@@ -98,6 +98,8 @@ var _vehicle_gathering := false
 var _bgm_audio = null
 ## 大厅初步异化叠加层（XLobbyCorruption，只在 Map004 且漩涡二阶起才建；换图时释放）
 var lobby_fx: XLobbyCorruption
+## 冠军庆典大厅叠加层（XFestLobby，只在 Map004 且活动期间才建；换图时释放）
+var fest_fx: XFestLobby
 ## 天启篇大厅方桌的裂纹（XTianqiTable，只在 Map004、天启篇存档才建；换图时释放）
 var tianqi_table: XTianqiTable
 ## 正在跑的顶层事件号（run_event 期间；没有为 0）：叠加层看是不是漩涡过场
@@ -267,6 +269,39 @@ var map_name_text := ""
 func _paint_map_name(c: XMVCanvas) -> void:
 	if map_name_text == "":
 		return
+	if XUiSkin.on():
+		var vw := c.size.x
+		var cx := vw / 2.0
+		var f := XUiSkin.font("title")
+		var fs := XUiSkin.FS_CARD
+		var tw := f.get_string_size(map_name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var bw := maxf(280.0, tw + 112.0)
+		var bh := 44.0
+		var bx := cx - bw / 2.0
+		var dark := Color(0.04, 0.04, 0.05, 0.84)
+		var clear := Color(0.04, 0.04, 0.05, 0.0)
+		var wing := 56.0
+		c.gradient(Rect2(bx - wing, 0.0, wing, bh), clear, dark)
+		c.draw_rect(Rect2(bx, 0.0, bw, bh), dark)
+		c.gradient(Rect2(bx + bw, 0.0, wing, bh), dark, clear)
+		var gold := Color(XUiSkin.GOLD, 0.55)
+		c.draw_line(Vector2(bx, 0.5), Vector2(bx + bw, 0.5), gold, 1.0)
+		c.draw_line(Vector2(bx, bh - 0.5), Vector2(bx + bw, bh - 0.5), gold, 1.0)
+		var tick_x1 := bx + 18.0
+		var tick_x2 := bx + bw - 18.0
+		var mid_y := bh / 2.0
+		for tx_d in [tick_x1, tick_x2]:
+			c.draw_colored_polygon(PackedVector2Array([
+				Vector2(tx_d, mid_y - 3.5), Vector2(tx_d + 3.5, mid_y),
+				Vector2(tx_d, mid_y + 3.5), Vector2(tx_d - 3.5, mid_y)
+			]), Color(XUiSkin.GOLD, 0.85))
+		var tx := roundf(cx - tw / 2.0)
+		var ty := roundf(bh / 2.0 + fs * 0.36)
+		c.draw_string(f, Vector2(tx, ty + 1.0), map_name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0, 0, 0, 0.8))
+		c.draw_string(f, Vector2(tx, ty), map_name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT)
+		return
+	c.font = XUI.font()
+	c.clean_text = false
 	var tw := c.text_width(map_name_text)
 	var distance := 80.0
 	var w := tw + distance * 2.0
@@ -283,6 +318,12 @@ func _show_map_name(text: String) -> void:
 	if _map_name_tween:
 		_map_name_tween.kill()
 	var plate: XMVCanvas = hud.find_child("MapNamePlate", true, false)
+	if XUiSkin.on():
+		plate.size = Vector2(get_viewport().get_visible_rect().size.x, 44.0)
+		plate.clean_text = true
+	else:
+		plate.size = Vector2(1280, 36)
+		plate.clean_text = false
 	map_name_text = text
 	plate.queue_redraw()
 	if text == "":
@@ -353,7 +394,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	var keep_cfg = slice().get("keepEvents", {}).get(str(id), [])
 	var keep: Array = keep_cfg.map(func(v): return int(v)) if keep_cfg is Array else []
 	for ev in map_data.events:
-		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id)) and not XRift.keep_event(id, int(ev.id)) and not XLobbyDebugNpc.keep_event(id, int(ev.id))):
+		if ev == null or (keep_cfg is Array and not keep.has(int(ev.id)) and not XRift.keep_event(id, int(ev.id)) and not XLobbyDebugNpc.keep_event(id, int(ev.id)) and not XFestLobby.keep_event(id, int(ev.id))):
 			continue
 		var e := MVEvent.new()
 		e.tilemap = lower
@@ -376,6 +417,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	_clear_treasure_popups()
 	_place_party(x, y, d)
 	_setup_lobby_fx()
+	_setup_fest_fx()
 	_setup_tianqi_look()
 
 
@@ -405,6 +447,17 @@ func _setup_lobby_fx() -> void:
 		lobby_fx = XLobbyCorruption.new()
 		add_child(lobby_fx)
 		lobby_fx.setup(self)
+
+
+## 冠军庆典：换图时先拆旧的，到了大厅且活动进行中（开关开着）再建
+func _setup_fest_fx() -> void:
+	if fest_fx != null and is_instance_valid(fest_fx):
+		fest_fx.queue_free()
+	fest_fx = null
+	if map_id == XFestLobby.MAP_ID and XFestLobby.decor():
+		fest_fx = XFestLobby.new()
+		add_child(fest_fx)
+		fest_fx.setup(self)
 
 
 ## 存档时的当前地图事件状态（XState.to_dict 调用）
@@ -484,6 +537,8 @@ func _process(delta: float) -> void:
 	if player:
 		var hanging := XHangUp.is_active(XState.current)
 		player.input_enabled = not busy and not _menu_open and not hanging and vehicle_can_move()
+		if not player.input_enabled and MVPlayer.MV_CLEAR_DEST:
+			player.clear_destination()  # Scene_Map.updateDestination：不能动时清目的地（MVPlayer.MV_CLEAR_DEST）
 		player.auto_step = _hang_up_step if hanging else Callable()
 		hang_overlay.visible = not _menu_open and transfer_page == null
 		hang_overlay.refresh()
@@ -1276,7 +1331,9 @@ func _tween_alpha(rect: ColorRect, out: bool) -> void:
 
 func transfer(id: int, x: int, y: int, d: int, fade_type := 0) -> void:
 	if XDB.map(id).is_empty() or not slice().get("maps", []).map(func(v): return int(v)).has(id):
-		await message.show_text("", 0, ["\\c[2]（首期尚未开放这张地图：Map%03d）" % id])
+		# 文字审 19-001：玩家不看内部地图号；号写进日志便于查是哪条事件指过来的（重制已开放全部原版路线，正常走不到这里）
+		push_warning("场所移动到没收录的地图：Map%03d" % id)
+		await message.show_text("", 0, ["\\c[2]（该区域暂未开放）"])
 		return
 	await transfer_fade(true, fade_type)
 	await load_map(id, x, y, d if d > 0 else player.direction)
@@ -1387,6 +1444,8 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	var hud_was := hud.visible
 	hud.visible = false
 	var shot := await _snapshot()
+	if MVPlayer.MV_CLEAR_DEST and player:
+		player.clear_destination()  # Scene_Map.stop 后 isActive 假，遇敌演出第一帧就清目的地
 	XPartySkills.battle_start(XState.current)  # BattleManager.startBattle 包装：装备学技能变了刷共享、成员变了刷羁绊
 	var battle := XBattleScene.new()
 	battle.setup(troop_id, can_escape, can_lose, battle_map(), shot, random_encounter)
@@ -1546,9 +1605,12 @@ func _snapshot() -> Texture2D:
 	var plate: CanvasItem = hud.find_child("MapNamePlate", true, false)
 	var was := message.visible
 	var plate_was := plate.visible if plate else false
+	var diff_was := difficulty_notice.visible if (difficulty_notice != null and XUiSkin.on()) else false
 	message.visible = false
 	if plate:
 		plate.visible = false
+	if diff_was:
+		difficulty_notice.visible = false
 	# 触屏虚拟按键（CanvasLayer 120，在根视口里）也不进截图：否则战斗背景（这张快照）里留着一份 A／B，
 	# 跟上面活的按键叠成两份（玩家反馈 v0.01.01）。原版 Mehmet_GhostButtons 的按键是场景子节点，同样会被截进去，按原版缺陷修掉。
 	var pad := XTouchControls.instance if SNAP_HIDE_TOUCH else null
@@ -1560,6 +1622,8 @@ func _snapshot() -> Texture2D:
 	message.visible = was
 	if plate:
 		plate.visible = plate_was
+	if diff_was and is_instance_valid(difficulty_notice):
+		difficulty_notice.visible = diff_was
 	if pad != null and is_instance_valid(pad):
 		pad.visible = pad_was
 	if img == null or img.is_empty():

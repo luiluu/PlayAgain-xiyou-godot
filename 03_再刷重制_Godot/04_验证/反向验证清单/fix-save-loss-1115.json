@@ -1,0 +1,4 @@
+{"tests": ["xiyou_save_cold_load"], "items": [
+ {"name": "读档同步不传新档（回到 v0.01.10 的写法）", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/liuying.gd", "find": "\t\tsync(s.actors[ACTOR], s)\n", "replace": "\t\tsync(s.actors[ACTOR])\n"},
+ {"name": "sync 不看传进来的档", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/liuying.gd", "find": "var r := XAdvance.rank(state, ACTOR) if state != null else rank(a)", "replace": "var r := rank(a)"}
+]}

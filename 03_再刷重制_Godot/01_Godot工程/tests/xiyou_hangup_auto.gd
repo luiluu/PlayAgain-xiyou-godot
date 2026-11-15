@@ -150,7 +150,7 @@ func _run() -> void:
 		await frames()
 		var r: Array = ref.windows[kind].rect
 		check("rect_" + kind, p.win.position == Vector2(r[0], r[1]) and p.win.size == Vector2(r[2], r[3]))
-		check("rows_" + kind, p.rows() == ref.windows[kind].rows, [p.rows(), ref.windows[kind].rows])
+		check("rows_" + kind, p.rows() == _ref_rows(ref.windows[kind].rows), [p.rows(), ref.windows[kind].rows])
 		check("opacity_" + kind, p.win.opacity == int(ref.windows[kind].opacity))
 		await shot(kind)
 		if kind == "counts":
@@ -166,12 +166,12 @@ func _run() -> void:
 			check("rate_cycles_to_ten", int(s.hang_up.RecoveryHMP.HpV) == 10)
 		elif kind == "sell":
 			s.hang_up.SellWeapon.quality12 = true
-			check("sell_partial_matches_oracle", p.rows() == ref.sell.partial.rows)
+			check("sell_partial_matches_oracle", p.rows() == _ref_rows(ref.sell.partial.rows))
 			p.select(7)
 			p.ok()
-			check("sell_partial_toggles_off", p.rows() == ref.sell.off.rows)
+			check("sell_partial_toggles_off", p.rows() == _ref_rows(ref.sell.off.rows))
 			p.ok()
-			check("sell_all_toggles_on", p.rows() == ref.sell.on.rows)
+			check("sell_all_toggles_on", p.rows() == _ref_rows(ref.sell.on.rows))
 			s.hang_up.SellWeapon.SellQuality = 11
 			p.select(0)
 			p.ok()
@@ -288,7 +288,7 @@ func _run() -> void:
 	check("map_battle_recovery_connected", outcome == 1 and s.actor(8).hp == 1000 and s.actor(8).mp == 1000)
 	check("map_battle_sell_connected", s.gear.is_empty() and s.gold == gold_before + 50)
 	map.hang_overlay.refresh()
-	check("panel_remaining_potions", map.hang_overlay._lines.potions == ["治疗药水(小) 剩余: 3"])
+	check("panel_remaining_potions", map.hang_overlay._lines.potions == ["治疗药水(小) 剩余：3"])
 	check("panel_partial_grade", map.hang_overlay._lines.grades == ["普通（部分）"])
 	await shot("overlay")
 	XHangUp.stop(s)
@@ -372,3 +372,8 @@ func _rollback_rules() -> void:
 	XHangUpAuto.after_battle_recovery(sr, lr)
 	XHangUpAuto.SAFE_RECOVERY = true
 	check("dead_eats_mp_potions_original", sr.actor(10).mp == 100 and sr.item_count(2) == 0, [sr.actor(10).mp, sr.item_count(2)])
+
+
+## 参照行的标签换成重制改过的文字（文字审：卖出设置第一行原版「卖出的回合(为0不卖出)」）；只换标签，值照比
+func _ref_rows(rows: Array) -> Array:
+	return rows.map(func(r): return [("自动卖出间隔场数（0 为不卖出）" if str(r[0]) == "卖出的回合(为0不卖出)" else r[0])] + (r as Array).slice(1))

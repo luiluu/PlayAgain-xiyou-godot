@@ -339,7 +339,7 @@ func _signature(obs: Dictionary) -> Array:
 				if obs.screen == "overlay":
 					var menu := _find_ui(obs.map, XMenu)
 					if menu != null:
-						sig.append([str(menu._mode), int(menu._cmd_index)])
+						sig.append([str(menu._mode), int(menu._cmd_index) if menu.skin == null else menu.skin.gi * 100 + menu.skin.ii])
 						var eq := _equip_scene(menu)
 						if eq != null:
 							sig.append([str(eq._mode), int(eq._slot), int(eq._item_index), int(eq.actor_index)])
@@ -1448,6 +1448,20 @@ func _act_equip(obs: Dictionary) -> void:
 			return
 		match str(menu._mode):
 			"command":
+				if menu.skin != null:  # 天启篇新界面主菜单（XSkinMainMenu，第 1A 批）：左右换组到「装备」组，确定直接进
+					var sk: XSkinMainMenu = menu.skin
+					var gw := -1
+					for g in sk.groups.size():
+						if (sk.groups[g].items as Array).any(func(it): return str(it.get("cmd", "")) == "equip"):
+							gw = g
+					if gw < 0:
+						job.done = true
+					elif str(sk.current_item().get("cmd", "")) != "equip":
+						await _tap("right" if gw > sk.gi else "left")
+					else:
+						await _tap("accept")
+						await _frames(3)
+					return
 				var want: int = menu.command_names().find("装备")
 				if want < 0:
 					job.done = true
@@ -1485,6 +1499,15 @@ func _act_equip(obs: Dictionary) -> void:
 		"slot":
 			var view: Array = eq.slot_view()
 			if int(job.row) >= view.size():
+				# 天启篇新界面（XSkinEquipPage，第 1C 批）没有指令窗、开页就在栏位上：
+				if eq.skin != null and int(job.actor) + 1 < party_n:
+					job.actor += 1                   # 这个人换完了，E 换下一个人（回到栏位第一栏）
+					job.row = 0
+					await _tap("e")
+					await _frames(2)
+					return
+				if eq.skin != null:
+					job.done = true
 				await _tap("cancel")
 				return
 			var row: int = eq._slot_row()

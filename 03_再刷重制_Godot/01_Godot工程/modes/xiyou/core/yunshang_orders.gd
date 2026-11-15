@@ -183,8 +183,30 @@ static func find_uid(s: XState, uid: String) -> Dictionary:
 	return {}
 
 
+## O-472（玩家反馈 v0.01.10「强退重进云裳装备没了」）：读档重放账本时，remove 的那件天衣在这份存档里正穿在角色身上，就不卸、不移除，以存档为准。
+## 账本是存档目录旁的独立文件、每次卖出／存仓／分解天衣当场写盘，存档要等玩家存；两份写入时机不同，强退后读回较早的档时，
+## 档里还穿着、之后才卸下失去的天衣会被账本的 remove 从身上扒掉（原版同样会，属原版设计在强退场景下的缺陷）。
+## 只放过「读档时穿着」、且不是进阶消耗的：背包里的照旧移除；**进阶消耗的照旧移除**（co 甲档核查 P2：进阶次数随账本保留，
+## 若放过被消耗的那件，等于进阶白拿一件）——进阶的 remove 带 src "advance"；本修复之前写下的旧账本没有来源，按账本结构认：
+## 进阶在同一个事务里写「人道意志碎片 −50／−188」紧跟恰好 3／9 条 remove（ADVANCE 表），卖出／分解的 remove 一次只写一条、前面不带碎片扣除。
+## 卖出／分解的收益随旧档一起回滚，放过不算刷。false＝照原版连穿着的一起卸下移除。
+static var KEEP_WORN_ON_LOAD := true
+## 读档重放中（after_load 里置真）
+static var _loading := false
+## 读档重放时放过的穿着天衣（_yunUid），给专项与日志看
+static var kept_on_load: Array = []
+
+
+static func _worn(s: XState, item: Dictionary) -> bool:
+	for a in s.actors.values():
+		for e in a.equips:
+			if e is Dictionary and is_same(e, item):
+				return true
+	return false
+
+
 ## removeUid：按 _yunUid（找不到再按记下的实例号且底子相同）移除；穿着的先卸下
-static func remove_uid(s: XState, uid: String, instance: String, base_id: int) -> void:
+static func remove_uid(s: XState, uid: String, instance: String, base_id: int, consumed := false) -> void:
 	var item := find_uid(s, uid)
 	if item.is_empty() and instance != "":
 		for e in s.gear:
@@ -193,6 +215,10 @@ static func remove_uid(s: XState, uid: String, instance: String, base_id: int) -
 				e._yunUid = uid
 				break
 	if item.is_empty():
+		return
+	if _loading and KEEP_WORN_ON_LOAD and not consumed and _worn(s, item):
+		kept_on_load.append(uid)
+		print("云裳账本：读档重放的移除 %s 指向身上穿着的天衣「%s」，以存档为准保留" % [uid, str(item.get("name", ""))])
 		return
 	for a in s.actors.values():
 		for slot in range(a.equips.size()):
@@ -216,12 +242,35 @@ static func grant_spec(s: XState, spec: Dictionary) -> void:
 	s.gear.append(n)
 
 
+## 日志里哪些 remove 是进阶消耗的（下标 → true）：带 src "advance" 的；没有来源的旧记录按结构认——
+## 碎片扣除正好是某一阶的数量（−50／−188）、紧跟其后连续的 remove 取前「该阶天衣数」条（3／9）
+static func advance_removes(journal: Array) -> Dictionary:
+	var out := {}
+	for i in journal.size():
+		var op: Dictionary = journal[i]
+		if op.has("remove") and str(op.get("src", "")) == "advance":
+			out[i] = true
+		if not op.has("delta") or int(op.get("item", 0)) != SHARD:
+			continue
+		var need := -1
+		for row in ADVANCE:
+			if int(op.delta) == -int(row.shards):
+				need = int(row.robes)
+		var k := i + 1
+		while need > 0 and k < journal.size() and journal[k].has("remove") and not journal[k].has("delta") and journal[k].get("grant") == null:
+			out[k] = true
+			need -= 1
+			k += 1
+	return out
+
+
 ## replay：从 _yunSeq 起把日志补到当前存档，再把云裳的进阶次数设成账本的
 static func replay(s: XState) -> bool:
 	var p = profile(s)
 	if p == null:
 		return false
 	var journal: Array = p.journal
+	var consumed := advance_removes(journal)
 	for j in range(int(s.flags.get(SEQ_FLAG, 0)), journal.size()):
 		var op: Dictionary = journal[j]
 		if op.has("delta"):
@@ -229,7 +278,7 @@ static func replay(s: XState) -> bool:
 		if op.get("grant") is Dictionary:
 			grant_spec(s, op.grant)
 		if op.has("remove"):
-			remove_uid(s, str(op.remove), str(op.get("instance", "")), int(op.get("baseId", 0)))
+			remove_uid(s, str(op.remove), str(op.get("instance", "")), int(op.get("baseId", 0)), consumed.has(j))
 		s.flags[SEQ_FLAG] = j + 1
 	if s.actors.has(XYunshang.ACTOR):
 		if int(p.stage) > 0:
@@ -284,7 +333,11 @@ static func after_load(s: XState, identity: String) -> void:
 		if l == null or not (l.legacyProfiles as Dictionary).has(identity):
 			storage_error = "" if l != null else error
 			return
-	storage_error = "" if replay(s) else error
+	kept_on_load = []
+	_loading = true
+	var ok := replay(s)
+	_loading = false
+	storage_error = "" if ok else error
 	if storage_error != "" and s.actors.has(XYunshang.ACTOR):
 		XYunshang.sync(s.actor(XYunshang.ACTOR))
 
@@ -538,7 +591,7 @@ static func advance(s: XState, selected: Array) -> String:
 	var ok := transaction(s, func(p):
 		p.journal.append({"item": SHARD, "delta": -int(req.shards)})
 		for i in selected:
-			p.journal.append({"remove": str(i._yunUid), "instance": str(i.get("instanceId", "")), "baseId": int(i.base)})
+			p.journal.append({"remove": str(i._yunUid), "instance": str(i.get("instanceId", "")), "baseId": int(i.base), "src": "advance"})
 		p.stage = st + 1)
 	if not ok:
 		return error

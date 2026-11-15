@@ -296,16 +296,22 @@ func _run() -> void:
 	XDungeon.restore_difficulty = false
 	# 法宝与积分重构（O-388、O-389）：法宝上限、抽奖范围对照原版语义关掉；本身由 tests/xiyou_fabao_rework 核
 	XMagicWeapon.LEVEL_99 = false
+	# 漩涡怪物异化对齐大厅稿（Kyo 11-15 D8，O-468）：二阶就出异化怪（XRift.stage() 恒为 2），比原版翻译时关掉，由 tests/xiyou_rift_alien 核
+	XRiftAlien.ALIGN_LOBBY = false
 	XLotteryRework.EV_NOT_POSITIVE = false
 	XFabaoFeed.NO_PILLS = false
 	# 大厅全图鉴 NPC 只留怪物图鉴（Kyo 11-12，O-354）：比原版翻译时照原版整页，由 tests/xiyou_lobby_debug_npc 单独量
 	XLobbyDebugNpc.BOOK_ONLY = false
+	# 冠军庆典大厅（使者、报名处、奖杯是追加的 Map004 事件 78～81，原版没有；O-466）：对照原版语义关掉，由 tests/xiyou_fest_lobby 核
+	XFestLobby.ENABLED = false
 	XDungeon.restore_hang_up = false
 	XDungeon.battle_end_counts = false
 	# 死内容做活的数据补丁（一护卍解 Map213、CE2508、CE2478 魔攻；O-184／O-185）：对照原版语义，关掉；补丁本身由 xiyou_floor_odds、xiyou_nanoha 核
 	XDeadContent.ICHIGO_BANKAI = false
 	XDeadContent.DOMAIN_ALL_MATK = false
 	XDeadContent.clear_cache()
+	# 原版文字错的加载时修正（XTextFix，乙类文字审，O 号见优化登记）：参照是原版文字，对照时整组关掉；修正本身由 tests/xiyou_text_fix 核
+	XTextFix.set_all(false)
 	# 漩涡二阶段、苍龙重做与解放（XRift／XCanglong／RELEASE_CANGLONG，优化登记三条）：对照原版语义，关掉；本身由 tests/xiyou_rift2_canglong 核
 	XCanglong.original_data()
 	# O-120 副本门判定修正（变量 5＝1）：对照原版语义，关掉；修正本身由 tests/xiyou_floor_reach075 核（有状态变体 m23e2p0#s1 咬着这个差异）
@@ -883,6 +889,9 @@ func _trace_norm(trace: Array) -> Array:
 			# 选项里的控制符：原版脚本拼的选项直接带 ESC（\x1b，即 convertEscapeCharacters 之后的写法，如称号选项 \x1bI[0]），
 			# 重制写成反斜杠；显示时两者一样，比较前统一成反斜杠（悟空 dmg2，m4e1p2／p3）
 			x.choices = (x.choices as Array).map(func(t): return str(t).replace(char(27), "\\"))
+		if x.t == "msg" and x.has("lines"):
+			# 已移除地图提示（CodexMapRemoval.notice）文字审批 19 改写：原版「【区域已移除】X因地图文件损坏，已从当前版本移除。」→「（X 区域暂未开放。）」
+			x.lines = (x.lines as Array).map(func(t): return RegEx.create_from_string("^【区域已移除】(.*)因地图文件损坏，已从当前版本移除。$").sub(str(t), "（$1 区域暂未开放。）"))
 		return _norm(x))
 
 

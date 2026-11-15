@@ -95,8 +95,8 @@ static func view(e: Dictionary, s: XState = null) -> Dictionary:
 		XGear.combine(v, record(d), "prefix")
 	v[VIEW_FLAG] = true
 	if id != "":
-		if _views.size() > 64:
-			_views.clear()
+		while _views.size() > 64:
+			_views.erase(_views.keys()[0])  # 只丢最早的一条，不整表清空：外面还拿着旧视图时 real() 才不至于全部回退成视图本身（核查 P3，11-15）
 		var p: Array = e.get("params", [])
 		_views[id] = {"src": e, "view": v, "cap": cap, "rev": revision, "abs": e.get(KEY), "note": str(e.get("note", "")),
 			"name": str(e.get("name", "")), "traits": e.get("traits"), "tn": (e.get("traits", []) as Array).size(), "pref": p,

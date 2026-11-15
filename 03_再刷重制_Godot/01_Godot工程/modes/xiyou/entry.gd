@@ -175,6 +175,7 @@ func _title() -> void:
 	_sel = XTianqiTitle.initial_index(_commands.map(func(c): return [str(c.get("key", "")), bool(c.enabled)]))
 	_select(_sel, true)
 	XForceUpdate.on_title(self, _layer)
+	_whats_new_hook()
 
 
 ## 天启篇新标题（XTianqiTitle，O-306）：五项功能从这里传进去；版本号、导入导出、「继续」照原版标题加，挪进它的 extras 层（跟菜单一起淡入）。
@@ -218,11 +219,40 @@ func _tq_build_title() -> void:
 		client.checked.connect(_tq_on_update_checked)
 	client.auto_check()
 	XForceUpdate.on_title(self, _layer)  # 低于清单的最低可玩版本：盖强制更新框，不能进标题
+	_whats_new_hook()
 
 
 func _tq_on_update_checked(_result: Dictionary) -> void:
 	if _tq_title != null and is_instance_valid(_tq_title):
 		_tq_title.set_badge("check_update", XUpdateClient.instance(get_tree()).has_update())
+
+
+## 更新装好、重启进标题后弹一次「本次更新内容」（XWhatsNewPage，update-whatsnew）。天启篇新标题走新皮肤，重制版旧标题走旧样式。
+## 查清单（强制更新的启动检查、每天一次的静默检查）回来时可能刚补记了这一版的说明（整包首次启动），人还在标题就再试一次。
+func _whats_new_hook() -> void:
+	if not XWhatsNew.ENABLED:
+		return
+	var client := XUpdateClient.instance(get_tree())
+	if not client.checked.is_connected(_whats_new_on_checked):
+		client.checked.connect(_whats_new_on_checked)
+	XWhatsNewPage.show_pending(self, _tq_title != null)
+
+
+func _whats_new_on_checked(_result: Dictionary) -> void:
+	_whats_new_after_frames(2)
+
+
+## 强制更新「正在检查」框查完放行时隔一帧才关（XForceUpdate._wait），隔两帧再弹。用一次性连接不用 await：标题节点中途被换掉时连接自动断开。
+func _whats_new_after_frames(left: int) -> void:
+	if not is_inside_tree():
+		return
+	if left > 0:
+		var next := _whats_new_after_frames.bind(left - 1)
+		if not get_tree().process_frame.is_connected(next):
+			get_tree().process_frame.connect(next, CONNECT_ONE_SHOT)
+		return
+	if is_title_page():
+		XWhatsNewPage.show_pending(self, _tq_title != null)
 
 
 ## 新标题「游戏设置」：没读档也能开（XOptionsScene 对 XState.current 为空都有判断），关掉回标题
@@ -281,7 +311,7 @@ func _add_auto_button() -> void:
 
 
 func _confirm_auto() -> void:
-	_window("继续切后台时自动存的档")
+	_window("继续（切后台自动存档）")
 	column.add_child(XUI.label(XSave.auto_summary()))
 	column.add_child(XUI.label("读的是切到后台那一刻的进度；你的存档位不受影响。手动存一次档后，这份自动存档就作废。", 18, XUI.DIM))
 	_add(XUI.button("读取"), _load_auto)
@@ -480,7 +510,7 @@ func _export_slot(slot: int) -> void:
 	if out.has("error"):
 		_notice("导出存档", "存档未导出：" + str(out.error))
 		return
-	var opened := XSaveTransfer.pick(true, XSaveTransfer.file_name(slot), func(path: String):
+	var opened := XSaveTransfer.pick(true, XSaveTransfer.file_name(slot, bool(out.get("tianqi", false))), func(path: String):
 		if path == "":
 			_title()
 			return

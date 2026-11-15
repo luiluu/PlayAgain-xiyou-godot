@@ -22,6 +22,8 @@ func _ready() -> void:
 
 
 func _run() -> void:
+	# 敌人数值按原版对照：漩涡怪物异化对齐大厅稿（O-468，Kyo 11-15 D8）二阶就会把守层者变成异化怪，这里关掉，由 tests/xiyou_rift_alien 核
+	XRiftAlien.ALIGN_LOBBY = false
 	var d = JSON.parse_string(FileAccess.get_file_as_string(XDB.BASE + ORACLE))
 	if not (d is Dictionary and d.cases.size() == 40 and d.troops.size() == 10):
 		check("oracle", false, ORACLE)

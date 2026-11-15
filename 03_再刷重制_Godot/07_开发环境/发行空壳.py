@@ -47,6 +47,8 @@ SUSPECT_HEAD = re.compile(r'只在天启篇|只管天启篇|只进天启篇|天�
 MIXED_OK = {
     'modes/xiyou/ui/tianqi_title.gd': '标题画面，发行包要用（KEEP）',
     'modes/xiyou/core/xdb.gd': '数据库总表；只有 content/gojo 贴图路径一行，图在 DENY 里不进包',
+    'modes/xiyou/ui/skin/ui_skin.gd': '新界面皮肤开关（ui-skin-p0）：XWindowStyle／XUI 每次画都问 on()，发行包里恒为 false（天启篇发行门）；'
+        '字体与法阵在 DENY 里不进包，缺了落回原字体',
 }
 HAND = HERE / '发行空壳手写'  # 手写空壳：<类名>.gd，整份照用（要保留部分发行功能的，如漩涡二阶画面）
 NUMERIC = set()  # 返回 int／float 的成员（check 要求它们不靠按类型空值）
@@ -114,7 +116,7 @@ def _balance(s: str) -> int:
 def parse(src: str) -> dict:
     """顶层：class_name、extends、signal、const／var、func（签名＋函数体前几行）。内部类整块跳过。"""
     lines = src.split('\n')
-    info = {'class_name': '', 'extends': 'RefCounted', 'signals': [], 'vars': {}, 'funcs': {}}
+    info = {'class_name': '', 'extends': 'RefCounted', 'signals': [], 'vars': {}, 'funcs': {}, 'inner': []}
     i = 0
     while i < len(lines):
         ln = lines[i]
@@ -128,6 +130,7 @@ def parse(src: str) -> dict:
         elif ln.startswith('signal '):
             info['signals'].append(_strip_comment(ln).strip())
         elif ln.startswith('class '):
+            info['inner'].append(re.match(r'class\s+(\w+)', ln).group(1))
             i += 1
             while i < len(lines) and (not lines[i] or lines[i][0] in ' \t'):
                 i += 1
@@ -262,11 +265,17 @@ def stub(cls: str, path: Path, need: set, over: dict, root: Path = PROJECT) -> t
         want.add('_init')
     # 特例表里写了的成员也留（西游代码没用到、但发行验收要跑的西游测试读它，如 XGojo.ENABLED）
     want |= {k.split('.', 1)[1] for k in over if k.startswith(cls + '.') and k.split('.', 1)[1] in info['vars'] | info['funcs'].keys()}
+    # 内部类整块不进空壳：类型标注里用到内部类的换成 Variant（cc 11-15 update-whatsnew 冷启动发现：XTianqiTable 的
+    # `var chip: _Chip` 照抄进空壳、_Chip 没了，发行包里 map_scene 及依赖它的三十多个脚本全部编译失败）
+    def de_inner(t: str) -> str:
+        for c in info.get('inner', []):
+            t = re.sub(rf'\b{re.escape(c)}\b', 'Variant', t)
+        return t
     for n in sorted(want):
         if n in info['vars']:
             v = info['vars'][n]
             kw = ('static var' if v['kind'] == 'var' and v['static'] else v['kind'])
-            t = f': {v["type"]}' if v['type'] else ''
+            t = f': {de_inner(v["type"])}' if v['type'] else ''
             val = var_value(cls, n, v, over)
             if not t and val == 'null':
                 out.append(f'{kw} {n} = null')
@@ -278,7 +287,7 @@ def stub(cls: str, path: Path, need: set, over: dict, root: Path = PROJECT) -> t
             how[n] = src
             if src == '照搬关着时的返回' and body.strip() == 'return true':
                 COPIED_TRUE.add(f'{cls}.{n}')
-            sig = f['sig']
+            sig = de_inner(f['sig'])
             if f['params'] and body != 'pass' or True:
                 # 参数没用到会报警告（发行包不在意），参数名前加下划线会改签名，所以照留
                 pass

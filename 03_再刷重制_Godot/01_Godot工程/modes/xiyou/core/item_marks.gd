@@ -244,6 +244,8 @@ static func shop_goods(goods: Array, map_id := 0) -> Array:
 			mapped.append(g)
 	var horn_before := mapped.any(_is_horn_row)
 	var out: Array = mapped.filter(func(g): return not (g[0] == 0 and XImportedBalance.horn_id_disabled(g[1])))
+	if not XImportedBalance.canglong_horn_on_sale():
+		out = out.filter(func(g): return not (g[0] == 0 and g[1] == XImportedBalance.CANGLONG_HORN))  # 苍龙破晓号角要等 rift2 过场之后才上架（Kyo 11-15）
 	out = XAlienHide.filter_goods(out)  # installAlienationHide 包 Window_ShopBuy.makeItemList：隐藏生效时不卖六件异化物品（O-283）
 	out = XTianqiPetHide.filter_goods(out)  # 天启篇隐藏宠物：不卖宠物物品
 	out = XFabaoFeed.filter_goods(out)  # 法宝经验丹下架（O-401）

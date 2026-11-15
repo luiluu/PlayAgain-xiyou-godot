@@ -308,7 +308,7 @@ func _supply(c: Dictionary) -> void:
 		XDungeon.battle = {"troop": 2, "floor": int(row.floor), "won": int(row.result) == 0, "orb": false, "supply": false}
 		var text := XDungeon.race_supply(s)
 		var tag := "supply.%d" % i
-		check(tag + ".toast", ([text] if text != "" else []) == row.toasts, [text, row.toasts])
+		check(tag + ".toast", ([text] if text != "" else []) == (row.toasts as Array).map(func(t): return str(t).replace("；背包已满，暂存祝福管理", "；背包已满，已暂存至种族祝福")), [text, row.toasts])  # 文字审批 16 改了暂存提示（参照是原版）
 		# 重制建档时就补空 inbox（原版背包满才建），内容相同
 		var sup: Dictionary = s.race_supply.duplicate(true)
 		if sup.get("inbox", {}).is_empty():

@@ -57,7 +57,7 @@ static func learn_reason(a: XActor, id: int) -> String:
 		return "已经学会这卷号卷" if XTianqiTrumpet.on() else "已经学会这项权能"
 	if ids.size() >= limit(a):
 		if XTianqiTrumpet.on():
-			return actor_class(a) + "最多学习" + str(limit(a)) + "卷号卷，请先用" + XTianqiTrumpet.forget_name() + "封上已有号卷"
+			return actor_class(a) + "最多学习" + str(limit(a)) + "卷号卷，请先用" + XTianqiTrumpet.forget_name() + "封印已有号卷"
 		return actor_class(a) + "最多学习" + str(limit(a)) + "本权能书，请先遗忘已有权能"
 	return ""
 
@@ -72,7 +72,7 @@ static func protected_forget(a: XActor, id: int) -> bool:
 ## No persistent permit flag: the dedicated paid operation owns this one erasure.
 static func forget_paid(s: XState, a: XActor, id: int) -> Dictionary:
 	if a == null or not learned(a).has(id):
-		return {"ok":false, "reason":"角色尚未学会这项权能"}
+		return {"ok":false, "reason":"角色尚未学会这项" + ("号卷" if XTianqiTrumpet.on() else "权能")}  # 天启篇提示文案跟号卷（核查 P3，11-15）
 	if s.item_count(FORGET_ITEM) <= 0:
 		return {"ok":false, "reason":"缺少" + XTianqiTrumpet.forget_name()}
 	a.skill_ids.erase(id)

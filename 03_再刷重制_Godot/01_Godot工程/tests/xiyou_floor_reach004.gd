@@ -187,6 +187,7 @@ func _run() -> void:
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0
 	XGuide.MILESTONE_ENABLED = false
+	XFestLobby.ENABLED = false  # 冠军庆典期间大厅多 78～81 号事件（原版没有，由 xiyou_fest_lobby 核）；比大厅保留事件时关掉
 	seed(20261102)
 	_kept()
 	for m in ADDED:

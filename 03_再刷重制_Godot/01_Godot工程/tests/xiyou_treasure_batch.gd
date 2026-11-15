@@ -153,6 +153,43 @@ func _run() -> void:
 	s.gain_gear("weapon", 2, 1)
 	check("plain_not_prestige", XTreasureBatch.queue.size() == n_before)
 
+	# ---- 发行包没有 generated/manifest.json（导出预设排除）：照样能在背包里直接用（玩家反馈 v0.01.10）----
+	var real_manifest := XTreasureMap.manifest_path
+	check("dev_manifest_present", FileAccess.file_exists(real_manifest) and XTreasureMap.v029())
+	XTreasureMap.manifest_path = "res://modes/xiyou/generated/__release_has_no_manifest__.json"
+	XTreasureMap._v029 = null
+	check("release_v029", XTreasureMap.v029())
+	check("release_supports_all_21", XTreasureMap.V029_SPECS.all(func(sp): return XTreasureBatch.supports(XDB.rec("Items", int(sp[0])))))
+	var rpage := XItemScene.new()
+	add_child(rpage)
+	await frames()
+	rpage._item = map212
+	rpage._mode = "action"
+	rpage._use_direct()
+	await frames()
+	check("release_window_open", not rpage._treasure.is_empty() and rpage.treasure_win.visible and str(rpage._treasure.state) == "quantity")
+	check("release_no_reserve", s.peek_common_event() == 0)
+	rpage._unhandled_input(_key(KEY_ENTER))
+	for i in 600:
+		await get_tree().process_frame
+		if rpage._treasure.is_empty():
+			break
+	check("release_used_in_bag", rpage._treasure.is_empty() and int(rpage.last_treasure.used) == 1 and s.item_count(212) == 1, rpage.last_treasure)
+	rpage.queue_free()
+	await frames()
+	# 有清单但没有这个运行时（旧源）：仍走原生
+	var old_manifest := "user://test_xiyou_treasure_batch/old_manifest.json"
+	DirAccess.make_dir_recursive_absolute(old_manifest.get_base_dir())
+	var f := FileAccess.open(old_manifest, FileAccess.WRITE)
+	f.store_string(JSON.stringify({"runtimeInputs": {}}))
+	f.close()
+	XTreasureMap.manifest_path = old_manifest
+	XTreasureMap._v029 = null
+	check("old_source_native", not XTreasureMap.v029() and not XTreasureBatch.supports(map212))
+	XTreasureMap.manifest_path = real_manifest
+	XTreasureMap._v029 = null
+	check("restored_v029", XTreasureMap.v029())
+
 	# ---- 回退：ENABLED = false ----
 	XTreasureBatch.ENABLED = false
 	check("rollback_not_supported", not XTreasureBatch.supports(map212))

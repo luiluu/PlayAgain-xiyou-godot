@@ -67,14 +67,17 @@ static func map_ready(scene: Node) -> void:
 	n.reveal(MSG_LOAD)
 
 
+var _host: Control
+
+
 func _init() -> void:
 	layer = 85
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	var host := Control.new()
-	host.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	host.size = Vector2(1280, 720)
-	add_child(host)
-	win = XMVWindow.make(host, RECT, 0, _paint)
+	_host = Control.new()
+	_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_host.size = Vector2(1280, 720)
+	add_child(_host)
+	win = XMVWindow.make(_host, RECT, 0, _paint)
 	win.padding = 0.0
 	win.canvas.modulate.a = 0.0
 
@@ -85,6 +88,23 @@ func reveal(msg: String) -> void:
 		return
 	message = msg
 	show_count = DURATION
+	var on := XUiSkin.on()
+	win.canvas.font = XUiSkin.font("body") if on else XUI.font()
+	win.canvas.clean_text = on
+	if on:
+		_host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		var vs := get_viewport().get_visible_rect().size if get_viewport() else Vector2(1280, 720)
+		var label := XMVText.plain(msg)
+		var f := XUiSkin.font("body")
+		var tw := f.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+		var pill_w := ceilf(24.0 + 8.0 + tw + 28.0)
+		var pill_h := 38.0
+		var margin := XSkinLayout.margin_for(vs.x)
+		win.set_rect(Rect2(vs.x - margin - pill_w, vs.y - 44.0 - pill_h, pill_w, pill_h))
+	else:
+		_host.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+		_host.size = Vector2(1280, 720)
+		win.set_rect(RECT)
 	win.refresh()
 
 
@@ -109,6 +129,23 @@ static func text_width(msg: String) -> float:
 
 
 func _paint(c: XMVCanvas) -> void:
+	if XUiSkin.on():
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(XUiSkin.PANEL_LOW, 0.92)
+		sb.border_color = Color(XUiSkin.GOLD, 0.5)
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(19)
+		sb.shadow_color = Color(0, 0, 0, 0.42)
+		sb.shadow_size = 6
+		sb.shadow_offset = Vector2(0, 3)
+		c.draw_style_box(sb, Rect2(Vector2.ZERO, c.size))
+		var m := RegEx.create_from_string("\\\\i\\[(\\d+)\\]").search(message)
+		var icon_idx := int(m.get_string(1)) if m != null else 0
+		if icon_idx > 0:
+			c.icon(icon_idx, 12.0, (c.size.y - 24.0) / 2.0, 1.0, 24.0)
+		var tx := 44.0 if icon_idx > 0 else 16.0
+		c.text(XMVText.plain(message), tx, 0.0, c.size.x - tx - 14.0, "left", XUiSkin.GOLD, 16, c.size.y)
+		return
 	var half := PAD + ceilf(text_width(message) / 2.0)
 	var h := RECT.size.y
 	var c1 := Color(0, 0, 0, 0)

@@ -86,7 +86,7 @@ func compare(name: String, got: Array, want: Array) -> void:
 		for i in range(got.size()):
 			if used.has(i) or got[i][0] != wop[0]:
 				continue
-			if wop[0] == "text" and got[i][1] != wop[1] and not VALUE_FREE.has(wop[1]):
+			if wop[0] == "text" and got[i][1] != _ref_text(wop[1]) and not VALUE_FREE.has(wop[1]):
 				continue
 			if wop[0] == "face" and str(got[i][1]) != str(wop[1]) or wop[0] == "icon" and int(got[i][1]) != int(wop[1]):
 				continue
@@ -248,3 +248,9 @@ static func _shift(op: Array, dy: float) -> Array:
 		_:
 			o[2] += dy
 	return o
+
+
+## 参照文字换成文字审改过的写法：称号原版 `, "称号"`，重制「，「称号」」（文字审批 14）
+static func _ref_text(t) -> Variant:
+	var m := RegEx.create_from_string('^, "(.*)"$').search(str(t)) if t is String else null
+	return "，「%s」" % m.get_string(1) if m else t

@@ -1,0 +1,789 @@
+== 选测（基准 main（分叉点 511db55cc6），32 个改动文件）
+⚠ 本分支比 main 旧（分叉点 511db55cc6 之后 main 改了 8 个 .gd）：先 git merge main 再选测，否则名单会混进 main 的改动
+  00_项目管理/交付/cc_tianqi-no-x6.md → docs（只改文档／登记：只跑文档与登记检查）：无场景
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd → battle（战斗核心：xiyou_rules 全部段＋事件对照＋覆盖＋同源）：281 个场景：xiyou_act_stat_memo.tscn、xiyou_action_sequence.tscn、xiyou_actor1_damage.tscn、xiyou_alien_affix.tscn、xiyou_alien_battle.tscn、xiyou_attack_query.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/smart_ai.gd → game（其它游戏模块：引用它的专项＋事件对照）：30 个场景：xiyou_battle_enter_exit_lag.tscn、xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_heartsteel.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/damage.gd → battle（战斗核心：xiyou_rules 全部段＋事件对照＋覆盖＋同源）：104 个场景：xiyou_actor_p0.tscn、xiyou_attack_element.tscn、xiyou_boss_status.tscn、xiyou_cat.tscn、xiyou_challenge_passives.tscn、xiyou_combat.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/guardian_rework.gd → game（其它游戏模块：引用它的专项＋事件对照）：8 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_fabao_rework.tscn、xiyou_tianqi_elements.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/state_effects.gd → battle（战斗核心：xiyou_rules 全部段＋事件对照＋覆盖＋同源）：86 个场景：xiyou_boss_react.tscn、xiyou_boss_state_origin.tscn、xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_affix_battle.gd → game（其它游戏模块：引用它的专项＋事件对照）：12 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_tianqi_affix_battle.tscn、xiyou_tianqi_affix_roll.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_combat.gd → game（其它游戏模块：引用它的专项＋事件对照）：9 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_tianqi_horsemen.tscn、xiyou_tianqi_money.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gojo_trial.gd → game（其它游戏模块：引用它的专项＋事件对照）：8 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_gojo.tscn、xiyou_gojo_trials.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_no_diff_passive.gd → game（其它游戏模块：引用它的专项＋事件对照）：8 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_gojo.tscn、xiyou_tianqi_no_diff_passive.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_no_x6.gd → game（其它游戏模块：引用它的专项＋事件对照）：12 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_fabao_rework.tscn、xiyou_tianqi_affix_battle.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_qiyin_effects.gd → game（其它游戏模块：引用它的专项＋事件对照）：9 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_tianqi_elements.tscn、xiyou_tianqi_qiyin_altar.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_skills.gd → game（其它游戏模块：引用它的专项＋事件对照）：19 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_gojo.tscn、xiyou_gojo_trials.tscn……
+  03_再刷重制_Godot/01_Godot工程/tests/virtual_player/baseline_dps.gd → test，找不到用它的测试，整轮（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：无场景
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_fabao_rework.gd → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_fabao_rework.tscn
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_affix_battle.gd → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_tianqi_affix_battle.tscn
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_death.gd → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_tianqi_death.tscn
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_no_diff_passive.gd → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_tianqi_no_diff_passive.tscn
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_no_x6.gd → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_tianqi_no_x6.tscn
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_no_x6.tscn → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_tianqi_no_x6.tscn
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_numbers.gd → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_tianqi_numbers.tscn
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_qiyin_effects.gd → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_tianqi_qiyin_effects.tscn
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_skills.gd → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_tianqi_skills.tscn
+  03_再刷重制_Godot/04_验证/去全队x6对照/duel_off.json → docs（只改文档／登记：只跑文档与登记检查）：无场景
+  03_再刷重制_Godot/04_验证/去全队x6对照/duel_on.json → docs（只改文档／登记：只跑文档与登记检查）：无场景
+  03_再刷重制_Godot/04_验证/去全队x6对照/duel_on_gh_off.json → docs（只改文档／登记：只跑文档与登记检查）：无场景
+  03_再刷重制_Godot/04_验证/去全队x6对照/首个分歧点.md → docs（只改文档／登记：只跑文档与登记检查）：无场景
+  03_再刷重制_Godot/04_验证/去全队x6对照/首个分歧点.py → docs（只改文档／登记：只跑文档与登记检查）：无场景
+  03_再刷重制_Godot/04_验证/反向验证清单/tianqi-no-x6_返修.json → docs（只改文档／登记：只跑文档与登记检查）：无场景
+  03_再刷重制_Godot/07_开发环境/发行空壳特例.json → tools（开发工具：工具回归（含守卫））：无场景
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/state_effects.gd → escapes（漏网回归集）（rules4（dev.304）改 state_effects 的 effect_program，战力预演 XPower→clone_battler 崩，只有云端 xiyou_status_power_panel 抓到；该场景只引用 XPower，文件名／class_name 引用选不到（rules5 已把它点名进 battle 组，这里按文件再兜一层，探针类改动也带上））：1 个场景：xiyou_status_power_panel.tscn
+  结论：整轮（有拿不准的改动），等同不加 --affected
+  工具快速回归（车道交付必跑，几十秒）：python3 03_再刷重制_Godot/07_开发环境/工具回归.py  ← 改了 检查.sh／选测对照.json／转换器／翻译／插件备注或新增检查时尤其要跑
+== 文档与登记
+  待Codex核查 0 批，另有只改文档、登记的 1 批（只看结论与编号）：
+    文档：b1fb511 9756d39
+  待审查核查 197 批，另有只改文档、登记的 27 批（只看结论与编号）：
+    [乙] 2026-11-05 合并 cc/rules-ui14｜5 个提交 54d2ddb…bd05c06｜cc（rules）、cc（唐僧）
+    [丙] 2026-11-06 合并 cc/nezha-tools78｜f0d278f ce9449d 9a06418｜cc（哪吒）、cc（唐僧）
+    [丙] 2026-11-06 合并 cc/bajie-events14｜6 个提交 e25e0a9…74d696d｜cc（八戒）、cc（唐僧）
+    [丙] 2026-11-06 总装：删 events14 加回的 3 个零效果 w1 变体（ce618#w1_292、ce62｜a967b7e｜cc（唐僧）
+    [丙] 2026-11-06 合并 cc/nezha-tools79｜e10ac73 1cbc55d 892909e｜cc（哪吒）、cc（唐僧）
+    [丙] 2026-11-06 合并 cc/nezha-tools80｜a7735ab a5b3612 c10d57f｜cc（哪吒）、cc（唐僧）
+    [丙] 2026-11-06 合并 cc/platform-mac2｜817bfe1 115f59d 4e6de7a｜cc（平台）、cc（唐僧）
+    [丙] 2026-11-07 合并 cc/platform-release3｜5cc1671 1a32ad4 0833ac9 46089c5｜cc（平台）、cc（唐僧）
+    [乙] 2026-11-07 合并 cc/bajie-walk1｜5 个提交 a278645…1489940｜cc（八戒）、cc（唐僧）
+    [乙] 2026-11-07 合并 cc/rules-pace1｜b22e5db ff11848 68d8955 48c9046｜cc（规则）、cc（唐僧）
+    [丙] 2026-11-07 合并 cc/sync-reuse-pending｜a2b07a4 303c8bf 6222c9f 1d162de｜cc（工具）、cc（唐僧）
+    [丙] 2026-11-07 测试事件探针分段：心跳测试等够 3 拍再收（launchd 后台调度下固定 0.3 秒只出 2 ｜ad3fb67｜cc（总装三十一）
+    [丙] 2026-11-07 检查.sh：事件探针分段测试失败时打出失败用例（原来输出全丢，收口三次只见一行）｜151a4cc｜cc（总装三十一）
+    [丙] 2026-11-07 合并 cc/tools-merge-args2｜5 个提交 8daa465…6d7c81b｜cc（工具）、cc（唐僧）
+    [丙] 2026-11-07 事件探针分段心跳：退出时 join 心跳线程（只 set 不 join，正在写的那一拍会在退出后｜7095eeb｜cc（唐僧）
+    [乙] 2026-11-07 合并 cc/bajie-interp4｜9 个提交 d6a2703…b4f0163｜cc（八戒）、cc（唐僧）
+    [乙] 2026-11-07 合并 cc/wukong-floor4｜2356c85 2ac0645 7a94a7d｜cc（悟空）、cc（唐僧）
+    [丙] 2026-11-08 合并 cc/rules-gaps4｜3abee43 34edccd 3882929 afa5acc｜cc（FC2）、cc（唐僧）
+    [丙] 2026-11-08 合并 cc/events-seg-a2｜92da597 bc1ae07 699c244 511be0f｜cc（分段甲）、cc（唐僧）
+    [丙] 2026-11-08 合并 cc/tools-sandbox-seed｜5 个提交 5546a29…7974133｜cc（哪吒）、cc（唐僧）
+    [丙] 2026-11-09 合并 cc/tools-flake1｜f1a3b7e dec0fa5 eb6ab52｜cc（哪吒）、cc（唐僧）
+    [丙] 2026-11-10 工具：选测入口链对纯 ASCII 短模块名按整词认（事件预设脚本/ 的 nb、sim 被 sim｜81d9cec｜cc（总装三十九）
+    [乙] 2026-11-10 合并 cc/tools-flaky-battle-log｜2327069 d4c319b b2c2a0b｜cc（哪吒）、cc（唐僧）
+    [丙] 2026-11-10 合并 cc/review-probe-deps-fp｜5 个提交 9324334…5d47d1c｜cc（审查）
+    [乙] 2026-11-10 手补 xiyou_game_over：2c 解释器全灭测试开消息自动翻页（gaps12＋batt｜48a285f｜cc（总装）
+    [丙] 2026-11-10 进度账：实机验收不计入进度（Mac 行出分母）、导入审查 73 建议表，91.1→93.3%；交｜0061051｜cc（总装）
+    [丙] 2026-11-10 合并 cc/tools-probe-scope1｜f1a60d3 8de127e e069479 be2cba1｜cc（哪吒）、cc（唐僧）
+    [乙] 2026-11-10 开场声明屏补提交 warning_screen.gd.uid（车道漏提交）｜ed552e8｜cc（唐僧）
+    [丙] 2026-11-11 合并 claude/project-thread-glbpf5｜6 个提交 a336001…8708211｜cc（合并提速）、cc（唐僧）
+    [乙] 2026-11-11 合并修正：装备栏专项按天启第二批 NO_RECRUIT 设开局阵容；解锁链强制选页补建逃离状态（｜3c71a8b｜cc（唐僧）
+    [丙] 2026-11-11 合并修正：测试事件探针分段 抽出 applyPreset 时补声明 hangUpSaved（ma｜34ffec5｜cc（唐僧）
+    [丙] 2026-11-11 合并 cc/platform-release450｜8 个提交 fba795a…d676215｜cc（平台 release450）、cc（唐僧）
+    [乙] 2026-11-11 合并修正：update_page 走 XKeyMap.handled（xiyou_input_h｜ccac9ac｜cc（唐僧）
+    [丙] 2026-11-11 合并 cc/update-cloud1｜f6ef0fe 600c35d cec4ca9 44ae9e6｜cc（update-cloud1）、cc（唐僧）
+    [乙] 2026-11-11 合并 cc/update-input-fix1｜4f84d72 8691642 8e16d8d｜cc（update-input-fix1）、cc（唐僧）
+    [丙] 2026-11-11 合并 cc/remake-tail1｜559fe5e 5a5fe98 5cfa30b ede094c｜cc（尾巴）、cc（唐僧）
+    [乙] 2026-11-11 天启篇标题页：上下移动放光标音；title_flow 按新标题取指令；ui_input 第 16｜e0b24ea｜cc（总装）
+    [甲] 2026-11-11 合并 cc/lobby-corruption｜5 个提交 3b37fc3…e5bc7e2｜cc（大厅异化）、cc（唐僧）
+    [甲] 2026-11-11 合并 cc/version-v001｜25981f3 dfc5b2d｜cc（唐僧）
+    [丙] 2026-11-11 合并 codex/lobby-stage2-art｜7 个提交 b876648…babec79｜Codex（大厅美术）、cc（唐僧）
+    [乙] 2026-11-11 合并 cc/lobby-art-hookup｜26d22cd 7771e6e 25a6dab f89dd1f｜cc（大厅异化）、cc（唐僧）
+    [甲] 2026-11-11 合并 cc/rift2-canglong-fix｜13 个提交 a4362df…b03f350｜cc、cc（总装三十八）、cc（唐僧）
+    [甲] 2026-11-11 合并 cc/alien-release-hide-fix｜6 个提交 1077182…9bbcacc｜cc（车道 C）、cc（总装三十八）、cc（唐僧）
+    [甲] 2026-11-11 合并 cc/alien-outside-hp1｜de35073 763d56d b8df7f9 5017c5b｜cc（车道B）、cc（唐僧）
+    [甲] 2026-11-11 合并 claude/project-thread-fi33gn｜9 个提交 7bcae89…66b64e4｜cc（云端）、cc（唐僧）
+    [乙] 2026-11-12 合并 cc/update-install-test-fix｜8082e63 cec643d 9330726 5b299cd｜cc（总装三十八）、cc（唐僧）
+    [丙] 2026-11-12 出 v0.01 整包：build_info releaseVersion 填 0.01（dev.｜dff08b2｜cc（总装三十八）
+    [甲] 2026-11-12 合并 cc/pro-tianqi-p3-1｜5 个提交 f4e0675…aa4e031｜cc（pro-tianqi-p3-1）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/pro-tianqi-horsemen｜7 个提交 78dfba1…6846bd5｜cc（Pro）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/pro-tianqi-war｜7 个提交 985d2a1…4e4d11c｜cc（Pro）、cc（唐僧）
+    [甲] 2026-11-12 合并 claude/project-thread-r4t9e0｜6 个提交 61baccc…d12412a｜cc（31～36 层）、cc（唐僧）
+    [甲] 2026-11-12 合并 claude/project-thread-bjkwzm｜6 个提交 53031ff…53879fc｜cc（天启篇·饥荒线）、cc（唐僧）
+    [乙] 2026-11-12 合并 cc/update-check-test-fix｜43e4017 3ee4c93 b0ad055｜cc（总装三十八）、cc（唐僧）
+    [甲] 2026-11-12 合并 claude/project-thread-g23xgd｜756a4c4 a610e57 a89000d 0bff6d9｜cc（云端）、cc（唐僧）
+    [甲] 2026-11-12 合并 claude/project-thread-rswno9-fix｜7 个提交 397e7e0…657f376｜cc（丁·按段异化）、cc（唐僧）
+    [甲] 2026-11-12 合并 claude/project-thread-o0m34i-fix｜7 个提交 dfc326d…db464d2｜cc（瘟疫线）、cc（总装三十八）、cc（唐僧）
+    [甲] 2026-11-12 合并 claude/project-thread-38nism-fix｜9 个提交 5aec5d0…e59c687｜cc（天启篇·死亡线）、cc（总装三十八）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-visual｜dba69c5 db430c6 c310ee0｜cc（庚）、cc（唐僧）
+    [乙] 2026-11-12 天启篇选线卡：标已处理改走 XKeyMap.handled（修 xiyou_input_hand｜9743f62｜cc（唐僧）
+    [甲] 2026-11-12 合并 claude/project-thread-yzaqle｜2516b03 1d34328 242d191 22056d4｜cc（Pro）、cc（唐僧）
+    [甲] 2026-11-12 合并 claude/project-thread-rp542v｜105ba7b 2bde120 3c0dfe9 142756b｜cc（Pro）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-rewards｜7 个提交 a1fc45f…dc0678c｜cc（己 奖励）、cc（唐僧）
+    [甲] 2026-11-12 天启篇奖励 after_action：跳过行动（skill 置空）时不调，修 xiyou_stu｜93224fc｜cc（唐僧）
+    [乙] 2026-11-12 xiyou_platform：退出前停掉音效播放器再等 0.5 秒，修偶发「4 resource｜6e481ec｜cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-seal-hooks｜2ef055c dff3775 79a0927｜cc（唐僧）
+    [甲] 2026-11-12 合并 cc/pro-qiyin-data｜9577d80 c007425 23ad8ed dea0d75｜cc（Pro）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/pro-qiyin-drop｜76a4060 93d94fc c85675a c39a0e6｜cc（Pro）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/pro-qiyin-dragon｜fe97f9a 8f884bf 8a83063｜cc（Pro）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/qiyin-effects｜416c6ec 73d4084 6a22c29 bcd215c｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/qiyin-altar｜11 个提交 d0e7943…8c308b6｜cc（七印祭坛车道）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/pro-tianqi-placeholders｜b2abb91 6d904fc e3df19b｜cc（唐僧）
+    [丙] 2026-11-12 合并 cc/pro-tools-fixes｜5 个提交 2421a6e…19a6223｜cc（Pro）、cc（唐僧）
+    [丙] 2026-11-12 合并 cc/tianqi-datacheck-wire｜5 个提交 265b18b…4151eff｜cc（Pro）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-rename-final｜c51a038 d153cdc 6480e1d fce4c17｜cc（Pro）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/qiyin-equip｜5 个提交 2d28345…ce569d7｜cc（七印装备）、cc（唐僧）
+    [甲] 2026-11-12 合并 claude/project-thread-oilmgi｜6 个提交 d6c5c86…1659938｜cc（七首之龙车道）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-affix-battle｜6 个提交 04fc444…5a00fc6｜cc（词条战斗）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-alien-gear｜acdd932 1aa1b45 52472cf 5df89cb｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-alien-affix｜cf82dd4 7bd2dd0 2e9d2bd 2ac104b｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-subpage-bg｜63ee306 693c4c8｜cc（唐僧）
+    [甲] 2026-11-12 合并 claude/project-thread-f14v3n｜6 个提交 34f3235…7d6c00e｜cc（反馈修复）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-pet-hide｜1e9454a 8e35cf8 30b4000 7bb345a｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-alien-finale｜3620365 df5fdc1 e8906ba 841b99c｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-ending｜498dacc 59938e2 4f9fcaf 0fa74c5｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-gear-affix-roll｜5 个提交 6adc008…9b424ea｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 claude/project-thread-ksjqul｜12 个提交 3145e45…42413b7｜cc（提速）、cc（云端）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/android-touch-battle｜ff9846c 3201446｜cc（唐僧）
+    [甲] 2026-11-12 合并 cc/android-touch-battle-p2｜78f2a84 1b31c2f d81e44d｜cc（线程）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/android-touch-battle-p3｜5 个提交 cbf636c…cdcc4ba｜cc（线程）、cc（唐僧）
+    [乙] 2026-11-12 xiyou_rift2_canglong：比 Map004 原图时一并关掉大厅全图鉴 NPC 的｜dcd7f4c｜cc（唐僧）
+    [丙] 2026-11-12 合并 cc/boot-splash｜5aa820d 1a14e88 b4c5b87｜cc（线程）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/rift-alien｜5 个提交 742d06c…cf82220｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-artifact-aura｜f5592d2 784905a 8215f30 c79a640｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-alien-tiers｜31a49f1 9bc5712 20e1b60 3e745bb｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-famine-reaper｜42f863c daf24ef 9acbb9d dc33878｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-reforge｜6195a6c 2ae4a54 88af730 3fe2364｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-skills-p1｜aa47038 4d94244 ef636eb f0fd7b7｜cc（技能重构）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-skills-p2｜8 个提交 9b4bc4f…b0533f0｜cc（技能重构）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/gojo-m｜6 个提交 d65f936…84bf235｜cc（五条悟）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-seven-seals-art｜158fc67 36ebdb1 a9a7c35 9bbf670｜cc、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/gojo-fix｜062f96e 638d40d 9425771｜cc（五条悟）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-skills-p2b｜5 个提交 b4186b3…e456ec5｜cc（技能重构）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-skills-buzhao｜8b48a4d 65717a5 946a54a 699e75f｜cc（技能重构）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-skills-p3｜15 个提交 ac63a91…c287397｜cc（技能重构）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/plague-flaky｜d058131 3a7290a 355119e 29dd071｜cc（技能重构）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/gojo-p2｜85cabfd 891728b 0cf67de｜cc（五条悟）、cc（唐僧）
+    [丙] 2026-11-12 合并 cc/gojo-p2｜a25940c 6105f31 d2d1a51 89392ff｜cc（五条悟）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-skills-p4｜9 个提交 fcb412e…580562f｜cc（技能重构）、cc（唐僧）
+    [甲] 2026-11-12 合并 cc/tianqi-skills-p5｜5 个提交 c10183a…b8e961e｜cc、cc（唐僧）
+    [乙] 2026-11-13 合并 claude/project-thread-n3ftf9｜9822b77 79c59c4 d24602d de53bd7｜cc（云端）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/tianqi-skills-p6｜9 个提交 55644af…3af005d｜cc（技能重构）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/tianqi-skills-fill｜9 个提交 854b101…cb00efc｜cc（技能补完）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/tianqi-skills-p7｜6 个提交 998fc24…0b2787b｜cc（技能重构）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/gojo-art｜6243fa1 1c281e4｜cc（唐僧）
+    [甲] 2026-11-13 合并 cc/tianqi-seven-seals-look｜14a5486 1952d50 7de2610｜cc、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/tianqi-line-card-text｜15 个提交 55b29ee…beaaf76｜cc、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/screen-smooth-default｜0258593 5fd91ef 372ae21｜cc（线程）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/quality-settings｜6 个提交 8eba3d2…691fee5｜cc（画质）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/hangup-g-fix｜f216b3b 84d5131 d5316f1｜cc（项目线程）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/ultimate-pill-lag｜95bc98c 8ce2143 00a2ac2 41dcf08｜cc（究极丹卡顿）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/save-visible｜81933b9 d4b3542 746832d bc8afb9｜cc（存档）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/quality-blend-fix｜134159c 3fee240｜cc（唐僧）
+    [甲] 2026-11-13 合并 cc/equip-lag｜5 个提交 eb5482d…e1185b5｜cc（装备页卡顿）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/battle-hold-ok｜718007b ca7ce1e 5917e48｜cc、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/virtual-player｜10 个提交 142951b…a531580｜cc（虚拟玩家）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/weather-lag｜5 个提交 24836ba…cdde55b｜cc、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/hangup-touch-enable｜6fe7897 cb15092 84f4563 1a82e9c｜cc（项目线程）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/kotori-firepower｜d678549 bd7a1b3 c625df7｜cc、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/transfer-touch｜586085e 5507e51｜cc（唐僧）
+    [甲] 2026-11-13 合并 cc/item-armor-lag｜6 个提交 24a11f9…6f87297｜cc（物品页卡顿）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/feedback-qq-group｜09c0ac7 6e5c932｜cc（唐僧）
+    [甲] 2026-11-13 合并 cc/battle-auto-default｜6 个提交 88cb374…81334bb｜cc（战斗自动默认）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/battle-lag｜5 个提交 3692a42…dff065a｜cc、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/vegeta-nerf｜5 个提交 cbcb2b8…15d3d96｜cc、cc（唐僧）
+    [乙] 2026-11-13 xiyou_rift2_canglong「关回原版」比 Skills 时把贝吉特优化调整也关掉（｜174a7e8｜cc（总装四十一）
+    [甲] 2026-11-13 合并 cc/fabao-rework｜7 个提交 b07644d…35f8e7f｜cc、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/battle-act-stat-cache｜5 个提交 912e129…23cc587｜cc、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/font-size｜c957493 dd80a0e f381127｜cc、cc（唐僧）
+    [乙] 2026-11-13 xiyou_character_gear_help、xiyou_yunshang_shop 按原｜7e24acc｜cc（总装四十一）
+    [甲] 2026-11-13 合并 cc/sukuna-fx｜6 个提交 8211701…528212f｜cc、cc（唐僧）
+    [乙] 2026-11-13 合并 cc/vp-fabao｜5 个提交 ab4673c…f36024d｜cc（虚拟玩家）、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/affix-absorb｜edb2f47 555403d 3607278 bf5c8f5｜cc、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/sleepy-liskov-358e95｜b9f7ffd 23c328e 90eda0a 9426fd9｜cc、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/battle-enter-exit-lag｜1a87d17 74cfb01 f75c423｜cc、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/abyss-droprate｜8 个提交 2f4893c…c5d3f68｜cc、cc（唐僧）
+    [甲] 2026-11-13 合并 cc/fabao-rework｜16 个提交 2b51830…ed65956｜cc、cc（唐僧）
+    [丙] 2026-11-13 合并 cc/drop-githack｜e443816 c969018 1945505 2f87155｜cc（总装四十一）、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/fabao-rework｜6 个提交 8024578…fdc7231｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/vp-paths｜20 个提交 bafa4d7…3db27cf｜cc（虚拟玩家）、cc（唐僧）
+    [丙] 2026-11-14 总装手补：发行空壳特例补齐 XTianqiDrop 4 个数字返回值｜2f11c42｜cc（总装）
+    [丙] 2026-11-14 总装手补：测试云端准备只暂存文档避免把 __pycache__ 当成代码｜8c84d58｜cc（总装）
+    [甲] 2026-11-14 合并 cc/tianqi-patches｜5 个提交 54210e8…c781f52｜cc（天启修补）、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/tianqi-trumpet-scrolls｜7 个提交 d49ec55…7d1f0a4｜cc、cc（号卷）、cc（唐僧）
+    [丙] 2026-11-14 合并 luiluu/Antigravity｜7337507 bd30be4 a559f49｜小A、cc（总装）
+    [甲] 2026-11-14 合并 codex/gojo-sprite-style｜301eb5b 7415cb1 5b64fa7｜Codex（美术）、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/app-window-icon｜4a877d2 731d80e d4b0eb7｜cc、cc（唐僧）
+    [丙] 2026-11-14 合并 cc/pro-tianqi-datacheck3｜abdd2df 01126cf afa7b1e 3f7b70f｜cc（Pro）、cc（唐僧）
+    [乙] 2026-11-14 合并 cc/pro-test-gaps｜045c7e8 ac9b94a b2aba19｜cc（Pro）、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/pro-newgame-back2｜b00c624 8af5934 83ea33d｜cc（Pro）、cc（唐僧）
+    [丙] 2026-11-14 合并 cc/tianqi-check-mode｜7 个提交 b05a673…1b5cb2b｜cc（检查模式）、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/tianqi-e2e-fix｜6 个提交 1a90b90…e4991d1｜cc（Pro）、cc、cc（唐僧）
+    [乙] 2026-11-14 合并 cc/flow-alt-enter-flake｜6 个提交 e7d99a3…fbb2d9b｜cc、cc（唐僧）
+    [丙] 2026-11-14 合并 cc/release-stub-gojo｜5 个提交 f6bdc91…8dc8e0b｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/fix-sell-lag｜7 个提交 362ee9e…23a8358｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/fix-liuying-gongfa｜6 个提交 a32d8fb…cbda3d3｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/force-update｜6 个提交 023eca6…b679920｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/tianqi-sect-ren｜5 个提交 eedfe79…c298092｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 xa/tianqi-sect-bing｜6 个提交 c17ee54…840bc1f｜小A、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/tianqi-sect-b｜7 个提交 c84a5e4…438625d｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 xa/tianqi-sect-geng｜6 个提交 f26f2f7…a66919f｜小A、cc（唐僧）
+    [甲] 2026-11-14 合并 xa/canglong-formula-check｜d9ab769 08a21f5 9fd2ca6｜小A、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/tianqi-seed-fix｜14 个提交 1d4096a…cf2ed9f｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/save-rng-facade｜10 个提交 a9f4711…12cd355｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/save-data-cleanup｜14 个提交 95ab44b…b18b85a｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/fix-hangup-stop｜8 个提交 f7d2c2b…ec915d7｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/fix-shop-bag-cuiyuan｜10 个提交 4f686ec…3374022｜cc、cc（唐僧）
+    [丙] 2026-11-14 合并 xa/repo-tidy｜5 个提交 734d872…2b3aed2｜小A、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/tianqi-rules-1114｜8 个提交 9446b53…356b5e1｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 luiluu/xa-release-stub-guard｜62e7707 f21a9e9 0493999｜小A、cc（唐僧）
+    [丙] 2026-11-14 测试发行空壳：取空壳函数体止于顶格行（特例成员 static var 紧跟函数时误算进函数体；r｜1b653a1｜cc
+    [甲] 2026-11-14 天启篇存档登记：补教派包丙 sect_bing、包乙 fetters 两个分区（S1 登记检查与｜bb1cdb1｜cc
+    [丙] 2026-11-14 核查积压销账：C 类 34 批免核、gpt 补核 9 批（连 #043）、#088 复核；待核查｜90e182d｜cc
+    [丙] 2026-11-14 规则：gpt 改名 co、小A 改名 ag（Kyo 11-14）；待核查.py／合并车道.py ｜61b2786｜cc
+    [甲] 2026-11-14 合并 xa/save-s2｜df1b36e 7d38674 3ae9b2f a24d4b3｜ag、cc（唐僧）
+    [乙] 2026-11-14 合并 xa/save-s3｜5 个提交 733b396…c0c3e39｜ag、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/tianqi-random-r1｜9 个提交 24f6159…4dfb11e｜cc、cc（唐僧）
+    [甲] 2026-11-14 合并 xa/tianqi-random-r2｜0b92aac b1f1148 0c4cde0 ee4ebdd｜ag、cc（唐僧）
+    [甲] 2026-11-14 合并 cc/tianqi-random-r3｜10 个提交 619ecee…ccb1466｜cc、cc（唐僧）
+    [甲] 2026-11-14 WIP: 去全队 ×6（XTianqiNoX6）接线＋专项 xiyou_tianqi_no_x6｜457e060｜cc
+    [乙] 2026-11-14 WIP: 去全队 ×6：五个天启篇专项改按新口径（固定数随 hp_unit／steal_mult｜8753b9c｜cc
+    [丙] 2026-11-14 Merge branch 'main' into cc/tianqi-no-x6｜0b8e283 13da58b 7062dff 511db55｜ag、cc（唐僧）
+    [乙] 2026-11-14 基准工具 baseline_dps：--duel 真打到底量回合数，--x6=off、--gua｜90f9e5b｜cc
+    [丙] 2026-11-14 去全队 ×6：发行空壳特例补 XTianqiNoX6.flat_unit；交付单（分类表、基准对｜e1982a7｜cc
+    [甲] 2026-11-14 WIP: 返修 co 三条 P2（MP 不缩、状态脚本绝对值 gainHp、敌人互打回血不再 1｜9925b46｜cc
+    [乙] 2026-11-15 返修 co 甲档 3 条 P2：MP 不缩固定减伤与吸收；状态脚本绝对值 gainHp（PROG｜65f6843｜cc
+    [甲] 2026-11-15 返修：自动战斗 AI 估伤（XSmartAI.safe_damage）对敌人 HP 伤害乘 de｜5317919｜cc
+    [丙] 2026-11-15 返修补证：去 ×6 开关逐队对照（三份 trace JSON、首个分歧点），交付单返修节与基准对｜a692cfb｜cc
+    文档：2848360 2265a14 4375cb5 a2ee069 fd4c2b0 fbc538f 5040878 29465e4 428db53 325ae69 2bd6283 35a1f05 37a07b9 11553b5 841f1e4 ff778a7 245c08c 4dbc11b 132e884 8f947a8 b59bcb9 b383892 97d2e35 f76153a 4ce244d fe7591b f34118b a2fa37a 70b6c59 d41bfdb 9fa820c 88e2bde 85b0b74 6674bfd ab23ee2 150b770 9156667 d92aee4 928cd12 7be0467 ccd591e 328aae0 8e7a7fa 161b1b4 f0485ab 799adf4 b8a238e 367e346 b6f9420 5ca7e07 dfa0778 fd5b623 3121973 e03c3dc
+  待交叉核查共 225 批：甲 124 批（其中 8 批只因有文件拿不准才算甲）、乙 28 批、丙 73 批；上限只算甲档，计入 124 批（分档表 待核查分档.json；按提交尾注减去变更记录核查条目）
+  拿不准归哪档、已按甲算的文件（到 待核查分档.json 加规则）：03_再刷重制_Godot/00_设计/苍龙破晓数值/原版复核.cjs、03_再刷重制_Godot/01_Godot工程/content/app_icon_runtime/icon.ico、03_再刷重制_Godot/01_Godot工程/content/sukuna/art_optional/sukuna_divine_flame_frames.tres、03_再刷重制_Godot/01_Godot工程/content/sukuna/art_optional/sukuna_malevolent_shrine_frames.tres、03_再刷重制_Godot/01_Godot工程/core/feedback.gd、03_再刷重制_Godot/01_Godot工程/core/feedback.gd.uid、03_再刷重制_Godot/01_Godot工程/core/key_map.gd、03_再刷重制_Godot/01_Godot工程/core/platform.gd、03_再刷重制_Godot/01_Godot工程/core/screen_scale.gd、03_再刷重制_Godot/01_Godot工程/core/screen_scale.gd.uid、03_再刷重制_Godot/01_Godot工程/core/touch_controls.gd、03_再刷重制_Godot/01_Godot工程/core/update_check.gd 等 47 个
+  ⚠ 待交叉核查甲档 124 批，超过 10 批上限：停派新车道、停新功能，先派审查线程核查
+  ✓ JSON、链接、开发编号（dev.594）
+  回退开关 357 个：测试覆盖回退值 309，缺口 24（新 12、豁免 12），人工确认 24，解析不了 15 行
+  ⚠ 缺口 O-294 XHelpCard.EFFECT_SORT_V041 = false（modes/xiyou/ui/help_card.gd；最后改它的：合并 cc/chars-gaps1 · eed777b00 WIP: 专属装备说明卡走 characterHelpView、饿狼法宝说明十行、魔法增量算公式（chars-gaps1））
+  ⚠ 缺口 O-249 SKIP_FOR_SMOKE = false（modes/xiyou/ui/splash_screen.gd；最后改它的：合并 cc/platform-android-keys-fix · 045ceb37a WIP: 安卓冒烟按键不放开场图（SKIP_FOR_SMOKE）＋专项断言，未验证；交付单写接续）
+  ⚠ 缺口 O-257 XBattleScene.ABORT_DOUBLE_END = true（modes/xiyou/battle/battle_scene.gd；最后改它的：合并 cc/rules-mira-raven2 · 5cb1655ba 340 中止战斗对齐原版：本页同一帧照常往下跑到等待；同帧全灭改写成 2（预约 1308、不复活、不去结束画面）、同帧全歼按胜利）
+  ⚠ 缺口 O-348 XZhenqi.DAOFA_TAG_CACHE = false（modes/xiyou/core/zhenqi.gd；最后改它的：合并 claude/project-thread-ksjqul · c160c7cdd 只读窗口缓存按重入护栏分开存（云裳万法同裳、璇共宿、屠苏盾相）；道法标签缓存加开关；说明卡开关改名 ELEMEN）
+  ⚠ 缺口 O-363 XTianqiSkills.ACTION_CAP = false（modes/xiyou/core/tianqi_skills.gd；最后改它的：f0fd7b78a 合并 cc/tianqi-skills-p1（dev.512）收尾）
+  ⚠ 缺口 O-364 XTianqiSkills.TIERS = false（modes/xiyou/core/tianqi_skills.gd；最后改它的：f0fd7b78a 合并 cc/tianqi-skills-p1（dev.512）收尾）
+  ⚠ 缺口 O-406 ROSTER = false（modes/xiyou/core/tianqi_trim.gd；最后改它的：c781f52dd 合并 cc/tianqi-patches（dev.563）收尾）
+  ⚠ 缺口 O-407 DIFF_NAME = false（modes/xiyou/core/tianqi_trim.gd；最后改它的：c781f52dd 合并 cc/tianqi-patches（dev.563）收尾）
+  ⚠ 缺口 O-408 HIDE_AFFIX_RATE = false（modes/xiyou/core/tianqi_trim.gd；最后改它的：c781f52dd 合并 cc/tianqi-patches（dev.563）收尾）
+  ⚠ 缺口 O-434 XTianqiElements.WEAK_EXPOSURE = false（modes/xiyou/core/tianqi_elements.gd；最后改它的：e6b9294bd 合并 cc/tianqi-elements（dev.575）收尾）
+  ⚠ 缺口 O-435 XTianqiElements.HIGHER_EFFECTS = false（modes/xiyou/core/tianqi_elements.gd；最后改它的：e6b9294bd 合并 cc/tianqi-elements（dev.575）收尾）
+  ⚠ 缺口 O-436 XTianqiElements.SKILL_SHIFTS = false（modes/xiyou/core/tianqi_elements.gd；最后改它的：e6b9294bd 合并 cc/tianqi-elements（dev.575）收尾）
+  ? 人工确认 O-142 XYunshangOrders.o_profile_stage：只见非字面量赋值 tests/xiyou_review20_fix.gd:23
+  ? 人工确认 O-168 XStateEffects.FIX_FORCE_DRAIN：只见非字面量赋值 tests/xiyou_state_effects.gd:1777
+  ? 人工确认 O-174 XStateEffects.FIX_COUNTER_ONCE：只见非字面量赋值 tests/xiyou_qiongxiao_balance.gd:132、tests/xiyou_state_effects.gd:1736
+  ? 人工确认 O-198 XBattlerSprite.RAVEN_MYTH_DEAD_ALPHA：只见非字面量赋值 tests/xiyou_raven_visual.gd:91
+  ? 人工确认 O-222 XStarWarehouse.o_withdraw_txn：只见非字面量赋值 tests/xiyou_star_warehouse.gd:354
+  ? 人工确认 O-284 XBattleEventRunner.O_PUSH_RECAST：只见非字面量赋值 tests/xiyou_battle_common_events.gd:130
+  ? 人工确认 O-228 XBossHpBar.REBUILD：只见非字面量赋值 tests/xiyou_boss_hp_bar.gd:330
+  ? 人工确认 O-234 XZhenhuo.FIX_OLD_CHASE：只见非字面量赋值 tests/xiyou_zhenhuo.gd:112、tests/xiyou_zhenhuo.gd:125、tests/xiyou_zhenhuo.gd:193
+  ? 人工确认 O-281 XTianqi.SWAP_INIT：只见非字面量赋值 tests/xiyou_tianqi_swap_init.gd:58
+  ? 人工确认 O-319 XMVCanvas.BLINK_FULL_REDRAW：只见非字面量赋值 tests/xiyou_android_perf.gd:39
+  ? 人工确认 O-342 XShop.DATA_CACHE：只见非字面量赋值 tests/xiyou_feedback_v001.gd:168
+  ? 人工确认 O-392 XSmartAI.CHOOSE_WINDOW：只见非字面量赋值 tests/xiyou_battle_enter_exit_lag.gd:30
+  ? 人工确认 O-394 XActor.RELEASE_WINDOW：只见非字面量赋值 tests/xiyou_battle_enter_exit_lag.gd:28
+  ? 人工确认 O-395 XResourceContext.REFRESH_WINDOW：只见非字面量赋值 tests/xiyou_battle_enter_exit_lag.gd:29
+  ? 人工确认 O-438 BANKRUPT_MDF：只见非字面量赋值 tests/xiyou_tianqi_horsemen_battle.gd:364
+  ? 人工确认 O-439 FRESH_PARAM：只见非字面量赋值 tests/xiyou_tianqi_horsemen_battle.gd:394
+  ? 人工确认 O-442 ONE_PASS：只见非字面量赋值 tests/xiyou_sell_lag.gd:74
+  ? 解析不了 O-214：代码里找不到 XIYOU_AUDIO_96K 的声明
+  ? 解析不了 O-246：代码里找不到 XIYOU_HBOOT_FILE_XHR 的声明
+  ? 解析不了 O-271：代码里找不到 XIYOU_AUDIT_BEFORE_HIT 的声明
+  ? 解析不了 O-275：AUTO 有 3 处声明（addons/xiyou_export/android_version.gd、addons/xiyou_export/desktop_version.gd、core/update_client.gd），认不出是哪个
+  ? 解析不了 O-348：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-390：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-392：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-395：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-396：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-398：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-399：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-413：ENABLED 有 59 处声明（core/screen_scale.gd、core/update_client.gd、core/update_install.gd），认不出是哪个
+  ? 解析不了 O-430：ENABLED 有 59 处声明（core/screen_scale.gd、core/update_client.gd、core/update_install.gd），认不出是哪个
+  ? 解析不了 O-430：ACHIEVEMENT 有 2 处声明（modes/xiyou/core/tianqi_weak_clear.gd、modes/xiyou/core/weak_challenge.gd），认不出是哪个
+  ? 解析不了 O-431：提到 LEARN_SHIFT、OWN_GOLD、RESTORE_ON_WIN、SHADOW_TINT 但认不出回退值
+  ✓ O-128 XWarehouse.o_reserved_no_dup 已有测试设回退值，可从 回退开关豁免.json 删掉
+  ✓ 探针登记：每个 mv_oracle 探针都在 PROBES 里或有夹具；读伤害的探针都关了五乘区（存量 23 个待确认）；同步探针的读法都进缓存键或审过
+  ✓ 天启篇存档字段都已登记
+✓ 随机守卫：61 个天启篇脚本没有未注明的全局随机
+事件状态探针产物在，不用补跑
+== Godot 测试
+  （--cloud：选中的 0 个场景交给云端，本机不跑 Godot；云端只测已提交的提交，未提交改动自动做成临时快照提交）
+[云端选测] 产物 7091 个对象，新写 0.0 MB
+[云端选测] 产物与远端 refs/ci/generated/cc/tianqi-no-x6 相同，不用推（2a27f6532b）
+GENERATED_REF=refs/ci/generated/cc/tianqi-no-x6 2a27f6532b62892f1ecd9ff21b18968ef95242db
+[云端选测] 选测基准：65f6843505（上次云端通过的祖先）
+选测，基准 65f6843505f680e56b1e6649598c09377716380d：30 个场景，分 9 片；约用 108 分钟额度（每月免费 2000），约 15 分钟跑完（含准备）
+已推送 a692cfb68a → ci/cc/tianqi-no-x6，云端开始选测（基准 65f6843505）
+等结果：python3 03_再刷重制_Godot/07_开发环境/云端选测.py wait a692cfb68ae6e1701ddbfc396d1d493ee3c1eeb8
+## ✓ 云端选测通过
+
+- 提交 a692cfb68a（ci/cc/tianqi-no-x6），选测（基准 65f6843505f680e56b1e6649598c09377716380d），30 个场景、2 片，最长一片 8.1 分钟
+- 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43665784823
+  ✓ 云端选测通过（a692cfb68）
+== 参照工具访问守卫
+TEST_RESULT={"passed":16,"total":16}
+  ✓ MV 文件守卫
+TEST_RESULT={"passed": 12, "total": 12, "failures": []}
+  ✓ 界面参照服务守卫
+  ✓ 工作树清理保护
+  ✓ 车道参照与切片同批提示
+  ✓ 导出包排除测试与参照数据
+  ✓ 发行空壳覆盖西游代码用到的天启篇成员
+共 0 处（直接 0）
+  ✓ 切场景后不再取视口／场景树（发行版空指针闪退同类）
+.........................
+----------------------------------------------------------------------
+Ran 25 tests in 0.004s
+
+OK
+TEST_RESULT={"passed": 25, "total": 25}
+  ✓ 共性参照对照工具保护
+{"referenceIntegrityOnly": true, "cases": 59, "passed": true, "issues": []}
+  ✓ 共性参照完整性（尚非Godot实现验收）
+.............................................................提示：没有工作树停在 claude/task 上（车道已换分支继续），按分支引用 c0e96907c 合并
+提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+== /opt/homebrew/opt/python@3.15/bin/python3.15 03_再刷重制_Godot/03_转换工具/同步正式西游.py --accept-additions
+== /opt/homebrew/opt/python@3.15/bin/python3.15 03_再刷重制_Godot/07_开发环境/开发编号.py bump task
+....提示：没有工作树停在 claude/task 上（车道已换分支继续），按分支引用 0f68c5c85 合并
+提示：车道不在 git worktree 里，按交付单的车道路径 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/xiyou_merge_fixture_3l6z2ram/clone-lane 取产物
+提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+提示：没有工作树停在 claude/task 上（车道已换分支继续），按分支引用 0f68c5c85 合并
+提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+提示：没有工作树停在 claude/task 上（车道已换分支继续），按分支引用 0f68c5c85 合并
+提示：交付单的车道路径 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/xiyou_merge_fixture_3l6z2ram/clone-lane 有未提交改动，不用它的产物（照旧完整同步）
+提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+== /opt/homebrew/opt/python@3.15/bin/python3.15 03_再刷重制_Godot/03_转换工具/同步正式西游.py --accept-additions --from-worktree /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/xiyou_merge_fixture_3l6z2ram/clone-lane
+== /opt/homebrew/opt/python@3.15/bin/python3.15 03_再刷重制_Godot/07_开发环境/开发编号.py bump task
+提示：交付单的车道路径 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/xiyou_merge_fixture_3l6z2ram/clone-lane 分支头 acff6cd8a 与交付提交 0f68c5c85 对不上，不用它的产物（照旧完整同步）
+............Merge made by the 'ort' strategy.
+ .../\344\272\244\344\273\230/claude_task.md"                  | 11 +++++++++++
+ .../modes/\346\265\213\350\257\225.gd"                        |  1 +
+ 2 files changed, 12 insertions(+)
+ create mode 100644 "00_\351\241\271\347\233\256\347\256\241\347\220\206/\344\272\244\344\273\230/claude_task.md"
+ create mode 100644 "03_\345\206\215\345\210\267\351\207\215\345\210\266_Godot/01_Godot\345\267\245\347\250\213/modes/\346\265\213\350\257\225.gd"
+已递增到 dev.002：task
+开发编号.json=dev.002 project.godot=dev.002 build_info=dev.002 一致
+......................提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+== /opt/homebrew/opt/python@3.15/bin/python3.15 03_再刷重制_Godot/03_转换工具/同步正式西游.py --accept-additions --accept-changes 03_再刷重制_Godot/04_验证/测量接受/claude_task.json --from-worktree /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/xiyou_merge_fixture_tvcpyryk/lane
+== /opt/homebrew/opt/python@3.15/bin/python3.15 03_再刷重制_Godot/07_开发环境/开发编号.py bump task
+............正在进行移走一行：| claude/task |
+待核查加一行：claude/task
+...........Merge made by the 'ort' strategy.
+ .../\344\272\244\344\273\230/claude_task.md"                  | 11 +++++++++++
+ .../\344\274\230\345\214\226\347\231\273\350\256\260.md"      |  1 +
+ .../00_\350\256\276\350\256\241/\350\257\264\346\230\216.md"  |  2 ++
+ .../modes/\346\265\213\350\257\225.gd"                        |  1 +
+ 4 files changed, 15 insertions(+)
+ create mode 100644 "00_\351\241\271\347\233\256\347\256\241\347\220\206/\344\272\244\344\273\230/claude_task.md"
+ create mode 100644 "03_\345\206\215\345\210\267\351\207\215\345\210\266_Godot/00_\350\256\276\350\256\241/\350\257\264\346\230\216.md"
+ create mode 100644 "03_\345\206\215\345\210\267\351\207\215\345\210\266_Godot/01_Godot\345\267\245\347\250\213/modes/\346\265\213\350\257\225.gd"
+已递增到 dev.002：task
+开发编号.json=dev.002 project.godot=dev.002 build_info=dev.002 一致
+{"rawPercent": "44", "percent": 44.0, "consistent": true, "written": false, "rows": [{"name": "甲", "contribution": "12"}, {"name": "乙", "contribution": "32"}]}
+[main 93237e6] 合并 claude/task（dev.002）收尾
+ Committer: lui <kyo@Kyo-ludeMacBook-Pro.local>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 10 files changed, 38 insertions(+), 19 deletions(-)
+ delete mode 100644 "00_\351\241\271\347\233\256\347\256\241\347\220\206/\344\272\244\344\273\230/claude_task.md"
+......提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+.........提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+..............................提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/main.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+.......................................................  不排队 3.98 秒，排队 0.56 秒
+....................................................................PROBE_PLAN={"executed": 0, "partial": {}, "reused": 1, "stashed": 0, "auditDue": []}
+PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": ["troop_event_probe.cjs"]}
+PROBE_DONE={"probe": "troop_event_probe.cjs", "seconds": 0.0, "command": ["troop_event_probe.cjs"], "exitCode": 0}
+PROBE_PLAN={"executed": 0, "partial": {}, "reused": 1, "stashed": 0, "auditDue": []}
+PROBE_PLAN={"executed": 0, "partial": {}, "reused": 1, "stashed": 0, "auditDue": []}
+PROBE_PLAN={"executed": 0, "partial": {}, "reused": 1, "stashed": 0, "auditDue": []}
+PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": ["event_state_probe.cjs"]}
+PROBE_DONE={"probe": "event_state_probe.cjs", "seconds": 0.0, "command": ["event_state_probe.cjs"], "exitCode": 0}
+PROBE_PLAN={"executed": 0, "partial": {}, "reused": 1, "stashed": 0, "auditDue": []}
+PROBE_PLAN={"executed": 0, "partial": {}, "reused": 1, "stashed": 0, "auditDue": []}
+.PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": ["troop_event_probe.cjs"]}
+PROBE_DONE={"probe": "troop_event_probe.cjs", "seconds": 0.0, "command": ["troop_event_probe.cjs"], "exitCode": 0}
+..PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+.PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 7}
+.PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+..PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "event_probe.cjs", "seconds": 0.003, "command": ["event_probe.cjs"], "exitCode": 0}
+.........PROBE_PLAN={"executed": 0, "partial": {}, "reused": 3, "stashed": 0, "auditDue": []}
+......PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 7}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.002, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_STASHED=["a_probe.cjs"]
+PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 7}
+PROBE_STASHED=["a_probe.cjs"]
+PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.002, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.002, "command": ["b_probe.cjs"], "exitCode": 0}
+PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 7}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 7}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_STASHED=["a_probe.cjs"]
+PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 7}
+PROBE_STASHED=["a_probe.cjs"]
+PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 0}
+.PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 7}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_STASHED=["a_probe.cjs"]
+PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 1, "auditDue": []}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 0}
+.....................................
+----------------------------------------------------------------------
+Ran 350 tests in 481.845s
+
+OK
+TEST_RESULT={"passed": 350, "total": 350}
+  ✓ 新增用例、进度账与合并保护
+............
+----------------------------------------------------------------------
+Ran 12 tests in 0.180s
+
+OK
+  ✓ 结构化公式编译边界
+  ✓ 天启篇存档登记检查
+  ✓ 随机守卫检查
+  ✓ 状态效果 js 再翻译整块边界
+........................
+----------------------------------------------------------------------
+Ran 24 tests in 2.847s
+
+OK
+  ✓ 转换器增量写入与中断恢复
+  ✓ 变更记录分卷与待核查清单工具
+.........................[云端选测] 产物 2 个对象，新写 3.0 MB
+[云端选测] 产物 2 个对象，新写 0.0 MB
+[云端选测] 产物 2 个对象，新写 0.0 MB
+.......
+----------------------------------------------------------------------
+Ran 32 tests in 38.771s
+
+OK
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.002s
+
+OK
+  ✓ 云端导入失败保护、推送重试
+· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp18zyfmdx/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp18zyfmdx/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp18zyfmdx/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 04a2fc1b、清单 de245b5c），没有推送
+· github：已在本机提交（包 27d2ccac、清单 d2b039da），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp18zyfmdx/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp18zyfmdx/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmplxa4mcti/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmplxa4mcti/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmplxa4mcti/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 bf40c222、清单 c2b130cb），没有推送
+· github：已在本机提交（包 bf40c222、清单 c2b130cb），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmplxa4mcti/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmplxa4mcti/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmplxa4mcti/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmplxa4mcti/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_475.pck：0.00 MB，三个预设导出一致
+· 0.453 → 0.475：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmplxa4mcti/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.475，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 82baa1c6、清单 764026b6），没有推送
+· github：已在本机提交（包 82baa1c6、清单 764026b6），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmplxa4mcti/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmplxa4mcti/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpq6mhrrhg/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpq6mhrrhg/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.450 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 450
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpq6mhrrhg/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+✗ --old-tree 的编号是 450，和底包 453 对不上：给的不是这个底包的工程目录
+..· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp4_jbbkhr/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp4_jbbkhr/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 76fc66d8、清单 080154cd），没有推送
+· github：已在本机提交（包 76fc66d8、清单 080154cd），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp4_jbbkhr/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp4_jbbkhr/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp4_jbbkhr/out
+✗ --stage 出补丁要给 --old-tree <底包对应的工程目录>，好写补丁文件清单（没有就加 --no-files-manifest）
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpwfgch0w8/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpwfgch0w8/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpwfgch0w8/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+  （没加 --stage：清单里的补丁地址是占位的，只能本地看，不能发）
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+..· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpim1isc__/out
+✗ 底包编号 470 不比当前 470 小，没有可发的补丁
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpq1_lprdf/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpq1_lprdf/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：31.46 MB，三个预设导出一致
+✗ 补丁 31.5 MB 超过 30 MB：该发新底包了（硬要发加 --allow-big）
+· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpq1_lprdf/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpq1_lprdf/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：31.46 MB，三个预设导出一致
+  （没加 --stage：清单里的补丁地址是占位的，只能本地看，不能发）
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+..✗ 更新说明里有内部编号、路径或掉率，改掉再发：修了 dev.453 的问题
+✗ 更新说明里有内部编号、路径或掉率，改掉再发：见 O-123
+✗ 更新说明里有内部编号、路径或掉率，改掉再发：改了 core/x.gd
+✗ 更新说明里有内部编号、路径或掉率，改掉再发：掉率提高
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpxcusindd/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpxcusindd/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpxcusindd/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 8bc06a07、清单 bb36ff93），没有推送
+· github：已在本机提交（包 8bc06a07、清单 bb36ff93），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpxcusindd/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpxcusindd/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 465（玩家看到 0.465），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpxcusindd/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpxcusindd/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_465.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.465：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpxcusindd/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+✗ 清单里的最新编号是 470，不能发更小的 465
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 f9c77f75、清单 5804af24），没有推送
+· github：已在本机提交（包 f9c77f75、清单 5804af24），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_475.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.475：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.475，有补丁的底包 ['453']，min_base 0，撤回 []，强制更新：开发编号低于 470 的进不了游戏
+· gitee：已在本机提交（包 5d6bd6da、清单 a79beacf），没有推送
+· github：已在本机提交（包 5d6bd6da、清单 a79beacf），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 480（玩家看到 0.480），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/out
+· 清单 channel.json、channel.sig 已写并验签：最新 0.480，有补丁的底包 ['453']，min_base 0，撤回 []，强制更新：开发编号低于 470 的进不了游戏
+· gitee：已在本机提交（包 无、清单 1fb4e735），没有推送
+· github：已在本机提交（包 无、清单 1fb4e735），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzqez7n8z/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+✗ 设了 min_playable（强制更新）就必须有手动下载页，不能同时 --download-url none：底包太旧的玩家只能靠它换整包，没有就卡在更新框里
+· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 强制更新没给下载页，默认用 https://gitee.com/kyoluu/play-again_-xiyou_-kyo/releases
+· 强制更新没给下载页，默认用 https://gitee.com/kyoluu/play-again_-xiyou_-kyo/releases
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，强制更新：开发编号低于 470 的进不了游戏
+· gitee：已在本机提交（包 e6e5e97e、清单 aa8b9a15），没有推送
+· github：已在本机提交（包 d4c21614、清单 bab7c7a5），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/out
+· 清单 channel.json、channel.sig 已写并验签：最新 0.475，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 无、清单 d898c977），没有推送
+· github：已在本机提交（包 无、清单 816315ab），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/out
+✗ --min-playable 476 比本次发布的编号 475 还大：玩家装到最新也过不了，会一直卡在更新框
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/out
+✗ --min-playable 要给开发编号（如 580）、latest 或 0，不认 abc
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/out
+✗ --download-url 要 https:// 开头（客户端不认别的）
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/out
+✗ 设了 min_playable（强制更新）就必须有手动下载页，不能同时 --download-url none：底包太旧的玩家只能靠它换整包，没有就卡在更新框里
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/out
+· 强制更新没给下载页，默认用 https://gitee.com/kyoluu/play-again_-xiyou_-kyo/releases
+· 强制更新没给下载页，默认用 https://gitee.com/kyoluu/play-again_-xiyou_-kyo/releases
+· 清单 channel.json、channel.sig 已写并验签：最新 0.475，有补丁的底包 ['453']，min_base 0，撤回 []，强制更新：开发编号低于 475 的进不了游戏
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptr7_y080/out
+· 清单 channel.json、channel.sig 已写并验签：最新 0.475，有补丁的底包 ['453']，min_base 0，撤回 []，强制更新：开发编号低于 475 的进不了游戏
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp3usc0uai/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp3usc0uai/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+  （没加 --stage：清单里的补丁地址是占位的，只能本地看，不能发）
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+.✗ 私钥对应的公钥和游戏里内嵌的不是同一把（core/update_check.gd 的 PUBLIC_KEY）
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpgjyi_uyv/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpgjyi_uyv/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpgjyi_uyv/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+✗ github 有没提交的改动，先处理
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpocfq9io2/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpocfq9io2/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpocfq9io2/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 ff4144b2、清单 72a31b74），没有推送
+· github：已在本机提交（包 ff4144b2、清单 72a31b74），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpocfq9io2/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpocfq9io2/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 480（玩家看到 0.480），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpocfq9io2/out
+· 清单 channel.json、channel.sig 已写并验签：最新 0.480，有补丁的底包 []，min_base 480，撤回 []，不强制更新
+· gitee：已在本机提交（包 无、清单 e1b26591），没有推送
+· github：已在本机提交（包 无、清单 e1b26591），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpocfq9io2/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpocfq9io2/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpcf7r0dgu/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpcf7r0dgu/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpcf7r0dgu/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 52e20112、清单 e52cef5d），没有推送
+· github：已在本机提交（包 52e20112、清单 e52cef5d），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpcf7r0dgu/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpcf7r0dgu/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 02f19ad0、清单 312a44cc），没有推送
+· github：已在本机提交（包 678fa9bb、清单 80d56897），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/base.pck（dev.460，0.0 MB）
+· 补丁 patch_460_470.pck：0.01 MB，三个预设导出一致
+· 0.460 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 460
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453', '460']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 2e5419e1、清单 1410b6b8），没有推送
+· github：已在本机提交（包 32cb1c7b、清单 69a9c13c），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_475.pck：0.00 MB，三个预设导出一致
+· 0.453 → 0.475：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.475，有补丁的底包 ['453', '460']，min_base 0，撤回 [470]，不强制更新
+· gitee：已在本机提交（包 68425349、清单 3299f467），没有推送
+· github：已在本机提交（包 e69cdb49、清单 3909fe06），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpamvj0p3d/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpnnjqrzzf/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpnnjqrzzf/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpnnjqrzzf/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 74247e22、清单 ebf84a1f），没有推送
+· github：已在本机提交（包 74247e22、清单 ebf84a1f），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpnnjqrzzf/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpnnjqrzzf/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.
+----------------------------------------------------------------------
+Ran 21 tests in 15.008s
+
+OK
+  ✓ 发布补丁工具（清单、签名、两次提交）
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 0.821s
+
+OK
+  ✓ 生成更新清单工具（比对、基线、签名）
+  ✓ 导出冒烟工具（结果解析与报告）
+  ✓ 切场景后调用扫描工具
+  ✓ 临时探针车道标签、clone 里 --补齐 转用主工作区脚本
+  ✓ 补齐整轮重导入走长任务
+  ✓ 天启篇数据表校验（规则自检与回归）
+  ✓ 发行入口冒烟安卓分支
+  ✓ 发行出包（发行说明、旧目录、体积表）
+  ✓ 发行空壳生成
+  ✓ Windows 实机冒烟（假 exe：入口、按键、存档目录）
+  ✓ 安卓实机冒烟（假 adb：返回键、新游戏、切后台、崩溃行、不碰真机）
+  ✓ 内容覆盖检查工具
+  ✓ 插件备注覆盖工具
+  ✓ 优化开关回退支覆盖检查
+  ✓ 探针五乘区检查
+  ✓ 工具快速回归门禁（门禁清单与早停）
+  ✓ 主工作区 main 提交守卫
+  ✓ 交付自检与待合看板（只读、试合并、快慢分道）
+    CheckerTests.test_cloud_quota_exhausted_falls_back_to_local	AssertionError: 'CHECK_JOBS=3' not found in '== 文档与登记\n\n  ✓ JSON、链接、开发编号（dev.001）\n== Godot 测试\n  （--cloud：选中的 0 个场景交给云端，本机不跑 Godot；云端只测已提交的提交，未提交改动自动做成临时快照提交）\n  （--cloud：工作区有未提交改动，做成临时快照提交 3140dc718 推到云端测，不进 main）\n云端汇总：超时\n  ⚠ 云端没有启动（多半
+  ✗ 选测回归失败：CheckerTests.test_cloud_quota_exhausted_falls_back_to_local；日志 /Users/kyo/orca/workspaces/再刷项目资料库/tianqi-no-x6/03_再刷重制_Godot/04_验证/本地结果/选测回归/20261115_033102-58091.log（满载偶发时先单跑 07_开发环境/测试选测.py 对照）
+  ✓ 扩角色同步提速（缓存携带、手动种子隔离、六难度共用并发池）
+  ✓ 事件探针分段并行（均衡分组、拼回顺序逐字相同）
+{"pages": 7141, "runnable": 7141, "counts": {"空页": 1182}, "hard": 0, "battleOnlyCommonEvents": 232, "new": 0, "resolved": 0}
+  ✓ 内容覆盖（无基线外新问题）
+用例 5959：空绿 92（全空 85、挡住 7），半空（有效果但另有分支没走到）1503
+按可达档：3档 85、2档 7 ；楼层地图 2；难度相关 0
+有状态变体 24699 个；仍无 delta 也无非文字 trace（观察面不够）1138 个：ce236#k13, ce1#c1, ce249#c1, m213e2p2#a3, ce1313#r1, ce334#r1, m4e8p0#s1, m187e2p0#s1, ce249#s1, m4e8p0#g3, m195e23p0#g3, ce1560#o1
+已补上，可更新基线（--update-baseline）：1 例，如 ce1604
+空绿 92 例，均在基线内
+其中写明走不到理由的 92 例，还没核的 0 例
+  ✓ 事件对照空绿（无基线外新增，变体与产物对得上）
+== MV 参照引擎
+  ✓ {"ms":3719,"scripts":277,"db":true,"plugins":165,"modulesFailed":[],"errors":[],"version":"v0.62.12"}
+{"releaseVersion": "v0.62.12", "inputs": 3435, "runtimeInputs": 411, "outputs": 3601, "issues": []}
+  ✓ 当前西游来源、转换产物、六难度参照同源
+== 失败项汇总（1 项）
+  ✗ 选测回归失败：CheckerTests.test_cloud_quota_exhausted_falls_back_to_local；日志 /Users/kyo/orca/workspaces/再刷项目资料库/tianqi-no-x6/03_再刷重制_Godot/04_验证/本地结果/选测回归/20261115_033102-58091.log（满载偶发时先单跑 07_开发环境/测试选测.py 对照）
+== Git
+有失败项，请先处理再提交
+
+TASK_RESULT={"runId": "10e2016392394156abda5ec102b0ae63", "status": "failed", "exitCode": 1, "pid": 58084, "startedAt": "2026-11-15T02:00:01.227315+00:00", "command": ["env", "CHECK_JOBS=2", "zsh", "03_再刷重制_Godot/07_开发环境/检查.sh", "--oracle", "--affected", "main", "--cloud"], "childPGID": 58091, "childIdentity": {"pid": 58091, "pgid": 58091, "startedAt": "Sun Nov 15 03:00:01 2026    "}, "startToken": "2fb48fafc7d8441a84d829deb22512c6", "launchdLabel": "xiyou.longtask.1794708001.2fb48fafc7d8", "finishedAt": "2026-11-15T02:41:45.429216+00:00"}

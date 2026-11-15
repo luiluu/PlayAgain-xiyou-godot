@@ -258,7 +258,7 @@ func feed() -> void:
 	check("feed.not_in_bag", XFabaoFeed.reason(s, fabao, loose) == "不在背包里", [XFabaoFeed.reason(s, fabao, loose), loose.has("instanceId")])
 	# 法宝不能喂法宝
 	var other := _bag(s, 3557, 1)
-	check("feed.no_fabao", XFabaoFeed.reason(s, fabao, other[0]) == "不能喂")
+	check("feed.no_fabao", XFabaoFeed.reason(s, fabao, other[0]) == "无法喂入")
 	# 物品页菜单：法宝 30 级从「优秀」起每档一行；精良那行 1 件可喂；喂完提示、装备扣掉
 	var acts := XFabaoFeed.actions(s, fabao)
 	check("feed.actions", acts.size() == 6 and int(acts[0].ext) == 1 and acts[1].enabled and str(acts[1].text).contains("精良") and str(acts[1].text).contains("1 件"), acts.map(func(x): return x.text))
@@ -338,7 +338,7 @@ func guardian() -> void:
 	var hl := XBattleLogic.new()
 	hl.setup(int(XTianqiSummit.data().hongjun.troop), s)
 	var hj: Array = hl.enemies.filter(func(x): return not x.horseman.is_empty())
-	check("guardian.hongjun_hp", absf(hl.enemies.reduce(func(t, x): return t + x.mhp, 0.0) - 6110000.0 * 8) < 10.0, hl.enemies.map(func(x): return x.mhp))
+	check("guardian.hongjun_hp", absf(hl.enemies.reduce(func(t, x): return t + x.mhp, 0.0) - 6110000.0 * 8 * XTianqiNoX6.hp_unit()) < 10.0, hl.enemies.map(func(x): return x.mhp))
 	check("guardian.hongjun", hj.size() == 1 and is_equal_approx(hj[0].output_scale, XGuardianRework.HONGJUN_SCALE), hl.enemies.map(func(x): return x.output_scale))
 	XTianqiQiyinRule.prepare("bai", true)
 	var ql := XBattleLogic.new()
@@ -346,10 +346,10 @@ func guardian() -> void:
 	check("guardian.qiyin_ref", not ql.enemies.is_empty() and ql.enemies.all(func(x): return is_equal_approx(x.output_scale, XGuardianRework.REF_SCALE)),
 		ql.enemies.map(func(x): return x.output_scale))
 	var boss_hp: float = ql.enemies.reduce(func(t, x): return maxf(t, x.mhp), 0.0)
-	check("guardian.qiyin_hp", boss_hp > 0.0 and boss_hp < 5690000.0 * 8, boss_hp)
+	check("guardian.qiyin_hp", boss_hp > 0.0 and boss_hp < 5690000.0 * 8 * XTianqiNoX6.hp_unit(), boss_hp)
 	var gl := XBattleLogic.new()
 	gl.setup(XGuardianRework.TROOPS[24], s)
-	check("guardian.hp", absf(gl.enemies.reduce(func(t, x): return t + x.mhp, 0.0) - 3000000.0 * 8) < 10.0 and gl.enemies.all(func(x): return x.hp == x.mhp),
+	check("guardian.hp", absf(gl.enemies.reduce(func(t, x): return t + x.mhp, 0.0) - 3000000.0 * 8 * XTianqiNoX6.hp_unit()) < 10.0 and gl.enemies.all(func(x): return x.hp == x.mhp),
 		gl.enemies.map(func(x): return [x.hp, x.mhp]))
 	XGuardianRework.HP = false
 	var gl2 := XBattleLogic.new()
@@ -368,7 +368,7 @@ func guardian() -> void:
 	var raw453 := 0.0
 	for mm in XDB.rec("Troops", 453).members:
 		raw453 += float(XDB.rec("Enemies", int(mm.enemyId)).params[0])
-	var want := raw453 / XGuardianRework.old_total(20) * 2250000.0 * 8
+	var want := raw453 / XGuardianRework.old_total(20) * 2250000.0 * 8 * XTianqiNoX6.hp_unit()  # 去全队 ×6（O-470）开着时 1/6
 	var got: float = wl.enemies.reduce(func(t, x): return t + x.mhp, 0.0)
 	check("guardian.world_hp", m20 > 0 and absf(got - want) / want < 0.01, [m20, got, want])
 	check("guardian.world_atk", wl.enemies.all(func(x): return is_equal_approx(x.output_scale, 0.074)), wl.enemies.map(func(x): return x.output_scale))

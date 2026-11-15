@@ -287,12 +287,19 @@ static func run_altar(host, s: XState) -> void:
 		claim(s)
 		var opts := altar_options(s)
 		var labels: Array = opts.map(func(o): return o.label)
-		var i: int = await ask(host, "head", labels, [keys(s), shards(s)])
+		var i := -1
+		var preset := ""
+		if XTianqiSkinAltar.use(host):  # 新界面（3A）：七印环页面只管选，选了什么照旧往下走；揭印时带上环上选中的印
+			var pick: Dictionary = await XTianqiSkinAltar.pick(host, s, opts)
+			i = opts.map(func(o): return str(o.id)).find(str(pick.get("id", "leave")))
+			preset = str(pick.get("seal", ""))
+		else:
+			i = await ask(host, "head", labels, [keys(s), shards(s)])
 		if i < 0 or i >= opts.size() or opts[i].id == "leave":
 			break
 		match str(opts[i].id):
 			"enter":
-				await choose_and_run(host, s)
+				await choose_and_run(host, s, preset)
 				_at = "altar"
 				await host.transfer(int(a.map), int(a.pos[0]), int(a.pos[1]), int(a.pos[2]))
 				s.screen.start_tint(a.get("tone", [0, 0, 0, 0]), 0)
@@ -341,11 +348,14 @@ static func seal_options(s: XState) -> Array:
 	return out
 
 
-static func choose_and_run(host, s: XState) -> int:
+## preset：新界面七印环上已选好的印（揭开了的才认），省掉「选哪一印」这一问；空＝照旧问
+static func choose_and_run(host, s: XState, preset := "") -> int:
 	var opts := seal_options(s)
 	var labels: Array = opts.map(func(o): return o.label)
 	labels.append("返回")
-	var i: int = await ask(host, "pick_seal", labels)
+	var i: int = opts.map(func(o): return str(o.key)).find(preset) if preset != "" else -1
+	if i < 0:
+		i = await ask(host, "pick_seal", labels)
 	if i < 0 or i >= opts.size():
 		return -1
 	var key := str(opts[i].key)
@@ -378,7 +388,7 @@ static func _ask_offering(host, s: XState, key: String):
 	if can_shards:
 		opts.append("献 %d 个印屑，指定第一件的部位" % cost)
 	if not weapons.is_empty():
-		opts.append("献一把本印毕业武器（这次毕业武器几率翻倍、必是同类）")
+		opts.append("献一把本印毕业武器（本次毕业武器概率翻倍、必为同类型武器）")
 	opts.append("返回")
 	var i: int = await ask(host, "offer_head", opts, [shards(s)])
 	if i == 0:
@@ -625,8 +635,8 @@ static func sealed_label(item: Dictionary) -> String:
 	var seal := str(seal_info(str(item.get("seal", ""))).get("seal", item.get("seal", "")))
 	var glow := str(data().names.true_glow if bool(item.get("true_seal", false)) else data().names.set_glow)
 	if str(item.get("kind", "")) == XTianqiQiyinDrop.KIND_WEAPON:
-		return "%s·毕业武器（%s）〔%s〕" % [seal, str(item.get("wtype", "")), glow]
-	return "%s·%s〔%s〕" % [seal, part_name(str(item.get("part", ""))), glow]
+		return "%s·毕业武器（%s）【%s】" % [seal, str(item.get("wtype", "")), glow]
+	return "%s·%s【%s】" % [seal, part_name(str(item.get("part", ""))), glow]
 
 
 ## 揭开后的名字：套装件名或武器名、真印、三条成色

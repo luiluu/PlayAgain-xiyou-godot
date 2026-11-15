@@ -95,7 +95,7 @@ static func on_open(s: XState) -> void:
 ## Window_ChangeClothesStatus.drawAllContents 的获得途径
 static func source_text(e: Dictionary) -> String:
 	var fs := str(e.get("GetFs", ""))
-	return "获得途径:" + (fs if fs != "" else "获得伙伴" + str(e.get("name", "")))
+	return "获得途径：" + (fs if fs != "" else "获得伙伴" + str(e.get("name", "")))
 
 
 ## onRefSzOk：已解锁 → 替换形象，返回 true；未解锁返回 false

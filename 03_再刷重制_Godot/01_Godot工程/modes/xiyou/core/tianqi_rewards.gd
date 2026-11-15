@@ -257,7 +257,7 @@ static func grant_survival(s: XState, line: String) -> Array:
 		out.append("%s×%d" % [str(XDB.rec("Items", int(e.item)).get("name", "")), int(e.amount)])
 	if int(sv.get("gold", 0)) > 0:
 		s.gain_gold(int(sv.gold))
-		out.append("%d 金钱" % int(sv.gold))
+		out.append("%d %s" % [int(sv.gold), str(XDB.system().get("currencyUnit", "精魂"))])
 	return out
 
 

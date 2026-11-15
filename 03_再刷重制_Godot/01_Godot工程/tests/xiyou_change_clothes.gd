@@ -81,7 +81,8 @@ static func record(win: XMVWindow) -> Array:
 
 
 static func want_form(texts: Array) -> Array:
-	return _sorted(texts.map(func(t): return [str(t[0]), float(t[1]), float(t[2]), float(t[3]), str(t[4]), float(t[5]), Color(str(t[6])).to_html(false)]))
+	# 文字审批 16：「获得途径:」改全角冒号（参照是原版半角）
+	return _sorted(texts.map(func(t): return [str(t[0]).replace("获得途径:", "获得途径："), float(t[1]), float(t[2]), float(t[3]), str(t[4]), float(t[5]), Color(str(t[6])).to_html(false)]))
 
 
 static func _sorted(a: Array) -> Array:

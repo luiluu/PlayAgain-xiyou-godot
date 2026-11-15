@@ -148,7 +148,7 @@ static func planted(a, look_key: String) -> bool:
 
 ## performAction 包装的动作（屠苏键看是不是持武，别的只对自身图）；空＝不改
 static func motion_for(a: XActor, skill: Dictionary) -> String:
-	if a.is_attack(skill) and _own(a) != "" and not XCostumes.active(XState.current, a):  # performAttack 包装
+	if a.attack_motion(skill) and _own(a) != "" and not XCostumes.active(XState.current, a):  # performAttack 包装
 		return "swing" if _own(a) == "Tusu" else "missile"
 	var id := int(skill.get("id", 0))
 	var tk := str(XTusuXuan.keys(XTusu.ACTOR).get(id, ""))

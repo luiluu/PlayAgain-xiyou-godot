@@ -315,6 +315,31 @@ func _menu_cmd(sym: String) -> bool:
 	if menu == null:
 		return false
 	await _frames(STEP)
+	if menu.skin != null:  # 天启篇新界面主菜单（XSkinMainMenu，第 1A 批）：按键走到那一项再确定
+		var sk: XSkinMainMenu = menu.skin
+		if XSkinMainMenu.TWO_LEVEL:   # 两级（p1fix）：环上右键换到那一大类，多项的确定进子项、再下键走到那一项
+			if sk.level == 1:
+				await _key(KEY_ESCAPE)
+			for g in sk.groups.size() + 1:
+				if sk.group_items(sk.current_group()).any(func(it): return str(it.get("cmd", "")) == sym):
+					break
+				await _key(KEY_RIGHT)
+			if sk.group_items(sk.current_group()).size() > 1:
+				await _key(KEY_ENTER)
+				for i in 10:
+					if str(sk.current_item().get("cmd", "")) == sym:
+						break
+					await _key(KEY_DOWN)
+			if str(sk.current_item().get("cmd", "")) != sym and sk.group_items(sk.current_group()).size() > 1:
+				return false
+			await _key(KEY_ENTER)
+			return true
+		for i in 40:
+			if str(sk.current_item().get("cmd", "")) == sym:
+				await _key(KEY_ENTER)
+				return true
+			await _key(KEY_DOWN)
+		return false
 	# 按 commands()（实际显示的指令）找：天启篇隐藏宠物、发行隐藏异化工坊时少几项，下标和 COMMANDS 对不上
 	var cmds: Array = XMenu.commands()
 	for i in cmds.size() + 1:

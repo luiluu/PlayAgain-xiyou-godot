@@ -47,13 +47,27 @@ static func show_for(d: Dictionary) -> void:
 	var pop := XAchievementPopup.new()
 	pop.item = d
 	pop.wait_frames = floori(float(str(st.get("Popup Wait", "0.75"))) * 60)
-	var y := SCREEN.y * 2.0 / 3.0
-	for p in _stack:
-		if p.position.y != y:
-			break
-		y += HEIGHT + GAP
-	pop.base_y = y
-	pop.position = Vector2((SCREEN.x - pop.plan_width() - GAP) / 2.0, y)
+	var on := XUiSkin.on()
+	var vs := tree.root.get_visible_rect().size if tree.root != null else SCREEN
+	var y := vs.y * 2.0 / 3.0 if on else SCREEN.y * 2.0 / 3.0
+	if on:
+		var h := pop.plan_height()
+		var gap := 24.0
+		for p in _stack:
+			var ph: float = p.plan_height()
+			if y + h + gap <= p.position.y:
+				break
+			if y < p.position.y + ph + gap:
+				y = p.position.y + ph + gap
+		pop.base_y = y
+		pop.position = Vector2(roundf((vs.x - pop.plan_width()) / 2.0), y)
+	else:
+		for p in _stack:
+			if p.position.y != y:
+				break
+			y += HEIGHT + GAP
+		pop.base_y = y
+		pop.position = Vector2((SCREEN.x - pop.plan_width() - GAP) / 2.0, y)
 	layer.add_child(pop)
 	_stack.append(pop)
 	_stack.sort_custom(func(a, b): return a.position.y < b.position.y)
@@ -67,21 +81,34 @@ func plan() -> Dictionary:
 
 func plan_width() -> float:
 	var p := plan()
-	return float(p.width) if not p.is_empty() else WIDTH
+	if not p.is_empty():
+		return float(p.width)
+	return 340.0 if XUiSkin.on() else WIDTH
+
+
+func plan_height() -> float:
+	var p := plan()
+	if not p.is_empty():
+		return HEIGHT
+	return 62.0 if XUiSkin.on() else HEIGHT
 
 
 func _ready() -> void:
-	size = Vector2(plan_width(), HEIGHT)
+	size = Vector2(plan_width(), plan_height())
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	win = XMVWindow.make(self, Rect2(Vector2.ZERO, size), 255, _paint)
 	win.padding = 0.0
+	var on := XUiSkin.on()
+	win.canvas.font = XUiSkin.font("body") if on else XUI.font()
+	win.canvas.clean_text = on
 	_apply(0.0)
 
 
 ## Tween 的 opacity／backOpacity／contentsOpacity 同步变化；菜单场景里框与底固定 30
 func _apply(a: float) -> void:
+	var on := XUiSkin.on()
 	var mback := is_inside_tree() and not get_tree().get_nodes_in_group(MBACK_GROUP).filter(func(n): return n.is_visible_in_tree()).is_empty()
-	var o := XUI.MENU_WINDOW_OPACITY if mback else roundi(255 * a)
+	var o := roundi(255 * a) if on else (XUI.MENU_WINDOW_OPACITY if mback else roundi(255 * a))
 	var pl := plan()
 	if not pl.is_empty() and int(pl.opacity) >= 0:
 		o = int(pl.opacity)   # kyo专属：窗口不透明度 0（只剩内容渐变）
@@ -92,14 +119,22 @@ func _apply(a: float) -> void:
 
 
 func _paint(c: XMVCanvas) -> void:
+	var on := XUiSkin.on()
 	var pl := plan()
 	if not pl.is_empty():
 		for op in pl.ops:
 			XAchievementBadge.paint_op(c, op)
 		if bool(pl.message):
-			c.text(str(XAchievementPopup.settings().get("Popup Message", "")), 50, 29, WIDTH - 60, "left", XUI.TEXT, 12, 12)
+			c.text(str(XAchievementPopup.settings().get("Popup Message", "")), 50, 29, WIDTH - 60, "left", XUiSkin.TEXT_2 if on else XUI.TEXT, 14 if on else 12, 16 if on else 12)
 		for op in pl.get("after", []):
 			XAchievementBadge.paint_op(c, op)
+		return
+	if on:
+		var w := c.size.x
+		c.icon(int(item.get("icon", 0)), 14, 15)
+		var tf := XUiSkin.font("title")
+		c.draw_string(tf, Vector2(58, 28), str(item.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, w - 72, 18, XUiSkin.GOLD)
+		c.text(str(XAchievementPopup.settings().get("Popup Message", "")), 58, 34, w - 72, "left", XUiSkin.TEXT_2, 14, 20)
 		return
 	c.icon(int(item.get("icon", 0)), 10, 10)
 	c.text(str(item.get("name", "")), 50, 5, WIDTH - 50, "left", XUI.text_color(1), 16, 24)
@@ -124,7 +159,7 @@ func _physics_process(_delta: float) -> void:
 	elif frame <= IN_FRAMES + wait_frames + OUT_FRAMES:
 		var n := _in_circ((frame - IN_FRAMES - wait_frames) / float(OUT_FRAMES))
 		_apply(1.0 - n)
-		position.y = base_y - HEIGHT * n
+		position.y = base_y - size.y * n
 	else:
 		_stack.erase(self)
 		queue_free()

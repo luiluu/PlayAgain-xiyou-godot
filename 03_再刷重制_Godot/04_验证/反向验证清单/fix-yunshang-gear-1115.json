@@ -1,0 +1,43 @@
+{
+ "tests": [
+  "xiyou_yunshang_gear_load"
+ ],
+ "items": [
+  {
+   "name": "读档重放照原版卸下移除穿着的天衣（去掉 KEEP_WORN_ON_LOAD 判断）",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/yunshang_orders.gd",
+   "find": "\tif _loading and KEEP_WORN_ON_LOAD and not consumed and _worn(s, item):",
+   "replace": "\tif false:"
+  },
+  {
+   "name": "放过范围扩到背包（_worn 恒真）",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/yunshang_orders.gd",
+   "find": "\tif _loading and KEEP_WORN_ON_LOAD and not consumed and _worn(s, item):",
+   "replace": "\tif _loading and KEEP_WORN_ON_LOAD and not consumed:"
+  },
+  {
+   "name": "读档重放没标 _loading",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/yunshang_orders.gd",
+   "find": "\t_loading = true\n",
+   "replace": "\t_loading = false\n"
+  },
+  {
+   "name": "进阶消耗也放过（不传 consumed，co P2 回归）",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/yunshang_orders.gd",
+   "find": "int(op.get(\"baseId\", 0)), consumed.has(j))",
+   "replace": "int(op.get(\"baseId\", 0)), false)"
+  },
+  {
+   "name": "旧账本不按结构认进阶消耗",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/yunshang_orders.gd",
+   "find": "\t\t\t\tneed = int(row.robes)\n",
+   "replace": "\t\t\t\tneed = 0\n"
+  },
+  {
+   "name": "进阶 remove 的来源标记不认（只剩结构识别）",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/yunshang_orders.gd",
+   "find": "\t\tif op.has(\"remove\") and str(op.get(\"src\", \"\")) == \"advance\":\n",
+   "replace": "\t\tif false:\n"
+  }
+ ]
+}

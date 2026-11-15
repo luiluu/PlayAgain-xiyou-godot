@@ -13,6 +13,8 @@ var results: Array = []
 
 
 func _ready() -> void:
+	# 参照是原版文字：原版文字错的加载时修正（XTextFix，cc/text-fix-b）比对时整组关掉；修正本身由 tests/xiyou_text_fix 核
+	XTextFix.set_all(false)
 	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（优化登记三条）关掉，新行为由 xiyou_rift2_canglong 核
 	_run.call_deferred()
 
@@ -55,7 +57,10 @@ func _run() -> void:
 
 
 static func _norm(v):
-	return JSON.parse_string(JSON.stringify(v)) if v != null else null
+	if v == null:
+		return null
+	# 挖宝提示（XTreasureMap）文字审批 18 把「获得物品:」「目标位置:」等的半角冒号改全角：两边都换成全角再比
+	return JSON.parse_string(RegEx.create_from_string("(获得物品|获得防具|获得武器|触发事件|目标位置|坐标|失败): ?").sub(JSON.stringify(v), "$1：", true))
 
 
 func _case(spec: Dictionary, host) -> Dictionary:

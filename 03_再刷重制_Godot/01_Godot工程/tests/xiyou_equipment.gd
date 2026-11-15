@@ -2,6 +2,8 @@ extends Node
 ## 固定随机数与正式运行插件对照；全部使用内存装备，不读取玩家存档。
 var results := []
 func _ready() -> void:
+	# 参照是原版文字：原版文字错的加载时修正（XTextFix，cc/text-fix-b）比对时整组关掉；修正本身由 tests/xiyou_text_fix 核
+	XTextFix.set_all(false)
 	_run.call_deferred()
 func check(name: String, ok: bool, detail = null) -> void:
 	results.append({"name":name,"passed":ok})

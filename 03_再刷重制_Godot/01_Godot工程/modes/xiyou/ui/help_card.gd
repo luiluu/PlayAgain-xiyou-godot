@@ -1288,7 +1288,8 @@ func _layout_extras() -> void:
 		return
 	var gap := EXTRA_GAP_NEAR if PLACE_NEAR else EXTRA_GAP_ORIGINAL
 	var lo := 22.0 if PLACE_NEAR else 0.0
-	var hi := 1258.0 if PLACE_NEAR else 1280.0
+	var vw := get_viewport_rect().size.x if (skinned() and is_inside_tree()) else 1280.0
+	var hi := (vw - lo) if PLACE_NEAR else vw
 	var total := -gap
 	for c in extras:
 		total += c.size.x + gap
@@ -1366,6 +1367,11 @@ func place_original(anchor: Rect2, battle := false) -> void:
 ## side：left（战斗，列表左侧）、right、below（列表内，选中行下方/上方）。
 ## anchor 为选中行在画布上的矩形；area 为卡片本体的可用范围（默认整个画面去掉品质框外扩 10、再留 12）。
 func place_near(anchor: Rect2, side := "right", area := Rect2(22, 22, 1236, 676)) -> void:
+	if skinned() and area == Rect2(22, 22, 1236, 676) and is_inside_tree():
+		var vs := get_viewport_rect().size
+		if vs.x > 1280.0:
+			var m := XSkinLayout.margin_for(vs.x)
+			area = Rect2(m, 22, vs.x - m * 2.0, vs.y - 44.0)
 	_anchor = anchor
 	var w := size.x
 	var h := size.y
@@ -1391,8 +1397,46 @@ func place_near(anchor: Rect2, side := "right", area := Rect2(22, 22, 1236, 676)
 	_layout_extras()
 
 
+## 新界面（天启篇，XUiSkin.on() 时）：黑面板＋细线、品质色 1px 描边、清字无 MV 描边、暗底可读配色
+func skinned() -> bool:
+	return XUiSkin.on()
+
+
+static func _skin_color(col: Color) -> Color:
+	if is_equal_approx(col.r, 1.0) and is_equal_approx(col.g, 1.0) and is_equal_approx(col.b, 1.0):
+		return XUiSkin.TEXT
+	if is_equal_approx(col.r, 1.0) and is_equal_approx(col.g, 1.0) and col.b < 0.05:
+		return XUiSkin.GOLD_LIGHT
+	if col.b > 0.85 and col.r < 0.35 and col.g < 0.35:
+		return XUiSkin.MP_TEXT
+	if col.r > 0.85 and col.g < 0.35 and col.b < 0.35:
+		return XUiSkin.SEL_LINE
+	if is_equal_approx(col.r, 0.5) and is_equal_approx(col.g, 0.5) and col.b > 0.9:
+		return XUiSkin.MP_TEXT
+	if col.g > 0.9 and col.r < 0.6 and col.b < 0.6:
+		return XUiSkin.UP
+	return col
+
+
 func _draw_frame() -> void:
-	# ItemQuality：四层 Window{品质} 窗口（西游 v0.15 起按七档取代表图）（不透明度、背景都是 60），覆盖卡外 10px
+	if skinned():
+		var ci := frame.get_canvas_item()
+		var r := Rect2(Vector2(4, 4), frame.size - Vector2(8, 8))
+		XUiSkin.shadow_style().draw(ci, r)
+		XUiSkin.draw_panel(ci, r)
+		var sb := StyleBoxFlat.new()
+		sb.draw_center = false
+		if robe_card:
+			sb.border_color = Color(XUiSkin.HP, 0.6)
+		elif quality > 0:
+			sb.border_color = Color(XUiSkin.quality_color(clampi(XQuality.grade_of(quality), 0, 6)), 0.58)
+		else:
+			sb.border_color = Color(XUiSkin.LINE, 0.38)
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(XUiSkin.RADIUS)
+		sb.draw(ci, r)
+		return
+	# ItemQuality：四层 Window{品质}.png 窗口（西游 v0.15 起按七档取代表图）（不透明度、背景都是 60），覆盖卡外 10px
 	var skin_path := XDB.img_path("system", "Window%d" % XQuality.window_skin(quality))
 	_frame_style = XUI.panel(60)
 	if skin_path != "":
@@ -1404,10 +1448,20 @@ func _draw_frame() -> void:
 
 
 func _paint(c: XMVCanvas) -> void:
-	c.draw_rect(Rect2(1, 1, size.x - 2, size.y - 2), BACK)
+	var on := skinned()
+	if on:
+		c.font = XUiSkin.font("body")
+		c.clean_text = true
+	else:
+		c.font = XUI.font()
+		c.clean_text = false
+		c.draw_rect(Rect2(1, 1, size.x - 2, size.y - 2), BACK)
 	for l in _lines:
 		for g in l.glyphs:
 			if g.has("icon"):
 				c.icon(int(g.icon), g.x, g.y)
 			else:
-				c.text(g.t, g.x, g.y, g.w * 2.0 if g.lh != 36.0 else g.w + 2, "left", g.color, g.size, g.lh)
+				var col: Color = _skin_color(g.color) if on else g.color
+				c.text(g.t, g.x, g.y, g.w * 2.0 if g.lh != 36.0 else g.w + 2, "left", col, g.size, g.lh)
+		if on and bool(l.get("line", false)):
+			c.draw_line(Vector2(PAD + 4.0, l.y + l.h + 1.0), Vector2(size.x - PAD - 4.0, l.y + l.h + 1.0), Color(XUiSkin.LINE, 0.22), 1.0)

@@ -136,6 +136,10 @@ static func run(code: String, interp) -> Array:
 	var js := _strip_comments(code).strip_edges()
 	if js == "":
 		return []
+	# 冠军庆典大厅（XFestLobby）的使者、报名处、奖杯：事件里一行「CodexFest.xxx();」
+	if js.begins_with("CodexFest."):
+		await XFestLobby.run_script(js, interp)
+		return []
 	if js.contains("CodexTier.nonWeakIds()"):
 		js = js.replace("CodexTier.nonWeakIds()", "[%s]" % ",".join(XState.tier_non_weak_ids().map(func(v): return str(v))))
 	var s := XState.current
@@ -571,7 +575,7 @@ static func _statements(js: String, interp) -> Array:
 		# Codex_StabilityPerformancePatch 已移除地图（Map103、108）的提示：$gameMessage.add，下一条要等待的指令前显示（Map080 王座宝箱的深渊之门）
 		m = _re("^CodexMapRemoval\\.notice\\((\\d+)\\)$").search(st)
 		if m and REMOVED_MAPS.has(int(m.get_string(1))):
-			interp.pending_lines.append("【区域已移除】%s因地图文件损坏，已从当前版本移除。" % REMOVED_MAPS[int(m.get_string(1))])
+			interp.pending_lines.append("（%s 区域暂未开放。）" % REMOVED_MAPS[int(m.get_string(1))])
 			continue
 		if st == "CodexToji.rollAdvanceStone()" or st == "CodexSukuna.rollAdvanceStone()":
 			var got := XDungeon.roll_advance_stone(s, XDungeon.TOJI if st.begins_with("CodexToji") else XDungeon.SUKUNA)

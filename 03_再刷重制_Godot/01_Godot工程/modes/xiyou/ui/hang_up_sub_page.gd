@@ -111,12 +111,15 @@ func rows() -> Array:
 			return out
 		"medication":
 			var r := XHangUpAuto.recovery(s)
-			return [["Hp恢复开关", "Open"], ["Mp恢复开关", "Open"], ["Hp恢复比例", str(r.HpV)], ["Mp恢复比例", str(r.MpV)]]
+			var enter := "进入" if XUiSkin.on() else "Open"
+			return [["Hp恢复开关", enter], ["Mp恢复开关", enter], ["Hp恢复比例", str(r.HpV)], ["Mp恢复比例", str(r.MpV)]]
 		"hp", "mp":
+			var on_txt := "开" if XUiSkin.on() else "ON"
+			var off_txt := "关" if XUiSkin.on() else "OFF"
 			return _potions.map(func(e): return ["%s 剩余:%d" % [XDB.rec("Items", int(e.id)).get("name", ""), int(e.num)],
-				"ON" if XHangUpAuto.potion_on(s, kind == "mp", int(e.id)) else "OFF"])
+				on_txt if XHangUpAuto.potion_on(s, kind == "mp", int(e.id)) else off_txt])
 		"sell":
-			var out := [["卖出的回合(为0不卖出)", str(int(XHangUpAuto.sell_config(s).SellQuality))]]
+			var out := [["自动卖出间隔场数（0 为不卖出）", str(int(XHangUpAuto.sell_config(s).SellQuality))]]
 			var names: Array = XQuality.config().names
 			for g in names.size():
 				out.append([str(names[g]), {"none": "不卖", "all": "卖", "partial": "部分"}[XHangUpAuto.grade_state(s, g)]])
@@ -134,20 +137,26 @@ func _refresh() -> void:
 
 
 func _paint(c: XMVCanvas) -> void:
+	var on := XUiSkin.on()
+	c.clean_text = on
+	c.font = XUiSkin.font("body") if on else XUI.font()
 	var list := rows()
 	var title_w := c.size.x - 12.0 - _status_w()
 	for i in range(top, mini(top + MAX_ROWS, list.size())):
 		var y := (i - top) * LH
 		if i == index:
 			c.cursor(Rect2(0, y, c.size.x, LH))
-		c.text(list[i][0], 6, y, title_w, "left", XUI.TEXT, XUI.FONT_SIZE, LH)
-		c.text(list[i][1], title_w, y, _status_w(), "right", XUI.TEXT, XUI.FONT_SIZE, LH)
+		c.text(list[i][0], 6, y, title_w, "left", XUiSkin.TEXT if on else XUI.TEXT, XUI.FONT_SIZE, LH)
+		c.text(list[i][1], title_w, y, _status_w(), "right", XUiSkin.GOLD_LIGHT if on else XUI.TEXT, XUI.FONT_SIZE, LH)
 
 
 func _paint_help(c: XMVCanvas) -> void:
+	var on := XUiSkin.on()
+	c.clean_text = on
+	c.font = XUiSkin.font("body") if on else XUI.font()
 	var lines := XSafeSell.HELP.split("\n")
 	for i in lines.size():
-		c.text(lines[i], 6, i * LH, c.size.x - 12, "left", XUI.TEXT, XUI.FONT_SIZE, LH)
+		c.text(lines[i], 6, i * LH, c.size.x - 12, "left", XUiSkin.TEXT_2 if on else XUI.TEXT, XUI.FONT_SIZE, LH)
 
 
 # ---- 操作 ----

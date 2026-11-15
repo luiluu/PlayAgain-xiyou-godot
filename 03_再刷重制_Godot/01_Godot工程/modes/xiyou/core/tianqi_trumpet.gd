@@ -161,7 +161,7 @@ static func _forget(base: Dictionary) -> Dictionary:
 	r.name = str(fg.get("name", "封卷"))
 	r.description = str(fg.get("desc", ""))
 	var note := "\n".join(["<quality:10>", "<ici:10>", "<Item 2530 Buy Price: 500>", "<CodexPowerForget>",
-		_pos("\\c[1]效果", "选择一名角色，封上一卷已学的号卷"), _pos("代价", "每次消耗1枚，号卷不返还"),
+		_pos("\\c[1]效果", "选择一名角色，封印一卷已学的号卷"), _pos("代价", "每次消耗1枚，号卷不返还"),
 		_pos("\\c[8]出处", "七雷所说的你要封上")])
 	r.note = note
 	r.meta = XTianqiSkills.parse_meta(note)

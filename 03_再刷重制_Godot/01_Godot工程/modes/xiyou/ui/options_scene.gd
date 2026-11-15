@@ -25,7 +25,7 @@ const STATUS_W := 120.0
 static var KEEP_INDEX_AFTER_PAGE := true
 ## [名字, 符号, 已重制]（正式 v0.19 Window_Options._list 顺序：v0.19 加「消息提醒」、去掉「技能升级通告」）
 const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", true], ["始终跑步", "alwaysDash", true],
-	["记住指令", "commandRemember", true], ["Battle Camera", "battleCamera", true], ["开启掉落动画", "MOG_TrPopUpBattle_Key", true],
+	["记住指令", "commandRemember", true], ["战斗镜头", "battleCamera", true], ["开启掉落动画", "MOG_TrPopUpBattle_Key", true],
 	["战斗伤害记录", "CombatDamageRecordKey", true], ["显示伤害数字", "CombatDamageShow", true], ["显示技能动画", "CombatSkillAnimation", true],
 	["屏蔽掉落", "pingbiDrop", true], ["智能战斗AI（自动战斗）", "codexSmartAI", true], ["BGM 音量", "bgmVolume", true],
 	["BGS 音量", "bgsVolume", true], ["ME 音量", "meVolume", true], ["SE 音量", "seVolume", true], ["只遇稀有", "Boss", true],
@@ -44,8 +44,19 @@ const SMOOTH_OPTION := ["画面平滑", "codexScreenSmooth", true]
 const TARGET_OPTION := ["定向遇怪", XEncounterTarget.KEY, true]
 ## 重制新增：进战斗默认自动（O-383，XBattleScene.AUTO_DEFAULT）：ON 时每场战斗开局自动按钮就是开；默认 OFF
 const AUTO_OPTION := ["进战斗默认自动", "codexBattleAutoDefault", true]
+## 重制新增：战斗站位（O-473，XPartyFormation）：两排错开／菱形／原版竖排，左右与确定切换，存配置，下一场战斗生效
+const FORMATION_OPTION := ["战斗站位", XPartyFormation.KEY, true]
 ## 重制新增：画质设置（XGraphics）：状态「调整」，确定音后打开 XGraphicsOptionsScene，左右无作用
 const QUALITY_OPTION := ["画质设置", "codexQuality", true]
+
+## 新界面（第 5C 批）：「界面风格：新／原版」「界面动效：全部／简化／关」。只在新皮肤有机会开的存档里（天启篇，XUiSkin.selectable()）出现，重制版里不列；
+## 动效一行只在新皮肤开着时列（原版界面没有这些动画）。排在画质设置之后、进战斗默认自动之前。
+const SKIN_OPTION := ["界面风格", "codexUiSkin", true]
+const MOTION_OPTION := ["界面动效", "codexUiMotion", true]
+const MOTION_NAMES := ["全部", "简化", "关"]
+
+## 重制新增：本次更新内容（XWhatsNew，update-whatsnew）：现在运行的这一版有更新说明时才列，状态「查看」，确定再看一次「本次更新内容」弹窗
+const WHATS_NEW_OPTION := ["本次更新内容", "codexWhatsNew", true]
 
 ## 只在触屏（安卓）出现，排在最后；状态「调整」，确定音后打开 XTouchOptionsScene，左右无作用。
 const TOUCH_OPTION := ["手机按键设置", "codexAndroidControls", true]
@@ -64,12 +75,28 @@ var top := 0
 var win: XMVWindow
 var _list: Array = []
 var _page: Control
+## 新界面（XUiSkin.on() 时）：设置主页换成 XSkinOptionsPage 的布局（状态机不变）；关着时为 null，旧页一行不变
+var skin: XSkinOptionsPage
+## 本页自己加的背景节点（切换界面风格时整套换掉）
+var _bg_nodes: Array = []
+## 本次改过「界面风格」：关设置页时连菜单一起关回地图（菜单是按旧风格建的，重开才换）；XMenu 读 to_map
+var to_map := false
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	theme = XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	_build_list()
+	_add_backdrop()
+	win = XMVWindow.make(self, RECT, XUI.MENU_WINDOW_OPACITY, _paint)
+	win.canvas.blink = true
+	if XUiSkin.on():
+		_show_skin(true)
+	_refresh()
+
+
+func _build_list() -> void:
 	_list = OPTIONS.filter(func(o): return o[1] != "HangUp" or XHangUp.enabled(XState.current))
 	if XEncounterTarget.ENABLED:  # 定向遇怪占原「只遇稀有」的位子，另两行去掉
 		_list = _list.filter(func(o): return o[1] != "BOSS" and o[1] != "boss").map(func(o): return TARGET_OPTION if o[1] == "Boss" else o)
@@ -85,14 +112,41 @@ func _ready() -> void:
 		_list.append(SMOOTH_OPTION)
 	if XGraphics.ENABLED:  # 画质设置排在画面平滑后、手机按键设置前；开关关掉时不列
 		_list.append(QUALITY_OPTION)
+	if XUiSkin.selectable():  # 界面风格、界面动效（5C）：天启篇才列；动效只在新界面开着时列
+		_list.append(SKIN_OPTION)
+		if XUiSkin.on():
+			_list.append(MOTION_OPTION)
 	if XBattleScene.AUTO_DEFAULT:  # 进战斗默认自动排在画质设置后、手机按键设置前；开关关掉时不列
 		_list.append(AUTO_OPTION)
+	if XPartyFormation.ENABLED:  # 战斗站位排在进战斗默认自动后、手机按键设置前；开关关掉时不列
+		_list.append(FORMATION_OPTION)
+	if XWhatsNew.ENABLED and not XWhatsNew.current(XUpdateClient.current_code()).is_empty():  # 本次更新内容排在手机按键设置前；没有说明或开关关掉时不列
+		_list.append(WHATS_NEW_OPTION)
 	if XPlatform.is_touch():  # 原版二合一包 Codex_AndroidTouchSettings：安卓在列表末尾加「手机按键设置」（平台三期 BP）
 		_list.append(TOUCH_OPTION)
+
+
+## 背景：旧界面的底图加粒子，新界面的黑底；记下加了哪些节点，切换风格时好整套换掉
+func _add_backdrop() -> void:
+	var before := get_children()
 	XUI.menu_background(self)
-	win = XMVWindow.make(self, RECT, XUI.MENU_WINDOW_OPACITY, _paint)
-	win.canvas.blink = true
-	_refresh()
+	_bg_nodes = get_children().filter(func(n): return not before.has(n))
+	for n in _bg_nodes:
+		move_child(n, 0)
+
+
+## 新界面开：建 XSkinOptionsPage、藏旧窗口；关：反过来
+func _show_skin(v: bool) -> void:
+	if v:
+		if skin == null:
+			skin = XSkinOptionsPage.new(self)
+			add_child(skin)
+		win.hide()
+	else:
+		if skin != null:
+			skin.queue_free()
+			skin = null
+		win.show()
 
 
 static func _group(symbol: String) -> String:
@@ -122,12 +176,20 @@ func status_text(i: int) -> String:
 			return XConfig.battle_speed_text()
 		XEncounterTarget.KEY:
 			return XEncounterTarget.text()
+		XPartyFormation.KEY:
+			return XPartyFormation.text()
 		"codexNotices":
 			return XConfig.notices_text()
 		"codexFollow":
 			return "ON" if _follow_on() else "OFF"
 		"codexAndroidControls", "codexQuality":
 			return "调整"
+		"codexWhatsNew":
+			return "查看"
+		"codexUiSkin":
+			return "新" if XConfig.ui_skin_new() else "原版"
+		"codexUiMotion":
+			return MOTION_NAMES[XUiSkin.motion()]
 		"codexCostumes":
 			return "打开" if XCostumes.can_open(XState.current) else "进入游戏"
 		"codexTestMode":
@@ -140,6 +202,9 @@ func status_text(i: int) -> String:
 
 
 func _refresh() -> void:
+	if skin != null:
+		skin.sync()
+		return
 	win.up_arrow = top > 0
 	win.down_arrow = top < _list.size() - ROWS
 	win.refresh()
@@ -192,6 +257,8 @@ func ok() -> void:
 			_set_speed(XConfig.battle_speed() % 4 + 1)
 		XEncounterTarget.KEY:
 			_set_target((XConfig.encounter_target() + 1) % XEncounterTarget.NAMES.size())
+		XPartyFormation.KEY:
+			_set_formation((XConfig.party_formation() + 1) % XPartyFormation.NAMES.size())
 		"HangUp":
 			XSound.system(1)
 			_open_hang_up()
@@ -199,6 +266,10 @@ func ok() -> void:
 			_open_page(XPingbiScene.new())
 		"codexFollow":
 			_set_follow(not _follow_on())
+		"codexUiSkin":
+			_set_ui_skin(not XConfig.ui_skin_new())
+		"codexUiMotion":
+			_set_ui_motion((XUiSkin.motion() + 1) % 3)
 		"codexNotices":
 			XSound.system(1)
 			_open_page(XNoticeOptionsScene.new())
@@ -208,6 +279,13 @@ func ok() -> void:
 		"codexQuality":
 			XSound.system(1)
 			_open_page(XGraphicsOptionsScene.new())
+		"codexWhatsNew":
+			var rec := XWhatsNew.current(XUpdateClient.current_code())
+			if rec.is_empty():
+				XSound.system(3)
+			else:
+				XSound.system(1)
+				XWhatsNewPage.open(self, rec, skin != null)
 		"codexTestMode":
 			if XTestMode.unlocked():
 				_set_test_mode(not XTestMode.enabled())
@@ -238,6 +316,10 @@ func _side(right: bool) -> void:
 			match symbol:
 				"codexFollow":
 					_set_follow(right)
+				"codexUiSkin":
+					_set_ui_skin(right)
+				"codexUiMotion":
+					_set_ui_motion(clampi(XUiSkin.motion() + (1 if right else -1), 0, 2))
 				"codexTestMode":
 					if XTestMode.unlocked():
 						_set_test_mode(right)
@@ -245,6 +327,8 @@ func _side(right: bool) -> void:
 					_set_speed(clampi(XConfig.battle_speed() + (1 if right else -1), 1, 4))
 				XEncounterTarget.KEY:
 					_set_target(clampi(XConfig.encounter_target() + (1 if right else -1), 0, XEncounterTarget.NAMES.size() - 1))
+				XPartyFormation.KEY:
+					_set_formation(clampi(XConfig.party_formation() + (1 if right else -1), 0, XPartyFormation.NAMES.size() - 1))
 
 
 func _set_map_xy(v: bool) -> void:
@@ -309,6 +393,44 @@ func _set_target(v: int) -> void:
 	_refresh()
 
 
+## 界面风格（5C）：存 XConfig，本页立刻换成对应风格；菜单是按旧风格建的，所以关设置页时连菜单一起回地图（to_map），重开菜单就是新风格
+func _set_ui_skin(v: bool) -> void:
+	if XConfig.ui_skin_new() == v:
+		return
+	XConfig.set_flag("codexUiSkin", v)
+	to_map = true
+	XSound.system(0)
+	var symbol := str(_list[index][1])
+	_build_list()
+	for n in _bg_nodes:
+		n.queue_free()
+	_add_backdrop()
+	_show_skin(XUiSkin.on())
+	index = maxi(_list.find_custom(func(o): return o[1] == symbol), 0)
+	top = clampi(top, 0, maxi(0, _list.size() - ROWS))
+	if index < top:
+		top = index
+	elif index >= top + ROWS:
+		top = index - ROWS + 1
+	_refresh()
+
+
+func _set_ui_motion(v: int) -> void:
+	if XConfig.ui_motion() == v:
+		return
+	XConfig.set_ui_motion(v)
+	XSound.system(0)
+	_refresh()
+
+
+func _set_formation(v: int) -> void:
+	if XConfig.party_formation() == v:
+		return
+	XConfig.set_party_formation(v)
+	XSound.system(0)
+	_refresh()
+
+
 func _set_speed(v: int) -> void:
 	if XConfig.battle_speed() == v:
 		return
@@ -330,6 +452,9 @@ func _open_hang_up() -> void:
 
 
 func _open_page(page: Control) -> void:
+	if skin != null:
+		_open_page_skin(page)
+		return
 	_page = page
 	for node in get_children():
 		if node is CanvasItem:
@@ -347,6 +472,35 @@ func _open_page(page: Control) -> void:
 		_refresh())
 
 
+## 新界面下开子页（画质、消息提醒、挂机……还是旧页面，按 1280×720 摆）：视口比 16:9 宽时放进居中的 1280×720 外框，背景用本页的（子页自己的新皮肤黑底藏掉，免得接缝）
+func _open_page_skin(page: Control) -> void:
+	_page = page
+	skin.hide()
+	var host := Control.new()
+	host.name = "SkinSubPageHost"
+	host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	host.size = Vector2(1280, 720)
+	var place := func(): host.position = Vector2(maxf(roundf((get_viewport_rect().size.x - 1280.0) / 2.0), 0.0), 0)
+	place.call()
+	var vp := get_viewport()
+	vp.size_changed.connect(place)   # 开着子页时拖窗口、转屏，外框跟着居中
+	host.tree_exiting.connect(func(): vp.size_changed.disconnect(place))
+	add_child(host)
+	host.add_child(page)
+	for n in page.get_children():
+		if n.name == "SkinBackdrop":
+			n.hide()
+	page.closed.connect(func():
+		page.queue_free()
+		host.queue_free()
+		_page = null
+		skin.show()
+		if not KEEP_INDEX_AFTER_PAGE:
+			index = 0
+			top = 0
+		_refresh())
+
+
 func _gui_input(event: InputEvent) -> void:
 	if _page or not (event is InputEventMouseButton and event.pressed):
 		return
@@ -354,10 +508,14 @@ func _gui_input(event: InputEvent) -> void:
 		MOUSE_BUTTON_RIGHT:
 			cancel()
 		MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP:
+			if skin != null:
+				return   # 新布局的滚动、点击由列表自己接（XSkinOptionsPage）
 			var d := 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1
 			top = clampi(top + d, 0, maxi(0, _list.size() - ROWS))
 			_refresh()
 		MOUSE_BUTTON_LEFT:
+			if skin != null:
+				return
 			var p: Vector2 = event.position - RECT.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 			if not RECT.has_point(event.position) or p.y < 0 or p.y >= ROWS * LH:
 				return
@@ -372,6 +530,9 @@ func _gui_input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _page:
+		return
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
 		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)

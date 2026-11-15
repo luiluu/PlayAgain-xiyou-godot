@@ -1,12 +1,12 @@
 extends Node
-## 【ag·未经审查】米拉人形 u2 新美术接入（content/mira/img/，开关 XMira.ART；XDB.img_path、XAppearance.sv_form／for_look／PROFILES、XActorBook.sprite_spec）：
-## - path.*：行走 $BlackDragon_Mira／$Codex_Mira_Walk_u2、人形战斗 Codex_Mira_SV_u2／BlackDragon_Mira_SV 都读 content/mira/，不读同步出的旧图。
-## - walk.*：行走图 144×192，四方向（行）× 三帧（列）每格 48×48 都有画面且脚底在第 45 行。
+## 【ag·未经审查】米拉人形新美术接入（content/mira/img/，开关 XMira.ART；XDB.img_path、XAppearance.sv_form／for_look／PROFILES、XActorBook.sprite_spec）：
+## - path.*：行走 $BlackDragon_Mira／$Codex_Mira_Walk_Final、人形战斗 Codex_Mira_SV_u2／BlackDragon_Mira_SV 都读 content/mira/，不读同步出的旧图。
+## - walk.*：行走图 144×192，四方向（行）× 三帧（列）每格 48×48 都有画面，可见高 47、脚底在第 47 行（0-based，与原版同高）。
 ## - human.*：人形战斗外观键为 BlackDragon_Mira_SV|form:MiraHuman_u2，18 种动作全部读 Codex_Mira_SV_u2.png（64×64 格）。
 ## - idle.*：定妆待机帧（wait 第 1 帧）可见高 58、脚底第 61 行，与归一档一致；缩放 72/58、最近邻（不平滑）。
 ## - dragon.*：黑龙形态（进阶 3、学 10161、带 2592）不受开关影响，仍走 UserSV_MiraDragon 多帧与旧归一档。
 ## - book.*：图鉴立绘开着走 Codex_Mira_SV_u2（单帧按档缩放），关掉回到 UserSV_MiraHuman1_0 多帧。
-## - map.*：地图行走角色（MVCharacter）开着取 $Codex_Mira_Walk_u2.png，关掉回到 $BlackDragon_Mira.png。
+## - map.*：地图行走角色（MVCharacter）开着取 $Codex_Mira_Walk_Final.png，关掉回到 $BlackDragon_Mira.png。
 ## - rollback.*：XMira.ART = false 回到原版行走图、UserSV_MiraHuman 多帧战斗图与旧图鉴；重新打开恢复新图。
 ## 窗口模式加 -- --out=<目录> 时另存战斗待机、地图行走、图鉴的原始对比帧。
 var results := []
@@ -71,10 +71,10 @@ static func _path_of(look: XAppearance, m: String, i := 0) -> String:
 
 
 func _paths() -> void:
-	var want_walk := OWN + "characters/$Codex_Mira_Walk_u2.png"
+	var want_walk := OWN + "characters/$Codex_Mira_Walk_Final.png"
 	var want_sv := OWN + "sv_actors/Codex_Mira_SV_u2.png"
 	check("path.walk", XDB.img_path("characters", "$BlackDragon_Mira") == want_walk
-		and XDB.img_path("characters", "$Codex_Mira_Walk_u2") == want_walk,
+		and XDB.img_path("characters", "$Codex_Mira_Walk_Final") == want_walk,
 		XDB.img_path("characters", "$BlackDragon_Mira"))
 	check("path.sv", XDB.img_path("sv_actors", "Codex_Mira_SV_u2") == want_sv
 		and XDB.img_path("sv_actors", "BlackDragon_Mira_SV") == want_sv,
@@ -91,15 +91,20 @@ func _walk() -> void:
 		img.decompress()
 	var empty := []
 	var bad_foot := []
+	var bad_height := []
 	for row in 4:
 		for col in 3:
 			var box := _bbox(t, Rect2(col * 48, row * 48, 48, 48))
 			if box[2] <= box[0]:
 				empty.append([row, col])
-			elif box[3] != 48 or box[1] < 3:
-				bad_foot.append([row, col, box[1], box[3]])
+			else:
+				if box[3] != 48:
+					bad_foot.append([row, col, box[1], box[3]])
+				if box[3] - box[1] != 47:
+					bad_height.append([row, col, box[1], box[3]])
 	check("walk.4x3_frames", empty.is_empty(), empty)
 	check("walk.foot_row_47", bad_foot.is_empty(), bad_foot)
+	check("walk.height_47", bad_height.is_empty(), bad_height)
 
 
 func _battle() -> void:
@@ -194,7 +199,7 @@ func _map_walk() -> void:
 	XMira.ART = true
 	ch.set_image("$BlackDragon_Mira", 0)
 	var p_new := str(ch._tex.resource_path) if ch._tex else ""
-	check("map.walk_new", p_new == OWN + "characters/$Codex_Mira_Walk_u2.png", p_new)
+	check("map.walk_new", p_new == OWN + "characters/$Codex_Mira_Walk_Final.png", p_new)
 	XMira.ART = false
 	ch.set_image("$BlackDragon_Mira", 0)
 	var p_old := str(ch._tex.resource_path) if ch._tex else ""

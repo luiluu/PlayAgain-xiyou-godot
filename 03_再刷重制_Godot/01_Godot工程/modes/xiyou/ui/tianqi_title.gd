@@ -11,6 +11,10 @@ extends Control
 ##   未选中用下半、0.9 倍（照菜单动效 v2 样张量的），0.12 秒过渡；光标 T4 缩到 0.4 倍放在选中项左侧，切换时从左 4 像素 0.2 秒减速滑入。
 ## - extras：给 entry.gd 放版本号、导入／导出存档、「继续」的层，跟菜单一起淡入。
 ## 回退：ENABLED = false（available() 为假）时 entry.gd 照旧走原版标题；XIntroAnim.ENABLED = false 时 play_entrance() 不做进场。
+## 新界面（ui-skin-3b，盘点清册 #4）：skin_on() 时底图、Logo、五项两态字图照旧（标题美术是定稿），只换「选中」和角落按钮：
+## 光标 T4 藏起来（位置照算），改成红乙选中条（XSkinSelectBar，0.09 秒滑动）垫在选中项后面；版本号、返回版本选择、继续、
+## 导入导出、反馈这些 extras 换成黑面板细线按钮＋思源黑体；不是触屏时底部居中放按键提示。选中、执行、进场一律照旧。
+## skin_on()：标题还没读档，不能按存档判断，改按构建判断——开发构建（天启篇开着）开、发行构建不开；ENABLED／FORCE／--ui-skin= 同 XUiSkin。
 
 signal entrance_finished
 
@@ -84,6 +88,20 @@ var _eye_tex: Array = []
 var _entering := false
 var _t := 0.0
 var _skip := false
+var skin_bar: XSkinSelectBar     # 新界面的选中条（skin_on() 时才有）
+var skin_hints: XSkinKeyHints
+
+
+## 新界面开没开（标题页专用：标题还没读档，按构建判断；发行构建恒关，同天启篇发行门）
+static func skin_on() -> bool:
+	if not XUiSkin.ENABLED:
+		return false
+	if XUiSkin.FORCE:
+		return true
+	var c := XUiSkin.cli_mode()
+	if c >= 0:
+		return c == 1
+	return not ReleaseEntry.is_release()
 
 
 ## 开关开着、素材都在（不看天启篇内容开关：Kyo 11-11 整包带新标题、内容照改版）
@@ -152,6 +170,18 @@ func setup(actions: Dictionary, disabled: Array = []) -> XTianqiTitle:
 	cursor.size = cursor.texture.get_size()
 	cursor.scale = Vector2.ONE * CURSOR_SCALE
 	menu.add_child(cursor)
+	skin_bar = null
+	skin_hints = null
+	if skin_on():
+		cursor.visible = false
+		skin_bar = XSkinSelectBar.new()
+		menu.add_child(skin_bar)
+		menu.move_child(skin_bar, 0)   # 垫在字图后面
+		if not XPlatform.is_touch():
+			skin_hints = XSkinKeyHints.new()
+			skin_hints.name = "SkinKeyHints"
+			skin_hints.set_hints([["↑ / ↓", "选择"], ["确定", "进入"]])
+			menu.add_child(skin_hints)
 
 	extras = Control.new()
 	extras.name = "Extras"
@@ -269,6 +299,86 @@ func _layout() -> void:
 		back_button.position = Vector2(12, vs.y - 52)
 	_apply_items()
 	_place_cursor()
+	if skin_on():
+		_skin_extras()
+		if skin_hints != null:
+			skin_hints.position = Vector2(roundf((vs.x - skin_hints.total_width()) / 2.0), vs.y - XUiSkin.HINT_BOTTOM - XSkinKeyHints.H)
+
+
+## 新界面：extras 里的按钮换黑面板细线、选中／悬停用红乙选中条，字换思源黑体；文字标签去描边、换次要字色
+func _skin_extras() -> void:
+	if extras == null:
+		return
+	var nodes: Array = [extras]
+	while not nodes.is_empty():
+		var n: Node = nodes.pop_back()
+		nodes.append_array(n.get_children())
+		if n.has_meta("skin_done"):
+			continue
+		if n is Button:
+			_skin_button(n)
+			n.set_meta("skin_done", true)
+		elif n is Label:
+			var l := n as Label
+			if l.label_settings != null:
+				var ls := l.label_settings.duplicate() as LabelSettings
+				ls.font = XUiSkin.font("body")
+				ls.outline_size = 0
+				ls.font_size = clampi(ls.font_size, XUiSkin.FS_AUX, XUiSkin.FS_AUX_MAX)
+				ls.font_color = XUiSkin.TEXT_2
+				l.label_settings = ls
+			else:
+				l.add_theme_font_override("font", XUiSkin.font("body"))
+				l.add_theme_constant_override("outline_size", 0)
+				l.add_theme_color_override("font_color", XUiSkin.TEXT_2)
+			n.set_meta("skin_done", true)
+	# 反馈问卷行叠在群号行正上方（entry.gd 按换皮前的高度摆的）：换皮后两个按钮都可能撑高、各自往上长，问卷行重新贴到群号行新的顶上
+	var group := extras.find_child("FeedbackGroup", true, false) as Control
+	var form := extras.find_child("FeedbackForm", true, false) as Control
+	if group != null and form != null and form.position.y + form.size.y > group.position.y:
+		form.position.y = group.position.y - form.size.y
+
+
+## 内边距沿用按钮原来那一档、字号不变（14～17 之间），按钮大小不变：entry.gd 按原大小摆好的上下叠放（反馈群号与问卷）不会挤到一起
+static func _skin_button(b: Button) -> void:
+	var old := b.get_theme_stylebox("normal")
+	var fs := b.get_theme_font_size("font_size")
+	var keep := b.size
+	XSkinButton.apply(b, "", clampi(fs, XUiSkin.FS_AUX, XUiSkin.FS_AUX_MAX))
+	var styles := ["normal", "disabled", "hover", "pressed", "focus", "hover_pressed"].map(func(st): return b.get_theme_stylebox(st))
+	for sb in styles:
+		for side in [SIDE_LEFT, SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM]:
+			sb.set_content_margin(side, old.get_content_margin(side) if old != null else 4.0)
+	# 思源黑体行高比原字体高：撑高了就先压上下内边距、再把字号降一档（不低于 14），保持原高
+	var f := clampi(fs, XUiSkin.FS_AUX, XUiSkin.FS_AUX_MAX)
+	for k in 6:
+		var over := b.get_combined_minimum_size().y - keep.y
+		if keep.y <= 0.0 or over <= 0.5:
+			break
+		var top: float = styles[0].get_content_margin(SIDE_TOP)
+		if top > 0.0:
+			for sb in styles:
+				for side in [SIDE_TOP, SIDE_BOTTOM]:
+					sb.set_content_margin(side, maxf(0.0, top - ceilf(over / 2.0)))
+		elif f > XUiSkin.FS_AUX:
+			f -= 1
+			b.add_theme_font_size_override("font_size", f)
+		else:
+			break
+	b.size = keep
+	# 压不回原高（字体行高随环境不同，云端 Linux 就压不回）：按钮只能撑高，往上长、底边不动，不压到下面一行（问卷行压群号行，云端 title_flow 挂）
+	var grown := b.size.y - keep.y
+	if keep.y > 0.0 and grown > 0.5:
+		b.position.y -= grown
+
+
+## 选中条垫在选中项字图后面：横向盖住放大后的字（字图 20～179），竖向取字图高（上下不超出行距）
+func skin_bar_rect() -> Rect2:
+	var b: Button = _items[_sel].node
+	var center := b.position + b.size / 2.0
+	var w := (b.size.x - TEXT_LEFT * 2.0) * SCALE_ON + XUiSkin.PAD * 2.0
+	var h := minf(b.size.y * SCALE_ON, MENU_GAP - 4.0)
+	return Rect2(roundf(center.x - w / 2.0), roundf(center.y - h / 2.0), roundf(w), roundf(h))
 
 
 func _notification(what: int) -> void:
@@ -350,6 +460,8 @@ func _place_cursor() -> void:
 	var u := clampf(_cursor_t / CURSOR_TIME, 0.0, 1.0)
 	var e := 1.0 - pow(1.0 - u, 3.0)
 	cursor.position = cursor_target() - Vector2(CURSOR_SLIDE * (1.0 - e), 0)
+	if skin_bar != null:
+		skin_bar.move_to(skin_bar_rect())
 
 
 # ---- 进场 ----

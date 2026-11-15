@@ -40,6 +40,7 @@ var name_win: XMVWindow
 var choice_win: XMVWindow
 var num_win: XMVWindow
 var _num_buttons: Control
+var _hints: XSkinKeyHints
 
 var _busy := false
 ## XdRs_HangUp：挂机中每页开始计 messageCount 帧，到时自动翻页/关闭
@@ -102,6 +103,67 @@ func _ready() -> void:
 	num_win.add_child(_num_buttons)
 	name_win = _make_window(_paint_name)
 	name_win.size = Vector2(240, LH + 28)
+	_hints = XSkinKeyHints.new()
+	_hints.visible = false
+	add_child(_hints)
+	resized.connect(_update_hints)
+
+
+func _view_size() -> Vector2:
+	return get_viewport_rect().size if is_inside_tree() else SCREEN
+
+
+func _msg_h() -> float:
+	return 180.0 if XUiSkin.on() else MSG_HEIGHT
+
+
+func _choice_lh() -> float:
+	return 42.0 if XUiSkin.on() else LH
+
+
+func _digit_w() -> float:
+	return 38.0 if XUiSkin.on() else DIGIT_W
+
+
+func _num_lh() -> float:
+	return 42.0 if XUiSkin.on() else LH
+
+
+func _sync_skin() -> void:
+	var on := XUiSkin.on()
+	win.padding = 18.0 if on else XMVWindow.PADDING
+	win.canvas.font = XUiSkin.font("body") if on else XUI.font()
+	win.canvas.clean_text = on
+	name_win.padding = 10.0 if on else XMVWindow.PADDING
+	name_win.canvas.font = XUiSkin.font("title") if on else XUI.font()
+	name_win.canvas.clean_text = on
+	choice_win.padding = 16.0 if on else XMVWindow.PADDING
+	choice_win.canvas.font = XUiSkin.font("body") if on else XUI.font()
+	choice_win.canvas.clean_text = on
+	num_win.padding = 16.0 if on else XMVWindow.PADDING
+	num_win.canvas.font = XUiSkin.font("num") if on else XUI.font()
+	num_win.canvas.clean_text = on
+
+
+func _update_hints() -> void:
+	if _hints == null:
+		return
+	if not XUiSkin.on() or not _busy:
+		_hints.visible = false
+		return
+	if _input_mode == "choice":
+		_hints.set_hints([["确定", "选择"]] if _cancel_type == -1 else [["确定", "选择"], ["取消", "返回"]])
+		_hints.visible = true
+	elif _input_mode == "number":
+		_hints.set_hints([["← / →", "换位"], ["↑ / ↓", "调数"], ["确定", "确认"]])
+		_hints.visible = true
+	else:
+		if _pause_skip:
+			_hints.visible = false
+			return
+		_hints.set_hints([["确定", "继续"]])
+		_hints.visible = true
+	_hints.place(_view_size())
 
 
 func _make_window(painter: Callable) -> XMVWindow:
@@ -192,18 +254,24 @@ func _try_start() -> void:
 
 
 func _start_message() -> void:
+	_sync_skin()
 	_name_active = false
 	_face = str(_msg.get("face", ""))
 	_face_index = int(_msg.get("index", 0))
 	var wrapped := word_wrap("\n".join(_msg.get("lines", [])))
 	var text := XMVText.convert_escapes(wrapped[0])
 	text = _convert_message_codes(text)
-	_state = XMVText.new(text, 0, 0, SCREEN.x - XMVWindow.PADDING * 2 - (WORD_WRAP_MARGIN if wrapped[1] else 0.0))
+	var on := XUiSkin.on()
+	var view := _view_size()
+	var win_w := minf(view.x - XSkinLayout.margin_for(view.x) * 2.0, 1200.0) if on else SCREEN.x
+	var wrap_w := win_w - win.padding * 2.0 - (WORD_WRAP_MARGIN if wrapped[1] else 0.0)
+	_state = XMVText.new(text, 0, 0, wrap_w, 24 if on else XUI.FONT_SIZE, XUiSkin.font("body") if on else null, on)
 	_new_page()
 	_update_placement()
 	win.background_type = int(_msg.get("background", 0))
 	win.open()
 	_refresh_name_placement()
+	_update_hints()
 
 
 ## YEP_MessageCore setWordWrap（Word Wrap Space 关）：文字含 <WordWrap> 时去掉标记、去掉换行、<BR> 换成换行；
@@ -248,15 +316,16 @@ func _convert_message_codes(text: String) -> String:
 
 ## Window_Message.newPage：清空、复位字体、载入头像、x = newLineX、y = 0
 func _new_page() -> void:
+	var on := XUiSkin.on()
 	_state.glyphs = []
 	_page_glyphs = _state.glyphs
-	_state.size = XUI.FONT_SIZE
-	_state.color = XUI.TEXT
+	_state.size = 24 if on else XUI.FONT_SIZE
+	_state.color = XUiSkin.TEXT if on else XUI.TEXT
 	_state.left = FACE_INDENT if _face != "" else 0.0
 	_state.x = _state.left
 	_state.y = 0
 	_state.height = _state.calc_height()
-	# 正式核心 clearFlags：整页立即显示；设置「对话跳过」时行内也快显，且文字完不等按键直接关闭
+	# 正式核心 clearFlags：整页立即显示；设置「对话跳过」时行内也快显，且文字完不等待按键直接关闭
 	_show_fast = true
 	_line_fast = XConfig.flag("dhtg")
 	_pause_skip = XConfig.flag("dhtg")
@@ -268,18 +337,44 @@ func _new_page() -> void:
 ## Window_Message.updatePlacement：y = 位置 ×（720 − 高）/ 2
 func _update_placement() -> void:
 	var pos := int(_msg.get("position", 2))
+	if XUiSkin.on():
+		var view := _view_size()
+		var h := _msg_h()
+		var w := minf(view.x - XSkinLayout.margin_for(view.x) * 2.0, 1200.0)
+		var x := roundf((view.x - w) / 2.0)
+		if pos == 0:
+			_msg_y = 20.0
+		elif pos == 1:
+			_msg_y = roundf((view.y - h) / 2.0)
+		else:
+			_msg_y = view.y - h - 40.0
+		win.set_rect(Rect2(x, _msg_y, w, h))
+		return
 	_msg_y = pos * (SCREEN.y - MSG_HEIGHT) / 2.0
 	win.set_rect(Rect2(0, _msg_y, SCREEN.x, MSG_HEIGHT))
 
 
 # ---- 名字框 ----
 func _refresh_name(raw: String, pos: int) -> void:
-	var t := XMVText.new("\u001bC[6]" + raw)
-	var w := ceilf(t.run() + XMVWindow.PADDING * 2 + NAME_PAD)
-	t = XMVText.new("\u001bC[6]" + raw, NAME_PAD / 2.0, 0, w - XMVWindow.PADDING * 2)
-	t.run()
-	_name_glyphs = t.glyphs
-	name_win.size = Vector2(w, LH + XMVWindow.PADDING * 2)
+	if XUiSkin.on():
+		var tf := XUiSkin.font("title")
+		var t := XMVText.new(raw, 0, 0, 0.0, 22, tf, true)
+		t.color = XUiSkin.GOLD
+		var tw := t.run()
+		var pad_x := 20.0
+		var w := ceilf(tw + name_win.padding * 2.0 + pad_x * 2.0)
+		t = XMVText.new(raw, pad_x, 0, w - name_win.padding * 2.0, 22, tf, true)
+		t.color = XUiSkin.GOLD
+		t.run()
+		_name_glyphs = t.glyphs
+		name_win.size = Vector2(w, 30.0 + name_win.padding * 2.0)
+	else:
+		var t := XMVText.new("\u001bC[6]" + raw)
+		var w := ceilf(t.run() + XMVWindow.PADDING * 2 + NAME_PAD)
+		t = XMVText.new("\u001bC[6]" + raw, NAME_PAD / 2.0, 0, w - XMVWindow.PADDING * 2)
+		t.run()
+		_name_glyphs = t.glyphs
+		name_win.size = Vector2(w, LH + XMVWindow.PADDING * 2)
 	name_win.set_meta("pos", pos)
 	name_win.open()
 	_name_active = true
@@ -292,6 +387,25 @@ func _refresh_name_placement() -> void:
 		return
 	var pos: int = name_win.get_meta("pos", 1)
 	var w := name_win.size.x
+	if XUiSkin.on():
+		var x := 0.0
+		match pos:
+			1:
+				x = win.position.x + 8.0
+			2:
+				x = win.position.x + win.size.x * 3.0 / 10.0 - w / 2.0
+			3:
+				x = win.position.x + win.size.x / 2.0 - w / 2.0
+			4:
+				x = win.position.x + win.size.x * 7.0 / 10.0 - w / 2.0
+			_:
+				x = win.position.x + win.size.x - w - 8.0
+		x = clampf(x, win.position.x, win.position.x + win.size.x - w)
+		var y := win.position.y - name_win.size.y - 6.0
+		if int(_msg.get("position", 2)) == 0 or y < 8.0:
+			y = win.position.y + win.size.y + 6.0
+		name_win.position = Vector2(roundf(x), roundf(y))
+		return
 	var x := 0.0
 	match pos:
 		1:
@@ -390,7 +504,7 @@ func _update_message() -> void:
 
 
 func _needs_new_page() -> bool:
-	return not _state.at_end() and _state.y + _state.height > win.size.y - XMVWindow.PADDING * 2
+	return not _state.at_end() and _state.y + _state.height > win.size.y - win.padding * 2.0
 
 
 func _process_character() -> void:
@@ -452,42 +566,63 @@ func _terminate(result: int) -> void:
 	_input_mode = ""
 	_state = null
 	_busy = false
+	_update_hints()
 	_finished.emit(result)
 
 
 # ---- 选项窗 ----
 func _start_choice() -> void:
+	_sync_skin()
 	_input_mode = "choice"
 	_choices = _msg.choices
 	var n := _choices.size()
 	var cancel := int(_msg.get("cancel", -1))
 	_cancel_type = -2 if cancel >= n else cancel
 	_choice_rows = mini(n, CHOICE_MAX_ROWS)
-	if _msg_y < SCREEN.y / 2.0 and _msg_y + MSG_HEIGHT > SCREEN.y / 2.0:
+	var on := XUiSkin.on()
+	var view := _view_size()
+	var mh := _msg_h()
+	if _msg_y < view.y / 2.0 and _msg_y + mh > view.y / 2.0:
 		_choice_rows = mini(n, 4)
 	_choice_rows = maxi(1, _choice_rows)
-	var max_w := 96.0
+	var max_w := 140.0 if on else 96.0
 	_choice_glyphs = []
 	for c in _choices:
-		var t := XMVText.new(XMVText.convert_escapes(str(c)), 6)
-		max_w = maxf(max_w, t.run() + 12)
+		var t := XMVText.new(XMVText.convert_escapes(str(c)), 12.0 if on else 6.0, 0.0, 0.0, 21 if on else XUI.FONT_SIZE, XUiSkin.font("body") if on else null, on)
+		max_w = maxf(max_w, t.run() + (24.0 if on else 12.0))
 		_choice_glyphs.append(t.glyphs)
-	var w := minf(max_w + XMVWindow.PADDING * 2, SCREEN.x)
-	var h := _choice_rows * LH + XMVWindow.PADDING * 2
+	var lh := _choice_lh()
+	var margin := XSkinLayout.margin_for(view.x) if on else 0.0
+	var w := minf(max_w + choice_win.padding * 2.0, view.x - margin * 2.0)
+	var h := _choice_rows * lh + choice_win.padding * 2.0
 	var x := 0.0
+	var left_edge := win.position.x if (on and not _msg.get("lines", []).is_empty()) else margin
+	var right_edge := (win.position.x + win.size.x) if (on and not _msg.get("lines", []).is_empty()) else (view.x - margin)
 	match int(_msg.get("choice_position", 2)):
 		0:
-			x = 0
+			x = left_edge
 		1:
-			x = (SCREEN.x - w) / 2.0
+			x = roundf((view.x - w) / 2.0)
 		_:
-			x = SCREEN.x - w
-	var y := _msg_y - h if _msg_y >= SCREEN.y / 2.0 else _msg_y + MSG_HEIGHT
-	match int(_msg.get("position", 2)):
-		0:
-			y = MSG_HEIGHT
-		2:
-			y = SCREEN.y - MSG_HEIGHT - h
+			x = right_edge - w
+	var y := 0.0
+	if on:
+		if _msg.get("lines", []).is_empty() and not _msg.has("position"):
+			y = roundf((view.y - h) / 2.0)
+		else:
+			y = _msg_y - h - 8.0 if _msg_y >= view.y / 2.0 else _msg_y + mh + 8.0
+			match int(_msg.get("position", 2)):
+				0:
+					y = _msg_y + mh + 8.0
+				2:
+					y = _msg_y - h - 8.0
+	else:
+		y = _msg_y - h if _msg_y >= SCREEN.y / 2.0 else _msg_y + MSG_HEIGHT
+		match int(_msg.get("position", 2)):
+			0:
+				y = MSG_HEIGHT
+			2:
+				y = SCREEN.y - MSG_HEIGHT - h
 	choice_win.set_rect(Rect2(x, y, w, h))
 	choice_win.background_type = int(_msg.get("choice_background", 0))
 	_choice_top = 0
@@ -495,6 +630,7 @@ func _start_choice() -> void:
 	choice_win.canvas.blink = true
 	choice_win.open()
 	_touching = false
+	_update_hints()
 
 
 func _select(i: int) -> void:
@@ -559,11 +695,13 @@ func _update_choice() -> void:
 
 
 func _choice_hit(p: Vector2) -> int:
-	var local := p - choice_win.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
-	var cw := choice_win.size.x - XMVWindow.PADDING * 2
-	if local.x < 0 or local.x >= cw or local.y < 0 or local.y >= _choice_rows * LH:
+	var pad := choice_win.padding
+	var lh := _choice_lh()
+	var local := p - choice_win.position - Vector2(pad, pad)
+	var cw := choice_win.size.x - pad * 2.0
+	if local.x < 0 or local.x >= cw or local.y < 0 or local.y >= _choice_rows * lh:
 		return -1
-	var i := _choice_top + floori(local.y / LH)
+	var i := _choice_top + floori(local.y / lh)
 	return i if i < _choices.size() else -1
 
 
@@ -575,20 +713,35 @@ func _close_choice(result: int) -> void:
 
 # ---- 数值输入 ----
 func _start_number() -> void:
+	_sync_skin()
 	_input_mode = "number"
 	_digits = clampi(int(_msg.get("digits", 1)), 1, 8)
 	_number = clampi(int(_msg.get("number_value", 0)), 0, int(pow(10, _digits)) - 1)
-	var w := _digits * DIGIT_W + XMVWindow.PADDING * 2
-	var h := LH + XMVWindow.PADDING * 2
-	var y := _msg_y - h - 8 if _msg_y >= SCREEN.y / 2.0 else _msg_y + MSG_HEIGHT + 8
-	match int(_msg.get("position", 2)):
-		0:
-			y = MSG_HEIGHT
-		1:
-			y = _msg_y - h if _msg_y >= SCREEN.y / 2.0 else _msg_y + MSG_HEIGHT
-		2:
-			y = SCREEN.y - MSG_HEIGHT - h
-	num_win.set_rect(Rect2((SCREEN.x - w) / 2.0, y, w, h))
+	var on := XUiSkin.on()
+	var view := _view_size()
+	var dw := _digit_w()
+	var lh := _num_lh()
+	var mh := _msg_h()
+	var w := _digits * dw + num_win.padding * 2.0
+	var h := lh + num_win.padding * 2.0
+	var y := 0.0
+	if on:
+		y = _msg_y - h - 8.0 if _msg_y >= view.y / 2.0 else _msg_y + mh + 8.0
+		match int(_msg.get("position", 2)):
+			0:
+				y = _msg_y + mh + 8.0
+			2:
+				y = _msg_y - h - 8.0
+	else:
+		y = _msg_y - h - 8 if _msg_y >= SCREEN.y / 2.0 else _msg_y + MSG_HEIGHT + 8
+		match int(_msg.get("position", 2)):
+			0:
+				y = MSG_HEIGHT
+			1:
+				y = _msg_y - h if _msg_y >= SCREEN.y / 2.0 else _msg_y + MSG_HEIGHT
+			2:
+				y = SCREEN.y - MSG_HEIGHT - h
+	num_win.set_rect(Rect2(roundf((view.x - w) / 2.0), y, w, h))
 	num_win.background_type = 0
 	_digit_index = 0
 	_buttons_visible = _last_touch
@@ -597,6 +750,7 @@ func _start_number() -> void:
 	num_win.canvas.blink = true
 	num_win.open()
 	num_win.refresh()
+	_update_hints()
 
 
 ## ButtonSet.png：下 (48,0,48,48)、上 (96,0,48,48)、确定 (192,0,96,48)；按下时用 y 48 那一排
@@ -607,7 +761,7 @@ func _button_rects() -> Array:
 	for b in BUTTONS:
 		total += b.size.x + 16
 	var x := (num_win.size.x - total) / 2.0
-	var y := -48.0 - 8.0 if _msg_y >= SCREEN.y / 2.0 else num_win.size.y + 8.0
+	var y := -48.0 - 8.0 if _msg_y >= _view_size().y / 2.0 else num_win.size.y + 8.0
 	var out := []
 	for b in BUTTONS:
 		out.append(Rect2(x, y, b.size.x, 48))
@@ -624,10 +778,31 @@ func _place_buttons() -> void:
 func _draw_buttons() -> void:
 	if not _buttons_visible or not num_win.is_open():
 		return
+	var rects := _button_rects()
+	if XUiSkin.on():
+		var labels := ["-", "+", "确定"]
+		var bf := XUiSkin.font("body")
+		var ci := _num_buttons.get_canvas_item()
+		for i in range(3):
+			var r: Rect2 = rects[i]
+			var down := i == _button_down
+			var sb := StyleBoxFlat.new()
+			sb.set_corner_radius_all(20)
+			if i == 2:
+				sb.bg_color = XUiSkin.SEL_FILL.darkened(0.15) if down else XUiSkin.SEL_FILL
+				sb.border_color = Color(XUiSkin.SEL_LINE, 0.85)
+			else:
+				sb.bg_color = Color(XUiSkin.PANEL_LOW if down else XUiSkin.PANEL, 0.96)
+				sb.border_color = Color(XUiSkin.SEL_LINE if down else XUiSkin.LINE, 0.65)
+			sb.set_border_width_all(1)
+			sb.draw(ci, r)
+			var tw := bf.get_string_size(labels[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+			_num_buttons.draw_string(bf, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + 18 * 0.36),
+				labels[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT)
+		return
 	var tex: Texture2D = _button_texture()
 	if tex == null:
 		return
-	var rects := _button_rects()
 	for i in range(3):
 		var src: Rect2 = BUTTONS[i]
 		if i == _button_down:
@@ -659,6 +834,9 @@ func _update_number() -> void:
 		return
 	_num_buttons.queue_redraw()
 	var last := _digit_index
+	var dw := _digit_w()
+	var lh := _num_lh()
+	var pad := num_win.padding
 	# Window_Selectable.cursorRight/Left：横排，按下（非连发）时首尾相接
 	if _in.get("right", false) and _digits >= 2 and (_digit_index < _digits - 1 or _in.get("right_trig", false)):
 		_digit_index = (_digit_index + 1) % _digits
@@ -676,9 +854,9 @@ func _update_number() -> void:
 				if Rect2(num_win.position + rects[i].position, rects[i].size).has_point(p):
 					if _in.get("touch_trig", false):
 						_button_down = i
-		var local := p - num_win.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
-		if _in.get("touch_trig", false) and local.y >= 0 and local.y < LH and local.x >= 0 and local.x < _digits * DIGIT_W:
-			_digit_index = floori(local.x / DIGIT_W)
+		var local := p - num_win.position - Vector2(pad, pad)
+		if _in.get("touch_trig", false) and local.y >= 0 and local.y < lh and local.x >= 0 and local.x < _digits * dw:
+			_digit_index = floori(local.x / dw)
 	if _in.get("touch_release", false) and _button_down >= 0:
 		var b := _button_down
 		_button_down = -1
@@ -713,6 +891,14 @@ func _number_ok() -> void:
 func _paint_message(c: XMVCanvas) -> void:
 	if _face != "":
 		c.face(_face, _face_index, 0, 0)
+		if XUiSkin.on():
+			var fr := StyleBoxFlat.new()
+			fr.draw_center = false
+			fr.border_color = Color(XUiSkin.LINE, 0.28)
+			fr.set_border_width_all(1)
+			fr.set_corner_radius_all(8)
+			c.draw_style_box(fr, Rect2(0, 0, 144, 144))
+			c.draw_line(Vector2(156, 4), Vector2(156, 140), Color(XUiSkin.LINE, 0.16), 1.0)
 	XMVText.paint(c, _page_glyphs)
 
 
@@ -721,20 +907,34 @@ func _paint_name(c: XMVCanvas) -> void:
 
 
 func _paint_choices(c: XMVCanvas) -> void:
+	var lh := _choice_lh()
+	var dy := roundf((lh - 29.0) / 2.0) if XUiSkin.on() else 0.0
 	for i in range(_choices.size()):
-		var y := (i - _choice_top) * LH
-		if y < 0 or y >= _choice_rows * LH:
+		var y := (i - _choice_top) * lh
+		if y < 0 or y >= _choice_rows * lh:
 			continue
 		if i == _choice_index:
-			c.cursor(Rect2(0, y, c.size.x, LH), _input_mode == "choice")
-		XMVText.paint(c, _choice_glyphs[i], 0, y)
+			c.cursor(Rect2(0, y, c.size.x, lh), _input_mode == "choice")
+		XMVText.paint(c, _choice_glyphs[i], 0, y + dy)
 
 
 func _paint_number(c: XMVCanvas) -> void:
-	c.cursor(Rect2(_digit_index * DIGIT_W, 0, DIGIT_W, LH), _input_mode == "number")
+	var on := XUiSkin.on()
+	var dw := _digit_w()
+	var lh := _num_lh()
+	if on:
+		for i in range(_digits):
+			var slot := StyleBoxFlat.new()
+			slot.bg_color = Color(XUiSkin.BG, 0.55)
+			slot.border_color = Color(XUiSkin.LINE, 0.22)
+			slot.set_border_width_all(1)
+			slot.set_corner_radius_all(6)
+			c.draw_style_box(slot, Rect2(i * dw + 2, 2, dw - 4, lh - 4))
+	c.cursor(Rect2(_digit_index * dw, 0, dw, lh), _input_mode == "number")
 	var s := str(_number).pad_zeros(_digits)
 	for i in range(_digits):
-		c.text(s[i], i * DIGIT_W, 0, DIGIT_W, "center")
+		var col := (XUiSkin.GOLD_LIGHT if i == _digit_index else XUiSkin.TEXT) if on else XUI.TEXT
+		c.text(s[i], i * dw, 0, dw, "center", col, 26, lh)
 
 
 # ---- 输入（MV Input：确定/取消/方向，鼠标左键即触摸，右键取消，滚轮） ----
