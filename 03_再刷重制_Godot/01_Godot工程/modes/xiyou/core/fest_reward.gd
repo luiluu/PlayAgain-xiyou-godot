@@ -111,9 +111,9 @@ static func sign_in(s) -> Dictionary:
 
 # ==== 贺礼 ====
 
-## 出战队伍（没有就全队）里的最高等级
+## 全队（含后备）里的最高等级：主力放在后备、出战栏只放了新入队的低级角色时也按主力的等级发（小A 核查 P3-1）
 static func top_level(s) -> int:
-	var list: Array = s.battle_members() if not s.battle_members().is_empty() else s.members()
+	var list: Array = s.members()
 	return list.reduce(func(acc, a): return maxi(acc, int(a.level)), 1)
 
 
@@ -138,7 +138,7 @@ static func gift(s) -> String:
 	d["envoy_gift"] = true
 	XFest.add_coins(s, GIFT_COINS)
 	s.gain_gold(GIFT_GOLD)
-	var items := "、精魂 ×%d" % GIFT_GOLD
+	var items := "、%d 万精魂" % (GIFT_GOLD / GOLD_PER)
 	var rune := rune_item(s)
 	s.gain_item(rune, GIFT_RUNES)
 	items += "、%s ×%d" % [_item_name(rune), GIFT_RUNES]
@@ -257,7 +257,7 @@ static func after_load(s) -> void:
 		XDesignation.unlock(XFest.TITLE_ROAD)  # 45 并进 41（v0.3.1 第 7 节第 1 条）
 	var got := convert_leftover(s)
 	if int(got[0]) > 0:
-		_pending.append(XFestText.LEFTOVER_TOAST.replace("{coins}", str(got[0])).replace("{gold}", str(got[1])))
+		_pending.append(XFestText.LEFTOVER_TOAST.replace("{coins}", str(got[0])).replace("{gold}", str(int(got[1]) / GOLD_PER)))
 	var msg := remind_text(s)
 	if msg != "":
 		_reminded_day = XFest.today()
@@ -338,7 +338,7 @@ static func _shop(interp, s) -> void:
 		await XFestLobby.say(interp, [["庆典使者", str(XFestText.SHOP_HELP[key])]])
 		if key == "gold":
 			var all := XFest.coins(s) / GOLD_PRICE
-			var gopts := [XFestText.GOLD_ONE, XFestText.GOLD_ALL.replace("{coins}", str(all * GOLD_PRICE)).replace("{gold}", str(all * GOLD_PER)), XFestText.SHOP_CANCEL]
+			var gopts := [XFestText.GOLD_ONE, XFestText.GOLD_ALL.replace("{coins}", str(all * GOLD_PRICE)).replace("{gold}", str(all)), XFestText.SHOP_CANCEL]
 			var g := await XFestLobby.choose(interp, gopts)
 			if g == 1:
 				n = maxi(1, all)
@@ -351,7 +351,7 @@ static func _shop(interp, s) -> void:
 		var why := buy(s, key, n)
 		match why:
 			"":
-				interp.host.toast(XFestText.SHOP_OK.replace("{name}", str(XFestText.SHOP_NAMES[key]) + ("" if n == 1 else " ×%d" % n)).replace("{coins}", str(XFest.coins(s))))
+				interp.host.toast(XFestText.SHOP_OK.replace("{name}", ("%d 万精魂" % n) if key == "gold" else str(XFestText.SHOP_NAMES[key]) + ("" if n == 1 else " ×%d" % n)).replace("{coins}", str(XFest.coins(s))))
 			"sold_out":
 				await XFestLobby.say(interp, XFestText.SHOP_SOLD_OUT_LINE)
 			"coins":

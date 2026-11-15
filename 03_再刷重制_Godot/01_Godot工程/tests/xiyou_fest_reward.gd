@@ -267,6 +267,7 @@ func _sign_gift_shop() -> void:
 	var t2 := XFestReward.gift(g)
 	_check("gift_contents_once", t1 != "" and t2 == "" and XFest.coins(g) == 50 and g.gold - gold0 == 50000 and g.item_count(rune) == 2 and g.item_count(1639) == 10,
 		[t1, XFest.coins(g), g.gold - gold0, rune, g.item_count(rune), g.item_count(1639)])
+	_check("rune_counts_reserve", _rune_bench() == 171, _rune_bench())
 	_check("rune_by_level", rune == 24 and _rune_at(35) == 64 and _rune_at(45) == 110 and _rune_at(70) == 171, [rune, _rune_at(35), _rune_at(45), _rune_at(70)])
 	# 兑换店：限购全买下 480 币；扣币、发货；买满、币不够都不动
 	var b := _state()
@@ -303,6 +304,17 @@ func _sign_gift_shop() -> void:
 	XFest.add_coins(b, 10)
 	_check("shop_open_in_grace", XFestReward.buy(b, "gold") == "")
 	XFest.TODAY_OVERRIDE = "2026-11-16"
+
+
+## 出战的人都是 1 级、后备里有一名 70 级：按全队最高等级发特级（小A 核查 P3-1）
+func _rune_bench() -> int:
+	var s := _state()
+	for a in s.members():
+		a.change_level(1)
+	if not s.party.has(6):
+		s.add_actor(6)
+	s.actor(6).change_level(70)
+	return XFestReward.rune_item(s) if not s.battle_members().has(s.actor(6)) else -1
 
 
 func _rune_at(lv: int) -> int:
@@ -371,7 +383,7 @@ func _load_hooks() -> void:
 	XFestReward.after_load(s)
 	var pl := XFestReward.pending()
 	_check("leftover_converted_after_grace", kept == 275 and XFest.coins(s) == 5 and s.gold - gold0 == 270000
-		and pl.size() == 1 and str(pl[0]).contains("270") and str(pl[0]).contains("270000"), [kept, XFest.coins(s), s.gold - gold0, pl])
+		and pl.size() == 1 and str(pl[0]).contains("270 庆典币") and str(pl[0]).contains("27 万精魂"), [kept, XFest.coins(s), s.gold - gold0, pl])
 	XFestReward.after_load(s)
 	_check("leftover_once", XFest.coins(s) == 5 and XFestReward.pending().is_empty())
 	# 开关关了也照换（币是玩家已经拿到的）
