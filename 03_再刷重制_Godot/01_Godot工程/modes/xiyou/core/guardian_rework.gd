@@ -172,6 +172,12 @@ static func troop_floor(logic) -> int:
 	return 0
 
 
+## 第 f 层每回合基准血量：HP_BASE 是 11-13 带全队 ×6 实测的，去 ×6（XTianqiNoX6，O-待定-1）开着时乘 1/6。
+## 以后用虚拟玩家按去 ×6 后的伤害重量、换表时，把这里的 hp_unit 去掉。
+static func hp_base(f: int) -> float:
+	return float(HP_BASE[f]) * XTianqiNoX6.hp_unit()
+
+
 ## 本档目标回合（不是天启篇五档的按艰险）
 static func turns(s: XState) -> int:
 	return int(TURNS.get(str(s.flags.get("tianqi", {}).get("difficulty", "")), 8))
@@ -187,7 +193,7 @@ static func setup(logic, s: XState) -> void:
 		for e in logic.enemies:
 			if str(e.horseman.get("rec", {}).get("_ref", "")) == "qiyin":
 				# 鸿蒙老祖原血量（含本档难度倍率）换成 33 层的目标血量，按这只占鸿蒙老祖的几成同比缩
-				_scale_hp(e, float(HP_BASE[33]) * turns(s) / maxf(1.0, ref_hp * float(e._rates[0])))
+				_scale_hp(e, hp_base(33) * turns(s) / maxf(1.0, ref_hp * float(e._rates[0])))
 		return
 	var f := troop_floor(logic)
 	if f == 0:
@@ -200,12 +206,13 @@ static func setup(logic, s: XState) -> void:
 		total += float(e.mhp)
 	if total <= 0.0:
 		return
-	var k := float(HP_BASE[f]) * turns(s) / total
+	var k := hp_base(f) * turns(s) / total
 	for e in logic.enemies:
 		_scale_hp(e, k)
 
 
 static func _scale_hp(e: XEnemy, k: float) -> void:
+	e.set_meta(XTianqiNoX6.META_HP_K, float(e.get_meta(XTianqiNoX6.META_HP_K, 1.0)) * k)  # 守层者回血同比缩用（O-待定-2）
 	e._rates = e._rates.duplicate()
 	e._rates[0] = float(e._rates[0]) * k
 	e.param_mark_dirty()
@@ -226,4 +233,4 @@ static func _world(logic, s: XState) -> void:
 		e.set_meta(META_FLOOR, f)
 		e.refresh_passive()
 		# 本层守层者原总血量（乘本档难度倍率）→ 新总血量，同一比例
-		_scale_hp(e, float(HP_BASE[f]) * turns(s) / (old_total(f) * float(e._rates[0])))
+		_scale_hp(e, hp_base(f) * turns(s) / (old_total(f) * float(e._rates[0])))

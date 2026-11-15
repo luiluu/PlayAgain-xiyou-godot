@@ -152,6 +152,8 @@ class PhaseValueProgram:
 
 	func _gain(receiver: String, resource: String, amount: float):
 		if effects.get("execute", false):
+			if resource == "hp":
+				amount = XTianqiNoX6.program_hp(effects.get("context", {}), _battlers[receiver], amount)  # 天启篇去全队 ×6：状态脚本里按绝对值写的扣血／回血（O-待定-1）
 			(effects.resources as XResourceContext).gain(_battlers[receiver], resource, amount)
 		return UNDEFINED
 
@@ -438,6 +440,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 				var amount := float(c.user.get(str(p)))
 				if amount > 0.0 and c.user is XEnemy and c.user.output_scale != 1.0:
 					amount = maxf(1.0, roundf(amount * c.user.output_scale))  # 守层者重算（O-402）：轮回困难附加的「攻击＋魔攻」真伤也乘出伤倍率
+				amount = XTianqiNoX6.scale_direct(c.user, c.target, amount)  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-待定-1）
 				if amount > 0.0:
 					ctx.resources.gain(c.target, "hp", -amount)
 					r.extra = r.get("extra", []) + [amount]
@@ -789,7 +792,7 @@ static func _poison_tick(e: Dictionary, holder: XBattler, c: Dictionary, ctx: Di
 	var rc: XResourceContext = ctx.resources
 	# regenerateStateEffects clears this holder's result, while retaining the source domain.
 	rc.seed_result(holder, XResourceContext.empty_result())
-	rc.gain(holder, "hp", -float(out.value))
+	rc.gain(holder, "hp", -XTianqiNoX6.scale_direct(c.get("origin"), holder, float(out.value)))  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-待定-1）
 	var r := rc.result(holder)
 	if ctx.get("emit") is Callable and ctx.emit.is_valid():
 		ctx.emit.call({"type": "regen", "target": holder, "hp": r.hpDamage, "animation": int(e.animation), "state": int(c.state_id)})
@@ -877,7 +880,10 @@ static func _query_elements(ctx: Dictionary, user: XBattler) -> Array:
 
 
 static func _active(effect: Dictionary, ctx: Dictionary) -> bool:
-	var hp: bool = int(ctx.get("item", {}).get("damage", {}).get("type", 0)) in [1, 3, 5]
+	var dtype := int(ctx.get("item", {}).get("damage", {}).get("type", 0))
+	var hp: bool = dtype in [1, 3, 5]
+	if effect.has("skipTypes") and dtype in effect.skipTypes and ctx.get("target") is XEnemy:
+		return false  # 只有天启篇难度被动的合成行带它（XTianqiNoX6，去全队 ×6）：打敌人的 HP 伤害不乘；打自己人（混乱）照旧 ×6。原版数据没有这个键
 	var cond := str(effect.get("cond", ""))
 	var active: bool = ctx.value != 0.0 if cond == "nonzero" else ctx.value > 0.0 if cond == "positive" else ctx.value >= 0.0 if cond == "nonnegative" else false
 	return active and (not effect.get("hpOnly", false) or hp)

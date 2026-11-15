@@ -95,6 +95,11 @@ func _fresh(lg: XBattleLogic) -> void:
 	XTianqiQiyinEffects.start(lg)
 
 
+static func _sd(v: float) -> float:  # 去全队 ×6（XTianqiNoX6，O-待定-1）开着时，按绝对值直接扣敌人血的跟着缩 1/6
+	var u := XTianqiNoX6.hp_unit()
+	return v if u == 1.0 else maxf(1.0, floorf(v * u))
+
+
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261112)
@@ -209,7 +214,7 @@ func _actions() -> void:
 	XTianqiQiyinEffects.end_action(lg, a, sk)
 	var hp0 := e.hp
 	XTianqiQiyinEffects.end_turn(lg)
-	var expect := floorf(a.atk * 0.1 * 2)
+	var expect := _sd(floorf(a.atk * 0.1 * 2))
 	_check("plague_tick", is_equal_approx(hp0 - e.hp, expect) or (e.shield > 0.0), [hp0 - e.hp, expect])
 	# 判决：攻击时追加最大生命 5%
 	var b: XActor = lg.actors[1]
@@ -222,7 +227,7 @@ func _actions() -> void:
 	XTianqiQiyinEffects.begin_action(lg, b, sk)
 	XTianqiQiyinEffects.after_apply(lg, b, sk, e, {"hp": 1.0})
 	XTianqiQiyinEffects.after_apply(lg, b, sk, e, {"hp": 1.0})
-	_check("judgment_once_per_target", is_equal_approx(hp0 - e.hp, floorf(b.mhp * 0.05)), [hp0 - e.hp, b.mhp])
+	_check("judgment_once_per_target", is_equal_approx(hp0 - e.hp, _sd(floorf(b.mhp * 0.05))), [hp0 - e.hp, b.mhp])
 	XTianqiQiyinEffects.end_action(lg, b, sk)
 	# 免死（灰印 5 件）一场一次
 	var c: XActor = lg.actors[2]

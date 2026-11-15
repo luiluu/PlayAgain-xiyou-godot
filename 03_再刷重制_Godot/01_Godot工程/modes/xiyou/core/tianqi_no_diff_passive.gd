@@ -143,13 +143,14 @@ static func confirm_rows(holder: XBattler, rows: Array) -> Array:
 	if settle.is_empty():
 		return rows
 	var out := rows
+	var skip := XTianqiNoX6.skip_types()  # 去全队 ×6（O-待定-1）：HP 伤害、吸取不乘，MP 伤害与回复照旧
 	for row in settle:
 		var sid := int(row.get("state", 0))
 		if sid <= 0 or holder.is_state_affected(sid):
 			continue
 		var prio := int(XDB.rec("States", sid).get("priority", 0))
 		var syn := {"id": sid, "priority": prio, "name": "天启篇·难度被动等价", "effects": [{"phase": "confirm", "op": "mul",
-			"cond": str(row.get("cond", "positive")), "hpOnly": false, "k": float(row.get("k", 1.0)), "round": str(row.get("round", "ceil"))}]}
+			"cond": str(row.get("cond", "positive")), "hpOnly": false, "k": float(row.get("k", 1.0)), "round": str(row.get("round", "ceil")), "skipTypes": skip}]}
 		var at := out.size()
 		for i in out.size():
 			var p := int(out[i].get("priority", 0))
