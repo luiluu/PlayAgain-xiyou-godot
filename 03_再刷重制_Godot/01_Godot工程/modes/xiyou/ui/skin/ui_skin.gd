@@ -96,7 +96,7 @@ static var motion_override := -1
 ## 宠物组现在天启篇随 XTianqiPetHide 整组隐藏（可见 6 组）；放开后自动出现（7 组），不用改布局。文字照小A文字审口径。
 const GROUPS := [
 	{"key": "items", "name": "物品", "icon": 100, "items": [{"key": "item", "name": "物品", "cmd": "item", "desc": "使用和查看随身物品"}]},
-	{"key": "equip", "name": "装备", "icon": 160, "items": [{"key": "equip", "name": "装备", "cmd": "equip", "desc": "给角色换装备"}]},
+	{"key": "equip", "name": "装备", "icon": 160, "items": [{"key": "equip", "name": "装备", "cmd": "equip", "desc": "更换角色装备"}]},
 	{"key": "actor", "name": "角色", "icon": 1001, "items": [{"key": "status", "name": "状态", "cmd": "status", "desc": "属性、抗性、掌握"},
 		{"key": "skill", "name": "技能", "cmd": "skill", "desc": "查看与使用技能"},
 		{"key": "zhenqi", "name": "真气", "cmd": "zhenqi", "desc": "闭关突破"},
@@ -110,9 +110,9 @@ const GROUPS := [
 		{"key": "enemy_book", "name": "怪物图鉴", "cmd": "monsterBook", "desc": "查看敌人资料"},
 		{"key": "achievement", "name": "成就", "cmd": "achievement", "desc": "查看成就"}]},
 	{"key": "system", "name": "系统", "icon": 688, "items": [{"key": "save", "name": "存档", "cmd": "save", "desc": "保存当前进度"},
-		{"key": "options", "name": "设置", "cmd": "options", "desc": "画面、声音与操作"},
+		{"key": "options", "name": "设置", "cmd": "options", "desc": "画面、声音、挂机与操作"},
 		{"key": "feedback", "name": "反馈", "cmd": "feedback", "desc": "提交问题和建议"},
-		{"key": "game_end", "name": "游戏结束", "cmd": "gameEnd", "desc": "回到标题画面"}]},
+		{"key": "game_end", "name": "返回标题", "cmd": "gameEnd", "desc": "回到标题画面"}]},
 ]
 
 const FONT_DIR := "res://content/ui_skin/fonts/"

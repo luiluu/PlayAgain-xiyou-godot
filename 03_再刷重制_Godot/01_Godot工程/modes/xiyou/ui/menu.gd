@@ -72,9 +72,9 @@ func command_enabled(i: int) -> bool:
 	return cmd[2] and not (cmd[1] in NEEDS_MEMBERS and _members().is_empty())
 
 
-## 按符号问可不可用（新主菜单用；规则同 command_enabled，不在 COMMANDS 里的符号不可用）
+## 按符号问可不可用（新主菜单用；规则同 command_enabled，不在 commands() 里的符号——没做的、被隐藏的——不可用）
 func symbol_enabled(sym: String) -> bool:
-	for c in COMMANDS:
+	for c in commands():
 		if c[1] == sym:
 			if sym == "formation" and _members().size() < 2:
 				return false
