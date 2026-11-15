@@ -1,0 +1,43 @@
+{
+ "sha": "929de654be5ccc8b11758385676d6c8533ed60df",
+ "branch": "ci/cc/ui-art-phase01",
+ "mode": "affected",
+ "base": "e9b156826b70d9c94989ca079ad1eca19f882398",
+ "passed": false,
+ "scenes": 20,
+ "failed": [
+  "xiyou_ui_skin_1c.tscn"
+ ],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 4,
+ "longestShardSeconds": 161.5,
+ "testSeconds": 632,
+ "generatedRef": "refs/ci/generated/cc/ui-art-phase01",
+ "generatedCommit": "818f460ae782965e98b059664135850efdc4e202",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43767700636",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_tianqi_gear.tscn",
+  "xiyou_ui_art_phase01.tscn",
+  "xiyou_ui_skin.tscn",
+  "xiyou_ui_skin_1b.tscn",
+  "xiyou_ui_skin_1c.tscn",
+  "xiyou_ui_skin_3a.tscn",
+  "xiyou_ui_skin_3b.tscn",
+  "xiyou_ui_skin_4a.tscn",
+  "xiyou_ui_skin_4b.tscn",
+  "xiyou_ui_skin_5c.tscn",
+  "xiyou_ui_skin_battle.tscn",
+  "xiyou_ui_skin_close.tscn",
+  "xiyou_ui_skin_hud.tscn",
+  "xiyou_ui_skin_menu.tscn",
+  "xiyou_ui_skin_offshot.tscn",
+  "xiyou_ui_skin_p1fix.tscn"
+ ],
+ "time": "2026-11-15T22:15:44+00:00"
+}
