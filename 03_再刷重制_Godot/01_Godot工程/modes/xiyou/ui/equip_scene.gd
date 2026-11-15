@@ -25,6 +25,8 @@ extends Control
 ## 属性对比挪进详情的位置 (640,231,640,431)；物品信息窗不再出现；说明卡不再弹出（详情代替）。
 ## 详情页与插槽页：PageUp／PageDown 翻详情页（不再换角色；Q／E 照旧换角色）、点翻页条左半／右半翻页、滚轮滚动、按住拖动。
 ## DETAIL_V041 = false：回到 v0.28 的信息窗／属性对比轮换和说明卡。
+## 天启篇新界面（ui-skin-1c，XUiSkin.on() 时）：建 XSkinEquipPage，旧窗口全藏、按新稿重画；没有指令窗（开页就在栏位上、
+## 取消直接关页，Q／E 换人回栏位），状态机、换装、清空、检索、候选缓存都还是这一页的代码。关着时一行不变。
 
 signal closed
 
@@ -66,6 +68,7 @@ var gear_detail: XGearDetail
 var _cand_cache: Array = []
 var _cand_key: Array = []
 var _cand_rev := 0  # 换装、清空后加一：背包件数不变（对换）时也让候选重算
+var skin: XSkinEquipPage
 
 
 func _ready() -> void:
@@ -87,6 +90,11 @@ func _ready() -> void:
 	add_child(help_card)
 	toolbar = XGearSearch.make_toolbar(open_search, clear_filter)
 	add_child(toolbar)
+	if XUiSkin.on():
+		skin = XSkinEquipPage.new(self)
+		add_child(skin)
+		_mode = "slot"
+		_slot = int(slot_view()[0]) if not slot_view().is_empty() else 0
 	_refresh()
 
 
@@ -258,6 +266,8 @@ func _refresh() -> void:
 		var gear := candidates().filter(func(e): return not (e.rec as Dictionary).is_empty()).size() if _slot >= 0 else 0
 		(toolbar.get_child(0) as Button).text = XGearSearch.toolbar_label(not gear_filter.is_empty(), gear)
 	_update_help()
+	if skin != null:
+		skin.sync()
 
 
 func _update_help() -> void:
@@ -422,6 +432,10 @@ static func paint_compare(c: XMVCanvas, a: XActor, temp: XActor) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if search_panel != null:
 		return
+	if skin != null:
+		if skin.input(event):
+			XKeyMap.handled(self)
+		return
 	var handled := true
 	var key := event as InputEventKey
 	if event.is_action_pressed("ui_cancel"):
@@ -475,6 +489,9 @@ func switch_actor(d: int) -> void:
 	_mode = "command"
 	_slot = 0
 	_slot_top = 0
+	if skin != null:   # 新界面没有指令窗：回到栏位环第一栏
+		_mode = "slot"
+		_slot = int(slot_view()[0]) if not slot_view().is_empty() else 0
 	_refresh()
 
 
@@ -539,6 +556,10 @@ func _cancel() -> void:
 			closed.emit()
 			return
 		"slot":
+			if skin != null:   # 新界面没有指令窗：栏位上取消就关页
+				_commit_seen()
+				closed.emit()
+				return
 			_mode = "command"
 		"item":
 			_commit_seen()
@@ -561,6 +582,8 @@ func _keep_rates(change: Callable) -> void:
 func _gui_input(event: InputEvent) -> void:
 	if search_panel != null:
 		return
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinEquipPage）
 	if gear_detail != null and gear_detail.mouse(event):
 		_sync_lower()
 		lower_win.refresh()
