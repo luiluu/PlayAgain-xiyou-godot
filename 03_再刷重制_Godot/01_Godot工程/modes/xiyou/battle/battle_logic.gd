@@ -259,6 +259,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XAlienBattle.start(self)  # 异化：Game_Troop.setup 的遭遇＋startBattle 的锁队、蜕壳护盾与提示
 	XTianqiQiyinEffects.start(self)  # 天启篇七印装备：本场数据、全队那一件神器、七印书卷（原版档不建）
 	XTianqiAffixBattle.start(self)  # 天启篇词条：本场数据、全队光环、开场护盾、初始 TP
+	XTianqiWeakAffix.start(self)  # 天启篇弱者专属词条（批 0A 地基）：本场数据
 	XTianqiTrumpet.start(self)  # 天启篇号卷：本场谁学了哪卷、七号齐鸣
 	XTianqiElements.start(self)  # 天启篇元素重做：确认牌组、清本场吞没/弱点暴露
 	XSukuna.start_tp(self)  # 宿傩 startBattle 包装（之后）：TP 至少 60
@@ -837,11 +838,22 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null, confus
 	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, (XConfusion.targets(self, a, skill) if confusable and XConfusion.confused(a) else _targets_for(a, skill, chosen)) if tusu_list == null else tusu_list, chosen))  # 云裳云丝展幅、千军入袖收袖 makeTargets 包装在异化之内
 	list = XBinding.filter_targets(self, a, skill, list)  # 绑定 makeTargets 包装：敌方对敌技能滤掉形态中的本体
 	list = XXuanBattle.extend_targets(a, skill, list)  # 璇 makeTargets 包装：列星期间回光、璃壁加受益者，棱光多打几遍
+	var before_layers := list.duplicate()  # 天启篇弱者专属词条：下面三层改过目标，专属引导就不动
 	list = XTianqiHorsemen.filter_targets(self, a, list)  # 天启四骑士：混子嘲讽在时只能打混子
 	list = XTianqiPlagueAlien.filter_targets(self, a, skill, list)  # 天启篇瘟疫线异化：挑衅者在时我方单体只能打它
 	list = XTianqiRewards.filter_targets(self, a, list)  # 天启篇奖励：混子之盾开场嘲讽
+	guide_layers_changed = list != before_layers
 	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
 	return list
+
+
+## 天启篇弱者专属词条：最近一次 targets_for 里四骑士嘲讽、瘟疫挑衅、混子之盾三层改没改过目标
+var guide_layers_changed := false
+
+## execute 的选目标：targets_for 之后接专属引导（排在三层约束之后、定主目标之前）
+func _guided_targets(u: XBattler, skill: Dictionary, chosen: XBattler, forcing: bool) -> Array:
+	var list := targets_for(u, skill, chosen, not forcing)
+	return XTianqiWeakAffix.guide_targets(self, u, skill, list, guide_layers_changed, forcing)
 
 
 func _targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Array:
@@ -1137,6 +1149,7 @@ func _tianqi_enter(h: XActor) -> void:
 
 ## 回合开始（YEP startTurn）：回合数 +1、冷却 -1、排顺序。
 func start_turn() -> void:
+	XTianqiWeakAffix.turn_begin(self)  # 天启篇弱者专属词条：自然回合开始，每回合次数清零（多动、强制行动、追加不清）
 	XStateEffects.battle_turn = turn + 1
 	XGuyu.start_turn(turn + 1)  # 谷雨 startTurn 包装（最外层）：原 startTurn 期间 round＝turnCount＋1
 	# Game_Troop.increaseTurn：span 1（回合）的页重新可执行
@@ -1222,6 +1235,7 @@ func act(u: XBattler, skill, target) -> Array:
 	var before := _movable_snapshot()
 	if is_over() or u.is_dead():
 		return logs
+	XTianqiWeakAffix.root_begin(self, u, skill)  # 天启篇弱者专属词条：开一根（act 末尾 root_end 收）
 	XTianqiQiyinRule.on_act(self, u, skill)  # 七印祭坛限时：记我方本回合放了几个技能
 	XWeakChallenge.start_action(state, u)  # 弱者挑战 startAction 包装：强者行动则最终战作废
 	XTianqiWeakClear.note_actor(u, state)  # 天启篇全弱者通关资格：行动的我方角色和此刻出战栏记下（中途换上来的）
@@ -1271,6 +1285,7 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(execute(u, skill, target))
 		XNanoha.end_execute(self)
 		XImportedBalance.set_acting(null)
+	XTianqiWeakAffix.set_kind(self, XTianqiWeakAffix.FOLLOW)  # 天启篇弱者专属词条：主动根执行完，之后都是原生追加
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
 	logs.append_array(XXuanBattle.take_logs())  # 璇：换宿主、定星的台词
 	# 敌人跳过的回合不走 endAction（审查 35b P2-1）；角色走 startOTBInput，不能行动也 startAction～endAction，只是没有行动（参照 xuan_auto skip_*、stunned_turn）
@@ -1304,7 +1319,9 @@ func act(u: XBattler, skill, target) -> Array:
 	XYomiJingliu.queue_extra(self, u)  # 镜流 queueJingliu（原 endAction 之后）：追加行动插队
 	XGojo.queue_again(self, u)  # 天启篇五条悟六眼：再动插队
 	logs.append_array(XTianqiQiyinEffects.end_action(self, u, skill))  # 天启篇七印装备：击倒再动、连斩、横扫、再射、放两次、补刀
-	logs.append_array(XTianqiAffixBattle.end_action(self, u, skill))  # 天启篇词条「再释放」
+	XTianqiWeakAffix.push_kind(self, XTianqiWeakAffix.RECAST)
+	logs.append_array(XTianqiAffixBattle.end_action(self, u, skill))  # 天启篇词条「再释放」（弱者专属词条：原生再释放）
+	XTianqiWeakAffix.pop_kind(self)
 	logs.append_array(XTianqiSkills.end_action(self, u, skill))  # 天启篇技能重构：追加释放（每人每回合最多 1 次）
 	logs.append_array(XTianqiQiyinDragonRun.end_action(self))  # 七首之龙：打到段底断首、揭下一道印
 	if ended:
@@ -1325,6 +1342,7 @@ func act(u: XBattler, skill, target) -> Array:
 	logs.append_array(XRiftAlien.take_logs(self))  # 漩涡阶段异化：毒腺中毒的日志
 	if started and skill is Dictionary:  # 被晕等跳过行动时 skill 已置空
 		logs.append_array(mark_views(XTianqiRewards.after_action(self, u, skill)))  # 天启篇奖励：钥匙串追加普攻、雷火弹
+	logs.append_array(XTianqiWeakAffix.root_end(self, u))  # 天启篇弱者专属词条：这一根全部结算完，各条专属出派生（反击、追击），收根
 	_sync_orders(before, true)
 	resolve_collapses()
 	return logs
@@ -1368,6 +1386,7 @@ func end_turn() -> Array:
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
 	logs.append_array(XTianqiQiyinEffects.end_turn(self))  # 天启篇七印装备：疫结算与传染、各计时
 	XTianqiAffixBattle.end_turn(self)  # 天启篇词条：破绽、压制计时；新异化词条：临终必死、带毒续毒
+	XTianqiWeakAffix.turn_end(self)  # 天启篇弱者专属词条：每自然回合次数清零、受邀标签摘掉
 	XTianqiElements.end_turn(self)  # 天启篇元素重做：回合末清虚空吞没、弱点暴露
 	logs.append_array(XTianqiAlienAffix.take_logs(self))  # 天启篇新异化词条：临终
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
@@ -1743,12 +1762,14 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	if u == first_subject:
 		_cleared[u] = true
 	var before := _movable_snapshot()
+	XTianqiWeakAffix.root_begin(self, u, skill)  # 天启篇弱者专属词条：强制行动也是一根（不重置每回合次数）
 	XNanoha.begin(self)
 	var chain_step: int = 1 if XStateEffects.CHAIN_SKILLS.has(int(skill.get("id", 0))) else 0  # rules9 审查 39 P3-6：只有 5576／5577 自己打出的这一击算防连锁，别的强制行动不算
 	XStateEffects.chain_depth += chain_step
 	logs.append_array(execute(u, skill, target, true))
 	XStateEffects.chain_depth -= chain_step
 	XNanoha.end_execute(self)
+	XTianqiWeakAffix.set_kind(self, XTianqiWeakAffix.FOLLOW)
 	logs.append_array(XXuanBattle.take_logs())  # 璇：换宿主、定星的台词
 	logs.append_array(XTusu.end_action(self, u, skill))  # 屠苏 endAction 包装（同 act 的次序）：强制行动也消费锁定、和鸣，持武者放剑气／镇魂（审查第 26 期 P3-1）
 	logs.append_array(XXuanBattle.end_action(self, u, skill))  # 璇 endAction 包装（同 act 的次序）
@@ -1770,6 +1791,7 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	XMira.liberate(self, u, skill)
 	XNanoha.finish(self, u)
 	logs.append_array(mark_views(XGuyu.after_action(self, u, skill)))  # 谷雨 endAction 包装 afterAction：强制行动也触发花期绽放（同 act，在奈叶之后）
+	logs.append_array(XTianqiWeakAffix.root_end(self, u))  # 天启篇弱者专属词条：强制行动这一根收尾
 	_sync_orders(before, true)
 	return logs
 
@@ -2129,13 +2151,14 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	XTianqiQiyinEffects.begin_action(self, u, skill)  # 天启篇七印装备：行动帧（砝码、倾囊、换系、舍身、蓄势）
 	XTianqiAffixBattle.begin_action(self, u, skill)  # 天启篇词条：先声、本次行动的目标与击杀
 	XTianqiSkills.begin_action(self, u, skill)  # 天启篇技能重构：记本次行动，追加释放用
+	XTianqiWeakAffix.root_skill(self, skill)  # 天启篇弱者专属词条：这一根的那一招（认直接命中）
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击（isAttack：此刻的 attackSkillId）的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
 		var times := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, 1)))))
 		times = XTianqiQiyinEffects.repeats(self, u, skill, times)  # 天启篇战流派攻击次数 +1。黄泉 numRepeats 包装（也开始新行动）；渡鸦包装在里层、云裳双针 ×2 在外层
 		var list := []
-		for t in targets_for(u, skill, chosen, not forcing):
+		for t in _guided_targets(u, skill, chosen, forcing):
 			for i in range(maxi(1, times)):
 				list.append(t)
 		XAlienBattle.set_heal_targets(skill, list.size())  # 逆祷治疗按目标数（含重复）分摊
@@ -2151,7 +2174,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		return logs
 	var repeats := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1)))))))
 	repeats = XTianqiQiyinEffects.repeats(self, u, skill, repeats)  # 天启篇战流派攻击次数 +1。黄泉 numRepeats 包装；渡鸦冥羽连葬在里层；流萤（新源第 34 个）在云裳外层
-	var targets := targets_for(u, skill, chosen, not forcing)
+	var targets := _guided_targets(u, skill, chosen, forcing)
 	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 	XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
@@ -2162,6 +2185,10 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	for t0 in targets:
 		var t: XBattler = t0
 		for i in range(maxi(1, repeats)):
+			var gt = XTianqiWeakAffix.segment_target(self, u, skill, t)  # 天启篇弱者专属词条：引导者这一段前不合法就回原目标、原目标也不合法跳过
+			if gt == null:
+				continue
+			t = gt
 			if t.is_dead() and not [9, 10].has(int(skill.scope)) and not _lotus_all(skill):
 				var nt = XTianqiQiyinEffects.redirect(self, u, skill, t)  # 天启篇战真印：剩下的段转给另一个敌人
 				if nt == null:
@@ -2171,7 +2198,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 				break
 			logs.append_array(mark_views(_invoke(u, skill, t)))
 	# YEP 默认收尾序列 immortal: targets, false → removeImmortal 逐个 refresh
-	for t in targets:
+	for t in targets + XTianqiWeakAffix.finish_targets(self).filter(func(x): return not targets.has(x)):  # 天启篇弱者专属词条：引导失效后回去打的原目标也收尾
 		t.param_refresh()
 		stale_refreshed(t)
 	logs.append_array(mark_views(_lotus_strike(u, skill, targets, lotus_before)))
@@ -2204,6 +2231,7 @@ func horseman_strike(u: XBattler, t: XBattler, skill: Dictionary, value: float, 
 		_die(t)
 		r.died = true
 	r.views = views([t, u])
+	XTianqiWeakAffix.note_hit(self, u, skill, t, r)  # 天启篇弱者专属词条：四骑士主动技的直接命中也发同一个通知（v0.3.1 第二节第 2 条）
 	return r
 
 
@@ -2386,7 +2414,9 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		_reflecting = true  # 导入角色平衡：反射回行动者自己的结算照样缩放
 		var race_prev = XRaceBattle.derived_begin(self)  # 种族：反射是独立数值来源，不是原行动
 		XBlackFlash.nested += 1  # 黑闪 invokeMagicReflection 包装
+		XTianqiWeakAffix.push_kind(self, XTianqiWeakAffix.COUNTER)  # 天启篇弱者专属词条：原生反射（反射按此刻的目标判，被引导时就是引导者）
 		var rs := XSukuna.apply(self, u, skill, u) if XSukuna.wraps(u, skill) else [apply(u, skill, u)]  # 宿傩 Game_Action.apply 包装
+		XTianqiWeakAffix.pop_kind(self)
 		XBlackFlash.nested -= 1
 		XRaceBattle.derived_end(self, race_prev)
 		_reflecting = false
@@ -2423,7 +2453,9 @@ func _counter_guarded(t: XBattler) -> bool:
 func _counter_attack(u: XBattler, t: XBattler) -> Array:
 	var race_prev = XRaceBattle.derived_begin(self)  # 种族：反击是独立数值来源，不是原行动
 	XBlackFlash.nested += 1  # 黑闪 invokeCounterAttack 包装
+	XTianqiWeakAffix.push_kind(self, XTianqiWeakAffix.COUNTER)  # 天启篇弱者专属词条：原生反击
 	var r := apply(t, XAlienBattle.project(t, t.attack_skill()), u)  # invokeCounterAttack：反击者 setAttack（异化逆祷：反击也读投影）
+	XTianqiWeakAffix.pop_kind(self)
 	XBlackFlash.nested -= 1
 	XRaceBattle.derived_end(self, race_prev)
 	r.counter = true
@@ -2478,6 +2510,8 @@ const SUBSTITUTE_NEEDS_MOVE := true
 func substitute_for(skill: Dictionary, t: XBattler) -> XBattler:
 	if not (t.is_alive() and t.hp < t.mhp / 4.0) or int(skill.get("hitType", 0)) == 0:
 		return t
+	if XTianqiWeakAffix.guided(self, t):
+		return t  # 天启篇弱者专属词条：被专属引导成功的那一个目标，原生掩护不再换人
 	for m in (actors if t.is_actor() else enemies):
 		if m.is_substitute() and (can_move(m) or not SUBSTITUTE_NEEDS_MOVE and not m.traits_set(62).has(2)):
 			return m
@@ -2680,6 +2714,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	XTianqiAffixBattle.after_apply(self, u, skill, t, r)  # 天启篇词条：吸血、斩获、破绽、压制、回春
 	XTianqiElements.after_apply(self, u, skill, t, r, r.get("best_row", {}))  # 天启篇元素重做：免疫弹字、虚空吞没、弱点暴露
 	XTianqiSkills.after_apply(self, u, skill, t, r)  # 天启篇技能重构：追加释放的目标、反弹（reflect）
+	XTianqiWeakAffix.note_hit(self, u, skill, t, r)  # 天启篇弱者专属词条：主动根的直接有效命中
 	return r
 
 
@@ -3654,6 +3689,7 @@ func end_battle(result := -1) -> void:
 	XTianqiQiyinRule.end(self, result)  # 七印祭坛：清本场规则；31～35 层野外打赢掉印钥
 	XTianqiQiyinEffects.finish(self)  # 天启篇七印装备：清本场数据
 	XTianqiAffixBattle.finish(self)  # 天启篇词条：清本场数据
+	XTianqiWeakAffix.finish(self)  # 天启篇弱者专属词条：库存、格数、标签全清
 	XTianqiTrumpet.finish(self)  # 天启篇号卷：清本场数据
 	XFestRing.finish(self)  # 冠军戒指「一穿四」：层数清零
 	XTianqiElements.finish(self)  # 天启篇元素重做：清本场数据

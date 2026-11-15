@@ -1235,7 +1235,8 @@ static func hp_damage(logic, u, t, value: float) -> float:
 	if value > 0.0 and is_same(t, f.knight) and str(f.line) == "plague" and u is XActor:
 		if not f.has("hit_knight"):
 			f.hit_knight = {}
-		f.hit_knight[u] = true
+		if not XTianqiWeakAffix.not_own_action(logic):  # 弱者专属词条的派生、原生反击／反射打到混子：盾照扣，不记到出手者「这次行动打过混子」上（v0.3.1 第二节第 3 条）
+			f.hit_knight[u] = true
 		_shield_hit(f, value, int(logic.turn))
 	return value
 

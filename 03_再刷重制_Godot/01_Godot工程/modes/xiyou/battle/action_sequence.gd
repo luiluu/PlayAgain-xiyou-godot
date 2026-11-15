@@ -251,7 +251,8 @@ func _change_variable(name: String) -> void:
 ## BattleManager.actionActionEffect 本体：对指定目标（缺省为当前目标）各 invoke 一次
 func _action_effect(args: Array) -> void:
 	var list := make_targets(str(args[0])) if not args.is_empty() and str(args[0]) != "" else targets
-	for t in list:
+	for t0 in list:
+		var t = XTianqiWeakAffix.segment_target(logic, user, skill, t0) if t0 != null else null  # 天启篇弱者专属词条：引导者这一段前不合法回原目标、都不合法跳过
 		if t == null:
 			continue
 		if t.is_dead() and not [9, 10].has(int(skill.get("scope", 0))) and not (XStateEffects.FIX_LOTUS_7303 and int(skill.get("id", 0)) == 7303):
