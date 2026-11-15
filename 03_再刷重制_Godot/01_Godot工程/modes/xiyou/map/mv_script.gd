@@ -136,6 +136,10 @@ static func run(code: String, interp) -> Array:
 	var js := _strip_comments(code).strip_edges()
 	if js == "":
 		return []
+	# 冠军庆典大厅（XFestLobby）的使者、报名处、奖杯：事件里一行「CodexFest.xxx();」
+	if js.begins_with("CodexFest."):
+		await XFestLobby.run_script(js, interp)
+		return []
 	if js.contains("CodexTier.nonWeakIds()"):
 		js = js.replace("CodexTier.nonWeakIds()", "[%s]" % ",".join(XState.tier_non_weak_ids().map(func(v): return str(v))))
 	var s := XState.current

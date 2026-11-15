@@ -1,0 +1,124 @@
+{
+  "assets": {
+    "Fest_Banner.png": {
+      "size": [
+        768,
+        96
+      ],
+      "mode": "RGBA",
+      "visible_bounds": [
+        2,
+        2,
+        766,
+        94
+      ],
+      "alpha_minmax": [
+        0,
+        255
+      ],
+      "sha256": "7a82f9dd4852add9d54613b84d86dabdd9a587e345e4c1bd21490fb73dbdb87c"
+    },
+    "Fest_Trophy.png": {
+      "size": [
+        96,
+        144
+      ],
+      "mode": "RGBA",
+      "visible_bounds": [
+        2,
+        15,
+        94,
+        142
+      ],
+      "alpha_minmax": [
+        0,
+        253
+      ],
+      "sha256": "50a488829ef843b19ba3c156e1038bed2f42f93866221d4d84bf9bb576bce0a8"
+    },
+    "Fest_Confetti_01.png": {
+      "size": [
+        16,
+        16
+      ],
+      "mode": "RGBA",
+      "visible_bounds": [
+        2,
+        3,
+        14,
+        13
+      ],
+      "alpha_minmax": [
+        0,
+        255
+      ],
+      "sha256": "dd0211b208cb5fc68267202abda32b9b493c06bd576bce02cf76fa50cd9b6013"
+    },
+    "Fest_Confetti_02.png": {
+      "size": [
+        16,
+        16
+      ],
+      "mode": "RGBA",
+      "visible_bounds": [
+        2,
+        2,
+        14,
+        14
+      ],
+      "alpha_minmax": [
+        0,
+        255
+      ],
+      "sha256": "43a2e0b489ad91f6391e8f6aa2215c768d3bc584447b1b1cae7bd9f922f6424f"
+    },
+    "Fest_Confetti_03.png": {
+      "size": [
+        16,
+        16
+      ],
+      "mode": "RGBA",
+      "visible_bounds": [
+        2,
+        2,
+        14,
+        14
+      ],
+      "alpha_minmax": [
+        0,
+        255
+      ],
+      "sha256": "8fa49129ef2420444dec236fbb6b5c85a5f3fbb27b9e5ab1375dcce178b50c8e"
+    },
+    "Fest_Confetti_04.png": {
+      "size": [
+        16,
+        16
+      ],
+      "mode": "RGBA",
+      "visible_bounds": [
+        2,
+        3,
+        14,
+        13
+      ],
+      "alpha_minmax": [
+        0,
+        255
+      ],
+      "sha256": "b76f65a83f2801233fe0f9f27caafbd5ab16e85b59b45d15ecd04e9279d1e4b1"
+    }
+  },
+  "banner_text_rect": [
+    110,
+    20,
+    658,
+    58
+  ],
+  "trophy_recommended_anchor": [
+    48,
+    142
+  ],
+  "sampling": "nearest; integer pixel alignment",
+  "notes": "Original generic celebration art. Banner and trophy plaque contain no text. Trophy halo intentionally retains partial alpha; particles and banner use binary alpha."
+}
