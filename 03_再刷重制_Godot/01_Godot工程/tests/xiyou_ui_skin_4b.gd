@@ -323,6 +323,15 @@ func _test_achievement_popup() -> void:
 			var a1: XAchievementPopup = st[1]
 			var min_gap := 24.0 if sk else XAchievementPopup.GAP
 			check("ach_stack_no_overlap_" + tag, a1.position.y >= a0.position.y + a0.plan_height() + min_gap - 0.1, [a0.position.y, a0.plan_height(), a1.position.y])
+			if not sk:
+				check("ach_stack_old_pos", is_equal_approx(a0.position.y, XAchievementPopup.SCREEN.y * 2.0 / 3.0) and is_equal_approx(a1.position.y, a0.position.y + XAchievementPopup.HEIGHT + XAchievementPopup.GAP), [a0.position.y, a1.position.y])
+				# 上一条退场上滑期间（position.y < base_y）：关闭时按原版 break 落在 y0，开启时仍避让
+				a1.queue_free()
+				st.erase(a1)
+				a0.position.y = a0.base_y - 10.0
+				XAchievementPopup.show_for({"id": 2, "name": "退场占位", "icon": 100})
+				var a_slide := XAchievementPopup._stack[1] as XAchievementPopup
+				check("ach_stack_old_slide_y0", is_equal_approx(a_slide.position.y, XAchievementPopup.SCREEN.y * 2.0 / 3.0), [a0.position.y, a_slide.position.y])
 		var pop_layer := get_tree().current_scene.get_node_or_null("XAchievementPopups")
 		if pop_layer != null:
 			pop_layer.queue_free()

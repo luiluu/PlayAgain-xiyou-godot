@@ -49,18 +49,25 @@ static func show_for(d: Dictionary) -> void:
 	pop.wait_frames = floori(float(str(st.get("Popup Wait", "0.75"))) * 60)
 	var on := XUiSkin.on()
 	var vs := tree.root.get_visible_rect().size if tree.root != null else SCREEN
-	var h := pop.plan_height()
-	var gap := 24.0 if on else GAP
-	var y := vs.y * 2.0 / 3.0
-	for p in _stack:
-		var ph: float = p.plan_height()
-		if y + h + gap <= p.position.y:
-			break
-		if y < p.position.y + ph + gap:
-			y = p.position.y + ph + gap
-	pop.base_y = y
-	var x := (vs.x - pop.plan_width()) / 2.0 if on else (SCREEN.x - pop.plan_width() - GAP) / 2.0
-	pop.position = Vector2(roundf(x), y)
+	var y := vs.y * 2.0 / 3.0 if on else SCREEN.y * 2.0 / 3.0
+	if on:
+		var h := pop.plan_height()
+		var gap := 24.0
+		for p in _stack:
+			var ph: float = p.plan_height()
+			if y + h + gap <= p.position.y:
+				break
+			if y < p.position.y + ph + gap:
+				y = p.position.y + ph + gap
+		pop.base_y = y
+		pop.position = Vector2(roundf((vs.x - pop.plan_width()) / 2.0), y)
+	else:
+		for p in _stack:
+			if p.position.y != y:
+				break
+			y += HEIGHT + GAP
+		pop.base_y = y
+		pop.position = Vector2((SCREEN.x - pop.plan_width() - GAP) / 2.0, y)
 	layer.add_child(pop)
 	_stack.append(pop)
 	_stack.sort_custom(func(a, b): return a.position.y < b.position.y)

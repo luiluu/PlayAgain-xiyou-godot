@@ -136,11 +136,12 @@
   - `tests/xiyou_help_card.gd` 在 `_ready()` 首行补加 `TestEnv.isolate("xiyou_help_card")`，裸跑不再受宿主 `options.json` 影响。
   - `modes/xiyou/ui/help_card.gd` `_skin_color()` 将硬编码 `#ff8078` 改为 `XUiSkin.SEL_LINE`。
   - `modes/xiyou/ui/achievement_popup.gd` 与 `modes/xiyou/ui/autosave_notice.gd` 标题／提示文本由 `XUiSkin.GOLD_LIGHT` 改为 `XUiSkin.GOLD`。
-  - `modes/xiyou/ui/achievement_popup.gd` `show_for()` 叠放按已占弹窗实际高度 `p.plan_height()` 推进，并在 `XUiSkin.on()` 下将间距扩至 `24.0`，避免第二条压住第一条下沿与阴影。
+  - `modes/xiyou/ui/achievement_popup.gd` `show_for()` 新叠放循环（按 `p.plan_height()` 推进并扩至 `24.0` 间距）仅在 `XUiSkin.on()` 下启用，皮肤关闭时保留原版 `SCREEN.y * 2.0 / 3.0` 与原循环（含退场上滑时落回 `y0`）。
   - `modes/xiyou/map/treasure_popup.gd` 移除死三元 `44.0 if XUiSkin.on() else 44.0`。
 - **整改后前台验证**（跳过 `并行测试.py` 及长测试，留总装）：
   - `语法检查.py`：929 个 `.gd`，0 个问题。
-  - `tests/xiyou_ui_skin_4b.tscn`（无头）：75/75（含新增 `autosave_host_*`、`prestige_host_*`、`ach_stack_*` 与红色映射断言）。
+  - `tests/xiyou_ui_skin_4b.tscn`（无头）：77/77（含新增 `autosave_host_*`、`prestige_host_*`、`ach_stack_*`、`ach_stack_old_pos`、`ach_stack_old_slide_y0` 与红色映射断言）。
+  - `tests/xiyou_achievement_badge.tscn`（无头）：34/34。
   - `tests/xiyou_ui_skin.tscn`（无头）：89/89。
   - `tests/xiyou_help_card.tscn`（无头裸跑）：1075/1075。
 
