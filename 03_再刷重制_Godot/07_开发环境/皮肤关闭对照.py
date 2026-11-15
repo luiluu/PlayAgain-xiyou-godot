@@ -13,6 +13,7 @@
 """
 import argparse
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -30,6 +31,21 @@ TEST = 'tests/xiyou_ui_skin_offshot'
 def run(cmd, **kw):
     print('$', ' '.join(str(c) for c in cmd), flush=True)
     return subprocess.run(cmd, check=True, **kw)
+
+
+def missing_classes(project: Path) -> list:
+    """工程里声明了 class_name、导入缓存（.godot/global_script_class_cache.cfg）里却没有的类名（同 并行测试.py）。"""
+    cache = project / '.godot/global_script_class_cache.cfg'
+    known = set(re.findall(r'"class":\s*&"(\w+)"', cache.read_text(errors='replace'))) if cache.is_file() else set()
+    declared = set()
+    for f in project.rglob('*.gd'):
+        rel = f.relative_to(project).parts
+        if '.godot' in rel or 'generated' in rel:
+            continue
+        m = re.search(r'^class_name\s+(\w+)', f.read_text(errors='replace'), re.M)
+        if m:
+            declared.add(m.group(1))
+    return sorted(declared - known)
 
 
 def shoot(project: Path, out: Path):
@@ -60,6 +76,11 @@ def main():
         cp = clone / PROJ_REL
         (cp / 'modes/xiyou/generated').symlink_to(PROJECT / 'modes/xiyou/generated')
         run(['cp', '-cR', str(PROJECT / '.godot'), str(cp / '.godot')])
+        # 拷来的类缓存是本分支的：基线有本分支还没合进的新 class_name（如 main 的 XTianqiNoX6）时报「类未声明」（5C、2B 踩到），重导入一次重建
+        miss = missing_classes(cp)
+        if miss:
+            print('基线有导入缓存里没有的类，重导入：' + '、'.join(miss[:8]), flush=True)
+            subprocess.run([str(GODOT), '--headless', '--path', str(cp), '--import'], capture_output=True, text=True, timeout=600)
         for ext in ('.gd', '.tscn', '.gd.uid'):
             src = PROJECT / (TEST + ext)
             if src.exists():
