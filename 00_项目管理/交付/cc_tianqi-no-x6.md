@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-no-x6
 
 - 车道／工作者：C 规则·数值线第一步（cc 车道；方案 Orca task_418d95534f7e，Opus＋high；实现 task_798ae1049cd3，Opus＋medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 方案（第一步，协调 11-14 批：第八节两点都按推荐）
 
@@ -271,10 +271,12 @@
 
 ## 验证
 
-- 新专项 `xiyou_tianqi_no_x6` 全过（开关两边：三种出手 × 暴击、九死，伤害 ≈×6；治疗、MP 伤害、敌人打角色不变；固定减伤等价；普通敌人、24 层守层者、20 层楼层敌群、鸿钧、七印里副本血量 ÷6，骑士不变；清心咒 O-2 开／关；我方治疗、骑士回血不缩；公式读 mhp 不缩；敌人打敌人 ÷6；吸取、吸血、scale_direct；五条悟 settle；西游档全项不变；存读不多存键；O-421 关时跟着关）。
-- 本机：`xiyou_tianqi_*` 全部、`xiyou_fabao_rework`、`xiyou_gojo`、`xiyou_gojo_trials`、`xiyou_life_steal`、`xiyou_determinism`、`xiyou_combat`、`xiyou_state_effects`、`xiyou_dot`、`xiyou_nanoha` 共 69 个：先挂 5 个（`xiyou_tianqi_affix_battle`、`xiyou_tianqi_death`、`xiyou_tianqi_numbers`、`xiyou_tianqi_qiyin_effects`、`xiyou_tianqi_skills`，都是钉了 ×6 口径的固定数），改按新口径后全过。
-- `检查.sh --oracle --affected main --cloud`：云端整轮 608 个场景、16 片全过（提交 dbf9b1971 快照，GitHub Actions run 43644545783；`xiyou_floor_reach080` 偶发一次、单跑过）；MV 参照引擎启动、西游来源／转换产物／六难度参照同源、事件对照空绿、内容覆盖、随机守卫全过。唯一失败「发行空壳缺成员」（`XTianqiNoX6.flat_unit`）已补进 `发行空壳特例.json`（发行时 1.0），`发行空壳.py check` 通过。
-- `语法检查.py` 0 问题；`工具回归.py` 全过。
+- 返修后（a692cfb68）`CHECK_JOBS=2 检查.sh --oracle --affected main --cloud`：云端整轮全过（GitHub Actions run 43665784823）；MV 参照引擎启动、西游来源／转换产物／六难度参照同源、事件对照空绿、内容覆盖全过。**`--oracle` 总日志：`03_再刷重制_Godot/04_验证/去全队x6对照/检查_oracle_a692cfb68.log`**。唯一失败是工具自测 `CheckerTests.test_cloud_quota_exhausted_falls_back_to_local`：它断言输出里有默认的 `CHECK_JOBS=3`，这次按协调要求带了 `CHECK_JOBS=2` 环境变量跑、被它读到；不带这个变量单跑 `python3 测试选测.py CheckerTests.test_cloud_quota_exhausted_falls_back_to_local` 通过，与本单无关。
+- 本机：`xiyou_tianqi_*` 全部＋`xiyou_fabao_rework`、`xiyou_gojo`、`xiyou_gojo_trials`、`xiyou_life_steal`、`xiyou_determinism`、`xiyou_combat`、`xiyou_state_effects`、`xiyou_dot`、`xiyou_nanoha`、`xiyou_confusion`、`xiyou_boss_react`、`xiyou_boss_output_context`、`xiyou_state_js`、`xiyou_shield` 共 74 个全过（返修三条 P2 后）；改 AI 估伤后 `xiyou_smart_ai*`、`xiyou_tianqi_no_x6`、`xiyou_determinism`、`xiyou_xuan_auto`、`xiyou_hangup_auto` 共 21 个全过。
+- `反向验证.py` 返修 5 处全咬住（清单 `03_再刷重制_Godot/04_验证/反向验证清单/tianqi-no-x6_返修.json`）。
+- 基准工具开关对照：见上节（263／264 队逐次行动全同）。
+- 首轮（e1982a74b）：云端整轮 608 个场景全过（run 43644545783），此后的改动都在返修提交里，已由上面这轮覆盖。
+- `语法检查.py` 0 问题；`发行空壳.py check` 通过。
 
 ## 待交叉核查
 
