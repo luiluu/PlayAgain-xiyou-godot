@@ -31,7 +31,7 @@ func setup(item: Dictionary, n: int, at: Vector2, fx: int, total: int) -> void:
 	var fs := 18 if XUiSkin.on() else FONT_SIZE
 	var disp := _display_text()
 	var wd := f.get_string_size(disp, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	var pad_w := 44.0 if XUiSkin.on() else 44.0
+	var pad_w := 44.0
 	position = Vector2(at.x - (pad_w + wd) / 2.0, at.y - 32 + OFFSET_Y - fx * SPACE)
 	_wait_hold = WAIT + (total * WAIT - fx * WAIT)
 	_icon = XUI.icon_texture(int(rec.get("iconIndex", 0)) if not rec.is_empty() else GOLD_ICON)

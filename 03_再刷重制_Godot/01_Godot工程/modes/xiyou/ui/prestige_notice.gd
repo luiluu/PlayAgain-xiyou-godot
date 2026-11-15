@@ -15,6 +15,7 @@ const FRAMES := 150
 const FLASH_FRAMES := 45
 
 var flash: ColorRect
+var host: Control
 var win: XMVWindow
 var frames := 0
 var flash_frames := 0
@@ -41,11 +42,11 @@ func _init() -> void:
 	flash = ColorRect.new()
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	flash.color = Color(FLASH_COLOR, 0.0)
-	flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	flash.size = Vector2(1280, 720)
 	add_child(flash)
-	var host := Control.new()
+	host = Control.new()
 	host.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	host.size = Vector2(1280, 720)
 	add_child(host)
 	win = XMVWindow.make(host, RECT, 255, _paint)
 	win.visible = false
@@ -70,12 +71,18 @@ func step() -> void:
 			win.canvas.font = XUiSkin.font("body") if on else XUI.font()
 			win.canvas.clean_text = on
 			if on:
+				flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+				host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 				var vs := get_viewport().get_visible_rect().size if get_viewport() else Vector2(1280, 720)
 				var w := minf(680.0, vs.x - XSkinLayout.margin_for(vs.x) * 2.0)
 				var h := 176.0
 				win.set_rect(Rect2(roundf((vs.x - w) / 2.0), maxf(24.0, roundf(vs.y * 0.11)), w, h))
 				flash.color = Color(XUiSkin.GOLD, flash.color.a)
 			else:
+				flash.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+				flash.size = Vector2(1280, 720)
+				host.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+				host.size = Vector2(1280, 720)
 				win.set_rect(RECT)
 				flash.color = Color(FLASH_COLOR, flash.color.a)
 			win.visible = true

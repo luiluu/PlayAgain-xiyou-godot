@@ -1410,7 +1410,7 @@ static func _skin_color(col: Color) -> Color:
 	if col.b > 0.85 and col.r < 0.35 and col.g < 0.35:
 		return XUiSkin.MP_TEXT
 	if col.r > 0.85 and col.g < 0.35 and col.b < 0.35:
-		return Color("ff8078")
+		return XUiSkin.SEL_LINE
 	if is_equal_approx(col.r, 0.5) and is_equal_approx(col.g, 0.5) and col.b > 0.9:
 		return XUiSkin.MP_TEXT
 	if col.g > 0.9 and col.r < 0.6 and col.b < 0.6:

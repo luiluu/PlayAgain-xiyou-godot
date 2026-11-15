@@ -248,8 +248,10 @@ func _run_notices_sample(skinned: bool) -> Image:
 	var tag := "new" if skinned else "old"
 	check("toast_shown_" + tag, toast != null and XToast.shown.size() == 1 and toast.stack.get_child_count() == 1)
 	check("autosave_skin_" + tag, auto.win.canvas.clean_text == skinned and (auto.win.size.y == 38.0 if skinned else auto.win.size == XAutosaveNotice.RECT.size))
+	check("autosave_host_" + tag, (auto._host.anchor_right == 1.0) if skinned else (auto._host.anchor_right == 0.0 and auto._host.size == Vector2(1280, 720)), [auto._host.anchor_right, auto._host.size])
 	check("power_notice_" + tag, pwr.box.visible and pwr.box.skinned == skinned)
 	check("prestige_notice_" + tag, pre.win.visible and pre.win.canvas.clean_text == skinned)
+	check("prestige_host_" + tag, (pre.flash.anchor_right == 1.0 and pre.host.anchor_right == 1.0) if skinned else (pre.flash.anchor_right == 0.0 and pre.flash.size == Vector2(1280, 720) and pre.host.anchor_right == 0.0 and pre.host.size == Vector2(1280, 720)), [pre.flash.anchor_right, pre.flash.size, pre.host.anchor_right, pre.host.size])
 	check("skill_notice_" + tag, not XSkillNotice.shown.is_empty() and sk.host.get_child_count() == 1)
 	var img := await _capture()
 	for n in [toast, auto, pwr, pre, sk, bg]:
@@ -307,6 +309,25 @@ func _test_achievement_popup() -> void:
 	var old_img := await _run_ach_sample(false)
 	var new_img := await _run_ach_sample(true)
 	await _save_side_by_side("04_achievement_popup_16x9", old_img, new_img)
+	for sk in [false, true]:
+		XUiSkin.ENABLED = sk
+		_state(true)
+		XAchievementPopup._stack.clear()
+		XAchievementPopup.show_for({"id": 1, "name": "初入西游", "icon": 100})
+		XAchievementPopup.show_for({"id": 142, "name": "本质高手", "icon": 240201})
+		var st := XAchievementPopup._stack
+		var tag := "new" if sk else "old"
+		check("ach_stack_count_" + tag, st.size() == 2, st.size())
+		if st.size() == 2:
+			var a0: XAchievementPopup = st[0]
+			var a1: XAchievementPopup = st[1]
+			var min_gap := 24.0 if sk else XAchievementPopup.GAP
+			check("ach_stack_no_overlap_" + tag, a1.position.y >= a0.position.y + a0.plan_height() + min_gap - 0.1, [a0.position.y, a0.plan_height(), a1.position.y])
+		var pop_layer := get_tree().current_scene.get_node_or_null("XAchievementPopups")
+		if pop_layer != null:
+			pop_layer.queue_free()
+		XAchievementPopup._stack.clear()
+		await frames(2)
 
 
 # ---- 5. 难度横幅、2B 首领血弧让位、地名横幅、拾取浮字、称号铭牌 ----
@@ -467,7 +488,8 @@ func _run_item_help_sample(skinned: bool) -> Image:
 	if skinned:
 		var c_blue := XHelpCard._skin_color(Color(0.3, 0.3, 1.0, 1.0))
 		var c_yel := XHelpCard._skin_color(Color(1.0, 1.0, 0.0, 1.0))
-		check("help_card_colors", c_blue == XUiSkin.MP_TEXT and c_yel == XUiSkin.GOLD_LIGHT)
+		var c_red := XHelpCard._skin_color(Color(1.0, 0.1, 0.1, 1.0))
+		check("help_card_colors", c_blue == XUiSkin.MP_TEXT and c_yel == XUiSkin.GOLD_LIGHT and c_red == XUiSkin.SEL_LINE)
 	var img := await _capture()
 	hc.queue_free()
 	sc.queue_free()

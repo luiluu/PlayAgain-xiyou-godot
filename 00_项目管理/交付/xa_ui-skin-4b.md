@@ -127,3 +127,20 @@
 | 其余通知（存档、战力、成就、地名、难度横幅、铭牌） | 文字内容未改，只换皮 | — |
 
 重制版（皮肤关闭）没有新字。以上文字审先不做，记给小A统一审。
+
+## 核查整改（小A，2026-11-15）
+
+已按 cc 乙档核查意见全部整改：
+- **P2**：`XPrestigeNotice`（`flash`／`host`）与 `XAutosaveNotice`（`_host`）恢复默认 `1280×720`（`PRESET_TOP_LEFT`），仅在 `XUiSkin.on()` 时切为 `PRESET_FULL_RECT`，关闭时复位为 `1280×720`，宽屏表现与 `main` 完全一致。
+- **P3 / 测试隔离**：
+  - `tests/xiyou_help_card.gd` 在 `_ready()` 首行补加 `TestEnv.isolate("xiyou_help_card")`，裸跑不再受宿主 `options.json` 影响。
+  - `modes/xiyou/ui/help_card.gd` `_skin_color()` 将硬编码 `#ff8078` 改为 `XUiSkin.SEL_LINE`。
+  - `modes/xiyou/ui/achievement_popup.gd` 与 `modes/xiyou/ui/autosave_notice.gd` 标题／提示文本由 `XUiSkin.GOLD_LIGHT` 改为 `XUiSkin.GOLD`。
+  - `modes/xiyou/ui/achievement_popup.gd` `show_for()` 叠放按已占弹窗实际高度 `p.plan_height()` 推进，并在 `XUiSkin.on()` 下将间距扩至 `24.0`，避免第二条压住第一条下沿与阴影。
+  - `modes/xiyou/map/treasure_popup.gd` 移除死三元 `44.0 if XUiSkin.on() else 44.0`。
+- **整改后前台验证**（跳过 `并行测试.py` 及长测试，留总装）：
+  - `语法检查.py`：929 个 `.gd`，0 个问题。
+  - `tests/xiyou_ui_skin_4b.tscn`（无头）：75/75（含新增 `autosave_host_*`、`prestige_host_*`、`ach_stack_*` 与红色映射断言）。
+  - `tests/xiyou_ui_skin.tscn`（无头）：89/89。
+  - `tests/xiyou_help_card.tscn`（无头裸跑）：1075/1075。
+

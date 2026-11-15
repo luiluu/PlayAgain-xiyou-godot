@@ -50,11 +50,14 @@ static func show_for(d: Dictionary) -> void:
 	var on := XUiSkin.on()
 	var vs := tree.root.get_visible_rect().size if tree.root != null else SCREEN
 	var h := pop.plan_height()
+	var gap := 24.0 if on else GAP
 	var y := vs.y * 2.0 / 3.0
 	for p in _stack:
-		if p.position.y != y:
+		var ph: float = p.plan_height()
+		if y + h + gap <= p.position.y:
 			break
-		y += h + GAP
+		if y < p.position.y + ph + gap:
+			y = p.position.y + ph + gap
 	pop.base_y = y
 	var x := (vs.x - pop.plan_width()) / 2.0 if on else (SCREEN.x - pop.plan_width() - GAP) / 2.0
 	pop.position = Vector2(roundf(x), y)
@@ -123,7 +126,7 @@ func _paint(c: XMVCanvas) -> void:
 		var w := c.size.x
 		c.icon(int(item.get("icon", 0)), 14, 15)
 		var tf := XUiSkin.font("title")
-		c.draw_string(tf, Vector2(58, 28), str(item.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, w - 72, 18, XUiSkin.GOLD_LIGHT)
+		c.draw_string(tf, Vector2(58, 28), str(item.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, w - 72, 18, XUiSkin.GOLD)
 		c.text(str(XAchievementPopup.settings().get("Popup Message", "")), 58, 34, w - 72, "left", XUiSkin.TEXT_2, 14, 20)
 		return
 	c.icon(int(item.get("icon", 0)), 10, 10)

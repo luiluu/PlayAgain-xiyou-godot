@@ -75,7 +75,7 @@ func _init() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_host = Control.new()
 	_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_host.size = Vector2(1280, 720)
 	add_child(_host)
 	win = XMVWindow.make(_host, RECT, 0, _paint)
 	win.padding = 0.0
@@ -92,6 +92,7 @@ func reveal(msg: String) -> void:
 	win.canvas.font = XUiSkin.font("body") if on else XUI.font()
 	win.canvas.clean_text = on
 	if on:
+		_host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		var vs := get_viewport().get_visible_rect().size if get_viewport() else Vector2(1280, 720)
 		var label := XMVText.plain(msg)
 		var f := XUiSkin.font("body")
@@ -101,6 +102,8 @@ func reveal(msg: String) -> void:
 		var margin := XSkinLayout.margin_for(vs.x)
 		win.set_rect(Rect2(vs.x - margin - pill_w, vs.y - 44.0 - pill_h, pill_w, pill_h))
 	else:
+		_host.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+		_host.size = Vector2(1280, 720)
 		win.set_rect(RECT)
 	win.refresh()
 
@@ -141,7 +144,7 @@ func _paint(c: XMVCanvas) -> void:
 		if icon_idx > 0:
 			c.icon(icon_idx, 12.0, (c.size.y - 24.0) / 2.0, 1.0, 24.0)
 		var tx := 44.0 if icon_idx > 0 else 16.0
-		c.text(XMVText.plain(message), tx, 0.0, c.size.x - tx - 14.0, "left", XUiSkin.GOLD_LIGHT, 16, c.size.y)
+		c.text(XMVText.plain(message), tx, 0.0, c.size.x - tx - 14.0, "left", XUiSkin.GOLD, 16, c.size.y)
 		return
 	var half := PAD + ceilf(text_width(message) / 2.0)
 	var h := RECT.size.y
