@@ -32,3 +32,9 @@
 ## 本分支提交
 
 - 见 git log
+
+## 验证
+
+- 本机 `XIYOU_STEP_FPS`＝15／30／60 各跑 xiyou_step_encounter_stop 10 次，30/30 全过（8/8、无 SCRIPT ERROR）。
+- 相关专项本机并行测试.py：battle_bgm 7/7、battle_end_ce 46/46、hangup 55/55、hangup_stop 11/11、victory_text_flow 4/4、transfer_touch、step_encounter_stop 8/8 全过。
+- 云端：没有跑。云端选测对 core/audio.gd 判整轮（634 场景、约 196 分钟额度），为 7 个相关专项不值得；合并时按总装的选测来。
