@@ -43,6 +43,8 @@ var list_win: XMVWindow
 var actor_win: XMVWindow
 var help_card: XHelpCard
 var logic: XBattleLogic
+## 新界面（天启篇，XUiSkin.on() 时）：同一套状态换成模板页布局画（XSkinSkillPage）；关着时为 null，旧页一行不变
+var skin: XSkinSkillPage
 
 
 func _ready() -> void:
@@ -60,6 +62,9 @@ func _ready() -> void:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
 	add_child(help_card)
+	if XUiSkin.on():
+		skin = XSkinSkillPage.new(self)
+		add_child(skin)
 	_refresh()
 
 
@@ -135,6 +140,8 @@ func _refresh() -> void:
 	for w in [type_win, status_win, list_win, actor_win]:
 		w.refresh()
 	_update_help()
+	if skin != null:
+		skin.sync()
 
 
 func _update_help() -> void:
@@ -488,6 +495,9 @@ func _move(d: int, horizontal: bool, wrap: bool) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if absorb_page != null:
 		return
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	var key := event as InputEventKey
 	var pressed := key != null and key.pressed and not key.echo
 	if event.is_action_pressed("ui_cancel"):
@@ -542,6 +552,8 @@ func _wheel(d: int) -> void:
 func _gui_input(event: InputEvent) -> void:
 	if absorb_page != null or not (event is InputEventMouseButton and event.pressed):
 		return
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinSkillPage）
 	var wd := XMenu.wheel_dir(event)
 	if wd != 0:
 		accept_event()

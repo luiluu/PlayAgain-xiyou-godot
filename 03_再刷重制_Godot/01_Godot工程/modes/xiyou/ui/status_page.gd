@@ -22,6 +22,8 @@ extends XActorPage
 ##   原版第 4 页按手机虚拟按键缩进（CodexV019.padRects，只在安卓宿主有）；重制版暂不缩进（桌面同原版，安卓待平台车道接虚拟键位）。
 ##   O-032（套装页）随之撤销：套装加成仍在物品说明卡与装备页显示。
 ## - 右上角「战力 N」按钮（XPowerPanel.make_button）打开角色战力面板（XPowerPanel）；关掉战力时没有按钮和战力条。
+## 天启篇新界面（ui-skin-1c，XUiSkin.on() 时）：不建旧窗口，建 XSkinStatusPage（左角色牌、右页签＋页内容）；页、滚动、换人还是这一页的
+## page／tops／actor_index，变了就 skin.sync()。新布局不放战力条和战力按钮（战力先藏）。关着时一行不变。
 
 const SELECT_RECT := Rect2(0, 0, 1280, 64)
 const PAGE_Y := 72.0
@@ -57,6 +59,7 @@ var power_strip: XPowerStrip
 var power_button: Button
 var power_panel: XPowerPanel
 var _last_actor := -1
+var skin: XSkinStatusPage
 
 
 func rebuild() -> void:
@@ -65,6 +68,12 @@ func rebuild() -> void:
 	if a.actor_id != _last_actor:
 		tops = [0, 0, 0, 0, 0]
 		_last_actor = a.actor_id
+	if XUiSkin.on():
+		if skin == null:
+			skin = XSkinStatusPage.new(self)
+			add_child(skin)
+		_scroll(0)
+		return
 	# 战力条占页窗原位置的上 36，页窗下移；关掉战力时没有
 	var page_y := PAGE_Y
 	power_strip = XPowerStrip.make(content, a, PAGE_Y, 1280)
@@ -88,15 +97,22 @@ func open_power() -> void:
 
 ## 可见行数（Window_Selectable.maxPageRows）
 func page_rows() -> int:
+	if skin != null:
+		return skin.visible_rows()
 	return floori((page_win.size.y - PAD * 2) / LH)
 
 
 func max_top() -> int:
+	if skin != null:
+		return skin.max_top()
 	return maxi(0, line_count(actor(), page) - page_rows())
 
 
 func _scroll(d: int) -> void:
 	tops[page] = clampi(tops[page] + d, 0, max_top())
+	if skin != null:
+		skin.sync()
+		return
 	page_win.up_arrow = tops[page] > 0
 	page_win.down_arrow = tops[page] < max_top()
 	select_win.refresh()
@@ -125,7 +141,7 @@ static func item_step() -> float:
 
 ## 当前页画出的全部文字（测试用）
 func all_text() -> String:
-	return "\n".join(page_names() + page_ops(actor(), page, page_win.size.y).filter(func(op): return op[0] == "text").map(func(op): return str(op[1])))
+	return "\n".join(page_names() + page_ops(actor(), page, page_win.size.y if page_win != null else 612.0).filter(func(op): return op[0] == "text").map(func(op): return str(op[1])))
 
 
 # ---- 绘制 ----
@@ -570,6 +586,8 @@ func _gui_input(event: InputEvent) -> void:
 		if power_panel == null or not is_instance_valid(power_panel):
 			accept_event()
 			cancel()
+	elif skin != null:
+		return   # 新布局点页签、滚轮由 XSkinStatusPage 接
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var p: Vector2 = event.position - SELECT_RECT.position - Vector2(PAD, PAD)
 		if p.y >= 0 and p.y < LH and p.x >= 0:

@@ -50,12 +50,20 @@ const V029_SPECS := [[212, 117, 1, 10], [319, 174, 11, 14], [320, 175, 15, 18], 
 	[339, 186, 58, 61], [340, 187, 62, 65], [341, 188, 66, 69], [342, 189, 1, 10], [1679, 1381, 76, 79], [1680, 1382, 80, 83], [1681, 1383, 84, 87],
 	[1682, 1384, 88, 91]]
 static var _v029 = null
+## 认运行时用的转换清单（测试可指到不存在的路径，模拟发行包）
+static var manifest_path := XDB.BASE + "manifest.json"
 
 
+## 玩家反馈 v0.01.10「藏宝图不能在背包里直接使用」：发行包导出预设排除了 generated/manifest.json（参照数据，10-18 起），
+## 原来缺清单就当旧源，发行版藏宝图一直走原生（背包里只预约事件、回地图要站在宝点上才挖）。正式源已定在 v0.62.12（带这个运行时），
+## 所以缺清单按新源认；有清单（开发工程）照旧看 runtimeInputs。
 static func v029() -> bool:
 	if _v029 == null:
-		var m = XDB.load_json("manifest.json") if FileAccess.file_exists(XDB.BASE + "manifest.json") else null
-		_v029 = m is Dictionary and (m.get("runtimeInputs", {}) as Dictionary).has("js/codex/runtime/installTreasureBatchRuntime.js")
+		if not FileAccess.file_exists(manifest_path):
+			_v029 = true
+		else:
+			var m = XDB.parse_file(manifest_path)
+			_v029 = m is Dictionary and (m.get("runtimeInputs", {}) as Dictionary).has("js/codex/runtime/installTreasureBatchRuntime.js")
 	return bool(_v029)
 
 

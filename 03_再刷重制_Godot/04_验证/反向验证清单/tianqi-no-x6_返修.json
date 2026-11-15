@@ -1,0 +1,7 @@
+{"tests": ["xiyou_tianqi_no_x6"], "items": [
+ {"name": "P2-1 固定减伤不分 HP／MP", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/damage.gd", "find": "if not absorb and hp_type:", "replace": "if not absorb:"},
+ {"name": "P2-1 MP 吸收也缩", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/damage.gd", "find": "(XTianqiNoX6.heal_scale(b) if hp_type else 1.0)", "replace": "XTianqiNoX6.heal_scale(b)"},
+ {"name": "P2-2 状态脚本不缩", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/state_effects.gd", "find": "amount = XTianqiNoX6.program_hp(effects.get(\"context\", {}), _battlers[receiver], amount)", "replace": "pass"},
+ {"name": "P2-3 敌人打敌人回血再缩", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_no_x6.gd", "find": "\tif u is XEnemy and t is XEnemy:\n\t\treturn heal_scale(t)\n", "replace": ""},
+ {"name": "混乱打队友也不乘", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/state_effects.gd", "find": "and dtype in effect.skipTypes and ctx.get(\"target\") is XEnemy:", "replace": "and dtype in effect.skipTypes:"}
+]}

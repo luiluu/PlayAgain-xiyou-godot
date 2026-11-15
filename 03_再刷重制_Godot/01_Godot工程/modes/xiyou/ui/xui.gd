@@ -52,6 +52,8 @@ static func skin() -> Texture2D:
 
 
 static func font() -> Font:
+	if XUiSkin.GLOBAL_FONT and XUiSkin.on():  # 新皮肤的全局换字（第 0 期默认关，见 XUiSkin）
+		return XUiSkin.font("body")
 	return GameFont.current()
 
 
@@ -174,6 +176,9 @@ static func blurred_background(tex: Texture2D) -> TextureRect:
 
 ## 菜单底图（MOG_MenuBackground：Background.png 铺满）＋上浮粒子（MOG_MenuParticles：15 个，向上飘、加算混合）。
 static func menu_background(parent: Control) -> void:
+	if XUiSkin.on():  # 天启篇新皮肤：黑底＋底光＋火星（XUiSkin.menu_backdrop）
+		XUiSkin.menu_backdrop(parent)
+		return
 	var p := XDB.img_path("menus", "Background")
 	if p != "":
 		var t := TextureRect.new()

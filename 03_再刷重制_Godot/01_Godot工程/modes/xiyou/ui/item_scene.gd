@@ -101,6 +101,8 @@ const BULK_BTN_X := [0, 48, 96, 144, 192]
 const BULK_BTN_W := [48, 48, 48, 48, 96]
 var bulk_buttons: Control
 var _touched := false               # TouchInput.date > Input.date：最近一次输入是鼠标／触摸才显示触摸键
+## 新界面（天启篇，XUiSkin.on() 时）：同一套状态，换成模板页布局画（XSkinItemPage）；关着时为 null，旧页一行不变
+var skin: XSkinItemPage
 
 
 func _ready() -> void:
@@ -140,6 +142,11 @@ func _ready() -> void:
 		gear_detail.set_visible(false)
 	toolbar = XGearSearch.make_toolbar(open_search, clear_filter)
 	add_child(toolbar)
+	if XUiSkin.on():
+		skin = XSkinItemPage.new(self)
+		add_child(skin)
+		move_child(bulk_win, -1)       # 数量窗、藏宝图窗留在新布局之上
+		move_child(treasure_win, -1)
 	_refresh()
 
 
@@ -358,11 +365,13 @@ func _refresh() -> void:
 		var gear := entries().filter(func(e): return XItemMarks.is_gear(e.rec)).size()
 		(toolbar.get_child(0) as Button).text = XGearSearch.toolbar_label(not gear_filter.is_empty(), gear)
 	_update_help()
+	if skin != null:
+		skin.sync()
 
 
 ## gearShown43：物品列表活动、选中的是装备
 func gear_shown() -> bool:
-	return gear_detail != null and _mode == "list" and XItemMarks.is_gear(_current())
+	return gear_detail != null and skin == null and _mode == "list" and XItemMarks.is_gear(_current())
 
 
 ## refreshGear43：详情三块与信息窗二选一
@@ -587,6 +596,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _bulk_busy or not _bulk.is_empty():
 		_bulk_input(event)
+		return
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
 		return
 	var handled := true
 	if event.is_action_pressed("ui_cancel"):
@@ -838,6 +850,15 @@ func _targets() -> Array:
 	if _for_all():
 		return members
 	return [members[clampi(_actor, 0, members.size() - 1)]]
+
+
+## 新界面「给谁用」：rec 用在 t 身上有没有效（同 _effective，不改 _item）
+func _effective_for(rec: Dictionary, t: XActor) -> bool:
+	var keep := _item
+	_item = rec
+	var ok := _effective(t)
+	_item = keep
+	return ok
 
 
 ## Game_Action.testApply：至少一个对象有效才能用，否则蜂鸣
@@ -1208,12 +1229,17 @@ func _gui_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	_touched = true
+	if skin != null and (not _treasure.is_empty() or _bulk_busy or not _bulk.is_empty()):
+		event = event.duplicate()
+		event.position -= skin.legacy_offset()   # 宽屏时数量窗居中挪过，点击坐标挪回旧坐标
 	if not _treasure.is_empty():
 		_treasure_click(event)
 		return
 	if _bulk_busy or not _bulk.is_empty():
 		_bulk_click(event)
 		return
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinItemPage）
 	var p: Vector2 = event.position
 	var pad := Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 	match event.button_index:

@@ -53,6 +53,9 @@ var player_tile := Vector2.ZERO
 var event_state: XState = XState.current
 ## 「真气」：CodexZhenqi.openFromMenu 关菜单回地图后，由地图执行闭关（XZhenqiRetreat）
 var zhenqi_requested := false
+## 新界面（第 1A 批）：XUiSkin.on() 时主菜单换成 XSkinMainMenu（环＋分组子项＋本局条＋队伍条），旧三个窗口不建；
+## 关着时这里是 null，旧代码一行不变。打开各页仍走下面同一套 run_command／open_actor_page。
+var skin: XSkinMainMenu
 
 
 ## 显示的指令：异化隐藏生效（XAlienBattle.hidden，O-283）时去掉「异化工坊」（v0.58 Window_MenuCommand.makeCommandList 包装）
@@ -69,6 +72,16 @@ func command_enabled(i: int) -> bool:
 	return cmd[2] and not (cmd[1] in NEEDS_MEMBERS and _members().is_empty())
 
 
+## 按符号问可不可用（新主菜单用；规则同 command_enabled，不在 commands() 里的符号——没做的、被隐藏的——不可用）
+func symbol_enabled(sym: String) -> bool:
+	for c in commands():
+		if c[1] == sym:
+			if sym == "formation" and _members().size() < 2:
+				return false
+			return c[2] and not (sym in NEEDS_MEMBERS and _members().is_empty())
+	return false
+
+
 func command_names() -> Array:
 	return commands().map(func(c): return c[0])
 
@@ -79,6 +92,11 @@ func _ready() -> void:
 	theme = XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	XUI.menu_background(self)
+	if XUiSkin.on():
+		skin = XSkinMainMenu.new()
+		skin.host = self
+		add_child(skin)
+		return
 	cmd_win = XMVWindow.make(self, CMD_RECT, XUI.MENU_WINDOW_OPACITY, _paint_commands)
 	cmd_win.canvas.blink = true
 	gold_win = XMVWindow.make(self, GOLD_RECT, XUI.MENU_WINDOW_OPACITY, _paint_gold)
@@ -92,6 +110,9 @@ func _members() -> Array:
 
 
 func _refresh() -> void:
+	if skin != null:
+		skin.refresh()
+		return
 	cmd_win.up_arrow = _cmd_top > 0
 	cmd_win.down_arrow = _cmd_top < commands().size() - CMD_VISIBLE
 	status_win.up_arrow = _actor_top > 0
@@ -234,7 +255,7 @@ static func _group(v: float) -> String:
 
 # ---- 操作 ----
 func _gui_input(event: InputEvent) -> void:
-	if _mode == "page":
+	if _mode == "page" or skin != null:
 		return
 	if event is InputEventMouseButton and event.pressed:
 		var p: Vector2 = event.position
@@ -277,7 +298,7 @@ func _click(p: Vector2) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _mode == "page":
+	if _mode == "page" or skin != null:  # 新界面由 XSkinMainMenu 自己收键
 		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
@@ -404,71 +425,81 @@ func _ok() -> void:
 			XSound.system(3)
 			return
 		XSound.system(1)
-		match cmd[1]:
-			"item":
-				_show_items()
-			"skill", "equip", "status":
-				_pending = cmd[1]
-				_mode = "actor"
-				_actor_index = clampi(_selected_actor, 0, _members().size() - 1)
-				_actor_top = _scroll_to(_actor_index, _actor_top, STATUS_ROWS)
-				_refresh()
-			"save":
-				# 正式版「存档」是公共事件 1（Menu 84 Ext）：回到地图后存到开局选的固定存档位
-				event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 84 Ext", "1"))))
-				closed.emit()
-			"achievement":
-				# 「成就」是公共事件 431（Menu 79 Ext）：回到地图后 SceneManager.push(Scene_AchievementBook)，关闭回地图
-				event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 79 Ext", "431"))))
-				closed.emit()
-			"monsterBook":
-				# 「怪物图鉴」是公共事件 2（Menu 83 Ext）：回到地图后插件指令 EnemyBook open，关闭回地图
-				event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 83 Ext", "2"))))
-				closed.emit()
-			"actorBook":
-				# 「人物图鉴」是公共事件 3（Menu 82 Ext）：回到地图后 SceneManager.push(Scene_ActorBook)，关闭回地图
-				event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 82 Ext", "3"))))
-				closed.emit()
-			"options":
-				var page := XOptionsScene.new()
-				page.map_shot = map_shot
-				page.player_tile = player_tile
-				_open_detail(page)
-			"pet":
-				# 「宠物」是公共事件 169（Menu 80 Ext）：回到地图后 SceneManager.push(Scene_PetSystem)，关闭回地图
-				event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 80 Ext", "169"))))
-				closed.emit()
-			"race":
-				# installNativeRaceRuntime：Scene_Menu 的 codexRace → CodexRaces.openMenu（XRaceMenu）
-				_open_detail(XRaceMenu.new())
-			"crafting":
-				# hc.js Scene_Menu.commandRecipe：SceneManager.push(Scene_Crafting)（从菜单进可以制作）
-				_open_detail(XCraftingScene.new())
-			"formation":
-				# Scene_Menu.commandFormation → YEP_PartySystem 的 Scene_Party
-				_open_detail(XPartyScene.new())
-			"zhenqi":
-				zhenqi_requested = true
-				closed.emit()
-			"alienation":
-				# installAlienationWorkshop：CodexAlienation.openWorkshop（原版是盖在菜单上的网页叠加层，见 XAlienWorkshop）
-				if not XAlienBattle.hidden():  # O-283：v0.58 隐藏时工坊打不开（A.openWorkshop 返回 false）
-					_open_detail(XAlienWorkshop.new())
-			"orbs":
-				# installNativeOrbRuntime：CodexOrbs.open → 宝珠坊（XOrbShop）
-				_open_detail(XOrbShop.new())
-			"gameEnd":
-				_show_game_end()
+		run_command(cmd[1])
 	elif _mode == "actor":
 		XSound.system(1)
-		_selected_actor = _actor_index
-		match _pending:
-			"skill":
-				_open_detail(XSkillScene.new())
-			"status":
-				_show_status()
-			"equip":
-				_show_equip()
+		open_actor_page(_pending, _actor_index)
+
+
+## 选好人后打开技能／状态／装备页（旧菜单选人窗、新主菜单队伍条共用）
+func open_actor_page(sym: String, actor_index: int) -> void:
+	_selected_actor = actor_index
+	match sym:
+		"skill":
+			_open_detail(XSkillScene.new())
+		"status":
+			_show_status()
+		"equip":
+			_show_equip()
+
+
+## 执行一条指令（确定音、可用与否由调用方处理）；技能／装备／状态转到选人
+func run_command(sym: String) -> void:
+	match sym:
+		"item":
+			_show_items()
+		"skill", "equip", "status":
+			_pending = sym
+			_mode = "actor"
+			_actor_index = clampi(_selected_actor, 0, _members().size() - 1)
+			_actor_top = _scroll_to(_actor_index, _actor_top, STATUS_ROWS)
+			_refresh()
+		"save":
+			# 正式版「存档」是公共事件 1（Menu 84 Ext）：回到地图后存到开局选的固定存档位
+			event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 84 Ext", "1"))))
+			closed.emit()
+		"achievement":
+			# 「成就」是公共事件 431（Menu 79 Ext）：回到地图后 SceneManager.push(Scene_AchievementBook)，关闭回地图
+			event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 79 Ext", "431"))))
+			closed.emit()
+		"monsterBook":
+			# 「怪物图鉴」是公共事件 2（Menu 83 Ext）：回到地图后插件指令 EnemyBook open，关闭回地图
+			event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 83 Ext", "2"))))
+			closed.emit()
+		"actorBook":
+			# 「人物图鉴」是公共事件 3（Menu 82 Ext）：回到地图后 SceneManager.push(Scene_ActorBook)，关闭回地图
+			event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 82 Ext", "3"))))
+			closed.emit()
+		"options":
+			var page := XOptionsScene.new()
+			page.map_shot = map_shot
+			page.player_tile = player_tile
+			_open_detail(page)
+		"pet":
+			# 「宠物」是公共事件 169（Menu 80 Ext）：回到地图后 SceneManager.push(Scene_PetSystem)，关闭回地图
+			event_state.reserve_common_event(int(str(XDB.plugin("YEP_MainMenuManager").get("Menu 80 Ext", "169"))))
+			closed.emit()
+		"race":
+			# installNativeRaceRuntime：Scene_Menu 的 codexRace → CodexRaces.openMenu（XRaceMenu）
+			_open_detail(XRaceMenu.new())
+		"crafting":
+			# hc.js Scene_Menu.commandRecipe：SceneManager.push(Scene_Crafting)（从菜单进可以制作）
+			_open_detail(XCraftingScene.new())
+		"formation":
+			# Scene_Menu.commandFormation → YEP_PartySystem 的 Scene_Party
+			_open_detail(XPartyScene.new())
+		"zhenqi":
+			zhenqi_requested = true
+			closed.emit()
+		"alienation":
+			# installAlienationWorkshop：CodexAlienation.openWorkshop（原版是盖在菜单上的网页叠加层，见 XAlienWorkshop）
+			if not XAlienBattle.hidden():  # O-283：v0.58 隐藏时工坊打不开（A.openWorkshop 返回 false）
+				_open_detail(XAlienWorkshop.new())
+		"orbs":
+			# installNativeOrbRuntime：CodexOrbs.open → 宝珠坊（XOrbShop）
+			_open_detail(XOrbShop.new())
+		"gameEnd":
+			_show_game_end()
 
 
 func _cancel() -> void:
@@ -560,7 +591,7 @@ func _show_game_end() -> void:
 	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_open_detail(page)
 	for node in get_children():
-		if (node is TextureRect) or (node is CPUParticles2D):
+		if (node is TextureRect) or (node is CPUParticles2D) or (skin != null and node.name == "SkinBackdrop"):  # 新界面的黑底
 			node.show()
 	page.to_title.connect(_to_title)
 

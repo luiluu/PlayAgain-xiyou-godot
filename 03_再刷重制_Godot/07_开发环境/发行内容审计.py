@@ -35,6 +35,7 @@ DENY = [
     'content/gojo/*',                 # 五条悟（只进天启篇）
     'modes/xiyou/rift_alien.json',    # 漩涡五阶段怪物异化设计数值
     'modes/xiyou/ui/tianqi/*',        # 天启篇五档难度徽章
+    'content/ui_skin/*',              # 天启篇新界面的字体与通用法阵（ui-skin-p0；新皮肤只在天启篇开）
 ]
 RELEASE_PRESETS = ('Windows 发行', '安卓 发行', 'macOS 发行')
 

@@ -16,6 +16,11 @@ extends Control
 ## 列表宽 33%（右 1px 分隔线、右内距 14），与详情间距 20；分解确认框暗红底红边；配置框黑 0.25 底、白 0.22 边、无内距。
 ## 相邻按钮原版另有 margin-left 7（button+button）：操作行间距 8+7＝15、确认框里两键同一行间隔 7，照画；
 ## 列表里第 2 个起也被右推 7 并撑出横向滚动条——O-087 不照搬，列表按钮左对齐、不出横向滚动条。
+## 新界面（ui-skin-3b，盘点清册 #78）：XUiSkin.on() 时整页换排法，节点树（build／tree／flatten／click）和全部操作一行不改：
+## 页名「异化工坊」左上、资源与合成、返回右上；下面一排页签（异化装备、异化核、装备重铸、本线图鉴、最近异化掉落，按 build 里有哪几节），
+## Q／E 换页；「异化装备」页左边全高列表、右边详情（可滚）＋底部常驻操作栏（重抽、分解、取核、净化、配置），确认框、配置展开在详情里；
+## 其余页各一整块面板；待选重抽时只有两张选择卡。黑底、黑面板细线、红乙选中、思源黑体／宋体，收益绿、代价和危险操作橙（红只表示选中）。
+## 关着（西游存档、ENABLED = false）一律照旧。
 
 signal closed
 
@@ -65,11 +70,27 @@ var root: Control
 var shown_selected := ""
 ## 最近一次 render 的节点树（屏上显示的就是它；测试读它、按它点按钮）
 var tree: Array = []
+## 新界面（_ready 时 XUiSkin.on() 定）；页签：[[名字, 节点]]，skin_tab 当前第几页（重画时按名字留住）
+var skin := false
+var skin_tabs: Array = []
+var skin_tab := 0
+var _skin_tab_name := ""
+var _skin_hints: XSkinKeyHints
+const SKIN_LIST_W := 360.0
+const SKIN_TAB_H := 36.0
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	skin = XUiSkin.on()
+	if skin:
+		XUiSkin.menu_backdrop(self)
+		theme = XUiSkin.theme()
+		XSkinLayout.request_wide(self)
+		render()
+		resized.connect(func(): if root != null: render(true))
+		return
 	XUI.menu_background(self)
 	var back := ColorRect.new()
 	back.color = BACKDROP
@@ -87,6 +108,19 @@ func close() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin and skin_tabs.size() > 1:
+		# 换页：pageup／pagedown（键盘 Q／E、手柄肩键，小A 3B 核查 P3），没绑到动作的 Q／E 键也认
+		var step := 0
+		if event.is_action_pressed("ui_page_up"):
+			step = -1
+		elif event.is_action_pressed("ui_page_down"):
+			step = 1
+		elif event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_Q or event.keycode == KEY_E):
+			step = 1 if event.keycode == KEY_E else -1
+		if step != 0:
+			skin_switch(step)
+			XKeyMap.handled(self)
+			return
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE or event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
 		close()
@@ -686,6 +720,9 @@ func render(partial := false) -> void:
 	tree = nodes
 	if root != null:
 		root.queue_free()
+	if skin:
+		await _render_skin(nodes)
+		return
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	center.offset_left = 18
@@ -793,6 +830,8 @@ func _vbox(sep := 10) -> VBoxContainer:
 
 ## 段落：白字黑描边、行高＝字号×1.6；标题粗体（h1／h2 字距 1）
 func _label(text: String, size_px := BODY_SIZE, color := TEXT, bold := false) -> Label:
+	if skin:
+		return _skin_label(text, size_px, color, bold)
 	var l := XWebPanel._para(text, size_px, color, size_px * 1.6, bold)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.mouse_filter = Control.MOUSE_FILTER_PASS
@@ -804,6 +843,8 @@ func _button(text: String, cls := "", disabled := false) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.disabled = disabled
+	if skin:
+		return _skin_button(b, cls)
 	XWebPanel.style_button(b, Vector2(12, 9))
 	b.custom_minimum_size.y = BUTTON_H
 	var pad := Vector2(12, 9)
@@ -826,6 +867,9 @@ func _button(text: String, cls := "", disabled := false) -> Button:
 ## 盒子：底、边、圆角与内距（CSS 内距＋边框）
 func _panel(bg: Color, edge: Color, radius: int, pad: Vector2, border := 1) -> PanelContainer:
 	var pc := PanelContainer.new()
+	if skin:
+		pc.add_theme_stylebox_override("panel", _skin_box(bg, edge, pad))
+		return pc
 	pc.add_theme_stylebox_override("panel", XWebPanel._box(bg, edge, radius, border, pad))
 	return pc
 
@@ -884,9 +928,13 @@ func _make(n: Dictionary) -> Control:
 			return lv
 		"select":
 			var ob := OptionButton.new()
-			XWebPanel.style_button(ob, Vector2(12, 9))
-			ob.add_theme_stylebox_override("normal", XWebPanel._box(XWebPanel.FIELD_BG, XWebPanel.BUTTON_EDGE, 6, 1, Vector2(12, 9)))
-			ob.custom_minimum_size.y = BUTTON_H
+			if skin:
+				XSkinButton.apply(ob, "", XUiSkin.FS_AUX_MAX)
+				ob.custom_minimum_size.y = 40
+			else:
+				XWebPanel.style_button(ob, Vector2(12, 9))
+				ob.add_theme_stylebox_override("normal", XWebPanel._box(XWebPanel.FIELD_BG, XWebPanel.BUTTON_EDGE, 6, 1, Vector2(12, 9)))
+				ob.custom_minimum_size.y = BUTTON_H
 			ob.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			var pick := -1
 			for idx in n.options.size():
@@ -947,6 +995,10 @@ func _make(n: Dictionary) -> Control:
 			for k in kids:
 				var c := _make(k)
 				if c != null:
+					if skin:   # 新界面：一行里的说明占满剩下的宽，按钮竖向居中不拉高
+						c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+						if c is Label:
+							c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 					h.add_child(c)
 			return h
 		"alien-body", "alien-choices":
@@ -1011,3 +1063,359 @@ func _make(n: Dictionary) -> Control:
 		pc.add_child(v)
 		return pc
 	return v
+
+
+## ---- 新界面（ui-skin-3b）：同一棵节点树换排法 ----
+
+## 颜色对照：收益绿→提升绿、代价／出错→橙、说明→次要字、系统色与金→旧金、其余正文白
+func _skin_color(c: Color) -> Color:
+	if c == GOOD:
+		return XUiSkin.UP
+	if c == BAD or c == ERROR:
+		return XUiSkin.DOWN
+	if c == NOTE:
+		return XUiSkin.TEXT_2
+	if c == XWebPanel.GOLD or c == XWebPanel.SYSTEM:
+		return XUiSkin.GOLD
+	return XUiSkin.TEXT
+
+
+## 字：h1 页名宋体 34、h2 宋体 24、h3 黑体 19 旧金、正文 17；行距 4
+func _skin_label(text: String, size_px: int, color: Color, bold: bool) -> Label:
+	var l := Label.new()
+	l.text = text
+	var ls := LabelSettings.new()
+	var big := bold and size_px >= SIZES.h2
+	ls.font = XUiSkin.font("title" if big else "body")
+	ls.font_size = XUiSkin.FS_PAGE if size_px >= SIZES.h1 else (24 if big else (XUiSkin.FS_LIST if bold else XUiSkin.FS_AUX_MAX))
+	ls.font_color = _skin_color(color)
+	ls.line_spacing = 4
+	l.label_settings = ls
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.mouse_filter = Control.MOUSE_FILTER_PASS
+	return l
+
+
+## 按钮：黑面板细线；合成／重抽／确认类旧金线（主按钮）、分解／取核类橙（危险）；列表里选中的那件是红乙选中条；不可点整体 0.4
+func _skin_button(b: Button, cls: String) -> Button:
+	var kind := ""
+	if RegEx.create_from_string(DANGER_RE).search(b.text) != null:
+		kind = "danger"
+	elif RegEx.create_from_string(PRIMARY_RE).search(b.text) != null:
+		kind = "primary"
+	XSkinButton.apply(b, kind, XUiSkin.FS_AUX_MAX)
+	b.custom_minimum_size.y = 40
+	if cls == "selected":
+		b.add_theme_stylebox_override("normal", XSkinButton.select())
+	if b.disabled:
+		b.add_theme_stylebox_override("disabled", b.get_theme_stylebox("normal"))
+		b.modulate.a = 0.4
+	return b
+
+
+## 盒子：确认框／出错用橙细线淡橙底，其余黑底细线
+func _skin_box(bg: Color, edge: Color, pad: Vector2) -> StyleBoxFlat:
+	var danger := edge == BAD or bg == ERROR_BACK
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(XUiSkin.DOWN, 0.07) if danger else Color(0, 0, 0, 0.25 if bg.a > 0 else 0.0)
+	sb.border_color = Color(XUiSkin.DOWN, 0.6) if danger else Color(XUiSkin.LINE, 0.3)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(XUiSkin.ROW_RADIUS)
+	var p := Vector2(maxf(pad.x, 12), maxf(pad.y, 10))
+	sb.content_margin_left = p.x
+	sb.content_margin_right = p.x
+	sb.content_margin_top = p.y
+	sb.content_margin_bottom = p.y
+	return sb
+
+
+func _skin_panel() -> PanelContainer:
+	var pc := PanelContainer.new()
+	pc.add_theme_stylebox_override("panel", XUiSkin.panel_style())
+	return pc
+
+
+func _skin_scroll() -> ScrollContainer:
+	var sc := ScrollContainer.new()
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.follow_focus = true
+	sc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	return sc
+
+
+## 页签名：异化装备页固定，其余取那一节的第一个标题（「异化核（N）」「装备重铸」「本线异化图鉴（N／M）」「最近异化掉落（N）」）
+static func _section_title(n: Dictionary) -> String:
+	for k in n.get("children", []):
+		if str(k.tag) in ["h2", "h3", "summary"]:
+			return str(k.get("text", ""))
+	return str(n.get("class", ""))
+
+
+## 换页（Q／E）：循环
+func skin_switch(step: int) -> void:
+	if skin_tabs.size() <= 1:
+		return
+	skin_tab = (skin_tab + step + skin_tabs.size()) % skin_tabs.size()
+	_skin_tab_name = str(skin_tabs[skin_tab][0])
+	XSound.system(0)
+	render(true)
+
+
+func skin_tab_name() -> String:
+	return str(skin_tabs[skin_tab][0]) if skin_tab < skin_tabs.size() else ""
+
+
+func _render_skin(nodes: Array) -> void:
+	var pane: Dictionary = nodes[0]
+	var page := Control.new()
+	page.name = "SkinPage"
+	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	page.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(page)
+	root = page
+	var vs := size if size.x > 0 else get_viewport_rect().size
+	var m := XSkinLayout.margin_for(vs.x)
+	# 拆节点树：标题、资源条、出错、说明、异化装备（左列表右详情）；之前的是待选重抽，之后的各成一页
+	var heading = null
+	var summary = null
+	var error = null
+	var note = null
+	var body = null
+	var pending := []
+	var sections := []
+	for n in pane.children:
+		var cls := str(n.get("class", ""))
+		if cls == "alien-heading":
+			heading = n
+		elif cls == "alien-summary":
+			summary = n
+		elif cls == "alien-error":
+			error = n
+		elif cls == "alien-note" and body == null and note == null:
+			note = n
+		elif cls == "alien-body":
+			body = n
+		elif body == null:
+			pending.append(n)
+		else:
+			sections.append(n)
+	# 顶上一行：页名（左）；资源、合成、返回（右）
+	var head := HBoxContainer.new()
+	head.name = "SkinHeader"
+	head.add_theme_constant_override("separation", XUiSkin.PANEL_GAP)
+	head.position = Vector2(m, 16)
+	head.size = Vector2(vs.x - m * 2.0, 44)
+	page.add_child(head)
+	if heading != null:
+		var t := _skin_label(str(heading.children[0].get("text", "")), SIZES.h1, XUiSkin.GOLD, true)
+		t.label_settings.font_color = XUiSkin.GOLD
+		t.autowrap_mode = TextServer.AUTOWRAP_OFF
+		t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		head.add_child(t)
+	if summary != null:
+		for k in summary.children:
+			var c := _make(k)
+			if c is Label:
+				(c as Label).label_settings.font_color = XUiSkin.GOLD_LIGHT
+				(c as Label).label_settings.font = XUiSkin.font("body")
+				(c as Label).autowrap_mode = TextServer.AUTOWRAP_OFF
+			if c != null:
+				c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				head.add_child(c)
+	if heading != null:
+		for k in heading.children.slice(1):
+			var c := _make(k)
+			if c != null:
+				c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				head.add_child(c)
+	var top := float(XUiSkin.TOP)
+	if error != null and not error.get("hidden", false):
+		var e := _make(error)
+		e.position = Vector2(m, top)
+		e.size = Vector2(vs.x - m * 2.0, 0)
+		page.add_child(e)
+		top += 52.0
+	var bottom := float(XUiSkin.BOTTOM)
+	# 页签
+	skin_tabs.clear()
+	if pending.is_empty() and body != null:
+		skin_tabs.append(["异化装备", body])
+		for n in sections:
+			skin_tabs.append([_section_title(n), n])
+	var names := skin_tabs.map(func(x): return str(x[0]).get_slice("（", 0))
+	var want := _skin_tab_name.get_slice("（", 0)
+	skin_tab = maxi(names.find(want), 0) if want != "" else clampi(skin_tab, 0, maxi(skin_tabs.size() - 1, 0))
+	if skin_tabs.size() > 1:
+		var strip := HBoxContainer.new()
+		strip.name = "SkinTabs"
+		strip.add_theme_constant_override("separation", 8)
+		strip.position = Vector2(m, top)
+		strip.size = Vector2(vs.x - m * 2.0, SKIN_TAB_H)
+		page.add_child(strip)
+		for i in skin_tabs.size():
+			var tb := Button.new()
+			tb.text = str(skin_tabs[i][0])
+			tb.focus_mode = Control.FOCUS_NONE
+			XSkinButton.apply(tb, "", XUiSkin.FS_AUX_MAX)
+			tb.custom_minimum_size.y = SKIN_TAB_H
+			if i == skin_tab:
+				tb.add_theme_stylebox_override("normal", XSkinButton.select())
+				tb.add_theme_color_override("font_color", XUiSkin.TEXT)
+			else:
+				tb.add_theme_color_override("font_color", XUiSkin.TEXT_2)
+			tb.pressed.connect(func():
+				skin_tab = i
+				_skin_tab_name = str(skin_tabs[i][0])
+				render(true))
+			strip.add_child(tb)
+		top += SKIN_TAB_H + XUiSkin.PANEL_GAP
+	var content_w := vs.x - m * 2.0
+	var focus_in: Control = null
+	if not pending.is_empty() or body == null:
+		# 待选重抽（或待选装备不可用）：居中一块
+		var w := minf(content_w, 960.0)
+		var pc := _skin_panel()
+		pc.position = Vector2(roundf((vs.x - w) / 2.0), top)
+		pc.size = Vector2(w, bottom - top)
+		page.add_child(pc)
+		var sc := _skin_scroll()
+		pc.add_child(sc)
+		var v := _stack(pending)
+		v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sc.add_child(v)
+		focus_in = v
+	elif skin_tab == 0:
+		focus_in = _skin_body(page, body, note, Rect2(m, top, content_w, bottom - top))
+	else:
+		var sec: Dictionary = skin_tabs[skin_tab][1]
+		var pc := _skin_panel()
+		pc.position = Vector2(m, top)
+		pc.size = Vector2(content_w, bottom - top)
+		page.add_child(pc)
+		var sc := _skin_scroll()
+		pc.add_child(sc)
+		# 一节的内容直接放进面板（不再套一层盒子）；「最近异化掉落」的展开按钮就是页签，行直接列出来
+		var kids: Array = sec.children
+		if str(sec.tag) == "details":
+			kids = kids.filter(func(k): return str(k.tag) != "summary")
+		var v := _stack(kids)
+		v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		sc.add_child(v)
+		focus_in = v
+	# 按键提示
+	_skin_hints = XSkinKeyHints.new()
+	_skin_hints.name = "SkinKeyHints"
+	var hl := [["确定", "选择"], ["取消", "返回"]]
+	if skin_tabs.size() > 1:
+		hl.push_front(["Q / E", "换页"])
+	_skin_hints.set_hints(hl)
+	_skin_hints.place(vs)
+	_skin_hints.visible = not XPlatform.is_touch()
+	page.add_child(_skin_hints)
+	await get_tree().process_frame
+	if not is_instance_valid(page) or page != root:
+		return
+	# 焦点：确认框开着时放在「确认…」上，配置开着时放在第一个下拉框，否则第一个能点的按钮（同旧版 O-089：先不画框）
+	var first: Control = null
+	if confirming or confirming_core:
+		first = _skin_find(page, func(c): return c is Button and not c.disabled and c.text.begins_with("确认"))
+	elif cfg_open:
+		first = _skin_find(page, func(c): return c is OptionButton)
+	if first == null and focus_in != null:
+		first = _first_button(focus_in)
+	if first != null and focus_first:
+		first.grab_focus(true)
+
+
+## 异化装备页：左边全高列表（下面一行说明），右边详情可滚＋底部常驻操作栏
+func _skin_body(page: Control, body: Dictionary, note, r: Rect2) -> Control:
+	var list_node: Dictionary = body.children[0]
+	var detail_node: Dictionary = body.children[1]
+	var lp := _skin_panel()
+	lp.name = "SkinList"
+	lp.position = r.position
+	lp.size = Vector2(SKIN_LIST_W, r.size.y)
+	page.add_child(lp)
+	var lv := _vbox(8)
+	lp.add_child(lv)
+	var lsc := _skin_scroll()
+	lv.add_child(lsc)
+	var items := _vbox(6)
+	items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lsc.add_child(items)
+	# 选中的那件画红乙选中条（旧版照原版只在整页重画时按当时的 selected 标，首次打开不标；新界面按现在选中的标，节点树不动）
+	var uids := XAlienation.owned(s()).filter(func(e): return not XAlienation.mark(e).is_empty()).map(func(e): return str(XAlienation.mark(e).uid))
+	var sel_i := uids.find(selected)
+	var bi := 0
+	for k in list_node.children:
+		var c := _make(k)
+		if c is Button:
+			if bi == sel_i:
+				c.add_theme_stylebox_override("normal", XSkinButton.select())
+			bi += 1
+			(c as Button).alignment = HORIZONTAL_ALIGNMENT_LEFT
+			(c as Button).text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			(c as Button).clip_text = true
+		elif c is Label:
+			(c as Label).label_settings.font_color = XUiSkin.TEXT_3
+		if c != null:
+			items.add_child(c)
+	if note != null:
+		var nl := _skin_label(str(note.text), BODY_SIZE, NOTE, false)
+		nl.label_settings.font_size = XUiSkin.FS_AUX
+		lv.add_child(nl)
+	var dp := _skin_panel()
+	dp.name = "SkinDetail"
+	dp.position = Vector2(r.position.x + SKIN_LIST_W + XUiSkin.PANEL_GAP, r.position.y)
+	dp.size = Vector2(r.size.x - SKIN_LIST_W - XUiSkin.PANEL_GAP, r.size.y)
+	page.add_child(dp)
+	var dv := _vbox(12)
+	dp.add_child(dv)
+	var dsc := _skin_scroll()
+	dv.add_child(dsc)
+	var actions = null
+	var rest := []
+	for k in detail_node.children:
+		if str(k.get("class", "")) == "alien-actions" and actions == null:
+			actions = k
+		else:
+			rest.append(k)
+	var inner := _stack(rest, 10)
+	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dsc.add_child(inner)
+	if actions != null:
+		var line := ColorRect.new()
+		line.color = Color(XUiSkin.LINE, 0.25)
+		line.custom_minimum_size.y = 1
+		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		dv.add_child(line)
+		var bar := HFlowContainer.new()
+		bar.name = "SkinActions"
+		bar.add_theme_constant_override("h_separation", 8)
+		bar.add_theme_constant_override("v_separation", 8)
+		for k in actions.children:
+			var c := _make(k)
+			if c != null:
+				bar.add_child(c)
+		dv.add_child(bar)
+	if confirming or confirming_core or cfg_open:   # 确认框、配置在详情最下面：滚到底
+		_skin_scroll_bottom.call_deferred(dsc)
+	return lp
+
+
+func _skin_scroll_bottom(sc: ScrollContainer) -> void:
+	if is_instance_valid(sc):
+		await get_tree().process_frame
+		if is_instance_valid(sc):
+			sc.scroll_vertical = int(sc.get_v_scroll_bar().max_value)
+
+
+func _skin_find(n: Node, pred: Callable) -> Control:
+	for c in n.get_children():
+		if pred.call(c):
+			return c
+		var r := _skin_find(c, pred)
+		if r != null:
+			return r
+	return null

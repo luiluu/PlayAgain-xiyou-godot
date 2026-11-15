@@ -9,6 +9,9 @@ extends Control
 ## - h3：17 号粗体系统色，上 12 下 6；.cq-note 13 号 #c9ced8 行高 20.8；胶囊：金色 13 号、黑 0.3 底、金 0.45 边、内边距 3/7、间距 7。
 ## - 卡片 .cq-effect：白 0.04 底、左 3px 系统色、内边距 9/10、下距 7。
 ## Esc 关闭；打开时其余按键不再传给游戏窗口。
+## 天启篇新界面（ui-skin-1c，盘点清册 #25；XUiSkin.on() 时）：同一套控件换皮——面板换黑面板＋细线（不画旧窗口皮肤边框）、
+## 字换思源黑体、不描黑边；颜色按 skin_color 换（白→正文、灰→次要字、系统蓝→旧金、金→淡金、光标青→绯红、分隔线→线色）。
+## 宽屏时面板水平居中（skin_center）。排版、尺寸、文字一律不变；新皮肤关着时一行不变。
 
 signal closed
 
@@ -31,20 +34,46 @@ const CURSOR_EDGE := Color(200 / 255.0, 245 / 255.0, 250 / 255.0, 0.75)
 
 
 static func _font(bold := false) -> Font:
+	var base: Font = XUiSkin.font("body") if XUiSkin.on() else XUI.font()
 	if not bold:
-		return XUI.font()
+		return base
 	var v := FontVariation.new()
-	v.base_font = XUI.font()
+	v.base_font = base
 	v.variation_embolden = 0.6
 	v.spacing_glyph = 1
 	return v
 
 
 # ---- 外观 ----
+## 新皮肤开着时把这一套的颜色换成新皮肤的（关着时原样返回）
+static func skin_color(c: Color) -> Color:
+	if not XUiSkin.on():
+		return c
+	if c == TEXT:
+		return XUiSkin.TEXT
+	if c == MUTED:
+		return XUiSkin.TEXT_2
+	if c == SYSTEM:
+		return XUiSkin.GOLD
+	if c == GOLD:
+		return XUiSkin.GOLD_LIGHT
+	if c == LINE:
+		return Color(XUiSkin.LINE, 0.22)
+	if c == PANEL_BG:
+		return XUiSkin.PANEL
+	if c == BUTTON_EDGE:
+		return Color(XUiSkin.LINE, 0.55)
+	if c == CURSOR:
+		return Color(XUiSkin.SEL_FILL, XUiSkin.FILL_ALPHA)
+	if c == CURSOR_EDGE:
+		return XUiSkin.SEL_LINE
+	return c
+
+
 static func _box(bg: Color, edge: Color, radius := 6, border := 1, pad := Vector2(10, 6)) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
-	s.bg_color = bg
-	s.border_color = edge
+	s.bg_color = skin_color(bg)
+	s.border_color = skin_color(edge)
 	s.set_border_width_all(border)
 	s.set_corner_radius_all(radius)
 	# CSS 盒子：内容到外沿＝内边距＋边框
@@ -57,15 +86,15 @@ static func _box(bg: Color, edge: Color, radius := 6, border := 1, pad := Vector
 
 static func _outline(c: Control) -> void:
 	c.add_theme_color_override("font_outline_color", Color.BLACK)
-	c.add_theme_constant_override("outline_size", 2)
+	c.add_theme_constant_override("outline_size", 0 if XUiSkin.on() else 2)
 
 
 ## installGamePanelTheme 的按钮：17 号、黑 0.28 底、白 0.4 边、圆角 6；悬停光标色
 static func style_button(b: Button, pad := Vector2(10, 6)) -> void:
-	b.add_theme_font_override("font", XUI.font())
+	b.add_theme_font_override("font", _font())
 	b.add_theme_font_size_override("font_size", 17)
 	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
-		b.add_theme_color_override(k, TEXT)
+		b.add_theme_color_override(k, skin_color(TEXT))
 	_outline(b)
 	b.add_theme_stylebox_override("normal", _box(BUTTON_BG, BUTTON_EDGE, 6, 1, pad))
 	b.add_theme_stylebox_override("hover", _box(CURSOR, CURSOR_EDGE, 6, 1, pad))
@@ -82,7 +111,7 @@ static func _label(text: String, size: int, color: Color, bold := false) -> Labe
 	l.text = text
 	l.add_theme_font_override("font", _font(bold))
 	l.add_theme_font_size_override("font_size", XFontScale.size(size))
-	l.add_theme_color_override("font_color", color)
+	l.add_theme_color_override("font_color", skin_color(color))
 	_outline(l)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
@@ -103,7 +132,7 @@ static func _fixed(l: Label, line_h: float) -> Label:
 	ls.font = l.get_theme_font("font")
 	ls.font_size = l.get_theme_font_size("font_size")
 	ls.font_color = l.get_theme_color("font_color")
-	ls.outline_size = 2
+	ls.outline_size = 0 if XUiSkin.on() else 2
 	ls.outline_color = Color.BLACK
 	ls.line_spacing = 0
 	var f := ls.font
@@ -115,6 +144,11 @@ static func _fixed(l: Label, line_h: float) -> Label:
 
 ## 面板底、Window 皮肤边框与标题区分隔线（_draw 里调用）
 func draw_frame() -> void:
+	if XUiSkin.on():
+		XUiSkin.shadow_style().draw(get_canvas_item(), PANEL)
+		XUiSkin.panel_style().draw(get_canvas_item(), PANEL)
+		draw_line(Vector2(CONTENT_X, 103.6), Vector2(CONTENT_X + CONTENT_W, 103.6), skin_color(LINE), 1.0)
+		return
 	var bg := _box(PANEL_BG, Color(0, 0, 0, 0), 8, 0, Vector2.ZERO)
 	bg.shadow_color = Color(0, 0, 0, 0.65)
 	bg.shadow_size = 20
@@ -275,6 +309,16 @@ static func card(rows: Array) -> Control:
 	p.add_child(v)
 	m.add_child(p)
 	return m
+
+
+## 宽屏（新界面页面把视口铺到 1280 以外）时面板水平居中；子控件都按 1280 坐标摆，整块挪就行
+func skin_center() -> void:
+	if not XUiSkin.on():
+		return
+	var vw := get_viewport_rect().size.x
+	position.x = roundf((vw - 1280.0) / 2.0) if vw > 1280.0 else 0.0
+	if not get_viewport().size_changed.is_connected(skin_center):
+		get_viewport().size_changed.connect(skin_center)
 
 
 func close() -> void:

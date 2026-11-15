@@ -151,7 +151,9 @@ func _draw() -> void:
 	if not is_open():
 		return
 	XMVCanvas.arrows(self, up_arrow, down_arrow)
-	if pause and XUI.skin():
+	if pause and XUiSkin.on():
+		XUiSkin.draw_pause(self, size.x, size.y, _pause_alpha, _anim)
+	elif pause and XUI.skin():
 		var fx := floori(_anim / 16.0) % 2
 		var fy := floori(_anim / 32.0) % 2
 		draw_texture_rect_region(XUI.skin(), Rect2(size.x / 2.0 - 12, size.y - 24, 24, 24),

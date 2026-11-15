@@ -1,0 +1,560 @@
+{
+ "说明": "天启篇伤害加成总账（设计仓 重制设定/天启篇_伤害加成总账_v0.4.md 第八节期一细则（1）（2））。每个「乘」一行：status＝pooled 已归池（出现就失败）／exempt 豁免（写到期 expires，到期那一期改 pooled）／allowed 永久允许。fields 是这个来源允许写的单独相乘字段；守卫只认登记过的（来源, 字段）。module_whitelist：卡开着时 MODULE_CAP 放行的 [{module, skill, field, reason}]，期初为空。",
+ "phase": 1,
+ "pools": {
+  "skill": "① 技能池",
+  "element": "② 元素池",
+  "bonus": "③ 伤害加成池",
+  "crit": "④ 暴击",
+  "tier": "⑤ 档位池"
+ },
+ "rows": [
+  {
+   "id": "module.raven",
+   "name": "渡鸦 XRaven.damage_ops",
+   "ref": "C5",
+   "fields": [
+    "finalMultiplier",
+    "settlementMultiplier",
+    "skillMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4
+  },
+  {
+   "id": "module.number_boost",
+   "name": "数字强化 XNumberBoost.damage_ops",
+   "ref": "C5",
+   "fields": [
+    "finalMultiplier",
+    "settlementMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4
+  },
+  {
+   "id": "module.mira",
+   "name": "米拉 XActorDamageHooks.mira_ops",
+   "ref": "C5",
+   "fields": [],
+   "status": "exempt",
+   "expires": 4,
+   "note": "只有伤害方式、承伤，无乘"
+  },
+  {
+   "id": "module.sukuna",
+   "name": "宿傩 XSukuna.damage_ops",
+   "ref": "C5",
+   "fields": [
+    "finalMultiplier",
+    "settlementMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4
+  },
+  {
+   "id": "module.yomi_jingliu",
+   "name": "黄泉、镜流 XYomiJingliu.damage_ops",
+   "ref": "C5",
+   "fields": [
+    "finalMultiplier",
+    "skillMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4
+  },
+  {
+   "id": "module.toji",
+   "name": "甚尔 XToji.damage_ops",
+   "ref": "C5",
+   "fields": [
+    "skillMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4
+  },
+  {
+   "id": "module.toji_incoming",
+   "name": "甚尔 XToji.incoming_ops",
+   "ref": "C5",
+   "fields": [],
+   "status": "exempt",
+   "expires": 4,
+   "note": "承伤（靶），无乘"
+  },
+  {
+   "id": "module.garou",
+   "name": "饿狼 XGarou.damage_ops",
+   "ref": "C5",
+   "fields": [
+    "finalMultiplier",
+    "skillMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4
+  },
+  {
+   "id": "module.yunshang",
+   "name": "云裳 XYunshang.damage_ops",
+   "ref": "C5",
+   "fields": [
+    "finalMultiplier",
+    "settlementMultiplier",
+    "skillMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4
+  },
+  {
+   "id": "module.black_flash",
+   "name": "黑闪 XBlackFlash.damage_ops",
+   "ref": "C5",
+   "fields": [],
+   "status": "exempt",
+   "expires": 4,
+   "note": "爆伤是加（④），无乘"
+  },
+  {
+   "id": "module.xuan_cast",
+   "name": "璇 XXuanBattle.cast_ops",
+   "ref": "C5",
+   "fields": [
+    "finalMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4,
+   "note": "分段 ×1/段数（缩小也算乘）"
+  },
+  {
+   "id": "module.xuan_incoming",
+   "name": "璇 XXuanBattle.incoming_ops",
+   "ref": "C5",
+   "fields": [],
+   "status": "exempt",
+   "expires": 4,
+   "note": "承伤（靶），无乘"
+  },
+  {
+   "id": "module.xuan_damage",
+   "name": "璇 XXuanBattle.damage_ops",
+   "ref": "C5",
+   "fields": [
+    "finalMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4
+  },
+  {
+   "id": "module.tusu",
+   "name": "屠苏 XTusu.damage_ops",
+   "ref": "C5",
+   "fields": [
+    "finalMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4
+  },
+  {
+   "id": "module.liuying",
+   "name": "流萤 XLiuying.damage_ops",
+   "ref": "C5",
+   "fields": [
+    "finalMultiplier",
+    "skillMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4
+  },
+  {
+   "id": "module.cat",
+   "name": "小猫剑圣 cat-sword 钩子",
+   "ref": "C5",
+   "fields": [
+    "settlementMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4,
+   "note": "C5「另有猫」"
+  },
+  {
+   "id": "module.tianqi_modules",
+   "name": "天启篇专属模块 XTianqiModules.damage_ops（卡开着才有）",
+   "ref": "C5",
+   "fields": [
+    "finalMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 4,
+   "note": "第七期 tq_ops：米拉、黄泉镜流、宿傩、饿狼、云裳、屠苏、璇、猫、流萤"
+  },
+  {
+   "id": "module.gojo",
+   "name": "五条悟 XGojo.damage_ops",
+   "ref": "C5",
+   "fields": [],
+   "status": "exempt",
+   "expires": 4,
+   "note": "只有无视双防（靶），无乘"
+  },
+  {
+   "id": "qiyin",
+   "name": "七印条件增伤 XTianqiQiyinEffects.damage_ops",
+   "ref": "D1-D3、D5、D6、D8、D9",
+   "fields": [
+    "finalMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 2,
+   "pool": "③（群体、持续伤害、天平进①，元素进②）"
+  },
+  {
+   "id": "orb_resonance",
+   "name": "宝珠共鸣 orb-sets",
+   "ref": "G2",
+   "fields": [
+    "finalMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 2,
+   "pool": "③"
+  },
+  {
+   "id": "race",
+   "name": "种族祝福 race-blessings",
+   "ref": "G8",
+   "fields": [
+    "finalMultiplier",
+    "physicalDamageMultiplier",
+    "magicalDamageMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 2,
+   "pool": "③；魔族爆伤进④"
+  },
+  {
+   "id": "affix_skill",
+   "name": "词条技能伤 XTianqiAffixBattle.damage_ops",
+   "ref": "B3",
+   "fields": [
+    "skillMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 2,
+   "pool": "①",
+   "note": "加在 skillMultiplier 上＝单独一区"
+  },
+  {
+   "id": "skill_pass",
+   "name": "技能专属被动 skillPass.rate（skillMultiplier 起点）",
+   "ref": "C6",
+   "fields": [
+    "skillMultiplier"
+   ],
+   "status": "exempt",
+   "expires": 2,
+   "pool": "①"
+  },
+  {
+   "id": "enemy_race_bonus",
+   "name": "对某族敌人增伤 <EnemyRaceBo>",
+   "ref": "G12",
+   "fields": [
+    "race"
+   ],
+   "status": "exempt",
+   "expires": 2,
+   "pool": "③"
+  },
+  {
+   "id": "self_rate",
+   "name": "原版独立乘区 <SelfPhysRate>／<SelfElemRate>",
+   "ref": "G13",
+   "fields": [
+    "independent"
+   ],
+   "status": "exempt",
+   "expires": 2,
+   "note": "期二：天启篇不读"
+  },
+  {
+   "id": "state_confirm",
+   "name": "原版状态确认阶段结算（攻击方状态 Confirm 乘）",
+   "ref": "设计稿未列",
+   "fields": [
+    "confirm"
+   ],
+   "status": "exempt",
+   "expires": 4,
+   "note": "期一时有确认阶段效果的状态号见 state_confirm_ids（转换数据 190 个＋贝吉特合体复制 2803）；只认这批，新状态出现确认阶段乘就失败。需设计稿补记归哪一期"
+  },
+  {
+   "id": "weak_challenge",
+   "name": "弱者挑战 10357 终伤 ×3",
+   "ref": "A9",
+   "fields": [
+    "finalMultiplier"
+   ],
+   "status": "pooled",
+   "note": "天启篇不开这个标记；出现就失败"
+  },
+  {
+   "id": "tier_pool",
+   "name": "⑤ 档位池 XTianqiCombat.damage_mult（档位×难度×协力×助力位×天平酒）",
+   "ref": "A1-A4、F3",
+   "fields": [
+    "tianqi"
+   ],
+   "status": "allowed",
+   "pool": "⑤"
+  },
+  {
+   "id": "card_formula",
+   "name": "技能卡预算内的招式倍率（公式里的技能系数）",
+   "ref": "C1",
+   "fields": [
+    "formula"
+   ],
+   "status": "allowed",
+   "pool": "底数"
+  },
+  {
+   "id": "mechanics",
+   "name": "机制类：伤害方式、种类、元素、承伤、治疗、封顶以内的穿透、防御率",
+   "ref": "靶",
+   "fields": [
+    "mode",
+    "kind",
+    "elements",
+    "noElement",
+    "categoryMax",
+    "incomingMultiplier",
+    "healingMultiplier",
+    "physicalDefenseRate",
+    "magicalDefenseRate",
+    "physicalIncomingPierce",
+    "magicalIncomingPierce",
+    "resistancePierce",
+    "flatMitigationRate",
+    "flatMitigationAdd"
+   ],
+   "status": "allowed",
+   "pool": "靶"
+  },
+  {
+   "id": "enemy_reflect",
+   "name": "敌人反伤（目标反应把伤害打回我方）",
+   "ref": "稿外·co",
+   "fields": [
+    "react"
+   ],
+   "status": "allowed",
+   "pool": "敌方",
+   "note": "敌方出伤，不是我方加成，不进五池；伤害从我方这次伤害来（已去 ×6），敌人打我方的承伤照靶算"
+  },
+  {
+   "id": "enemy_mhp_state",
+   "name": "来源为敌人的按生命上限比例状态（毒、灼烧、诅咒按 mhp%）",
+   "ref": "稿外·co",
+   "fields": [
+    "mhp"
+   ],
+   "status": "allowed",
+   "pool": "敌方",
+   "note": "按承受方生命上限比例，不吃任何加成池；我方血量不缩，所以不跟去 ×6 缩"
+  }
+ ],
+ "module_whitelist": [],
+ "state_confirm_ids": [
+  34,
+  38,
+  50,
+  52,
+  97,
+  543,
+  712,
+  713,
+  719,
+  838,
+  978,
+  991,
+  995,
+  1001,
+  1002,
+  1003,
+  1034,
+  1035,
+  1038,
+  1052,
+  1056,
+  1062,
+  1073,
+  1074,
+  1087,
+  1088,
+  1089,
+  1096,
+  1098,
+  1120,
+  1123,
+  1124,
+  1126,
+  1132,
+  1134,
+  1143,
+  1146,
+  1149,
+  1150,
+  1151,
+  1152,
+  1153,
+  1154,
+  1160,
+  1161,
+  1165,
+  1168,
+  1177,
+  1186,
+  1189,
+  1192,
+  1245,
+  1246,
+  1247,
+  1248,
+  1254,
+  1257,
+  1259,
+  1261,
+  1266,
+  1273,
+  1275,
+  1276,
+  1278,
+  1279,
+  1281,
+  1287,
+  1289,
+  1310,
+  1311,
+  1352,
+  1397,
+  1401,
+  1406,
+  1419,
+  1420,
+  1421,
+  1422,
+  1424,
+  1441,
+  1442,
+  1443,
+  1444,
+  1445,
+  1446,
+  1447,
+  1448,
+  1454,
+  1521,
+  1522,
+  1531,
+  1545,
+  1571,
+  1624,
+  1629,
+  1630,
+  1631,
+  1637,
+  1638,
+  1639,
+  1640,
+  1642,
+  1644,
+  1645,
+  1647,
+  1648,
+  1651,
+  1661,
+  1666,
+  1669,
+  1671,
+  1681,
+  1684,
+  1685,
+  1688,
+  1689,
+  1690,
+  1691,
+  1703,
+  1707,
+  1708,
+  1712,
+  1713,
+  1714,
+  1715,
+  1717,
+  1718,
+  1719,
+  1720,
+  1722,
+  1726,
+  1730,
+  1731,
+  1732,
+  1733,
+  1735,
+  1747,
+  1766,
+  1770,
+  1831,
+  1834,
+  1836,
+  1838,
+  2300,
+  2301,
+  2302,
+  2441,
+  2442,
+  2522,
+  2525,
+  2526,
+  2529,
+  2539,
+  2544,
+  2545,
+  2556,
+  2559,
+  2563,
+  2565,
+  2568,
+  2583,
+  2588,
+  2626,
+  2672,
+  2673,
+  2674,
+  2675,
+  2676,
+  2677,
+  2678,
+  2679,
+  2709,
+  2711,
+  2718,
+  2721,
+  2723,
+  2724,
+  2725,
+  2727,
+  2731,
+  2739,
+  2760,
+  2761,
+  2762,
+  2770,
+  2771,
+  2772,
+  2773,
+  2774,
+  2777,
+  2803
+ ]
+}

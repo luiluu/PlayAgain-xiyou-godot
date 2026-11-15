@@ -438,7 +438,9 @@ func _place_battlers() -> void:
 		_make_enemy_sprite(e)
 		_make_enemy_gauge(e)
 		_set_enemy_shown(e)
-	var points := party_layout(logic.actors.size())
+	# 战斗站位（XPartyFormation，设置页「战斗站位」）：编队第 k 位站阵型第 k 个点；原版竖排＝party_layout
+	var points := XPartyFormation.points(XPartyFormation.current(), logic.actors.size())
+	var mine := []
 	for i in range(logic.actors.size()):
 		var a: XActor = logic.actors[i]
 		var s := XBattlerSprite.new()
@@ -447,6 +449,19 @@ func _place_battlers() -> void:
 		s.home = points[i]
 		s.position = s.home + Vector2(300, 0)
 		sprites[a] = s
+		mine.append(s)
+	_sort_actor_sprites(mine)
+
+
+## 我方精灵按脚底 y 排绘制次序（靠下的画在上面）：两排错开、菱形时编队次序与上下次序不一致；
+## 原版竖排本来就是自上而下，排完不变。只在我方精灵已占的那几个子节点位置里互换。
+func _sort_actor_sprites(mine: Array) -> void:
+	var slots := mine.map(func(s): return s.get_index())
+	slots.sort()
+	var by_y := mine.duplicate()
+	by_y.sort_custom(func(a, b): return a.home.y < b.home.y if a.home.y != b.home.y else a.home.x > b.home.x)
+	for k in range(by_y.size()):
+		field.move_child(by_y[k], slots[k])
 
 
 
@@ -585,7 +600,7 @@ func _show_enemy_gauge(e: XBattler, seconds := 0.5) -> void:
 
 func _build_ui(vs: Vector2) -> void:
 	# Boss 血条（MOG_BossHP）：最先加，窗口在它上面（原版 hudField 在窗口层下）
-	boss_hp = XBossHpBar.new()
+	boss_hp = XSkinBattle.boss_hp()  # 新界面 2B：开着新皮肤是顶上的血弧，关着同 XBossHpBar.new()
 	boss_hp.hp_source = func(e): return view_lite(e)
 	boss_hp.busy_source = func(): return message._busy
 	var hp_holder := Node2D.new()
@@ -606,8 +621,9 @@ func _build_ui(vs: Vector2) -> void:
 	holder.position = _origin
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(holder)
+	XSkinBattle.side_backdrop(holder, logic.actors.size())  # 新界面 2B：队伍紧凑条的面板底（关着不加）
 	for i in range(logic.actors.size()):
-		var row := XSideStatus.new()
+		var row := XSkinBattle.side_status()  # 新界面 2B：开着是紧凑条的一行，关着同 XSideStatus.new()
 		row.setup(logic.actors[i], i)
 		holder.add_child(row)
 		status_rows[logic.actors[i]] = row
@@ -639,13 +655,14 @@ func _build_ui(vs: Vector2) -> void:
 		speed_btn.text = "变速 " + XConfig.battle_speed_text())
 	side.add_child(speed_btn)
 	_refresh_auto()
+	XSkinBattle.style_toggles(side, [auto_btn, speed_btn], _origin)  # 新界面 2B：开着新皮肤换胶囊、挪到挂机界面下（关着什么也不做）
 	# 行动顺序条：宽 = 画面宽 - x - 状态宽 - 左移量 - 状态图标 4.5 个
-	otb = XOTBBar.new()
+	otb = XSkinBattle.otb()  # 新界面 2B：开着是左下圆头像一排（自己挪到 XSkinOTBBar.POS），关着同 XOTBBar.new()
 	otb.position = _origin + OTB_POS
 	ui.add_child(otb)
 	otb.setup(BOX.x - OTB_POS.x - STATUS_W - STATUS_MOVE - 32 * (STATES_MAX + 0.5))
 	# Boss 状态面板（Codex_BossStatusSummary）：只显示，不参与结算；最后加，盖在说明卡上
-	boss_panel = XBossStatusPanel.new()
+	boss_panel = XSkinBattle.boss_panel(boss_hp)  # 新界面 2B：开着是血弧下的状态胶囊，关着同 XBossStatusPanel.new()
 	boss_panel.position = _origin
 	boss_panel.enemies_source = func(): return logic.enemies
 	boss_panel.target_source = func(): return _hover if _target_mode == "enemy" else null
@@ -713,8 +730,8 @@ func _help(entry = null) -> void:
 	help_card.show_for(XGrowthHelp.skill_view(entry, _active) if XHelpCard.kind_of(entry) == "skill" else entry)
 	ui.move_child(help_card, -1)
 	# 选中行：纵向取该行，横向取整个列表窗口（卡片外发光不压到窗口边框）
-	var row := Rect2(list_win.position - _origin + Vector2(0, list_win.padding + (list_win.index - list_win.top) * XBattleList.LH),
-		Vector2(list_win.size.x, XBattleList.LH))
+	var row := list_win.row_rect()
+	row.position -= _origin
 	help_card.place_for_row(row, true)
 	help_card.position += _origin
 
@@ -1153,6 +1170,7 @@ func _tianqi_swap(out: XActor) -> void:
 	var old: XBattlerSprite = sprites[out]
 	var s := XBattlerSprite.new()
 	field.add_child(s)
+	field.move_child(s, old.get_index())  # 换上的人接替原来的绘制次序（站位交错时靠下的要画在上面）
 	s.setup(h, ACTOR_SCALE)
 	s.home = old.home
 	s.position = old.home
@@ -1160,7 +1178,7 @@ func _tianqi_swap(out: XActor) -> void:
 	old.queue_free()
 	sprites[h] = s
 	var row: XSideStatus = status_rows[out]
-	var nr := XSideStatus.new()
+	var nr := XSkinBattle.side_status()  # 新界面 2B（关着同 XSideStatus.new()）
 	nr.setup(h, logic.actors.find(h))
 	row.get_parent().add_child(nr)
 	row.get_parent().move_child(nr, row.get_index())
@@ -1188,7 +1206,7 @@ func _open_status(a: XActor) -> void:
 	var top := CanvasLayer.new()
 	top.layer = 95
 	add_child(top)
-	status_panel = XPartyStatusPanel.open(top, logic.actors.filter(func(m): return m is XActor), a)
+	status_panel = XSkinBattle.status_panel(top, logic.actors.filter(func(m): return m is XActor), a)  # 新界面 2B（关着同 XPartyStatusPanel.open）
 	status_panel.closed.connect(func():
 		status_panel = null
 		top.queue_free()
@@ -1272,7 +1290,11 @@ func _command_entries(a: XActor) -> Array:
 ## Olivia updatePosition：x = 角色 x + 图宽/2（64/2），y = 角色 y − 图高（64）；再收在画面内。列表另加 (16, 16)。
 func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> void:
 	var s: XBattlerSprite = sprites[a]
-	var p := s.position + Vector2(32, -64)
+	if w.has_method("place_for_actor"):  # 新界面 2A：指令环、新列表自己按角色摆（XSkinBattleRing／XSkinBattleSkillList）
+		w.place_for_actor(s.position, BOX)
+		w.position += _origin
+		return
+	var p := XPartyFormation.window_anchor(s.position + Vector2(32, -64))
 	w.place(minf(BOX.x - w.size.x, p.x) + offset.x, minf(BOX.y - w.size.y, p.y) + offset.y)
 	w.position += _origin
 
@@ -1282,7 +1304,7 @@ func _command_for(a: XActor):
 	var last_index := initial_command_index(a, opts)
 	while true:
 		_close_windows()
-		cmd_win = XBattleList.create(ui, opts, CMD_W, "center")
+		cmd_win = XSkinBattle.command(ui, opts, CMD_W, a)  # 新界面 2A：开着新皮肤是指令环，关着同 XBattleList.create
 		cmd_win.cancel_enabled = false
 		cmd_win.index_changed.connect(func(i): _preview(a, opts[i].get("preview") if i >= 0 else null))
 		cmd_win.chosen.connect(func(i): _picked.emit(opts[i].key))
@@ -1553,8 +1575,11 @@ func _pick_from_list(a: XActor, entries: Array, items: bool, initial_index := 0)
 	_close_list()
 	XActor.read_begin()  # 只读窗口缓存（O-348）：逐行算能不能用、费用都是只读
 	var rows := entries.map(func(e): return _list_entry(a, e, items))
+	if XSkinBattle.on():
+		rows = XSkinBattle.decorate_all(logic, a, entries, rows, items)  # 新界面 2A：不能用的原因、目标、用完剩多少（只读）
 	XActor.read_end()
-	list_win = XBattleList.create(ui, rows, LIST_W)
+	var title := str(cmd_win.entries[cmd_win.index].text) if cmd_win != null and is_instance_valid(cmd_win) and cmd_win.index >= 0 and cmd_win.index < cmd_win.entries.size() else ""
+	list_win = XSkinBattle.list(ui, rows, LIST_W, items, a, title)  # 关着同 XBattleList.create(ui, rows, LIST_W)
 	list_win.index_changed.connect(func(i):
 		if i >= 0 and i < entries.size():
 			_help(entries[i])
@@ -1814,6 +1839,7 @@ func _select_target(b) -> void:
 		_poison_help(b)
 	elif b is XActor and _target_mode == "ally" and XGuyu.key(_target_skill) == "transfer":
 		_transfer_help(b)
+	XSkinBattle.target_hint(self, b, _target_skill, group)  # 新界面 2A：目标提示（关着什么也不做）
 
 
 ## 优化 O-107：选敌时的毒鸡汤说明卡贴在该敌人旁边，选到没有毒鸡汤的敌人就收起。

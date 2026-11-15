@@ -17,10 +17,17 @@ func setup(prompt: String, default := "") -> void:
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	theme = XUI.theme()
+	var skin := XUiSkin.on()   # 新界面（5C）：黑面板＋细线、红乙选中条，输入框也换；关着时一行旧代码都不变
+	theme = XUiSkin.theme() if skin else XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	if skin:
+		var dim := ColorRect.new()
+		dim.color = Color(0, 0, 0, 0.6)
+		dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		add_child(dim)
 	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", XUI.panel())
+	panel.add_theme_stylebox_override("panel", XUiSkin.panel_style() if skin else XUI.panel())
 	panel.custom_minimum_size = Vector2(560, 0)
 	add_child(panel)
 	var col := VBoxContainer.new()
@@ -30,6 +37,19 @@ func _ready() -> void:
 	edit = LineEdit.new()
 	edit.text = _default
 	edit.custom_minimum_size = Vector2(0, 44)
+	if skin:
+		for state in ["normal", "focus"]:
+			var box := StyleBoxFlat.new()
+			box.bg_color = Color(1, 1, 1, 0.05)
+			box.set_border_width_all(1)
+			box.border_color = XUiSkin.SEL_LINE if state == "focus" else Color(XUiSkin.LINE, 0.42)
+			box.set_corner_radius_all(XUiSkin.ROW_RADIUS)
+			box.content_margin_left = XUiSkin.PAD
+			box.content_margin_right = XUiSkin.PAD
+			edit.add_theme_stylebox_override(state, box)
+		edit.add_theme_color_override("font_color", XUiSkin.TEXT)
+		edit.add_theme_color_override("caret_color", XUiSkin.SEL_LINE)
+		edit.add_theme_font_size_override("font_size", XUiSkin.FS_LIST)
 	edit.text_submitted.connect(func(t: String): closed.emit(t))
 	col.add_child(edit)
 	var row := HBoxContainer.new()

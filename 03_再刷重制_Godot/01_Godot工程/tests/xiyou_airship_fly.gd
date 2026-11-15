@@ -109,9 +109,13 @@ func _step_to(c: Vector2i) -> bool:
 
 
 ## 飞到某格（穿透，_toward 直线靠近）
+## 地图上有提示／事件在跑（busy）时目的地会被清掉（原版 updateDestination，MVPlayer.MV_CLEAR_DEST），清了就再点一次
 func _fly_to(c: Vector2i) -> bool:
 	map.player.touch_target = c
-	return await _until(func(): return map.player.grid == c and not map.player.is_moving())
+	return await _until(func():
+		if not map.busy and map.player.touch_target.x < 0 and map.player.grid != c and not map.player.is_moving():
+			map.player.touch_target = c
+		return map.player.grid == c and not map.player.is_moving())
 
 
 func _press() -> void:

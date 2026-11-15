@@ -22,6 +22,11 @@ func _check(name: String, ok: bool, detail = null) -> void:
 	results.append({"name": name, "passed": ok, "detail": detail})
 
 
+static func _sd(v: float) -> float:  # 去全队 ×6（XTianqiNoX6，O-470）开着时，按绝对值直接扣敌人血的跟着缩 1/6
+	var u := XTianqiNoX6.hp_unit()
+	return v if u == 1.0 else maxf(1.0, floorf(v * u))
+
+
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261112)
@@ -728,7 +733,7 @@ func _p5() -> void:
 	var hp0 := float(b.hp)
 	XTianqiSkills._reflect(b, yx, {"hp": 1000.0})
 	var cut := hp0 - float(b.hp)
-	_check("p5_reflect", is_equal_approx(cut, 200.0) or is_equal_approx(cut, 100.0), cut)
+	_check("p5_reflect", is_equal_approx(cut, _sd(200.0)) or is_equal_approx(cut, _sd(100.0)), cut)
 	_check("p5_reflect_script_gone", (XDB.rec("States", 1061).get("effects", []) as Array).is_empty())
 	# 记录字段：厄临星爆的「按当前魔法扣、每 2000 蓝多打一段」关掉
 	var el := XDB.rec("Skills", 5706)
@@ -805,8 +810,11 @@ func _p6() -> void:
 		{"op": "mul", "field": "magicalDefenseRate", "value": 0.1}, {"op": "set", "field": "mode", "value": "magical"},
 		{"op": "mul", "field": "incomingMultiplier", "value": 0.8}]
 	var capped := XTianqiSkills.module_ops(XDB.rec("Skills", 10122), rv, mods)
+	XTianqiSkills.MODULE_CAP_ALL = false  # 旧口径：只拦改写过的技能，普攻原样（总账期一改成卡开着就默认拦，见 xiyou_tianqi_ledger）
 	var kept := XTianqiSkills.module_ops(XDB.rec("Skills", 1), rv, mods)
-	_check("p6_module_ops", capped.size() == 3 and is_equal_approx(float(capped[0].value), 0.7) and kept.size() == 5, capped)
+	XTianqiSkills.MODULE_CAP_ALL = true
+	var kept_all := XTianqiSkills.module_ops(XDB.rec("Skills", 1), rv, mods)
+	_check("p6_module_ops", capped.size() == 3 and is_equal_approx(float(capped[0].value), 0.7) and kept.size() == 5 and kept_all.size() == 3, [capped, kept_all])
 	XTianqiSkills.MODULE_CAP = false
 	_check("p6_module_cap_switch", XTianqiSkills.module_ops(XDB.rec("Skills", 10122), rv, mods).size() == 5)
 	XTianqiSkills.MODULE_CAP = true
@@ -878,11 +886,11 @@ func _fill() -> void:
 		n.hp = n.mhp
 		var h0 := float(n.hp)
 		XTianqiSkills._reflect(n, a, {"hp": 1000.0})
-		_check("fill_mabaoguo_reflect", is_equal_approx(h0 - float(n.hp), 330.0), h0 - float(n.hp))
+		_check("fill_mabaoguo_reflect", is_equal_approx(h0 - float(n.hp), _sd(330.0)), h0 - float(n.hp))
 		b.hp = b.mhp
 		var hb := float(b.hp)
 		XTianqiSkills._reflect(b, a, {"hp": 1000.0})
-		_check("fill_mabaoguo_boss_half", is_equal_approx(hb - float(b.hp), 165.0), hb - float(b.hp))
+		_check("fill_mabaoguo_boss_half", is_equal_approx(hb - float(b.hp), _sd(165.0)), hb - float(b.hp))
 		a.remove_state(908)
 	# 唐三寄生：敌全体各掉 3% 当前生命，首领无效
 	if n != null:

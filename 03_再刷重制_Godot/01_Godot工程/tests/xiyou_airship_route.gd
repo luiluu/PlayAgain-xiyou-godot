@@ -45,6 +45,7 @@ func _event(id: int) -> MVEvent:
 
 
 func step_to(c: Vector2i) -> bool:
+	await _until(func(): return not map.busy, 600)  # busy 时目的地会被清（原版 updateDestination，MVPlayer.MV_CLEAR_DEST）
 	map.player.touch_target = c
 	return await _until(func(): return map.busy or (map.player.grid == c and not map.player.is_moving()), 600)
 
