@@ -17,6 +17,15 @@
 - 4:3：视口照 O-483（`XSkinLayout.NARROW_LETTERBOX`）锁 1280×720 上下留黑边，所以 4:3 屏实际用 16:9 那张背景、装备页和 16:9 同一个摆法（13 栏放得下，不用两列网格）；960×720 背景只在视口真是 4:3 时用上（NARROW_LETTERBOX 关掉时）。
 - 测试：新专项 `xiyou_ui_art_phase01`（无头 74 项、带窗口截图 88 项）；`xiyou_ui_skin_1c` 栏位分页那几项改在 `ONE_PAGE = false` 下验（回退路径）。
 - 发行空壳：`skin_art.gd` 登记进 `发行空壳.py` 的 MIXED_OK（只在 on() 的画法里调；缺图时 part()／bg_texture() 给 null、走程序画）。
+- v2（Kyo 11-15 看审图：字看不清、13 栏一圈太密）：
+  - 可读性（`XSkinArt.READ`）：正式背景上整体压暗 28%、顶栏从上往下渐隐黑（132px，85%）、底栏从下往上渐隐黑（112px，88%）、左块环区一团椭圆暗角（62%）；直接写在背景上的字（页名、组页签、货币名、按键提示、环上项名、装备环下说明）次要灰提到暖骨灰 #d2ccc2、加 3px 深色描边，按键提示键帽垫 55% 黑底。面板里的字不动。
+  - 装备 13 栏分支摆法（`XSkinEquipPage.LAYOUT`，只在天启篇 13 栏时用）：主环 8 个核心栏（武器 副手 头部 盔甲 护手 腰带 裤子 鞋子，半径 112、球 24），项链 戒指 法宝 坐骑 神器 从环上分叉成旧金细线连的枝丫；A 下垂三枝（饰品、坐骑、宝物三枝往下垂）、B 星座斜出（饰品、宝物往两个上角斜出，坐骑往右下）、C 挂主栏（每栏挂在相关的主栏上：神器←武器、法宝←副手、项链←头部、戒指←护手、坐骑←鞋子）；0＝上一版一圈 13 颗。键盘按深度优先走（绕主环，走到有枝丫的那栏先走完枝丫）。默认 C，等 Kyo 挑。
+- 小A 核查返修（核查报告_ui-art-phase01_20261115.md）：
+  - P2-1 外置箭头：主菜单行、模板页列表左边从 10／8 收到 28（2× 箭头收在烟底里）；双列列表列缝至少 26（右列箭头在缝里）；组页签缝 4→18；详情展开、队伍状态的横排页签改用页签画法（1× 箭头）、页签间 20、第一个右移 16。
+  - P2-2 像素件硬边：箭头、选中横幅、页签横幅、助力签、七芒印都按最近邻预先放大到要画的尺寸（自写整数最近邻，Image.resize 的最近邻不是干净的 k×k 块），1:1、整数像素画；控件本身照旧线性过滤（字要平滑）。烟底九宫格只沿长边拉伸、渐隐方向不缩放，没有改。
+  - P2-3 观感：烟底整体乘 0.85（secondary 0.88）透一点背景；大面板内缩 16 叠 smoke_grain_tile 颗粒（40%，四边 24px 渐隐不出硬边）；左右内容边距 16→24；正式背景上火星亮度减半；主菜单助力位卡去旧金描边，改 smoke_secondary 72%＋七芒暗印 64（原图 alpha 最高 28，照美术说明不再减透明，没按报告的 0.16）＋helper_tag 2×（64×24，暖白「助力」）。
+  - P2-4：分支摆法与一圈 13 颗只在天启篇 13 栏（`XTianqiGear.on()`、栏数 ≤13）时用；19 栏照旧分页。
+  - P3-1 注释改 72；P3-3 装备环下「身上 n 件」走背景字描边；P3-2 不改（照 O-483）。
 - 玩家可见：天启篇新界面换上正式美术——菜单背景跟着你走的骑士线换图，面板变成无框烟色，选中行变成渐隐暗红底加左侧小箭头，主菜单当前组图标有一圈像素高亮；装备页 13 个栏位一页全显示，不用再翻页。
 
 ## 优化登记草稿
@@ -27,11 +36,13 @@
 | O-待定 | `modes/xiyou/ui/skin/skin_art.gd` `XSkinArt.PANEL`；`ui/skin/ui_skin.gd` `panel_style`／`shadow_style`／`draw_panel` | 面板是程序画的圆角黑块＋细线＋投影 | R2 无框烟色九宫格（smoke_reading，矮的 smoke_secondary），去投影 | D50 | `XSkinArt.PANEL = false` | cc | 保留 |
 | O-待定 | `modes/xiyou/ui/skin/skin_art.gd` `XSkinArt.SELECT`；`ui/skin/ui_skin.gd` `draw_select`、`ui/skin/skin_tab_strip.gd` | 选中条是整行实心暗红底＋朱红框＋左光标 | 渐隐暗红底＋左外小箭头（8px 间隔），页签同一套 | D51 | `XSkinArt.SELECT = false` | cc | 保留 |
 | O-待定 | `modes/xiyou/ui/skin/skin_art.gd` `XSkinArt.HALO`；`ui/skin/skin_ring_nav.gd` | 主菜单当前组只靠暗红圆底区分 | 当前组图标加 ring_selected_halo 像素外圈 | 小o phase01_final README | `XSkinArt.HALO = false` | cc | 保留 |
+| O-待定 | `modes/xiyou/ui/skin/skin_art.gd` `XSkinArt.READ`；`ui/skin/skin_tab_strip.gd`、`skin_key_hints.gd`、`skin_template_page.gd`、`skin_main_menu.gd`、`skin_ring_nav.gd`、`skin_equip_page.gd` | 正式背景上细灰字压在齿轮、塔楼、红裂纹上看不清 | 背景压暗＋顶底栏渐隐黑＋环区暗角，背景上的次要字提亮、加深色描边 | Kyo 11-15 看审图 | `XSkinArt.READ = false` | cc | 保留 |
+| O-待定 | `modes/xiyou/ui/skin/skin_equip_page.gd` `XSkinEquipPage.LAYOUT`；`ui/skin/skin_ring_nav.gd`（`custom`／`links`） | 一圈 13 颗太密 | 主环 8 核心栏＋5 栏分叉成枝丫（A／B／C 三种，默认 C 待 Kyo 挑） | Kyo 11-15「可以扩展一些不规则的分支子类」 | `XSkinEquipPage.LAYOUT = 0`（回一圈 13 颗） | cc | 保留 |
 | O-待定 | `modes/xiyou/ui/skin/skin_equip_page.gd` `XSkinEquipPage.ONE_PAGE`；`ui/skin/skin_ring_nav.gd`（`label_inner`） | 装备栏位环 13 栏分 7＋6 两页、要翻页 | 13 栏一圈同屏，栏位名写环内侧，不翻页 | Kyo 11-15 原话 | `XSkinEquipPage.ONE_PAGE = false` | cc | 保留 |
 
 ## 新增可见文字（给小A文字审）
 
-- 没有新增文字。去掉了装备页环下的「· 栏位第 a / b 页」，只剩「身上 n 件」（原有文字）。栏位名照旧取数据库装备类型名（天启篇 17 叫「神器」）。
+- 没有新增文字（v2：助力签上的「助力」是原有文字，只是换了底）。去掉了装备页环下的「· 栏位第 a / b 页」，只剩「身上 n 件」（原有文字）。栏位名照旧取数据库装备类型名（天启篇 17 叫「神器」）。
 
 ## 交接板
 
@@ -53,6 +64,9 @@
 - 工具快速回归全部通过。
 - 截图（本地结果目录不入 Git，在本工作树 `/Users/kyo/orca/workspaces/再刷项目资料库/ui-art-phase01/`）：`03_再刷重制_Godot/04_验证/本地结果/ui_art_phase01/`——`menu_／items_／equip_` × `16x9／20x9／4x3`（4:3 另有 `_letterbox` 版＝960×720 窗口玩家看到的样子）、`equip_16x9_touch.png`、`bg_death／war／famine／plague_16x9.png`。
 
+- v2／返修（a9fc063db）：`xiyou_ui_art_phase01` 无头 183/183、带窗口 205/205；本地 `xiyou_ui_skin`／`_1b`／`_1c`／`_close`／`_menu`／`_p1fix`、`input_handled` 全过；82624d45a 云端选测 21 场景全过；a9fc063db 云端与皮肤关闭对照见回报。
+- v2 截图：`04_验证/本地结果/ui_art_phase01/v2/`；返修后 v3：`…/v3/`（同一套，另有 `equip_layout{0,1,2,3}_{16x9,touch}.png` 四种装备摆法）。
+
 ## 可优化（流程／工具／效率）
 
 - 无
@@ -61,4 +75,6 @@
 
 - ef3a723a4 WIP: 第一期正式美术接入＋装备 13 栏一页（XSkinArt、专项 xiyou_ui_art_phase01）
 - 929de654b WIP: 专项截图 4:3 加黑边版；第一期美术截图
-- （本提交）1c 改验回退路径、发行空壳登记、交付单
+- 4fd30c259 1c 改验回退路径、发行空壳登记、交付单
+- 82624d45a v2：可读性＋装备分支摆法 A／B／C
+- a9fc063db 小A核查返修 P2×4、P3×2
