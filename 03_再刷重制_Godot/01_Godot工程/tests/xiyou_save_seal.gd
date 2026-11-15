@@ -69,6 +69,7 @@ func _run() -> void:
 	_switch_off()
 	_transfer()
 	_feedback()
+	_release_cold_legacy()
 	XSaveSeal.ENABLED = true
 	XSaveSeal.STRICT_AFTER_MIGRATE = true
 	XSaveTransfer.ACCEPT_PLAIN_IMPORT = false
@@ -323,3 +324,28 @@ func _feedback() -> void:
 			z.close()
 	check("feedback.zip_has_sealed_bytes", ok and same == 2, [zip_path, same])
 	check("feedback.zip_has_failed_originals", has_failed)
+
+
+## 发行模拟（ReleaseEntry.simulate_release）冷启动：进程刚起（XState.current＝null）读一份旧版写的明文档 → 迁移并读进来
+func _release_cold_legacy() -> void:
+	var cold := dir.path_join("cold")
+	DirAccess.make_dir_recursive_absolute(cold)
+	XSave.dir_override = cold
+	XSaveSeal.ENABLED = false
+	var s := _new_state()
+	s.gold = 2468
+	XState.current = s
+	XSave.save(1)
+	var plain := _bytes(XSave.path(1))
+	XSaveSeal.ENABLED = true
+	var saved := ReleaseEntry.simulate_release
+	ReleaseEntry.simulate_release = true
+	XState.current = null
+	XSave.current_slot = 0
+	var ok := XSave.load_slot(1)
+	ReleaseEntry.simulate_release = saved
+	check("release_cold.legacy_loads", ok and XState.current != null and XState.current.gold == 2468)
+	check("release_cold.migrated", XSaveSeal.is_sealed(_bytes(XSave.path(1))) and XSaveSeal.marker_ok(cold)
+		and Array(DirAccess.get_files_at(cold)).filter(func(n): return str(n).begins_with("save_1.json" + XSaveSeal.PLAIN_BACKUP)).size() == 1)
+	check("release_cold.text_same", XSaveSeal.read_text(XSave.path(1)) == plain.get_string_from_utf8())
+	XSave.dir_override = dir
