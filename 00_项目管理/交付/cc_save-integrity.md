@@ -1,117 +1,140 @@
 # 交付：cc/save-integrity
 
-- 车道／工作者：C 规则·存档「存档加密＋校验」（D28，Kyo 11-15）（cc 车道，Orca task_11eb3bcf1931，Opus＋medium：碰存档，甲档，交 co 核）
+- 车道／工作者：C 规则·存档「存档加密＋校验」（D28，Kyo 11-15）（cc 车道，Orca task_11eb3bcf1931，返修 task_dfcee09d43bf；Opus＋medium：碰存档，甲档，交 co 核）
 - 状态：可合并
 
-## 结论
+## 结论（返修后）
 
-- 新 `XSaveSeal`（`modes/xiyou/core/save_seal.gd`）：存档目录里的进度文件一律写成**加密＋签名**的封存格式；读到被改过、截断、坏掉的文件一律「存档校验失败」：**不读、不覆盖、不删**。重制版、天启篇共用同一个存档目录与写盘入口，两边都生效。
-- 老玩家不受影响：某个存档目录**第一次被读**时（标题摘要、读档页、读档都会读），目录里的明文旧档逐个先原样备份成 `<文件>.plain_<时间>.bak`（逐字节核对），再改写成封存格式（解开核对与原文一字不差才替换），全部成功后放记号 `.sealed_v1`。迁移哪一步不成，那个文件原样留着、照明文读，下次再试。
-- **这只防普通改档工具和手改数字，防不住逆向**：密钥编进游戏，会拆包的人拿得到；本仓库公开期间源码里就能看到（见「需要用户决定」1）。
-- 开关 `XSaveSeal.ENABLED`（O-待定-1，默认开）：关掉＝照旧写明文，封存与明文两种都读（回退）。
+- 新 `XSaveSeal`（`modes/xiyou/core/save_seal.gd`）：存档目录里的进度文件写成**加密＋签名**的封存格式，**用新文件名 `<名>.ksv`**；明文旧档 `<名>.json` 留在原处当备份。读到被改过、截断、坏掉的封存文件一律「存档校验失败」：**不读、不覆盖、不删**。重制版、天启篇共用存档入口，两边都生效。
+- 老玩家不受影响：某个存档目录第一次被读时，把明文 `.json` 封成同名 `.ksv`（写临时文件 → **读回落盘内容解开、和原文一字不差** → 改名），`.json` 不动；全部成功后放记号 `.sealed_v1`。迁移不成（磁盘满等）那个文件照旧读 `.json`，不当成空档，下个进程再试。
+- 补丁退回旧底包时，旧代码只认 `.json`、看不见 `.ksv`，**不会覆盖、删除封存档**（co 核查 P1 的代码层挡法）。剩余风险见「返修」P1。
+- 密钥不再进仓库：仓库里只有公开测试密钥（号 0，开发／测试用）；发行密钥放私密设计仓，`发行出包.py` 出包时注入导出副本；发行构建没注入密钥就不封存（照旧明文），也不认测试密钥。
+- **只防普通改档工具和手改数字，防不住逆向**（会拆包的人能从发行包里取出密钥）。
+- 开关 `XSaveSeal.ENABLED`（O-待定-1，默认开）：关掉＝读写回到 `.json` 明文（比 `.json` 新的 `.ksv` 先解开写回，两种都读得到）。
 
-## 存档格式（封存第 1 版）
+## 存档格式（封存第 1 版，文件 `<名>.ksv`）
 
 | 偏移 | 内容 |
 |---|---|
 | 0 | 魔数 `KYSV`（4 字节） |
 | 4 | 版本 u8＝1 |
 | 5 | 标志 u8（bit0＝先 deflate 压缩） |
-| 6 | 保留 2 字节＝0 |
-| 8 | 明文 UTF-8 字节数 u32（小端） |
+| 6 | 密钥号 u8（0＝公开测试密钥，只在开发／测试构建认；发行密钥号 ≥ 1） |
+| 7 | 保留 1 字节＝0 |
+| 8 | 明文 UTF-8 字节数 u32（小端），上限 `MAX_PLAIN`＝128 MiB |
 | 12 | IV 16 字节（每次写随机） |
 | 28 | 密文：AES-256-CBC（PKCS#7 补齐），内容是压缩后的存档 JSON（与原来写的 JSON 一字不差） |
 | 末尾 32 字节 | HMAC-SHA256，签前面全部字节 |
 
-- 先验签名再解密；签名不对、长度不对、补齐不对、解压后字节数对不上都算校验失败。两把密钥（加密、签名）都由 `XSaveSeal.SECRET` 派生（`sha256(SECRET|enc|v1)`、`sha256(SECRET|mac|v1)`）。改 SECRET 等于作废所有已封存的存档。
-- 封存管的文件（`XSaveSeal.covered`）：`save_1～30.json`、`save_auto.json`、云裳账本 `yunshang_orders_v1.json`、魔冠账本 `crown_progress_v1.json`、星级仓库 `star_warehouse.json`、跨存档变量 `global.json`。不封：设置 `options.json`、触屏设置、测试模式文件、瘦身日志、各种 `.bak`／导入前备份（备份是原样复制，封存的档复制出来仍是封存字节）。
-- 存档变小：JSON 先压缩再加密，实测封存后约为明文的几分之一（存档页「存档容量」显示实际文件大小，会变小）。
+- 读：文件超过 `MAX_FILE` 不读进来 → 认密钥号 → **先验签名（常数时间比较），没过签名的字节不解密、不解压** → 解密 → 补齐**每个字节**都核 → 声明长度过上限就拒、`decompress` 最多解出声明的长度 → 长度对上。任何一步不对都算校验失败。
+- 密钥：每个号由 64 位十六进制种子派生加密钥、签名钥（`sha256(种子|enc|v1)`、`sha256(种子|mac|v1)`）。密钥文件 `{"current": 号, "keys": {"号": 种子}}`：写用 current，读认所有号——以后换密钥加新号、旧号留着读老档。
+- 封存管的文件（`XSaveSeal.covered`）：`save_1～30`、`save_auto`、云裳账本 `yunshang_orders_v1`、魔冠账本 `crown_progress_v1`、星级仓库 `star_warehouse`、跨存档变量 `global`（各自 `.json`／`.ksv`）。不封：设置、触屏设置、测试模式文件、瘦身日志、各种备份。
 
 ## 玩家看到什么
 
-- **迁移**：什么都看不到。第一次进标题读档案时自动补签名；目录里多出 `save_N.json.plain_<时间>.bak` 等明文原件备份（留着不删）。
+- **迁移**：看不到。存档文件夹里每个进度文件多一个同名 `.ksv`，原来的 `.json` 留着（是迁移那一刻的备份，之后不再更新），另有 `.sealed_v1`。
 - **校验失败**：
-  - 读档页（旧的回忆／存档页）：该格列表右边红字「存档校验失败」，右边信息窗写「存档校验失败」＋「原文件已保留，可通过游戏内反馈问卷导出存档发给我们。」；「读取」可点，点了弹提示框「存档校验失败，无法读取。／原文件已保留，可通过游戏内反馈问卷导出存档发给我们。」＋「确定」，不读。
-  - 标题导出／导入的选格列表：「存档 N：存档校验失败」；导出这一格报「存档校验失败」。
-  - 自动存档：标题摘要「自动存档：存档校验失败」，读取弹「存档校验失败，这份自动存档无法读取。原文件已保留，……」。
-  - 云裳、魔冠账本：沿用原有「记录损坏」的暂停逻辑，原因写「云裳订单记录存档校验失败」「"头顶"成长记录存档校验失败」，功能暂停、不写盘。
-  - 星级仓库：不读、存取都不做，提示「仓库文件存档校验失败，暂时不能存取。原文件已保留，……」。
-  - 跨存档变量：不读、本次运行只在内存里改、不写盘。
-- **原文件一直在**：游戏不删、不覆盖校验失败的文件。玩家在这一格**存档**或**删除**时，先把原文件改名成 `<文件>.failed_<时间>` 留着，再写新档／空出这一格（不然开局选了固定档位的玩家会永远存不上）。反馈问卷「导出存档包」把整个存档目录原样打包，封存文件、`.failed_*`、`.plain_*.bak` 都在里面（专项 `feedback.*` 核过）。
+  - 读档页：该格列表右边红字「存档校验失败」，信息窗写「存档校验失败」＋「原文件已保留，可通过游戏内反馈问卷导出存档发给我们。」；「读取」弹提示框「存档校验失败，无法读取。／原文件已保留，……」＋「确定」，不读。
+  - 标题导出／导入选格：「存档 N：存档校验失败」；导出这一格报「存档校验失败」。
+  - 自动存档：标题摘要「自动存档：存档校验失败」，读取弹同样的说明。
+  - 云裳、魔冠账本：沿用「记录损坏」的暂停，原因写「……存档校验失败」，功能暂停、不写盘。星级仓库：不读、存取都不做，提示「仓库文件存档校验失败，暂时不能存取。……」。跨存档变量：不读、只在内存里改、不写盘。
+- **原文件一直在**：游戏不删、不覆盖校验失败的文件。玩家在这一格存档、删除、**导入**时，原文件先改名成唯一的 `<文件>.failed_<时间>[_n]` 留着（任何自动清理都不碰这个名字）。反馈问卷「导出存档包」把整个存档目录原样打包，`.ksv`、`.json` 备份、`.failed_*` 都在里面。
 - 坏档（闪退写一半）和被改的分不开，一样按校验失败处理、一样留原文件。
+- 导出改成封存格式（`kyo-remake-save-sealed-v2`），改过的导不进；旧版明文导出默认不收。
+
+## 返修（co 甲档核查 ec1064160）
+
+| 项 | 怎么改的 | 证据（专项 `xiyou_save_seal`，119/119） |
+|---|---|---|
+| **P1** 退回旧底包时旧代码覆盖／删除封存档 | 封存档改用新文件名 `.ksv`；所有入口经 `XSaveSeal.resolve(<名>.json)` 换名（`XSave.path`／`auto_path`、云裳／魔冠／仓库／跨存档变量的 `path()`）。旧代码只认 `.json`：它覆盖 `save_N.json`、手动存档时删 `save_auto.json`、往「空格」写 `save_N.json`，都碰不到 `.ksv`。明文 `.json` 留原处当备份。 | `rollback.ksv_untouched`、`rollback.new_reads_ksv`、`rollback.auto_still_there`、`legacy.*.json_kept` |
+| P1 剩余风险（写清） | ① 退回旧底包期间：旧代码读的是迁移那一刻的 `.json`（旧进度），封存后的新进度它看不到；玩家在旧版玩出来的进度写在 `.json`，回到新版后**不读**（有记号，分不出是旧版写的还是手改的）。找回：删掉存档目录里的 `.sealed_v1` 再进游戏，比 `.ksv` 新的 `.json` 会重新封存（`rollback.recover_by_marker`）。② 旧版本身没有封存功能，退回期间存档照旧能被改。③ 结论不变：**随兼容整包发**（底包里就有封存读写），不走补丁（D36 协调问 Kyo）。另外，装到**没有注入密钥**的旧底包上的补丁根本不封存（发行构建没密钥＝照旧明文），所以就算误走补丁也不会写出旧代码读不了的东西。 | `keys.release_without_key_no_seal` |
+| P2① 导入时坏原件被备份清理删掉 | `import_to` 不管备不备份，先把校验失败的目标改名成唯一 `.failed_<时间>[_n]`（清理只认 `.before_import_` 前缀，碰不到）；导入前备份重名加 `_2`…（同一秒两次导入不再互相覆盖） | `import.failed_original_survives_prune`（校验失败的格连续导入 5 次，原件仍在、字节一致）、`import.backups_pruned_unique`；`xiyou_save_transfer` 原 skipped 的 `import_twice_same_second_keeps_original` 现在通过 |
+| P2② 解压无上限 | 文件 > `MAX_FILE` 不读进来（读档、导入都先查大小）；声明明文长度 > `MAX_PLAIN`（128 MiB）拒；`decompress` 按声明长度分配、最多解出这么多 | `crafted.oversize_rejected`（带**合法签名**的超大声明） |
+| P2③ 迁移没读回落盘内容 | 所有封存写盘统一走 `XSaveSeal.write_file`：写临时文件 → **读回临时文件逐字节比、解开和原文一字不差** → 改名（存档、自动存档、账本、仓库、跨存档变量、导入、迁移都是它）。迁移不再另建 `.plain_*.bak`（`.json` 原件本身就是备份，不复用旧备份）。迁移写不进：那个文件照旧读 `.json`、不放记号、下个进程再试 | `mfail.falls_back_to_json`、`mfail.no_marker`、`mfail.retry_next_process` |
+| P2④ 密钥进公开仓库 | 删掉原来的生产种子；仓库只留公开测试密钥（号 0，注释写明只给开发／测试，发行构建不认）。发行密钥在私密设计仓 `xiyou-design-docs/发行密钥/save_seal_key.json`（不进本仓库，`.gitignore` 了注入路径），`发行出包.py` 导出前复制进导出用的工程副本 `content/save_seal_key.json`、导完删；没密钥就不出包（`--no-save-key` 明知故出不封存的包）。新工具 `07_开发环境/存档密钥.py`（`--init` 生成、`--rotate` 加新号、`--check`）。原种子已在公开仓库历史里，作废不用。 | `keys.release_without_key_no_seal`、`keys.release_rejects_test_key`、`keys.release_with_key_seals`（号 3 写、号 2 读）、`keys.other_key_not_accepted`、`keys.dev_test_key_back` |
+| P3 补齐只验末字节 | 每个补齐字节都核；HMAC 在解密之前（文件头注释写明） | `crafted.padding_all_bytes`（带合法签名、末字节对前面不对） |
+
+- 反向验证（手工，改完用备份字节还原）：去掉补齐逐字节核 → `crafted.padding_all_bytes` 挂；去掉长度上限 → `crafted.oversize_rejected` 挂；去掉导入前改名 → `import.failed_original_survives_prune` 挂。
+- 顺带：迁移失败时 `.ksv` 不存在会被当成「空档／空账本」再写新的（返修中发现）——改成回落读 `.json`。
+
+### 总装出包要做的（第一次）
+
+1. 在私密设计仓生成发行密钥：`python3 03_再刷重制_Godot/07_开发环境/存档密钥.py --init`（默认写 `~/Documents/xiyou-design-docs/发行密钥/save_seal_key.json`，或 `XIYOU_SAVE_KEY=<路径>`），在设计仓提交它。**不要拷进游戏仓库。**
+2. 出包照旧 `python3 发行出包.py`：它自动注入（打印「存档密钥：已注入（号 1，不进仓库）」）；缺密钥会报错不出包。
+3. 发行后**不要删旧号**（删了玩家用旧号封存的档就读不了）；要换密钥用 `--rotate`。
+4. 走补丁（`发布补丁.py`）时不带密钥：装在没有密钥的旧底包上＝不封存（照旧明文）。所以封存要随整包生效。
 
 ## 逐条对应派单
 
 | 要求 | 做了什么 | 证据（专项 `xiyou_save_seal`） |
 |---|---|---|
-| 接在存档统一入口；rg 所有读写路径 | 存档写盘 `XSave._write`／`write_text_safely`（账本）；读档 `XSave.read_file`（→`XSaveSeal.read`）；仓库、跨存档变量各自的读写；存档页、导出导入、仓库取出事务查存档里的 whToken、瘦身记号检测都改走解码读。rg 结果：游戏代码里直接读写这些文件的只剩 `XSaveSeal` 自己 | `legacy.*`、`ledger.*` |
-| 加密＋签名、新格式带版本号 | 见上「存档格式」 | `codec.*` |
-| 旧格式：先备份（带时间）再读、写新格式并签名 | 目录级迁移：备份 `.plain_<时间>.bak` → 封存改写 → 记号。（比「下次存盘写新格式」更早：第一次读就封存，免得明文文件长期留在目录里被改。）| `legacy.<文件>.backup／sealed／same_text`、`legacy.backup_once` |
-| 校验失败：不读、不覆盖、不删；列表显示「校验失败」；读档弹提示 | 见上「玩家看到什么」 | `tamper.*`、`trunc.*`、`empty.failed`、`auto.*` |
-| 迁移完后丢进来的明文 | 有记号的目录再出现明文封存文件＝校验失败（`STRICT_AFTER_MIGRATE`，O-待定-2，关掉则照明文读） | `plain_after.*` |
-| 反馈问卷导出 zip 带加密存档原样 | 导出逻辑本来就是整目录原样打包，没改；核过 zip 里字节＝磁盘字节 | `feedback.*` |
-| 开关＋O 号可回退 | `ENABLED=false`：写明文、去掉记号，两种格式都读；再打开重新迁移 | `off.*`、`on_again.*` |
-| 测试不碰真实存档和设置 | 全部临时目录（`XSave.dir_override`、`XFeedback.export_dir_override`），账本路径跟临时目录 | — |
-| 导出导入 | 封存开着时导出 `kyo-remake-save-sealed-v2`（存档封存字节的 base64），改过的导不进；直接选一份封存存档文件也能导入；**没签名的旧明文导出默认拒**（`XSaveTransfer.ACCEPT_PLAIN_IMPORT`，O-待定-3），不然改明文再导入就绕过了 | `xfer.*` |
+| 接在存档统一入口；rg 所有读写路径 | 路径 `XSaveSeal.resolve`；写盘 `XSaveSeal.write_file`；读 `XSaveSeal.read`（存档页、导出导入、仓库取出事务查 whToken、瘦身记号检测都走解码读）。生产代码里直接读写这几类文件的只剩 `XSaveSeal` 自己 | `legacy.*`、`ledger.*` |
+| 加密＋签名、新格式带版本号 | 见上「存档格式」 | `codec.*`、`crafted.*` |
+| 旧格式先备份再迁移 | `.json` 原件留原处当备份；`.ksv` 读回核对后才落位 | `legacy.*`、`mfail.*` |
+| 校验失败不读、不覆盖、不删；列表显示；读档弹提示 | 见「玩家看到什么」 | `tamper.*`、`trunc.*`、`empty.failed`、`plain_in_ksv.failed`、`auto.*`、`import.*` |
+| 反馈问卷 zip 带加密存档原样 | 导出逻辑整目录原样打包，没改 | `feedback.*` |
+| 开关＋O 号可回退 | `ENABLED=false`：读写 `.json` 明文，`.ksv` 解开写回、去掉记号；再打开重新迁移 | `off.*`、`on_again.*` |
+| 测试不碰真实存档和设置 | 全部临时目录；密钥文件也走 `key_file_override` | — |
 
 ## 变更记录草稿
 
 ## 2026-11-15 【cc·存档封存·未经审查】存档加密＋签名，改过的存档认得出（D28）（dev.待定）
 
-- Kyo 11-15 D28：不允许玩家修改存档。新 `XSaveSeal`：存档、自动存档、云裳／魔冠账本、星级仓库、跨存档变量写成加密＋签名格式（AES-256-CBC＋HMAC-SHA256，先压缩，带版本号）；只防普通改档工具和手改数字，防不住逆向。
-- 老存档第一次被读时自动补签名：先原样备份 `.plain_<时间>.bak` 再封存，老玩家不受影响；迁移完的目录再出现明文文件算校验失败。
-- 校验失败（被改、截断、坏档）：不读、不覆盖、不删；读档页标红「存档校验失败」、读取弹提示（原文件已保留，可通过游戏内反馈问卷导出存档发给我们）；在这一格存档／删除时原文件改名 `.failed_<时间>` 留着。账本、仓库、跨存档变量校验失败就暂停、不写盘。
+- Kyo 11-15 D28：不允许玩家修改存档。新 `XSaveSeal`：存档、自动存档、云裳／魔冠账本、星级仓库、跨存档变量写成加密＋签名格式（AES-256-CBC＋HMAC-SHA256，先压缩，带版本号和密钥号），文件名改成 `.ksv`；只防普通改档工具和手改数字，防不住逆向。
+- 老存档第一次被读时自动封存成 `.ksv`（读回核对后才落位），原 `.json` 留原处当备份，老玩家不受影响；旧版本代码只认 `.json`，退回旧版时碰不到封存档。
+- 校验失败（被改、截断、坏档）：不读、不覆盖、不删；读档页标红「存档校验失败」、读取弹提示（原文件已保留，可通过游戏内反馈问卷导出存档发给我们）；在这一格存档／删除／导入时原文件改名 `.failed_<时间>` 留着。账本、仓库、跨存档变量校验失败就暂停、不写盘。
 - 导出改成封存格式，改过的导不进；旧版明文导出默认不收。
-- 回退：`XSaveSeal.ENABLED = false`（写明文、两种都读）。
+- 发行密钥不进仓库：出包时由 `发行出包.py` 从私密设计仓注入（新工具 `存档密钥.py`）；发行构建没密钥就不封存，开发／测试用公开测试密钥。
+- 回退：`XSaveSeal.ENABLED = false`（读写 `.json` 明文，封存档解开写回）。
 - 玩家可见：存档文件不能再用改档工具修改；改过的存档在读档页显示「存档校验失败」并保留原文件。
-- 验证：专项 `xiyou_save_seal`（新，97/97）、存档相关旧专项 32 个本机通过（改成经 `XSaveSeal` 读写测试夹具）；云端选测 416 个场景 415 过，1 个是与本改动无关的偶发（见交付单）。
+- 验证：专项 `xiyou_save_seal`（新，119/119）、存档相关旧专项本机通过（测试夹具改走 `XSaveSeal` 读写、`.ksv` 文件名）；co 甲档核查返修见交付单；云端选测见交付单。
 - 提交：（合并时填）
 
 ## 优化登记草稿
 
 | 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
 |---|---|---|---|---|---|---|---|
-| O-待定-1 | `modes/xiyou/core/save_seal.gd` `XSaveSeal.ENABLED`；`xsave.gd` `_write`／`write_text_safely`；`star_warehouse.gd`、`xglobal_vars.gd` `_save` | 存档、账本是明文 JSON，谁都能改 | 加密＋签名写盘，改过的认得出，旧档第一次读时迁移 | Kyo 11-15 D28 | `XSaveSeal.ENABLED = false`（写明文、封存与明文两种都读） | cc | 保留 |
-| O-待定-2 | `save_seal.gd` `XSaveSeal.STRICT_AFTER_MIGRATE`、`read` | （新功能）| 目录迁移完（有 `.sealed_v1` 记号）后再出现的明文存档算校验失败 | 不然把改过的明文丢回目录就绕过 | `XSaveSeal.STRICT_AFTER_MIGRATE = false`（明文一直照读） | cc | 保留 |
+| O-待定-1 | `modes/xiyou/core/save_seal.gd` `XSaveSeal.ENABLED`、`resolve`、`write_file`；`xsave.gd`、`star_warehouse.gd`、`xglobal_vars.gd`、`yunshang_orders.gd`、`demon_crown.gd` 的路径与写盘 | 存档、账本是明文 JSON，谁都能改 | 加密＋签名写成 `.ksv`，改过的认得出，旧档第一次读时迁移、`.json` 留作备份 | Kyo 11-15 D28 | `XSaveSeal.ENABLED = false`（读写 `.json` 明文，`.ksv` 解开写回） | cc | 保留 |
+| O-待定-2 | `save_seal.gd` `XSaveSeal.STRICT_AFTER_MIGRATE`、`ensure_dir` | （新功能）| 目录迁移完（有 `.sealed_v1`）后不再读 `.json` | 不然改 `.json`、删 `.ksv` 就绕过 | `XSaveSeal.STRICT_AFTER_MIGRATE = false`（每次进目录都把比 `.ksv` 新的 `.json` 重新封存） | cc | 保留 |
 | O-待定-3 | `save_transfer.gd` `XSaveTransfer.ACCEPT_PLAIN_IMPORT`、`parse_import` | 导出导入是明文 JSON | 封存开着时导出封存格式；没签名的明文导出不收 | 不然改明文导出再导入就绕过 | `XSaveTransfer.ACCEPT_PLAIN_IMPORT = true`（照旧收明文导出，导入后写成封存格式） | cc | 保留 |
 
 ## 交接板
 
-- 下一步：co 甲档核查本分支；Kyo 定下面「需要用户决定」后按结论补。
-- 用户试玩说明：读档照常；改过的存档（或把存档文件拷来拷去改坏的）读档页显示「存档校验失败」。存档文件夹里会多出 `.plain_<时间>.bak`（迁移前的明文原件）和 `.sealed_v1`。
+- 下一步：co 复核返修；出包前总装按「总装出包要做的」生成发行密钥。
+- 用户试玩说明：读档照常；存档文件夹里每个进度文件多一个 `.ksv`（新存档）和 `.sealed_v1`，原 `.json` 留作备份。改过的 `.ksv` 读档页显示「存档校验失败」。
 - 需要用户决定：
-  1. **重制版也上吗、走不走补丁**：现在重制版、天启篇都生效（共用存档入口）。走补丁的风险：补丁启动失败自动退回底包时，底包的旧代码读不了封存档（读档页当坏档），退回期间旧代码写的明文档回到新版后会被当成校验失败（原文件都留着，不丢，但要人工找回）。稳妥做法是随下一个**整包**出；要走补丁也行，概率低、文件不丢。推荐：随整包。
-  2. **密钥在公开仓库里看得到**：仓库公开期间谁都能从源码拿到 `SECRET` 自己封存改过的档。要更严可以改成出包时从私密设计仓注入密钥（像发行空壳那样，源码里放占位）；推荐等仓库转私有前再做，现在先这样（D28 本来就只防普通改档工具）。
-  3. **旧版明文导出文件还收不收**：默认不收（否则改明文再导入就绕过）。若有玩家手里只有旧版导出文件要换设备，可临时打开 `ACCEPT_PLAIN_IMPORT`。推荐：不收。
+  1. **发行方式（D36，协调问 Kyo）**：推荐随兼容整包发。补丁装在没有密钥的旧底包上不会封存（安全但等于没上）；整包带密钥才生效。
+  2. **旧版明文导出文件还收不收**：默认不收（否则改明文再导入就绕过）。若有玩家只有旧版导出文件要换设备，可临时打开 `ACCEPT_PLAIN_IMPORT`。推荐：不收。
 
 ## 进度账
 
-- 重制版平台与存档：存档防改（D28）完成。
+- 重制版平台与存档：存档防改（D28）完成（待 co 复核）。
 
 ## 可优化（流程／工具／效率）
 
-- 建议：测试里直接 `FileAccess.get_file_as_string(XSave.path(…))` 读存档的写法以后都要走 `XSaveSeal.read_text`，可在守卫检查里加一条 rg（预计收益：防新测试一上来就崩在解析封存字节；归工具车道）。
-- 建议：`xiyou_step_encounter_stop` 的 `rollback_stale_target_walks` 仍偶发（main 最新也一样，封存关掉也会挂），归步步遇敌那条车道把起点或等待改成确定性。
-- 已做：本轮把 23 个测试文件里的存档读写夹具改成 `XSaveSeal.read_text`／`XSaveSeal.store`。
+- 建议：守卫检查加一条 rg，禁止测试和游戏代码直接 `FileAccess.get_file_as_string(XSave.path(…))`／写 `save_*.json`（预计收益：防新代码绕过封存或一上来就崩在解析封存字节；归工具车道）。
+- 建议：`xiyou_step_encounter_stop` 的 `rollback_stale_target_walks` 偶发（第一轮云端挂过，封存关掉本机也挂过一次），归步步遇敌车道改成确定性；co 提醒「main 上也挂」尚未在 main 隔离复跑证实。
+- 已做：存档相关测试夹具改走 `XSaveSeal.read_text`／`write_file`、`.ksv` 文件名。
 
 ## 验证
 
-- 专项 `xiyou_save_seal`（新）97/97：编码往返、改任一段一字节／截断／追加／空文件失败；明文旧档迁移（七个文件备份逐字节等于原文件、解开等于原文、记号、只备份一次）；新档往返；改一字节→校验失败且原文件仍在、存档页／摘要／导出表现、存到失败格先改名留着；截断；删除改名；迁移后明文失败、开关放宽照读；自动存档；多槽；云裳／魔冠账本、仓库、跨存档变量改过不读不写；开关关闭写明文、两种都读、再打开重新迁移；导出导入；反馈 zip 原样。
-- 本机直跑（单测 `test_main_loop`，本机测试槽被别的车道占着，没走并行测试排队）：xiyou_save_corrupt 53/53、save_cat_slots 15/15、save_slim 126/126、save_page 42/42、save_events 31/31、save_transfer 38/38、star_warehouse 99/99（一次偶发 4 项品质颜色不对，连跑两次都过，与本改动无关的颜色断言，第一次偶发）、global_vars 17/17、demon_crown 106/106、autosave 10/10、pause_save 46/46、save_cold_load 27/27、splash_autosave 74/74、feedback_v001 32/32、yunshang_shop 436/436、yunshang_gear_load 137/137、platform 155/155、percent_pills 65/65、review_regressions 29/29、random_streams 490/490、floor30_gifts 30/30、tianqi_affix_seed 23/23、tianqi_opening 44/44、tianqi_seed_fix 77/77、lottery_seed 12/12、tianqi_save 82/82、battleback_save 5/5、newgame_back 68/68、tianqi_e2e 58/58、tianqi_title_flow 43/43、tianqi_ending 24/24、entry_release 16/16。
-- 云端选测（`云端选测.py run --no-upload`，提交 ba4f9b83d，416 个场景、16 片）：415 通过，1 个失败 `xiyou_step_encounter_stop`（`rollback_stale_target_walks`）。本机查：**与本改动无关的偶发**——再合 main（含 0f85d8abd「遗留目的地取刚离开的一格」）后本机连跑 3 次 1 过 2 挂；把 `XSaveSeal.ENABLED` 默认改成关再连跑 4 次仍有 1 次挂（同一断言，起点随机）。这是回退开关那一段（`MV_CLEAR_DEST=false`）的偶发，见「可优化」。
-- 发行模拟冷启动读旧档：专项 `release_cold.*`（`ReleaseEntry.simulate_release`、`XState.current＝null` 时读旧版写的明文档→迁移、读进来、内容一字不差）通过；`xiyou_save_cold_load`（含 release_slot／release_auto）27/27。真发行包实机冷启动没做（要出包），建议出包后测试玩家验一次。
-- 工具快速回归全部通过（97 秒）；语法检查通过。
+- 专项 `xiyou_save_seal` 119/119（新）：编码往返；改任一段一字节／截断／追加／空；带合法签名的超大声明、坏补齐；明文旧档迁移（七个文件 `.ksv` 解开＝原文、`.json` 原件不动、记号）；旧底包退回模拟；新档往返、改字节、截断、明文写进 `.ksv`、迁移后丢进来的 `.json`、存到失败格改名留着、删除改名；自动存档；多槽；账本、仓库、跨存档变量改过不读不写；开关关闭／再打开；导出导入；导入保留失败原件；反馈 zip 原样；发行模拟冷启动读旧档；迁移写不进回落 `.json`；发行密钥（无密钥不封存、不认测试密钥、号轮换）。
+- 本机直跑（`test_main_loop`，本机测试槽被别的车道占着）：save_corrupt 53/53、save_cat_slots 15/15、save_slim 126/126、save_page 42/42、save_events 31/31、save_transfer 39/39（原 skipped 一项现在通过）、star_warehouse 99/99、global_vars 17/17、demon_crown 106/106、demon_crown_compact 48/48、autosave 10/10、pause_save 46/46、save_cold_load 27/27、splash_autosave 74/74、feedback_v001 32/32、yunshang_shop 436/436、yunshang_gear_load 137/137、platform 155/155、percent_pills 65/65、review_regressions 29/29、random_streams 490/490、floor30_gifts 30/30、tianqi_affix_seed 23/23、tianqi_opening 44/44、tianqi_seed_fix 77/77、lottery_seed 12/12、tianqi_save 82/82、battleback_save 5/5、newgame_back 68/68、entry_release 16/16。
+- 工具快速回归全部通过（98 秒）；语法检查通过。
+- 云端选测：CLOUD_RESULT
+- 真发行包实机冷启动、Windows／安卓文件替换、真磁盘满／断电没做（要出包或实机）。
 - 合并建议：`合并车道.sh … --finish --affected --cloud`。
 
 ## 待交叉核查
 
-- co 甲档：`save_seal.gd`（新）、`xsave.gd`、`save_transfer.gd`、`star_warehouse.gd`、`xglobal_vars.gd`、`yunshang_orders.gd`、`demon_crown.gd`、`save_slim.gd`、`ui/save_scene.gd`、`entry.gd`；测试夹具改动 23 个文件。
+- co 甲档复核：`save_seal.gd`（重写）、`xsave.gd`、`save_transfer.gd`、`star_warehouse.gd`、`xglobal_vars.gd`、`yunshang_orders.gd`、`demon_crown.gd`、`save_slim.gd`、`ui/save_scene.gd`、`entry.gd`、`07_开发环境/发行出包.py`、`07_开发环境/存档密钥.py`（新）、`.gitignore`；测试夹具改动。
 
 ## 本分支提交
 
 - 6b696d2a6 存档封存 XSaveSeal 接入
 - 81d3f31d2 专项 xiyou_save_seal；旧存档专项改走 XSaveSeal 读写
-- 交付单、发行模拟冷启动读旧档专项（xiyou_save_seal 97/97）
+- abe3b2397 交付单
+- 返修：封存档改 .ksv、发行密钥出包注入、上限、读回核对、补齐逐字节、导入保留失败原件；测试改 .ksv；迁移失败回落 .json
 
 ## co 甲档核查
 
