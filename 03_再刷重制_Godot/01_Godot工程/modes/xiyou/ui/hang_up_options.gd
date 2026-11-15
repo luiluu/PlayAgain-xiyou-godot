@@ -93,23 +93,33 @@ static func words(sym: String) -> Array:
 func status_text(i: int) -> String:
 	var sym: String = SYMS[i]
 	if sym in SUBPAGES:
-		return "open"
+		return "进入" if XUiSkin.on() else "open"
 	var v = settings().get(sym)
-	return str(int(v)) if sym == "range" else ("YES" if v else "NO")
+	if sym == "range":
+		return str(int(v))
+	if XUiSkin.on():
+		return "是" if v else "否"
+	return "YES" if v else "NO"
 
 
 func _paint_title(c: XMVCanvas) -> void:
-	c.text(words(SYMS[index])[1], 0, 0, c.size.x, "center", XUI.TEXT, XUI.FONT_SIZE, 44)
+	var on := XUiSkin.on()
+	c.clean_text = on
+	c.font = XUiSkin.font("body") if on else XUI.font()
+	c.text(words(SYMS[index])[1], 0, 0, c.size.x, "center", XUiSkin.TEXT if on else XUI.TEXT, XUI.FONT_SIZE, 44)
 
 
 func _paint_item(c: XMVCanvas, i: int) -> void:
+	var on := XUiSkin.on()
+	c.clean_text = on
+	c.font = XUiSkin.font("body") if on else XUI.font()
 	if i == index:
 		c.cursor(Rect2(0, 0, c.size.x, ITEM_LH))
 	var rect_w := c.size.x - 12.0
 	var status_w := c.size.x / 2.0
 	var title_w := rect_w - status_w
-	c.text(words(SYMS[i])[0], 6, 0, title_w, "left", XUI.TEXT, XUI.FONT_SIZE, ITEM_LH)
-	c.text(status_text(i), title_w, 0, status_w, "right", XUI.TEXT, XUI.FONT_SIZE, ITEM_LH)
+	c.text(words(SYMS[i])[0], 6, 0, title_w, "left", XUiSkin.TEXT if on else XUI.TEXT, XUI.FONT_SIZE, ITEM_LH)
+	c.text(status_text(i), title_w, 0, status_w, "right", XUiSkin.GOLD_LIGHT if on else XUI.TEXT, XUI.FONT_SIZE, ITEM_LH)
 
 
 ## 范围格（XdRsData.hangUp.drawLattice）：画面格坐标，玩家格除外

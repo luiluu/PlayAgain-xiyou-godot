@@ -11,6 +11,7 @@ var title := ""
 var title_color := XUiSkin.TEXT
 var title_size := XUiSkin.FS_CARD
 var subtitle := ""
+var notice := ""
 var desc := ""
 ## [{title, lines: [{left, right, color, right_color}]}] 或 [{title, text}] 或 [{title, rows: [{text, color}]}]（每行自动换行、各自颜色；title 可空）
 var sections: Array = []
@@ -100,6 +101,25 @@ func _draw() -> void:
 		y += 4
 		draw_string(body, Vector2(pad, y + XUiSkin.FS_AUX_MAX * 0.86), subtitle, HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 		y += XUiSkin.FS_AUX_MAX + 6
+	if notice != "":
+		y += 6
+		var npara := TextParagraph.new()
+		npara.width = w - 20.0
+		npara.add_string(notice, body, XUiSkin.FS_AUX)
+		var nlh := roundf(XUiSkin.FS_AUX * 1.45)
+		var ncnt := maxi(1, npara.get_line_count())
+		var nh := float(ncnt) * nlh + 10.0
+		if y + nh <= bottom:
+			var nsb := StyleBoxFlat.new()
+			nsb.bg_color = Color(XUiSkin.GOLD, 0.14)
+			nsb.border_color = Color(XUiSkin.GOLD, 0.55)
+			nsb.set_border_width_all(1)
+			nsb.set_corner_radius_all(XUiSkin.ROW_RADIUS)
+			nsb.draw(ci, Rect2(pad, y, w, nh))
+			for li in npara.get_line_count():
+				var r := npara.get_line_range(li)
+				draw_string(body, Vector2(pad + 10.0, y + 5.0 + float(li) * nlh + XUiSkin.FS_AUX * 0.96), notice.substr(r.x, r.y - r.x), HORIZONTAL_ALIGNMENT_LEFT, w - 20.0, XUiSkin.FS_AUX, XUiSkin.GOLD_LIGHT)
+			y += nh + 4
 	if desc != "":
 		y += 8
 		y = _paragraph(body, desc, y, w, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT, bottom)

@@ -68,23 +68,38 @@ func _init() -> void:
 	add_child(stack)
 
 
+func _view_size() -> Vector2:
+	return get_viewport().get_visible_rect().size if get_viewport() else Vector2(1280, 720)
+
+
 ## 按弹窗字号算出的 [字号, 行高, 框宽]
 static func metrics() -> Array:
 	var k := XFontScale.scaled(1.0, "toast")
+	if XUiSkin.on():
+		return [maxi(XUiSkin.FS_MIN, roundi(17.0 * k)), roundi(25.0 * k), 340.0 * minf(k, MAX_WIDEN)]
 	return [roundi(FONT_SIZE * k), roundi(LINE_HEIGHT * k), WIDTH * minf(k, MAX_WIDEN)]
 
 
 func _add(message: String) -> void:
+	var on := XUiSkin.on()
 	var text := plain(message)
 	shown.append(text)
 	var m := metrics()
 	var font_size: int = m[0]
 	var line_height: int = m[1]
 	var width: float = m[2]
+	var vs := _view_size()
+	if on:
+		width = minf(width, vs.x - XSkinLayout.margin_for(vs.x) * 2.0)
+		stack.position = Vector2(roundf((vs.x - width) / 2.0) + MARGIN, TOP + MARGIN)
+	else:
+		stack.position = Vector2(LEFT + MARGIN, TOP + MARGIN)
 	stack.custom_minimum_size.x = width - MARGIN * 2
-	var inner := width - MARGIN * 2 - PADDING * 2
+	var pad_x := 16.0 if on else PADDING
+	var pad_y := 12.0 if on else PADDING
+	var inner := width - MARGIN * 2 - pad_x * 2
 	var font := FontVariation.new()
-	font.base_font = XUI.font()
+	font.base_font = XUiSkin.font("body") if on else XUI.font()
 	var trim := line_height - int(font.get_height(font_size))   # 上下合计要减的像素（回退字体更矮时可能为 -1 之类）
 	font.spacing_top = floori(trim / 2.0)
 	font.spacing_bottom = trim - floori(trim / 2.0)
@@ -97,22 +112,48 @@ func _add(message: String) -> void:
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	box.size.x = width - MARGIN * 2
 	var style := StyleBoxFlat.new()
-	style.bg_color = BACK
-	style.set_content_margin_all(PADDING)
+	if on:
+		style.bg_color = Color(XUiSkin.PANEL_LOW.lerp(XUiSkin.PANEL, 0.45), 0.94)
+		style.border_color = Color(XUiSkin.GOLD if text.begins_with("已生效") or text.begins_with("已使用") else XUiSkin.LINE, 0.48)
+		style.set_border_width_all(1)
+		style.set_corner_radius_all(10)
+		style.shadow_color = Color(0, 0, 0, 0.48)
+		style.shadow_size = 8
+		style.shadow_offset = Vector2(0, 4)
+		style.content_margin_left = pad_x + 6.0
+		style.content_margin_right = pad_x
+		style.content_margin_top = pad_y
+		style.content_margin_bottom = pad_y
+	else:
+		style.bg_color = BACK
+		style.set_content_margin_all(PADDING)
 	box.add_theme_stylebox_override("panel", style)
+	if on:
+		var accent := ColorRect.new()
+		accent.color = XUiSkin.GOLD
+		accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		accent.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
+		accent.offset_left = 8
+		accent.offset_right = 11
+		accent.offset_top = 8
+		accent.offset_bottom = -8
+		box.add_child(accent)
 	var label := Label.new()
 	label.text = text
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 与浏览器一样：句末标点不单独起行
 	label.add_theme_font_override("font", font)
 	label.add_theme_constant_override("line_spacing", 0)
 	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_color_override("font_color", Color.WHITE)
-	label.add_theme_color_override("font_outline_color", SHADOW)
-	label.add_theme_constant_override("outline_size", 2)
-	label.size.x = inner
+	label.add_theme_color_override("font_color", XUiSkin.TEXT if on else Color.WHITE)
+	if on:
+		label.add_theme_constant_override("outline_size", 0)
+	else:
+		label.add_theme_color_override("font_outline_color", SHADOW)
+		label.add_theme_constant_override("outline_size", 2)
+	label.size.x = inner - (6.0 if on else 0.0)
 	box.add_child(label)
 	# 用Label实际塑形后的高度排栈，避免预估字体尚未加载回退度量。
-	var h := label.get_minimum_size().y + PADDING * 2
+	var h := label.get_minimum_size().y + pad_y * 2
 	box.size.y = h
 	slot.custom_minimum_size.y = h
 	slot.add_child(box)

@@ -27,6 +27,7 @@ static func embolden_at(scale: float) -> bool:
 
 var painter: Callable
 var font: Font
+var clean_text := false
 var _t := 0.0
 ## 光标闪烁（MV Window._updateCursor：活动时每 40 帧透明度起伏）
 var blink := false
@@ -114,9 +115,12 @@ func text(s: String, x: float, y: float, max_w: float, align := "left", color :=
 	if zoom != 1.0:
 		xf = Transform2D(0.0, Vector2(zoom, zoom), 0.0, pivot - pivot * zoom) * xf
 	draw_set_transform_matrix(xf)
-	draw_string_outline(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 1, Color(outline, outline.a * alpha))
-	if embolden_at(get_viewport().get_final_transform().get_scale().x):
-		draw_string_outline(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, EMBOLDEN, c)
+	if not clean_text:
+		draw_string_outline(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 1, Color(outline, outline.a * alpha))
+		if embolden_at(get_viewport().get_final_transform().get_scale().x):
+			draw_string_outline(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, EMBOLDEN, c)
+	elif outline.a > 0.0 and outline != OUTLINE:
+		draw_string(font, Vector2(0, 1), s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(outline, outline.a * alpha))
 	draw_string(font, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, c)
 	draw_set_transform(Vector2.ZERO)
 

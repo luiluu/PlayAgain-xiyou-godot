@@ -24,7 +24,17 @@ co 出的 `Mira_Dragon_Unarmed_Motions_u1`（21 张，原版文件名，340×280
 
 - `img/sv_actors/sv/UserSV_MiraDragon/`：21 张，`XDB.img_path` 在开关开着时优先读这里（外观按 `sv_actors/sv/UserSV_MiraDragon/UserSV_MiraDragon<动作>_<帧>` 取），站姿归一档 `UserSV_MiraDragon` 不变。`dragon_unarmed_manifest.json` 是 co 的动作映射。
 - `fx/sword_u2/`：召剑特效 10 张＋`manifest.json`（中心锚 [64,64]，相对龙底锚 [160,217] 偏移 [-40,-200]；出现、消散每帧 100ms，悬停 140ms 循环）。
-- 召剑是独立层 `XMiraSwordFx`（`modes/xiyou/battle/mira_sword_fx.gd`），挂在 `XBattlerSprite` 下；`SKILLS` 默认空＝**从不召剑**，名单待 Kyo 定；`RECOMMENDED` 只是建议。`battle_scene._perform_action` 末尾调 `on_skill`，行动收尾调 `vanish_all`。
+- 召剑是独立层 `XMiraSwordFx`（`modes/xiyou/battle/mira_sword_fx.gd`），挂在 `XBattlerSprite` 下；`SKILLS = [10151]`：**只有 10151 黑日焚界召剑**，平时不挂剑（Kyo 11-15 定，D34）。`battle_scene._perform_action` 末尾调 `on_skill`，行动收尾调 `vanish_all`。
 - 回退：`XMira.DRAGON_ART = false` → 回到原版带剑 `UserSV_MiraDragon`，召剑层也不建；人形开关 `XMira.ART` 另算。
 - 测试：`tests/xiyou_mira_dragon_art.tscn`（窗口模式加 `-- --out=<目录>` 存与原版并排的截图）。
-- 不在本批：放大倍数、升空变身演出（u6）。
+- 不在本批：放大倍数。升空变身演出见下一节（u7）。
+
+## 升空变身 u7（Kyo 11-15 通过 D35，开关 `XMira.LIFT_ART`）
+
+co 出的 `米拉_黑龙升空变身_u7`（来源 `/Users/kyo/.codex/generated_images/01a1d6f2-3650-7fa0-aa8a-a14f105bdf8f/米拉_黑龙升空变身_u7/`，说明 `接入说明.md`、`时间轴.json`）。
+
+- `fx/lift_u7/`：8 张过渡姿势（340×280，锚 [160,217]：MiraLift／MiraHover／MiraWingHuman／MiraHybrid／MiraAir／MiraDescend／MiraTouchdown／MiraSettle）＋4 张火屑（256×256，中心锚：MiraEmberLift／Arc／Scatter／Landing），共 12 张 288 KB，与来源逐字节相同。人形起点直接取 `img/sv_actors/Codex_Mira_SV_u2.png` 第 1 行第 1 列格（来源 human.png 就是这一格），Final 直接用 `UserSV_MiraDragon0_0.png`（来源 dragon.png 字节相同），不另拷。
+- 只拷运行时要的：116 张帧序列（body／fx_back／composite）、GIF、母图、脚本都没进工程。按时间轴拼（`XMiraLiftFx`，`modes/xiyou/battle/mira_lift_fx.gd`），关键帧照 `时间轴.json` 写在代码常量里。
+- 接线：`XBattlerSprite.swap_look` 末尾 `XMiraLiftFx.on_swap`：人形→黑龙（2592 加上后外观键变）时挂层开演；只是画面，状态与结算不等它。「显示技能动画」关着（默认关）或快速战斗直接是黑龙。
+- 回退：`XMira.LIFT_ART = false`（外观一变直接换成黑龙，同接入前）。
+- 测试：`tests/xiyou_mira_lift.tscn`（窗口模式加 `-- --out=<目录>` 存 6 张变身过程截图）。

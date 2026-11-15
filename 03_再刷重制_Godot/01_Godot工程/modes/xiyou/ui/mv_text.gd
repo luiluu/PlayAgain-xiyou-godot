@@ -26,16 +26,20 @@ var color := XUI.TEXT
 var wrap_width := 0.0           # 内容区宽（窗口宽 − 2×内边距）；0 表示不换行
 var glyphs: Array = []
 var _font: Font
+var skin_palette := false
 
 
-func _init(converted := "", start_x := 0.0, start_y := 0.0, contents_width := 0.0, font_size := XUI.FONT_SIZE) -> void:
-	_font = XUI.font()
+func _init(converted := "", start_x := 0.0, start_y := 0.0, contents_width := 0.0, font_size := XUI.FONT_SIZE, custom_font: Font = null, use_skin_palette := false) -> void:
+	_font = custom_font if custom_font != null else XUI.font()
+	skin_palette = use_skin_palette
 	text = converted
 	x = start_x
 	y = start_y
 	left = start_x
 	wrap_width = contents_width
 	size = font_size
+	if skin_palette:
+		color = XUiSkin.TEXT
 	height = calc_height()
 
 
@@ -180,7 +184,19 @@ func _escape() -> Dictionary:
 	index += code.length()
 	match code:
 		"C":
-			color = XUI.text_color(_param())
+			var ci := _param()
+			if skin_palette:
+				match ci:
+					0:
+						color = XUiSkin.TEXT
+					6:
+						color = XUiSkin.GOLD_LIGHT
+					16:
+						color = XUiSkin.GOLD
+					_:
+						color = XUI.text_color(ci)
+			else:
+				color = XUI.text_color(ci)
 		"I":
 			var n := _param()
 			glyphs.append({"icon": n, "x": x + 2, "y": y + 2})

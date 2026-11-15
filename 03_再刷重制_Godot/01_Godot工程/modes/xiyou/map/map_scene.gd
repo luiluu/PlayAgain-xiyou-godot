@@ -269,6 +269,39 @@ var map_name_text := ""
 func _paint_map_name(c: XMVCanvas) -> void:
 	if map_name_text == "":
 		return
+	if XUiSkin.on():
+		var vw := c.size.x
+		var cx := vw / 2.0
+		var f := XUiSkin.font("title")
+		var fs := XUiSkin.FS_CARD
+		var tw := f.get_string_size(map_name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var bw := maxf(280.0, tw + 112.0)
+		var bh := 44.0
+		var bx := cx - bw / 2.0
+		var dark := Color(0.04, 0.04, 0.05, 0.84)
+		var clear := Color(0.04, 0.04, 0.05, 0.0)
+		var wing := 56.0
+		c.gradient(Rect2(bx - wing, 0.0, wing, bh), clear, dark)
+		c.draw_rect(Rect2(bx, 0.0, bw, bh), dark)
+		c.gradient(Rect2(bx + bw, 0.0, wing, bh), dark, clear)
+		var gold := Color(XUiSkin.GOLD, 0.55)
+		c.draw_line(Vector2(bx, 0.5), Vector2(bx + bw, 0.5), gold, 1.0)
+		c.draw_line(Vector2(bx, bh - 0.5), Vector2(bx + bw, bh - 0.5), gold, 1.0)
+		var tick_x1 := bx + 18.0
+		var tick_x2 := bx + bw - 18.0
+		var mid_y := bh / 2.0
+		for tx_d in [tick_x1, tick_x2]:
+			c.draw_colored_polygon(PackedVector2Array([
+				Vector2(tx_d, mid_y - 3.5), Vector2(tx_d + 3.5, mid_y),
+				Vector2(tx_d, mid_y + 3.5), Vector2(tx_d - 3.5, mid_y)
+			]), Color(XUiSkin.GOLD, 0.85))
+		var tx := roundf(cx - tw / 2.0)
+		var ty := roundf(bh / 2.0 + fs * 0.36)
+		c.draw_string(f, Vector2(tx, ty + 1.0), map_name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0, 0, 0, 0.8))
+		c.draw_string(f, Vector2(tx, ty), map_name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT)
+		return
+	c.font = XUI.font()
+	c.clean_text = false
 	var tw := c.text_width(map_name_text)
 	var distance := 80.0
 	var w := tw + distance * 2.0
@@ -285,6 +318,12 @@ func _show_map_name(text: String) -> void:
 	if _map_name_tween:
 		_map_name_tween.kill()
 	var plate: XMVCanvas = hud.find_child("MapNamePlate", true, false)
+	if XUiSkin.on():
+		plate.size = Vector2(get_viewport().get_visible_rect().size.x, 44.0)
+		plate.clean_text = true
+	else:
+		plate.size = Vector2(1280, 36)
+		plate.clean_text = false
 	map_name_text = text
 	plate.queue_redraw()
 	if text == "":
@@ -1564,9 +1603,12 @@ func _snapshot() -> Texture2D:
 	var plate: CanvasItem = hud.find_child("MapNamePlate", true, false)
 	var was := message.visible
 	var plate_was := plate.visible if plate else false
+	var diff_was := difficulty_notice.visible if (difficulty_notice != null and XUiSkin.on()) else false
 	message.visible = false
 	if plate:
 		plate.visible = false
+	if diff_was:
+		difficulty_notice.visible = false
 	# 触屏虚拟按键（CanvasLayer 120，在根视口里）也不进截图：否则战斗背景（这张快照）里留着一份 A／B，
 	# 跟上面活的按键叠成两份（玩家反馈 v0.01.01）。原版 Mehmet_GhostButtons 的按键是场景子节点，同样会被截进去，按原版缺陷修掉。
 	var pad := XTouchControls.instance if SNAP_HIDE_TOUCH else null
@@ -1578,6 +1620,8 @@ func _snapshot() -> Texture2D:
 	message.visible = was
 	if plate:
 		plate.visible = plate_was
+	if diff_was and is_instance_valid(difficulty_notice):
+		difficulty_notice.visible = diff_was
 	if pad != null and is_instance_valid(pad):
 		pad.visible = pad_was
 	if img == null or img.is_empty():
