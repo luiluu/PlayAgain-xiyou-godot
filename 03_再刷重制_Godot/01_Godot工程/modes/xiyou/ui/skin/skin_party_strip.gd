@@ -128,9 +128,9 @@ func _draw() -> void:
 		var x := r.position.x + 14 + HEAD + 12
 		var right := r.end.x - 12
 		var y1 := r.position.y + 6 + 18
-		var nm := str(m.get("name", ""))
-		draw_string(body, Vector2(x, y1), nm, HORIZONTAL_ALIGNMENT_LEFT, right - x - 80, 18, XUiSkin.TEXT)
-		var nw := body.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+		var fit := name_fit(body, str(m.get("name", "")), int(m.get("level", 1)), right - x - 80)
+		draw_string(body, Vector2(x, y1), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], XUiSkin.TEXT)
+		var nw := body.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
 		var info := "Lv %d" % int(m.get("level", 1))
 		if str(m.get("cls", "")) != "":
 			info += " · " + str(m.cls)
@@ -172,6 +172,13 @@ func _pill(ci: RID, r: Rect2, c: Color) -> void:
 
 
 ## 圆形裁切画图（头像）：圆多边形＋UV；AtlasTexture 换算到整张图的 UV
+## 名字放不下时先缩字（≥14）再加省略号，保住后面「Lv 数字」的宽度（小A核查 3A 顺带：「窃格瓦拉·周 Lv」把等级挤掉）。
+## avail：名字＋等级能占的宽度。返回 [名字, 字号]
+static func name_fit(f: Font, name: String, level: int, avail: float) -> Array:
+	var lv := f.get_string_size("Lv %d" % level, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
+	return XSkinList.fit_text(f, name, maxf(avail - lv - 8, 24.0), 18, 14)
+
+
 static func draw_round_texture(ci: CanvasItem, tex: Texture2D, c: Vector2, r: float, segments := 32) -> void:
 	var src := Rect2(Vector2.ZERO, tex.get_size())
 	var base: Texture2D = tex

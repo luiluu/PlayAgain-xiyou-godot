@@ -113,7 +113,7 @@ static func cond_text(key: String) -> String:
 	if u.has("floor"):
 		return "打过第 %d 层开启" % int(u.floor)
 	if u.has("after_seals"):
-		return "前六印的首领都打过开启"
+		return "前六印的首领都打过后开启"
 	return ""
 
 

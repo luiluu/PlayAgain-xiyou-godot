@@ -36,11 +36,20 @@ static func _qiyin_card(rec: Dictionary, d: Dictionary) -> void:
 	if bool(m.get("true_seal", false)):
 		head.append("真印")
 	var sub := str(d.get("subtitle", ""))
-	d.subtitle = " · ".join(PackedStringArray(head)) + ("　" + sub if sub != "" else "")
+	d.subtitle = " · ".join(PackedStringArray(head)) + (" · " + sub if sub != "" else "")
+	_drop_quality_rows(d)   # 品质已写在小字里（小A核查 P2：不重复「品质：…」那行）
 	var grades: Array = m.get("grades", [])
 	if not grades.is_empty():
 		var g := "／".join(PackedStringArray(grades.map(func(x): return XTianqiQiyin.grade_name(str(x)))))
 		d.sections = [{"title": "", "rows": [{"text": "成色　" + g, "color": XUiSkin.GOLD_LIGHT}]}] + (d.get("sections", []) as Array)
+
+
+## 牌上分节里去掉说明卡的「品质：…」行（小字已写）
+static func _drop_quality_rows(d: Dictionary) -> void:
+	for sec in d.get("sections", []):
+		if sec.has("rows"):
+			sec.rows = (sec.rows as Array).filter(func(r): return not str(r.get("text", "")).begins_with("品质："))
+	d.sections = (d.get("sections", []) as Array).filter(func(sec): return not sec.has("rows") or not (sec.rows as Array).is_empty())
 
 
 ## 第几卷号卷（不是号卷返回 0）
@@ -65,6 +74,7 @@ static func _trumpet_card(rec: Dictionary, d: Dictionary) -> void:
 	rows = rows.filter(func(r): return not str(r.text).begins_with("天启号卷") and not str(r.text).begins_with("学习后获得被动") \
 		and not str(r.text).ends_with(str(sc.get("lore", ""))))   # 「号声」那行就是牌上的说明，不重复
 	d.sections = [{"title": "", "rows": rows}] if not rows.is_empty() else []
+	_drop_quality_rows(d)   # 「品质：神话　天启号卷·消耗品」：小字已有「号卷 · 第 n 卷」（小A核查 P2）
 
 
 ## 「给谁学」一行（XSkinItemPage.target_rows 做好的 row，会被改）：号卷写这人已学几卷

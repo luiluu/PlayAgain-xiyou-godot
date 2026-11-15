@@ -144,6 +144,7 @@ func _run() -> void:
 	_gear_card()
 	_trumpet()
 	_look()
+	_name_fit()
 	await _shots_82()
 	XUiSkin.ENABLED = true
 	XUiSkin.motion_override = -1
@@ -177,7 +178,7 @@ func _rows() -> void:
 	check("rows_same_as_menu", rows.map(func(r): return int(r.state)) == XSkinMainMenu.seal_states(s))
 	check("rows_seal_names", str(rows[0].seal) == str(XTianqiQiyin.seal_info("bai").seal) and str(rows[0].place) == str(XTianqiQiyin.seal_info("bai").name))
 	check("rows_cond_floor", rows[0].cond == "打过第 31 层开启" and rows[2].cond == "打过第 32 层开启" and rows[3].cond == "打过第 33 层开启", rows.map(func(r): return r.cond))
-	check("rows_cond_mo", rows[6].cond == "前六印的首领都打过开启", rows[6].cond)
+	check("rows_cond_mo", rows[6].cond == "前六印的首领都打过后开启", rows[6].cond)
 	check("rows_restless", rows[1].restless and not rows[0].restless)
 	check("rows_sealed_counts", int(rows[2].set) == 2 and int(rows[2].weapon) == 1 and int(rows[0].set) == 0, [rows[2].set, rows[2].weapon])
 	check("sealed_lines", XTianqiSkinAltar.sealed_lines(rows[2]) == [["封着的套装件", 2], ["封着的毕业武器", 1]] and XTianqiSkinAltar.sealed_lines(rows[0]).is_empty())
@@ -424,7 +425,9 @@ func _gear_card() -> void:
 	check("gear_made", XTianqiQiyinEquip.is_qiyin(it), it.keys())
 	var d := XSkinItemPage.card_data(it)
 	check("gear_subtitle", str(d.subtitle).begins_with("白印 · 七印套装 · 真印"), d.subtitle)
+	check("gear_subtitle_quality", str(d.subtitle).contains(" · 神话"), d.subtitle)
 	check("gear_grades", str(d.sections[0].rows[0].text) == "成色　极／上品／普通", d.sections[0])
+	check("gear_no_quality_row", not d.sections.any(func(sec): return (sec.get("rows", []) as Array).any(func(r): return str(r.text).begins_with("品质："))), d.sections)
 	check("gear_rows_kept", d.sections.size() >= 2 and not (d.sections[1].rows as Array).is_empty())
 	var w := XTianqiQiyinEquip.give(s, XTianqiQiyinEquip.make({"kind": XTianqiQiyinDrop.KIND_WEAPON, "seal": "hong", "wtype": "剑", "true_seal": false, "grades": ["putong", "putong", "putong"]},
 		"jianxian", XRandomStream.create("0123012301230123", "qiyin")))
@@ -457,6 +460,7 @@ func _trumpet() -> void:
 			texts.append(str(r.text))
 	check("trumpet_sweet_bitter", texts.any(func(t): return t.contains(str(XTianqiTrumpet.scroll(1).sweet))) and texts.any(func(t): return t.contains(str(XTianqiTrumpet.scroll(1).bitter))), texts)
 	check("trumpet_limit_line", texts.any(func(t): return t.contains("弱者最多")), texts)
+	check("trumpet_no_quality_row", not texts.any(func(t): return t.begins_with("品质：")), texts)
 	check("trumpet_no_dup_intro", not texts.any(func(t): return t.begins_with("天启号卷")), texts)
 	check("trumpet_no_dup_lore", not texts.any(func(t): return t.ends_with(str(XTianqiTrumpet.scroll(1).lore))), texts)
 	var a: XActor = s.members()[0]
@@ -474,6 +478,17 @@ func _trumpet() -> void:
 	XTianqiSkinShow.dress_target(rec, a, row4)
 	check("target_off_untouched", row4.right == "x")
 	XUiSkin.ENABLED = true
+
+
+func _name_fit() -> void:
+	var f := XUiSkin.font("body")
+	var avail := 160.0
+	var fit: Array = XSkinPartyStrip.name_fit(f, "窃格瓦拉·周的超长名字", 99, avail)
+	var lv := f.get_string_size("Lv 99", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
+	var nw := f.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
+	check("strip_name_keeps_lv", nw + 8 + lv <= avail + 0.5 and str(fit[0]).ends_with("…"), [fit, nw, lv])
+	var short: Array = XSkinPartyStrip.name_fit(f, "修", 1, avail)
+	check("strip_short_name_same", short == ["修", 18], short)
 
 
 func _look() -> void:
