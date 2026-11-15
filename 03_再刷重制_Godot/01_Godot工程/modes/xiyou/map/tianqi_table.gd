@@ -5,6 +5,8 @@ extends Node2D
 ## - 通关 5 层、还没选线：裂成四块，每块透出一位骑士的颜色和剪影；调查方桌再进选线（XTianqi.run_line_choice）；
 ## - 选定：另外三块合上（留一道暗疤）、剪影隐去，选中的那道裂纹变成本线颜色、一直留在桌上。
 ## 只叠不改：不写 Map004 的事件和图块；画在下层图块之上、人物之下。开关 XTianqiLook.TABLE（O-323）。
+## 新界面（ui-skin-3b，盘点清册 #77）：XUiSkin.on() 时，玩家面朝方桌、地图没在跑事件时，桌子上方浮一枚提示胶囊
+## （黑面板细线，「[确定] 调查」／「[确定] 选一条路」／本线名；触屏不画键名框）。只显示，不改调查逻辑；关着时没有这枚提示。
 
 const MAP_ID := 4
 const TS := 48
@@ -20,6 +22,7 @@ var _t := 0.0
 var _cracks: Array = []  # 四道裂纹（折线），按 XTianqi.LINES 的顺序
 var _hint: PackedVector2Array
 var _figs: Array = []    # 四个小剪影（Sprite2D）
+var chip: _Chip          # 新界面的调查提示（XUiSkin.on() 时才建）
 
 
 static func wanted(s: XState) -> String:
@@ -48,6 +51,9 @@ func setup() -> void:
 		sp.visible = false
 		add_child(sp)
 		_figs.append(sp)
+	chip = _Chip.new()
+	chip.position = Vector2(SURFACE.get_center().x, SURFACE.position.y - 14)
+	add_child(chip)
 	refresh()
 
 
@@ -95,6 +101,81 @@ func _process(dt: float) -> void:
 		var p := 0.75 + 0.25 * sin(_t * 2.2)
 		for f in _figs:
 			f.modulate.a = p
+	_update_chip()
+
+
+## 提示胶囊的字：还没到选线「调查」、该选线「选一条路」、选过了「本线名之路」；空串＝不显示
+static func chip_text(st: String, key: String) -> String:
+	match st:
+		"hint":
+			return "调查"
+		"split":
+			return "选一条路"
+		"chosen":
+			var nm := str(XTianqi.line_info(key).get("name", ""))
+			return nm + "之路" if nm != "" else "调查"
+	return ""
+
+
+## 玩家面朝方桌、没在跑事件、新界面开着才显示（host 是地图场景：有 player、busy）
+func _update_chip() -> void:
+	if chip == null:
+		return
+	var host := get_parent()
+	var show := visible and XUiSkin.on() and host != null and "player" in host and host.player != null \
+		and not bool(host.get("busy")) and is_table(host.player.front_cell(host.player.direction))
+	var text := chip_text(state, line) if show else ""
+	chip.set_text(text, not XPlatform.is_touch())
+
+
+## 调查提示：一枚黑面板细线胶囊，左边键名框「确定」，右边一句；画在人物和上层图块之上
+class _Chip extends Node2D:
+	var text := ""
+	var keycap := true
+	const FS := 15
+	const H := 28.0
+
+	func _init() -> void:
+		z_as_relative = false
+		z_index = 200
+		visible = false
+
+	func set_text(t: String, with_key: bool) -> void:
+		if t == text and with_key == keycap and visible == (t != ""):
+			return
+		text = t
+		keycap = with_key
+		visible = t != ""
+		queue_redraw()
+
+	func _draw() -> void:
+		if text == "":
+			return
+		var f := XUiSkin.font("body")
+		var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, FS).x
+		var kw := f.get_string_size("确定", HORIZONTAL_ALIGNMENT_LEFT, -1, FS - 1).x + 16 if keycap else 0.0
+		var w := tw + 24 + (kw + 8 if keycap else 0.0)
+		var r := Rect2(-w / 2.0, -H, w, H)
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(XUiSkin.PANEL, 0.94)
+		sb.border_color = Color(XUiSkin.LINE, 0.42)
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(int(H / 2))
+		sb.shadow_color = Color(0, 0, 0, 0.5)
+		sb.shadow_size = 6
+		sb.draw(get_canvas_item(), r)
+		var x := r.position.x + 12
+		var base := -H / 2.0 + FS * 0.36
+		if keycap:
+			var kb := StyleBoxFlat.new()
+			kb.draw_center = false
+			kb.border_color = XUiSkin.TEXT_2
+			kb.set_border_width_all(1)
+			kb.set_corner_radius_all(9)
+			kb.draw(get_canvas_item(), Rect2(x - 4, -H + 5, kw, H - 10))
+			draw_string(f, Vector2(x + 4, base), "确定", HORIZONTAL_ALIGNMENT_LEFT, -1, FS - 1, XUiSkin.TEXT)
+			x += kw + 4
+		draw_string(f, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, FS, XUiSkin.GOLD)
 
 
 func _draw() -> void:

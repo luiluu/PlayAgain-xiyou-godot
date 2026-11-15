@@ -11,7 +11,7 @@
     "coverage_baseline": {"说明": "内容覆盖基线", "checks": ["content"]},
     "event_baseline": {"说明": "事件对照基线", "scenes": ["xiyou_event_compare*.tscn"]},
     "tianqi_title": {"说明": "天启篇标题页（XTianqiTitle 与 content/title/）：跑标题专项和开场专项", "scenes": ["xiyou_tianqi_title.tscn", "xiyou_splash_autosave.tscn", "xiyou_tianqi_e2e.tscn"]},
-    "ui_skin": {"说明": "天启篇新界面皮肤素材（content/ui_skin/：裁过字的字体、通用法阵，XUiSkin）：跑皮肤专项", "scenes": ["xiyou_ui_skin.tscn", "xiyou_ui_skin_offshot.tscn"]},
+    "ui_skin": {"说明": "天启篇新界面皮肤素材（content/ui_skin/：裁过字的字体、通用法阵，XUiSkin）：跑皮肤专项", "scenes": ["xiyou_ui_skin.tscn", "xiyou_ui_skin_offshot.tscn", "xiyou_ui_skin_3b.tscn"]},
     "intro_video": {"说明": "天启篇启动动画视频与说明（content/intro/，intro_anim v8 接入）：跑开场专项", "scenes": ["xiyou_splash_autosave.tscn"]},
     "ui": {"说明": "界面：界面专项＋事件对照", "scenes": ["xiyou_event_compare*.tscn"], "refs": true, "fallback": ["ui_smoke.tscn"], "checks": ["guards"]},
     "battle": {"说明": "战斗核心：xiyou_rules 全部段＋事件对照＋覆盖＋同源", "scenes": ["xiyou_rules*.tscn", "xiyou_event_compare*.tscn", "xiyou_status_power_panel.tscn"], "refs": true, "checks": ["guards", "content", "same_source"]},

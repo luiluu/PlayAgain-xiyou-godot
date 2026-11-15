@@ -31,9 +31,19 @@ func total_width() -> float:
 	return w
 
 
-## 摆到视口右下（右边对齐安全边距或 16:9 的 24）
+## 摆到视口右下：右边对齐安全边距（16:9 为 24），并让出右下角版本号（right_edge）
 func place(view: Vector2) -> void:
-	position = Vector2(view.x - XSkinLayout.margin_for(view.x) - total_width(), view.y - XUiSkin.HINT_BOTTOM - H)
+	position = Vector2(right_edge(view) - total_width(), view.y - XUiSkin.HINT_BOTTOM - H)
+
+
+## 按键提示的右边：安全边距，且让出右下角版本号（XVersionLabel，全局一直显示，字号 14）。
+## 原在 1A 主菜单（XSkinMainMenu.hint_right），ui-skin-3b 收进这里，用 place() 的页都让位（小A 3B 核查 P2）。
+static func right_edge(view: Vector2) -> float:
+	var right := view.x - XSkinLayout.margin_for(view.x)
+	if XVersionLabel.SHOW:
+		var vw := GameFont.current().get_string_size(XVersionLabel.version_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, XVersionLabel.FONT_SIZE).x
+		right = minf(right, view.x - XVersionLabel.MARGIN.x - vw - 16.0)
+	return right
 
 
 func _draw() -> void:
