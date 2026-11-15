@@ -1,7 +1,7 @@
 # 交付：cc/fest-champion-road
 
 - 车道／工作者：冠军庆典·甲（活动总开关＋冠军之路）＋奖励丰富档（D46），cc（Opus＋medium）
-- 状态：进行中
+- 状态：可合并
 - **推前等 Kyo**：可以合 main，补丁／清单要等 Kyo 说推才进（新增 class_name，见下「新增 class_name」）。
 
 ## 变更记录草稿
@@ -20,7 +20,7 @@
 - 改：`core/xdb.gd`（Armors 追加戒指一行）、`battle/battle_logic.gd`（开战、结算倒下、战斗结束各一行）、`core/actor_damage_hooks.gd`（末段加 `XFestRing.damage_ops`）、`core/actor.gd`（`custom_param` 认 `levelCap`）、`core/fabao_feed.gd`、`core/item_marks.gd`、`core/achievement.gd`（并入 144～147）、`core/xsave.gd`（读档后 `XFestReward.after_load`）、`map/map_scene.gd`（进地图放提示）、`map/fest_lobby.gd`（使者菜单、贺礼、天启篇分支）、`core/designation.gd`（活动期间且冠军之路开放才列全部庆典称号，活动外只列拿到的——main 的写法丢了日期判断，接回）、`tianqi_data/damage_ledger.json`（登记 `fest_road`＝pooled：天启篇出现就失败）。
 - 测试：新增专项 `tests/xiyou_fest_reward`（41 项）；`xiyou_fest_road` 改三档（66 项）、`xiyou_fest_lobby` 跟新菜单与贺礼（121 项）。工具：`tests/virtual_player/fest_road_probe` 加 `--tier`／`--ring`／`--vs`／`--guard-fixed`（不进检查）。
 - 玩家可见：冠军之路多了大众的「欢庆档」，三档各送一枚冠军戒指（四关全胜，输过也算），天灾／洪荒戒指带「一穿四」（本场每倒下一个敌人伤害加成，最多 4 层）；庆典使者能签到（累计 3 天）、用庆典币兑换门票、抽奖券、不朽碎片、深渊派对邀请函和称号；活动结束后没花完的庆典币自动换成精魂。
-- 验证：见下「测试」。
+- 验证：专项 `xiyou_fest_reward` 42/42（三枚戒指数值照稿、0 浮动 6 孔无词缀、发几枚都一样；欢庆成长 30 级 +30、60／90 级都 +60；一穿四实伤 4 层 ×1.2、洪荒 4 层 ×1.32、倒下一只 +1／同一只不重复／封顶 4、没戴的和欢庆戒指不加、开战与战斗结束清零、关活动开关照样生效；防刷四处各一项＋不能卖；签到 3 天 200 币与称号、当天重复与满了不给、收尾期不能签；贺礼内容只一次、符文按等级；兑换店限购合计 480、发货、买满／币不够不动、精魂兜底、收尾期开、结束后关；收支 750；读档提醒每天一次且不改存档；收尾期过后剩币换精魂只一次、开关关了也换；45 并进 41；使者菜单签到／兑换／收尾期只剩兑换；成就「我在现场」；天启篇只给称号成就、不给币精魂戒指、不开签到兑换、给过不再提醒）。`反向验证`：防刷四处逐个改坏（去掉喂法宝拦截、去掉发放锁定、去掉 meta PushDct、定义跟活动开关走）各自对应的专项项都咬住。`xiyou_fest_road` 66/66（三档基准与固定难度、三档实建能力值、洪荒／天灾比、欢庆档远弱于天灾、三档奖励各发一次互不顶替、洪荒→天灾→欢庆三档全拿 500 币、接着打不串档、三档读档往返、旧 road／road_hard 键对上天灾／洪荒、旧档已全胜下次补发戒指、称号表列 46／47 不列 45）；`xiyou_fest_lobby` 121/121。选测（本机，37 个场景）：`xiyou_achievement*`、`xiyou_system_evidence`、`xiyou_weak_challenge`、`xiyou_fabao_rework`、`xiyou_magic_weapon_level`、`xiyou_item_use`、`xiyou_star_warehouse`、`xiyou_save_slim`、`xiyou_tianqi_seed_fix`、`xiyou_sell_lag`、`xiyou_item_marks`、`xiyou_hangup_auto`、`xiyou_alien_config`、`xiyou_alien_affix`、`xiyou_custom_params`、`xiyou_actor_modules`、`xiyou_tianqi_ledger`、`xiyou_actor1_damage`、`xiyou_determinism`、`xiyou_designation*`、`xiyou_fest_*`、`xiyou_tianqi_save`、`xiyou_save_page`、`xiyou_flow`、`xiyou_party`、`xiyou_event_compare*`（四片）、`xiyou_tianqi_drop`、`xiyou_shop_buy`、`xiyou_ui_skin_4b`、`xiyou_tianqi_skills`、`xiyou_virtual_player` 全过（中途修了三处：`xiyou_flow` 存读档往返被读档提醒写进存档→改成记在本次运行；`xiyou_achievement` 比原版成就表→开头关 `XFest.ENABLED`；`xiyou_custom_params` 转换器计数→排除冠军戒指）。`选测.py main` 判整轮（探针脚本找不到引用它的测试），没跑整轮也没上云；`语法检查.py` 通过。
 
 ## 2026-11-15 【cc·未经审查】冠军庆典·甲：活动总开关 XFest＋冠军之路「一穿四」普通版／困难版（dev.待定）
 
@@ -68,6 +68,29 @@
 - 天启篇：`ENVOY_TIANQI`（两句）、`ENVOY_TIANQI_AGAIN`、`ENVOY_TIANQI_TOAST`、`ENROLL_TIANQI`（两句）
 - 不含西游人物、典故；真名只在贺词一处（`xiyou_fest_lobby` 的文案底线检查照跑、通过）。
 
+## 数值实测（虚拟玩家探针 fest_road_probe，稿第 7 节第 7 条）
+
+口径：现成夹具只有「守层者基准队」（4 名弱档角色、本层等级上限、精良以下最好装备＋法宝，不算真气宝珠种族）。它建的是天启篇存档，会把原版守层者重算、把我方伤害缩小，量冠军之路对不上，所以本轮全部加 `--remake`（去掉天启篇标记当重制版档）。每组 6 队。这是「刚到这层、养成很浅」的代理队，不是真实玩家。
+
+**三档敌人**（`--guard-fixed --all-stages`：对照守层者也固定吃本档难度；输了也回满量下一关，只为量各关相对强度）
+- 欢庆档（10 层、等级 30、普通难度）：估算打死回合中位数——10 层守层者 22.4，四关 19.4／17.3／13.1／12.6；12 回合内打赢守层者 1/6 队，连穿四关 2/6 队。即欢庆每一关约是 10 层守层者的 0.6～0.9 倍，四关连打对「刚过 10 层」的队是一场硬仗，过了 10 层多练几级就稳。没调。
+- 天灾档、洪荒档（26 层、等级 65）：**量不出**。代理队对天灾／洪荒 26 层守层者每回合伤害近于 0（估算打死要 10^15 回合以上），四关同样打不动，比值没意义。按构造：×1.0 队五人血量合计 ≈1.82 只金角（＝金角＋银角那一场），攻击合计 ≈2 只。要真实原版档后期存档试打（交接板下一步②）。
+
+**三枚戒指**（前 3 人戴冠军戒指 vs 戴同品质对照戒指，同队同种子；回合数只算两边都打赢的场）
+| 戒指 | 场合 | 对照 | 群怪（冠军之路欢庆四关）每回合伤害比／回合数 | 单首领每回合伤害比 |
+| --- | --- | --- | --- | --- |
+| 欢庆（史诗） | 10 层，普通 | 悲伤之戒（史诗） | ×1.146／5.33→4.50（−16%，n=6 队×场） | ×1.144（守层者 3.0→3.0 回合，n=1） |
+| 天灾（传说） | 22 层 | 昂扬徽记（传说） | ×1.074／3.75→3.56（−5%，n=16） | ×1.114 |
+| 洪荒（不朽） | 25 层（等级 65） | 盘龙（不朽，物理 +75%、终伤 +25%） | ×0.941／3.44→3.31（−4%，n=16） | ×1.149 |
+| 洪荒（不朽） | 25 层（等级 65） | 谜语（不朽，所有伤害 +70%、暴击 −25%） | ×0.956／3.25→3.31（+2%，n=16） | ×1.665 |
+| 洪荒（不朽） | 25 层（等级 65） | 不戴（对照：空戒指栏） | ×1.209／3.69→3.31（−10%，n=16） | ×1.831 |
+
+- 稿的预期：欢庆 −10～15%，天灾／洪荒群怪 −10～15%、单首领 −5% 左右，任何一项超过 20% 就往下砍。
+- 欢庆：群怪 −16%，略高于预期上沿、没过 20%。天灾：群怪 −5%、单首领 ×1.11，都在线内（群怪偏弱）。洪荒：对盘龙群怪 −4%、单首领 ×1.15，都没过 20%。
+- **和稿的定位不一致的一处**：稿说洪荒戒指「单挑大首领比不过盘龙这类毕业戒」，代理队实测单首领反而比盘龙高 15%、比谜语高 67%。原因：代理队物理、法术混编，盘龙只加物理，法术角色戴盘龙几乎白戴；谜语带暴击 −25%。物理主力单独对盘龙没量。没过 20% 的砍线，本轮没改数值，交 Kyo 看要不要把洪荒的「所有伤害 +35%」往下压（见回报）。
+- 量法的坑（已避开）：对照戒指要求 65 级，代理队等级不够时整件不生效，等于对「不戴」——22 层先量的一轮就是这样，作废，改到 25 层（等级 65）重量。
+- 天灾、洪荒戒指没在 26 层量（代理队打不动 26 层，见上）；冠军之路欢庆四关当「群怪」场合（固定普通难度，不随层数变），首领用本层守层者（代理队打不死，只比每回合伤害）。
+
 ## 稿第 8 节没核实的四件（本轮查了）
 
 1. **楼层和等级**：原版守层者打赢后的等级上限表（`baseline_dps.gd` 的 `LEVEL_CAP`，来自地图事件 maxlevel）：10 层起上限 30 级、12 层 33、15 层 40、21 层 55、23 层 60、**25～28 层 65 级**、29 层 75。稿里「10 层约 20～25 级、26 层约 60 级」偏低一档：10 层玩家多半已到 25～30 级，26 层在 60～65 级。欢庆戒指成长到 60 级封顶，正好覆盖到 26 层前后。
@@ -80,13 +103,15 @@
 | 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | O-待定·冠军庆典总开关 | `modes/xiyou/core/fest.gd` `XFest.ENABLED`、`START`、`DAYS`、`GRACE_DAYS`；`core/designation.gd`；`tests/xiyou_fest_road.gd`、`tests/xiyou_designation.gd`、`tests/xiyou_event_compare.gd` | 没有限时活动 | 冠军庆典限时活动（本机日期 15 天＋3 天收尾），称号 41～44 | Kyo 11-15 庆祝 BLG 夺冠 | `XFest.ENABLED = false`（整件不存在） | cc | 保留 |
-| O-待定·冠军之路 | `modes/xiyou/core/fest_road.gd` `XFestRoad.ENABLED`；`core/xdb.gd`、`core/actor_damage_hooks.gd`、`battle/battle_logic.gd`；`tests/xiyou_fest_road.gd` | 没有 | 冠军之路普通／困难两档四关五人队连战、势如破竹、场间暂停、奖励与称号 | Kyo 11-15 庆典方案 2.3 节 | `XFestRoad.ENABLED = false`（表外敌人敌群技能、伤害加成、入口都没了） | cc | 保留 |
+| O-待定·冠军之路 | `modes/xiyou/core/fest_road.gd` `XFestRoad.ENABLED`；`core/xdb.gd`、`core/actor_damage_hooks.gd`、`battle/battle_logic.gd`；`tests/xiyou_fest_road.gd` | 没有 | 冠军之路欢庆／天灾／洪荒三档四关五人队连战、势如破竹、场间暂停、奖励与称号（v0.3.1） | Kyo 11-15 庆典方案；D46「丰富」 | `XFestRoad.ENABLED = false`（表外敌人敌群技能、伤害加成、入口都没了） | cc | 保留 |
+| O-待定·冠军戒指 | `modes/xiyou/core/fest_ring.gd` `XFestRing.GRANT`；`core/xdb.gd`（Armors 追加）、`core/actor.gd` `custom_param`（认 `levelCap`）、`core/actor_damage_hooks.gd`、`battle/battle_logic.gd`、`core/fabao_feed.gd`、`core/item_marks.gd`；`tests/xiyou_fest_reward.gd` | 没有 | 三枚冠军戒指（8010～8012，定义常驻）、一穿四叠层、防刷（PushDct、喂法宝拒收、发放锁定、不能卖） | 稿 v0.3.1 2.2、第 3 节 | `XFestRing.GRANT = false`：冠军之路不再发戒指；**已发的戒指照旧在、照旧生效**（定义不能卸，卸了老存档查不到装备，稿第 3 节第 4 条） | cc | 保留 |
+| O-待定·庆典奖励 | `modes/xiyou/core/fest_reward.gd` `XFestReward`；`map/fest_lobby.gd`、`core/achievement.gd`、`core/xsave.gd`、`map/map_scene.gd`；`tests/xiyou_fest_reward.gd`、`tests/xiyou_achievement.gd`（比原版时关庆典） | 没有 | 签到 3 天、贺礼改版、兑换店、剩币自动换精魂、读档提醒、成就 144～147、天启篇纪念品 | 稿 v0.3.1 2.3～2.6、第 4 节 | `XFest.ENABLED = false`（使者菜单、成就定义、读档提醒都没了；剩币照换） | cc | 保留 |
 
 ## 交接板
 
-- 下一步：拿原版档天灾、洪荒难度能打 26 层的存档各试打一轮，按结果改 `XFestRoad.HP_SHARE`／`ATK_SHARE`（不再补海选、巅峰）。
-- 用户试玩说明：大厅报名处（乙车道接入后）选「从第一关开始」，连打网吧队、银河战舰队、大魔王队、内战幻神队；两关之间可以暂停一次回三成；打通看称号页多了「冠军之路」「一穿四」。
-- 需要用户决定：无（Kyo 11-15 定两档与分档奖励；币量按「全拿完不超过刷一两小时」：普通 220、困难 400，在 `XFestRoad.REWARDS` 可改）。
+- 下一步：①Kyo 说推之前，出安卓包真机装一次（新增 class_name `XFestRing`／`XFestReward`／`XFestRoad`）。②天灾、洪荒两档和对应戒指的数值，要拿原版档能打 26 层天灾／洪荒的存档各试打一轮（代理队打不动 26 层，见「数值实测」），按结果改 `XFestRoad.TIERS[].hp_share／atk_share` 或 `XFestRing.RINGS`。
+- 用户试玩说明：大厅找庆典使者：第一次领贺礼（50 币、5 万精魂、符文 ×2、抽奖券 ×10）；之后菜单里「签到」（累计 3 天）、「庆典币兑换」。报名处先选欢庆／天灾／洪荒，四关全胜背包里多一枚冠军戒指（默认锁定）；天灾、洪荒戒指戴上打群怪，每倒下一个敌人伤害往上叠。活动结束 3 天后读档，没花完的庆典币自动换成精魂。
+- 需要用户决定：无（D46 Kyo 定「丰富」，数值照稿 v0.3.1）。两处跟稿写法不同、按默认做了，Kyo 不同意可改：①符文按出战队伍最高等级挑档（稿写「按最高到达层」，但符文本身是按等级分的：<30 级初级、<40 中级、<50 高级、其余特级）；②「冠军之路」称号（41）三档任一档全胜都发（稿表只写欢庆档，但第 7 节说 45 并进 41，所以洪荒全胜也发 41）。
 
 ## 进度账
 
@@ -94,15 +119,14 @@
 
 ## 待交叉核查
 
-- **给总装：`core/designation.gd` 与乙车道 cc/fest-lobby（f82298326）改了同一处判断，合并会冲突。** 保留本分支写法即可：`var during := XFest.visible() and _fest_road_ready()`，条件 `(during or unlocked(id)) and 没重复`，即 `(XFest.visible() and XFestLobby.road_ready()) or unlocked(id)` 再去重；`_fest_road_ready()` 按名字找全局类 XFestLobby 调它的静态 `road_ready()`，没有这个类时当作开放，所以两条分支谁先合都不报错。乙那一行（`XFestLobby.road_ready() or unlocked(...)`）丢掉。
-- 第三轮只复核：c1a92da64（冠军之路敌人不吃 DCultyL 仓库倍率；专项 `dcultyl_does_not_touch_road`：DCultyL2 开／关两种下首敌血、攻、xparam、sparam 都相同，同存档普通敌人仍吃 1.5；反向验证去掉标记即失败）。
-
-- 交 co 甲档：`modes/xiyou/core/fest.gd`、`fest_road.gd`（新）；`core/xdb.gd`、`core/actor_damage_hooks.gd`（伤害钩子）、`core/designation.gd`、`battle/battle_logic.gd`（共用核心文件，各一两行）。**第二轮只核两档改动（9d91f902d）**：敌人固定吃本档难度倍率（`battle_setup` 改 `_rates` 后 `recover_all`）、两档奖励与进度分开只发一次、旧进度按普通版、称号 45／46。重点：表外号段会不会和别的表外追加撞号（敌人／敌群 9300～9399、技能 19300）；势如破竹只在 `in_road_battle` 时生效、战斗中途崩了会不会残留（静态变量，不进存档）；奖励只发一次。
-- 合并建议：xdb.gd 改动让选测扇到约 494 个场景，总装 `合并车道.sh --finish --affected --cloud`。
+- **交小o甲档（本轮，D46 丰富档）**：戒指（`core/fest_ring.gd`：定义常驻、0 浮动 6 孔、`customParams`＋`levelCap`；`core/actor.gd` `custom_param` 一处）、伤害钩子（`XFestRing.damage_ops` 接在 `actor_damage_hooks.gd` 末段，`battle_logic.gd` 的开战／`resolve_collapses`／`end_battle` 三行；层数 meta 在战斗中途崩了会不会残留——开战也清一次）、存档防刷（`fabao_feed.gd`、`item_marks.gd` 两处、`star_warehouse` 不用改但要核 meta 路径；`xsave.gd` 读档后 `XFestReward.after_load`：剩币换精魂只在收尾期过后、读档提醒不写存档）。重点：①冠军之路三档旧进度键对应（`road`＝天灾、`road_hard`＝洪荒）；②称号 45 并进 41 的读档迁移；③天启篇存档拿不到戒指和币（`XFestReward.tianqi`、`talk` 的天启篇分支）。
+- **交小A文字审**：见上「玩家可见文字」。
+- 早先几轮（两档、DCultyL）已核过的不再列。
 
 ## 可优化（流程／工具／效率）
 
-- 已做：`tests/virtual_player/fest_road_probe`（任意层基准队连打冠军之路四关，记每关回合、输赢、剩几人）、`fest_road_shots`（四关战斗截图）；不进检查，删掉即回退。
+- 已做：`tests/virtual_player/fest_road_probe`（任意层基准队连打冠军之路四关，记每关回合、输赢、剩几人）、`fest_road_shots`（四关战斗截图）；不进检查，删掉即回退。本轮加 `--tier`／`--ring`／`--vs=<对照戒指>`／`--guard-fixed`（守层者也固定吃本档难度）／`--remake`（去掉天启篇标记当重制版档）／`--all-stages`（输了也量下一关），输出估算打死回合（敌方总血 ÷ 每回合伤害）和戴戒指前后的伤害比。
+- 发现：基准队夹具建的是天启篇存档，量原版数值的东西（冠军之路、原版守层者）会被天启篇的守层者重算和我方伤害缩放带偏，`--remake` 才对得上；以后量重制版档的活动先加这个开关。
 - 建议：守层者基准队探针（`baseline_dps.gd`）只有天启篇弱者队，原版档的平衡没有自动化口径；要做原版档活动、副本时缺一个「原版档 N 层典型队伍」夹具（预计省一轮人工试打，归虚拟玩家车道）。
 
 ## 本分支提交
@@ -118,4 +142,9 @@
 - 9d91f902d 冠军之路改两档（普通天灾／困难洪荒 26 层），两档奖励与进度分开、称号 45／46；专项 62/62
 - 5cd6064da 交付单补两档；方案稿私密仓 c074b87 改两档
 - c1a92da64 冠军之路敌人不吃 DCultyL；称号表接 XFestLobby.road_ready；专项 63/63
-- （本提交）交付单补第三轮
+- c1a92da64 之后：交付单补第三轮
+- d66228a25 合并 main（冲突：fest.gd、designation.gd、actor_damage_hooks.gd、fest.gd.uid）
+- 2d9e56858 奖励丰富档主体：三档、三枚戒指＋一穿四、签到／贺礼／兑换店／剩币／读档提醒、防刷四处、天启篇纪念品、成就；专项 xiyou_fest_reward
+- f039e5356 称号表活动外只列拿到的（main 合并丢了日期判断）、大厅专项跟新菜单
+- 7dcbd66a1 读档提醒不写存档、庆典成就随总开关、custom_params 计数、总账登记 fest_road；探针扩展；交付单续写
+- （本提交）交付单：测试、数值实测、状态可合并
