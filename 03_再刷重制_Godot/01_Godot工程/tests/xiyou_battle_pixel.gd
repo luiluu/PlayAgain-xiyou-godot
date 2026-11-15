@@ -74,6 +74,7 @@ func _dump(b: XBattleScene) -> Dictionary:
 
 
 func _run() -> void:
+	XPartyFormation.ENABLED = false  # 对照原版站位：战斗站位回退到原版竖排（新阵型见 xiyou_party_formation）
 	XSave.dir_override = "user://test_xiyou_battle_pixel"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XConfig.set_flag("CombatDamageShow", true)
