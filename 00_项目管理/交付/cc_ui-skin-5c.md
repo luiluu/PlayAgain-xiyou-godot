@@ -176,3 +176,18 @@
 - P3-1：专项截图前不再把 `motion_override` 钉成 OFF，`ui_skin_5c_options_screen` 已重拍（界面动效显示默认「全部」）；全部 9 页 18 张重拍。
 - P3-2：新设置页不再自建第二层 `SkinBackdrop`（只留 `XOptionsScene` 自己那层，子页盖上时也有底），专项加断言。
 - 复验：专项 `xiyou_ui_skin_5c` 无头 79/79、有窗 97/97；`xiyou_ui_skin_offshot`、`xiyou_options_basic`、`_misc`、`xiyou_graphics_options`、`xiyou_ui_skin_menu` 全过；语法检查 0 问题；`发行空壳.py check` 通过；`皮肤关闭对照.py --base 17be52a65`（本分支切出点；对最新 main 比时 main 已有新类、克隆的类缓存认不得，报解析错，与本批无关）25 张 SAME。
+
+## 小A 复核
+
+- **复核对象**：`cc/ui-skin-5c` 返修提交 `2a25d29b6`（对比上次核查基点 `17e193430`），只读复核，未改游戏代码。
+- **总结论**：**通过**（**P1：0**，**P2：0**，**P3：0**；**文字必改：0**）。上次不通过的 P2×2、DESC 必改×5 及 P3×3 均已按要求修妥，可合。
+- **核查口径区分**：
+  - **核了规则本身／前台实跑**：`git diff 17e193430..2a25d29b6` 全量代码、`XSkinOptionsPage` / `XOptionsScene` / `XConfig` / `XSkinTemplatePage` / `XSkinLayout` 规则代码；无头实跑 `xiyou_ui_skin_5c.tscn`（79/79）、`xiyou_ui_skin_offshot.tscn`（23/23）、`xiyou_options_basic.tscn`（148/148）、`xiyou_options_misc.tscn`（105/105）、`xiyou_graphics_options.tscn`（60/60）、`xiyou_ui_skin_menu.tscn`（58/58）；`语法检查.py`（913 个 `.gd` 0 问题）、`发行空壳.py check`（58 脚本 492 函数通过）、`回退开关覆盖.py`（未新增缺口）；`charset_hei.txt` 字集覆盖校验（0 缺字）；`04_验证/本地结果/ui_skin_5c/` 18 张重拍 PNG 尺寸/时间戳与 `options_screen`（16:9／20:9）/`options_old_style`（16:9）图像 OCR 核验。
+  - **没核到的（留总装 `--affected --cloud`）**：未本地重跑 `并行测试.py`、`工具回归.py`、`皮肤关闭对照.py` 有窗逐像素比对及 `xconfig.gd` 影响的 206 个选测场景全集。
+- **逐项复核**：
+  1. **P2-1 屏蔽掉落详卡判断顺序（修对）**：`XSkinOptionsPage._sync_card()` 已将 `if PAGE_SYMBOLS.has(sym):` 提前到 `elif XOptionsScene._group(sym) in ["flag", "session"] ...` 之前；全量对照 `XOptionsScene._list` 与 `ok()`/`_side()`，`PAGE_SYMBOLS` 7 项均为进入子页、详卡写「确定进入。」；`opt_pingbi_card_enter` 通过。
+  2. **P2-2 状态词统一只在展示层（核了规则本身）**：`git diff 17e193430..2a25d29b6` 未触碰 `XOptionsScene.status_text()`、`XConfig.battle_speed_text()` 及 `XConfig` 存值；仅在 `XSkinOptionsPage.status_of(i)` 做展示映射（`battleAniSpeed` 的 `OFF` →「原速」，其余 `ON`/`OFF` →「开」/「关」），列表右列与详卡副标题同步走 `status_of`；旧设置页 OCR 仍见 `ON`/`OFF`/`原版`，重制版玩家所见与存盘语义均未变。
+  3. **DESC 文字审与「只在旧页无说明」核实（文字必改：0）**：5 条必改 `DESC`（`pingbiDrop`、`CombatDamageRecordKey`、`battleAniSpeed`「原速」版、`HangUp`、`codexEncounterTarget`）均与 `17e193430` 要求原文一字不差；4 条润色（`codexUiSkin`、`codexScreenFx`、`dhtg`、`CombatDamageShow`）措辞准确、与实际代码一致、全角标点规范；`charset_hei.txt` 全部 0 缺字。全库检索确认 `DESC` 仅在 `XSkinOptionsPage` 定义与读取，`XOptionsScene` 无说明区与说明文字，重制版旧页确无说明文字。
+  4. **18 张截图与双层 `SkinBackdrop`（均妥）**：`04_验证/本地结果/ui_skin_5c/` 18 张图均为 11:23 新生成；`xiyou_ui_skin_5c.gd` 在拍 `ui_skin_5c_options_screen` 前已设为 `motion_override = -1`，截图 OCR 实测「界面动效」显示正式默认「全部」；`XSkinOptionsPage._ready()` 已释放模板基类多余 `backdrop` 并置 `null`（不影响 `XSkinTemplatePage` 其余引用），仅保留 `XOptionsScene` 底层那一层，`opt_single_backdrop` 通过。
+  5. **新问题检查（无）**：复核 `17e193430..2a25d29b6` 全部 3 个文件改动，无越界改动、无新缺字、无新引入问题。
+
