@@ -970,6 +970,22 @@ func replace_attack_objects() -> Array:
 func is_attack(item: Dictionary) -> bool:
 	return not item.is_empty() and not XBattleLogic.is_item(item) and int(item.get("id", 0)) == attack_skill_id() and not item.has("_alienMode")
 
+## O-待定：替换后的普攻（<Replace Attack: x>、甚尔形态、宿傩等）按技能自己的动作演出；false＝原版（isAttack 就挥武器、不放施法动画）
+static var REPLACED_ATTACK_OWN_MOTION := true
+## 不跟上面开关走、始终照原版挥武器的替换技能：甚尔四形态主技能（游云／万里锁／释魂刀／天逆鉾，挥咒具是设定，协调 11-15 定）、
+## 宿傩普攻 10238 咒力体术（运行时恒为普攻，体术挥拳同理）
+static var OWN_MOTION_EXCLUDE := [10216, 10217, 10218, 10219, 10238]
+
+## 演出上按「攻击」走（performAttack 挥武器／武器图、castAnimation 不放）：原版就是 is_attack。
+## 开关开时，普攻被替换成带技能类型（stypeId>0）的技能，就按普通技能演出（施法／技能动作、施放动画）；
+## 没被替换（技能 1）或替换成无技能类型的「攻击」类技能（飞镖、苦无等 stypeId 0）照旧挥武器。只管演出，结算一律看 is_attack。
+func attack_motion(item: Dictionary) -> bool:
+	if not is_attack(item):
+		return false
+	if not REPLACED_ATTACK_OWN_MOTION or int(item.get("id", 0)) == ATTACK_SKILL_ID or OWN_MOTION_EXCLUDE.has(int(item.get("id", 0))):
+		return true
+	return int(item.get("stypeId", 0)) <= 0
+
 ## 普通攻击技能记录（指令窗、自动战斗与不能用时的退回用它）
 func attack_skill() -> Dictionary:
 	return XDB.rec("Skills", attack_skill_id())

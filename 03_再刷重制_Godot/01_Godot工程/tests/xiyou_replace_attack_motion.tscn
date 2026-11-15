@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/xiyou_replace_attack_motion.gd" id="1"]
+
+[node name="XiyouReplaceAttackMotion" type="Node"]
+script = ExtResource("1")
