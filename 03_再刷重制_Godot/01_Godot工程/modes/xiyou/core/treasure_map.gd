@@ -97,8 +97,8 @@ static func run(s: XState, first: int, last: int, common_id := 0) -> Dictionary:
 				_dig(s, spot, out)
 				dug.append(i)
 			else:
-				out.toasts.append("%s 坐标:%d,%d" % [_map_name(s.map_id), s.x, s.y])
-				out.toasts.append("目标位置:%s %d,%d" % [_map_name(spot.map), spot.x, spot.y])
+				out.toasts.append("%s 坐标：%d,%d" % [_map_name(s.map_id), s.x, s.y])
+				out.toasts.append("目标位置：%s %d,%d" % [_map_name(spot.map), spot.x, spot.y])
 			break
 		if i == last:
 			for a in range(first, last + 1):
@@ -159,33 +159,33 @@ static func _dig(s: XState, spot: Dictionary, out: Dictionary) -> void:
 	if roll < 20:
 		if spot.item.is_empty():
 			s.gain_item(ticket, 1)
-			out.toasts.append("获取物品失败: 请重新使用")
+			out.toasts.append("获取物品失败：请重新使用")
 		else:
 			var id: int = spot.item[v % spot.item.size()]
 			s.gain_item(id, 1)
-			out.toasts.append("获得物品:" + str(XDB.rec("Items", id).get("name", "")))
+			out.toasts.append("获得物品：" + str(XDB.rec("Items", id).get("name", "")))
 	elif roll < 40:
 		if spot.armor.is_empty():
 			s.gain_item(ticket, 1)
-			out.toasts.append("获取防具失败: 请重新使用")
+			out.toasts.append("获取防具失败：请重新使用")
 		else:
 			var id: int = spot.armor[v % spot.armor.size()]
 			s.gain_gear("armor", id, 1)
-			out.toasts.append("获得防具:" + str(XDB.rec("Armors", id).get("name", "")))
+			out.toasts.append("获得防具：" + str(XDB.rec("Armors", id).get("name", "")))
 	elif roll < 60:
 		if spot.weapon.is_empty():
 			s.gain_item(ticket, 1)
-			out.toasts.append("获取武器失败: 请重新使用")
+			out.toasts.append("获取武器失败：请重新使用")
 		else:
 			var id: int = spot.weapon[v % spot.weapon.size()]
 			s.gain_gear("weapon", id, 1)
-			out.toasts.append("获得武器:" + str(XDB.rec("Weapons", id).get("name", "")))
+			out.toasts.append("获得武器：" + str(XDB.rec("Weapons", id).get("name", "")))
 	else:
 		if spot.common.is_empty():
 			s.gain_item(ticket, 1)
-			out.toasts.append("触发事件失败: 请重新使用")
+			out.toasts.append("触发事件失败：请重新使用")
 		else:
 			var id: int = spot.common[v % spot.common.size()]
-			out.toasts.append("触发事件:" + str(XDB.rec("CommonEvents", id).get("name", "")))
+			out.toasts.append("触发事件：" + str(XDB.rec("CommonEvents", id).get("name", "")))
 			out.reserve = id
 	s.rom.gn = int(s.rom.gn) + 1
