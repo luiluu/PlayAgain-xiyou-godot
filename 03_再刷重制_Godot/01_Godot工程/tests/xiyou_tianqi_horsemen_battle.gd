@@ -366,12 +366,22 @@ func _plague_minions() -> void:
 	# 出场：第二阶段起每 2 回合一只（第 2、4、6 回合），A → B → C
 	kn.hp = kn.mhp * 0.6
 	var seen := []
+	var appear_turn := {}
+	var act_turn := {}
 	for i in range(6):
-		lg.run_turn(_guard_all(lg))
+		var tl := lg.run_turn(_guard_all(lg))
 		for k in _alive_keys(lg):
 			if not seen.has(k):
 				seen.append(k)
+				appear_turn[k] = lg.turn
+		for l in tl:
+			if l.type == "action" and adds.has(l.user):
+				var k := XTianqiHorsemen.minion_key_of(lg, l.user)
+				if not act_turn.has(k):
+					act_turn[k] = lg.turn
 	_check("minion_order", seen == ["A", "B", "C"], seen)
+	# 出场当回合就出手（真实 run_turn）；A、B 之后每回合都出手
+	_check("minion_act_on_appear", appear_turn.keys().size() == 3 and appear_turn.keys().all(func(k): return act_turn.get(k, -1) == appear_turn[k]), [appear_turn, act_turn])
 	_check("minion_all_three", _alive_keys(lg).size() == 3, _alive_keys(lg))
 	# A：打不服层数最多的人
 	for x in lg.actors:
@@ -441,7 +451,9 @@ func _plague_minions() -> void:
 	var back1: bool = adds[2].is_alive()
 	lg.run_turn(_guard_all(lg))
 	var back2: bool = adds[2].is_alive()
-	lg.run_turn(_guard_all(lg))
+	var tl3 := lg.run_turn(_guard_all(lg))
+	var c_acted := tl3.any(func(l): return l.type == "action" and is_same(l.user, adds[2]) and str(l.skill.get("tianqi_horseman", "")) == "minion_cheer")
+	_check("minion_respawn_acts", c_acted)
 	_check("minion_respawn_gap", not back1 and not back2 and adds[2].is_alive() and lg.turn == down_t + 3, [back1, back2, adds[2].is_alive(), lg.turn, down_t])
 	# 先后：没出过场的先出，其次倒下最早的
 	f.minion_seen = {"A": true, "B": true}

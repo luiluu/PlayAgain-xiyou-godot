@@ -688,6 +688,7 @@ static func _plague_turn_start(logic, f: Dictionary, turn: int) -> void:
 		var e = _next_minion(f, turn)
 		if e != null:
 			_summon(logic, f, e)
+			_join_orders(logic, e)
 			f.last_add = turn
 			var mkey := str(f.minion_keys[f.adds.find(e)])
 			f.minion_seen[mkey] = true
@@ -695,6 +696,15 @@ static func _plague_turn_start(logic, f: Dictionary, turn: int) -> void:
 	for a in _alive_actors(logic):
 		if _mark(f, a).get("plague", false) and logic._float("horseman_plague_confuse") < float(k.plague.confuse):
 			_confuse(logic, a)
+
+
+## 小弟在回合开始混出时本回合行动顺序已排完（BattleLogic._make_action_orders 在 start_turn 之前，藏着／倒下的不在里面）：
+## 补进本回合顺序的末尾（出场当回合就出手，v0.2 稿、骑士.py 同口径），下个回合的顺序里也补上（不然要到 T＋2 才动）
+static func _join_orders(logic, e) -> void:
+	if not logic.current_order.has(e):
+		logic.current_order.append(e)
+	if not logic.next_order.has(e):
+		logic.next_order.append(e)
 
 
 ## 这一回合该混出哪只小弟：没上场、且（没出过场，或倒下后已空满 respawn_gap 个整回合）；
