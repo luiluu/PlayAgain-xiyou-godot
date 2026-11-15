@@ -228,6 +228,7 @@ static func open(parent: Control, src: Array) -> XGearSearch:
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	skin_center()
 	_render_gear()
 
 
@@ -251,9 +252,9 @@ func _render_gear() -> void:
 	_search = LineEdit.new()
 	_search.placeholder_text = "搜索装备 / 词条，例如：暴击 掉宝"
 	_search.text = str(filter.query)
-	_search.add_theme_font_override("font", XUI.font())
+	_search.add_theme_font_override("font", _font())
 	_search.add_theme_font_size_override("font_size", 17)
-	_search.add_theme_color_override("font_color", TEXT)
+	_search.add_theme_color_override("font_color", skin_color(TEXT))
 	_search.add_theme_color_override("font_placeholder_color", Color(1, 1, 1, 0.5))
 	_search.add_theme_stylebox_override("normal", _box(FIELD_BG, BUTTON_EDGE))
 	var sf := _box(FIELD_BG, CURSOR_EDGE, 6, 2)
@@ -331,10 +332,10 @@ func _select(label: String, values: Array, value: String, cb: Callable) -> Contr
 	var l := _fixed(_label(label, 13, SYSTEM), 20.8)
 	box.add_child(l)
 	var s := OptionButton.new()
-	s.add_theme_font_override("font", XUI.font())
+	s.add_theme_font_override("font", _font())
 	s.add_theme_font_size_override("font_size", 17)
 	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
-		s.add_theme_color_override(k, TEXT)
+		s.add_theme_color_override(k, skin_color(TEXT))
 	_outline(s)
 	s.add_theme_stylebox_override("normal", _box(FIELD_BG, BUTTON_EDGE))
 	s.add_theme_stylebox_override("hover", _box(CURSOR, CURSOR_EDGE))
@@ -345,7 +346,7 @@ func _select(label: String, values: Array, value: String, cb: Callable) -> Contr
 	s.clip_text = true
 	s.fit_to_longest_item = false
 	var widest := 0.0
-	var font := XUI.font()
+	var font := _font()
 	for i in range(values.size()):
 		var t := str(values[i][1])
 		s.add_item(t.replace("\n", " "), i)
@@ -356,7 +357,7 @@ func _select(label: String, values: Array, value: String, cb: Callable) -> Contr
 	if not values.any(func(v): return str(v[0]) == value):
 		s.select(-1)
 	var popup := s.get_popup()
-	popup.add_theme_font_override("font", XUI.font())
+	popup.add_theme_font_override("font", _font())
 	popup.add_theme_font_size_override("font_size", 17)
 	popup.add_theme_stylebox_override("panel", _box(Color("#1e1f2a"), BUTTON_EDGE, 4, 1, Vector2(4, 4)))
 	s.item_selected.connect(func(i): cb.call(str(s.get_item_metadata(i))))

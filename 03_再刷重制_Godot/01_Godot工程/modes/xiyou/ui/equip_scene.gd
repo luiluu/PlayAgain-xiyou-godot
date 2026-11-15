@@ -259,7 +259,7 @@ func _refresh() -> void:
 	cmd_win.down_arrow = commands().size() > CMD_ROWS
 	for w in [cmd_win, status_win, list_win, lower_win]:
 		w.refresh()
-	if gear_detail != null:
+	if gear_detail != null and skin == null:   # 新界面不显示旧详情：不排版
 		gear_detail.set_item(_shown_item())
 		_sync_lower()
 	if toolbar != null:

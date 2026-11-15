@@ -17,11 +17,13 @@ extends XSkinTemplatePage
 
 var scene: XEquipScene
 var actor_strip: XSkinPartyStrip
+var ring_top: Control
 var detail: XSkinGearDetail
 var _syncing := false
 var _rows_src = null          # 上次建列表行用的候选数组（同一个数组＝没变）
 var _rows_key := []
 var _ring_key := []
+var _strip_key := []
 var _preview_key := []
 var _preview: XActor = null
 var expanded := false
@@ -53,13 +55,18 @@ func _ready() -> void:
 	actor_strip = XSkinPartyStrip.new()
 	actor_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layout.left.add_child(actor_strip)
-	ring.draw.connect(_draw_ring_extra)
+	ring_top = Control.new()   # 环自己的球画在 draw 信号之后，「空」字、变暗、环心头像放在上面一层
+	ring_top.name = "RingTop"
+	ring_top.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ring_top.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	ring_top.draw.connect(_draw_ring_extra)
+	ring.add_child(ring_top)
 	ring.changed.connect(_on_ring_changed)
-	ring.activated.connect(_on_ring_activated)
+	ring.activated.connect(_equip_ring_activated)
 	list.right2_w = 58.0
 	list.empty_text = ""
 	list.index_changed.connect(_on_list_index)
-	list.activated.connect(_on_list_activated)
+	list.activated.connect(_equip_list_activated)
 	list_panel.draw.connect(_draw_list_count)
 	card.button_pressed.connect(func(_i): _confirm_from_card())
 	card.gui_input.connect(_on_card_gui)
@@ -126,7 +133,10 @@ func sync() -> void:
 	sc.help_card.visible = false
 	visible = sc.search_panel == null
 	var a := sc.actor()
-	actor_strip.set_members([XSkinPartyStrip.from_actor(a)])
+	var strip_key := [a.get_instance_id(), sc._cand_rev, a.hp, a.mp, a.tp]
+	if strip_key != _strip_key:   # 角色条只在换人、换装后重取（每挪一格都取要 0.7 毫秒）
+		_strip_key = strip_key
+		actor_strip.set_members([XSkinPartyStrip.from_actor(a)])
 	_sync_ring(a)
 	_sync_list(a)
 	_sync_card(a)
@@ -156,6 +166,14 @@ func _sync_ring(a: XActor) -> void:
 	var pp := ring_pages(view.size())
 	var per: int = pp[1]
 	var pg := floori(row / float(per))
+	var idx := row - pg * per
+	var cheap := [a.get_instance_id(), pg, scene._cand_rev, view.size()]
+	if not _ring_key.is_empty() and _ring_key[0] == cheap:   # 同一人、同一页、没换装：只挪选中
+		if ring.index != idx:
+			ring.select(idx)
+		ring.queue_redraw()
+		ring_top.queue_redraw()
+		return
 	var items := []
 	var icons := []
 	for k in range(pg * per, mini(view.size(), (pg + 1) * per)):
@@ -164,14 +182,14 @@ func _sync_ring(a: XActor) -> void:
 		var ic := int(e.get("iconIndex", 0)) if e is Dictionary and not e.is_empty() else 0
 		items.append({"key": slot, "name": scene.slot_name(slot), "icon": ic, "empty": ic == 0, "locked": not XEquipment.can_change(a, slot)})
 		icons.append([slot, ic, items[-1].locked])
-	var key := [a.actor_id, pg, icons]
+	var key := [cheap, icons]
 	if key != _ring_key:
 		_ring_key = key
 		ring.set_items(items, true)
-	var idx := row - pg * per
 	if ring.index != idx:
 		ring.select(idx)
 	ring.queue_redraw()
+	ring_top.queue_redraw()
 
 
 func caption() -> String:
@@ -310,13 +328,9 @@ func _sync_card(a: XActor) -> void:
 		var temp := preview_actor(a)
 		_cache_compare(a, temp)
 		var ch: Dictionary = _compare
-		var sec := {"title": "换上后", "lines": ch.lines}
-		var rows := []
-		if ch.lines.is_empty():
-			rows.append({"text": "能力值不变", "color": XUiSkin.TEXT_3})
-		else:
-			rows.append({"text": "其余 %d 项不变" % int(ch.same), "color": XUiSkin.TEXT_3})
-		sec.rows = rows
+		var lines: Array = ch.lines.duplicate()
+		lines.append({"left": "能力值不变" if ch.lines.is_empty() else "其余 %d 项不变" % int(ch.same), "color": XUiSkin.TEXT_3})
+		var sec := {"title": "换上后", "lines": lines}
 		d.sections = [sec] + d.get("sections", [])
 		var dis := XEquipment.dual_blocked(a, sc._slot, rec) if not rec.is_empty() else false
 		d.buttons = [{"text": "卸下" if rec.is_empty() else "装备", "primary": true, "disabled": dis or not XEquipment.can_change(a, sc._slot)}]
@@ -354,9 +368,9 @@ func _draw_ring_extra() -> void:
 	var face := XUiSkin.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0)))
 	if face != null:
 		var r := ring_radius - 62.0
-		ring.draw_circle(c, r + 2.0, XUiSkin.ORB_LOW)
-		XSkinPartyStrip.draw_round_texture(ring, face, c, r)
-		ring.draw_circle(c, r + 1.0, Color(XUiSkin.LINE, 0.55), false, 1.5, true)
+		ring_top.draw_circle(c, r + 2.0, XUiSkin.ORB_LOW)
+		XSkinPartyStrip.draw_round_texture(ring_top, face, c, r)
+		ring_top.draw_circle(c, r + 1.0, Color(XUiSkin.LINE, 0.55), false, 1.5, true)
 	var body := XUiSkin.font("body")
 	for i in ring.items.size():
 		var it: Dictionary = ring.items[i]
@@ -366,13 +380,13 @@ func _draw_ring_extra() -> void:
 		if bool(it.get("empty", false)):
 			var t := "空"
 			var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
-			ring.draw_string(body, Vector2(p.x - tw / 2.0, p.y + XUiSkin.FS_AUX * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_3)
+			ring_top.draw_string(body, Vector2(p.x - tw / 2.0, p.y + XUiSkin.FS_AUX * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_3)
 		if bool(it.get("locked", false)):
-			ring.draw_circle(p, r, Color(0, 0, 0, 0.55))
+			ring_top.draw_circle(p, r, Color(0, 0, 0, 0.55))
 	var cap := caption()
 	var cw := body.get_string_size(cap, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
 	var cy := layout.left.size.y - ring.position.y - 6.0
-	ring.draw_string(body, Vector2(c.x - cw / 2.0, cy), cap, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+	ring_top.draw_string(body, Vector2(c.x - cw / 2.0, cy), cap, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 
 
 func _draw_list_count() -> void:
@@ -400,6 +414,7 @@ func input(event: InputEvent) -> bool:
 		return true
 	if fresh and code == KEY_X:
 		sc.open_search()
+		visible = sc.search_panel == null
 		return true
 	if fresh and code == KEY_C and sc._mode == "slot":
 		clear_all()
@@ -475,7 +490,7 @@ func _on_ring_changed(i: int) -> void:
 	scene._refresh()
 
 
-func _on_ring_activated(_i: int) -> void:
+func _equip_ring_activated(_i: int) -> void:
 	if _syncing:
 		return
 	if scene._mode == "item":
@@ -500,7 +515,7 @@ func _on_list_index(i: int) -> void:
 	sc._refresh()
 
 
-func _on_list_activated(i: int) -> void:
+func _equip_list_activated(i: int) -> void:
 	if _syncing:
 		return
 	var sc := scene
