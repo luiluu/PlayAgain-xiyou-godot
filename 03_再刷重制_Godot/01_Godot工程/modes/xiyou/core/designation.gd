@@ -27,6 +27,11 @@ static func table() -> Array:
 			out.append({"id": i, "name": str(d.get("DesignationName", "")), "icon": int(float(str(d.get("DesignationIcon", "0")))), "color": str(d.get("DesignationColor", ""))})
 	if not out.any(func(d): return int(d.id) == KYO_ID):
 		out.append({"id": KYO_ID, "name": "kyo专属", "icon": 240202, "color": "#f5f7fa"})
+	if XFest.ENABLED:  # 冠军庆典称号 41～44 接在最后（开关关掉整件不列；活动结束照列，已解锁的永久可选）
+		for t in XFest.TITLES:
+			# 冠军之路没开放时只列已拿到的（单独上线：不显示拿不到的「???」）；开放后全列
+			if not out.any(func(d): return int(d.id) == int(t.id)) and (XFestLobby.road_ready() or unlocked(int(t.id))):
+				out.append((t as Dictionary).duplicate())
 	return out
 
 static func unlocked(id: int) -> bool:
