@@ -18,6 +18,7 @@
   - 新增 `modes/xiyou/ui/skin/skin_button.gd`（`XSkinButton`）：独立小按钮的新界面样式（黑面板细线、主按钮旧金线、危险橙、悬停／焦点红乙选中条且内边距同平时那档，换状态字不跳）。标题、选线、工坊共用；文件名和头注释不带天启篇字样（标题在发行包里是真脚本，会引用它）。
   - `tests/xiyou_ui_skin_3b.gd`／`.tscn`（新专项）；`tests/xiyou_ui_skin_offshot.gd`（关闭对照加 `XTianqiTitle`、`XTianqiLineCards`、`XAlienWorkshop` 三页：标题在西游情形下按发行构建拍，选线卡把脉动钉在同一相位再拍）。
 - 发行：标题 `XTianqiTitle` 是 KEEP（真脚本进包），新分支只引用 `XUiSkin`、`XSkinSelectBar`、`XSkinKeyHints`、`XSkinButton`、`ReleaseEntry`，没有直接调天启篇专属类；选线卡、方桌在发行包里本来就是空壳；工坊只调 `XUiSkin`／`XSkin*`。`发行空壳.py check` 通过。发行隐藏（`XAlienHide`／`RELEASE_HIDE`）在主菜单入口那层，工坊页本身没动显隐。
+- 返修（小A 乙档核查 5fd436890）：**改了共用组件** `modes/xiyou/ui/skin/skin_key_hints.gd`——1A 主菜单的「让出右下角版本号」（原 `XSkinMainMenu.hint_right`）收进 `XSkinKeyHints.right_edge`，`place()` 自带让位；`XSkinMainMenu.hint_right` 留作转调。受影响的页：主菜单（`skin_main_menu.gd` 改用 `place`，位置不变）、模板页及套它的物品／技能页（`skin_template_page.gd` 改用 `place`，位置不变）、组件陈列页、选线四卡、异化工坊（这三页原来不让位，现在让出版本号）；以后 2B／5C 等用 `place()` 的页自动让位。选线卡未开放的线标「暂未开放」（原「还没修好」，旧画法也一起改，文字审必改，与 xa/text-audit 同字）。工坊换页加 `ui_page_up`／`ui_page_down`（手柄肩键），没绑动作的 Q／E 键照认。
 - 验证：见「验证」。
 
 ## 新增可见文字（合前请小A文字审）
@@ -29,8 +30,9 @@
 | 调查、选一条路、「<线名>之路」（如「战争之路」）；键名框「确定」 | 大厅方桌提示胶囊 | 「…之路」沿用调查方桌后小小鱼那句「桌上只剩%s之路的那一道裂纹」的叫法 |
 | 异化装备 | 异化工坊第一个页签 | 其余页签名取各节原有标题（异化核（N）、装备重铸、本线异化图鉴（N／M）、最近异化掉落（N）） |
 | `Q / E` 换页、`确定` 选择、`取消` 返回 | 异化工坊右下按键提示 | 只有一页时不显示 Q / E |
+| 暂未开放（改原「还没修好」） | 选线卡上没做好的线 | 返修：文字审必改；新旧画法都改 |
 
-没改任何原有文字。
+原有文字只改了「还没修好」→「暂未开放」一处（返修）。
 
 ## 交接板
 
@@ -43,6 +45,10 @@
 - 天启篇新界面：页面重排 + 4 项（清册 #4、#76、#77、#78）。
 
 ## 验证
+
+- **返修复验（合 main 到 c66438ebc／dev.606 后）**：`xiyou_ui_skin_3b` 有窗口 51/51（新加：选线卡与工坊按键提示右边不超过 `right_edge`、「暂未开放」、工坊 `ui_page_up` 换回第一页）；`xiyou_ui_skin`（p0 的 `hints_place` 改按 `right_edge` 断言，另加版本号关掉时贴安全边距）、`xiyou_ui_skin_menu`（1A 主菜单）、`xiyou_ui_skin_1b`／`1c`／`battle`／`offshot`、`xiyou_tianqi_look`、`xiyou_alien_workshop`、`xiyou_alien_config`、`xiyou_tianqi_title*`、`xiyou_tianqi_alien_gear`、`xiyou_tianqi_e2e`、`xiyou_input_handled` 共 15 个全过（日志 `03_再刷重制_Godot/04_验证/本地结果/并行测试/20261115_111319_ms72okeo/`；`xiyou_input_handled` main 上已修好，现在通过）。`语法检查.py` 0 问题，`发行空壳.py check` 通过。
+- **皮肤关闭对照（返修后，基线 main c66438ebc）**：22 张里 21 张 SAME；`xiyou_XTianqiLineCards`、`tq_off_XTianqiLineCards` 各 1119 像素不同，**就是「还没修好」→「暂未开放」这四个字**（文字审必改，旧画法也显示这行字，看过截图，别处无差）。其余页（含主菜单、模板页、装备检索、战斗三张）逐像素一致——关掉皮肤时按键提示不出现，让位搬家不影响。
+- 选测对照：`07_开发环境/选测对照.json`（**共用文件**）`ui_skin` 组加 `xiyou_ui_skin_3b.tscn`，改皮肤组件时一起跑 3B 专项。
 
 - 新专项 `tests/xiyou_ui_skin_3b.tscn`：有窗口 48/48（含 12 张截图）、无头 36/36。覆盖：标题 `skin_on()` 开发开／发行关／`ENABLED = false` 关、`XUiSkin.on()` 在标题照旧为假、选中条垫在选中项后且跟着走、extras 换皮且大小不变、按键提示、确定执行同旧、关掉没有选中条且光标照旧；选线卡开着 skin 画法、字不小于 14、卡在安全边距内、左右循环、确定／取消返回值同旧、关掉走旧画法；方桌提示三种字、面朝方桌才显示、忙时／背对／关掉不显示；工坊开着页签（异化装备、异化核、装备重铸…）、列表与操作栏、Q／E 换页再换回、**点屏上的「分解为…」出确认框、焦点在「确认分解」、点「确认分解」真的分解掉一件**、关掉照旧（PaneFrame）、开关两边节点树结构一致。
 - **开关关掉与 main 一致**：`python3 03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py --base main`（合 main 后，main＝e3ffadf43，含 1A、1B、1C）→ 主菜单、状态、物品、技能、装备、设置、装备检索、天启篇标题、选线四卡、异化工坊 × 西游存档默认／天启篇存档 `ENABLED = false` 共 20 张逐像素 SAME。合 main 前对分支切出点 17c4ba6b2 也是 16 张全 SAME。
@@ -63,6 +69,8 @@
 - 建议：`皮肤关闭对照.py --base main` 在本地 main 比车道新（别的批已合进 main）时，基线克隆拷的是车道的 `.godot` 缓存，main 新增的全局类（如 `XSkinSkillPage`）认不出、整页编不过；建议脚本在基线克隆里先跑一次 `--import` 或只在 `--base` 是车道祖先时直接拷缓存（小，归工具车道）。车道先合 main 再比可绕开。
 
 ## 本分支提交
+
+- 返修：见 `git log 5fd436890..cc/ui-skin-3b`（按键提示让位收进 XSkinKeyHints.place、暂未开放、工坊手柄换页、选测对照；合并 main 到 dev.606）。
 
 - 见 `git log main..cc/ui-skin-3b`（WIP 标题、选线卡、方桌提示、异化工坊新界面；专项与版面修正；关闭对照加三页；合并 main；标题角落按钮保持原大小）。
 
