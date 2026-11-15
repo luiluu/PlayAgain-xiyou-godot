@@ -209,9 +209,13 @@ func _process(delta: float) -> void:
 		tick(delta * 1000.0 * speed_mult())
 
 
-func _exit_tree() -> void:
-	if not done:
-		finish(false)  # 精灵或战斗画面被释放：本体照样恢复、回调照样调一次
+func _notification(what: int) -> void:
+	# 精灵或战斗画面被释放（挪父节点不算）：回调照样调一次；本体跟着一起释放，不用恢复
+	if what == NOTIFICATION_PREDELETE and not done:
+		done = true
+		elapsed = DURATION
+		if _on_done.is_valid():
+			_on_done.call()
 
 
 ## 推进 ms 毫秒（已乘战斗动画倍速）

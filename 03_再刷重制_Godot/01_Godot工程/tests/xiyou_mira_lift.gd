@@ -296,9 +296,9 @@ func _cancel() -> void:
 	l = _trigger(sp)
 	_done_calls = 0
 	l.tick(700.0)
-	remove_child(sp)
-	check("cancel.freed", l.done and _done_calls == 1, [l.done, _done_calls])
+	var wr: WeakRef = weakref(l)
 	sp.free()
+	check("cancel.freed", _done_calls == 1 and wr.get_ref() == null, _done_calls)
 
 
 func _rollback() -> void:
@@ -346,7 +346,7 @@ func _capture_shots() -> void:
 		root.add_child(lab)
 		await _frames(3)
 		await RenderingServer.frame_post_draw
-		get_viewport().get_texture().get_image().save_png(out_dir.path_join("mira_lift_%04dms.png" % ms))
+		get_viewport().get_texture().get_image().get_region(Rect2i(0, 0, 640, 480)).save_png(out_dir.path_join("mira_lift_%04dms.png" % ms))
 		root.queue_free()
 		await _frames(2)
 
