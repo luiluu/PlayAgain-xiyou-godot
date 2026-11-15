@@ -27,14 +27,30 @@ var _icon: Texture2D
 func setup(item: Dictionary, n: int, at: Vector2, fx: int, total: int) -> void:
 	rec = item
 	amount = n
-	var wd := XUI.font().get_string_size(text(), HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x
-	position = Vector2(at.x - (32 + 12 + wd) / 2.0, at.y - 32 + OFFSET_Y - fx * SPACE)
+	var f := XUiSkin.font("body") if XUiSkin.on() else XUI.font()
+	var fs := 18 if XUiSkin.on() else FONT_SIZE
+	var disp := _display_text()
+	var wd := f.get_string_size(disp, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var pad_w := 44.0 if XUiSkin.on() else 44.0
+	position = Vector2(at.x - (pad_w + wd) / 2.0, at.y - 32 + OFFSET_Y - fx * SPACE)
 	_wait_hold = WAIT + (total * WAIT - fx * WAIT)
 	_icon = XUI.icon_texture(int(rec.get("iconIndex", 0)) if not rec.is_empty() else GOLD_ICON)
 
 
 func text() -> String:
 	return "%s x %d" % [str(rec.get("name", "")), amount] if not rec.is_empty() else str(amount)
+
+
+func _display_text() -> String:
+	if not XUiSkin.on():
+		return text()
+	return "%s × %d" % [str(rec.get("name", "")), amount] if not rec.is_empty() else str(amount)
+
+
+func _tint_color() -> Color:
+	if rec.is_empty():
+		return XUiSkin.GOLD_LIGHT
+	return XQuality.list_color(rec)
 
 
 func _physics_process(_delta: float) -> void:
@@ -53,6 +69,33 @@ func _physics_process(_delta: float) -> void:
 
 func _draw() -> void:
 	var a := _alpha / 255.0
+	if XUiSkin.on():
+		var f := XUiSkin.font("body")
+		var fs := 18
+		var t := _display_text()
+		var w := f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var sx := minf(1.0, 180.0 / maxf(w, 1.0))
+		var dw := w * sx
+		var pill_w := 36.0 + dw + 14.0
+		var pill_h := 30.0
+		var col := _tint_color()
+		var box := StyleBoxFlat.new()
+		box.bg_color = Color(0.06, 0.062, 0.075, 0.88 * a)
+		box.border_color = Color(col, 0.65 * a)
+		box.set_border_width_all(1)
+		box.set_corner_radius_all(8)
+		box.shadow_color = Color(0, 0, 0, 0.4 * a)
+		box.shadow_size = 6
+		box.shadow_offset = Vector2(0, 2)
+		draw_style_box(box, Rect2(-6.0, 1.0, pill_w, pill_h))
+		if _icon:
+			draw_texture_rect(_icon, Rect2(0.0, 4.0, 24.0, 24.0), false, Color(1, 1, 1, a))
+		var base := 1.0 + pill_h / 2.0 + fs * 0.35
+		draw_set_transform(Vector2(30.0, base), 0.0, Vector2(sx, 1.0))
+		draw_string(f, Vector2(0, 1), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0, 0, 0, 0.75 * a))
+		draw_string(f, Vector2.ZERO, t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, a))
+		draw_set_transform(Vector2.ZERO)
+		return
 	if _icon:
 		draw_texture(_icon, Vector2.ZERO, Color(1, 1, 1, a))
 	var font := XUI.font()
