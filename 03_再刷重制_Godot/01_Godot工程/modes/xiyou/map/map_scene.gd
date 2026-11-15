@@ -168,6 +168,7 @@ func _ready() -> void:
 	if XTianqi.has_pending():
 		await _run_tianqi_opening()
 	XAutosaveNotice.map_ready(self)  # YEP_X_Autosave：Scene_Map.createAllWindows 建 Window_Autosave，刚读过档就出「存档加载成功！」
+	XFestReward.map_start()  # 冠军庆典：读档时攒下的提示（剩币换精魂、回大厅看庆典）
 	XItemMarks.deploy_start(XState.current)  # Scene_Map.start 包装：清出战栏里的超强者并提示
 	XStarburstBooks.map_start(XState.current)  # 星爆三本被动书 Scene_Map.start 包装：老存档补发
 

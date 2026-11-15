@@ -1,25 +1,28 @@
 class_name XFestRoad
 extends RefCounted
-## 【cc·未经审查】冠军庆典·冠军之路「一穿四」（Kyo 11-15；方案：私密设计仓 重制设定/冠军庆典活动_v0.2.md 2.3 节）。
+## 【cc·未经审查】冠军庆典·冠军之路「一穿四」（Kyo 11-15；方案：私密设计仓 重制设定/冠军庆典活动_v0.2.md 2.3 节；三档与奖励按 v0.3.1 第 1、2.1 节）。
 ## 五打五（建议满五人；不满五人报名时提示一句，确认后照样能打）连打四支五人队：网吧队 → 银河战舰队 → 大魔王队 → 内战幻神队（决赛）。队名、敌人名都是自创，不写真实战队与选手。
 ##
-## - 敌人、敌群、辅助的群体治疗都是运行时追加（XDB.rec 表外号段），不改生成数据：敌人 9300 起、敌群 9300 起、技能 19300。
+## - 敌人、敌群、辅助的群体治疗都是运行时追加（XDB.rec 表外号段），不改生成数据：敌人 9300／9400／9500 三段、敌群 9300 起、技能 19300。
 ##   每只敌人照本档基准守层者复制（特性、属性抗性、伤害抵抗被动跟着走），再按「队强度×位置倍率」重算能力值、换名字换图换技能。
 ## - 四关连战：中间不回大厅；血量、蓝量、阵亡带进下一关（游戏本来就不在战后回复）。四关都不能逃跑，输了不结束游戏。
 ## - 势如破竹：每赢一关全队伤害 +10%，最多三层；只在冠军之路的战斗里生效（XActorDamageHooks 的 finalMultiplier），退出或输了清零。
 ## - 场间暂停：整趟一次，两关之间全队回三成血蓝、复活阵亡的人。
 ## - 输了：回到大厅、队伍回满；下次可以从输的那关接着打，但接着打的这趟不算「不败」。
-## - 两档（Kyo 11-15 定，取代海选／正赛／巅峰三档）：普通版对标「天灾」难度 26 层守层者，困难版对标「洪荒」难度 26 层守层者；
-##   敌人的难度倍率固定按本档（天灾 6／洪荒 8），不看玩家存档的难度（battle_setup）。四队相对强度 ×0.8／1.0／1.2／1.5 在两档上各乘。
-## - 奖励两档分开给、互不顶替（每个存档各算各的；称号全局），见 REWARDS：每关首胜庆典币、四关全胜（称号＋币）、从第一关起一次不败连穿（称号＋币）。
-##   庆典成就（第 2 天，模块 G）按档读 cleared(s, 档)／flawless_done(s, 档)（存档 flags.fest_champion.road／road_hard），本文件不发成就。
-## - 只开给原版档（天启篇档的守层者另有一套血量，第 1 天不开）。
+## - 三档（v0.3.1 第 1 节，Kyo 11-15 定 D46「丰富」）：欢庆档（大众）对标「普通」难度 10 层守层者（灵狼祭祀，敌人 72，一只），
+##   天灾档、洪荒档对标「天灾」「洪荒」难度 26 层守层者（金角 529、银角两只）。敌人的难度倍率固定按本档（普通 3／天灾 6／洪荒 8），
+##   不看玩家存档的难度（battle_setup）。四队相对强度 ×0.8／1.0／1.2／1.5 在三档上各乘。
+## - 旧进度迁移（第 7 节第 1 条）：改三档前的「普通版」进度在存档键 road、「困难版」在 road_hard，正好对上天灾档、洪荒档；欢庆档用新键 road_fest。
+## - 奖励三档分开给、互不顶替（每个存档各算各的；称号全局），见 REWARDS：每关首胜庆典币、四关全胜（冠军戒指＋币＋称号「冠军之路」）、
+##   从第一关起一次不败连穿（称号＋币）。戒指每档一枚（XFestRing.grant，记在进度的 ring 上），输过也给。
+##   改三档前的「冠军之路·洪荒」（45）没发给玩家过，并进「冠军之路」（41）：洪荒档全胜也发 41，45 不再发（XFestReward 读档时把手里有 45 的补成 41）。
+## - 只开给重制版存档（天启篇档的守层者另有一套血量，进去打不动；报名处说一句就走，见 talk）。
 ## 开关 ENABLED＝false 或总开关 XFest.ENABLED＝false：表外记录都不认、伤害加成不生效、入口不开，回到没有冠军之路的样子。O-待定·冠军之路。
 
 static var ENABLED := true
 
-const ENEMY_BASE := 9300   # 敌人号＝ENEMY_BASE＋档位序×100＋关序×10＋位置序（普通 9300～9334，困难 9400～9434）
-const TROOP_BASE := 9300   # 敌群号＝TROOP_BASE＋档位序×10＋关序（普通 9300～9303，困难 9310～9313）
+const ENEMY_BASE := 9300   # 敌人号＝ENEMY_BASE＋档位序×100＋关序×10＋位置序（欢庆 9300～9334，天灾 9400～9434，洪荒 9500～9534）
+const TROOP_BASE := 9300   # 敌群号＝TROOP_BASE＋档位序×10＋关序（欢庆 9300～9303，天灾 9310～9313，洪荒 9320～9323）
 const HEAL_SKILL := 19300  # 辅助的「应援」：全体友方回复最大生命的 HEAL_RATE
 const HEAL_RATE := 0.04
 const HEAL_FROM := 906     # 外观、动画照「治愈之歌」
@@ -29,10 +32,6 @@ const STREAK_STEP := 0.10
 const STREAK_MAX := 3
 ## 场间暂停回复比例
 const PAUSE_RATE := 0.3
-## 奖励
-## 普通版的两项（旧名留给测试与说明；数值以 REWARDS 为准）
-const COIN_FIRST_WIN := 30
-const COIN_FLAWLESS := 100
 
 ## 四支战队（Kyo 11-15 定）：mult＝相对基准的强度；role_mul 是本队特色在位置倍率上再乘的（按位置下标）
 const TEAMS := [
@@ -59,9 +58,11 @@ const ROLES := [
 	{"name": "辅助", "hp": 1.0, "atk": 0.8, "mat": 1.0, "def": 1.1, "mdf": 1.1, "agi": 1.0,
 		"actions": [[HEAL_SKILL, 5], [1025, 3]]},
 ]
-## 26 层那场是金角、银角两只守层者（敌群 462），血量合计约金角的 1.83 倍、两只出手。按「×1.0 的队≈这一场」摊：
-## 五人血量倍率合计 5.2，每人血量＝金角 ×0.35×位置×队强度（×1.0 队合计 ≈1.82 只金角）；每人攻击、魔攻＝金角 ×0.4（五人出手合计 ≈2 只）。
-## 防御、速度不摊，按金角×位置×队强度。没实测，Kyo 或玩家试打后再调
+## 摊比（按档写在 TIERS 的 hp_share／atk_share）：按「×1.0 的队≈守层者那一场」摊。五人血量倍率合计 5.2。
+## - 26 层那场是金角、银角两只（敌群 462），血量合计约金角的 1.83 倍、两只出手：每人血量＝金角 ×0.35×位置×队强度（×1.0 队合计 ≈1.82 只金角）；
+##   每人攻击、魔攻＝金角 ×0.4（五人出手合计 ≈2 只）。
+## - 10 层那场只有灵狼祭祀一只（敌群 69）：每人血量 ×0.19（合计 ≈1 只）、攻击 ×0.2（五人出手合计 ≈1 只）。
+## 防御、速度不摊，按守层者×位置×队强度。数值实测见交付单（虚拟玩家 fest_road_probe）
 const HP_SHARE := 0.35
 const ATK_SHARE := 0.4
 
@@ -70,14 +71,19 @@ const POS := [[470, 340], [440, 230], [250, 290], [440, 450], [250, 410]]
 
 ## 档位：base＝基准守层者敌人号（复制它的特性、伤害抵抗被动；26 层敌群 462 的第一只金角 529），difficulty＝敌人固定吃的难度倍率（Vitsuno_Difficulty 编号）
 const TIERS := [
-	{"key": "normal", "name": "普通版", "base": 529, "guard_troop": 462, "floor": 26, "difficulty": 6, "diff_name": "天灾", "save_key": "road"},
-	{"key": "hard", "name": "困难版", "base": 529, "guard_troop": 462, "floor": 26, "difficulty": 8, "diff_name": "洪荒", "save_key": "road_hard"},
+	{"key": "fest", "name": "欢庆档", "base": 72, "guard_troop": 69, "floor": 10, "difficulty": 3, "diff_name": "普通", "save_key": "road_fest",
+		"hp_share": 0.19, "atk_share": 0.2},
+	{"key": "normal", "name": "天灾档", "base": 529, "guard_troop": 462, "floor": 26, "difficulty": 6, "diff_name": "天灾", "save_key": "road",
+		"hp_share": HP_SHARE, "atk_share": ATK_SHARE},
+	{"key": "hard", "name": "洪荒档", "base": 529, "guard_troop": 462, "floor": 26, "difficulty": 8, "diff_name": "洪荒", "save_key": "road_hard",
+		"hp_share": HP_SHARE, "atk_share": ATK_SHARE},
 ]
 
-## 两档奖励（互不顶替）。庆典币不占物品号，兑换处（第 2 天）有限购，全换完 400 币，资源总量由兑换处的限购封顶
+## 三档奖励（v0.3.1 2.1，互不顶替）：本档合计 200／150／150 币。ring＝冠军戒指的档（XFestRing.RINGS）
 const REWARDS := [
-	{"first": 30, "clear": 0, "flawless": 100, "title_clear": XFest.TITLE_ROAD, "title_flawless": XFest.TITLE_ONE_FOUR},
-	{"first": 50, "clear": 50, "flawless": 150, "title_clear": XFest.TITLE_ROAD_HARD, "title_flawless": XFest.TITLE_ONE_FOUR_HARD},
+	{"first": 30, "clear": 30, "flawless": 50, "title_clear": XFest.TITLE_ROAD, "title_flawless": XFest.TITLE_ONE_FOUR, "ring": 0},
+	{"first": 20, "clear": 30, "flawless": 40, "title_clear": XFest.TITLE_ROAD, "title_flawless": XFest.TITLE_ONE_FOUR_DISASTER, "ring": 1},
+	{"first": 20, "clear": 30, "flawless": 40, "title_clear": XFest.TITLE_ROAD, "title_flawless": XFest.TITLE_ONE_FOUR_HARD, "ring": 2},
 ]
 
 
@@ -175,15 +181,17 @@ static func _role_mul(stage: int, role: int, key: String) -> float:
 ## 能力值（不含难度倍率；难度倍率由 XEnemy 照常乘）
 static func enemy_params(tier: int, stage: int, role: int, base_params: Array) -> Array:
 	var t := float(TEAMS[stage].mult)
+	var hp_share := float(TIERS[tier].get("hp_share", HP_SHARE))
+	var atk_share := float(TIERS[tier].get("atk_share", ATK_SHARE))
 	var p: Array = []
 	for i in 8:
 		p.append(float(base_params[i]) if i < base_params.size() else 0.0)
 	var out := [
-		floor(p[0] * HP_SHARE * t * _role_mul(stage, role, "hp")),
+		floor(p[0] * hp_share * t * _role_mul(stage, role, "hp")),
 		p[1],
-		floor(p[2] * ATK_SHARE * t * _role_mul(stage, role, "atk")),
+		floor(p[2] * atk_share * t * _role_mul(stage, role, "atk")),
 		floor(p[3] * t * _role_mul(stage, role, "def")),
-		floor(p[4] * ATK_SHARE * t * _role_mul(stage, role, "mat")),
+		floor(p[4] * atk_share * t * _role_mul(stage, role, "mat")),
 		floor(p[5] * t * _role_mul(stage, role, "mdf")),
 		floor(p[6] * sqrt(t) * _role_mul(stage, role, "agi")),
 		p[7],
@@ -332,14 +340,15 @@ static func damage_ops(a) -> Array:
 
 # ==== 存档进度 ====
 
-## 存档 flags.fest_champion.road（普通版；改两档前的旧进度就在这个键，按普通版算）／road_hard（困难版）：
+## 存档 flags.fest_champion.road_fest（欢庆档）／road（天灾档；改三档前的「普通版」进度就在这个键）／road_hard（洪荒档；原「困难版」）：
 ##   next     下一关（0～3；4 以上＝没在打）
 ##   flawless 这趟从第一关起没输过、也没中途接着打
 ##   pause    这趟的场间暂停用过没有
 ##   streak   这趟当前势如破竹层数
 ##   first    [四个布尔] 每关首胜（发过庆典币）
 ##   cleared  四关全胜过（发过「冠军之路」）
-##   flawless_done  一次不败连穿过（发过「一穿四」和 100 币）
+##   flawless_done  一次不败连穿过（发过本档一穿四称号和币）
+##   ring     发过本档的冠军戒指（和 cleared 分开记：改三档前已全胜的旧进度，下次全胜补发戒指）
 static func progress(s, tier := 0) -> Dictionary:
 	var d := XFest.data(s)
 	var key := str(TIERS[tier].save_key)
@@ -350,7 +359,7 @@ static func progress(s, tier := 0) -> Dictionary:
 		r["next"] = TEAMS.size()
 	if not r.get("first") is Array or (r["first"] as Array).size() != TEAMS.size():
 		r["first"] = [false, false, false, false]
-	for k in ["flawless", "pause", "cleared", "flawless_done"]:
+	for k in ["flawless", "pause", "cleared", "flawless_done", "ring"]:
 		if not r.has(k):
 			r[k] = false
 	if not r.has("streak"):
@@ -380,11 +389,11 @@ static func continue_run(s, tier := 0) -> void:
 	r["streak"] = 0
 
 
-## 一关打完结算（result：0 胜 1 逃 2 败）。返回发了什么 {coins, titles: [], finished: bool}
+## 一关打完结算（result：0 胜 1 逃 2 败）。返回发了什么 {coins, titles: [], finished: bool, ring: 发的戒指实例或 {}}
 static func settle(s, stage: int, result: int, tier := 0) -> Dictionary:
 	var r := progress(s, tier)
 	var rw: Dictionary = REWARDS[tier]
-	var out := {"coins": 0, "titles": [], "finished": false}
+	var out := {"coins": 0, "titles": [], "finished": false, "ring": {}}
 	if result != 0:
 		r["next"] = stage  # 下次从这关接着打
 		r["flawless"] = false
@@ -403,9 +412,15 @@ static func settle(s, stage: int, result: int, tier := 0) -> Dictionary:
 			r["cleared"] = true
 			XFest.add_coins(s, int(rw.clear))
 			out.coins += int(rw.clear)
+		if not bool(r.ring):
+			var inst := XFestRing.grant(s, int(rw.ring))
+			if not inst.is_empty():
+				r["ring"] = true
+				out.ring = inst
 		if not XDesignation.unlocked(int(rw.title_clear)):
 			out.titles.append(int(rw.title_clear))
 		XFest.unlock_title(int(rw.title_clear))
+		XFestReward.achieve(s, "road")
 		if bool(r.flawless):
 			if not bool(r.flawless_done):
 				r["flawless_done"] = true
@@ -414,6 +429,7 @@ static func settle(s, stage: int, result: int, tier := 0) -> Dictionary:
 			if not XDesignation.unlocked(int(rw.title_flawless)):
 				out.titles.append(int(rw.title_flawless))
 			XFest.unlock_title(int(rw.title_flawless))
+			XFestReward.achieve(s, "one_four")
 		r["streak"] = 0
 		r["flawless"] = false
 		r["pause"] = false
@@ -470,7 +486,8 @@ static func intro_lines() -> Array:
 	return [SPEAKER + "冠军之路·一穿四：五打五，连打四支五人战队，中间不回大厅。",
 		"血量、蓝量、阵亡都带进下一关；每赢一关全队伤害 +10%（最多三层）。",
 		"整趟有一次场间暂停：全队回三成血蓝、复活阵亡的人。四关都不能逃跑。",
-		"普通版对标「天灾」难度、困难版对标「洪荒」难度的 26 层守层者；两版的奖励和称号分开拿。"]
+		"一共三档：欢庆档按「普通」难度 10 层守层者的强度来，天灾档、洪荒档按对应难度 26 层守层者的强度来。",
+		"每档四关全胜送一枚冠军戒指，输过也算；三档的奖励分开拿。"]
 
 
 static func lineup_text() -> String:
@@ -491,10 +508,10 @@ static func talk(host, s = null) -> void:
 		await _say(host, [SPEAKER + "先组好出战的队伍再来报名吧。"])
 		return
 	if XTianqi.active(s):
-		# 天启篇守层者另有一套血量（XGuardianRework），本表按原版守层者定的数值对不上；天启篇档先不开（第 1 天）
-		await _say(host, [SPEAKER + "这份存档暂时不能报名冠军之路。"])
+		# 天启篇守层者另有一套血量，本表按原版守层者定的数值，进去第一关就打不动：天启篇存档不开（v0.3.1 第 4 节）
+		await _say(host, XFestText.ENROLL_TIANQI.map(func(row): return SPEAKER + str(row)))
 		return
-	# 先选档：普通／困难（两档奖励分开、互不顶替）
+	# 先选档：欢庆／天灾／洪荒（三档奖励分开、互不顶替）
 	var top := tier_labels()
 	top.append_array(["规则说明", "离开"])
 	var tp := await _ask(host, [SPEAKER + "欢迎来到冠军之路！今天的对手：", lineup_text()], top, top.size() - 1)
@@ -564,6 +581,8 @@ static func run(host, s, tier: int, stage: int) -> void:
 		if bool(got.finished):
 			recover_party(s)
 			var lines := [SPEAKER + "%s四关全胜，冠军之路完成！" % TIERS[tier].name]
+			if not (got.ring as Dictionary).is_empty():
+				lines.append("获得「%s」！已经放进背包，默认锁定。" % str(XFestRing.RINGS[int(REWARDS[tier].ring)].name))
 			for t in got.titles:
 				lines.append("获得称号「%s」！" % _title_name(int(t)))
 			await _say(host, lines)

@@ -56,6 +56,8 @@ static func reason(s: XState, fabao: Dictionary, item: Dictionary) -> String:
 		return "不在背包里"
 	if XItemMarks.is_locked(s, item):
 		return "已锁定"
+	if XStarWarehouse.push_dct(item) or XFestRing.is_ring(item):
+		return "限定装备无法喂入"  # 冠军戒指等绑定存档的装备（PushDct）：解了锁也不能喂（冠军庆典 v0.3.1 第 3 节）
 	if XTianqiDrop.feed_blocked(s, item):
 		return "商店购买的装备无法喂入"
 	if grade_of(item) < min_grade(XMagicWeapon.level_of(fabao)):

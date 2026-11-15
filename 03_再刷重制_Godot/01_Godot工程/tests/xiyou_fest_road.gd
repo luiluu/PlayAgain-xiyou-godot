@@ -3,7 +3,7 @@ extends Node
 ## 一、四关顺序与队名、五人敌群站位放得下、敌人记录（名字、图、能力值逐关变强、不掉东西、不变神话）、辅助「应援」；
 ## 二、实建战斗（XBattleLogic.setup）五只敌人都在；
 ## 三、流程：四关顺序开战、不能逃、可输、势如破竹层数 0→1→2→3 与伤害倍率、场间暂停一次（三成、复活）、输了回满可接着打；
-## 四、奖励：每关首胜 30 币只发一次、四关全胜「冠军之路」、一次不败「一穿四」＋100 币只发一次、接着打的不算不败；
+## 四、奖励（v0.3.1 2.1，三档）：每关首胜币只发一次、四关全胜「冠军之路」＋冠军戒指、一次不败本档一穿四称号只发一次、接着打的不算不败；
 ## 五、活动外不可进（开始前、结束后、收尾期）；开关关掉无痕（表外记录、称号表、伤害加成、入口都没了）。
 
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
@@ -66,7 +66,7 @@ func _run() -> void:
 	await _flow_loss_resume()
 	await _pause_and_quit()
 	await _small_party()
-	await _two_tiers()
+	await _three_tiers()
 	await _closed_outside_event()
 	await _switch_off()
 	XFest.TODAY_OVERRIDE = ""
@@ -95,9 +95,19 @@ func _state() -> XState:
 
 func _reset_config() -> void:
 	var n := XConfig.designations()
-	for id in [XFest.TITLE_ROAD, XFest.TITLE_ONE_FOUR]:
+	for id in range(41, 48):
 		n.erase(str(id))
 	XConfig.save_designations()
+
+
+## 一档全拿（四关首胜＋全胜＋一次不败）的庆典币
+func _full(tier: int) -> int:
+	var rw: Dictionary = XFestRoad.REWARDS[tier]
+	return 4 * int(rw.first) + int(rw.clear) + int(rw.flawless)
+
+
+func _rings(s, tier: int) -> int:
+	return s.gear.filter(func(e): return XFestRing.tier_of(e) == tier).size()
 
 
 func _records() -> void:
@@ -215,7 +225,7 @@ func _flow_flawless() -> void:
 	_check("streak_0_1_2_3", streaks == [0, 1, 2, 3], streaks)
 	_check("damage_mult_by_streak", muls == [1.0, 1.1, 1.2, 1.3], muls)
 	_check("streak_off_after_run", not XFestRoad.in_road_battle and XFestRoad.damage_ops(s.battle_members()[0]).is_empty())
-	_check("flawless_rewards", XFest.coins(s) == 4 * XFestRoad.COIN_FIRST_WIN + XFestRoad.COIN_FLAWLESS
+	_check("flawless_rewards", XFest.coins(s) == _full(0) and _full(0) == 200 and _rings(s, 0) == 1
 		and XDesignation.unlocked(XFest.TITLE_ROAD) and XDesignation.unlocked(XFest.TITLE_ONE_FOUR), XFest.coins(s))
 	var p := XFestRoad.progress(s)
 	_check("flawless_flags", bool(p.cleared) and bool(p.flawless_done) and int(p.next) == 4)
@@ -223,7 +233,7 @@ func _flow_flawless() -> void:
 	var h2 := MockHost.new()
 	h2.choices_queue = [0, 0, 0, 0, 0]
 	await XFestRoad.talk(h2, s)
-	_check("rewards_only_once", h2.battles.size() == 4 and XFest.coins(s) == 4 * XFestRoad.COIN_FIRST_WIN + XFestRoad.COIN_FLAWLESS, XFest.coins(s))
+	_check("rewards_only_once", h2.battles.size() == 4 and XFest.coins(s) == _full(0) and _rings(s, 0) == 1, [XFest.coins(s), _rings(s, 0)])
 	# 称号表列庆典称号
 	var ids := XDesignation.table().map(func(d): return int(d.id))
 	_check("titles_in_table", ids.has(XFest.TITLE_ROAD) and ids.has(XFest.TITLE_ONE_FOUR))
@@ -252,7 +262,7 @@ func _flow_loss_resume() -> void:
 	var p := XFestRoad.progress(s)
 	_check("loss_resume_point", int(p.next) == 1 and not bool(p.flawless) and int(p.streak) == 0 and XFestRoad.resume_stage(s) == 1, p)
 	_check("loss_party_recovered", s.members().all(func(m): return m.is_alive() and m.hp == m.mhp))
-	_check("loss_first_win_coin", XFest.coins(s) == XFestRoad.COIN_FIRST_WIN)
+	_check("loss_first_win_coin", XFest.coins(s) == int(XFestRoad.REWARDS[0].first))
 	# 接着打：从第二关起、势如破竹从 0 起；打完给「冠军之路」不给「一穿四」
 	var h2 := MockHost.new()
 	h2.choices_queue = [0, 1, 0, 0]  # 接着打第 2 关；两关之间继续
@@ -261,7 +271,8 @@ func _flow_loss_resume() -> void:
 	_check("resume_from_lost_stage", troops == [9301, 9302, 9303], troops)
 	_check("resume_streak_restarts", h2.battles.map(func(b): return int(b.streak)) == [0, 1, 2])
 	_check("resume_gives_road_not_one_four", XDesignation.unlocked(XFest.TITLE_ROAD) and not XDesignation.unlocked(XFest.TITLE_ONE_FOUR)
-		and XFest.coins(s) == 4 * XFestRoad.COIN_FIRST_WIN and not bool(XFestRoad.progress(s).flawless_done), XFest.coins(s))
+		and XFest.coins(s) == 4 * int(XFestRoad.REWARDS[0].first) + int(XFestRoad.REWARDS[0].clear) and _rings(s, 0) == 1
+		and not bool(XFestRoad.progress(s).flawless_done), XFest.coins(s))
 	_check("resume_offered_only_after_loss", XFestRoad.resume_stage(s) == 0)
 	a = a
 
@@ -296,34 +307,39 @@ func _pause_and_quit() -> void:
 	b = b
 
 
-func _two_tiers() -> void:
-	# 两档基准：普通版＝天灾（难度 6）、困难版＝洪荒（难度 8）的 26 层守层者金角 529；存档难度不影响
-	var g: Dictionary = XDB.table("Enemies")[529]
-	var r6 := XEnemy.difficulty_rates(6)
-	var r8 := XEnemy.difficulty_rates(8)
-	_check("tier_bases", XFestRoad.TIERS.size() == 2 and int(XFestRoad.TIERS[0].base) == 529 and int(XFestRoad.TIERS[1].base) == 529
-		and int(XFestRoad.TIERS[0].difficulty) == 6 and int(XFestRoad.TIERS[1].difficulty) == 8 and int(XFestRoad.TIERS[0].guard_troop) == 462
-		and XEnemy.difficulty_name(6) == "天灾" and XEnemy.difficulty_name(8) == "洪荒")
-	# 内战幻神队·上单（×1.5）在两档里的实建能力值＝金角×摊比×位置×1.5×本档倍率；换存档难度（2 简单、5 地狱）结果一样
+func _three_tiers() -> void:
+	# 三档基准（v0.3.1 第 1 节）：欢庆＝普通（难度 3）10 层灵狼祭祀 72（敌群 69）；天灾、洪荒＝难度 6、8 的 26 层金角 529（敌群 462）；存档难度不影响
+	var T := XFestRoad.TIERS
+	_check("tier_bases", T.size() == 3 and int(T[0].base) == 72 and int(T[0].difficulty) == 3 and int(T[0].guard_troop) == 69 and int(T[0].floor) == 10
+		and int(T[1].base) == 529 and int(T[1].difficulty) == 6 and int(T[2].base) == 529 and int(T[2].difficulty) == 8 and int(T[1].guard_troop) == 462
+		and str(T[1].save_key) == "road" and str(T[2].save_key) == "road_hard" and str(T[0].save_key) == "road_fest"
+		and XEnemy.difficulty_name(3) == "普通" and XEnemy.difficulty_name(6) == "天灾" and XEnemy.difficulty_name(8) == "洪荒")
+	# 内战幻神队·上单（×1.5）在三档里的实建能力值＝守层者×本档摊比×位置×1.5×本档倍率；换存档难度（2 简单、5 地狱）结果一样
 	var ok := true
 	var detail := []
 	for diff in [2, 5]:
 		var s := _state()
 		s.difficulty = diff
-		for tier in 2:
+		for tier in 3:
+			var g: Dictionary = XDB.table("Enemies")[int(T[tier].base)]
+			var rates := XEnemy.difficulty_rates(int(T[tier].difficulty))
 			var lg := XBattleLogic.new()
 			lg.setup(XFestRoad.troop_id(tier, 3), s)
 			var e = lg.enemies[0]
-			var rates := r6 if tier == 0 else r8
-			var want_hp := floorf(float(g.params[0]) * XFestRoad.HP_SHARE * 1.5 * 1.6) * float(rates[0])
-			var want_atk := floorf(float(g.params[2]) * XFestRoad.ATK_SHARE * 1.5 * 0.7) * float(rates[2])
+			var want_hp := floorf(float(g.params[0]) * float(T[tier].hp_share) * 1.5 * 1.6) * float(rates[0])
+			var want_atk := floorf(float(g.params[2]) * float(T[tier].atk_share) * 1.5 * 0.7) * float(rates[2])
 			var got_hp := float(e.mhp)
 			var got_atk := float(e.param(2))
 			detail.append([diff, tier, got_hp, want_hp, got_atk, want_atk])
 			ok = ok and absf(got_hp / want_hp - 1.0) < 0.001 and absf(got_atk / want_atk - 1.0) < 0.02 and e.hp == e.mhp
 			ok = ok and absf(got_hp - XFestRoad.effective_param(tier, 3, 0, 0)) / got_hp < 0.001
 	_check("tier_effective_params_fixed_difficulty", ok, detail)
-	var h6 := XFestRoad.effective_param(1, 0, 0, 0) / XFestRoad.effective_param(0, 0, 0, 0)
+	var r6 := XEnemy.difficulty_rates(6)
+	var r8 := XEnemy.difficulty_rates(8)
+	var h6 := XFestRoad.effective_param(2, 0, 0, 0) / XFestRoad.effective_param(1, 0, 0, 0)
+	_check("hard_is_honghuang_over_tianzai", absf(h6 - float(r8[0]) / float(r6[0])) < 0.001, h6)
+	_check("fest_tier_weaker_than_disaster", XFestRoad.effective_param(0, 3, 0, 0) < XFestRoad.effective_param(1, 0, 0, 0) / 100.0,
+		[XFestRoad.effective_param(0, 3, 0, 0), XFestRoad.effective_param(1, 0, 0, 0)])
 	# 存档的 DCultyL1～5（Star_Warehouse 难度怪物属性）开或关，冠军之路敌人属性都一样；普通敌人照样吃
 	var sw := _state()
 	var dl := []
@@ -332,7 +348,7 @@ func _two_tiers() -> void:
 			sw.flags["DCultyL%d" % k] = false
 		sw.flags["DCultyL2"] = flag
 		var lgw := XBattleLogic.new()
-		lgw.setup(XFestRoad.troop_id(0, 0), sw)
+		lgw.setup(XFestRoad.troop_id(1, 0), sw)
 		var ew = lgw.enemies[0]
 		var plain := XEnemy.new().setup(6, sw.difficulty)
 		dl.append([float(ew.mhp), float(ew.param(2)), float(ew.xparam(0)), float(ew.sparam(0)), plain.warehouse_rate()])
@@ -340,57 +356,66 @@ func _two_tiers() -> void:
 		sw.flags.erase("DCultyL%d" % k)
 	_check("dcultyl_does_not_touch_road", dl[0][0] == dl[1][0] and dl[0][1] == dl[1][1] and dl[0][2] == dl[1][2] and dl[0][3] == dl[1][3]
 		and dl[0][4] == 1.0 and dl[1][4] > 1.0, dl)
-	_check("hard_is_honghuang_over_tianzai", absf(h6 - float(r8[0]) / float(r6[0])) < 0.001, h6)
-	_check("hard_troops_and_enemies", (XDB.rec("Troops", 9313).members as Array).size() == 5 and str(XDB.rec("Troops", 9313).name) == "冠军之路·内战幻神队"
-		and str(XDB.rec("Enemies", 9434).name) == "内战幻神队·辅助" and XDB.rec("Troops", 9320).is_empty() and XDB.rec("Enemies", 9500).is_empty())
-	# 两档奖励分开、只发一次、互不顶替
+	_check("tier_troops_and_enemies", (XDB.rec("Troops", 9323).members as Array).size() == 5 and str(XDB.rec("Troops", 9323).name) == "冠军之路·内战幻神队"
+		and str(XDB.rec("Enemies", 9534).name) == "内战幻神队·辅助" and str(XDB.rec("Enemies", 9434).name) == "内战幻神队·辅助"
+		and XDB.rec("Troops", 9330).is_empty() and XDB.rec("Enemies", 9600).is_empty())
+	# 三档奖励分开、只发一次、互不顶替（洪荒 → 天灾 → 欢庆）
 	_reset_config()
-	for id in [XFest.TITLE_ROAD_HARD, XFest.TITLE_ONE_FOUR_HARD]:
-		XConfig.designations().erase(str(id))
-	XConfig.save_designations()
 	var s := _state()
 	var h := MockHost.new()
-	h.choices_queue = [1, 0, 0, 0, 0]  # 困难版 → 从第一关开始 → 继续×3
+	h.choices_queue = [2, 0, 0, 0, 0]  # 洪荒档 → 从第一关开始 → 继续×3
 	await XFestRoad.talk(h, s)
 	var hard_troops := h.battles.map(func(b): return int(b.troop))
-	var rw: Dictionary = XFestRoad.REWARDS[1]
-	var hard_coins := 4 * int(rw.first) + int(rw.clear) + int(rw.flawless)
-	_check("hard_run_order", hard_troops == [9310, 9311, 9312, 9313], hard_troops)
-	_check("hard_rewards", XFest.coins(s) == hard_coins and XDesignation.unlocked(XFest.TITLE_ROAD_HARD) and XDesignation.unlocked(XFest.TITLE_ONE_FOUR_HARD)
-		and not XDesignation.unlocked(XFest.TITLE_ROAD) and not XDesignation.unlocked(XFest.TITLE_ONE_FOUR)
-		and XFestRoad.cleared(s, 1) and XFestRoad.flawless_done(s, 1) and not XFestRoad.cleared(s, 0), XFest.coins(s))
+	_check("hard_run_order", hard_troops == [9320, 9321, 9322, 9323], hard_troops)
+	_check("hard_rewards", XFest.coins(s) == _full(2) and _full(2) == 150 and _rings(s, 2) == 1 and _rings(s, 1) == 0
+		and XDesignation.unlocked(XFest.TITLE_ROAD) and XDesignation.unlocked(XFest.TITLE_ONE_FOUR_HARD)
+		and not XDesignation.unlocked(XFest.TITLE_ONE_FOUR) and not XDesignation.unlocked(XFest.TITLE_ONE_FOUR_DISASTER)
+		and not XDesignation.unlocked(XFest.TITLE_ROAD_HARD)
+		and XFestRoad.cleared(s, 2) and XFestRoad.flawless_done(s, 2) and not XFestRoad.cleared(s, 0) and not XFestRoad.cleared(s, 1), XFest.coins(s))
 	var h2 := MockHost.new()
-	h2.choices_queue = [1, 0, 0, 0, 0]
+	h2.choices_queue = [2, 0, 0, 0, 0]
 	await XFestRoad.talk(h2, s)
-	_check("hard_rewards_once", h2.battles.size() == 4 and XFest.coins(s) == hard_coins, XFest.coins(s))
-	# 打完困难还能拿普通的
+	_check("hard_rewards_once", h2.battles.size() == 4 and XFest.coins(s) == _full(2) and _rings(s, 2) == 1, [XFest.coins(s), _rings(s, 2)])
 	var h3 := MockHost.new()
-	h3.choices_queue = [0, 0, 0, 0, 0]
+	h3.choices_queue = [1, 0, 0, 0, 0]
 	await XFestRoad.talk(h3, s)
-	var normal_coins := 4 * XFestRoad.COIN_FIRST_WIN + XFestRoad.COIN_FLAWLESS
-	_check("normal_after_hard_still_pays", XFest.coins(s) == hard_coins + normal_coins and XDesignation.unlocked(XFest.TITLE_ROAD)
-		and XDesignation.unlocked(XFest.TITLE_ONE_FOUR) and XFestRoad.cleared(s, 0), XFest.coins(s))
+	_check("disaster_after_hard_still_pays", XFest.coins(s) == _full(2) + _full(1) and _rings(s, 1) == 1
+		and XDesignation.unlocked(XFest.TITLE_ONE_FOUR_DISASTER) and not XDesignation.unlocked(XFest.TITLE_ONE_FOUR) and XFestRoad.cleared(s, 1), XFest.coins(s))
+	var h5 := MockHost.new()
+	h5.choices_queue = [0, 0, 0, 0, 0]
+	await XFestRoad.talk(h5, s)
+	_check("fest_after_others_still_pays", XFest.coins(s) == 500 and _rings(s, 0) == 1 and XDesignation.unlocked(XFest.TITLE_ONE_FOUR), XFest.coins(s))
 	# 一档输了接着打的点不串到另一档
 	var s2 := _state()
 	var h4 := MockHost.new()
 	h4.battle_results = [0, 2]
-	h4.choices_queue = [1, 0, 0]
+	h4.choices_queue = [2, 0, 0]
 	await XFestRoad.talk(h4, s2)
-	_check("resume_per_tier", XFestRoad.resume_stage(s2, 1) == 1 and XFestRoad.resume_stage(s2, 0) == 0
-		and int(XFestRoad.progress(s2, 0).next) == 4 and not (XFestRoad.progress(s2, 0).first as Array).has(true))
-	# 读档往返：两档进度都在；旧档（只有 road 键）按普通版
+	_check("resume_per_tier", XFestRoad.resume_stage(s2, 2) == 1 and XFestRoad.resume_stage(s2, 1) == 0 and XFestRoad.resume_stage(s2, 0) == 0
+		and int(XFestRoad.progress(s2, 1).next) == 4 and not (XFestRoad.progress(s2, 1).first as Array).has(true))
+	# 读档往返：三档进度都在
 	XState.current = s
 	var back = kit.roundtrip()
-	_check("tiers_survive_save", back != null and XFestRoad.cleared(back, 0) and XFestRoad.cleared(back, 1) and XFestRoad.flawless_done(back, 1)
-		and XFest.coins(back) == hard_coins + normal_coins, null if back == null else back.flags.get(XFest.FLAG_KEY))
+	_check("tiers_survive_save", back != null and XFestRoad.cleared(back, 0) and XFestRoad.cleared(back, 1) and XFestRoad.cleared(back, 2)
+		and XFestRoad.flawless_done(back, 2) and XFest.coins(back) == 500, null if back == null else back.flags.get(XFest.FLAG_KEY))
+	# 旧进度迁移（v0.3.1 第 7 节第 1 条）：改三档前的 road（普通版）＝天灾档、road_hard（困难版）＝洪荒档；旧档已全胜、没发过戒指的，下次全胜补发戒指
 	var old := _state()
 	XFest.data(old)["road"] = {"next": 4, "first": [true, true, true, true], "cleared": true, "flawless_done": false}
-	_check("legacy_road_is_normal", XFestRoad.cleared(old, 0) and not XFestRoad.cleared(old, 1))
-	# 称号表列 45、46
+	XFest.data(old)["road_hard"] = {"next": 2, "first": [true, true, false, false], "cleared": false, "flawless_done": false}
+	_check("legacy_keys_map_to_tiers", XFestRoad.cleared(old, 1) and not XFestRoad.cleared(old, 0) and XFestRoad.resume_stage(old, 2) == 2
+		and not bool(XFestRoad.progress(old, 1).ring))
+	var h6r := MockHost.new()
+	h6r.choices_queue = [1, 0, 0, 0, 0]
+	var c0 := XFest.coins(old)
+	await XFestRoad.talk(h6r, old)
+	_check("legacy_cleared_gets_ring_on_next_clear", _rings(old, 1) == 1 and XFest.coins(old) - c0 == int(XFestRoad.REWARDS[1].flawless), [_rings(old, 1), XFest.coins(old) - c0])
+	# 称号表：41～44 编号不变；列 46、47；45 不再列
 	var ids := XDesignation.table().map(func(d): return int(d.id))
-	_check("hard_titles_in_table", ids.has(XFest.TITLE_ROAD_HARD) and ids.has(XFest.TITLE_ONE_FOUR_HARD))
+	_check("tier_titles_in_table", ids.has(41) and ids.has(42) and ids.has(43) and ids.has(44) and ids.has(XFest.TITLE_ONE_FOUR_HARD)
+		and ids.has(XFest.TITLE_ONE_FOUR_DISASTER) and not ids.has(XFest.TITLE_ROAD_HARD), ids.slice(-7))
 	# 报名处选档文字写对标难度
-	_check("tier_labels", str(XFestRoad.tier_labels()) .contains("天灾") and str(XFestRoad.tier_labels()).contains("洪荒") and str(XFestRoad.tier_labels()).contains("26"))
+	var lab := str(XFestRoad.tier_labels())
+	_check("tier_labels", lab.contains("欢庆") and lab.contains("普通") and lab.contains("10") and lab.contains("天灾") and lab.contains("洪荒") and lab.contains("26"), lab)
 
 
 func _small_party() -> void:

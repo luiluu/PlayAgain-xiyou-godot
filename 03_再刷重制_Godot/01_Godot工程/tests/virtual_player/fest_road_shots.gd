@@ -28,7 +28,8 @@ func _go() -> void:
 	var shots := []
 	for st in XFestRoad.TEAMS.size():
 		shots.append([0, st])
-	shots.append([1, XFestRoad.TEAMS.size() - 1])  # 困难版决赛
+	shots.append([1, XFestRoad.TEAMS.size() - 1])  # 天灾档决赛
+	shots.append([2, XFestRoad.TEAMS.size() - 1])  # 洪荒档决赛
 	for pair in shots:
 		var tier: int = pair[0]
 		var st: int = pair[1]
