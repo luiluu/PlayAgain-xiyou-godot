@@ -77,7 +77,10 @@ func _run() -> void:
 	if FileAccess.file_exists(XConfig.path_override):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
 	XRiftAlien.reload()
-	_check("align_default_on", XRiftAlien.ALIGN_LOBBY and XRiftAlien.first_alien_stage() == 2)
+	# headless 默认走旧表（按原版对照的战斗测试不被二阶异化冲掉）；IN_HEADLESS 打开才对齐
+	_check("align_default_on", XRiftAlien.ALIGN_LOBBY and not XRiftAlien.IN_HEADLESS and not XRiftAlien.aligned() and XRiftAlien.first_alien_stage() == 3)
+	XRiftAlien.IN_HEADLESS = true
+	_check("align_in_headless", XRiftAlien.aligned() and XRiftAlien.first_alien_stage() == 2)
 	XRiftAlien.ALIGN_LOBBY = false
 	_data()
 	_rules()
@@ -89,6 +92,7 @@ func _run() -> void:
 	XRiftAlien.ALIGN_LOBBY = true
 	_aligned()
 	XRiftAlien.STAGE_OVERRIDE = 0
+	XRiftAlien.IN_HEADLESS = false
 	XRiftAlien.force_drop = -1.0
 	XConfig.path_override = ""
 	var passed := results.filter(func(r): return r.passed).size()

@@ -60,9 +60,13 @@ static func battle_setup(s) -> void:
 
 ## 2565／2803 不随战斗结束去掉（removeAtBattleEnd＝false），会留在存档里：
 ## 开关开着时，身上留着旧 2565、但开战标签已不再给 2565（只会 9940 不会 9933）的，去掉 2565，免得和 2803 叠两份；
-## 开关关掉时（回原版），身上的 2803 去掉，9940 开战照旧挂 2565。
+## 开关关掉时（回原版），身上的 2803 去掉（只在表里已查不到 2803 时），9940 开战照旧挂 2565。
 static func _migrate_fusion(s) -> void:
 	var on := not cfg().is_empty()
+	# 关掉时只抹表里查不到记录的 2803（别的模块或测试可能在表尾真用这个号）
+	var stale := not on and XDB.rec("States", ST_FUSION).is_empty()
+	if not on and not stale:
+		return
 	for id in s.actors:
 		var a = s.actors[id]
 		if a == null:
