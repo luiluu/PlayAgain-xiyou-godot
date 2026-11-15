@@ -31,16 +31,17 @@ static func _uids(s: XState) -> Array:
 
 
 ## 云裳 55 级、进阶 2，账本里做两件天衣（一件穿上、一件留背包），其余空栏挑数据库里第一件穿得上的
-func _build() -> XState:
+func _build(stage := 2, robes := 2) -> XState:
 	var s := XState.new_game(3, 1, [8])
 	XState.current = s
 	s.actor_max_level = 99
 	XYunshang.recruit(s)
 	var ys: XActor = s.actor(XYunshang.ACTOR)
 	ys.change_level_mv(55)
-	s.actor_advance[XYunshang.ACTOR] = 2
+	if stage > 0:
+		s.actor_advance[XYunshang.ACTOR] = stage
 	XYunshang.sync(ys)
-	for n in 2:
+	for n in robes:
 		s.gain_item(SILK, XYunshangOrders.COST)
 		var err := XYunshangOrders.submit(s)
 		check("setup.submit%d" % n, err == "", err)
@@ -194,6 +195,7 @@ func _run() -> void:
 	XYunshangOrders.KEEP_WORN_ON_LOAD = true
 	XState.current = s
 	XSave.save(1)
+	_advance_case()
 	ReleaseEntry.simulate_release = saved_release
 	for fname in DirAccess.get_files_at(XSave.dir_override):
 		DirAccess.remove_absolute(XSave.dir_override.path_join(fname))
@@ -203,3 +205,41 @@ func _run() -> void:
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## co 甲档核查 P2：存档时穿着天衣，之后卸下拿去进阶、不存档，强退再读旧档——进阶次数随账本保留，被消耗的那件不能也留着（白拿一件）。
+## 真调 XYunshangOrders.advance；新账本带 src "advance"，旧账本（本修复前写的，没有来源）按结构认，两种都核
+func _advance_case() -> void:
+	for legacy in [false, true]:
+		var tag := "advance." + ("legacy_ledger" if legacy else "tagged")
+		var s := _build(0, 3)
+		var ys: XActor = s.actor(XYunshang.ACTOR)
+		var worn: String = _uids(s)[0] if not _uids(s).is_empty() else ""
+		s.gain_item(XYunshangOrders.SHARD, 50)
+		check(tag + ".setup", worn != "" and XYunshang.stage(ys) == 0 and XYunshangOrders.owned(s).size() == 2, [worn, XYunshang.stage(ys)])
+		check(tag + ".save", XSave.save(1))
+		var slot := ys.equips.find_custom(func(e): return e is Dictionary and str(e.get("_yunUid", "")) == worn)
+		check(tag + ".unequip", XEquipment.change(s, ys, slot, null))
+		var err := XYunshangOrders.advance(s, XYunshangOrders.owned(s))
+		check(tag + ".advanced", err == "" and XAdvance.rank(s, XYunshang.ACTOR) == 1 and XYunshangOrders.owned(s).is_empty(), [err, XAdvance.rank(s, XYunshang.ACTOR)])
+		if legacy:  # 抹掉来源，模拟 v0.01.10 写下的账本
+			var l: Dictionary = JSON.parse_string(_ledger_text())
+			for p in l.profiles.values():
+				for op in p.journal:
+					op.erase("src")
+			_write_ledger(JSON.stringify(l))
+		for release in [false, true]:
+			var t2 := _cold_load(release)
+			var tg := tag + (".release" if release else ".dev")
+			if not check(tg + ".loaded", t2 != null):
+				continue
+			check(tg + ".stage_kept", XAdvance.rank(t2, XYunshang.ACTOR) == 1, XAdvance.rank(t2, XYunshang.ACTOR))
+			check(tg + ".consumed_worn_removed", XYunshangOrders.find_uid(t2, worn).is_empty() and XYunshangOrders.owned(t2).is_empty(), [_uids(t2), XYunshangOrders.owned(t2).size()])
+			check(tg + ".not_kept", not XYunshangOrders.kept_on_load.has(worn), XYunshangOrders.kept_on_load)
+			check(tg + ".shards_spent", t2.item_count(XYunshangOrders.SHARD) == 0, t2.item_count(XYunshangOrders.SHARD))
+		XState.current = s
+	# 结构识别不误伤：卖出的 remove（单条、前面没有碎片扣除）紧跟在进阶之后也不算进阶消耗
+	var j := [{"item": XYunshangOrders.SHARD, "delta": -50}, {"remove": "a"}, {"remove": "b"}, {"remove": "c"}, {"remove": "sold"}, {"item": SILK, "delta": 2}, {"remove": "sold2"}]
+	check("advance.structure", XYunshangOrders.advance_removes(j).keys() == [1, 2, 3], XYunshangOrders.advance_removes(j))
+	# 带来源的照来源认（不靠前面的碎片扣除）
+	check("advance.tagged", XYunshangOrders.advance_removes([{"remove": "x", "src": "advance"}, {"remove": "y"}]).keys() == [0])
