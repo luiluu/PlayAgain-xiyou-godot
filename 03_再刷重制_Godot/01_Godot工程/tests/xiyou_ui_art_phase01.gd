@@ -337,13 +337,14 @@ func _equip_layout(lay: int) -> void:
 						lab_ok = false
 						bad.append(["orb", i, j])
 			check("equip13_c_labels_clear_" + tag, lab_ok, bad)
-			# 连线：三点直角折线，拐点在根栏径向上、离副栏比离根栏近（Kyo 11-16 v5）
+			# 连线：三点钝角斜折，拐点在根栏径向上、不贴根栏（拐点前一段占全程四成五以上），拐角大于 105°（Kyo 11-16 v6）
 			var link_ok := ring.links.size() == 5
 			for l in ring.links:
 				var r0: Vector2 = l[0]
 				var k: Vector2 = l[1] if (l as Array).size() == 3 else Vector2.ZERO
-				if (l as Array).size() != 3 or absf(k.angle_to(r0)) > 0.01 or absf((l[2] - k).normalized().dot(k.normalized())) > 0.05 \
-					or k.distance_to(l[2]) >= k.distance_to(r0):
+				var a1 := k.distance_to(r0)
+				if (l as Array).size() != 3 or absf(k.angle_to(r0)) > 0.01 or (r0 - k).normalized().dot((l[2] - k).normalized()) > -0.26 \
+					or a1 < 0.45 * (a1 + k.distance_to(l[2])):
 					link_ok = false
 			check("equip13_c_links_elbow_" + tag, link_ok, ring.links)
 			check("equip13_no_notches_" + tag, not bool(ring.sty("notches")))
@@ -351,7 +352,7 @@ func _equip_layout(lay: int) -> void:
 			for i in n:
 				if not ring.on_ring(i):
 					far = maxf(far, (ring.custom[i].pos as Vector2).length())
-			check("equip13_c_subs_close_" + tag, far <= 180.0, far)
+			check("equip13_c_subs_close_" + tag, far <= 190.0, far)
 		# 键盘：下／右一格走完 13 栏回到第一栏（导航顺序：一圈时就是显示顺序；分支时绕主环、遇枝丫先走完）；上／左反过来
 		var nav: Array = sk._plan.nav if lay > 0 else range(n)
 		check("equip13_nav_covers_" + tag, nav.size() == n and nav.duplicate().all(func(r): return nav.count(r) == 1), nav)
@@ -458,6 +459,20 @@ func _shots() -> void:
 			await frames(3)
 	XSkinEquipPage.LAYOUT = 3
 	XUiSkin.touch_override = 0
+	# 弧线枝丫（LINK_CURVE）：16:9、4:3 各一张
+	XSkinEquipPage.LINK_CURVE = true
+	for sz in [SIZES[0], SIZES[2]]:
+		get_window().size = sz[0]
+		await frames(6)
+		var e3: Node = await _shot_equip()
+		await frames(6)
+		check("curve_on_" + sz[1], bool((e3 as XEquipScene).skin.ring.sty("link_curve")))
+		await _save_shot("equip_curve_%s" % sz[1], sz)
+		e3.queue_free()
+		await frames(3)
+	XSkinEquipPage.LINK_CURVE = false
+	get_window().size = Vector2i(1280, 720)
+	await frames(6)
 	for line in ["death", "war", "famine", "plague"]:
 		var m: Node = await _build_menu(line)
 		await frames(6)

@@ -138,7 +138,8 @@ const DEFAULT_STYLE := {
 	"ring_line": Color(0.0, 0.0, 0.0, -1.0), "ring_line_a": 0.75, "ring_w": 1.5,   # ring_line 的 a<0＝用 XUiSkin.LINE
 	"band": Color(0.81, 0.165, 0.12, 0.05), "band_w": 10.0, "halo_line_a": 0.22,
 	"dash_a": 0.30, "notches": true, "notch": Color(0.89, 0.741, 0.447, 1.0), "notch_size": 5.5,   # notches＝环上七颗刻痕菱形（七印）；项数不是 7 的页（装备页）关掉，免得画面上有没含义的点
-	"link": Color(0.89, 0.741, 0.447, 0.55), "link_w": 1.5, "knot": Color(0.89, 0.741, 0.447, 1.0), "knot_size": 4.0,
+	"link": Color(0.89, 0.741, 0.447, 0.55), "link_w": 1.5, "link_curve": false,   # link_curve＝枝丫画成弧线（从根栏沿径向出发、平滑弯向副栏，不画拐点菱形）
+	 "knot": Color(0.89, 0.741, 0.447, 1.0), "knot_size": 4.0,
 	"orb_low": Color(0.071, 0.075, 0.082, 1.0), "orb_hi": Color(0.204, 0.212, 0.231, 0.85), "orb_line_a": 0.65,
 }
 
@@ -302,6 +303,17 @@ func _gui_input(event: InputEvent) -> void:
 		accept_event()
 
 
+## 弧线枝丫：二次贝塞尔，起点沿根栏径向出发（控制点＝副栏在根栏径向上的垂足），平滑弯到副栏
+static func curve_points(c: Vector2, a: Vector2, b: Vector2, steps := 20) -> PackedVector2Array:
+	var u := a.normalized()
+	var ctrl := u * b.dot(u)
+	var pts := PackedVector2Array()
+	for k in steps + 1:
+		var t := k / float(steps)
+		pts.append(c + a.lerp(ctrl, t).lerp(ctrl.lerp(b, t), t))
+	return pts
+
+
 func _diamond(p: Vector2, s: float, col: Color) -> void:
 	draw_colored_polygon(PackedVector2Array([p + Vector2(0, -s), p + Vector2(s, 0), p + Vector2(0, s), p + Vector2(-s, 0)]), col)
 
@@ -340,6 +352,9 @@ func _draw() -> void:
 		draw_texture_rect(center_texture, Rect2(c - ts * k / 2.0, ts * k), false)
 	# 枝丫连线：旧金细线＋节点小菱形（星座连线）
 	for path in links:
+		if bool(sty("link_curve")) and (path as Array).size() >= 2:
+			draw_polyline(curve_points(c, path[0], path[-1]), sty("link"), float(sty("link_w")), true)
+			continue
 		for k in range((path as Array).size() - 1):
 			draw_line(c + path[k], c + path[k + 1], sty("link"), float(sty("link_w")), true)
 		for k in range(1, (path as Array).size() - 1):   # 拐点：小菱形节点（七印环刻痕同款）

@@ -39,8 +39,10 @@ const ONE_PAGE_ORB_R := 22.0
 const ONE_PAGE_LABEL_R := 98.0
 ## 13 栏一页的摆法（O-待定，Kyo 11-15 看审图：「一圈 13 个太密，可以扩展一些不规则的分支子类」）：
 ## 0＝一圈 13 颗（上一版）；1＝A 下垂三枝；2＝B 星座斜出；3＝C 挂主栏（默认；Kyo 11-16 选定 C，A／B 只留作开关）。
-## C 第五版（Kyo 11-16 看 v4）：连线是直角折线——从根栏沿径向伸出约 60，拐角（小菱形）再横着接副栏，拐角离副栏比离根栏近；
-## 副栏离环心 168～178；项链在头部斜上方；装备页环上不画七印刻痕（8 栏不是 7，那几颗点没含义）。nodes 第 4 项＝拐点（相对环心）。
+## C 第六版（Kyo 11-16 看 v5：不要直角）：连线是钝角斜折——从根栏沿径向伸出约 48 拐（小菱形），再斜着接副栏，拐角约 125°，
+## 拐点在全程五成多、不贴根栏；项链靠左块右边，只能伸 32。LINK_CURVE＝true 换弧线（径向出发平滑弯过去，不画拐点）。
+## 副栏离环心 167～187；项链在头部斜上方；装备页环上不画七印刻痕（8 栏不是 7，那几颗点没含义）。nodes 第 4 项＝拐点（相对环心）。
+static var LINK_CURVE := false
 static var LAYOUT := 3
 const BRANCH_R := 112.0
 const BRANCH_ORB_R := 24.0
@@ -58,11 +60,11 @@ const LAYOUTS := {
 		{"root": 6, "nodes": [[16, Vector2(100, 190), "right"]]},
 		{"root": 7, "nodes": [[9, Vector2(-140, -150), "down"], [10, Vector2(-90, -215), "up"]]}]},
 	3: {"name": "C 挂主栏", "shift": Vector2(0, 0), "branches": [
-		{"root": 1, "nodes": [[17, Vector2(-46, -172), "left", Vector2(0, -172)]]},
-		{"root": 2, "nodes": [[13, Vector2(89, -154), "right", Vector2(122, -122)]]},
-		{"root": 3, "nodes": [[9, Vector2(162, -46), "up", Vector2(162, 0)]]},
-		{"root": 6, "nodes": [[10, Vector2(46, 172), "right", Vector2(0, 172)]]},
-		{"root": 7, "nodes": [[16, Vector2(-154, -89), "down", Vector2(-122, -122)]]}]},
+		{"root": 1, "nodes": [[17, Vector2(-34, -184), "left", Vector2(0, -160)]]},
+		{"root": 2, "nodes": [[13, Vector2(106, -154), "right", Vector2(113, -113)]]},
+		{"root": 3, "nodes": [[9, Vector2(164, -30), "up", Vector2(144, 0)]]},
+		{"root": 6, "nodes": [[10, Vector2(34, 184), "right", Vector2(0, 160)]]},
+		{"root": 7, "nodes": [[16, Vector2(-154, -106), "down", Vector2(-113, -113)]]}]},
 }
 var _plan := {}
 
@@ -154,7 +156,7 @@ func _ready() -> void:
 	ring_top.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ring_top.draw.connect(_draw_ring_extra)
 	ring.add_child(ring_top)
-	ring.style = {"notches": false}   # 栏位环不画七印刻痕（Kyo 11-16：画面上每个点都要有含义）
+	ring.style = {"notches": false, "link_curve": LINK_CURVE}   # 栏位环不画七印刻痕（Kyo 11-16：画面上每个点都要有含义）
 	if ONE_PAGE and XTianqiGear.on():
 		ring.label_inner = BRANCH_LABEL_R if branched() else ONE_PAGE_LABEL_R
 		ring.label_sel_boost = 1
