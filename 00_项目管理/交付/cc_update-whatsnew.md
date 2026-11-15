@@ -110,3 +110,13 @@
 - 回归：`xiyou_whats_new` 加 11 种坏记录（缺 version／date／seen、缺 seen、code 为数组／字符串／小数／负数、seen 为字符串／数字、notes 为字符串、version 为数字、date 为 null），每种查「不弹、current 空、标题 show_pending 不弹、mark_seen 不改文件」和「查清单同号照样重记」，再加一条 JSON 浮点 code 当整数认。80/80，日志无 SCRIPT ERROR／ERROR。
 - 反向验证：把 whats_new.gd 换回修前版本跑同一专项，新加的断言挂 8 条以上（缺字段会弹、同号坏记录不重记、code 为数组／seen 为字符串报脚本错误），换回修后版本恢复 80/80。
 - 复跑：xiyou_whats_new、xiyou_update_check、xiyou_update_install 通过；语法检查 0 问题。只改了 `core/whats_new.gd` 和专项，没碰更新链路其他文件，没重跑冷启动。
+
+
+## co 甲档复核
+
+- 核查者：co；仅复核返修 `190eb0e94`，2026-11-15。**通过：P1 0、P2 0、P3 0；上轮 P2 已关闭。**只修改本节，未修改实现或测试。
+- 实测：独立复跑 `xiyou_whats_new` **80/80**、`xiyou_update_check` **84/84**、`xiyou_update_install` **53/53**，退出 0，无脚本错误。另用临时 Godot 脚本做 **134 项边界检查，0 失败**：逐字段缺失、null、空串／数字字符串、数字、布尔、数组／字典错类型；坏记录 current/pending 为空、mark_seen 字节不变、同号清单可修复，标已读后不再重记；正常 version/date 空串仍接受；notes 混入非字符串过滤、纯非字符串或空数组不弹。code 的正整数但与运行号不同也验证为不弹、可补记，并非判为坏类型。日志及临时脚本在 `/tmp/co_whatsnew_rereview/`。
+- 实测冷启动：重新从当前树生成发行空壳补丁（code 619，5.3 MB），底包 477＋macOS 发行模板替身、隔离 HOME，四次进程启动、8 项具名检查全部通过：首次载入补丁→进标题→弹说明→持久化 seen=true；同 HOME 再启动仍载入且不弹；错号记录不弹；无补丁底包正常进标题。四份日志均无 SCRIPT ERROR／Parse Error／ERROR。证据 `/tmp/co_whatsnew_rereview/cold.log` 与 `cold/run_a.log` 至 `run_d.log`；不是沿用上一轮冷启动日志。
+- 代码复核：五字段先 validate 后才消费，覆盖上轮缺 seen、code 数组和 seen 字符串的反例；JSON 整数按 float 读回仍接受。version/date 只要求字符串，允许空串；notes 只要求数组，之后 clean_notes 过滤元素，因此没有把正常写入格式判坏。旧 0.481 安装时尚无此功能，不能假定它已有五字段 whatsnew 记录：本功能通过 check 的 LATEST 结果补记；check.json 缺 notes 时恢复为空，有 notes 时 clean_notes→remember→Array 序列化，写出的五字段符合新验证。此兼容判断依据写入／恢复代码与专项，未读取真实玩家记录。
+- 同号重记：note_check 只在 _read 返回空或记录号不同时写；正常已读五字段记录的 code 在 validate 整理后保持一致，同号早退不改变 seen。独立检查对六种正常 version/date 组合各连续查三次均不重记，发行进程二次启动也不弹。损坏后首次修复可补弹一次属预期；未发现正常玩家每次启动反复弹出的路径。
+- 未核到：线上 0.481 清单实时请求／签名、真实 Windows／安卓机、真窗口观感与输入遮挡；未重复 51 项全组选测，未独立重复返修的反向验证。冷启动使用预置未读记录，查清单补记与坏记录重记由专项和独立脚本实测覆盖，不能称为线上下载更新全链路验收。
