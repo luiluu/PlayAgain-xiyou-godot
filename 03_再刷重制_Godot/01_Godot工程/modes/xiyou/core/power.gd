@@ -330,7 +330,7 @@ static func _growth_gear(s: Dictionary, item: Dictionary) -> void:
 	if XHeartsteel.is_gear(item):
 		var rate := XHeartsteel.hp_rate(item)
 		if rate != 1.0:
-			_attribute(s, 0, REFERENCE[0] * (rate - 1.0), "心钢 · 生命×%.1f（层数%d，第%d阶）" % [rate, XHeartsteel.stacks(item), XHeartsteel.stage(item)])
+			_attribute(s, 0, REFERENCE[0] * (rate - 1.0), "心钢 · 生命×%.1f（层数%d，第%d阶）" % [rate, XHeartsteel.stacks(item), XHeartsteel.eff_stage(item)])
 		_pools(s).x[7] += 0.05 if XHeartsteel.is_leviathan(item) else 0.03
 
 

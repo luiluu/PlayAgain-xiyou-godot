@@ -159,14 +159,14 @@ func _draw_top() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and (event.keycode == KEY_Q or event.keycode == KEY_E):
 		ring.step(-1 if event.keycode == KEY_Q else 1)
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		return
 	if event is InputEventKey and event.pressed and event.keycode == KEY_TAB:
 		_focus = list2 if _focus == list1 else list1
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		return
 	if _focus.handle_input(event):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 static func _short(v: float) -> String:
