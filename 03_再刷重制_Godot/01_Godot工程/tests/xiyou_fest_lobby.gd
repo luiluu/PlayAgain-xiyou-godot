@@ -122,6 +122,7 @@ func _run() -> void:
 	XGuide.MILESTONE_ENABLED = false
 	XFest.ENABLED = true
 	XFestLobby.ENABLED = true
+	XFestLobby.ROAD_CLASS = "NoSuchRoad"   # 不管 XFestRoad 合没合进来，默认按「没开放」测；开放的情形用 XFestRoadProbe
 	var day1 := XFest.START
 	var day_before := "2000-01-01"
 	var grace_day := _plus(XFest.START, XFest.DAYS)         # 收尾期第一天
@@ -192,7 +193,7 @@ func _run() -> void:
 	var t2 := await talk(m1, 78, [0, 1, 2])   # 冠军之路是什么 → 四支战队 → 再见
 	var j2 := join(t2)
 	check("envoy.second.no_gift", s.gold == gold1 and XFest.coins(s) == coins1)
-	check("envoy.second.menu", j2.contains("选择：" + XFestText.ENVOY_MENU_ROAD) and j2.contains(XFestText.ENVOY_ROAD_INFO[0][1].split("\n")[0]), j2)
+	check("envoy.second.menu", j2.contains("选择：" + XFestText.ENVOY_MENU_ROAD) and j2.contains(XFestText.ENVOY_ROAD_INFO_SOON[0][1].split("\n")[0]), j2)
 	check("envoy.second.teams", XFestText.TEAMS.all(func(t): return j2.contains(t.name)), j2)
 	check("envoy.second.not_congrats", not j2.contains(XFest.CONGRATS))
 	# 存档往返：贺礼记录跟存档走，读回来仍然领过
@@ -213,13 +214,48 @@ func _run() -> void:
 	# 奖杯与报名处
 	var tt := join(await talk(m1, 80))
 	check("trophy.text", tt.contains("奖杯"), tt)
-	var e1 := join(await talk(m1, 79, [0]))
-	check("enroll.placeholder", road_exists() or e1.contains(XFestText.ENROLL_NOT_READY[0][1].split("\n")[0]), e1)
+	# 冠军之路没开放（XFestRoad 不存在）：报名处只说「敬请期待」，没有选项、没有占位战斗；使者介绍改「即将开放」口径
+	check("enroll.road_not_ready", not XFestLobby.road_ready())
+	var e1 := join(await talk(m1, 79))
+	check("enroll.soon", e1.contains("敬请期待") and e1.contains("即将开放") and not e1.contains("选择：") and not e1.contains(XFestText.ENROLL_GREET[0][1].split("\n")[0]), e1)
+	var env_soon := join(await talk(m1, 78, [0, 2]))
+	check("envoy.road_info_soon", env_soon.contains("即将开放") and not env_soon.contains("场间暂停"), env_soon)
+	# 称号表：单独上线只列已拿到的，不显示拿不到的「???」
+	var tbl_ids := func() -> Array: return XDesignation.table().map(func(d): return int(d.id))
+	check("titles.hidden_when_locked", XFest.TITLES.all(func(t): return not tbl_ids.call().has(int(t.id))), tbl_ids.call())
+	var cfg_designations := XConfig.designations()
+	XDesignation.unlock(42)
+	check("titles.unlocked_listed", tbl_ids.call().has(42) and not tbl_ids.call().has(41), tbl_ids.call())
+	cfg_designations.erase("42")
+	XConfig.save_designations()
+	# 入口开放（用测试替身）：报名处走真入口，称号表全列，使者用原介绍
+	XFestLobby.ROAD_CLASS = "XFestRoadProbe"
+	check("road.ready", XFestLobby.road_ready())
+	check("titles.all_when_road_ready", XFest.TITLES.all(func(t): return tbl_ids.call().has(int(t.id))), tbl_ids.call())
+	var env_ready := join(await talk(m1, 78, [0, 2]))
+	check("envoy.road_info_ready", env_ready.contains("场间暂停") and not env_ready.contains("即将开放"), env_ready)
 	var e2 := join(await talk(m1, 79, [1, 2]))
 	check("enroll.teams", XFestText.TEAMS.all(func(t): return e2.contains(t.name)), e2)
 	var e3 := join(await talk(m1, 79, [2]))
 	check("enroll.bye", e3.contains(XFestText.ENROLL_BYE[0][1]), e3)
+	await talk(m1, 79, [0])
+	check("enroll.goes_real_entry", XFestRoadProbe.entered == 1, XFestRoadProbe.entered)
+	XFestRoadProbe.ENABLED = false
+	check("road.disabled_not_ready", not XFestLobby.road_ready())
+	var e4 := join(await talk(m1, 79))
+	check("enroll.disabled_soon", e4.contains("敬请期待"), e4)
+	XFestRoadProbe.ENABLED = true
+	XFestLobby.ROAD_CLASS = "NoSuchRoad"
 
+	# 报名处对话截图（真窗口：关掉自动应答，起对话后截）
+	var en := ev(m1, 79)
+	m1.player.locate(en.grid.x, en.grid.y + 1)
+	m1.player.direction = 8
+	XMessageBox.auto = false
+	m1._on_action()
+	await frames(40)
+	await shot("fest_lobby_enroll.png")
+	XMessageBox.auto = true
 	# 画面特效关掉：不放粒子
 	XConfig.set_flag("codexScreenFx", false)
 	check("fx_off.no_confetti", m1.fest_fx.confetti_count() == 0)

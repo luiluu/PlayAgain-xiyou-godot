@@ -57,7 +57,7 @@ const RED := Color(0.72, 0.08, 0.12)
 ## 庆典使者菜单的附加项：第 2 天的签到、兑换往这里加，不改本文件。每项 {"label": 文字, "call": Callable(interp) 协程}
 static var EXTRA_MENU: Array = []
 ## 报名处的入口（甲车道的冠军之路）：全局类 XFestRoad 有静态方法 enter(interp) 时调它；没有就放占位对话
-const ROAD_CLASS := "XFestRoad"
+static var ROAD_CLASS := "XFestRoad"
 const ROAD_METHOD := "enter"
 
 ## 贺礼（D21 先按「称号成就为主、少量资源」填，量都在表里可改）：庆典币、精魂、物品 [[物品号, 数量]]
@@ -223,7 +223,7 @@ static func envoy(interp) -> void:
 		await say(interp, XFestText.ENVOY_FIRST)
 		var toast := give_gift(s)
 		interp.host.toast(toast)
-		await say(interp, XFestText.ENVOY_INTRO)
+		await say(interp, XFestText.ENVOY_INTRO if road_ready() else XFestText.ENVOY_INTRO_SOON)
 		return
 	await say(interp, XFestText.ENVOY_AGAIN)
 	await _menu(interp, true)
@@ -249,7 +249,7 @@ static func _menu(interp, with_info: bool) -> void:
 			return
 		var act = acts[r]
 		if act is String and act == "road":
-			await say(interp, XFestText.ENVOY_ROAD_INFO)
+			await say(interp, XFestText.ENVOY_ROAD_INFO if road_ready() else XFestText.ENVOY_ROAD_INFO_SOON)
 		elif act is String and act == "teams":
 			await say(interp, team_lines())
 		else:
@@ -278,6 +278,9 @@ static func give_gift(s: XState) -> String:
 
 ## 报名处：问候 → 报名（进甲车道的冠军之路）／看战队／再想想
 static func enroll(interp) -> void:
+	if _road() == null:
+		await say(interp, XFestText.ENROLL_SOON)   # 冠军之路还没开放：只说敬请期待，不放占位战斗
+		return
 	await say(interp, XFestText.ENROLL_GREET)
 	while interp.host_alive():
 		var r := await choose(interp, [XFestText.ENROLL_MENU_GO, XFestText.ENROLL_MENU_TEAMS, XFestText.ENROLL_MENU_BYE])
@@ -286,7 +289,7 @@ static func enroll(interp) -> void:
 			if road != null:
 				await road.call(ROAD_METHOD, interp)
 			else:
-				await say(interp, XFestText.ENROLL_NOT_READY)
+				await say(interp, XFestText.ENROLL_SOON)
 			return
 		if r == 1:
 			await say(interp, team_lines())
@@ -295,12 +298,20 @@ static func enroll(interp) -> void:
 		return
 
 
-## 甲车道的入口类；没合进来（或没有 enter 方法）返回 null。按全局类表动态取，两边谁先合进来都能编译
+## 冠军之路开放了没有（入口类在、有 enter 方法、没把自己的 ENABLED 关掉）
+static func road_ready() -> bool:
+	return _road() != null
+
+
+## 甲车道的入口类；没合进来（没有 enter 方法、或 ENABLED 关着）返回 null。按全局类表动态取，两边谁先合进来都能编译
 static func _road() -> Variant:
 	for c in ProjectSettings.get_global_class_list():
 		if str(c.get("class", "")) == ROAD_CLASS:
 			var scr = load(str(c.path))
 			if scr != null and scr.get_script_method_list().any(func(m): return m.name == ROAD_METHOD):
+				var on = scr.get("ENABLED")   # 入口类自己的开关（静态变量；没有这个变量就当开着）
+				if on != null and not bool(on):
+					return null
 				return scr
 			return null
 	return null
