@@ -139,6 +139,7 @@ func _menu(s: XState) -> void:
 		menu.queue_free()
 		return
 	check("ring_6", m.ring.items.size() == 6 and m.groups.size() == 6, m.ring.items.map(func(i): return i.name))
+	await _u4_icons(m)
 	check("wide_on", root.content_scale_aspect == XSkinLayout.aspect_for(Vector2(root.size)))
 	check("party_rows", m.party.members.size() == menu._members().size(), [m.party.members.size(), menu._members().size()])
 	check("blocks", m.layout.center.size.x <= 720.0 and m.run_panel.size.y == XSkinMainMenu.RUN_H)
@@ -326,3 +327,41 @@ func _shots(s: XState) -> void:
 	menu.queue_free()
 	await frames(2)
 	XUiSkin.motion_override = XUiSkin.Motion.OFF
+
+
+## 组入口图标 u4（p1fix 追加）：28 张都在、六个可见组都有贴图、原生 64 整数位置、选中只换贴图不缩放；开关关掉回旧图标号
+func _u4_icons(m: XSkinMainMenu) -> void:
+	var missing := []
+	for k in ["items", "equipment", "character", "party", "workshop", "codex", "system"]:
+		for st in ["normal", "selected"]:
+			for px in [64, 32]:
+				var path := "%s%s_%s_%d.png" % [XUiSkin.GROUP_ICON_DIR, k, st, px]
+				if not ResourceLoader.exists(path) or (load(path) as Texture2D).get_size() != Vector2(px, px):
+					missing.append(path)
+	check("u4_files", missing.is_empty(), missing)
+	var ring := m.ring
+	check("u4_all_groups_art", range(ring.items.size()).all(func(i): return ring.has_art(i)), ring.items.map(func(i): return i.key))
+	ring.queue_redraw()
+	await frames(2)
+	var bad := []
+	for d in ring.art_drawn:
+		var r: Rect2 = d.rect
+		if r.size != Vector2(64, 64) or r.position != r.position.round():
+			bad.append(d)
+		if (d.i == ring.index) != (d.tex == ring.items[d.i].art_selected):
+			bad.append(["state", d.i])
+	check("u4_native_64_integer", ring.art_drawn.size() == ring.items.size() and bad.is_empty(), bad)
+	var before := ring.index
+	ring.select((before + 1) % ring.items.size(), false)
+	ring.queue_redraw()
+	await frames(2)
+	var sel_d: Array = ring.art_drawn.filter(func(d): return d.i == ring.index)
+	var old_d: Array = ring.art_drawn.filter(func(d): return d.i == before)
+	check("u4_select_swaps_texture", sel_d.size() == 1 and sel_d[0].tex == ring.items[ring.index].art_selected and (sel_d[0].rect as Rect2).size == Vector2(64, 64)
+		and old_d.size() == 1 and old_d[0].tex == ring.items[before].art_normal)
+	ring.select(before, false)
+	XUiSkin.GROUP_ICONS_U4 = false
+	var it := XSkinRingNav.group_item(XUiSkin.GROUPS[0])
+	check("u4_switch_off_old_icon", not it.has("art_normal") and int(it.icon) == 100)
+	XUiSkin.GROUP_ICONS_U4 = true
+	check("u4_pets_no_art", not XSkinRingNav.group_item(XUiSkin.GROUPS.filter(func(g): return g.key == "pets")[0]).has("art_normal"))

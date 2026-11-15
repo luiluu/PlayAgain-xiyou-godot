@@ -66,6 +66,7 @@ func _run() -> void:
 			await _pair("p1_select_board_" + tag, _board)
 			await _pair("p1_select_menu_" + tag, _menu)
 			await _pair("p1_select_equip_" + tag, _equip)
+			await _u4_shots(tag)
 		get_window().size = Vector2i(1024, 768)
 		await frames(8)
 		await _tablet()
@@ -194,6 +195,41 @@ func _equip() -> Node:
 	add_child(page)
 	await frames(4)
 	return page
+
+
+## ---- 组入口图标 u4：常态一张（第一组选中）＋每组选中各一张，左环部分拼成一张；再存整屏 ----
+func _u4_shots(tag: String) -> void:
+	XUiSkin.SELECT_V2 = true
+	XUiSkin._styles.clear()
+	_state()
+	var menu := XMenu.new()
+	add_child(menu)
+	await frames(6)
+	var ring: XSkinRingNav = menu.skin.ring
+	save(await grab(), "u4_menu_" + tag)
+	var crops := []
+	var gr := ring.get_global_rect()
+	var view := get_viewport().get_visible_rect().size
+	var img_w := 0
+	for i in ring.items.size():
+		ring.select(i, false)
+		menu.skin._set_group(i, 0)
+		await frames(4)
+		var img: Image = await grab()
+		var k := img.get_width() / view.x
+		var cr := Rect2i(Vector2i(gr.position * k), Vector2i(gr.size * k)).intersection(Rect2i(Vector2i.ZERO, img.get_size()))
+		crops.append(img.get_region(cr))
+		img_w = cr.size.x
+	var cols := 4
+	var rows := ceili(crops.size() / float(cols))
+	var h: int = crops[0].get_height()
+	var sheet := Image.create(img_w * cols, h * rows, false, crops[0].get_format())
+	sheet.fill(Color(0.2, 0.2, 0.2))
+	for i in crops.size():
+		sheet.blit_rect(crops[i], Rect2i(Vector2i.ZERO, crops[i].get_size()), Vector2i((i % cols) * img_w, (i / cols) * h))
+	save(sheet, "u4_each_selected_" + tag)
+	menu.queue_free()
+	await frames(3)
 
 
 ## ---- 平板 4:3 ----

@@ -112,25 +112,42 @@ static var motion_override := -1
 ## 每组 {key, name, icon（占位图标号，样稿从旧图标里挑的，美术出了再换）, items:[{key, name, cmd（旧菜单 XMenu.COMMANDS 的符号，新主菜单按它打开同一页）, desc（新主菜单子项的一句话说明，第 1A 批）}]}；组或子项可带 hide（按存档判断的隐藏规则，见 hide_rule）或 hidden（写死隐藏）。
 ## 宠物组现在天启篇随 XTianqiPetHide 整组隐藏（可见 6 组）；放开后自动出现（7 组），不用改布局。文字照小A文字审口径。
 const GROUPS := [
-	{"key": "items", "name": "物品", "icon": 100, "items": [{"key": "item", "name": "物品", "cmd": "item", "desc": "使用和查看随身物品"}]},
-	{"key": "equip", "name": "装备", "icon": 160, "items": [{"key": "equip", "name": "装备", "cmd": "equip", "desc": "更换角色装备"}]},
-	{"key": "actor", "name": "角色", "icon": 1001, "items": [{"key": "status", "name": "状态", "cmd": "status", "desc": "属性、抗性、掌握"},
+	{"key": "items", "name": "物品", "art": "items", "icon": 100, "items": [{"key": "item", "name": "物品", "cmd": "item", "desc": "使用和查看随身物品"}]},
+	{"key": "equip", "name": "装备", "art": "equipment", "icon": 160, "items": [{"key": "equip", "name": "装备", "cmd": "equip", "desc": "更换角色装备"}]},
+	{"key": "actor", "name": "角色", "art": "character", "icon": 1001, "items": [{"key": "status", "name": "状态", "cmd": "status", "desc": "属性、抗性、掌握"},
 		{"key": "skill", "name": "技能", "cmd": "skill", "desc": "查看与使用技能"},
 		{"key": "zhenqi", "name": "真气", "cmd": "zhenqi", "desc": "闭关突破"},
 		{"key": "race", "name": "种族祝福", "cmd": "race", "desc": "种族加成与进阶"},
 		{"key": "formation", "name": "整队", "cmd": "formation", "desc": "调整出战人员和顺序"}]},
 	{"key": "pets", "name": "宠物", "icon": 384, "hide": "pet", "items": [{"key": "pets", "name": "宠物", "cmd": "pet", "desc": "查看和培养宠物"}]},
-	{"key": "workshop", "name": "工坊", "icon": 193, "items": [{"key": "crafting", "name": "制作", "cmd": "crafting", "desc": "用材料做物品和装备"},
+	{"key": "workshop", "name": "工坊", "art": "workshop", "icon": 193, "items": [{"key": "crafting", "name": "制作", "cmd": "crafting", "desc": "用材料做物品和装备"},
 		{"key": "orb_shop", "name": "宝珠坊", "cmd": "orbs", "desc": "鉴定、兑换、分解宝珠"},
 		{"key": "alien_workshop", "name": "异化工坊", "cmd": "alienation", "hide": "alien", "desc": "分解异化装备、重铸词条"}]},
-	{"key": "codex", "name": "图鉴", "icon": 1360, "items": [{"key": "actor_book", "name": "人物图鉴", "cmd": "actorBook", "desc": "查看角色资料"},
+	{"key": "codex", "name": "图鉴", "art": "codex", "icon": 1360, "items": [{"key": "actor_book", "name": "人物图鉴", "cmd": "actorBook", "desc": "查看角色资料"},
 		{"key": "enemy_book", "name": "怪物图鉴", "cmd": "monsterBook", "desc": "查看敌人资料"},
 		{"key": "achievement", "name": "成就", "cmd": "achievement", "desc": "查看成就"}]},
-	{"key": "system", "name": "系统", "icon": 688, "items": [{"key": "save", "name": "存档", "cmd": "save", "desc": "保存当前进度"},
+	{"key": "system", "name": "系统", "art": "system", "icon": 688, "items": [{"key": "save", "name": "存档", "cmd": "save", "desc": "保存当前进度"},
 		{"key": "options", "name": "设置", "cmd": "options", "desc": "画面、声音、挂机与操作"},
 		{"key": "feedback", "name": "反馈", "cmd": "feedback", "desc": "提交问题和建议"},
 		{"key": "game_end", "name": "返回标题", "cmd": "gameEnd", "desc": "回到标题画面"}]},
 ]
+
+## ---- 组入口图标 u4（Kyo 11-15 定稿；co 画，content/ui_skin/group_icons/）----
+## GROUP_ICONS_U4（默认开，O-待定）：组带 art 的用 u4 贴图（{art}_{normal|selected}_{64|32}.png），原生大小、最近邻、选中只换贴图不缩放；
+## false＝回旧图标号（icon）和旧画法（40px、选中 ×1.16）。宠物组暂无 art（u4 的 party 号角留着，宠物组放开时再定）。
+static var GROUP_ICONS_U4 := true
+const GROUP_ICON_DIR := "res://content/ui_skin/group_icons/"
+
+
+## 组入口 u4 贴图；没有 art、开关关着或文件缺失时 null（调用方回旧图标）
+static func group_icon(art: String, selected := false, px := 64) -> Texture2D:
+	if not GROUP_ICONS_U4 or art == "":
+		return null
+	var path := "%s%s_%s_%d.png" % [GROUP_ICON_DIR, art, "selected" if selected else "normal", px]
+	if not ResourceLoader.exists(path):
+		return null
+	return load(path)
+
 
 const FONT_DIR := "res://content/ui_skin/fonts/"
 ## 裁过字、改过名的字体（07_开发环境/裁字.py 生成；思源宋体 Heavy、思源黑体 Medium、Barlow Condensed Medium，SIL OFL）

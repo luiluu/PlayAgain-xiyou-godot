@@ -58,7 +58,7 @@ func _ready() -> void:
 	ring.radius = 160
 	ring.orb_radius = 33
 	ring.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	ring.set_items(groups.map(func(g): return {"key": g.key, "name": g.name, "icon": int(g.get("icon", 0))}))
+	ring.set_items(groups.map(func(g): return XSkinRingNav.group_item(g)))
 	layout.left.add_child(ring)
 	face = Control.new()
 	face.mouse_filter = Control.MOUSE_FILTER_IGNORE
