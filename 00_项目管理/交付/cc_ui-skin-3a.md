@@ -127,3 +127,21 @@
 - P3：「前六印的首领都打过开启」→「前六印的首领都打过后开启」。
 - 顺带（第 0 期遗留 P2，本批碰过 `XSkinPartyStrip`）：角色条名字放不下时先缩字（≥14）再加省略号，先扣掉「Lv 数字」的宽度（`XSkinPartyStrip.name_fit`），「窃格瓦拉·周」不再把等级挤掉（截图 `gear_card_16x9` 第三人）。
 - 合了 main（c66438ebc，dev.606），补齐后重验：`xiyou_ui_skin_3a` 无头 90/90、有窗口 101/101（新增：装备牌小字带品质、无品质行、号卷无品质行、长名字保住 Lv、短名字不动）；`xiyou_ui_skin`、`_1b`、`_1c`、`_menu`、`xiyou_tianqi_trumpet`、`xiyou_tianqi_qiyin_altar`、`_equip` 8 个全过；`皮肤关闭对照.py --base main` 17 张全 SAME；`语法检查.py` 0 问题；`发行空壳.py check` 通过（61 脚本 527 函数）。截图重拍覆盖原目录。
+
+## 小A 复核（乙档返修 c8d3474d9）
+
+- **结论**：**通过**（P1 0、P2 0、文字必改 0；仅 1 项 P3 观察记总装）。
+- **已跑验证（前台实跑）**：
+  - `res://tests/xiyou_ui_skin_3a.tscn`（无头）：90/90 通过；
+  - `res://tests/xiyou_ui_skin.tscn`（88/88）、`res://tests/xiyou_ui_skin_1b.tscn`（85/85）、`res://tests/xiyou_ui_skin_1c.tscn`（78/78）、`res://tests/xiyou_ui_skin_offshot.tscn`（15/15）均通过；
+  - `07_开发环境/语法检查.py`：916 `.gd` 0 个问题；
+  - `07_开发环境/发行空壳.py check`：61 脚本 527 函数全通过（7 个旧 `return true` 警告无新增）；
+  - 截图 OCR＋像素框核查 `04_验证/本地结果/ui_skin_3a/`（`gear_card_*`、`trumpet_card_*`、`altar_*`、`altar_hei_*`）。
+- **逐项复核**：
+  1. **七印装备牌（核了代码＋截图 OCR）**：小字统一用 ` · ` 拼接 `XQuality.label`（`白印 · 七印套装 · 真印 · 神话（神话特效）`），下方重复 `品质：…` 行已由 `XTianqiSkinShow._drop_quality_rows` 去掉并过滤空节；`白印`、`七印套装／七印毕业武器／七印神器`、`真印`、`神话（神话特效）` 措辞与 `qiyin_altar.json`、`qiyin_equip.json`、`XQuality.label` 全处统一。**P3 观察**：`XSkinItemPage` 右牌宽 336（内容宽 288）时，若末尾再拼甲种/武器类型名（如 ` · 布甲`、` · 剑`），`XSkinCard` `subtitle` 用 `draw_string(..., width=288)` 会将超宽尾部切掉（`gear_card_16x9.png` 实测止于 `神话（神话特效）`），`XSkinEquipPage`（宽 476）可完整显示；留待后续用 `fit_text` 缩字或七印套装件不分甲种不拼后缀。
+  2. **号卷牌（核了代码＋截图 OCR）**：去掉 `品质：神话　天启号卷·消耗品` 行后，保留标题 `号卷：初号·雹火`（神话红）、小字 `号卷 · 第 1 卷 · 持有 n`、说明（号声）以及 `获得：`、`效果：`、`限制：`、`代价：`、`无法出售给普通商店`（及「给谁学」右侧 `已学 a / b`／`已学会`），核心规则与使用信息足够。
+  3. **默印开启条件（核了规则＋数据＋源码）**：`qiyin_altar.json` `unlock.mo` 为 `{"after_seals": ["bai", "hong", "hei", "hui", "xun", "zhen"]}`，`XTianqiQiyin.unlocked`（`tianqi_qiyin.gd`）核对 `progress.drop.first_clear` 中前六印是否全部首通（Boss 战胜利由 `XTianqiQiyinDrop.first_clear` 置真），与「前六印的首领都打过后开启」完全一致，且与「打过第 %d 层开启」句式统一。
+  4. **队伍条长名与 2B 影响面（核了代码＋截图 OCR）**：`XSkinPartyStrip.name_fit` 先扣 `Lv N` 与 8px 间距后再调 `XSkinList.fit_text(..., 18, 14)` 先缩字后省略。截图 `gear_card_16x9.png`／`20x9.png`（300px 宽）第 3 人最长名 `窃格瓦拉·周` 缩字后完整显示且紧跟 `Lv 1` 未被挤掉，短名（`绿司机`、`艾坤`、`小痔`、`吕布`）保持 18 号字不变；单测另覆盖更长名字省略号截断并保住 `Lv 99`。**影响面（给总装）**：已接入 `XSkinPartyStrip` 的页面均生效——`XSkinMainMenu`（360px）、`XSkinEquipPage`（384px）、`XSkinSkillPage`（300px，最窄实页）、`XSkinShowcase`（360px）；`XSkinStatusPage`／`XSkinTargetList` 仅用静态 `draw_round_texture` 不受影响。**2B 右侧角色条**尚未合入 main（2A 已记「右侧角色条属 2B」且 `skin_party_strip.gd` 文件头标明「主菜单的队伍、战斗右上角」），2B 复用 `XSkinPartyStrip` 时将自动继承 `name_fit` 与 `look`；若 2B 在独立分支并行开发，总装合并时需注意 `skin_party_strip.gd` 本批有改动。
+  5. **`7cfc7d8ec..c8d3474d9` 差量核查**：除合入 `main`（`c66438ebc`）的干净合并提交 `dd0b333f3` 外，3A 自身仅改 `skin_party_strip.gd`、`tianqi_skin_altar.gd`、`tianqi_skin_show.gd`、`tests/xiyou_ui_skin_3a.gd` 与 `cc_ui-skin-3a.md` 5 个文件，未带入新问题。
+- **未核到（留总装 `--affected --cloud`）**：`事件对照四片`、`xiyou_tianqi_qiyin_effects`／`drop`／`dragon`、`xiyou_tianqi_trumpet`／`altar`／`equip`（前次已过，本次未重跑）、实窗 `皮肤关闭对照.py` 及 `--affected --cloud` 全量云端长测未在本次单跑。
+
