@@ -6,7 +6,7 @@ extends Node
 ## - 判断：琴里 6170、火精灵文书（武器 1109 → 1004）、飞镖（武器 25 → 12，stypeId 0）、敌人佛陀真身（状态 66 → 562）、技能 1，开／关各一；
 ## - 结算不动：is_attack、普攻追加次数、同种子下 6170 的伤害／暴击／命中／TP 开关前后全同；
 ## - 画面：真战斗场景里跑完整行动序列，逐帧记出手者动作、武器图、出手者身上的施放动画、顶部日志招名；技能动画关时只少动画、动作照技能。
-## 窗口模式加 -- --out=<目录> 截琴里出手前后。
+## 窗口模式加 -- --out=<目录> 截琴里出手（开关前后一样）与惊宵锤开／关各三帧。
 class RecBattle extends XBattleScene:
 	var started := []
 
@@ -85,6 +85,19 @@ func _judge() -> void:
 	var palm := XDB.rec("Skills", 562)
 	check("enemy.attack_is_562", e.attack_skill_id() == 562 and e.is_attack(palm), e.attack_skill_id())
 	check("enemy.skill_motion_on", not e.attack_motion(palm))
+	# 甚尔四形态主技能、宿傩 10238 在排除名单里：开关开着也挥咒具；名单清空才按技能演出
+	var toji: XActor = s.actor(XActor.TOJI)
+	var toji_main := XDB.rec("Skills", toji.attack_skill_id())
+	check("toji.main_skill", XActor.TOJI_MAIN.has(int(toji_main.id)) and toji.is_attack(toji_main), toji.attack_skill_id())
+	check("toji.excluded_swing", toji.attack_motion(toji_main))
+	var keep: Array = XBattler.OWN_MOTION_EXCLUDE
+	XBattler.OWN_MOTION_EXCLUDE = []
+	check("toji.unexcluded_skill_motion", not toji.attack_motion(toji_main))
+	XBattler.OWN_MOTION_EXCLUDE = keep
+	check("toji.exclude_list", XBattler.OWN_MOTION_EXCLUDE == XActor.TOJI_MAIN + [10238], XBattler.OWN_MOTION_EXCLUDE)
+	var sukuna: XActor = s.actor(XSukuna.ACTOR)
+	var body := XDB.rec("Skills", sukuna.attack_skill_id())
+	check("sukuna.excluded_swing", sukuna.attack_skill_id() == 10238 and sukuna.is_attack(body) and sukuna.attack_motion(body), sukuna.attack_skill_id())
 	XBattler.REPLACED_ATTACK_OWN_MOTION = false
 	check("kotori.swing_off", k.attack_motion(pillar) and k.is_attack(pillar))
 	_equip_weapon(hero, 1109)
@@ -188,12 +201,12 @@ func _scene_checks() -> void:
 		# 按技能演出（施法动作、不出武器图）、放施放动画；关开关回到挥武器、不放。每次出手前重新套上
 		_equip_weapon(hero, 1724)
 		check("scene.%s.hammer_replaced" % tag, hero.attack_skill_id() == 4437, hero.attack_skill_id())
-		var book := await _play(scene, hero, 4437)
+		var book := await _play(scene, hero, 4437, "hammer_on" if anim_on else "")
 		check("scene.%s.hammer_motion_on" % tag, book.motions.has(want) and not book.weapon and book.cast.size() >= 1 and book.cast.all(func(c): return c[1] == anim_on), book)
 		XBattler.REPLACED_ATTACK_OWN_MOTION = false
 		_equip_weapon(hero, 1724)
 		check("scene.%s.hammer_replaced_off" % tag, hero.attack_skill_id() == 4437, hero.attack_skill_id())
-		var book_off := await _play(scene, hero, 4437)
+		var book_off := await _play(scene, hero, 4437, "hammer_off" if anim_on else "")
 		XBattler.REPLACED_ATTACK_OWN_MOTION = true
 		check("scene.%s.hammer_motion_off" % tag, not book_off.motions.has(want) and book_off.cast.is_empty(), book_off)
 		hero.equips[0] = null

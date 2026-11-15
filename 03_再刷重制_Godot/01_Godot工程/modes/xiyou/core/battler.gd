@@ -972,6 +972,9 @@ func is_attack(item: Dictionary) -> bool:
 
 ## O-待定：替换后的普攻（<Replace Attack: x>、甚尔形态、宿傩等）按技能自己的动作演出；false＝原版（isAttack 就挥武器、不放施法动画）
 static var REPLACED_ATTACK_OWN_MOTION := true
+## 不跟上面开关走、始终照原版挥武器的替换技能：甚尔四形态主技能（游云／万里锁／释魂刀／天逆鉾，挥咒具是设定，协调 11-15 定）、
+## 宿傩普攻 10238 咒力体术（运行时恒为普攻，体术挥拳同理）
+static var OWN_MOTION_EXCLUDE := [10216, 10217, 10218, 10219, 10238]
 
 ## 演出上按「攻击」走（performAttack 挥武器／武器图、castAnimation 不放）：原版就是 is_attack。
 ## 开关开时，普攻被替换成带技能类型（stypeId>0）的技能，就按普通技能演出（施法／技能动作、施放动画）；
@@ -979,7 +982,7 @@ static var REPLACED_ATTACK_OWN_MOTION := true
 func attack_motion(item: Dictionary) -> bool:
 	if not is_attack(item):
 		return false
-	if not REPLACED_ATTACK_OWN_MOTION or int(item.get("id", 0)) == ATTACK_SKILL_ID:
+	if not REPLACED_ATTACK_OWN_MOTION or int(item.get("id", 0)) == ATTACK_SKILL_ID or OWN_MOTION_EXCLUDE.has(int(item.get("id", 0))):
 		return true
 	return int(item.get("stypeId", 0)) <= 0
 
