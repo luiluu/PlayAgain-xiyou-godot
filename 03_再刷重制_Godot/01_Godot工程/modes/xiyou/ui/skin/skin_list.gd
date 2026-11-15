@@ -1,7 +1,7 @@
 class_name XSkinList
 extends Control
 ## 【cc·天启篇·未经审查】直列表：一列／两列、行高可设、超出时右侧细滚动条，选中用红乙选中条（XSkinSelectBar）。
-## 每项 {text, icon（图标号或 Texture2D）, sub（名字后的辅助小字）, right（右对齐数值，窄体数字字）, color, right_color, disabled}。
+## 每项 {text, icon（图标号或 Texture2D）, badge（图标左上角的小角标贴图，如「新」）, sub（名字后的辅助小字）, right（右对齐数值，窄体数字字）, color, right_color, disabled}。
 ## 按键：handle_input 认 ui_up／ui_down／ui_left／ui_right／ui_accept／ui_cancel（页面在自己的 _input／_unhandled_input 里转进来）；
 ## 鼠标、触屏：点非当前项＝选中，点当前项＝确定；滚轮滚一行。上下到头循环（同 MV 列表按一下时的行为）。
 
@@ -20,10 +20,17 @@ var row_height := XUiSkin.ROW_H:
 var col_gap := XUiSkin.GRID
 var font_size := XUiSkin.FS_LIST
 var sub_size := XUiSkin.FS_AUX
+## 名字太长时最小缩到几号（再放不下才加省略号）
+var min_font_size := 16
 var right_size := 21
 var icon_size := 32
 var wrap := true
 var empty_text := "空"
+## 列表有没有焦点：没有时不画选中条（模板页里分类环有焦点时，列表只显示内容）
+var active := true:
+	set(v):
+		active = v
+		_relayout(true)
 var items: Array = []
 var index := 0
 var top_row := 0
@@ -92,7 +99,7 @@ func select(i: int, animate := true) -> void:
 	index = i
 	var scrolled := _ensure_visible()
 	bar.move_to(cell_rect(index), not animate or scrolled)
-	bar.visible = true
+	bar.visible = active
 	queue_redraw()
 	if changed:
 		index_changed.emit(index)
@@ -162,6 +169,21 @@ func _gui_input(event: InputEvent) -> void:
 		accept_event()
 
 
+## 名字放不下时先缩字（最小 min_fs），还放不下就截断加「…」（1B：两列物品名不再被硬裁成「治疗药水(」）。返回 [文字, 字号]
+static func fit_text(f: Font, text: String, max_w: float, fs: int, min_fs: int) -> Array:
+	if max_w <= 0.0 or text == "":
+		return [text, fs]
+	var s := fs
+	while s > min_fs and f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x > max_w:
+		s -= 1
+	if f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, s).x <= max_w:
+		return [text, s]
+	var n := text.length()
+	while n > 1 and f.get_string_size(text.substr(0, n) + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, s).x > max_w:
+		n -= 1
+	return [text.substr(0, n) + "…", s]
+
+
 func scroll_to(row: int) -> void:
 	var r := clampi(row, 0, maxi(rows_total() - visible_rows(), 0))
 	if r == top_row:
@@ -184,10 +206,10 @@ func _ensure_visible() -> bool:
 func _relayout(instant := false) -> void:
 	if bar == null:
 		return
-	bar.visible = not items.is_empty()
+	bar.visible = active and not items.is_empty()
 	if not items.is_empty():
 		var r := cell_rect(index)
-		bar.visible = r.position.y >= 0 and r.end.y <= visible_rows() * row_height + 0.5
+		bar.visible = active and r.position.y >= 0 and r.end.y <= visible_rows() * row_height + 0.5
 		bar.move_to(r, instant)
 	queue_redraw()
 
@@ -210,6 +232,11 @@ func _draw() -> void:
 		var tex: Texture2D = icon if icon is Texture2D else (XUI.icon_texture(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
 		if tex != null:
 			draw_texture_rect(tex, Rect2(x, base - icon_size / 2.0, icon_size, icon_size), false, Color(1, 1, 1, 0.45 if dis else 1.0))
+			var badge = it.get("badge")
+			if badge is Texture2D:
+				var bs: Vector2 = (badge as Texture2D).get_size()
+				var bk := 14.0 / maxf(bs.y, 1.0)
+				draw_texture_rect(badge, Rect2(x - 4, base - icon_size / 2.0 - 4, bs.x * bk, bs.y * bk), false)
 			x += icon_size + 10.0
 		var right := str(it.get("right", ""))
 		var right_w := 0.0
@@ -220,11 +247,13 @@ func _draw() -> void:
 				XUiSkin.TEXT_3 if dis else rc)
 		var max_w := r.end.x - 14.0 - right_w - (10.0 if right_w > 0 else 0.0) - x
 		var col: Color = it.get("color", XUiSkin.TEXT)
-		var text := str(it.get("text", ""))
-		draw_string(body, Vector2(x, base + font_size * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, max_w, font_size, XUiSkin.TEXT_3 if dis else col)
+		var fit := fit_text(body, str(it.get("text", "")), max_w, font_size, min_font_size)
+		var text: String = fit[0]
+		var fs: int = fit[1]
+		draw_string(body, Vector2(x, base + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_3 if dis else col)
 		var sub := str(it.get("sub", ""))
 		if sub != "":
-			var tw := body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+			var tw := body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			var sx := x + tw + 10.0
 			if sx < x + max_w - 20.0:
 				draw_string(body, Vector2(sx, base + sub_size * 0.36), sub, HORIZONTAL_ALIGNMENT_LEFT, x + max_w - sx, sub_size, XUiSkin.TEXT_2)
