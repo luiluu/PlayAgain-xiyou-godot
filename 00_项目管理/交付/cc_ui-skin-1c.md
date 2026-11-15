@@ -102,3 +102,70 @@
 - eb5cbc395 WIP：关闭对照加装备检索、天启篇装备测试兼容新界面
 - fc16377c9 虚拟玩家换装认新界面、交付单
 - 另有合并：cc/ui-skin-1b（d6c36554e、123aa0b38）、main（dev.599，含 1A）
+
+## 小A 乙档核查
+
+- **核查对象**：`cc/ui-skin-1c`（交付提交 `20248229a`，含 1C 四笔提交 `c7e46696e..fc16377c9`，已合 `1B` 返工 `123aa0b38` 与 `main` `dev.599` `17c4ba6b2`），执行者：小A（只读核查＋轻量前台无头验证，未改任何游戏代码）。
+- **结论：不通过**（**P1 0 条**；**P2 3 条**〔含**文字／按键提示必改 1 条**、检索选中行底边未换色 1 条、详情覆盖时未屏蔽左侧栏位环点击 1 条〕；**P3 4 条**）。
+
+### 协调截图两问核实
+
+1. **① `ui_skin_1c_status_p0_16x9` 状态页（Lv 1、HP 485、物攻 47）与装备页（Lv 80、最大生命 6,818、攻击 263）数值不同（核了测试规则＋源码＋实跑）**：
+   - **结论**：是测试函数用了**不同的测试存档**，**不是**状态页读错数据。
+   - 依据：`tests/xiyou_ui_skin_1c.gd` 中 `_equip_page()`（`L136-158`）建档后显式调用了 `a.change_level(80)` 再拍 `ui_skin_1c_equip_*`；而 `_status_page()`（`L311-312`）重新调用 `_state()` 建了一个全新 **1 级**存档（`a.level == 1`，初始 HP 485、ATK 47），未升 80 级即拍 `ui_skin_1c_status_*`。`XSkinStatusPage`（`skin_status_page.gd:130-191, 240`）直接读取 `scene.actor()` 及 `XStatusPage.page_ops(a, p, 612.0)`，数据一致。
+2. **② 状态页「状态」页签右边第 3 列孤零零一个带图标的「练习剑」（核了旧状态页排版规则＋源码）**：
+   - **结论**：这是角色第 0 栏（武器槽）当前身上装备，**位置与旧状态页完全一致**（非错位或遗留控件）。
+   - 依据：旧状态页 `XStatusPage._params_ops()`（`status_page.gd:48-49, 302-328`）把第 1 页排成 3 列——前两列 `PARAM_X := [82.0, 466.0]` 画 13 行能力值，第 3 列 `EQUIP_X := 850.0`（占基准宽 `OLD_W = 1252.0` 的约 68%）按 `XTianqiGear.view(a)` 13 栏逐行绘制身上装备并跳过空槽（`if not e is Dictionary or e.is_empty(): continue`）。`XSkinStatusPage._draw_page_body()`（`skin_status_page.gd:215-282`）去 6 行表头后按板宽等比横移。1 级狗逍遥开局只有第 0 栏装了「练习剑」、其余 12 栏均空，因此第 3 列只在第 0 行画出一个「练习剑」。注：旧 `JAH_StatusMenuCore` 本身就没有为第 3 列加列标题，开局仅 1 件时顶部无标题略显孤立（属忠实继承旧页，非 bug）。
+
+### 核查项与核实深度（分清规则本身／只看代码）
+
+1. **皮肤关闭隔离与 14 张 SAME 对照（核了源码＋实跑无头测试＋已有对照图 `--compare`）**：
+   - 源码：`equip_scene.gd:83`、`status_page.gd:71`、`web_panel.gd:40-53,128` 均严格守门 `XUiSkin.on()`；关皮肤或进西游／重制版存档时完全回退旧装备页、旧状态页、旧 `XWebPanel`／`XGearSearch`，`XStatusPage` 旧战力条与按钮照旧工作。
+   - 实跑前景测试：`语法检查.py`（906 个 `.gd` 0 问题）、`发行空壳.py check`（58 脚本 492 函数通过）、`xiyou_ui_skin_1c.tscn`（**72/72**）、`xiyou_ui_skin_offshot.tscn`（**14/14**，含新加 `XGearSearch`）、工程内已有 `04_验证/本地结果/ui_skin_1c/关闭对照/` `--compare` **14/14 SAME**；另加跑相关专项 `xiyou_ui_skin_menu`（58/58）、`xiyou_ui_skin_1b`（85/85）、`xiyou_gear_detail`（56/56）、`xiyou_tianqi_gear`（36/36）、`xiyou_status_page`（47/47）、`xiyou_gear_ui`（49/49）、`xiyou_alien_workshop`（45/45）、`xiyou_gear_search`（60/60）、`xiyou_party_status_panel`（19/19）全过。
+2. **换装逻辑与数值只读隔离（核了 `XEquipment`/`XEquipScene` 规则本身＋读代码＋跑专项）**：
+   - **P1 0 条**。`XSkinEquipPage` 不改装备数据：换上／卸下调 `scene._ok()`（走 `_keep_rates` ＋ `XEquipment.change`），清空调 `clear_all()`（走 `_keep_rates` ＋ `XEquipment.clear`）；候选仍读 `scene.candidates()`（经 `bag_gear`＋`XEquipment.fits`＋`_filter_view`＋`XEquipment.dual_blocked`，未碰 `equip_list`／`raw_equip_list` 语义与专武吸取视图 `XCat.sword_view`／`XAffixAbsorb`）。
+   - 「换上后」只列变的项：通过 `scene._temp_actor()` → `XEquipment.preview()`（深拷贝角色＋重算被动与不可装备卸下）与 `a.param(i)`（`i = 0..7`）逐项对比（有缓存键控且包了 `XActor.read_begin/end`），与旧属性对比页来源相同。
+   - 候选行右列 `+主属性 ▲▼`：`main_param` / `candidate_row`（`skin_equip_page.gd:206-237`）只读对比 `rec.params` 与当前槽 `_slot_item().params`（武器优先 `params[2]`，其余取 8 项中绝对值最大项），不修改任何属性。
+3. **按键与手柄清空说明（核了 `XKeyMap` 规则＋对比 1B 口径＋读代码）**：
+   - 键盘 `X` 原属 `XKeyMap` 取消键，新装备页在 `input()` `L416` 先拦 `KEY_X` 调 `scene.open_search()`（与 1B `skin_item_page.gd` 一致；微差：1C 取 `physical_keycode if != 0 else keycode`，1B 只取 `physical_keycode`）；Esc／K／Insert／小键盘 0／右键／手柄 B 取消仍有效；`Q / E` 与 `ui_page_up`／`ui_page_down`（LB/RB）换人有效。
+   - 存在两处不一致见 **P2-2**（`item` 态漏列 `Q / E 换人`、`C 清空` 未标明仅键盘／手柄无清空键）及 **P2-3**（展开详卡时未拦截左侧环点击，与 1B 返工 `123aa0b38` 兜底口径不一致）。
+4. **`XWebPanel` 换皮连带范围（核了源码＋像素查看截图＋跑无头专项）**：
+   - 皮肤关闭（重制版／西游存档）时 `skin_color`、`_font`、`_outline`、`draw_frame`、`skin_center` 全部原样透传，不受影响（`45/45`、`60/60`、`19/19` 无头全过）。
+   - 天启篇 `XUiSkin.on()` 时：`gear_search.gd:424` 漏调 `skin_color()` 导致选中行底线仍呈青色（见 **P2-1**，已在 `ui_skin_1c_gear_search_16x9.png` 核实）；`XAlienWorkshop` 与 `XPartyStatusPanel` 出现半新半旧混色见 **P3-1**；战力面板按 `XPower.SHOW_POWER_UI := false`（`power.gd:40`）照旧隐藏（`XGearSearch` 亦据此不显示战力块）。
+5. **测试改动审查（只看代码＋实跑 `xiyou_tianqi_gear`）**：
+   - `tests/xiyou_tianqi_gear.gd:148-149`：仅加 `if equip._mode == "command": equip._ok()` 以跳过新界面已取消的指令窗，其后 13 栏位、换装与神器断言一行未改（实跑 `36/36` 全过）。
+   - `tests/virtual_player/virtual_player.gd:1502-1511`：仅补 `if eq.skin != null` 在 `job.row >= view.size()` 时按 `e` 换下一人或标记 `done` 退出，未放松换装判定（未单跑该测试，留云端）。
+6. **文字审（对照 `ba1f7ed` 口径＋全量提取三文件字符串核对交付单表）**：
+   - 现有术语「卸下」（替换旧插件「卸载」，与 `v0.7` 样稿及 `ba1f7ed` 统一）、「装备」「可选 %d 件」「（已筛选）」「身上 %d 件 · 栏位第 %d / %d 页」「空」「换上后」「其余 %d 项不变」「能力值不变」「装备详情」「属性对比」「插槽与镶嵌」「「称号」」「Lv %s · 职业」均通顺准确、无残余旧称或语病；按键提示存在 **P2-2** 必改项与 **P3-2 / P3-4** 微调。
+
+### 问题清单（P1/P2/P3，含文字必改）
+
+- **P1**：无。
+- **P2-1（检索面板选中行底线未换色｜代码＋截图实测）**：
+  - `modes/xiyou/ui/gear_search.gd:424`：`normal.border_color = CURSOR_EDGE if active else Color(1, 1, 1, 0.1)` 漏掉 `skin_color()`，导致天启篇 `ui_skin_1c_gear_search_16x9.png` 左侧选中行虽已变为绯红底，底边 1px 边框仍是亮青色（`#9abbc0` 视觉混色）而非红线 `XUiSkin.SEL_LINE`。
+  - **改法**：改为 `normal.border_color = skin_color(CURSOR_EDGE) if active else Color(1, 1, 1, 0.1)`。
+- **P2-2（文字／按键提示必改｜对比 1B 口径与 `ba1f7ed`）**：
+  1. `XSkinEquipPage.item_hints()`（`skin_equip_page.gd:104-105`）缺少 `["Q / E", "换人"]`，但 `input()`（`L422-427`）在 `"item"` 态同样响应 `Q / E` 与手柄 LB/RB 换人——与 1B「提示必须匹配当前态生效按键」口径不一致；
+  2. `XSkinEquipPage.slot_hints()`（`skin_equip_page.gd:100-101`）仅写 `["C", "清空"]`，未写明仅键盘可用（`input()` `L420` 仅判 `KEY_C`，手柄无清空键）。
+  - **给改好的字**：
+    - `slot_hints()`：`[["确定", "更换"], ["取消", "返回"], ["Y", "全部属性与词条"], ["X", "检索排序"], ["键盘 C", "清空"], ["Q / E", "换人"]]`
+    - `item_hints()`：`[["确定", "装备"], ["取消", "回栏位"], ["Y", "全部属性与词条"], ["X", "检索排序"], ["Q / E", "换人"]]`
+    - 同步把 `键盘 C` 及候选态的 `Q / E 换人` 补入交付单「新增可见文字」表。
+- **P2-3（展开装备详情时未屏蔽左侧栏位环点击｜对比 1B 返工 `123aa0b38` 口径）**：
+  - `XSkinEquipPage` 按 Y 展开 `XSkinGearDetail`（`expanded == true`）时仅遮盖 `center + right`，`layout.left` 栏位环仍可见且 `ring.mouse_filter` 为 `STOP`；`_on_ring_changed`（`skin_equip_page.gd:470`）与 `_equip_ring_activated`（`L484`）未检查 `if expanded: return`。玩家展开详卡后点击左环会直接切栏位或触发 `scene._ok()`，状态与提示栏停在详情态产生错位。
+  - **改法**：`_on_ring_changed` 与 `_equip_ring_activated` 开头加 `if _syncing or expanded: return`，且在 `sync()` 展开态设 `ring.mouse_filter = Control.MOUSE_FILTER_IGNORE`（收起恢复 `STOP`）。
+- **P3-1（`XWebPanel` 换皮连带异化工坊／我方状态面板呈半换色状态｜仅看代码）**：
+  - `XUiSkin.on()` 时：`alien_workshop.gd:750-776, 806, 816, 860, 913, 938, 970, 1007` 仍用旧深蓝黑底 `#16161f`＋旧 `XUI.skin()` 边框、`PRIMARY` 青色按钮及直接读取未转换的 `XWebPanel.LINE`/`GOLD`，但同时通过 `XWebPanel._para`/`style_button` 换成了思源黑体与绯红悬停；`party_status_panel.gd:102-104` 主框已换黑面板＋绯红，但 `_search` 输入框仍硬写 `XUI.font()` 与常量 `TEXT`。不影响皮肤关闭与重制版，建议记入后续网页面板专项统一。
+- **P3-2（`detail_hints()` 漏提 `Y 收起`｜仅看代码）**：
+  - `skin_equip_page.gd:108-109` `detail_hints()` 为 `[["左右", "换页"], ["上下", "滚动"], ["取消", "收起"]]`，实际 `input()` `L409` 也支持再按 `Y` 收起；可维持精简或按需补作 `["Y / 取消", "收起"]`。
+- **P3-3（与 1B/旧详情页微差记档｜只看代码）**：
+  - `KEY_X` 替换原取消键与 1B 一致（留 5C 统一定键）；`XSkinGearDetail` 第 1 页同旧 `XGearDetail` 调 `XHelpCard.detail_rows`（不含仅悬浮卡 `XHelpCard.show_for` 才显示的 `XAffixAbsorb.view` 专武吸取附加行）。
+- **P3-4（交付单文字表小补充｜只看代码）**：
+  - 三文件可见字样均已核对（含 `XSkinGearDetail` 无数据兜底「空」）；待落实 **P2-2** 时同步更新表内 `键盘 C` 与候选态 `Q / E 换人`。
+
+### 没核到的（留给总装 `--affected --cloud`）
+
+- 未重跑有窗模式的 `皮肤关闭对照.py --base main` 与 `xiyou_ui_skin_1c.tscn -- --out=...` 截图重拍（本次仅对已有 `关闭对照/` 14 张图跑了 `--compare`）；
+- 未跑 `并行测试.py`、`选测.py` 全集、`工具回归.py`、`xiyou_virtual_player`、`xiyou_tianqi_e2e`、楼层及事件对照四片；
+- 交付单所引私密设计仓 `重制设定/界面风格提案_v0.7/` 与早先 `ba1f7ed` 原提交未在当前工作树直接读到，文字审对照 `cc_ui-skin-1b.md` 与 `变更记录.md` 所载 `ba1f7ed` 口径核实。
+
