@@ -19,11 +19,12 @@
   - 两档（Kyo 11-15 定，取代海选／正赛／巅峰三档）：普通版对标「天灾」难度 26 层守层者、困难版对标「洪荒」难度 26 层守层者。26 层那场是金角 529＋银角 530（敌群 462），以金角为基准；敌人固定吃本档难度倍率（天灾＝难度 6：血 ×750、攻魔 ×3、防 ×5、速 ×5；洪荒＝难度 8：血 ×3500、攻魔 ×10、防 ×20、速 ×30），不看玩家存档难度（`XBattleLogic.setup` 里 `XFestRoad.battle_setup`，改 `battle_logic.gd` 一行）。摊法「×1.0 的队≈26 层这一场」：每人血量＝金角 ×0.35×位置×队强度（×1.0 队五人合计约 1.82 只金角≈金角＋银角），攻击魔攻＝金角 ×0.4（五人合计约 2 只）；防御速度＝金角×位置×队强度。四队 ×0.8／1.0／1.2／1.5 两档各乘。敌人号普通 9300～9334、困难 9400～9434，敌群普通 9300～9303、困难 9310～9313。
   - 两档奖励分开、互不顶替（`XFestRoad.REWARDS`）：普通版每关首胜 30 币、全胜称号「冠军之路」（41）、不败「一穿四」（42，金）＋100 币，共 220 币；困难版每关首胜 50 币、全胜「冠军之路·洪荒」（45，橙）＋50 币、不败「一穿四·洪荒」（46，金红）＋150 币，共 400 币。存档分档记：`flags.fest_champion.road`（普通；改两档前的旧进度就在这个键，按普通版算）／`road_hard`（困难）。成就组（第 2 天）按档读 `XFestRoad.cleared(s, 档)`／`flawless_done(s, 档)`。
   - 庆典币总量：贺礼 50＋签到 140＋普通 220＋困难 400＝最多 810；兑换处有限购、全换完 400 币，资源总量由限购封顶（仍在「刷一两小时」以内），多的币只让打冠军之路的人不签到也换得完。
+  - 敌人也不吃存档的 DCultyL1～5（Star_Warehouse 难度怪物属性，公共事件 714 置位，原会多乘 1～3 倍）：`battle_setup` 给冠军之路敌人打 `fest_road` 标记，`XEnemy.warehouse_rate` 见标记返回 1（改 `core/enemy.gd` 两行；co 核查 P2）。
   - 报名处先选档（「普通版（对标天灾难度 26 层守层者）」「困难版（对标洪荒难度 26 层守层者）」），再选从头打／接着打。
-- 改：`core/xdb.gd`（`rec` 表外入口一行）、`core/actor_damage_hooks.gd`（伤害钩子接 `XFestRoad.damage_ops`）、`core/designation.gd`（称号表活动期间列 41～44、结束后只列拿到的；总开关关掉不列）。
+- 改：`core/enemy.gd`（warehouse_rate 认冠军之路标记）、`core/xdb.gd`（`rec` 表外入口一行）、`core/actor_damage_hooks.gd`（伤害钩子接 `XFestRoad.damage_ops`）、`core/designation.gd`（称号表活动期间列 41～44、结束后只列拿到的；总开关关掉不列）。
 - 测试：新增专项 `tests/xiyou_fest_road`（46 项）；`tests/xiyou_designation`（逐例比原版参照）与 `tests/xiyou_event_compare`（比原版）开头关 `XFest.ENABLED`。工具：`tests/virtual_player/fest_road_probe`（基准队连打四关的数值探针）、`fest_road_shots`（四关战斗截图，要窗口）。
 - 玩家可见：活动期间可以在大厅报名「冠军之路」，五打五连挑四支战队，打通拿限定称号「冠军之路」，一次不败拿金色称号「一穿四」。
-- 验证：专项 `xiyou_fest_road` 62/62（两档基准取金角×本档难度倍率、换存档难度不变，困难／普通比＝洪荒／天灾，困难敌群敌人号对、超号段为空，两档奖励各发一次互不顶替、打完困难还能拿普通、接着打的点不串档、两档读档往返、旧 road 进度按普通版、称号表列 45／46、选档文字写对标难度；不满五人提示与确认后可进、满五人不提示；四关顺序与队名、五人站位放得下、图在且不超 96 像素帧、逐关变强、位置特点、应援实算 4%、实建战斗五只都在、流程顺序与不能逃、势如破竹 0→3 层与实际伤害 ×1.3、暂停一次与复活三成、输了回满可接着打、接着打只给「冠军之路」、奖励只发一次、存读档进度在、活动外与收尾期不可进、15＋3 天窗口、天启篇档不开、开关关掉无痕）；`反向验证.py` 9 处改坏 8 处咬住（「接着打不清不败」是等价改动：输那一关时已经清了）。选测：`xiyou_designation*`、`xiyou_achievement*`、`xiyou_event_compare*`（四片 14/6/6/6）、`xiyou_actor_modules`、`xiyou_actor1_damage`、`xiyou_determinism`、`xiyou_tianqi_skills`、`xiyou_tianqi_sect_bing`、`xiyou_lobby_shops` 全过；`语法检查.py`、`工具回归.py` 通过。两档专项的反向验证 3 处改坏都咬住（不固定难度、困难用普通称号、两档共用进度）；改两档后选测 `xiyou_designation*`、`xiyou_determinism`、`xiyou_actor_modules`、`xiyou_actor1_damage`、`xiyou_tianqi_horsemen`、`xiyou_tianqi_sect_bing` 全过。截图：`03_再刷重制_Godot/04_验证/本地结果/fest_road/fest_road_normal_1_网吧队.png`～`fest_road_normal_4_内战幻神队.png`、`fest_road_hard_4_内战幻神队.png`（本地结果不入库）。
+- 验证：专项 `xiyou_fest_road` 63/63（存档 DCultyL 开关不影响冠军之路敌人属性；两档基准取金角×本档难度倍率、换存档难度不变，困难／普通比＝洪荒／天灾，困难敌群敌人号对、超号段为空，两档奖励各发一次互不顶替、打完困难还能拿普通、接着打的点不串档、两档读档往返、旧 road 进度按普通版、称号表列 45／46、选档文字写对标难度；不满五人提示与确认后可进、满五人不提示；四关顺序与队名、五人站位放得下、图在且不超 96 像素帧、逐关变强、位置特点、应援实算 4%、实建战斗五只都在、流程顺序与不能逃、势如破竹 0→3 层与实际伤害 ×1.3、暂停一次与复活三成、输了回满可接着打、接着打只给「冠军之路」、奖励只发一次、存读档进度在、活动外与收尾期不可进、15＋3 天窗口、天启篇档不开、开关关掉无痕）；`反向验证.py` 9 处改坏 8 处咬住（「接着打不清不败」是等价改动：输那一关时已经清了）。选测：`xiyou_designation*`、`xiyou_achievement*`、`xiyou_event_compare*`（四片 14/6/6/6）、`xiyou_actor_modules`、`xiyou_actor1_damage`、`xiyou_determinism`、`xiyou_tianqi_skills`、`xiyou_tianqi_sect_bing`、`xiyou_lobby_shops` 全过；`语法检查.py`、`工具回归.py` 通过。两档专项的反向验证 3 处改坏都咬住（不固定难度、困难用普通称号、两档共用进度）；改两档后选测 `xiyou_designation*`、`xiyou_determinism`、`xiyou_actor_modules`、`xiyou_actor1_damage`、`xiyou_tianqi_horsemen`、`xiyou_tianqi_sect_bing` 全过。截图：`03_再刷重制_Godot/04_验证/本地结果/fest_road/fest_road_normal_1_网吧队.png`～`fest_road_normal_4_内战幻神队.png`、`fest_road_hard_4_内战幻神队.png`（本地结果不入库）。
 - 未完成／已知问题：①数值没实测。现成的守层者基准队探针只有天启篇弱者队，打不动按原版守层者定的数值，不代表原版档玩家；两档摊法见上，参数在 `HP_SHARE`／`ATK_SHARE`／`TEAMS[].mult`／`ROLES`，要有人拿原版档天灾／洪荒难度打得过 26 层的存档试打再调。②「打野专挑血少的」没做（现成敌人 AI 不挑目标）。③庆典成就（模块 G）第 2 天做，按档读 `XFestRoad.cleared`／`flawless_done`。④天启篇档暂不开放（天启篇守层者另有一套血量）。
 
 ## 优化登记草稿
@@ -45,6 +46,9 @@
 
 ## 待交叉核查
 
+- **给总装：`core/designation.gd` 与乙车道 cc/fest-lobby（f82298326）改了同一处判断，合并会冲突。** 保留本分支写法即可：`var during := XFest.visible() and _fest_road_ready()`，条件 `(during or unlocked(id)) and 没重复`，即 `(XFest.visible() and XFestLobby.road_ready()) or unlocked(id)` 再去重；`_fest_road_ready()` 按名字找全局类 XFestLobby 调它的静态 `road_ready()`，没有这个类时当作开放，所以两条分支谁先合都不报错。乙那一行（`XFestLobby.road_ready() or unlocked(...)`）丢掉。
+- 第三轮只复核：c1a92da64（冠军之路敌人不吃 DCultyL 仓库倍率；专项 `dcultyl_does_not_touch_road`：DCultyL2 开／关两种下首敌血、攻、xparam、sparam 都相同，同存档普通敌人仍吃 1.5；反向验证去掉标记即失败）。
+
 - 交 co 甲档：`modes/xiyou/core/fest.gd`、`fest_road.gd`（新）；`core/xdb.gd`、`core/actor_damage_hooks.gd`（伤害钩子）、`core/designation.gd`、`battle/battle_logic.gd`（共用核心文件，各一两行）。**第二轮只核两档改动（9d91f902d）**：敌人固定吃本档难度倍率（`battle_setup` 改 `_rates` 后 `recover_all`）、两档奖励与进度分开只发一次、旧进度按普通版、称号 45／46。重点：表外号段会不会和别的表外追加撞号（敌人／敌群 9300～9399、技能 19300）；势如破竹只在 `in_road_battle` 时生效、战斗中途崩了会不会残留（静态变量，不进存档）；奖励只发一次。
 - 合并建议：xdb.gd 改动让选测扇到约 494 个场景，总装 `合并车道.sh --finish --affected --cloud`。
 
@@ -64,4 +68,6 @@
 - a8566a18a 报名处入口 enter；开关注释 O-待定·名
 - 9d9260df5 不满五人报名提示、确认后可进；专项 49/49
 - 9d91f902d 冠军之路改两档（普通天灾／困难洪荒 26 层），两档奖励与进度分开、称号 45／46；专项 62/62
-- （本提交）交付单补两档；方案稿私密仓 c074b87 改两档
+- 5cd6064da 交付单补两档；方案稿私密仓 c074b87 改两档
+- c1a92da64 冠军之路敌人不吃 DCultyL；称号表接 XFestLobby.road_ready；专项 63/63
+- （本提交）交付单补第三轮
