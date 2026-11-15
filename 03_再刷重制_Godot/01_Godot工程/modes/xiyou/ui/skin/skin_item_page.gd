@@ -229,6 +229,12 @@ func _sync_card(mode: String) -> void:
 			rec = sc._material()
 		"augment":
 			rec = sc._augment_row().get("rec", {})
+	if rec.is_empty() and mode == "augment" and not sc._augment_row().is_empty():
+		# 停在「取下镶嵌物」那一行
+		var t := str(XDB.plugin("YEP_X_AttachAugments").get("Remove Augment", "\\i[1348]取下镶嵌物"))
+		set_card({"icon": XUiSkin.icon(_first_icon(t)), "title": _strip(t), "subtitle": _strip(XItemScene.augment_name(sc._item, sc._aug_slot))})   # 孔里现在镶的（空孔写「- 空 -」）
+		show_targets([])
+		return
 	if rec.is_empty():
 		var n: int = _cat_counts()[sc._cat]
 		set_card({"title": XShop.CATEGORIES[sc._cat][0], "subtitle": "%d %s" % [n, ring_center[1]] if n > 0 else "", "desc": "" if n > 0 else list.empty_text})
@@ -410,6 +416,9 @@ static func preview_gain(rec: Dictionary, t: XActor, user: XActor, kind: String)
 
 func _on_ring_changed(i: int) -> void:
 	if _syncing or i == scene._cat:
+		return
+	if not scene._mode in ["category", "list"]:   # 操作、选人、升级、镶嵌时点环不跨态（同旧页：分类窗那时点了没反应）
+		ring.select(scene._cat, false)
 		return
 	scene._commit_seen()
 	scene._cat = i

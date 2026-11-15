@@ -130,7 +130,8 @@ func _draw() -> void:
 		var base := r.position.y + r.size.y / 2.0
 		var right_w := 56.0
 		var name_w := 72.0
-		draw_string(body, Vector2(x, base + 17 * 0.36), str(m.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, name_w, 17, Color(XUiSkin.TEXT, a))
+		var nf := XSkinList.fit_text(body, str(m.get("name", "")), name_w, 17, 14)   # 长名字先缩字再加省略号
+		draw_string(body, Vector2(x, base + int(nf[1]) * 0.36), nf[0], HORIZONTAL_ALIGNMENT_LEFT, -1, nf[1], Color(XUiSkin.TEXT, a))
 		x += name_w + 6
 		var kind := str(m.get("kind", "hp"))
 		var col: Color = XUiSkin.HP if kind == "hp" else (XUiSkin.MP if kind == "mp" else XUiSkin.TP)

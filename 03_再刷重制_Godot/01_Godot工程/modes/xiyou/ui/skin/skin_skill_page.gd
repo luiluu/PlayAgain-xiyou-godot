@@ -112,6 +112,13 @@ func sync() -> void:
 			set_focus("targets")
 	ring.queue_redraw()
 	list_panel.queue_redraw()
+	match sc.mode:
+		"type":
+			set_hint_list([["确定", "选择"], ["取消", "返回"], ["Q / E", "换人"]])
+		"list":
+			set_hint_list([["确定", "选择"], ["取消", "回类型"], ["Q / E", "翻页"]])   # 列表里 Q/E 是翻页（同旧页）
+		_:
+			set_hint_list([["确定", "选择"], ["取消", "返回"]])   # 选人时 Q/E 不换人
 	_syncing = false
 
 
@@ -170,6 +177,9 @@ func _sync_card(a: XActor) -> void:
 
 func _on_ring_changed(i: int) -> void:
 	if _syncing or i == scene.type_index:
+		return
+	if not scene.mode in ["type", "list"]:   # 选人时点环不跨态（同旧页：选人窗盖住类型窗）
+		ring.select(scene.type_index, false)
 		return
 	scene.mode = "type"
 	scene.type_index = i

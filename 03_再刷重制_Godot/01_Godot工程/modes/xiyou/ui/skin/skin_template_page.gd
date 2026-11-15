@@ -104,6 +104,8 @@ func _ready() -> void:
 	list.row_height = row_height
 	list.index_changed.connect(func(i):
 		list_panel.queue_redraw()
+		if auto_nav and focus == "ring":
+			set_focus("list")   # 自动导航：环上时鼠标点列表行＝进列表
 		item_changed.emit(i))
 	list.activated.connect(_on_list_activated)
 	list_panel.add_child(list)
@@ -146,6 +148,8 @@ func _ready() -> void:
 	resized.connect(relayout)
 	get_viewport().size_changed.connect(relayout)
 	relayout()
+	if not show_ring and focus == "ring":
+		focus = "list"   # 没有分类环时默认焦点在列表（不然方向键空打、取消直接退）
 	set_focus(focus)
 
 
@@ -209,6 +213,8 @@ func set_items(arr: Array, index := -1) -> void:
 func set_card(d: Dictionary) -> void:
 	var base := {"icon": null, "title": "", "title_color": XUiSkin.TEXT, "subtitle": "", "desc": "", "sections": [], "buttons": [], "button_index": -1}
 	base.merge(d, true)
+	if focus == "card" and not d.has("button_index") and not (base.buttons as Array).is_empty():
+		base.button_index = 0   # 焦点在牌上时换了牌内容，仍落在第一个按钮
 	card.setup(base)
 	_place_targets()
 
@@ -271,6 +277,9 @@ func set_focus(f: String) -> void:
 		close_menu()
 	if f != "card":
 		card.button_index = -1
+		card.queue_redraw()
+	elif card.button_index < 0 and not card.buttons.is_empty():
+		card.button_index = 0   # 焦点到牌上时先落在第一个按钮
 		card.queue_redraw()
 	hints.queue_redraw()
 

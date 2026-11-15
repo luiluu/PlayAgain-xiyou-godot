@@ -67,6 +67,14 @@ func _key(action: String, echo := false) -> InputEventAction:
 	return e
 
 
+func _click(p: Vector2) -> InputEventMouseButton:
+	var e := InputEventMouseButton.new()
+	e.button_index = MOUSE_BUTTON_LEFT
+	e.pressed = true
+	e.position = p
+	return e
+
+
 func _keycode(k: Key) -> InputEventKey:
 	var e := InputEventKey.new()
 	e.keycode = k
@@ -185,7 +193,7 @@ func _template() -> void:
 	check("tpl_item_activated", fired.activated == 22)
 	page.set_card({"title": "牌", "desc": "说明", "buttons": [{"text": "甲", "primary": true}, {"text": "乙", "disabled": true}]})
 	page.set_focus("card")
-	page.handle_input(_key("ui_right"))
+	check("tpl_card_focus_first_button", page.card.button_index == 0)
 	page.handle_input(_key("ui_accept"))
 	check("tpl_card_button", fired.button == 0, fired)
 	page.handle_input(_key("ui_right"))
@@ -212,7 +220,18 @@ func _template() -> void:
 		["甲：1\\col[50]乙：2", 16, "#fff", false, 0]])
 	check("tpl_help_rows", cs.size() == 2 and cs[0].text == "红字" and cs[1].text == "甲：1　　乙：2", cs)
 	check("tpl_currency_default", page.currency_pairs()[0][0] == "精魂")
+	page.set_focus("ring")
+	var vis := page.list.top_row * 2 + 1   # 当前屏里另一格（列表已滚过，cell_rect 按滚动后算）
+	page.list._gui_input(_click(page.list.cell_rect(vis).get_center()))
+	check("tpl_auto_click_list_focuses", page.focus == "list" and page.list.index == vis, [page.focus, page.list.index, vis])
 	page.queue_free()
+	await frames(2)
+	var flat := XSkinTemplatePage.new()
+	flat.show_ring = false
+	add_child(flat)
+	await frames(2)
+	check("tpl_no_ring_focus_list", flat.focus == "list" and flat.list.active and not flat.ring.visible)
+	flat.queue_free()
 	await frames(2)
 
 
@@ -275,6 +294,9 @@ func _item_page() -> void:
 		check("item_actor_mode", page._mode == "actor" and sk.focus == "targets" and sk.targets.selectable)
 		page._unhandled_input(_key("ui_down"))
 		check("item_actor_down", page._actor == 1 and sk.targets.index == 1)
+		var cat0 := page._cat
+		sk.ring.select(2)
+		check("item_ring_click_ignored_in_actor", page._mode == "actor" and page._cat == cat0 and sk.ring.index == cat0, [page._mode, page._cat, sk.ring.index])
 		await shots("ui_skin_1b_items_target")
 		page._unhandled_input(_key("ui_accept"))
 		check("item_used", s.item_count(int(d[heal].rec.id)) == before - 1 and a.hp > hp0, [before, s.item_count(int(d[heal].rec.id)), hp0, a.hp])
@@ -334,6 +356,7 @@ func _skill_page() -> void:
 	await shots("ui_skin_1b_skill_type")
 	page._unhandled_input(_key("ui_accept"))
 	check("skill_list_mode", page.mode == "list" and sk.focus == "list")
+	check("skill_hints_list", sk.hint_list == [["确定", "选择"], ["取消", "回类型"], ["Q / E", "翻页"]], sk.hint_list)
 	check("skill_list_rows", sk.list.items.size() == page.entries().size() and sk.list.columns == 2)
 	if page.entries().size() > 1:
 		page._unhandled_input(_key("ui_right"))
@@ -342,6 +365,7 @@ func _skill_page() -> void:
 	await shots("ui_skin_1b_skill_list")
 	page._unhandled_input(_key("ui_cancel"))
 	check("skill_cancel_to_type", page.mode == "type" and sk.focus == "ring")
+	check("skill_hints_type", sk.hint_list == [["确定", "选择"], ["取消", "返回"], ["Q / E", "换人"]], sk.hint_list)
 	var a0 := page.actor_index
 	page._unhandled_input(_keycode(KEY_E))   # 类型环上 Q/E 换人（列表里 Q/E 是翻页，同旧页）
 	check("skill_qe_actor", page.actor_index != a0 and page.mode == "type" and sk.focus == "ring")
