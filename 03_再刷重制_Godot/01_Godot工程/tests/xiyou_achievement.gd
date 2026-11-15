@@ -87,6 +87,7 @@ func _ready() -> void:
 	XSave.dir_override = DIR
 	XConfig.path_override = ""
 	XAchievement.time_override = TIME
+	XFest.ENABLED = false  # 比原版成就表：冠军庆典追加的 144～147（XFestReward）整件关掉，由 tests/xiyou_fest_reward 管
 	# 本专项核对提示音参数，不验异步播放；批量达成会堆积 Saint5 的 Ogg 播放句柄（同 drop_dh 静音夹具）。
 	var popup_sound := str(XAchievementPopup.settings().get("Popup Sound", ""))
 	XSound._cache[popup_sound] = null

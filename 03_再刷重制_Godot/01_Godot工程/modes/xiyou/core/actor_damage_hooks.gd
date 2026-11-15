@@ -13,7 +13,7 @@ static func descriptor() -> Dictionary:
 
 
 static func capture(item: Dictionary, a: XBattler, b: XBattler) -> Dictionary:
-	var ops: Array = XRaven.damage_ops(item, a) + XNumberBoost.damage_ops(item, a, b) + mira_ops(item, a, b) + XSukuna.damage_ops(item, a) + XYomiJingliu.damage_ops(item, a, b) + XToji.damage_ops(item, a) + XToji.incoming_ops(item, a, b) + XGarou.damage_ops(item, a, b) + XYunshang.damage_ops(item, a, b) + XBlackFlash.damage_ops(b) + XXuanBattle.cast_ops(item, a) + XXuanBattle.incoming_ops(item, a, b) + XXuanBattle.damage_ops(item, a) + XTusu.damage_ops(item, a, b) + XLiuying.damage_ops(item, a, b) + XHubris.damage_ops(item, a) + XWeakChallenge.damage_ops(a)  # 狂妄 hubris：物防率 ×0.82／0.73；弱者挑战 weak-new-game 终伤 ×3
+	var ops: Array = XRaven.damage_ops(item, a) + XNumberBoost.damage_ops(item, a, b) + mira_ops(item, a, b) + XSukuna.damage_ops(item, a) + XYomiJingliu.damage_ops(item, a, b) + XToji.damage_ops(item, a) + XToji.incoming_ops(item, a, b) + XGarou.damage_ops(item, a, b) + XYunshang.damage_ops(item, a, b) + XBlackFlash.damage_ops(b) + XXuanBattle.cast_ops(item, a) + XXuanBattle.incoming_ops(item, a, b) + XXuanBattle.damage_ops(item, a) + XTusu.damage_ops(item, a, b) + XLiuying.damage_ops(item, a, b) + XHubris.damage_ops(item, a) + XWeakChallenge.damage_ops(a) + XFestRoad.damage_ops(a) + XFestRing.damage_ops(a)  # 冠军庆典：冠军之路「势如破竹」＋冠军戒指「一穿四」（补丁线接法，main 在分段 module_parts 末段）；狂妄 hubris：物防率 ×0.82／0.73；弱者挑战 weak-new-game 终伤 ×3
 	return {"ops": ops}
 
 

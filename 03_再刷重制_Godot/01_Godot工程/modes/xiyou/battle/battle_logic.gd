@@ -192,6 +192,8 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 		e.set_meta("y", float(m.y))
 		e.hidden = bool(m.get("hidden", false))
 		enemies.append(e)
+	XFestRing.battle_setup(self)  # 冠军戒指「一穿四」：开战清层数
+	XFestRoad.battle_setup(self)  # 冠军庆典·冠军之路：敌人固定吃本档难度倍率（普通版天灾／困难版洪荒），不看存档难度
 	XRiftAlien.setup(self, s)  # 漩涡阶段怪物异化（西游，天启篇存档不动）：二阶只有画面，三阶起稀有、首领、守层者、深渊怪按阶段表异化（自己的随机流）
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
@@ -3238,6 +3240,7 @@ func resolve_collapses() -> void:
 	for e in enemies:
 		if e.is_dead():
 			resolve_collapse(e)
+	XFestRing.on_collapses(self)  # 冠军戒指「一穿四」：新倒下的敌人给佩戴者加层
 
 
 func resolve_collapse(e: XEnemy) -> void:
@@ -3354,6 +3357,7 @@ func end_battle(result := -1) -> void:
 	_clear_event_cursor()
 	XAlienBattle.end(self, result)  # 异化 endBattle 包装：胜利补发、结算、清锁队
 	XRiftAlien.end(self)  # 漩涡阶段异化：清本场异化与画面标记
+	XFestRing.finish(self)  # 冠军戒指「一穿四」：层数清零
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段

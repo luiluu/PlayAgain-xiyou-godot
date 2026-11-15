@@ -233,6 +233,8 @@ func param(i: int) -> float:
 ## 按插件参数 DCL1～5（1／1.5／2／2.5／3）乘到 Game_Enemy 的 param（取整）、xparam、sparam 上；L6～8 与全假＝不乘。
 ## 包装次序：它比 installBossDifficultyRuntime 内层，所以先乘它再乘首领倍率（参照 enemy_warehouse.json）。
 func warehouse_rate() -> float:
+	if has_meta("fest_road"):
+		return 1.0  # 冠军庆典·冠军之路的敌人只吃本档难度倍率，不读存档的 DCultyL（XFestRoad.battle_setup 标记；co 核查 P2）
 	var s := XState.current
 	if s == null:
 		return 1.0

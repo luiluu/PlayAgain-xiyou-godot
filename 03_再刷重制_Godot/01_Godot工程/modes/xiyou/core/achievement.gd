@@ -56,6 +56,9 @@ static func _ensure() -> void:
 			_item_lists.append({"acId": int(lst.get("AcId", 0)), "items": (items if items is Array else []).map(func(v): return int(v))})
 	for id in EXTRA:
 		_defs[id] = _def(id, EXTRA[id])
+	var fest := XFestReward.achievement_defs()  # 冠军庆典成就 144～147（常驻，已拿到的永远显示）
+	for id in fest:
+		_defs[id] = _def(id, fest[id])
 	_ids = _defs.keys()
 	_ids.sort()
 

@@ -5,7 +5,7 @@ extends Node
 ## - 贺礼每个存档只领一次（庆典币、精魂、物品都只加一次，第二次对话出菜单）；
 ## - 奖杯两格挡路、全在异化圈外；报名处在冠军之路没接上时放占位对话、接上后调它的 enter；
 ## - 画面特效关掉不放彩带烟花；
-## - 文案：真名只在贺词一处、不出现选手／官方／赛事字眼、没有西游词；四支战队、四个称号、五条成就都齐。
+## - 文案：真名只在贺词一处、不出现选手／官方／赛事字眼、没有西游词；四支战队、六个称号、四条成就都齐。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const TIMEOUT_FRAMES := 3000
 
@@ -177,20 +177,20 @@ func _run() -> void:
 	var s: XState = XState.current
 	var gold0 := s.gold
 	var coins0 := XFest.coins(s)
-	var item0 := s.item_count(26) if s.has_method("item_count") else 0
+	var item0 := s.item_count(1639) if s.has_method("item_count") else 0
 	var t1 := await talk(m1, 78)
 	var j1 := join(t1)
 	check("envoy.first.congrats", j1.contains(XFest.CONGRATS), j1)
 	check("envoy.first.coins", XFest.coins(s) == coins0 + int(XFestLobby.GIFT.coins), [XFest.coins(s), coins0])
 	check("envoy.first.gold", s.gold == gold0 + int(XFestLobby.GIFT.gold), [s.gold, gold0])
 	if s.has_method("item_count"):
-		check("envoy.first.items", s.item_count(26) == item0 + 10)
+		check("envoy.first.items", s.item_count(1639) == item0 + 10)   # v0.3.1 贺礼：肝帝积分抽奖券 ×10
 	check("envoy.first.intro", j1.contains("冠军之路"))
 	check("envoy.met_flag", bool(XFest.data(s).get("envoy_met", false)) and bool(XFest.data(s).get("envoy_gift", false)))
 	await shot("fest_lobby_envoy.png")
 	var gold1 := s.gold
 	var coins1 := XFest.coins(s)
-	var t2 := await talk(m1, 78, [0, 1, 2])   # 冠军之路是什么 → 四支战队 → 再见
+	var t2 := await talk(m1, 78, [0, 1, 4])   # 冠军之路是什么 → 四支战队 → 再见（菜单：冠军之路／战队／签到／兑换／再见）
 	var j2 := join(t2)
 	check("envoy.second.no_gift", s.gold == gold1 and XFest.coins(s) == coins1)
 	check("envoy.second.menu", j2.contains("选择：" + XFestText.ENVOY_MENU_ROAD) and j2.contains(XFestText.ENVOY_ROAD_INFO_SOON[0][1].split("\n")[0]), j2)
@@ -207,7 +207,7 @@ func _run() -> void:
 	# 扩展菜单项（第 2 天的签到、兑换）
 	var hit := [false]
 	XFestLobby.EXTRA_MENU = [{"label": "今日签到", "call": func(_i): hit[0] = true}]
-	var t3 := await talk(m1, 78, [2, 3])
+	var t3 := await talk(m1, 78, [4, 5])
 	check("envoy.extra_menu", hit[0] and join(t3).contains("今日签到"), join(t3))
 	XFestLobby.EXTRA_MENU = []
 
@@ -218,7 +218,7 @@ func _run() -> void:
 	check("enroll.road_not_ready", not XFestLobby.road_ready())
 	var e1 := join(await talk(m1, 79))
 	check("enroll.soon", e1.contains("敬请期待") and e1.contains("即将开放") and not e1.contains("选择：") and not e1.contains(XFestText.ENROLL_GREET[0][1].split("\n")[0]), e1)
-	var env_soon := join(await talk(m1, 78, [0, 2]))
+	var env_soon := join(await talk(m1, 78, [0, 4]))
 	check("envoy.road_info_soon", env_soon.contains("即将开放") and not env_soon.contains("场间暂停"), env_soon)
 	# 称号表：单独上线只列已拿到的，不显示拿不到的「???」
 	var tbl_ids := func() -> Array: return XDesignation.table().map(func(d): return int(d.id))
@@ -232,7 +232,7 @@ func _run() -> void:
 	XFestLobby.ROAD_CLASS = "XFestRoadProbe"
 	check("road.ready", XFestLobby.road_ready())
 	check("titles.all_when_road_ready", XFest.TITLES.all(func(t): return tbl_ids.call().has(int(t.id))), tbl_ids.call())
-	var env_ready := join(await talk(m1, 78, [0, 2]))
+	var env_ready := join(await talk(m1, 78, [0, 4]))
 	check("envoy.road_info_ready", env_ready.contains("场间暂停") and not env_ready.contains("即将开放"), env_ready)
 	var e2 := join(await talk(m1, 79, [1, 2]))
 	check("enroll.teams", XFestText.TEAMS.all(func(t): return e2.contains(t.name)), e2)
@@ -268,8 +268,9 @@ func _run() -> void:
 	check("grace.no_layer", mg.fest_fx == null)
 	check("grace.only_envoy", ids(mg).has(78) and not ids(mg).has(79) and not ids(mg).has(80) and not ids(mg).has(81), ids(mg))
 	check("grace.bgm_untouched", str(mg.map_data.get("bgm", {}).get("name", "")) == "TCLH-60")
-	var tg := join(await talk(mg, 78))
-	check("grace.text", tg.contains(XFestText.ENVOY_GRACE_NONE[0][1].split("\n")[0]) and not tg.contains(XFest.CONGRATS), tg)
+	var tg := join(await talk(mg, 78, [1]))   # 收尾期留兑换店：兑换／再见
+	check("grace.text", tg.contains(XFestText.ENVOY_GRACE[0][1].split("\n")[0]) and tg.contains("选择：") and not tg.contains(XFest.CONGRATS), tg)
+	check("grace.menu_shop_only", XFestReward.menu(XState.current).map(func(m): return m.label) == [XFestText.SHOP_MENU], XFestReward.menu(XState.current))
 	check("grace.passability_same", passability(mg) == base_pass)
 	await close(mg)
 
@@ -329,8 +330,8 @@ func _run() -> void:
 	check("text.team_intros", XFestText.TEAMS.all(func(t): return str(t.intro).length() > 15 and str(t.intro).length() < 90))
 	check("text.enemy_name", XFestText.enemy_name(0, 0) == "网吧队·上单" and XFestText.enemy_name(3, 4) == "内战幻神队·辅助")
 	check("text.roles", XFestText.ROLES == ["上单", "打野", "中单", "下路", "辅助"])
-	check("text.titles", XFestText.TITLE_TEXTS.size() == 4 and XFest.TITLES.all(func(t): return XFestText.TITLE_TEXTS.has(int(t.id)) and XFestText.TITLE_TEXTS[int(t.id)].name == t.name))
-	check("text.achievements", XFestText.ACHIEVEMENTS.size() == 5 and XFestText.ACHIEVEMENTS.map(func(a): return a.name) == ["我在现场", "冠军之路", "一穿四", "巅峰一穿四", "全勤观众"])
+	check("text.titles", XFestText.TITLE_TEXTS.size() == XFest.TITLES.size() and XFest.TITLES.all(func(t): return XFestText.TITLE_TEXTS.has(int(t.id)) and XFestText.TITLE_TEXTS[int(t.id)].name == t.name))
+	check("text.achievements", XFestText.ACHIEVEMENTS.size() == 4 and XFestText.ACHIEVEMENTS.map(func(a): return a.name) == ["我在现场", "冠军之路", "一穿四", "全勤观众"])
 	check("text.easter", XFestText.EASTER_LINES.size() >= 6 and XFestText.BUBBLE_LINES.size() >= 4)
 	check("text.easter_events_exist", XFestText.EASTER_LINES.keys().all(func(k): return base_ids.has(int(k))), XFestText.EASTER_LINES.keys())
 

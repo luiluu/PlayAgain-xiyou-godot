@@ -1240,12 +1240,14 @@ func custom_param(e: Dictionary, i: int) -> float:
 	var key := kind + ":" + str(base)
 	if not _custom_param_cache.has(key):
 		var rec := XDB.rec("Weapons" if kind == "weapon" else "Armors", base)
-		_custom_param_cache[key] = (rec if not rec.is_empty() else e).get("customParams", {}).get("params", [])
-	var terms: Array = _custom_param_cache[key]
+		var cp: Dictionary = (rec if not rec.is_empty() else e).get("customParams", {})
+		_custom_param_cache[key] = [cp.get("params", []), float(cp.get("levelCap", 0))]
+	var terms: Array = _custom_param_cache[key][0]
 	if terms.is_empty():
 		return 0.0
+	var cap: float = _custom_param_cache[key][1]
 	var t: Dictionary = terms[i]
-	var v := float(t.k) + float(t.level) * _lv
+	var v: float = float(t.k) + float(t.level) * (minf(_lv, cap) if cap > 0.0 else float(_lv))  # levelCap：重制写的成长封顶（冠军戒指·欢庆 60 级），原版数据没有这个键
 	for vid in t.vars:
 		v += float(t.vars[vid]) * (XState.current.variable(int(vid)) if XState.current else 0.0)
 	return v

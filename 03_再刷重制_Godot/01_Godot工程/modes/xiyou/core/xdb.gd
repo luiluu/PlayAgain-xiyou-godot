@@ -121,6 +121,7 @@ static func table(name: String) -> Variant:
 				if id < _tables[name].size() and _tables[name][id] is Dictionary:
 					XGrowthHelp.describe(_tables[name][id])
 			XCanglong.patch_armors(_tables[name])  # 【上邪】专属名
+			XFestRing.patch_armors(_tables[name])  # 冠军庆典三枚冠军戒指 8010～8012（常驻，不看活动开关）
 		if name == "CommonEvents":
 			XDeadContent.patch_common_events(_tables[name])  # 死内容做活（一护招募置 1309、领域魔攻全队；O-184／O-185）
 			XCasinoBatch.fix_abyss_stage2(_tables[name])  # 深渊赌场二阶段先抽再读（新源 v0.62.10 fixAbyssStage2）
@@ -135,6 +136,8 @@ static func table(name: String) -> Variant:
 ## 取一条记录；不存在或为空时返回 {}。
 static func rec(name: String, id: int) -> Dictionary:
 	var t: Array = table(name)
+	if id >= t.size() and (name == "Enemies" or name == "Troops" or name == "Skills") and XFestRoad.has(name, id):
+		return XFestRoad.rec(name, id, t)  # 冠军庆典·冠军之路：四支五人队、四个敌群、辅助的「应援」（表外号段 9300／19300）
 	if id <= 0 or id >= t.size() or t[id] == null:
 		return {}
 	return t[id]
