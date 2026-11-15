@@ -41,11 +41,11 @@ func _init() -> void:
 	flash = ColorRect.new()
 	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	flash.color = Color(FLASH_COLOR, 0.0)
-	flash.size = Vector2(1280, 720)
+	flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(flash)
 	var host := Control.new()
 	host.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	host.size = Vector2(1280, 720)
+	host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(host)
 	win = XMVWindow.make(host, RECT, 255, _paint)
 	win.visible = false
@@ -65,6 +65,19 @@ func step() -> void:
 				count += int(r.count)
 			frames = FRAMES
 			flash_frames = FLASH_FRAMES
+			var on := XUiSkin.on()
+			win.padding = 18.0 if on else XMVWindow.PADDING
+			win.canvas.font = XUiSkin.font("body") if on else XUI.font()
+			win.canvas.clean_text = on
+			if on:
+				var vs := get_viewport().get_visible_rect().size if get_viewport() else Vector2(1280, 720)
+				var w := minf(680.0, vs.x - XSkinLayout.margin_for(vs.x) * 2.0)
+				var h := 176.0
+				win.set_rect(Rect2(roundf((vs.x - w) / 2.0), maxf(24.0, roundf(vs.y * 0.11)), w, h))
+				flash.color = Color(XUiSkin.GOLD, flash.color.a)
+			else:
+				win.set_rect(RECT)
+				flash.color = Color(FLASH_COLOR, flash.color.a)
 			win.visible = true
 			win.canvas.modulate.a = 1.0
 			win.refresh()
@@ -82,6 +95,23 @@ func step() -> void:
 
 func _paint(c: XMVCanvas) -> void:
 	var w := c.size.x
+	if XUiSkin.on():
+		var tf := XUiSkin.font("title")
+		var head := "至臻现世 · 获得 %d 件" % count
+		var tw := tf.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x
+		c.draw_string(tf, Vector2(roundf((w - tw) / 2.0), 22.0), head, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, XUiSkin.GOLD)
+		c.draw_line(Vector2(24, 34), Vector2(w - 24, 34), Color(XUiSkin.GOLD, 0.25), 1.0)
+		var lh := 34.0
+		var y0 := 40.0
+		for i in mini(2, items.size()):
+			var r: Dictionary = items[i]
+			var y := y0 + lh * i
+			c.icon(int(r.icon), 12, y + 1, 1.0, 30.0)
+			var label := str(r.name) + (" × %d" % int(r.count) if int(r.count) > 1 else "")
+			c.text(label, 52, y, w - 64, "left", XUiSkin.GOLD_LIGHT, 20, lh)
+		if items.size() > 2:
+			c.text("另有 %d 种至臻装备" % (items.size() - 2), 0, y0 + lh * 2, w, "center", XUiSkin.TEXT_2, 16, 28)
+		return
 	var lh := XUI.LINE_HEIGHT
 	c.text("至臻现世 · 获得 %d 件" % count, 0, 0, w, "center", Color(TITLE_COLOR))
 	for i in mini(2, items.size()):
