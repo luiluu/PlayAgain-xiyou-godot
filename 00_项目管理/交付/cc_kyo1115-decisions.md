@@ -9,7 +9,7 @@
 
 - **D3 选 B（贝吉特）**：`vegeta_tune.gd` 开关开着（`XVegetaTune.ENABLED`，默认）时，读表把状态 2565「终伤、爆伤188%」原样复制成新状态 **2803**（`ST_FUSION`；XGojo 2792～2800、五条悟试炼 2801～2802 之后的空号，各在途分支都没占），「合体赛亚人」9940 的 `<StartPushState2565>`（备注和 meta 同改，meta 键位置不变）改挂 2803；「普通一拳」9933 照旧挂 2565。乙档（`fusion≥0`）只改 2803，不再连带 9933。甲档 2803 与 2565 除号外一字不差，结算逐值相同。
 - **存档迁移**：2565／2803 都是 `removeAtBattleEnd＝false`，会留在角色身上进存档。`battle_setup`（每场开局）里：开着时，身上留着旧 2565、开战标签只给 2803 不给 2565 的（只会 9940、不会 9933）去掉 2565，免得叠两份；关掉回原版时，身上的 2803 直接抹掉（表里已没有 2803，不走 `remove_state` 的移除效果），9940 开战照旧挂 2565。
-- **D8 选 A（漩涡怪物异化）**：`rift_alien.json` 新增几率表 `stages_aligned`（旧表 `stages` 留着），`rift_alien.gd` 新开关 `XRiftAlien.ALIGN_LOBBY`（默认开）：二阶就出侵染、三阶蚀骨、四阶化形＝旧表三～五阶整体前移一档；五阶（大厅稿的终焉）怪物端没有终焉，先按「化形且几率最高」——几率同旧五阶（稀有 20、非常稀有 50、守层者 100、深渊 100），各类一律化形、不再升级。难度修正照旧作用在新表上。关掉回旧表（三阶起）。现在 `XRift.stage()` 只要 `STAGE2` 开着就**恒为 2**（不看进度），所以变化落在二阶、而且是**西游每一场**：守层者 33% 侵染／蚀骨（按层）、稀有 11%、非常稀有 22% 开始出异化怪；发行构建仍要 `RELEASE_OPEN` 才开（默认关，玩家版不受影响），Kyo 本地版会见到。无画面（headless 测试）默认仍走旧表（`XRiftAlien.IN_HEADLESS`，同 `XBattleTransition` 先例），否则按原版对照的战斗测试会被二阶异化冲掉（`xiyou_combat` 的守层者就被选中过）；本功能的专项设 `IN_HEADLESS` 测对齐表。
+- **D8 选 A（漩涡怪物异化）**：`rift_alien.json` 新增几率表 `stages_aligned`（旧表 `stages` 留着），`rift_alien.gd` 新开关 `XRiftAlien.ALIGN_LOBBY`（默认开）：二阶就出侵染、三阶蚀骨、四阶化形＝旧表三～五阶整体前移一档；五阶（大厅稿的终焉）怪物端没有终焉，先按「化形且几率最高」——几率同旧五阶（稀有 20、非常稀有 50、守层者 100、深渊 100），各类一律化形、不再升级。难度修正照旧作用在新表上。关掉回旧表（三阶起）。现在 `XRift.stage()` 只要 `STAGE2` 开着就**恒为 2**（不看进度），所以变化落在二阶、而且是**西游每一场**：守层者 33% 侵染／蚀骨（按层）、稀有 11%、非常稀有 22% 开始出异化怪；发行构建仍要 `RELEASE_OPEN` 才开（默认关，玩家版不受影响），Kyo 本地版会见到。测试与玩家走同一条路（返修后去掉了按 headless 切换）：按原版对照的测试 `xiyou_event_compare`、`xiyou_combat`、`xiyou_smart_ai`、`xiyou_troop_events` 自己显式关 `ALIGN_LOBBY`（不关会被二阶异化冲掉，云端实测 smart_ai、troop_events 20 段数值 ×1.5）。
 - 撞号小坑：`xiyou_state_effects` 关掉开关后在表尾临时追加状态，号正好是 2803，迁移曾把它当遗留抹掉；改成关掉时只抹「表里查不到记录」的 2803。
 - 私密设计仓（`xiyou-design-docs/重制设定/`，已推送 `4a259f7`）新增版本：《漩涡五阶段怪物异化设计稿 v0.3》（D8 新几率表、五阶终焉待补、第 11 节结论栏按 D4～D8 填上）、《四线异化与异化装备重构 v0.10》（D4：第 3 节带 4 的档位改成天启篇实装值，丧钟 6／5／3／2 等；D5 第 2.1 节注「西游漩涡另有递增表」；新增第 6 节写 D4～D7 对西游漩涡的定法）。旧版不覆盖。
 - 验证：语法检查 0 个问题；专项 `xiyou_vegeta_tune` 30／30、`xiyou_rift_alien` 93／93；其余见下「验证」。
@@ -20,7 +20,7 @@
 
 | 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| O-待定 | `modes/xiyou/core/rift_alien.gd` `XRiftAlien.ALIGN_LOBBY`、`IN_HEADLESS`、`aligned()`、`first_alien_stage()`、`_stage_table()`；`modes/xiyou/rift_alien.json` `stages_aligned`；`tests/xiyou_rift_alien.gd` | 原版没有漩涡阶段；O-356 实现里漩涡二阶只有画面、三阶起才出异化怪 | 怪物异化阶段对齐大厅稿：二阶侵染、三阶蚀骨、四阶化形（旧表三～五阶前移一档），五阶暂按化形且几率最高 | Kyo 2026-11-15 拍板 D8 选 A（大厅稿第 0 节、漩涡五阶段稿 v0.2 第 11 节第 12 条） | `XRiftAlien.ALIGN_LOBBY = false`（回旧表 `stages`，`tests/xiyou_rift_alien.gd` 旧 71 项在关掉下照跑） | cc | 保留 |
+| O-待定 | `modes/xiyou/core/rift_alien.gd` `XRiftAlien.ALIGN_LOBBY`、`aligned()`、`first_alien_stage()`、`_stage_table()`；`modes/xiyou/rift_alien.json` `stages_aligned`；`tests/xiyou_rift_alien.gd` | 原版没有漩涡阶段；O-356 实现里漩涡二阶只有画面、三阶起才出异化怪 | 怪物异化阶段对齐大厅稿：二阶侵染、三阶蚀骨、四阶化形（旧表三～五阶前移一档），五阶暂按化形且几率最高 | Kyo 2026-11-15 拍板 D8 选 A（大厅稿第 0 节、漩涡五阶段稿 v0.2 第 11 节第 12 条） | `XRiftAlien.ALIGN_LOBBY = false`（回旧表 `stages`，`tests/xiyou_rift_alien.gd` 旧 71 项在关掉下照跑） | cc | 保留 |
 
 ## 交接板
 
@@ -34,7 +34,7 @@
 
 ## 可优化（流程／工具／效率）
 
-- 无。
+- 建议：`XRift.stage()` 只看 `STAGE2` 开关、恒为 2，没按玩家进度（比如看过 rift2 过场）接线，是 O-312 的旧问题，不在本单修。它让「二阶」等于「全部西游战斗」，大厅异化（`XLobbyCorruption`）和本单的怪物异化都受影响；建议另开一条把阶段接到进度上（归 C 规则／机制或大厅那条车道，要先问 Kyo 二阶从什么时候算）。
 
 ## 验证
 
@@ -42,17 +42,5 @@
 - 专项：`xiyou_vegeta_tune` 30／30（新加：甲档 9940 挂 2803、9933 挂 2565，2803 与 2565 除号外一字不差，9940 挂的状态结算终伤／暴击与原版逐值相同（`jia_fusion_zero_change`），开战标签真读 `battle_start_state_tags`；乙档只改 2803、2565 和 9933 原样；存档迁移三种情况）、`xiyou_rift_alien` 94／94（旧 71 项在 `ALIGN_LOBBY` 关掉下照跑；新加 23 项：headless 默认不对齐、`IN_HEADLESS` 才对齐，新表二～四阶与旧表三～五阶逐类逐层逐难度相同、五阶一律化形且几率不低于四阶、二阶判定、二阶开战选中时规则随机流逐条相同、关掉回旧表）。
 - 选测（`选测.py main --list` 给的 9 个＋自加 8 个，本机）：通过 `xiyou_vegeta_tune`、`xiyou_rift_alien`、`xiyou_state_effects`（32816／32816）、`xiyou_combat`、`xiyou_help_card`、`xiyou_rift2_canglong`、`xiyou_vegetto_form`、`xiyou_state_effects_tp`、`xiyou_state_remove`、`xiyou_determinism`、`xiyou_tianqi_skills`、`xiyou_actor_p0`、`xiyou_battle_state_batch`（后两个第一轮因负载超时、第二轮通过）。第一轮挂过 `xiyou_state_effects`（2803 撞号）和 `xiyou_combat`（二阶守层者被异化），都已修（`56d39697f`）并重跑通过。
 - **没跑通**：`xiyou_event_compare`、`_b`、`_c`、`_d` 两轮都在 600 秒上限被掐（rc=142），日志除引擎抬头外没有任何输出，不是断言失败；当时本机负载 55～124（几条车道同时在跑）。这四段是事件对照，本单改动在 headless 下不改漩涡异化行为、贝吉特只动技能／状态表，预计不受影响，但没有证据，请总装合并时 `--affected --cloud` 跑这四段。
-- 工具快速回归 `工具回归.py`：全部通过。
-- 建议总装：合并用 `--affected --cloud`。**加 `--oracle`**：9940／9933 是原版技能，甲档要零改动的对照证据；本单专项里甲档与「`original_data()` 关掉开关读原版数据」逐值比过（同一 Godot 结算），但没跑 mv_oracle 原版对照，`--oracle` 会让 `xiyou_rules*` 等按原版数据比一遍贝吉特在场的战斗。
-
-## 待交叉核查
-
-- `modes/xiyou/core/vegeta_tune.gd`（`_copy_fusion`、`_repoint`、`_migrate_fusion`、`_drop_unknown`）：战斗相关，甲档。
-- `modes/xiyou/core/rift_alien.gd`、`modes/xiyou/rift_alien.json`：几率表与阶段门槛，甲档。
-- 与 `cc/review-p3-fixes` 的关系：那条分支在 `vegeta_tune.gd` `patch_states` 里加了一段「切乙档会连带 9933」的注释，和本单不冲突（本单没改那几行），但合并后那段注释就过时了，总装合并两条后请删掉那三行注释（或交给 co 核时一并改）。
-
-## 本分支提交
-
-- 83b4b79dc 代码与测试（D3 合体赛亚人拆开＋存档迁移；D8 阶段对齐大厅稿）
-- 56d39697f 迁移只抹表里查不到的 2803；对齐表在 headless 默认不开（`IN_HEADLESS`）
-- 4930203a1 等：交付单
+- **返修后（94cf4ad2e）**：云端选测 190 个场景全过（运行 43664182479；`xiyou_rules*`、`xiyou_smart_ai*` 按规矩每 4 段抽 1 段）。`xiyou_event_compare_b`／`_c`／`_d` 云端各 6／6（有断言输出，运行 43662814988 那轮），`xiyou_event_compare` 第一段云端没抽到、本机重跑 14／14。专项 `xiyou_vegeta_tune` 41／41、`xiyou_rift_alien` 99／99、`xiyou_combat` 36／36。上面「没跑通」那条已由这几轮补上。
+- 合并要求（协调定）：`--affected --cloud --oracle`，点名 `xiyou_event_compare`／`_b`／`_c`／`_d` 跑出断言。另外，没抽到的 `xiyou_rules*` 段如果有西游守层者／稀有的战斗、又没关 `ALIGN_LOBBY`，可能和 smart_ai 一样被二阶异化冲掉，抽到的那几段都过了；最好跑一次全量确认，挂了就照 smart_ai 的写法在那个测试里显式关。
