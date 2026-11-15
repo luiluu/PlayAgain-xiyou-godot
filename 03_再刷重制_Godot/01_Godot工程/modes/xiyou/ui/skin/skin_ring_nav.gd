@@ -24,6 +24,10 @@ var _label_size := 0
 var label_size: int:   # 收口批：没设过时跟 XUiSkin.FS_LIST 现取
 	get: return _label_size if _label_size > 0 else XUiSkin.FS_LIST
 	set(v): _label_size = v
+## >0 时项名写在环内侧、离环心这么远（装备页 13 栏一页用）；0＝照旧写在球的上方／下方
+var label_inner := 0.0
+## 选中项名字加大几号（装备页 13 栏一页时 1，免得挤）
+var label_sel_boost := 3
 ## 光弧现在的角度（度，0＝正右、顺时针为正）
 var arc_deg := -90.0
 var _arc_from := -90.0
@@ -84,9 +88,14 @@ func art_rect(i: int) -> Rect2:
 	return Rect2((item_pos(i) - ts / 2.0).round(), ts)
 
 
+## 上次画的环高亮外圈在哪（测试看；没画是空矩形）
+var halo_rect := Rect2()
+
+
 func _draw_art() -> void:
 	RenderingServer.canvas_item_clear(_art_ci)
 	art_drawn.clear()
+	halo_rect = Rect2()
 	for i in items.size():
 		if has_art(i):
 			var tex: Texture2D = items[i].get("art_selected" if i == index else "art_normal")
@@ -98,6 +107,11 @@ func _draw_art() -> void:
 				RenderingServer.canvas_item_add_circle(_art_ci, item_pos(i), r.size.x * 0.47, XUiSkin.U4_SEL_DISC, true)
 			RenderingServer.canvas_item_add_texture_rect(_art_ci, r, tex.get_rid())
 			art_drawn.append({"i": i, "tex": tex, "rect": r})
+			if i == index and XSkinArt.HALO and XUiSkin.on():   # 第一期正式美术：当前组图标加像素外圈（中心对齐）
+				var ht := XSkinArt.halo_texture(r.size.x)
+				if ht != null:
+					halo_rect = XSkinArt.halo_rect(item_pos(i), r.size.x)
+					RenderingServer.canvas_item_add_texture_rect(_art_ci, halo_rect, ht.get_rid())
 
 
 func set_items(arr: Array, keep := false) -> void:
@@ -275,7 +289,7 @@ func _draw() -> void:
 			var s := 40.0 * (1.16 if on else 1.0)
 			draw_texture_rect(tex, Rect2(p - Vector2(s, s) / 2.0, Vector2(s, s)), false)
 		var name := str(items[i].get("name", ""))
-		var fs := label_size + (3 if on else 0)
+		var fs := label_size + (label_sel_boost if on else 0)
 		var tw := body.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		if XUiSkin.FONT_V2:   # 收口批（小A核 P2-3）：字号放大后标签不越出环的左右边（先缩到 15，再加「…」）
 			var fit := XSkinList.fit_text(body, name, label_room(p), fs, XUiSkin.FS_MIN)
@@ -284,5 +298,10 @@ func _draw() -> void:
 			tw = body.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var above := sin(deg_to_rad(item_deg(i))) < -0.2
 		var ly := p.y - r - 10.0 if above else p.y + r + 10.0 + fs * 0.86
-		draw_string_outline(body, Vector2(p.x - tw / 2.0, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.6))
-		draw_string(body, Vector2(p.x - tw / 2.0, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE if on else XUiSkin.TEXT_2)
+		var lx := p.x - tw / 2.0
+		if label_inner > 0.0:   # 名字写在环内侧（装备 13 栏一页：球挨得近，上下写会压到邻球）
+			var lp := center() + Vector2.from_angle(deg_to_rad(item_deg(i))) * label_inner
+			lx = lp.x - tw / 2.0
+			ly = lp.y + fs * 0.36
+		draw_string_outline(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.6))
+		draw_string(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE if on else XUiSkin.TEXT_2)

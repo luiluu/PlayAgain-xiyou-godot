@@ -1,0 +1,89 @@
+{
+  "1280x720": {
+    "central_low_detail_rect": [
+      320,
+      180,
+      640,
+      420
+    ],
+    "side_art_anchors": [
+      [
+        0,
+        0,
+        320,
+        720
+      ],
+      [
+        960,
+        0,
+        320,
+        720
+      ]
+    ],
+    "eclipse_anchor": [
+      480,
+      0,
+      320,
+      140
+    ],
+    "text_policy": "Outside low-detail rect always use reading smoke (peak alpha245), text >=16px from fade edges; reflow UI for 4:3, do not crop 16:9 UI."
+  },
+  "1600x720": {
+    "central_low_detail_rect": [
+      320,
+      180,
+      960,
+      420
+    ],
+    "side_art_anchors": [
+      [
+        0,
+        0,
+        320,
+        720
+      ],
+      [
+        1280,
+        0,
+        320,
+        720
+      ]
+    ],
+    "eclipse_anchor": [
+      640,
+      0,
+      320,
+      140
+    ],
+    "text_policy": "Outside low-detail rect always use reading smoke (peak alpha245), text >=16px from fade edges; reflow UI for 4:3, do not crop 16:9 UI."
+  },
+  "960x720": {
+    "central_low_detail_rect": [
+      320,
+      180,
+      320,
+      420
+    ],
+    "side_art_anchors": [
+      [
+        0,
+        0,
+        320,
+        720
+      ],
+      [
+        640,
+        0,
+        320,
+        720
+      ]
+    ],
+    "eclipse_anchor": [
+      320,
+      0,
+      320,
+      140
+    ],
+    "text_policy": "Outside low-detail rect always use reading smoke (peak alpha245), text >=16px from fade edges; reflow UI for 4:3, do not crop 16:9 UI."
+  }
+}

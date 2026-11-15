@@ -94,7 +94,9 @@ func _draw() -> void:
 	for i in groups.size():
 		var r := tab_rect(i)
 		var on := i == index
-		if on:
+		if on and XSkinArt.select_on():   # 第一期正式美术（D51）：tab_selected_assembly 几何（渐隐红底＋左外小箭头）
+			XSkinArt.draw_tab(ci, r)
+		elif on:
 			var sb := StyleBoxFlat.new()
 			sb.bg_color = Color(XUiSkin.SEL_FILL, 0.22)
 			sb.set_corner_radius_all(XUiSkin.ROW_RADIUS)

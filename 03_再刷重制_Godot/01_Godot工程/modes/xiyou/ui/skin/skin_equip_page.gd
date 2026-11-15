@@ -4,7 +4,7 @@ extends XSkinTemplatePage
 ## 只管「怎么摆、怎么画」：换装、清空、检索筛选、候选缓存（O-374）、HP/MP 按比例保留、看过新装备这些全部还是 XEquipScene 原来的代码
 ## （同一套 _mode／_slot／_item_index），这一页每次 _refresh 后 sync() 按状态重画，按键和点击翻译成同样的状态变化。
 ## - 左：上面一条角色条（头像、名字、Lv · 职业、血蓝 TP、状态图标）；下面栏位环（天启篇 13 栏，一圈放不下就分两页：
-##   7＋6，环下写「身上 n 件 · 栏位第 a / b 页」），球里是身上那件的图标，空的写「空」，不能换的栏变暗；环心是角色圆头像。
+##   7＋6，环下写「身上 n 件 · 栏位第 a / b 页」；ONE_PAGE 开着时 13 栏一圈、不翻页），球里是身上那件的图标，空的写「空」，不能换的栏变暗；环心是角色圆头像。
 ## - 中：当前栏位的候选（旧金小标题＝栏位名，右边「可选 n 件」）；第一行「卸下」，其余每行 图标、名字（品质色）、主属性「+35」、
 ##   和身上那件比「▲23／▼2」（同一项能力值相减，只是显示）；一屏 10 行、行高 46，多了底下写「第 a / b 页」。
 ##   栏位环有焦点时列表只显示（没有选中条），确定后焦点进列表。
@@ -27,8 +27,16 @@ var _strip_key := []
 var _preview_key := []
 var _preview: XActor = null
 var expanded := false
-## 栏位环一圈最多几颗（样稿 10 颗；天启篇 13 栏分两页 7＋6）
+## 栏位环一圈最多几颗（样稿 10 颗；天启篇 13 栏分两页 7＋6）——ONE_PAGE 关掉时才用
 const RING_MAX := 10
+## 13 栏一页（O-待定，Kyo 11-15「除了这个装备，我要所有栏位都在一页」）：栏位全部排在一圈上、不翻页、环下不再写「栏位第 a / b 页」。
+## 一圈 13 颗：环半径 140、球半径 22（触屏点按半径 26，相邻两球中心隔 68，不会点串）；栏位名写在环内侧（球挨得近，写在球上下会压到邻球），
+## 环心头像跟着缩到半径 78。上下左右／Q E 照旧：上、左＝逆时针一格，下、右＝顺时针一格（就是显示顺序），Q／E 换人。
+## 4:3 屏：视口照 O-483 锁 1280×720 上下留边，左块宽度不变，和 16:9 同一个摆法。false＝回 7＋6 分两页。
+static var ONE_PAGE := true
+const ONE_PAGE_RING_R := 140.0
+const ONE_PAGE_ORB_R := 22.0
+const ONE_PAGE_LABEL_R := 98.0
 const STRIP_H := 72.0
 const CAPTION_H := 28.0
 const COUNT_W := 96.0
@@ -43,8 +51,8 @@ func _init(s: XEquipScene) -> void:
 	row_height = XUiSkin.ROW_H
 	left_w = 384.0
 	right_w = 476.0
-	ring_radius = 132.0
-	orb_radius = 26.0
+	ring_radius = ONE_PAGE_RING_R if ONE_PAGE else 132.0
+	orb_radius = ONE_PAGE_ORB_R if ONE_PAGE else 26.0
 	auto_nav = false
 	currencies = []
 	hint_list = slot_hints()
@@ -61,6 +69,9 @@ func _ready() -> void:
 	ring_top.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ring_top.draw.connect(_draw_ring_extra)
 	ring.add_child(ring_top)
+	if ONE_PAGE:
+		ring.label_inner = ONE_PAGE_LABEL_R
+		ring.label_sel_boost = 1
 	ring.changed.connect(_on_ring_changed)
 	ring.activated.connect(_equip_ring_activated)
 	list.right2_w = 58.0
@@ -157,6 +168,8 @@ func sync() -> void:
 
 ## 栏位分页：一圈放不下时平均分（13 → 7＋6）
 static func ring_pages(n: int) -> Array:
+	if ONE_PAGE:
+		return [1, maxi(n, 1)]
 	var pages := maxi(1, ceili(n / float(RING_MAX)))
 	var per := ceili(n / float(pages))
 	return [pages, per]
@@ -369,7 +382,7 @@ func _draw_ring_extra() -> void:
 	var a := scene.actor()
 	var face := XUiSkin.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0)))
 	if face != null:
-		var r := ring_radius - 62.0
+		var r := ring_radius - (68.0 if ONE_PAGE else 62.0)   # 一页 13 栏：头像 72，给环内侧的栏位名让出位置
 		ring_top.draw_circle(c, r + 2.0, XUiSkin.ORB_LOW)
 		XSkinPartyStrip.draw_round_texture(ring_top, face, c, r)
 		ring_top.draw_circle(c, r + 1.0, Color(XUiSkin.LINE, 0.55), false, 1.5, true)

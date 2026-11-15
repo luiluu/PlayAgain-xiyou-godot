@@ -441,6 +441,8 @@ static func theme() -> Theme:
 
 ## 面板（新组件的 StyleBox；MV 窗口框改画时也用它）
 static func panel_style() -> StyleBox:
+	if XSkinArt.panel_on():   # 第一期正式美术（D50）：R2 无框烟色九宫格
+		return XSkinArt.smoke_style()
 	if not _styles.has("panel"):
 		var s := StyleBoxTexture.new()
 		s.texture = panel_texture()
@@ -458,6 +460,10 @@ static func panel_style() -> StyleBox:
 
 ## 面板的投影（0 8 22 rgba(0,0,0,.5)）
 static func shadow_style() -> StyleBox:
+	if XSkinArt.panel_on():   # 烟底自己渐隐，不再垫投影
+		if not _styles.has("shadow_none"):
+			_styles["shadow_none"] = StyleBoxEmpty.new()
+		return _styles["shadow_none"]
 	if not _styles.has("shadow"):
 		var s := StyleBoxFlat.new()
 		s.bg_color = Color(0, 0, 0, 0)
@@ -558,6 +564,9 @@ static func draw_panel(ci: RID, rect: Rect2, opacity := 1.0) -> void:
 	var a := clampf(opacity / (30.0 / 255.0), 0.0, 1.0)
 	if a <= 0.0 or rect.size.x <= 0.0 or rect.size.y <= 0.0:
 		return
+	if XSkinArt.panel_on():   # 第一期正式美术（D50）：烟色九宫格，矮的用 secondary
+		XSkinArt.draw_smoke(ci, rect, a)
+		return
 	var r := minf(RADIUS, minf(rect.size.x, rect.size.y) / 2.0)
 	if r >= RADIUS:
 		shadow_style().draw(ci, rect)
@@ -578,6 +587,9 @@ static func draw_panel(ci: RID, rect: Rect2, opacity := 1.0) -> void:
 ## SELECT_V2 = false：v0.7 打磨版（绯红底光从左 40% 渐到 68% 处 8%、再到右端透明；朱红 1px 描边 45%＋外晕；左侧 4px 光标，上下各缩 5），state 不区分。
 static func draw_select(ci: RID, rect: Rect2, bar_alpha := 1.0, alpha := 1.0, state := SelState.FOCUS) -> void:
 	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return
+	if XSkinArt.select_on():   # 第一期正式美术（D51）：渐隐暗红底＋左外小箭头
+		XSkinArt.draw_select(ci, rect, alpha, state)
 		return
 	if SELECT_V2:
 		_draw_select_v2(ci, rect, bar_alpha, alpha, state)
@@ -719,6 +731,10 @@ static func menu_backdrop(parent: Control) -> Control:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	parent.add_child(root)
+	if XSkinArt.BG and XSkinArt.bg_texture(XSkinArt.route(), Vector2(1280, 720)) != null:   # 第一期正式美术：按骑士线、按比例的背景图
+		XSkinArt.add_backdrop(root)
+		_add_embers(parent, root)
+		return root
 	var base := ColorRect.new()
 	base.color = BG
 	base.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -751,6 +767,11 @@ static func menu_backdrop(parent: Control) -> Control:
 	gl.offset_top = -130
 	gl.offset_bottom = 70
 	root.add_child(gl)
+	_add_embers(parent, root)
+	return root
+
+
+static func _add_embers(parent: Control, root: Control) -> void:
 	var n: int = [10, 4, 0][motion()]
 	if n > 0:
 		var vs := parent.get_viewport_rect().size if parent.is_inside_tree() else Vector2(1280, 720)
@@ -778,7 +799,6 @@ static func menu_backdrop(parent: Control) -> Control:
 		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 		p.material = mat
 		root.add_child(p)
-	return root
 
 
 static func _full_tex(t: Texture2D) -> TextureRect:
