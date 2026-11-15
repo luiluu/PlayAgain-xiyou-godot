@@ -88,3 +88,48 @@
 
 - 90fd3d24f WIP：新界面 1A 主菜单（XSkinMainMenu）、组子项说明与旧指令对照、异化隐藏规则、组件图标缓存修白块、专项测试
 - （其余见 git log）
+
+## 小A 乙档核查
+
+- 核查对象：`cc/ui-skin-1a`（交付提交 `6c8a98368`），执行者：小A（ag，只读核查＋轻量前台验证，未改游戏代码）。
+- **结论：不通过**（第 1～5 项功能与规则核查全部通过，无 P1；第 6 项文字审发现 **1 处必改**——单项组折叠行右边重复显示组名「物品　物品」「装备　装备」，需先修再合；另有 3 条 P3 与 2 条文案建议不阻塞）。
+
+### 核查项与核实深度
+
+1. **XMenu 分流、旧菜单行为与 10 张对照口径（读代码＋跑无头专项与既有图比对；未重拍有窗截图）**：
+   - `modes/xiyou/ui/menu.gd` 仅在 `XUiSkin.on()` 时建 `XSkinMainMenu` 并把 `_refresh`／`_gui_input`／`_unhandled_input` 转交它，旧三窗体不建；`XUiSkin.on()` 为假时 `skin == null`，走回原代码。从 `_ok()` 抽出的 `run_command(sym)`、`open_actor_page(sym, idx)` 逐分支对照 `main`（`c4e5a375a`），17 个指令与选人跳转、音效、可用性规则均与旧菜单一致；`_show_game_end()` 仅在 `skin != null` 时额外恢复 `SkinBackdrop` 显示。
+   - `07_开发环境/皮肤关闭对照.py` 改用 `Path(a.out).resolve()` 修正相对路径写偏问题，基线取 `main` 与本分支各跑 `xiyou_ui_skin_offshot.tscn`（10 张：`XMenu`、`XStatusPage`、`XItemScene`、`XEquipScene`、`XOptionsScene` × 西游默认／天启 `ENABLED=false`）逐像素比对。前台实跑 `xiyou_ui_skin_menu.tscn`（51/51）、`xiyou_ui_skin_offshot.tscn`（10/10）及对既有 `ui_skin_1a/关闭对照/{base,branch}` 跑 `--compare`（10/10 SAME）均通过；`语法检查.py` 897 个 `.gd` 0 个问题。
+2. **GROUPS、异化隐藏规则 `alien`、单项组直接进（核了规则本身＋读代码＋跑无头专项）**：
+   - 对照 `XMenu.commands()`、`XAlienHide.active()`（→ `XAlienBattle.hidden()`：`HIDDEN_V058 or (RELEASE_HIDE and ReleaseEntry.is_release())`）及 `XTianqiPetHide.active(s)`，`XUiSkin.GROUPS` 在天启篇默认隐藏 `pets` 组，呈 6 组（物品｜装备｜角色(状态、技能、真气、种族祝福、整队)｜工坊｜图鉴｜系统）；`hide: "alien"` 调用 `XAlienBattle.hidden()`，发行隐藏异化生效时工坊组仅剩「制作」「宝珠坊」，与旧菜单口径完全一致。
+   - `XSkinMainMenu._layout_rows()` 对 `n <= 1` 的当前组直接排 `"item"` 行而不展开 `"header"`，确定即调 `run_command` 直接进（`物品` 直接进 `XItemScene`、`装备` 直接转 `actor` 选人再进 `XEquipScene`）。`xiyou_ui_skin_menu.tscn` 专项通过。
+3. **本局条与七印数据来源（核了规则本身＋读代码＋跑无头专项）**：
+   - `run_text(s)` 层数取 `maxi(1, int(s.variable(20)))`（对应全库 `FLOOR_VAR = 20` 当前要打的层）、难度取 `XTianqi.difficulty_of(s).name`、线取 `XTianqi.line_info(XTianqi.line_of(s)).name + "线"`，西游档仅显示层数。
+   - `seal_states(s)` 与 `currencies(s)` 以 `XTianqiQiyin.allowed(s)` 门控（天启篇＋发行门＋已选线），七印首通按 `XTianqiQiyin.seal_keys()` 序读 `XTianqiQiyin.progress(s).drop.get("first_clear", {})` 统计 `N / 7`（`2`＝首通、`1`＝`unlocked(s, k)` 已揭开、`0`＝未揭开），印屑名读 `qiyin_altar.json` `shards_name`、数量读 `XTianqiQiyin.shards(s)`，口径全部准确。
+4. **`tianqi_e2e` 与 `virtual_player` 适配（只看了代码 diff）**：
+   - `tests/xiyou_tianqi_e2e.gd` 仅在 `_menu_cmd` 增加 `if menu.skin != null:` 分支按键走到 `cmd == sym` 再回车；`tests/virtual_player/virtual_player.gd` 仅在 `_signature` 把游标签名兼容为 `skin.gi * 100 + skin.ii`、在 `_act_equip` 增加 `menu.skin != null` 时左右换组到 `"equip"` 再确定（仍经 `"actor"` 选人与 `XEquipScene`）。两边均未放松任何断言。
+5. **图标白块修复与缓存边界（核了机制本身＋读代码＋跑无头专项）**：
+   - 机制成立：`XUI.icon_texture` 对常规 `IconSet_1..4`（以及 `XUI.face_texture`）每次新建 `AtlasTexture`，在新组件 `_draw()` 里作为局部变量用完即释放，底层贴图失去 GDScript 引用后被卸载，导致绘制时变白块（与旧画布 `XMVCanvas._keep` 同理）。
+   - `XUiSkin._icon_cache` 键空间为静态有限的图标号 `index: int` 与 `"face:%s#%d"`，上限受静态表与图集总量约束（4 张 IconSet＋角色头像），不会随运行时间或帧数无限增长；`skin/*.gd` 已全部改走 `XUiSkin.icon()`／`face()`。`xiyou_ui_skin.tscn` 88/88 通过。
+6. **文字审（核了 `ba1f7ed`《文字审_小A.md》与 `v0.7 README.md`＋源码全量核对）**：
+   - `ba1f7ed` 必改与建议项已按要求落实：货币用「精魂」（非「精魄」）、天启篇「宠物」已整组隐藏、宝珠坊用「鉴定、兑换、分解宝珠」、按键提示统一 `XSkinKeyHints` 胶囊框（「[确定] 进入」「[取消] 回地图」「[Q / E] 换组」「[取消] 返回」），以及「查看与使用技能」「闭关突破」「用材料做物品和装备」「分解异化装备、重铸词条」已照改。
+   - **必改项（1 处）**：`skin_main_menu.gd:480` `"group"` 行在未选中折叠态把 `group_items(g)` 的 `name` 拼在右边，导致只有 1 项且子项与组同名的「物品」「装备」（及后续「宠物」）在折叠态左右重复显示「物品　物品」「装备　装备」（即协调在截图中看到的问题）。**改法**：当 `group_items(g).size() == 1` 时，折叠行右侧改为显示该项的 `desc`（不再显示 `it.name`）：
+     - `物品` 折叠行右侧：`使用和查看随身物品`
+     - `装备` 折叠行右侧：`给角色换装备`（或顺手统一下文建议改为 `更换角色装备`）
+     - `宠物`（后续放开时）折叠行右侧：`查看和培养宠物`
+   - **协调／交付单所问两项定夺建议（非阻塞必改）**：
+     - **「游戏结束」叫法**：旧菜单 `XMenu.COMMANDS` 与 `v0.7` 样稿原表均写「游戏结束」，但该入口实为打开「回到标题／取消」确认窗（不退出程序），且与全灭画面 `XGameOverScreen`（游戏结束）重名、易被误解为关闭游戏；按新界面去歧义口径，**建议改叫 `返回标题`**（右侧说明可写 `回到标题画面` 或 `退回标题，注意先存档`），各测试均按 `cmd == "gameEnd"` 定位、改显示名零风险。若协调／Kyo 定照旧版沿用「游戏结束」，有右侧说明「回到标题画面」兜底亦可接受。
+     - **「设置」说明要不要写全挂机、通知等**：**不写全**。主菜单说明栏为 15px 单行概览（同「状态」只列三词「属性、抗性、掌握」），可保持 `画面、声音与操作`，或补上常用的「挂机」微调为 `画面、声音、挂机与操作`（非必改）。
+
+### 问题清单（P1/P2/P3）
+
+- **P1**：无。
+- **P2（文字／显示必改 1 条）**：`skin_main_menu.gd:480` 单项组折叠行（`物品`、`装备`、未来 `宠物`）右侧重复画了 `it.name`，需改为画 `desc`（改好文字见上「文字审」必改项）。
+- **P3-1（选人态左环未拦）**：`skin_main_menu.gd:65-66,356-360` 进入 `host._mode == "actor"` 选人时，`_pane_input` 已拦非 `"command"` 态，但 `ring.changed`（`_on_ring_changed`）与 `ring.activated` 未判 `host._mode == "command"`，鼠标点左环会切组而停留在选人态。建议入口加 `if host == null or host._mode != "command": return`。
+- **P3-2（`symbol_enabled` 小差）**：`menu.gd:77-83` `symbol_enabled(sym)` 遍历 `COMMANDS` 而非 `commands()`，对隐藏的 `"pet"`／`"alienation"` 会返回 `true`（新菜单已被 `visible_groups` 滤掉，实际不可达）。
+- **P3-3（交付单文字表小遗漏）**：`cc_ui-skin-1a.md`「新增可见文字」表未单列 7 个组名、19 个子项名（沿用自第 0 期／`v0.7`）与队伍条 `Lv %d · 职业名`，文字本身均已核过无问题。
+
+### 没核到的（留给总装 `--affected --cloud`）
+
+- 有窗模式重新跑 `python3 03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py --base main` 与 `xiyou_ui_skin_menu.tscn -- --out=...` 截图（本次仅对已有对照图跑了 `--compare`）；
+- 长测试：`xiyou_tianqi_e2e`、`xiyou_virtual_player`、事件对照四段 `xiyou_event_compare*`、完整 `工具回归.py` 与 `选测.py` 全集。
+
