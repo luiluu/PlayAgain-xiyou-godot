@@ -1,5 +1,5 @@
 extends Node
-## 【cc·未经审查】替换后的普攻按技能动作演出（O-待定，XBattler.REPLACED_ATTACK_OWN_MOTION）。
+## 【cc·未经审查】替换后的普攻按技能动作演出（O-478，XBattler.REPLACED_ATTACK_OWN_MOTION）。
 ## 原版 isAttack 规则：<Replace Attack: x> 换来的技能仍走 performAttack（挥武器、武器图）、不放施放动画（castAnimation），
 ## 琴里学了炽烈之魂（6174）后普攻 6170「初火*炽烈火柱」看着像平A（v0.01.10 玩家反馈）。
 ## 开关开：替换成带技能类型（stypeId>0）的技能按技能本身演出；没替换（技能 1）或替换成 stypeId 0 的「攻击」类技能照旧挥武器。

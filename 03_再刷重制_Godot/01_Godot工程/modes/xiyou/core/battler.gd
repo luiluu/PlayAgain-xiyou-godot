@@ -970,7 +970,7 @@ func replace_attack_objects() -> Array:
 func is_attack(item: Dictionary) -> bool:
 	return not item.is_empty() and not XBattleLogic.is_item(item) and int(item.get("id", 0)) == attack_skill_id() and not item.has("_alienMode")
 
-## O-待定：替换后的普攻（<Replace Attack: x>、甚尔形态、宿傩等）按技能自己的动作演出；false＝原版（isAttack 就挥武器、不放施法动画）
+## O-478：替换后的普攻（<Replace Attack: x>、甚尔形态、宿傩等）按技能自己的动作演出；false＝原版（isAttack 就挥武器、不放施法动画）
 static var REPLACED_ATTACK_OWN_MOTION := true
 ## 不跟上面开关走、始终照原版挥武器的替换技能：甚尔四形态主技能（游云／万里锁／释魂刀／天逆鉾，挥咒具是设定，协调 11-15 定）、
 ## 宿傩普攻 10238 咒力体术（运行时恒为普攻，体术挥拳同理）
