@@ -2,7 +2,8 @@ extends Node
 ## 新界面开关关掉时与 main 逐像素一致（ui-skin-p0）：这个脚本不直接引用任何新类，main 上也能跑；
 ## 07_开发环境/皮肤关闭对照.py 把它拷进 main 的临时克隆和本分支各跑一次（要窗口），再用 --compare 逐像素比。
 ## 拍的页：主菜单、状态、物品、技能、装备、设置（技能 ui-skin-1b 加）、装备检索（XGearSearch 网页面板，ui-skin-1c 加：XWebPanel 换皮）；战斗（2A 加：指令窗、战技列表、选目标三张，地图 5 敌群 2，随机数钉住、呼吸停掉；只拍西游存档那一档）；
-## 天启篇标题、选线四卡、异化工坊（ui-skin-3b 加；标题在西游情形下按发行构建拍：标题还没读档，新皮肤按构建开，发行构建不开）。两种情形：
+## 天启篇标题、选线四卡、异化工坊（ui-skin-3b 加；标题在西游情形下按发行构建拍：标题还没读档，新皮肤按构建开，发行构建不开）。
+## tq_off 背包里另放七印装备和号卷（ui-skin-3a 加，#82）。七印祭坛关着时照旧是地图上的对话框选单（同一句 ask），不在这里拍，专项 xiyou_ui_skin_3a 验。两种情形：
 ##   xiyou      西游存档、开关全默认（重制版玩家现在的样子）；
 ##   tq_off     天启篇存档、XUiSkin.ENABLED = false（新皮肤关掉回退）。main 上没有 XUiSkin，两种都是旧界面。
 ## 去掉不确定因素：菜单粒子隐藏、MV 光标不闪烁、每页等固定帧数。
@@ -41,6 +42,7 @@ func _run() -> void:
 				var sk: Script = load(SKIN)
 				sk.set("ENABLED", false)
 				print("skin ENABLED=", sk.get("ENABLED"))
+			_tianqi_goods(s)   # ui-skin-3a：七印装备、号卷进背包（物品、装备页带上它们；新皮肤关着时牌照旧）
 		for cls in PAGES:
 			var page: Node = _make(cls)
 			if page == null:
@@ -154,6 +156,17 @@ func _still(b: Node) -> void:
 		body.scale = Vector2(k * (-1.0 if body.get_meta("flip", false) else 1.0), k)
 		if who is XActor:
 			body.visible = false
+
+
+## 天启篇专属东西放进背包（ui-skin-3a，#82）：一件七印套装件、一卷号卷。只用 main 上已有的类（XTianqiQiyinEquip、XTianqiTrumpet）
+func _tianqi_goods(s: XState) -> void:
+	var item := XTianqiQiyinEquip.make({"kind": "set", "seal": "bai", "part": "head", "true_seal": true, "grades": ["ji", "shangpin", "putong"]},
+		"jianxian", XRandomStream.create("0123012301230123", "qiyin"))
+	if not item.is_empty():
+		XTianqiQiyinEquip.give(s, item)
+	var sc := XTianqiTrumpet.scroll(1)
+	if not sc.is_empty():
+		s.gain_item(int(sc.item), 1)
 
 
 func _make(cls: String) -> Node:

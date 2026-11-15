@@ -287,12 +287,19 @@ static func run_altar(host, s: XState) -> void:
 		claim(s)
 		var opts := altar_options(s)
 		var labels: Array = opts.map(func(o): return o.label)
-		var i: int = await ask(host, "head", labels, [keys(s), shards(s)])
+		var i := -1
+		var preset := ""
+		if XTianqiSkinAltar.use(host):  # 新界面（3A）：七印环页面只管选，选了什么照旧往下走；揭印时带上环上选中的印
+			var pick: Dictionary = await XTianqiSkinAltar.pick(host, s, opts)
+			i = opts.map(func(o): return str(o.id)).find(str(pick.get("id", "leave")))
+			preset = str(pick.get("seal", ""))
+		else:
+			i = await ask(host, "head", labels, [keys(s), shards(s)])
 		if i < 0 or i >= opts.size() or opts[i].id == "leave":
 			break
 		match str(opts[i].id):
 			"enter":
-				await choose_and_run(host, s)
+				await choose_and_run(host, s, preset)
 				_at = "altar"
 				await host.transfer(int(a.map), int(a.pos[0]), int(a.pos[1]), int(a.pos[2]))
 				s.screen.start_tint(a.get("tone", [0, 0, 0, 0]), 0)
@@ -341,11 +348,14 @@ static func seal_options(s: XState) -> Array:
 	return out
 
 
-static func choose_and_run(host, s: XState) -> int:
+## preset：新界面七印环上已选好的印（揭开了的才认），省掉「选哪一印」这一问；空＝照旧问
+static func choose_and_run(host, s: XState, preset := "") -> int:
 	var opts := seal_options(s)
 	var labels: Array = opts.map(func(o): return o.label)
 	labels.append("返回")
-	var i: int = await ask(host, "pick_seal", labels)
+	var i: int = opts.map(func(o): return str(o.key)).find(preset) if preset != "" else -1
+	if i < 0:
+		i = await ask(host, "pick_seal", labels)
 	if i < 0 or i >= opts.size():
 		return -1
 	var key := str(opts[i].key)
