@@ -86,3 +86,84 @@
 ## 本分支提交
 
 - 见 git log（分支 cc/ui-skin-5c）。
+
+## 小A 乙档核查
+
+- **核查对象**：`cc/ui-skin-5c`（交付提交 `c94188fd1`，对比基线 `17be52a65`），只读核查，未改游戏代码。
+- **总结论**：**不通过**（**P1：0**，**P2：2**，**P3：3**；**文字必改：5 条 `DESC` 事实／歧义问题 + 状态叫法中英不统一**）。返工量很小且全在天启篇/皮肤展示层或文字，修完重核即可合，**不需转 co 甲档**。
+- **核查口径区分**：
+  - **核了规则本身／前台实跑**：无头跑 `xiyou_ui_skin_5c.tscn`（75/75）、`xiyou_ui_skin_offshot.tscn`（23/23，核了 `ENABLED = false` 下 22 页+1 战构建不崩）、`xiyou_options_basic.tscn`（148/148）、`xiyou_options_misc.tscn`（105/105）、`xiyou_graphics_options.tscn`（60/60）、`语法检查.py`（913 个 `.gd` 0 问题）、`发行空壳.py check`（58 脚本 492 函数通过）、`回退开关覆盖.py`（未引入新缺口），以及 `charset_song.txt`/`charset_hei.txt` 字集覆盖校验（原文本及下文建议改字均 0 缺字）。
+  - **只看代码／按文档与提交口径核对**：`git diff 17be52a65..c94188fd1` 全量源码、设置项真实规则源码（`XPingbi`、`XDamageRecord`、`XBattleTiming`/`XSequencePlayer`/`MVAnimation`、`XHangUpOptionsScene`、`XEncounterTarget`、`XGraphics`、`XFestLobby`/`XRiftAlien` 等）、`XSkinLayout.request_wide` 与 `XMenuScene`/`XMapScene` `to_map` 流程、协调所看截图 3 问与 `ba1f7ed` 口径对比。
+
+### 逐项核查
+
+1. **开关与回退（核了规则代码＋无头实跑 `xiyou_ui_skin_5c` / `offshot`）**：
+   - `XUiSkin.ENABLED = false` 时 `on()` 与 `selectable()` 恒为 `false`（`ui_skin.gd:131-149`）；`XOptionsScene` 不建 `skin`、`XTextPrompt` 与 `XGameEndPanel` 走旧代码，`codexUiSkin`/`codexUiMotion` 两行在设置页不出现。
+   - 重制版（西游存档 `XTianqiLine.open_for(XState.current) == false`）下，`selectable()` 与 `on()` 均返回 `false`，即使 `codexUiSkin = true` 也不显示「界面风格」且保持旧界面；天启篇存档默认 `codexUiSkin = true`（新），切到「原版」时 `on()` 变为 `false` 回旧界面，而 `selectable()` 仍为 `true` 保留「界面风格」行供切回，同时隐藏「界面动效」行（`if XUiSkin.on()`）。
+   - `tests/xiyou_ui_skin_offshot.gd` 在 `PAGES` 补入 4 个子页/终局面板共 11 页 × 2 套场景 + 3 战斗 = 25 张（无头 `23/23` 通过；未在本地有窗重跑 `皮肤关闭对照.py` 逐像素比对）。
+2. **存盘与测试隔离（核了 `xconfig.gd` 规则＋`TestEnv` 源码＋无头实跑）**：
+   - `git diff 17be52a65..c94188fd1 -- modes/xiyou/core/xconfig.gd` 确认**只新增两个键**：`codexUiSkin`（默认 `true`）与 `codexUiMotion`（默认 `-1`），`codexUiMotion` 已列入 `set_flag()` 排除列表。旧 `options.json` 缺键或 `codexUiMotion` 非数字时回落默认且钳制 `-1..2`，其余设置项（画质、字体、画面平滑、画面特效、坐标显示、音量、战斗变速、定向遇怪等）默认值与存盘键名**一行未动**。
+   - `tests/xiyou_test_env.gd:14-16` `TestEnv.isolate()` 将 `XSave.dir_override` 与 `XConfig.path_override` 指到 `user://test_xiyou_ui_skin_5c/` 并清理测试目录下旧 `options.json`，**不会读写本机真实 `options.json`**。
+3. **切换「界面风格」立即生效与关页连菜单回地图 `to_map`（只看代码＋无头 `xiyou_ui_skin_5c` 实跑切换/退出）**：
+   - `_set_ui_skin(v)`（`options_scene.gd:372-389`）立即写入 `XConfig`、置 `to_map = true`、保留原 `symbol`、重建 `_list` 与 `_bg_nodes`、调用 `_show_skin(XUiSkin.on())` 并恢复光标与刷新，无旧节点残留或空引用。
+   - `XSkinLayout.request_wide`（`skin_layout.gd:89-103`）按 `tree_exiting` 计数管理 `_wide_users`：主菜单进入设置页隐藏时已释放自身 `_wide_token`（`skin_main_menu.gd:117-127`）；页内「新 → 原版」`skin.queue_free()` 触发 `tree_exiting` 使 `_wide_users` 归 0 恢复窗口比例、「原版 → 新」重建 `skin` 递增至 1，不会泄漏锁定宽屏。
+   - 关闭设置页时，`XMenuScene` 检查 `page.to_map`（`menu.gd:545-548`）后释放设置页并 emit `closed`，`XMapScene.open_menu`（`map_scene.gd:2076-2088`）统一清理 `menu`、复位 `_menu_open = false`、记录 `_menu_closed_frame`、恢复 `hud.visible = true` 并跑菜单后钩子，**不会丢状态或卡住**（若同页内「新→原版→新」来回切再退出，`to_map` 仍为 `true` 会直接回地图，属预期无害）。
+4. **协调看截图请核 ①②③（只看代码＋规则核实）**：
+   - **① `ui_skin_5c_options_screen` 中「界面动效」显示「关」**：是**测试状态，不是默认值**。正式默认 `codexUiMotion = -1`，`XUiSkin.motion()`（`ui_skin.gd:174-180`）在未选过时默认返回 **`Motion.FULL`（「全部」）**（仅在开启省电模式 `XGraphics.low_power()` 时默认 **`Motion.SIMPLE`（「简化」）**）。原因是 `tests/xiyou_ui_skin_5c.gd:158` 为截图稳定性设置了 `XUiSkin.motion_override = XUiSkin.Motion.OFF`，直到 L208 截完 `ui_skin_5c_options_screen` 后才在 L213 重置为 `-1`（记为 **P3-1**）。
+   - **② 同页「画面特效 ON」「画面平滑 OFF」英文与「界面风格 新」「界面动效 关」中文叫法不统一（记为 P2-2）**：
+     - **建议统一后的中文叫法**：`ON` → **`开`**、`OFF` → **`关`**；其中 `battleAniSpeed`（「战斗变速」）第 4 档原显示 `OFF`，统一中文建议改 **`原速`**（同步把 `DESC["battleAniSpeed"]` 末尾改为「`「原速」为正常速度。`」）。
+     - **补丁与改动边界必须分清**：`ON`/`OFF` 来自 `XOptionsScene.status_text()` 与 `XConfig.battle_speed_text()`，覆盖 `画面特效`、`画面平滑`、`始终奔跑` 等**重制版玩家也看得到的旧设置项**。
+       - **推荐方案 A（只改 `XSkinOptionsPage` 展示层）**：保留 `XOptionsScene.status_text()` 与 `XConfig.battle_speed_text()` 原样（继续返回 `"ON"`/`"OFF"`），仅在 `XSkinOptionsPage`（`sync()` 右列与 `_sync_card()` 副标题）做映射转换（`"ON"→"开"`、`"OFF"→"关"`、`battleAniSpeed` 的 `"OFF"→"原速"`）。这样**不影响重制版 0.01.x 玩家看到的旧设置页、不用走重制版发布补丁（`发布补丁.py`）**、25 张 `皮肤关闭对照` 仍 100% SAME，且旧测试 `xiyou_options_basic` 等断言 `== "ON"/"OFF"` 全部不破（只需同步更新 `tests/xiyou_ui_skin_5c.gd:175` 的 `"ON"/"OFF"` 断言）。
+       - **方案 B（改共用 `XOptionsScene` / `XConfig` 返回值）**：若要求旧设置页也一并汉化 `ON`/`OFF`，会改变重制版玩家可见界面，**必须走重制版发布补丁流程**并更新既有设置测试与皮肤关闭对照基线。
+   - **③ 子页（画质设置等）版面未重排、字为旧蓝色（`XUI.SYSTEM` `#84aaff`）、无按键提示**：
+     - **属有意留后续批，不是 5C 范围遗漏**。交付单「做了什么」「需要协调确认」「可优化」已明确 5C 目标为「设置主页套模板页＋子页居中外框保宽屏不变形」，子页重排另开批次（挂机主界面 13 窗＋范围图＋4 子页单页即是一批，手机按键需等第 6 期触屏统一按键提示方案）。
+     - **建议**：保持留后续批，不卡 5C：把「画质设置／消息提醒／屏蔽掉落／角色换装」4 个简单子页合并为 1 批套 `XSkinTemplatePage`（自动切黑体、替换 `XUI.SYSTEM` 蓝字为 `TEXT_2`/`GOLD`、带 `XSkinKeyHints`）；「挂机设置」单独 1 批；「手机按键」归第 6 期。若协调介意重排前子页蓝字刺眼，可仅在这些子页内按 `if XUiSkin.on():` 把说明色换成 `XUiSkin.TEXT_2`（**切勿全局修改 `XUI.SYSTEM`**，以免波及未重排旧窗与重制版）。
+5. **文字审（对照 `ba1f7ed` 口径＋实查 38 条设置源码＋字集覆盖）**：
+   - `ba1f7ed` 口径（`XUiSkin.GROUPS` `"画面、声音、挂机与操作"`、`"返回标题"` 统一）、`XSkinOptionsPage` 标题/分类名/按键提示格式（`Q / E` 空格、`智能战斗 AI` 空格、`OFF 为原速` 空格、全角标点）均符合规范。
+   - 交付单「新增可见文字」表中标注“按名字推”的 4 条及 `codexEncounterTarget` 经对照真实游戏源码核实，**有 5 条存在事实错误、以偏概全或歧义**，列为「文字必改」。
+
+### 问题清单（P1 / P2 / P3）
+
+- **P1**：无。
+- **P2-1（`屏蔽掉落` 详卡操作提示错误｜只看代码）**：
+  - `modes/xiyou/ui/skin/skin_options_page.gd:196` `_sync_card()` 先判 `if XOptionsScene._group(sym) in ["flag", "session"]`，后判 `elif PAGE_SYMBOLS.has(sym):`。由于 `pingbiDrop` 在 `XConfig.SESSION_FLAGS` 中，`_group("pingbiDrop")` 返回 `"session"`，导致详情卡「操作」写成了**「确定切换，左右键直接选择。」**，而实际 `options_scene.gd:250` 确定是进入 `XPingbiScene` 子页。
+  - **改法**：把 `if PAGE_SYMBOLS.has(sym):` 提前到 `elif XOptionsScene._group(sym) in ["flag", "session"] or ...:` 之前。
+- **P2-2（设置主页状态词中英混用｜看截图＋读代码）**：
+  - 见上 #4②：`ON`/`OFF` 与中文「新」「原版」「全部」「简化」「关」同屏混用。按**推荐方案 A**在 `XSkinOptionsPage` 展示层统一为 **`开` / `关`**（`battleAniSpeed` 的 `OFF` → **`原速`**，同步修改 `DESC["battleAniSpeed"]` 及 `tests/xiyou_ui_skin_5c.gd:175`），**不动重制版可见旧代码**；若协调拍板走方案 B 改共用函数，需明示走重制版发布补丁。
+- **P3-1（`options_screen` 截图显示「界面动效 关」非默认｜看截图＋读测试）**：
+  - `tests/xiyou_ui_skin_5c.gd:158` 在 `await shots("ui_skin_5c_options_screen")`（L208）前设置了 `motion_override = OFF`，导致协调审图时看到「关」而非默认「全部」。建议在 L208 截完主屏图前保持 `-1`（或改在截完后如需固定动效再设 `OFF`）。
+- **P3-2（设置主页存在双层 `SkinBackdrop`｜只看代码）**：
+  - `XOptionsScene._add_backdrop()`（`options_scene.gd:199`）与 `XSkinTemplatePage._ready()` 各建一层 `SkinBackdrop`（外层保子页隐藏 `skin` 时不断底，主页面内层不透明底板遮住外层）；无画面缺陷，仅多 1 个被遮挡的 `Embers` 粒子节点，留待后续或加 `has_backdrop` 控制即可。
+- **P3-3（可选 `DESC` 措辞微调，非必改）**：
+  - `codexUiSkin`：现「「新」是天启篇的新界面，「原版」沿用旧界面。切换后返回地图时生效。」→ 可微调为「「新」是天启篇的新界面，「原版」沿用旧界面。切换后本页立即生效，退出设置将返回地图。」（更贴合当前切换后本页立即换皮的实际行为）。
+  - `codexScreenFx`：现「大厅里的光尘和氛围小字。」→ 代码还控制庆典大厅彩纸（`fest_lobby.gd`）与裂隙二阶预兆（`rift_alien.gd`），可微调为「大厅里的光尘、庆典粒子与氛围特效。」。
+  - `dhtg`：现「对话可以跳过。只在本次游戏有效。」→ 实际 `message_box.gd` 是开启后快进并自动跳过对话（选项除外），可微调为「对话快速显示并自动跳过（选项除外）。只在本次游戏有效。」。
+  - `CombatDamageShow`：现「战斗中在角色身上显示伤害数字。」→ 实际含敌人与恢复数字（`mv_animation.gd`），可微调为「战斗中在敌我双方身上显示伤害与恢复数字。」。
+
+### 文字必改（给改好的字，均已核 `charset_hei.txt` 无缺字）
+
+1. **`pingbiDrop`（屏蔽掉落）**：
+   - 现文：`选择不想看到的掉落，进入后设置。`（错：实为过滤不掉落／不获得，并非隐藏不看，且仅过滤武器与防具）
+   - 改好：`屏蔽指定品质的武器与防具掉落，进入后设置。`
+2. **`CombatDamageRecordKey`（战斗伤害记录）**：
+   - 现文：`战斗中记录每次伤害，方便事后查看。`（错：`damage_record.gd` 与 `battle_scene.gd:2539` 在战斗结束/逃跑/全灭时即刻销毁节点，**无法事后查看**，仅战中右下角实时显示）
+   - 改好：`战斗中在右下角实时统计出战角色的伤害与占比。`
+3. **`battleAniSpeed`（战斗变速）**：
+   - 现文：`战斗动画的播放速度。倍数越高越快，OFF 为原速。`（不准：实同时加快战斗动画、行动等待与移动节奏）
+   - 改好（按现状态词）：`战斗动画与行动节奏的播放速度。倍数越高越快，OFF 为原速。`
+   - 改好（若同步按 P2-2 将状态改中文 `原速`）：`战斗动画与行动节奏的播放速度。倍数越高越快，「原速」为正常速度。`
+4. **`HangUp`（挂机设置）**：
+   - 现文：`设置自动挂机的技能、吃药和卖出规则，进入后设置。`（以偏概全：实际含挂机范围、快速战斗、逃跑规则、技能、吃药、卖出与屏蔽掉落等 13 项）
+   - 改好：`设置自动挂机的范围、逃跑、技能、吃药与卖出等规则，进入后设置。`
+5. **`codexEncounterTarget`（定向遇怪）**：
+   - 现文：`指定要遇到的敌群稀有度。档位越高，越难遇到。`（易误解：`XEncounterTarget.pick` 是优先匹配对应稀有度的敌群，而非越调越难遇敌）
+   - 改好：`指定要遇到的敌群稀有度，档位越高对应越稀有的敌群。`
+6. **状态词中英统一（P2-2）**：
+   - `XSkinOptionsPage` 展示层将 `ON` → `开`、`OFF` → `关`、`battleAniSpeed` 的 `OFF` → `原速`。
+
+### 没核到的（留总装 `--affected --cloud` 及后续环节）
+
+- 未在本地有窗重跑 `皮肤关闭对照.py` 做 25 张逐像素比对、未重拍 `ui_skin_5c` 截图（仅按已有测试结论与 `offshot` 23/23 无头构建通过记档）；
+- 未跑 `并行测试.py`、`工具回归.py`，以及因修改 `xconfig.gd` 扩到的 206 个选测场景全集（含 `xiyou_ui_skin_menu`、`1b`、`1c`、`battle_options`、`hangup_options`、`power`、`smart_ai`、`tianqi_e2e`、`virtual_player` 等），按要求留总装 `--affected --cloud`；
+- 未在当前工作树直接读到 `重制设定/界面风格提案_v0.7/` 与早先 `ba1f7ed` 原提交，对照 `ui_skin.gd`、`4b780b162` 及过往交付记录的 `ba1f7ed` 口径核实。
+
