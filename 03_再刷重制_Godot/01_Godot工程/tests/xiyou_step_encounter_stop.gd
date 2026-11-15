@@ -19,6 +19,8 @@ var _was_in_battle := false
 var _toggles := 0
 var _downs := 0
 var _fade_note := ""
+var _watch_stop := false  # 停挂机观察：置真后，每个物理帧看挂机已停、目的地是否还留着（事件计数，不靠点按之后才采样的位置）
+var _stop_seen_target := false
 
 
 func _ready() -> void:
@@ -52,6 +54,8 @@ func _physics_process(_d: float) -> void:
 	if map and map._in_battle and not _was_in_battle:
 		battles += 1
 	_was_in_battle = map != null and map._in_battle
+	if _watch_stop and map and s and not XHangUp.is_active(s) and map.player.touch_target.x >= 0:
+		_stop_seen_target = true
 
 
 ## 触屏点一下（视口坐标）：按下与松开之间隔 hold 帧
@@ -71,6 +75,19 @@ func tap(at: Vector2, hold := 3) -> void:
 	e.pressed = false
 	Input.parse_input_event(e)
 	await frames(2)
+
+
+## 按正常时钟点一下挂机按钮：快时钟下点按那几帧里游戏已跑出几十个物理帧，人早走完停挂机前后的路，
+## 之后再采样就漏记点按期间的移动（低渲染帧率下稳定出现，max_fps=15 即复现）。点按用正常时钟，采样紧跟其后
+func tap_button_normal() -> void:
+	var clock := [Engine.physics_ticks_per_second, Engine.max_physics_steps_per_frame, Engine.time_scale]
+	Engine.physics_ticks_per_second = 60
+	Engine.max_physics_steps_per_frame = 1
+	Engine.time_scale = 1.0
+	await tap(button_at())
+	Engine.physics_ticks_per_second = clock[0]
+	Engine.max_physics_steps_per_frame = clock[1]
+	Engine.time_scale = clock[2]
 
 
 ## 地图 ui 上有没有正在用的遇敌／收场黑幕
@@ -160,6 +177,9 @@ func _run() -> void:
 		Engine.physics_ticks_per_second = 600
 		Engine.max_physics_steps_per_frame = 64
 		Engine.time_scale = 30.0
+	# 手动压测渲染帧率（偶发排查）：XIYOU_STEP_FPS=15 复现低帧率下一帧跑多个物理帧的调度；默认不设
+	if OS.get_environment("XIYOU_STEP_FPS") != "":
+		Engine.max_fps = int(OS.get_environment("XIYOU_STEP_FPS"))
 	seed(20261115)
 	s = XState.new_game(3, 1, [8, 10, 9])
 	s.random_master = XRandomStream.hex64(20261115)
@@ -264,7 +284,7 @@ func stale_target_hangup(tag: String, expect_walk := false) -> void:
 	var pre := [map.map_id, map.player.grid, map.busy, map.player.input_enabled, map._in_battle]
 	map.player.click_cell(map.player.grid + Vector2i(7, 0))  # 点地（真点按已由 tap_walk 验过；这里只要留下目的地）
 	var tt: bool = await until(func(): return map.player.is_moving() or map.player.grid != pre[1], 200)  # 点地生效、人走起来了
-	await tap(button_at())  # 开挂机
+	await tap_button_normal()  # 开挂机
 	var started := XHangUp.is_active(s)
 	await physics(200)
 	# 挂机前留下的目的地还在（不靠点按时机）：取人刚离开的那一格，停后走得回去（固定格子在云端随机走到别处时可能走不过去）
@@ -273,7 +293,9 @@ func stale_target_hangup(tag: String, expect_walk := false) -> void:
 	await until(func(): return map.player.grid != left, 400)
 	map.player.touch_target = left
 	map.encounter_count = 999
-	await tap(button_at())  # 停挂机
+	_stop_seen_target = false
+	_watch_stop = true  # 挂机一停就开始看：目的地还留着（回退开关）＝停后会接着走，点按期间人已走到的也记得住
+	await tap_button_normal()  # 停挂机
 	var stopped := not XHangUp.is_active(s)
 	XConfig.set_session("yd100", true)
 	map.encounter_count = 1
@@ -282,9 +304,10 @@ func stale_target_hangup(tag: String, expect_walk := false) -> void:
 	var g0 := map.player.grid  # 停的那一步走完的格子
 	await physics(900)
 	await wait_still()
-	var walked := battles > b0 or map.player.grid != g0
+	_watch_stop = false
+	var walked := battles > b0 or map.player.grid != g0 or _stop_seen_target
 	check(tag, tt and started and stopped and walked == expect_walk,
-		{"pre": pre, "walking": tt, "started": started, "stopped": stopped, "battles_after": battles - b0, "from": g0, "now": map.player.grid, "touch_target": map.player.touch_target})
+		{"pre": pre, "walking": tt, "started": started, "stopped": stopped, "battles_after": battles - b0, "from": g0, "now": map.player.grid, "touch_target": map.player.touch_target, "target_kept_after_stop": _stop_seen_target})
 
 
 func _finish() -> void:
