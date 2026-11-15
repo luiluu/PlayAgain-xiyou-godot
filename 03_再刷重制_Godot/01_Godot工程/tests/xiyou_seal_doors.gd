@@ -158,7 +158,7 @@ func _chest() -> void:
 	var r := await _event(13, [0])
 	var done := s.map_id == 78 and Vector2i(s.x, s.y) == Vector2i(21, 26) and not s.switch(127) and int(s.variable(5)) == 0 and int(s.variable(6)) == 0 \
 		and int(s.variable(21)) == 0 and int(s.variable(175)) == 0
-	check("b2_fix_notice_then_leave", r.page == 2 and _said(r, "【区域已移除】深渊:魔神之渊因地图文件损坏，已从当前版本移除。") and done
+	check("b2_fix_notice_then_leave", r.page == 2 and _said(r, "（深渊:魔神之渊 区域暂未开放。）") and done
 		and gear.call(s) == 1 and s.item_count(INVITE) == 1 and not s.switch(107), [r, s.map_id, gear.call(s), s.item_count(INVITE)])
 	s.map_id = 80
 	r = await _event(13, [0])
@@ -168,7 +168,7 @@ func _chest() -> void:
 	MVInterpreter.removed_gate_fix = {}
 	s = await _throne(true)
 	r = await _event(13, [0])
-	check("b2_original_stays", r.page == 2 and _said(r, "【区域已移除】") and s.map_id == 80 and s.switch(127) and gear.call(s) == 1
+	check("b2_original_stays", r.page == 2 and _said(r, "区域暂未开放") and s.map_id == 80 and s.switch(127) and gear.call(s) == 1
 		and s.item_count(INVITE) == 0 and s.switch(107) and int(s.variable(107)) == 2, [r, s.map_id, gear.call(s)])
 	r = await _event(13, [0])
 	check("b2_original_again", r.page == 2 and s.map_id == 78 and not s.switch(127) and gear.call(s) == 2 and int(s.variable(106)) == 2, [r, s.map_id, gear.call(s)])

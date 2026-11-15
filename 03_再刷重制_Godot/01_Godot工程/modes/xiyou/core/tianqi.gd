@@ -36,7 +36,7 @@ const BADGE_DIR := "res://modes/xiyou/ui/tianqi/"
 ## super_cap（同一场上阵的超强者上限）、min_weak（每次随机阵容至少几名弱者）、候选池的档位：第三批起只认数值表
 ## （XTianqiBalance，balance_table.json），difficulty() 把它们并进来，这里不再写一份。
 const DIFFICULTIES := [
-	{"key": "xunchang", "name": "寻常", "desc": "初入西行，熟悉玩法", "legacy": 2, "badge": "01_xunchang.png"},
+	{"key": "xunchang", "name": "寻常", "desc": "初入高塔，熟悉玩法", "legacy": 2, "badge": "01_xunchang.png"},
 	{"key": "jianxian", "name": "艰险", "desc": "标准体验", "legacy": 3, "badge": "02_jianxian.png"},
 	{"key": "jiusi", "name": "九死", "desc": "需要搭配与养成", "legacy": 4, "badge": "03_jiusi.png"},
 	{"key": "lianyu", "name": "炼狱", "desc": "敌人大幅强化，可上阵更多超强者", "legacy": 5, "badge": "04_lianyu.png"},
@@ -363,7 +363,7 @@ static func opening_commands(slot: int, key: String, lineup: Array) -> Array:
 	# 引路人问道号（原版 Map001 的名字，存在 $gamePlayer.SaveActorName，称号牌上显示）
 	c.append_array(_say("你终于来了。这里是方桌大厅，往后每一次出发，都从这里开始。"))
 	c.append_array(_say("在出发之前……该怎么称呼你？"))
-	c.append(_script("$gamePlayer.SaveActorName = prompt(\"请输入你的道号\",\"\");"))
+	c.append(_script("$gamePlayer.SaveActorName = prompt(\"请输入你的名字\",\"\");"))
 	c.append_array(_say("记住了。去吧，塔就在前面。"))
 	c.append({"code": 0, "indent": 0, "parameters": []})
 	return c
@@ -694,7 +694,7 @@ static func run_line_choice(host, s: XState) -> void:
 			await host.show_text("", 0, [_card_text(l)])
 		await host.show_text("", 0, _line(str(l.guide)))
 		if not line_playable(str(l.key)):
-			await host.show_text("", 0, _line("……这条路还没修好。换一条吧。"))
+			await host.show_text("", 0, _line("……这条路暂未开放，换一条吧。"))
 			continue
 		var sure: int = await host.show_text_with_choices("", 0, _line("选定后这个存档不能再换。确定走%s之路吗？" % l.name), ["确定", "再想想"], 1)
 		if sure != 0:

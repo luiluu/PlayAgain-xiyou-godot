@@ -4,6 +4,8 @@ extends Control
 ## 圆头像 42、名字（18）＋「Lv 等级 · 职业」辅助小字、右上状态图标（最多 4 个）、下面一行血（玫粉）、蓝、TP 三条细量条＋窄体数字。
 ## 行间 1px 线色 14% 分隔；选中的人用红乙选中条（selectable＝true 时）。
 ## 每人一份字典 {name, level, cls, face（Texture2D）, hp, mhp, mp, mmp, tp, mtp, states:[图标号]}；from_actor 从 XActor 取。
+## p1fix 追加：helper＝天启篇助力位卡（略暗底＋旧金细边＋右上「助力」角标）；placeholder＝空的助力位（只写 name，如「助力位 · 空」）。
+## 行比 60 高时（主菜单把队伍框填到中间栏底边），内容在行里竖直居中。
 
 signal index_changed(index: int)
 signal activated(index: int)
@@ -16,6 +18,8 @@ var title := ""
 var bar: XSkinSelectBar
 const HEAD := 42.0
 const TITLE_H := 44.0
+## 助力卡上状态图标从右边让出多少（角标约 42 宽，从行右缘 2 起，右边距 12）
+const HELPER_TAG_ROOM := 36.0
 
 
 func _init() -> void:
@@ -96,6 +100,7 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		for i in members.size():
 			if row_rect(i).has_point(event.position):
+				bar.press()
 				if i == index:
 					activated.emit(i)
 				else:
@@ -118,6 +123,16 @@ func _draw() -> void:
 		var r := row_rect(i)
 		if i > 0:
 			draw_line(Vector2(r.position.x + 10, r.position.y), Vector2(r.end.x - 10, r.position.y), Color(XUiSkin.LINE, 0.14), 1.0)
+		if bool(m.get("helper", false)):
+			_draw_helper_frame(ci, r, head)
+			if bool(m.get("placeholder", false)):
+				var hc0 := Vector2(r.position.x + 14 + HEAD / 2.0, r.position.y + r.size.y / 2.0)
+				draw_circle(hc0, HEAD / 2.0, Color(XUiSkin.LINE, 0.4), false, 1.5, true)
+				draw_string(body, Vector2(hc0.x - 6, hc0.y + 8), "+", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, XUiSkin.TEXT_3)
+				draw_string(body, Vector2(r.position.x + 14 + HEAD + 12, hc0.y + 18 * 0.36), str(m.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT_2)
+				continue
+		# 行比 60 高：内容竖直居中
+		r = Rect2(r.position.x, r.position.y + floorf((r.size.y - XUiSkin.MEMBER_H) / 2.0), r.size.x, XUiSkin.MEMBER_H)
 		var hc := Vector2(r.position.x + 14 + HEAD / 2.0, r.position.y + r.size.y / 2.0)
 		draw_circle(hc, HEAD / 2.0, XUiSkin.ORB_LOW)
 		var face: Texture2D = m.get("face")
@@ -136,7 +151,7 @@ func _draw() -> void:
 			info += " · " + str(m.cls)
 		draw_string(body, Vector2(x + nw + 8, y1), info, HORIZONTAL_ALIGNMENT_LEFT, maxf(right - x - nw - 8 - 80, 10), XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 		var states: Array = m.get("states", [])
-		var sx := right
+		var sx := right - (HELPER_TAG_ROOM if bool(m.get("helper", false)) else 0.0)   # 助力卡：状态图标让开右上角标（小A核 P3-2）
 		for k in range(mini(states.size(), 4)):
 			var tex := XUiSkin.icon(int(states[k]))
 			sx -= 22
@@ -160,6 +175,39 @@ func _draw() -> void:
 				_pill(ci, Rect2(track.position, Vector2(track.size.x * clampf(v / mx, 0, 1), 5)), spec[2])
 			draw_string(num, Vector2(bx + w - num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x, y2 + 6), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, spec[3])
 			bx += w + 8
+
+
+## 「助力」角标的矩形（行矩形 r 里，右上角）
+static func helper_tag_rect(r: Rect2, head: Font) -> Rect2:
+	var box := r.grow_individual(-2, -3, -2, -3)
+	var tw := head.get_string_size("助力", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+	return Rect2(box.end.x - tw - 14, box.position.y, tw + 14, 20)
+
+
+## 第 k 个状态图标的矩形（行矩形 r 里；_draw 同一算法，测试用）
+func state_icon_rect(r: Rect2, k: int, helper: bool) -> Rect2:
+	var c := Rect2(r.position.x, r.position.y + floorf((r.size.y - XUiSkin.MEMBER_H) / 2.0), r.size.x, XUiSkin.MEMBER_H)
+	var right := c.end.x - 12 - (HELPER_TAG_ROOM if helper else 0.0)
+	return Rect2(right - 22 * (k + 1), c.position.y + 6, 22, 22)
+
+
+## 助力位卡：略暗底＋旧金细边＋右上「助力」角标
+func _draw_helper_frame(ci: RID, r: Rect2, head: Font) -> void:
+	var box := r.grow_individual(-2, -3, -2, -3)
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0, 0, 0, 0.28)
+	sb.border_color = Color(XUiSkin.GOLD, 0.55)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(XUiSkin.ROW_RADIUS)
+	sb.draw(ci, box)
+	var tag := "助力"
+	var tr := helper_tag_rect(r, head)
+	var tb := StyleBoxFlat.new()
+	tb.bg_color = Color(XUiSkin.GOLD, 0.9)
+	tb.corner_radius_bottom_left = 6
+	tb.corner_radius_top_right = XUiSkin.ROW_RADIUS
+	tb.draw(ci, tr)
+	draw_string(head, Vector2(tr.position.x + 7, tr.position.y + 15), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, XUiSkin.BG)
 
 
 func _pill(ci: RID, r: Rect2, c: Color) -> void:

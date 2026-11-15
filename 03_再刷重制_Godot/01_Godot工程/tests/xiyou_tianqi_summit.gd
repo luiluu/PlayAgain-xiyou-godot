@@ -187,7 +187,7 @@ func _door35() -> void:
 	var f := _state(35, "death")
 	host = FakeHost.new()
 	host.answers = [0, 0]
-	_check("death_unready_shadow", await XTianqiSummit.run_floor(host, f, 35) == -1 and host.battles.is_empty() and _has(host, "还没修好") and int(f.variable(20)) == 35)
+	_check("death_unready_shadow", await XTianqiSummit.run_floor(host, f, 35) == -1 and host.battles.is_empty() and _has(host, "暂未开放") and int(f.variable(20)) == 35)
 	XTianqiDeathLine.ENABLED = true
 	# 饥荒线（cc 饥荒线车道接上）：35 层打本线影子、36 层打本线骑士
 	var fm := _state(35, "famine")

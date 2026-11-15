@@ -258,7 +258,7 @@ func feed() -> void:
 	check("feed.not_in_bag", XFabaoFeed.reason(s, fabao, loose) == "不在背包里", [XFabaoFeed.reason(s, fabao, loose), loose.has("instanceId")])
 	# 法宝不能喂法宝
 	var other := _bag(s, 3557, 1)
-	check("feed.no_fabao", XFabaoFeed.reason(s, fabao, other[0]) == "不能喂")
+	check("feed.no_fabao", XFabaoFeed.reason(s, fabao, other[0]) == "无法喂入")
 	# 物品页菜单：法宝 30 级从「优秀」起每档一行；精良那行 1 件可喂；喂完提示、装备扣掉
 	var acts := XFabaoFeed.actions(s, fabao)
 	check("feed.actions", acts.size() == 6 and int(acts[0].ext) == 1 and acts[1].enabled and str(acts[1].text).contains("精良") and str(acts[1].text).contains("1 件"), acts.map(func(x): return x.text))

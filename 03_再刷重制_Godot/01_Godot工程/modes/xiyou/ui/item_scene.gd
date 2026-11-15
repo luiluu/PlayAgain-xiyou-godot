@@ -419,7 +419,8 @@ func _update_help() -> void:
 	# 用道具的结果提示：光标换了行（或回到分类、进了升级／宝珠列表）才被说明盖掉；选人阶段只是暂时隐藏
 	if not _notice.is_empty():
 		if _mode == "list" and _index == int(_notice.index):
-			_paint_notice()
+			if skin == null:
+				_paint_notice()
 		elif _mode != "actor":
 			_notice = {}
 
@@ -1197,7 +1198,9 @@ var _notice := {}
 
 func show_notice(text: String) -> void:
 	_notice = {"text": text, "index": _index}
-	if _mode in ["list", "action"]:
+	if skin != null:
+		skin.sync()
+	elif _mode in ["list", "action"]:
 		_paint_notice()
 	XToast.show_text(text, true)
 

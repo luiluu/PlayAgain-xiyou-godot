@@ -158,6 +158,29 @@ func _run() -> void:
 
 	# ---- 文件框 ----
 	check("file_name_shape", XSaveTransfer.file_name(7).begins_with("再刷重制存档07_") and XSaveTransfer.file_name(7).ends_with(".json"))
+	# 文字审 18-005：天启篇档的导出建议名换前缀；导入只认 JSON 里的 format／game，旧名字的文件照样导得进、读得出
+	check("file_name_tianqi_shape", XSaveTransfer.file_name(7, true).begins_with("再刷一把天启篇存档07_") and XSaveTransfer.file_name(7, true).ends_with(".json"))
+	check("export_plain_not_tianqi", XSaveTransfer.export_text(1).get("tianqi") == false)
+	var tq := XTianqi.start_new_game(6, "jiusi", [8, 9, 10])
+	XTianqi.take_pending()
+	XState.current = tq
+	tq.gold = 2468
+	check("tianqi_make_save", XSave.save(6))
+	var tq_out := XSaveTransfer.export_text(6)
+	check("export_tianqi_flag", tq_out.get("tianqi") == true and not tq_out.has("error"), tq_out.keys())
+	var tq_wrapped: Dictionary = JSON.parse_string(str(tq_out.get("text", "{}")))
+	check("export_tianqi_wrapper_unchanged", tq_wrapped.keys() == wrapped.keys() and str(tq_wrapped.get("format")) == XSaveTransfer.FORMAT, tq_wrapped.keys())
+	var old_named := dir.path_join("再刷重制存档06_20261101_120000.json")  # 改名前导出的文件名
+	_write(old_named, str(tq_out.text))
+	var tq_got := XSaveTransfer.read_import(old_named)
+	check("import_old_name_tianqi", tq_got.has("data") and XSaveTransfer.import_to(9, tq_got.get("data", {})) == "", tq_got.get("error"))
+	check("import_old_name_tianqi_loads", XSave.load_slot(9) and XTianqi.active(XState.current) and XState.current.gold == 2468
+		and str(XState.current.flags.tianqi.get("difficulty", "")) == "jiusi", [XState.current.gold, XState.current.flags.get("tianqi")])
+	var new_named := dir.path_join(XSaveTransfer.file_name(6, true))
+	_write(new_named, str(tq_out.text))
+	check("import_new_name_tianqi", XSaveTransfer.read_import(new_named).has("data"))
+	XSave.remove(6)
+	XSave.remove(9)
 	var called := []
 	var opened := XSaveTransfer.pick(false, "", func(path): called.append(path))
 	if DisplayServer.has_feature(DisplayServer.FEATURE_NATIVE_DIALOG_FILE):

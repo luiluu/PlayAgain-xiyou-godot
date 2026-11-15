@@ -8,7 +8,13 @@ extends Control
 ##   只剩一项的组（物品、装备）不展开，组那一行就是子项，确定直接进；
 ## - 右块：本局条（第几层 · 难度 · 哪条线；七印进度：首通几印）＋队伍条（XSkinPartyStrip）；
 ## - 顶上：页名「菜单」、货币（精魂；能进七印祭坛的档另显示印屑）；右下：按键提示（给右下角版本号让位）。
-## 操作：上下在子项间走（到组头尾跨到上／下一组）；左右或 Q／E 换组；确定进入；取消回地图。
+## 操作（TWO_LEVEL＝false，旧一级）：上下在子项间走（到组头尾跨到上／下一组）；左右或 Q／E 换组；确定进入；取消回地图。
+## 两级操作（TWO_LEVEL＝true 默认，Kyo 11-15「先选大类，移到哪个大类右边显示其子类，大类确认后进入子类菜单」）：
+## - 第一级（level 0）：焦点在环上，方向键／Q E／点环在大类间走；中块只列当前大类的子项（预览，不画选中条，同屏一个焦点）；
+##   只一项的大类（物品、装备）中块写一句说明，确定直接打开；确定＝进第二级（记得的子项，否则第一项）；取消回地图；
+## - 第二级（level 1）：上下在本大类子项间走（循环）、Q／E 换大类（留在第二级、第一项）；确定打开；取消回环上；
+## - 触屏：点环上大类＝选中并进第二级（只一项的直接打开）；点中块子项＝直接打开；
+## - 记住上次的大类和子项（按键名，_mem），重开菜单停在那个大类的第一级。
 ## 技能、装备、状态先到队伍条选人（XMenu._mode＝"actor"），确定进页、取消回列表。
 ## 打开各页、可不可用都走 XMenu（run_command／open_actor_page／symbol_enabled），和旧菜单是同一套。
 
@@ -41,6 +47,17 @@ var ii := 0
 var party_top := 0
 var _rows: Array = []
 var _wide_token: Node
+## 两级操作开关（cc/ui-skin-p1fix 追加，O-486）：false＝回旧的一级分组列表
+static var TWO_LEVEL := true
+## 第几级：0 环上选大类、1 中块选子项（TWO_LEVEL 时才用）
+var level := 0
+## 上次停在哪：{g: 组键, items: {组键: 子项键}}（跨次打开菜单；每个大类各记各的子项）
+static var _mem := {}
+const NOTE_H := 56.0
+## 右栏队伍框加助力位卡（Kyo 11-15「不是还有助力位置吗」，O-487）：天启篇第 5 张卡＝出战栏第 5 格（XState.helper），
+## 空着写「助力位 · 空」；队伍框拉到和中间栏底边对齐、卡按高度均分（最高 ROW_MAX）。false＝旧的随人数排、框高随内容。
+static var HELPER_CARD := true
+const PARTY_ROW_MAX := 120.0
 
 
 func _ready() -> void:
@@ -53,12 +70,14 @@ func _ready() -> void:
 	layout.right_w = RIGHT_W
 	add_child(layout)
 	groups = XUiSkin.visible_groups(XUiSkin.GROUPS, _state())
+	_restore_mem()
 	# 左块：环
 	ring = XSkinRingNav.new()
 	ring.radius = 160
 	ring.orb_radius = 33
 	ring.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	ring.set_items(groups.map(func(g): return {"key": g.key, "name": g.name, "icon": int(g.get("icon", 0))}))
+	ring.set_items(groups.map(func(g): return XSkinRingNav.group_item(g)))
+	ring.select(gi, false)
 	layout.left.add_child(ring)
 	face = Control.new()
 	face.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -68,7 +87,10 @@ func _ready() -> void:
 	ring.changed.connect(_on_ring_changed)
 	ring.activated.connect(func(_i):
 		if host != null and host._mode == "command":
-			activate())
+			if TWO_LEVEL:
+				enter()
+			else:
+				activate())
 	# 中块：分组子项
 	pane = Panel.new()
 	pane.name = "Groups"
@@ -201,19 +223,22 @@ func refresh() -> void:
 	var actor_mode := host._mode == "actor"
 	party.selectable = actor_mode
 	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE if actor_mode else Control.MOUSE_FILTER_STOP
+	var order := party_order()
+	party.row_height = party_row_height(order.size())
 	var rows := party_rows()
 	if actor_mode:
-		var ai := clampi(host._actor_index, 0, maxi(members.size() - 1, 0))
+		var ai := maxi(order.find(clampi(host._actor_index, 0, maxi(members.size() - 1, 0))), 0)
 		if ai < party_top:
 			party_top = ai
 		elif ai >= party_top + rows:
 			party_top = ai - rows + 1
-	party_top = clampi(party_top, 0, maxi(members.size() - rows, 0))
-	party.set_members(members.slice(party_top, party_top + rows).map(func(a): return XSkinPartyStrip.from_actor(a)))
-	party.index = (host._actor_index - party_top) if actor_mode else -1
+	party_top = clampi(party_top, 0, maxi(order.size() - rows, 0))
+	var helper_i := helper_index()
+	party.set_members(order.slice(party_top, party_top + rows).map(func(k): return _card(k, helper_i)))
+	party.index = (order.find(host._actor_index) - party_top) if actor_mode else -1
 	party._place_bar(true)
 	party.queue_redraw()
-	hints.set_hints([["确定", "进入"], ["取消", "返回"]] if actor_mode else [["确定", "进入"], ["取消", "回地图"], ["Q / E", "换组"]])
+	hints.set_hints(hint_list())
 	_place()
 	_place_bar(false)
 	text_layer.queue_redraw()
@@ -222,10 +247,126 @@ func refresh() -> void:
 	top.queue_redraw()
 
 
+## 底部按键提示：随选人／层级变
+func hint_list() -> Array:
+	if host != null and host._mode == "actor":
+		return [["确定", "进入"], ["取消", "返回"]]
+	if TWO_LEVEL and level == 1:
+		return [["确定", "打开"], ["取消", "返回"], ["Q / E", "换组"]]
+	return [["确定", "进入"], ["取消", "回地图"], ["Q / E", "换组"]]
+
+
+func _restore_mem() -> void:
+	if not TWO_LEVEL or _mem.is_empty():
+		return
+	for k in groups.size():
+		if str(groups[k].key) == str(_mem.get("g", "")):
+			gi = k
+			ii = mem_index(k)
+			return
+
+
+## 第 g 组记住的子项（没记过、或记的那项现在藏了：0）
+func mem_index(g: int) -> int:
+	if g < 0 or g >= groups.size():
+		return 0
+	var key := str((_mem.get("items", {}) as Dictionary).get(str(groups[g].key), ""))
+	var items := group_items(groups[g])
+	for j in items.size():
+		if str(items[j].key) == key:
+			return j
+	return 0
+
+
+## 记下现在的大类；第二级时（或打开时）连子项一起记
+func _remember() -> void:
+	var g := current_group()
+	if g.is_empty():
+		return
+	if not _mem.has("items"):
+		_mem["items"] = {}
+	_mem["g"] = str(g.key)
+	if level == 1 or group_items(g).size() <= 1:
+		_mem.items[str(g.key)] = str(current_item().get("key", ""))
+
+
+## 第一级 → 第二级（只一项的大类直接打开）
+func enter() -> void:
+	if host == null or current_group().is_empty():
+		return
+	if group_items(current_group()).size() <= 1:
+		ii = 0
+		activate()
+		return
+	if level == 0:
+		XSound.system(1)
+		level = 1
+		_remember()
+		refresh()
+
+
+## 第二级 → 第一级
+func leave() -> void:
+	if level == 1:
+		XSound.system(2)
+		level = 0
+		refresh()
+
+
 ## 队伍条最多放几行（右块高减本局条）
 func party_rows() -> int:
-	var h: float = (layout.rects().right as Rect2).size.y - run_height() - XUiSkin.PANEL_GAP - XSkinPartyStrip.TITLE_H - 8
-	return maxi(1, floori(h / party.row_height))
+	return maxi(1, floori(party_space() / party.row_height + 0.001))
+
+
+## 队伍条里放卡的高度（右块高减本局条、标题）
+func party_space() -> float:
+	return (layout.rects().right as Rect2).size.y - run_height() - XUiSkin.PANEL_GAP - XSkinPartyStrip.TITLE_H - 8
+
+
+## 有没有助力位卡：开关开、天启篇存档
+func helper_card_on() -> bool:
+	return HELPER_CARD and XTianqi.active(_state())
+
+
+## 助力位上的人在 host._members() 里第几个（没有：-1）
+func helper_index() -> int:
+	if not helper_card_on():
+		return -1
+	var h := _state().helper()
+	return host._members().find(h) if h != null else -1
+
+
+## 队伍条的显示顺序：host._members() 的下标；有助力位卡时助力位的人挪到最后，没人时末尾放 -1（空位占位）
+func party_order() -> Array:
+	var n := host._members().size()
+	var out := range(n)
+	if not helper_card_on():
+		return out
+	var h := helper_index()
+	if h >= 0:
+		out.erase(h)
+		out.append(h)
+	else:
+		out.append(-1)
+	return out
+
+
+## 卡高：有助力位卡时把队伍框填到中间栏底边（均分，最高 PARTY_ROW_MAX）；否则照旧 60
+func party_row_height(n: int) -> float:
+	if not helper_card_on() or n <= 0:
+		return float(XUiSkin.MEMBER_H)
+	var fit := floori(party_space() / XUiSkin.MEMBER_H)
+	var shown := clampi(n, 1, maxi(fit, 1))
+	return clampf(floorf(party_space() / shown), XUiSkin.MEMBER_H, PARTY_ROW_MAX)
+
+
+func _card(k: int, helper_i: int) -> Dictionary:
+	if k < 0:
+		return {"name": "助力位 · 空", "placeholder": true, "helper": true}
+	var d := XSkinPartyStrip.from_actor(host._members()[k])
+	if k == helper_i:
+		d["helper"] = true
+	return d
 
 
 func run_height() -> float:
@@ -241,6 +382,8 @@ func _place() -> void:
 	run_panel.size = Vector2(RIGHT_W, rh)
 	party.position = Vector2(0, rh + XUiSkin.PANEL_GAP)
 	party.size = Vector2(RIGHT_W, party.custom_minimum_size.y)
+	if helper_card_on():   # 助力位卡：框底边对齐中间栏（卡少时卡在上、框照样拉齐）
+		party.size.y = maxf(party.size.y, (layout.rects().right as Rect2).size.y - party.position.y)
 	var view := layout.view_size()
 	hints.place(view)
 	_layout_rows()
@@ -253,9 +396,12 @@ static func hint_right(view: Vector2) -> float:
 	return XSkinKeyHints.right_edge(view)
 
 
-## 中块各行：[{kind: group／header／item, g, i, rect}]
+## 中块各行：[{kind: group／header／item／note, g, i, rect}]
 func _layout_rows() -> void:
 	_rows = []
+	if TWO_LEVEL:
+		_layout_rows_two()
+		return
 	var h := pane.size.y - XUiSkin.PAD * 2
 	var fixed := 0.0
 	var collapsed := 0
@@ -288,6 +434,23 @@ func _layout_rows() -> void:
 				y += ROW_ITEM
 
 
+## 两级：只列当前大类——组名行＋子项；只一项的大类是组名行＋一句说明（note，点它／确定直接打开）
+func _layout_rows_two() -> void:
+	if current_group().is_empty():
+		return
+	var y := float(XUiSkin.PAD)
+	var w := pane.size.x - 20.0
+	var n := group_items(current_group()).size()
+	_rows.append({"kind": "header", "g": gi, "i": -1, "rect": Rect2(10, y, w, ROW_HEADER)})
+	y += ROW_HEADER
+	if n <= 1:
+		_rows.append({"kind": "note", "g": gi, "i": 0, "rect": Rect2(10, y, w, NOTE_H)})
+		return
+	for i in n:
+		_rows.append({"kind": "item", "g": gi, "i": i, "rect": Rect2(10, y, w, ROW_ITEM)})
+		y += ROW_ITEM
+
+
 func rows() -> Array:
 	return _rows
 
@@ -303,7 +466,7 @@ func _place_bar(instant: bool) -> void:
 	if bar == null:
 		return
 	var r := selected_row_rect()
-	bar.visible = r.size != Vector2.ZERO
+	bar.visible = r.size != Vector2.ZERO and (not TWO_LEVEL or level == 1)
 	if bar.visible:
 		bar.move_to(r, instant)
 
@@ -314,7 +477,8 @@ func _place_bar(instant: bool) -> void:
 func step_group(d: int) -> void:
 	if groups.size() <= 1:
 		return
-	_set_group(posmod(gi + d, groups.size()), 0)
+	var ng := posmod(gi + d, groups.size())
+	_set_group(ng, mem_index(ng) if TWO_LEVEL else 0)
 
 
 func _set_group(g: int, i: int) -> void:
@@ -325,6 +489,11 @@ func _set_group(g: int, i: int) -> void:
 		ring.select(gi)
 	if changed:
 		XSound.system(0)
+	if TWO_LEVEL:
+		if level == 1 and group_items(current_group()).size() <= 1:   # 小A核 P2-1：切到单项组不留在「幽灵第二级」
+			level = 0
+		_remember()
+		hints.set_hints(hint_list())
 	_layout_rows()
 	_place_bar(false)
 	text_layer.queue_redraw()
@@ -354,6 +523,9 @@ func activate() -> void:
 		XSound.system(3)
 		return
 	XSound.system(1)
+	if TWO_LEVEL:
+		level = 1 if group_items(current_group()).size() > 1 else level
+		_remember()
 	host.run_command(str(it.cmd))
 
 
@@ -362,7 +534,10 @@ func _on_ring_changed(i: int) -> void:
 		ring.select(gi, false)
 		return
 	if i != gi:
-		_set_group(i, 0)
+		_set_group(i, mem_index(i) if TWO_LEVEL else 0)
+		if TWO_LEVEL:   # 点环上别的大类＝选中并进第二级（只一项的直接打开）
+			level = 0
+			enter()
 
 
 ## 收起的组那一行右边：多项组列子项名；只一项的组写那一项的说明（不重复组名，小A核查 P2）
@@ -375,7 +550,11 @@ static func collapsed_text(g: Dictionary) -> String:
 
 func _on_party_index(i: int) -> void:
 	if host != null and host._mode == "actor":
-		host._actor_index = party_top + i
+		var k: int = party_order()[party_top + i] if party_top + i < party_order().size() else -1
+		if k < 0:   # 空的助力位不能选：退回原来那张
+			refresh()
+			return
+		host._actor_index = k
 		XSound.system(0)
 		face.queue_redraw()
 
@@ -383,7 +562,11 @@ func _on_party_index(i: int) -> void:
 func _on_party_activated(i: int) -> void:
 	if host == null or host._mode != "actor":
 		return
-	host._actor_index = party_top + i
+	var k: int = party_order()[party_top + i] if party_top + i < party_order().size() else -1
+	if k < 0:
+		XSound.system(3)
+		return
+	host._actor_index = k
 	XSound.system(1)
 	host.open_actor_page(host._pending, host._actor_index)
 
@@ -401,7 +584,15 @@ func _pane_input(event: InputEvent) -> void:
 			return
 		for r in _rows:
 			if (r.rect as Rect2).has_point(mb.position):
-				if r.kind == "group" or r.kind == "header":
+				bar.press()
+				if TWO_LEVEL:   # 点子项（或单项大类的说明行）＝直接打开；点组名行不做事
+					if r.kind == "item" or r.kind == "note":
+						_set_group(r.g, r.i)
+						if r.kind == "item":
+							level = 1
+						activate()
+						refresh()
+				elif r.kind == "group" or r.kind == "header":
 					if r.g != gi:
 						_set_group(r.g, 0)
 				elif r.g == gi and r.i == ii:
@@ -412,11 +603,38 @@ func _pane_input(event: InputEvent) -> void:
 				return
 
 
+## 鼠标右键／触屏两指（Platform.two_finger_cancel 发的就是右键）＝取消（小A核 P1-1）：
+## 子控件 ring／pane／party 都是 MOUSE_FILTER_STOP，右键到不了 XMenu，这里在 GUI 之前接住
+func _input(event: InputEvent) -> void:
+	if host == null or host._mode == "page" or not is_visible_in_tree():
+		return
+	if event is InputEventMouseButton and event.pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_RIGHT:
+		get_viewport().set_input_as_handled()
+		cancel()
+
+
+## 取消一步：选人→回列表；第二级→回环上；第一级（或旧一级）→回地图
+func cancel() -> void:
+	if host == null:
+		return
+	if host._mode == "actor":
+		XSound.system(2)
+		host._mode = "command"
+		refresh()
+	elif TWO_LEVEL and level == 1:
+		leave()
+	else:
+		host._cancel()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if host == null or host._mode == "page" or not is_visible_in_tree():
 		return
 	if host._mode == "actor":
 		_actor_input(event)
+		return
+	if TWO_LEVEL:
+		_two_level_input(event)
 		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
@@ -430,6 +648,37 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_left", true) or event.is_action_pressed("ui_right", true):
 		XKeyMap.handled(self)
 		step_group(1 if event.is_action_pressed("ui_right", true) else -1)
+	elif XMenu.page_dir(event) != 0:
+		XKeyMap.handled(self)
+		step_group(XMenu.page_dir(event))
+
+
+func _two_level_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		XKeyMap.handled(self)
+		if level == 1:
+			leave()
+		else:
+			host._cancel()
+	elif event.is_action_pressed("ui_accept"):
+		XKeyMap.handled(self)
+		if level == 1:
+			activate()
+		else:
+			enter()
+	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
+		XKeyMap.handled(self)
+		var d := 1 if event.is_action_pressed("ui_down", true) else -1
+		if level == 1:
+			var n := group_items(current_group()).size()
+			if n > 1 and (not event.is_echo() or (ii + d >= 0 and ii + d < n)):
+				_set_group(gi, posmod(ii + d, n))
+		else:
+			step_group(d)
+	elif event.is_action_pressed("ui_left", true) or event.is_action_pressed("ui_right", true):
+		XKeyMap.handled(self)
+		if level == 0:
+			step_group(1 if event.is_action_pressed("ui_right", true) else -1)
 	elif XMenu.page_dir(event) != 0:
 		XKeyMap.handled(self)
 		step_group(XMenu.page_dir(event))
@@ -450,7 +699,10 @@ func _actor_input(event: InputEvent) -> void:
 		XKeyMap.handled(self)
 		var d := 1 if event.is_action_pressed("ui_down", true) else -1
 		var before := host._actor_index
-		host._actor_index = XMenu._move(host._actor_index, d, members.size(), not event.is_echo())
+		# 按队伍条的显示顺序走（助力位的人在最后；空的助力位跳过）
+		var order := party_order().filter(func(k): return k >= 0)
+		var pos := XMenu._move(maxi(order.find(host._actor_index), 0), d, order.size(), not event.is_echo())
+		host._actor_index = order[pos]
 		if before != host._actor_index:
 			XSound.system(0)
 		refresh()
@@ -474,9 +726,14 @@ func _draw_pane() -> void:
 				text_layer.draw_string(body, Vector2(sx, base + 15 * 0.36), collapsed_text(g), HORIZONTAL_ALIGNMENT_LEFT, rect.end.x - sx - 8.0, 15, XUiSkin.TEXT_2)
 			"header":
 				text_layer.draw_string(head, Vector2(x, base + 21 * 0.36), str(g.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD)
+			"note":
+				var it0: Dictionary = group_items(g)[0]
+				var ok0 := item_enabled(it0)
+				text_layer.draw_string(body, Vector2(x + 8.0, base + 17 * 0.36), "%s。确定直接打开" % str(it0.get("desc", it0.name)), HORIZONTAL_ALIGNMENT_LEFT,
+					rect.size.x - 32.0, 17, XUiSkin.TEXT_2 if ok0 else XUiSkin.TEXT_3)
 			"item":
 				var it: Dictionary = group_items(g)[r.i]
-				var on: bool = r.g == gi and r.i == ii
+				var on: bool = r.g == gi and r.i == ii and (not TWO_LEVEL or level == 1)
 				var ok := item_enabled(it)
 				var ix := x + (8.0 if group_items(g).size() > 1 else 0.0)
 				var fs := XUiSkin.FS_LIST_MAX

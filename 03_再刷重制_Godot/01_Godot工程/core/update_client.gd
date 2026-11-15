@@ -112,6 +112,7 @@ func check() -> Dictionary:
 		XUpdateInstall.rollback(false, "已撤回")  # 静默检查时发现现在这版被撤回：直接退回上一份，下次启动生效（页面开着时由页面处理并说明）
 	if last["state"] != XUpdateCheck.BAD:
 		_save_stamp()
+		XWhatsNew.note_check(last, current_code())  # 已是最新且就是现在这版：补记「本次更新内容」（整包首次启动、旧客户端装的补丁）
 	checking = false
 	checked.emit(last)
 	return last
@@ -156,7 +157,8 @@ func _read_stamp() -> Variant:
 	return j.data if j.parse(FileAccess.get_file_as_string(stamp_path)) == OK else null
 
 
-## 启动后还没查过时，用上次记下的结果给红点（只留版本号和状态，补丁地址每次现查，不信旧记录）。
+## 启动后还没查过时，用上次记下的结果给红点（只留版本号、状态和更新说明，补丁地址每次现查，不信旧记录）。
+## 说明也存（update-whatsnew）：免得旧记录恢复出「有新版本」却没有「更新内容」；更早写的记录没有 notes，照旧是空（更新框不列那一节）。
 func _load_stamp() -> void:
 	if not last.is_empty():
 		return
@@ -164,7 +166,7 @@ func _load_stamp() -> void:
 	if typeof(d) == TYPE_DICTIONARY and d.get("version") is String and d.get("state") is String:
 		last = {"state": XUpdateCheck.FULL if d["state"] != XUpdateCheck.LATEST else XUpdateCheck.LATEST,
 			"current": XUpdateCheck.version_of(current_code()), "version": d["version"], "code": int(d.get("code", 0)),
-			"date": str(d.get("date", "")), "notes": PackedStringArray(), "patch": {}, "revoked": false, "stale": true}
+			"date": str(d.get("date", "")), "notes": XWhatsNew.clean_notes(d.get("notes")), "patch": {}, "revoked": false, "stale": true}
 
 
 func _save_stamp() -> void:
@@ -172,4 +174,4 @@ func _save_stamp() -> void:
 	var f := FileAccess.open(stamp_path, FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify({"time": int(Time.get_unix_time_from_system()), "state": last["state"],
-			"version": last["version"], "code": last["code"], "date": last["date"]}))
+			"version": last["version"], "code": last["code"], "date": last["date"], "notes": Array(last.get("notes", PackedStringArray()))}))

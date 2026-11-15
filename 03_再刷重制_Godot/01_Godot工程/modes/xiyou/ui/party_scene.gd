@@ -128,9 +128,9 @@ func _paint_slots(c: XMVCanvas) -> void:
 		if fl >= 1 and fl <= 33:
 			var prof := XTianqiElements.floor_deck(s_cur, fl)
 			var cov := XTianqiElements.party_coverage(s_cur, prof)
-			var w_tx := "可击弱点:" + ("、".join((cov.weak_hits as Array).map(func(e): return XTianqiElements.element_name(int(e)))) if not cov.weak_hits.is_empty() else "无")
+			var w_tx := "可击弱点：" + ("、".join((cov.weak_hits as Array).map(func(e): return XTianqiElements.element_name(int(e)))) if not cov.weak_hits.is_empty() else "无")
 			if cov.has_higher:
-				w_tx += "  高阶:有"
+				w_tx += "　高阶：有"
 			c.text("%s  |  %s" % [XTianqiElements.format_profile_line(prof), w_tx], 8, c.size.y - 26, c.size.x - 16, "left", Color("#9be4ff"), 16)
 
 

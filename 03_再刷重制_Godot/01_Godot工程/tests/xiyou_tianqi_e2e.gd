@@ -317,6 +317,23 @@ func _menu_cmd(sym: String) -> bool:
 	await _frames(STEP)
 	if menu.skin != null:  # 天启篇新界面主菜单（XSkinMainMenu，第 1A 批）：按键走到那一项再确定
 		var sk: XSkinMainMenu = menu.skin
+		if XSkinMainMenu.TWO_LEVEL:   # 两级（p1fix）：环上右键换到那一大类，多项的确定进子项、再下键走到那一项
+			if sk.level == 1:
+				await _key(KEY_ESCAPE)
+			for g in sk.groups.size() + 1:
+				if sk.group_items(sk.current_group()).any(func(it): return str(it.get("cmd", "")) == sym):
+					break
+				await _key(KEY_RIGHT)
+			if sk.group_items(sk.current_group()).size() > 1:
+				await _key(KEY_ENTER)
+				for i in 10:
+					if str(sk.current_item().get("cmd", "")) == sym:
+						break
+					await _key(KEY_DOWN)
+			if str(sk.current_item().get("cmd", "")) != sym and sk.group_items(sk.current_group()).size() > 1:
+				return false
+			await _key(KEY_ENTER)
+			return true
 		for i in 40:
 			if str(sk.current_item().get("cmd", "")) == sym:
 				await _key(KEY_ENTER)

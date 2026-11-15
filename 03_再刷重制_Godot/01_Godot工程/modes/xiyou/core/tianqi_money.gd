@@ -286,7 +286,7 @@ static func train(s: XState, param: int) -> String:
 		m["training"] = {}
 	m.training[str(param)] = lv + 1
 	s.gain_gold(-cost)
-	return "修炼成功"
+	return "强化成功"
 
 
 ## 修炼给这名角色第 i 项能力加的值：基础值 × 每级比例 × 等级（全队共享）
@@ -410,8 +410,9 @@ static func run_scale(host, s: XState) -> void:
 		for g in GOODS:
 			labels.append(_good_label(s, g, sc))
 		labels.append("离开")
-		var head := "第 %d 层　已买 %d／%d　下一样 %d%s　身上 %d" % [int(sc.floor), int(sc.buys), int(_sec("scale").get("max_buys", 3)),
-			scale_price(s), str(XDB.system().get("currencyUnit", "")), int(s.gold)]
+		var unit := str(XDB.system().get("currencyUnit", ""))
+		var head := "第 %d 层　已买 %d／%d　下一样 %d%s　身上 %d%s" % [int(sc.floor), int(sc.buys), int(_sec("scale").get("max_buys", 3)),
+			scale_price(s), unit, int(s.gold), unit]
 		var i: int = await host.show_text_with_choices("", 0, [head], labels, labels.size() - 1)
 		if i < 0 or i >= GOODS.size():
 			break
@@ -421,6 +422,6 @@ static func run_scale(host, s: XState) -> void:
 
 static func _good_label(s: XState, g: String, sc: Dictionary) -> String:
 	var t := _sec("scale")
-	var desc: String = {"wheat": "每场开战全队回满", "oil": "全队承伤 −%d%%" % roundi(float(t.get("oil", 0.1)) * 100),
-		"wine": "全队出伤 ＋%d%%" % roundi(float(t.get("wine", 0.1)) * 100)}[g]
+	var desc: String = {"wheat": "每场开战全队回满", "oil": "全队承伤 -%d%%" % roundi(float(t.get("oil", 0.1)) * 100),
+		"wine": "全队出伤 +%d%%" % roundi(float(t.get("wine", 0.1)) * 100)}[g]
 	return "%s：%s%s" % [GOODS_NAME[g], desc, "（已买）" if (sc.goods as Array).has(g) else ""]

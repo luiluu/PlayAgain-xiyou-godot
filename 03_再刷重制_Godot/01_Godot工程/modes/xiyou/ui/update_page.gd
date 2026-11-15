@@ -458,6 +458,8 @@ func _install(result: Dictionary) -> void:
 	var base := XUpdateClient.base_code()
 	var path := await installer.download(patch, base)
 	var ok := path != "" and XUpdateInstall.register(patch, base)
+	if ok:
+		XWhatsNew.note_install(result, patch)  # 记下这一版的说明，重启进游戏后弹一次「本次更新内容」（update-whatsnew；页面关了也照记）
 	if not is_inside_tree():
 		return
 	if ok:

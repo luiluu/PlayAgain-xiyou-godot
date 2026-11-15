@@ -5,8 +5,8 @@ extends Node2D
 ##   （140ms 循环）→ 消散 3 帧＋clear（每帧 100ms）→ 隐藏。
 ## - 摆位：特效 128×128、中心锚点 [64,64]，相对龙图底锚 [160,217] 偏移 [-40,-200]（OFFSET）；层挂在 XBattlerSprite 下（原点＝脚底），
 ##   位置与缩放都乘身体缩放（sprite.body_scale），所以与龙体的相对关系不随归一缩放变。
-## - 技能白名单**未定**（Kyo 待定，见交付单）：SKILLS 默认空，什么技能都不召；on_skill 只在技能号在 SKILLS 里时才出现，
-##   行动结束 vanish_all 让已出现的剑消散。RECOMMENDED 是推荐清单，仅供 Kyo 定，不参与判断。
+## - 技能名单（Kyo 11-15 定，D34）：只有 10151 黑日焚界召剑，平时不挂剑；on_skill 只在技能号在 SKILLS 里时才出现，
+##   行动结束 vanish_all 让已出现的剑消散。
 ## - 开关：XMira.DRAGON_ART（false＝回原版带剑龙图，也不再建这一层）。
 
 const DIR := "res://content/mira/fx/sword_u2/"
@@ -17,10 +17,8 @@ const DISAPPEAR := ["disappear_0", "disappear_1", "disappear_2", "clear"]
 const APPEAR_MS := 100
 const HOVER_MS := 140
 const DISAPPEAR_MS := 100
-## 触发召剑的技能号（待 Kyo 定，默认空＝从不召剑）
-static var SKILLS: Array = []
-## 推荐触发（只是建议，未启用）：10151 黑日焚界（黑龙终极技）、10152 王鳞龙心（黑龙强化）；10147 只随解放放出、10146 在人形施放，都不适合
-const RECOMMENDED := [10151, 10152]
+## 触发召剑的技能号（Kyo 11-15 定：只有 10151 黑日焚界）
+static var SKILLS: Array = [10151]
 
 var state := "hidden"  # hidden／appear／hover／disappear
 var _t := 0.0  # 当前段已过毫秒

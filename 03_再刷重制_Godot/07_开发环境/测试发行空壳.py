@@ -100,6 +100,18 @@ class T(unittest.TestCase):
         self.assertIn('static func hook(logic) -> void:\n\tpass', s)
         self.assertEqual(how['XTianqiFoo.gain'], '照搬关着时的返回')
 
+    def test_inner_class_types_become_variant(self):
+        # cc 11-15 update-whatsnew：XTianqiTable 的 `var chip: _Chip` 照抄进空壳、内部类 _Chip 没了，发行包整片编译失败
+        (self.root / 'modes/xiyou/core/tianqi_bar.gd').write_text(
+            'class_name XTianqiBar\nextends Node2D\nvar chip: _Chip = null\nvar chips: Array[_Chip] = []\n'
+            'func make(a: _Chip) -> _Chip:\n\treturn a\n\nclass _Chip:\n\tvar x := 1\n', encoding='utf-8')
+        stubs, _, _ = K.build_all(self.root)
+        s = stubs[Path('modes/xiyou/core/tianqi_bar.gd')]
+        self.assertNotIn('_Chip', s)
+        self.assertIn('var chip: Variant = null', s)
+        self.assertIn('var chips: Array[Variant]', s)
+        self.assertIn('func make(a: Variant) -> Variant:', s)
+
     def test_override_and_tree_check(self):
         (self.root / 'none.json').write_text('{"XTianqiFoo.label": "str(i)", "XTianqiFoo.regen": "BODY:var a := [dh, dm]\\nreturn a"}', encoding='utf-8')
         stubs, _, how = K.build_all(self.root)

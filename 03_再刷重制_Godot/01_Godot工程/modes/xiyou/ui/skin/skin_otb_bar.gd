@@ -15,6 +15,8 @@ static var R_NOW := 31.0
 static var R_ROW := 22.0
 static var R_SELECTED := 26.0
 static var R_PREVIEW := 15.0
+## 条占的地方顶边离 POS 多高（目标放大圈、预览小圈都在里面；小A审 P1-3 量的是 y≈627～712，再留 11）
+const CLEAR_ABOVE := 11.0
 const STEP_MAX := 50.0       # 两个小圆圆心最远隔多少（44 的圆＋6 的缝）
 const SEP := 48.0            # 本回合与下回合之间多留的缝（放「下回合」；核查返工 40→48）
 const SEP_TEXT := "下回合"
@@ -26,6 +28,12 @@ var step_px := STEP_MAX
 var sep_x := -1.0            # 分隔线 x（没有下回合时为 −1，不画）
 ## 「下回合」画在这个子节点上、z 高一层：头像都是条的子节点，画在条自己 _draw 之上，挤的时候会把竖字盖住（核查返工）
 var sep_node: Node2D
+
+
+## 行动顺序条在 1280×720 画面坐标里占的矩形（战技／物品列表要躲开它，XSkinBattleSkillList.place_for_actor）
+static func occupied_rect() -> Rect2:
+	var top := POS.y - CLEAR_ABOVE
+	return Rect2(POS.x, top, WIDTH, 720.0 - top)
 
 
 func setup(_width: float) -> void:

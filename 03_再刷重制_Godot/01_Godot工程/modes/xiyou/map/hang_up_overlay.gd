@@ -141,7 +141,7 @@ func _atlas(img: Texture2D, r: Rect2) -> TextureRect:
 
 func _paint(c: XMVCanvas) -> void:
 	c.text(str(XHangUp.params().get("tipWord", "")), 64, 28, 136, "left", TEXT_COLOR, 18, 44)
-	c.text("挂机时间:", 0, 12, 120, "right", TEXT_COLOR, 14, 16)
+	c.text("挂机时间：", 0, 12, 120, "right", TEXT_COLOR, 14, 16)
 	c.text(_time, 126, 12, 120, "left", XUI.TEXT, 14, 18)
 
 
@@ -175,7 +175,7 @@ func _paint_lines(c: XMVCanvas, lines: Dictionary) -> void:
 	var grades: Array = lines.get("grades", [])
 	if grades.is_empty():
 		return
-	c.text("每 %d 次战斗后卖出的装备品质:" % int(lines.every), 5, y, 200, "left", XUI.TEXT, 14, 18)
+	c.text("每 %d 次战斗后卖出的装备品质：" % int(lines.every), 5, y, 200, "left", XUI.TEXT, 14, 18)
 	y += 20
 	var line := ""
 	for grade in grades:

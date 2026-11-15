@@ -44,12 +44,22 @@ static func pick(save_mode: bool, filename: String, callback: Callable) -> bool:
 	return DisplayServer.file_dialog_show("导出存档" if save_mode else "导入存档", "", filename, false, mode, FILTERS, done) == OK
 
 
-## 导出文件的默认名
-static func file_name(slot: int) -> String:
-	return "再刷重制存档%02d_%s.json" % [slot, Time.get_datetime_string_from_system().replace(":", "").replace("-", "").replace("T", "_")]
+## 导出文件的默认名：天启篇开局建的档叫「再刷一把天启篇存档」，其余照旧「再刷重制存档」（文字审 18-005）。
+## 只是系统「另存为」框里的建议名：导入只看 JSON 里的 format／game，不看文件名，旧名字导出的文件照样导得进。
+static func file_name(slot: int, tianqi := false) -> String:
+	return "%s%02d_%s.json" % ["再刷一把天启篇存档" if tianqi else "再刷重制存档", slot,
+		Time.get_datetime_string_from_system().replace(":", "").replace("-", "").replace("T", "_")]
 
 
-## 某格存档包成导出 JSON；格空或存档坏了返回 {"error": 原因}。
+## 存档原文（XSave 写盘的字典）是不是天启篇开局建的档：与 XTianqi.active 同口径（flags.tianqi.rules ≥ 1）
+static func is_tianqi_data(d) -> bool:
+	if not (d is Dictionary) or not (d.get("flags") is Dictionary):
+		return false
+	var tq = d.flags.get("tianqi")
+	return tq is Dictionary and int(tq.get("rules", 0)) >= 1
+
+
+## 某格存档包成导出 JSON：{"text", "tianqi" 是不是天启篇档}；格空或存档坏了返回 {"error": 原因}。
 static func export_text(slot: int) -> Dictionary:
 	if not XSave.exists(slot):
 		return {"error": "这一格没有存档"}
@@ -64,7 +74,7 @@ static func export_text(slot: int) -> Dictionary:
 		return {"text": JSON.stringify({"format": FORMAT_SEALED, "game": GAME, "slot": slot,
 			"exportedAt": Time.get_datetime_string_from_system(), "sealed": Marshalls.raw_to_base64(XSaveSeal.seal(str(r.text)))})}
 	return {"text": JSON.stringify({"format": FORMAT, "game": GAME, "slot": slot,
-		"exportedAt": Time.get_datetime_string_from_system(), "data": d})}
+		"exportedAt": Time.get_datetime_string_from_system(), "data": d}), "tianqi": is_tianqi_data(d)}
 
 
 ## 把导出 JSON 写到选好的位置（安卓是 content:// URI）。返回出错原因，成功为 ""。

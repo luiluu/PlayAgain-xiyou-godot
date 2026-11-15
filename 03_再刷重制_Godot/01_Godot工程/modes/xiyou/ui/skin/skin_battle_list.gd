@@ -14,6 +14,10 @@ const FOOT_H := 52.0
 const PAD_X := 8.0
 ## 列表右边离角色多远（样稿 819−782）
 static var GAP_TO_ACTOR := 37.0
+## 躲开左下行动顺序条（cc/ui-skin-p1fix，O-484，小A审 v0.7 P1-3：8 行满屏时说明栏被第 7、8 颗圆头像盖住）：
+## true（默认）＝列表和行动条横向有重叠时，底边收到条顶上方 OTB_GAP；false＝照旧只收在画面里（可回退）。
+static var AVOID_OTB := true
+const OTB_GAP := 4.0
 
 var title := ""
 var header := ""
@@ -82,6 +86,10 @@ func place_for_actor(feet: Vector2, box: Vector2) -> void:
 	var y := feet.y - 32.0 - size.y / 2.0
 	x = clampf(x, 8.0, maxf(8.0, box.x - size.x - 8.0))
 	y = clampf(y, 8.0, maxf(8.0, box.y - size.y - 8.0))
+	if AVOID_OTB and XSkinBattle.on():
+		var otb := XSkinOTBBar.occupied_rect()
+		if Rect2(x, y, size.x, size.y).intersects(otb):
+			y = maxf(8.0, otb.position.y - OTB_GAP - size.y)
 	position = Vector2(x, y)
 
 

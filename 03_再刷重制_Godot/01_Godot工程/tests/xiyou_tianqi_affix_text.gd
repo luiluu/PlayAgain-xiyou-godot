@@ -129,12 +129,12 @@ func _run() -> void:
 	for c in [
 		["物攻四阶极", X.line("atk", 4, "perfect"), "极·物攻 +8%"],
 		["终伤四阶上品", X.line("final_damage", 4, "fine"), "上品·伤害加成 +12%"],
-		["再动四阶极", X.line("reaction", 4, "perfect"), "极·〔稀有〕每回合有 20% 几率多行动一次"],
+		["再动四阶极", X.line("reaction", 4, "perfect"), "极·〔稀有〕每回合有 20% 概率多行动一次"],
 		["全能光环四阶极", X.line("aura_versatile", 4, "perfect"), "极·全队·八项属性 +6%"],
 		["连击", X.line("combo", 4, "perfect"), "〔稀有〕攻击次数 +1"],
 		["暴怒四阶普通", X.line("aura_fury", 4, "normal"), "全队·暴击率 +3%，爆伤 +6%"],
 		["火焰增伤四阶极", X.line("element_damage", 4, "perfect", {"element": "fire"}), "极·火焰伤害 +22%"],
-		["避敌四阶普通", X.line("target_rate", 4, "normal", {"variant": "avoid"}), "避敌：被选为目标的几率 −10%"],
+		["避敌四阶普通", X.line("target_rate", 4, "normal", {"variant": "avoid"}), "避敌：被选为目标的概率 −10%"],
 		["物攻一阶普通", X.line("atk", 1, "normal"), "物攻 +1%"],
 	]:
 		_check("抽查 " + c[0], c[1] == c[2], [c[1], c[2]])

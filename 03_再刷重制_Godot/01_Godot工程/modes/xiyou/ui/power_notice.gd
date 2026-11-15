@@ -96,14 +96,39 @@ func _init() -> void:
 
 
 func show_text(text: String) -> void:
+	var on := XUiSkin.on()
+	box.skinned = on
 	box.text = text
+	var bf := XUiSkin.font("body") if on else box.font
+	var nf := XUiSkin.font("num") if on else box.font
+	var lines := text.split("\n")
+	var pad := Vector2(20, 14) if on else PAD
+	var lh := 26.0 if on else LINE_H
 	var w := 0.0
-	for line in text.split("\n"):
-		w = maxf(w, box.font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x)
-	var outer := Vector2(ceilf(w) + PAD.x * 2 + BORDER * 2, LINE_H * text.split("\n").size() + PAD.y * 2 + BORDER * 2)
+	if on:
+		for i in lines.size():
+			var ln := lines[i]
+			if i == 0:
+				var idx := maxi(ln.rfind(" "), -1)
+				if idx > 0:
+					w = maxf(w, bf.get_string_size(ln.substr(0, idx + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x + nf.get_string_size(ln.substr(idx + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x)
+					continue
+			elif i == 1:
+				var cidx := ln.find("：")
+				if cidx >= 0:
+					w = maxf(w, bf.get_string_size(ln.substr(0, cidx + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + nf.get_string_size(ln.substr(cidx + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x)
+					continue
+			w = maxf(w, bf.get_string_size(ln, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x)
+	else:
+		for line in lines:
+			w = maxf(w, box.font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, FONT_SIZE).x)
+	var bdr := 0.0 if on else float(BORDER)
+	var outer := Vector2(ceilf(w) + pad.x * 2 + bdr * 2, lh * lines.size() + pad.y * 2 + bdr * 2)
 	var vs := get_viewport().get_visible_rect().size if get_viewport() else Vector2(1280, 720)
 	box.size = outer
-	box.position = Vector2(vs.x - RIGHT - outer.x, vs.y - BOTTOM - outer.y)
+	var right_m := XSkinLayout.margin_for(vs.x) if on else RIGHT
+	var bottom_m := 44.0 if on else BOTTOM
+	box.position = Vector2(vs.x - right_m - outer.x, vs.y - bottom_m - outer.y)
 	box.visible = true
 	box.queue_redraw()
 	var t := get_tree().create_timer(TIMEOUT)
@@ -114,6 +139,7 @@ func show_text(text: String) -> void:
 ## 浮框本体：自己画字，每行固定 28 高（CSS line-height；Label 会被中文后备字体撑高）
 class NoticeBox extends Control:
 	var text := ""
+	var skinned := false
 	var font: Font = XPowerNotice.font()
 	var style := StyleBoxFlat.new()
 
@@ -127,6 +153,38 @@ class NoticeBox extends Control:
 		style.shadow_offset = Vector2(0, 4)
 
 	func _draw() -> void:
+		if skinned:
+			draw_style_box(XUiSkin.shadow_style(), Rect2(Vector2.ZERO, size))
+			draw_style_box(XUiSkin.panel_style(), Rect2(Vector2.ZERO, size))
+			var bf := XUiSkin.font("body")
+			var nf := XUiSkin.font("num")
+			var pad := Vector2(20, 14)
+			var lh := 26.0
+			var lines := text.split("\n")
+			for i in range(lines.size()):
+				var ln := lines[i]
+				var cy := roundf(pad.y + lh * i + lh / 2.0)
+				if i == 0:
+					var sp := ln.rfind(" ")
+					if sp > 0:
+						var left_s := ln.substr(0, sp + 1)
+						var right_s := ln.substr(sp + 1)
+						var col := XUiSkin.UP if right_s.begins_with("+") else (XUiSkin.DOWN if right_s.begins_with("-") else XUiSkin.TEXT_2)
+						draw_string(bf, Vector2(pad.x, cy + 18 * 0.36), left_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT)
+						var lx := bf.get_string_size(left_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+						draw_string(nf, Vector2(pad.x + lx, cy + 20 * 0.36), right_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, col)
+						continue
+				elif i == 1:
+					var cidx := ln.find("：")
+					if cidx >= 0:
+						var left_s := ln.substr(0, cidx + 1)
+						var right_s := ln.substr(cidx + 1)
+						draw_string(bf, Vector2(pad.x, cy + 16 * 0.36), left_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, XUiSkin.TEXT_2)
+						var lx := bf.get_string_size(left_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+						draw_string(nf, Vector2(pad.x + lx, cy + 20 * 0.36), right_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, XUiSkin.GOLD_LIGHT)
+						continue
+				draw_string(bf, Vector2(pad.x, cy + 18 * 0.36), ln, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT)
+			return
 		draw_style_box(style, Rect2(Vector2.ZERO, size))
 		var asc := font.get_ascent(FONT_SIZE)
 		var half := (LINE_H - (asc + font.get_descent(FONT_SIZE))) / 2.0
