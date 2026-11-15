@@ -2,11 +2,11 @@
 
 - 车道／工作者：文字盘点与审查（ag）
 - 分支：`xa/text-audit`
-- 状态：进行中（已完成盘点＋批 1，继续推进批 2～）
+- 状态：进行中（已完成盘点＋批 1～批 2，继续推进批 3～）
 
 ## 三句话总结
 
-本次在 `03_再刷重制_Godot/01_Godot工程` 盘出玩家可见文字总计约 **65,200 段**，其中甲类（重制／天启篇新写或改写）约 **11,080 段**、乙类（原版 MV 转换数据与地图对话）约 **54,140 段**，按每批 300～600 段拆为甲类 20 批、乙类约 108 批推进。目前已审完**批 1**（引擎入口、全局壳、内容配置与全部 40 个 `XTianqi*` / `tianqi_*.gd` 天启篇脚本，共 31 条记录：必改 10 条、建议 17 条、可不改 4 条），突出问题包括天启篇新内容残留「初入西行」「道号」「修炼」等西游／修仙用语、多处把货币「精魂」误写为「金钱」、未开放路线向玩家直出「还没修好」以及 macOS 发行包名仍写「再刷重制」。批 2 起将按甲类顺序继续审查 `modes/xiyou/tianqi_data/` 各配置表、`skill_rework.json`、UI 界面与共用核心模块，每审完一批即提交一次。
+本次在 `03_再刷重制_Godot/01_Godot工程` 盘出玩家可见文字总计约 **65,200 段**，其中甲类（重制／天启篇新写或改写）约 **11,080 段**、乙类（原版 MV 转换数据与地图对话）约 **54,140 段**，按每批 300～600 段拆为甲类 20 批、乙类约 108 批推进。目前已审完**批 1～批 2**（引擎入口、通用壳、全部 40 个 `tianqi*` GDScript 及 `tianqi_data/` 非七印非技能改写类 17 个 JSON，累计 45 条记录：必改 15 条、建议 23 条、可不改 7 条），突出问题包括天启篇残留「初入西行」「道号」「修炼」、多处把「精魂」误写为「金钱」、未开放路线直出「还没修好」、`alien_gear.json` 回退文本残留 `{every}` 占位符、`trumpet.json`「掺着」误作「搀着」以及 `summit.json` 句号断句错误。批 3 起将按甲类顺序继续审查七印与词条表、`skill_rework.json` 及 UI／共用核心模块，每审完一批即提交一次。
 
 ---
 
@@ -102,3 +102,27 @@
 | 1-031 | `content/modes.json:5` | `"title": "西游改版"` | 仅在开发预览总入口（`entry_menu.gd`）可见，发行版跳过入口直进游戏；若后续保留模式选择页需与「天启篇」命名对齐 | 开发期可保持；若公开发布多模式入口再改 | 可不改 | 两边都有 |
 
 > 批 1 复核：以上已逐条核对 `scenes/entry_menu.gd`、`core/*.gd`、`content/*.json`、`project.godot`、`export_presets.cfg`、`modes/xiyou/entry.gd` 及全部 40 个 `tianqi*` GDScript 文件。其中 `tianqi_elements.gd:869-886`、`tianqi_gear.gd:139`、`tianqi_trumpet.gd:139,150,164` 中的 `<pos=APs text=\c[1]效果:...>` 为 `honghuang.gd:47` 等正则表达式解析的格式标签，半角 `:` 属协议锚点，不判问题；`tianqi.gd:624` 的「莉co」与 `tianqi_horsemen.gd:496` 的「莉co特调」经查 `horsemen.json` 为策划原定角色名，不判错字。
+
+
+---
+
+### 批 2：天启篇配置表（一）——四线剧情、骑士、登顶、号卷、奖励与异化基础（17 个 JSON）
+
+> 范围：`modes/xiyou/tianqi_data/` 下 `famine_line.json`、`death_line.json`、`plague_line.json`、`war_line.json`、`horsemen.json`、`seg_alien.json`、`alien_gear.json`、`gojo_trials.json`、`summit.json`、`trumpet.json`、`rewards.json`、`balance_table.json`、`money_table.json`、`drop_table.json`、`gear_table.json`、`abyss_shelves.json`、`reforge.json`（扣除 `_note`/`source` 等开发注释后约 535 段玩家可见文字）。
+
+| 序号 | 位置 | 原文 | 问题 | 建议改成 | 级别 | 版本 |
+| --- | --- | --- | --- | --- | --- | --- |
+| 2-001 | `tianqi_data/famine_line.json` `scenes.omen_arrive[5][1]` | `不花东西的技能……也要交一份口粮。只有普通的攻击和防御不用。` | 「不花东西」过于口语，与代码日志 `tianqi_famine_alien.gd:223` 的「不花资源的技能」口径不一致 | `不消耗 MP 或 TP 的技能……也要交一份口粮。只有普通的攻击和防御不用。`（或 `不花资源的技能……`） | 建议 | 天启篇 |
+| 2-002 | `tianqi_data/famine_line.json`、`death_line.json`、`plague_line.json`、`war_line.json` `scenes.final_win` 末行 | `已完成，已验证。（未经姐姐复核）` | 四线终战胜利均以这句收尾，属于小小鱼对开发流程玩梗的元叙事彩蛋；仅提醒普通玩家可能看不懂「姐姐」指谁 | 保持原文（剧情彩蛋）；若不想暴露元叙事可改回正常台词 | 可不改 | 天启篇 |
+| 2-003 | 四线 JSON `scenes.choose[1][1]` | `这次的世界我想再改一次，你帮我验收。` | 「验收」同样带开发口吻元叙事彩蛋，和「像在看一个改东西的人」呼应 | 保持原文（或改为 `你帮我看着`） | 可不改 | 天启篇 |
+| 2-004 | 四线 JSON `scenes.apostle30[1][1]`（`famine`/`plague`/`death`/`war`） | `玉皇大帝的身子干瘪了下去…` 等 | 点名 30 层原版既有首领「玉皇大帝」为使徒，属引用既有塔层 Boss 而非新造西游内容 | 保持原文（如后续 30 层换 Boss 再同步替换） | 可不改 | 天启篇 |
+| 2-005 | `tianqi_data/summit.json` `scenes.not_ready[0][1]` | `……这条路还没修好。先回去吧。` | 与 1-011 同源，面向玩家直出开发口吻「还没修好」 | `……这条路暂未开放，先回去吧。` | 必改 | 天启篇 |
+| 2-006 | `tianqi_data/summit.json` `scenes.honghuang_ask[0][1]` | `注意：保留存档，对话后只有一个新游戏可以获取洪荒通关奖励，后续要继续新游戏获取洪荒通关奖励得重新对话！\n是否保存了？` | 「只有一个新游戏可以…」语序略拗口，且两处重复「获取洪荒通关奖励」 | `注意：请先保留当前存档！对话后仅限下一个新游戏领取洪荒通关奖励；若之后还要新开档领取，需读档重新对话。\n确认继续吗？` | 建议 | 天启篇 |
+| 2-007 | `tianqi_data/summit.json` `scenes.honghuang_done[0][1]` | `你已完美通关！后续新游戏可以获取1000人道碎片，18星神。\n20万肝帝积分，并且洪荒之家永久开启。` | `18星神。` 后用了句号导致清单被错误截断成两句，且「并且」前无主语断句生硬 | `你已完美通关！后续新游戏可获取 1000 人道碎片、18 星神、\n20 万肝帝积分，并永久开启洪荒之家。` | 必改 | 天启篇 |
+| 2-008 | `tianqi_data/trumpet.json` `forget.desc` | `选择一名角色，封上一卷已学的号卷。每次消耗1枚，号卷不返还。` | 同 1-022，「封上一卷」易读成「封上面一卷」 | `选择一名角色，封印一卷已学的号卷。每次消耗 1 枚，号卷不返还。` | 建议 | 天启篇 |
+| 2-009 | `tianqi_data/trumpet.json` `scrolls[0].lore` | `雹子与火搀着血落下，地的三分之一被烧` | 错别字：「搀着」意为搀扶，「混合」应为「掺着」 | `雹子与火掺着血落下，地的三分之一被烧` | 必改 | 天启篇 |
+| 2-010 | `tianqi_data/trumpet.json` `scrolls[2].sweet` | `自己上的持续效果 +33%：持续伤害、持续回复的数值，减益的回合数` | 「自己上的」过于口语 | `自己施加的持续效果 +33%：持续伤害、持续回复的数值，减益的回合数` | 建议 | 天启篇 |
+| 2-011 | `tianqi_data/trumpet.json` `scrolls[6].bitter` | `金钱掉落 −30%` | 游戏中货币统一叫「精魂」（`System.json`），写「金钱」与全局口径不符 | `精魂掉落 −30%` | 必改 | 天启篇 |
+| 2-012 | `tianqi_data/rewards.json` `seal.lines.death.text`、`seal.lines.war.text`、`relic.lines.death.text` | `……有 %d%% 几率……` | 概率用词与其余系统「概率」不一致 | `……有 %d%% 概率……` | 建议 | 天启篇 |
+| 2-013 | `tianqi_data/rewards.json` `relic.lines.war.text` | `满 %d 点对敌全体火焰轰炸一次` | 与 `tianqi_war_alien.gd`「我方全体」及 `tianqi_qiyin_effects.gd`「敌方全体」写法不统一 | `满 %d 点对敌方全体火焰轰炸一次` | 建议 | 天启篇 |
+| 2-014 | `tianqi_data/alien_gear.json` `new_affixes.again.benefit` | `按级每 {every} 回合（侵染／蚀骨／化形／终焉）多行动一次。` | 回退文案中残留未替换模板占位符 `{every}`（且 `dying`/`thrift` 硬编码化形档数值，与分档数组不一致）；当 `TIER_TEXT=false` 或 `idx < 0` 时会直接显示给玩家 | 改为不带 `{every}` 的安全兜底文案（如 `按异化等级每数回合多行动一次。`），或确保所有调用走分档拼接 `tier_benefit` | 必改 | 天启篇 |
