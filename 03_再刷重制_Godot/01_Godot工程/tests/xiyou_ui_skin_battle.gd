@@ -171,6 +171,7 @@ func _ring(b: XBattleScene, a: XActor) -> void:
 	await _mouse(p, MOUSE_BUTTON_LEFT)
 	await _frames(3)
 	_check("ring_mouse_confirm_opens_list", b.list_win != null)
+	_check("ring_hidden_while_list", is_instance_valid(ring) and not ring.active and not ring._drawn_active)
 	_check("ring_hit_outside", ring._hit(ring.position + ring.center) == -1)
 
 

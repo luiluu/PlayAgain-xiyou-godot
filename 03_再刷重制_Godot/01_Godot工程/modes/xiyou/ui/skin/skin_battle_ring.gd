@@ -27,6 +27,7 @@ var orb_r := 41.0
 var center := Vector2.ZERO       # 本节点里的环心
 var _angles: Array = []
 var _spin := 0.0
+var _drawn_active := true
 
 
 static func create_ring(parent: Control, list: Array, actor_name := "") -> XSkinBattleRing:
@@ -113,12 +114,18 @@ func _hit(p: Vector2) -> int:
 
 
 func _process(delta: float) -> void:
-	if XUiSkin.breathing():
+	if active != _drawn_active:
+		queue_redraw()
+	if XUiSkin.breathing() and active:
 		_spin += delta
 		queue_redraw()
 
 
+## 失活（开着技能／物品列表、选目标、看怪物信息）时整环不画（样稿：列表出来环就收起；选目标时 XBattleScene 另把它淡出）
 func _draw() -> void:
+	_drawn_active = active
+	if not active:
+		return
 	var line := XUiSkin.LINE
 	# 外圈虚线（14 秒一圈）
 	var dashes := 48
