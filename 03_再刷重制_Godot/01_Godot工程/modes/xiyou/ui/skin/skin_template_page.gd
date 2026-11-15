@@ -398,12 +398,13 @@ func _draw_top() -> void:
 ## skip_first：第一行是名字（牌上已有）时跳过
 static func help_rows(rows: Array, skip_first := true) -> Array:
 	var out := []
+	var col := RegEx.create_from_string("(?i)(?:\\\\|\u001b)col\\[\\d+\\]")   # 说明卡一行两项（\col[50] 分到右半）：这里用两个全角空格隔开
 	var esc := RegEx.create_from_string("(?i)(?:\\\\|\u001b)(?:[a-z]+\\[[^\\]]*\\]|[{}.|!><^$])")
 	for k in rows.size():
 		if skip_first and k == 0:
 			continue
 		var r: Array = rows[k]
-		var t := esc.sub(XMVText.convert_escapes(str(r[0])), "", true).strip_edges()
+		var t := esc.sub(col.sub(XMVText.convert_escapes(str(r[0])), "　　", true), "", true).strip_edges()
 		if t == "":
 			continue
 		var c := XHelpCard._css(str(r[2])) if r.size() > 2 else XUiSkin.TEXT_2

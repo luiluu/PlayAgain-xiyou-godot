@@ -208,8 +208,9 @@ func _template() -> void:
 	check("tpl_targets_above_buttons", page.targets.get_rect().end.y <= page.card.button_rect(0).position.y + 0.5, [page.targets.get_rect(), page.card.button_rect(0)])
 	page.show_targets([])
 	check("tpl_targets_hidden", not page.targets.visible and page.card.reserve_bottom == 0.0)
-	var cs := XSkinTemplatePage.help_rows([["名字", 20, "#fff", false, 0], ["\\c[2]红字\\i[5]", 16, "rgba(255,128,128,1)", false, 0], ["", 16, "#fff", false, 0]])
-	check("tpl_help_rows", cs.size() == 1 and cs[0].text == "红字", cs)
+	var cs := XSkinTemplatePage.help_rows([["名字", 20, "#fff", false, 0], ["\\c[2]红字\\i[5]", 16, "rgba(255,128,128,1)", false, 0], ["", 16, "#fff", false, 0],
+		["甲：1\\col[50]乙：2", 16, "#fff", false, 0]])
+	check("tpl_help_rows", cs.size() == 2 and cs[0].text == "红字" and cs[1].text == "甲：1　　乙：2", cs)
 	check("tpl_currency_default", page.currency_pairs()[0][0] == "精魂")
 	page.queue_free()
 	await frames(2)

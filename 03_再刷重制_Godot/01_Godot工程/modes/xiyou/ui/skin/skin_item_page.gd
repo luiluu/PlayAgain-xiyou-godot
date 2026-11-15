@@ -235,7 +235,7 @@ func _sync_card(mode: String) -> void:
 	if mode == "list" and usable:
 		d.buttons = [{"text": "使用", "primary": true}]
 	set_card(d)
-	var friend := mode in ["list", "action", "actor"] and usable and int(rec.get("scope", 0)) in [7, 8, 9, 10, 11]
+	var friend := mode in ["list", "actor"] and usable   # 操作菜单开着时牌底让给菜单 and int(rec.get("scope", 0)) in [7, 8, 9, 10, 11]
 	if friend:
 		show_targets(target_rows(rec), mode == "actor", mode == "actor" and int(rec.get("scope", 0)) in [8, 10], sc._actor if mode == "actor" else -1)
 		targets.title = "给谁学" if _learns(rec) else "给谁用"
