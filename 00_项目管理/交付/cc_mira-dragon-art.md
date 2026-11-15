@@ -68,3 +68,46 @@
 ## 本分支提交
 
 - 见 `git log main..cc/mira-dragon-art`
+
+## 小A 乙档核查
+
+- **核查对象**：`cc/mira-dragon-art`（`df8d427f5`），按只读核查要求未改任何游戏代码。
+- **总体结论**：**通过**（无 P1/P2/P3 代码或规格问题；其中 4 张验证截图因本会话无看图/视觉工具，仅做像素与区域程序核对，未做人眼视觉审视，详见「未核到」）。
+
+### 逐项核查结果
+
+1. **21 张黑龙无剑动作图规格**【核了规则＋实跑】：
+   - `03_再刷重制_Godot/01_Godot工程/content/mira/img/sv_actors/sv/UserSV_MiraDragon/` 共 21 张 PNG，文件名与数量与原版 `UserSV_MiraDragon`（本工作树实际位于 `03_再刷重制_Godot/02_内容与素材/冻结正式源/app.nw/img/sv_actors/sv/UserSV_MiraDragon/`，无 `v0.62.12/` 子层）完全一一对应。
+   - Python PNG 解析逐张实测：21 张全部为 `340×280` RGBA 8-bit、alpha 仅 `{0, 255}` 二值、可见外接框全部在 `[61, 58, 260, 217]` 内且底边 `y = 217`；`dragon_unarmed_manifest.json` 动作映射与 `XAppearance.form_meta("MiraDragon")` 一致。
+   - 召剑特效 `content/mira/fx/sword_u2/` 10 张（`appear_0..2`、`hover_0..2`、`disappear_0..2`、`clear`）实测均为 `128×128` RGBA、`appear/hover/disappear` alpha 仅 `{0, 255}`、`clear.png` 全透明。
+2. **开关关闭回退与人形影响**【核了规则＋实跑＋读代码】：
+   - `XMira.DRAGON_ART = false` 时，`XDB.img_path` 跳过 `content/mira/img/sv_actors/sv/UserSV_MiraDragon/` 拦截直接走原版路径（与 `main` 一致）；`XMiraSwordFx.wants()` 与 `dragon_sprite()` 均返回 `false`，`on_skill` 不会创建 `MiraSwordFx` 节点（`layer_of(sp) == null`）。
+   - 人形 `MiraHuman` / `Codex_Mira_SV_u2`（`XMira.ART`）及图鉴 `XActorBook`（`BOOK_MULTI[168]` / `Codex_Mira_SV_u2`）逻辑均不读 `XMira.DRAGON_ART`，不受影响。
+3. **召剑层位置、独立性与技能名单**【核了规则＋实跑＋读代码】：
+   - `XMiraSwordFx` 作为独立 `Node2D`（`z_index = 1`）挂在 `XBattlerSprite` 下（不挂在 `sp.sprite` 下、不裁进 `340×280` 龙图；`manifest.json` 顶缘相对龙画布 `y = -47`）。
+   - `OFFSET = Vector2(-40, -200)`、`center_for(s) = OFFSET * body_scale`、`scale = Vector2(s, s)`、`_spr.centered = true`（`128×128` 中心 `[64,64]` 对齐层原点）；对照 `battler_sprite.gd:_place_body()` 与 `UserSV_MiraDragon` 档 `[340, 280, 61, 58, 260, 217]`，脚底 `y=217` 映射到 `XBattlerSprite` 原点 `y=0`（可见中心 `x=160.5` 与 `160` 仅差 `0.5px`，属正常取整）。
+   - `XMiraSwordFx.SKILLS` 默认 `[]`（不召剑，名单待 Kyo 定，不算问题）；`RECOMMENDED` 仅作注释常量不参与判断；`battle_scene.gd` 仅在 `_play` 收尾调用 `vanish_all` 与 `_perform_action` 调用 `on_skill` 各 1 行，未动 `battle_logic`／数值／随机数。
+4. **影响面（`XDB.img_path`）与测试实跑**【读代码＋实跑】：
+   - `modes/xiyou/core/xdb.gd:213` 仅 1 个 `if XMira.DRAGON_ART and (folder + "/" + name).begins_with("sv_actors/sv/UserSV_MiraDragon/UserSV_MiraDragon"):`，其余所有角色／敌人／系统／行走图路径完全不变。
+   - 本工作树前台单独实跑通过：
+     - `xiyou_mira_dragon_art.tscn`：`30/30` 通过
+     - `xiyou_actor_looks.tscn`：`35/35` 通过
+     - `xiyou_mira_art.tscn`：`26/26` 通过
+     - `语法检查.py`：935 个 `.gd` 0 个问题
+     - `发行空壳.py check`：62 个脚本、534 个函数全过
+5. **4 张截图核对**【仅程序核对像素区域，未视觉看图】：
+   - `03_再刷重制_Godot/04_验证/本地结果/mira_dragon_art/` 下 4 张截图（`dragon_idle.png`、`dragon_attack7_frame2.png`、`dragon_spell10_frame2.png`、`dragon_sword_hover.png`）实测均为 `1280×720`：
+     - 4 张图左右半区（原版 vs 新图）底边均为 `y = 587`，脚底对齐；
+     - `dragon_sword_hover.png` 与 `dragon_idle.png` 右半区像素差分仅发生在头顶召剑区域（`4168` 像素，外接框 `(562, 162, 733, 230)`，中心 `(647.5, 196.0)` 与理论中心 `(647.5, 197.7)` 吻合）；
+     - 21 张新图连通域检查：除主体外，仅 `10_0`/`10_1`/`10_2`/`7_1` 的原版同位置火焰火星像素与 `15_0` 紫色异常特效点，未见明显游离剑柄碎片。
+
+### 发现问题（P1/P2/P3）
+
+- **P1 / P2 / P3**：无。
+
+### 未核到（留给总装／后续）
+
+1. **4 张截图的人眼／视觉审视**：本会话无看图（图像输入）工具，未能肉眼确认龙身轮廓内是否有细微残留剑柄、动作帧衔接美感或头顶剑的视觉观感，请总装或 Kyo 打开 `03_再刷重制_Godot/04_验证/本地结果/mira_dragon_art/` 4 张图目视终验。
+2. **全量／其余选测场景**：按本单「不跑 `并行测试.py`、超过 2 分钟不跑」要求，未跑全量 `检查.sh` 及 `xiyou_mira_battle`、`xiyou_actor_book`、`xiyou_actor_modules`、`xiyou_actor_sv_compare`、`xiyou_battle_log`、`xiyou_determinism` 等其余场景，留给总装合并时跑。
+3. **`~/.codex` 原图 `cmp` 比对**：未读 `~/.codex` 源目录，未复测交付单所述的 `cmp` 逐字节对比。
+
