@@ -30,10 +30,10 @@ static var TOUCH_V2 := true
 static var COMFORT_V2 := true
 ## WARM_BG（D44，只出对比图，默认 false＝冷黑）：底、面板、线换暖炭黑（小A审 美化 1）
 static var WARM_BG := false
-## D45（Kyo：环心「会动的像素小人」和「角色头像」都要）：FACE＝现在的大圆头像（默认，等 Kyo 看对比图定）；
-## SPRITE＝方案 A 环心像素小人、头像只在右栏队伍卡；SPRITE_BADGE＝方案 B 环心像素小人＋右下叠一枚小圆头像
+## D45／D48（Kyo：环心「会动的像素小人」和「角色头像」都要；11-15 定 A）：SPRITE＝方案 A 环心像素小人、头像留在右栏队伍卡（默认）；
+## FACE＝原来的大圆头像（回退：`XUiSkin.CENTER_STYLE = 0`）；SPRITE_BADGE＝方案 B 环心小人＋右下叠一枚小圆头像（没选，留着）
 enum CenterStyle { FACE, SPRITE, SPRITE_BADGE }
-static var CENTER_STYLE := CenterStyle.FACE
+static var CENTER_STYLE := CenterStyle.SPRITE
 const U4_SEL_DISC := Color("7a1a14")     # u4 组图标选中时的暗红圆底
 const BTN_IDLE_FILL := Color("2b2318")   # 主按钮平时：深褐金底
 const TARGET_PULSE := 2.4                 # 选目标金圈一呼一吸的秒数（原 sin·TAU 绝对值＝每秒 2 闪）

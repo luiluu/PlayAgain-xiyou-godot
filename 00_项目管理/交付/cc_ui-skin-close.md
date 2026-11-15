@@ -26,9 +26,10 @@
 | O-待定 | `modes/xiyou/ui/skin/ui_skin.gd` `XUiSkin.CORE_V2`；`skin_template_page.gd`、`skin_item_page.gd`、`skin_battle.gd`、`battle/battle_scene.gd` | 详情牌原样灌旧说明卡的行和 MV 老颜色（纯黄价格、红属性、青蓝说明），带品质／种类／买卖价行；战斗说明卡盖行动条 | 旧颜色对照表、去重复行和价格、装备分节；战斗说明卡收到行动条上方 | Fable审 P1-1／A1／A19、小A审 P1-4／P1-6 | `XUiSkin.CORE_V2 = false` | cc | 保留 |
 | O-待定 | `modes/xiyou/ui/skin/ui_skin.gd` `XUiSkin.FONT_V2` | 新页面字号写死，不认字体大小设置 | 列表、辅助字号 ×字体大小档 ×触屏 1.1（封顶 1.3），辅助字下限 15 | Fable审 P1-3／A2、小A审 舒适 5 | `XUiSkin.FONT_V2 = false` | cc | 保留 |
 | O-待定 | `modes/xiyou/ui/skin/ui_skin.gd` `XUiSkin.TOUCH_V2`；`skin_key_hints.gd`、`skin_back_button.gd`、`skin_list.gd`、`skin_battle_ring.gd`、`core/touch_controls.gd` | 触屏没有能点的提示和返回，列表一碰就触发、不能拖，菜单里虚拟键压在界面上，指令环跟着角色跑 | 提示胶囊可点、左上「‹」返回、列表拖动＋松手才点、全屏菜单收虚拟键、触屏指令环固定右下 | Fable审 P2-1／P2-8／A3／A4／A8／A20、小A审 P1-1／P1-3／P1-5，Kyo 定指令环右下 | `XUiSkin.TOUCH_V2 = false` | cc | 保留 |
+| O-待定 | `modes/xiyou/ui/skin/ui_skin.gd` `XUiSkin.CENTER_STYLE`；`skin_main_menu.gd` | 主菜单环心是放大的角色圆头像（和右栏队伍卡重复、放大发糊） | 环心换成 3 倍整数放大的战斗站立像素小人（0-1-2-1 播放，动效「全部」档才动），头像留在右栏队伍卡 | Fable审 A28、小A审 美化 6，Kyo 11-15 定 D48＝A | `XUiSkin.CENTER_STYLE = 0` | cc | 保留 |
 | O-待定 | `modes/xiyou/ui/skin/ui_skin.gd` `XUiSkin.COMFORT_V2`；`skin_card.gd`、`tianqi_skin_altar.gd`、`skin_otb_bar.gd`、`skin_party_strip.gd`、`skin_side_status.gd`、`skin_ring_nav.gd` | 正文近白、禁用灰过暗、优秀荧光绿、主按钮常驻大红、选目标每秒两闪、血条 5px、祭坛状态只靠颜色、u4 选中亮红盘 | 骨白正文、灰提亮、优秀绿 #8fdc5a、按钮平时旧金、2.4 秒慢呼吸、血条 8px、◆◇· 记号、选中暗红圆底 | Fable审 C1～C4、小A审 舒适 1～4、6、7，Kyo 定优秀绿调柔、u4 只调暗 | `XUiSkin.COMFORT_V2 = false` | cc | 保留 |
 
-（`WARM_BG`、`CENTER_STYLE` 默认关、只是待 Kyo 定的方案，不是优化项，没登记；Kyo 定了再登记。）
+（`WARM_BG` 默认关、只是待 Kyo 定的对比方案，没登记；`CENTER_STYLE` Kyo 已定 A，登记在上表。）
 
 ## 截图（本机，不入库）
 
@@ -160,4 +161,10 @@
 
 - 本地专项：`xiyou_ui_skin_close` 67/67（窗口出图 212/212），`xiyou_ui_skin` 104、`_1b` 85、`_1c` 78、`_3a` 90、`_3b` 40（窗口 52）、`_5c` 79、`_menu` 99、`_battle` 61、`_hud` 104、`_4b` 77、`_offshot` 29、`_p1fix` 1，全过；`语法检查.py` 过。
 - 云端选测：返修提交见下一行。
-- 返修云端：待填
+- 返修云端（整轮 635 场景，因为改到 `core/touch_controls.gd`）：a2a08016f 挂 13 个；其中 `xiyou_input_handled`（新战技列表与 p1fix 主菜单直接调 `set_input_as_handled`）和 `xiyou_ui_skin_close`（临时 `XSkinRingNav` 没释放，退出时报资源未释放）是本单的，已在 ee1f8e00d 修。ee1f8e00d 重跑剩 11 个：`text_fix_dump`、`text_fix_shots`、`xiyou_common_scripts`、`xiyou_dungeon`、`xiyou_enemy_book`、`xiyou_equipment`、`xiyou_gear_search`、`xiyou_inlay_book`、`xiyou_rift2_canglong`、`xiyou_troop_events_d`、`xiyou_troop_events_half`——**main 自己 cdf35cb92 的整轮（actions/runs/43751229906）同样挂这 11 个**（另有 `xiyou_pet_capture` 偶发、`xiyou_input_handled`），是 cc/text-fix-b 改字（「奥数→奥术」「Boos→Boss」等）跟参照对照的断言没对上，与本单无关，要 text-fix 那条线修。本单运行页 actions/runs/43755928864。
+- 顺带：`xiyou_input_handled` 在 main 上也挂（p1fix 主菜单那处），本单合进去后 main 上这条也会过。
+
+### D48（Kyo 11-15 定 A，项目经理cc 转达）
+
+- `XUiSkin.CENTER_STYLE` 默认改成 `SPRITE`：主菜单环心是像素小人，头像留在右栏队伍卡；回退 `XUiSkin.CENTER_STYLE = 0`（大头像）。方案 B 的代码留着没删。断言 `d48_default_sprite`、`d48_rollback_face`；`xiyou_ui_skin_close` 68/68（窗口 213/213），`_menu` 99、`_p1fix` 1、`_3b` 40、`_offshot` 29。截图 `menu_*_after*.png`、`d45_*` 已按新默认重拍。D44（`WARM_BG`）照旧默认关。
+- 这一提交只动主菜单环心，没再跑云端（上一轮整轮在它前一个提交）；相关专项本地都过了。

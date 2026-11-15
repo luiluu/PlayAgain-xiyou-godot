@@ -238,7 +238,10 @@ func _comfort() -> void:
 		prev = v
 	check("comfort_pulse_slow", peaks == 0, peaks)
 	check("comfort_altar_shapes", XTianqiSkinAltar.STATE_TEXT[2].begins_with("◆") and XTianqiSkinAltar.STATE_TEXT[1].begins_with("◇"))
-	check("d45_default_face", XUiSkin.CENTER_STYLE == XUiSkin.CenterStyle.FACE)
+	check("d48_default_sprite", XUiSkin.CENTER_STYLE == XUiSkin.CenterStyle.SPRITE)   # Kyo 11-15 定 A
+	XUiSkin.CENTER_STYLE = 0   # 回退：大头像
+	check("d48_rollback_face", XUiSkin.CENTER_STYLE == XUiSkin.CenterStyle.FACE)
+	XUiSkin.CENTER_STYLE = XUiSkin.CenterStyle.SPRITE
 	var s0 := _state()
 	check("d45_sv_frame", XSkinMainMenu.sv_frame(s0.members()[0]) != null and XSkinMainMenu.sv_frame(s0.members()[0], 2).region.position.x > XSkinMainMenu.sv_frame(s0.members()[0]).region.position.x)
 	XState.current = null
@@ -431,7 +434,7 @@ func _d45() -> void:
 			await frames(3)
 		check("d45_differs_" + sz[1], imgs[0].get_data() != imgs[1].get_data() and imgs[1].get_data() != imgs[2].get_data())
 		save_compare(imgs[1], imgs[2], "d45_A_vs_B_%s" % sz[1])
-	XUiSkin.CENTER_STYLE = XUiSkin.CenterStyle.FACE
+	XUiSkin.CENTER_STYLE = XUiSkin.CenterStyle.SPRITE   # 回到默认（Kyo 定 A）
 	get_window().size = Vector2i(1280, 720)
 	await frames(4)
 
