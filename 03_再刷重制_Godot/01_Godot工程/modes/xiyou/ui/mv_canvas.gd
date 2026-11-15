@@ -233,6 +233,9 @@ func _blink_cursor(r: Rect2) -> void:
 
 ## MV Window 的上下滚动箭头（皮肤 Window.png），x 为窗口宽的一半，坐标相对窗口左上。
 static func arrows(win: Control, up: bool, down: bool) -> void:
+	if XUiSkin.on():
+		XUiSkin.draw_arrows(win, win.size.x, win.size.y, up, down)
+		return
 	var sk := XUI.skin()
 	if sk == null:
 		return
