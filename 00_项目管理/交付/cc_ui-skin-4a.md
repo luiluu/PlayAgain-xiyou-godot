@@ -151,3 +151,16 @@
 - 截图（同目录 `04_验证/本地结果/ui_skin_4a/`）：`map_16x9_after_touch.png`、`map_20x9_after_touch.png`（右上胶囊在 Save 下）、`battle_20x9_after_touch_five.png`、`battle_16x9_after_touch_five.png`（5 人出战）、`map_*_after_touch_five.png`。
 - 验证：`xiyou_ui_skin_4a` 无头 57/57；窗口 `--touch`（16:9／20:9／4:3）、`--touch --five`（16:9／20:9）52～61 条全过；`xiyou_ui_skin_battle` 61、`_hud` 104、`_close` 68、`_5c` 79、`_4b` 77、`xiyou_mv_animation` 21、`xiyou_input_handled` 10 全过；`语法检查.py` 通过。
 - 顺带发现（不是本单引起，没修）：16:9 窗口下原版虚拟摇杆头上的队长行走图画成一块白方块（20:9 正常；4A 开关全关、旧样式下同样有），留给虚拟键车道查 `XTouchControls._draw_ghost_knob` 的取图区域。
+
+## 小A乙档复核（针对 41be428c2）
+
+- **结论**：**通过（P1/P2 清零，可合入 main）**；P3-2 经代码与专项核查未改帧数、时序与伤害结算，**无需升甲档**。
+- **三条返修复核明细（分清实测与只看代码）**：
+  1. **P2-1（实测：截图像素＋无头专项＋代码）**：`XMapHUD._layout_skin` 读取 `XTouchControls.instance.group_rects.get("top")` 底边＋8。像素核查 `map_16x9_after_touch.png` 与 `map_20x9_after_touch.png`：右上 `Save`/`Hide` 顶组底边在 `y = 70`，第一排黑金胶囊从 `y = 78` 起画，中间留出完整 `8px` 空隙（`0` 重叠）；代码核对 `modern`（`top` 组底边＋8）与非触屏/`HUD_V2 = false` 回退均自洽；`xiyou_ui_skin_4a` `touch_hud_clear_of_top_keys` 实测通过。
+  2. **P3-1（实测：截图像素＋无头专项＋代码）**：新增 `XSkinBattleRing.drawn_rect()`、`XBattleScene.party_rect()` 与 `XSkin4A.avoid_rect`。像素核查 `battle_20x9_after_touch_five.png`：5 人出战队伍面板底边在 `y = 304`，指令环「某某的回合」金字顶在 `y = 324`（`14～20px` 间隙、无压叠）；`xiyou_ui_skin_4a` 无头 5 人出战下 `five_members`、`touch_ring_clear_of_party`、`touch_ring_clear_of_keys` 与合成重叠断言 `avoid_rect_moves_left` 均实测通过（只看代码确认 `avoid_rect` 在 `HUD_V2 = false` 时不动）。
+  3. **P3-2（只看代码＋专项实测）**：逐行核查 `modes/xiyou/battle/mv_animation.gd`（`_timing` 与 `_flash_mult`），仅改变绘制透明系数 `target_gain`/`screen_gain`（在 `XBattleScene` 子树内取动画 `rate` 与 `XConfig.battle_speed()` 的较大变速倍数），`span`、`flash_duration`、`screen_duration`、`hiding_duration`、`step()`、随机数与伤害结算完全未改；`xiyou_ui_skin_4a`（`anim_rate4_in_battle_follows_speed`、`anim_outside_battle_by_rate`）与 `xiyou_mv_animation` 均实测通过。
+- **额外确认（16:9 原版虚拟摇杆头白方块）**：**属实**——像素核查 `map_16x9_after_touch.png` 与 `map_16x9_after_touch_five.png`，摇杆头中心 `(196, 516)..(234, 563)` 确实画成 `39×48px` 实心近白方块 `(235, 234, 233)`（非地图雪地透底，下方仍为深色摇杆底圆），而 `map_20x9_after_touch.png` 与 `battle_16x9_after_touch.png` 同位置均为正常行走图像素；确非本单改动所致，留给虚拟键车道排查。
+- **本轮前台实测与留给总装**：
+  - 前台实测通过：`xiyou_ui_skin_4a.tscn`（`57/57`）、`xiyou_mv_animation.tscn`（`21/21`）、`发行空壳.py check`（62 脚本 534 函数对齐）、`回退开关覆盖.py`（388 开关，`XSkin4A` 五开关无新缺口）；上述 3 张新截图及 `map_16x9_after_touch_five.png` / `battle_16x9_after_touch.png` 像素复核。
+  - 仍留给总装：`检查.sh --full`（含 `--oracle` 如需对照）、`皮肤关闭对照.py` 现场重跑、合入 `main` `501b6e99b` 消 11 项已知 `XTextFix` 云端参照失败、真机刘海安全区与触屏手测。
+
