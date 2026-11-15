@@ -151,6 +151,7 @@ func setup(s: XState, opts: Array) -> void:
 
 
 func _ready() -> void:
+	add_to_group(XUiSkin.FULLSCREEN_GROUP)   # 收口批：开着时收起虚拟摇杆／AB 键
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	theme = XUiSkin.theme()

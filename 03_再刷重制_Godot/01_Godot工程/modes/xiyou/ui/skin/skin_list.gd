@@ -73,7 +73,7 @@ func scrollable() -> bool:
 
 
 func content_width() -> float:
-	return size.x - (SCROLL_W + XUiSkin.GRID if scrollable() else 0.0)
+	return size.x - (scroll_w() + XUiSkin.GRID if scrollable() else 0.0)
 
 
 ## 第 i 项在列表里的矩形（已减去滚动；不在可见范围时也照算）
@@ -159,18 +159,65 @@ func _gui_input(event: InputEvent) -> void:
 			scroll_to(top_row + (-1 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else 1))
 			accept_event()
 			return
+	if XUiSkin.TOUCH_V2:
+		_drag_input(event)
+		return
+	if event is InputEventMouseButton and event.pressed:
+		var mb := event as InputEventMouseButton
 		if mb.button_index != MOUSE_BUTTON_LEFT:
 			return
-		var i := item_at(mb.position)
-		if i < 0:
-			return
-		bar.press()
-		if i == index:
-			if not bool(items[i].get("disabled", false)):
-				activated.emit(i)
-		else:
-			select(i)
+		_tap(mb.position)
 		accept_event()
+
+
+func _tap(p: Vector2) -> void:
+	var i := item_at(p)
+	if i < 0:
+		return
+	bar.press()
+	if i == index:
+		if not bool(items[i].get("disabled", false)):
+			activated.emit(i)
+	else:
+		select(i)
+
+
+## 收口批（TOUCH_V2）手指拖动：按下只记位置，上下拖过 DRAG_SLOP 就按行滚（不选中、不触发）；松手时没拖过才算一次点（选中／再点打开）。
+## 触屏会被引擎模拟成鼠标左键，所以只接鼠标事件。
+const DRAG_SLOP := 10.0
+var _drag_from := Vector2.INF
+var _drag_row0 := 0
+var _dragging := false
+
+
+func _drag_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		var mb := event as InputEventMouseButton
+		accept_event()
+		if mb.pressed:
+			_drag_from = mb.position
+			_drag_row0 = top_row
+			_dragging = false
+			return
+		var was := _dragging
+		var from := _drag_from
+		_drag_from = Vector2.INF
+		_dragging = false
+		if not was and from != Vector2.INF:
+			_tap(mb.position)
+		return
+	if event is InputEventMouseMotion and _drag_from != Vector2.INF:
+		var dy := _drag_from.y - (event as InputEventMouseMotion).position.y
+		if not _dragging and absf(dy) >= DRAG_SLOP and scrollable():
+			_dragging = true
+		if _dragging:
+			scroll_to(_drag_row0 + roundi(dy / row_height))
+			accept_event()
+
+
+## 滚动条宽：触屏版 8（手指找得到），旧 4
+func scroll_w() -> float:
+	return 8.0 if XUiSkin.TOUCH_V2 else SCROLL_W
 
 
 ## 名字放不下时先缩字（最小 min_fs），还放不下就截断加「…」（1B：两列物品名不再被硬裁成「治疗药水(」）。返回 [文字, 字号]
@@ -271,8 +318,8 @@ func _draw() -> void:
 			if sx < x + max_w - 20.0:
 				draw_string(body, Vector2(sx, base + sub_size * 0.36), sub, HORIZONTAL_ALIGNMENT_LEFT, x + max_w - sx, sub_size, XUiSkin.TEXT_2)
 	if scrollable():
-		var track := Rect2(size.x - SCROLL_W, 0, SCROLL_W, visible_rows() * row_height)
+		var track := Rect2(size.x - scroll_w(), 0, scroll_w(), visible_rows() * row_height)
 		draw_rect(track, Color(1, 1, 1, 0.06))
 		var h := maxf(track.size.y * visible_rows() / float(rows_total()), 16.0)
 		var y := (track.size.y - h) * top_row / float(maxi(rows_total() - visible_rows(), 1))
-		draw_rect(Rect2(track.position.x, y, SCROLL_W, h), Color(XUiSkin.LINE, 0.55))
+		draw_rect(Rect2(track.position.x, y, scroll_w(), h), Color(XUiSkin.LINE, 0.55))

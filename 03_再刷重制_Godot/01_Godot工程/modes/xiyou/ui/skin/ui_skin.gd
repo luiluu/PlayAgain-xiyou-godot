@@ -22,6 +22,45 @@ static var GLOBAL_FONT := false
 ## 去掉品质／武器种类／买卖价格行（牌上小字已有，价格只在商店看），装备按「自带／词条／套装／说明」分节；战斗里旧说明卡不再盖行动条。
 ## false＝详情牌照旧原样灌说明卡的行、战斗说明卡照旧位置。
 static var CORE_V2 := true
+## TOUCH_V2（O-待定，触屏）：底部按键提示触屏时变成能点的胶囊、整页左上「‹」返回、列表手指拖动、进全屏菜单收起虚拟摇杆／AB 键、
+## 触屏战斗指令环固定右下（Kyo 定）。false＝同 p1fix（提示只看、没有返回钮、指令环跟着角色）。
+static var TOUCH_V2 := true
+## 测试用：-1 按设备（XPlatform.is_touch）；0 强制非触屏；1 强制触屏
+static var touch_override := -1
+
+
+## 现在是不是触屏（收口批的触屏样式都问这里）
+static func touch() -> bool:
+	if touch_override >= 0:
+		return touch_override == 1
+	return XPlatform.is_touch()
+
+
+## 新皮肤的全屏菜单页（模板页、主菜单、七印祭坛进 FULLSCREEN_GROUP 组）现在开着没有：开着时虚拟摇杆、AB 键收起（TOUCH_V2）
+const FULLSCREEN_GROUP := "skin_fullscreen"
+
+
+static func fullscreen_menu_open(tree: SceneTree) -> bool:
+	if not TOUCH_V2 or tree == null:
+		return false
+	for n in tree.get_nodes_in_group(FULLSCREEN_GROUP):
+		if n is CanvasItem and (n as CanvasItem).is_visible_in_tree():
+			return true
+	return false
+
+
+## 字号倍率（FONT_V2）：字体大小设置 × 触屏一档，封顶 FONT_MULT_MAX
+static func font_mult() -> float:
+	if not FONT_V2:
+		return 1.0
+	var m := XFontScale.percent("global") / 100.0
+	if touch():
+		m *= TOUCH_FONT_STEP
+	return minf(m, FONT_MULT_MAX)
+
+
+static func fs(base: int) -> int:
+	return roundi(base * font_mult())
 
 ## ---- 颜色（第三节定稿）----
 const BG := Color("050506")          # 底
@@ -55,11 +94,22 @@ const QUALITY_NAMES := ["普通", "优秀", "精良", "史诗", "传说", "不�
 const FS_PAGE := 34
 const FS_CARD := 26
 const FS_CARD_MAX := 38
-const FS_LIST := 19
-const FS_LIST_MAX := 24
-const FS_AUX := 14
-const FS_AUX_MAX := 17
-const FS_MIN := 14
+## 收口批 FONT_V2（O-待定）：列表、辅助两级跟「字体大小」设置（XFontScale 全局档，codexFontSize）放大，触屏设备再大一档（×1.1），
+## 合起来封顶 ×1.3（行高不动，130% 时 19 号→25 号仍在 46 的行里）；辅助字下限 14→15（正文不小于 15）。页名、牌上大名字不放大。
+## false＝四级字号写死（同 p1fix）。
+static var FONT_V2 := true
+const TOUCH_FONT_STEP := 1.1
+const FONT_MULT_MAX := 1.3
+static var FS_LIST: int:
+	get: return fs(19)
+static var FS_LIST_MAX: int:
+	get: return fs(24)
+static var FS_AUX: int:
+	get: return fs(15 if FONT_V2 else 14)
+static var FS_AUX_MAX: int:
+	get: return fs(17)
+static var FS_MIN: int:
+	get: return 15 if FONT_V2 else 14
 const FONT_TIERS := {"page": [34, 34], "card": [26, 38], "list": [19, 24], "aux": [14, 17]}
 
 ## ---- 间距（8 的倍数）与对齐线 ----

@@ -84,12 +84,20 @@ func angle_of(i: int) -> float:
 
 
 ## XBattleScene._place_near_actor 转来：feet＝角色脚底（画布坐标），box＝画布大小；整环收在画面里
+## 收口批（TOUCH_V2，Kyo 定）：触屏时整环固定在右下角（拇指够得着，每回合不换地方）；键盘手柄照旧跟着角色。
 func place_for_actor(feet: Vector2, box: Vector2) -> void:
+	if fixed_corner():
+		position = Vector2(box.x - size.x - MARGIN, box.y - size.y - MARGIN)
+		return
 	var c := feet + OFFSET
 	var p := c - center
 	p.x = clampf(p.x, MARGIN, maxf(MARGIN, box.x - size.x - MARGIN))
 	p.y = clampf(p.y, MARGIN, maxf(MARGIN, box.y - size.y - MARGIN))
 	position = p
+
+
+static func fixed_corner() -> bool:
+	return XUiSkin.TOUCH_V2 and XUiSkin.touch()
 
 
 ## 环心在父节点里的位置（测试、截图看）

@@ -61,6 +61,7 @@ const PARTY_ROW_MAX := 120.0
 
 
 func _ready() -> void:
+	add_to_group(XUiSkin.FULLSCREEN_GROUP)   # 收口批：开着时收起虚拟摇杆／AB 键
 	name = "SkinMainMenu"
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
