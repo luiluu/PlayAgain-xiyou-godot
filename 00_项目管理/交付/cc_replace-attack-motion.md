@@ -1,7 +1,7 @@
 # 交付：cc/replace-attack-motion
 
 - 车道／工作者：C 规则·战斗演出（cc，Orca worker task_e2234cedc9c7，claude-opus-5-5＋medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -53,4 +53,5 @@
 
 ## 本分支提交
 
-- 待写
+- a967b38c7 WIP：XBattler.attack_motion、开关、三处演出改用；专项初版
+- 0300b1750 甚尔／宿傩排除名单、专项 36 项、交付单
