@@ -2098,6 +2098,7 @@ func _play(logs: Array) -> void:
 	_banner("")
 	_set_active(null)
 	clear_views()
+	XMiraSwordFx.vanish_all(sprites.values())
 	for s in sprites.values():
 		s.position = s.home
 
@@ -2126,6 +2127,7 @@ func _perform_action(a: XActor, skill: Dictionary) -> void:
 		# Game_Action.isMagicSkill：技能类型在 System.magicSkills 里
 		var magic: Array = XDB.system().get("magicSkills", [])
 		s.set_motion("spell" if magic.has(int(skill.get("stypeId", 0))) or magic.has(float(skill.get("stypeId", 0))) else "skill")
+	XMiraSwordFx.on_skill(s, int(skill.id))  # 米拉黑龙头顶召剑层（技能名单 SKILLS 待定，默认空＝不召）
 	var xt := XXuanTusuArt.motion_for(a, skill)  # ArtPack performAction 包装：专属技能绑定动作（盖在上面）
 	if xt != "":
 		s.set_motion(xt)

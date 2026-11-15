@@ -1,0 +1,49 @@
+{
+  "cell": [
+    128,
+    128
+  ],
+  "fx_anchor": [
+    64,
+    64
+  ],
+  "dragon_anchor": [
+    160,
+    217
+  ],
+  "offset_from_dragon_anchor": [
+    -40,
+    -200
+  ],
+  "fx_top_left_relative_dragon_canvas": [
+    56,
+    -47
+  ],
+  "orientation": "horizontal left; enemy direction; never tip down",
+  "appear": {
+    "frames": [
+      "appear_0.png",
+      "appear_1.png",
+      "appear_2.png"
+    ],
+    "ms_per_frame": 100
+  },
+  "hover": {
+    "frames": [
+      "hover_0.png",
+      "hover_1.png",
+      "hover_2.png"
+    ],
+    "ms_per_frame": 140,
+    "loop": true
+  },
+  "disappear": {
+    "frames": [
+      "disappear_0.png",
+      "disappear_1.png",
+      "disappear_2.png",
+      "clear.png"
+    ],
+    "ms_per_frame": 100
+  }
+}

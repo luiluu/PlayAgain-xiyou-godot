@@ -209,6 +209,11 @@ static func img_path(folder: String, name: String) -> String:
 			var own_ms := "res://content/mira/img/sv_actors/Codex_Mira_SV_u2.png"
 			if ResourceLoader.exists(own_ms):
 				return own_ms
+	# 米拉黑龙无剑 21 张（XMira.DRAGON_ART）：sv_actors/sv/UserSV_MiraDragon/UserSV_MiraDragon<动作>_<帧>（外观按「文件夹／名」两种切法取），content/mira/ 优先于同步出的带剑图
+	if XMira.DRAGON_ART and (folder + "/" + name).begins_with("sv_actors/sv/UserSV_MiraDragon/UserSV_MiraDragon"):
+		var own_d := "res://content/mira/img/%s/%s.png" % [folder, name]
+		if ResourceLoader.exists(own_d):
+			return own_d
 	for ext in [".png", ".jpg"]:
 		var p := "%simg/%s/%s%s" % [BASE, folder, name, ext]
 		if ResourceLoader.exists(p):
