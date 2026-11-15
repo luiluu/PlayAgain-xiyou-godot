@@ -148,9 +148,7 @@ func _ready() -> void:
 	hints = XSkinKeyHints.new()
 	hints.set_hints(hint_list)
 	add_child(hints)
-	if XUiSkin.TOUCH_V2:
-		back_button = XSkinBackButton.new()
-		add_child(back_button)
+	back_button = XSkinBackButton.attach(self)
 	resized.connect(relayout)
 	get_viewport().size_changed.connect(relayout)
 	relayout()
@@ -403,10 +401,8 @@ static func _group(v: int) -> String:
 func _draw_top() -> void:
 	var view := layout.view_size()
 	var m := XSkinLayout.margin_for(view.x)
-	if back_button != null:
-		back_button.position = Vector2(m - 8, 10)
-		m += XSkinBackButton.W
-	top_layer.draw_string(XUiSkin.font("title"), Vector2(m, 14 + 34 * 0.92), title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	var tx := XSkinBackButton.place(back_button, m)   # 只挪页名，右上货币仍按页边距（小A核 P2-1）
+	top_layer.draw_string(XUiSkin.font("title"), Vector2(tx, 14 + 34 * 0.92), title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	var x := view.x - m

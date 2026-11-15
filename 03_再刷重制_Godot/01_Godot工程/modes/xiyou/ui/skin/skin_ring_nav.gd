@@ -20,7 +20,10 @@ var index := 0
 var radius := 180.0
 var orb_radius := 33.0
 var center_texture: Texture2D
-var label_size := XUiSkin.FS_LIST
+var _label_size := 0
+var label_size: int:   # 收口批：没设过时跟 XUiSkin.FS_LIST 现取
+	get: return _label_size if _label_size > 0 else XUiSkin.FS_LIST
+	set(v): _label_size = v
 ## 光弧现在的角度（度，0＝正右、顺时针为正）
 var arc_deg := -90.0
 var _arc_from := -90.0
@@ -65,6 +68,13 @@ static func group_item(g: Dictionary) -> Dictionary:
 
 func has_art(i: int) -> bool:
 	return i >= 0 and i < items.size() and items[i].get("art_normal") is Texture2D
+
+
+## 以 p.x 为中心的标签最多能多宽：不越出本控件左右边（各留 4）
+func label_room(p: Vector2) -> float:
+	if size.x <= 0.0:
+		return INF
+	return maxf(24.0, minf(p.x - 4.0, size.x - 4.0 - p.x) * 2.0)
 
 
 ## 第 i 项 u4 贴图画在哪（本节点坐标，整数像素、原生大小）
@@ -267,6 +277,11 @@ func _draw() -> void:
 		var name := str(items[i].get("name", ""))
 		var fs := label_size + (3 if on else 0)
 		var tw := body.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		if XUiSkin.FONT_V2:   # 收口批（小A核 P2-3）：字号放大后标签不越出环的左右边（先缩到 15，再加「…」）
+			var fit := XSkinList.fit_text(body, name, label_room(p), fs, XUiSkin.FS_MIN)
+			name = str(fit[0])
+			fs = int(fit[1])
+			tw = body.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var above := sin(deg_to_rad(item_deg(i))) < -0.2
 		var ly := p.y - r - 10.0 if above else p.y + r + 10.0 + fs * 0.86
 		draw_string_outline(body, Vector2(p.x - tw / 2.0, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.6))

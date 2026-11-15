@@ -21,6 +21,7 @@ const RING_R := 212.0
 const BUTTON_H := 44.0
 ## 三种状态的字（小A文字审：「可以揭」→「可揭开」）
 ## 收口批 COMFORT_V2：前面加形状（· 未开启、◇ 可揭开、◆ 已揭开），色弱不看颜色也分得清（小A审 舒适 7）
+const RING_DONE_TEXT := "已揭开"
 static var STATE_TEXT: Array:
 	get: return ["· 未开启", "◇ 可揭开", "◆ 已揭开"] if XUiSkin.COMFORT_V2 else ["未开启", "可揭开", "已揭开"]
 const RULES := [
@@ -154,6 +155,9 @@ func setup(s: XState, opts: Array) -> void:
 
 func _ready() -> void:
 	add_to_group(XUiSkin.FULLSCREEN_GROUP)   # 收口批：开着时收起虚拟摇杆／AB 键
+	back_button = XSkinBackButton.attach(self)
+	if back_button != null:
+		back_button.z_index = 10   # 在后加的底图、面板之上
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	theme = XUiSkin.theme()
@@ -217,7 +221,7 @@ func relayout() -> void:
 		return
 	var v := view()
 	hints.set_hints(hint_list())
-	hints.position = Vector2(XSkinMainMenu.hint_right(v) - hints.total_width(), v.y - XUiSkin.HINT_BOTTOM - XSkinKeyHints.H)
+	hints.position = Vector2(XSkinMainMenu.hint_right(v) - hints.total_width(), v.y - XUiSkin.HINT_BOTTOM - hints.height())
 	for c in [ring, card, top, rules]:
 		c.queue_redraw()
 
@@ -415,8 +419,9 @@ func _draw_ring() -> void:
 	var big := "%d / %d" % [done, rows.size()]
 	var bw := num.get_string_size(big, HORIZONTAL_ALIGNMENT_LEFT, -1, 64).x
 	ring.draw_string(num, Vector2(c.x - bw / 2.0, c.y + 12), big, HORIZONTAL_ALIGNMENT_LEFT, -1, 64, XUiSkin.TEXT)
-	var sw := body.get_string_size(STATE_TEXT[2], HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX).x
-	ring.draw_string(body, Vector2(c.x - sw / 2.0, c.y + 42), STATE_TEXT[2], HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT_2)
+	var done_text := RING_DONE_TEXT   # 环心是「几/7 已揭开」的计数说明，不带 ◆ 记号（小A文字审）
+	var sw := body.get_string_size(done_text, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX).x
+	ring.draw_string(body, Vector2(c.x - sw / 2.0, c.y + 42), done_text, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT_2)
 	# 七枚封蜡
 	for i in rows.size():
 		var r: Dictionary = rows[i]
@@ -574,10 +579,14 @@ func currency_pairs() -> Array:
 	return [["印钥", str(XTianqiQiyin.keys(s))], ["印屑", str(XTianqiQiyin.shards(s))], ["印库", "%d 件" % XTianqiQiyin.progress(s).bag.size()]]
 
 
+## 收口批（TOUCH_V2）：左上「‹」返回（点＝取消），_ready 时加上
+var back_button: XSkinBackButton
+
+
 func _draw_top() -> void:
 	var v := view()
 	var m := XSkinLayout.margin_for(v.x)
-	top.draw_string(XUiSkin.font("title"), Vector2(m, 14 + 34 * 0.92), "七印祭坛", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	top.draw_string(XUiSkin.font("title"), Vector2(XSkinBackButton.place(back_button, m), 14 + 34 * 0.92), "七印祭坛", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	var x := v.x - m

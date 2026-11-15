@@ -62,6 +62,9 @@ const PARTY_ROW_MAX := 120.0
 
 func _ready() -> void:
 	add_to_group(XUiSkin.FULLSCREEN_GROUP)   # 收口批：开着时收起虚拟摇杆／AB 键
+	back_button = XSkinBackButton.attach(self)
+	if back_button != null:
+		back_button.z_index = 10   # 在后加的底图、面板之上
 	name = "SkinMainMenu"
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -884,10 +887,14 @@ func _draw_sprite() -> void:
 	_sprite_layer.draw_texture_rect(fr, Rect2((c - sz / 2.0).round(), sz), false)
 
 
+## 收口批（TOUCH_V2）：左上「‹」返回（点＝取消），_ready 时加上
+var back_button: XSkinBackButton
+
+
 func _draw_top() -> void:
 	var view := layout.view_size()
 	var m := XSkinLayout.margin_for(view.x)
-	top.draw_string(XUiSkin.font("title"), Vector2(m, 14 + 34 * 0.92), TITLE, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	top.draw_string(XUiSkin.font("title"), Vector2(XSkinBackButton.place(back_button, m), 14 + 34 * 0.92), TITLE, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
 	# 货币：名字次要字 15、数值淡金窄体 26，右对齐（样稿：精魂在左、印屑在右）
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")

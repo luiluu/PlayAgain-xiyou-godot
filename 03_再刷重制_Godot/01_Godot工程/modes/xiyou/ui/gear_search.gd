@@ -221,6 +221,8 @@ static func open(parent: Control, src: Array) -> XGearSearch:
 		reset_session()
 	var p := XGearSearch.new()
 	p.source = src
+	if XUiSkin.on():
+		p.add_to_group(XUiSkin.FULLSCREEN_GROUP)   # 收口批：检索页盖住整页时虚拟键也收起（小A核 P2-2）
 	parent.add_child(p)
 	return p
 

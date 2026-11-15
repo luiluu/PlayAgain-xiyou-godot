@@ -564,7 +564,7 @@ var _menu_hidden := false
 
 
 func _process(_delta: float) -> void:
-	var mh := XUiSkin.fullscreen_menu_open(get_tree()) if is_inside_tree() else false
+	var mh := XUiSkin.fullscreen_menu_open(get_tree()) and not layout_editing if is_inside_tree() else false
 	if mh != _menu_hidden:
 		_menu_hidden = mh
 		_apply_hidden()

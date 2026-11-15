@@ -302,7 +302,7 @@ func _layout() -> void:
 	if skin_on():
 		_skin_extras()
 		if skin_hints != null:
-			skin_hints.position = Vector2(roundf((vs.x - skin_hints.total_width()) / 2.0), vs.y - XUiSkin.HINT_BOTTOM - XSkinKeyHints.H)
+			skin_hints.position = Vector2(roundf((vs.x - skin_hints.total_width()) / 2.0), vs.y - XUiSkin.HINT_BOTTOM - skin_hints.height())
 
 
 ## 新界面：extras 里的按钮换黑面板细线、选中／悬停用红乙选中条，字换思源黑体；文字标签去描边、换次要字色

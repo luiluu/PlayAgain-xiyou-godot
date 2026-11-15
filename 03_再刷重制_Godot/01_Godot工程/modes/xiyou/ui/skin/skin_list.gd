@@ -19,8 +19,15 @@ var row_height := XUiSkin.ROW_H:
 		row_height = maxi(v, 24)
 		_relayout()
 var col_gap := XUiSkin.GRID
-var font_size := XUiSkin.FS_LIST
-var sub_size := XUiSkin.FS_AUX
+## 收口批（FONT_V2，小A核 P2-3）：没单独设过时每次画都按 XUiSkin 现取，设置页改字号后当前列表也跟着变；设过（>0）就用设的
+var _font_size := 0
+var _sub_size := 0
+var font_size: int:
+	get: return _font_size if _font_size > 0 else XUiSkin.FS_LIST
+	set(v): _font_size = v
+var sub_size: int:
+	get: return _sub_size if _sub_size > 0 else XUiSkin.FS_AUX
+	set(v): _sub_size = v
 ## 名字太长时最小缩到几号（再放不下才加省略号）
 var min_font_size := 16
 var right_size := 21

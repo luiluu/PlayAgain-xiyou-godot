@@ -61,6 +61,7 @@ func _run() -> void:
 	_font()
 	await _touch()
 	_comfort()
+	await _repair()
 	if windowed():
 		await _shots()
 	_set_all(true)
@@ -257,6 +258,109 @@ func _comfort() -> void:
 	XUiSkin.WARM_BG = false
 
 
+# ---- 小A乙档核查返修（939675d1d）----
+func _repair() -> void:
+	XUiSkin.TOUCH_V2 = true
+	XUiSkin.FONT_V2 = true
+	XUiSkin.touch_override = 1
+	# P1-2：「Y / 取消」是单键（发取消、不画 ‹ ›）；「上下」是两向键
+	check("r_y_cancel_single", not XSkinKeyHints.is_pair("Y / 取消") and XSkinKeyHints.key_events("Y / 取消") == [["ui_cancel", true]])
+	check("r_updown_pair", XSkinKeyHints.is_pair("上下") and XSkinKeyHints.key_events("上下") == [["ui_up", true], ["ui_down", true]])
+	var h := XSkinKeyHints.new()
+	h.set_hints([["Y / 取消", "收起"], ["上下", "滚动"], ["← / →", "切换印"]])
+	check("r_chip_texts", h._chip_text(h.hints[0]) == "收起" and h._chip_text(h.hints[1]) == "‹ 滚动 ›" and h._chip_text(h.hints[2]) == "‹ 切换印 ›")
+	h.free()
+	# 发出去的事件真能到：点「Y / 取消」胶囊＝一次 ui_cancel 按下
+	var got := []
+	var probe := _Probe.new()
+	probe.seen = got
+	add_child(probe)
+	XSkinKeyHints.fire("Y / 取消")
+	XSkinKeyHints.fire("上下", 1)
+	await frames(2)
+	check("r_fire_reaches", got.has("ui_cancel") and got.has("ui_down"), got)
+	probe.queue_free()
+	# P1-1：祭坛触屏胶囊整颗在画面里
+	var s := _altar_state()
+	var page := XTianqiSkinAltar.new()
+	page.setup(s, XTianqiQiyin.altar_options(s))
+	add_child(page)
+	await frames(4)
+	var vh := page.view().y
+	check("r_altar_hints_inside", page.hints.height() == XSkinKeyHints.TOUCH_H and page.hints.position.y + page.hints.height() <= vh - XUiSkin.HINT_BOTTOM + 0.5,
+		[page.hints.position, vh])
+	# P2-1：祭坛左上有返回，页名在它右边；P3：环心说明不带 ◆
+	check("r_altar_back", page.back_button != null and page.back_button.is_visible_in_tree())
+	check("r_ring_done_text", XTianqiSkinAltar.RING_DONE_TEXT == "已揭开")
+	page.queue_free()
+	await frames(2)
+	XTianqiQiyin.set_current("")
+	XTianqiQiyin.rng_override = null
+	# P2-1：主菜单有返回；模板页右上货币不跟着返回钮挪
+	_state()
+	var menu := XMenu.new()
+	add_child(menu)
+	await frames(4)
+	check("r_menu_back", menu.skin != null and menu.skin.back_button != null and menu.skin.back_button.is_visible_in_tree())
+	menu.queue_free()
+	await frames(2)
+	check("r_back_place", XSkinBackButton.place(null, 24.0) == 24.0)
+	# P2-2：拖动小件；状态页、战技列表接了
+	var d := XSkinDrag.new()
+	d.press(Vector2(0, 100), 36.0)
+	check("r_drag_slop", is_nan(d.motion(Vector2(0, 95))) and d.motion(Vector2(0, 40)) == 96.0 and not d.release())
+	d.press(Vector2(0, 100), 0.0)
+	check("r_drag_tap", d.release())
+	var bl := XSkinBattleSkillList.create_list(Control.new(), range(20).map(func(i): return {"text": "技能 %d" % i, "enabled": true}), "技能")
+	bl.active = true
+	add_child(bl.get_parent())
+	await frames(2)
+	var r0 := bl.row_rect(0) if bl.has_method("row_rect") else Rect2()
+	var p0 := bl.position + Vector2(bl.size.x / 2.0, XSkinBattleSkillList.HEAD_H + 10.0)
+	bl._unhandled_input(_mb(p0, true))
+	check("r_battle_press_no_select", bl.index == 0)
+	bl._unhandled_input(_mm(p0 - Vector2(0, XSkinBattleSkillList.ROW_H * 3)))
+	bl._unhandled_input(_mb(p0 - Vector2(0, XSkinBattleSkillList.ROW_H * 3), false))
+	check("r_battle_drag_scrolls", bl.top == 3 and bl.index == 0, [bl.top, bl.index, r0])
+	XUiSkin.TOUCH_V2 = false
+	bl._unhandled_input(_mb(p0 + Vector2(0, XSkinBattleSkillList.ROW_H), true))
+	check("r_battle_off_press_selects", bl.index != 0, bl.index)
+	XUiSkin.TOUCH_V2 = true
+	bl.get_parent().queue_free()
+	# P2-2：子页／检索开着也算全屏页
+	var host := Control.new()
+	add_child(host)
+	var gs := XGearSearch.open(host, [])
+	await frames(2)
+	check("r_search_in_fullscreen", gs.is_in_group(XUiSkin.FULLSCREEN_GROUP) and XUiSkin.fullscreen_menu_open(get_tree()))
+	host.queue_free()
+	await frames(2)
+	# P2-3：130%＋触屏左环标签不越界；战技名缩字
+	XFontScale.set_value("global", 130)
+	var ring := XSkinRingNav.new()
+	ring.size = Vector2(300, 400)
+	check("r_ring_label_room", ring.label_room(Vector2(258, 100)) == 76.0 and is_inf(XSkinRingNav.new().label_room(Vector2(10, 10))))
+	ring.free()
+	var fit := XSkinList.fit_text(XUiSkin.font("body"), "非常非常长的技能名字一二三四五", 120.0, XUiSkin.FS_LIST, XUiSkin.FS_MIN)
+	check("r_fit_shrinks", int(fit[1]) <= XUiSkin.FS_LIST and XUiSkin.font("body").get_string_size(str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1])).x <= 120.5, fit)
+	var lst := XSkinList.new()
+	check("r_list_font_follows", lst.font_size == XUiSkin.FS_LIST and lst.font_size == 25)
+	XFontScale.set_value("global", 100)
+	check("r_list_font_follows_back", lst.font_size == XUiSkin.FS_LIST and lst.font_size == 21)
+	lst.font_size = 30
+	check("r_list_font_override", lst.font_size == 30)
+	lst.free()
+	XUiSkin.touch_override = 0
+
+
+class _Probe extends Node:
+	var seen: Array
+	func _input(e: InputEvent) -> void:
+		for a in ["ui_cancel", "ui_down", "ui_up"]:
+			if e.is_action_pressed(a):
+				seen.append(a)
+
+
 func _mb(p: Vector2, pressed: bool) -> InputEventMouseButton:
 	var e := InputEventMouseButton.new()
 	e.button_index = MOUSE_BUTTON_LEFT
@@ -273,7 +377,8 @@ func _mm(p: Vector2) -> InputEventMouseMotion:
 
 
 # ---- 改前改后对照图 ----
-const VARIANTS := [["before", false, 0], ["after", true, 0], ["after_touch", true, 1]]
+## [名字, 收口批开关, 触屏, 字体大小档]；after_touch_130＝触屏＋字号 130%（小A核 P2-3 要看的）
+const VARIANTS := [["before", false, 0, 100], ["after", true, 0, 100], ["after_touch", true, 1, 100], ["after_touch_130", true, 1, 130]]
 const SIZES := [[Vector2i(1280, 720), "16x9"], [Vector2i(1600, 720), "20x9"], [Vector2i(960, 720), "4x3"]]
 
 
@@ -281,11 +386,12 @@ func _shots() -> void:
 	for sz in SIZES:
 		get_window().size = sz[0]
 		await frames(6)
-		for page in ["items", "equip", "skill", "menu", "altar"]:
+		for page in ["items", "equip", "equip_detail", "skill", "status", "menu", "altar"]:
 			var imgs := []
 			for v in VARIANTS:
 				_set_all(bool(v[1]))
 				XUiSkin.touch_override = int(v[2])
+				XFontScale.set_value("global", int(v[3]))
 				var node: Node = await call("_build_" + page)
 				await frames(6)
 				var img: Image = await grab()
@@ -297,6 +403,7 @@ func _shots() -> void:
 				XTianqiQiyin.rng_override = null
 			check("differs_%s_%s" % [page, sz[1]], imgs[0].get_data() != imgs[2].get_data())
 			save_compare(imgs[0], imgs[2], "%s_%s_compare" % [page, sz[1]])
+	XFontScale.set_value("global", 100)
 	get_window().size = Vector2i(1280, 720)
 	await frames(4)
 	_set_all(true)
@@ -376,6 +483,28 @@ func _build_equip() -> Node:
 	add_child(page)
 	await frames(4)
 	page._unhandled_input(_key("ui_accept"))
+	await frames(4)
+	return page
+
+
+func _build_equip_detail() -> Node:
+	_state()
+	var page := XEquipScene.new()   # 栏位上按 Y：展开身上武器的详情（候选列表第一行是「卸下」，没有详情）
+	add_child(page)
+	await frames(4)
+	var e := InputEventKey.new()
+	e.physical_keycode = KEY_Y
+	e.keycode = KEY_Y
+	e.pressed = true
+	page._unhandled_input(e)   # Y：全部属性与词条（展开详情）
+	await frames(4)
+	return page
+
+
+func _build_status() -> Node:
+	_state()
+	var page := XStatusPage.new()
+	add_child(page)
 	await frames(4)
 	return page
 

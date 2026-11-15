@@ -474,6 +474,8 @@ func _open_page(page: Control) -> void:
 
 ## 新界面下开子页（画质、消息提醒、挂机……还是旧页面，按 1280×720 摆）：视口比 16:9 宽时放进居中的 1280×720 外框，背景用本页的（子页自己的新皮肤黑底藏掉，免得接缝）
 func _open_page_skin(page: Control) -> void:
+	if not page is XTouchOptionsScene:   # 收口批：子页开着时虚拟键也收起；触屏按键设置页要看着键调位置，不收
+		page.add_to_group(XUiSkin.FULLSCREEN_GROUP)
 	_page = page
 	skin.hide()
 	var host := Control.new()

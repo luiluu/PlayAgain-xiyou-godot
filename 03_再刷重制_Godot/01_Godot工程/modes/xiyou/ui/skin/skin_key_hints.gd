@@ -35,12 +35,16 @@ func height() -> float:
 	return TOUCH_H if touch_mode() else H
 
 
-## 两向键（「Q / E」「← / →」「↑ / ↓」「左右」）：点左半是前一个，右半是后一个
+## 两向键（「Q / E」「← / →」「↑ / ↓」「左右」「上下」）：点左半是前一个，右半是后一个。
+## 别的带「/」的是同一件事的几个键（如「Y / 取消」），是单键，不画 ‹ ›（小A核 P1-2）
+const PAIR_KEYS := ["Q/E", "←/→", "↑/↓", "左右", "上下"]
+
+
 static func is_pair(key: String) -> bool:
-	return key.contains("/") or key == "左右"
+	return PAIR_KEYS.has(key.replace(" ", ""))
 
 
-## 键名→点了要发的输入：[[动作或键码, 是不是动作], …]（两向键两个）
+## 键名→点了要发的输入：[[动作或键码, 是不是动作], …]（两向键两个；「Y / 取消」这类几选一的取第一个认得的，动作优先）
 static func key_events(key: String) -> Array:
 	var k := key.replace(" ", "").replace("键盘", "")
 	match k:
@@ -52,8 +56,15 @@ static func key_events(key: String) -> Array:
 			return [[KEY_Q, false], [KEY_E, false]]
 		"←/→", "左右":
 			return [["ui_left", true], ["ui_right", true]]
-		"↑/↓":
+		"↑/↓", "上下":
 			return [["ui_up", true], ["ui_down", true]]
+	if k.contains("/"):
+		var alts := Array(k.split("/", false)).map(func(x): return key_events(str(x)))
+		for want_action in [true, false]:
+			for ev in alts:
+				if not (ev as Array).is_empty() and bool(ev[0][1]) == want_action:
+					return ev
+		return []
 	if k.length() == 1:
 		var code := OS.find_keycode_from_string(k)
 		if code != KEY_NONE:

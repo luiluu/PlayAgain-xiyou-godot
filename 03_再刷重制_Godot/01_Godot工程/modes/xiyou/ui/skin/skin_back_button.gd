@@ -8,6 +8,23 @@ const H := 48.0
 var _down := false
 
 
+## 加到整页上（TOUCH_V2 关时不加，返回 null）；页面画页名前调 place() 摆好并拿到页名的 x
+static func attach(page: Control) -> XSkinBackButton:
+	if not XUiSkin.TOUCH_V2:
+		return null
+	var b := XSkinBackButton.new()
+	page.add_child(b)
+	return b
+
+
+## 摆到页名前（m＝页边距），返回页名该画的 x
+static func place(b: XSkinBackButton, m: float) -> float:
+	if b == null or not is_instance_valid(b):
+		return m
+	b.position = Vector2(m - 8, 10)
+	return m + W
+
+
 func _init() -> void:
 	name = "SkinBack"
 	size = Vector2(W, H)

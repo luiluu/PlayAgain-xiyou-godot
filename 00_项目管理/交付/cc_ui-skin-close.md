@@ -132,3 +132,32 @@
    - 窗口模式实拍 `xiyou_ui_skin_close -- --out=...`（141 断言）及 `皮肤关闭对照.py` 全量重跑；
    - 云端选测／全量与安卓真机触屏实测。
 
+
+## 返修（小A乙档核查 939675d1d）
+
+本单配 Opus＋medium（同首轮：碰共用皮肤组件）。逐条：
+
+- **P1-1 祭坛／标题触屏胶囊出屏**：`tianqi_skin_altar.gd` `relayout`、`tianqi_title.gd` `_layout` 改用 `hints.height()`／`skin_hints.height()`。断言 `r_altar_hints_inside`（close）、`title_touch_hints_inside`（3b）；后者把修复改回去会挂（本地反向验证过：`(553,688)` 底边 732）。
+- **P1-2 「Y / 取消」「上下」**：`XSkinKeyHints.PAIR_KEYS` 只认 Q/E、←/→、↑/↓、左右、上下是两向键；别的带「/」的是同一件事的几个键，取第一个认得的（动作优先）——「Y / 取消」＝取消、画成「收起」「关闭」不带 ‹ ›；「上下」＝上／下两半。断言 `r_y_cancel_single`、`r_updown_pair`、`r_chip_texts`、`r_fire_reaches`（真发到 `_input`）。
+- **P2-1 返回钮与货币**：新 `XSkinBackButton.attach／place`；主菜单、七印祭坛在 `_ready` 加（z 10），页名右挪；模板页只挪页名，右上货币回到页边距。断言 `r_menu_back`、`r_altar_back`、`r_back_place`。
+- **P2-2 拖动与虚拟键**：新 `XSkinDrag`（按下记位、过 10px 才算拖、松手没拖才算点）；状态页属性区按行拖、装备详情展开按像素拖、战技列表按下不选、拖了按行滚、松手没拖照旧点（`XSkinBattleSkillList._unhandled_input`）；滚动条触屏 8（战技 6）。`XGearSearch`（新皮肤时）、设置子页（触屏按键设置除外，要看着键调位置）、`XAlienWorkshop`、`XMapTransfer`、`XSkinPartyStatusPanel` 进 `skin_fullscreen` 组；调虚拟键位置时不收。断言 `r_drag_slop`、`r_drag_tap`、`r_battle_press_no_select`、`r_battle_drag_scrolls`、`r_battle_off_press_selects`、`r_search_in_fullscreen`。
+- **P2-3 大字号**：左环标签按左右可用宽 `label_room` 先缩到 15 再加「…」；`XSkinList.font_size／sub_size`、`XSkinRingNav.label_size` 没单独设时每次现取（设置页改字号即时跟）；状态页上限 20→`fs(20)` 封 24；战技名用 `fit_text`。断言 `r_ring_label_room`、`r_fit_shrinks`、`r_list_font_follows*`、`r_list_font_override`。
+- **P3**：祭坛环心改 `RING_DONE_TEXT`「已揭开」（不带 ◆，`r_ring_done_text`）；新文字补列见下。
+- **没改的**：4:3 窄屏中栏（设置约 228 宽）在 130%＋触屏时长名字仍会缩到 15 号再截「…」，现在至少不越界；要彻底解决得在 4A 改窄屏版面。键盘手柄下左上「‹」照旧显示（记号，可点）。
+
+### 新文字补列（请小A复核）
+
+- 两向键胶囊：「‹ 切换印 ›」「‹ 选入口 ›」「‹ 滚动 ›」「‹ 换页 ›」（另 `message_box` 的「‹ 换位 ›」「‹ 调数 ›」）；单键胶囊「收起」「关闭」不带 ‹ ›。
+- 七印祭坛环心计数下的小字：「已揭开」（状态行仍是「◆ 已揭开」）。
+
+### 返修截图
+
+`03_再刷重制_Godot/04_验证/本地结果/ui_skin_close/`：
+- 新增 `equip_detail_*`（装备详情展开）、`status_*`（状态页）两页；每页每比例新增 `*_after_touch_130.png`（触屏＋字号 130%）；祭坛、主菜单、物品等 `*_after_touch.png` 重拍。
+- 标题触屏：`title_touch/ui_skin_3b_title_16x9.png`（`xiyou_ui_skin_3b -- --out=… --touch`）。
+
+### 返修验证
+
+- 本地专项：`xiyou_ui_skin_close` 67/67（窗口出图 212/212），`xiyou_ui_skin` 104、`_1b` 85、`_1c` 78、`_3a` 90、`_3b` 40（窗口 52）、`_5c` 79、`_menu` 99、`_battle` 61、`_hud` 104、`_4b` 77、`_offshot` 29、`_p1fix` 1，全过；`语法检查.py` 过。
+- 云端选测：返修提交见下一行。
+- 返修云端：待填

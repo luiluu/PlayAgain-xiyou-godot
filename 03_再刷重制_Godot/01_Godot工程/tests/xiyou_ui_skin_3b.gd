@@ -17,6 +17,8 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
+		if arg == "--touch":   # 收口批：按触屏画（提示胶囊）
+			XUiSkin.touch_override = 1
 	_run.call_deferred()
 
 
@@ -139,6 +141,16 @@ func _title() -> void:
 		and t.back_button.has_meta("skin_done"))
 	check("title_extras_keep_size", extra.size == Vector2(280, 40), extra.size)   # entry.gd 按原大小上下叠放（反馈群号与问卷）
 	check("title_hints", t.skin_hints != null and t.skin_hints.hints.size() == 2)
+	# 收口批返修（小A核 P1-1）：触屏胶囊高 44，整颗留在画面里
+	var to0 := XUiSkin.touch_override
+	XUiSkin.touch_override = 1
+	t.skin_hints.set_hints(t.skin_hints.hints)
+	t._layout()
+	var vy := t.get_viewport_rect().size.y
+	check("title_touch_hints_inside", t.skin_hints.position.y + t.skin_hints.height() <= vy - XUiSkin.HINT_BOTTOM + 0.5, [t.skin_hints.position, vy])
+	XUiSkin.touch_override = to0
+	t.skin_hints.set_hints(t.skin_hints.hints)
+	t._layout()
 	check("title_activate_same", t.activate() and hit == [str(XTianqiTitle.COMMANDS[sel0 + 1].key)], hit)
 	await shots("ui_skin_3b_title")
 	t.queue_free()
