@@ -160,7 +160,7 @@ static func notetags(note: String) -> PackedStringArray:
 
 static func race_name(n: int) -> String:
 	var names = JSON.parse_string(str(XDB.plugin("Star_EnemyRace").get("EnemyRaceName", "[]")))
-	return str(names[n - 1]) if names is Array and n >= 1 and n - 1 < names.size() else "undefined"
+	return str(names[n - 1]) if names is Array and n >= 1 and n - 1 < names.size() else XUI.undef_text("未知")
 
 
 ## AB_EnemyBook 参数 ElementIcons（前面补 0，按属性 ID 取）
@@ -183,7 +183,7 @@ static func action_text(a: Dictionary) -> String:
 		5: text = "玩家队伍最高等级达到:" + js_num(p1)
 		6:
 			var sw: Array = XDB.system().get("switches", [])
-			text = "开关: " + (str(sw[int(p1)]) if int(p1) < sw.size() else "undefined") + "  开启"
+			text = "开关: " + (str(sw[int(p1)]) if int(p1) >= 0 and int(p1) < sw.size() else XUI.undef_text("未知开关")) + "  开启"
 	return text + "  权重:" + js_num(float(a.get("rating", 0)))
 
 

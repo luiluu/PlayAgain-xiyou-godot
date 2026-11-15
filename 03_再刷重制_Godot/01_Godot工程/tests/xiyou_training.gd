@@ -156,7 +156,7 @@ func _check_flows(oracle: Dictionary) -> void:
 		var want_base: Array = f.start.members.map(func(m): return m.params.map(func(v): return float(v)))
 		check(name + "_base_params", base == want_base, [base, want_base])
 		var cur := 0
-		check(name + "_start_lines", XTraining.lines(s, int(party[cur])) == f.start.lines, [XTraining.lines(s, int(party[cur])), f.start.lines])
+		check(name + "_start_lines", XTraining.lines(s, int(party[cur])) == _ref_lines(f.start.lines), [XTraining.lines(s, int(party[cur])), f.start.lines])
 		var k := 0
 		for st in f.steps:
 			var toasts := []
@@ -170,7 +170,7 @@ func _check_flows(oracle: Dictionary) -> void:
 			var tag := "%s_%d" % [name, k]
 			check(tag + "_toasts", toasts == st.toasts, [toasts, st.toasts])
 			check(tag + "_gold", s.gold == int(st.gold), [s.gold, st.gold])
-			check(tag + "_lines", XTraining.lines(s, int(party[cur])) == st.lines, [XTraining.lines(s, int(party[cur])), st.lines])
+			check(tag + "_lines", XTraining.lines(s, int(party[cur])) == _ref_lines(st.lines), [XTraining.lines(s, int(party[cur])), st.lines])
 			var bad := []
 			var bad_params := []
 			for m_i in st.members.size():
@@ -234,7 +234,8 @@ func _check_ui(ui: Dictionary) -> void:
 	check("oracle_gold", d == "", d)
 	d = diff(got_form(XTrainingScene.bottom_ops()), want_form(ui.bottom))
 	check("oracle_bottom", d == "", d)
-	d = diff(got_form(XTrainingScene.list_ops(s, 1)), want_form(ui.confirm))
+	var conf: Array = (ui.confirm as Array).map(func(t): var x: Array = (t as Array).duplicate(); x[0] = _ref_lines([str(x[0])])[0]; return x)
+	d = diff(got_form(XTrainingScene.list_ops(s, 1)), want_form(conf))
 	check("oracle_list", d == "", d)
 	check("sprite", page._sprite_tex != null and absf(XTrainingScene.SPRITE_CENTER.x - float(ui.sprite.x)) < POS_TOL
 		and str(ui.sprite.bmp).ends_with(str(s.actor(1).data().battlerName) + ".png"))
@@ -303,3 +304,8 @@ func _finish() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## 参照行换成文字审改过的写法：费用单位原版「w」，重制写「万」
+static func _ref_lines(lines: Array) -> Array:
+	return lines.map(func(t): return RegEx.create_from_string("(\\d)w$").sub(str(t), "$1万"))

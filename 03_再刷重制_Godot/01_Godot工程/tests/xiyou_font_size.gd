@@ -84,6 +84,10 @@ func _run() -> void:
 	var lb := XUI.label("x")
 	check("theme_scaled", XUI.theme().default_font_size == 34 and lb.get_theme_font_size("font_size") == 34)
 	lb.free()
+	# 网页覆盖层面板（装备检索、战力）的字也跟（文字审 13-009）：13 号 → 17，行高 20.8 → 27.04
+	var wl := XWebPanel._fixed(XWebPanel._label("x", 13, Color.WHITE), 20.8)
+	check("web_panel_scaled", wl.get_theme_font_size("font_size") == 17 and wl.label_settings.font_size == 17 and is_equal_approx(wl.custom_minimum_size.y, 27.04), [wl.get_theme_font_size("font_size"), wl.custom_minimum_size.y])
+	wl.free()
 	# 弹窗不跟全局
 	XFontScale.set_value("toast", 100)
 	check("toast_ignores_global", XToast.metrics()[0] == 18)

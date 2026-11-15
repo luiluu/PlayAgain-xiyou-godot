@@ -57,7 +57,7 @@ static func learn_reason(a: XActor, id: int) -> String:
 		return "已经学会这卷号卷" if XTianqiTrumpet.on() else "已经学会这项权能"
 	if ids.size() >= limit(a):
 		if XTianqiTrumpet.on():
-			return actor_class(a) + "最多学习" + str(limit(a)) + "卷号卷，请先用" + XTianqiTrumpet.forget_name() + "封上已有号卷"
+			return actor_class(a) + "最多学习" + str(limit(a)) + "卷号卷，请先用" + XTianqiTrumpet.forget_name() + "封印已有号卷"
 		return actor_class(a) + "最多学习" + str(limit(a)) + "本权能书，请先遗忘已有权能"
 	return ""
 

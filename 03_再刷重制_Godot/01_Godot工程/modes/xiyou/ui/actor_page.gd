@@ -57,7 +57,7 @@ func selector(parent: Control) -> void:
 		b.pressed.connect(func(): switch_actor(d))
 		row.add_child(b)
 	var a := actor()
-	row.add_child(XUI.label(a.display_name() + (",「%s」" % a.nickname if a.nickname != "" else "")))
+	row.add_child(XUI.label(a.display_name() + ("，「%s」" % a.nickname if a.nickname != "" else "")))
 
 func actor_summary(parent: Control, xp := false) -> void:
 	var a := actor()

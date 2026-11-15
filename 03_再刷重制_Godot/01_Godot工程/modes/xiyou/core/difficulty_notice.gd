@@ -75,7 +75,7 @@ func paint(frame := 0) -> void:
 	showing = remaining > 0
 	if showing:
 		var tq := XTianqiTrim.difficulty_name(XState.current)  # 天启篇显示五档档名（副本里带副本档，O-407）
-		text = "当前难度：" + (tq if tq != "" else str(NAMES[difficulty]) if difficulty >= 0 and difficulty < NAMES.size() else "undefined")
+		text = "当前难度：" + (tq if tq != "" else str(NAMES[difficulty]) if difficulty >= 0 and difficulty < NAMES.size() else XUI.undef_text("未知"))
 		color = difficulty_color(difficulty, frame)
 		bounce_y = 10.0 + sin((240 - remaining) * 0.1) * 3.0
 		opacity = clampi((240 - remaining) * 10 if remaining > 210 else remaining * 6 if remaining < 40 else 255, 0, 255)

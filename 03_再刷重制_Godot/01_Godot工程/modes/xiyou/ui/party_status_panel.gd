@@ -268,12 +268,12 @@ static func trait_description(st: Dictionary) -> String:
 		match code:
 			21:
 				if v != 1.0:
-					s = _name_of(XSideStatus.PARAM_NAMES, d, "undefined") + pct(v - 1.0)
+					s = _name_of(XSideStatus.PARAM_NAMES, d, XUI.undef_text("未知属性")) + pct(v - 1.0)
 			22:
 				if v != 0.0:
-					s = _name_of(XPARAMS, d, "undefined") + pct(v)
+					s = _name_of(XPARAMS, d, XUI.undef_text("未知属性")) + pct(v)
 			23:
-				s = _name_of(SPARAM23, d, "undefined") + "倍率 %d%%" % int(XPower.js_round(v * 100))
+				s = _name_of(SPARAM23, d, XUI.undef_text("未知属性")) + "倍率 %d%%" % int(XPower.js_round(v * 100))
 			62:
 				s = FLAG62[d] if d >= 0 and d < FLAG62.size() else ""
 			61:

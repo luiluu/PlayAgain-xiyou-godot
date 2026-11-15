@@ -124,7 +124,7 @@ static func now_text() -> String:
 	if time_override != "":
 		return time_override
 	var t := Time.get_datetime_dict_from_system()
-	return "%d年%d月%d日 %d:%d:%d" % [t.year, t.month, t.day, t.hour, t.minute, t.second]
+	return "%d年%d月%d日 %02d:%02d:%02d" % [t.year, t.month, t.day, t.hour, t.minute, t.second]
 
 
 ## 事件脚本里的 GetAcReward(id)：O-076 FLOOR12_FIX 按地图与事件改号

@@ -408,7 +408,7 @@ static func _plunder_gold(logic, f: Dictionary, u, r: Dictionary) -> void:
 	s.gain_gold(-n)
 	f.gold_taken = taken + n
 	r.gold = int(r.get("gold", 0)) + n
-	_say(f, "%s顺手摸走了 %d 金钱。打倒它就能拿回来。" % [u.display_name(), n])
+	_say(f, "%s顺手摸走了 %d 精魂。打倒它就能拿回来。" % [u.display_name(), n])
 
 
 ## 打倒的掠夺者：它摸走的金钱全额还回来
@@ -418,7 +418,7 @@ static func _refund_gold(logic) -> void:
 		var r: Dictionary = f.units[e]
 		if int(r.get("gold", 0)) > 0 and e.is_dead():
 			logic.state.gain_gold(int(r.gold))
-			f.queue.append({"type": "battle_text", "text": "%s倒下了，摸走的 %d 金钱回来了。" % [e.display_name(), int(r.gold)]})
+			f.queue.append({"type": "battle_text", "text": "%s倒下了，摸走的 %d 精魂回来了。" % [e.display_name(), int(r.gold)]})
 			r.gold = 0
 
 

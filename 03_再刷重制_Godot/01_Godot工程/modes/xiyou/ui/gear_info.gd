@@ -38,7 +38,7 @@ static func details(parent: Control, item: Dictionary, a: XActor = null) -> void
 static func bonus_text(b: Dictionary) -> String:
 	var parts := []
 	for group in ["param","xparam","sparam","bResult"]:
-		var labels: Array={"param":XMenu.PARAM_NAMES,"xparam":XNAMES,"sparam":SNAMES,"bResult":["队伍经验","队伍金钱","队伍掉率"]}[group]
+		var labels: Array={"param":XMenu.PARAM_NAMES,"xparam":XNAMES,"sparam":SNAMES,"bResult":["队伍经验","队伍精魂","队伍掉率"]}[group]
 		for i in range(labels.size()):
 			var plus := float(b[group+"Plus"][i]);var rate := float(b[group+"Rate"][i])
 			if plus!=0:parts.append("%s %s%s%s"%[labels[i],"+" if plus>0 else "",number(plus),"" if group=="param" else "%"])

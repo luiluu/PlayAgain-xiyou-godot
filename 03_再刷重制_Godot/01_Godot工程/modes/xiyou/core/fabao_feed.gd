@@ -51,13 +51,13 @@ static func reason(s: XState, fabao: Dictionary, item: Dictionary) -> String:
 	if XMagicWeapon.level_of(fabao) >= XMagicWeapon.max_level(fabao):
 		return "法宝已到本层上限"
 	if not item.has("instanceId") or XMagicWeapon.is_magic(item) or is_same(item, fabao):
-		return "不能喂"
+		return "无法喂入"
 	if not s.gear.any(func(e): return is_same(e, item)):
 		return "不在背包里"
 	if XItemMarks.is_locked(s, item):
 		return "已锁定"
 	if XTianqiDrop.feed_blocked(s, item):
-		return "商店买的不能喂"
+		return "商店购买的装备无法喂入"
 	if grade_of(item) < min_grade(XMagicWeapon.level_of(fabao)):
 		return "品质不够（至少%s）" % GRADE_NAMES[min_grade(XMagicWeapon.level_of(fabao))]
 	return ""

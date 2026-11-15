@@ -88,7 +88,8 @@ func _compare(cat: String, card: Dictionary) -> void:
 		var w: Array = want[i]
 		var g_align = null if g[4] == null else int(g[4])
 		var w_align = null if w[4] == null else int(w[4])
-		var row_ok: bool = str(g[0]) == str(w[0]) and int(g[1]) == int(w[1]) and str(g[2]) == str(w[2]) and g_align == w_align
+		# 文字审批 12：10168 等复刻说明行的弯引号“”改直角引号「」（参照是原版）
+		var row_ok: bool = (str(g[0]) == str(w[0]) or str(g[0]) == str(w[0]).replace("“", "「").replace("”", "」")) and int(g[1]) == int(w[1]) and str(g[2]) == str(w[2]) and g_align == w_align
 		var y_ok := is_equal_approx(float(lay.lines[i].y), float(w[3]))
 		if not (row_ok and y_ok):
 			_check(name, false, {"row": i, "got": [g[0], g[1], g[2], g_align, lay.lines[i].y], "want": [w[0], w[1], w[2], w_align, w[3]]})
@@ -114,6 +115,8 @@ func _run() -> void:
 	_check("oracle_loaded", data is Dictionary and data.has("skills"))
 	# 参照是原版 HelpExtend 的出售价格（四舍五入），逐行比对时关掉 O-049
 	XHelpCard.REAL_SELL_PRICE = false
+	# 参照是原版文字：原版文字错的加载时修正（XTextFix）对照时整组关掉；修正本身由 tests/xiyou_text_fix 核
+	XTextFix.set_all(false)
 	# 探针把切片角色都 changeLevel(maxLevel)，新局等级上限 10 夹住；178 哈基米的说明卡按已有的 178（characterHelpActor）算，这里同样建一个 10 级的
 	var prior := XState.current
 	var cat_state := XState.new()

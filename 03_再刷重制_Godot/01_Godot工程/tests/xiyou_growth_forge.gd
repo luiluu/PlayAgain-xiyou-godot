@@ -267,7 +267,7 @@ func _case_forge(c: Dictionary) -> void:
 	check(c.id + ".unchanged", JSON.stringify(src) == keep)
 	_cmp(c.id + ".detail", XGrowthForge.detail_lines(id, src), o.detail)
 	_cmp(c.id + ".help", [XGrowthForge.help_text(id, src, true, false), XGrowthForge.help_text(id, src, true, true), XGrowthForge.help_text(id, src, false, false),
-		XGrowthForge.help_text(id, null, false, false)], o.help)
+		XGrowthForge.help_text(id, null, false, false)], (o.help as Array).map(func(t): return str(t).replace("选择: ", "选择：")))  # 文字审 17-001：「选择: 」改全角冒号（参照是原版半角）
 	_cmp(c.id + ".emptyDetail", XGrowthForge.detail_lines(id, null), o.emptyDetail)
 	XGrowthForge.forge_source = src
 	var out := XCrafting.craft(s, XCrafting.recipe(id))
@@ -328,8 +328,8 @@ func _case_ui() -> void:
 	scene.index = i
 	scene.ok()
 	check("ui.pick", scene.mode == "pick" and scene.picks.size() == 1 and is_same(scene.picks[0], src), [scene.mode, scene.picks.size()])
-	check("ui.help", scene.forge_shown() == src and XGrowthForge.help_text(457, src, true, false).begins_with("选择: 心之钢"))
-	check("ui.row", XCraftingScene.pick_row_ops(s, 457, src, 0).size() == 3 and str(XCraftingScene.pick_row_ops(s, 457, src, 0)[2][1]).contains("心钢层数:120 · 背包"))
+	check("ui.help", scene.forge_shown() == src and XGrowthForge.help_text(457, src, true, false).begins_with("选择：心之钢"))
+	check("ui.row", XCraftingScene.pick_row_ops(s, 457, src, 0).size() == 3 and str(XCraftingScene.pick_row_ops(s, 457, src, 0)[2][1]).contains("心钢层数：120 · 背包"))
 	check("ui.detail", XCraftingScene.forge_detail_ops(457, src).size() == 5)
 	# Shift：详情窗位置开原件说明卡（原版压 14 号被 helpView 冲掉，照原字号），提示换成「返回升级预览」；取消先收卡、留在选原件
 	scene.toggle_source()

@@ -142,18 +142,18 @@
   "conversion_books": {
     "base_rename": {
       "item": 1039,
-      "item_name": "元素转换:自然",
+      "item_name": "元素转换：自然",
       "ce": 641,
       "ce_name": "元素自然"
     },
     "shop_pair": [
-      {"item": 3101, "skill": 11201, "ce": 9101, "element": 14, "name": "元素转换:水", "icon": 768, "price": 100, "buy_item": 188, "buy_price": 3},
-      {"item": 3102, "skill": 11202, "ce": 9102, "element": 15, "name": "元素转换:风", "icon": 768, "price": 100, "buy_item": 188, "buy_price": 3}
+      {"item": 3101, "skill": 11201, "ce": 9101, "element": 14, "name": "元素转换：水", "icon": 768, "price": 100, "buy_item": 188, "buy_price": 3},
+      {"item": 3102, "skill": 11202, "ce": 9102, "element": 15, "name": "元素转换：风", "icon": 768, "price": 100, "buy_item": 188, "buy_price": 3}
     ],
     "higher": [
-      {"item": 3103, "skill": 11203, "ce": 9103, "element": 11, "name": "元素转换:虚空", "icon": 768, "price": 100},
-      {"item": 3104, "skill": 11204, "ce": 9104, "element": 12, "name": "元素转换:混沌", "icon": 768, "price": 100},
-      {"item": 3105, "skill": 11205, "ce": 9105, "element": 13, "name": "元素转换:空间", "icon": 768, "price": 100}
+      {"item": 3103, "skill": 11203, "ce": 9103, "element": 11, "name": "元素转换：虚空", "icon": 768, "price": 100},
+      {"item": 3104, "skill": 11204, "ce": 9104, "element": 12, "name": "元素转换：混沌", "icon": 768, "price": 100},
+      {"item": 3105, "skill": 11205, "ce": 9105, "element": 13, "name": "元素转换：空间", "icon": 768, "price": 100}
     ],
     "higher_drop_difficulties": ["lianyu", "zhengdao"]
   }
