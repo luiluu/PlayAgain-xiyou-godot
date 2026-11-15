@@ -1,7 +1,7 @@
 # 交付：cc/ui-skin-2b
 
 - 车道／工作者：B 界面·新界面 2B（右侧角色条 #65、行动顺序 #66、首领血弧＋状态胶囊＋详情 #67／#68、我方状态弹窗 #69）／cc（Opus＋medium，派单定：战斗界面接线，复杂系统）
-- 分支：从 `cc/ui-skin-2a`（500bb38f5，小A 乙档已过）切出；已合进 main 的 1A（17c4ba6b2，`XUiSkin.icon` 白块修复）。**2A 还没进 main：2A 合进 main 后本分支要再 `git merge main` 一次**（2A 的提交本分支里都有，预计无冲突）。
+- 分支：从 `cc/ui-skin-2a`（500bb38f5，小A 乙档已过）切出；已合进 main 的 1A（17c4ba6b2，`XUiSkin.icon` 白块修复）和 1B（85577b3ab；冲突只在 `xiyou_ui_skin_offshot.gd` 头注释，已解）。**2A 还没进 main：2A 合进 main 后本分支要再 `git merge main` 一次**（2A 的提交本分支里都有，预计无冲突）。
 - 状态：可合并
 
 ## 变更记录草稿
@@ -73,9 +73,10 @@
   - 我方状态详情：等指令时打开是 `XSkinPartyStatusPanel`、队伍人数与当前人、指令环失活、「全部」页签条数＝`rows_for`、详情牌第一条名字与「类别 · 时长」、人物属性一节、三块位置＝`XSkinLayout.compute`、← → 换页签条数对、Q／E 换人且保留页签、空列表字、关掉后指令环恢复；点队伍整行也能打开。
   - 自动／变速挪到 (20,84) 且 104×40。
   - 开关关着：`XSkinBattle` 五个工厂都给原类、不加面板底、原 `XOTBBar` 的图标没有换画法。
-- **开关关掉与 main 一致**：`python3 03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py --base main --out 03_再刷重制_Godot/04_验证/本地结果/ui_skin_2b/关闭对照`（main＝17c4ba6b2，还没有 2A；本分支含 2A＋2B）→ **14 张逐像素 SAME**：第 0 期 10 张＋战斗指令窗、战技列表、选目标（2A）＋我方状态详情（2B 新加，西游存档点状态格打开原网页面板）。
-- 截图（有窗口，git 忽略目录 `03_再刷重制_Godot/04_验证/本地结果/ui_skin_2b/`）：`battle_2b_hud_16x9.png`（指令环＋队伍条＋行动顺序＋首领血弧＋状态胶囊）、`battle_2b_boss_detail_16x9.png`、`battle_2b_boss_state_16x9.png`、`battle_2b_status_16x9.png`，同名 `_20x9`；`关闭对照/base`、`关闭对照/branch` 各 14 张。注：同 2A，专项场面在地图 5 上直接开战，截图里背景是地图（地图上的 NPC 名字、挂机界面也拍进去了），关闭对照那几张是真战斗背景。
+- **开关关掉与 main 一致**：`python3 03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py --base main --out 03_再刷重制_Godot/04_验证/本地结果/ui_skin_2b/关闭对照`（合 1B 后重跑：main＝85577b3ab，还没有 2A；本分支含 2A＋2B）→ **16 张逐像素 SAME**：第 0 期 10 张＋技能页 2 张（1B）＋战斗指令窗、战技列表、选目标（2A）＋我方状态详情（2B 新加，西游存档点状态格打开原网页面板）。合 1B 前对 17c4ba6b2 也跑过一次，14 张 SAME。
+- 截图（有窗口，git 忽略目录 `03_再刷重制_Godot/04_验证/本地结果/ui_skin_2b/`）：`battle_2b_hud_16x9.png`（指令环＋队伍条＋行动顺序＋首领血弧＋状态胶囊）、`battle_2b_boss_detail_16x9.png`、`battle_2b_boss_state_16x9.png`、`battle_2b_status_16x9.png`，同名 `_20x9`；`关闭对照/base`、`关闭对照/branch` 各 16 张。注：同 2A，专项场面在地图 5 上直接开战，截图里背景是地图（地图上的 NPC 名字、挂机界面也拍进去了），关闭对照那几张是真战斗背景。
 - 选测（本地）：`选测.py main --list` 给 131 个；本地跑了去掉 `xiyou_floor*`、`xiyou_map186*`、`xiyou_event_compare*` 之后的 73 个，再手动加 `xiyou_party_status_panel`、`xiyou_otb`、`xiyou_side_status_order`、`xiyou_ui_skin`、`xiyou_ui_skin_menu`（改到的原类各自的专项，选测对照没选中），**78 个全部通过**（1087 秒，并行 2，含 `xiyou_determinism`、`xiyou_battle_*`、`xiyou_boss_hp_bar`、`xiyou_boss_status`、`xiyou_ui_skin_*`）。日志 `04_验证/本地结果/并行测试/20261115_082236_qh802a8c/`。没跑的楼层／map186／事件对照：只改了建窗口和画法，开关关时走原类，这几组不建天启篇存档、也不看窗口像素。
+- 合 1B（改了 `skin_card`、`skin_list`、`help_card`）之后重跑：`xiyou_ui_skin_hud`、`xiyou_ui_skin_battle`、`xiyou_ui_skin_1b`、`xiyou_ui_skin`、`xiyou_ui_skin_menu`、`xiyou_ui_skin_offshot`、`xiyou_battle_ui`、`xiyou_otb`、`xiyou_party_status_panel`、`xiyou_boss_hp_bar`、`xiyou_boss_status`、`xiyou_side_status_order`、`xiyou_determinism`、`xiyou_item_list` 14 个全部通过（92 秒）；有窗口截图重拍。
 - `工具回归.py`：全部通过（97 秒）。`发行空壳.py check`：通过（58 个脚本 492 个函数；新组件不进发行空壳名单，只在 `XUiSkin.on()` 时建，发行包里天启篇存档不会开）。`语法检查.py`：908 个 .gd 0 个问题。
 - 给总装：`合并车道.sh --finish --affected --cloud`（`选测.py main --list` 给 131 个场景，含本地没跑的楼层、map186、事件对照）。
 
