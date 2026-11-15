@@ -400,6 +400,8 @@ func _update_indicators() -> void:
 ## 换装卡（卡状态 Custom Apply／Remove Effect 的 setBattlerImage）：按外观键换图，动作与帧接着播。
 ## 只换 Sprite2D 身体；场景外观（appearances.json 的 scene）不换（目前没有角色登记场景外观）。
 func swap_look(key: String) -> void:
+	var old_key := _look_key
+	var old_scale := body_scale
 	_look_key = key
 	if look.kind == "scene" or not sprite is Sprite2D:
 		return
@@ -420,6 +422,7 @@ func swap_look(key: String) -> void:
 		_apply()
 	else:
 		_show_frame(look.frame("walk", 0))
+	XMiraLiftFx.on_swap(self, old_key, key, old_scale)  # 米拉人形→黑龙：升空变身演出（XMira.LIFT_ART；技能动画关着时直接是黑龙）
 
 
 func _idle_motion() -> String:
