@@ -2,7 +2,7 @@
 
 - 车道／工作者：B 美术接入·米拉升空变身 u7＋召剑定为 10151／cc（Opus＋medium，派单定：要接战斗演出时钟、变速、暂停、开关、清理）
 - 分支：`cc/mira-lift-u7`（从 main fa0562032 切出）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -41,6 +41,7 @@
 
 ## 可优化（流程／工具／效率）
 
+- 建议：`xiyou_step_encounter_stop` 的 `rollback_stale_target_walks` 在云端两条无关车道都挂、本机过，像云端环境下的时序偶发（该测试已修过两次确定性），派一条小单看（Sonnet＋medium）。
 - 已做：`选测对照.json` 加 `mira_art` 组，`content/mira/*` 只选 6 个米拉美术／外观专项（原先新增一张 PNG 就整轮 628 个场景、约 196 分钟云端额度；本单选测从整轮降到 155 个）。回退：删掉该组与对应 `rules` 一行。
 
 ## 验证
@@ -55,7 +56,7 @@
   - 素材：12 张尺寸、无 mipmap、人形取 u2 格、Final 路径；时间轴端点（起点 (56,0)、1530 起回脚点、920 最高 (40,−116)）、淡化窗口、火屑区间与贴地。
 - 12 张素材与 co 来源 `cmp` 逐字节一致；本机 `Codex_Mira_SV_u2.png` 与 co u2 原图一致。
 - `语法检查.py` 0 个问题；`发行空壳.py check` 通过（62 个脚本、534 个函数）；`工具回归.py` 全过（改了选测对照）。
-- 云端选测：（待写）
+- 云端选测（472df0c8c，155 个场景、6 片，运行 43743489825）：154 过、1 挂 `xiyou_step_encounter_stop`（`rollback_stale_target_walks`，地图踩遇敌回退，重跑也挂）。判断与本分支无关：同一测试同一断言在无关车道 `cc/save-integrity` 的云端（运行 43739384021，17:08）也挂；本机单跑本分支 7/7 通过；该测试不碰战斗精灵／米拉。含 `xiyou_determinism`、battle 演出类（battle_log／pixel／events／lag／pace／ui／mv_animation／sequence_visual 等）、mira 各项全过。建议总装另派人看这个云端偶发。
 - 截图（本机、不入库）`03_再刷重制_Godot/04_验证/本地结果/mira_lift_u7/`：`mira_lift_0240ms／0600ms／0900ms／1300ms／1600ms／2000ms.png`（游戏内缩放、画面 2 倍）、`dragon_sword_hover.png`（10151 召剑悬停，左原版带剑、右新图）。
 
 ## 待交叉核查
