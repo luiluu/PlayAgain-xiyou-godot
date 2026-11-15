@@ -137,6 +137,7 @@ func _title() -> void:
 	check("title_bar_follows", t.selected() == sel0 + 1 and absf(t.skin_bar.current_rect().get_center().y - (b1.position.y + b1.size.y / 2.0)) <= 1.0)
 	check("title_extras_skinned", extra.has_meta("skin_done") and extra.get_theme_stylebox("hover") is XSkinSelectStyle
 		and t.back_button.has_meta("skin_done"))
+	check("title_extras_keep_size", extra.size == Vector2(280, 40), extra.size)   # entry.gd 按原大小上下叠放（反馈群号与问卷）
 	check("title_hints", t.skin_hints != null and t.skin_hints.hints.size() == 2)
 	check("title_activate_same", t.activate() and hit == [str(XTianqiTitle.COMMANDS[sel0 + 1].key)], hit)
 	await shots("ui_skin_3b_title")

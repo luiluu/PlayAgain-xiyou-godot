@@ -334,8 +334,33 @@ func _skin_extras() -> void:
 			n.set_meta("skin_done", true)
 
 
+## 内边距沿用按钮原来那一档、字号不变（14～17 之间），按钮大小不变：entry.gd 按原大小摆好的上下叠放（反馈群号与问卷）不会挤到一起
 static func _skin_button(b: Button) -> void:
-	XSkinButton.apply(b, "", clampi(b.get_theme_font_size("font_size"), XUiSkin.FS_AUX, XUiSkin.FS_AUX_MAX))
+	var old := b.get_theme_stylebox("normal")
+	var fs := b.get_theme_font_size("font_size")
+	var keep := b.size
+	XSkinButton.apply(b, "", clampi(fs, XUiSkin.FS_AUX, XUiSkin.FS_AUX_MAX))
+	var styles := ["normal", "disabled", "hover", "pressed", "focus", "hover_pressed"].map(func(st): return b.get_theme_stylebox(st))
+	for sb in styles:
+		for side in [SIDE_LEFT, SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM]:
+			sb.set_content_margin(side, old.get_content_margin(side) if old != null else 4.0)
+	# 思源黑体行高比原字体高：撑高了就先压上下内边距、再把字号降一档（不低于 14），保持原高
+	var f := clampi(fs, XUiSkin.FS_AUX, XUiSkin.FS_AUX_MAX)
+	for k in 6:
+		var over := b.get_combined_minimum_size().y - keep.y
+		if keep.y <= 0.0 or over <= 0.5:
+			break
+		var top: float = styles[0].get_content_margin(SIDE_TOP)
+		if top > 0.0:
+			for sb in styles:
+				for side in [SIDE_TOP, SIDE_BOTTOM]:
+					sb.set_content_margin(side, maxf(0.0, top - ceilf(over / 2.0)))
+		elif f > XUiSkin.FS_AUX:
+			f -= 1
+			b.add_theme_font_size_override("font_size", f)
+		else:
+			break
+	b.size = keep
 
 
 ## 选中条垫在选中项字图后面：横向盖住放大后的字（字图 20～179），竖向取字图高（上下不超出行距）
