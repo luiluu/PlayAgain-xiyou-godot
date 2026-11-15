@@ -92,20 +92,27 @@ enum Motion { FULL, SIMPLE, OFF }
 static var motion_override := -1
 
 ## ---- 主菜单的组（D25；Kyo 11-15 更正：整队并入角色，宠物以后单独一组）。组配置只在这一处，页签条、环形导航都按可见组数排。----
-## 每组 {key, name, icon（占位图标号，样稿从旧图标里挑的，美术出了再换）, items:[{key, name}]}；组或子项可带 hide（按存档判断的隐藏规则，见 hide_rule）或 hidden（写死隐藏）。
+## 每组 {key, name, icon（占位图标号，样稿从旧图标里挑的，美术出了再换）, items:[{key, name, cmd（旧菜单 XMenu.COMMANDS 的符号，新主菜单按它打开同一页）, desc（新主菜单子项的一句话说明，第 1A 批）}]}；组或子项可带 hide（按存档判断的隐藏规则，见 hide_rule）或 hidden（写死隐藏）。
 ## 宠物组现在天启篇随 XTianqiPetHide 整组隐藏（可见 6 组）；放开后自动出现（7 组），不用改布局。文字照小A文字审口径。
 const GROUPS := [
-	{"key": "items", "name": "物品", "icon": 100, "items": [{"key": "item", "name": "物品"}]},
-	{"key": "equip", "name": "装备", "icon": 160, "items": [{"key": "equip", "name": "装备"}]},
-	{"key": "actor", "name": "角色", "icon": 1001, "items": [{"key": "status", "name": "状态"}, {"key": "skill", "name": "技能"},
-		{"key": "zhenqi", "name": "真气"}, {"key": "race", "name": "种族祝福"}, {"key": "formation", "name": "整队"}]},
-	{"key": "pets", "name": "宠物", "icon": 384, "hide": "pet", "items": [{"key": "pets", "name": "宠物"}]},
-	{"key": "workshop", "name": "工坊", "icon": 193, "items": [{"key": "crafting", "name": "制作"}, {"key": "orb_shop", "name": "宝珠坊"},
-		{"key": "alien_workshop", "name": "异化工坊"}]},
-	{"key": "codex", "name": "图鉴", "icon": 1360, "items": [{"key": "actor_book", "name": "人物图鉴"}, {"key": "enemy_book", "name": "怪物图鉴"},
-		{"key": "achievement", "name": "成就"}]},
-	{"key": "system", "name": "系统", "icon": 688, "items": [{"key": "save", "name": "存档"}, {"key": "options", "name": "设置"},
-		{"key": "feedback", "name": "反馈"}, {"key": "game_end", "name": "游戏结束"}]},
+	{"key": "items", "name": "物品", "icon": 100, "items": [{"key": "item", "name": "物品", "cmd": "item", "desc": "使用和查看随身物品"}]},
+	{"key": "equip", "name": "装备", "icon": 160, "items": [{"key": "equip", "name": "装备", "cmd": "equip", "desc": "更换角色装备"}]},
+	{"key": "actor", "name": "角色", "icon": 1001, "items": [{"key": "status", "name": "状态", "cmd": "status", "desc": "属性、抗性、掌握"},
+		{"key": "skill", "name": "技能", "cmd": "skill", "desc": "查看与使用技能"},
+		{"key": "zhenqi", "name": "真气", "cmd": "zhenqi", "desc": "闭关突破"},
+		{"key": "race", "name": "种族祝福", "cmd": "race", "desc": "种族加成与进阶"},
+		{"key": "formation", "name": "整队", "cmd": "formation", "desc": "调整出战人员和顺序"}]},
+	{"key": "pets", "name": "宠物", "icon": 384, "hide": "pet", "items": [{"key": "pets", "name": "宠物", "cmd": "pet", "desc": "查看和培养宠物"}]},
+	{"key": "workshop", "name": "工坊", "icon": 193, "items": [{"key": "crafting", "name": "制作", "cmd": "crafting", "desc": "用材料做物品和装备"},
+		{"key": "orb_shop", "name": "宝珠坊", "cmd": "orbs", "desc": "鉴定、兑换、分解宝珠"},
+		{"key": "alien_workshop", "name": "异化工坊", "cmd": "alienation", "hide": "alien", "desc": "分解异化装备、重铸词条"}]},
+	{"key": "codex", "name": "图鉴", "icon": 1360, "items": [{"key": "actor_book", "name": "人物图鉴", "cmd": "actorBook", "desc": "查看角色资料"},
+		{"key": "enemy_book", "name": "怪物图鉴", "cmd": "monsterBook", "desc": "查看敌人资料"},
+		{"key": "achievement", "name": "成就", "cmd": "achievement", "desc": "查看成就"}]},
+	{"key": "system", "name": "系统", "icon": 688, "items": [{"key": "save", "name": "存档", "cmd": "save", "desc": "保存当前进度"},
+		{"key": "options", "name": "设置", "cmd": "options", "desc": "画面、声音、挂机与操作"},
+		{"key": "feedback", "name": "反馈", "cmd": "feedback", "desc": "提交问题和建议"},
+		{"key": "game_end", "name": "返回标题", "cmd": "gameEnd", "desc": "回到标题画面"}]},
 ]
 
 const FONT_DIR := "res://content/ui_skin/fonts/"
@@ -540,6 +547,27 @@ static func _full_tex(t: Texture2D) -> TextureRect:
 	return r
 
 
+## ---- 图标、头像（缓存）----
+## XUI.icon_texture／face_texture 每次新建 AtlasTexture，图集（load 出来的贴图）只靠它引用：组件在 _draw 里取完就释放，
+## 图集跟着被卸掉，画出来是白块（旧画布 XMVCanvas 靠 _keep 留引用）。新组件一律从这里取，按号缓存住。
+static var _icon_cache := {}
+
+
+static func icon(index: int) -> Texture2D:
+	if index <= 0:
+		return null
+	if not _icon_cache.has(index):
+		_icon_cache[index] = XUI.icon_texture(index)
+	return _icon_cache[index]
+
+
+static func face(face_name: String, index: int) -> Texture2D:
+	var k := "face:%s#%d" % [face_name, index]
+	if not _icon_cache.has(k):
+		_icon_cache[k] = XUI.face_texture(face_name, index)
+	return _icon_cache[k]
+
+
 ## ---- 组 ----
 
 ## 某组在当前存档里看得到的子项
@@ -560,6 +588,8 @@ static func hide_rule(rule: String, s: XState = null) -> bool:
 	match rule:
 		"pet":
 			return XTianqiPetHide.active(s)
+		"alien":
+			return XAlienBattle.hidden()  # 同旧菜单 XMenu.commands()（O-283）
 	return false
 
 

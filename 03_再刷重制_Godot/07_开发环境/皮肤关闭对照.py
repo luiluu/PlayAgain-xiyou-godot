@@ -47,7 +47,7 @@ def main():
     ap.add_argument('--out', default=str(ROOT / '03_再刷重制_Godot/04_验证/本地结果/ui_skin_p0/关闭对照'))
     ap.add_argument('--keep', action='store_true')
     a = ap.parse_args()
-    out = Path(a.out)
+    out = Path(a.out).resolve()  # Godot 以工程目录为当前目录，相对路径会写到别处（1A 踩到：两边都 0 张）
     if out.exists():
         shutil.rmtree(out)
     work = Path(tempfile.mkdtemp(prefix='skin_off_'))
