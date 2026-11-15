@@ -239,6 +239,8 @@ static func style_toggles(side: Control, buttons: Array, origin: Vector2) -> voi
 	if not on():
 		return
 	side.position = Vector2(TOGGLE_POS.x, origin.y + TOGGLE_POS.y)   # x 贴屏幕左边（同挂机快捷界面），宽屏不跟 1280 居中（核查返工）
+	if XSkin4A.hud_on() and side.is_inside_tree():   # 新界面 4A：挂机胶囊贴安全边距，这两颗跟它左对齐
+		side.position.x = XSkin4A.safe_rect(side).position.x
 	var normal := StyleBoxFlat.new()
 	normal.bg_color = Color(XUiSkin.BG, 0.85)
 	normal.border_color = Color(XUiSkin.LINE, 0.6)

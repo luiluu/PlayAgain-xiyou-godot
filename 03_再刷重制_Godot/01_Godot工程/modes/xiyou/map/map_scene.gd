@@ -141,6 +141,7 @@ func _ready() -> void:
 	top.add_child(fader)
 	_build_hud()
 	ui.child_entered_tree.connect(_on_ui_page)
+	_update_wide()  # 新界面 4A：宽屏横向铺满
 	# EnemyNameColorByDifficulty 的提示位于窗口层之上，随地图快照进入战斗背景。
 	difficulty_notice = XDifficultyNoticeCanvas.new()
 	ui.add_child(difficulty_notice)
@@ -218,6 +219,45 @@ func _run_tianqi_line_arrival() -> void:
 func _on_ui_page(node: Node) -> void:
 	if not node is XTextPrompt and not node is XCasinoDialog:
 		XItemBagReturn.scene_opened(XState.current)
+	if not _wide_aware(node):  # 新界面 4A：按 1280 排的旧页面开着时收回 16:9，关了再铺满
+		_legacy_pages += 1
+		node.tree_exited.connect(func():
+			_legacy_pages = maxi(_legacy_pages - 1, 0)
+			if is_inside_tree():
+				_update_wide.call_deferred(), CONNECT_ONE_SHOT)
+		_update_wide()
+
+
+## ---- 新界面 4A：地图横向铺满（XSkin4A.WIDE_V2）----
+## 地图本身（镜头、天气、HUD、对话框、提示条）都按可见宽度摆；旧页面按 1280 排，所以地图只在「没开旧页面、没开菜单」时申请铺满。
+## 主菜单（XMenu）、传送页、新皮肤模板页自己会按需 request_wide；战斗自己申请。离开地图时令牌节点跟着释放，拉伸方式自动还原。
+var _wide_token: Node = null
+var _legacy_pages := 0
+
+
+## 加进 ui 层但不算「旧页面」的：地图自己的叠加层、黑幕、战斗（自己管铺满）、新皮肤的全屏页（自己管）、大厅氛围小字
+func _wide_aware(node: Node) -> bool:
+	return node is XSceneFade or node is XBattleScene or node is XDifficultyNoticeCanvas or node is XHangUpOverlay \
+		or node == hud or node == message or node == screen_fader or node.is_in_group(XUiSkin.FULLSCREEN_GROUP) \
+		or node is Label   # 大厅氛围小字（XLobbyCorruption）
+
+
+func _update_wide() -> void:
+	var want := XSkin4A.wide_on() and is_inside_tree() and not _menu_open and _legacy_pages == 0
+	if want and _wide_token == null:
+		_wide_token = Node.new()
+		_wide_token.name = "WideToken"
+		add_child(_wide_token)
+		XSkinLayout.request_wide(_wide_token)
+	elif not want and _wide_token != null:
+		var t := _wide_token
+		_wide_token = null
+		remove_child(t)   # tree_exiting 里还原拉伸方式（XSkinLayout 计数）
+		t.free()
+
+
+func wide_active() -> bool:
+	return _wide_token != null
 
 
 func _difficulty_notice_active() -> bool:
@@ -1555,7 +1595,7 @@ func _encounter_effect(battle: XBattleScene) -> XSceneFade:
 func encounter_zoom_base() -> Dictionary:
 	var ct := get_viewport().get_canvas_transform()
 	var at := ct * player.global_position + Vector2(0, -(0.0 if player.is_object() else 6.0) - XBattleTransition.ZOOM_LIFT)
-	var base := {"at": Vector2(floorf(at.x + 0.5), floorf(at.y + 0.5)), "top_left": camera.get_screen_center_position() - Vector2(1280, 720) / 2.0,
+	var base := {"at": Vector2(floorf(at.x + 0.5), floorf(at.y + 0.5)), "top_left": camera.get_screen_center_position() - XSkin4A.view_size(self) / 2.0,
 		"limits": [camera.limit_left, camera.limit_top, camera.limit_right, camera.limit_bottom]}
 	const FREE := 10000000
 	camera.limit_left = -FREE
@@ -1567,7 +1607,7 @@ func encounter_zoom_base() -> Dictionary:
 
 ## 镜头缩放 q：画面坐标 s 变成 shift＋q·s（Spriteset_Base.updatePosition），Camera2D 画面左上角的世界坐标因此是 top_left − shift／q
 func apply_encounter_zoom(base: Dictionary, q: float) -> void:
-	var screen := Vector2(1280, 720)
+	var screen := XSkin4A.view_size(self)  # 新界面 4A：铺满时按可见宽度（关着 1280×720）
 	var shift := XBattleTransition.zoom_shift(base.at, q)
 	camera.zoom = Vector2(q, q)
 	_zoom_offset = ((base.top_left as Vector2) - shift / q + screen / (2.0 * q)) - camera.global_position
@@ -1634,8 +1674,11 @@ func _snapshot() -> Texture2D:
 		return null
 	img = img.get_region(r)
 	# MV 快照是 1280×720 位图；高分屏截到的大图缩回画布尺寸，放大镜头时才会和原版一样柔化
-	if img.get_size() != Vector2i(1280, 720):
-		img.resize(1280, 720, Image.INTERPOLATE_BILINEAR)
+	var want := Vector2i(1280, 720)
+	if wide_active() and r.size.y > 0:   # 新界面 4A：铺满时快照保留宽度（战斗背景照原尺寸铺开）
+		want.x = maxi(1280, roundi(720.0 * r.size.x / r.size.y))
+	if img.get_size() != want:
+		img.resize(want.x, want.y, Image.INTERPOLATE_BILINEAR)
 	return ImageTexture.create_from_image(img)
 
 
@@ -2111,6 +2154,7 @@ func open_menu(resume_items: Dictionary = {}) -> void:
 		return
 	XAutoSave.checkpoint(self, "menu")  # 进主菜单的安全检查点（O-221·自动存档检查点）
 	_menu_open = true
+	_update_wide()  # 新界面 4A：菜单（及其旧子页）按 1280 排，地图先收回铺满（主菜单自己再按需铺满）
 	var owner := XState.current
 	XSound.system(1)  # Scene_Map.callMenu：SoundManager.playOk
 	# Scene_Map.terminate：snapForBackground／snapForHangUp（含地图 HUD），挂机设置页的背景与范围图
@@ -2127,6 +2171,7 @@ func open_menu(resume_items: Dictionary = {}) -> void:
 	var zhenqi := menu.zhenqi_requested
 	menu.queue_free()
 	_menu_open = false
+	_update_wide.call_deferred()
 	_menu_closed_frame = Engine.get_process_frames()  # 同一次 Esc 关菜单后本帧不再开（XKeyMap.menu_call_blocked）
 	XItemMarks.deploy_start(XState.current)  # 回地图＝Scene_Map.start
 	XStarburstBooks.map_start(XState.current)  # 星爆三本被动书 Scene_Map.start 包装：老存档补发

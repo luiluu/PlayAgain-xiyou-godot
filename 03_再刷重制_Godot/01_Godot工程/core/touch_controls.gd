@@ -140,6 +140,10 @@ const DRAG_MARGIN := [12.0, 6.0, 12.0, 12.0]  # 左、上、右、下
 const SCREEN := Vector2(1280, 720)
 ## 当前这一个（设置页找它）。
 static var instance: XTouchControls
+## 新界面 4A（XSkin4A.HUD_V2／WIDE_V2）：皮肤开着时按键换黑底旧金描边、字旧金；铺满时贴边按可见宽度（关着恒按 1280×720）
+var _skinned := false
+const SKIN_FILL := Color(0.031, 0.027, 0.031, 0.78)
+const SKIN_IDLE := 0.85
 
 var hidden := false
 var settings := {}
@@ -496,8 +500,8 @@ func _physics_process(_delta: float) -> void:
 		var pressed := _touches.values()
 		for name in _ghost_alpha.keys():
 			var a: float = _ghost_alpha[name]
-			if not pressed.has(name) and a > GHOST_IDLE:
-				a = maxf(GHOST_IDLE, a - 3.0 / 255.0)
+			if not pressed.has(name) and a > _idle_alpha():
+				a = maxf(_idle_alpha(), a - 3.0 / 255.0)
 				_ghost_alpha[name] = a
 			if _buttons.has(name):
 				(_buttons[name] as Panel).modulate.a = a
@@ -563,7 +567,22 @@ func _send_echo(code: Key) -> void:
 var _menu_hidden := false
 
 
+## 画面可见区大小：新界面铺满开着时取视口（宽屏比 1280 宽），否则 1280×720
+func screen_size() -> Vector2:
+	return XSkin4A.view_size(self)
+
+
+func _idle_alpha() -> float:
+	return SKIN_IDLE if _skinned else GHOST_IDLE
+
+
 func _process(_delta: float) -> void:
+	var sk := XSkin4A.hud_on()
+	if sk != _skinned:
+		_skinned = sk
+		apply_layout()
+		_ghost_base.queue_redraw()
+		_ghost_knob.queue_redraw()
 	var mh := XUiSkin.fullscreen_menu_open(get_tree()) and not layout_editing if is_inside_tree() else false
 	if mh != _menu_hidden:
 		_menu_hidden = mh
@@ -652,7 +671,18 @@ func apply_layout() -> void:
 				label.text = button_text(name)
 				label.add_theme_font_size_override("font_size", maxi(10, roundi(_font_base(name) * s)))
 				label.add_theme_color_override("font_color", _font_color(name))
+	_style_stick()
 	_apply_hidden()
+
+
+## 改版轮盘的底和头：皮肤开着黑底旧金边，关着原来的深蓝
+func _style_stick() -> void:
+	var base := _stick_base.get_theme_stylebox("panel") as StyleBoxFlat
+	var knob := _stick_knob.get_theme_stylebox("panel") as StyleBoxFlat
+	base.bg_color = Color(SKIN_FILL, 0.55) if _skinned else Color(0.08, 0.15, 0.24, 0.45)
+	knob.bg_color = Color(XUiSkin.BTN_IDLE_FILL, 0.85) if _skinned else Color(0.45, 0.62, 0.76, 0.75)
+	for sb in [base, knob]:
+		sb.border_color = Color(XUiSkin.GOLD, 0.7) if _skinned else Color(0.68, 0.77, 0.93, 0.47)
 
 
 ## 当前右侧布局（ab／full／classic）与移动方式（joystick／buttons）
@@ -756,6 +786,8 @@ func _font_base(name: String) -> int:
 
 
 func _font_color(name: String) -> Color:
+	if _skinned:
+		return XUiSkin.GOLD_LIGHT if name in ["ok", "cancel"] else XUiSkin.GOLD
 	if ghost() and name in ["ok", "cancel", "save", "info"]:
 		return GHOST_TEXT
 	if layout() == "ab" and name == "ok":
@@ -777,11 +809,24 @@ func ghost() -> bool:
 ## 按键底色：原版 A／B 灰底（gradientFillRect 207,217,223 → 226,235,240，0.8）、Save 再叠一层暗色；其余照旧深蓝
 func _style_button(name: String) -> void:
 	var sb := (_buttons[name] as Panel).get_theme_stylebox("panel") as StyleBoxFlat
+	if _skinned:   # 新界面 4A：黑底、旧金细边（A／B 粗一点）
+		sb.bg_color = SKIN_FILL
+		sb.border_color = Color(XUiSkin.GOLD, 0.75)
+		sb.set_border_width_all(2 if name in ["ok", "cancel"] else 1)
+		if ghost() and name in ["ok", "cancel", "save", "info"]:
+			if not _ghost_alpha.has(name) or _ghost_alpha[name] < _idle_alpha():
+				_ghost_alpha[name] = _idle_alpha()
+			(_buttons[name] as Panel).modulate = Color(1, 1, 1, _ghost_alpha[name])
+		else:
+			_ghost_alpha.erase(name)
+			(_buttons[name] as Panel).modulate = Color.WHITE
+		return
+	sb.border_color = Color(0.68, 0.77, 0.93, 0.47)
 	if ghost() and name in ["ok", "cancel", "save", "info"]:
 		sb.bg_color = Color8(216, 226, 231, 204) if name != "save" else Color8(130, 136, 139, 220)
 		sb.set_border_width_all(0)
-		if not _ghost_alpha.has(name):
-			_ghost_alpha[name] = GHOST_IDLE
+		if not _ghost_alpha.has(name) or (_skinned and _ghost_alpha[name] < _idle_alpha()):
+			_ghost_alpha[name] = _idle_alpha()
 		(_buttons[name] as Panel).modulate = Color(1, 1, 1, _ghost_alpha[name])
 	else:
 		sb.bg_color = Color(0.07, 0.15, 0.24, 0.72)
@@ -797,6 +842,14 @@ func _draw_ghost_base() -> void:
 		return
 	var c := Vector2(r, r)
 	var k := r / 140.0
+	if _skinned:   # 新界面 4A：黑底圆＋旧金细圈＋四向小刻
+		_ghost_base.draw_circle(c, r - 2.0 * k, Color(SKIN_FILL, 0.55))
+		_ghost_base.draw_arc(c, r - 2.0 * k, 0, TAU, 64, Color(XUiSkin.GOLD, 0.7), 2.0 * k, true)
+		_ghost_base.draw_arc(c, r * 0.6, 0, TAU, 48, Color(XUiSkin.GOLD, 0.25), 1.0, true)
+		for i in 4:
+			var d := Vector2.RIGHT.rotated(i * PI / 2.0)
+			_ghost_base.draw_line(c + d * (r - 14.0 * k), c + d * (r - 4.0 * k), Color(XUiSkin.GOLD_LIGHT, 0.7), 2.0 * k)
+		return
 	_ghost_base.draw_circle(c, roundf(r * 0.6), Color(0, 0, 0, 0.6 * GHOST_STICK_ALPHA))
 	_ghost_base.draw_arc(c, r - 2.5 * k, 0, TAU, 64, Color(1, 1, 1, GHOST_STICK_ALPHA), 5.0 * k, true)
 
@@ -809,10 +862,15 @@ func _draw_ghost_knob() -> void:
 	var c := Vector2(r, r)
 	var k := r / GHOST_KNOB
 	var a := GHOST_STICK_ALPHA
-	_ghost_knob.draw_circle(c, r, Color(1, 1, 1, 0.8 * a))
-	_ghost_knob.draw_circle(c, r / 2.0, Color(242 / 255.0, 12 / 255.0, 0, 0.8 * a))
-	_ghost_knob.draw_arc(c, r / 2.0, 0, TAU, 48, Color(0, 0, 0, a), 2.0 * k, true)
-	_ghost_knob.draw_arc(c, r - 1.25 * k, 0, TAU, 64, Color(0, 0, 0, 0.8 * a), 2.5 * k, true)
+	if _skinned:   # 新界面 4A：深褐金头＋旧金圈（不再白底红芯）
+		a = 0.9
+		_ghost_knob.draw_circle(c, r, Color(XUiSkin.BTN_IDLE_FILL, 0.85))
+		_ghost_knob.draw_arc(c, r - 1.5 * k, 0, TAU, 64, Color(XUiSkin.GOLD, 0.9), 2.5 * k, true)
+	else:
+		_ghost_knob.draw_circle(c, r, Color(1, 1, 1, 0.8 * a))
+		_ghost_knob.draw_circle(c, r / 2.0, Color(242 / 255.0, 12 / 255.0, 0, 0.8 * a))
+		_ghost_knob.draw_arc(c, r / 2.0, 0, TAU, 48, Color(0, 0, 0, a), 2.0 * k, true)
+		_ghost_knob.draw_arc(c, r - 1.25 * k, 0, TAU, 64, Color(0, 0, 0, 0.8 * a), 2.5 * k, true)
 	var ch := knob_character()
 	if ch.is_empty() or str(ch[0]) == "":
 		return
@@ -914,9 +972,10 @@ func default_position(g: String, size: Vector2) -> Vector2:
 	var spec: Dictionary = GROUPS[g]
 	var base: Rect2 = _style_members(g).get("base", spec.rect)
 	var margin := [base.position.x, base.position.y, SCREEN.x - base.end.x, SCREEN.y - base.end.y]
+	var scr := screen_size()
 	var pos := Vector2.ZERO
-	pos.x = maxf(margin[0], _insets[0]) if spec.anchor.has(SIDE_LEFT) else SCREEN.x - maxf(margin[2], _insets[2]) - size.x
-	pos.y = maxf(margin[1], _insets[1]) if spec.anchor.has(SIDE_TOP) else SCREEN.y - maxf(margin[3], _insets[3]) - size.y
+	pos.x = maxf(margin[0], _insets[0]) if spec.anchor.has(SIDE_LEFT) else scr.x - maxf(margin[2], _insets[2]) - size.x
+	pos.y = maxf(margin[1], _insets[1]) if spec.anchor.has(SIDE_TOP) else scr.y - maxf(margin[3], _insets[3]) - size.y
 	return pos
 
 
@@ -924,8 +983,9 @@ func default_position(g: String, size: Vector2) -> Vector2:
 func drag_bounds(size: Vector2) -> Rect2:
 	var left: float = DRAG_MARGIN[0] + _insets[0]
 	var top: float = DRAG_MARGIN[1] + _insets[1]
-	var w := maxf(0, SCREEN.x - left - DRAG_MARGIN[2] - _insets[2] - size.x)
-	var h := maxf(0, SCREEN.y - top - DRAG_MARGIN[3] - _insets[3] - size.y)
+	var scr := screen_size()
+	var w := maxf(0, scr.x - left - DRAG_MARGIN[2] - _insets[2] - size.x)
+	var h := maxf(0, scr.y - top - DRAG_MARGIN[3] - _insets[3] - size.y)
 	return Rect2(left, top, w, h)
 
 

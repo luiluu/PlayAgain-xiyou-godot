@@ -152,6 +152,8 @@ func _draw() -> void:
 		if top == INF:
 			top = center.y - radius
 		var pos := Vector2(center.x - tw / 2.0, top - 10.0)
+		if XSkin4A.text_on():  # 新界面 4A（A5）：回合提示垫深色胶囊底
+			XSkin4A.draw_text_backing(self, pos.x, pos.y, tw, fs)
 		draw_string_outline(title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.7))
 		draw_string(title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD)
 	# 球

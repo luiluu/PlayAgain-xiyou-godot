@@ -29,6 +29,7 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexBattleAutoDefault": false,  # 重制新增「进战斗默认自动」
 	"codexFontSize": {"global": 100, "toast": 100},  # 重制新增「字体大小」「弹窗字号」（XFontScale）
 	"codexUiSkin": true,  # 新界面「界面风格：新／原版」（天启篇才出现，XUiSkin.on()）：旧档没有这个键时按默认「新」
+	"codexBattleDim": 15,  # 新界面 4A「战斗背景压暗」（C8，XSkin4A.DIM_V2）：0 关、15、30（百分比）
 	"codexUiMotion": -1,  # 新界面「界面动效」：-1 没选过（省电模式按简化，否则全部）、0 全部、1 简化、2 关（XUiSkin.motion()）
 	"codexEncounterTarget": 0,  # 重制新增「定向遇怪」（O-384，XEncounterTarget）：0 关、1 罕见……5 亘古未有  # 重制新增「进战斗默认自动」（O-383，XBattleScene.AUTO_DEFAULT）：开了每场战斗开局自动按钮就是开
 	"codexPartyFormation": 0}  # 重制新增「战斗站位」（O-473，XPartyFormation）：0 两排错开（默认）、1 菱形、2 原版竖排
@@ -70,6 +71,9 @@ static func ensure_loaded() -> void:
 					_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 0, 100)
 				elif key == "battleAniSpeed":
 					_values[key] = clampi(int(data.get(key, DEFAULTS[key])), 1, 4)
+				elif key == "codexBattleDim":
+					var saved_dim = data.get(key)
+					_values[key] = int(saved_dim) if (saved_dim is float or saved_dim is int) and XSkin4A.DIM_LEVELS.has(int(saved_dim)) else XSkin4A.DIM_DEFAULT
 				elif key == "codexUiMotion":
 					var saved_motion = data.get(key)
 					_values[key] = clampi(int(saved_motion), -1, 2) if (saved_motion is float or saved_motion is int) else -1
@@ -157,7 +161,7 @@ static func set_session(key: String, value: Variant) -> void:
 
 
 static func set_flag(key: String, value: bool) -> bool:
-	if key not in DEFAULTS or key in VOLUMES or key in [XEncounterTarget.KEY, XPartyFormation.KEY, "battleAniSpeed", "codexNotices", "codexEquipmentSort", "SAchievementS", "codexQuality", "codexFontSize", "codexUiMotion"]:
+	if key not in DEFAULTS or key in VOLUMES or key in [XEncounterTarget.KEY, XPartyFormation.KEY, "battleAniSpeed", "codexNotices", "codexEquipmentSort", "SAchievementS", "codexQuality", "codexFontSize", "codexUiMotion", "codexBattleDim"]:
 		return false
 	ensure_loaded()
 	_values[key] = value
@@ -228,6 +232,19 @@ static func ui_motion() -> int:
 static func set_ui_motion(value: int) -> bool:
 	ensure_loaded()
 	_values["codexUiMotion"] = clampi(value, -1, 2)
+	return _write()
+
+
+## 新界面 4A「战斗背景压暗」（C8）：0 关、15、30（百分比）；跟存档无关，存在设置里
+static func battle_dim() -> int:
+	ensure_loaded()
+	var v := int(_values.get("codexBattleDim", XSkin4A.DIM_DEFAULT))
+	return v if XSkin4A.DIM_LEVELS.has(v) else XSkin4A.DIM_DEFAULT
+
+
+static func set_battle_dim(value: int) -> bool:
+	ensure_loaded()
+	_values["codexBattleDim"] = value if XSkin4A.DIM_LEVELS.has(value) else XSkin4A.DIM_DEFAULT
 	return _write()
 
 

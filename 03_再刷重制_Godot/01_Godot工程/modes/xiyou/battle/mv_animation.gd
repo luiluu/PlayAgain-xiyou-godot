@@ -101,6 +101,9 @@ var flash_duration := 0
 var screen_color := Color(0, 0, 0, 0)
 var screen_duration := 0
 var hiding_duration := 0
+## 新界面 4A（C7，XSkin4A.FLASH_V2）：目标闪光、屏幕闪光画出来时乘的系数（变速高时减弱、整屏闪光限频）；只压透明度，帧数不变
+var target_gain := 1.0
+var screen_gain := 1.0
 var flash: Node2D               # 屏幕闪光（ScreenSprite）
 var _sprites: Array[Sprite2D] = []
 var se_player: AudioStreamPlayer
@@ -204,7 +207,7 @@ func advance() -> void:
 		var d := flash_duration
 		flash_duration -= 1
 		flash_color.a *= float(d - 1) / d
-		_target_call("set_anim_blend", flash_color)
+		_target_call("set_anim_blend", flash_color if target_gain == 1.0 else Color(flash_color, flash_color.a * target_gain))
 	if screen_duration > 0:
 		var d := screen_duration
 		screen_duration -= 1
@@ -283,9 +286,11 @@ func _timing(t: Dictionary) -> void:
 		1:
 			flash_color = col
 			flash_duration = span
+			target_gain = XSkin4A.flash_gain(XSkin4A.speed_mult_for_rate(rate))
 		2:
 			screen_color = col
 			screen_duration = span
+			screen_gain = XSkin4A.screen_flash_gain(XSkin4A.speed_mult_for_rate(rate)) if col.a > 0.0 and span > 0 else 1.0
 		3:
 			hiding_duration = span
 			_target_call("set_anim_hidden", true)
@@ -309,7 +314,7 @@ func _timing(t: Dictionary) -> void:
 func _draw_flash() -> void:
 	var box := flash.get_viewport_rect().size
 	flash.draw_set_transform_matrix(flash.get_global_transform_with_canvas().affine_inverse())
-	flash.draw_rect(Rect2(-box * 5.0, box * 10.0), screen_color)
+	flash.draw_rect(Rect2(-box * 5.0, box * 10.0), screen_color if screen_gain == 1.0 else Color(screen_color, screen_color.a * screen_gain))
 
 
 func flash_opacity() -> float:

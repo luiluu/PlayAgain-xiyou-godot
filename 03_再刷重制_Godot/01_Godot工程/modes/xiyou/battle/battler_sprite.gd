@@ -613,7 +613,8 @@ func set_anim_hidden(h: bool) -> void:
 
 func flash(color := Color(1, 1, 1)) -> void:
 	var t := create_tween()
-	sprite.modulate = color * 2.0
+	var g := XSkin4A.flash_gain(XSkin4A.battle_speed_mult())  # 新界面 4A（C7）：变速高时闪白减弱（3 倍及以上不闪），时长不变
+	sprite.modulate = color * 2.0 if g == 1.0 else Color.WHITE.lerp(color * 2.0, g)
 	t.tween_property(sprite, "modulate", Color.WHITE, 0.25)
 
 

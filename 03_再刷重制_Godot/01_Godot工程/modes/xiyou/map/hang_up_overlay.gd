@@ -48,6 +48,12 @@ var _lines := {}
 var _summary_history: Array = []
 ## 上一次点按钮停挂机的时刻（Time.get_ticks_msec）
 var _stopped_msec := -1000000
+## 新界面 4A（XSkin4A.HUD_V2）：快捷界面换成左上一枚黑底旧金胶囊（琥珀点亮＝挂机中，整枚可点），挂机提示换黑金条、按可见宽度居中；
+## 底板和按钮贴图藏起来。关着照旧。
+var _skinned := false
+var _panel: TextureRect
+var _tip_tex: Texture2D
+const SKIN_CAP_H := 40.0
 
 
 func _ready() -> void:
@@ -72,6 +78,8 @@ func _ready() -> void:
 	var panel := _atlas(img, PANEL_SRC)
 	panel.position = Vector2(10, 28)
 	inter.add_child(panel)
+	_panel = panel
+	_tip_tex = tip.texture
 	_button_sprite = _atlas(img, BUTTON_SRC)
 	_button_sprite.pivot_offset = BUTTON_SRC.size / 2.0
 	_button_sprite.position = BUTTON_CENTER - BUTTON_SRC.size / 2.0
@@ -140,6 +148,9 @@ func _atlas(img: Texture2D, r: Rect2) -> TextureRect:
 
 
 func _paint(c: XMVCanvas) -> void:
+	if _skinned:
+		_paint_skin(c)
+		return
 	c.text(str(XHangUp.params().get("tipWord", "")), 64, 28, 136, "left", TEXT_COLOR, 18, 44)
 	c.text("挂机时间：", 0, 12, 120, "right", TEXT_COLOR, 14, 16)
 	c.text(_time, 126, 12, 120, "left", XUI.TEXT, 14, 18)
@@ -147,6 +158,16 @@ func _paint(c: XMVCanvas) -> void:
 
 ## HangUp_Tip.drawWord
 func paint_tip(c: XMVCanvas) -> void:
+	if _skinned:   # 新界面 4A：黑金条（底和字都在这里画；原图藏起来）
+		var r := Rect2(0, 18, 560, 52)
+		XSkin4A.draw_capsule(c, r)
+		c.draw_line(Vector2(r.position.x + 40, r.position.y + 0.5), Vector2(r.end.x - 40, r.position.y + 0.5), Color(XUiSkin.GOLD, 0.5), 1.0)
+		if TIP_WORD:
+			var f := XUiSkin.font("title")
+			var w := str(XHangUp.params().get("huWord", ""))
+			var tw := f.get_string_size(w, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
+			c.draw_string(f, Vector2(roundf((560 - tw) / 2.0), r.position.y + 35), w, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, XUiSkin.GOLD)
+		return
 	if not TIP_WORD:
 		return
 	var p := XHangUp.params()
@@ -158,6 +179,68 @@ func paint_tip(c: XMVCanvas) -> void:
 func press() -> void:
 	_button_sprite.scale = Vector2(0.9, 0.9)
 	_press = 8
+	if _skinned:
+		_text.queue_redraw()
+
+
+# ---- 新界面 4A ----
+func skin_width() -> float:
+	var f := XUiSkin.font("body")
+	var word := str(XHangUp.params().get("tipWord", ""))
+	return ceilf(14.0 + 10.0 + 10.0 + f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, XSkin4A.CAP_FS).x + 12.0
+		+ f.get_string_size(_time, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 16.0)
+
+
+func _set_skinned(v: bool) -> void:
+	_skinned = v
+	_panel.visible = not v
+	_button_sprite.visible = not v
+	tip.texture = null if v else _tip_tex
+	tip.modulate.a = 1.0 if v else 160.0 / 255.0
+	if not v:
+		inter.position = INTER_POS
+		button.position = BUTTON_CENTER - Vector2(27, 27)
+		button.size = Vector2(54, 54)
+		tip.position = TIP_POS
+		tip.size = TIP_SRC.size
+		_text.size = Vector2(240, 74)
+	_text.queue_redraw()
+	tip_text.queue_redraw()
+
+
+func _layout_skin() -> void:
+	var safe := XSkin4A.safe_rect(self)
+	inter.position = Vector2(safe.position.x, safe.position.y + 4.0)
+	var w := skin_width()
+	button.position = Vector2.ZERO
+	button.size = Vector2(w, SKIN_CAP_H)
+	if _text.size.x != maxf(240.0, w):
+		_text.size.x = maxf(240.0, w)
+		_text.queue_redraw()
+	var vw := XSkin4A.view_size(self).x
+	tip.size = Vector2(560, 88)
+	tip.position = Vector2(roundf((vw - 560.0) / 2.0), TIP_POS.y)
+
+
+## 左上胶囊：琥珀点（挂机中亮）＋ 旧金「开启/关闭挂机:G」＋ 次要灰挂机时长
+func _paint_skin(c: XMVCanvas) -> void:
+	var w := skin_width()
+	var r := Rect2(0, 0, w, SKIN_CAP_H)
+	var hot := _press > 0 or button.is_pressed()
+	XSkin4A.draw_capsule(c, r.grow(-0.5), hot)
+	var active := XHangUp.current_active()
+	var dot := Vector2(14.0 + 5.0, SKIN_CAP_H / 2.0)
+	if active:
+		c.draw_circle(dot, 7.0, Color(XSkin4A.AMBER, 0.25))
+	c.draw_circle(dot, 4.0, XSkin4A.AMBER if active else Color(XUiSkin.TEXT_3, 0.8))
+	var f := XUiSkin.font("body")
+	var fs := XSkin4A.CAP_FS
+	var word := str(XHangUp.params().get("tipWord", ""))
+	var base := roundf(SKIN_CAP_H / 2.0 + fs * 0.36)
+	var x := 14.0 + 10.0 + 10.0
+	c.draw_string(f, Vector2(x, base), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD)
+	x += f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 12.0
+	c.draw_string(f, Vector2(x, base), _time, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
 
 
 func _paint_summary(c: XMVCanvas) -> void:
@@ -200,12 +283,20 @@ func _physics_process(_delta: float) -> void:
 ## 每帧按状态显示/隐藏，时长变化时重画
 func refresh() -> void:
 	var s := XState.current
+	var sk := XSkin4A.hud_on()
+	if sk != _skinned:
+		_set_skinned(sk)
 	inter.visible = XHangUp.inter_show(s)
+	var was_tip := tip.visible
 	tip.visible = XHangUp.is_active(s)
 	var t := XHangUp.time_text(s) if s else "---"
 	if t != _time:
 		_time = t
 		_text.queue_redraw()
+	if _skinned:
+		_layout_skin()
+		if was_tip != tip.visible:
+			_text.queue_redraw()
 	var lines := XHangUpAuto.panel_lines(s) if s and XHangUp.is_active(s) else {}
 	if lines != _lines:
 		if not CLEAR_SUMMARY and not _lines.is_empty():

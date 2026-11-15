@@ -54,6 +54,8 @@ const QUALITY_OPTION := ["画质设置", "codexQuality", true]
 const SKIN_OPTION := ["界面风格", "codexUiSkin", true]
 const MOTION_OPTION := ["界面动效", "codexUiMotion", true]
 const MOTION_NAMES := ["全部", "简化", "关"]
+## 新界面 4A（C8，XSkin4A.DIM_V2）：「战斗背景压暗：关／15%／30%」，只在新皮肤开着时列，排在界面动效后
+const DIM_OPTION := ["战斗背景压暗", "codexBattleDim", true]
 
 ## 重制新增：本次更新内容（XWhatsNew，update-whatsnew）：现在运行的这一版有更新说明时才列，状态「查看」，确定再看一次「本次更新内容」弹窗
 const WHATS_NEW_OPTION := ["本次更新内容", "codexWhatsNew", true]
@@ -116,6 +118,8 @@ func _build_list() -> void:
 		_list.append(SKIN_OPTION)
 		if XUiSkin.on():
 			_list.append(MOTION_OPTION)
+			if XSkin4A.DIM_V2:
+				_list.append(DIM_OPTION)
 	if XBattleScene.AUTO_DEFAULT:  # 进战斗默认自动排在画质设置后、手机按键设置前；开关关掉时不列
 		_list.append(AUTO_OPTION)
 	if XPartyFormation.ENABLED:  # 战斗站位排在进战斗默认自动后、手机按键设置前；开关关掉时不列
@@ -190,6 +194,8 @@ func status_text(i: int) -> String:
 			return "新" if XConfig.ui_skin_new() else "原版"
 		"codexUiMotion":
 			return MOTION_NAMES[XUiSkin.motion()]
+		"codexBattleDim":
+			return XSkin4A.dim_text(XConfig.battle_dim())
 		"codexCostumes":
 			return "打开" if XCostumes.can_open(XState.current) else "进入游戏"
 		"codexTestMode":
@@ -270,6 +276,9 @@ func ok() -> void:
 			_set_ui_skin(not XConfig.ui_skin_new())
 		"codexUiMotion":
 			_set_ui_motion((XUiSkin.motion() + 1) % 3)
+		"codexBattleDim":
+			var cur := XConfig.battle_dim()
+			_set_battle_dim(XSkin4A.DIM_LEVELS[(XSkin4A.DIM_LEVELS.find(cur) + 1) % XSkin4A.DIM_LEVELS.size()])
 		"codexNotices":
 			XSound.system(1)
 			_open_page(XNoticeOptionsScene.new())
@@ -320,6 +329,8 @@ func _side(right: bool) -> void:
 					_set_ui_skin(right)
 				"codexUiMotion":
 					_set_ui_motion(clampi(XUiSkin.motion() + (1 if right else -1), 0, 2))
+				"codexBattleDim":
+					_set_battle_dim(XSkin4A.dim_step(XConfig.battle_dim(), right))
 				"codexTestMode":
 					if XTestMode.unlocked():
 						_set_test_mode(right)
@@ -419,6 +430,14 @@ func _set_ui_motion(v: int) -> void:
 	if XConfig.ui_motion() == v:
 		return
 	XConfig.set_ui_motion(v)
+	XSound.system(0)
+	_refresh()
+
+
+func _set_battle_dim(v: int) -> void:
+	if XConfig.battle_dim() == v:
+		return
+	XConfig.set_battle_dim(v)
 	XSound.system(0)
 	_refresh()
 
