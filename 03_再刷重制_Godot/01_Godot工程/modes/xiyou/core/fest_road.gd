@@ -1,7 +1,7 @@
 class_name XFestRoad
 extends RefCounted
 ## 【cc·未经审查】冠军庆典·冠军之路「一穿四」（Kyo 11-15；方案：私密设计仓 重制设定/冠军庆典活动_v0.2.md 2.3 节）。
-## 五打五连打四支五人队：网吧队 → 银河战舰队 → 大魔王队 → 内战幻神队（决赛）。队名、敌人名都是自创，不写真实战队与选手。
+## 五打五（建议满五人；不满五人报名时提示一句，确认后照样能打）连打四支五人队：网吧队 → 银河战舰队 → 大魔王队 → 内战幻神队（决赛）。队名、敌人名都是自创，不写真实战队与选手。
 ##
 ## - 敌人、敌群、辅助的群体治疗都是运行时追加（XDB.rec 表外号段），不改生成数据：敌人 9300 起、敌群 9300 起、技能 19300。
 ##   每只敌人照本档基准守层者复制（特性、属性抗性、伤害抵抗被动跟着走），再按「队强度×位置倍率」重算能力值、换名字换图换技能。
@@ -455,6 +455,8 @@ static func talk(host, s = null) -> void:
 	var keys := ["new", "resume", "rules", "leave"] if resume > 0 else ["new", "rules", "leave"]
 	var pick := await _ask(host, [SPEAKER + "欢迎来到冠军之路！今天的对手：", lineup_text()], opts, opts.size() - 1)
 	var key: String = keys[pick] if pick >= 0 and pick < keys.size() else "leave"
+	if (key == "new" or key == "resume") and not await _confirm_small_party(host, s):
+		return
 	match key:
 		"rules":
 			await _say(host, intro_lines())
@@ -464,6 +466,15 @@ static func talk(host, s = null) -> void:
 		"resume":
 			continue_run(s)
 			await run(host, s, 0, resume)
+
+
+## 出战不满五人：提示一句，选「仍要出战」才进（co 核查 P2，协调 11-15 裁定不强制五人：角色不够或想挑战的不挡）
+static func _confirm_small_party(host, s) -> bool:
+	if s.battle_members().size() >= 5:
+		return true
+	var pick := await _ask(host, [SPEAKER + "冠军之路是五打五，建议满五人出战。你现在只有 %d 人出战。" % s.battle_members().size()],
+		["仍要出战", "回去整队"], 1)
+	return pick == 0
 
 
 ## 大厅报名处（乙车道 XFestLobby 按 ROAD_CLASS／ROAD_METHOD 调 enter）：同 talk

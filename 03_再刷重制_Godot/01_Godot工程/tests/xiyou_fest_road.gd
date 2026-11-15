@@ -65,6 +65,7 @@ func _run() -> void:
 	await _flow_flawless()
 	await _flow_loss_resume()
 	await _pause_and_quit()
+	await _small_party()
 	await _closed_outside_event()
 	await _switch_off()
 	XFest.TODAY_OVERRIDE = ""
@@ -292,6 +293,28 @@ func _pause_and_quit() -> void:
 	XFestRoad.begin_run(s2)
 	_check("new_run_resets_pause", not bool(XFestRoad.progress(s2).pause))
 	b = b
+
+
+func _small_party() -> void:
+	# 出战 4 人：报名出「建议满五人」提示；选「回去整队」不开打、进度不动，选「仍要出战」照常连打
+	var s := _state()
+	s.set_battle_slot(4, 0)
+	var n := s.battle_members().size()
+	var h := MockHost.new()
+	h.choices_queue = [0, 1]  # 从第一关开始 → 回去整队
+	await XFestRoad.talk(h, s)
+	var warned := h.texts.any(func(t): return str(t.get("lines", [])).contains("建议满五人") and str(t.get("options", [])).contains("仍要出战"))
+	_check("small_party_warned_and_back", n == 4 and warned and h.battles.is_empty() and int(XFestRoad.progress(s).next) == 4, [n, h.texts.size(), h.battles.size()])
+	var h2 := MockHost.new()
+	h2.choices_queue = [0, 0, 0, 0, 0]  # 从第一关开始 → 仍要出战 → 两关之间都继续
+	await XFestRoad.talk(h2, s)
+	_check("small_party_confirm_enters", h2.battles.size() == 4 and int(h2.battles[0].troop) == 9300, h2.battles.size())
+	# 满五人不出提示
+	var s5 := _state()
+	var h3 := MockHost.new()
+	h3.choices_queue = [0, 0, 0, 0]
+	await XFestRoad.talk(h3, s5)
+	_check("full_party_no_warning", not h3.texts.any(func(t): return str(t.get("lines", [])).contains("建议满五人")) and h3.battles.size() == 4)
 
 
 func _closed_outside_event() -> void:
