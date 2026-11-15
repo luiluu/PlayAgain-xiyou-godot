@@ -1,6 +1,6 @@
 extends Node
 ## 新界面第一期正式美术（cc/ui-art-phase01）专项：背景按骑士线切换、三比例选图、烟色面板九宫格、选中条箭头外置、主菜单环高亮、
-## 装备 13 栏一页（无翻页文字、键盘顺序、触屏点得准）、每个开关关掉回旧。
+## 装备 13 栏一页（无翻页文字、键盘顺序、触屏点得准；C 摆法名字不互压、折线连线）、每个开关关掉回旧。
 ## 带 -- --out=<目录> 且有窗口时出截图：主菜单／物品／装备 × 16:9／20:9／4:3、触屏装备页、四条线各一张背景（主菜单）。
 ## 4:3 屏视口照 O-483 锁 1280×720 上下留边：截图另存一张按 960×720 窗口加黑边的「玩家看到的样子」。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
@@ -316,6 +316,34 @@ func _equip_layout(lay: int) -> void:
 		var face_r := (sk.ring_radius - XSkinEquipPage.BRANCH_LABEL_R - 2.0) if lay > 0 else sk.ring_radius - 68.0
 		check("equip13_labels_inner_" + tag, ring.label_inner > 0.0 and ring.label_inner + 18.0 <= ring.radius - ring.orb_radius \
 			and ring.label_inner - 18.0 >= face_r, [ring.label_inner, ring.radius, face_r])
+		if lay == 3:   # C 第四版（Kyo 11-16）：名字互不相压、不压别的球、不出左块；连线是三点折线（根→径向拐点→副栏）
+			var rects := []
+			for i in n:
+				rects.append(ring.label_layout(i).rect)
+			var lab_ok := true
+			var bad := []
+			for i in n:
+				var ri: Rect2 = rects[i]
+				if ri.position.x < 0.0 or ri.end.x > ring.size.x or ri.position.y < 0.0 or ri.end.y > ring.size.y:
+					lab_ok = false
+					bad.append(["out", i])
+				for j in n:
+					if j > i and ri.intersects(rects[j]):
+						lab_ok = false
+						bad.append(["lab", i, j])
+					var q := ring.item_pos(j)
+					var near := Vector2(clampf(q.x, ri.position.x, ri.end.x), clampf(q.y, ri.position.y, ri.end.y))
+					if j != i and near.distance_to(q) < ring.orb_radius * 1.16:
+						lab_ok = false
+						bad.append(["orb", i, j])
+			check("equip13_c_labels_clear_" + tag, lab_ok, bad)
+			check("equip13_c_links_elbow_" + tag, ring.links.size() == 5 and ring.links.all(func(l): return (l as Array).size() == 3 \
+				and absf((l[1] as Vector2).length() - 148.0) < 0.5 and absf((l[1] as Vector2).angle_to(l[0])) < 0.01), ring.links)
+			var far := 0.0
+			for i in n:
+				if not ring.on_ring(i):
+					far = maxf(far, (ring.custom[i].pos as Vector2).length())
+			check("equip13_c_subs_close_" + tag, far <= 180.0, far)
 		# 键盘：下／右一格走完 13 栏回到第一栏（导航顺序：一圈时就是显示顺序；分支时绕主环、遇枝丫先走完）；上／左反过来
 		var nav: Array = sk._plan.nav if lay > 0 else range(n)
 		check("equip13_nav_covers_" + tag, nav.size() == n and nav.duplicate().all(func(r): return nav.count(r) == 1), nav)

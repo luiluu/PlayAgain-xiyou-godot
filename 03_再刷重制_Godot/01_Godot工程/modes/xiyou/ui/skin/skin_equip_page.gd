@@ -38,7 +38,9 @@ const ONE_PAGE_RING_R := 140.0
 const ONE_PAGE_ORB_R := 22.0
 const ONE_PAGE_LABEL_R := 98.0
 ## 13 栏一页的摆法（O-待定，Kyo 11-15 看审图：「一圈 13 个太密，可以扩展一些不规则的分支子类」）：
-## 0＝一圈 13 颗（上一版）；1＝A 下垂三枝；2＝B 星座斜出；3＝C 挂主栏（默认，Kyo 挑定前先放 cc 推荐的）。
+## 0＝一圈 13 颗（上一版）；1＝A 下垂三枝；2＝B 星座斜出；3＝C 挂主栏（默认；Kyo 11-16 选定 C，A／B 只留作开关）。
+## C 第四版（Kyo 11-16）：副栏收近（离环心 172～176）、各自落在两颗主栏之间的空当里；连线是折线——从根栏沿径向出到 elbow 半径
+## 拐一个小菱形节点，再斜接副栏；项链挪到头部斜上方（原来贴着头部、字挤在一起），副栏名字都朝外写、不压主环项名。
 ## 1～3：主环只放 8 个穿在身上的核心栏（武器 副手 头部 盔甲 护手 腰带 裤子 鞋子），其余 5 栏（项链 戒指 法宝 坐骑 神器）
 ## 从环上某一栏分叉伸出去，旧金细线连成枝丫；仍然一页全显示。键盘：上、左＝前一个，下、右＝后一个，顺序是绕主环走、
 ## 走到有枝丫的那栏就先顺着枝丫走完再回主环（深度优先）；Q／E 换人。主环 8 颗：半径 112、球半径 24（点按半径 28.8）。
@@ -58,12 +60,12 @@ const LAYOUTS := {
 		{"root": 2, "nodes": [[13, Vector2(140, -150), "down"], [17, Vector2(90, -215), "up"]]},
 		{"root": 6, "nodes": [[16, Vector2(100, 190), "right"]]},
 		{"root": 7, "nodes": [[9, Vector2(-140, -150), "down"], [10, Vector2(-90, -215), "up"]]}]},
-	3: {"name": "C 挂主栏", "shift": Vector2(0, 2), "branches": [
-		{"root": 1, "nodes": [[17, Vector2(-44, -200), "right"]]},
-		{"root": 2, "nodes": [[13, Vector2(124, -168), "right"]]},
-		{"root": 3, "nodes": [[9, Vector2(150, -64), "down"]]},
-		{"root": 6, "nodes": [[10, Vector2(64, 198), "right"]]},
-		{"root": 7, "nodes": [[16, Vector2(-134, -160), "left"]]}]},
+	3: {"name": "C 挂主栏", "shift": Vector2(0, 0), "elbow": 148.0, "branches": [
+		{"root": 1, "nodes": [[17, Vector2(-67, -163), "left"]]},
+		{"root": 2, "nodes": [[13, Vector2(67, -163), "right"]]},
+		{"root": 3, "nodes": [[9, Vector2(156, -73), "up"]]},
+		{"root": 6, "nodes": [[10, Vector2(67, 163), "right"]]},
+		{"root": 7, "nodes": [[16, Vector2(-156, -73), "up"]]}]},
 }
 var _plan := {}
 
@@ -103,6 +105,8 @@ static func ring_plan(view: Array, layout_id: int = -1) -> Dictionary:
 			if int(type_row.get(int(b.root), core[0])) != row:
 				continue
 			var path := [rp]
+			if lay.has("elbow"):   # 折线：先沿径向出到 elbow 半径（拐点画小菱形），再拐向副栏
+				path.append(rp.normalized() * float(lay.elbow))
 			for nd in b.nodes:
 				if not type_row.has(int(nd[0])) or placed.has(type_row[int(nd[0])]):
 					continue
@@ -111,7 +115,7 @@ static func ring_plan(view: Array, layout_id: int = -1) -> Dictionary:
 				custom.append({"pos": nd[1], "label": nd[2]})
 				placed[r2] = true
 				path.append(nd[1])
-			if path.size() > 1:
+			if path.size() > (2 if lay.has("elbow") else 1):
 				links.append(path)
 	var spare := 0
 	for k in view.size():   # 没摆上的（正常没有）：底下一排

@@ -65,6 +65,9 @@
 - 截图（本地结果目录不入 Git，在本工作树 `/Users/kyo/orca/workspaces/再刷项目资料库/ui-art-phase01/`）：`03_再刷重制_Godot/04_验证/本地结果/ui_art_phase01/`——`menu_／items_／equip_` × `16x9／20x9／4x3`（4:3 另有 `_letterbox` 版＝960×720 窗口玩家看到的样子）、`equip_16x9_touch.png`、`bg_death／war／famine／plague_16x9.png`。
 
 - v2／返修（a9fc063db）：`xiyou_ui_art_phase01` 无头 183/183、带窗口 205/205；本地 `xiyou_ui_skin`／`_1b`／`_1c`／`_close`／`_menu`／`_p1fix`、`input_handled` 全过；82624d45a 云端选测 21 场景全过；a9fc063db 云端与皮肤关闭对照见回报。
+- v4（Kyo 11-16 选 C）：A／B 留作 `LAYOUT` 开关、默认 C。C 改三处：①连线改折线——根栏沿径向出到半径 148 拐一个旧金小菱形节点再斜接副栏；②副栏收近到离环心 172～176，各落在两颗主栏之间的空当；③项链从贴着头部挪到头部斜上方（156, −73），坐骑对称放鞋子斜上方，副栏名字都朝外写。专项新增三项：C 摆法名字互不相压／不压别的球／不出环区、连线是三点折线、副栏不超 180。
+- 换环样式的口子（给「高品质装备改变主环样式」留的，这次没做功能）：`XSkinRingNav.style` 字典＋`DEFAULT_STYLE`，环描边色／线宽、光带、外圈虚线、刻痕菱形、枝丫连线与拐点菱形、球底与球描边都走 `sty(键)` 取值；换一张表就换样式，没给的键回默认。
+- v4 截图：`…/v4/`（`equip_16x9`、`equip_16x9_touch`、`equip_20x9`、`equip_4x3`＋`_letterbox`；另有四种摆法对照）。
 - v2 截图：`04_验证/本地结果/ui_art_phase01/v2/`；返修后 v3：`…/v3/`（同一套，另有 `equip_layout{0,1,2,3}_{16x9,touch}.png` 四种装备摆法）。
 
 ## 可优化（流程／工具／效率）

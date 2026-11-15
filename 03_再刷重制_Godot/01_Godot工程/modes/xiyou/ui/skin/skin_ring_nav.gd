@@ -130,8 +130,27 @@ func set_items(arr: Array, keep := false) -> void:
 var center_shift := Vector2.ZERO
 ## 分支布局（装备页 13 栏一页·分支，O-待定）：非空时每项一条 {pos: 相对环心, deg: 在主环上的角度（不在主环上的没有）, label: ""（写环内侧）／up／down／left／right}
 var custom: Array = []
-## 枝丫连线（相对环心的折线点列）：[[Vector2, Vector2, …], …]
+## 枝丫连线（相对环心的折线点列）：[[Vector2, Vector2, …], …]；中间的拐点画小菱形节点
 var links: Array = []
+## 环的样式表（留给「高品质装备改变主环样式」：换一张表就换环的描边、光带、虚线、刻痕、枝丫、球的颜色和线宽；没给的键用 DEFAULT_STYLE）
+var style: Dictionary = {}
+const DEFAULT_STYLE := {
+	"ring_line": Color(0.0, 0.0, 0.0, -1.0), "ring_line_a": 0.75, "ring_w": 1.5,   # ring_line 的 a<0＝用 XUiSkin.LINE
+	"band": Color(0.81, 0.165, 0.12, 0.05), "band_w": 10.0, "halo_line_a": 0.22,
+	"dash_a": 0.30, "notch": Color(0.89, 0.741, 0.447, 1.0), "notch_size": 5.5,
+	"link": Color(0.89, 0.741, 0.447, 0.55), "link_w": 1.5, "knot": Color(0.89, 0.741, 0.447, 1.0), "knot_size": 4.0,
+	"orb_low": Color(0.071, 0.075, 0.082, 1.0), "orb_hi": Color(0.204, 0.212, 0.231, 0.85), "orb_line_a": 0.65,
+}
+
+
+## 样式表取值（style 没给就用 DEFAULT_STYLE）
+func sty(key: String):
+	return style.get(key, DEFAULT_STYLE[key])
+
+
+func ring_line_color() -> Color:
+	var c: Color = sty("ring_line")
+	return Color(XUiSkin.LINE, float(sty("ring_line_a"))) if c.a < 0.0 else c
 
 
 func center() -> Vector2:
@@ -155,6 +174,43 @@ func item_pos(i: int) -> Vector2:
 ## 这一项在主环上（光弧只在主环上的项画）
 func on_ring(i: int) -> bool:
 	return custom.is_empty() or (i < custom.size() and (custom[i] as Dictionary).has("deg"))
+
+
+## 第 i 项名字怎么写：{text, fs, pos（基线起点）, rect（字的外框，测试查互压）}
+func label_layout(i: int) -> Dictionary:
+	var body := XUiSkin.font("body")
+	var p := item_pos(i)
+	var on := i == index
+	var r := orb_radius * (1.16 if on else 1.0)
+	var name := str(items[i].get("name", ""))
+	var fs := label_size + (label_sel_boost if on else 0)
+	var tw := body.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	if XUiSkin.FONT_V2:   # 收口批（小A核 P2-3）：字号放大后标签不越出环的左右边（先缩到 15，再加「…」）
+		var fit := XSkinList.fit_text(body, name, label_room(p), fs, XUiSkin.FS_MIN)
+		name = str(fit[0])
+		fs = int(fit[1])
+		tw = body.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var above := sin(deg_to_rad(item_deg(i))) < -0.2
+	var ly := p.y - r - 10.0 if above else p.y + r + 10.0 + fs * 0.86
+	var lx := p.x - tw / 2.0
+	var lab := str(custom[i].get("label", "")) if not custom.is_empty() and i < custom.size() else ""
+	if lab != "":   # 分支布局：枝丫上的球名字写在指定一侧
+		match lab:
+			"up":
+				ly = p.y - r - 8.0
+			"down":
+				ly = p.y + r + 8.0 + fs * 0.86
+			"left":
+				lx = p.x - r - 8.0 - tw
+				ly = p.y + fs * 0.36
+			"right":
+				lx = p.x + r + 8.0
+				ly = p.y + fs * 0.36
+	elif label_inner > 0.0:   # 名字写在环内侧（装备 13 栏一页：球挨得近，上下写会压到邻球）
+		var lp := center() + Vector2.from_angle(deg_to_rad(item_deg(i))) * label_inner
+		lx = lp.x - tw / 2.0
+		ly = lp.y + fs * 0.36
+	return {"text": name, "fs": fs, "pos": Vector2(lx, ly), "rect": Rect2(lx, ly - fs * 0.86, tw, fs * 1.1)}
 
 
 func notch_deg(k: int) -> float:
@@ -246,6 +302,10 @@ func _gui_input(event: InputEvent) -> void:
 		accept_event()
 
 
+func _diamond(p: Vector2, s: float, col: Color) -> void:
+	draw_colored_polygon(PackedVector2Array([p + Vector2(0, -s), p + Vector2(s, 0), p + Vector2(0, s), p + Vector2(-s, 0)]), col)
+
+
 func _draw() -> void:
 	_draw_art()
 	var c := center()
@@ -259,20 +319,20 @@ func _draw() -> void:
 		draw_texture_rect(circ, Rect2(-d / 2.0, -d / 2.0, d, d), false, Color(1, 1, 1, 0.5))
 		draw_set_transform(Vector2.ZERO)
 	# 光带与细线
-	draw_arc(c, R + 5.5, 0, TAU, 96, Color(XUiSkin.SEL_FILL, 0.05), 10.0, true)
-	draw_arc(c, R + 10.5, 0, TAU, 96, Color(line, 0.22), 1.0, true)
-	draw_arc(c, R, 0, TAU, 128, Color(line, 0.75), 1.5, true)
+	draw_arc(c, R + 5.5, 0, TAU, 96, sty("band"), float(sty("band_w")), true)
+	draw_arc(c, R + 10.5, 0, TAU, 96, Color(line, float(sty("halo_line_a"))), 1.0, true)
+	draw_arc(c, R, 0, TAU, 128, ring_line_color(), float(sty("ring_w")), true)
 	# 外圈虚线（反转）
 	var dash_r := R + 22.0
 	var dashes := 72
 	var off := -_spin * TAU / 50.0
 	for k in dashes:
 		var a0 := off + k * TAU / dashes
-		draw_arc(c, dash_r, a0, a0 + TAU / dashes * 0.5, 4, Color(line, 0.30), 1.5, true)
+		draw_arc(c, dash_r, a0, a0 + TAU / dashes * 0.5, 4, Color(line, float(sty("dash_a"))), 1.5, true)
 	# 刻痕
 	for k in NOTCHES:
 		var p := c + Vector2.from_angle(deg_to_rad(notch_deg(k))) * (R + 11.0)
-		draw_colored_polygon(PackedVector2Array([p + Vector2(0, -5.5), p + Vector2(5.5, 0), p + Vector2(0, 5.5), p + Vector2(-5.5, 0)]), XUiSkin.GOLD)
+		_diamond(p, float(sty("notch_size")), sty("notch"))
 	# 中心图
 	if center_texture != null:
 		var ts := center_texture.get_size()
@@ -281,9 +341,9 @@ func _draw() -> void:
 	# 枝丫连线：旧金细线＋节点小菱形（星座连线）
 	for path in links:
 		for k in range((path as Array).size() - 1):
-			draw_line(c + path[k], c + path[k + 1], Color(XUiSkin.GOLD, 0.55), 1.5, true)
-		var p0: Vector2 = c + path[0]
-		draw_colored_polygon(PackedVector2Array([p0 + Vector2(0, -4), p0 + Vector2(4, 0), p0 + Vector2(0, 4), p0 + Vector2(-4, 0)]), XUiSkin.GOLD)
+			draw_line(c + path[k], c + path[k + 1], sty("link"), float(sty("link_w")), true)
+		for k in range(1, (path as Array).size() - 1):   # 拐点：小菱形节点（七印环刻痕同款）
+			_diamond(c + path[k], float(sty("knot_size")), sty("knot"))
 	# 焦点光弧
 	if not items.is_empty() and on_ring(index):
 		var half := PI * ARC_FRAC
@@ -303,43 +363,20 @@ func _draw() -> void:
 			draw_texture_rect(g, Rect2(p - Vector2(r + 24, r + 24), Vector2(r + 24, r + 24) * 2), false,
 				Color(XUiSkin.GOLD, 0.30) if art else Color(XUiSkin.SEL_FILL, 0.85))
 		draw_circle(p + Vector2(0, 3), r + 2, Color(0, 0, 0, 0.45))
-		draw_circle(p, r, XUiSkin.ORB_LOW)
-		draw_circle(p + Vector2(-r * 0.15, -r * 0.2), r * 0.72, Color(XUiSkin.ORB_HI, 0.85))
-		var ring_col := (Color(XUiSkin.GOLD, 1.0) if art else Color(XUiSkin.SEL_LINE, 1.0)) if on else Color(line, 0.65)
+		draw_circle(p, r, sty("orb_low"))
+		draw_circle(p + Vector2(-r * 0.15, -r * 0.2), r * 0.72, sty("orb_hi"))
+		var ring_col := (Color(XUiSkin.GOLD, 1.0) if art else Color(XUiSkin.SEL_LINE, 1.0)) if on else Color(line, float(sty("orb_line_a")))
 		draw_circle(p, r, ring_col, false, 2.5 if on else 1.5, true)
 		var icon = items[i].get("icon")
 		var tex: Texture2D = icon if icon is Texture2D else (XUiSkin.icon(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
 		if tex != null and not art:
 			var s := 40.0 * (1.16 if on else 1.0)
 			draw_texture_rect(tex, Rect2(p - Vector2(s, s) / 2.0, Vector2(s, s)), false)
-		var name := str(items[i].get("name", ""))
-		var fs := label_size + (label_sel_boost if on else 0)
-		var tw := body.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		if XUiSkin.FONT_V2:   # 收口批（小A核 P2-3）：字号放大后标签不越出环的左右边（先缩到 15，再加「…」）
-			var fit := XSkinList.fit_text(body, name, label_room(p), fs, XUiSkin.FS_MIN)
-			name = str(fit[0])
-			fs = int(fit[1])
-			tw = body.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		var above := sin(deg_to_rad(item_deg(i))) < -0.2
-		var ly := p.y - r - 10.0 if above else p.y + r + 10.0 + fs * 0.86
-		var lx := p.x - tw / 2.0
-		var lab := str(custom[i].get("label", "")) if not custom.is_empty() and i < custom.size() else ""
-		if lab != "":   # 分支布局：枝丫上的球名字写在指定一侧
-			match lab:
-				"up":
-					ly = p.y - r - 8.0
-				"down":
-					ly = p.y + r + 8.0 + fs * 0.86
-				"left":
-					lx = p.x - r - 8.0 - tw
-					ly = p.y + fs * 0.36
-				"right":
-					lx = p.x + r + 8.0
-					ly = p.y + fs * 0.36
-		elif label_inner > 0.0:   # 名字写在环内侧（装备 13 栏一页：球挨得近，上下写会压到邻球）
-			var lp := center() + Vector2.from_angle(deg_to_rad(item_deg(i))) * label_inner
-			lx = lp.x - tw / 2.0
-			ly = lp.y + fs * 0.36
+		var lay := label_layout(i)
+		var name: String = lay.text
+		var fs: int = lay.fs
+		var lx: float = lay.pos.x
+		var ly: float = lay.pos.y
 		var rd := XSkinArt.read_on()   # 可读性：描边加粗加深、未选中的名字提亮
 		draw_string_outline(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5 if rd else 4, Color(0, 0, 0, 0.9 if rd else 0.6))
 		draw_string(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE if on else XSkinArt.bg_text_2())
