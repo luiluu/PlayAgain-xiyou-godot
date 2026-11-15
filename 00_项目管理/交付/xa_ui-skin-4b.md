@@ -153,3 +153,7 @@
 - 改对：prestige／autosave 只在 `on()` 时全屏，关闭时复位 `TOP_LEFT`＋`size=1280×720`（初始也是 1280×720，与 main 一致，专项有 `*_host_old/new` 断言）；`xiyou_help_card` 已加 `TestEnv.isolate`；帮助卡红字改 `SEL_LINE`（测试补了断言）；成就标题、存档提示改 `GOLD`；`treasure_popup` 死三元已去。
 - **P2（要改）**：成就叠放循环没按 `on` 分支。皮肤关闭时，原版逻辑是「`p.position.y != y` 就 break、新条仍落在 y0」；新循环会在前一条正在上滑退出（`position.y` < y0）时把新条排到 `p.y + HEIGHT + GAP`，与 main 位置不同（重制版也会碰到：上一条退场时来了新成就）。稳定叠放（全部 `p.y == y`）下两者等价，所以专项（`ach_stack_*_old`）看不出来。修法：循环外 `if not on:` 保留原来的 `if p.position.y != y: break; y += h + GAP`，新算法只在 `on` 下走。
 - 没核到：成就退场中叠放的真机观感；皮肤关闭逐像素留总装。
+
+### cc 乙档复核二（提交 c4196ed83，2026-11-15）
+
+结论：**通过**。`achievement_popup.gd` `show_for()` 关闭分支（`else`）与 main 逐行一致：`y = SCREEN.y*2/3`、`if p.position.y != y: break`、`y += HEIGHT + GAP`、`base_y = y`、`position.x = (SCREEN.x - plan_width - GAP)/2`；新避让算法只在 `on` 下。前台：`xiyou_ui_skin_4b` 77/77（含 `ach_stack_old_pos`、`ach_stack_old_slide_y0`）、`xiyou_achievement_badge` 34/34。上一轮 P2 已关闭。
