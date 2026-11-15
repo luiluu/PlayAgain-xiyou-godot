@@ -4,7 +4,7 @@ extends Node
 ## - art.*：每张 340×280、可见框在 [61,58,260,217] 内、脚底 217、alpha 只有 0／255；站姿归一档不变。
 ## - human.*：人形外观（Codex_Mira_SV_u2）不受 DRAGON_ART 影响。
 ## - fx.*：召剑层时间线（出现 3×100ms → 悬停 3×140ms 循环 → 消散 3＋clear ×100ms）、层中心＝脚底＋[-40,-200]×身体缩放、
-##   SKILLS 默认空不召、名单里的技能号才召并在行动结束消散、人形或开关关时不召。
+##   SKILLS 默认只有 10151 黑日焚界（Kyo 11-15 定，D34）、别的技能不召、名单空时不召、名单里的技能号才召并在行动结束消散、人形或开关关时不召。
 ## - rollback.*：XMira.DRAGON_ART = false 回原版带剑图（同步出的 UserSV_MiraDragon），不建召剑层；人形开关 XMira.ART 另算。
 ## 窗口模式加 -- --out=<目录> 时另存黑龙待机／攻击 7 号／施法 10 号／召剑悬停合成与原版并排的截图。
 var results := []
@@ -30,7 +30,7 @@ func _run() -> void:
 	XAppearance.overrides = {}
 	XMira.ART = true
 	XMira.DRAGON_ART = true
-	XMiraSwordFx.SKILLS = []
+	check("fx.default_only_10151", XMiraSwordFx.SKILLS == [10151], XMiraSwordFx.SKILLS)
 	_paths()
 	_art()
 	_human()
@@ -41,7 +41,7 @@ func _run() -> void:
 		await _capture_shots()
 	XMira.ART = true
 	XMira.DRAGON_ART = true
-	XMiraSwordFx.SKILLS = []
+	XMiraSwordFx.SKILLS = [10151]
 	XAppearance.overrides = null
 	XState.current = null
 	finish()
@@ -164,7 +164,9 @@ func _dragon_sprite() -> XBattlerSprite:
 
 func _fx_layer() -> void:
 	var sp := _dragon_sprite()
-	check("fx.default_list_empty", XMiraSwordFx.SKILLS.is_empty() and not XMiraSwordFx.wants(10151))
+	XMiraSwordFx.SKILLS = [10151]
+	check("fx.default_wants_only_10151", XMiraSwordFx.wants(10151) and not XMiraSwordFx.wants(10150) and not XMiraSwordFx.wants(10152))
+	XMiraSwordFx.SKILLS = []
 	XMiraSwordFx.on_skill(sp, 10151)
 	check("fx.empty_list_no_layer", XMiraSwordFx.layer_of(sp) == null)
 	XMiraSwordFx.SKILLS = [10151]
@@ -195,7 +197,7 @@ func _fx_layer() -> void:
 	check("fx.human_no_layer", XMiraSwordFx.layer_of(hs) == null)
 	hs.queue_free()
 	sp.queue_free()
-	XMiraSwordFx.SKILLS = []
+	XMiraSwordFx.SKILLS = [10151]
 
 
 func _rollback() -> void:
@@ -214,7 +216,7 @@ func _rollback() -> void:
 	XMiraSwordFx.on_skill(sp, 10151)
 	check("rollback.no_layer", XMiraSwordFx.layer_of(sp) == null and not XMiraSwordFx.wants(10151))
 	sp.queue_free()
-	XMiraSwordFx.SKILLS = []
+	XMiraSwordFx.SKILLS = [10151]
 	XMira.DRAGON_ART = true
 	check("rollback.on_again", _path_of(XAppearance.for_battler(_mira(3, true)), "wait").begins_with(OWN))
 
@@ -255,7 +257,7 @@ func _shot(name: String, motion: String, frame: int, fx: bool) -> void:
 		var l := XMiraSwordFx.layer_of(sps[1])
 		l.advance(300.0)
 		l.advance(10.0)
-		XMiraSwordFx.SKILLS = []
+		XMiraSwordFx.SKILLS = [10151]
 	for sp in sps:
 		sp.set_process(false)
 		sp.set_physics_process(false)

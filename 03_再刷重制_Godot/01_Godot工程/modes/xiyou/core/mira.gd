@@ -41,6 +41,9 @@ static var ART := true
 ## 黑龙无剑新美术（O-479，co 出 21 张无剑动作＋召剑特效 u2，Kyo 11-15 通过）：UserSV_MiraDragon 多帧换成 content/mira/img/sv_actors/sv/UserSV_MiraDragon/（XDB.img_path，
 ## 站姿归一档不变）；头顶召剑是独立层 XMiraSwordFx（触发技能名单待 Kyo 定）。false＝回到原版带剑黑龙图，召剑层也不建。
 static var DRAGON_ART := true
+## 升空变身演出（O-待定，co 出 u7，Kyo 11-15 通过 D35）：人形换成黑龙时放 2320ms 升空、龙化、落地（XMiraLiftFx，素材 content/mira/fx/lift_u7/），
+## 「显示技能动画」关着时直接是黑龙。只是画面，2592 与结算照旧在 liberate 当场做完。false＝回到旧表现（外观一变直接换成黑龙）。
+static var LIFT_ART := true
 const ARMOR := 4577
 const DRAGON := 2592
 const DRAGON_ATTACKS := [10148, 10149, 10150, 10151]
