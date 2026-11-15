@@ -183,6 +183,25 @@ static func find_uid(s: XState, uid: String) -> Dictionary:
 	return {}
 
 
+## O-待定（玩家反馈 v0.01.10「强退重进云裳装备没了」）：读档重放账本时，remove 的那件天衣在这份存档里正穿在角色身上，就不卸、不移除，以存档为准。
+## 账本是存档目录旁的独立文件、每次卖出／存仓／分解天衣当场写盘，存档要等玩家存；两份写入时机不同，强退后读回较早的档时，
+## 档里还穿着、之后才卸下失去的天衣会被账本的 remove 从身上扒掉（原版同样会，属原版设计在强退场景下的缺陷）。
+## 只放过「读档时穿着」的：背包里的照旧移除，跨档防复制（领取、进阶消耗）不受影响。false＝照原版连穿着的一起卸下移除。
+static var KEEP_WORN_ON_LOAD := true
+## 读档重放中（after_load 里置真）
+static var _loading := false
+## 读档重放时放过的穿着天衣（_yunUid），给专项与日志看
+static var kept_on_load: Array = []
+
+
+static func _worn(s: XState, item: Dictionary) -> bool:
+	for a in s.actors.values():
+		for e in a.equips:
+			if e is Dictionary and is_same(e, item):
+				return true
+	return false
+
+
 ## removeUid：按 _yunUid（找不到再按记下的实例号且底子相同）移除；穿着的先卸下
 static func remove_uid(s: XState, uid: String, instance: String, base_id: int) -> void:
 	var item := find_uid(s, uid)
@@ -193,6 +212,10 @@ static func remove_uid(s: XState, uid: String, instance: String, base_id: int) -
 				e._yunUid = uid
 				break
 	if item.is_empty():
+		return
+	if _loading and KEEP_WORN_ON_LOAD and _worn(s, item):
+		kept_on_load.append(uid)
+		print("云裳账本：读档重放的移除 %s 指向身上穿着的天衣「%s」，以存档为准保留" % [uid, str(item.get("name", ""))])
 		return
 	for a in s.actors.values():
 		for slot in range(a.equips.size()):
@@ -284,7 +307,11 @@ static func after_load(s: XState, identity: String) -> void:
 		if l == null or not (l.legacyProfiles as Dictionary).has(identity):
 			storage_error = "" if l != null else error
 			return
-	storage_error = "" if replay(s) else error
+	kept_on_load = []
+	_loading = true
+	var ok := replay(s)
+	_loading = false
+	storage_error = "" if ok else error
 	if storage_error != "" and s.actors.has(XYunshang.ACTOR):
 		XYunshang.sync(s.actor(XYunshang.ACTOR))
 

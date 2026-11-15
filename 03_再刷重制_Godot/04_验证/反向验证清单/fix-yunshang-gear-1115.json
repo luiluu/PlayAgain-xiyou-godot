@@ -1,0 +1,8 @@
+{"tests": ["xiyou_yunshang_gear_load"], "items": [
+ {"name": "读档重放照原版卸下移除穿着的天衣（去掉 KEEP_WORN_ON_LOAD 判断）", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/yunshang_orders.gd",
+  "find": "\tif _loading and KEEP_WORN_ON_LOAD and _worn(s, item):", "replace": "\tif false:"},
+ {"name": "放过范围扩到背包（_worn 恒真）", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/yunshang_orders.gd",
+  "find": "\tif _loading and KEEP_WORN_ON_LOAD and _worn(s, item):", "replace": "\tif _loading and KEEP_WORN_ON_LOAD:"},
+ {"name": "读档重放没标 _loading", "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/yunshang_orders.gd",
+  "find": "\t_loading = true\n", "replace": "\t_loading = false\n"}
+]}
