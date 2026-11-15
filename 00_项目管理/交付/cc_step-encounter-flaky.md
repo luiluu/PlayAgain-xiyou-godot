@@ -72,3 +72,13 @@
 - 修法：见上「stop_fade／战斗曲已释放」条；守卫逻辑全部收进 `STOP_FADE_GUARD`。
 - 新专项 `xiyou_bgm_release_guard`（11/11）：开档——有效不跳过、已释放（悬空引用）跳过、空值跳过；关档——三种都不跳过（恒回原路径）；`stop_fade` 签名参数仍为 `AudioStreamPlayer`；有效播放器 fade_in→stop_fade 在两档都恢复音量并移除元数据。
 - 本机并行测试.py 全过：battle_bgm 7/7、battle_end_ce 46/46、hangup 55/55、hangup_stop 11/11、victory_text_flow 4/4、transfer_touch、step_encounter_stop 7/7（专项删去一条后总数 7）、bgm_release_guard 11/11。限制：原偶发堆栈仍未复现，胜利分支的释放来源仍是代码判断；这次没重跑 15/30/60 的 30 次压测（测试文件只删了末尾一条 check，采样逻辑没动）。
+
+
+## 小o 甲档返修复核
+
+- 核查者：co（gpt-6.1-sol＋medium）；对象：02285ff58、21aa4272f，仅复核本次返修。游戏代码未改。
+- **代码结论：原 P2 已修复。** 对照改动前基线 cdf35cb92，脚本逐函数比较确认 `XAudio.stop_fade` 的签名、空值判断与函数体完全还原，`_defeat_me` 完全还原，`_bgm_alive` 已删除。`STOP_FADE_GUARD=false` 使 `_bgm_released()` 短路恒假，胜利处 stop_fade、stop、取消暂停、胜利曲查找／赋值／播放及空曲清 stream 全回原路径；不存在上轮“去类型、空值判断仍生效但不受开关控制”的额外改变。
+- **守卫位置（代码判断）**：开档只在 `is_instance_valid(bgm)` 为假时跳过胜利处 BGM 操作（包括 null），有效对象保持原行为。判定至最后一次 BGM 访问之间没有 await，缓存 bgm_gone 不会跨帧失效；前置 play_me 的空值判断与上一轮实测结论仍适用。因而覆盖已释放 bgm 到达胜利音频段的报错点；原释放来源／完整偶发时序仍未复现，不把这次防护宣称为生命周期根因已定位。
+- **新专项核查**：确实先赋 `b.bgm = dead` 再 free，形成类型成员中的悬空引用；对有效、已释放、null 三类分别断言开／关两档，另用反射断言 stop_fade 的 AudioStreamPlayer 参数类型，并在两档实际 fade_in→stop_fade 后断言音量恢复与元数据移除。断言有实际输入和预期值，未用常量代替已释放对象判定。限制：没有直接执行 `_victory` 的完整生命周期，也没有故意跑关档报错；关闭后回到原调用行为由上述差异检查证明。补 uid 提交只增对应 gd.uid。
+- **本轮独立实测**：指定三项各一次（并行测试.py --jobs 1，无沿用、无重跑），退出码 0：xiyou_bgm_release_guard 11/11、xiyou_battle_bgm 7/7、xiyou_battle_end_ce 46/46，无 SCRIPT ERROR；总用时 143 秒。日志：`03_再刷重制_Godot/04_验证/本地结果/并行测试/20261115_220333_oned6gs2/`。
+- **最终结论：通过；原 P2 关闭，本次无新增 P1/P2/P3。** 通过范围为本次返修、回退行为与上述三项选测；原偶发释放来源仍未复现，本轮未跑云端或音频听感验收。
