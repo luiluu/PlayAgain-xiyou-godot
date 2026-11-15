@@ -40,7 +40,7 @@
   - 云裳、魔冠账本：沿用「记录损坏」的暂停，原因写「……存档校验失败」，功能暂停、不写盘。星级仓库：不读、存取都不做，提示「仓库文件存档校验失败，暂时不能存取。……」。跨存档变量：不读、只在内存里改、不写盘。
 - **原文件一直在**：游戏不删、不覆盖校验失败的文件。玩家在这一格存档、删除、**导入**时，原文件先改名成唯一的 `<文件>.failed_<时间>[_n]` 留着（任何自动清理都不碰这个名字）。反馈问卷「导出存档包」把整个存档目录原样打包，`.ksv`、`.json` 备份、`.failed_*` 都在里面。
 - 坏档（闪退写一半）和被改的分不开，一样按校验失败处理、一样留原文件。
-- 导出改成封存格式（`kyo-remake-save-sealed-v2`），改过的导不进；旧版明文导出默认不收。
+- 导出改成封存格式（`kyo-remake-save-sealed-v2`），改过的导不进；**旧版明文导出照收，导入时写成封存格式**（Kyo 11-15 D37：老玩家的备份不作废）。
 
 ## 返修（co 甲档核查 ec1064160）
 
@@ -52,6 +52,7 @@
 | P2② 解压无上限 | 文件 > `MAX_FILE` 不读进来（读档、导入都先查大小）；声明明文长度 > `MAX_PLAIN`（128 MiB）拒；`decompress` 按声明长度分配、最多解出这么多 | `crafted.oversize_rejected`（带**合法签名**的超大声明） |
 | P2③ 迁移没读回落盘内容 | 所有封存写盘统一走 `XSaveSeal.write_file`：写临时文件 → **读回临时文件逐字节比、解开和原文一字不差** → 改名（存档、自动存档、账本、仓库、跨存档变量、导入、迁移都是它）。迁移不再另建 `.plain_*.bak`（`.json` 原件本身就是备份，不复用旧备份）。迁移写不进：那个文件照旧读 `.json`、不放记号、下个进程再试 | `mfail.falls_back_to_json`、`mfail.no_marker`、`mfail.retry_next_process` |
 | P2④ 密钥进公开仓库 | 删掉原来的生产种子；仓库只留公开测试密钥（号 0，注释写明只给开发／测试，发行构建不认）。发行密钥在私密设计仓 `xiyou-design-docs/发行密钥/save_seal_key.json`（不进本仓库，`.gitignore` 了注入路径），`发行出包.py` 导出前复制进导出用的工程副本 `content/save_seal_key.json`、导完删；没密钥就不出包（`--no-save-key` 明知故出不封存的包）。新工具 `07_开发环境/存档密钥.py`（`--init` 生成、`--rotate` 加新号、`--check`）。原种子已在公开仓库历史里，作废不用。 | `keys.release_without_key_no_seal`、`keys.release_rejects_test_key`、`keys.release_with_key_seals`（号 3 写、号 2 读）、`keys.other_key_not_accepted`、`keys.dev_test_key_back` |
+| D37（Kyo 11-15）旧明文导出要收 | `ACCEPT_PLAIN_IMPORT` 默认改成 true：旧版 `kyo-remake-save-json-v1` 导出、直接一份明文存档都照收，`import_to` 经 `write_file` 写成 `.ksv` 封存；关掉开关回到拒收 | `xfer.plain_accepted_d37`、`xfer.plain_import_sealed`、`xfer.plain_refused_when_off`；`xiyou_platform` `transfer_bare_save_ok` |
 | P3 补齐只验末字节 | 每个补齐字节都核；HMAC 在解密之前（文件头注释写明） | `crafted.padding_all_bytes`（带合法签名、末字节对前面不对） |
 
 - 反向验证（手工，改完用备份字节还原）：去掉补齐逐字节核 → `crafted.padding_all_bytes` 挂；去掉长度上限 → `crafted.oversize_rejected` 挂；去掉导入前改名 → `import.failed_original_survives_prune` 挂。
@@ -83,7 +84,7 @@
 - Kyo 11-15 D28：不允许玩家修改存档。新 `XSaveSeal`：存档、自动存档、云裳／魔冠账本、星级仓库、跨存档变量写成加密＋签名格式（AES-256-CBC＋HMAC-SHA256，先压缩，带版本号和密钥号），文件名改成 `.ksv`；只防普通改档工具和手改数字，防不住逆向。
 - 老存档第一次被读时自动封存成 `.ksv`（读回核对后才落位），原 `.json` 留原处当备份，老玩家不受影响；旧版本代码只认 `.json`，退回旧版时碰不到封存档。
 - 校验失败（被改、截断、坏档）：不读、不覆盖、不删；读档页标红「存档校验失败」、读取弹提示（原文件已保留，可通过游戏内反馈问卷导出存档发给我们）；在这一格存档／删除／导入时原文件改名 `.failed_<时间>` 留着。账本、仓库、跨存档变量校验失败就暂停、不写盘。
-- 导出改成封存格式，改过的导不进；旧版明文导出默认不收。
+- 导出改成封存格式，改过的导不进；旧版明文导出照收、导入时自动封存（D37）。
 - 发行密钥不进仓库：出包时由 `发行出包.py` 从私密设计仓注入（新工具 `存档密钥.py`）；发行构建没密钥就不封存，开发／测试用公开测试密钥。
 - 回退：`XSaveSeal.ENABLED = false`（读写 `.json` 明文，封存档解开写回）。
 - 玩家可见：存档文件不能再用改档工具修改；改过的存档在读档页显示「存档校验失败」并保留原文件。
@@ -96,15 +97,13 @@
 |---|---|---|---|---|---|---|---|
 | O-待定-1 | `modes/xiyou/core/save_seal.gd` `XSaveSeal.ENABLED`、`resolve`、`write_file`；`xsave.gd`、`star_warehouse.gd`、`xglobal_vars.gd`、`yunshang_orders.gd`、`demon_crown.gd` 的路径与写盘 | 存档、账本是明文 JSON，谁都能改 | 加密＋签名写成 `.ksv`，改过的认得出，旧档第一次读时迁移、`.json` 留作备份 | Kyo 11-15 D28 | `XSaveSeal.ENABLED = false`（读写 `.json` 明文，`.ksv` 解开写回） | cc | 保留 |
 | O-待定-2 | `save_seal.gd` `XSaveSeal.STRICT_AFTER_MIGRATE`、`ensure_dir` | （新功能）| 目录迁移完（有 `.sealed_v1`）后不再读 `.json` | 不然改 `.json`、删 `.ksv` 就绕过 | `XSaveSeal.STRICT_AFTER_MIGRATE = false`（每次进目录都把比 `.ksv` 新的 `.json` 重新封存） | cc | 保留 |
-| O-待定-3 | `save_transfer.gd` `XSaveTransfer.ACCEPT_PLAIN_IMPORT`、`parse_import` | 导出导入是明文 JSON | 封存开着时导出封存格式；没签名的明文导出不收 | 不然改明文导出再导入就绕过 | `XSaveTransfer.ACCEPT_PLAIN_IMPORT = true`（照旧收明文导出，导入后写成封存格式） | cc | 保留 |
+| O-待定-3 | `save_transfer.gd` `XSaveTransfer.ACCEPT_PLAIN_IMPORT`、`parse_import`、`export_text` | 导出导入是明文 JSON | 封存开着时导出封存格式（改过的导不进）；旧版明文导出照收、导入时写成封存格式（D37） | D28＋D37（老玩家备份不作废） | `XSaveTransfer.ACCEPT_PLAIN_IMPORT = false`（封存开着时不收没签名的导出） | cc | 保留 |
 
 ## 交接板
 
 - 下一步：co 复核返修；出包前总装按「总装出包要做的」生成发行密钥。
 - 用户试玩说明：读档照常；存档文件夹里每个进度文件多一个 `.ksv`（新存档）和 `.sealed_v1`，原 `.json` 留作备份。改过的 `.ksv` 读档页显示「存档校验失败」。
-- 需要用户决定：
-  1. **发行方式（D36，协调问 Kyo）**：推荐随兼容整包发。补丁装在没有密钥的旧底包上不会封存（安全但等于没上）；整包带密钥才生效。
-  2. **旧版明文导出文件还收不收**：默认不收（否则改明文再导入就绕过）。若有玩家只有旧版导出文件要换设备，可临时打开 `ACCEPT_PLAIN_IMPORT`。推荐：不收。
+- 需要用户决定：无。Kyo 11-15 已定：**D36** 重制版存档加密等下次整包上（不走补丁；补丁装在没有密钥的旧底包上本来也不封存）；**D37** 旧明文存档导出要收，导入时自动加密一次（已做，代价：改过的明文导出也能这样导进来——封存只管住游戏自己写的文件）。
 
 ## 进度账
 
