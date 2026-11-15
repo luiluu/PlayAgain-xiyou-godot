@@ -585,7 +585,7 @@ func _show_enemy_gauge(e: XBattler, seconds := 0.5) -> void:
 
 func _build_ui(vs: Vector2) -> void:
 	# Boss 血条（MOG_BossHP）：最先加，窗口在它上面（原版 hudField 在窗口层下）
-	boss_hp = XBossHpBar.new()
+	boss_hp = XSkinBattle.boss_hp()  # 新界面 2B：开着新皮肤是顶上的血弧，关着同 XBossHpBar.new()
 	boss_hp.hp_source = func(e): return view_lite(e)
 	boss_hp.busy_source = func(): return message._busy
 	var hp_holder := Node2D.new()
@@ -606,8 +606,9 @@ func _build_ui(vs: Vector2) -> void:
 	holder.position = _origin
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(holder)
+	XSkinBattle.side_backdrop(holder, logic.actors.size())  # 新界面 2B：队伍紧凑条的面板底（关着不加）
 	for i in range(logic.actors.size()):
-		var row := XSideStatus.new()
+		var row := XSkinBattle.side_status()  # 新界面 2B：开着是紧凑条的一行，关着同 XSideStatus.new()
 		row.setup(logic.actors[i], i)
 		holder.add_child(row)
 		status_rows[logic.actors[i]] = row
@@ -639,13 +640,14 @@ func _build_ui(vs: Vector2) -> void:
 		speed_btn.text = "变速 " + XConfig.battle_speed_text())
 	side.add_child(speed_btn)
 	_refresh_auto()
+	XSkinBattle.style_toggles(side, [auto_btn, speed_btn], _origin)  # 新界面 2B：开着新皮肤换胶囊、挪到挂机界面下（关着什么也不做）
 	# 行动顺序条：宽 = 画面宽 - x - 状态宽 - 左移量 - 状态图标 4.5 个
-	otb = XOTBBar.new()
+	otb = XSkinBattle.otb()  # 新界面 2B：开着是左下圆头像一排（自己挪到 XSkinOTBBar.POS），关着同 XOTBBar.new()
 	otb.position = _origin + OTB_POS
 	ui.add_child(otb)
 	otb.setup(BOX.x - OTB_POS.x - STATUS_W - STATUS_MOVE - 32 * (STATES_MAX + 0.5))
 	# Boss 状态面板（Codex_BossStatusSummary）：只显示，不参与结算；最后加，盖在说明卡上
-	boss_panel = XBossStatusPanel.new()
+	boss_panel = XSkinBattle.boss_panel(boss_hp)  # 新界面 2B：开着是血弧下的状态胶囊，关着同 XBossStatusPanel.new()
 	boss_panel.position = _origin
 	boss_panel.enemies_source = func(): return logic.enemies
 	boss_panel.target_source = func(): return _hover if _target_mode == "enemy" else null
@@ -1160,7 +1162,7 @@ func _tianqi_swap(out: XActor) -> void:
 	old.queue_free()
 	sprites[h] = s
 	var row: XSideStatus = status_rows[out]
-	var nr := XSideStatus.new()
+	var nr := XSkinBattle.side_status()  # 新界面 2B（关着同 XSideStatus.new()）
 	nr.setup(h, logic.actors.find(h))
 	row.get_parent().add_child(nr)
 	row.get_parent().move_child(nr, row.get_index())
@@ -1188,7 +1190,7 @@ func _open_status(a: XActor) -> void:
 	var top := CanvasLayer.new()
 	top.layer = 95
 	add_child(top)
-	status_panel = XPartyStatusPanel.open(top, logic.actors.filter(func(m): return m is XActor), a)
+	status_panel = XSkinBattle.status_panel(top, logic.actors.filter(func(m): return m is XActor), a)  # 新界面 2B（关着同 XPartyStatusPanel.open）
 	status_panel.closed.connect(func():
 		status_panel = null
 		top.queue_free()

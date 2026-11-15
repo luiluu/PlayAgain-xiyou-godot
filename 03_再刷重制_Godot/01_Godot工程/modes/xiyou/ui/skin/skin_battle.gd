@@ -1,6 +1,7 @@
 class_name XSkinBattle
 extends RefCounted
-## 【cc·天启篇·未经审查】新界面 2A：战斗指令环、战技／物品列表、目标提示的接线（XBattleScene 只在这里问开关）。
+## 【cc·天启篇·未经审查】新界面 2A／2B：战斗指令环、战技／物品列表、目标提示（2A），右侧队伍条、行动顺序、首领血弧＋状态胶囊、
+## 我方状态详情（2B）的接线（XBattleScene 只在这里问开关）。
 ## 只在 XUiSkin.on() 时走新组件；关着时 XBattleScene 照旧建 XBattleList，代码一行不变。
 ## 全是只读：不改战斗计算、行动顺序和随机数（能不能用、费用、冷却都读 XBattleLogic 现成的结果）。
 
@@ -10,20 +11,13 @@ const SCOPE_TEXT := {
 	7: "我方单体", 8: "我方全体", 9: "我方单体（倒下的）", 10: "我方全体（倒下的）", 11: "自己",
 }
 
-static var _icons := {}
-
-
 static func on() -> bool:
 	return XUiSkin.on()
 
 
-## 图标贴图（缓存住，免得临时 AtlasTexture 被释放画成白块；1A 合进 main 后可换 XUiSkin.icon）
+## 图标贴图：转到 XUiSkin.icon（1A 修白块的缓存，已进 main）
 static func icon(index: int) -> Texture2D:
-	if index <= 0:
-		return null
-	if not _icons.has(index):
-		_icons[index] = XUI.icon_texture(index)
-	return _icons[index]
+	return XUiSkin.icon(index)
 
 
 ## 指令窗：开着新皮肤时是指令环，关着是原 XBattleList（同 XBattleList.create）
@@ -178,3 +172,78 @@ static func target_hint(scene: XBattleScene, b, skill: Dictionary, group: Array)
 		sub = "%s · %d 个" % [scope, group.size()] if scope != "" else "%d 个" % group.size()
 	scene.ui.move_child(hint, -1)
 	hint.show_for(name, sub, scene._origin + s.position, s.height(), b is XEnemy)
+
+
+## ---- 2B：右侧队伍条、行动顺序、首领血弧与状态、我方状态详情 ----
+## 开关关着时每个都给原来的类（同 XBattleScene 原来的 new()），一行不变。
+
+## 右侧一名角色的状态行：开着是 XSkinSideStatus（队伍紧凑条的一行），关着是原 XSideStatus
+static func side_status() -> XSideStatus:
+	return XSkinSideStatus.new() if on() else XSideStatus.new()
+
+
+## 队伍紧凑条的面板底（开着新皮肤时加在各行前面）；关着不加，返回 null
+static func side_backdrop(holder: Control, count: int) -> Control:
+	if not on():
+		return null
+	var back := XSkinSideStatus.Back.new()
+	holder.add_child(back)
+	back.count = count
+	return back
+
+
+## 行动顺序条
+static func otb() -> XOTBBar:
+	return XSkinOTBBar.new() if on() else XOTBBar.new()
+
+
+## 首领血条：开着是顶上的大血弧
+static func boss_hp() -> XBossHpBar:
+	return XSkinBossArc.new() if on() else XBossHpBar.new()
+
+
+## 首领状态面板：开着是血弧下的一排胶囊＋新皮肤详情；arc 是本场的首领血条（胶囊据此决定摆在弧下还是顶上）
+static func boss_panel(arc: XBossHpBar) -> XBossStatusPanel:
+	if not on():
+		return XBossStatusPanel.new()
+	var p := XSkinBossStatus.new()
+	p.arc = arc
+	return p
+
+
+## 我方状态详情（点右侧状态格／新皮肤点整行）
+static func status_panel(parent: Node, list: Array, who: XBattler) -> XPartyStatusPanel:
+	if not on():
+		return XPartyStatusPanel.open(parent, list, who)
+	var p := XSkinPartyStatusPanel.new()
+	p.members = list
+	p.index = maxi(0, list.find(who))
+	parent.add_child(p)
+	return p
+
+
+## 自动／变速两个按钮：开着新皮肤时换成黑底细线的胶囊（按下、悬停是红乙选中条），挪到挂机快捷界面（左上 20,10,240×74）下面，
+## 免得被顶上的首领血弧压住；字和点了做什么都不变。关着什么也不做。
+static var TOGGLE_POS := Vector2(20, 84)
+
+static func style_toggles(side: Control, buttons: Array, origin: Vector2) -> void:
+	if not on():
+		return
+	side.position = Vector2(TOGGLE_POS.x, origin.y + TOGGLE_POS.y)   # x 贴屏幕左边（同挂机快捷界面），宽屏不跟 1280 居中（核查返工）
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(XUiSkin.BG, 0.85)
+	normal.border_color = Color(XUiSkin.LINE, 0.6)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(23)
+	normal.content_margin_left = 14
+	normal.content_margin_right = 14
+	for b in buttons:
+		var btn := b as Button
+		btn.custom_minimum_size = Vector2(120, 46)   # 点击区同原按钮（XUI.button 高 46、最小宽 120；核查返工，原 104×40）
+		btn.add_theme_font_override("font", XUiSkin.font("body"))
+		btn.add_theme_font_size_override("font_size", 16)
+		btn.add_theme_stylebox_override("normal", normal)
+		for k in ["hover", "pressed"]:
+			btn.add_theme_stylebox_override(k, XUiSkin.select_style())
+		for k in ["font_color", "font_hover_color", "font_pressed_color"]:
+			btn.add_theme_color_override(k, XUiSkin.TEXT)

@@ -1,7 +1,7 @@
 extends Node
 ## 新界面开关关掉时与 main 逐像素一致（ui-skin-p0）：这个脚本不直接引用任何新类，main 上也能跑；
 ## 07_开发环境/皮肤关闭对照.py 把它拷进 main 的临时克隆和本分支各跑一次（要窗口），再用 --compare 逐像素比。
-## 拍的页：主菜单、状态、物品、技能、装备、设置（技能 ui-skin-1b 加）、装备检索（XGearSearch 网页面板，ui-skin-1c 加：XWebPanel 换皮）、设置子页三个（画质、消息提醒、屏蔽掉落）与返回标题（XGameEndPanel）（ui-skin-5c 加）；战斗（2A 加：指令窗、战技列表、选目标三张，地图 5 敌群 2，随机数钉住、呼吸停掉；只拍西游存档那一档）；
+## 拍的页：主菜单、状态、物品、技能、装备、设置（技能 ui-skin-1b 加）、装备检索（XGearSearch 网页面板，ui-skin-1c 加：XWebPanel 换皮）、设置子页三个（画质、消息提醒、屏蔽掉落）与返回标题（XGameEndPanel）（ui-skin-5c 加）；战斗（2A 加：指令窗、战技列表、选目标三张；2B 加我方状态详情；地图 5 敌群 2，随机数钉住、呼吸停掉；只拍西游存档那一档）；
 ## 天启篇标题、选线四卡、异化工坊（ui-skin-3b 加；标题在西游情形下按发行构建拍：标题还没读档，新皮肤按构建开，发行构建不开）。
 ## tq_off 背包里另放七印装备和号卷（ui-skin-3a 加，#82）。七印祭坛关着时照旧是地图上的对话框选单（同一句 ask），不在这里拍，专项 xiyou_ui_skin_3a 验。两种情形：
 ##   xiyou      西游存档、开关全默认（重制版玩家现在的样子）；
@@ -96,7 +96,7 @@ func _run() -> void:
 	get_tree().quit(0)
 
 
-## 战斗三张：指令窗、战技列表（第 2 项）、选目标（攻击）。随机数钉住（种子、random_master、敌人出场掷骰）；返回 [建了几次, 拍了几张]
+## 战斗四张：指令窗、我方状态详情（2B）、战技列表（第 2 项）、选目标（攻击）。随机数钉住（种子、random_master、敌人出场掷骰）；返回 [建了几次, 拍了几张]
 func _battle_shots(scenario: String) -> Array:
 	seed(20261013)
 	XState.current.random_master = "2026101300000001"
@@ -117,7 +117,7 @@ func _battle_shots(scenario: String) -> Array:
 		b.queue_free()
 		return [0, 0]
 	n = 1
-	var steps := [["cmd", []], ["list", ["ui_down", "ui_accept"]], ["target", ["ui_cancel", "ui_up", "ui_accept"]]]
+	var steps := [["cmd", []], ["status", []], ["list", ["ui_down", "ui_accept"]], ["target", ["ui_cancel", "ui_up", "ui_accept"]]]
 	for st in steps:
 		for act in st[1]:
 			for down in [true, false]:
@@ -127,6 +127,8 @@ func _battle_shots(scenario: String) -> Array:
 				get_viewport().push_input(e)
 				for k in range(2):
 					await get_tree().process_frame
+		if st[0] == "status":   # 2B：我方状态详情（点右侧状态格那条路）
+			b.call("_open_status", b.get("_active"))
 		for i in range(40):
 			await get_tree().process_frame
 		_freeze(b)
@@ -138,6 +140,10 @@ func _battle_shots(scenario: String) -> Array:
 			DirAccess.make_dir_recursive_absolute(out_dir)
 			get_viewport().get_texture().get_image().save_png(out_dir.path_join("%s_battle_%s.png" % [scenario, st[0]]))
 			shots += 1
+		if st[0] == "status" and b.get("status_panel") != null:
+			b.get("status_panel").close()
+			for i in range(5):
+				await get_tree().process_frame
 	b.queue_free()
 	for i in range(5):
 		await get_tree().process_frame

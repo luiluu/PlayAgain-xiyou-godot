@@ -1,0 +1,138 @@
+# 交付：cc/ui-skin-2b
+
+- 车道／工作者：B 界面·新界面 2B（右侧角色条 #65、行动顺序 #66、首领血弧＋状态胶囊＋详情 #67／#68、我方状态弹窗 #69）／cc（Opus＋medium，派单定：战斗界面接线，复杂系统）
+- 分支：从 `cc/ui-skin-2a`（500bb38f5，小A 乙档已过）切出；已合进 main 的 1A（17c4ba6b2，`XUiSkin.icon` 白块修复）和 1B（85577b3ab；冲突只在 `xiyou_ui_skin_offshot.gd` 头注释，已解）。核查返工时 2A、1C 已进 main，又合了一次 main（9eda62b84；冲突同样只在那行头注释），不用再等。
+- 状态：可合并
+
+## 变更记录草稿
+
+## 2026-11-15 【cc·未经审查】新界面 2B：右侧队伍条、行动顺序、首领血弧与状态胶囊、我方状态详情（dev.待定）
+
+- 玩家可见：无（新皮肤只在天启篇存档里开，天启篇没对玩家开放；重制版西游存档的战斗画面与 main 逐像素一致，见「验证」）。开发版天启篇存档进战斗：右上一块黑面板队伍条（圆头像、名字、Lv、状态图标、血蓝 TP 三条细条，轮到谁谁那行是红选中条，整行可点开状态详情）；左下一排圆头像的行动顺序（最左大圆是正在行动的人，只给当前的人和敌人标名字，竖排「下回合」隔开下个回合）；有首领时顶上一道玫粉大血弧（掉血那截先变橙再收），弧里首领名字和「现血量 / 上限」，弧下一排状态胶囊（异常橙边）＋「详情 ▾」，点开是新皮肤的详情框；点队伍条打开新皮肤的我方状态详情（左队伍、中页签＋状态列表、右详情牌＋人物属性）。自动／变速两个按钮换成黑底胶囊（大小同原按钮 120×46），挪到挂机快捷界面下面、和它左边对齐（免得被血弧压住）。
+- 依据：派单（协调 11-15）；设计稿 私密设计仓 `重制设定/界面风格提案_v0.7/` README 第一节「战斗」（行动顺序只标当前的人和敌人、删敌人脚下小血条留给 2C）、第三节颜色（生命玫粉、下降橙）、样稿 `battle`（`样稿/src/build.py` `battle()` 的 `.party`、`.otb`、`.boss`／`.barc`、`.bst`）；小A 文字审 `文字审_小A.md`（ba1f7ed）：#189「详情」做成明显的按钮样式（建议项，照做：旧金边＋淡金底＋▾），#221「下回合」照用，数字和单位间空一格（「黑暗 4 回合」「2 层」）；第 0 期交付单「第 1～6 期拆批建议」2B 行；盘点清册 `xa/ui-audit` 35b648209 #65～#69。
+- 开关：沿用第 0 期 O-467 `XUiSkin.ENABLED`／`XUiSkin.on()`（不另开）。关着时 `XSkinBattle` 的工厂全部给原来的类（`XSideStatus.new()`、`XOTBBar.new()`、`XBossHpBar.new()`、`XBossStatusPanel.new()`、`XPartyStatusPanel.open`），原代码路径不变。
+- 只读：全部组件都是原类的子类，只换画法和摆法；读数照原类（演出中读 `show_views` 的画面快照，平时读实时值；状态图标走 `XSideStatus.cell_rows` 的记忆；首领条目走 `XBossStatus.entries`；状态详情行走 `XPartyStatusPanel.rows_for`）。不改战斗计算、行动顺序、随机数取用、存档格式；队伍条头像取数据库 faceName（不调 `XAppearance.for_battler`——它会经 `XSukuna.full_look` 往状态里放东西）。
+- 新增文件（独占，`modes/xiyou/ui/skin/`）：
+  - `skin_side_status.gd`（`XSkinSideStatus extends XSideStatus`）：队伍紧凑条的一行（宽 290、行高 58，右离 16、顶 12；样稿 `.party`）。轮到输入的人那行是红乙选中条（原版是左移 48，不再左移），被选为目标的行旧金细框；状态图标一次画 3 个（带层数，不再 1.4 秒轮换，但仍每 1.4 秒重画一次跟上实时值）；护盾在血条上叠浅蓝一段、Lv 行写「盾 1234」；谷雨状态字也写在 Lv 行；濒危名字橙、倒下整行变暗。`cell_button` 扩成整行（点整行开状态详情，悬停提示照旧）。内类 `Back`：整块面板底＋行间细线。
+  - `skin_otb_bar.gd`（`XSkinOTBBar extends XOTBBar`）：行动顺序（样稿 `.otb`）。图标增删、移动、前移、预览、选中全继承；只覆写 `setup`（挪到 `POS`）、`show_orders`（按两段人数统一间距，最宽 50、整条 550，挤不下缩间距）、`_step`／`_slot_x`／`_draw`（只画「下回合」竖排小字和分隔线）、`_icon`（换圆形画法：大圆 62 红圈外晕、小圆 44、被选为目标 52 旧金圈闪、预览是轨道上方半透明小圈；角色取侧视图头部、敌人整张放进圆、精英敌人色调照旧）。人多挤得圆叠起来（间距小于 44）时敌人名字会互相压住，只给被选为目标的敌人标名字。
+  - `skin_boss_arc.gd`（`XSkinBossArc extends XBossHpBar`）：首领血弧（样稿 `.boss`）。谁有血条、跟着谁、红条拖尾（O-188 封顶）、数字追赶（O-237）、淡入淡出、受伤震动全继承；圆心 (640, −188)、半径 320、露出下面 126°；底槽黑 65%、玫粉渐变弧＋外晕，扣血那截橙（原红条拖尾，派单「下降改橙」），血从右往左掉；名字思源宋体 27（难度色同原版）、数字窄体 34＋「 / 上限」18 旧金；有 MOG 头像的首领在弧顶画圆头像。
+  - `skin_boss_status.gd`（`XSkinBossStatus extends XBossStatusPanel`）：首领状态胶囊＋详情（样稿 `.bst`）。选哪只、条目、展开／页签／翻页／看条目全继承，详情框几何（480×400、页签行、每条 68 高、页脚）不变所以点击照旧；折叠行是一排居中胶囊（血弧没画这只时先放名字胶囊）——最多 2 个状态（图标＋「名字 N 回合」，异常橙）、「+N」、「详情 ▾／收起 ▴」；有血弧时贴在弧下 172，没有时在顶上 16；天启篇元素牌组在下面一行小字。
+  - `skin_party_status.gd`（`XSkinPartyStatusPanel extends XPartyStatusPanel`）：我方状态详情（原 XWebPanel 网页样式换成新皮肤三块）。左 `XSkinPartyStrip`（点谁看谁、Q／E 换人）、中页签（异常／增益／常驻／全部 + 数，← → 换）＋`XSkinList`、右 `XSkinCard`（选中状态的图标、名字、「类别 · 时长 · N 层」、说明，下面「人物属性」一节：元素属性＋各元素承伤）；右上「返回战斗」按钮、底部按键提示；打开时 `request_wide`。
+- 改共用文件：
+  - `modes/xiyou/battle/battle_scene.gd`：建首领条、队伍行（含天启篇换人 `_tianqi_swap`）、行动顺序条、首领状态面板、状态详情各改调 `XSkinBattle` 的工厂（关着同原 new／open）；队伍行前加 `XSkinBattle.side_backdrop`（关着不加）；`_build_ui` 末尾 `XSkinBattle.style_toggles`（关着什么也不做）。共 7 处，各一行。
+  - `modes/xiyou/battle/otb_bar.gd`：`Icon` 加 `painter`（空＝原画法，`_draw`／`_process` 开头各两行判断）；`show_orders`／`set_preview` 里的 `Icon.new(b)` 改调 `_icon(b)`（默认就是 `Icon.new(b)`）。
+  - `modes/xiyou/ui/skin/skin_battle.gd`（2A 的，本车道独占）：加 2B 工厂；`icon()` 改转 `XUiSkin.icon`（1A 已进 main）；`style_toggles`。
+  - `tests/xiyou_ui_skin_offshot.gd`、`07_开发环境/皮肤关闭对照.py`：战斗加第四张「我方状态详情」（点状态格那条路，西游存档）。
+- 现状与没做的：
+  - **两排站位（五人）时指令环、队伍条挪不挪（Kyo 还没定）**：队伍条位置参数是 `XSkinSideStatus` 的 static var `RIGHT`（16）、`TOP`（12）、`ROW_W`（290）、`ROW_H`（58）；五人时队伍条高 294（到 y 306），不跟站位走。行动顺序 `XSkinOTBBar.POS`（15, 627）、`WIDTH`（550）、各圆半径；血弧 `XSkinBossArc.CENTER`／`RADIUS`／`SPAN_DEG`／`THICK`；自动／变速 `XSkinBattle.TOGGLE_POS`（20, 84；x 是屏幕坐标，宽屏也贴左边同挂机界面，y 跟战斗画面）。2A 的指令环参数见 2A 交付单。定了只改这几个数。
+  - 自动／变速只换了样式和位置（字和行为不变）；样稿是两个圆钮放左上角，那里现在是挂机快捷界面（20,10,240×74），所以放在它下面。天启篇本线计量条（`XTianqiMeter`，(272,66)）没动，归 2C（#79）。
+  - 战斗背景、坐标还是 1280 居中（同 2A，没申请 `request_wide`；全局铺满归 4A），所以 20:9 截图两边是黑边，队伍条贴的是 1280 画面右边。
+  - 职业名：数据库 `Classes.json` 的名字全是空串，队伍条和状态详情只写「Lv 10」（样稿「Lv 1 · 见习骑士」是演示数据）。
+  - 状态详情没做原版的搜索框（键盘手柄触屏都不好输字；页签够用）；人物属性一节是灰字（承伤一项一组按牌宽排行、不在词中折），没按元素上色（原面板按元素色）。
+  - 首领血弧的样稿里弧顶是一枚封印图；现在有 MOG 头像（`boss-N-头像`）的首领画圆头像，没有就不画。
+  - 敌人头上的状态图标、敌人小血条（#71）、伤害数字、回合提示（#72）、计量条（#79）归 2C。
+  - 天启篇「死期」标记（`XTianqiMeter._draw_doom_marks`）照旧画在队伍行左边 56 处，新队伍条下会落在面板左外侧，2C 一起看。
+
+## 优化登记草稿
+
+无（沿用 O-467 `XUiSkin.ENABLED`，不新开开关）。
+
+## 新增可见文字（交付后协调派小A文字审）
+
+天启篇开放后玩家能看到的（其余字都是原来就有的：「某某 · 状态详情」「查看时暂停战斗，关闭后继续。」「返回战斗」「异常 N／增益 N／常驻 N／全部 N」「详情 ▾／收起 ▴」「‹ 上一页」「下一页 ›」「返回列表」「当前没有异常状态」等、「敌人属性：」、「自动：关」「变速 OFF」）：
+
+| 文字 | 在哪 | 说明 |
+| --- | --- | --- |
+| 下回合 | 行动顺序条，本回合与下个回合之间竖排 | 样稿用词（#221）；原条是「当前回合」「下个回合」两个标签，新条不写 |
+| 黑暗 4 回合、防御 4 回合（「状态名 N 回合」） | 首领状态胶囊 | 状态名＋原「4回合」的回合字样，数字和「回合」间空一格；「行动后结束」「回合末结束」「常驻」「本场战斗」「持续」照原字 |
+| +3（「+N」） | 首领状态胶囊，超过 2 个状态时 | 原折叠栏也写「+N」 |
+| 4 回合、2 层（原「4回合」「2层」） | 首领详情每条右边、状态详情列表小字与详情牌 | 只是加空格 |
+| 异常 · 3 回合 · 2 层（「类别 · 时长 · N 层」） | 我方状态详情的列表小字、详情牌第二行 | 原卡片写「异常 · 3回合 · 2层」 |
+| 当前没有异常状态（「当前没有X状态」）、当前没有状态 | 我方状态详情列表为空时 | 原是「没有异常状态符合当前条件。」（去掉了搜索）；核查文字必改后同首领详情「当前没有异常状态」 |
+| 人物属性 | 我方状态详情牌的小标题 | 原面板写「人物属性：无属性」，新牌把它当小标题，下面一段「无属性」＋各元素承伤 |
+| ↑ / ↓ 选状态、← / → 换分类、Q / E 换人、取消 返回战斗 | 我方状态详情底部按键提示（键名套框） | 按键写法照文字审 #249（← / →） |
+| Lv 10、盾 1234 | 队伍条名字后的小字 | 「Lv 等级」第 0 期已审；「盾 数值」原侧栏写「盾1234」（12 号蓝字），现在放进 Lv 行、中间空一格 |
+
+## 交接板
+
+- 下一步：2C（伤害数字／回合提示、本线计量条、胜利结算、全灭、伤害统计、敌人头顶、特殊战斗专窗），依赖本批；派 2C 时带上「死期标记位置」「自动／变速放左上挂机界面下」两条现状。
+- 用户试玩说明：无（天启篇没对玩家开放）。
+- 需要用户决定：两排站位（五人）时指令环、队伍条要不要挪（2A 已提，2B 把队伍条、行动顺序、血弧的位置参数也留好了，见变更记录草稿「现状与没做的」）。可放进 `待Kyo拍板.json`，附截图 `04_验证/本地结果/ui_skin_2b/battle_2b_hud_16x9.png`。
+
+## 进度账
+
+- 天启篇新界面：第 0 期底层 → 1A → 2A → 加 2B 右侧队伍条、行动顺序、首领血弧＋状态胶囊＋详情、我方状态详情；页面重排 +5（#65、#66、#67、#68、#69），连同 #64 剩下的自动／变速样式。
+
+## 验证
+
+- 专项 `tests/xiyou_ui_skin_hud.tscn`（新）：无头 103/103；有窗口 16:9、20:9（`--wide`）各 107/107（多 4 张截图）。覆盖：
+  - 队伍条：每行都是 `XSkinSideStatus`、面板底一个且在各行之前、面板 (974,12) 290×(n×58+4)、各行位置、整行按钮、轮到的那行 active 且不左移、右边贴 1280−16、Lv 行、头像、护盾「盾 1234」、状态图标＝`cell_rows`、演出快照优先。
+  - 行动顺序：类型、位置＝_origin＋POS、行动者大圆在 (36,36) 标名字、各图标换了画法且原头像精灵藏起、名字只给当前的人和敌人（挤时只给被选中的敌人）、不挤时敌人有名字、全在宽度里、「下回合」分隔线在两段之间、大圆不压第一个小圆、24 人挤时缩间距且不超宽、被选中放大。
+  - 首领血弧：类型、把第一只敌人换成名单 6 号后跟上且不透明、原点 0 且原名字画布藏起、角度 27～153、弧底 132、满血比例、上限字样、半血时比例对、橙色残影在、追上后残影与数字都对上。
+  - 首领状态：类型且接上血弧、跟上同一只、在弧下 172、居中、胶囊顺序（无名字、2 个状态异常在前、最后详情）、胶囊字「黑暗 4 回合」、「详情 ▾」、数字单位空格；点开详情位置 (400, 弧下)、「收起 ▴」、点「全部」页签、点第一条看详情、返回列表、× 关；没有血弧时在顶上 16 且第一枚是名字。
+  - 我方状态详情：等指令时打开是 `XSkinPartyStatusPanel`、队伍人数与当前人、指令环失活、「全部」页签条数＝`rows_for`、详情牌第一条名字与「类别 · 时长」、人物属性一节、三块位置＝`XSkinLayout.compute`、← → 换页签条数对、Q／E 换人且保留页签、空列表字、关掉后指令环恢复；点队伍整行也能打开。
+  - 自动／变速挪到 (20, 战斗原点 y＋84) 且 120×46（核查返工后）。
+  - 开关关着：`XSkinBattle` 五个工厂都给原类、不加面板底、原 `XOTBBar` 的图标没有换画法。
+- **开关关掉与 main 一致**：`python3 03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py --base main --out 03_再刷重制_Godot/04_验证/本地结果/ui_skin_2b/关闭对照`（合 1B 后重跑：main＝85577b3ab，还没有 2A；本分支含 2A＋2B）→ **16 张逐像素 SAME**：第 0 期 10 张＋技能页 2 张（1B）＋战斗指令窗、战技列表、选目标（2A）＋我方状态详情（2B 新加，西游存档点状态格打开原网页面板）。合 1B 前对 17c4ba6b2 也跑过一次，14 张 SAME。
+- 截图（有窗口，git 忽略目录 `03_再刷重制_Godot/04_验证/本地结果/ui_skin_2b/`）：`battle_2b_hud_16x9.png`（指令环＋队伍条＋行动顺序＋首领血弧＋状态胶囊）、`battle_2b_boss_detail_16x9.png`、`battle_2b_boss_state_16x9.png`、`battle_2b_status_16x9.png`，同名 `_20x9`；`关闭对照/base`、`关闭对照/branch` 各 16 张。注：同 2A，专项场面在地图 5 上直接开战，截图里背景是地图（地图上的 NPC 名字、挂机界面也拍进去了），关闭对照那几张是真战斗背景。
+- 选测（本地）：`选测.py main --list` 给 131 个；本地跑了去掉 `xiyou_floor*`、`xiyou_map186*`、`xiyou_event_compare*` 之后的 73 个，再手动加 `xiyou_party_status_panel`、`xiyou_otb`、`xiyou_side_status_order`、`xiyou_ui_skin`、`xiyou_ui_skin_menu`（改到的原类各自的专项，选测对照没选中），**78 个全部通过**（1087 秒，并行 2，含 `xiyou_determinism`、`xiyou_battle_*`、`xiyou_boss_hp_bar`、`xiyou_boss_status`、`xiyou_ui_skin_*`）。日志 `04_验证/本地结果/并行测试/20261115_082236_qh802a8c/`。没跑的楼层／map186／事件对照：只改了建窗口和画法，开关关时走原类，这几组不建天启篇存档、也不看窗口像素。
+- 合 1B（改了 `skin_card`、`skin_list`、`help_card`）之后重跑：`xiyou_ui_skin_hud`、`xiyou_ui_skin_battle`、`xiyou_ui_skin_1b`、`xiyou_ui_skin`、`xiyou_ui_skin_menu`、`xiyou_ui_skin_offshot`、`xiyou_battle_ui`、`xiyou_otb`、`xiyou_party_status_panel`、`xiyou_boss_hp_bar`、`xiyou_boss_status`、`xiyou_side_status_order`、`xiyou_determinism`、`xiyou_item_list` 14 个全部通过（92 秒）；有窗口截图重拍。
+- `工具回归.py`：全部通过（97 秒）。`发行空壳.py check`：通过（58 个脚本 492 个函数；新组件不进发行空壳名单，只在 `XUiSkin.on()` 时建，发行包里天启篇存档不会开）。`语法检查.py`：908 个 .gd 0 个问题。
+- 给总装：`合并车道.sh --finish --affected --cloud`（`选测.py main --list` 给 131 个场景，含本地没跑的楼层、map186、事件对照）。
+
+## 核查
+
+- cc 写 → 小A 乙档（界面换皮＋文字审）。本批碰到 `battle_scene.gd`（7 处各一行换工厂）和 `otb_bar.gd`（加画法钩子），不碰战斗流程逻辑（行动顺序、`_picked`、目标、随机数都没动；新组件全是原类的子类，只覆写画法和摆法），所以不需要 co 甲档；小A 核查时请重点看「关着时工厂给原类」和 `otb_bar.gd` 的 `painter` 空时原路径不变。
+
+## 可优化（流程／工具／效率）
+
+- 已做：`皮肤关闭对照.py`／`xiyou_ui_skin_offshot` 加「我方状态详情」一张（回退：删 `steps` 里的 `["status", []]` 和两处 `if st[0] == "status"`）。
+- 建议（给总装，共用文件）：`选测对照.json` 改 `modes/xiyou/battle/otb_bar.gd` 时没选中 `xiyou_otb`、改 `side_status.gd` 消费方时没选中 `xiyou_side_status_order`（本车道手动加进本地选测）；`ui_skin` 组 `scenes` 建议加 `xiyou_ui_skin_battle.tscn`、`xiyou_ui_skin_hud.tscn`，并加 `{"match": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/*", "group": "ui_skin"}`（小A 2A 核查 P3 第 3 条同此）。
+- 建议：队伍条一行的画法和第 0 期 `XSkinPartyStrip._draw` 有一段重复（量条三条），1B 也在动 `XSkinPartyStrip`，为免冲突这次没抽；1B、2B 都进 main 后可抽成 `XSkinPartyStrip.draw_member` 共用（半小时）。
+
+## 本分支提交
+
+- （见 git log：`git log --oneline cc/ui-skin-2a..cc/ui-skin-2b`）
+
+## cc 乙档核查（代小A）
+
+- **核查对象**：`cc/ui-skin-2b` @ `377340cee`（只读，未改游戏代码）。核查人 cc（核查），不是 2B 的执行会话；代小A（周额度用完），配 Sonnet＋medium。
+- **结论**：**通过**（P1 0、P2 0、P3 5；文字必改 1 处；**不需要转 co 甲档**）。
+- **核了规则本身（前台实跑）**：`并行测试.py --full` 跑 8 个：`xiyou_ui_skin_hud` 103/103、`xiyou_ui_skin_offshot` 13/13、`xiyou_otb` 34/34、`xiyou_side_status_order` 15/15、`xiyou_boss_hp_bar` 100/100、`xiyou_boss_status` 57/57、`xiyou_party_status_panel` 19/19、`xiyou_determinism` 372/372，全部通过（62 秒）。另看了 `ui_skin_2b/` 下 20:9、16:9 截图。
+- **只看代码／截图（没重跑）**：关闭对照 16 张 SAME（用交付单已有结果，没重跑 `皮肤关闭对照.py`）；有窗口专项没重跑；131 场景、楼层、事件对照留总装 `--affected --cloud`。
+
+逐项：
+1. **开关（实跑＋看代码）**：`XSkinBattle` 2B 的五个工厂（`side_status`／`otb`／`boss_hp`／`boss_panel`／`status_panel`）关着都返回原类（`XSideStatus.new()`、`XOTBBar.new()`、`XBossHpBar.new()`、`XBossStatusPanel.new()`、`XPartyStatusPanel.open`），`side_backdrop` 关着返回 null、`style_toggles` 关着首行 return。`battle_scene.gd` 2B 的 7 处各一行，关着与原一致；`_help` 里 `list_win.row_rect()` 是原算式搬移，数值一致（2A 已核）。`otb_bar.gd`：`painter` 默认空 Callable，`is_valid()` 为假，`_process`／`_draw` 走原路径；`_icon(b)` 默认就是 `Icon.new(b)`。口径与「皮肤关闭对照 16 张 SAME」相符（含我方状态详情一张）。
+2. **没碰战斗流程（只看代码）**：5 个新子类里没有改 hp／mp／tp、增减状态、取随机数、`XAppearance`／`XSukuna.full_look` 的调用；`refresh()` 只是 `XSideStatus`／`XBossStatusPanel` 自己的重画，不是战斗者的 refresh。`xiyou_determinism` 372/372 通过。没发现改战斗结果，无 P1。
+3. **自动／变速挪位（看代码＋截图）**：功能、`focus_mode = NONE`、点击回调都没动，`style_toggles` 只改样式和 `side.position`＝origin＋(20,84)；挂机快捷界面 (20,10,240×74) 下沿正好 84，上下相接不重叠；离血弧（弧在 y≈84 处 x≈472 起）、指令环、行动顺序都远。20:9：战斗仍 1280 居中，按钮在 x≈180（origin 160＋20），挂机界面贴屏幕左缘 x≈20，两者在横向错开（不重叠，但不齐）。
+4. **两排站位参数现状（看代码＋交付单）**：写清了。队伍条 `XSkinSideStatus` static var `RIGHT 16`／`TOP 12`／`ROW_W 290`／`ROW_H 58`，五人高 294（到 y306），不跟站位走；行动顺序 `XSkinOTBBar.POS (15,627)`／`WIDTH 550`／`R_NOW 31`／`R_ROW 22`／`R_SELECTED 26`／`R_PREVIEW 15`；血弧 `XSkinBossArc.CENTER (640,−188)`／`RADIUS 320`／`SPAN_DEG 126`／`THICK 14`；`XSkinBattle.TOGGLE_POS (20,84)`。均为 static var，定了只改这几个数；待 Kyo 拍板（五人时指令环、队伍条挪不挪）。
+5. **选测对照.json 漏项：属实（看 `07_开发环境/选测对照.json`）**：全文件没有 `xiyou_otb`、`xiyou_side_status_order`；`ui_skin` 组 `scenes` 只有 `xiyou_ui_skin.tscn`、`xiyou_ui_skin_offshot.tscn`（缺 `xiyou_ui_skin_battle`、`xiyou_ui_skin_hud`、1B 专项）；`match` 只有 `content/ui_skin/*`，没有 `modes/xiyou/ui/skin/*`；`modes/xiyou/battle/*` 只归 `game` 组。总装合并时补：`ui_skin` 加上述场景和 skin/* 的 match，`battle/otb_bar.gd`、`battle/side_status.gd` 对应 `xiyou_otb`、`xiyou_side_status_order`。
+
+**P3（不挡合并）**
+1. 20:9 下自动／变速在 x≈180、挂机界面在屏幕左缘 x≈20，没对齐（战斗背景 1280 居中，归 4A 铺满时一起解）。
+2. 自动／变速点击区比原版小：原 `XUI.button` 高 46、最小宽 120，现 104×40（触屏偏小，建议至少 44 高）。
+3. 20:9 截图里行动顺序「下回合」竖排小字被两侧头像盖住一部分，竖排字几乎看不清（交付单已说人多会挤）；建议分隔处多留 20px 宽或字放到圆下方。
+4. 我方状态详情「人物属性」下的元素承伤是一段连排文字，会在词中间折行（截图：「雷／电承伤 90%」「混沌承／伤 100%」「风承伤／100%」）。建议每个元素「火焰 90%」一组，用不换行的组（或 2～3 列）排，别让「承伤」与数字分开。
+5. `选测对照.json` 漏项见第 5 条（流程类）。
+
+**文字审（按 ba1f7ed 口径：数字与单位空格、全角中文标点、按键用键名符号、名词统一）**
+- 通过：「下回合」（#221）、「黑暗 4 回合」「2 层」「异常 · 3 回合 · 2 层」空格与「·」；「+3」；「详情 ▾／收起 ▴」做成胶囊按钮（#189 建议项已照做）；「人物属性」小标题；底部提示 `↑ / ↓ 选状态`、`← / → 换分类`、`Q / E 换人`、`取消 返回战斗` 键名都套框、写法与第 0 期主菜单 `确定／取消／Q / E` 一致（#249 `← / →` 已照改）；「Lv 10」；「某某 · 状态详情」「查看时暂停战斗，关闭后继续。」。
+- **文字必改**：我方状态详情空列表字「没有异常状态」「没有状态」与首领详情的「当前没有异常状态」「当前没有增益状态」「当前没有状态」不一致，同一概念两种写法。改成：「当前没有异常状态」「当前没有增益状态」「当前没有常驻状态」「当前没有状态」（`skin_party_status.gd:204`，`"当前没有%s状态" % ...`，「全部」时写「当前没有状态」）。
+- 「盾 1234」与 Lv 行空格分隔一致，通过；文字必改只有上面这 1 条。
+- 字库：没有重新比对 `charset_hei`／`charset_song`（没核到）；「承伤」「胶囊」类字都是原有字。
+
+**没核到的**：有窗口截图重拍、`皮肤关闭对照.py` 现场重跑、选测 131 场景与 `工具回归.py`、`charset` 零缺字、20:9 之外的真机／触屏点击区；主菜单类按键提示的第 0 期口径只对照了代码里的写法，没回看设计稿原文全文。
+
+## 核查后返工（cc，2026-11-15）
+
+对上面「cc 乙档核查（代小A）」：
+- **文字必改（已改）**：我方状态详情空列表字改「当前没有异常状态／当前没有增益状态／当前没有常驻状态／当前没有状态」（`skin_party_status.gd` `_fill_list`），与首领详情统一；专项断言跟着改。
+- **P3-1 宽屏自动／变速与挂机界面不齐（已修）**：按钮在 `low_ui`（屏幕坐标，不随战斗 1280 居中），x 直接取 `TOGGLE_POS.x`＝20、y 仍跟战斗原点；20:9 截图里与挂机界面左边对齐。16:9 位置不变。
+- **P3-2 胶囊点击区小（已修）**：104×40 → 120×46（同原 `XUI.button` 高 46、最小宽 120），圆角 23。
+- **P3-3「下回合」竖字被头像盖（已修）**：竖字和分隔线改画在一个 z 高一层的子节点上（头像是条的子节点，原来画在条自己的 `_draw` 上，挤时被盖），字后面垫一条 18 宽的深色圆角底；两段间多留的缝 40 → 48。
+- **P3-4 承伤在词中折行（已修）**：`attr_text` 把「火焰承伤 90%」这类一项当一组，按牌的文字宽（`RIGHT_W − 2×24`）自己排行、行间换行；专项加 `status_attr_no_split`（每行都由整组拼成）。
+- **P3-5 选测对照漏项**：流程类，照旧留给总装（见「可优化」）。
+- 复验：`xiyou_ui_skin_hud` 无头 104/104、有窗口 16:9／20:9 各 108/108（截图重拍，`04_验证/本地结果/ui_skin_2b/`）；合 main（9eda62b84，含 2A、1C）后 `xiyou_ui_skin_hud`、`xiyou_ui_skin_battle`、`xiyou_ui_skin`、`xiyou_ui_skin_1b`、`xiyou_ui_skin_1c`、`xiyou_ui_skin_menu`、`xiyou_ui_skin_offshot`、`xiyou_battle_ui`、`xiyou_otb`、`xiyou_party_status_panel`、`xiyou_side_status_order`、`xiyou_boss_hp_bar`、`xiyou_boss_status`、`xiyou_determinism` 14 个全部通过；**皮肤关闭对照对 main 9eda62b84：18 张逐像素 SAME**（多了 1C 的装备检索 2 张）；`语法检查.py` 通过；`发行空壳.py check` 通过（59 脚本 499 函数）。
+- 注：合 main 前跑皮肤关闭对照时基线报 `XTianqiNoX6` 未声明——工具把本树的 `.godot` 导入缓存拷给基线，main 新加的类本树缓存里还没有；合 main 并重导后正常。属工具局限（main 新增 class_name 而车道没合 main 时会遇到），写这里备查。
+- 1C 的 `XWebPanel` 换皮不影响本批：`XSkinPartyStatusPanel` 覆写了 `_ready`／`render`／`_draw`，不走 `draw_frame`／`skin_center`。
+
