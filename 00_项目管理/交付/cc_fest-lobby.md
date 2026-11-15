@@ -50,6 +50,13 @@
 - P3 使者台词改「奖杯旁边的报名处」，不再写左右。
 - 专项 110/110；重截 4 张截图（`fest_lobby_south/trophy/firework/envoy.png`）。
 
+## 单独上线调整（Kyo 11-15：先上大厅庆典＋使者贺礼，冠军之路后补）
+
+- 报名处：`XFestRoad` 不存在、没有 `enter`、或它的 `ENABLED` 关着时，只说「冠军之路·一穿四，敬请期待。擂台还在搭，即将开放」一句，没有选项、没有占位战斗；road 合进来后自动走真入口（`ROAD_CLASS`／`ROAD_METHOD` 判断保留；`ROAD_CLASS` 改成 `static var` 方便测试替换）。
+- 使者介绍（第一次、问「冠军之路是什么」）：没开放时用「即将开放」口径（`ENVOY_INTRO_SOON`、`ENVOY_ROAD_INFO_SOON`），开放后自动换回原台词。
+- 称号表：甲 cherry-pick 带进来的 41～44 会在选称号窗口列成「???」。改 `core/designation.gd` 那一块：冠军之路没开放时只列已拿到的，开放后全列（只改了甲加的那个 if 的条件，合并时若冲突以这个条件为准）。
+- 专项 120/120（新增：报名处敬请期待、使者即将开放口径、称号表隐藏／已拿到才列／入口开放全列、入口替身 `tests/fest_road_probe.gd`〔`XFestRoadProbe`，只测试用〕走真入口与 `ENABLED` 关掉）；报名处对话截图 `fest_lobby_enroll.png`。
+
 ## 与甲、ag、总装的接口（合并时请对一下）
 
 1. **甲的 `XFest`**：已 cherry-pick 甲 `6a3efc739`、`d0eaba585`（只读用，没改 `fest.gd`、`designation.gd`）。合并时 git 会识别为同一提交，不冲突。我在 `XFest.data(s)` 里加了 3 个键：`envoy_gift`（贺礼领过）、`envoy_met`（成就「我在现场」读它）、`trophy_looks`；请甲别占用这些键名。
