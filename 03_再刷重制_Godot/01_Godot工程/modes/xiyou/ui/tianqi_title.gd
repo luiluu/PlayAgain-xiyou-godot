@@ -361,6 +361,10 @@ static func _skin_button(b: Button) -> void:
 		else:
 			break
 	b.size = keep
+	# 压不回原高（字体行高随环境不同，云端 Linux 就压不回）：按钮只能撑高，往上长、底边不动，不压到下面一行（问卷行压群号行，云端 title_flow 挂）
+	var grown := b.size.y - keep.y
+	if keep.y > 0.0 and grown > 0.5:
+		b.position.y -= grown
 
 
 ## 选中条垫在选中项字图后面：横向盖住放大后的字（字图 20～179），竖向取字图高（上下不超出行距）
