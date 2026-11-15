@@ -169,10 +169,10 @@ func _draw() -> void:
 			var txt := str(int(v))
 			var tw := maxf(num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x, 26)
 			var bw := w - tw - 4
-			var track := Rect2(bx, y2 - 3, bw, 5)
+			var track := Rect2(bx, y2 + 2 - XUiSkin.bar_h(spec[0]), bw, XUiSkin.bar_h(spec[0]))
 			_pill(ci, track, Color(1, 1, 1, 0.12))
 			if mx > 0 and v > 0:
-				_pill(ci, Rect2(track.position, Vector2(track.size.x * clampf(v / mx, 0, 1), 5)), spec[2])
+				_pill(ci, Rect2(track.position, Vector2(track.size.x * clampf(v / mx, 0, 1), track.size.y)), spec[2])
 			draw_string(num, Vector2(bx + w - num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x, y2 + 6), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, spec[3])
 			bx += w + 8
 

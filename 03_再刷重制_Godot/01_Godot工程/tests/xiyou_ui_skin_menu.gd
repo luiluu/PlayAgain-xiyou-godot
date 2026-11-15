@@ -356,7 +356,9 @@ func _u4_icons(m: XSkinMainMenu) -> void:
 		var r: Rect2 = d.rect
 		if r.size != Vector2(64, 64) or r.position != r.position.round():
 			bad.append(d)
-		if (d.i == ring.index) != (d.tex == ring.items[d.i].art_selected):
+		if XUiSkin.COMFORT_V2 and d.tex != ring.items[d.i].art_normal:   # 收口批：选中也画常态贴图（底下程序画暗红圆）
+			bad.append(["state", d.i])
+		elif not XUiSkin.COMFORT_V2 and (d.i == ring.index) != (d.tex == ring.items[d.i].art_selected):
 			bad.append(["state", d.i])
 	check("u4_native_64_integer", ring.art_drawn.size() == ring.items.size() and bad.is_empty(), bad)
 	var before := ring.index
@@ -365,7 +367,7 @@ func _u4_icons(m: XSkinMainMenu) -> void:
 	await frames(2)
 	var sel_d: Array = ring.art_drawn.filter(func(d): return d.i == ring.index)
 	var old_d: Array = ring.art_drawn.filter(func(d): return d.i == before)
-	check("u4_select_swaps_texture", sel_d.size() == 1 and sel_d[0].tex == ring.items[ring.index].art_selected and (sel_d[0].rect as Rect2).size == Vector2(64, 64)
+	check("u4_select_swaps_texture", sel_d.size() == 1 and sel_d[0].tex == (ring.items[ring.index].art_normal if XUiSkin.COMFORT_V2 else ring.items[ring.index].art_selected) and (sel_d[0].rect as Rect2).size == Vector2(64, 64)
 		and old_d.size() == 1 and old_d[0].tex == ring.items[before].art_normal)
 	ring.select(before, false)
 	XUiSkin.GROUP_ICONS_U4 = false

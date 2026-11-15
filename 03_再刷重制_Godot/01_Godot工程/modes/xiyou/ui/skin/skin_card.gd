@@ -152,9 +152,7 @@ func _draw() -> void:
 		var sb := StyleBoxFlat.new()
 		sb.set_corner_radius_all(int(BUTTON_H / 2))
 		if bool(b.get("primary", false)) and not bool(b.get("disabled", false)):
-			sb.bg_color = XUiSkin.SEL_FILL
-			sb.shadow_color = Color(XUiSkin.SEL_FILL, 0.5)
-			sb.shadow_size = 7
+			XUiSkin.primary_button_style(sb, i == button_index)
 		else:
 			sb.bg_color = Color(0, 0, 0, 0)
 			sb.border_color = Color(XUiSkin.LINE, 0.55)

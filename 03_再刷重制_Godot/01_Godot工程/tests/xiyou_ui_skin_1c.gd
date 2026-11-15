@@ -54,6 +54,9 @@ func shots(name: String) -> void:
 	win.size = Vector2i(1600, 720)
 	await frames(12)
 	await shot(name + "_20x9")
+	win.size = Vector2i(960, 720)   # 收口批：4:3 也拍
+	await frames(12)
+	await shot(name + "_4x3")
 	win.size = old
 	await frames(8)
 
@@ -257,6 +260,9 @@ func _equip_page() -> void:
 	click.pressed = true
 	click.position = sk.list.cell_rect(3).get_center()
 	sk.list._gui_input(click)
+	var up := click.duplicate() as InputEventMouseButton
+	up.pressed = false   # 收口批 TOUCH_V2：列表松手才算点
+	sk.list._gui_input(up)
 	check("equip_click_selects", page._mode == "item" and sk.list.index == 3 and page._item_index == 2, [page._mode, sk.list.index, page._item_index])
 	page._unhandled_input(_key("ui_cancel"))
 	check("equip_cancel_to_slot", page._mode == "slot" and closed[0] == 0)

@@ -51,6 +51,8 @@ var show_ring := true
 var auto_nav := true
 ## 按键提示 [[键, 说明]]
 var hint_list: Array = [["确定", "选择"], ["取消", "返回"]]
+## 收口批（TOUCH_V2）：左上页名前的「‹」返回（点＝取消）
+var back_button: XSkinBackButton
 
 # ---- 节点 ----
 var backdrop: Control
@@ -74,6 +76,7 @@ const MENU_ROW_H := 40
 
 
 func _ready() -> void:
+	add_to_group(XUiSkin.FULLSCREEN_GROUP)   # 收口批：开着时收起虚拟摇杆／AB 键
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	theme = XUiSkin.theme()
@@ -145,6 +148,7 @@ func _ready() -> void:
 	hints = XSkinKeyHints.new()
 	hints.set_hints(hint_list)
 	add_child(hints)
+	back_button = XSkinBackButton.attach(self)
 	resized.connect(relayout)
 	get_viewport().size_changed.connect(relayout)
 	relayout()
@@ -172,7 +176,7 @@ func relayout() -> void:
 	var view := layout.view_size()
 	if tabs != null:
 		var f := XUiSkin.font("title")
-		tabs.position = Vector2(XSkinLayout.margin_for(view.x) + f.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE).x + 24, 14)
+		tabs.position = Vector2(XSkinLayout.margin_for(view.x) + (XSkinBackButton.W if back_button != null else 0.0) + f.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE).x + 24, 14)
 		tabs.size = Vector2(tabs.total_width(), XSkinTabStrip.TAB_H)
 	hints.set_hints(hint_list)
 	hints.place(view)   # 右边让出右下角版本号（XSkinKeyHints.right_edge）
@@ -397,7 +401,8 @@ static func _group(v: int) -> String:
 func _draw_top() -> void:
 	var view := layout.view_size()
 	var m := XSkinLayout.margin_for(view.x)
-	top_layer.draw_string(XUiSkin.font("title"), Vector2(m, 14 + 34 * 0.92), title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	var tx := XSkinBackButton.place(back_button, m)   # 只挪页名，右上货币仍按页边距（小A核 P2-1）
+	top_layer.draw_string(XUiSkin.font("title"), Vector2(tx, 14 + 34 * 0.92), title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	var x := view.x - m
@@ -428,5 +433,43 @@ static func help_rows(rows: Array, skip_first := true) -> Array:
 		var c := XHelpCard._css(str(r[2])) if r.size() > 2 else XUiSkin.TEXT_2
 		if c.get_luminance() < 0.35:
 			c = XUiSkin.TEXT_2
-		out.append({"text": t, "color": c})
+		if not XUiSkin.CORE_V2:
+			out.append({"text": t, "color": c})
+			continue
+		# 收口批：一格里换行连着的几句（如「武器种类:书」＋说明）拆开逐句判，别整格丢掉
+		for line in t.split("\n", false):
+			var lt := str(line).strip_edges()
+			if lt != "" and not drop_help_row(lt):
+				out.append({"text": lt, "color": XUiSkin.legacy_color(c)})
+	return out
+
+
+## 收口批（CORE_V2）：牌上不再列的说明行——品质（名字颜色和小字已有）、武器／防具种类（小字已有）、买卖价格（只在商店看）
+static func drop_help_row(t: String) -> bool:
+	return RegEx.create_from_string("^(?:品质|武器种类|防具种类|装备类型|类别)\\s*[：:]|^(?:购买价格|出售价格|无法出售)").search(t) != null
+
+
+## 收口批（CORE_V2）：装备说明按样稿分节——自带（「名：数」的基础属性）、词条（特效／效果／成长／异化等）、套装、说明（其余）。
+## rows 是 help_rows 的结果。CORE_V2 关时原样一节无标题（同旧）。
+static func help_sections(rows: Array) -> Array:
+	if not XUiSkin.CORE_V2:
+		return [{"title": "", "rows": rows}]
+	var base_re := RegEx.create_from_string("^[^：:，。]{1,10}[：:]\\s*[+\\-]?\\d[\\d.,%％]*(?:\\s|　|$)|^[^：:，。\\s]{2,8}[+\\-]\\d[\\d.%％]*$")
+	var affix_re := RegEx.create_from_string("^(?:特效|效果|词条|成长|异化|吸取|专武|被动|◆|●|★|【)")
+	var set_re := RegEx.create_from_string("套装|^\\d\\s*件[：:]|\\(\\d/\\d\\)|（\\d/\\d）")
+	var buckets := {"自带": [], "词条": [], "套装": [], "说明": []}
+	for r in rows:
+		var t := str(r.get("text", ""))
+		if set_re.search(t) != null:
+			buckets["套装"].append(r)
+		elif affix_re.search(t) != null:
+			buckets["词条"].append(r)
+		elif base_re.search(t) != null:
+			buckets["自带"].append(r)
+		else:
+			buckets["说明"].append(r)
+	var out := []
+	for k in ["自带", "词条", "套装", "说明"]:
+		if not (buckets[k] as Array).is_empty():
+			out.append({"title": k, "rows": buckets[k]})
 	return out

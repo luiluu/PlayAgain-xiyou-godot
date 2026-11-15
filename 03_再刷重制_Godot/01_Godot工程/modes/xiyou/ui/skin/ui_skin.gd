@@ -17,18 +17,110 @@ static var ENABLED := true
 static var FORCE := false
 static var GLOBAL_FONT := false
 
+## ---- 收口批（cc/ui-skin-close，Fable／小A 三审 2026-11-15 汇总，Kyo 定）----
+## CORE_V2（O-待定，换芯）：详情牌里旧说明卡的行过「旧颜色对照表」（legacy_color：纯黄→淡金、大红属性→正文、青蓝说明→次要灰、荧光绿→正文），
+## 去掉品质／武器种类／买卖价格行（牌上小字已有，价格只在商店看），装备按「自带／词条／套装／说明」分节；战斗里旧说明卡不再盖行动条。
+## false＝详情牌照旧原样灌说明卡的行、战斗说明卡照旧位置。
+static var CORE_V2 := true
+## TOUCH_V2（O-待定，触屏）：底部按键提示触屏时变成能点的胶囊、整页左上「‹」返回、列表手指拖动、进全屏菜单收起虚拟摇杆／AB 键、
+## 触屏战斗指令环固定右下（Kyo 定）。false＝同 p1fix（提示只看、没有返回钮、指令环跟着角色）。
+static var TOUCH_V2 := true
+## COMFORT_V2（O-待定，舒适）：正文骨白、禁用灰提亮、「优秀」绿调柔、常驻主按钮平时旧金选中才红、行动条选目标去 2Hz 急闪（改 2.4 秒慢呼吸）、
+## 队伍血条 5→8px、七印状态字加 ◆／◇／·、u4 组图标选中红底调暗。false＝同 p1fix。
+static var COMFORT_V2 := true
+## WARM_BG（D44，只出对比图，默认 false＝冷黑）：底、面板、线换暖炭黑（小A审 美化 1）
+static var WARM_BG := false
+## D45／D48（Kyo：环心「会动的像素小人」和「角色头像」都要；11-15 定 A）：SPRITE＝方案 A 环心像素小人、头像留在右栏队伍卡（默认）；
+## FACE＝原来的大圆头像（回退：`XUiSkin.CENTER_STYLE = 0`）；SPRITE_BADGE＝方案 B 环心小人＋右下叠一枚小圆头像（没选，留着）
+enum CenterStyle { FACE, SPRITE, SPRITE_BADGE }
+static var CENTER_STYLE := CenterStyle.SPRITE
+const U4_SEL_DISC := Color("7a1a14")     # u4 组图标选中时的暗红圆底
+const BTN_IDLE_FILL := Color("2b2318")   # 主按钮平时：深褐金底
+const TARGET_PULSE := 2.4                 # 选目标金圈一呼一吸的秒数（原 sin·TAU 绝对值＝每秒 2 闪）
+
+
+## 量条高：COMFORT_V2 时血条 8、其余 5
+static func bar_h(kind: String) -> float:
+	return 8.0 if COMFORT_V2 and kind == "hp" else 5.0
+
+
+## 主按钮（使用、装备、揭印）的底：COMFORT_V2 时平时深褐金底＋旧金边、焦点或按下才红；false＝一直红
+static func primary_button_style(sb: StyleBoxFlat, focused: bool) -> void:
+	if not COMFORT_V2 or focused:
+		sb.bg_color = SEL_FILL
+		sb.shadow_color = Color(SEL_FILL, 0.5)
+		sb.shadow_size = 7
+		return
+	sb.bg_color = BTN_IDLE_FILL
+	sb.border_color = Color(GOLD, 0.85)
+	sb.set_border_width_all(2)
+
+
+## 选目标的金圈亮度（0.6～1）：COMFORT_V2 时 2.4 秒余弦慢呼吸；false＝原来每秒两闪
+static func target_pulse(t: float) -> float:
+	if COMFORT_V2:
+		return 0.6 + 0.4 * (0.5 - 0.5 * cos(t * TAU / TARGET_PULSE))
+	return 0.6 + 0.4 * absf(sin(t * TAU))
+
+
+## 测试用：-1 按设备（XPlatform.is_touch）；0 强制非触屏；1 强制触屏
+static var touch_override := -1
+
+
+## 现在是不是触屏（收口批的触屏样式都问这里）
+static func touch() -> bool:
+	if touch_override >= 0:
+		return touch_override == 1
+	return XPlatform.is_touch()
+
+
+## 新皮肤的全屏菜单页（模板页、主菜单、七印祭坛进 FULLSCREEN_GROUP 组）现在开着没有：开着时虚拟摇杆、AB 键收起（TOUCH_V2）
+const FULLSCREEN_GROUP := "skin_fullscreen"
+
+
+static func fullscreen_menu_open(tree: SceneTree) -> bool:
+	if not TOUCH_V2 or tree == null:
+		return false
+	for n in tree.get_nodes_in_group(FULLSCREEN_GROUP):
+		if n is CanvasItem and (n as CanvasItem).is_visible_in_tree():
+			return true
+	return false
+
+
+## 字号倍率（FONT_V2）：字体大小设置 × 触屏一档，封顶 FONT_MULT_MAX
+static func font_mult() -> float:
+	if not FONT_V2:
+		return 1.0
+	var m := XFontScale.percent("global") / 100.0
+	if touch():
+		m *= TOUCH_FONT_STEP
+	return minf(m, FONT_MULT_MAX)
+
+
+static func fs(base: int) -> int:
+	return roundi(base * font_mult())
+
 ## ---- 颜色（第三节定稿）----
-const BG := Color("050506")          # 底
-const BG_MID := Color("0b0b0d")      # 底的径向渐变中段
-const BG_HI := Color("1b1c20")       # 底的径向渐变亮心
-const PANEL := Color("18191c")       # 面板（渐变上沿）
-const PANEL_LOW := Color("0e0e10")   # 面板（渐变下沿）
-const LINE := Color("a2a5ab")        # 线
+static var BG: Color:                  # 底（WARM_BG：暖炭黑 D44 对比方案，默认冷黑）
+	get: return Color("080708") if WARM_BG else Color("050506")
+static var BG_MID: Color:              # 底的径向渐变中段
+	get: return Color("0f0d0e") if WARM_BG else Color("0b0b0d")
+static var BG_HI: Color:               # 底的径向渐变亮心
+	get: return Color("1f1b1c") if WARM_BG else Color("1b1c20")
+static var PANEL: Color:               # 面板（渐变上沿）
+	get: return Color("1c1a1d") if WARM_BG else Color("18191c")
+static var PANEL_LOW: Color:           # 面板（渐变下沿）
+	get: return Color("121113") if WARM_BG else Color("0e0e10")
+static var LINE: Color:                # 线
+	get: return Color("b0a79b") if WARM_BG else Color("a2a5ab")
 const ORB_HI := Color("34363b")      # 环上圆球的亮面
 const ORB_LOW := Color("121315")     # 环上圆球的暗面
-const TEXT := Color("f0f0ee")        # 正文
+static var TEXT: Color:                # 正文（COMFORT_V2：骨白 #e6e2dc，原 #f0f0ee 只留给 TEXT_HI）
+	get: return Color("e6e2dc") if COMFORT_V2 else Color("f0f0ee")
+const TEXT_HI := Color("f0f0ee")       # 最亮的字（收口批后只给名字、选中行用；现在没有地方用，留着给后续页）
 const TEXT_2 := Color("a8aaaf")      # 次要字
-const TEXT_3 := Color("7d8086")      # 最暗的字（对比度 4.4，只用于「空」「没有词条」「未开启」）
+static var TEXT_3: Color:              # 最暗的字（禁用、「空」；COMFORT_V2 提亮到 #8e8982，面板上对比度过 5）
+	get: return Color("8e8982") if COMFORT_V2 else Color("7d8086")
 const SEL_LINE := Color("ff5a48")    # 选中：细线用朱红
 const SEL_FILL := Color("cf2a1f")    # 选中：大块用绯红
 const GOLD := Color("e3bd72")        # 旧金：标题、提醒、点缀；事件（回合提示、换装成功）
@@ -42,18 +134,31 @@ const TP_TEXT := Color("bff3e2")
 const UP := Color("6fe3a1")          # 提升
 const DOWN := Color("ffa35c")        # 下降、不够（橙）
 ## 品质七档：普通、优秀、精良、史诗（v0.7 改 #9d88ff）、传说、不朽、神话
-const QUALITY := [Color("ebf0f7"), Color("80ff1c"), Color("39b9ff"), Color("9d88ff"), Color("ffa040"), Color("ffd65a"), Color("ff483c")]
+## COMFORT_V2：「优秀」绿 #80ff1c→#8fdc5a 调柔（Kyo 11-15 定）
+static var QUALITY: Array:
+	get: return [Color("ebf0f7"), Color("8fdc5a") if COMFORT_V2 else Color("80ff1c"), Color("39b9ff"), Color("9d88ff"), Color("ffa040"), Color("ffd65a"), Color("ff483c")]
 const QUALITY_NAMES := ["普通", "优秀", "精良", "史诗", "传说", "不朽", "神话"]
 
 ## ---- 字号四级（第二节）：页名 34／牌上的名字 26～38／列表 19～24／辅助 14～17；下限 14 ----
 const FS_PAGE := 34
 const FS_CARD := 26
 const FS_CARD_MAX := 38
-const FS_LIST := 19
-const FS_LIST_MAX := 24
-const FS_AUX := 14
-const FS_AUX_MAX := 17
-const FS_MIN := 14
+## 收口批 FONT_V2（O-待定）：列表、辅助两级跟「字体大小」设置（XFontScale 全局档，codexFontSize）放大，触屏设备再大一档（×1.1），
+## 合起来封顶 ×1.3（行高不动，130% 时 19 号→25 号仍在 46 的行里）；辅助字下限 14→15（正文不小于 15）。页名、牌上大名字不放大。
+## false＝四级字号写死（同 p1fix）。
+static var FONT_V2 := true
+const TOUCH_FONT_STEP := 1.1
+const FONT_MULT_MAX := 1.3
+static var FS_LIST: int:
+	get: return fs(19)
+static var FS_LIST_MAX: int:
+	get: return fs(24)
+static var FS_AUX: int:
+	get: return fs(15 if FONT_V2 else 14)
+static var FS_AUX_MAX: int:
+	get: return fs(17)
+static var FS_MIN: int:
+	get: return 15 if FONT_V2 else 14
 const FONT_TIERS := {"page": [34, 34], "card": [26, 38], "list": [19, 24], "aux": [14, 17]}
 
 ## ---- 间距（8 的倍数）与对齐线 ----
@@ -244,6 +349,26 @@ static func breath_alpha(t := -1.0) -> float:
 ## 品质色（0 普通 … 6 神话）
 static func quality_color(q: int) -> Color:
 	return QUALITY[clampi(q, 0, QUALITY.size() - 1)]
+
+
+## 旧颜色对照表（CORE_V2）：说明卡里 MV 老颜色（\\c[n]、rgba）→ 皮肤色。只给详情牌的说明行用，品质名的颜色不走这里。
+static func legacy_color(c: Color) -> Color:
+	if not CORE_V2:
+		return c
+	if c.s < 0.18:   # 白、灰：亮的当正文，暗的当次要字
+		return TEXT if c.v > 0.8 else TEXT_2
+	var h := c.h
+	if h >= 0.11 and h < 0.2 and c.s > 0.45:   # 纯黄（价格、旧强调）→ 淡金
+		return GOLD_LIGHT
+	if (h < 0.045 or h > 0.93) and c.s > 0.3:   # 红、粉红（属性、消耗品）→ 正文
+		return TEXT
+	if h >= 0.2 and h < 0.42 and c.s > 0.4:   # 荧光绿（旧 TP、强调）→ 正文；绿只留给「优秀」品质名
+		return TEXT
+	if h >= 0.42 and h < 0.75:   # 青、蓝、蓝紫说明字 → 次要字
+		return TEXT_2
+	if h >= 0.045 and h < 0.11:   # 橙：保留（下降、警示），压到皮肤的橙
+		return DOWN
+	return TEXT_2
 
 
 ## 八的倍数（向上取）

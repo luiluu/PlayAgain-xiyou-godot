@@ -56,6 +56,9 @@ func shots(name: String) -> void:
 	win.size = Vector2i(1600, 720)
 	await frames(12)
 	await shot(name + "_20x9")
+	win.size = Vector2i(960, 720)   # 收口批：4:3 也拍
+	await frames(12)
+	await shot(name + "_4x3")
 	win.size = old
 	await frames(8)
 
@@ -223,6 +226,9 @@ func _template() -> void:
 	page.set_focus("ring")
 	var vis := page.list.top_row * 2 + 1   # 当前屏里另一格（列表已滚过，cell_rect 按滚动后算）
 	page.list._gui_input(_click(page.list.cell_rect(vis).get_center()))
+	var up := _click(page.list.cell_rect(vis).get_center())
+	up.pressed = false   # 收口批 TOUCH_V2：列表松手才算点
+	page.list._gui_input(up)
 	check("tpl_auto_click_list_focuses", page.focus == "list" and page.list.index == vis, [page.focus, page.list.index, vis])
 	page.queue_free()
 	await frames(2)
@@ -312,6 +318,9 @@ func _item_page() -> void:
 	click.pressed = true
 	click.position = cell.get_center()
 	sk.list._gui_input(click)
+	var release := click.duplicate() as InputEventMouseButton
+	release.pressed = false   # 收口批 TOUCH_V2：列表松手才算点
+	sk.list._gui_input(release)
 	check("item_click_selects", page._mode == "list" and page._index == 2)
 	# 武器类：装备详情行照说明卡
 	page._mode = "category"

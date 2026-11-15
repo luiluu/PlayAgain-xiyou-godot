@@ -65,6 +65,8 @@ var _wide_requested := false
 
 
 func _ready() -> void:
+	if XUiSkin.on():
+		add_to_group(XUiSkin.FULLSCREEN_GROUP)   # 收口批：新皮肤全屏页开着时收起虚拟摇杆／AB 键（小A核 P2-2）
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var skinned := XUiSkin.on()
 	theme = XUiSkin.theme() if skinned else XUI.theme()

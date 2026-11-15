@@ -257,7 +257,7 @@ func _draw_page_body() -> void:
 	var p := scene.page
 	var sz := page_body.size
 	var sx := (sz.x - 8.0) / OLD_W
-	var fs := clampi(roundi(XUI.FONT_SIZE * sx), XUiSkin.FS_MIN, 20)
+	var fs := clampi(roundi(XUI.FONT_SIZE * sx), XUiSkin.FS_MIN, mini(XUiSkin.fs(20), 24) if XUiSkin.FONT_V2 else 20)   # 收口批：上限跟字号设置（行高 36 封 24）
 	var body := XUiSkin.font("body")
 	var y0 := XStatusPage.LH * XStatusPage.HEADER_LINES
 	var top: int = scene.tops[p] if p < scene.tops.size() else 0
@@ -300,15 +300,21 @@ func _draw_page_body() -> void:
 	var total := content_rows(a, p)
 	var vis := visible_rows()
 	if total > vis:
-		var track := Rect2(sz.x - 4, 0, 4, vis * ROW)
+		var sw := 8.0 if XUiSkin.TOUCH_V2 else 4.0   # 收口批：滚动条手指找得到
+		var track := Rect2(sz.x - sw, 0, sw, vis * ROW)
 		page_body.draw_rect(track, Color(1, 1, 1, 0.06))
 		var h := maxf(track.size.y * vis / float(total), 16.0)
-		page_body.draw_rect(Rect2(track.position.x, (track.size.y - h) * top / float(maxi(total - vis, 1)), 4, h), Color(XUiSkin.LINE, 0.55))
+		page_body.draw_rect(Rect2(track.position.x, (track.size.y - h) * top / float(maxi(total - vis, 1)), sw, h), Color(XUiSkin.LINE, 0.55))
 
 
 # ---- 点击 ----
 
+var _drag := XSkinDrag.new()
+
+
 func _on_page_gui(event: InputEvent) -> void:
+	if XUiSkin.TOUCH_V2 and _drag_input(event):
+		return
 	var mb := event as InputEventMouseButton
 	if mb == null or not mb.pressed:
 		return
@@ -321,6 +327,28 @@ func _on_page_gui(event: InputEvent) -> void:
 				scene.set_page(i)
 				page_panel.accept_event()
 				return
+
+
+## 收口批（TOUCH_V2，小A核 P2-2）：属性区手指上下拖＝按行滚（一行 XStatusPage.LH）
+func _drag_input(event: InputEvent) -> bool:
+	if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_drag.press(event.position, float(scene.tops[scene.page]) * XStatusPage.LH)
+			return false
+		var was_drag := _drag.dragging
+		_drag.release()
+		if was_drag:
+			page_panel.accept_event()
+		return was_drag
+	if event is InputEventMouseMotion:
+		var to := _drag.motion(event.position)
+		if not is_nan(to):
+			var want := roundi(to / XStatusPage.LH)
+			if want != int(scene.tops[scene.page]):
+				scene._scroll(want - int(scene.tops[scene.page]))
+			page_panel.accept_event()
+			return true
+	return false
 
 
 func _on_gui(event: InputEvent) -> void:

@@ -61,6 +61,10 @@ const PARTY_ROW_MAX := 120.0
 
 
 func _ready() -> void:
+	add_to_group(XUiSkin.FULLSCREEN_GROUP)   # 收口批：开着时收起虚拟摇杆／AB 键
+	back_button = XSkinBackButton.attach(self)
+	if back_button != null:
+		back_button.z_index = 10   # 在后加的底图、面板之上
 	name = "SkinMainMenu"
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -83,6 +87,7 @@ func _ready() -> void:
 	face.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	face.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	face.draw.connect(_draw_face)
+	_ensure_sprite_layer()
 	ring.add_child(face)
 	ring.changed.connect(_on_ring_changed)
 	ring.activated.connect(func(_i):
@@ -794,15 +799,102 @@ func _draw_face() -> void:
 		return
 	var c := ring.center()
 	var rad := ring.radius - 62.0
+	if _sprite_layer != null:
+		_sprite_layer.queue_redraw()
+	if XUiSkin.CENTER_STYLE != XUiSkin.CenterStyle.FACE and sv_frame(a) != null:
+		# D45 方案：环心是像素小人（_draw_sprite，最近邻），方案 B 再在环心右下叠一枚小圆头像
+		if XUiSkin.CENTER_STYLE == XUiSkin.CenterStyle.SPRITE_BADGE:
+			var bc := c + Vector2(rad * 0.55, rad * 0.5)
+			var br := 30.0
+			face.draw_circle(bc, br + 4.0, Color(0, 0, 0, 0.6))
+			XSkinPartyStrip.draw_round_texture(face, tex, bc, br)
+			face.draw_circle(bc, br + 1.0, Color(XUiSkin.GOLD, 0.8), false, 2.0, true)
+		return
 	face.draw_circle(c, rad + 3.0, Color(0, 0, 0, 0.45))
 	XSkinPartyStrip.draw_round_texture(face, tex, c, rad)
 	face.draw_circle(c, rad, Color(XUiSkin.LINE, 0.5), false, 1.5, true)
 
 
+## ---- D45（收口批，Kyo 定小人和头像都要；XUiSkin.CENTER_STYLE 选方案，默认仍是头像，等 Kyo 看图定）----
+var _sprite_layer: Control
+var _sprite_step := 0
+
+
+## 当前角色战斗侧视图（sv_actors，9×6 格）第 0 行第 1 格（站立）；没有时 null
+static func sv_frame(a: XActor, col := 1) -> AtlasTexture:
+	if a == null:
+		return null
+	var p := XDB.img_path("sv_actors", str(a.data().get("battlerName", "")))
+	if p == "" or not ResourceLoader.exists(p):
+		return null
+	var key := "sv:%s#%d" % [p, col]
+	if not XUiSkin._icon_cache.has(key):
+		var sheet := load(p) as Texture2D
+		var at: AtlasTexture = null
+		if sheet != null:
+			at = AtlasTexture.new()
+			at.atlas = sheet
+			var cw := sheet.get_width() / 9.0
+			var ch := sheet.get_height() / 6.0
+			at.region = Rect2(cw * col, 0, cw, ch)
+		XUiSkin._icon_cache[key] = at
+	return XUiSkin._icon_cache[key]
+
+
+func _ensure_sprite_layer() -> void:
+	if _sprite_layer != null or face == null:
+		return
+	_sprite_layer = Control.new()
+	_sprite_layer.name = "SvSprite"
+	_sprite_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sprite_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_sprite_layer.draw.connect(_draw_sprite)
+	face.add_child(_sprite_layer)
+	var t := Timer.new()   # 站立动作 0-1-2-1 每格 0.2 秒（动效「全部」档才动）
+	t.wait_time = 0.2
+	t.autostart = true
+	t.timeout.connect(func():
+		if XUiSkin.CENTER_STYLE != XUiSkin.CenterStyle.FACE and XUiSkin.breathing():
+			_sprite_step += 1
+			_sprite_layer.queue_redraw())
+	_sprite_layer.add_child(t)
+
+
+## 像素小人：整数倍放大（最多 3 倍，放不进环心就降），脚下一块半透明黑椭圆影＋一圈淡金受光
+func _draw_sprite() -> void:
+	if host == null or XUiSkin.CENTER_STYLE == XUiSkin.CenterStyle.FACE:
+		return
+	var members := host._members()
+	if members.is_empty():
+		return
+	var idx := host._actor_index if host._mode == "actor" else host._selected_actor
+	var a: XActor = members[clampi(idx, 0, members.size() - 1)]
+	var fr := sv_frame(a, [0, 1, 2, 1][_sprite_step % 4] if XUiSkin.breathing() else 1)
+	if fr == null:
+		return
+	var c := ring.center()
+	var rad := ring.radius - 62.0
+	var fs := fr.get_size()
+	var k := clampi(floori(rad * 2.0 * 0.9 / maxf(fs.x, fs.y)), 1, 3)
+	var sz := fs * k
+	var feet := c + Vector2(0, sz.y * 0.42)
+	var shadow := PackedVector2Array()
+	for i in 24:
+		shadow.append(feet + Vector2(cos(TAU * i / 24.0) * 48.0, sin(TAU * i / 24.0) * 12.0))
+	_sprite_layer.draw_colored_polygon(shadow, Color(0, 0, 0, 0.55))
+	_sprite_layer.draw_arc(feet, 52.0, 0, TAU, 32, Color(XUiSkin.GOLD, 0.25), 1.5, true)
+	_sprite_layer.draw_texture_rect(fr, Rect2((c - sz / 2.0).round(), sz), false)
+
+
+## 收口批（TOUCH_V2）：左上「‹」返回（点＝取消），_ready 时加上
+var back_button: XSkinBackButton
+
+
 func _draw_top() -> void:
 	var view := layout.view_size()
 	var m := XSkinLayout.margin_for(view.x)
-	top.draw_string(XUiSkin.font("title"), Vector2(m, 14 + 34 * 0.92), TITLE, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	top.draw_string(XUiSkin.font("title"), Vector2(XSkinBackButton.place(back_button, m), 14 + 34 * 0.92), TITLE, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
 	# 货币：名字次要字 15、数值淡金窄体 26，右对齐（样稿：精魂在左、印屑在右）
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")

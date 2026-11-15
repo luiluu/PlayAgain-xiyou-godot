@@ -559,7 +559,15 @@ func _send_echo(code: Key) -> void:
 	Input.parse_input_event(e)
 
 
+## 收口批（XUiSkin.TOUCH_V2）：新皮肤的全屏菜单页开着时收起摇杆、AB 等虚拟键（菜单靠直接点）；关菜单回来照旧
+var _menu_hidden := false
+
+
 func _process(_delta: float) -> void:
+	var mh := XUiSkin.fullscreen_menu_open(get_tree()) and not layout_editing if is_inside_tree() else false
+	if mh != _menu_hidden:
+		_menu_hidden = mh
+		_apply_hidden()
 	if ghost() and _ghost_knob.visible:
 		var ch := knob_character()
 		if ch != _knob_drawn:
@@ -567,7 +575,7 @@ func _process(_delta: float) -> void:
 			_ghost_knob.queue_redraw()
 	for name in ["save", "info"]:
 		if _buttons.has(name):
-			var want := active.has(name) and (not hidden or layout_editing) and (layout_editing or _cond_shown(name))
+			var want := active.has(name) and (not hidden or layout_editing) and not _menu_hidden and (layout_editing or _cond_shown(name))
 			if (_buttons[name] as Panel).visible != want:
 				(_buttons[name] as Panel).visible = want
 	var platform := get_parent() as XPlatform
@@ -579,9 +587,9 @@ func _process(_delta: float) -> void:
 
 
 func _apply_hidden() -> void:
-	var shown := not hidden or layout_editing
+	var shown := (not hidden or layout_editing) and not _menu_hidden
 	for name in _buttons:
-		(_buttons[name] as Panel).visible = name == "hide" or (shown and active.has(name) and (layout_editing or _cond_shown(name)))
+		(_buttons[name] as Panel).visible = (name == "hide" and not _menu_hidden) or (shown and active.has(name) and (layout_editing or _cond_shown(name)))
 	_stick_base.visible = shown and _uses_stick and not ghost()
 	_stick_knob.visible = shown and _uses_stick and not ghost()
 	_ghost_base.visible = shown and _uses_stick and ghost()

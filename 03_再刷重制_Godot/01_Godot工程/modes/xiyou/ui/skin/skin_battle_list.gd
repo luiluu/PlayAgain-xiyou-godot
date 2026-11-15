@@ -106,6 +106,41 @@ func _paint(_c: XMVCanvas) -> void:
 	pass
 
 
+## 收口批（TOUCH_V2，小A核 P2-2）：按下不立刻选中／确定，上下拖过 SLOP 按行滚；松手没拖过才照旧当一次点（同 XBattleList）
+var _drag := XSkinDrag.new()
+var _press_event: InputEventMouseButton
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if XUiSkin.TOUCH_V2 and active and is_visible_in_tree():
+		if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+			var mb := event as InputEventMouseButton
+			if mb.pressed:
+				if _hit(mb.position) < 0:
+					super._unhandled_input(event)
+					return
+				_press_event = mb.duplicate() as InputEventMouseButton
+				_drag.press(mb.position, float(top) * ROW_H)
+				XKeyMap.handled(self)
+				return
+			if _drag.active():
+				var tap := _drag.release()
+				XKeyMap.handled(self)
+				if tap and _press_event != null:
+					super._unhandled_input(_press_event)
+				_press_event = null
+				return
+		elif event is InputEventMouseMotion and _drag.active():
+			var to := _drag.motion((event as InputEventMouseMotion).position)
+			if not is_nan(to):
+				var want := clampi(roundi(to / ROW_H), 0, maxi(entries.size() - rows, 0))
+				if want != top:
+					_scroll(want - top)
+				XKeyMap.handled(self)
+			return
+	super._unhandled_input(event)
+
+
 func _hit(p: Vector2) -> int:
 	var local := p - position
 	if local.x < PAD_X or local.x >= size.x - PAD_X or local.y < HEAD_H or local.y >= HEAD_H + rows * ROW_H:
@@ -129,11 +164,12 @@ func _draw() -> void:
 		_draw_row(i, body, num)
 	# 滚动条
 	if entries.size() > rows:
-		var track := Rect2(size.x - 5, HEAD_H + 4, 2, rows * ROW_H - 8)
+		var bw := 6.0 if XUiSkin.TOUCH_V2 else 2.0   # 收口批：滚动条手指找得到
+		var track := Rect2(size.x - bw - 3.0, HEAD_H + 4, bw, rows * ROW_H - 8)
 		draw_rect(track, Color(XUiSkin.LINE, 0.18))
 		var h := maxf(16.0, track.size.y * rows / entries.size())
 		var y := track.position.y + (track.size.y - h) * top / maxf(1.0, entries.size() - rows)
-		draw_rect(Rect2(track.position.x, y, 2, h), Color(XUiSkin.LINE, 0.7))
+		draw_rect(Rect2(track.position.x, y, track.size.x, h), Color(XUiSkin.LINE, 0.7))
 	# 说明栏
 	var fy := HEAD_H + rows * ROW_H + 4.0
 	draw_line(Vector2(16, fy), Vector2(size.x - 16, fy), Color(XUiSkin.LINE, 0.3), 1.0)
@@ -180,5 +216,9 @@ func _draw_row(i: int, body: Font, num: Font) -> void:
 	if i == index:
 		name_col = Color.WHITE
 	name_col.a = a
-	draw_string(body, Vector2(nx, cy + 7), str(e.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, maxf(20.0, x - nx), XUiSkin.FS_LIST, name_col,
-		TextServer.JUSTIFICATION_NONE)
+	if XUiSkin.FONT_V2:   # 收口批（小A核 P2-3）：大字号时先缩字到 15，还放不下加「…」，不再硬裁
+		var fit := XSkinList.fit_text(body, str(e.get("text", "")), maxf(20.0, x - nx), XUiSkin.FS_LIST, XUiSkin.FS_MIN)
+		draw_string(body, Vector2(nx, cy + int(fit[1]) * 0.36), str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1]), name_col)
+	else:
+		draw_string(body, Vector2(nx, cy + 7), str(e.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, maxf(20.0, x - nx), XUiSkin.FS_LIST, name_col,
+			TextServer.JUSTIFICATION_NONE)

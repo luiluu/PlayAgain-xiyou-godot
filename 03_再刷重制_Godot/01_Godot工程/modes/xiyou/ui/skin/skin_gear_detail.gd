@@ -132,7 +132,12 @@ func tab_rect(i: int) -> Rect2:
 	return Rect2(pad + i * w, pad + HEAD_H, w - XUiSkin.GRID, TAB_H)
 
 
+var _drag := XSkinDrag.new()
+
+
 func _gui_input(event: InputEvent) -> void:
+	if XUiSkin.TOUCH_V2 and _drag_input(event):
+		return
 	var mb := event as InputEventMouseButton
 	if mb == null or not mb.pressed:
 		return
@@ -146,6 +151,26 @@ func _gui_input(event: InputEvent) -> void:
 				choose(i)
 				accept_event()
 				return
+
+
+## 收口批（TOUCH_V2）：正文区手指上下拖＝像素滚动；拖过了就不再当点（页签点击照旧在按下时）
+func _drag_input(event: InputEvent) -> bool:
+	if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			_drag.press(event.position, scroll)
+			return false
+		var was_drag := _drag.dragging
+		_drag.release()
+		if was_drag:
+			accept_event()
+		return was_drag
+	if event is InputEventMouseMotion:
+		var to := _drag.motion(event.position)
+		if not is_nan(to):
+			scroll_by(clampf(to, 0.0, max_scroll()) - scroll)
+			accept_event()
+			return true
+	return false
 
 
 # ---- 画 ----
@@ -234,7 +259,8 @@ func _draw_body() -> void:
 		if _rows.is_empty():
 			body.draw_string(font, Vector2(0, fs * 1.15), "空" if tab == 2 or item.is_empty() else "", HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_3)
 	if max_scroll() > 0.0:
-		var track := Rect2(body.size.x - 4, 0, 4, body.size.y)
+		var sw := 8.0 if XUiSkin.TOUCH_V2 else 4.0   # 收口批：滚动条手指找得到
+		var track := Rect2(body.size.x - sw, 0, sw, body.size.y)
 		body.draw_rect(track, Color(1, 1, 1, 0.06))
 		var h := maxf(track.size.y * body.size.y / maxf(_content_h, 1.0), 16.0)
-		body.draw_rect(Rect2(track.position.x, (track.size.y - h) * scroll / max_scroll(), 4, h), Color(XUiSkin.LINE, 0.55))
+		body.draw_rect(Rect2(track.position.x, (track.size.y - h) * scroll / max_scroll(), sw, h), Color(XUiSkin.LINE, 0.55))

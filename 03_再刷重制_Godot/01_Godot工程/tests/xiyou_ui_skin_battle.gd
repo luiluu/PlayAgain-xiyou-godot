@@ -18,6 +18,13 @@ func _ready() -> void:
 			wide = true
 		if arg == "--tablet":
 			tablet = true
+		if arg == "--close-off":   # 收口批改前对照图：收口批开关全关（＝p1fix）
+			XUiSkin.CORE_V2 = false
+			XUiSkin.FONT_V2 = false
+			XUiSkin.TOUCH_V2 = false
+			XUiSkin.COMFORT_V2 = false
+		if arg == "--touch":   # 收口批：按触屏设备画（指令环右下、字大一档）
+			XUiSkin.touch_override = 1
 	if has_meta("runner"):
 		_run.call_deferred()
 		return
@@ -161,7 +168,7 @@ func _ring(b: XBattleScene, a: XActor) -> void:
 	want.x = clampf(want.x, XSkinBattleRing.MARGIN, maxf(XSkinBattleRing.MARGIN, XBattleScene.BOX.x - ring.size.x - XSkinBattleRing.MARGIN))
 	want.y = clampf(want.y, XSkinBattleRing.MARGIN, maxf(XSkinBattleRing.MARGIN, XBattleScene.BOX.y - ring.size.y - XSkinBattleRing.MARGIN))
 	want += ring.center + b._origin
-	_check("ring_center_on_actor", ring.ring_center().distance_to(want) < 0.5 and absf(ring.ring_center().x - (feet + XSkinBattleRing.OFFSET).x) < 0.5, [ring.ring_center(), want, feet])
+	_check("ring_center_on_actor", XSkinBattleRing.fixed_corner() or ring.ring_center().distance_to(want) < 0.5 and absf(ring.ring_center().x - (feet + XSkinBattleRing.OFFSET).x) < 0.5, [ring.ring_center(), want, feet])
 	var angles := range(6).map(func(i): return ring.angle_of(i))
 	_check("ring_angles", angles == [258.0, 222.0, 186.0, 150.0, 114.0, 78.0], angles)
 	var apart := true
@@ -321,7 +328,7 @@ func _ring_layout(b: XBattleScene) -> void:
 	var r6 := XSkinBattleRing.create_ring(b.ui, opts.slice(0, 6), "")
 	r6.active = false
 	r6.place_for_actor(Vector2(819, 427), XBattleScene.BOX)
-	_check("ring_offset_param", r6.ring_center().distance_to(Vector2(779, 395)) < 0.5, r6.ring_center())
+	_check("ring_offset_param", XSkinBattleRing.fixed_corner() or r6.ring_center().distance_to(Vector2(779, 395)) < 0.5, r6.ring_center())
 	XSkinBattleRing.OFFSET = old
 	# 长指令名：球里缩字或折两行，最小 14
 	_check("ring_font_shrinks", r6.orb_font_size("七曜元素选择", 70.0) >= XUiSkin.FS_MIN and r6.orb_font_size("攻击", 70.0) == 23)
