@@ -37,6 +37,89 @@ static var ONE_PAGE := true
 const ONE_PAGE_RING_R := 140.0
 const ONE_PAGE_ORB_R := 22.0
 const ONE_PAGE_LABEL_R := 98.0
+## 13 栏一页的摆法（O-待定，Kyo 11-15 看审图：「一圈 13 个太密，可以扩展一些不规则的分支子类」）：
+## 0＝一圈 13 颗（上一版）；1＝A 下垂三枝；2＝B 星座斜出；3＝C 挂主栏（默认，Kyo 挑定前先放 cc 推荐的）。
+## 1～3：主环只放 8 个穿在身上的核心栏（武器 副手 头部 盔甲 护手 腰带 裤子 鞋子），其余 5 栏（项链 戒指 法宝 坐骑 神器）
+## 从环上某一栏分叉伸出去，旧金细线连成枝丫；仍然一页全显示。键盘：上、左＝前一个，下、右＝后一个，顺序是绕主环走、
+## 走到有枝丫的那栏就先顺着枝丫走完再回主环（深度优先）；Q／E 换人。主环 8 颗：半径 112、球半径 24（点按半径 28.8）。
+static var LAYOUT := 3
+const BRANCH_R := 112.0
+const BRANCH_ORB_R := 24.0
+const BRANCH_LABEL_R := 68.0
+## 主环上的装备类型（显示顺序）；枝丫里的类型 9 项链 10 戒指 13 法宝 16 坐骑 17 神器
+const CORE_TYPES := [1, 2, 3, 4, 6, 8, 5, 7]
+## 每种摆法：shift＝环心相对环区中心的偏移；branches＝[{root: 根上的装备类型, nodes: [[类型, 相对环心的位置, 名字写哪边], …]}]
+const LAYOUTS := {
+	1: {"name": "A 下垂三枝", "shift": Vector2(0, -58), "branches": [
+		{"root": 4, "nodes": [[13, Vector2(128, 160), "down"], [17, Vector2(100, 238), "down"]]},
+		{"root": 6, "nodes": [[16, Vector2(0, 196), "down"]]},
+		{"root": 8, "nodes": [[9, Vector2(-128, 160), "down"], [10, Vector2(-100, 238), "down"]]}]},
+	2: {"name": "B 星座斜出", "shift": Vector2(0, 22), "branches": [
+		{"root": 2, "nodes": [[13, Vector2(140, -150), "down"], [17, Vector2(90, -215), "up"]]},
+		{"root": 6, "nodes": [[16, Vector2(100, 190), "right"]]},
+		{"root": 7, "nodes": [[9, Vector2(-140, -150), "down"], [10, Vector2(-90, -215), "up"]]}]},
+	3: {"name": "C 挂主栏", "shift": Vector2(0, 2), "branches": [
+		{"root": 1, "nodes": [[17, Vector2(-44, -200), "right"]]},
+		{"root": 2, "nodes": [[13, Vector2(124, -168), "right"]]},
+		{"root": 3, "nodes": [[9, Vector2(150, -64), "down"]]},
+		{"root": 6, "nodes": [[10, Vector2(64, 198), "right"]]},
+		{"root": 7, "nodes": [[16, Vector2(-134, -160), "left"]]}]},
+}
+var _plan := {}
+
+
+## 当前用不用分支摆法
+static func branched() -> bool:
+	return ONE_PAGE and LAYOUTS.has(LAYOUT)
+
+
+## 分支摆法：显示行号的导航顺序（nav）、环上每项的摆法（custom，和 nav 一一对应）、枝丫连线（links）。
+## 按装备类型摆（槽位号＋1）：没有副手栏的角色（猫）主环 7 颗，根不在时挂到主环第一颗上。
+static func ring_plan(view: Array, layout_id: int = -1) -> Dictionary:
+	var lay: Dictionary = LAYOUTS.get(LAYOUT if layout_id < 0 else layout_id, {})
+	var rows := range(view.size())
+	if lay.is_empty():
+		return {"nav": rows, "custom": [], "links": [], "shift": Vector2.ZERO}
+	var type_row := {}
+	for k in view.size():
+		type_row[int(view[k]) + 1] = k
+	var core := []
+	for t in CORE_TYPES:
+		if type_row.has(t):
+			core.append(type_row[t])
+	var n := core.size()
+	var nav := []
+	var custom := []
+	var links := []
+	var placed := {}
+	for j in n:
+		var row: int = core[j]
+		var deg := -90.0 + j * 360.0 / n
+		var rp := Vector2.from_angle(deg_to_rad(deg)) * BRANCH_R
+		nav.append(row)
+		custom.append({"pos": rp, "deg": deg, "label": ""})
+		placed[row] = true
+		for b in lay.branches:
+			if int(type_row.get(int(b.root), core[0])) != row:
+				continue
+			var path := [rp]
+			for nd in b.nodes:
+				if not type_row.has(int(nd[0])) or placed.has(type_row[int(nd[0])]):
+					continue
+				var r2: int = type_row[int(nd[0])]
+				nav.append(r2)
+				custom.append({"pos": nd[1], "label": nd[2]})
+				placed[r2] = true
+				path.append(nd[1])
+			if path.size() > 1:
+				links.append(path)
+	var spare := 0
+	for k in view.size():   # 没摆上的（正常没有）：底下一排
+		if not placed.has(k):
+			nav.append(k)
+			custom.append({"pos": Vector2(-120 + spare * 60, 200), "label": "down"})
+			spare += 1
+	return {"nav": nav, "custom": custom, "links": links, "shift": lay.shift}
 const STRIP_H := 72.0
 const CAPTION_H := 28.0
 const COUNT_W := 96.0
@@ -51,8 +134,8 @@ func _init(s: XEquipScene) -> void:
 	row_height = XUiSkin.ROW_H
 	left_w = 384.0
 	right_w = 476.0
-	ring_radius = ONE_PAGE_RING_R if ONE_PAGE else 132.0
-	orb_radius = ONE_PAGE_ORB_R if ONE_PAGE else 26.0
+	ring_radius = (BRANCH_R if branched() else ONE_PAGE_RING_R) if ONE_PAGE else 132.0
+	orb_radius = (BRANCH_ORB_R if branched() else ONE_PAGE_ORB_R) if ONE_PAGE else 26.0
 	auto_nav = false
 	currencies = []
 	hint_list = slot_hints()
@@ -70,7 +153,7 @@ func _ready() -> void:
 	ring_top.draw.connect(_draw_ring_extra)
 	ring.add_child(ring_top)
 	if ONE_PAGE:
-		ring.label_inner = ONE_PAGE_LABEL_R
+		ring.label_inner = BRANCH_LABEL_R if branched() else ONE_PAGE_LABEL_R
 		ring.label_sel_boost = 1
 	ring.changed.connect(_on_ring_changed)
 	ring.activated.connect(_equip_ring_activated)
@@ -97,6 +180,8 @@ func relayout() -> void:
 	actor_strip.position = Vector2.ZERO
 	actor_strip.size = Vector2(lb.x, STRIP_H)
 	var d := ring_radius * 2.0 + 120.0
+	if branched():   # 分支摆法：环区占满角色条和环下说明之间，枝丫往上下伸
+		d = maxf(lb.y - STRIP_H - CAPTION_H, d)
 	ring.size = Vector2(lb.x, d)
 	ring.position = Vector2(0, STRIP_H + maxf((lb.y - STRIP_H - CAPTION_H - d) / 2.0, 0.0))
 	if detail != null:
@@ -176,6 +261,9 @@ static func ring_pages(n: int) -> Array:
 
 
 func _sync_ring(a: XActor) -> void:
+	if branched():
+		_sync_ring_branched(a)
+		return
 	var view := scene.slot_view()
 	var row := scene._slot_row()
 	var pp := ring_pages(view.size())
@@ -205,6 +293,40 @@ func _sync_ring(a: XActor) -> void:
 		ring.select(idx)
 	ring.queue_redraw()
 	ring_top.queue_redraw()
+
+
+func _sync_ring_branched(a: XActor) -> void:
+	var view := scene.slot_view()
+	var row := scene._slot_row()
+	var cheap := [a.get_instance_id(), LAYOUT, scene._cand_rev, view.size()]
+	if _ring_key.is_empty() or _ring_key[0] != cheap:
+		_plan = ring_plan(view)
+		ring.custom = _plan.custom
+		ring.links = _plan.links
+		ring.center_shift = _plan.shift
+	var nav: Array = _plan.nav
+	var idx := maxi(nav.find(row), 0)
+	var items := []
+	var icons := []
+	for k in nav:
+		var slot: int = view[k]
+		var e = a.equips[slot] if slot < a.equips.size() else null
+		var ic := int(e.get("iconIndex", 0)) if e is Dictionary and not e.is_empty() else 0
+		items.append({"key": slot, "name": scene.slot_name(slot), "icon": ic, "empty": ic == 0, "locked": not XEquipment.can_change(a, slot)})
+		icons.append([slot, ic, items[-1].locked])
+	var key := [cheap, icons]
+	if key != _ring_key:
+		_ring_key = key
+		ring.set_items(items, true)
+	if ring.index != idx:
+		ring.select(idx)
+	ring.queue_redraw()
+	ring_top.queue_redraw()
+
+
+## 分支摆法下环上第 i 项是第几行（显示行号）
+func nav_row(i: int) -> int:
+	return int(_plan.nav[i]) if branched() and i < (_plan.get("nav", []) as Array).size() else i
 
 
 func caption() -> String:
@@ -383,6 +505,8 @@ func _draw_ring_extra() -> void:
 	var face := XUiSkin.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0)))
 	if face != null:
 		var r := ring_radius - (68.0 if ONE_PAGE else 62.0)   # 一页 13 栏：头像 72，给环内侧的栏位名让出位置
+		if branched():
+			r = ring_radius - BRANCH_LABEL_R - 2.0   # 分支摆法：头像半径 42，给环内侧的栏位名让地方
 		ring_top.draw_circle(c, r + 2.0, XUiSkin.ORB_LOW)
 		XSkinPartyStrip.draw_round_texture(ring_top, face, c, r)
 		ring_top.draw_circle(c, r + 1.0, Color(XUiSkin.LINE, 0.55), false, 1.5, true)
@@ -455,6 +579,16 @@ func input(event: InputEvent) -> bool:
 		return false
 	var wrap := not event.is_echo()
 	if sc._mode == "slot":
+		if branched():   # 分支摆法：按导航顺序（绕主环、遇枝丫先走完枝丫）走
+			var nav: Array = _plan.get("nav", [])
+			var pos := maxi(nav.find(sc._slot_row()), 0)
+			var np := XMenu._move(pos, d, nav.size(), wrap)
+			if np != pos:
+				sc._commit_seen()
+				sc._slot = int(sc.slot_view()[int(nav[np])])
+				XSound.system(0)
+			sc._refresh()
+			return true
 		sc._move(d, wrap)
 		return true
 	if sc._mode == "item":
@@ -495,7 +629,7 @@ func _on_ring_changed(i: int) -> void:
 	var view := scene.slot_view()
 	var per: int = ring_pages(view.size())[1]
 	var pg := floori(scene._slot_row() / float(per))
-	var row := pg * per + i
+	var row := nav_row(i) if branched() else pg * per + i
 	if row >= view.size() or int(view[row]) == scene._slot:
 		return
 	scene._commit_seen()

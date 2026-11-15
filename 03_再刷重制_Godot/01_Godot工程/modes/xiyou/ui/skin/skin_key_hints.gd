@@ -194,11 +194,14 @@ func _draw() -> void:
 		var kw := f.get_string_size(str(h[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 20
 		var sb := StyleBoxFlat.new()
 		sb.draw_center = false
-		sb.border_color = XUiSkin.TEXT_2
+		sb.border_color = XSkinArt.bg_text_2()
 		sb.set_border_width_all(1)
 		sb.set_corner_radius_all(11)
+		if XSkinArt.read_on():   # 可读性：键帽垫深底
+			sb.draw_center = true
+			sb.bg_color = Color(0, 0, 0, 0.55)
 		sb.draw(ci, Rect2(x, 0, kw, H))
-		draw_string(f, Vector2(x + 10, H / 2.0 + font_size * 0.36), str(h[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, XUiSkin.TEXT)
+		XSkinArt.bg_string(self, f, Vector2(x + 10, H / 2.0 + font_size * 0.36), str(h[0]), font_size, XUiSkin.TEXT)
 		x += kw + 6
-		draw_string(f, Vector2(x, H / 2.0 + font_size * 0.36), str(h[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, XUiSkin.TEXT_2)
+		XSkinArt.bg_string(self, f, Vector2(x, H / 2.0 + font_size * 0.36), str(h[1]), font_size, XSkinArt.bg_text_2())
 		x += f.get_string_size(str(h[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 16

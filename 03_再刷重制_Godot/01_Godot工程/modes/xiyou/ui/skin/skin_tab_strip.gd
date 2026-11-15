@@ -103,5 +103,5 @@ func _draw() -> void:
 			sb.border_color = XUiSkin.SEL_LINE
 			sb.border_width_bottom = 3
 			sb.draw(ci, r)
-		draw_string(f, Vector2(r.position.x + TAB_PAD, r.position.y + TAB_H / 2.0 + font_size * 0.36), str(groups[i].name),
-			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.WHITE if on else XUiSkin.TEXT_2)
+		XSkinArt.bg_string(self, f, Vector2(r.position.x + TAB_PAD, r.position.y + TAB_H / 2.0 + font_size * 0.36), str(groups[i].name),
+			font_size, Color.WHITE if on else XSkinArt.bg_text_2())

@@ -894,7 +894,7 @@ var back_button: XSkinBackButton
 func _draw_top() -> void:
 	var view := layout.view_size()
 	var m := XSkinLayout.margin_for(view.x)
-	top.draw_string(XUiSkin.font("title"), Vector2(XSkinBackButton.place(back_button, m), 14 + 34 * 0.92), TITLE, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	XSkinArt.bg_string(top, XUiSkin.font("title"), Vector2(XSkinBackButton.place(back_button, m), 14 + 34 * 0.92), TITLE, XUiSkin.FS_PAGE, XUiSkin.TEXT)
 	# 货币：名字次要字 15、数值淡金窄体 26，右对齐（样稿：精魂在左、印屑在右）
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
@@ -904,8 +904,8 @@ func _draw_top() -> void:
 	for pair in cur:
 		var vw := num.get_string_size(pair[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
 		x -= vw
-		top.draw_string(num, Vector2(x, 42), pair[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 26, XUiSkin.GOLD_LIGHT)
+		XSkinArt.bg_string(top, num, Vector2(x, 42), pair[1], 26, XUiSkin.GOLD_LIGHT)
 		var nw := body.get_string_size(pair[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
 		x -= nw + 6
-		top.draw_string(body, Vector2(x, 42), pair[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
+		XSkinArt.bg_string(top, body, Vector2(x, 42), pair[0], 15, XSkinArt.bg_text_2())
 		x -= 18

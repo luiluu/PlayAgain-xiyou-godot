@@ -19,6 +19,20 @@ static var BG := true
 static var PANEL := true
 static var SELECT := true
 static var HALO := true
+## READ（O-待定，可读性，Kyo 11-15 看审图：字压在齿轮、塔楼、红裂纹上看不清）：背景开着时
+##   1) 背景上加压暗层：整体压 28%、顶栏（页名、页签、货币）从上往下渐隐的黑、底栏（按键提示）从下往上渐隐的黑、左块环区一团径向暗角；
+##   2) 直接放在背景上的次要字（页签、货币名、按键提示、环上的项名）从次要灰 #a8aaaf 提到暖骨灰 #d2ccc2；
+##   3) 这些字加 3px 深色描边（READ_OUTLINE）。面板里的字不动（烟底本来就够暗）。false＝不压暗、字照旧。
+static var READ := true
+const READ_DIM := 0.28
+const READ_TOP_H := 132.0
+const READ_TOP_A := 0.85
+const READ_BOTTOM_H := 112.0
+const READ_BOTTOM_A := 0.88
+const READ_RING_A := 0.62
+const READ_TEXT_2 := Color("d2ccc2")
+const READ_OUTLINE := 3
+const READ_OUTLINE_C := Color(0.0, 0.0, 0.0, 0.85)
 
 const DIR := "res://content/ui_skin/phase01/"
 const ROUTES := ["general", "death", "war", "famine", "plague"]
@@ -109,7 +123,90 @@ static func add_backdrop(root: Control) -> TextureRect:
 		t.set_meta("aspect", aspect_key(vs))
 	pick.call()
 	t.resized.connect(pick)
+	if READ:
+		_add_scrims(root)
 	return t
+
+
+## 可读性压暗层（READ）：整体压暗＋顶栏、底栏渐隐黑＋左块环区径向暗角；都不收鼠标
+static func _add_scrims(root: Control) -> void:
+	var dim := ColorRect.new()
+	dim.name = "ReadDim"
+	dim.color = Color(0, 0, 0, READ_DIM)
+	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.add_child(dim)
+	var top := _vgrad("ReadTop", READ_TOP_A, 0.0)
+	top.anchor_bottom = 0.0
+	top.offset_bottom = READ_TOP_H
+	root.add_child(top)
+	var bot := _vgrad("ReadBottom", 0.0, READ_BOTTOM_A)
+	bot.anchor_top = 1.0
+	bot.offset_top = -READ_BOTTOM_H
+	root.add_child(bot)
+	# 环区：左块中心（16:9 约 x=232、y=380）一团椭圆暗角，宽 640、高 600，贴左边跟着安全边距走
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
+	g.colors = PackedColorArray([Color(0, 0, 0, READ_RING_A), Color(0, 0, 0, READ_RING_A * 0.6), Color(0, 0, 0, 0)])
+	var rad := GradientTexture2D.new()
+	rad.gradient = g
+	rad.width = 128
+	rad.height = 128
+	rad.fill = GradientTexture2D.FILL_RADIAL
+	rad.fill_from = Vector2(0.5, 0.5)
+	rad.fill_to = Vector2(1.0, 0.5)
+	var ring := TextureRect.new()
+	ring.name = "ReadRing"
+	ring.texture = rad
+	ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ring.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ring.stretch_mode = TextureRect.STRETCH_SCALE
+	ring.anchor_left = 0.0
+	ring.anchor_right = 0.0
+	ring.anchor_top = 0.5
+	ring.anchor_bottom = 0.5
+	ring.offset_left = -88.0
+	ring.offset_right = 552.0
+	ring.offset_top = -280.0
+	ring.offset_bottom = 320.0
+	root.add_child(ring)
+
+
+static func _vgrad(n: String, a_top: float, a_bottom: float) -> TextureRect:
+	var g := Gradient.new()
+	g.offsets = PackedFloat32Array([0.0, 1.0])
+	g.colors = PackedColorArray([Color(0, 0, 0, a_top), Color(0, 0, 0, a_bottom)])
+	var gt := GradientTexture2D.new()
+	gt.gradient = g
+	gt.width = 4
+	gt.height = 64
+	gt.fill_from = Vector2(0, 0)
+	gt.fill_to = Vector2(0, 1)
+	var t := TextureRect.new()
+	t.name = n
+	t.texture = gt
+	t.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	t.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	t.stretch_mode = TextureRect.STRETCH_SCALE
+	t.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	return t
+
+
+## 可读性开着（新皮肤开、正式背景开、READ 开）
+static func read_on() -> bool:
+	return READ and BG and XUiSkin.on()
+
+
+## 直接放在背景上的次要字的颜色
+static func bg_text_2() -> Color:
+	return READ_TEXT_2 if read_on() else XUiSkin.TEXT_2
+
+
+## 直接放在背景上的字：READ 时先描 3px 深色边再写
+static func bg_string(ci: CanvasItem, font: Font, pos: Vector2, text: String, fs: int, color: Color, width := -1.0) -> void:
+	if read_on():
+		ci.draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, width, fs, READ_OUTLINE, READ_OUTLINE_C)
+	ci.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, width, fs, color)
 
 
 ## ---- 组件 ----

@@ -126,17 +126,35 @@ func set_items(arr: Array, keep := false) -> void:
 	queue_redraw()
 
 
+## 环心离控件中心的偏移（装备页分支布局把环往上／下挪，给枝丫让地方）
+var center_shift := Vector2.ZERO
+## 分支布局（装备页 13 栏一页·分支，O-待定）：非空时每项一条 {pos: 相对环心, deg: 在主环上的角度（不在主环上的没有）, label: ""（写环内侧）／up／down／left／right}
+var custom: Array = []
+## 枝丫连线（相对环心的折线点列）：[[Vector2, Vector2, …], …]
+var links: Array = []
+
+
 func center() -> Vector2:
-	return size / 2.0
+	return size / 2.0 + center_shift
 
 
-## 第 i 项的角度：第一项在正上方（-90°），顺时针等分
+## 第 i 项的角度：第一项在正上方（-90°），顺时针等分；分支布局里不在主环上的项取它相对环心的方向
 func item_deg(i: int) -> float:
+	if not custom.is_empty() and i < custom.size():
+		var c: Dictionary = custom[i]
+		return float(c.deg) if c.has("deg") else rad_to_deg((c.pos as Vector2).angle())
 	return -90.0 + i * 360.0 / maxf(items.size(), 1.0)
 
 
 func item_pos(i: int) -> Vector2:
+	if not custom.is_empty() and i < custom.size():
+		return center() + (custom[i].pos as Vector2)
 	return center() + Vector2.from_angle(deg_to_rad(item_deg(i))) * radius
+
+
+## 这一项在主环上（光弧只在主环上的项画）
+func on_ring(i: int) -> bool:
+	return custom.is_empty() or (i < custom.size() and (custom[i] as Dictionary).has("deg"))
 
 
 func notch_deg(k: int) -> float:
@@ -260,8 +278,14 @@ func _draw() -> void:
 		var ts := center_texture.get_size()
 		var k := minf((R - 50.0) * 2.0 / maxf(ts.x, ts.y), 4.0)
 		draw_texture_rect(center_texture, Rect2(c - ts * k / 2.0, ts * k), false)
+	# 枝丫连线：旧金细线＋节点小菱形（星座连线）
+	for path in links:
+		for k in range((path as Array).size() - 1):
+			draw_line(c + path[k], c + path[k + 1], Color(XUiSkin.GOLD, 0.55), 1.5, true)
+		var p0: Vector2 = c + path[0]
+		draw_colored_polygon(PackedVector2Array([p0 + Vector2(0, -4), p0 + Vector2(4, 0), p0 + Vector2(0, 4), p0 + Vector2(-4, 0)]), XUiSkin.GOLD)
 	# 焦点光弧
-	if not items.is_empty():
+	if not items.is_empty() and on_ring(index):
 		var half := PI * ARC_FRAC
 		var a := deg_to_rad(arc_deg)
 		draw_arc(c, R, a - half, a + half, 24, Color(XUiSkin.SEL_FILL, 0.35), 11.0, true)
@@ -299,9 +323,23 @@ func _draw() -> void:
 		var above := sin(deg_to_rad(item_deg(i))) < -0.2
 		var ly := p.y - r - 10.0 if above else p.y + r + 10.0 + fs * 0.86
 		var lx := p.x - tw / 2.0
-		if label_inner > 0.0:   # 名字写在环内侧（装备 13 栏一页：球挨得近，上下写会压到邻球）
+		var lab := str(custom[i].get("label", "")) if not custom.is_empty() and i < custom.size() else ""
+		if lab != "":   # 分支布局：枝丫上的球名字写在指定一侧
+			match lab:
+				"up":
+					ly = p.y - r - 8.0
+				"down":
+					ly = p.y + r + 8.0 + fs * 0.86
+				"left":
+					lx = p.x - r - 8.0 - tw
+					ly = p.y + fs * 0.36
+				"right":
+					lx = p.x + r + 8.0
+					ly = p.y + fs * 0.36
+		elif label_inner > 0.0:   # 名字写在环内侧（装备 13 栏一页：球挨得近，上下写会压到邻球）
 			var lp := center() + Vector2.from_angle(deg_to_rad(item_deg(i))) * label_inner
 			lx = lp.x - tw / 2.0
 			ly = lp.y + fs * 0.36
-		draw_string_outline(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.6))
-		draw_string(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE if on else XUiSkin.TEXT_2)
+		var rd := XSkinArt.read_on()   # 可读性：描边加粗加深、未选中的名字提亮
+		draw_string_outline(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5 if rd else 4, Color(0, 0, 0, 0.9 if rd else 0.6))
+		draw_string(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE if on else XSkinArt.bg_text_2())

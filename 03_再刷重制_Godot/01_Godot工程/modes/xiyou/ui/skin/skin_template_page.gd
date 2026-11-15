@@ -402,7 +402,7 @@ func _draw_top() -> void:
 	var view := layout.view_size()
 	var m := XSkinLayout.margin_for(view.x)
 	var tx := XSkinBackButton.place(back_button, m)   # 只挪页名，右上货币仍按页边距（小A核 P2-1）
-	top_layer.draw_string(XUiSkin.font("title"), Vector2(tx, 14 + 34 * 0.92), title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	XSkinArt.bg_string(top_layer, XUiSkin.font("title"), Vector2(tx, 14 + 34 * 0.92), title, XUiSkin.FS_PAGE, XUiSkin.TEXT)
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	var x := view.x - m
@@ -410,10 +410,10 @@ func _draw_top() -> void:
 		var v := str(pair[1])
 		var vw := num.get_string_size(v, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
 		x -= vw
-		top_layer.draw_string(num, Vector2(x, 42), v, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, XUiSkin.GOLD_LIGHT)
+		XSkinArt.bg_string(top_layer, num, Vector2(x, 42), v, 26, XUiSkin.GOLD_LIGHT)
 		var nw := body.get_string_size(str(pair[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
 		x -= nw + 6
-		top_layer.draw_string(body, Vector2(x, 42), str(pair[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
+		XSkinArt.bg_string(top_layer, body, Vector2(x, 42), str(pair[0]), 15, XSkinArt.bg_text_2())
 		x -= 18
 
 

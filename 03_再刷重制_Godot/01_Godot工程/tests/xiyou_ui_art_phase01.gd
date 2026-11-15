@@ -232,12 +232,29 @@ func _build_equip(accept := true) -> XEquipScene:
 
 
 func _equip() -> void:
+	for lay in [0, 1, 2, 3]:
+		XSkinEquipPage.LAYOUT = lay
+		await _equip_layout(lay)
+	XSkinEquipPage.LAYOUT = 3
+	# 分支摆法的导航顺序：绕主环、遇枝丫先走完（C 挂主栏）
+	var view := [0, 1, 2, 3, 5, 7, 4, 6, 8, 9, 12, 15, 16]
+	var plan := XSkinEquipPage.ring_plan(view, 3)
+	var names := (plan.nav as Array).map(func(r): return int(view[r]) + 1)
+	check("branch_nav_c", names == [1, 17, 2, 13, 3, 9, 4, 6, 10, 8, 5, 7, 16], names)
+	check("branch_links_c", (plan.links as Array).size() == 5)
+	# 没有副手栏（猫）：主环 7 颗，挂在副手上的法宝改挂主环第一颗
+	var cat := view.filter(func(sl): return sl != 1)
+	var pc := XSkinEquipPage.ring_plan(cat, 3)
+	check("branch_cat_all_placed", (pc.nav as Array).size() == 12 and (pc.custom as Array).filter(func(c): return c.has("deg")).size() == 7)
+
+
+func _equip_layout(lay: int) -> void:
 	for touch in [0, 1]:
 		XUiSkin.touch_override = touch
 		var page := await _build_equip(false)
 		var sk: XSkinEquipPage = page.skin
 		var n := page.slot_view().size()
-		var tag := "touch" if touch == 1 else "key"
+		var tag := "L%d_%s" % [lay, "touch" if touch == 1 else "key"]
 		check("equip13_n_" + tag, n == 13, n)
 		check("equip13_all_on_ring_" + tag, sk.ring.items.size() == n, sk.ring.items.size())
 		check("equip13_no_page_text_" + tag, not sk.caption().contains("页") and sk.caption().begins_with("身上"), sk.caption())
@@ -249,42 +266,49 @@ func _equip() -> void:
 		var inside := true
 		for i in n:
 			var p := ring.item_pos(i)
-			if p.distance_to(ring.item_pos((i + 1) % n)) <= hit_r * 2.0:
-				sep_ok = false
+			for j in n:
+				if j != i and p.distance_to(ring.item_pos(j)) <= hit_r * 2.0:
+					sep_ok = false
 			if ring.item_at(p) != i or ring.item_at(p + Vector2(hit_r - 1.0, 0)) != i:
 				hit_ok = false
 			var gp := ring.position + p
-			if gp.x - ring.orb_radius * 1.16 < 0.0 or gp.x + ring.orb_radius * 1.16 > sk.layout.left.size.x:
+			var er := ring.orb_radius * 1.16
+			if gp.x - er < 0.0 or gp.x + er > sk.layout.left.size.x or gp.y - er < XSkinEquipPage.STRIP_H or gp.y + er > sk.layout.left.size.y - XSkinEquipPage.CAPTION_H:
 				inside = false
 		check("equip13_orbs_apart_" + tag, sep_ok)
 		check("equip13_tap_hits_" + tag, hit_ok)
 		check("equip13_inside_left_" + tag, inside)
 		check("equip13_touch_target_" + tag, hit_r * 2.0 >= 44.0, hit_r)
 		# 栏位名在环内侧：离球心够远，不压头像
-		check("equip13_labels_inner_" + tag, ring.label_inner > 0.0 and ring.label_inner + 18.0 < ring.radius - ring.orb_radius \
-			and ring.label_inner - 18.0 > sk.ring_radius - 68.0, [ring.label_inner, ring.radius])
-		# 键盘：下／右顺时针一格走完 13 栏回到第一栏；上／左反过来
+		var face_r := (sk.ring_radius - XSkinEquipPage.BRANCH_LABEL_R - 2.0) if lay > 0 else sk.ring_radius - 68.0
+		check("equip13_labels_inner_" + tag, ring.label_inner > 0.0 and ring.label_inner + 18.0 <= ring.radius - ring.orb_radius \
+			and ring.label_inner - 18.0 >= face_r, [ring.label_inner, ring.radius, face_r])
+		# 键盘：下／右一格走完 13 栏回到第一栏（导航顺序：一圈时就是显示顺序；分支时绕主环、遇枝丫先走完）；上／左反过来
+		var nav: Array = sk._plan.nav if lay > 0 else range(n)
+		check("equip13_nav_covers_" + tag, nav.size() == n and nav.duplicate().all(func(r): return nav.count(r) == 1), nav)
 		var order := []
 		for i in n:
 			order.append(page._slot_row())
+			if ring.index != i:
+				check("equip13_ring_index_%s_%d" % [tag, i], false, ring.index)
 			page._unhandled_input(_key("ui_down" if i % 2 == 0 else "ui_right"))
 			await frames(1)
-		check("equip13_walk_order_" + tag, order == range(n) and page._slot_row() == 0 and ring.index == 0, order)
+		check("equip13_walk_order_" + tag, order == nav and page._slot_row() == int(nav[0]) and ring.index == 0, order)
 		page._unhandled_input(_key("ui_up"))
 		await frames(1)
-		check("equip13_walk_back_" + tag, page._slot_row() == n - 1 and ring.index == n - 1, page._slot_row())
+		check("equip13_walk_back_" + tag, page._slot_row() == int(nav[n - 1]) and ring.index == n - 1, page._slot_row())
 		page._unhandled_input(_key("ui_left"))
 		await frames(1)
-		check("equip13_walk_left_" + tag, page._slot_row() == n - 2, page._slot_row())
-		# 点第 10 颗（第二页那半）直接选中，不翻页
+		check("equip13_walk_left_" + tag, page._slot_row() == int(nav[n - 2]), page._slot_row())
+		# 点第 10 颗直接选中，不翻页
 		ring._gui_input(_click(ring.item_pos(10)))
 		await frames(1)
-		check("equip13_click_far_slot_" + tag, page._slot_row() == 10 and ring.items.size() == n, page._slot_row())
+		check("equip13_click_far_slot_" + tag, page._slot_row() == int(nav[10]) and ring.index == 10 and ring.items.size() == n, page._slot_row())
 		# 不能换的栏照旧标 locked（变暗）
 		var a := page.actor()
 		var locked_ok := true
 		for i in n:
-			if bool(ring.items[i].get("locked", false)) != (not XEquipment.can_change(a, int(page.slot_view()[i]))):
+			if bool(ring.items[i].get("locked", false)) != (not XEquipment.can_change(a, int(page.slot_view()[int(nav[i])]))):
 				locked_ok = false
 		check("equip13_locked_flag_" + tag, locked_ok)
 		page.queue_free()
@@ -344,6 +368,18 @@ func _shots() -> void:
 	await _save_shot("equip_16x9_touch", SIZES[0])
 	eq.queue_free()
 	await frames(3)
+	XUiSkin.touch_override = 0
+	# 装备 13 栏三种分支摆法（＋上一版一圈），16:9 键盘、触屏各一张
+	for lay in [0, 1, 2, 3]:
+		XSkinEquipPage.LAYOUT = lay
+		for touch in [0, 1]:
+			XUiSkin.touch_override = touch
+			var e2: Node = await _shot_equip()
+			await frames(6)
+			await _save_shot("equip_layout%d_%s" % [lay, "touch" if touch == 1 else "16x9"], SIZES[0])
+			e2.queue_free()
+			await frames(3)
+	XSkinEquipPage.LAYOUT = 3
 	XUiSkin.touch_override = 0
 	for line in ["death", "war", "famine", "plague"]:
 		var m: Node = await _build_menu(line)
