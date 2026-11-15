@@ -49,6 +49,7 @@ func _reset(unlocked: Array) -> XState:
 
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_designation"  # 配置只在内存
+	XFest.ENABLED = false  # 本专项逐例比原版称号表；冠军庆典追加的 41～44 由 xiyou_fest_road 管
 	XMessageBox.auto = true
 	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("source", ref.sourceIdentity.runtimeInputs == XDB.load_json("manifest.json").runtimeInputs)

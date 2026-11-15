@@ -291,6 +291,7 @@ func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_event_compare"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XMessageBox.auto = true
+	XFest.ENABLED = false  # 比原版：冠军庆典（称号 41～44、冠军之路、大厅庆典）整件关掉，由 tests/xiyou_fest_road 单独测
 	# 比原版翻译：副本的难度／挂机恢复优化（O-038／O-040）关掉，由 tests/xiyou_dungeon 单独对照
 	XDungeon.restore_difficulty = false
 	# 法宝与积分重构（O-388、O-389）：法宝上限、抽奖范围对照原版语义关掉；本身由 tests/xiyou_fabao_rework 核

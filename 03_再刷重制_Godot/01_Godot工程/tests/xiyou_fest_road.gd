@@ -225,6 +225,12 @@ func _flow_flawless() -> void:
 	# 称号表列庆典称号
 	var ids := XDesignation.table().map(func(d): return int(d.id))
 	_check("titles_in_table", ids.has(XFest.TITLE_ROAD) and ids.has(XFest.TITLE_ONE_FOUR))
+	# 活动结束后：拿到的照列，没拿到的（观赛团、全勤）不再列成 ???
+	XFest.TODAY_OVERRIDE = "2027-01-01"
+	var ids_after := XDesignation.table().map(func(d): return int(d.id))
+	XFest.TODAY_OVERRIDE = "2026-11-16"
+	_check("titles_after_event_only_owned", ids_after.has(XFest.TITLE_ROAD) and ids_after.has(XFest.TITLE_ONE_FOUR)
+		and not ids_after.has(XFest.TITLE_WATCH) and not ids_after.has(XFest.TITLE_ATTEND), ids_after.slice(-4))
 	# 存档里进度能存能读（flags 走 JSON）
 	XState.current = s
 	var back = kit.roundtrip() if kit.has_method("roundtrip") else null
