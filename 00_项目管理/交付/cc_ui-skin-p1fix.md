@@ -145,3 +145,23 @@
 - **P3-1 截图对比失效**：`xiyou_ui_skin_p1fix` 的主菜单先进第二级选中「真气」、装备页确定进候选列表再拍；陈列板 `request_wide`，20:9 截成 1600×720。脚本加断言：每组前后图像素不同（`differs_*`）、20:9 宽高比对（`wide_*`）。已重拍：六组 `p1_select_*_v07`／`_v2` SHA-256 两两不同，`*_20x9` 宽 1600。窗口跑 49/49。
 - **P3-2 助力角标压状态图标**：助力卡上状态图标从右让出 `HELPER_TAG_ROOM`＝36；抽出 `XSkinPartyStrip.helper_tag_rect`／`state_icon_rect`（与绘制同算法）。专项 `helper_tag_clear_of_states`：行高 60／64／72／86／120 下 4 个图标都不碰角标，且不让位时会碰（咬得住）。
 - 验证：语法检查通过；本地 `xiyou_ui_skin_menu` 99/99、`xiyou_ui_skin` 104/104、`xiyou_tianqi_e2e` 58/58、`xiyou_ui_skin_p1fix` 窗口 49/49。
+
+## 小A乙档复核
+
+- **结论：通过**（返修提交 `b20de58ba`；P1 **0** 条、P2 **0** 条、P3 **0** 条；上轮 `0e26f8ce5` 4 条均已修好）。
+
+### 一、四条返修与排查结果
+
+- **P1-1 主菜单右键／两指取消（实测＋代码核对，已修好）**：`XSkinMainMenu._input` 在 GUI 之前拦截 `MOUSE_BUTTON_RIGHT` 并调 `cancel()`（选人→回列表、第二级→回环、第一级／旧一级→回地图）。本轮前台 `xiyou_ui_skin_menu` 99/99 通过（含 `two_right_l1_to_ring`、`two_right_actor_back`、`two_right_l0_closes`）；`Platform.two_finger_cancel` 触屏转右键链路仅核对 `core/platform.gd` 代码。
+- **P2-1 Q/E 切单项组 level 归 0（实测＋代码核对，已修好）**：`XSkinMainMenu._set_group` 在 `TWO_LEVEL` 下落到 `items.size() <= 1` 的组时将 `level` 归 `0`，同步更新 `_remember()`、按键提示与选中条显隐；`xiyou_ui_skin_menu` 的 `two_qe_single_drops_level`、`two_qe_multi_keeps_ring` 通过。
+- **P3-1 截图对比重拍与断言（实测，已修好）**：`xiyou_ui_skin_p1fix` 的 `_menu()` 进第二级选中「真气」、`_equip()` 确定进候选列表再拍、`_board()` 调 `XSkinLayout.request_wide` 并加 `differs_*` 与 `wide_*` 断言。本轮前台窗口模式实跑 `xiyou_ui_skin_p1fix` 49/49 通过，并逐组核验重拍 PNG：6 组 `p1_select_{board,menu,equip}_{16x9,20x9}` 的 `_v07` 与 `_v2` 均实质不同（差异像素数分别为 107440、122266、27920、45324、19258、34106，差异区域落在选中条与控件区域），且 `*_20x9` 均为 `1600×720`；仓内 `04_验证/本地结果/ui_skin_p1fix/` 现存对比图亦核对确认两边不同且宽屏尺寸正确。
+- **P3-2 助力卡状态图标左让 36 像素（实测＋代码核对，已修好）**：`XSkinPartyStrip` 新增 `HELPER_TAG_ROOM = 36.0`，助力卡状态图标右起让出 36px（`helper_tag_rect` 左缘 `r.end.x - 44`，`state_icon_rect(..., 0, true)` 右缘 `r.end.x - 48`，水平留出约 4px 间隙）；`xiyou_ui_skin_menu` 的 `helper_tag_clear_of_states` 在行高 60/64/72/86/120 下 4 个状态图标全通过且不让位时碰撞。
+- **其它页 `cancel()` 是否误吞右键（只看代码，未误吞）**：核对 `menu.gd` `_open_detail()` 与 `item_scene.gd` `restore_return()`，进入物品（`XItemScene`／`XSkinItemPage`）、装备（`XEquipScene`／`XSkinEquipPage`）等子页时会置 `host._mode = "page"` 并隐藏 `XSkinMainMenu`（`is_visible_in_tree() == false`）；`XSkinMainMenu._input` 入口已守卫 `host._mode == "page" or not is_visible_in_tree()` 直接 `return`，不会吞掉子页内的鼠标右键／两指返回（未从主菜单实操进子页做真右键测试）。
+- **新问题**：未发现阻断性新问题。附带一处非阻断代码观察：`skin_party_strip.gd` 中 `name_fit` 与职业文本最大宽度仍按右侧预留 `80` 算，未把助力卡的 `HELPER_TAG_ROOM`（36）计入，仅在极长名字＋极长职业且带 3～4 个状态图标时职业后缀可能贴近第 3/4 个状态图标。
+
+### 二、核规则／实测与只看代码区分
+
+- **前台实测通过**：`xiyou_ui_skin_menu.tscn` 无头 99/99、`xiyou_ui_skin_p1fix.tscn` 窗口模式 49/49（含重拍 PNG 像素差异与 `20:9` 尺寸核验）、`语法检查.py` 937 个 `.gd` 0 问题。
+- **只看代码核对**：`Platform.two_finger_cancel` 真机双指手势、从主菜单打开物品／装备等子页后的真右键不误吞、`4:3` 窗口外黑边视觉效果。
+- **长测试留给总装**：全量 `检查.sh`、`xiyou_ui_skin_battle`（窗口模式）、`xiyou_tianqi_e2e`（交付单返修节已记 `cc` 本轮跑过 58/58）、`皮肤关闭对照.py`。
+
