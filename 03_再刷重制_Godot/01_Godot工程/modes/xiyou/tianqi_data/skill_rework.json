@@ -1543,7 +1543,7 @@
   "5851": {"actor": 87, "name": "添腹一饼", "kind": "被动", "desc": ["效果:添腹一饼（击杀加生命暂未实装）"], "note_remove": ["SkillPass\\d+"]},
   "5849": {"actor": 87, "name": "西格玛男人", "kind": "被动", "desc": ["效果:西格玛男人（暂未实装）"], "note_remove": ["SkillPass\\d+", "passiveHarmRi", "passivePBST\\d"]},
   "5846": {"actor": 87, "name": "明教圣火令", "kind": "被动", "desc": ["效果:明教圣火令（暂未实装）"], "note_remove": ["passiveHarmRi", "SkillPass\\d+"]},
-  "5841": {"actor": 87, "name": "觉醒:张无忌", "kind": "被动", "desc": ["效果:觉醒（增伤并进被动）"], "note_remove": ["SkillPass\\d+"]},
+  "5841": {"actor": 87, "name": "觉醒:张无忌", "kind": "被动", "desc": ["效果:觉醒（原增伤已并入其他被动，本技能无额外效果）"], "note_remove": ["SkillPass\\d+"]},
   "5888": {"actor": 88, "name": "雷切", "kind": "爆发", "scope": 1, "damage": {"stats": {}, "max_of": ["atk", "mat"], "coef": 3.0, "conds": [{"if": "always", "mult": 0.8, "_fix": "第六期复核段数"}]}, "mp_pct": 10, "cooldown": 3, "header": {"对象": "单个敌人", "冷却时间": "3回合"}, "desc": ["效果:三段雷电伤害", "伤害:每段 物理攻击、魔法攻击取高×2.4（合计7.2）", "消耗:最大魔法10%"]},
   "10725": {"actor": 88, "name": "手里剑", "kind": "常规", "damage": {"stats": {"atk": 1}, "coef": 1.2}, "hit_type": 0, "desc": ["效果:三段，必中", "伤害:每段 物理攻击×1.2（合计3.6）"]},
   "5885": {"actor": 88, "name": "奥义*千年杀", "kind": "被动", "desc": ["效果:造成伤害有概率沉默、无法行动"], "note_remove": ["passiveHarmRi"]},
