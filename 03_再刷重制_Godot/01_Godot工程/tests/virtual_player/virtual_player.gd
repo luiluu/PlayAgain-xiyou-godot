@@ -1499,6 +1499,15 @@ func _act_equip(obs: Dictionary) -> void:
 		"slot":
 			var view: Array = eq.slot_view()
 			if int(job.row) >= view.size():
+				# 天启篇新界面（XSkinEquipPage，第 1C 批）没有指令窗、开页就在栏位上：
+				if eq.skin != null and int(job.actor) + 1 < party_n:
+					job.actor += 1                   # 这个人换完了，E 换下一个人（回到栏位第一栏）
+					job.row = 0
+					await _tap("e")
+					await _frames(2)
+					return
+				if eq.skin != null:
+					job.done = true
 				await _tap("cancel")
 				return
 			var row: int = eq._slot_row()
