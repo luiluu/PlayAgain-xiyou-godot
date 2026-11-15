@@ -111,3 +111,33 @@
 - 专项与回归测试（本轮仅代码审阅，未独立重跑）：`xiyou_tianqi_e2e`、`xiyou_tianqi_party`、`xiyou_tianqi_opening`、`xiyou_tianqi_balance`、`xiyou_tianqi_numbers`、`xiyou_tianqi_trim`、`xiyou_tianqi_weak_clear`、`xiyou_tianqi_affix_battle`、`xiyou_virtual_player` 及云端全量/选测 `检查.sh`。
 - 脚本工具：`03_再刷重制_Godot/07_开发环境/反向验证.py`、`工具回归.py`。
 - 实机手测：按交付单「用户试玩说明」抽查整队页蜂鸣、随机阵容标题与 3 超占位、旧档进图单次提示。
+
+---
+
+## 五、返修复核（`892d27d12`，2026-11-16）
+
+- **复核者**：ag（小A，Gemini 4 Hydrogen，职级 P7）
+- **复核对象**：`892d27d12`（小o / `co`，`gpt-6.1-sol + medium` 返修提交）
+- **复核结论**：**可合**（**P2-1 已清零，0 P1 / 0 P2 / 2 P3 保留**）
+
+### 1. P2-1 是否修对、有无同类漏传（已核代码本身）
+- **`battle_logic.gd:1094-1102` 修法正确**：`can_tianqi_swap` 内三行五处 `XTianqiSkills.is_super(..., true)` 全部补传 `true`。
+  - 入口 `:1089` 已用 `XTianqi.active(state)` 限定仅天启篇有效；结合 `tianqi_skills.gd:750-764` 的 `force := true` 逻辑：当 `XTianqiSkills.ENABLED` 与 `TIERS` 均开启时直接按天启篇名单 `_tier` 判定，不再经由 `on()` 读取全局 `XState.current`，与 `XItemMarks._super_in(state, id)`（`item_marks.gd:534`）及 `XTianqi.roll_lineup` 口径完全统一；即使关闭 `ENABLED`/`TIERS` 也会一致退回 `XTier.tier_of(id)`。
+- **全仓检索未见同类漏传**：检索 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/` 全部分支内及跨模块的 `XTianqiSkills.is_super` / `is_weak` / `tier_of` / `battle_tier` 调用：
+  - 本分支涉及的 `tianqi.gd`、`item_marks.gd`、`battle_logic.gd`、`entry.gd` 全部显式传入 `true` 或持有显式 `s`；
+  - 全局仅存 `tianqi_trumpet.gd:191`（前一行已 `if not on(): return ""`，且该模块设计为只认全局当前档）与 `tianqi_trim.gd:93`（`XTianqiSkills.ids(tier)`，前置已验 `on(s)`，属原 `dev.563` 图鉴模块，不在本单范围），无与本单相关的同类漏传。
+
+### 2. 新用例是否真能咬住原问题
+- **跨存档回归 `bswap_cross_save_null` / `bswap_cross_save_legacy`（`tests/xiyou_tianqi_zhengdao_party.gd:348-359`）**：**能真咬住原问题**。
+  - 构造从 `(_ids(XTier.WEAK) + _ids(XTier.STRONG)).filter(func(id): return XTier.is_super(id))` 挑出「原版为超强者、天启篇已降档为弱者/强者」的角色 `changed[0]`，在九死战斗存档 `cs` 中将 `XState.current` 分别切为 `XState.new_game_blank()` 与 `null`。
+  - 修前 `is_super(changed[0])` 退回读取 `XState.current` 导致误判为原版超强者，在九死助力位禁超规则下 `cl.can_tianqi_swap(_actor(cl, changed[0]))` 必返回 `false` 而双双失败；修后统一返回 `true`。结尾正确恢复 `XState.current = saved`，无全局状态污染。
+- **P3-2 换位边界保护（`modes/xiyou/core/item_marks.gd:645-646`、`tests/xiyou_tianqi_zhengdao_party.gd:128-129`）**：已顺手修复并补测 `swap_overflow_slot`（`5`）与 `swap_negative_slot`（`-1`），在访问数组前拦截，避免 GDScript 负索引绕过或越界崩溃。
+
+### 3. P3-1 / P3-3 保留理由评议
+- **P3-1 保留理由合理**：四超极端旧档两条提示语义均准确，仅措辞重复，不阻合并，且避免为非阻合微调引入新文本审查开销。
+- **P3-3 保留理由合理**：`balance_table.json` 表头 `source` 代表整表来源提交，不宜因单条 `helper_super` 增量擅自改写全表来源号，留待下批全表数值同步时统一更新合理。
+
+### 4. 本轮复核前台验证
+- `./03_再刷重制_Godot/07_开发环境/godot --headless --path 03_再刷重制_Godot/01_Godot工程 res://tests/xiyou_tianqi_zhengdao_party.tscn`：**`94/94` 通过**（较上一轮 89 项新增 5 项：`swap_overflow_slot`、`swap_negative_slot`、`bswap_cross_save_fixture`、`bswap_cross_save_legacy`、`bswap_cross_save_null`）。
+- `git diff --check e9b156826..HEAD`：无空白/格式问题。
+- 长测试与全量回归仍留总装按上节「未核边界」执行；当前代码可合入 `main`。
