@@ -55,3 +55,16 @@
 
 - a967b38c7 WIP：XBattler.attack_motion、开关、三处演出改用；专项初版
 - 0300b1750 甚尔／宿傩排除名单、专项 36 项、交付单
+
+## co 甲档核查
+
+- 核查对象：`d9b869c30`（累计包含 a967b38c7、0300b1750 的代码），co／gpt-6.1-sol＋medium，2026-11-15；只改本节，不改游戏代码。
+- 结论：通过（附非阻断 P3 补测建议）；未发现 P1／P2，不改游戏代码。
+- P3（非阻断）：`tests/xiyou_replace_attack_motion.gd:123`、`:211`，开关结算对比只测演出本来不变的琴里 6170，惊宵锤画面测试未直接对比结算和随机流快照。建议后续增加 4437 完整行动序列开／关的伤害、TP、追加次数与 `logic.random.snapshot()` 对比；现有 determinism 是演出矩阵通用保障，不是这个开关的直接证据。
+- 结算与时序：新函数仅供三个演出调用点读取，伤害／追加次数／AI 的 `is_attack`、`attack_skill_id` 不变；`_cast_animation → _normal_animation → _start_animation → MVAnimation` 无战斗随机流调用，音效 timing 也无随机数抽取；WAIT FOR ANIMATION 会延长演出等待，顺序仍串行，等待只推进显示状态。随机动作 randattack 使用独立 RandomNumberGenerator，不消耗战斗 rule／reward 流。
+- 回退：开关关时 `attack_motion(item)` 与 `is_attack(item)` 等价，三个替换点恢复原条件，未改其余分支，技能动画开关及变速仍走原实现。
+- 边界只读：stypeId 0（飞镖／苦无等）返回攻击动作；双持／空手的 attack_visual 与 `_attack_animation_ids` 没改，新技能分支不出武器图；自动／挂机／智能 AI 选招后共用 `_play` 和序列演出入口。双持本轮没有重新运行专项（不在该基准的云端选测集合），不以执行者历史测试冒充本轮证据。
+- 排除名单：与 `XActor.TOJI_MAIN` 四形态及宿傩固定普攻一致，保留咒具挥击／体术符合本单要求；不需要扩名单。琴里 6170 的显式 swing 与 Cast Animation 0 保持不动（Kyo A）。
+- 本轮验证：修正后云端 25/25 场景通过（7 片及 report 全部 success），包括 xiyou_replace_attack_motion、xiyou_determinism、xiyou_smart_ai 及 b～p／profile 共 17 个、attack_query、battle_speed、hangup_options、sequence_visual、toji_battle、sukuna_fx；运行证据：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43737201174 （attempt 2）。
+- 原版对照：本轮实际运行 `mv_oracle/boot_check.cjs`，db=true、277 scripts、165 plugins、modulesFailed/errors 均空（约 4.6 秒）；云端 attack_query、smart_ai 使用已有原版探针基线，并非重新生成全部原版探针，未跑全量 `检查.sh --oracle`、未重同步正式源。
+- 云端执行说明：首次跳过名单漏 `.tscn` 后缀，误启动 297 场景，已取消；修正后重跑的 plan.json 确认为 25 场景／7 片，以下结论只据修正后的结果。
