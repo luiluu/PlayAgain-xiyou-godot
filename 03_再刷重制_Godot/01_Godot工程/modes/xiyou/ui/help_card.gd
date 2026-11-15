@@ -1391,7 +1391,23 @@ func place_near(anchor: Rect2, side := "right", area := Rect2(22, 22, 1236, 676)
 	_layout_extras()
 
 
+## 新界面（天启篇，XUiSkin.on() 时，1B 换皮）：外框换成黑面板＋细线，品质色只留一道 1px 描边；排版、字、位置都不变
+func skinned() -> bool:
+	return XUiSkin.on()
+
+
 func _draw_frame() -> void:
+	if skinned():
+		var ci := frame.get_canvas_item()
+		var r := Rect2(Vector2(4, 4), frame.size - Vector2(8, 8))
+		XUiSkin.draw_panel(ci, r)
+		var sb := StyleBoxFlat.new()
+		sb.draw_center = false
+		sb.border_color = Color(XUiSkin.quality_color(clampi(XQuality.grade_of(quality), 0, 6)), 0.55) if quality > 0 else Color(XUiSkin.LINE, 0.35)
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(XUiSkin.RADIUS)
+		sb.draw(ci, r)
+		return
 	# ItemQuality：四层 Window{品质} 窗口（西游 v0.15 起按七档取代表图）（不透明度、背景都是 60），覆盖卡外 10px
 	var skin_path := XDB.img_path("system", "Window%d" % XQuality.window_skin(quality))
 	_frame_style = XUI.panel(60)
@@ -1404,7 +1420,8 @@ func _draw_frame() -> void:
 
 
 func _paint(c: XMVCanvas) -> void:
-	c.draw_rect(Rect2(1, 1, size.x - 2, size.y - 2), BACK)
+	if not skinned():
+		c.draw_rect(Rect2(1, 1, size.x - 2, size.y - 2), BACK)
 	for l in _lines:
 		for g in l.glyphs:
 			if g.has("icon"):
