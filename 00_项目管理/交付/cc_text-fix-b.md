@@ -19,6 +19,7 @@
 - 逐条覆盖表（O-待定-6）：`modes/xiyou/text_fix/overrides.json` 77 条，每条「位置＋原文子串＋改成（＋应命中次数）」，原文对不上（0 次或次数不等）就不套用、记进 `XTextFix.warnings` 并 push_warning。先套覆盖（from 按原版原文写），再套统一规则。填的是报告第三节第 2 组的必改条目，文本照报告「改成」列；以下几条按实际数据调整并在条目 why 里写明：Skills:10076／10489、10508 公式照实际伤害公式重写（报告建议的括号位置与实际算式不符）；Skills:7848（错贴风遁说明）、7854（第二行空）新写了一句、Skills:6234 按报告首选补「谁」，都待小A润色；Weapons:68～70「特效:???」与 Skills:6875「特效:)」整行删掉。另补两条报告未列的同类单边引号（Skills:4459、10109）。之后玩家可见文字的润色由小A在这张表里改。
 - 代码里按名字认敌人档位的两处同时认新旧写法：`XZhenqi.is_boss_enemy`（真气首领判定，「【超级Boos】」→加认「【超级Boss】」）；`XEncounterTarget` 本来就不认这个前缀，只改注释。
 - 加载开销：修正本身约 0.47 秒（Skills 0.25 秒），所以修正后的表连同报警一起存进 XDB 已有的 JSON 解析缓存（键＝源文件内容＋开关状态＋rules／overrides 内容＋`CACHE_VER`），命中后读表与不修正时一样（实测全部 13 张表开／关各约 0.58 秒，差在噪声内）。`XIYOU_JSON_CACHE=0` 时每次现算。
+- 边界：① 记录的 `meta` 里也有一份 MV 解析出的 `pos=… text=…` 键，界面不从那里读（只有 XCanglong 为一致性顺手改它），本单不动，专项核 meta 原样；② 旧存档里锻造／生成装备实例自带名字的，存的是旧名（如「奥数璀璨外套」），新拿到的才是新名；③ 新换上的字只有「箧」不在天启篇皮肤字体子集（`content/ui_skin/fonts/charset_*.txt`）里，`XUiSkin` 给子集字体挂了全量字体做回退，显示正常，重裁子集时带上即可。
 - 报告判必改、核对后不改的 2 条：52-001（Items:3063 生成数据里就是「萨姆变身器」，报告摘录被截断）；80-003（「西西卡」是角色 88 的正式名，说明里玩的这个梗，不改成卡卡西）。报告位置写错 2 条（104-001 Map136 应为 ev4、106-002 Map154 应为 ev3），统一规则已改到。
 - 工具：`tests/text_fix_dump.tscn`（把修正后的表与地图导出到 `XIYOU_TEXT_FIX_DUMP` 目录，并量耗时）；`07_开发环境/文字审/scan_beta_text.py` 加 `--gen-dir`／`--out-dir`（扫修正后数据，别覆盖原归档），读 Godot 导出的 `\v` 与 `134.0` 整数，「槃」不再报繁简；新 `07_开发环境/文字审/核对必改.py`（逐条比对报告必改位置的原文与修正后文字）；`tests/text_fix_shots.tscn`（名字框修正前后对话窗截图，要真窗口）。
 - 玩家可见：
@@ -60,7 +61,7 @@
 
 - 代码（cc 总装合并时核）：`modes/xiyou/core/text_fix.gd`（新）、`modes/xiyou/core/xdb.gd`（`table` 读表改走 `XTextFix.load_table`，`map` 加一行 `patch_map`）、`modes/xiyou/core/zhenqi.gd`（首领名正则加「超级Boss」）、`modes/xiyou/core/encounter_target.gd`（注释）。重点：读表入口改了，所有读这 13 张表的地方都经过修正；修正缓存的键与作废（`CACHE_VER`）；`clear_cache` 只清 13 张表与地图。
 - 文字（小A文字审）：`modes/xiyou/text_fix/rules.json`、`overrides.json` 改出来的字；可用 `tests/text_fix_dump.tscn` 导出后对照。
-- 测试：新专项 `tests/xiyou_text_fix`（42 项）；`tests/xiyou_event_compare.gd` 对照原版时 `XTextFix.set_all(false)`。
+- 测试：新专项 `tests/xiyou_text_fix`（42 项）；`tests/xiyou_event_compare.gd`、`tests/xiyou_help_card.gd` 对照原版时 `XTextFix.set_all(false)`。
 - `--affected --cloud` 建议：本单改了读表入口，影响面等同全部读数据库的场景，建议总装合并时 `--affected --cloud` 跑（选测会判整轮）。
 
 ## 验证
@@ -69,7 +70,9 @@
 - 扫描脚本重跑（`scan_beta_text.py --scan --gen-dir <导出>`）：机械命中 837 → 616 段；控制符 65→0、`mv_ctrl_missing_arg` 33→0、括号不配对 190→36、半全角混搭 45→5、繁简 179→161（余下多是古神异兽、人名本字，可不改）、半角标点 398→397（建议项，没做）。
 - 必改逐条核对（`07_开发环境/文字审/核对必改.py --gen-dir <导出>`）：160 条＝已改 158、登记不改 2（52-001、80-003，理由见上）、剩余 0。另按错词全库查残留：只剩编辑器分隔条（`------1层副本boos技能`）与动画名（`奥数爆炸`），玩家看不到。
 - 名字框窗口截图（真窗口，`tests/text_fix_shots.tscn`）：`03_再刷重制_Godot/04_验证/本地结果/text_fix_b/`，五组原版／修正：Map008 副本协会主席、Map004 天才灵魂、Map071 `\c\[4]` 双转义、Map121 孤立 `\n`（重制版原本就没露，数据顺手清）、Map144 太上老君藏身处；`shots.json` 记两边原文。
-- 本地选测：（待写）
+- 本地选测 59 个场景（`xiyou_event_compare` 四段、`xiyou_floor*` 全部 47 个、提示卡类 7 个、`xiyou_message`、`xiyou_zhenqi*` 三个、`growth_forge`、`auto_passive`、`movie`、`text_fix`）：58 过；`xiyou_help_card` 挂 8 项，全是参照（原版渲染的说明卡）与修正后文字的预期差异（「受到的所伤害」「Boos血脉」「奥数伤害」、半全角括号），已照事件对照的做法在该专项对照原版时 `XTextFix.set_all(false)`，复跑 1075/1075。日志 `04_验证/本地结果/并行测试/20261115_181311_qmgivskm/`。
+- 没跑的：其余直接比原版文字的参照专项（可能还有几处像 help_card 这样要关修正的），留给总装 `--affected --cloud` 整轮；挂了就照 help_card 加一行 `XTextFix.set_all(false)`。
+- 工具回归全过（105 秒）。
 - 语法检查 0 问题。
 
 ## 本分支提交
