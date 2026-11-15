@@ -1,7 +1,7 @@
 extends Node
 ## 新界面开关关掉时与 main 逐像素一致（ui-skin-p0）：这个脚本不直接引用任何新类，main 上也能跑；
 ## 07_开发环境/皮肤关闭对照.py 把它拷进 main 的临时克隆和本分支各跑一次（要窗口），再用 --compare 逐像素比。
-## 拍的页：主菜单、状态、物品、技能、装备、设置（技能 ui-skin-1b 加）、装备检索（XGearSearch 网页面板，ui-skin-1c 加：XWebPanel 换皮）；战斗（2A 加：指令窗、战技列表、选目标三张，地图 5 敌群 2，随机数钉住、呼吸停掉；只拍西游存档那一档）；
+## 拍的页：主菜单、状态、物品、技能、装备、设置（技能 ui-skin-1b 加）、装备检索（XGearSearch 网页面板，ui-skin-1c 加：XWebPanel 换皮）、设置子页三个（画质、消息提醒、屏蔽掉落）与返回标题（XGameEndPanel）（ui-skin-5c 加）；战斗（2A 加：指令窗、战技列表、选目标三张，地图 5 敌群 2，随机数钉住、呼吸停掉；只拍西游存档那一档）；
 ## 天启篇标题、选线四卡、异化工坊（ui-skin-3b 加；标题在西游情形下按发行构建拍：标题还没读档，新皮肤按构建开，发行构建不开）。
 ## tq_off 背包里另放七印装备和号卷（ui-skin-3a 加，#82）。七印祭坛关着时照旧是地图上的对话框选单（同一句 ask），不在这里拍，专项 xiyou_ui_skin_3a 验。两种情形：
 ##   xiyou      西游存档、开关全默认（重制版玩家现在的样子）；
@@ -11,7 +11,7 @@ extends Node
 ##   比：godot --headless --path <工程> res://tests/xiyou_ui_skin_offshot.tscn -- --compare=<目录甲>,<目录乙>
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const SKIN := "res://modes/xiyou/ui/skin/ui_skin.gd"
-const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XSkillScene", "XEquipScene", "XOptionsScene", "XGearSearch", "XTianqiTitle", "XTianqiLineCards", "XAlienWorkshop"]
+const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XSkillScene", "XEquipScene", "XOptionsScene", "XGearSearch", "XGraphicsOptionsScene", "XNoticeOptionsScene", "XPingbiScene", "XGameEndPanel", "XTianqiTitle", "XTianqiLineCards", "XAlienWorkshop"]
 
 var out_dir := ""
 var compare := ""
