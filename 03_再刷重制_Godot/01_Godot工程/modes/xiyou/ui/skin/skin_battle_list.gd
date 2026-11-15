@@ -121,11 +121,11 @@ func _unhandled_input(event: InputEvent) -> void:
 					return
 				_press_event = mb.duplicate() as InputEventMouseButton
 				_drag.press(mb.position, float(top) * ROW_H)
-				get_viewport().set_input_as_handled()
+				XKeyMap.handled(self)
 				return
 			if _drag.active():
 				var tap := _drag.release()
-				get_viewport().set_input_as_handled()
+				XKeyMap.handled(self)
 				if tap and _press_event != null:
 					super._unhandled_input(_press_event)
 				_press_event = null
@@ -136,7 +136,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				var want := clampi(roundi(to / ROW_H), 0, maxi(entries.size() - rows, 0))
 				if want != top:
 					_scroll(want - top)
-				get_viewport().set_input_as_handled()
+				XKeyMap.handled(self)
 			return
 	super._unhandled_input(event)
 

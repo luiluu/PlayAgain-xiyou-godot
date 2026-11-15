@@ -614,7 +614,7 @@ func _input(event: InputEvent) -> void:
 	if host == null or host._mode == "page" or not is_visible_in_tree():
 		return
 	if event is InputEventMouseButton and event.pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_RIGHT:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		cancel()
 
 
