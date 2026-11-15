@@ -1,0 +1,30 @@
+{
+ "sha": "e4e1f3e628a5ad392186b8c9f1a97a81f03f031e",
+ "branch": "ci/cc/ui-skin-p1fix",
+ "mode": "affected",
+ "base": "406e3174a607a98196340e0302a06da416b6e474",
+ "passed": true,
+ "scenes": 9,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 248.4,
+ "testSeconds": 492,
+ "generatedRef": "refs/ci/generated/cc/ui-skin-p1fix",
+ "generatedCommit": "40f7741d45ba0ee4058dc20752d3c3d5a8ec4750",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43745251092",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_tianqi_e2e.tscn",
+  "xiyou_ui_skin.tscn",
+  "xiyou_ui_skin_3a.tscn",
+  "xiyou_ui_skin_menu.tscn",
+  "xiyou_ui_skin_p1fix.tscn"
+ ],
+ "time": "2026-11-15T18:16:42+00:00"
+}
