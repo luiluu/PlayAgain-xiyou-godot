@@ -32,6 +32,7 @@ func _run() -> void:
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = s
 	var shots := 0
+	var built := 0
 	for scenario in ["xiyou", "tq_off"]:
 		if scenario == "tq_off":
 			s.flags["tianqi"] = {"rules": 1}
@@ -45,13 +46,14 @@ func _run() -> void:
 				print("SKIP ", cls)
 				continue
 			add_child(page)
+			built += 1
 			for i in range(30):
 				await get_tree().process_frame
 			_freeze(page)
 			for i in range(3):
 				await get_tree().process_frame
-			await RenderingServer.frame_post_draw
-			if out_dir != "" and DisplayServer.get_name() != "headless":
+			if out_dir != "" and DisplayServer.get_name() != "headless":   # 无头时没有 frame_post_draw，只把各页建一遍
+				await RenderingServer.frame_post_draw
 				DirAccess.make_dir_recursive_absolute(out_dir)
 				get_viewport().get_texture().get_image().save_png(out_dir.path_join("%s_%s.png" % [scenario, cls]))
 				shots += 1
@@ -63,7 +65,9 @@ func _run() -> void:
 			pl.stop()
 			pl.stream = null
 	await get_tree().create_timer(0.3, true, false, true).timeout
-	print("TEST_RESULT=" + JSON.stringify({"passed": shots, "total": shots}))
+	# 无头（检查.sh 整轮）时只验各页建得起来：每页算一项
+	var n := shots if shots > 0 else built
+	print("TEST_RESULT=" + JSON.stringify({"passed": n, "total": n}))
 	get_tree().quit(0)
 
 
