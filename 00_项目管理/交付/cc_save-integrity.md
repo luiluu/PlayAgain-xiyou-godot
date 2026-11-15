@@ -1,7 +1,7 @@
 # 交付：cc/save-integrity
 
 - 车道／工作者：C 规则·存档「存档加密＋校验」（D28，Kyo 11-15）（cc 车道，Orca task_11eb3bcf1931，Opus＋medium：碰存档，甲档，交 co 核）
-- 状态：进行中
+- 状态：可合并
 
 ## 结论
 
@@ -64,7 +64,7 @@
 - 导出改成封存格式，改过的导不进；旧版明文导出默认不收。
 - 回退：`XSaveSeal.ENABLED = false`（写明文、两种都读）。
 - 玩家可见：存档文件不能再用改档工具修改；改过的存档在读档页显示「存档校验失败」并保留原文件。
-- 验证：专项 `xiyou_save_seal`（新，94/94）、存档相关旧专项 30 个本机通过（改成经 `XSaveSeal` 读写测试夹具）；云端选测见交付单。
+- 验证：专项 `xiyou_save_seal`（新，97/97）、存档相关旧专项 32 个本机通过（改成经 `XSaveSeal` 读写测试夹具）；云端选测 416 个场景 415 过，1 个是与本改动无关的偶发（见交付单）。
 - 提交：（合并时填）
 
 ## 优化登记草稿
@@ -91,14 +91,16 @@
 ## 可优化（流程／工具／效率）
 
 - 建议：测试里直接 `FileAccess.get_file_as_string(XSave.path(…))` 读存档的写法以后都要走 `XSaveSeal.read_text`，可在守卫检查里加一条 rg（预计收益：防新测试一上来就崩在解析封存字节；归工具车道）。
+- 建议：`xiyou_step_encounter_stop` 的 `rollback_stale_target_walks` 仍偶发（main 最新也一样，封存关掉也会挂），归步步遇敌那条车道把起点或等待改成确定性。
 - 已做：本轮把 23 个测试文件里的存档读写夹具改成 `XSaveSeal.read_text`／`XSaveSeal.store`。
 
 ## 验证
 
-- 专项 `xiyou_save_seal`（新）94/94：编码往返、改任一段一字节／截断／追加／空文件失败；明文旧档迁移（七个文件备份逐字节等于原文件、解开等于原文、记号、只备份一次）；新档往返；改一字节→校验失败且原文件仍在、存档页／摘要／导出表现、存到失败格先改名留着；截断；删除改名；迁移后明文失败、开关放宽照读；自动存档；多槽；云裳／魔冠账本、仓库、跨存档变量改过不读不写；开关关闭写明文、两种都读、再打开重新迁移；导出导入；反馈 zip 原样。
+- 专项 `xiyou_save_seal`（新）97/97：编码往返、改任一段一字节／截断／追加／空文件失败；明文旧档迁移（七个文件备份逐字节等于原文件、解开等于原文、记号、只备份一次）；新档往返；改一字节→校验失败且原文件仍在、存档页／摘要／导出表现、存到失败格先改名留着；截断；删除改名；迁移后明文失败、开关放宽照读；自动存档；多槽；云裳／魔冠账本、仓库、跨存档变量改过不读不写；开关关闭写明文、两种都读、再打开重新迁移；导出导入；反馈 zip 原样。
 - 本机直跑（单测 `test_main_loop`，本机测试槽被别的车道占着，没走并行测试排队）：xiyou_save_corrupt 53/53、save_cat_slots 15/15、save_slim 126/126、save_page 42/42、save_events 31/31、save_transfer 38/38、star_warehouse 99/99（一次偶发 4 项品质颜色不对，连跑两次都过，与本改动无关的颜色断言，第一次偶发）、global_vars 17/17、demon_crown 106/106、autosave 10/10、pause_save 46/46、save_cold_load 27/27、splash_autosave 74/74、feedback_v001 32/32、yunshang_shop 436/436、yunshang_gear_load 137/137、platform 155/155、percent_pills 65/65、review_regressions 29/29、random_streams 490/490、floor30_gifts 30/30、tianqi_affix_seed 23/23、tianqi_opening 44/44、tianqi_seed_fix 77/77、lottery_seed 12/12、tianqi_save 82/82、battleback_save 5/5、newgame_back 68/68、tianqi_e2e 58/58、tianqi_title_flow 43/43、tianqi_ending 24/24、entry_release 16/16。
-- 云端选测（`云端选测.py run`，416 个场景）：待写
-- 发行包冷启动读旧档：待写
+- 云端选测（`云端选测.py run --no-upload`，提交 ba4f9b83d，416 个场景、16 片）：415 通过，1 个失败 `xiyou_step_encounter_stop`（`rollback_stale_target_walks`）。本机查：**与本改动无关的偶发**——再合 main（含 0f85d8abd「遗留目的地取刚离开的一格」）后本机连跑 3 次 1 过 2 挂；把 `XSaveSeal.ENABLED` 默认改成关再连跑 4 次仍有 1 次挂（同一断言，起点随机）。这是回退开关那一段（`MV_CLEAR_DEST=false`）的偶发，见「可优化」。
+- 发行模拟冷启动读旧档：专项 `release_cold.*`（`ReleaseEntry.simulate_release`、`XState.current＝null` 时读旧版写的明文档→迁移、读进来、内容一字不差）通过；`xiyou_save_cold_load`（含 release_slot／release_auto）27/27。真发行包实机冷启动没做（要出包），建议出包后测试玩家验一次。
+- 工具快速回归全部通过（97 秒）；语法检查通过。
 - 合并建议：`合并车道.sh … --finish --affected --cloud`。
 
 ## 待交叉核查
@@ -109,3 +111,4 @@
 
 - 6b696d2a6 存档封存 XSaveSeal 接入
 - 81d3f31d2 专项 xiyou_save_seal；旧存档专项改走 XSaveSeal 读写
+- 交付单、发行模拟冷启动读旧档专项（xiyou_save_seal 97/97）
