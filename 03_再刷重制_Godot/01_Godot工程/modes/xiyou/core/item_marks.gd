@@ -630,8 +630,8 @@ static func _tianqi_can_deploy(s: XState, actor_id: int, slot: int) -> bool:
 			if _tianqi_can_deploy(s, actor_id, i):
 				return true
 		return false
-	if slot >= XState.MAX_BATTLE_MEMBERS:
-		return false
+	if slot >= XState.MAX_BATTLE_MEMBERS or (actor_id > 0 and not s.party.has(actor_id)):
+		return false  # 越界格、不在队伍里的角色放不进
 	var after: Array = s.battle_slots.duplicate()
 	var at := after.find(actor_id) if actor_id > 0 else -1
 	if at >= 0:

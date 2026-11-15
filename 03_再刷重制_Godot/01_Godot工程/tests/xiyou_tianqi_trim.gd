@@ -75,7 +75,7 @@ func _roster() -> void:
 	var sup := XTianqiTrim.roster("super", s)
 	_check("roster_super_ids", sup.get("ids") == XTianqiSkills.ids(XTier.SUPER) and not (sup.ids as Array).is_empty(), sup.get("ids"))
 	var notes := " ".join(sup.get("notes", []))
-	_check("roster_super_notes", notes.contains("+150%") and notes.contains("寻常 0") and notes.contains("九死 1") and notes.contains("证道 3")
+	_check("roster_super_notes", notes.contains("+150%") and notes.contains("寻常 0") and notes.contains("九死 1") and notes.contains("证道 2") and notes.contains("助力位只有证道能放超强者")
 		and not notes.contains("洪荒"), notes)
 	var st := XTianqiTrim.roster("strong", s)
 	_check("roster_strong", st.get("ids") == XTianqiSkills.ids(XTier.STRONG) and " ".join(st.notes).contains("+50%"), st)

@@ -109,6 +109,12 @@ func _deploy() -> void:
 		and not XItemMarks.can_deploy(z, sup[3], 2) and XItemMarks.can_deploy(z, sup[3], 1))
 	_check("deploy_remove_ok", XItemMarks.can_deploy(z, 0, 4) and XItemMarks.can_deploy(z, 0, 0))
 	_check("deploy_bad_slot", not XItemMarks.can_deploy(z, w[5], 5) and not XItemMarks.can_deploy(z, w[5], 9))
+	_check("deploy_not_in_party", not XItemMarks.can_deploy(z, w[6], 4) and not XItemMarks.can_deploy(z, w[6]) and not z.party.has(w[6]))
+	_check("deploy_full_field_super_swap", XItemMarks.can_deploy(z, sup[0], 1) and XItemMarks.can_deploy(z, sup[1], 0) and XItemMarks.can_deploy(z, sup[2], 4))
+	# 非天启篇存档：照原版 canDeploy（不按整栏、不看助力位）
+	var old := XState.new_game_blank()
+	_check("deploy_legacy", XItemMarks.can_deploy(old, w[0], 4) == XItemMarks.can_acquire_actor(old, w[0])
+		and XItemMarks.can_deploy(old, sup[0], 4) == XItemMarks.can_acquire_actor(old, sup[0]))
 	_check("deploy_readonly", z.battle_slots == [sup[0], sup[1], w[2], w[3], sup[2]], z.battle_slots)
 
 
@@ -193,6 +199,27 @@ func _enforce() -> void:
 	var z5 := _state("zhengdao", [sup[0], sup[1], sup[2]], [sup[0], sup[1], sup[2], w[3], w[4]])
 	var fighters := z5.battle_members().map(func(a): return a.actor_id)
 	_check("enf_via_battle_members", fighters.filter(func(id): return XItemMarks._super_in(z5, id)).size() == 2 and z5.helper() != null and z5.helper().actor_id == sup[2], [fighters, z5.battle_slots])
+	# 各入口都会清（init_battle_slots、add_actor、rearrange_actors、remove_actor、进图 deploy_start、battle_members）
+	var entries := {
+		"rearrange": func(x: XState): x.rearrange_actors(),
+		"add_actor": func(x: XState): XTianqi._joining = true; x.add_actor(w[6]); XTianqi._joining = false,
+		"remove_actor": func(x: XState): x.remove_actor(w[2]),
+		"deploy_start": func(x: XState): XItemMarks.deploy_start(x),
+		"battle_members": func(x: XState): x.battle_members(),
+	}
+	for name in entries:
+		var e := _state("lianyu", [sup[0], sup[1], sup[2]], [sup[0], sup[1], w[2], w[3], sup[2]])
+		entries[name].call(e)
+		_check("enf_entry_" + name, XItemMarks.tianqi_slots_ok(e, e.battle_slots) and e.party.has(sup[2]), [name, e.battle_slots])
+	var ib := _state("lianyu", [sup[0], sup[1], sup[2]], [sup[0], sup[1], w[2], w[3], sup[2]])
+	ib.party = [sup[0], sup[1], sup[2], w[0], w[1], w[2], w[3], w[4]]
+	ib.init_battle_slots()  # 按队伍前 5 人重建：3 超在前 → 清成合规
+	_check("enf_entry_init_battle_slots", XItemMarks.tianqi_slots_ok(ib, ib.battle_slots), ib.battle_slots)
+	# 非天启篇存档：清理照原版（不动助力位规则）
+	var old := XState.new_game_blank()
+	old.party = [w[0], w[1], w[2], w[3], w[4]]
+	old.battle_slots = [w[0], w[1], w[2], w[3], w[4]]
+	_check("enf_legacy_untouched", not XItemMarks.enforce_party(old) and old.battle_slots == [w[0], w[1], w[2], w[3], w[4]])
 	# 存档往返后照样（旧档存着违规出战栏，读回再清）
 	var j3 := _state("jiusi", [sup[0], sup[1]], [sup[0], w[1], w[2], w[3], sup[1]])
 	var back: XState = XState.from_dict(j3.to_dict())
@@ -293,14 +320,21 @@ func _battle_swap() -> void:
 	h = lg.tianqi_swap(_actor(lg, sup[0]))
 	_check("bswap_super_swapped", h != null and h.actor_id == sup[2] and z.battle_slots == [sup[2], sup[1], w[2], w[3], sup[0]]
 		and XItemMarks.tianqi_slots_ok(z, z.battle_slots), z.battle_slots)
+	# 证道满 2 超、助力位是强／弱者：超强者换下去、强／弱者换上来可以
+	var zf := _state("zhengdao", [sup[0], sup[1]], [sup[0], sup[1], w[2], w[3], w[4]])
+	var lgf := _logic(zf)
+	_check("bswap_super_out_plain_in", lgf.can_tianqi_swap(_actor(lgf, sup[0])) and lgf.can_tianqi_swap(_actor(lgf, w[2])))
+	# 倒下的人不能换（不靠上限：场上 1 超时也不行）
+	var zd := _state("zhengdao", [sup[0], sup[2]], [sup[0], w[1], w[2], w[3], sup[2]])
+	var lgd := _logic(zd)
+	_actor(lgd, w[1]).add_state(1)
+	_check("bswap_dead_cannot_swap", not lgd.can_tianqi_swap(_actor(lgd, w[1])) and lgd.can_tianqi_swap(_actor(lgd, w[2])))
 	# 证道：场上 1 超 → 助力位超强者能换下强者
 	var z2 := _state("zhengdao", [sup[0], sup[2]], [sup[0], w[1], w[2], w[3], sup[2]])
 	var lg2 := _logic(z2)
 	_check("bswap_under_cap", lg2.can_tianqi_swap(_actor(lg2, w[1])))
 	h = lg2.tianqi_swap(_actor(lg2, w[1]))
 	_check("bswap_under_cap_slots", h != null and XItemMarks.tianqi_slots_ok(z2, z2.battle_slots) and z2.battle_slots[4] == w[1], z2.battle_slots)
-	# 证道：强者换下超强者（超强者进助力位）可以
-	_check("bswap_super_out", lg2.can_tianqi_swap(_actor(lg2, sup[0])) or lg2.can_tianqi_swap(_actor(lg2, sup[2])))
 	# 九死：场上的超强者不能换进助力位；助力位被写成超强者（漏清）也不能换上来
 	var j := _state("jiusi", [sup[0], sup[1]], [sup[0], w[1], w[2], w[3], w[4]])
 	var lg3 := _logic(j)
