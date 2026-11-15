@@ -66,3 +66,19 @@
 ## 本分支提交
 
 - 见 `git log main..cc/mira-lift-u7`
+
+## 乙档核查
+
+- 核查者：cc（核查，Sonnet＋medium，2026-11-15；对象 472df0c8c＋dd17fcaa1；执行者是 cc／小A 线，不是本核查者）。**结论：通过，P1／P2 无，P3 三条。**
+- 实测：本机前台跑 `xiyou_mira_lift` 42/42、`xiyou_mira_dragon_art` 31/31；`xiyou_step_encounter_stop` 本机单跑 7/7（63 秒），与交付单「云端偶发、与本分支无关」一致（只证明本机能过，没有复现云端失败）。看了 6 张截图。
+- 只看代码（没另行实测）：
+  1. 开关关／技能动画关：`begin` 动画关时不建层、回调立即一次；`is_lift` 受 `XMira.LIFT_ART` 管；`swap_look` 只多记旧键旧缩放＋末尾一行，结算在 `XMira.liberate` 里，战斗流程不 await，结算顺序与回调次数不变。
+  2. 清理：`finish` 有 `done` 守卫只调一次；取消（外观换回人形）、阵亡、`animate_on` 中途变 false、`_look_key` 不再是黑龙、精灵释放（PREDELETE）都走收尾；读档不经 `swap_look`（初始键在构造时直接设），不会误开演。
+  3. 倍速：`speed_mult()＝5−battleAniSpeed`，4／3／2／1＝1×／2×／3×／4×，与 YEP 档位对得上；`_process` 的 delta 不含战斗动画倍速，这里乘一次，没有重复乘；齿轮靠物理帧 delta 的 time_scale，另一层，不冲突。战斗代码里没有 `tree.paused`，「暂停」按节点树暂停算，测试覆盖。
+  4. 召剑：`SKILLS＝[10151]`，`on_skill` 只认名单；dragon_art 断言 10150／10152 不召。
+  5. 选测：`content/mira/*` → `mira_art` 组（6 个场景都存在），规则在 `*` 兜底之前；该目录只有 PNG、两个 manifest／README，没有逻辑数据；改 `battler_sprite.gd`／`mira.gd` 等代码文件走各自原有规则，不会漏。没发现会让该跑的测试漏跑；`xiyou_mira_battle`／`abyss`／`raven_hit` 不在组里，但只改素材时不依赖素材，可接受。
+  6. 截图：0240ms 人形在脚点右侧（交付单已披露的右移约 70 像素）；900ms 空中黑龙约 1.9 倍大、被截图画面上沿裁掉一点（截图框限制，不是游戏错位）；1600ms 龙在地面、落地火环对准脚点；2000ms 与落地本体一致，没有明显错位或重影。
+- P3：
+  - `_draw_at`／`finish` 直接写 `sp.sprite.visible`（1800ms 后每帧置 true），会盖掉 `set_anim_hidden`（技能动画 flashScope 3 隐藏）的结果；只在米拉变身后 520ms 内又被藏时才可见，影响极小，可顺手改成只在自己藏过时才恢复。
+  - 层从来没有被「暂停」实测过真实战斗暂停路径（战斗里没用 tree.paused），只是测试里设了树暂停；若以后战斗加了自己的暂停标志，要在 `_process` 里一起判。
+  - 起点右移约 70 像素、空中放大两项已写进交付单「需要用户决定」，不算缺陷，等 Kyo 定。
