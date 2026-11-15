@@ -10,7 +10,7 @@
     "tool_readonly_content": {"说明": "只读工具里挂在 content 检查下的（fix7，审查 48 P2）：事件空绿扫描.py／事件空绿基线.json／补预设批量.py，检查.sh 的「事件空绿扫描.py --check」属 content；工具回归＋content＋引用它的测试，不选整组 converter", "refs": true, "toolRefs": true, "checks": ["guards", "tools", "content"]},
     "coverage_baseline": {"说明": "内容覆盖基线", "checks": ["content"]},
     "event_baseline": {"说明": "事件对照基线", "scenes": ["xiyou_event_compare*.tscn"]},
-    "tianqi_title": {"说明": "天启篇标题页（XTianqiTitle 与 content/title/）：跑标题专项和开场专项", "scenes": ["xiyou_tianqi_title.tscn", "xiyou_splash_autosave.tscn", "xiyou_tianqi_e2e.tscn"]},
+    "tianqi_title": {"说明": "天启篇标题页（XTianqiTitle 与 content/title/）：跑标题专项、开场专项和标题流程（title_flow 含反馈群号／问卷叠放，11-15 3B 换皮漏选在云端挂过）", "scenes": ["xiyou_tianqi_title.tscn", "xiyou_tianqi_title_flow.tscn", "xiyou_splash_autosave.tscn", "xiyou_tianqi_e2e.tscn"]},
     "ui_skin": {"说明": "天启篇新界面皮肤素材（content/ui_skin/：裁过字的字体、通用法阵，XUiSkin）：跑皮肤专项", "scenes": ["xiyou_ui_skin.tscn", "xiyou_ui_skin_offshot.tscn", "xiyou_ui_skin_3b.tscn"]},
     "intro_video": {"说明": "天启篇启动动画视频与说明（content/intro/，intro_anim v8 接入）：跑开场专项", "scenes": ["xiyou_splash_autosave.tscn"]},
     "ui": {"说明": "界面：界面专项＋事件对照", "scenes": ["xiyou_event_compare*.tscn"], "refs": true, "fallback": ["ui_smoke.tscn"], "checks": ["guards"]},

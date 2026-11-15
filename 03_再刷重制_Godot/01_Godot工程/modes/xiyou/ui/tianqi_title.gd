@@ -332,6 +332,11 @@ func _skin_extras() -> void:
 				l.add_theme_constant_override("outline_size", 0)
 				l.add_theme_color_override("font_color", XUiSkin.TEXT_2)
 			n.set_meta("skin_done", true)
+	# 反馈问卷行叠在群号行正上方（entry.gd 按换皮前的高度摆的）：换皮后两个按钮都可能撑高、各自往上长，问卷行重新贴到群号行新的顶上
+	var group := extras.find_child("FeedbackGroup", true, false) as Control
+	var form := extras.find_child("FeedbackForm", true, false) as Control
+	if group != null and form != null and form.position.y + form.size.y > group.position.y:
+		form.position.y = group.position.y - form.size.y
 
 
 ## 内边距沿用按钮原来那一档、字号不变（14～17 之间），按钮大小不变：entry.gd 按原大小摆好的上下叠放（反馈群号与问卷）不会挤到一起
