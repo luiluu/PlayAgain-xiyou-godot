@@ -149,6 +149,7 @@ func _echo(code: Key) -> void:
 
 
 func _run() -> void:
+	XPartyFormation.ENABLED = false  # 对照原版站位：战斗站位回退到原版竖排（新阵型见 xiyou_party_formation）
 	XMessageBox.auto = true
 	XEnemy.force_roll = 100.0
 	seed(20261013)

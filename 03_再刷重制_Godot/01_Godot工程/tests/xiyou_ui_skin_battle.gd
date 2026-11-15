@@ -149,7 +149,12 @@ func _ring(b: XBattleScene, a: XActor) -> void:
 	_check("ring_entries", ring.entries.map(func(e): return e.text) == ["攻击", "战技", "魔法", "防御", "物品", "逃跑"], ring.entries.map(func(e): return e.text))
 	_check("ring_title", ring.title == a.display_name() + "的回合", ring.title)
 	var feet: Vector2 = b._origin + b.sprites[a].position
-	_check("ring_center_on_actor", ring.ring_center().distance_to(feet + XSkinBattleRing.OFFSET) < 0.5, [ring.ring_center(), feet])
+	# 环心＝脚底＋OFFSET，整环夹在画面里（战斗站位两排错开／菱形时下排角色站得低，环会被往上夹，party-formation 合并后）
+	var want: Vector2 = b.sprites[a].position + XSkinBattleRing.OFFSET - ring.center
+	want.x = clampf(want.x, XSkinBattleRing.MARGIN, maxf(XSkinBattleRing.MARGIN, XBattleScene.BOX.x - ring.size.x - XSkinBattleRing.MARGIN))
+	want.y = clampf(want.y, XSkinBattleRing.MARGIN, maxf(XSkinBattleRing.MARGIN, XBattleScene.BOX.y - ring.size.y - XSkinBattleRing.MARGIN))
+	want += ring.center + b._origin
+	_check("ring_center_on_actor", ring.ring_center().distance_to(want) < 0.5 and absf(ring.ring_center().x - (feet + XSkinBattleRing.OFFSET).x) < 0.5, [ring.ring_center(), want, feet])
 	var angles := range(6).map(func(i): return ring.angle_of(i))
 	_check("ring_angles", angles == [258.0, 222.0, 186.0, 150.0, 114.0, 78.0], angles)
 	var apart := true

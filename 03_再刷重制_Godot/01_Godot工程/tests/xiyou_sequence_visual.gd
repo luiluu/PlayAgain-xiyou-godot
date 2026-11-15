@@ -34,6 +34,7 @@ func check(label: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
+	XPartyFormation.ENABLED = false  # 对照原版站位：战斗站位回退到原版竖排（新阵型见 xiyou_party_formation）
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
