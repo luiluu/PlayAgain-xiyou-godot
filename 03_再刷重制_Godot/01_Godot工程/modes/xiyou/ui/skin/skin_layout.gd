@@ -85,7 +85,7 @@ func relayout() -> void:
 
 
 ## ---- 窗口拉伸方式：按新稿排好的页面进树时调 request_wide(self) ----
-## 窄屏留边（cc/ui-skin-p1fix，小A审 v0.7 P1-2）：原来一律 KEEP_HEIGHT，4:3 平板上视口被压成 960 宽、三栏挤烂（写反了）。
+## 窄屏留边（cc/ui-skin-p1fix，小A审 v0.7 P1-2，O-483）：原来一律 KEEP_HEIGHT，4:3 平板上视口被压成 960 宽、三栏挤烂（写反了）。
 ## true（默认）：窗口比 16:9 宽才 KEEP_HEIGHT 横向铺满，16:9 及更窄用 KEEP（视口锁 1280×720、上下留黑边、不重排）；窗口改大小时跟着换。
 ## false：回到原来一律 KEEP_HEIGHT（可回退）。
 static var NARROW_LETTERBOX := true
