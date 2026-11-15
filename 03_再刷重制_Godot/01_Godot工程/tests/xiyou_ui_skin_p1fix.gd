@@ -67,6 +67,7 @@ func _run() -> void:
 			await _pair("p1_select_menu_" + tag, _menu)
 			await _pair("p1_select_equip_" + tag, _equip)
 			await _u4_shots(tag)
+			await _two_level_shots(tag)
 		get_window().size = Vector2i(1024, 768)
 		await frames(8)
 		await _tablet()
@@ -230,6 +231,50 @@ func _u4_shots(tag: String) -> void:
 	save(sheet, "u4_each_selected_" + tag)
 	menu.queue_free()
 	await frames(3)
+
+
+## ---- 主菜单两级＋助力位卡：第一级停角色、停工坊；第二级角色里选中真气；助力位空／有人 ----
+func _two_level_shots(tag: String) -> void:
+	XSkinMainMenu._mem = {}
+	var s := _state()
+	var menu := XMenu.new()
+	add_child(menu)
+	await frames(5)
+	var m: XSkinMainMenu = menu.skin
+	m.level = 0
+	m._set_group(2, 0)
+	m.refresh()
+	await frames(4)
+	save(await grab(), "menu2_l0_actor_helper_empty_" + tag)
+	m._set_group(3, 0)
+	m.refresh()
+	await frames(4)
+	save(await grab(), "menu2_l0_workshop_" + tag)
+	m._set_group(2, 0)
+	m.enter()
+	m._set_group(2, 2)
+	await frames(6)
+	save(await grab(), "menu2_l1_actor_zhenqi_" + tag)
+	menu.queue_free()
+	await frames(2)
+	# 助力位有人：再收一人（5 人），第 5 个人放进第 5 格
+	XTianqi._joining = true
+	s.add_actor(12)
+	XTianqi._joining = false
+	var hid := int(s.party[-1])
+	for k in s.battle_slots.size():
+		if int(s.battle_slots[k]) == hid:
+			s.battle_slots[k] = 0
+	if s.battle_slots.size() > XTianqi.HELPER_SLOT:
+		s.battle_slots[XTianqi.HELPER_SLOT] = hid
+	var menu2 := XMenu.new()
+	add_child(menu2)
+	await frames(6)
+	check("shot_helper_filled_" + tag, s.helper() != null)
+	save(await grab(), "menu2_helper_filled_" + tag)
+	menu2.queue_free()
+	await frames(2)
+	XSkinMainMenu._mem = {}
 
 
 ## ---- 平板 4:3 ----
