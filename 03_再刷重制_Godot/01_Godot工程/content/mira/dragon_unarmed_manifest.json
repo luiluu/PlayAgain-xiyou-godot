@@ -1,0 +1,155 @@
+{
+  "walk": {
+    "source_motion": 0,
+    "frames": [
+      "UserSV_MiraDragon0_0.png",
+      "UserSV_MiraDragon0_1.png",
+      "UserSV_MiraDragon0_2.png",
+      "UserSV_MiraDragon0_3.png"
+    ],
+    "wait": 10
+  },
+  "wait": {
+    "source_motion": 1,
+    "frames": [
+      "UserSV_MiraDragon1_0.png"
+    ],
+    "wait": 10
+  },
+  "chant": {
+    "source_motion": 0,
+    "frames": [
+      "UserSV_MiraDragon0_0.png",
+      "UserSV_MiraDragon0_1.png",
+      "UserSV_MiraDragon0_2.png",
+      "UserSV_MiraDragon0_3.png"
+    ],
+    "wait": 10
+  },
+  "guard": {
+    "source_motion": 3,
+    "frames": [
+      "UserSV_MiraDragon3_0.png"
+    ],
+    "wait": 10
+  },
+  "damage": {
+    "source_motion": 4,
+    "frames": [
+      "UserSV_MiraDragon4_0.png"
+    ],
+    "wait": 10
+  },
+  "evade": {
+    "source_motion": 5,
+    "frames": [
+      "UserSV_MiraDragon5_0.png"
+    ],
+    "wait": 10
+  },
+  "thrust": {
+    "source_motion": 7,
+    "frames": [
+      "UserSV_MiraDragon7_0.png",
+      "UserSV_MiraDragon7_1.png",
+      "UserSV_MiraDragon7_2.png",
+      "UserSV_MiraDragon7_3.png"
+    ],
+    "wait": 10
+  },
+  "swing": {
+    "source_motion": 7,
+    "frames": [
+      "UserSV_MiraDragon7_0.png",
+      "UserSV_MiraDragon7_1.png",
+      "UserSV_MiraDragon7_2.png",
+      "UserSV_MiraDragon7_3.png"
+    ],
+    "wait": 10
+  },
+  "missile": {
+    "source_motion": 7,
+    "frames": [
+      "UserSV_MiraDragon7_0.png",
+      "UserSV_MiraDragon7_1.png",
+      "UserSV_MiraDragon7_2.png",
+      "UserSV_MiraDragon7_3.png"
+    ],
+    "wait": 10
+  },
+  "skill": {
+    "source_motion": 10,
+    "frames": [
+      "UserSV_MiraDragon10_0.png",
+      "UserSV_MiraDragon10_1.png",
+      "UserSV_MiraDragon10_2.png",
+      "UserSV_MiraDragon10_3.png"
+    ],
+    "wait": 10
+  },
+  "spell": {
+    "source_motion": 10,
+    "frames": [
+      "UserSV_MiraDragon10_0.png",
+      "UserSV_MiraDragon10_1.png",
+      "UserSV_MiraDragon10_2.png",
+      "UserSV_MiraDragon10_3.png"
+    ],
+    "wait": 10
+  },
+  "item": {
+    "source_motion": 10,
+    "frames": [
+      "UserSV_MiraDragon10_0.png",
+      "UserSV_MiraDragon10_1.png",
+      "UserSV_MiraDragon10_2.png",
+      "UserSV_MiraDragon10_3.png"
+    ],
+    "wait": 10
+  },
+  "escape": {
+    "source_motion": 0,
+    "frames": [
+      "UserSV_MiraDragon0_0.png",
+      "UserSV_MiraDragon0_1.png",
+      "UserSV_MiraDragon0_2.png",
+      "UserSV_MiraDragon0_3.png"
+    ],
+    "wait": 10
+  },
+  "victory": {
+    "source_motion": 13,
+    "frames": [
+      "UserSV_MiraDragon13_0.png"
+    ],
+    "wait": 10
+  },
+  "dying": {
+    "source_motion": 14,
+    "frames": [
+      "UserSV_MiraDragon14_0.png"
+    ],
+    "wait": 10
+  },
+  "abnormal": {
+    "source_motion": 15,
+    "frames": [
+      "UserSV_MiraDragon15_0.png"
+    ],
+    "wait": 10
+  },
+  "sleep": {
+    "source_motion": 16,
+    "frames": [
+      "UserSV_MiraDragon16_0.png"
+    ],
+    "wait": 10
+  },
+  "dead": {
+    "source_motion": 17,
+    "frames": [
+      "UserSV_MiraDragon17_0.png"
+    ],
+    "wait": 10
+  }
+}
