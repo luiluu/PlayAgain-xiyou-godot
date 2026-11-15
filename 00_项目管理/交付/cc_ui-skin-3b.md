@@ -110,3 +110,22 @@
 
 - 有窗截图实观与重拍比对（本次未装 PIL、未跑 `xiyou_ui_skin_3b.tscn -- --out=...` 与 `皮肤关闭对照.py --base main` 重拍，仅就既有 `关闭对照` 运行 `--compare` 20/20 `SAME` 并以源码核坐标）；
 - 其余长测试：选测余下 55 个场景（楼层、事件对照四段、地图等）与 `并行测试.py`、`工具回归.py`。
+
+## 小A 复核
+
+- **复核对象**：`cc/ui-skin-3b` 返修提交 `7d9e77eb4`（含返修代码 `6be4844a9` 及合并 `main` `c66438ebc`/dev.606 的 `dff5eb3de`；对比上次核查提交 `5fd436890`），执行者：小A（只读复核、未改游戏代码）。
+- **结论：通过**（**P1 0 条**、**P2 0 条**、**P3 0 条**、**文字必改 0 条**；原 P2-1、P3-1、P3-2 及文字必改「暂未开放」全部解决，未带入新问题）。
+- **逐项复核**：
+  1. **按键提示让位收进共用组件（通过）**：`modes/xiyou/ui/skin/skin_key_hints.gd:35-46` 新增静态方法 `right_edge(view)`（与原 `XSkinMainMenu.hint_right(view)` 算法一致：`minf(view.x - XSkinLayout.margin_for(view.x), view.x - XVersionLabel.MARGIN.x - vw - 16.0)`），`place(view)` 改按 `right_edge(view) - total_width()` 定位；`skin_main_menu.gd:245,252-253`（`hint_right` 留作转调 `XSkinKeyHints.right_edge`）与 `skin_template_page.gd:178` 均改调 `hints.place(view)`，位置不变；选线卡（`tianqi_line_cards.gd:168`）、异化工坊（`alien_workshop.gd:1312`）及组件陈列页（`skin_showcase.gd:132`）均调用 `place(view)`，现已全部让出右下角版本号（`xiyou_ui_skin.gd:318-322`、`xiyou_ui_skin_3b.gd:171,313`、`xiyou_ui_skin_menu.gd:125` 实测通过）。
+     - **给总装的跨分支影响面**：
+       - **1B／1C（已在 `main`：`skin_item_page.gd`、`skin_skill_page.gd`、`skin_status_page.gd`、`skin_equip_page.gd`）**：均继承 `XSkinTemplatePage` 且子类 `relayout()` 只调 `super()` 后排自身左右区域、不覆写 `hints.position`，此前已套 `XSkinMainMenu.hint_right`，改用 `hints.place(view)` 后**位置完全不变**。
+       - **5C（`cc/ui-skin-5c` 设置页 `skin_options_page.gd`）**：继承 `XSkinTemplatePage` 且未覆写 `relayout()`，此前走模板页 `XSkinMainMenu.hint_right`，合流后**位置完全不变**，且未改 `tests/xiyou_ui_skin.gd:317`，无冲突。
+       - **2B（`cc/ui-skin-2b` 战斗中查看状态页 `skin_party_status.gd:115`）**：`_relayout()` 直接调用 `hints.place(view)`（2B 其余 `skin_battle*`/`skin_boss_*`/`skin_otb_bar`/`skin_side_status` 不用 `XSkinKeyHints`）。3B 合 `main` 后，2B 状态页右下按键提示会**自动左移让出右下角版本号**（修掉其原本可能压版本号的隐患）；`cc/ui-skin-2b` 测试未断言 `hints.position` 精确像素，也不冲突。
+       - **3A（`cc/ui-skin-3a` 祭坛页 `tianqi_skin_altar.gd:217`）**：直接调 `XSkinMainMenu.hint_right(v)`，因留作转调，**位置不变**且兼容。
+       - **天启篇标题（`tianqi_title.gd:305`）**：底部居中摆放，不调 `place()`，**位置不变**。
+  2. **选线卡「还没修好」→「暂未开放」（通过）**：`modes/xiyou/ui/tianqi_line_cards.gd:282`（`_make_card()` 新旧画法共用构造）已改为 `"暂未开放"`；`charset_hei.txt`／`charset_song.txt` 均覆盖该 4 字（缺 0 字），`xiyou_ui_skin_3b.gd:172`（`cards_unready_text`）通过。对既有 `04_验证/本地结果/ui_skin_3b/关闭对照/{base,branch}` 跑 `--compare` 得 21/23 `SAME`（交付单前文写作「22 张里 21 张」系总数笔误，实为 `tq_off` 10 页＋`xiyou` 13 页共 23 张），仅 `xiyou_XTianqiLineCards.png` 与 `tq_off_XTianqiLineCards.png` 各差 1119 像素；逐像素解码比对两图差异包围盒均为 `(741, 254, 813, 272)`（1280×720 下第 3 张未开放卡中央 `72×18` 像素标签区域），**确认 100% 只差「还没修好」→「暂未开放」四字**。检索确认 `XTianqiLineCards` 仅由 `map_scene.gd:399`／`tianqi.gd:681` 在天启篇选线调用，且在 `07_开发环境/发行空壳特例.json:32` 列为空壳，**只在天启篇出现，重制版玩家看不到**。
+  3. **工坊手柄换页与 `选测对照.json`（通过）**：`modes/xiyou/ui/alien_workshop.gd:111-123` 在 `if skin and skin_tabs.size() > 1:` 下以互斥 `if/elif` 顺序接住 `ui_page_up`（-1）、`ui_page_down`（+1）与未绑动作时的 `KEY_Q`/`KEY_E`（防重复触发，且走 `XKeyMap.handled(self)` 消费，关闭皮肤时不走该分支）；`xiyou_ui_skin_3b.gd:306-311`（`ws_tab_back_pageup`）通过。`03_再刷重制_Godot/07_开发环境/选测对照.json:14` 的 `ui_skin` 组 `scenes` 已加入 `xiyou_ui_skin_3b.tscn`。
+  4. **diff `5fd436890..7d9e77eb4` 回归检查（通过）**：除 `dff5eb3de` 合并 `main` 到 `c66438ebc`（仅 `tests/xiyou_ui_skin_offshot.gd` 有三方合并且已跑通）外，返修提交 `6be4844a9`、`7d9e77eb4` 仅触及上述 5 个游戏/测试/配置脚本、2 个测试与交付单，未带入新问题。
+- **前台轻量化实测**：`语法检查.py`（915 个 `.gd` 0 问题）、`发行空壳.py check`（59 脚本 500 函数通过）、无头专项 `xiyou_ui_skin.tscn`（89/89）、`xiyou_ui_skin_3b.tscn`（39/39）、`xiyou_ui_skin_menu.tscn`（58/58）、`xiyou_ui_skin_offshot.tscn`（21/21，含对既有 `关闭对照` 运行 `--compare` 21/23 SAME＋2 张选线卡各 1119px）、`xiyou_ui_skin_1b.tscn`（85/85）、`xiyou_ui_skin_1c.tscn`（78/78）、`xiyou_input_handled.tscn`（10/10）、`xiyou_alien_workshop.tscn`（45/45）、`xiyou_alien_config.tscn`（95/95）、`xiyou_tianqi_look.tscn`（59/59）全部通过。
+- **没核到的（留总装 `--affected --cloud`）**：未跑 `并行测试.py`、`工具回归.py`、`选测.py` 其余场景（含 `xiyou_tianqi_e2e`、楼层及事件对照四片）、未在当前机器重拍有窗截图（`xiyou_ui_skin_3b` 有窗 51/51 与 `皮肤关闭对照.py --base main` 23 张重拍）。
+
