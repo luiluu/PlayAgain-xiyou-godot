@@ -263,6 +263,7 @@ func _dump_and_cap() -> void:
 		scens[str(k).split("|")[1]] = true
 	_check("dump_scenarios", ["普攻", "派生"].all(func(sc): return scens.has(sc)), scens.keys())
 	_check("dump_all_registered", unregistered.is_empty(), unregistered)
+	_static_module_scan()
 	_check("cap_all_blocks_boosts", leaked_all.is_empty(), leaked_all)
 	# 旧口径（MODULE_CAP_ALL 关）：普攻、没改写、派生上的增伤不拦（这就是期一要堵的漏口）
 	_check("cap_old_leaks_unrewritten", leaked_old.is_empty(), leaked_old)
@@ -703,3 +704,30 @@ func _enemy_chains() -> void:
 	_check("chain_enemy_mhp_state", regen[0] == regen[1] and regen[0] < 0.0, regen)
 	# 守卫只管我方出手（敌人打我方不进）
 	_check("chain_guard_enemy_skipped", not XTianqiLedger.auditing(e))
+
+
+## 期一核查遗留（未触发的模块分支）：真打只触发了一部分条件，这里静态扫 11 个模块文件里每一处写单独相乘字段的操作，
+## 字段都得在该文件对应来源的登记行里（真打没触发的渡鸦 355／356、数字强化 68／73、宿傩 250……都在内）。运行期逐条触发的夹具留到期四。
+const MODULE_SRC_FILES := {"raven": ["module.raven"], "number_boost": ["module.number_boost"], "sukuna": ["module.sukuna"], "yomi_jingliu": ["module.yomi_jingliu"],
+	"toji": ["module.toji", "module.toji_incoming"], "garou": ["module.garou"], "yunshang": ["module.yunshang"], "black_flash": ["module.black_flash"],
+	"xuan_battle": ["module.xuan_cast", "module.xuan_incoming", "module.xuan_damage"], "tusu": ["module.tusu"], "liuying": ["module.liuying"]}
+
+func _static_module_scan() -> void:
+	var bad := []
+	var n := 0
+	var re := RegEx.create_from_string("\\{\"op\":\\s*\"(mul|set|add)\",\\s*\"field\":\\s*\"(\\w+)\"")
+	for f in MODULE_SRC_FILES:
+		var text := FileAccess.get_file_as_string("res://modes/xiyou/core/%s.gd" % f)
+		var allowed := {}
+		for tag in MODULE_SRC_FILES[f]:
+			for fld in XTianqiLedger.row(tag).get("fields", []):
+				allowed[fld] = true
+		var ln := 0
+		for line in text.split("\n"):
+			ln += 1
+			for m in re.search_all(line):
+				if XTianqiLedger.MUL_FIELDS.has(m.get_string(2)):
+					n += 1
+					if not allowed.has(m.get_string(2)):
+						bad.append("%s.gd:%d %s" % [f, ln, m.get_string(2)])
+	_check("static_module_fields_registered", bad.is_empty() and n >= 30, [n, bad])
