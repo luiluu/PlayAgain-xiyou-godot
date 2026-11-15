@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-ledger-p1
 
 - 车道／工作者：C 规则·数值线第 3 步「伤害加成总账·期一 总账入口（不改数）」（cc 车道，Orca task_246ba90d1cca，Opus＋medium：战斗核心接线，甲档，交 co 核）
-- 状态：进行中
+- 状态：可合并
 
 依据：私密设计仓 `重制设定/天启篇_伤害加成总账_v0.4.md` 第八节「期一」那行＋「期一细则」（1）～（4），第五节第 4 条（3）（来源分桶口径），稿末第十一节 co 评审第 5 条。D24（骑士计时、全弱者资格）没碰，骑士数值一个没动。
 
@@ -55,7 +55,7 @@
 | 5 | 五池明细＋回合预算调用点清单 | 见细则（4） | `pools_*`；下面清单 |
 | 6 | 敌人反伤、来源为敌人的 mhp 型状态怎么登记 | 登记两行永久允许（`enemy_reflect`、`enemy_mhp_state`，池＝「敌方」），口径见「需设计稿补记」；守卫只管我方出手（`guard_enemy_skipped`） | `damage_ledger.json` |
 | 7 | 总账.py、总账档位.py 并进测算主流程 | 设计仓只读，没改；要改的列在下面 | — |
-| 8 | 专项、选测登记、回退开关 | 专项 `tests/xiyou_tianqi_ledger`（40 条断言）；选测对照 `battle_hooks` 冒烟组加 `xiyou_tianqi_ledger.tscn`（核心文件里只加模块钩子行时也跑总账守卫；别的改动按引用自动选中）；四个开关测试里都赋过回退值，优化登记草稿见下 | 本机专项通过 |
+| 8 | 专项、选测登记、回退开关 | 专项 `tests/xiyou_tianqi_ledger`（37 条断言）；选测对照 `battle_hooks` 冒烟组加 `xiyou_tianqi_ledger.tscn`（核心文件里只加模块钩子行时也跑总账守卫；别的改动按引用自动选中）；四个开关测试里都赋过回退值，优化登记草稿见下 | 本机专项通过 |
 
 ## 15 个钩子的乘操作逐号清单
 
@@ -177,7 +177,7 @@
 - 被动缓存与装备元素增幅并排存一份按来源分桶的数（秘籍格、符文之语、宝珠、原版装备、种族、成长装备、天启篇自己的……），原合计不动；伤害详情加五池明细。
 - 15 个专属模块钩子在普攻／没改写／派生下的乘操作逐号清单、回合预算调用点清单见交付单。
 - 西游档不变：守卫、分桶、明细都只在天启篇档；`damage.gd`、`actor.gd`、`actor_damage_hooks.gd` 只加不改。
-- 验证：专项 `xiyou_tianqi_ledger`（新）、相关战斗专项 19 个本机通过；`--oracle` 云端选测见交付单「验证」。
+- 验证：专项 `xiyou_tianqi_ledger`（新，37/37）、相关战斗专项 19 个本机通过；`检查.sh --oracle --affected main --cloud` 通过（云端 353 个场景＋沿用本机 19 个，MV 参照引擎同源）。
 - 提交：（合并时填）
 
 ## 优化登记草稿
@@ -205,7 +205,10 @@
 
 ## 验证
 
-（待写）
+- 专项 `xiyou_tianqi_ledger`：37/37 通过（本机，12 秒）。
+- 本机相关专项 19 个全过（141 秒）：`xiyou_tianqi_ledger`、`xiyou_tianqi_skills`、`xiyou_actor_modules`、`xiyou_module_hooks`、`xiyou_tianqi_no_x6`、`xiyou_tianqi_qiyin_effects`、`xiyou_tianqi_affix_battle`、`xiyou_determinism`、`xiyou_raven_battle`、`xiyou_tianqi_e2e`、`xiyou_race_battle`、`xiyou_orbs`、`xiyou_passive`、`xiyou_tianqi_trumpet`、`xiyou_toji_battle`、`xiyou_liuying`、`xiyou_yunshang`、`xiyou_xuan_battle`、`xiyou_tusu_battle`。
+- `检查.sh --oracle --affected main --cloud`（提交 1526270cd，基准 main 66b579c07）：选测 372 个场景，云端 353 个、16 片全过，沿用本机 19 个；非 Godot 检查（guards、content、same_source、事件对照空绿）全过；MV 参照引擎启动、六难度参照同源 ✓。退出码 0。
+- `语法检查.py` 917 个 .gd 0 问题；`发行空壳.py check` 60 个脚本、506 个函数都有（`XTianqiLedger` 空壳全返回关着的值）；`工具回归.py` 全过（95 秒）；`交付自检.py` 见提交后回报。
 
 ## 待交叉核查
 
@@ -214,3 +217,5 @@
 ## 本分支提交
 
 - 7d5bc63ba WIP：总账表与守卫、MODULE_CAP 默认拦、来源分桶、五池明细、专项
+- 1526270cd 选测登记、交付单（逐号清单、回合预算调用点、需设计稿补记）
+- （本提交）验证、标可合并
