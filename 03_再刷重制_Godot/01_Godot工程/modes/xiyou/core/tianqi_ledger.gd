@@ -10,6 +10,8 @@ extends RefCounted
 ##   天启篇、角色自带、状态分；原合计字段不动、西游档不建这份。
 ## 五池明细（DETAIL）：伤害详情（breakdown.row.pools）多一份五池和单独相乘残余，只加明细。
 ## 开关都默认开；全关＝回到 main（数值本来就不变）。
+## 期二「归池清场」（第五节第 1 条全表，D16＝乙）：表的 phase＝2，期一「豁免·期二到期」的七行改成已归池，每样一个回退开关（POOL_* 等，见下）；
+##   另加套装确认阶段乘、万灵增元丹被动、暴击敏捷挪 combat_rules；确认阶段运行期守卫 audit_confirm（期一核查 P2）。
 
 const PATH := "res://modes/xiyou/tianqi_data/damage_ledger.json"
 ## 单独相乘的口子（第三节第 1 条）：落在这些字段上的操作就算「乘」，不论 add／mul／set
