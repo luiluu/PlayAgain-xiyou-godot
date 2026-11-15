@@ -401,6 +401,7 @@ func _pane_input(event: InputEvent) -> void:
 			return
 		for r in _rows:
 			if (r.rect as Rect2).has_point(mb.position):
+				bar.press()
 				if r.kind == "group" or r.kind == "header":
 					if r.g != gi:
 						_set_group(r.g, 0)

@@ -78,10 +78,27 @@ const ROW_H_SKILL := 44      # 战技
 const MEMBER_H := 60         # 紧凑角色条一人
 
 ## ---- 红乙选中条（第二节「红光标」「光标移动」）----
+## 下面四个是 v0.7 打磨版的值（SELECT_V2 = false 时用）；小A审 P1-1 嫌它在手机小屏上看不出焦点，加厚版见 SEL2_*。
 const BAR_W := 4.0           # 左侧光标宽（v0.6 是 5）
 const BAR_INSET := 5.0       # 上下各缩 5，不顶到头
 const OUTLINE_ALPHA := 0.45  # 外圈描边（v0.6 是 60%）
 const FILL_ALPHA := 0.40     # 底光（v0.6 是 46%）
+## 选中条加厚版（cc/ui-skin-p1fix，小A审 v0.7 P1-1，Kyo 11-15「修」）：false＝回到 v0.7 打磨版（上面四个常量），可回退。
+static var SELECT_V2 := true
+const SEL2_BAR_W := 6.0                  # 左侧光标 4→6
+const SEL2_BAR_INSET := 2.0              # 上下只缩 2
+const SEL2_OUTLINE_W := 2                # 外框 1→2px
+const SEL2_OUTLINE_ALPHA := 1.0          # 外框不透明（v0.7 是 45%）
+const SEL2_FILL_L := Color("761c14")     # 整行实心暗红底：左端
+const SEL2_FILL_R := Color("4e1410")     # 右端略浅（不再掉到透明）
+const SEL2_FILL_ALPHA := 0.94
+const SEL2_ANCHOR := Color("f2d08a")     # 光标中点的淡金小三角（形状锚点：红字、强光下也认得出）
+const SEL2_HOVER_ALPHA := 0.45           # 悬停：只到焦点的这么多（不画光标）
+const SEL2_PRESS_DARK := 0.42            # 按下：底色压暗这么多，并整体下沉 1px
+const SEL2_PRESS_TIME := 0.12            # 列表点一下的按下反馈停留秒数
+## 选中条上的字：红套红时（神话红、选中朱红一类的字）换成亮珊瑚色，别糊进红底
+const SEL2_RED_TEXT := Color("ffa094")
+enum SelState { FOCUS, HOVER, PRESSED }
 const SLIDE_TIME := 0.09     # 行间滑动
 const BREATH_TIME := 1.6     # 左侧光标呼吸（单程，0.75→1→0.75）
 const BREATH_MIN := 0.75
@@ -258,8 +275,10 @@ static func theme() -> Theme:
 	empty.content_margin_right = PAD
 	for state in ["normal", "disabled"]:
 		t.set_stylebox(state, "Button", empty)
-	for state in ["hover", "pressed", "focus", "hover_pressed"]:
-		t.set_stylebox(state, "Button", select_style())
+	t.set_stylebox("focus", "Button", select_style())
+	t.set_stylebox("hover", "Button", select_style_for(SelState.HOVER))
+	for state in ["pressed", "hover_pressed"]:
+		t.set_stylebox(state, "Button", select_style_for(SelState.PRESSED))
 	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
 		t.set_color(k, "Button", TEXT)
 	t.set_color("font_disabled_color", "Button", TEXT_3)
@@ -412,9 +431,14 @@ static func draw_panel(ci: RID, rect: Rect2, opacity := 1.0) -> void:
 	s.draw(ci, rect)
 
 
-## 选中条（静态）：绯红底光从左 40% 渐到 68% 处 8%、再到右端透明；朱红 1px 描边 45%＋外晕；左侧 4px 朱红光标（上下各缩 5，带光晕、呼吸）
-static func draw_select(ci: RID, rect: Rect2, bar_alpha := 1.0, alpha := 1.0) -> void:
+## 选中条（静态）。SELECT_V2（默认）：整行实心暗红底（左 #761c14 → 右 #4e1410，不掉透明）＋2px 不透明朱红框＋外晕＋左侧 6px 朱红光标＋光标中点淡金小三角；
+## state：FOCUS 焦点（全画）、HOVER 悬停（同样式减淡、不画光标）、PRESSED 按下（底色压暗、整体下沉 1px）。
+## SELECT_V2 = false：v0.7 打磨版（绯红底光从左 40% 渐到 68% 处 8%、再到右端透明；朱红 1px 描边 45%＋外晕；左侧 4px 光标，上下各缩 5），state 不区分。
+static func draw_select(ci: RID, rect: Rect2, bar_alpha := 1.0, alpha := 1.0, state := SelState.FOCUS) -> void:
 	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return
+	if SELECT_V2:
+		_draw_select_v2(ci, rect, bar_alpha, alpha, state)
 		return
 	var rs := RenderingServer
 	# 外晕（0 0 12px 绯红 30%）
@@ -450,6 +474,68 @@ static func draw_select(ci: RID, rect: Rect2, bar_alpha := 1.0, alpha := 1.0) ->
 		b.bg_color = Color(SEL_LINE, ba)
 		b.set_corner_radius_all(2)
 		b.draw(ci, bar)
+
+
+static func _draw_select_v2(ci: RID, rect: Rect2, bar_alpha: float, alpha: float, state: int) -> void:
+	var rs := RenderingServer
+	var a := alpha * (SEL2_HOVER_ALPHA if state == SelState.HOVER else 1.0)
+	var r := rect
+	if state == SelState.PRESSED:
+		r.position.y += 1.0   # 按下：整体下沉 1px
+	# 外晕
+	var halo := _flat("sel_halo")
+	halo.draw_center = false
+	halo.shadow_color = Color(SEL_FILL, 0.40 * a)
+	halo.shadow_size = 6
+	halo.set_corner_radius_all(ROW_RADIUS)
+	halo.draw(ci, r)
+	# 整行实心底：左深右略浅；按下压暗
+	var dark := SEL2_PRESS_DARK if state == SelState.PRESSED else 0.0
+	var inner := r.grow(-1)
+	_hquad(ci, inner, Color(SEL2_FILL_L.darkened(dark), SEL2_FILL_ALPHA * a), Color(SEL2_FILL_R.darkened(dark), SEL2_FILL_ALPHA * a))
+	# 外框：2px 不透明朱红
+	var edge := _flat("sel_edge")
+	edge.draw_center = false
+	edge.border_color = Color(SEL_LINE, SEL2_OUTLINE_ALPHA * a)
+	edge.set_border_width_all(SEL2_OUTLINE_W)
+	edge.set_corner_radius_all(ROW_RADIUS)
+	edge.draw(ci, r)
+	if state == SelState.HOVER:
+		return
+	# 左侧光标 6px＋光晕＋中点淡金小三角
+	var bh := r.size.y - SEL2_BAR_INSET * 2.0
+	if bh > 2.0:
+		var bar := Rect2(r.position.x, r.position.y + SEL2_BAR_INSET, SEL2_BAR_W, bh)
+		var ba := clampf(bar_alpha, 0.0, 1.0) * alpha
+		rs.canvas_item_add_texture_rect(ci, bar.grow_individual(10, 10, 10, 10), glow_texture().get_rid(), false, Color(SEL_LINE, 0.65 * ba))
+		var b := _flat("sel_bar")
+		b.bg_color = Color(SEL_LINE, maxf(ba, 0.85 * alpha))
+		b.set_corner_radius_all(2)
+		b.draw(ci, bar)
+		var th := clampf(r.size.y * 0.22, 5.0, 8.0)
+		var cy := r.position.y + r.size.y / 2.0
+		var x0 := bar.end.x + 1.0
+		rs.canvas_item_add_polygon(ci, PackedVector2Array([Vector2(x0, cy - th), Vector2(x0 + th * 0.9, cy), Vector2(x0, cy + th)]),
+			PackedColorArray([Color(SEL2_ANCHOR, alpha), Color(SEL2_ANCHOR, alpha), Color(SEL2_ANCHOR, alpha)]))
+
+
+## 选中条上的字色：加厚版下红字（神话红、朱红一类）换亮珊瑚色，其余不变；v0.7 版原样返回
+static func sel_text(c: Color) -> Color:
+	if not SELECT_V2:
+		return c
+	if c.s > 0.55 and c.v > 0.7 and (c.h < 0.035 or c.h > 0.95):
+		return Color(SEL2_RED_TEXT, c.a)
+	return c
+
+
+## 选中条（静态 StyleBox）按状态取：焦点／悬停／按下（Button 的 focus／hover／pressed 用，各状态看得出区别）
+static func select_style_for(state: int) -> StyleBox:
+	var key := "select_%d" % state
+	if not _styles.has(key):
+		var st := XSkinSelectStyle.new()
+		st.state = state
+		_styles[key] = st
+	return _styles[key]
 
 
 ## 画法里反复用的 StyleBoxFlat（选中条每帧都可能重画，不每次新建）；取到后照用处重设颜色再画

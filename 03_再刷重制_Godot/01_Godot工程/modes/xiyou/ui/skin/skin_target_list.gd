@@ -100,6 +100,7 @@ func _gui_input(event: InputEvent) -> void:
 		var i := row_at(event.position)
 		if i < 0:
 			return
+		bar.press()
 		if i == index or all:
 			activated.emit(i)
 		else:

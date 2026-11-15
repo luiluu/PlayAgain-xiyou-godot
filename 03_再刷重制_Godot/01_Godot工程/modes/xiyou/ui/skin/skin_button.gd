@@ -22,12 +22,16 @@ static func style(kind := "") -> StyleBoxFlat:
 	return sb
 
 
-## 红乙选中条，内边距和平时那一档一样（换状态时字不跳）
-static func select(like: StyleBox = null) -> StyleBox:
+## 红乙选中条，内边距和平时那一档一样（换状态时字不跳）；state 见 XUiSkin.SelState（按下态的字跟着下沉 1px）
+static func select(like: StyleBox = null, state := XUiSkin.SelState.FOCUS) -> StyleBox:
 	var sel := XSkinSelectStyle.new()
+	sel.state = state
 	var src: StyleBox = like if like != null else style()
 	for side in [SIDE_LEFT, SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM]:
 		sel.set_content_margin(side, src.get_content_margin(side))
+	if state == XUiSkin.SelState.PRESSED and XUiSkin.SELECT_V2:
+		sel.content_margin_top += 1
+		sel.content_margin_bottom -= 1
 	return sel
 
 
@@ -41,8 +45,12 @@ static func apply(b: Button, kind := "", font_size := -1) -> Button:
 	for st in ["normal", "disabled"]:
 		b.add_theme_stylebox_override(st, normal)
 	var sel := select(normal)
-	for st in ["hover", "pressed", "focus", "hover_pressed"]:
-		b.add_theme_stylebox_override(st, sel)
+	var press := select(normal, XUiSkin.SelState.PRESSED)
+	b.add_theme_stylebox_override("focus", sel)
+	b.add_theme_stylebox_override("hover", select(normal, XUiSkin.SelState.HOVER) if XUiSkin.SELECT_V2 else sel)
+	for st in ["pressed", "hover_pressed"]:
+		b.add_theme_stylebox_override(st, press if XUiSkin.SELECT_V2 else sel)
+	wire_press(b, sel, press)
 	b.add_theme_font_override("font", XUiSkin.font("body"))
 	var fs := font_size if font_size > 0 else clampi(b.get_theme_font_size("font_size"), XUiSkin.FS_AUX, XUiSkin.FS_LIST)
 	b.add_theme_font_size_override("font_size", fs)
@@ -52,3 +60,13 @@ static func apply(b: Button, kind := "", font_size := -1) -> Button:
 		b.add_theme_color_override(k, col)
 	b.add_theme_color_override("font_disabled_color", XUiSkin.TEXT_3)
 	return b
+
+
+## Godot 的 Button 把 focus 样式叠在 pressed 上面画，按住时焦点的整行实心底会盖掉按下的压暗：
+## 按下期间把 focus 换成按下态，松开换回（手指点下去看得出来；SELECT_V2 关时不接）。
+static func wire_press(b: Button, focus_style: StyleBox, press_style: StyleBox) -> void:
+	if not XUiSkin.SELECT_V2 or b.has_meta("skin_press_wired"):
+		return
+	b.set_meta("skin_press_wired", true)
+	b.button_down.connect(func(): b.add_theme_stylebox_override("focus", press_style))
+	b.button_up.connect(func(): b.add_theme_stylebox_override("focus", focus_style))

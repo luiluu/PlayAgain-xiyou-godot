@@ -135,6 +135,7 @@ func _run() -> void:
 	await _item_list(b, a)
 	await _target(b)
 	_ring_layout(b)
+	await _list_avoid_otb(b)
 	await _skin_off(b, a)
 	_finish()
 
@@ -323,6 +324,35 @@ func _ring_layout(b: XBattleScene) -> void:
 
 
 ## 开关关着：指令窗、列表都回到原 XBattleList（矩形同原版），目标提示不建
+## p1fix（小A审 P1-3）：8 行满屏的战技列表不压左下行动顺序条（下排角色站得低时原来底边到 712，说明栏被第 7、8 颗圆头像盖住）
+func _list_avoid_otb(b: XBattleScene) -> void:
+	var entries := []
+	for i in 10:
+		entries.append({"text": "战技%d" % i, "icon": 0, "enabled": true, "target": "敌方单体", "left": "用完剩 TP 2"})
+	var lw := XSkinBattleSkillList.create_list(b.ui, entries, "战技")
+	var otb := XSkinOTBBar.occupied_rect()
+	_check("otb_rect_covers_review_area", otb.has_point(Vector2(452, 627)) and otb.has_point(Vector2(564, 711)), otb)
+	var bad := []
+	for feet in [Vector2(819, 600), Vector2(819, 520), Vector2(700, 640), Vector2(819, 430), Vector2(1000, 600), Vector2(600, 660)]:
+		lw.place_for_actor(feet, XBattleScene.BOX)
+		var r := Rect2(lw.position, lw.size)
+		if r.intersects(otb) or not Rect2(Vector2.ZERO, XBattleScene.BOX).encloses(r):
+			bad.append([feet, r])
+	_check("list_clear_of_otb", lw.rows == 8 and bad.is_empty(), bad)
+	XSkinBattleSkillList.AVOID_OTB = false
+	lw.place_for_actor(Vector2(819, 600), XBattleScene.BOX)
+	_check("list_avoid_switch_off_old", Rect2(lw.position, lw.size).intersects(otb), [lw.position, lw.size])
+	XSkinBattleSkillList.AVOID_OTB = true
+	# 截图：8 行满屏、下排角色位置（最容易撞的那种）
+	lw.place_for_actor(Vector2(819, 600), XBattleScene.BOX)
+	lw.position += b._origin
+	lw.select(7)
+	await _frames(2)
+	await _shot("battle_p1fix_list_8rows")
+	lw.queue_free()
+	await _frames(1)
+
+
 func _skin_off(b: XBattleScene, a: XActor) -> void:
 	XUiSkin.FORCE = false
 	XUiSkin.ENABLED = false

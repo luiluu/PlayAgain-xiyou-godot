@@ -139,7 +139,7 @@ func _menu(s: XState) -> void:
 		menu.queue_free()
 		return
 	check("ring_6", m.ring.items.size() == 6 and m.groups.size() == 6, m.ring.items.map(func(i): return i.name))
-	check("wide_on", root.content_scale_aspect == Window.CONTENT_SCALE_ASPECT_KEEP_HEIGHT)
+	check("wide_on", root.content_scale_aspect == XSkinLayout.aspect_for(Vector2(root.size)))
 	check("party_rows", m.party.members.size() == menu._members().size(), [m.party.members.size(), menu._members().size()])
 	check("blocks", m.layout.center.size.x <= 720.0 and m.run_panel.size.y == XSkinMainMenu.RUN_H)
 	# 第一组物品：只一项，不展开（没有组名行），列表里其余五组各一行
@@ -196,12 +196,12 @@ func _menu(s: XState) -> void:
 	var page: Node = _child_of(menu, "XItemScene")
 	check("direct_item_page", menu._mode == "page" and page != null and not m.visible)
 	# 1B 起物品页按新稿排好、自己 request_wide（XSkinItemPage）：主菜单让出后由物品页接着铺满，计数不乱
-	check("wide_held_by_new_item_page", page != null and page.get("skin") != null and root.content_scale_aspect == Window.CONTENT_SCALE_ASPECT_KEEP_HEIGHT and XSkinLayout._wide_users == 1)
+	check("wide_held_by_new_item_page", page != null and page.get("skin") != null and root.content_scale_aspect == XSkinLayout.aspect_for(Vector2(root.size)) and XSkinLayout._wide_users == 1)
 	if page != null:
 		page.closed.emit()
 	await frames(2)
 	check("back_from_page", menu._mode == "command" and m.visible and m.gi == 0)
-	check("wide_back", root.content_scale_aspect == Window.CONTENT_SCALE_ASPECT_KEEP_HEIGHT)
+	check("wide_back", root.content_scale_aspect == XSkinLayout.aspect_for(Vector2(root.size)))
 	# 装备：先选人
 	m._set_group(1, 0)
 	_press(m, "ui_accept")

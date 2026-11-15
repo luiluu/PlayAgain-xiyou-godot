@@ -243,7 +243,7 @@ static func style_toggles(side: Control, buttons: Array, origin: Vector2) -> voi
 		btn.add_theme_font_override("font", XUiSkin.font("body"))
 		btn.add_theme_font_size_override("font_size", 16)
 		btn.add_theme_stylebox_override("normal", normal)
-		for k in ["hover", "pressed"]:
-			btn.add_theme_stylebox_override(k, XUiSkin.select_style())
+		btn.add_theme_stylebox_override("hover", XUiSkin.select_style_for(XUiSkin.SelState.HOVER if XUiSkin.SELECT_V2 else XUiSkin.SelState.FOCUS))
+		btn.add_theme_stylebox_override("pressed", XUiSkin.select_style_for(XUiSkin.SelState.PRESSED if XUiSkin.SELECT_V2 else XUiSkin.SelState.FOCUS))
 		for k in ["font_color", "font_hover_color", "font_pressed_color"]:
 			btn.add_theme_color_override(k, XUiSkin.TEXT)

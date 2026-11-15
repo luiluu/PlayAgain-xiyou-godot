@@ -96,6 +96,7 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		for i in members.size():
 			if row_rect(i).has_point(event.position):
+				bar.press()
 				if i == index:
 					activated.emit(i)
 				else:
