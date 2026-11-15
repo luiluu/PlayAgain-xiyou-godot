@@ -1,7 +1,7 @@
 {
-  "developmentVersion": "dev.480",
-  "releaseVersion": "0.01",
+  "developmentVersion": "dev.481",
+  "releaseVersion": "0.02",
   "kind": "playable_slice",
   "gameplayAvailable": true,
-  "releaseBase": 470
+  "releaseBase": 481
 }
