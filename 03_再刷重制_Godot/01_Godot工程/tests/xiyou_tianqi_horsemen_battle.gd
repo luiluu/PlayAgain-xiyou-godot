@@ -391,16 +391,21 @@ func _plague_minions() -> void:
 	var want_b := XTianqiHorsemen.hit_value(adds[1].mat, t0.mdf, adds[1].mat * float(mt.B.coef), float(XTianqiCombat.taken_parts(t0, lg.state).mult))
 	_check("minion_b_all", hb.size() == lg.alive(lg.actors).size() and hb.size() >= 2, [hb.size(), lg.alive(lg.actors).size()])
 	_check("minion_b_magical", bool(hb[0].skill.magical) and absf(float(hb[0].hp) - want_b) <= 1.0, [hb[0].hp, want_b])
-	# C：两名不同的人各 +1 不服，不打伤害
-	for x in lg.actors:
-		XTianqiHorsemen.mark_of(lg, x).defiance = 0
-	var lc := XTianqiHorsemen.perform(lg, adds[2], XTianqiHorsemen._minion_pick("C")[0], null)
-	var bumped := lg.actors.filter(func(x): return int(XTianqiHorsemen.mark_of(lg, x).get("defiance", 0)) == 1)
-	var total := 0
-	for x in lg.actors:
-		total += int(XTianqiHorsemen.mark_of(lg, x).get("defiance", 0))
-	_check("minion_c_two_distinct", bumped.size() == 2 and total == 2, [bumped.size(), total])
-	_check("minion_c_no_damage", lc.filter(func(l): return l.type == "hit").is_empty())
+	# C：两名不同的人各 +1 不服，不打伤害（抽 20 次，每次都要是两个不同的人）
+	var distinct_ok := 0
+	var c_hits := 0
+	for _n in range(20):
+		for x in lg.actors:
+			XTianqiHorsemen.mark_of(lg, x).defiance = 0
+		var lc := XTianqiHorsemen.perform(lg, adds[2], XTianqiHorsemen._minion_pick("C")[0], null)
+		c_hits += lc.filter(func(l): return l.type == "hit").size()
+		var bumped := lg.actors.filter(func(x): return int(XTianqiHorsemen.mark_of(lg, x).get("defiance", 0)) == 1)
+		var total := 0
+		for x in lg.actors:
+			total += int(XTianqiHorsemen.mark_of(lg, x).get("defiance", 0))
+		distinct_ok += 1 if bumped.size() == 2 and total == 2 else 0
+	_check("minion_c_two_distinct", distinct_ok == 20, distinct_ok)
+	_check("minion_c_no_damage", c_hits == 0, c_hits)
 	# 回合末不再有小怪给不服（三只都在）
 	for x in lg.actors:
 		XTianqiHorsemen.mark_of(lg, x).defiance = 0
