@@ -106,8 +106,8 @@ static func _cache_write(path: String, file: String, value: Variant) -> void:
 
 static func table(name: String) -> Variant:
 	if not _tables.has(name):
-		_tables[name] = load_json("db/%s.json" % name)
-		XTextFix.patch_table(name, _tables[name])  # 原版文字错的统一规则与逐条覆盖（乙类文字审，开关见 XTextFix）
+		# 原版文字错的统一规则与逐条覆盖（乙类文字审，开关见 XTextFix）；修正后的结果也走解析缓存
+		_tables[name] = XTextFix.load_table(name) if XTextFix.TABLES.has(name) else load_json("db/%s.json" % name)
 		if name == "Skills" and _tables[name] is Array:
 			XZhenqi.patch_rewards(_tables[name])  # 真气突破奖励的数值（CodexZhenqi.patchRewards）
 			XCanglong.patch_skills(_tables[name])  # 苍龙破晓重做（O-314，开关 XCanglong.REWORK）

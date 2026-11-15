@@ -35,5 +35,28 @@ func _run() -> void:
 		elif name.ends_with(".json"):
 			_write(out.path_join("maps").path_join(name), XDB.load_json("maps/" + name))
 	_write(out.path_join("warnings.json"), XTextFix.warnings)
+	# 修正本身的耗时：读原文件后单量 patch_table／patch_map（毫秒）
+	var cost := {}
+	var total := 0
+	for t in XTextFix.TABLES:
+		var raw = XDB.load_json("db/%s.json" % t)
+		var t0 := Time.get_ticks_usec()
+		XTextFix.patch_table(t, raw)
+		cost[t] = (Time.get_ticks_usec() - t0) / 1000
+		total += cost[t]
+	var t1 := Time.get_ticks_usec()
+	for m in [4, 121, 186]:
+		XTextFix.patch_map(m, XDB.load_json("maps/Map%03d.json" % m))
+	cost["maps3"] = (Time.get_ticks_usec() - t1) / 1000
+	cost["tables_total"] = total
+	# 实际读表（走解析缓存）：修正开／关各读一次全部表
+	for on in [true, false]:
+		XTextFix.set_all(on)
+		var t2 := Time.get_ticks_usec()
+		for t in XTextFix.TABLES:
+			XDB.table(t)
+		cost["xdb_tables_%s" % ("on" if on else "off")] = (Time.get_ticks_usec() - t2) / 1000
+	print("TEXT_FIX_COST_MS=" + JSON.stringify(cost))
+	XTextFix.set_all(true)
 	print("TEXT_FIX_DUMP=" + JSON.stringify({"dir": out, "warnings": XTextFix.warnings.size()}))
 	get_tree().quit.call_deferred(0)

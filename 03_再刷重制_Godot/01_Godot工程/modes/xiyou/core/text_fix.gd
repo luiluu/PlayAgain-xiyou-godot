@@ -25,6 +25,8 @@ static var OVERRIDES := true
 
 const RULES_PATH := "res://modes/xiyou/text_fix/rules.json"
 const OVERRIDES_PATH := "res://modes/xiyou/text_fix/overrides.json"
+## 改了修正逻辑（不只是 rules／overrides 数据）就加 1，让旧的修正缓存作废（导出版脚本源码可能读不到，不能只靠源码哈希）
+const CACHE_VER := 1
 const TABLES := ["Actors", "Classes", "Skills", "Items", "Weapons", "Armors", "Enemies", "States", "Troops", "CommonEvents",
 	"MapInfos", "EquipSuits", "Runewords"]
 const TEXT_KEYS := ["name", "nickname", "profile", "description", "message1", "message2", "message3", "message4"]
@@ -80,12 +82,12 @@ static func rules() -> Dictionary:
 				if re == null or not re.is_valid():
 					push_warning("XTextFix: rules.json 词典正则无效 " + from)
 					continue
-				gate.append(from)
+				gate.append(_escape(str(e.get("gate", ""))) if str(e.get("gate", "")) != "" else from.trim_prefix("^"))  # 预筛只用字面文字（正则里的后顾、行首锚点会让整段预筛变慢或对不上）
 			else:
 				gate.append(_escape(from))
 			_dict.append([re, from, str(e.get("to", ""))])
-		gate.append("﻿")
-		gate.append("​")
+		gate.append("\ufeff")
+		gate.append("\u200b")
 		_gate = RegEx.create_from_string("|".join(gate))
 		_pos_re = RegEx.create_from_string("^(<pos=\\S+\\s+text=)([\\s\\S]*?)(\\s+size=[\\s\\S]*)$")
 		_namebox_re = RegEx.create_from_string("^<([^<>\\\\:]{1,20})>")
@@ -114,6 +116,52 @@ static func overrides() -> Dictionary:
 
 
 # ---------- 入口（XDB.table／XDB.map 读进来时调） ----------
+
+## 读一张表并修正（XDB.table 调）。修正要扫十几万行（Skills 约 0.25 秒），所以修正后的结果连同覆盖表报警一起
+## 存进 XDB 的解析缓存，键＝源文件内容＋开关状态＋rules／overrides 内容；XIYOU_JSON_CACHE=0 时每次现算。
+static func load_table(name: String) -> Variant:
+	var rel := "db/%s.json" % name
+	var path := XDB.BASE + rel
+	var bytes := FileAccess.get_file_as_bytes(path) if XDB.json_cache and any_on() else PackedByteArray()
+	if bytes.is_empty():
+		var v = XDB.load_json(rel)
+		patch_table(name, v)
+		return v
+	var key := path + "#textfix" + _signature()
+	var file := XDB._cache_file(key, bytes)
+	var hit = XDB._cache_read(file)
+	if hit[0] and hit[1] is Dictionary and hit[1].has("data"):
+		for w in hit[1].get("warnings", []):
+			_warn(str(w))
+		return hit[1].data
+	var value = XDB._parse(path)
+	if value == null:
+		return null
+	var before := warnings.size()
+	patch_table(name, value)
+	XDB._cache_write(key, file, {"data": value, "warnings": warnings.slice(before)})
+	return value
+
+
+static var _sig_files := ""
+
+
+static func _signature() -> String:
+	if _sig_files == "":
+		var h := HashingContext.new()
+		h.start(HashingContext.HASH_SHA256)
+		h.update(str(CACHE_VER).to_utf8_buffer())
+		for p in [RULES_PATH, OVERRIDES_PATH, "res://modes/xiyou/core/text_fix.gd"]:
+			h.update(FileAccess.get_file_as_bytes(p))
+		_sig_files = h.finish().hex_encode().substr(0, 16)
+	return "%d%d%d%d%d%d.%s" % [int(STRIP_ZW), int(NAMEBOX), int(PAIRS), int(DICT), int(TRAD), int(OVERRIDES), _sig_files]
+
+
+static func _warn(msg: String) -> void:
+	if not warnings.has(msg):
+		warnings.append(msg)
+		push_warning("XTextFix 覆盖表没套用 " + msg)
+
 
 static func patch_table(name: String, data) -> void:
 	if not any_on() or not TABLES.has(name) or not data is Array:
@@ -170,7 +218,7 @@ static func fix(s: String, event := false) -> String:
 		s = _namebox(s)
 	if _gate.search(s) != null:
 		if STRIP_ZW:
-			s = s.replace("﻿", "").replace("​", "")
+			s = s.replace("\ufeff", "").replace("\u200b", "")
 		if TRAD:
 			var trad: Dictionary = _rules.get("trad", {})
 			for k in trad:
@@ -182,7 +230,7 @@ static func fix(s: String, event := false) -> String:
 					s = (d[0] as RegEx).sub(s, d[2], true)
 				elif s.contains(d[1]):
 					s = s.replace(d[1], d[2])
-	if PAIRS:
+	if PAIRS and _pair_hint(s):
 		s = _pairs(s)
 	return s
 
@@ -200,21 +248,36 @@ static func _namebox(s: String) -> String:
 	return s
 
 
+## 备注里只处理行首的 <pos=… text=… size=…> 行（其余是 notetag、动作序列、脚本，体积大，不扫）
 static func _fix_note(note: String) -> String:
-	var lines := note.split("\n")
-	var changed := false
-	for i in lines.size():
-		if not lines[i].begins_with("<pos="):
-			continue
-		var m := _pos_re.search(lines[i])
-		if m == null:
-			continue
-		var t := m.get_string(2)
-		var u := fix(t)
-		if u != t:
-			lines[i] = m.get_string(1) + u + m.get_string(3)
-			changed = true
-	return "\n".join(lines) if changed else note
+	var i := note.find("<pos=")
+	if i < 0:
+		return note
+	var out := ""
+	var last := 0
+	while i >= 0:
+		var e := note.find("\n", i)
+		if e < 0:
+			e = note.length()
+		if i == 0 or note[i - 1] == "\n":
+			var line := note.substr(i, e - i)
+			var u := _fix_pos_line(line)
+			if u != line:
+				out += note.substr(last, i - last) + u
+				last = e
+		i = note.find("<pos=", e)
+	return note if last == 0 else out + note.substr(last)
+
+
+static func _fix_pos_line(line: String) -> String:
+	if _gate.search(line) == null and not (PAIRS and _pair_hint(line)):
+		return line
+	var m := _pos_re.search(line)
+	if m == null:
+		return line
+	var t := m.get_string(2)
+	var u := fix(t)
+	return line if u == t else m.get_string(1) + u + m.get_string(3)
 
 
 static func _fix_list(list) -> void:
@@ -237,6 +300,13 @@ static func _fix_list(list) -> void:
 
 
 ## 成对标点：只有一种引号且个数成双的，改成左右交替；括号按半全角一视同仁配对，能配平时把半全角混搭的一对改成全角
+## 成对标点要不要细看：有引号字符，或半角、全角括号同时出现
+static func _pair_hint(s: String) -> bool:
+	if s.contains("‘") or s.contains("“") or s.contains("”"):
+		return true
+	return (s.contains("（") or s.contains("）")) and (s.contains("(") or s.contains(")"))
+
+
 static func _pairs(s: String) -> String:
 	if s.contains("‘") and not s.contains("’") and s.count("‘") % 2 == 0:
 		s = _alternate(s, "‘", "’")
@@ -304,10 +374,7 @@ static func _apply_override(e: Dictionary, data, table: String) -> void:
 	var want := int(e.get("count", 0))
 	if from == "" or total == 0 or (want > 0 and total != want):
 		var why := "位置找不到" if slots.is_empty() else ("原文命中 %d 次，应为 %s" % [total, str(want) if want > 0 else "至少 1"])
-		var msg := "%s：%s（%s）" % [at, why, str(e.get("ref", ""))]
-		if not warnings.has(msg):
-			warnings.append(msg)
-			push_warning("XTextFix 覆盖表没套用 " + msg)
+		_warn("%s：%s（%s）" % [at, why, str(e.get("ref", ""))])
 		return
 	for s in slots:
 		if s[0][s[1]] is String:

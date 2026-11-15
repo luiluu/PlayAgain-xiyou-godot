@@ -92,6 +92,14 @@ func _run() -> void:
 	_check("ov_count_mismatch", XTextFix.warnings.size() == before + 2 and probe[1].name == "甲乙")
 	XTextFix.warnings.resize(before)
 
+	# 修正结果走解析缓存：读两次（第二次命中缓存）都与现算的一致
+	var fresh = XDB.load_json("db/Items.json")
+	XTextFix.patch_table("Items", fresh)
+	XDB._tables.erase("Items")
+	var first := JSON.stringify(XDB.table("Items"))
+	XDB._tables.erase("Items")
+	_check("cache_roundtrip", first == JSON.stringify(fresh) and JSON.stringify(XDB.table("Items")) == first)
+
 	# 五、名字改了首领判定照旧
 	_check("boss_name_rule", _rec("Enemies", 850).name == "【超级Boss】瑞丁" and XZhenqi.is_boss_enemy(XEnemy.new().setup(850, 1, 100.0)))
 

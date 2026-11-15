@@ -1,5 +1,5 @@
 {
- "_说明": "原版文字错的统一规则（乙类文字审 xa_text-audit-b 第三节第 1 组）。加载时由 XTextFix 套在玩家看得到的字段上：数据库 name／nickname／profile／description／message1～4、备注 <pos=… text=…> 的 text 段、MapInfos 名、事件 401／405 对话行与 102 选项。dict 每条 from→to（re=true 时 from 是正则，to 里 $1 引用分组）；trad 是逐字繁→简；namebox_skip 是行首 <…> 里不当名字框补 \\n 的标签。改字后跑 tests/xiyou_text_fix 与 07_开发环境/文字审/scan_beta_text.py --verify-fix。",
+ "_说明": "原版文字错的统一规则（乙类文字审 xa_text-audit-b 第三节第 1 组）。加载时由 XTextFix 套在玩家看得到的字段上：数据库 name／nickname／profile／description／message1～4、备注 <pos=… text=…> 的 text 段、MapInfos 名、事件 401／405 对话行与 102 选项。dict 每条 from→to（re=true 时 from 是正则，to 里 $1 引用分组，gate 写一段必含的字面文字做预筛）；trad 是逐字繁→简；namebox_skip 是行首 <…> 里不当名字框补 \\n 的标签。改字后跑 tests/xiyou_text_fix 与 07_开发环境/文字审/scan_beta_text.py --verify-fix。",
  "namebox_skip": [
   "WordWrap",
   "br",
@@ -47,7 +47,8 @@
    "from": "(?<!还是)奥数",
    "to": "奥术",
    "re": true,
-   "ref": "22-001、27-001、34-002、40～42、47-001、50-001、69-001、76-003、84-002；跳过 Skills:8036「奥术还是奥数」梗"
+   "ref": "22-001、27-001、34-002、40～42、47-001、50-001、69-001、76-003、84-002；跳过 Skills:8036「奥术还是奥数」梗",
+   "gate": "奥数"
   },
   {
    "from": "终级",
@@ -103,7 +104,8 @@
    "from": "己·物理攻击(\\d)",
    "to": "己·物理攻击x$1",
    "re": true,
-   "ref": "55-001 等"
+   "ref": "55-001 等",
+   "gate": "己·物理攻击"
   },
   {
    "from": "利用魔为友方",
@@ -144,7 +146,8 @@
    "from": "^效果：(?=\\\\c\\[1\\]效果)",
    "to": "",
    "re": true,
-   "ref": "49-002"
+   "ref": "49-002",
+   "gate": "效果：\\c[1]效果"
   }
  ]
 }
