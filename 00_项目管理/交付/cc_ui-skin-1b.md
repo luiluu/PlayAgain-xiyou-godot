@@ -187,3 +187,18 @@
 - 未重跑有窗模式的 `皮肤关闭对照.py --base main` 与 `xiyou_ui_skin_1b.tscn -- --out=...` 截图重拍（本次仅对工程内已有对照图运行了 `--compare`）；
 - 未跑 `并行测试.py`、`选测.py` 全集、`工具回归.py`、`xiyou_tianqi_e2e`、`xiyou_virtual_player` 及事件对照四段（按派单要求留给总装 `--affected --cloud`）；
 - 未在仓库外读取私密设计仓 `重制设定/界面风格提案_v0.7/` 原件，文字审对照 `cc_ui-skin-p0.md` 与 `cc_ui-skin-1a.md` 所载 `ba1f7ed` 核查口径完成。
+
+### 返修复核（提交 `123aa0b38`，相对 `c02f2b70e`）
+
+- **复核对象**：`cc/ui-skin-1b`（返修提交 `123aa0b38` 相对 `c02f2b70e` 的 6 个文件 diff，乙档复核），执行者：小A（只读核查＋前台轻量无头复跑，未改游戏代码）。
+- **结论：通过**（上次 1 条 P2 必改、3 条 P3、文字表补全与套用要点 1～5 重写均已按要求改妥，要点作为后续 5A／5B 使用者可直接看懂照用，未带出新问题；按 `ba1f7ed` 口径核对无误）。
+- **逐项确认**：
+  1. **P2 按键提示三态（`skin_skill_page.gd`）**：`sync()` 已按 `sc.mode` 切换 `set_hint_list`——`"type"` 为 `确定 选择／取消 返回／Q / E 换人`、`"list"` 为 `确定 选择／取消 回类型／Q / E 翻页`、`"actor"`（`_:`）为 `确定 选择／取消 返回`，与实际交互及 `ba1f7ed` 简短口径一致。
+  2. **三条 P3 与防引入新问题**：
+     - P3-1（无环默认焦点）：`skin_template_page.gd` `_ready()` 新增 `if not show_ring and focus == "ring": focus = "list"`，配合 `_auto_cancel()`，无环时默认落在列表且取消直接发 `back`。
+     - P3-2（点环不跨态／取下镶嵌物牌／目标名字缩字）：`skin_item_page.gd`（非 `category`/`list`）与 `skin_skill_page.gd`（非 `type`/`list`）的 `_on_ring_changed` 均调 `ring.select(..., false)` 弹回原类（`_on_ring_changed` 首行已判 `i == scene._cat/type_index`，不会无限递归）；镶嵌列表停在「取下镶嵌物」时 `set_card` 正确切到插件原文标题与 `XItemScene.augment_name` 孔位副标题；`skin_target_list.gd` 改用 `XSkinList.fit_text(..., 17, 14)` 先缩字再加省略号。
+     - P3-3（文字表补全）：`cc_ui-skin-1b.md`「新增可见文字」表已补入 `回类型／翻页`、`空`、`取下镶嵌物`、`LV.%1`、`减少魔法`，按 `ba1f7ed` 口径无误。
+  3. **模板页套用要点 1～5 重写可用性（以 5A／5B 使用者视角核对源码）**：
+     - 5 处踩坑点均已补全且与 `XSkinTemplatePage`/`XSkinCard`/`XSkinList`/`XSkinTargetList` 源码一致：`XKeyMap.handled(self)`、旧弹窗 `move_child(..., -1)`、右键取消自设 `MOUSE_FILTER_PASS` 与 `gui_input`；`show_ring = false` 默认焦点与 `left_w` 处理、`group_key = ""`、货币重绘 `top_layer.queue_redraw()`；`int`/`Texture2D` 图标传参区分（`set_card.icon`/`show_targets.face`/`badge` 只认 `Texture2D`）、`show_targets` 行字段格式、`set_items(-1)`、`sections` 三种格式、环心 `ring.draw`；`auto_nav` 点列表行自动进列表与 `set_focus("card")` 默认落第一个按钮（同步在 `skin_template_page.gd` 补齐实现与 `tests/xiyou_ui_skin_1b.gd` 断言，并明示了 `1C` 行为兼容边界）；手动模式用 `open_menu`/`close_menu`、`_syncing` 护栏与状态拦截。
+  4. **测试与前台轻量复跑**：`tests/xiyou_ui_skin_1b.gd` 新增 6 条断言（`tpl_card_focus_first_button`、`tpl_auto_click_list_focuses`、`tpl_no_ring_focus_list`、`item_ring_click_ignored_in_actor`、`skill_hints_list`、`skill_hints_type`）；前台实测 `./03_再刷重制_Godot/07_开发环境/godot --headless --path 03_再刷重制_Godot/01_Godot工程 res://tests/xiyou_ui_skin_1b.tscn` 输出 `TEST_RESULT={"passed":85,"total":85}`，`python3 03_再刷重制_Godot/07_开发环境/语法检查.py` 输出 `902 个 .gd，0 个问题`（`21 秒`）。
+
