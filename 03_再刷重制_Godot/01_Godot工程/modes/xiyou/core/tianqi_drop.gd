@@ -23,6 +23,11 @@ extends RefCounted
 ## - 第四期：挂机「屏蔽掉落」开着时，通用掉落里低于门槛档的自动按卖价折成钱、够门槛的留着（AUTO_SELL；原版是精良及以下全丢）；
 ##   怪物图鉴、地图传送预览的掉率换成招牌掉落的面板概率，图鉴里标「已连续 N 次没出」。
 ##
+## 返修（T099，O-待定）：原版的低档稀有装备（精良及以下，全部敌人里最高掉率低于 generic.rare_below）不进通用池、
+##   也不当删除栏位重抽的替补；怪物表里那一行照留，按原表 × 底率掷（不垫到 item_floor）。光明独角兽、嘶风逐日驹（1 级坐骑）
+##   原版只在剑道争锋巅峰首领身上 1/700、1/500，数据品质写的是普通、等级需求 1，没有这条会成为第 1 层最常见的掉落之一（Kyo 11-16 反馈）。
+##   `RARE_KEEP = false` 回到旧写法。
+##
 ## 回退（O-403）：`SEED_FROM_SAVE`／`PITY_RESET_ON_SURE`（O-429，返修）关掉回旧写法；`AUTO_SELL = false` 屏蔽掉落照原版丢；`NO_FEED_BOUGHT = false` 商店货也能喂；`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
 
 static var ENABLED := true
@@ -35,6 +40,8 @@ static var AUTO_SELL := true
 ## 返修（O-429）：旧档首次掉落种子由存档种子派生；必掉也清连败、推进总次数
 static var SEED_FROM_SAVE := true
 static var PITY_RESET_ON_SURE := true
+## 返修（T099）：低档稀有装备不进通用池、留在原怪物表
+static var RARE_KEEP := true
 
 const PATH := "res://modes/xiyou/tianqi_data/drop_table.json"
 const BASE_RATE := 0.2
@@ -44,6 +51,10 @@ static var _table: Dictionary = {}
 static var _load_failed := false
 ## 品质档 → [[种类 2／3, 编号, 等级需求], …]
 static var _pool: Dictionary = {}
+## 同上，去掉低档稀有装备（RARE_KEEP 开着时用）
+static var _pool_common: Dictionary = {}
+## "种类:编号" → 全部敌人掉落表里的最高概率（dropItems 1÷分母、<Enemy Drops> 百分数）
+static var _best_rate: Dictionary = {}
 
 
 static func table() -> Dictionary:
@@ -174,6 +185,8 @@ static func _members(logic) -> Array:
 static func keeps_row(s: XState, kind: int, id: int) -> bool:
 	if not generic_on(s) or kind < 2:
 		return true
+	if rare_gear(kind, id):
+		return true  # 低档稀有装备不进通用池，照原表掉
 	var rec := XDB.rec("Weapons" if kind == 2 else "Armors", id)
 	return XQuality.grade(rec) > int(table().get("generic", {}).get("table_cut_grade", 2))
 
@@ -192,6 +205,8 @@ static func signature_base(kind: int, id: int, raw: float) -> float:
 		return item_p
 	if raw >= 1.0:
 		return 1.0
+	if rare_gear(kind, id):
+		return minf(1.0, raw * float(g.get("item_base", BASE_RATE)))  # 低档稀有装备：原表 × 底率，不垫底
 	var range_ = g.get("gear_range", {}).get(str(XQuality.grade(XDB.rec("Weapons" if kind == 2 else "Armors", id))))
 	if not range_ is Array:
 		return item_p  # 精良及以下（通用掉落关着或异化装备挑本体时才会问到）
@@ -370,7 +385,44 @@ static func pool(grade: int) -> Array:
 			if not _pool.has(gr):
 				_pool[gr] = []
 			_pool[gr].append([int(r[0]), int(r[1]), int(rec.get("meta", {}).get("req_level", 0))])
-	return _pool.get(grade, [])
+	if not RARE_KEEP:
+		return _pool.get(grade, [])
+	if not _pool_common.has(grade):
+		_pool_common[grade] = (_pool.get(grade, []) as Array).filter(func(x): return not rare_gear(int(x[0]), int(x[1])))
+	return _pool_common[grade]
+
+
+## 这件装备在全部敌人掉落表里的最高概率（没出现过是 0）
+static func best_rate(kind: int, id: int) -> float:
+	if _best_rate.is_empty():
+		var enemies = XDB.table("Enemies")
+		for e in (enemies if enemies is Array else []):
+			if not e is Dictionary:
+				continue
+			for d in e.get("dropItems", []):
+				if int(d.get("kind", 0)) in [2, 3] and float(d.get("denominator", 0)) > 0:
+					_note_rate("%d:%d" % [int(d.kind), int(d.dataId)], 1.0 / float(d.denominator))
+			for x in XBattleLogic._extra_drops(e):
+				if int(x.kind) in [2, 3]:
+					_note_rate("%d:%d" % [int(x.kind), int(x.id)], float(x.rate))
+	return float(_best_rate.get("%d:%d" % [kind, id], 0.0))
+
+
+static func _note_rate(key: String, p: float) -> void:
+	_best_rate[key] = maxf(float(_best_rate.get(key, 0.0)), p)
+
+
+## 低档稀有装备：精良及以下、原版最高掉率低于 generic.rare_below（RARE_KEEP 关着时都不算）
+static func rare_gear(kind: int, id: int) -> bool:
+	if not RARE_KEEP or kind < 2:
+		return false
+	var g: Dictionary = table().get("generic", {})
+	var p := best_rate(kind, id)
+	if p <= 0.0 or p >= float(g.get("rare_below", 0.0)):
+		return false
+	return XQuality.grade(XDB.rec("Weapons" if kind == 2 else "Armors", id)) <= int(g.get("table_cut_grade", 2))
+
+
 
 
 ## 有人能穿这一件（按栏位、类型、专属判，等级也算）
