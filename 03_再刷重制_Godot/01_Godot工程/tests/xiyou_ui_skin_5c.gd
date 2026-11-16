@@ -89,6 +89,7 @@ func _run() -> void:
 	_config()
 	await _options_tianqi()
 	await _options_xiyou()
+	await _options_tianqi_old_skin()
 	await _sub_pages()
 	await _prompt_and_end()
 	XUiSkin.motion_override = -1
@@ -284,9 +285,47 @@ func _options_xiyou() -> void:
 	check("xy_no_skin", page.skin == null and page.win.visible)
 	check("xy_no_new_rows", not _symbols(page).has("codexUiSkin") and not _symbols(page).has("codexUiMotion"), _symbols(page))
 	check("xy_ads_still_listed", _symbols(page).has("wxxonoff"))
+	check("xy_ads_all_three", _symbols(page).has("wxlonoff") and _symbols(page).has("wxtonoff"), _symbols(page))
+	check("xy_no_ads_tip", not page.ads_tip())
 	check("xy_not_to_map", not page.to_map)
 	page.queue_free()
 	await frames(3)
+
+
+# ---- 设置主页（天启篇存档＋界面风格选了原版：旧列表去掉防骗三行、页底静态提示）----
+func _options_tianqi_old_skin() -> void:
+	_state()
+	XConfig.set_flag("codexUiSkin", false)
+	var page := XOptionsScene.new()
+	add_child(page)
+	await frames(3)
+	check("tq_old_no_skin", page.skin == null and page.win.visible)
+	var syms := _symbols(page)
+	check("tq_old_ads_gone", not syms.has("wxxonoff") and not syms.has("wxlonoff") and not syms.has("wxtonoff"), syms)
+	check("tq_old_ads_tip", page.ads_tip() and XOptionsScene.ADS_TIP != "")
+	# 位置：提示节点真在、矩形在 1280×720 可见区内，且不跟窗口（12 行＋上下箭头都在窗内）相交
+	var tip := page.get_node_or_null("AdsTip") as Label
+	check("tq_old_tip_node", tip != null and tip.text == XOptionsScene.ADS_TIP)
+	var tr := page.ads_tip_rect()
+	var win_r := page.win.get_rect()
+	check("tq_old_tip_visible", Rect2(0, 0, 1280, 720).encloses(tr), tr)
+	check("tq_old_tip_clear_of_rows_arrows", not tr.intersects(win_r), [tr, win_r])
+	check("tq_old_tip_node_matches", tip != null and Rect2(tip.position, tip.size) == tr)
+	# 实际可用高度：窗内画布正好 12 行，没有多余底栏，所以不能画在窗内
+	check("tq_old_canvas_full_rows", page.win.canvas.size.y == XOptionsScene.ROWS * XOptionsScene.LH, page.win.canvas.size)
+	await shots("tianqi_old_skin_options")
+	# 切风格后提示跟着显隐：原版→新：不在；新→原版：在且位置对
+	page._set_ui_skin(true)
+	await frames(3)
+	check("tq_old_to_new_tip_gone", page.skin != null and page.get_node_or_null("AdsTip") == null and not page.ads_tip())
+	page._set_ui_skin(false)
+	await frames(3)
+	var tip2 := page.get_node_or_null("AdsTip") as Label
+	check("tq_new_to_old_tip_back", page.skin == null and tip2 != null and tip2.visible and Rect2(tip2.position, tip2.size) == page.ads_tip_rect() and page.get_children().filter(func(n): return n.name == "AdsTip").size() == 1)
+	check("tq_old_other_rows_kept", syms.has("dhtg") and syms.has("cq"), syms)
+	page.queue_free()
+	await frames(3)
+	XConfig.set_flag("codexUiSkin", true)
 
 
 # ---- 子页放进居中外框 ----
