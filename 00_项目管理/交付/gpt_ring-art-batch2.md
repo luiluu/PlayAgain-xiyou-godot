@@ -6,7 +6,7 @@
 
 ## Carbon返修（本轮，以此节与最新测量为准）
 
-完整审稿随交付提交：[小A美术审](gpt_ring-art-batch2_小A美术审.md)。本轮按给定RGB与16×8矩阵修改，不自行标定稿；待协调Opus对照P1复核再给Kyo。
+完整审稿随交付提交：[小A美术审](../核查/xa_核ring_art_batch2.md)。本轮按给定RGB与16×8矩阵修改，不自行标定稿；待协调Opus对照P1复核再给Kyo。
 
 | 审项 | 怎么改的 | 验证证据 |
 | --- | --- | --- |
@@ -42,11 +42,11 @@
 | ring_center_famine.png | badges_128/famine.png | 枯麦冷灰铜；仰口空碗／秤盘 |
 | ring_center_qiyin.png | circles/hei.png | 盛装旧金；平顶方印玺台，无龙 |
 
-每个深／中／亮色的源坐标、源RGB、输出RGB见[palette_sources.json](gpt_ring-art-batch2_预览/palette_sources.json)。是源材质参考后的人工调色，并非声称逐像素原色照搬；亮度按已过样板的深壳、亮芯方法控制。原生逐像素绘制，无抗锯齿，无柔边alpha；程序负责法阵染色、殉印漂浮与残缺压暗。
+每个深／中／亮色的源坐标、源RGB、输出RGB见[palette_sources.json](../归档/交付截图/gpt_ring-art-batch2/palette_sources.json)。是源材质参考后的人工调色，并非声称逐像素原色照搬；亮度按已过样板的深壳、亮芯方法控制。原生逐像素绘制，无抗锯齿，无柔边alpha；程序负责法阵染色、殉印漂浮与残缺压暗。
 
 ## 验证
 
-仓根运行 `/tmp/ring-art-venv/bin/python 00_项目管理/交付/gpt_ring-art-batch2_预览/build.py` 复出图，随后同解释器运行同目录 `verify.py`。脚本只写本批九张与本批预览，不覆盖样板。
+仓根运行 `/tmp/ring-art-venv/bin/python 00_项目管理/归档/交付截图/gpt_ring-art-batch2/build.py` 复出图，随后同解释器运行同目录 `verify.py`。脚本只写本批九张与本批预览，不覆盖样板。
 
 量法：每个不透明像素以方格中心dx、dy求近缘 `hypot(max(abs(dx)-0.5,0),max(abs(dy)-0.5,0))`、远缘 `hypot(abs(dx)+0.5,abs(dy)+0.5)`，量整个方格，非只量像素中心。
 
@@ -58,7 +58,7 @@
 | xun | 288×288 | 108.812～132.966 |
 | zhen | 288×288 | 108.453～130.668 |
 
-四张环心均96×96，完整像素方格包络分别war 33.000～44.181、plague 33.000～44.045、famine 33.000～43.417、qiyin 33.000～43.290；主体完整方格≤38，超38仅12点±15°以内。全部9张红像素0、柔边alpha0；红色保守阈值为R≥120且R>1.6G且R>1.6B，全部alpha仅0／255。四张新环心各与20:9触屏130%全部13个栏位名矩形交叠0，测量与断言原文见[measurement.txt](gpt_ring-art-batch2_预览/measurement.txt)。样板hei、mo、death、orb四图与a2294d4a3逐字节比对一致。
+四张环心均96×96，完整像素方格包络分别war 33.000～44.181、plague 33.000～44.045、famine 33.000～43.417、qiyin 33.000～43.290；主体完整方格≤38，超38仅12点±15°以内。全部9张红像素0、柔边alpha0；红色保守阈值为R≥120且R>1.6G且R>1.6B，全部alpha仅0／255。四张新环心各与20:9触屏130%全部13个栏位名矩形交叠0，测量与断言原文见[measurement.txt](../归档/交付截图/gpt_ring-art-batch2/measurement.txt)。样板hei、mo、death、orb四图与a2294d4a3逐字节比对一致。
 
 - 选测main --list已跑：新增未知PNG保守触发整轮；本批无GDScript、战斗或存档变更，按派单的图像专项交付，不跑Godot全量。
 - 工具快速回归20项全通过、退出0（见预览tool_regression.txt）；提交后交付自检通过、退出0（见delivery_check.txt）；快车道，无转换或同步产物变化。
@@ -66,17 +66,17 @@
 
 ## 合成预览
 
-[七印环身并排](gpt_ring-art-batch2_预览/overview_bands.png)、[四线＋七印神器环心并排](gpt_ring-art-batch2_预览/overview_centers.png)。均以原生大小排布，不放大美化。
+[七印环身并排](../归档/交付截图/gpt_ring-art-batch2/overview_bands.png)、[四线＋七印神器环心并排](../归档/交付截图/gpt_ring-art-batch2/overview_centers.png)。均以原生大小排布，不放大美化。
 
 每印一张20:9触屏130%完整合成，另有同图标注全部栏位名外框：
 
-- [白印](gpt_ring-art-batch2_预览/annotated_bai_20x9_touch130.png)
-- [红印](gpt_ring-art-batch2_预览/annotated_hong_20x9_touch130.png)
-- [黑印](gpt_ring-art-batch2_预览/annotated_hei_20x9_touch130.png)
-- [灰印](gpt_ring-art-batch2_预览/annotated_hui_20x9_touch130.png)
-- [殉印](gpt_ring-art-batch2_预览/annotated_xun_20x9_touch130.png)
-- [震印](gpt_ring-art-batch2_预览/annotated_zhen_20x9_touch130.png)
-- [默印](gpt_ring-art-batch2_预览/annotated_mo_20x9_touch130.png)
+- [白印](../归档/交付截图/gpt_ring-art-batch2/annotated_bai_20x9_touch130.png)
+- [红印](../归档/交付截图/gpt_ring-art-batch2/annotated_hong_20x9_touch130.png)
+- [黑印](../归档/交付截图/gpt_ring-art-batch2/annotated_hei_20x9_touch130.png)
+- [灰印](../归档/交付截图/gpt_ring-art-batch2/annotated_hui_20x9_touch130.png)
+- [殉印](../归档/交付截图/gpt_ring-art-batch2/annotated_xun_20x9_touch130.png)
+- [震印](../归档/交付截图/gpt_ring-art-batch2/annotated_zhen_20x9_touch130.png)
+- [默印](../归档/交付截图/gpt_ring-art-batch2/annotated_mo_20x9_touch130.png)
 
 同目录composite开头的七张为未标注版。沿用样板bare／clean底图与layout_20.json，先环身、恢复球与焦点、33半径头像、环心框、武器副手球框、最后原始栏位文字层；没有重画文字或擦背景。此为离线合成，程序接线后需总装验收，不宣称运行时效果。
 
