@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-fest-envoy-missing
 
 - 车道／工作者：T069 大厅庆典使者、报名处不显示（cc，Opus＋medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -15,7 +15,7 @@
 - 修法（`fest_lobby.gd` `patch_map`）：只看 78～81 这四格是否已被别的事件占用，不看表长；空着就按编号写进去（表不够长才补 null）。四格有一格被占照旧不动。
 - 专项新增「T069」一段：`XRift.STAGE2 = true`（正式默认）进大厅，断言 `rift2_on.events_padded`（表确实被扩到 204 以后）、`rift2_on.envoy_enroll_trophy`（78～81 都进图）、`rift2_on.rift_events_kept`（201～204 不受影响）、`rift2_on.envoy_cell`、天启篇档 `rift2_on.tianqi.*` 两条；该段临时把 rift2 记成看过，免得二阶段过场在本专项里开播（过场另有 `xiyou_rift2_canglong`）。修前跑：`rift2_on.envoy_enroll_trophy`、`rift2_on.envoy_cell` 失败（123/125，事件列表 1～77＋201～204）；修后 127/127。
 - 天启篇隐藏（`XTianqiSect` YI/JIA_HIDDEN）只藏大厅 3、16、35 号，不涉及 78～81；`map_scene.gd:438` 的 keepEvents 过滤已有 `XFestLobby.keep_event` 放行，都不是原因。
-- 验证：`xiyou_fest_lobby` 127/127；带窗口截图（西游档、天启篇档各一张，报名处 (5,17)、奖杯 (6～7,17)、使者 (8,17) 都在，使者在奖杯右侧、不被盖住）；语法检查 984 个 0 问题；`检查.sh --affected`（见下）。
+- 验证：`xiyou_fest_lobby` 127/127；带窗口截图（西游档、天启篇档各一张，报名处 (5,17)、奖杯 (6～7,17)、使者 (8,17) 都在，使者在奖杯右侧、不被盖住）；语法检查 984 个 0 问题；`检查.sh --affected main`：69 个场景只挂 `xiyou_map_hotkeys`（`touch_save_shown_on_main_menu`，首跑和重跑都挂）——本分支当时落后 main，合 main 后单跑 `xiyou_map_hotkeys` 36/36、`xiyou_fest_lobby` 127/127 通过（main 改过该专项，断言 35→36），与本单无关；其余全过。第一次 `--affected` 跑到 21/69 被外部 SIGTERM（143）掐掉，原因不明，重跑完成。截图在本地 `03_再刷重制_Godot/04_验证/本地结果/t069/`（不入库）。
 
 ## 交接板
 
