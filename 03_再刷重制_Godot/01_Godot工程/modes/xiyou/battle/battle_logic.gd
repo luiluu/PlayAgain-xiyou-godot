@@ -1980,7 +1980,8 @@ func _sync_orders(before: Dictionary, allow_current: bool) -> void:
 		if before[b] and not now:
 			lost = true
 		elif not before[b] and now:
-			if allow_current and mini(make_action_times(b), OTB_MAX_ACTIONS) > int(_acted.get(b, 0)):
+			var wake := XTianqiLedger.wake_times(self, b)  # 天启篇回合预算（期三）：醒来补排当前回合不重掷；-1＝不归预算管
+			if allow_current and (wake > 0 if wake >= 0 else mini(make_action_times(b), OTB_MAX_ACTIONS) > int(_acted.get(b, 0))):
 				_insert_orders(b, current_order)
 			_insert_orders(b, next_order)
 	if lost:
@@ -1996,7 +1997,10 @@ func _insert_orders(b: XBattler, order: Array) -> void:
 	var room := OTB_MAX_ACTIONS - acted if is_same(order, current_order) else OTB_MAX_ACTIONS  # 按引用比：两个空数组 == 也相等
 	if room <= 0:
 		return
-	var times := mini(maxi(make_action_times(b) - acted, 1), room)
+	var wake := XTianqiLedger.wake_times(self, b) if is_same(order, current_order) else -1  # 天启篇回合预算（期三）：当前回合补排用「1＋多动上限 − 已行动 − 已用预算」，不重掷
+	var times := mini(wake if wake >= 0 else maxi(make_action_times(b) - acted, 1), room)
+	if times <= 0:
+		return
 	for i in range(times):
 		order.append(b)
 

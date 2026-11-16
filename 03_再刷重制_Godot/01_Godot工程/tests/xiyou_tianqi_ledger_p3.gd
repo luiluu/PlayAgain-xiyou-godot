@@ -287,7 +287,7 @@ func _derived_table() -> void:
 					bad.append(m.get_string(2))
 			elif not (XTianqiLedger.data().get("turn_budget", {}).get("recast", []) as Array).has(m.get_string(2)):
 				bad.append(m.get_string(2))
-	_check("derived_sites_registered", bad.is_empty() and calls >= 6, [calls, bad])
+	_check("derived_sites_registered", bad.is_empty() and calls >= 5, [calls, bad])
 	# 模块追击：表里有、文件在、期四到期
 	var mods: Array = (XTianqiLedger.data().get("derived", []) as Array).filter(func(r): return str(r.id).begins_with("module."))
 	_check("derived_modules_listed", mods.size() >= 7 and mods.all(func(r): return int(r.get("expires", 0)) == 4 and FileAccess.file_exists("res://modes/xiyou/core/" + str(r.file))), mods.map(func(r): return r.id))

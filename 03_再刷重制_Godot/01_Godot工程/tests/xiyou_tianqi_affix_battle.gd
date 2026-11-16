@@ -351,6 +351,8 @@ func _actions() -> void:
 		# 评审 v0.1 第 8 条：走整次行动时，再释放那一下的命中也带画面快照（血条跟着动）
 		tgt.hp = tgt.mhp
 		lg2.current_order.clear()
+		if lg2.has_meta(XTianqiLedger.BUDGET_META):
+			lg2.remove_meta(XTianqiLedger.BUDGET_META)  # 回合预算（总账期三）：上面同一回合已再释放过一次、预算用掉了；这里当新的一回合
 		var acted := lg2.act(u, real, tgt)
 		var hits := acted.filter(func(l): return l is Dictionary and l.get("type") == "hit")
 		var acts := acted.filter(func(l): return l is Dictionary and l.get("type") == "action" and is_same(l.get("user"), u))
