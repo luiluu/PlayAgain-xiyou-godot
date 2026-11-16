@@ -6,6 +6,7 @@ extends RefCounted
 ## 改哪些字段：数据库 name／nickname／profile／description／message1～4、备注里 <pos=… text=… size=…> 的 text 段、
 ## 公共事件／敌群／地图事件的 401／405 对话行与 102 选项。备注的其余部分（notetag、动作序列、脚本）、伤害公式、插件参数都不碰。
 ##
+## 天启篇词典 tianqi_dict（D126 去西游化）跟 DICT 开关，只在天启篇存档套用，换档清缓存（sync_mode）。
 ## 六个开关各一个 O 号（00_设计/优化登记.md），默认开；关掉后 clear_cache() 让表重读即回原版文字：
 ## - STRIP_ZW（O-489）：剥零宽控制符 U+FEFF、U+200B、U+200C。
 ## - NAMEBOX（O-490）：事件对话名字框——行首 <名字> 补前导 \n、/n< 写反改 \n<、\c\[ 双转义改 \c[、行首孤立 \n（后面不是 <、[、字母）删掉。
@@ -14,7 +15,7 @@ extends RefCounted
 ## - TRAD（O-493）：繁体异体字逐字转简体（rules.json 的 trad）。
 ## - OVERRIDES（O-494）：逐条覆盖表 text_fix/overrides.json（位置＋原文子串＋改成，原文对不上就不套用并报警）。
 ## 次序：先逐条覆盖（from 按原版原文写），再套统一规则。
-## 代码里按名字认敌人档位的（XZhenqi.is_named_boss、XEncounterTarget）同时认「超级Boos」「超级Boss」。
+## 代码里按名字认敌人档位的（XZhenqi.is_named_boss、XEncounterTarget）同时认「超级Boos」「超级Boss」与 D126 新前缀「霸主」（「远古首领」＝原【DOTABOSS】本来不按名认首领，照旧不认，与参照一致）。
 
 static var STRIP_ZW := true
 static var NAMEBOX := true
@@ -36,6 +37,11 @@ static var warnings: Array = []
 static var _rules = null
 static var _overrides = null  # {"Skills": [条目…], "Map004": […]}
 static var _dict := []  # [[RegEx 或 null, from, to]]
+## 只在天启篇存档套用的词典（rules.json 的 tianqi_dict，D126 去西游化；西游档 1:1 原貌）
+static var _tq_dict := []
+static var _tq_gate: RegEx
+## 上一次读表／地图时用的是不是天启篇口径；和现在不一样就要清缓存（sync_mode）
+static var _applied_tq := false
 static var _gate: RegEx  # 零宽／繁体／词典任一命中的总预筛
 static var _pos_re: RegEx
 static var _namebox_re: RegEx
@@ -51,6 +57,19 @@ static func set_all(on: bool) -> void:
 	TRAD = on
 	OVERRIDES = on
 	clear_cache()
+
+
+## 现在是不是天启篇存档（D126 去西游化词典 tianqi_dict 只在天启篇套用；西游档 1:1 原貌）
+static func tq_on() -> bool:
+	return XState.current != null and XTianqi.active(XState.current)
+
+
+## 存档模式（西游档／天启篇）变了就清缓存让表与地图按新口径重读。
+## 换档（XState._become_current）、天启篇开局建档（XTianqi.start_new_game）时调；磁盘缓存的键里也编了模式位。
+static func sync_mode() -> void:
+	if tq_on() != _applied_tq:
+		_applied_tq = tq_on()
+		clear_cache()
 
 
 static func any_on() -> bool:
@@ -72,28 +91,38 @@ static func rules() -> Dictionary:
 		var gate := []
 		for k in _rules.get("trad", {}):
 			gate.append(_escape(str(k)))
-		for e in _rules.get("dict", []):
-			var from := str(e.get("from", ""))
-			if from == "":
-				continue
-			var re: RegEx = null
-			if bool(e.get("re", false)):
-				re = RegEx.create_from_string(from)
-				if re == null or not re.is_valid():
-					push_warning("XTextFix: rules.json 词典正则无效 " + from)
-					continue
-				gate.append(_escape(str(e.get("gate", ""))) if str(e.get("gate", "")) != "" else from.trim_prefix("^"))  # 预筛只用字面文字（正则里的后顾、行首锚点会让整段预筛变慢或对不上）
-			else:
-				gate.append(_escape(from))
-			_dict.append([re, from, str(e.get("to", ""))])
+		_dict = _build_dict(_rules.get("dict", []), gate)
 		gate.append("\ufeff")
 		gate.append("\u200b")
 		gate.append("\u200c")
 		_gate = RegEx.create_from_string("|".join(gate))
+		var tq_gate := []
+		_tq_dict = _build_dict(_rules.get("tianqi_dict", []), tq_gate)
+		_tq_gate = RegEx.create_from_string("|".join(tq_gate)) if not tq_gate.is_empty() else null
 		_pos_re = RegEx.create_from_string("^(<pos=\\S+\\s+text=)([\\s\\S]*?)(\\s+size=[\\s\\S]*)$")
 		_namebox_re = RegEx.create_from_string("^<([^<>\\\\:]{1,20})>")
 		_lone_n_re = RegEx.create_from_string("^\\\\n(?=[^<\\[A-Za-z])")
 	return _rules
+
+
+## rules.json 的词典条目 → [[RegEx 或 null, from, to]]，预筛字面文字追加进 gate
+static func _build_dict(entries: Array, gate: Array) -> Array:
+	var out := []
+	for e in entries:
+		var from := str(e.get("from", ""))
+		if from == "":
+			continue
+		var re: RegEx = null
+		if bool(e.get("re", false)):
+			re = RegEx.create_from_string(from)
+			if re == null or not re.is_valid():
+				push_warning("XTextFix: rules.json 词典正则无效 " + from)
+				continue
+			gate.append(_escape(str(e.get("gate", ""))) if str(e.get("gate", "")) != "" else from.trim_prefix("^"))  # 预筛只用字面文字（正则里的后顾、行首锚点会让整段预筛变慢或对不上）
+		else:
+			gate.append(_escape(from))
+		out.append([re, from, str(e.get("to", ""))])
+	return out
 
 
 static func _escape(s: String) -> String:
@@ -121,6 +150,7 @@ static func overrides() -> Dictionary:
 ## 读一张表并修正（XDB.table 调）。修正要扫十几万行（Skills 约 0.25 秒），所以修正后的结果连同覆盖表报警一起
 ## 存进 XDB 的解析缓存，键＝源文件内容＋开关状态＋rules／overrides 内容；XIYOU_JSON_CACHE=0 时每次现算。
 static func load_table(name: String) -> Variant:
+	_applied_tq = tq_on()
 	var rel := "db/%s.json" % name
 	var path := XDB.BASE + rel
 	var bytes := FileAccess.get_file_as_bytes(path) if XDB.json_cache and any_on() else PackedByteArray()
@@ -155,7 +185,7 @@ static func _signature() -> String:
 		for p in [RULES_PATH, OVERRIDES_PATH, "res://modes/xiyou/core/text_fix.gd"]:
 			h.update(FileAccess.get_file_as_bytes(p))
 		_sig_files = h.finish().hex_encode().substr(0, 16)
-	return "%d%d%d%d%d%d.%s" % [int(STRIP_ZW), int(NAMEBOX), int(PAIRS), int(DICT), int(TRAD), int(OVERRIDES), _sig_files]
+	return "%d%d%d%d%d%d%d.%s" % [int(STRIP_ZW), int(NAMEBOX), int(PAIRS), int(DICT), int(TRAD), int(OVERRIDES), int(tq_on()), _sig_files]
 
 
 static func _warn(msg: String) -> void:
@@ -195,6 +225,7 @@ static func patch_table(name: String, data) -> void:
 static func patch_map(map_id: int, data) -> void:
 	if not any_on() or not data is Dictionary:
 		return
+	_applied_tq = tq_on()
 	if OVERRIDES:
 		for e in overrides().get("Map%03d" % map_id, []):
 			_apply_override(e, data, "Map%03d" % map_id)
@@ -231,6 +262,12 @@ static func fix(s: String, event := false) -> String:
 					s = (d[0] as RegEx).sub(s, d[2], true)
 				elif s.contains(d[1]):
 					s = s.replace(d[1], d[2])
+	if DICT and _tq_gate != null and tq_on() and _tq_gate.search(s) != null:
+		for d in _tq_dict:
+			if d[0] != null:
+				s = (d[0] as RegEx).sub(s, d[2], true)
+			elif s.contains(d[1]):
+				s = s.replace(d[1], d[2])
 	if PAIRS and _pair_hint(s):
 		s = _pairs(s)
 	return s

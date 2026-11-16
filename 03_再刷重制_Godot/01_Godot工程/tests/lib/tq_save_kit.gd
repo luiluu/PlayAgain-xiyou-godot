@@ -51,6 +51,7 @@ static func new_game(difficulty := "jianxian", line := "war", orb_seed := -1) ->
 	s.map_id = 0
 	s.set_variable(20, 3)
 	XState.current = s
+	XTextFix.sync_mode()
 	s.flags.tianqi["line"] = line
 	XTianqiLine.progress(line, s)["stage"] = XTianqiLine.stage_done(line)
 	return s

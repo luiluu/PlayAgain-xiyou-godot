@@ -258,7 +258,7 @@ static func reroll_pool(rec: Dictionary, pool = null) -> Array:
 	var out := []
 	for r in (pool if pool is Array else drop_pool()):
 		var other := XDB.rec("Weapons" if int(r[0]) == 2 else "Armors", int(r[1]))
-		if _reroll_ok(int(r[0]), other) and drop_group(other) == want:
+		if _reroll_ok(int(r[0]), other) and drop_group(other) == want and not XTianqiDrop.rare_gear(int(r[0]), int(r[1])):  # T099：低档稀有装备不当替补
 			out.append(r)
 	return out
 

@@ -107,6 +107,24 @@ for (const id of SKILLS) for (const mode of ['normal', 'myth']) {
     return {log, playing, groups, frames, after: spriteset.isAnimationPlaying(), myth: a._codexRavenMythTurns || 0};
   }));
 }
+// ④ 再释放掷中（T046／T088）：渡鸦 10137 魂海刻度 <AgainUseMf:15>，dsPassiveSkill numRepeats 包装 Math.random×100<15 时 +1。
+// 上面各例随 host 钉 0.5、永不掷中；这里出手前钉 0：单体技能 makeTargets 重复目标，showNormalAnimation 分两次、施放特效两组；
+// 全体技能同一次调用里目标去重，仍一组。只比施放特效（其余随机也变成 0，slash 等不比）。
+for (const id of SKILLS) {
+  cases.push(makeCase(`again.${id}`, {skill: id, random: 0}, () => {
+    const {bm, a} = battle();
+    w.eval('Math.random=function(){return 0;};');
+    const probe = new w.Game_Action(a); probe.setSkill(id);
+    const numRepeats = probe.numRepeats();
+    rec.length = 0;
+    act(bm, a, id, 0);
+    const casts = rec.filter(r => r.kind === 'cast');
+    const groups = V.active.length;
+    V.active.slice().forEach(f => f.finish());
+    w.eval('Math.random=function(){return 0.5;};');
+    return {numRepeats, casts, groups};
+  }));
+}
 // ③ 放完前再放一次（不 update）：两组同时在；连放 8 次封顶 6 组
 cases.push(makeCase('twice', {skill: 10122}, () => {
   const {bm, a} = battle();
