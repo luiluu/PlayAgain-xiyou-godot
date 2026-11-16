@@ -8,7 +8,7 @@
 ## 2026-11-16 【cc·文字批1·未经审查】文风指南 A 类错字不通（#1、#5 的向导文字、#6、#7；#3 已有修正无需改）（dev.待定）
 
 - 依据：私密仓 `协作交接/天启篇文风指南_v0.1.md` 第三节 A 类；Kyo D103 定「梗不动」，所以 #3 只管 `/n` 斜杠、不改台词，#4（白票）不动；#2 等 D106。
-- 改：`core/tianqi_famine_alien.gd`（透支扣 MP 战报，名字与 MP 间补空格）、`core/tianqi_horsemen.gd`（混子小弟 B 退场台词去掉「（倒）」）、`tianqi_data/qiyin_gear.json`（不立文字效果句补「毕业武器」「中」与句号）、`text_fix/overrides.json`（Map004 向导 EV073 两处「金币」→「精魂」）；测试 `tests/xiyou_text_fix` 加 `guide_currency_unit`。
+- 改：`core/tianqi_famine_alien.gd`（透支扣 MP 战报，名字与 MP 间补空格）、`core/tianqi_horsemen.gd`（混子小弟 B 退场台词去掉「（倒）」）、`tianqi_data/qiyin_gear.json`（不立文字效果句补「毕业武器」「中」；句末不加句号，跟全表其余 62 条一致，小A 文字审 P3）、`text_fix/overrides.json`（Map004 向导 EV073 两处「金币」→「精魂」）；测试 `tests/xiyou_text_fix` 加 `guide_currency_unit`。
 - 玩家可见：战报「透支：莉co MP −20。」不再粘连；瘟疫混子退场不再念出舞台指示；不立文字的说明读得通；方桌商店向导里的货币名与商店、天平一致。
 - 验证：选测 xiyou_text_fix、xiyou_tianqi_qiyin_gear、xiyou_tianqi_famine、xiyou_tianqi_famine_reaper、xiyou_tianqi_horsemen、xiyou_tianqi_horsemen_battle、xiyou_tianqi_alien_finale、xiyou_tianqi_death、xiyou_event_compare 共 9 个全过（日志无 SCRIPT ERROR）；语法检查 0 问题。待小A 文字审（Hydrogen）。
 
