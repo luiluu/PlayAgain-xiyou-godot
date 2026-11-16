@@ -12,6 +12,9 @@
 - 测试：普查宿主 CensusHost 补 `start_battle` 桩（普查只看认不认得，返回 0）；`show_text_with_choices` 桩原本就有。
 - 复现：main 上单跑 xiyou_script_census 4 条 SCRIPT ERROR（3 条 show_text_with_choices、1 条 start_battle），TEST_RESULT 仍 31/31 但判挂；修后 0 条。
 
+- 并入（总协调 11-16 加单）：main 上 T070（ce9e7a8fb）后 `检查.sh` 报「发行空壳缺成员」，实为 `发行空壳.py check` 的 suspects：`modes/xiyou/core/text_fix.gd` 头注释含「只在天启篇」被当天启篇专属。查实它是 XDB 读表／地图的通用文字修正，西游档也要用（只有 tianqi_dict 一条限天启篇存档），不能换空壳，故登记进 `发行空壳.py` 的 MIXED_OK 并写理由；`发行空壳.py check` 通过（64 脚本 579 函数）、`测试发行空壳.py` OK。
+- 待总协调定（不在本单范围）：`text_fix/rules.json` 的 tianqi_dict（晨星币／霸主／见证使者等改名）会随真脚本进发行包，发行审计里没有 DENY 它；是否剔掉请定。
+
 ## 交接板
 
 - 下一步：无
