@@ -1396,7 +1396,7 @@ static func _follow_of(u: XActor, skill: Dictionary) -> Array:
 ## 追加出来的那次伤害倍率（formula 读）
 static var follow_scale := 1.0
 
-## 追加打满整招（T016，O-待定）：追加出来的技能照正常行动走行动序列（yepSeq）或重复次数，打满全部段数（天罡五雷五段、凌空三式每个敌人三段、
+## 追加打满整招（T016，O-待定·追加打满）：追加出来的技能照正常行动走行动序列（yepSeq）或重复次数，打满全部段数（天罡五雷五段、凌空三式每个敌人三段、
 ## 霸者连环斩随机三段）；表里追加招的系数都是按「每段」填的。false 回到只 apply 一次（每个目标一段，只打出三分之一到五分之一）
 static var FOLLOW_FULL := true
 
@@ -1501,7 +1501,7 @@ static func end_action(logic, u, skill) -> Array:
 ## 技能行 counter {cast 反击招, scale 伤害倍率}：学了这招的角色被物理攻击、照原生反击率（cnt）掷中时，这一段先正常挨打、再用 cast 反击出手者
 ## （不吞掉这一下；招照正常结算，凌空斩回 10 TP 照给）；同一次敌人行动最多反一次（多段攻击判中一次就停，没中的段接着判；COUNTER_ONCE，项目经理cc 定）。
 ## 技能行 counter_next 倍率：反击后自己下一次行动的伤害 ×倍率（牛马之魂 1.2，用掉就清、不叠加、每回合最多 1 次）。
-## 开关 NATIVE_COUNTER（O-待定）：false 回到原版（反击代替挨打、全伤普攻）
+## 开关 NATIVE_COUNTER、COUNTER_ONCE（O-待定·重构反击）：false 回到原版（反击代替挨打、全伤普攻）
 static var NATIVE_COUNTER := true
 static var COUNTER_ONCE := true
 
@@ -1548,7 +1548,7 @@ static func _arm_next(logic, t: XActor) -> void:
 ## 技能行 guard {cast, rate, scale, per_turn}：学了这招的角色，敌人一次行动全部结算完、这次行动有效命中过（扣了血）他以外的队友时，
 ## 掷一次 rate，中了对出手的敌人放 cast（伤害 × scale，打满段数；不触发太极再释放：去掉效果 44），每回合最多 per_turn 次；
 ## 他活着、能行动、出手的敌人活着才掷，不满足不扣次数。技能行 guard_note_remove：重构护短开着时从这些技能备注里去掉的标签
-## （5859／5861 开局给全队挂 2007 太极反击，原版护短走它预约公共事件 1605）。开关 GUARD（O-待定）：false 回到原版护短
+## （5859／5861 开局给全队挂 2007 太极反击，原版护短走它预约公共事件 1605）。开关 GUARD（O-待定·重构护短）：false 回到原版护短
 static var GUARD := true
 
 
