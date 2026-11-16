@@ -392,10 +392,15 @@ static func bucket_of(o: Dictionary, a = null) -> String:
 ## 被动 4／其他 5／功法 6 类技能。不算：种族技能（种族桶）、天启篇号卷（另有 3／2／1 卷）、万灵增元丹被动（期二已不生效）、
 ## 没有书教的「其他」类（羁绊、套装这类角色自带的）。期三核查 P1：原来只认权能书和类型 5，真功法（6）、通用被动书（4）漏进角色桶、羁绊误占格。
 static var _book_skills := {}
+## 期三补（复核遗留）：超越极限 1240／1241／1242／1244 是进阶被动（XGojo、进阶给的），小药丸 CE645～648 开头 `var i = 1240` 只是要忘掉的旧被动，
+## 被 `var kX = N` 那条规则顺带扫进来；诸葛孔明专属被动 2498 由伙伴号角招募事件（CE342）用「学会技能」给固定角色，_ce_skills 已按招募排掉。
+const NOT_BOOK := [1240, 1241, 1242, 1244]
 
 static func is_secret_skill(id: int, stype: int) -> bool:
 	if PILL_PASSIVES.has(id) or XTianqiTrumpet.of_skill(id) != 0:
 		return false  # 号卷占的是号卷格（3／2／1），不占秘籍格；号卷物品带 <CodexPower>，要先排掉
+	if NOT_BOOK.has(id):
+		return false  # 期三补：进阶被动「超越极限」，小药丸事件里只是忘掉的旧被动（见 NOT_BOOK）
 	if XPowerBooks.is_power(id):
 		return true
 	if not stype in [4, 5, 6]:
@@ -420,10 +425,18 @@ static func _ce_skills(ce_id: int) -> void:
 		return
 	var re_learn := RegEx.create_from_string("learnSkill\\((\\d+)\\)")
 	var re_var := RegEx.create_from_string("var\\s+\\w+\\s*=\\s*(\\d+)\\s*;")
+	# 期三补：伙伴号角的招募事件（同一事件里「增减队伍成员·加入」129 加的那个固定角色）用「学会技能」给的是角色专属被动，不是书
+	var recruits := {}
+	for c in ces[ce_id].get("list", []):
+		var p0: Array = c.get("parameters", [])
+		if int(c.get("code", 0)) == 129 and p0.size() > 1 and int(p0[1]) == 0:
+			recruits[int(p0[0])] = true
 	for c in ces[ce_id].get("list", []):
 		var code := int(c.get("code", 0))
 		var p: Array = c.get("parameters", [])
 		if code == 318 and p.size() > 3 and int(p[2]) == 0:
+			if int(p[0]) == 0 and recruits.has(int(p[1])):
+				continue
 			_book_skills[int(p[3])] = true
 		elif code in [355, 655] and not p.is_empty():
 			var line := str(p[0])
@@ -601,6 +614,78 @@ static func derived_row(source: String) -> Dictionary:
 		if str(r.get("id", "")) == source:
 			return r
 	return {}
+
+
+# ---- 期三补「九线来源停用」（设计稿第五节第 2 条表下「九线来源停用（照 v0.1，并进上面的框架）」）----
+## NINE_OFF：天启篇我方角色身上，九条养成线带来的多动、多段来源不生效（回合预算之外再收口；西游档、敌人照旧）：
+## ① 攻击次数＋（特性 34）、追加行动（特性 61 号 0）：特性来自没有天启篇标记的装备（原版装备、套装件、符文之语、成长装备、人族首领法宝）、
+##    原版套装给的状态、镶进任何装备的宝珠特性（_codexOrb）。角色、职业自带的，技能挂上的状态，天启篇装备上的，照算（不是九线）。
+## ② <passiveAPLUS> 追加行动：秘籍格的书教的被动（is_secret_skill：功法、通用被动书、抽奖被动、权能书）和原版套装给的技能；
+##    天启篇技能重构改写过的技能（技能卡开着时 XTianqiSkills.has）不停——改写稿自己定的再动数。
+## ③ 真气道法「连击」「分神」：天启篇不生效（XActor.attack_times_add／action_plus_set 两处）。
+## ④ 符文之语再释放 <AgainUseAll>（6 件符石）和被动 atkk：原版是 numRepeats 掷 +1 段；重制只有小猫剑圣 XCat.native_repeats 读，按同样的来源停。
+## 人族「九九六」走回合预算（race.human996），不在这里。开关关＝回到期三现状。
+static var NINE_OFF := true
+const NINE_OFF_BUCKETS := ["equip", "runeword", "hubris", "suit"]
+
+
+static func nine_off(a) -> bool:
+	return NINE_OFF and a is XActor and active()
+
+
+## 一个对象（特性对象、装备、技能、状态）是不是要停的九线来源；不在天启篇／开关关恒假
+static func nine_off_source(a, o) -> bool:
+	if not nine_off(a) or not o is Dictionary:
+		return false
+	if o.has("stypeId"):
+		return nine_off_skill(a, o)
+	return bucket_of(o, a) in NINE_OFF_BUCKETS
+
+
+static func nine_off_skill(a, sk: Dictionary) -> bool:
+	var id := int(sk.get("id", 0))
+	if XTianqiSkills.cards_on() and XTianqiSkills.has(id):
+		return false
+	return is_secret_skill(id, int(sk.get("stypeId", 0))) or XEquipSuits.ids(a, "skills").has(id)
+
+
+## 天启篇留下的特性（code 34／61 用）：和 XActor.all_traits 同一批对象、同样次序，去掉九线来源的整份和宝珠特性
+## （宝珠特性整份停，所以同族超上限丢掉的那几颗不用另算）
+static func nine_kept_traits(a, code: int) -> Array:
+	var out := []
+	for o in a.trait_objects():
+		if not o is Dictionary or nine_off_source(a, o):
+			continue
+		for t in o.get("traits", []):
+			if int(t.code) == code and not t.has("_codexOrb"):
+				out.append(t)
+	return out
+
+
+## 天启篇的特性 34 合计（Game_BattlerBase.attackTimesAdd 同口径，不小于 0）
+static func nine_attack_times(a) -> float:
+	var v := 0.0
+	for t in nine_kept_traits(a, 34):
+		v += float(t.value)
+	return maxf(v, 0.0)
+
+
+## 天启篇的特性 61 号 0 几率表 ＋ 留下的 <passiveAPLUS>（同 XActor.action_plus_set 前半段的次序）
+static func nine_action_plus(a) -> Array:
+	var out := []
+	for t in nine_kept_traits(a, 61):
+		if int(t.dataId) == 0:
+			out.append(float(t.value))
+	return out
+
+
+static func nine_aplus_values(a) -> Array:
+	var out := []
+	for sk in a.skills():
+		var m: Dictionary = sk.get("meta", {})
+		if m.has("passiveAPLUS") and not nine_off_skill(a, sk):
+			out.append(m.passiveAPLUS)
+	return out
 
 
 # ---- 期三「九线来源临时封顶」（设计稿第五节第 4 条；养成线三期逐条重做之前）----

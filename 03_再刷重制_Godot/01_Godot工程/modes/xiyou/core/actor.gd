@@ -1109,17 +1109,21 @@ func attack_command_text() -> String:
 static var _command_text_line := RegEx.create_from_string("(?i)<(COMMAND NAME|COMMAND TEXT|ATTACK NAME|ATTACK TEXT):[ ](.*)>")
 
 ## 道法（XZhenqi）：连击普攻次数＋1、分神必定再动＋1
+## 天启篇九线来源停用（XTianqiLedger.NINE_OFF，总账期三补）：九线装备／套装状态／宝珠的特性 34、61，秘籍书与套装技能的 passiveAPLUS，道法连击、分神都不算
 func attack_times_add() -> float:
-	return super.attack_times_add() + (1.0 if XZhenqi.has_daofa(self, "lianji") else 0.0) + XTianqiAffixBattle.attack_times(self)  # 天启篇词条「连击」
+	var nine := XTianqiLedger.nine_off(self)
+	var base := XTianqiLedger.nine_attack_times(self) if nine else super.attack_times_add()
+	return base + (1.0 if XZhenqi.has_daofa(self, "lianji") and not nine else 0.0) + XTianqiAffixBattle.attack_times(self)  # 天启篇词条「连击」
 
 func action_plus_set() -> Array:
-	var out := super.action_plus_set()
+	var nine := XTianqiLedger.nine_off(self)
+	var out := XTianqiLedger.nine_action_plus(self) if nine else super.action_plus_set()
 	# dsPassiveSkill Game_Actor.actionPlusSet：每个 <passiveAPLUS:N%> 被动加一项追加行动几率（取第一个整数 ×0.01）
-	for m in passive_values("passiveAPLUS"):
+	for m in (XTianqiLedger.nine_aplus_values(self) if nine else passive_values("passiveAPLUS")):
 		var found := RegEx.create_from_string("(\\d+)").search(str(m))
 		if found:
 			out.append(float(found.get_string(1)) * 0.01)
-	if XZhenqi.has_daofa(self, "fenshen"):
+	if XZhenqi.has_daofa(self, "fenshen") and not nine:
 		out.append(1.0)
 	XActorModules.action_plus_set(self, out)  # 专属角色模块的 actionPlusSet 包装（黄泉 10175）
 	XTianqiAffixBattle.action_plus_set(self, out)  # 天启篇词条「再动」
