@@ -2,7 +2,7 @@ extends Node
 ## 文字批 2／3（T027，文风指南 #8～#28）专项：玩家可见文字的残留断言。只管字，不碰逻辑。
 ## 一、大厅放贷人老钱／小钱不再地痞腔；36 层越阶台词无「该打」「天道」。
 ## 二、伤害总池统一叫「伤害」：天平、七印、戒指、向导等不再出现「出伤／终伤／最终伤害」。
-## 三、首领：文字修正规则把玩家文字里的 Boss／BOSS／boss 改「首领」，【超级Boss】等特殊怪前缀与按名认档不受影响。
+## 三、首领：文字修正规则把玩家文字里的 Boss／BOSS／boss 改「首领」，【超级Boss】已按 D126 改【霸主】、【DOTABOSS】改【远古首领】，按名认档不受影响。
 ## 四、界面：主菜单「回到标题」、金额溢出「极多」、存档确认句、天平标题与麦说明、再挑战说明、号卷限制行。
 ## 五、地图 Map004：人族首领无「天道」、改版向导无「KYO改版」「13位伙伴」；Actors 半角标点已修。
 ## 六、元素转换书说明口径一致；仙法招式名已换。
@@ -53,7 +53,7 @@ func _run() -> void:
 					if rx.search(str(r.get(k, ""))) != null:
 						left.append("%s:%s.%s" % [tb, r.get("id"), k])
 	_check("boss_none_left_in_db_text", left.is_empty(), left.slice(0, 8))
-	_check("boss_prefix_kept", str(XDB.table("Enemies")[850].name).begins_with("【超级Boss】") and XZhenqi.is_boss_enemy(XEnemy.new().setup(850, 1, 100.0)), XDB.table("Enemies")[850].name)
+	_check("boss_prefix_kept", str(XDB.table("Enemies")[850].name).begins_with("【霸主】") and XZhenqi.is_boss_enemy(XEnemy.new().setup(850, 1, 100.0)), XDB.table("Enemies")[850].name)
 	var pool_db := []
 	var prx := RegEx.create_from_string("(?:最终伤害|终伤)[+＋\\-−]\\d")
 	for tb in ["Items", "Skills", "Weapons", "Armors", "States"]:

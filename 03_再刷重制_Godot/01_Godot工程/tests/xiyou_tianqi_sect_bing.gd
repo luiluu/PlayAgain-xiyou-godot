@@ -82,6 +82,7 @@ func _run() -> void:
 	await _debt_battle()
 	await _merchant_and_items()
 	_hydroponics()
+	_hall_trim()
 	_switch_off_and_original()
 	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -294,6 +295,30 @@ func _hydroponics() -> void:
 	_check("hydroponics_hidden", XTianqiSect.hides(187, 105) and XTianqiSect.hides(187, 106) and _page_of(187, 105) == -1 and _page_of(187, 106) == -1)
 
 
+## D126：大厅两句过时说明天启篇下删（EV073 天道币那句、EV071 cmd571 的使者小队），西游档原样
+func _line(ev: int, cmd: int) -> Dictionary:
+	var c: Dictionary = XDB.map(4).events[ev].pages[0].list[cmd]
+	return {"face": "", "index": 0, "lines": [str(c.parameters[0])]}
+
+
+func _hall_trim() -> void:
+	var tq := _tianqi_state()
+	var plain := _plain_state()
+	var raw73 := _line(73, 1)
+	var t73 := str(XTianqiSect.rewrite_message(tq, 4, 73, raw73.duplicate(true)).lines[0])
+	_check("hall73_tianqi_trimmed", not t73.contains("逆天币") and not t73.contains("心法碎片") and not t73.contains("天道币") and not t73.contains("晨星币")
+		and t73.begins_with("<WordWrap>\\n<商店向导>货币已经简化：五种魂灯合成"), t73)
+	_check("hall73_plain_kept", str(XTianqiSect.rewrite_message(plain, 4, 73, raw73.duplicate(true)).lines[0]) == str(raw73.lines[0]) and str(raw73.lines[0]).contains("逆天币"))
+	var raw71 := _line(71, 571)
+	var t71 := str(XTianqiSect.rewrite_message(tq, 4, 71, raw71.duplicate(true)).lines[0])
+	_check("hall71_tianqi_exact", t71 == "<WordWrap>\\n<改版向导>深渊的\\c[4]副本协会主席\\c[0]、副本首领（1/8）以及25张安慰奖券一抽，现在都抽\\c[4]秘境被动书\\c[0]。", t71)
+	_check("hall71_plain_kept", str(XTianqiSect.rewrite_message(plain, 4, 71, raw71.duplicate(true)).lines[0]) == str(raw71.lines[0]) and str(raw71.lines[0]).contains("见证使者打晕求道者小队"))
+	# 18 层仍是老钱：真实 Map046 台词（已过 XTextFix，讨债人那句仍写天道使者）进包丙改写
+	var raw46 := {"face": "Evil", "index": 3, "lines": [str(XDB.map(46).events[1].pages[0].list[13].parameters[0])]}
+	var t46 := XTianqiSect.rewrite_message(tq, 46, 1, raw46.duplicate(true))
+	_check("map046_still_laoqian", str(raw46.lines[0]).contains("<天道使者>") and str(t46.lines[0]).contains("<老钱>"), [raw46.lines[0], t46.lines[0]])
+
+
 func _switch_off_and_original() -> void:
 	var tq := _tianqi_state()
 	var raw_msg := {"face": "Evil", "index": 3, "lines": ["\\n<天道使者>讨债"]}
@@ -305,7 +330,7 @@ func _switch_off_and_original() -> void:
 		and str(XDB.rec("Items", 1958).name) == "天道信物"
 		and str(XDB.rec("Items", 1961).name) == "天道研究日志[典藏版]"
 		and (XDB.rec("Troops", 747).members as Array).size() == 1
-		and str(XDB.rec("Enemies", 871).name) == "天道使者"
+		and str(XDB.rec("Enemies", 871).name) == "见证使者"
 		and str(XTianqiSect.rewrite_message(tq, 46, 1, raw_msg.duplicate(true)).lines[0]) == "\\n<天道使者>讨债"
 	)
 	XTianqiSect.BING = true
@@ -318,5 +343,5 @@ func _switch_off_and_original() -> void:
 		and not XTianqiSect.intercepts(orig, 192, 6)
 		and str(XDB.rec("Items", 1958).name) == "天道信物"
 		and (XDB.rec("Troops", 747).members as Array).size() == 1
-		and str(XDB.rec("Enemies", 871).name) == "天道使者"
+		and str(XDB.rec("Enemies", 871).name) == "见证使者"
 	)

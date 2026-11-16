@@ -4,7 +4,7 @@ extends Node
 ## 二、每条统一规则抽样：零宽、名字框、成对标点、词典、繁简；规则不碰的（notetag、公式、梗）保持原样。
 ## 三、逐条覆盖抽样；原文对不上的条目不套用、记进 warnings。
 ## 四、开关全关回原版：读出的表与 generated 原文件逐字相同。
-## 五、「超级Boos」改成「超级Boss」后，真气突破的首领判定（XZhenqi.is_boss_enemy）照旧认。
+## 五、「超级Boos」改成「霸主」（D126；先改「超级Boss」再改前缀）后，真气突破的首领判定（XZhenqi.is_boss_enemy）照旧认。
 var results: Array = []
 
 
@@ -66,7 +66,7 @@ func _run() -> void:
 						wordwrap -= 1000
 	_check("namebox_skip_wordwrap", wordwrap >= 0, wordwrap)
 	_check("pairs_quotes", _pos_texts(_rec("Items", 2231).note).has("\\c[1]效果:使用后学会被动技能 ‘玄天功·入门’") and _pos_texts(_rec("Weapons", 1641).note)[0].contains("“凌波舞”"))
-	_check("pairs_brackets", _rec("Enemies", 858).name == "【超级Boss】龙之祖（天龙）" and _pos_texts(_rec("Weapons", 1708).note).any(func(t): return t.begins_with("\\c[1]特效:逆伤（") and t.ends_with("持续3回合）")))
+	_check("pairs_brackets", _rec("Enemies", 858).name == "【霸主】龙之祖（天龙）" and _pos_texts(_rec("Weapons", 1708).note).any(func(t): return t.begins_with("\\c[1]特效:逆伤（") and t.ends_with("持续3回合）")))
 	_check("pairs_unbalanced_left", _pos_texts(_rec("Skills", 10111).note).any(func(t): return t.contains("三教极元分（天，地，人）")))
 	_check("dict_terms", _rec("Skills", 7765).name == "终极奥术伤" and _rec("EquipSuits", 164).name == "奥术璀璨" and _rec("States", 297).name == "奥术导能", [_rec("Skills", 7765).name])
 	_check("dict_joke_kept", str(_rec("Skills", 8036).description).contains("奥术还是奥数"))
@@ -104,7 +104,8 @@ func _run() -> void:
 	_check("cache_roundtrip", first == JSON.stringify(fresh) and JSON.stringify(XDB.table("Items")) == first)
 
 	# 五、名字改了首领判定照旧
-	_check("boss_name_rule", _rec("Enemies", 850).name == "【超级Boss】瑞丁" and XZhenqi.is_boss_enemy(XEnemy.new().setup(850, 1, 100.0)))
+	_check("boss_name_rule", _rec("Enemies", 850).name == "【霸主】瑞丁" and XZhenqi.is_boss_enemy(XEnemy.new().setup(850, 1, 100.0)))
+	_d126()
 
 	# 六、逐个开关单独关掉，只回退那一类（其余照旧修）
 	XTextFix.set_all(true)
@@ -118,7 +119,7 @@ func _run() -> void:
 	XTextFix.set_all(true)
 	XTextFix.PAIRS = false
 	XTextFix.clear_cache()
-	_check("off_pairs_only", _rec("Enemies", 858).name == "【超级Boss】龙之祖(天龙）")
+	_check("off_pairs_only", _rec("Enemies", 858).name == "【霸主】龙之祖(天龙）")
 	XTextFix.set_all(true)
 	XTextFix.DICT = false
 	XTextFix.clear_cache()
@@ -150,3 +151,35 @@ func _run() -> void:
 
 func raw_count(table: String, id: int) -> int:
 	return str(XDB.parse_file(XDB.BASE + "db/%s.json" % table)[id].note).count("<pos=")
+
+
+## D126（Kyo 11-16）：【超级Boss】→【霸主】、【DOTABOSS】→【远古首领】、天道使者→见证使者、天道币→晨星币
+func _d126() -> void:
+	var supers := [850, 858, 859, 860, 868, 869, 870, 938, 960, 961]
+	var bad := []
+	for id in supers:
+		var n := str(_rec("Enemies", id).name)
+		if not n.begins_with("【霸主】") or not XZhenqi.is_boss_enemy(XEnemy.new().setup(id, 1, 100.0)):
+			bad.append([id, n])
+	_check("d126_super_enemies", bad.is_empty(), bad)
+	var troops := []
+	for id in [739, 830, 831]:
+		if not str(_rec("Troops", id).name).begins_with("【霸主】"):
+			troops.append(id)
+	_check("d126_super_troops", troops.is_empty(), troops)
+	_check("d126_dota", _rec("Enemies", 2027).name == "【远古首领】ROSHAN" and _rec("Troops", 2029).name == "【远古首领】肉山宝宝", [_rec("Enemies", 2027).name, _rec("Troops", 2029).name])
+	# 新前缀单独也认首领；旧前缀照旧认
+	var probe := XEnemy.new().setup(850, 1, 100.0)
+	var ok := true
+	for pre in ["霸主", "远古首领", "超级Boos", "超级Boss"]:
+		probe.horseman = {"rec": {"id": 999999, "name": "【%s】测试" % pre, "note": ""}}
+		ok = ok and XZhenqi.is_boss_enemy(probe)
+	probe.horseman = {"rec": {"id": 999999, "name": "【测试】测试", "note": ""}}
+	_check("d126_prefix_regex", ok and not XZhenqi.is_boss_enemy(probe))
+	_check("d126_names", _rec("Enemies", 871).name == "见证使者" and _rec("Items", 2451).name == "晨星币", [_rec("Enemies", 871).name, _rec("Items", 2451).name])
+	# 18 层讨债台词不改：XTianqiSect.rewrite_message 按「天道使者」原文认它
+	var kept := false
+	for c in XDB.map(46).events[1].pages[0].list:
+		if int(c.code) == 401 and str(c.parameters[0]).contains("<天道使者>嘿嘿，你居然打过了深渊骑士"):
+			kept = true
+	_check("d126_map046_line_kept", kept)

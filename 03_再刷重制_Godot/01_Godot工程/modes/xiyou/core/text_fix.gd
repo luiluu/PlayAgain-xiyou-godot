@@ -14,7 +14,7 @@ extends RefCounted
 ## - TRAD（O-493）：繁体异体字逐字转简体（rules.json 的 trad）。
 ## - OVERRIDES（O-494）：逐条覆盖表 text_fix/overrides.json（位置＋原文子串＋改成，原文对不上就不套用并报警）。
 ## 次序：先逐条覆盖（from 按原版原文写），再套统一规则。
-## 代码里按名字认敌人档位的（XZhenqi.is_named_boss、XEncounterTarget）同时认「超级Boos」「超级Boss」。
+## 代码里按名字认敌人档位的（XZhenqi.is_named_boss、XEncounterTarget）同时认「超级Boos」「超级Boss」与 D126 新前缀「霸主」「远古首领」。
 
 static var STRIP_ZW := true
 static var NAMEBOX := true
