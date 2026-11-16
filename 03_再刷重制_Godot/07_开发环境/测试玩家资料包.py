@@ -284,7 +284,6 @@ class VisibleRateTests(unittest.TestCase):
 
     def build(self, td):
         P.VISIBLE.clear()
-        P.KEPT.clear()
         t, _ = P.build_rows(self.dump())
         ev = self.events(td)
         p = Pkg(td)
@@ -304,7 +303,8 @@ class VisibleRateTests(unittest.TestCase):
             body = ev[0]['text']
             for n in ('1/50机会', '副本Boss（1/8）', '有10%的概率'):
                 self.assertIn(n, body)
-            self.assertEqual(len(P.KEPT), 17)  # 说明卡 14 行（萨姆 1、首领书 4、进阶石 4、神秘珠 5）＋对白 3 句，都记进原样留日志
+            kept = P.rate_lines(p.stage)
+            self.assertEqual(len([x for x in kept if x['where'] != '数据/Enemies.json']), 18)  # 说明卡 14 行＋对白 3 句＋事件标题 1（首句带 1/50）
             res = p.check(visible=P.VISIBLE)
             self.assertTrue(res[P.CHECKS[1]]['ok'], res[P.CHECKS[1]])
 
@@ -346,12 +346,89 @@ class VisibleRateTests(unittest.TestCase):
             p.put('Items', rows)
             self.assertFalse(p.check()[P.CHECKS[1]]['ok'])
 
-    def test_effects_not_rate_lines(self):
-        """X3 加成写法不是掉率句，不需要放行也不报。"""
-        for t in ['效果：物品掉落率+5%', '特效：寻获财宝(物品掉落率+8%，精魂掉落率+18%)', '特效：权势之运(物品掉落率提高30%)']:
+    # 小A 第二道核 P1／P3 报的绕过句：都得认成掉率句，且不在可见文本里时②必拦
+    BYPASS = ['深渊掉落，7.25%', '隐藏Boss掉率： 7.25%', '隐藏Boss掉落 7.25%', '答：概率为5%。', '秘境出货概率：1/30',
+              '每场5%概率获取', '掉落提高7.25%', '首领掉落千分之五', '隐藏宝箱爆率 3‰', '神器掉率约3成']
+
+    def test_rate_detector(self):
+        for t in self.BYPASS:
+            self.assertTrue(P.is_rate_line(t), t)
+        for t in self.MUST:
+            for ln in self.ITEMS[t].split('\n')[1:] or [self.ITEMS[t]]:
+                self.assertTrue(P.is_rate_line(ln), ln)
+        for t in ['效果：物品掉落率+5%', '特效：寻获财宝(物品掉落率+8%，精魂掉落率+18%)', '当前等级：1 / 888；经验：0',
+                  '战斗胜利后获得经验+10%', '第15、17、19层深渊', '完成3成功挑战']:
             self.assertFalse(P.is_rate_line(t), t)
-        self.assertTrue(P.is_rate_line('黑龙米拉三次进阶的共用道具。深渊合格掉落判定概率为1/30。'))
-        self.assertTrue(P.is_rate_line('归真品质概率：65%'))
+
+    def test_bypass_blocked(self):
+        with tempfile.TemporaryDirectory() as td:
+            p, t, ev = self.build(td)
+            for i, line in enumerate(self.BYPASS):
+                q = Pkg(str(Path(td) / f'b{i}'))
+                q.stage.joinpath('常见问答.md').write_text(f'问：掉率？\n{line}\n', encoding='utf-8')
+                res = q.check(visible=P.VISIBLE)
+                self.assertFalse(res[P.CHECKS[1]]['ok'], f'「{line}」没拦住')
+
+    def test_substring_tail_not_allowed(self):
+        """可见长句的尾巴另起一行不能借子串放行；只有事件截断尾行可以是前缀。"""
+        with tempfile.TemporaryDirectory() as td:
+            p, t, ev = self.build(td)
+            q = Pkg(str(Path(td) / 'tail'))
+            q.stage.joinpath('常见问答.md').write_text('天灾3%、灭世5%、洪荒6%～18%（随诅咒提高），21、27层至少10%；不受掉落率加成影响。\n', encoding='utf-8')
+            self.assertFalse(q.check(visible=P.VISIBLE)[P.CHECKS[1]]['ok'])
+            # 事件 text 不到 3000 字时，最后一行是可见句前缀也不放行
+            e = dict(EVENTS[0], text='你好\n改版向导：谷雨在队时，战斗胜利有1/50机会')
+            q.stage.joinpath('事件.jsonl').write_text(json.dumps(e, ensure_ascii=False) + '\n', encoding='utf-8')
+            q.stage.joinpath('常见问答.md').write_text('（待补）\n', encoding='utf-8')
+            self.assertFalse(q.check(visible=P.VISIBLE)[P.CHECKS[1]]['ok'])
+            # 截到 3000 字时，尾行是可见句前缀放行；不是前缀照拦
+            e['text'] = '字' * (P.EVENT_CAP - 21) + '\n' + '改版向导：谷雨在队时，战斗胜利有1/50机会'[:20]
+            self.assertEqual(len(e['text']), P.EVENT_CAP)
+            q.stage.joinpath('事件.jsonl').write_text(json.dumps(e, ensure_ascii=False) + '\n', encoding='utf-8')
+            self.assertTrue(q.check(visible=P.VISIBLE)[P.CHECKS[1]]['ok'], q.check(visible=P.VISIBLE)[P.CHECKS[1]])
+            e['text'] = '字' * (P.EVENT_CAP - 21) + '\n' + '首领每场掉落概率7.25%隐藏表补齐二十字'[:20]
+            q.stage.joinpath('事件.jsonl').write_text(json.dumps(e, ensure_ascii=False) + '\n', encoding='utf-8')
+            self.assertFalse(q.check(visible=P.VISIBLE)[P.CHECKS[1]]['ok'])
+
+    def test_unopened_not_cross_file(self):
+        """未开放条目的说明只给它自己放行，不进跨文件白名单。"""
+        with tempfile.TemporaryDirectory() as td:
+            P.VISIBLE.clear()
+            d = {'kinds': {k: [] for k in P.KINDS}}
+            line = '异化掉落：深渊异化首领掉落概率1/40'
+            d['kinds']['Items'] = [{'id': 1, 'name': '异化核', 'description': line, 'open': False},
+                                   {'id': 2, 'name': '普通石', 'description': '说明', 'open': True}]
+            t, _ = P.build_rows(d)
+            self.assertNotIn(line, P.VISIBLE.lines)
+            q = Pkg(td)
+            q.put('Items', t['Items'])
+            self.assertTrue(q.check(visible=P.VISIBLE)[P.CHECKS[1]]['ok'])  # 它自己那行放行
+            rows = q.rows('Items')
+            rows[1]['description'] = line  # 搬到已开放条目
+            q.put('Items', rows)
+            self.assertFalse(q.check(visible=P.VISIBLE)[P.CHECKS[1]]['ok'])
+            q.put('Items', t['Items'])
+            q.stage.joinpath('常见问答.md').write_text(line + '\n', encoding='utf-8')  # 搬到 md
+            self.assertFalse(q.check(visible=P.VISIBLE)[P.CHECKS[1]]['ok'])
+
+    def test_kept_counts_after_truncation(self):
+        """原样留计数按截断后实际进包的行数。"""
+        with tempfile.TemporaryDirectory() as td:
+            q = Pkg(td)
+            filler = '字' * (P.EVENT_CAP - 5)
+            e = dict(EVENTS[0], text=(filler + '\n改版向导：独立20%掉落。')[:P.EVENT_CAP])
+            q.stage.joinpath('事件.jsonl').write_text(json.dumps(e, ensure_ascii=False) + '\n', encoding='utf-8')
+            self.assertEqual(P.rate_lines(q.stage), [])  # 截掉的那句不算
+
+    def test_forbidden_word_escaped(self):
+        """禁词用 \\uXXXX 转义写进 json 也拦。"""
+        with tempfile.TemporaryDirectory() as td:
+            q = Pkg(td)
+            rows = q.rows('Items')
+            rows[0]['description'] = '七首之龙'
+            (q.stage / '数据/Items.json').write_text(json.dumps(rows, ensure_ascii=True), encoding='utf-8')
+            self.assertNotIn('七首之龙', (q.stage / '数据/Items.json').read_text(encoding='utf-8'))
+            self.assertFalse(q.check()[P.CHECKS[1]]['ok'])
 
     def test_inject_hidden(self):
         with tempfile.TemporaryDirectory() as td:

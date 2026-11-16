@@ -321,101 +321,58 @@ DEV_TEST = re.compile(r'^测试')
 
 
 # 掉率（X12，Kyo 11-16 定「放宽」，取代 X2「剥」与 T008 严口径）：玩家在游戏里看得到的掉率数字原样留，只防隐藏掉率表。
-# 判定法：说明卡（取字脚本 XHelpCard／状态详情的输出）和事件对白（401/405 显示文字）就是玩家看得到的文本，原样出包、不再改字；
-# 内部掉落表（dropItems、note、公式、天启篇掉落表）本来就不进包（字段白名单①＋禁字段）。自检②再兜一层：包里任何一行
-# 掉率样式的句子（下面两个探测器认出的），必须在本次取字抓到的玩家可见文本里逐字出现过（VISIBLE），否则算外泄——
-# 三份手写 md、版本说明或别处拼进来的隐藏掉率就靠这一层拦。redact_drop／redact_strict 现在只当探测器用（改了字＝这行是掉率句）。
-# 探测器一：「概率…掉落／产出」＋百分数。
-DROP_CHANCE = re.compile(r'(概率|几率)(可以)?(掉落|产出|触发肝帝)|有概率掉落|掉落[，,]\s*概率')
-PCT = re.compile(r'\d+(?:\.\d+)?\s*[%％](?:\s*[～~\-－]\s*\d+(?:\.\d+)?\s*[%％])?')
-CLAUSE = re.compile(r'([，,；;。])')
-
-
-def redact_drop(line: str) -> str:
-    """一行里有掉落／产出几率且带百分数：「有10%的概率」→「有概率」；冒号后面是百分数列表的截掉冒号后半；还带百分数的分句整句去掉。"""
-    if not DROP_CHANCE.search(re.sub(r'有\d+(?:\.\d+)?[%％]的?(概率|几率)', r'有\1', line)) or not PCT.search(line):
-        return line
-    line = re.sub(r'有\d+(?:\.\d+)?[%％]的?(概率|几率)', r'有\1', line)
-    parts = CLAUSE.split(line)
-    out = []
-    for i in range(0, len(parts), 2):
-        c, d = parts[i], (parts[i + 1] if i + 1 < len(parts) else '')
-        if PCT.search(c):
-            k = max(c.rfind('：'), c.rfind(':'))
-            c = c[:k] if k >= 0 and PCT.search(c[k:]) and not PCT.search(c[:k]) else ''
-            c = re.sub(r'（[^）]*）$', '', c)
-        if c.strip():
-            out.append(c + d)
-        elif out and d in '。；;' and out[-1][-1:] in '，,':
-            out[-1] = out[-1][:-1] + d
-    t = ''.join(out)
-    return re.sub(r'[，,]$', '。', t)
-
-
-# 探测器二（原 T008 严口径，X12 起只探不剥）：句子里有「来源词」且带掉率样式的数（N%、1/N、括号里的倍率）。
-# 数字前面是 +／增加／提升 这类加成写法的（物品掉落率+5%、精魂和爆率增加10%）是效果，不算掉率句。
-SOURCE_WORDS = re.compile(r'掉落|掉率|爆率|产出|机会|品质概率|判定|抽')
-_N = r'(?<![\d.])\d+(?:\.\d+)?\s*[%％](?:\s*[～~\-－]\s*\d+(?:\.\d+)?\s*[%％])?|(?<![\d.])\d+\s*/\s*\d+(?!\s*[；;]?\s*经验)'
-RATE_NUM = re.compile(_N)
-MOD_BEFORE = re.compile(r'(?:[+＋]|增加|提升|提高|降低|减少|加成)\s*$')
-SENT = re.compile(r'([。；;！!？?\n])')
-PAREN_NUM = re.compile(r'[（(][^（）()]*(?:\d\s*[%％]|\d\s*/\s*\d|×\s*\d)[^（）()]*[）)]')
-
-
-def _rate_hits(sent: str) -> list:
-    return [m for m in RATE_NUM.finditer(sent) if not MOD_BEFORE.search(sent[:m.start()])]
-
-
-def _strict_clause(t: str) -> str:
-    t = re.sub(r'([\u4e00-\u9fff]{1,4}品质)概率[：:]\s*(' + _N + r')', r'\1：有概率出现', t)
-    t = re.sub(r'(?:判定)?(?:概率|几率|机会)(?:为|是)?\s*(?:' + _N + r')', '有概率', t)
-    t = re.sub(r'有?约?\s*(?:' + _N + r')\s*的?\s*(掉落)?\s*(概率|几率|机会)', r'有\1\2', t)
-    out, last = [], 0
-    for m in _rate_hits(t):
-        out.append(t[last:m.start()])
-        last = m.end()
-        if t[last:last + 1] == '的':
-            last += 1
-    t = ''.join(out) + t[last:]
-    t = re.sub(r'有有', '有', t)
-    return re.sub(r'[：:]\s*$', '', t)
-
-
-def _strict_sentence(sent: str) -> str:
-    """句里有来源词才看；括号里有掉率样式的数（不是 +N% 这类加成）整个括号去掉；
-    再按逗号／空格分句，分句里有来源词或「概率／几率」且有掉率样式的数，去数留来源。"""
-    if not SOURCE_WORDS.search(sent):
-        return sent
-    t = PAREN_NUM.sub(lambda m: '' if _rate_hits(m.group(0)[1:-1]) else m.group(0), sent)
-    parts = re.split(r'([，,\s]+)', t)
-    for i in range(0, len(parts), 2):
-        c = parts[i]
-        if (SOURCE_WORDS.search(c) or re.search(r'概率|几率', c)) and _rate_hits(c):
-            parts[i] = _strict_clause(c)
-    return ''.join(parts)
-
-
-def redact_strict(line: str) -> str:
-    parts = SENT.split(line)
-    return ''.join(_strict_sentence(x) if i % 2 == 0 else x for i, x in enumerate(parts))
+# 判定法：说明卡（取字脚本 XHelpCard／状态详情的输出）、事件对白（401/405 显示文字）、线上清单更新说明（游戏「更新」页显示）
+# 就是玩家看得到的文本，原样出包、不再改字；内部掉落表（dropItems、note、公式、天启篇掉落表）本来就不进包（字段白名单①＋禁字段）。
+# 自检②兜底（小A 第二道核 P1 后改严）：包里每一行（json 解码后的字符串值逐行、md 逐行）只要 is_rate_line 认出是掉率句，
+# 就必须**整行**等于本次取字抓到的某一行玩家可见文本（行级精确集合，不做子串）；唯一例外是事件块被 3000 字截断时的最后一行，
+# 可以是某行可见文本的前缀。未开放条目（open_in_current_version false）的说明只给它自己那一行放行，不进跨文件白名单。
+RATE_NUM = re.compile(r'(?<![\d.])\d+(?:\.\d+)?\s*[%％‰]'
+                      r'|(?<![\d.])\d+\s*/\s*\d+(?![\d.])'
+                      r'|[千万百]分之\s*[\d零〇一二两三四五六七八九十百千万]+'
+                      r'|(?<![\d.])\d+(?:\.\d+)?\s*成(?![功就为员本长立年绩分份])')
+RATE_KEY = re.compile(r'掉|爆|产出|出率|出货|概率|几率|机率|机会|判定|抽')
+BONUS = re.compile(r'[+＋]\s*(?:' + RATE_NUM.pattern + r')')  # 只去明确的「+N%」加成写法；「提高／增加 N%」不豁免（宁可多认）
 
 
 def is_rate_line(line: str) -> bool:
-    """这一行是不是掉率样式的句子（两个探测器任一认出）。"""
-    return redact_drop(line) != line or redact_strict(line) != line
+    """掉率样式的行：去掉 +N% 加成写法后，同时有掉率样式的数（N%、N‰、N/M、千分之N、N成）和掉率词。
+    认多了不要紧（玩家可见文本整行放行），认少了才是外泄，所以宁严勿宽。"""
+    t = BONUS.sub('', str(line))
+    return bool(RATE_KEY.search(t) and RATE_NUM.search(t))
 
 
-VISIBLE = []  # 本次取字抓到的玩家可见文本（说明卡逐行、事件对白逐句），自检②放行掉率句的依据；只在内存里，不进包
-KEPT = []  # 本次原样留下的掉率句（出处＋原文），只写进工作目录的日志，不进包
+class Visible:
+    """本次取字抓到的玩家可见文本，按行（去首尾空白）存成集合；只在内存里，不进包。
+    lines：跨文件放行；rows[(数据文件名, public_id)]：未开放条目自己的说明，只放行它自己。"""
+
+    def __init__(self, texts=()):
+        self.lines, self.rows = set(), {}
+        for t in texts:
+            self.add(t)
+
+    def clear(self):
+        self.lines.clear()
+        self.rows.clear()
+
+    def add(self, text, row=None):
+        ls = {x.strip() for x in str(text).split('\n') if x.strip()}
+        if row is None:
+            self.lines |= ls
+        else:
+            self.rows.setdefault(row, set()).update(ls)
+
+    def extend(self, texts):
+        for t in texts:
+            self.add(t)
 
 
-def keep_visible(text: str, where: str) -> str:
-    """玩家看得到的文本原样返回；记进 VISIBLE，其中的掉率句另记进 KEPT。"""
+VISIBLE = Visible()
+
+
+def keep_visible(text: str, row=None) -> str:
+    """玩家看得到的文本原样返回，并记进 VISIBLE（未开放条目记在它自己的 row 下）。"""
     text = str(text)
-    VISIBLE.append(text)
-    for ln in text.split('\n'):
-        if is_rate_line(ln):
-            KEPT.append({'where': where, 'line': ln})
+    VISIBLE.add(text, row)
     return text
 
 
@@ -440,12 +397,13 @@ def build_rows(dump: dict) -> tuple:
             row = {'public_id': pid, 'name': name}
             if r.get('nickname'):
                 row['nickname'] = r['nickname']
-            row['description'] = keep_visible(r.get('description', ''), f'{fname} {name}')
+            is_open = bool(r.get('open', True))
+            row['description'] = keep_visible(r.get('description', ''), None if is_open else (fname, pid))
             if int(r.get('price', 0) or 0) > 0 and '价格' in row['description']:
                 row['price'] = int(r['price'])
             if fname in ('Weapons', 'Armors') and isinstance(r.get('params'), list):
                 row['params'] = [int(x) for x in r['params']]
-            row['open_in_current_version'] = bool(r.get('open', True))
+            row['open_in_current_version'] = is_open
             rows.append(row)
         tables[fname] = rows
         excluded[fname] = ex
@@ -506,12 +464,14 @@ def build_events(tree: Path, dump: dict) -> list:
                             refs.append(f'[{hit[0]}] {hit[1]}')
             if not texts and not refs:
                 continue
-            texts = [keep_visible(t, f'事件 {place}') for t in texts]  # 对白原样留（X12）
-            body = '\n'.join(texts + ([f'事件给的物品/武器/护甲：{"、".join(refs)}'] if refs else []))[:3000]
+            texts = [keep_visible(t) for t in texts]  # 对白原样留（X12）
+            ref_line = [f'事件给的物品/武器/护甲：{"、".join(refs)}'] if refs else []
+            VISIBLE.extend(ref_line)  # 已开放物品名拼的一行，名字玩家都看得到
+            body = '\n'.join(texts + ref_line)[:EVENT_CAP]
             eid = ev.get('id', n) if isinstance(ev, dict) else n
             ref = hashlib.sha256(f'{f.name}:{eid}'.encode('utf-8')).hexdigest()[:12]
             first = texts[0][:48] if texts else '事件'
-            VISIBLE.append(f'{place} · {first}')  # 标题＝地图名＋首句前 48 字，两段都是玩家看得到的
+            VISIBLE.add(f'{place} · {first}')  # 标题＝地图名＋首句前 48 字，两段都是玩家看得到的
             out.append({'id': f'事件:{ref}', 'kind': 'event', 'title': f'{place} · {first}', 'source': '事件.jsonl', 'text': body})
     return out
 
@@ -627,44 +587,69 @@ def check_fields(root: Path) -> list:
     return bad
 
 
-def _pkg_lines(p: Path) -> list:
-    """包里一个文件的全部文本行：json／jsonl 取所有字符串值（解掉转义）再按换行拆，md 按行。"""
+EVENT_CAP = 3000
+
+
+def _pkg_items(p: Path) -> list:
+    """包里一个文件的全部文本行，返回 [(行, 未开放条目键或 None, 是否截断尾行)]：json／jsonl 取所有字符串值（解掉转义，
+    \\uXXXX 也解）再按换行拆；md 按行。数据文件里 open_in_current_version 为 false 的行带上 (文件名, public_id)。"""
+    t = p.read_text(encoding='utf-8', errors='replace')
     if p.suffix not in ('.json', '.jsonl'):
-        return p.read_text(encoding='utf-8', errors='replace').split('\n')
+        return [(x, None, False) for x in t.split('\n')]
     out = []
 
-    def walk(x):
+    def walk(x, row, key=None):
         if isinstance(x, str):
-            out.extend(x.split('\n'))
+            ls = x.split('\n')
+            cut = p.name == '事件.jsonl' and key == 'text' and len(x) >= EVENT_CAP
+            out.extend((ln, row, cut and i == len(ls) - 1) for i, ln in enumerate(ls))
         elif isinstance(x, dict):
-            for v in x.values():
-                walk(v)
+            r = row
+            if p.parent.name == '数据' and x.get('open_in_current_version') is False:
+                r = (p.stem, x.get('public_id'))
+            for k, v in x.items():
+                walk(v, r, k)
         elif isinstance(x, list):
             for v in x:
-                walk(v)
-    t = p.read_text(encoding='utf-8', errors='replace')
+                walk(v, row)
     try:
         docs = [json.loads(x) for x in t.splitlines() if x.strip()] if p.suffix == '.jsonl' else [json.loads(t)]
     except ValueError:
-        return t.split('\n')  # 坏 json 也照行查，宁可多报
+        return [(x, None, False) for x in t.split('\n')]  # 坏 json 也照行查，宁可多报
     for d in docs:
-        walk(d)
+        walk(d, None)
     return out
 
 
+def _pkg_lines(p: Path) -> list:
+    return [x for x, _, _ in _pkg_items(p)]
+
+
+def rate_lines(root: Path) -> list:
+    """包里实际有的掉率句（出处＋原文），给工作目录日志和 自检.json 计数用。"""
+    return [{'where': str(p.relative_to(root)), 'line': ln.strip()}
+            for p in pkg_files(root) for ln, _, _ in _pkg_items(p) if is_rate_line(ln)]
+
+
 def check_forbidden(root: Path, words: set, visible=None) -> list:
-    """禁词零命中；另查掉率句（X12）：掉率样式的行必须在玩家可见文本 visible（取字结果）里逐字出现过，没出现过就是隐藏掉率。"""
+    """禁词零命中（查解码后的文本，另查原文兜住键名）；掉率句（X12）必须整行等于玩家可见文本的一行，否则算隐藏掉率。"""
     bad = []
-    corpus = '\n'.join(visible or ())
+    vis = visible if isinstance(visible, Visible) else Visible(visible or ())
     for p in pkg_files(root):
-        for sub in _pkg_lines(p):
-            if is_rate_line(sub) and sub.strip() not in corpus:
-                bad.append(f'{p.relative_to(root)}：玩家文本里没有的掉率「{sub[:60]}」')
+        for ln, row, cut in _pkg_items(p):
+            s = ln.strip()
+            if not is_rate_line(s):
+                continue
+            allowed = vis.rows.get(row, set()) if row else vis.lines
+            if s in allowed or (cut and row is None and any(v.startswith(s) for v in vis.lines)):
+                continue
+            bad.append(f'{p.relative_to(root)}：玩家文本里没有的掉率「{s[:60]}」')
     lw = [(w, w.lower()) for w in words]
     for p in pkg_files(root):
-        t = p.read_text(encoding='utf-8', errors='replace').lower()
+        raw = p.read_text(encoding='utf-8', errors='replace')
         if p.name == '版本.json':
-            t = t.replace('"tianqi_open"', '')  # 契约 C1 规定的字段名，不是包内容
+            raw = raw.replace('"tianqi_open"', '')  # 契约 C1 规定的字段名，不是包内容
+        t = ('\n'.join(_pkg_lines(p)) + '\n' + raw).lower()  # 解码后（防 \\uXXXX 绕过）＋原文（键名）
         for w, l in lw:
             if l in t:
                 bad.append(f'{p.relative_to(root)}：{w}')
@@ -907,11 +892,8 @@ def run(a) -> int:
         ver = dump['version']
         log(f'  右下角 {ver.get("label")}；补丁号算出 {ver.get("of_patch")}；老底包弹窗 {ver.get("legacy_popup", "—")}；发行门 {dump.get("release")}')
         VISIBLE.clear()
-        KEPT.clear()
         tables, excluded = build_rows(dump)
         events = build_events(tree, dump)
-        (work / '掉率原样留.json').write_text(json.dumps(KEPT, ensure_ascii=False, indent=1), encoding='utf-8')
-        log(f'  玩家看得到的掉率句原样留 {len(KEPT)} 行（X12；出处见 {work / "掉率原样留.json"}，不进包）')
         words, wsrc = forbidden_words(tree)
         prev_dir, prev_check = previous(out)
         prev_ver = None
@@ -944,6 +926,9 @@ def run(a) -> int:
             shutil.rmtree(stage)
         written = []
         counts = assemble(stage, tables, events, version, written)
+        kept = rate_lines(stage)  # 截断后实际进包的掉率句（注入之前）
+        (work / '掉率原样留.json').write_text(json.dumps(kept, ensure_ascii=False, indent=1), encoding='utf-8')
+        log(f'  包里玩家看得到的掉率句原样留 {len(kept)} 行（X12；出处见 {work / "掉率原样留.json"}，不进包）')
         injected = inject(stage, a.inject, words) if a.inject else None
         if injected:
             log(f'  ⚠ 反例注入：{injected}')
@@ -957,7 +942,7 @@ def run(a) -> int:
             'from_dump': a.from_dump or None, 'injected': injected, 'channel_source': ch['src'],
             'channel_sha256': ch.get('sha256', ''), 'generated_from': tree_info.get('generated_how'),
             'major_basis': f'上一版 {prev_ver}' if prev_ver else ('命令行 --major' if a.major != 'auto' else '没有上一版，默认 false'),
-            'release_gate': dump.get('release'), 'dry_run': a.dry_run, 'drop_rate_lines_kept_visible': len(KEPT),
+            'release_gate': dump.get('release'), 'dry_run': a.dry_run, 'drop_rate_lines_kept_visible': len(kept),
             'generated_at': dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'files': file_hashes(stage),
         }
