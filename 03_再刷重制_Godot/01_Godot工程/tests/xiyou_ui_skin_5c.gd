@@ -303,6 +303,7 @@ func _options_tianqi_old_skin() -> void:
 	var syms := _symbols(page)
 	check("tq_old_ads_gone", not syms.has("wxxonoff") and not syms.has("wxlonoff") and not syms.has("wxtonoff"), syms)
 	check("tq_old_ads_tip", page.ads_tip() and XOptionsScene.ADS_TIP != "")
+	check("tq_old_ads_tip_group", XOptionsScene.ADS_TIP.contains("1097315054") and not XOptionsScene.ADS_TIP.contains("906327865"))
 	# 位置：提示节点真在、矩形在 1280×720 可见区内，且不跟窗口（12 行＋上下箭头都在窗内）相交
 	var tip := page.get_node_or_null("AdsTip") as Label
 	check("tq_old_tip_node", tip != null and tip.text == XOptionsScene.ADS_TIP)

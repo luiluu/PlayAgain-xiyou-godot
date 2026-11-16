@@ -38,7 +38,7 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 
 ## 天启篇存档（皮肤有机会开）的旧列表：防骗三行（原版是三行 ON/OFF 空白的宣传行）不再当列表项，合成页底一行静态提示；西游档照原版 33 行不动（T051）
 const ADS_SYMBOLS := ["wxxonoff", "wxlonoff", "wxtonoff"]
-const ADS_TIP := "本游戏免费，勿在闲鱼购买；总群 906327865"
+const ADS_TIP := "本游戏免费，勿在闲鱼购买；总群 1097315054"
 
 ## 重制新增：大厅初步异化（XLobbyCorruption）的光尘与氛围小字，关掉不放
 const FX_OPTION := ["画面特效", "codexScreenFx", true]
