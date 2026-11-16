@@ -1,0 +1,7 @@
+# Orca 建工作树后自动跑的钩子（T036）：补引擎软链＋generated／.godot 克隆（几秒，不跑转换器和 import）。
+# 需要 Orca 批准运行（orca worktree create 加 --setup run，或在 app 里点允许）；失败不挡建树。
+# 完整补齐（转换器＋import）仍由车道开工时 新建工作树.sh --补齐 <路径> --branch <分支> 做。
+scripts:
+  setup: |
+    S="$ORCA_WORKTREE_PATH/03_再刷重制_Godot/07_开发环境/新建工作树.sh"
+    if [ -f "$S" ]; then zsh "$S" --快速 "$ORCA_WORKTREE_PATH" || echo "⚠ 快速补齐失败，开工时手动跑 新建工作树.sh --补齐"; else echo "⚠ 本分支没有 新建工作树.sh，跳过快速补齐"; fi
