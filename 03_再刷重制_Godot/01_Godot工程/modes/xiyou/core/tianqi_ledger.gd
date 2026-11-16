@@ -624,7 +624,7 @@ static func derived_row(source: String) -> Dictionary:
 ## ② <passiveAPLUS> 追加行动：秘籍格的书教的被动（is_secret_skill：功法、通用被动书、抽奖被动、权能书）和原版套装给的技能；
 ##    天启篇技能重构改写过的技能（技能卡开着时 XTianqiSkills.has）不停——改写稿自己定的再动数。
 ## ③ 真气道法「连击」「分神」：天启篇不生效（XActor.attack_times_add／action_plus_set 两处）。
-## ④ 符文之语再释放 <AgainUseAll>（6 件符石）和被动 atkk：原版是 numRepeats 掷 +1 段；重制只有小猫剑圣 XCat.native_repeats 读，按同样的来源停。
+## ④ 符文之语再释放 <AgainUseAll>（6 件符石）和被动 atkk：原版是 numRepeats 掷 +1 段；天启篇里只有小猫剑圣 XCat.native_repeats 读（西游档通用出手由 XBattleLogic.passive_repeats 读，T046，天启篇不走），按同样的来源停（XBattleLogic.passive_again）。
 ## 人族「九九六」走回合预算（race.human996），不在这里。开关关＝回到期三现状。
 static var NINE_OFF := true
 const NINE_OFF_BUCKETS := ["equip", "runeword", "hubris", "suit"]
