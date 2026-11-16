@@ -36,6 +36,8 @@ var face: Control
 var pane: Panel
 var bar: XSkinSelectBar
 var text_layer: Control
+## T024 选中放大：选中子项的名字放大（行高 56、选中条不变；说明小字跟着往右让）
+var item_scale: XSkinSelScale
 var run_panel: Control
 var party: XSkinPartyStrip
 var hints: XSkinKeyHints
@@ -110,6 +112,7 @@ func _ready() -> void:
 	text_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	pane.add_child(text_layer)
 	text_layer.draw.connect(_draw_pane)
+	item_scale = XSkinSelScale.attach(text_layer)
 	pane.gui_input.connect(_pane_input)
 	pane.resized.connect(func(): _place_bar(true))
 	# 右块：本局条＋队伍条
@@ -723,6 +726,7 @@ func _actor_input(event: InputEvent) -> void:
 func _draw_pane() -> void:
 	var body := XUiSkin.font("body")
 	var head := XUiSkin.font("title")
+	item_scale.sel("%d:%d" % [gi, ii] if not TWO_LEVEL or level == 1 else null)
 	for r in _rows:
 		var rect: Rect2 = r.rect
 		var g: Dictionary = groups[r.g]
@@ -746,7 +750,7 @@ func _draw_pane() -> void:
 				var on: bool = r.g == gi and r.i == ii and (not TWO_LEVEL or level == 1)
 				var ok := item_enabled(it)
 				var ix := x + (8.0 if group_items(g).size() > 1 else 0.0)
-				var fs := XUiSkin.FS_LIST_MAX
+				var fs := XSkinSelScale.fs(XUiSkin.FS_LIST_MAX, item_scale.k("%d:%d" % [r.g, r.i]), floori(rect.size.y * 0.62))
 				var nm := str(it.name)
 				text_layer.draw_string(head if on else body, Vector2(ix, base + fs * 0.36), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
 					XUiSkin.TEXT_3 if not ok else (Color.WHITE if on else XUiSkin.TEXT))

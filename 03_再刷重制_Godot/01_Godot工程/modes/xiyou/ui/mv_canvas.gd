@@ -41,6 +41,14 @@ static var BLINK_FULL_REDRAW := false
 var _cursor_layer: Control
 ## 本次重画登记的闪烁光标 [Rect2, ...]（画在 _cursor_layer）
 var _blink_cursors: Array = []
+## T024 选中放大（只在新皮肤开着时）：活动光标那一行里画的字和图标放大到 SEL_PEAK（字仍受原 max_w 限宽，超了横向压回；
+## 行高、光标框不变）；换行时 0.12 秒从 1 长到位，界面动效关时直接到位。旧 MV 页（图鉴、商店……）都走这里，各页不用改。
+## 只认在光标之后画的东西（MV 的画法是先光标后字，各页照这个顺序）。XSkinSelScale.ENABLED 关时不放大。
+const SEL_PEAK := 1.08
+var _sel_rect := Rect2()     # 本次重画里活动光标的行（没有＝不放大）
+var _sel_key := Rect2()      # 上一次的活动光标行（换了行才重新长）
+var _sel_k := 1.0
+var _sel_primed := false
 
 
 func _init() -> void:
@@ -57,6 +65,9 @@ func _init() -> void:
 
 
 func _process(delta: float) -> void:
+	if _sel_k < SEL_PEAK and _sel_key.has_area() and XUiSkin.motion() != XUiSkin.Motion.OFF:
+		_sel_k = move_toward(_sel_k, SEL_PEAK, (SEL_PEAK - 1.0) * delta / XUiSkin.SEL_TIME)
+		queue_redraw()
 	if blink:
 		_t += delta
 		if BLINK_FULL_REDRAW:
@@ -68,6 +79,7 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	_keep.clear()
 	_blink_cursors.clear()
+	_sel_rect = Rect2()
 	if painter.is_valid():
 		painter.call(self)
 	if _cursor_layer != null:
@@ -103,6 +115,12 @@ func text(s: String, x: float, y: float, max_w: float, align := "left", color :=
 	var sx := 1.0
 	if max_w > 0 and w > max_w:
 		sx = max_w / w
+	var sk := sel_k_at(Vector2(x + 1.0, y + lh / 2.0)) if _sel_rect.has_area() else 1.0
+	var sy := sk
+	if sk != 1.0:
+		sx *= sk
+		if max_w > 0 and w * sx > max_w:
+			sx = max_w / w
 	var dw := w * sx
 	var tx := x
 	if align == "center":
@@ -110,8 +128,10 @@ func text(s: String, x: float, y: float, max_w: float, align := "left", color :=
 	elif align == "right":
 		tx = x + max_w - dw
 	var base := y + lh - (lh - size * 0.7) / 2.0
+	if sy != 1.0:
+		base += size * 0.35 * (sy - 1.0)   # 以字的竖直中线放大
 	var c := Color(color, color.a * alpha)
-	var xf := Transform2D(0.0, Vector2(sx, 1.0), 0.0, Vector2(roundf(tx), roundf(base)))
+	var xf := Transform2D(0.0, Vector2(sx, sy), 0.0, Vector2(roundf(tx), roundf(base)))
 	if zoom != 1.0:
 		xf = Transform2D(0.0, Vector2(zoom, zoom), 0.0, pivot - pivot * zoom) * xf
 	draw_set_transform_matrix(xf)
@@ -130,6 +150,10 @@ func icon(index: int, x: float, y: float, alpha := 1.0, size := 32.0) -> void:
 	var t := XUI.icon_texture(index)
 	if t:
 		_keep.append(t)
+		var sk := sel_k_at(Vector2(x + size / 2.0, y + size / 2.0)) if _sel_rect.has_area() else 1.0
+		if sk != 1.0:
+			draw_texture_rect(t, XSkinSelScale.grow(Rect2(x, y, size, size), sk), false, Color(1, 1, 1, alpha))
+			return
 		if size == 32.0:
 			draw_texture(t, Vector2(x, y), Color(1, 1, 1, alpha))
 		else:
@@ -221,6 +245,8 @@ func gradient(r: Rect2, c1: Color, c2: Color) -> void:
 
 ## 选中光标（Window.png 光标框）；blink 时按 MV 活动窗口的 40 帧周期变淡。
 func cursor(r: Rect2, active := true) -> void:
+	if active:
+		_mark_sel(r)
 	var a := 1.0
 	if active and blink:
 		if not BLINK_FULL_REDRAW:
@@ -228,6 +254,24 @@ func cursor(r: Rect2, active := true) -> void:
 			return
 		a = blink_alpha()
 	draw_style_box(XUI.cursor_style(a), r)
+
+
+## 活动光标行登记为「选中放大」的范围（新皮肤开着时）
+func _mark_sel(r: Rect2) -> void:
+	if not XSkinSelScale.ENABLED or not XUiSkin.on() or not r.has_area():
+		return
+	_sel_rect = r
+	if r != _sel_key:
+		_sel_key = r
+		_sel_k = SEL_PEAK if not _sel_primed else 1.0   # 刚打开时直接是放大的
+	_sel_primed = true
+
+
+## 点 p 在不在本次的选中行里；在就返回现在的倍数，不在返回 1
+func sel_k_at(p: Vector2) -> float:
+	if not _sel_rect.has_area() or not _sel_rect.has_point(p):
+		return 1.0
+	return SEL_PEAK if XUiSkin.motion() == XUiSkin.Motion.OFF else _sel_k
 
 
 ## 闪烁光标登记到背后那层

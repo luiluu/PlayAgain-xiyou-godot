@@ -59,7 +59,45 @@ static func apply(b: Button, kind := "", font_size := -1) -> Button:
 	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
 		b.add_theme_color_override(k, col)
 	b.add_theme_color_override("font_disabled_color", XUiSkin.TEXT_3)
+	wire_focus_scale(b)
 	return b
+
+
+## T024 选中放大：拿到焦点的按钮以中心放大到 BUTTON_PEAK（只是画面缩放，不改按钮大小、不让容器重排，邻钮不动）；
+## 0.12 秒过渡，界面动效关时直接到位；XSkinSelScale.ENABLED 关时不放大。
+const BUTTON_PEAK := 1.05
+
+
+static func wire_focus_scale(b: Control) -> void:
+	if b.has_meta("skin_focus_scale_wired"):
+		return
+	b.set_meta("skin_focus_scale_wired", true)
+	b.pivot_offset = b.size / 2.0
+	b.resized.connect(func(): b.pivot_offset = b.size / 2.0)
+	b.focus_entered.connect(func(): _scale_to(b, BUTTON_PEAK))
+	b.focus_exited.connect(func(): _scale_to(b, 1.0))
+	if b.is_inside_tree() and b.has_focus():
+		b.scale = Vector2.ONE * focus_scale_target(true)
+
+
+static func focus_scale_target(focused: bool) -> float:
+	return BUTTON_PEAK if focused and XSkinSelScale.ENABLED else 1.0
+
+
+static func _scale_to(b: Control, k: float) -> void:
+	if not is_instance_valid(b):
+		return
+	if b.has_meta("skin_focus_tween"):
+		var old = b.get_meta("skin_focus_tween")
+		if old is Tween and (old as Tween).is_valid():
+			(old as Tween).kill()
+	k = k if XSkinSelScale.ENABLED else 1.0
+	if XUiSkin.motion() == XUiSkin.Motion.OFF or not b.is_inside_tree():
+		b.scale = Vector2.ONE * k
+		return
+	var tw := b.create_tween()
+	tw.tween_property(b, "scale", Vector2.ONE * k, XUiSkin.SEL_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	b.set_meta("skin_focus_tween", tw)
 
 
 ## Godot 的 Button 把 focus 样式叠在 pressed 上面画，按住时焦点的整行实心底会盖掉按下的压暗：

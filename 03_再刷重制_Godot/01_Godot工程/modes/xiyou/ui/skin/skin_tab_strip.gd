@@ -12,12 +12,15 @@ var font_size := 17
 const TAB_H := 38.0
 const TAB_PAD := 14.0
 const TAB_GAP := 4.0
+## T024 选中放大：选中页签的字放大、在页签里居中（页签宽照旧按原字号算，放大的字落在左右各 14 的内边距里，不碰邻签）
+var sel_scale: XSkinSelScale
 const TAB_GAP_ART := 18.0
 
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	custom_minimum_size.y = TAB_H
+	sel_scale = XSkinSelScale.attach(self)
 
 
 ## 按存档筛出看得见的组；keep_key 给了就尽量留在同一组
@@ -93,6 +96,7 @@ func _gui_input(event: InputEvent) -> void:
 func _draw() -> void:
 	var f := XUiSkin.font("body")
 	var ci := get_canvas_item()
+	sel_scale.sel(index if not groups.is_empty() else null)
 	for i in groups.size():
 		var r := tab_rect(i)
 		var on := i == index
@@ -105,5 +109,7 @@ func _draw() -> void:
 			sb.border_color = XUiSkin.SEL_LINE
 			sb.border_width_bottom = 3
 			sb.draw(ci, r)
-		XSkinArt.bg_string(self, f, Vector2(r.position.x + TAB_PAD, r.position.y + TAB_H / 2.0 + font_size * 0.36), str(groups[i].name),
-			font_size, Color.WHITE if on else XSkinArt.bg_text_2())
+		var fs := XSkinSelScale.fs(font_size, sel_scale.k(i))
+		var tw := f.get_string_size(str(groups[i].name), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		XSkinArt.bg_string(self, f, Vector2(r.get_center().x - tw / 2.0, r.position.y + TAB_H / 2.0 + fs * 0.36), str(groups[i].name),
+			fs, Color.WHITE if on else XSkinArt.bg_text_2())

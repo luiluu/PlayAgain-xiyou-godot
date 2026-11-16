@@ -12,6 +12,8 @@ extends XSkinTemplatePage
 var scene: XStatusPage
 var actor_panel: Control
 var page_panel: Control
+## T024 选中放大：当前页签的字放大（页签宽不变，放不下先缩字）
+var tab_scale: XSkinSelScale
 var page_body: Control
 const TAB_H := 40.0
 const ROW := 36.0
@@ -52,6 +54,7 @@ func _ready() -> void:
 	page_panel.draw.connect(_draw_page_frame)
 	page_panel.gui_input.connect(_on_page_gui)
 	layout.add_child(page_panel)
+	tab_scale = XSkinSelScale.attach(page_panel)
 	page_body = Control.new()
 	page_body.clip_contents = true
 	page_body.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -212,12 +215,13 @@ func _draw_page_frame() -> void:
 	XUiSkin.panel_style().draw(ci, Rect2(Vector2.ZERO, sz))
 	var body := XUiSkin.font("body")
 	var names := XStatusPage.page_names()
+	tab_scale.sel(scene.page)
 	for i in names.size():
 		var r := tab_rect(i)
 		if i == scene.page:
 			XUiSkin.draw_select(ci, r, XUiSkin.breath_alpha())
 		var t := str(names[i])
-		var fit := XSkinList.fit_text(body, t, r.size.x - 12, XUiSkin.FS_AUX_MAX, XUiSkin.FS_AUX)
+		var fit := XSkinList.fit_text(body, t, r.size.x - 12, XSkinSelScale.fs(XUiSkin.FS_AUX_MAX, tab_scale.k(i), floori(r.size.y * 0.66)), XUiSkin.FS_AUX)
 		var tw := body.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
 		page_panel.draw_string(body, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + int(fit[1]) * 0.36), fit[0],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], XUiSkin.TEXT if i == scene.page else XUiSkin.TEXT_2)

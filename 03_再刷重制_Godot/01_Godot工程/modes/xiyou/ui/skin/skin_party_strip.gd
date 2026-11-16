@@ -16,6 +16,8 @@ var selectable := false
 var row_height := XUiSkin.MEMBER_H
 var title := ""
 var bar: XSkinSelectBar
+## T024 选中放大（selectable 时）：选中那人的圆头像和名字放大，行高不变
+var sel_scale: XSkinSelScale
 const HEAD := 42.0
 const TITLE_H := 44.0
 ## 助力卡上状态图标从右边让出多少（角标约 42 宽，从行右缘 2 起，右边距 12）
@@ -27,6 +29,7 @@ func _init() -> void:
 	bar = XSkinSelectBar.new()
 	add_child(bar, false, Node.INTERNAL_MODE_FRONT)
 	bar.visible = false
+	sel_scale = XSkinSelScale.attach(self)
 	resized.connect(queue_redraw)
 
 
@@ -118,9 +121,11 @@ func _draw() -> void:
 	var num := XUiSkin.font("num")
 	if title != "":
 		draw_string(head, Vector2(16, 10 + 21 * 0.9), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD)
+	sel_scale.sel(index if selectable and index >= 0 else null)
 	for i in members.size():
 		var m: Dictionary = members[i]
 		var r := row_rect(i)
+		var sk := sel_scale.k(i)
 		if i > 0:
 			draw_line(Vector2(r.position.x + 10, r.position.y), Vector2(r.end.x - 10, r.position.y), Color(XUiSkin.LINE, 0.14), 1.0)
 		if bool(m.get("helper", false)):
@@ -134,16 +139,21 @@ func _draw() -> void:
 		# 行比 60 高：内容竖直居中
 		r = Rect2(r.position.x, r.position.y + floorf((r.size.y - XUiSkin.MEMBER_H) / 2.0), r.size.x, XUiSkin.MEMBER_H)
 		var hc := Vector2(r.position.x + 14 + HEAD / 2.0, r.position.y + r.size.y / 2.0)
-		draw_circle(hc, HEAD / 2.0, XUiSkin.ORB_LOW)
+		var hr := HEAD / 2.0 * sk
+		draw_circle(hc, hr, XUiSkin.ORB_LOW)
 		var face: Texture2D = m.get("face")
 		if face != null:
-			XSkinPartyStrip.draw_round_texture(self, face, hc, HEAD / 2.0 - 2.0)
-		draw_circle(hc, HEAD / 2.0, Color(XUiSkin.LINE, 0.65), false, 1.5, true)
-		XTianqiSkinShow.draw_look(self, str(m.get("look", "")), hc, HEAD / 2.0)
+			XSkinPartyStrip.draw_round_texture(self, face, hc, hr - 2.0)
+		draw_circle(hc, hr, Color(XUiSkin.LINE, 0.65), false, 1.5, true)
+		XTianqiSkinShow.draw_look(self, str(m.get("look", "")), hc, hr)
 		var x := r.position.x + 14 + HEAD + 12
 		var right := r.end.x - 12
 		var y1 := r.position.y + 6 + 18
 		var fit := name_fit(body, str(m.get("name", "")), int(m.get("level", 1)), right - x - 80)
+		if sk > 1.0:   # 放大后还放得下才放大（放不下照旧）
+			var bfs := XSkinSelScale.fs(int(fit[1]), sk, 22)
+			if body.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x <= right - x - 80:
+				fit = [fit[0], bfs]
 		draw_string(body, Vector2(x, y1), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], XUiSkin.TEXT)
 		var nw := body.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
 		var info := "Lv %d" % int(m.get("level", 1))

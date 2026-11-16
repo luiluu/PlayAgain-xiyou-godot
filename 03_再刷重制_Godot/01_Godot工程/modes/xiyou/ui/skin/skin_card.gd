@@ -21,6 +21,8 @@ var reserve_bottom := 0.0
 var buttons: Array = []
 var button_index := -1
 var pad := XUiSkin.PAD_LG
+## T024 选中放大：焦点按钮的字放大（按钮框不变，字放不下就不放大）
+var sel_scale: XSkinSelScale
 const BUTTON_H := 46.0
 const LINE_H := 30.0
 const SECTION_H := 36.0
@@ -28,6 +30,7 @@ const SECTION_H := 36.0
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	sel_scale = XSkinSelScale.attach(self)
 	resized.connect(queue_redraw)
 
 
@@ -146,6 +149,7 @@ func _draw() -> void:
 				var rw := num.get_string_size(rt, HORIZONTAL_ALIGNMENT_LEFT, -1, 21).x
 				draw_string(num, Vector2(pad + w - rw, base + 21 * 0.36), rt, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, ln.get("right_color", XUiSkin.TEXT))
 			y += LINE_H
+	sel_scale.sel(button_index if button_index >= 0 and button_index < buttons.size() else null)
 	for i in buttons.size():
 		var r := button_rect(i)
 		var b: Dictionary = buttons[i]
@@ -161,9 +165,13 @@ func _draw() -> void:
 		if i == button_index:
 			XUiSkin.draw_select(ci, r.grow(3), XUiSkin.breath_alpha())
 		var t := str(b.get("text", ""))
-		var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST).x
-		draw_string(body, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + XUiSkin.FS_LIST * 0.36), t,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST, XUiSkin.TEXT_3 if bool(b.get("disabled", false)) else XUiSkin.TEXT)
+		var bfs := XSkinSelScale.fs(XUiSkin.FS_LIST, sel_scale.k(i), floori(r.size.y * 0.66))
+		var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x
+		if bfs != XUiSkin.FS_LIST and tw > r.size.x - 12.0:
+			bfs = XUiSkin.FS_LIST
+			tw = body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x
+		draw_string(body, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + bfs * 0.36), t,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, bfs, XUiSkin.TEXT_3 if bool(b.get("disabled", false)) else XUiSkin.TEXT)
 
 
 func _paragraph(f: Font, text: String, y: float, w: float, fs: int, col: Color, bottom: float) -> float:

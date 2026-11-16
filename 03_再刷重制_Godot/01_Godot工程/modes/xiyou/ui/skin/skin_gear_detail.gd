@@ -27,6 +27,8 @@ var _rows: Array = []        # [{text, color}]（装备详情、插槽）
 var _cmp: Array = []         # [[名, 当前, 换上后（-1＝不写）]]
 var body: Control
 var _content_h := 0.0
+## T024 选中放大：当前页签的字放大（页签宽不变，放不下先缩字）
+var tab_scale: XSkinSelScale
 
 
 func _init() -> void:
@@ -36,6 +38,7 @@ func _init() -> void:
 	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	body.draw.connect(_draw_body)
 	add_child(body)
+	tab_scale = XSkinSelScale.attach(self)
 	resized.connect(_place)
 
 
@@ -196,6 +199,7 @@ func _draw() -> void:
 		var fit := XSkinList.fit_text(head, str(d.title), size.x - pad - x, XUiSkin.FS_CARD, 20)
 		draw_string(head, Vector2(x, pad + 26), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], d.title_color)
 		draw_string(font, Vector2(x, pad + 50), str(d.subtitle), HORIZONTAL_ALIGNMENT_LEFT, size.x - pad - x, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+	tab_scale.sel(tab)
 	for i in TABS.size():
 		var r := tab_rect(i)
 		if i == tab:
@@ -203,10 +207,12 @@ func _draw() -> void:
 				XSkinArt.draw_tab(ci, r)
 			else:
 				XUiSkin.draw_select(ci, r, XUiSkin.breath_alpha())
-		var t: String = TABS[i]
-		var tw := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX).x
-		draw_string(font, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + XUiSkin.FS_AUX_MAX * 0.36), t,
-			HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT if i == tab else XUiSkin.TEXT_2)
+		var fit := XSkinList.fit_text(font, TABS[i], r.size.x - 12, XSkinSelScale.fs(XUiSkin.FS_AUX_MAX, tab_scale.k(i), floori(r.size.y * 0.66)), XUiSkin.FS_AUX)
+		var t: String = fit[0]
+		var tfs: int = fit[1]
+		var tw := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, tfs).x
+		draw_string(font, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + tfs * 0.36), t,
+			HORIZONTAL_ALIGNMENT_LEFT, -1, tfs, XUiSkin.TEXT if i == tab else XUiSkin.TEXT_2)
 	var ly := pad + HEAD_H + TAB_H + 3
 	draw_line(Vector2(pad, ly), Vector2(size.x - pad, ly), Color(XUiSkin.LINE, 0.14), 1.0)
 

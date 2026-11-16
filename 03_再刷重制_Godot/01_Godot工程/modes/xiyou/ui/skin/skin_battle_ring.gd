@@ -28,6 +28,9 @@ var center := Vector2.ZERO       # 本节点里的环心
 var _angles: Array = []
 var _spin := 0.0
 var _drawn_active := true
+## T024 选中放大：选中的球原本直接 ×1.08，现在 0.12 秒过渡到 1.08（相邻 36° 的球在 1.15 时会相叠 2px，所以留 1.08）
+const SEL_PEAK := 1.08
+var sel_scale: XSkinSelScale
 
 
 static func create_ring(parent: Control, list: Array, actor_name := "") -> XSkinBattleRing:
@@ -39,6 +42,7 @@ static func create_ring(parent: Control, list: Array, actor_name := "") -> XSkin
 	w.title = ("%s的回合" % actor_name) if actor_name != "" else ""
 	w.canvas.visible = false
 	w._layout_ring()
+	w.sel_scale = XSkinSelScale.attach(w, SEL_PEAK)
 	parent.add_child(w)
 	w.select(0)
 	return w
@@ -169,6 +173,8 @@ func _draw() -> void:
 		draw_string_outline(title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.7))
 		draw_string(title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD)
 	# 球
+	if sel_scale != null:
+		sel_scale.sel(index)
 	for i in entries.size():
 		_draw_orb(i, title_font)
 
@@ -179,7 +185,7 @@ func _draw_orb(i: int, font: Font) -> void:
 	var sel := i == index
 	var en := bool(e.get("enabled", true))
 	var p := orb_pos(i)
-	var r := orb_r * (1.08 if sel else 1.0)
+	var r := orb_r * orb_scale(i)
 	var alpha := 1.0 if en else 0.5
 	if sel:
 		var g := XUiSkin.glow_texture()
@@ -196,6 +202,14 @@ func _draw_orb(i: int, font: Font) -> void:
 	var color := Color.WHITE if sel else XUiSkin.GOLD
 	color.a = alpha
 	_orb_text(font, text, p, r, color)
+
+
+## 第 i 个球现在的倍数（选中放大关掉时照旧直接 ×1.08）
+func orb_scale(i: int) -> float:
+	if sel_scale == null or not XSkinSelScale.ENABLED:
+		return SEL_PEAK if i == index else 1.0
+	sel_scale.sel(index)
+	return sel_scale.k(i)
 
 
 ## 球里的字：一行放得下就一行（23 起、最小 14）；四字以上放不下折两行
