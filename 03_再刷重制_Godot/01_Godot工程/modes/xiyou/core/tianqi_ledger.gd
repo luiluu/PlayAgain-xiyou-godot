@@ -747,7 +747,7 @@ static func secret_kept(a, by: Dictionary) -> Array:
 					ids[b] = true
 			else:
 				ids[sub] = true
-	var per := nine_cap("secret_slot")
+	var per := XTianqiBase.secret_slot(nine_cap("secret_slot"))  # 期四开着读 phase4.secret_slot
 	var scored := []
 	for b in ids:
 		var score := minf(_max_of(books.globalHarmRi, b), per) + minf(_max_of(books.critHarmRi, b), per)
@@ -788,7 +788,7 @@ static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictio
 	# （1）秘籍格
 	var raw_secret := _hit_share(by, "secret", hit)
 	var kept := {"skill": 0.0, "bonus": 0.0, "crit": 0.0, "element": {}}
-	var per := nine_cap("secret_slot")
+	var per := XTianqiBase.secret_slot(nine_cap("secret_slot"))  # 期四开着读 phase4.secret_slot
 	for b in secret_kept(a, by):
 		var c := _book_capped(_hit_share(by.books, b, hit), per)
 		for k in ["skill", "bonus", "crit"]:
@@ -802,15 +802,19 @@ static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictio
 		if x > 0.0:
 			cut.element[e] = x
 	# （2）其余九线合计
-	var nine := {"skill": 0.0, "bonus": float(hooks.get("race", 0.0)) + float(hooks.get("orb", 0.0)) + float(hooks.get("suit", 0.0)), "element": {}}
+	var nine := {"skill": 0.0, "bonus": float(hooks.get("race", 0.0)) + float(hooks.get("orb", 0.0)) + float(hooks.get("suit", 0.0)), "crit": 0.0, "element": {}}
 	for b in NINE_BUCKETS:
 		var sh := _hit_share(by, b, hit)
 		nine.skill += sh.skill
 		nine.bonus += sh.bonus
+		nine.crit += sh.crit
 		for e in sh.element:
 			nine.element[e] = float(nine.element.get(e, 0.0)) + float(sh.element[e])
 	cut.skill += maxf(0.0, nine.skill - nine_cap("skill"))
 	cut.bonus += maxf(0.0, nine.bonus - nine_cap("bonus"))
+	var crit_cap := XTianqiBase.nine_crit_cap()  # 期四：九线爆伤合计封顶（phase4.nine_crit_dmg_cap）；关着 −1 不封（现在 nine_caps 没有这一项）
+	if crit_cap >= 0.0:
+		cut.crit += maxf(0.0, nine.crit - crit_cap)
 	for e in nine.element:
 		var x := maxf(0.0, float(nine.element[e]) - nine_cap("element"))
 		if x > 0.0:

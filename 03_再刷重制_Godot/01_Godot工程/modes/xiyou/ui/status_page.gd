@@ -443,7 +443,8 @@ static func global_bonuses(a: XActor) -> Array:
 			element = int(de.get_string(1))
 	var dvup: Dictionary = cache.get("skillTypeDvup", {})
 	var pct := func(v: float) -> String: return "%d%%" % int(XPower.js_round(v * 100))
-	return [["爆伤加成", pct.call(float(cache.get("critHarmRi", 0.0)))],
+	var gaze := XTianqiBase.gaze_row()  # 天启篇期四「天启注视」：伤害 ×K（总开关关着没有这一行）
+	return ([gaze] if not gaze.is_empty() else []) + [["爆伤加成", pct.call(float(cache.get("critHarmRi", 0.0)))],
 		["伤害加成", pct.call(float(cache.get("globalHarmRi", 0.0)))],
 		["全队掉率", drop_rate_text()],
 		["再次行动", pct.call(again_action)],

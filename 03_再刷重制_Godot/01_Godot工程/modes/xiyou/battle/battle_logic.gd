@@ -3197,6 +3197,8 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 		return
 	var v1 := float(eff.value1)
 	var v2 := float(eff.value2)
+	if int(eff.code) in [11, 12] and v2 != 0.0 and is_item(r.skill):  # 天启篇期四（总开关关着原样）：药品固定回复换成上限的百分比（abs_rescale.json）
+		v2 = XTianqiBase.abs_value("item_fixed_heal", int(r.skill.get("id", 0)), v2, t)
 	match int(eff.code):
 		11:
 			var v := (t.mhp * v1 + v2) * t.rec * (u.pha if is_item(r.skill) else 1.0)

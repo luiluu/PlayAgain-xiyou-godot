@@ -1209,6 +1209,9 @@ func _tag(prefix: String, i: int) -> String:
 	return prefix + str(i % 10)
 
 func param_base_direct(i: int) -> float:
+	var tq := XTianqiBase.param_base(self, i)  # 天启篇期四（总开关关着为 NAN）：本体读标准线＋职责模板，不读职业曲线
+	if not is_nan(tq):
+		return tq
 	var params: Array = class_data().params
 	return float(params[i][_lv])
 
