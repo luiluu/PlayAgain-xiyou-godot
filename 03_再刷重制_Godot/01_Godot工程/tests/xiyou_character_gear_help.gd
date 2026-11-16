@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 【cc·悟空·未经审查】专属装备说明卡（chars-gaps1）：照 character_gear_help_probe（tests/fixtures/character_gear_help_oracle.json，v0.62.12）
 ## 逐行比文字、字号、颜色、对齐、y 与卡高：
 ## - characterHelpTarget 认的专属装备（4001 武器／防具、4577～4581、7904～7911、7920～7935）走 XCharacterHelp.view（分组上色）；
@@ -55,7 +56,7 @@ func _card(tag: String, obj: Dictionary, c: Dictionary) -> void:
 		var g: Array = got[i]
 		var w: Array = want[i]
 		# 冒号宽度不比：文字审 16-003 把饿狼法宝说明统一成全角冒号，原版只换每行第一个半角冒号（参照里「法宝形态:」「敏捷倍率:」还是半角）
-		var same_text := str(g[0]).replace(":", "：") == str(w[0]).replace(":", "：") or (_is_power(g) and _is_power(w))
+		var same_text := str(g[0]).replace(":", "：") == Z.text(str(w[0])).replace(":", "：") or (_is_power(g) and _is_power(w))
 		if not (same_text and int(g[1]) == int(w[1]) and str(g[2]) == str(w[2]) \
 				and (null if g[4] == null else int(g[4])) == (null if w[4] == null else int(w[4])) and (not with_y or is_equal_approx(float(ys[i]), float(w[3])))):
 			ok = false

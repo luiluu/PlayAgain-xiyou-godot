@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 真气第一批（XZhenqi）与修行页（XGuide）：与 mv_oracle/zhenqi_probe.cjs 的冻结 v0.28 参照（generated/oracle/zhenqi.json）逐例比——
 ## 路线、境界名／加成／门槛、允许境界、天道补偿表、Boss 奖励表、溢出再动、胜利结算（守层者首通与重复、路线系数、阵亡、溢出上限、
 ## 大圆满与精进提示、Boss 敌群在大厅按进度层）、存读档、新档初值、地图楼层、Boss 判定、修行页行文（不含不移植的五个乘区）、战力条文字、倍率格式。
@@ -222,7 +223,7 @@ func _panel_rollback() -> void:
 	if not check("v028_fixture", fx is Dictionary and fx.cases.size() == 6):
 		return
 	var shape := func(rows: Array) -> Array:
-		return rows.map(func(r): return [r.type, str(r.get("text", "")).get_slice("：", 0).get_slice("　", 0).left(6), r.cells[0] if r.type == "cols" else ""])
+		return rows.map(func(r): return [r.type, str(r.get("text", "")).get_slice("：", 0).get_slice("　", 0).left(6), Z.text(str(r.cells[0])) if r.type == "cols" else ""])
 	XGuide.PANEL_V062 = false
 	for c in fx.cases:
 		var got = _case(c.id, c.setup)
@@ -264,7 +265,7 @@ func _run() -> void:
 				XAffixRate.DETAIL_SHOWN = false
 			var got = _case(c.id, c.setup)
 			XAffixRate.DETAIL_SHOWN = true
-			var want = c.observed
+			var want = Z.fwd(c.observed)  # T027：参照里的 Boss／终伤换成新口径
 			if c.id.begins_with("page.") and c.id == "page.default" and XGuide.PANEL_V062:
 				# 修好的一支：页末多出「高阶词条概率」一段，其余与原版相同
 				var fixed = _case(c.id, c.setup)

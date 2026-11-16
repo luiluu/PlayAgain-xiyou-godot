@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 宝珠坊界面（XOrbShop＋XChoiceWindow）：按正式 orb_shop_probe.cjs 记录的 7 条点选路线（行文点选）逐页比对说明与选项、
 ## 提示、结束时的背包与随机流序号；窗口几何与 ui_reference 读数（tests/fixtures/orb_shop_ui_oracle.json）比对；
 ## 主菜单「宝珠坊」可选并能打开。窗口模式加 -- --out=<目录> 存对照截图。
@@ -47,6 +48,8 @@ func _clear_popups(n: Node) -> void:
 
 
 static func norm(v):
+	if v is String:
+		return Z.text(v)  # T027：参照里的 Boss 换成首领
 	if v is int or v is float:
 		return float(v)
 	if v is Array:
@@ -156,7 +159,7 @@ func _flow(p: Dictionary) -> void:
 	for k in s.items:
 		if int(s.items[k]) > 0:
 			bag[str(k)] = float(s.items[k])
-	check("after_" + name, bag == norm(p.bag) and norm(s.orb_state.n) == norm(p.rng.n) and XToast.shown.slice(toast0) == p.toasts,
+	check("after_" + name, bag == norm(p.bag) and norm(s.orb_state.n) == norm(p.rng.n) and XToast.shown.slice(toast0) == Z.fwd(p.toasts),
 		[bag, p.bag, s.orb_state.n, XToast.shown.slice(toast0), p.toasts])
 	shop.queue_free()
 	await frames()

@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 修行指引第二阶段（XGuide：区段里程碑、方桌大厅「商店向导」→「下一步建议」）：与 mv_oracle/guide_probe.cjs 逐例比（generated/oracle/guide.json）。
 ## advice.* 比参照里去掉 CodexZones 的文字（战力短板段不移植，O-050），另查完整文字只多这一段。
 ## 另测：区段表与 guide_atlas.json 一致、看过标记随存档、商店向导事件（参照里的 Map004 事件 73 指令列）选「下一步建议」的显示、
@@ -118,7 +119,7 @@ func _run() -> void:
 				continue
 			n += 1
 			var got = _case(c.id, c.setup)
-			var want = c.observed
+			var want = Z.fwd(c.observed)  # T027：参照里的 Boss 换成首领
 			if c.id.begins_with("advice."):
 				# 原版完整文字＝去掉五乘区的文字＋末尾「战力短板」一段（O-050）
 				var full: Array = want.full

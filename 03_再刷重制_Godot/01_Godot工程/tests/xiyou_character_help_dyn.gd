@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 【cc·悟空·未经审查】角色说明卡动态行（chars-gaps2），参照 mv_oracle/character_help_dyn_probe.cjs（v0.62.12）：
 ## - listCosts：技能页／战斗里（XHelpCard.list_costs，show_for 按卡所在场景设）说明卡不列消耗行；
 ## - dyn2：云裳 174（目标、段数、成长倍率、爆伤终伤）、镜流 170（已解锁星魂、寒川映月上限）、宿傩 10242 斩击强化。
@@ -29,7 +30,7 @@ func _pick(item: Dictionary) -> Array:
 
 static func _norm(list: Array) -> Array:
 	var re := RegEx.create_from_string("；伤害属性：[^；]*")
-	return list.map(func(t): return re.sub(str(t), "", true))
+	return list.map(func(t): return Z.text(re.sub(str(t), "", true)))
 
 
 func _setup(c: Dictionary) -> XState:

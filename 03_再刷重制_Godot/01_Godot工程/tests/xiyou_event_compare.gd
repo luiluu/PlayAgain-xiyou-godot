@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 地图事件对照（效率改造第二步）：用 MV 参照引擎的 event_probe（generated/oracle/events.json）里同一批用例，
 ## 以同样的初始状态与应答在 Godot 的 MVInterpreter 上运行，逐项比较可观察的输出（trace）与状态变化（delta）。
 ## - 宿主是记录用的替身（EventHost）：不开画面、不进战斗，文字/选项/场所移动/战斗/商店/场景/存档/输入/提示只记录并按约定应答
@@ -888,10 +889,10 @@ func _trace_norm(trace: Array) -> Array:
 		if x.t == "msg" and x.has("choices"):
 			# 选项里的控制符：原版脚本拼的选项直接带 ESC（\x1b，即 convertEscapeCharacters 之后的写法，如称号选项 \x1bI[0]），
 			# 重制写成反斜杠；显示时两者一样，比较前统一成反斜杠（悟空 dmg2，m4e1p2／p3）
-			x.choices = (x.choices as Array).map(func(t): return str(t).replace(char(27), "\\"))
+			x.choices = (x.choices as Array).map(func(t): return Z.text(str(t).replace(char(27), "\\")))
 		if x.t == "msg" and x.has("lines"):
 			# 已移除地图提示（CodexMapRemoval.notice）文字审批 19 改写：原版「【区域已移除】X因地图文件损坏，已从当前版本移除。」→「（X 区域暂未开放。）」
-			x.lines = (x.lines as Array).map(func(t): return RegEx.create_from_string("^【区域已移除】(.*)因地图文件损坏，已从当前版本移除。$").sub(str(t), "（$1 区域暂未开放。）"))
+			x.lines = (x.lines as Array).map(func(t): return Z.text(RegEx.create_from_string("^【区域已移除】(.*)因地图文件损坏，已从当前版本移除。$").sub(str(t), "（$1 区域暂未开放。）")))  # T027：Boss→首领、终伤＋数→伤害
 		return _norm(x))
 
 

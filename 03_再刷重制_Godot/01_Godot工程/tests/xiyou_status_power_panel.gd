@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 状态页「战力 N」按钮与角色战力面板（XPowerPanel，installEquipmentStatusRuntime renderPower）：
 ## - 覆盖说明：新开局各角色初始状态的「尚未完整评估的技能」「战力未计入」与正式版逐角色一致（tests/fixtures/power_coverage_oracle.json）。
 ## - 面板：各行文字与几何对照 tests/fixtures/power_panel_oracle.json（正式 v0.62.12 无头浏览器 DOM 读数，ui_reference/dom_ref.cjs＋power_panel_ref.js）。
@@ -96,6 +97,8 @@ func shot(name: String) -> void:
 
 ## 战力数字换成 N（正式版浏览器开着五乘区成长修正，数字不同）；承伤与页签照原样比
 static func norm(t: String) -> String:
+	if t.begins_with("3回合平均输出 "):
+		t = "单人对木桩估算（三档防御加权，不含元素抗性）：" + t  # T027：战力页评估行加了前缀（参照是原版）
 	t = {"已穿装备": "已装备", "未穿装备，自身战力仍然有效。": "未装备，自身战力仍然有效。"}.get(t, t)  # 文字审批 15 改的两处（参照是原版）
 	if t.contains("承伤"):
 		return t
