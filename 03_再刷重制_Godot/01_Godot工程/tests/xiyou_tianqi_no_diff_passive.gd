@@ -212,9 +212,12 @@ func _equivalence() -> void:
 	# 什么都不乘：开关开但把数值表这一节拿掉
 	var tbl: Dictionary = XTianqiBalance.data()
 	var saved = tbl.get("legacy_passive")
+	var saved_rules = tbl.get("combat_rules")  # 伤害加成总账期二：暴击、敏捷挪进 combat_rules，「什么都不乘」两节都拿掉
 	tbl.erase("legacy_passive")
+	tbl.erase("combat_rules")
 	var bare := _snapshot(s, a, enemy, ally)
 	tbl["legacy_passive"] = saved
+	tbl["combat_rules"] = saved_rules
 	var new := _snapshot(s, a, enemy, ally)
 	_legacy_on(a)
 	var old := _snapshot(s, a, enemy, ally)

@@ -75,6 +75,8 @@ func _ready() -> void:
 			duel = true
 		elif a == "--x6=off":
 			XTianqiNoX6.ENABLED = false   # 回到全队 ×6 与原血量（O-470 关）
+		elif a == "--ledger=off":
+			XTianqiLedger.set_all_p2(false)   # 伤害加成总账期二归池清场全关（回到期一的单独相乘），开关对照用
 		elif a == "--guardian-heal=off":
 			XTianqiNoX6.GUARDIAN_HEAL = false   # 守层者回血只缩 1/6、不乘重算缩放比（O-469 关）
 		elif a == "--both":

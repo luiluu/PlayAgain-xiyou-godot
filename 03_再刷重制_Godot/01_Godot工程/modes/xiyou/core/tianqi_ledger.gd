@@ -10,6 +10,8 @@ extends RefCounted
 ##   天启篇、角色自带、状态分；原合计字段不动、西游档不建这份。
 ## 五池明细（DETAIL）：伤害详情（breakdown.row.pools）多一份五池和单独相乘残余，只加明细。
 ## 开关都默认开；全关＝回到 main（数值本来就不变）。
+## 期二「归池清场」（第五节第 1 条全表，D16＝乙）：表的 phase＝2，期一「豁免·期二到期」的七行改成已归池，每样一个回退开关（POOL_* 等，见下）；
+##   另加套装确认阶段乘、万灵增元丹被动、暴击敏捷挪 combat_rules；确认阶段运行期守卫 audit_confirm（期一核查 P2）。
 
 const PATH := "res://modes/xiyou/tianqi_data/damage_ledger.json"
 ## 单独相乘的口子（第三节第 1 条）：落在这些字段上的操作就算「乘」，不论 add／mul／set
@@ -23,6 +25,22 @@ static var BUCKETS := true
 static var DETAIL := true
 ## 测试用：不 push_error，只记（专项故意造违规时用）
 static var QUIET := false
+
+# ---- 期二「归池清场」（设计稿第五节第 1 条全表；D16＝乙，qiyin_gear.json 的数一个不改）----
+## 每样一个回退开关，默认开；关掉＝这一样回到期一的单独相乘（守卫把那一行当作「回退中」，不报）。只对天启篇存档生效。
+static var POOL_QIYIN := true        # 七印条件增伤 ×(1＋x) → 各自 ＋x 进池（群体、天平进①，元素进②，其余进③；末段 ×2 → ＋100% 进③）
+static var POOL_ORB := true          # 宝珠共鸣 finalMultiplier ×(1＋g) → ＋g 进③
+static var POOL_RACE := true         # 种族祝福 finalMultiplier／物理魔法伤害乘数 ×(1＋q) → ＋q 进③（魔族爆伤本来就进④）
+static var POOL_ENEMY_RACE := true   # 对某族敌人增伤 <EnemyRaceBo> 种族乘数 → 进③
+static var NO_SELF_RATE := true      # 原版独立乘区 <SelfPhysRate>／<SelfElemRate> 天启篇不读
+static var POOL_SUIT := true         # 原版套装给的状态在确认阶段的「结果 ×k」（铁头娃II ×2）→ ＋(k−1) 进③
+static var POOL_AFFIX_SKILL := true  # 词条技能伤 skillMultiplier 加项 → normalAdd（①）
+static var POOL_SKILL_PASS := true   # 技能专属被动 skillPass.rate（skillMultiplier 起点）→ normalAdd（①）
+static var NO_PILL_PASSIVES := true  # 万灵增元丹类被动 5974～5977 的开战状态天启篇不挂
+static var COMBAT_RULES := true      # 暴击 ＋50%、战斗中敏捷 ×0.8 改读档位表全局规则 balance_table.combat_rules（数不变）
+
+## 万灵增元丹类：物品 1497～1500 学到的被动（全属性 ×120%、结算伤害 ×120%／×150%、降敌暴击闪避），天启篇不生效
+const PILL_PASSIVES := [5974, 5975, 5976, 5977]
 
 static var _data: Dictionary = {}
 static var _rows: Dictionary = {}
@@ -51,6 +69,7 @@ static func data() -> Dictionary:
 static func reload() -> void:
 	_data = {}
 	_rows = {}
+	_confirm_ids = {}
 	_load_failed = false
 
 
@@ -80,6 +99,102 @@ static func detail_on() -> bool:
 	return DETAIL and active()
 
 
+## 归池开关名 → 当前值（damage_ledger.json 的行用 "switch" 指过来；关着的行守卫当回退中、不报）
+static func switch_on(name: String) -> bool:
+	match name:
+		"POOL_QIYIN": return POOL_QIYIN
+		"POOL_ORB": return POOL_ORB
+		"POOL_RACE": return POOL_RACE
+		"POOL_ENEMY_RACE": return POOL_ENEMY_RACE
+		"NO_SELF_RATE": return NO_SELF_RATE
+		"POOL_SUIT": return POOL_SUIT
+		"POOL_AFFIX_SKILL": return POOL_AFFIX_SKILL
+		"POOL_SKILL_PASS": return POOL_SKILL_PASS
+		"NO_PILL_PASSIVES": return NO_PILL_PASSIVES
+		"COMBAT_RULES": return COMBAT_RULES
+	return true
+
+
+## 这一样现在归不归池：开关开、天启篇存档（读不到总账表也照归：归池是数值口径，不靠守卫）
+static func pool_on(name: String) -> bool:
+	return switch_on(name) and active()
+
+
+## 期二要关的全部开关（基准对照 --ledger=off、专项回退用）
+static func set_all_p2(on: bool) -> void:
+	POOL_QIYIN = on
+	POOL_ORB = on
+	POOL_RACE = on
+	POOL_ENEMY_RACE = on
+	NO_SELF_RATE = on
+	POOL_SUIT = on
+	POOL_AFFIX_SKILL = on
+	POOL_SKILL_PASS = on
+	NO_PILL_PASSIVES = on
+	COMBAT_RULES = on
+
+
+## 原版套装给的状态（XEquipSuits.ids "states"）里，确认阶段的「结果 ×k」（op mul、k>1，如铁头娃II 713 ×2）：
+## 天启篇我方打敌人时改成 ＋(k−1) 进③（damage._calculate 加 finalAdd），确认阶段那一步对敌人的伤害不再乘（suit_confirm_rows 加 skipTypes）。
+## 治疗、打自己人照旧乘（skipTypes 只在目标是敌人、伤害类型 1/2/5/6 时跳过）。返回 [[状态号, 效果], ...]
+const SUIT_SKIP_TYPES := [1, 2, 5, 6]
+
+static func suit_confirm_effects(a) -> Array:
+	var out := []
+	if not a is XActor or not pool_on("POOL_SUIT"):
+		return out
+	for sid in XEquipSuits.ids(a, "states"):  # 套装状态不进 state_ids，只在 states() 里（XActor._actor_states_memo）
+		for e in XDB.rec("States", int(sid)).get("effects", []):
+			if e is Dictionary and str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) == "mul" and float(e.get("k", 1.0)) > 1.0:
+				out.append([int(sid), e])
+	return out
+
+
+## damage._calculate：这一下（我方打敌人、伤害类型 dmg_type）套装确认阶段乘改进③的量
+static func suit_confirm_add(a, b, dmg_type := 1) -> float:
+	if not b is XEnemy or not dmg_type in SUIT_SKIP_TYPES:
+		return 0.0
+	var add := 0.0
+	for pair in suit_confirm_effects(a):
+		var e: Dictionary = pair[1]
+		if bool(e.get("hpOnly", false)) and not dmg_type in [1, 5]:
+			continue
+		add += float(e.k) - 1.0
+	return add
+
+
+## XStateEffects.run("confirm")：把这些状态的那一步换成带 skipTypes 的副本（对敌人的伤害不乘，已进③）
+static func suit_confirm_rows(holder, rows: Array) -> Array:
+	var pairs := suit_confirm_effects(holder)
+	if pairs.is_empty():
+		return rows
+	var ids := {}
+	for pair in pairs:
+		ids[int(pair[0])] = true
+	var out := []
+	for st in rows:
+		if not ids.has(int(st.get("id", 0))):
+			out.append(st)
+			continue
+		var copy: Dictionary = st.duplicate()
+		var effects := []
+		for e in st.get("effects", []):
+			if e is Dictionary and str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) == "mul" and float(e.get("k", 1.0)) > 1.0:
+				var e2: Dictionary = e.duplicate()
+				e2.skipTypes = SUIT_SKIP_TYPES
+				effects.append(e2)
+			else:
+				effects.append(e)
+		copy.effects = effects
+		out.append(copy)
+	return out
+
+
+## 天启篇里不挂开战状态的被动（XActor.battle_start_state_tags 跳过）
+static func skips_passive(skill_id: int) -> bool:
+	return PILL_PASSIVES.has(skill_id) and pool_on("NO_PILL_PASSIVES")
+
+
 ## 一个操作是不是「乘」：落在单独相乘字段上、且不是恒等（mul/set 1、add 0）
 static func is_mul(op: Dictionary) -> bool:
 	var f := str(op.get("field", ""))
@@ -97,6 +212,8 @@ static func check(source: String, field: String) -> String:
 		return "unregistered"
 	if not (r.get("fields", []) as Array).has(field):
 		return "field_not_registered"
+	if r.has("switch") and not switch_on(str(r.switch)):
+		return ""  # 期二归池的回退开关关着：这一样回到单独相乘，是有意回退，不报
 	match str(r.get("status", "")):
 		"allowed":
 			return ""
@@ -150,8 +267,48 @@ static func audit(item: Dictionary, a, trace: Array, facts: Dictionary, extras: 
 
 
 ## 原版状态确认阶段乘：只认登记的那批状态号（state_confirm_ids）
+static var _confirm_ids := {}
+
 static func state_confirm_registered(state_id: int) -> bool:
-	return (data().get("state_confirm_ids", []) as Array).has(state_id) or (data().get("state_confirm_ids", []) as Array).has(float(state_id))
+	if _confirm_ids.is_empty():
+		for id in data().get("state_confirm_ids", []):
+			_confirm_ids[int(id)] = true
+	return _confirm_ids.has(state_id)
+
+
+## 一个状态确认阶段效果的指纹（只取 phase＝confirm、op 不是 noop 的那几条，键排序后 md5 前 8 位）；
+## damage_ledger.json 的 state_confirm_fp 存期一快照，专项比对：既有状态号的确认阶段效果改了也认得出（期一核查 P2）。
+static func confirm_fingerprint(st: Dictionary) -> String:
+	var effects := (st.get("effects", []) as Array).filter(func(e): return e is Dictionary and str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) != "noop")
+	return "" if effects.is_empty() else JSON.stringify(effects, "", true).md5_text().substr(0, 8)
+
+
+## 确认阶段（XStateEffects.run "confirm"）的运行期守卫（期一核查 P2：原来只在专项里认状态号，不过 check，到期也不报）：
+## 天启篇我方打敌人时，身上每个带确认阶段效果的状态逐个认来源——套装状态那一步已进③（套装行）；天启篇难度被动等价行不算；
+## 其余按 state_confirm 那一行判（没登记的状态号＝unregistered，到期＝exempt_expired）。只记不改数。
+const CONFIRM_SYNTH := "天启篇·难度被动等价"
+
+static func audit_confirm(holder, rows: Array, ctx: Dictionary) -> Array:
+	var found := []
+	if not auditing(holder) or not ctx.get("defender") is XEnemy:
+		return found
+	var ctxx := {"skill": int(ctx.get("item", {}).get("id", 0)), "actor": int(holder.actor_id)}
+	for st in rows:
+		if not st is Dictionary or str(st.get("name", "")) == CONFIRM_SYNTH:
+			continue
+		var effects := (st.get("effects", []) as Array).filter(func(e): return e is Dictionary and str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) != "noop" and not e.has("skipTypes"))
+		if effects.is_empty():
+			continue
+		var sid := int(st.get("id", 0))
+		var why := "" if state_confirm_registered(sid) else "unregistered"
+		if why == "":
+			why = check("state_confirm", "confirm")
+		found.append({"source": "state_confirm", "state": sid, "ok": why == ""})
+		if why != "":
+			var c := ctxx.duplicate()
+			c.state = sid
+			_flag("state_confirm", "confirm#%d" % sid, why, c)
+	return found
 
 
 # ---- MODULE_CAP 白名单 ----

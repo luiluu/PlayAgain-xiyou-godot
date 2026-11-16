@@ -7,7 +7,10 @@ extends Node
 ## 四、不改数：天启篇档总账三个开关全开、全关，各模块角色普攻／技能的伤害逐项相等；西游档伤害详情、被动缓存和 main 一样（不带新键）。
 ## 五、来源分桶：天启篇档被动缓存带 bySource，各桶相加＝原合计；BUCKETS 关不带。
 ## 六、五池明细：天启篇伤害详情带 pools／residual，和那一行的乘区值对得上；DETAIL 关不带。
-## 七、原版状态确认阶段乘：数据里每个有确认阶段效果的状态都在 state_confirm_ids 里（新状态出现就失败）。
+## 七、原版状态确认阶段乘：数据里每个有确认阶段效果的状态都在 state_confirm_ids 里、效果指纹和期一快照一致（新状态、既有状态改了都失败）；
+##     期二起运行期也逐个过 check（XTianqiLedger.audit_confirm），到期、没登记都报（期一核查 P2）。
+## 八、期二「归池清场」（设计稿第五节第 1 条全表）：每一样归池后的算法、回退开关、守卫状态；西游档开关开关一样。
+## 九、敌方链路分链验证（期一「需设计稿补记」1、2 条）：元素反射、状态 React 反伤、技能卡反弹、敌源按生命上限比例状态都不吃我方的池，开关开关一样。
 
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
 const MODULE_ACTORS := {"module.raven": 167, "module.number_boost": 168, "module.mira": 168, "module.sukuna": 172, "module.yomi_jingliu": 169,
@@ -63,6 +66,9 @@ func _run() -> void:
 	_buckets()
 	_pools()
 	_state_confirm()
+	_p2_items()
+	_enemy_chains()
+	XTianqiLedger.set_all_p2(true)
 	XTianqiSkills.CARDS = false
 	XTianqiSkills.MODULE_CAP_ALL = true
 	XTianqiLedger.GUARD = true
@@ -81,7 +87,7 @@ func _run() -> void:
 # ---- 表本身 ----
 func _registry_shape() -> void:
 	var d := XTianqiLedger.data()
-	_check("ledger_loaded", not d.is_empty() and XTianqiLedger.phase() == 1)
+	_check("ledger_loaded", not d.is_empty() and XTianqiLedger.phase() == 2)
 	var bad := []
 	for r in d.get("rows", []):
 		var st := str(r.get("status", ""))
@@ -89,10 +95,15 @@ func _registry_shape() -> void:
 			bad.append(r.id)
 	_check("ledger_rows_valid", bad.is_empty(), bad)
 	_check("module_whitelist_empty_at_p1", (d.get("module_whitelist", []) as Array).is_empty())
-	# 期一登记：七印、宝珠共鸣、种族豁免·期二；15 个专属模块钩子豁免·期四
-	var p2 := ["qiyin", "orb_resonance", "race"].all(func(k): return XTianqiLedger.row(k).get("status") == "exempt" and int(XTianqiLedger.row(k).get("expires")) == 2)
-	_check("p1_exempt_phase2", p2)
-	var p4 := XActorDamageHooks.MODULE_TAGS.all(func(k): return XTianqiLedger.row(k).get("status") == "exempt" and int(XTianqiLedger.row(k).get("expires")) == 4)
+	# 期二：期一「豁免·期二到期」的七行全部改成已归池、各挂一个回退开关；套装确认阶段、万灵增元丹被动也是已归池；不再有期二到期的豁免
+	var p2_rows := ["qiyin", "orb_resonance", "race", "affix_skill", "skill_pass", "enemy_race_bonus", "self_rate", "suit_confirm", "pill_passives"]
+	var not_pooled := p2_rows.filter(func(k): return XTianqiLedger.row(k).get("status") != "pooled" or str(XTianqiLedger.row(k).get("switch", "")) == "")
+	_check("p2_rows_pooled", not_pooled.is_empty(), not_pooled)
+	var left := (d.get("rows", []) as Array).filter(func(r): return str(r.get("status")) == "exempt" and int(r.get("expires", 0)) <= 2).map(func(r): return r.id)
+	_check("p2_no_exempt_left", left.is_empty(), left)
+	_check("p2_new_rows", ["qiyin_derived", "combat_rules"].all(func(k): return XTianqiLedger.row(k).get("status") == "allowed"))
+	var p4: bool = XActorDamageHooks.MODULE_TAGS.all(func(k): return XTianqiLedger.row(k).get("status") == "exempt" and int(XTianqiLedger.row(k).get("expires")) == 4) \
+		and XTianqiLedger.row("state_confirm").get("status") == "exempt" and int(XTianqiLedger.row("state_confirm").get("expires")) == 4
 	_check("p1_modules_exempt_phase4", p4 and XActorDamageHooks.MODULE_TAGS.size() == 15)
 	# 来源名都有一行（tags、注册表模块）
 	var missing := []
@@ -252,6 +263,7 @@ func _dump_and_cap() -> void:
 		scens[str(k).split("|")[1]] = true
 	_check("dump_scenarios", ["普攻", "派生"].all(func(sc): return scens.has(sc)), scens.keys())
 	_check("dump_all_registered", unregistered.is_empty(), unregistered)
+	_static_module_scan()
 	_check("cap_all_blocks_boosts", leaked_all.is_empty(), leaked_all)
 	# 旧口径（MODULE_CAP_ALL 关）：普攻、没改写、派生上的增伤不拦（这就是期一要堵的漏口）
 	_check("cap_old_leaks_unrewritten", leaked_old.is_empty(), leaked_old)
@@ -292,21 +304,33 @@ func _guard() -> void:
 	XTianqiLedger.QUIET = true
 	var item := XDB.rec("Skills", 1)
 	var trace := [{"module": "actor-modules", "ops": [{"op": "mul", "field": "finalMultiplier", "value": 1.2}, {"op": "mul", "field": "finalMultiplier", "value": 3.0},
-		{"op": "mul", "field": "settlementMultiplier", "value": 1.5}, {"op": "mul", "field": "finalMultiplier", "value": 2.0}, {"op": "mul", "field": "incomingMultiplier", "value": 0.5}]},
+		{"op": "mul", "field": "settlementMultiplier", "value": 1.5}, {"op": "mul", "field": "finalMultiplier", "value": 2.0}, {"op": "mul", "field": "incomingMultiplier", "value": 0.5},
+		{"op": "mul", "field": "finalMultiplier", "value": 1.4}, {"op": "mul", "field": "finalMultiplier", "value": 0.5}]},
 		{"module": "orb-sets", "ops": [{"op": "mul", "field": "finalMultiplier", "value": 1.3}]},
 		{"module": "new-module", "ops": [{"op": "mul", "field": "finalMultiplier", "value": 1.1}, {"op": "mul", "field": "finalMultiplier", "value": 1.0}]}]
-	var facts := {"actorModules": {"tags": ["qiyin", "weak_challenge", "qiyin", "new.source", "module.mira"]}}
+	var facts := {"actorModules": {"tags": ["module.raven", "weak_challenge", "module.toji", "new.source", "module.mira", "qiyin", "qiyin_derived"]}}
 	XTianqiLedger.violations.clear()
 	var found := XTianqiLedger.audit(item, a, trace, facts, {"skill_pass": 1.0, "race": 1.2, "independent": 1.0})
 	var why := XTianqiLedger.violations.map(func(v): return "%s.%s:%s" % [v.source, v.field, v.reason])
-	_check("guard_flags", why == ["weak_challenge.finalMultiplier:pooled", "qiyin.settlementMultiplier:field_not_registered", "new.source.finalMultiplier:unregistered", "module:new-module.finalMultiplier:unregistered"], why)
-	_check("guard_ok_rows", found.filter(func(f): return f.ok).map(func(f): return f.source) == ["qiyin", "orb_resonance", "enemy_race_bonus"], found)
-	# 豁免到期：期数到了就判失败
-	XTianqiLedger.data()["phase"] = 2
+	# 期二：七印、宝珠共鸣、对某族增伤已归池，再出现乘就失败
+	_check("guard_flags", why == ["weak_challenge.finalMultiplier:pooled", "module.toji.settlementMultiplier:field_not_registered", "new.source.finalMultiplier:unregistered",
+		"qiyin.finalMultiplier:pooled", "orb_resonance.finalMultiplier:pooled", "module:new-module.finalMultiplier:unregistered", "enemy_race_bonus.race:pooled"], why)
+	_check("guard_ok_rows", found.filter(func(f): return f.ok).map(func(f): return f.source) == ["module.raven", "qiyin_derived"], found)
+	# 回退开关关着的那一样：有意回退，守卫不报
+	XTianqiLedger.POOL_ORB = false
+	XTianqiLedger.POOL_QIYIN = false
 	XTianqiLedger.violations.clear()
-	XTianqiLedger.audit(item, a, [{"module": "orb-sets", "ops": [{"op": "mul", "field": "finalMultiplier", "value": 1.3}]}], {}, {})
+	XTianqiLedger.audit(item, a, [{"module": "orb-sets", "ops": [{"op": "mul", "field": "finalMultiplier", "value": 1.3}]}, {"module": "actor-modules", "ops": [{"op": "mul", "field": "finalMultiplier", "value": 1.2}]}],
+		{"actorModules": {"tags": ["qiyin"]}}, {})
+	_check("guard_switch_off_rollback_quiet", XTianqiLedger.violations.is_empty(), XTianqiLedger.violations)
+	XTianqiLedger.POOL_ORB = true
+	XTianqiLedger.POOL_QIYIN = true
+	# 豁免到期：期数到了就判失败（专属模块期四到期）
+	XTianqiLedger.data()["phase"] = 4
+	XTianqiLedger.violations.clear()
+	XTianqiLedger.audit(item, a, [{"module": "actor-modules", "ops": [{"op": "mul", "field": "finalMultiplier", "value": 1.1}]}], {"actorModules": {"tags": ["module.raven"]}}, {})
 	_check("guard_exempt_expires", XTianqiLedger.violations.size() == 1 and XTianqiLedger.violations[0].reason == "exempt_expired", XTianqiLedger.violations)
-	XTianqiLedger.data()["phase"] = 1
+	XTianqiLedger.data()["phase"] = 2
 	# GUARD 关：不记
 	XTianqiLedger.GUARD = false
 	XTianqiLedger.violations.clear()
@@ -328,6 +352,7 @@ func _guard() -> void:
 
 
 # ---- 四、不改数 ----
+## 期一的四个开关（守卫、分桶、明细、MODULE_CAP_ALL）：卡关着时全开全关伤害逐项相等（期二归池开关另在第八节）
 func _set_all(on: bool) -> void:
 	XTianqiLedger.GUARD = on
 	XTianqiLedger.BUCKETS = on
@@ -349,7 +374,8 @@ func _hits(s: XState, ids: Array) -> Array:
 
 
 func _numbers_same() -> void:
-	var actors := [167, 168, 169, 171, 172, 173, 174, 176, 177, 179]
+	# 期一核查 P3：原来漏了 170（镜流）；这里是 11 个模块角色、每人普攻＋前四个模块技能、暴击／不暴击（不是「全部技能」）
+	var actors := [167, 168, 169, 170, 171, 172, 173, 174, 176, 177, 179]
 	var s := _state(actors)
 	for aid in actors:
 		s.actor(int(aid)).change_level(60)
@@ -360,7 +386,18 @@ func _numbers_same() -> void:
 	_set_all(false)
 	var off := _hits(s, actors)
 	_set_all(true)
-	_check("tq_numbers_same", on == off and on.size() > 20, [on.size(), off.size()])
+	_check("tq_numbers_same", on == off and on.size() > 80, [on.size(), off.size()])
+	# 西游档：期二全部归池开关开、关，同一批角色伤害逐项相等（归池只对天启篇存档）
+	var xs := _state(actors, false)
+	for aid in actors:
+		xs.actor(int(aid)).change_level(60)
+	XTianqiLedger.set_all_p2(true)
+	var xon := _hits(xs, actors)
+	XTianqiLedger.set_all_p2(false)
+	var xoff := _hits(xs, actors)
+	XTianqiLedger.set_all_p2(true)
+	_check("xiyou_p2_switches_same", xon == xoff and xon.size() > 80, [xon.size(), xoff.size()])
+	XState.current = s
 	# 西游档：伤害详情不带五池、被动缓存不带 bySource，模块钩子 facts 不带 tags
 	var x := _state([167], false)
 	var xa := x.actor(167)
@@ -453,3 +490,244 @@ func _state_confirm() -> void:
 		if (st.get("effects", []) as Array).any(func(e): return str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) != "noop") and not XTianqiLedger.state_confirm_registered(int(st.id)):
 			fresh.append(int(st.id))
 	_check("state_confirm_all_registered", fresh.is_empty(), fresh)
+	# 期一核查 P2：效果指纹（操作级）——既有状态号的确认阶段效果改了也认得出
+	var fp: Dictionary = XTianqiLedger.data().get("state_confirm_fp", {})
+	var changed := []
+	var n := 0
+	for st in XDB.table("States"):
+		if st is Dictionary:
+			var f := XTianqiLedger.confirm_fingerprint(st)
+			if f != "":
+				n += 1
+				if str(fp.get(str(int(st.id)), "")) != f:
+					changed.append(int(st.id))
+	_check("state_confirm_fingerprints", changed.is_empty() and n == fp.size() and n > 150, [changed.slice(0, 10), n, fp.size()])
+	var probe := {"id": 713, "effects": [{"phase": "confirm", "op": "mul", "cond": "nonzero", "k": 3.0, "round": "ceil"}]}
+	_check("state_confirm_fp_bites", XTianqiLedger.confirm_fingerprint(probe) != str(fp.get("713", "")) and XTianqiLedger.confirm_fingerprint(XDB.rec("States", 713)) == str(fp.get("713", "")))
+	# 运行期守卫：登记过的过 check（期二合规；期四到期就报），没登记的状态号当场报；套装那一步（带 skipTypes）、难度被动等价行不算
+	var s := _state([])
+	var a := s.actor(int(s.battle_slots[0]))
+	var e := XEnemy.new().setup(1, 3, 100.0)
+	var ctx := {"defender": e, "item": XDB.rec("Skills", 1)}
+	XTianqiLedger.QUIET = true
+	XTianqiLedger.violations.clear()
+	var rows := [XDB.rec("States", 713), {"id": 99999, "effects": [{"phase": "confirm", "op": "mul", "cond": "positive", "k": 1.5, "round": "ceil"}]},
+		{"id": 1631, "name": XTianqiLedger.CONFIRM_SYNTH, "effects": [{"phase": "confirm", "op": "mul", "k": 1.5}]},
+		{"id": 713, "effects": [{"phase": "confirm", "op": "mul", "k": 2.0, "skipTypes": [1]}]}]
+	var got := XTianqiLedger.audit_confirm(a, rows, ctx)
+	_check("confirm_runtime_p2", got.size() == 2 and got[0].ok and not got[1].ok and XTianqiLedger.violations.size() == 1 and XTianqiLedger.violations[0].reason == "unregistered", [got, XTianqiLedger.violations])
+	XTianqiLedger.data()["phase"] = 4
+	XTianqiLedger.violations.clear()
+	XTianqiLedger.audit_confirm(a, [XDB.rec("States", 713)], ctx)
+	_check("confirm_runtime_expires", XTianqiLedger.violations.size() == 1 and XTianqiLedger.violations[0].reason == "exempt_expired", XTianqiLedger.violations)
+	XTianqiLedger.data()["phase"] = 2
+	XTianqiLedger.violations.clear()
+	XTianqiLedger.audit_confirm(a, [XDB.rec("States", 713)], {"defender": s.actor(int(s.battle_slots[1])), "item": XDB.rec("Skills", 1)})
+	XTianqiLedger.audit_confirm(e, [{"id": 99999, "effects": [{"phase": "confirm", "op": "mul", "k": 9.0}]}], ctx)
+	_check("confirm_runtime_scope", XTianqiLedger.violations.is_empty(), XTianqiLedger.violations)  # 只管我方打敌人
+	XTianqiLedger.QUIET = false
+
+
+# ---- 八、期二归池清场 ----
+func _calc(a, b, item_id := 1, crit := false) -> Dictionary:
+	return XDamage.calculate(XDB.rec("Skills", item_id), a, b, {"critical": crit, "variance": false})
+
+
+func _with_note(rec: Dictionary, extra: String, f: Callable):
+	var old := str(rec.get("note", ""))
+	rec.note = old + "\n" + extra
+	var out = f.call()
+	rec.note = old
+	return out
+
+
+func _p2_items() -> void:
+	var s := _state([])
+	var a := s.actor(int(s.battle_slots[0]))
+	a.change_level(40)
+	a.refresh_passive()
+	var e := XEnemy.new().setup(1, 3, 100.0)
+	XTianqiLedger.violations.clear()
+	# 1. 技能专属被动 skillPass.rate：进①（normalAdd），skillMultiplier 起点恒 1；只有它一条时数一样
+	var saved: Dictionary = a._passive_cache
+	a._passive_cache = saved.duplicate(true)
+	a._passive_cache.skillPass = {1: {"rate": 0.5}}
+	a._passive_cache.skillTypeDvup = {}
+	var on := _calc(a, e)
+	XTianqiLedger.POOL_SKILL_PASS = false
+	var off := _calc(a, e)
+	XTianqiLedger.POOL_SKILL_PASS = true
+	a._passive_cache = saved
+	_check("p2_skill_pass_pooled", is_equal_approx(float(on.breakdown.row.normal), 1.5) and is_equal_approx(float(on.breakdown.row.residual.skillMultiplier), 1.0) \
+		and is_equal_approx(float(off.breakdown.row.residual.skillMultiplier), 1.5) and on.value == off.value, [on.breakdown.row.normal, off.breakdown.row.residual])
+	# 2. 对某族敌人增伤 <EnemyRaceBo>：种族乘数恒 1，加进③
+	var er := func(): return _with_note(e.data(), "<EnemyRace: 1>", func(): return _with_note(a.data(), "<EnemyRaceBo01: 30%>", func():
+		var r := {"on": _calc(a, e)}
+		XTianqiLedger.POOL_ENEMY_RACE = false
+		r.off = _calc(a, e)
+		XTianqiLedger.POOL_ENEMY_RACE = true
+		return r))
+	var r: Dictionary = er.call()
+	var base := _calc(a, e)
+	_check("p2_enemy_race_pooled", float(r.on.breakdown.row.race) == 1.0 and is_equal_approx(float(r.on.breakdown.row.terminal), float(base.breakdown.row.terminal) + 0.3) \
+		and is_equal_approx(float(r.off.breakdown.row.race), 1.3), [r.on.breakdown.row.race, r.on.breakdown.row.terminal, base.breakdown.row.terminal, r.off.breakdown.row.race])
+	# 3. 原版独立乘区 <SelfPhysRate>：天启篇不读
+	# （天启篇元素牌组把物理 1 映射成 0，普攻这一下不算「物理」，所以直接核 _self_rates 和守卫看到的独立乘区）
+	var sr: Dictionary = _with_note(a.data(), "<SelfPhysRate: 2>\n<SelfElemRate: 3>", func():
+		var o := {"on": XDamage._self_rates(a), "hit": _calc(a, e).value}
+		XTianqiLedger.NO_SELF_RATE = false
+		o.off = XDamage._self_rates(a)
+		XTianqiLedger.NO_SELF_RATE = true
+		return o)
+	_check("p2_self_rate_off", sr.on == [1.0, 1.0] and sr.off == [2.0, 3.0] and sr.hit == base.value, sr)
+	# 4. 宝珠共鸣：天启篇写 finalAdd ＋g；回退／西游写 finalMultiplier ×(1＋g)
+	var orb_on := XModuleRegistry._orb_sets({"facts": {"orbMultiplier": 1.3, "orbPooled": true}}, {})
+	var orb_off := XModuleRegistry._orb_sets({"facts": {"orbMultiplier": 1.3}}, {})
+	var trace_orb: Array = base.moduleTrace.filter(func(t): return str(t.module) == "orb-sets")
+	_check("p2_orb_pooled", orb_on.ops[0].field == "finalAdd" and is_equal_approx(float(orb_on.ops[0].value), 0.3) and orb_off.ops[0].field == "finalMultiplier" \
+		and not trace_orb.is_empty() and trace_orb[0].ops[0].field == "finalAdd", [orb_on, trace_orb])
+	# 5. 种族祝福：出伤乘改 ＋q 进③；只对物理（魔族）的按伤害方式折（对口全额、混合一半、不对口 0）；爆伤、防御率照旧
+	var mk := func(race: int, mode: String, pooled: bool, extra := {}):
+		var f := {"race": race, "q": 0.2, "blood": true, "divine": false, "weapon": true, "hunter": true, "low": true, "counter": true, "pooled": pooled}
+		f.merge(extra, true)
+		return XRaceBattle.build({"facts": {"race": f}, "item": {"damage": {"type": 1}}}, {"kind": "normal", "mode": mode}).ops
+	var sum_add := func(ops: Array, field: String) -> float:
+		var v := 0.0
+		for o in ops:
+			if o.field == field and o.op == "add":
+				v += float(o.value)
+		return v
+	var demon_p: Array = mk.call(3, "physical", true)
+	var demon_m: Array = mk.call(3, "magical", true)
+	var demon_x: Array = mk.call(3, "mixed", true)
+	var demon_old: Array = mk.call(3, "physical", false)
+	var no_mul := demon_p.all(func(o): return not XTianqiLedger.is_mul(o))
+	_check("p2_race_demon", no_mul and is_equal_approx(sum_add.call(demon_p, "finalAdd"), 0.3) and is_equal_approx(sum_add.call(demon_m, "finalAdd"), 0.0) \
+		and is_equal_approx(sum_add.call(demon_x, "finalAdd"), 0.15) and is_equal_approx(sum_add.call(demon_p, "criticalAdd"), 0.1) \
+		and demon_old.filter(func(o): return o.field == "physicalDamageMultiplier").size() == 2, [demon_p, demon_x, demon_old])
+	var hunter: Array = mk.call(1, "physical", true)
+	_check("p2_race_hunter", is_equal_approx(sum_add.call(hunter, "finalAdd"), 0.2) and hunter.any(func(o): return o.field == "physicalDefenseRate") and hunter.all(func(o): return not XTianqiLedger.is_mul(o)), hunter)
+	_check("p2_race_counter_weapon", is_equal_approx(sum_add.call(mk.call(6, "physical", true), "finalAdd"), 0.3) and is_equal_approx(sum_add.call(mk.call(5, "physical", true), "finalAdd"), 0.2))
+	var god_m: Array = mk.call(0, "magical", true)
+	_check("p2_race_god", is_equal_approx(sum_add.call(god_m, "finalAdd"), 0.2) and is_equal_approx(sum_add.call(mk.call(0, "physical", true), "finalAdd"), 0.0), god_m)
+	# 6. 原版套装状态「结果 ×k」（红魔套装 3 件 → 铁头娃II 713 ×2）：打敌人 ＋1 进③、确认阶段那一步对敌人不乘；治疗、打自己人照旧 ×2
+	var b := s.actor(int(s.battle_slots[1]))
+	b.change_level(40)
+	var slots := b.equip_slots()
+	for id in [4184, 4185, 4186]:
+		var eq := XActor.make_equip("armor", id)
+		var at := slots.find(int(eq.etypeId))
+		if at >= 0:
+			b.equips[at] = eq
+	b.read_touch()
+	b.refresh_passive()
+	b.effect_snapshot_valid = false  # 换装在战斗外；测试里当场换，清掉状态效果快照
+	b.effect_lists = {}
+	var has713 := b.states().any(func(st): return int(st.id) == 713)
+	var hit := XDB.rec("Skills", 1)
+	var res := XDamage.calculate(hit, b, e, {"critical": false, "variance": false})
+	var fin_on := XDamage.finish(res, hit, b, e, false)
+	XTianqiLedger.POOL_SUIT = false
+	var res_off := XDamage.calculate(hit, b, e, {"critical": false, "variance": false})
+	var fin_off := XDamage.finish(res_off, hit, b, e, false)
+	XTianqiLedger.POOL_SUIT = true
+	var heal := XStateEffects.run("confirm", b, {"attacker": b, "defender": e, "item": XDB.rec("Skills", 1).merged({"damage": {"type": 3}}, true), "value": -100.0, "execute": false})
+	var self_hit := XStateEffects.run("confirm", b, {"attacker": b, "defender": a, "item": hit, "value": 100.0, "execute": false})
+	_check("p2_suit_confirm", has713 and is_equal_approx(XTianqiLedger.suit_confirm_add(b, e, 1), 1.0) and is_equal_approx(float(res.breakdown.row.terminal), float(res_off.breakdown.row.terminal) + 1.0) \
+		and fin_off > float(res_off.value) * 1.9 and absf(fin_on - float(res.value)) <= 1.0 and heal <= -200.0 and self_hit >= 200.0, [has713, res.breakdown.row.terminal, res_off.breakdown.row.terminal, res.value, fin_on, res_off.value, fin_off, heal, self_hit])
+	# 7. 万灵增元丹类被动（5974～5977）：天启篇不挂开战状态；西游档照挂
+	var p := s.actor(int(s.battle_slots[2]))
+	p.learn_skill(5975)
+	var tags_on := p.battle_start_state_tags().filter(func(t): return int(t[1]) == 1287)
+	XTianqiLedger.NO_PILL_PASSIVES = false
+	var tags_off := p.battle_start_state_tags().filter(func(t): return int(t[1]) == 1287)
+	XTianqiLedger.NO_PILL_PASSIVES = true
+	_check("p2_pill_passive_skipped", tags_on.is_empty() and tags_off.size() == 1, [tags_on, tags_off])
+	# 8. 暴击 ＋50%、敏捷 ×0.8：读 combat_rules（改表就跟着变），关开关回到 legacy_passive，两处数一样
+	var rules: Dictionary = XTianqiBalance.data().combat_rules
+	var legacy: Dictionary = XTianqiBalance.data().legacy_passive
+	_check("p2_combat_rules_same_numbers", float(rules.crit_add) == float(legacy.crit_add) and float(rules.agi_rate) == float(legacy.agi_rate) and float(rules.crit_add) == 0.5)
+	rules.crit_add = 0.4
+	var c_rules := XTianqiNoDiffPassive.xparam_add(a, XTianqiNoDiffPassive.CRIT)
+	XTianqiLedger.COMBAT_RULES = false
+	var c_legacy := XTianqiNoDiffPassive.xparam_add(a, XTianqiNoDiffPassive.CRIT)
+	XTianqiLedger.COMBAT_RULES = true
+	rules.crit_add = 0.5
+	_check("p2_combat_rules_read", is_equal_approx(c_rules, 0.4) and is_equal_approx(c_legacy, 0.5), [c_rules, c_legacy])
+	# 9. 七印：真打一下（守卫不报）在七印测试 xiyou_tianqi_qiyin_effects 里逐条核；这里核「归池后七印不再写单独相乘」的登记口径
+	_check("p2_qiyin_row", XTianqiLedger.check("qiyin", "finalMultiplier") == "pooled" and XTianqiLedger.check("qiyin_derived", "finalMultiplier") == "")
+	# 期二全部开着，上面真打的各下都没报违规
+	_check("p2_real_hits_clean", XTianqiLedger.violations.is_empty(), XTianqiLedger.violations.slice(0, 5))
+
+
+# ---- 九、敌方链路分链验证 ----
+func _enemy_chains() -> void:
+	var s := _state([])
+	var a := s.actor(int(s.battle_slots[0]))
+	var a2 := s.actor(int(s.battle_slots[1]))
+	a.change_level(40)
+	var e := XEnemy.new().setup(1, 3, 100.0)
+	var hit := XDB.rec("Skills", 1)
+	var both := func(f: Callable) -> Array:
+		XTianqiLedger.set_all_p2(true)
+		var x = f.call()
+		XTianqiLedger.set_all_p2(false)
+		var y = f.call()
+		XTianqiLedger.set_all_p2(true)
+		return [x, y]
+	# (1) 元素反射／魔法反射：原版把这一招打回出手者自己——我方打我方，走我方的伤害帧（守卫照管）；七印、套装、对某族增伤只算打敌人，这里一条都不进
+	var refl: Array = both.call(func(): return _calc(a, a2).value)
+	XTianqiLedger.violations.clear()
+	_calc(a, a2)
+	_check("chain_element_reflect", refl[0] == refl[1] and XTianqiLedger.violations.is_empty() and XTianqiLedger.auditing(a), refl)
+	# (2) 敌人状态 React 反伤（381 反伤属性）：数额从这一下我方伤害（已过五池、已去 ×6）来，是敌方出伤；同一个输入值，开关开关一样
+	var react: Array = both.call(func():
+		e.add_state(381)
+		var hp0 := a.hp
+		var v := XStateEffects.run("react", e, {"attacker": a, "defender": e, "item": hit, "value": 1000.0, "execute": false})
+		e.remove_state(381)
+		return [v, hp0 - a.hp])
+	_check("chain_state_react", react[0] == react[1] and not XTianqiLedger.auditing(e), react)
+	# (3) 技能卡状态反弹（XTianqiSkills._reflect）：我方按敌人这一下的伤害比例打回敌人；不过伤害帧、不吃我方池，开关开关一样（要不要进③待设计稿定）
+	var cards := XTianqiSkills.CARDS
+	XTianqiSkills.CARDS = true
+	var card: Array = both.call(func():
+		e.hp = e.mhp
+		XTianqiSkills._reflect(e, a, {"hp": 500.0})
+		return e.hp)
+	XTianqiSkills.CARDS = cards
+	_check("chain_card_reflect", card[0] == card[1], card)
+	# (4) 敌源按生命上限比例状态（中毒 4：hrg −10%）：floor(mhp × hrg × rec)，不过伤害帧、不吃任何池、不跟去 ×6 缩
+	a.add_state(4)
+	var regen: Array = both.call(func(): return floorf(a.mhp * a.hrg * a.rec))
+	a.remove_state(4)
+	_check("chain_enemy_mhp_state", regen[0] == regen[1] and regen[0] < 0.0, regen)
+	# 守卫只管我方出手（敌人打我方不进）
+	_check("chain_guard_enemy_skipped", not XTianqiLedger.auditing(e))
+
+
+## 期一核查遗留（未触发的模块分支）：真打只触发了一部分条件，这里静态扫 11 个模块文件里每一处写单独相乘字段的操作，
+## 字段都得在该文件对应来源的登记行里（真打没触发的渡鸦 355／356、数字强化 68／73、宿傩 250……都在内）。运行期逐条触发的夹具留到期四。
+const MODULE_SRC_FILES := {"raven": ["module.raven"], "number_boost": ["module.number_boost"], "sukuna": ["module.sukuna"], "yomi_jingliu": ["module.yomi_jingliu"],
+	"toji": ["module.toji", "module.toji_incoming"], "garou": ["module.garou"], "yunshang": ["module.yunshang"], "black_flash": ["module.black_flash"],
+	"xuan_battle": ["module.xuan_cast", "module.xuan_incoming", "module.xuan_damage"], "tusu": ["module.tusu"], "liuying": ["module.liuying"]}
+
+func _static_module_scan() -> void:
+	var bad := []
+	var n := 0
+	var re := RegEx.create_from_string("\\{\"op\":\\s*\"(mul|set|add)\",\\s*\"field\":\\s*\"(\\w+)\"")
+	for f in MODULE_SRC_FILES:
+		var text := FileAccess.get_file_as_string("res://modes/xiyou/core/%s.gd" % f)
+		var allowed := {}
+		for tag in MODULE_SRC_FILES[f]:
+			for fld in XTianqiLedger.row(tag).get("fields", []):
+				allowed[fld] = true
+		var ln := 0
+		for line in text.split("\n"):
+			ln += 1
+			for m in re.search_all(line):
+				if XTianqiLedger.MUL_FIELDS.has(m.get_string(2)):
+					n += 1
+					if not allowed.has(m.get_string(2)):
+						bad.append("%s.gd:%d %s" % [f, ln, m.get_string(2)])
+	_check("static_module_fields_registered", bad.is_empty() and n >= 30, [n, bad])

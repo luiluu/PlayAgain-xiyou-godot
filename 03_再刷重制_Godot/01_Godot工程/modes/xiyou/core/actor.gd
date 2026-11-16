@@ -1684,6 +1684,8 @@ func battle_start_state_tags() -> Array:
 	var objs := XTianqiGear.stat_list(equip_list()) + skills()  # 天启篇：普通坐骑原来的开战状态不算
 	for prefix in START_STATE_TAGS:
 		for o in objs:
+			if o.has("stypeId") and XTianqiLedger.skips_passive(int(o.get("id", 0))):
+				continue  # 伤害加成总账期二：万灵增元丹类被动（5974～5977）天启篇不生效
 			for k in o.get("meta", {}):
 				var key := str(k)
 				if key.begins_with(prefix) and key.substr(prefix.length()).is_valid_int():

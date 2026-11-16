@@ -233,7 +233,11 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			normal_add += float(cache.get("skillTypeDvup", {}).get(str(t), 0.0))
 
 	var dmg_type := int(item.damage.type)
-	var initial := {"mode": mode, "kind": kind, "skillMultiplier": maxf(0.0, 1.0 + float(skill_pass.get("rate", 0.0))),
+	var pass_rate := float(skill_pass.get("rate", 0.0))
+	if pass_rate != 0.0 and XTianqiLedger.pool_on("POOL_SKILL_PASS"):  # 伤害加成总账期二：技能专属被动 rate 进①（normalAdd），不再当 skillMultiplier 起点
+		normal_add += pass_rate
+		pass_rate = 0.0
+	var initial := {"mode": mode, "kind": kind, "skillMultiplier": maxf(0.0, 1.0 + pass_rate),
 		"flatSkill": float(skill_pass.get("flat", 0.0)), "normalAdd": normal_add, "criticalAdd": critical_add,
 		"elementAdd": {}, "elementMultiplier": {}, "flatMitigationAdd": {}, "finalAdd": final_add,
 		"finalMultiplier": 1.0, "growthMultiplier": 1.0, "settlementMultiplier": 1.0,
@@ -243,6 +247,8 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 		"resistancePierceByElement": XLiuying.pierce_by_element(item, a, _resistance_pierce_by_element(a))}  # 流萤赤染之茧：火穿透取 max(原值, 33)
 	var registry: XModuleRegistry = options.get("moduleRegistry", XModuleRegistry.standard())
 	var facts := {"orbMultiplier": orb_set_multiplier(item, a) if not dmg_type in [3, 4] else 1.0}
+	if XTianqiLedger.pool_on("POOL_ORB"):
+		facts.orbPooled = true  # 伤害加成总账期二：宝珠共鸣 ＋g 进③（finalAdd），不再乘 finalMultiplier；原版档不带这个键
 	# Extra module facts are explicitly supplied value snapshots. The registered
 	# orb fact belongs to this boundary and cannot be replaced by an option.
 	var extras = XModuleRegistry.value_copy(options.get("moduleFacts", {}))
@@ -250,6 +256,9 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 		return _module_failure({"trace": [], "diagnostics": ["invalid_module_facts"]})
 	facts.merge(extras)
 	facts.merge(registry.capture_facts(item, a, b, options, facts))
+	if facts.get("race") is Dictionary and int(facts.race.get("race", -1)) >= 0 and XTianqiLedger.pool_on("POOL_RACE"):
+		facts.race = facts.race.duplicate()
+		facts.race.pooled = true  # 伤害加成总账期二：种族祝福 ＋q 进③（XRaceBattle.build 读它）；原版档不带
 	var context := {"item": item, "subject": _module_snapshot(a), "target": _module_snapshot(b),
 		"options": {"critical": options.get("critical", false), "preview": options.get("preview", not options.has("random"))},
 		"facts": facts, "operationId": str(options.get("operationId", ""))}
@@ -284,12 +293,18 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	else:
 		defense *= weights[0] * float(frame.physicalDamageMultiplier) + weights[1] * float(frame.magicalDamageMultiplier)
 
+	var race := _race_factors(a, b)
+	if race.multiplier != 1.0 and XTianqiLedger.pool_on("POOL_ENEMY_RACE"):  # 伤害加成总账期二：<EnemyRaceBo> 进③
+		frame.finalAdd = float(frame.finalAdd) + race.multiplier - 1.0
+		race.multiplier = 1.0
+	var suit_add := XTianqiLedger.suit_confirm_add(a, b, dmg_type) if dmg_type in [1, 2, 5, 6] else 0.0
+	if suit_add != 0.0:  # 伤害加成总账期二：原版套装状态确认阶段「结果 ×k」改成 ＋(k−1) 进③（确认阶段那一步对敌人的伤害不再乘）
+		frame.finalAdd = float(frame.finalAdd) + suit_add
 	var critical: bool = options.get("critical", false)
 	var critical_base := 1.5 + critical_multiplier_bonus(a)
 	var critical_mult := maxf(1.0, critical_base + float(frame.criticalAdd)) if critical else 1.0
 	var final_mult := maxf(0.0, 1.0 + float(frame.finalAdd)) * maxf(0.0, float(frame.finalMultiplier))
 	var normal_mult := maxf(0.0, 1.0 + float(frame.normalAdd))
-	var race := _race_factors(a, b)
 	var explicit = options.get("elements", frame.elements)
 	var es: Array = explicit if explicit != null else action_elements(item, a)
 	if frame.noElement: es = [0]
@@ -360,7 +375,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 				best = row
 	if XTianqiLedger.auditing(a):  # 伤害加成总账守卫：单独相乘的口子都要能认出来源（只记、不改数）
 		var self_rates := _self_rates(a)
-		XTianqiLedger.audit(item, a, report.trace, facts, {"skill_pass": maxf(0.0, 1.0 + float(skill_pass.get("rate", 0.0))), "race": race.multiplier, "independent": float(self_rates[0]) * float(self_rates[1])})
+		XTianqiLedger.audit(item, a, report.trace, facts, {"skill_pass": maxf(0.0, 1.0 + pass_rate), "race": race.multiplier, "independent": float(self_rates[0]) * float(self_rates[1])})
 	var settled: float = best.value
 	if options.get("variance", true) and not options.get("preview", false):
 		settled = apply_variance(settled, int(item.damage.variance), options.get("random"))
@@ -517,6 +532,8 @@ static func _independent(a: XBattler, item: Dictionary, e: int, frame: Dictionar
 static func _self_rates(a: XBattler) -> Array:
 	var pr := 1.0
 	var er := 1.0
+	if XTianqiLedger.pool_on("NO_SELF_RATE"):  # 伤害加成总账期二：天启篇不读原版独立乘区
+		return [pr, er]
 	for o in objects(a):
 		var note := str(o.get("note", ""))
 		var p := RegEx.create_from_string("(?i)<SelfPhysRate:\\s*([\\d.]+)>").search(note)

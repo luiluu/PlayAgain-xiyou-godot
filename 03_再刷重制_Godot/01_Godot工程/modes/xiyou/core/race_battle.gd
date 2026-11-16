@@ -616,7 +616,7 @@ static func descriptor() -> Dictionary:
 	return {"id": "race-blessings", "version": "2", "capabilities": ["damage.race_blessings"],
 		"contexts": ["item", "facts"], "hooks": [{"point": "damage.before", "order": 41, "reads": ["facts.race"],
 			"writes": ["healingMultiplier", "magicalDamageMultiplier", "magicalDefenseRate", "physicalDamageMultiplier", "criticalAdd",
-				"finalMultiplier", "physicalDefenseRate", "flatMitigationRate"], "handler": build}]}
+				"finalMultiplier", "physicalDefenseRate", "flatMitigationRate", "finalAdd"], "handler": build}]}
 
 
 ## 宿主取当下的事实：种族、q、行动根（猎物、首次魔法、血契、反攻）、兵器是否匹配
@@ -737,6 +737,8 @@ static func _op(field: String, value: float, operation := "mul") -> Dictionary:
 	return {"op": operation, "field": field, "value": value}
 
 
+## 天启篇伤害加成总账期二（XTianqiLedger.POOL_RACE，facts.race.pooled）：出伤的 ×(1＋x) 一律改成 ＋x 进③（finalAdd）；
+## 只对物理（魔族）／魔法（神族）生效的那几条按这一下的伤害方式折：对口 ＋x、混合 ＋x/2、不对口 0。治疗、防御率、固定减伤、爆伤照旧。
 static func build(context: Dictionary, frame: Dictionary) -> Dictionary:
 	var f: Dictionary = context.facts.get("race", {})
 	var ops := []
@@ -745,27 +747,39 @@ static func build(context: Dictionary, frame: Dictionary) -> Dictionary:
 	var q := float(f.q)
 	var race := int(f.race)
 	var heal := int(context.item.get("damage", {}).get("type", 0)) in [3, 4]
+	var pooled := bool(f.get("pooled", false))
+	var mode := str(frame.get("mode", "physical"))
 	if race == 0:
 		if heal:
 			ops.append(_op("healingMultiplier", 1.0 + q))
 		else:
-			ops.append(_op("magicalDamageMultiplier", 1.0 + q))
+			ops.append(_pooled_op("magicalDamageMultiplier", q, pooled, mode, "magical"))
 			if bool(f.divine):
 				ops.append(_op("magicalDefenseRate", 1.0 - q / 2.0))
 	if heal:
 		return {"ops": ops}
 	if race == 3:
-		ops.append(_op("physicalDamageMultiplier", 1.0 + q))
+		ops.append(_pooled_op("physicalDamageMultiplier", q, pooled, mode, "physical"))
 		ops.append(_op("criticalAdd", q / 2.0, "add"))
 		if bool(f.blood):
-			ops.append(_op("physicalDamageMultiplier", 1.0 + q / 2.0))
+			ops.append(_pooled_op("physicalDamageMultiplier", q / 2.0, pooled, mode, "physical"))
 	if race == 5 and bool(f.weapon):
-		ops.append(_op("finalMultiplier", 1.0 + q))
+		ops.append(_pooled_op("finalMultiplier", q, pooled))
 	if race == 1 and bool(f.hunter):
 		ops.append(_op("physicalDefenseRate", 1.0 - q))
 		ops.append(_op("magicalDefenseRate", 1.0 - q))
 		ops.append(_op("flatMitigationRate", 1.0 - q))
-		ops.append(_op("finalMultiplier", 1.0 + (q if bool(f.low) else q / 2.0)))
+		ops.append(_pooled_op("finalMultiplier", q if bool(f.low) else q / 2.0, pooled))
 	if race == 6 and bool(f.counter):
-		ops.append(_op("finalMultiplier", 1.0 + 1.5 * q))
+		ops.append(_pooled_op("finalMultiplier", 1.5 * q, pooled))
 	return {"ops": ops}
+
+
+## 出伤 ×(1＋x)：归池时改成 finalAdd ＋x（只对某种伤害方式的按 mode 折：对口全额、混合一半、不对口 0）
+static func _pooled_op(field: String, x: float, pooled: bool, mode := "", only := "") -> Dictionary:
+	if not pooled:
+		return _op(field, 1.0 + x)
+	var share := 1.0
+	if only != "":
+		share = 1.0 if mode == only else (0.5 if mode == "mixed" else 0.0)
+	return _op("finalAdd", x * share, "add")

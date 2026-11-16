@@ -190,10 +190,14 @@ func _damage() -> void:
 	var ops := XTianqiAffixBattle.damage_ops(_hit(), a, e)
 	_check("final_add_only_final", _near(_op(ops, "finalAdd"), 0.15), ops)  # 不是本回合第一击、血满、普通敌人
 	_check("crit_add", _near(_op(ops, "criticalAdd"), 0.15), ops)
-	_check("skill_mult", _near(_op(ops, "skillMultiplier"), 0.12), ops)
+	_check("skill_mult", _near(_op(ops, "normalAdd"), 0.12) and _op(ops, "skillMultiplier") == null, ops)  # 伤害加成总账期二：词条技能伤进①（normalAdd）
+	XTianqiLedger.POOL_AFFIX_SKILL = false
+	var ops_old := XTianqiAffixBattle.damage_ops(_hit(), a, e)
+	XTianqiLedger.POOL_AFFIX_SKILL = true
+	_check("skill_mult_switch_off", _near(_op(ops_old, "skillMultiplier"), 0.12) and _op(ops_old, "normalAdd") == null, ops_old)
 	_check("element_fire", _near(_op(ops, "elementAdd", 2), 0.15), ops)
 	ops = XTianqiAffixBattle.damage_ops(_hit(int(a.attack_skill().get("id", 1))), a, e)
-	_check("attack_no_skill_mult", _op(ops, "skillMultiplier") == null, ops)
+	_check("attack_no_skill_mult", _op(ops, "skillMultiplier") == null and _op(ops, "normalAdd") == null, ops)
 	e.elite = true
 	_check("headhunter_elite", _near(_op(XTianqiAffixBattle.damage_ops(_hit(), a, e), "finalAdd"), 0.15 + 0.15))
 	e.elite = false

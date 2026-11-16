@@ -91,6 +91,23 @@ func _final(ops: Array) -> float:
 	return m
 
 
+## 伤害加成总账期二（POOL_QIYIN）：条件增伤 ＋x 进池；这里按「1＋该字段的 add 合计」比，和旧的 finalMultiplier 写法同一个数
+func _pool(ops: Array, field := "finalAdd") -> float:
+	var m := 1.0
+	for o in ops:
+		if str(o.field) == field and str(o.op) == "add":
+			m += float(o.value)
+	return m
+
+
+func _field(ops: Array, field: String) -> float:
+	var m := 1.0
+	for o in ops:
+		if str(o.field) == field and str(o.op) == "mul":
+			m *= float(o.value)
+	return m
+
+
 func _fresh(lg: XBattleLogic) -> void:
 	XTianqiQiyinEffects.start(lg)
 
@@ -153,7 +170,10 @@ func _damage() -> void:
 	_wear(a, _gear_set("hui", 2))
 	_fresh(lg)
 	e.hp = e.mhp * 0.4
-	_check("hui2_low_target", is_equal_approx(_final(XTianqiQiyinEffects.damage_ops(_hit(), a, e)), 1.15), XTianqiQiyinEffects.damage_ops(_hit(), a, e))
+	_check("hui2_low_target", is_equal_approx(_pool(XTianqiQiyinEffects.damage_ops(_hit(), a, e)), 1.15) and _final(XTianqiQiyinEffects.damage_ops(_hit(), a, e)) == 1.0, XTianqiQiyinEffects.damage_ops(_hit(), a, e))
+	XTianqiLedger.POOL_QIYIN = false
+	_check("hui2_switch_off_old_mult", is_equal_approx(_final(XTianqiQiyinEffects.damage_ops(_hit(), a, e)), 1.15), XTianqiQiyinEffects.damage_ops(_hit(), a, e))
+	XTianqiLedger.POOL_QIYIN = true
 	e.hp = e.mhp
 	_check("hui2_full_target", XTianqiQiyinEffects.damage_ops(_hit(), a, e).is_empty())
 	var b: XActor = lg.actors[1]
@@ -162,7 +182,7 @@ func _damage() -> void:
 	_check("bai3_no_debuff", XTianqiQiyinEffects.damage_ops(_hit(), b, e).is_empty())
 	e.buffs[2] = -1
 	e.buffs[3] = -1
-	_check("bai3_two_debuffs", is_equal_approx(_final(XTianqiQiyinEffects.damage_ops(_hit(), b, e)), 1.1))
+	_check("bai3_two_debuffs", is_equal_approx(_pool(XTianqiQiyinEffects.damage_ops(_hit(), b, e)), 1.1))
 	e.buffs[2] = 0
 	e.buffs[3] = 0
 	var c: XActor = lg.actors[2]
@@ -177,7 +197,7 @@ func _damage() -> void:
 	_fresh(lg)
 	var owner = lg.get_meta("xqiyin").artifact_owner
 	_check("artifact_first_in_order", is_same(owner, c), owner)
-	_check("great_sword_taken_up", is_equal_approx(_final(XTianqiQiyinEffects.damage_ops(_hit(), e, c)), 1.15))
+	_check("great_sword_taken_up", is_equal_approx(_field(XTianqiQiyinEffects.damage_ops(_hit(), e, c), "incomingMultiplier"), 1.15) and _final(XTianqiQiyinEffects.damage_ops(_hit(), e, c)) == 1.0)  # 打到我方：期二起记在承伤（靶）上
 	_check("scales_inactive_second", XTianqiQiyinEffects.damage_ops(_hit(), d, e).is_empty())
 	_check("great_sword_kill_extra", XTianqiQiyinEffects.effects(lg, c).has("kill_extra_action"))
 
@@ -196,7 +216,7 @@ func _cost_hp() -> void:
 	_wear(b, [{"kind": "artifact", "key": "scales"}])
 	_fresh(lg)
 	_check("scales_cost_double", int(XTianqiQiyinEffects.cost(b, _hit(), {"mp": 100, "tp": 20}).mp) == 200)
-	_check("scales_skill_dmg", is_equal_approx(_final(XTianqiQiyinEffects.damage_ops(_hit(), b, lg.enemies[0])), 1.33))
+	_check("scales_skill_dmg", is_equal_approx(_pool(XTianqiQiyinEffects.damage_ops(_hit(), b, lg.enemies[0]), "normalAdd"), 1.33))  # 天平进①
 
 
 func _actions() -> void:
@@ -282,7 +302,7 @@ func _actions() -> void:
 	en.recover_all()
 	XTianqiQiyinEffects.begin_action(lg, w, sk)
 	var wops := XTianqiQiyinEffects.damage_ops(sk, w, en)
-	_check("weights_dmg_crit", is_equal_approx(_final(wops), 1.75) and wops.any(func(o): return str(o.field) == "criticalAdd") and XTianqiQiyinEffects.cri(lg, w, 0.1) == 1.0, wops)
+	_check("weights_dmg_crit", is_equal_approx(_pool(wops), 1.75) and wops.any(func(o): return str(o.field) == "criticalAdd") and XTianqiQiyinEffects.cri(lg, w, 0.1) == 1.0, wops)
 	XTianqiQiyinEffects.end_action(lg, w, sk)
 	_check("weights_spent", int(lg.get_meta("xqiyin").units[w].weights) == 0)
 	# 默印 5 件：敌方沉默
