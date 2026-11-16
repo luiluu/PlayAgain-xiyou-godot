@@ -150,6 +150,9 @@ func move(dx: int, dy: int) -> bool:
 
 
 func handle_input(event: InputEvent) -> bool:
+	# T049：键盘真正的 PageUp／PageDown 翻一页（ui_page_up/down 动作＝Q／E／肩键，页面拿它换角色，这里不认）
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode in [KEY_PAGEUP, KEY_PAGEDOWN]:
+		return page(1 if event.physical_keycode == KEY_PAGEDOWN else -1)
 	if event.is_action_pressed("ui_up", true):
 		return move(0, -1)
 	if event.is_action_pressed("ui_down", true):
@@ -254,6 +257,22 @@ static func fit_text(f: Font, text: String, max_w: float, fs: int, min_fs: int) 
 	while n > 1 and f.get_string_size(text.substr(0, n) + "…", HORIZONTAL_ALIGNMENT_LEFT, -1, s).x > max_w:
 		n -= 1
 	return [text.substr(0, n) + "…", s]
+
+
+## T049 翻页：往后（d>0）或往前（d<0）整整一页（visible_rows 行）；到头不动返回 false。
+## move_index＝选中项跟着挪一页（光标留在同一屏位置）；列表没焦点（active＝false）时只翻不挪，免得悄悄换了选中项。
+func page(d: int, move_index := true) -> bool:
+	var vis := visible_rows()
+	var r := clampi(top_row + (vis if d > 0 else -vis), 0, maxi(rows_total() - vis, 0))
+	var delta := r - top_row
+	if delta == 0:
+		return false
+	if move_index and not items.is_empty():
+		select(clampi(index + delta * columns, 0, items.size() - 1))
+		scroll_to(r)   # select 已滚到看得见；再对齐成整页
+	else:
+		scroll_to(r)
+	return true
 
 
 func scroll_to(row: int) -> void:

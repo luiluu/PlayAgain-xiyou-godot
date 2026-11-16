@@ -60,6 +60,7 @@ var mode := "index"          # index / drops
 var drop_index := -1
 var drop_top := 0
 var drop_list: Array = []
+var index_pager: XListPager   # T049 翻页件（新界面关着、战斗内图鉴时为 null）
 var index_win: XMVWindow
 var status_win: XMVWindow
 var drop_win: XMVWindow
@@ -85,11 +86,15 @@ func _ready() -> void:
 	drop_win = XMVWindow.make(self, STATUS_RECT, opacity, _paint_drops)
 	index_win.canvas.blink = true
 	drop_win.canvas.blink = true
+	if not in_battle:
+		index_pager = XListPager.attach(index_win, _pager_step)
 	help_card = XHelpCard.new()
 	help_card.show_frame = false
 	add_child(help_card)
 	index = 0 if in_battle else clampi(last_index, 0, maxi(0, ids.size() - 1))
-	top = XMenu._scroll_to(index, 0, ROWS)
+	top = XMenu._scroll_to(index, 0, index_rows())
+	if index_pager != null:   # T049：重新进图鉴＝翻到上次选中那只所在的那一页
+		top = XListPager.top_for_index(index, index_rows(), ids.size())
 	_show_drops(false)
 	_select_enemy()
 
@@ -328,9 +333,9 @@ static func drop_row_ops(row: Dictionary, y: float) -> Array:
 
 # ---- 绘制 ----
 func _paint_index(c: XMVCanvas) -> void:
-	if index >= top and index < top + ROWS:
+	if index >= top and index < top + index_rows():
 		c.cursor(Rect2(0, (index - top) * LH, c.size.x, LH), mode == "index")
-	for i in range(top, mini(top + ROWS, ids.size())):
+	for i in range(top, mini(top + index_rows(), ids.size())):
 		var y := (i - top) * LH
 		if in_battle:
 			XActorBook.paint_ops(c, [_t(index_name(i), 6, y, INDEX_NAME_W + 40)])
@@ -385,9 +390,27 @@ func _select_enemy() -> void:
 	_refresh()
 
 
+## T049：天启篇新界面开着且列表超一页时少放一行，给翻页件腾地方（见 XListPager.rows_for）
+func index_rows() -> int:
+	return XListPager.rows_for(ROWS, ids.size())
+
+
+## 翻页件的按钮：同键盘 PageUp／PageDown 的通用翻页
+func _pager_step(d: int) -> void:
+	if mode != "index" or ids.is_empty():
+		return
+	var r := XMenu.page(top, index, ids.size(), index_rows(), d)
+	top = r[0]
+	select(r[1])
+	_refresh()
+
+
 func _refresh() -> void:
 	index_win.up_arrow = top > 0
-	index_win.down_arrow = top + ROWS < ids.size()
+	index_win.down_arrow = top + index_rows() < ids.size()
+	if index_pager != null:   # 有翻页件时它自己画页码，底边的下箭头不要
+		index_pager.set_state(top, index_rows(), ids.size())
+		index_win.down_arrow = index_win.down_arrow and not index_pager.visible
 	for w in [index_win, status_win, drop_win]:
 		w.refresh()
 
@@ -405,7 +428,7 @@ func select(i: int) -> void:
 		return
 	index = i
 	XSound.system(0)
-	top = XMenu._scroll_to(index, top, ROWS)
+	top = XMenu._scroll_to(index, top, index_rows())
 	_select_enemy()
 
 
@@ -492,7 +515,7 @@ func _move(d: int, wrap: bool) -> void:
 func _page_jump(d: int) -> void:
 	if mode != "index" or ids.is_empty():
 		return
-	select(clampi(index + d * ROWS, 0, ids.size() - 1))
+	select(clampi(index + d * index_rows(), 0, ids.size() - 1))
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -505,7 +528,7 @@ func _gui_input(event: InputEvent) -> void:
 			cancel()
 		MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP:
 			if mode == "index" and rect.has_point(p):
-				top = clampi(top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0, ids.size() - ROWS))
+				top = clampi(top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0, ids.size() - index_rows()))
 				_refresh()
 			elif mode == "drops" and rect.has_point(p):
 				# Window_EnemyBookItemList.processWheel：只滚窗口、光标不动（ui11）
@@ -517,7 +540,7 @@ func _gui_input(event: InputEvent) -> void:
 			var row := floori((p.y - rect.position.y - XMVWindow.PADDING) / LH)
 			if mode == "index":
 				var i := top + row
-				if row >= 0 and row < ROWS and i < ids.size():
+				if row >= 0 and row < index_rows() and i < ids.size():
 					if i == index:
 						ok()
 					else:
@@ -547,7 +570,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif mode == "index" and XMenu.page_dir(event) != 0:
 		# AB_EnemyBook 的索引窗不接管 pageup／pagedown：走通用翻页
 		XKeyMap.handled(self)
-		var r := XMenu.page(top, index, ids.size(), ROWS, XMenu.page_dir(event))
+		var r := XMenu.page(top, index, ids.size(), index_rows(), XMenu.page_dir(event))
 		top = r[0]
 		select(r[1])
 		_refresh()

@@ -59,6 +59,8 @@ var backdrop: Control
 var layout: XSkinLayout
 var ring: XSkinRingNav
 var list_panel: Panel
+## T049 翻页件（挂在列表面板底边，超过一页才显示）
+var pager: XListPager
 var list: XSkinList
 var card: XSkinCard
 var targets: XSkinTargetList
@@ -112,6 +114,11 @@ func _ready() -> void:
 		item_changed.emit(i))
 	list.activated.connect(_on_list_activated)
 	list_panel.add_child(list)
+	# T049：列表超过一页时，底下的页码换成可点的「‹ 第 a / b 页 ›」
+	pager = XListPager.new()
+	pager.page_step.connect(func(d): list.page(d, list.active))
+	list_panel.add_child(pager)
+	list_panel.resized.connect(_place_pager)
 	# 右：详情牌＋目标列表＋操作菜单
 	card = XSkinCard.new()
 	card.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -174,6 +181,7 @@ func relayout() -> void:
 	list.size = Vector2(cs.x - lx - 8.0, rows * row_height)
 	_place_targets()
 	_place_menu()
+	_place_pager()
 	var view := layout.view_size()
 	if tabs != null:
 		var f := XUiSkin.font("title")
@@ -351,6 +359,14 @@ func _draw_ring_center() -> void:
 		ring.draw_string(body, Vector2(c.x - sw / 2.0, c.y + 34), small, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 
 
+func _place_pager() -> void:
+	if pager == null or list_panel == null:
+		return
+	var s := list_panel.size
+	pager.size = Vector2(minf(XListPager.DEFAULT_SIZE.x, maxf(s.x - 16.0, 120.0)), FOOTER_H - 4.0)
+	pager.position = Vector2((s.x - pager.size.x) / 2.0, s.y - FOOTER_H + 2.0)
+
+
 func footer_text() -> String:
 	if footer != "" or not auto_footer or list == null or not list.scrollable():
 		return footer
@@ -368,7 +384,7 @@ func _draw_list_panel() -> void:
 	if list_title != "":
 		list_panel.draw_string(body, Vector2(XUiSkin.PAD + 8, XUiSkin.PAD + 20), list_title, HORIZONTAL_ALIGNMENT_LEFT, s.x - 48, 20, XUiSkin.GOLD)
 	var ft := footer_text()
-	if ft != "":
+	if ft != "" and not (pager != null and pager.visible and footer == ""):   # 自动页码由翻页件画
 		var fw := body.get_string_size(ft, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
 		list_panel.draw_string(body, Vector2((s.x - fw) / 2.0, s.y - XUiSkin.PAD), ft, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 
@@ -378,9 +394,15 @@ func _process(_delta: float) -> void:
 	if list != null and list.top_row != _last_top:
 		_last_top = list.top_row
 		list_panel.queue_redraw()
+	if pager != null and list != null:
+		pager.set_state(list.top_row, list.visible_rows(), list.rows_total())
+		if pager.visible != _pager_was:
+			_pager_was = pager.visible
+			list_panel.queue_redraw()
 
 
 var _last_top := -1
+var _pager_was := false
 
 
 func currency_pairs() -> Array:

@@ -58,6 +58,8 @@ var top := 0
 var mode := "index"          # index / skills
 var skill_index := -1
 var skill_top := 0
+var index_pager: XListPager   # T049 翻页件（新界面关着时为 null）
+var list_pager: XListPager
 var skill_list: Array = []    # 技能详情页的技能记录
 var index_win: XMVWindow
 var status_win: XMVWindow
@@ -83,6 +85,8 @@ func _ready() -> void:
 	list_win = XMVWindow.make(self, LIST_RECT, XUI.MENU_WINDOW_OPACITY, _paint_list)
 	index_win.canvas.blink = true
 	list_win.canvas.blink = true
+	index_pager = XListPager.attach(index_win, _page)
+	list_pager = XListPager.attach(list_win, _page)
 	help_card = XHelpCard.new()
 	help_card.card_width = HELP_WIDTH
 	help_card.skill_copy = true
@@ -489,9 +493,9 @@ static func js_width(s: String, size: int) -> float:
 
 func _paint_index(c: XMVCanvas) -> void:
 	var names := index_names()
-	if index >= top and index < top + INDEX_ROWS:
+	if index >= top and index < top + index_rows():
 		c.cursor(Rect2(0, (index - top) * LH, c.size.x, LH), mode == "index")
-	for i in range(top, mini(top + INDEX_ROWS, names.size())):
+	for i in range(top, mini(top + index_rows(), names.size())):
 		c.text(names[i], 6, (i - top) * LH, c.size.x - 12)
 
 
@@ -509,9 +513,9 @@ func _paint_header(c: XMVCanvas) -> void:
 
 
 func _paint_list(c: XMVCanvas) -> void:
-	if skill_index >= skill_top and skill_index < skill_top + LIST_ROWS:
+	if skill_index >= skill_top and skill_index < skill_top + list_rows():
 		c.cursor(Rect2(0, (skill_index - skill_top) * LH, c.size.x, LH), mode == "skills")
-	for i in range(skill_top, mini(skill_top + LIST_ROWS, skill_list.size())):
+	for i in range(skill_top, mini(skill_top + list_rows(), skill_list.size())):
 		paint_ops(c, list_row_ops(actor_id(), skill_list[i], (i - skill_top) * LH, _measure))
 
 
@@ -597,11 +601,26 @@ static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: i
 	return [Rect2(Vector2(foot_x - size.x / 2.0, foot_y - size.y), size), src]
 
 
+## T049：天启篇新界面开着且列表超一页时少放一行，给翻页件腾地方（见 XListPager.rows_for）
+func index_rows() -> int:
+	return XListPager.rows_for(INDEX_ROWS, actor_count())
+
+
+func list_rows() -> int:
+	return XListPager.rows_for(LIST_ROWS, skill_list.size())
+
+
 func _refresh() -> void:
 	index_win.up_arrow = top > 0
-	index_win.down_arrow = top + INDEX_ROWS < actor_count()
+	index_win.down_arrow = top + index_rows() < actor_count()
 	list_win.up_arrow = skill_top > 0
-	list_win.down_arrow = skill_top + LIST_ROWS < skill_list.size()
+	list_win.down_arrow = skill_top + list_rows() < skill_list.size()
+	if index_pager != null:   # 有翻页件时它自己画页码，底边的下箭头不要
+		index_pager.set_state(top, index_rows(), actor_count())
+		index_win.down_arrow = index_win.down_arrow and not index_pager.visible
+	if list_pager != null:
+		list_pager.set_state(skill_top, list_rows(), skill_list.size())
+		list_win.down_arrow = list_win.down_arrow and not list_pager.visible
 	for w in [index_win, status_win, header_win, list_win]:
 		w.refresh()
 
@@ -623,7 +642,7 @@ func select(i: int) -> void:
 		return
 	index = i
 	XSound.system(0)
-	top = XMenu._scroll_to(index, top, INDEX_ROWS)
+	top = XMenu._scroll_to(index, top, index_rows())
 	_select_actor()
 
 
@@ -632,7 +651,7 @@ func select_skill(i: int) -> void:
 		return
 	skill_index = i
 	XSound.system(0)
-	skill_top = XMenu._scroll_to(skill_index, skill_top, LIST_ROWS)
+	skill_top = XMenu._scroll_to(skill_index, skill_top, list_rows())
 	_update_help()
 	_refresh()
 
@@ -685,7 +704,7 @@ func _move(d: int, wrap: bool) -> void:
 ## Window_Selectable.cursorPagedown/up
 func _page(d: int) -> void:
 	var n := actor_count() if mode == "index" else skill_list.size()
-	var rows := INDEX_ROWS if mode == "index" else LIST_ROWS
+	var rows := index_rows() if mode == "index" else list_rows()
 	var cur := index if mode == "index" else skill_index
 	var t := top if mode == "index" else skill_top
 	var max_top := maxi(0, n - rows)
@@ -718,9 +737,9 @@ func _gui_input(event: InputEvent) -> void:
 			if rect.has_point(p):
 				var d := 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1
 				if mode == "index":
-					top = clampi(top + d, 0, maxi(0, actor_count() - INDEX_ROWS))
+					top = clampi(top + d, 0, maxi(0, actor_count() - index_rows()))
 				else:
-					skill_top = clampi(skill_top + d, 0, maxi(0, skill_list.size() - LIST_ROWS))
+					skill_top = clampi(skill_top + d, 0, maxi(0, skill_list.size() - list_rows()))
 				_refresh()
 		MOUSE_BUTTON_LEFT:
 			if not rect.has_point(p):
@@ -728,14 +747,14 @@ func _gui_input(event: InputEvent) -> void:
 			var row := floori((p.y - rect.position.y - XMVWindow.PADDING) / LH)
 			if mode == "index":
 				var i := top + row
-				if row >= 0 and row < INDEX_ROWS and i < actor_count():
+				if row >= 0 and row < index_rows() and i < actor_count():
 					if i == index:
 						ok()
 					else:
 						select(i)
 			else:
 				var i := skill_top + row
-				if row >= 0 and row < LIST_ROWS and i < skill_list.size():
+				if row >= 0 and row < list_rows() and i < skill_list.size():
 					select_skill(i)
 
 
