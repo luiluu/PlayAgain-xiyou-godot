@@ -2085,18 +2085,28 @@ static func attack_repeats(u: XBattler, skill: Dictionary, base: int) -> int:
 ## （AgainUseAll＋按技能类型 AgainUseZj（stypeId 1）／AgainUseMf（stypeId 2）＋AgainUse<技能号>）合计，Math.random×100 < 合计时 +1，取整。
 ## 来源同 refreshPassiveCache：装备（178 持剑时剑按翻倍视图，同 stat_equips）＋技能＋状态的备注元数据；物品也算（原版 item.id 照查）。
 ## 原版这层在各 Codex 运行时（渡鸦冥羽、黄泉、云裳双针、流萤）里层，所以这里紧贴 attack_repeats 外面。
-## 只接西游档：天启篇照旧不走这层（只有小猫剑圣 XCat.native_repeats 读，九线来源照停）。敌人的被动缓存没有 atkk／againUse，不加。
+## 天启篇（T063，Kyo D124=B）：只读技能重构改写说明写了再释放的来源（改写稿 note_add 的 22 处＋2071、2356，XTianqiSkills.again_use），
+## 照原版自由掷、不占每回合多 1 次的预算（不调 XTianqiLedger.take_extra）；atkk 和其余原版再释放标签照旧不读（小猫剑圣 XCat.native_repeats 另读，九线来源照停）。技能卡没开（XTianqiSkills.cards_on）时改写稿不生效，这层也不加。
+## 敌人的被动缓存没有 atkk／againUse，不加。
 ## 小猫剑圣自己的四个剑技原版 numRepeats 恒 1（次数由 XCat.native_repeats 按剑段算），不加。
-## 开关 AGAIN_USE＝false 回到 T046 之前（通用出手不读 atkk／AgainUse）。
+## 心钢 10227／10228（XHeartsteel.is_skill）不加：原版那一段 _invoke 是空跑（T046 核查 P2），省一次结算。
+## 开关 AGAIN_USE＝false 回到 T046 之前（通用出手不读 atkk／AgainUse）；TIANQI_AGAIN＝false 回到 T063 之前（天启篇不读）。
 ## 11-16 曾临时关（xiyou_raven_fx 渡鸦施放特效偶尔放两次）；T088 判定不是回归：渡鸦 10137 魂海刻度 <AgainUseMf:15>，原版掷中时单体技能
 ## 施放特效同样放两组（raven_fx_probe again.*），是专项没钉 again_use 这一掷；专项已钉，开回。
 static var AGAIN_USE := true
+static var TIANQI_AGAIN := true
 
 
 func passive_repeats(u: XBattler, skill: Dictionary, n: int) -> int:
-	if not AGAIN_USE or not u is XActor or XTianqiLedger.active() or XCat.casts(u, skill):
+	if not AGAIN_USE or not u is XActor or XCat.casts(u, skill) or XHeartsteel.is_skill(skill):
 		return n
-	var p := passive_again(u, skill, u.stat_equips())
+	var p: Dictionary
+	if XTianqiLedger.active():
+		if not TIANQI_AGAIN:
+			return n
+		p = {"atkk": 0, "again": XTianqiSkills.again_use(u, skill)}
+	else:
+		p = passive_again(u, skill, u.stat_equips())
 	var total := float(n + int(p.atkk))
 	if float(p.again) > 0.0 and _float("again_use") * 100.0 < float(p.again):
 		total += 1.0
@@ -2108,9 +2118,6 @@ func passive_repeats(u: XBattler, skill: Dictionary, n: int) -> int:
 static func passive_again(a, item: Dictionary, equips: Array) -> Dictionary:
 	var atkk := 0
 	var again := 0
-	var stype := int(item.get("stypeId", 0)) if not is_item(item) else 0
-	var by := "AgainUseZj" if stype == 1 else ("AgainUseMf" if stype == 2 else "")
-	var own_key := "AgainUse%d" % int(item.get("id", 0))
 	for o in equips + a.skills() + a.states():
 		if not o is Dictionary or XTianqiLedger.nine_off_source(a, o):
 			continue
@@ -2119,11 +2126,21 @@ static func passive_again(a, item: Dictionary, equips: Array) -> Dictionary:
 			var m := RegEx.create_from_string("(\\d+)").search(str(meta.atkk))
 			if m:
 				atkk += int(m.get_string(1))
-		for k in meta:
-			var key := str(k)
-			if key == "AgainUseAll" or (by != "" and key == by) or key == own_key:
-				again += _parse_int(str(meta[k]))
+		again += again_in(meta, item)
 	return {"atkk": atkk, "again": again}
+
+
+## 一份备注元数据里对这招的 AgainUse 几率：AgainUseAll＋按技能类型 AgainUseZj（stypeId 1）／AgainUseMf（stypeId 2）＋AgainUse<技能号>；物品不分类型
+static func again_in(meta: Dictionary, item: Dictionary) -> int:
+	var stype := int(item.get("stypeId", 0)) if not is_item(item) else 0
+	var by := "AgainUseZj" if stype == 1 else ("AgainUseMf" if stype == 2 else "")
+	var own_key := "AgainUse%d" % int(item.get("id", 0))
+	var again := 0
+	for k in meta:
+		var key := str(k)
+		if key == "AgainUseAll" or (by != "" and key == by) or key == own_key:
+			again += _parse_int(str(meta[k]))
+	return again
 
 
 ## JS parseInt(s, 10)：跳过前导空白，可带正负号，取开头的数字；没有数字为 0（原版 NaN 加进去会让几率变 NaN、永不触发，这里按 0）
@@ -2221,7 +2238,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
 		var times := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, passive_repeats(u, skill, attack_repeats(u, skill, 1))))))
-		times = XTianqiQiyinEffects.repeats(self, u, skill, times)  # dsPassiveSkill 被动 atkk／AgainUse 在渡鸦里层（passive_repeats，只西游档）。天启篇战流派攻击次数 +1。黄泉 numRepeats 包装（也开始新行动）；渡鸦包装在里层、云裳双针 ×2 在外层
+		times = XTianqiQiyinEffects.repeats(self, u, skill, times)  # dsPassiveSkill 被动 atkk／AgainUse 在渡鸦里层（passive_repeats；天启篇只读改写稿写的再释放）。天启篇战流派攻击次数 +1。黄泉 numRepeats 包装（也开始新行动）；渡鸦包装在里层、云裳双针 ×2 在外层
 		var list := []
 		for t in _guided_targets(u, skill, chosen, forcing):
 			for i in range(maxi(1, times)):
