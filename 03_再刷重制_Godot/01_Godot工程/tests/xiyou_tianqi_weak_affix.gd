@@ -493,6 +493,10 @@ func _horseman_and_hunzi() -> void:
 		XTianqiWeakAffix.push_kind(lg, XTianqiWeakAffix.COUNTER)
 		XTianqiHorsemen.hp_damage(lg, me, e, 1.0)
 		_check("hunzi_counter_no_mark", not XTianqiHorsemen.fight(lg).hit_knight.has(me))
+		XTianqiWeakAffix.COUNTER_NO_HUNZI_MARK = false  # 回退：原生反击打混子照旧记
+		XTianqiHorsemen.hp_damage(lg, me, e, 1.0)
+		_check("hunzi_counter_rollback_marks", bool(XTianqiHorsemen.fight(lg).hit_knight.get(me, false)))
+		XTianqiWeakAffix.COUNTER_NO_HUNZI_MARK = true
 		XTianqiWeakAffix.root_end(lg)
 		XTianqiWeakAffix.root_end(lg)
 	lg.remove_meta(XTianqiHorsemen.META)
