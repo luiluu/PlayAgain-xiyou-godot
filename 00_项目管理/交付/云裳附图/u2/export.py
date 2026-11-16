@@ -1,7 +1,7 @@
 from pathlib import Path
 from PIL import Image
 import json,shutil
-P=Path(__file__).parent;R=Path('/Users/kyo/.codex/generated_images/01a1e678-5c12-79f3-9540-014e18747978')
+P=Path(__file__).parent;GAME=P.parents[3]/'03_再刷重制_Godot/01_Godot工程/content/yunshang_v2/u2';R=Path('/Users/kyo/.codex/generated_images/01a1e678-5c12-79f3-9540-014e18747978')
 for dst,src in [('battle0','a3e7e8c5-0116-4445-9773-c789572290df'),('battle1','1dffec05-52d8-4366-aee3-66061b77dd77'),('battle2','89e5d995-25c6-4a6a-be5c-881dbce9e1e5'),('walk','76e1e075-8769-4484-8ec5-3538d3c9b4ef')]:
  if not (P/f'{dst}_raw.png').exists():shutil.copyfile(R/f'exec-{src}.png',P/f'{dst}_raw.png')
 def cut(name,cols,rows,cuts=None):
@@ -37,9 +37,9 @@ def resize(im,s):
 for g in range(3):
  for k in range(18):
   idx=g*18+k;m=g*6+(k//6)*2+(k%6)//3;f=k%3;im=resize(frames[idx],scale);tile=Image.new('RGBA',(64,64));tile.alpha_composite(im,((64-im.width)//2,62-im.height));sheet.alpha_composite(tile,((m//6*3+f)*64,m%6*64));preview.alpha_composite(tile,((k%6)*64,(g*3+k//6)*64));report['sv'].append({'motion':m,'frame':f,'bounds':tile.getbbox()});rendered.append(tile)
-sheet.save(P/'Yunshang_SV_u2.png');preview.resize((1536,2304),Image.Resampling.NEAREST).save(P/'SV_all_4x.png')
+sheet.save(GAME/'Yunshang_SV_u2.png');preview.resize((1536,2304),Image.Resampling.NEAREST).save(P/'SV_all_4x.png')
 a=Image.open(P/'walk_raw.png');walk=cut('walk',3,4,[0,350,700,1050,a.height]);s=46/walk[1].height;out=Image.new('RGBA',(144,192))
 for i,im in enumerate(walk):
  im=resize(im,s);out.alpha_composite(im,((i%3)*48+(48-im.width)//2,(i//3)*48+48-im.height))
-out.save(P/'$Yunshang_u2.png');out.resize((576,768),Image.Resampling.NEAREST).save(P/'walk_4x.png')
+out.save(GAME/'$Yunshang_u2.png');out.resize((576,768),Image.Resampling.NEAREST).save(P/'walk_4x.png')
 report['walk_scale']=s;report['idle_height']=report['sv'][4]['bounds'][3]-report['sv'][4]['bounds'][1];(P/'validation.json').write_text(json.dumps(report,indent=2));print('SV scale',scale,'idle height',report['idle_height'],'max width',max(x['bounds'][2]-x['bounds'][0] for x in report['sv']))

@@ -3,8 +3,9 @@ from PIL import Image, ImageFilter, ImageDraw
 from pathlib import Path
 import json, shutil
 P=Path(__file__).parent
-S=Path('/Users/kyo/Documents/再刷项目资料库/03_再刷重制_Godot/01_Godot工程/modes/xiyou/generated/img')
-G=P.parent
+ENGINE=P.parents[2]/'03_再刷重制_Godot/01_Godot工程'
+S=ENGINE/'modes/xiyou/generated/img'
+G=ENGINE/'content'
 RAW=Path('/Users/kyo/.codex/generated_images/01a1e678-5c12-79f3-9540-014e18747978')
 (P/'raw').mkdir(exist_ok=True)
 for name,src in [('battle','exec-3f532907-0206-45ed-97a6-8d5223e192fd.png'),('walk','exec-63c36f16-04ae-4828-9ac6-04d76eb02770.png'),('face','exec-b4dde7c5-e0fb-45f5-a0d8-2a08fb3ae1d3.png')]:

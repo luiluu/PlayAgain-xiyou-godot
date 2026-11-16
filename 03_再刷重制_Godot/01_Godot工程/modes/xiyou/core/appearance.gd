@@ -285,7 +285,7 @@ static func profile(f: Dictionary, motion: String) -> Dictionary:
 		return {}
 	# 新图只在实际加载原生64格图时用1:1；旧图继续旧归一。
 	if key == "Yunshang_u2":
-		return {"size": Vector2(64,64), "bounds": Rect2(13,2,37,60), "multi": false, "scale": 1.0, "native_pixels": true}
+		return {"size": Vector2(64,64), "bounds": Rect2(13,2,38,60), "multi": false, "scale": 1.0, "native_pixels": true}
 	var multi := not (f.get("rect", Rect2()) as Rect2).has_area()
 	var p: Array = profile_of(key)
 	if p.is_empty():

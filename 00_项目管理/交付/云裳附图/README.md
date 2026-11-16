@@ -47,3 +47,7 @@
 `build.py` 成功运行，逐格透明外接框检查通过，输出见 validation.json。人工查看行走4倍与五人并排图；待跨模型美术审查与 Kyo 拍板，未自标定稿。无游戏代码修改，不跑Godot全量，工程逻辑与接线交总装后续处理。生成产物只在本目录，旧素材保持原样。
 
 工具快速回归22项全部通过（102秒）；尺寸、SV非空六格、二值alpha专项断言通过，git暂存差异空白检查通过。
+
+## 合前清理后的路径
+
+本目录位于游戏工程外，仅存放审样、母图、预览、截图和离线脚本。运行时仅保留 `content/yunshang_v2/Yunshang_Face_u1.png`、`content/yunshang_v2/u2/$Yunshang_u2.png`、`content/yunshang_v2/u2/Yunshang_SV_u2.png` 及对应导入元数据（路径相对于 Godot 工程）。export.py 从本目录母图生成预览，并把两张运行时图写回上述工程目录；build.py 仅重建历史u1审样，输出留在附图目录，不写运行时。

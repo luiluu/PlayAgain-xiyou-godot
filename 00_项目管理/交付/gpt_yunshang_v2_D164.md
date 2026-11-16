@@ -4,10 +4,20 @@
 
 已补齐18组三帧SV、长裙四向行走，54帧统一倍率；待机与伸梭各帧均60px，最大轮廓宽61px。新图仅Yunshang启用1.0归一和显式NEAREST，关闭可选crisp柔边；旧逐帧与旧归一保留、XYunshang.ART=false回退。新图优先查找覆盖行走/SV/头像，处理了旧sv备注二次覆盖，进阶窗口新图不再按旧192格缩小。
 
-实机证据：`03_再刷重制_Godot/01_Godot工程/content/yunshang_v2/u2/screenshots/battle_phone.png`（桌面Godot真实1280×720渲染，云裳/米拉/五条悟同屏，不是安卓设备截图）。旁边render_evidence.json记录云裳scale=1/filter=NEAREST；美术与生成提示见u2/README.md，动作完整预览与统一倍率GIF同目录。
+实机证据：`00_项目管理/交付/云裳附图/u2/screenshots/battle_phone.png`（桌面Godot真实1280×720渲染，云裳/米拉/五条悟同屏，不是安卓设备截图）。旁边render_evidence.json记录云裳scale=1/filter=NEAREST；美术与生成提示见u2/README.md，动作完整预览与统一倍率GIF同目录。
 
 验证：先红0/164；接入专项168/168，真实战斗截图模式169/169；八项相关回归全部通过（70秒）：xiyou_yunshang_art、xiyou_sv_smooth、xiyou_appearance、xiyou_actor_looks、xiyou_mira_art、xiyou_actor_advanced、xiyou_actor_book、xiyou_battle_pixel。语法988文件0问题；工具快速回归22项通过（108秒）；54格非空、二值alpha、尺寸及暂存空白检查通过。旧SV平滑专项显式关闭新图开关测冻结旧路径，另用新专项守新图，不删除旧断言。选测器对新增美术目录保守报全量，本车道只跑直接影响的八专项，未跑全量/oracle（无伤害、存档或掉落改动）。
 
 待交叉核查：appearance.gd、battler_sprite.gd、xdb.gd、yunshang.gd、actor_advanced.gd与新/旧专项；重点看备注覆盖、旧图回退和换装卡不被错误接管。需要Kyo审原大人物大小、裙长与完整动作清晰度，当前未自行定稿。总装维护交接板/变更记录并分配开发编号；本分支可供核查合并，未推送或改共用登记。
 
 可优化：新美术目录加入选测对照的资源路径映射，避免纯图触发整轮；属于工具车道范围，本单未动选测器。
+
+## 合前清理（T113）
+
+游戏 content/yunshang_v2 仅保留运行时加载的头像、u2行走、u2完整SV三张图及各自.import（共6文件）；历史u1、母图、参考、4x预览、GIF、截图、验证JSON和离线脚本整体迁到 `00_项目管理/交付/云裳附图/`，包括对应历史.import。两个README说明迁后位置；export.py从附图母图读入、把运行时两张图写回工程，build.py仍只重建历史审样且引用本工作树素材。没有预览图留在游戏包。
+
+图鉴优先读新云裳SV，缺图或ART=false仍读旧逐帧；新图按原大整数矩形并显式NEAREST绘制。归一框宽37扩到38，中心落整数像素，战斗offset.x从0.5变0；未修改贴图像素。图鉴窗口截图为 `云裳附图/u2/screenshots/actor_book_174.png`，桌面Godot真实渲染，已目视确认新图；不代表安卓实机验收。
+
+验证：xiyou_yunshang_art 171/171（新增整数偏移、新图鉴路径及采样断言），xiyou_sv_smooth 140/140；图鉴冻结参照关闭ART以保持旧路径断言，新图由云裳专项守护。语法988文件0问题；工具快速回归22项通过109秒；diff空白检查通过。选测对未知素材路径仍建议整轮，沿用原交付按外观影响面与派单仅跑专项的说明，无战斗规则改变、不跑oracle。
+
+待交叉核查：本节改到 appearance.gd、actor_book.gd，以及两个专项（旧参照开关隔离、新图断言）；请重点复核新图回退、整数中心和附图不入包。未自行标核查完成。
