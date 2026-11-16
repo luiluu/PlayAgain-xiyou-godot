@@ -155,6 +155,7 @@ func _run() -> void:
 		# 第一轮：原版行为，逐项一致
 		XDungeon.restore_difficulty = false
 		XDungeon.restore_hang_up = false
+		XDungeon.inside_repair = false   # T055：原版变量 21 可以是负数（ab* 瞬移进深渊再出口就是 −1），第一轮照原版
 		for c in oracle.cases:
 			var got := await _run_case(c, oracle.setup, host)
 			for i in c.steps.size():
@@ -171,6 +172,7 @@ func _run() -> void:
 		# 第二轮：O-038／O-040
 		XDungeon.restore_difficulty = true
 		XDungeon.restore_hang_up = true
+		XDungeon.inside_repair = true
 		for c in oracle.cases:
 			var got := await _run_case(c, oracle.setup, host)
 			_check_optimized(c, got)
@@ -180,6 +182,7 @@ func _run() -> void:
 func _finish() -> void:
 	XDungeon.restore_difficulty = true
 	XDungeon.restore_hang_up = true
+	XDungeon.inside_repair = true
 	DirAccess.remove_absolute(XConfig.path_override)
 	DirAccess.remove_absolute(XSave.dir())
 	MVInterpreter.max_steps = 0

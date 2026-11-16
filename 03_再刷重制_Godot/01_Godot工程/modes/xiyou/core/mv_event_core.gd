@@ -95,6 +95,8 @@ var casino_draw = null
 var casino_root := false
 ## 抽奖类公共事件（XLotteryRework.EVENTS）里运行时为该事件号，子游标跟着带上；不在抽奖里为 0
 var lottery_id := 0
+## T055：本游标（存档公共事件 1 的子游标）里的存档要按这些变量的偏移写 {变量: 加多少}，见 XDungeon.save_bias；平时为空
+var save_bias := {}
 
 
 func state() -> XState:
@@ -330,6 +332,7 @@ func _execute(c: Dictionary):
 					_child.pending_lines = pending_lines
 					_child.receipt = receipt
 					_child.casino_draw = casino_draw
+					_child.save_bias = XDungeon.save_bias(list, index, ce_id)
 					return {"kind": "child"}
 		118:
 			pass

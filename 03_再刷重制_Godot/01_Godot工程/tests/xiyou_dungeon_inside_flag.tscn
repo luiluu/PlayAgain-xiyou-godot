@@ -1,0 +1,4 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://tests/xiyou_dungeon_inside_flag.gd" id="1"]
+[node name="DungeonInsideFlagTest" type="Node"]
+script = ExtResource("1")
