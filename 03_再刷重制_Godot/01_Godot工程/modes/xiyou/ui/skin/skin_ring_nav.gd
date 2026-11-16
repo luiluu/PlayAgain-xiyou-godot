@@ -774,6 +774,8 @@ static func _ribbon_build(pts: PackedVector2Array, widths: PackedFloat32Array, c
 	var n := pts.size()
 	var left := PackedVector2Array()
 	var right := PackedVector2Array()
+	if n < 2:
+		return {"left": left, "right": right, "cols": cols}
 	for k in n:
 		var d0 := (pts[k] - pts[maxi(k - 1, 0)]).normalized() if k > 0 else (pts[1] - pts[0]).normalized()
 		var d1 := (pts[mini(k + 1, n - 1)] - pts[k]).normalized() if k < n - 1 else d0
@@ -816,7 +818,7 @@ func _draw_styled_link(c: Vector2, path: Array, ri: int, si: int, st: Dictionary
 func link_data(c: Vector2, path: Array, ri: int, si: int, st: Dictionary, hot: bool, li := 0) -> Dictionary:
 	var sr := item_scale(ri) if ri >= 0 else 1.0
 	var ss := item_scale(si) if si >= 0 else 1.0
-	var key := [c, hash(path), ri, si, sr, ss, orb_radius, hot, st.hash()]
+	var key := [c, hash(path), ri, si, sr, ss, orb_radius, hot, st.hash(), bool(sty("link_curve"))]
 	var data: Dictionary = _link_cache.get(li, {})
 	if data.is_empty() or data.key != key:
 		data = _build_styled_link(c, path, sr, ss, st, hot)
