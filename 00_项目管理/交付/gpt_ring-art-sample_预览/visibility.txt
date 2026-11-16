@@ -1,0 +1,2 @@
+16:9 visible annulus DEFAULT/HEI/MO: positive luma sum=[97640, 401608, 120420]; pixels delta>20=[1514, 4137, 1148]
+20:9 visible annulus DEFAULT/HEI/MO: positive luma sum=[97104, 400000, 117802]; pixels delta>20=[1525, 4083, 1101]

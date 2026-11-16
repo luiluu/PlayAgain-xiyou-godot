@@ -28,3 +28,22 @@ for mode in ['16','20']:
    x,y=it['pos'];others+=overlaps(Image.open(root/'ring_orb_frame.png'),x+ox,y+oy,it['scale'],it['name'])
  print(f'{mode}x9: center vs all 13 label rectangles={center}; orb vs other label rectangles={others}; own orb labels rendered above frame per spec')
  assert center==others==0
+# Round 2 hard envelope assertions and corner brightness, not just a printed range.
+for name,n in [('ring_band_hei',288),('ring_band_mo',288),('ring_center_death',96),('ring_orb_frame',56)]:
+ im=Image.open(root/(name+'.png'));assert im.size==(n,n)
+ corners=[0]*4
+ for y in range(n):
+  for x in range(n):
+   R,G,B,A=im.getpixel((x,y))
+   if not A:continue
+   dx=x+.5-n/2;dy=y+.5-n/2;r=math.hypot(dx,dy);near=math.hypot(max(abs(dx)-.5,0),max(abs(dy)-.5,0));far=math.hypot(abs(dx)+.5,abs(dy)+.5)
+   if n==288:assert near>=100 and far<=138
+   if n==96:
+    assert near>=33 and far<=46
+    if far>38:assert dy<0 and abs(math.degrees(math.atan2(dx,-dy)))<=15
+   if n==56:
+    assert near>=21 and far<=28
+    if far>24:assert abs(abs(dx)-abs(dy))<=2.6
+    if r>24 and R>=180:corners[(dx>0)+2*(dy>0)]+=1
+ if n==56:print('Corner bright pixels beyond r24:',corners);assert min(corners)>=10
+print('Round 2: dimensions, full-square envelopes, 12h angular limit and bright corner counts PASS')

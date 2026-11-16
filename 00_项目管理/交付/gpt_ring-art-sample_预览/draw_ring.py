@@ -1,50 +1,58 @@
-from PIL import Image,ImageDraw
+"""T030 round 2: native binary pixels; radii/colors follow Carbon review."""
+from PIL import Image, ImageDraw
 from pathlib import Path
-import math,json,collections
-root=Path('03_再刷重制_Godot/01_Godot工程/content'); out=root/'tianqi/ring_style';out.mkdir(parents=True,exist_ok=True)
+import math,json
+root=Path('03_再刷重制_Godot/01_Godot工程/content/tianqi/ring_style')
 proof=Path('00_项目管理/交付/gpt_ring-art-sample_预览')
-def palette(path,targets):
- im=Image.open(root/path).convert('RGBA'); colors=collections.Counter(tuple(round(p[i]*p[3]/255+24*(1-p[3]/255)) for i in range(3)) for p in im.getdata() if p[3]>20)
- return [min(colors,key=lambda c:sum((c[i]-t[i])**2 for i in range(3))) for t in targets]
-hei=palette('tianqi/qiyin/circles/hei.png',[(112,80,40),(180,138,65),(244,209,124)])
-mo=palette('tianqi/qiyin/circles/mo.png',[(95,77,113),(166,137,183)])
-death=palette('tianqi/qiyin/badges_128/death.png',[(38,52,72),(83,112,145),(172,189,192)])
-print('PALETTES',hei,mo,death)
+pal={'hei':[(34,24,15),(140,102,48),(180,139,65),(245,209,124),(196,154,76),(205,164,84)],'mo':[(38,28,48),(206,178,218),(170,135,179),(142,110,156)],'death':[(46,52,68),(96,114,152),(192,196,198),(136,150,178)]}
+def bounds(dx,dy):
+ return math.hypot(max(abs(dx)-.5,0),max(abs(dy)-.5,0)),math.hypot(abs(dx)+.5,abs(dy)+.5)
 for name,n in [('ring_band_hei',288),('ring_band_mo',288),('ring_center_death',96),('ring_orb_frame',56)]:
- im=Image.new('RGBA',(n,n)); p=im.load()
+ im=Image.new('RGBA',(n,n));p=im.load();S=set()
+ if n==56:
+  S={(x,y) for y in range(n) for x in range(n) if (lambda b:b[0]>=21 and b[1]<=24)(bounds(x+.5-n/2,y+.5-n/2))}
  for y in range(n):
   for x in range(n):
-   dx=x+.5-n/2;dy=y+.5-n/2;r=math.hypot(dx,dy);a=math.atan2(dy,dx);c=None
-   if name=='ring_band_hei':
-    if 110.5<=r<=112.5:c=hei[1 if dy>0 else 2]
-    if 118<=r<=119.5:c=hei[0]
-    # Continuous shallow chevron ribbon: no separate ticks or dots.
-    tri=abs(((a/math.tau*48)%1)*2-1)
-    if 123<=r<=124.5 or 130<=r<=131.5:c=hei[1]
-    if abs(r-(125+4*tri))<.7:c=hei[0]
-   elif name=='ring_band_mo':
-    if 111<=r<=112.3:c=mo[0 if dy>0 else 1]
+   dx=x+.5-n/2;dy=y+.5-n/2;r=math.hypot(dx,dy);a=math.atan2(dy,dx);near,far=bounds(dx,dy);c=None
+   if name=='ring_band_mo' and 109.5<=r<=114.5:
+    c=pal['mo'][0]
+    if 110.6<=r<=113.4:c=pal['mo'][1 if dy < -25 else 2 if dy<75 else 3]
+   elif name=='ring_band_hei':
+    if 109.5<=r<=114:
+     c=pal['hei'][0]
+     if 110.5<=r<=113:c=pal['hei'][3 if dy<0 else 4]
+    if 120.5<=r<=131.5:
+     c=pal['hei'][0]
+     if r<=122.2:c=pal['hei'][2]
+     if r>=129.8:c=pal['hei'][3 if dy<0 else 2]
+     k=round(a/math.tau*60);delta=abs(a-k*math.tau/60)
+     if delta*r<=.85 and 122.2<=r<=129.8:
+      if k%5==0:c=pal['hei'][3 if dy<0 else 5]
+      elif r>=126:c=pal['hei'][1]
    elif name=='ring_center_death':
-    if 33<=r<=37.5:c=death[0]
-    if 33<=r<=34 or 36<=r<=37:c=death[1 if dy>0 else 2]
-    # Upright sword: the death badge's blade and crossguard silhouette.
-    if dy<-35 and r<=46 and abs(math.degrees(math.atan2(dx,-dy)))<=15:
-     if abs(dx)<=1.5 or (-40.5<=dy<=-38.5 and abs(dx)<=7):c=death[2]
-     if abs(dx)<=.5 and dy<-37:c=death[1]
-   else:
-    if 21<=r<=24:c=(95,95,95)
-    if 21<=r<=22 or 23<=r<=24:c=(190,190,190) if dy<0 else (126,126,126)
-    if 23<=r<=28 and abs(abs(dx)-abs(dy))<2.2:c=(155,155,155) if abs(abs(dx)-abs(dy))<.8 else (72,72,72)
-   if c:
-    # Keep the entire pixel square inside the prescribed radial envelope.
-    near=math.hypot(max(abs(dx)-.5,0),max(abs(dy)-.5,0));far=math.hypot(abs(dx)+.5,abs(dy)+.5)
-    inner=100 if n==288 else (33 if n==96 else 21)
-    outer=138 if n==288 else (38 if n==96 and dy>=-35 else 46 if n==96 else 24 if abs(abs(dx)-abs(dy))>=2.2 else 28)
-    if near>=inner and far<=outer:p[x,y]=(*c,255)
- im.save(out/(name+'.png'))
-# asset sheet enlarged with nearest neighbor only
+    if near>=33 and far<=38:
+     c=pal['death'][0] if r>36.8 else pal['death'][1]
+     if r<=34.4 or 35.6<=r<=36.6:c=pal['death'][2 if dy<0 else 3]
+    widths={3:2,4:2,5:4,6:4,7:4,8:6,9:6,10:10,11:10}
+    if y in widths and abs(dx)<widths[y]/2:
+     w=widths[y];edge=abs(dx)>w/2-1
+     c=(42,48,64) if edge and y in (5,10,11) else (181,182,180) if edge else (98,118,158)
+     if y in (6,7):c=(205,208,210) if edge else (120,140,178)
+     if y==3:c=(222,226,228)
+     if y==4:c=(181,182,180)
+   elif n==56:
+    if (x,y) in S:
+     outside=inside=False
+     for xx,yy in [(x-1,y),(x+1,y),(x,y-1),(x,y+1)]:
+      bn,bf=bounds(xx+.5-28,yy+.5-28);outside|=bf>24;inside|=bn<21
+     v=(215 if dy<0 else 145) if outside else (165 if dy<0 else 115) if inside else 95;c=(v,)*3
+    if abs(abs(dx)-abs(dy))<=2.6 and r>=23 and far<=28:
+     # One-pixel silhouette border, bright wings and diagonal spine.
+     v=56 if abs(abs(dx)-abs(dy))>1.6 and r>26 else 235 if abs(abs(dx)-abs(dy))<.6 else 185
+     c=(v,)*3
+   if c:p[x,y]=(*c,255)
+ im.save(root/(name+'.png'))
 sheet=Image.new('RGB',(1000,650),'#1d2028');d=ImageDraw.Draw(sheet)
 for name,pos in [('ring_band_hei',(20,30)),('ring_band_mo',(350,30)),('ring_center_death',(700,40)),('ring_orb_frame',(740,330))]:
- im=Image.open(out/(name+'.png'));s=2 if im.width<100 else 1;im=im.resize((im.width*s,im.height*s),Image.Resampling.NEAREST);sheet.paste(im,pos,im);d.text((pos[0],pos[1]-18),name,fill='white')
-sheet.save(proof/'assets_nearest.png')
-(proof/'palette.json').write_text(json.dumps({'hei':hei,'mo':mo,'death':death},indent=2))
+ im=Image.open(root/(name+'.png'));s=2 if im.width<100 else 1;im=im.resize((im.width*s,im.height*s),Image.Resampling.NEAREST);sheet.paste(im,pos,im);d.text((pos[0],pos[1]-18),name,fill='white')
+sheet.save(proof/'assets_nearest.png');(proof/'palette.json').write_text(json.dumps(pal,indent=2))
