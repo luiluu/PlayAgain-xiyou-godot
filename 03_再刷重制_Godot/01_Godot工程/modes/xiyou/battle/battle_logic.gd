@@ -2081,7 +2081,7 @@ static func attack_repeats(u: XBattler, skill: Dictionary, base: int) -> int:
 	return floori(base + u.attack_times_add()) if u.is_attack(skill) else base
 
 
-## dsPassiveSkill 的 Game_Action.numRepeats 包装（T046，O-待定）：MV 本体之后加被动 atkk，再把 AgainUse 几率
+## dsPassiveSkill 的 Game_Action.numRepeats 包装（T046，O-547）：MV 本体之后加被动 atkk，再把 AgainUse 几率
 ## （AgainUseAll＋按技能类型 AgainUseZj（stypeId 1）／AgainUseMf（stypeId 2）＋AgainUse<技能号>）合计，Math.random×100 < 合计时 +1，取整。
 ## 来源同 refreshPassiveCache：装备（178 持剑时剑按翻倍视图，同 stat_equips）＋技能＋状态的备注元数据；物品也算（原版 item.id 照查）。
 ## 原版这层在各 Codex 运行时（渡鸦冥羽、黄泉、云裳双针、流萤）里层，所以这里紧贴 attack_repeats 外面。

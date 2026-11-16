@@ -1,5 +1,5 @@
 extends Node
-## 被动再释放／攻击次数（T046，O-待定 XBattleLogic.AGAIN_USE）：dsPassiveSkill 的 Game_Action.numRepeats 包装接进西游档通用出手。
+## 被动再释放／攻击次数（T046，O-547 XBattleLogic.AGAIN_USE）：dsPassiveSkill 的 Game_Action.numRepeats 包装接进西游档通用出手。
 ## 参照 mv_oracle/again_use_probe.cjs（夹具 tests/fixtures/again_use_oracle.json）：角色 1 摆好技能／状态／装备后，
 ## 普攻 1、战技 9、魔法 51、物品 1 在一串固定随机数下的 numRepeats。
 ## 一、逐例逐随机数比 passive_repeats(attack_repeats(...))；MV 本体 attack_repeats 照旧。
