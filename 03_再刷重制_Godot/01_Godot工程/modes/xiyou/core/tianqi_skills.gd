@@ -37,6 +37,7 @@ static var _state_recs: Dictionary = {}
 static var _tier: Dictionary = {}  # int 角色号 → 名单档位（含「不开放」）
 static var _gear: Dictionary = {}  # "armor:底号"／"weapon:底号" → 专属装备改写规格
 static var _gear_cache: Dictionary = {}
+static var _again: Dictionary = {}  # 技能号（int）或装备键（"armor:底号"）→ 改写稿 note_add 里的 AgainUse 元数据（只放有的；空表＝还没建）
 static var _counter_ids: Array = []  # 技能行带 counter／counter_next／guard 的技能号（data() 读表时列出）
 static var _counter_next_ids: Array = []
 static var _guard_ids: Array = []  # 同上键 → [原备注, 原特性数组, 新备注, 新 meta, 新特性]
@@ -102,6 +103,7 @@ static func reload() -> void:
 	_tier = {}
 	_gear = {}
 	_gear_cache = {}
+	_again = {}
 	_new_recs = {}
 	_new_state_recs = {}
 	_counter_ids = []
@@ -377,6 +379,50 @@ static func sync_learn(a) -> void:
 		var ok: bool = a.skill_ids.has(int(str(e[0]).substr(1))) if e[0] is String else int(a.level) >= int(e[0])
 		if ok and not a.skill_ids.has(int(e[1])):  # "s技能号"：学了那个技能（进阶给的被动）就补学（小青剑破万光）
 			a.learn_skill(int(e[1]))
+
+
+## 天启篇再释放（T063，Kyo D124=B）：这个角色出这招时，改写稿 note_add 里写进去的 AgainUse 几率合计（20 个技能＋armor:3670、weapon:2021，
+## 共 22 处；键法同 XBattleLogic.again_in）。只认改写稿新写的：原版留下的再释放标签（改写里没去掉的 2071、2356、3232、4701、7457，
+## 和没改写的技能、状态、装备）照旧不读；改写稿是天启篇自己定的数，不按九线来源停（同 XTianqiLedger.nine_off_skill 放过改写技能）。
+## 技能卡没开（cards_on）时改写稿整份不生效，返回 0。
+static func again_use(a, item: Dictionary) -> int:
+	if not cards_on() or not (a is XActor):
+		return 0
+	var tab := _again_table()
+	var total := 0
+	for sk in a.skills():
+		if sk is Dictionary and tab.has(int(sk.get("id", 0))):
+			total += XBattleLogic.again_in(tab[int(sk.id)], item)
+	for e in a.equip_list():
+		var key := gear_key(e)
+		if key != "" and tab.has(key):
+			total += XBattleLogic.again_in(tab[key], item)
+	return total
+
+
+static func _again_table() -> Dictionary:
+	if _again.is_empty():
+		data()
+		var out := {"": {}}  # 占位：表建过（没有一处写 AgainUse 时也不重建）
+		for id in _skills:
+			var m := _again_meta(str(_skills[id].get("note_add", "")) if _skills[id] is Dictionary else "")
+			if not m.is_empty():
+				out[int(id)] = m
+		for key in _gear:
+			var m := _again_meta(str(_gear[key].get("note_add", "")) if _gear[key] is Dictionary else "")
+			if not m.is_empty():
+				out[str(key)] = m
+		_again = out
+	return _again
+
+
+static func _again_meta(note: String) -> Dictionary:
+	var out := {}
+	var meta := parse_meta(note)
+	for k in meta:
+		if str(k).begins_with("AgainUse"):
+			out[k] = meta[k]
+	return out
 
 
 # ---- 专属装备（法宝、武器）：按底号换成改写视图（第二期之二）----
