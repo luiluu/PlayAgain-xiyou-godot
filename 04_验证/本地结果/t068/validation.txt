@@ -1,0 +1,6 @@
+Fest_Icon_Road.png: 128x128 RGBA alpha=0..255 bbox=(11, 10, 119, 115)
+Fest_Icon_OneFour_Gold.png: 128x128 RGBA alpha=0..255 bbox=(19, 8, 109, 120)
+Fest_Icon_OneFour_Orange.png: 128x128 RGBA alpha=0..255 bbox=(14, 8, 113, 120)
+Fest_Icon_OneFour_Red.png: 128x128 RGBA alpha=0..255 bbox=(20, 8, 109, 120)
+Fest_Icon_Watch.png: 128x128 RGBA alpha=0..255 bbox=(8, 36, 120, 92)
+Fest_Icon_Attend.png: 128x128 RGBA alpha=0..255 bbox=(8, 8, 120, 120)
