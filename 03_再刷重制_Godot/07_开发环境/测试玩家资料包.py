@@ -279,6 +279,90 @@ class DropRateTests(unittest.TestCase):
         self.assertEqual(t['Items'][0]['description'], self.CASES[0][1])
 
 
+class StrictDropRateTests(unittest.TestCase):
+    """严口径（小A Carbon 第二道核 P1，项目经理cc 11-16 定）：物品／武器／防具说明与事件对白里，句子有来源词且带 N%、1/N、
+    括号里的掉率就去数留来源。原文取自 v0.02 包里 Carbon 报的那几处；出包后不许再含对应数字。"""
+    CASES = [  # (原文, 出包文, 出包后不许出现的数)
+        ('获得：击败22层 月行天→剥皮教堂的「哥布林太上皇」劳勃掉落（每场5%，熟练度10/50次后×2/×3）',
+         '获得：击败22层 月行天→剥皮教堂的「哥布林太上皇」劳勃掉落', ['5%', '10/50', '×2', '×3']),
+        ('获得：击败28层 众分天→西天的恶·如来掉落（每场5%，熟练度10/50次后×2/×3）', '获得：击败28层 众分天→西天的恶·如来掉落', ['5%']),
+        ('黑龙米拉三次进阶的共用道具。深渊合格掉落判定概率为1/30。', '黑龙米拉三次进阶的共用道具。深渊合格掉落有概率。', ['1/30']),
+        ('用于伏黑甚尔进阶。由肝帝积分券的原有奖励流程独立判定获得，概率1/50。', '用于伏黑甚尔进阶。由肝帝积分券的原有奖励流程独立判定获得，有概率。', ['1/50']),
+        ('用于宿傩的三次进阶。肝帝积分券奖励流程独立判定，概率1/50；足够完成剩余进阶后停止掉落。',
+         '用于宿傩的三次进阶。肝帝积分券奖励流程独立判定，有概率；足够完成剩余进阶后停止掉落。', ['1/50']),
+        ('来源：谷雨在队时战斗胜利，约1/50概率掉落（持有数满足剩余进阶时不再掉落）',
+         '来源：谷雨在队时战斗胜利，有概率掉落（持有数满足剩余进阶时不再掉落）', ['1/50']),
+        ('改版向导：谷雨在队时，战斗胜利有1/50机会获得金缮石。', '改版向导：谷雨在队时，战斗胜利有机会获得金缮石。', ['1/50']),
+        ('改版向导：心之钢与狂妄各自独立有10%掉落机会；两件可在同次通关中获得。', '改版向导：心之钢与狂妄各自独立有掉落机会；两件可在同次通关中获得。', ['10%']),
+        ('改版向导：锻造锤来自55级不朽深渊后续未知存在，独立20%掉落。装备品质概率与装备掉落概率是两回事。',
+         '改版向导：锻造锤来自55级不朽深渊后续未知存在，独立掉落。装备品质概率与装备掉落概率是两回事。', ['20%']),
+        ('改版向导：副本Boss每场胜利独立有10%机会掉一枚未鉴定神秘珠，不受掉率影响。', '改版向导：副本Boss每场胜利独立有机会掉一枚未鉴定神秘珠，不受掉率影响。', ['10%']),
+        ('改版向导：副本Boss（1/8）以及25张安慰奖券一抽，现在都抽秘境被动书。', '改版向导：副本Boss以及25张安慰奖券一抽，现在都抽秘境被动书。', ['1/8']),
+        ('蕴灵品质概率：15%', '蕴灵品质：有概率出现', ['15%']),
+        ('归真品质概率：65%', '归真品质：有概率出现', ['65%']),
+    ]
+    # X3 机制效果：严口径也不动（物品／装备／事件里的加成写法与战斗特效）
+    KEEP = ['镶嵌效果：超级幸运（物品掉落率+10%，精魂掉落率+10%）', '特效：寻获财宝(物品掉落率+8%，精魂掉落率+18%)',
+            '特效：权势之运(物品掉落率提高30%)', '特效：造成任何伤害有10%概率获得\'闪电护盾\'效果',
+            '可以消耗00肝帝积分，提升10%遇到肝帝积分赌局的概率，当前已提升%',
+            '宝宝:无视敌人3000%爆闪，无视敌人300%抗性 精魂和爆率增加9999% 获得结算伤害*99999',
+            '当前等级：1 / 888；经验：0', '糖尿病：有5%受到糖尿病debuff,全属性*50%,持续200步']
+    # 技能、状态不走严口径（冰红茶 1/2、1/8，劫天运 60/20/20）
+    SKILLS = ['效果：曼巴在队伍时，通关副本,深渊,未知1/2掉落冰红茶，1/8冰镇冰红茶',
+              '效果：你使用劫运神镖杀死天道眷顾者后，能劫取它们的气运，60%的几率获取一颗“天运果·运势”，20%的几率获取一颗“天运果·魔能”']
+
+    def test_strict(self):
+        for before, after, gone in self.CASES:
+            got = P.redact_text(before, strict=True)
+            self.assertEqual(got, after)
+            for n in gone:
+                self.assertNotIn(n, got)
+            self.assertEqual(P.redact_text(got, strict=True), got)
+
+    def test_keep(self):
+        for t in self.KEEP:
+            self.assertEqual(P.redact_text(t, strict=True), t)
+
+    def test_skills_states_untouched(self):
+        dump = {'kinds': {k: [] for k in P.KINDS}}
+        dump['kinds']['Skills'] = [{'id': 1, 'name': f'技能{i}', 'description': t, 'open': True} for i, t in enumerate(self.SKILLS)]
+        dump['kinds']['Items'] = [{'id': 1, 'name': '黑龙进阶石', 'description': self.CASES[2][0], 'open': True}]
+        t, _ = P.build_rows(dump)
+        self.assertEqual([r['description'] for r in t['Skills']], self.SKILLS)
+        self.assertEqual(t['Items'][0]['description'], self.CASES[2][1])
+
+    def test_event_redacted_before_truncation(self):
+        with tempfile.TemporaryDirectory() as td:
+            tree = Path(td)
+            (tree / 'modes/xiyou/generated/maps').mkdir(parents=True)
+            (tree / 'modes/xiyou/generated/db').mkdir(parents=True)
+            filler = [{'code': 401, 'parameters': [f'第{i}句' + '字' * 200]} for i in range(16)]
+            tail = [{'code': 401, 'parameters': ['\\n<改版向导>锻造锤来自55级不朽深渊后续未知存在，独立20%掉落。']}]
+            m = {'displayName': '方桌大厅', 'events': [None, {'id': 71, 'pages': [{'list': filler + tail}]}]}
+            (tree / 'modes/xiyou/generated/maps/Map004.json').write_text(json.dumps(m, ensure_ascii=False), encoding='utf-8')
+            (tree / 'modes/xiyou/generated/db/CommonEvents.json').write_text('[null]', encoding='utf-8')
+            log = []
+            P.REDACTED.clear()
+            ev = P.build_events(tree, {'kinds': {'Items': [], 'Weapons': [], 'Armors': []}})
+            self.assertNotIn('锻造锤', ev[0]['text'])  # 这句在 3000 字截断线后，包里本来就没有
+            self.assertNotIn('20%', ev[0]['text'])
+            self.assertTrue(any('独立掉落' in x['after'] for x in P.REDACTED))  # 截断线后的句子也剥过
+
+    def test_self_check_strict_scope(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Pkg(td)
+            rows = p.rows('Items')
+            rows[0]['description'] = self.CASES[2][0]
+            p.put('Items', rows)
+            self.assertFalse(p.check()[P.CHECKS[1]]['ok'])
+            rows[0]['description'] = self.CASES[2][1]
+            p.put('Items', rows)
+            sk = p.rows('Skills')
+            sk[0]['description'] = self.SKILLS[0]
+            p.put('Skills', sk)
+            self.assertTrue(p.check()[P.CHECKS[1]]['ok'])  # 技能里的冰红茶 1/2 不算
+
+
 class EventTests(unittest.TestCase):
     def test_events(self):
         with tempfile.TemporaryDirectory() as td:

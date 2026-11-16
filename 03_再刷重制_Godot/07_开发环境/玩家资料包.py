@@ -348,16 +348,68 @@ def redact_drop(line: str) -> str:
     return re.sub(r'[，,]$', '。', t)
 
 
-def redact_text(text: str, log_list: list = None, where: str = '') -> str:
+# 严口径（小A Carbon 第二道核 P1，项目经理cc 11-16 定，X12 前不放宽）：句子里有「来源词」且带掉率样式的数（N%、1/N、
+# 括号里的倍率）就整句去数、留来源。只用于物品／武器／防具说明和事件对白；技能、状态里的几率是机制效果（X3，冰红茶 1/2、
+# 劫天运 60/20/20），不动。数字前面是 +／增加／提升 这类加成写法的（物品掉落率+5%、精魂和爆率增加10%）是效果，不动。
+SOURCE_WORDS = re.compile(r'掉落|掉率|爆率|产出|机会|品质概率|判定|抽')
+_N = r'(?<![\d.])\d+(?:\.\d+)?\s*[%％](?:\s*[～~\-－]\s*\d+(?:\.\d+)?\s*[%％])?|(?<![\d.])\d+\s*/\s*\d+(?!\s*[；;]?\s*经验)'
+RATE_NUM = re.compile(_N)
+MOD_BEFORE = re.compile(r'(?:[+＋]|增加|提升|提高|降低|减少|加成)\s*$')
+SENT = re.compile(r'([。；;！!？?\n])')
+PAREN_NUM = re.compile(r'[（(][^（）()]*(?:\d\s*[%％]|\d\s*/\s*\d|×\s*\d)[^（）()]*[）)]')
+
+
+def _rate_hits(sent: str) -> list:
+    return [m for m in RATE_NUM.finditer(sent) if not MOD_BEFORE.search(sent[:m.start()])]
+
+
+def _strict_clause(t: str) -> str:
+    t = re.sub(r'([\u4e00-\u9fff]{1,4}品质)概率[：:]\s*(' + _N + r')', r'\1：有概率出现', t)
+    t = re.sub(r'(?:判定)?(?:概率|几率|机会)(?:为|是)?\s*(?:' + _N + r')', '有概率', t)
+    t = re.sub(r'有?约?\s*(?:' + _N + r')\s*的?\s*(掉落)?\s*(概率|几率|机会)', r'有\1\2', t)
+    out, last = [], 0
+    for m in _rate_hits(t):
+        out.append(t[last:m.start()])
+        last = m.end()
+        if t[last:last + 1] == '的':
+            last += 1
+    t = ''.join(out) + t[last:]
+    t = re.sub(r'有有', '有', t)
+    return re.sub(r'[：:]\s*$', '', t)
+
+
+def _strict_sentence(sent: str) -> str:
+    """句里有来源词才看；括号里有掉率样式的数（不是 +N% 这类加成）整个括号去掉；
+    再按逗号／空格分句，分句里有来源词或「概率／几率」且有掉率样式的数，去数留来源。"""
+    if not SOURCE_WORDS.search(sent):
+        return sent
+    t = PAREN_NUM.sub(lambda m: '' if _rate_hits(m.group(0)[1:-1]) else m.group(0), sent)
+    parts = re.split(r'([，,\s]+)', t)
+    for i in range(0, len(parts), 2):
+        c = parts[i]
+        if (SOURCE_WORDS.search(c) or re.search(r'概率|几率', c)) and _rate_hits(c):
+            parts[i] = _strict_clause(c)
+    return ''.join(parts)
+
+
+def redact_strict(line: str) -> str:
+    parts = SENT.split(line)
+    return ''.join(_strict_sentence(x) if i % 2 == 0 else x for i, x in enumerate(parts))
+
+
+def redact_text(text: str, log_list: list = None, where: str = '', strict: bool = False) -> str:
     lines = []
     for ln in str(text).split('\n'):
         new = redact_drop(ln)
+        if strict:
+            new = redact_strict(new)
         if new != ln and log_list is not None:
             log_list.append({'where': where, 'before': ln, 'after': new})
         lines.append(new)
     return '\n'.join(lines)
 
 
+STRICT_KINDS = ('Items', 'Weapons', 'Armors')  # 严口径只管这几类的说明和事件对白
 REDACTED = []  # 本次剥掉掉率的地方（原文→出包文），只写进工作目录的日志，不进包
 
 
@@ -382,7 +434,7 @@ def build_rows(dump: dict) -> tuple:
             row = {'public_id': pid, 'name': name}
             if r.get('nickname'):
                 row['nickname'] = r['nickname']
-            row['description'] = redact_text(str(r.get('description', '')), REDACTED, f'{fname} {name}')
+            row['description'] = redact_text(str(r.get('description', '')), REDACTED, f'{fname} {name}', fname in STRICT_KINDS)
             if int(r.get('price', 0) or 0) > 0 and '价格' in row['description']:
                 row['price'] = int(r['price'])
             if fname in ('Weapons', 'Armors') and isinstance(r.get('params'), list):
@@ -448,7 +500,7 @@ def build_events(tree: Path, dump: dict) -> list:
                             refs.append(f'[{hit[0]}] {hit[1]}')
             if not texts and not refs:
                 continue
-            texts = [redact_text(t, REDACTED, f'事件 {place}') for t in texts]
+            texts = [redact_text(t, REDACTED, f'事件 {place}', True) for t in texts]  # 先剥再截 3000 字：截断位置不决定剥不剥
             body = '\n'.join(texts + ([f'事件给的物品/武器/护甲：{"、".join(refs)}'] if refs else []))[:3000]
             eid = ev.get('id', n) if isinstance(ev, dict) else n
             ref = hashlib.sha256(f'{f.name}:{eid}'.encode('utf-8')).hexdigest()[:12]
@@ -497,7 +549,7 @@ def forbidden_words(tree: Path, cwd=REPO) -> tuple:
     src = {'tianqi_data_files': len(files), 'tianqi_data_names': len(names), 'dropped_in_original': dropped_orig,
            'dropped_single_char': dropped_short, 'stub_classes': len(classes), 'fixed_words': len(FIXED_WORDS),
            'fixed_dropped_in_original': fixed_dropped, 'total': len(words),
-           'from': '天启篇数值表（main）全部 name；发行空壳替换的类名；玩家资料包.py 固定词表（来源见交付单）'}  # 自检.json 在她能读的目录里：不写工程路径
+           'from': '天启篇数值表（main）全部 name；发行空壳替换的类名；固定词表（来源见交付单）'}  # 自检.json 在她能读的目录里：不写工程路径
     return words, src
 
 
@@ -573,8 +625,9 @@ def check_forbidden(root: Path, words: set) -> list:
     bad = []
     for p in pkg_files(root):
         for ln in p.read_text(encoding='utf-8', errors='replace').split('\\n' if p.suffix in ('.json', '.jsonl') else '\n'):
+            strict = p.name == '事件.jsonl' or p.stem in STRICT_KINDS
             for sub in ln.split('\n'):
-                if redact_drop(sub) != sub:
+                if redact_drop(sub) != sub or (strict and redact_strict(sub) != sub):
                     bad.append(f'{p.relative_to(root)}：掉率数字「{sub[:60]}」')
     lw = [(w, w.lower()) for w in words]
     for p in pkg_files(root):
