@@ -1,10 +1,21 @@
-ring_band_bai.png: 288x288; full-square radius=108.812..132.458; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
-ring_band_hong.png: 288x288; full-square radius=108.812..132.231; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
-ring_band_hui.png: 288x288; full-square radius=108.812..132.654; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
-ring_band_xun.png: 288x288; full-square radius=108.812..132.612; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
-ring_band_zhen.png: 288x288; full-square radius=108.812..130.668; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
-ring_center_war.png: 96x96; full-square radius=33.000..45.011; red=0; soft_alpha=0; center_label_overlap=0
-ring_center_plague.png: 96x96; full-square radius=33.000..45.011; red=0; soft_alpha=0; center_label_overlap=0
-ring_center_famine.png: 96x96; full-square radius=33.000..45.011; red=0; soft_alpha=0; center_label_overlap=0
-ring_center_qiyin.png: 96x96; full-square radius=33.000..45.011; red=0; soft_alpha=0; center_label_overlap=0
+ring_band_bai.png: 288x288; full-square radius=108.812..132.612; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
+ring_band_hong.png: 288x288; full-square radius=108.812..132.593; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
+ring_band_hui.png: 288x288; full-square radius=108.812..132.189; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
+ring_band_xun.png: 288x288; full-square radius=108.812..132.966; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
+ring_band_zhen.png: 288x288; full-square radius=108.453..130.668; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
+ring_center_war.png: 96x96; full-square radius=33.000..44.181; red=0; soft_alpha=0; center_label_overlap=0
+ring_center_plague.png: 96x96; full-square radius=33.000..44.045; red=0; soft_alpha=0; center_label_overlap=0
+ring_center_famine.png: 96x96; full-square radius=33.000..43.417; red=0; soft_alpha=0; center_label_overlap=0
+ring_center_qiyin.png: 96x96; full-square radius=33.000..43.290; red=0; soft_alpha=0; center_label_overlap=0
 PASS: 9 dimensions / full pixel envelopes / red threshold / binary alpha / 4 center label intersections; 4 approved samples byte-identical.
+P1-1 war: symmetric crown PASS; circular body y>=12 overpaint=0
+P1-1 plague: symmetric crown PASS; circular body y>=12 overpaint=0
+P1-1 famine: symmetric crown PASS; circular body y>=12 overpaint=0
+P1-1 qiyin: symmetric crown PASS; circular body y>=12 overpaint=0
+hong outer r123..138: opaque=4068 (before 4364); luma>=150 pixels=468
+xun outer r123..138: opaque=1438 (before 2744); luma>=150 pixels=1184
+hui outer r123..138: opaque=5816 (before 7240); luma>=150 pixels=3100
+P1-1 mid-color distance war/famine=52.69
+P1-1 mid-color distance war/qiyin=49.07
+P1-1 mid-color distance famine/qiyin=58.45
+Revision evidence PASS; final aesthetic approval remains with coordinator/Kyo.

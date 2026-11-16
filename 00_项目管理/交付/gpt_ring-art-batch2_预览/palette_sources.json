@@ -12,11 +12,11 @@
         129
       ],
       "output_rgb": [
-        52,
-        48,
-        35
+        44,
+        46,
+        48
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "circles/bai.png",
@@ -30,11 +30,11 @@
         129
       ],
       "output_rgb": [
-        158,
-        150,
-        110
+        164,
+        170,
+        168
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "circles/bai.png",
@@ -48,11 +48,11 @@
         168
       ],
       "output_rgb": [
-        220,
-        214,
-        174
+        234,
+        238,
+        232
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     }
   ],
   "hong": [
@@ -68,11 +68,11 @@
         28
       ],
       "output_rgb": [
-        51,
-        30,
-        26
+        46,
+        24,
+        20
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "frames/hong.png",
@@ -86,11 +86,11 @@
         46
       ],
       "output_rgb": [
-        108,
-        62,
-        46
+        138,
+        88,
+        62
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "frames/hong.png",
@@ -104,11 +104,11 @@
         55
       ],
       "output_rgb": [
-        170,
-        133,
-        67
+        224,
+        180,
+        96
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     }
   ],
   "hui": [
@@ -180,11 +180,11 @@
         129
       ],
       "output_rgb": [
-        54,
-        45,
-        40
+        52,
+        38,
+        28
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "circles/xun.png",
@@ -198,11 +198,11 @@
         146
       ],
       "output_rgb": [
-        171,
         162,
-        146
+        134,
+        102
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "circles/xun.png",
@@ -216,11 +216,11 @@
         203
       ],
       "output_rgb": [
-        229,
-        221,
-        203
+        226,
+        196,
+        152
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     }
   ],
   "zhen": [
@@ -236,11 +236,11 @@
         255
       ],
       "output_rgb": [
-        28,
+        26,
         32,
         62
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "circles/zhen.png",
@@ -254,11 +254,11 @@
         255
       ],
       "output_rgb": [
-        80,
-        95,
-        151
+        96,
+        116,
+        176
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "circles/zhen.png",
@@ -272,11 +272,11 @@
         255
       ],
       "output_rgb": [
-        152,
-        169,
-        210
+        176,
+        196,
+        232
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     }
   ],
   "war": [
@@ -292,11 +292,11 @@
         20
       ],
       "output_rgb": [
-        55,
-        36,
-        22
+        52,
+        26,
+        20
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "badges_128/war.png",
@@ -310,11 +310,11 @@
         44
       ],
       "output_rgb": [
-        142,
-        101,
-        44
+        138,
+        88,
+        60
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "badges_128/war.png",
@@ -328,11 +328,11 @@
         95
       ],
       "output_rgb": [
-        216,
-        171,
-        71
+        222,
+        168,
+        84
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     }
   ],
   "plague": [
@@ -348,11 +348,11 @@
         34
       ],
       "output_rgb": [
-        37,
         34,
-        30
+        38,
+        26
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "badges_128/plague.png",
@@ -366,11 +366,11 @@
         39
       ],
       "output_rgb": [
-        102,
-        114,
-        47
+        108,
+        128,
+        52
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "badges_128/plague.png",
@@ -384,11 +384,11 @@
         54
       ],
       "output_rgb": [
-        176,
-        184,
-        92
+        196,
+        210,
+        96
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     }
   ],
   "famine": [
@@ -404,11 +404,11 @@
         19
       ],
       "output_rgb": [
-        48,
-        36,
-        24
+        42,
+        40,
+        34
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "badges_128/famine.png",
@@ -422,11 +422,11 @@
         55
       ],
       "output_rgb": [
-        137,
-        106,
-        51
+        132,
+        124,
+        98
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "badges_128/famine.png",
@@ -440,11 +440,11 @@
         113
       ],
       "output_rgb": [
-        216,
-        177,
-        96
+        206,
+        198,
+        166
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     }
   ],
   "qiyin": [
@@ -460,11 +460,11 @@
         129
       ],
       "output_rgb": [
-        49,
-        35,
-        22
+        46,
+        32,
+        18
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "circles/hei.png",
@@ -478,11 +478,11 @@
         129
       ],
       "output_rgb": [
-        144,
-        107,
-        53
+        168,
+        126,
+        52
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     },
     {
       "source": "circles/hei.png",
@@ -496,11 +496,38 @@
         115
       ],
       "output_rgb": [
-        221,
-        180,
-        100
+        242,
+        206,
+        118
       ],
-      "method": "source material reference; muted hue and luminance matched to approved sample"
+      "method": "Carbon review explicit RGB override; original source material reference retained"
     }
-  ]
+  ],
+  "extra_colors": {
+    "bai_lower": [
+      192,
+      198,
+      194
+    ],
+    "xun_lower": [
+      188,
+      160,
+      122
+    ],
+    "xun_tip": [
+      246,
+      214,
+      142
+    ],
+    "hong_copper": [
+      182,
+      126,
+      74
+    ],
+    "zhen_lower": [
+      128,
+      148,
+      198
+    ]
+  }
 }

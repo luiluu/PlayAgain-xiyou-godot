@@ -19,6 +19,13 @@ for key,(path,ts) in targets.items():
   h,s,v=colorsys.rgb_to_hsv(*(c/255 for c in rgb));th,ss,vv=colorsys.rgb_to_hsv(*(c/255 for c in target))
   out=tuple(round(c*255) for c in colorsys.hsv_to_rgb(th,ss,vv))
   pal[key].append(out);sources[key].append({'source':str(path),'xy':xy,'source_rgb':rgb,'output_rgb':out,'method':'source material reference; muted hue and luminance matched to approved sample'})
+# Carbon review palette overrides; original source references remain traceable above.
+overrides={'bai':[(44,46,48),(164,170,168),(234,238,232)],'hong':[(46,24,20),(138,88,62),(224,180,96)],'xun':[(52,38,28),(162,134,102),(226,196,152)],'zhen':[(26,32,62),(96,116,176),(176,196,232)],'war':[(52,26,20),(138,88,60),(222,168,84)],'plague':[(34,38,26),(108,128,52),(196,210,96)],'famine':[(42,40,34),(132,124,98),(206,198,166)],'qiyin':[(46,32,18),(168,126,52),(242,206,118)]}
+for key,colors in overrides.items():
+ pal[key]=colors
+ for entry,color in zip(sources[key],colors):
+  entry['output_rgb']=color;entry['method']='Carbon review explicit RGB override; original source material reference retained'
+sources['extra_colors']={'bai_lower':(192,198,194),'xun_lower':(188,160,122),'xun_tip':(246,214,142),'hong_copper':(182,126,74),'zhen_lower':(128,148,198)}
 def bounds(dx,dy):return math.hypot(max(abs(dx)-.5,0),max(abs(dy)-.5,0)),math.hypot(abs(dx)+.5,abs(dy)+.5)
 for k in targets:
  n=288 if k in ['bai','hong','hui','xun','zhen'] else 96;im=Image.new('RGBA',(n,n));px=im.load();dark,mid,light=pal[k]
@@ -28,26 +35,37 @@ for k in targets:
    if n==288:
     if 109.5<=r<=114:c=dark if r<110.5 or r>113 else light if dy<0 else mid
     if k=='bai':
-     if 119<=r<=121:c=mid
-     wave=(1-abs((a/math.tau*40)%1*2-1));outer=127+5*wave
-     if 123<=r<=outer:c=dark if r<124 or r>outer-1.2 else light if dy<0 else mid
+     lower=(192,198,194)
+     if 110.5<=r<=113:c=light if dy<0 else lower
+     if 118.5<=r<=120.5:c=mid
+     wave=1-abs((a/math.tau*24)%1*2-1);outer=126+6*wave
+     if 123<=r<=outer:
+      c=dark if r<124 or r>outer-1 else mid
+      if outer-2.2<=r<=outer-1:c=light if dy<0 else lower
     if k=='hong':
-     outer=125+7*((a/math.tau*48)%1)
-     if 120<=r<=outer:c=dark if r<121 or r>outer-1.2 else mid
-     if 121.2<=r<=122.5:c=light
+     copper=(182,126,74)
+     if 110.5<=r<=113:c=mid
+     if 110.5<=r<=111.7:c=light if dy<0 else copper
+     phase=(a/math.tau*30)%1;outer=124+8.2*phase
+     if 120.5<=r<=outer:
+      c=dark if r<121.5 or r>outer-1 else mid
+      if outer-2.3<=r<=outer-1:c=light if dy<0 else copper
+      if phase<.08:c=dark
     if k=='hui':
-     # Continuous braided bone chain, two crossing strands with connected dark bed.
-     w=math.sin(a*24);r1=126+3*w;r2=126-3*w
-     if 120<=r<=132:c=dark
-     if min(abs(r-r1),abs(r-r2))<=1.5:c=light if dy<0 else mid
-     if abs(w)>.87 and 123<=r<=129:c=mid
+     w=math.sin(a*24);r1=126+3*w;r2=126-3*w;dist=min(abs(r-r1),abs(r-r2))
+     if dist<=2.6:c=dark
+     if dist<=1.5:c=light if dy<0 else mid
+     if abs(w)>.85 and dist<=2.1:c=light
     if k=='xun':
-     outer=125+7*max(0,math.sin(a*36))**3
-     if 120<=r<=outer:c=dark if r<121 or r>outer-1 else mid
-     if 121.5<=r<=123:c=light
-     if outer>129 and outer-2.8<=r<=outer-1:c=light
+     if 110.5<=r<=113:c=light if dy<0 else (188,160,122)
+     if 120.5<=r<=122.5:c=mid if 121<=r<=122 else dark
+     u=((a+.03*(r-122))/math.tau*18)%1
+     if u<.34:
+      flame_r=122.5+10*math.sin(u/.34*math.pi)**1.4
+      if 122<=r<=flame_r:
+       c=dark if r>flame_r-1 else (246,214,142) if r>=127.5 else light
     if k=='zhen':
-     # Staggered cracks, two tracks bridge each other's interruptions.
+     if 110.5<=r<=113:c=light if dy<0 else (128,148,198)
      phase=(a/math.tau*13)%1
      if phase<.82:
       rr=124+2*math.sin(a*13)
@@ -55,7 +73,9 @@ for k in targets:
      if phase>.65 or phase<.1:
       if 128<=r<=130:c=mid
      if .78<phase<.86 and 122<=r<=130:c=mid
-     if .42<phase<.50 and 109<=r<=115:c=None
+     if 109<=r<=115:
+      if .39<phase<.55:c=None
+      elif .37<phase<=.39 or .55<=phase<.57:c=dark
     if not (near>=100 and far<=138):c=None
    else:
     if near>=33 and far<=38:
@@ -64,16 +84,17 @@ for k in targets:
    if c:px[x,y]=(*c,255)
  if n==96:
   d=ImageDraw.Draw(im)
-  # Shared taper reaches y3; connected to the frame at y11..14.
-  d.polygon([(47,3),(48,3),(50,8),(52,11),(51,14),(44,14),(43,11),(45,8)],fill=(*dark,255))
-  if k=='war':
-   d.line([(45,6),(50,12)],fill=(*light,255),width=2);d.line([(50,6),(45,12)],fill=(*mid,255),width=2);d.line([(44,10),(47,8)],fill=(*light,255))
-  elif k=='plague':
-   d.line([(47,5),(47,11),(44,9),(45,7),(49,11),(51,9),(49,7),(45,11)],fill=(*light,255),width=1)
-  elif k=='famine':
-   d.line([(44,9),(51,9),(49,12),(46,12),(44,9)],fill=(*light,255),width=1);d.line([(47,5),(47,7),(49,7)],fill=(*mid,255))
-  else:
-   d.rectangle((45,7,50,12),outline=(*light,255));d.line([(47,4),(47,10),(49,10)],fill=(*mid,255));d.point((47,12),fill=(*light,255))
+  # Four distinct symmetric silhouettes; leave all y>=12 ring pixels untouched.
+  import re
+  report=(P.parent/'gpt_ring-art-batch2_小A美术审.md').read_text()
+  section=report[report.index('3. **尖冠改用'):report.index('### P1-2')]
+  block=section.split('     - `'+k+'`')[1].split('```text')[1].split('```')[0]
+  for row in block.splitlines():
+   match=re.search(r'y=\s*(\d+): ([.dm#]{16})',row)
+   if not match:continue
+   yy=int(match[1]);assert yy<12
+   for xx,ch in enumerate(match[2]):
+    if ch!='.':px[40+xx,yy]=(*{'d':dark,'m':mid,'#':light}[ch],255)
   for y in range(n):
    for x in range(n):
     if not px[x,y][3]:continue
