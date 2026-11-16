@@ -30,7 +30,6 @@
   - `execute_wired`：角色学 7008 用药水，实战 execute 对自己打 2 次、开关关 1 次。
 - 天启篇九线停：`xiyou_tianqi_nine_off`（含 `cat_again_use_off`）在选测里。
 - 语法检查通过；工具快速回归全部通过（110 秒）；`检查.sh --affected main --cloud` 退出码 0（云端选测 301 个场景全过，提交 3b4fb6e97；非 Godot 检查全过）。
-- 新专项 `xiyou_again_use.gd` 没有 `.gd.uid`（本机单跑没生成），合并时由总装带入。
 - 原版参照探针手跑 20 秒；探针没登记进同步（产物只做夹具）。
 
 ## 我不同意的地方
@@ -56,3 +55,6 @@
 ## 本分支提交
 
 - 3b4fb6e97 T046: 西游档通用出手接 dsPassiveSkill 被动 atkk／AgainUse
+- ced295c77 交付单；之后补专项 .gd.uid
+
+合并提示：交付自检判慢车道（新增 mv_oracle/again_use_probe.cjs），但这个探针只产夹具、没进 PROBES／同步，合并可用 `XIYOU_MERGE_SYNC=skip`。
