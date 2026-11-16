@@ -1,7 +1,7 @@
 # 交付：cc/fix-dungeon-save-flag
 
 - 车道／工作者：T055 副本内外回城判断反了（玩家报），cc（Opus＋medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -14,7 +14,7 @@
 - 旧档兼容（不改存档结构）：读档后 `XDungeon.repair_after_load`（`xsave.gd` `_load_data`）：有副本上下文（进门时记、随存档）且变量 5≥1 才算人在副本里，变量 21≤0 改 1；不在副本里而变量 21<0 改 0，残留的副本上下文清掉（按 O-040 恢复挂机开关，难度不动——离开后玩家可能自己改过）。已经中招的存档读一次档就好。
 - 改：`modes/xiyou/core/dungeon.gd`（两个开关、`save_bias`、`repair_after_load`、`inside`、`event_finished`）、`core/mv_event_core.gd`（117 给子游标带 `save_bias`）、`map/mv_script.gd`（存档分支按偏移写）、`core/xsave.gd`（读档修正一行）。测试：`tests/xiyou_dungeon.gd` 第一轮（原版对照）关 `inside_repair`（参照 ab* 瞬移进深渊再出口原版就是 −1）、第二轮开；`tests/xiyou_event_compare.gd` 对照原版关 `inside_repair`、`_finish` 还原。
 - 玩家可见：野外用回城物品、存档不再被「当前正在挑战副本」拦；副本里照旧拦。已经被拦的存档读一次档自动修好。
-- 验证：新增专项 `tests/xiyou_dungeon_inside_flag` 52/52，西游档（`XState.new_game`）与天启篇档（`XTianqi.start_new_game` 炼狱）各一遍，用真实数据：Map003 EV7 二层副本门、Map123 EV6 逃离、CE10 回到大厅、CE1434 第 70～72 条、Map128 EV3。断言：副本外可用（`outside_ok`）、副本内禁用（`inside_block`）、逃离后可用（`after_escape_ok`）；副本里抽奖存档文件里变量 21＝1、读档仍禁用、逃离后可用（`lottery.*`）；两个开关全关复现玩家的 bug（`off.inside_ok_bug`、`off.outside_block_bug`）；旧坏档副本外读档归零可用、副本内 0 读回 1（`legacy.*`）；猿神空间重置修正后 0 可回城、原版 −1 被拦（`yuanshen.*`）。`反向验证`（手工）：去掉存档偏移和读档修正，`lottery.file_has_1`、`lottery.load`、`legacy.*` 等 8 项以上失败，还原后全过。本机专项 `xiyou_dungeon`、`xiyou_event_compare`、`xiyou_save_*`、`xiyou_floor_reach075`、`xiyou_seal_doors`、`xiyou_tianqi_save`、`xiyou_pause_save`、`xiyou_autosave`、`xiyou_determinism` 共 16 场全过；`检查.sh --affected main --cloud` 结果见下。`语法检查.py` 通过。
+- 验证：新增专项 `tests/xiyou_dungeon_inside_flag` 52/52，西游档（`XState.new_game`）与天启篇档（`XTianqi.start_new_game` 炼狱）各一遍，用真实数据：Map003 EV7 二层副本门、Map123 EV6 逃离、CE10 回到大厅、CE1434 第 70～72 条、Map128 EV3。断言：副本外可用（`outside_ok`）、副本内禁用（`inside_block`）、逃离后可用（`after_escape_ok`）；副本里抽奖存档文件里变量 21＝1、读档仍禁用、逃离后可用（`lottery.*`）；两个开关全关复现玩家的 bug（`off.inside_ok_bug`、`off.outside_block_bug`）；旧坏档副本外读档归零可用、副本内 0 读回 1（`legacy.*`）；猿神空间重置修正后 0 可回城、原版 −1 被拦（`yuanshen.*`）。`反向验证`（手工）：去掉存档偏移和读档修正，`lottery.file_has_1`、`lottery.load`、`legacy.*` 等 8 项以上失败，还原后全过。本机专项 `xiyou_dungeon`、`xiyou_event_compare`、`xiyou_save_*`、`xiyou_floor_reach075`、`xiyou_seal_doors`、`xiyou_tianqi_save`、`xiyou_pause_save`、`xiyou_autosave`、`xiyou_determinism` 共 16 场全过；`检查.sh --affected main --cloud` 通过（云端 252 场＋沿用本机 16 场，运行 43877070166）。`语法检查.py` 通过。
 
 ## 优化登记草稿
 
