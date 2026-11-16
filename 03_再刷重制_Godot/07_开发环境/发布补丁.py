@@ -22,6 +22,7 @@
       --repos <gitee副本> <github副本>   发版仓库副本的位置（默认 ~/Documents/DSH/小小鱼/发版/zaishuayiba-updates-{gitee,github}）
       --key <私钥.pem>         签名私钥（默认 ~/Library/Application Support/KYO/发版密钥/godot_update_private.pem；也认环境变量 XIYOU_UPDATE_KEY）
       --dry-run                只打印会做什么
+      --no-player-pack         --verify-online 通过后不出小小鱼的玩家资料包（默认出，见 PLAYER_PACK_AFTER_VERIFY）
 
 清单格式见 core/update_check.gd 头注释（schema 1）。做的检查：
   - 私钥对应的公钥等于游戏里内嵌的公钥（XUpdateCheck.PUBLIC_KEY），签完用公钥再验一次；
@@ -62,6 +63,9 @@ SCHEMA = 1
 DIR_RE = re.compile(r'^dev(\d+)_三平台发行$')
 NEW_TREE = PROJECT  # 补丁文件清单的新版本目录（测试换成假目录）
 FILES_PRESET = 'Windows 发行'
+# 玩家资料包（T008 期一，cc 11-16）：--verify-online 核过线上清单与补丁后，接着跑 玩家资料包.py 给小小鱼出公开资料（玩家真能下到了才出）。
+# 回退＝改成 False（或单次加 --no-player-pack）。资料包失败只报警，不改 --verify-online 的退出码（线上核对本身是对的）。
+PLAYER_PACK_AFTER_VERIFY = True
 
 
 def release_excludes() -> list:
@@ -395,12 +399,19 @@ def main(argv=None) -> int:
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--old-tree')
     ap.add_argument('--no-files-manifest', action='store_true')
+    ap.add_argument('--no-player-pack', action='store_true')
     a = ap.parse_args(argv)
     try:
         repos = [Path(p).expanduser() for p in a.repos] if a.repos else DEFAULT_REPOS
         embedded = embedded_public_key()
         if a.verify_online:
-            return verify_online(repos, embedded)
+            rc = verify_online(repos, embedded)
+            if rc == 0 and PLAYER_PACK_AFTER_VERIFY and not a.no_player_pack:
+                print('== 线上核对通过，出小小鱼的玩家资料包（玩家资料包.py）')
+                r = subprocess.run([sys.executable, str(HERE / '玩家资料包.py')])
+                if r.returncode:
+                    print('⚠ 玩家资料包没出成（上面有原因；「当前」没动）。补跑：python3 玩家资料包.py；不影响本次线上核对结果')
+            return rc
         if not a.base and not a.full_only:
             ap.error('要给 --base，或用 --full-only')
         key = Path(a.key or os.environ.get('XIYOU_UPDATE_KEY') or DEFAULT_KEY).expanduser()
