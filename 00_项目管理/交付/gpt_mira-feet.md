@@ -2,7 +2,7 @@
 
 - 分支：gpt/mira-feet
 - 车道／工作者：小o（co），gpt-6.1-sol＋medium，P6 像素小修
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -78,7 +78,7 @@
 - 协调者批准只前台单跑 `xiyou_sukuna_art` 加mira_art关联6项（book/looks/sv_compare/mira_art/mira_dragon_art/mira_lift），不跑战斗核心全量；选测.py对新离线路径判未知整轮，已明确请示后采用上述名单，不改共用映射。总装合并时自行安排云端整轮。
 - 素材脚本断言、宿傩重现PNG逐字节比对、双证据树和漂移工具均在Godot工程外检查：通过。
 - 语法检查987个gd：0问题；工具快速回归22项通过（101秒）；宿傩常态实际Godot战斗窗口已截图，正常场景加载无脚本错误。
-- 七项单线程专项结果待收尾追加。
+- 七项单线程专项全部通过（85秒）：sukuna_art 24/24、actor_book 28/28、actor_looks 35/35、mira_art 30/30、mira_dragon_art 31/31、mira_lift 57/57；actor_sv_compare为工具场景，未设XIYOU_SV_REAL时1/1并跳过真实对比。完整输出见T123/selected_tests.log。
 
 ## T123 本分支提交
 

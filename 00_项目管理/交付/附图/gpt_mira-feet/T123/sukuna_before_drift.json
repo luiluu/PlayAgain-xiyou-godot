@@ -3,7 +3,7 @@
   "note": "Coarse alpha-zone drift triage; hand bands include clothing/tails. REVIEW is not an automatic failure or permission to edit. Single-frame forms have no three-frame animation. Runtime content overrides generated files.",
   "results": [
     {
-      "asset": "03_再刷重制_Godot/01_Godot工程/content/sukuna/t123_evidence/before.png",
+      "asset": "00_项目管理/交付/附图/gpt_mira-feet/T123/before.png",
       "kind": "sheet walk",
       "frame_count": 3,
       "cell": [
@@ -53,17 +53,18 @@
           ],
           "bbox_edge_span": 1
         },
-        "feet": {
+        "sole_contact": {
           "centroid_span_xy": [
-            0.169,
-            0.135
+            13.5,
+            0.0
           ],
-          "bbox_edge_span": 1
+          "bbox_edge_span": 14
         }
       },
       "warnings": [
         "head",
-        "left_hand_band"
+        "left_hand_band",
+        "sole_contact"
       ],
       "status": "REVIEW"
     }
