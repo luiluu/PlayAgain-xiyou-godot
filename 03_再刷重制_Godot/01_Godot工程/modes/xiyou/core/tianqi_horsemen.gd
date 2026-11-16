@@ -41,6 +41,18 @@ static var BANKRUPT_MDF := true
 ## O-439：评审 v0.1 第 2 条，战斗中敌人能力值有 krz 缓存，add_param 后同一行动读到的还是旧值（宝石加攻后的追加普攻、骑士队长、百亿仙剑）；
 ## true＝天启篇骑士加属性后当场刷新缓存格。false＝照旧等回合边界
 static var FRESH_PARAM := true
+## 证道骑士规则表（horsemen.json 的 zhengdao 节，全弱者证道资格 v0.4.4 第一节第 3 条；cc/zhengdao-rules-fill）。只在证道 36 层本体战生效。
+## 各开关 false＝回到没有这一条的样子（数都是占位，T014 虚拟玩家标）。
+## 莉co、混子狂暴（D58、D74）
+static var ZD_ENRAGE := true
+## 做题家狂暴（D81，与混子同一套）
+static var ZD_FAMINE_ENRAGE := true
+## 勇者每回合末回一截最大生命（D82「按比例起作用的机制」）
+static var ZD_DEATH_REGEN := true
+## 莉co每回合末回一截最大生命（D58）
+static var ZD_WAR_REGEN := true
+## 勇者甲：死期从出战栏最后一格往前点、到某回合起每回合点一人（D32、D54）
+static var ZD_DOOM := true
 
 static var _data: Dictionary = {}
 ## 下一场开战要换成哪位骑士（prepare 设、setup 取走）
@@ -147,6 +159,73 @@ static func _scan(v, path: String, exempt: Array, out: Array) -> void:
 		var s := XTianqiBalance._num_text(float(v))
 		if s.contains("4"):
 			out.append(path + "=" + s)
+
+
+# ---- 证道骑士规则（zhengdao 节） ----
+
+static func zd_table() -> Dictionary:
+	var z = data().get("zhengdao")
+	return z if z is Dictionary else {}
+
+
+## 这场骑士战吃的证道规则（本线那一行）；不是证道本体战返回 {}
+static func zd_rule(f: Dictionary) -> Dictionary:
+	if f.is_empty() or str(f.get("mode", "")) != "body":
+		return {}
+	var z := zd_table()
+	if z.is_empty() or str(f.get("key", "")) != str(z.get("key", "zhengdao")):
+		return {}
+	var r = z.get(str(f.get("line", "")))
+	return r if r is Dictionary else {}
+
+
+## 本场从第几回合起狂暴（0＝不狂暴：不是证道本体战、这位骑士没有狂暴，或开关关了）
+static func enrage_turn(f: Dictionary) -> int:
+	var r := zd_rule(f)
+	if not r.has("enrage"):
+		return 0
+	var on := ZD_FAMINE_ENRAGE if str(f.line) == "famine" else ZD_ENRAGE
+	return int(r.enrage) if on else 0
+
+
+## 骑士本体本回合的狂暴倍率：没到狂暴回合 1；第 R 回合起 2＋enrage_step×(回合−R)
+static func enrage_mult(logic) -> float:
+	if not active(logic):
+		return 1.0
+	var r := enrage_turn(fight(logic))
+	var t := int(logic.turn)
+	if r <= 0 or t < r:
+		return 1.0
+	return 2.0 + float(zd_table().get("enrage_step", 1.0)) * float(t - r)
+
+
+## 骑士每回合末回几成最大生命（勇者 D82、莉co D58）；0＝不回
+static func zd_regen_rate(f: Dictionary) -> float:
+	var r := zd_rule(f)
+	match str(f.get("line", "")):
+		"death":
+			return float(r.get("regen", 0.0)) if ZD_DEATH_REGEN else 0.0
+		"war":
+			return float(r.get("regen", 0.0)) if ZD_WAR_REGEN else 0.0
+	return 0.0
+
+
+## 勇者甲（D32、D54）这一行；开关关了或不是证道本体战返回 {}
+static func zd_doom(f: Dictionary) -> Dictionary:
+	if not ZD_DOOM or str(f.get("line", "")) != "death":
+		return {}
+	return zd_rule(f)
+
+
+static func _zd_regen(logic, f: Dictionary, logs: Array) -> void:
+	var rate := zd_regen_rate(f)
+	var kn = f.knight
+	if rate <= 0.0 or not kn.is_alive() or kn.hp >= kn.mhp:
+		return
+	var before: float = kn.hp
+	kn.hp = minf(float(kn.mhp), float(kn.hp) + floorf(float(kn.mhp) * rate))
+	kn.refresh_resources()
+	logs.append({"type": "regen", "target": kn, "hp": before - float(kn.hp), "views": logic.views([kn])})
 
 
 # ---- 开关与开战 ----
@@ -473,6 +552,9 @@ static func start_turn(logic) -> Array:
 	if bool(f.survived):
 		return take_logs(logic)
 	_check_phase(logic, f)
+	var er := enrage_turn(f)
+	if er > 0 and turn >= er:
+		_say(f, ("%s狂暴了：" % str(f.base.name) if turn == er else "狂暴：") + "伤害 ×%s。" % XTianqiBalance._num_text(enrage_mult(logic)))
 	match str(f.line):
 		"death":
 			_death_turn_start(logic, f, turn)
@@ -508,7 +590,7 @@ static func end_turn(logic) -> Array:
 			m.burn = int(m.burn) - 1
 			_lose_hp(logic, a, floorf(a.mhp * float(knight("war").wave.burn)), logs)
 		if a.is_alive() and m.get("plague", false):
-			_lose_hp(logic, a, floorf(a.mhp * float(knight("plague").plague.dot)), logs)
+			_lose_hp(logic, a, floorf(a.mhp * float(knight("plague").plague.dot) * enrage_mult(logic)), logs)  # 证道狂暴：疫病掉血同乘
 		for k in ["seen", "shrapnel"]:
 			if int(m.get(k, 0)) > 0:
 				m[k] = int(m[k]) - 1
@@ -519,6 +601,7 @@ static func end_turn(logic) -> Array:
 	if str(f.line) == "death" and int(f.phase) >= 3:  # 阶段只进不退（圣水加最大生命会把血量比例往回拉）
 		f.finale = mini(int(knight("death").finale.full), int(f.finale) + 1)
 		_say(f, "终末 %d／%d。" % [int(f.finale), int(knight("death").finale.full)])
+	_zd_regen(logic, f, logs)
 	_check_kills(logic, f)
 	if str(f.mode) == "survival" and not bool(f.survived) and int(logic.turn) >= int(data().survival.survive_turns) and not _alive_actors(logic).is_empty():
 		_survive(logic, f)
@@ -592,10 +675,14 @@ static func _death_turn_start(logic, f: Dictionary, turn: int) -> void:
 	var interval := int(k.doom.phase_interval) if int(f.phase) >= 3 else int(k.doom.interval)
 	if str(f.mode) == "survival":
 		interval = int(data().survival.doom_interval)  # 开场生存战每 3 回合（数值稿 v0.4 第 7 节，已确认）
+	var zd := zd_doom(f)
+	if int(zd.get("doom_every_from", 0)) > 0 and turn >= int(zd.doom_every_from):
+		interval = 1  # 勇者甲（D54）：证道到这一回合起死期每回合点一人
 	if turn - int(f.doom_last) >= interval:
 		var live := _alive_actors(logic).filter(func(a): return not _mark(f, a).get("doom", false))
 		if not live.is_empty():
-			var t = live[logic._int(0, live.size() - 1, "horseman_doom")]
+			# 勇者甲（D32）：证道从出战栏最后一格往前点（actors 照出战栏顺序，换人原位替换）；别的档照旧随机
+			var t = live[live.size() - 1] if bool(zd.get("doom_from_last", false)) else live[logic._int(0, live.size() - 1, "horseman_doom")]
 			f.doom_last = turn
 			if XTianqiRewards.doom_spared(logic, t, str(f.mode) != "survival"):  # 天启篇奖励：净印·长明（终焉无效：本体、影子）
 				_say(f, "死期落在%s身上，被净印挡下，只损失了一半生命。" % t.display_name())
@@ -1162,6 +1249,8 @@ static func _strike(logic, u, t, skill: Dictionary, base: float, critical: bool)
 	var power := float(u.mat) if magical else float(u.atk)
 	var def := float(t.mdf) if magical else float(t.def)
 	var taken := float(XTianqiCombat.taken_parts(t, logic.state).mult)
+	if is_same(u, fight(logic).get("knight")):
+		base *= enrage_mult(logic)  # 证道狂暴：只乘骑士本体（援军、小怪、混子小弟不乘）
 	return logic.horseman_strike(u, t, skill, hit_value(power, def, base, taken), critical)
 
 
@@ -1230,8 +1319,13 @@ static func hp_damage(logic, u, t, value: float) -> float:
 	var f := fight(logic)
 	if value > 0.0 and str(f.mode) == "survival" and is_same(t, f.knight):
 		return minf(value, maxf(0.0, float(t.hp) - 1.0))  # 生存战：骑士生命锁住，打不完
-	if value < 0.0 and t is XActor and _mark(f, t).get("plague", false):
-		return value * (1.0 - float(knight("plague").plague.heal_down))
+	if value < 0.0 and t is XActor:
+		var v := value
+		if _mark(f, t).get("plague", false):
+			v *= 1.0 - float(knight("plague").plague.heal_down)
+		if str(f.line) == "plague" and enrage_mult(logic) > 1.0:
+			v *= float(zd_table().get("plague_enrage_heal", 0.5))  # 证道混子狂暴后受到的治疗再减半
+		return v
 	if value > 0.0 and is_same(t, f.knight) and str(f.line) == "plague" and u is XActor:
 		if not f.has("hit_knight"):
 			f.hit_knight = {}
