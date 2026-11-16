@@ -1,0 +1,27 @@
+{
+ "sha": "4ad115becf218073fa3132ec00dd35c6a8450bcf",
+ "branch": "ci/gpt/mira-feet",
+ "mode": "affected",
+ "base": "dddb78aa61a93b1f0d810394d0bf490141b3e5f7",
+ "passed": true,
+ "scenes": 6,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 59.0,
+ "testSeconds": 98,
+ "generatedRef": "refs/ci/generated/gpt/mira-feet",
+ "generatedCommit": "db20569ad78677828f3e3270314b8bd4d198d43f",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43973552983",
+ "sceneNames": [
+  "xiyou_actor_book.tscn",
+  "xiyou_actor_looks.tscn",
+  "xiyou_actor_sv_compare.tscn",
+  "xiyou_mira_art.tscn",
+  "xiyou_mira_dragon_art.tscn",
+  "xiyou_mira_lift.tscn"
+ ],
+ "time": "2026-11-16T22:53:12+00:00"
+}
