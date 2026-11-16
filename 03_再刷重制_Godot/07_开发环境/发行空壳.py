@@ -6,6 +6,9 @@
 「天启篇没开放时」的结果（发行构建里天启篇都关着，真脚本在西游存档上走的也是这条路）。开发版、测试、Kyo 本地照旧用真脚本。
 
   python3 发行空壳.py tree <输出目录>      克隆工程（APFS cp -c，含 .godot 缓存）并换上空壳，打印目录；发行出包.py、发布补丁.py 从这里导出
+  python3 发行空壳.py tree --src <工程目录> <输出目录>
+                                            同上，但克隆的是指定的工程目录（如发行提交的临时 git worktree 里的 01_Godot工程）；
+                                            空壳规则（特例表、手写空壳、DENY）仍用本脚本旁边的。玩家资料包.py 用（T008，cc 11-16）
   python3 发行空壳.py check                 只生成空壳、不落盘：查西游代码用到的每个成员都有，没有就报（检查.sh 用）
   python3 发行空壳.py show <类名>           打印某个类的空壳（核对用）
 
@@ -429,18 +432,21 @@ def check_errors(missing: list, how: dict, sus: list = None) -> list:
     return errs
 
 
-def make_tree(out: Path) -> Path:
-    """克隆工程到 out 并换上空壳。out 不能已存在。"""
+def make_tree(out: Path, src: Path = None) -> Path:
+    """克隆工程到 out 并换上空壳。out 不能已存在。src：要克隆的工程目录（默认本仓工程 PROJECT）。"""
     if out.exists():
         raise SystemExit(f'{out} 已存在')
-    stubs, missing, how = build_all(PROJECT)
-    errs = check_errors(missing, how, suspects(PROJECT))
+    if src is not None and not (Path(src) / 'project.godot').is_file():
+        raise SystemExit(f'{src} 不是 Godot 工程（没有 project.godot）')
+    src = Path(src).resolve() if src is not None else PROJECT
+    stubs, missing, how = build_all(src)
+    errs = check_errors(missing, how, suspects(src))
     if errs:
         raise SystemExit('\n'.join(errs))
     out.parent.mkdir(parents=True, exist_ok=True)
-    r = subprocess.run(['cp', '-cR', str(PROJECT), str(out)])
+    r = subprocess.run(['cp', '-cR', str(src), str(out)])
     if r.returncode:
-        shutil.copytree(PROJECT, out, symlinks=True)
+        shutil.copytree(src, out, symlinks=True)
     for p, s in stubs.items():
         (out / p).write_text(s, encoding='utf-8')
     return out
@@ -461,7 +467,19 @@ def main(argv) -> int:
         print(__doc__)
         return 2
     if argv[0] == 'tree':
-        print(make_tree(Path(argv[1]).resolve()))
+        rest = list(argv[1:])
+        src = None
+        if '--src' in rest:
+            i = rest.index('--src')
+            if i + 1 >= len(rest):
+                print('--src 后面要跟工程目录')
+                return 2
+            src = Path(rest[i + 1]).expanduser().resolve()
+            del rest[i:i + 2]
+        if len(rest) != 1:
+            print(__doc__)
+            return 2
+        print(make_tree(Path(rest[0]).resolve(), src))
         return 0
     stubs, missing, how = build_all(PROJECT)
     if argv[0] == 'show':
