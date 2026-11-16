@@ -261,6 +261,7 @@ want tools && { if python3 "$ENV_DIR/测试导入超时.py" >/dev/null 2>&1; the
 want tools && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/测试天启篇数据校验.py" >/dev/null 2>&1 && python3 "$ROOT/03_再刷重制_Godot/03_转换工具/天启篇数据校验.py" >/dev/null; then ok "天启篇数据表校验（规则自检与回归）"; else bad "天启篇数据表校验失败，单跑 03_转换工具/天启篇数据校验.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行入口冒烟.py" >/dev/null 2>&1; then ok "发行入口冒烟安卓分支"; else bad "发行入口冒烟工具回归失败，单跑 07_开发环境/测试发行入口冒烟.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行出包.py" >/dev/null 2>&1; then ok "发行出包（发行说明、旧目录、体积表）"; else bad "发行出包工具回归失败，单跑 07_开发环境/测试发行出包.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试玩家资料包.py" >/dev/null 2>&1; then ok "玩家资料包工具"; else bad "玩家资料包工具回归失败，单跑 07_开发环境/测试玩家资料包.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行空壳.py" >/dev/null 2>&1; then ok "发行空壳生成"; else bad "发行空壳工具回归失败，单跑 07_开发环境/测试发行空壳.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试Windows实机冒烟.py" >/dev/null 2>&1; then ok "Windows 实机冒烟（假 exe：入口、按键、存档目录）"; else bad "Windows 实机冒烟工具回归失败，单跑 07_开发环境/测试Windows实机冒烟.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试安卓实机冒烟.py" >/dev/null 2>&1; then ok "安卓实机冒烟（假 adb：返回键、新游戏、切后台、崩溃行、不碰真机）"; else bad "安卓实机冒烟工具回归失败，单跑 07_开发环境/测试安卓实机冒烟.py 看详情"; fi; }
