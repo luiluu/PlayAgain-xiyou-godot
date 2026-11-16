@@ -211,7 +211,8 @@ func cannon_options() -> Array:
 
 func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var power := float(CANNON_POWER.get(int(rec.get("id", 0)), 0.0)) if a is XActor and a.actor_id == XNanoha.ACTOR else 0.0
-	if power <= 0.0:
+	# 天启篇技能重构把六档的比例费用与伤害后多段关掉（skill_rework.json fields），没有付前 MP 换段数这回事，照普通技能估
+	if power <= 0.0 or not bool(rec.get("postDamageCostRepeat", false)):
 		return _safe_damage(a, t, rec)
 	# YEP 先付比例费用再算公式；previewCost 不留 _costmp（skill_cost 本就不写）
 	var before_mp := maxf(0.0, a.mp)
@@ -264,7 +265,7 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	if p.has("hits") and o_profile_hits:
 		repeats = float(p.hits)
 	else:
-		repeats *= float(p.hits) if p.has("hits") else float(rec.get("yepEffects", 1))
+		repeats *= float(p.hits) if p.has("hits") else seq_hits(a, rec)
 	var level := maxf(0.0, float(a.skillMasteryLevel(int(rec.id)))) if not is_item(rec) else 0.0
 	var m := RegEx.create_from_string("(?i)" + MASTERY_NOTE).search(str(rec.get("note", "")))
 	var mastery := 1.0 + level * (float(m.get_string(1)) if m else 0.10)
@@ -274,6 +275,68 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var balance := 0.01 if a is XActor and int(a.data().get("id", 0)) >= 141 and int(a.data().get("id", 0)) <= 166 and type in [1, 2, 5, 6] else 1.0
 	var tq := XTianqiNoX6.dealt_scale(a, t) if type in [1, 5] else 1.0  # 天启篇去全队 ×6（O-470）：AI 估伤本来不含 ×6，目标血量缩了它也跟着缩，选目标、选招和原来一样
 	return maxf(0.0, value) * rate * defense * clampf(repeats, 1, 32) * extra * mastery * balance * tq
+
+
+## O-待定-1（优化登记）：行动序列段数按 IF 条件算。原版 sequenceHits 本想判 `if user._skills.includes(N)`／`isStateAffected`，
+## 但 YEP 把 if 行整行存成名字（"IF USER._SKILLS.INCLUDES(5702)"），name==='IF' 从不成立，条件里的 ACTION EFFECT 全算上（转换器 yepEffects 照此）。
+## 奈叶星光 5710 没学魔力强化 5702 时实打 2 段、AI 按 7 段估，伤害高估三倍多，自动战斗永远选星光、不放小魔炮（玩家 11-16 报）。
+## true＝只看行动者自己的条件（技能、状态、装备、能力值、队友数等，同 XActionSequence.eval_condition），条件为假的分支里的段数不算；
+## 带 target 的、认不出的条件照旧全算（不知真假时两个分支都算，同原版）。false＝照原版用 yepEffects
+static var o_seq_if_hits := true
+var _seq_hits_cache := {}
+
+
+func seq_hits(a: XBattler, rec: Dictionary) -> float:
+	var all := float(rec.get("yepEffects", 1))
+	if not o_seq_if_hits or not rec.get("yepSeq") is Dictionary:
+		return all
+	var key := "%d|%d|%d" % [a.get_instance_id(), int(rec.get("id", 0)), _view]
+	if _seq_hits_cache.has(key):
+		return _seq_hits_cache[key]
+	var dry := XActionSequence.create(logic, a, rec, [])  # 只借条件求值，不跑序列
+	var skipped := 0
+	for phase in ["whole", "target"]:
+		var stack := []  # {parent, truth: true/false/null(不知道), taken}
+		var active := true
+		for entry in rec.yepSeq.get(phase, []):
+			var name := str(entry[0]).strip_edges()
+			var up := name.to_upper()
+			if up.begins_with("ELSE IF ") or up == "ELSE" or up.begins_with("ELSE "):
+				if stack.is_empty():
+					continue
+				var top: Dictionary = stack.back()
+				if up.begins_with("ELSE IF "):
+					var t2 = _seq_truth(dry, name.substr(8))
+					top.truth = null if t2 == null or top.truth == null else (t2 and not top.taken)
+				else:
+					top.truth = null if top.truth == null else not top.taken
+				if top.truth == true:
+					top.taken = true
+				active = top.parent and top.truth != false
+			elif up == "END" or up == "END IF":
+				if not stack.is_empty():
+					active = stack.pop_back().parent
+			elif up.begins_with("IF "):
+				var t = _seq_truth(dry, name.substr(3))
+				stack.append({"parent": active, "truth": t, "taken": t == true})
+				active = active and t != false
+			elif up == "ACTION EFFECT" and not active:
+				skipped += 1
+	var v := maxf(1.0, all - float(skipped))
+	_seq_hits_cache[key] = v
+	return v
+
+
+## 条件真假；带 target、认不出的返回 null（不知道）
+func _seq_truth(dry: XActionSequence, cond: String):
+	var text := cond.split("//")[0].strip_edges()
+	if text.contains("target"):
+		return null
+	var before := dry.unknown.size()
+	var v = dry.eval_condition(text)
+	if dry.unknown.size() > before:
+		return null
+	return v == true
 
 
 func expected_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:

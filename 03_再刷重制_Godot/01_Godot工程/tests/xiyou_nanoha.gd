@@ -122,6 +122,7 @@ func _run() -> void:
 	_domain_live()
 	_cast()
 	_manual()
+	_auto()
 	# 本地断言：追击等 execute 之外的 apply 不记（目标表在 execute 结束时关闭）
 	var b := _battle({"party": [1, 108], "hp": [1, BIG_HP, BIG_HP]})
 	var logic: XBattleLogic = b[0]
@@ -331,7 +332,10 @@ func _ai(c: Dictionary) -> void:
 	elif not n.skill_ids.has(5692):
 		n.learn_skill(5692)
 	n.mp = float(c.setup.mp)
+	var keep := XSmartAI.o_seq_if_hits
+	XSmartAI.o_seq_if_hits = false  # 原版对照：星光 5710 按 7 段估（O-待定-1 关）
 	var best := XSmartAI.choose(b[0], n)
+	XSmartAI.o_seq_if_hits = keep
 	var id := int(best.get("skill", {}).get("id", 0))
 	check(c.id, id == int(o.skill) and n.skill_ids.has(5692) == o.learned5692 and not n.has_meta("costmp"), [id, best.get("candidates"), o])
 
@@ -362,7 +366,12 @@ func _sched(c: Dictionary) -> void:
 	table.clear()
 	if int(c.setup.id) > 0:
 		table[n.display_name() + XHangUpAuto.three(1)] = int(c.setup.id)
+	var keep := [XSmartAI.o_seq_if_hits, XNanoha.AUTO_CANNON]
+	XSmartAI.o_seq_if_hits = false  # 原版对照（O-待定-1、O-待定-2 关）：智能 AI 关着照表放 5692 本身
+	XNanoha.AUTO_CANNON = false
 	var r := logic.auto_battle_action(n)
+	XSmartAI.o_seq_if_hits = keep[0]
+	XNanoha.AUTO_CANNON = keep[1]
 	var id := int(r[0].get("id", 0))
 	table.clear()
 	XConfig._values.codexSmartAI = was_smart
@@ -399,6 +408,135 @@ func _manual() -> void:
 		check("manual.%d" % ids[i], asked == [6] and not used.is_empty() and n.mp == want_mp
 			and int(n.get_meta("costmp", -1)) == floori(mp1 * rates[i] / 2000.0) and logic.enemies.any(func(e): return e.hp < BIG_HP),
 			[asked, used.size(), n.mp, want_mp, n.get_meta("costmp", -1), logic.common_event_skipped])
+
+
+## 自动战斗／挂机放小魔炮（玩家 11-16 报：自动战斗只放星光，挂机按顺序也放不出小魔炮）。本地断言，西游档、天启篇各一遍：
+## - auto.*.seq_hits：O-待定-1 开时星光 5710 没学魔力强化 5702 按 2 段估（原版 7 段），学了 7 段；关时 7 段；
+## - auto.*.smart：智能 AI 开、没排表、魔法足（最大魔法加 5 万、当前一半）时自动战斗选六档魔炮之一；O-待定-1 关时照原版选星光；
+## - auto.*.sched_smart／sched_off：挂机顺序表排 5692，智能 AI 开时在六档里挑、关时放凰霞风暴 30%（O-待定-2）；放出去不预约 2483 选单、真打出伤害；
+## - auto.*.sched_off_orig：O-待定-2 关时照原版放 5692 本身（会预约选单）；
+## - auto.*.no_mp：魔法 0 时不卡：智能 AI 开关两种都不放 5692、不预约选单、动作照常结算。
+func _auto() -> void:
+	for tq in [false, true]:
+		var tag := "auto.tq" if tq else "auto.xy"
+		var was_smart := XConfig.smart_ai()
+		# 段数
+		var b := _auto_battle(tq)
+		var logic: XBattleLogic = b[0]
+		var n: XActor = b[2]
+		var star := XDB.rec("Skills", 5710)
+		var ai := XSmartAI.new(logic, n)
+		var keep := [XSmartAI.o_seq_if_hits, XNanoha.AUTO_CANNON]
+		var h_on := ai.seq_hits(n, star)
+		XSmartAI.o_seq_if_hits = false
+		var h_off := XSmartAI.new(logic, n).seq_hits(n, star)
+		XSmartAI.o_seq_if_hits = keep[0]
+		n.learn_skill(5702)
+		var h_learned := XSmartAI.new(logic, n).seq_hits(n, star)
+		n.forget_skill(5702)
+		check(tag + ".seq_hits", h_on == 2.0 and h_off == 7.0 and h_learned == 7.0, [h_on, h_off, h_learned])
+		# 智能 AI、没排表
+		XConfig._values.codexSmartAI = true
+		var pick := int(logic.auto_battle_action(n)[0].get("id", 0))
+		XSmartAI.o_seq_if_hits = false
+		var pick_orig := int(logic.auto_battle_action(n)[0].get("id", 0))
+		XSmartAI.o_seq_if_hits = keep[0]
+		check(tag + ".smart", XSmartAI.CANNON_POWER.has(pick) and pick_orig == 5710, [pick, pick_orig])
+		# 挂机表排 5692：智能 AI 开／关
+		for smart in [true, false]:
+			b = _auto_battle(tq)
+			logic = b[0]
+			n = b[2]
+			XConfig._values.codexSmartAI = smart
+			_schedule(b[1], n, 5692)
+			var r := logic.auto_battle_action(n)
+			var id := int(r[0].get("id", 0))
+			var mp0 := n.mp
+			var hp0: float = logic.enemies.reduce(func(acc, e): return acc + e.hp, 0.0)
+			var logs := logic.act(n, r[0], r[1] if r[1] != null else logic.enemies[0])
+			var reserved := XBattleCommonEvent.reserved(logic)
+			logs.append_array(logic.run_events())
+			var hp1: float = logic.enemies.reduce(func(acc, e): return acc + e.hp, 0.0)
+			var used := logs.any(func(l): return l is Dictionary and l.has("target") and int(l.get("skill", {}).get("id", 0)) == id)
+			var ok_id := XSmartAI.CANNON_POWER.has(id) if smart else id == 5703
+			var ok_mp := n.mp < mp0 if smart else n.mp == mp0 - floorf(mp0 * 0.3)
+			check(tag + (".sched_smart" if smart else ".sched_off"), ok_id and ok_mp and used and reserved != 2483 and hp1 < hp0,
+				[id, mp0, n.mp, reserved, used, hp0 - hp1])
+		# O-待定-2 关：照原版放 5692（预约选单）
+		b = _auto_battle(tq)
+		XConfig._values.codexSmartAI = false
+		_schedule(b[1], b[2], 5692)
+		XNanoha.AUTO_CANNON = false
+		var orig := int(b[0].auto_battle_action(b[2])[0].get("id", 0))
+		XNanoha.AUTO_CANNON = keep[1]
+		check(tag + ".sched_off_orig", orig == 5692, orig)
+		# 魔法 0：不放 5692、不卡选单
+		for smart in [true, false]:
+			b = _auto_battle(tq)
+			logic = b[0]
+			n = b[2]
+			n.mp = 0.0
+			XConfig._values.codexSmartAI = smart
+			_schedule(b[1], n, 5692)
+			var r := logic.auto_battle_action(n)
+			var id := int(r[0].get("id", 0))
+			logic.act(n, r[0], r[1] if r[1] != null else logic.enemies[0])
+			var reserved := XBattleCommonEvent.reserved(logic)
+			check(tag + ".no_mp." + ("smart" if smart else "off"), id != 5692 and id > 0 and reserved != 2483 and not logic.is_event_waiting(), [id, reserved])
+		XHangUpAuto.data(b[1], "ActSkill").clear()
+		XConfig._values.codexSmartAI = was_smart
+
+
+## 奈叶单人、10 级会 5692、最大魔法加 5 万、当前魔法一半；敌群 2 血量很厚。tq＝天启篇存档（九死档，奈叶是超强者，上限 1 才能上场）
+func _auto_battle(tq: bool) -> Array:
+	var s: XState
+	if tq:
+		s = XTianqi.start_new_game(3, "jiusi", [108])  # 九死起超强者能上场（super_cap 1）
+		XTianqi.take_pending()
+		s.party.clear()
+		s.battle_slots.clear()
+		XTianqi._joining = true
+		s.add_actor(108)
+		XTianqi._joining = false
+		s.map_id = 4
+		XState.current = s
+		s.actor(108).change_level_mv(10)
+	else:
+		s = _new_state()
+		s.switches[2494] = true  # 同 _battle：开挑战开关，奈叶才能上场
+		s.party.clear()
+		s.battle_slots.clear()
+		s.actor(108).change_level_mv(10)
+		s.add_actor(108)
+	var n := s.actor(108)
+	if not n.skill_ids.has(5692):
+		n.learn_skill(5692)
+	var logic := XBattleLogic.new()
+	var rand := XBattleRandom.create("0000000000000108")
+	rand.rule = FixedMidStream.new()
+	rand.rule.domain = "rule"
+	logic.setup(2, s, rand)
+	XBattleCommonEvent.take(logic)  # 开战预约的 1320 不跑
+	for e in logic.enemies:
+		var p: Array = (e.data().params as Array).map(func(v): return float(v))
+		p[0] += BIG_HP
+		e.zq_ref = {"p": p, "k": 1.0}
+		e.param_mark_dirty()
+		e.param_refresh()
+		e.recover_all()
+	n.add_param(1, 50000.0)
+	n.param_mark_dirty()
+	n.param_refresh()
+	n.recover_all()
+	n.mp = floorf(n.mmp * 0.5)
+	logic.turn = 1
+	return [logic, s, n]
+
+
+func _schedule(s: XState, n: XActor, id: int) -> void:
+	var table := XHangUpAuto.data(s, "ActSkill")
+	table.clear()
+	table[n.display_name() + XHangUpAuto.three(1)] = id
 
 
 func finish() -> void:
