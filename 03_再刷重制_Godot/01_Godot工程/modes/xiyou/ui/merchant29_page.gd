@@ -38,6 +38,14 @@ const DEFAULT_HELP := "确认选择；取消返回上一级。"
 class List29 extends XYunChoicesWindow:
 	signal turn(d: int)
 	var detail_rect := Rect2()
+	var pager: XListPager   # T050 翻页件（新界面关着时为 null）：翻的是左侧列表，不是右侧详情页（PageUp／PageDown 仍翻详情）
+
+	## 窗口刷新时同步翻页件（滚轮、点选、翻页都会走到这里）；有翻页件时它自己画页码，底边的下箭头不要
+	func refresh() -> void:
+		if pager != null:
+			pager.set_state(top, rows, entries.size())
+			down_arrow = down_arrow and not pager.visible
+		super()
 
 	func _unhandled_input(event: InputEvent) -> void:
 		if active and is_visible_in_tree():
@@ -87,6 +95,7 @@ func _ready() -> void:
 	list.size = LIST_RECT.size
 	list.detail_rect = DETAIL_RECT
 	add_child(list)
+	list.pager = XListPager.attach(list, list.page)
 	list.canvas.painter = list._paint
 	list.canvas.blink = true
 	list.index_changed.connect(func(_i): update_help())
@@ -107,6 +116,7 @@ func choose(list_rows: Array, ok: Callable, back: Callable, info := []) -> void:
 	_back = back
 	header.refresh()
 	list.entries = rows
+	list.rows = XListPager.rows_for(LIST_ROWS, rows.size())   # T050：超一页少放一行给翻页件
 	list.top = 0
 	list.select(0 if not rows.is_empty() else -1)
 	update_help()

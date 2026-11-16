@@ -45,6 +45,7 @@ var top := 0
 var cmd := -1                # 底部「修炼」窗的选择（-1 不选）
 var row := -1                # 修炼项窗的选择
 var index_win: XMVWindow
+var index_pager: XListPager   # T050 翻页件（新界面关着时为 null）
 var status_win: XMVWindow
 var gold_win: XMVWindow
 var bottom_win: XMVWindow
@@ -68,6 +69,9 @@ func _ready() -> void:
 	list_win = XMVWindow.make(self, LIST_RECT, op, _paint_list)
 	for w in [index_win, bottom_win, list_win]:
 		w.canvas.blink = true
+	index_pager = XListPager.attach(index_win, page)
+	if index_pager != null:   # 精魂窗（GOLD_RECT）盖在目录窗底部 64px，翻页件摆在它上面
+		index_pager.position.y = GOLD_RECT.position.y - XListPager.DEFAULT_SIZE.y - 2.0
 	_select_actor()
 
 
@@ -161,10 +165,10 @@ static func _paint_ops(c: XMVCanvas, ops: Array) -> void:
 
 func _paint_index(c: XMVCanvas) -> void:
 	var n := members().size()
-	if index >= top and index < top + INDEX_ROWS and n > 0:
+	if index >= top and index < top + index_rows() and n > 0:
 		c.cursor(Rect2(0, (index - top) * LH, c.size.x, LH), mode == "index")
 	var ops := index_ops(XState.current)
-	for i in range(top, mini(top + INDEX_ROWS, ops.size())):
+	for i in range(top, mini(top + index_rows(), ops.size())):
 		var o: Array = ops[i].duplicate()
 		o[3] = (i - top) * LH
 		_paint_ops(c, [o])
@@ -219,9 +223,18 @@ func _select_actor() -> void:
 	_refresh()
 
 
+## T050：目录窗底部 64px 被精魂窗盖住，原版 19 行里实际露出 17 行；新界面开着且队员超 17 个时只放 16 行，
+## 翻页件摆在精魂窗之上（不超 17 个或西游档：行数不变）。修炼项窗（LIST_ROWS）一屏放全、不滚动，不挂。
+func index_rows() -> int:
+	return 16 if XUiSkin.on() and members().size() > 17 else INDEX_ROWS
+
+
 func _refresh() -> void:
 	index_win.up_arrow = top > 0
-	index_win.down_arrow = top + INDEX_ROWS < members().size()
+	index_win.down_arrow = top + index_rows() < members().size()
+	if index_pager != null:   # 有翻页件时它自己画页码，底边的下箭头不要
+		index_pager.set_state(top, index_rows(), members().size())
+		index_win.down_arrow = index_win.down_arrow and not index_pager.visible
 	for w in [index_win, status_win, gold_win, bottom_win, list_win]:
 		w.refresh()
 
@@ -231,7 +244,7 @@ func select(i: int) -> void:
 		return
 	index = i
 	XSound.system(0)
-	top = XMenu._scroll_to(index, top, INDEX_ROWS)
+	top = XMenu._scroll_to(index, top, index_rows())
 	_select_actor()
 
 
@@ -296,13 +309,13 @@ func _gui_input(event: InputEvent) -> void:
 		cancel()
 	elif mode == "index" and XMenu.wheel_dir(event) != 0 and INDEX_RECT.has_point(event.position):
 		# Window_Selectable.processWheel：目录只滚窗口、光标不动（ui11）
-		top = XMenu.wheel(top, members().size(), INDEX_ROWS, XMenu.wheel_dir(event))
+		top = XMenu.wheel(top, members().size(), index_rows(), XMenu.wheel_dir(event))
 		_refresh()
 
 
 ## 队员目录是 Window_Selectable、不接管 pageup／pagedown：照 cursorPagedown／cursorPageup 整页翻（ui11）
 func page(d: int) -> void:
-	var r := XMenu.page(top, index, members().size(), INDEX_ROWS, d)
+	var r := XMenu.page(top, index, members().size(), index_rows(), d)
 	top = r[0]
 	if r[1] != index:
 		index = r[1]

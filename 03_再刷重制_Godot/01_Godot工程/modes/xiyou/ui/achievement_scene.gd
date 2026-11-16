@@ -29,6 +29,7 @@ var mode := "type"
 var list: Array = []
 var type_win: XMVWindow
 var list_win: XMVWindow
+var list_pager: XListPager   # T050 翻页件（新界面关着时为 null）；每页仍 6 条：窗口底边本来有 44px 空地，不少放行
 var count_win: XMVWindow
 
 
@@ -43,6 +44,7 @@ func _ready() -> void:
 	count_win = XMVWindow.make(self, COUNT_RECT, XUI.MENU_WINDOW_OPACITY, _paint_count)
 	type_win.canvas.blink = true
 	list_win.canvas.blink = true
+	list_pager = XListPager.attach(list_win, _pager_step)
 	_load_list()
 
 
@@ -63,6 +65,9 @@ func _max_top() -> int:
 func _refresh() -> void:
 	list_win.up_arrow = top > 0
 	list_win.down_arrow = top < _max_top()
+	if list_pager != null:   # 有翻页件时它自己画页码，底边的下箭头不要
+		list_pager.set_state(top, PAGE_ROWS, list.size())
+		list_win.down_arrow = list_win.down_arrow and not list_pager.visible
 	for w in [type_win, list_win, count_win]:
 		w.refresh()
 
@@ -122,6 +127,8 @@ func select_type(i: int) -> void:
 	if i == type_index:
 		return
 	type_index = i
+	if list_pager != null:   # T050：切页签回第 1 页（西游档照旧只夹到范围内）
+		top = 0
 	XSound.system(0)
 	_load_list()
 
@@ -187,6 +194,15 @@ func _page(d: int) -> void:
 	if index != before:
 		XSound.system(0)
 	_refresh()
+
+
+## T050 翻页件：列表态整页翻（选中跟着挪）；还在选分类时只翻不挪
+func _pager_step(d: int) -> void:
+	if mode == "list":
+		_page(d)
+	elif not list.is_empty():
+		top = XListPager.top_of(XListPager.page_of(top, PAGE_ROWS, list.size()) + d, PAGE_ROWS, list.size())
+		_refresh()
 
 
 func _scroll(d: int) -> void:

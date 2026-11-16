@@ -56,6 +56,7 @@ var _cooldown_until := 0
 var _entered_frame := -1
 var _detail: Dictionary = {}
 var list_win: XMVWindow
+var list_pager: XListPager   # T050 翻页件（新界面关着时为 null）
 var info_win: XMVWindow
 var detail_win: XMVWindow
 var confirm_win: XMVWindow
@@ -85,6 +86,7 @@ func _ready() -> void:
 			add_child(XUI.blurred_background(background))
 	list_win = XMVWindow.make(self, LIST_RECT, 255, _paint_list)
 	list_win.canvas.blink = true
+	list_pager = XListPager.attach(list_win, _pager_step)
 	info_win = XMVWindow.make(self, INFO_RECT, 255, _paint_info)
 	detail_win = XMVWindow.make(self, DETAIL_RECT, 255, _paint_detail)
 	detail_win.openness = 0
@@ -181,10 +183,28 @@ func _sync_hints() -> void:
 	_hints.place(_view_size())
 
 
+## T050：新界面下列表窗高随屏幕定，超一页时再少放一行给翻页件腾地方（见 XListPager.rows_for）
 func _list_rows() -> int:
+	var base := LIST_ROWS
 	if XUiSkin.on() and list_win != null:
-		return maxi(1, floori((list_win.size.y - XMVWindow.PADDING * 2.0) / LH))
-	return LIST_ROWS
+		base = maxi(1, floori((list_win.size.y - XMVWindow.PADDING * 2.0) / LH))
+	return XListPager.rows_for(base, XMapTransfer.maps().size())
+
+
+## 翻页件：整页翻（页首对齐），列表态选中项跟着挪同样的行数；掉落态只翻不换地图
+func _pager_step(d: int) -> void:
+	var n := XMapTransfer.maps().size()
+	var rows := _list_rows()
+	var nt := XListPager.top_of(XListPager.page_of(top, rows, n) + d, rows, n)
+	if nt == top:
+		return
+	var moved := nt - top
+	top = nt
+	if mode == "list":
+		XSound.system(0)
+		_select(clampi(index + moved, 0, n - 1))
+	else:
+		_refresh_list()
 
 
 func _info_inner_w() -> float:
@@ -547,6 +567,11 @@ func _select(i: int) -> void:
 func _refresh_list() -> void:
 	list_win.up_arrow = top > 0
 	list_win.down_arrow = top + _list_rows() < XMapTransfer.maps().size()
+	if list_pager != null:   # 有翻页件时它自己画页码，底边的下箭头不要
+		list_pager.size.x = minf(XListPager.DEFAULT_SIZE.x, list_win.size.x - 16.0)   # 窗宽窗高随屏幕变，每次重摆
+		list_pager.position = Vector2((list_win.size.x - list_pager.size.x) / 2.0, list_win.size.y - XListPager.DEFAULT_SIZE.y - 2.0)
+		list_pager.set_state(top, _list_rows(), XMapTransfer.maps().size())
+		list_win.down_arrow = list_win.down_arrow and not list_pager.visible
 	list_win.refresh()
 
 

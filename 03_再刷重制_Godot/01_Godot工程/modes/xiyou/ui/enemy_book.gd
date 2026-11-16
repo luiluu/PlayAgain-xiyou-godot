@@ -64,6 +64,7 @@ var index_pager: XListPager   # T049 翻页件（新界面关着、战斗内图�
 var index_win: XMVWindow
 var status_win: XMVWindow
 var drop_win: XMVWindow
+var drop_pager: XListPager   # T050 掉落列表的翻页件（新界面关着、战斗内图鉴时为 null）
 var help_card: XHelpCard
 var _enemies := {}
 var _status_ops: Array = []
@@ -88,6 +89,7 @@ func _ready() -> void:
 	drop_win.canvas.blink = true
 	if not in_battle:
 		index_pager = XListPager.attach(index_win, _pager_step)
+		drop_pager = XListPager.attach(drop_win, _drop_pager_step)
 	help_card = XHelpCard.new()
 	help_card.show_frame = false
 	add_child(help_card)
@@ -361,7 +363,7 @@ func _paint_status(c: XMVCanvas) -> void:
 
 
 func _paint_drops(c: XMVCanvas) -> void:
-	var rows := floori((STATUS_RECT.size.y - XMVWindow.PADDING * 2) / LH)
+	var rows := drop_rows_visible()
 	if drop_index >= drop_top and drop_index < drop_top + rows:
 		c.cursor(Rect2(0, (drop_index - drop_top) * LH, c.size.x, LH), mode == "drops")
 	for i in range(drop_top, mini(drop_top + rows, drop_list.size())):
@@ -411,6 +413,8 @@ func _refresh() -> void:
 	if index_pager != null:   # 有翻页件时它自己画页码，底边的下箭头不要
 		index_pager.set_state(top, index_rows(), ids.size())
 		index_win.down_arrow = index_win.down_arrow and not index_pager.visible
+	if drop_pager != null:   # 掉落窗的翻页件：掉落列表开着才显示（原版掉落窗本来就没有上下箭头）
+		drop_pager.set_state(drop_top, drop_rows_visible(), drop_list.size() if mode == "drops" else 0)
 	for w in [index_win, status_win, drop_win]:
 		w.refresh()
 
@@ -432,8 +436,19 @@ func select(i: int) -> void:
 	_select_enemy()
 
 
+## T050：新界面开着且掉落超一页时少放一行，给翻页件腾地方（战斗内图鉴不挂，行数不变）
 func drop_rows_visible() -> int:
-	return floori((STATUS_RECT.size.y - XMVWindow.PADDING * 2) / LH)
+	var base := floori((STATUS_RECT.size.y - XMVWindow.PADDING * 2) / LH)
+	return base if in_battle else XListPager.rows_for(base, drop_list.size())
+
+
+func _drop_pager_step(d: int) -> void:
+	if mode != "drops" or drop_list.is_empty():
+		return
+	var r := XMenu.page(drop_top, drop_index, drop_list.size(), drop_rows_visible(), d)
+	drop_top = r[0]
+	select_drop(r[1])
+	_refresh()
 
 
 func select_drop(i: int) -> void:
@@ -547,7 +562,7 @@ func _gui_input(event: InputEvent) -> void:
 						select(i)
 			else:
 				var i := drop_top + row
-				if row >= 0 and i < drop_list.size():
+				if row >= 0 and row < drop_rows_visible() and i < drop_list.size():
 					if i == drop_index:
 						ok()
 					else:

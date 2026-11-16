@@ -62,6 +62,7 @@ var popup_icon := 0
 var help_win: XMVWindow
 var cat_win: XMVWindow
 var list_win: XMVWindow
+var list_pager: XListPager   # T050 翻页件（新界面关着时为 null；锻造选原件态不显示）
 var detail_win: XMVWindow
 var confirm_win: XMVWindow
 var gold_win: XMVWindow
@@ -97,6 +98,7 @@ func _ready() -> void:
 	cat_win = XMVWindow.make(self, CAT_RECT, op, _paint_category)
 	gauge_win = XMVWindow.make(self, GAUGE_RECT, op, _paint_gauge)
 	list_win.canvas.blink = true
+	list_pager = XListPager.attach(list_win, _pager_step)
 	cat_win.canvas.blink = true
 	confirm_win.canvas.blink = true
 	popup_win.openness = 0
@@ -150,7 +152,7 @@ func _reset_list() -> void:
 	list = XCrafting.recipes().filter(func(r): return XCrafting.known(s, r) and XCrafting.has_craft_level(s, r) and str(r.category) == cat)
 	if index >= list.size():
 		index = list.size() - 1 if mode != "category" else -1
-	top = clampi(top, 0, maxi(0, list.size() - LIST_ROWS))
+	top = clampi(top, 0, maxi(0, list.size() - list_rows()))
 
 
 ## 文字操作 ["t", 文字, x, y, 宽, 行高, 对齐, 字号, 颜色, 不透明度]；图标 ["i", 图标号, x, y, 不透明度]
@@ -300,9 +302,9 @@ func _paint_list(c: XMVCanvas) -> void:
 		for i in range(pick_top, mini(pick_top + PICK_ROWS, picks.size())):
 			paint_ops(c, pick_row_ops(s, int(current().id), picks[i], (i - pick_top) * PICK_H))
 		return
-	if index >= top and index < top + LIST_ROWS:
+	if index >= top and index < top + list_rows():
 		c.cursor(Rect2(0, (index - top) * LH, c.size.x, LH), mode == "list")
-	for i in range(top, mini(top + LIST_ROWS, list.size())):
+	for i in range(top, mini(top + list_rows(), list.size())):
 		paint_ops(c, list_row_ops(s, list[i], (i - top) * LH))
 
 
@@ -353,7 +355,10 @@ func _refresh() -> void:
 		confirm_win.opacity = a
 		confirm_win.canvas.modulate.a = a / 255.0
 	list_win.up_arrow = pick_top > 0 if mode == "pick" else top > 0
-	list_win.down_arrow = pick_top + PICK_ROWS < picks.size() if mode == "pick" else top + LIST_ROWS < list.size()
+	list_win.down_arrow = pick_top + PICK_ROWS < picks.size() if mode == "pick" else top + list_rows() < list.size()
+	if list_pager != null:   # 有翻页件时它自己画页码，底边的下箭头不要；选原件态列的是 picks，不挂
+		list_pager.set_state(top, list_rows(), list.size() if mode != "pick" else 0)
+		list_win.down_arrow = list_win.down_arrow and not list_pager.visible
 	_sync_source()
 	for w in [help_win, cat_win, list_win, detail_win, confirm_win, gold_win, gauge_win, popup_win]:
 		w.refresh()
@@ -427,6 +432,8 @@ func select_category(i: int) -> void:
 	if i == cat_index:
 		return
 	cat_index = i
+	if list_pager != null:   # T050：切页签回第 1 页（西游档照旧只夹到范围内）
+		top = 0
 	XSound.system(0)
 	_reset_list()
 	_refresh()
@@ -437,7 +444,7 @@ func select(i: int) -> void:
 		return
 	index = i
 	XSound.system(0)
-	top = XMenu._scroll_to(index, top, LIST_ROWS)
+	top = XMenu._scroll_to(index, top, list_rows())
 	_refresh()
 
 
@@ -600,12 +607,27 @@ func _move(d: int, wrap: bool) -> void:
 			change_amount(-10 if d > 0 else 10)
 
 
+## T050：天启篇新界面开着且配方超一页时少放一行，给翻页件腾地方（见 XListPager.rows_for）
+func list_rows() -> int:
+	return XListPager.rows_for(LIST_ROWS, list.size())
+
+
+func _pager_step(d: int) -> void:
+	if mode == "pick" or list.is_empty():
+		return
+	if mode != "list" or index < 0:   # 没选中项（分类态）只翻不挪
+		top = XListPager.top_of(XListPager.page_of(top, list_rows(), list.size()) + d, list_rows(), list.size())
+		_refresh()
+		return
+	_page(d)
+
+
 ## 通用翻页（制作列表、锻造原件窗都不接管 pageup／pagedown）
 func _page(d: int) -> void:
 	match mode:
 		"list":
 			if not list.is_empty():
-				var r := XMenu.page(top, index, list.size(), LIST_ROWS, d)
+				var r := XMenu.page(top, index, list.size(), list_rows(), d)
 				top = r[0]
 				if r[1] != index:
 					select(r[1])
@@ -649,7 +671,7 @@ func _gui_input(event: InputEvent) -> void:
 			cancel()
 		MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP:
 			if mode == "list" and LIST_RECT.has_point(p):
-				top = clampi(top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0, list.size() - LIST_ROWS))
+				top = clampi(top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0, list.size() - list_rows()))
 				_refresh()
 		MOUSE_BUTTON_LEFT:
 			if mode == "popup":
@@ -663,7 +685,7 @@ func _gui_input(event: InputEvent) -> void:
 						select_category(i)
 			elif mode == "list" and LIST_RECT.has_point(p):
 				var i := top + floori((p.y - LIST_RECT.position.y - XMVWindow.PADDING) / LH)
-				if i >= top and i < mini(top + LIST_ROWS, list.size()):
+				if i >= top and i < mini(top + list_rows(), list.size()):
 					if i == index:
 						ok()
 					else:
