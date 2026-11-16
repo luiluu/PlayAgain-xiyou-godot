@@ -139,6 +139,7 @@ func target_index(logic: XBattleLogic, t) -> int:
 func _run() -> void:
 	# 原版对照：漩涡怪物异化对齐大厅稿（Kyo 11-15 D8）二阶就把守层者、稀有等变成异化怪（XRift.stage() 恒为 2），这里关掉，由 tests/xiyou_rift_alien 核
 	XRiftAlien.ALIGN_LOBBY = false
+	XSmartAI.o_seq_if_hits = false  # 原版对照：AI 段数照原版全算行动序列里的 ACTION EFFECT（O-待定-1 关；开着的断言在 xiyou_nanoha auto.*）
 	var ref = JSON.parse_string(FileAccess.get_file_as_string("res://modes/xiyou/generated/oracle/smart_ai.json"))
 	if not ref is Dictionary:
 		check("oracle_present", false, "先运行 mv_oracle/smart_ai_probe.cjs")

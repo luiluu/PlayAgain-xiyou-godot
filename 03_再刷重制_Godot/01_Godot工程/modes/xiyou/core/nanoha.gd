@@ -162,3 +162,23 @@ static func domain_queue(logic) -> void:
 	for id in logic.get_meta("nanoha_domain_ce"):
 		XBattleCommonEvent.reserve_after(logic, int(id))
 	logic.remove_meta("nanoha_domain_ce")
+
+
+# ---- 自动战斗／挂机放小魔炮（玩家 11-16 报：挂机按顺序放技能时奈叶放不出小魔炮） ----
+## O-待定-2（优化登记）：小魔炮 5692 本身只预约公共事件 2483 弹「魔炮选择」六选一（凰霞风暴／厄临星爆 × 30／60／90%）。
+## 原版智能 AI 关着、挂机顺序表排了 5692 时照表放（XdRs_HangUp makeAction），挂机中也弹六选一等玩家点，人不在就停在选单上。
+## true＝自动行动（挂机、自动战斗按钮）不放 5692 本身，直接放一档：凰霞风暴 30%（5703，全体、只花当前魔法三成，留蓝给下一轮）；
+## 放不了（天启篇冷却、魔法不够）退到厄临星爆 30%（5706）；都放不了按挂机原规则普通攻击，不卡选单。
+## 智能 AI 开着时不走这里（原版 Codex_SmartBattleAI 就在六档里按估分挑，见 XSmartAI.cannon_options）。手动放 5692 照旧弹六选一。
+## false＝照原版放 5692（挂机里弹选单）
+static var AUTO_CANNON := true
+const AUTO_TIERS := [5703, 5706]
+
+
+## 自动行动要放 5692 时换成的那一档；都放不了返回空
+static func auto_tier(logic, a: XActor) -> Dictionary:
+	for id in AUTO_TIERS:
+		var sk := XDB.rec("Skills", id)
+		if not sk.is_empty() and logic.can_use(a, sk):
+			return sk
+	return {}
