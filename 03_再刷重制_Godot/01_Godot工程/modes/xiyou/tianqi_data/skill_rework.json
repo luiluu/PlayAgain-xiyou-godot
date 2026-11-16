@@ -1565,7 +1565,7 @@
   "7453": {"actor": 90, "name": "光暗交织", "kind": "被动", "desc": ["效果：学会光暗交织（主动技）"], "note_remove": ["passiveELUP\\d+", "passiveAPLUS"]},
   "7458": {"actor": 90, "name": "剑影重重", "kind": "被动", "desc": ["效果：学会剑影重重（主动技）"], "note_remove": ["passiveELUP\\d+", "passiveCrHarmRi", "passiveHarmRi", "passiveXPBST\\d"]},
   "7454": {"actor": 90, "name": "剑意流转", "kind": "被动", "desc": ["效果：再动 +10%", "效果：用剑或太刀时伤害 +10%"], "note_remove": ["SkETypeHarmRi\\d+", "passiveAPLUS"], "note_add": "<SkETypeHarmRi2: 10%><SkETypeHarmRi11: 10%><passiveAPLUS: 10%>"},
-  "7457": {"actor": 90, "name": "精灵至血", "kind": "被动", "desc": ["效果：暴击率 +20%", "效果：暴击伤害 +30%"], "note_remove": ["passivePBST\\d", "passiveAPLUS", "passiveHarmRe\\d+", "passiveHarmRi"], "note_add": "<passiveXPBST2:20%><passiveCrHarmRi:30>"},
+  "7457": {"actor": 90, "name": "精灵至血", "kind": "被动", "desc": ["效果：暴击率 +20%", "效果：暴击伤害 +30%"], "note_remove": ["passivePBST\\d", "passiveAPLUS", "passiveHarmRe\\d+", "passiveHarmRi", "AgainUseAll"], "note_add": "<passiveXPBST2:20%><passiveCrHarmRi:30>"},
   "7452": {"actor": 90, "name": "幽冥剑护", "kind": "被动", "desc": ["效果：普攻变为莫名剑法", "效果：闪避 +10%", "效果：开场回复20%生命、魔法和20 TP"], "note_remove": ["passivePBST\\d", "passiveHarmRe\\d+", "passiveXPBST\\d"], "note_add": "<passiveXPBST1:10%>"},
   "7459": {"actor": 90, "name": "觉醒：暗夜精灵", "kind": "被动", "desc": ["效果：已并入「精灵至血」"], "note_remove": ["SkillPass\\d+", "passivePBST\\d"]},
   "7455": {"actor": 90, "name": "恶魔之恸", "kind": "被动", "desc": ["效果：伤害 +5%", "效果：最大生命 +5%"], "note_remove": ["passiveHarmRi"], "note_add": "<passiveHarmRi:5><passivePBST0:5%>"},
