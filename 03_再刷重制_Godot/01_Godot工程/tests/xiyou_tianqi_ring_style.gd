@@ -400,6 +400,31 @@ func _orb_fx_frames() -> void:
 		check("fxframe_%s_no_red" % kind, reds == 0, reds)
 		check("fxframe_%s_animates" % kind, F.image(kind, 0).get_data() != F.image(kind, F.STILL).get_data())
 		print("ORB_FX_MAX_R %s=%.2f" % [kind, maxr])
+	# T062 加亮版：七印、双星整圈 36 帧都要二值 alpha、半径 ≤ 28、没有正红；并钉住深蓝描边、七印内圈点、双星星头暖白中心
+	for kind in ["seal7", "stars"]:
+		var all_ok := true
+		var outline := 0
+		for fr in F.FRAMES:
+			var im := F.image(kind, fr)
+			for y in F.SIZE:
+				for x in F.SIZE:
+					var p := im.get_pixel(x, y)
+					if p.a8 == 0:
+						continue
+					if p.a8 != 255 or Vector2(x - F.C, y - F.C).length() > 28.0 or (p.r8 >= XTianqiRingStyle.RED_R and p.g8 <= XTianqiRingStyle.RED_G and p.b8 <= XTianqiRingStyle.RED_B):
+						all_ok = false
+					if p.to_html(false) == "171c32":
+						outline += 1
+		check("fxbright_%s_36frames_clean" % kind, all_ok)
+		check("fxbright_%s_has_navy_outline" % kind, outline > 40, outline)
+	var star := F.image("stars", F.STILL)
+	var head := 0
+	for y in F.SIZE:
+		for x in F.SIZE:
+			if star.get_pixel(x, y).to_html(false) == "fff7d6":
+				head += 1
+	check("fxbright_stars_head_centre_warm", head == 2, head)
+	check("fxbright_seal7_inner_dot", F.image("seal7", 0).get_pixelv(Vector2i(F.C + 20, F.C)).to_html(false) == "e2fff6")
 	var g22 := F.image("glint", 0, 22.0)
 	var gr := 0.0
 	for y in F.SIZE:

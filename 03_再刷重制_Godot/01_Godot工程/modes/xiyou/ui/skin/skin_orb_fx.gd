@@ -7,6 +7,7 @@ extends RefCounted
 ## - stars 双星巡轨（小样 05）：两条倾斜椭圆虚线轨道各挂一颗亮星带拖尾，1.44 秒一周；传家宝、专属武器、独特物件，不论哪一栏。
 ## 画法照小样：64×64 原生像素画布（中心 32）、二值 alpha、半径 > 28 的像素一律剪掉（不压栏位名），最近邻贴到球心、乘选中放大倍数。
 ## 每档 FRAMES 帧按需生成一次、缓存成贴图，之后每帧每颗球只多一次贴图绘制（13 栏全亮也只是 13 次 add_texture_rect）。
+## 【T062·D121】seal7、stars 两支改用小o 加亮版（gpt/orb-fx-bright e8095236d）：七印 3×3 源字形每像素放 2×2、中心半径 23.5、七色提亮 22%、深蓝 171c32 四邻域 1px 描边、内圈四点半径 20 色 e2fff6；双星轨道 2px（96 采样、12 取 7）、拖尾提亮 25%、5×5 菱形星头、全部深蓝 1px 描边。微光、灵焰不动。
 ## 小样是 12 帧，这里每圈 36 帧（小样交付单「正式版建议升采样」），像素位置仍取整。动效档不是「全部」时停在 STILL 那一帧（小样静帧的相位）。
 
 const KINDS := ["flame", "seal7", "stars", "glint"]
@@ -85,11 +86,20 @@ static func image(kind: String, frame: int, glint_r := GLINT_R) -> Image:
 				_pt(img, _at(glint_r + 0.5, t), Color(GLINT_COLS[j >> 3]))
 		"seal7":
 			for i in 7:
-				var c := _at(26.0, TAU * (i / 7.0 + p / 7.0))
+				var c := _at(23.5, TAU * (i / 7.0 + p / 7.0))
+				var mask := {}
 				for d in SEAL7_GLYPHS[i]:
-					_pt(img, c + Vector2i(d[0], d[1]), Color(SEAL7_COLS[i]))
+					for yy in 2:
+						for xx in 2:
+							mask[c + Vector2i(d[0] * 2 + xx, d[1] * 2 + yy)] = true
+				for q in mask:
+					for off in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+						_pt(img, q + off, Color("171c32"))
+				for q in mask:
+					_pt(img, q, Color(SEAL7_COLS[i]).lightened(0.22))
 			for i in 4:
-				_pt(img, _at(21.0, TAU * (i / 4.0 - p)), Color("a6ded0"))
+				var q := _at(20.0, TAU * (i / 4.0 - p))
+				_pt(img, q, Color("e2fff6"))
 		"flame":
 			for i in 16:
 				var t := TAU * i / 16.0
@@ -100,17 +110,28 @@ static func image(kind: String, frame: int, glint_r := GLINT_R) -> Image:
 				_line(img, _at(22.0, t), _at(22.0 + h - 1, t), Color("d1adff" if i % 2 else "a3f2dc"))
 		"stars":
 			for k in 2:
-				for j in 64:
-					if j % 8 < 4:
-						_pt(img, _orbit(k, TAU * j / 64.0), Color("416171" if k else "55527c"))
+				var mask := {}
+				for j in 96:
+					if j % 12 < 7:
+						var q := _orbit(k, TAU * j / 96.0)
+						mask[q] = Color("96d9ec" if k else "c2abf0")
+						mask[q + Vector2i(0, 1)] = Color("96d9ec" if k else "c2abf0")
 				var head := TAU * (p if k else -p)
 				for j in 16:
-					_pt(img, _orbit(k, head - 0.8 + j * 0.05), Color(STAR_TRAIL[j >> 2]))
-				var s := _orbit(k, head)
-				var col := Color("94dff7" if k else "c6a7ff")
-				for d in [Vector2i(-1, 0), Vector2i(1, 0), Vector2i(0, -1), Vector2i(0, 1)]:
-					_pt(img, s + d, col)
-				_pt(img, s, Color("fff7d6"))
+					var q := _orbit(k, head - 0.8 + j * 0.05)
+					mask[q] = Color(STAR_TRAIL[j >> 2]).lightened(0.25)
+					mask[q + Vector2i(0, 1)] = mask[q]
+				var star := _orbit(k, head)
+				for y in range(-2, 3):
+					for x in range(-2, 3):
+						if absi(x) + absi(y) <= 2:
+							mask[star + Vector2i(x, y)] = Color("e5faff" if k else "efe3ff")
+				mask[star] = Color("fff7d6")
+				for q in mask:
+					for off in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+						_pt(img, q + off, Color("171c32"))
+				for q in mask:
+					_pt(img, q, mask[q])
 	# 剪到半径 28（欧氏，和小样一样按像素整数坐标量）
 	for y in SIZE:
 		for x in SIZE:
