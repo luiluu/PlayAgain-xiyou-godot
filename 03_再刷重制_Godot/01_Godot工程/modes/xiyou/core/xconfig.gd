@@ -30,6 +30,7 @@ const DEFAULTS := {"MapXy": false, "codexSmartAI": true, "alwaysDash": true, "co
 	"codexFontSize": {"global": 100, "toast": 100},  # 重制新增「字体大小」「弹窗字号」（XFontScale）
 	"codexUiSkin": true,  # 新界面「界面风格：新／原版」（天启篇才出现，XUiSkin.on()）：旧档没有这个键时按默认「新」
 	"codexBattleDim": 15,  # 新界面 4A「战斗背景压暗」（C8，XSkin4A.DIM_V2）：0 关、15、30（百分比）
+	"codexRingStyle": true,  # 天启篇「装备环纹」（XTianqiRingStyle，D101）：默认开；旧配置没有这个键时按开，只有存成 false 才关
 	"codexUiMotion": -1,  # 新界面「界面动效」：-1 没选过（省电模式按简化，否则全部）、0 全部、1 简化、2 关（XUiSkin.motion()）
 	"codexEncounterTarget": 0,  # 重制新增「定向遇怪」（O-384，XEncounterTarget）：0 关、1 罕见……5 亘古未有  # 重制新增「进战斗默认自动」（O-383，XBattleScene.AUTO_DEFAULT）：开了每场战斗开局自动按钮就是开
 	"codexPartyFormation": 0}  # 重制新增「战斗站位」（O-473，XPartyFormation）：0 两排错开（默认）、1 菱形、2 原版竖排
@@ -131,7 +132,7 @@ static func ensure_loaded() -> void:
 					_values[key] = XScreenScale.saved_value(data)
 					if data.get(XScreenScale.CHOSEN_KEY) == true:
 						_values[XScreenScale.CHOSEN_KEY] = true
-				elif key == "codexSkillLevelNotice" or key == "codexPowerEnabled" or key == "codexBossStatusPanel":
+				elif key == "codexSkillLevelNotice" or key == "codexPowerEnabled" or key == "codexBossStatusPanel" or key == "codexRingStyle":
 					# installCombatPowerRuntime applyData：只有存成 false 才关
 					_values[key] = not (data.get(key) is bool and data[key] == false)
 				else:

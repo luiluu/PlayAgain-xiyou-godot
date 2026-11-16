@@ -15,7 +15,7 @@ const CATS := [
 	["battle", "战斗", 160, ["battleCamera", "MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "CombatDamageShow", "CombatSkillAnimation",
 		"codexSmartAI", "battleAniSpeed", "codexBattleAutoDefault", "codexPartyFormation", "codexBossStatusPanel", "codexPowerEnabled"]],
 	["encounter", "遇敌", 193, ["Boss", "BOSS", "boss", "codexEncounterTarget", "ydgb", "yd100"]],
-	["screen", "画面", 100, ["codexScreenFx", "codexScreenSmooth", "codexQuality", "codexUiSkin", "codexUiMotion", "codexBattleDim"]],
+	["screen", "画面", 100, ["codexScreenFx", "codexScreenSmooth", "codexQuality", "codexUiSkin", "codexUiMotion", "codexRingStyle", "codexBattleDim"]],
 	["sound", "声音", 384, ["bgmVolume", "bgsVolume", "meVolume", "seVolume"]],
 	["hangup", "挂机与操作", 1001, ["HangUp", "codexAndroidControls"]],
 ]
@@ -57,6 +57,7 @@ const DESC := {
 	"codexQuality": "帧率、窗口大小、省电等画质选项，进入后设置。",
 	"codexUiSkin": "「新」是天启篇的新界面，「原版」沿用旧界面。切换后本页立即生效，退出设置将返回地图。",
 	"codexBattleDim": "在战斗背景上盖一层暗色，雪地、沙漠这类亮背景上的字和角色更清楚。可选关、15%、30%。",
+	"codexRingStyle": "穿齐七印套装、戴上骑士遗物或毕业武器时，装备页的栏位环换成对应的纹样。只改外观，不影响数值；关掉后所有人都用默认的环。",
 	"codexUiMotion": "选中条呼吸光、法阵转动等界面动画。选「简化」或「关」，选中条就不再呼吸。省电模式下默认为简化。",
 	"bgmVolume": "背景音乐的音量。每次调整 20。",
 	"bgsVolume": "环境音的音量。每次调整 20。",

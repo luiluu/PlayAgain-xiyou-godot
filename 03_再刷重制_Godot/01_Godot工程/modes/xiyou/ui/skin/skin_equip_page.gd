@@ -27,6 +27,16 @@ var _strip_key := []
 var _preview_key := []
 var _preview: XActor = null
 var expanded := false
+## 环纹（XTianqiRingStyle，装备环样式 v0.2.1）：上次解析的结果、缓存键（人、换装、出战顺序）、上下文（人＋出战顺序，判是不是「亲手换出来的变化」）
+var ring_style: Dictionary = {}
+var _ring_style_key := []
+var _ring_style_ctx := []
+## 环心框画在 ring_top 的最近邻子画布项（ring_top 是线性过滤，96×96 像素框直画会糊）
+var _center_ci := RID()
+## 演出开始的时刻（毫秒，环下说明前 2 秒是旧金色）；-1＝没在演
+var _intro_ms := -1
+const RING_FACE_R_FRAMED := 33.0
+const CAPTION_GOLD_MS := 2000
 ## 栏位环一圈最多几颗（样稿 10 颗；天启篇 13 栏分两页 7＋6）——ONE_PAGE 关掉时才用
 const RING_MAX := 10
 ## 13 栏一页（O-520，Kyo 11-15「除了这个装备，我要所有栏位都在一页」）：栏位全部排在一圈上、不翻页、环下不再写「栏位第 a / b 页」。
@@ -171,7 +181,10 @@ func _ready() -> void:
 	ring_top.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ring_top.draw.connect(_draw_ring_extra)
 	ring.add_child(ring_top)
-	ring.style = {"notches": false, "link_curve": LINK_CURVE, "link_style": LINK_STYLE}   # 栏位环不画七印刻痕（Kyo 11-16：画面上每个点都要有含义）
+	_center_ci = RenderingServer.canvas_item_create()   # 环心框：ring_top 的子画布项，在头像之后（5.1 第 7 层）
+	RenderingServer.canvas_item_set_parent(_center_ci, ring_top.get_canvas_item())
+	RenderingServer.canvas_item_set_default_texture_filter(_center_ci, RenderingServer.CANVAS_ITEM_TEXTURE_FILTER_NEAREST)
+	ring.style = base_style()   # 栏位环不画七印刻痕（Kyo 11-16：画面上每个点都要有含义）
 	if ONE_PAGE and XTianqiGear.on():
 		ring.label_inner = BRANCH_LABEL_R if branched() else ONE_PAGE_LABEL_R
 		ring.label_sel_boost = 3 if branched() else 1   # 分支摆法：选中的名字跟球一起放大（Kyo 11-16 v7）
@@ -190,6 +203,15 @@ func _ready() -> void:
 	gui_input.connect(_on_gui)
 	mouse_filter = Control.MOUSE_FILTER_PASS
 	relayout()
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and _center_ci.is_valid():
+		RenderingServer.free_rid(_center_ci)
+
+
+static func base_style() -> Dictionary:
+	return {"notches": false, "link_curve": LINK_CURVE, "link_style": LINK_STYLE}
 
 
 func relayout() -> void:
@@ -340,10 +362,102 @@ func _sync_ring_branched(a: XActor) -> void:
 	if key != _ring_key:
 		_ring_key = key
 		ring.set_items(items, true)
+	_sync_ring_style(a)
 	if ring.index != idx:
 		ring.select(idx)
 	ring.queue_redraw()
 	ring_top.queue_redraw()
+
+
+## 出战顺序（换队伍顺序会改七印神器归属）；没有存档时空
+static func battle_order() -> Array:
+	return XState.current.battle_members() if XState.current != null else []
+
+
+## 环纹：只在换人、换装、换出战顺序时重算（挪光标不算）。槽位号 → 环项序号按 items[i].key 换，不拿槽位号直接当序号
+## （C 摆法里第 1 项是神器、第 2 项才是副手）。开页、换人、换队伍顺序时直接是那人的环；只有这一页亲手换装换出来的变化才演
+func _sync_ring_style(a: XActor) -> void:
+	var order := battle_order()
+	var ids := order.map(func(m): return m.get_instance_id())
+	var key := [a.get_instance_id(), scene._cand_rev, ids, XTianqiRingStyle.ENABLED, XTianqiRingStyle.GLINT, XConfig.flag(XTianqiRingStyle.SETTING), ring.items.size()]
+	if key == _ring_style_key:
+		return
+	_ring_style_key = key
+	var res := XTianqiRingStyle.resolve(a, order)
+	if res.is_empty():   # 发行空壳给空字典
+		res = {}
+	var ctx := [a.get_instance_id(), ids]
+	var kind := ""
+	if ctx == _ring_style_ctx and str(res.get("sig", "")) != str(ring_style.get("sig", "")):
+		kind = XTianqiRingStyle.intro_kind(ring_style, res)
+	_ring_style_ctx = ctx
+	ring_style = res
+	apply_ring_style(res)
+	if kind != "":
+		ring.play_intro(kind)
+		_intro_ms = Time.get_ticks_msec() if kind == "burn" else -1
+
+
+## 把解析结果填进环（空结果＝回默认环）
+func apply_ring_style(res: Dictionary) -> void:
+	var st := base_style()
+	var art := {}
+	var mo := {}
+	var band := str(res.get("band", ""))
+	if band != "":
+		var bs := XTianqiRingStyle.style(band)
+		for k in (bs.get("style", {}) as Dictionary):
+			var v = bs.style[k]
+			st[k] = Color.html(v) if v is String else v
+		var ba: Dictionary = bs.get("art", {})
+		if ba.has("band"):
+			art["band"] = XTianqiRingStyle.texture(str(ba.band), "band")
+		if ba.has("circle"):
+			var ct := XTianqiRingStyle.texture(str(ba.circle), "circle")
+			if ct != null:
+				art["circle"] = ct
+				art["circle_a"] = float(ba.get("circle_a", 0.28))
+				art["circle_tint"] = Color.html(str(ba.get("circle_tint", "#ffffff")))
+		mo = (bs.get("motion", {}) as Dictionary).duplicate()
+		if mo.has("mote_color"):
+			mo["mote_color"] = Color.html(str(mo.mote_color))
+	ring.style = st
+	ring.style_art = art
+	ring.motion = mo
+	var frames := {}
+	var dots := {}
+	var orbs: Dictionary = res.get("orbs", {})
+	var dd: Dictionary = res.get("dots", {})
+	for i in ring.items.size():
+		var slot := int(ring.items[i].get("key", -1))
+		if orbs.has(slot):
+			var ob: Dictionary = orbs[slot]
+			var fa: Dictionary = XTianqiRingStyle.style(str(ob.get("style", ""))).get("art", {})
+			var tex := XTianqiRingStyle.texture(str(fa.get("frame", "")), "orb")
+			if tex != null:
+				frames[i] = {"tex": tex, "tint": ob.get("tint", Color.WHITE)}
+		if dd.has(slot):
+			dots[i] = dd[slot]
+	ring.orb_frames = frames
+	ring.orb_dots = dots
+	ring.queue_redraw()
+	if ring_top != null:
+		ring_top.queue_redraw()
+
+
+## 环心框贴图（没有为 null）
+func center_frame() -> Texture2D:
+	var ck := str(ring_style.get("center", ""))
+	if ck == "":
+		return null
+	var fa: Dictionary = XTianqiRingStyle.style(ck).get("art", {})
+	return XTianqiRingStyle.texture(str(fa.get("frame", "")), "center")
+
+
+## 环心框画在哪（96×96，1:1 居中在环心；起点取整，免得半像素时最近邻采样抖动——小A 抽看第三节第 2 条）
+func center_frame_rect(tex: Texture2D) -> Rect2:
+	var ts := tex.get_size()
+	return Rect2((ring.center() - ts / 2.0).round(), ts)
 
 
 ## 分支摆法下环上第 i 项是第几行（显示行号）
@@ -360,7 +474,7 @@ func caption() -> String:
 			n += 1
 	var pp := ring_pages(scene.slot_view().size())
 	if int(pp[0]) <= 1:
-		return "身上 %d 件" % n
+		return "身上 %d 件" % n + XTianqiRingStyle.caption_suffix(ring_style)
 	return "身上 %d 件 · 栏位第 %d / %d 页" % [n, floori(scene._slot_row() / float(pp[1])) + 1, pp[0]]
 
 
@@ -529,6 +643,8 @@ func _draw_ring_extra() -> void:
 		var r := ring_radius - (68.0 if ring.label_inner > 0.0 else 62.0)   # 一页 13 栏：头像 72，给环内侧的栏位名让出位置
 		if branched():
 			r = ring_radius - BRANCH_LABEL_R - 2.0   # 分支摆法：头像半径 42，给环内侧的栏位名让地方
+		if center_frame() != null:
+			r = RING_FACE_R_FRAMED   # 有环心框：头像裁到 33，框外沿 ≤ 38（不新增占地）
 		ring_top.draw_circle(c, r + 2.0, XUiSkin.ORB_LOW)
 		XSkinPartyStrip.draw_round_texture(ring_top, face, c, r)
 		ring_top.draw_circle(c, r + 1.0, Color(XUiSkin.LINE, 0.55), false, 1.5, true)
@@ -544,10 +660,39 @@ func _draw_ring_extra() -> void:
 			ring_top.draw_string(body, Vector2(p.x - tw / 2.0, p.y + XUiSkin.FS_AUX * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_3)
 		if bool(it.get("locked", false)):
 			ring_top.draw_circle(p, r, Color(0, 0, 0, 0.55))
+	_draw_center_frame()
 	var cap := caption()
-	var cw := body.get_string_size(cap, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
+	var fs := XUiSkin.FS_AUX
+	if not ring_style.is_empty() and str(ring_style.get("sig", "")) != "":   # 环纹说明可能变长：过 fit_text 防大字号溢出（4.1）
+		var fit := XSkinList.fit_text(body, cap, left_w - 16.0, fs, XUiSkin.FS_MIN)
+		cap = str(fit[0])
+		fs = int(fit[1])
+	var cw := body.get_string_size(cap, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	var cy := layout.left.size.y - ring.position.y - 6.0
-	XSkinArt.bg_string(ring_top, body, Vector2(c.x - cw / 2.0, cy), cap, XUiSkin.FS_AUX, XSkinArt.bg_text_2())   # 直接在背景上（小A核 P3-3）
+	var cap_col := XSkinArt.bg_text_2()
+	if _intro_ms >= 0:
+		if Time.get_ticks_msec() - _intro_ms < CAPTION_GOLD_MS:
+			cap_col = XUiSkin.GOLD   # 穿上那一刻：环下说明前 2 秒旧金
+			ring_top.queue_redraw()
+		else:
+			_intro_ms = -1
+	XSkinArt.bg_string(ring_top, body, Vector2(c.x - cw / 2.0, cy), cap, fs, cap_col)   # 直接在背景上（小A核 P3-3）
+
+
+## 环心框（最近邻子画布 _center_ci；残缺遗物整张乘亮度）
+func _draw_center_frame() -> void:
+	if not _center_ci.is_valid():
+		return
+	RenderingServer.canvas_item_clear(_center_ci)
+	var tex := center_frame()
+	if tex == null:
+		return
+	var dim := float(ring_style.get("center_dim", 1.0))
+	var col := Color(dim, dim, dim, ring.intro_alpha())
+	var t := ring.intro_t if ring.intro_kind == "burn" and dim >= 1.0 else 1.0
+	XSkinRingNav.add_sweep(_center_ci, center_frame_rect(tex), tex, t, col)
+	if ring.intro_t < 1.0:
+		ring_top.queue_redraw()
 
 
 func _draw_list_count() -> void:
