@@ -1,0 +1,23 @@
+{
+ "sha": "32aace5d8a076773ec56713759742d4265365121",
+ "branch": "ci/luiluu/cc-shana-zhuanwu-attack",
+ "mode": "affected",
+ "base": "a1a900dec98d77dc6ffa08899c8ea45c31a48881",
+ "passed": true,
+ "scenes": 2,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 13.2,
+ "testSeconds": 20,
+ "generatedRef": "refs/ci/generated/luiluu/cc-shana-zhuanwu-attack",
+ "generatedCommit": "0da841416bab42d791cbc583cdbf88a4a5173f9d",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43939528329",
+ "sceneNames": [
+  "xiyou_attack_query.tscn",
+  "xiyou_weapon_unleash.tscn"
+ ],
+ "time": "2026-11-16T19:29:54+00:00"
+}
