@@ -1,12 +1,20 @@
 {
- "说明": "天启篇伤害加成总账（设计仓 重制设定/天启篇_伤害加成总账_v0.4.md 第八节期一细则（1）（2）、期二「归池清场」）。每个「乘」一行：status＝pooled 已归池（出现就失败）／exempt 豁免（写到期 expires，到期那一期改 pooled）／allowed 永久允许。fields 是这个来源允许写的单独相乘字段；守卫只认登记过的（来源, 字段）。module_whitelist：卡开着时 MODULE_CAP 放行的 [{module, skill, field, reason}]，期初为空。 期二起：switch＝这一行的归池回退开关（XTianqiLedger 同名 static var），关着时守卫当「回退中」不报；state_confirm_fp＝确认阶段效果指纹（XTianqiLedger.confirm_fingerprint）的期一快照，专项比对。",
- "phase": 2,
+ "说明": "天启篇伤害加成总账（设计仓 重制设定/天启篇_伤害加成总账_v0.4.md 第八节期一细则（1）（2）、期二「归池清场」）。每个「乘」一行：status＝pooled 已归池（出现就失败）／exempt 豁免（写到期 expires，到期那一期改 pooled）／allowed 永久允许。fields 是这个来源允许写的单独相乘字段；守卫只认登记过的（来源, 字段）。module_whitelist：卡开着时 MODULE_CAP 放行的 [{module, skill, field, reason}]，期初为空。 期二起：switch＝这一行的归池回退开关（XTianqiLedger 同名 static var），关着时守卫当「回退中」不报；state_confirm_fp＝确认阶段效果指纹（XTianqiLedger.confirm_fingerprint）的期一快照，专项比对。 期三：phase＝3；nine_caps＝九线来源临时封顶（第五节第 4 条：skill ①、element ② 每一系、bonus ③、param 属性、secret_slot 秘籍每本每池）；qiyin_derived 当派生攻击的伤害比例（期二补记 2）；qiyin_dot 持续伤害 ×1.2 保留（补记 3）。",
+ "phase": 3,
  "pools": {
   "skill": "① 技能池",
   "element": "② 元素池",
   "bonus": "③ 伤害加成池",
   "crit": "④ 暴击",
   "tier": "⑤ 档位池"
+ },
+ "nine_caps": {
+  "skill": 0.15,
+  "element": 0.3,
+  "bonus": 0.35,
+  "param": 0.3,
+  "secret_slot": 0.08,
+  "note": "九线三期各自做完一条，就把那条从封顶里拿掉（XTianqiLedger.NINE_BUCKETS）；秘籍格数读 balance_table 档位行 secret_cap"
  },
  "rows": [
   {
@@ -315,7 +323,19 @@
    ],
    "status": "allowed",
    "pool": "底数（派生攻击系数，第五节第 2 条）",
-   "note": "机制：这一击按原招的几成算，不是加成；期一并在七印的 finalMultiplier 里，期二归池时单独记"
+   "note": "机制：这一击按原招的几成算，不是加成；期一并在七印的 finalMultiplier 里，期二归池时单独记",
+   "phase3": "期二补记 2：派生一击的系数是底数，不进③；回合预算里派生攻击不占出手预算，系数就是第五节第 2 条表里的「伤害比例」"
+  },
+  {
+   "id": "qiyin_dot",
+   "name": "七印白印「持续伤害 +20%」（dot_dealt_pct，疫 plague_tick 直接扣血、不过伤害帧）",
+   "ref": "D 白印",
+   "fields": [
+    "dot"
+   ],
+   "status": "allowed",
+   "pool": "①（①里只有它，单独 ×1.2 同数）",
+   "note": "期二补记 3：保留单独 ×1.2，九线封顶不封；疫重做时再看"
   },
   {
    "id": "combat_rules",
