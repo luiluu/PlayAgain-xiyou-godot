@@ -545,6 +545,7 @@ func _choose_import_slot(data: Dictionary) -> void:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(_import_slot.bind(slot, data))
 		grid.add_child(b)
+	_fit_slot_grid(grid)
 	_add_back("取消", _title)
 	_focus_first()
 
@@ -599,8 +600,22 @@ func _tq_slot() -> void:
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(_tq_slot_chosen.bind(slot))
 		grid.add_child(b)
+	_fit_slot_grid(grid)
 	_add_back("返回", _title)
 	_focus_first()
+
+
+## 存档位两列（T095，Kyo 11-16「左列选中不显示光标」）：存档摘要长（角色名＋地图名＋时间）时两列加起来比屏幕宽，
+## 面板左边出了屏幕，左列的光标（选中条左边的小三角）画在屏幕外。两列放不下就改一列（10 格＋返回一列也放得下）
+func _fit_slot_grid(grid: GridContainer) -> void:
+	var panel := grid.get_parent().get_parent() as Control
+	if panel == null:
+		return
+	var fit := func():
+		if grid.columns > 1 and panel.size.x > get_viewport_rect().size.x - 32.0:
+			grid.columns = 1
+			panel.reset_size.call_deferred()   # 面板不在容器里，不会自己缩回去
+	panel.resized.connect(fit)
 
 
 func _tq_slot_chosen(slot: int) -> void:

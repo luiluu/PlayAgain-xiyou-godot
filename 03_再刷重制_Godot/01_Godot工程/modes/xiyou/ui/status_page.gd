@@ -343,7 +343,9 @@ static func _resist_ops(a: XActor) -> Array:
 	var passive_w := _tw("-999%") + PAD
 	var pen_w := _tw("9999%") + PAD
 	var resist_w := _tw("-999%") + PAD
-	var wbonus_w := _tw("9999%") + PAD
+	# 新界面：带「 生效／ 未持有」后缀时列宽按最长的那种算（T095，Kyo 11-16：新界面放不下时不压窄字、往两边溢出，「0% 未持有」贴住右边「爆伤加成」）。
+	# 旧界面照原版 drawText 把字压窄塞进列宽，不改
+	var wbonus_w := maxf(_tw("9999%"), _tw("999% 未持有") if WTYPE_HOLD_V041 and XUiSkin.on() else 0.0) + PAD
 	name_w += PAD
 	wt_w += PAD
 	var left := PAD * 2

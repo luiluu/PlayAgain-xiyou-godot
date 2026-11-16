@@ -124,6 +124,11 @@ static func battler_key(b: XBattler) -> String:
 		return ""
 	var a := b as XActor
 	XSukuna.full_look(a)  # 宿傩 Sprite_Actor.updateBitmap 包装：完全体时把 2643 放进状态（多帧图按状态选）
+	return look_key(a)
+
+
+## battler_key 去掉宿傩那步改状态（只读）：战斗外（主菜单环心小人，T095）取外观用
+static func look_key(a: XActor) -> String:
 	var s := XState.current
 	var key := XCostumes.battler_name(s, a)
 	if XCostumes.active(s, a):

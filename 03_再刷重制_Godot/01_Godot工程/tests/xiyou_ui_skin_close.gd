@@ -159,11 +159,19 @@ func _touch() -> void:
 		and XSkinKeyHints.key_events("键盘 C") == [[KEY_C, false]] and XSkinKeyHints.key_events("X") == [[KEY_X, false]])
 	XUiSkin.touch_override = 0
 	h.set_hints(h.hints)
-	check("hints_keyboard_plain", h.mouse_filter == Control.MOUSE_FILTER_IGNORE and h.size.y == XSkinKeyHints.H)
+	# T095：桌面样式也能点整段「键帽＋说明」（点说明字也算）；CLICK_DESKTOP 关掉回到只看不点
+	var desk_r := h.chip_rect(1)
+	check("hints_keyboard_plain", h.mouse_filter == Control.MOUSE_FILTER_STOP and h.size.y == XSkinKeyHints.H
+		and desk_r.size.y == XSkinKeyHints.H and h.hit(desk_r.end - Vector2(3, 8)) == [1, 1] and h.hit(desk_r.position + Vector2(3, 8)) == [1, 0]
+		and h.chip_rect(3).end.x <= h.total_width() + 0.5 and h.chip_rect(3).end.x >= h.total_width() - 0.5, [desk_r, h.total_width()])
+	XSkinKeyHints.CLICK_DESKTOP = false
+	h.set_hints(h.hints)
+	check("hints_keyboard_click_off", h.mouse_filter == Control.MOUSE_FILTER_IGNORE)
+	XSkinKeyHints.CLICK_DESKTOP = true
 	XUiSkin.touch_override = 1
 	XUiSkin.TOUCH_V2 = false
 	h.set_hints(h.hints)
-	check("hints_touch_off", h.mouse_filter == Control.MOUSE_FILTER_IGNORE and h.size.y == XSkinKeyHints.H)
+	check("hints_touch_off", h.mouse_filter == Control.MOUSE_FILTER_STOP and h.size.y == XSkinKeyHints.H)
 	h.queue_free()
 	# 列表：拖动滚、不选；松手才算点
 	XUiSkin.TOUCH_V2 = true
@@ -244,6 +252,12 @@ func _comfort() -> void:
 	XUiSkin.CENTER_STYLE = XUiSkin.CenterStyle.SPRITE
 	var s0 := _state()
 	check("d45_sv_frame", XSkinMainMenu.sv_frame(s0.members()[0]) != null and XSkinMainMenu.sv_frame(s0.members()[0], 2).region.position.x > XSkinMainMenu.sv_frame(s0.members()[0]).region.position.x)
+	# T095：环心小人是待机（wait）动作：MV 侧视图第 1 行（不是第 0 行的 walk）；人按不透明范围居中
+	var sv0 := XSkinMainMenu.sv_frame(s0.members()[0])
+	var cell_h: float = sv0.atlas.get_height() / 6.0 if sv0 != null else 0.0
+	check("t095_sv_wait_row", sv0 != null and is_equal_approx(sv0.region.position.y, cell_h), [sv0.region if sv0 else null, cell_h])
+	var info0 := XSkinMainMenu._sv_info(s0.members()[0], XAppearance.look_key(s0.members()[0]))
+	check("t095_sv_used_rect", not info0.is_empty() and (info0.used as Rect2).has_area() and Rect2(Vector2.ZERO, info0.cell).encloses(info0.used), info0.get("used"))
 	XState.current = null
 	check("warm_bg_default_off", not XUiSkin.WARM_BG and XUiSkin.BG == Color("050506"))
 	XUiSkin.COMFORT_V2 = false

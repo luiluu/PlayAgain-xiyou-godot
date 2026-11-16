@@ -11,6 +11,8 @@ const H := 22.0
 const TOUCH_H := 44.0
 const TOUCH_FS := 18
 var _press := -1
+## 桌面样式也能点（T095）；false＝回到桌面样式只看不点
+static var CLICK_DESKTOP := true
 
 
 func _init() -> void:
@@ -19,7 +21,8 @@ func _init() -> void:
 
 func set_hints(arr: Array) -> void:
 	hints = arr
-	mouse_filter = Control.MOUSE_FILTER_STOP if touch_mode() else Control.MOUSE_FILTER_IGNORE
+	# 桌面样式（键帽＋说明）也能用鼠标点整条（T095，Kyo 11-16：提示只当说明、点不了）
+	mouse_filter = Control.MOUSE_FILTER_STOP if (touch_mode() or CLICK_DESKTOP) and not hints.is_empty() else Control.MOUSE_FILTER_IGNORE
 	size = Vector2(total_width(), height())
 	queue_redraw()
 
@@ -80,12 +83,25 @@ func _chip_w(h: Array) -> float:
 	return XUiSkin.font("body").get_string_size(_chip_text(h), HORIZONTAL_ALIGNMENT_LEFT, -1, TOUCH_FS).x + 36.0
 
 
-## 触屏样式下第 i 条胶囊的位置（本控件坐标）
+## 第 i 条提示的位置（本控件坐标）：触屏样式是胶囊；桌面样式是「键帽＋说明」整段
 func chip_rect(i: int) -> Rect2:
 	var x := 0.0
+	if not touch_mode():
+		for j in hints.size():
+			var w := _desk_w(hints[j])
+			if j == i:
+				return Rect2(x, 0, w, H)
+			x += w + 16
+		return Rect2()
 	for j in i:
 		x += _chip_w(hints[j]) + 10.0
 	return Rect2(x, 0, _chip_w(hints[i]), TOUCH_H)
+
+
+func _desk_w(h: Array) -> float:
+	var f := XUiSkin.font("body")
+	return f.get_string_size(str(h[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 20 + 6 \
+		+ f.get_string_size(str(h[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
 
 
 ## 点到哪条：返回 [条号, 0/1（两向键的左右半）]；没点到 [-1, 0]
@@ -119,7 +135,7 @@ static func fire(key: String, half := 0) -> bool:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if not touch_mode():
+	if not touch_mode() and not CLICK_DESKTOP:
 		return
 	var p := Vector2.INF
 	var down := false
