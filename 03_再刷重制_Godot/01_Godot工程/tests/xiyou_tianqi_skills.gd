@@ -332,7 +332,8 @@ func _follow() -> void:
 	XTianqiSkills.begin_action(lg, a, dunk)
 	XTianqiSkills.after_apply(lg, a, dunk, b)
 	var logs := XTianqiSkills.end_action(lg, a, dunk)
-	_check("follow_cast", logs.size() == 2 and int(logs[0].skill.id) == 4370, logs.size())
+	var follow_hits := logs.filter(func(l): return l.get("type") == "hit" and is_same(l.get("target"), b)).size()
+	_check("follow_cast", not logs.is_empty() and int(logs[0].skill.id) == 4370 and follow_hits >= 5, [logs.size(), follow_hits])  # 追加打满整招（FOLLOW_FULL，T016）：球来五段以上
 	XTianqiSkills.begin_action(lg, a, dunk)
 	XTianqiSkills.after_apply(lg, a, dunk, b)
 	_check("follow_once_per_turn", XTianqiSkills.end_action(lg, a, dunk).is_empty())
