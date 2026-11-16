@@ -10,7 +10,7 @@ extends Node2D
 ##    事件指令是一行 355 脚本「CodexFest.xxx();」，由 MVScript 转交本类的 run_script。
 ##    活动期间大厅 BGM 也在补丁里换成现成曲子（BGM），不引入新音乐文件。
 ##
-## 位置（Map004，格）：全在漩涡中心 (14,19) 的 6 格圈外（方案 2.1，不压异化层的地盘）：东侧一排，报名处 (20,17)、奖杯占 (21,17)(22,17)、使者 (23,17)。
+## 位置（Map004，格）：全在漩涡中心 (14,19) 的 6 格圈外（方案 2.1，不压异化层的地盘）：大厅左侧一排（T059 候选 B），报名处 (5,17)、奖杯占 (6,17)(7,17)、使者 (8,17)。
 ## 横幅挂在大厅南段（行 23～24，x 264～1032 像素），进大厅第一眼就看到；彩旗挂在横幅上沿。
 ## 和大厅异化层（XLobbyCorruption）不冲突：两层各有各的开关，浮砖等随机选格避开有事件的格。
 
@@ -24,9 +24,9 @@ const FIRST_EV := 78
 const ENVOY_EV := 78
 const ENROLL_EV := 79
 const TROPHY_EVS := [80, 81]
-const ENVOY_CELL := Vector2i(23, 17)
-const ENROLL_CELL := Vector2i(20, 17)
-const TROPHY_CELLS := [Vector2i(21, 17), Vector2i(22, 17)]
+const ENVOY_CELL := Vector2i(8, 17)
+const ENROLL_CELL := Vector2i(5, 17)
+const TROPHY_CELLS := [Vector2i(6, 17), Vector2i(7, 17)]
 ## 使者、报名处的行走图（现成的：文件名、第几个角色，朝下）
 const ENVOY_SPRITE := ["People14", 2]
 const ENROLL_SPRITE := ["People13", 5]
@@ -39,13 +39,13 @@ static var ART_DIR := "res://content/fest/"
 const BANNER_FILE := "Fest_Banner.png"
 const TROPHY_FILE := "Fest_Trophy.png"
 const CONFETTI_FILES := ["Fest_Confetti_01.png", "Fest_Confetti_02.png", "Fest_Confetti_03.png", "Fest_Confetti_04.png"]
-## 横幅（768×96）左上角的像素位置与奖杯脚底中心（96×144，脚底 (48,142)）
+## 横幅（768×96）左上角的像素位置与奖杯脚底中心（112×168，脚底 (56,167)）
 const BANNER_SIZE := Vector2(768, 96)
 const BANNER_POS := Vector2(264, 23 * TS)
 ## co 给的字的安全区（图内像素）：x1, y1, x2, y2
 const BANNER_TEXT_RECT := Rect2(110, 20, 548, 38)
-const TROPHY_FOOT := Vector2(22 * TS, 18 * TS)   # 奖杯脚底中心（占 21、22 两列、行 17 的下沿）
-const TROPHY_ANCHOR := Vector2(48, 142)
+const TROPHY_FOOT := Vector2(7 * TS, 18 * TS)   # 奖杯脚底中心（占 6、7 两列、行 17 的下沿；报名处、使者在两侧 5、8 列；T059 候选 B 左移 2 格以避开异化圈）
+const TROPHY_ANCHOR := Vector2(56, 167)
 
 const MAX_CONFETTI := 46
 const FIREWORK_GAP_MIN := 5.0

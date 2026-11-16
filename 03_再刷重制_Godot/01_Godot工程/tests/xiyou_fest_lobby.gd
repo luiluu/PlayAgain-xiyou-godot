@@ -148,13 +148,13 @@ func _run() -> void:
 	check("active.art_textured", m1.fest_fx.banner_textured() and m1.fest_fx.trophy_textured())
 	var pass1 := passability(m1)
 	# 奖杯两格：被事件挡住（通行表不变，事件挡路），脚下能走到的人不能进
-	m1.player.locate(21, 18)
+	m1.player.locate(6, 18)
 	m1.player.direction = 8
 	check("active.trophy_blocks_21", not m1.player.can_pass(8))
-	m1.player.locate(22, 18)
+	m1.player.locate(7, 18)
 	check("active.trophy_blocks_22", not m1.player.can_pass(8))
 	check("active.passability_unchanged", pass1 == base_pass)
-	check("active.cells", ev(m1, 78).grid == XFestLobby.ENVOY_CELL and ev(m1, 79).grid == XFestLobby.ENROLL_CELL and ev(m1, 80).grid == Vector2i(21, 17) and ev(m1, 81).grid == Vector2i(22, 17))
+	check("active.cells", ev(m1, 78).grid == XFestLobby.ENVOY_CELL and ev(m1, 79).grid == XFestLobby.ENROLL_CELL and ev(m1, 80).grid == Vector2i(6, 17) and ev(m1, 81).grid == Vector2i(7, 17))
 	# 方案 2.1：使者、报名处、奖杯都在异化中心 (14,19) 的 6 格圈外
 	for id in [78, 79, 80, 81]:
 		var d := Vector2(ev(m1, id).grid - XLobbyCorruption.CENTER).length()
@@ -165,7 +165,7 @@ func _run() -> void:
 	m1.player.locate(14, 21)
 	await frames(10)
 	await shot("fest_lobby_south.png")
-	m1.player.locate(19, 19)
+	m1.player.locate(11, 19)
 	await frames(10)
 	await shot("fest_lobby_trophy.png")
 	m1.fest_fx._next_firework = 0.0
