@@ -147,6 +147,7 @@ static func switch_on(name: String) -> bool:
 		"COMBAT_RULES": return COMBAT_RULES
 		"NO_PILLS": return NO_PILLS
 		"CAP_NINE": return CAP_NINE
+		"TURN_BUDGET": return TURN_BUDGET
 	return true
 
 
@@ -468,6 +469,91 @@ static func bucket_total(buckets: Dictionary, caps := {}) -> float:
 		var v := float(buckets[b])
 		total += minf(v, float(caps[b])) if caps.has(b) else v
 	return total
+
+
+# ---- 期三「回合预算」（设计稿第五节第 2 条）----
+## 我方角色每人每回合最多多 1 次完整出手（1＋skill_rework.rules.max_extra_actions）：追加行动（插队）和再释放共用；
+## 回合开始掷出来的再动、九九六插进顺序的那次也占（按「本回合已行动＋顺序里还排着的－1」算，不重复记）。
+## 派生攻击、连击段数不占出手预算；派生攻击按 damage_ledger.json 的 derived 表各自每回合最多几次（take_derived）。
+## 骑士、怪物不管（照旧）。预算记在战斗对象的 meta 上，每回合换号即清；不进存档。
+static var TURN_BUDGET := true
+const BUDGET_META := "xtq_turn_budget"
+
+
+static func budget_on(logic, u) -> bool:
+	return TURN_BUDGET and u is XActor and logic != null and active() and logic.actors.has(u)
+
+
+static func _budget(logic) -> Dictionary:
+	var b: Dictionary = logic.get_meta(BUDGET_META) if logic.has_meta(BUDGET_META) else {}
+	if int(b.get("turn", -1)) != int(logic.turn):
+		b = {"turn": int(logic.turn), "recast": {}, "free": {}, "derived": {}, "log": []}
+		logic.set_meta(BUDGET_META, b)
+	return b
+
+
+static func max_extra() -> int:
+	return int(XTianqiSkills.rules().get("max_extra_actions", 1))
+
+
+## 本回合已经用掉的「多出来的完整出手」：已行动＋顺序里还排着的－1（不算不占预算的 free 插队）＋直接再释放的次数。
+## in_action：在 u 自己这次行动的结算中途问（这次还没记进已行动）
+static func extra_used(logic, u, in_action := false) -> int:
+	var b := _budget(logic)
+	var planned: int = int(logic._acted.get(u, 0)) + int(logic.current_order.count(u)) + (1 if in_action else 0) - int(b.free.get(u, 0))
+	return maxi(0, planned - 1) + int(b.recast.get(u, 0))
+
+
+## 统一入口：还有预算就扣掉、返回真；没有返回假（调用方就不插队／不再放）。不归预算管的（敌人、西游档、开关关）恒真。
+## recast＝直接再打一次（不经行动顺序，要自己记数）；插队的调用方在返回真后自己 push_front（顺序里的次数就是记数）。
+static func take_extra(logic, u, source: String, recast := false, in_action := false) -> bool:
+	if not budget_on(logic, u):
+		return true
+	var b := _budget(logic)
+	var ok := extra_used(logic, u, in_action) < max_extra()
+	if ok and recast:
+		b.recast[u] = int(b.recast.get(u, 0)) + 1
+	b.log.append({"actor": int(u.actor_id), "source": source, "ok": ok})
+	return ok
+
+
+## 不占预算的插队（技能卡 free_action 里不造成伤害的）：记一笔，extra_used 扣掉它
+static func note_free(logic, u) -> void:
+	if budget_on(logic, u):
+		var b := _budget(logic)
+		b.free[u] = int(b.free.get(u, 0)) + 1
+
+
+## 昏迷醒来补排当前回合（battle_logic._insert_orders）：不重掷，用「1＋max_extra − 已行动 − 已用预算」；-1＝不归预算管（照原来掷）
+static func wake_times(logic, u) -> int:
+	if not budget_on(logic, u):
+		return -1
+	var b := _budget(logic)
+	return maxi(0, 1 + max_extra() - int(logic._acted.get(u, 0)) - int(b.recast.get(u, 0)))
+
+
+## 派生攻击每回合次数（damage_ledger.json derived 表）：还没到上限就记一次、返回真
+static func take_derived(logic, u, source: String) -> bool:
+	if not budget_on(logic, u):
+		return true
+	var row: Dictionary = derived_row(source)
+	if row.is_empty():
+		_flag("derived:" + source, "per_turn", "unregistered", {"actor": int(u.actor_id)})
+		return true
+	var b := _budget(logic)
+	var key := "%d|%s" % [int(u.actor_id), source]
+	var n := int(b.derived.get(key, 0))
+	if n >= int(row.get("per_turn", 0)):
+		return false
+	b.derived[key] = n + 1
+	return true
+
+
+static func derived_row(source: String) -> Dictionary:
+	for r in data().get("derived", []):
+		if str(r.get("id", "")) == source:
+			return r
+	return {}
 
 
 # ---- 期三「九线来源临时封顶」（设计稿第五节第 4 条；养成线三期逐条重做之前）----

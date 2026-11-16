@@ -557,7 +557,7 @@ static func queue_again(logic, u) -> void:
 	if _queued == null or not is_same(_queued, u):
 		return
 	_queued = null
-	if u.is_alive():
+	if u.is_alive() and XTianqiLedger.take_extra(logic, u, "gojo.again"):  # 回合预算（期三）：六眼再动占每回合多 1 次
 		logic.current_order.push_front(u)
 
 

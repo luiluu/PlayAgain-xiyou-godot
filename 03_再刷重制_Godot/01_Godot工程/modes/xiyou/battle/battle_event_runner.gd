@@ -246,7 +246,7 @@ func _recast_script(code: String) -> bool:
 			if ok == null:
 				return true   # 读了 null 的 actor：抛错，后面都不做
 			taken = ok
-			if ok and logic.actors.has(a) and not logic.alive(logic.enemies).is_empty():
+			if ok and logic.actors.has(a) and not logic.alive(logic.enemies).is_empty() and XTianqiLedger.take_extra(logic, a, "event.recast", true):  # 回合预算（期三）
 				logic.pending_force = {"user": a, "skill": int(cl[1])}
 	return true
 
@@ -258,7 +258,7 @@ func _freeze_followup_script(code: String) -> bool:
 	if _compact_js(code) != FREEZE_FOLLOWUP:
 		return false
 	var a = get_meta("ce_user") if has_meta("ce_user") else null
-	if a is XActor and a.is_alive() and _recast_meets(a, [["has_skill", 6175, 0]]) and logic.actors.has(a) and not logic.alive(logic.enemies).is_empty():
+	if a is XActor and a.is_alive() and _recast_meets(a, [["has_skill", 6175, 0]]) and logic.actors.has(a) and not logic.alive(logic.enemies).is_empty() and XTianqiLedger.take_extra(logic, a, "event.freeze_followup", true):  # 回合预算（期三）
 		logic.pending_force = {"user": a, "skill": 6172}
 	return true
 
@@ -286,7 +286,7 @@ func _push_recast_script(code: String) -> bool:
 	else:
 		var aid := int(state().variable(int(m.get_string(2))))
 		a = null if XDB.rec("Actors", aid).is_empty() else state().actor(aid)
-	if a is XActor and _recast_meets(a, [["has_skill", int(m.get_string(3)), 0]]) and logic.actors.has(a) and not logic.alive(logic.enemies).is_empty():
+	if a is XActor and _recast_meets(a, [["has_skill", int(m.get_string(3)), 0]]) and logic.actors.has(a) and not logic.alive(logic.enemies).is_empty() and XTianqiLedger.take_extra(logic, a, "event.push_recast", true):  # 回合预算（期三）
 		logic.pending_force = {"user": a, "skill": int(m.get_string(4))}
 	return true
 

@@ -833,5 +833,125 @@
   "2774": "b5e9f44c",
   "2777": "e22e5d76",
   "2803": "8469e2cc"
+ },
+ "derived": [
+  {
+   "id": "qiyin.kill_chain_slash",
+   "name": "七印送行连斩",
+   "file": "tianqi_qiyin_effects.gd",
+   "per_turn": 18,
+   "ratio": "dmg_pct（qiyin_gear）",
+   "enforced": true,
+   "note": "现值：每次行动最多 chain_max 9 次 × 每回合最多 2 次完整出手；第 4 步定数"
+  },
+  {
+   "id": "qiyin.hit_count_burst",
+   "name": "七印攒段横扫（每次触发对全体各补 bonus_hits 段）",
+   "file": "tianqi_qiyin_effects.gd",
+   "per_turn": 2,
+   "ratio": 1.0,
+   "enforced": true,
+   "note": "按触发次数记；现值每次行动最多 1 次；第 4 步定数"
+  },
+  {
+   "id": "qiyin.single_skill_repeat",
+   "name": "七印弓与冠再射",
+   "file": "tianqi_qiyin_effects.gd",
+   "per_turn": 2,
+   "ratio": "dmg_pct（qiyin_gear，50%）",
+   "enforced": true,
+   "note": "现值每次行动最多 1 次；第 4 步定数"
+  },
+  {
+   "id": "qiyin.ally_followup_execute",
+   "name": "七印补刀",
+   "file": "tianqi_qiyin_effects.gd",
+   "per_turn": "装备表 per_turn（每次队友行动最多 followup_max_per_action 2）",
+   "ratio": 1.0,
+   "enforced": "自管",
+   "note": "原有每回合上限，不另记"
+  },
+  {
+   "id": "module.toji.armory",
+   "name": "甚尔武器库追击",
+   "file": "toji.gd",
+   "per_turn": "模块自管",
+   "ratio": "模块自管",
+   "enforced": false,
+   "expires": 4
+  },
+  {
+   "id": "module.garou.follow",
+   "name": "饿狼追击／反击",
+   "file": "garou.gd",
+   "per_turn": "模块自管",
+   "ratio": "模块自管",
+   "enforced": false,
+   "expires": 4
+  },
+  {
+   "id": "module.xuan.follow_up",
+   "name": "璇 _follow_up",
+   "file": "xuan_battle.gd",
+   "per_turn": "模块自管",
+   "ratio": "模块自管",
+   "enforced": false,
+   "expires": 4
+  },
+  {
+   "id": "module.jingliu.segment",
+   "name": "镜流追加段",
+   "file": "yomi_jingliu.gd",
+   "per_turn": "模块自管",
+   "ratio": "模块自管",
+   "enforced": false,
+   "expires": 4
+  },
+  {
+   "id": "module.yunshang.derived",
+   "name": "云裳派生伤害",
+   "file": "yunshang.gd",
+   "per_turn": "模块自管",
+   "ratio": "模块自管",
+   "enforced": false,
+   "expires": 4
+  },
+  {
+   "id": "module.liuying.segment",
+   "name": "流萤扩散、额外段",
+   "file": "liuying.gd",
+   "per_turn": "模块自管",
+   "ratio": "模块自管",
+   "enforced": false,
+   "expires": 4
+  },
+  {
+   "id": "module.tusu.segments",
+   "name": "屠苏 apply_segments",
+   "file": "tusu.gd",
+   "per_turn": "模块自管",
+   "ratio": "模块自管",
+   "enforced": false,
+   "expires": 4
+  }
+ ],
+ "turn_budget": {
+  "note": "第五节第 2 条：我方每人每回合最多多 1 次完整出手（skill_rework.rules.max_extra_actions），追加行动和再释放共用；XTianqiLedger.take_extra。下列是接了预算的入口",
+  "extra": [
+   "qiyin.kill_extra_action",
+   "gojo.again",
+   "jingliu.extra",
+   "race.human996",
+   "card.free_action（造成伤害的）",
+   "battle_logic._insert_orders（醒来补排不重掷）"
+  ],
+  "recast": [
+   "affix.recast",
+   "qiyin.double",
+   "event.recast",
+   "event.freeze_followup",
+   "event.push_recast",
+   "liuying.rerelease"
+  ]
  }
 }
