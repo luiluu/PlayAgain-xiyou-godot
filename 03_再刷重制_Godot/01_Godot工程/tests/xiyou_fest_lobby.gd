@@ -306,6 +306,20 @@ func _run() -> void:
 	check("cache.ended.clean", mce.fest_fx == null and ids(mce) == base_ids and str(mce.map_data.get("bgm", {}).get("name", "")) == base_bgm, ids(mce))
 	await close(mce)
 
+	# ---- T069：漩涡二阶段开着（正式默认）时 XRift 先把 Map004 事件表扩到 201～204，庆典补丁不能因为表长超过 78 就放弃 ----
+	XRift.STAGE2 = true
+	XRift.clear_cache()
+	var mr := await open_lobby(day1)
+	check("rift2_on.events_padded", (mr.map_data.get("events", []) as Array).size() > XRift.CANGLONG_EV, (mr.map_data.get("events", []) as Array).size())
+	check("rift2_on.envoy_enroll_trophy", ids(mr).has(XFestLobby.ENVOY_EV) and ids(mr).has(XFestLobby.ENROLL_EV) and XFestLobby.TROPHY_EVS.all(func(i): return ids(mr).has(i)), ids(mr))
+	check("rift2_on.rift_events_kept", ids(mr).has(XRift.RIFT2) and ids(mr).has(XRift.BLOCK_L), ids(mr))
+	var mr_env := ev(mr, XFestLobby.ENVOY_EV)
+	check("rift2_on.envoy_cell", mr_env != null and mr_env.grid == XFestLobby.ENVOY_CELL, mr_env.grid if mr_env != null else null)
+	await close(mr)
+	XRift.STAGE2 = false
+	XRift.clear_cache()
+	XFestLobby.reload_map()
+
 	# ---- 文案 ----
 	var strs: Array = []
 	var consts: Dictionary = (load("res://modes/xiyou/core/fest_text.gd") as GDScript).get_script_constant_map()
