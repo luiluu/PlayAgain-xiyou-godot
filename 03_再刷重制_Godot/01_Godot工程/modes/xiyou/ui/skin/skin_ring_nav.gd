@@ -131,7 +131,7 @@ func set_items(arr: Array, keep := false) -> void:
 
 ## 环心离控件中心的偏移（装备页分支布局把环往上／下挪，给枝丫让地方）
 var center_shift := Vector2.ZERO
-## 分支布局（装备页 13 栏一页·分支，O-待定）：非空时每项一条 {pos: 相对环心, deg: 在主环上的角度（不在主环上的没有）, label: ""（写环内侧）／up／down／left／right}
+## 分支布局（装备页 13 栏一页·分支，O-519）：非空时每项一条 {pos: 相对环心, deg: 在主环上的角度（不在主环上的没有）, label: ""（写环内侧）／up／down／left／right}
 var custom: Array = []
 ## 枝丫连线（相对环心的折线点列）：[[Vector2, Vector2, …], …]；中间的拐点画小菱形节点
 var links: Array = []
