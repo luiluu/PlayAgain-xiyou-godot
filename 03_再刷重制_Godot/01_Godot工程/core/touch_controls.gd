@@ -895,7 +895,27 @@ func _draw_ghost_knob() -> void:
 	if dst.size.x <= 0 or dst.size.y <= 0:
 		return
 	var cut := Rect2(src.position + (dst.position - full.position) / k, dst.size / k)
-	_ghost_knob.draw_texture_rect_region(tex, dst, cut, Color(1, 1, 1, a))
+	# T022：直接拿行走图 CompressedTexture2D 做 draw_texture_rect_region，首次画出来是一块白（读过 get_image 后才正常，
+	# 手机 16:9 触屏最明显）；改成把这一格取成 ImageTexture 再画，不依赖原贴图的显存状态
+	var cell := _knob_cell(p, src, tex)
+	if cell == null:
+		_ghost_knob.draw_texture_rect_region(tex, dst, cut, Color(1, 1, 1, a))
+	else:
+		_ghost_knob.draw_texture_rect_region(cell, dst, Rect2(cut.position - src.position, cut.size), Color(1, 1, 1, a))
+
+
+func _knob_cell(path: String, src: Rect2, tex: Texture2D) -> Texture2D:
+	var key := "%s|%s" % [path, src]
+	if _knob_cells.has(key):
+		return _knob_cells[key]
+	var img := tex.get_image()
+	var out: Texture2D = null
+	if img != null and not img.is_empty():
+		if img.is_compressed():
+			img.decompress()
+		out = ImageTexture.create_from_image(img.get_region(Rect2i(src)))
+	_knob_cells[key] = out
+	return out
 
 
 ## 摇杆头上的行走图（$gamePlayer._characterName／_characterIndex）：地图主角，没有地图时取队长
@@ -915,6 +935,8 @@ func knob_character() -> Array:
 
 ## 摇杆头上次画的行走图（换了就重画）
 var _knob_drawn := []
+## T022：摇杆头行走图那一格的小贴图缓存（键：贴图路径＋格子）
+var _knob_cells := {}
 
 
 ## 设置页用：改样式（操作布局、右侧布局、移动方式），立即生效并保存
