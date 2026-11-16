@@ -35,7 +35,7 @@
 
 - 专项 `xiyou_list_pager`：176 项（触屏，16:9、20:9 窗口各一遍）全过；无窗口 156 项全过。
 - 截图（触屏 16:9 与 20:9，翻页件不压内容、按钮点击区 ≥44px）：`00_项目管理/归档/交付截图/cc_list-paging-2/`（11 个页／窗各翻到第 2 页，`<页>_p2_16x9_touch.png`／`<页>_p2_20x9_touch.png`）。
-- `检查.sh --affected main`、交付自检结果见回报。
+- `检查.sh --affected main`：选测全部通过（含 xiyou_list_pager、warehouse、star_warehouse、crafting、pets、training、transfer、achievement 等），用时 718 秒；交付自检退出码见回报。
 
 ## 可优化（流程／工具／效率）
 
