@@ -44,6 +44,10 @@ const ONE_PAGE_LABEL_R := 98.0
 ## 主栏固定罗盘角（45° 一格）：178 哈基米没有副手，副手位留空、其余栏和拐点不动，法宝改挂武器、直连（小A核 v4 P2-1）。
 ## 选中的球和名字放大（1.15 倍、0.12 秒过渡）；选中副栏时它那条连线提亮。装备页环上不画七印刻痕。nodes 第 4 项＝拐点（相对环心）。
 static var LINK_CURVE := false
+## 连线样式 v8（Kyo 11-16 看小A三个弧线方向：「我觉得是样式和颜色的问题」）：线从两球边缘起止、根粗梢细；
+## 1＝S1 实金锥线、2＝S2 金到透明、3＝S3 骨白细线、4＝S4 暗铜镶金（见 XSkinRingNav.LINK_STYLES）；0＝回 v7 等宽细线。
+## 选中副栏时线整根提亮（不变红）、父栏描边转亮金；红只给选中框。
+static var LINK_STYLE := 1
 static var LAYOUT := 3
 const BRANCH_R := 112.0
 const BRANCH_ORB_R := 24.0
@@ -167,7 +171,7 @@ func _ready() -> void:
 	ring_top.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	ring_top.draw.connect(_draw_ring_extra)
 	ring.add_child(ring_top)
-	ring.style = {"notches": false, "link_curve": LINK_CURVE}   # 栏位环不画七印刻痕（Kyo 11-16：画面上每个点都要有含义）
+	ring.style = {"notches": false, "link_curve": LINK_CURVE, "link_style": LINK_STYLE}   # 栏位环不画七印刻痕（Kyo 11-16：画面上每个点都要有含义）
 	if ONE_PAGE and XTianqiGear.on():
 		ring.label_inner = BRANCH_LABEL_R if branched() else ONE_PAGE_LABEL_R
 		ring.label_sel_boost = 3 if branched() else 1   # 分支摆法：选中的名字跟球一起放大（Kyo 11-16 v7）

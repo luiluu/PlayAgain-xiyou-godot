@@ -8,12 +8,15 @@ const SIZES := [[Vector2i(1280, 720), "16x9"], [Vector2i(1600, 720), "20x9"], [V
 
 var results := []
 var out_dir := ""
+var only := ""   # -- --only=v8：带窗口时只出 v8 连线样式截图（省时间）
 
 
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
+		elif arg.begins_with("--only="):
+			only = arg.substr(7)
 	_run.call_deferred()
 
 
@@ -45,8 +48,12 @@ func _run() -> void:
 	await _halo()
 	await _equip()
 	await _switches_off()
+	await _link_v8()
 	if windowed():
-		await _shots()
+		if only == "v8":
+			await _shots_v8()
+		else:
+			await _shots()
 	_set_all(true)
 	XUiSkin.touch_override = -1
 	XUiSkin.FORCE = false
@@ -545,6 +552,75 @@ func _shots() -> void:
 		await _save_shot("bg_%s_16x9" % line, SIZES[0])
 		m.queue_free()
 		await frames(3)
+
+
+## v8 连线样式：每套都能画、样式表认套号、线从球边缘起止（裁剪后首点离根栏球心 ≥ 半径、末点离副栏 ≥ 半径＋气口）、
+## 哈基米两点直连在弧线开关下照旧直线、B 弧线以拐点为控制点（项链那根拱高不超过其余几根）
+func _link_v8() -> void:
+	var ring := XSkinRingNav.new()
+	ring.orb_radius = 24.0
+	ring.style = {"link_curve": true, "link_style": 1}
+	var a := Vector2(0, -112)
+	var m := Vector2(0, -160)
+	var b := Vector2(-40, -190)
+	var pts := ring.link_route([a, m, b])
+	check("v8_route_curve_ctrl_elbow", pts.size() == 33 and pts[0] == a and pts[-1] == b and pts[16].distance_to(a.lerp(m, 0.5).lerp(m.lerp(b, 0.5), 0.5)) < 0.01)
+	var two := ring.link_route([a, b])
+	var straight := true
+	for p in two:
+		if absf((p - a).cross(b - a)) / (b - a).length() > 0.01:
+			straight = false
+	check("v8_route_two_point_straight", straight and two[-1] == b)
+	var clipped := XSkinRingNav.clip_route(pts, a, 25.5, b, 26.0)
+	check("v8_clip_edges", clipped.size() >= 2 and absf(clipped[0].distance_to(a) - 25.5) < 0.3 and absf(clipped[-1].distance_to(b) - 26.0) < 0.3,
+		[clipped[0].distance_to(a), clipped[-1].distance_to(b)])
+	ring.free()
+	check("v8_styles", XSkinRingNav.LINK_STYLES.size() == 4 and XSkinEquipPage.LINK_STYLE in [0, 1, 2, 3, 4])
+	for st in XSkinRingNav.LINK_STYLES.values():   # 红只表示选中：线色（平时、选中）都不能偏红
+		for key in ["col", "hot"]:
+			var col: Color = st[key]
+			check("v8_not_red_%s_%s" % [st.name, key], not (col.r - col.g > 0.25 and col.r - col.b > 0.25), col)
+	for ls in [0, 1, 2, 3, 4]:
+		XSkinEquipPage.LINK_STYLE = ls
+		var e: XEquipScene = await _build_equip()
+		await frames(2)
+		check("v8_style_on_%d" % ls, int(e.skin.ring.sty("link_style")) == ls)
+		e.queue_free()
+		await frames(2)
+	XSkinEquipPage.LINK_STYLE = 1
+
+
+## v8 截图：4 套 × 走向 A（斜折）／B（弧线）× 16:9，都选中项链（副栏）；另 S1～S4 各一张 20:9 触屏 130% 字号
+func _shots_v8() -> void:
+	var keep_style := XSkinEquipPage.LINK_STYLE
+	get_window().size = SIZES[0][0]
+	await frames(6)
+	for ls in [1, 2, 3, 4]:
+		XSkinEquipPage.LINK_STYLE = ls
+		for curve in [false, true]:
+			XSkinEquipPage.LINK_CURVE = curve
+			var e: Node = await _shot_equip(5)
+			await frames(6)
+			await _save_shot("v8_S%d_%s_16x9_选中项链" % [ls, "B弧线" if curve else "A斜折"], SIZES[0])
+			e.queue_free()
+			await frames(3)
+	XSkinEquipPage.LINK_CURVE = false
+	XFontScale.set_value("global", 130)
+	XUiSkin.touch_override = 1
+	get_window().size = SIZES[1][0]
+	await frames(6)
+	for ls in [1, 2, 3, 4]:
+		XSkinEquipPage.LINK_STYLE = ls
+		var e: Node = await _shot_equip(5)
+		await frames(6)
+		await _save_shot("v8_S%d_A斜折_20x9_触屏130_选中项链" % ls, SIZES[1])
+		e.queue_free()
+		await frames(3)
+	XFontScale.set_value("global", 100)
+	XUiSkin.touch_override = 0
+	get_window().size = SIZES[0][0]
+	XSkinEquipPage.LINK_STYLE = keep_style
+	await frames(6)
 
 
 func _save_shot(name: String, sz: Array) -> void:

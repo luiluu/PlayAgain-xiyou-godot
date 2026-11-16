@@ -144,9 +144,24 @@ const DEFAULT_STYLE := {
 	"ring_line": Color(0.0, 0.0, 0.0, -1.0), "ring_line_a": 0.75, "ring_w": 1.5,   # ring_line 的 a<0＝用 XUiSkin.LINE
 	"band": Color(0.81, 0.165, 0.12, 0.05), "band_w": 10.0, "halo_line_a": 0.22,
 	"dash_a": 0.30, "notches": true, "notch": Color(0.89, 0.741, 0.447, 1.0), "notch_size": 5.5,   # notches＝环上七颗刻痕菱形（七印）；项数不是 7 的页（装备页）关掉，免得画面上有没含义的点
-	"link": Color(0.89, 0.741, 0.447, 0.55), "link_w": 1.5, "link_curve": false,   # link_curve＝枝丫画成弧线（从根栏沿径向出发、平滑弯向副栏，不画拐点菱形）
+	"link": Color(0.89, 0.741, 0.447, 0.55), "link_w": 1.5, "link_curve": false, "link_style": 0,   # link_style＝线样式套号（0＝v7 等宽细线；1～4 见 LINK_STYLES，只管单副栏枝）；link_curve＝枝丫画成弧线（从根栏沿径向出发、平滑弯向副栏，不画拐点菱形）
 	 "knot": Color(0.89, 0.741, 0.447, 1.0), "knot_size": 4.0,
 	"orb_low": Color(0.071, 0.075, 0.082, 1.0), "orb_hi": Color(0.204, 0.212, 0.231, 0.85), "orb_line_a": 0.65,
+}
+
+
+## 连线样式（v8，Kyo 11-16「是样式和颜色的问题」）：线从两球边缘起止，根粗梢细；正红只给选中框，选中副栏时线整根提亮（不变红）、父栏描边转亮金。
+## 键：col 线色、a0／a1 根／梢不透明度、w0／w1 根／梢线宽、edge 深色描边宽（0＝不描）、gap 副栏端气口、
+## under／under_w 底层（双层线的暗铜底）、root 根部印（diamond／dot／""）、tip 梢部印、hot 选中时的线色
+const LINK_STYLES := {
+	1: {"name": "S1 实金锥线", "col": Color("e3bd72"), "a0": 0.85, "a1": 0.85, "w0": 3.0, "w1": 1.2, "edge": 1.0, "gap": 3.0,
+		"root": "diamond", "tip": "", "hot": Color("f6dc9c")},
+	2: {"name": "S2 金到透明", "col": Color("f0cf86"), "a0": 0.95, "a1": 0.18, "w0": 2.6, "w1": 1.3, "edge": 1.0, "gap": 6.0,
+		"root": "dot", "tip": "", "hot": Color("ffe7b0")},
+	3: {"name": "S3 骨白细线", "col": Color("d2ccc2"), "a0": 0.78, "a1": 0.62, "w0": 1.6, "w1": 1.2, "edge": 1.0, "gap": 2.0,
+		"root": "", "tip": "", "hot": Color("f4efe6")},
+	4: {"name": "S4 暗铜镶金", "col": Color("f0d495"), "a0": 0.92, "a1": 0.80, "w0": 1.2, "w1": 0.9, "edge": 0.0, "gap": 3.0,
+		"under": Color("7a5a2c"), "under_a": 0.75, "under_w": 2.4, "root": "diamond", "tip": "dot", "hot": Color("fff1cc")},
 }
 
 
@@ -379,15 +394,24 @@ func _draw() -> void:
 		var ts := center_texture.get_size()
 		var k := minf((R - 50.0) * 2.0 / maxf(ts.x, ts.y), 4.0)
 		draw_texture_rect(center_texture, Rect2(c - ts * k / 2.0, ts * k), false)
-	# 枝丫连线：旧金细线＋节点小菱形（星座连线）
+	# 枝丫连线：旧金细线＋节点小菱形（星座连线）；v8 线样式（link_style≠0）只管单副栏枝（C 摆法），A／B 摆法串两颗的照旧
+	var ls := int(sty("link_style"))
+	var hot_roots := {}
 	for li in links.size():
 		var path: Array = links[li]
 		var hot := li < link_items.size() and (link_items[li] as Array).has(index)   # 选中的是这条线上的副栏：线提亮加粗（小A核 v4 P3-2）
+		if LINK_STYLES.has(ls) and links_elbowed and path.size() <= 3:
+			var ri := _item_at_pos(path[0])
+			var si: int = (link_items[li] as Array)[0] if li < link_items.size() and not (link_items[li] as Array).is_empty() else -1
+			if hot and ri >= 0:
+				hot_roots[ri] = true
+			_draw_styled_link(c, path, ri, si, LINK_STYLES[ls], hot)
+			continue
 		var lc: Color = sty("link")
 		if hot:
 			lc = Color(lc, minf(1.0, lc.a + 0.4))
 		var lw := float(sty("link_w")) + (0.75 if hot else 0.0)
-		if bool(sty("link_curve")) and links_elbowed and path.size() <= 3:   # 弧线只给「根→拐点→副栏」这种单副栏枝（一枝串两颗的 A／B 摆法照旧折线）
+		if bool(sty("link_curve")) and links_elbowed and path.size() == 3:   # 弧线只给「根→拐点→副栏」这种单副栏枝（一枝串两颗的 A／B 摆法、哈基米直连照旧直线）
 			draw_polyline(curve_points(c, path[0], path[-1]), lc, lw, true)
 			continue
 		for k in range(path.size() - 1):
@@ -417,7 +441,10 @@ func _draw() -> void:
 		draw_circle(p, r, sty("orb_low"))
 		draw_circle(p + Vector2(-r * 0.15, -r * 0.2), r * 0.72, sty("orb_hi"))
 		var ring_col := (Color(XUiSkin.GOLD, 1.0) if art else Color(XUiSkin.SEL_LINE, 1.0)) if on else Color(line, float(sty("orb_line_a")))
-		draw_circle(p, r, ring_col, false, 2.5 if on else 1.5, true)
+		var parent_hint := not on and hot_roots.has(i)   # 选中副栏时它的父栏：描边转亮金（不红，红只给选中）
+		if parent_hint:
+			ring_col = Color(XUiSkin.GOLD, 0.95)
+		draw_circle(p, r, ring_col, false, 2.5 if on else (2.0 if parent_hint else 1.5), true)
 		var icon = items[i].get("icon")
 		var tex: Texture2D = icon if icon is Texture2D else (XUiSkin.icon(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
 		if tex != null and not art:
@@ -431,3 +458,157 @@ func _draw() -> void:
 		var rd := XSkinArt.read_on()   # 可读性：描边加粗加深、未选中的名字提亮
 		draw_string_outline(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5 if rd else 4, Color(0, 0, 0, 0.9 if rd else 0.6))
 		draw_string(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE if on else XSkinArt.bg_text_2())
+
+
+## 位置（相对环心）对得上的那一项（连线首点＝根栏）
+func _item_at_pos(rel: Vector2) -> int:
+	for i in custom.size():
+		if ((custom[i] as Dictionary).pos as Vector2).distance_to(rel) < 0.5:
+			return i
+	return -1
+
+
+## 连线走向（相对环心的密点列）：A 斜折＝根→拐点→副栏；B 弧线＝以拐点为控制点的二次贝塞尔（径向出发、和 A 同一形制，
+## 项链那根不再鼓肚子）；两点（哈基米法宝直连武器）一律直线
+func link_route(path: Array) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	if path.size() == 3 and bool(sty("link_curve")):
+		var a: Vector2 = path[0]
+		var m: Vector2 = path[1]
+		var b: Vector2 = path[2]
+		for k in 33:
+			var t := k / 32.0
+			pts.append(a.lerp(m, t).lerp(m.lerp(b, t), t))
+		return pts
+	for k in range(path.size() - 1):
+		var a: Vector2 = path[k]
+		var b: Vector2 = path[k + 1]
+		var n := maxi(2, int(a.distance_to(b) / 3.0))
+		for j in n:
+			pts.append(a.lerp(b, j / float(n)))
+	pts.append(path[-1])
+	return pts
+
+
+## 把点列裁到两球外：起点离 a 至少 ra、终点离 b 至少 rb（交点线性插值）
+static func clip_route(pts: PackedVector2Array, a: Vector2, ra: float, b: Vector2, rb: float) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	var started := false
+	for k in pts.size():
+		var p := pts[k]
+		var inside_a := p.distance_to(a) < ra
+		var inside_b := p.distance_to(b) < rb
+		if not started:
+			if inside_a:
+				continue
+			started = true
+			if k > 0:
+				var q := pts[k - 1]
+				out.append(q.lerp(p, _cross_t(q, p, a, ra)))
+		if inside_b:
+			if k > 0 and not out.is_empty():
+				var q := pts[k - 1]
+				out.append(q.lerp(p, _cross_t(q, p, b, rb)))
+			break
+		out.append(p)
+	return out
+
+
+## 线段 q→p 和圆（中心 o、半径 r）的交点在第几成（q、p 一里一外；二分够用）
+static func _cross_t(q: Vector2, p: Vector2, o: Vector2, r: float) -> float:
+	var lo := 0.0
+	var hi := 1.0
+	var q_in := q.distance_to(o) < r
+	for i in 12:
+		var mid := (lo + hi) * 0.5
+		if (q.lerp(p, mid).distance_to(o) < r) == q_in:
+			lo = mid
+		else:
+			hi = mid
+	return (lo + hi) * 0.5
+
+
+## 一条变宽变色的带子：逐段四边形（顶点法线取相邻两段平均、斜接补长），两边再描 1px 抗锯齿边
+func _ribbon(pts: PackedVector2Array, widths: PackedFloat32Array, cols: PackedColorArray) -> void:
+	var n := pts.size()
+	if n < 2:
+		return
+	var left := PackedVector2Array()
+	var right := PackedVector2Array()
+	for k in n:
+		var d0 := (pts[k] - pts[maxi(k - 1, 0)]).normalized() if k > 0 else (pts[1] - pts[0]).normalized()
+		var d1 := (pts[mini(k + 1, n - 1)] - pts[k]).normalized() if k < n - 1 else d0
+		var dir := (d0 + d1).normalized()
+		if dir == Vector2.ZERO:
+			dir = d1
+		var nrm := Vector2(-dir.y, dir.x)
+		var miter := clampf(1.0 / maxf(absf(nrm.dot(Vector2(-d1.y, d1.x))), 0.5), 1.0, 2.0)
+		var h := widths[k] * 0.5 * miter
+		left.append(pts[k] + nrm * h)
+		right.append(pts[k] - nrm * h)
+	for k in n - 1:
+		draw_polygon(PackedVector2Array([left[k], left[k + 1], right[k + 1], right[k]]),
+			PackedColorArray([cols[k], cols[k + 1], cols[k + 1], cols[k]]))
+	draw_polyline_colors(left, cols, 1.0, true)
+	draw_polyline_colors(right, cols, 1.0, true)
+
+
+## 按样式画一条单副栏枝（ri／si＝根栏／副栏是第几项，取放大后的半径算边缘）
+func _draw_styled_link(c: Vector2, path: Array, ri: int, si: int, st: Dictionary, hot: bool) -> void:
+	var a: Vector2 = path[0]
+	var b: Vector2 = path[-1]
+	var ra := orb_radius * (item_scale(ri) if ri >= 0 else 1.0) + 4.5   # +4.5：躲开球的投影（r+2、下移 3），根部印才露得出来
+	var rb := orb_radius * (item_scale(si) if si >= 0 else 1.0) + float(st.gap)
+	var pts := clip_route(link_route(path), a, ra, b, rb)
+	if pts.size() < 2:
+		return
+	var total := 0.0
+	var acc := PackedFloat32Array([0.0])
+	for k in range(1, pts.size()):
+		total += pts[k].distance_to(pts[k - 1])
+		acc.append(total)
+	var col: Color = st.hot if hot else st.col
+	var boost := 1.0 if hot else 0.0
+	var wadd := 0.6 if hot else 0.0
+	var ws := PackedFloat32Array()
+	var cs := PackedColorArray()
+	var us := PackedFloat32Array()
+	var ucs := PackedColorArray()
+	var es := PackedFloat32Array()
+	var ecs := PackedColorArray()
+	var abs_pts := PackedVector2Array()
+	for k in pts.size():
+		var t := acc[k] / maxf(total, 0.001)
+		abs_pts.append(c + pts[k])
+		var w := lerpf(float(st.w0), float(st.w1), t) + wadd
+		var al := lerpf(float(st.a0), float(st.a1), t)
+		al = lerpf(al, 1.0, 0.55 * boost) if float(st.a1) > 0.3 else lerpf(al, al * 1.6 + 0.1, boost)
+		ws.append(w)
+		cs.append(Color(col, clampf(al, 0.0, 1.0)))
+		if st.has("under"):
+			var uw := lerpf(float(st.under_w), float(st.under_w) * 0.75, t) + wadd
+			us.append(uw)
+			ucs.append(Color(XUiSkin.GOLD if hot else st.under, float(st.under_a) * (1.0 if hot else 1.0)))
+		if float(st.edge) > 0.0:
+			es.append(w + float(st.edge) * 2.0)
+			ecs.append(Color(0, 0, 0, 0.55 * clampf(al / maxf(float(st.a0), 0.01), 0.0, 1.0)))
+	if not es.is_empty():
+		_ribbon(abs_pts, es, ecs)
+	if not us.is_empty():
+		_ribbon(abs_pts, us, ucs)
+	_ribbon(abs_pts, ws, cs)
+	var head := Color(col, minf(1.0, float(st.a0) + 0.1 * boost + 0.05))
+	var d0 := (abs_pts[1] - abs_pts[0]).normalized()
+	match String(st.root):
+		"diamond":   # 根部小菱印：沿出发方向拉长一点
+			var p0 := abs_pts[0] + d0 * 1.0
+			var s := 3.2 + wadd * 0.5
+			var nn := Vector2(-d0.y, d0.x)
+			if float(st.edge) > 0.0 or st.has("under"):
+				draw_colored_polygon(PackedVector2Array([p0 - d0 * (s + 1.4), p0 + nn * (s * 0.62 + 1.2), p0 + d0 * (s + 1.4), p0 - nn * (s * 0.62 + 1.2)]), Color(0, 0, 0, 0.55))
+			draw_colored_polygon(PackedVector2Array([p0 - d0 * s, p0 + nn * s * 0.62, p0 + d0 * s, p0 - nn * s * 0.62]), head)
+		"dot":
+			draw_circle(abs_pts[0], 2.6, Color(0, 0, 0, 0.5), true, -1.0, true)
+			draw_circle(abs_pts[0], 1.8 + wadd * 0.3, head, true, -1.0, true)
+	if String(st.tip) == "dot":
+		draw_circle(abs_pts[-1], 1.9 + wadd * 0.3, Color(col, minf(1.0, float(st.a1) + 0.1)), true, -1.0, true)
