@@ -1,0 +1,5013 @@
+{
+ "_note": "T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 6910、魔法 2696。现在没有代码读它。",
+ "version": 1,
+ "nice_number_exempt": [
+  "entries",
+  "id",
+  "unscanned",
+  "base",
+  "groups"
+ ],
+ "base": {
+  "weak_mhp81": 6910,
+  "weak_mmp81": 2696,
+  "weak_main81": 267
+ },
+ "entries": [
+  {
+   "kind": "item_fixed_heal",
+   "id": 1,
+   "name": "治疗药水(小)",
+   "stat": "mhp",
+   "orig": 500.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 7.2
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 2,
+   "name": "魔力药水(小)",
+   "stat": "mmp",
+   "orig": 200.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 7.4
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 3,
+   "name": "活力药水(小)",
+   "stat": "mhp",
+   "orig": 500.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 7.2
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 3,
+   "name": "活力药水(小)",
+   "stat": "mmp",
+   "orig": 200.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 7.4
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 5,
+   "name": "止血草",
+   "stat": "mhp",
+   "orig": 250.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 3.6
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 6,
+   "name": "可口的蘑菇",
+   "stat": "mmp",
+   "orig": 100.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 3.7
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 22,
+   "name": "鱼干",
+   "stat": "mhp",
+   "orig": 600.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 8.7
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 23,
+   "name": "海岸蘑菇",
+   "stat": "mmp",
+   "orig": 250.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 9.3
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 26,
+   "name": "治疗药水(中)",
+   "stat": "mhp",
+   "orig": 1000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14.5
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 27,
+   "name": "魔力药水(中)",
+   "stat": "mmp",
+   "orig": 400.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 14.8
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 28,
+   "name": "活力药水(中)",
+   "stat": "mhp",
+   "orig": 1000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14.5
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 28,
+   "name": "活力药水(中)",
+   "stat": "mmp",
+   "orig": 400.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 14.8
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 49,
+   "name": "治疗药水(大)",
+   "stat": "mhp",
+   "orig": 1500.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 21.7
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 50,
+   "name": "魔力药水(大)",
+   "stat": "mmp",
+   "orig": 600.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 22.3
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 51,
+   "name": "活力药水(大)",
+   "stat": "mhp",
+   "orig": 1500.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 21.7
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 51,
+   "name": "活力药水(大)",
+   "stat": "mmp",
+   "orig": 600.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 22.3
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 58,
+   "name": "可口的苹果",
+   "stat": "mhp",
+   "orig": 600.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 8.7
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 59,
+   "name": "森林蘑菇",
+   "stat": "mmp",
+   "orig": 350.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 13.0
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 138,
+   "name": "治疗药水(特)",
+   "stat": "mhp",
+   "orig": 2750.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 39.8
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 139,
+   "name": "魔力药水(特)",
+   "stat": "mmp",
+   "orig": 1200.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 44.5
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 140,
+   "name": "活力药水(特)",
+   "stat": "mhp",
+   "orig": 2500.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 36.2
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 140,
+   "name": "活力药水(特)",
+   "stat": "mmp",
+   "orig": 1200.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 44.5
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 214,
+   "name": "腐败之息药水",
+   "stat": "mhp",
+   "orig": 4000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 57.9
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 251,
+   "name": "魔晶",
+   "stat": "mmp",
+   "orig": 1500.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 55.6
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 412,
+   "name": "秘制治疗药水",
+   "stat": "mhp",
+   "orig": 7750.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "over100": 112.2
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 413,
+   "name": "秘制魔力药水",
+   "stat": "mmp",
+   "orig": 3500.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 100,
+    "over100": 129.8
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 414,
+   "name": "秘制活力药水",
+   "stat": "mhp",
+   "orig": 7750.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "over100": 112.2
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 414,
+   "name": "秘制活力药水",
+   "stat": "mmp",
+   "orig": 3500.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 100,
+    "over100": 129.8
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 510,
+   "name": "太阳药水",
+   "stat": "mhp",
+   "orig": 900.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 13.0
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 510,
+   "name": "太阳药水",
+   "stat": "mmp",
+   "orig": 350.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 13.0
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 511,
+   "name": "大太阳药水",
+   "stat": "mhp",
+   "orig": 2850.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 41.2
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 511,
+   "name": "大太阳药水",
+   "stat": "mmp",
+   "orig": 1350.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 50.1
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 524,
+   "name": "速效止血药水",
+   "stat": "mhp",
+   "orig": 1400.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 20.3
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 527,
+   "name": "速效魔力药水",
+   "stat": "mmp",
+   "orig": 500.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 18.5
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 557,
+   "name": "昏睡药水",
+   "stat": "mhp",
+   "orig": 2000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 28.9
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 557,
+   "name": "昏睡药水",
+   "stat": "mmp",
+   "orig": 1000.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 37.1
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 584,
+   "name": "妖精魔力药水",
+   "stat": "mmp",
+   "orig": 3200.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 100,
+    "over100": 118.7
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 590,
+   "name": "绮丽秘术药水",
+   "stat": "mhp",
+   "orig": 4000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 57.9
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 591,
+   "name": "巨人之心药水",
+   "stat": "mhp",
+   "orig": 6000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 86.8
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 592,
+   "name": "黄金雷液药水",
+   "stat": "mhp",
+   "orig": 4000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 57.9
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 593,
+   "name": "永恒魔力药水",
+   "stat": "mmp",
+   "orig": 3500.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 100,
+    "over100": 129.8
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 594,
+   "name": "无尽战意药水",
+   "stat": "mhp",
+   "orig": 4000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 57.9
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 793,
+   "name": "无尽小紫瓶",
+   "stat": "mhp",
+   "orig": 600.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 8.7
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 793,
+   "name": "无尽小紫瓶",
+   "stat": "mmp",
+   "orig": 600.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 22.3
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 805,
+   "name": "无尽小瓶红",
+   "stat": "mhp",
+   "orig": 600.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 8.7
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 806,
+   "name": "无尽小瓶蓝",
+   "stat": "mmp",
+   "orig": 300.0,
+   "new": {
+    "pct_of": "mmp",
+    "pct": 11.1
+   }
+  },
+  {
+   "kind": "item_fixed_heal",
+   "id": 1998,
+   "name": "幸运女神的眷顾",
+   "stat": "mhp",
+   "orig": 500.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 7.2
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 33,
+   "name": "中毒（毒蛇钉刺）",
+   "healing": false,
+   "orig": 300.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 4.3
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 35,
+   "name": "中毒",
+   "healing": false,
+   "orig": 300.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 4.3
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 43,
+   "name": "猛击之伤",
+   "healing": false,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 48,
+   "name": "邪毒入体",
+   "healing": false,
+   "orig": 2000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 28.9
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 54,
+   "name": "邪毒入体",
+   "healing": false,
+   "orig": 2000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 28.9
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 55,
+   "name": "治愈之歌",
+   "healing": true,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 57,
+   "name": "治愈之歌",
+   "healing": true,
+   "orig": 10000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "over100": 144.7
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 69,
+   "name": "丧尸之毒",
+   "healing": false,
+   "orig": 1000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14.5
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 70,
+   "name": "尸毒",
+   "healing": false,
+   "orig": 3000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 43.4
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 84,
+   "name": "尸毒",
+   "healing": false,
+   "orig": 4500.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 65.1
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 89,
+   "name": "腐败之毒",
+   "healing": false,
+   "orig": 4000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 57.9
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 90,
+   "name": "邪炎",
+   "healing": false,
+   "orig": 3500.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 50.7
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 91,
+   "name": "出血",
+   "healing": false,
+   "orig": 4000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 57.9
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 93,
+   "name": "毒杀",
+   "healing": false,
+   "orig": 5000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 72.4
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 95,
+   "name": "污染者",
+   "healing": false,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 117,
+   "name": "回春",
+   "healing": true,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 132,
+   "name": "奇拉美的毒",
+   "healing": false,
+   "orig": 3000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 43.4
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 135,
+   "name": "出血",
+   "healing": false,
+   "orig": 350.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 5.1
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 160,
+   "name": "生命护盾术",
+   "healing": true,
+   "orig": 5000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 72.4
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 164,
+   "name": "撕裂",
+   "healing": false,
+   "orig": 3000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 43.4
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 168,
+   "name": "食人魔投喂",
+   "healing": true,
+   "orig": 5000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 72.4
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 176,
+   "name": "飞蛇之毒",
+   "healing": false,
+   "orig": 3750.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 54.3
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 177,
+   "name": "猩红飞蛇之毒",
+   "healing": false,
+   "orig": 4500.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 65.1
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 181,
+   "name": "蛊毒",
+   "healing": false,
+   "orig": 5000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 72.4
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 185,
+   "name": "宁静之风",
+   "healing": true,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 243,
+   "name": "火海",
+   "healing": false,
+   "orig": 10000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "over100": 144.7
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 261,
+   "name": "怨毒",
+   "healing": false,
+   "orig": 8000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "over100": 115.8
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 286,
+   "name": "邪毒入体",
+   "healing": false,
+   "orig": 2000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 28.9
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 347,
+   "name": "锋芒",
+   "healing": false,
+   "orig": 200.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 2.9
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 365,
+   "name": "割裂",
+   "healing": false,
+   "orig": 75.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 1.1
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 473,
+   "name": "淤青",
+   "healing": false,
+   "orig": 1000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14.5
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 474,
+   "name": "残毒",
+   "healing": false,
+   "orig": 1000.0,
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14.5
+   }
+  },
+  {
+   "kind": "state_dot",
+   "id": 487,
+   "name": "骨毒",
+   "healing": false,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 619,
+   "name": "桃木宝杖",
+   "healing": true,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 643,
+   "name": "奇怪的治疗",
+   "healing": false,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 644,
+   "name": "奇怪的复活",
+   "healing": false,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 645,
+   "name": "奇怪的回血",
+   "healing": true,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 837,
+   "name": "苍穹不灭",
+   "healing": true,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 902,
+   "name": "仁德",
+   "healing": true,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 1386,
+   "name": "亲母缠绕",
+   "healing": false,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_dot",
+   "id": 2038,
+   "name": "火遁初级燃烧",
+   "healing": true,
+   "orig": "公式（读 a／b 属性）",
+   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+  },
+  {
+   "kind": "state_shield",
+   "id": 1174,
+   "name": "永不停止的鼓点·友",
+   "orig": "<ShieldEffect:150>",
+   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+  },
+  {
+   "kind": "state_shield",
+   "id": 1177,
+   "name": "鼓点共鸣",
+   "orig": "<ShieldEffect:75>",
+   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+  },
+  {
+   "kind": "state_shield",
+   "id": 1179,
+   "name": "专属节拍器",
+   "orig": "<ShieldEffect:200>",
+   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+  },
+  {
+   "kind": "state_shield",
+   "id": 1180,
+   "name": "椎名立希进阶",
+   "orig": "<ShieldEffect:150>",
+   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+  },
+  {
+   "kind": "state_shield",
+   "id": 1757,
+   "name": "石者，八荒韫玉而明",
+   "orig": "<ShieldEffect:50>",
+   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+  },
+  {
+   "kind": "state_shield",
+   "id": 1758,
+   "name": "圭璋，暝仍不移其晖",
+   "orig": "<ShieldEffect:100>",
+   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+  },
+  {
+   "kind": "state_shield",
+   "id": 1760,
+   "name": "金玉，礼予天地四方·友",
+   "orig": "<ShieldEffect:200>",
+   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 8,
+   "name": "治愈",
+   "enemy": false,
+   "orig": "200 + a.mat",
+   "new": "固定底数 200 换成对象生命上限的 2.9%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 89,
+   "name": "圣光术",
+   "enemy": false,
+   "orig": "750 + a.mat * 4.5",
+   "new": "固定底数 750 换成对象生命上限的 10.9%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 135,
+   "name": "次级治疗术",
+   "enemy": true,
+   "orig": "1550 + a.mat * 2",
+   "new": "固定底数 1550 换成对象生命上限的 22.4%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 166,
+   "name": "治疗术",
+   "enemy": false,
+   "orig": "550 + a.mat * 3",
+   "new": "固定底数 550 换成对象生命上限的 8.0%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 306,
+   "name": "痛饮",
+   "enemy": false,
+   "orig": "1500",
+   "new": "固定底数 1500 换成对象生命上限的 21.7%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 335,
+   "name": "魔力愈合",
+   "enemy": true,
+   "orig": "5500 + a.mat * 3",
+   "new": "固定底数 5500 换成对象生命上限的 79.6%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 341,
+   "name": "生命复苏",
+   "enemy": true,
+   "orig": "10000",
+   "new": "固定底数 10000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 357,
+   "name": "治疗波",
+   "enemy": true,
+   "orig": "3000",
+   "new": "固定底数 3000 换成对象生命上限的 43.4%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 410,
+   "name": "PUA",
+   "enemy": true,
+   "orig": "1550 + a.mat * 2",
+   "new": "固定底数 1550 换成对象生命上限的 22.4%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 482,
+   "name": "先祖之力",
+   "enemy": true,
+   "orig": "30000 + a.mat * 5",
+   "new": "固定底数 30000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 499,
+   "name": "先祖之魂",
+   "enemy": false,
+   "orig": "1000",
+   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 546,
+   "name": "PUA",
+   "enemy": true,
+   "orig": "550 + a.mat * 2",
+   "new": "固定底数 550 换成对象生命上限的 8.0%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 631,
+   "name": "治愈之歌",
+   "enemy": true,
+   "orig": "40000",
+   "new": "固定底数 40000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 649,
+   "name": "光辉映照",
+   "enemy": false,
+   "orig": "1000 + a.mat * 3",
+   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 680,
+   "name": "圣光术",
+   "enemy": true,
+   "orig": "70000",
+   "new": "固定底数 70000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 861,
+   "name": "风语者祝福",
+   "enemy": false,
+   "orig": "1000 + a.mat * 6",
+   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 906,
+   "name": "治愈之歌",
+   "enemy": true,
+   "orig": "100000",
+   "new": "固定底数 100000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 921,
+   "name": "屏障术",
+   "enemy": true,
+   "orig": "200000",
+   "new": "固定底数 200000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 1040,
+   "name": "屏障术",
+   "enemy": true,
+   "orig": "1000000",
+   "new": "固定底数 1e+06 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 1130,
+   "name": "不灭轮回",
+   "enemy": true,
+   "orig": "100000",
+   "new": "固定底数 100000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 1218,
+   "name": "不灭轮回",
+   "enemy": false,
+   "orig": "100000",
+   "new": "固定底数 100000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 1301,
+   "name": "屏障术",
+   "enemy": true,
+   "orig": "3000000",
+   "new": "固定底数 3e+06 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 1322,
+   "name": "PUA",
+   "enemy": true,
+   "orig": "2550 + a.mat * 2",
+   "new": "固定底数 2550 换成对象生命上限的 36.9%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 1323,
+   "name": "鞭策",
+   "enemy": true,
+   "orig": "2550 + a.mat * 2",
+   "new": "固定底数 2550 换成对象生命上限的 36.9%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 1710,
+   "name": "治疗祷告",
+   "enemy": false,
+   "orig": "550 + a.mat * 20",
+   "new": "固定底数 550 换成对象生命上限的 8.0%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 1711,
+   "name": "治疗之涌",
+   "enemy": false,
+   "orig": "550 + a.mat * 20",
+   "new": "固定底数 550 换成对象生命上限的 8.0%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 1715,
+   "name": "嗜血",
+   "enemy": true,
+   "orig": "100000",
+   "new": "固定底数 100000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 1738,
+   "name": "饱餐一顿",
+   "enemy": true,
+   "orig": "1000000",
+   "new": "固定底数 1e+06 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 1988,
+   "name": "食人魔愈合术",
+   "enemy": true,
+   "orig": "5000000",
+   "new": "固定底数 5e+06 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 2264,
+   "name": "推气过宫",
+   "enemy": false,
+   "orig": "750 + a.mat * 2.5",
+   "new": "固定底数 750 换成对象生命上限的 10.9%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 2271,
+   "name": "慈航普渡",
+   "enemy": false,
+   "orig": "1000 + a.mat * 3.5",
+   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 2433,
+   "name": "舔舐伤口",
+   "enemy": true,
+   "orig": "10000000",
+   "new": "固定底数 1e+07 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 2542,
+   "name": "四海平生",
+   "enemy": false,
+   "orig": "1000 + a.mat * 500",
+   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 2565,
+   "name": "净化",
+   "enemy": true,
+   "orig": "20000000",
+   "new": "固定底数 2e+07 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 2578,
+   "name": "复苏之歌",
+   "enemy": false,
+   "orig": "1000",
+   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 2579,
+   "name": "治愈之歌",
+   "enemy": false,
+   "orig": "650 + a.mat * 3",
+   "new": "固定底数 650 换成对象生命上限的 9.4%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 2663,
+   "name": "舔舐伤口",
+   "enemy": true,
+   "orig": "50000000",
+   "new": "固定底数 5e+07 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 2690,
+   "name": "神圣祷言",
+   "enemy": false,
+   "orig": "700 + a.mat * 4",
+   "new": "固定底数 700 换成对象生命上限的 10.1%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 2698,
+   "name": "救赎",
+   "enemy": false,
+   "orig": "1000",
+   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 3570,
+   "name": "清心咒",
+   "enemy": true,
+   "orig": "450 + a.mat * 1000",
+   "new": "固定底数 450 换成对象生命上限的 6.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 3701,
+   "name": "小马乱撞",
+   "enemy": false,
+   "orig": "1000",
+   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 3968,
+   "name": "圣光术",
+   "enemy": true,
+   "orig": "v[364] + 70000",
+   "new": "公式读对象生命或属性，T012-b 逐条看"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 4442,
+   "name": "悦耳",
+   "enemy": false,
+   "orig": "800 + a.mat * 2",
+   "new": "固定底数 800 换成对象生命上限的 11.6%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 5314,
+   "name": "屌丝的治疗术",
+   "enemy": false,
+   "orig": "1550 + a.mat * 2",
+   "new": "固定底数 1550 换成对象生命上限的 22.4%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 5930,
+   "name": "说唱",
+   "enemy": false,
+   "orig": "500",
+   "new": "固定底数 500 换成对象生命上限的 7.2%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 6240,
+   "name": "龙马复活术",
+   "enemy": false,
+   "orig": "1000",
+   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 6620,
+   "name": "PUA*终极大师版[抽奖版]",
+   "enemy": false,
+   "orig": "5000+a.mat*5",
+   "new": "固定底数 5000 换成对象生命上限的 72.4%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 6624,
+   "name": "龙舞天下[抽奖版]",
+   "enemy": false,
+   "orig": "550 + a.mat * 2",
+   "new": "固定底数 550 换成对象生命上限的 8.0%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 7073,
+   "name": "月光之舞",
+   "enemy": false,
+   "orig": "3000+a.mat*60",
+   "new": "固定底数 3000 换成对象生命上限的 43.4%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 7130,
+   "name": "生生不息[群体复活]",
+   "enemy": false,
+   "orig": "1000",
+   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 7163,
+   "name": "《百草回春经》上篇",
+   "enemy": false,
+   "orig": "1000+a.mat*10",
+   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 7164,
+   "name": "《百草回春经》下篇",
+   "enemy": false,
+   "orig": "30000+a.mat*50",
+   "new": "固定底数 30000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 7165,
+   "name": "《轮回转生决》",
+   "enemy": false,
+   "orig": "1000",
+   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 7303,
+   "name": "万古青天一株莲",
+   "enemy": false,
+   "orig": "30000+a.mat*300",
+   "new": "固定底数 30000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 8021,
+   "name": "普度众生",
+   "enemy": false,
+   "orig": "b.mhp * 0.5",
+   "new": "公式读对象生命或属性，T012-b 逐条看"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 8028,
+   "name": "圣光普照",
+   "enemy": false,
+   "orig": "b.mhp * 0.5",
+   "new": "公式读对象生命或属性，T012-b 逐条看"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 8038,
+   "name": "神爱世人",
+   "enemy": false,
+   "orig": "b.mhp",
+   "new": "公式读对象生命或属性，T012-b 逐条看"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 8046,
+   "name": "玄心真术",
+   "enemy": false,
+   "orig": "a.mmp",
+   "new": "公式读对象生命或属性，T012-b 逐条看"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 8111,
+   "name": "轮回模式·平衡伤害",
+   "enemy": true,
+   "orig": "1",
+   "new": "固定底数 1 换成对象生命上限的 0.0%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 10288,
+   "name": "泽苍生",
+   "enemy": false,
+   "orig": "0",
+   "new": "公式读对象生命或属性，T012-b 逐条看"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 10524,
+   "name": "外壳静血装",
+   "enemy": true,
+   "orig": "a.hp*0.2",
+   "new": "公式读对象生命或属性，T012-b 逐条看"
+  },
+  {
+   "kind": "skill_fixed_heal",
+   "id": 10549,
+   "name": "麒麟天护",
+   "enemy": true,
+   "orig": "2000+a.mat+(30*a.skillMasteryLevel(10549)+a.luk*3)",
+   "new": "固定底数 2000 换成对象生命上限的 28.9%（原数÷弱者 81 级生命）"
+  },
+  {
+   "kind": "skill_fixed_drain",
+   "id": 500,
+   "name": "吞魔术",
+   "enemy": true,
+   "orig": "10000",
+   "new": "吸取量 10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+  },
+  {
+   "kind": "skill_fixed_drain",
+   "id": 550,
+   "name": "抽干",
+   "enemy": true,
+   "orig": "10000",
+   "new": "吸取量 10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+  },
+  {
+   "kind": "skill_fixed_drain",
+   "id": 841,
+   "name": "魔力吸取",
+   "enemy": false,
+   "orig": "10000",
+   "new": "吸取量 10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+  },
+  {
+   "kind": "skill_fixed_drain",
+   "id": 853,
+   "name": "抽干",
+   "enemy": true,
+   "orig": "10000",
+   "new": "吸取量 10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+  },
+  {
+   "kind": "skill_fixed_drain",
+   "id": 855,
+   "name": "抽干",
+   "enemy": false,
+   "orig": "10000",
+   "new": "吸取量 10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+  },
+  {
+   "kind": "skill_fixed_drain",
+   "id": 865,
+   "name": "扭曲之触",
+   "enemy": true,
+   "orig": "a.mat * 15 - (0 * 4)",
+   "new": "吸取量 a.mat * 15 - (0 * 4)：换成对象生命／魔法上限的百分比（T012-b 定）"
+  },
+  {
+   "kind": "skill_fixed_drain",
+   "id": 897,
+   "name": "折磨",
+   "enemy": true,
+   "orig": "5000",
+   "new": "吸取量 5000：换成对象生命／魔法上限的百分比（T012-b 定）"
+  },
+  {
+   "kind": "skill_fixed_drain",
+   "id": 963,
+   "name": "折磨",
+   "enemy": true,
+   "orig": "2000",
+   "new": "吸取量 2000：换成对象生命／魔法上限的百分比（T012-b 定）"
+  },
+  {
+   "kind": "skill_fixed_drain",
+   "id": 977,
+   "name": "抽干",
+   "enemy": true,
+   "orig": "10000",
+   "new": "吸取量 10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+  },
+  {
+   "kind": "skill_fixed_drain",
+   "id": 4012,
+   "name": "抽干",
+   "enemy": true,
+   "orig": "v[364] +1750 + a.mat * 9 - (0 * 2)",
+   "new": "吸取量 v[364] +1750 + a.mat：换成对象生命／魔法上限的百分比（T012-b 定）"
+  },
+  {
+   "kind": "skill_fixed_drain",
+   "id": 4152,
+   "name": "魔力吸取",
+   "enemy": true,
+   "orig": "v[364] +10000",
+   "new": "吸取量 v[364] +10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+  },
+  {
+   "kind": "note_shieldeffect",
+   "id": 4546,
+   "name": "厚土盾剑",
+   "table": "Armors",
+   "orig": "150",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_shieldeffect",
+   "id": 4570,
+   "name": "震岳擂魂",
+   "table": "Armors",
+   "orig": "50",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_shieldeffect",
+   "id": 4571,
+   "name": "贯虹之槊",
+   "table": "Armors",
+   "orig": "100",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_regen_formula",
+   "id": 55,
+   "name": "治愈之歌",
+   "table": "States",
+   "orig": "a.mat*5",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_regen_formula",
+   "id": 57,
+   "name": "治愈之歌",
+   "table": "States",
+   "orig": "10000",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 72,
+   "name": "冰封血脉",
+   "table": "States",
+   "orig": "60%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_regen_formula",
+   "id": 117,
+   "name": "回春",
+   "table": "States",
+   "orig": "a.mat*5",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_regen_formula",
+   "id": 160,
+   "name": "生命护盾术",
+   "table": "States",
+   "orig": "5000",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_regen_formula",
+   "id": 168,
+   "name": "食人魔投喂",
+   "table": "States",
+   "orig": "5000",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_regen_formula",
+   "id": 185,
+   "name": "宁静之风",
+   "table": "States",
+   "orig": "a.mat*5",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 380,
+   "name": "冰封血脉II",
+   "table": "States",
+   "orig": "50%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_regen_formula",
+   "id": 619,
+   "name": "桃木宝杖",
+   "table": "States",
+   "orig": "a.mat*6",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 628,
+   "name": "极度冰寒",
+   "table": "States",
+   "orig": "60%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_regen_formula",
+   "id": 645,
+   "name": "奇怪的回血",
+   "table": "States",
+   "orig": "a.mat*4",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_regen_formula",
+   "id": 837,
+   "name": "苍穹不灭",
+   "table": "States",
+   "orig": "a.mat*10",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_regen_formula",
+   "id": 902,
+   "name": "仁德",
+   "table": "States",
+   "orig": "a.mat*10",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 1079,
+   "name": "降低敏捷恢复",
+   "table": "States",
+   "orig": "65%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 1080,
+   "name": "降低敏捷恢复2",
+   "table": "States",
+   "orig": "40%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 1085,
+   "name": "天地交泰",
+   "table": "States",
+   "orig": "25%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 1321,
+   "name": "极度负状",
+   "table": "States",
+   "orig": "60%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 1606,
+   "name": "猪王舒服",
+   "table": "States",
+   "orig": "70%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 1620,
+   "name": "旋涡冰封",
+   "table": "States",
+   "orig": "40%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 2570,
+   "name": "急速冷却",
+   "table": "States",
+   "orig": "80%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 2580,
+   "name": "剑*坏",
+   "table": "States",
+   "orig": "60%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 2732,
+   "name": "剑*坏",
+   "table": "States",
+   "orig": "60%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  },
+  {
+   "kind": "note_dbhplsteal",
+   "id": 2752,
+   "name": "无月X",
+   "table": "States",
+   "orig": "1%",
+   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+  }
+ ],
+ "groups": {
+  "enemy_skill_fixed_base": {
+   "_note": "敌人用的、没进技能卡的原版技能，伤害公式的固定底数（如 100＋魔攻×10 里的 100）。列：技能号、名字、固定底数、占弱者 81 级主攻（267）的百分比；公式里「属性×系数」的部分随属性涨，不在这里，只有固定底数在新量级里会变轻。底数换成「标准线攻击的百分之几」（new_rule）。",
+   "new_rule": "固定底数 → 标准线攻击(81级) × 占比%",
+   "columns": [
+    "skill",
+    "name",
+    "base",
+    "pct_of_weak_main81"
+   ],
+   "rows": [
+    [
+     10,
+     "闪电",
+     100.0,
+     37.5
+    ],
+    [
+     49,
+     "水泡术",
+     150.0,
+     56.2
+    ],
+    [
+     112,
+     "英勇打击",
+     180.0,
+     67.4
+    ],
+    [
+     113,
+     "恶毒咒语",
+     300.0,
+     112.4
+    ],
+    [
+     114,
+     "火球术",
+     200.0,
+     74.9
+    ],
+    [
+     118,
+     "连续射击",
+     245.0,
+     91.8
+    ],
+    [
+     119,
+     "跳斩",
+     325.0,
+     121.7
+    ],
+    [
+     125,
+     "寒冰箭",
+     145.0,
+     54.3
+    ],
+    [
+     126,
+     "愤怒",
+     225.0,
+     84.3
+    ],
+    [
+     128,
+     "瞄准射击",
+     175.0,
+     65.5
+    ],
+    [
+     130,
+     "兽人散打·冲拳",
+     355.0,
+     133.0
+    ],
+    [
+     131,
+     "兽人散打·乱冲",
+     400.0,
+     149.8
+    ],
+    [
+     132,
+     "嘤嘤嘤",
+     350.0,
+     131.1
+    ],
+    [
+     134,
+     "跳斩",
+     325.0,
+     121.7
+    ],
+    [
+     136,
+     "碎甲一击",
+     200.0,
+     74.9
+    ],
+    [
+     137,
+     "神*英勇打击",
+     2500.0,
+     936.3
+    ],
+    [
+     144,
+     "鱼人突刺",
+     500.0,
+     187.3
+    ],
+    [
+     146,
+     "寒冰箭",
+     145.0,
+     54.3
+    ],
+    [
+     147,
+     "巨人打击",
+     500.0,
+     187.3
+    ],
+    [
+     148,
+     "暴风雪",
+     575.0,
+     215.4
+    ],
+    [
+     151,
+     "神*跳斩",
+     2500.0,
+     936.3
+    ],
+    [
+     152,
+     "禁言术",
+     500.0,
+     187.3
+    ],
+    [
+     159,
+     "神*穿心",
+     2000.0,
+     749.1
+    ],
+    [
+     167,
+     "刺骨",
+     900.0,
+     337.1
+    ],
+    [
+     168,
+     "劈斩术",
+     750.0,
+     280.9
+    ],
+    [
+     177,
+     "捕猎穿刺",
+     900.0,
+     337.1
+    ],
+    [
+     178,
+     "刺骨",
+     650.0,
+     243.4
+    ],
+    [
+     179,
+     "捕猎冲锋",
+     200.0,
+     74.9
+    ],
+    [
+     180,
+     "巨浪术",
+     1000.0,
+     374.5
+    ],
+    [
+     181,
+     "爪击",
+     200.0,
+     74.9
+    ],
+    [
+     182,
+     "撕咬",
+     250.0,
+     93.6
+    ],
+    [
+     207,
+     "群体炎柱术",
+     775.0,
+     290.3
+    ],
+    [
+     255,
+     "爪击",
+     270.0,
+     101.1
+    ],
+    [
+     256,
+     "撕咬",
+     450.0,
+     168.5
+    ],
+    [
+     257,
+     "教训",
+     200.0,
+     74.9
+    ],
+    [
+     258,
+     "连环爪",
+     270.0,
+     101.1
+    ],
+    [
+     259,
+     "大杀四方",
+     270.0,
+     101.1
+    ],
+    [
+     261,
+     "撕咬",
+     450.0,
+     168.5
+    ],
+    [
+     263,
+     "无量梵音",
+     350.0,
+     131.1
+    ],
+    [
+     274,
+     "炸裂火球",
+     200.0,
+     74.9
+    ],
+    [
+     275,
+     "炎柱术",
+     700.0,
+     262.2
+    ],
+    [
+     276,
+     "冰刺术",
+     600.0,
+     224.7
+    ],
+    [
+     278,
+     "炎柱术",
+     700.0,
+     262.2
+    ],
+    [
+     279,
+     "冰刺术",
+     600.0,
+     224.7
+    ],
+    [
+     280,
+     "炎柱术",
+     700.0,
+     262.2
+    ],
+    [
+     283,
+     "陨星术",
+     950.0,
+     355.8
+    ],
+    [
+     284,
+     "冰锥术",
+     885.0,
+     331.5
+    ],
+    [
+     290,
+     "巨力挥舞",
+     1055.0,
+     395.1
+    ],
+    [
+     291,
+     "碎骨",
+     800.0,
+     299.6
+    ],
+    [
+     292,
+     "踏地",
+     1000.0,
+     374.5
+    ],
+    [
+     302,
+     "碎骨",
+     2000.0,
+     749.1
+    ],
+    [
+     303,
+     "巨力挥舞",
+     555.0,
+     207.9
+    ],
+    [
+     304,
+     "碎空斩",
+     500.0,
+     187.3
+    ],
+    [
+     305,
+     "屠灭",
+     580.0,
+     217.2
+    ],
+    [
+     309,
+     "魔力居合斩",
+     750.0,
+     280.9
+    ],
+    [
+     325,
+     "双星",
+     1250.0,
+     468.2
+    ],
+    [
+     331,
+     "雷电之剑",
+     600.0,
+     224.7
+    ],
+    [
+     332,
+     "火焰之剑",
+     500.0,
+     187.3
+    ],
+    [
+     333,
+     "寒冰之剑",
+     400.0,
+     149.8
+    ],
+    [
+     334,
+     "双星",
+     1250.0,
+     468.2
+    ],
+    [
+     336,
+     "爪击",
+     270.0,
+     101.1
+    ],
+    [
+     337,
+     "撕咬",
+     450.0,
+     168.5
+    ],
+    [
+     338,
+     "撕咬",
+     450.0,
+     168.5
+    ],
+    [
+     340,
+     "狂怒连击",
+     275.0,
+     103.0
+    ],
+    [
+     342,
+     "嗜血追击",
+     350.0,
+     131.1
+    ],
+    [
+     343,
+     "嗜血撕咬",
+     850.0,
+     318.4
+    ],
+    [
+     354,
+     "风卷术",
+     575.0,
+     215.4
+    ],
+    [
+     356,
+     "风怒",
+     475.0,
+     177.9
+    ],
+    [
+     358,
+     "土锥术",
+     800.0,
+     299.6
+    ],
+    [
+     359,
+     "英勇打击",
+     580.0,
+     217.2
+    ],
+    [
+     360,
+     "陨星术",
+     950.0,
+     355.8
+    ],
+    [
+     361,
+     "地火术",
+     785.0,
+     294.0
+    ],
+    [
+     363,
+     "狂怒连击",
+     580.0,
+     217.2
+    ],
+    [
+     364,
+     "风怒连击",
+     475.0,
+     177.9
+    ],
+    [
+     365,
+     "杀意剑",
+     1255.0,
+     470.0
+    ],
+    [
+     366,
+     "剑圣跳劈",
+     650.0,
+     243.4
+    ],
+    [
+     367,
+     "兽人散打·冲拳",
+     355.0,
+     133.0
+    ],
+    [
+     368,
+     "兽人散打·乱冲",
+     750.0,
+     280.9
+    ],
+    [
+     371,
+     "驱魔射击",
+     1045.0,
+     391.4
+    ],
+    [
+     372,
+     "弹幕射击",
+     375.0,
+     140.4
+    ],
+    [
+     394,
+     "终结",
+     3000.0,
+     1123.6
+    ],
+    [
+     396,
+     "愤怒连击",
+     2000.0,
+     749.1
+    ],
+    [
+     411,
+     "连续攻击",
+     125.0,
+     46.8
+    ],
+    [
+     412,
+     "凌空斩",
+     300.0,
+     112.4
+    ],
+    [
+     413,
+     "狂野冲撞",
+     300.0,
+     112.4
+    ],
+    [
+     414,
+     "投掷",
+     1000.0,
+     374.5
+    ],
+    [
+     415,
+     "凌空三式",
+     280.0,
+     104.9
+    ],
+    [
+     416,
+     "连掷",
+     1000.0,
+     374.5
+    ],
+    [
+     417,
+     "践踏",
+     888.0,
+     332.6
+    ],
+    [
+     418,
+     "幻影凌空杀",
+     280.0,
+     104.9
+    ],
+    [
+     419,
+     "凌空连斩",
+     300.0,
+     112.4
+    ],
+    [
+     440,
+     "灵光连刃",
+     300.0,
+     112.4
+    ],
+    [
+     447,
+     "灵光连刃",
+     300.0,
+     112.4
+    ],
+    [
+     454,
+     "碎骨腿",
+     600.0,
+     224.7
+    ],
+    [
+     465,
+     "大杀四方",
+     355.0,
+     133.0
+    ],
+    [
+     466,
+     "踏地",
+     1100.0,
+     412.0
+    ],
+    [
+     469,
+     "龙魂强击",
+     475.0,
+     177.9
+    ],
+    [
+     471,
+     "影杀",
+     125.0,
+     46.8
+    ],
+    [
+     473,
+     "猛击",
+     350.0,
+     131.1
+    ],
+    [
+     474,
+     "狂劈",
+     750.0,
+     280.9
+    ],
+    [
+     475,
+     "吼叫",
+     500.0,
+     187.3
+    ],
+    [
+     476,
+     "震耳怒吼",
+     1200.0,
+     449.4
+    ],
+    [
+     477,
+     "巨拳打击",
+     550.0,
+     206.0
+    ],
+    [
+     478,
+     "灭敌一拳",
+     5555.0,
+     2080.5
+    ],
+    [
+     479,
+     "回音重踏",
+     2000.0,
+     749.1
+    ],
+    [
+     480,
+     "战争践踏",
+     1500.0,
+     561.8
+    ],
+    [
+     481,
+     "风怒连击",
+     475.0,
+     177.9
+    ],
+    [
+     483,
+     "退魔连环击",
+     400.0,
+     149.8
+    ],
+    [
+     484,
+     "穿心",
+     2000.0,
+     749.1
+    ],
+    [
+     501,
+     "碎骨腿",
+     700.0,
+     262.2
+    ],
+    [
+     528,
+     "水崩",
+     1850.0,
+     692.9
+    ],
+    [
+     549,
+     "土锥术",
+     1100.0,
+     412.0
+    ],
+    [
+     551,
+     "石化之土",
+     1100.0,
+     412.0
+    ],
+    [
+     552,
+     "土之奥义·震撼大地",
+     800.0,
+     299.6
+    ],
+    [
+     568,
+     "碎骨腿",
+     700.0,
+     262.2
+    ],
+    [
+     569,
+     "升龙拳",
+     825.0,
+     309.0
+    ],
+    [
+     571,
+     "勇气连环击",
+     500.0,
+     187.3
+    ],
+    [
+     573,
+     "邪毒入体",
+     1000.0,
+     374.5
+    ],
+    [
+     574,
+     "双星",
+     1250.0,
+     468.2
+    ],
+    [
+     602,
+     "屠灭",
+     580.0,
+     217.2
+    ],
+    [
+     603,
+     "石土",
+     1100.0,
+     412.0
+    ],
+    [
+     604,
+     "眩光",
+     1000.0,
+     374.5
+    ],
+    [
+     606,
+     "王之霸气",
+     3000.0,
+     1123.6
+    ],
+    [
+     607,
+     "心脏打击",
+     755.0,
+     282.8
+    ],
+    [
+     609,
+     "心脏打击",
+     255.0,
+     95.5
+    ],
+    [
+     610,
+     "天使冲击",
+     1055.0,
+     395.1
+    ],
+    [
+     611,
+     "连掷",
+     1000.0,
+     374.5
+    ],
+    [
+     612,
+     "巨力投掷",
+     2000.0,
+     749.1
+    ],
+    [
+     616,
+     "炎鬼",
+     1075.0,
+     402.6
+    ],
+    [
+     626,
+     "冰风暴",
+     1275.0,
+     477.5
+    ],
+    [
+     627,
+     "冰刺术",
+     1275.0,
+     477.5
+    ],
+    [
+     628,
+     "鹰踏",
+     495.0,
+     185.4
+    ],
+    [
+     629,
+     "冰风暴",
+     1275.0,
+     477.5
+    ],
+    [
+     630,
+     "尖啸之歌",
+     800.0,
+     299.6
+    ],
+    [
+     641,
+     "嗜血追击",
+     350.0,
+     131.1
+    ],
+    [
+     643,
+     "狂怒之爪",
+     175.0,
+     65.5
+    ],
+    [
+     644,
+     "双重怒吼",
+     700.0,
+     262.2
+    ],
+    [
+     645,
+     "连环斩",
+     655.0,
+     245.3
+    ],
+    [
+     646,
+     "利刃风暴",
+     500.0,
+     187.3
+    ],
+    [
+     659,
+     "灵光连刃",
+     300.0,
+     112.4
+    ],
+    [
+     660,
+     "高阶奥术波动",
+     450.0,
+     168.5
+    ],
+    [
+     661,
+     "奥术波动",
+     450.0,
+     168.5
+    ],
+    [
+     681,
+     "圣光矢",
+     1500.0,
+     561.8
+    ],
+    [
+     682,
+     "圣光矢",
+     1500.0,
+     561.8
+    ],
+    [
+     694,
+     "马神*半人马奔腾",
+     5000.0,
+     1872.7
+    ],
+    [
+     696,
+     "马神*凌空斩",
+     2000.0,
+     749.1
+    ],
+    [
+     697,
+     "马神*投掷",
+     1500.0,
+     561.8
+    ],
+    [
+     698,
+     "马神*凌空三式",
+     2000.0,
+     749.1
+    ],
+    [
+     699,
+     "马神*怒吼",
+     1500.0,
+     561.8
+    ],
+    [
+     733,
+     "冥花葬*彼岸",
+     1000.0,
+     374.5
+    ],
+    [
+     754,
+     "癫舞召火术",
+     500.0,
+     187.3
+    ],
+    [
+     755,
+     "癫舞飓风刃",
+     700.0,
+     262.2
+    ],
+    [
+     756,
+     "神火火舞",
+     500.0,
+     187.3
+    ],
+    [
+     757,
+     "神火飓风刃",
+     700.0,
+     262.2
+    ],
+    [
+     758,
+     "癫舞召火术",
+     500.0,
+     187.3
+    ],
+    [
+     759,
+     "风刃帷幕",
+     1500.0,
+     561.8
+    ],
+    [
+     760,
+     "癫舞召火术",
+     500.0,
+     187.3
+    ],
+    [
+     761,
+     "癫舞唤风术",
+     750.0,
+     280.9
+    ],
+    [
+     762,
+     "癫舞吸魂术",
+     700.0,
+     262.2
+    ],
+    [
+     763,
+     "癫舞吸魂术",
+     750.0,
+     280.9
+    ],
+    [
+     765,
+     "吸魂术",
+     750.0,
+     280.9
+    ],
+    [
+     766,
+     "鹰踏",
+     495.0,
+     185.4
+    ],
+    [
+     771,
+     "爷拳",
+     15000.0,
+     5618.0
+    ],
+    [
+     772,
+     "撕咬",
+     850.0,
+     318.4
+    ],
+    [
+     773,
+     "疯狂撕咬",
+     250.0,
+     93.6
+    ],
+    [
+     774,
+     "疯狂撕咬",
+     250.0,
+     93.6
+    ],
+    [
+     775,
+     "尸毒",
+     1000.0,
+     374.5
+    ],
+    [
+     776,
+     "尸毒",
+     1000.0,
+     374.5
+    ],
+    [
+     777,
+     "疯狂撕咬",
+     450.0,
+     168.5
+    ],
+    [
+     780,
+     "鱼人之歌",
+     800.0,
+     299.6
+    ],
+    [
+     781,
+     "水球爆破",
+     1250.0,
+     468.2
+    ],
+    [
+     786,
+     "土崩术",
+     2000.0,
+     749.1
+    ],
+    [
+     795,
+     "飞爪",
+     495.0,
+     185.4
+    ],
+    [
+     796,
+     "袭杀之爪",
+     1535.0,
+     574.9
+    ],
+    [
+     797,
+     "十字连斩",
+     1500.0,
+     561.8
+    ],
+    [
+     798,
+     "双重冻结术",
+     1600.0,
+     599.3
+    ],
+    [
+     802,
+     "冻结术",
+     1600.0,
+     599.3
+    ],
+    [
+     805,
+     "亚特兰蒂斯巨浪",
+     5000.0,
+     1872.7
+    ],
+    [
+     806,
+     "鱼人之歌",
+     800.0,
+     299.6
+    ],
+    [
+     807,
+     "亚特兰蒂斯水球",
+     1250.0,
+     468.2
+    ],
+    [
+     809,
+     "亚特兰蒂斯巨拳",
+     750.0,
+     280.9
+    ],
+    [
+     827,
+     "如来神掌",
+     1875.0,
+     702.2
+    ],
+    [
+     828,
+     "佛光初现",
+     1550.0,
+     580.5
+    ],
+    [
+     829,
+     "大罗法咒",
+     3050.0,
+     1142.3
+    ],
+    [
+     830,
+     "疯狂撕咬",
+     450.0,
+     168.5
+    ],
+    [
+     832,
+     "黑龙波",
+     2450.0,
+     917.6
+    ],
+    [
+     833,
+     "魔爆术",
+     1550.0,
+     580.5
+    ],
+    [
+     835,
+     "邪炎打击",
+     3000.0,
+     1123.6
+    ],
+    [
+     836,
+     "巨人投掷",
+     6500.0,
+     2434.5
+    ],
+    [
+     838,
+     "魔爆术",
+     1550.0,
+     580.5
+    ],
+    [
+     839,
+     "吞噬灵魂",
+     5000.0,
+     1872.7
+    ],
+    [
+     840,
+     "陨星群",
+     1550.0,
+     580.5
+    ],
+    [
+     842,
+     "石化秘术",
+     1550.0,
+     580.5
+    ],
+    [
+     845,
+     "盛宴",
+     450.0,
+     168.5
+    ],
+    [
+     846,
+     "恶毒诅咒",
+     2000.0,
+     749.1
+    ],
+    [
+     850,
+     "重力投杀",
+     2000.0,
+     749.1
+    ],
+    [
+     852,
+     "强效打击",
+     500.0,
+     187.3
+    ],
+    [
+     854,
+     "巨浪术",
+     4000.0,
+     1498.1
+    ],
+    [
+     862,
+     "巨拳打击",
+     700.0,
+     262.2
+    ],
+    [
+     863,
+     "摄人心魄",
+     1550.0,
+     580.5
+    ],
+    [
+     864,
+     "催眠术",
+     3000.0,
+     1123.6
+    ],
+    [
+     866,
+     "风怒连击",
+     475.0,
+     177.9
+    ],
+    [
+     867,
+     "怒吼",
+     2000.0,
+     749.1
+    ],
+    [
+     868,
+     "猩红之毒",
+     1000.0,
+     374.5
+    ],
+    [
+     872,
+     "深海水泡",
+     1000.0,
+     374.5
+    ],
+    [
+     873,
+     "巨浪术",
+     2500.0,
+     936.3
+    ],
+    [
+     874,
+     "深海音波",
+     1550.0,
+     580.5
+    ],
+    [
+     875,
+     "巨浪投掷",
+     2000.0,
+     749.1
+    ],
+    [
+     876,
+     "鱼人之歌",
+     2000.0,
+     749.1
+    ],
+    [
+     877,
+     "巨浪投掷",
+     2500.0,
+     936.3
+    ],
+    [
+     878,
+     "海妖尖叫",
+     1500.0,
+     561.8
+    ],
+    [
+     879,
+     "海妖之歌",
+     2000.0,
+     749.1
+    ],
+    [
+     880,
+     "溺亡之水",
+     3000.0,
+     1123.6
+    ],
+    [
+     887,
+     "妖精之歌",
+     1200.0,
+     449.4
+    ],
+    [
+     888,
+     "妖精花粉",
+     2000.0,
+     749.1
+    ],
+    [
+     889,
+     "尖啸之歌",
+     800.0,
+     299.6
+    ],
+    [
+     898,
+     "灵魂火焰",
+     1250.0,
+     468.2
+    ],
+    [
+     899,
+     "灵魂火焰",
+     1250.0,
+     468.2
+    ],
+    [
+     900,
+     "灵魂火焰",
+     1250.0,
+     468.2
+    ],
+    [
+     901,
+     "灵魂火焰",
+     1250.0,
+     468.2
+    ],
+    [
+     903,
+     "亚特兰蒂斯崩天杀",
+     5550.0,
+     2078.7
+    ],
+    [
+     905,
+     "尖啸之歌",
+     800.0,
+     299.6
+    ],
+    [
+     907,
+     "黑龙波",
+     2450.0,
+     917.6
+    ],
+    [
+     909,
+     "深渊崩裂",
+     2500.0,
+     936.3
+    ],
+    [
+     910,
+     "黑暗斩击",
+     2500.0,
+     936.3
+    ],
+    [
+     911,
+     "崩裂打击",
+     7000.0,
+     2621.7
+    ],
+    [
+     912,
+     "腐败之毒",
+     1000.0,
+     374.5
+    ],
+    [
+     913,
+     "邪炎崩裂",
+     1500.0,
+     561.8
+    ],
+    [
+     914,
+     "黑暗斩击",
+     2500.0,
+     936.3
+    ],
+    [
+     915,
+     "吞魂术",
+     5000.0,
+     1872.7
+    ],
+    [
+     916,
+     "飞爪",
+     2950.0,
+     1104.9
+    ],
+    [
+     917,
+     "袭杀之爪",
+     2535.0,
+     949.4
+    ],
+    [
+     918,
+     "飞爪",
+     2950.0,
+     1104.9
+    ],
+    [
+     919,
+     "破坏一击",
+     1500.0,
+     561.8
+    ],
+    [
+     920,
+     "凌空连斩",
+     1500.0,
+     561.8
+    ],
+    [
+     922,
+     "屠灭",
+     585.0,
+     219.1
+    ],
+    [
+     923,
+     "毒杀",
+     1500.0,
+     561.8
+    ],
+    [
+     924,
+     "腐败之毒",
+     1000.0,
+     374.5
+    ],
+    [
+     948,
+     "炎爆术",
+     3000.0,
+     1123.6
+    ],
+    [
+     951,
+     "风魔炮",
+     3000.0,
+     1123.6
+    ],
+    [
+     959,
+     "狂风卷击",
+     2450.0,
+     917.6
+    ],
+    [
+     960,
+     "巨拳打击",
+     1000.0,
+     374.5
+    ],
+    [
+     961,
+     "地爆天星",
+     1500.0,
+     561.8
+    ],
+    [
+     962,
+     "地震术",
+     3000.0,
+     1123.6
+    ],
+    [
+     964,
+     "灵魂火焰",
+     1250.0,
+     468.2
+    ],
+    [
+     970,
+     "恶魔之眼",
+     3000.0,
+     1123.6
+    ],
+    [
+     973,
+     "星辰碎冰",
+     2350.0,
+     880.1
+    ],
+    [
+     974,
+     "炎爆术",
+     2250.0,
+     842.7
+    ],
+    [
+     975,
+     "陨星风暴",
+     1550.0,
+     580.5
+    ],
+    [
+     976,
+     "冻结术",
+     1600.0,
+     599.3
+    ],
+    [
+     981,
+     "恶魔印记",
+     8000.0,
+     2996.3
+    ],
+    [
+     983,
+     "魔星降世",
+     9999999999.0,
+     3745318351.7
+    ],
+    [
+     985,
+     "恶魔印记",
+     5000.0,
+     1872.7
+    ],
+    [
+     999,
+     "地震术",
+     3000.0,
+     1123.6
+    ],
+    [
+     1001,
+     "啃食",
+     5000.0,
+     1872.7
+    ],
+    [
+     1006,
+     "勇气连环击",
+     500.0,
+     187.3
+    ],
+    [
+     1025,
+     "嗜血追击",
+     350.0,
+     131.1
+    ],
+    [
+     1031,
+     "古树之风",
+     2050.0,
+     767.8
+    ],
+    [
+     1035,
+     "吸元秘术",
+     2000.0,
+     749.1
+    ],
+    [
+     1036,
+     "荆棘重击",
+     2050.0,
+     767.8
+    ],
+    [
+     1037,
+     "破坏连击",
+     1500.0,
+     561.8
+    ],
+    [
+     1038,
+     "龙吼",
+     2500.0,
+     936.3
+    ],
+    [
+     1039,
+     "龙爪飞踏",
+     2500.0,
+     936.3
+    ],
+    [
+     1051,
+     "神圣新星",
+     1500.0,
+     561.8
+    ],
+    [
+     1287,
+     "奇拉美之毒",
+     1000.0,
+     374.5
+    ],
+    [
+     1302,
+     "老君符",
+     5000.0,
+     1872.7
+    ],
+    [
+     1303,
+     "龙息",
+     2000.0,
+     749.1
+    ],
+    [
+     1305,
+     "龙炎弹",
+     2000.0,
+     749.1
+    ],
+    [
+     1306,
+     "战争冲锋",
+     1550.0,
+     580.5
+    ],
+    [
+     1307,
+     "吞噬灵魂",
+     7000.0,
+     2621.7
+    ],
+    [
+     1308,
+     "吞噬灵魂",
+     8000.0,
+     2996.3
+    ],
+    [
+     1315,
+     "啃食",
+     350.0,
+     131.1
+    ],
+    [
+     1316,
+     "啃食",
+     350.0,
+     131.1
+    ],
+    [
+     1317,
+     "震耳怒吼",
+     550.0,
+     206.0
+    ],
+    [
+     1319,
+     "冲撞",
+     555.0,
+     207.9
+    ],
+    [
+     1320,
+     "狂怒冲撞",
+     555.0,
+     207.9
+    ],
+    [
+     1321,
+     "狂怒冲撞",
+     1000.0,
+     374.5
+    ],
+    [
+     1324,
+     "高阶奥术波动",
+     450.0,
+     168.5
+    ],
+    [
+     1325,
+     "群体奥术爆破",
+     1055.0,
+     395.1
+    ],
+    [
+     1326,
+     "水球爆破",
+     855.0,
+     320.2
+    ],
+    [
+     1327,
+     "震地之跃",
+     695.0,
+     260.3
+    ],
+    [
+     1328,
+     "震耳怒吼",
+     1000.0,
+     374.5
+    ],
+    [
+     1329,
+     "封神榜",
+     5000.0,
+     1872.7
+    ],
+    [
+     1332,
+     "高阶奥术波动",
+     450.0,
+     168.5
+    ],
+    [
+     1397,
+     "黑龙波",
+     2000.0,
+     749.1
+    ],
+    [
+     1679,
+     "黑龙波",
+     2450.0,
+     917.6
+    ],
+    [
+     1682,
+     "铁蹄",
+     3500.0,
+     1310.9
+    ],
+    [
+     1691,
+     "风怒连击",
+     2575.0,
+     964.4
+    ],
+    [
+     1692,
+     "攻击",
+     999999999.0,
+     374531834.8
+    ],
+    [
+     1703,
+     "吞噬灵魂",
+     2000.0,
+     749.1
+    ],
+    [
+     1713,
+     "重拳出击",
+     3500.0,
+     1310.9
+    ],
+    [
+     1714,
+     "多重火球术",
+     1250.0,
+     468.2
+    ],
+    [
+     1716,
+     "巨力连掷",
+     2000.0,
+     749.1
+    ],
+    [
+     1717,
+     "抱摔",
+     2035.0,
+     762.2
+    ],
+    [
+     1718,
+     "连续抱摔",
+     2035.0,
+     762.2
+    ],
+    [
+     1719,
+     "乌鸦坐飞机",
+     2035.0,
+     762.2
+    ],
+    [
+     1720,
+     "破胆怒吼",
+     1500.0,
+     561.8
+    ],
+    [
+     1721,
+     "奥术冲击",
+     2450.0,
+     917.6
+    ],
+    [
+     1731,
+     "嗜血乱舞",
+     875.0,
+     327.7
+    ],
+    [
+     1734,
+     "屠灭",
+     1585.0,
+     593.6
+    ],
+    [
+     1735,
+     "疯狂撕咬",
+     1450.0,
+     543.1
+    ],
+    [
+     1737,
+     "流星火雨",
+     1550.0,
+     580.5
+    ],
+    [
+     1831,
+     "剧毒撕咬",
+     2750.0,
+     1030.0
+    ],
+    [
+     1832,
+     "剧毒撕咬",
+     2750.0,
+     1030.0
+    ],
+    [
+     1833,
+     "剧毒撕咬",
+     3750.0,
+     1404.5
+    ],
+    [
+     1834,
+     "剧毒撕咬",
+     3750.0,
+     1404.5
+    ],
+    [
+     1835,
+     "猩红风暴",
+     2450.0,
+     917.6
+    ],
+    [
+     1858,
+     "撕咬",
+     2750.0,
+     1030.0
+    ],
+    [
+     1859,
+     "疯狂撕咬",
+     2750.0,
+     1030.0
+    ],
+    [
+     1860,
+     "黑虎掏心",
+     4000.0,
+     1498.1
+    ],
+    [
+     1861,
+     "雷法·神雷咒",
+     4250.0,
+     1591.8
+    ],
+    [
+     1868,
+     "怒浪",
+     8000.0,
+     2996.3
+    ],
+    [
+     1869,
+     "怒浪",
+     8000.0,
+     2996.3
+    ],
+    [
+     1878,
+     "沉默凝视",
+     10000.0,
+     3745.3
+    ],
+    [
+     1879,
+     "愤怒凝视",
+     10000.0,
+     3745.3
+    ],
+    [
+     1880,
+     "混乱凝视",
+     10000.0,
+     3745.3
+    ],
+    [
+     1888,
+     "蛊毒风暴",
+     2450.0,
+     917.6
+    ],
+    [
+     1895,
+     "嗜血追击",
+     350.0,
+     131.1
+    ],
+    [
+     1896,
+     "吞噬灵魂",
+     10000.0,
+     3745.3
+    ],
+    [
+     1902,
+     "喷火",
+     1500.0,
+     561.8
+    ],
+    [
+     1911,
+     "滔天巨浪",
+     10000.0,
+     3745.3
+    ],
+    [
+     1915,
+     "猴拳",
+     2000.0,
+     749.1
+    ],
+    [
+     1916,
+     "猴拳",
+     2000.0,
+     749.1
+    ],
+    [
+     1917,
+     "地爆天星",
+     3000.0,
+     1123.6
+    ],
+    [
+     1918,
+     "鲜血汲取",
+     8500.0,
+     3183.5
+    ],
+    [
+     1919,
+     "归墟弹",
+     10000.0,
+     3745.3
+    ],
+    [
+     1920,
+     "鹰踏",
+     750.0,
+     280.9
+    ],
+    [
+     1921,
+     "鹰羽利刃",
+     1255.0,
+     470.0
+    ],
+    [
+     1922,
+     "鹰羽利刃",
+     1255.0,
+     470.0
+    ],
+    [
+     1943,
+     "鹰踏",
+     750.0,
+     280.9
+    ],
+    [
+     1944,
+     "鹰羽风暴",
+     1255.0,
+     470.0
+    ],
+    [
+     1945,
+     "狂乱爪击",
+     4500.0,
+     1685.4
+    ],
+    [
+     1981,
+     "天龙帝爪",
+     2000.0,
+     749.1
+    ],
+    [
+     1983,
+     "紫罗兰大剑",
+     3550.0,
+     1329.6
+    ],
+    [
+     1984,
+     "陨星碎",
+     3000.0,
+     1123.6
+    ],
+    [
+     1985,
+     "破灭矢",
+     2055.0,
+     769.7
+    ],
+    [
+     1986,
+     "翔天斩",
+     4000.0,
+     1498.1
+    ],
+    [
+     1993,
+     "鲜血汲取",
+     8500.0,
+     3183.5
+    ],
+    [
+     1996,
+     "沉默凝视",
+     10000.0,
+     3745.3
+    ],
+    [
+     1997,
+     "愤怒凝视",
+     10000.0,
+     3745.3
+    ],
+    [
+     1998,
+     "混乱凝视",
+     10000.0,
+     3745.3
+    ],
+    [
+     2007,
+     "大威天龙*佛怒",
+     3333.0,
+     1248.3
+    ],
+    [
+     2038,
+     "暗影风暴",
+     1500.0,
+     561.8
+    ],
+    [
+     2243,
+     "机械铳击",
+     450.0,
+     168.5
+    ],
+    [
+     2244,
+     "机械铳击",
+     450.0,
+     168.5
+    ],
+    [
+     2245,
+     "狂怒冲撞",
+     1000.0,
+     374.5
+    ],
+    [
+     2247,
+     "电击器",
+     450.0,
+     168.5
+    ],
+    [
+     2261,
+     "天使冲击",
+     2000.0,
+     749.1
+    ],
+    [
+     2283,
+     "星爆气流斩",
+     4500.0,
+     1685.4
+    ],
+    [
+     2289,
+     "乾坤撼地脚",
+     1500.0,
+     561.8
+    ],
+    [
+     2353,
+     "大威天龙",
+     1375.0,
+     515.0
+    ],
+    [
+     2410,
+     "死亡魔音",
+     99999.0,
+     37452.8
+    ],
+    [
+     2427,
+     "剑刃乱舞",
+     950.0,
+     355.8
+    ],
+    [
+     2428,
+     "快剑斩",
+     1000.0,
+     374.5
+    ],
+    [
+     2429,
+     "慢剑斩",
+     4000.0,
+     1498.1
+    ],
+    [
+     2430,
+     "破血狂攻",
+     2525.0,
+     945.7
+    ],
+    [
+     2431,
+     "凛冬风暴",
+     13000.0,
+     4868.9
+    ],
+    [
+     2432,
+     "凛冬剑斩",
+     1000.0,
+     374.5
+    ],
+    [
+     2445,
+     "极恶凝视",
+     15000.0,
+     5618.0
+    ],
+    [
+     2447,
+     "魔吞",
+     5000.0,
+     1872.7
+    ],
+    [
+     2449,
+     "海神巨浪",
+     15000.0,
+     5618.0
+    ],
+    [
+     2453,
+     "流星火雨",
+     3550.0,
+     1329.6
+    ],
+    [
+     2455,
+     "黑魔法:坍缩黑洞",
+     8000.0,
+     2996.3
+    ],
+    [
+     2456,
+     "龙魂强击",
+     2005.0,
+     750.9
+    ],
+    [
+     2457,
+     "龙吼",
+     1500.0,
+     561.8
+    ],
+    [
+     2458,
+     "龙息",
+     20000.0,
+     7490.6
+    ],
+    [
+     2462,
+     "熔岩陨弹",
+     10000.0,
+     3745.3
+    ],
+    [
+     2483,
+     "疯狂撕咬",
+     2750.0,
+     1030.0
+    ],
+    [
+     2488,
+     "陨星碎",
+     4000.0,
+     1498.1
+    ],
+    [
+     2489,
+     "群星碎",
+     20000.0,
+     7490.6
+    ],
+    [
+     2555,
+     "魔猿哮",
+     15000.0,
+     5618.0
+    ],
+    [
+     2556,
+     "饕餮魔功",
+     5000.0,
+     1872.7
+    ],
+    [
+     2560,
+     "毁灭水弹",
+     3850.0,
+     1441.9
+    ],
+    [
+     2561,
+     "鲲鹏搏龙术",
+     5000.0,
+     1872.7
+    ],
+    [
+     2562,
+     "无畏之愿",
+     2000.0,
+     749.1
+    ],
+    [
+     2563,
+     "吞噬灵魂",
+     10000.0,
+     3745.3
+    ],
+    [
+     2564,
+     "灭世弹",
+     10000.0,
+     3745.3
+    ],
+    [
+     2566,
+     "魔化·老君符",
+     10000.0,
+     3745.3
+    ],
+    [
+     2569,
+     "灭世弹",
+     10000.0,
+     3745.3
+    ],
+    [
+     2570,
+     "天道*裁决",
+     99999.0,
+     37452.8
+    ],
+    [
+     2581,
+     "惩击",
+     400.0,
+     149.8
+    ],
+    [
+     2598,
+     "怨毒",
+     1000.0,
+     374.5
+    ],
+    [
+     2599,
+     "放逐",
+     5000.0,
+     1872.7
+    ],
+    [
+     2600,
+     "吞噬灵魂",
+     8000.0,
+     2996.3
+    ],
+    [
+     2643,
+     "剑刃乱舞",
+     1500.0,
+     561.8
+    ],
+    [
+     2645,
+     "冰天冻地",
+     15000.0,
+     5618.0
+    ],
+    [
+     2647,
+     "混沌魔雷",
+     4000.0,
+     1498.1
+    ],
+    [
+     2648,
+     "死亡魔雷",
+     999999.0,
+     374531.5
+    ],
+    [
+     2649,
+     "吞噬灵魂",
+     10000.0,
+     3745.3
+    ],
+    [
+     2652,
+     "魔吞",
+     5000.0,
+     1872.7
+    ],
+    [
+     2653,
+     "鲜血汲取",
+     12000.0,
+     4494.4
+    ],
+    [
+     2654,
+     "恶魔之眼",
+     8000.0,
+     2996.3
+    ],
+    [
+     2657,
+     "流星火雨",
+     6000.0,
+     2247.2
+    ],
+    [
+     2659,
+     "鲜血汲取",
+     15000.0,
+     5618.0
+    ],
+    [
+     2660,
+     "饕餮魔功",
+     5000.0,
+     1872.7
+    ],
+    [
+     2661,
+     "地爆天星",
+     8000.0,
+     2996.3
+    ],
+    [
+     2662,
+     "归墟",
+     20000.0,
+     7490.6
+    ],
+    [
+     2722,
+     "达摩八法神禅枪法",
+     1000.0,
+     374.5
+    ],
+    [
+     2723,
+     "如来神掌",
+     15000.0,
+     5618.0
+    ],
+    [
+     2724,
+     "达摩剑法",
+     5000.0,
+     1872.7
+    ],
+    [
+     2738,
+     "冰川枪雨",
+     4000.0,
+     1498.1
+    ],
+    [
+     2751,
+     "堕天一击",
+     3550.0,
+     1329.6
+    ],
+    [
+     2752,
+     "雷法·神雷咒",
+     4250.0,
+     1591.8
+    ],
+    [
+     2757,
+     "雷法·神雷咒【boss】",
+     9999999.0,
+     3745318.0
+    ],
+    [
+     3490,
+     "无能怒吼",
+     3000.0,
+     1123.6
+    ],
+    [
+     3491,
+     "废物呐喊",
+     2000.0,
+     749.1
+    ],
+    [
+     3550,
+     "能量轰炸",
+     1500.0,
+     561.8
+    ],
+    [
+     3551,
+     "霹雳火",
+     1800.0,
+     674.2
+    ],
+    [
+     3552,
+     "鲸吞天下",
+     2500.0,
+     936.3
+    ],
+    [
+     3553,
+     "心脏打击",
+     1500.0,
+     561.8
+    ],
+    [
+     3558,
+     "荒芜剑诀",
+     3000.0,
+     1123.6
+    ],
+    [
+     3559,
+     "斩天拔剑术",
+     4444.0,
+     1664.4
+    ],
+    [
+     3560,
+     "三眼神光",
+     1375.0,
+     515.0
+    ],
+    [
+     3561,
+     "三妹真火",
+     3000.0,
+     1123.6
+    ],
+    [
+     3562,
+     "雄霸天下",
+     2500.0,
+     936.3
+    ],
+    [
+     3563,
+     "仙宫寒气",
+     2500.0,
+     936.3
+    ],
+    [
+     3565,
+     "困妖锁",
+     2500.0,
+     936.3
+    ],
+    [
+     3566,
+     "捆仙锁",
+     2500.0,
+     936.3
+    ],
+    [
+     3580,
+     "四相剑诀",
+     3500.0,
+     1310.9
+    ],
+    [
+     3583,
+     "不二剑",
+     2500.0,
+     936.3
+    ],
+    [
+     3650,
+     "雷行",
+     20000.0,
+     7490.6
+    ],
+    [
+     3796,
+     "圣裁之雷",
+     2500.0,
+     936.3
+    ],
+    [
+     3797,
+     "无梦",
+     3550.0,
+     1329.6
+    ],
+    [
+     3798,
+     "最后通牒",
+     3000.0,
+     1123.6
+    ],
+    [
+     3799,
+     "封尘绝念掌",
+     4550.0,
+     1704.1
+    ],
+    [
+     3800,
+     "不屈之剑",
+     3000.0,
+     1123.6
+    ],
+    [
+     3801,
+     "轮回绝境",
+     3000.0,
+     1123.6
+    ],
+    [
+     3802,
+     "时空断裂",
+     4000.0,
+     1498.1
+    ],
+    [
+     3803,
+     "次元打击",
+     3500.0,
+     1310.9
+    ],
+    [
+     3805,
+     "厄运剥夺",
+     1800.0,
+     674.2
+    ],
+    [
+     3807,
+     "涌泉之恨",
+     3500.0,
+     1310.9
+    ],
+    [
+     3808,
+     "怒涛终章",
+     2500.0,
+     936.3
+    ],
+    [
+     3809,
+     "霹雳神光爪",
+     2670.0,
+     1000.0
+    ],
+    [
+     3810,
+     "军相八寸",
+     2700.0,
+     1011.2
+    ],
+    [
+     3822,
+     "爷拳",
+     2500.0,
+     936.3
+    ],
+    [
+     4350,
+     "灭天绝地三大限",
+     5000.0,
+     1872.7
+    ],
+    [
+     4531,
+     "超强*狂乱猛击",
+     875.0,
+     327.7
+    ],
+    [
+     5150,
+     "雪沓流星",
+     6000.0,
+     2247.2
+    ],
+    [
+     5431,
+     "闪流月明",
+     30000.0,
+     11236.0
+    ],
+    [
+     5550,
+     "炎阳裂爆",
+     2000.0,
+     749.1
+    ],
+    [
+     5551,
+     "落心破冰",
+     2000.0,
+     749.1
+    ],
+    [
+     5552,
+     "大地崩裂",
+     2000.0,
+     749.1
+    ],
+    [
+     5553,
+     "雷霆万钧",
+     2000.0,
+     749.1
+    ],
+    [
+     5554,
+     "奥术千钧",
+     10000.0,
+     3745.3
+    ],
+    [
+     5555,
+     "蜂花浪杀",
+     5000.0,
+     1872.7
+    ],
+    [
+     5556,
+     "神圣新星",
+     20000.0,
+     7490.6
+    ],
+    [
+     5558,
+     "暗域弑杀",
+     100000.0,
+     37453.2
+    ],
+    [
+     5559,
+     "连环怒抓",
+     3000.0,
+     1123.6
+    ],
+    [
+     6107,
+     "天道*放逐",
+     5000.0,
+     1872.7
+    ],
+    [
+     6142,
+     "冰霜黑洞",
+     9999.0,
+     3744.9
+    ],
+    [
+     6170,
+     "初火*炽烈火柱",
+     3500.0,
+     1310.9
+    ],
+    [
+     6186,
+     "最终盛宴",
+     4000.0,
+     1498.1
+    ],
+    [
+     6188,
+     "饕餮魔功",
+     4000.0,
+     1498.1
+    ],
+    [
+     7101,
+     "日之呼吸·伍之形 火车",
+     20000.0,
+     7490.6
+    ],
+    [
+     7116,
+     "水之呼吸·贰之型 水车",
+     20000.0,
+     7490.6
+    ],
+    [
+     8078,
+     "熔岩迸发",
+     580.0,
+     217.2
+    ],
+    [
+     8079,
+     "雷霆万钧",
+     8000.0,
+     2996.3
+    ],
+    [
+     8080,
+     "以炁化实",
+     5000.0,
+     1872.7
+    ],
+    [
+     8081,
+     "神之制裁",
+     9999.0,
+     3744.9
+    ],
+    [
+     10472,
+     "肆虐之风",
+     1550.0,
+     580.5
+    ],
+    [
+     10473,
+     "十字斩",
+     1155.0,
+     432.6
+    ],
+    [
+     10475,
+     "雷法·神雷咒【boss】",
+     9999999.0,
+     3745318.0
+    ],
+    [
+     10490,
+     "万剑归二*破",
+     3000.0,
+     1123.6
+    ],
+    [
+     10491,
+     "飞雪剑法·连剑式",
+     785.0,
+     294.0
+    ],
+    [
+     10492,
+     "巨剑术",
+     4050.0,
+     1516.9
+    ],
+    [
+     10493,
+     "斩天拔剑术",
+     4444.0,
+     1664.4
+    ],
+    [
+     10498,
+     "荒芜剑诀",
+     20000.0,
+     7490.6
+    ],
+    [
+     10514,
+     "月牙天冲【boss】",
+     1000.0,
+     374.5
+    ],
+    [
+     10516,
+     "虚闪【boss】",
+     5000.0,
+     1872.7
+    ],
+    [
+     10517,
+     "雷法·神雷咒【boss】必中",
+     311111.0,
+     116521.0
+    ],
+    [
+     10526,
+     "苦闷之环",
+     499999.0,
+     187265.5
+    ],
+    [
+     10542,
+     "究极辐烈破",
+     9999.0,
+     3744.9
+    ],
+    [
+     10543,
+     "黑虚闪",
+     999.0,
+     374.2
+    ],
+    [
+     10550,
+     "雷霆之枪",
+     999.0,
+     374.2
+    ],
+    [
+     10613,
+     "肉山乱拍",
+     199999.0,
+     74906.0
+    ]
+   ]
+  },
+  "other_skill_fixed_base_count": {
+   "_note": "没进卡、不是敌人用的原版技能里带固定底数 ≥100 的个数（多是旧角色技能，天启篇看不到或已被卡改写，不逐条列）",
+   "count": 617
+  },
+  "qiyin_equip_params": {
+   "_note": "qiyin_equip.json 里写死的八项（神话 80 级同级参照）。D137 已定七印装备读 gear_base.json（80 级神话，武器和真印再 ×1.1），这些原数被取代，T012-b 接线时不再读 params；这里列出路径供对账。",
+   "rows": [
+    {
+     "path": "qiyin_equip/armor/parts/head",
+     "params": [
+      1200,
+      0,
+      0,
+      90,
+      0,
+      90,
+      0,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/armor/parts/body",
+     "params": [
+      2000,
+      0,
+      0,
+      150,
+      0,
+      150,
+      0,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/armor/parts/hands",
+     "params": [
+      800,
+      0,
+      60,
+      60,
+      60,
+      60,
+      0,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/armor/parts/waist",
+     "params": [
+      1000,
+      0,
+      0,
+      80,
+      0,
+      80,
+      0,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/armor/parts/legs",
+     "params": [
+      1500,
+      0,
+      0,
+      120,
+      0,
+      120,
+      0,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/armor/parts/feet",
+     "params": [
+      800,
+      0,
+      0,
+      60,
+      0,
+      60,
+      30,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/weapons/bow",
+     "params": [
+      0,
+      0,
+      300,
+      0,
+      0,
+      0,
+      20,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/weapons/hidden",
+     "params": [
+      0,
+      0,
+      280,
+      0,
+      0,
+      0,
+      30,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/weapons/sword",
+     "params": [
+      0,
+      0,
+      300,
+      20,
+      0,
+      20,
+      0,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/weapons/axe",
+     "params": [
+      0,
+      0,
+      350,
+      0,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/weapons/gun",
+     "params": [
+      0,
+      0,
+      300,
+      0,
+      0,
+      0,
+      0,
+      20
+     ]
+    },
+    {
+     "path": "qiyin_equip/weapons/fist",
+     "params": [
+      500,
+      0,
+      280,
+      20,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/weapons/katana",
+     "params": [
+      0,
+      0,
+      320,
+      0,
+      0,
+      0,
+      10,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/weapons/dagger",
+     "params": [
+      0,
+      0,
+      260,
+      0,
+      0,
+      0,
+      50,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/weapons/blunt",
+     "params": [
+      800,
+      0,
+      280,
+      30,
+      0,
+      30,
+      0,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/weapons/spear",
+     "params": [
+      0,
+      0,
+      310,
+      20,
+      0,
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/weapons/staff",
+     "params": [
+      0,
+      300,
+      0,
+      0,
+      300,
+      20,
+      0,
+      0
+     ]
+    },
+    {
+     "path": "qiyin_equip/weapons/book",
+     "params": [
+      0,
+      300,
+      0,
+      0,
+      280,
+      30,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  "alien_gear_rewards": {
+   "_note": "alien_gear.json、rewards.json 没有写死的八项（只有百分比：atk_rate、def_pct、dmg_dealt_pct、heal 等），不用换。净印、遗物的八项：没找到写死数据（遗物是 relic 类物品，走原版装备 params，随装备底子规则）。"
+  },
+  "abs_threshold_in_notes": {
+   "_note": "原版技能备注里「属性超过某个绝对值」的门槛（user.agi>=1000 这类），换成「标准线的百分之几」；in_card＝true 的卡已改写，不用换。GDScript 里（core、battle）没有这类比较（已 grep）。",
+   "rows": [
+    {
+     "table": "Skills",
+     "id": 1232,
+     "name": "疾风杀意剑",
+     "in_card": true,
+     "conds": [
+      "user.agi>=1000",
+      "user.agi>=10000",
+      "user.agi>=11000",
+      "user.agi>=12000",
+      "user.agi>=13000",
+      "user.agi>=14000",
+      "user.agi>=15000",
+      "user.agi>=2000",
+      "user.agi>=3000",
+      "user.agi>=4000",
+      "user.agi>=5000",
+      "user.agi>=6000",
+      "user.agi>=7000",
+      "user.agi>=8000",
+      "user.agi>=9000"
+     ]
+    },
+    {
+     "table": "Skills",
+     "id": 7057,
+     "name": "妖狐之爪",
+     "in_card": true,
+     "conds": [
+      "user.hp>=100000",
+      "user.hp>=150000",
+      "user.hp>=50000"
+     ]
+    },
+    {
+     "table": "Skills",
+     "id": 7063,
+     "name": "妖狐之爪",
+     "in_card": false,
+     "conds": [
+      "user.hp>=100000",
+      "user.hp>=150000",
+      "user.hp>=50000"
+     ]
+    },
+    {
+     "table": "Skills",
+     "id": 7074,
+     "name": "灵狐之箭",
+     "in_card": true,
+     "conds": [
+      "user.mmp>=20000",
+      "user.mmp>=40000",
+      "user.mmp>=60000"
+     ]
+    },
+    {
+     "table": "Skills",
+     "id": 7075,
+     "name": "灵狐之箭",
+     "in_card": false,
+     "conds": [
+      "user.mmp>=20000",
+      "user.mmp>=40000",
+      "user.mmp>=60000"
+     ]
+    },
+    {
+     "table": "Skills",
+     "id": 9954,
+     "name": "急速冷却",
+     "in_card": true,
+     "conds": [
+      "user.agi>2000",
+      "user.agi>4000",
+      "user.agi>6000"
+     ]
+    },
+    {
+     "table": "Skills",
+     "id": 10474,
+     "name": "疾风杀意剑",
+     "in_card": false,
+     "conds": [
+      "user.agi>=1000",
+      "user.agi>=10000",
+      "user.agi>=11000",
+      "user.agi>=12000",
+      "user.agi>=13000",
+      "user.agi>=14000",
+      "user.agi>=15000",
+      "user.agi>=2000",
+      "user.agi>=3000",
+      "user.agi>=4000",
+      "user.agi>=5000",
+      "user.agi>=6000",
+      "user.agi>=7000",
+      "user.agi>=8000",
+      "user.agi>=9000"
+     ]
+    }
+   ]
+  }
+ },
+ "unscanned": [
+  "公式型状态持续伤害（41 条里 14 条是读属性的公式）和 Custom Regenerate Effect 脚本型回复（25 个状态）：底数要逐条拆脚本，没拆，只列号；七首之龙、骑士等 horsemen.json 里的绝对值不在本清单（D78 M5 标）"
+ ]
+}

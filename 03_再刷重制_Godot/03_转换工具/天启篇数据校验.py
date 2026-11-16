@@ -1552,6 +1552,316 @@ def check_qiyin_dragon_run(_args) -> bool:
     return _run_table('qiyin_dragon_run.json', qiyin_dragon_run_rules)
 
 
+# ---- T080 期四暗装填表（基础数值重构 v0.3）：base_line.json、gear_base.json、damage_ledger.json 的 phase4、balance_table 的两个新键、技能卡单段上限 ----
+
+ROLE_NAMES = ('输出', '均衡', '坦克', '辅助')
+SPEED_NAMES = ('快', '中', '慢')
+LINE_HP, LINE_MP = 25.0, 25.0  # 标准线的生命、魔法倍数（base_line.json line 里的值，校验时再核对）
+
+
+def cond_max(c: dict) -> float:
+    """一条伤害条件「成立到最大」时的倍率（只减不加的不算：<1 当 1；自耗类 self_mp_frac 取它的 cap，它本身就是最大倍率）。"""
+    i = c.get('if')
+    if i == 'self_mp_frac':
+        return min(1.0, float(c.get('cap', 1.0)))
+    if 'steps' in c:
+        m = max(float(x[1]) for x in c['steps'])
+    elif 'mult' in c:
+        m = float(c['mult'])
+    elif 'cap' in c:
+        cap = float(c['cap'])
+        for v in c.get('cap_with', {}).values():
+            cap = max(cap, float(v))
+        m = 1.0 + cap
+    else:
+        m = 1.0
+    return max(1.0, m)
+
+
+def skill_weight(d: dict) -> float:
+    """技能伤害里属性权重的合计，折到标准角色：生命、魔法上限按标准线是攻击的 25 倍；max_of 再加 1。"""
+    w = 0.0
+    for k, v in d.get('stats', {'atk': 1}).items():
+        w += float(v) * (LINE_HP if k == 'mhp' else LINE_MP if k == 'mmp' else 1.0)
+    if 'max_of' in d:
+        w += 1.0
+    return w
+
+
+def tier_of(rework: dict, actor) -> str:
+    t = rework.get('tiers', {})
+    a = int(actor)
+    if a in [int(x) for x in t.get(SUPER, [])]:
+        return SUPER
+    if a in [int(x) for x in t.get(STRONG, [])]:
+        return STRONG
+    if a in [int(x) for x in t.get('不开放', [])]:
+        return '不开放'
+    return WEAK
+
+
+def single_hit_effective(rework: dict, sid: str, row: dict) -> float:
+    """单段有效系数 ＝ 卡上的系数 × Σ属性权重 × 这一段能同时成立的全部条件倍率（技能自己的 conds＋角色行里点到这个技能的 conds）。"""
+    d = row['damage']
+    m = 1.0
+    for c in d.get('conds', []):
+        m *= cond_max(c)
+    a = row.get('actor')
+    if a is not None:
+        for c in rework.get('actors', {}).get(str(a), {}).get('conds', []):
+            if 'skills' in c and int(sid) not in [int(x) for x in c['skills']]:
+                continue
+            m *= cond_max(c)
+    return float(d.get('coef', 0)) * skill_weight(d) * m
+
+
+def single_hit_cap_rules(rework: dict) -> list:
+    bad = []
+    rules = rework.get('rules', {})
+    cap = rules.get('single_hit_cap')
+    if cap != {WEAK: 8, STRONG: 11, SUPER: 11}:
+        bad.append('rules.single_hit_cap 要是 {弱者 8、强者 11、超强者 11}（D137，整数），现在 %s' % cap)
+        return bad
+    pending = rules.get('single_hit_cap_pending', {})
+    over = []
+    for sid, row in rework.get('skills', {}).items():
+        if not str(sid).isdigit() or 'damage' not in row or row.get('actor') is None:
+            continue
+        tier = tier_of(rework, row['actor'])
+        if tier not in cap:
+            continue
+        eff = single_hit_effective(rework, sid, row)
+        if eff > cap[tier] + 1e-6:
+            over.append((sid, row['name'], tier, eff))
+    for sid, name, tier, eff in over:
+        if sid not in pending:
+            bad.append('skills/%s %s（%s）单段有效系数 %.2f 超过上限 %s，要拆段（合计不变），或登记进 rules.single_hit_cap_pending 写理由' % (sid, name, tier, eff, cap[tier]))
+    for sid in pending:
+        if sid not in [o[0] for o in over]:
+            bad.append('rules.single_hit_cap_pending 里的 %s 已经不超上限，把它从待拆名单里删掉' % sid)
+    return bad
+
+
+def backtest_rules(base: dict, rework: dict) -> list:
+    """回验（基础数值重构 v0.3 第四节第 4 条）：Σ(权重×本体属性)÷标准线攻击 对卡面系数，偏差超 ±10% 的必须在 backtest_notes 里有理由。"""
+    bad = []
+    line = base.get('line', {})
+    hp_mult, mp_mult = float(line.get('hp_mult', LINE_HP)), float(line.get('mp_mult', LINE_MP))
+    noted = {(int(n['skill']), int(n['actor'])) for n in base.get('backtest_notes', [])}
+    seen = set()
+    for sid, row in rework.get('skills', {}).items():
+        d = row.get('damage')
+        if not d or row.get('actor') is None or 'max_of' in d or not str(sid).isdigit():
+            continue
+        ac = base.get('actors', {}).get(str(row['actor']))
+        if not ac:
+            continue
+        r = base['roles'][ac['role']]
+        tw = {k: (v if isinstance(v, (int, float)) else float(v.get('mult', 1.0))) for k, v in ac.get('tweak', {}).items()}
+        mult = {'mhp': hp_mult * r['hp'] * tw.get('mhp', 1.0), 'mmp': mp_mult * tw.get('mmp', 1.0),
+                'def': r['def'] * tw.get('def', 1.0), 'mdf': r['def'] * tw.get('mdf', 1.0),
+                'agi': base['speed'][ac['speed']] * tw.get('agi', 1.0)}
+        nom = new = 0.0
+        for k, w in d.get('stats', {'atk': 1}).items():
+            nom += float(w) * (hp_mult if k == 'mhp' else mp_mult if k == 'mmp' else 1.0)
+            new += float(w) * mult.get(k, tw.get(k, 1.0))
+        dev = new / nom - 1.0
+        if abs(dev) > 0.1 + 1e-9:
+            seen.add((int(sid), int(row['actor'])))
+            if (int(sid), int(row['actor'])) not in noted:
+                bad.append('回验：技能 %s %s（%s）偏差 %+.1f%%，超过 ±10%%，要改微调或权重，或在 backtest_notes 写理由' % (sid, row['name'], ac['name'], dev * 100))
+    for k in sorted(noted - seen):
+        bad.append('backtest_notes 里的 技能 %s／角色 %s 回验已经不超 ±10%%，删掉这条理由' % k)
+    return bad
+
+
+def base_line_rules(table: dict, rework: dict = None) -> list:
+    bad = _fours(table)
+    line = table.get('line', {})
+    for k in ('A0', 'A1', 'hp_mult', 'mp_mult'):
+        if not isinstance(line.get(k), (int, float)) or line[k] <= 0:
+            bad.append('line.%s 要是正数' % k)
+    if (line.get('hp_mult'), line.get('mp_mult')) != (LINE_HP, LINE_MP):
+        bad.append('line.hp_mult／mp_mult 起点都是 25（技能卡的权重按这个折的），现在 %s／%s' % (line.get('hp_mult'), line.get('mp_mult')))
+    roles = table.get('roles', {})
+    if set(roles) != set(ROLE_NAMES):
+        bad.append('roles 要正好是 %s' % '、'.join(ROLE_NAMES))
+    speed = table.get('speed', {})
+    if set(speed) != set(SPEED_NAMES):
+        bad.append('speed 要正好是 %s' % '、'.join(SPEED_NAMES))
+    for k, v in list(roles.items()):
+        for f in ('hp', 'def'):
+            if not 0.8 <= float(v.get(f, 0)) <= 1.2:
+                bad.append('roles.%s.%s 要在 0.8～1.2（职责浮动 ±20%%）' % (k, f))
+    for k, v in speed.items():
+        if not 0.8 <= float(v) <= 1.2:
+            bad.append('speed.%s 要在 0.8～1.2' % k)
+    lo, hi = table.get('tweak_range', [0.8, 1.2])
+    actors = table.get('actors', {})
+    for aid, a in actors.items():
+        if not str(aid).isdigit():
+            bad.append('actors 键要是角色号：%s' % aid)
+            continue
+        if a.get('role') not in ROLE_NAMES:
+            bad.append('actors/%s 职责要是 %s' % (aid, '／'.join(ROLE_NAMES)))
+        if a.get('speed') not in SPEED_NAMES:
+            bad.append('actors/%s 速度档要是 %s' % (aid, '／'.join(SPEED_NAMES)))
+        for stat, tw in a.get('tweak', {}).items():
+            if stat not in ('mhp', 'mmp', 'atk', 'def', 'mat', 'mdf', 'agi', 'luk'):
+                bad.append('actors/%s 微调的项不认识：%s' % (aid, stat))
+            if not isinstance(tw, dict) or not lo <= float(tw.get('mult', 0)) <= hi or not tw.get('reason'):
+                bad.append('actors/%s 微调 %s 要写成 {mult: 0.8～1.2, reason: 理由}' % (aid, stat))
+    for u in table.get('unclear', []):
+        if str(u) not in actors:
+            bad.append('unclear 里的 %s 不在 actors 里' % u)
+    if rework is not None:
+        t = rework.get('tiers', {})
+        for tier in (SUPER, STRONG):
+            for i in t.get(tier, []):
+                if str(i) not in actors:
+                    bad.append('%s名单里的 %s 没有在 base_line.actors 里填三格' % (tier, i))
+        for i in t.get('不开放', []):
+            if str(i) in actors:
+                bad.append('不开放的角色 %s 不填 base_line.actors' % i)
+        bad += backtest_rules(table, rework)
+    return bad
+
+
+def check_base_line(_args) -> bool:
+    if not (DATA_DIR / 'base_line.json').is_file():
+        print('跳过：没有 base_line.json')
+        return True
+    rework = _load_opt('skill_rework.json')
+    return _run_table('base_line.json', lambda t: base_line_rules(t, rework))
+
+
+def gear_base_rules(table: dict, base: dict = None) -> list:
+    bad = _fours(table)
+    slots = table.get('slots', {})
+    if len(slots) != 10:
+        bad.append('slots 要 10 个部位（武器、副手、头部、盔甲、护手、腰带、裤子、鞋子、项链、戒指），现在 %d 个' % len(slots))
+    etypes = [v.get('etype') for v in slots.values()]
+    if sorted(etypes) != list(range(1, 11)):
+        bad.append('slots 的 etype 要正好是 1～10 各一个：%s' % etypes)
+    tot = {k: 0.0 for k in ('atk', 'hp', 'def', 'agi', 'luk')}
+    for name, v in slots.items():
+        for k in tot:
+            tot[k] += float(v.get(k, 0))
+        for k in v:
+            if k not in tot and k != 'etype':
+                bad.append('slots/%s 不认识的项 %s' % (name, k))
+    for k, (lo, hi) in table.get('slot_totals_range', {}).items():
+        if not lo - 1e-9 <= tot.get(k, 0) <= hi + 1e-9:
+            bad.append('全身合计 %s ＝ %.2f，不在 %s～%s' % (k, tot.get(k, 0), lo, hi))
+    keys = ['putong', 'youxiu', 'jingliang', 'shishi', 'chuanshuo', 'buxiu', 'shenhua']
+    try:
+        keys = quality_keys()
+    except Exception:
+        pass
+    g = table.get('grades', {})
+    if list(g) != keys:
+        bad.append('grades 的键要同 tianqi_affix_roll.gd 的 QUALITY_KEYS：%s' % keys)
+    else:
+        vals = [float(g[k]) for k in keys]
+        step = float(table.get('grade_step_min', 0.2))
+        for a, b in zip(vals, vals[1:]):
+            if b - a < step - 1e-9:
+                bad.append('品质系数相邻两档至少差 %s：%s' % (step, vals))
+                break
+        if vals[-1] > vals[0] * float(table.get('grade_max_over_min', 3.5)) + 1e-9:
+            bad.append('神话不超过普通的 %s 倍：%s' % (table.get('grade_max_over_min', 3.5), vals))
+    ratio = table.get('ratio', {})
+    if sorted(int(k) for k in ratio) != list(range(0, 91)):
+        bad.append('ratio 要有装备等级 0～90 各一行')
+    prev = None
+    for k in sorted(ratio, key=int):
+        row = ratio[k]
+        if set(row) != {'atk', 'hp', 'def', 'agi', 'luk'} or not all(float(v) > 0 for v in row.values()):
+            bad.append('ratio/%s 要有 atk、hp、def、agi、luk 五个正数' % k)
+        elif int(k) >= 20 and not all(3.0 <= float(v) <= 8.0 for v in row.values()):
+            bad.append('ratio/%s 超出常理范围 3～8（原版弱者本体约是标准线的六分之一）：%s' % (k, row))
+    q = table.get('qiyin', {})
+    if q.get('level') != 80 or q.get('first_kill_level') != 75 or q.get('grade') != 'shenhua' or q.get('weapon_and_true_seal_mult') != 1.1:
+        bad.append('qiyin 要写 80 级神话、首杀 75 级、武器和真印 ×1.1（qiyin_gear.json 的规则）：%s' % q)
+    return bad
+
+
+def check_gear_base(_args) -> bool:
+    return _run_table('gear_base.json', gear_base_rules)
+
+
+def ledger_phase4_rules(table: dict, balance: dict = None) -> list:
+    bad = []
+    p4 = table.get('phase4')
+    if not isinstance(p4, dict):
+        return ['damage_ledger.json 要有 phase4 小节']
+    bad += _fours({k: v for k, v in p4.items() if k not in ('derived_qiyin',)}, extra=())
+    now = {r['id']: r for r in table.get('derived', [])}
+    rows = p4.get('derived_qiyin', [])
+    if [r['id'] for r in rows] != [i for i in now if i.startswith('qiyin.')]:
+        bad.append('phase4.derived_qiyin 要正好是 derived 里的七印 4 行（同序）')
+    for r in rows:
+        cur = now.get(r['id'])
+        if cur is not None and any(r.get(k) != cur.get(k) for k in ('per_turn', 'ratio', 'enforced')):
+            bad.append('phase4.derived_qiyin/%s 要照 derived 现值，一个不改（D16）' % r['id'])
+    mods = [r['id'] for r in p4.get('derived_module', [])]
+    if mods != [i for i in now if i.startswith('module.')]:
+        bad.append('phase4.derived_module 要正好是 derived 里的模块 7 行（同序）：%s' % mods)
+    if p4.get('nine_crit_dmg_cap') != 0.3:
+        bad.append('phase4.nine_crit_dmg_cap 要是 0.3（九线爆伤合计封顶 +30%）')
+    if p4.get('secret_slot') != 0.08:
+        bad.append('phase4.secret_slot 要是 0.08（秘籍每格 +8%，不改）')
+    if p4.get('brand', {}).get('id') != 'brand':
+        bad.append('phase4.brand 要登记烙印一行')
+    return bad
+
+
+def check_ledger_phase4(_args) -> bool:
+    return _run_table('damage_ledger.json', ledger_phase4_rules)
+
+
+def combat_rules_phase4_rules(table: dict) -> list:
+    bad = []
+    cr = table.get('combat_rules', {})
+    k = cr.get('base_damage')
+    if not isinstance(k, (int, float)) or not 0.05 <= float(k) <= 1.0:
+        bad.append('combat_rules.base_damage（K）要在 0.05～1（暗装期先填 1，标定后 0.07～0.17）：%s' % k)
+    u = cr.get('boss_hp_temp_unit')
+    if not isinstance(u, dict) or set(u) != {'crit', 'no_crit'}:
+        bad.append('combat_rules.boss_hp_temp_unit 要是 {crit, no_crit} 两个数')
+    else:
+        for kk, v in u.items():
+            if not isinstance(v, (int, float)) or not 0.1 <= float(v) <= 1.0:
+                bad.append('combat_rules.boss_hp_temp_unit.%s 要在 0.1～1（暗装期先填 1，标定后约 0.2～0.3）：%s' % (kk, v))
+    return bad
+
+
+def check_combat_rules_phase4(_args) -> bool:
+    return _run_table('balance_table.json', combat_rules_phase4_rules)
+
+
+def check_single_hit_cap(_args) -> bool:
+    return _run_table('skill_rework.json', single_hit_cap_rules)
+
+
+def abs_rescale_rules(table: dict) -> list:
+    bad = _fours(table)
+    for i, e in enumerate(table.get('entries', [])):
+        if not all(k in e for k in ('kind', 'id', 'name', 'orig', 'new')):
+            bad.append('entries/%d 要有 kind、id、name、orig、new' % i)
+            continue
+        n = e['new']
+        if isinstance(n, dict) and not (0 < float(n.get('pct', 0)) <= 100 and n.get('pct_of') in ('mhp', 'mmp')):
+            bad.append('entries/%d（%s %s）换算后要是 mhp／mmp 的 0～100%%：%s' % (i, e['kind'], e['id'], n))
+    if not table.get('unscanned'):
+        bad.append('unscanned 要列出还没扫的范围（稿第七节第 4 条的六类里扫不到的）')
+    return bad
+
+
+def check_abs_rescale(_args) -> bool:
+    return _run_table('abs_rescale.json', abs_rescale_rules)
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -1578,6 +1888,12 @@ CHECKS = [
     ('qiyin_equip', check_qiyin_equip),
     ('qiyin_show', check_qiyin_show),
     ('qiyin_dragon_run', check_qiyin_dragon_run),
+    ('base_line', check_base_line),
+    ('gear_base', check_gear_base),
+    ('ledger_phase4', check_ledger_phase4),
+    ('combat_rules_phase4', check_combat_rules_phase4),
+    ('single_hit_cap', check_single_hit_cap),
+    ('abs_rescale', check_abs_rescale),
 ]
 
 
