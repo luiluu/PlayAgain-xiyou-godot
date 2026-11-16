@@ -706,6 +706,7 @@ func _build_ui(vs: Vector2) -> void:
 	tianqi_meter = XTianqiMeter.make(logic, func(): return status_rows)
 	tianqi_meter.position = _origin + TIANQI_METER_POS
 	ui.add_child(tianqi_meter)
+	XSkinBattleMotion.hud_in([hp_holder, boss_panel, holder, side, otb, tianqi_meter])  # T096：新界面开战时依次淡入（样稿 .in）；动效关、皮肤关什么也不做
 
 
 ## 说明卡（选技能／物品时右侧的详情）显示时的矩形（减 _origin，原版坐标）；没显示为空

@@ -257,19 +257,55 @@ func _draw_orb(i: int, font: Font) -> void:
 		draw_texture_rect(g, Rect2(p - Vector2(r + 18, r + 18), Vector2(r + 18, r + 18) * 2), false,
 			Color(XUiSkin.SEL_FILL, (0.85 if on else 0.4) * XUiSkin.breath_alpha()))
 	draw_circle(p + Vector2(0, 3), r + 2, Color(0, 0, 0, 0.45 * alpha))
-	draw_circle(p, r, Color(XUiSkin.ORB_LOW, 0.92))
-	draw_circle(p + Vector2(-r * 0.15, -r * 0.2), r * 0.72, Color(XUiSkin.ORB_HI, 0.85 * alpha))
+	if ORB_STYLE == 0:
+		draw_circle(p, r, Color(XUiSkin.ORB_LOW, 0.92))
+		draw_circle(p + Vector2(-r * 0.15, -r * 0.2), r * 0.72, Color(XUiSkin.ORB_HI, 0.85 * alpha))
+	else:
+		_draw_orb_body(p, r, sel, on, alpha)
 	if sel:
 		draw_circle(p, r, XUiSkin.SEL_LINE, false, 2.5, true)
 		if i == _flash_i and _flash_t < FLASH_TIME:   # T096：新选中闪一圈白（样稿 bo1），0.25 秒散开淡掉
 			var f := _flash_t / FLASH_TIME
 			draw_circle(p, r + 2.0 + 6.0 * f, Color(1, 1, 1, 0.9 * (1.0 - f)), false, 3.0 * (1.0 - f) + 0.5, true)
-	else:
+	elif ORB_STYLE == 0:
 		draw_circle(p, r, Color(XUiSkin.LINE, 0.6 * alpha), false, 1.5, true)
+	else:
+		draw_circle(p, r, Color(XUiSkin.GOLD, (0.55 if ORB_STYLE != 2 else 0.75) * alpha), false, 1.5, true)
 	var text := str(e.get("text", ""))
 	var color := Color.WHITE if sel else XUiSkin.GOLD
 	color.a = alpha
 	_orb_text(font, text, p, r, color)
+
+
+## T096 追加（Kyo 11-16「指令球全黑底不好看」）：球的底色三版，0＝原来的全黑（可回退）。
+## 1 深红：绯红到近黑的径向渐变、旧金细描边，选中更亮更红；
+## 2 烟底：半透明深灰（透出背景）＋旧金描边和内细圈，选中换绯红半透明；
+## 3 暗金：暖炭灰渐变＋旧金描边，选中换深红渐变。
+static var ORB_STYLE := 3   # 选 3：没选中的不带红，「红＝选中」不乱（README 第三节）；1 整环发红、选中不突出，2 在亮背景上发灰
+const ORB_STYLES := {
+	# [外圈色, 中心亮面色, 选中外圈, 选中亮面]
+	1: [Color("1e0708"), Color("5c1a1a"), Color("4a0e0b"), Color("b8352a")],
+	2: [Color(0.04, 0.04, 0.045, 0.55), Color(0.16, 0.16, 0.17, 0.55), Color(0.42, 0.08, 0.06, 0.62), Color(0.81, 0.17, 0.12, 0.62)],
+	3: [Color("14120f"), Color("3d362a"), Color("3c0c0a"), Color("a12a20")],
+}
+
+
+## 球身：多层同心圆叠出径向渐变（亮面偏左上），再加一道内细圈
+func _draw_orb_body(p: Vector2, r: float, sel: bool, on: bool, alpha: float) -> void:
+	var cs: Array = ORB_STYLES.get(ORB_STYLE, ORB_STYLES[1])
+	var outer: Color = cs[2] if sel else cs[0]
+	var inner: Color = cs[3] if sel else cs[1]
+	if sel and not on:   # 失活时（开着列表）选中那颗暗一点
+		inner = inner.lerp(outer, 0.4)
+	const STEPS := 10
+	var hi := Vector2(-r * 0.22, -r * 0.28)
+	for k in STEPS:
+		var f := float(k) / float(STEPS - 1)     # 0 外 → 1 内
+		var c := outer.lerp(inner, f)
+		c.a *= alpha if ORB_STYLE != 2 else alpha * (1.0 if k == 0 else 0.35)
+		draw_circle(p + hi * f, r * lerpf(1.0, 0.3, f), c)
+	if not sel:
+		draw_circle(p, r - 4.0, Color(XUiSkin.GOLD, 0.16 * alpha), false, 1.0, true)
 
 
 ## 第 i 个球现在的倍数（选中放大关掉时照旧直接 ×1.08）

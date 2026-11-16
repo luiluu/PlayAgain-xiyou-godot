@@ -16,6 +16,8 @@ const LIST_IN_FROM := 0.3
 const CLOSE := 0.12            # 关列表／环：缩到 0.5 淡出
 const CLOSE_TO := 0.5
 const HUD_IN := 0.26           # 开战：队伍条、行动条、首领血弧淡入（样稿 .in）
+const HUD_DELAY := 0.15        # 开战黑幕（24 帧＝0.4 秒）淡到一半再开始，第一块和黑幕后半段叠着
+const HUD_STAGGER := 0.06      # 相邻两块错开
 
 
 ## 现在演不演切换
@@ -89,3 +91,14 @@ static func fade_in(n: CanvasItem, delay := 0.0) -> void:
 	if delay > 0.0:
 		tw.tween_interval(delay)
 	tw.tween_property(n, "modulate:a", 1.0, HUD_IN).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+
+
+## 开战：各块界面依次淡入（XBattleScene._build_ui 末尾调；只动透明度，演完 modulate.a 回 1）
+static func hud_in(nodes: Array) -> void:
+	if not on():
+		return
+	var k := 0
+	for n in nodes:
+		if n is CanvasItem and is_instance_valid(n):
+			fade_in(n, HUD_DELAY + HUD_STAGGER * k)
+			k += 1

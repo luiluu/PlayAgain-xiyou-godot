@@ -88,11 +88,15 @@ func _run() -> void:
 	var b := XBattleScene.new()
 	b.setup(4, true, false, {})
 	add_child(b)
+	await _frames(1)
+	_check("hud_fading_in", b.otb.modulate.a < 1.0 and b.boss_panel.modulate.a < 1.0, [b.otb.modulate.a, b.boss_panel.modulate.a])
 	var ok := await _until(func(): return b.cmd_win != null and b.cmd_win.active)
 	_check("command_shown", ok)
 	if not ok:
 		_finish()
 		return
+	await _secs(0.3)
+	_check("hud_in_done", b.otb.modulate.a == 1.0 and b.boss_panel.modulate.a == 1.0 and b.tianqi_meter.modulate.a == 1.0, [b.otb.modulate.a, b.boss_panel.modulate.a])
 	for a in b.logic.actors:
 		a.tp = 12.0
 	var boss: XBattler = b.logic.enemies[0]
@@ -124,6 +128,13 @@ func _ring(b: XBattleScene) -> void:
 	_check("ring_intro_done", ring.intro_elapsed >= ring.intro_total() and ring.intro_of(ring.entries.size() - 1) == 1.0, [ring.intro_elapsed, ring.intro_total()])
 	await _secs(0.5)
 	await _shot("v07_ring", 2)
+	_check("ring_orb_style_default", XSkinBattleRing.ORB_STYLE == 3)
+	if out_dir != "":   # 追加：指令球底色三版对比（0＝修前全黑）
+		for st in [0, 1, 2, 3]:
+			XSkinBattleRing.ORB_STYLE = st
+			ring.queue_redraw()
+			await _shot("orb_style_%d" % st, 3)
+		XSkinBattleRing.ORB_STYLE = 3
 
 
 ## 战技列表：确定后环淡出、列表从右边（环那边）由小展开；取消时列表收起成残影、新环重新铺开
@@ -223,6 +234,11 @@ func _motion_off(b: XBattleScene) -> void:
 	_check("off_no_turn_cue", b.ui.get_children().filter(func(c): return c is XSkinTurnCue).is_empty())
 	var nr := b.cmd_win as XSkinBattleRing
 	_check("off_ring_no_intro", nr != null and nr.intro_of(0) == 1.0 and nr.intro_elapsed >= nr.intro_total())
+	var probe := Control.new()
+	add_child(probe)
+	XSkinBattleMotion.hud_in([probe])
+	_check("off_no_hud_fade", probe.modulate.a == 1.0)
+	probe.queue_free()
 	XUiSkin.motion_override = XUiSkin.Motion.FULL
 
 
