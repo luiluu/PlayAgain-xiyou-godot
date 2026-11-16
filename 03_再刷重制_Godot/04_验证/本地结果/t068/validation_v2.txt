@@ -1,0 +1,6 @@
+Fest_Icon_Road.png: 128x128 RGBA; logical=32x32; nearest x4 exact; alpha=0/255; opaque colors=23; bbox=(5, 2, 27, 30)
+Fest_Icon_OneFour_Gold.png: 128x128 RGBA; logical=32x32; nearest x4 exact; alpha=0/255; opaque colors=23; bbox=(3, 2, 28, 30)
+Fest_Icon_OneFour_Orange.png: 128x128 RGBA; logical=32x32; nearest x4 exact; alpha=0/255; opaque colors=24; bbox=(3, 2, 28, 30)
+Fest_Icon_OneFour_Red.png: 128x128 RGBA; logical=32x32; nearest x4 exact; alpha=0/255; opaque colors=23; bbox=(3, 2, 28, 30)
+Fest_Icon_Watch.png: 128x128 RGBA; logical=32x32; nearest x4 exact; alpha=0/255; opaque colors=23; bbox=(2, 7, 30, 24)
+Fest_Icon_Attend.png: 128x128 RGBA; logical=32x32; nearest x4 exact; alpha=0/255; opaque colors=21; bbox=(2, 2, 30, 30)
