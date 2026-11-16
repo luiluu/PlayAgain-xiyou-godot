@@ -67,7 +67,7 @@ clone_generated() {   # 返回 10＝克隆了；主工作区没有 generated 时
   local gen=$1 mgen=$2
   [[ ! -e $gen ]] || return 0
   if [[ -d $mgen ]]; then
-    mkdir -p "${gen:h}"   # 工作树里 modes/xiyou 可能还不存在（generated 被忽略、父目录无跟踪文件）
+    mkdir -p "${gen:h}" || { print -u2 "✗ 建 generated 父目录失败：${gen:h}"; return 1; }   # 工作树里 modes/xiyou 可能还不存在（generated 被忽略、父目录无跟踪文件）
     cp -cR "$mgen" "$gen" || { print -u2 "✗ generated 克隆失败"; return 1; }
     return 10
   fi
@@ -81,6 +81,7 @@ quick_prepare() {
   local proj=$wt/$GODOT_SUB/01_Godot工程 mproj=$MAIN/$GODOT_SUB/01_Godot工程 rc=0
   link_engine "$wt"
   clone_generated "$proj/modes/xiyou/generated" "$mproj/modes/xiyou/generated" || rc=$?
+  (( rc == 0 || rc == 10 )) || exit 1
   (( rc != 10 )) || python3 "$ENV_DIR/参照批次.py" record "$proj/modes/xiyou/generated" "$mproj/modes/xiyou/generated" || true
   [[ -e $proj/.godot || ! -d $mproj/.godot ]] || cp -cR "$mproj/.godot" "$proj/.godot"
   print "✓ 快速补齐 $wt（引擎软链＋generated／.godot 克隆；没跑转换器和 import，需要时再 --补齐）"
@@ -155,7 +156,9 @@ PY
       refresh_oracle "$mgen/oracle" "$gen/oracle"; python3 "$ENV_DIR/参照批次.py" pending "$gen" clear
     fi
   else
-    local crc=0; clone_generated "$gen" "$mgen" || crc=$?; (( crc != 10 )) || ORACLE_COPIED=1
+    local crc=0; clone_generated "$gen" "$mgen" || crc=$?
+    (( crc == 0 || crc == 10 )) || exit 1
+    (( crc != 10 )) || ORACLE_COPIED=1
     [[ -z $oracle_skew ]] || print -u2 "⚠ generated/ 是从主工作区拷的，参照量自 ${oracle_skew%%→*}，本树用 ${oracle_skew##*→}：参照对不上新源，在本树跑一次 同步正式西游.py 再比对"
     (( flux_rc != 4 )) || python3 "$ENV_DIR/参照批次.py" pending "$gen" set
   fi

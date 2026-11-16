@@ -17,8 +17,8 @@ def run(cwd, *args, check=True):
     return subprocess.run(args, cwd=cwd, env=ENV, text=True, capture_output=True, check=check)
 
 
-def make_main(tmp, with_generated):
-    main = Path(tmp) / ('main_g' if with_generated else 'main_n')
+def make_main(tmp, with_generated, tag=''):
+    main = Path(tmp) / (('main_g' if with_generated else 'main_n') + tag)
     env = main / GODOT / '07_开发环境'
     env.mkdir(parents=True)
     shutil.copy2(SCRIPT, env / '新建工作树.sh')
@@ -82,6 +82,17 @@ with tempfile.TemporaryDirectory(prefix='xiyou_quick_prepare_') as tmp:
     # 主工作区自己不能被「补齐」
     p5 = run(main, 'zsh', str(main / GODOT / '07_开发环境/新建工作树.sh'), '--快速', str(main), check=False)
     assert p5.returncode != 0
+
+    # 克隆失败（父目录被同名文件挡住，mkdir -p 失败）：退出非 0、不打印成功
+    main3 = make_main(tmp, True, '3')
+    wt4 = main3.parent / 'd'
+    run(main3, 'git', 'worktree', 'add', '-q', '-b', 'cc/d', str(wt4), 'main')
+    blocker = wt4 / GODOT / '01_Godot工程/modes'
+    blocker.parent.mkdir(parents=True, exist_ok=True)
+    blocker.write_text('x')
+    p6 = run(main3, 'zsh', str(main3 / GODOT / '07_开发环境/新建工作树.sh'), '--快速', str(wt4), check=False)
+    assert p6.returncode != 0, p6.stdout + p6.stderr
+    assert '✓ 快速补齐' not in p6.stdout and '失败' in p6.stderr, p6.stdout + p6.stderr
 
 # 接线：orca.yaml 的 setup 调 --快速
 root = HERE.parents[1]
