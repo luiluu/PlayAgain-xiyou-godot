@@ -37,6 +37,7 @@ static func toasts(logs: Array) -> Array:
 
 
 func _run() -> void:
+	XRiftAlien.ALIGN_LOBBY = false  # 原版对照：漩涡阶段对齐大厅（O-468）会让敌名随机带「侵染·」，云端偶发挂 start_troop_*（同 event_compare 做法）
 	ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	var manifest = XDB.load_json("manifest.json")
 	var sha = manifest.get("runtimeInputs", {}).get(ref.source) if manifest is Dictionary else null
