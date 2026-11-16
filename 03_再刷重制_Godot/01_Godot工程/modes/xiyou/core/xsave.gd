@@ -321,6 +321,7 @@ static func load_slot(slot: int) -> bool:
 
 static func _load_data(d: Dictionary, slot: int, text: String) -> bool:
 	XState.from_dict(d)
+	XDungeon.repair_after_load(XState.current)  # T055：旧档残留的变量 21 错值（副本外 −1、副本内 0）按副本上下文修正
 	XYunshangOrders.after_load(XState.current, XYunshangOrders.identity(slot, text))  # 云裳 extractSaveContents 包装：订单账本重放
 	XDemonCrown.after_load(XState.current, XDemonCrown.identity(text))  # 魔冠 extractSaveContents 包装（在云裳外层）：收编、重放成长账本
 	XTusuXuan.after_load(XState.current)  # 屠苏／璇 extractSaveContents 包装：专属技能按习得表同步

@@ -306,6 +306,8 @@ func _run() -> void:
 	# 冠军庆典大厅（使者、报名处、奖杯是追加的 Map004 事件 78～81，原版没有；O-466）：对照原版语义关掉，由 tests/xiyou_fest_lobby 核
 	XFestLobby.ENABLED = false
 	XDungeon.restore_hang_up = false
+	# T055 变量 21 不为负（猿神空间重置连减两次等原版数据）：对照原版语义关掉，由 tests/xiyou_dungeon_inside_flag 核
+	XDungeon.inside_repair = false
 	XDungeon.battle_end_counts = false
 	# 死内容做活的数据补丁（一护卍解 Map213、CE2508、CE2478 魔攻；O-184／O-185）：对照原版语义，关掉；补丁本身由 xiyou_floor_odds、xiyou_nanoha 核
 	XDeadContent.ICHIGO_BANKAI = false
@@ -518,6 +520,7 @@ func _finish() -> void:
 	MVInterpreter.random_sequence = []
 	XDungeon.restore_difficulty = true
 	XDungeon.restore_hang_up = true
+	XDungeon.inside_repair = true
 	XDungeon.battle_end_counts = true
 	XDungeon.battle = {}
 	var passed := results.filter(func(r): return r.passed).size()

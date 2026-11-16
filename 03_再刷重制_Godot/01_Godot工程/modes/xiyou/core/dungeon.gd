@@ -21,6 +21,17 @@ const VAR_TIER := 450      # 所选档：1 普通 2 冒险 3 勇士 4 王者
 static var restore_difficulty := true
 ## O-040：离开副本时挂机开关恢复成进门前；false 恢复原版（到大厅大工匠处重开）。
 static var restore_hang_up := true
+## T055（玩家 11-16「副本内可以存档回城，副本外刚好反过来」）：变量 21 是「在副本内」计数，进门加一、逃离／通关／重置减一，
+## 枫叶回城（CE10 等 45 个回城公共事件）与存档（CE1）都要它＝0。两处会让它在副本外停在 −1：
+## ① 抽奖强制存档（CE1431～1434；Map141「深渊:未知存在」进门就调 CE1434）先把变量 21 减一、调 CE1 存档、再加一。原版存档连地图解释器
+##    一起存，读档后从存档那条接着跑、把这一减补回来；重制不存解释器，读档后存档里的变量 21 少一：在副本里存的读回来是 0，
+##    逃离再减一就成 −1，从此副本外不能回城、不能存档，进副本反而是 0 能回城。true：这种「减一→调 CE1→加一」包着的存档
+##    按加回后的值写进存档（同原版读档后的结果）；false 回旧写法。
+static var save_resume_fix := true
+## ② 原版数据：猿神空间两扇门（Map128、Map154 事件 3）「重置副本」连减两次变量 21，重置完也是 −1（O-待定）。
+## true：变量 21 不会是负数——顶层事件结束时小于 0 就归零；「在副本内」只认大于 0；读档时按副本上下文修正旧档里残留的错值
+## （见 repair_after_load）。false 回旧判断（≠0 算在副本内、不归零、读档不修）。
+static var inside_repair := true
 
 ## installNativeEconomyRuntime：副本 Boss 熟练度与抽奖券
 const TICKET := 1639
@@ -78,7 +89,50 @@ static func context(s: XState) -> Dictionary:
 
 
 static func inside(s: XState) -> bool:
-	return s.variable(VAR_INSIDE) != 0
+	return s.variable(VAR_INSIDE) > 0 if inside_repair else s.variable(VAR_INSIDE) != 0
+
+
+## save_resume_fix：解释器在 list[at] 这条 117 调公共事件 ce_id 时问一句——是不是「变量 21 减 n → 调 CE1 存档 → 变量 21 加 n」。
+## 是就返回 {21: n}：子游标里的存档按变量 21 加 n 后的值写（MVScript 存档分支），写完还原，不改当前局面。
+static func save_bias(list: Array, at: int, ce_id: int) -> Dictionary:
+	if not save_resume_fix or ce_id != 1 or at < 1 or at + 1 >= list.size():
+		return {}
+	var before: Dictionary = list[at - 1]
+	var after: Dictionary = list[at + 1]
+	if int(before.get("code", 0)) != 122 or int(after.get("code", 0)) != 122:
+		return {}
+	var a: Array = before.get("parameters", [])
+	var b: Array = after.get("parameters", [])
+	if a.size() < 5 or b.size() < 5:
+		return {}
+	# [起, 止, 操作 2 减／1 加, 操作数类型 0 常量, 值]
+	if int(a[0]) != VAR_INSIDE or int(a[1]) != VAR_INSIDE or int(a[2]) != 2 or int(a[3]) != 0:
+		return {}
+	if int(b[0]) != VAR_INSIDE or int(b[1]) != VAR_INSIDE or int(b[2]) != 1 or int(b[3]) != 0 or int(b[4]) != int(a[4]):
+		return {}
+	return {VAR_INSIDE: int(a[4])}
+
+
+## inside_repair：读档后修正变量 21（旧档兼容，不改存档结构）。有副本上下文（进门时记、离开时清）且变量 5（副本未重置）≥1
+## 才算人在副本里，此时变量 21 应为 1；否则不在副本里，变量 21 小于 0 就归零，残留的上下文清掉（只按 O-040 恢复挂机开关，
+## 难度不动——离开后玩家可能已自己改过）。返回修正说明，没改返回 ""。
+static func repair_after_load(s: XState) -> String:
+	if not inside_repair or s == null:
+		return ""
+	var v := int(s.variable(VAR_INSIDE))
+	var ctx := context(s)
+	var in_dungeon := not ctx.is_empty() and int(s.variable(VAR_SEALED)) >= 1
+	if in_dungeon and v <= 0:
+		s.set_variable(VAR_INSIDE, 1)
+		return "变量21 %d→1（副本内）" % v
+	if not in_dungeon and v < 0:
+		s.set_variable(VAR_INSIDE, 0)
+		if not ctx.is_empty():
+			s.dungeon.erase("context")
+			if restore_hang_up and bool(ctx.get("hangEnabled", false)):
+				set_hang_up(s, true)
+		return "变量21 %d→0（副本外）" % v
+	return ""
 
 
 # ---- 插件指令与事件钩子（MVInterpreter 调用） ----
@@ -109,6 +163,8 @@ static func set_hang_up(s: XState, enabled: bool) -> void:
 static func event_finished(s: XState) -> void:
 	if s == null:
 		return
+	if inside_repair and s.variable(VAR_INSIDE) < 0:
+		s.set_variable(VAR_INSIDE, 0)  # T055②：猿神空间重置连减两次等，顶层事件结束时不留负数
 	if not s.dungeon.has("pending") and s.dungeon.has("context") and not inside(s):
 		leave(s)
 	if not s.dungeon.has("pending"):

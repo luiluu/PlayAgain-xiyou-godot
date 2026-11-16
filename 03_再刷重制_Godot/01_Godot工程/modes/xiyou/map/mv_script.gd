@@ -335,7 +335,18 @@ static func run(code: String, interp) -> Array:
 			fail = fail_block[0]
 			end = fail_block[1]
 		unknown.append_array(await _statements(js.substr(0, if_at), interp))
+		# T055：抽奖「变量 21 减一→存档→加一」包着的存档按加回后的值写，写完还原（XDungeon.save_bias）
+		var bias: Dictionary = interp.save_bias
+		var keep := {}
+		for k in bias:
+			keep[k] = s.variables.get(k)
+			s.variables[k] = s.variable(k) + int(bias[k])
 		var ok: bool = interp.host.save_game(int(s.flags.get("SaveGameId", 0)))
+		for k in keep:
+			if keep[k] == null:
+				s.variables.erase(k)
+			else:
+				s.variables[k] = keep[k]
 		XSound.system(5 if ok else 3)
 		var msg := _toaster_text(ok_block[0] if ok else fail)
 		if msg != "":
