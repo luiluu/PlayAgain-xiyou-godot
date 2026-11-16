@@ -136,7 +136,7 @@ func _draw() -> void:
 			draw_string(body, Vector2(pad, y + XUiSkin.FS_AUX_MAX * 1.1), str(sec.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
 			y += SECTION_H - 10
 		for row in sec.get("rows", []):
-			y = _paragraph(body, str(row.get("text", "")), y, w, XUiSkin.FS_AUX, row.get("color", XUiSkin.TEXT_2), bottom)
+			y = _paragraph(body, str(row.get("text", "")), y, w, XUiSkin.FS_AUX, row.get("color", XUiSkin.TEXT_2), bottom, row.get("spans", []))
 		if sec.has("text"):
 			y = _paragraph(body, str(sec.text), y, w, XUiSkin.FS_AUX, XUiSkin.TEXT_2, bottom)
 		for ln in sec.get("lines", []):
@@ -174,7 +174,8 @@ func _draw() -> void:
 			HORIZONTAL_ALIGNMENT_LEFT, -1, bfs, XUiSkin.TEXT_3 if bool(b.get("disabled", false)) else XUiSkin.TEXT)
 
 
-func _paragraph(f: Font, text: String, y: float, w: float, fs: int, col: Color, bottom: float) -> float:
+## spans（可选）：[[字, 颜色], …] 拼起来＝text，逐段上色（装备「自带」属性分色，T095）
+func _paragraph(f: Font, text: String, y: float, w: float, fs: int, col: Color, bottom: float, spans := []) -> float:
 	var lh := roundf(fs * 1.5)
 	var para := TextParagraph.new()
 	para.width = w
@@ -183,6 +184,24 @@ func _paragraph(f: Font, text: String, y: float, w: float, fs: int, col: Color, 
 		if y + lh > bottom:
 			break
 		var line_text_range := para.get_line_range(li)
-		draw_string(f, Vector2(pad, y + fs * 1.1), text.substr(line_text_range.x, line_text_range.y - line_text_range.x), HORIZONTAL_ALIGNMENT_LEFT, w, fs, col)
+		if spans.is_empty():
+			draw_string(f, Vector2(pad, y + fs * 1.1), text.substr(line_text_range.x, line_text_range.y - line_text_range.x), HORIZONTAL_ALIGNMENT_LEFT, w, fs, col)
+		else:
+			_span_line(f, spans, line_text_range.x, line_text_range.y, Vector2(pad, y + fs * 1.1), fs)
 		y += lh
 	return y
+
+
+## 画一行里 [from, to) 这段字，按 spans 换色
+func _span_line(f: Font, spans: Array, from: int, to: int, at: Vector2, fs: int) -> void:
+	var off := 0
+	var x := at.x
+	for sp in spans:
+		var s := str(sp[0])
+		var a := maxi(from, off)
+		var b := mini(to, off + s.length())
+		if b > a:
+			var piece := s.substr(a - off, b - a)
+			draw_string(f, Vector2(x, at.y), piece, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, sp[1])
+			x += f.get_string_size(piece, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		off += s.length()

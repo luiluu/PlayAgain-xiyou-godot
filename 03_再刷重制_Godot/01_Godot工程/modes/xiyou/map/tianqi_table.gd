@@ -128,12 +128,39 @@ func _update_chip() -> void:
 	chip.set_text(text, not XPlatform.is_touch())
 
 
-## 调查提示：一枚黑面板细线胶囊，左边键名框「确定」，右边一句；画在人物和上层图块之上
+## 调查提示：一枚黑面板细线胶囊，左边键名框「确定」，右边一句；画在人物和上层图块之上。
+## 整枚能点（鼠标、触屏）：点了等同按确定（T095，Kyo 11-16「这个调查不能选择，只能确定」）
 class _Chip extends Node2D:
 	var text := ""
 	var keycap := true
+	var rect := Rect2()   # 上次画的胶囊（本节点坐标）
 	const FS := 15
 	const H := 28.0
+	const TOUCH_PAD := 10.0   # 点击范围四周放宽（手指）
+
+	func _unhandled_input(event: InputEvent) -> void:
+		if not visible or text == "" or not rect.has_area():
+			return
+		var p := Vector2.INF
+		if (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT) or event is InputEventScreenTouch:
+			p = event.position
+		if p == Vector2.INF:
+			return
+		if not hit(get_global_transform_with_canvas().affine_inverse() * p):
+			return
+		get_viewport().set_input_as_handled()   # 按下也吞掉：别让地图当成点地面走路
+		if event.pressed:
+			return
+		# 鼠标由触屏模拟时同一下会来两份（触摸＋鼠标），只认一次
+		if Engine.get_process_frames() == _fired_frame:
+			return
+		_fired_frame = Engine.get_process_frames()
+		XSkinKeyHints.fire.call_deferred("确定")
+
+	var _fired_frame := -1
+
+	func hit(local: Vector2) -> bool:
+		return rect.grow(TOUCH_PAD).has_point(local)
 
 	func _init() -> void:
 		z_as_relative = false
@@ -156,6 +183,7 @@ class _Chip extends Node2D:
 		var kw := f.get_string_size("确定", HORIZONTAL_ALIGNMENT_LEFT, -1, FS - 1).x + 16 if keycap else 0.0
 		var w := tw + 24 + (kw + 8 if keycap else 0.0)
 		var r := Rect2(-w / 2.0, -H, w, H)
+		rect = r
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = Color(XUiSkin.PANEL, 0.94)
 		sb.border_color = Color(XUiSkin.LINE, 0.42)

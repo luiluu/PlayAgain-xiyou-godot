@@ -106,6 +106,25 @@ func _run() -> void:
 			if t != null:
 				t.queue_free()
 			await _frames(3)
+		if _want("choice"):
+			var box := XMessageBox.new()
+			add_child(box)
+			var go := func(): await box.choose(["借积分", "感到怀疑，离开"], 1)
+			go.call()
+			await _frames(40)
+			await _shot(sc + "_09_choice")
+			box.queue_free()
+			await _frames(3)
+			XConfig.set_font_size_percent("global", 130)   # 字体大小调到最大档
+			var box2 := XMessageBox.new()
+			add_child(box2)
+			var go2 := func(): await box2.choose(["借积分", "感到怀疑，离开"], 1)
+			go2.call()
+			await _frames(40)
+			await _shot(sc + "_09_choice_font130")
+			box2.queue_free()
+			XConfig.set_font_size_percent("global", 100)
+			await _frames(3)
 		if _want("slot"):
 			s.map_id = 4   # 摘要带地图名（方桌大厅），跟 Kyo 截图一样长
 			XSave.save(1)
