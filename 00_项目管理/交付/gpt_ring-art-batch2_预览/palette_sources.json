@@ -1,0 +1,506 @@
+{
+  "bai": [
+    {
+      "source": "circles/bai.png",
+      "xy": [
+        138,
+        351
+      ],
+      "source_rgb": [
+        255,
+        242,
+        129
+      ],
+      "output_rgb": [
+        52,
+        48,
+        35
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "circles/bai.png",
+      "xy": [
+        138,
+        351
+      ],
+      "source_rgb": [
+        255,
+        242,
+        129
+      ],
+      "output_rgb": [
+        158,
+        150,
+        110
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "circles/bai.png",
+      "xy": [
+        208,
+        420
+      ],
+      "source_rgb": [
+        255,
+        243,
+        168
+      ],
+      "output_rgb": [
+        220,
+        214,
+        174
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    }
+  ],
+  "hong": [
+    {
+      "source": "frames/hong.png",
+      "xy": [
+        40,
+        35
+      ],
+      "source_rgb": [
+        52,
+        29,
+        28
+      ],
+      "output_rgb": [
+        51,
+        30,
+        26
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "frames/hong.png",
+      "xy": [
+        29,
+        40
+      ],
+      "source_rgb": [
+        108,
+        59,
+        46
+      ],
+      "output_rgb": [
+        108,
+        62,
+        46
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "frames/hong.png",
+      "xy": [
+        61,
+        33
+      ],
+      "source_rgb": [
+        175,
+        137,
+        55
+      ],
+      "output_rgb": [
+        170,
+        133,
+        67
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    }
+  ],
+  "hui": [
+    {
+      "source": "circles/hui.png",
+      "xy": [
+        339,
+        403
+      ],
+      "source_rgb": [
+        211,
+        236,
+        255
+      ],
+      "output_rgb": [
+        29,
+        43,
+        41
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "circles/hui.png",
+      "xy": [
+        339,
+        403
+      ],
+      "source_rgb": [
+        211,
+        236,
+        255
+      ],
+      "output_rgb": [
+        100,
+        126,
+        111
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "circles/hui.png",
+      "xy": [
+        339,
+        403
+      ],
+      "source_rgb": [
+        211,
+        236,
+        255
+      ],
+      "output_rgb": [
+        172,
+        189,
+        168
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    }
+  ],
+  "xun": [
+    {
+      "source": "circles/xun.png",
+      "xy": [
+        138,
+        131
+      ],
+      "source_rgb": [
+        255,
+        160,
+        129
+      ],
+      "output_rgb": [
+        54,
+        45,
+        40
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "circles/xun.png",
+      "xy": [
+        90,
+        287
+      ],
+      "source_rgb": [
+        255,
+        164,
+        146
+      ],
+      "output_rgb": [
+        171,
+        162,
+        146
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "circles/xun.png",
+      "xy": [
+        291,
+        369
+      ],
+      "source_rgb": [
+        255,
+        220,
+        203
+      ],
+      "output_rgb": [
+        229,
+        221,
+        203
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    }
+  ],
+  "zhen": [
+    {
+      "source": "circles/zhen.png",
+      "xy": [
+        125,
+        365
+      ],
+      "source_rgb": [
+        163,
+        194,
+        255
+      ],
+      "output_rgb": [
+        28,
+        32,
+        62
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "circles/zhen.png",
+      "xy": [
+        125,
+        365
+      ],
+      "source_rgb": [
+        163,
+        194,
+        255
+      ],
+      "output_rgb": [
+        80,
+        95,
+        151
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "circles/zhen.png",
+      "xy": [
+        125,
+        365
+      ],
+      "source_rgb": [
+        163,
+        194,
+        255
+      ],
+      "output_rgb": [
+        152,
+        169,
+        210
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    }
+  ],
+  "war": [
+    {
+      "source": "badges_128/war.png",
+      "xy": [
+        40,
+        20
+      ],
+      "source_rgb": [
+        50,
+        33,
+        20
+      ],
+      "output_rgb": [
+        55,
+        36,
+        22
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "badges_128/war.png",
+      "xy": [
+        44,
+        8
+      ],
+      "source_rgb": [
+        118,
+        86,
+        44
+      ],
+      "output_rgb": [
+        142,
+        101,
+        44
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "badges_128/war.png",
+      "xy": [
+        44,
+        12
+      ],
+      "source_rgb": [
+        218,
+        175,
+        95
+      ],
+      "output_rgb": [
+        216,
+        171,
+        71
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    }
+  ],
+  "plague": [
+    {
+      "source": "badges_128/plague.png",
+      "xy": [
+        60,
+        20
+      ],
+      "source_rgb": [
+        49,
+        42,
+        34
+      ],
+      "output_rgb": [
+        37,
+        34,
+        30
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "badges_128/plague.png",
+      "xy": [
+        68,
+        20
+      ],
+      "source_rgb": [
+        90,
+        105,
+        39
+      ],
+      "output_rgb": [
+        102,
+        114,
+        47
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "badges_128/plague.png",
+      "xy": [
+        68,
+        24
+      ],
+      "source_rgb": [
+        156,
+        186,
+        54
+      ],
+      "output_rgb": [
+        176,
+        184,
+        92
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    }
+  ],
+  "famine": [
+    {
+      "source": "badges_128/famine.png",
+      "xy": [
+        40,
+        20
+      ],
+      "source_rgb": [
+        43,
+        32,
+        19
+      ],
+      "output_rgb": [
+        48,
+        36,
+        24
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "badges_128/famine.png",
+      "xy": [
+        88,
+        12
+      ],
+      "source_rgb": [
+        146,
+        112,
+        55
+      ],
+      "output_rgb": [
+        137,
+        106,
+        51
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "badges_128/famine.png",
+      "xy": [
+        44,
+        12
+      ],
+      "source_rgb": [
+        226,
+        189,
+        113
+      ],
+      "output_rgb": [
+        216,
+        177,
+        96
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    }
+  ],
+  "qiyin": [
+    {
+      "source": "circles/hei.png",
+      "xy": [
+        405,
+        334
+      ],
+      "source_rgb": [
+        255,
+        162,
+        129
+      ],
+      "output_rgb": [
+        49,
+        35,
+        22
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "circles/hei.png",
+      "xy": [
+        405,
+        334
+      ],
+      "source_rgb": [
+        255,
+        162,
+        129
+      ],
+      "output_rgb": [
+        144,
+        107,
+        53
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    },
+    {
+      "source": "circles/hei.png",
+      "xy": [
+        250,
+        304
+      ],
+      "source_rgb": [
+        255,
+        201,
+        115
+      ],
+      "output_rgb": [
+        221,
+        180,
+        100
+      ],
+      "method": "source material reference; muted hue and luminance matched to approved sample"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+ring_band_bai.png: 288x288; full-square radius=108.812..132.458; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
+ring_band_hong.png: 288x288; full-square radius=108.812..132.231; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
+ring_band_hui.png: 288x288; full-square radius=108.812..132.654; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
+ring_band_xun.png: 288x288; full-square radius=108.812..132.612; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
+ring_band_zhen.png: 288x288; full-square radius=108.812..130.668; red=0; soft_alpha=0; center_label_overlap=N/A band drawn below labels
+ring_center_war.png: 96x96; full-square radius=33.000..45.011; red=0; soft_alpha=0; center_label_overlap=0
+ring_center_plague.png: 96x96; full-square radius=33.000..45.011; red=0; soft_alpha=0; center_label_overlap=0
+ring_center_famine.png: 96x96; full-square radius=33.000..45.011; red=0; soft_alpha=0; center_label_overlap=0
+ring_center_qiyin.png: 96x96; full-square radius=33.000..45.011; red=0; soft_alpha=0; center_label_overlap=0
+PASS: 9 dimensions / full pixel envelopes / red threshold / binary alpha / 4 center label intersections; 4 approved samples byte-identical.
