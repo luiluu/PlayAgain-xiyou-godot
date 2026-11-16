@@ -6,6 +6,7 @@ extends Node
 ## 四、界面：主菜单「回到标题」、金额溢出「极多」、存档确认句、天平标题与麦说明、再挑战说明、号卷限制行。
 ## 五、地图 Map004：人族首领无「天道」、改版向导无「KYO改版」「13位伙伴」；Actors 半角标点已修。
 ## 六、元素转换书说明口径一致；仙法招式名已换。
+## 七（批 3，skill_rework.json）：技能／装备说明无半角冒号残留、无「暂未实装」、无「最终伤害／终伤／出伤」、已并入一句话、正负号前有空格；名字与键不动。
 var results: Array = []
 
 
@@ -53,6 +54,15 @@ func _run() -> void:
 						left.append("%s:%s.%s" % [tb, r.get("id"), k])
 	_check("boss_none_left_in_db_text", left.is_empty(), left.slice(0, 8))
 	_check("boss_prefix_kept", str(XDB.table("Enemies")[850].name).begins_with("【超级Boss】") and XZhenqi.is_boss_enemy(XEnemy.new().setup(850, 1, 100.0)), XDB.table("Enemies")[850].name)
+	var pool_db := []
+	var prx := RegEx.create_from_string("(?:最终伤害|终伤)[+＋\\-−]\\d")
+	for tb in ["Items", "Skills", "Weapons", "Armors", "States"]:
+		for r in XDB.table(tb):
+			if r is Dictionary:
+				for k in ["name", "description"]:
+					if prx.search(str(r.get(k, ""))) != null:
+						pool_db.append("%s:%s.%s" % [tb, r.get("id"), k])
+	_check("pool_word_none_left_in_db_text", pool_db.is_empty(), pool_db.slice(0, 8))
 	# 四
 	_check("menu_cmd", XMenu.COMMANDS[XMenu.COMMANDS.size() - 1][0] == "回到标题", XMenu.COMMANDS[XMenu.COMMANDS.size() - 1])
 	_check("gold_overlap_zh", XMenu.GOLD_OVERLAP_ZH == "极多" and XMenu.GOLD_OVERLAP == "A lotta")
@@ -73,6 +83,39 @@ func _run() -> void:
 	_check("no_xianfa_in_horsemen", not hz.contains("仙法"))
 	var el := FileAccess.get_file_as_string("res://modes/xiyou/core/tianqi_elements.gd")
 	_check("element_book_wording", not el.contains("所有攻击伤害转换") and not el.contains("效果:所有技能伤害转换"))
+	# 七（批 3）
+	var sr: Dictionary = XDB.parse_file("res://modes/xiyou/tianqi_data/skill_rework.json")
+	var colon_left := []
+	var dev_left := []
+	var pool_left := []
+	var merged_left := []
+	var sign_left := []
+	var sign := RegEx.create_from_string("[\\x{4e00}-\\x{9fff}）」][+-]\\d")
+	var bar := RegEx.create_from_string("[\\x{4e00}-\\x{9fff}）」]:")
+	for sec in ["skills", "gear"]:
+		for k in sr[sec]:
+			var rec: Dictionary = sr[sec][k]
+			for line in rec.get("desc", []):
+				var ls := str(line)
+				if bar.search(ls) != null:
+					colon_left.append("%s:%s %s" % [sec, k, ls])
+				if ls.contains("暂未实装") or ls.contains("半成品"):
+					dev_left.append("%s:%s %s" % [sec, k, ls])
+				if ls.contains("最终伤害") or ls.contains("终伤") or ls.contains("出伤") or ls.contains("受到的所有伤害"):
+					pool_left.append("%s:%s %s" % [sec, k, ls])
+				if ls.contains("本技能无额外效果") or ls.contains("原效果已并入") or ls.contains("原增伤已并入"):
+					merged_left.append("%s:%s %s" % [sec, k, ls])
+				if sign.search(ls) != null:
+					sign_left.append("%s:%s %s" % [sec, k, ls])
+	_check("skill_rework_no_halfwidth_colon", colon_left.is_empty(), colon_left.slice(0, 5))
+	_check("skill_rework_no_dev_marks", dev_left.is_empty(), dev_left.slice(0, 5))
+	_check("skill_rework_pool_word", pool_left.is_empty(), pool_left.slice(0, 5))
+
+	_check("skill_rework_merged_one_line", merged_left.is_empty(), merged_left.slice(0, 5))
+	_check("skill_rework_sign_spaced", sign_left.is_empty(), sign_left.slice(0, 5))
+	_check("skill_rework_hidden_kept", int(sr.skills["2534"].get("_hidden_desc", []).size()) == 1 and sr.skills["2534"].desc.is_empty(), sr.skills["2534"])
+	_check("skill_rework_keys_untouched", sr.skills.has("1240") and sr.gear.has("armor:4520") and str(sr.gear["armor:4520"].name) == "命运骰子（半成品）")
+
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
