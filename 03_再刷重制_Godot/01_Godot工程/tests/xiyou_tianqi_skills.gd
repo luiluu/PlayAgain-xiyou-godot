@@ -366,7 +366,7 @@ func _gear() -> void:
 	_check("gear_sparam", is_equal_approx(a.sparam(6), pdr0 * 0.9), [pdr0, a.sparam(6)])
 	_check("gear_passive_cache", a.passive_cache().harmRe.is_empty(), a.passive_cache().harmRe)
 	var rows := XHelpCard.content(eq)
-	_check("gear_help", JSON.stringify(rows).contains("受到的伤害-10%") and not JSON.stringify(rows).contains("-3000"))
+	_check("gear_help", JSON.stringify(rows).contains("受到的伤害 −10%") and not JSON.stringify(rows).contains("-3000"))
 	_check("gear_owns", XTianqiSkills.owns(a, "e3672") and not XTianqiSkills.owns(a, "e4512") and XTianqiSkills.owns(a, float(a.skill_ids[0])))
 	var w := _wear(a, "weapon", 1687)
 	var wv: Dictionary = XTianqiSkills.gear_view(w)

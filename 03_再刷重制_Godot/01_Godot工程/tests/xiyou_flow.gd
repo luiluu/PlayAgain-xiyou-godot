@@ -235,7 +235,7 @@ func _run() -> void:
 	_check("menu_opened", menus.size() == 1)
 	if menus.size() == 1:
 		var m: XMenu = menus[0]
-		_check("menu_commands_like_original", m.command_names().size() == 18 and m.command_names()[0] == "物品" and m.command_names()[17] == "游戏结束" and not m.command_names().has("一键存档"), m.command_names())
+		_check("menu_commands_like_original", m.command_names().size() == 18 and m.command_names()[0] == "物品" and m.command_names()[17] == "返回标题" and not m.command_names().has("一键存档"), m.command_names())
 		# 状态：先选人（光标到队伍窗），确定后进入状态页，关闭后回到指令窗
 		m._cmd_index = 3
 		m._ok()

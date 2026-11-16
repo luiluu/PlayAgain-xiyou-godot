@@ -105,7 +105,7 @@ func _build_list() -> void:
 	if XEncounterTarget.ENABLED:  # 定向遇怪占原「只遇稀有」的位子，另两行去掉
 		_list = _list.filter(func(o): return o[1] != "BOSS" and o[1] != "boss").map(func(o): return TARGET_OPTION if o[1] == "Boss" else o)
 	if XBossStatusPanel.TOGGLE:  # v0.56：「Boss状态面板」在「步步遇敌」后、「消息提醒」前（v0.62.12 options_probe 的行序）
-		_list.insert(_list.find_custom(func(o): return o[1] == "codexNotices"), ["Boss状态面板", "codexBossStatusPanel", true])
+		_list.insert(_list.find_custom(func(o): return o[1] == "codexNotices"), ["首领状态面板", "codexBossStatusPanel", true])
 	if not XPower.SHOW_POWER_UI:  # 战力先藏：设置页也不列「战力显示与估算」（回退＝XPower.SHOW_POWER_UI 设 true）
 		_list = _list.filter(func(o): return o[1] != "codexPowerEnabled")
 	if XTestMode.unlocked():  # 只有 Kyo 本机有解锁文件时，测试模式／GM 工具两项才可点（没有时照旧留灰）

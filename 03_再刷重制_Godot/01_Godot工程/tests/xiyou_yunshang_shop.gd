@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 【cc·白龙_11·未经审查】云裳天衣铺一期（XYunshangShop：首页与配置天衣神纹）：照参照 p7.shop（yunshang_probe 拿原版 Scene_Yunshang 逐页量的
 ## Window_YunChoices 说明行与各行），用按键走同一串操作——首页、选队员、空袖藏星选借用技能（中途取消不改）、九曲回针选针眼、
 ## 七曜流霞选元素、寸光留仙无需配置、选队员时取消、返回；每页比说明行、各行文字与能不能选，选完比设置。
@@ -261,6 +262,8 @@ const SHARD := 2530
 
 ## JSON 读回的整数是浮点：整数值的浮点一律转成整数再比
 func norm(v):
+	if v is String:
+		return Z.text(v)  # T027：参照里的旧用词换成新口径
 	if v is float and v == floorf(v) and absf(v) < 1e15:
 		return int(v)
 	if v is Array:

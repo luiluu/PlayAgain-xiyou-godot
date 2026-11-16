@@ -5,6 +5,7 @@ extends Node
 ## 换装备（未就绪、就绪、第二件、同槽替换、待选中）与商店出售可否选。另查挂机自动卖出／一键出售跳过异化装备（O-081）。
 ## 吞器供体的装备 ID：原版是独立装备编号，这里是实例 ID，比对时按供体顺序换算。
 
+const Z := preload("res://tests/lib/zh_fwd.gd")
 var results := []
 var out_dir := ""
 const ORACLE := "res://modes/xiyou/generated/oracle/alien_config.json"
@@ -42,6 +43,8 @@ func frames(n := 2) -> void:
 
 
 static func norm(v):
+	if v is String:
+		return Z.text(v)  # T027：参照里的旧用词换成新口径
 	if v is int or v is float:
 		return float(v)
 	if v is Array:

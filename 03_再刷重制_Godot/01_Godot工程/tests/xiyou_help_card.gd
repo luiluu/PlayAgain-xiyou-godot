@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 说明卡验收：XHelpCard.content() 与正式版 Sprite_ItemHelp.setItem 实际画出的行（generated/oracle/help_cards.json，
 ## 探针 03_转换工具/mv_oracle/help_probe.cjs）逐行一致——文字、字号、颜色、对齐；layout() 用参照引擎同样的字宽
 ## （字数×字号×0.6）排出的每行 y 与卡高一致，含「装备战力」行（XPower.equipment）。
@@ -89,7 +90,7 @@ func _compare(cat: String, card: Dictionary) -> void:
 		var g_align = null if g[4] == null else int(g[4])
 		var w_align = null if w[4] == null else int(w[4])
 		# 文字审批 12：10168 等复刻说明行的弯引号“”改直角引号「」（参照是原版）
-		var row_ok: bool = (str(g[0]) == str(w[0]) or str(g[0]) == str(w[0]).replace("“", "「").replace("”", "」")) and int(g[1]) == int(w[1]) and str(g[2]) == str(w[2]) and g_align == w_align
+		var row_ok: bool = (str(g[0]) == Z.code_text(str(w[0])) or str(g[0]) == Z.code_text(str(w[0])).replace("“", "「").replace("”", "」")) and int(g[1]) == int(w[1]) and str(g[2]) == str(w[2]) and g_align == w_align
 		var y_ok := is_equal_approx(float(lay.lines[i].y), float(w[3]))
 		if not (row_ok and y_ok):
 			_check(name, false, {"row": i, "got": [g[0], g[1], g[2], g_align, lay.lines[i].y], "want": [w[0], w[1], w[2], w_align, w[3]]})

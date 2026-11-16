@@ -211,7 +211,7 @@ static func start_turn(logic) -> Array:
 					_say(f, "献祭：%s失去生命。" % top.display_name())
 				else:
 					f.side_bonus = "actor" if top is XActor else "enemy"
-					_say(f, "献祭：%s失去生命，%s本回合出伤提升。" % [top.display_name(), "我方" if f.side_bonus == "actor" else "敌方"])
+					_say(f, "献祭：%s失去生命，%s本回合伤害提升。" % [top.display_name(), "我方" if f.side_bonus == "actor" else "敌方"])
 			var own = scroll_owner(logic)
 			if own != null and own.is_alive():  # 书卷的代价：佩戴者每回合也献一次（不加伤；和敌人比生命基本轮不到他，单算）
 				_lose(own, float(param("sacrifice").get("hp_loss", 0.1)))

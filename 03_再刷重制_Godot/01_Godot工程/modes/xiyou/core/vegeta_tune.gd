@@ -163,10 +163,12 @@ static func patch_skills(t: Array) -> void:
 	if c.is_empty():
 		return
 	_desc(t, SK_CHIBIE, "减少90%受到的伤害", "减少%s受到的伤害" % _pct(1.0 - float(c.chibie)))
-	_desc(t, SK_EGO, "受到伤害后，增加150%终伤，最多叠加20次", "每场战斗中受到伤害后，增加%s终伤，最多叠加%d次" % [_pct(float(c.ego_per)), int(c.ego_cap)])
+	_desc(t, SK_EGO, "受到伤害后，增加150%终伤，最多叠加20次", "每场战斗中受到伤害后，增加%s伤害，最多叠加%d次" % [_pct(float(c.ego_per)), int(c.ego_cap)])
 	_repoint(t, SK_FUSION, ST_FUSION_SRC, ST_FUSION)
 	if float(c.fusion) >= 0.0:
-		_desc(t, SK_FUSION, "最终伤害+188%", "最终伤害+%s，暴击时再+%s" % [_pct(float(c.fusion)), _pct(float(c.fusion_crit))])
+		# 原文可能已被 text_fix（D104「最终伤害＋数」→「伤害＋数」）先改过，两种写法都认
+		var fusion_old := "最终伤害+188%" if str(t[SK_FUSION].get("note", "")).contains("最终伤害+188%") else "伤害+188%"
+		_desc(t, SK_FUSION, fusion_old, "伤害+%s，暴击时再+%s" % [_pct(float(c.fusion)), _pct(float(c.fusion_crit))])
 
 
 static func _desc(t: Array, id: int, old: String, new: String) -> void:

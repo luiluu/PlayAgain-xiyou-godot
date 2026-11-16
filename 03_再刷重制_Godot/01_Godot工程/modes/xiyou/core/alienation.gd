@@ -171,7 +171,7 @@ static func details(s: XState, i: Dictionary) -> Array:
 		return []
 	else:
 		var boss := str(m.origin) == "boss"
-		out = ["异化：" + str(f.name), "收益：" + str(f.benefit), "代价：" + str(f.cost), "来源：" + ("异化Boss" if boss else "异化小怪") + "；分解获得" + ("5" if boss else "1") + "点能量"]
+		out = ["异化：" + str(f.name), "收益：" + str(f.benefit), "代价：" + str(f.cost), "来源：" + ("异化首领" if boss else "异化小怪") + "；分解获得" + ("5" if boss else "1") + "点能量"]
 	var c: Dictionary = m.get("config", {})
 	if c.has("actorId"):
 		out.append("使用角色：" + (s.actor(int(c.actorId)).display_name() if s.actors.has(int(c.actorId)) else "配置失效"))

@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 状态页逐像素复现（XStatusPage，JAH_StatusMenuCore）：对照 tests/fixtures/status_page_oracle.json（正式 v0.62.12 无头浏览器读数，ui_reference/dom_ref.cjs＋status_page_ref.js）。
 ## - 窗口矩形：选页窗 (0,0,1280,64)、页窗 (0,108,1280,612)（开着战力）／(0,72,1280,648)（关掉战力）。
 ## - 每个角色 × 前三页：contents 上的每个绘制调用（文字、位置、宽、对齐、字号、颜色；脸图、图标、量条、分隔线）逐项比对；
@@ -253,4 +254,4 @@ static func _shift(op: Array, dy: float) -> Array:
 ## 参照文字换成文字审改过的写法：称号原版 `, "称号"`，重制「，「称号」」（文字审批 14）
 static func _ref_text(t) -> Variant:
 	var m := RegEx.create_from_string('^, "(.*)"$').search(str(t)) if t is String else null
-	return "，「%s」" % m.get_string(1) if m else t
+	return "，「%s」" % m.get_string(1) if m else (Z.text(t) if t is String else t)

@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 状态/装备/胜利页面验收；全部用内存新游戏，不触及任何保存。
 var results := []
 var out_dir := ""
@@ -53,7 +54,7 @@ func _run() -> void:
 	_check("status_params", status.all_text().contains("命中率") and status.all_text().contains("物理攻击"))
 	await _shot("01_状态")
 	status.page = 1; status.rebuild(); await _frames()
-	_check("status_resistances", status.all_text().contains("承伤") and status.all_text().contains("终伤加成"))
+	_check("status_resistances", status.all_text().contains("承伤") and status.all_text().contains("伤害加成"))
 	await _shot("02_加成与抗性")
 	status.page = 2; status.rebuild(); await _frames()
 	_check("status_mastery", status.all_text().contains("角色可使用"))

@@ -79,7 +79,7 @@ static func roster(kind: String, s) -> Dictionary:
 		return {}
 	var tier := XTier.SUPER if kind == "super" else XTier.STRONG
 	var bonus := int(roundf(float(XTianqiBalance.tier(tier).get("damage_dealt", 0.0)) * 100.0))
-	var notes := ["天启篇档位：出伤 +%d%%。" % bonus]
+	var notes := ["天启篇档位：伤害 +%d%%。" % bonus]
 	if kind == "super":
 		var caps := []
 		for d in XTianqi.DIFFICULTIES:
@@ -87,9 +87,9 @@ static func roster(kind: String, s) -> Dictionary:
 		notes.append("每场上阵上限：" + "，".join(caps) + "。")
 		var helper_ok := XTianqi.DIFFICULTIES.filter(func(d): return XTianqi.helper_super_key(str(d.key))).map(func(d): return str(d.name))
 		if XTianqi.HELPER_RULES and not helper_ok.is_empty():
-			notes.append("助力位只有%s能放超强者，多出来的只能当替补。" % "、".join(helper_ok))  # D57
+			notes.append("助力位只有%s能放超强者，多出来的会被移出出战栏。" % "、".join(helper_ok))  # D57
 		else:
-			notes.append("多出来的只能当替补。")
+			notes.append("多出来的会被移出出战栏。")
 	return {"ids": XTianqiSkills.ids(tier), "notes": notes}
 
 
@@ -136,7 +136,7 @@ static func laoda_options(s: XState) -> Array:
 static func run_laoda(host, s: XState) -> void:
 	var opts := laoda_options(s)
 	var labels := opts.map(func(o): return str(o[0]))
-	var i: int = await host.show_text_with_choices("", 0, ["\\n<牢妲>挑战强大的守层者"], labels, labels.size() - 1)
+	var i: int = await host.show_text_with_choices("", 0, ["\\n<牢妲>挑战强大的守层者。", "再挑战不耗门票：34～36 层每胜一场得 1 颗终焉核，遗物只在首次击败时给。"], labels, labels.size() - 1)
 	if i < 0 or i >= opts.size():
 		return
 	var act: Array = opts[i][1]

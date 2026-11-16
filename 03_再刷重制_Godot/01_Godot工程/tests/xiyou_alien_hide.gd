@@ -13,6 +13,7 @@ extends Node
 ## - 重制另补：仓库迁移、迁移只跑一次、身上普通异化装备还原后仍穿着、星级仓库取出、词缀不收残响、得到减少照常。
 const ORACLE := "oracle/alien_hide.json"
 const LEVEL := 30
+const Z := preload("res://tests/lib/zh_fwd.gd")
 var results := []
 var _added_traits := []
 
@@ -125,7 +126,8 @@ func _bases(list: Array, ids: Array) -> Array:
 
 func _menu(c: Dictionary, hide: bool) -> void:
 	var names: Array = XMenu.commands().map(func(x): return x[0])
-	check(str(c.id) + ".names", names == c.observed.names, [names, c.observed.names])
+	var want_names: Array = c.observed.names.map(func(n): return "返回标题" if n == "游戏结束" else n)  # T027：主菜单最后一项改名
+	check(str(c.id) + ".names", names == want_names, [names, want_names])
 	check(str(c.id) + ".workshop", names.has("异化工坊") == bool(c.observed.hasWorkshop) and names.has("异化工坊") != hide)
 
 

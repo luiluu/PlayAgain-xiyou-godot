@@ -111,12 +111,12 @@ static func _bing_loan_meta(event_id: int) -> Dictionary:
 			"face": "People1",
 			"face_index": 6,
 			"var_id": BING_LAO_VAR,
-			"intro": "\\n<老钱>嘿嘿，天平那摊子忙不过来，我在这儿顺手放点小贷。你要是缺用，可以找我借1800肝帝积分，不过一定要在18层过关前还我2400肝帝积分！",
-			"no_courage": "\\n<老钱>连胆气都没有，这种买卖可做不成，算了。",
-			"repaid_ok": "\\n<老钱>不错不错，你果然是言而有信之人！",
-			"short_money": "\\n<老钱>积分都不够，还想糊弄我？",
-			"remind": "\\n<老钱>记得赶紧把积分还了！别拖延，不然有你好瞧的！",
-			"done_talk": "\\n<老钱>做买卖讲究一个和气生财，有空常来光顾。",
+			"intro": "\\n<老钱>天平那边只管麦和油，账房这边另算。缺用的话，可以借 1800 肝帝积分，18 层过关前还 2400 肝帝积分。",
+			"no_courage": "\\n<老钱>没有胆气，这笔账就不记了。",
+			"repaid_ok": "\\n<老钱>账清了。你是守信的人。",
+			"short_money": "\\n<老钱>积分不够。凑齐了再来。",
+			"remind": "\\n<老钱>积分记得还。过了 18 层，这笔账会有人来收。",
+			"done_talk": "\\n<老钱>账已两清。需要时再来。",
 		}
 	return {
 		"event_id": 39,
@@ -124,12 +124,12 @@ static func _bing_loan_meta(event_id: int) -> Dictionary:
 		"face": "People1",
 		"face_index": 2,
 		"var_id": BING_XIAO_VAR,
-		"intro": "\\n<小钱>攀登这座塔也太难了，不如跟老爷子一块儿放点贷款赚外快。我这里有些肝帝积分，你要是需要，可以找我借1800肝帝积分，不过一定要在18层过关前还我2400肝帝积分！",
-		"no_courage": "\\n<小钱>你还是没有那份胆量，这单生意不做了。",
-		"repaid_ok": "\\n<小钱>有借有还，再借不难！",
-		"short_money": "\\n<小钱>这些积分不够啊，你可别糊弄我！",
-		"remind": "\\n<小钱>记得还积分，不然我可是要动真格了！",
-		"done_talk": "\\n<小钱>有什么事吗？",
+		"intro": "\\n<小钱>这座塔不好爬，我和老爷子一起放些贷。可以借 1800 肝帝积分，18 层过关前还 2400 肝帝积分。",
+		"no_courage": "\\n<小钱>没有胆气，这笔账就不记了。",
+		"repaid_ok": "\\n<小钱>有借有还。下次再借，不难。",
+		"short_money": "\\n<小钱>积分不够。凑齐了再来。",
+		"remind": "\\n<小钱>积分记得还。过了 18 层，就要动真格了。",
+		"done_talk": "\\n<小钱>有事吗？",
 	}
 
 
@@ -291,11 +291,11 @@ static func rewrite_message(s, map_id: int, event_id: int, msg: Dictionary) -> D
 	if joined.contains("天道使者"):
 		msg["face"] = "People1"
 		msg["index"] = 6
-		msg["lines"] = ["\\n<老钱>嘿嘿，你居然打过了深渊骑士！不过你欠我的积分还没还，可别想就这么走了，兄弟们上！"]
+		msg["lines"] = ["\\n<老钱>你打过了深渊骑士。可欠的积分还没还，不能就这么走。动手。"]
 	elif joined.contains("求道者") and joined.contains("动真格"):
 		msg["face"] = "People1"
 		msg["index"] = 2
-		msg["lines"] = ["\\n<小钱>我早就说过不还钱我会动真格的，给我上！"]
+		msg["lines"] = ["\\n<小钱>说过不还就动真格。上。"]
 	return msg
 
 

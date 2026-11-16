@@ -547,7 +547,7 @@ func _review_fixes() -> void:
 			lg._die(e)
 		var t: XActor = lg.actors[0]
 		var mdf0 := t.mdf
-		var sk := XTianqiHorsemen._skill("bankrupt", "仙法：破产一剑", 1, 1, float(famine.bankrupt.coef), true)
+		var sk := XTianqiHorsemen._skill("bankrupt", "混招·破产一剑", 1, 1, float(famine.bankrupt.coef), true)
 		var mult := 1.0 + float(famine.seniority.per) * int(f.seniority)
 		var base := kn.mat * float(sk.coef) * mult
 		# 不挂破产的同一击（法术、打法防）

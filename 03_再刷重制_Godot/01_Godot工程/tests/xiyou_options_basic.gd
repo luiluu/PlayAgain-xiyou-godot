@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 正式 options_probe 对照、配置重读/不随局内读档回滚、四路现有播放器、跑步与战斗指令记忆。
 var results := []
 var out_dir := ""
@@ -203,7 +204,7 @@ func _run() -> void:
 	await frames()
 	var at: int = tog.symbols().find("codexBossStatusPanel")
 	check("boss_panel_row_order", at >= 0 and at == tog.symbols().find("yd100") + 1 and tog.symbols()[at + 1] == "codexNotices", tog.symbols())
-	check("boss_panel_row_name", tog._list[at][0] == "Boss状态面板" and tog._list[at][2])
+	check("boss_panel_row_name", tog._list[at][0] == "首领状态面板" and tog._list[at][2])
 	check("boss_panel_default_on", XConfig.flag("codexBossStatusPanel") and tog.status_text(at) == "ON", tog.status_text(at))
 	tog.index = at
 	tog.ok()

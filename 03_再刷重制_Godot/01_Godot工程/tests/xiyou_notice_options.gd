@@ -1,4 +1,5 @@
 extends Node
+const Z := preload("res://tests/lib/zh_fwd.gd")
 ## 设置「消息提醒」：正式 options_probe 的 notices 对照（子页行/说明/开关操作/状态文字/配置读写/提示分类），
 ## 提示过滤（菜单内照常显示）与设置页打开、键盘操作、返回；主菜单的光标/确定/蜂鸣/取消音效。
 var results := []
@@ -74,7 +75,7 @@ func _run() -> void:
 
 	# 子页行、说明与布局
 	var rows := XNoticeOptionsScene.rows()
-	check("rows", rows.map(func(r): return [r[0], r[1], r[2]]) == nt.rows.map(func(r): return [r.key, r.name, r.hint]), rows)
+	check("rows", rows.map(func(r): return [r[0], r[1], r[2]]) == nt.rows.map(func(r): return [r.key, r.name, Z.text(str(r.hint))]), rows)
 	var hr := XNoticeOptionsScene.HEAD_RECT
 	var lr := XNoticeOptionsScene.LIST_RECT
 	var rect_nums := [hr.position.x, hr.position.y, hr.size.x, hr.size.y, lr.position.x, lr.position.y, lr.size.x, lr.size.y, rows.size(), 0]

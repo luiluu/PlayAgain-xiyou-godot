@@ -1164,7 +1164,7 @@ static func _roll_daofa_v028(s: XState, a: XActor, i: int) -> Dictionary:
 			return _daofa_done_v028(s, a, done.call(rnd))
 		var opts := known.map(func(x): return {"label": "指定「%s」" % names[x], "next": done.call(x)})
 		opts.append({"label": "随机（%s）" % names[rnd], "next": done.call(rnd)})
-		return _ask(["领悟道法「%s」：" % DAOFA_NAME[k], "已降服过的Boss可让你指定%s。" % ("武器类型" if is_w else "元素")], opts)
+		return _ask(["领悟道法「%s」：" % DAOFA_NAME[k], "已降服过的首领可让你指定%s。" % ("武器类型" if is_w else "元素")], opts)
 	return _daofa_done_v028(s, a, {"page": "daofa_done", "id": id, "k": k, "i": i, "key": "daofa:" + k, "label": DAOFA_NAME[k]})
 
 
@@ -1195,7 +1195,7 @@ static func _weapon_menu_v028(s: XState) -> Dictionary:
 	opts.append({"label": "返回", "next": {"page": "retreat"}})
 	opts.append({"label": "离开", "next": null})
 	return _ask(["\\C[6]神兵试炼\\C[0]：降服神兵之仙，领悟道法「本命兵」时即可指定该武器类型。",
-		"对手强度＝第%d层守层者 ×%d。须在此主动挑战并获胜，野外击败同名Boss不算完成。" % [f, WEAPON_TRIAL_SCALE]], opts)
+		"对手强度＝第%d层守层者 ×%d。须在此主动挑战并获胜，野外击败同名首领不算完成。" % [f, WEAPON_TRIAL_SCALE]], opts)
 
 
 ## Z.startWeaponTrial：对手＝修行进度层守层者 ×2（不能逃、可以输）；打完不回菜单

@@ -148,6 +148,46 @@
    "re": true,
    "ref": "49-002",
    "gate": "效果：\\c[1]效果"
+  },
+  {
+   "from": "(?<!超级)(?<!DOTA)Boss",
+   "to": "首领",
+   "re": true,
+   "gate": "Boss",
+   "ref": "文风D105",
+   "why": "玩家文字一律叫「首领」（Kyo 11-16 D105）；【超级Boss】【DOTABOSS】等特殊怪专属称呼不动，等小A 另起名单（名字前缀被 XZhenqi／XEncounterTarget 按字面认档）"
+  },
+  {
+   "from": "(?<!超级)(?<!DOTA)BOSS",
+   "to": "首领",
+   "re": true,
+   "gate": "BOSS",
+   "ref": "文风D105",
+   "why": "玩家文字一律叫「首领」（Kyo 11-16 D105）；【超级Boss】【DOTABOSS】等特殊怪专属称呼不动，等小A 另起名单（名字前缀被 XZhenqi／XEncounterTarget 按字面认档）"
+  },
+  {
+   "from": "(?<!超级)(?<!DOTA)boss",
+   "to": "首领",
+   "re": true,
+   "gate": "boss",
+   "ref": "文风D105",
+   "why": "玩家文字一律叫「首领」（Kyo 11-16 D105）；【超级Boss】【DOTABOSS】等特殊怪专属称呼不动，等小A 另起名单（名字前缀被 XZhenqi／XEncounterTarget 按字面认档）"
+  },
+  {
+   "from": "最终伤害(?=[+＋\\-−]\\d)",
+   "to": "伤害",
+   "re": true,
+   "gate": "最终伤害",
+   "ref": "文风D104",
+   "why": "伤害总池统一叫「伤害」（Kyo 11-16 D104）；只改后面直接跟加减数值的写法，「结算伤害」等别的池不动"
+  },
+  {
+   "from": "终伤(?=[+＋\\-−]\\d)",
+   "to": "伤害",
+   "re": true,
+   "gate": "终伤",
+   "ref": "文风D104",
+   "why": "伤害总池统一叫「伤害」（Kyo 11-16 D104）；只改后面直接跟加减数值的写法，「结算伤害」等别的池不动"
   }
  ]
 }

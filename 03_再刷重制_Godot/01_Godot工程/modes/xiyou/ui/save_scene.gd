@@ -464,14 +464,14 @@ func ok() -> void:
 					if data(slot()) == null and seal_failed(slot()):
 						_start_notice(XSaveSeal.FAIL_TEXT + "，无法读取。\n" + XSaveSeal.FAIL_HINT)
 					else:
-						_start_confirm(plugin("Load Text", "是否加载此保存文件？"))
+						_start_confirm("要读取这份存档吗？")
 				"save":
 					if XSave.exists(slot()):
-						_start_confirm(plugin("Save Text", "是否要覆盖此保存文件？"))
+						_start_confirm("要覆盖这份存档吗？")
 					else:
 						_perform("save")
 				_:
-					_start_confirm(plugin("Delete Text", "是否要删除此保存文件？"))
+					_start_confirm("要删除这份存档吗？")
 		"notice":
 			XSound.system(1)
 			confirm_win.visible = false

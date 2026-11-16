@@ -426,7 +426,7 @@
   },
   {
    "key": "state_rate",
-   "name": "异常几率"
+   "name": "异常概率"
   },
   {
    "key": "heal_received",
@@ -798,7 +798,7 @@
    "name": "伤害加成",
    "layer": "special",
    "tag": "atk",
-   "effect": "最终伤害 +%",
+   "effect": "伤害 +%",
    "values": [
     3,
     6,
@@ -912,7 +912,7 @@
    "name": "异常抵抗",
    "layer": "special",
    "tag": "def",
-   "effect": "被施加异常的几率 −%",
+   "effect": "被施加异常的概率 −%",
    "values": [
     3,
     6,
@@ -967,7 +967,7 @@
    "name": "引敌／避敌",
    "layer": "special",
    "tag": "def",
-   "effect": "被选为目标的几率 +% 或 −%",
+   "effect": "被选为目标的概率 +% 或 −%",
    "values": [
     5,
     8,
@@ -1017,7 +1017,7 @@
    "name": "再释放",
    "layer": "special",
    "tag": "gen",
-   "effect": "技能放完后 % 几率再放一次",
+   "effect": "技能放完后 % 概率再放一次",
    "values": [
     1,
     2,
@@ -1338,7 +1338,7 @@
    "name": "再动",
    "layer": "legendary",
    "tag": "gen",
-   "effect": "每回合 % 几率多行动一次",
+   "effect": "每回合 % 概率多行动一次",
    "values": [
     5,
     10,

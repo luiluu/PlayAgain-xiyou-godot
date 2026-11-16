@@ -3,6 +3,7 @@ extends Node
 ## 合成／异化／重抽／待选／分解的返回、背包、账本与装备标记；工坊 5 条点选路线每一步的叠加层节点树（标签、class、文字、按钮可否点）、
 ## 提示、结束时的背包与账本。异化装备的本体名字与属性照参照抄（独立装备的随机前后缀不在本参照范围）。另查主菜单入口与窗口能打开。
 
+const Z := preload("res://tests/lib/zh_fwd.gd")
 var results := []
 var out_dir := ""
 const ORACLE := "res://modes/xiyou/generated/oracle/alien_workshop.json"
@@ -37,6 +38,8 @@ func frames(n := 2) -> void:
 
 
 static func norm(v):
+	if v is String:
+		return Z.text(v)  # T027：参照里的旧用词换成新口径
 	if v is int or v is float:
 		return float(v)
 	if v is Array:
@@ -136,7 +139,7 @@ func _calls(rows: Array) -> void:
 	got["craft-1"] = {"r": XAlienation.craft(s, 1)}
 	var a := _make(s, made[0])
 	var b := _make(s, made[1])
-	check("call_made_details", XAlienation.details(s, a) == by.made.details[0] and XAlienation.details(s, b) == by.made.details[1], [XAlienation.details(s, a), by.made.details])
+	check("call_made_details", XAlienation.details(s, a) == Z.fwd(by.made.details[0]) and XAlienation.details(s, b) == Z.fwd(by.made.details[1]), [XAlienation.details(s, a), by.made.details])
 	check("call_made_pool", a.alien.pool == by.made.pool[0] and b.alien.pool == by.made.pool[1], [a.alien.pool, by.made.pool])
 	check("call_made_ledger", norm(XAlienation.ledger(s)) == norm(by.made.ledger), [XAlienation.ledger(s), by.made.ledger])
 	got["attach-bad"] = {"r": XAlienation.create(s, "w", 1042, "mob", "pest")}
@@ -225,7 +228,7 @@ func _flow(p: Dictionary) -> void:
 		if norm(got) != norm(want):
 			bad.append([screen, first_diff(got, want)])
 	check("pages_" + name, bad.is_empty(), bad)
-	check("toasts_" + name, XToast.shown.slice(toast0) == p.toasts, [XToast.shown.slice(toast0), p.toasts])
+	check("toasts_" + name, XToast.shown.slice(toast0) == Z.fwd(p.toasts), [XToast.shown.slice(toast0), p.toasts])
 	check("after_" + name, _bag(s) == norm(p.bag) and norm(_gear(s)) == norm(p.gear) and norm(XAlienation.ledger(s)) == norm(p.ledger),
 		[_bag(s), p.bag, _gear(s), p.gear, XAlienation.ledger(s), p.ledger])
 	page.queue_free()

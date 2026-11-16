@@ -96,7 +96,7 @@ static func tips(s: XState, a: XActor, c: Dictionary) -> Array:
 	if c.diff.atk < 0.5 or c.diff.mat < 0.5:
 		out.append("\\C[2]难度把攻击压到 %s：学属性%%被动、吃淬元丹。" % XZhenqi.mult(maxf(c.diff.atk, c.diff.mat)))
 	if out.is_empty():
-		out.append("\\C[3]各项门槛都已越过：现在主要看伤害量（真气、装备、结算类被动）和 Boss 机制。")
+		out.append("\\C[3]各项门槛都已越过：现在主要看伤害量（真气、装备、结算类被动）和首领机制。")
 	return out
 
 
@@ -130,7 +130,7 @@ static func zhenqi_rows(s: XState, a: XActor) -> Array:
 	rows.append(_line(nxt))
 	var df := XZhenqi.DAOFA.filter(func(k): return d.daofa.get(k, 0)).map(func(k): return XZhenqi.DAOFA_NAME[k])
 	rows.append(_line("道法：" + ("、".join(df) if not df.is_empty() else "未领悟") + ("　\\C[17]待选奖励 %d 项\\C[0]" % int(st.pending) if st.pending else "")))
-	rows.append(_line("来源：守层者（每层一次）、副本 Boss 与神兵试炼（可反复刷）、超出上限的再动（每场最多 10）。层数和难度越高越多。"))
+	rows.append(_line("来源：守层者（每层一次）、副本首领与神兵试炼（可反复刷）、超出上限的再动（每场最多 10）。层数和难度越高越多。"))
 	return rows
 
 
@@ -155,7 +155,7 @@ static func page_rows_v028(s: XState, a: XActor) -> Array:
 	rows.append(_cols(["暴击率", pct(c.diff.cri, true), pct(c.base.cri), pct(c.now.cri)], false, c.now.cri < 1))
 	rows.append(_cols(["爆伤", pct(c.diff.crit, true), pct(c.base.crit, true), "暴击 " + XZhenqi.mult(maxf(1, 1.5 + c.now.crit))], false, 1.5 + c.now.crit <= 1))
 	rows.append(_cols(["命中", pct(c.diff.hit, true), pct(c.base.hit), pct(c.now.hit)], false, c.now.hit < 1))
-	rows.append(_cols(["终伤", pct(c.diff.fin, true), pct(c.base.fin, true), pct(c.now.fin, true)]))
+	rows.append(_cols(["伤害", pct(c.diff.fin, true), pct(c.base.fin, true), pct(c.now.fin, true)]))
 	rows.append(_cols(["物攻", XZhenqi.mult(c.diff.atk), XZhenqi.group(c.base.atk), XZhenqi.group(c.now.atk)], false, c.diff.atk < 0.5))
 	rows.append(_cols(["魔攻", XZhenqi.mult(c.diff.mat), XZhenqi.group(c.base.mat), XZhenqi.group(c.now.mat)], false, c.diff.mat < 0.5))
 	rows.append(_cols(["结算倍率", XZhenqi.mult(c.diff.settle), XZhenqi.mult(c.base.settle), XZhenqi.mult(c.now.settle)], false, c.diff.settle < 0.01))
@@ -256,7 +256,7 @@ static func panel_suggestions(s: XState, a: XActor, c: Dictionary) -> Array:
 		var b2 := next_mijing(a, "结算伤害")
 		out.append({"key": "settle", "text": "学习「%s」（方桌大厅·秘境被动书兑换）" % b2 if b2 != "" else "服用加结算伤害的丹药（来源见物品说明）"})
 	if out.is_empty():
-		out.append({"key": "ok", "text": "挑战副本Boss获取真气"})
+		out.append({"key": "ok", "text": "挑战副本首领获取真气"})
 	return out
 
 
@@ -324,7 +324,7 @@ static func detail_rows(s: XState, a: XActor) -> Array:
 	var rows := [_head("真气"), _line("境界：%s　真气：%s点" % [st.name, big_panel(st.qi)]), _line("真气：伤害 " + dmg_pct(st.rate))]
 	var df := XZhenqi.DAOFA.filter(func(k): return d.daofa.get(k, 0)).map(func(k): return XZhenqi.DAOFA_NAME[k])
 	rows.append(_line("道法：" + ("、".join(df) if not df.is_empty() else "未领悟")))
-	rows.append(_line("来源：守层者（每层一次）、副本Boss、神兵试炼、溢出再动（每场最多10次）"))
+	rows.append(_line("来源：守层者（每层一次）、副本首领、神兵试炼、溢出再动（每场最多10次）"))
 	rows.append({"type": "blank"})
 	var c := compare(a)
 	var ctx := context(s)
@@ -335,7 +335,7 @@ static func detail_rows(s: XState, a: XActor) -> Array:
 	var nm: float = 1.5 + c.now.crit
 	rows.append(_cols(["暴伤", mult1(nm / bm if bm else 1.0), mult1(bm), mult1(nm)], false, nm <= 1))
 	rows.append(_cols(["命中", dmg_pct(_ratio(c.base.hit, c.now.hit)), stat_pct(c.base.hit), stat_pct(c.now.hit)], false, c.now.hit < 1))
-	rows.append(_cols(["终伤", dmg_pct(_ratio(c.base.fin, c.now.fin)), signed_pct0(c.base.fin), signed_pct0(c.now.fin)]))
+	rows.append(_cols(["伤害", dmg_pct(_ratio(c.base.fin, c.now.fin)), signed_pct0(c.base.fin), signed_pct0(c.now.fin)]))
 	rows.append(_cols(["物攻", dmg_pct(c.diff.atk), big_panel(c.base.atk), big_panel(c.now.atk)], false, c.diff.atk < 0.5))
 	rows.append(_cols(["魔攻", dmg_pct(c.diff.mat), big_panel(c.base.mat), big_panel(c.now.mat)], false, c.diff.mat < 0.5))
 	rows.append(_line("结算伤害·本层难度：" + dmg_pct(c.diff.settle)))
@@ -408,7 +408,7 @@ static func milestone_intro(seg: Dictionary) -> String:
 			var rate := pct(float(XDB.table("CodexOrbs").get("dropRate", 0.1)))
 			return intro.replace("20%", rate)
 		"c":
-			return "首通守层者可以获得真气；副本Boss可以反复挑战。积累真气、突破境界、学习道法，提升队伍能力。"
+			return "首通守层者可以获得真气；副本首领可以反复挑战。积累真气、突破境界、学习道法，提升队伍能力。"
 		"d":
 			return "打开状态界面「%s」页的难度对照，查看暴击率、爆伤、命中与攻击的变化，再通过装备、被动和真气调整队伍。" % ("修行·详细" if PANEL_V062 else "修行")
 		"g":
@@ -420,7 +420,7 @@ static func milestone_intro(seg: Dictionary) -> String:
 static func milestone_texts(seg: Dictionary) -> Array:
 	var t := ["\\C[6]%s\\C[0]　%s" % [seg.title, milestone_intro(seg)]]
 	if not seg.get("bosses", []).is_empty():
-		t.append("\\C[4]可反复刷的副本Boss\\C[0]：" + _boss_summary(seg, 4) + "。")
+		t.append("\\C[4]可反复刷的副本首领\\C[0]：" + _boss_summary(seg, 4) + "。")
 	var more: Array = seg.get("special", []).duplicate()
 	var pw := _power_line(seg)
 	if pw != "":
@@ -464,14 +464,14 @@ static func advice_texts(s: XState) -> Array:
 		elif st.canBreak:
 			cap.append(a.display_name() + "→" + str(st.next))
 	var p1 := "\\C[6]修行建议\\C[0]　路线：%s，已通过第%d层，" % [XZhenqi.route(s).name, f]
-	p1 += "守层者已全部通过，真气主要靠副本Boss、神兵试炼和溢出再动。" if f >= 33 else "下一个守层者在第%d层（每层只能打一次，首通给大量真气）。" % (f + 1)
+	p1 += "守层者已全部通过，真气主要靠副本首领、神兵试炼和溢出再动。" if f >= 33 else "下一个守层者在第%d层（每层只能打一次，首通给大量真气）。" % (f + 1)
 	if not pend.is_empty():
 		p1 += "\\C[2]待选奖励\\C[0]：" + "、".join(pend.slice(0, 6)) + (" 等" if pend.size() > 6 else "") + "——打开菜单「真气」补选。"
 	if not cap.is_empty():
 		p1 += "\\C[2]可突破\\C[0]：" + "、".join(cap.slice(0, 4)) + (" 等" if cap.size() > 4 else "") + "——打开菜单「真气」打瓶颈之战。"
 	out.append(p1)
 	if not seg.is_empty():
-		out.append("\\C[4]%s\\C[0]可反复刷：%s。胜利给抽奖券（另加 层数÷3 张）和真气（1～15层保留原奖励的1/3，16～25层保留1/2，26～33层保留2/3）；同一个副本Boss打满 1／10／50 次另给 10／30／100 张券，10 次后权能和专属书掉率×2、50 次后×3；每场另有 10%% 掉神秘珠（宝珠坊鉴定，一半出原作宝珠）。" % [seg.title, _boss_summary(seg, 5)])
+		out.append("\\C[4]%s\\C[0]可反复刷：%s。胜利给抽奖券（另加 层数÷3 张）和真气（1～15层保留原奖励的1/3，16～25层保留1/2，26～33层保留2/3）；同一个副本首领打满 1／10／50 次另给 10／30／100 张券，10 次后权能和专属书掉率×2、50 次后×3；每场另有 10%% 掉神秘珠（宝珠坊鉴定，一半出原作宝珠）。" % [seg.title, _boss_summary(seg, 5)])
 		var sp := "".join(PackedStringArray(seg.get("special", [])))
 		var pw := _power_line(seg)
 		if sp != "" or pw != "":
@@ -486,6 +486,6 @@ static func advice_texts(s: XState) -> Array:
 	if band >= 0:
 		var first = s.race_supply.get("first", {})
 		var claimed := first is Dictionary and bool(first.get(str(band + 2), false))
-		entry += "本段副本Boss提供%s，%s每累计5场再1份。" % [str(XDB.rec("Items", int(races.stones[band])).get("name", "")), "" if claimed else "首次胜利1份，"]
+		entry += "本段副本首领提供%s，%s每累计5场再1份。" % [str(XDB.rec("Items", int(races.stones[band])).get("name", "")), "" if claimed else "首次胜利1份，"]
 	out.append(entry)
 	return out

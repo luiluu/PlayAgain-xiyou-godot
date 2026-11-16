@@ -564,10 +564,10 @@ static func _dyn2(obj: Dictionary, a) -> Dictionary:
 			out["成长：魔防穿透率"] = "成长：魔防穿透率" + pc.call((1 - XRaven.defense_factor(a)) * 100)
 		if id == 10131:
 			var has := XRaven.has(a, id)
-			out["成长：专属黑暗"] = "成长：专属黑暗魔法伤害＋" + pc.call(200 + p * 100 if has else 0.0) + "；专属魔法最终伤害×" + n2.call(1 + 1.5 * minf(1, (st + p) / 5.0) if has else 1.0)
+			out["成长：专属黑暗"] = "成长：专属黑暗魔法伤害＋" + pc.call(200 + p * 100 if has else 0.0) + "；专属魔法伤害×" + n2.call(1 + 1.5 * minf(1, (st + p) / 5.0) if has else 1.0)
 		if id == 10137:
 			var pools := XRaven.growth_pools(a) if _learned(a, id) else [0.0, 0.0]
-			out["成长：爆伤"] = "成长：爆伤＋" + pc.call(pools[0]) + "；终伤＋" + pc.call(pools[1])
+			out["成长：爆伤"] = "成长：爆伤＋" + pc.call(pools[0]) + "；伤害＋" + pc.call(pools[1])
 			out["成长：专属魔法暴击率"] = "成长：专属魔法暴击率＋" + pc.call(p * 1000 if _learned(a, id) else 0.0)
 			out["成长：冥河成长倍率"] = "成长：冥河成长倍率×" + n2.call(XRaven.growth_rate(a))
 		if id == 10138:
@@ -600,7 +600,7 @@ static func _dyn2(obj: Dictionary, a) -> Dictionary:
 	if who == 171:
 		if id == 10205:
 			out["成长：最大生命"] = "成长：最大生命＋" + pc.call(lv * 10) + "；物攻、速度＋" + pc.call(lv * 5)
-			out["成长：暴击率"] = "成长：暴击率＋" + pc.call(lv * 10) + "；爆伤、终伤＋" + pc.call(lv * 40)
+			out["成长：暴击率"] = "成长：暴击率＋" + pc.call(lv * 10) + "；爆伤、伤害＋" + pc.call(lv * 40)
 		if id == 10205 or id == 10211 or (id >= 10216 and id <= 10223):
 			out["成长：咒具成长系数"] = "成长：咒具成长系数×" + num(roundf(XToji.output_growth_at(lv, id == 10205 or (id >= 10216 and id <= 10219)) * 1000.0) / 1000.0)
 	if who == 172:
@@ -638,7 +638,7 @@ static func _dyn2(obj: Dictionary, a) -> Dictionary:
 			if id == 10276:
 				# Y.offensiveGrowth：n＝min(99,等级)−24（不小于 0），暴伤 1.88n、终伤 0.1888n
 				var n := float(maxi(0, mini(99, lv) - 24)) if yh.call(10276) else 0.0
-				t += "；爆伤＋" + pc.call(n * 1.88 * 100) + "；终伤＋" + pc.call(n * 0.1888 * 100)
+				t += "；爆伤＋" + pc.call(n * 1.88 * 100) + "；伤害＋" + pc.call(n * 0.1888 * 100)
 			out["成长：生命、魔攻、敏捷成长"] = t
 	return out
 
