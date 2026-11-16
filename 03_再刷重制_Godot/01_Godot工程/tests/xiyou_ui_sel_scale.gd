@@ -470,13 +470,32 @@ func _shot_options() -> Node:
 	return page
 
 
+func _ws_state() -> XState:   # 同 xiyou_ui_skin_3b：有一件异化装备、一枚核，列表不空
+	var ids := XTier.ids(XTier.WEAK).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not XActorModules.IDS.has(id)).slice(0, 4)
+	var s := XTianqi.start_new_game(3, "jianxian", ids)
+	XTianqi.take_pending()
+	for id in ids:
+		XTianqi._joining = true
+		s.add_actor(int(id))
+		XTianqi._joining = false
+	s.map_id = 0
+	XState.current = s
+	s.flags.tianqi["line"] = "plague"
+	s.gain_item(XAlienation.stone_id(), 3)
+	s.gear.append(XTianqiAlienGear.create(s, "armor", 52, "plague", "huaxing", "mimic").ok)
+	XTianqiAlienGear.add_core(s, "plague", "insulation", "shigu", "test")
+	s.gain_gear("armor", 53, 1)
+	return s
+
+
 func _shot_workshop() -> Node:
-	_state("plague")
+	_ws_state()
 	XAlienWorkshop.selected = ""
 	var page := XAlienWorkshop.new()
 	add_child(page)
 	await frames(4)
-	var btn := _all(page, func(n): return n is Button and n.visible and n.focus_mode != Control.FOCUS_NONE and not (n as Button).disabled)
+	var lst: Node = _all(page, func(n): return n.name == "SkinList").front() if not _all(page, func(n): return n.name == "SkinList").is_empty() else page
+	var btn := _all(lst, func(n): return n is Button and n.is_visible_in_tree() and n.focus_mode != Control.FOCUS_NONE)
 	if not btn.is_empty():
 		(btn[0] as Button).grab_focus()
 	return page
