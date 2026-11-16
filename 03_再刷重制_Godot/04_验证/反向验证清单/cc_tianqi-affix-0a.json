@@ -1,0 +1,56 @@
+{
+ "tests": [
+  "xiyou_tianqi_weak_affix"
+ ],
+ "items": [
+  {
+   "name": "掩护不跳过引导者",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+   "find": "\tif XTianqiWeakAffix.guided(self, t):\n\t\treturn t  #",
+   "replace": "\tif false and XTianqiWeakAffix.guided(self, t):\n\t\treturn t  #"
+  },
+  {
+   "name": "逐段不复查（execute 路）",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_weak_affix.gd",
+   "find": "\tif bool(g.active) and legal(logic, t):\n\t\treturn t",
+   "replace": "\tif true:\n\t\treturn t"
+  },
+  {
+   "name": "不认暂不倒下 0 血",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_weak_affix.gd",
+   "find": "if b == null or b.is_dead() or (b.immortal and b.hp <= 0.0):",
+   "replace": "if b == null or b.is_dead():"
+  },
+  {
+   "name": "三层改过仍引导",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_weak_affix.gd",
+   "find": "if not _active(logic) or forcing or layers_changed or list.size()",
+   "replace": "if not _active(logic) or forcing or list.size()"
+  },
+  {
+   "name": "派生也记直接命中",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_weak_affix.gd",
+   "find": "if f.is_empty() or _kind(f) != ROOT or not is_same(u, f.user) or u == null",
+   "replace": "if f.is_empty() or not is_same(u, f.user) or u == null"
+  },
+  {
+   "name": "多动重置每回合次数",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_weak_affix.gd",
+   "find": "\tst.roots = int(st.roots) + 1\n",
+   "replace": "\tst.turn_used.clear()\n\tst.roots = int(st.roots) + 1\n"
+  },
+  {
+   "name": "派生打混子照记",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_horsemen.gd",
+   "find": "if not XTianqiWeakAffix.not_own_action(logic):",
+   "replace": "if true:"
+  },
+  {
+   "name": "多个引导者不取靠前",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_weak_affix.gd",
+   "find": "if best == null or side.find(g) < side.find(best):",
+   "replace": "if true:"
+  }
+ ],
+ "说明": "cc/tianqi-affix-0a 批 0A 的反向验证。「回原目标也收尾」没列：两条多段路里暂不倒下只挂在引导者身上，回去打的原目标本来就当场倒下，那一行是防御性的（v0.3.1 第二节第 1 条），现有路径碰不到。"
+}

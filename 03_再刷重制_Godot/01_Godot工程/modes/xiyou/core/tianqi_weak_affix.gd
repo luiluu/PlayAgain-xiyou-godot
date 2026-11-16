@@ -182,6 +182,10 @@ static func unit(logic, a) -> Dictionary:
 		return {}
 	var units: Dictionary = _store(logic).units
 	var sig := ",".join(active_keys(logic, a))
+	if sig != "":
+		for i in rules().get("slots", [0, 1]):
+			var slot := int(i)
+			sig += "|%d" % (hash(a.equips[slot]) if slot < a.equips.size() and a.equips[slot] is Dictionary else 0)  # 换了别的一件也算换装
 	var u = units.get(a)
 	if not (u is Dictionary) or str(u.sig) != sig:
 		u = {"sig": sig, "stock": {}}
@@ -212,6 +216,8 @@ static func root_begin(logic, u, skill) -> void:
 	if not _active(logic):
 		return
 	var st := _store(logic)
+	for a in st.units.keys():
+		unit(logic, a)  # 根与根之间换过装、离过场、倒下过的：在这里对签名，变了从零起
 	st.roots = int(st.roots) + 1
 	st.frames.append({"id": int(st.roots), "user": u, "skill": _skill_key(skill), "forced": false,
 		"kinds": [ROOT], "used": {}, "hits": [], "guide": {}, "finish": []})
