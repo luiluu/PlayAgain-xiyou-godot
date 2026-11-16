@@ -168,14 +168,15 @@ func _d126() -> void:
 			troops.append(id)
 	_check("d126_super_troops", troops.is_empty(), troops)
 	_check("d126_dota", _rec("Enemies", 2027).name == "【远古首领】ROSHAN" and _rec("Troops", 2029).name == "【远古首领】肉山宝宝", [_rec("Enemies", 2027).name, _rec("Troops", 2029).name])
-	# 新前缀单独也认首领；旧前缀照旧认
+	# 【霸主】单独也认首领；旧前缀照旧认；【远古首领】（原 DOTABOSS）照旧不认
 	var probe := XEnemy.new().setup(850, 1, 100.0)
 	var ok := true
-	for pre in ["霸主", "远古首领", "超级Boos", "超级Boss"]:
+	for pre in ["霸主", "超级Boos", "超级Boss"]:
 		probe.horseman = {"rec": {"id": 999999, "name": "【%s】测试" % pre, "note": ""}}
 		ok = ok and XZhenqi.is_boss_enemy(probe)
-	probe.horseman = {"rec": {"id": 999999, "name": "【测试】测试", "note": ""}}
-	_check("d126_prefix_regex", ok and not XZhenqi.is_boss_enemy(probe))
+	probe.horseman = {"rec": {"id": 999999, "name": "【远古首领】测试", "note": ""}}
+	# 原【DOTABOSS】本来不按名认首领（对照参照），改名后行为不变
+	_check("d126_prefix_regex", ok and not XZhenqi.is_boss_enemy(probe) and not XZhenqi.is_boss_enemy(XEnemy.new().setup(2027, 1, 100.0)))
 	_check("d126_names", _rec("Enemies", 871).name == "见证使者" and _rec("Items", 2451).name == "晨星币", [_rec("Enemies", 871).name, _rec("Items", 2451).name])
 	# 18 层讨债台词不改：XTianqiSect.rewrite_message 按「天道使者」原文认它
 	var kept := false

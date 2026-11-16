@@ -264,7 +264,7 @@ static func is_boss_enemy(e: XEnemy) -> bool:
 		return true
 	if RegEx.create_from_string("(?i)<boss(?:\\s*:[^>]*)?\\s*>|BOSS级怪物").search(str(d.get("note", ""))):
 		return true
-	return RegEx.create_from_string("【(首领|守层者|守护者|被封印者|未知存在|超级Boos|超级Boss|霸主|远古首领|前所未见|终焉恐惧|神兵)】").search(str(d.get("name", ""))) != null
+	return RegEx.create_from_string("【(首领|守层者|守护者|被封印者|未知存在|超级Boos|超级Boss|霸主|前所未见|终焉恐惧|神兵)】").search(str(d.get("name", ""))) != null
 
 
 # ---- 战斗钩子（BattleLogic 调用）----
