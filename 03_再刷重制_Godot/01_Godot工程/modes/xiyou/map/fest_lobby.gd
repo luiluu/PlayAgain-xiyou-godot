@@ -24,9 +24,9 @@ const FIRST_EV := 78
 const ENVOY_EV := 78
 const ENROLL_EV := 79
 const TROPHY_EVS := [80, 81]
-const ENVOY_CELL := Vector2i(23, 17)
-const ENROLL_CELL := Vector2i(20, 17)
-const TROPHY_CELLS := [Vector2i(21, 17), Vector2i(22, 17)]
+const ENVOY_CELL := Vector2i(23, 15)
+const ENROLL_CELL := Vector2i(20, 15)
+const TROPHY_CELLS := [Vector2i(21, 15), Vector2i(22, 15)]
 ## 使者、报名处的行走图（现成的：文件名、第几个角色，朝下）
 const ENVOY_SPRITE := ["People14", 2]
 const ENROLL_SPRITE := ["People13", 5]
@@ -44,7 +44,7 @@ const BANNER_SIZE := Vector2(768, 96)
 const BANNER_POS := Vector2(264, 23 * TS)
 ## co 给的字的安全区（图内像素）：x1, y1, x2, y2
 const BANNER_TEXT_RECT := Rect2(110, 20, 548, 38)
-const TROPHY_FOOT := Vector2(22 * TS, 18 * TS)   # 奖杯脚底中心（占 21、22 两列、行 17 的下沿）
+const TROPHY_FOOT := Vector2(22 * TS, 16 * TS)   # 奖杯脚底中心（占 21、22 两列、行 15 的下沿；使者、报名处在两侧 23、20 列）
 const TROPHY_ANCHOR := Vector2(56, 167)
 
 const MAX_CONFETTI := 46
