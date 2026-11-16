@@ -35,12 +35,12 @@ const TITLE_ROAD_HARD := 45   # 已并进 41，只留编号做迁移
 const TITLE_ONE_FOUR_HARD := 46  # 一穿四·洪荒（金红）：洪荒档一次不败连穿
 const TITLE_ONE_FOUR_DISASTER := 47  # 一穿四·天灾（橙）：天灾档一次不败连穿
 const TITLES := [
-	{"id": TITLE_ROAD, "name": "冠军之路", "icon": 1469, "color": "#f5f7fa"},
-	{"id": TITLE_ONE_FOUR, "name": "一穿四", "icon": 2506, "color": "#ffd700"},
-	{"id": TITLE_WATCH, "name": "冠军观赛团", "icon": 1800, "color": "#00bfff"},
-	{"id": TITLE_ATTEND, "name": "全勤观众", "icon": 2607, "color": "#00ff00"},
-	{"id": TITLE_ONE_FOUR_DISASTER, "name": "一穿四·天灾", "icon": 2506, "color": "#ff8c00"},
-	{"id": TITLE_ONE_FOUR_HARD, "name": "一穿四·洪荒", "icon": 2506, "color": "#ff4500"},
+	{"id": TITLE_ROAD, "name": "冠军之路", "icon": 6420, "color": "#f5f7fa"},
+	{"id": TITLE_ONE_FOUR, "name": "一穿四", "icon": 6421, "color": "#ffd700"},
+	{"id": TITLE_WATCH, "name": "冠军观赛团", "icon": 6424, "color": "#00bfff"},
+	{"id": TITLE_ATTEND, "name": "全勤观众", "icon": 6425, "color": "#00ff00"},
+	{"id": TITLE_ONE_FOUR_DISASTER, "name": "一穿四·天灾", "icon": 6422, "color": "#ff8c00"},
+	{"id": TITLE_ONE_FOUR_HARD, "name": "一穿四·洪荒", "icon": 6423, "color": "#ff4500"},
 ]
 
 ## 存档里活动数据都放在 flags 这一个键下（每个存档各算各的）：{"coins": 庆典币, "road": 冠军之路进度, …}；旧档没有就当空

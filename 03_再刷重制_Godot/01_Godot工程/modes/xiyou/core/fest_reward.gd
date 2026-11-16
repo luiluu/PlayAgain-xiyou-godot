@@ -43,7 +43,7 @@ const PARTY := 179
 ## 成就编号（接在原版 1～141、重制 142／143 之后）
 const ACHIEVEMENT_IDS := {"scene": 144, "road": 145, "one_four": 146, "attend": 147}
 const ACHIEVEMENT_TYPE := "节日"
-const ACHIEVEMENT_ICONS := {"scene": 1800, "road": 1469, "one_four": 2506, "attend": 2607}
+const ACHIEVEMENT_ICONS := {"scene": 6424, "road": 6420, "one_four": 6421, "attend": 6425}
 
 ## 读档后要在进地图时弹的提示（after_load 填，map_start 放）
 static var _pending: Array = []
