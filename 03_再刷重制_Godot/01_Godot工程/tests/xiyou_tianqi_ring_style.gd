@@ -12,6 +12,7 @@ var results := []
 var out_dir := ""
 var off_shot := ""
 var orb_shots := ""
+var fx_shots := ""
 
 
 func _ready() -> void:
@@ -20,6 +21,8 @@ func _ready() -> void:
 			out_dir = arg.substr(6)
 		elif arg.begins_with("--orb-shots="):
 			orb_shots = arg.substr(12)
+		elif arg.begins_with("--fx-shots="):
+			fx_shots = arg.substr(11)
 		elif arg.begins_with("--off-shot="):
 			off_shot = arg.substr(11)
 	_run.call_deferred()
@@ -50,9 +53,12 @@ func _run() -> void:
 		await _off_shot_only()
 	elif orb_shots != "":
 		await _orb_shots_only()
+	elif fx_shots != "":
+		await _fx_shots_only()
 	else:
 		_rules()
 		_textures()
+		await _orb_fx_frames()
 		_intro_kinds()
 		await _page()
 		await _no_overlap()
@@ -213,6 +219,8 @@ func _rules() -> void:
 	r = R.resolve(a)
 	check("rule_dual_two_tints", (r.orbs as Dictionary).size() == 2 and r.orbs[0].tint == R.seal_tint("hei") and r.orbs[1].tint == R.seal_tint("bai"), r)
 	# 球框两档（D108／D109）：专属武器（不论刻没刻印）套斜角框＋特效；神话及以上武器淡框；两档都中取特殊；只管槽位 0、1
+	# （T047 起默认 ORB_FX＝tiers；这一段在 sweep 档跑，同时就是「改回 sweep＝T044 原样」的回退断言）
+	R.ORB_FX = "sweep"
 	_clear(a)
 	var excl := {"kind": "weapon", "wtypeId": 1, "etypeId": 1, "note": "<req_actors: 1>"}
 	a.equips[0] = _gear({}, excl)
@@ -253,6 +261,11 @@ func _rules() -> void:
 	check("tier_switch_off_main_behavior", (R.resolve(a).orbs as Dictionary).is_empty())
 	R.ORB_TIERS = true
 	_clear(a)
+	a.equips[5] = _gear({}, {"meta": {"quality": "9"}})
+	check("tier_sweep_rollback_no_heirloom", (R.resolve(a).orbs as Dictionary).is_empty(), R.resolve(a).orbs)
+	R.ORB_FX = "tiers"
+	_clear(a)
+	_fx_tiers(a, wk_hei, wk_bai)
 	# 备注挂球框
 	_clear(a)
 	a.equips[9] = _gear({}, {"note": "<ring_style:orb_seal:zhen>"})
@@ -278,6 +291,174 @@ func _rules() -> void:
 	XState.current = s
 	# 指纹
 	check("rule_sig_changes", R.resolve(a).sig != R.resolve(b).sig and R.resolve(a).sig == R.resolve(a).sig)
+
+
+## D113 四档（T047）：分档、多档取高、栏位、回退
+func _fx_tiers(a: XActor, wk_hei: String, wk_bai: String) -> void:
+	var R := XTianqiRingStyle
+	var F := XSkinOrbFx
+	var excl := {"kind": "weapon", "wtypeId": 1, "etypeId": 1, "note": "<req_actors: 1>"}
+	var myth := {"kind": "weapon", "wtypeId": 1, "etypeId": 1, "meta": {"quality": "14"}}
+	var plain_w := {"kind": "weapon", "wtypeId": 1, "etypeId": 1}
+	var zy := {"alien": {"uid": "alien-1", "tq": {"line": "war", "level": "zhongyan"}}}
+	var grad := {"kind": "weapon", "seal": "hei", "key": wk_hei, "true_seal": false}
+	var eng := {"kind": "engrave", "key": wk_bai}
+	check("fx_rank_order", F.rank("flame") > F.rank("seal7") and F.rank("seal7") > F.rank("stars") and F.rank("stars") > F.rank("glint") and F.rank("glint") > F.rank(""))
+	check("fx_default_tiers", R.ORB_FX == "tiers")
+	# 每一档单独命中
+	a.equips[0] = _gear(eng, excl)
+	var r := R.resolve(a)
+	check("fx_flame_engraved_exclusive", r.orbs[0].fx == "flame" and r.orbs[0].style == "orb_seal" and r.orbs[0].tint == R.seal_tint("bai"), r.orbs)
+	_clear(a)
+	a.equips[1] = _gear({}, plain_w.merged(zy))
+	r = R.resolve(a)
+	check("fx_flame_zhongyan_weapon", (r.orbs as Dictionary).keys() == [1] and r.orbs[1].fx == "flame" and r.orbs[1].style == "orb_seal" and r.orbs[1].tint == R.seal_tint(""), r.orbs)
+	_clear(a)
+	a.equips[ARMOR[1]] = _gear({}, zy)
+	check("fx_zhongyan_armor_no_flame", (R.resolve(a).orbs as Dictionary).is_empty(), R.resolve(a).orbs)
+	a.equips[ARMOR[1]] = {}
+	a.equips[0] = _gear({}, plain_w.merged({"alien": {"tq": {"line": "war", "level": "jiehuo"}}}))
+	check("fx_lower_alien_no_flame", (R.resolve(a).orbs as Dictionary).is_empty(), R.resolve(a).orbs)
+	a.equips[0] = _gear(grad)
+	r = R.resolve(a)
+	check("fx_seal7_graduation", r.orbs[0].fx == "seal7" and r.orbs[0].tint == R.seal_tint("hei"), r.orbs)
+	_clear(a)
+	a.equips[0] = _gear({}, excl)
+	check("fx_stars_exclusive", R.resolve(a).orbs[0].fx == "stars" and R.resolve(a).orbs[0].tint == R.seal_tint(""), R.resolve(a).orbs)
+	_clear(a)
+	a.equips[ARMOR[3]] = _gear({}, {"meta": {"quality": "9"}})   # 传家宝防具：不在武器栏也出
+	a.equips[ART] = _gear({}, {"etypeId": 17, "note": "<KyoUnique: 测试>"})   # 独特物件在神器栏
+	a.equips[NECK] = _gear({}, {"etypeId": 9, "meta": {"quality": "8"}})   # 不朽非传家宝：不出
+	r = R.resolve(a)
+	check("fx_stars_any_slot", (r.orbs as Dictionary).has(ARMOR[3]) and r.orbs[ARMOR[3]].fx == "stars" and (r.orbs as Dictionary).has(ART) and r.orbs[ART].fx == "stars"
+		and r.orbs[ART].style == "orb_seal" and not (r.orbs as Dictionary).has(NECK), r.orbs)
+	_clear(a)
+	a.equips[0] = _gear({}, myth)
+	r = R.resolve(a)
+	check("fx_glint_mythic_outline", r.orbs[0].style == "orb_tier" and r.orbs[0].fx == "glint" and r.orbs[0].tint == R.orb_tier_tint(XQuality.color(a.equips[0])) and float(r.orbs[0].outline_w) == 2.0, r.orbs)
+	_clear(a)
+	a.equips[9] = _gear({}, myth)
+	a.equips[ARMOR[0]] = _gear({}, {"meta": {"quality": "14"}})
+	check("fx_glint_weapon_slots_only", (R.resolve(a).orbs as Dictionary).is_empty(), R.resolve(a).orbs)
+	_clear(a)
+	a.equips[1] = _gear({}, {"kind": "armor", "atypeId": 1, "etypeId": 3, "meta": {"quality": "14"}})
+	check("fx_glint_not_on_armor_slot1", (R.resolve(a).orbs as Dictionary).is_empty())
+	# 同时命中两档：取高
+	_clear(a)
+	a.equips[0] = _gear(eng, excl.merged({"meta": {"quality": "14"}}))   # 灵焰＋双星＋微光 → 灵焰
+	a.equips[1] = _gear(grad, myth)   # 七印封缄＋微光 → 七印封缄
+	r = R.resolve(a)
+	check("fx_two_tiers_flame_over_stars_glint", r.orbs[0].fx == "flame", r.orbs)
+	check("fx_two_tiers_seal7_over_glint", r.orbs[1].fx == "seal7" and r.orbs[1].style == "orb_seal", r.orbs)
+	a.equips[0] = _gear(grad, plain_w.merged(zy).merged({"note": "<KyoUnique: 测试>", "meta": {"quality": "9"}}))   # 毕业武器带终焉核＋独特＋传家宝 → 灵焰
+	check("fx_two_tiers_flame_over_seal7", R.resolve(a).orbs[0].fx == "flame" and R.resolve(a).orbs[0].tint == R.seal_tint("hei"), R.resolve(a).orbs)
+	check("fx_two_tiers_seal7_over_stars", R.fx_tier(_gear(grad, {"kind": "weapon", "note": "<KyoUnique: 测试>"}), 0) == "seal7")
+	a.equips[1] = _gear({}, excl.merged({"meta": {"quality": "14"}}))   # 双星＋微光 → 双星
+	check("fx_two_tiers_stars_over_glint", R.resolve(a).orbs[1].fx == "stars" and R.resolve(a).orbs[1].style == "orb_seal", R.resolve(a).orbs)
+	check("fx_two_tiers_zhongyan_heirloom", R.fx_tier(_gear({}, plain_w.merged(zy).merged({"meta": {"quality": "9"}})), 0) == "flame")
+	check("fx_tier_unit_glint_slot_gate", R.fx_tier(_gear({}, myth), 0) == "glint" and R.fx_tier(_gear({}, myth), 1) == "glint" and R.fx_tier(_gear({}, myth), 2) == "")
+	# 指纹带上特效档：同框同色换档也算变
+	_clear(a)
+	a.equips[0] = _gear({}, excl)
+	var s1: String = R.resolve(a).sig
+	a.equips[0] = _gear({}, plain_w.merged(zy))
+	check("fx_sig_has_tier", s1 != R.resolve(a).sig, [s1, R.resolve(a).sig])
+	# 开关
+	R.ORB_TIERS = false
+	check("fx_tiers_switch_off_empty", (R.resolve(a).orbs as Dictionary).is_empty())
+	R.ORB_TIERS = true
+	R.ORB_FX = "sweep"
+	check("fx_sweep_rollback_zhongyan_none", (R.resolve(a).orbs as Dictionary).is_empty(), R.resolve(a).orbs)
+	a.equips[0] = _gear({}, excl)
+	check("fx_sweep_rollback_t044", R.resolve(a).orbs[0].fx == "sweep")
+	R.ORB_FX = "tiers"
+	_clear(a)
+
+
+## 四档帧图：二值 alpha、半径 ≤ 28、不出正红、会动、静帧固定；nav 动效档
+func _orb_fx_frames() -> void:
+	var F := XSkinOrbFx
+	for kind in F.KINDS:
+		var ok := true
+		var maxr := 0.0
+		var reds := 0
+		var lit := 0
+		for fr in [0, F.STILL, F.FRAMES - 1]:
+			var img := F.image(kind, fr)
+			for y in F.SIZE:
+				for x in F.SIZE:
+					var p := img.get_pixel(x, y)
+					if p.a8 != 0 and p.a8 != 255:
+						ok = false
+					if p.a8 > 0:
+						lit += 1
+						maxr = maxf(maxr, Vector2(x - F.C, y - F.C).length())
+						if p.r8 >= XTianqiRingStyle.RED_R and p.g8 <= XTianqiRingStyle.RED_G and p.b8 <= XTianqiRingStyle.RED_B:
+							reds += 1
+		check("fxframe_%s_binary_alpha" % kind, ok)
+		check("fxframe_%s_within_28" % kind, maxr <= 28.0 and lit > 0, maxr)
+		check("fxframe_%s_no_red" % kind, reds == 0, reds)
+		check("fxframe_%s_animates" % kind, F.image(kind, 0).get_data() != F.image(kind, F.STILL).get_data())
+		print("ORB_FX_MAX_R %s=%.2f" % [kind, maxr])
+	var g22 := F.image("glint", 0, 22.0)
+	var gr := 0.0
+	for y in F.SIZE:
+		for x in F.SIZE:
+			if g22.get_pixel(x, y).a8 > 0:
+				gr = maxf(gr, Vector2(x - F.C, y - F.C).length())
+	check("fxframe_glint_follows_orb_r", gr <= 23.5 and gr >= 21.5, gr)
+	check("fxframe_still_fixed", F.frame_of("flame", 0.37, 0.5, true) == F.STILL and F.frame_of("flame", 0.0, 0.0, false) == 0 and F.frame_of("flame", 0.72, 0.0, false) == F.FRAMES / 2)
+	var b0 := F.built
+	F.texture("stars", 3)
+	F.texture("stars", 3)
+	check("fxframe_cached", F.built <= b0 + 1)
+	# nav：减动效（简化、关）停在静帧；全部会动
+	var rn := XSkinRingNav.new()
+	rn.size = Vector2(800, 600)
+	rn.items = [{"name": "甲"}, {"name": "乙"}]
+	var ft := XTianqiRingStyle.texture("ring_orb_frame.png", "orb")
+	rn.orb_frames = {0: {"tex": ft, "tint": Color.WHITE, "fx": "stars"}, 1: {"outline": Color("d9925c"), "outline_w": 2.0, "fx": "glint"}}
+	add_child(rn)
+	for lvl in [XUiSkin.Motion.OFF, XUiSkin.Motion.SIMPLE]:
+		XUiSkin.motion_override = lvl
+		rn._spin = 0.8
+		rn.queue_redraw()
+		await frames(2)
+		check("fxnav_still_motion_%d" % lvl, rn.orb_fx_drawn.get(0, []) == ["stars", F.STILL] and rn.orb_fx_drawn.get(1, []) == ["glint", F.STILL], rn.orb_fx_drawn)
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	rn._spin = 0.0
+	rn.queue_redraw()
+	await frames(1)
+	var f0: Array = rn.orb_fx_drawn.get(0, [])
+	rn._spin = 0.5
+	rn.queue_redraw()
+	await frames(1)
+	check("fxnav_full_animates", not f0.is_empty() and rn.orb_fx_drawn.get(0, []) != f0 or not XUiSkin.breathing(), [f0, rn.orb_fx_drawn])
+	check("fxnav_offhand_half_phase", F.frame_of("stars", 0.0, 0.5, false) == F.FRAMES / 2)
+	# 帧耗时：13 栏全亮（13 颗斜角框＋特效），_draw_layers 每帧微秒（同 T034 的 200 帧平均口径）；对照 T044 sweep、无特效
+	var items := []
+	for k in 13:
+		items.append({"name": "栏%d" % k})
+	rn.items = items
+	rn._spin = 0.3
+	var res := {}
+	for mode in ["none", "sweep", "stars", "flame", "seal7", "mix"]:
+		var fr := {}
+		for k in 13:
+			var fx: String = mode if mode != "none" and mode != "mix" else ("" if mode == "none" else ["flame", "seal7", "stars", "stars"][k % 4])
+			fr[k] = {"tex": ft, "tint": Color.WHITE, "fx": fx}
+		rn.orb_frames = fr
+		rn._draw_layers()   # 预热（帧贴图生成）
+		var t0 := Time.get_ticks_usec()
+		for f in 200:
+			rn._spin += 0.016
+			rn._draw_layers()
+		res[mode] = (Time.get_ticks_usec() - t0) / 200.0
+	print("ORB_FX_US（13 栏全亮 _draw_layers，200 帧平均，动效全部）" + JSON.stringify(res))
+	check("fxperf_13_lit_reasonable", float(res.stars) < float(res.sweep) * 3.0 + 200.0, res)
+	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	rn.queue_free()
+	await frames(1)
 
 
 func _textures() -> void:
@@ -916,6 +1097,81 @@ func _orb_shots_only() -> void:
 	R.ORB_TIERS = true
 	pg.queue_free()
 	await frames(3)
+	XUiSkin.motion_override = XUiSkin.Motion.OFF
+
+
+## T047 四档特效截图：每档 16:9（键鼠 100％）、20:9（触屏 130％）各一张＋环区放大，另加 20:9 的 13 栏混合一张；动效全部、定相位
+func _fx_loadout(a: XActor, kind: String, keys: Array) -> void:
+	_clear(a)
+	var wk := str((XTianqiQiyinGear.weapons_of_seal("hei")[0] as Dictionary).key)
+	var wb := str((XTianqiQiyinGear.weapons_of_seal("bai")[0] as Dictionary).key)
+	var excl := {"kind": "weapon", "wtypeId": 1, "etypeId": 1, "note": "<req_actors: 1>"}
+	var myth := {"kind": "weapon", "wtypeId": 1, "etypeId": 1, "meta": {"quality": "14"}}
+	match kind:
+		"flame":
+			a.equips[0] = _gear({"kind": "engrave", "key": wb}, excl)
+			a.equips[1] = _gear({}, {"kind": "weapon", "wtypeId": 1, "etypeId": 1, "alien": {"uid": "alien-shot", "origin": "boss", "affix": "inversebone", "pool": ["inversebone"], "config": {}, "plainName": "测试件", "lastName": "", "tq": {"line": "war", "level": "zhongyan"}}})
+		"seal7":
+			a.equips[0] = _gear({"kind": "weapon", "seal": "hei", "key": wk, "true_seal": false})
+			a.equips[1] = _gear({"kind": "weapon", "seal": "bai", "key": wb, "true_seal": false})
+		"stars":
+			a.equips[0] = _gear({}, excl)
+			a.equips[ARMOR[2]] = _gear({}, {"meta": {"quality": "9"}})
+			a.equips[ART] = _gear({}, {"etypeId": 17, "note": "<KyoUnique: 测试>"})
+		"glint":
+			a.equips[0] = _gear({}, myth)
+			a.equips[1] = _gear({}, myth)
+		"mix":   # 13 栏都有东西：0 灵焰、1 神话微光、其余一半双星（传家宝／独特）一半普通件
+			a.equips[0] = _gear({"kind": "engrave", "key": wb}, excl)
+			a.equips[1] = _gear({}, myth)
+			var n := 0
+			for k in keys:
+				if int(k) <= 1 or int(k) >= a.equips.size():
+					continue
+				a.equips[int(k)] = _gear({}, {"meta": {"quality": "9"}} if n % 2 == 0 else {"note": "<KyoUnique: 测试>"} if n % 4 == 1 else {"meta": {"quality": "6"}})
+				n += 1
+
+
+func _fx_shots_only() -> void:
+	DirAccess.make_dir_recursive_absolute(fx_shots)
+	XTianqiRingStyle.ORB_FX = "tiers"
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	var names := {"flame": "灵焰外溢", "seal7": "七印封缄", "stars": "双星巡轨", "glint": "微光扫框", "mix": "13栏混合"}
+	for kind in ["flame", "seal7", "stars", "glint", "mix"]:
+		for sz in [SIZES[0], SIZES[2]]:
+			if kind == "mix" and sz[1] != "20x9":
+				continue
+			var touch: bool = sz[1] == "20x9"
+			get_window().size = sz[0]
+			XUiSkin.touch_override = 1 if touch else 0
+			XFontScale.set_value("global", 130 if touch else 100)
+			await frames(4)
+			var page := await _build_equip()
+			var keys := []
+			for it in page.skin.ring.items:
+				keys.append(int(it.get("key", -1)))
+			_fx_loadout(page.actor(), kind, keys)
+			await _bump(page)
+			for k in 4:
+				page._unhandled_input(_key("ui_down"))
+			await frames(4)
+			page.skin.ring._spin = 0.25
+			page.skin.ring.queue_redraw()
+			var img := await _grab()
+			var tag := "%s_%s%s" % [names[kind], sz[1], "_触屏130" if touch else ""]
+			check("fx_shot_" + tag, img.save_png(fx_shots.path_join("球框四档_%s.png" % tag)) == OK)
+			var ring: XSkinRingNav = page.skin.ring
+			var c := ring.get_global_transform_with_canvas() * ring.center()
+			var far := ring.radius
+			for i in ring.items.size():
+				far = maxf(far, (ring.item_pos(i) - ring.center()).length())
+			var half := int(far + 60.0)
+			var rc := Rect2i(Vector2i(c) - Vector2i(half, half), Vector2i(half * 2, half * 2)).intersection(Rect2i(Vector2i.ZERO, img.get_size()))
+			var crop := img.get_region(rc)
+			crop.resize(rc.size.x * 2, rc.size.y * 2, Image.INTERPOLATE_NEAREST)
+			check("fx_shot_zoom_" + tag, crop.save_png(fx_shots.path_join("球框四档_%s_放大.png" % tag)) == OK)
+			page.queue_free()
+			await frames(3)
 	XUiSkin.motion_override = XUiSkin.Motion.OFF
 
 

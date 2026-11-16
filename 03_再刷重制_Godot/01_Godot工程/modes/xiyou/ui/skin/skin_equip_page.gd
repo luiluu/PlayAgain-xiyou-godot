@@ -447,6 +447,8 @@ func apply_ring_style(res: Dictionary) -> void:
 			var ob: Dictionary = orbs[slot]
 			if str(ob.get("style", "")) == "orb_tier":   # 淡框：不用图，nav 画一圈品质色 2px 描边
 				frames[i] = {"outline": ob.get("tint", Color.WHITE), "outline_w": float(ob.get("outline_w", 2.0))}
+				if str(ob.get("fx", "")) != "":   # D113：神话淡框叠微光
+					frames[i]["fx"] = str(ob.fx)
 			else:
 				var fa: Dictionary = XTianqiRingStyle.style(str(ob.get("style", ""))).get("art", {})
 				var tex := XTianqiRingStyle.texture(str(fa.get("frame", "")), "orb")

@@ -19,8 +19,12 @@ static var GLINT := true
 ## O-541（D108／D109）：false＝球框只认毕业武器、刻印专属武器、备注件（回到 main 行为）；true＝再加两档：
 ## 专属武器（不论刻没刻印）套斜角框＋特效；神话及以上武器只把球描边换成品质色 2px。只管槽位 0、1
 static var ORB_TIERS := true
-## 特殊球框的特效：""＝无、"sweep"＝微光沿框扫过、"breath"＝亮度呼吸。动效档「关」时不动（nav 判）。默认 sweep，两种各截图给 Kyo 挑
-static var ORB_FX := "sweep"
+## 特殊球框的特效：""＝无、"sweep"＝微光沿框扫过、"breath"＝亮度呼吸（这三样是 T044 的样子：特殊武器同一特效、神话淡框无特效）；
+## "tiers"＝D113 按档分四种（O-待定，T047）：灵焰外溢 flame（刻过七印的专属武器、刻了终焉级异化核的武器）＞七印封缄 seal7（毕业武器）＞
+## 双星巡轨 stars（传家宝 旧档 9、专属武器、备注 <KyoUnique> 的独特物件，不论哪一栏）＞微光扫框 glint（神话及以上武器，只槽位 0、1，叠在淡框上）；
+## 多档同时命中取高。回退：改回 "sweep" 就是 T044 原样。动效档不是「全部」时 tiers 停在一帧、sweep／breath 不画（nav 判）
+static var ORB_FX := "tiers"
+const LEGACY_HEIRLOOM := 9   # 旧档 9＝传家宝（XQuality 头注释）
 const WEAPON_SLOTS := [0, 1]
 const MYTHIC_GRADE := 6
 
@@ -177,17 +181,28 @@ static func resolve(actor, party: Array = [], s = null) -> Dictionary:
 				seal = str(m.get("seal", ""))
 			"engrave":
 				seal = str(XTianqiQiyinGear.weapon(str(m.get("key", ""))).get("seal", ""))
+		var tiers := ORB_TIERS and ORB_FX == "tiers"
+		var tier := fx_tier(e, sl) if tiers else ""
 		if seal != "" and _has_rule("qiyin_weapon" if str(m.kind) == "weapon" else "qiyin_engrave"):
 			out.orbs[sl] = {"style": "orb_seal", "tint": seal_tint(seal)}
 			if ORB_TIERS:
-				out.orbs[sl]["fx"] = ORB_FX
+				out.orbs[sl]["fx"] = tier if tiers else ORB_FX
 			continue
 		var tag := note_tag(e)
 		if not tag.is_empty() and _has_rule("item_tag") and str(style(str(tag[0])).get("layer", "")) == "orb":
 			out.orbs[sl] = {"style": str(tag[0]), "tint": seal_tint(str(tag[1])) if str(tag[1]) != "" else Color.html(str(style(str(tag[0])).get("tint", "#e3bd72")))}
+			if tier != "":
+				out.orbs[sl]["fx"] = tier
+			continue
+		# D113 四档：灵焰、双星的件套斜角框（中性旧金），微光的件是淡框＋微光（七印封缄只有毕业武器，上面已出）
+		if tiers and tier != "":
+			if tier == "glint":
+				out.orbs[sl] = {"style": "orb_tier", "tint": orb_tier_tint(XQuality.color(e)), "outline_w": float(style("orb_tier").get("outline_w", 2.0)), "fx": "glint"}
+			else:
+				out.orbs[sl] = {"style": "orb_seal", "tint": seal_tint(""), "fx": tier}
 			continue
 		# 球框两档（D108／D109）：只管武器栏槽位 0、1；两档都中取特殊（上面已 continue 的毕业武器、刻印、备注件不会走到这里）
-		if ORB_TIERS and WEAPON_SLOTS.has(sl) and XQuality.gear_kind(e) == "weapon":   # 槽位 1 在非双持角色是防具、178 槽位 1 是头盔，得认类型
+		if ORB_TIERS and not tiers and WEAPON_SLOTS.has(sl) and XQuality.gear_kind(e) == "weapon":   # 槽位 1 在非双持角色是防具、178 槽位 1 是头盔，得认类型
 			if XEquipment.is_exclusive(e):   # 专属武器不论刻没刻印：套斜角框，未刻印用中性旧金（seal_tint("")）
 				out.orbs[sl] = {"style": "orb_seal", "tint": seal_tint(""), "fx": ORB_FX}
 			elif XQuality.grade(e) >= MYTHIC_GRADE:   # 神话及以上：只换描边色（品质色）、2px
@@ -200,6 +215,27 @@ static func resolve(actor, party: Array = [], s = null) -> Dictionary:
 				out.dots[sl] = seal_tint(seal)
 	out.sig = signature(out)
 	return out
+
+
+## D113 这件在槽位 sl 上该出哪档特效（多档命中取高）：flame／seal7／stars／glint／""。
+## 灵焰、七印封缄只认武器（七印标记本身就是武器；终焉核要看类型），双星不论哪一栏，微光只槽位 0、1 的武器
+static func fx_tier(e: Dictionary, sl: int) -> String:
+	var weapon := XQuality.gear_kind(e) == "weapon"
+	var m := XTianqiQiyinEffects.mark_of(e)
+	var best := ""
+	match str(m.get("kind", "")):
+		"engrave":
+			best = XSkinOrbFx.higher(best, "flame")
+		"weapon":
+			best = XSkinOrbFx.higher(best, "seal7")
+	var al = e.get("alien", {})
+	if weapon and al is Dictionary and str((al.get("tq", {}) if al.get("tq") is Dictionary else {}).get("level", "")) == "zhongyan":
+		best = XSkinOrbFx.higher(best, "flame")
+	if XQuality.legacy(e) == LEGACY_HEIRLOOM or XEquipment.is_exclusive(e) or str(e.get("note", "")).contains("<KyoUnique"):
+		best = XSkinOrbFx.higher(best, "stars")
+	if weapon and WEAPON_SLOTS.has(sl) and XQuality.grade(e) >= MYTHIC_GRADE:
+		best = XSkinOrbFx.higher(best, "glint")
+	return best
 
 
 ## 淡框描边色：取品质色；神话品质色（#ff483c）过「正红」门（2.1 第 3 条：环纹不许用正红、不跟选中红框混），改用铜橙 red_safe_tint（离选中红框远一点）
@@ -268,7 +304,7 @@ static func signature(r: Dictionary) -> String:
 	dk.sort()
 	var o := []
 	for k in ok:
-		o.append("%d:%s:%s" % [k, orbs[k].style, (orbs[k].tint as Color).to_html()])
+		o.append("%d:%s:%s%s" % [k, orbs[k].style, (orbs[k].tint as Color).to_html(), (":" + str(orbs[k].fx)) if XSkinOrbFx.RANK.has(str(orbs[k].get("fx", ""))) else ""])   # 只 tiers 档带上特效档（sweep 档指纹和 T044 一样）
 	var d := []
 	for k in dk:
 		d.append("%d:%s" % [k, (dots[k] as Color).to_html()])

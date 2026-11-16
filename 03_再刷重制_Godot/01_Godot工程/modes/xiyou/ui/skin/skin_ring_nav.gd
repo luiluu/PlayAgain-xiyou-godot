@@ -221,10 +221,29 @@ func _draw_sweep(i: int) -> void:
 	ring_draws += 1
 
 
+## 测试看：上次各球画的是哪档哪帧 {环项序号: [档, 帧]}
+var orb_fx_drawn := {}
+
+
+## D113 球框四档特效（XSkinOrbFx 出 64×64 像素帧，最近邻贴到球心、乘选中放大）；相邻球错半周；动效档不是「全部」时停在一帧
+func _draw_orb_fx(i: int, kind: String, glint_r: float) -> void:
+	var fr := XSkinOrbFx.frame_of(kind, _spin, 0.5 * (i % 2), ring_motion_level() < 2)
+	var tex := XSkinOrbFx.texture(kind, fr, glint_r)
+	if tex == null:
+		return
+	var k := item_scale(i)
+	var ts := Vector2(XSkinOrbFx.SIZE, XSkinOrbFx.SIZE) * k
+	var pos := item_pos(i) - ts / 2.0
+	RenderingServer.canvas_item_add_texture_rect(_orb_ci, Rect2(pos.round() if is_equal_approx(k, 1.0) else pos, ts), tex.get_rid())
+	orb_fx_drawn[i] = [kind, fr]
+	ring_draws += 1
+
+
 ## 第 3、4 层：球框、小点、补画选中红框（_orb_ci），栏位名（_label_ci）
 func _draw_layers() -> void:
 	RenderingServer.canvas_item_clear(_orb_ci)
 	RenderingServer.canvas_item_clear(_label_ci)
+	orb_fx_drawn.clear()
 	if not ring_layers():
 		labels_on = "parent"
 		return
@@ -241,13 +260,18 @@ func _draw_layers() -> void:
 			ring_draws += 1
 			if fx == "sweep" and ring_motion_level() >= 2:   # 微光扫过：一小段亮弧沿框转一圈（3 秒一周），尾部渐淡
 				_draw_sweep(i)
-		elif f is Dictionary and f.has("outline"):   # 淡框（神话及以上）：球原来的 1.5px 描边位置换品质色 2px，不加斜角不加特效
+			elif XSkinOrbFx.RANK.has(fx):
+				_draw_orb_fx(i, fx, XSkinOrbFx.GLINT_R)
+		elif f is Dictionary and f.has("outline"):   # 淡框（神话及以上）：球原来的 1.5px 描边位置换品质色 2px，不加斜角；D113 起叠微光（fx＝glint）
 			var r := orb_radius * item_scale(i)
 			var pts := PackedVector2Array()
 			for k in 65:
 				pts.append(item_pos(i) + Vector2.from_angle(TAU * k / 64.0) * r)
 			RenderingServer.canvas_item_add_polyline(_orb_ci, pts, PackedColorArray([f.outline]), float(f.get("outline_w", 2.0)), true)
 			ring_draws += 1
+			var ofx := str(f.get("fx", ""))
+			if XSkinOrbFx.RANK.has(ofx):
+				_draw_orb_fx(i, ofx, orb_radius)
 		if orb_dots.has(i):
 			var dr := dot_rect(i)
 			RenderingServer.canvas_item_add_rect(_orb_ci, dr, Color(0, 0, 0, 0.9))
