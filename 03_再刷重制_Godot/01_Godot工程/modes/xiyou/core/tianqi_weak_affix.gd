@@ -6,7 +6,7 @@ extends RefCounted
 ##
 ## 一、装备与作用域（第 5 条）
 ##   装备实例上 tianqi_exclusive: {key}；只认武器、副手两格（rules.slots），两格同一条只算一条。
-##   生效＝模块开（ENABLED，O-待定·弱者专属词条）＋天启篇档＋（发行另要 XTianqi.RELEASE_OPEN）＋这条开着（entries[key].enabled，默认全关）＋
+##   生效＝模块开（ENABLED，O-524）＋天启篇档＋（发行另要 XTianqi.RELEASE_OPEN）＋这条开着（entries[key].enabled，默认全关）＋
 ##   装的人是本人（entries[key].actor）＋他在场上（logic.actors；助力位没上场不生效）＋活着。
 ##   每人的库存、格数、标签放在本场 unit 里，换装、离场、倒下、战斗结束都清（unit 每次取都对一遍签名，变了就从零起）。
 ## 二、根与五类事件（第 2 条）
@@ -27,7 +27,7 @@ extends RefCounted
 ## 具体词条以 register(key, 处理对象) 挂进来：处理对象可有 root_end(logic, frame) -> Array（这一根结算完后出专属派生，派生用 derived_invoke）、
 ## turn_begin(logic)、turn_end(logic)、badge(logic, b) -> String。
 
-## 开关（O-待定·弱者专属词条）：false＝专属词条在战斗里完全不生效（不引导、不记事件、不派生），装备上的专属只显示灰字
+## 开关（O-524）：false＝专属词条在战斗里完全不生效（不引导、不记事件、不派生），装备上的专属只显示灰字
 static var ENABLED := true
 
 const PATH := "res://modes/xiyou/tianqi_data/weak_affix_table.json"
@@ -279,7 +279,7 @@ static func in_derived(logic) -> bool:
 	return logic != null and kind(logic) == DERIVED
 
 
-## 原生反击、反射打混子不记「打过混子」（O-待定·混子标记对齐，v0.3.1 第二节第 3 条「顺手对齐」）；false＝回到旧行为：原生反击照记
+## 原生反击、反射打混子不记「打过混子」（O-525，v0.3.1 第二节第 3 条「顺手对齐」）；false＝回到旧行为：原生反击照记
 static var COUNTER_NO_HUNZI_MARK := true
 
 
