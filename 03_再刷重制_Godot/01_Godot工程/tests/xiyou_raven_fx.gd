@@ -4,6 +4,8 @@ extends Node
 ## - 10122～10127 由渡鸦放：一次行动一组施放特效（目标数同参照），R.Fx 的 slash／ring 不画；神话＋狩猎时收割／回响照画（个数、次序同参照）；
 ## - 每组放够 life 帧才结束（isAnimationPlaying 算没放完）；两次行动的特效可以同时在，最多 6 组；
 ## - 别的角色放同一技能：不换施放特效（参照 V.play 返回 false）。
+## - 再释放（T046／T088）：渡鸦学了 10137 魂海刻度 <AgainUseMf:15>，魔法 15% 多出手一次。参照随 host 把 Math.random 钉 0.5（永不掷中），
+##   所以上面各例把 again_use 那一掷钉 0.5（PinAgain）；again.* 各例钉 0（参照出手前钉 Math.random=0）：单体技能施放特效两组、全体一组。
 ## 真战斗画面（敌群 3、地图 5），走 logic.act → _play，数 XRavenFx.played。
 const FIXTURE := "res://tests/fixtures/raven_fx_oracle.json"
 var results: Array = []
@@ -14,6 +16,26 @@ func check(name: String, ok: bool, detail = null) -> bool:
 	if not ok and results.filter(func(r): return not r.passed).size() <= 20:
 		print("FAIL ", name, " ", JSON.stringify(detail))
 	return ok
+
+
+## 规则流只换掉 again_use（dsPassiveSkill 再释放）那一掷，其余照原流取数
+class PinAgain extends XRandomStream:
+	var roll := 0.5
+	func next_float(reason: String, event_key := "") -> float:
+		return roll if reason == "again_use" else super(reason, event_key)
+
+	static func wrap(r: XRandomStream) -> PinAgain:
+		var p := PinAgain.new()
+		p.domain = r.domain
+		p._seed_hex = r._seed_hex
+		p._rng.seed = r._rng.seed
+		p._rng.state = r._rng.state
+		p.draws = r.draws
+		p.journal = r.journal
+		p.error = r.error
+		p._scripted = r._scripted
+		p._tape = r._tape
+		return p
 
 
 func _ready() -> void:
@@ -28,7 +50,7 @@ func frames(n := 1) -> void:
 func _run() -> void:
 	XMessageBox.auto = true
 	var d = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
-	if check("oracle", d is Dictionary and d.cases.size() == 14 and d.cases.all(func(c): return c.errors.is_empty()), FIXTURE):
+	if check("oracle", d is Dictionary and d.cases.size() == 20 and d.cases.all(func(c): return c.errors.is_empty()), FIXTURE):
 		var cases := {}
 		for c in d.cases:
 			cases[str(c.id)] = c.observed
@@ -69,6 +91,9 @@ func _cases(want: Dictionary) -> void:
 		e.recover_all()
 	var foes: Array = b.logic.alive(b.logic.enemies)
 	check("setup.foes", foes.size() == 3, foes.size())
+	b.logic._rule()
+	var pin := PinAgain.wrap(b.logic.random.rule)
+	b.logic.random.rule = pin
 	var fx := b._raven_layer()
 	for id in [10122, 10123, 10124, 10125, 10126, 10127]:
 		for mode in ["normal", "myth"]:
@@ -99,6 +124,27 @@ func _cases(want: Dictionary) -> void:
 				await frames()
 				n += 1
 			check(key + ".frames", n == int(w.get("frames", -1)), [n, w.get("frames")])
+	# 再释放掷中：numRepeats 2；单体技能施放特效两组、全体一组（目标数同参照）。AGAIN_USE 关掉时只有一组，这几条会挂
+	pin.roll = 0.0
+	for id in [10122, 10123, 10124, 10125, 10126, 10127]:
+		var key := "again.%d" % id
+		var w: Dictionary = want.get(key, {})
+		var st: Dictionary = s.raven
+		st["myth"] = 0
+		st["hunter"] = false
+		st["residue"] = 0
+		a.mp = a.mmp
+		fx.played.clear()
+		var rec := XDB.rec("Skills", id)
+		var reps := b.logic.passive_repeats(a, rec, XBattleLogic.attack_repeats(a, rec, 1))
+		check(key + ".repeats", reps == int(w.get("numRepeats", -1)), [reps, w.get("numRepeats")])
+		await b._play(b.logic.act(a, rec, foes[0]))
+		var got: Array = fx.played.filter(func(p): return p.type == "cast").map(func(p): return [int(p.skill), int(p.spots)])
+		var exp: Array = w.get("casts", []).filter(func(l): return l.played).map(func(l): return [int(l.skill), int(l.targets)])
+		check(key + ".casts", not exp.is_empty() and got == exp, [got, exp])
+		while fx.busy():
+			await frames()
+	pin.roll = 0.5
 	# 放完前再放一次：两组都在；连放到 8 组封顶 6
 	fx.play_cast(10122, [Vector2(200, 200)], Vector2(600, 200))
 	fx.play_cast(10122, [Vector2(200, 200)], Vector2(600, 200))
