@@ -71,6 +71,8 @@ var motion: Dictionary = {}
 ## 演出：intro_kind＝burn（0.6 秒从 12 点顺时针铺开，先闪旧金）／fade（0.3 秒淡入）／""；intro_t 0→1
 var intro_kind := ""
 var intro_t := 1.0
+## fade 演出的「旧环」快照 {style, art, motion}：脱下／微亮态进出时旧环按 1-alpha 淡出、新环按 alpha 淡入（4.1 的 0.3 秒淡入淡出）；演完清空
+var fade_from: Dictionary = {}
 const INTRO_TIME := {"burn": 0.6, "fade": 0.3}
 ## 测试看：栏位名这一帧画在哪一层（"parent"／"label_ci"）、补画了几次选中红框、多画了几次贴图
 var labels_on := "parent"
@@ -124,11 +126,20 @@ static func ring_motion_level() -> int:
 
 
 ## 演出（不拦输入）。动效关时一帧就结束
-func play_intro(kind: String) -> void:
+func play_intro(kind: String, from := {}) -> void:
 	if kind == "" or not INTRO_TIME.has(kind):
 		return
 	intro_kind = kind
 	intro_t = 0.0 if ring_motion_level() > 0 else 1.0
+	fade_from = from if kind == "fade" and intro_t < 1.0 else {}
+	queue_redraw()
+
+
+## 切人／换队序：进行中的演出作废，直接是那人的环（不串旧角色的半途铺开）
+func cancel_intro() -> void:
+	intro_kind = ""
+	intro_t = 1.0
+	fade_from = {}
 	queue_redraw()
 
 
@@ -180,13 +191,18 @@ static func add_sweep(ci: RID, rect: Rect2, tex: Texture2D, t: float, col: Color
 
 func _draw_band() -> void:
 	RenderingServer.canvas_item_clear(_band_ci)
-	var tex: Texture2D = style_art.get("band")
+	_add_band(style_art, intro_alpha(), intro_t if intro_kind == "burn" else 1.0)
+	if not fade_from.is_empty() and intro_t < 1.0:
+		_add_band(fade_from.get("art", {}), 1.0 - intro_alpha(), 1.0)
+
+
+func _add_band(art: Dictionary, alpha: float, t: float) -> void:
+	var tex: Texture2D = art.get("band")
 	if tex == null:
 		return
 	var ts := tex.get_size()
 	var r := Rect2((center() - ts / 2.0).round(), ts)
-	var col := Color(1, 1, 1, intro_alpha())
-	add_sweep(_band_ci, r, tex, intro_t if intro_kind == "burn" else 1.0, col)
+	add_sweep(_band_ci, r, tex, t, Color(1, 1, 1, alpha))
 	ring_draws += 1
 
 
@@ -473,6 +489,8 @@ func advance(delta: float) -> void:
 		queue_redraw()
 	if intro_t < 1.0:
 		intro_t = minf(1.0, intro_t + delta / float(INTRO_TIME.get(intro_kind, 0.3))) if ring_motion_level() > 0 else 1.0
+		if intro_t >= 1.0:
+			fade_from = {}
 		queue_redraw()
 
 
@@ -528,23 +546,18 @@ func _diamond(p: Vector2, s: float, col: Color) -> void:
 	draw_colored_polygon(PackedVector2Array([p + Vector2(0, -s), p + Vector2(s, 0), p + Vector2(0, s), p + Vector2(-s, 0)]), col)
 
 
-func _draw() -> void:
-	_draw_art()
-	ring_draws = 0
-	_draw_band()
-	var c := center()
-	var R := radius
-	var line := XUiSkin.LINE
+## 法阵＋程序光带／主圈／细线／虚线，整体乘 alpha（淡入淡出用）
+func _draw_body(c: Vector2, R: float, line: Color, alpha: float) -> void:
 	# 法阵（环纹给了本印法阵就换掉通用的：乘 circle_tint、按 circle_a，全部档时轻微呼吸）
 	var circ := XUiSkin.circle_texture()
-	var circ_col := Color(1, 1, 1, 0.5)
+	var circ_col := Color(1, 1, 1, 0.5 * alpha)
 	var spin_k := 1.0
 	if style_art.get("circle") is Texture2D:
 		circ = style_art.circle
 		var lv := ring_motion_level()
 		spin_k = float(motion.get("spin", 1.0)) if lv >= 2 else 0.0
 		var breath := float(motion.get("breath", 0.0)) * (0.5 + 0.5 * sin(_spin * TAU / 4.0)) if lv >= 2 else 0.0
-		circ_col = Color(style_art.get("circle_tint", Color.WHITE), (float(style_art.get("circle_a", 0.28)) + breath) * intro_alpha())
+		circ_col = Color(style_art.get("circle_tint", Color.WHITE), (float(style_art.get("circle_a", 0.28)) + breath) * alpha)
 		ring_draws += 1
 	if circ != null:
 		var d := R * 2.0 - 60.0
@@ -553,16 +566,40 @@ func _draw() -> void:
 		draw_set_transform(Vector2.ZERO)
 	if not (style_art.get("band") is Texture2D):
 		# 光带与细线
-		draw_arc(c, R + 5.5, 0, TAU, 96, sty("band"), float(sty("band_w")), true)
-		draw_arc(c, R + 10.5, 0, TAU, 96, Color(line, float(sty("halo_line_a"))), 1.0, true)
-		draw_arc(c, R, 0, TAU, 128, ring_line_color(), float(sty("ring_w")), true)
+		draw_arc(c, R + 5.5, 0, TAU, 96, _a(sty("band"), alpha), float(sty("band_w")), true)
+		draw_arc(c, R + 10.5, 0, TAU, 96, Color(line, float(sty("halo_line_a")) * alpha), 1.0, true)
+		draw_arc(c, R, 0, TAU, 128, _a(ring_line_color(), alpha), float(sty("ring_w")), true)
 		# 外圈虚线（反转）
 		var dash_r := R + 22.0
 		var dashes := 72
 		var off := -_spin * TAU / 50.0
 		for k in dashes:
 			var a0 := off + k * TAU / dashes
-			draw_arc(c, dash_r, a0, a0 + TAU / dashes * 0.5, 4, Color(line, float(sty("dash_a"))), 1.5, true)
+			draw_arc(c, dash_r, a0, a0 + TAU / dashes * 0.5, 4, Color(line, float(sty("dash_a")) * alpha), 1.5, true)
+
+
+static func _a(c: Color, k: float) -> Color:
+	return Color(c, c.a * k)
+
+
+func _draw() -> void:
+	_draw_art()
+	ring_draws = 0
+	_draw_band()
+	var c := center()
+	var R := radius
+	var line := XUiSkin.LINE
+	_draw_body(c, R, line, intro_alpha())
+	if not fade_from.is_empty() and intro_t < 1.0:   # 旧环淡出（脱下／微亮态进出）
+		var keep := [style, style_art, motion, ring_draws]
+		style = fade_from.get("style", style)
+		style_art = fade_from.get("art", {})
+		motion = fade_from.get("motion", {})
+		_draw_body(c, R, line, 1.0 - intro_alpha())
+		style = keep[0]
+		style_art = keep[1]
+		motion = keep[2]
+		ring_draws = keep[3]
 	# 铺开演出：先闪一下旧金（前三分之一）
 	if intro_kind == "burn" and intro_t < 1.0:
 		var fl := clampf(1.0 - intro_t * 3.0, 0.0, 1.0)
@@ -575,7 +612,7 @@ func _draw() -> void:
 		for k in motes:
 			var a := _spin * TAU / 30.0 + k * TAU / motes
 			var p := c + Vector2.from_angle(a) * (R + 3.0 * sin(_spin * 2.0 + k))
-			draw_circle(p, 1.5, Color(mc, 0.35 + 0.3 * (0.5 + 0.5 * sin(_spin * 3.0 + k * 1.7))))
+			draw_circle(p, 1.5, Color(mc, (0.35 + 0.3 * (0.5 + 0.5 * sin(_spin * 3.0 + k * 1.7))) * intro_alpha()))
 	# 刻痕
 	for k in (NOTCHES if bool(sty("notches")) else 0):
 		var p := c + Vector2.from_angle(deg_to_rad(notch_deg(k))) * (R + 11.0)

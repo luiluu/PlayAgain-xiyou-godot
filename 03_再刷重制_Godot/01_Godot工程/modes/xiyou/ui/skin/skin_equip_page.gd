@@ -35,6 +35,9 @@ var _ring_style_ctx := []
 var _center_ci := RID()
 ## 演出开始的时刻（毫秒，环下说明前 2 秒是旧金色）；-1＝没在演
 var _intro_ms := -1
+## fade 演出时旧环心框（淡出用）及其亮度
+var _center_fade_from: Texture2D = null
+var _center_fade_dim := 1.0
 const RING_FACE_R_FRAMED := 33.0
 const CAPTION_GOLD_MS := 2000
 ## 栏位环一圈最多几颗（样稿 10 颗；天启篇 13 栏分两页 7＋6）——ONE_PAGE 关掉时才用
@@ -390,11 +393,21 @@ func _sync_ring_style(a: XActor) -> void:
 	var kind := ""
 	if ctx == _ring_style_ctx and str(res.get("sig", "")) != str(ring_style.get("sig", "")):
 		kind = XTianqiRingStyle.intro_kind(ring_style, res)
+	var switched := ctx != _ring_style_ctx
+	var prev := {"style": ring.style, "art": ring.style_art, "motion": ring.motion}
+	var prev_center := center_frame()
+	var prev_dim := float(ring_style.get("center_dim", 1.0))
 	_ring_style_ctx = ctx
 	ring_style = res
 	apply_ring_style(res)
+	if switched:   # 切人／换队序：进行中的演出作废，说明也不闪旧金（4.1）
+		ring.cancel_intro()
+		_center_fade_from = null
+		_intro_ms = -1
 	if kind != "":
-		ring.play_intro(kind)
+		ring.play_intro(kind, prev)
+		_center_fade_from = prev_center if kind == "fade" and ring.fade_from.size() > 0 else null
+		_center_fade_dim = prev_dim
 		_intro_ms = Time.get_ticks_msec() if kind == "burn" and XSkinRingNav.ring_motion_level() > 0 else -1   # 动效「关」：直接切换，说明也不闪旧金
 
 
@@ -685,6 +698,12 @@ func _draw_center_frame() -> void:
 		return
 	RenderingServer.canvas_item_clear(_center_ci)
 	var tex := center_frame()
+	if _center_fade_from != null and ring.intro_t < 1.0:   # 脱下／换环心：旧框 0.3 秒淡出
+		var od := _center_fade_dim
+		XSkinRingNav.add_sweep(_center_ci, center_frame_rect(_center_fade_from), _center_fade_from, 1.0, Color(od, od, od, 1.0 - ring.intro_alpha()))
+		ring_top.queue_redraw()
+	elif ring.intro_t >= 1.0:
+		_center_fade_from = null
 	if tex == null:
 		return
 	var dim := float(ring_style.get("center_dim", 1.0))
