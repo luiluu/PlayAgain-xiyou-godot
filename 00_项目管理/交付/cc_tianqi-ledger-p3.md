@@ -93,7 +93,7 @@
 
 ## 验证
 
-- `检查.sh --oracle --affected main --cloud`（跑在 1805f9e1d，基准 main f052f6fb4）：云端选测 479 个场景、16 片**全部通过**；文档登记、参照守卫、MV 参照、同源都过；唯一失败项「发行空壳缺成员」（`take_extra` 没进放行名单、`hook_bonus` 没发行值）已在 aa 提交补上，`发行空壳.py check` 通过（63 个脚本、568 个函数都有；`wake_times` 发行值 −1、`param_cap` 1.0、`apply_nine_cap` 空）。日志 `03_再刷重制_Godot/04_验证/总账期三/cloud_check.log`。
+- `检查.sh --oracle --affected main --cloud`（跑在 1805f9e1d，基准 main f052f6fb4）：云端选测 479 个场景、16 片**全部通过**；文档登记、参照守卫、MV 参照、同源都过；唯一失败项「发行空壳缺成员」（`take_extra` 没进放行名单、`hook_bonus` 没发行值）已在 92a76b4c1 补上，`发行空壳.py check` 通过（63 个脚本、568 个函数都有；`wake_times` 发行值 −1、`param_cap` 1.0、`apply_nine_cap` 空）。日志 `03_再刷重制_Godot/04_验证/总账期三/cloud_check.log`。
 - 之后 `git merge main`（带进 T035 `cc/t035-guard-kind`，dev.639，无冲突），合后本机重跑受影响专项 12 个全过：`xiyou_tianqi_ledger`（67）、`xiyou_tianqi_ledger_p3`（32）、`xiyou_tianqi_affix_battle`、`xiyou_tianqi_qiyin_effects`、`xiyou_tianqi_skills`、`xiyou_tianqi_skill_debt`、`xiyou_tianqi_weak_affix`、`xiyou_determinism`、`xiyou_otb`、`xiyou_battle_common_events`、`xiyou_percent_pills`、`xiyou_item_marks`。合并前另跑过 `xiyou_gojo`、`xiyou_jingliu`／`2`、`xiyou_liuying`／`2`／`3`、`xiyou_race_battle`、`xiyou_yomi_battle`、`xiyou_bulk_pills`、`xiyou_tianqi_alien_affix`，全过。
 - 数值卡 DoD（P2-6b）：`explore`＝专项 `xiyou_virtual_player` 通过；短帧 `climb`（种子 2、200000 帧、15.8 分钟）：**卡死 0、脚本报错 0（SCRIPT ERROR 0 行）、违规 0、收工金币 14500、全灭 3 次都经标题「旧的回忆」读档接回（存档读写正常）**、打了 47 场。注意：短帧爬塔停在第 1 层，还没进天启篇选线（第 5 层后），所以这一轮只证明西游流程没被弄坏，**没覆盖天启篇的回合预算／封顶**——这几样靠专项断言。日志里有 `skin_ring_nav.gd:550` 的渲染 ERROR 行（界面皮肤，不是本单代码）。小结存 `04_验证/总账期三/vp_climb_seed2_summary.md`。
 - 工具回归 `工具回归.py` 全过；`回退开关覆盖.py` 没有新增缺口（三个新开关都在 `xiyou_tianqi_ledger_p3` 里设 false）。
