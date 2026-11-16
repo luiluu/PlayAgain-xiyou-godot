@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.665",
-  "sequence": 665,
-  "next": "dev.666",
-  "nextSequence": 666,
+  "current": "dev.666",
+  "sequence": 666,
+  "next": "dev.667",
+  "nextSequence": 667,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "cc-fest-envoy-missing",
+  "currentChange": "cc-shana-zhuanwu-attack",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

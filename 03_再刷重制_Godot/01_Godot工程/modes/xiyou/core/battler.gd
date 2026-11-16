@@ -995,7 +995,7 @@ static var _replace_attack_cache := {}
 static var _replace_attack_line := RegEx.create_from_string("(?i)<(?:ATTACK REPLACE|REPLACE ATTACK):[ ](.*)>")
 static var _first_number := RegEx.create_from_string("(\\d+)")
 
-## O-待定（T074）：原版 MOD 数据错——夏娜专武贽殿遮那（武器 77）、天外天·贽殿遮那（83）写成 <Replace Attack: 5769>＋<Weapon Unleash 100%: 5769>，
+## O-548（T074）：原版 MOD 数据错——夏娜专武贽殿遮那（武器 77）、天外天·贽殿遮那（83）写成 <Replace Attack: 5769>＋<Weapon Unleash 100%: 5769>，
 ## 5769 是科比的被动「8秒肘击24下」（occasion 3 永不可用），说明写的「普攻变为天破壤碎」实为 10556。开：只对这两把把 5769 换成 10556、
 ## 去掉 5769 的武器解放（与天启篇 skill_rework weapon:77／83 同口径）；关：逐字照原版（普攻显示成八秒肘击且用不了）
 static var SHANA_ZHUANWU_ATTACK_FIX := true
