@@ -6,7 +6,7 @@ extends Node
 ## 三、回血：勇者每回合末回 2%（D82）、莉co回 1.5%（D58），各一个开关；艰险没有。
 ## 四、勇者甲（D32、D54）：死期从出战栏最后一格往前点；到第 doom_every_from 回合起每回合点一人；开关关掉照旧（5 回合、随机）。
 ## 五、验收场景跑法（tests/virtual_player/zhengdao_scenarios.tscn）：11 个场景都在、编号 1～11；Wilson 区间算得对；换人合法性四条都对。
-## 数是 v044 参考组占位（T014 标数），断言都从表里读，改数不用改测试。
+## 莉co 16、勇者 18 是 Kyo 定的（D58、D32／D54），单独钉死；其余是 v044 参考组占位（T014 标数），断言从表里读，改占位不用改测试。
 
 var results: Array = []
 
@@ -104,6 +104,9 @@ func _reset() -> void:
 func _scope() -> void:
 	var z := XTianqiHorsemen.zd_table()
 	_check("table_present", not z.is_empty() and str(z.get("key", "")) == "zhengdao", z.keys())
+	# Kyo 定的数（不是占位）：D58 丁莉co第 16 回合狂暴；D32／D54 勇者第 18 回合起每回合点死期
+	_check("kyo_d58_war_enrage_16", int(_row("war").get("enrage", 0)) == 16, _row("war"))
+	_check("kyo_d54_doom_every_18", int(_row("death").get("doom_every_from", 0)) == 18, _row("death"))
 	_check("table_nice_numbers", XTianqiHorsemen.nice_number_violations().is_empty(), XTianqiHorsemen.nice_number_violations())
 	for line in XTianqiHorsemen.LINES:
 		var lg := _logic(line)
