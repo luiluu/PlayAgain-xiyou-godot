@@ -144,13 +144,24 @@ static func _bbox(tex: Texture2D, rect: Rect2) -> Array:
 func _idle() -> void:
 	var a := _mira(0, false)
 	var look := XAppearance.for_battler(a)
-	# wait 第 1 帧（索引 1）为 Kyo 定妆 64×64 基准帧
-	var f := look.frame("wait", 1)
+	# 实机默认待机播放 walk；归一档仍沿用定妆 wait 的 58px 基准。
+	var f := look.frame("walk", 1)
 	var box := _bbox(f.tex, f.get("rect", Rect2()))
-	var prof := XAppearance.profile(f, "wait")
-	check("idle.height_58", box[3] - box[1] == 58, box)
+	var prof := XAppearance.profile(f, "walk")
+	check("idle.walk_height_57", box[3] - box[1] == 57, box)
 	check("idle.foot_61", box[3] == 61, box)
 	check("idle.profile", not prof.is_empty() and prof.bounds.size.y == 58.0 and prof.bounds.end.y == 61.0, prof)
+	for i in range(3):
+		var walk := look.frame("walk", i)
+		var walk_box := _bbox(walk.tex, walk.get("rect", Rect2()))
+		check("idle.walk_foot_61_" + str(i), walk_box[3] == 61, walk_box)
+	var middle := look.frame("walk", 1)
+	var image := (middle.tex as Texture2D).get_image()
+	if image.is_compressed():
+		image.decompress()
+	var rect: Rect2 = middle.get("rect", Rect2())
+	check("idle.walk_boot_gap_clear", image.get_pixel(int(rect.position.x) + 26, int(rect.position.y) + 57).a8 == 0)
+
 	var sp := XBattlerSprite.new()
 	add_child(sp)
 	sp.setup(a, 0.75)

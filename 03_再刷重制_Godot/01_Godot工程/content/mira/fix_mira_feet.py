@@ -26,6 +26,8 @@ for frame in range(3):
             donor = src.getpixel((x, 64 + y))
             if boot(donor):
                 out.putpixel(xy, donor)
+    # Remove the old middle-frame dark boot pixel at the new leg gap.
+    out.putpixel((x0 + 26, 57), (0, 0, 0, 0))
     before = src.crop((x0, 0, x0 + 64, 64))
     after = out.crop((x0, 0, x0 + 64, 64))
     assert before.getbbox() == after.getbbox(), (frame, before.getbbox(), after.getbbox())

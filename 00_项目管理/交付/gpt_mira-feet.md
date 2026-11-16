@@ -2,15 +2,15 @@
 
 - 分支：gpt/mira-feet
 - 车道／工作者：小o（co），gpt-6.1-sol＋medium，P6 像素小修
-- 状态：可合并
+- 状态：进行中
 
 ## 变更记录草稿
 
 ## 2026-11-16 【co·未经审查】米拉战斗待机双脚分开（dev.待定）
 
 - 玩家可见：米拉人形战斗待机两只靴子分开站，不再叠成一只。
-- 左上 walk 三帧仅改靴腿局部404像素，沿用原图 wait 分腿靴部，三帧脚位相同；整图尺寸、54格外接框、脚底、二值 alpha、调色板不变。
-- 复现与验证脚本留在 content/mira/；原大与4倍新旧整表、三帧动图、Godot战斗截图和逐帧报告见 img/sv_actors/t122_evidence/。
+- 左上 walk 三帧仅改靴腿局部405像素，沿用原图 wait 分腿靴部，三帧脚位相同；整图尺寸、54格外接框、脚底、二值 alpha、调色板不变。
+- 复现与验证脚本留在 content/mira/；原大与4倍新旧整表、三帧动图、Godot战斗截图和逐帧报告见 00_项目管理/交付/附图/gpt_mira-feet/T122/。
 
 ## 判断与范围
 
@@ -21,7 +21,7 @@
 
 ## 验证
 
-- fix_mira_feet.py＋validate_mira_feet.py：通过；全部54格外接框一致，变更只在左上三格 x17..35/y51..60，404像素，原调色板子集，alpha仅0/255，底行双靴之间5px透明间隙。
+- fix_mira_feet.py＋validate_mira_feet.py：通过；全部54格外接框一致，变更只在左上三格 x17..35/y51..60，405像素，原调色板子集，alpha仅0/255，底行双靴之间5px透明间隙。
 - Godot窗口模式 xiyou_mira_art：26/26，battle_godot.png 为真实战斗视口截图。
 - 工具回归：22项全部通过（106秒）。
 - 选测.py main --list：mira_art关联6场景；最终素材提交4ad115bec云端6场景通过：actor_book 28/28、actor_looks 35/35、mira_art 26/26、mira_dragon_art 31/31、mira_lift 57/57；actor_sv_compare为工具场景，未设XIYOU_SV_REAL时记录1/1并跳过真实对比。运行 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43973552983 。

@@ -5,7 +5,7 @@ Also measure T113 Yunshang sample directly from its git branch (never check out/
 import argparse,io,itertools,json,subprocess
 from pathlib import Path
 from PIL import Image
-PROJECT=Path(__file__).resolve().parents[2]
+PROJECT=Path(__file__).resolve().parents[2]/'01_Godot工程'
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--out',type=Path,required=True)
 p.add_argument('--sheet',type=Path,action='append',help='Only measure these MV sheets; repeatable')

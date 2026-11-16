@@ -2,7 +2,7 @@ from PIL import Image,ImageDraw,ImageChops
 from pathlib import Path
 import json
 root=Path(__file__).resolve().parent/'img/sv_actors'
-e=root/'t122_evidence'
+e=Path(__file__).resolve().parents[4]/'00_项目管理/交付/附图/gpt_mira-feet/T122'
 b=Image.open(e/'before.png').convert('RGBA');a=Image.open(root/'Codex_Mira_SV_u2.png').convert('RGBA')
 def bg(im):
  out=Image.new('RGBA',im.size,'#40404a');out.alpha_composite(im);return out.convert('RGB')
@@ -24,6 +24,7 @@ for y in range(384):
    report['changed_pixels']+=1
 assert report['alpha'] == [0,255] and report['palette_subset']
 for frame in range(3):
+ assert a.getpixel((frame*64+26,57))[3] == 0
  assert all(a.getpixel((frame*64+x,60))[3] == 0 for x in range(24,29))
  assert all(a.getpixel((frame*64+x,60))[3] == 255 for x in list(range(17,24))+list(range(29,34)))
 for i in range(54):
