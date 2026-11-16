@@ -257,6 +257,7 @@ want tools && { if python3 "$ENV_DIR/测试生成更新清单.py"; then ok "生�
 want tools && { if python3 "$ENV_DIR/测试导出冒烟.py" >/dev/null 2>&1; then ok "导出冒烟工具（结果解析与报告）"; else bad "导出冒烟工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试切场景后调用扫描.py" >/dev/null 2>&1; then ok "切场景后调用扫描工具"; else bad "切场景后调用扫描工具回归失败，单跑 07_开发环境/测试切场景后调用扫描.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试临时探针.py" >/dev/null 2>&1; then ok "临时探针车道标签、clone 里 --补齐 转用主工作区脚本"; else bad "临时探针工具回归失败，单跑 07_开发环境/测试临时探针.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试快速补齐.py" >/dev/null 2>&1; then ok "新建工作树 --快速（引擎软链、generated 克隆）"; else bad "快速补齐回归失败，单跑 07_开发环境/测试快速补齐.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试导入超时.py" >/dev/null 2>&1; then ok "补齐整轮重导入走长任务"; else bad "导入超时工具回归失败，单跑 07_开发环境/测试导入超时.py 看详情"; fi; }
 want tools && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/测试天启篇数据校验.py" >/dev/null 2>&1 && python3 "$ROOT/03_再刷重制_Godot/03_转换工具/天启篇数据校验.py" >/dev/null; then ok "天启篇数据表校验（规则自检与回归）"; else bad "天启篇数据表校验失败，单跑 03_转换工具/天启篇数据校验.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行入口冒烟.py" >/dev/null 2>&1; then ok "发行入口冒烟安卓分支"; else bad "发行入口冒烟工具回归失败，单跑 07_开发环境/测试发行入口冒烟.py 看详情"; fi; }

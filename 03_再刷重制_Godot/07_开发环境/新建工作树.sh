@@ -7,6 +7,8 @@
 #                                           车道开工用这条：app 给的工作树在 cc/<随机名> 上，先在该工作树里从 --from（默认 main）
 #                                           切出派单的分支（如 cc/nezha-tools22）再补齐；工作树须无已跟踪改动，新分支不能已存在。
 #                                           交付后总装照派单的任务名合并；分支名与任务名对不上时 合并车道.py --branch <分支> 指定。
+#   新建工作树.sh --快速 <worktree 路径>      轻量补齐（T036）：只补引擎软链＋generated／.godot 克隆（APFS cp -c），不重跑转换器、不 godot --import，几秒。
+#                                           给 Orca 建树后自动跑（仓库根 orca.yaml 的 scripts.setup 调它）；主工作区没有 generated 就跳过并提示。幂等。
 # 补齐内容：Godot 引擎链接、西游资料库链接、冻结正式源链接（设了 XIYOU_APP 就链它）、mv_oracle/node_modules、转换产物 generated/、导入缓存 .godot/。
 # node_modules、generated、.godot 用 APFS 克隆（cp -c）复制主工作区的，不另占空间；随后按本分支重跑转换器与 godot --import。
 # 已有 generated 时，generated/oracle 里主工作区较新的文件会覆盖进来（本分支自己生成、主工作区没有或比主工作区新的保留）。
@@ -32,7 +34,7 @@ fi
 MAIN=${$(git -C "$SELF_ROOT" rev-parse --path-format=absolute --git-common-dir):h}
 GODOT_SUB=03_再刷重制_Godot
 
-usage() { print -u2 "用法：${0:t} <任务名> [cc|codex]   或   ${0:t} --补齐 <worktree 路径> [--branch <新分支名> [--from <提交或分支>]]"; exit 64; }
+usage() { print -u2 "用法：${0:t} <任务名> [cc|codex]   或   ${0:t} --快速 <worktree 路径>   或   ${0:t} --补齐 <worktree 路径> [--branch <新分支名> [--from <提交或分支>]]"; exit 64; }
 
 # 参照副本按内容刷新（tools64：原来只比 mtime，车道文件时间比主工作区新就永远不刷新）：见 参照批次.py refresh。
 ORACLE_COPIED=0
@@ -42,6 +44,44 @@ refresh_oracle() {
   (( rc == 10 )) && ORACLE_COPIED=1
   (( rc == 0 || rc == 10 )) || { print -u2 "✗ 参照刷新失败（参照批次.py refresh 退出 $rc）"; exit 1; }
   return 0
+}
+
+# 引擎软链与 generated／.godot 克隆（T036）：--快速 和完整 --补齐 共用。
+# 软链是 git 看得见的未跟踪项（.gitignore 里「引擎/」带斜杠挡不住软链），写进公共 info/exclude 不入库；幂等。
+ensure_exclude() {
+  local common ex line
+  common=$(git -C "$MAIN" rev-parse --path-format=absolute --git-common-dir)
+  ex=$common/info/exclude
+  mkdir -p "${ex:h}"; touch "$ex"
+  for line in "$@"; do
+    grep -qxF -- "$line" "$ex" || print -r -- "$line" >> "$ex"
+  done
+}
+link_engine() {
+  local wt=$1 env=$1/$GODOT_SUB/07_开发环境 menv=$MAIN/$GODOT_SUB/07_开发环境
+  # -L：悬空软链也算「已有」，免得 ln -s 撞上已存在的名字在 set -e 下整段退出
+  [[ -e $env/当前Godot.app || -L $env/当前Godot.app ]] || ln -s "$menv/当前Godot.app" "$env/当前Godot.app"
+  ensure_exclude "$GODOT_SUB/07_开发环境/当前Godot.app" "$GODOT_SUB/07_开发环境/引擎"
+}
+clone_generated() {   # 返回 10＝克隆了；主工作区没有 generated 时只提示、不报错
+  local gen=$1 mgen=$2
+  [[ ! -e $gen ]] || return 0
+  if [[ -d $mgen ]]; then
+    cp -cR "$mgen" "$gen"; return 10
+  fi
+  print -u2 "⚠ 主工作区没有 generated（$mgen），跳过克隆；需要时在主工作区或本树跑转换器（xiyou_export.py）"
+  return 0
+}
+quick_prepare() {
+  local wt=${1:A}
+  [[ -e $wt/.git ]] || { print -u2 "✗ $wt 不是 git 工作区"; exit 1; }
+  [[ $wt != $MAIN ]] || { print -u2 "✗ 这是主工作区，不需要补齐"; exit 1; }
+  local proj=$wt/$GODOT_SUB/01_Godot工程 mproj=$MAIN/$GODOT_SUB/01_Godot工程 rc=0
+  link_engine "$wt"
+  clone_generated "$proj/modes/xiyou/generated" "$mproj/modes/xiyou/generated" || rc=$?
+  (( rc != 10 )) || python3 "$ENV_DIR/参照批次.py" record "$proj/modes/xiyou/generated" "$mproj/modes/xiyou/generated" || true
+  [[ -e $proj/.godot || ! -d $mproj/.godot ]] || cp -cR "$mproj/.godot" "$proj/.godot"
+  print "✓ 快速补齐 $wt（引擎软链＋generated／.godot 克隆；没跑转换器和 import，需要时再 --补齐）"
 }
 
 prepare() {
@@ -56,7 +96,7 @@ prepare() {
   local proj=$wt/$GODOT_SUB/01_Godot工程 mproj=$MAIN/$GODOT_SUB/01_Godot工程
   local gen=$proj/modes/xiyou/generated mgen=$mproj/modes/xiyou/generated
   # 只读共用的外部文件：直接链接
-  [[ -e $env/当前Godot.app ]] || ln -s "$menv/当前Godot.app" "$env/当前Godot.app"
+  link_engine "$wt"
   local lib=$wt/02_再刷西游/现有资料库
   [[ -e $lib || ! -L $MAIN/02_再刷西游/现有资料库 ]] || ln -s "$(readlink "$MAIN/02_再刷西游/现有资料库")" "$lib"
   # 冻结正式源（只读，不入 Git）：工具默认用主工作区的绝对路径；按相对路径找它（如 serve.py）时也能找到。
@@ -113,7 +153,7 @@ PY
       refresh_oracle "$mgen/oracle" "$gen/oracle"; python3 "$ENV_DIR/参照批次.py" pending "$gen" clear
     fi
   else
-    cp -cR "$mgen" "$gen"; ORACLE_COPIED=1
+    local crc=0; clone_generated "$gen" "$mgen" || crc=$?; (( crc != 10 )) || ORACLE_COPIED=1
     [[ -z $oracle_skew ]] || print -u2 "⚠ generated/ 是从主工作区拷的，参照量自 ${oracle_skew%%→*}，本树用 ${oracle_skew##*→}：参照对不上新源，在本树跑一次 同步正式西游.py 再比对"
     (( flux_rc != 4 )) || python3 "$ENV_DIR/参照批次.py" pending "$gen" set
   fi
@@ -184,6 +224,11 @@ switch_branch() {
   fi
 }
 
+if [[ $1 == --快速 ]]; then
+  (( $# == 2 )) || usage
+  quick_prepare "$2"
+  exit 0
+fi
 if [[ $1 == --补齐 ]]; then
   (( $# >= 2 )) || usage
   wt=$2 branch='' from=''
