@@ -40,6 +40,7 @@ func _run() -> void:
 	check("oracle_clean", ref.cases.all(func(c): return c.errors.is_empty()), ref.cases.filter(func(c): return not c.errors.is_empty()).map(func(c): return c.id))
 	XAlienation.force_roll = 0.5
 	XGear.force_roll = 0.5
+	XBattler.SHANA_ZHUANWU_ATTACK_FIX = false  # 比原版：贽殿遮那 77／83 原版普攻是 5769（O-548 T074 修正另见 xiyou_shana_zhuanwu_attack）
 	for c in ref.cases:
 		if c.observed == null:
 			continue
@@ -228,6 +229,7 @@ func _common(logic: XBattleLogic, b: XBattler) -> Dictionary:
 func _finish() -> void:
 	XAlienation.force_roll = -1.0
 	XGear.force_roll = -1.0
+	XBattler.SHANA_ZHUANWU_ATTACK_FIX = true
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
