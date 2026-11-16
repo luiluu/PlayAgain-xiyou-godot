@@ -995,9 +995,26 @@ static var _replace_attack_cache := {}
 static var _replace_attack_line := RegEx.create_from_string("(?i)<(?:ATTACK REPLACE|REPLACE ATTACK):[ ](.*)>")
 static var _first_number := RegEx.create_from_string("(\\d+)")
 
+## O-548（T074）：原版 MOD 数据错——夏娜专武贽殿遮那（武器 77）、天外天·贽殿遮那（83）写成 <Replace Attack: 5769>＋<Weapon Unleash 100%: 5769>，
+## 5769 是科比的被动「8秒肘击24下」（occasion 3 永不可用），说明写的「普攻变为天破壤碎」实为 10556。开：只对这两把把 5769 换成 10556、
+## 去掉 5769 的武器解放（与天启篇 skill_rework weapon:77／83 同口径）；关：逐字照原版（普攻显示成八秒肘击且用不了）
+static var SHANA_ZHUANWU_ATTACK_FIX := true
+const SHANA_ZHUANWU_WEAPONS := [77, 83]
+const SHANA_WRONG_ATTACK := 5769
+const SHANA_TIANPO := 10556
+
+static func _is_shana_zhuanwu(o: Dictionary) -> bool:
+	return SHANA_ZHUANWU_ATTACK_FIX and o.has("wtypeId") and SHANA_ZHUANWU_WEAPONS.has(int(o.get("base", o.get("id", 0))))
+
 ## DataManager.processWULNotetags1：逐行认 <Replace Attack: x>／<Attack Replace: x>，取里面第一串数字（技能名写法正式数据没用到，不认）；
 ## 多行时后写的盖前面的
 static func replace_attack_of(o) -> int:
+	var id := _replace_attack_raw(o)
+	if id == SHANA_WRONG_ATTACK and _is_shana_zhuanwu(o):
+		return SHANA_TIANPO
+	return id
+
+static func _replace_attack_raw(o) -> int:
 	if not o is Dictionary:
 		return 0
 	var note := str(o.get("note", ""))
@@ -1031,6 +1048,12 @@ static var _weapon_unleash_line := RegEx.create_from_string("(?i)<WEAPON UNLEASH
 
 ## DataManager.processWULNotetags1：逐行认 <Weapon Unleash x%: 技能>，几率 x×0.01，技能取名字里第一串数字（技能名写法正式数据没用到，不认）
 static func weapon_unleash_of(o) -> Array:
+	var out := _weapon_unleash_raw(o)
+	if not out.is_empty() and _is_shana_zhuanwu(o):
+		return out.filter(func(u): return int(u[0]) != SHANA_WRONG_ATTACK)
+	return out
+
+static func _weapon_unleash_raw(o) -> Array:
 	if not o is Dictionary:
 		return []
 	var note := str(o.get("note", ""))
