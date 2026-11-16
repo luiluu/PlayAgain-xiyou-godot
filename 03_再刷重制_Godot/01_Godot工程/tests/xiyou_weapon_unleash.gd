@@ -39,6 +39,7 @@ func _run() -> void:
 	check("same_source", ref.sourceIdentity.runtimeInputs == manifest.runtimeInputs)
 	check("oracle_clean", ref.cases.all(func(c): return c.errors.is_empty()), ref.cases.filter(func(c): return not c.errors.is_empty()).map(func(c): return c.id))
 	XGear.force_roll = 0.5
+	XBattler.SHANA_ZHUANWU_ATTACK_FIX = false  # 比原版：贽殿遮那 77／83 原版是 5769（T074 修正另见 xiyou_shana_zhuanwu_attack）
 	var triggered := 0
 	for c in ref.cases:
 		if c.observed == null:
@@ -111,6 +112,7 @@ func _measure(spec: Dictionary, observed: Dictionary) -> Dictionary:
 
 func _finish() -> void:
 	XGear.force_roll = -1.0
+	XBattler.SHANA_ZHUANWU_ATTACK_FIX = true
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
