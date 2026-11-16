@@ -1,0 +1,6 @@
+ring_band_hei.png: (288, 288); center radius 110.501..131.440; full pixel square envelope 109.809..132.136; red=0; soft_alpha=0; alpha=0/255
+ring_band_mo.png: (288, 288); center radius 111.016..112.270; full pixel square envelope 110.309..112.929; red=0; soft_alpha=0; alpha=0/255
+ring_center_death.png: (96, 96); center radius 33.504..44.525; full pixel square envelope 33.000..45.044; red=0; soft_alpha=0; alpha=0/255
+ring_orb_frame.png: (56, 56); center radius 21.506..26.879; full pixel square envelope 21.000..27.586; red=0; soft_alpha=0; alpha=0/255
+16x9: center vs all 13 label rectangles=0; orb vs other label rectangles=0; own orb labels rendered above frame per spec
+20x9: center vs all 13 label rectangles=0; orb vs other label rectangles=0; own orb labels rendered above frame per spec
