@@ -52,6 +52,7 @@ func _run() -> void:
 		await _page()
 		await _no_overlap()
 		await _motion()
+		await _link_cache()
 		_settings()
 		if out_dir != "" and windowed():
 			await _shots()
@@ -558,6 +559,105 @@ func _motion() -> void:
 	check("motion_fx_off_one_frame", rn.intro_t == 1.0 and rn.ring_motion_level() == 0)
 	XConfig.set_flag("codexScreenFx", true)
 	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	rn.free()
+
+
+# ---- T034 连线稳态缓存 ----
+
+func _link_cache() -> void:
+	var rn := XSkinRingNav.new()
+	rn.size = Vector2(800, 600)
+	rn.items = [{"name": "甲"}, {"name": "乙"}, {"name": "丙"}]
+	rn.style = {"link_style": 2}
+	rn.links = [[Vector2(0, -100), Vector2(80, -60)]]
+	rn.link_items = [[1]]
+	rn.links_elbowed = true
+	var base := rn.link_rebuilds
+	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	var c := rn.center()
+	rn.link_data(c, rn.links[0], 0, 1, XSkinRingNav.LINK_STYLES[2], false, 0)
+	check("link_cache_first_builds", rn.link_rebuilds == base + 1, rn.link_rebuilds)
+	for k in 30:   # 稳态（呼吸只动 _spin）：不重建
+		rn._spin += 0.016
+		rn.link_data(c, rn.links[0], 0, 1, XSkinRingNav.LINK_STYLES[2], false, 0)
+	check("link_cache_steady_no_rebuild", rn.link_rebuilds == base + 1, rn.link_rebuilds)
+	rn.link_data(c, rn.links[0], 0, 1, XSkinRingNav.LINK_STYLES[2], true, 0)
+	check("link_cache_hot_rebuilds", rn.link_rebuilds == base + 2)
+	rn.link_data(c, rn.links[0], 0, 1, XSkinRingNav.LINK_STYLES[3], true, 0)
+	check("link_cache_style_rebuilds", rn.link_rebuilds == base + 3)
+	rn.link_data(c + Vector2(5, 0), rn.links[0], 0, 1, XSkinRingNav.LINK_STYLES[3], true, 0)
+	check("link_cache_center_rebuilds", rn.link_rebuilds == base + 4)
+	rn.orb_radius += 2.0
+	rn.link_data(c + Vector2(5, 0), rn.links[0], 0, 1, XSkinRingNav.LINK_STYLES[3], true, 0)
+	check("link_cache_radius_rebuilds", rn.link_rebuilds == base + 5)
+	# 3 点路径（C 摆法）：link_curve 切换必须重建；path／缩放变更重建
+	var p3: Array = [Vector2(0, -100), Vector2(40, -90), Vector2(80, -60)]
+	var s3: Dictionary = XSkinRingNav.LINK_STYLES[2]
+	rn.style = {"link_style": 2, "link_curve": false}
+	var d1 := rn.link_data(c, p3, 0, 1, s3, false, 5)
+	var n1 := rn.link_rebuilds
+	rn.style = {"link_style": 2, "link_curve": true}
+	var d2 := rn.link_data(c, p3, 0, 1, s3, false, 5)
+	check("link_cache_curve_toggle_rebuilds", rn.link_rebuilds == n1 + 1 and d1.abs != d2.abs, rn.link_rebuilds)
+	rn.link_data(c, p3, 0, 1, s3, false, 5)
+	check("link_cache_curve_same_hits", rn.link_rebuilds == n1 + 1)
+	rn.link_data(c, [Vector2(0, -100), Vector2(40, -90), Vector2(80, -61)], 0, 1, s3, false, 5)
+	check("link_cache_path_rebuilds", rn.link_rebuilds == n1 + 2)
+	XUiSkin.motion_override = XUiSkin.Motion.SIMPLE   # 非 OFF 才读 _scales
+	rn._scales[0] = 1.2
+	rn.link_data(c, [Vector2(0, -100), Vector2(40, -90), Vector2(80, -61)], 0, 1, s3, false, 5)
+	check("link_cache_sr_rebuilds", rn.link_rebuilds == n1 + 3 or not XSkinSelScale.ENABLED, rn.link_rebuilds)
+	rn._scales[1] = 1.3
+	rn.link_data(c, [Vector2(0, -100), Vector2(40, -90), Vector2(80, -61)], 0, 1, s3, false, 5)
+	check("link_cache_ss_rebuilds", rn.link_rebuilds == n1 + 4 or not XSkinSelScale.ENABLED, rn.link_rebuilds)
+	rn.style = {"link_style": 2}
+	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	rn.free()
+	# 真实 _draw＋Motion.FULL 呼吸：稳态不重建
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	var live := XSkinRingNav.new()
+	live.size = Vector2(800, 600)
+	live.items = [{"name": "甲"}, {"name": "乙"}]
+	live.style = {"link_style": 2}
+	live.links = [p3]
+	live.link_items = [[1]]
+	live.links_elbowed = true
+	add_child(live)
+	await frames(3)
+	var r0 := live.link_rebuilds
+	var sp0 := live._spin
+	for i in 20:
+		live.advance(0.016)
+		await frames(1)
+	check("link_cache_live_draw_built", r0 >= 1 and live.ring_draws >= 0, r0)
+	check("link_cache_live_breath_no_rebuild", live.link_rebuilds == r0 and live._spin > sp0 or not XUiSkin.breathing(), [r0, live.link_rebuilds, live._spin, sp0])
+	live.queue_free()
+	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	rn = XSkinRingNav.new()
+	rn.size = Vector2(800, 600)
+	rn.items = [{"name": "甲"}, {"name": "乙"}, {"name": "丙"}]
+	c = rn.center()
+	# 帧耗时对照（13 条枝 × 200 帧，微秒/帧）：改前＝每帧重建（清缓存）；改后＝命中缓存
+	var paths := []
+	var its := []
+	for k in 13:
+		paths.append([Vector2(0, -100), Vector2(80, -60 + k)])
+		its.append([k])
+	rn.links = paths
+	rn.link_items = its
+	var st: Dictionary = XSkinRingNav.LINK_STYLES[4]
+	var t0 := Time.get_ticks_usec()
+	for f in 200:
+		for k in 13:
+			rn._link_cache.erase(k)
+			rn.link_data(c, paths[k], 0, 1, st, false, k)
+	var rebuild_us := (Time.get_ticks_usec() - t0) / 200.0
+	t0 = Time.get_ticks_usec()
+	for f in 200:
+		for k in 13:
+			rn.link_data(c, paths[k], 0, 1, st, false, k)
+	var hit_us := (Time.get_ticks_usec() - t0) / 200.0
+	print("LINK_CACHE_US（13 条 2 点枝、rebuild 档的 erase 计入）rebuild=%.1f hit=%.1f" % [rebuild_us, hit_us])
 	rn.free()
 
 

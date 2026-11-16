@@ -637,7 +637,7 @@ func _draw() -> void:
 			var si: int = (link_items[li] as Array)[0] if li < link_items.size() and not (link_items[li] as Array).is_empty() else -1
 			if hot and ri >= 0:
 				hot_roots[ri] = true
-			_draw_styled_link(c, path, ri, si, LINK_STYLES[ls], hot)
+			_draw_styled_link(c, path, ri, si, LINK_STYLES[ls], hot, li)
 			continue
 		var lc: Color = sty("link")
 		if hot:
@@ -766,11 +766,16 @@ static func _cross_t(q: Vector2, p: Vector2, o: Vector2, r: float) -> float:
 
 ## 一条变宽变色的带子：逐段四边形（顶点法线取相邻两段平均、斜接补长），两边再描 1px 抗锯齿边
 func _ribbon(pts: PackedVector2Array, widths: PackedFloat32Array, cols: PackedColorArray) -> void:
+	_ribbon_draw(_ribbon_build(pts, widths, cols))
+
+
+## 带子的几何（左右边点列＋颜色）：只在连线几何变了才重算（T034 稳态缓存）
+static func _ribbon_build(pts: PackedVector2Array, widths: PackedFloat32Array, cols: PackedColorArray) -> Dictionary:
 	var n := pts.size()
-	if n < 2:
-		return
 	var left := PackedVector2Array()
 	var right := PackedVector2Array()
+	if n < 2:
+		return {"left": left, "right": right, "cols": cols}
 	for k in n:
 		var d0 := (pts[k] - pts[maxi(k - 1, 0)]).normalized() if k > 0 else (pts[1] - pts[0]).normalized()
 		var d1 := (pts[mini(k + 1, n - 1)] - pts[k]).normalized() if k < n - 1 else d0
@@ -782,22 +787,55 @@ func _ribbon(pts: PackedVector2Array, widths: PackedFloat32Array, cols: PackedCo
 		var h := widths[k] * 0.5 * miter
 		left.append(pts[k] + nrm * h)
 		right.append(pts[k] - nrm * h)
-	for k in n - 1:
+	return {"left": left, "right": right, "cols": cols}
+
+
+func _ribbon_draw(rb: Dictionary) -> void:
+	var left: PackedVector2Array = rb.left
+	var right: PackedVector2Array = rb.right
+	var cols: PackedColorArray = rb.cols
+	for k in left.size() - 1:
 		draw_polygon(PackedVector2Array([left[k], left[k + 1], right[k + 1], right[k]]),
 			PackedColorArray([cols[k], cols[k + 1], cols[k + 1], cols[k]]))
 	draw_polyline_colors(left, cols, 1.0, true)
 	draw_polyline_colors(right, cols, 1.0, true)
 
 
+## 连线缓存（T034）：几何只跟 path／两球缩放／半径／样式／hot／环心有关，不跟呼吸（_spin）；呼吸每帧重画时直接复用
+var _link_cache := {}
+## 连线几何重建次数（专项断言：稳态为 0）
+var link_rebuilds := 0
+
+
 ## 按样式画一条单副栏枝（ri／si＝根栏／副栏是第几项，取放大后的半径算边缘）
-func _draw_styled_link(c: Vector2, path: Array, ri: int, si: int, st: Dictionary, hot: bool) -> void:
+func _draw_styled_link(c: Vector2, path: Array, ri: int, si: int, st: Dictionary, hot: bool, li := 0) -> void:
+	var data := link_data(c, path, ri, si, st, hot, li)
+	if data.has("abs"):
+		_paint_styled_link(data, st)
+
+
+## 取这条枝的几何（命中缓存就直接返回，几何变了才重建；专项直接调这个，不用在 _draw 里）
+func link_data(c: Vector2, path: Array, ri: int, si: int, st: Dictionary, hot: bool, li := 0) -> Dictionary:
+	var sr := item_scale(ri) if ri >= 0 else 1.0
+	var ss := item_scale(si) if si >= 0 else 1.0
+	var key := [c, hash(path), ri, si, sr, ss, orb_radius, hot, st.hash(), bool(sty("link_curve"))]
+	var data: Dictionary = _link_cache.get(li, {})
+	if data.is_empty() or data.key != key:
+		data = _build_styled_link(c, path, sr, ss, st, hot)
+		data["key"] = key
+		_link_cache[li] = data
+		link_rebuilds += 1
+	return data
+
+
+func _build_styled_link(c: Vector2, path: Array, sr: float, ss: float, st: Dictionary, hot: bool) -> Dictionary:
 	var a: Vector2 = path[0]
 	var b: Vector2 = path[-1]
-	var ra := orb_radius * (item_scale(ri) if ri >= 0 else 1.0) + 4.5   # +4.5：躲开球的投影（r+2、下移 3），根部印才露得出来
-	var rb := orb_radius * (item_scale(si) if si >= 0 else 1.0) + float(st.gap)
+	var ra := orb_radius * sr + 4.5   # +4.5：躲开球的投影（r+2、下移 3），根部印才露得出来
+	var rb := orb_radius * ss + float(st.gap)
 	var pts := clip_route(link_route(path), a, ra, b, rb)
 	if pts.size() < 2:
-		return
+		return {}
 	var total := 0.0
 	var acc := PackedFloat32Array([0.0])
 	for k in range(1, pts.size()):
@@ -828,11 +866,25 @@ func _draw_styled_link(c: Vector2, path: Array, ri: int, si: int, st: Dictionary
 		if float(st.edge) > 0.0:
 			es.append(w + float(st.edge) * 2.0)
 			ecs.append(Color(0, 0, 0, 0.55 * clampf(al / maxf(float(st.a0), 0.01), 0.0, 1.0)))
+	var out := {"abs": abs_pts, "col": col, "wadd": wadd, "boost": boost}
 	if not es.is_empty():
-		_ribbon(abs_pts, es, ecs)
+		out["edge"] = _ribbon_build(abs_pts, es, ecs)
 	if not us.is_empty():
-		_ribbon(abs_pts, us, ucs)
-	_ribbon(abs_pts, ws, cs)
+		out["under"] = _ribbon_build(abs_pts, us, ucs)
+	out["main"] = _ribbon_build(abs_pts, ws, cs)
+	return out
+
+
+func _paint_styled_link(data: Dictionary, st: Dictionary) -> void:
+	var abs_pts: PackedVector2Array = data.abs
+	var col: Color = data.col
+	var wadd: float = data.wadd
+	var boost: float = data.boost
+	if data.has("edge"):
+		_ribbon_draw(data.edge)
+	if data.has("under"):
+		_ribbon_draw(data.under)
+	_ribbon_draw(data.main)
 	var head := Color(col, minf(1.0, float(st.a0) + 0.1 * boost + 0.05))
 	var d0 := (abs_pts[1] - abs_pts[0]).normalized()
 	match String(st.root):
