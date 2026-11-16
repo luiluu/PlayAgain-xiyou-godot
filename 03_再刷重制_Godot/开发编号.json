@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.637",
-  "sequence": 637,
-  "next": "dev.638",
-  "nextSequence": 638,
+  "current": "dev.638",
+  "sequence": 638,
+  "next": "dev.639",
+  "nextSequence": 639,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "tianqi-ledger-p2",
+  "currentChange": "t022-joystick-pet",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
