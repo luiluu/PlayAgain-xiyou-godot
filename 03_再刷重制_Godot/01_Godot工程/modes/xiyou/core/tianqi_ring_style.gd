@@ -11,7 +11,7 @@ extends RefCounted
 ## resolve 只按槽位号出，界面自己把槽位号换成环项序号（装备页 items[i].key）。
 ## 数据 tianqi_data/ring_styles.json；图在 content/tianqi/ring_style/，没有的用程序画的同尺寸灰圈占位（texture()）。
 ##
-## 开关：ENABLED（O-待定-1）false＝resolve 一律空、环和现状一模一样；GLINT（O-待定-2）false＝不认微亮名单（路 A 退回路 B）；
+## 开关：ENABLED（O-536）false＝resolve 一律空、环和现状一模一样；GLINT（O-537）false＝不认微亮名单（路 A 退回路 B）；
 ## 玩家设置「装备环纹」codexRingStyle（默认开，D101）。非天启篇存档不生效；新皮肤关、非分支摆法时装备页根本不调。
 
 static var ENABLED := true
