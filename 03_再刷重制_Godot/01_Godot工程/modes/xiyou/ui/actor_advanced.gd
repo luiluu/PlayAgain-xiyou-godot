@@ -189,6 +189,8 @@ var v108_scale := 0.0  # 本帧 v1.08 用的缩放（0＝没用）
 
 ## CodexSV.scaleFor(profiles.Yunshang)：可见高缩到 72、宽 129，取小
 static func yunshang_scale() -> float:
+	if XYunshang.art_path("sv_actors", "Yunshang") != "":
+		return 1.0
 	var p: Array = XAppearance.PROFILES.Yunshang
 	return minf(XAppearance.PROFILE_H / float(p[5] - p[3]), XAppearance.PROFILE_W / float(p[4] - p[2]))
 

@@ -128,6 +128,8 @@ func _invalid_imports(dir: String) -> Array:
 
 
 func _run() -> void:
+	var yunshang_art := XYunshang.ART
+	XYunshang.ART = false  # 此专项量旧正式源归一；新图由 xiyou_yunshang_art 守卫。
 	XMessageBox.auto = true
 	var ids: Array = SMOOTH + CRISP
 	check("switch_default_on", XBattlerSprite.SV_NORM_SMOOTH == true)
@@ -161,6 +163,7 @@ func _run() -> void:
 			check("on.%d.back_smooth" % id, a.back == true)
 			check("off.%d.grown_crisp" % id, z.grown == false)
 			check("off.%d.back_crisp" % id, z.back == false)
+	XYunshang.ART = yunshang_art
 	_finish()
 
 
