@@ -37,6 +37,7 @@ var top := 0
 var data: Array = []
 var cat_win: XMVWindow
 var list_win: XMVWindow
+var list_pager: XListPager   # T050 翻页件（新界面关着时为 null）
 var help_card: XHelpCard
 var _drift := Vector2.ZERO
 
@@ -52,6 +53,7 @@ func _ready() -> void:
 	list_win = XMVWindow.make(self, LIST_RECT, op, _paint_list)
 	for w in [cat_win, list_win]:
 		w.canvas.blink = true
+	list_pager = XListPager.attach(list_win, _pager_step)
 	help_card = XHelpCard.new()
 	add_child(help_card)
 	help_card.show_for({})
@@ -110,7 +112,7 @@ func pet_label(pet: Dictionary) -> String:
 
 func list_ops() -> Array:
 	var ops := []
-	for i in range(top * 2, mini((top + ROWS) * 2, data.size())):
+	for i in range(top * 2, mini((top + list_rows()) * 2, data.size())):
 		ops += gear_ops(data[i], cell(i, top)) if _symbol() == "equip" else pet_ops(pet_label(data[i]), cell(i, top))
 	return ops
 
@@ -121,15 +123,39 @@ func _paint_cat(c: XMVCanvas) -> void:
 
 
 func _paint_list(c: XMVCanvas) -> void:
-	if index >= 0 and floori(index / 2.0) >= top and floori(index / 2.0) < top + ROWS:
+	if index >= 0 and floori(index / 2.0) >= top and floori(index / 2.0) < top + list_rows():
 		var p := cell(index, top)
 		c.cursor(Rect2(p.x, p.y, COL_W, LH), mode == "list")
 	XActorBook.paint_ops(c, list_ops())
 
 
+## T050：天启篇新界面开着且列表超一页时少放一行，给翻页件腾地方（见 XListPager.rows_for；总量按行算）
+func list_rows() -> int:
+	return XListPager.rows_for(ROWS, ceili(data.size() / 2.0))
+
+
+func _pager_step(d: int) -> void:
+	if data.is_empty():
+		return
+	if mode != "list" or index < 0:   # 没选中项（分类态）只翻不挪
+		top = XListPager.top_of(XListPager.page_of(top, list_rows(), ceili(data.size() / 2.0)) + d, list_rows(), ceili(data.size() / 2.0))
+		_refresh()
+		return
+	var r := XMenu.page(top, index, data.size(), list_rows(), d, 2)
+	top = r[0]
+	if r[1] != index:
+		XSound.system(0)
+		_select(r[1])
+	else:
+		_refresh()
+
+
 func _refresh() -> void:
 	list_win.up_arrow = top > 0
-	list_win.down_arrow = (top + ROWS) * 2 < data.size()
+	list_win.down_arrow = (top + list_rows()) * 2 < data.size()
+	if list_pager != null:   # 有翻页件时它自己画页码，底边的下箭头不要
+		list_pager.set_state(top, list_rows(), ceili(data.size() / 2.0))
+		list_win.down_arrow = list_win.down_arrow and not list_pager.visible
 	for w in [cat_win, list_win]:
 		w.refresh()
 	_update_help()
@@ -212,7 +238,7 @@ func cancel() -> void:
 
 func _select(i: int) -> void:
 	index = i
-	top = XMenu._scroll_to(floori(i / 2.0), top, ROWS)
+	top = XMenu._scroll_to(floori(i / 2.0), top, list_rows())
 	_refresh()
 
 
@@ -257,7 +283,7 @@ func _gui_input(event: InputEvent) -> void:
 			cancel()
 		MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP:
 			if LIST_RECT.has_point(p):
-				top = clampi(top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0, ceili(data.size() / 2.0) - ROWS))
+				top = clampi(top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0, ceili(data.size() / 2.0) - list_rows()))
 				_refresh()
 		MOUSE_BUTTON_LEFT:
 			var pad := XMVWindow.PADDING
@@ -270,7 +296,7 @@ func _gui_input(event: InputEvent) -> void:
 			elif mode == "list" and LIST_RECT.has_point(p):
 				var row := floori((p.y - LIST_RECT.position.y - pad) / LH)
 				var i := (top + row) * 2 + (1 if p.x - pad >= COL_STEP else 0)
-				if row >= 0 and row < ROWS and i < data.size():
+				if row >= 0 and row < list_rows() and i < data.size():
 					if i == index:
 						ok()
 					else:
@@ -295,7 +321,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		# 两列列表不接管 pageup／pagedown：走通用翻页（页项数＝行数×2）
 		XKeyMap.handled(self)
 		if not data.is_empty():
-			var r := XMenu.page(top, index, data.size(), ROWS, XMenu.page_dir(event), 2)
+			var r := XMenu.page(top, index, data.size(), list_rows(), XMenu.page_dir(event), 2)
 			top = r[0]
 			if r[1] != index:
 				XSound.system(0)

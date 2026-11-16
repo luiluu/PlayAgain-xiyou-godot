@@ -28,6 +28,7 @@ var top := 0
 var actors: Array = []
 var head_win: XMVWindow
 var list_win: XMVWindow
+var list_pager: XListPager   # T050 翻页件（新界面关着时为 null）
 
 
 func _ready() -> void:
@@ -39,6 +40,7 @@ func _ready() -> void:
 	head_win = XMVWindow.make(self, HEAD_RECT, XUI.MENU_WINDOW_OPACITY, _paint_head)
 	list_win = XMVWindow.make(self, LIST_RECT, XUI.MENU_WINDOW_OPACITY, _paint_list)
 	list_win.canvas.blink = true
+	list_pager = XListPager.attach(list_win, page)
 	_refresh()
 
 
@@ -58,7 +60,7 @@ static func row_texts(a: XActor) -> Array:
 func _paint_list(c: XMVCanvas) -> void:
 	var w := c.size.x - TEXT_PADDING * 2
 	var name_w := minf(240.0, w * 0.3)
-	for i in range(top, mini(top + ROWS, actors.size())):
+	for i in range(top, mini(top + list_rows(), actors.size())):
 		var y := (i - top) * LH
 		if i == index:
 			c.cursor(Rect2(0, y, c.size.x, LH))
@@ -68,9 +70,17 @@ func _paint_list(c: XMVCanvas) -> void:
 		c.text(t[2], TEXT_PADDING + w - STATUS_W, y, STATUS_W, "right", ON_COLOR if t[2] == "启用" else XUI.TEXT)
 
 
+## T050：天启篇新界面开着且角色超一页时少放一行，给翻页件腾地方（见 XListPager.rows_for）
+func list_rows() -> int:
+	return XListPager.rows_for(ROWS, actors.size())
+
+
 func _refresh() -> void:
 	list_win.up_arrow = top > 0
-	list_win.down_arrow = top + ROWS < actors.size()
+	list_win.down_arrow = top + list_rows() < actors.size()
+	if list_pager != null:   # 有翻页件时它自己画页码，底边的下箭头不要
+		list_pager.set_state(top, list_rows(), actors.size())
+		list_win.down_arrow = list_win.down_arrow and not list_pager.visible
 	list_win.refresh()
 
 
@@ -78,14 +88,14 @@ func select(i: int) -> void:
 	if i == index:
 		return
 	index = i
-	top = XMenu._scroll_to(index, top, ROWS)
+	top = XMenu._scroll_to(index, top, list_rows())
 	XSound.system(0)
 	_refresh()
 
 
 ## Window_CodexCostumes（Window_Command）不接管 pageup／pagedown：照 cursorPagedown／cursorPageup 整页翻（ui11）
 func page(d: int) -> void:
-	var r := XMenu.page(top, index, actors.size(), ROWS, d)
+	var r := XMenu.page(top, index, actors.size(), list_rows(), d)
 	top = r[0]
 	if r[1] != index:
 		index = r[1]
@@ -116,11 +126,11 @@ func _gui_input(event: InputEvent) -> void:
 			cancel()
 		MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP:
 			var d := 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1
-			top = clampi(top + d, 0, maxi(0, actors.size() - ROWS))
+			top = clampi(top + d, 0, maxi(0, actors.size() - list_rows()))
 			_refresh()
 		MOUSE_BUTTON_LEFT:
 			var p: Vector2 = event.position - LIST_RECT.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
-			if not LIST_RECT.has_point(event.position) or p.y < 0 or p.y >= ROWS * LH:
+			if not LIST_RECT.has_point(event.position) or p.y < 0 or p.y >= list_rows() * LH:
 				return
 			var i := top + floori(p.y / LH)
 			if i >= actors.size():

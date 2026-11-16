@@ -681,6 +681,8 @@ func _move_inner(d: int, wrap: bool) -> void:
 			_cat = XMenu._move(_cat, d, XShop.CATEGORIES.size(), wrap)
 			_cat_top = XMenu._scroll_to(_cat, _cat_top, CAT_ROWS)
 			_top = 0
+			if XUiSkin.on():   # T050：键盘在分类态切分类也回第 1 页（与翻页件的环切换一致，西游档不变）
+				_index = 0
 		"list":
 			var n := entries().size()
 			if n > 0:

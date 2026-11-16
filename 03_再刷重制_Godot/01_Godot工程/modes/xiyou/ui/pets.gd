@@ -56,6 +56,7 @@ var team := -1
 var skill_index := -1
 var skill_top := 0
 var index_win: XMVWindow
+var index_pager: XListPager   # T050 翻页件（新界面关着时为 null）
 var status_win: XMVWindow
 var skill_win: XMVWindow
 var bottom_win: XMVWindow
@@ -86,6 +87,7 @@ func _ready() -> void:
 	syn_win = XMVWindow.make(self, SYN_RECT, op, _paint_syn)
 	for w in [index_win, skill_win, bottom_win, team_win, feed_win, syn_win]:
 		w.canvas.blink = true
+	index_pager = XListPager.attach(index_win, _pager_step)
 	skill_win.openness = 0
 	team_win.openness = 0
 	feed_win.openness = 0
@@ -221,9 +223,9 @@ func team_names() -> Array:
 func _paint_index(c: XMVCanvas) -> void:
 	var s := XState.current
 	var l := pets()
-	if index >= top and index < top + ROWS and not l.is_empty():
+	if index >= top and index < top + index_rows() and not l.is_empty():
 		c.cursor(Rect2(0, (index - top) * LH, c.size.x, LH), mode == "index")
-	for i in range(top, mini(top + ROWS, l.size())):
+	for i in range(top, mini(top + index_rows(), l.size())):
 		_paint_ops(c, [_t(display_name(l[i]).replace(MUTANT, ""), 6, (i - top) * LH, c.size.x - 12)])
 
 
@@ -331,7 +333,10 @@ func _select_pet() -> void:
 
 func _refresh() -> void:
 	index_win.up_arrow = top > 0
-	index_win.down_arrow = top + ROWS < pets().size()
+	index_win.down_arrow = top + index_rows() < pets().size()
+	if index_pager != null:   # 有翻页件时它自己画页码，底边的下箭头不要
+		index_pager.set_state(top, index_rows(), pets().size())
+		index_win.down_arrow = index_win.down_arrow and not index_pager.visible
 	bottom_win.up_arrow = cmd_top > 0
 	bottom_win.down_arrow = cmd_top + BOTTOM_ROWS < COMMANDS.size()
 	skill_win.up_arrow = skill_top > 0
@@ -347,7 +352,7 @@ func select(i: int) -> void:
 		return
 	index = i
 	XSound.system(0)
-	top = XMenu._scroll_to(index, top, ROWS)
+	top = XMenu._scroll_to(index, top, index_rows())
 	_select_pet()
 
 
@@ -458,7 +463,7 @@ func _syn_ok() -> void:
 		syn = -1
 		_back_to_index()
 		index = r
-		top = XMenu._scroll_to(index, top, ROWS)
+		top = XMenu._scroll_to(index, top, index_rows())
 	else:
 		_toast("合成失败")
 		_close_syn()
@@ -560,11 +565,25 @@ func _move(d: int, wrap: bool) -> void:
 				_refresh()
 
 
+## T050：天启篇新界面开着且宠物超一页时少放一行，给翻页件腾地方（见 XListPager.rows_for）
+func index_rows() -> int:
+	return XListPager.rows_for(ROWS, pets().size())
+
+
+func _pager_step(d: int) -> void:
+	if mode == "index":
+		_page(d)
+	elif not pets().is_empty():   # 光标在别的窗（指令、喂养…）：只翻宠物列表，不换选中的宠物
+		var n := pets().size()
+		top = XListPager.top_of(XListPager.page_of(top, index_rows(), n) + d, index_rows(), n)
+		_refresh()
+
+
 ## Star_PetSystem 的宠物列表、底部指令、喂养、技能窗都是 Window_Selectable，没接管 pageup／pagedown：走通用翻页
 func _page(d: int) -> void:
 	match mode:
 		"index":
-			var r := XMenu.page(top, index, pets().size(), ROWS, d)
+			var r := XMenu.page(top, index, pets().size(), index_rows(), d)
 			top = r[0]
 			if r[1] != index:
 				select(r[1])
@@ -594,7 +613,7 @@ func _page_set(r: Array, top_name: String, index_name: String) -> void:
 func _wheel(d: int) -> void:
 	match mode:
 		"index":
-			top = XMenu.wheel(top, pets().size(), ROWS, d)
+			top = XMenu.wheel(top, pets().size(), index_rows(), d)
 		"bottom":
 			cmd_top = XMenu.wheel(cmd_top, COMMANDS.size(), BOTTOM_ROWS, d)
 		"feed":

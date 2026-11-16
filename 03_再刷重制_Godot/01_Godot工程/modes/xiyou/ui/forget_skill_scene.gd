@@ -27,6 +27,7 @@ var rows: Array = []
 var index := 0
 var top := 0
 var win: XMVWindow
+var pager: XListPager   # T050 翻页件（新界面关着或技能不超一页时为 null）
 
 
 static func listed_skills(a: XActor) -> Array:
@@ -34,9 +35,18 @@ static func listed_skills(a: XActor) -> Array:
 
 
 ## Star_Window_ForgetSkill.windowHeight：fittingHeight(min(numVisibleRows, 12))
+## T050：窗高刚好裹住行数，没有空地。新界面开着且技能超一页（>12）时，每页放 11 行，窗口再加高 46 放翻页件
 static func window_rect(n: int) -> Rect2:
-	var h := mini(n, MAX_ROWS) * LH + XMVWindow.PADDING * 2
+	var h := page_rows_of(n) * LH + XMVWindow.PADDING * 2 + (XListPager.DEFAULT_SIZE.y + 2.0 if pager_on(n) else 0.0)
 	return Rect2((1280.0 - WIDTH) / 2.0, (720.0 - h) / 2.0, WIDTH, h)
+
+
+static func pager_on(n: int) -> bool:
+	return XUiSkin.on() and n > MAX_ROWS
+
+
+static func page_rows_of(n: int) -> int:
+	return mini(n, MAX_ROWS - 1 if pager_on(n) else MAX_ROWS)
 
 
 func setup(a: XActor) -> XForgetSkillScene:
@@ -51,16 +61,20 @@ func _ready() -> void:
 	rows = listed_skills(actor).map(func(id): return {"id": id, "kept": true})
 	win = XMVWindow.make(self, window_rect(rows.size()), XUI.MENU_WINDOW_OPACITY, _paint)
 	win.canvas.blink = true
+	pager = XListPager.attach(win, page) if pager_on(rows.size()) else null
 	_refresh()
 
 
 func page_rows() -> int:
-	return mini(rows.size(), MAX_ROWS)
+	return page_rows_of(rows.size())
 
 
 func _refresh() -> void:
 	win.up_arrow = top > 0
 	win.down_arrow = top + page_rows() < rows.size()
+	if pager != null:   # 有翻页件时它自己画页码，底边的下箭头不要
+		pager.set_state(top, page_rows(), rows.size())
+		win.down_arrow = win.down_arrow and not pager.visible
 	win.refresh()
 
 
