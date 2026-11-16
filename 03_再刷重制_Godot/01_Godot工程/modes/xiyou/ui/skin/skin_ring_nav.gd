@@ -206,6 +206,21 @@ func _add_band(art: Dictionary, alpha: float, t: float) -> void:
 	ring_draws += 1
 
 
+## 球框上的微光扫过：框身上一段 ≤ 60° 的亮弧，分 6 段由尾到头越来越亮（只画不改框，选中红框之后补画仍在上面）
+func _draw_sweep(i: int) -> void:
+	var k := item_scale(i)
+	var r := 24.5 * k   # 框身（贴图 56px 里半径约 24～25）
+	var head := _spin * TAU / 3.0
+	var seg := deg_to_rad(10.0)
+	for n in 6:
+		var a0 := head - seg * (6 - n)
+		var pts := PackedVector2Array()
+		for j in 5:
+			pts.append(item_pos(i) + Vector2.from_angle(a0 + seg * j / 4.0) * r)
+		RenderingServer.canvas_item_add_polyline(_orb_ci, pts, PackedColorArray([Color(1, 0.93, 0.66, 0.25 + 0.12 * n)]), 3.0 * k, true)
+	ring_draws += 1
+
+
 ## 第 3、4 层：球框、小点、补画选中红框（_orb_ci），栏位名（_label_ci）
 func _draw_layers() -> void:
 	RenderingServer.canvas_item_clear(_orb_ci)
@@ -218,7 +233,20 @@ func _draw_layers() -> void:
 		var f = orb_frames.get(i)
 		if f is Dictionary and f.get("tex") is Texture2D:
 			var tex: Texture2D = f.tex
-			RenderingServer.canvas_item_add_texture_rect(_orb_ci, frame_rect(i, tex), tex.get_rid(), false, f.get("tint", Color.WHITE))
+			var tint: Color = f.get("tint", Color.WHITE)
+			var fx := str(f.get("fx", ""))
+			if fx == "breath" and ring_motion_level() >= 2:   # 呼吸亮度：框色在原色和提亮之间慢慢来回（4 秒一周）
+				tint = tint.lerp(Color.WHITE, 0.45 * (0.5 + 0.5 * sin(_spin * TAU / 4.0)))
+			RenderingServer.canvas_item_add_texture_rect(_orb_ci, frame_rect(i, tex), tex.get_rid(), false, tint)
+			ring_draws += 1
+			if fx == "sweep" and ring_motion_level() >= 2:   # 微光扫过：一小段亮弧沿框转一圈（3 秒一周），尾部渐淡
+				_draw_sweep(i)
+		elif f is Dictionary and f.has("outline"):   # 淡框（神话及以上）：球原来的 1.5px 描边位置换品质色 2px，不加斜角不加特效
+			var r := orb_radius * item_scale(i)
+			var pts := PackedVector2Array()
+			for k in 65:
+				pts.append(item_pos(i) + Vector2.from_angle(TAU * k / 64.0) * r)
+			RenderingServer.canvas_item_add_polyline(_orb_ci, pts, PackedColorArray([f.outline]), float(f.get("outline_w", 2.0)), true)
 			ring_draws += 1
 		if orb_dots.has(i):
 			var dr := dot_rect(i)

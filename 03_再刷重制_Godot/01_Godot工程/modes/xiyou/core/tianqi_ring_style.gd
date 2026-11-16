@@ -16,6 +16,13 @@ extends RefCounted
 
 static var ENABLED := true
 static var GLINT := true
+## O-待定（D108／D109）：false＝球框只认毕业武器、刻印专属武器、备注件（回到 main 行为）；true＝再加两档：
+## 专属武器（不论刻没刻印）套斜角框＋特效；神话及以上武器只把球描边换成品质色 2px。只管槽位 0、1
+static var ORB_TIERS := true
+## 特殊球框的特效：""＝无、"sweep"＝微光沿框扫过、"breath"＝亮度呼吸。动效档「关」时不动（nav 判）。默认 sweep，两种各截图给 Kyo 挑
+static var ORB_FX := "sweep"
+const WEAPON_SLOTS := [0, 1]
+const MYTHIC_GRADE := 6
 
 const PATH := "res://modes/xiyou/tianqi_data/ring_styles.json"
 const ART_DIR := "res://content/tianqi/ring_style/"
@@ -172,10 +179,19 @@ static func resolve(actor, party: Array = [], s = null) -> Dictionary:
 				seal = str(XTianqiQiyinGear.weapon(str(m.get("key", ""))).get("seal", ""))
 		if seal != "" and _has_rule("qiyin_weapon" if str(m.kind) == "weapon" else "qiyin_engrave"):
 			out.orbs[sl] = {"style": "orb_seal", "tint": seal_tint(seal)}
+			if ORB_TIERS:
+				out.orbs[sl]["fx"] = ORB_FX
 			continue
 		var tag := note_tag(e)
 		if not tag.is_empty() and _has_rule("item_tag") and str(style(str(tag[0])).get("layer", "")) == "orb":
 			out.orbs[sl] = {"style": str(tag[0]), "tint": seal_tint(str(tag[1])) if str(tag[1]) != "" else Color.html(str(style(str(tag[0])).get("tint", "#e3bd72")))}
+			continue
+		# 球框两档（D108／D109）：只管武器栏槽位 0、1；两档都中取特殊（上面已 continue 的毕业武器、刻印、备注件不会走到这里）
+		if ORB_TIERS and WEAPON_SLOTS.has(sl) and XQuality.gear_kind(e) == "weapon":   # 槽位 1 在非双持角色是防具、178 槽位 1 是头盔，得认类型
+			if XEquipment.is_exclusive(e):   # 专属武器不论刻没刻印：套斜角框，未刻印用中性旧金（seal_tint("")）
+				out.orbs[sl] = {"style": "orb_seal", "tint": seal_tint(""), "fx": ORB_FX}
+			elif XQuality.grade(e) >= MYTHIC_GRADE:   # 神话及以上：只换描边色（品质色）、2px
+				out.orbs[sl] = {"style": "orb_tier", "tint": orb_tier_tint(XQuality.color(e)), "outline_w": float(style("orb_tier").get("outline_w", 2.0))}
 	# 小点
 	var min_pieces := int(data().get("dots", {}).get("min_pieces", 2))
 	for seal in set_slots:
@@ -184,6 +200,13 @@ static func resolve(actor, party: Array = [], s = null) -> Dictionary:
 				out.dots[sl] = seal_tint(seal)
 	out.sig = signature(out)
 	return out
+
+
+## 淡框描边色：取品质色；神话品质色（#ff483c）过「正红」门（2.1 第 3 条：环纹不许用正红、不跟选中红框混），改用铜橙 red_safe_tint（离选中红框远一点）
+static func orb_tier_tint(c: Color) -> Color:
+	if c.r8 >= RED_R and c.g8 <= RED_G + 30 and c.b8 <= RED_B + 30:   # 正红门（G≤90、B≤70）各放宽 30：离正红近的都算（神话 255,72,60 本来就落在放宽后的 G≤120、B≤100 里）
+		return Color.html(str(style("orb_tier").get("red_safe_tint", "#d9925c")))
+	return c
 
 
 ## 槽位 → 装备（只取非空的；178 光着手时第 0 格不算，同 XActor.equip_list）

@@ -11,12 +11,15 @@ const SIZES := [[Vector2i(1280, 720), "16x9"], [Vector2i(960, 720), "4x3"], [Vec
 var results := []
 var out_dir := ""
 var off_shot := ""
+var orb_shots := ""
 
 
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
+		elif arg.begins_with("--orb-shots="):
+			orb_shots = arg.substr(12)
 		elif arg.begins_with("--off-shot="):
 			off_shot = arg.substr(11)
 	_run.call_deferred()
@@ -45,6 +48,8 @@ func _run() -> void:
 	XUiSkin.touch_override = 0
 	if off_shot != "":
 		await _off_shot_only()
+	elif orb_shots != "":
+		await _orb_shots_only()
 	else:
 		_rules()
 		_textures()
@@ -207,6 +212,47 @@ func _rules() -> void:
 	a.equips[1] = _gear({"kind": "weapon", "seal": "bai", "key": wk_bai, "true_seal": false})
 	r = R.resolve(a)
 	check("rule_dual_two_tints", (r.orbs as Dictionary).size() == 2 and r.orbs[0].tint == R.seal_tint("hei") and r.orbs[1].tint == R.seal_tint("bai"), r)
+	# 球框两档（D108／D109）：专属武器（不论刻没刻印）套斜角框＋特效；神话及以上武器淡框；两档都中取特殊；只管槽位 0、1
+	_clear(a)
+	var excl := {"kind": "weapon", "wtypeId": 1, "etypeId": 1, "note": "<req_actors: 1>"}
+	a.equips[0] = _gear({}, excl)
+	r = R.resolve(a)
+	check("tier_exclusive_plain_gold", (r.orbs as Dictionary).keys() == [0] and r.orbs[0].style == "orb_seal" and r.orbs[0].tint == R.seal_tint("") and r.orbs[0].fx == R.ORB_FX, r)
+	a.equips[0] = _gear({"kind": "engrave", "key": wk_bai}, excl)
+	r = R.resolve(a)
+	check("tier_exclusive_engraved_seal_color", r.orbs[0].style == "orb_seal" and r.orbs[0].tint == R.seal_tint("bai"), r)
+	var myth := {"kind": "weapon", "wtypeId": 1, "etypeId": 1, "meta": {"quality": "14"}}
+	a.equips[1] = _gear({}, myth)
+	r = R.resolve(a)
+	check("tier_mythic_outline", r.orbs[1].style == "orb_tier" and r.orbs[1].tint == R.orb_tier_tint(XQuality.color(a.equips[1])) and not r.orbs[1].has("fx") and float(r.orbs[1].outline_w) == 2.0, r)
+	var mc: Color = r.orbs[1].tint
+	check("tier_mythic_not_pure_red", not (mc.r8 >= R.RED_R and mc.g8 <= R.RED_G and mc.b8 <= R.RED_B), mc.to_html())
+	a.equips[1] = _gear({}, {"kind": "weapon", "wtypeId": 1, "etypeId": 1, "meta": {"quality": "8"}})
+	check("tier_red_quality_swapped_rust", R.orb_tier_tint(Color("ff483c")) == Color("d9925c") and R.orb_tier_tint(Color("fffa32")) == Color("fffa32"))
+	check("tier_below_mythic_none", not (R.resolve(a).orbs as Dictionary).has(1))
+	var both := excl.duplicate()
+	both["meta"] = {"quality": "14"}
+	a.equips[1] = _gear({}, both)
+	check("tier_both_takes_special", R.resolve(a).orbs[1].style == "orb_seal")
+	a.equips[1] = _gear({"kind": "weapon", "seal": "hei", "key": wk_hei, "true_seal": false}, myth)
+	check("tier_seal_weapon_still_seal_color", R.resolve(a).orbs[1].tint == R.seal_tint("hei") and R.resolve(a).orbs[1].style == "orb_seal")
+	_clear(a)
+	a.equips[1] = _gear({}, {"kind": "armor", "atypeId": 1, "etypeId": 3, "meta": {"quality": "14"}})   # 非双持：槽位 1 是神话防具，不出框
+	check("tier_slot1_mythic_armor_no_orb", (R.resolve(a).orbs as Dictionary).is_empty(), R.resolve(a).orbs)
+	a._cat_bare = true   # 178 哈基米：第 0 格不算，槽位 1 是头盔，神话头盔不出框
+	_clear(a)
+	a.equips[1] = _gear({}, {"kind": "armor", "atypeId": 1, "etypeId": 3, "meta": {"quality": "14"}})
+	check("tier_cat_slot1_mythic_helmet_no_orb", (R.resolve(a).orbs as Dictionary).is_empty(), R.resolve(a).orbs)
+	a._cat_bare = false
+	_clear(a)
+	a.equips[2] = _gear({}, excl)
+	a.equips[9] = _gear({}, myth)
+	check("tier_only_slots_0_1", (R.resolve(a).orbs as Dictionary).is_empty(), R.resolve(a).orbs)
+	a.equips[0] = _gear({}, excl)
+	R.ORB_TIERS = false
+	check("tier_switch_off_main_behavior", (R.resolve(a).orbs as Dictionary).is_empty())
+	R.ORB_TIERS = true
+	_clear(a)
 	# 备注挂球框
 	_clear(a)
 	a.equips[9] = _gear({}, {"note": "<ring_style:orb_seal:zhen>"})
@@ -714,6 +760,9 @@ func _loadout(a: XActor, kind: String) -> void:
 			a.equips[ART] = XTianqiRewards.make_item("relic", "death", 1, true)
 		"glint":
 			a.equips[NECK] = XTianqiRewards.make_item("seal", "war", 3)
+		"tiers":   # D108／D109：0 号未刻印专属武器（斜角＋特效）、1 号神话武器（品质色淡框）
+			a.equips[0] = _gear({}, {"kind": "weapon", "wtypeId": 1, "etypeId": 1, "note": "<req_actors: 1>"})
+			a.equips[1] = _gear({}, {"kind": "weapon", "wtypeId": 1, "etypeId": 1, "meta": {"quality": "14"}})
 		"hong":
 			for k in 5:
 				a.equips[ARMOR[k]] = _set_piece("hong")
@@ -843,6 +892,33 @@ static func _lum(c: Color) -> float:
 
 
 ## 逐像素对照用：ENABLED 关、16:9、穿黑印 5 件＋毕业武器＋死亡遗物，停在第 0 栏，存一张
+## 球框两档的特效候选截图：20:9 触屏 130％，微光扫过、呼吸亮度各一张（定在动画里一个看得清的相位），再加特效关、开关关各一张对照
+func _orb_shots_only() -> void:
+	DirAccess.make_dir_recursive_absolute(orb_shots)
+	var R := XTianqiRingStyle
+	var sz: Array = SIZES[2]
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	var cases := [["sweep", "sweep", 0.9], ["breath", "breath", 1.0], ["无特效", "", 0.0]]
+	for c in cases:
+		R.ORB_FX = c[1]
+		var page := await _shot_page("tiers", sz, true, 4)
+		page.skin.ring._spin = c[2]
+		page.skin.ring.queue_redraw()
+		page.skin.ring_top.queue_redraw()
+		var img := await _grab()
+		check("orb_shot_" + c[0], img.save_png(orb_shots.path_join("球框两档_%s_20x9_触屏130.png" % c[0])) == OK)
+		page.queue_free()
+		await frames(3)
+	R.ORB_FX = "sweep"
+	R.ORB_TIERS = false
+	var pg := await _shot_page("tiers", sz, true, 4)
+	check("orb_shot_off", (await _grab()).save_png(orb_shots.path_join("球框两档_开关关_20x9_触屏130.png")) == OK)
+	R.ORB_TIERS = true
+	pg.queue_free()
+	await frames(3)
+	XUiSkin.motion_override = XUiSkin.Motion.OFF
+
+
 func _off_shot_only() -> void:
 	get_window().size = SIZES[0][0]
 	await frames(4)
