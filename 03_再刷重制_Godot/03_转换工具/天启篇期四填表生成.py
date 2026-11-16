@@ -235,6 +235,91 @@ def capped(key, v, b):
     return {'pct_of': key, 'pct': pct}
 
 
+def scan_more(b, card_skills):
+    """第二批：把 unscanned 六类里能机器扫的扫完。返回 (entries, groups)。"""
+    main = b['main']
+    entries, groups = [], {}
+    enemy_skills = set()
+    for e in jload(DB / 'Enemies.json'):
+        if e:
+            for a in e.get('actions', []):
+                enemy_skills.add(a.get('skillId'))
+    base_re = re.compile(r'^\(*\s*(\d+(?:\.\d+)?)\s*\+')
+    dmg_enemy, dmg_other, heal_rows, drain_rows = [], 0, [], []
+    for x in jload(DB / 'Skills.json'):
+        if not x or str(x['id']) in card_skills:
+            continue
+        d = x.get('damage') or {}
+        f = d.get('formulaGd') or d.get('formula') or ''
+        ty = d.get('type', 0)
+        if ty == 0 or not f:
+            continue
+        m = base_re.match(f.strip())
+        const = float(m.group(1)) if m else (float(f) if re.fullmatch(r'\d+(\.\d+)?', f.strip()) else None)
+        enemy = x['id'] in enemy_skills
+        if ty in (3, 4, 7, 8):
+            heal_rows.append({'kind': 'skill_fixed_heal', 'id': x['id'], 'name': x['name'], 'enemy': enemy, 'orig': f[:60],
+                              'new': ('固定底数 %g 换成对象生命上限的 %s%%（原数÷弱者 81 级生命）' % (const, round(min(100, const / b['mhp'] * 100), 1))) if const else '公式读对象生命或属性，T012-b 逐条看'})
+        elif ty in (5, 6):
+            drain_rows.append({'kind': 'skill_fixed_drain', 'id': x['id'], 'name': x['name'], 'enemy': enemy, 'orig': f[:60],
+                               'new': '吸取量 %s：换成对象生命／魔法上限的百分比（T012-b 定）' % (f[:20])})
+        elif const is not None and const >= 100:
+            if enemy:
+                dmg_enemy.append([x['id'], x['name'], const, round(const / main * 100, 1)])
+            else:
+                dmg_other += 1
+    entries += heal_rows + drain_rows
+    groups['enemy_skill_fixed_base'] = {
+        '_note': '敌人用的、没进技能卡的原版技能，伤害公式的固定底数（如 100＋魔攻×10 里的 100）。列：技能号、名字、固定底数、占弱者 81 级主攻（267）的百分比；公式里「属性×系数」的部分随属性涨，不在这里，只有固定底数在新量级里会变轻。底数换成「标准线攻击的百分之几」（new_rule）。',
+        'new_rule': '固定底数 → 标准线攻击(81级) × 占比%',
+        'columns': ['skill', 'name', 'base', 'pct_of_weak_main81'],
+        'rows': dmg_enemy,
+    }
+    groups['other_skill_fixed_base_count'] = {'_note': '没进卡、不是敌人用的原版技能里带固定底数 ≥100 的个数（多是旧角色技能，天启篇看不到或已被卡改写，不逐条列）', 'count': dmg_other}
+    # 装备、状态带的固定回血／回复／护盾
+    tags = []
+    for f in ('Weapons', 'Armors', 'States'):
+        for x in jload(DB / (f + '.json')):
+            if not x:
+                continue
+            note = x.get('note', '')
+            if f == 'States' and 'ShieldEffect' in note and False:
+                pass
+            for m in re.finditer(r'<(ShieldEffect|Regen Formula|DBHPLSteal)\s*:\s*([^<>]*)>', note):
+                if f == 'States' and m.group(1) == 'ShieldEffect':
+                    continue  # 状态护盾上面 state_shield 已列
+                tags.append({'kind': 'note_' + m.group(1).replace(' ', '_').lower(), 'id': x['id'], 'name': x['name'], 'table': f, 'orig': m.group(2),
+                             'new': '待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换'})
+    entries += tags
+    # 七印装备八项（qiyin_equip.json 的 params）：D137 已定读标准线，列出被取代的原数
+    qe = jload(DATA / 'qiyin_equip.json')
+    qrows = []
+    def walk(v, path):
+        if isinstance(v, dict):
+            for k, x in v.items():
+                if k == 'params' and isinstance(x, list) and len(x) == 8:
+                    qrows.append({'path': path, 'params': x})
+                else:
+                    walk(x, path + '/' + str(k))
+        elif isinstance(v, list):
+            for i, x in enumerate(v):
+                walk(x, '%s/%d' % (path, i))
+    walk(qe, 'qiyin_equip')
+    groups['qiyin_equip_params'] = {'_note': 'qiyin_equip.json 里写死的八项（神话 80 级同级参照）。D137 已定七印装备读 gear_base.json（80 级神话，武器和真印再 ×1.1），这些原数被取代，T012-b 接线时不再读 params；这里列出路径供对账。', 'rows': qrows}
+    groups['alien_gear_rewards'] = {'_note': 'alien_gear.json、rewards.json 没有写死的八项（只有百分比：atk_rate、def_pct、dmg_dealt_pct、heal 等），不用换。净印、遗物的八项：没找到写死数据（遗物是 relic 类物品，走原版装备 params，随装备底子规则）。'}
+    # 技能备注里按绝对属性门槛
+    pat = re.compile(r'(?:user|a|b|target)\.(?:agi|atk|mat|def|mdf|luk|mhp|mmp|hp|mp)\s*(?:>=|<=|>|<)\s*\d{3,}')
+    th = []
+    for f in ('Skills', 'States', 'Weapons', 'Armors', 'Items'):
+        for x in jload(DB / (f + '.json')):
+            if x:
+                m = sorted(set(pat.findall(json.dumps(x, ensure_ascii=False))))
+                if m:
+                    th.append({'table': f, 'id': x['id'], 'name': x['name'], 'in_card': f == 'Skills' and str(x['id']) in card_skills, 'conds': m})
+    groups['abs_threshold_in_notes'] = {'_note': '原版技能备注里「属性超过某个绝对值」的门槛（user.agi>=1000 这类），换成「标准线的百分之几」；in_card＝true 的卡已改写，不用换。GDScript 里（core、battle）没有这类比较（已 grep）。', 'rows': th}
+    return entries, groups
+
+
 def build_abs():
     b = weak_body81()
     entries = []
@@ -265,21 +350,16 @@ def build_abs():
         if x and re.search(r'<Shield[^>]*>', x.get('note', '')):
             entries.append({'kind': 'state_shield', 'id': x['id'], 'name': x['name'], 'orig': re.search(r'<Shield[^>]*>', x['note']).group(0),
                             'new': '待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）'})
-    qe = DATA / 'qiyin_equip.json'
+    more_entries, groups = scan_more(b, set(jload(DATA / 'skill_rework.json')['skills']))
+    entries += more_entries
     return {
         '_note': 'T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 %.0f、魔法 %.0f。现在没有代码读它。' % (b['mhp'], b['mmp']),
         'version': 1,
-        'nice_number_exempt': ['entries', 'id', 'unscanned', 'base'],
+        'nice_number_exempt': ['entries', 'id', 'unscanned', 'base', 'groups'],
         'base': {'weak_mhp81': b['mhp'], 'weak_mmp81': b['mmp'], 'weak_main81': b['main']},
         'entries': entries,
-        'unscanned': [
-            '技能的固定伤害、固定回复、固定护盾（卡改写过的按卡的预算，不在这里；没进卡的原版技能、敌人技能、七印祭坛技能）',
-            '装备和状态带的固定回血（traits／note 里的 HP 回复）、固定护盾里 note 以外的写法',
-            '1～34 层敌人的固定追伤、固定扣血（敌人技能公式里的常数）',
-            '异化装备、净印、遗物里写死的八项（qiyin_equip.json 的 params 等，rewards.json）',
-            '专属模块里按绝对值比较属性的门槛（如「敏捷超过 800」）',
-            '状态持续伤害里公式型（读 a／b 属性）的那几条只列了号，没逐条拆底数',
-        ],
+        'groups': groups,
+        'unscanned': ['公式型状态持续伤害（41 条里 %d 条是读属性的公式）和 Custom Regenerate Effect 脚本型回复（25 个状态）：底数要逐条拆脚本，没拆，只列号；七首之龙、骑士等 horsemen.json 里的绝对值不在本清单（D78 M5 标）' % sum(1 for e in entries if e['kind'] == 'state_dot' and not isinstance(e['new'], dict))],
     }
 
 
