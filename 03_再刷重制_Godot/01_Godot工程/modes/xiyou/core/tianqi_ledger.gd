@@ -407,7 +407,32 @@ static func is_secret_skill(id: int, stype: int) -> bool:
 				for e in it.get("effects", []):
 					if int(e.get("code", 0)) == 43:
 						_book_skills[int(e.get("dataId", 0))] = true
+					elif int(e.get("code", 0)) == 44:
+						_ce_skills(int(e.get("dataId", 0)))
 	return _book_skills.has(id)
+
+
+## 物品「公共事件」（效果 44）教的技能（复核 P2①：精通 5189～5308、谢幕 3680、莫等闲 3184、吾之剑道 3687、小药丸 5091～5098 这类）：
+## 事件里的「增减技能·学会」（318）、脚本里写死的 learnSkill(N)，和精通系列脚本开头列的 var kX = N（穿心枪术精通★ 5214 只在这里出现）
+static func _ce_skills(ce_id: int) -> void:
+	var ces = XDB.table("CommonEvents")
+	if not ces is Array or ce_id <= 0 or ce_id >= ces.size() or not ces[ce_id] is Dictionary:
+		return
+	var re_learn := RegEx.create_from_string("learnSkill\\((\\d+)\\)")
+	var re_var := RegEx.create_from_string("var\\s+\\w+\\s*=\\s*(\\d+)\\s*;")
+	for c in ces[ce_id].get("list", []):
+		var code := int(c.get("code", 0))
+		var p: Array = c.get("parameters", [])
+		if code == 318 and p.size() > 3 and int(p[2]) == 0:
+			_book_skills[int(p[3])] = true
+		elif code in [355, 655] and not p.is_empty():
+			var line := str(p[0])
+			for m in re_learn.search_all(line):
+				_book_skills[int(m.get_string(1))] = true
+			for m in re_var.search_all(line):
+				var sid := int(m.get_string(1))
+				if int(XDB.rec("Skills", sid).get("stypeId", 0)) == 4:
+					_book_skills[sid] = true
 
 
 static func _add(d: Dictionary, key, bucket: String, v: float) -> void:
@@ -756,9 +781,20 @@ static func param_cap(a, i: int, base: float, suit_rate: float) -> float:
 	if not CAP_NINE or not a is XActor or not active():
 		return 1.0
 	var from_traits := 0.0
+	# 同族宝珠超过上限丢掉的那几颗（XActor.all_traits 经 XOrbs.filter_traits 不算），这里也不算（复核 P1）。
+	# stat_equips 可能是视图拷贝，按「装备实例号|宝珠标记」认，不靠同一对象
+	var drops := XOrbs.cap_drops((a as XActor).equips)
+	var dropped := {}
+	for d in drops:
+		for eq0 in (a as XActor).equips:
+			if eq0 is Dictionary and str(eq0.get("instanceId", "")) != "" and (eq0.get("traits", []) as Array).any(func(t): return is_same(t, d)):
+				dropped["%s|%s|%d" % [str(eq0.instanceId), str(d.get("_codexOrb", "")), int(d.get("dataId", -1))]] = true
 	for eq in (a as XActor).stat_equips():
 		var whole := bucket_of(eq) in ["runeword", "hubris"]
 		for t in eq.get("traits", []):
+			if t.has("_codexOrb") and (drops.any(func(d): return is_same(d, t)) or (str(eq.get("instanceId", "")) != "" \
+					and dropped.has("%s|%s|%d" % [str(eq.instanceId), str(t._codexOrb), int(t.get("dataId", -1))]))):
+				continue
 			if int(t.get("code", 0)) == 21 and int(t.get("dataId", -1)) == i and (whole or t.has("_codexOrb")):
 				from_traits += float(t.get("value", 1.0)) - 1.0
 	var excess := from_traits + (suit_rate - 1.0) - nine_cap("param")

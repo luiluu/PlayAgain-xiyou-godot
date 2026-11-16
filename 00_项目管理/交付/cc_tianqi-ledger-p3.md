@@ -117,6 +117,16 @@
 
 返修后本机重跑：`xiyou_tianqi_ledger`、`xiyou_tianqi_ledger_p3`（37）、`xiyou_determinism`、`xiyou_otb`、`xiyou_yunshang`、`xiyou_yunshang_wraps`、`xiyou_tianqi_affix_battle`、`xiyou_tianqi_qiyin_effects`、`xiyou_tianqi_weak_affix`、`xiyou_tianqi_skills`、`xiyou_tianqi_trumpet`、`xiyou_power_books`、`xiyou_orbs` 全过；语法检查、`发行空壳.py check`（64 个脚本、573 个函数）过。
 
+## 二轮复核返修（小A 复核 af421e0af：1 P1／2 P2）
+
+| 条 | 改了什么 | 断言 |
+|---|---|---|
+| P1 同族宝珠超上限 | `param_cap` 不算 `XOrbs.cap_drops` 丢掉的宝珠特性（和 `XActor.all_traits` 一样；视图拷贝按「实例号＋宝珠标记＋能力号」认，没实例号的按同一对象认）。原来 4 颗同族会多扣、属性倍率压到 1.0 以下 | `param_cap_family_drop`（4 件各镶同族 +36%，只算 3 颗，封顶后 ≥1.0） |
+| P2① 公共事件教的书 | `is_secret_skill` 另认物品效果 44 的公共事件里「学会技能」（318）、脚本 `learnSkill(N)`、精通系列开头列的 `var kX = N`（只取被动 4 类）：精通 5189～5308、谢幕、莫等闲、吾之剑道、小药丸都进秘籍格。顺带进来的还有超越极限 1240～1244（旧丹药被动，吃新的时会忘掉）、暴爽 2747、变身·深渊骑士 6801 | `bucket_secret_ce_books`（5189、5214、5308、3680、3184、3687、5091、5098） |
+| P2② 云裳对自己赠行 | `add_actions` 加 `in_action`，手操赠行目标是自己时传真 | `budget_yunshang_self_gift` |
+
+本机重跑 `xiyou_tianqi_ledger_p3`（40/40）、`xiyou_tianqi_ledger`、`xiyou_yunshang`、`xiyou_yunshang_wraps`、`xiyou_orbs`、`xiyou_determinism`、`xiyou_power_books`、`xiyou_tianqi_qiyin_effects` 全过；语法检查、发行空壳 check 过。
+
 ## 本分支提交
 
 - ce29a3e12 WIP：丹药下架、九线封顶、audit_confirm 收紧

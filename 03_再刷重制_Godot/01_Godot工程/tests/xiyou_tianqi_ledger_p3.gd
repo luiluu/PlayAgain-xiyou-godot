@@ -137,6 +137,10 @@ func _nine_cap() -> void:
 		var got := XTianqiLedger.bucket_of(sk_of.call(id), a)
 		if got != cases[id]:
 			wrong.append([id, got])
+	# 复核 P2①：公共事件（物品效果 44）教的通用被动书也占秘籍格
+	var ce_books := [5189, 5214, 5308, 3680, 3184, 3687, 5091, 5098]
+	var ce_miss := ce_books.filter(func(id): return XTianqiLedger.bucket_of(sk_of.call(id), a) != "secret")
+	_check("bucket_secret_ce_books", ce_miss.is_empty(), ce_miss)
 	_check("bucket_secret_by_book", wrong.is_empty() and int(sk_of.call(7144).stypeId) == 6 and int(sk_of.call(2776).stypeId) == 4 and int(sk_of.call(1077).stypeId) == 5, wrong)
 	var slots := XTianqiLedger.secret_slots(a)
 	_check("secret_slots_by_tier", slots == XTianqiBalance.secret_cap(XTier.tier_of(a)) and slots > 0, slots)
@@ -202,6 +206,30 @@ func _nine_cap() -> void:
 	var f_mix := XTianqiLedger.param_cap(b, 2, base, 1.1)
 	(eq0.traits as Array).pop_back()
 	_check("param_cap_additive_orb", is_equal_approx(f_orb, (base - 0.2) / base) and is_equal_approx(f_mix, (base - 0.3) / base) and base >= 1.5, [base, f_orb, f_mix])
+	# 复核 P1：同族宝珠超过上限（familyCap，3）丢掉的那颗不算九线：4 件各镶一颗同族 +36%，只算 3 颗，封顶后不低于 1.0
+	var fa := s.actor(int(s.battle_slots[2]))
+	var eqs: Array = fa.equips.filter(func(x): return x is Dictionary and not x.is_empty())
+	var cslots := fa.equip_slots()
+	for id in [4184, 4185, 4186, 4187, 4188]:
+		if eqs.size() >= 4:
+			break
+		var made := XActor.make_equip("armor", id)
+		var at2 := cslots.find(int(made.etypeId))
+		if at2 >= 0 and (fa.equips[at2] == null or (fa.equips[at2] is Dictionary and fa.equips[at2].is_empty())):
+			fa.equips[at2] = made
+			eqs.append(made)
+	var fam := []
+	for k in mini(4, eqs.size()):
+		var tr := {"code": 21, "dataId": 2, "value": 1.36, "_codexOrb": "ledger_fam:5"}
+		(eqs[k].traits as Array).append(tr)
+		fam.append([eqs[k], tr])
+	fa.read_touch()
+	var cbase := fa.traits_pi(21, 2)
+	var fc := XTianqiLedger.param_cap(fa, 2, cbase, 1.0)
+	for pr in fam:
+		(pr[0].traits as Array).erase(pr[1])
+	fa.read_touch()
+	_check("param_cap_family_drop", fam.size() == 4 and is_equal_approx(fc, (cbase - (3 * 0.36 - 0.3)) / cbase) and cbase * fc >= 1.0, [fam.size(), cbase, fc, cbase * fc])
 	# 核查 P2③：虚空～风借火～暗最低的一系，封顶前后照同样取法扣
 	var keep_yep = eq0.get("yep", {}).duplicate(true)
 	var yep: Dictionary = eq0.get("yep", {}).duplicate(true)
@@ -317,6 +345,13 @@ func _budget() -> void:
 	var n1 := L.current_order.count(y)
 	var again := XYunshang.add_actions(L, y, 1, "gift")
 	_check("budget_yunshang_gift", gave and n1 == 2 and not again and L.current_order.count(y) == 2, [n1, L.current_order.count(y)])
+	# 复核 P2②：手操赠行对自己施放（这次行动还没记进已行动）：in_action 时顺序里那一次就是本次，再加 1 次就满
+	L.turn = 21
+	L._acted = {}
+	L.current_order = []
+	var self1 := XYunshang.add_actions(L, y, 1, "gift", true)
+	var self2 := XYunshang.add_actions(L, y, 1, "gift", true)
+	_check("budget_yunshang_self_gift", self1 and not self2 and L.current_order.count(y) == 1, L.current_order.count(y))
 	L.free()
 
 
