@@ -22,6 +22,8 @@ var all := false:
 		all = v
 		_place_bar(true)
 var bar: XSkinSelectBar
+## T024 选中放大（单人可选时；全体对象整队都选中，不放大）：选中那人的圆头像和名字放大
+var sel_scale: XSkinSelScale
 const ROW_H := 44.0
 const TITLE_H := 32.0
 const HEAD := 30.0
@@ -33,6 +35,7 @@ func _init() -> void:
 	add_child(bar, false, Node.INTERNAL_MODE_FRONT)
 	bar.show_behind_parent = true
 	bar.visible = false
+	sel_scale = XSkinSelScale.attach(self)
 	resized.connect(func(): _place_bar(true))
 
 
@@ -115,23 +118,26 @@ func _draw() -> void:
 	if title != "":
 		draw_string(body, Vector2(0, XUiSkin.FS_AUX_MAX + 4), title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
 		draw_line(Vector2(0, TITLE_H - 4), Vector2(size.x, TITLE_H - 4), Color(XUiSkin.LINE, 0.14), 1.0)
+	sel_scale.sel(index if selectable and not all and index >= 0 else null)
 	for i in rows.size():
 		var m: Dictionary = rows[i]
 		var r := row_rect(i)
+		var sk := sel_scale.k(i)
 		if selectable and all:
 			XUiSkin.draw_select(ci, r.grow_individual(0, -2, 0, -2), XUiSkin.breath_alpha())
 		var a := 0.45 if bool(m.get("dim", false)) else 1.0
 		var hc := Vector2(r.position.x + 10 + HEAD / 2.0, r.position.y + r.size.y / 2.0)
-		draw_circle(hc, HEAD / 2.0, XUiSkin.ORB_LOW)
+		var hr := HEAD / 2.0 * sk
+		draw_circle(hc, hr, XUiSkin.ORB_LOW)
 		var face = m.get("face")
 		if face is Texture2D:
-			XSkinPartyStrip.draw_round_texture(self, face, hc, HEAD / 2.0 - 1.5)
-		draw_circle(hc, HEAD / 2.0, Color(XUiSkin.LINE, 0.65 * a), false, 1.2, true)
+			XSkinPartyStrip.draw_round_texture(self, face, hc, hr - 1.5)
+		draw_circle(hc, hr, Color(XUiSkin.LINE, 0.65 * a), false, 1.2, true)
 		var x := r.position.x + 10 + HEAD + 10
 		var base := r.position.y + r.size.y / 2.0
 		var right_w := 56.0
 		var name_w := 72.0
-		var nf := XSkinList.fit_text(body, str(m.get("name", "")), name_w, 17, 14)   # 长名字先缩字再加省略号
+		var nf := XSkinList.fit_text(body, str(m.get("name", "")), name_w, XSkinSelScale.fs(17, sk), 14)   # 长名字先缩字再加省略号
 		draw_string(body, Vector2(x, base + int(nf[1]) * 0.36), nf[0], HORIZONTAL_ALIGNMENT_LEFT, -1, nf[1], Color(XUiSkin.TEXT, a))
 		x += name_w + 6
 		var kind := str(m.get("kind", "hp"))

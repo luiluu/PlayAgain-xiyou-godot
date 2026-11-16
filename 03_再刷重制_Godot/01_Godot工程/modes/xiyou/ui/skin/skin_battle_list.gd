@@ -23,6 +23,8 @@ var title := ""
 var header := ""
 var bar: XSkinSelectBar
 var back: Control
+## T024 选中放大：选中行的图标、名字放大（行高、消耗列不变）
+var sel_scale: XSkinSelScale
 
 
 static func create_list(parent: Control, list: Array, list_title: String, header_text := "") -> XSkinBattleSkillList:
@@ -45,6 +47,7 @@ static func create_list(parent: Control, list: Array, list_title: String, header
 	w.bar = XSkinSelectBar.new()
 	w.bar.show_behind_parent = true
 	w.add_child(w.bar, false, Node.INTERNAL_MODE_FRONT)
+	w.sel_scale = XSkinSelScale.attach(w)
 	parent.add_child(w)
 	w.select(0)
 	return w
@@ -160,6 +163,8 @@ func _draw() -> void:
 	# 行
 	if entries.is_empty():
 		draw_string(body, Vector2(16, HEAD_H + ROW_H * 0.64), "空", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST, XUiSkin.TEXT_3)
+	if sel_scale != null:
+		sel_scale.sel(index if index >= 0 else null)
 	for i in range(top, mini(top + rows, entries.size())):
 		_draw_row(i, body, num)
 	# 滚动条
@@ -186,9 +191,10 @@ func _draw_row(i: int, body: Font, num: Font) -> void:
 	var en := bool(e.get("enabled", true))
 	var a := 1.0 if en else 0.5
 	var cy := r.position.y + r.size.y / 2.0
+	var sk := sel_scale.k(i) if sel_scale != null else 1.0
 	var tex := XSkinBattle.icon(int(e.get("icon", 0)))
 	if tex != null:
-		draw_texture_rect(tex, Rect2(r.position.x + 8, cy - 16, 32, 32), false, Color(1, 1, 1, a))
+		draw_texture_rect(tex, XSkinSelScale.grow(Rect2(r.position.x + 8, cy - 16, 32, 32), sk), false, Color(1, 1, 1, a))
 	# 右侧消耗（从右往左）
 	var x := r.end.x - 10.0
 	for k in range((e.get("skin_costs", []) as Array).size() - 1, -1, -1):
@@ -211,13 +217,14 @@ func _draw_row(i: int, body: Font, num: Font) -> void:
 		draw_string(body, Vector2(x - rw, cy + 5), reason, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, Color(XUiSkin.DOWN, 0.9))
 		x -= rw + 10
 	# 名字（放不下就截短）
-	var nx := r.position.x + 50
+	var nx := r.position.x + 50 + 16.0 * (sk - 1.0)
+	var nfs := XSkinSelScale.fs(XUiSkin.FS_LIST, sk, floori(ROW_H * 0.6))
 	var name_col: Color = e.get("color", XUiSkin.TEXT) if e.get("color") is Color else XUiSkin.TEXT
 	if i == index:
 		name_col = Color.WHITE
 	name_col.a = a
 	if XUiSkin.FONT_V2:   # 收口批（小A核 P2-3）：大字号时先缩字到 15，还放不下加「…」，不再硬裁
-		var fit := XSkinList.fit_text(body, str(e.get("text", "")), maxf(20.0, x - nx), XUiSkin.FS_LIST, XUiSkin.FS_MIN)
+		var fit := XSkinList.fit_text(body, str(e.get("text", "")), maxf(20.0, x - nx), nfs, XUiSkin.FS_MIN)
 		draw_string(body, Vector2(nx, cy + int(fit[1]) * 0.36), str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1]), name_col)
 	else:
 		draw_string(body, Vector2(nx, cy + 7), str(e.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, maxf(20.0, x - nx), XUiSkin.FS_LIST, name_col,

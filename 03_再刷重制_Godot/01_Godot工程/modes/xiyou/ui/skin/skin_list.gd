@@ -45,6 +45,8 @@ var items: Array = []
 var index := 0
 var top_row := 0
 var bar: XSkinSelectBar
+## T024 选中放大：选中行的图标、名字放大（行高、选中条不变，名字仍按本行余宽缩字／省略，不压右列和邻行）
+var sel_scale: XSkinSelScale
 const SCROLL_W := 4.0
 
 
@@ -54,6 +56,7 @@ func _init() -> void:
 	bar = XSkinSelectBar.new()
 	add_child(bar, false, Node.INTERNAL_MODE_FRONT)
 	bar.show_behind_parent = true
+	sel_scale = XSkinSelScale.attach(self)
 	resized.connect(_relayout)
 
 
@@ -233,6 +236,11 @@ func scroll_w() -> float:
 	return 8.0 if XUiSkin.TOUCH_V2 else SCROLL_W
 
 
+## 选中放大后名字最大几号：行高的 0.6（46 行→27），130% 字号时不顶到行边
+func sel_font_cap() -> int:
+	return floori(row_height * 0.6)
+
+
 ## 名字放不下时先缩字（最小 min_fs），还放不下就截断加「…」（1B：两列物品名不再被硬裁成「治疗药水(」）。返回 [文字, 字号]
 static func fit_text(f: Font, text: String, max_w: float, fs: int, min_fs: int) -> Array:
 	if max_w <= 0.0 or text == "":
@@ -286,22 +294,25 @@ func _draw() -> void:
 		return
 	var first := top_row * columns
 	var last := mini(items.size(), (top_row + visible_rows()) * columns)
+	sel_scale.sel(index if active else null)
 	for i in range(first, last):
 		var it: Dictionary = items[i]
 		var r := cell_rect(i)
 		var x := r.position.x + 14.0
 		var base := r.position.y + r.size.y / 2.0
 		var dis := bool(it.get("disabled", false))
+		var sk := sel_scale.k(i)
 		var icon = it.get("icon")
 		var tex: Texture2D = icon if icon is Texture2D else (XUiSkin.icon(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
 		if tex != null:
-			draw_texture_rect(tex, Rect2(x, base - icon_size / 2.0, icon_size, icon_size), false, Color(1, 1, 1, 0.45 if dis else 1.0))
+			var ir := XSkinSelScale.grow(Rect2(x, base - icon_size / 2.0, icon_size, icon_size), sk)
+			draw_texture_rect(tex, ir, false, Color(1, 1, 1, 0.45 if dis else 1.0))
 			var badge = it.get("badge")
 			if badge is Texture2D:
 				var bs: Vector2 = (badge as Texture2D).get_size()
 				var bk := 14.0 / maxf(bs.y, 1.0)
-				draw_texture_rect(badge, Rect2(x - 4, base - icon_size / 2.0 - 4, bs.x * bk, bs.y * bk), false)
-			x += icon_size + 10.0
+				draw_texture_rect(badge, Rect2(ir.position.x - 4, ir.position.y - 4, bs.x * bk, bs.y * bk), false)
+			x = ir.end.x + 10.0
 		var right := str(it.get("right", ""))
 		var right_w := 0.0
 		var end_x := r.end.x - 14.0
@@ -320,7 +331,7 @@ func _draw() -> void:
 		var col: Color = it.get("color", XUiSkin.TEXT)
 		if i == index and active:
 			col = XUiSkin.sel_text(col)
-		var fit := fit_text(body, str(it.get("text", "")), max_w, font_size, min_font_size)
+		var fit := fit_text(body, str(it.get("text", "")), max_w, XSkinSelScale.fs(font_size, sk, sel_font_cap()), min_font_size)
 		var text: String = fit[0]
 		var fs: int = fit[1]
 		draw_string(body, Vector2(x, base + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_3 if dis else col)
