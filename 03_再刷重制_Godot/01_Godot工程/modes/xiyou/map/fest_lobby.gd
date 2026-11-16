@@ -130,15 +130,17 @@ static func patch_map(map_id: int, data) -> void:
 	if map_id != MAP_ID or not wanted() or not (data is Dictionary):
 		return
 	var events: Array = data.get("events", [])
-	if events.size() > FIRST_EV:
-		return  # 编号被占了（来源变了）：不动
-	while events.size() < FIRST_EV:
+	# T069：只看 78～81 这几格有没有被占，不看表长——漩涡二阶段（XRift.patch_map，先于本补丁）会把表扩到 201～204，中间留空
+	for id in [ENVOY_EV, ENROLL_EV] + TROPHY_EVS:
+		if id < events.size() and events[id] != null:
+			return  # 编号被占了（来源变了）：不动
+	while events.size() <= TROPHY_EVS[-1]:
 		events.append(null)
-	events.append(_event(ENVOY_EV, XFestText.ENVOY_NAME, ENVOY_CELL, ENVOY_SPRITE, "CodexFest.envoy();"))
+	events[ENVOY_EV] = _event(ENVOY_EV, XFestText.ENVOY_NAME, ENVOY_CELL, ENVOY_SPRITE, "CodexFest.envoy();")
 	if decor():
-		events.append(_event(ENROLL_EV, XFestText.ENROLL_NAME, ENROLL_CELL, ENROLL_SPRITE, "CodexFest.enroll();"))
+		events[ENROLL_EV] = _event(ENROLL_EV, XFestText.ENROLL_NAME, ENROLL_CELL, ENROLL_SPRITE, "CodexFest.enroll();")
 		for i in TROPHY_EVS.size():
-			events.append(_event(TROPHY_EVS[i], "庆典奖杯", TROPHY_CELLS[i], ["", 0], "CodexFest.trophy();"))
+			events[TROPHY_EVS[i]] = _event(TROPHY_EVS[i], "庆典奖杯", TROPHY_CELLS[i], ["", 0], "CodexFest.trophy();")
 		if BGM != "" and XDB.audio_path("bgm", BGM) != "":
 			var bgm: Dictionary = data.get("bgm", {}).duplicate() if data.get("bgm") is Dictionary else {}
 			bgm["name"] = BGM

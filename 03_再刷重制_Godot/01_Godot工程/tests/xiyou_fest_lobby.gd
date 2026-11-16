@@ -40,12 +40,14 @@ func frames(n: int) -> void:
 
 
 ## 开大厅。today 是「今天」（XFest.TODAY_OVERRIDE）；先清地图缓存让补丁按当天重做
-func open_lobby(today: String, x := 14, y := 24, reload := true) -> XMapScene:
+func open_lobby(today: String, x := 14, y := 24, reload := true, tianqi := false) -> XMapScene:
 	XFest.TODAY_OVERRIDE = today
 	if reload:
 		XFestLobby.reload_map()
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	s.set_variable(206, -3000)
+	if tianqi:
+		s.flags["tianqi"] = {"rules": 1}   # 天启篇存档（XTianqi.active）
 	s.map_id = 4
 	s.x = x
 	s.y = y
@@ -305,6 +307,30 @@ func _run() -> void:
 	var mce := await open_lobby(after_day, 14, 24, false)
 	check("cache.ended.clean", mce.fest_fx == null and ids(mce) == base_ids and str(mce.map_data.get("bgm", {}).get("name", "")) == base_bgm, ids(mce))
 	await close(mce)
+
+	# ---- T069：漩涡二阶段开着（正式默认）时 XRift 先把 Map004 事件表扩到 201～204，庆典补丁不能因为表长超过 78 就放弃 ----
+	XRift.STAGE2 = true
+	XRift.clear_cache()
+	(XConfig._values.codexWhisperSeen as Array).append("rift2")   # 不让二阶段过场在这里开播（另有专项测）
+	var mr := await open_lobby(day1, 7, 20)
+	check("rift2_on.events_padded", (mr.map_data.get("events", []) as Array).size() > XRift.CANGLONG_EV, (mr.map_data.get("events", []) as Array).size())
+	check("rift2_on.envoy_enroll_trophy", ids(mr).has(XFestLobby.ENVOY_EV) and ids(mr).has(XFestLobby.ENROLL_EV) and XFestLobby.TROPHY_EVS.all(func(i): return ids(mr).has(i)), ids(mr))
+	check("rift2_on.rift_events_kept", ids(mr).has(XRift.RIFT2) and ids(mr).has(XRift.BLOCK_L), ids(mr))
+	var mr_env := ev(mr, XFestLobby.ENVOY_EV)
+	check("rift2_on.envoy_cell", mr_env != null and mr_env.grid == XFestLobby.ENVOY_CELL, mr_env.grid if mr_env != null else null)
+	await frames(30)
+	await shot("fest_lobby_rift2_xiyou.png")
+	await close(mr)
+	var mt := await open_lobby(day1, 7, 20, true, true)
+	check("rift2_on.tianqi.save_is_tianqi", XTianqi.active(XState.current))
+	check("rift2_on.tianqi.envoy_enroll_trophy", ids(mt).has(XFestLobby.ENVOY_EV) and ids(mt).has(XFestLobby.ENROLL_EV) and XFestLobby.TROPHY_EVS.all(func(i): return ids(mt).has(i)), ids(mt))
+	await frames(30)
+	await shot("fest_lobby_rift2_tianqi.png")
+	await close(mt)
+	(XConfig._values.codexWhisperSeen as Array).erase("rift2")
+	XRift.STAGE2 = false
+	XRift.clear_cache()
+	XFestLobby.reload_map()
 
 	# ---- 文案 ----
 	var strs: Array = []
