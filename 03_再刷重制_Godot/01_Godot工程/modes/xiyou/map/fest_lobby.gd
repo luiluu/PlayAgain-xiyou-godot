@@ -39,13 +39,13 @@ static var ART_DIR := "res://content/fest/"
 const BANNER_FILE := "Fest_Banner.png"
 const TROPHY_FILE := "Fest_Trophy.png"
 const CONFETTI_FILES := ["Fest_Confetti_01.png", "Fest_Confetti_02.png", "Fest_Confetti_03.png", "Fest_Confetti_04.png"]
-## 横幅（768×96）左上角的像素位置与奖杯脚底中心（96×144，脚底 (48,142)）
+## 横幅（768×96）左上角的像素位置与奖杯脚底中心（112×168，脚底 (56,167)）
 const BANNER_SIZE := Vector2(768, 96)
 const BANNER_POS := Vector2(264, 23 * TS)
 ## co 给的字的安全区（图内像素）：x1, y1, x2, y2
 const BANNER_TEXT_RECT := Rect2(110, 20, 548, 38)
 const TROPHY_FOOT := Vector2(22 * TS, 18 * TS)   # 奖杯脚底中心（占 21、22 两列、行 17 的下沿）
-const TROPHY_ANCHOR := Vector2(48, 142)
+const TROPHY_ANCHOR := Vector2(56, 167)
 
 const MAX_CONFETTI := 46
 const FIREWORK_GAP_MIN := 5.0
