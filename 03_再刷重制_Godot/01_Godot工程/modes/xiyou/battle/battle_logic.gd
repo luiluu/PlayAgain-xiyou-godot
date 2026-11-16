@@ -2081,6 +2081,55 @@ static func attack_repeats(u: XBattler, skill: Dictionary, base: int) -> int:
 	return floori(base + u.attack_times_add()) if u.is_attack(skill) else base
 
 
+## dsPassiveSkill 的 Game_Action.numRepeats 包装（T046，O-待定）：MV 本体之后加被动 atkk，再把 AgainUse 几率
+## （AgainUseAll＋按技能类型 AgainUseZj（stypeId 1）／AgainUseMf（stypeId 2）＋AgainUse<技能号>）合计，Math.random×100 < 合计时 +1，取整。
+## 来源同 refreshPassiveCache：装备（178 持剑时剑按翻倍视图，同 stat_equips）＋技能＋状态的备注元数据；物品也算（原版 item.id 照查）。
+## 原版这层在各 Codex 运行时（渡鸦冥羽、黄泉、云裳双针、流萤）里层，所以这里紧贴 attack_repeats 外面。
+## 只接西游档：天启篇照旧不走这层（只有小猫剑圣 XCat.native_repeats 读，九线来源照停）。敌人的被动缓存没有 atkk／againUse，不加。
+## 小猫剑圣自己的四个剑技原版 numRepeats 恒 1（次数由 XCat.native_repeats 按剑段算），不加。
+## 开关 AGAIN_USE＝false 回到 T046 之前（通用出手不读 atkk／AgainUse）。
+static var AGAIN_USE := true
+
+
+func passive_repeats(u: XBattler, skill: Dictionary, n: int) -> int:
+	if not AGAIN_USE or not u is XActor or XTianqiLedger.active() or XCat.casts(u, skill):
+		return n
+	var p := passive_again(u, skill, u.stat_equips())
+	var total := float(n + int(p.atkk))
+	if float(p.again) > 0.0 and _float("again_use") * 100.0 < float(p.again):
+		total += 1.0
+	return floori(total)
+
+
+## 被动缓存里的 atkk 合计与对这招的 AgainUse 几率合计（dsPassiveSkill refreshPassiveCache：parseInt 取整数部分）；
+## 天启篇九线来源（XTianqiLedger.nine_off_source）不算——西游档恒不停
+static func passive_again(a, item: Dictionary, equips: Array) -> Dictionary:
+	var atkk := 0
+	var again := 0
+	var stype := int(item.get("stypeId", 0)) if not is_item(item) else 0
+	var by := "AgainUseZj" if stype == 1 else ("AgainUseMf" if stype == 2 else "")
+	var own_key := "AgainUse%d" % int(item.get("id", 0))
+	for o in equips + a.skills() + a.states():
+		if not o is Dictionary or XTianqiLedger.nine_off_source(a, o):
+			continue
+		var meta: Dictionary = o.get("meta", {})
+		if meta.has("atkk"):
+			var m := RegEx.create_from_string("(\\d+)").search(str(meta.atkk))
+			if m:
+				atkk += int(m.get_string(1))
+		for k in meta:
+			var key := str(k)
+			if key == "AgainUseAll" or (by != "" and key == by) or key == own_key:
+				again += _parse_int(str(meta[k]))
+	return {"atkk": atkk, "again": again}
+
+
+## JS parseInt(s, 10)：跳过前导空白，可带正负号，取开头的数字；没有数字为 0（原版 NaN 加进去会让几率变 NaN、永不触发，这里按 0）
+static func _parse_int(s: String) -> int:
+	var m := RegEx.create_from_string("^\\s*([+-]?\\d+)").search(s)
+	return int(m.get_string(1)) if m else 0
+
+
 ## Game_BattlerBase.paySkillCost（含各包装）与 YEP 冷却：execute 付费、专项直接付费共用
 func pay_skill_cost(u, skill: Dictionary) -> void:
 	var free := XTianqiTrumpet.free_all(u)  # 天启篇号卷六号：第 1 回合噬主代付、米拉代价都免，饥荒口粮、透支照扣（MP／TP／HP／物品在各自函数里免；缄默锁上限按面板 MP 算，MP 已是 0）
@@ -2169,8 +2218,8 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	# YEP 行动序列（yepSeq）：运行时 repeats 都已改成 1，段数在序列里；Game_Action.numRepeats＝1＋普通攻击（isAttack：此刻的 attackSkillId）的追加次数，
 	# makeTargets 把每个目标按 numRepeats 重复（repeatTargets）。
 	if XActionSequence.has_sequence(skill):
-		var times := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, 1)))))
-		times = XTianqiQiyinEffects.repeats(self, u, skill, times)  # 天启篇战流派攻击次数 +1。黄泉 numRepeats 包装（也开始新行动）；渡鸦包装在里层、云裳双针 ×2 在外层
+		var times := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, passive_repeats(u, skill, attack_repeats(u, skill, 1))))))
+		times = XTianqiQiyinEffects.repeats(self, u, skill, times)  # dsPassiveSkill 被动 atkk／AgainUse 在渡鸦里层（passive_repeats，只西游档）。天启篇战流派攻击次数 +1。黄泉 numRepeats 包装（也开始新行动）；渡鸦包装在里层、云裳双针 ×2 在外层
 		var list := []
 		for t in _guided_targets(u, skill, chosen, forcing):
 			for i in range(maxi(1, times)):
@@ -2186,7 +2235,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		logs.append_array(XActionSequence.create(self, u, skill, list).run())
 		logs.append_array(mark_views(_lotus_strike(u, skill, lotus_seq.keys(), lotus_seq)))
 		return logs
-	var repeats := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1)))))))
+	var repeats := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, passive_repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1))))))))
 	repeats = XTianqiQiyinEffects.repeats(self, u, skill, repeats)  # 天启篇战流派攻击次数 +1。黄泉 numRepeats 包装；渡鸦冥羽连葬在里层；流萤（新源第 34 个）在云裳外层
 	var targets := _guided_targets(u, skill, chosen, forcing)
 	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊

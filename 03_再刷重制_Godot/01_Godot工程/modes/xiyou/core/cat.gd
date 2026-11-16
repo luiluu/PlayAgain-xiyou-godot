@@ -430,23 +430,9 @@ static func native_repeats(logic, a, item: Dictionary) -> int:
 	var n := float(item.get("repeats", 1))
 	if a.is_attack(item):  # isAttack：看此刻的 attackSkillId
 		n += a.attack_times_add()
-	var atkk := 0
-	var again := 0.0
-	var by := "AgainUseZj" if int(item.get("stypeId", 0)) == 1 else ("AgainUseMf" if int(item.get("stypeId", 0)) == 2 else "")
-	for o in a.equip_list() + a.skills() + a.states():
-		if XTianqiLedger.nine_off_source(a, o):
-			continue  # 天启篇九线来源停用（总账期三补）：符文之语等九线装备、套装状态、秘籍书上的 atkk 与再释放 AgainUse 不算
-		var meta: Dictionary = o.get("meta", {})
-		if meta.has("atkk"):
-			var m := RegEx.create_from_string("(\\d+)").search(str(meta.atkk))
-			if m:
-				atkk += int(m.get_string(1))
-		for k in meta:
-			var key := str(k)
-			if key == "AgainUseAll" or (by != "" and key == by) or key == "AgainUse%d" % int(item.get("id", 0)):
-				again += float(str(meta[k]).to_int())
-	n += atkk
-	if again > 0.0 and logic._float("cat_again_use") * 100.0 < again:
+	var p := XBattleLogic.passive_again(a, item, a.equip_list())  # 天启篇九线来源停用（总账期三补）在里面：符文之语等九线装备、套装状态、秘籍书上的 atkk 与再释放 AgainUse 不算
+	n += int(p.atkk)
+	if int(p.again) > 0 and logic._float("cat_again_use") * 100.0 < float(p.again):
 		n += 1
 	return maxi(1, floori(n))
 
