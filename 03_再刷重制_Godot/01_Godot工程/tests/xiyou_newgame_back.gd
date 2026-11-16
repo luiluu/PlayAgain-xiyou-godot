@@ -189,9 +189,15 @@ func _pages(m: String, before: PackedByteArray) -> void:
 	_check(m + "_slot_page", _on_slots())
 	# 已有存档的格：覆盖确认页按取消＝「换一格」
 	await _pick_slot(OLD_SLOT)
-	_check(m + "_overwrite_page", not _on_slots() and _find("WindowBack") != null and (_find("WindowBack") as Button).text == "换一格")
+	var skin := XTianqiTitle.skin_on()
+	var wb := _find("WindowBack") as Button
+	if skin:
+		# 新界面（T102）：确认并进详情牌，焦点在牌里的「覆盖它」，牌上的「换一格」仍叫 WindowBack；取消回列表、焦点回到这一格
+		_check(m + "_overwrite_page", _focus_name() == "TianqiOverwrite" and wb != null and wb.text == "换一格", _focus_name())
+	else:
+		_check(m + "_overwrite_page", not _on_slots() and wb != null and wb.text == "换一格")
 	await _cancel(m)
-	_check(m + "_overwrite_back_to_slots", _on_slots(), _last_back)
+	_check(m + "_overwrite_back_to_slots", _on_slots() and (not skin or _focus_name() == "TianqiSlot%d" % OLD_SLOT), [_last_back, _focus_name()])
 	_check(m + "_overwrite_keeps_old_save", FileAccess.get_file_as_bytes(XSave.path(OLD_SLOT)) == before)
 	# 空格 → 难度 → 阵容，再逐页退回
 	await _pick_slot(NEW_SLOT)

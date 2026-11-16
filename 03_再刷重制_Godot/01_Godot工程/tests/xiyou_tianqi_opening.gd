@@ -113,10 +113,27 @@ func _title_pages() -> void:
 	entry._tq_difficulty(2)
 	await get_tree().process_frame
 	var diffs := {}
+	var skin := XTianqiTitle.skin_on()
 	for d in XTianqi.DIFFICULTIES:
 		var b = _find(entry, "TianqiDifficulty_" + str(d.key))
-		diffs[d.key] = b != null and b.icon != null and b.disabled == XTianqi.locked(d.key)
+		if skin:
+			# 新界面（T102）：徽记是卡里的 Badge；证道不设 disabled（焦点要能落上去），锁记在 meta locked
+			var badge = b.get_node_or_null("Badge") if b != null else null
+			diffs[d.key] = b != null and badge is TextureRect and badge.texture != null and not b.disabled and b.get_meta("locked", false) == XTianqi.locked(d.key)
+		else:
+			diffs[d.key] = b != null and b.icon != null and b.disabled == XTianqi.locked(d.key)
 	_check("page_difficulty", diffs.values().all(func(v): return v), diffs)
+	if skin and XTianqi.locked("zhengdao"):
+		# 证道能拿到焦点，按确定还停在难度页（抖一下、出提示）
+		var zd = _find(entry, "TianqiDifficulty_zhengdao") as Button
+		zd.grab_focus()
+		await get_tree().process_frame
+		var got: bool = get_viewport().gui_get_focus_owner() == zd
+		zd.pressed.emit()
+		await get_tree().process_frame
+		var toast = _find(entry, "TianqiToast")
+		_check("page_zhengdao_focus_stays", got and _find(entry, "TianqiDifficulty_zhengdao") != null and _find(entry, "TianqiReroll") == null
+			and toast is Label and toast.visible and toast.text == "「证道」暂未开放", [got, toast.text if toast is Label else null])
 	entry._tq_lineup(2, "lianyu", [])
 	await get_tree().process_frame
 	_check("page_lineup", _find(entry, "TianqiReroll") != null and _find(entry, "TianqiConfirm") != null)

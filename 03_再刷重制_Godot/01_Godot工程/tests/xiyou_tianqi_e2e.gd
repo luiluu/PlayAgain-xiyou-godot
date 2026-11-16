@@ -622,7 +622,7 @@ func _cancel_and_overwrite() -> void:
 	_check("cancel.overwrite_to_difficulty", _btn("TianqiDifficulty_jiusi") != null, _page_title())
 	await _press_focused(_btn("TianqiDifficulty_jiusi"))
 	_check("cancel.lineup_page", _btn("TianqiReroll") != null, _page_title())
-	# 逐页按取消键：阵容 → 难度 → 选格 → 标题。ESC_BACK＝false 时（现状）取消键不动、改按「返回」按钮走，见常量说明
+	# 逐页按取消键：阵容 → 难度 → 选格 → 标题。ESC_BACK＝false 时取消键不动、改按「返回」按钮走，见常量说明
 	for step in [["lineup_to_difficulty", "TianqiReroll", "TianqiDifficulty_jiusi"],
 			["difficulty_to_slots", "TianqiDifficulty_jiusi", "TianqiSlot%d" % SLOT], ["slots_to_title", "TianqiSlot%d" % SLOT, ""]]:
 		var title_before := _page_title()

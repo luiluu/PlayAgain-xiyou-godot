@@ -103,6 +103,9 @@ func _tq_state(line := "") -> XState:
 
 func _title() -> void:
 	XState.current = null
+	# T102：skin_on() 现在也看「界面风格」设置；先钉成「新」，不随本机 options.json 变（只改内存）
+	XConfig.ensure_loaded()
+	XConfig._values["codexUiSkin"] = true
 	check("title_skin_dev_on", XTianqiTitle.skin_on())
 	check("title_xiyou_skin_untouched", not XUiSkin.on())   # 皮肤层本身在标题照旧不开（p0 口径），标题自己按构建判断
 	ReleaseEntry.simulate_release = true
@@ -111,6 +114,11 @@ func _title() -> void:
 	XUiSkin.ENABLED = false
 	check("title_skin_disabled_off", not XTianqiTitle.skin_on())
 	XUiSkin.ENABLED = true
+	# T102：标题和开局三页共用 skin_on()，设置「界面风格」选原版（codexUiSkin＝false）时回旧框（只改内存，不写本机设置）
+	XConfig._values["codexUiSkin"] = false
+	check("title_skin_setting_old_off", not XTianqiTitle.skin_on())
+	XConfig._values["codexUiSkin"] = true   # 本测试后面都按「新」（只在内存里，不写回本机设置）
+	check("title_skin_setting_new_on", XTianqiTitle.skin_on())
 	if not XTianqiTitle.available():
 		check("title_assets", false, "content/title 素材不全")
 		return

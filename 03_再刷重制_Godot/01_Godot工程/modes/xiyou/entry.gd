@@ -10,7 +10,7 @@ const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 ## MOG_TitlePictureCom Command Pos 1..3（原版 1280×720 坐标，图片左上角）
 const COMMAND_POS := [Vector2(540, 375), Vector2(540, 450), Vector2(540, 525)]
 
-var column: VBoxContainer
+var column: Control                # 窗口页的竖排容器（VBoxContainer）；天启篇开局新界面时是 XTianqiStartPage.stage
 var _layer: Control               # 当前页面（标题指令或窗口）
 var _commands: Array = []         # [{node, enabled, fn, top, bottom}]
 var _sel := 0
@@ -588,8 +588,28 @@ func _on_new_game() -> void:
 var _tq_rng := RandomNumberGenerator.new()
 
 
-## 原版 Map001 开头选的固定存档位，之后存档都存这一格（证道删档也靠它）
-func _tq_slot() -> void:
+## 新界面（T102，开局界面提案 v0.2）：门同标题页 XTianqiTitle.skin_on()（「界面风格」选原版、发行没开放时照旧画 MV 窗口）。
+## 三页画在 XTianqiStartPage 里，column 指向它的 stage（测试和 _btn_text 照旧在 column 里找按钮），取消键交给页面的 cancel()。
+func _tq_skin() -> bool:
+	return XTianqiTitle.skin_on()
+
+
+func _tq_page() -> XTianqiStartPage:
+	_clear()
+	var p := XTianqiStartPage.new()
+	_layer.add_child(p)
+	return p
+
+
+## 原版 Map001 开头选的固定存档位，之后存档都存这一格（证道删档也靠它）。
+## focus_slot：新界面光标停哪一格（从难度页退回时停在刚才那格；0＝第一个空格）
+func _tq_slot(focus_slot := 0) -> void:
+	if _tq_skin():
+		var p := _tq_page()
+		p.build_slots(focus_slot, _tq_difficulty, _title)
+		column = p.stage
+		_back = p.cancel
+		return
 	_window("选择存档位（开局后一直存在这一格）", 760.0)
 	var grid := GridContainer.new()
 	grid.columns = 2
@@ -629,8 +649,14 @@ func _tq_slot_chosen(slot: int) -> void:
 	_focus_first()
 
 
-## 五档难度（证道暂未开放）
-func _tq_difficulty(slot: int) -> void:
+## 五档难度（证道暂未开放）。focus_key：新界面从阵容页退回时光标停在刚才那档
+func _tq_difficulty(slot: int, focus_key := "") -> void:
+	if _tq_skin():
+		var p := _tq_page()
+		p.build_difficulty(slot, focus_key, func(key: String): _tq_lineup(slot, key, []), _tq_slot.bind(slot))
+		column = p.stage
+		_back = p.cancel
+		return
 	_window("选择难度", 760.0)
 	for d in XTianqi.DIFFICULTIES:
 		var lock := XTianqi.locked(d.key)
@@ -653,13 +679,26 @@ func _tq_lineup(slot: int, key: String, lineup: Array) -> void:
 	if lineup.is_empty():
 		_tq_rng.randomize()
 		lineup = XTianqi.roll_lineup(key, _tq_rng)
+	if _tq_skin():
+		var p := _tq_page()
+		var b: Dictionary = p.build_lineup(slot, key, lineup, _tq_difficulty.bind(slot, key))
+		(b.reroll as Button).pressed.connect(func(): _tq_lineup(slot, key, []))
+		(b.confirm as Button).pressed.connect(_tq_start.bind(slot, key, lineup))
+		(b.back as Button).pressed.connect(_tq_difficulty.bind(slot, key))
+		column = p.stage
+		_back = p.cancel
+		return
 	var d := XTianqi.difficulty(key)
 	var cap_text := "同一场最多上阵 %d 名超强者" % int(d.super_cap)
 	if XTianqi.HELPER_RULES and bool(d.get("helper_super", false)):
 		cap_text += "，助力位可再放 1 名"  # D57：只有证道的助力位能放超强者
 	_window("随机阵容 · %s（%s）" % [d.name, cap_text], 760.0)
 	for i in lineup.size():
-		column.add_child(_tq_actor_row(int(lineup[i]), i == 0))
+		var row := _tq_actor_row(int(lineup[i]), i == 0)
+		row.name = "TianqiActor%d" % i   # 同新界面的角色卡：测试按名字和 meta 取阵容
+		row.set_meta("actor_id", int(lineup[i]))
+		row.set_meta("actor_name", str(XDB.rec("Actors", int(lineup[i])).get("name", "")))
+		column.add_child(row)
 	var roll := XUI.button("重新随机")
 	roll.name = "TianqiReroll"
 	_add(roll, func(): _tq_lineup(slot, key, []))

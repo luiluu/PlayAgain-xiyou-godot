@@ -105,14 +105,13 @@ func _title() -> Node:
 
 
 ## 随机阵容页上的角色名（按 1～5 号位）
+## 阵容页五个人的名字：新界面的角色卡、原版的名单行都叫 TianqiActor0～4，meta actor_name 是名字
 func _lineup_names() -> Array:
 	var out := []
-	var col = _scene().column if _scene() != null else null
-	if col == null:
-		return out
-	for row in col.get_children():
-		if row is HBoxContainer and row.get_child_count() >= 2 and row.get_child(1) is Label:
-			out.append((row.get_child(1) as Label).text.replace("　（1 号位）", ""))
+	for i in XTianqi.LINEUP_SIZE:
+		var n = _find("TianqiActor%d" % i)
+		if n != null and not n.is_queued_for_deletion():
+			out.append(str(n.get_meta("actor_name", "")))
 	return out
 
 
@@ -231,17 +230,29 @@ func _keyboard() -> void:
 	_check("title_feedback_form", ff is Button and ff.focus_mode == Control.FOCUS_NONE and vr.encloses(ff.get_global_rect()) and fb is Button and ff.get_global_rect().end.y <= fb.get_global_rect().position.y + 0.5, ff.get_global_rect() if ff is Button else null)
 	_check("subpage_bg_is_tianqi", sub_bg is TextureRect and sub_bg.texture == load(XTianqiTitle.BG) and old_bg.is_empty(), old_bg.size())
 	await _key(KEY_ENTER)
+	var skin := XTianqiTitle.skin_on()   # 新界面（T102）：一列 10 格＋详情牌；原版：两列按钮＋单独的覆盖确认页
+	# 光标默认停第一个空格：只预置了 2 号，1 号是空的
 	_check("kb_slot_page", _find("TianqiSlot1") != null and _focus_name() == "TianqiSlot1", _focus_name())
-	await _key(KEY_RIGHT)
+	await _key(KEY_DOWN if skin else KEY_RIGHT)
 	_check("kb_slot2_focused", _focus_name() == "TianqiSlot2", _focus_name())
 	await _key(KEY_ENTER)
 	# 已有存档：「覆盖它」「换一格」；先换一格（取消覆盖）
-	_check("kb_overwrite_prompt", _find("TianqiSlot1") == null and _find("TianqiDifficulty_jiusi") == null)
-	await _key(KEY_DOWN)
+	if skin:
+		# 并进详情牌：列表还在，焦点跳进牌里停在「覆盖它」，左右换到「换一格」
+		var wb := _find("WindowBack") as Button
+		_check("kb_overwrite_prompt", _find("TianqiSlot1") != null and _focus_name() == "TianqiOverwrite" and wb != null and wb.text == "换一格"
+			and wb.is_visible_in_tree() and _find("TianqiDifficulty_jiusi") == null, _focus_name())
+		await _key(KEY_RIGHT)
+		_check("kb_overwrite_to_change", _focus_name() == "WindowBack", _focus_name())
+	else:
+		_check("kb_overwrite_prompt", _find("TianqiSlot1") == null and _find("TianqiDifficulty_jiusi") == null)
+		await _key(KEY_DOWN)
 	await _key(KEY_ENTER)
-	_check("kb_cancel_back_to_slots", _find("TianqiSlot2") != null)
+	# 新界面回列表时焦点留在刚才那格（2 号），不用再挪（T098 小A 复核新发现：同 newgame_back 的口径）
+	_check("kb_cancel_back_to_slots", _find("TianqiSlot2") != null and (not skin or _focus_name() == "TianqiSlot2"), _focus_name())
 	_check("kb_cancel_keeps_old_save", FileAccess.get_file_as_bytes(XSave.path(2)) == before)
-	await _key(KEY_RIGHT)
+	if not skin:
+		await _key(KEY_RIGHT)
 	await _key(KEY_ENTER)
 	await _key(KEY_ENTER)   # 覆盖它
 	var first := _focus_name()
