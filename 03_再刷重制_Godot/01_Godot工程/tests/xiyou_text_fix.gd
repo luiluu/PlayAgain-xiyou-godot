@@ -49,6 +49,7 @@ func _run() -> void:
 	var ce1441 := JSON.stringify(_rec("CommonEvents", 1441).list)
 	_check("zw_ce1441", not ce1441.contains("﻿") and ce1441.contains("再动+5，再释放+100%"))
 	_check("namebox_lead", str(_cmd(8, 7, 0, 1)).begins_with("\\n<副本协会主席>"), _cmd(8, 7, 0, 1))
+	_check("guide_currency_unit", str(_cmd(4, 73, 0, 8)).contains("\\c[4]精魂\\c[0]：阿卡拉") and str(_cmd(4, 73, 0, 24)).contains("炼器师（精魂）") and not str(_cmd(4, 73, 0, 8)).contains("金币"), [_cmd(4, 73, 0, 8), _cmd(4, 73, 0, 24)])
 	_check("namebox_slash", str(_cmd(4, 36, 0, 175)) == "\\n<天才灵魂>此塔是我开，此塔是我栽，要想从这过留下买路财~！", _cmd(4, 36, 0, 175))
 	_check("namebox_cesc", str(_cmd(71, 22, 0, 5)).contains("\\c[4]蛊雕") and not str(_cmd(71, 22, 0, 5)).contains("\\c\\["))
 	_check("namebox_lone_n", str(_cmd(121, 1, 4, 35)) == "是否前往孽镜深渊？", _cmd(121, 1, 4, 35))

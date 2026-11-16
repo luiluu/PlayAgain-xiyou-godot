@@ -1094,7 +1094,7 @@
     {
      "code": "random_unique",
      "pool": "other_weapons",
-     "text": "揭开时从另外 12 把的独有效果里随机刻上一条"
+     "text": "揭开时，从另外 12 把毕业武器的独有效果中随机刻上一条"
     }
    ],
    "type_random": true
