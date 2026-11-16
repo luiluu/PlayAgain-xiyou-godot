@@ -58,6 +58,7 @@ func _run() -> void:
 	var start0 := XFest.START
 	XFest.START = "2026-11-15"  # 断言里的日期按 11-15 开始写；真实 START 是 v0.03.00 推送日，这里钉住
 	XFest.TODAY_OVERRIDE = "2026-11-16"
+	_icons()
 	_ring_records()
 	_growth()
 	_one_four()
@@ -76,6 +77,23 @@ func _run() -> void:
 			print("FAIL ", r.name, " ", JSON.stringify(r.detail))
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## T072：称号／成就新图标（6420～6425，content/fest）都能取到 32 贴图，称号表各用各的号，总开关关着不并成就
+func _icons() -> void:
+	var seen := {}
+	for t in XFest.TITLES:
+		var tex := XUI.icon_texture(int(t.icon))
+		_check("icon_title_%d" % int(t.id), tex != null and tex.get_size() == Vector2(32, 32), t.icon)
+		seen[int(t.icon)] = true
+	_check("icon_titles_distinct", seen.size() == 6 and seen.keys().all(func(k): return k >= 6420 and k <= 6425), seen.keys())
+	var want := {"scene": 6424, "road": 6420, "one_four": 6421, "attend": 6425}
+	_check("icon_achievements", XFestReward.ACHIEVEMENT_ICONS == want, XFestReward.ACHIEVEMENT_ICONS)
+	var big := XQualityIcons.icon_texture(6421, 128)
+	_check("icon_big_128", big != null and big.get_size() == Vector2(128, 128))
+	XFest.ENABLED = false
+	_check("icon_off_no_achievements", XFestReward.achievement_defs().is_empty())
+	XFest.ENABLED = true
 
 
 func _state() -> XState:
@@ -377,6 +395,17 @@ func _load_hooks() -> void:
 	var p4 := XFestReward.pending()
 	_check("remind_once_a_day", p1 == [XFestText.REMIND_TOAST] and p2.is_empty() and p3 == [XFestText.REMIND_TOAST] and p4.is_empty(), [p1, p2, p3, p4])
 	_check("load_hook_does_not_touch_save", JSON.stringify(s.to_dict()) == snap)
+	# T072：选了旧图标号的庆典称号，读档后名牌取新号；别的称号（非庆典名）不动
+	var old := _state()
+	old.designation = {"name": "一穿四·洪荒", "icon": 2506, "color": "#ff4500"}
+	XFestReward.after_load(old)
+	_check("title_icon_migrated", int(old.designation.icon) == 6423 and XUI.icon_texture(int(old.designation.icon)) != null, old.designation)
+	old.designation = {"name": "冠军之路", "icon": 1469, "color": "#f5f7fa"}
+	XFestReward.after_load(old)
+	_check("title_icon_migrated_road", int(old.designation.icon) == 6420, old.designation)
+	old.designation = {"name": "别的称号", "icon": 2506, "color": "#ffffff"}
+	XFestReward.after_load(old)
+	_check("title_icon_other_untouched", int(old.designation.icon) == 2506, old.designation)
 	# 剩币：收尾期里不换；收尾期过后读档按 10 币＝1 万精魂换掉、提示
 	XFest.add_coins(s, 275)
 	XFestReward.after_load(s)
