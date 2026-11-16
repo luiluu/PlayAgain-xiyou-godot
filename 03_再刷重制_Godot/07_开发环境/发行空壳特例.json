@@ -7,7 +7,8 @@
     "XTianqiDrop.keeps_row": "掉落表行过滤：天启篇通用掉落未开时返回 true，否则西游怪物不掉原表物品",
     "XTianqiGear.allows": "穿戴栏位与神器白名单：天启篇未开时返回 true，否则西游无法穿戴防具饰品",
     "XTianqiQiyinRule.can_use": "七印战斗规则：天启篇未开时返回 true，否则西游全员无法放技能",
-    "XTianqiSkills.meets": "天启篇技能重构条件：未开时返回 true，否则西游全员无法放技能"
+    "XTianqiSkills.meets": "天启篇技能重构条件：未开时返回 true，否则西游全员无法放技能",
+    "XTianqiLedger.take_extra": "回合预算：天启篇未开时恒放行（返回 true），否则西游档的击倒再动、再释放、九九六、技能卡 free_action 全被拦"
   },
   "XRiftAlien.gear_energy": "-1",
   "XTianqi.fighter_slots": "XState.MAX_BATTLE_MEMBERS",
@@ -75,5 +76,6 @@
   "XGojo.hidden": "id == ACTOR",
   "XGojo.locked": "id == ACTOR",
   "XGojo.ENABLED": "false",
-  "XTianqiTrumpet.cost": "c"
+  "XTianqiTrumpet.cost": "c",
+  "XTianqiLedger.hook_bonus": "0.0"
 }
