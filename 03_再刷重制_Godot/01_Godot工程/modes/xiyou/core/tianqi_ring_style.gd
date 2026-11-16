@@ -187,7 +187,7 @@ static func resolve(actor, party: Array = [], s = null) -> Dictionary:
 			out.orbs[sl] = {"style": str(tag[0]), "tint": seal_tint(str(tag[1])) if str(tag[1]) != "" else Color.html(str(style(str(tag[0])).get("tint", "#e3bd72")))}
 			continue
 		# 球框两档（D108／D109）：只管武器栏槽位 0、1；两档都中取特殊（上面已 continue 的毕业武器、刻印、备注件不会走到这里）
-		if ORB_TIERS and WEAPON_SLOTS.has(sl):
+		if ORB_TIERS and WEAPON_SLOTS.has(sl) and XQuality.gear_kind(e) == "weapon":   # 槽位 1 在非双持角色是防具、178 槽位 1 是头盔，得认类型
 			if XEquipment.is_exclusive(e):   # 专属武器不论刻没刻印：套斜角框，未刻印用中性旧金（seal_tint("")）
 				out.orbs[sl] = {"style": "orb_seal", "tint": seal_tint(""), "fx": ORB_FX}
 			elif XQuality.grade(e) >= MYTHIC_GRADE:   # 神话及以上：只换描边色（品质色）、2px
@@ -204,7 +204,7 @@ static func resolve(actor, party: Array = [], s = null) -> Dictionary:
 
 ## 淡框描边色：取品质色；神话品质色（#ff483c）过「正红」门（2.1 第 3 条：环纹不许用正红、不跟选中红框混），改用铜橙 red_safe_tint（离选中红框远一点）
 static func orb_tier_tint(c: Color) -> Color:
-	if c.r8 >= RED_R and c.g8 <= RED_G + 30 and c.b8 <= RED_B + 30:   # 门外放宽一点：离正红近的都算（神话 255,72,60 已在 G/B 门外 2、-10）
+	if c.r8 >= RED_R and c.g8 <= RED_G + 30 and c.b8 <= RED_B + 30:   # 正红门（G≤90、B≤70）各放宽 30：离正红近的都算（神话 255,72,60 本来就落在放宽后的 G≤120、B≤100 里）
 		return Color.html(str(style("orb_tier").get("red_safe_tint", "#d9925c")))
 	return c
 

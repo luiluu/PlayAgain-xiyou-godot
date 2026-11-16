@@ -237,6 +237,14 @@ func _rules() -> void:
 	a.equips[1] = _gear({"kind": "weapon", "seal": "hei", "key": wk_hei, "true_seal": false}, myth)
 	check("tier_seal_weapon_still_seal_color", R.resolve(a).orbs[1].tint == R.seal_tint("hei") and R.resolve(a).orbs[1].style == "orb_seal")
 	_clear(a)
+	a.equips[1] = _gear({}, {"kind": "armor", "atypeId": 1, "etypeId": 3, "meta": {"quality": "14"}})   # 非双持：槽位 1 是神话防具，不出框
+	check("tier_slot1_mythic_armor_no_orb", (R.resolve(a).orbs as Dictionary).is_empty(), R.resolve(a).orbs)
+	a._cat_bare = true   # 178 哈基米：第 0 格不算，槽位 1 是头盔，神话头盔不出框
+	_clear(a)
+	a.equips[1] = _gear({}, {"kind": "armor", "atypeId": 1, "etypeId": 3, "meta": {"quality": "14"}})
+	check("tier_cat_slot1_mythic_helmet_no_orb", (R.resolve(a).orbs as Dictionary).is_empty(), R.resolve(a).orbs)
+	a._cat_bare = false
+	_clear(a)
 	a.equips[2] = _gear({}, excl)
 	a.equips[9] = _gear({}, myth)
 	check("tier_only_slots_0_1", (R.resolve(a).orbs as Dictionary).is_empty(), R.resolve(a).orbs)
