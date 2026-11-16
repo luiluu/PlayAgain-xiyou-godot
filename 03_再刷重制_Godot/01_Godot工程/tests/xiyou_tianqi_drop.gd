@@ -4,6 +4,7 @@ extends Node
 ## 二、难度倍率五档。
 ## 三、通用掉落：门槛档跟层走、品质权重、件数（第 1 层翻倍）、只管 1～30 层、挑出来的装备品质和等级对、不出专属和删除栏位。
 ## 四、怪物表：精良及以下的装备不掷，史诗以上和材料照掷；倍率不再有 ×5。
+## 六、低档稀有装备（T099）：光明独角兽、嘶风逐日驹这类原版稀有的 1 级坐骑不进通用池、不当重抽替补，原怪物表照原表 × 底率掉；品质照原版显示「普通」。
 ## 五、开关：ENABLED／GENERIC／BONUS／DIFFICULTY 各自回退。
 
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
@@ -35,6 +36,7 @@ func _run() -> void:
 	_signature()
 	_guardian_and_dungeon()
 	_filter_and_book()
+	_rare_gear()
 	_switches()
 	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -136,6 +138,46 @@ func _generic() -> void:
 			by_grade[gr] = int(by_grade.get(gr, 0)) + 1
 	_check("mean_pieces", absf(float(total) / 4000.0 - 0.9) < 0.05, float(total) / 4000.0)
 	_check("mostly_gate_or_below", float(int(by_grade.get(0, 0))) / float(maxi(1, total)) > 0.8, by_grade)
+
+
+## T099：Kyo 11-16 炼狱新档第 1 层掉了三只光明独角兽、一只嘶风逐日驹
+func _rare_gear() -> void:
+	var s := _tianqi_state("lianyu")
+	var mounts := [7997, 7998]
+	_check("rare_mounts_marked", mounts.all(func(id): return XTianqiDrop.rare_gear(3, id)) and not XTianqiDrop.rare_gear(3, 52) and not XTianqiDrop.rare_gear(3, 53),
+		[XTianqiDrop.best_rate(3, 7997), XTianqiDrop.best_rate(3, 7998), XTianqiDrop.best_rate(3, 52)])
+	var in_pool := []
+	for g in range(6):
+		for r in XTianqiDrop.pool(g):
+			if int(r[0]) == 3 and mounts.has(int(r[1])):
+				in_pool.append([g, r])
+	_check("rare_mounts_not_in_generic_pool", in_pool.is_empty(), in_pool)
+	# 第 1 层（炼狱、一人队）掷 2000 场，一只都不出；修前约三成是这两只
+	s.map_id = 5
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 20261116
+	var hits := 0
+	var total := 0
+	for i in 2000:
+		for d in XTianqiDrop.roll(s, [s.actor(1)], func(): return rng.randf()):
+			total += 1
+			if int(d.kind) == 3 and mounts.has(int(d.id)):
+				hits += 1
+	_check("floor1_no_rare_mounts", hits == 0 and total > 2000, [hits, total])
+	# 原怪物表那一行照留，按原表 × 底率（1/700 × 0.2），不垫到 0.5%
+	_check("rare_row_kept", XTianqiDrop.keeps_row(s, 3, 7997) and XTianqiDrop.keeps_row(s, 3, 7998) and not XTianqiDrop.keeps_row(s, 3, 53))
+	_check("rare_row_original_rate", _near(XTianqiDrop.signature_base(3, 7997, 1.0 / 700.0), 0.2 / 700.0, 0.000001), XTianqiDrop.signature_base(3, 7997, 1.0 / 700.0))
+	# 删除栏位重抽：和坐骑同组（普通、0～9 级）的替补里也没有它们
+	var subs := XTianqiGear.reroll_pool(XDB.rec("Armors", 7997)).filter(func(r): return int(r[0]) == 3 and mounts.has(int(r[1])))
+	_check("rare_not_reroll_sub", subs.is_empty() and not XTianqiGear.reroll_pool(XDB.rec("Armors", 7997)).is_empty(), subs)
+	# 品质照原版：<quality:1> → 普通
+	_check("rare_mount_label_original", XQuality.label(XDB.rec("Armors", 7997), "armor") == "普通" and XQuality.label(XDB.rec("Armors", 7998), "armor") == "普通",
+		XQuality.label(XDB.rec("Armors", 7997), "armor"))
+	# 回退：RARE_KEEP 关掉回旧池
+	XTianqiDrop.RARE_KEEP = false
+	var back: bool = XTianqiDrop.pool(0).any(func(r): return int(r[0]) == 3 and int(r[1]) == 7997) and not XTianqiDrop.keeps_row(s, 3, 7997)
+	XTianqiDrop.RARE_KEEP = true
+	_check("rare_switch_off_restores", back)
 
 
 func _table_rows() -> void:
