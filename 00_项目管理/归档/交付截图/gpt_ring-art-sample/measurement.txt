@@ -1,0 +1,8 @@
+ring_band_hei.png: (288, 288); center radius 109.501..131.440; full pixel square envelope 108.812..132.136; red=0; soft_alpha=0; alpha=0/255
+ring_band_mo.png: (288, 288); center radius 109.501..114.475; full pixel square envelope 108.812..115.122; red=0; soft_alpha=0; alpha=0/255
+ring_center_death.png: (96, 96); center radius 33.504..44.503; full pixel square envelope 33.000..45.011; red=0; soft_alpha=0; alpha=0/255
+ring_orb_frame.png: (56, 56); center radius 21.506..26.879; full pixel square envelope 21.000..27.586; red=0; soft_alpha=0; alpha=0/255
+16x9: center vs all 13 label rectangles=0; orb vs other label rectangles=0; own orb labels rendered above frame per spec
+20x9: center vs all 13 label rectangles=0; orb vs other label rectangles=0; own orb labels rendered above frame per spec
+Corner bright pixels beyond r24: [10, 10, 10, 10]
+Round 2: dimensions, full-square envelopes, 12h angular limit and bright corner counts PASS

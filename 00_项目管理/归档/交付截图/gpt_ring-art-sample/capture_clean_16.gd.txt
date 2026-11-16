@@ -1,0 +1,27 @@
+extends "res://tests/xiyou_ui_art_phase01.gd"
+func _ready() -> void:
+	_go.call_deferred()
+func _go() -> void:
+	TestEnv.isolate("t030_sample")
+	XUiSkin.FORCE = true
+	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	XUiSkin.touch_override = 0
+	XSkinEquipPage.LAYOUT = 3
+	get_window().size = Vector2i(1280,720)
+	await frames(8)
+	var e: Node = await _shot_equip(0)
+	await frames(8)
+	var ring = (e as XEquipScene).skin.ring
+	ring.style.merge({"ring_line":Color.TRANSPARENT,"band":Color.TRANSPARENT,"halo_line_a":0.0,"dash_a":0.0,"notches":false},true)
+	ring.queue_redraw()
+	await frames(3)
+	var rows = []
+	for i in ring.items.size():
+		var r = ring.label_layout(i).rect
+		rows.append({"name":ring.items[i].name,"rect":[r.position.x,r.position.y,r.size.x,r.size.y],"pos":[ring.item_pos(i).x,ring.item_pos(i).y],"scale":ring.item_scale(i)})
+	var off = ring.get_global_rect().position
+	var c = off + ring.center()
+	FileAccess.open("/tmp/ring_layout.json",FileAccess.WRITE).store_string(JSON.stringify({"off":[off.x,off.y],"center":[c.x,c.y],"items":rows}))
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_png("/tmp/ring_16_clean.png")
+	get_tree().quit()
