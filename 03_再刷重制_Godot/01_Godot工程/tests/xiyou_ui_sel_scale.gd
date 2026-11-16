@@ -173,7 +173,7 @@ func _battle_parts() -> void:
 		if n == 6:
 			check("battle_ring_sel_peak", is_equal_approx(ring.orb_scale(0), XSkinBattleRing.SEL_PEAK) and is_equal_approx(ring.orb_scale(1), 1.0))
 			XSkinSelScale.ENABLED = false
-			check("battle_ring_switch_off_old", is_equal_approx(ring.orb_scale(0), 1.08) and is_equal_approx(ring.orb_scale(1), 1.0))
+			check("battle_ring_switch_off_old", is_equal_approx(ring.orb_scale(0), XSkinBattleRing.peak()) and is_equal_approx(ring.orb_scale(1), 1.0))
 			XSkinSelScale.ENABLED = true
 		ring.free()
 	host.queue_free()

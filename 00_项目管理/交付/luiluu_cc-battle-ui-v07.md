@@ -36,7 +36,7 @@
 - 动效（XSkinBattleMotion，受「界面动效」设置管，关＝直接到位）：环铺开、选中闪圈、环淡出＋列表从环那边展开、关列表收起、开战 HUD 依次淡入；换人回合提示 XSkinTurnCue。
 - 伤害数字新画法 XSkinDamagePopup（窄体、千分位、暴击小字在上），轨迹时长不变；战技列表说明栏两行、旧说明卡默认收起按「详情」展开。
 - 可回退：XSkinBattleMotion.ENABLED、XSkinDamagePopup.ENABLED、XSkinBattleRing.SMALL_ORBS／ORB_STYLE、XSkinBattle.HELP_COLLAPSE。
-- 测试：新增 tests/xiyou_ui_skin_battle_v07（44 项，带窗口加 `-- --out=<目录>` 出截图）；xiyou_ui_skin_battle 64/64、xiyou_otb 34/34。
+- 测试：新增 tests/xiyou_ui_skin_battle_v07（44 项，带窗口加 `-- --out=<目录>` 出截图）；xiyou_ui_skin_battle 64/64、xiyou_otb 34/34；xiyou_ui_sel_scale 关过渡时的断言 1.08 改认 peak()。
 - 玩家可见：战斗界面的指令圈变小变好看、切换有动画、伤害数字换成新字体并带千分位、轮到谁有金色提示。
 
 ## 交接板
