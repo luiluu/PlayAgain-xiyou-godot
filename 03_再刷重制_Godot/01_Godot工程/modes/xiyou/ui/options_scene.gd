@@ -36,6 +36,10 @@ const OPTIONS := [["坐标显示", "MapXy", true], ["挂机设置", "HangUp", tr
 	["战力显示与估算", "codexPowerEnabled", true], ["测试模式", "codexTestMode", false], ["GM 工具", "codexGM", false],
 	["角色换装", "codexCostumes", true], ["待提交反馈", "codexFeedbackPending", false]]
 
+## 天启篇存档（皮肤有机会开）的旧列表：防骗三行（原版是三行 ON/OFF 空白的宣传行）不再当列表项，合成页底一行静态提示；西游档照原版 33 行不动（T051）
+const ADS_SYMBOLS := ["wxxonoff", "wxlonoff", "wxtonoff"]
+const ADS_TIP := "本游戏免费，勿在闲鱼购买；总群 906327865"
+
 ## 重制新增：大厅初步异化（XLobbyCorruption）的光尘与氛围小字，关掉不放
 const FX_OPTION := ["画面特效", "codexScreenFx", true]
 ## 重制新增：画面平滑（XScreenScale，玩家反馈 v0.01「画面锐化太高」）：开＝先画 1280×720 再整幅柔和放大（同原版），关＝按屏幕分辨率直接画
@@ -102,6 +106,8 @@ func _ready() -> void:
 
 func _build_list() -> void:
 	_list = OPTIONS.filter(func(o): return o[1] != "HangUp" or XHangUp.enabled(XState.current))
+	if XUiSkin.selectable():  # 天启篇存档：防骗三行改页底提示（皮肤开时新布局本来就藏；存档里没有这三项的值，无兼容问题）
+		_list = _list.filter(func(o): return not ADS_SYMBOLS.has(o[1]))
 	if XEncounterTarget.ENABLED:  # 定向遇怪占原「只遇稀有」的位子，另两行去掉
 		_list = _list.filter(func(o): return o[1] != "BOSS" and o[1] != "boss").map(func(o): return TARGET_OPTION if o[1] == "Boss" else o)
 	if XBossStatusPanel.TOGGLE:  # v0.56：「Boss状态面板」在「步步遇敌」后、「消息提醒」前（v0.62.12 options_probe 的行序）
@@ -229,6 +235,13 @@ func _paint(c: XMVCanvas) -> void:
 		var title_w := c.size.x - 12.0 - STATUS_W
 		c.text(_list[i][0], 6, y, title_w, "left", XUI.TEXT, XUI.FONT_SIZE, LH, alpha)
 		c.text(status_text(i), title_w, y, STATUS_W, "right", XUI.TEXT, XUI.FONT_SIZE, LH, alpha)
+	if ads_tip():
+		c.text(ADS_TIP, 6, ROWS * LH, c.size.x - 12.0, "left", XUI.TEXT, 16, c.size.y - ROWS * LH, XUI.DIM.a)
+
+
+## 页底提示是否显示：天启篇存档的旧布局（防骗三行已从列表去掉）
+func ads_tip() -> bool:
+	return XUiSkin.selectable() and not _list.is_empty() and not symbols().has("wxxonoff")
 
 
 # ---- 操作 ----

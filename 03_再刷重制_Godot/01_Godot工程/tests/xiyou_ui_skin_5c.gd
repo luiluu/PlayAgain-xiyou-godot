@@ -89,6 +89,7 @@ func _run() -> void:
 	_config()
 	await _options_tianqi()
 	await _options_xiyou()
+	await _options_tianqi_old_skin()
 	await _sub_pages()
 	await _prompt_and_end()
 	XUiSkin.motion_override = -1
@@ -284,9 +285,28 @@ func _options_xiyou() -> void:
 	check("xy_no_skin", page.skin == null and page.win.visible)
 	check("xy_no_new_rows", not _symbols(page).has("codexUiSkin") and not _symbols(page).has("codexUiMotion"), _symbols(page))
 	check("xy_ads_still_listed", _symbols(page).has("wxxonoff"))
+	check("xy_ads_all_three", _symbols(page).has("wxlonoff") and _symbols(page).has("wxtonoff"), _symbols(page))
+	check("xy_no_ads_tip", not page.ads_tip())
 	check("xy_not_to_map", not page.to_map)
 	page.queue_free()
 	await frames(3)
+
+
+# ---- 设置主页（天启篇存档＋界面风格选了原版：旧列表去掉防骗三行、页底静态提示）----
+func _options_tianqi_old_skin() -> void:
+	_state()
+	XConfig.set_flag("codexUiSkin", false)
+	var page := XOptionsScene.new()
+	add_child(page)
+	await frames(3)
+	check("tq_old_no_skin", page.skin == null and page.win.visible)
+	var syms := _symbols(page)
+	check("tq_old_ads_gone", not syms.has("wxxonoff") and not syms.has("wxlonoff") and not syms.has("wxtonoff"), syms)
+	check("tq_old_ads_tip", page.ads_tip() and XOptionsScene.ADS_TIP != "")
+	check("tq_old_other_rows_kept", syms.has("dhtg") and syms.has("cq"), syms)
+	page.queue_free()
+	await frames(3)
+	XConfig.set_flag("codexUiSkin", true)
 
 
 # ---- 子页放进居中外框 ----
