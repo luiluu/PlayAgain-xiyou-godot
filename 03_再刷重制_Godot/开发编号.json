@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.648",
-  "sequence": 648,
-  "next": "dev.649",
-  "nextSequence": 649,
+  "current": "dev.649",
+  "sequence": 649,
+  "next": "dev.650",
+  "nextSequence": 650,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "ring-orb-tiers",
+  "currentChange": "tianqi-nine-off",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
