@@ -100,6 +100,7 @@ func _tianqi_state(diff := "jiusi") -> XState:
 func _plain_state() -> XState:
 	var s := XState.new_game_blank()
 	XState.current = s
+	XTextFix.sync_mode()  # 西游档口径（D126 去西游化词典不套用）
 	return s
 
 
@@ -303,20 +304,34 @@ func _line(ev: int, cmd: int) -> Dictionary:
 
 func _hall_trim() -> void:
 	var tq := _tianqi_state()
-	var plain := _plain_state()
 	var raw73 := _line(73, 1)
 	var t73 := str(XTianqiSect.rewrite_message(tq, 4, 73, raw73.duplicate(true)).lines[0])
-	_check("hall73_tianqi_trimmed", not t73.contains("逆天币") and not t73.contains("心法碎片") and not t73.contains("天道币") and not t73.contains("晨星币")
-		and t73.begins_with("<WordWrap>\\n<商店向导>货币已经简化：五种魂灯合成"), t73)
-	_check("hall73_plain_kept", str(XTianqiSect.rewrite_message(plain, 4, 73, raw73.duplicate(true)).lines[0]) == str(raw73.lines[0]) and str(raw73.lines[0]).contains("逆天币"))
+	_check("hall73_tianqi_trimmed", not t73.contains("逆天币") and not t73.contains("心法碎片") and not t73.contains("天道币") and not t73.contains("晨星币") and not t73.contains("旧存档")
+		and t73 == "<WordWrap>\\n<商店向导>货币已经简化：五种魂灯合成\\c[4]魂灯\\c[0]；安慰奖I～IV合成\\c[4]安慰奖券\\c[0]；金精铜钱并入诸神头颅。", t73)
 	var raw71 := _line(71, 571)
 	var t71 := str(XTianqiSect.rewrite_message(tq, 4, 71, raw71.duplicate(true)).lines[0])
 	_check("hall71_tianqi_exact", t71 == "<WordWrap>\\n<改版向导>深渊的\\c[4]副本协会主席\\c[0]、副本首领（1/8）以及25张安慰奖券一抽，现在都抽\\c[4]秘境被动书\\c[0]。", t71)
-	_check("hall71_plain_kept", str(XTianqiSect.rewrite_message(plain, 4, 71, raw71.duplicate(true)).lines[0]) == str(raw71.lines[0]) and str(raw71.lines[0]).contains("见证使者打晕求道者小队"))
-	# 18 层仍是老钱：真实 Map046 台词（已过 XTextFix，讨债人那句仍写天道使者）进包丙改写
+	# 18 层仍是老钱：真实 Map046 台词（天启篇口径下讨债人那句仍写天道使者）进包丙改写
 	var raw46 := {"face": "Evil", "index": 3, "lines": [str(XDB.map(46).events[1].pages[0].list[13].parameters[0])]}
 	var t46 := XTianqiSect.rewrite_message(tq, 46, 1, raw46.duplicate(true))
 	_check("map046_still_laoqian", str(raw46.lines[0]).contains("<天道使者>") and str(t46.lines[0]).contains("<老钱>"), [raw46.lines[0], t46.lines[0]])
+	var all46 := true
+	for pg in [0, 2, 4, 6]:
+		var li: Array = XDB.map(46).events[1].pages[pg].list
+		var found := false
+		for c in li:
+			if int(c.code) == 401 and str(c.parameters[0]).contains("<天道使者>嘿嘿，你居然打过了深渊骑士"):
+				var m := {"face": "Evil", "index": 3, "lines": [str(c.parameters[0])]}
+				found = true
+				all46 = all46 and str(XTianqiSect.rewrite_message(tq, 46, 1, m).lines[0]).contains("<老钱>")
+		all46 = all46 and found
+	_check("map046_all_pages_laoqian", all46)
+	# 西游档：同样的句子、币名、使者名都是原版原貌，向导句不删
+	var plain := _plain_state()
+	var p73 := _line(73, 1)
+	var p71 := _line(71, 571)
+	_check("hall73_plain_kept", str(XTianqiSect.rewrite_message(plain, 4, 73, p73.duplicate(true)).lines[0]) == str(p73.lines[0]) and str(p73.lines[0]).contains("天道币、逆天币") and str(p73.lines[0]).contains("旧存档里的这些货币"), p73.lines[0])
+	_check("hall71_plain_kept", str(XTianqiSect.rewrite_message(plain, 4, 71, p71.duplicate(true)).lines[0]) == str(p71.lines[0]) and str(p71.lines[0]).contains("天道使者打晕求道者小队"), p71.lines[0])
 
 
 func _switch_off_and_original() -> void:
@@ -330,7 +345,7 @@ func _switch_off_and_original() -> void:
 		and str(XDB.rec("Items", 1958).name) == "天道信物"
 		and str(XDB.rec("Items", 1961).name) == "天道研究日志[典藏版]"
 		and (XDB.rec("Troops", 747).members as Array).size() == 1
-		and str(XDB.rec("Enemies", 871).name) == "见证使者"
+		and str(XDB.rec("Enemies", 871).name) == "见证使者"  # 天启篇档（D126 词典）；BING 关只还原 老钱 改写，不还原去西游化改名
 		and str(XTianqiSect.rewrite_message(tq, 46, 1, raw_msg.duplicate(true)).lines[0]) == "\\n<天道使者>讨债"
 	)
 	XTianqiSect.BING = true
@@ -343,5 +358,5 @@ func _switch_off_and_original() -> void:
 		and not XTianqiSect.intercepts(orig, 192, 6)
 		and str(XDB.rec("Items", 1958).name) == "天道信物"
 		and (XDB.rec("Troops", 747).members as Array).size() == 1
-		and str(XDB.rec("Enemies", 871).name) == "见证使者"
+		and str(XDB.rec("Enemies", 871).name) == "天道使者"  # 西游档 1:1 原貌
 	)

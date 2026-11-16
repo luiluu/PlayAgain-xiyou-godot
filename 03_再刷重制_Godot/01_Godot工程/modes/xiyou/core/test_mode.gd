@@ -13,7 +13,7 @@ extends RefCounted
 ## - 普通（非 Boss）敌人掉的装备：词缀掷骰几率 ×35、60% 取可选词缀里品质最高的一组，最多 4 个词缀，
 ##   词缀只来自装备原配置的可选行；已有 13 档以上品质的词缀不会被后面的普通词缀盖掉。
 ## GM 工具（设置里「GM 工具」，要先开测试模式并已进入游戏）：加物品／装备、加金币、加经验、全队恢复、
-## 肝帝积分／人道碎片／晨星币（原天道币）／逆天币的增加或设为。会直接写进存档，和原版一样。
+## 肝帝积分／人道碎片／天道币（天启篇显示晨星币）／逆天币的增加或设为。会直接写进存档，和原版一样。
 ## 没移植：主菜单上的「GM 工具」入口、战斗外菜单用技能的熟练度训练、「待提交反馈」（要原版服务器）。
 
 const UNLOCK_PATH := "user://modes/xiyou/test_mode_unlock"
@@ -194,7 +194,7 @@ static func roll_affixes(item: Dictionary, rows: Array, table: String) -> void:
 const KINDS := {"items": "Items", "weapons": "Weapons", "armors": "Armors"}
 ## [键, 名字, 变量号, 物品号, 计数变量号]
 const RESOURCES := [["points", "肝帝积分", 206, 0, 0], ["fragments", "人道碎片", 0, 2530, 1478],
-	["heaven", "晨星币", 0, 2451, 0], ["rebel", "逆天币", 0, 1919, 0]]
+	["heaven", "天道币", 0, 2451, 0], ["rebel", "逆天币", 0, 1919, 0]]
 
 
 static func _guard(s: XState) -> String:
@@ -305,6 +305,11 @@ static func recover(s: XState) -> Dictionary:
 	return {"ok": true, "text": "全队生命、魔法已恢复，阵亡角色已复活。"}
 
 
+## 资源显示名：天道币在天启篇显示晨星币（D126），西游档原名
+static func resource_name(s: XState, r: Array) -> String:
+	return "晨星币" if str(r[0]) == "heaven" and XTianqi.active(s) else str(r[1])
+
+
 static func resource_amount(s: XState, key: String) -> int:
 	for r in RESOURCES:
 		if r[0] == key:
@@ -339,5 +344,6 @@ static func change_resource(s: XState, key: String, n: float, mode: String) -> D
 		if int(r[4]) > 0:
 			s.set_variable(int(r[4]), s.item_count(int(r[3])))
 	var after := resource_amount(s, key)
+	var label := resource_name(s, r)
 	return {"ok": true, "before": before, "after": after, "change": after - before,
-		"text": "%s：%d → %d（变化 %s%d）。" % [r[1], before, after, "+" if after - before >= 0 else "", after - before]}
+		"text": "%s：%d → %d（变化 %s%d）。" % [label, before, after, "+" if after - before >= 0 else "", after - before]}

@@ -303,14 +303,14 @@ static func rewrite_message(s, map_id: int, event_id: int, msg: Dictionary) -> D
 
 ## 大厅向导里两句过时说明，天启篇下删掉（D126，Kyo 11-16；西游档原样）。
 ## 此时文字已过 XTextFix，币名可能是原来的「天道币」也可能是「晨星币」，使者同理，两种都认。
-## - 商店向导 EV073：「天道币、逆天币、心法碎片并入肝帝积分（1个＝30积分）；」整句删（天启篇不读 MV 旧档）。
+## - 商店向导 EV073：「天道币、逆天币、心法碎片并入肝帝积分（1个＝30积分）；」整句删，句尾「旧存档里的这些货币，读档时已经自动折算。」也删（天启篇不读 MV 旧档，P3-1）。
 ## - 改版向导 EV071：「、天道使者打晕求道者小队」删（对应深渊教派页，天启篇永远触发不了）。
 static func _hall_trim_message(event_id: int, msg: Dictionary) -> Dictionary:
 	var lines: Array = msg.get("lines", [])
 	for i in lines.size():
 		var t := str(lines[i])
 		if event_id == 73 and t.contains("逆天币、心法碎片"):
-			lines[i] = RegEx.create_from_string("(?:\\\\c\\[4\\])?(?:天道币|晨星币)、逆天币、心法碎片(?:\\\\c\\[0\\])?并入(?:\\\\c\\[4\\])?肝帝积分(?:\\\\c\\[0\\])?（1个＝30积分）；").sub(t, "")
+			lines[i] = RegEx.create_from_string("(?:\\\\c\\[4\\])?(?:天道币|晨星币)、逆天币、心法碎片(?:\\\\c\\[0\\])?并入(?:\\\\c\\[4\\])?肝帝积分(?:\\\\c\\[0\\])?（1个＝30积分）；").sub(t, "").replace("旧存档里的这些货币，读档时已经自动折算。", "")
 		elif event_id == 71 and t.contains("打晕求道者小队"):
 			lines[i] = t.replace("、天道使者打晕求道者小队", "").replace("、见证使者打晕求道者小队", "")
 	msg["lines"] = lines

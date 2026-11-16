@@ -1,10 +1,11 @@
 extends Node
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 ## 原版文字错的加载时修正（XTextFix，乙类文字审 xa_text-audit-b）专项：
 ## 一、六个开关默认开；覆盖表每条都套上（warnings 为空）。
 ## 二、每条统一规则抽样：零宽、名字框、成对标点、词典、繁简；规则不碰的（notetag、公式、梗）保持原样。
 ## 三、逐条覆盖抽样；原文对不上的条目不套用、记进 warnings。
 ## 四、开关全关回原版：读出的表与 generated 原文件逐字相同。
-## 五、「超级Boos」改成「霸主」（D126；先改「超级Boss」再改前缀）后，真气突破的首领判定（XZhenqi.is_boss_enemy）照旧认。
+## 五、「超级Boos」改成「超级Boss」后（西游档；天启篇档再改【霸主】见 _d126），真气突破的首领判定（XZhenqi.is_boss_enemy）照旧认。
 var results: Array = []
 
 
@@ -66,7 +67,7 @@ func _run() -> void:
 						wordwrap -= 1000
 	_check("namebox_skip_wordwrap", wordwrap >= 0, wordwrap)
 	_check("pairs_quotes", _pos_texts(_rec("Items", 2231).note).has("\\c[1]效果:使用后学会被动技能 ‘玄天功·入门’") and _pos_texts(_rec("Weapons", 1641).note)[0].contains("“凌波舞”"))
-	_check("pairs_brackets", _rec("Enemies", 858).name == "【霸主】龙之祖（天龙）" and _pos_texts(_rec("Weapons", 1708).note).any(func(t): return t.begins_with("\\c[1]特效:逆伤（") and t.ends_with("持续3回合）")))
+	_check("pairs_brackets", _rec("Enemies", 858).name == "【超级Boss】龙之祖（天龙）" and _pos_texts(_rec("Weapons", 1708).note).any(func(t): return t.begins_with("\\c[1]特效:逆伤（") and t.ends_with("持续3回合）")))
 	_check("pairs_unbalanced_left", _pos_texts(_rec("Skills", 10111).note).any(func(t): return t.contains("三教极元分（天，地，人）")))
 	_check("dict_terms", _rec("Skills", 7765).name == "终极奥术伤" and _rec("EquipSuits", 164).name == "奥术璀璨" and _rec("States", 297).name == "奥术导能", [_rec("Skills", 7765).name])
 	_check("dict_joke_kept", str(_rec("Skills", 8036).description).contains("奥术还是奥数"))
@@ -104,7 +105,7 @@ func _run() -> void:
 	_check("cache_roundtrip", first == JSON.stringify(fresh) and JSON.stringify(XDB.table("Items")) == first)
 
 	# 五、名字改了首领判定照旧
-	_check("boss_name_rule", _rec("Enemies", 850).name == "【霸主】瑞丁" and XZhenqi.is_boss_enemy(XEnemy.new().setup(850, 1, 100.0)))
+	_check("boss_name_rule", _rec("Enemies", 850).name == "【超级Boss】瑞丁" and XZhenqi.is_boss_enemy(XEnemy.new().setup(850, 1, 100.0)))
 	_d126()
 
 	# 六、逐个开关单独关掉，只回退那一类（其余照旧修）
@@ -119,7 +120,7 @@ func _run() -> void:
 	XTextFix.set_all(true)
 	XTextFix.PAIRS = false
 	XTextFix.clear_cache()
-	_check("off_pairs_only", _rec("Enemies", 858).name == "【霸主】龙之祖(天龙）")
+	_check("off_pairs_only", _rec("Enemies", 858).name == "【超级Boss】龙之祖(天龙）")
 	XTextFix.set_all(true)
 	XTextFix.DICT = false
 	XTextFix.clear_cache()
@@ -154,8 +155,11 @@ func raw_count(table: String, id: int) -> int:
 
 
 ## D126（Kyo 11-16）：【超级Boss】→【霸主】、【DOTABOSS】→【远古首领】、天道使者→见证使者、天道币→晨星币
+## 只在天启篇存档套用（rules.json tianqi_dict），西游档 1:1 原貌；换档（sync_mode）清缓存重读。
 func _d126() -> void:
 	var supers := [850, 858, 859, 860, 868, 869, 870, 938, 960, 961]
+	var tq_state := Kit.new_game("jiusi")  # 天启篇档（Kit 内 XState.current 与 sync_mode 都到位）
+	_check("d126_tq_mode_on", XTextFix.tq_on())
 	var bad := []
 	for id in supers:
 		var n := str(_rec("Enemies", id).name)
@@ -179,8 +183,39 @@ func _d126() -> void:
 	_check("d126_prefix_regex", ok and not XZhenqi.is_boss_enemy(probe) and not XZhenqi.is_boss_enemy(XEnemy.new().setup(2027, 1, 100.0)))
 	_check("d126_names", _rec("Enemies", 871).name == "见证使者" and _rec("Items", 2451).name == "晨星币", [_rec("Enemies", 871).name, _rec("Items", 2451).name])
 	# 18 层讨债台词不改：XTianqiSect.rewrite_message 按「天道使者」原文认它
-	var kept := false
+	_check("d126_map046_line_kept", _map046_has("<天道使者>嘿嘿，你居然打过了深渊骑士"))
+	# 天启篇开关：XTextFix.DICT 关了词典（含天启篇词典）一起回原貌
+	XTextFix.DICT = false
+	XTextFix.clear_cache()
+	_check("d126_dict_off", _rec("Enemies", 871).name == "天道使者", _rec("Enemies", 871).name)
+	XTextFix.DICT = true
+	XTextFix.clear_cache()
+	# 换成西游档：同一进程内切档清缓存，名字回原貌（天道使者／天道币／【超级Boss】／【DOTABOSS】），Map046 同样原貌
+	var plain := XState.new_game_blank()
+	XState.current = plain
+	XTextFix.sync_mode()
+	_check("d126_plain_mode_off", not XTextFix.tq_on())
+	var raw_bad := []
+	for id in supers:
+		if not str(_rec("Enemies", id).name).begins_with("【超级Boss】"):
+			raw_bad.append([id, _rec("Enemies", id).name])
+	_check("d126_plain_super_kept", raw_bad.is_empty(), raw_bad)
+	_check("d126_plain_names", _rec("Enemies", 871).name == "天道使者" and _rec("Items", 2451).name == "天道币" and _rec("Enemies", 2027).name == "【DOTABOSS】ROSHAN" and _rec("Troops", 747).name == "天道使者", [_rec("Enemies", 871).name, _rec("Items", 2451).name])
+	_check("d126_plain_map046", _map046_has("<天道使者>嘿嘿，你居然打过了深渊骑士"))
+	_check("d126_plain_boss_rule", XZhenqi.is_boss_enemy(XEnemy.new().setup(850, 1, 100.0)))
+	# 磁盘缓存按模式位隔离：回天启篇再读，仍是天启篇口径（不被西游档缓存污染）
+	XState.current = tq_state
+	XTextFix.sync_mode()
+	_check("d126_switch_back", _rec("Enemies", 871).name == "见证使者" and _rec("Enemies", 850).name.begins_with("【霸主】"))
+	var heaven: Array = XTestMode.RESOURCES.filter(func(r): return r[0] == "heaven")[0]
+	_check("d126_test_mode_label", XTestMode.resource_name(tq_state, heaven) == "晨星币" and XTestMode.resource_name(plain, heaven) == "天道币")
+	XState.current = plain
+	XTextFix.sync_mode()
+	_check("d126_switch_again", _rec("Enemies", 871).name == "天道使者")
+
+
+func _map046_has(needle: String) -> bool:
 	for c in XDB.map(46).events[1].pages[0].list:
-		if int(c.code) == 401 and str(c.parameters[0]).contains("<天道使者>嘿嘿，你居然打过了深渊骑士"):
-			kept = true
-	_check("d126_map046_line_kept", kept)
+		if int(c.code) == 401 and str(c.parameters[0]).contains(needle):
+			return true
+	return false
