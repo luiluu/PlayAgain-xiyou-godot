@@ -394,11 +394,12 @@ def build_rows(dump: dict) -> tuple:
             seen[pid] = seen.get(pid, 0) + 1
             if seen[pid] > 1:
                 pid = f'{pid}-{seen[pid]}'
-            row = {'public_id': pid, 'name': name}
-            if r.get('nickname'):
-                row['nickname'] = r['nickname']
             is_open = bool(r.get('open', True))
-            row['description'] = keep_visible(r.get('description', ''), None if is_open else (fname, pid))
+            vrow = None if is_open else (fname, pid)
+            row = {'public_id': pid, 'name': keep_visible(name, vrow)}  # 名字、称号玩家也看得到（「厄临星爆 30%」这类技能名）
+            if r.get('nickname'):
+                row['nickname'] = keep_visible(r['nickname'], vrow)
+            row['description'] = keep_visible(r.get('description', ''), vrow)
             if int(r.get('price', 0) or 0) > 0 and '价格' in row['description']:
                 row['price'] = int(r['price'])
             if fname in ('Weapons', 'Armors') and isinstance(r.get('params'), list):

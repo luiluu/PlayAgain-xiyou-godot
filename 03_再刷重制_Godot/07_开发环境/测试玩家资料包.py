@@ -411,6 +411,20 @@ class VisibleRateTests(unittest.TestCase):
             q.stage.joinpath('常见问答.md').write_text(line + '\n', encoding='utf-8')  # 搬到 md
             self.assertFalse(q.check(visible=P.VISIBLE)[P.CHECKS[1]]['ok'])
 
+    def test_names_visible(self):
+        """条目名字带掉率样式（「厄临星爆 30%」）是玩家看得到的，放行；未开放条目的名字只放行自己。"""
+        with tempfile.TemporaryDirectory() as td:
+            P.VISIBLE.clear()
+            d = {'kinds': {k: [] for k in P.KINDS}}
+            d['kinds']['Skills'] = [{'id': 1, 'name': '厄临星爆 30%', 'description': '品质：传说', 'open': True},
+                                    {'id': 2, 'name': '暗爆 1/40', 'description': '说明', 'open': False}]
+            t, _ = P.build_rows(d)
+            q = Pkg(td)
+            q.put('Skills', t['Skills'])
+            self.assertTrue(q.check(visible=P.VISIBLE)[P.CHECKS[1]]['ok'])
+            q.stage.joinpath('常见问答.md').write_text('暗爆 1/40\n', encoding='utf-8')
+            self.assertFalse(q.check(visible=P.VISIBLE)[P.CHECKS[1]]['ok'])
+
     def test_kept_counts_after_truncation(self):
         """原样留计数按截断后实际进包的行数。"""
         with tempfile.TemporaryDirectory() as td:
