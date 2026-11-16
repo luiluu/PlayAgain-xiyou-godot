@@ -445,10 +445,13 @@ func apply_ring_style(res: Dictionary) -> void:
 		var slot := int(ring.items[i].get("key", -1))
 		if orbs.has(slot):
 			var ob: Dictionary = orbs[slot]
-			var fa: Dictionary = XTianqiRingStyle.style(str(ob.get("style", ""))).get("art", {})
-			var tex := XTianqiRingStyle.texture(str(fa.get("frame", "")), "orb")
-			if tex != null:
-				frames[i] = {"tex": tex, "tint": ob.get("tint", Color.WHITE)}
+			if str(ob.get("style", "")) == "orb_tier":   # 淡框：不用图，nav 画一圈品质色 2px 描边
+				frames[i] = {"outline": ob.get("tint", Color.WHITE), "outline_w": float(ob.get("outline_w", 2.0))}
+			else:
+				var fa: Dictionary = XTianqiRingStyle.style(str(ob.get("style", ""))).get("art", {})
+				var tex := XTianqiRingStyle.texture(str(fa.get("frame", "")), "orb")
+				if tex != null:
+					frames[i] = {"tex": tex, "tint": ob.get("tint", Color.WHITE), "fx": str(ob.get("fx", ""))}
 		if dd.has(slot):
 			dots[i] = dd[slot]
 	ring.orb_frames = frames

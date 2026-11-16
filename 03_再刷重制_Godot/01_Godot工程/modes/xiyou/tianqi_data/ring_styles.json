@@ -54,7 +54,8 @@
       "art": {"frame": "ring_center_plague.png"}, "half": {"dim": 0.6, "suffix": "（残）"}, "intro": "burn"},
     "qiyin_artifact": {"layer": "center", "name": "七印神器", "priority": 50,
       "art": {"frame": "ring_center_qiyin.png"}, "team_active_only": true, "inactive_suffix": "（未生效）", "intro": "burn"},
-    "orb_seal": {"layer": "orb", "art": {"frame": "ring_orb_frame.png"}, "tint_by": "seal"}
+    "orb_seal": {"layer": "orb", "art": {"frame": "ring_orb_frame.png"}, "tint_by": "seal"},
+    "orb_tier": {"layer": "orb", "tint_by": "quality", "outline_w": 2.0, "red_safe_tint": "#d9925c", "_note": "D108：神话及以上武器的淡框，只换描边色、不加斜角不加特效，零张图（nav 程序画）"}
   },
   "rules": [
     {"style": "seal_{seal}", "when": {"qiyin_set_pieces": 5}},
