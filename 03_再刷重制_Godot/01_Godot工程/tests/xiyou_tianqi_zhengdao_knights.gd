@@ -5,6 +5,7 @@ extends Node
 ##     做题家与莉co／混子各一个开关，互不牵连；勇者没有伤害狂暴。
 ## 三、回血：勇者每回合末回 2%（D82）、莉co回 1.5%（D58），各一个开关；艰险没有。
 ## 四、勇者甲（D32、D54）：死期从出战栏最后一格往前点；到第 doom_every_from 回合起每回合点一人；开关关掉照旧（5 回合、随机）。
+## 五、验收场景跑法（tests/virtual_player/zhengdao_scenarios.tscn）：11 个场景都在、编号 1～11；Wilson 区间算得对；换人合法性四条都对。
 ## 数是 v044 参考组占位（T014 标数），断言都从表里读，改数不用改测试。
 
 var results: Array = []
@@ -81,6 +82,7 @@ func _run() -> void:
 	_regen()
 	_doom()
 	_reset()
+	_scenario_runner()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -320,3 +322,23 @@ func _doom() -> void:
 	lg3.run_turn(_guard_all(lg3))
 	_check("doom_kills_last", tail.is_dead() and lg3.actors.filter(func(a): return a.is_dead()).size() == 1, lg3.actors.map(func(a): return a.hp))
 	lg3.end_battle(0)
+
+
+# ---- 五、验收场景跑法 ----
+
+const RUNNER := "res://tests/virtual_player/zhengdao_scenarios.tscn"
+
+
+func _scenario_runner() -> void:
+	_check("runner_scene", ResourceLoader.exists(RUNNER))
+	var R = load("res://tests/virtual_player/zhengdao_scenarios.gd")
+	var list: Array = R.scenarios()
+	_check("runner_eleven", list.map(func(sc): return int(sc.id)) == range(1, 12), list.map(func(sc): return sc.id))
+	_check("runner_gates", list.all(func(sc): return sc.groups.all(func(g): return ["ruler", "pass90", "fail80", "ref"].has(str(g.gate)))))
+	var w0: Array = R.wilson(0, 300)
+	var w1: Array = R.wilson(240, 300)
+	_check("runner_wilson", w0[0] == 0.0 and absf(w0[1] - 0.0126) < 0.001 and absf(w1[0] - 0.751) < 0.002 and absf(w1[1] - 0.843) < 0.002, [w0, w1])
+	var node = R.new()
+	var swap: Dictionary = node._swap_checks()
+	_check("runner_swap_rules", int(swap.get("failed", 1)) == 0 and swap.get("checks", []).size() == 4, swap)
+	node.free()
