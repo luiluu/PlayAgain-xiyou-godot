@@ -426,7 +426,7 @@ func _buckets() -> void:
 		var a := s.actor(int(id))
 		# 学几本带终伤、技能类型增伤的通用被动书，保证有东西可分
 		for sk in XDB.table("Skills"):
-			if sk is Dictionary and int(sk.get("stypeId", 0)) == 5 and str(sk.get("note", "")).contains("passiveHarmRi"):
+			if sk is Dictionary and XTianqiLedger.is_secret_skill(int(sk.id), int(sk.get("stypeId", 0))) and str(sk.get("note", "")).contains("passiveHarmRi"):  # 期三核查 P1：秘籍桶认书教的
 				a.learn_skill(int(sk.id))
 				break
 		a.refresh_passive()

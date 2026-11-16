@@ -380,12 +380,34 @@ static func bucket_of(o: Dictionary, a = null) -> String:
 		return "state"
 	if o.has("stypeId"):
 		var id := int(o.get("id", 0))
-		if XPowerBooks.is_power(id) or int(o.get("stypeId", 0)) == 5:
-			return "secret"
 		if not XRace.skill_info(id).is_empty():
 			return "race"
+		if is_secret_skill(id, int(o.get("stypeId", 0))):
+			return "secret"
 		return "actor"
 	return "actor"
+
+
+## 秘籍格占格的技能（养成线 v0.3：功法、通用被动书、转换书都占格）：洪荒权能书，或者由物品「学会技能」（效果 43）教的
+## 被动 4／其他 5／功法 6 类技能。不算：种族技能（种族桶）、天启篇号卷（另有 3／2／1 卷）、万灵增元丹被动（期二已不生效）、
+## 没有书教的「其他」类（羁绊、套装这类角色自带的）。期三核查 P1：原来只认权能书和类型 5，真功法（6）、通用被动书（4）漏进角色桶、羁绊误占格。
+static var _book_skills := {}
+
+static func is_secret_skill(id: int, stype: int) -> bool:
+	if PILL_PASSIVES.has(id) or XTianqiTrumpet.of_skill(id) != 0:
+		return false  # 号卷占的是号卷格（3／2／1），不占秘籍格；号卷物品带 <CodexPower>，要先排掉
+	if XPowerBooks.is_power(id):
+		return true
+	if not stype in [4, 5, 6]:
+		return false
+	if _book_skills.is_empty():
+		_book_skills[0] = true
+		for it in XDB.table("Items"):
+			if it is Dictionary:
+				for e in it.get("effects", []):
+					if int(e.get("code", 0)) == 43:
+						_book_skills[int(e.get("dataId", 0))] = true
+	return _book_skills.has(id)
 
 
 static func _add(d: Dictionary, key, bucket: String, v: float) -> void:
@@ -682,6 +704,7 @@ static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictio
 		var x := maxf(0.0, float(nine.element[e]) - nine_cap("element"))
 		if x > 0.0:
 			cut.element[e] = float(cut.element.get(e, 0.0)) + x
+	_cap_derived_elements(a, cut.element)
 	if cut.skill == 0.0 and cut.bonus == 0.0 and cut.crit == 0.0 and cut.element.is_empty():
 		return {}
 	frame.normalAdd = float(frame.normalAdd) - cut.skill
@@ -691,6 +714,26 @@ static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictio
 		frame.elementAdd[str(e)] = float(frame.elementAdd.get(str(e), 0.0)) - float(cut.element[e])
 	frame.nineCap = cut
 	return cut
+
+
+## 虚空～风（11～15）的元素加成是 max(自身, 火～暗 2～9 里最低的一系)（XDamage.element_bonus）：照同样的取法算封顶前后，
+## 差多少就扣多少（期三核查 P2③：原来只按 11～15 自己那份扣，借来的火～暗那份漏封）。cut：{元素: 扣的量}，就地改
+static func _cap_derived_elements(a, cut: Dictionary) -> void:
+	if cut.is_empty():
+		return
+	var low_raw := INF
+	var low_cap := INF
+	for c in [2, 3, 4, 5, 6, 7, 8, 9]:
+		var own := XDamage.own_bonus(a, c)
+		low_raw = minf(low_raw, own)
+		low_cap = minf(low_cap, own - float(cut.get(c, 0.0)))
+	for e in [11, 12, 13, 14, 15]:
+		var own := XDamage.own_bonus(a, e)
+		var x := maxf(own, low_raw) - maxf(own - float(cut.get(e, 0.0)), low_cap)
+		if x > 0.0:
+			cut[e] = x
+		else:
+			cut.erase(e)
 
 
 ## 钩子帧里种族祝福、宝珠共鸣写进③（finalAdd add）的量
@@ -705,19 +748,30 @@ static func hook_bonus(trace: Array, module: String) -> float:
 	return v
 
 
-## 属性 ＋30%（XActor.param_rate 末尾乘）：原版套装属性倍率 × 符文之语／成长装备上的属性倍率特性，合计超过 1＋30% 时压回去
-static func param_cap(a, i: int, suit_rate: float) -> float:
+## 属性 ＋30%（XActor.param_rate 里乘）：九线来的属性倍率合计超过 ＋30% 时扣掉超出的部分。
+## 口径跟实际一致（期三核查 P2②）：特性 21 在 XBattler.traits_pi 里是加算（1＋Σ(v−1)），原版套装属性倍率在外面另乘。
+## 九线的份：符文之语、成长装备整件的特性 21；别的装备上宝珠镶进去的特性 21（XOrbs 打的 _codexOrb 标记）；套装倍率 (suit−1)。
+## 超出的先从特性那份扣、不够再从套装那份扣；base＝不含套装的特性倍率（super.param_rate）。返回要再乘的系数。
+static func param_cap(a, i: int, base: float, suit_rate: float) -> float:
 	if not CAP_NINE or not a is XActor or not active():
 		return 1.0
-	var nine := suit_rate
+	var from_traits := 0.0
 	for eq in (a as XActor).stat_equips():
-		if not bucket_of(eq) in ["runeword", "hubris"]:
-			continue
+		var whole := bucket_of(eq) in ["runeword", "hubris"]
 		for t in eq.get("traits", []):
-			if int(t.get("code", 0)) == 21 and int(t.get("dataId", -1)) == i:
-				nine *= float(t.get("value", 1.0))
-	var top := 1.0 + nine_cap("param")
-	return top / nine if nine > top else 1.0
+			if int(t.get("code", 0)) == 21 and int(t.get("dataId", -1)) == i and (whole or t.has("_codexOrb")):
+				from_traits += float(t.get("value", 1.0)) - 1.0
+	var excess := from_traits + (suit_rate - 1.0) - nine_cap("param")
+	if excess <= 0.0:
+		return 1.0
+	var cut_t := minf(excess, maxf(0.0, from_traits))
+	var cut_s := excess - cut_t
+	var f := 1.0
+	if base > 0.0:
+		f *= maxf(0.0, base - cut_t) / base
+	if suit_rate > 0.0:
+		f *= maxf(0.0, suit_rate - cut_s) / suit_rate
+	return f
 
 
 # ---- 五池明细（第四节第 1 条）----

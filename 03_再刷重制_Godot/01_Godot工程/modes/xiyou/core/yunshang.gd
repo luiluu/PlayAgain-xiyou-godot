@@ -609,10 +609,14 @@ static func add_actions(logic, a, count: int, tag: String) -> bool:
 	_gift_sources[int(a.actor_id)] = tags
 	while tags.size() < pending:
 		tags.append("original")
+	var added := 0
 	for i in range(count):
+		if not XTianqiLedger.take_extra(logic, a, "yunshang." + tag):
+			break  # 回合预算（伤害加成总账期三，核查 P2①）：赠行、放行也是多出来的完整出手，和别的追加行动共用每回合多 1 次；西游档恒放行
 		q.append(a)
 		tags.append(tag)
-	return true
+		added += 1
+	return added > 0 or count <= 0
 
 
 ## Y.freeGift（同袍换日觉醒）：每回合一次免费赠队友 2 次行动；同一接收者每回合最多 2 次；异化绝缘挡掉

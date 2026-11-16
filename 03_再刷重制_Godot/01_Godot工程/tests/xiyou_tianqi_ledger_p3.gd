@@ -110,11 +110,14 @@ func _pills() -> void:
 # ---- 二、九线封顶 ----
 func _secret_books(n: int) -> Array:
 	var out := []
-	for sk in XDB.table("Skills"):
-		if sk is Dictionary and int(sk.get("stypeId", 0)) == 5 and RegEx.create_from_string("<passiveHarmRi\\s*:\\s*(\\d+)").search(str(sk.get("note", ""))) != null:
-			out.append(int(sk.id))
-			if out.size() >= n:
-				break
+	# 核查 P1：先取真功法（类型 6）、再取通用被动书（类型 4），都要由书教、判进秘籍桶（原来只抽类型 5，掩盖了 6／4 漏判）
+	for want in [6, 4]:
+		for sk in XDB.table("Skills"):
+			if sk is Dictionary and int(sk.get("stypeId", 0)) == want and XTianqiLedger.is_secret_skill(int(sk.id), want) \
+					and RegEx.create_from_string("<passiveHarmRi\\s*:\\s*(\\d+)").search(str(sk.get("note", ""))) != null and not out.has(int(sk.id)):
+				out.append(int(sk.id))
+				if out.size() >= n:
+					return out
 	return out
 
 
@@ -126,6 +129,15 @@ func _nine_cap() -> void:
 	var s := _state()
 	var a := s.actor(int(s.battle_slots[0]))
 	var e := XEnemy.new().setup(1, 3, 100.0)
+	# 核查 P1：判桶口径——真功法（6）、通用被动书（4）由书教的进秘籍；羁绊这类没书教的「其他」、号卷、种族技能不进
+	var sk_of := func(id: int) -> Dictionary: return XDB.rec("Skills", id)
+	var cases := {7144: "secret", 7145: "secret", 2776: "secret", 6137: "secret", 1077: "actor", 1126: "actor", 7238: "actor"}
+	var wrong := []
+	for id in cases:
+		var got := XTianqiLedger.bucket_of(sk_of.call(id), a)
+		if got != cases[id]:
+			wrong.append([id, got])
+	_check("bucket_secret_by_book", wrong.is_empty() and int(sk_of.call(7144).stypeId) == 6 and int(sk_of.call(2776).stypeId) == 4 and int(sk_of.call(1077).stypeId) == 5, wrong)
 	var slots := XTianqiLedger.secret_slots(a)
 	_check("secret_slots_by_tier", slots == XTianqiBalance.secret_cap(XTier.tier_of(a)) and slots > 0, slots)
 	var books := _secret_books(slots + 3)
@@ -181,7 +193,35 @@ func _nine_cap() -> void:
 	var want := maxf(0.0, nine_bonus - 0.35)
 	_check("cap_nine_bonus_35", suit >= 1.0 and is_equal_approx(float(rs_off.breakdown.row.terminal) - float(rs.breakdown.row.terminal), want), [suit, nine_bonus, rs.breakdown.row.terminal, rs_off.breakdown.row.terminal])
 	# 属性：套装属性倍率 ×1.5 → 封到 1.3
-	_check("param_cap", is_equal_approx(XTianqiLedger.param_cap(b, 2, 1.5), 1.3 / 1.5) and XTianqiLedger.param_cap(b, 2, 1.2) == 1.0)
+	_check("param_cap", is_equal_approx(XTianqiLedger.param_cap(b, 2, 1.0, 1.5), 1.3 / 1.5) and XTianqiLedger.param_cap(b, 2, 1.0, 1.2) == 1.0)
+	# 核查 P2②：特性 21 是加算（traits_pi＝1＋Σ(v−1)），宝珠镶进去的认 _codexOrb；超出从特性那份扣
+	var eq0 = b.stat_equips()[0]
+	(eq0.traits as Array).append({"code": 21, "dataId": 2, "value": 1.5, "_codexOrb": "ledger_test:1"})
+	var base := b.traits_pi(21, 2)
+	var f_orb := XTianqiLedger.param_cap(b, 2, base, 1.0)
+	var f_mix := XTianqiLedger.param_cap(b, 2, base, 1.1)
+	(eq0.traits as Array).pop_back()
+	_check("param_cap_additive_orb", is_equal_approx(f_orb, (base - 0.2) / base) and is_equal_approx(f_mix, (base - 0.3) / base) and base >= 1.5, [base, f_orb, f_mix])
+	# 核查 P2③：虚空～风借火～暗最低的一系，封顶前后照同样取法扣
+	var keep_yep = eq0.get("yep", {}).duplicate(true)
+	var yep: Dictionary = eq0.get("yep", {}).duplicate(true)
+	var amp := {}
+	for c in [2, 3, 4, 5, 6, 7, 8, 9]:
+		amp[str(c)] = 0.5
+	yep["elementAmplify"] = amp
+	eq0["yep"] = yep
+	b.read_touch()
+	b._pm_base = {}
+	b.refresh_passive()
+	var frame := {"normalAdd": 0.0, "finalAdd": 0.0, "criticalAdd": 0.0, "elementAdd": {}}
+	var cut := XTianqiLedger.apply_nine_cap(XDB.rec("Skills", 1), b, frame, b.passive_cache(), {})
+	eq0["yep"] = keep_yep
+	b.read_touch()
+	b._pm_base = {}
+	b.refresh_passive()
+	var c11 := float(cut.get("element", {}).get(11, 0.0))
+	_check("cap_elements_11_15", is_equal_approx(float(cut.get("element", {}).get(2, 0.0)), 0.2) and is_equal_approx(c11, 0.2) \
+		and is_equal_approx(float(frame.elementAdd.get("15", 0.0)), -0.2) and is_equal_approx(float(frame.elementAdd.get("9", 0.0)), -0.2), [cut, frame.elementAdd])
 	# 西游档：不封
 	var x := _state(false)
 	var xa := x.actor(int(x.battle_slots[0]))
@@ -189,7 +229,7 @@ func _nine_cap() -> void:
 		xa.learn_skill(int(id))
 	xa.refresh_passive()
 	var xr := _calc(xa, e)
-	_check("cap_xiyou_none", not xr.breakdown.row.has("nineCap") and not xa.passive_cache().has("bySource") and XTianqiLedger.param_cap(xa, 2, 2.0) == 1.0)
+	_check("cap_xiyou_none", not xr.breakdown.row.has("nineCap") and not xa.passive_cache().has("bySource") and XTianqiLedger.param_cap(xa, 2, 1.0, 2.0) == 1.0)
 
 
 # ---- 三、回合预算 ----
@@ -266,6 +306,17 @@ func _budget() -> void:
 	L._acted = {xu: 1}
 	L.current_order = [xu]
 	_check("budget_xiyou_none", XTianqiLedger.take_extra(L, xu, "test.xiyou") and XTianqiLedger.take_extra(L, xu, "test.xiyou", true))
+	# 核查 P2①：云裳赠行、放行（add_actions）逐次过预算：本回合只排了一次的人最多再加 1 次
+	var s2 := _state()
+	var y := s2.actor(int(s2.battle_slots[2]))
+	L.actors = [y]
+	L.turn = 20
+	L._acted = {}
+	L.current_order = [y]
+	var gave := XYunshang.add_actions(L, y, 2, "gift")
+	var n1 := L.current_order.count(y)
+	var again := XYunshang.add_actions(L, y, 1, "gift")
+	_check("budget_yunshang_gift", gave and n1 == 2 and not again and L.current_order.count(y) == 2, [n1, L.current_order.count(y)])
 	L.free()
 
 
@@ -308,6 +359,13 @@ func _derived_table() -> void:
 
 # ---- 四、期二补记 ----
 func _notes() -> void:
+	# 顺看（小A，T035 范围外）：七印 end_action 的派生在弱者专属词条里算「原生追加 FOLLOW」——行动执行完就 set_kind FOLLOW、在 root_end 之前，
+	# 不是主动根 ROOT，所以不会被当主动根记命中；DERIVED 是弱者词条自己代出的派生，七印的不该归那类（不改）。这里锁住次序。
+	var bl := FileAccess.get_file_as_string("res://modes/xiyou/battle/battle_logic.gd")
+	var i_follow := bl.find("XTianqiWeakAffix.set_kind(self, XTianqiWeakAffix.FOLLOW)")
+	var i_qiyin := bl.find("XTianqiQiyinEffects.end_action(self, u, skill)")
+	var i_root_end := bl.find("XTianqiWeakAffix.root_end(self, u)")
+	_check("qiyin_derived_under_follow", i_follow > 0 and i_follow < i_qiyin and i_qiyin < i_root_end, [i_follow, i_qiyin, i_root_end])
 	_check("note2_qiyin_derived_allowed", XTianqiLedger.row("qiyin_derived").get("status") == "allowed" and XTianqiLedger.row("qiyin_derived").has("phase3"))
 	_check("note3_qiyin_dot_allowed", XTianqiLedger.row("qiyin_dot").get("status") == "allowed")
 	_check("ledger_phase3", XTianqiLedger.phase() == 3 and not XTianqiLedger.data().get("nine_caps", {}).is_empty())

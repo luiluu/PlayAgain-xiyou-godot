@@ -27,7 +27,9 @@
 `damage._calculate` 在钩子之后、算乘区之前调 `XTianqiLedger.apply_nine_cap`，只扣超出的部分，扣的量记在伤害详情 `row.nineCap`（「九线封顶」）：
 - 秘籍格：格数读档位行 `secret_cap`（6／4／3），每本书每个池最多 +8%；学多了按「各池封后最大值相加」从高到低取前几本（同分书号小的先），其余不算——临时规则，第一期秘籍格做出来换正式占格。被动分桶在秘籍那桶并排按本记了一份（`bySource.books`，桶名 `#技能号`）。
 - 其余九线（符文之语、宝珠、原版装备与套装、种族、成长装备、真气）：①技能池合计 +15%，②元素池每一系 +30%，③伤害加成池 +35%（包括种族祝福、宝珠共鸣两个钩子这一下进③的量和套装确认阶段 +(k−1)）。④暴击只封秘籍（稿子没给其余九线暴击的数）。
-- 属性 +30%：`XActor.param_rate` 末尾乘 `param_cap`：原版套装属性倍率 × 符文之语／成长装备上的属性倍率特性，超过 1.3 压回 1.3。
+- 属性 +30%：`XActor.param_rate` 里乘 `param_cap`。口径和实际一致：特性 21 在 `traits_pi` 里是加算（1＋Σ(v−1)），套装倍率在外面另乘；九线的份＝符文之语、成长装备整件的特性 21＋其他装备上宝珠镶进去的特性 21（`XOrbs` 打的 `_codexOrb` 标记）＋(套装−1)，超过 +30% 的部分先从特性那份扣、不够再扣套装那份（核查 P2② 返修）。
+- 秘籍判桶（核查 P1 返修）：`is_secret_skill`＝洪荒权能书，或由物品「学会技能」（效果 43）教的被动 4／其他 5／功法 6 类；不算种族技能、号卷（7238 等，号卷物品也带 `<CodexPower>`，先排掉）、万灵增元丹被动、没书教的羁绊。原来只认权能书和类型 5：真功法 7144、7145 和通用被动书 2776、6137 漏进角色桶不封，羁绊误占格。
+- 虚空～风（11～15）借火～暗最低一系的那份，照 `element_bonus` 同样取法算封顶前后、差多少扣多少（核查 P2③ 返修，`_cap_derived_elements`）。
 - 套装状态现在单独分桶 `suit`（原来混在 `state`）。
 
 ## 三、回合预算（第五节第 2 条）
@@ -36,7 +38,7 @@
 
 | 类 | 入口 | 怎么接 |
 |---|---|---|
-| 追加行动 | 七印击倒再动 `qiyin.kill_extra_action`、五条悟六眼 `gojo.again`、镜流 `jingliu.extra`、人族九九六 `race.human996`、技能卡 `free_action`（造成伤害的 `card.free_action`；不造成伤害的 `note_free`、不占） | 先问，给了才 `push_front`／插入 |
+| 追加行动 | 七印击倒再动 `qiyin.kill_extra_action`、五条悟六眼 `gojo.again`、镜流 `jingliu.extra`、人族九九六 `race.human996`、云裳赠行／免费赠行／放行 `yunshang.gift`／`yunshang.stored`（`XYunshang.add_actions` 逐次问，核查 P2① 返修）、技能卡 `free_action`（造成伤害的 `card.free_action`；不造成伤害的 `note_free`、不占） | 先问，给了才 `push_front`／插入 |
 | 再释放 | 词条 `affix.recast`、震印放两次 `qiyin.double`、公共事件再释放三种 `event.recast`／`event.freeze_followup`／`event.push_recast`、流萤 `liuying.rerelease`（行动中途问，`in_action`） | 先掷原来的几率，再问预算（随机数次序不变） |
 | 醒来补排 | `battle_logic._sync_orders`／`_insert_orders` 当前回合 | 不重掷，次数＝1＋1－已行动－已用再释放；下个回合照原来 |
 | 派生攻击 | 七印连斩、横扫、再射走 `take_derived` 按表每回合次数（18／2／2，都是「每次行动的原上限×2 次出手」，不改实际上限）；补刀用装备表原有 per_turn；专属模块 7 处登记为模块自管、期四到期 | 不占出手预算 |
@@ -48,12 +50,12 @@
 
 1. **补记 1「混合招固定一半」我同意**：期二对照里混合招都没出现差（32 队次的差全是技能专属被动），没有实测依据要改攻防权重。虚拟玩家对照的 5% 门槛本期没量到（基准队没有魔族／神族混合招主力）。
 2. **九线封顶的「④暴击」稿子只给了秘籍**：其余九线的爆伤（宝珠、套装的 `passiveCrHarmRi`）现在不封。请设计稿补一句要不要封、封多少。
-3. **属性 +30% 只封得了一半**：宝珠镶进装备的属性、原版装备本身的属性倍率合在装备实例的特性里，分不出来源，没封；真气的属性加在别处也没算进。等宝珠、真气三期重做时自然解决，现在先登记。
+3. **属性 +30% 的范围**：宝珠镶进去的属性特性带 `_codexOrb` 标记、分得出来，已封（原稿「分不出」说错了，核查 P2② 指出）；原版装备本身的属性倍率不算九线、不封；真气的属性加在别处，没算进，等真气三期重做时再说。
 4. **「九线来源停用」（特性 34／61、`<passiveAPLUS>`、道法连击分神、符文之语再释放）本单没做**：第八节期三行只写了第五节第 2～4 条，这块在第 2 条表下面、但改的是 `zhenqi.gd` 和装备特性，量不小；回合预算已经把它们的效果压在「每回合多 1 次」以内（掷出的再动占预算）。建议另开小单（Opus＋medium），不然期三拖太长。
 
 ## 没做的
 
-- 小A（T035 核查范围外 P3，协调转来）：七印 `end_action` 里的 `_derived`→`logic.apply` 没切弱者专属词条的 DERIVED 种类，补刀也是。本单派生预算按来源计数（`take_derived(logic, u, "qiyin.…")`），不按种类，所以**本单不漏记**；切种类会改弱者专属词条在派生一击上的触发（那张表归 T035），没顺手改，建议归弱者词条车道一并看。
+- 小A（T035 核查范围外 P3）七印 `_derived` 的事件种类：查了，**不改**。`battle_logic.act` 在主动根执行完就 `set_kind(FOLLOW)`，七印 `end_action` 在它之后、`root_end` 之前，所以七印的连斩、横扫、再射、补刀在弱者专属词条里记成「原生追加 FOLLOW」，不是主动根 ROOT、不会被当主动根记命中；DERIVED 是弱者专属词条自己代出的派生，七印的派生是原生装备效果，归 FOLLOW 才对。专项 `qiyin_derived_under_follow` 锁住这个次序。本单派生预算按来源计数，也不靠种类。
 
 - 九线来源停用（见上 4）。
 - 虚拟玩家养成存档的满养成队开关对照（同期二）。
@@ -102,6 +104,18 @@
 ## 待交叉核查
 
 - 甲档（小A）：本分支全部提交。改到的核心文件：`battle_logic.gd`（`_sync_orders`／`_insert_orders` 两处）、`damage.gd`（一行调用）、`actor.gd`（`param_rate`）。请重点看：`extra_used` 的算法在「掷出两次」「插队后再释放」「行动中途问」三种时机是否都不多算少算；九线封顶只扣超出、不足的不加；西游档三样都恒不进。
+
+## 核查返修（小A 甲档核 ea0526866：1 P1／5 P2／2 P3）
+
+| 条 | 改了什么 | 断言 |
+|---|---|---|
+| P1 秘籍判桶 | `bucket_of` 改用 `is_secret_skill`（书教的 4／5／6 类＋权能书；排掉号卷、种族、丹药被动、羁绊） | `bucket_secret_by_book`（7144、7145、2776、6137 进秘籍；羁绊 1077、1126 和号卷 7238 不进）；`_secret_books` 改抽类型 6、4 的真书；期一专项 `buckets_*` 改学书教的 |
+| P2① 云裳插队 | `XYunshang.add_actions` 每加一次问 `take_extra`（`yunshang.<来源>`），总账 `turn_budget.extra` 登记 | `budget_yunshang_gift` |
+| P2② 属性封顶口径 | `param_cap(a, i, base, suit)` 按加算算、宝珠认 `_codexOrb`，`actor.param_rate` 传 base | `param_cap`、`param_cap_additive_orb` |
+| P2③ 元素 11～15 | `_cap_derived_elements` | `cap_elements_11_15`（2～9 各 0.5 封到 0.3，11～15 也扣 0.2） |
+| 顺看 七印派生种类 | 不改（见「没做的」） | `qiyin_derived_under_follow` |
+
+返修后本机重跑：`xiyou_tianqi_ledger`、`xiyou_tianqi_ledger_p3`（37）、`xiyou_determinism`、`xiyou_otb`、`xiyou_yunshang`、`xiyou_yunshang_wraps`、`xiyou_tianqi_affix_battle`、`xiyou_tianqi_qiyin_effects`、`xiyou_tianqi_weak_affix`、`xiyou_tianqi_skills`、`xiyou_tianqi_trumpet`、`xiyou_power_books`、`xiyou_orbs` 全过；语法检查、`发行空壳.py check`（64 个脚本、573 个函数）过。
 
 ## 本分支提交
 
