@@ -1,0 +1,5 @@
+sandbox_extension_issue_file_to_process failed for /Users/kyo/orca/workspaces/再刷项目资料库/gpt-mira-feet/03_再刷重制_Godot/07_开发环境/当前Godot.app: 1 (Operation not permitted)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M1 Pro
+
+TEST_RESULT={"passed":26,"total":26}

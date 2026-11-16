@@ -9,3 +9,7 @@
 复现（Pillow）：在 content/mira 下运行 `python3 fix_mira_feet.py --source img/sv_actors/t122_evidence/before.png --output img/sv_actors/Codex_Mira_SV_u2.png`。生成式工具试图重画整张表且尺寸不符，未采用；协调者授权确定性修补后使用原图靴像素，无新增颜色。
 
 证据在 t122_evidence/：before.png 为修改前完整原图；comparison_1x.png、comparison_4x.png 为上旧下新整表；idle_comparison_4x.gif 为左旧右新三帧往返；validation.json 含54格外接框逐格记录。576×384、二值alpha、原调色板子集、全部外接框和脚底均保持。注意脚底最后有像素的是 0-based y=60，外接框下界为61，与原图完全一致。
+
+第三帧原靴底有一枚深色残点，另在 y=60、x=24..28 清空原脚间隙后贴入原图靴部；总改动404像素。复验与重建对照图：`python3 content/mira/validate_mira_feet.py`（相对 Godot 工程根目录；脚本也可在任意目录按绝对路径运行）。三帧底行左靴 x17..23、右靴 x29..33，脚间隙 x24..28 均透明。
+
+`battle_godot.png` 为最终素材在 Godot 真实战斗场景的窗口视口截图；`xiyou_mira_art` 窗口模式重跑26/26通过。修图未改动任何播放逻辑。
