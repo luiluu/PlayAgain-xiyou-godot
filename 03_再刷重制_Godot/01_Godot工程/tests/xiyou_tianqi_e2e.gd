@@ -559,18 +559,27 @@ func _load_back(lineup: Array) -> void:
 		await _key(KEY_RIGHT)  # 第 4 格（助力位）
 	_check("deploy.helper_slot_selected", page.slot_index == XTianqi.HELPER_SLOT, page.slot_index)
 	await _key(KEY_ENTER)
+	# D57（XTianqi.HELPER_RULES）：九死助力位不许超强者——替补里的超强者 B 放进助力位要被拦
 	await _list_to(page, b)
-	var helper_before: int = int(s.battle_slots[XTianqi.HELPER_SLOT])
+	before = s.battle_slots.duplicate()
+	XSound.system_log.clear()
 	await _key(KEY_ENTER)
-	_check("deploy.super_to_helper", int(s.battle_slots[XTianqi.HELPER_SLOT]) == b, s.battle_slots)
-	# 普通换人：把刚被换下的人换回第 1 格
-	if helper_before > 0:
-		for i in 3:
-			await _key(KEY_LEFT)
-		await _key(KEY_ENTER)
-		await _list_to(page, helper_before)
-		await _key(KEY_ENTER)
-		_check("deploy.normal_swap", int(s.battle_slots[1]) == helper_before, s.battle_slots)
+	_check("deploy.super_to_helper_blocked", XSound.system_log.has(3) and s.battle_slots == before and page.mode == "list",
+		[XSound.system_log, s.battle_slots, page.mode])
+	# 上场格的超强者 A 和助力位对调（A 会进助力位）也要拦
+	await _list_to(page, a)
+	XSound.system_log.clear()
+	await _key(KEY_ENTER)
+	_check("deploy.field_super_to_helper_blocked", XSound.system_log.has(3) and s.battle_slots == before and page.mode == "list",
+		[XSound.system_log, s.battle_slots, page.mode])
+	# 普通换人：第 2 格的非超强者换进助力位，原助力位的人换到第 2 格
+	var helper_before: int = int(s.battle_slots[XTianqi.HELPER_SLOT])
+	var plain: int = int(s.battle_slots[2])
+	await _list_to(page, plain)
+	await _key(KEY_ENTER)
+	_check("deploy.normal_swap", int(s.battle_slots[XTianqi.HELPER_SLOT]) == plain and int(s.battle_slots[2]) == helper_before and page.mode == "slot",
+		[s.battle_slots, plain, helper_before, page.mode])
+	_check("deploy.helper_no_super", not XItemMarks._super_in(s, int(s.battle_slots[XTianqi.HELPER_SLOT])), s.battle_slots)
 	var fighters := s.battle_slots.slice(0, XTianqi.FIGHTERS).filter(func(id): return XItemMarks._super_in(s, int(id)))
 	_check("deploy.cap_holds", fighters.size() <= XTianqi.super_cap(s), s.battle_slots)
 	await _key(KEY_ESCAPE)  # 出战栏 → 指令

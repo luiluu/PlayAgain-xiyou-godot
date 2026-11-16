@@ -58,6 +58,12 @@ static var SWAP_IN_BATTLE := true
 ## 开关（O-281，审查 78 P3-1）：true＝换上来的助力位补开战初始化（初始 TP、预热、开战状态标签、种族本场数据）；
 ## false＝照第二批，换上来什么都不补
 static var SWAP_INIT := true
+## 开关（O-待定，全弱者证道 D57／D76／D77）：true＝助力位只有数值表 roster.helper_super 为真的难度（证道）能放超强者；
+## 整队页放人和两格互换、读档／进图清理（enforce_party）、随机阵容、战斗中换人都按「上场前 4 格超强者 ≤ super_cap、
+## 助力位是超强者时本档要 helper_super」整栏校验；证道随机阵容最多 super_cap＋1 个超强者（多的那个在第 5 位）；
+## 证道旧档上场多出的超强者先挪进助力位。false＝照旧：助力位任何难度都能放超强者，整队页只查被放进去的那个人，
+## 随机阵容最多 super_cap 个。（上限 0/0/1/2/2 是数值表的数，不归这个开关）
+static var HELPER_RULES := true
 ## 开关（Kyo 11-11「关」；四线异化 v0.8 第 2.3 节）：true＝天启篇存档不出原版的 1% 异化遭遇（XAlienBattle.setup_encounter），
 ## 异化只走天启篇自己的按段异化和各线预设，免得同一只怪生命加成叠两次；false＝照原版。西游档、发行版不受影响。
 static var NO_LEGACY_ALIEN := true
@@ -142,6 +148,7 @@ static func difficulty(key: String) -> Dictionary:
 			var row := XTianqiBalance.difficulty(key)
 			out["super_cap"] = int(row.get("super_cap", 0))
 			out["min_weak"] = int(row.get("min_weak", 0))
+			out["helper_super"] = bool(row.get("helper_super", false))
 			out["pool"] = row.get("pool", [])
 			return out
 	return {}
@@ -195,6 +202,21 @@ static func super_cap(s: XState) -> int:
 	return int(d.super_cap) if not d.is_empty() else -1
 
 
+## 本档助力位能不能放超强者（D57：只有数值表 helper_super 为真的档，即证道）；HELPER_RULES 关掉时照旧都能放。不是天启篇存档返回 true（不管）
+static func helper_super_ok(s: XState) -> bool:
+	return not active(s) or helper_super_key(str(s.flags.tianqi.get("difficulty", "")))
+
+
+static func helper_super_key(key: String) -> bool:
+	return not HELPER_RULES or bool(difficulty(key).get("helper_super", false))
+
+
+## 随机阵容最多几个超强者：上场上限，助力位能放超强者的档再加 1（D76：证道 2＋1）；HELPER_RULES 关掉时只算上场上限
+static func lineup_super_max(key: String) -> int:
+	var d := difficulty(key)
+	return int(d.get("super_cap", 0)) + (1 if HELPER_RULES and bool(d.get("helper_super", false)) else 0)
+
+
 # ---- 随机阵容 ----
 
 ## 能抽到的角色：有名字、分了档（XTier）、没停用（导入角色 143～145、157、160 等）。
@@ -229,16 +251,40 @@ static func roll_lineup(key: String, rng: RandomNumberGenerator) -> Array:
 	var rest: Array = (p[XTier.WEAK] + p[XTier.STRONG] + p[XTier.SUPER]).filter(func(id): return not picked.has(id))
 	_shuffle(rest, rng)
 	var supers := 0
+	var max_supers := lineup_super_max(key)
 	for id in rest:
 		if picked.size() >= LINEUP_SIZE:
 			break
 		if XTianqiSkills.is_super(id, true):
-			if supers >= int(d.get("super_cap", 0)):
+			if supers >= max_supers:
 				continue
 			supers += 1
 		picked.append(id)
 	_shuffle(picked, rng)
+	if HELPER_RULES:
+		_seat_lineup(picked, int(d.get("super_cap", 0)), helper_super_key(key), rng)
 	return picked
+
+
+## 打乱后再排一次位（D57／D76）：第 5 个（助力位）是超强者而本档不许 → 和前 4 个里随机一个非超强者对调；
+## 前 4 个超强者超过上限（证道抽到 3 个）→ 前 4 个里随机一个超强者和第 5 个（非超强者）对调。1 号位是调完后的第一个。
+## 不用调时不再取随机数（同种子的老结果不变）。
+static func _seat_lineup(a: Array, cap: int, helper_ok: bool, rng: RandomNumberGenerator) -> void:
+	if a.size() != LINEUP_SIZE:
+		return
+	var front := range(FIGHTERS)
+	var sup := front.filter(func(i): return XTianqiSkills.is_super(a[i], true))
+	var plain := front.filter(func(i): return not XTianqiSkills.is_super(a[i], true))
+	var h_super := XTianqiSkills.is_super(a[HELPER_SLOT], true)
+	var j := -1
+	if h_super and not helper_ok and not plain.is_empty():
+		j = plain[rng.randi_range(0, plain.size() - 1)]
+	elif not h_super and sup.size() > cap:
+		j = sup[rng.randi_range(0, sup.size() - 1)]
+	if j >= 0:
+		var t = a[j]
+		a[j] = a[HELPER_SLOT]
+		a[HELPER_SLOT] = t
 
 
 static func _shuffle(a: Array, rng: RandomNumberGenerator) -> void:
@@ -265,7 +311,12 @@ static func lineup_ok(key: String, lineup: Array) -> bool:
 		seen[int(id)] = true
 		weak += 1 if XTianqiSkills.is_weak(id, true) else 0
 		supers += 1 if XTianqiSkills.is_super(id, true) else 0
-	return weak >= int(d.min_weak) and supers <= int(d.super_cap)
+	if not HELPER_RULES:
+		return weak >= int(d.min_weak) and supers <= int(d.super_cap)
+	# D57／D76：总数 ≤ 上限（证道 ＋1）；前 4 个（上场）≤ super_cap；第 5 个（助力位）是超强者时本档要许可
+	var front := lineup.slice(0, FIGHTERS).filter(func(id): return XTianqiSkills.is_super(id, true)).size()
+	var helper_bad := XTianqiSkills.is_super(lineup[HELPER_SLOT], true) and not helper_super_key(key)
+	return weak >= int(d.min_weak) and supers <= lineup_super_max(key) and front <= int(d.super_cap) and not helper_bad
 
 
 # ---- 开新档 ----

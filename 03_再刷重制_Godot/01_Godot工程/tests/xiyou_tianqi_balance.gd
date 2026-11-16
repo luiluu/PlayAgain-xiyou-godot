@@ -121,6 +121,8 @@ func _difficulties() -> void:
 	for k in ["xunchang", "jianxian"]:
 		var d := XTianqiBalance.difficulty(k)
 		_check("低难度候选池没有超强者：" + k, not d.get("pool", []).has(XTier.SUPER) and d.get("super_cap", -1) == 0, d)
+	for k in XTianqiBalance.difficulty_keys():
+		_check("助力位放超强者只有证道（D57）：" + k, XTianqiBalance.difficulty(k).get("helper_super") == (k == "zhengdao"), XTianqiBalance.difficulty(k))
 
 
 func _nice() -> void:

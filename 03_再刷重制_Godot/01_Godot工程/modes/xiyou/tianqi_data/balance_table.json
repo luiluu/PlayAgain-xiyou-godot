@@ -2,7 +2,7 @@
  "version": 1,
  "source": "天启篇数值测算 参数.json（设计仓库 xiyou-design-docs 提交 7767262）",
  "dev": "dev.448",
- "_note": "天启篇档位与五档难度的数值表，只读（XTianqiBalance）。第三批起接进战斗与开局（XTianqiCombat：敌人血量／攻击、档位出伤／承伤、弱者协力、助力位光环；XTianqi：候选池、超强者上限、至少弱者）；quality_offset 还没接；reward＝难度奖励倍率（金钱、掉率共用，金钱重构 v0.2／掉落重构 v0.8，XTianqiBalance.reward_mult）。draft 为 true 的小节是测算占位，等实战校准后再定。改数先改设计仓库的 参数.json，再改这里并跑 天启篇数据校验.py --params。",
+ "_note": "天启篇档位与五档难度的数值表，只读（XTianqiBalance）。第三批起接进战斗与开局（XTianqiCombat：敌人血量／攻击、档位出伤／承伤、弱者协力、助力位光环；XTianqi：候选池、超强者上限、至少弱者、助力位能不能放超强者 helper_super（只证道写 true，缺省 false，全弱者证道 D57））；quality_offset 还没接；reward＝难度奖励倍率（金钱、掉率共用，金钱重构 v0.2／掉落重构 v0.8，XTianqiBalance.reward_mult）。draft 为 true 的小节是测算占位，等实战校准后再定。改数先改设计仓库的 参数.json，再改这里并跑 天启篇数据校验.py --params。",
  "nice_number_exempt": ["version", "secret_cap", "super_cap", "min_weak"],
  "tiers": {
   "弱者": {"damage_dealt": 0.0, "damage_taken": 0.0, "secret_cap": 6},
@@ -61,6 +61,6 @@
    "roster": {"pool": ["弱者", "强者", "超强者"], "super_cap": 2, "min_weak": 2}},
   {"key": "zhengdao", "name": "证道",
    "scaling": {"draft": true, "enemy_hp": 2.8, "enemy_atk": 1.8, "party_damage": 1.0, "quality_offset": 0.9, "reward": 1.8},
-   "roster": {"pool": ["弱者", "强者", "超强者"], "super_cap": 3, "min_weak": 2}}
+   "roster": {"pool": ["弱者", "强者", "超强者"], "super_cap": 2, "min_weak": 2, "helper_super": true}}
  ]
 }

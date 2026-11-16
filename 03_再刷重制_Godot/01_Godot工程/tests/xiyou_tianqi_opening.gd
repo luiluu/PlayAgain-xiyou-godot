@@ -85,7 +85,7 @@ func _lineups() -> void:
 				uniq[id] = true
 			seen_super = seen_super or supers > 0
 			firsts[l[0]] = true
-			if l.size() != 5 or uniq.size() != 5 or weak < int(d.min_weak) or supers > int(d.super_cap) or not XTianqi.lineup_ok(d.key, l) \
+			if l.size() != 5 or uniq.size() != 5 or weak < int(d.min_weak) or supers > XTianqi.lineup_super_max(d.key) or not XTianqi.lineup_ok(d.key, l) \
 					or l.any(func(id): return XImportedBalance.is_disabled_actor(id)):
 				bad.append(l)
 		_check("roll_%s" % d.key, bad.is_empty(), bad.slice(0, 3))
@@ -97,7 +97,8 @@ func _lineups() -> void:
 		and not XTianqi.lineup_ok("jiusi", [w[0], w[1], w[2], sup[0], sup[1]])
 		and not XTianqi.lineup_ok("jianxian", [w[0], w[1], w[2], w[3], sup[0]])
 		and not XTianqi.lineup_ok("jiusi", [w[0], w[1], w[2], w[3]])
-		and XTianqi.lineup_ok("jiusi", [w[0], w[1], w[2], w[3], sup[0]]))
+		and not XTianqi.lineup_ok("jiusi", [w[0], w[1], w[2], w[3], sup[0]])  # D57：九死第 5 位（助力位）不许超强者
+		and XTianqi.lineup_ok("jiusi", [sup[0], w[0], w[1], w[2], w[3]]))
 	_check("zhengdao_locked", XTianqi.locked("zhengdao") and not XTianqi.locked("lianyu"))
 
 
@@ -166,7 +167,7 @@ func _rules() -> void:
 	XItemMarks.enforce_party(s)
 	var on_field := s.battle_slots.filter(func(id): return XTianqiSkills.is_super(int(id), true))
 	_check("super_cap_enforced", on_field == [sup[0]], s.battle_slots)
-	_check("can_deploy_cap", not XItemMarks.can_deploy(s, sup[1], 1) and XItemMarks.can_deploy(s, sup[1], XTianqi.HELPER_SLOT) and XItemMarks.can_deploy(s, sup[0]) and XItemMarks.can_acquire_actor(s, sup[1]))
+	_check("can_deploy_cap", not XItemMarks.can_deploy(s, sup[1], 1) and not XItemMarks.can_deploy(s, sup[1], XTianqi.HELPER_SLOT) and XItemMarks.can_deploy(s, sup[0]) and XItemMarks.can_acquire_actor(s, sup[1]))
 	# 原版开局建的档：不是天启篇，羁绊照旧、超强者按原版
 	var old := XState.new_game_blank()
 	_check("legacy_untouched", not XTianqi.active(old) and XBonds.enabled(old) and XTianqi.super_cap(old) == -1 and not XItemMarks.can_acquire_actor(old, sup[0]))

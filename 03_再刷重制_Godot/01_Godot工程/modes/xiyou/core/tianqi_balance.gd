@@ -113,7 +113,7 @@ static func difficulty_keys() -> Array:
 	return data().get("difficulties", []).map(func(d): return str(d.get("key", "")))
 
 
-## 难度一行，拍平成：key、name、enemy_hp、enemy_atk、party_damage、quality_offset（占位）、pool（档位名）、super_cap、min_weak。没有为空。
+## 难度一行，拍平成：key、name、enemy_hp、enemy_atk、party_damage、quality_offset（占位）、pool（档位名）、super_cap、min_weak、helper_super。没有为空。
 static func difficulty(key: String) -> Dictionary:
 	for d in data().get("difficulties", []):
 		if str(d.get("key", "")) == key:
@@ -126,6 +126,7 @@ static func difficulty(key: String) -> Dictionary:
 			out["pool"] = r.get("pool", []).duplicate()
 			out["super_cap"] = int(r.get("super_cap", 0))
 			out["min_weak"] = int(r.get("min_weak", 0))
+			out["helper_super"] = bool(r.get("helper_super", false))  # D57：助力位能放超强者（只证道）；缺省 false
 			return out
 	return {}
 

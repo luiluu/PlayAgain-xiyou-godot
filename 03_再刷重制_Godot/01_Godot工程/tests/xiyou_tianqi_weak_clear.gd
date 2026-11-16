@@ -242,12 +242,14 @@ func _not_weak() -> void:
 		s.add_actor(int(strong[0]))
 		XTianqi._joining = false
 		s.battle_slots[XTianqi.HELPER_SLOT] = int(strong[0])
+		var out_id := int(lg.actors[0].actor_id)
 		var st: XActor = lg.tianqi_swap(lg.actors[0])
 		sw["in"] = st != null and int(st.actor_id) == int(strong[0])
 		if st != null:
 			st.hp = 0
 			sw["dead"] = st.is_dead()
-			sw["back"] = lg.tianqi_swap(st) != null
+			sw["back"] = lg.tianqi_swap(st) == null  # 倒下的人不能换（D57 单起，XTianqi.HELPER_RULES）；改由出战栏直接撤走
+			s.battle_slots[s.battle_slots.find(int(strong[0]))] = out_id
 		s.battle_slots[XTianqi.HELPER_SLOT] = w.actor_id
 		lg.end_battle(0)
 	_check("swap_in_dead_no_action", await XTianqiWarLine.run_final(host, s) == 0 and not XTianqiWeakClear.has(s)

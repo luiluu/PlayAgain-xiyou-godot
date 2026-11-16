@@ -153,7 +153,9 @@ func _paint_list(c: XMVCanvas) -> void:
 			c.text("离队", 36, y, c.size.x - TEXT_PADDING - 36)
 			continue
 		var a := XState.current.actor(id)
-		paint_actor_row(c, a, y, battle.has(a), XItemMarks.can_deploy(XState.current, id))
+		# 天启篇（HELPER_RULES）：按要放进的那一格判（D57 助力位／上场格规则不同）；原版档照旧只问能不能编进来
+		var target := slot_index if XTianqi.HELPER_RULES and XTianqi.active(XState.current) else -1
+		paint_actor_row(c, a, y, battle.has(a), XItemMarks.can_deploy(XState.current, id, target))
 
 
 ## Window_PartyList.drawBasic／drawExtra 的一行（角色仓库 XActorWarehouseScene 共用）：行走图上半、名字（出战成员 textColor 6；
@@ -263,11 +265,14 @@ func page(d: int) -> void:
 		return
 	if mode != "slot":
 		return
-	XSound.system(0)
-	XSound.system(4)
 	var n := slots().size()
 	var other := (slot_index + d + n) % n
 	var s := XState.current
+	if not XItemMarks.can_swap_slots(s, slot_index, other):
+		XSound.system(3)  # 天启篇 D57：对调后上场超强者超上限，或把超强者换进不许的助力位
+		return
+	XSound.system(0)
+	XSound.system(4)
 	var a = s.battle_slots[slot_index]
 	s.battle_slots[slot_index] = s.battle_slots[other]
 	s.battle_slots[other] = a
