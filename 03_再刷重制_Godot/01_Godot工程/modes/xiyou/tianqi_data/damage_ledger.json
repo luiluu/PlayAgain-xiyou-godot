@@ -944,6 +944,7 @@
    "race.human996",
    "yunshang.gift／yunshang.stored（XYunshang.add_actions：赠行、免费赠行、放行，逐次问）",
    "card.free_action（造成伤害的）",
+   "card.full_again（白起杀气攒满再动，期三补）",
    "battle_logic._insert_orders（醒来补排不重掷）"
   ],
   "recast": [

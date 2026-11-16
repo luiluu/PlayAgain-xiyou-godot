@@ -1233,8 +1233,9 @@ static func _charge(logic, u, f: Dictionary) -> void:
 	v = clampi(v, 0, cap)
 	s.set_variable(vid, v)
 	if ch.has("full_again") and v >= cap and before < cap and owns(u, ch.full_again) and not bool(u.get_meta("xtq_charge_again", false)) and u.is_alive():
-		u.set_meta("xtq_charge_again", true)
-		logic.current_order.append(u)
+		u.set_meta("xtq_charge_again", true)  # 每场一次：第一次攒满就算用掉，预算不给也不留到下次
+		if XTianqiLedger.take_extra(logic, u, "card.full_again"):  # 回合预算（总账期三补）：再动一次是追加行动，和别的共用每回合多 1 次
+			logic.current_order.append(u)
 
 
 ## 技能行 ally_state {need, state}：学了 need 时，放完再给生命比例最低的一个队友挂这个状态（诸葛逆天改命：七星续命给队友）

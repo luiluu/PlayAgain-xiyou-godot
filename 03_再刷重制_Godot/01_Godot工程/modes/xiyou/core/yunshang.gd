@@ -668,7 +668,7 @@ static func release(logic, a) -> bool:
 	var count := int(d.stored) * (2 if awake(a) else 1)
 	d.stored = 0
 	d.release_round = round
-	return add_actions(logic, a, count, "stored")
+	return add_actions(logic, a, count, "stored", true)  # 放行在自己出手前选（指令窗／自动战斗），这次还没记进已行动（总账期三补）
 
 
 ## aiGather：觉醒剩余回合最多的、不是自己的优先，再按队伍顺序
