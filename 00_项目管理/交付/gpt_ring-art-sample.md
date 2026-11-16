@@ -45,7 +45,7 @@
 
 ## 合成预览与复现边界
 
-[16:9 黑／默并排](gpt_ring-art-sample_预览/composite_16x9.png)、[20:9 黑／默并排](gpt_ring-art-sample_预览/composite_20x9.png)、[16:9 默认／黑／默原尺寸](gpt_ring-art-sample_预览/default_vs_new_16x9.png)、[20:9 默认／黑／默原尺寸](gpt_ring-art-sample_预览/default_vs_new_20x9.png)、[四图像素板](gpt_ring-art-sample_预览/assets_nearest.png)、[完整／残缺态](gpt_ring-art-sample_预览/death_intact_broken_x2.png)。
+[16:9 黑／默并排](../归档/交付截图/gpt_ring-art-sample/composite_16x9.png)、[20:9 黑／默并排](../归档/交付截图/gpt_ring-art-sample/composite_20x9.png)、[16:9 默认／黑／默原尺寸](../归档/交付截图/gpt_ring-art-sample/default_vs_new_16x9.png)、[20:9 默认／黑／默原尺寸](../归档/交付截图/gpt_ring-art-sample/default_vs_new_20x9.png)、[四图像素板](../归档/交付截图/gpt_ring-art-sample/assets_nearest.png)、[完整／残缺态](../归档/交付截图/gpt_ring-art-sample/death_intact_broken_x2.png)。
 
 clean底图由本分支引擎窗口运行原capture脚本加样式开关得到，bare底图另外令ring.center_texture=null。capture_clean_*.gd.txt保留可复现脚本，复制至/tmp并用原捕获场景运行；bare时加center_texture=null并改输出文件名。TestEnv隔离，不碰真实存档。layout沿用同基线引擎取出的栏位矩形，中心16:9=(216,392)、20:9=(248,392)。
 
