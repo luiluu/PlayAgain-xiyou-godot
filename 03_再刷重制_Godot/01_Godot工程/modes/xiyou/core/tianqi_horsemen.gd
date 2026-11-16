@@ -1190,7 +1190,7 @@ static func _check_kills(logic, f: Dictionary) -> void:
 			var mkey := minion_key_of(logic, e)
 			if mkey != "" and f.knight.is_alive():
 				f.minion_down[mkey] = int(logic.turn)  # 重混从倒下回合起算
-				_say(f, "%s：「%s」" % [e.display_name(), {"A": "砖……砖碎了……", "B": "……阿嚏。（倒）", "C": "喇叭……给我留着……"}.get(mkey, "")])
+				_say(f, "%s：「%s」" % [e.display_name(), {"A": "砖……砖碎了……", "B": "……阿嚏。", "C": "喇叭……给我留着……"}.get(mkey, "")])
 	if f.knight.is_dead():
 		for e in f.adds:
 			if e.is_alive():

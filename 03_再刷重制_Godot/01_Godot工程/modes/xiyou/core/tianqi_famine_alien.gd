@@ -314,7 +314,7 @@ static func after_pay(logic, u, skill: Dictionary, c: Dictionary) -> void:
 		var mp_lose := floorf(float(u.mp) * float(kind_info("overdraw").get("finale_mp", 0.1)))
 		if mp_lose > 0.0:
 			u.mp -= mp_lose
-			_say(f, "透支：%sMP −%d。" % [u.display_name(), int(mp_lose)])
+			_say(f, "透支：%s MP −%d。" % [u.display_name(), int(mp_lose)])
 	if od >= 0:
 		var rate := _sum(logic, "overdraw", "hp_cost")
 		var base: float = float(u.mhp) if od >= 2 else float(u.hp)
