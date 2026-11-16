@@ -487,6 +487,8 @@ func _switches_off() -> void:
 
 # ---- 截图 ----
 func _shots() -> void:
+	var keep_curve := XSkinEquipPage.LINK_CURVE   # 旧截图名按 A 斜折＝默认外观出（v8 起默认 B），出完还原
+	XSkinEquipPage.LINK_CURVE = false
 	for sz in SIZES:
 		get_window().size = sz[0]
 		await frames(6)
@@ -552,6 +554,7 @@ func _shots() -> void:
 		await _save_shot("bg_%s_16x9" % line, SIZES[0])
 		m.queue_free()
 		await frames(3)
+	XSkinEquipPage.LINK_CURVE = keep_curve
 
 
 ## v8 连线样式：每套都能画、样式表认套号、线从球边缘起止（裁剪后首点离根栏球心 ≥ 半径、末点离副栏 ≥ 半径＋气口）、
@@ -580,6 +583,8 @@ func _link_v8() -> void:
 		for key in ["col", "hot"]:
 			var col: Color = st[key]
 			check("v8_not_red_%s_%s" % [st.name, key], not (col.r - col.g > 0.25 and col.r - col.b > 0.25), col)
+	var keep := XSkinEquipPage.LINK_STYLE
+	check("v8_default_s2b", keep == 2 and XSkinEquipPage.LINK_CURVE)   # Kyo 11-16 定 S2＋B 弧线
 	for ls in [0, 1, 2, 3, 4]:
 		XSkinEquipPage.LINK_STYLE = ls
 		var e: XEquipScene = await _build_equip()
@@ -587,12 +592,13 @@ func _link_v8() -> void:
 		check("v8_style_on_%d" % ls, int(e.skin.ring.sty("link_style")) == ls)
 		e.queue_free()
 		await frames(2)
-	XSkinEquipPage.LINK_STYLE = 1
+	XSkinEquipPage.LINK_STYLE = keep
 
 
 ## v8 截图：4 套 × 走向 A（斜折）／B（弧线）× 16:9，都选中项链（副栏）；另 S1～S4 各一张 20:9 触屏 130% 字号
 func _shots_v8() -> void:
 	var keep_style := XSkinEquipPage.LINK_STYLE
+	var keep_curve := XSkinEquipPage.LINK_CURVE
 	get_window().size = SIZES[0][0]
 	await frames(6)
 	for ls in [1, 2, 3, 4]:
@@ -616,10 +622,18 @@ func _shots_v8() -> void:
 		await _save_shot("v8_S%d_A斜折_20x9_触屏130_选中项链" % ls, SIZES[1])
 		e.queue_free()
 		await frames(3)
+	XSkinEquipPage.LINK_STYLE = 2   # Kyo 定的 S2＋B 弧线
+	XSkinEquipPage.LINK_CURVE = true
+	var e2b: Node = await _shot_equip(5)
+	await frames(6)
+	await _save_shot("v8_S2_B弧线_20x9_触屏130_选中项链", SIZES[1])
+	e2b.queue_free()
+	await frames(3)
 	XFontScale.set_value("global", 100)
 	XUiSkin.touch_override = 0
 	get_window().size = SIZES[0][0]
 	XSkinEquipPage.LINK_STYLE = keep_style
+	XSkinEquipPage.LINK_CURVE = keep_curve
 	await frames(6)
 
 

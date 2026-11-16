@@ -43,11 +43,11 @@ const ONE_PAGE_LABEL_R := 98.0
 ## LINK_CURVE＝true 换弧线（径向出发平滑弯过去，不画拐点）。项链挪到头部右上 (164, −68)，线比 v6 长一倍多（左块右边只容它径向伸 40）。
 ## 主栏固定罗盘角（45° 一格）：178 哈基米没有副手，副手位留空、其余栏和拐点不动，法宝改挂武器、直连（小A核 v4 P2-1）。
 ## 选中的球和名字放大（1.15 倍、0.12 秒过渡）；选中副栏时它那条连线提亮。装备页环上不画七印刻痕。nodes 第 4 项＝拐点（相对环心）。
-static var LINK_CURVE := false
+static var LINK_CURVE := true   # Kyo 11-16 定 S2＋B 弧线（v8）；false＝A 斜折
 ## 连线样式 v8（Kyo 11-16 看小A三个弧线方向：「我觉得是样式和颜色的问题」）：线从两球边缘起止、根粗梢细；
 ## 1＝S1 实金锥线、2＝S2 金到透明、3＝S3 骨白细线、4＝S4 暗铜镶金（见 XSkinRingNav.LINK_STYLES）；0＝回 v7 等宽细线。
-## 选中副栏时线整根提亮（不变红）、父栏描边转亮金；红只给选中框。
-static var LINK_STYLE := 1
+## 选中副栏时线整根提亮（不变红）、父栏描边转亮金；红只给选中框。Kyo 11-16 定 S2（金到透明）＋B 弧线，其余套留作开关。
+static var LINK_STYLE := 2
 static var LAYOUT := 3
 const BRANCH_R := 112.0
 const BRANCH_ORB_R := 24.0

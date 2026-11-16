@@ -84,6 +84,7 @@
   - 截图（`~/Library/Application Support/orca/chat-scratch/2febbfd3fa4e937365aa0ceb82ea6fa4/连线v8/`）：`v8_S{1..4}_{A斜折,B弧线}_16x9_选中项链.png`＋`v8_S{1..4}_A斜折_20x9_触屏130_选中项链.png`；出图命令：专项带窗口 `-- --out=<目录> --only=v8`（`--audio-driver Dummy`）。
   - 验证：语法检查通过；本地选测（选测.py 列的全部）`xiyou_event_compare`、`xiyou_event_compare_b`、`xiyou_event_compare_c`、`xiyou_event_compare_d`、`xiyou_ui_art_phase01`（无头 213/213，带窗口 v8 截图 225/225）、`xiyou_ui_skin`、`xiyou_ui_skin_1c`、`xiyou_ui_skin_close`、`xiyou_ui_skin_menu`、`xiyou_ui_skin_p1fix` 全过；`发行空壳.py check`、工具快速回归通过。
   - 我不同意的地方／没做的：①选中副栏的**红色外晕**（球外一圈 SEL_FILL 发光）是全部环页共用的选中样式，本单只许动装备页连线，没改；Kyo 说的「金线配红晕撞色」里红晕那一半还在，要改得另开单统一定（建议副栏选中只留红框、外晕减成淡旧金，和 u4 贴图球一致）。②线都只有 24～40px 可见长度，样式差别在 1 倍屏上不算大；若 Kyo 看完四套仍觉得乱，根子可能是「8 主＋5 副，枝丫方向各不相同」本身，下一步可以考虑把五根枝统一朝外（同一种出发角）而不是再调颜色。
+  - **Kyo 11-16 定 S2（金到透明）＋B 弧线**：默认改 `LINK_STYLE = 2`、`LINK_CURVE = true`；S1／S3／S4 和 A 斜折留作开关（0 回 v7）。选中球的红晕照旧不动。补截图 `v8_S2_B弧线_20x9_触屏130_选中项链.png`。专项加「默认是 S2B」一项，旧截图段按 A 斜折出、出完还原默认。验证：语法检查；本地选测 `xiyou_event_compare`、`_b`、`_c`、`_d`、`xiyou_ui_art_phase01`（无头 214/214、带窗口 v8 227/227）、`xiyou_ui_skin`、`xiyou_ui_skin_1c`、`xiyou_ui_skin_close`、`xiyou_ui_skin_menu`、`xiyou_ui_skin_p1fix` 全过。
 - v2 截图：`04_验证/本地结果/ui_art_phase01/v2/`；返修后 v3：`…/v3/`（同一套，另有 `equip_layout{0,1,2,3}_{16x9,touch}.png` 四种装备摆法）。
 
 ## 可优化（流程／工具／效率）
@@ -103,4 +104,5 @@
 - d3c08a9c3 v6：A 钝角斜折／B 弧线
 - d85af4cf0 小A 核 v4 报告（已移到 00_项目管理/核查/）
 - 5c63bedd9 v7：选中放大、项链上移、哈基米槽位、P3 两条
-- （本次）v8：连线线样式 S1～S4、球缘起止、弧线以拐点为控制点
+- 9464cf503 v8：连线线样式 S1～S4、球缘起止、弧线以拐点为控制点
+- （本次）v8 定稿：默认 S2＋B 弧线（Kyo 11-16）
