@@ -67,7 +67,9 @@ clone_generated() {   # 返回 10＝克隆了；主工作区没有 generated 时
   local gen=$1 mgen=$2
   [[ ! -e $gen ]] || return 0
   if [[ -d $mgen ]]; then
-    cp -cR "$mgen" "$gen"; return 10
+    mkdir -p "${gen:h}"   # 工作树里 modes/xiyou 可能还不存在（generated 被忽略、父目录无跟踪文件）
+    cp -cR "$mgen" "$gen" || { print -u2 "✗ generated 克隆失败"; return 1; }
+    return 10
   fi
   print -u2 "⚠ 主工作区没有 generated（$mgen），跳过克隆；需要时在主工作区或本树跑转换器（xiyou_export.py）"
   return 0

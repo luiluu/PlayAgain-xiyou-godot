@@ -23,7 +23,7 @@ def make_main(tmp, with_generated):
     env.mkdir(parents=True)
     shutil.copy2(SCRIPT, env / '新建工作树.sh')
     (env / '参照批次.py').write_text('import sys\nsys.exit(0)\n')   # 桩：record 不管
-    (main / '.gitignore').write_text(f'{GODOT}/07_开发环境/引擎/\n{GODOT}/07_开发环境/当前Godot.app\n')
+    (main / '.gitignore').write_text(f'{GODOT}/07_开发环境/引擎/\n{GODOT}/07_开发环境/当前Godot.app\n{GODOT}/01_Godot工程/modes/xiyou/generated/\n')
     run(main, 'git', 'init', '-q', '-b', 'main')
     (env / '引擎' / '4.7' / 'Godot.app').mkdir(parents=True)
     os.symlink('引擎/4.7/Godot.app', env / '当前Godot.app')   # 和真库一样的相对软链
@@ -50,6 +50,10 @@ with tempfile.TemporaryDirectory(prefix='xiyou_quick_prepare_') as tmp:
     assert app.is_symlink() and app.exists(), '引擎软链要能解析到主工作区的引擎'
     gen = wt / GODOT / '01_Godot工程/modes/xiyou/generated'
     assert (gen / 'db/manifest.json').is_file() and not gen.is_symlink(), 'generated 要克隆成真目录'
+    (gen / 'db/manifest.json').write_text('changed')
+    mg = main / GODOT / '01_Godot工程/modes/xiyou/generated/db/manifest.json'
+    assert mg.read_text() == '{}', '克隆后改工作树的 generated 不能影响主工作区'
+    (gen / 'db/manifest.json').write_text('{}')
     assert run(wt, 'git', 'status', '--short').stdout.strip() == '', '软链和 generated 不能出现在 git status'
     # 幂等：再跑一次不报错、不重复写 exclude
     p2 = run(main, 'zsh', str(main / GODOT / '07_开发环境/新建工作树.sh'), '--快速', str(wt), check=False)
@@ -60,6 +64,7 @@ with tempfile.TemporaryDirectory(prefix='xiyou_quick_prepare_') as tmp:
     (gen / 'mine').write_text('x')
     run(main, 'zsh', str(main / GODOT / '07_开发环境/新建工作树.sh'), '--快速', str(wt))
     assert (gen / 'mine').is_file()
+    assert not (mg.parent / 'mine').exists()
     # 悬空软链（别处残留）也不挂
     wt2, _ = quick(main, 'b')   # 已补齐一次
     app2 = wt2 / GODOT / '07_开发环境/当前Godot.app'
