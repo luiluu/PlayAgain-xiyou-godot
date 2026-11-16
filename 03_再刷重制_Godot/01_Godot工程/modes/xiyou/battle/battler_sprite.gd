@@ -488,6 +488,10 @@ func _apply_smooth() -> void:
 	var body := sprite as Sprite2D
 	if body == null:
 		return
+	if _profile.get("native_pixels", false):
+		body.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_apply_crisp(false)  # 保持原生像素边界，不套可选柔边着色器。
+		return
 	var smooth := SV_NORM_SMOOTH and not _profile.is_empty() and float(_profile.scale) * fd < 1.0
 	body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if smooth else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 	_apply_crisp(not smooth)
