@@ -66,10 +66,10 @@ class Pkg:
         self.written = []
         self.counts = P.assemble(self.stage, tables(), EVENTS, version(), self.written)
 
-    def check(self, words=frozenset({'七首之龙', 'XTianqiFoo'}), dump_ver=None, prev=None, bi=None, extra_written=()):
+    def check(self, words=frozenset({'七首之龙', 'XTianqiFoo'}), dump_ver=None, prev=None, bi=None, extra_written=(), visible=None):
         return P.self_check(self.stage, set(words), dump_ver or DUMP_VER, CHANNEL, BI if bi is None else bi, self.counts,
                             prev or {}, self.written + list(extra_written), self.out,
-                            [str(self.out / 'v0.02'), str(self.out / '当前')])
+                            [str(self.out / 'v0.02'), str(self.out / '当前')], visible=visible)
 
     def rows(self, fname):
         return json.loads((self.stage / '数据' / f'{fname}.json').read_text(encoding='utf-8'))
@@ -201,6 +201,7 @@ class InjectTests(unittest.TestCase):
         self.run_inject('数字id', P.CHECKS[2])
         self.run_inject('空目录', P.CHECKS[0])
         self.run_inject('空目录', P.CHECKS[4])
+        self.run_inject('隐藏掉率', P.CHECKS[1])
 
 
 class RowTests(unittest.TestCase):
@@ -236,131 +237,128 @@ class RowTests(unittest.TestCase):
         self.assertEqual(P._plain('长度：\\evalText<<$dataArmors.length+1>>件'), '长度：件')
 
 
-class DropRateTests(unittest.TestCase):
-    """X2（协调 11-16 定「剥」）：游戏原文里的掉落／产出几率留来源、去数字；战斗特效几率与掉落率加成效果（X3）照留。"""
-    CASES = [
-        ('流萤专属进阶材料。第15、17、19、21、27层深渊「未知存在」有概率掉落：天灾3%、灭世5%、洪荒6%～18%（随诅咒提高），21、27层至少10%；不受掉落率加成影响。',
-         '流萤专属进阶材料。第15、17、19、21、27层深渊「未知存在」有概率掉落；不受掉落率加成影响。'),
-        ('改版向导：第15、17、19、21、27层深渊「未知存在」的首领会掉落，概率随难度：天灾3%、灭世5%、洪荒6%～18%；21、27层至少10%。不受掉落率加成影响。',
-         '改版向导：第15、17、19、21、27层深渊「未知存在」的首领会掉落，概率随难度；不受掉落率加成影响。'),
-        ('(开启后通过深渊位置存在有10%的概率可以触发肝帝积分赌局(可以拒绝))', '(开启后通过深渊位置存在有概率可以触发肝帝积分赌局(可以拒绝))'),
-        ('(开启后，每次完成赌场二阶段有1%的概率产出星神命途系列装备)', '(开启后，每次完成赌场二阶段有概率产出星神命途系列装备)'),
-    ]
-    KEEP = ['特效：渔人叉法(普通攻击50%的几率触发捕鱼穿刺)', '效果：物品掉落率+5%', 'S.A.O(物品掉落+50% 所有伤害增加30% 30%几率再次行动)',
-            '效果：星神命途系列装备获得的概率+1%', '特效：存护(获得掩护效果，受到攻击的概率+1000%)']
+class VisibleRateTests(unittest.TestCase):
+    """X12（Kyo 11-16「放宽」，取代 X2 剥与 T008 严口径）：游戏文本里印给玩家看的掉率原样留；
+    隐藏掉率（不在任何玩家可见文本里的）不进包——字段白名单挡内部表，自检②挡拼进来的句子。"""
+    # 验收 1 点名的几处（v0.02 包取字原文；T008 时这些被剥成「有概率」）
+    ITEMS = {
+        '萨姆残核': '流萤专属进阶材料。一阶1个、二阶5个、三阶9个。第15、17、19、21、27层深渊「未知存在」有概率掉落：天灾3%、灭世5%、洪荒6%～18%（随诅咒提高），21、27层至少10%；不受掉落率加成影响。',
+        '九秘:行字诀【强化版】': '获得：击败22层 月行天→剥皮教堂的「哥布林太上皇」劳勃掉落（每场5%，熟练度10/50次后×2/×3）',
+        '炎黄后裔': '获得：击败26层 兜率宫→丹房的三清投影（任一）掉落（每场5%，熟练度10/50次后×2/×3）',
+        '九阳淬体图': '获得：击败19层 天空圣殿→古龙祭坛的「古龙」普拉顿掉落（每场5%，熟练度10/50次后×2/×3）',
+        '传承升华': '获得：击败28层 众分天→西天的恶·如来掉落（每场5%，熟练度10/50次后×2/×3）',
+        '黑龙进阶石': '黑龙米拉三次进阶的共用道具。深渊合格掉落判定概率为1/30。',
+        '甚尔进阶石': '用于伏黑甚尔进阶。由肝帝积分券的原有奖励流程独立判定获得，概率1/50。',
+        '咒王进阶石': '用于宿傩的三次进阶。肝帝积分券奖励流程独立判定，概率1/50；足够完成剩余进阶后停止掉落。',
+        '谷种金缮石': '来源：谷雨在队时战斗胜利，约1/50概率掉落（持有数满足剩余进阶时不再掉落）',
+        '神秘珠·灵蕴': '未鉴定。\n通玄品质概率：15%\n蕴灵品质概率：60%\n凝砂品质概率：25%',
+        '神秘珠·太初': '未鉴定。\n归真品质概率：65%\n化境品质概率：35%',
+    }
+    MUST = {'萨姆残核': ['天灾3%', '灭世5%', '洪荒6%～18%', '至少10%'], '九秘:行字诀【强化版】': ['每场5%'], '炎黄后裔': ['每场5%'],
+            '九阳淬体图': ['每场5%'], '传承升华': ['每场5%'], '黑龙进阶石': ['1/30'], '甚尔进阶石': ['1/50'], '咒王进阶石': ['1/50'],
+            '谷种金缮石': ['1/50'], '神秘珠·灵蕴': ['通玄品质概率：15%', '蕴灵品质概率：60%', '凝砂品质概率：25%'],
+            '神秘珠·太初': ['归真品质概率：65%', '化境品质概率：35%']}
+    DIALOG = ['\\n<改版向导>谷雨在队时，战斗胜利有1/50机会获得金缮石。',
+              '\\n<改版向导>副本Boss（1/8）以及25张安慰奖券一抽，现在都抽秘境被动书。',
+              '(开启后通过深渊位置存在有10%的概率可以触发肝帝积分赌局(可以拒绝))']
+    # 隐藏掉率：只在数据库字段／备注／天启篇掉落表里，游戏文本没写
+    HIDDEN = ['7.25%', '1/37', '0.33%']
 
-    def test_redact(self):
-        import re
-        for before, after in self.CASES:
-            got = P.redact_drop(before)
-            self.assertEqual(got, after)
-            self.assertIsNone(re.search(r'\d\s*%', got))
-            self.assertEqual(P.redact_drop(got), got)
+    def dump(self):
+        d = {'kinds': {k: [] for k in P.KINDS}}
+        d['kinds']['Items'] = [{'id': i + 1, 'name': n, 'description': t, 'open': True, 'note': '<Drop Rate: 7.25%>',
+                                'dropItems': [{'kind': 1, 'dataId': 9, 'denominator': 37}]} for i, (n, t) in enumerate(self.ITEMS.items())]
+        d['kinds']['Enemies'] = [{'id': 1, 'name': '哥布林太上皇', 'note': '<Item Drop 9: 0.33%>',
+                                  'dropItems': [{'kind': 1, 'dataId': 9, 'denominator': 37}], 'open': True}]
+        return d
 
-    def test_keep_effects(self):
-        for t in self.KEEP:
-            self.assertEqual(P.redact_drop(t), t)
+    def events(self, td):
+        tree = Path(td) / 'tree'
+        (tree / 'modes/xiyou/generated/maps').mkdir(parents=True)
+        (tree / 'modes/xiyou/generated/db').mkdir(parents=True)
+        lst = [{'code': 401, 'parameters': [t]} for t in self.DIALOG] + [{'code': 108, 'parameters': ['掉落概率7.25%（注释，不显示）']}]
+        m = {'displayName': '方桌大厅', 'events': [None, {'id': 71, 'pages': [{'list': lst}]}]}
+        (tree / 'modes/xiyou/generated/maps/Map004.json').write_text(json.dumps(m, ensure_ascii=False), encoding='utf-8')
+        (tree / 'modes/xiyou/generated/db/CommonEvents.json').write_text('[null]', encoding='utf-8')
+        return P.build_events(tree, {'kinds': {'Items': [], 'Weapons': [], 'Armors': []}})
 
-    def test_self_check_catches(self):
+    def build(self, td):
+        P.VISIBLE.clear()
+        P.KEPT.clear()
+        t, _ = P.build_rows(self.dump())
+        ev = self.events(td)
+        p = Pkg(td)
+        p.stage.joinpath('数据/Items.json').write_text(json.dumps(t['Items'], ensure_ascii=False), encoding='utf-8')
+        p.stage.joinpath('数据/Enemies.json').write_text(json.dumps(t['Enemies'], ensure_ascii=False), encoding='utf-8')
+        p.stage.joinpath('事件.jsonl').write_text('\n'.join(json.dumps(e, ensure_ascii=False) for e in ev) + '\n', encoding='utf-8')
+        return p, t, ev
+
+    def test_1_visible_rates_kept(self):
+        with tempfile.TemporaryDirectory() as td:
+            p, t, ev = self.build(td)
+            got = {r['name']: r['description'] for r in t['Items']}
+            for name, text in self.ITEMS.items():
+                self.assertEqual(got[name], text, f'{name} 说明卡被改了字')
+                for n in self.MUST[name]:
+                    self.assertIn(n, got[name])
+            body = ev[0]['text']
+            for n in ('1/50机会', '副本Boss（1/8）', '有10%的概率'):
+                self.assertIn(n, body)
+            self.assertEqual(len(P.KEPT), 17)  # 说明卡 14 行（萨姆 1、首领书 4、进阶石 4、神秘珠 5）＋对白 3 句，都记进原样留日志
+            res = p.check(visible=P.VISIBLE)
+            self.assertTrue(res[P.CHECKS[1]]['ok'], res[P.CHECKS[1]])
+
+    def test_2_hidden_rates_not_in_pack(self):
+        with tempfile.TemporaryDirectory() as td:
+            p, t, ev = self.build(td)
+            blob = '\n'.join(x.read_text(encoding='utf-8') for x in P.pkg_files(p.stage))
+            for n in self.HIDDEN:
+                self.assertNotIn(n, blob)  # 备注、dropItems、事件注释里的隐藏掉率都没进包
+            for r in t['Items'] + t['Enemies']:
+                self.assertFalse(set(r) & {'note', 'dropItems', 'meta'})
+            self.assertNotIn('7.25', ev[0]['text'])
+
+    def test_2_injected_hidden_rate_blocked(self):
+        """包里任何掉率句没在玩家可见文本里出现过（手写 md、拼进来的数据）都拦。"""
+        with tempfile.TemporaryDirectory() as td:
+            p, t, ev = self.build(td)
+            for where in ('Items', 'md', '事件'):
+                q = Pkg(str(Path(td) / where))
+                q.stage.joinpath('数据/Items.json').write_text(json.dumps(t['Items'], ensure_ascii=False), encoding='utf-8')
+                if where == 'Items':
+                    rows = q.rows('Items')
+                    rows[1]['description'] += '\n另有隐藏表：首领每场掉落概率7.25%'
+                    q.put('Items', rows)
+                elif where == 'md':
+                    q.stage.joinpath('常见问答.md').write_text('问：萨姆残核掉率？\n答：未知存在掉落概率1/37。\n', encoding='utf-8')
+                else:
+                    q.stage.joinpath('事件.jsonl').write_text(json.dumps(dict(EVENTS[0], text='首领有0.33%的概率掉落神器'), ensure_ascii=False) + '\n', encoding='utf-8')
+                res = q.check(visible=P.VISIBLE)
+                self.assertFalse(res[P.CHECKS[1]]['ok'], f'{where} 里的隐藏掉率没拦住')
+                self.assertTrue(any('玩家文本里没有的掉率' in x for x in res[P.CHECKS[1]]['problems']))
+
+    def test_2_no_visible_corpus_blocks_all(self):
+        """没给可见文本（老调用、取字失败）就不放行任何掉率句：宁可不出包。"""
         with tempfile.TemporaryDirectory() as td:
             p = Pkg(td)
             rows = p.rows('Items')
-            rows[0]['description'] = self.CASES[0][0]
+            rows[0]['description'] = self.ITEMS['黑龙进阶石']
             p.put('Items', rows)
             self.assertFalse(p.check()[P.CHECKS[1]]['ok'])
-            rows[0]['description'] = self.CASES[0][1] + '\n' + self.KEEP[0]
-            p.put('Items', rows)
-            self.assertTrue(p.check()[P.CHECKS[1]]['ok'])
 
-    def test_build_rows_redacts(self):
-        dump = {'kinds': {k: [] for k in P.KINDS}}
-        dump['kinds']['Items'] = [{'id': 1, 'name': '萨姆残核', 'description': self.CASES[0][0], 'open': True}]
-        t, _ = P.build_rows(dump)
-        self.assertEqual(t['Items'][0]['description'], self.CASES[0][1])
+    def test_effects_not_rate_lines(self):
+        """X3 加成写法不是掉率句，不需要放行也不报。"""
+        for t in ['效果：物品掉落率+5%', '特效：寻获财宝(物品掉落率+8%，精魂掉落率+18%)', '特效：权势之运(物品掉落率提高30%)']:
+            self.assertFalse(P.is_rate_line(t), t)
+        self.assertTrue(P.is_rate_line('黑龙米拉三次进阶的共用道具。深渊合格掉落判定概率为1/30。'))
+        self.assertTrue(P.is_rate_line('归真品质概率：65%'))
 
-
-class StrictDropRateTests(unittest.TestCase):
-    """严口径（小A Carbon 第二道核 P1，项目经理cc 11-16 定）：物品／武器／防具说明与事件对白里，句子有来源词且带 N%、1/N、
-    括号里的掉率就去数留来源。原文取自 v0.02 包里 Carbon 报的那几处；出包后不许再含对应数字。"""
-    CASES = [  # (原文, 出包文, 出包后不许出现的数)
-        ('获得：击败22层 月行天→剥皮教堂的「哥布林太上皇」劳勃掉落（每场5%，熟练度10/50次后×2/×3）',
-         '获得：击败22层 月行天→剥皮教堂的「哥布林太上皇」劳勃掉落', ['5%', '10/50', '×2', '×3']),
-        ('获得：击败28层 众分天→西天的恶·如来掉落（每场5%，熟练度10/50次后×2/×3）', '获得：击败28层 众分天→西天的恶·如来掉落', ['5%']),
-        ('黑龙米拉三次进阶的共用道具。深渊合格掉落判定概率为1/30。', '黑龙米拉三次进阶的共用道具。深渊合格掉落有概率。', ['1/30']),
-        ('用于伏黑甚尔进阶。由肝帝积分券的原有奖励流程独立判定获得，概率1/50。', '用于伏黑甚尔进阶。由肝帝积分券的原有奖励流程独立判定获得，有概率。', ['1/50']),
-        ('用于宿傩的三次进阶。肝帝积分券奖励流程独立判定，概率1/50；足够完成剩余进阶后停止掉落。',
-         '用于宿傩的三次进阶。肝帝积分券奖励流程独立判定，有概率；足够完成剩余进阶后停止掉落。', ['1/50']),
-        ('来源：谷雨在队时战斗胜利，约1/50概率掉落（持有数满足剩余进阶时不再掉落）',
-         '来源：谷雨在队时战斗胜利，有概率掉落（持有数满足剩余进阶时不再掉落）', ['1/50']),
-        ('改版向导：谷雨在队时，战斗胜利有1/50机会获得金缮石。', '改版向导：谷雨在队时，战斗胜利有机会获得金缮石。', ['1/50']),
-        ('改版向导：心之钢与狂妄各自独立有10%掉落机会；两件可在同次通关中获得。', '改版向导：心之钢与狂妄各自独立有掉落机会；两件可在同次通关中获得。', ['10%']),
-        ('改版向导：锻造锤来自55级不朽深渊后续未知存在，独立20%掉落。装备品质概率与装备掉落概率是两回事。',
-         '改版向导：锻造锤来自55级不朽深渊后续未知存在，独立掉落。装备品质概率与装备掉落概率是两回事。', ['20%']),
-        ('改版向导：副本Boss每场胜利独立有10%机会掉一枚未鉴定神秘珠，不受掉率影响。', '改版向导：副本Boss每场胜利独立有机会掉一枚未鉴定神秘珠，不受掉率影响。', ['10%']),
-        ('改版向导：副本Boss（1/8）以及25张安慰奖券一抽，现在都抽秘境被动书。', '改版向导：副本Boss以及25张安慰奖券一抽，现在都抽秘境被动书。', ['1/8']),
-        ('蕴灵品质概率：15%', '蕴灵品质：有概率出现', ['15%']),
-        ('归真品质概率：65%', '归真品质：有概率出现', ['65%']),
-    ]
-    # X3 机制效果：严口径也不动（物品／装备／事件里的加成写法与战斗特效）
-    KEEP = ['镶嵌效果：超级幸运（物品掉落率+10%，精魂掉落率+10%）', '特效：寻获财宝(物品掉落率+8%，精魂掉落率+18%)',
-            '特效：权势之运(物品掉落率提高30%)', '特效：造成任何伤害有10%概率获得\'闪电护盾\'效果',
-            '可以消耗00肝帝积分，提升10%遇到肝帝积分赌局的概率，当前已提升%',
-            '宝宝:无视敌人3000%爆闪，无视敌人300%抗性 精魂和爆率增加9999% 获得结算伤害*99999',
-            '当前等级：1 / 888；经验：0', '糖尿病：有5%受到糖尿病debuff,全属性*50%,持续200步']
-    # 技能、状态不走严口径（冰红茶 1/2、1/8，劫天运 60/20/20）
-    SKILLS = ['效果：曼巴在队伍时，通关副本,深渊,未知1/2掉落冰红茶，1/8冰镇冰红茶',
-              '效果：你使用劫运神镖杀死天道眷顾者后，能劫取它们的气运，60%的几率获取一颗“天运果·运势”，20%的几率获取一颗“天运果·魔能”']
-
-    def test_strict(self):
-        for before, after, gone in self.CASES:
-            got = P.redact_text(before, strict=True)
-            self.assertEqual(got, after)
-            for n in gone:
-                self.assertNotIn(n, got)
-            self.assertEqual(P.redact_text(got, strict=True), got)
-
-    def test_keep(self):
-        for t in self.KEEP:
-            self.assertEqual(P.redact_text(t, strict=True), t)
-
-    def test_skills_states_untouched(self):
-        dump = {'kinds': {k: [] for k in P.KINDS}}
-        dump['kinds']['Skills'] = [{'id': 1, 'name': f'技能{i}', 'description': t, 'open': True} for i, t in enumerate(self.SKILLS)]
-        dump['kinds']['Items'] = [{'id': 1, 'name': '黑龙进阶石', 'description': self.CASES[2][0], 'open': True}]
-        t, _ = P.build_rows(dump)
-        self.assertEqual([r['description'] for r in t['Skills']], self.SKILLS)
-        self.assertEqual(t['Items'][0]['description'], self.CASES[2][1])
-
-    def test_event_redacted_before_truncation(self):
-        with tempfile.TemporaryDirectory() as td:
-            tree = Path(td)
-            (tree / 'modes/xiyou/generated/maps').mkdir(parents=True)
-            (tree / 'modes/xiyou/generated/db').mkdir(parents=True)
-            filler = [{'code': 401, 'parameters': [f'第{i}句' + '字' * 200]} for i in range(16)]
-            tail = [{'code': 401, 'parameters': ['\\n<改版向导>锻造锤来自55级不朽深渊后续未知存在，独立20%掉落。']}]
-            m = {'displayName': '方桌大厅', 'events': [None, {'id': 71, 'pages': [{'list': filler + tail}]}]}
-            (tree / 'modes/xiyou/generated/maps/Map004.json').write_text(json.dumps(m, ensure_ascii=False), encoding='utf-8')
-            (tree / 'modes/xiyou/generated/db/CommonEvents.json').write_text('[null]', encoding='utf-8')
-            log = []
-            P.REDACTED.clear()
-            ev = P.build_events(tree, {'kinds': {'Items': [], 'Weapons': [], 'Armors': []}})
-            self.assertNotIn('锻造锤', ev[0]['text'])  # 这句在 3000 字截断线后，包里本来就没有
-            self.assertNotIn('20%', ev[0]['text'])
-            self.assertTrue(any('独立掉落' in x['after'] for x in P.REDACTED))  # 截断线后的句子也剥过
-
-    def test_self_check_strict_scope(self):
+    def test_inject_hidden(self):
         with tempfile.TemporaryDirectory() as td:
             p = Pkg(td)
-            rows = p.rows('Items')
-            rows[0]['description'] = self.CASES[2][0]
-            p.put('Items', rows)
-            self.assertFalse(p.check()[P.CHECKS[1]]['ok'])
-            rows[0]['description'] = self.CASES[2][1]
-            p.put('Items', rows)
-            sk = p.rows('Skills')
-            sk[0]['description'] = self.SKILLS[0]
-            p.put('Skills', sk)
-            self.assertTrue(p.check()[P.CHECKS[1]]['ok'])  # 技能里的冰红茶 1/2 不算
+            P.inject(p.stage, '隐藏掉率', set())
+            res = p.check(visible=['说明', '效果：暴击率+10%'])
+            self.assertFalse(res[P.CHECKS[1]]['ok'])
 
 
 class EventTests(unittest.TestCase):
