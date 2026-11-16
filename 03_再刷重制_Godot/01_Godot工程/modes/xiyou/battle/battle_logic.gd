@@ -2088,8 +2088,9 @@ static func attack_repeats(u: XBattler, skill: Dictionary, base: int) -> int:
 ## 只接西游档：天启篇照旧不走这层（只有小猫剑圣 XCat.native_repeats 读，九线来源照停）。敌人的被动缓存没有 atkk／againUse，不加。
 ## 小猫剑圣自己的四个剑技原版 numRepeats 恒 1（次数由 XCat.native_repeats 按剑段算），不加。
 ## 开关 AGAIN_USE＝false 回到 T046 之前（通用出手不读 atkk／AgainUse）。
-## 11-16 临时关：开着时 xiyou_raven_fx 渡鸦 10123 施法特效放两次（回归），T046 修复车道判定后开回。
-static var AGAIN_USE := false
+## 11-16 曾临时关（xiyou_raven_fx 渡鸦施放特效偶尔放两次）；T088 判定不是回归：渡鸦 10137 魂海刻度 <AgainUseMf:15>，原版掷中时单体技能
+## 施放特效同样放两组（raven_fx_probe again.*），是专项没钉 again_use 这一掷；专项已钉，开回。
+static var AGAIN_USE := true
 
 
 func passive_repeats(u: XBattler, skill: Dictionary, n: int) -> int:
