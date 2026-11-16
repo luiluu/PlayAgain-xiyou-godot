@@ -93,6 +93,8 @@ var _wait_arg = null
 var casino_draw = null
 ## 批量抽奖最外层的那条：缩进 5 的选项记「二阶段」，212 显示动画、230 等待直接跳过（子游标不带）
 var casino_root := false
+## T055：本游标（存档公共事件 1 的子游标）里的存档要按这些变量的偏移写 {变量: 加多少}，见 XDungeon.save_bias；平时为空
+var save_bias := {}
 
 
 func state() -> XState:
@@ -320,6 +322,7 @@ func _execute(c: Dictionary):
 					_child.pending_lines = pending_lines
 					_child.receipt = receipt
 					_child.casino_draw = casino_draw
+					_child.save_bias = XDungeon.save_bias(list, index, ce_id)
 					return {"kind": "child"}
 		118:
 			pass
