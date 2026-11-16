@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-shana-zhuanwu-attack
 
 - 车道／工作者：T074 夏娜专武贽殿遮那普攻用不了、显示成科比「八秒肘击」（cc 车道，Opus 5.5＋medium，P8）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -31,8 +31,8 @@
 - 反向验证（`反向验证.py`）三项都咬住：去掉普攻替换修正（＝修前）、去掉武器解放修正、修正不限武器号。
 - `xiyou_replace_attack_motion` 36/36；语法检查通过。
 - `xiyou_attack_query`（原版参照逐例比普攻）：第一轮云端选测它挂了 6 条，正是原版 154＋武器 77／83 的 attackSkillId／setAttack／挂机行动／指令窗（原版 `{"enabled":false,"name":"8秒肘击24下"}`，修后 `{"enabled":true,"name":"天破壤碎"}`）——这就是修前修后指令窗的直接证据；该测试是 1:1 比原版，开头设 `XBattler.SHANA_ZHUANWU_ATTACK_FIX = false` 后 381/381。
-- `检查.sh --affected main --cloud`：（待填）
-- `工具回归.py`：（待填）
+- `检查.sh --affected main --cloud` 退出码 0（云端选测 181 个场景全过，提交 e66237d08；非 Godot 检查全过）。第一轮（20e62977b）只挂 `xiyou_attack_query`，处理见上。
+- `工具回归.py` 全部通过（129 秒）。
 
 ## 我不同意的地方
 
@@ -56,4 +56,4 @@
 ## 本分支提交
 
 - 20e62977b T074 修正＋专项
-- （下一提交）attack_query 比原版时关开关＋交付单
+- e66237d08 attack_query 比原版时关开关＋交付单
