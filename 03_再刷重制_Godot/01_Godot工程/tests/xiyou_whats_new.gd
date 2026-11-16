@@ -259,7 +259,7 @@ func _run() -> void:
 	page = XWhatsNewPage.open(host, W.current(cur), true)
 	await _frames(3)
 	var ok_b := page.find_child("Ok", true, false) as Button
-	_check("新皮肤：思源字、红乙选中条、面板贴图", page.skin and page.find_child("Panel", true, false).get_theme_stylebox("panel") is StyleBoxTexture
+	_check("新皮肤：思源字、红乙选中条、面板贴图", page.skin and (page.find_child("Panel", true, false).get_theme_stylebox("panel") is XSkinArt.SmokeStyle if XSkinArt.panel_on() else page.find_child("Panel", true, false).get_theme_stylebox("panel") is StyleBoxTexture)  # O-515 第一期美术开着时面板是烟色九宫格
 		and ok_b.get_theme_stylebox("focus") is XSkinSelectStyle)
 	_check("已开着再开返回同一页", XWhatsNewPage.open(host, W.current(cur), true) == page)
 	_send("ui_cancel")
