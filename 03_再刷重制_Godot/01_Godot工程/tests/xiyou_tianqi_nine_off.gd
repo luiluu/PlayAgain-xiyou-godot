@@ -126,6 +126,16 @@ func _traits() -> void:
 	# 原版套装给的状态：停
 	var suit_ok := _suit_state_case(a, t0)
 	_check("t34_suit_state_off", suit_ok[0], suit_ok[1])
+	# 小A 核 P1：角色本体号和套装状态同号——赤狐（角色 97，自带追加行动 100%）穿套装 55 狂风护手（1 件给状态 97），本体那份不能被当成套装状态停掉
+	XTianqi._joining = true
+	s.add_actor(97)
+	XTianqi._joining = false
+	var fox := s.actor(97)
+	_put(fox, "armor", 1558)
+	var fox_suit := XEquipSuits.ids(fox, "states").has(97)
+	var fox_bucket := XTianqiLedger.bucket_of(fox.data(), fox)
+	var fox_plus := _plus(fox)
+	_check("suit_same_id_actor_kept", fox_suit and fox_bucket == "actor" and fox_plus.has(1.0) and fox_plus.size() == _plus(fox, false).size(), [fox_suit, fox_bucket, fox_plus, _plus(fox, false)])
 	# 西游档：照旧
 	var x := _state(false)
 	var xa := x.actor(int(x.battle_slots[0]))

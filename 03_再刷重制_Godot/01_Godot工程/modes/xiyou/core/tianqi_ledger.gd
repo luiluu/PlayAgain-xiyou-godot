@@ -374,8 +374,9 @@ static func bucket_of(o: Dictionary, a = null) -> String:
 		if not (o.get("runewords", []) as Array).is_empty() or str(o.get("runewordName", "")) != "":
 			return "runeword"
 		return "equip"
-	if a is XActor and o.has("id") and not o.has("stypeId") and XEquipSuits.ids(a, "states").has(int(o.id)):
-		return "suit"  # 原版套装给的状态（期三九线封顶要分得出来）
+	if a is XActor and o.has("id") and not o.has("stypeId") and not is_same(o, a.data()) and not is_same(o, a.class_data()) \
+			and XEquipSuits.ids(a, "states").has(int(o.id)):
+		return "suit"  # 原版套装给的状态（期三九线封顶要分得出来）；角色、职业本体号可能和套装状态同号（赤狐 97 穿套装 55 给状态 97），先排掉（小A 核 P1）
 	if a is XBattler and a.states().has(o):
 		return "state"
 	if o.has("stypeId"):

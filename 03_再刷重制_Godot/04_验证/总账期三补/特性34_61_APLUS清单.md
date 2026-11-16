@@ -60,7 +60,7 @@
 - 符文之语 133 连打：Weapons 1637，AgainUseZj: 5%
 - 符文之语 157 竹蜻蜓：Armors 3852，AgainUseMf: 25%、AgainUseZj: 25%
 - 符文之语 177 疾风骤雨：Armors 3872，AgainUseAll: 25%
-- 符文之语 207 锋不可当：Armors 3903，AgainUseAll: 10%
+- 符文之语 207 锋不可当（配方名；防具 3903 名「锐不可当」）：Armors 3903，AgainUseAll: 10%
 
 重制里只有小猫剑圣 `XCat.native_repeats` 读 AgainUse／atkk；通用出手（`battle_logic.attack_repeats`）没接这两个标签，西游档本来就不生效（见交付单「我不同意的地方」）。
 另：符文之语 154 幻术师（防具 3849）、196 最强大脑（防具 3891）说明写「25% 几率再次释放」，备注里没有 AgainUse 标签，原版也不生效，不算。
