@@ -1,0 +1,30 @@
+{
+ "sha": "c952caa4ded8d0710874480e1d944afd87f57a27",
+ "branch": "ci/cc/tianqi-nine-off",
+ "mode": "affected",
+ "base": "3042f5ad5a9614383e11a3fc1e049c62b411224a",
+ "passed": true,
+ "scenes": 9,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 258.3,
+ "testSeconds": 507,
+ "generatedRef": "refs/ci/generated/cc/tianqi-nine-off",
+ "generatedCommit": "84298333c2565bf4e0ff23f4951e3c850dc19e66",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43837794247",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_tianqi_affix_battle.tscn",
+  "xiyou_tianqi_ledger.tscn",
+  "xiyou_tianqi_ledger_p3.tscn",
+  "xiyou_tianqi_nine_off.tscn",
+  "xiyou_tianqi_qiyin_effects.tscn"
+ ],
+ "time": "2026-11-16T09:19:39+00:00"
+}
