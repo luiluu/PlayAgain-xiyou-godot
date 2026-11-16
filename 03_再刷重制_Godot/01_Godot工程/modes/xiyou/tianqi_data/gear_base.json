@@ -2,7 +2,9 @@
  "_note": "天启篇装备底子（T080，基础数值重构 v0.3 第五节）。只读；开关关着时没有代码读它。一件装备某一项的底子＝标准线(折算等级)×部位系数×品质系数，折算等级＝1＋装备等级×98÷90，标准线读 base_line.json。slots：部位系数（etype＝原装备类型号；主攻 atk、生命 hp、物防魔防 def 各自、敏捷 agi、幸运 luk）；grades：七档品质系数（键同 tianqi_affix_roll.gd 的 QUALITY_KEYS）；main_stat：主攻给物攻还是魔攻；ratio：换算比（词缀、强化加的固定属性 × 它，按装备等级 0～90 一张表，列 atk／hp／def／agi／luk＝标准线÷原版同等级弱者本体中位）；qiyin：七印装备、毕业武器、真印（80 级神话，武器和真印再 ×base_mult，也读这张表）；exceptions：不读这张表的装备。",
  "version": 1,
  "nice_number_exempt": [
-  "ratio"
+  "ratio",
+  "etype",
+  "slot_totals_range"
  ],
  "slots": {
   "武器": {

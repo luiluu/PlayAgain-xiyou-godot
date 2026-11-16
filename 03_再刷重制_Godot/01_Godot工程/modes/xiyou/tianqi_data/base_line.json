@@ -3,7 +3,9 @@
  "version": 1,
  "nice_number_exempt": [
   "dev",
-  "unclear"
+  "unclear",
+  "skill",
+  "actor"
  ],
  "line": {
   "A0": 20,
