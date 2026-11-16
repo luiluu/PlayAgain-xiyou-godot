@@ -277,7 +277,7 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	return maxf(0.0, value) * rate * defense * clampf(repeats, 1, 32) * extra * mastery * balance * tq
 
 
-## O-待定-1（优化登记）：行动序列段数按 IF 条件算。原版 sequenceHits 本想判 `if user._skills.includes(N)`／`isStateAffected`，
+## O-544（优化登记）：行动序列段数按 IF 条件算。原版 sequenceHits 本想判 `if user._skills.includes(N)`／`isStateAffected`，
 ## 但 YEP 把 if 行整行存成名字（"IF USER._SKILLS.INCLUDES(5702)"），name==='IF' 从不成立，条件里的 ACTION EFFECT 全算上（转换器 yepEffects 照此）。
 ## 奈叶星光 5710 没学魔力强化 5702 时实打 2 段、AI 按 7 段估，伤害高估三倍多，自动战斗永远选星光、不放小魔炮（玩家 11-16 报）。
 ## true＝只看行动者自己的条件（技能、状态、装备、能力值、队友数等，同 XActionSequence.eval_condition），条件为假的分支里的段数不算；

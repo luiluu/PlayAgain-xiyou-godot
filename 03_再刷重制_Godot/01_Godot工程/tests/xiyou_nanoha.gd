@@ -333,7 +333,7 @@ func _ai(c: Dictionary) -> void:
 		n.learn_skill(5692)
 	n.mp = float(c.setup.mp)
 	var keep := XSmartAI.o_seq_if_hits
-	XSmartAI.o_seq_if_hits = false  # 原版对照：星光 5710 按 7 段估（O-待定-1 关）
+	XSmartAI.o_seq_if_hits = false  # 原版对照：星光 5710 按 7 段估（O-544 关）
 	var best := XSmartAI.choose(b[0], n)
 	XSmartAI.o_seq_if_hits = keep
 	var id := int(best.get("skill", {}).get("id", 0))
@@ -367,7 +367,7 @@ func _sched(c: Dictionary) -> void:
 	if int(c.setup.id) > 0:
 		table[n.display_name() + XHangUpAuto.three(1)] = int(c.setup.id)
 	var keep := [XSmartAI.o_seq_if_hits, XNanoha.AUTO_CANNON]
-	XSmartAI.o_seq_if_hits = false  # 原版对照（O-待定-1、O-待定-2 关）：智能 AI 关着照表放 5692 本身
+	XSmartAI.o_seq_if_hits = false  # 原版对照（O-544、O-545 关）：智能 AI 关着照表放 5692 本身
 	XNanoha.AUTO_CANNON = false
 	var r := logic.auto_battle_action(n)
 	XSmartAI.o_seq_if_hits = keep[0]
@@ -411,10 +411,10 @@ func _manual() -> void:
 
 
 ## 自动战斗／挂机放小魔炮（玩家 11-16 报：自动战斗只放星光，挂机按顺序也放不出小魔炮）。本地断言，西游档、天启篇各一遍：
-## - auto.*.seq_hits：O-待定-1 开时星光 5710 没学魔力强化 5702 按 2 段估（原版 7 段），学了 7 段；关时 7 段；
-## - auto.*.smart：智能 AI 开、没排表、魔法足（最大魔法加 5 万、当前一半）时自动战斗选六档魔炮之一；O-待定-1 关时照原版选星光；
-## - auto.*.sched_smart／sched_off：挂机顺序表排 5692，智能 AI 开时在六档里挑、关时放凰霞风暴 30%（O-待定-2）；放出去不预约 2483 选单、真打出伤害；
-## - auto.*.sched_off_orig：O-待定-2 关时照原版放 5692 本身（会预约选单）；
+## - auto.*.seq_hits：O-544 开时星光 5710 没学魔力强化 5702 按 2 段估（原版 7 段），学了 7 段；关时 7 段；
+## - auto.*.smart：智能 AI 开、没排表、魔法足（最大魔法加 5 万、当前一半）时自动战斗选六档魔炮之一；O-544 关时照原版选星光；
+## - auto.*.sched_smart／sched_off：挂机顺序表排 5692，智能 AI 开时在六档里挑、关时放凰霞风暴 30%（O-545）；放出去不预约 2483 选单、真打出伤害；
+## - auto.*.sched_off_orig：O-545 关时照原版放 5692 本身（会预约选单）；
 ## - auto.*.no_mp：魔法 0 时不卡：智能 AI 开关两种都不放 5692、不预约选单、动作照常结算。
 func _auto() -> void:
 	for tq in [false, true]:
@@ -462,7 +462,7 @@ func _auto() -> void:
 			var ok_mp := n.mp < mp0 if smart else n.mp == mp0 - floorf(mp0 * 0.3)
 			check(tag + (".sched_smart" if smart else ".sched_off"), ok_id and ok_mp and used and reserved != 2483 and hp1 < hp0,
 				[id, mp0, n.mp, reserved, used, hp0 - hp1])
-		# O-待定-2 关：照原版放 5692（预约选单）
+		# O-545 关：照原版放 5692（预约选单）
 		b = _auto_battle(tq)
 		XConfig._values.codexSmartAI = false
 		_schedule(b[1], b[2], 5692)

@@ -1064,7 +1064,7 @@ func _auto_battle_action(a: XActor) -> Array:
 			return [cannon.skill, cannon.target]
 	var planned := XHangUpAuto.scheduled_skill(state, self, a, turn)
 	if XNanoha.AUTO_CANNON and int(planned.get("id", 0)) == XSmartAI.CANNON_SKILL:
-		planned = XNanoha.auto_tier(self, a)  # 挂机不弹魔炮六选一（O-待定-2）：直接放凰霞风暴 30%，放不了退厄临星爆 30%，再不行普攻
+		planned = XNanoha.auto_tier(self, a)  # 挂机不弹魔炮六选一（O-545）：直接放凰霞风暴 30%，放不了退厄临星爆 30%，再不行普攻
 		if planned.is_empty():
 			planned = a.attack_skill()
 	if not planned.is_empty():

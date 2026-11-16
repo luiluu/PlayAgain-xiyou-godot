@@ -228,7 +228,7 @@ func _battle_case(c: Dictionary) -> void:
 
 
 func _run() -> void:
-	XSmartAI.o_seq_if_hits = false  # 原版对照：AI 段数照原版全算行动序列里的 ACTION EFFECT（O-待定-1 关）
+	XSmartAI.o_seq_if_hits = false  # 原版对照：AI 段数照原版全算行动序列里的 ACTION EFFECT（O-544 关）
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
 		return finish()
