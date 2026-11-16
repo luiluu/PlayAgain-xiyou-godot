@@ -13,7 +13,7 @@ extends RefCounted
 static var ENABLED := true
 
 ## 活动开始日（本机日期，含当天）。补丁哪天推，Kyo 定；默认 11-15（Kyo 拍板做庆典的当天）
-static var START := "2026-11-15"
+static var START := "2026-11-16"
 ## 进行天数（D20 Kyo 11-15 定：半个月）
 static var DAYS := 15
 ## 收尾天数（D20 推荐 3 天）
