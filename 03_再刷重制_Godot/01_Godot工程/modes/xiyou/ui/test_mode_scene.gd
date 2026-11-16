@@ -116,7 +116,7 @@ func _ready() -> void:
 	right.add_child(_title("自定义资源"))
 	resource = OptionButton.new()
 	for r in XTestMode.RESOURCES:
-		resource.add_item(r[1])
+		resource.add_item(XTestMode.resource_name(XState.current, r))
 		resource.set_item_metadata(resource.item_count - 1, r[0])
 	resource.item_selected.connect(func(_i): _refresh_resource())
 	right.add_child(resource)

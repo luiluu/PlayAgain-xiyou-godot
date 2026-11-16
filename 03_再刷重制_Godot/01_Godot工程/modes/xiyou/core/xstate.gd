@@ -250,6 +250,7 @@ static func _fresh_seed() -> int:
 ## XDungeon.battle 记最近一场事件战斗的胜负与神秘珠／种族补给是否已领，不随存档。
 static func _become_current(s: XState) -> void:
 	current = s
+	XTextFix.sync_mode()  # D126：西游档／天启篇的去西游化文字口径不同，换档重读表
 	XDungeon.battle = {}
 	XHonghuang.power_battle = {}
 	XXuanBattle.data = {}
