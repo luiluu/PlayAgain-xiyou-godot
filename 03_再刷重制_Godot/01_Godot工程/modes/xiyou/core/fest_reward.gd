@@ -255,6 +255,7 @@ static func after_load(s) -> void:
 		return
 	if XDesignation.unlocked(XFest.TITLE_ROAD_HARD) and not XDesignation.unlocked(XFest.TITLE_ROAD):
 		XDesignation.unlock(XFest.TITLE_ROAD)  # 45 并进 41（v0.3.1 第 7 节第 1 条）
+	migrate_title_icon(s)
 	var got := convert_leftover(s)
 	if int(got[0]) > 0:
 		_pending.append(XFestText.LEFTOVER_TOAST.replace("{coins}", str(got[0])).replace("{gold}", str(int(got[1]) / GOLD_PER)))
@@ -262,6 +263,22 @@ static func after_load(s) -> void:
 	if msg != "":
 		_reminded_day = XFest.today()
 		_pending.append(msg)
+
+
+## T072：已选中的庆典称号存的是旧图标号（IconSet 1469／1800／2506／2607），读档时按称号名换成 TITLES 里的新号（只动 designation.icon，不动存档结构；换过就不再动）
+const OLD_TITLE_ICONS := [1469, 1800, 2506, 2607]
+
+
+static func migrate_title_icon(s) -> void:
+	if s == null or not XFest.ENABLED or not s.designation is Dictionary:
+		return
+	var d: Dictionary = s.designation
+	if not OLD_TITLE_ICONS.has(int(d.get("icon", 0))):
+		return
+	for t in XFest.TITLES:
+		if str(t.name) == str(d.get("name", "")):
+			d["icon"] = int(t.icon)
+			return
 
 
 ## 今天要不要提醒（活动进行中、这次运行今天还没提醒过）；要就返回文字

@@ -395,6 +395,17 @@ func _load_hooks() -> void:
 	var p4 := XFestReward.pending()
 	_check("remind_once_a_day", p1 == [XFestText.REMIND_TOAST] and p2.is_empty() and p3 == [XFestText.REMIND_TOAST] and p4.is_empty(), [p1, p2, p3, p4])
 	_check("load_hook_does_not_touch_save", JSON.stringify(s.to_dict()) == snap)
+	# T072：选了旧图标号的庆典称号，读档后名牌取新号；别的称号（非庆典名）不动
+	var old := _state()
+	old.designation = {"name": "一穿四·洪荒", "icon": 2506, "color": "#ff4500"}
+	XFestReward.after_load(old)
+	_check("title_icon_migrated", int(old.designation.icon) == 6423 and XUI.icon_texture(int(old.designation.icon)) != null, old.designation)
+	old.designation = {"name": "冠军之路", "icon": 1469, "color": "#f5f7fa"}
+	XFestReward.after_load(old)
+	_check("title_icon_migrated_road", int(old.designation.icon) == 6420, old.designation)
+	old.designation = {"name": "别的称号", "icon": 2506, "color": "#ffffff"}
+	XFestReward.after_load(old)
+	_check("title_icon_other_untouched", int(old.designation.icon) == 2506, old.designation)
 	# 剩币：收尾期里不换；收尾期过后读档按 10 币＝1 万精魂换掉、提示
 	XFest.add_coins(s, 275)
 	XFestReward.after_load(s)

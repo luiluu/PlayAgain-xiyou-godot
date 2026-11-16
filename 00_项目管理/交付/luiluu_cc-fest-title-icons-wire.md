@@ -13,11 +13,11 @@
 - 活动总开关关着：称号表不列、成就定义不并，6420～6425 没人引用（沿用现有约定，已加断言）。
 - 专项 `xiyou_fest_reward` 加 `_icons()`：六个称号 icon 都取得到 32×32 非空贴图、号互不相同且在号段内、成就图标映射、128 大图、开关关时成就定义为空。
 - 玩家可见：庆典称号与庆典成就换成新像素图标（一穿四分金／橙／红三色）。
-- 已知：已选中称号的老存档里 `designation.icon` 仍是旧号（1469／2506 等），头顶名牌显示旧图直到玩家在称号选单里重选一次；庆典 11-15 才开，影响面很小，未做存档迁移，需要的话另开一单。
+- 老存档迁移：读档（`XFestReward.after_load`→`migrate_title_icon`）时，已选庆典称号若还存着旧图标号（1469／1800／2506／2607），按称号名换成 TITLES 的新号；只改 `designation.icon`，不动存档结构，换过不再动。新增断言 `title_icon_migrated*`（洪荒、冠军之路、非庆典称号不动）。
 
 ## 验证
 
-- `xiyou_fest_reward` 53/53、`xiyou_quality_icons` 7/7（带 `--full` 单跑）。
+- `xiyou_fest_reward` 56/56、`xiyou_quality_icons` 7/7（带 `--full` 单跑）。
 - 截图（Godot 窗口、Dummy 音频）：`03_再刷重制_Godot/04_验证/本地结果/t068/shot_achievement_fest.png`（成就「节日」页，图标 2 倍 64 显示）、`shot_titles_row.png`（六个称号 32 显示 nearest＋头顶名牌），边缘清楚不糊。
 
 ## 本分支提交
