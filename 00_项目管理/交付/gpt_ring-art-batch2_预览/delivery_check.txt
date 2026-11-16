@@ -1,5 +1,6 @@
-交付自检 gpt/ring-art-batch2（任务 ring-art-batch2，提交 82215ec59；对 main 43e66e043）
+交付自检 gpt/ring-art-batch2（任务 ring-art-batch2，提交 cecc2c3be；对 main 43e66e043）
 ✓ 合并准备阶段的检查全过（交付单、草稿、优化登记草稿、占位、试合并）
+  提示：另有交付单 00_项目管理/交付/gpt_ring-art-batch2_小A美术审.md 未标可合并或草稿不完整，未并入；不要它就在 main 删掉，--finish 时加 --also 00_项目管理/交付/gpt_ring-art-batch2_小A美术审.md
   提示：交付后 main 又前进了，但没有冲突：按「验收只做一轮」不用再合 main
   分道：快车道（不动切片、转换器、参照探针，合并不用同步，先合先推）
   开发编号：合并时递增（改了游戏内容）
