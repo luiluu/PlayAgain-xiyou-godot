@@ -28,7 +28,7 @@ func check(name: String, ok: bool, detail = null) -> bool:
 
 
 func _run() -> void:
-	XBattleLogic.AGAIN_USE = true  # 11-16 默认临时关（raven_fx 回归），本专项照测开着的行为
+	XBattleLogic.AGAIN_USE = true  # 本专项测开着的行为，不依赖默认值（11-16 默认曾临时关，T088 开回；保留这行防默认再变）
 	var ref = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/again_use_oracle.json"))
 	if not check("oracle_present", ref is Dictionary and ref.has("cases") and not ref.cases.is_empty()):
 		return _finish()

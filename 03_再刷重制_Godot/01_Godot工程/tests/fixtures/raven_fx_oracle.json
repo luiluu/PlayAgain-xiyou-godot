@@ -1151,6 +1151,150 @@
    "errors": []
   },
   {
+   "id": "again.10122",
+   "setup": {
+    "skill": 10122,
+    "random": 0
+   },
+   "observed": {
+    "numRepeats": 2,
+    "casts": [
+     {
+      "kind": "cast",
+      "skill": 10122,
+      "targets": 1,
+      "played": true
+     },
+     {
+      "kind": "cast",
+      "skill": 10122,
+      "targets": 1,
+      "played": true
+     }
+    ],
+    "groups": 2
+   },
+   "errors": []
+  },
+  {
+   "id": "again.10123",
+   "setup": {
+    "skill": 10123,
+    "random": 0
+   },
+   "observed": {
+    "numRepeats": 2,
+    "casts": [
+     {
+      "kind": "cast",
+      "skill": 10123,
+      "targets": 1,
+      "played": true
+     },
+     {
+      "kind": "cast",
+      "skill": 10123,
+      "targets": 1,
+      "played": true
+     }
+    ],
+    "groups": 2
+   },
+   "errors": []
+  },
+  {
+   "id": "again.10124",
+   "setup": {
+    "skill": 10124,
+    "random": 0
+   },
+   "observed": {
+    "numRepeats": 2,
+    "casts": [
+     {
+      "kind": "cast",
+      "skill": 10124,
+      "targets": 3,
+      "played": true
+     }
+    ],
+    "groups": 1
+   },
+   "errors": []
+  },
+  {
+   "id": "again.10125",
+   "setup": {
+    "skill": 10125,
+    "random": 0
+   },
+   "observed": {
+    "numRepeats": 2,
+    "casts": [
+     {
+      "kind": "cast",
+      "skill": 10125,
+      "targets": 1,
+      "played": true
+     },
+     {
+      "kind": "cast",
+      "skill": 10125,
+      "targets": 1,
+      "played": true
+     }
+    ],
+    "groups": 2
+   },
+   "errors": []
+  },
+  {
+   "id": "again.10126",
+   "setup": {
+    "skill": 10126,
+    "random": 0
+   },
+   "observed": {
+    "numRepeats": 2,
+    "casts": [
+     {
+      "kind": "cast",
+      "skill": 10126,
+      "targets": 3,
+      "played": true
+     }
+    ],
+    "groups": 1
+   },
+   "errors": []
+  },
+  {
+   "id": "again.10127",
+   "setup": {
+    "skill": 10127,
+    "random": 0
+   },
+   "observed": {
+    "numRepeats": 2,
+    "casts": [
+     {
+      "kind": "cast",
+      "skill": 10127,
+      "targets": 1,
+      "played": true
+     },
+     {
+      "kind": "cast",
+      "skill": 10127,
+      "targets": 1,
+      "played": true
+     }
+    ],
+    "groups": 2
+   },
+   "errors": []
+  },
+  {
    "id": "twice",
    "setup": {
     "skill": 10122
