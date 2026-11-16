@@ -427,6 +427,7 @@ func _on_ring_changed(i: int) -> void:
 	scene._cat = i
 	scene._mode = "category"
 	scene._top = 0
+	scene._index = 0   # T049：切分类回第 1 页（同切页签），不留在上一类的第 2 页
 	XSound.system(0)
 	scene._refresh()
 

@@ -32,6 +32,7 @@ var top := 0
 var mode := "type"           # type / index
 var lists := [[], []]        # 武器、防具配方
 var list: Array = []         # 目录当前列出的（取消后清空）
+var index_pager: XListPager   # T049 翻页件（新界面关着时为 null）
 var type_win: XMVWindow
 var index_win: XMVWindow
 var status_win: XMVWindow
@@ -50,6 +51,7 @@ func _ready() -> void:
 	status_win = XMVWindow.make(self, STATUS_RECT, XUI.MENU_WINDOW_OPACITY, _paint_status)
 	type_win.canvas.blink = true
 	index_win.canvas.blink = true
+	index_pager = XListPager.attach(index_win, _page)
 	_refresh()
 
 
@@ -195,9 +197,9 @@ func _paint_type(c: XMVCanvas) -> void:
 
 
 func _paint_index(c: XMVCanvas) -> void:
-	if index >= top and index < top + ROWS:
+	if index >= top and index < top + index_rows():
 		c.cursor(Rect2(0, (index - top) * LH, c.size.x, LH), mode == "index")
-	for i in range(top, mini(top + ROWS, list.size())):
+	for i in range(top, mini(top + index_rows(), list.size())):
 		c.text(str(list[i].get("name", "")), 6, (i - top) * LH, ROW_W)
 
 
@@ -205,9 +207,17 @@ func _paint_status(c: XMVCanvas) -> void:
 	XActorBook.paint_ops(c, _status_ops)
 
 
+## T049：天启篇新界面开着且目录超一页时少放一行，给翻页件腾地方（见 XListPager.rows_for）
+func index_rows() -> int:
+	return XListPager.rows_for(ROWS, list.size())
+
+
 func _refresh() -> void:
 	index_win.up_arrow = top > 0
-	index_win.down_arrow = top + ROWS < list.size()
+	index_win.down_arrow = top + index_rows() < list.size()
+	if index_pager != null:   # 有翻页件时它自己画页码，底边的下箭头不要
+		index_pager.set_state(top, index_rows(), list.size())
+		index_win.down_arrow = index_win.down_arrow and not index_pager.visible
 	for w in [type_win, index_win, status_win]:
 		w.refresh()
 
@@ -216,7 +226,7 @@ func _refresh() -> void:
 ## Scene_EquipInlayBook.update：目录选中项变了就画状态窗
 func _select(i: int) -> void:
 	index = i
-	top = XMenu._scroll_to(index, top, ROWS)
+	top = XMenu._scroll_to(index, top, index_rows())
 	_status_ops = status_ops(list[index], type_index) if index >= 0 and index < list.size() else []
 	_refresh()
 
@@ -268,13 +278,13 @@ func _move(d: int, wrap: bool) -> void:
 func _page(d: int) -> void:
 	if mode != "index" or list.is_empty():
 		return
-	var max_top := maxi(0, list.size() - ROWS)
-	if d > 0 and top + ROWS < list.size():
-		top = mini(top + ROWS, max_top)
-		index = mini(index + ROWS, list.size() - 1)
+	var max_top := maxi(0, list.size() - index_rows())
+	if d > 0 and top + index_rows() < list.size():
+		top = mini(top + index_rows(), max_top)
+		index = mini(index + index_rows(), list.size() - 1)
 	elif d < 0 and top > 0:
-		top = maxi(top - ROWS, 0)
-		index = maxi(index - ROWS, 0)
+		top = maxi(top - index_rows(), 0)
+		index = maxi(index - index_rows(), 0)
 	else:
 		return
 	XSound.system(0)
@@ -290,7 +300,7 @@ func _gui_input(event: InputEvent) -> void:
 			cancel()
 		MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP:
 			if mode == "index" and INDEX_RECT.has_point(p):
-				top = clampi(top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0, list.size() - ROWS))
+				top = clampi(top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0, list.size() - index_rows()))
 				_refresh()
 		MOUSE_BUTTON_LEFT:
 			if mode == "type" and TYPE_RECT.has_point(p):
@@ -305,7 +315,7 @@ func _gui_input(event: InputEvent) -> void:
 			elif mode == "index" and INDEX_RECT.has_point(p):
 				var row := floori((p.y - INDEX_RECT.position.y - XMVWindow.PADDING) / LH)
 				var i := top + row
-				if row >= 0 and row < ROWS and i < list.size() and i != index:
+				if row >= 0 and row < index_rows() and i < list.size() and i != index:
 					XSound.system(0)
 					_select(i)
 
