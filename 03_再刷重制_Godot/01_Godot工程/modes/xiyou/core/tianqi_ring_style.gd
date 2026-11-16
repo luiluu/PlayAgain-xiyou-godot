@@ -16,7 +16,7 @@ extends RefCounted
 
 static var ENABLED := true
 static var GLINT := true
-## O-待定（D108／D109）：false＝球框只认毕业武器、刻印专属武器、备注件（回到 main 行为）；true＝再加两档：
+## O-541（D108／D109）：false＝球框只认毕业武器、刻印专属武器、备注件（回到 main 行为）；true＝再加两档：
 ## 专属武器（不论刻没刻印）套斜角框＋特效；神话及以上武器只把球描边换成品质色 2px。只管槽位 0、1
 static var ORB_TIERS := true
 ## 特殊球框的特效：""＝无、"sweep"＝微光沿框扫过、"breath"＝亮度呼吸。动效档「关」时不动（nav 判）。默认 sweep，两种各截图给 Kyo 挑
