@@ -130,7 +130,7 @@ func _scenario(kind: String, host: Host) -> void:
 	XState.current.map_id = 123
 	await _run_list(host, 123, 0, lot)
 	check(p + "lottery.saved", host.trace.any(func(e): return e.t == "save") and _v21() == 1, host.trace)
-	var raw = JSON.parse_string(XSaveSeal.read_text(XSave.path(1)))
+	var raw = JSON.parse_string(FileAccess.get_file_as_string(XSave.path(1)))
 	var saved21 = raw.get("variables", {}).get("21", raw.get("variables", {}).get(21)) if raw is Dictionary else null
 	check(p + "lottery.file_has_1", saved21 != null and int(saved21) == 1, saved21)
 	check(p + "lottery.load", XSave.load_slot(1) and _v21() == 1, _v21())

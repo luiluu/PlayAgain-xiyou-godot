@@ -212,9 +212,7 @@ func _anti_farm() -> void:
 	s.gain_gear("armor", 3557, 1)
 	var fabao: Dictionary = s.gear.back()
 	XItemMarks.toggle_lock(s, inst)
-	var why := XFabaoFeed.reason(s, fabao, inst)
-	var fed := XFabaoFeed.feed(s, fabao, [inst])
-	_check("antifarm_2_fabao_feed_refuses", not XItemMarks.is_locked(s, inst) and why == "限定装备无法喂入" and int(fed.used) == 0 and s.gear.has(inst), [why, fed])
+	# 补丁线没有法宝喂装备（XFabaoFeed 只在 main），这一条不测
 	# 不能卖：商店不收，一键出售（安全出售开／关）和挂机自动卖都跳过（解锁状态下）
 	var all := range(0, 16)
 	var safe0 := XSafeSell.ENABLED
