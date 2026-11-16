@@ -75,6 +75,8 @@ const INTRO_TIME := {"burn": 0.6, "fade": 0.3}
 ## 测试看：栏位名这一帧画在哪一层（"parent"／"label_ci"）、补画了几次选中红框、多画了几次贴图
 var labels_on := "parent"
 var ring_draws := 0
+## 测试用：不画栏位名（量名字底下的底色对比度）
+var hide_labels := false
 
 
 func _init() -> void:
@@ -217,7 +219,7 @@ func _draw_layers() -> void:
 		RenderingServer.canvas_item_add_polyline(_orb_ci, pts, PackedColorArray([col]), 2.5, true)
 	var body := XUiSkin.font("body")
 	var rd := XSkinArt.read_on()
-	for i in items.size():
+	for i in (0 if hide_labels else items.size()):
 		var lay := label_layout(i)
 		body.draw_string_outline(_label_ci, lay.pos, lay.text, HORIZONTAL_ALIGNMENT_LEFT, -1, lay.fs, 5 if rd else 4, Color(0, 0, 0, 0.9 if rd else 0.6))
 		body.draw_string(_label_ci, lay.pos, lay.text, HORIZONTAL_ALIGNMENT_LEFT, -1, lay.fs, Color.WHITE if i == index else XSkinArt.bg_text_2())
@@ -640,7 +642,7 @@ func _draw() -> void:
 		if tex != null and not art:
 			var s := 40.0 * item_scale(i)
 			draw_texture_rect(tex, Rect2(p - Vector2(s, s) / 2.0, Vector2(s, s)), false)
-		if layers:   # 环纹第 3、4 层开着：名字挪到 _label_ci，画在球框、小点上面
+		if layers or hide_labels:   # 环纹第 3、4 层开着：名字挪到 _label_ci，画在球框、小点上面
 			continue
 		var lay := label_layout(i)
 		var name: String = lay.text

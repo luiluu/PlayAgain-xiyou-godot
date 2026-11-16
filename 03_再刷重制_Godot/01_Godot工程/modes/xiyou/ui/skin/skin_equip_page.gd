@@ -395,7 +395,7 @@ func _sync_ring_style(a: XActor) -> void:
 	apply_ring_style(res)
 	if kind != "":
 		ring.play_intro(kind)
-		_intro_ms = Time.get_ticks_msec() if kind == "burn" else -1
+		_intro_ms = Time.get_ticks_msec() if kind == "burn" and XSkinRingNav.ring_motion_level() > 0 else -1   # 动效「关」：直接切换，说明也不闪旧金
 
 
 ## 把解析结果填进环（空结果＝回默认环）
