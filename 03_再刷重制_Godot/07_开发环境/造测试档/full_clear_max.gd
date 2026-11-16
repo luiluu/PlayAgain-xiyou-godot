@@ -21,6 +21,8 @@ const HONGHUANG_FLOOR := 13
 const ROSTER_EV := 41      # 大厅「破阵·投影」：开局灭世（天灾档、变量 20≤1），13 层前开洪荒
 const ALTAR_MAP := 158     # 三十四层「决战：天外天」古龙祭坛
 
+## 增强攻击倍数：洪荒（13 层起）各种压制叠起来伤害只剩约万分之一，守层者每回合回血，1 倍打不动
+var atk_mult := 4.0
 var out_abs := ""
 var slot_out := 10
 var report := {}
@@ -122,14 +124,20 @@ func _recruit_all(s: XState) -> void:
 			got.append(aid)
 		else:
 			blocked.append([aid, str(XDB.rec("Actors", aid).get("name", "")), "招募事件跑完没入队"])
-	# 有名字、没停用、不在号角表里的角色（开局英雄另外几位等）：只记下来
+	# 有名字、没停用、不在号角表里的角色（Map217 另几位开局英雄、专属公共事件的角色、大厅 EV57 五只猫猫、哈基米）：
+	# 各有自己的入手路线（多是一局只能选一个），这里直接 add_actor 加入，报告单列
 	var horned := XBabyAllActors.catalog([]).map(func(r): return int(r.actor))
-	var no_horn := []
+	var direct := []
+	var not_owned := []
 	var db: Array = XDB.table("Actors")
 	for i in range(1, db.size()):
-		if db[i] is Dictionary and not XBabyAllActors.excluded(i) and not horned.has(i) and not s.party.has(i):
-			no_horn.append([i, str(db[i].get("name", ""))])
-	report.recruit = {"got": got, "blocked": blocked, "no_horn_not_owned": no_horn, "party_size": s.party.size()}
+		if db[i] is Dictionary and not XBabyAllActors.excluded(i) and not horned.has(i) and not s.party.has(i) and not s.saved_actors.has(i):
+			s.add_actor(i)
+			if s.party.has(i):
+				direct.append([i, str(db[i].get("name", ""))])
+			else:
+				not_owned.append([i, str(db[i].get("name", "")), "add_actor 没加进来"])
+	report.recruit = {"got": got, "blocked": blocked, "direct_added": direct, "not_owned": not_owned, "party_size": s.party.size()}
 
 
 const MATERIALS := {
@@ -229,7 +237,11 @@ func _grow_all(s: XState) -> void:
 				continue
 			m_all += 1
 			XSkillMastery.gain_level(a, int(sid), 100000)
-			if XSkillMastery.is_maxed(a, int(sid)):
+			# 有效上限：变量 13＝1 时再夹变量 8（技能等级上限，洪荒 33 层后 38；同 gain_level）
+			var lim := XSkillMastery.max_level(int(sid))
+			if int(s.variable(13)) == 1 and int(s.variable(8)) > 0:
+				lim = mini(lim, int(s.variable(8)))
+			if XSkillMastery.level(a, int(sid)) >= lim:
 				m_cap += 1
 		r.mastery = [m_cap, m_all, int(s.variable(8)), int(s.variable(13))]
 		# 本人专属法宝
@@ -383,7 +395,7 @@ func _altar34(s: XState) -> void:
 ## 洪荒诅咒（全属性 ×0.5、结算伤害 ×0.5、无法行动、命中 −10% 等）下 floor_run 的增强扛不住守层者：在它的基础上把生命、防御、
 ## 魔防、敏捷也抬上去，攻击 ×4。只改出战成员第一件装备的能力值，造完由 _unboost 换回模板值。
 func _boost_party(s: XState, atk := 2.0e16) -> void:
-	super._boost_party(s, atk * 4.0)
+	super._boost_party(s, atk * atk_mult)
 	for a in s.members():
 		var eq: Array = a.equip_list()
 		if eq.is_empty():
@@ -398,3 +410,44 @@ func _boost_party(s: XState, atk := 2.0e16) -> void:
 		a.refresh_passive()
 		a.hp = a.mhp
 		a.mp = a.mmp
+
+
+## 十三至十九层 floor_run 不交见面礼；洪荒下不交礼守层者开天道领域，增强队伍也打不过。这几层照玩家的出路先交礼：
+## 给够不朽残渣，直接记成已交（变量 842＝1，同 floor_run 对三十三层的做法），守层者胜后事件自己把 842 清零。
+func _floor(f: Dictionary, full: bool) -> bool:
+	var s := XState.current
+	if int(f.floor) >= 13 and not PAY_GIFT.has(int(f.map)):
+		s.gain_item(182, 200)
+		s.set_variable(842, 1)
+	if int(f.floor) >= 13:
+		atk_mult = 1.0e6
+		_boost_party(s)
+	var ok: bool = await super._floor(f, full)
+	if not ok:
+		report.fail_floor = {"floor": f.floor, "map": f.map, "v842": s.variable(842), "battles": battles,
+			"members": s.members().map(func(a): return [a.display_name(), a.hp, a.mhp, a.state_ids.slice(0, 12)])}
+	return ok
+
+
+## 战斗直接赢（同 xiyou_floor_reach004._run_event 的 "win"）：开战后把还活着的敌人生命清零、加死亡状态 1，胜利结算（经验、掉落、
+## 守层者胜后事件）照常走；倒下的队员每帧拉起来。洪荒的压制和守层者回血让增强队伍的自动战斗也打不完（21 层六道魔君 157 回合满血），只能这样造档。
+func _on_battle(map: XMapScene, battle: XBattleScene) -> void:
+	super._on_battle(map, battle)
+	_knock_out.call_deferred(battle)
+
+
+func _knock_out(battle: XBattleScene) -> void:
+	for i in range(20000):
+		if not is_instance_valid(battle) or not battle.is_inside_tree():
+			return
+		if battle.logic != null and not battle.logic.enemies.is_empty():
+			for en in battle.logic.enemies:
+				if en.is_alive():
+					en.hp = 0.0
+					en.add_state(1)
+			# 三十层玉皇大帝等开场就能秒掉全队：倒下的队员当帧拉起来（不然先判全灭）
+			for a in battle.logic.actors:
+				if not a.is_alive():
+					a.remove_state(1)
+					a.hp = a.mhp
+		await get_tree().process_frame
