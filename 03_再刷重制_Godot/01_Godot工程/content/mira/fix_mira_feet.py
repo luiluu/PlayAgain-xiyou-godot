@@ -21,7 +21,7 @@ for frame in range(3):
     for y in range(51, 61):
         for x in range(17, 36):
             xy = (x0 + x, y)
-            if boot(src.getpixel(xy)):
+            if boot(src.getpixel(xy)) or (y == 60 and 24 <= x <= 28):
                 out.putpixel(xy, (0, 0, 0, 0))
             donor = src.getpixel((x, 64 + y))
             if boot(donor):
