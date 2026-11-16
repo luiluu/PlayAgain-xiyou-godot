@@ -156,6 +156,8 @@ func _records() -> void:
 	_check("awake_no_skillpass", not awake.keys().any(func(k): return str(k).begins_with("SkillPass")) and str(awake.get("passiveELUP01", "")) == "10%")
 	var lead: Dictionary = XDB.rec("Skills", 2772).meta
 	_check("leader", not lead.has("passiveAPLUS") and not lead.has("AgainUseAll") and str(lead.get("passiveXPBST7", "")) == "5%")
+	# 精灵至血 7457：设计稿去掉 32% 全体再释放；天启篇不带 AgainUseAll，西游档照旧
+	_check("again_use_7457", not str(XDB.rec("Skills", 7457).note).contains("AgainUseAll") and str(XDB.table("Skills")[7457].note).contains("AgainUseAll"))
 	var note := str(XDB.rec("Skills", 3632).note)
 	_check("desc_lines", note.contains("物理攻击×10.8") and not note.contains("*12*") and note.contains("冷却时间:6回合"), note.substr(0, 200))
 	var a: XActor = XState.current.actor(XIAOYAO)
