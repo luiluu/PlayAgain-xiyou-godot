@@ -129,7 +129,7 @@ static func name_of(node: Icon) -> String:
 	if node.battler is XEnemy:
 		var bar := node.get_parent() as XSkinOTBBar
 		if bar == null or bar.step_px >= R_ROW * 2.0 or node.selected:
-			return node.battler.display_name()
+			return short_name(node.battler.display_name())
 	return ""
 
 
@@ -159,6 +159,13 @@ func _paint_icon(node: Icon) -> void:
 			c.queue_redraw()
 
 
+## 敌人名字去掉前面的【称号】（样稿只写「里德」；圆下面地方小，原来「【守层…」看不出是谁）
+static func short_name(n: String) -> String:
+	if n.begins_with("【") and n.contains("】") and n.find("】") < n.length() - 1:
+		return n.substr(n.find("】") + 1)
+	return n
+
+
 static func fit(f: Font, text: String, width: float, fs: int) -> String:
 	if f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= width:
 		return text
@@ -173,6 +180,11 @@ class Disk extends Node2D:
 	var icon: XOTBBar.Icon
 	var _atlas: AtlasTexture
 
+	## 头像是侧视图（sv_actors 一格 64×64）的敌人
+	static func sv_sheet(ic: XOTBBar.Icon) -> bool:
+		var tex := ic.face.texture
+		return tex != null and ic.face.region_enabled and ic.face.region_rect.size == Vector2(64, 64) and tex.resource_path.contains("/sv_actors/")
+
 	func _region() -> Rect2:
 		var tex := icon.face.texture
 		var full := Rect2(Vector2.ZERO, tex.get_size())
@@ -184,7 +196,7 @@ class Disk extends Node2D:
 		var alpha := 0.55 if icon.has_meta("preview") else 1.0
 		if tex != null:
 			var reg := _region()
-			if icon.battler is XActor:
+			if icon.battler is XActor or sv_sheet(icon):   # T096：拿侧视图当战斗图的敌人（如【守层者】里德）也取头部，原来整格缩进圆里画出来是空的
 				var k := reg.size / 64.0
 				var head := Rect2(reg.position + Vector2(10, 8) * k, Vector2(44, 44) * k)
 				if _atlas == null:
@@ -195,7 +207,7 @@ class Disk extends Node2D:
 				else:
 					_atlas.atlas = tex
 				_atlas.region = head
-				XSkinPartyStrip.draw_round_texture(self, _atlas, Vector2.ZERO, r - 2.0)
+				XSkinPartyStrip.draw_round_texture(self, _atlas, Vector2.ZERO, r - 2.0, 32, icon.face.flip_h)
 				if alpha < 1.0:
 					draw_circle(Vector2.ZERO, r - 2.0, Color(0, 0, 0, 1.0 - alpha))
 			else:

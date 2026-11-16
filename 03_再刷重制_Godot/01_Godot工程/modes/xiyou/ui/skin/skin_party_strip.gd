@@ -243,7 +243,7 @@ static func name_fit(f: Font, name: String, level: int, avail: float) -> Array:
 	return XSkinList.fit_text(f, name, maxf(avail - lv - 8, 24.0), 18, 14)
 
 
-static func draw_round_texture(ci: CanvasItem, tex: Texture2D, c: Vector2, r: float, segments := 32) -> void:
+static func draw_round_texture(ci: CanvasItem, tex: Texture2D, c: Vector2, r: float, segments := 32, flip_h := false) -> void:
 	var src := Rect2(Vector2.ZERO, tex.get_size())
 	var base: Texture2D = tex
 	if tex is AtlasTexture and (tex as AtlasTexture).atlas != null:
@@ -255,5 +255,6 @@ static func draw_round_texture(ci: CanvasItem, tex: Texture2D, c: Vector2, r: fl
 	for k in segments:
 		var d := Vector2.from_angle(TAU * k / segments)
 		pts.append(c + d * r)
-		uvs.append((src.position + src.size * (Vector2(0.5, 0.5) + d * 0.5)) / full)
+		var u := Vector2(-d.x, d.y) if flip_h else d   # T096：朝右的敌人（侧视图翻转）头像也翻过来
+		uvs.append((src.position + src.size * (Vector2(0.5, 0.5) + u * 0.5)) / full)
 	ci.draw_polygon(pts, PackedColorArray([Color.WHITE]), uvs, base)
