@@ -2,4 +2,4 @@ sandbox_extension_issue_file_to_process failed for /Users/kyo/orca/workspaces/å†
 Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
 OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M1 Pro
 
-TEST_RESULT={"passed":26,"total":26}
+TEST_RESULT={"passed":30,"total":30}

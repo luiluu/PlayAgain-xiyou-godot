@@ -3,7 +3,7 @@ extends Node
 ## - path.*：行走 $BlackDragon_Mira／$Codex_Mira_Walk_Final、人形战斗 Codex_Mira_SV_u2／BlackDragon_Mira_SV 都读 content/mira/，不读同步出的旧图。
 ## - walk.*：行走图 144×192，四方向（行）× 三帧（列）每格 48×48 都有画面，可见高 47、脚底在第 47 行（0-based，与原版同高）。
 ## - human.*：人形战斗外观键为 BlackDragon_Mira_SV|form:MiraHuman_u2，18 种动作全部读 Codex_Mira_SV_u2.png（64×64 格）。
-## - idle.*：定妆待机帧（wait 第 1 帧）可见高 58、脚底第 61 行，与归一档一致；缩放 72/58、最近邻（不平滑）。
+## - idle.*：实际待机walk三帧脚底下界61，可见高57；归一档沿用定妆wait的58px与72/58缩放、最近邻。
 ## - dragon.*：黑龙形态（进阶 3、学 10161、带 2592）不受开关影响，仍走 UserSV_MiraDragon 多帧与旧归一档。
 ## - book.*：图鉴立绘开着走 Codex_Mira_SV_u2（单帧按档缩放），关掉回到 UserSV_MiraHuman1_0 多帧。
 ## - map.*：地图行走角色（MVCharacter）开着取 $Codex_Mira_Walk_Final.png，关掉回到 $BlackDragon_Mira.png。
