@@ -80,6 +80,17 @@ static func wire_focus_scale(b: Control) -> void:
 		b.scale = Vector2.ONE * focus_scale_target(true)
 
 
+## 不拿焦点的按钮（FOCUS_NONE）：鼠标悬停时按同档放大、移开缩回；皮肤关着不会调到这里
+static func wire_hover_scale(b: Control) -> void:
+	if b.has_meta("skin_hover_scale_wired"):
+		return
+	b.set_meta("skin_hover_scale_wired", true)
+	b.pivot_offset = b.size / 2.0
+	b.resized.connect(func(): b.pivot_offset = b.size / 2.0)
+	b.mouse_entered.connect(func(): _scale_to(b, BUTTON_PEAK))
+	b.mouse_exited.connect(func(): _scale_to(b, 1.0))
+
+
 static func focus_scale_target(focused: bool) -> float:
 	return BUTTON_PEAK if focused and XSkinSelScale.ENABLED else 1.0
 

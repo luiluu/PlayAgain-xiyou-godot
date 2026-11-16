@@ -43,6 +43,7 @@ func _run() -> void:
 	await _strips()
 	await _card_and_button()
 	await _pages()
+	await _fill()
 	await _mv_canvas()
 	await _font130()
 	if windowed():
@@ -373,6 +374,122 @@ func _mv_canvas() -> void:
 	await frames(2)
 
 
+# ---- T040 补齐：状态页分类页签、七印祭坛按钮、选线竖卡、工坊顶页签、角标、环导航总开关 ----
+func _fill() -> void:
+	# 队伍状态页分类页签
+	XEnemy.force_roll = 100.0
+	var s := XState.new_game(3, 1, [8])
+	XState.current = s
+	var lg := XBattleLogic.new()
+	lg.elite_roll = 100.0
+	lg.setup(2, s)
+	var root := Control.new()
+	root.size = Vector2(1280, 720)
+	add_child(root)
+	var sp := XSkinPartyStatusPanel.new()
+	sp.members = lg.actors.filter(func(m): return m is XActor)
+	root.add_child(sp)
+	await frames(4)
+	check("party_tab_scaled", is_equal_approx(sp.tab_scale.k(sp.tab), XUiSkin.SEL_SCALE) and is_equal_approx(sp.tab_scale.k("异常" if sp.tab != "异常" else "增益"), 1.0), [sp.tab, sp.tab_scale.selected()])
+	sp.step_tab(1)
+	await frames(3)
+	check("party_tab_moves", is_equal_approx(sp.tab_scale.k(sp.tab), XUiSkin.SEL_SCALE), sp.tab)
+	XSkinSelScale.ENABLED = false
+	check("party_tab_switch_off", is_equal_approx(sp.tab_scale.k(sp.tab), 1.0))
+	XSkinSelScale.ENABLED = true
+	root.queue_free()
+	await frames(2)
+	# 七印祭坛底部按钮
+	var ts := _ws_state()
+	XTianqiQiyin.sync(ts)
+	var alt := XTianqiSkinAltar.new()
+	alt.setup(ts, XTianqiQiyin.altar_options(ts))
+	add_child(alt)
+	await frames(4)
+	check("altar_button_scaled", alt.buttons.size() >= 1 and is_equal_approx(alt.btn_scale.k(alt.button), XSkinButton.BUTTON_PEAK), [alt.buttons.size(), alt.button])
+	if alt.buttons.size() >= 2:
+		alt.handle_input(_key("ui_down"))
+		await frames(3)
+		check("altar_button_moves", is_equal_approx(alt.btn_scale.k(alt.button), XSkinButton.BUTTON_PEAK) and is_equal_approx(alt.btn_scale.k(0), 1.0), alt.button)
+	XSkinSelScale.ENABLED = false
+	check("altar_button_switch_off", is_equal_approx(alt.btn_scale.k(alt.button), 1.0))
+	XSkinSelScale.ENABLED = true
+	alt.queue_free()
+	await frames(2)
+	# 选线竖卡
+	var lc := XTianqiLineCards.new()
+	lc.lines = XTianqi.LINES
+	lc.playable = [true, true, true, true]
+	add_child(lc)
+	await frames(3)
+	var picked: Control = lc._cards[lc.index]
+	check("line_card_scaled", is_equal_approx(picked.scale.x, XTianqiLineCards.CARD_PEAK) and lc._cards.filter(func(k): return k != picked).all(func(k): return is_equal_approx(k.scale.x, 1.0)), picked.scale)
+	check("line_card_pivot_center", picked.pivot_offset.is_equal_approx(XTianqiLineCards.CARD / 2.0))
+	var gap: float = lc._cards[1].position.x - lc._cards[0].position.x - XTianqiLineCards.CARD.x
+	check("line_card_no_overlap", XTianqiLineCards.CARD.x * (XTianqiLineCards.CARD_PEAK - 1.0) / 2.0 < gap, gap)
+	check("line_back_hover_wired", lc._back.has_meta("skin_hover_scale_wired"))
+	XSkinSelScale.ENABLED = false
+	lc._highlight()
+	check("line_card_switch_off", is_equal_approx(picked.scale.x, 1.0))
+	XSkinSelScale.ENABLED = true
+	lc.queue_free()
+	await frames(2)
+	# 工坊：当前页签放大、左列滚动容器给放大外扩留了余量
+	_ws_state()
+	XAlienWorkshop.selected = ""
+	var ws := XAlienWorkshop.new()
+	add_child(ws)
+	await frames(4)
+	var strips := _all(ws, func(n): return n.name == "SkinTabs")
+	if check("workshop_tabs", not strips.is_empty()):
+		var tbs := (strips[0] as Node).get_children().filter(func(n): return n is Button)
+		check("workshop_tab_scaled", tbs.size() > 1 and is_equal_approx(tbs[ws.skin_tab].scale.x, XSkinButton.BUTTON_PEAK) and tbs.filter(func(b): return b != tbs[ws.skin_tab]).all(func(b): return is_equal_approx(b.scale.x, 1.0)), tbs.map(func(b): return b.scale.x))
+	var lists := _all(ws, func(n): return n.name == "SkinList")
+	if lists.is_empty():
+		ws.skin_switch(1)   # 默认页签不是列表页时切过去
+		await frames(3)
+		lists = _all(ws, func(n): return n.name == "SkinList")
+	if check("workshop_list", not lists.is_empty()):
+		var scs := _all(lists[0], func(n): return n is ScrollContainer)
+		var mcs: Array = scs[0].get_children().filter(func(n): return n is MarginContainer) if not scs.is_empty() else []
+		check("workshop_scroll_margin", not mcs.is_empty() and (mcs[0] as MarginContainer).get_theme_constant("margin_left") == XAlienWorkshop.SCALE_ROOM)
+		var btns := _all(lists[0], func(n): return n is Button and n.focus_mode != Control.FOCUS_NONE)
+		var worst := 0.0
+		for b in btns:
+			worst = maxf(worst, (b as Control).size.x * (XSkinButton.BUTTON_PEAK - 1.0) / 2.0)
+		check("workshop_scale_fits_room", worst <= XAlienWorkshop.SCALE_ROOM, worst)
+	ws.queue_free()
+	await frames(2)
+	# 「新」角标跟选中行放大（仓库、物品列表）
+	var c := XMVCanvas.new()
+	add_child(c)
+	var tex_sz := Vector2(16, 16)
+	check("tex_rect_plain", c.tex_rect(Vector2(2, 38), tex_sz) == Rect2(Vector2(2, 38), tex_sz))
+	c._mark_sel(Rect2(0, 36, 400, 36))
+	var br := c.tex_rect(Vector2(2, 38), tex_sz)
+	check("tex_rect_selected_grows", br.size.x > tex_sz.x and is_equal_approx(br.get_center().x, 10.0) and is_equal_approx(br.get_center().y, 46.0), br)
+	check("tex_rect_other_row", c.tex_rect(Vector2(2, 2), tex_sz).size == tex_sz)
+	XSkinSelScale.ENABLED = false
+	var c2 := XMVCanvas.new()
+	add_child(c2)
+	c2._mark_sel(Rect2(0, 36, 400, 36))
+	check("tex_rect_switch_off", c2.tex_rect(Vector2(2, 38), tex_sz).size == tex_sz)
+	XSkinSelScale.ENABLED = true
+	c.queue_free()
+	c2.queue_free()
+	# 环导航挂 XSkinSelScale.ENABLED 总开关
+	var ring := XSkinRingNav.new()
+	ring.items = [{"text": "甲"}, {"text": "乙"}]
+	ring.index = 0
+	check("ring_scaled_on", is_equal_approx(ring.item_scale(0), XUiSkin.SEL_SCALE) and is_equal_approx(ring.item_scale(1), 1.0))
+	XSkinSelScale.ENABLED = false
+	check("ring_switch_off", is_equal_approx(ring.item_scale(0), 1.0))
+	ring._ease_scales(0.05)
+	check("ring_switch_off_steady", is_equal_approx(ring.item_scale(0), 1.0))
+	XSkinSelScale.ENABLED = true
+	ring.free()
+
+
 # ---- 130% 字号 ----
 func _font130() -> void:
 	XFontScale.set_value("global", 130)
@@ -387,7 +504,7 @@ func _font130() -> void:
 func _shots() -> void:
 	get_window().size = Vector2i(1280, 720)
 	await frames(6)
-	for page in ["menu", "items", "equip", "status", "options", "workshop", "enemybook", "battle"]:
+	for page in ["menu", "items", "equip", "status", "options", "workshop", "enemybook", "battle", "party", "altar", "cards", "wstab"]:
 		for on in [true, false]:
 			XSkinSelScale.ENABLED = on
 			var node: Node = await call("_shot_" + page)
@@ -531,3 +648,55 @@ func _shot_battle() -> Node:
 	lw.position = Vector2(120, 120)
 	lw.select(2)
 	return host
+
+
+func _shot_party() -> Node:
+	XEnemy.force_roll = 100.0
+	var s := XState.new_game(3, 1, [8, 9])
+	XState.current = s
+	var lg := XBattleLogic.new()
+	lg.elite_roll = 100.0
+	lg.setup(2, s)
+	var host := Control.new()
+	host.size = Vector2(1280, 720)
+	add_child(host)
+	var bg := ColorRect.new()
+	bg.color = XUiSkin.BG
+	bg.size = host.size
+	host.add_child(bg)
+	var sp := XSkinPartyStatusPanel.new()
+	sp.members = lg.actors.filter(func(m): return m is XActor)
+	host.add_child(sp)
+	await frames(4)
+	sp.step_tab(1)
+	return host
+
+
+func _shot_altar() -> Node:
+	var ts := _ws_state()
+	XTianqiQiyin.sync(ts)
+	var alt := XTianqiSkinAltar.new()
+	alt.setup(ts, XTianqiQiyin.altar_options(ts))
+	add_child(alt)
+	await frames(4)
+	return alt
+
+
+func _shot_cards() -> Node:
+	_ws_state()
+	var lc := XTianqiLineCards.new()
+	lc.lines = XTianqi.LINES
+	lc.playable = [true, true, true, true]
+	add_child(lc)
+	await frames(3)
+	lc._handle(_key("ui_right"))
+	return lc
+
+
+func _shot_wstab() -> Node:
+	_ws_state()
+	XAlienWorkshop.selected = ""
+	var page := XAlienWorkshop.new()
+	add_child(page)
+	await frames(4)
+	return page

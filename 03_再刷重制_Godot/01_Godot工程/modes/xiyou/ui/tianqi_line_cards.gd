@@ -117,6 +117,7 @@ func _skin_dress() -> void:
 				_skin_label(c, l)
 	XSkinButton.apply(_back, "", XUiSkin.FS_LIST)
 	_back.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	XSkinButton.wire_hover_scale(_back)   # T040：「再想想」不拿焦点，鼠标／手指悬停时同按钮档放大
 	_back.custom_minimum_size = Vector2(180, 40)
 	_back.size = Vector2(180, 40)
 	_hints = XSkinKeyHints.new()
@@ -291,6 +292,11 @@ func _make_card(i: int) -> Control:
 ## 选中的那张抬起 LIFT、原亮度，其余压暗一点（原来只有边框变亮，四张看着差不多）
 const LIFT := 10.0
 const UNSELECTED := Color(0.8, 0.8, 0.82)
+## T040 选中放大：选中的那张以中心放大一点（只画面缩放，卡位置、邻卡不动）；新界面开着且 XSkinSelScale.ENABLED 才放大
+const CARD_PEAK := 1.03
+
+func _card_scale(on: bool) -> float:
+	return CARD_PEAK if on and skin and XSkinSelScale.ENABLED else 1.0
 
 func _highlight() -> void:
 	for i in _cards.size():
@@ -298,13 +304,17 @@ func _highlight() -> void:
 		c.selected = i == index
 		var y := TOP - (LIFT if c.selected else 0.0)
 		var tint := Color.WHITE if c.selected else UNSELECTED
-		if is_inside_tree() and (not is_equal_approx(c.position.y, y) or c.modulate != tint):
+		var k := Vector2.ONE * _card_scale(c.selected)
+		c.pivot_offset = CARD / 2.0
+		if is_inside_tree() and (not is_equal_approx(c.position.y, y) or c.modulate != tint or c.scale != k) and not (skin and XUiSkin.motion() == XUiSkin.Motion.OFF):
 			var tw := c.create_tween().set_parallel(true).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 			tw.tween_property(c, "position:y", y, 0.12)
 			tw.tween_property(c, "modulate", tint, 0.12)
+			tw.tween_property(c, "scale", k, 0.12)
 		else:
 			c.position.y = y
 			c.modulate = tint
+			c.scale = k
 		c.queue_redraw()
 
 

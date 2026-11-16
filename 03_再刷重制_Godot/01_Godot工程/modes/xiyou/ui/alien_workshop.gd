@@ -1137,6 +1137,9 @@ func _skin_panel() -> PanelContainer:
 	return pc
 
 
+const SCALE_ROOM := 8   # 按钮放大外扩的余量（宽 ≈ 0.025×宽、顶 ≈ 0.025×高，最宽的按钮也不到 8）
+
+
 func _skin_scroll() -> ScrollContainer:
 	var sc := ScrollContainer.new()
 	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -1261,7 +1264,12 @@ func _render_skin(nodes: Array) -> void:
 			tb.focus_mode = Control.FOCUS_NONE
 			XSkinButton.apply(tb, "", XUiSkin.FS_AUX_MAX)
 			tb.custom_minimum_size.y = SKIN_TAB_H
+			XSkinButton.wire_focus_scale(tb)   # T040：当前页签（Q／E 切的那个）放大；页签不拿焦点，换页重建时直接给到位
 			if i == skin_tab:
+				# 容器每次排版都会把子控件的 scale 重置成 1，所以每次排完再给一遍（不改位置和大小，邻页签不动）
+				var tab_btn := tb
+				strip.sort_children.connect(func(): tab_btn.scale = Vector2.ONE * XSkinButton.focus_scale_target(true))
+				tb.scale = Vector2.ONE * XSkinButton.focus_scale_target(true)
 				tb.add_theme_stylebox_override("normal", XSkinButton.select())
 				tb.add_theme_color_override("font_color", XUiSkin.TEXT)
 			else:
@@ -1343,9 +1351,15 @@ func _skin_body(page: Control, body: Dictionary, note, r: Rect2) -> Control:
 	lp.add_child(lv)
 	var lsc := _skin_scroll()
 	lv.add_child(lsc)
+	# T040：按钮焦点放大 1.05 会比原位置外扩一点，ScrollContainer 又会裁掉框外的部分；四周留一圈余量让高亮框不被裁
+	var im := MarginContainer.new()
+	im.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+		im.add_theme_constant_override(side, SCALE_ROOM)
+	lsc.add_child(im)
 	var items := _vbox(6)
 	items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lsc.add_child(items)
+	im.add_child(items)
 	# 选中的那件画红乙选中条（旧版照原版只在整页重画时按当时的 selected 标，首次打开不标；新界面按现在选中的标，节点树不动）
 	var uids := XAlienation.owned(s()).filter(func(e): return not XAlienation.mark(e).is_empty()).map(func(e): return str(XAlienation.mark(e).uid))
 	var sel_i := uids.find(selected)

@@ -155,7 +155,7 @@ func _paint_list(c: XMVCanvas) -> void:
 	var tex := XItemRow.new_icon()
 	for i in range(top * 2, mini((top + ROWS) * 2, data.size())):
 		if tex != null and XItemRow.shows_new(s, data[i].rec):
-			c.draw_texture(tex, cell(i, top) + Vector2(2, 2))
+			c.tex(tex, cell(i, top) + Vector2(2, 2))
 
 
 func _paint_info(c: XMVCanvas) -> void:
