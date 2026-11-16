@@ -1,0 +1,20 @@
+[
+  {
+    "actor": 174,
+    "filter": 1,
+    "path": "res://content/yunshang_v2/u2/Yunshang_SV_u2.png",
+    "scale": 1.0
+  },
+  {
+    "actor": 168,
+    "filter": 0,
+    "path": "res://content/mira/img/sv_actors/Codex_Mira_SV_u2.png",
+    "scale": 1.24137931034483
+  },
+  {
+    "actor": 180,
+    "filter": 0,
+    "path": "res://content/gojo/Codex_Gojo_SV.png",
+    "scale": 1.22033898305085
+  }
+]

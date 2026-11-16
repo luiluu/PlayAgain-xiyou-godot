@@ -1,5 +1,16 @@
 class_name XYunshang
 extends RefCounted
+
+## D164：原生像素美术可回退开关，缺文件仍走旧资源。
+static var ART := true
+static func art_path(folder: String, name: String) -> String:
+	if not ART:
+		return ""
+	var files := {"characters/$Yunshang": "u2/$Yunshang_u2", "sv_actors/Yunshang": "u2/Yunshang_SV_u2", "faces/Yunshang": "Yunshang_Face_u1"}
+	var file := str(files.get(folder + "/" + name, ""))
+	var path := "res://content/yunshang_v2/%s.png" % file
+	return path if file != "" and ResourceLoader.exists(path) else ""
+
 ## 【cc·白龙_9·未经审查】174 云裳（正式 js/codex/runtime/installNativeYunshangRuntime.js，W.CodexYunshang）第一期：招募、技能同步、
 ## 能力值、被动缓存、公式、伤害钩子，以及只看云裳本人的战斗包装（必中、暴击、段数、目标、能不能用）。行号是该文件的。
 ## - 进阶次数 stage＝原版 a._AdvancedNum（XAdvance.rank）。unlocked(id)：配置 gates[id]＝[等级, 进阶]，没有就算解锁（第 43 行）。
