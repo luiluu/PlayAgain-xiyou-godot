@@ -101,6 +101,7 @@ func _ready() -> void:
 	win.canvas.blink = true
 	if XUiSkin.on():
 		_show_skin(true)
+	_build_ads_tip()
 	_refresh()
 
 
@@ -235,13 +236,33 @@ func _paint(c: XMVCanvas) -> void:
 		var title_w := c.size.x - 12.0 - STATUS_W
 		c.text(_list[i][0], 6, y, title_w, "left", XUI.TEXT, XUI.FONT_SIZE, LH, alpha)
 		c.text(status_text(i), title_w, y, STATUS_W, "right", XUI.TEXT, XUI.FONT_SIZE, LH, alpha)
-	if ads_tip():
-		c.text(ADS_TIP, 6, ROWS * LH, c.size.x - 12.0, "left", XUI.TEXT, 16, c.size.y - ROWS * LH, XUI.DIM.a)
 
 
-## 页底提示是否显示：天启篇存档的旧布局（防骗三行已从列表去掉）
+## 页底提示是否显示：天启篇存档的旧布局（防骗三行已从列表去掉；新布局 skin 开着时不画）
 func ads_tip() -> bool:
-	return XUiSkin.selectable() and not _list.is_empty() and not symbols().has("wxxonoff")
+	return skin == null and XUiSkin.selectable() and not _list.is_empty() and not symbols().has("wxxonoff")
+
+
+## 提示画在设置窗口外下方（窗口内 432 px 画布正好装 12 行，下箭头又贴着窗底），不跟列表行和箭头抢位置
+func ads_tip_rect() -> Rect2:
+	return Rect2(RECT.position.x, RECT.end.y + 6.0, RECT.size.x, 28.0)
+
+
+func _build_ads_tip() -> void:
+	if not ads_tip():
+		return
+	var l := Label.new()
+	l.name = "AdsTip"
+	l.text = ADS_TIP
+	l.position = ads_tip_rect().position
+	l.size = ads_tip_rect().size
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	l.add_theme_font_size_override("font_size", 16)
+	l.add_theme_color_override("font_color", XUI.TEXT)
+	l.modulate.a = XUI.DIM.a
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(l)
 
 
 # ---- 操作 ----

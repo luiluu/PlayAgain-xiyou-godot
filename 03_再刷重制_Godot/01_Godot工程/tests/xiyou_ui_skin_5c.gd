@@ -303,6 +303,17 @@ func _options_tianqi_old_skin() -> void:
 	var syms := _symbols(page)
 	check("tq_old_ads_gone", not syms.has("wxxonoff") and not syms.has("wxlonoff") and not syms.has("wxtonoff"), syms)
 	check("tq_old_ads_tip", page.ads_tip() and XOptionsScene.ADS_TIP != "")
+	# 位置：提示节点真在、矩形在 1280×720 可见区内，且不跟窗口（12 行＋上下箭头都在窗内）相交
+	var tip := page.get_node_or_null("AdsTip") as Label
+	check("tq_old_tip_node", tip != null and tip.text == XOptionsScene.ADS_TIP)
+	var tr := page.ads_tip_rect()
+	var win_r := page.win.get_rect()
+	check("tq_old_tip_visible", Rect2(0, 0, 1280, 720).encloses(tr), tr)
+	check("tq_old_tip_clear_of_rows_arrows", not tr.intersects(win_r), [tr, win_r])
+	check("tq_old_tip_node_matches", tip != null and Rect2(tip.position, tip.size) == tr)
+	# 实际可用高度：窗内画布正好 12 行，没有多余底栏，所以不能画在窗内
+	check("tq_old_canvas_full_rows", page.win.canvas.size.y == XOptionsScene.ROWS * XOptionsScene.LH, page.win.canvas.size)
+	await shots("tianqi_old_skin_options")
 	check("tq_old_other_rows_kept", syms.has("dhtg") and syms.has("cq"), syms)
 	page.queue_free()
 	await frames(3)

@@ -15,10 +15,11 @@
 | 天启篇、皮肤开（新界面） | 不露：`skin_options_page.gd` 的 HIDDEN_SYMBOLS 已藏 | 同上，不露 |
 | 天启篇、皮肤关（界面风格选了原版） | 露出 → **本次改**：旧列表去掉三行，页底一行静态提示 | 同上，不露 |
 
-- 防骗三行：`XUiSkin.selectable()`（天启篇存档，含皮肤关）时从旧列表滤掉，`_paint` 在窗口底部（12 行之下的 28 px）画一行小字提示 `XOptionsScene.ADS_TIP`；西游档一字不改。这三项本来就不存配置（状态空白），没有旧值要兼容。
+- 防骗三行：`XUiSkin.selectable()`（天启篇存档，含皮肤关）时从旧列表滤掉，`_paint` 在窗口底部（12 行之下的 28 px）在窗口**外下方**（y＝窗底＋6，28 px 高，居中）放一个 Label 小字提示 `XOptionsScene.ADS_TIP`；西游档一字不改。这三项本来就不存配置（状态空白），没有旧值要兼容。
 - 遇怪三开关：**一字不改**（项目经理cc 拍板）。三行只在 `XEncounterTarget.ENABLED=false`（O-384 回退开关）时露出；`xiyou_options_basic／options_misc` 用它对照原版行序，`map_scene.gd` 仍读旧值，所以不能删。
+- 位置（小A 核 1P1～1P3 返修）：窗内画布高 460−2×14＝432＝12 行×36，正好装满，下箭头又贴窗底，所以窗内没有底栏；选「画到窗外下方」（`ads_tip_rect()`＝(440,596,400,28)，在 1280×720 内，与窗口矩形不相交）。`ads_tip()` 加了 `skin==null`，新皮肤开着时不放。
 - 提示文字（小A 文字审）：`本游戏免费，勿在闲鱼购买；总群 906327865`（由原版三行「此游戏为免费游戏！」「总群请加906327865！」「不要在闲鱼买到这个版本！」合并）。
-- 专项：`xiyou_ui_skin_5c` 增加 `xy_ads_all_three`、`xy_no_ads_tip`（西游档三行仍在、无提示）和新场景 `tq_old_no_skin／tq_old_ads_gone／tq_old_ads_tip／tq_old_other_rows_kept`（天启篇皮肤关：三行不在、提示在、其他行保留）；`xiyou_options_basic`、`xiyou_options_misc`、`xiyou_ui_skin_5c` 通过（85／148／112）。
+- 专项：`xiyou_ui_skin_5c` 增加 `xy_ads_all_three`、`xy_no_ads_tip`（西游档三行仍在、无提示）和新场景 `tq_old_no_skin／tq_old_ads_gone／tq_old_ads_tip／tq_old_other_rows_kept`（天启篇皮肤关：三行不在、提示在、其他行保留）；`xiyou_options_basic`、`xiyou_options_misc`、`xiyou_ui_skin_5c` 通过（5c 110 项、基础 148、杂项 112）；断言含提示节点存在、矩形在可见区内、不与窗口（行与箭头）相交、窗内画布高＝12 行（`tq_old_tip_*`、`tq_old_canvas_full_rows`）；截图 `tianqi_old_skin_options_16x9.png`（`--out=` 带窗口跑 xiyou_ui_skin_5c 生成，静音）。
 - 玩家可见：天启篇里把「界面风格」切回原版时，设置页不再有三行没用的宣传项，页底多一行小字提示。
 
 ## 交接板
