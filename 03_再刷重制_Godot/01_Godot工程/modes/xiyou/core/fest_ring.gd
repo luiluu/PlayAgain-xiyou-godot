@@ -142,7 +142,7 @@ static func grant(s, tier: int) -> Dictionary:
 	if s == null or not GRANT or tier < 0 or tier >= RINGS.size():
 		return {}
 	var before: int = s.gear.size()
-	s.gain_gear("armor", armor_id(tier), 1, "fest")
+	s.gain_gear("armor", armor_id(tier), 1)  # 补丁线 gain_gear 没有 source 参数（main 的来源标记给天启篇用）
 	if s.gear.size() <= before:
 		return {}
 	var inst: Dictionary = s.gear.back()

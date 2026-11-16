@@ -58,6 +58,8 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 func _run() -> void:
 	kit = Kit.new("xiyou_fest_road")
+	var start0 := XFest.START
+	XFest.START = "2026-11-15"  # 断言里的日期按 11-15 开始写；补丁线真实 START 是推送日，这里钉住
 	XFest.TODAY_OVERRIDE = "2026-11-16"
 	_records()
 	_battle_setup()
@@ -70,6 +72,7 @@ func _run() -> void:
 	await _closed_outside_event()
 	await _switch_off()
 	XFest.TODAY_OVERRIDE = ""
+	XFest.START = start0
 	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -87,7 +90,7 @@ func _state() -> XState:
 			s.add_actor(id)
 	s.init_battle_slots()
 	for i in 5:
-		s.set_battle_slot(i, [1, 2, 3, 4, 5][i])
+		s.battle_slots[i] = [1, 2, 3, 4, 5][i]
 	for a in s.members():
 		a.recover_all()
 	return s
@@ -421,7 +424,7 @@ func _three_tiers() -> void:
 func _small_party() -> void:
 	# 出战 4 人：报名出「建议满五人」提示；选「回去整队」不开打、进度不动，选「仍要出战」照常连打
 	var s := _state()
-	s.set_battle_slot(4, 0)
+	s.battle_slots[4] = 0
 	var n := s.battle_members().size()
 	var h := MockHost.new()
 	h.choices_queue = [0, 0, 1]  # 从第一关开始 → 回去整队
