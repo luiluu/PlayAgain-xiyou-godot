@@ -35,6 +35,12 @@ func _shot(name: String) -> void:
 
 
 func _run() -> void:
+	if out_dir == "" or DisplayServer.get_name() == "headless":
+		# 工具不是专项：整轮测试（并行测试.py 跑 tests/ 下全部场景）里没给参数时报跳过、算通过
+		print("SKIP 工具场景，没给参数")
+		print("TEST_RESULT=" + JSON.stringify({"passed": 1, "total": 1}))
+		get_tree().quit.call_deferred(0)
+		return
 	TestEnv.isolate("t095_ui_shots")
 	XSplashScreen.shown = true
 	for sc in ["tq", "xy"]:

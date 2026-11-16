@@ -148,7 +148,7 @@ class _Chip extends Node2D:
 			return
 		if not hit(get_global_transform_with_canvas().affine_inverse() * p):
 			return
-		get_viewport().set_input_as_handled()   # 按下也吞掉：别让地图当成点地面走路
+		XKeyMap.handled(self)   # 按下也吞掉：别让地图当成点地面走路
 		if event.pressed:
 			return
 		# 鼠标由触屏模拟时同一下会来两份（触摸＋鼠标），只认一次
