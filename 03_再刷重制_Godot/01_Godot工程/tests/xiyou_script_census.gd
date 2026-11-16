@@ -34,6 +34,7 @@ class CensusHost:
 	func shake_screen(_a = null, _b = null, _c = null) -> void: pass
 	func change_battleback(_a = null, _b = null) -> void: pass
 	func show_text_with_choices(_face: String, _idx: int, _lines: Array, _options: Array, _cancel: int) -> int: return 0
+	func start_battle(_troop: int, _can_escape: bool, _can_lose: bool, _random := false) -> int: return 0   # 庆典报名处（CodexFest.enroll）走到冠军之路会开战；普查只看认不认得，返回 0＝胜
 
 
 func _ready() -> void:
