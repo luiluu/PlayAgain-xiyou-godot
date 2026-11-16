@@ -2085,9 +2085,8 @@ static func attack_repeats(u: XBattler, skill: Dictionary, base: int) -> int:
 ## （AgainUseAll＋按技能类型 AgainUseZj（stypeId 1）／AgainUseMf（stypeId 2）＋AgainUse<技能号>）合计，Math.random×100 < 合计时 +1，取整。
 ## 来源同 refreshPassiveCache：装备（178 持剑时剑按翻倍视图，同 stat_equips）＋技能＋状态的备注元数据；物品也算（原版 item.id 照查）。
 ## 原版这层在各 Codex 运行时（渡鸦冥羽、黄泉、云裳双针、流萤）里层，所以这里紧贴 attack_repeats 外面。
-## 天启篇（T063，Kyo D124=B）：只读技能重构改写稿 note_add 写进去的 AgainUse（20 个技能＋专属装备 armor:3670、weapon:2021，
-## XTianqiSkills.again_use），10% 照原版自由掷、不占每回合多 1 次的预算（不调 XTianqiLedger.take_extra）；atkk 和原版留下的
-## 再释放标签照旧不读（小猫剑圣 XCat.native_repeats 另读，九线来源照停）。技能卡没开（XTianqiSkills.cards_on）时改写稿不生效，这层也不加。
+## 天启篇（T063，Kyo D124=B）：只读技能重构改写说明写了再释放的来源（改写稿 note_add 的 22 处＋2071、2356，XTianqiSkills.again_use），
+## 照原版自由掷、不占每回合多 1 次的预算（不调 XTianqiLedger.take_extra）；atkk 和其余原版再释放标签照旧不读（小猫剑圣 XCat.native_repeats 另读，九线来源照停）。技能卡没开（XTianqiSkills.cards_on）时改写稿不生效，这层也不加。
 ## 敌人的被动缓存没有 atkk／againUse，不加。
 ## 小猫剑圣自己的四个剑技原版 numRepeats 恒 1（次数由 XCat.native_repeats 按剑段算），不加。
 ## 心钢 10227／10228（XHeartsteel.is_skill）不加：原版那一段 _invoke 是空跑（T046 核查 P2），省一次结算。

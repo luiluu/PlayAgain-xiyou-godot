@@ -1,8 +1,9 @@
 extends Node
 ## 天启篇改写技能的「再释放」接通（T063，Kyo D124=B；开关 XBattleLogic.TIANQI_AGAIN）：
-## 一、改写稿 note_add 写了 AgainUse 的正好 22 处（20 个技能＋armor:3670、weapon:2021），技能卡开时改写后的记录里真有这个标签、说明写着再释放。
-## 二、每一处都生效：学了这招（或装上这件）的角色，again_use 几率与改写稿一致；按类型（All／Mf）分、掷在边界上（roll×100 < 几率）。
-## 三、只认改写稿新写的：原版留下的再释放（7190 时之主宰 100%、改写里没去掉的 7457 精灵至血 32%）、atkk（1817）天启篇照旧不读；
+## 一、名单＝改写稿 note_add 写了 AgainUse 的 22 处（20 个技能＋armor:3670、weapon:2021）＋说明写着「战技 10% 再次释放」、标签沿用原版的 2071、2356，
+##     技能卡开时改写后的记录里真有这个标签、说明写着再释放。
+## 二、每一处都生效：学了这招（或装上这件）的角色，again_use 几率与改写稿一致；按类型（All／Mf／Zj）分、掷在边界上（roll×100 < 几率）。
+## 三、只认名单：原版留下的再释放（7190 时之主宰 100%、改写说明没写的遗留标签 7457 精灵至血 32%）、atkk（1817）天启篇照旧不读；
 ##     技能卡关、开关关、敌人、心钢 10227 不加。
 ## 四、实战 execute：198 雪山飞狐（药水）、826 倾国倾城（普攻）、2030 怨咒（魔法）掷中时多打一轮、没掷中照旧；
 ##     预算先用掉（take_extra 已经 false）照样再放，execute 前后回合预算的记录、再释放计数、extra_used 都不变（不占 take_extra）。
@@ -12,7 +13,7 @@ const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
 var kit: Kit
 
-## 22 处：改写稿里的几率（armor:3670 是 5%）
+## 22 处＋2 处：改写后的几率（armor:3670 是 5%）
 const EXPECT := {
 	198: ["AgainUseAll", 10], 3593: ["AgainUseAll", 10], 826: ["AgainUseAll", 10], 5483: ["AgainUseAll", 10],
 	4924: ["AgainUseAll", 10], 2030: ["AgainUseMf", 10], 5477: ["AgainUseAll", 10], 6011: ["AgainUseAll", 10],
@@ -20,6 +21,7 @@ const EXPECT := {
 	3751: ["AgainUseAll", 10], 3732: ["AgainUseMf", 10], 4948: ["AgainUseAll", 10], 7477: ["AgainUseAll", 10],
 	7054: ["AgainUseAll", 10], 7070: ["AgainUseAll", 10], 7046: ["AgainUseAll", 10], 10137: ["AgainUseMf", 10],
 	"armor:3670": ["AgainUseAll", 5], "weapon:2021": ["AgainUseAll", 10],
+	2071: ["AgainUseZj", 10], 2356: ["AgainUseZj", 10],
 }
 const ATTACK := 1
 const WAR := 9  # 战技 stypeId 1
@@ -87,13 +89,12 @@ func _run() -> void:
 # ---- 一、22 处 ----
 func _table() -> void:
 	_state()
-	var tab := XTianqiSkills._again_table().duplicate()
-	tab.erase("")
+	var tab := XTianqiSkills.again_sources()
 	var keys := tab.keys().map(func(k): return str(k))
 	keys.sort()
 	var want := EXPECT.keys().map(func(k): return str(k))
 	want.sort()
-	_check("table_is_the_22", keys == want, [keys.size(), keys])
+	_check("table_is_the_24", keys == want and keys.size() == 24, [keys.size(), keys])
 	var bad := []
 	for k in EXPECT:
 		if k is int:
@@ -124,19 +125,20 @@ func _each() -> void:
 			a.equips[slot] = item
 		a.refresh_passive()
 		var rate := int(EXPECT[k][1])
-		var mf := str(EXPECT[k][0]) == "AgainUseMf"
+		var tag := str(EXPECT[k][0])
 		var got := {"war": XTianqiSkills.again_use(a, war), "mag": XTianqiSkills.again_use(a, mag), "atk": XTianqiSkills.again_use(a, atk)}
-		var want := {"war": 0 if mf else rate, "mag": rate, "atk": 0 if mf else rate}
-		# 边界：roll×100 < 几率 才 +1
+		var want := {"war": rate if tag != "AgainUseMf" else 0, "mag": rate if tag != "AgainUseZj" else 0, "atk": rate if tag == "AgainUseAll" else 0}
+		# 边界：roll×100 < 几率 才 +1（用这一处吃得到的那招）
+		var probe := mag if tag == "AgainUseMf" else war
 		L.roll = (rate - 0.01) / 100.0
-		var hit := L.passive_repeats(a, mag, 1)
+		var hit := L.passive_repeats(a, probe, 1)
 		L.roll = rate / 100.0
-		var miss := L.passive_repeats(a, mag, 1)
+		var miss := L.passive_repeats(a, probe, 1)
 		L.roll = 0.0
-		var war_n := L.passive_repeats(a, war, 1)
-		if got != want or hit != 2 or miss != 1 or war_n != (1 if mf else 2):
-			bad.append({"k": k, "got": got, "want": want, "hit": hit, "miss": miss, "war": war_n})
-	_check("each_of_22_rolls", bad.is_empty(), bad)
+		var atk_n := L.passive_repeats(a, atk, 1)
+		if got != want or hit != 2 or miss != 1 or atk_n != (2 if tag == "AgainUseAll" else 1):
+			bad.append({"k": k, "got": got, "want": want, "hit": hit, "miss": miss, "atk": atk_n})
+	_check("each_of_24_rolls", bad.is_empty(), bad)
 
 
 # ---- 三、只认改写稿 ----
