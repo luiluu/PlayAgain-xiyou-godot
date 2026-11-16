@@ -29,6 +29,14 @@
 - `语法检查.py` 0 问题；`工具回归.py` 全过。
 - `检查.sh --affected main --cloud`、整轮云端全量、`交付自检.py`：见下文「验证（收尾）」。
 
+## 验证（收尾）
+
+- 收尾前合了一次 main（a78773e4d）：`选测对照.json` 冲突，`battle` 组取 main（T074 加 `xiyou_weapon_unleash`），`battle_logic` 组同步也补上 `xiyou_weapon_unleash`；`选测.py main --list` 选中 raven_fx／again_use／weapon_unleash。
+- `检查.sh --affected main --cloud`（a78773e4d，294 场景 12 片，运行 43953215398）：**293 过、1 挂**——`xiyou_script_census` 本身 TEST_RESULT 31/31，因日志里 SCRIPT ERROR 判挂：`fest_road.gd:482 _ask` 调 `show_text_with_choices`、`:571` 调 `start_battle`，普查用的 MVInterpreter 宿主没有这两个函数（调用链 `mv_script.run → fest_lobby.run_script → enroll → fest_road.enter`）。本分支 7 个改动文件都不在这条链上，是 main 带来的（T069／T059 庆典报名处），**不归本单**，请总装另派（Sonnet＋medium 即可：普查给庆典报名脚本记无操作或宿主补桩）。
+- 本机部分：文档与登记、参照守卫各项全过；整段工具回归跑到中途被外部 SIGTERM 掐断（长任务 143，不是测试失败），另跑 `工具回归.py` 全过（122 秒）。
+- `交付自检.py`：可以交付；慢车道（改了 mv_oracle/raven_fx_probe.cjs）。夹具 `raven_fx_oracle.json` 已入库，同步不重算它，建议总装用 `XIYOU_MERGE_SYNC=skip`。交付后 main 又前进到 fafdb95e3，试合无冲突，未再合。
+- 可合并（除 script_census 那一项 main 自带问题外）。
+
 ## 我不同意的地方
 
 - 派单把它定性为「T046 回归」、方向偏「修代码」；按原版证据它是测试口径问题，所以修的是测试、没动出手逻辑。另一个可选口径是「渡鸦施放特效每次行动只放一组」——那是对原版的改动，要 Kyo 定，我没做。
