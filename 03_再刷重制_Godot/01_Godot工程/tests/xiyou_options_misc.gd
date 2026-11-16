@@ -364,6 +364,56 @@ func target_tests() -> void:
 	for r in total7:
 		ids7[XMapScene.encounter_troop(list7, r)] = true
 	check("target_same_tier_both", ids7.size() == 2 and ids7.keys().all(func(id): return XEncounterTarget.troop_tier(id) == 3), ids7.keys())
+	# T048：特殊秘境:肝帝之地全是【外界…】（全表 0 档），按位置从后往前定档，每档固定一种（亘古未有＝表末天使 847）
+	var list185: Array = XDB.map(185).get("encounterList", [])
+	var total185 := 0
+	for en in list185:
+		total185 += int(en.weight)
+	var t185 := list185.map(func(en): return XEncounterTarget.troop_tier(int(en.troopId)))
+	check("map185_all_tier0", list185.size() == 14 and t185.max() == 0, t185)
+	var want185 := {5: 847, 4: 846, 3: 845, 2: 844, 1: 843}
+	var fixed185 := {}
+	for t in want185:
+		XConfig.set_encounter_target(t)
+		var ids := {}
+		for r in total185:
+			ids[XMapScene.encounter_troop(list185, r)] = true
+		fixed185[t] = ids.keys()
+	check("map185_tier_fixed", want185.keys().all(func(t): return fixed185[t] == [want185[t]]), fixed185)
+	check("map185_angel", str(XDB.rec("Troops", 847).get("name", "")).contains("天使"))
+	# 定向关着：照原版算法（整表按权重都抽得到；旧开关「极其稀有」固定表末天使）
+	XConfig.set_encounter_target(0)
+	var ids_off := {}
+	var off_orig := true
+	for r in total185:
+		var id := XMapScene.encounter_troop(list185, r)
+		ids_off[id] = true
+		XEncounterTarget.ENABLED = false
+		off_orig = off_orig and id == XMapScene.encounter_troop(list185, r)
+		XEncounterTarget.ENABLED = true
+	check("map185_off_original", off_orig and ids_off.size() == 14, ids_off.size())
+	XEncounterTarget.ENABLED = false
+	XConfig.set_session("boss", true)
+	check("map185_off_old_boss_angel", XMapScene.encounter_troop(list185, 0) == 847)
+	XConfig.set_session("boss", null)
+	XEncounterTarget.ENABLED = true
+	# 组数不足 5 的全同档小表：从最高档往下按位置分，分不到的低档落到第一项
+	var small: Array = list185.slice(0, 3)
+	var want_small := {5: 836, 4: 835, 3: 834, 2: 834, 1: 834}
+	var got_small := {}
+	for t in want_small:
+		XConfig.set_encounter_target(t)
+		got_small[t] = XMapScene.encounter_troop(small, 7)
+	check("small_table_by_position", got_small == want_small, got_small)
+	# 能认档的表不受影响（上面 map30 各档照旧），回退 POSITION_FALLBACK＝false：全表同档时整表按权重抽
+	XEncounterTarget.POSITION_FALLBACK = false
+	XConfig.set_encounter_target(5)
+	var ids_rb := {}
+	for r in total185:
+		ids_rb[XMapScene.encounter_troop(list185, r)] = true
+	check("map185_fallback_rollback", ids_rb.size() == 14, ids_rb.size())
+	XEncounterTarget.POSITION_FALLBACK = true
+	XConfig.set_encounter_target(0)
 	# 回退：定向遇怪不列、原版三行回来、抽签照原版（存着的档位不起作用）
 	XEncounterTarget.ENABLED = false
 	XConfig.set_encounter_target(5)
