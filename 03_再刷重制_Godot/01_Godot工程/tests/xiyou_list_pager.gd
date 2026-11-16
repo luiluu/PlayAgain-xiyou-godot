@@ -104,6 +104,7 @@ func _run() -> void:
 	await _widget()
 	await _skin_list()
 	await _template()
+	await _item_page()
 	await _books()
 	print("TEST_RESULT=" + JSON.stringify({"passed": results.filter(func(x): return x.passed).size(), "total": results.size()}))
 	get_tree().quit()
@@ -150,7 +151,7 @@ func _widget() -> void:
 	u.position = pg.button_rect(-1).get_center()
 	pg._gui_input(u)
 	check("pager_press_release_must_match", got == [1, -1], got)
-	check("pager_button_touch_size", pg.button_rect(1).size.x >= 44 and pg.button_rect(1).size.y >= 40, pg.button_rect(1))
+	check("pager_button_touch_size", pg.button_rect(1).size.x >= 44 and pg.button_rect(-1).size.y >= 44, pg.button_rect(1))
 	var mid := InputEventMouseButton.new()
 	mid.button_index = MOUSE_BUTTON_LEFT
 	mid.pressed = true
@@ -221,6 +222,7 @@ func _template() -> void:
 	var list_end := page.list.position.y + page.list.size.y
 	check("tpl_pager_below_list", page.pager.position.y >= list_end and page.pager.position.y + page.pager.size.y <= panel.y + 0.5, [page.pager.position, page.pager.size, list_end, panel])
 	check("tpl_pager_inside_panel_width", page.pager.position.x >= 0 and page.pager.position.x + page.pager.size.x <= panel.x, [page.pager.position, page.pager.size, panel])
+	check("tpl_pager_height_ge_44", page.pager.size.y >= 44.0 and page.pager.button_rect(1).size.y >= 44.0, page.pager.size)
 	await shot("tpl_page1")
 	_pager_click(page.pager, 1)
 	await frames(3)
@@ -255,7 +257,43 @@ func _template() -> void:
 	await _clear()
 
 
+## 物品页：在第 2 页切分类回第 1 页（T049 小A核 P2-2：原来 _top 清了、_index 没清，会停在第 2 页）
+func _item_page() -> void:
+	XUiSkin.FORCE = true
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	XState.current = s
+	s.flags["tianqi"] = {"rules": 1}
+	var n := 0
+	for id in range(1, 500):
+		var rec := XDB.rec("Items", id)
+		if rec.is_empty() or str(rec.get("name", "")).begins_with("-") or str(rec.get("name", "")) == "" or int(rec.get("itypeId", 1)) != 1:
+			continue
+		s.gain_item(id, 3)
+		n += 1
+		if n >= 45:
+			break
+	var page := XItemScene.new()
+	add_child(page)
+	await frames(3)
+	var sk := page.skin
+	if not check("item_page_built", sk != null):
+		return
+	check("item_pager_over_one_page", page.entries().size() > 20 and sk.pager.visible, page.entries().size())
+	page._unhandled_input(_action("ui_accept"))
+	await frames(2)
+	page._index = 25
+	page._top = 5
+	page._refresh()
+	await frames(3)
+	check("item_on_page2", sk.pager.page == 2, [sk.pager.page, sk.list.top_row])
+	sk._on_ring_changed(1)
+	await frames(3)
+	check("item_ring_switch_back_to_page1", page._index == 0 and page._top == 0 and sk.list.top_row == 0 and sk.pager.page == 1, [page._index, page._top, sk.list.top_row, sk.pager.page])
+	await _clear()
+
+
 func _books() -> void:
+	XState.new_game(3, 1, [8, 9, 10])   # 不带天启篇标记：FORCE 关掉后新界面也是关的（西游档）
 	XUiSkin.FORCE = true
 	var book := XActorBook.new()
 	add_child(book)
@@ -273,6 +311,25 @@ func _books() -> void:
 	_pager_click(book.index_pager, -1)
 	await frames(3)
 	check("actor_click_prev_page", book.top == 0 and book.index_pager.page == 1, [book.top, book.index_pager.page])
+	# 技能页（第二个翻页件）：找一个技能超一页的角色
+	var found := -1
+	for i in n:
+		book.index = i
+		book._select_actor()
+		book.ok()
+		await frames(2)
+		if book.skill_list.size() > XActorBook.LIST_ROWS:
+			found = i
+			break
+		book.cancel()
+		await frames(2)
+	if check("actor_has_actor_with_many_skills", found >= 0):
+		check("actor_skills_pager_and_rows", book.mode == "skills" and book.list_pager != null and book.list_pager.visible and book.list_rows() == XActorBook.LIST_ROWS - 1, book.list_rows())
+		check("actor_skills_pager_below_rows", book.list_pager.position.y >= XMVWindow.PADDING + book.list_rows() * XActorBook.LH, book.list_pager.position)
+		_pager_click(book.list_pager, 1)
+		await frames(3)
+		check("actor_skills_click_next_page", book.skill_top == mini(book.list_rows(), book.skill_list.size() - book.list_rows()) and book.list_pager.page == 2 and book.skill_index >= book.skill_top, [book.skill_top, book.skill_index, book.list_pager.page])
+		await shot("actor_book_skills_p2")
 	await _clear()
 
 	var eb := XEnemyBookPage.new()

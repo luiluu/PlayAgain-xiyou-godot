@@ -1,6 +1,6 @@
 class_name XListPager
 extends Control
-## 【cc·天启篇·T049·未经审查】通用翻页件：「‹  第 a / b 页  ›」，两个触屏拇指够得着的按钮（56×本件高，默认 40），超过一页才显示。
+## 【cc·天启篇·T049·未经审查】通用翻页件：「‹  第 a / b 页  ›」，两个触屏拇指够得着的按钮（56×本件高，默认 44），超过一页才显示。
 ## 只管「画＋点」，不管列表怎么滚：owner 每次列表变了调 set_state(top, per, total)（单位随便：行或项，三个数同单位即可），
 ## 点按钮发 page_step(-1 或 +1)，由 owner 自己翻（新皮肤列表见 XSkinList.page()，旧 MV 画布页见各页的 _page(d)）。
 ## 页码口径：第 a 页＝top 所在页（末页 top 被夹到 total−per，所以到了底一定算末页）。
@@ -9,7 +9,7 @@ extends Control
 signal page_step(d: int)
 
 const BW := 56.0
-const DEFAULT_SIZE := Vector2(240, 40)
+const DEFAULT_SIZE := Vector2(240, 44)   # 点击区高 ≥44（验收：触屏按钮 ≥44px）
 
 var page := 1
 var pages := 1
@@ -52,7 +52,7 @@ static func attach(win: Control, step: Callable) -> XListPager:
 		return null
 	var p := XListPager.new()
 	p.size = Vector2(minf(DEFAULT_SIZE.x, win.size.x - 16.0), DEFAULT_SIZE.y)
-	p.position = Vector2((win.size.x - p.size.x) / 2.0, win.size.y - XMVWindow.PADDING - 32.0)
+	p.position = Vector2((win.size.x - p.size.x) / 2.0, win.size.y - DEFAULT_SIZE.y - 2.0)
 	win.add_child(p)
 	p.page_step.connect(step)
 	return p
