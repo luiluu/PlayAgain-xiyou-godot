@@ -10,7 +10,7 @@
 - 现象：原版虚拟摇杆（Mehmet_GhostButtons 风格）的摇杆头正中本应画队长行走图，实际是一块淡色方块。
 - 根因：`XTouchControls._draw_ghost_knob` 直接拿行走图 `CompressedTexture2D` 做 `draw_texture_rect_region`，该贴图在读过 `get_image()` 之前画出来是一整块白（1280×720、`1-XiaoMing`／`Actor1` 都复现；多次重画、等 30 帧都不好，读一次 `get_image()` 就好）。
 - 修法（`core/touch_controls.gd`）：把摇杆头要画的那一格取成 `ImageTexture` 缓存（`_knob_cell`，键＝贴图路径＋格子），再用它画；取不到图时退回原写法。几何、裁切、透明度不变。
-- 验证：1280×720 带窗口 Godot（`--audio-driver Dummy`）修前截图白块、修后连截 3 次逐字节相同且行走图正常（`1-XiaoMing` 与调色板型 `Actor1` 都试过）；`xiyou_platform` 155/155。截图在 `00_项目管理/归档/交付截图/cc_t022-joystick-pet/`（`knob_before.png`、`knob_after.png`、`knob_after_actor1.png`）。
+- 验证：1280×720 带窗口 Godot（`--audio-driver Dummy`）修前截图白块、修后连截 3 次逐字节相同且行走图正常（`1-XiaoMing` 与调色板型 `Actor1` 都试过）；`xiyou_platform` 155/155。截图在 `00_项目管理/归档/交付截图/cc_t022-joystick-pet/`（`knob_before.png`、`knob_after.png`、`knob_after_actor1.png`、`knob_after_font130.png`＝字体大小 130% 档）。
 - 玩家可见：触屏摇杆头正中显示队长行走图，不再是白块。
 
 ## 交接板
