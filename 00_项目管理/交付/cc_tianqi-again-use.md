@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-again-use
 
 - 车道／工作者：T063 天启篇 22 个改写技能「再释放10%」接通（cc 车道，Opus 5.5＋medium，P8）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -33,7 +33,7 @@
   - `seeded_rate_near_10pct`：固定种子真随机数，198 掷 400 次触发数在 20～60。
 - `xiyou_again_use` 89→92：加 `own_key_only_that_skill`／`own_key_again_in`（`AgainUse<技能号>` 只对那一招、和 All／Zj 相加；数据里 0 处，用装备元数据摆）、`heartsteel_skipped`（西游档 7008 100% 时心钢两招不加、战技照加）；原 89 条（含原版参照 `oracle_numRepeats_all_match`）不变。
 - 反向验证（`反向验证.py`，两轮 11 项全咬住）：开关默认关、心钢不排除、去掉技能号分支、再释放改成占预算、装备不读、天启篇读全部技能／原版来源、保留名单清空、遗留 7457 也读。
-- 语法检查通过；工具快速回归全部通过（111 秒）；`检查.sh --affected main --cloud`：待写
+- 语法检查通过；工具快速回归全部通过（111 秒）；`检查.sh --affected main --cloud` 退出码 0（提交 dd6dcc4f1，云端选测 301 个场景全过、含 `xiyou_again_use` 原版参照与 smart_ai／tusu／rules 各片；偶发 1 个 `xiyou_tianqi_rewards`，并行失败单跑过，与本单无关；非 Godot 检查全过）
 
 ## 我不同意的地方
 
@@ -58,3 +58,5 @@
 ## 本分支提交
 
 - 179716422 T063: 天启篇改写技能 22 处再释放接通（不占 take_extra）；心钢不加；AgainUse<技能号> 分支测试
+- dd6dcc4f1 T063: 名单加 2071、2356，读改写后记录；交付单
+- 本提交：交付单标可合并
