@@ -386,6 +386,26 @@ func _page() -> void:
 	a.equips[ARMOR[4]] = _set_piece("hei")
 	await _bump(page)
 	check("page_intro_on_equip", ring.intro_kind == "burn" and ring.intro_t < 1.0, [ring.intro_kind, ring.intro_t])
+	# P2-1：演出进行中换出战顺序（切人同理）→ 演出作废，不串半途铺开、说明不闪旧金
+	var sw := s.battle_slots.duplicate()
+	var sw0 = sw[0]
+	sw[0] = sw[1]
+	sw[1] = sw0
+	s.battle_slots = sw
+	page._refresh()
+	check("page_switch_cancels_intro", ring.intro_kind == "" and ring.intro_t == 1.0 and sk._intro_ms == -1 and ring.fade_from.is_empty(), [ring.intro_kind, ring.intro_t, sk._intro_ms])
+	# P2-2：脱下一件 → fade，旧环快照淡出（旧环心框也留着）；0.3 秒后清掉
+	a.equips[ARMOR[4]] = {}
+	await _bump(page)
+	check("page_takeoff_fade", ring.intro_kind == "fade" and ring.intro_t < 1.0 and not ring.fade_from.is_empty() and ring.fade_from.get("art", {}).get("band") is Texture2D, [ring.intro_kind, ring.intro_t])
+	check("page_takeoff_center_ghost", sk._center_fade_from != null, sk._center_fade_from)
+	ring.intro_t = 0.0   # 带窗口时真帧也在走，钉回起点再量
+	ring.advance(0.15)
+	check("page_takeoff_half", ring.intro_alpha() > 0.4 and ring.intro_alpha() < 0.6 and not ring.fade_from.is_empty(), ring.intro_alpha())
+	ring.advance(0.2)
+	check("page_takeoff_done", ring.intro_t == 1.0 and ring.fade_from.is_empty())
+	a.equips[ARMOR[4]] = _set_piece("hei")   # 穿回去，后面的断言接着用满套
+	await _bump(page)
 	XUiSkin.motion_override = XUiSkin.Motion.OFF
 	# 开关关：环回默认，名字回父层
 	XTianqiRingStyle.ENABLED = false
@@ -520,7 +540,16 @@ func _motion() -> void:
 	rn.play_intro("fade")
 	rn.advance(0.15)
 	check("motion_full_fade_half", rn.intro_alpha() > 0.4 and rn.intro_alpha() < 0.6 and rn._spin > sp, rn.intro_alpha())
+	rn.play_intro("fade", {"style": {}, "art": {}, "motion": {}})
+	check("motion_fade_ghost_kept", not rn.fade_from.is_empty())
+	rn.advance(0.4)
+	check("motion_fade_ghost_cleared", rn.fade_from.is_empty() and rn.intro_t == 1.0)
+	rn.play_intro("fade", {"style": {}})
+	rn.cancel_intro()
+	check("motion_cancel_intro", rn.intro_kind == "" and rn.intro_t == 1.0 and rn.fade_from.is_empty() and rn.intro_alpha() == 1.0)
 	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	rn.play_intro("fade", {"style": {}})
+	check("motion_off_no_ghost", rn.fade_from.is_empty())
 	rn.play_intro("burn")
 	check("motion_off_one_frame", rn.intro_t == 1.0 and rn.ring_motion_level() == 0)
 	XUiSkin.motion_override = XUiSkin.Motion.FULL
@@ -627,6 +656,20 @@ func _shots() -> void:
 				await _red_and_contrast(page, img, kind)
 			page.queue_free()
 			await frames(3)
+	# 脱下一件、淡出到一半（0.15 秒）：旧黑印环与新默认环叠着，各约半透明
+	var pg := await _shot_page("hei", SIZES[0], false, 0)
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	pg.actor().equips[ARMOR[4]] = {}
+	await _bump(pg)
+	pg.skin.ring.intro_t = 0.0
+	pg.skin.ring.advance(0.15)
+	pg.skin.ring.queue_redraw()
+	pg.skin.ring_top.queue_redraw()
+	var fimg := await _grab()
+	check("shot_fade_half", fimg.save_png(out_dir.path_join("ring_脱下淡出一半_16x9.png")) == OK and pg.skin.ring.intro_alpha() > 0.4)
+	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	pg.queue_free()
+	await frames(3)
 	XUiSkin.touch_override = 0
 	XFontScale.set_value("global", 100)
 	get_window().size = SIZES[0][0]
