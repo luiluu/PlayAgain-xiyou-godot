@@ -1,7 +1,7 @@
 # 交付：cc/tianqi-nine-off
 
 - 车道／工作者：C 规则·数值线「伤害加成总账·期三补 九线来源停用＋期三复核遗留」（cc 车道，Orca task_f07b3578fc12，T041，Opus＋medium：碰战斗数值来源与回合预算，甲档）
-- 状态：进行中
+- 状态：可合并
 
 依据：私密设计仓 `重制设定/天启篇_伤害加成总账_v0.4.md` 第五节第 2 条表下「九线来源停用（照 v0.1，并进上面的框架）」、第五节第 4 条、附表「没核实的」（特性 34、61、passiveAPLUS 挂在哪）；期三交付单（main 历史 `7cf36c7b2` 的 `cc_tianqi-ledger-p3.md`）「我不同意的地方」4 与复核遗留。数值表一个数没改。
 
@@ -101,7 +101,11 @@
 
 ## 验证
 
-（待写）
+- 新专项 `xiyou_tianqi_nine_off` 18/18：特性 34（原版装备停、天启篇标记照算、宝珠特性停、技能状态照算、原版套装状态停）、特性 61、passiveAPLUS（书停、种族科技照算）、道法连击分神、猫剑 AgainUse、秘籍格剔除与保留、放行 in_action、`full_again` 预算；每样开关关和西游档各验。`反向验证.py` 9 处故意改坏（连击不看开关、停用桶去掉 equip、宝珠不排、APLUS 不分书、猫剑不排、招募不排、NOT_BOOK 不排、full_again 不过预算、放行不传 in_action）**全部咬住**。
+- `检查.sh --oracle --affected main --cloud`（跑在 3042f5a，选测基准 c301d8e95）：云端 421 个场景、16 片**全部通过**（含 `xiyou_rules` 全部段、`xiyou_determinism` 所在战斗核心组、`xiyou_tianqi_ledger`／`_p3`、`xiyou_cat*`、`xiyou_yunshang*`、`xiyou_zhenqi_daofa`、`xiyou_smart_ai*`、事件对照）；非 Godot 检查 content、guards、same_source（MV 参照）、tools 都过；退出码 0。回退开关覆盖：`NINE_OFF` 不在缺口里（专项设 false）。日志 `03_再刷重制_Godot/04_验证/总账期三补/cloud_check.log`（本地，不入库）。
+- 语法检查 976 个 .gd 0 问题；`工具回归.py` 全过；`发行空壳.py check` 64 个脚本、578 个函数都有（`nine_attack_times` 发行值 0.0 写进特例，`nine_off` 发行恒假）。
+- 数值卡 DoD（P2-6b）：`explore`＝专项 `xiyou_virtual_player`（在上面云端选测里）通过；短帧 `climb`（种子 2、200000 帧、16.0 分钟、48 场战斗）：**卡死 0、违规 0（含负血负钱）、SCRIPT ERROR 0 行、收工金币 15640、全灭 3 次都回标题读档接着玩（存档读写正常）**。同期三那轮一样停在第 1 层、没进天启篇选线，只证明西游流程没被弄坏；天启篇的停用靠专项断言。日志里的 ERROR 全是 `skin_ring_nav.gd` 的多边形绘制（界面皮肤，不是本单）。小结 `04_验证/总账期三补/vp_climb_seed2_summary.md`。
+- 慢／快车道：没改切片、转换器、探针，快车道。
 
 ## 待交叉核查
 
