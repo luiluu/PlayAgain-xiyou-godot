@@ -205,6 +205,84 @@ def ratio_table():
 BACKTEST_REASON = '坦克职责：伤害 ×0.8 已折在卡的系数里，本体生命、物防魔防 ×1.2；这个技能吃的正是这一项，两样相乘净 ×0.96（卡里写「吃生命和双防」的坦克，招式靠防御打、不比均衡低），不改模板也不改权重，留给核查判断是否要微调；（偏差来自职责系数，不是填错）'
 
 
+# ---- abs_rescale.json（稿第七节第 4 条）：只扫「能机器扫的」几类，扫不到的写进 unscanned，T012-b 开工接着扫 ----
+def weak_body81():
+    actors = jload(DB / 'Actors.json')
+    classes = {x['id']: x for x in jload(DB / 'Classes.json') if x}
+    rework = jload(DATA / 'skill_rework.json')
+    sup, strong, hidden = tiers(rework)
+    weak = [a for a in actors if a and a.get('name') and a['id'] not in (sup | strong | hidden)]
+    return {'mhp': statistics.median(classes[a['classId']]['params'][0][81] for a in weak),
+            'mmp': statistics.median(classes[a['classId']]['params'][1][81] for a in weak),
+            'main': statistics.median(max(classes[a['classId']]['params'][2][81], classes[a['classId']]['params'][4][81]) for a in weak)}
+
+
+def literal_only(prog):
+    """状态持续伤害程序只是一个字面常数时返回它，否则 None。"""
+    try:
+        steps = prog['steps']
+        if len(steps) == 1 and steps[0]['value']['op'] == 'literal':
+            return float(steps[0]['value']['value'])
+    except Exception:
+        pass
+    return None
+
+
+def capped(key, v, b):
+    pct = round(v / b[key] * 100, 1)
+    if pct > 100:
+        return {'pct_of': key, 'pct': 100, 'over100': pct}  # 原数比弱者 81 级本体还大：先封 100%，原折算值留在 over100，T012-b 看要不要保留
+    return {'pct_of': key, 'pct': pct}
+
+
+def build_abs():
+    b = weak_body81()
+    entries = []
+    for x in jload(DB / 'Items.json'):
+        if not x:
+            continue
+        for e in x.get('effects', []):
+            if e['code'] in (11, 12) and e.get('value2', 0) != 0:
+                key = 'mhp' if e['code'] == 11 else 'mmp'
+                v = float(e['value2'])
+                entries.append({'kind': 'item_fixed_heal', 'id': x['id'], 'name': x['name'], 'stat': key, 'orig': v,
+                                'new': capped(key, v, b)})
+    for x in jload(DB / 'States.json'):
+        if not x:
+            continue
+        d = x.get('dot')
+        if d:
+            v = literal_only(d.get('program', {}))
+            ent = {'kind': 'state_dot', 'id': x['id'], 'name': x['name'], 'healing': bool(d.get('healing'))}
+            if v is not None:
+                ent['orig'] = v
+                ent['new'] = capped('mhp', v, b)
+            else:
+                ent['orig'] = '公式（读 a／b 属性）'
+                ent['new'] = '待 T012-b 逐条看：公式里的固定底数要换成标准线百分比'
+            entries.append(ent)
+    for x in jload(DB / 'States.json'):
+        if x and re.search(r'<Shield[^>]*>', x.get('note', '')):
+            entries.append({'kind': 'state_shield', 'id': x['id'], 'name': x['name'], 'orig': re.search(r'<Shield[^>]*>', x['note']).group(0),
+                            'new': '待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）'})
+    qe = DATA / 'qiyin_equip.json'
+    return {
+        '_note': 'T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 %.0f、魔法 %.0f。现在没有代码读它。' % (b['mhp'], b['mmp']),
+        'version': 1,
+        'nice_number_exempt': ['entries', 'id', 'unscanned', 'base'],
+        'base': {'weak_mhp81': b['mhp'], 'weak_mmp81': b['mmp'], 'weak_main81': b['main']},
+        'entries': entries,
+        'unscanned': [
+            '技能的固定伤害、固定回复、固定护盾（卡改写过的按卡的预算，不在这里；没进卡的原版技能、敌人技能、七印祭坛技能）',
+            '装备和状态带的固定回血（traits／note 里的 HP 回复）、固定护盾里 note 以外的写法',
+            '1～34 层敌人的固定追伤、固定扣血（敌人技能公式里的常数）',
+            '异化装备、净印、遗物里写死的八项（qiyin_equip.json 的 params 等，rewards.json）',
+            '专属模块里按绝对值比较属性的门槛（如「敏捷超过 800」）',
+            '状态持续伤害里公式型（读 a／b 属性）的那几条只列了号，没逐条拆底数',
+        ],
+    }
+
+
 def dumps(d):
     return json.dumps(d, ensure_ascii=False, indent=1) + '\n'
 
@@ -274,7 +352,8 @@ def main():
             'ratio': ratio_table(),
         }
         (DATA / 'gear_base.json').write_text(dumps(gear_base), encoding='utf-8')
-        print('已写 base_line.json、gear_base.json')
+        (DATA / 'abs_rescale.json').write_text(dumps(build_abs()), encoding='utf-8')
+        print('已写 base_line.json、gear_base.json、abs_rescale.json')
 
 
 if __name__ == '__main__':

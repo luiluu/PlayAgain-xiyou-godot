@@ -1844,6 +1844,24 @@ def check_single_hit_cap(_args) -> bool:
     return _run_table('skill_rework.json', single_hit_cap_rules)
 
 
+def abs_rescale_rules(table: dict) -> list:
+    bad = _fours(table)
+    for i, e in enumerate(table.get('entries', [])):
+        if not all(k in e for k in ('kind', 'id', 'name', 'orig', 'new')):
+            bad.append('entries/%d 要有 kind、id、name、orig、new' % i)
+            continue
+        n = e['new']
+        if isinstance(n, dict) and not (0 < float(n.get('pct', 0)) <= 100 and n.get('pct_of') in ('mhp', 'mmp')):
+            bad.append('entries/%d（%s %s）换算后要是 mhp／mmp 的 0～100%%：%s' % (i, e['kind'], e['id'], n))
+    if not table.get('unscanned'):
+        bad.append('unscanned 要列出还没扫的范围（稿第七节第 4 条的六类里扫不到的）')
+    return bad
+
+
+def check_abs_rescale(_args) -> bool:
+    return _run_table('abs_rescale.json', abs_rescale_rules)
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -1875,6 +1893,7 @@ CHECKS = [
     ('ledger_phase4', check_ledger_phase4),
     ('combat_rules_phase4', check_combat_rules_phase4),
     ('single_hit_cap', check_single_hit_cap),
+    ('abs_rescale', check_abs_rescale),
 ]
 
 
