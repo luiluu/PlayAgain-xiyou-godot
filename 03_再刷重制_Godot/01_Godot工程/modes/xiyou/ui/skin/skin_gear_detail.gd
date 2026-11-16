@@ -129,6 +129,8 @@ func handle_input(event: InputEvent) -> bool:
 func tab_rect(i: int) -> Rect2:
 	var pad := float(XUiSkin.PAD_LG)
 	var w := minf(160.0, (size.x - pad * 2) / TABS.size())
+	if XSkinArt.select_on():   # 第一期正式美术：页签间留 20、第一个往右 16，外置箭头（1×，左探 15）不压前一个页签（小A核 P2-1）
+		return Rect2(pad + 16.0 + i * w, pad + HEAD_H, w - 20.0, TAB_H)
 	return Rect2(pad + i * w, pad + HEAD_H, w - XUiSkin.GRID, TAB_H)
 
 
@@ -197,7 +199,10 @@ func _draw() -> void:
 	for i in TABS.size():
 		var r := tab_rect(i)
 		if i == tab:
-			XUiSkin.draw_select(ci, r, XUiSkin.breath_alpha())
+			if XSkinArt.select_on():
+				XSkinArt.draw_tab(ci, r)
+			else:
+				XUiSkin.draw_select(ci, r, XUiSkin.breath_alpha())
 		var t: String = TABS[i]
 		var tw := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX).x
 		draw_string(font, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + XUiSkin.FS_AUX_MAX * 0.36), t,

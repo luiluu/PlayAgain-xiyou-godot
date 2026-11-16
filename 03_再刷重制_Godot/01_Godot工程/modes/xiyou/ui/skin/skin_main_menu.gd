@@ -422,21 +422,26 @@ func _layout_rows() -> void:
 	if collapsed > 0:
 		gh = clampf((h - fixed) / collapsed, 30.0, ROW_GROUP)
 	var y := float(XUiSkin.PAD)
-	var w := pane.size.x - 20.0
+	var w := pane.size.x - row_x() - 10.0
 	for k in groups.size():
 		var n := group_items(groups[k]).size()
 		if k != gi:
-			_rows.append({"kind": "group", "g": k, "i": 0, "rect": Rect2(10, y, w, gh)})
+			_rows.append({"kind": "group", "g": k, "i": 0, "rect": Rect2(row_x(), y, w, gh)})
 			y += gh
 		elif n <= 1:
-			_rows.append({"kind": "item", "g": k, "i": 0, "rect": Rect2(10, y, w, ROW_ITEM)})
+			_rows.append({"kind": "item", "g": k, "i": 0, "rect": Rect2(row_x(), y, w, ROW_ITEM)})
 			y += ROW_ITEM
 		else:
-			_rows.append({"kind": "header", "g": k, "i": -1, "rect": Rect2(10, y, w, ROW_HEADER)})
+			_rows.append({"kind": "header", "g": k, "i": -1, "rect": Rect2(row_x(), y, w, ROW_HEADER)})
 			y += ROW_HEADER
 			for i in n:
-				_rows.append({"kind": "item", "g": k, "i": i, "rect": Rect2(10, y, w, ROW_ITEM)})
+				_rows.append({"kind": "item", "g": k, "i": i, "rect": Rect2(row_x(), y, w, ROW_ITEM)})
 				y += ROW_ITEM
+
+
+## 行左边：第一期正式美术的选中条箭头外置在行左外 22px，行往里收到 28，箭头收在烟底面板里（小A核 P2-1）；否则照旧 10
+static func row_x() -> float:
+	return 28.0 if XSkinArt.select_on() else 10.0
 
 
 ## 两级：只列当前大类——组名行＋子项；只一项的大类是组名行＋一句说明（note，点它／确定直接打开）
@@ -444,15 +449,15 @@ func _layout_rows_two() -> void:
 	if current_group().is_empty():
 		return
 	var y := float(XUiSkin.PAD)
-	var w := pane.size.x - 20.0
+	var w := pane.size.x - row_x() - 10.0
 	var n := group_items(current_group()).size()
-	_rows.append({"kind": "header", "g": gi, "i": -1, "rect": Rect2(10, y, w, ROW_HEADER)})
+	_rows.append({"kind": "header", "g": gi, "i": -1, "rect": Rect2(row_x(), y, w, ROW_HEADER)})
 	y += ROW_HEADER
 	if n <= 1:
-		_rows.append({"kind": "note", "g": gi, "i": 0, "rect": Rect2(10, y, w, NOTE_H)})
+		_rows.append({"kind": "note", "g": gi, "i": 0, "rect": Rect2(row_x(), y, w, NOTE_H)})
 		return
 	for i in n:
-		_rows.append({"kind": "item", "g": gi, "i": i, "rect": Rect2(10, y, w, ROW_ITEM)})
+		_rows.append({"kind": "item", "g": gi, "i": i, "rect": Rect2(row_x(), y, w, ROW_ITEM)})
 		y += ROW_ITEM
 
 
@@ -894,7 +899,7 @@ var back_button: XSkinBackButton
 func _draw_top() -> void:
 	var view := layout.view_size()
 	var m := XSkinLayout.margin_for(view.x)
-	top.draw_string(XUiSkin.font("title"), Vector2(XSkinBackButton.place(back_button, m), 14 + 34 * 0.92), TITLE, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	XSkinArt.bg_string(top, XUiSkin.font("title"), Vector2(XSkinBackButton.place(back_button, m), 14 + 34 * 0.92), TITLE, XUiSkin.FS_PAGE, XUiSkin.TEXT)
 	# 货币：名字次要字 15、数值淡金窄体 26，右对齐（样稿：精魂在左、印屑在右）
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
@@ -904,8 +909,8 @@ func _draw_top() -> void:
 	for pair in cur:
 		var vw := num.get_string_size(pair[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
 		x -= vw
-		top.draw_string(num, Vector2(x, 42), pair[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 26, XUiSkin.GOLD_LIGHT)
+		XSkinArt.bg_string(top, num, Vector2(x, 42), pair[1], 26, XUiSkin.GOLD_LIGHT)
 		var nw := body.get_string_size(pair[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
 		x -= nw + 6
-		top.draw_string(body, Vector2(x, 42), pair[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
+		XSkinArt.bg_string(top, body, Vector2(x, 42), pair[0], 15, XSkinArt.bg_text_2())
 		x -= 18

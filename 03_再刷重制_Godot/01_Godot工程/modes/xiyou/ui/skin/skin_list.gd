@@ -85,17 +85,23 @@ func content_width() -> float:
 
 ## 第 i 项在列表里的矩形（已减去滚动；不在可见范围时也照算）
 func cell_rect(i: int) -> Rect2:
-	var cw := (content_width() - col_gap * (columns - 1)) / columns
+	var g := gap()
+	var cw := (content_width() - g * (columns - 1)) / columns
 	var row := floori(i / float(columns)) - top_row
 	var col := i % columns
-	return Rect2(col * (cw + col_gap), row * row_height, cw, row_height)
+	return Rect2(col * (cw + g), row * row_height, cw, row_height)
+
+
+## 列间距：第一期正式美术的外置箭头（左探 22）要落在列缝里，不进左列（小A核 P2-1）：至少 26
+func gap() -> float:
+	return maxf(col_gap, 26.0) if columns > 1 and XSkinArt.select_on() else col_gap
 
 
 func item_at(p: Vector2) -> int:
 	if p.x < 0 or p.y < 0 or p.x > content_width() or p.y > visible_rows() * row_height:
 		return -1
-	var cw := (content_width() - col_gap * (columns - 1)) / columns
-	var col := clampi(floori(p.x / (cw + col_gap)), 0, columns - 1)
+	var cw := (content_width() - gap() * (columns - 1)) / columns
+	var col := clampi(floori(p.x / (cw + gap())), 0, columns - 1)
 	var i := (floori(p.y / row_height) + top_row) * columns + col
 	return i if i < items.size() else -1
 

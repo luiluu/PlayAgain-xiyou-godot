@@ -12,6 +12,7 @@ var font_size := 17
 const TAB_H := 38.0
 const TAB_PAD := 14.0
 const TAB_GAP := 4.0
+const TAB_GAP_ART := 18.0
 
 
 func _init() -> void:
@@ -69,8 +70,9 @@ func current_direct() -> String:
 func tab_rect(i: int) -> Rect2:
 	var f := XUiSkin.font("body")
 	var x := 0.0
+	var gap := TAB_GAP_ART if XSkinArt.select_on() else TAB_GAP   # 第一期正式美术：外置箭头（1×，左探 15）落在页签缝里（小A核 P2-1）
 	for k in range(i):
-		x += f.get_string_size(str(groups[k].name), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + TAB_PAD * 2 + TAB_GAP
+		x += f.get_string_size(str(groups[k].name), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + TAB_PAD * 2 + gap
 	var w := f.get_string_size(str(groups[i].name), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + TAB_PAD * 2
 	return Rect2(x, 0, w, TAB_H)
 
@@ -94,12 +96,14 @@ func _draw() -> void:
 	for i in groups.size():
 		var r := tab_rect(i)
 		var on := i == index
-		if on:
+		if on and XSkinArt.select_on():   # 第一期正式美术（D51）：tab_selected_assembly 几何（渐隐红底＋左外小箭头）
+			XSkinArt.draw_tab(ci, r)
+		elif on:
 			var sb := StyleBoxFlat.new()
 			sb.bg_color = Color(XUiSkin.SEL_FILL, 0.22)
 			sb.set_corner_radius_all(XUiSkin.ROW_RADIUS)
 			sb.border_color = XUiSkin.SEL_LINE
 			sb.border_width_bottom = 3
 			sb.draw(ci, r)
-		draw_string(f, Vector2(r.position.x + TAB_PAD, r.position.y + TAB_H / 2.0 + font_size * 0.36), str(groups[i].name),
-			HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.WHITE if on else XUiSkin.TEXT_2)
+		XSkinArt.bg_string(self, f, Vector2(r.position.x + TAB_PAD, r.position.y + TAB_H / 2.0 + font_size * 0.36), str(groups[i].name),
+			font_size, Color.WHITE if on else XSkinArt.bg_text_2())

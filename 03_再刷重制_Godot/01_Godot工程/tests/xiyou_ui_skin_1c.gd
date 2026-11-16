@@ -79,8 +79,10 @@ func _keycode(k: Key) -> InputEventKey:
 func _run() -> void:
 	TestEnv.isolate("xiyou_ui_skin_1c")
 	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	XSkinEquipPage.ONE_PAGE = false   # 本专项验栏位分页 7＋6（ONE_PAGE 关掉时的回退）；13 栏一页由 xiyou_ui_art_phase01 验
 	_pure()
 	await _equip_page()
+	XSkinEquipPage.ONE_PAGE = true
 	await _search_skin()
 	await _status_page()
 	XUiSkin.motion_override = -1

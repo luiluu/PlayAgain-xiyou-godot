@@ -194,6 +194,12 @@ func state_icon_rect(r: Rect2, k: int, helper: bool) -> Rect2:
 ## 助力位卡：略暗底＋旧金细边＋右上「助力」角标
 func _draw_helper_frame(ci: RID, r: Rect2, head: Font) -> void:
 	var box := r.grow_individual(-2, -3, -2, -3)
+	if XSkinArt.panel_on():   # 第一期正式美术（小A核 P2-3）：烟底＋七芒暗印＋助力签，不要旧金描边
+		XSkinArt.draw_helper(ci, box)
+		var tr2 := XSkinArt.helper_tag_rect(box)
+		var tw := head.get_string_size("助力", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+		draw_string(head, Vector2(tr2.position.x + (tr2.size.x - tw) / 2.0, tr2.position.y + 17), "助力", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, XUiSkin.TEXT)
+		return
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0, 0, 0, 0.28)
 	sb.border_color = Color(XUiSkin.GOLD, 0.55)
