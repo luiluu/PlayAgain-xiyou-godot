@@ -27,7 +27,7 @@
 
 - 已做：无。
 - 记一条工具坑：新建工作树里 `07_开发环境/当前Godot.app`、`引擎` 不会自带，`godot` 包装脚本直接报找不到；本单手动软链到主工作区的 `引擎/4.7.2-stable`（`引擎` 已写进 `.git/info/exclude`，未提交）。建议 `新建工作树.sh --补齐` 顺带补这个软链（归工具车道）。
-- 记一条查明的事：`start_troop_4/5` 在新树必挂，原因是新树没有被 gitignore 的 `modes/xiyou/generated`（本树该目录用 `--import` 前就在，不是 bug）；`pet_capture`「侵染·」前缀总装已在 8d354958c 修，等 dev.631 上 main 后 rebase 连跑 5 次，本单不重做。
+- 记一条查明的事：`start_troop_4/5` 挂的原因是守层者 4/5 触发 `XRiftAlien.ALIGN_LOBBY` 的侵染前缀（「侵染·」），main 8d354958c 已修（原写「新树缺 generated」不成立，总装 11-16 照协调更正）；合后在 main 上 `pet_capture` 连跑 5 次确认。
 
 ## 本分支提交
 
