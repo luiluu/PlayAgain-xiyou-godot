@@ -2195,18 +2195,18 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	for t0 in targets:
 		var t: XBattler = t0
 		for i in range(maxi(1, repeats)):
-			var gt = XTianqiWeakAffix.segment_target(self, u, skill, t)  # 天启篇弱者专属词条：引导者这一段前不合法就回原目标、原目标也不合法跳过
-			if gt == null:
+			# 天启篇弱者专属词条：引导者这一段前不合法就回原目标、原目标也不合法跳过。每段从 t 重新判，不覆写 t（T035，与序列路 _action_effect 对称）
+			var seg = XTianqiWeakAffix.segment_target(self, u, skill, t)
+			if seg == null:
 				continue
-			t = gt
-			if t.is_dead() and not [9, 10].has(int(skill.scope)) and not _lotus_all(skill):
-				var nt = XTianqiQiyinEffects.redirect(self, u, skill, t)  # 天启篇战真印：剩下的段转给另一个敌人
+			if seg.is_dead() and not [9, 10].has(int(skill.scope)) and not _lotus_all(skill):
+				var nt = XTianqiQiyinEffects.redirect(self, u, skill, seg)  # 天启篇战真印：剩下的段转给另一个敌人（取第一个活着的，每段重判结果相同）
 				if nt == null:
 					break
-				t = nt
+				seg = nt
 			if u.is_dead():
 				break
-			logs.append_array(mark_views(_invoke(u, skill, t)))
+			logs.append_array(mark_views(_invoke(u, skill, seg)))
 	# YEP 默认收尾序列 immortal: targets, false → removeImmortal 逐个 refresh
 	for t in targets + XTianqiWeakAffix.finish_targets(self).filter(func(x): return not targets.has(x)):  # 天启篇弱者专属词条：引导失效后回去打的原目标也收尾
 		t.param_refresh()

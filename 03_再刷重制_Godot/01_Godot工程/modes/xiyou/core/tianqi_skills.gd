@@ -1628,7 +1628,9 @@ static func _guard(logic, u) -> Array:
 		st.depth = int(st.depth) + 1
 		var prev := follow_scale
 		follow_scale = float(g.get("scale", 1.0))
+		XTianqiWeakAffix.push_kind(logic, XTianqiWeakAffix.COUNTER)  # 弱者专属词条（T035）：护短是队友对敌人这次行动的反应，同原生反击记 COUNTER，打混子不记「不服」
 		var part := _cast(logic, z, cast, [u])
+		XTianqiWeakAffix.pop_kind(logic)
 		follow_scale = prev
 		st.depth = int(st.depth) - 1
 		if not part.is_empty():

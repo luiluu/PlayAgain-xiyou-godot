@@ -361,7 +361,45 @@ func _guard() -> void:
 	var stunned := _guard_stats(lg, z, ally, e, 100, 1)
 	z.remove_state(STUN)
 	_check("guard_stunned", stunned.fired == 0, stunned)
+	_guard_hunzi(lg, z, ally, e)
 	lg.end_battle(0)
+
+
+## T035：护短跑在敌人这一根的追加阶段（FOLLOW），但它是张三丰对敌人这次行动的反应，记 COUNTER：太极拳打到混子不记「不服」
+func _guard_hunzi(lg: XBattleLogic, z, ally, e) -> void:
+	var f := {"line": "plague", "mode": "body", "knight": e, "hit_knight": {}, "queue": [], "shield_open": false, "broken_turn": -1}
+	lg.set_meta(XTianqiHorsemen.META, f)
+	var real := XTianqiHorsemen.active(lg) and XTianqiWeakAffix.on(lg.state)
+	_check("guard_hunzi_fixture", real)
+	if not real:
+		lg.remove_meta(XTianqiHorsemen.META)
+		return
+	# 夹具咬得住：追加阶段直接放太极拳（不经护短）会记
+	XTianqiWeakAffix.root_begin(lg, e, XDB.rec("Skills", 1153))
+	XTianqiWeakAffix.set_kind(lg, XTianqiWeakAffix.FOLLOW)
+	XTianqiSkills._cast(lg, z, XDB.rec("Skills", 5860), [e])
+	XTianqiWeakAffix.root_end(lg)
+	_check("guard_hunzi_follow_marks", bool(f.hit_knight.get(z, false)), f.hit_knight.size())
+	f.hit_knight.clear()
+	_fresh(lg)
+	var phys := XDB.rec("Skills", 1153)
+	var fired := 0
+	var kinds_ok := true
+	for i in range(60):
+		lg.turn = 9000 + i
+		XTianqiWeakAffix.root_begin(lg, e, phys)
+		XTianqiSkills.begin_action(lg, e, phys)
+		var logs := lg._invoke(e, phys, ally)
+		XTianqiWeakAffix.set_kind(lg, XTianqiWeakAffix.FOLLOW)  # 同 BattleLogic.act：执行完以后进追加阶段，再走 end_action（护短在这里）
+		logs.append_array(XTianqiSkills.end_action(lg, e, phys))
+		kinds_ok = kinds_ok and XTianqiWeakAffix.kind(lg) == XTianqiWeakAffix.FOLLOW  # 护短收尾 pop 回去
+		XTianqiWeakAffix.root_end(lg)
+		var zh := logs.filter(func(l): return l is Dictionary and l.get("type") == "hit" and is_same(l.get("user"), z) and is_same(l.get("target"), e) and float(l.get("hp", 0.0)) > 0.0)
+		if not zh.is_empty():
+			fired += 1
+		_fresh(lg)
+	_check("guard_hunzi_no_mark", fired > 0 and not f.hit_knight.has(z) and kinds_ok, {"fired": fired, "marked": f.hit_knight.has(z), "kinds_ok": kinds_ok})
+	lg.remove_meta(XTianqiHorsemen.META)
 
 
 ## 关掉 GUARD：回到原版（开局全队挂 2007，挨打预约公共事件 1605）——修前的复现

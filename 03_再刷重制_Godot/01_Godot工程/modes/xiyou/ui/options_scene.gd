@@ -56,6 +56,8 @@ const MOTION_OPTION := ["界面动效", "codexUiMotion", true]
 const MOTION_NAMES := ["全部", "简化", "关"]
 ## 新界面 4A（C8，XSkin4A.DIM_V2）：「战斗背景压暗：关／15%／30%」，只在新皮肤开着时列，排在界面动效后
 const DIM_OPTION := ["战斗背景压暗", "codexBattleDim", true]
+## 天启篇「装备环纹」（XTianqiRingStyle，D101）：开／关，默认开；只在新界面开着时列（环纹只画在新界面装备页），排在界面动效后
+const RING_STYLE_OPTION := ["装备环纹", "codexRingStyle", true]
 
 ## 重制新增：本次更新内容（XWhatsNew，update-whatsnew）：现在运行的这一版有更新说明时才列，状态「查看」，确定再看一次「本次更新内容」弹窗
 const WHATS_NEW_OPTION := ["本次更新内容", "codexWhatsNew", true]
@@ -67,7 +69,7 @@ const TOUCH_OPTION := ["手机按键设置", "codexAndroidControls", true]
 ## （含 pingbiDrop：状态恒空白、确定打开屏蔽页，只有左右键会改它）
 const FLAG_SYMBOLS := ["MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "battleCamera", "CombatDamageShow",
 	"CombatSkillAnimation", "cq", "MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexPowerEnabled", "codexBossStatusPanel",
-	"codexScreenFx", "codexScreenSmooth", "codexBattleAutoDefault"]
+	"codexScreenFx", "codexScreenSmooth", "codexBattleAutoDefault", "codexRingStyle"]
 
 ## 挂机设置页用：打开菜单前的地图截图与玩家所在的画面格（由地图经主菜单传入）
 var map_shot: Texture2D
@@ -118,6 +120,8 @@ func _build_list() -> void:
 		_list.append(SKIN_OPTION)
 		if XUiSkin.on():
 			_list.append(MOTION_OPTION)
+			if XTianqiRingStyle.ENABLED:
+				_list.append(RING_STYLE_OPTION)
 			if XSkin4A.DIM_V2:
 				_list.append(DIM_OPTION)
 	if XBattleScene.AUTO_DEFAULT:  # 进战斗默认自动排在画质设置后、手机按键设置前；开关关掉时不列

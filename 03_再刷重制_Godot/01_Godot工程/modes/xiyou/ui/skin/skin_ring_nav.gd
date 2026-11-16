@@ -48,18 +48,181 @@ var _art_ci := RID()
 ## 上次画了哪些 u4 贴图（测试看）：[{i, tex, rect}]
 var art_drawn: Array = []
 
+## ---- 环纹（天启篇装备环样式 v0.2.1 第 5.1 节层序、7.3 节接口；XTianqiRingStyle 出数据，装备页填进来）----
+## 从下往上：_band_ci（draw_behind_parent，环身图，最近邻）→ 本节点 _draw（法阵、光带、主圈、虚线、连线、光弧、球＋图标）→
+## _orb_ci（球框、套装小点、补画选中红框，最近邻）→ _label_ci（栏位名，线性）→ _art_ci（主菜单 u4）→ 子控件（装备页 ring_top）。
+## 三个新子画布项在 _init 里按 _orb_ci → _label_ci → _art_ci 的顺序建、都不设 draw_index（全留默认 0），子画布项按建的顺序排，
+## 天然都在 ring_top（之后才 add_child）之前（小A 抽看 8cb0693 第三节第 1 条：别给它们设正的 draw_index，会把 ring_top 反压到下面）。
+## 都空着时环和以前逐像素一样：orb_frames／orb_dots 都空时栏位名照旧在 _draw 的球循环里画，第 3、4 层不启用。
+var _band_ci := RID()
+var _orb_ci := RID()
+var _label_ci := RID()
+## 建子画布项的顺序（测试看层序）
+var layer_order: Array = []
+## 环身贴图口子：{band: Texture2D, circle: Texture2D, circle_a: float, circle_tint: Color}；有 band 就画图、不画程序的光带、主圈、外圈细线和虚线；
+## 有 circle 就替掉通用法阵，乘 circle_tint、按 circle_a
+var style_art: Dictionary = {}
+## 环项序号 → {tex: Texture2D, tint: Color}（球框，按 item_scale 放大）
+var orb_frames: Dictionary = {}
+## 环项序号 → Color（套装小点）
+var orb_dots: Dictionary = {}
+## 动效参数 {spin, breath, motes, mote_color}；按界面动效档削减（全部才转、呼吸、飘光点）
+var motion: Dictionary = {}
+## 演出：intro_kind＝burn（0.6 秒从 12 点顺时针铺开，先闪旧金）／fade（0.3 秒淡入）／""；intro_t 0→1
+var intro_kind := ""
+var intro_t := 1.0
+const INTRO_TIME := {"burn": 0.6, "fade": 0.3}
+## 测试看：栏位名这一帧画在哪一层（"parent"／"label_ci"）、补画了几次选中红框、多画了几次贴图
+var labels_on := "parent"
+var ring_draws := 0
+## 测试用：不画栏位名（量名字底下的底色对比度）
+var hide_labels := false
+
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	resized.connect(queue_redraw)
+	var me := get_canvas_item()
+	_band_ci = RenderingServer.canvas_item_create()
+	RenderingServer.canvas_item_set_parent(_band_ci, me)
+	RenderingServer.canvas_item_set_draw_behind_parent(_band_ci, true)
+	RenderingServer.canvas_item_set_default_texture_filter(_band_ci, RenderingServer.CANVAS_ITEM_TEXTURE_FILTER_NEAREST)
+	_orb_ci = RenderingServer.canvas_item_create()
+	RenderingServer.canvas_item_set_parent(_orb_ci, me)
+	RenderingServer.canvas_item_set_default_texture_filter(_orb_ci, RenderingServer.CANVAS_ITEM_TEXTURE_FILTER_NEAREST)
+	_label_ci = RenderingServer.canvas_item_create()
+	RenderingServer.canvas_item_set_parent(_label_ci, me)
+	RenderingServer.canvas_item_set_default_texture_filter(_label_ci, RenderingServer.CANVAS_ITEM_TEXTURE_FILTER_LINEAR)
 	_art_ci = RenderingServer.canvas_item_create()
-	RenderingServer.canvas_item_set_parent(_art_ci, get_canvas_item())
+	RenderingServer.canvas_item_set_parent(_art_ci, me)
 	RenderingServer.canvas_item_set_default_texture_filter(_art_ci, RenderingServer.CANVAS_ITEM_TEXTURE_FILTER_NEAREST)
+	layer_order = ["band_ci(behind)", "parent", "orb_ci", "label_ci", "art_ci", "children"]
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_PREDELETE and _art_ci.is_valid():
-		RenderingServer.free_rid(_art_ci)
+	if what == NOTIFICATION_PREDELETE:
+		for ci in [_art_ci, _band_ci, _orb_ci, _label_ci]:
+			if ci.is_valid():
+				RenderingServer.free_rid(ci)
+
+
+## 这一帧走不走环纹的第 3、4 层（球框／小点在名字下面）
+func ring_layers() -> bool:
+	return not orb_frames.is_empty() or not orb_dots.is_empty()
+
+
+## 动效档：2＝全部（转、呼吸、飘光点、演铺开）、1＝简化（只演铺开）、0＝关（全停、直接切换）。「画面特效」关或省电同「关」
+static func ring_motion_level() -> int:
+	if not XGraphics.fx_on():
+		return 0
+	match XUiSkin.motion():
+		XUiSkin.Motion.FULL:
+			return 2
+		XUiSkin.Motion.SIMPLE:
+			return 1
+	return 0
+
+
+## 演出（不拦输入）。动效关时一帧就结束
+func play_intro(kind: String) -> void:
+	if kind == "" or not INTRO_TIME.has(kind):
+		return
+	intro_kind = kind
+	intro_t = 0.0 if ring_motion_level() > 0 else 1.0
+	queue_redraw()
+
+
+func intro_alpha() -> float:
+	return 1.0 if intro_kind != "fade" else clampf(intro_t, 0.0, 1.0)
+
+
+## 小点中心：外侧径向顺时针偏 45°、离球心 0.9 倍球半径（7.3）
+func dot_pos(i: int) -> Vector2:
+	return item_pos(i) + Vector2.from_angle(deg_to_rad(item_deg(i) + 45.0)) * 0.9 * orb_radius * item_scale(i)
+
+
+## 小点外框（8×8×item_scale，含 1px 黑边）
+func dot_rect(i: int) -> Rect2:
+	var s := 8.0 * item_scale(i)
+	return Rect2(dot_pos(i) - Vector2(s, s) / 2.0, Vector2(s, s))
+
+
+## 球框画在哪（56×56×item_scale，静止 1:1 时取整）
+func frame_rect(i: int, tex: Texture2D) -> Rect2:
+	var k := item_scale(i)
+	var ts := tex.get_size() * k
+	var pos := item_pos(i) - ts / 2.0
+	return Rect2(pos.round() if is_equal_approx(k, 1.0) else pos, ts)
+
+
+## 一张贴图从 12 点顺时针铺开到 t（0～1）：扇形多边形带 UV（不用着色器）
+static func add_sweep(ci: RID, rect: Rect2, tex: Texture2D, t: float, col: Color) -> void:
+	if t >= 1.0:
+		RenderingServer.canvas_item_add_texture_rect(ci, rect, tex.get_rid(), false, col)
+		return
+	if t <= 0.0:
+		return
+	var c := rect.get_center()
+	var rad := rect.size.length() / 2.0 + 2.0
+	var steps := maxi(3, ceili(48.0 * t))
+	var pts := PackedVector2Array([c])
+	var uvs := PackedVector2Array([Vector2(0.5, 0.5)])
+	for k in steps + 1:
+		var a := -PI / 2.0 + TAU * t * k / float(steps)
+		var p := c + Vector2.from_angle(a) * rad
+		pts.append(p)
+		uvs.append((p - rect.position) / rect.size)
+	var cols := PackedColorArray()
+	cols.resize(pts.size())
+	cols.fill(col)
+	RenderingServer.canvas_item_add_polygon(ci, pts, cols, uvs, tex.get_rid())
+
+
+func _draw_band() -> void:
+	RenderingServer.canvas_item_clear(_band_ci)
+	var tex: Texture2D = style_art.get("band")
+	if tex == null:
+		return
+	var ts := tex.get_size()
+	var r := Rect2((center() - ts / 2.0).round(), ts)
+	var col := Color(1, 1, 1, intro_alpha())
+	add_sweep(_band_ci, r, tex, intro_t if intro_kind == "burn" else 1.0, col)
+	ring_draws += 1
+
+
+## 第 3、4 层：球框、小点、补画选中红框（_orb_ci），栏位名（_label_ci）
+func _draw_layers() -> void:
+	RenderingServer.canvas_item_clear(_orb_ci)
+	RenderingServer.canvas_item_clear(_label_ci)
+	if not ring_layers():
+		labels_on = "parent"
+		return
+	labels_on = "label_ci"
+	for i in items.size():
+		var f = orb_frames.get(i)
+		if f is Dictionary and f.get("tex") is Texture2D:
+			var tex: Texture2D = f.tex
+			RenderingServer.canvas_item_add_texture_rect(_orb_ci, frame_rect(i, tex), tex.get_rid(), false, f.get("tint", Color.WHITE))
+			ring_draws += 1
+		if orb_dots.has(i):
+			var dr := dot_rect(i)
+			RenderingServer.canvas_item_add_rect(_orb_ci, dr, Color(0, 0, 0, 0.9))
+			RenderingServer.canvas_item_add_rect(_orb_ci, dr.grow(-1.0 * item_scale(i)), orb_dots[i])
+	# 选中红框补画一遍，永远在框和点之上（2.1 第 3 条）
+	if index >= 0 and index < items.size():
+		var p := item_pos(index)
+		var r := orb_radius * item_scale(index)
+		var pts := PackedVector2Array()
+		for k in 65:
+			pts.append(p + Vector2.from_angle(TAU * k / 64.0) * r)
+		var col := Color(XUiSkin.GOLD, 1.0) if has_art(index) else Color(XUiSkin.SEL_LINE, 1.0)
+		RenderingServer.canvas_item_add_polyline(_orb_ci, pts, PackedColorArray([col]), 2.5, true)
+	var body := XUiSkin.font("body")
+	var rd := XSkinArt.read_on()
+	for i in (0 if hide_labels else items.size()):
+		var lay := label_layout(i)
+		body.draw_string_outline(_label_ci, lay.pos, lay.text, HORIZONTAL_ALIGNMENT_LEFT, -1, lay.fs, 5 if rd else 4, Color(0, 0, 0, 0.9 if rd else 0.6))
+		body.draw_string(_label_ci, lay.pos, lay.text, HORIZONTAL_ALIGNMENT_LEFT, -1, lay.fs, Color.WHITE if i == index else XSkinArt.bg_text_2())
 
 
 ## 主菜单组 → 环上的项（有 u4 贴图时带 art_normal／art_selected）
@@ -308,6 +471,9 @@ func advance(delta: float) -> void:
 	if XUiSkin.breathing():
 		_spin += delta
 		queue_redraw()
+	if intro_t < 1.0:
+		intro_t = minf(1.0, intro_t + delta / float(INTRO_TIME.get(intro_kind, 0.3))) if ring_motion_level() > 0 else 1.0
+		queue_redraw()
 
 
 func _process(delta: float) -> void:
@@ -364,27 +530,52 @@ func _diamond(p: Vector2, s: float, col: Color) -> void:
 
 func _draw() -> void:
 	_draw_art()
+	ring_draws = 0
+	_draw_band()
 	var c := center()
 	var R := radius
 	var line := XUiSkin.LINE
-	# 法阵
+	# 法阵（环纹给了本印法阵就换掉通用的：乘 circle_tint、按 circle_a，全部档时轻微呼吸）
 	var circ := XUiSkin.circle_texture()
+	var circ_col := Color(1, 1, 1, 0.5)
+	var spin_k := 1.0
+	if style_art.get("circle") is Texture2D:
+		circ = style_art.circle
+		var lv := ring_motion_level()
+		spin_k = float(motion.get("spin", 1.0)) if lv >= 2 else 0.0
+		var breath := float(motion.get("breath", 0.0)) * (0.5 + 0.5 * sin(_spin * TAU / 4.0)) if lv >= 2 else 0.0
+		circ_col = Color(style_art.get("circle_tint", Color.WHITE), (float(style_art.get("circle_a", 0.28)) + breath) * intro_alpha())
+		ring_draws += 1
 	if circ != null:
 		var d := R * 2.0 - 60.0
-		draw_set_transform(c, deg_to_rad(_spin * 6.0), Vector2.ONE)
-		draw_texture_rect(circ, Rect2(-d / 2.0, -d / 2.0, d, d), false, Color(1, 1, 1, 0.5))
+		draw_set_transform(c, deg_to_rad(_spin * 6.0 * spin_k), Vector2.ONE)
+		draw_texture_rect(circ, Rect2(-d / 2.0, -d / 2.0, d, d), false, circ_col)
 		draw_set_transform(Vector2.ZERO)
-	# 光带与细线
-	draw_arc(c, R + 5.5, 0, TAU, 96, sty("band"), float(sty("band_w")), true)
-	draw_arc(c, R + 10.5, 0, TAU, 96, Color(line, float(sty("halo_line_a"))), 1.0, true)
-	draw_arc(c, R, 0, TAU, 128, ring_line_color(), float(sty("ring_w")), true)
-	# 外圈虚线（反转）
-	var dash_r := R + 22.0
-	var dashes := 72
-	var off := -_spin * TAU / 50.0
-	for k in dashes:
-		var a0 := off + k * TAU / dashes
-		draw_arc(c, dash_r, a0, a0 + TAU / dashes * 0.5, 4, Color(line, float(sty("dash_a"))), 1.5, true)
+	if not (style_art.get("band") is Texture2D):
+		# 光带与细线
+		draw_arc(c, R + 5.5, 0, TAU, 96, sty("band"), float(sty("band_w")), true)
+		draw_arc(c, R + 10.5, 0, TAU, 96, Color(line, float(sty("halo_line_a"))), 1.0, true)
+		draw_arc(c, R, 0, TAU, 128, ring_line_color(), float(sty("ring_w")), true)
+		# 外圈虚线（反转）
+		var dash_r := R + 22.0
+		var dashes := 72
+		var off := -_spin * TAU / 50.0
+		for k in dashes:
+			var a0 := off + k * TAU / dashes
+			draw_arc(c, dash_r, a0, a0 + TAU / dashes * 0.5, 4, Color(line, float(sty("dash_a"))), 1.5, true)
+	# 铺开演出：先闪一下旧金（前三分之一）
+	if intro_kind == "burn" and intro_t < 1.0:
+		var fl := clampf(1.0 - intro_t * 3.0, 0.0, 1.0)
+		if fl > 0.0:
+			draw_arc(c, R, 0, TAU, 128, Color(XUiSkin.GOLD, 0.8 * fl), 3.0, true)
+	# 沿主圈飘的光点（≤ 8 颗，只在全部档）
+	var motes := mini(int(motion.get("motes", 0)), 8)
+	if motes > 0 and ring_motion_level() >= 2 and style_art.get("band") is Texture2D:
+		var mc: Color = motion.get("mote_color", XUiSkin.GOLD_LIGHT)
+		for k in motes:
+			var a := _spin * TAU / 30.0 + k * TAU / motes
+			var p := c + Vector2.from_angle(a) * (R + 3.0 * sin(_spin * 2.0 + k))
+			draw_circle(p, 1.5, Color(mc, 0.35 + 0.3 * (0.5 + 0.5 * sin(_spin * 3.0 + k * 1.7))))
 	# 刻痕
 	for k in (NOTCHES if bool(sty("notches")) else 0):
 		var p := c + Vector2.from_angle(deg_to_rad(notch_deg(k))) * (R + 11.0)
@@ -427,6 +618,7 @@ func _draw() -> void:
 		draw_arc(c, R, a - half, a + half, 24, XUiSkin.SEL_LINE, 5.0, true)
 	# 球
 	var body := XUiSkin.font("body")
+	var layers := ring_layers()
 	for i in items.size():
 		var p := item_pos(i)
 		var on := i == index
@@ -450,6 +642,8 @@ func _draw() -> void:
 		if tex != null and not art:
 			var s := 40.0 * item_scale(i)
 			draw_texture_rect(tex, Rect2(p - Vector2(s, s) / 2.0, Vector2(s, s)), false)
+		if layers or hide_labels:   # 环纹第 3、4 层开着：名字挪到 _label_ci，画在球框、小点上面
+			continue
 		var lay := label_layout(i)
 		var name: String = lay.text
 		var fs: int = lay.fs
@@ -458,6 +652,7 @@ func _draw() -> void:
 		var rd := XSkinArt.read_on()   # 可读性：描边加粗加深、未选中的名字提亮
 		draw_string_outline(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5 if rd else 4, Color(0, 0, 0, 0.9 if rd else 0.6))
 		draw_string(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE if on else XSkinArt.bg_text_2())
+	_draw_layers()
 
 
 ## 位置（相对环心）对得上的那一项（连线首点＝根栏）

@@ -122,6 +122,7 @@ func _run() -> void:
 	_switch_save()              # 断言 10
 	_parity_idle_entry()        # 断言 11
 	_horseman_and_hunzi()       # v0.3.1 二、三
+	_segment_root_only()        # T035：segment_target 只管主动根；非序列路不覆写 t、两路对称
 	_boss_badges_drop()         # 第 4 条那一句、v0.3.1 四、掉落接口
 	XTianqiWeakAffix.test_entries = {}
 	XTianqiWeakAffix.test_guidable = []
@@ -188,6 +189,48 @@ func _guide_cover_reflect() -> void:
 	XTianqiWeakAffix.mark_guide(lg4, e4, lg4.actors[2], "test")
 	var hit4 := _targets_hit(lg4.act(e4, _attack(e4), lg4.actors[0]))
 	_check("guide_front_slot_wins", hit4.size() == 1 and is_same(hit4[0], lg4.actors[2]), hit4.map(func(x): return x.display_name()))
+	XTianqiWeakAffix.test_guidable = []
+
+
+## T035：segment_target 只认 ROOT——根执行完的追加（FOLLOW_FULL 打满整招、走序列路）打引导者时，不再拿这一根的引导把它改回原目标
+func _segment_root_only() -> void:
+	var lg := _logic()
+	var e: XEnemy = lg.enemies[0]
+	var orig: XActor = lg.actors[0]
+	var g: XActor = lg.actors[1]
+	lg.start_turn()
+	XTianqiWeakAffix.root_begin(lg, e, {"id": 1})
+	var f := XTianqiWeakAffix._frame(lg)
+	f.guide = {"guider": g, "orig": orig, "active": true, "reverted": false}
+	g.hp = 0.0
+	g.add_state(1)  # 引导者已倒下：主动根里的下一段会回原目标
+	_check("seg_root_reverts", is_same(XTianqiWeakAffix.segment_target(lg, e, {"id": 1}, g), orig))
+	f.guide = {"guider": g, "orig": orig, "active": true, "reverted": false}
+	f.finish = []
+	XTianqiWeakAffix.set_kind(lg, XTianqiWeakAffix.FOLLOW)
+	_check("seg_follow_passthrough", is_same(XTianqiWeakAffix.segment_target(lg, e, {"id": 1}, g), g) and bool(f.guide.active) and f.finish.is_empty(), f.guide)
+	# 实跑序列路（追加的 FOLLOW_FULL 有序列就走 XActionSequence）：打的是倒下的引导者，跳过；不会回头打原目标
+	var hp0 := orig.hp
+	var logs := XActionSequence.create(lg, e, _attack(e, true, 2), [g]).run()
+	_check("seg_follow_no_reuse_guide", _targets_hit(logs).is_empty() and orig.hp == hp0 and bool(f.guide.active), _targets_hit(logs).map(func(x): return x.display_name()))
+	for k in [XTianqiWeakAffix.RECAST, XTianqiWeakAffix.COUNTER, XTianqiWeakAffix.DERIVED]:
+		XTianqiWeakAffix.push_kind(lg, k)
+		_check("seg_%s_passthrough" % k, is_same(XTianqiWeakAffix.segment_target(lg, e, {"id": 1}, g), g))
+		XTianqiWeakAffix.pop_kind(lg)
+	XTianqiWeakAffix.root_end(lg)
+	# 非序列路与序列路对称（T035：非序列路不再把 segment_target 的结果写回循环变量 t）：同一场面两路打到的人逐段一样
+	XTianqiWeakAffix.test_guidable = [1]
+	var seen := {}
+	for seq in [false, true]:
+		var lgs := _logic()
+		var es: XEnemy = lgs.enemies[0]
+		var os: XActor = lgs.actors[0]
+		var gs: XActor = lgs.actors[1]
+		gs.hp = 1.0
+		lgs.start_turn()
+		XTianqiWeakAffix.mark_guide(lgs, es, gs, "test")
+		seen[seq] = _targets_hit(lgs.act(es, _attack(es, seq, 4), os)).map(func(x): return lgs.actors.find(x))
+	_check("seg_rep_seq_symmetric", seen[false] == seen[true] and seen[false] == [1, 0, 0, 0], seen)
 	XTianqiWeakAffix.test_guidable = []
 
 
