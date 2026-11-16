@@ -102,7 +102,7 @@ static func _pos(label: String, text: String) -> String:
 
 static func _limit_line() -> String:
 	var l: Dictionary = data().get("limit", {})
-	return "每名角色：弱者最多 %d 卷，强者 %d 卷，超强者 %d 卷；满了先用「%s」封掉已有号卷" % [int(l.get(XTier.WEAK, 3)), int(l.get(XTier.STRONG, 2)), int(l.get(XTier.SUPER, 1)), forget_name()]
+	return "每名角色：弱者最多 %d 卷，强者 %d 卷，超强者 %d 卷；满了先用「%s」封掉已有号卷（不占抽奖被动上限）" % [int(l.get(XTier.WEAK, 3)), int(l.get(XTier.STRONG, 2)), int(l.get(XTier.SUPER, 1)), forget_name()]
 
 
 static func _source_line(sc: Dictionary) -> String:

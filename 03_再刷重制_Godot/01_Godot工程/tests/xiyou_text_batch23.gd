@@ -64,10 +64,17 @@ func _run() -> void:
 						pool_db.append("%s:%s.%s" % [tb, r.get("id"), k])
 	_check("pool_word_none_left_in_db_text", pool_db.is_empty(), pool_db.slice(0, 8))
 	# 四
-	_check("menu_cmd", XMenu.COMMANDS[XMenu.COMMANDS.size() - 1][0] == "回到标题", XMenu.COMMANDS[XMenu.COMMANDS.size() - 1])
+	_check("menu_cmd", XMenu.COMMANDS[XMenu.COMMANDS.size() - 1][0] == "返回标题", XMenu.COMMANDS[XMenu.COMMANDS.size() - 1])
 	_check("gold_overlap_zh", XMenu.GOLD_OVERLAP_ZH == "极多" and XMenu.GOLD_OVERLAP == "A lotta")
-	var sv := FileAccess.get_file_as_string("res://modes/xiyou/ui/save_scene.gd")
-	_check("save_confirm_text", not sv.contains("此保存文件") and sv.contains("要读取这份存档吗？"))
+	var sp := XSaveScene.new()
+	add_child(sp)
+	sp._phase = "action"
+	sp.act = 0
+	sp.mode = "load"
+	_check("save_confirm_runtime", sp.confirm_text == "" or not sp.confirm_text.contains("此保存文件"), sp.confirm_text)
+	sp._start_confirm("要读取这份存档吗？")
+	_check("save_confirm_text", sp.confirm_text == "要读取这份存档吗？" and not FileAccess.get_file_as_string("res://modes/xiyou/ui/save_scene.gd").contains("此保存文件"), sp.confirm_text)
+	sp.queue_free()
 	_check("trumpet_limit", XTianqiTrumpet._limit_line().contains("每名角色") and XTianqiTrumpet._limit_line().contains("满了先用"), XTianqiTrumpet._limit_line())
 	# 五
 	var m4: Dictionary = XDB.map(4)

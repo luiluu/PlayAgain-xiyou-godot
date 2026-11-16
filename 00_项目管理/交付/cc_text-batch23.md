@@ -104,3 +104,8 @@
 
 - 2df0033d8 T027 批 2：文风指南 #8～#18、#21～#28② 玩家可见文字（不动逻辑）
 - 批 3：见回报（`skill_rework.json` 洗稿＋专项第七节＋截图工具）
+
+## 小A 复核后的返修（第四个提交）
+
+- P2-1 存档确认句直接用新句（不再读 Plugins.json 的旧句），专项测运行时 `confirm_text`；P3-1 guide.gd 多余空格；P3-2 EV071「流萤以外的新角色」；P3-3 Skills 28/46/517「全属性伤害及治疗效果」、Armors 4574 覆盖成「爆伤和伤害 +300%」；P3-4 主菜单「返回标题」；#23 号卷限制行补「（不占抽奖被动上限）」。
+- 只跑了相关专项（save_page、text_batch23、text_fix、flow、alien_hide、guide、zhenqi、trumpet、event_compare、tianqi_skills）全过，没重跑云端整轮。

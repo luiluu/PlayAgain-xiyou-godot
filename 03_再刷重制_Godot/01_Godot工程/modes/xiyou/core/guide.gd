@@ -96,7 +96,7 @@ static func tips(s: XState, a: XActor, c: Dictionary) -> Array:
 	if c.diff.atk < 0.5 or c.diff.mat < 0.5:
 		out.append("\\C[2]难度把攻击压到 %s：学属性%%被动、吃淬元丹。" % XZhenqi.mult(maxf(c.diff.atk, c.diff.mat)))
 	if out.is_empty():
-		out.append("\\C[3]各项门槛都已越过：现在主要看伤害量（真气、装备、结算类被动）和 首领 机制。")
+		out.append("\\C[3]各项门槛都已越过：现在主要看伤害量（真气、装备、结算类被动）和首领机制。")
 	return out
 
 
@@ -130,7 +130,7 @@ static func zhenqi_rows(s: XState, a: XActor) -> Array:
 	rows.append(_line(nxt))
 	var df := XZhenqi.DAOFA.filter(func(k): return d.daofa.get(k, 0)).map(func(k): return XZhenqi.DAOFA_NAME[k])
 	rows.append(_line("道法：" + ("、".join(df) if not df.is_empty() else "未领悟") + ("　\\C[17]待选奖励 %d 项\\C[0]" % int(st.pending) if st.pending else "")))
-	rows.append(_line("来源：守层者（每层一次）、副本首领 与神兵试炼（可反复刷）、超出上限的再动（每场最多 10）。层数和难度越高越多。"))
+	rows.append(_line("来源：守层者（每层一次）、副本首领与神兵试炼（可反复刷）、超出上限的再动（每场最多 10）。层数和难度越高越多。"))
 	return rows
 
 

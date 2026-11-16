@@ -126,7 +126,7 @@ func _bases(list: Array, ids: Array) -> Array:
 
 func _menu(c: Dictionary, hide: bool) -> void:
 	var names: Array = XMenu.commands().map(func(x): return x[0])
-	var want_names: Array = c.observed.names.map(func(n): return "回到标题" if n == "游戏结束" else n)  # T027：主菜单最后一项改名
+	var want_names: Array = c.observed.names.map(func(n): return "返回标题" if n == "游戏结束" else n)  # T027：主菜单最后一项改名
 	check(str(c.id) + ".names", names == want_names, [names, want_names])
 	check(str(c.id) + ".workshop", names.has("异化工坊") == bool(c.observed.hasWorkshop) and names.has("异化工坊") != hide)
 

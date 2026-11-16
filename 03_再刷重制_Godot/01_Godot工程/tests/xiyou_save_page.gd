@@ -160,12 +160,12 @@ func _page(fx: Dictionary, s: XState) -> void:
 	check("list_ok_to_action", page._phase == "action" and page.act == 0 and page.help_text == str(fx.help.load), [page._phase, page.act, page.help_text])
 	page.ok()
 	var c: Dictionary = fx.confirm
-	check("confirm_load", page._phase == "confirm" and page.confirm_text == str(c.load) and rect_of(page.confirm_win) == nums(c.rect), [page.confirm_text, rect_of(page.confirm_win)])
+	check("confirm_load", page._phase == "confirm" and page.confirm_text == "要读取这份存档吗？" and _same_y(rect_of(page.confirm_win), nums(c.rect)), [page.confirm_text, rect_of(page.confirm_win)])
 	var confirm_canvas := RecCanvas.new()
 	confirm_canvas.size = page.confirm_win.canvas.size
 	page._paint_confirm(confirm_canvas)
-	var question: Array = confirm_canvas.log.filter(func(x): return x[0] == "text").slice(0, str(c.load).length())
-	check("confirm_question_single_line", question.size() == str(c.load).length() and question.all(func(x): return x[3] == 0.0), question)
+	var question: Array = confirm_canvas.log.filter(func(x): return x[0] == "text").slice(0, page.confirm_text.length())
+	check("confirm_question_single_line", question.size() == page.confirm_text.length() and question.all(func(x): return x[3] == 0.0), question)
 	check("confirm_masks_underlying_windows", page.confirm_back.visible and page.confirm_back.position == page.confirm_win.position and page.confirm_back.size == page.confirm_win.size)
 	confirm_canvas.free()
 	await shot("load_confirm")
@@ -176,7 +176,7 @@ func _page(fx: Dictionary, s: XState) -> void:
 	page.move(1)
 	check("delete_help", page.act == 2 and page.help_text == str(fx.help.delete))
 	page.ok()
-	check("confirm_delete", page._phase == "confirm" and page.confirm_text == str(c.delete))
+	check("confirm_delete", page._phase == "confirm" and page.confirm_text == "要删除这份存档吗？")
 	page.ok()
 	check("delete_done", not XSave.exists(1) and page._phase == "list" and page.help_text == str(fx.help.select), [XSave.exists(1), page._phase])
 	page.index = 2
@@ -198,7 +198,7 @@ func _page(fx: Dictionary, s: XState) -> void:
 	check("save_empty_direct", XSave.exists(7) and sp._phase == "list")
 	sp.ok()
 	sp.ok()
-	check("save_overwrite_confirm", sp._phase == "confirm" and sp.confirm_text == str(c.save))
+	check("save_overwrite_confirm", sp._phase == "confirm" and sp.confirm_text == "要覆盖这份存档吗？")
 	sp.queue_free()
 	await frames()
 
@@ -314,3 +314,8 @@ func _file_size_original() -> void:
 	XSaveScene.REAL_FILE_SIZE = true
 	check("file_size_real", real == "%dB" % FileAccess.get_file_as_bytes(XSave.path(XSave.SLOTS)).size(), real)  # 封存后是实际文件字节数
 	check("file_size_original_escape_count", orig == "5B", orig)
+
+
+## T027：确认句换了新字，窗口宽度随文字变，只比纵向位置与高度（x、宽不比）
+func _same_y(a, b) -> bool:
+	return is_equal_approx(float(a[1]), float(b[1])) and is_equal_approx(float(a[3]), float(b[3]))

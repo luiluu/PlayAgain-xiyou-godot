@@ -29,7 +29,7 @@ const COMMANDS := [["物品", "item", true], ["技能", "skill", true], ["装备
 	["真气", "zhenqi", true], ["整队", "formation", true], ["种族祝福", "race", true], ["宠物", "pet", true],
 	["制作", "crafting", true], ["宝珠坊", "orbs", true], ["异化工坊", "alienation", true], ["人物图鉴", "actorBook", true],
 	["怪物图鉴", "monsterBook", true], ["成就", "achievement", true], ["存档", "save", true], ["反馈", "feedback", false],
-	["设置", "options", true], ["回到标题", "gameEnd", true]]
+	["设置", "options", true], ["返回标题", "gameEnd", true]]
 const CMD_VISIBLE := 15
 ## 无队员时灰显的指令（冻结 v0.28 空队主菜单运行时：物品／技能／装备／状态／真气／整队 enabled=false，其余不变）
 const NEEDS_MEMBERS := ["item", "skill", "equip", "status", "zhenqi", "formation"]
