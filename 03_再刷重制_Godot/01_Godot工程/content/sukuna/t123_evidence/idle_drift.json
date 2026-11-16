@@ -1,0 +1,1571 @@
+{
+  "threshold_native_pixels": 1.0,
+  "note": "Coarse alpha-zone drift triage; hand bands include clothing/tails. REVIEW is not an automatic failure or permission to edit. Single-frame forms have no three-frame animation. Runtime content overrides generated files.",
+  "results": [
+    {
+      "asset": "content/gojo/Codex_Gojo_SV.png",
+      "kind": "sheet walk",
+      "frame_count": 3,
+      "cell": [
+        64,
+        64
+      ],
+      "bounds": [
+        [
+          10,
+          3,
+          49,
+          63
+        ],
+        [
+          12,
+          4,
+          49,
+          63
+        ],
+        [
+          12,
+          5,
+          50,
+          63
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            1.546,
+            1.018
+          ],
+          "bbox_edge_span": 3
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            1.456,
+            0.48
+          ],
+          "bbox_edge_span": 3
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.638,
+            0.722
+          ],
+          "bbox_edge_span": 3
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            0.727,
+            0.0
+          ],
+          "bbox_edge_span": 2
+        }
+      },
+      "warnings": [
+        "head",
+        "left_hand_band",
+        "right_hand_band",
+        "sole_contact"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "content/mira/img/sv_actors/Codex_Mira_SV_u2.png",
+      "kind": "sheet walk",
+      "frame_count": 3,
+      "cell": [
+        64,
+        64
+      ],
+      "bounds": [
+        [
+          12,
+          4,
+          54,
+          61
+        ],
+        [
+          12,
+          4,
+          54,
+          61
+        ],
+        [
+          12,
+          4,
+          52,
+          61
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            1.435,
+            0.096
+          ],
+          "bbox_edge_span": 3
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.475,
+            0.181
+          ],
+          "bbox_edge_span": 1
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            1.483,
+            0.095
+          ],
+          "bbox_edge_span": 3
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            0.0,
+            0.0
+          ],
+          "bbox_edge_span": 0
+        }
+      },
+      "warnings": [
+        "head",
+        "right_hand_band"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "content/sukuna/img/sv_actors/Codex_Sukuna_SV.png",
+      "kind": "sheet walk",
+      "frame_count": 3,
+      "cell": [
+        64,
+        64
+      ],
+      "bounds": [
+        [
+          10,
+          3,
+          49,
+          61
+        ],
+        [
+          10,
+          3,
+          49,
+          61
+        ],
+        [
+          10,
+          3,
+          49,
+          61
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            0.0,
+            0.0
+          ],
+          "bbox_edge_span": 0
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.0,
+            0.0
+          ],
+          "bbox_edge_span": 0
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.0,
+            0.0
+          ],
+          "bbox_edge_span": 0
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            0.0,
+            0.0
+          ],
+          "bbox_edge_span": 0
+        }
+      },
+      "warnings": [],
+      "status": "within_threshold"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/Codex_Jingliu_SV.png",
+      "kind": "sheet walk",
+      "frame_count": 3,
+      "cell": [
+        64,
+        64
+      ],
+      "bounds": [
+        [
+          12,
+          2,
+          55,
+          64
+        ],
+        [
+          11,
+          2,
+          54,
+          64
+        ],
+        [
+          11,
+          2,
+          54,
+          64
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            0.707,
+            0.092
+          ],
+          "bbox_edge_span": 1
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.034,
+            0.263
+          ],
+          "bbox_edge_span": 0
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.436,
+            0.064
+          ],
+          "bbox_edge_span": 1
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            2.429,
+            0.0
+          ],
+          "bbox_edge_span": 12
+        }
+      },
+      "warnings": [
+        "sole_contact"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/Codex_Liuying_SV.png",
+      "kind": "sheet walk",
+      "frame_count": 3,
+      "cell": [
+        128,
+        128
+      ],
+      "bounds": [
+        [
+          18,
+          12,
+          111,
+          128
+        ],
+        [
+          19,
+          12,
+          111,
+          128
+        ],
+        [
+          18,
+          12,
+          111,
+          128
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            0.376,
+            0.035
+          ],
+          "bbox_edge_span": 1
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.247,
+            0.028
+          ],
+          "bbox_edge_span": 0
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.229,
+            0.007
+          ],
+          "bbox_edge_span": 0
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            1.0,
+            0.0
+          ],
+          "bbox_edge_span": 1
+        }
+      },
+      "warnings": [],
+      "status": "within_threshold"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/Codex_Sam_SV.png",
+      "kind": "sheet walk",
+      "frame_count": 3,
+      "cell": [
+        64,
+        64
+      ],
+      "bounds": [
+        [
+          13,
+          2,
+          51,
+          62
+        ],
+        [
+          13,
+          2,
+          50,
+          62
+        ],
+        [
+          13,
+          2,
+          50,
+          62
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            0.229,
+            0.339
+          ],
+          "bbox_edge_span": 1
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.301,
+            0.288
+          ],
+          "bbox_edge_span": 1
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.488,
+            0.153
+          ],
+          "bbox_edge_span": 0
+        }
+      },
+      "warnings": [],
+      "status": "within_threshold"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/Codex_Toji_SV.png",
+      "kind": "sheet walk",
+      "frame_count": 3,
+      "cell": [
+        64,
+        64
+      ],
+      "bounds": [
+        [
+          9,
+          0,
+          53,
+          64
+        ],
+        [
+          9,
+          0,
+          52,
+          64
+        ],
+        [
+          8,
+          3,
+          52,
+          64
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            1.462,
+            0.076
+          ],
+          "bbox_edge_span": 2
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.704,
+            0.181
+          ],
+          "bbox_edge_span": 1
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.817,
+            0.175
+          ],
+          "bbox_edge_span": 2
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            1.5,
+            0.0
+          ],
+          "bbox_edge_span": 2
+        }
+      },
+      "warnings": [
+        "head",
+        "right_hand_band",
+        "sole_contact"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/Codex_Tusu_SV_v1.png",
+      "kind": "sheet walk",
+      "frame_count": 3,
+      "cell": [
+        64,
+        64
+      ],
+      "bounds": [
+        [
+          16,
+          17,
+          51,
+          59
+        ],
+        [
+          16,
+          17,
+          51,
+          59
+        ],
+        [
+          16,
+          17,
+          51,
+          59
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            0.386,
+            0.081
+          ],
+          "bbox_edge_span": 0
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.07,
+            0.306
+          ],
+          "bbox_edge_span": 0
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.209,
+            0.316
+          ],
+          "bbox_edge_span": 0
+        }
+      },
+      "warnings": [],
+      "status": "within_threshold"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/Codex_Xuan_SV_v1.png",
+      "kind": "sheet walk",
+      "frame_count": 3,
+      "cell": [
+        64,
+        64
+      ],
+      "bounds": [
+        [
+          17,
+          19,
+          49,
+          59
+        ],
+        [
+          17,
+          19,
+          50,
+          59
+        ],
+        [
+          17,
+          19,
+          49,
+          59
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            0.369,
+            0.064
+          ],
+          "bbox_edge_span": 1
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.325,
+            0.207
+          ],
+          "bbox_edge_span": 0
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.246,
+            0.144
+          ],
+          "bbox_edge_span": 1
+        }
+      },
+      "warnings": [],
+      "status": "within_threshold"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/Codex_Yomi_SV.png",
+      "kind": "sheet walk",
+      "frame_count": 3,
+      "cell": [
+        64,
+        64
+      ],
+      "bounds": [
+        [
+          10,
+          4,
+          64,
+          64
+        ],
+        [
+          0,
+          4,
+          63,
+          64
+        ],
+        [
+          8,
+          4,
+          64,
+          64
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            1.816,
+            0.286
+          ],
+          "bbox_edge_span": 2
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.56,
+            0.043
+          ],
+          "bbox_edge_span": 14
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.873,
+            0.138
+          ],
+          "bbox_edge_span": 1
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            1.5,
+            0.0
+          ],
+          "bbox_edge_span": 2
+        }
+      },
+      "warnings": [
+        "head",
+        "left_hand_band",
+        "sole_contact"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/Yunshang.png",
+      "kind": "sheet walk",
+      "frame_count": 3,
+      "cell": [
+        192,
+        192
+      ],
+      "bounds": [
+        [
+          43,
+          52,
+          161,
+          184
+        ],
+        [
+          43,
+          53,
+          157,
+          184
+        ],
+        [
+          43,
+          53,
+          161,
+          184
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            1.888,
+            0.684
+          ],
+          "bbox_edge_span": 3
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.428,
+            0.582
+          ],
+          "bbox_edge_span": 0
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            1.731,
+            0.063
+          ],
+          "bbox_edge_span": 4
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            14.48,
+            0.0
+          ],
+          "bbox_edge_span": 33
+        }
+      },
+      "warnings": [
+        "head",
+        "right_hand_band",
+        "sole_contact"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/sv/Codex_Garou_QCosmic",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        112,
+        112
+      ],
+      "bounds": [
+        [
+          34,
+          24,
+          80,
+          96
+        ],
+        [
+          33,
+          24,
+          81,
+          96
+        ],
+        [
+          32,
+          24,
+          80,
+          96
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            1.823,
+            0.318
+          ],
+          "bbox_edge_span": 2
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.821,
+            0.197
+          ],
+          "bbox_edge_span": 2
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.876,
+            0.125
+          ],
+          "bbox_edge_span": 2
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            1.553,
+            0.0
+          ],
+          "bbox_edge_span": 1
+        }
+      },
+      "warnings": [
+        "head",
+        "left_hand_band",
+        "right_hand_band",
+        "sole_contact"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/sv/Codex_Garou_QHuman",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        64,
+        64
+      ],
+      "bounds": [
+        [
+          12,
+          1,
+          53,
+          64
+        ],
+        [
+          13,
+          2,
+          53,
+          64
+        ],
+        [
+          12,
+          3,
+          52,
+          64
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            0.829,
+            0.879
+          ],
+          "bbox_edge_span": 2
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.51,
+            0.301
+          ],
+          "bbox_edge_span": 0
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.191,
+            0.583
+          ],
+          "bbox_edge_span": 0
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            1.0,
+            0.0
+          ],
+          "bbox_edge_span": 2
+        }
+      },
+      "warnings": [
+        "head",
+        "sole_contact"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/sv/Codex_Guyu",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        160,
+        160
+      ],
+      "bounds": [
+        [
+          36,
+          44,
+          133,
+          145
+        ],
+        [
+          48,
+          45,
+          138,
+          145
+        ],
+        [
+          51,
+          45,
+          142,
+          145
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            13.443,
+            0.825
+          ],
+          "bbox_edge_span": 14
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            6.156,
+            1.723
+          ],
+          "bbox_edge_span": 15
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            4.918,
+            0.801
+          ],
+          "bbox_edge_span": 9
+        }
+      },
+      "warnings": [
+        "head",
+        "left_hand_band",
+        "right_hand_band"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_book_v1",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        128,
+        128
+      ],
+      "bounds": [
+        [
+          12,
+          38,
+          119,
+          112
+        ],
+        [
+          11,
+          38,
+          120,
+          112
+        ],
+        [
+          12,
+          37,
+          120,
+          111
+        ]
+      ],
+      "sole_span": 1,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            2.157,
+            0.732
+          ],
+          "bbox_edge_span": 1
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.653,
+            0.333
+          ],
+          "bbox_edge_span": 1
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            1.107,
+            0.991
+          ],
+          "bbox_edge_span": 0
+        }
+      },
+      "warnings": [
+        "head",
+        "right_hand_band"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_bow_v1",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        128,
+        128
+      ],
+      "bounds": [
+        [
+          46,
+          15,
+          85,
+          119
+        ],
+        [
+          12,
+          14,
+          100,
+          117
+        ],
+        [
+          63,
+          14,
+          97,
+          120
+        ]
+      ],
+      "sole_span": 3,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            15.876,
+            3.198
+          ],
+          "bbox_edge_span": 49
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            10.79,
+            6.446
+          ],
+          "bbox_edge_span": 50
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            5.442,
+            8.812
+          ],
+          "bbox_edge_span": 17
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            10.5,
+            3.0
+          ],
+          "bbox_edge_span": 11
+        }
+      },
+      "warnings": [
+        "head",
+        "left_hand_band",
+        "right_hand_band",
+        "sole_contact",
+        "sole"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_hammer_v1",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        128,
+        128
+      ],
+      "bounds": [
+        [
+          29,
+          19,
+          100,
+          120
+        ],
+        [
+          29,
+          19,
+          100,
+          120
+        ],
+        [
+          28,
+          19,
+          99,
+          120
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            0.931,
+            0.268
+          ],
+          "bbox_edge_span": 1
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.365,
+            1.765
+          ],
+          "bbox_edge_span": 1
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.675,
+            0.35
+          ],
+          "bbox_edge_span": 1
+        }
+      },
+      "warnings": [
+        "left_hand_band"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_shield_v1",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        128,
+        128
+      ],
+      "bounds": [
+        [
+          29,
+          18,
+          97,
+          120
+        ],
+        [
+          30,
+          18,
+          98,
+          120
+        ],
+        [
+          30,
+          18,
+          98,
+          120
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            0.863,
+            0.127
+          ],
+          "bbox_edge_span": 1
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.337,
+            0.208
+          ],
+          "bbox_edge_span": 1
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.233,
+            0.117
+          ],
+          "bbox_edge_span": 1
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            1.0,
+            0.0
+          ],
+          "bbox_edge_span": 1
+        }
+      },
+      "warnings": [],
+      "status": "within_threshold"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_sword_v1",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        128,
+        128
+      ],
+      "bounds": [
+        [
+          38,
+          9,
+          85,
+          118
+        ],
+        [
+          32,
+          8,
+          79,
+          118
+        ],
+        [
+          32,
+          8,
+          79,
+          117
+        ]
+      ],
+      "sole_span": 1,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            6.28,
+            0.283
+          ],
+          "bbox_edge_span": 7
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            2.625,
+            0.47
+          ],
+          "bbox_edge_span": 6
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.867,
+            4.139
+          ],
+          "bbox_edge_span": 6
+        }
+      },
+      "warnings": [
+        "head",
+        "left_hand_band",
+        "right_hand_band"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_v1",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        128,
+        128
+      ],
+      "bounds": [
+        [
+          37,
+          39,
+          97,
+          112
+        ],
+        [
+          37,
+          39,
+          97,
+          112
+        ],
+        [
+          37,
+          39,
+          97,
+          112
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            0.737,
+            0.093
+          ],
+          "bbox_edge_span": 1
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.145,
+            0.5
+          ],
+          "bbox_edge_span": 1
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.368,
+            0.617
+          ],
+          "bbox_edge_span": 1
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            15.214,
+            0.0
+          ],
+          "bbox_edge_span": 18
+        }
+      },
+      "warnings": [
+        "sole_contact"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/sv/Codex_Xuan_v1",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        128,
+        128
+      ],
+      "bounds": [
+        [
+          39,
+          43,
+          93,
+          114
+        ],
+        [
+          39,
+          43,
+          95,
+          113
+        ],
+        [
+          40,
+          43,
+          93,
+          112
+        ]
+      ],
+      "sole_span": 2,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            0.618,
+            0.143
+          ],
+          "bbox_edge_span": 1
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.672,
+            0.126
+          ],
+          "bbox_edge_span": 1
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.322,
+            0.343
+          ],
+          "bbox_edge_span": 2
+        }
+      },
+      "warnings": [
+        "right_hand_band",
+        "sole"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "modes/xiyou/generated/img/sv_actors/sv/garou_human_v2",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        192,
+        176
+      ],
+      "bounds": [
+        [
+          37,
+          36,
+          139,
+          172
+        ],
+        [
+          51,
+          39,
+          134,
+          172
+        ],
+        [
+          35,
+          38,
+          140,
+          172
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            4.919,
+            1.05
+          ],
+          "bbox_edge_span": 9
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            4.362,
+            1.924
+          ],
+          "bbox_edge_span": 16
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            2.597,
+            0.241
+          ],
+          "bbox_edge_span": 7
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            5.1,
+            0.0
+          ],
+          "bbox_edge_span": 10
+        }
+      },
+      "warnings": [
+        "head",
+        "left_hand_band",
+        "right_hand_band",
+        "sole_contact"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "content/sukuna/img/sv_actors/sv/Codex_Sukuna_QFull",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        64,
+        64
+      ],
+      "bounds": [
+        [
+          11,
+          3,
+          48,
+          61
+        ],
+        [
+          11,
+          3,
+          49,
+          61
+        ],
+        [
+          13,
+          3,
+          50,
+          61
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            2.262,
+            0.384
+          ],
+          "bbox_edge_span": 2
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            1.696,
+            0.368
+          ],
+          "bbox_edge_span": 4
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.719,
+            0.451
+          ],
+          "bbox_edge_span": 2
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            7.167,
+            0.0
+          ],
+          "bbox_edge_span": 13
+        }
+      },
+      "warnings": [
+        "head",
+        "left_hand_band",
+        "right_hand_band",
+        "sole_contact"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "content/mira/img/sv_actors/sv/UserSV_MiraDragon",
+      "kind": "multi-frame walk (up to first3)",
+      "frame_count": 3,
+      "cell": [
+        340,
+        280
+      ],
+      "bounds": [
+        [
+          61,
+          58,
+          260,
+          217
+        ],
+        [
+          61,
+          62,
+          260,
+          217
+        ],
+        [
+          61,
+          60,
+          260,
+          217
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            2.226,
+            1.401
+          ],
+          "bbox_edge_span": 4
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.621,
+            0.512
+          ],
+          "bbox_edge_span": 0
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            1.022,
+            1.775
+          ],
+          "bbox_edge_span": 0
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            50.25,
+            0.0
+          ],
+          "bbox_edge_span": 100
+        }
+      },
+      "warnings": [
+        "head",
+        "right_hand_band",
+        "sole_contact"
+      ],
+      "status": "REVIEW"
+    },
+    {
+      "asset": "gpt/yunshang-v2:03_再刷重制_Godot/01_Godot工程/content/yunshang_v2/Yunshang_SV_sample_u1.png",
+      "kind": "sample wait (not wired)",
+      "frame_count": 3,
+      "cell": [
+        64,
+        64
+      ],
+      "bounds": [
+        [
+          10,
+          2,
+          53,
+          62
+        ],
+        [
+          10,
+          2,
+          53,
+          62
+        ],
+        [
+          9,
+          2,
+          54,
+          62
+        ]
+      ],
+      "sole_span": 0,
+      "metrics": {
+        "head": {
+          "centroid_span_xy": [
+            0.679,
+            0.113
+          ],
+          "bbox_edge_span": 1
+        },
+        "left_hand_band": {
+          "centroid_span_xy": [
+            0.41,
+            0.094
+          ],
+          "bbox_edge_span": 1
+        },
+        "right_hand_band": {
+          "centroid_span_xy": [
+            0.528,
+            0.071
+          ],
+          "bbox_edge_span": 1
+        },
+        "sole_contact": {
+          "centroid_span_xy": [
+            1.308,
+            0.0
+          ],
+          "bbox_edge_span": 1
+        }
+      },
+      "warnings": [
+        "sole_contact"
+      ],
+      "status": "REVIEW"
+    }
+  ],
+  "skipped": []
+}
