@@ -1365,6 +1365,31 @@ static func _follow_of(u: XActor, skill: Dictionary) -> Array:
 ## 追加出来的那次伤害倍率（formula 读）
 static var follow_scale := 1.0
 
+## 追加打满整招（T016，O-待定）：追加出来的技能照正常行动走行动序列（yepSeq）或重复次数，打满全部段数（天罡五雷五段、凌空三式每个敌人三段、
+## 霸者连环斩随机三段）；表里追加招的系数都是按「每段」填的。false 回到只 apply 一次（每个目标一段，只打出三分之一到五分之一）
+static var FOLLOW_FULL := true
+
+
+## 放一次追加（或 then 接的招）：画面一条 action，再按 FOLLOW_FULL 打满或只打一段
+static func _cast(logic, u, cast: Dictionary, targets: Array) -> Array:
+	var logs := [{"type": "action", "user": u, "skill": cast, "views": logic.views()}]
+	if not FOLLOW_FULL:
+		for t in targets:
+			logs.append_array(logic.mark_views([logic.apply(u, cast, t)]))  # 打完当场取画面快照（评审 v0.1 第 8 条）
+		return logs
+	if XActionSequence.has_sequence(cast):
+		logs.append_array(XActionSequence.create(logic, u, cast, targets).run())  # 同 XBattleLogic.execute 的序列路：段数在序列里
+		return logs
+	for t in targets:
+		for i in range(maxi(1, int(cast.get("repeats", 1)))):
+			if not t.is_alive() or not u.is_alive():
+				break
+			logs.append_array(logic.mark_views([logic.apply(u, cast, t)]))
+	for t in targets:
+		t.param_refresh()
+		logic.stale_refreshed(t)
+	return logs
+
 
 static func end_action(logic, u, skill) -> Array:
 	var logs := []
@@ -1413,14 +1438,14 @@ static func end_action(logic, u, skill) -> Array:
 			targets = logic.alive(logic.enemies)
 		8:
 			targets = logic.alive(logic.actors)
+	if FOLLOW_FULL and int(cast.get("scope", 1)) in [3, 4, 5, 6]:
+		targets = logic.targets_for(u, cast, alive[0] if not alive.is_empty() else null)  # 随机几段（霸者连环斩、一石三鸟）照正常行动随机挑敌人
 	if targets.is_empty():
 		return logs
 	st.used[u] = int(logic.turn)
 	st.depth = int(st.depth) + 1
 	follow_scale = float(hit[2])
-	for t in targets:
-		logs.append({"type": "action", "user": u, "skill": cast, "views": logic.views()})
-		logs.append_array(logic.mark_views([logic.apply(u, cast, t)]))  # 打完当场取画面快照（评审 v0.1 第 8 条）
+	logs.append_array(_cast(logic, u, cast, targets))
 	follow_scale = 1.0
 	# 追加之后再接一招（then：{cast, rate, need_skill}，比如兽魂之力后心无旁羁的苍龙之力）
 	var then: Dictionary = hit[3] if hit[3] is Dictionary else {}
@@ -1431,8 +1456,7 @@ static func end_action(logic, u, skill) -> Array:
 		var nxt := XDB.rec("Skills", int(then.get("cast", 0)))
 		var left: Array = logic.alive(logic.enemies) if on_kill else targets.filter(func(t): return t.is_alive())
 		if not nxt.is_empty() and not left.is_empty() and logic._float("tianqi_skill_follow") < float(then.get("rate", 0.0)):
-			logs.append({"type": "action", "user": u, "skill": nxt, "views": logic.views()})
-			logs.append_array(logic.mark_views([logic.apply(u, nxt, left[0])]))
+			logs.append_array(_cast(logic, u, nxt, [left[0]]))
 	st.depth = int(st.depth) - 1
 	return logs
 
