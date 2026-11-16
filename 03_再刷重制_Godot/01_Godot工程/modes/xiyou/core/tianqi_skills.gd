@@ -36,7 +36,10 @@ static var _recs: Dictionary = {}  # int 技能号 → 改写后的记录（按�
 static var _state_recs: Dictionary = {}
 static var _tier: Dictionary = {}  # int 角色号 → 名单档位（含「不开放」）
 static var _gear: Dictionary = {}  # "armor:底号"／"weapon:底号" → 专属装备改写规格
-static var _gear_cache: Dictionary = {}  # 同上键 → [原备注, 原特性数组, 新备注, 新 meta, 新特性]
+static var _gear_cache: Dictionary = {}
+static var _counter_ids: Array = []  # 技能行带 counter／counter_next／guard 的技能号（data() 读表时列出）
+static var _counter_next_ids: Array = []
+static var _guard_ids: Array = []  # 同上键 → [原备注, 原特性数组, 新备注, 新 meta, 新特性]
 
 
 ## 读表失败过（发行包排除了 tianqi_data/，见 07_开发环境/发行内容审计.py）：记下来不再重读、不再报错。
@@ -66,6 +69,17 @@ static func data() -> Dictionary:
 		for k in _data.get("states", {}):
 			if str(k).is_valid_int():
 				_states[int(k)] = _data.states[k]
+		_counter_ids = []
+		_counter_next_ids = []
+		_guard_ids = []
+		for id in _skills:
+			if _skills[id] is Dictionary:
+				if _skills[id].has("counter"):
+					_counter_ids.append(id)
+				if _skills[id].has("counter_next"):
+					_counter_next_ids.append(id)
+				if _skills[id].has("guard"):
+					_guard_ids.append(id)
 		_gear = {}
 		for k in _data.get("gear", {}):
 			if str(k).contains(":"):
@@ -140,6 +154,8 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 	var r: Dictionary = base.duplicate(true)
 	var note := str(r.get("note", ""))
 	note = _note_edit(note, sp)
+	if GUARD:
+		note = _note_edit(note, {"note_remove": sp.get("guard_note_remove", [])})
 	if sp.has("tp"):
 		r.tpCost = int(sp.tp)
 	if sp.has("tp_gain"):
@@ -561,6 +577,8 @@ static func formula(a, b, item: Dictionary) -> float:
 			hi = maxf(hi, float(a.param(STATS.find(str(k)))))
 		base += hi
 	var v := base * float(d.get("coef", 0.0)) * level_scale(a) * follow_scale
+	if NATIVE_COUNTER and a is XActor and a.has_meta("xtq_cnext_on") and follow_scale == 1.0:
+		v *= float(a.get_meta("xtq_cnext_on"))  # 牛马之魂：反击后下一招（不含追加、反击本身）
 	for c in d.get("conds", []):
 		v *= _cond(c, a, b)
 	if a is XActor:
@@ -814,6 +832,13 @@ static func _fstore(logic) -> Dictionary:
 static func begin_action(logic, u, skill) -> void:
 	if not (logic.has_meta("xtqs") and int(_fstore(logic).depth) > 0):
 		_act_skill = int(skill.get("id", 0)) if u is XActor and skill is Dictionary else 0
+		if cards_on() and logic is Object:
+			var gs := _fstore(logic)
+			gs.seq = int(gs.get("seq", 0)) + 1  # 第几次行动（反击「同一次敌人行动最多反一次」认这个）
+			gs.guard_hit = []  # 这次行动有效命中过的我方（护短）
+			if u is XActor and u.has_meta("xtq_cnext"):
+				u.set_meta("xtq_cnext_on", float(u.get_meta("xtq_cnext")))  # 牛马之魂：反击后的下一招
+				u.remove_meta("xtq_cnext")
 	if not cards_on() or not (u is XActor) or not (skill is Dictionary):
 		return
 	var st := _fstore(logic)
@@ -830,6 +855,12 @@ static func after_apply(logic, u, skill, t, r := {}) -> void:
 	_reflect(u, t, r)
 	if t == null or not logic.has_meta("xtqs"):
 		return
+	if GUARD and t is XActor and not (u is XActor) and float(r.get("hp", 0.0)) > 0.0 and not bool(r.get("missed", false)) and not bool(r.get("evaded", false)) \
+			and int(_fstore(logic).depth) == 0 and not bool(r.get("counter", false)):
+		var gh: Array = _fstore(logic).get("guard_hit", [])
+		if not gh.has(t):
+			gh.append(t)
+		_fstore(logic).guard_hit = gh
 	var f: Dictionary = _fstore(logic).act
 	if not f.is_empty() and is_same(f.u, u) and not f.targets.has(t):
 		f.targets.append(t)
@@ -1395,6 +1426,10 @@ static func end_action(logic, u, skill) -> Array:
 	var logs := []
 	if not logic.has_meta("xtqs"):
 		return logs
+	if u is XActor and u.has_meta("xtq_cnext_on") and int(_fstore(logic).depth) == 0:
+		u.remove_meta("xtq_cnext_on")
+		u.set_meta("xtq_cnext_turn", int(logic.turn))
+	logs.append_array(_guard(logic, u))
 	var st := _fstore(logic)
 	var f: Dictionary = st.act
 	st.act = {}
@@ -1460,6 +1495,104 @@ static func end_action(logic, u, skill) -> Array:
 	st.depth = int(st.depth) - 1
 	return logs
 
+
+
+# ---- 原生反击（T016 欠账 2：布兰德瓦登）----
+## 技能行 counter {cast 反击招, scale 伤害倍率}：学了这招的角色被物理攻击、照原生反击率（cnt）掷中时，这一段先正常挨打、再用 cast 反击出手者
+## （不吞掉这一下；招照正常结算，凌空斩回 10 TP 照给）；同一次敌人行动最多反一次（多段攻击判中一次就停，没中的段接着判；COUNTER_ONCE，项目经理cc 定）。
+## 技能行 counter_next 倍率：反击后自己下一次行动的伤害 ×倍率（牛马之魂 1.2，用掉就清、不叠加、每回合最多 1 次）。
+## 开关 NATIVE_COUNTER（O-待定）：false 回到原版（反击代替挨打、全伤普攻）
+static var NATIVE_COUNTER := true
+static var COUNTER_ONCE := true
+
+
+## 这名角色的重构反击规格（没有＝null，走原版反击）
+static func counter_rule(t):
+	if not NATIVE_COUNTER or not (t is XActor) or not cards_on():
+		return null
+	data()
+	for id in _counter_ids:
+		if owns(t, id):
+			return spec(id).counter
+	return null
+
+
+static func invoke_counter(logic, u, skill: Dictionary, t, cnt: float) -> Array:
+	var st := _fstore(logic)
+	var once: Dictionary = st.get("countered", {})
+	if COUNTER_ONCE and once.get(t, -1) == int(st.get("seq", 0)):
+		return logic._invoke_normal(u, skill, t)  # 这次行动已经反过：不再判
+	if logic._float("counter") >= cnt:
+		return logic._invoke_normal(u, skill, t)
+	var rule: Dictionary = counter_rule(t)
+	var hit: Array = logic._invoke_normal(u, skill, t)
+	if is_same(logic._last_receiver, t) and t.is_alive() and logic.can_move(t) and u.is_alive():
+		var cast := XDB.rec("Skills", int(rule.get("cast", 0)))
+		var c: Array = logic._counter_attack(u, t, cast, float(rule.get("scale", 1.0)))
+		c[0].after_hit = true  # 画面：同一次 invokeAction（同敌人挨打后反击）
+		hit.append_array(c)
+		once[t] = int(st.get("seq", 0))
+		st.countered = once
+		_arm_next(logic, t)
+	return hit
+
+
+static func _arm_next(logic, t: XActor) -> void:
+	for id in _counter_next_ids:
+		if owns(t, id) and int(t.get_meta("xtq_cnext_turn", -1)) != int(logic.turn):
+			t.set_meta("xtq_cnext", float(spec(id).counter_next))
+			return
+
+
+# ---- 护短（T016 欠账 3：张三丰）----
+## 技能行 guard {cast, rate, scale, per_turn}：学了这招的角色，敌人一次行动全部结算完、这次行动有效命中过（扣了血）他以外的队友时，
+## 掷一次 rate，中了对出手的敌人放 cast（伤害 × scale，打满段数；不触发太极再释放：去掉效果 44），每回合最多 per_turn 次；
+## 他活着、能行动、出手的敌人活着才掷，不满足不扣次数。技能行 guard_note_remove：重构护短开着时从这些技能备注里去掉的标签
+## （5859／5861 开局给全队挂 2007 太极反击，原版护短走它预约公共事件 1605）。开关 GUARD（O-待定）：false 回到原版护短
+static var GUARD := true
+
+
+static func _guard(logic, u) -> Array:
+	var logs := []
+	if not GUARD or u is XActor or u == null or not cards_on():
+		return logs
+	var st := _fstore(logic)
+	if int(st.depth) > 0:
+		return logs
+	var hit: Array = st.get("guard_hit", [])
+	st.guard_hit = []
+	if hit.is_empty() or not u.is_alive():
+		return logs
+	for z in logic.actors:
+		var g := {}
+		for id in _guard_ids:
+			if owns(z, id):
+				g = spec(id).guard
+				break
+		if g.is_empty() or not z.is_alive() or not logic.can_move(z) or not u.is_alive():
+			continue
+		if not hit.any(func(x): return not is_same(x, z)):
+			continue
+		var used: Dictionary = st.get("guard_used", {})
+		var key := "%d:%d" % [z.get_instance_id(), int(logic.turn)]
+		if int(used.get(key, 0)) >= int(g.get("per_turn", 2)):
+			continue
+		if logic._float("tianqi_skill_guard") >= float(g.get("rate", 0.0)):
+			continue
+		used[key] = int(used.get(key, 0)) + 1
+		st.guard_used = used
+		var cast: Dictionary = XDB.rec("Skills", int(g.cast)).duplicate(true)
+		cast.effects = (cast.get("effects", []) as Array).filter(func(e): return int(e.get("code", 0)) != 44)
+		st.depth = int(st.depth) + 1
+		var prev := follow_scale
+		follow_scale = float(g.get("scale", 1.0))
+		var part := _cast(logic, z, cast, [u])
+		follow_scale = prev
+		st.depth = int(st.depth) - 1
+		if not part.is_empty():
+			part[0].guard = true
+		logs.append_array(part)
+	return logs
 
 
 # ---- 变招（替换这次放的技能：克比六式这类按几率换招；原版的 ChangeTo 在表里删掉时用）----
