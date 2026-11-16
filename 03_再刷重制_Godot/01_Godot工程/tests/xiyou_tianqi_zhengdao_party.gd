@@ -1,5 +1,5 @@
 extends Node
-## 全弱者证道编队规则（D57／D76／D77，XTianqi.HELPER_RULES，O-待定）：
+## 全弱者证道编队规则（D57／D76／D77，XTianqi.HELPER_RULES，O-513）：
 ## 一、数值表：超强者上场上限 0／0／1／2／2，只有证道 helper_super。
 ## 二、整队页 can_deploy：各难度上场上限、助力位只有证道能放超强者、整栏模拟（非超强者挪进助力位把超强者顶上场的漏洞）、slot<0。
 ## 三、翻页键两格对调 can_swap_slots。

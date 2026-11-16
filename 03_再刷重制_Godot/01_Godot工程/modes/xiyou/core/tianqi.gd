@@ -58,7 +58,7 @@ static var SWAP_IN_BATTLE := true
 ## 开关（O-281，审查 78 P3-1）：true＝换上来的助力位补开战初始化（初始 TP、预热、开战状态标签、种族本场数据）；
 ## false＝照第二批，换上来什么都不补
 static var SWAP_INIT := true
-## 开关（O-待定，全弱者证道 D57／D76／D77）：true＝助力位只有数值表 roster.helper_super 为真的难度（证道）能放超强者；
+## 开关（O-513，全弱者证道 D57／D76／D77）：true＝助力位只有数值表 roster.helper_super 为真的难度（证道）能放超强者；
 ## 整队页放人和两格互换、读档／进图清理（enforce_party）、随机阵容、战斗中换人都按「上场前 4 格超强者 ≤ super_cap、
 ## 助力位是超强者时本档要 helper_super」整栏校验；证道随机阵容最多 super_cap＋1 个超强者（多的那个在第 5 位）；
 ## 证道旧档上场多出的超强者先挪进助力位。false＝照旧：助力位任何难度都能放超强者，整队页只查被放进去的那个人，
