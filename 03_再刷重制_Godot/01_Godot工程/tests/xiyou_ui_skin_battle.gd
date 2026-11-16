@@ -60,6 +60,16 @@ func _shot(name: String) -> void:
 	_check("screenshot_" + name + suffix, get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + suffix + ".png")) == OK)
 
 
+func _key(code: Key) -> void:
+	for down in [true, false]:
+		var e := InputEventKey.new()
+		e.keycode = code
+		e.physical_keycode = code
+		e.pressed = down
+		get_viewport().push_input(e)
+		await _frames(2)
+
+
 func _press(action: String) -> void:
 	for down in [true, false]:
 		var e := InputEventAction.new()
@@ -161,7 +171,7 @@ func _ring(b: XBattleScene, a: XActor) -> void:
 		return
 	var ring: XSkinBattleRing = r
 	_check("ring_entries", ring.entries.map(func(e): return e.text) == ["攻击", "战技", "魔法", "防御", "物品", "逃跑"], ring.entries.map(func(e): return e.text))
-	_check("ring_title", ring.title == a.display_name() + "的回合", ring.title)
+	_check("ring_title", ring.title == a.display_name() + "的行动", ring.title)   # T096：同样稿
 	var feet: Vector2 = b._origin + b.sprites[a].position
 	# 环心＝脚底＋OFFSET，整环夹在画面里（战斗站位两排错开／菱形时下排角色站得低，环会被往上夹，party-formation 合并后）
 	var want: Vector2 = b.sprites[a].position + XSkinBattleRing.OFFSET - ring.center
@@ -219,7 +229,17 @@ func _skill_list(b: XBattleScene, a: XActor, cold: Dictionary) -> void:
 		_check("list_foot_target_left", lw.foot_text() == want, [lw.foot_text(), want])
 		await _frames(2)
 		var hc: XHelpCard = b.help_card
-		_check("list_help_card_left", hc != null and hc.visible and hc.position.x + hc.size.x <= lw.position.x + 1.0, null if hc == null else [hc.position, hc.size, lw.position])
+		# T096：旧说明卡默认收起（一句话说明进说明栏），按 Y 展开、再按收起
+		_check("list_desc_line", lw.desc_line() == XSkinBattle.desc_text(cold) and lw.desc_line() != "", lw.desc_line())
+		_check("list_help_card_collapsed", hc == null or not hc.visible)
+		await _key(KEY_Y)
+		await _frames(2)
+		hc = b.help_card
+		_check("list_help_card_left", XSkinBattle.help_open and hc != null and hc.visible and hc.position.x + hc.size.x <= lw.position.x + 1.0, null if hc == null else [hc.position, hc.size, lw.position])
+		await _shot("battle_t096_help_open")
+		await _key(KEY_Y)
+		await _frames(2)
+		_check("list_help_card_closed_again", not XSkinBattle.help_open and not b.help_card.visible)
 		_check("list_row_rect", lw.row_rect() == Rect2(lw.position + lw.row_local(i).position, lw.row_local(i).size))
 		_check("list_select_bar_on_row", lw.bar.visible and lw.bar.target == lw.row_local(i), [lw.bar.target, lw.row_local(i)])
 	await _shot("battle_2a_skill_list")

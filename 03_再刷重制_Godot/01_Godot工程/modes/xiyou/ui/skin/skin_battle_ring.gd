@@ -6,9 +6,13 @@ extends XBattleList
 ## 左半边等分、半径加大到球不相叠。环心＝角色脚底往上 32（样稿 819,494 对脚底 526）＋ OFFSET，整环收在画面里。
 ## 两排站位（Kyo 问过「指令窗要不要挪」，还没定）：位置参数都是 static var，定了只改这几个数。
 
-## 环半径（样稿 124；6 项时为了球不相叠实际是 139）、球半径（样稿 82 直径）
-static var RADIUS := 124.0
-static var ORB_R := 41.0
+## 环半径、球半径。T096（Kyo 11-16「栏位圈太大，缩小，只有选到的稍微放大 20%」）：球直径 82→64、选中 1.2 倍；
+## 半径按「选中的球放大后也不碰邻球」算（6 项实际约 120）。旧值（样稿 124／82 直径／选中 1.08）在 SMALL_ORBS＝false 时用（可回退）。
+static var SMALL_ORBS := true
+static var RADIUS := 116.0
+static var ORB_R := 32.0
+const OLD_RADIUS := 124.0
+const OLD_ORB_R := 41.0
 ## 项多时半径最多加到这么大，再多就把球缩小（最小 28）
 static var MAX_RADIUS := 230.0
 ## 第 1 项的角度（度，0＝右、90＝下）、相邻两项的角度差（往小走＝逆时针＝画面上往下）
@@ -28,9 +32,29 @@ var center := Vector2.ZERO       # 本节点里的环心
 var _angles: Array = []
 var _spin := 0.0
 var _drawn_active := true
-## T024 选中放大：选中的球原本直接 ×1.08，现在 0.12 秒过渡到 1.08（相邻 36° 的球在 1.15 时会相叠 2px，所以留 1.08）
-const SEL_PEAK := 1.08
+## T024 选中放大：0.12 秒过渡到 SEL_PEAK（T096 起 1.2；旧 1.08）
+const SEL_PEAK := 1.2
+const OLD_SEL_PEAK := 1.08
 var sel_scale: XSkinSelScale
+## T096 动效：铺开计时（秒，≥ intro_total() 算铺完）、失活淡出（0～1）、新选中那颗的白圈闪（秒）
+var intro_elapsed := 999.0
+var vis := 1.0
+var _flash_i := -1
+var _flash_t := 999.0
+var _last_index := -1
+const FLASH_TIME := 0.25
+
+
+static func base_radius() -> float:
+	return RADIUS if SMALL_ORBS else OLD_RADIUS
+
+
+static func base_orb_r() -> float:
+	return ORB_R if SMALL_ORBS else OLD_ORB_R
+
+
+static func peak() -> float:
+	return SEL_PEAK if SMALL_ORBS else OLD_SEL_PEAK
 
 
 static func create_ring(parent: Control, list: Array, actor_name := "") -> XSkinBattleRing:
@@ -39,12 +63,15 @@ static func create_ring(parent: Control, list: Array, actor_name := "") -> XSkin
 	w.align = "center"
 	w.rows = maxi(list.size(), 1)
 	w.padding = 0.0
-	w.title = ("%s的回合" % actor_name) if actor_name != "" else ""
+	w.title = ("%s的行动" % actor_name) if actor_name != "" else ""   # T096：同样稿「美娜的行动」；「某某的回合」留给换人提示
 	w.canvas.visible = false
 	w._layout_ring()
-	w.sel_scale = XSkinSelScale.attach(w, SEL_PEAK)
+	w.sel_scale = XSkinSelScale.attach(w, peak())
+	if XSkinBattleMotion.on():
+		w.intro_elapsed = 0.0
 	parent.add_child(w)
 	w.select(0)
+	w._last_index = w.index
 	return w
 
 
@@ -56,8 +83,10 @@ func _layout_ring() -> void:
 		step = MAX_SPAN_DEG / float(n - 1)
 	# 球不相叠：相邻两球心距 ≥ 2·球半径＋4；半径到 MAX_RADIUS 还不够就缩球
 	var half := sin(deg_to_rad(step) / 2.0)
-	radius = clampf((ORB_R + 2.0) / half, RADIUS, maxf(RADIUS, MAX_RADIUS))
-	orb_r = minf(ORB_R, radius * half - 2.0)
+	# 相邻两颗：一颗放大到 peak、一颗原大，也留 4 的缝（T096；旧算法只按原大留缝）
+	var grow := (1.0 + peak()) / 2.0 if SMALL_ORBS else 1.0
+	radius = clampf((base_orb_r() * grow + 2.0) / half, base_radius(), maxf(base_radius(), MAX_RADIUS))
+	orb_r = minf(base_orb_r(), (radius * half - 2.0) / grow)
 	_angles = []
 	for i in n:
 		_angles.append(START_DEG - i * step)
@@ -143,12 +172,42 @@ func _process(delta: float) -> void:
 	if XUiSkin.breathing() and active:
 		_spin += delta
 		queue_redraw()
+	# T096：铺开、失活淡出／回来淡入、新选中白圈闪
+	var moving := XSkinBattleMotion.on()
+	if intro_elapsed < intro_total():
+		intro_elapsed = intro_elapsed + delta if moving else 999.0
+		queue_redraw()
+	var want := 1.0 if active else 0.0
+	if vis != want:
+		vis = move_toward(vis, want, delta / XSkinBattleMotion.RING_FADE) if moving else want
+		queue_redraw()
+	if index != _last_index:
+		_last_index = index
+		if moving and active and index >= 0:
+			_flash_i = index
+			_flash_t = 0.0
+	if _flash_t < FLASH_TIME:
+		_flash_t += delta
+		queue_redraw()
+
+
+## 铺开总时长：最后一颗也长完
+func intro_total() -> float:
+	return XSkinBattleMotion.RING_ORB_IN + XSkinBattleMotion.RING_STAGGER * maxf(entries.size() - 1, 0)
+
+
+## 第 i 颗的铺开进度 0～1
+func intro_of(i: int) -> float:
+	if intro_elapsed >= intro_total():
+		return 1.0
+	return clampf((intro_elapsed - XSkinBattleMotion.RING_STAGGER * i) / XSkinBattleMotion.RING_ORB_IN, 0.0, 1.0)
 
 
 ## 失活（开着技能／物品列表、选目标、看怪物信息）时整环不画（样稿：列表出来环就收起；选目标时 XBattleScene 另把它淡出）
 func _draw() -> void:
 	_drawn_active = active
-	if not active:
+	self_modulate.a = vis   # T096：失活时淡出（动效关时 vis 当场归 0，同原来直接不画）
+	if vis <= 0.0:
 		return
 	var line := XUiSkin.LINE
 	# 外圈虚线（14 秒一圈）
@@ -168,10 +227,13 @@ func _draw() -> void:
 		if top == INF:
 			top = center.y - radius
 		var pos := Vector2(center.x - tw / 2.0, top - 10.0)
-		if XSkin4A.text_on():  # 新界面 4A（A5）：回合提示垫深色胶囊底
+		var ta := XSkinTurnCue.title_alpha() if XSkinBattleMotion.on() else 1.0   # T096：换人提示胶囊淡掉后再出来
+		if ta < 1.0:
+			queue_redraw()
+		if XSkin4A.text_on() and ta >= 1.0:  # 新界面 4A（A5）：回合提示垫深色胶囊底
 			XSkin4A.draw_text_backing(self, pos.x, pos.y, tw, fs)
-		draw_string_outline(title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.7))
-		draw_string(title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD)
+		draw_string_outline(title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.7 * ta))
+		draw_string(title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(XUiSkin.GOLD, ta))
 	# 球
 	if sel_scale != null:
 		sel_scale.sel(index)
@@ -185,8 +247,11 @@ func _draw_orb(i: int, font: Font) -> void:
 	var sel := i == index
 	var en := bool(e.get("enabled", true))
 	var p := orb_pos(i)
-	var r := orb_r * orb_scale(i)
-	var alpha := 1.0 if en else 0.5
+	var t := intro_of(i)
+	var r := orb_r * orb_scale(i) * lerpf(0.6, 1.0, XSkinBattleMotion.ease_out_back(t))   # T096 铺开：0.6→1、错开 0.03 秒
+	if t <= 0.0:
+		return
+	var alpha := (1.0 if en else 0.5) * minf(1.0, t * 1.6)
 	if sel:
 		var g := XUiSkin.glow_texture()
 		draw_texture_rect(g, Rect2(p - Vector2(r + 18, r + 18), Vector2(r + 18, r + 18) * 2), false,
@@ -196,6 +261,9 @@ func _draw_orb(i: int, font: Font) -> void:
 	draw_circle(p + Vector2(-r * 0.15, -r * 0.2), r * 0.72, Color(XUiSkin.ORB_HI, 0.85 * alpha))
 	if sel:
 		draw_circle(p, r, XUiSkin.SEL_LINE, false, 2.5, true)
+		if i == _flash_i and _flash_t < FLASH_TIME:   # T096：新选中闪一圈白（样稿 bo1），0.25 秒散开淡掉
+			var f := _flash_t / FLASH_TIME
+			draw_circle(p, r + 2.0 + 6.0 * f, Color(1, 1, 1, 0.9 * (1.0 - f)), false, 3.0 * (1.0 - f) + 0.5, true)
 	else:
 		draw_circle(p, r, Color(XUiSkin.LINE, 0.6 * alpha), false, 1.5, true)
 	var text := str(e.get("text", ""))
@@ -207,7 +275,7 @@ func _draw_orb(i: int, font: Font) -> void:
 ## 第 i 个球现在的倍数（选中放大关掉时照旧直接 ×1.08）
 func orb_scale(i: int) -> float:
 	if sel_scale == null or not XSkinSelScale.ENABLED:
-		return SEL_PEAK if i == index else 1.0
+		return peak() if i == index else 1.0
 	sel_scale.sel(index)
 	return sel_scale.k(i)
 
@@ -216,11 +284,12 @@ func orb_scale(i: int) -> float:
 func _orb_text(font: Font, text: String, p: Vector2, r: float, color: Color) -> void:
 	var max_w := r * 1.7
 	var lines := [text]
-	var fs := orb_font_size(text, max_w)
-	if fs < 17 and text.length() >= 4:
+	var start := clampi(roundi(r * 0.56), XUiSkin.FS_MIN, 23)   # T096：字跟球一起缩放（41→23 号、32→18 号、选中 1.2 倍→21 号）
+	var fs := orb_font_size(text, max_w, start)
+	if fs < mini(17, start) and text.length() >= 4:
 		var half := ceili(text.length() / 2.0)
 		lines = [text.substr(0, half), text.substr(half)]
-		fs = mini(orb_font_size(lines[0], max_w), orb_font_size(lines[1], max_w))
+		fs = mini(orb_font_size(lines[0], max_w, start), orb_font_size(lines[1], max_w, start))
 	var lh := fs * 1.1
 	var y0 := p.y - lh * lines.size() / 2.0 + fs * 0.86
 	for k in lines.size():
@@ -230,9 +299,9 @@ func _orb_text(font: Font, text: String, p: Vector2, r: float, color: Color) -> 
 		draw_string(font, pos, lines[k], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
 
 
-func orb_font_size(text: String, max_w: float) -> int:
+func orb_font_size(text: String, max_w: float, start := 23) -> int:
 	var font := XUiSkin.font("title")
-	var fs := 23
+	var fs := start
 	while fs > XUiSkin.FS_MIN and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > max_w:
 		fs -= 1
 	return fs

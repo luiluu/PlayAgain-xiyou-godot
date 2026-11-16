@@ -68,7 +68,32 @@ static func decorate(logic: XBattleLogic, a: XActor, e: Dictionary, row: Diction
 	r.skin_costs = skin_costs(logic, a, e, row, items)
 	r.target = target_text(a, e)
 	r.left = left_text(logic, a, e, items)
+	r.desc = desc_text(e)
 	return r
+
+
+## 说明栏第一行：技能／物品说明的第一句（T096，同样稿「凝聚圣光之力打击敌人。」；去掉 MV 转义码，只取第一行）
+static func desc_text(e: Dictionary) -> String:
+	var lines := Array(XMVText.plain(str(e.get("description", ""))).split("\n", false)).map(func(x): return str(x).strip_edges()).filter(func(x): return x != "")
+	if lines.is_empty():
+		return ""
+	# 技能说明第一行多是分类小标签（「特技」「被动」「战技」「本命·增强·…」，短）：有第二行就取第二行
+	if lines.size() > 1 and str(lines[0]).length() <= 10:
+		return str(lines[1])
+	return str(lines[0])
+
+
+## ---- T096：旧说明卡收起 ----
+## 新界面开着时，战技／物品列表旁的旧说明卡（XHelpCard：品质、伤害公式、武器限制……）默认收起，一句话说明进列表底部说明栏；
+## 按「详情」（键盘 Y、手柄 Y、点列表标题旁的「详情」）展开／再收起，本场战斗内记住。
+## HELP_COLLAPSE＝false：照旧一直显示旧说明卡（可回退）。
+static var HELP_COLLAPSE := true
+static var help_open := false
+
+
+## XBattleScene._help 问：这次要不要显示旧说明卡
+static func help_card_shown() -> bool:
+	return not (on() and HELP_COLLAPSE) or help_open
 
 
 ## 不能用的原因（只在用不了时调）：照 XBattleLogic.can_use 的先后，认得出的写具体原因，其余写「现在不能用」
@@ -258,3 +283,20 @@ static func style_toggles(side: Control, buttons: Array, origin: Vector2) -> voi
 		btn.add_theme_stylebox_override("pressed", XUiSkin.select_style_for(XUiSkin.SelState.PRESSED if XUiSkin.SELECT_V2 else XUiSkin.SelState.FOCUS))
 		for k in ["font_color", "font_hover_color", "font_pressed_color"]:
 			btn.add_theme_color_override(k, XUiSkin.TEXT)
+
+
+## ---- T096：换人回合提示 ----
+## 轮到我方某人输入指令时：旧金圈从他身上扩开两道、头上弹出「某某 的回合」胶囊（样稿 .horn、.tname），约 0.8 秒后淡掉，
+## 交给指令环上方的「某某的行动」。动效关、皮肤关时什么也不做。
+static func turn_cue(scene: XBattleScene, a: XActor) -> void:
+	if not XSkinBattleMotion.on() or a == null:
+		return
+	var s: XBattlerSprite = scene.sprites.get(a)
+	if s == null:
+		return
+	var cue := XSkinTurnCue.new()
+	cue.who = str(a.display_name())
+	cue.feet = scene._origin + s.position
+	cue.body_h = s.height()
+	scene.ui.add_child(cue)
+	scene.ui.move_child(cue, -1)

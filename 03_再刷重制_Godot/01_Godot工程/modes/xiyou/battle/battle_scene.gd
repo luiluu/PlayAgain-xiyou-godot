@@ -755,7 +755,7 @@ func _help(entry = null) -> void:
 		# 原版说明卡是场景直属精灵，在窗口层（含 OTB 行动顺序条，z 8）之上
 		help_card.z_index = 10
 		ui.add_child(help_card)
-	if not (entry is Dictionary) or list_win == null or not is_instance_valid(list_win) or list_win.index < 0:
+	if not (entry is Dictionary) or list_win == null or not is_instance_valid(list_win) or list_win.index < 0 or not XSkinBattle.help_card_shown():  # T096：新界面默认收起，「详情」展开
 		help_card.visible = false
 		return
 	XHelpCard.scene_actor = _active  # 黑闪说明卡读 scene._skillWindow._actor
@@ -1171,6 +1171,7 @@ func _command(u: XBattler):
 	if not (u is XActor) or logic.auto or not logic.can_move(u) or XConfusion.confused(u):  # 混乱类状态：canInput 假，没有指令窗，直接普通攻击（自动战斗在上面先走）
 		return logic.decide(u)
 	_set_active(u)
+	XSkinBattle.turn_cue(self, u)  # T096：新界面换人提示（旧金圈＋「某某 的回合」），只是画面
 	while true:
 		inputting = true
 		var r = await _command_for(u)
@@ -1254,7 +1255,7 @@ func _open_status(a: XActor) -> void:
 func _close_windows() -> void:
 	for w in [cmd_win, list_win, mimic_win, yun_win, transfer_win]:
 		if w and is_instance_valid(w):
-			w.queue_free()
+			XSkinBattleMotion.dismiss(w)  # T096：新界面的环／列表淡出后再释放；其余同 queue_free
 	cmd_win = null
 	list_win = null
 	mimic_win = null
@@ -1698,7 +1699,7 @@ func _pick_transfer(a: XActor):
 
 func _close_list() -> void:
 	if list_win and is_instance_valid(list_win):
-		list_win.queue_free()
+		XSkinBattleMotion.dismiss(list_win)  # T096：新界面收起淡出后再释放；其余同 queue_free
 	list_win = null
 	_help()
 
