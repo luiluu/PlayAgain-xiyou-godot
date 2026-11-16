@@ -363,7 +363,7 @@ static func choose_and_run(host, s: XState, preset := "") -> int:
 	await say(host, "enter", [info.name, "%s——%s" % [info.rule_name, info.rule_text]])
 	var direct := false
 	if XTianqiQiyinDrop.direct_allowed(progress(s).drop, key):
-		var m: int = await ask(host, "mode", ["打满三场", "直取（只打 Boss，没有前两场的印屑）", "返回"])
+		var m: int = await ask(host, "mode", ["打满三场", "直取（只打首领，没有前两场的印屑）", "返回"])
 		if m < 0 or m == 2:
 			return -1
 		direct = m == 1

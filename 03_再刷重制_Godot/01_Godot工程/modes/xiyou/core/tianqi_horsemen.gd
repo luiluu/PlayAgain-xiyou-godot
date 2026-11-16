@@ -656,7 +656,7 @@ static func _check_phase(logic, f: Dictionary) -> void:
 					for i in [2, 3, 4, 5, 6]:
 						f.knight.add_param(i, float(f.knight.data().params[i]) * up)
 					fresh_param(f.knight)
-					_say(f, "今日方知我是我：领悟仙法·百亿仙剑。")
+					_say(f, "今日方知我是我：领悟绝招·百亿剑雨。")
 			"plague":
 				if int(f.phase) == 2:
 					f.shield_open = true
@@ -988,9 +988,9 @@ static func _famine_pick(logic, f: Dictionary, i: int) -> Array:
 	var turn := int(logic.turn)
 	if i == 0:
 		if bool(f.broke2) and turn % int(k.sword_rain.every) == 0:
-			return [_skill("sword_rain", "仙法：百亿仙剑", 2, int(k.sword_rain.hits), float(k.sword_rain.coef), true), null]
+			return [_skill("sword_rain", "绝招·百亿剑雨", 2, int(k.sword_rain.hits), float(k.sword_rain.coef), true), null]
 		if bool(f.broke1) and turn % int(k.bankrupt.every) == 0:
-			return [_skill("bankrupt", "仙法：破产一剑", 1, 1, float(k.bankrupt.coef), true), null]
+			return [_skill("bankrupt", "混招·破产一剑", 1, 1, float(k.bankrupt.coef), true), null]
 		return [_skill("sea", "题海战术", 2, 1, float(k.sea.coef), false), null]
 	return [_skill("landing", "上岸剑法", 1, 1, float(k.landing.coef), false), null]
 

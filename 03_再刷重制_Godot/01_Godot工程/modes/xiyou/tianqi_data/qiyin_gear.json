@@ -10,7 +10,7 @@
    "dmg_per_target_debuff_pct": "目标身上每有一种减益，对它伤害 +value%，最多 +max%",
    "dot_extra_tick": "回合结束时，自己挂在敌人身上的持续伤害再结算 times 次",
    "aoe_skill_dmg_pct": "群体技能伤害 +value%",
-   "kill_stack_dmg_pct": "每击倒一个敌人，本场出伤 +value%，最多 max_stacks 层",
+   "kill_stack_dmg_pct": "每击倒一个敌人，本场伤害 +value%，最多 max_stacks 层",
    "kill_extra_action": "每回合前 per_turn 次击倒敌人后，立刻再行动一次",
    "skill_cost_pct": "技能消耗 +value%（负数＝少耗）",
    "weight_stack": "「砝码」：每回合开始得 per_turn 层，防御再得 on_guard 层，最多 max_stacks 层；放伤害技能时全部用掉，每层伤害 +per_stack_pct%",
@@ -294,7 +294,7 @@
        "code": "kill_stack_dmg_pct",
        "value": 5,
        "max_stacks": 6,
-       "text": "每击倒一个敌人，本场出伤 +5%，最多 6 层"
+       "text": "每击倒一个敌人，本场伤害 +5%，最多 6 层"
       }
      ]
     },

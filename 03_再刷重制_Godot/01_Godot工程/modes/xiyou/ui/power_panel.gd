@@ -160,7 +160,7 @@ static func evaluation_lines(data: Dictionary) -> Array:
 	var ev: Dictionary = data.get("evaluation", {})
 	if ev.is_empty():
 		return []
-	var out := ["3回合平均输出 " + XPower.format(float(ev.burst)) + " · 10回合平均输出 " + XPower.format(float(ev.sustained))]
+	var out := ["单人对木桩估算（三档防御加权，不含元素抗性）：3回合平均输出 " + XPower.format(float(ev.burst)) + " · 10回合平均输出 " + XPower.format(float(ev.sustained))]
 	var cov: Dictionary = ev.coverage
 	if not cov.unknown.is_empty():
 		out.append("尚未完整评估的技能：" + "、".join(cov.unknown.map(func(r): return str(r.name))))

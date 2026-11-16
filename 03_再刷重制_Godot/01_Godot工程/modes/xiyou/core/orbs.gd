@@ -759,4 +759,4 @@ static func drop_boss_pearl(s: XState, floor_no: int) -> Dictionary:
 	else:
 		s.orb_state.inbox[str(id)] = int(s.orb_state.inbox.get(str(id), 0)) + 1
 	return {"id": id, "floor": floor_no, "overflow": overflow,
-		"toast": "副本Boss掉落：" + item_name(id) + "（未鉴定）" + ("；背包已满，暂存宝珠坊" if overflow else "")}
+		"toast": "副本首领掉落：" + item_name(id) + "（未鉴定）" + ("；背包已满，暂存宝珠坊" if overflow else "")}

@@ -69,9 +69,9 @@ static func note_of(tier: int) -> String:
 	var line := func(text: String) -> String:
 		return "<pos=APs text=%s size=18 color=rgba(255,255,255,1) line=false align=0>" % text
 	lines.append(line.call("等级需求:1"))
-	var fx := "最终伤害+%d%%" % int(r.final)
+	var fx := "伤害+%d%%" % int(r.final)
 	if int(r.all) > 0:
-		fx += "，所有伤害+%d%%" % int(r.all)
+		fx += "，全属性伤害+%d%%" % int(r.all)
 	lines.append(line.call("\\c[1]特效:冠军(%s)" % fx))
 	if tier > 0:
 		lines.append(line.call("\\c[1]特效:一穿四(本场每倒下一个敌人，伤害+%d%%，最多%d层)" % [int(round(STACK_STEP[tier] * 100)), STACK_MAX]))

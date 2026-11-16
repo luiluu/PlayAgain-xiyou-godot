@@ -142,7 +142,7 @@ static func tier_benefit(key: String, idx: int) -> String:
 			return "技能消耗降低 %s%%。" % v.call("cost")
 		"venom":
 			var c := XTianqiAlienAffix.value(key, "chance", idx, 100.0)
-			return "攻击附带中毒。" if c >= 100.0 else "攻击有 %s%% 几率附带中毒。" % String.num(c, 0)
+			return "攻击附带中毒。" if c >= 100.0 else "攻击有 %s%% 概率附带中毒。" % String.num(c, 0)
 	return ""
 
 

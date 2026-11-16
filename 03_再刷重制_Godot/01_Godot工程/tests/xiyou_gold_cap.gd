@@ -101,7 +101,7 @@ func _check_ui() -> void:
 	check("text_width_max", absf(rc.text_width("999,999,999,999", 20) - MAX_TEXT_W) <= 3.0, rc.text_width("999,999,999,999", 20))
 	# A lotta：金额区 168（主菜单）放得下 9999 亿；宽度不够时整段换掉，字符串照原样判断
 	check("overlap_fits", XMenu.currency_text(rc, XState.GOLD_MAX, 168.0) == "999,999,999,999")
-	check("overlap_lotta", XMenu.currency_text(rc, XState.GOLD_MAX, 120.0) == "A lotta" and XMenu.currency_text(rc, "-1,500,000,000", 100.0) == "A lotta")
+	check("overlap_lotta", XMenu.currency_text(rc, XState.GOLD_MAX, 120.0) == "极多" and XMenu.currency_text(rc, "-1,500,000,000", 100.0) == "极多")
 	rc.queue_free()
 	var menu := XMenu.new()
 	var craft := XCraftingScene.new()

@@ -101,7 +101,7 @@ func _data() -> void:
 	# 再动间隔跟 XTianqiAlienAffix.again_every（七印终局 O-428 起 6／5／3／2）
 	_check("review6_tier_again", str(XTianqiAlienGear.affix_view(sv, "again", "qinran").benefit) == "每 %d 回合多行动一次。" % XTianqiAlienAffix.again_every(0) and str(XTianqiAlienGear.affix_view(sv, "again", "zhongyan").benefit) == "每 %d 回合多行动一次。" % XTianqiAlienAffix.again_every(3),
 		[XTianqiAlienGear.affix_view(sv, "again", "qinran").benefit, XTianqiAlienGear.affix_view(sv, "again", "zhongyan").benefit])
-	_check("review6_tier_thrift_venom", str(XTianqiAlienGear.affix_view(sv, "thrift", "shigu").benefit) == "技能消耗降低 25%。" and str(XTianqiAlienGear.affix_view(sv, "venom", "qinran").benefit) == "攻击有 50% 几率附带中毒。",
+	_check("review6_tier_thrift_venom", str(XTianqiAlienGear.affix_view(sv, "thrift", "shigu").benefit) == "技能消耗降低 25%。" and str(XTianqiAlienGear.affix_view(sv, "venom", "qinran").benefit) == "攻击有 50% 概率附带中毒。",
 		[XTianqiAlienGear.affix_view(sv, "thrift", "shigu").benefit, XTianqiAlienGear.affix_view(sv, "venom", "qinran").benefit])
 	# 再动不在内：不给级时文案是四级合写（「按级每 6／5／3／2 回合…」），给化形级就是化形那一格
 	_check("review6_huaxing_again", str(XTianqiAlienGear.affix_view(sv, "again", "huaxing").benefit) == "每 %d 回合多行动一次。" % XTianqiAlienAffix.again_every(2), XTianqiAlienGear.affix_view(sv, "again", "huaxing").benefit)

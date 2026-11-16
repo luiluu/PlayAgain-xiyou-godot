@@ -52,7 +52,7 @@
     },
     "hong": {
       "order": 2, "seal": "红印", "name": "里·哥布林部族「战场」", "map": 13, "pos": [27, 24, 8], "tone": [33, -22, -22, 33],
-      "rule": "war_cry", "rule_name": "杀声", "rule_text": "每有一个单位倒下，全场出伤 +5%。",
+      "rule": "war_cry", "rule_name": "杀声", "rule_text": "每有一个单位倒下，全场伤害 +5%。",
       "troops": [33, 34, 39],
       "boss": {"enemy": 40, "name": "【里】战酋", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
     },
@@ -70,7 +70,7 @@
     },
     "xun": {
       "order": 5, "seal": "殉印", "name": "里·黑暗废墟「魂冢」", "map": 32, "pos": [31, 14, 8], "tone": [11, 11, 33, 66],
-      "rule": "sacrifice", "rule_name": "献祭", "rule_text": "每回合开始，生命最高的单位损失 10% 当前生命，它那一方本回合出伤 +10%。",
+      "rule": "sacrifice", "rule_name": "献祭", "rule_text": "每回合开始，生命最高的单位损失 10% 当前生命，它那一方本回合伤害 +10%。",
       "troops": [122, 123, 138],
       "boss": {"enemy": 128, "name": "【里】白衣的魂", "battler": "Tianqi_Qiyin_WhiteSoul", "boss_rate": [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]}
     },

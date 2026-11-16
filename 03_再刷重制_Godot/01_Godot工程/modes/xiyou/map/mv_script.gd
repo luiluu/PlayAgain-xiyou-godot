@@ -780,8 +780,8 @@ static func _boss_roster(kind: String, interp, tier_ids = null, notes = null) ->
 	if notes is Array:
 		lines.append_array(notes)
 	elif is_super:
-		lines.append_array(["超强者仅限地狱及以上难度出战。", "每名出战超强者：Boss八项属性+20%。", "第2、4、6…回合霸体，持续一整回合。",
-			"霸体回合每名超强者再令Boss输出+20%。", "洪荒以下路线压制：灭世微幅、天灾小幅、地狱大幅。", "天灾、地狱：受到伤害×1.2、×1.5，", "给队友的治疗、护盾、增益×0.8、×0.5。"])
+		lines.append_array(["超强者仅限地狱及以上难度出战。", "每名出战超强者：首领八项属性+20%。", "第2、4、6…回合霸体，持续一整回合。",
+			"霸体回合每名超强者再令首领输出+20%。", "洪荒以下路线压制：灭世微幅、天灾小幅、地狱大幅。", "天灾、地狱：受到伤害×1.2、×1.5，", "给队友的治疗、护盾、增益×0.8、×0.5。"])
 	else:
 		lines.append_array(["镜流属于强者，不计入超强者难度加成。", "强者在普通、困难、地狱路线有小幅压制。"])
 	var list := [{"code": 101, "indent": 0, "parameters": ["SF_People2", 5, 0, 2]}]

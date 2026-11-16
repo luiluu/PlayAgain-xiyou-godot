@@ -145,7 +145,7 @@ func identify_menu() -> void:
 			home()
 		else:
 			identify_detail(int(row.id)),
-		home, ["鉴定神秘珠", "副本Boss每场胜利" + pct(float(cfg().dropRate)) + "掉落；一半鉴定为原作宝珠，一半为新宝珠（楼层决定阶位）"])
+		home, ["鉴定神秘珠", "副本首领每场胜利" + pct(float(cfg().dropRate)) + "掉落；一半鉴定为原作宝珠，一半为新宝珠（楼层决定阶位）"])
 
 
 func identify_detail(id: int) -> void:
@@ -204,7 +204,7 @@ func buy_menu() -> void:
 				buy_menu(),
 			buy_menu, [name_of(int(b.itemId)), "消耗 %d 宝珠残片" % (int(row.quantity) * p)]),
 		home, ["残片换神秘珠", "按当前进度（" + where + "）：" + (name_of(int(b.itemId)) if not b.is_empty() else "—") + " 每枚 %d 残片" % p,
-			"持有 %d 残片；残片来自副本Boss奖励与分解宝珠" % have])
+			"持有 %d 残片；残片来自副本首领奖励与分解宝珠" % have])
 
 
 func dismantle_menu() -> void:
@@ -249,7 +249,7 @@ func guide() -> void:
 		lines.append_array(["新宝珠16类等概率；另有%s%%鉴定为原作宝珠（%s档 %d种）" % [_num(XOrbs.legacy_share()), XOrbs.LEGACY_TIER_NAME.get(str(b.get("legacy", "")), ""), XOrbs.legacy_pool(b).size()],
 			"原作宝珠：1～12层弱档，13～18层中档，19层起强档"])
 		choose([{"label": "返回分布表"}], func(_r): guide(), guide, lines),
-		home, ["神秘珠掉落与鉴定", "副本Boss胜利后每场独立" + pct(float(cfg().dropRate)) + "，最多1枚", "不受掉率、熟练度或洪荒诅咒倍率影响", "高层封印保留到鉴定时；未鉴定不能镶嵌"])
+		home, ["神秘珠掉落与鉴定", "副本首领胜利后每场独立" + pct(float(cfg().dropRate)) + "，最多1枚", "不受掉率、熟练度或洪荒诅咒倍率影响", "高层封印保留到鉴定时；未鉴定不能镶嵌"])
 
 
 func set_guide() -> void:

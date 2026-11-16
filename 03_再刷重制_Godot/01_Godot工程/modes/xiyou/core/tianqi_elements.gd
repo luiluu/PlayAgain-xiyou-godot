@@ -859,17 +859,17 @@ static func new_rec(table: String, id: int, base_table: Array) -> Dictionary:
 			out["name"] = sname
 			out["iconIndex"] = int(spec.get("icon", out.get("iconIndex", 768)))
 			out["price"] = int(spec.get("price", out.get("price", 100)))
-			out["description"] = "元素转换\n使角色所有攻击伤害转换为%s属性" % ename
+			out["description"] = "元素转换\n使角色所有攻击和技能伤害转换为%s属性" % ename
 			out["effects"] = [{"code": 44, "dataId": ceid, "value1": 1, "value2": 0}]
 			var lines := ["<quality:8>", "<ici:9>"]
 			if spec.has("buy_item") and spec.has("buy_price"):
 				lines.append("<item %d Buy Price: %d>" % [int(spec.buy_item), int(spec.buy_price)])
 			else:
 				lines.append("<TianqiHigherBook: %d>" % elem)
-			lines.append("<pos=APs text=\\c[1]效果:所有技能伤害转换为%s size=18 color=rgba(255,255,255,1) line=false align=0>" % ename)
-			lines.append("<pos=APs text=\\c[2]限制:每名角色仅可持有1种元素转换 size=18 color=rgba(255,255,255,1) line=false align=0>")
+			lines.append("<pos=APs text=\\c[1]效果：所有攻击和技能伤害转换为%s size=18 color=rgba(255,255,255,1) line=false align=0>" % ename)
+			lines.append("<pos=APs text=\\c[2]限制：每名角色仅可持有 1 种元素转换 size=18 color=rgba(255,255,255,1) line=false align=0>")
 			if not spec.has("buy_item"):
-				lines.append("<pos=APs text=\\c[1]来源:炼狱/证道难度掉落（单档限1本） size=18 color=rgba(255,255,255,1) line=false align=0>")
+				lines.append("<pos=APs text=\\c[1]来源：炼狱／证道难度掉落（单档限 1 本） size=18 color=rgba(255,255,255,1) line=false align=0>")
 			var note := "\n".join(lines)
 			out["note"] = note
 			out["meta"] = XTianqiSkills.parse_meta(note)
@@ -879,11 +879,11 @@ static func new_rec(table: String, id: int, base_table: Array) -> Dictionary:
 			out["id"] = sid
 			out["name"] = sname
 			out["iconIndex"] = int(spec.get("icon", out.get("iconIndex", 1072)))
-			out["description"] = "所有伤害转换为%s" % ename
+			out["description"] = "所有攻击和技能伤害转换为%s" % ename
 			var note_s := "\n".join([
 				"<Hide in Battle>", "<quality:8>", "<ici:9>",
-				"<pos=APs text=\\c[1]所有伤害转换为%s size=18 color=rgba(255,255,255,1) line=false align=0>" % ename,
-				"<pos=APs text=\\c[1]效果:自身增伤仍按原属性 size=18 color=rgba(255,255,255,1) line=false align=0>",
+				"<pos=APs text=\\c[1]所有攻击和技能伤害转换为%s size=18 color=rgba(255,255,255,1) line=false align=0>" % ename,
+				"<pos=APs text=\\c[1]效果：自身增伤仍按原属性 size=18 color=rgba(255,255,255,1) line=false align=0>",
 				"<DamageElements: %d>" % elem,
 			])
 			out["note"] = note_s

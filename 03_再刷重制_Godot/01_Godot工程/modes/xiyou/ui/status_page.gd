@@ -444,7 +444,7 @@ static func global_bonuses(a: XActor) -> Array:
 	var dvup: Dictionary = cache.get("skillTypeDvup", {})
 	var pct := func(v: float) -> String: return "%d%%" % int(XPower.js_round(v * 100))
 	return [["爆伤加成", pct.call(float(cache.get("critHarmRi", 0.0)))],
-		["终伤加成", pct.call(float(cache.get("globalHarmRi", 0.0)))],
+		["伤害加成", pct.call(float(cache.get("globalHarmRi", 0.0)))],
 		["全队掉率", drop_rate_text()],
 		["再次行动", pct.call(again_action)],
 		["攻击次数", _num(again_atk + 1)],

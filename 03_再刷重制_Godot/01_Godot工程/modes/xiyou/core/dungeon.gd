@@ -221,7 +221,7 @@ static func boss_reward(s: XState) -> Array:
 	var book := int(BOSS_BOOKS.get(t, 0))
 	if book > 0 and MVInterpreter.random_float(s) < minf(1.0, BOOK_RATE * power_factor(s, t)):
 		s.gain_item(book, 1)
-		toasts.append("副本Boss专属掉落：%s！" % str(XDB.rec("Items", book).get("name", "")))
+		toasts.append("副本首领专属掉落：%s！" % str(XDB.rec("Items", book).get("name", "")))
 	# 神秘珠（O.dropBossPearl：本场胜利、每场一次）
 	if bool(battle.get("won", false)) and not bool(battle.get("orb", false)):
 		battle.orb = true

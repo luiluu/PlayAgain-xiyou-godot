@@ -325,7 +325,7 @@ func _paint_bar(c: XMVCanvas) -> void:
 		return
 	var all := XBossStatus.entries(battler)
 	_frame_box(c, WIDTH, _bar_height(), true)
-	c.text("BOSS", 12, 3, 44, "left", BLUE, 14, 24)
+	c.text("首领", 12, 3, 44, "left", BLUE, 14, 24)
 	var name_text := XBossStatus.clean(battler.display_name())
 	var power := power_of()
 	var pw := 118.0 if not power.is_empty() else 0.0

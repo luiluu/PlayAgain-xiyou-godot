@@ -291,7 +291,7 @@ func _honghuang() -> void:
 	host = FakeHost.new()
 	host.answers = [0, 0]
 	await XTianqiSummit.run_door(host, s3)
-	_check("gaze_skip", _has(host, "天道注视") and s3.members().all(func(a): return not a.native_skill_ids().has(6213)))
+	_check("gaze_skip", _has(host, "越阶而上") and not _has(host, "该打") and not _has(host, "天道") and s3.members().all(func(a): return not a.native_skill_ids().has(6213)))
 	var s4 := _state(36)
 	s4.set_switch(2483, true)
 	XTianqi.NO_HEAVEN_GAZE = false

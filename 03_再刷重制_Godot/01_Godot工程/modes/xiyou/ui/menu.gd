@@ -29,7 +29,7 @@ const COMMANDS := [["物品", "item", true], ["技能", "skill", true], ["装备
 	["真气", "zhenqi", true], ["整队", "formation", true], ["种族祝福", "race", true], ["宠物", "pet", true],
 	["制作", "crafting", true], ["宝珠坊", "orbs", true], ["异化工坊", "alienation", true], ["人物图鉴", "actorBook", true],
 	["怪物图鉴", "monsterBook", true], ["成就", "achievement", true], ["存档", "save", true], ["反馈", "feedback", false],
-	["设置", "options", true], ["游戏结束", "gameEnd", true]]
+	["设置", "options", true], ["回到标题", "gameEnd", true]]
 const CMD_VISIBLE := 15
 ## 无队员时灰显的指令（冻结 v0.28 空队主菜单运行时：物品／技能／装备／状态／真气／整队 enabled=false，其余不变）
 const NEEDS_MEMBERS := ["item", "skill", "equip", "status", "zhenqi", "formation"]
@@ -220,11 +220,13 @@ static func _hp_color(a: XActor) -> Color:
 	return XUI.TEXT
 
 
-## YEP drawCurrencyValue：千位逗号的金额（字号 20）宽过 avail（金额区宽减图标 32）时整段换成 Gold Overlap「A lotta」
+## YEP drawCurrencyValue：千位逗号的金额（字号 20）宽过 avail（金额区宽减图标 32）时整段换成 Gold Overlap「A lotta」（显示时换成 GOLD_OVERLAP_ZH）
 const GOLD_OVERLAP := "A lotta"
+## 天启篇玩家看到的兜底字（GOLD_OVERLAP 仍是原版参照值，gold_cap 专项逐字对原版）
+const GOLD_OVERLAP_ZH := "极多"
 static func currency_text(c: XMVCanvas, value, avail: float) -> String:
 	var t := str(value) if value is String else _group(value)
-	return GOLD_OVERLAP if c.text_width(t, 20) > avail else t
+	return GOLD_OVERLAP_ZH if c.text_width(t, 20) > avail else t
 
 
 ## Yanfly.Util.toGroup：千位逗号

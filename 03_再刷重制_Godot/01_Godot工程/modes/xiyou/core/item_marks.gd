@@ -348,7 +348,7 @@ static func _lobby_additions(out: Array, horn_before: bool) -> void:
 
 ## 宝珠运行时（installNativeOrbRuntime）：宝珠改为副本掉落，Scene_Shop.prepare 先从商品表滤掉宝珠物品（CodexOrbs 的新宝珠
 ## items、神秘珠 bands、原作宝珠 legacyRefund；shopKeep 里的保留），再交给其余改写；商品表非空而全被滤掉时，商店一打开就提示并关闭。
-const ORB_SHOP_TEXT := "宝珠已改为副本掉落：刷副本Boss得神秘珠，到宝珠坊鉴定"
+const ORB_SHOP_TEXT := "宝珠已改为副本掉落：刷副本首领得神秘珠，到宝珠坊鉴定"
 
 
 static func is_orb_item(id: int) -> bool:
@@ -519,9 +519,9 @@ static func acquisition_notice() -> void:
 
 ## ---- 出战限制（D.enforceParty／canDeploy，参照 mv_oracle/super_deploy_probe.cjs） ----
 const DEPLOY_NOTICE := "超强者仅限地狱及以上难度出战，已移至替补。"
-const TIANQI_DEPLOY_NOTICE := "本难度同一场最多上阵 %d 名超强者，多的已移至替补。"
+const TIANQI_DEPLOY_NOTICE := "本难度同一场最多上阵 %d 名超强者，多的已移出出战栏。"
 ## D57／D77（XTianqi.HELPER_RULES）：助力位不许放超强者的档清出助力位；证道上场多出的超强者挪进助力位
-const TIANQI_HELPER_NOTICE := "本难度助力位不能放超强者，已移至替补。"
+const TIANQI_HELPER_NOTICE := "本难度助力位不能放超强者，已移出出战栏。"
 const TIANQI_TO_HELPER_NOTICE := "本难度同一场最多上阵 %d 名超强者，多的已移至助力位。"
 ## deploymentNotice：清出过超强者的那份 XState（只在内存，不进存档）；回地图／开整队页时弹一次
 static var _deploy_notice: WeakRef = null

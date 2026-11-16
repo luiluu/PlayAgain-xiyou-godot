@@ -539,7 +539,7 @@ static func relic_help_lines(item: Dictionary) -> Array:
 		"每级成长：魔法/物防/魔防/幸运+%d" % r[1],
 		"物攻倍率：×%s" % r[2],
 		"魔攻倍率：×%s；敏捷倍率：×%s" % [r[3], r[4]],
-		"终伤+%d%%；爆伤+%d%%" % [r[5], r[6]],
+		"伤害+%d%%；爆伤+%d%%" % [r[5], r[6]],
 		"命中+%d%%；暴击+%d%%；闪避+%d%%" % [r[7], r[8], r[9]],
 		("进化强化：每层额外伤害+%d%%；最多3层" % RELIC_EVOLUTION[st]) if st > 0 else "进化强化：赤发形态起生效；最多3层"]
 	lines.reverse()

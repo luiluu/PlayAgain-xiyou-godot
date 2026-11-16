@@ -200,9 +200,9 @@ func build() -> Array:
 				maps.append(str(info.name))
 		var guide := [el("h2", "如何获得异化装备")]
 		for t in ["在" + "、".join(PackedStringArray(maps)) + "的小怪战斗中，每场有1%机会出现紫色的异化敌人。" if not maps.is_empty() else "",
-				"部分Boss每场最多有1%机会异化，奖励来自该Boss装备池的强力异化装备。",
+				"部分首领每场最多有1%机会异化，奖励来自该首领装备池的强力异化装备。",
 				"击败异化敌人并赢得战斗，必定掉落一件异化装备；逃跑或失败不会掉落。",
-				"重复的异化装备可以分解为异化能量（小怪装备1点、Boss装备5点），%d点合成1颗异化石，用来重抽已有异化装备的词条。" % int(cfg.energyCost)]:
+				"重复的异化装备可以分解为异化能量（小怪装备1点、首领装备5点），%d点合成1颗异化石，用来重抽已有异化装备的词条。" % int(cfg.energyCost)]:
 			if t != "":
 				guide.append(el("p", t))
 		detail.append(el("div", null, "alien-guide", guide))
@@ -260,7 +260,7 @@ func build() -> Array:
 		var rows := [btn("最近异化掉落（%d）" % recent.size(), _toggle_recent, false, "summary")]
 		rows[0].tag = "summary"
 		for r in recent.slice(0, 10):
-			rows.append(el("p", str(r.name) + "　" + ("Boss" if str(r.origin) == "boss" else "小怪")))
+			rows.append(el("p", str(r.name) + "　" + ("首领" if str(r.origin) == "boss" else "小怪")))
 		pane.append(el("details", null, "", rows))
 	return [el("div", null, "alien-pane", pane)]
 
