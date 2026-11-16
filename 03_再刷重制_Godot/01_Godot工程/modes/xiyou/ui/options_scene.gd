@@ -162,6 +162,7 @@ func _show_skin(v: bool) -> void:
 			skin.queue_free()
 			skin = null
 		win.show()
+	_build_ads_tip()   # 风格换了：提示跟着显隐（新布局不放，回旧布局补上）
 
 
 static func _group(symbol: String) -> String:
@@ -249,6 +250,10 @@ func ads_tip_rect() -> Rect2:
 
 
 func _build_ads_tip() -> void:
+	var old := get_node_or_null("AdsTip")
+	if old != null:   # 先摘掉旧的（立即不可见、查不到），再按当前状态决定要不要补建
+		remove_child(old)
+		old.queue_free()
 	if not ads_tip():
 		return
 	var l := Label.new()

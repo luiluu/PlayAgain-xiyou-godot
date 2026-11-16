@@ -314,6 +314,14 @@ func _options_tianqi_old_skin() -> void:
 	# 实际可用高度：窗内画布正好 12 行，没有多余底栏，所以不能画在窗内
 	check("tq_old_canvas_full_rows", page.win.canvas.size.y == XOptionsScene.ROWS * XOptionsScene.LH, page.win.canvas.size)
 	await shots("tianqi_old_skin_options")
+	# 切风格后提示跟着显隐：原版→新：不在；新→原版：在且位置对
+	page._set_ui_skin(true)
+	await frames(3)
+	check("tq_old_to_new_tip_gone", page.skin != null and page.get_node_or_null("AdsTip") == null and not page.ads_tip())
+	page._set_ui_skin(false)
+	await frames(3)
+	var tip2 := page.get_node_or_null("AdsTip") as Label
+	check("tq_new_to_old_tip_back", page.skin == null and tip2 != null and tip2.visible and Rect2(tip2.position, tip2.size) == page.ads_tip_rect() and page.get_children().filter(func(n): return n.name == "AdsTip").size() == 1)
 	check("tq_old_other_rows_kept", syms.has("dhtg") and syms.has("cq"), syms)
 	page.queue_free()
 	await frames(3)
