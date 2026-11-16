@@ -650,7 +650,7 @@ static func queue_extra(logic, u) -> void:
 	if _queued == null or not is_same(_queued, u):
 		return
 	_queued = null
-	if u.is_alive() and int(logic._acted.get(u, 0)) < 5:
+	if u.is_alive() and int(logic._acted.get(u, 0)) < 5 and XTianqiLedger.take_extra(logic, u, "jingliu.extra"):  # 回合预算（期三，天启篇才管）
 		logic.current_order.push_front(u)
 
 

@@ -300,6 +300,8 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var suit_add := XTianqiLedger.suit_confirm_add(a, b, dmg_type) if dmg_type in [1, 2, 5, 6] else 0.0
 	if suit_add != 0.0:  # 伤害加成总账期二：原版套装状态确认阶段「结果 ×k」改成 ＋(k−1) 进③（确认阶段那一步对敌人的伤害不再乘）
 		frame.finalAdd = float(frame.finalAdd) + suit_add
+	if XTianqiLedger.CAP_NINE and b is XEnemy:  # 伤害加成总账期三：九线来源临时封顶（秘籍格单列、其余九线各池合计封顶；只扣超出的）
+		XTianqiLedger.apply_nine_cap(item, a, frame, cache, {"race": XTianqiLedger.hook_bonus(report.trace, "race-blessings"), "orb": XTianqiLedger.hook_bonus(report.trace, "orb-sets"), "suit": suit_add})
 	var critical: bool = options.get("critical", false)
 	var critical_base := 1.5 + critical_multiplier_bonus(a)
 	var critical_mult := maxf(1.0, critical_base + float(frame.criticalAdd)) if critical else 1.0

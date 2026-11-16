@@ -521,6 +521,8 @@ static func end_action(logic, u, skill) -> Array:
 		return logs
 	if logic._float("tianqi_affix_recast") >= rc / 100.0:
 		return logs
+	if not XTianqiLedger.take_extra(logic, u, "affix.recast", true):
+		return logs  # 回合预算（期三）：再释放和追加行动共用每回合多 1 次；先掷几率再问预算，随机数次序不变
 	st.depth = int(st.depth) + 1
 	for t in f.targets:
 		if t.is_alive():

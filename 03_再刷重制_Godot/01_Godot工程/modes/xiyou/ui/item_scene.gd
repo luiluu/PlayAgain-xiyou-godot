@@ -308,7 +308,10 @@ func _usable(item: Dictionary) -> bool:
 
 func _make_actions() -> void:
 	var label := "\\i[%d]\\c[0]%s" % [int(_item.get("iconIndex", 0)), str(_item.get("name", ""))]
-	_actions = [{"text": str(XDB.plugin("YEP_ItemCore").get("Use Command", "使用 %1")).replace("%1", label), "symbol": "use", "enabled": _usable(_item)}]
+	var use_text := str(XDB.plugin("YEP_ItemCore").get("Use Command", "使用 %1")).replace("%1", label)
+	if XTianqiLedger.pill_delisted(int(_item.get("id", 0))) and not _item.has("instanceId"):
+		use_text += "（%s）" % XTianqiLedger.PILL_NOTICE  # 天启篇丹药下架（伤害加成总账期三）：不可用并提示
+	_actions = [{"text": use_text, "symbol": "use", "enabled": _usable(_item)}]
 	if _item.has("instanceId"):
 		_actions.append({"text": str(XDB.plugin("YEP_X_ItemUpgradeSlots").get("Upgrade Command", "升级 %1")).replace("%1", label), "symbol": "upgrade", "enabled": true})
 		_actions.append_array(augment_actions(_item))

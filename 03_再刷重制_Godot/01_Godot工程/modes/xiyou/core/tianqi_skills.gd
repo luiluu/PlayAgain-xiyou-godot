@@ -1449,7 +1449,12 @@ static func end_action(logic, u, skill) -> Array:
 		_ally_state(u, f.skill)
 		_foe_drain(logic, u, f.skill)
 		if bool(spec(int(f.skill.get("id", 0))).get("free_action", false)) and u.is_alive():
-			logic.current_order.push_front(u)  # 技能行 free_action：不占行动，放完马上再动一次（诸葛命星：战斗中切五行）
+			# 回合预算（伤害加成总账期三）：不造成伤害的不占预算（记 free），造成伤害的占（"card.free_action"）
+			var dmg := int(f.skill.get("damage", {}).get("type", 0)) in [1, 2, 5, 6]
+			if not dmg:
+				XTianqiLedger.note_free(logic, u)
+			if not dmg or XTianqiLedger.take_extra(logic, u, "card.free_action"):
+				logic.current_order.push_front(u)  # 技能行 free_action：不占行动，放完马上再动一次（诸葛命星：战斗中切五行）
 		_hp_equalize(logic, u, f.skill)
 		_self_heal(u, f.skill)
 		if u.is_alive():

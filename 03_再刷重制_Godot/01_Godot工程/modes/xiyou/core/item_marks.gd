@@ -257,7 +257,7 @@ static func shop_goods(goods: Array, map_id := 0) -> Array:
 			var key := str(db[i].get("meta", {}).get("CodexPill", "")).strip_edges() if db[i] is Dictionary else ""
 			if PILL_KEYS.has(key) and not out.any(func(g): return g[0] == 0 and g[1] == i):
 				out.append([0, i, 0, 0])
-	return out
+	return XTianqiLedger.filter_pill_goods(out)  # 天启篇丹药下架（伤害加成总账期三）：淬元丹追加之后再滤
 
 
 ## 兑换大厅 Map132 的商品追加（各运行时包 Scene_Shop.prepare，后装的先跑；都在调用旧 prepare 之前改商品表，已有的不重复）：
@@ -508,6 +508,8 @@ static func recruit_actor_id(rec: Dictionary) -> int:
 static func can_acquire_item(s: XState, rec: Dictionary) -> bool:
 	if XTianqi.horn_blocked(s, rec):
 		return false  # 天启篇：号角整套不用（招募改大厅通关抽角色）
+	if XTianqiLedger.pill_delisted(int(rec.get("id", 0))) and not rec.has("instanceId"):
+		return false  # 天启篇丹药下架（伤害加成总账期三）：「使用」不可用
 	return can_acquire_actor(s, recruit_actor_id(rec))
 
 

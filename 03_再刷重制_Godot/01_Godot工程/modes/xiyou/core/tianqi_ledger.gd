@@ -39,6 +39,39 @@ static var POOL_SKILL_PASS := true   # 技能专属被动 skillPass.rate（skill
 static var NO_PILL_PASSIVES := true  # 万灵增元丹类被动 5974～5977 的开战状态天启篇不挂
 static var COMBAT_RULES := true      # 暴击 ＋50%、战斗中敏捷 ×0.8 改读档位表全局规则 balance_table.combat_rules（数不变）
 
+# ---- 期三「丹药下架」（设计稿第五节第 3 条）----
+## 天启篇里这些丹药不上架、「使用」不可用并提示；背包里已有的不删、不收回。
+## 已吃下去的：淬元丹计数天启篇不读（XPercentPills.param）；万灵增元丹类学到的被动 5974～5977 期二已不生效（NO_PILL_PASSIVES）；
+## 一品到四品、养神丹、破厄丹加进永久加值合计（mv_param_plus），分不出来源、照算（只影响本地测试档）。
+static var NO_PILLS := true
+const PILL_RANGES := [[1497, 1500], [1685, 1700], [1702, 1717], [1726, 1728], [2882, 2887]]
+const PILL_NOTICE := "天启篇已下架"
+
+
+static func is_pill_item(id: int) -> bool:
+	for r in PILL_RANGES:
+		if id >= int(r[0]) and id <= int(r[1]):
+			return true
+	return false
+
+
+## 这件物品在天启篇是不是已下架的丹药（开关开、天启篇存档）
+static func pill_delisted(id: int) -> bool:
+	return NO_PILLS and is_pill_item(id) and active()
+
+
+## 淬元丹已吃的计数天启篇不读
+static func pill_counts_ignored() -> bool:
+	return NO_PILLS and active()
+
+
+## 商店进货行 [类型 0物品/1武器/2防具, ID, …]：天启篇滤掉下架丹药
+static func filter_pill_goods(rows: Array) -> Array:
+	if not NO_PILLS or not active():
+		return rows
+	return rows.filter(func(g): return not (int(g[0]) == 0 and is_pill_item(int(g[1]))))
+
+
 ## 万灵增元丹类：物品 1497～1500 学到的被动（全属性 ×120%、结算伤害 ×120%／×150%、降敌暴击闪避），天启篇不生效
 const PILL_PASSIVES := [5974, 5975, 5976, 5977]
 
@@ -112,6 +145,9 @@ static func switch_on(name: String) -> bool:
 		"POOL_SKILL_PASS": return POOL_SKILL_PASS
 		"NO_PILL_PASSIVES": return NO_PILL_PASSIVES
 		"COMBAT_RULES": return COMBAT_RULES
+		"NO_PILLS": return NO_PILLS
+		"CAP_NINE": return CAP_NINE
+		"TURN_BUDGET": return TURN_BUDGET
 	return true
 
 
@@ -138,6 +174,7 @@ static func set_all_p2(on: bool) -> void:
 ## 天启篇我方打敌人时改成 ＋(k−1) 进③（damage._calculate 加 finalAdd），确认阶段那一步对敌人的伤害不再乘（suit_confirm_rows 加 skipTypes）。
 ## 治疗、打自己人照旧乘（skipTypes 只在目标是敌人、伤害类型 1/2/5/6 时跳过）。返回 [[状态号, 效果], ...]
 const SUIT_SKIP_TYPES := [1, 2, 5, 6]
+const SUIT_POOLED := "_ledgerSuitPooled"
 
 static func suit_confirm_effects(a) -> Array:
 	var out := []
@@ -182,6 +219,7 @@ static func suit_confirm_rows(holder, rows: Array) -> Array:
 			if e is Dictionary and str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) == "mul" and float(e.get("k", 1.0)) > 1.0:
 				var e2: Dictionary = e.duplicate()
 				e2.skipTypes = SUIT_SKIP_TYPES
+				e2[SUIT_POOLED] = true  # audit_confirm 只认这个标记放行（期三收紧 T004 P3-1：原来凡带 skipTypes 的都放行）
 				effects.append(e2)
 			else:
 				effects.append(e)
@@ -284,7 +322,8 @@ static func confirm_fingerprint(st: Dictionary) -> String:
 
 
 ## 确认阶段（XStateEffects.run "confirm"）的运行期守卫（期一核查 P2：原来只在专项里认状态号，不过 check，到期也不报）：
-## 天启篇我方打敌人时，身上每个带确认阶段效果的状态逐个认来源——套装状态那一步已进③（套装行）；天启篇难度被动等价行不算；
+## 天启篇我方打敌人时，身上每个带确认阶段效果的状态逐个认来源——套装状态那一步已进③（套装行，只认 suit_confirm_rows 打的 SUIT_POOLED 标记；
+##   原版数据自带 skipTypes 的确认阶段效果照样要过 check，期三收紧）；天启篇难度被动等价行不算；
 ## 其余按 state_confirm 那一行判（没登记的状态号＝unregistered，到期＝exempt_expired）。只记不改数。
 const CONFIRM_SYNTH := "天启篇·难度被动等价"
 
@@ -296,7 +335,7 @@ static func audit_confirm(holder, rows: Array, ctx: Dictionary) -> Array:
 	for st in rows:
 		if not st is Dictionary or str(st.get("name", "")) == CONFIRM_SYNTH:
 			continue
-		var effects := (st.get("effects", []) as Array).filter(func(e): return e is Dictionary and str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) != "noop" and not e.has("skipTypes"))
+		var effects := (st.get("effects", []) as Array).filter(func(e): return e is Dictionary and str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) != "noop" and not bool(e.get(SUIT_POOLED, false)))
 		if effects.is_empty():
 			continue
 		var sid := int(st.get("id", 0))
@@ -335,16 +374,65 @@ static func bucket_of(o: Dictionary, a = null) -> String:
 		if not (o.get("runewords", []) as Array).is_empty() or str(o.get("runewordName", "")) != "":
 			return "runeword"
 		return "equip"
+	if a is XActor and o.has("id") and not o.has("stypeId") and XEquipSuits.ids(a, "states").has(int(o.id)):
+		return "suit"  # 原版套装给的状态（期三九线封顶要分得出来）
 	if a is XBattler and a.states().has(o):
 		return "state"
 	if o.has("stypeId"):
 		var id := int(o.get("id", 0))
-		if XPowerBooks.is_power(id) or int(o.get("stypeId", 0)) == 5:
-			return "secret"
 		if not XRace.skill_info(id).is_empty():
 			return "race"
+		if is_secret_skill(id, int(o.get("stypeId", 0))):
+			return "secret"
 		return "actor"
 	return "actor"
+
+
+## 秘籍格占格的技能（养成线 v0.3：功法、通用被动书、转换书都占格）：洪荒权能书，或者由物品「学会技能」（效果 43）教的
+## 被动 4／其他 5／功法 6 类技能。不算：种族技能（种族桶）、天启篇号卷（另有 3／2／1 卷）、万灵增元丹被动（期二已不生效）、
+## 没有书教的「其他」类（羁绊、套装这类角色自带的）。期三核查 P1：原来只认权能书和类型 5，真功法（6）、通用被动书（4）漏进角色桶、羁绊误占格。
+static var _book_skills := {}
+
+static func is_secret_skill(id: int, stype: int) -> bool:
+	if PILL_PASSIVES.has(id) or XTianqiTrumpet.of_skill(id) != 0:
+		return false  # 号卷占的是号卷格（3／2／1），不占秘籍格；号卷物品带 <CodexPower>，要先排掉
+	if XPowerBooks.is_power(id):
+		return true
+	if not stype in [4, 5, 6]:
+		return false
+	if _book_skills.is_empty():
+		_book_skills[0] = true
+		for it in XDB.table("Items"):
+			if it is Dictionary:
+				for e in it.get("effects", []):
+					if int(e.get("code", 0)) == 43:
+						_book_skills[int(e.get("dataId", 0))] = true
+					elif int(e.get("code", 0)) == 44:
+						_ce_skills(int(e.get("dataId", 0)))
+	return _book_skills.has(id)
+
+
+## 物品「公共事件」（效果 44）教的技能（复核 P2①：精通 5189～5308、谢幕 3680、莫等闲 3184、吾之剑道 3687、小药丸 5091～5098 这类）：
+## 事件里的「增减技能·学会」（318）、脚本里写死的 learnSkill(N)，和精通系列脚本开头列的 var kX = N（穿心枪术精通★ 5214 只在这里出现）
+static func _ce_skills(ce_id: int) -> void:
+	var ces = XDB.table("CommonEvents")
+	if not ces is Array or ce_id <= 0 or ce_id >= ces.size() or not ces[ce_id] is Dictionary:
+		return
+	var re_learn := RegEx.create_from_string("learnSkill\\((\\d+)\\)")
+	var re_var := RegEx.create_from_string("var\\s+\\w+\\s*=\\s*(\\d+)\\s*;")
+	for c in ces[ce_id].get("list", []):
+		var code := int(c.get("code", 0))
+		var p: Array = c.get("parameters", [])
+		if code == 318 and p.size() > 3 and int(p[2]) == 0:
+			_book_skills[int(p[3])] = true
+		elif code in [355, 655] and not p.is_empty():
+			var line := str(p[0])
+			for m in re_learn.search_all(line):
+				_book_skills[int(m.get_string(1))] = true
+			for m in re_var.search_all(line):
+				var sid := int(m.get_string(1))
+				if int(XDB.rec("Skills", sid).get("stypeId", 0)) == 4:
+					_book_skills[sid] = true
 
 
 static func _add(d: Dictionary, key, bucket: String, v: float) -> void:
@@ -359,24 +447,36 @@ static func _add(d: Dictionary, key, bucket: String, v: float) -> void:
 ## 返回 {globalHarmRi: {桶: 值}, critHarmRi, skillTypeDvup: {类型: {桶: 值}}, SkETypeHarmRi, skillPass: {技能: {桶: rate}}, passiveELUP: {元素: {桶}}, elementAmplify: {元素: {桶}}}
 static func passive_buckets(a, objs: Array) -> Dictionary:
 	var out := {"globalHarmRi": {}, "critHarmRi": {}, "skillTypeDvup": {}, "SkETypeHarmRi": {}, "skillPass": {}, "passiveELUP": {}, "elementAmplify": {}}
+	# 期三九线封顶：秘籍格按本数封，所以秘籍桶再并排按本记一份（同样的形状，桶名 "#技能号"）
+	var books := {"globalHarmRi": {}, "critHarmRi": {}, "skillTypeDvup": {}, "SkETypeHarmRi": {}, "skillPass": {}, "passiveELUP": {}, "elementAmplify": {}}
 	for o in objs:
 		var bucket := bucket_of(o, a)
+		var book := "#%d" % int(o.get("id", 0)) if bucket == "secret" else ""
 		var sc := XActor._note_scans(str(o.get("note", "")))
 		var meta: Dictionary = o.get("meta", {})
+		var put := func(key: String, sub, v: float) -> void:
+			for pair in [[out, bucket], [books, book]]:
+				if pair[1] == "":
+					continue
+				if sub == null:
+					_add(pair[0], key, pair[1], v)
+				else:
+					_add(pair[0][key], sub, pair[1], v)
 		for m in sc[4]:
-			_add(out, "globalHarmRi", bucket, float(m[0]) / 100.0)
+			put.call("globalHarmRi", null, float(m[0]) / 100.0)
 		for m in sc[5]:
-			_add(out, "critHarmRi", bucket, float(m[0]) / 100.0)
+			put.call("critHarmRi", null, float(m[0]) / 100.0)
 		for m in sc[2]:
-			_add(out.skillTypeDvup, str(m[0]), bucket, XActor._num(m[1]) / 100.0)
+			put.call("skillTypeDvup", str(m[0]), XActor._num(m[1]) / 100.0)
 		for m in sc[3]:
-			_add(out.SkETypeHarmRi, int(m[0]), bucket, XActor._num(m[1]) / 100.0)
+			put.call("SkETypeHarmRi", int(m[0]), XActor._num(m[1]) / 100.0)
 		for k in meta:
 			var tag := str(k)
 			if tag.begins_with("SkillPass") and str(meta[k]).contains("%"):
-				_add(out.skillPass, int(tag.substr(9)), bucket, XActor._num(meta[k]) / 100.0)
+				put.call("skillPass", int(tag.substr(9)), XActor._num(meta[k]) / 100.0)
 			elif tag.begins_with("passiveELUP") and o.has("stypeId"):
-				_add(out.passiveELUP, int(tag.substr(11)), bucket, XActor._num(meta[k]) / 100.0)
+				put.call("passiveELUP", int(tag.substr(11)), XActor._num(meta[k]) / 100.0)
+	out["books"] = books
 	# 元素增幅（damage.own_bonus 的 elementAmplify 来源：状态＋装备＋角色＋职业）；宝珠镶进装备的那份单列
 	var amp_objs: Array = a.states() + (a.stat_equips() if a.has_method("stat_equips") else []) + ([a.data(), a.class_data()] if a is XActor else [])
 	for o in amp_objs:
@@ -418,10 +518,305 @@ static func bucket_total(buckets: Dictionary, caps := {}) -> float:
 	return total
 
 
+# ---- 期三「回合预算」（设计稿第五节第 2 条）----
+## 我方角色每人每回合最多多 1 次完整出手（1＋skill_rework.rules.max_extra_actions）：追加行动（插队）和再释放共用；
+## 回合开始掷出来的再动、九九六插进顺序的那次也占（按「本回合已行动＋顺序里还排着的－1」算，不重复记）。
+## 派生攻击、连击段数不占出手预算；派生攻击按 damage_ledger.json 的 derived 表各自每回合最多几次（take_derived）。
+## 骑士、怪物不管（照旧）。预算记在战斗对象的 meta 上，每回合换号即清；不进存档。
+static var TURN_BUDGET := true
+const BUDGET_META := "xtq_turn_budget"
+
+
+static func budget_on(logic, u) -> bool:
+	return TURN_BUDGET and u is XActor and logic != null and active() and logic.actors.has(u)
+
+
+static func _budget(logic) -> Dictionary:
+	var b: Dictionary = logic.get_meta(BUDGET_META) if logic.has_meta(BUDGET_META) else {}
+	if int(b.get("turn", -1)) != int(logic.turn):
+		b = {"turn": int(logic.turn), "recast": {}, "free": {}, "derived": {}, "log": []}
+		logic.set_meta(BUDGET_META, b)
+	return b
+
+
+static func max_extra() -> int:
+	return int(XTianqiSkills.rules().get("max_extra_actions", 1))
+
+
+## 本回合已经用掉的「多出来的完整出手」：已行动＋顺序里还排着的－1（不算不占预算的 free 插队）＋直接再释放的次数。
+## in_action：在 u 自己这次行动的结算中途问（这次还没记进已行动）
+static func extra_used(logic, u, in_action := false) -> int:
+	var b := _budget(logic)
+	var planned: int = int(logic._acted.get(u, 0)) + int(logic.current_order.count(u)) + (1 if in_action else 0) - int(b.free.get(u, 0))
+	return maxi(0, planned - 1) + int(b.recast.get(u, 0))
+
+
+## 统一入口：还有预算就扣掉、返回真；没有返回假（调用方就不插队／不再放）。不归预算管的（敌人、西游档、开关关）恒真。
+## recast＝直接再打一次（不经行动顺序，要自己记数）；插队的调用方在返回真后自己 push_front（顺序里的次数就是记数）。
+static func take_extra(logic, u, source: String, recast := false, in_action := false) -> bool:
+	if not budget_on(logic, u):
+		return true
+	var b := _budget(logic)
+	var ok := extra_used(logic, u, in_action) < max_extra()
+	if ok and recast:
+		b.recast[u] = int(b.recast.get(u, 0)) + 1
+	b.log.append({"actor": int(u.actor_id), "source": source, "ok": ok})
+	return ok
+
+
+## 不占预算的插队（技能卡 free_action 里不造成伤害的）：记一笔，extra_used 扣掉它
+static func note_free(logic, u) -> void:
+	if budget_on(logic, u):
+		var b := _budget(logic)
+		b.free[u] = int(b.free.get(u, 0)) + 1
+
+
+## 昏迷醒来补排当前回合（battle_logic._insert_orders）：不重掷，用「1＋max_extra − 已行动 − 已用预算」；-1＝不归预算管（照原来掷）
+static func wake_times(logic, u) -> int:
+	if not budget_on(logic, u):
+		return -1
+	var b := _budget(logic)
+	return maxi(0, 1 + max_extra() - int(logic._acted.get(u, 0)) - int(b.recast.get(u, 0)))
+
+
+## 派生攻击每回合次数（damage_ledger.json derived 表）：还没到上限就记一次、返回真
+static func take_derived(logic, u, source: String) -> bool:
+	if not budget_on(logic, u):
+		return true
+	var row: Dictionary = derived_row(source)
+	if row.is_empty():
+		_flag("derived:" + source, "per_turn", "unregistered", {"actor": int(u.actor_id)})
+		return true
+	var b := _budget(logic)
+	var key := "%d|%s" % [int(u.actor_id), source]
+	var n := int(b.derived.get(key, 0))
+	if n >= int(row.get("per_turn", 0)):
+		return false
+	b.derived[key] = n + 1
+	return true
+
+
+static func derived_row(source: String) -> Dictionary:
+	for r in data().get("derived", []):
+		if str(r.get("id", "")) == source:
+			return r
+	return {}
+
+
+# ---- 期三「九线来源临时封顶」（设计稿第五节第 4 条；养成线三期逐条重做之前）----
+## CAP_NINE：天启篇我方出手，九线来源进各池的量封顶（只扣超出的，不足的照算）：
+## （1）秘籍格单列：按档位格数（balance_table 档位行 secret_cap：弱者 6、强者 4、超强者 3），每本书每个池最多 ＋8%；
+##     学了超过格数的按「对伤害贡献」从高到低取前几本（临时规则：每本各池封后取最大值相加排序，同分技能号小的先），其余不算。
+## （2）其余九线（符文之语、宝珠、原版装备与套装、种族、成长装备、真气）每个池合计封顶：①技能池 ＋15%、②元素池 ＋30%（每一系）、
+##     ③伤害加成池 ＋35%（含种族祝福、宝珠共鸣、套装确认阶段 ＋(k−1) 这三条钩子来的量）；④暴击只封秘籍（稿子没给其余九线的数）。
+## （3）属性 ＋30%：原版套装的属性倍率 × 符文之语、成长装备上的属性倍率特性（param_cap）；宝珠镶进装备的、原版装备本身的分不出来源，不封。
+## 白印「持续伤害 ＋20%」（疫，不过伤害帧）不封（期二补记 3）。超出的量记在伤害详情 nineCap（「九线封顶」）。
+static var CAP_NINE := true
+const NINE_BUCKETS := ["runeword", "orb", "equip", "suit", "race", "hubris", "zhenqi"]
+const NINE_DEFAULTS := {"skill": 0.15, "element": 0.30, "bonus": 0.35, "param": 0.30, "secret_slot": 0.08}
+
+
+static func nine_cap(key: String) -> float:
+	return float(data().get("nine_caps", {}).get(key, NINE_DEFAULTS[key]))
+
+
+static func secret_slots(a) -> int:
+	return XTianqiBalance.secret_cap(XTier.tier_of(a)) if a is XActor else 0
+
+
+## 某一桶（或某一本书 "#id"）在这一下各池的量：skill（①，按这一招的技能类型、装备的武器类型、技能专属被动）、bonus（③）、crit（④）、element {e: ②}
+static func _hit_share(by: Dictionary, b: String, hit: Dictionary) -> Dictionary:
+	var skill := 0.0
+	for wt in hit.wtypes:
+		skill += float(by.SkETypeHarmRi.get(wt, {}).get(b, 0.0))
+	for t in hit.types:
+		skill += float(by.skillTypeDvup.get(str(t), {}).get(b, 0.0))
+	if hit.pass_pooled:
+		skill += float(by.skillPass.get(hit.skill, {}).get(b, 0.0))
+	var elem := {}
+	for e in by.elementAmplify:
+		elem[int(e)] = float(elem.get(int(e), 0.0)) + float(by.elementAmplify[e].get(b, 0.0))
+	for e in by.passiveELUP:
+		elem[int(e)] = float(elem.get(int(e), 0.0)) + float(by.passiveELUP[e].get(b, 0.0))
+	return {"skill": skill, "bonus": float(by.globalHarmRi.get(b, 0.0)), "crit": float(by.critHarmRi.get(b, 0.0)), "element": elem}
+
+
+## 一本书各池封到 ＋8% 后的量
+static func _book_capped(share: Dictionary, per: float) -> Dictionary:
+	var elem := {}
+	for e in share.element:
+		elem[e] = minf(float(share.element[e]), per)
+	return {"skill": minf(share.skill, per), "bonus": minf(share.bonus, per), "crit": minf(share.crit, per), "element": elem}
+
+
+## 秘籍格：取前几本（按各池封顶后最大可能贡献；书号升序定次序）。返回生效的书 ["#id", ...]
+static func secret_kept(a, by: Dictionary) -> Array:
+	var books: Dictionary = by.get("books", {})
+	var ids := {}
+	for key in books:
+		for sub in books[key]:
+			var row = books[key][sub]
+			if row is Dictionary:
+				for b in row:
+					ids[b] = true
+			else:
+				ids[sub] = true
+	var per := nine_cap("secret_slot")
+	var scored := []
+	for b in ids:
+		var score := minf(_max_of(books.globalHarmRi, b), per) + minf(_max_of(books.critHarmRi, b), per)
+		score += minf(maxf(maxf(_max_nested(books.skillTypeDvup, b), _max_nested(books.SkETypeHarmRi, b)), _max_nested(books.skillPass, b)), per)
+		score += minf(maxf(_max_nested(books.elementAmplify, b), _max_nested(books.passiveELUP, b)), per)
+		scored.append([score, int(str(b).substr(1)), b])
+	scored.sort_custom(func(x, y): return x[0] > y[0] or (x[0] == y[0] and x[1] < y[1]))
+	return scored.slice(0, secret_slots(a)).map(func(x): return x[2])
+
+
+static func _max_of(d: Dictionary, b: String) -> float:
+	return float(d.get(b, 0.0))
+
+
+static func _max_nested(d: Dictionary, b: String) -> float:
+	var v := 0.0
+	for k in d:
+		v = maxf(v, float(d[k].get(b, 0.0)))
+	return v
+
+
+## damage._calculate：钩子之后、算乘区之前调用。扣掉这一下九线超出的部分（frame 的 normalAdd、finalAdd、criticalAdd、elementAdd），
+## 记在 frame.nineCap。hooks＝{race, orb, suit}：种族祝福、宝珠共鸣、套装确认阶段这一下进③的量（钩子帧里分不出，调用方给）。
+static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictionary, hooks: Dictionary) -> Dictionary:
+	if not CAP_NINE or not a is XActor or not active() or not cache.has("bySource"):
+		return {}
+	var by: Dictionary = cache.bySource
+	var types := []
+	var parsed = JSON.parse_string(str(item.get("meta", {}).get("SkillTypes", "[]")))
+	if parsed is Array:
+		types = parsed
+	var wtypes := []
+	for wt in by.SkETypeHarmRi:
+		if (a as XActor).equip_list().any(func(e): return e.kind == "weapon" and int(e.wtypeId) == int(wt)):
+			wtypes.append(wt)
+	var hit := {"types": types, "wtypes": wtypes, "skill": int(item.get("id", 0)), "pass_pooled": pool_on("POOL_SKILL_PASS")}
+	var cut := {"skill": 0.0, "bonus": 0.0, "crit": 0.0, "element": {}}
+	# （1）秘籍格
+	var raw_secret := _hit_share(by, "secret", hit)
+	var kept := {"skill": 0.0, "bonus": 0.0, "crit": 0.0, "element": {}}
+	var per := nine_cap("secret_slot")
+	for b in secret_kept(a, by):
+		var c := _book_capped(_hit_share(by.books, b, hit), per)
+		for k in ["skill", "bonus", "crit"]:
+			kept[k] += float(c[k])
+		for e in c.element:
+			kept.element[e] = float(kept.element.get(e, 0.0)) + float(c.element[e])
+	for k in ["skill", "bonus", "crit"]:
+		cut[k] += maxf(0.0, float(raw_secret[k]) - float(kept[k]))
+	for e in raw_secret.element:
+		var x := maxf(0.0, float(raw_secret.element[e]) - float(kept.element.get(e, 0.0)))
+		if x > 0.0:
+			cut.element[e] = x
+	# （2）其余九线合计
+	var nine := {"skill": 0.0, "bonus": float(hooks.get("race", 0.0)) + float(hooks.get("orb", 0.0)) + float(hooks.get("suit", 0.0)), "element": {}}
+	for b in NINE_BUCKETS:
+		var sh := _hit_share(by, b, hit)
+		nine.skill += sh.skill
+		nine.bonus += sh.bonus
+		for e in sh.element:
+			nine.element[e] = float(nine.element.get(e, 0.0)) + float(sh.element[e])
+	cut.skill += maxf(0.0, nine.skill - nine_cap("skill"))
+	cut.bonus += maxf(0.0, nine.bonus - nine_cap("bonus"))
+	for e in nine.element:
+		var x := maxf(0.0, float(nine.element[e]) - nine_cap("element"))
+		if x > 0.0:
+			cut.element[e] = float(cut.element.get(e, 0.0)) + x
+	_cap_derived_elements(a, cut.element)
+	if cut.skill == 0.0 and cut.bonus == 0.0 and cut.crit == 0.0 and cut.element.is_empty():
+		return {}
+	frame.normalAdd = float(frame.normalAdd) - cut.skill
+	frame.finalAdd = float(frame.finalAdd) - cut.bonus
+	frame.criticalAdd = float(frame.criticalAdd) - cut.crit
+	for e in cut.element:
+		frame.elementAdd[str(e)] = float(frame.elementAdd.get(str(e), 0.0)) - float(cut.element[e])
+	frame.nineCap = cut
+	return cut
+
+
+## 虚空～风（11～15）的元素加成是 max(自身, 火～暗 2～9 里最低的一系)（XDamage.element_bonus）：照同样的取法算封顶前后，
+## 差多少就扣多少（期三核查 P2③：原来只按 11～15 自己那份扣，借来的火～暗那份漏封）。cut：{元素: 扣的量}，就地改
+static func _cap_derived_elements(a, cut: Dictionary) -> void:
+	if cut.is_empty():
+		return
+	var low_raw := INF
+	var low_cap := INF
+	for c in [2, 3, 4, 5, 6, 7, 8, 9]:
+		var own := XDamage.own_bonus(a, c)
+		low_raw = minf(low_raw, own)
+		low_cap = minf(low_cap, own - float(cut.get(c, 0.0)))
+	for e in [11, 12, 13, 14, 15]:
+		var own := XDamage.own_bonus(a, e)
+		var x := maxf(own, low_raw) - maxf(own - float(cut.get(e, 0.0)), low_cap)
+		if x > 0.0:
+			cut[e] = x
+		else:
+			cut.erase(e)
+
+
+## 钩子帧里种族祝福、宝珠共鸣写进③（finalAdd add）的量
+static func hook_bonus(trace: Array, module: String) -> float:
+	var v := 0.0
+	for t in trace:
+		if str(t.get("module", "")) != module:
+			continue
+		for op in t.get("ops", []):
+			if op is Dictionary and str(op.get("field", "")) == "finalAdd" and str(op.get("op", "")) == "add":
+				v += float(op.get("value", 0.0))
+	return v
+
+
+## 属性 ＋30%（XActor.param_rate 里乘）：九线来的属性倍率合计超过 ＋30% 时扣掉超出的部分。
+## 口径跟实际一致（期三核查 P2②）：特性 21 在 XBattler.traits_pi 里是加算（1＋Σ(v−1)），原版套装属性倍率在外面另乘。
+## 九线的份：符文之语、成长装备整件的特性 21；别的装备上宝珠镶进去的特性 21（XOrbs 打的 _codexOrb 标记）；套装倍率 (suit−1)。
+## 超出的先从特性那份扣、不够再从套装那份扣；base＝不含套装的特性倍率（super.param_rate）。返回要再乘的系数。
+static func param_cap(a, i: int, base: float, suit_rate: float) -> float:
+	if not CAP_NINE or not a is XActor or not active():
+		return 1.0
+	var from_traits := 0.0
+	# 同族宝珠超过上限丢掉的那几颗（XActor.all_traits 经 XOrbs.filter_traits 不算），这里也不算（复核 P1）。
+	# stat_equips 可能是视图拷贝，按「装备实例号|宝珠标记」认，不靠同一对象
+	var drops := XOrbs.cap_drops((a as XActor).equips)
+	var dropped := {}
+	for d in drops:
+		for eq0 in (a as XActor).equips:
+			if eq0 is Dictionary and str(eq0.get("instanceId", "")) != "" and (eq0.get("traits", []) as Array).any(func(t): return is_same(t, d)):
+				dropped["%s|%s|%d" % [str(eq0.instanceId), str(d.get("_codexOrb", "")), int(d.get("dataId", -1))]] = true
+	for eq in (a as XActor).stat_equips():
+		var whole := bucket_of(eq) in ["runeword", "hubris"]
+		for t in eq.get("traits", []):
+			if t.has("_codexOrb") and (drops.any(func(d): return is_same(d, t)) or (str(eq.get("instanceId", "")) != "" \
+					and dropped.has("%s|%s|%d" % [str(eq.instanceId), str(t._codexOrb), int(t.get("dataId", -1))]))):
+				continue
+			if int(t.get("code", 0)) == 21 and int(t.get("dataId", -1)) == i and (whole or t.has("_codexOrb")):
+				from_traits += float(t.get("value", 1.0)) - 1.0
+	var excess := from_traits + (suit_rate - 1.0) - nine_cap("param")
+	if excess <= 0.0:
+		return 1.0
+	var cut_t := minf(excess, maxf(0.0, from_traits))
+	var cut_s := excess - cut_t
+	var f := 1.0
+	if base > 0.0:
+		f *= maxf(0.0, base - cut_t) / base
+	if suit_rate > 0.0:
+		f *= maxf(0.0, suit_rate - cut_s) / suit_rate
+	return f
+
+
 # ---- 五池明细（第四节第 1 条）----
 ## element_pool＝(1＋自身元素增幅＋elementAdd)（不含 elementMultiplier），其余照 damage._calculate 那一行的值
 static func pools(frame: Dictionary, element: int, element_pool: float, normal: float, crit: float, tier: float, race: float, independent: float) -> Dictionary:
-	return {"pools": {"skill": normal, "element": element_pool, "bonus": maxf(0.0, 1.0 + float(frame.finalAdd)), "crit": crit, "tier": tier},
+	var out := {"pools": {"skill": normal, "element": element_pool, "bonus": maxf(0.0, 1.0 + float(frame.finalAdd)), "crit": crit, "tier": tier},
 		"residual": {"skillMultiplier": float(frame.skillMultiplier), "elementMultiplier": float(frame.elementMultiplier.get(str(element), 1.0)),
 			"finalMultiplier": maxf(0.0, float(frame.finalMultiplier)), "race": race, "independent": independent,
 			"physicalDamageMultiplier": float(frame.physicalDamageMultiplier), "magicalDamageMultiplier": float(frame.magicalDamageMultiplier)}}
+	if frame.has("nineCap"):
+		out["nineCap"] = frame.nineCap  # 「九线封顶」：这一下各池扣掉的量（期三）
+	return out

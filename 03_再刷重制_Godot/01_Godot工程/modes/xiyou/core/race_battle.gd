@@ -589,7 +589,7 @@ static func insert_human(logic, order: Array, logs = null) -> void:
 		if int(s.humanInserted) == r:
 			continue
 		s.humanInserted = r
-		if human_extra(logic, a) and order.has(a):
+		if human_extra(logic, a) and order.has(a) and XTianqiLedger.take_extra(logic, a, "race.human996"):  # 回合预算（期三）：九九六占每回合多 1 次
 			var last := order.rfind(a)
 			order.insert(last + 1, a)
 			_toast(out, a.display_name() + "九九六：额外行动")

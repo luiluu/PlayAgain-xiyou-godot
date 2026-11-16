@@ -36,13 +36,15 @@ static func valid(item, t) -> int:
 	var id := param_of(item)
 	if id < 0:
 		return -1
+	if XTianqiLedger.pill_counts_ignored():
+		return 0  # 天启篇丹药下架（伤害加成总账期三）：不能再吃
 	return 1 if t is XActor and count(t, id) < CAP else 0
 
 
 ## applyItemUserEffect 包装：吃下一颗。返回是否生效（不是淬元丹、或已满为假）
 static func apply(item, t) -> bool:
 	var id := param_of(item)
-	if id < 0 or not t is XActor or count(t, id) >= CAP:
+	if id < 0 or not t is XActor or count(t, id) >= CAP or XTianqiLedger.pill_counts_ignored():
 		return false
 	var m = t.state_data.get(FIELD)
 	if not m is Dictionary:
@@ -59,4 +61,6 @@ static func apply(item, t) -> bool:
 ## Game_Actor.param 包装
 static func param(a, i: int, v: float) -> float:
 	var n := count(a, i)
+	if n > 0 and XTianqiLedger.pill_counts_ignored():
+		return v  # 天启篇丹药下架：已吃的计数留在存档里不动、不读（设计稿第五节第 3 条）
 	return roundf(minf(a.param_max(i), v * (1.0 + STEP * n))) if n > 0 else v

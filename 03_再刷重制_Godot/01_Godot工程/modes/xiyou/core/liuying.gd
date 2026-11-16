@@ -591,6 +591,8 @@ static func apply(logic, u, skill: Dictionary, t) -> Array:
 					cd = 0
 			u.state_data["_codexLbRsReady"] = turn_now() + cd if cd > 0 else 0
 		_frame.rerelease = logic._float("liuying_rerelease") < (0.1 if _tq() else RE_RELEASE)  # 天启篇：10% 再放
+		if bool(_frame.rerelease) and not XTianqiLedger.take_extra(logic, u, "liuying.rerelease", true, true):
+			_frame.rerelease = false  # 回合预算（期三）：再释放占每回合多 1 次（这次行动还没记进已行动）
 	var out := _segment(logic, u, skill, t, false)
 	if bool(_frame.get("rerelease", false)):
 		out.append_array(_segment(logic, u, skill, t, true))

@@ -66,7 +66,9 @@ func _run() -> void:
 	_buckets()
 	_pools()
 	_state_confirm()
+	XTianqiLedger.CAP_NINE = false  # 期二的归池断言按「不封顶」写（套装 ＋1 进③超过九线 ＋35%）；封顶见 xiyou_tianqi_ledger_p3
 	_p2_items()
+	XTianqiLedger.CAP_NINE = true
 	_enemy_chains()
 	XTianqiLedger.set_all_p2(true)
 	XTianqiSkills.CARDS = false
@@ -87,7 +89,7 @@ func _run() -> void:
 # ---- 表本身 ----
 func _registry_shape() -> void:
 	var d := XTianqiLedger.data()
-	_check("ledger_loaded", not d.is_empty() and XTianqiLedger.phase() == 2)
+	_check("ledger_loaded", not d.is_empty() and XTianqiLedger.phase() >= 2)
 	var bad := []
 	for r in d.get("rows", []):
 		var st := str(r.get("status", ""))
@@ -424,7 +426,7 @@ func _buckets() -> void:
 		var a := s.actor(int(id))
 		# 学几本带终伤、技能类型增伤的通用被动书，保证有东西可分
 		for sk in XDB.table("Skills"):
-			if sk is Dictionary and int(sk.get("stypeId", 0)) == 5 and str(sk.get("note", "")).contains("passiveHarmRi"):
+			if sk is Dictionary and XTianqiLedger.is_secret_skill(int(sk.id), int(sk.get("stypeId", 0))) and str(sk.get("note", "")).contains("passiveHarmRi"):  # 期三核查 P1：秘籍桶认书教的
 				a.learn_skill(int(sk.id))
 				break
 		a.refresh_passive()
@@ -513,9 +515,13 @@ func _state_confirm() -> void:
 	XTianqiLedger.violations.clear()
 	var rows := [XDB.rec("States", 713), {"id": 99999, "effects": [{"phase": "confirm", "op": "mul", "cond": "positive", "k": 1.5, "round": "ceil"}]},
 		{"id": 1631, "name": XTianqiLedger.CONFIRM_SYNTH, "effects": [{"phase": "confirm", "op": "mul", "k": 1.5}]},
-		{"id": 713, "effects": [{"phase": "confirm", "op": "mul", "k": 2.0, "skipTypes": [1]}]}]
+		{"id": 713, "effects": [{"phase": "confirm", "op": "mul", "k": 2.0, "skipTypes": [1], XTianqiLedger.SUIT_POOLED: true}]}]
 	var got := XTianqiLedger.audit_confirm(a, rows, ctx)
 	_check("confirm_runtime_p2", got.size() == 2 and got[0].ok and not got[1].ok and XTianqiLedger.violations.size() == 1 and XTianqiLedger.violations[0].reason == "unregistered", [got, XTianqiLedger.violations])
+	# 期三收紧（T004 P3-1）：只带 skipTypes、没有套装标记的确认阶段乘不再放行，照样认来源（没登记的状态号报 unregistered）
+	XTianqiLedger.violations.clear()
+	var got2 := XTianqiLedger.audit_confirm(a, [{"id": 99998, "effects": [{"phase": "confirm", "op": "mul", "k": 2.0, "skipTypes": [1, 2]}]}], ctx)
+	_check("confirm_skiptypes_not_free", got2.size() == 1 and not got2[0].ok and XTianqiLedger.violations.size() == 1, [got2, XTianqiLedger.violations])
 	XTianqiLedger.data()["phase"] = 4
 	XTianqiLedger.violations.clear()
 	XTianqiLedger.audit_confirm(a, [XDB.rec("States", 713)], ctx)

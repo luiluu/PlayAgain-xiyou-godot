@@ -573,38 +573,38 @@ static func end_action(logic, u, skill) -> Array:
 			var again := true
 			while again and n < int(TUNE.chain_max) and u.is_alive():
 				var nx = _random_enemy(logic)
-				if nx == null:
+				if nx == null or not XTianqiLedger.take_derived(logic, u, "qiyin.kill_chain_slash"):  # 回合预算：派生攻击每回合次数（期三）
 					break
 				n += 1
-				logs.append_array(_derived(logic, u, u.attack_skill(), nx, float(chain.dmg_pct) / 100.0))
+				logs.append_array(_derived(logic, u, u.attack_skill(), nx, float(chain.dmg_pct) / 100.0))  # derived:qiyin.kill_chain_slash
 				again = bool(chain.get("chain", false)) and nx.is_dead()
 	# 攒段横扫
-	if int(un.burst) > 0 and _has(logic, u, "hit_count_burst") and u.is_alive():
+	if int(un.burst) > 0 and _has(logic, u, "hit_count_burst") and u.is_alive() and XTianqiLedger.take_derived(logic, u, "qiyin.hit_count_burst"):
 		var b := _p(logic, u, "hit_count_burst")
 		un.burst = int(un.burst) - 1
 		for e in logic.enemies.filter(func(x): return x.is_alive()):
 			for i in int(b.bonus_hits):
 				if e.is_dead():
 					break
-				logs.append_array(_derived(logic, u, u.attack_skill(), e, 1.0))
+				logs.append_array(_derived(logic, u, u.attack_skill(), e, 1.0))  # derived:qiyin.hit_count_burst
 	# 弓与冠：单体技能再射一次
 	var rep := _p(logic, u, "single_skill_repeat")
 	if not rep.is_empty() and int(skill.get("scope", 0)) == 1 and not u.is_attack(skill) and _is_damage(skill) and not f.targets.is_empty():
 		if logic._float("qiyin_repeat") < float(rep.chance_pct) / 100.0:
 			var t = f.targets[0] if f.targets[0].is_alive() else _random_enemy(logic)
-			if t != null:
-				logs.append_array(_derived(logic, u, skill, t, float(rep.dmg_pct) / 100.0))
-	# 震印 5 件：这个技能再放一次（不付费）
-	if bool(f.double) and u.is_alive():
+			if t != null and XTianqiLedger.take_derived(logic, u, "qiyin.single_skill_repeat"):
+				logs.append_array(_derived(logic, u, skill, t, float(rep.dmg_pct) / 100.0))  # derived:qiyin.single_skill_repeat
+	# 震印 5 件：这个技能再放一次（不付费）。属「再释放」：占回合预算（和击倒再动、词条再释放共用每回合多 1 次，期三）
+	if bool(f.double) and u.is_alive() and XTianqiLedger.take_extra(logic, u, "qiyin.double", true):
 		for t in f.targets:
 			if t.is_alive():
-				logs.append_array(_derived(logic, u, skill, t, 1.0))
+				logs.append_array(_derived(logic, u, skill, t, 1.0))  # recast:qiyin.double
 	st.depth = int(st.depth) - 1
 	# 击倒后再行动一次（红印 5 件、灰真印、夺和大刀；同名只算一条，每回合 per_turn 次）
 	var ka := _p(logic, u, "kill_extra_action")
-	if not ka.is_empty() and not f.killed.is_empty() and u.is_alive() and int(un.extra_used) < int(ka.per_turn):
+	if not ka.is_empty() and not f.killed.is_empty() and u.is_alive() and int(un.extra_used) < int(ka.per_turn) and XTianqiLedger.take_extra(logic, u, "qiyin.kill_extra_action"):
 		un.extra_used = int(un.extra_used) + 1
-		logic.current_order.push_front(u)
+		logic.current_order.push_front(u)  # 追加行动：占回合预算（期三）
 	# 补刀：队友这次行动打到的目标低于线，持有者追一刀
 	for h in logic.actors:
 		if is_same(h, u) or not h.is_alive() or not h.can_move():
@@ -621,7 +621,7 @@ static func end_action(logic, u, skill) -> Array:
 				hu.followups = int(hu.followups) + 1
 				n += 1
 				st.depth = int(st.depth) + 1
-				logs.append_array(_derived(logic, h, h.attack_skill(), t, 1.0))
+				logs.append_array(_derived(logic, h, h.attack_skill(), t, 1.0))  # derived:qiyin.ally_followup_execute（次数＝装备表 per_turn）
 				st.depth = int(st.depth) - 1
 	logs.append_array(take_logs(logic))
 	return logs

@@ -1,0 +1,164 @@
+== 选测（基准 main，26 个改动文件）
+  00_项目管理/交付/cc_tianqi-ledger-p3.md → docs（只改文档／登记：只跑文档与登记检查）：无场景
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_event_runner.gd → game（其它游戏模块：引用它的专项＋事件对照）：21 个场景：xiyou_battle_common_events.tscn、xiyou_battle_end_ce.tscn、xiyou_battle_events.tscn、xiyou_battle_start_event.tscn、xiyou_cond111.tscn、xiyou_event_compare.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd → battle（战斗核心：xiyou_rules 全部段＋事件对照＋覆盖＋同源）：289 个场景：xiyou_act_stat_memo.tscn、xiyou_action_sequence.tscn、xiyou_actor1_damage.tscn、xiyou_alien_affix.tscn、xiyou_alien_battle.tscn、xiyou_attack_query.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor.gd → battle（战斗核心：xiyou_rules 全部段＋事件对照＋覆盖＋同源）：370 个场景：xiyou_act_stat_memo.tscn、xiyou_action_sequence.tscn、xiyou_actor1_damage.tscn、xiyou_actor_bonus.tscn、xiyou_actor_change.tscn、xiyou_actor_modules.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/damage.gd → battle（战斗核心：xiyou_rules 全部段＋事件对照＋覆盖＋同源）：106 个场景：xiyou_actor_p0.tscn、xiyou_attack_element.tscn、xiyou_boss_status.tscn、xiyou_cat.tscn、xiyou_challenge_passives.tscn、xiyou_combat.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/gojo.gd → game（其它游戏模块：引用它的专项＋事件对照）：19 个场景：xiyou_actor_advanced.tscn、xiyou_actor_book.tscn、xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/item_marks.gd → game（其它游戏模块：引用它的专项＋事件对照）：44 个场景：xiyou_actor_modules.tscn、xiyou_alien_affix.tscn、xiyou_alien_config.tscn、xiyou_alien_hide.tscn、xiyou_baby_all_actors.tscn、xiyou_battle_ui.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/liuying.gd → game（其它游戏模块：引用它的专项＋事件对照）：15 个场景：xiyou_actor_p0.tscn、xiyou_battle_log.tscn、xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/percent_pills.gd → game（其它游戏模块：引用它的专项＋事件对照）：6 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_percent_pills.tscn、xiyou_tianqi_ledger_p3.tscn
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/race_battle.gd → game（其它游戏模块：引用它的专项＋事件对照）：8 个场景：xiyou_battle_ui.tscn、xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_race_battle.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_affix_battle.gd → game（其它游戏模块：引用它的专项＋事件对照）：13 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_tianqi_affix_battle.tscn、xiyou_tianqi_affix_roll.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_ledger.gd → game（其它游戏模块：引用它的专项＋事件对照）：8 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_tianqi_affix_battle.tscn、xiyou_tianqi_ledger.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_qiyin_effects.gd → game（其它游戏模块：引用它的专项＋事件对照）：10 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_tianqi_elements.tscn、xiyou_tianqi_ledger_p3.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_skills.gd → game（其它游戏模块：引用它的专项＋事件对照）：23 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_gojo.tscn、xiyou_gojo_trials.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/yomi_jingliu.gd → game（其它游戏模块：引用它的专项＋事件对照）：76 个场景：xiyou_actor_modules.tscn、xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_jingliu.tscn……
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/damage_ledger.json → mode_data（模式手写数据（modes/xiyou/*.json）：引用它或加载它的模块的专项＋事件对照）：5 个场景：xiyou_event_compare.tscn、xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn、xiyou_event_compare_d.tscn、xiyou_tianqi_ledger.tscn
+  03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/item_scene.gd → ui（界面：界面专项＋事件对照）：38 个场景：xiyou_alien_hide.tscn、xiyou_attack_query.tscn、xiyou_book_capacity.tscn、xiyou_book_capacity_ui.tscn、xiyou_bulk_pills.tscn、xiyou_event_compare.tscn……
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_affix_battle.gd → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_tianqi_affix_battle.tscn
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_ledger.gd → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_tianqi_ledger.tscn
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_ledger_p3.gd → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_tianqi_ledger_p3.tscn
+  03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_ledger_p3.tscn → test（改了测试本身：跑那个测试（辅助脚本就跑引用它的测试））：1 个场景：xiyou_tianqi_ledger_p3.tscn
+  03_再刷重制_Godot/04_验证/总账期三/cloud_check.log → docs（只改文档／登记：只跑文档与登记检查）：无场景
+  03_再刷重制_Godot/04_验证/总账期三/cloud_check.log.lock → docs（只改文档／登记：只跑文档与登记检查）：无场景
+  03_再刷重制_Godot/04_验证/总账期三/cloud_check.log.start.err → docs（只改文档／登记：只跑文档与登记检查）：无场景
+  03_再刷重制_Godot/04_验证/总账期三/cloud_check.log.status.json → docs（只改文档／登记：只跑文档与登记检查）：无场景
+  结论：Godot 场景 479 个（xiyou_act_stat_memo.tscn xiyou_action_sequence.tscn xiyou_actor1_damage.tscn xiyou_actor_advanced.tscn xiyou_actor_bonus.tscn xiyou_actor_book.tscn xiyou_actor_change.tscn xiyou_actor_modules.tscn xiyou_actor_p0.tscn xiyou_advance_reads.tscn xiyou_affix_absorb.tscn xiyou_alien_affix.tscn xiyou_alien_battle.tscn xiyou_alien_config.tscn xiyou_alien_hide.tscn xiyou_attack_element.tscn xiyou_attack_query.tscn xiyou_auto_passive.tscn xiyou_baby_all_actors.tscn xiyou_barrier.tscn xiyou_battle.tscn xiyou_battle_common_event_child.tscn xiyou_battle_common_events.tscn xiyou_battle_drop.tscn xiyou_battle_end_ce.tscn xiyou_battle_enter_exit_lag.tscn xiyou_battle_events.tscn xiyou_battle_gaps.tscn xiyou_battle_log.tscn xiyou_battle_options.tscn xiyou_battle_pace.tscn xiyou_battle_pixel.tscn xiyou_battle_speed.tscn xiyou_battle_start_event.tscn xiyou_battle_state_batch.tscn xiyou_battle_ui.tscn xiyou_binding.tscn xiyou_black_flash_ui.tscn xiyou_book_capacity.tscn xiyou_book_capacity_ui.tscn xiyou_boss_lifecycle.tscn xiyou_boss_output.tscn xiyou_boss_output_context.tscn xiyou_boss_sequence.tscn xiyou_boss_status.tscn xiyou_bulk_pills.tscn xiyou_cat.tscn xiyou_cat_trial.tscn xiyou_census1.tscn xiyou_challenge_passives.tscn xiyou_combat.tscn xiyou_common_scripts.tscn xiyou_cond111.tscn xiyou_confusion.tscn xiyou_costume_battle.tscn xiyou_costumes.tscn xiyou_counter_guard.tscn xiyou_crisp_scale.tscn xiyou_custom_damage.tscn xiyou_custom_params.tscn xiyou_death_admission.tscn xiyou_demon_crown.tscn xiyou_demon_crown_compact.tscn xiyou_determinism.tscn xiyou_difficulty_actor.tscn xiyou_difficulty_enemy.tscn xiyou_difficulty_inherit.tscn xiyou_difficulty_inherit_battle.tscn xiyou_difficulty_inherit_load.tscn xiyou_difficulty_troop.tscn xiyou_dot.tscn xiyou_drop_record.tscn xiyou_dual_exclusive.tscn xiyou_dual_wield.tscn xiyou_dungeon.tscn xiyou_element_ternary.tscn xiyou_empress_draw.tscn xiyou_enemy_book.tscn xiyou_equipment.tscn xiyou_equipment_admission.tscn xiyou_equipment_clone_state.tscn xiyou_error_data.tscn xiyou_event_compare.tscn xiyou_event_compare_b.tscn xiyou_event_compare_c.tscn xiyou_event_compare_d.tscn xiyou_fabao_rework.tscn xiyou_fest_reward.tscn xiyou_fest_road.tscn xiyou_floor16_dungeon.tscn xiyou_floor28_dungeon.tscn xiyou_floor_abyss037.tscn xiyou_floor_abyss174.tscn xiyou_floor_abyss211.tscn xiyou_floor_brave081.tscn xiyou_floor_brave083.tscn xiyou_floor_fortress029.tscn xiyou_floor_goblin024.tscn xiyou_floor_guild197.tscn xiyou_floor_guild198.tscn xiyou_floor_inherit.tscn xiyou_floor_lab111.tscn xiyou_floor_odds.tscn xiyou_floor_reach004.tscn xiyou_floor_reach011.tscn xiyou_floor_reach040.tscn xiyou_floor_reach041.tscn xiyou_floor_reach062.tscn xiyou_floor_reach068.tscn xiyou_floor_reach069.tscn xiyou_floor_reach075.tscn xiyou_floor_reach079.tscn xiyou_floor_reach080.tscn xiyou_floor_reach094.tscn xiyou_floor_reach106.tscn xiyou_floor_reach107.tscn xiyou_floor_reach109.tscn xiyou_floor_reach115.tscn xiyou_floor_reach125.tscn xiyou_floor_reach128.tscn xiyou_floor_reach139.tscn xiyou_floor_reach173.tscn xiyou_floor_reach187.tscn xiyou_floor_reach207.tscn xiyou_floor_reach222.tscn xiyou_floor_reach224.tscn xiyou_floor_reach225.tscn xiyou_floor_run.tscn xiyou_floor_run_b.tscn xiyou_floor_run_c.tscn xiyou_floor_unknown160.tscn xiyou_floor_unknown210.tscn xiyou_floor_unknown223.tscn xiyou_formula_effects.tscn xiyou_formula_equipment.tscn xiyou_formula_program.tscn xiyou_formula_rest.tscn xiyou_formulas.tscn xiyou_garou_battle.tscn xiyou_garou_progress.tscn xiyou_gear_detail.tscn xiyou_gear_query_cache.tscn xiyou_gear_search.tscn xiyou_gear_ui.tscn xiyou_gojo.tscn xiyou_gojo_trials.tscn xiyou_growth_forge.tscn xiyou_growth_help.tscn xiyou_guide.tscn xiyou_guyu.tscn xiyou_guyu_battle.tscn xiyou_guyu_ui.tscn xiyou_hangup_auto.tscn xiyou_heartsteel.tscn xiyou_heir116.tscn xiyou_hidden_actors.tscn xiyou_hit_warehouse.tscn xiyou_honghuang_curse.tscn xiyou_honghuang_curse_battle.tscn xiyou_honghuang_reward.tscn xiyou_imported_balance.tscn xiyou_item_bag.tscn xiyou_item_list.tscn xiyou_item_marks.tscn xiyou_item_use.tscn xiyou_jingliu.tscn xiyou_jingliu2.tscn xiyou_kotori_firepower.tscn xiyou_legion_tech.tscn xiyou_life_steal.tscn xiyou_liuying.tscn xiyou_liuying2.tscn xiyou_liuying3.tscn xiyou_liuying_help.tscn xiyou_loose_fixes.tscn xiyou_magic_level.tscn xiyou_magic_weapon.tscn xiyou_magic_weapon_level.tscn xiyou_map132_shop.tscn xiyou_map186.tscn xiyou_map186_b.tscn xiyou_map186_c.tscn xiyou_map186_d.tscn xiyou_map186_e.tscn xiyou_map186_legions.tscn xiyou_map186_legions_b.tscn xiyou_map_hotkeys.tscn xiyou_mira_abyss.tscn xiyou_mira_art.tscn xiyou_mira_battle.tscn xiyou_mira_dragon_art.tscn xiyou_mira_lift.tscn xiyou_mira_raven_hit.tscn xiyou_module_hooks.tscn xiyou_movie.tscn xiyou_multi_element.tscn xiyou_nanoha.tscn xiyou_newsrc_boss_events.tscn xiyou_one_press.tscn xiyou_options_basic.tscn xiyou_options_misc.tscn xiyou_orb_ui.tscn xiyou_orbs.tscn xiyou_otb.tscn xiyou_panels.tscn xiyou_param_cache.tscn xiyou_param_max.tscn xiyou_param_states.tscn xiyou_party.tscn xiyou_party_formation.tscn xiyou_party_skills.tscn xiyou_party_status_panel.tscn xiyou_passive.tscn xiyou_passive_content.tscn xiyou_percent_pills.tscn xiyou_pet_capture.tscn xiyou_poison_collapse.tscn xiyou_popup_multi.tscn xiyou_power.tscn xiyou_power_books.tscn xiyou_power_books_boundary.tscn xiyou_power_books_menu.tscn xiyou_power_hidden.tscn xiyou_preempt.tscn xiyou_pushstate.tscn xiyou_qiongxiao_balance.tscn xiyou_qiyu.tscn xiyou_race_battle.tscn xiyou_race_menu.tscn xiyou_random_big_range.tscn xiyou_random_streams.tscn xiyou_raven_artifact.tscn xiyou_raven_battle.tscn xiyou_raven_reflect.tscn xiyou_reincarnation_entry.tscn xiyou_replace_attack_motion.tscn xiyou_review135.tscn xiyou_review20_fix.tscn xiyou_review_fix.tscn xiyou_review_fixes.tscn xiyou_review_regressions.tscn xiyou_rift2_canglong.tscn xiyou_rift_alien.tscn xiyou_rules.tscn xiyou_rules10.tscn xiyou_rules_d1b.tscn xiyou_rules_d1c.tscn xiyou_rules_d1d.tscn xiyou_rules_d1e.tscn xiyou_rules_d1f.tscn xiyou_rules_d1g.tscn xiyou_rules_d1h.tscn xiyou_rules_d2.tscn xiyou_rules_d2b.tscn xiyou_rules_d2c.tscn xiyou_rules_d2d.tscn xiyou_rules_d2e.tscn xiyou_rules_d2f.tscn xiyou_rules_d2g.tscn xiyou_rules_d2h.tscn xiyou_rules_d3.tscn xiyou_rules_d3b.tscn xiyou_rules_d3c.tscn xiyou_rules_d3d.tscn xiyou_rules_d3e.tscn xiyou_rules_d3f.tscn xiyou_rules_d3g.tscn xiyou_rules_d3h.tscn xiyou_rules_d3i.tscn xiyou_rules_d3j.tscn xiyou_rules_d3k.tscn xiyou_rules_d3l.tscn xiyou_rules_d3m.tscn xiyou_rules_d3n.tscn xiyou_rules_d3o.tscn xiyou_rules_d3p.tscn xiyou_rules_d4.tscn xiyou_rules_d4b.tscn xiyou_rules_d4c.tscn xiyou_rules_d4d.tscn xiyou_rules_d4e.tscn xiyou_rules_d4f.tscn xiyou_rules_d4g.tscn xiyou_rules_d4h.tscn xiyou_rules_d5.tscn xiyou_rules_d5b.tscn xiyou_rules_d5c.tscn xiyou_rules_d5d.tscn xiyou_rules_d5e.tscn xiyou_rules_d5f.tscn xiyou_rules_d5g.tscn xiyou_rules_d5h.tscn xiyou_rules_d6.tscn xiyou_rules_d6b.tscn xiyou_rules_d6c.tscn xiyou_rules_d6d.tscn xiyou_rules_d6e.tscn xiyou_rules_d6f.tscn xiyou_rules_d6g.tscn xiyou_rules_d6h.tscn xiyou_rules_d6i.tscn xiyou_rules_d6j.tscn xiyou_rules_d6k.tscn xiyou_rules_d6l.tscn xiyou_rules_d6m.tscn xiyou_rules_d6n.tscn xiyou_rules_d6o.tscn xiyou_rules_d6p.tscn xiyou_save_cold_load.tscn xiyou_save_slim.tscn xiyou_scan2.tscn xiyou_script_census.tscn xiyou_script_gaps.tscn xiyou_sell_lag.tscn xiyou_sequence_visual.tscn xiyou_settlement.tscn xiyou_shield.tscn xiyou_shield_ledger.tscn xiyou_shop_buy.tscn xiyou_shop_stock.tscn xiyou_side_status_order.tscn xiyou_skill_change_to.tscn xiyou_skill_mastery.tscn xiyou_skill_menu_events.tscn xiyou_skill_progression.tscn xiyou_smart_ai.tscn xiyou_smart_ai_b.tscn xiyou_smart_ai_c.tscn xiyou_smart_ai_d.tscn xiyou_smart_ai_e.tscn xiyou_smart_ai_f.tscn xiyou_smart_ai_g.tscn xiyou_smart_ai_h.tscn xiyou_smart_ai_i.tscn xiyou_smart_ai_j.tscn xiyou_smart_ai_k.tscn xiyou_smart_ai_l.tscn xiyou_smart_ai_m.tscn xiyou_smart_ai_n.tscn xiyou_smart_ai_o.tscn xiyou_smart_ai_p.tscn xiyou_smart_ai_profile.tscn xiyou_speed_gear.tscn xiyou_stage50_review.tscn xiyou_star_warehouse.tscn xiyou_starburst_books.tscn xiyou_start_clear_result.tscn xiyou_start_state_walk.tscn xiyou_state_change_remove.tscn xiyou_state_effects.tscn xiyou_state_effects_tp.tscn xiyou_state_js.tscn xiyou_state_operation.tscn xiyou_state_overlay.tscn xiyou_state_remove.tscn xiyou_status_power_panel.tscn xiyou_stunned_turn.tscn xiyou_sukuna_art.tscn xiyou_sukuna_battle.tscn xiyou_sukuna_fx.tscn xiyou_super_acquire.tscn xiyou_super_deploy.tscn xiyou_svpngfd.tscn xiyou_system_evidence.tscn xiyou_target_eval.tscn xiyou_test_mode.tscn xiyou_three_growth.tscn xiyou_tianqi_affix_battle.tscn xiyou_tianqi_affix_roll.tscn xiyou_tianqi_affix_seed.tscn xiyou_tianqi_alien_affix.tscn xiyou_tianqi_alien_finale.tscn xiyou_tianqi_alien_gear.tscn xiyou_tianqi_artifact_aura.tscn xiyou_tianqi_battle_seed.tscn xiyou_tianqi_death.tscn xiyou_tianqi_drop.tscn xiyou_tianqi_e2e.tscn xiyou_tianqi_elements.tscn xiyou_tianqi_ending.tscn xiyou_tianqi_famine.tscn xiyou_tianqi_famine_reaper.tscn xiyou_tianqi_gear.tscn xiyou_tianqi_gear2.tscn xiyou_tianqi_horsemen_battle.tscn xiyou_tianqi_ledger.tscn xiyou_tianqi_ledger_p3.tscn xiyou_tianqi_look.tscn xiyou_tianqi_money.tscn xiyou_tianqi_no_diff_passive.tscn xiyou_tianqi_no_x6.tscn xiyou_tianqi_numbers.tscn xiyou_tianqi_opening.tscn xiyou_tianqi_party.tscn xiyou_tianqi_pet_hide.tscn xiyou_tianqi_plague.tscn xiyou_tianqi_qiyin_altar.tscn xiyou_tianqi_qiyin_art.tscn xiyou_tianqi_qiyin_dragon_run.tscn xiyou_tianqi_qiyin_effects.tscn xiyou_tianqi_qiyin_endgame.tscn xiyou_tianqi_qiyin_equip.tscn xiyou_tianqi_reforge.tscn xiyou_tianqi_rewards.tscn xiyou_tianqi_save.tscn xiyou_tianqi_sect_a.tscn xiyou_tianqi_sect_bing.tscn xiyou_tianqi_sect_ren.tscn xiyou_tianqi_seed_fix.tscn xiyou_tianqi_seg_alien.tscn xiyou_tianqi_skill_debt.tscn xiyou_tianqi_skills.tscn xiyou_tianqi_summit.tscn xiyou_tianqi_swap_init.tscn xiyou_tianqi_trim.tscn xiyou_tianqi_trumpet.tscn xiyou_tianqi_war.tscn xiyou_tianqi_weak_affix.tscn xiyou_tianqi_weak_clear.tscn xiyou_tianqi_zhengdao_party.tscn xiyou_toji.tscn xiyou_toji_battle.tscn xiyou_toji_eva.tscn xiyou_training.tscn xiyou_trait_stack.tscn xiyou_transform_params.tscn xiyou_treasure_batch.tscn xiyou_troop_condition.tscn xiyou_troop_events.tscn xiyou_troop_events_b.tscn xiyou_troop_events_c.tscn xiyou_troop_events_d.tscn xiyou_troop_events_half.tscn xiyou_troop_events_sce.tscn xiyou_troop_events_sce_b.tscn xiyou_tusu.tscn xiyou_tusu_battle.tscn xiyou_tusu_ui.tscn xiyou_ui_art_phase01.tscn xiyou_ui_page_details.tscn xiyou_ui_pixel.tscn xiyou_ui_skin_1b.tscn xiyou_ui_skin_1c.tscn xiyou_ui_skin_3a.tscn xiyou_ui_skin_4b.tscn xiyou_ui_skin_battle.tscn xiyou_ui_skin_close.tscn xiyou_ui_skin_hud.tscn xiyou_ui_skin_menu.tscn xiyou_ui_skin_offshot.tscn xiyou_unlock_chain.tscn xiyou_unlock_chain_b.tscn xiyou_unlock_chain_c.tscn xiyou_unlock_chain_d.tscn xiyou_variants.tscn xiyou_variants_b.tscn xiyou_vegeta_tune.tscn xiyou_virtual_player.tscn xiyou_vsfx.tscn xiyou_warehouse.tscn xiyou_weak_challenge.tscn xiyou_weapon_unleash.tscn xiyou_window_rects.tscn xiyou_wtype.tscn xiyou_xuan_auto.tscn xiyou_xuan_battle.tscn xiyou_xuan_bind.tscn xiyou_xuan_chart.tscn xiyou_xuan_tusu_art.tscn xiyou_yomi_battle.tscn xiyou_yunshang.tscn xiyou_yunshang_gear_load.tscn xiyou_yunshang_shop.tscn xiyou_yunshang_ui.tscn xiyou_yunshang_wraps.tscn xiyou_zhenhuo.tscn xiyou_zhenqi.tscn xiyou_zhenqi_break.tscn xiyou_zhenqi_daofa.tscn）；非 Godot 检查：content、guards、same_source；文档与登记检查照常
+  工具快速回归（车道交付必跑，几十秒）：python3 03_再刷重制_Godot/07_开发环境/工具回归.py  ← 改了 检查.sh／选测对照.json／转换器／翻译／插件备注或新增检查时尤其要跑
+== 文档与登记
+  待审查核查 24 批，另有只改文档、登记的 10 批（只看结论与编号）：
+    [乙] 2026-11-15 合并 cc/ui-skin-1c｜8 个提交 c7e4669…e3ffadf｜cc、cc（唐僧）
+    [乙] 2026-11-15 1A 测试修：skin_showcase 按键标已处理改走 XKeyMap.handled（xi｜e9e0e16｜cc
+    [乙] 2026-11-15 测试修：难度敌群对照、楼层跑测按原版对照，显式关 XRiftAlien.ALIGN_LOBBY｜9eda62b｜cc
+    [丙] 2026-11-15 皮肤关闭对照：基线有导入缓存里没有的 class_name 时先对克隆重导入（5C、2B 报类未｜ab0f7ed｜cc
+    [乙] 2026-11-15 3B 修：天启篇标题 extras 按钮换皮后压不回原高时往上长、底边不动｜89ab066｜cc
+    [甲] 2026-11-15 合并 cc/party-formation｜7 个提交 78eee70…35cd2f2｜cc、cc（唐僧）
+    [乙] 2026-11-15 天启篇标题：换皮后问卷行重新贴到群号行新顶上；选测对照 tianqi_title 组补 titl｜56b339b｜cc
+    [乙] 2026-11-15 合并 xa/review-party-2b｜5 个提交 6ace5ae…a88a92b｜小A、cc（唐僧）
+    [乙] 2026-11-15 乙批收口修：比原版文字的 8 个参照专项关 XTextFix（照 help_card）、text｜501b6e9｜cc
+    [丙] 2026-11-15 天启篇数据校验：词条抽查两条期望跟 text-audit e0e1fc982 改成「概率」（js｜c42216a｜cc
+    [乙] 2026-11-16 测试修：rift2_canglong 原表对照补打冠军戒指补丁（XFestRing.patch_｜51f044d｜cc
+    [乙] 2026-11-16 测试修：pet_capture 关 XRiftAlien.ALIGN_LOBBY（原版敌名对照，｜8d35495｜cc
+    [甲] 2026-11-16 合并 cc/ui-art-phase01｜19 个提交 ef3a723…84fd250｜cc、ag、cc（唐僧）
+    [甲] 2026-11-16 合并 cc/tianqi-skill-debt｜6 个提交 b29432d…e9c7390｜cc、cc（唐僧）
+    [甲] 2026-11-16 合并 cc/tianqi-affix-0a｜6 个提交 9b62058…d55ea3d｜cc、cc（唐僧）
+    [甲] 2026-11-16 合并 cc/tianqi-ledger-p2｜10 个提交 8173358…d804ad7｜cc、cc（唐僧）
+    [乙] 2026-11-16 测试修：whats_new 新皮肤断言认 O-515 烟色面板（XSkinArt.SmokeSt｜a146fc9｜cc
+    [甲] 2026-11-16 合并 cc/t022-joystick-pet｜5 个提交 30995b6…97e38e4｜cc、cc（唐僧）
+    [甲] 2026-11-16 合并 cc/t036-worktree-setup｜5 个提交 1c1654a…2b49b27｜cc、cc（唐僧）
+    [丙] 2026-11-16 合并 cc/xxy-public-pack｜6 个提交 adf3561…f052f6f｜cc、cc（唐僧）
+    [甲] 2026-11-16 WIP: 总账期三丹药下架、九线封顶、audit_confirm 收紧｜ce29a3e｜cc
+    [甲] 2026-11-16 WIP: 总账期三回合预算入口 take_extra，接七印、词条、公共事件、五条悟、镜流、流萤｜093e961｜cc
+    [乙] 2026-11-16 WIP: 总账期三专项 xiyou_tianqi_ledger_p3｜05867b6｜cc
+    [甲] 2026-11-16 总账期三：醒来补排不重掷、技能卡 free_action 接预算；交付单初稿；词条专项按新回合重｜1805f9e｜cc
+    文档：8058775 8af990c 11431e9 9e379df 9fb942c b19dc4f b4b62b8 195f0b6 3127aef e9172c4
+  待交叉核查共 34 批：甲 10 批（其中 2 批只因有文件拿不准才算甲）、乙 11 批、丙 13 批；上限只算甲档，计入 10 批（分档表 待核查分档.json；按提交尾注减去变更记录核查条目）
+  拿不准归哪档、已按甲算的文件（到 待核查分档.json 加规则）：03_再刷重制_Godot/01_Godot工程/content/ui_skin/phase01/safe_areas.json、03_再刷重制_Godot/01_Godot工程/core/touch_controls.gd、03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/balance_table.json、03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/damage_ledger.json、03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/skill_rework.json、03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/weak_affix_table.json、orca.yaml
+  ✓ JSON、链接、开发编号（dev.638）
+  回退开关 429 个：测试覆盖回退值 376，缺口 27（新 15、豁免 12），人工确认 26，解析不了 17 行
+  ⚠ 缺口 O-294 XHelpCard.EFFECT_SORT_V041 = false（modes/xiyou/ui/help_card.gd；最后改它的：合并 cc/chars-gaps1 · eed777b00 WIP: 专属装备说明卡走 characterHelpView、饿狼法宝说明十行、魔法增量算公式（chars-gaps1））
+  ⚠ 缺口 O-249 SKIP_FOR_SMOKE = false（modes/xiyou/ui/splash_screen.gd；最后改它的：合并 cc/platform-android-keys-fix · 045ceb37a WIP: 安卓冒烟按键不放开场图（SKIP_FOR_SMOKE）＋专项断言，未验证；交付单写接续）
+  ⚠ 缺口 O-257 XBattleScene.ABORT_DOUBLE_END = true（modes/xiyou/battle/battle_scene.gd；最后改它的：合并 cc/rules-mira-raven2 · 5cb1655ba 340 中止战斗对齐原版：本页同一帧照常往下跑到等待；同帧全灭改写成 2（预约 1308、不复活、不去结束画面）、同帧全歼按胜利）
+  ⚠ 缺口 O-348 XZhenqi.DAOFA_TAG_CACHE = false（modes/xiyou/core/zhenqi.gd；最后改它的：合并 claude/project-thread-ksjqul · c160c7cdd 只读窗口缓存按重入护栏分开存（云裳万法同裳、璇共宿、屠苏盾相）；道法标签缓存加开关；说明卡开关改名 ELEMEN）
+  ⚠ 缺口 O-363 XTianqiSkills.ACTION_CAP = false（modes/xiyou/core/tianqi_skills.gd；最后改它的：f0fd7b78a 合并 cc/tianqi-skills-p1（dev.512）收尾）
+  ⚠ 缺口 O-364 XTianqiSkills.TIERS = false（modes/xiyou/core/tianqi_skills.gd；最后改它的：f0fd7b78a 合并 cc/tianqi-skills-p1（dev.512）收尾）
+  ⚠ 缺口 O-406 ROSTER = false（modes/xiyou/core/tianqi_trim.gd；最后改它的：c781f52dd 合并 cc/tianqi-patches（dev.563）收尾）
+  ⚠ 缺口 O-407 DIFF_NAME = false（modes/xiyou/core/tianqi_trim.gd；最后改它的：c781f52dd 合并 cc/tianqi-patches（dev.563）收尾）
+  ⚠ 缺口 O-408 HIDE_AFFIX_RATE = false（modes/xiyou/core/tianqi_trim.gd；最后改它的：c781f52dd 合并 cc/tianqi-patches（dev.563）收尾）
+  ⚠ 缺口 O-434 XTianqiElements.WEAK_EXPOSURE = false（modes/xiyou/core/tianqi_elements.gd；最后改它的：e6b9294bd 合并 cc/tianqi-elements（dev.575）收尾）
+  ⚠ 缺口 O-435 XTianqiElements.HIGHER_EFFECTS = false（modes/xiyou/core/tianqi_elements.gd；最后改它的：e6b9294bd 合并 cc/tianqi-elements（dev.575）收尾）
+  ⚠ 缺口 O-436 XTianqiElements.SKILL_SHIFTS = false（modes/xiyou/core/tianqi_elements.gd；最后改它的：e6b9294bd 合并 cc/tianqi-elements（dev.575）收尾）
+  ⚠ 缺口 O-511 XFestRing.GRANT = false（modes/xiyou/core/fest_ring.gd；最后改它的：edcf6d615 合并 cc/fest-champion-road（dev.631）收尾）
+  ⚠ 缺口 O-518 XSkinArt.READ = false（modes/xiyou/ui/skin/skin_art.gd；最后改它的：84fd25095 合并 cc/ui-art-phase01（dev.634）收尾）
+  ⚠ 缺口 O-528 XTianqiLedger.POOL_RACE = false（modes/xiyou/core/tianqi_ledger.gd；最后改它的：合并 cc/tianqi-ledger-p2 · 8173358a5 WIP: 伤害加成总账期二归池清场：七印、宝珠共鸣、种族、对某族增伤、独立乘区、套装确认阶段、词条技能伤、技能专属被动、万灵增元丹）
+  ? 人工确认 O-142 XYunshangOrders.o_profile_stage：只见非字面量赋值 tests/xiyou_review20_fix.gd:23
+  ? 人工确认 O-168 XStateEffects.FIX_FORCE_DRAIN：只见非字面量赋值 tests/xiyou_state_effects.gd:1777
+  ? 人工确认 O-174 XStateEffects.FIX_COUNTER_ONCE：只见非字面量赋值 tests/xiyou_qiongxiao_balance.gd:132、tests/xiyou_state_effects.gd:1736
+  ? 人工确认 O-198 XBattlerSprite.RAVEN_MYTH_DEAD_ALPHA：只见非字面量赋值 tests/xiyou_raven_visual.gd:91
+  ? 人工确认 O-222 XStarWarehouse.o_withdraw_txn：只见非字面量赋值 tests/xiyou_star_warehouse.gd:354
+  ? 人工确认 O-284 XBattleEventRunner.O_PUSH_RECAST：只见非字面量赋值 tests/xiyou_battle_common_events.gd:130
+  ? 人工确认 O-228 XBossHpBar.REBUILD：只见非字面量赋值 tests/xiyou_boss_hp_bar.gd:330
+  ? 人工确认 O-234 XZhenhuo.FIX_OLD_CHASE：只见非字面量赋值 tests/xiyou_zhenhuo.gd:112、tests/xiyou_zhenhuo.gd:125、tests/xiyou_zhenhuo.gd:193
+  ? 人工确认 O-281 XTianqi.SWAP_INIT：只见非字面量赋值 tests/xiyou_tianqi_swap_init.gd:58
+  ? 人工确认 O-319 XMVCanvas.BLINK_FULL_REDRAW：只见非字面量赋值 tests/xiyou_android_perf.gd:39
+  ? 人工确认 O-342 XShop.DATA_CACHE：只见非字面量赋值 tests/xiyou_feedback_v001.gd:168
+  ? 人工确认 O-392 XSmartAI.CHOOSE_WINDOW：只见非字面量赋值 tests/xiyou_battle_enter_exit_lag.gd:30
+  ? 人工确认 O-394 XActor.RELEASE_WINDOW：只见非字面量赋值 tests/xiyou_battle_enter_exit_lag.gd:28
+  ? 人工确认 O-395 XResourceContext.REFRESH_WINDOW：只见非字面量赋值 tests/xiyou_battle_enter_exit_lag.gd:29
+  ? 人工确认 O-438 BANKRUPT_MDF：只见非字面量赋值 tests/xiyou_tianqi_horsemen_battle.gd:539
+  ? 人工确认 O-439 FRESH_PARAM：只见非字面量赋值 tests/xiyou_tianqi_horsemen_battle.gd:569
+  ? 人工确认 O-442 ONE_PASS：只见非字面量赋值 tests/xiyou_sell_lag.gd:74
+  ? 人工确认 O-488 XUI.UNDEF_TEXT_FIX：只见非字面量赋值 tests/xiyou_difficulty_notice.gd:135
+  ? 人工确认 O-519 XSkinEquipPage.LAYOUT：只见非字面量赋值 tests/xiyou_ui_art_phase01.gd:276、tests/xiyou_ui_art_phase01.gd:512
+  ? 解析不了 O-214：代码里找不到 XIYOU_AUDIO_96K 的声明
+  ? 解析不了 O-246：代码里找不到 XIYOU_HBOOT_FILE_XHR 的声明
+  ? 解析不了 O-271：代码里找不到 XIYOU_AUDIT_BEFORE_HIT 的声明
+  ? 解析不了 O-275：AUTO 有 3 处声明（addons/xiyou_export/android_version.gd、addons/xiyou_export/desktop_version.gd、core/update_client.gd），认不出是哪个
+  ? 解析不了 O-348：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-390：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-392：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-395：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-396：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-398：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-399：代码里找不到 XIYOU_READ_VERIFY 的声明
+  ? 解析不了 O-402：HP 有 2 处声明（modes/xiyou/core/guardian_rework.gd、modes/xiyou/ui/skin/ui_skin.gd），认不出是哪个
+  ? 解析不了 O-413：ENABLED 有 67 处声明（core/screen_scale.gd、core/update_client.gd、core/update_install.gd），认不出是哪个
+  ? 解析不了 O-430：ENABLED 有 67 处声明（core/screen_scale.gd、core/update_client.gd、core/update_install.gd），认不出是哪个
+  ? 解析不了 O-430：ACHIEVEMENT 有 2 处声明（modes/xiyou/core/tianqi_weak_clear.gd、modes/xiyou/core/weak_challenge.gd），认不出是哪个
+  ? 解析不了 O-431：提到 LEARN_SHIFT、OWN_GOLD、RESTORE_ON_WIN、SHADOW_TINT 但认不出回退值
+  ? 解析不了 O-523：GUARD 有 2 处声明（modes/xiyou/core/tianqi_ledger.gd、modes/xiyou/core/tianqi_skills.gd），认不出是哪个
+  ✓ O-128 XWarehouse.o_reserved_no_dup 已有测试设回退值，可从 回退开关豁免.json 删掉
+  ✓ 探针登记：每个 mv_oracle 探针都在 PROBES 里或有夹具；读伤害的探针都关了五乘区（存量 23 个待确认）；同步探针的读法都进缓存键或审过
+  ✓ 天启篇存档字段都已登记
+✓ 随机守卫：65 个天启篇脚本没有未注明的全局随机
+事件状态探针产物在，不用补跑
+== Godot 测试
+  · 沿用 1805f9e1d（本机）1 个：xiyou_virtual_player
+  · 车道结果沿用 1 个、照跑 478 个（XIYOU_REUSE_LANE=0 关）
+  （--cloud：选中的 478 个场景交给云端，本机不跑 Godot；云端只测已提交的提交，未提交改动自动做成临时快照提交）
+[云端选测] ⚠ 上次 --补齐 时总装正在合并，没刷新参照；合并收尾后重跑 新建工作树.sh --补齐 再推产物
+[云端选测] 产物 7092 个对象，新写 0.0 MB
+[云端选测] 推送 ba7e8f3cbd → refs/ci/generated/cc/tianqi-ledger-p3（接在远端当前快照上，只传改了的文件）
+GENERATED_REF=refs/ci/generated/cc/tianqi-ledger-p3 ba7e8f3cbdcfe49d542c15bf9b467e47edd7d879
+[云端选测] 选测基准：f052f6fb4b（上次云端通过的祖先）
+[云端选测] 沿用车道结果：1 个场景不在云端重跑
+选测，基准 f052f6fb4beb9029e6da3acd1dba4c737116eb78：479 个场景，分 16 片；约用 196 分钟额度（每月免费 2000），约 14 分钟跑完（含准备）
+已推送 1805f9e1da → ci/cc/tianqi-ledger-p3，云端开始选测（基准 f052f6fb4b）
+等结果：python3 03_再刷重制_Godot/07_开发环境/云端选测.py wait 1805f9e1da5ee9f28dc6361628078bca097545b8
+## ✓ 云端选测通过
+
+- 提交 1805f9e1da（ci/cc/tianqi-ledger-p3），选测（基准 f052f6fb4beb9029e6da3acd1dba4c737116eb78），478 个场景、16 片，最长一片 13.8 分钟
+- 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43813868809
+  ✓ 云端选测通过（1805f9e1d）
+== 参照工具访问守卫
+TEST_RESULT={"passed":16,"total":16}
+  ✓ MV 文件守卫
+TEST_RESULT={"passed": 12, "total": 12, "failures": []}
+  ✓ 界面参照服务守卫
+  ✓ 导出包排除测试与参照数据
+  ✗ 发行空壳缺成员：跑 07_开发环境/发行空壳.py check，照真脚本发行时的行为补 发行空壳特例.json
+共 0 处（直接 0）
+  ✓ 切场景后不再取视口／场景树（发行版空指针闪退同类）
+{"referenceIntegrityOnly": true, "cases": 59, "passed": true, "issues": []}
+  ✓ 共性参照完整性（尚非Godot实现验收）
+{"pages": 7141, "runnable": 7141, "counts": {"空页": 1182}, "hard": 0, "battleOnlyCommonEvents": 232, "new": 0, "resolved": 0}
+  ✓ 内容覆盖（无基线外新问题）
+用例 5959：空绿 92（全空 85、挡住 7），半空（有效果但另有分支没走到）1503
+按可达档：3档 85、2档 7 ；楼层地图 2；难度相关 0
+有状态变体 24699 个；仍无 delta 也无非文字 trace（观察面不够）1138 个：ce236#k13, ce1#c1, ce249#c1, m213e2p2#a3, ce1313#r1, ce334#r1, m4e8p0#s1, m187e2p0#s1, ce249#s1, m4e8p0#g3, m195e23p0#g3, ce1560#o1
+已补上，可更新基线（--update-baseline）：1 例，如 ce1604
+空绿 92 例，均在基线内
+其中写明走不到理由的 92 例，还没核的 0 例
+  ✓ 事件对照空绿（无基线外新增，变体与产物对得上）
+== MV 参照引擎
+  ✓ {"ms":3713,"scripts":277,"db":true,"plugins":165,"modulesFailed":[],"errors":[],"version":"v0.62.12"}
+{"releaseVersion": "v0.62.12", "inputs": 3435, "runtimeInputs": 411, "outputs": 3601, "issues": []}
+  ✓ 当前西游来源、转换产物、六难度参照同源
+== 失败项汇总（1 项）
+  ✗ 发行空壳缺成员：跑 07_开发环境/发行空壳.py check，照真脚本发行时的行为补 发行空壳特例.json
+== Git
+  ?? 03_再刷重制_Godot/04_验证/总账期三/
+有失败项，请先处理再提交
+
+TASK_RESULT={"runId": "d04b8d7627474a3ebf96b4551ab73941", "status": "failed", "exitCode": 1, "pid": 82196, "startedAt": "2026-11-16T05:58:50.209713+00:00", "command": ["07_开发环境/检查.sh", "--oracle", "--affected", "main", "--cloud"], "childPGID": 82199, "childIdentity": {"pid": 82199, "pgid": 82199, "startedAt": "Mon Nov 16 06:58:50 2026    "}, "startToken": "56318db6f4c64720a84109ba132d0549", "launchdLabel": "xiyou.longtask.1794808730.56318db6f4c6", "finishedAt": "2026-11-16T06:23:05.246836+00:00"}
