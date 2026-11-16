@@ -55,6 +55,8 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 func _run() -> void:
 	kit = Kit.new("xiyou_fest_reward")
+	var start0 := XFest.START
+	XFest.START = "2026-11-15"  # 断言里的日期按 11-15 开始写；真实 START 是 v0.03.00 推送日，这里钉住
 	XFest.TODAY_OVERRIDE = "2026-11-16"
 	_ring_records()
 	_growth()
@@ -66,6 +68,7 @@ func _run() -> void:
 	await _tianqi()
 	XFest.ENABLED = true
 	XFest.TODAY_OVERRIDE = ""
+	XFest.START = start0
 	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
