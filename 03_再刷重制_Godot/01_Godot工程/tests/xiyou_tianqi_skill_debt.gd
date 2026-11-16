@@ -197,9 +197,6 @@ func _counter_stats(lg: XBattleLogic, b, e, n: int, segs: int) -> Dictionary:
 				st.tp_ok = false
 		st.swallowed += maxi(0, segs - hits_on_b)
 		_fresh(lg)
-		for k in ["xtq_cnext", "xtq_cnext_on", "xtq_cnext_turn"]:
-			if b.has_meta(k):
-				b.remove_meta(k)
 	return st
 
 
@@ -219,9 +216,9 @@ func _counter() -> void:
 		_fresh(lg)
 	var ratio: float = (one.dmg / maxf(1.0, one.with_counter)) / maxf(1.0, direct / 100.0)
 	_check("counter_half", ratio > 0.38 and ratio < 0.62, [ratio, one.dmg / maxf(1.0, one.with_counter), direct / 100.0])
-	# 多段攻击同一次行动只反一次（五段：至少有一段中的几率约 86%）
+	# 多段攻击：同一个敌人一次行动只掷一次（五段也约 33%，项目经理cc 11-16 定）
 	var five := _counter_stats(lg, b, e, 200, 5)
-	_check("counter_once_per_action", five.max_per_action == 1 and five.with_counter >= 140 and five.swallowed == 0, five)
+	_check("counter_once_per_action", five.max_per_action == 1 and five.with_counter >= 40 and five.with_counter <= 95 and five.swallowed == 0, five)
 	XTianqiSkills.COUNTER_ONCE = false
 	var many := _counter_stats(lg, b, e, 200, 5)
 	XTianqiSkills.COUNTER_ONCE = true
@@ -231,7 +228,13 @@ func _counter() -> void:
 	var stunned := _counter_stats(lg, b, e, 60, 1)
 	b.remove_state(STUN)
 	_check("counter_stunned", stunned.counters == 0 and stunned.swallowed == 0, stunned)
-	# 牛马之魂：反击后下一招 ×1.2，用掉就清，同回合不再挂
+	lg.end_battle(0)
+	# 牛马之魂：反击后下一次造成伤害的行动 ×1.2，用掉就清，同回合不再挂（新开一场，前面几轮挂上的加成随 end_battle 清掉）
+	_check("counter_next_cleared_by_end", not b.has_meta("xtq_cnext") and not b.has_meta("xtq_cnext_on") and not b.has_meta("xtq_cnext_turn"))
+	x = _brand()
+	lg = x[1]
+	b = x[2]
+	e = x[3]
 	var sk := XDB.rec("Skills", 1159)
 	var base := XTianqiSkills.formula(b, e, sk)
 	var armed := false
@@ -242,6 +245,13 @@ func _counter() -> void:
 		if b.has_meta("xtq_cnext"):
 			armed = true
 			break
+	# 防御、物品、不造成伤害的技能不消耗
+	var keeps := true
+	for nd in [XDB.rec("Skills", XBattleLogic.GUARD_SKILL), XDB.rec("Items", 1), XDB.rec("Skills", 1162)]:
+		XTianqiSkills.begin_action(lg, b, nd)
+		XTianqiSkills.end_action(lg, b, nd)
+		keeps = keeps and b.has_meta("xtq_cnext")
+	_check("counter_next_skip_non_damage", armed and keeps)
 	XTianqiSkills.begin_action(lg, b, sk)
 	var boosted := XTianqiSkills.formula(b, e, sk)
 	XTianqiSkills.end_action(lg, b, sk)
@@ -260,7 +270,17 @@ func _counter() -> void:
 		_fresh(lg)
 		rearm2 = rearm2 or b.has_meta("xtq_cnext")
 	_check("counter_next_next_turn", rearm2)
+	# 跨战斗不残留：挂着加成结束战斗清掉；直接带着标记进下一场，开战（start_turns）也清
+	var had := b.has_meta("xtq_cnext")
 	lg.end_battle(0)
+	_check("counter_next_not_across_battle", had and not b.has_meta("xtq_cnext"))
+	b.set_meta("xtq_cnext", 1.2)
+	b.set_meta("xtq_cnext_on", 1.2)
+	var lg2 := XBattleLogic.new()
+	lg2.setup(2, x[0])
+	lg2._battle_start_states()
+	_check("counter_next_cleared_at_start", not b.has_meta("xtq_cnext") and not b.has_meta("xtq_cnext_on"))
+	lg2.end_battle(0)
 
 
 ## 关掉 NATIVE_COUNTER：回到原版（反击代替挨打、用 1 号普攻）——也就是修前的复现

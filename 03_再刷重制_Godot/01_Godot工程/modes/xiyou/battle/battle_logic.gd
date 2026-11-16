@@ -2427,8 +2427,10 @@ func _counter_attack(u: XBattler, t: XBattler, cast := {}, scale := 1.0) -> Arra
 	XBlackFlash.nested += 1  # 黑闪 invokeCounterAttack 包装
 	var prev_scale := XTianqiSkills.follow_scale
 	XTianqiSkills.follow_scale = scale
+	XTianqiSkills.counter_depth += 1  # 反击里的命中：XTianqiSkills.after_apply 认得出（护短不把敌人反击打中队友记成「被打」）
 	var r := apply(t, XAlienBattle.project(t, t.attack_skill() if cast.is_empty() else cast), u)  # invokeCounterAttack：反击者 setAttack（异化逆祷：反击也读投影）
 	XTianqiSkills.follow_scale = prev_scale
+	XTianqiSkills.counter_depth -= 1
 	XBlackFlash.nested -= 1
 	XRaceBattle.derived_end(self, race_prev)
 	r.counter = true
@@ -3662,6 +3664,7 @@ func end_battle(result := -1) -> void:
 	XTianqiTrumpet.finish(self)  # 天启篇号卷：清本场数据
 	XFestRing.finish(self)  # 冠军戒指「一穿四」：层数清零
 	XTianqiElements.finish(self)  # 天启篇元素重做：清本场数据
+	XTianqiSkills.finish(self)  # 天启篇技能重构：清牛马之魂反击后加成等本场标记
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段
