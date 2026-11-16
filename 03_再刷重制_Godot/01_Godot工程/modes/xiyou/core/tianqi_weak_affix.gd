@@ -468,7 +468,10 @@ static func guided(logic, t) -> bool:
 static func segment_target(logic, _u, _skill, t):
 	if not _active(logic):
 		return t
-	var g: Dictionary = _frame(logic).get("guide", {})
+	var f := _frame(logic)
+	if _kind(f) != ROOT:
+		return t  # 只管主动根本身的段（T035）：根执行完的追加（FOLLOW_FULL 打满整招）、再释放、反击、派生不复用这一根的引导
+	var g: Dictionary = f.get("guide", {})
 	if g.is_empty() or not is_same(t, g.guider):
 		return t
 	if bool(g.active) and legal(logic, t):
@@ -476,7 +479,7 @@ static func segment_target(logic, _u, _skill, t):
 	if bool(g.active):
 		g.active = false  # 摘掉「已引导」：之后的段按没被引导处理，原生掩护照常
 		g.reverted = true
-		var fin: Array = _frame(logic).finish
+		var fin: Array = f.finish
 		if not fin.has(g.orig):
 			fin.append(g.orig)
 	return g.orig if legal(logic, g.orig) else null
