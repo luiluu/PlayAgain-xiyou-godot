@@ -955,5 +955,103 @@
    "event.push_recast",
    "liuying.rerelease"
   ]
+ },
+ "phase4": {
+  "_note": "T080 暗装填表（基础数值重构 v0.3 第七节第 5 条）：期四定数放这里，不动 derived、nine_caps（那两处现在就有代码在读：take_derived、apply_nine_cap）。总开关 XTianqiBase.PHASE4（T012-b）开着时读这个小节，关着读现在的键。现在没有代码读它。",
+  "derived_qiyin": [
+   {
+    "id": "qiyin.kill_chain_slash",
+    "per_turn": 18,
+    "ratio": "dmg_pct（qiyin_gear）",
+    "enforced": true,
+    "note": "照 derived 现值，一个不改（D16）"
+   },
+   {
+    "id": "qiyin.hit_count_burst",
+    "per_turn": 2,
+    "ratio": 1.0,
+    "enforced": true,
+    "note": "照 derived 现值，一个不改"
+   },
+   {
+    "id": "qiyin.single_skill_repeat",
+    "per_turn": 2,
+    "ratio": "dmg_pct（qiyin_gear，50%）",
+    "enforced": true,
+    "note": "照 derived 现值，一个不改"
+   },
+   {
+    "id": "qiyin.ally_followup_execute",
+    "per_turn": "装备表 per_turn（每次队友行动最多 followup_max_per_action 2）",
+    "ratio": 1.0,
+    "enforced": "自管",
+    "note": "照 derived 现值，一个不改"
+   }
+  ],
+  "derived_module": [
+   {
+    "id": "module.toji.armory",
+    "per_turn": null,
+    "ratio": null,
+    "enforced": false,
+    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+   },
+   {
+    "id": "module.garou.follow",
+    "per_turn": null,
+    "ratio": null,
+    "enforced": false,
+    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+   },
+   {
+    "id": "module.xuan.follow_up",
+    "per_turn": null,
+    "ratio": null,
+    "enforced": false,
+    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+   },
+   {
+    "id": "module.jingliu.segment",
+    "per_turn": null,
+    "ratio": null,
+    "enforced": false,
+    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+   },
+   {
+    "id": "module.yunshang.derived",
+    "per_turn": null,
+    "ratio": null,
+    "enforced": false,
+    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+   },
+   {
+    "id": "module.liuying.segment",
+    "per_turn": null,
+    "ratio": null,
+    "enforced": false,
+    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+   },
+   {
+    "id": "module.tusu.segments",
+    "per_turn": null,
+    "ratio": null,
+    "enforced": false,
+    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+   }
+  ],
+  "nine_crit_dmg_cap": 0.3,
+  "nine_crit_dmg_cap_note": "九线爆伤合计封顶 +30%（T041 暂定的数，和元素池的九线封顶同数）；九线三期逐条重做时各自带上限，这个封顶到时拿掉。注意：现在的 nine_caps 里没有爆伤这一项，T012-b 要加读它的地方",
+  "secret_slot": 0.08,
+  "secret_slot_note": "秘籍每格 +8%，不改（测算标骑士一直用的数）",
+  "brand": {
+   "id": "brand",
+   "name": "烙印（原真气）：生效 100% 时 +33%，单独相乘，每人各自",
+   "ref": "D129、D131、D132",
+   "fields": [
+    "finalMultiplier"
+   ],
+   "status": "pending_t073",
+   "note": "状态照 T073《天启篇_真气加伤害》；K 和它联动（基础数值重构 v0.3 第三节第 10 条，D139）：同一处相乘，300 万锚不动。曲线、中位、让出哪几条九线、存档字段都归 T073，这里只登记一行"
+  }
  }
 }
