@@ -27,7 +27,7 @@ static func paint(c: XMVCanvas, rec: Dictionary, y: float, right_text: String, a
 	if is_new:
 		var tex := new_icon()
 		if tex:
-			c.draw_texture(tex, Vector2(2, y + 2), Color(1, 1, 1, alpha))
+			c.tex(tex, Vector2(2, y + 2), alpha)
 	if right_text != "":
 		c.text(right_text, 0, y, w, "right", XUI.TEXT, QTY_FONT, LH, alpha)
 

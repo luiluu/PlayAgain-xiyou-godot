@@ -160,6 +160,24 @@ func icon(index: int, x: float, y: float, alpha := 1.0, size := 32.0) -> void:
 			draw_texture_rect(t, Rect2(x, y, size, size), false, Color(1, 1, 1, alpha))
 
 
+## T040：贴图（如「新」角标）落在选中行里时的画法矩形：在行里就跟着行一起放大，其余原样
+func tex_rect(pos: Vector2, sz: Vector2) -> Rect2:
+	var sk := sel_k_at(pos + sz / 2.0) if _sel_rect.has_area() else 1.0
+	return XSkinSelScale.grow(Rect2(pos, sz), sk) if sk != 1.0 else Rect2(pos, sz)
+
+
+## T040：画一张贴图，选中行里的跟着放大，其余同 draw_texture
+func tex(t: Texture2D, pos: Vector2, alpha := 1.0) -> void:
+	if t == null:
+		return
+	_keep.append(t)
+	var r := tex_rect(pos, t.get_size())
+	if r.size != t.get_size():
+		draw_texture_rect(t, r, false, Color(1, 1, 1, alpha))
+	else:
+		draw_texture(t, pos, Color(1, 1, 1, alpha))
+
+
 ## 成就专用徽章（img/codex_achievements/<file>.png，256²）缩到 size×size；图没导出时不画（见 XAchievementBadge）
 func badge(file: String, x: float, y: float, size: float, alpha := 1.0) -> void:
 	var p := XDB.img_path("codex_achievements", file)

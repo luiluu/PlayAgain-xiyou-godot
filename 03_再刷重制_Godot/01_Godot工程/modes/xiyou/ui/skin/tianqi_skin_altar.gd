@@ -50,6 +50,7 @@ var _done := false
 var backdrop: Control
 var ring: Control
 var card: Control
+var btn_scale: XSkinSelScale
 var top: Control
 var hints: XSkinKeyHints
 var rules: Control
@@ -165,6 +166,7 @@ func _ready() -> void:
 	XSkinLayout.request_wide(self)
 	ring = _layer("Ring", _draw_ring)
 	card = _layer("Card", _draw_card)
+	btn_scale = XSkinSelScale.attach(card, XSkinButton.BUTTON_PEAK)   # T040：底部按钮选中放大（整块按钮和按钮同档 1.05）
 	top = _layer("Top", _draw_top)
 	hints = XSkinKeyHints.new()
 	add_child(hints)
@@ -528,9 +530,10 @@ func _draw_card() -> void:
 			card.draw_string(num, Vector2(w - pad - vw, y + 20), v, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, XUiSkin.GOLD_LIGHT)
 			y += 28
 	# 入口
+	btn_scale.sel(button if not rules_open and not buttons.is_empty() else null)
 	for i in buttons.size():
 		var b: Dictionary = buttons[i]
-		var br := button_rect(i)
+		var br := XSkinSelScale.grow(button_rect(i), btn_scale.k(i))
 		var sb := StyleBoxFlat.new()
 		sb.set_corner_radius_all(int(br.size.y / 2.0))
 		if bool(b.get("primary", false)) and not bool(b.get("disabled", false)):
@@ -543,7 +546,7 @@ func _draw_card() -> void:
 		if i == button and not rules_open:
 			XUiSkin.draw_select(ci, br.grow(3), XUiSkin.breath_alpha())
 		var t := str(b.get("text", ""))
-		var fit := XSkinList.fit_text(body, t, br.size.x - 24, XUiSkin.FS_LIST, 15)
+		var fit := XSkinList.fit_text(body, t, br.size.x - 24, XSkinSelScale.fs(XUiSkin.FS_LIST, btn_scale.k(i), floori(br.size.y * 0.62)), 15)
 		var tw := body.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
 		card.draw_string(body, Vector2(br.position.x + (br.size.x - tw) / 2.0, br.position.y + br.size.y / 2.0 + fit[1] * 0.36), fit[0],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], XUiSkin.TEXT_3 if bool(b.get("disabled", false)) else XUiSkin.TEXT)

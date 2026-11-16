@@ -22,6 +22,7 @@ var state_card: XSkinCard
 var hints: XSkinKeyHints
 var back_btn: Button
 var tab_row: Control
+var tab_scale: XSkinSelScale
 var _rows: Array = []
 
 
@@ -58,6 +59,7 @@ func render() -> void:
 	tab_row = Control.new()
 	tab_row.mouse_filter = Control.MOUSE_FILTER_STOP
 	tab_row.draw.connect(_draw_tabs)
+	tab_scale = XSkinSelScale.attach(tab_row)   # T040：分类页签选中放大
 	tab_row.gui_input.connect(_tab_input)
 	add_child(tab_row)
 	list = XSkinList.new()
@@ -146,6 +148,7 @@ func _draw_tabs() -> void:
 	var ci := tab_row.get_canvas_item()
 	var rects := tab_rects()
 	var ts := tabs()
+	tab_scale.sel(tab)
 	for i in ts.size():
 		var r: Rect2 = rects[i]
 		var on: bool = ts[i][0] == tab
@@ -155,8 +158,9 @@ func _draw_tabs() -> void:
 			else:
 				XUiSkin.draw_select(ci, r)
 		var col := XUiSkin.TEXT if on else XUiSkin.TEXT_2
-		var tw := f.get_string_size(ts[i][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
-		tab_row.draw_string(f, Vector2(r.position.x + (r.size.x - tw) / 2.0, TAB_H / 2.0 + 17 * 0.36), ts[i][1], HORIZONTAL_ALIGNMENT_LEFT, -1, 17, col)
+		var fit := XSkinList.fit_text(f, str(ts[i][1]), r.size.x - 8, XSkinSelScale.fs(17, tab_scale.k(ts[i][0]), floori(TAB_H * 0.66)), 14)
+		var tw := f.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
+		tab_row.draw_string(f, Vector2(r.position.x + (r.size.x - tw) / 2.0, TAB_H / 2.0 + int(fit[1]) * 0.36), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], col)
 	tab_row.draw_line(Vector2(0, TAB_H + 3), Vector2(tab_row.size.x, TAB_H + 3), Color(XUiSkin.LINE, 0.18), 1.0)
 
 

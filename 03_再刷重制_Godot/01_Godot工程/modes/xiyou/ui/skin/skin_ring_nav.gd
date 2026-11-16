@@ -340,12 +340,16 @@ func ring_line_color() -> Color:
 
 ## 第 i 项现在的放大倍数：选中项过渡到 SEL_SCALE，其余回 1（动效关时直接到）
 func item_scale(i: int) -> float:
+	if not XSkinSelScale.ENABLED:   # T040：挂上总开关（原先只读 v7 的 XUiSkin.sel_scale_target，总开关关了环导航还放大）
+		return 1.0
 	if XUiSkin.motion() == XUiSkin.Motion.OFF:
 		return XUiSkin.sel_scale_target(i == index)
 	return float(_scales.get(i, XUiSkin.sel_scale_target(i == index)))
 
 
 func _ease_scales(delta: float) -> void:
+	if not XSkinSelScale.ENABLED:
+		return
 	for i in items.size():
 		var cur := item_scale(i)
 		var nxt := XUiSkin.sel_scale_step(cur, i == index, delta)
