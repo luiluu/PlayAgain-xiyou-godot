@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.659",
-  "sequence": 659,
-  "next": "dev.660",
-  "nextSequence": 660,
+  "current": "dev.660",
+  "sequence": 660,
+  "next": "dev.661",
+  "nextSequence": 661,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "orb-fx-tiers",
+  "currentChange": "fest-trophy-pos",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
