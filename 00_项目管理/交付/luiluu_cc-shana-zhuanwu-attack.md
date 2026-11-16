@@ -28,6 +28,7 @@
 ## 验证
 
 - 新专项 `xiyou_shana_zhuanwu_attack` 27/27：原版数据证据（`data.w77/w83_note_5769`、`data.5769_passive` occasion 3、`data.10556_tianpo`）；开关开：77／83 普攻＝10556、名字天破壤碎、`can_use` 真、`is_attack` 真、无 5769 武器解放；开关关：普攻 5769、不能用、有 5769 解放（逐字原版）；不带专武普攻 1；科比学 5769 被动照旧、普攻不随开关变；假造武器 78 写 5769 不改、防具同号 77 不改；别的武器（火精灵文书 1109 → 1004）不变。
+- 小A 核查 P1 返工：`xiyou_weapon_unleash`（同为 1:1 原版对照，不提 XBattler 所以第一版选测漏选）w77／w83 共 8 例 40 条断言对不上原版；开头关 `SHANA_ZHUANWU_ATTACK_FIX`、`_finish` 恢复后 963/963；`xiyou_attack_query` 结尾也恢复开关（381/381）；`选测对照.json` 的 battle 组补上 `xiyou_weapon_unleash.tscn`（改 battler.gd 等战斗核心都会选到，云端约 6 秒）。
 - 反向验证（`反向验证.py`）三项都咬住：去掉普攻替换修正（＝修前）、去掉武器解放修正、修正不限武器号。
 - `xiyou_replace_attack_motion` 36/36；语法检查通过。
 - `xiyou_attack_query`（原版参照逐例比普攻）：第一轮云端选测它挂了 6 条，正是原版 154＋武器 77／83 的 attackSkillId／setAttack／挂机行动／指令窗（原版 `{"enabled":false,"name":"8秒肘击24下"}`，修后 `{"enabled":true,"name":"天破壤碎"}`）——这就是修前修后指令窗的直接证据；该测试是 1:1 比原版，开头设 `XBattler.SHANA_ZHUANWU_ATTACK_FIX = false` 后 381/381。

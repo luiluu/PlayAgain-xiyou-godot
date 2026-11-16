@@ -229,6 +229,7 @@ func _common(logic: XBattleLogic, b: XBattler) -> Dictionary:
 func _finish() -> void:
 	XAlienation.force_roll = -1.0
 	XGear.force_roll = -1.0
+	XBattler.SHANA_ZHUANWU_ATTACK_FIX = true
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
