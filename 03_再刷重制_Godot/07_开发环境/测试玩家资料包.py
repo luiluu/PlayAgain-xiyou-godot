@@ -192,8 +192,7 @@ class InjectTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             p = Pkg(td)
             P.inject(p.stage, what, {'七首之龙'})
-            if what == '空目录':
-                p.counts = {k: 0 for k in p.counts}
+            p.counts = P.recount(p.stage)
             res = p.check()
             self.assertFalse(res[key]['ok'], f'{what} 没被 {key} 拦住')
 
@@ -215,22 +214,69 @@ class RowTests(unittest.TestCase):
                                    {'id': 6, 'name': '火球', 'description': '二号', 'open': True},
                                    {'id': 7, 'name': '', 'description': '空名'},
                                    {'id': 8, 'name': '------', 'description': '分隔行'},
+                                   {'id': 10, 'name': '------15层副本扩充', 'description': '编辑器分组标题'},
+                                   {'id': 11, 'name': '测试物理100暴击', 'description': '开发测试'},
                                    {'id': 9, 'name': '火球', 'description': '三号', 'open': False}]
+        dump['kinds']['Enemies'] = [{'id': 3, 'name': '测试:木桩-反击', 'open': True}]
         dump['kinds']['Weapons'] = [{'id': 1, 'name': '铁剑', 'description': '购买价格：100', 'price': 100, 'params': [0, 0, 5, 0, 0, 0, 0, 0], 'open': True},
                                     {'id': 2, 'name': '木剑', 'description': '普通的木剑', 'price': 50, 'params': [0] * 8, 'open': True}]
         t, ex = P.build_rows(dump)
         sk = t['Skills']
         self.assertEqual([r['public_id'] for r in sk], [P.public_id('skill', '火球'), P.public_id('skill', '火球') + '-2', P.public_id('skill', '火球') + '-3'])
-        self.assertEqual(ex['Skills'], 2)
+        self.assertEqual(ex['Skills'], 4)
         self.assertFalse(sk[2]['open_in_current_version'])
         self.assertTrue(all('id' not in r for r in sk))
         self.assertEqual(t['Weapons'][0]['price'], 100)
         self.assertNotIn('price', t['Weapons'][1])  # 说明卡上没有价格行就不给
         self.assertEqual(t['Weapons'][0]['params'], [0, 0, 5, 0, 0, 0, 0, 0])
+        self.assertEqual([r['name'] for r in t['Enemies']], ['测试:木桩-反击'])  # 敌人不按「测试」剥
 
     def test_plain(self):
         self.assertEqual(P._plain('\\n<滑稽商人>\\c[2]你好\\i[12]<WordWrap>'), '滑稽商人：你好')
         self.assertEqual(P._plain('长度：\\evalText<<$dataArmors.length+1>>件'), '长度：件')
+
+
+class DropRateTests(unittest.TestCase):
+    """X2（协调 11-16 定「剥」）：游戏原文里的掉落／产出几率留来源、去数字；战斗特效几率与掉落率加成效果（X3）照留。"""
+    CASES = [
+        ('流萤专属进阶材料。第15、17、19、21、27层深渊「未知存在」有概率掉落：天灾3%、灭世5%、洪荒6%～18%（随诅咒提高），21、27层至少10%；不受掉落率加成影响。',
+         '流萤专属进阶材料。第15、17、19、21、27层深渊「未知存在」有概率掉落；不受掉落率加成影响。'),
+        ('改版向导：第15、17、19、21、27层深渊「未知存在」的首领会掉落，概率随难度：天灾3%、灭世5%、洪荒6%～18%；21、27层至少10%。不受掉落率加成影响。',
+         '改版向导：第15、17、19、21、27层深渊「未知存在」的首领会掉落，概率随难度；不受掉落率加成影响。'),
+        ('(开启后通过深渊位置存在有10%的概率可以触发肝帝积分赌局(可以拒绝))', '(开启后通过深渊位置存在有概率可以触发肝帝积分赌局(可以拒绝))'),
+        ('(开启后，每次完成赌场二阶段有1%的概率产出星神命途系列装备)', '(开启后，每次完成赌场二阶段有概率产出星神命途系列装备)'),
+    ]
+    KEEP = ['特效：渔人叉法(普通攻击50%的几率触发捕鱼穿刺)', '效果：物品掉落率+5%', 'S.A.O(物品掉落+50% 所有伤害增加30% 30%几率再次行动)',
+            '效果：星神命途系列装备获得的概率+1%', '特效：存护(获得掩护效果，受到攻击的概率+1000%)']
+
+    def test_redact(self):
+        import re
+        for before, after in self.CASES:
+            got = P.redact_drop(before)
+            self.assertEqual(got, after)
+            self.assertIsNone(re.search(r'\d\s*%', got))
+            self.assertEqual(P.redact_drop(got), got)
+
+    def test_keep_effects(self):
+        for t in self.KEEP:
+            self.assertEqual(P.redact_drop(t), t)
+
+    def test_self_check_catches(self):
+        with tempfile.TemporaryDirectory() as td:
+            p = Pkg(td)
+            rows = p.rows('Items')
+            rows[0]['description'] = self.CASES[0][0]
+            p.put('Items', rows)
+            self.assertFalse(p.check()[P.CHECKS[1]]['ok'])
+            rows[0]['description'] = self.CASES[0][1] + '\n' + self.KEEP[0]
+            p.put('Items', rows)
+            self.assertTrue(p.check()[P.CHECKS[1]]['ok'])
+
+    def test_build_rows_redacts(self):
+        dump = {'kinds': {k: [] for k in P.KINDS}}
+        dump['kinds']['Items'] = [{'id': 1, 'name': '萨姆残核', 'description': self.CASES[0][0], 'open': True}]
+        t, _ = P.build_rows(dump)
+        self.assertEqual(t['Items'][0]['description'], self.CASES[0][1])
 
 
 class EventTests(unittest.TestCase):

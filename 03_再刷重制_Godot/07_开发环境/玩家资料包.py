@@ -314,6 +314,51 @@ def run_dump(tree: Path, out_json: Path, patch: int, legacy: tuple) -> dict:
 # ---------------------------------------------------------------- 出包内容
 
 NAME_OK = re.compile(r'[\u4e00-\u9fffA-Za-z0-9]')
+# 数据库编辑器里的分组标题（「------15层副本扩充」「----------------10」）：游戏里不显示，不出
+EDITOR_DIVIDER = re.compile(r'^[-=＝—_~*#─]{2,}')
+# 开发用的测试条目（「测试物理100暴击」「测试武器1」）：敌人不剥（木桩之类玩家打得到）
+DEV_TEST = re.compile(r'^测试')
+
+
+# 掉率（X2，协调 11-16 定「剥」）：游戏原文里写着的掉落／产出几率，留来源、去数字。只认「掉落／产出几率」的句子，
+# 战斗特效几率（普通攻击 50% 几率触发…）和掉落率加成效果（物品掉落率+5%）是说明卡效果（X3），不动。
+DROP_CHANCE = re.compile(r'(概率|几率)(可以)?(掉落|产出|触发肝帝)|有概率掉落|掉落[，,]\s*概率')
+PCT = re.compile(r'\d+(?:\.\d+)?\s*[%％](?:\s*[～~\-－]\s*\d+(?:\.\d+)?\s*[%％])?')
+CLAUSE = re.compile(r'([，,；;。])')
+
+
+def redact_drop(line: str) -> str:
+    """一行里有掉落／产出几率且带百分数：「有10%的概率」→「有概率」；冒号后面是百分数列表的截掉冒号后半；还带百分数的分句整句去掉。"""
+    if not DROP_CHANCE.search(re.sub(r'有\d+(?:\.\d+)?[%％]的?(概率|几率)', r'有\1', line)) or not PCT.search(line):
+        return line
+    line = re.sub(r'有\d+(?:\.\d+)?[%％]的?(概率|几率)', r'有\1', line)
+    parts = CLAUSE.split(line)
+    out = []
+    for i in range(0, len(parts), 2):
+        c, d = parts[i], (parts[i + 1] if i + 1 < len(parts) else '')
+        if PCT.search(c):
+            k = max(c.rfind('：'), c.rfind(':'))
+            c = c[:k] if k >= 0 and PCT.search(c[k:]) and not PCT.search(c[:k]) else ''
+            c = re.sub(r'（[^）]*）$', '', c)
+        if c.strip():
+            out.append(c + d)
+        elif out and d in '。；;' and out[-1][-1:] in '，,':
+            out[-1] = out[-1][:-1] + d
+    t = ''.join(out)
+    return re.sub(r'[，,]$', '。', t)
+
+
+def redact_text(text: str, log_list: list = None, where: str = '') -> str:
+    lines = []
+    for ln in str(text).split('\n'):
+        new = redact_drop(ln)
+        if new != ln and log_list is not None:
+            log_list.append({'where': where, 'before': ln, 'after': new})
+        lines.append(new)
+    return '\n'.join(lines)
+
+
+REDACTED = []  # 本次剥掉掉率的地方（原文→出包文），只写进工作目录的日志，不进包
 
 
 def public_id(kind: str, name: str) -> str:
@@ -327,7 +372,7 @@ def build_rows(dump: dict) -> tuple:
         rows, seen, ex = [], {}, 0
         for r in dump['kinds'].get(fname, []):
             name = str(r.get('name', '')).strip()
-            if not name or not NAME_OK.search(name):
+            if not name or not NAME_OK.search(name) or EDITOR_DIVIDER.match(name) or (fname != 'Enemies' and DEV_TEST.match(name)):
                 ex += 1
                 continue
             pid = public_id(kind, name)
@@ -337,7 +382,7 @@ def build_rows(dump: dict) -> tuple:
             row = {'public_id': pid, 'name': name}
             if r.get('nickname'):
                 row['nickname'] = r['nickname']
-            row['description'] = str(r.get('description', ''))
+            row['description'] = redact_text(str(r.get('description', '')), REDACTED, f'{fname} {name}')
             if int(r.get('price', 0) or 0) > 0 and '价格' in row['description']:
                 row['price'] = int(r['price'])
             if fname in ('Weapons', 'Armors') and isinstance(r.get('params'), list):
@@ -403,6 +448,7 @@ def build_events(tree: Path, dump: dict) -> list:
                             refs.append(f'[{hit[0]}] {hit[1]}')
             if not texts and not refs:
                 continue
+            texts = [redact_text(t, REDACTED, f'事件 {place}') for t in texts]
             body = '\n'.join(texts + ([f'事件给的物品/武器/护甲：{"、".join(refs)}'] if refs else []))[:3000]
             eid = ev.get('id', n) if isinstance(ev, dict) else n
             ref = hashlib.sha256(f'{f.name}:{eid}'.encode('utf-8')).hexdigest()[:12]
@@ -434,7 +480,7 @@ def forbidden_words(tree: Path, cwd=REPO) -> tuple:
         except (Fail, json.JSONDecodeError):
             pass
     sk = load_mod('发行空壳', HERE / '发行空壳.py')
-    classes = set(sk.targets(tree).keys())
+    classes = set(sk.targets(tree).keys()) | set(sk.targets(sk.PROJECT).keys())  # 发行提交里的＋本仓当前的天启篇类名
     gen = tree / 'modes/xiyou/generated'
     corpus = ''.join(p.read_text(encoding='utf-8', errors='replace') for p in list((gen / 'db').glob('*.json')) + list((gen / 'maps').glob('*.json')))
     words, dropped_orig, dropped_short = set(), 0, 0
@@ -451,7 +497,7 @@ def forbidden_words(tree: Path, cwd=REPO) -> tuple:
     src = {'tianqi_data_files': len(files), 'tianqi_data_names': len(names), 'dropped_in_original': dropped_orig,
            'dropped_single_char': dropped_short, 'stub_classes': len(classes), 'fixed_words': len(FIXED_WORDS),
            'fixed_dropped_in_original': fixed_dropped, 'total': len(words),
-           'from': f'main:{PROJECT_REL}/modes/xiyou/tianqi_data/*.json 的 name；发行空壳.targets 类名；玩家资料包.FIXED_WORDS'}
+           'from': '天启篇数值表（main）全部 name；发行空壳替换的类名；玩家资料包.py 固定词表（来源见交付单）'}  # 自检.json 在她能读的目录里：不写工程路径
     return words, src
 
 
@@ -523,7 +569,13 @@ def check_fields(root: Path) -> list:
 
 
 def check_forbidden(root: Path, words: set) -> list:
+    """禁词零命中；另查掉落／产出几率带百分数的行（X2：掉率只说来源）。"""
     bad = []
+    for p in pkg_files(root):
+        for ln in p.read_text(encoding='utf-8', errors='replace').split('\\n' if p.suffix in ('.json', '.jsonl') else '\n'):
+            for sub in ln.split('\n'):
+                if redact_drop(sub) != sub:
+                    bad.append(f'{p.relative_to(root)}：掉率数字「{sub[:60]}」')
     lw = [(w, w.lower()) for w in words]
     for p in pkg_files(root):
         t = p.read_text(encoding='utf-8', errors='replace').lower()
@@ -676,10 +728,23 @@ def assemble(stage: Path, tables: dict, events: list, version: dict, written: li
     return counts
 
 
+def recount(stage: Path) -> dict:
+    counts = {}
+    for fname in KINDS:
+        p = stage / '数据' / f'{fname}.json'
+        try:
+            counts[fname] = len(json.loads(p.read_text(encoding='utf-8')))
+        except (OSError, json.JSONDecodeError):
+            counts[fname] = 0
+    ep = stage / '事件.jsonl'
+    counts['事件'] = sum(1 for x in ep.read_text(encoding='utf-8').splitlines() if x.strip()) if ep.is_file() else 0
+    return counts
+
+
 def inject(stage: Path, what: str, words: set) -> str:
     """反例（验收证据 4）：往待检的包里塞坏东西。"""
     if what == '禁词':
-        w = sorted(x for x in words if re.search(r'[\u4e00-\u9fff]', x))[0]
+        w = sorted(x for x in words if re.fullmatch(r'[\u4e00-\u9fff·]{3,8}', x))[0]
         p = stage / '数据/Items.json'
         rows = json.loads(p.read_text(encoding='utf-8'))
         rows.append({'public_id': public_id('item', w), 'name': w, 'description': '', 'open_in_current_version': True})
@@ -747,8 +812,11 @@ def run(a) -> int:
             dump = run_dump(tree, work / '取字.json', patch, legacy)
         ver = dump['version']
         log(f'  右下角 {ver.get("label")}；补丁号算出 {ver.get("of_patch")}；老底包弹窗 {ver.get("legacy_popup", "—")}；发行门 {dump.get("release")}')
+        REDACTED.clear()
         tables, excluded = build_rows(dump)
         events = build_events(tree, dump)
+        (work / '掉率剥除.json').write_text(json.dumps(REDACTED, ensure_ascii=False, indent=1), encoding='utf-8')
+        log(f'  掉率剥除 {len(REDACTED)} 行（原文→出包文见 {work / "掉率剥除.json"}，不进包）')
         words, wsrc = forbidden_words(tree)
         prev_dir, prev_check = previous(out)
         prev_ver = None
@@ -783,6 +851,7 @@ def run(a) -> int:
         injected = inject(stage, a.inject, words) if a.inject else None
         if injected:
             log(f'  ⚠ 反例注入：{injected}')
+        counts = recount(stage)  # 按待检目录里真有的重数（注入、写坏都算进去）
         checks = self_check(stage, words, ver, channel, loc['build_info'], counts, (prev_check or {}).get('counts') or {},
                             written, out, [str(out / vname), str(out / '当前')], stage.parent if a.dry_run else out)
         ok = all(c['ok'] for c in checks.values())
@@ -792,7 +861,7 @@ def run(a) -> int:
             'from_dump': a.from_dump or None, 'injected': injected, 'channel_source': ch['src'],
             'channel_sha256': ch.get('sha256', ''), 'generated_from': tree_info.get('generated_how'),
             'major_basis': f'上一版 {prev_ver}' if prev_ver else ('命令行 --major' if a.major != 'auto' else '没有上一版，默认 false'),
-            'release_gate': dump.get('release'), 'dry_run': a.dry_run,
+            'release_gate': dump.get('release'), 'dry_run': a.dry_run, 'drop_rate_lines_redacted': len(REDACTED),
             'generated_at': dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'files': file_hashes(stage),
         }
