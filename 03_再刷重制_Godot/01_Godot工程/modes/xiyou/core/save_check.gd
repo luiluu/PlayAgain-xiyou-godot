@@ -54,7 +54,8 @@ static func actor_row(row: Dictionary) -> bool:
 			return false
 	var z = row.get("zhenqi")
 	if z is Dictionary:
-		if not (opt(z, "qi", scalar) and opt(z, "realm", scalar) and opt(z, "pending", scalars)):
+		if not (opt(z, "qi", scalar) and opt(z, "realm", scalar) and opt(z, "pending", scalars)
+				and opt(z, "brand", scalar) and opt(z, "brand_carved", scalar) and opt(z, "brand_realm", scalar)):
 			return false
 		if z.has("firsts") and not (z.firsts is Dictionary or z.firsts is Array):
 			return false

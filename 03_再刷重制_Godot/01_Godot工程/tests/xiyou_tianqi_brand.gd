@@ -40,6 +40,7 @@ func _run() -> void:
 	_t7_uncarved()
 	_p24_climb()
 	_e2e()
+	_qiyin_real()
 	XTianqiBrand.ENABLED = false
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -201,7 +202,7 @@ func _t1_node_stall() -> void:
 	for i in 10:
 		XTianqiBrand.settle(_logic(s, _boss("guardian:6", 6)))
 	_check("t1.stall_10", XTianqiBrand.value(a) == 1000, XTianqiBrand.value(a))
-	_check("t1.no_gain_toast", XTianqiBrand.toasts.any(func(t): return str(t).contains("没有涨")), XTianqiBrand.toasts)
+	_check("t1.no_gain_toast", XTianqiBrand.toasts.any(func(t): return str(t).contains("未再增长")), XTianqiBrand.toasts)
 	_check("t1.stand", XTianqiBrand.stand(a) and XTianqiBrand.realm(a) == 1)
 	XTianqiBrand.settle(_logic(s, _boss("guardian:6", 6)))
 	_check("t1.grows_after", XTianqiBrand.value(a) > 1000, XTianqiBrand.value(a))
@@ -331,7 +332,7 @@ func _t7_uncarved() -> void:
 	_check("t7.no_plus", not bool(p.plus) and not str(p.text).contains("+") and int(p.sealed_from) == 4000, p)
 	_check("t7.bar_sealed", XTianqiBrand.bar_text(s, a).contains("×") and not XTianqiBrand.bar_text(s, a).contains("‖"), XTianqiBrand.bar_text(s, a))
 	var page := XZhenqi.menu(s, {"page": "actor", "id": XIAOYAO})
-	_check("t7.no_entry", not _menu_labels(page).has("挑战心魔") and _menu_labels(page).has("刻印"), _menu_labels(page))
+	_check("t7.no_entry", not _menu_labels(page).has("挑战心魔") and _menu_labels(page).has("进行刻印"), _menu_labels(page))
 	_check("t7.trial_refused", not XZhenqi.menu(s, {"page": "trial", "id": XIAOYAO}).has("battle"))
 	# 不刻印的封顶 40%：烙实也不越过
 	XTianqiSave.section(s, "brand").firsts = {"horseman:war": 1}
@@ -343,7 +344,7 @@ func _t7_uncarved() -> void:
 	XZhenqi.menu(s, {"page": "carve", "id": XIAOYAO, "ok": true})
 	_check("t7.carved", XTianqiBrand.carved(a) and XTianqiBrand.can_stand(a))
 	page = XZhenqi.menu(s, {"page": "actor", "id": XIAOYAO})
-	_check("t7.entry_after_carve", _menu_labels(page).has("挑战心魔") and not _menu_labels(page).has("刻印"), _menu_labels(page))
+	_check("t7.entry_after_carve", _menu_labels(page).has("挑战心魔") and not _menu_labels(page).has("进行刻印"), _menu_labels(page))
 	_check("t7.plus_after_carve", str(XTianqiBrand.panel(s, a).text).ends_with("+"))
 	_check("t7.trial_battle", XZhenqi.menu(s, {"page": "trial", "id": XIAOYAO}).has("battle"))
 	XZhenqi.pending_trial = {}
@@ -401,3 +402,34 @@ func _e2e() -> void:
 	var lg2 := XBattleLogic.new()
 	lg2.setup(39, s)
 	_check("e2e.ripe_second", bool(XTianqiBrand.fight(lg2).get("ripe", false)))
+
+
+# ---- 甲核 R1 P1：七印里副本走真实路径（XTianqiQiyinRule.setup → facts_of）----
+## 灰印、默印第 2 场精英（297、220）借了【首领】名的敌群，不能按名字前缀认成首领；里副本首领那场认 qiyin:<印>
+func _qiyin_real() -> void:
+	var s := _state()
+	s.set_variable(20, 33)
+	s.flags.tianqi["line"] = "war"
+	XTianqiWarLine.progress(s)["stage"] = XTianqiWarLine.STAGE_DONE
+	for pair in [["hui", 297], ["mo", 220]]:
+		XTianqiQiyinRule.prepare(str(pair[0]), false)
+		var lg := XBattleLogic.new()
+		lg.setup(int(pair[1]), s)
+		var named := lg.enemies.any(func(e): return str(e.data().get("name", "")).contains("【首领】"))
+		var c := XTianqiBrand.fight(lg)
+		_check("qiyin_real.elite_%s" % pair[0], XTianqiQiyinRule.active(lg) and named and str(c.get("kind", "")) == "none", [named, c])
+		lg.end_battle()
+	XTianqiQiyinRule.prepare("hui", true)
+	var lb := XBattleLogic.new()
+	lb.setup(296, s)
+	var cb := XTianqiBrand.fight(lb)
+	_check("qiyin_real.boss_hui", str(cb.get("key", "")) == "qiyin:hui" and str(cb.get("kind", "")) == "boss", cb)
+	lb.end_battle()
+	# P2-1：zhenqi 为空的角色经 gain 写入后键是全的
+	var a: XActor = s.actors[XIAOYAO]
+	a.zhenqi = {}
+	XTianqiBrand.gain(s, a, "test", 1.0)
+	_check("gain_ensure_keys", a.zhenqi.has("qi") and a.zhenqi.has("brand_realm") and int(a.zhenqi.get("brand", 0)) == 100, a.zhenqi)
+	# P2-2：开着烙印时闭关列表页头不出真气文案
+	var r := XZhenqi.menu(s, {"page": "retreat"})
+	_check("retreat_head_brand", not " ".join(r.lines).contains("真气") and str(r.lines[0]).contains("烙印"), r.lines)

@@ -21,10 +21,11 @@ extends RefCounted
 const PATH := "res://modes/xiyou/tianqi_data/brand.json"
 const META := "tianqi_brand"
 ## 玩家可见文字（交付单单列，合前过小A 文字审）
-const TEXT_BOTTLENECK := "%s 烙印已到瓶颈"
-const TEXT_NO_GAIN := "%s 烙印已到瓶颈，这一场没有涨"
+const TEXT_BOTTLENECK := "%s 的烙印已到瓶颈"
+const TEXT_NO_GAIN := "%s 的烙印已到瓶颈，本场未再增长。"
 const TEXT_GAIN := "烙印 %s"
-const TEXT_CARVE_WARN := ["刻印之后，烙印只涨不降，没有回头路。", "刻了印，每首通一位守层者烙印都会加深；不刻，只有首领战里挨的打会烙下来，最多到 40%。"]
+const TEXT_CARVE_WARN := ["一旦刻印，烙印只涨不降，没有回头路。", "刻印后，每首通一位守层者都会加深烙印；不刻印则只在首领战挨打时记下烙印，上限 40%。"]
+const TEXT_RETREAT := ["\\C[6]烙印\\C[0]", "烙印随首领战加深，到每境节点后，打赢心魔即可立入下一境。", "未刻印只能停在铸骨（40%），刻印后可继续推进。"]
 
 static var ENABLED := false
 
@@ -199,6 +200,7 @@ static func gain(s: XState, a, _source: String, amount: float, floor_now := -1, 
 	var nv := mini(cur + roundi(amount * scale()), cap_now(s, a, floor_now, cleared36))
 	if nv <= cur:
 		return 0
+	_ensure_keys(a)
 	(a as XActor).zhenqi["brand"] = nv
 	if can_stand(a):
 		_toast(TEXT_BOTTLENECK % a.display_name())
@@ -257,6 +259,7 @@ static func facts_of(logic, s: XState) -> Dictionary:
 		"horse_line": str(horse.get("line", "")), "horse_mode": str(horse.get("mode", "")),
 		"dragon": XTianqiQiyinDragonRun.active(logic),
 		"qiyin_seal": str(qr.get("seal", "")) if bool(qr.get("boss", false)) and not bool(qr.get("enemy_only", false)) else "",
+		"qiyin_elite": not qr.is_empty() and not bool(qr.get("boss", false)) and not bool(qr.get("enemy_only", false)),  # 里副本前两场精英（灰印 297、默印 220 借【首领】敌群）
 		"summit": summit,
 		"guardian_floor": XGuardianRework.troop_floor(logic) if not summit else 0,
 		"enemy_ids": ids, "enemy_names": names,
@@ -286,6 +289,8 @@ static func classify(f: Dictionary) -> Dictionary:
 		return {"kind": "boss", "key": "qiyin_dragon", "first_floor": 0}
 	if str(f.get("qiyin_seal", "")) != "":
 		return {"kind": "boss", "key": "qiyin:" + str(f.qiyin_seal), "first_floor": 0}
+	if bool(f.get("qiyin_elite", false)):
+		return {"kind": "none", "key": "", "first_floor": 0}  # 七印里副本的精英战：不按名字前缀认首领
 	if bool(f.get("summit", false)):
 		return {"kind": "boss", "key": "summit:34", "first_floor": 34}
 	var gf := int(f.get("guardian_floor", 0))

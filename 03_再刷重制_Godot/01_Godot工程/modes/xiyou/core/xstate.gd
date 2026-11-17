@@ -255,6 +255,7 @@ static func _become_current(s: XState) -> void:
 	XHonghuang.power_battle = {}
 	XXuanBattle.data = {}
 	XZhenqi.battle = {}
+	XTianqiBrand.pending_event = {}  # 烙印：上一档事件开战时记的地图、事件、敌群
 	XZhenqi.pending_trial = {}
 	XZhenqi.trial_done = {}
 	XZhenqi.pending_scale = {}

@@ -100,7 +100,7 @@ static func from_save(d) -> Dictionary:
 				out.pendingDaofaRoll.random = int(roll.random)
 		# 天启篇烙印（XTianqiBrand，T117）：只在读进来的数据里本来就有时原样留，不新建（西游档读出来再存回去逐字节不变）
 		for k in BRAND_KEYS:
-			if d.has(k):
+			if d.has(k) and (d[k] is int or d[k] is float):  # 坏档塞了别的类型：不认（原样丢弃，不报错）
 				out[k] = int(d[k])
 	return out
 
@@ -900,6 +900,8 @@ static func _retreat(s: XState, page: int) -> Dictionary:
 		opts.append({"label": "下一页（%d/%d）" % [page + 2, pages], "next": {"page": "retreat", "p": page + 1}})
 	opts.append({"label": "神兵试炼（指定本命兵武器）", "next": {"page": "weapon"}})
 	opts.append({"label": "离开", "next": null})
+	if XTianqiBrand.on(s):
+		return _ask(XTianqiBrand.TEXT_RETREAT, opts)
 	return _ask(["\\C[6]闭关之所\\C[0]", "真气达到大圆满、通关对应楼层后，打赢瓶颈之战突破。", "突破后获得境界奖励。"], opts)
 
 
@@ -977,7 +979,7 @@ static func _brand_page(s: XState, a: XActor) -> Dictionary:
 		lines.append(XTianqiBrand.TEXT_BOTTLENECK % a.display_name())
 	var opts := []
 	if not XTianqiBrand.carved(a):
-		opts.append({"label": "刻印", "next": {"page": "carve", "id": a.actor_id}})
+		opts.append({"label": "进行刻印", "next": {"page": "carve", "id": a.actor_id}})
 	if bool(bp.plus):
 		opts.append({"label": "挑战心魔", "next": {"page": "trial", "id": a.actor_id}})
 	opts.append({"label": "返回", "next": {"page": "retreat"}})
@@ -998,7 +1000,7 @@ static func _brand_carve(s: XState, a: XActor, ok: bool) -> Dictionary:
 ## 心魔（立境）：gate 只看节点＋甲二，不看层数；对手照瓶颈之战幻化（心魔战自己的规则不在本卡）
 static func _brand_trial(s: XState, a: XActor) -> Dictionary:
 	if not XTianqiBrand.can_stand(a):
-		return _tell(["烙印还没到本境的头。" if not XTianqiBrand.at_node(a) else "没刻印的人到这里就停了，刻了印才能接着打心魔。"])
+		return _tell(["烙印还没到本境上限，暂不能挑战心魔。" if not XTianqiBrand.at_node(a) else "未刻印到此为止，先进行「刻印」才能继续挑战心魔。"])
 	if not s.battle_members().has(a):
 		return _tell(["%s 不在出战队伍中。" % a.display_name(), "请先把%s编入出战队伍再打心魔。" % a.display_name()])
 	var i := XTianqiBrand.realm(a) + 1
