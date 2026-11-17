@@ -1,0 +1,55 @@
+{
+  "说明": "T156 精灵自检阈值。依据：五条悟/狗逍遥/里德现有图（行走+待机）与原版 Centaur1/Dryad 战斗图实测，再让 T141 首轮稿(bffd65797)和返修2稿(c5a2e294d)必须被报出问题。改阈值要在交付单写理由和实测数。severity：fail=必须修到消失才能交样；warn=必须在交付单逐条说明（--strict 时按 fail）。",
+  "walk_sheet_size": [144, 192],
+  "idle_sheet_size": [192, 64],
+  "sole_rows": 4,
+  "walk_sole_span_max": 0,
+  "gait_iou": {"side": 0.95, "frontback": 0.95},
+  "isolated_max_size": 2,
+  "hole_min_size": 5,
+  "hole_max_size": 60,
+  "height_ratio": [0.75, 1.3],
+  "idle_baseline": {"bottom": 64, "tolerance": 0},
+  "idle_anchor_span_max": 1.0,
+  "severity": {
+    "native_size": "fail",
+    "binary_alpha": "fail",
+    "edge_margin": "fail",
+    "walk_sole_span": "fail",
+    "gait_repeat": "fail",
+    "stride": "warn",
+    "foot_merge": "fail",
+    "waist_break": "fail",
+    "waist_shift": "fail",
+    "isolated_px": "fail",
+    "hole": "warn",
+    "height_ratio": "warn",
+    "idle_baseline": "fail",
+    "idle_anchor_drift": "warn",
+    "idle_sole_span": "fail",
+    "idle_static": "warn"
+  },
+  "profiles": {
+    "biped": {
+      "leg_frac": 0.6,
+      "stride_min_side": 0.3,
+      "foot_components_min": {"left": 1, "right": 1, "front": 1, "back": 1},
+      "waist": {"upper_frac": 0.35, "waist_band": [0.4, 0.7], "min_part_px": 6, "pinch_min": 0.5, "shift_span_max": 2.0}
+    },
+    "quadruped": {
+      "leg_frac": 0.6,
+      "stride_min_side": 0.3,
+      "foot_components_min": {"left": 3, "right": 3, "front": 1, "back": 1},
+      "waist": {"upper_frac": 0.35, "waist_band": [0.4, 0.7], "min_part_px": 6, "pinch_min": 0.5, "shift_span_max": 2.0}
+    }
+  },
+  "实测依据": {
+    "walk_sole": "狗逍遥/里德/五条悟行走各方向三帧脚底行完全相同（至少一只脚/蹄贴地基线）；T141 首轮布兰德瓦登正面 46/44/46，返修2侧向 46/45/45",
+    "idle_baseline": "狗逍遥 gxysv2、里德 Actor11_1、五条悟 SV 的待机三帧包围盒下沿全是 64（零基行 63）；T141 首轮 60，返修2 63",
+    "gait_iou": "参照图腿区 IoU 最高 0.894（0.6 切线）；原版 Centaur/Dryad 站立几乎不动≈1.0；T141 首轮／返修2稿本身在 0.45～0.88，IoU 不能单独抓步态，只抓『完全没换腿』",
+    "foot_merge": "原版 Centaur1 / Dryad 侧向脚底带恒为 3 个独立落点；T141 布兰德瓦登侧向最低 2",
+    "waist": "参照图腰带最细行占比≥0.5、上下半身水平偏移三帧浮动≤1.1px；返修2露丝/碧池浮动 2.8～5.9px、占比 0.33～0.42",
+    "hole": "原版 Centaur/Dryad 本身有 4px 体内孔、参照人形有 1～2px，故只报≥5px",
+    "idle_anchor": "狗逍遥/里德待机脚底带质心零位移，五条悟待机有意走动（3.3px）会报 warn，属已知误报"
+  }
+}
