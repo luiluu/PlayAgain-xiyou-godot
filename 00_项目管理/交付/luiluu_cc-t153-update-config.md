@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-t153-update-config
 
-- 车道／工作者：T153 检查更新先走 Gitee＋gh-proxy、T154 设置导入／导出配置（cc，Opus＋medium，P8）
-- 状态：进行中
+- 车道／工作者：T153 检查更新先走 Gitee＋gh-proxy、T154 设置导入／导出配置、T157 开战卡测量（cc，Opus＋medium，P8）
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -53,7 +53,7 @@
 
 - 专项（本机）：`xiyou_update_check` 94/94、`xiyou_update_install`、`xiyou_force_update`、`xiyou_whats_new`、`xiyou_config_transfer` 57/57；设置相关 24 个场景（options_basic／misc、notice／graphics／battle／hangup_options、ui_skin_3a／3b／4a／5c／offshot、costumes、test_mode、font_size、party_formation、screen_fx、platform、feedback_v001、power_hidden 等）全过（hangup_options 首轮因新一行挂，已改测试后通过）。`测试发布补丁.py` 21 项全过；语法检查 0 问题。
 - 子页带窗口截图看过（`--audio-driver Dummy`）：说明两行折行正常、确认提示一行、灰显撤回行正常。
-- `检查.sh --affected main --cloud`：见下（待填）。
+- `检查.sh --affected main --cloud`：通过（227 个场景在云端跑，工具回归、守卫全过，退出码 0；跑在 e5827732a 上，后面只改了交付单）。
 - **补丁线 cc/v00300 试摘**（在 scratchpad 临时检出上 `git cherry-pick --no-commit`）：T153 提交 e5f153a88 干净（5 文件）；T154 提交 5f9f3e031 干净（10 文件，含 hangup 测试一行）；两个一起摘后语法检查 777 个 .gd 0 问题；在那棵树上跑 `xiyou_update_check` 94/94、`xiyou_config_transfer` 57/57 断言全过（那棵树没有转换产物，场景末尾 XDB 读不到数据的报错是环境问题，不是代码）。T154 的新界面那条（e5827732a，`skin_options_page.gd`）**只进 main**：补丁线没有新界面，不要摘。代码对补丁线做了兼容：`SETTINGS` 里补丁线没有的键自动跳过，不用 `XConfig.ui_skin_new()`、`to_map` 用 `"to_map" in self` 判断。
 
 ## 我不同意的地方／风险
@@ -62,6 +62,23 @@
 - **gh-proxy 是第三方**：被篡改能被验签／SHA 挡住，但它能看到请求（只有普通 GET、不带玩家信息）。挂了只是多等一次超时再换下一个。
 - **挂机设置、屏蔽掉落不在导出里**：它们存在存档里（`XState.hang_up`、`pingbi_quality`），不是设置文件。玩家截图里「设置选项很多」多半也指这两页，如果要连它们一起导，要动存档、要进游戏后才能导，建议另开一单（要 Kyo 定要不要）。
 - 导入文本用 base64 包了一层，聊天里看不懂内容；好处是 QQ／微信不会把引号、花括号改坏。直接粘 JSON 也认。
+
+## T157 玩家开战卡 4 秒：只做了测量，没修
+
+用玩家存档 save_1（116 号图 20 层喜乐天，站在 EV007 传承者旁边，录屏里是 776「【传承者】炎龙守护者」，九人队、难度 8；玩家设置：技能动画关、战斗变速 2、进战斗默认自动开）在本机 main 上用临时探针量（隔离 HOME、存档拷进 scratchpad、`--headless --audio-driver Dummy`；探针、计时打点都已删掉，没提交；玩家存档没进仓库）。M1 Pro 上的数字：
+
+| 阶段 | 含 T135（现 main） | 去掉 T135（`CMD313_NO_EXTRA_REFRESH=false`） |
+| --- | --- | --- |
+| 读档 | 约 0.9 秒（不算开战） | 同 |
+| `setup`＋`_ready` | 约 0.32＋0.12～0.18 秒 | 同 |
+| 开战第 0 回合敌群事件（奈叶领域 CE2479→CE2478，画面停住） | **0.76 秒** | **1.40 秒** |
+| 第一位行动前的敌群事件：算 3 个强制行动 | 0.27～0.34 秒 | 0.34 秒 |
+| 3 个强制行动播放（技能动画关，画面上基本没动静） | 约 2.8 秒 | 约 2.9 秒 |
+
+结论：
+- **T135 是原因之一，但不是全部。** 它把奈叶领域那一段从 1.40 秒砍到 0.76 秒（本机）；玩家现在的 v0.01.x 还没有 T135，补丁线 cc/v00300 已经有了。
+- 剩下的卡顿：(1) 领域事件仍有 0.76 秒，全花在 `XBattler._add_state` 新状态的 `refresh_resources`（这个存档每个角色每加一个状态约 8 毫秒；领域加 8 个状态×九人队；原版 `addState` 里也做这次 refresh，所以没法像 T135 那样直接省掉）。把整页事件包进 `XActor.batch_begin/end`（STATE_BATCH）试过，只省约 25%（0.76→0.57 秒），没提交。(2) 炎龙守护者第 2 页开场 3 个强制行动，算要 0.3 秒左右；播放约 2.8 秒，但技能动画关着，看起来像卡住。按录屏，「卡 4 秒」大概是 (1)＋setup／首帧约 1.5 秒的真卡，加上 (2) 这 2.8 秒看着没动静的强制行动播放，玩家电脑慢一些就到 4 秒了。
+- 还没做：真正的修复要动 `refresh_resources` 的开销（甲档、战斗核心），或者在技能动画关着时把强制行动的空等压短（得先对照原版在动画关着时等多久）。这两项都要单独派车道，我这条没修。
 
 ## 待交叉核查
 
