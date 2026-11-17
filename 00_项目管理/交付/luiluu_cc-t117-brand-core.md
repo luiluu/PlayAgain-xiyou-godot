@@ -90,6 +90,7 @@
 - 专项 `xiyou_tianqi_brand`：77/77（R1 返修后 82/82），日志零 SCRIPT ERROR。
 - 虚拟玩家（`--vp-brand`）：explore 14/14；climb 4 万帧 6/6，stuck 0、stalemates 0、violations 0、脚本报错 0。
 - `检查.sh --oracle --affected main --cloud`：第一轮云端 421 个场景全过、只挂「发行空壳缺成员」（XTianqiBrand.realm／last_realm），补进 `07_开发环境/发行空壳特例.json`（发行值 0／6）后第二轮（提交 c58b99f18 快照）退出码 0：云端选测通过、MV 参照引擎启动检查通过、「选测全部通过」。
+- R1 返修后（提交 f13cb990f）本机选测：`xiyou_tianqi_brand`（82/82）、`xiyou_zhenqi*`、`xiyou_save_corrupt`、`xiyou_save_cold_load`、`xiyou_tianqi_save`、`xiyou_tianqi_phase4`、`xiyou_tianqi_no_x6`、`xiyou_tianqi_ledger`、`xiyou_determinism`、`xiyou_tianqi_qiyin*` 共 20 个场景全过；`语法检查.py` 995 个 0 问题；`发行空壳.py check` 67／606 全有；`工具回归.py` 全过。R1 只改 tianqi_brand／zhenqi／save_check／xstate 与专项，没碰 battle_logic，`--affected` 云端全选测沿用 c58b99f18 那轮。
 - 交付自检：见回报（标可合并、提交之后跑）。
 - 附带：`k_for` 保留开头早返（两个开关都关着直接 1.0），发行空壳照规则 2 照搬 1.0，不会落到 float 默认 0.0。
 
