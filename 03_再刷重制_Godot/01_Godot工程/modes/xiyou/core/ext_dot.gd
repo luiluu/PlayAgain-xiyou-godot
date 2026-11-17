@@ -101,6 +101,7 @@ static func _one(logic: XBattleLogic, rc: XResourceContext, b: XBattler, st: Dic
 			_diag(st, b, "formula_unavailable" if not out.available else "formula_" + str(out.sourceValueKind))
 			return
 		value = float(out.value)
+		value = XTianqiBase.abs_value("state_dot", id, value, b)  # 天启篇期四（总开关关着原样）：常数持续伤害换成持有者生命上限的百分比（abs_rescale.json）
 	value = XTianqiTrumpet.dot_value(a, value)  # 天启篇号卷三号：自己上的持续伤害、持续回复 +33%
 	var healing := bool(d.healing)
 	value = value if healing else -value

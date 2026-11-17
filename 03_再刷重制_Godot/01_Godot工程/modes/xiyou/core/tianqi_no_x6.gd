@@ -141,8 +141,16 @@ static func program_hp(ctx: Dictionary, b, amount: float) -> float:
 	return -maxf(1.0, floorf(-amount * f)) if f != 1.0 else amount
 
 
-## 绕过确认阶段、按绝对值直接扣敌人血的我方效果（分类表里标「缩」的）：缩了才向下取整、至少 1；不缩原样返回
-static func scale_direct(u, t, value: float) -> float:
-	if value <= 0.0 or not t is XEnemy or not party_actor(u) or not on():
+## 绕过确认阶段、按绝对值直接扣敌人血的我方效果（分类表里标「缩」的）：缩了才向下取整、至少 1；不缩原样返回。
+## gaze：期四 K「天启注视」（基础数值重构 v0.4 第三节第 2 条）——按我方属性／绝对值算的直接扣血也乘 K；
+## 反弹敌人伤害那一处（tianqi_skills 反伤）是「敌人的攻击」，传 false 不乘。总开关关着 k_for 恒 1，和原来逐字节相同
+static func scale_direct(u, t, value: float, gaze := true) -> float:
+	if value <= 0.0 or not t is XEnemy or not party_actor(u):
 		return value
-	return maxf(1.0, floorf(value * hp_unit()))
+	var v := value
+	if on():
+		v = maxf(1.0, floorf(v * hp_unit()))
+	var k := XTianqiBase.k_for(u) if gaze else 1.0
+	if k != 1.0:
+		v = maxf(1.0, floorf(v * k))
+	return v

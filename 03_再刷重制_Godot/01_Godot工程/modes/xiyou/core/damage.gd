@@ -373,6 +373,8 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 			if XTianqiLedger.detail_on():  # 伤害加成总账：五池明细（只加明细，天启篇档才有）
 				var em := float(frame.elementMultiplier.get(str(oe), 1.0))
 				row.merge(XTianqiLedger.pools(frame, oe, bonus / em if em != 0.0 else 0.0, normal_mult, crit, tianqi, race.multiplier, independent))
+				if XTianqiBase.on():  # 期四「天启注视」单列一行：只记 K 本身（已含在 tier 那一格的 damage_mult 里，不再乘）
+					row["gaze"] = {"name": XTianqiBase.GAZE_NAME, "k": XTianqiBase.k_base(), "desc": XTianqiBase.GAZE_DESC}
 			if best.is_empty() or value > best.value:
 				best = row
 	if XTianqiLedger.auditing(a):  # 伤害加成总账守卫：单独相乘的口子都要能认出来源（只记、不改数）

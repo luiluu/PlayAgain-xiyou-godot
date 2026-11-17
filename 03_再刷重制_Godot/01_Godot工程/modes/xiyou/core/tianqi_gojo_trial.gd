@@ -400,7 +400,7 @@ static func setup(logic, s: XState) -> void:
 	var dealt := XTianqiCombat.dealt_parts(a, s)
 	var taken := XTianqiCombat.taken_parts(a, s)
 	var base := {"mhp": a.param_base_direct(0), "def": a.param_base_direct(3), "mat": a.param_base_direct(4), "mdf": a.param_base_direct(5)}
-	var unit := float(base.mat) * XTianqiSkills.level_scale(a) * float(dealt.get("tier", 1.0)) * float(dealt.get("party", 1.0)) * settle()
+	var unit := float(base.mat) * XTianqiSkills.level_scale(a) * float(dealt.get("tier", 1.0)) * float(dealt.get("party", 1.0)) * float(dealt.get("k", 1.0)) * settle()
 	var rec: Dictionary = XDB.rec("Enemies", int(data().get("shell_enemy", 71))).duplicate(true)
 	rec.name = str(t.foe)
 	rec.params = [roundf(unit * float(t.hp_units)), 1000.0, roundf(float(base.def) * float(t.atk_def)), 0.0,

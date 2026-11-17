@@ -28,6 +28,14 @@ ROLES = {
 SPEED = {'快': 1.2, '中': 1.0, '慢': 0.8}
 # 速度档：卡里明写的才填（1 狗逍遥「低敏后手」→慢；45 东方教主「敏捷 ×120%，出手最快」→快）；没写的填中
 SPEED_OF = {1: '慢', 45: '快'}
+# T081（P3）：卡上没写「X型」、标题行关键字也认不出的几人，按标题行职业重判（理由写在第二格，生成时进 role_notes）
+ROLE_REJUDGE = {
+    6: ('输出', '吕布：标题「物理斗士（TP 流，靠重放）」，斗士是输出职业，卡里没有坦克、辅助功能'),
+    8: ('均衡', '修：四小强，招牌技之外多一个治疗和复活，正是均衡的「一项小功能」，不到辅助'),
+    15: ('输出', '张飞：标题「物理斗士（暴击、破胆减益）」，破胆是附带减益，主职是出伤'),
+    21: ('输出', '玛莎：标题「风系法师（一招风旋术，击杀叠层）」，只有出伤职责'),
+    22: ('输出', '维利：标题「拳击手（拳套，暴击）」，只有出伤职责'),
+}
 # 部位系数（稿第五节第 2 条表）
 SLOTS = {
     '武器': {'etype': 1, 'atk': 1.2},
@@ -61,6 +69,8 @@ def parse_cards(doc: Path):
     cards = {}
     for a, b in zip(heads, heads[1:]):
         h = lines[a]
+        if '轮回者' in h:  # 11 轮回者·里德是轮回后才开放的另一张卡；11 号本体按「8～11 四小强」那张（T081）
+            continue
         m = re.match(r'### ([\d、～,]+)', h)
         if not m:
             continue
@@ -105,7 +115,9 @@ def build_actors(doc: Path):
     for i in roster:
         c = cards.get(i, {})
         role = c.get('role')
-        if not role:
+        if i in ROLE_REJUDGE:
+            role = ROLE_REJUDGE[i][0]
+        elif not role:
             role = '均衡'
             unclear.append(i)
         actors[str(i)] = {'name': names.get(i, '五条悟'), 'role': role, 'speed': SPEED_OF.get(i, '中'), 'tweak': {}}
@@ -141,9 +153,6 @@ def backtest(actors, rework):
             continue
         st = d.get('stats', {'atk': 1})
         nom = sum(w * W.get(k, 1.0) for k, w in st.items())
-        new = sum(w * role_mult(ac, k) * (LINE['hp_mult'] if k == 'mhp' else LINE['mp_mult'] if k == 'mmp' else 1.0)
-                  / (LINE['hp_mult'] if k == 'mhp' else LINE['mp_mult'] if k == 'mmp' else 1.0)
-                  for k, w in st.items())
         # mhp／mmp 的 role_mult 已含 25 倍，所以直接比 w*role_mult 与 w*W
         new = sum(w * role_mult(ac, k) for k, w in st.items())
         out.append((sid, v['actor'], new / nom - 1))
@@ -353,7 +362,7 @@ def build_abs():
     more_entries, groups = scan_more(b, set(jload(DATA / 'skill_rework.json')['skills']))
     entries += more_entries
     return {
-        '_note': 'T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 %.0f、魔法 %.0f。现在没有代码读它。' % (b['mhp'], b['mmp']),
+        '_note': 'T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 %.0f、魔法 %.0f。T081 起只接了结构化的两类：药品固定回复（battle_logic._apply_effect）、常数状态持续伤害（ext_dot），其余几类 new 还是文字说明、未接。' % (b['mhp'], b['mmp']),
         'version': 1,
         'nice_number_exempt': ['entries', 'id', 'unscanned', 'base', 'groups'],
         'base': {'weak_mhp81': b['mhp'], 'weak_mmp81': b['mmp'], 'weak_main81': b['main']},
@@ -406,6 +415,7 @@ def main():
             'speed': SPEED,
             'tweak_range': [0.8, 1.2],
             'unclear': unclear,
+            'role_rejudged': {str(i): r for i, (_, r) in sorted(ROLE_REJUDGE.items())},
             'actors': actors,
             'backtest_notes': [
                 {'skill': int(s), 'actor': int(a), 'dev': round(r, 3), 'reason': BACKTEST_REASON}

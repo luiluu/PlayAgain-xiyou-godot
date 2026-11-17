@@ -75,9 +75,10 @@ static func harm_re(e: XEnemy, table: Dictionary) -> Dictionary:
 		return table
 	var v := measure_resist
 	if v < 0.0:
-		if not RESIST or not RESIST_TABLE.has(f) or not _on():
+		var rt := XTianqiBase.guardian_table("resist", RESIST_TABLE)  # 期四总开关开着读新表（T012-c 量；缺就退回旧表）
+		if not RESIST or not rt.has(f) or not _on():
 			return table
-		v = float(RESIST_TABLE[f])
+		v = float(rt[f])
 	var out := {}
 	for k in table:
 		out[k] = v
@@ -97,7 +98,7 @@ static func atk_scale(e: XEnemy) -> float:
 		return 1.0
 	if ref:
 		return HONGJUN_SCALE if str(rec.get("_ref", "")) == "hongjun" else REF_SCALE
-	return float(ATK_SCALE.get(f, 1.0))
+	return float(XTianqiBase.guardian_table("atk_scale", ATK_SCALE).get(f, 1.0))  # 期四总开关开着读新表（缺就退回旧表）
 
 
 ## 守层者认敌人号；楼层里别的敌人认 setup 记下的层（WORLD）
@@ -175,6 +176,9 @@ static func troop_floor(logic) -> int:
 ## 第 f 层每回合基准血量：HP_BASE 是 11-13 带全队 ×6 实测的，去 ×6（XTianqiNoX6，O-470）开着时乘 1/6。
 ## 以后用虚拟玩家按去 ×6 后的伤害重量、换表时，把这里的 hp_unit 去掉。
 static func hp_base(f: int) -> float:
+	var t := XTianqiBase.guardian_table("hp_base", HP_BASE)  # 期四总开关开着读新表（T012-c 按新口径实机量，不再乘 hp_unit；缺就退回旧表照旧乘）
+	if not is_same(t, HP_BASE):
+		return float(t.get(f, 0.0))
 	return float(HP_BASE[f]) * XTianqiNoX6.hp_unit()
 
 

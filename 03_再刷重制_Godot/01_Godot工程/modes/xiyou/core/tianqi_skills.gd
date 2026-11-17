@@ -139,7 +139,12 @@ static func spec(id: int) -> Dictionary:
 
 ## XDB.rec 包装：天启篇存档里换成改写后的记录
 static func cards_on(s = null) -> bool:
-	return CARDS and on(s)
+	return cards_flag() and on(s)
+
+
+## 角色卡开没开（不看存档）：期四总开关 XTianqiBase.PHASE4 开着就开。CARDS 只留给专项单独隔离卡用，产品代码不许改它（T081）
+static func cards_flag() -> bool:
+	return CARDS or XTianqiBase.PHASE4
 
 
 static func rec(id: int, base: Dictionary) -> Dictionary:
@@ -195,9 +200,14 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 			dmg.critical = bool(sp.critical)
 		r.damage = dmg
 	if sp.has("seq") and r.get("yepSeq") is Dictionary:
+		var before := _seq_effect_count(r.yepSeq)
 		for ph in ["target", "whole"]:
 			if r.yepSeq.get(ph) is Array:
 				r.yepSeq[ph] = _seq_edit(r.yepSeq[ph], sp.seq)
+		# 智能 AI 估段数用的 yepEffects 按编辑前后 whole＋target 段数的差值重算（drop_if／if_keep／keep_effects／split_effects 都会改段数；
+		# 原来只有 split_effects 乘 n，2058 删条件块后没减，核查 R2 P3）。口径同转换器 yep_action_effects：大小写不分、条件里的都算
+		if r.has("yepEffects"):
+			r.yepEffects = maxi(1, int(r.yepEffects) + _seq_effect_count(r.yepSeq) - before)
 	if sp.has("hit_type"):
 		r.hitType = int(sp.hit_type)
 	for k in sp.get("fields", {}):  # 记录上的其他字段直接改（奈叶自定义魔法消耗 mpCostCurrentRate／postDamageCostRepeat 关掉）
@@ -219,8 +229,18 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 	return r
 
 
+static func _seq_effect_count(seq: Dictionary) -> int:
+	var n := 0
+	for ph in ["whole", "target"]:
+		for c in seq.get(ph, []):
+			if c is Array and not c.is_empty() and str(c[0]).strip_edges().to_upper() == "ACTION EFFECT":
+				n += 1
+	return n
+
+
 ## 行动序列（yepSeq，转换器预编译）：段数在这里。drop_if 删掉条件段（match 是条件里的子串，空＝所有条件段）、if_keep 条件段只留前 n 段（cmd 换成别的命令前缀，如 "Add State"）、replace_cmd 整条换命令名、
-## if_to_effects 把条件段换成固定 n 段、add_effects 在最后一段后面再加 n 段、clear_effect_args 把「action effect: enemies」改成只打目标
+## if_to_effects 把条件段换成固定 n 段、add_effects 在最后一段后面再加 n 段、clear_effect_args 把「action effect: enemies」改成只打目标、
+## split_effects 每一段原地拆成 n 段（单段上限拆段用，卡上系数同时除以 n）
 static func _seq_edit(cmds: Array, ops: Array) -> Array:
 	var out: Array = cmds.duplicate(true)
 	for op in ops:
@@ -230,7 +250,8 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 				var i := 0
 				while i < out.size():
 					var name := str(out[i][0])
-					if name.begins_with("if ") and name.contains(str(op.get("match", ""))):
+					var mt := str(op.get("match", ""))
+					if name.begins_with("if ") and (mt == "" or name.contains(mt)):  # Godot 的 contains("") 为假：空 match 要单独判（T081 发现 2058 的 drop_if "" 一直没生效）
 						var depth := 1
 						i += 1
 						while i < out.size() and depth > 0:
@@ -254,7 +275,8 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 					var nm := str(out[i2][0])
 					res2.append(out[i2])
 					i2 += 1
-					if nm.begins_with("if ") and nm.contains(str(op.get("match", ""))):
+					var mt2 := str(op.get("match", ""))
+					if nm.begins_with("if ") and (mt2 == "" or nm.contains(mt2)):  # 同 drop_if：Godot 的 contains("") 为假，空 match 认所有条件段
 						var kept := 0
 						while i2 < out.size() and str(out[i2][0]) != "end":
 							if str(out[i2][0]).to_lower().begins_with(str(op.get("cmd", "action effect")).to_lower()):
@@ -296,6 +318,18 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 				for c in out:
 					if str(c[0]) == "action effect":
 						c[1] = []
+			"split_effects":  # 每一段（大小写 action effect 都算，条件块里的也算）原地拆成 n 段、参数照抄；系数在卡上除以 n，合计不变（T081 单段上限拆段）
+				var n3 := int(op.get("n", 1))
+				var res4 := []
+				for c in out:
+					if str(c[0]).to_lower() != "action effect":
+						res4.append(c)
+						continue
+					for k in n3:
+						if k > 0 and str(c[0]) == "action effect":
+							res4.append(["wait", ["6"]])
+						res4.append((c as Array).duplicate(true))  # 默认序列的大写段可能只有名字一项（["ACTION EFFECT"]）
+				out = res4
 	return out
 
 
@@ -359,7 +393,7 @@ static func new_rec(id: int, t: Array) -> Dictionary:
 
 ## XActor 的职业技能表（升级、改等级、新建时学技能）：天启篇卡开着时加上 learn 里这名角色的
 static func learnings(a, list: Array) -> Array:
-	if not CARDS or not (a is XActor) or not cards_on():
+	if not cards_flag() or not (a is XActor) or not cards_on():
 		return list
 	var extra = data().get("learn", {}).get(str(int(a.actor_id)), [])
 	if not extra is Array or extra.is_empty():
@@ -436,7 +470,7 @@ static func gear_key(item) -> String:
 
 
 static func gear_view(item):
-	if not CARDS or not (item is Dictionary) or item.is_empty() or not cards_on():
+	if not cards_flag() or not (item is Dictionary) or item.is_empty() or not cards_on():
 		return item
 	data()
 	var key := gear_key(item)
@@ -627,13 +661,38 @@ static func formula(a, b, item: Dictionary) -> float:
 	var v := base * float(d.get("coef", 0.0)) * level_scale(a) * follow_scale
 	if NATIVE_COUNTER and a is XActor and a.has_meta("xtq_cnext_on") and follow_scale == 1.0:
 		v *= float(a.get_meta("xtq_cnext_on"))  # 牛马之魂：反击后下一招（不含追加、反击本身）
+	var hit_cap := XTianqiBase.single_hit_cap(a)  # 期四：单段有效系数上限（总开关关着 0，不封）
+	var eff := float(d.get("coef", 0.0)) * (hit_weight(d) if hit_cap > 0.0 else 1.0)  # 口径同 天启篇数据校验.py single_hit_effective
 	for c in d.get("conds", []):
-		v *= _cond(c, a, b)
+		var m := _cond(c, a, b)
+		v *= m
+		eff *= m
 	if a is XActor:
 		for c in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("conds", []):
-			v *= _cond(c, a, b)
+			var m2 := _cond(c, a, b)
+			v *= m2
+			eff *= m2
+	if hit_cap > 0.0 and eff > hit_cap:
+		v *= hit_cap / eff  # 卡面系数×条件全中后超过上限：压回上限（数据校验已按上限拆段，这里只兜底）
 	v = maxf(0.0, v)
 	return -v if kind in [3, 4] else v
+
+
+## 单段有效系数里的属性权重合计（同 天启篇数据校验.py skill_weight）：生命、魔法上限按标准线折成攻击的 hp_mult／mp_mult 倍；max_of 再加 1
+static func hit_weight(d: Dictionary) -> float:
+	var l: Dictionary = XTianqiBase.line_data().get("line", {})
+	var w := 0.0
+	var stats: Dictionary = d.get("stats", {"atk": 1})
+	for k in stats:
+		var m := 1.0
+		if str(k) == "mhp":
+			m = float(l.get("hp_mult", 25))
+		elif str(k) == "mmp":
+			m = float(l.get("mp_mult", 25))
+		w += float(stats[k]) * m
+	if d.has("max_of"):
+		w += 1.0
+	return w
 
 
 ## 一条伤害条件成立时的倍率，不成立为 1。
@@ -922,7 +981,7 @@ static func after_apply(logic, u, skill, t, r := {}) -> void:
 ## 状态行 reflect 比例：带这个状态的角色受到敌人伤害时反弹这么多（首领减半；云霄阵眼不灭、张楚岚进阶、南宫恨五绝神功）。
 ## 原版这类状态是 React 脚本按（伤害＋属性）×几十倍反弹，天启篇改成比例（effects_remove 去掉原脚本）
 static func _reflect(u, t, r: Dictionary) -> void:
-	if not CARDS or not (t is XActor) or u == null or u is XActor or not u.is_alive() or not cards_on():
+	if not cards_flag() or not (t is XActor) or u == null or u is XActor or not u.is_alive() or not cards_on():
 		return
 	var dmg := float(r.get("hp", 0.0))
 	if dmg <= 0.0 or bool(r.get("missed", false)) or bool(r.get("evaded", false)):
@@ -943,7 +1002,7 @@ static func _reflect(u, t, r: Dictionary) -> void:
 		return
 	if u is XEnemy and u.boss_difficulty_boss:  # 首领（开战时按 boss_id 记）
 		pct *= 0.5
-	u.hp = maxf(0.0, float(u.hp) - floorf(XTianqiNoX6.scale_direct(t, u, floorf(dmg * pct))))  # 去全队 ×6：敌人伤害没缩、敌人血量缩了，反弹跟着缩（O-470）
+	u.hp = maxf(0.0, float(u.hp) - floorf(XTianqiNoX6.scale_direct(t, u, floorf(dmg * pct), false)))  # 去全队 ×6：敌人伤害没缩、敌人血量缩了，反弹跟着缩（O-470）；反弹的是敌人的攻击，不乘期四 K
 	if u.hp <= 0.0:
 		u.add_state(1)
 
@@ -958,7 +1017,7 @@ static var _act_skill := 0  # 角色正在放的技能号（begin_action 记、e
 
 
 static func boss_rule(e, id: int):
-	if not BOSS_RULE or not CARDS or not (e is XEnemy) or not e.boss_difficulty_boss or not cards_on():
+	if not BOSS_RULE or not cards_flag() or not (e is XEnemy) or not e.boss_difficulty_boss or not cards_on():
 		return ""
 	if XImportedBalance.acting_battler() is XEnemy:
 		return ""
@@ -985,12 +1044,12 @@ static var OFFHAND_HALF := true
 
 
 static func offhand_half() -> bool:
-	return OFFHAND_HALF and CARDS and cards_on()
+	return OFFHAND_HALF and cards_flag() and cards_on()
 
 
 ## 百分比生命伤害对首领无效（第一节）：表里的技能在行动序列里按目标生命上限比例扣血（Hp -n%）时，首领不扣
 static func boss_pct_immune(u, t, skill_id: int) -> bool:
-	return BOSS_RULE and CARDS and u is XActor and t is XEnemy and t.boss_difficulty_boss and has(skill_id) and cards_on()
+	return BOSS_RULE and cards_flag() and u is XActor and t is XEnemy and t.boss_difficulty_boss and has(skill_id) and cards_on()
 
 
 ## add_state 之前：返回 -1 不挂、0 照常、>0 换成这个状态
@@ -1014,7 +1073,7 @@ static func boss_turns(e, id: int, n: int) -> int:
 
 ## 技能行 shield {pct, self}：放这招时给目标（self：给自己）加施放者生命上限这个比例的护盾（钟离、立希、云霄；只在正式结算时加）
 static func after_formula(a, b, item: Dictionary) -> void:
-	if not CARDS or not cards_on():
+	if not cards_flag() or not cards_on():
 		return
 	var sh: Dictionary = spec(int(item.get("id", 0))).get("shield", {})
 	if sh.is_empty() or a == null:
@@ -1095,7 +1154,7 @@ static func dot_value(a, b, d: Dictionary) -> float:
 ## （状态本身还被技能用，不改状态记录）
 static func start_turns(list: Array, foes: Array = []) -> void:
 	clear_marks(list)  # 开战清掉上一场残留的反击后加成（不看卡开没开）
-	if not CARDS or not cards_on():
+	if not cards_flag() or not cards_on():
 		return
 	for a in list:
 		if not (a is XActor):
@@ -1162,7 +1221,7 @@ static func module_ops(item: Dictionary, a, ops: Array, module := "") -> Array:
 
 ## 伤害钩子（XActorDamageHooks.capture）：技能行 pierce {rate, need} 无视目标一部分双防；角色行 heal_mult [{need, mult}] 治疗量
 static func damage_ops(item: Dictionary, a, b) -> Array:
-	if not CARDS or not cards_on():
+	if not cards_flag() or not cards_on():
 		return []
 	var ops := []
 	var id := int(item.get("id", 0))
@@ -1188,7 +1247,7 @@ static func _when(c: Dictionary, a, b) -> bool:
 
 ## itemCri 包装：技能行 crit_if（一条伤害条件，成立时必暴：小痔坐忘痔霄①）
 static func item_cri(u, skill: Dictionary, t, cri: float) -> float:
-	if not CARDS or not has(int(skill.get("id", 0))) or not cards_on():
+	if not cards_flag() or not has(int(skill.get("id", 0))) or not cards_on():
 		return cri
 	var c: Dictionary = spec(int(skill.id)).get("crit_if", {})
 	if c.is_empty():
@@ -1201,7 +1260,7 @@ static func item_cri(u, skill: Dictionary, t, cri: float) -> float:
 
 ## 技能行 hp_free_with 技能号：学了它这招不扣生命（晴明两仪四象②尸鬼尽封）
 static func hp_free(u, skill: Dictionary) -> bool:
-	if not CARDS or not has(int(skill.get("id", 0))) or not cards_on():
+	if not cards_flag() or not has(int(skill.get("id", 0))) or not cards_on():
 		return false
 	var k = spec(int(skill.id)).get("hp_free_with")
 	return k != null and owns(u, int(k))
@@ -1308,7 +1367,7 @@ static func _foe_drain(logic, u, skill: Dictionary) -> void:
 
 ## BattleLogic.battle_skills：角色行 battle_extra [{need, skill}]：带着这件时战斗技能列表多出这一招（诸葛命星：战斗中的五行移位）
 static func battle_extra(a) -> Array:
-	if not CARDS or not (a is XActor) or not cards_on():
+	if not cards_flag() or not (a is XActor) or not cards_on():
 		return []
 	var out := []
 	for r in data().get("actors", {}).get(str(int(a.actor_id)), {}).get("battle_extra", []):
@@ -1321,7 +1380,7 @@ static func battle_extra(a) -> Array:
 
 ## BattleLogic.can_use：技能行 need_var {var, min}：变量不够不能放（白起断天休要 3 点杀气）
 static func meets(a, skill: Dictionary) -> bool:
-	if not (a is XActor) or not CARDS:
+	if not (a is XActor) or not cards_flag():
 		return true
 	var nv: Dictionary = spec(int(skill.get("id", 0))).get("need_var", {})
 	if nv.is_empty() or not cards_on() or XState.current == null:

@@ -159,7 +159,7 @@ func _records() -> void:
 	# 精灵至血 7457：设计稿去掉 32% 全体再释放；天启篇不带 AgainUseAll，西游档照旧
 	_check("again_use_7457", not str(XDB.rec("Skills", 7457).note).contains("AgainUseAll") and str(XDB.table("Skills")[7457].note).contains("AgainUseAll"))
 	var note := str(XDB.rec("Skills", 3632).note)
-	_check("desc_lines", note.contains("物理攻击×10.8") and not note.contains("*12*") and note.contains("冷却时间:6回合"), note.substr(0, 200))
+	_check("desc_lines", note.contains("物理攻击×3.6") and not note.contains("*12*") and note.contains("冷却时间:6回合"), note.substr(0, 200))
 	var a: XActor = XState.current.actor(XIAOYAO)
 	a.learn_skill(2746)
 	a.param_mark_dirty()
@@ -188,7 +188,7 @@ func _damage() -> void:
 	a.change_level(99)
 	var one := XDB.rec("Skills", 3632)
 	var slow := a.agi < b.agi
-	_check("cond_agi", is_equal_approx(XTianqiSkills.formula(a, b, one), a.atk * 10.8 * (1.3 if slow else 1.0)))
+	_check("cond_agi", is_equal_approx(XTianqiSkills.formula(a, b, one), a.atk * 3.6 * (1.3 if slow else 1.0)))  # T081 单段上限拆成 3 段 ×3.6（合计 10.8 不变）
 	var c: XActor = s.actor(LVSIJI)
 	c.change_level(99)
 	var hat := XDB.rec("Skills", 102)
@@ -426,7 +426,7 @@ func _xinfa() -> void:
 	var b := _enemy(lg)
 	a.change_level(99)
 	var base := XTianqiSkills.formula(a, b, XDB.rec("Skills", 4748))
-	_check("xinfa_pohun", is_equal_approx(XTianqiSkills.formula(a, b, XDB.rec("Skills", 4749)), base * 1.5), [base])
+	_check("xinfa_pohun", is_equal_approx(XTianqiSkills.formula(a, b, XDB.rec("Skills", 4749)) * 2.0, base * 3.0 * 1.5), [base])  # T081：破魂 2 段 ×8.1、万剑归一 3 段 ×3.6，合计仍是 1.5 倍
 	var ops := XTianqiSkills.damage_ops(XDB.rec("Skills", 4751), a, b)
 	_check("xinfa_pierce", ops.size() == 2 and is_equal_approx(float(ops[0].value), 0.7), ops)
 	_check("xinfa_pierce_none", XTianqiSkills.damage_ops(XDB.rec("Skills", 4748), a, b).is_empty())
@@ -505,6 +505,14 @@ func _p3() -> void:
 	_check("p3_replace_cmd", (seq.call(1067) as Array).any(func(c): return str(c[0]) == "Hp -1%") and not (seq.call(1067) as Array).any(func(c): return str(c[0]) == "Hp -3%"))
 	_check("p3_keep_effects", (fx.call(10710) as Array).size() == 1 and (fx.call(2067) as Array).size() == 5)
 	_check("p3_drop_area", (fx.call(1212) as Array).all(func(c): return (c[1] as Array).is_empty()))
+	# T081 单段上限拆段（split_effects）：每段原地拆 n 段，条件块里的也拆；大写默认序列也拆；万剑归一*灭 原生 3 段不动；后颈斩纯数据 keep_effects 3
+	var up := func(id, ph): return ((XDB.rec("Skills", id).yepSeq.get(ph, []) as Array).filter(func(c): return str(c[0]).to_lower() == "action effect")).size()
+	_check("split_plain", up.call(3632, "target") == 3 and up.call(3631, "target") == 3 and up.call(4749, "target") == 2 and up.call(10731, "target") == 3, [up.call(3632, "target"), up.call(3631, "target"), up.call(4749, "target"), up.call(10731, "target")])
+	_check("split_in_if", up.call(3645, "target") == 6 and up.call(1060, "target") == 12 and up.call(2058, "target") == 2, [up.call(3645, "target"), up.call(1060, "target"), up.call(2058, "target")])
+	_check("split_upper", up.call(6036, "whole") == 3 and up.call(10615, "whole") == 3 and up.call(10752, "target") == 3 and up.call(10125, "target") == 2, [up.call(6036, "whole"), up.call(10615, "whole"), up.call(10752, "target"), up.call(10125, "target")])
+	_check("split_yep_effects", int(XDB.rec("Skills", 6036).get("yepEffects", 0)) == int(XDB.table("Skills")[6036].get("yepEffects", 0)) * 3)
+	_check("seq_yep_effects_recount", int(XDB.rec("Skills", 2058).get("yepEffects", 0)) == 2 and int(XDB.table("Skills")[2058].get("yepEffects", 0)) == 22, XDB.rec("Skills", 2058).get("yepEffects"))  # 核查 R2 P3：drop_if 删条件块后 yepEffects 按差值重算（原来 22×2＝44）
+	_check("split_tp_gain", int(XDB.rec("Skills", 1060).tpGain) == 10 and int(XDB.table("Skills")[1060].tpGain) == 30)
 	var in_w := 0
 	var on := false
 	for c in seq.call(1098):

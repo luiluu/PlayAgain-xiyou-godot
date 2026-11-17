@@ -107,7 +107,8 @@ static func dealt_parts(a, s = null) -> Dictionary:
 	var assist := 1.0 + float(XTianqiBalance.assist_bonus(field_weak_count(s)).damage_dealt)
 	var aura := 1.0 + (XTianqiBalance.assist_slot_aura() if has_helper(s) else 0.0)
 	var scale := XTianqiMoney.scale_dealt_mult(s)  # 天平「酒」
-	return {"mult": tier * party * assist * aura * scale, "tier": tier, "party": party, "assist": assist, "aura": aura, "scale": scale}
+	var k := XTianqiBase.k_for(a, s)  # 期四 K「天启注视」（总开关关着 1）
+	return {"mult": tier * party * assist * aura * scale * k, "tier": tier, "party": party, "assist": assist, "aura": aura, "scale": scale, "k": k}
 
 
 ## 打到角色身上的伤害要乘的倍率（档位承伤 × 弱者协力承伤）
