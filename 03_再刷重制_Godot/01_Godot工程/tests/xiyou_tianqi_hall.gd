@@ -376,10 +376,10 @@ func _hall_text() -> void:
 						if cj.contains(bad):
 							leak.append([eid, "choice", i, bad, cj])
 	_check("npcs_no_xiyou_leaks", leak.is_empty(), leak)
-	var ev71_forbidden := ["Boss", "boss", "神武", "12.27", "×0.01", "境界", "大境界", "大圆满", "赌场", "移植", "真气乘算伤害", "真气（伤害加成）", "丹药批量使用", "用丹", "花橙、落芸、苍龙破晓等已停用"]
+	var ev71_forbidden := ["Boss", "boss", "神武", "12.27", "×0.01", "境界", "大境界", "大圆满", "赌场", "移植", "真气", "闭关", "道法", "本命兵", "灵根", "兵仙", "神兵试炼", "丹药批量使用", "用丹", "花橙、落芸、苍龙破晓等已停用"]
 	var ev71_leaks := ev71_forbidden.filter(func(b): return ev71_all.contains(b))
 	_check("ev71_t139_no_residue", ev71_leaks.is_empty(), ev71_leaks)
-	_check("ev71_t139_wording_locked", ev71_all.contains("助力位与后备均不计入") and ev71_all.contains("36层四骑士不吃霸体、改用各自阶段规则") and ev71_all.contains("当前仅用于闭关突破并领取属性与道法奖励") and ev71_all.contains("神器装备与打造") and ev71_all.contains("抽奖与法宝喂养") and ev71_all.contains("成长机制怎么看") and ev71_all.contains("品质、检索与排序") and ev71_all.contains("开放与停用角色") and ev71_all.contains("丹药下架与法宝喂养"), "missing t139 wording")
+	_check("ev71_t139_wording_locked", ev71_all.contains("助力位与后备均不计入") and ev71_all.contains("36层四骑士不吃霸体、改用各自阶段规则") and ev71_all.contains("阶段成长与突破奖励机制正随版本重制接入中") and ev71_all.contains("取消了旧版的超额行动增伤机制") and ev71_all.contains("成长与试炼") and ev71_all.contains("成长查看说明") and ev71_all.contains("超额行动与体系") and ev71_all.contains("神器装备与打造") and ev71_all.contains("抽奖与法宝喂养") and ev71_all.contains("成长机制怎么看") and ev71_all.contains("品质、检索与排序") and ev71_all.contains("开放与停用角色") and ev71_all.contains("丹药下架与法宝喂养"), "missing t139 wording")
 	_check("ev73_fixed_face_index", ev73_faces == [6, 6, 6, 6], ev73_faces)
 	var ev26_m := XTianqiHallText.rewrite_message(s, 4, 26, {"face": "", "index": 0, "lines": ["\\n<奇怪的老太>又来\\c[4]白票\\c[0]啊。"]})
 	_check("p2_p3_wording_locked", ev71_all.contains("封卷") and ev71_all.contains("号卷不返还") and ev71_all.contains("每卷每个存档只掉一次") and ev71_all.contains("证道暂未开放") and ev71_all.contains("（暂未开放）将一命通关") and ev71_all.contains("下一页|返回") and str(ev26_m.lines[0]).contains("这些滑稽币拿去吧"), [ev26_m, ev71_all.contains("封卷"), ev71_all.contains("证道暂未开放")])
