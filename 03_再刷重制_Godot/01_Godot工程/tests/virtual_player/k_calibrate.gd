@@ -66,6 +66,8 @@ func _ready() -> void:
 			level = clampi(int(a.substr(8)), 1, LEVEL)
 			gear_level = mini(80, maxi(1, level - 1))
 			fabao_level = mini(FABAO, roundi(FABAO * level / float(LEVEL)))
+		elif a == "--no-tune":  # T163：D189 逐个调角色的覆盖层关掉（改前对照、量成长曲线用）
+			XTianqiBase.TUNE_D189 = false
 		elif a == "--per-skill":
 			per_skill = true
 		elif a == "--debug":
@@ -85,7 +87,7 @@ func _run() -> void:
 	var rules: Dictionary = XTianqiBalance.data().get("combat_rules", {})
 	if k_arg > 0.0:
 		rules["base_damage"] = k_arg
-	report = {"k": float(rules.get("base_damage", 1.0)), "hits": hits, "level": level, "gear_level": gear_level, "fabao_level": fabao_level, "def": DEF, "rows": [], "tiers": {},
+	report = {"k": float(rules.get("base_damage", 1.0)), "hits": hits, "tune_d189": XTianqiBase.TUNE_D189, "level": level, "gear_level": gear_level, "fabao_level": fabao_level, "def": DEF, "rows": [], "tiers": {},
 		"brand_max_bonus": float(XTianqiBrand.data().get("power", {}).get("max_bonus", 0.5)),
 		"caps": XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}),
 		"build": "bare" if bare else "full",

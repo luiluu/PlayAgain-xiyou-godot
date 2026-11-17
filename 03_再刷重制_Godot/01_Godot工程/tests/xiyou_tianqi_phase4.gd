@@ -251,6 +251,15 @@ func _tune_d189() -> void:
 	_check("tune_d189.on", on_coef == 5.0 and on_hp == 0.002 and on_atk == 0.6667 and on_desc.contains("×5.0"), [on_coef, on_hp, on_desc])
 	_check("tune_d189.switch_back", off_coef == 6.0 and off_hp == 0.0133 and off_desc.contains("×6.0"), [off_coef, off_hp])
 	_check("tune_d189.no_note_keys", not XTianqiSkills.spec(10727).has("_note"))
+	# 第二批（偏弱超强者调高，分摊到全部伤害招＋本体成长）：176 贯日 6.0→9.6、177 棱光 2.5→5.8、本体成长 tweak；关掉照原卡、tweak 回 1
+	var on_gr := [float(XTianqiSkills.spec(10315).damage.coef), float(XTianqiSkills.spec(10337).damage.coef), XTianqiBase.actor_mult(177, "mat"), XTianqiBase.actor_mult(176, "atk"), XTianqiBase.actor_mult(108, "mmp")]
+	XTianqiBase.TUNE_D189 = false
+	XTianqiSkills.reload()
+	var off_gr := [float(XTianqiSkills.spec(10315).damage.coef), float(XTianqiSkills.spec(10337).damage.coef), XTianqiBase.actor_mult(177, "mat"), XTianqiBase.actor_mult(176, "atk"), XTianqiBase.actor_mult(108, "mmp")]
+	XTianqiBase.TUNE_D189 = true
+	XTianqiSkills.reload()
+	_check("tune_d189.raise_on", on_gr == [9.6, 5.8, 1.2, 1.2, 1.2] and str(XTianqiSkills.spec(10337).desc).contains("×5.8"), on_gr)
+	_check("tune_d189.raise_switch_back", off_gr == [6.0, 2.5, 1.0, 1.0, 1.0], off_gr)
 
 ## 开着但是西游档：全走关着
 func _xiyou() -> void:

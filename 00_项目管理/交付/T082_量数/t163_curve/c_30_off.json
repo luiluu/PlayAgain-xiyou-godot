@@ -1,0 +1,86 @@
+{
+ "brand_max_bonus": 0.5,
+ "build": "bare",
+ "caps": {
+  "弱者": 8.0,
+  "强者": 11.0,
+  "超强者": 11.0
+ },
+ "def": 8200.0,
+ "fabao_level": 37,
+ "gear_level": 29,
+ "hits": 3,
+ "k": 0.27,
+ "level": 30,
+ "mastery_max_level_seen": 10,
+ "missing": [
+  "词条掷满挑最大",
+  "黑印满配攒五层",
+  "真印无视防御",
+  "秘籍格",
+  "号卷",
+  "烙印（XTianqiBrand 关着＝烙印 0；锚临时取 200 万＝300 万÷1.50，稿第九节第 3 条）"
+ ],
+ "rows": [
+  {
+   "actor": 108,
+   "atk": 1762.0,
+   "cap": 11.0,
+   "dealt": 7869.0,
+   "eff_full": 6.0,
+   "formula": "XTianqiSkills.formula(a,b,5696)",
+   "mat": 5729.0,
+   "mhp": 158004.0,
+   "peak": 7869.0,
+   "repeats": 1,
+   "skill": 5696,
+   "terminal": 1.0,
+   "tier": "超强者",
+   "v0": 14819.9669387755,
+   "v_full": 14819.9669387755
+  },
+  {
+   "actor": 176,
+   "atk": 4784.0,
+   "cap": 11.0,
+   "dealt": 7979.0,
+   "eff_full": 6.0,
+   "formula": "XTianqiSkills.formula(a,b,10315)",
+   "mat": 1613.0,
+   "mhp": 146693.0,
+   "peak": 7979.0,
+   "repeats": 1,
+   "skill": 10315,
+   "terminal": 1.0,
+   "tier": "超强者",
+   "v0": 18599.0204081633,
+   "v_full": 18599.0204081633
+  },
+  {
+   "actor": 177,
+   "atk": 975.0,
+   "cap": 11.0,
+   "dealt": 4648.0,
+   "eff_full": 2.5,
+   "formula": "XTianqiSkills.formula(a,b,10337)",
+   "mat": 5456.0,
+   "mhp": 156766.0,
+   "peak": 4648.0,
+   "repeats": 1,
+   "skill": 10337,
+   "terminal": 1.0,
+   "tier": "超强者",
+   "v0": 8838.16326530612,
+   "v_full": 8838.16326530612
+  }
+ ],
+ "tiers": {
+  "超强者": {
+   "max": 7979.0,
+   "max_brand": 11968.5,
+   "median": 7869.0,
+   "n": 3
+  }
+ },
+ "tune_d189": false
+}
