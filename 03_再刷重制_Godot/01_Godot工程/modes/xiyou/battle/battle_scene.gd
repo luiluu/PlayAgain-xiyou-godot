@@ -1188,6 +1188,10 @@ func escape_text() -> String:
 
 ## 轮到 u：敌人/自动/不能行动时直接决定；角色由玩家选。逃跑在这里处理，成功时结束战斗并返回 "escaped"。
 func _command(u: XBattler):
+	# 天启篇烙印发作（不听指挥一回合）：排在挂机、场内自动、手动指令窗三条路之前，三条路同一个结果（稿第四节第 3 条；开关关着恒空）
+	var fit := logic.brand_forced(u)
+	if not fit.is_empty():
+		return fit
 	# 挂机中队员按自动战斗行动（Game_BattlerBase.isAutoBattle）
 	if u is XActor and logic.can_move(u) and XHangUp.is_active(XState.current):
 		# 技能顺序表／智能战斗AI（XBattleLogic.auto_battle_action）

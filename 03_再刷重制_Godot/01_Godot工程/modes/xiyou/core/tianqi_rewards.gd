@@ -546,11 +546,12 @@ static func actor_param(a, i: int, v: float) -> float:
 	return roundf(v * mult) if mult != 1.0 else v
 
 
-## makeTargets：混子之盾开场嘲讽（敌人对我方的技能只打嘲讽的人）
+## makeTargets：混子之盾开场嘲讽（敌人对我方的技能只打嘲讽的人）。T119（T118 小A P3①）：原来 list.size() <= 1 就放过，
+## 敌人单体随机（scope 1，先抽好一个人）拦不住；改成目标里有我方就换成嘲讽的人（嘲讽的人从出战里找，不要求他已被抽中）
 static func filter_targets(logic, a, list: Array) -> Array:
-	if _fight(logic).is_empty() or not a is XEnemy or list.size() <= 1:
+	if _fight(logic).is_empty() or not a is XEnemy or not list.any(func(x): return x is XActor):
 		return list
-	for b in list:
+	for b in logic.actors:
 		var p := _relic_p(b, "plague")
 		if not p.is_empty() and b.is_alive() and int(logic.turn) <= int(p.taunt_turns):
 			return [b]

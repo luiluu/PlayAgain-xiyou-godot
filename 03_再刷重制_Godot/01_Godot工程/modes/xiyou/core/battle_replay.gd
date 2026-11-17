@@ -79,6 +79,11 @@ static func replay(data: Dictionary) -> Dictionary:
 			if logic.stable_id(b) == str(cmd.target):
 				chosen = b
 		var skill := XDB.rec("Items" if cmd.get("kind", "skill") == "item" else "Skills", int(cmd.skill))
+		var fit := logic.brand_forced(user)  # 天启篇烙印发作：同战斗里一样排在最前，照本场状态重算（开关关着恒空）
+		if not fit.is_empty():
+			logs.append_array(logic.act(user, fit[0], fit[1]))
+			commands.append(cmd)
+			continue
 		if bool(cmd.automatic):
 			var decision := logic.decide(user)
 			if (0 if decision[0] == null else int(decision[0].id)) != int(cmd.skill):  # 0：敌人没有可用行动
