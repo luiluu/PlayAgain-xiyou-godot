@@ -843,7 +843,7 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null, confus
 	var before_layers := list.duplicate()  # 天启篇弱者专属词条：下面三层改过目标，专属引导就不动
 	list = XTianqiHorsemen.filter_targets(self, a, list)  # 天启四骑士：混子嘲讽在时只能打混子
 	list = XTianqiPlagueAlien.filter_targets(self, a, skill, list)  # 天启篇瘟疫线异化：挑衅者在时我方单体只能打它
-	list = XTianqiRewards.filter_targets(self, a, list)  # 天启篇奖励：混子之盾开场嘲讽
+	list = XTianqiRewards.filter_targets(self, a, list, skill)  # 天启篇奖励：混子之盾开场嘲讽
 	guide_layers_changed = list != before_layers
 	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
 	return list
@@ -2256,6 +2256,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	else:
 		u.refresh_resources()
 		stale_refreshed(u)  # YEP useItem 的 refresh：出手者自己的陈旧状态进缓存（被挡的 useItem 原版直接返回、不 refresh）
+	var act_at := logs.size()  # 「行动」那一条的下标（烧命记录要插在它前面）
 	logs.append({"type": "action", "user": u, "skill": skill, "views": views()})
 	logs.append_array(XCat.start_action(u, skill))  # 小猫试炼 startAction 包装：巨龙蓄息时日志加一行
 	if blocked:
@@ -2268,7 +2269,10 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		_burn_armed = null  # 只扣主行动这一次；里面再施放的 execute 不扣
 		var burn := XTianqiBrand.burn(self, u)  # 天启篇烙印烧命：确实出手（付完消耗、没被禁用／封印）才付当前生命 4%（不算受到伤害）
 		if not burn.is_empty():
-			logs.append(burn)
+			# T119 返修（小A P1）：结算仍在这里（封印、禁用判完之后），记录插到「行动」之前，
+			# 「行动」后面紧跟 battle_text／seq_phase，BattleScene._play 才认得出序列交给 XSequencePlayer；行动那条的血量改成扣完之后
+			logs.insert(act_at, burn)
+			logs[act_at + 1]["views"] = views()
 	XImportedBalance.set_acting(u)  # YEP 附加状态记 BattleManager._subject 为来源
 	XTianqiQiyinEffects.begin_action(self, u, skill)  # 天启篇七印装备：行动帧（砝码、倾囊、换系、舍身、蓄势）
 	XTianqiAffixBattle.begin_action(self, u, skill)  # 天启篇词条：先声、本次行动的目标与击杀

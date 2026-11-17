@@ -2047,6 +2047,7 @@ func _open_battle_book(w: XBattleList) -> void:
 const ENTRY_FRAMES := 30
 const ACT_MOTION_FRAMES := 12
 const ACT_HIT_FRAMES := 2
+const FIT_TEXT_FRAMES := 36  # 天启篇烙印发作那一行的停留（约 0.6 秒，发呆／断片／抽自己等没有序列演出）
 const ACT_LOG_FRAMES := 41
 const ACT_END_FRAMES := 52
 
@@ -2152,6 +2153,8 @@ func _play(logs: Array) -> void:
 				_log_add(str(l.text))  # BattleManager._logWindow.push('addText')（宿傩「发动了神灶：开！」等）
 				if l.has("sukuna_fx"):
 					await _sukuna_fx(str(l.sukuna_fx))
+				if l.has("tianqi_fit"):
+					await _wait_frames(FIT_TEXT_FRAMES)  # 天启篇烙印发作：没有序列演出，停一下让人看清再往下（T119 返修，小A P3①）
 			"enemy_change":
 				if l.kind == "vanish" or l.has("tianqi_horseman"):  # 天启四骑士：援军、小怪战斗中出场
 					_apply_enemy_change(l)  # die＋hide（XPetCapture：逃跑；被捕的在公共事件 173 里，由 _play_troop_events 处理）

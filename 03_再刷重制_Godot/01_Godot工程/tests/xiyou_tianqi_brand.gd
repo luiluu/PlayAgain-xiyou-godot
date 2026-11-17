@@ -724,11 +724,21 @@ func _t118_costs() -> void:
 	_cost_actor(lg, 0, 7000)
 	_check("t118.burn_at_node", XTianqiBrand.burn(lg, a).is_empty())
 	a = _cost_actor(lg, 0, 7001)
+	var hp_pre := a.hp
 	var logs := lg.act(a, a.attack_skill(), e)
 	var burn_at := logs.find(logs.filter(func(l): return str(l.get("type", "")) == "regen" and l.get("target") == a).front() if logs.any(func(l): return str(l.get("type", "")) == "regen" and l.get("target") == a) else null)
 	var act_at := logs.find(logs.filter(func(l): return str(l.get("type", "")) == "action").front() if logs.any(func(l): return str(l.get("type", "")) == "action") else null)
-	# T119（T118 小A P3②）：挪到 execute 里确实出手之后扣，记录排在「行动」那一条之后、命中之前
-	_check("t118.burn_in_act", burn_at > act_at and act_at >= 0, logs.map(func(l): return l.get("type")))
+	# T119（T118 小A P3②）：挪到 execute 里确实出手之后扣。返修（小A P1）：记录插在「行动」之前，行动那条的血量是扣完的
+	_check("t118.burn_in_act", burn_at >= 0 and burn_at < act_at, logs.map(func(l): return l.get("type")))
+	var paid_hp := float(logs[burn_at].hp) if burn_at >= 0 else -1.0
+	_check("t119.burn_act_views", act_at >= 0 and paid_hp >= 1.0 and float(logs[act_at].views.get(a, {}).get("hp", -1.0)) == hp_pre - paid_hp,
+		[hp_pre, paid_hp, logs[act_at].views.get(a, {}).get("hp") if act_at >= 0 else null])
+	# 带 yepSeq 的技能＋烧命：「行动」后面（跳过 battle_text）紧跟 seq_phase，BattleScene._play 照样交给 XSequencePlayer
+	var seq_k := act_at + 1
+	while seq_k < logs.size() and str(logs[seq_k].type) == "battle_text":
+		seq_k += 1
+	_check("t119.burn_keeps_seq", XActionSequence.has_sequence(a.attack_skill()) and burn_at >= 0 and seq_k < logs.size() and str(logs[seq_k].type) == "seq_phase",
+		logs.map(func(l): return l.get("type")))
 	# 被禁用的行动（禁用号角）：execute 直接返回，不扣
 	a.hp = a.mhp
 	var hp_b := a.hp
@@ -1043,6 +1053,9 @@ func _t119_fits() -> void:
 	lg.start_turn()
 	_check("t119.trigger_queue", t0[0] == "started" and t1[0] == "started" and t2[0] == "queued" and _fit_turns(lg, c2) == [2] and XTianqiBrand.fit_kinds(lg, c2) == ["daze"],
 		[t0[0], t1[0], t2[0], _fit_turns(lg, c2)])
+	# 返修（小A P3②）：发作中被打疯也顺延（和破防一样），不丢；间隔过了再发
+	var t3 := XTianqiBrand.trigger(lg, c2)
+	_check("t119.trigger_in_fit_queues", t3[0] == "queued" and XTianqiBrand._queued(XTianqiBrand.fight(lg), c2), t3[0])
 	lg.end_battle()
 
 	# 12. 生熟：首领战第一次是生的，打赢记首胜后同一键再打是熟的（几率 ×0.4、前 3 回合不掷、花样只三种）；心魔、五条悟试炼总是生的

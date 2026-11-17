@@ -617,7 +617,7 @@ static func _start_fit(logic, c: Dictionary, a, source: String) -> Array:
 			var r := fit_row("break_guard")
 			last = turn + maxi(1, int(r.get("rounds", 2))) - 1
 			c.guard_break[a] = last
-			logs.append({"type": "battle_text", "text": TEXT_FIT % [a.display_name(), fit_name(kind)]})
+			logs.append({"type": "battle_text", "text": TEXT_FIT % [a.display_name(), fit_name(kind)], "tianqi_fit": true})
 		"swap":
 			kind = "blackout"  # T086 落地前的兜底：断片，人还在场上
 			last = turn + maxi(1, int(fit_row("swap").get("fallback_rounds", 2))) - 1
@@ -675,7 +675,9 @@ static func trigger(logic, a, source := "sear") -> Array:
 	var turn := int(logic.turn)
 	if _may_start(logic, c, a, turn) and not _queued(c, a):
 		return ["started", _start_fit(logic, c, a, source)]
-	if not _queued(c, a) and not _in_fit(c, a, turn):
+	# T119 返修（小A P3②）：发作中（发呆、断片等记在 fit_now 的）和破防一样顺延，不再直接丢掉；
+	# 发作中一定也在间隔里（fit_last 记到最后一回合），顺延下来的照「隔回合」等间隔过了再发
+	if not _queued(c, a):
 		c.fit_queue.append([a, source])
 		return ["queued", []]
 	return ["", []]
@@ -694,22 +696,27 @@ static func forced_action(logic, u) -> Array:
 	var f: Dictionary = c.fit_now[u]
 	var kind := str(f.kind)
 	if int(f.get("used", -1)) == turn:
-		return [{FIT_KEY: "idle"}, null]
+		return [_cmd("idle"), null]
 	f["used"] = turn
 	match kind:
 		"misfire":
 			var foes: Array = logic.alive(logic.enemies)
 			if foes.is_empty():
-				return [{FIT_KEY: "daze"}, null]
-			return [{FIT_KEY: kind}, foes[logic._mod(foes.size(), "brand_fit_target")] if foes.size() > 1 else foes[0]]
+				return [_cmd("daze"), null]
+			return [_cmd(kind), foes[logic._mod(foes.size(), "brand_fit_target")] if foes.size() > 1 else foes[0]]
 		"hit_self":
-			return [{FIT_KEY: kind}, u]
+			return [_cmd(kind), u]
 		"hit_ally":
 			var mates: Array = logic.alive(logic.actors).filter(func(b): return not is_same(b, u))
 			if mates.is_empty():
-				return [{FIT_KEY: "daze"}, null]
-			return [{FIT_KEY: kind}, mates[logic._mod(mates.size(), "brand_fit_target")] if mates.size() > 1 else mates[0]]
-	return [{FIT_KEY: kind}, null]
+				return [_cmd("daze"), null]
+			return [_cmd(kind), mates[logic._mod(mates.size(), "brand_fit_target")] if mates.size() > 1 else mates[0]]
+	return [_cmd(kind), null]
+
+
+## 合成技能：带 id 0（T119 返修，小A P3③：外部回放录制照 int(cmd[0].id) 读也不报错；0 号不是任何技能）
+static func _cmd(kind: String) -> Dictionary:
+	return {FIT_KEY: kind, "id": 0}
 
 
 static func is_fit_command(skill) -> bool:
@@ -722,7 +729,7 @@ static func perform(logic, u, skill: Dictionary, target) -> Dictionary:
 	var kind := str(skill.get(FIT_KEY, ""))
 	var logs := []
 	if kind != "idle":
-		logs.append({"type": "battle_text", "text": TEXT_FIT % [u.display_name(), fit_name(kind)]})
+		logs.append({"type": "battle_text", "text": TEXT_FIT % [u.display_name(), fit_name(kind)], "tianqi_fit": true})
 	match kind:
 		"misfire":
 			return {"logs": logs, "skill": u.attack_skill(), "target": target}
