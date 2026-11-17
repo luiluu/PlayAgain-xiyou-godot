@@ -1,5 +1,13 @@
 class_name XCat
 extends RefCounted
+static var ART := true
+static func art_path(folder: String, name: String) -> String:
+	if not ART:
+		return ""
+	var file := str({"sv_actors/CatSwordSaint_SV_v3": "Hajimi_SV_v2", "characters/$CatSwordSaint": "$Hajimi_v2"}.get(folder + "/" + name, ""))
+	var path := "res://content/hajimi_v2/%s.png" % file
+	return path if file != "" and ResourceLoader.exists(path) else ""
+
 ## 178 哈基米（小猫剑圣，正式 js/codex/runtime/installImportedBalanceRuntime.js「小猫剑圣 v1.0」段，W.CodexCat 1.0.1）第一期：
 ## - 招募（公共事件 9017 的 CodexCat.recruit()）：学 6216、忘 6235；首次生成独立法宝 7999「抱剑喵铃」装进装备类型 13 的槽
 ##   （只给一次，记在存档 cat.relicGranted）；没持剑时生成练习剑 2 装进武器槽（记在角色 cat_starter_granted）；入队。已在队时返回 false。

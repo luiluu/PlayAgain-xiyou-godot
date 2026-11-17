@@ -292,7 +292,7 @@ static func profile(f: Dictionary, motion: String) -> Dictionary:
 	# 新图只在实际加载原生64格图时用1:1；旧图继续旧归一。
 	if key == "Guyu_v2":
 		return {"size": Vector2(64,64), "bounds": Rect2(9,4,44,60), "multi": false, "scale": 1.0, "native_pixels": true}
-	if key in ["Tusu_v2", "Xuan_v2"]:
+	if key in ["Tusu_v2", "Xuan_v2", "Hajimi_v2"]:
 		return {"size": Vector2(64,64), "bounds": Rect2(9,4,44,60), "multi": false, "scale": 1.0, "native_pixels": true}
 	if key == "Yunshang_u2":
 		return {"size": Vector2(64,64), "bounds": Rect2(13,2,38,60), "multi": false, "scale": 1.0, "native_pixels": true}
@@ -351,6 +351,8 @@ func _mv_sheet(t: Texture2D, asset := "") -> void:
 		asset = "Yunshang_u2"
 	if t != null and t.resource_path.ends_with("/xuan_v2/Xuan_SV_v2.png"):
 		asset = "Xuan_v2"
+	if t != null and t.resource_path.ends_with("/hajimi_v2/Hajimi_SV_v2.png"):
+		asset = "Hajimi_v2"
 	sideview = true
 	if t == null:
 		cell = Vector2(64, 64)
@@ -382,6 +384,10 @@ func _super_sv(meta: Dictionary) -> void:
 	if name == "Codex_Xuan_v1" and XXuanTusuArt.xuan_path("sv_actors", "Codex_Xuan_SV_v1") != "":
 		_mv_sheet(load(XXuanTusuArt.xuan_path("sv_actors", "Codex_Xuan_SV_v1")))
 		hide_shadow = true
+		return
+	if name == CAT_FRAMES and XCat.art_path("sv_actors", CAT_SHEET) != "":
+		_mv_sheet(load(XCat.art_path("sv_actors", CAT_SHEET)))
+		hide_shadow = false
 		return
 	var counts := {}
 	for i in range(MOTIONS.size()):

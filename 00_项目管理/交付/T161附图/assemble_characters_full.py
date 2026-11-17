@@ -19,7 +19,7 @@ def build(name,walk=False):
  parts=[]
  for r in range(rows):
   strip=raw.crop((0,bands[r],raw.width,bands[r+1]))
-  alpha=strip.getchannel('A');blank=[x for x in range(raw.width) if not alpha.crop((x,0,x+1,strip.height)).getbbox()]
+  alpha=strip.getchannel('A');blank=[x for x in range(raw.width) if x>1 and x<raw.width-2 and not alpha.crop((x-1,0,x+2,strip.height)).getbbox()]
   cuts=[0]+[min((x for x in blank if abs(x-k*raw.width/cols)<raw.width/cols*0.3),key=lambda x:abs(x-k*raw.width/cols)) for k in range(1,cols)]+[raw.width]
   for c in range(cols):
    q=strip.crop((cuts[c],0,cuts[c+1],strip.height));bb=q.getbbox();assert bb
@@ -32,7 +32,7 @@ def build(name,walk=False):
  out=Image.new('RGBA',(cols*cell,rows*cell));records=[]
  for i,q in enumerate(parts):
   wh=(round(q.width*scale),round(q.height*scale));assert max(wh)<=cell-2,(i,wh)
-  q=q.resize(wh,Image.Resampling.NEAREST);x=(cell-wh[0])//2;y=cell-4-wh[1]
+  q=q.resize(wh,Image.Resampling.NEAREST);x=(cell-wh[0])//2;y=cell-wh[1]
   out.alpha_composite(q,((i%cols)*cell+x,(i//cols)*cell+y));records.append({'i':i,'size':wh,'pos':[x,y]})
  key='Walk' if walk else 'Battle';out.save(P/f'{name}_{key}_candidate.png')
  (P/f'{name}_{key}_alignment.json').write_text(json.dumps({'scale':scale,'frames':records},indent=2))
