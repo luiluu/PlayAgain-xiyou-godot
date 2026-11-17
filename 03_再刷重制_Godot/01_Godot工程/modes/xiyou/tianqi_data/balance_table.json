@@ -40,7 +40,7 @@
   "_note": "天启篇常驻战斗规则（伤害加成总账 v0.4 第四节第 2 条第 4 款、第五节第 1 条，期二挪进来，数不变；XTianqiCombat.combat_rule，开关 XTianqiLedger.COMBAT_RULES）：crit_add＝暴击率 +50 个百分点（原天道诅咒 passiveXPBST2，算④暴击池的基础暴击率，测算 10%→60%）；agi_rate＝战斗中敏捷能力倍率加算 −0.2（原状态 995 特性 21 ×0.8）。legacy_passive 里同名两项只留给回退开关。",
   "crit_add": 0.5,
   "agi_rate": -0.2,
-  "base_damage": 0.088,
+  "base_damage": 0.27,
   "boss_hp_temp_unit": {"crit": 1, "no_crit": 1},
   "phase4_note": "T080 暗装填表、T081 接线（基础数值重构 v0.4 第三节、第七节）：base_damage＝基准系数 K「天启注视」，起点 0.088（D141 丙：九线不让，多出来的全由 K 收；T012-c 实机标定再改）；boss_hp_temp_unit＝首领生命临时折算 U（crit 能暴击的、no_crit 免暴击的），先填 1。只在总开关 XTianqiBase.PHASE4 开着时读（XTianqiBase.k_base、boss_hp_unit），关着 K、U 都按 1。guardian_phase4（守层者三张新表 atk_scale／hp_base／resist）由 T012-c 实机量出来补，没有时开着也退回代码里的旧表。"
  },

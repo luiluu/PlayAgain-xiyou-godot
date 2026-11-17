@@ -1030,7 +1030,7 @@ static func _sort_by_priority(rows: Array) -> Array:
 
 func param_rate(i: int) -> float:
 	var suit := XEquipSuits.value(self,"param",i,true)
-	var base := super.param_rate(i)
+	var base := XTianqiBase.class_rate_strip(self, i, super.param_rate(i))  # 天启篇期四：职业属性倍率不算（CLASS_RATE_OFF）
 	return base * suit * XTianqiLedger.param_cap(self, i, base, suit) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i) * XTianqiQiyinEffects.param_rate(self, i) * XTianqiQiyinDragonRun.param_rate(self, i) * XTianqiAffixBattle.param_rate(self, i) * XTianqiSkills.param_rate(self, i) * XTianqiBrand.def_rate(self, i)  # 天启篇烙印皮薄（物防、魔防）；伤害加成总账期三：九线属性封顶（param_cap，天启篇才不为 1）；天启篇技能重构：击杀成长；天启篇殉印 2 件最大生命、七首之龙龙血全属性、天启篇词条属性%；专属角色模块的 paramRate 包装（饿狼形态倍率）
 
 # ---- dsPassiveSkill：被动标签只从已有技能读取 ----
@@ -1287,6 +1287,8 @@ static func magic_param(e: Dictionary, i: int) -> float:
 	var lv = XEquipmentView.level(e)
 	if float(lv) < 0.0:
 		return 0.0
+	if XTianqiGear.fabao_applies(e):  # T163：天启篇期四法宝读表（半件同级装备），关着照原版每级成长
+		return XTianqiGear.fabao_param(e, i)
 	var grown := XThreeGrowth.sync_item(e)  # 三法宝成长 magicWeaponCustomParam 包装：所属人物 60 级进化，每级成长翻倍
 	if not grown.is_empty():
 		return float(lv) * float(grown[i])
@@ -1695,6 +1697,8 @@ func battle_start_state_tags() -> Array:
 		for o in objs:
 			if o.has("stypeId") and XTianqiLedger.skips_passive(int(o.get("id", 0))):
 				continue  # 伤害加成总账期二：万灵增元丹类被动（5974～5977）天启篇不生效
+			if XTianqiLedger.nine_off_suit_skill(self, o):
+				continue  # T082（T137 核 P2）：原版套装给的技能开战挂的状态（套装 164／186 的 3609、3863 → 524「攻击次数 +1」）同九线停用
 			for k in o.get("meta", {}):
 				var key := str(k)
 				if key.begins_with(prefix) and key.substr(prefix.length()).is_valid_int():

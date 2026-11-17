@@ -97,6 +97,10 @@
   "rule": "看原版那件装备物攻、魔攻哪个高，高的那项给主攻；一样高各给一半",
   "tie": "split"
  },
+ "sub_stat": {
+  "ratio": 0.12,
+  "rule": "D182（Kyo 11-17）：部位表里没有、原版这一项又不为零的副属性留一小份＝标准线(这一项)×本部位最大的部位系数×品质×ratio，正负随原版；七印装备不给。ratio 在主属性 10%～15% 里取，T082 量 K 时定"
+ },
  "level_map": {
   "conv_level": "1 + 装备等级 * 98 / 90",
   "equip_level_range": [
@@ -110,13 +114,22 @@
   "grade": "shenhua",
   "weapon_and_true_seal_mult": 1.1
  },
+ "fabao": {
+  "rule": "T163（D187，Kyo 11-17「直接修法宝」）：法宝（etype 13、带 Magic Weapon）不再按原版每级成长加属性，改成「成长满时相当于半件同级装备」（基础数值重构 v0.4 第五节第 2 条、法宝与积分重构 v0.3）：折算装备等级＝法宝等级×equip_level_at_full÷full_level，攻击、生命各＝标准线(折算等级,这一项)×share×法宝自己的品质系数。攻击给物攻还是魔攻看原版每级成长哪个大；一样大（含都为 0）物攻魔攻都给，不对半。其余六项（魔法、双防、敏捷、幸运）法宝不给。专属、通用一起读；等级照旧受 FLOOR_CAP 封顶。升级特性、学技能、卡上的效果、<Custom Parameters>（按角色等级的）照旧。回退 XTianqiGear.FABAO_TABLE = false",
+  "full_level": 99,
+  "equip_level_at_full": 80,
+  "share": {
+   "atk": 0.5,
+   "hp": 0.5
+  }
+ },
  "exceptions": {
   "etypes": [
    13,
    16,
    17
   ],
-  "note": "法宝（13）成长满时相当于半件同级装备，坐骑（16）只管敏捷百分比和先手，神器栏（17）是独特物件，都不读这张表；神器白名单见 core/tianqi_gear.gd 的 ARTIFACTS。其余等级、品质不落在表里的装备要 T012-b 开工时核（见交付单清单 1）",
+  "note": "法宝（13）走上面 fabao 那条规则（不读部位表），坐骑（16）只管敏捷百分比和先手，神器栏（17）是独特物件，都不读这张表；神器白名单见 core/tianqi_gear.gd 的 ARTIFACTS。其余等级、品质不落在表里的装备要 T012-b 开工时核（见交付单清单 1）",
   "ids": []
  },
  "ratio": {

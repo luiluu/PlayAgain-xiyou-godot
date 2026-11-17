@@ -121,6 +121,7 @@ func _desc_set(seal: String, part: String, true_seal := false, grades := ["puton
 func _make_sets() -> void:
 	var rng := _rng()
 	var all_ok := true
+	var no_base_fx := true
 	var bad := []
 	for seal in XTianqiQiyinDrop.seals():
 		for pc in XTianqiQiyinGear.set_of(seal).pieces:
@@ -131,7 +132,14 @@ func _make_sets() -> void:
 			if not ok:
 				all_ok = false
 				bad.append([seal, pc.part, it.get("name"), m])
+			if not (it.get("yep", {}) as Dictionary).is_empty() or not (it.get("equipment", {}).get("suits", []) as Array).is_empty():
+				no_base_fx = false  # T082：底子的 YEP（元素增幅）、原版套装不能带过来
 	_check("sets_all_42", all_ok, bad)
+	_check("sets_no_base_yep_suit", no_base_fx)
+	XTianqiQiyinEquip.CLEAR_BASE_FX = false  # 回退支：照旧带底子的 YEP（避苍九妙玄 4534 全系元素增幅 +250%）
+	var old := XTianqiQiyinEquip.make(_desc_set("hei", "legs"), "jianxian", rng)
+	XTianqiQiyinEquip.CLEAR_BASE_FX = true
+	_check("sets_base_yep_rollback", not (old.get("yep", {}).get("elementAmplify", {}) as Dictionary).is_empty(), old.get("yep"))
 	var row: Dictionary = XTianqiQiyinEquip.data().armor.parts.body
 	var a := XTianqiQiyinEquip.make(_desc_set("bai", "body"), "jianxian", rng)
 	_check("set_params", a.params == row.params.map(func(v): return int(v)), [a.params, row.params])
@@ -187,7 +195,8 @@ func _make_weapons() -> void:
 			var m := XTianqiQiyinEffects.mark_of(it)
 			var w := XTianqiQiyinGear.weapon(str(m.get("key", "")))
 			if it.is_empty() or str(it.kind) != "weapon" or str(names[int(it.wtypeId)]) != wt or str(w.seal) != seal or str(it.name) != str(w.name) \
-					or str(m.wtype) != wt or (seal == "mo" and str(m.get("unique", "")) == ""):
+					or str(m.wtype) != wt or (seal == "mo" and str(m.get("unique", "")) == "") \
+					or not (it.get("yep", {}) as Dictionary).is_empty():  # T082：底子的 YEP（如 2004 全系元素增幅 +250%）不能带过来
 				bad.append([seal, wt, it.get("name"), m])
 	_check("weapons_all_classes", bad.is_empty(), bad)
 	var w := XTianqiQiyinEquip.make({"kind": "weapon", "seal": "hong", "wtype": "剑", "true_seal": true, "grades": ["ji", "ji", "ji"]}, "jianxian", rng)

@@ -7,6 +7,8 @@ extends RefCounted
 ## |---|---|---|---|
 ## | 角色卡 | 开 | 关（XTianqiSkills.CARDS 只剩测试隔离用） | XTianqiSkills.cards_on |
 ## | 角色本体 | 读标准线（base_line.json） | 原版职业曲线 | XActor.param_base_direct → param_base |
+## | 原版境界被动 | 数值标签全拦（REALM_OFF；圣者境界／雷劫淬炼／半步圣人 8 个号） | 照原版 | XDB.rec → realm_rec |
+## | 职业属性倍率 | 不算（职业特性 21：惠惠魔攻 ×3、蕾姆生命 ×2.5 等；CLASS_RATE_OFF） | 照算 | XActor.param_rate → class_rate_strip |
 ## | 装备八项 | gear_base.json 新底子＋换算后的词缀、镶嵌、宝珠 | 实例 params | XTianqiGear.effective_params（T104；读八项的地方都走它，清单在交付单） |
 ## | K（天启注视） | combat_rules.base_damage × 每人乘数口子 | 1 | XTianqiCombat.dealt_parts |
 ## | 守层者三张表 | balance_table.guardian_phase4（T012-c 量；缺就退回旧表并警告一次） | 代码里的旧表 | XGuardianRework |
@@ -27,6 +29,21 @@ const GAZE_DESC := "全员常驻、无法解除；烙印越深，受此注视的
 
 ## 总开关（暂名，稿第七节第 2 条）。只在代码里改；T012-c 翻成 true。
 static var PHASE4 := false
+## 【cc·T082】职业上的属性倍率（特性 21）在期四里不算：本体已经是「标准线×职责模板」，职业曲线不读（稿第四节），
+## 职业特性里的倍率是同一份差异的另一半（惠惠魔攻 ×3、蕾姆生命 ×2.5、绯红蔷薇双攻 ×2、钟离生命 ×1.5、西西卡双攻 ×1.2、病娇幸运 ×5、嫦娥魔法 ×5）。
+## 角色卡都没写保留它们；T082 第 1 步量出惠惠强者 585 万＞超强者，查出是这一条。false＝照算（回退）
+static var CLASS_RATE_OFF := true
+## 【cc·T082】原版通用境界被动（圣者境界 5707/5778/8083/9976、雷劫淬炼 5714/9982、半步圣人 5777/10018，22 人 81 级会学）不在角色卡里，
+## 期四开着时数值标签按角色卡同一张 note_remove 表全拦（协调 11-17 同意：Kyo 已定天启篇境界整套重做、原版这几招不沿用、不参与标定）。
+## T082 量 K：拳一 163 靠 9976＋10018 爆伤 +200%、终伤 +200%，峰值是第二名超强者的 5 倍。false＝照原版（回退）
+static var REALM_OFF := true
+## T163（D189，Kyo 11-18）：标定后逐个调角色的覆盖层（skill_rework.json、base_line.json 的 tune.D189）；false＋XTianqiSkills.reload() 照覆盖前
+static var TUNE_D189 := true
+const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
+const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",
+	"SkillPass\\d+", "passiveAPLUS", "AgainUseAll", "passiveIRUP", "passiveGRUP", "passiveSPBST\\d", "ConsumeReduce\\w+", "passiveEXTTP", "DepassiveHarmRe\\d+",
+	"Element Amplify \\d+", "StartPushState\\d+", "StartWTPushState\\d+", "StartAEPushState\\d+", "RecPushState\\d+", "PushState\\d+", "passiveELEM\\d+", "SkETypeHarmRi\\d+"]
+static var _realm_recs := {}
 
 static var _line: Dictionary = {}
 static var _abs: Dictionary = {}
@@ -111,7 +128,10 @@ static func actor_mult(actor_id: int, stat: String) -> float:
 		m = float(role.get("def", 1.0))
 	elif stat == "agi":
 		m = float(d.get("speed", {}).get(str(row.get("speed", "中")), 1.0))
-	return m * float(row.get("tweak", {}).get(stat, 1.0))
+	var tw := float(row.get("tweak", {}).get(stat, 1.0))
+	if TUNE_D189:  # T163（D189）：逐个调角色的本体成长（base_line.json 的 tune.D189.actors.<id>.tweak），回退同 XTianqiBase.TUNE_D189
+		tw = float(d.get("tune", {}).get("D189", {}).get("actors", {}).get(str(actor_id), {}).get("tweak", {}).get(stat, tw))
+	return m * tw
 
 
 ## XActor.param_base_direct 的替身：开着、表里有这个人时返回标准线本体；否则 NAN（调用方照原版职业曲线）
@@ -122,6 +142,35 @@ static func param_base(a, i: int) -> float:
 	if not has_actor(id):
 		return NAN
 	return floorf(line(float((a as XActor).level), STATS[i]) * actor_mult(id, STATS[i]))
+
+
+## XActor.param_rate 里不含套装的特性倍率 base（加算：1＋Σ(v−1)）扣掉职业那几条的 (v−1)；关着、西游档原样返回
+static func class_rate_strip(a, i: int, base: float) -> float:
+	if not CLASS_RATE_OFF or not a is XActor or not on() or not has_actor(int((a as XActor).actor_id)):
+		return base
+	var cut := 0.0
+	for t in ((a as XActor).class_data().get("traits", []) as Array):
+		if int(t.get("code", 0)) == XBattler.TRAIT_PARAM and int(t.get("dataId", -1)) == i:
+			cut += float(t.get("value", 1.0)) - 1.0
+	return maxf(0.0, base - cut) if cut != 0.0 else base
+
+
+## XDB.rec 的 Skills 分支：这个号要不要换成拦掉数值的境界被动
+static func realm_touches(id: int) -> bool:
+	return REALM_OFF and REALM_IDS.has(id) and on()
+
+
+static func realm_rec(id: int, base: Dictionary) -> Dictionary:
+	var hit = _realm_recs.get(id)
+	if hit is Array and is_same(hit[0], base):
+		return hit[1]
+	var r: Dictionary = base.duplicate(true)
+	var note := XTianqiSkills._note_edit(str(r.get("note", "")), {"note_remove": REALM_NOTE_REMOVE})
+	r.note = note
+	r.meta = XTianqiSkills.parse_meta(note)
+	r.description = "通用境界被动：天启篇里暂不生效（境界整套重做）。"
+	_realm_recs[id] = [base, r]
+	return r
 
 
 # ---- K：天启注视（稿第三节第 2、10 条）----

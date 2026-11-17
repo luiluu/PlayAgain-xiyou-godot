@@ -1,0 +1,132 @@
+{
+ "brand_max_bonus": 0.5,
+ "build": "full",
+ "caps": {
+  "弱者": 8.0,
+  "强者": 11.0,
+  "超强者": 11.0
+ },
+ "def": 8200.0,
+ "hits": 20,
+ "k": 0.2,
+ "mastery_max_level_seen": 10,
+ "missing": [
+  "烙印（XTianqiBrand 关着＝烙印 0；锚临时取 200 万＝300 万÷1.50，稿第九节第 3 条）"
+ ],
+ "rows": [
+  {
+   "actor": 122,
+   "affixes": [
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "atk"
+     ],
+     "name": "【真印】一力降十会",
+     "slot": 0
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·头",
+     "slot": 2
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·甲",
+     "slot": 3
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·裤",
+     "slot": 4
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·手",
+     "slot": 5
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·鞋",
+     "slot": 6
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·腰",
+     "slot": 7
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "atk"
+     ],
+     "name": "狂怒项圈",
+     "slot": 8
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "atk"
+     ],
+     "name": "悲伤之戒",
+     "slot": 9
+    }
+   ],
+   "atk": 21188.0,
+   "build": {
+    "equips": [
+     "【真印】一力降十会",
+     "",
+     "【真印】斤斤计较·头",
+     "【真印】斤斤计较·甲",
+     "【真印】斤斤计较·裤",
+     "【真印】斤斤计较·手",
+     "【真印】斤斤计较·鞋",
+     "【真印】斤斤计较·腰",
+     "狂怒项圈",
+     "悲伤之戒",
+     "",
+     "",
+     "阴阳扇·狂龙",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     6150,
+     6151,
+     6152
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "cap": 11.0,
+   "dealt": 1746009.0,
+   "eff_full": 8.64,
+   "formula": "XTianqiSkills.formula(a,b,6026)",
+   "mat": 3713.0,
+   "mhp": 359184.0,
+   "peak": 1976628.0,
+   "repeats": 1,
+   "skill": 6026,
+   "tier": "超强者",
+   "v0": 146856.190040816,
+   "v_full": 166253.464251006
+  }
+ ],
+ "tiers": {
+  "超强者": {
+   "max": 1976628.0,
+   "max_brand": 2964942.0,
+   "median": 1976628.0,
+   "n": 1
+  }
+ }
+}

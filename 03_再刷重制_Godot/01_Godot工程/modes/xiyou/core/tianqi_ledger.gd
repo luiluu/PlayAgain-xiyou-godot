@@ -716,6 +716,17 @@ static func nine_off_skill(a, sk: Dictionary) -> bool:
 	return is_secret_skill(id, int(sk.get("stypeId", 0))) or XEquipSuits.ids(a, "skills").has(id)
 
 
+## 原版套装给的技能（不是卡改写的）：九线停用开着时它在开战挂的状态（StartPushState 等）也不挂（T082，T137 核 P2：
+## 套装 164 技能 3609、套装 186 技能 3863 开战挂 524「套装6攻击次数+1」漏停）
+static func nine_off_suit_skill(a, o) -> bool:
+	if not nine_off(a) or not o is Dictionary or not o.has("stypeId"):
+		return false
+	var id := int(o.get("id", 0))
+	if XTianqiSkills.cards_on() and XTianqiSkills.has(id):
+		return false
+	return XEquipSuits.ids(a, "skills").has(id)
+
+
 ## 天启篇留下的特性（code 34／61 用）：和 XActor.all_traits 同一批对象、同样次序，去掉九线来源的整份和宝珠特性
 ## （宝珠特性整份停，所以同族超上限丢掉的那几颗不用另算）
 static func nine_kept_traits(a, code: int) -> Array:

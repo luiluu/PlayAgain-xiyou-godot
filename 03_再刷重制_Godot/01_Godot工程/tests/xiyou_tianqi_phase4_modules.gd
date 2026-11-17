@@ -61,6 +61,7 @@ func _run() -> void:
 	_tusu_tq()
 	_jingliu_no_other()
 	_xuan_gate()
+	_suit_524()
 	XTianqiBase.PHASE4 = false
 	XTianqiSkills.CARDS = false
 	XTianqiLedger.TRACE = null
@@ -376,8 +377,9 @@ func _fixture_battles() -> void:
 	var own: Array = xr[0].own_turns if not xr.is_empty() else []
 	_check("xuan_bound_turn_guard_only", not own.is_empty() and own.all(func(t): return int(t.skill) == XBattleLogic.GUARD_SKILL and float(t.drop) <= 0.0), own)
 	# 棱光每一次真打出了伤害（口子在 _cast 查完星契、冷却之后才问，不会白扣次数）
-	var lg: Array = (xr[0].trace as Array).filter(func(t): return str(t.source) == "module.xuan.follow_up") if not xr.is_empty() else []
-	_check("xuan_gate_after_cast", not lg.is_empty() and lg.all(func(t): return bool(t.ok) and float(t.hp0) > float(t.hp1)), lg.size())
+	var lg: Array = (xr[0].trace as Array).filter(func(t): return str(t.source) == "module.xuan.follow_up" and int(t.trigger) != 177) if not xr.is_empty() else []  # 跟攻（触发者是宿主）；同轨、回合末那两条（T082 补的门控，触发者记璇自己）先问口子再判，另有断言
+	# T082：同轨协同先用掉本回合次数时跟攻被拦（ok 假、不掉血），放出来的每次都真打出伤害
+	_check("xuan_gate_after_cast", lg.any(func(t): return bool(t.ok)) and lg.all(func(t): return float(t.hp0) > float(t.hp1) if bool(t.ok) else float(t.hp0) == float(t.hp1)), lg.size())
 	_check("fixture_battle_traced", trace_rows.any(func(r): return not (r.trace as Array).is_empty()), trace_rows.map(func(r): return [r.actor, (r.trace as Array).size(), r.main]))
 	var seen_sources := by.keys()
 	print("P4DERIVED_SEEN=" + JSON.stringify(seen_sources))
@@ -742,8 +744,69 @@ func _xuan_gate() -> void:
 		XXuanBattle._follow_up(logic, a, atk, null, host)  # end_action 宿主主动攻击后走这里（真打的接线在夹具那场里，30 次）
 		counts.append((XTianqiLedger.TRACE as Array).filter(func(t): return str(t.source) == "module.xuan.follow_up" and int(t.trigger) == int(host.actor_id)).size())  # 口子被问了几次（记数与否看表里 enforced）
 		XTianqiLedger.TRACE = null
+	# T082（T137 核 P2）：同轨协同、回合末放的棱光也走同一个口子；上面那次跟攻已用掉本回合 1 次，两条路都被拦（不再多打）
+	var tg_prev = XXuanBattle.data.get("tonggui")
+	XXuanBattle.data.tonggui = true
+	XXuanBattle._main_tonggui = false
+	XTianqiLedger.TRACE = []
+	var foe_hp := 0.0
+	for e in logic.alive(logic.enemies):
+		foe_hp += float(e.hp)
+	XXuanBattle._tonggui_strike(logic, a)
+	var tg: Array = (XTianqiLedger.TRACE as Array).filter(func(t): return str(t.source) == "module.xuan.follow_up")
+	var foe_hp2 := 0.0
+	for e in logic.alive(logic.enemies):
+		foe_hp2 += float(e.hp)
+	XTianqiLedger.TRACE = null
+	XXuanBattle.data.tonggui = tg_prev
+	XXuanBattle.take_logs()
 	XTianqiBase.PHASE4 = false
 	_check("xuan_gate_no_charge_no_count", counts == [0, 1], counts)
+	_check("xuan_tonggui_gated", tg.size() == 1 and not bool(tg[0].ok) and foe_hp2 == foe_hp, [tg, foe_hp, foe_hp2])
+	# 回合末放的棱光：_cast 带 gate_trigger（源码钉住，回合末要 XBinding._logic() 真战斗现场，这里不搭）
+	var src := FileAccess.get_file_as_string("res://modes/xiyou/core/xuan_battle.gd")
+	_check("xuan_round_end_gated", src.contains("done = _cast(logic, owner, \"lengguang\", [alive[0]], {}, true, owner)"))
+
+
+## T082（T137 核 P2）：原版套装 164 的技能 3609 开战挂 524「攻击次数 +1」：天启篇九线停用开着时不挂，关着（回退）照挂
+func _suit_524() -> void:
+	var s := _state([])
+	var a: XActor = s.battle_members()[0]
+	var need := 0
+	var defs: Array = XDB.table("EquipSuits")
+	for b in defs[164].bonuses:
+		if (b.get("skills", []) as Array).any(func(x): return int(x) == 3609):
+			need = int(b.requirePieces)
+	var n := 0
+	var slots := a.equip_slots()
+	for i in slots.size():
+		if n >= need:
+			break
+		var et := int(slots[i])
+		if et == 1:
+			continue
+		for rec in XDB.table("Armors"):
+			if rec is Dictionary and int(rec.get("etypeId", 0)) == et and str(rec.get("name", "")) != "":
+				var e := XGear.template("armor", int(rec.id))
+				if not a.can_equip(e):
+					continue
+				var eq: Dictionary = e.get("equipment", {})
+				eq["suits"] = [164]
+				e["equipment"] = eq
+				a.equips[i] = e
+				n += 1
+				break
+	_refresh(a)
+	var has524 := func() -> bool:
+		return a.battle_start_state_tags().any(func(t): return int(t[1]) == 524)
+	var on_has: bool = has524.call()
+	XTianqiLedger.NINE_OFF = false
+	_refresh(a)
+	var off_has: bool = has524.call()
+	XTianqiLedger.NINE_OFF = true
+	_refresh(a)
+	_check("suit_524_setup", need > 0 and n >= need and XEquipSuits.ids(a, "skills").has(3609), [need, n, XEquipSuits.ids(a, "skills")])
+	_check("suit_524_stopped", not on_has and off_has, [on_has, off_has])
 
 
 ## 模块技能要的武器类型（黄泉 11、镜流 2）：身上那把不对就换一把对的
