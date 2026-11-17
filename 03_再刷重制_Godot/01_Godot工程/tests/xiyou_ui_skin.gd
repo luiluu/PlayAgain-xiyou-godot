@@ -438,13 +438,17 @@ func _fonts() -> void:
 	var tb := XSkinButton.apply(Button.new(), "", 20)
 	check("t100_skin_button_outline", tb.get_theme_constant("outline_size") == 1 and is_equal_approx(tb.get_theme_color("font_outline_color").a, 0.45))
 	tb.free()
+	# 全仓新皮肤分支：ui/ 与 map/（含 skin/）里的 draw_string 都得走 XUiSkin.ds。允许的裸调用按「文件: 条数」登记（旧页自己的描边／阴影、读背景的粗描边、Font.draw_string(RID)）
+	var raw_ok := {"skin_art.gd": 1, "skin_ring_nav.gd": 1, "mv_canvas.gd": 3, "item_scene.gd": 1, "power_notice.gd": 1, "skill_notice.gd": 1,
+		"fest_lobby.gd": 1, "map_scene.gd": 2, "difficulty_notice.gd": 2, "treasure_popup.gd": 3}
 	var raw := []
-	for p in DirAccess.get_files_at("res://modes/xiyou/ui/skin"):
-		if p.ends_with(".gd") and p != "ui_skin.gd":
-			var src := FileAccess.get_file_as_string("res://modes/xiyou/ui/skin/" + p)
-			var rx := RegEx.create_from_string("(?<![\\w])(?:\\w+\\.)?draw_string\\(")
-			if rx.search(src) != null and not (p in ["skin_art.gd", "skin_ring_nav.gd"] and rx.search_all(src).size() == 1):   # 两处各留一条：READ 已描粗边／Font.draw_string(RID) 上一行已 draw_string_outline
-				raw.append(p)
+	var rx := RegEx.create_from_string("(?<![\\w])(?:\\w+\\.)?draw_string\\(")
+	for dir in ["res://modes/xiyou/ui", "res://modes/xiyou/ui/skin", "res://modes/xiyou/map"]:
+		for p in DirAccess.get_files_at(dir):
+			if p.ends_with(".gd") and p != "ui_skin.gd":
+				var n := rx.search_all(FileAccess.get_file_as_string(dir + "/" + p)).size()
+				if n != int(raw_ok.get(p, 0)):
+					raw.append("%s:%d" % [p, n])
 	check("t100_no_raw_draw_string", raw.is_empty(), raw)
 	XUiSkin.FONT_V00300 = false
 	check("t100_switch_off_no_outline", XUiSkin.outline_size() == 0)

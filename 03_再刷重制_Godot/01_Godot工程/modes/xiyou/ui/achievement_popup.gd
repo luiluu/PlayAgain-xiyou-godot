@@ -133,7 +133,7 @@ func _paint(c: XMVCanvas) -> void:
 		var w := c.size.x
 		c.icon(int(item.get("icon", 0)), 14, 15)
 		var tf := XUiSkin.font("title")
-		c.draw_string(tf, Vector2(58, 28), str(item.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, w - 72, 18, XUiSkin.GOLD)
+		XUiSkin.ds(c, tf, Vector2(58, 28), str(item.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, w - 72, 18, XUiSkin.GOLD)
 		c.text(str(XAchievementPopup.settings().get("Popup Message", "")), 58, 34, w - 72, "left", XUiSkin.TEXT_2, 14, 20)
 		return
 	c.icon(int(item.get("icon", 0)), 10, 10)

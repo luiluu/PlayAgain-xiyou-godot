@@ -797,7 +797,7 @@ func _draw_buttons() -> void:
 			sb.set_border_width_all(1)
 			sb.draw(ci, r)
 			var tw := bf.get_string_size(labels[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
-			_num_buttons.draw_string(bf, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + 18 * 0.36),
+			XUiSkin.ds(_num_buttons, bf, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + 18 * 0.36),
 				labels[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT)
 		return
 	var tex: Texture2D = _button_texture()

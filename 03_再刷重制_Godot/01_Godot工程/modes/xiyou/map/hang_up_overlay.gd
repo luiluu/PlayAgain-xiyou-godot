@@ -166,7 +166,7 @@ func paint_tip(c: XMVCanvas) -> void:
 			var f := XUiSkin.font("title")
 			var w := str(XHangUp.params().get("huWord", ""))
 			var tw := f.get_string_size(w, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
-			c.draw_string(f, Vector2(roundf((560 - tw) / 2.0), r.position.y + 35), w, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, XUiSkin.GOLD)
+			XUiSkin.ds(c, f, Vector2(roundf((560 - tw) / 2.0), r.position.y + 35), w, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, XUiSkin.GOLD)
 		return
 	if not TIP_WORD:
 		return
@@ -238,9 +238,9 @@ func _paint_skin(c: XMVCanvas) -> void:
 	var word := str(XHangUp.params().get("tipWord", ""))
 	var base := roundf(SKIN_CAP_H / 2.0 + fs * 0.36)
 	var x := 14.0 + 10.0 + 10.0
-	c.draw_string(f, Vector2(x, base), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD)
+	XUiSkin.ds(c, f, Vector2(x, base), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD)
 	x += f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 12.0
-	c.draw_string(f, Vector2(x, base), _time, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
+	XUiSkin.ds(c, f, Vector2(x, base), _time, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
 
 
 func _paint_summary(c: XMVCanvas) -> void:

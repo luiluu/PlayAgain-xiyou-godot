@@ -106,7 +106,7 @@ func _paint(c: XMVCanvas) -> void:
 		var tf := XUiSkin.font("title")
 		var head := "至臻现世 · 获得 %d 件" % count
 		var tw := tf.get_string_size(head, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x
-		c.draw_string(tf, Vector2(roundf((w - tw) / 2.0), 22.0), head, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, XUiSkin.GOLD)
+		XUiSkin.ds(c, tf, Vector2(roundf((w - tw) / 2.0), 22.0), head, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, XUiSkin.GOLD)
 		c.draw_line(Vector2(24, 34), Vector2(w - 24, 34), Color(XUiSkin.GOLD, 0.25), 1.0)
 		var lh := 34.0
 		var y0 := 40.0

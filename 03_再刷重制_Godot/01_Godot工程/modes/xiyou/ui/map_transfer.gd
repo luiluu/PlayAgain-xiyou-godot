@@ -152,12 +152,12 @@ func _draw_header() -> void:
 	var head := XUiSkin.font("title")
 	var body := XUiSkin.font("body")
 	var title_txt := "传送"
-	_header.draw_string(head, Vector2(m, 50), title_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	XUiSkin.ds(_header, head, Vector2(m, 50), title_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
 	var cur := current_map()
 	var sub := "???" if cur.is_empty() or XMapTransfer.is_locked(XState.current, cur) else str(cur.get("name", ""))
 	if sub != "":
 		var tw := head.get_string_size(title_txt, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE).x
-		_header.draw_string(body, Vector2(m + tw + 16.0, 48), "·  " + sub, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST, XUiSkin.GOLD_LIGHT)
+		XUiSkin.ds(_header, body, Vector2(m + tw + 16.0, 48), "·  " + sub, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST, XUiSkin.GOLD_LIGHT)
 
 
 func _sync_hints() -> void:

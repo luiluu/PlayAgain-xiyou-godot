@@ -233,7 +233,7 @@ func _paint_capsule(c: CanvasItem, b: BaseButton, icon: String, label: String) -
 	XSkin4A.draw_hud_icon(c, icon, Vector2(14.0 + SKIN_ICON / 2.0, r.size.y / 2.0), SKIN_ICON, al)
 	var f := XUiSkin.font("body")
 	var fs := XSkin4A.CAP_FS
-	c.draw_string(f, Vector2(14.0 + SKIN_ICON + 6.0, roundf(r.size.y / 2.0 + fs * 0.36)), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(XUiSkin.GOLD, al))
+	XUiSkin.ds(c, f, Vector2(14.0 + SKIN_ICON + 6.0, roundf(r.size.y / 2.0 + fs * 0.36)), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(XUiSkin.GOLD, al))
 
 
 func _draw_return_face() -> void:
@@ -255,10 +255,10 @@ func _paint_coords_skin(c: XMVCanvas) -> void:
 	var f := XUiSkin.font("body")
 	var t := coordinate_text().strip_edges()
 	var base := roundf(r.size.y / 2.0 + 15 * 0.36)
-	c.draw_string(f, Vector2(14, base), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
+	XUiSkin.ds(c, f, Vector2(14, base), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
 	var tw := f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
 	c.draw_circle(Vector2(14 + tw + 10, r.size.y / 2.0), 1.5, Color(XUiSkin.GOLD, 0.6))
-	c.draw_string(f, Vector2(14 + tw + 20, base), difficulty_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.GOLD)
+	XUiSkin.ds(c, f, Vector2(14 + tw + 20, base), difficulty_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.GOLD)
 
 
 func set_actions_enabled(backup: bool, return_hub: bool, transfer: bool) -> void:
