@@ -1191,12 +1191,16 @@ def apply_skill_tune(table: dict) -> dict:
     return out
 
 
+# 覆盖后数字带 4 的豁免（只列具体路径）：508 的 5.4 是 Kyo 按推荐定的数（D189），和「数字避开 4」冲突，等 Kyo 定改 5.5 还是留（交付单 T163「要 Kyo 定」）
+TUNE_NICE_EXEMPT = {'skills/508/damage/coef=5.4'}
+
+
 def _with_tune(rules):
     """原卡、覆盖后各查一遍（开关两边都是游戏会读到的表），覆盖后的失败前面标「tune 覆盖后」。"""
     def run(table):
         bad = list(rules(table))
         if table.get('tune'):
-            bad += ['tune 覆盖后：' + b for b in rules(apply_skill_tune(table)) if b not in bad]
+            bad += ['tune 覆盖后：' + b for b in rules(apply_skill_tune(table)) if b not in bad and b not in TUNE_NICE_EXEMPT]
         return bad
     return run
 
