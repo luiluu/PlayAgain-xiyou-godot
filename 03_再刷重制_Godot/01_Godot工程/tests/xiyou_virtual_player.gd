@@ -153,6 +153,8 @@ func _run() -> void:
 	bot.farm_first = int(_arg("--vp-farm-first", "0"))
 	bot.fixed_random = not OS.get_cmdline_user_args().has("--vp-loose-random")
 	bot.debug_floor = int(_arg("--vp-debug-floor", "0"))
+	if OS.get_cmdline_user_args().has("--vp-brand"):
+		XTianqiBrand.ENABLED = true  # 天启篇烙印开着跑（T117 数值卡 DoD；默认关）
 	for pair in _arg("--vp-debug-items").split(",", false):
 		bot.debug_items[int(pair.get_slice(":", 0))] = int(pair.get_slice(":", 1))
 	bot.zhenqi_enabled = not OS.get_cmdline_user_args().has("--vp-no-zhenqi")
