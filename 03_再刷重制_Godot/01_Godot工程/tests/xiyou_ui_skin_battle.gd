@@ -60,6 +60,16 @@ func _shot(name: String) -> void:
 	_check("screenshot_" + name + suffix, get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + suffix + ".png")) == OK)
 
 
+func _key(code: Key) -> void:
+	for down in [true, false]:
+		var e := InputEventKey.new()
+		e.keycode = code
+		e.physical_keycode = code
+		e.pressed = down
+		get_viewport().push_input(e)
+		await _frames(2)
+
+
 func _press(action: String) -> void:
 	for down in [true, false]:
 		var e := InputEventAction.new()
@@ -161,7 +171,7 @@ func _ring(b: XBattleScene, a: XActor) -> void:
 		return
 	var ring: XSkinBattleRing = r
 	_check("ring_entries", ring.entries.map(func(e): return e.text) == ["攻击", "战技", "魔法", "防御", "物品", "逃跑"], ring.entries.map(func(e): return e.text))
-	_check("ring_title", ring.title == a.display_name() + "的回合", ring.title)
+	_check("ring_title", ring.title == a.display_name() + "的行动", ring.title)   # T096：同样稿
 	var feet: Vector2 = b._origin + b.sprites[a].position
 	# 环心＝脚底＋OFFSET，整环夹在画面里（战斗站位两排错开／菱形时下排角色站得低，环会被往上夹，party-formation 合并后）
 	var want: Vector2 = b.sprites[a].position + XSkinBattleRing.OFFSET - ring.center
@@ -170,11 +180,16 @@ func _ring(b: XBattleScene, a: XActor) -> void:
 	want += ring.center + b._origin
 	_check("ring_center_on_actor", XSkinBattleRing.fixed_corner() or ring.ring_center().distance_to(want) < 0.5 and absf(ring.ring_center().x - (feet + XSkinBattleRing.OFFSET).x) < 0.5, [ring.ring_center(), want, feet])
 	var angles := range(6).map(func(i): return ring.angle_of(i))
-	_check("ring_angles", angles == [258.0, 222.0, 186.0, 150.0, 114.0, 78.0], angles)
+	var want_angles := range(6).map(func(i): return (XSkinBattleRing.START_DEG_B - i * XSkinBattleRing.STEP_DEG_B) if XSkinBattleRing.BOWSTRING_B else (XSkinBattleRing.START_DEG - i * XSkinBattleRing.STEP_DEG))
+	var ang_ok := angles.size() == want_angles.size()
+	for i in angles.size():
+		ang_ok = ang_ok and is_equal_approx(float(angles[i]), float(want_angles[i]))
+	_check("ring_angles", ang_ok, [angles, want_angles])
+	var expect_orb := XSkinBattleRing.base_orb_r()
 	var apart := true
 	for i in 5:
-		apart = apart and ring.orb_pos(i).distance_to(ring.orb_pos(i + 1)) >= XSkinBattleRing.ORB_R * 2.0 + 3.9
-	_check("ring_orbs_apart", apart and is_equal_approx(ring.orb_r, XSkinBattleRing.ORB_R), [ring.radius, ring.orb_r])
+		apart = apart and ring.orb_pos(i).distance_to(ring.orb_pos(i + 1)) >= expect_orb * 2.0 + 3.9
+	_check("ring_orbs_apart", apart and is_equal_approx(ring.orb_r, expect_orb), [ring.radius, ring.orb_r, expect_orb])
 	_check("ring_inside_screen", Rect2(b._origin, XBattleScene.BOX).encloses(Rect2(ring.position, ring.size)), [ring.position, ring.size, b._origin])
 	_check("ring_no_canvas", not ring.canvas.visible)
 	await _shot("battle_2a_ring")
@@ -183,7 +198,7 @@ func _ring(b: XBattleScene, a: XActor) -> void:
 	await _press("ui_up")
 	await _press("ui_up")
 	_check("ring_key_wrap", ring.index == 5, ring.index)
-	# 点选：点第 2 个球先选中、再点确定→战技列表
+	# 点选：点第 2 项先选中、再点确定→战技列表
 	var p := _global(ring, ring.position + ring.orb_pos(1))
 	await _mouse(p, MOUSE_BUTTON_LEFT)
 	_check("ring_mouse_select", is_instance_valid(ring) and ring.index == 1 and b.list_win == null, ring.index if is_instance_valid(ring) else -1)
@@ -219,7 +234,17 @@ func _skill_list(b: XBattleScene, a: XActor, cold: Dictionary) -> void:
 		_check("list_foot_target_left", lw.foot_text() == want, [lw.foot_text(), want])
 		await _frames(2)
 		var hc: XHelpCard = b.help_card
-		_check("list_help_card_left", hc != null and hc.visible and hc.position.x + hc.size.x <= lw.position.x + 1.0, null if hc == null else [hc.position, hc.size, lw.position])
+		# T096：旧说明卡默认收起（一句话说明进说明栏），按 Y 展开、再按收起
+		_check("list_desc_line", lw.desc_line() == XSkinBattle.desc_text(cold) and lw.desc_line() != "", lw.desc_line())
+		_check("list_help_card_collapsed", hc == null or not hc.visible)
+		await _key(KEY_Y)
+		await _frames(2)
+		hc = b.help_card
+		_check("list_help_card_left", XSkinBattle.help_open and hc != null and hc.visible and hc.position.x + hc.size.x <= lw.position.x + 1.0, null if hc == null else [hc.position, hc.size, lw.position])
+		await _shot("battle_t096_help_open")
+		await _key(KEY_Y)
+		await _frames(2)
+		_check("list_help_card_closed_again", not XSkinBattle.help_open and not b.help_card.visible)
 		_check("list_row_rect", lw.row_rect() == Rect2(lw.position + lw.row_local(i).position, lw.row_local(i).size))
 		_check("list_select_bar_on_row", lw.bar.visible and lw.bar.target == lw.row_local(i), [lw.bar.target, lw.row_local(i)])
 	await _shot("battle_2a_skill_list")
@@ -318,10 +343,19 @@ func _ring_layout(b: XBattleScene) -> void:
 	var apart := true
 	for i in 15:
 		apart = apart and ring.orb_pos(i).distance_to(ring.orb_pos(i + 1)) >= ring.orb_r * 2.0
-	_check("ring16_apart", apart and ring.radius > XSkinBattleRing.RADIUS and ring.radius <= XSkinBattleRing.MAX_RADIUS and ring.orb_r >= 28.0, [ring.radius, ring.orb_r])
-	_check("ring16_span", is_equal_approx(ring.angle_of(0) - ring.angle_of(15), XSkinBattleRing.MAX_SPAN_DEG))
+	var min_orb := 12.0 if XSkinBattleRing.BOWSTRING_B else 28.0
+	var expect_span := XSkinBattleRing.MAX_SPAN_DEG_B if XSkinBattleRing.BOWSTRING_B else XSkinBattleRing.MAX_SPAN_DEG
+	_check("ring16_apart", apart and ring.radius > XSkinBattleRing.base_radius() and ring.radius <= XSkinBattleRing.MAX_RADIUS and ring.orb_r >= min_orb, [ring.radius, ring.orb_r])
+	_check("ring16_span", is_equal_approx(ring.angle_of(0) - ring.angle_of(15), expect_span))
 	ring.place_for_actor(Vector2(819, 230), XBattleScene.BOX)
 	_check("ring16_inside", Rect2(Vector2.ZERO, XBattleScene.BOX).encloses(Rect2(ring.position, ring.size)), [ring.position, ring.size])
+	# 回退 BOWSTRING_B=false 后恢复 116 半径、252° 最大展开弧与 32 球半径
+	XSkinBattleRing.BOWSTRING_B = false
+	var old_ring16 := XSkinBattleRing.create_ring(b.ui, opts, "测试")
+	old_ring16.active = false
+	_check("ring16_rollback_t096", is_equal_approx(old_ring16.angle_of(0) - old_ring16.angle_of(15), XSkinBattleRing.MAX_SPAN_DEG) and old_ring16.orb_r >= 28.0, [old_ring16.radius, old_ring16.orb_r])
+	old_ring16.queue_free()
+	XSkinBattleRing.BOWSTRING_B = true
 	# 位置参数（两排站位要挪时改这里）
 	var old := XSkinBattleRing.OFFSET
 	XSkinBattleRing.OFFSET = Vector2(-40, -32)

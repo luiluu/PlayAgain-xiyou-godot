@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.682",
-  "sequence": 682,
-  "next": "dev.683",
-  "nextSequence": 683,
+  "current": "dev.685",
+  "sequence": 685,
+  "next": "dev.686",
+  "nextSequence": 686,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "cc-phase4-wiring",
+  "currentChange": "cc-t079-hall-npc",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

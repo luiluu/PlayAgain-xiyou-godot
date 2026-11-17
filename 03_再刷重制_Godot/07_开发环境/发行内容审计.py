@@ -22,6 +22,7 @@ import importlib.util
 from pathlib import Path
 import re
 import struct
+import json
 import sys
 import tempfile
 import zipfile
@@ -195,12 +196,32 @@ def stub_problems(path: Path, scripts: list = None) -> list:
     return out
 
 
+RULES_NAME = 'modes/xiyou/text_fix/rules.json'
+
+
+def rules_problems(path: Path) -> list:
+    """包里的 text_fix/rules.json 不许带 tianqi_dict（天启篇改名）和点名它的注释字段。包里没有该文件算没问题。"""
+    got = read_files(path, lambda n: n == RULES_NAME)
+    out = []
+    for n, data in got.items():
+        try:
+            d = json.loads(data.decode('utf-8'))
+        except Exception as e:  # noqa: BLE001
+            out.append(f'{n}：解不开（{e}），当带天启篇词条算')
+            continue
+        if 'tianqi_dict' in d:
+            out.append(f'{n}：带 tianqi_dict（天启篇改名词典进包了）')
+        if any(k in d for k in ('_说明',)):
+            out.append(f'{n}：带注释字段 _说明')
+    return out
+
+
 def audit(path: Path, scripts: list = None) -> list:
     """包里不许有的文件和没换成空壳的天启篇脚本（空＝干净）。读不了也算问题，不当成干净。"""
     try:
         got = names(path)
         bad = sorted({n.removeprefix('res://') for n in got if denied(n)})
-        return bad + stub_problems(path, scripts)
+        return bad + stub_problems(path, scripts) + rules_problems(path)
     except Exception as e:  # noqa: BLE001
         return [f'{Path(path).name}：读不了包内名单（{e}）']
 

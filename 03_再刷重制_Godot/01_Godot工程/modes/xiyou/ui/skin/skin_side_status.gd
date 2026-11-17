@@ -170,8 +170,10 @@ static func _pill(ci: RID, r: Rect2, col: Color) -> void:
 	sb.draw(ci, r)
 
 
-## 整块队伍条的面板底（行在它上面）：黑面板＋行间 14% 细线
+## 整块队伍条的面板底（行在它上面）：默认左 66%→右 46% 暖炭半透烟纱（SMOKE_BACK=false 回到 T096 实心黑面板）
 class Back extends Control:
+	static var SMOKE_BACK := true
+	var _last_smoke_drawn := true
 	var count := 4:
 		set(v):
 			count = v
@@ -188,7 +190,37 @@ class Back extends Control:
 	func _draw() -> void:
 		if count <= 0:
 			return
-		XUiSkin.draw_panel(get_canvas_item(), Rect2(Vector2.ZERO, size))
+		_last_smoke_drawn = SMOKE_BACK
+		if not SMOKE_BACK:
+			XUiSkin.draw_panel(get_canvas_item(), Rect2(Vector2.ZERO, size))
+			for i in range(1, count):
+				var y := PAD_Y + i * XSkinSideStatus.ROW_H
+				draw_line(Vector2(10, y), Vector2(size.x - 10, y), Color(XUiSkin.LINE, 0.14), 1.0)
+			return
+		var w := size.x
+		var h := size.y
+		var cut := 8.0
+		var c_l := Color(0.068, 0.052, 0.048, 0.66)
+		var c_r := Color(0.052, 0.042, 0.040, 0.46)
+		var poly := PackedVector2Array([
+			Vector2(cut, 0), Vector2(w - cut, 0), Vector2(w, cut), Vector2(w, h - cut),
+			Vector2(w - cut, h), Vector2(cut, h), Vector2(0, h - cut), Vector2(0, cut),
+		])
+		var cols := PackedColorArray([c_l, c_r, c_r, c_r, c_r, c_l, c_l, c_l])
+		draw_polygon(poly, cols)
+		# 左侧旧金游丝脊线（上下渐隐）＋上下轻烟细边
+		draw_polyline_colors(
+			PackedVector2Array([Vector2(0.5, cut), Vector2(0.5, h * 0.5), Vector2(0.5, h - cut)]),
+			PackedColorArray([Color(XUiSkin.GOLD, 0.0), Color(XUiSkin.GOLD, 0.50), Color(XUiSkin.GOLD, 0.0)]),
+			1.2, true)
+		for y_edge in [0.5, h - 0.5]:
+			draw_polyline_colors(
+				PackedVector2Array([Vector2(cut, y_edge), Vector2(w - cut, y_edge)]),
+				PackedColorArray([Color(XUiSkin.GOLD, 0.34), Color(XUiSkin.GOLD, 0.06)]),
+				1.0, true)
 		for i in range(1, count):
 			var y := PAD_Y + i * XSkinSideStatus.ROW_H
-			draw_line(Vector2(10, y), Vector2(size.x - 10, y), Color(XUiSkin.LINE, 0.14), 1.0)
+			draw_polyline_colors(
+				PackedVector2Array([Vector2(10, y), Vector2(w - 10, y)]),
+				PackedColorArray([Color(XUiSkin.LINE, 0.16), Color(XUiSkin.LINE, 0.06)]),
+				1.0, true)
