@@ -14,10 +14,20 @@
 - 触屏指令环（D171）：`XUiSkin.TOUCH_RING_FIXED`（默认 false）从 TOUCH_V2 里单拆，只管指令环位置；false 时触屏也跟着当前行动的角色（`XBattleScene._ring_follow`，同环自己不固定那一支），照旧让开 A／B 键组与右上队伍面板；TOUCH_V2 其余各项不变。没改 `skin_battle_ring.gd`（T125 在改；它的 `fixed_corner()` 仍认 TOUCH_V2，battle_scene 摆完后改摆一次）。
 - 回退开关：`XBattleLayout.ENABLED`、`XSkinEnemyHp.ENABLED`、`XUiSkin.TOUCH_RING_FIXED`（改 true 回到右下）。
 - 测试：新增 `tests/xiyou_battle_layout`（窗口 72 项含截图与取像素、无头 66 项）：首领点与封顶、敌群矩形、我方右半场不压队伍栏、我方与敌人间距、2 人队、原版竖排不撑开、两个开关关掉回原版、指令环跟角色且在画面内、TOUCH_RING_FIXED＝true 回右下、血条尺寸、拖尾先拖后追上、脚下那一行是糖果粉、首领不画。800×450 定稿图在私密仓 `协作交接/附图/T126/定稿_*.png`，出样三版四宫格同目录。
-- 原版对照专项关掉站位撑开：xiyou_battle_pixel、xiyou_battle_ui（含继承它的 xiyou_popup_overlap）、xiyou_guyu_ui、xiyou_party_formation、xiyou_sequence_visual、xiyou_sv_smooth 在 `_run` 开头设 `XBattleLayout.ENABLED = false`（它们拿原版坐标／MV 参照帧／原版缩放比对；battle_ui 的「默认选最右边的敌人」写死原版 x 353，撑开是保序变换，行为不变）。
+- ~~原版对照专项关掉站位撑开~~（R2 撤掉，见下）。
 - 验证：云端选测 169 场景（57af843431）162 过、7 个即上面这些对照专项，加关开关后本机单跑 7 个全过（182／791／28／74／140／8／73）；xiyou_ui_skin_battle_v07、xiyou_ui_skin_4a、xiyou_ui_skin_hud 等云端已过；xiyou_battle_layout 窗口 72/72、无头 66/66。合并 main（解 xiyou_sv_smooth 开头与云裳 ART 开关的冲突，两行都留）后本机复跑 14 个相关专项全过（xiyou_battle_layout、xiyou_ui_skin_battle_v07、xiyou_battle_ui、xiyou_sv_smooth、xiyou_guyu_ui、xiyou_sequence_visual、xiyou_battle_pixel、xiyou_popup_overlap、xiyou_party_formation、xiyou_yunshang_art、xiyou_ui_skin_4a、xiyou_ui_skin_battle、xiyou_determinism、xiyou_ui_skin_hud），交付自检退出 0。
-- 玩家可见：战斗里角色和怪物变大、拉开铺满画面，首领站到左边；小怪脚下多了一条粉色细血条（扣血有橙色拖尾）；手机上战斗指令环改回跟着当前行动的角色。
+- 玩家可见：天启篇新界面的战斗里角色和怪物变大、拉开铺满画面，首领站到左边（西游档／原版界面照旧）；小怪脚下多了一条粉色细血条（扣血有橙色拖尾）；手机上战斗指令环改回跟着当前行动的角色。
 
+
+- **R2 返修（小A 核查退回 71bb39aa0）**：
+  - P1-1 站位撑开只在新界面生效：`XBattleLayout.spec()` 加 `XUiSkin.on()` 门控（西游档／设置页选原版界面＝原版站位与大小，不压旧 XSideStatus、旧指令窗，O-473 阵型照旧 x≤819）。`xiyou_battle_layout` 补 `old_ui_identity`（单元）与 `_xiyou_old_ui`（FORCE＝false 进 4 只小怪战与首领战：敌我都是原版脚底、layout_mul＝1、我方 x≤819、不画小怪血条，窗口模式出西游档截图）；反向验证：撤掉门控 6 项失败。
+  - P1-2 七个老专项开头的 `XBattleLayout.ENABLED = false` 全部撤掉，不加回任何关法；本机单跑 xiyou_party_formation 74／guyu_ui 791／sv_smooth 140／popup_overlap 8／battle_pixel 28／sequence_visual 73／battle_ui 182 全过。
+  - P2-1 选择光标随放大重算：`battler_sprite.gd` 抽 `_cursor_y()`（侧视图一格高×layout_mul，其余 height()），setup 与 rescale 都调；`_check_cursors` 核首领战、小怪战敌我光标都在放大后身高处；反向验证：撤掉重算两项失败（顺手修了该断言失败分支里 `x.name()` 不存在的报错）。
+  - 截图：私密仓 `协作交接/附图/T126/R2_西游档_4只小怪.png`（旧侧栏、旧指令窗、原版大小与阵型）、`R2_新界面_首领战.png`（新界面不回归）。
+  - 验证：xiyou_battle_layout 无头 78/78、窗口 85/85；xiyou_ui_skin_battle_v07 41/41；检查.sh --affected 71bb39aa0 见下行。
+  - 验证：检查.sh --affected 71bb39aa0 选中 39 个 Godot 场景全过；非 Godot 只剩 1 项「发行空壳缺成员」：`modes/xiyou/ui/skin/skin_boss_arc.gd`（T125 b2140b3eb 的文件，本轮没动；引用 DENY 里的 hong.png）。本分支自己的 battle_layout.gd 也曾因 R2 头注释写「只在天启篇新界面」被认成天启篇专属，已改措辞（它在发行包里要用、恒走原版站位）。
+  - **要总装登记**（共用文件，车道不改）：`发行空壳.py` 的 MIXED_OK 加 `'modes/xiyou/ui/skin/skin_boss_arc.gd': '首领血弧：只在 XSkinBattle.on()（XUiSkin.on()）时创建，发行包里恒为 false；铜印贴图走 ResourceLoader.exists 守卫，在 DENY 里不进包'`，加上后 检查.sh 即全过。
+  - P3：冲锋类行动序列像素位移不放大，小A 查实不做精灵横移、不会打空，不改。
 ## 交接板
 
 - 下一步：合并后请小A／小o 实机看一眼放大后的冲锋类技能（行动序列像素位移没放大）和变身怪（换图后照新图大小重算倍数）。
