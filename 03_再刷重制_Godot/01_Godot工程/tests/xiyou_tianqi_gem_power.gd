@@ -268,6 +268,7 @@ func _run() -> void:
 	for k in ov_ids:
 		ovg[k] = XGear.create(ov_ids[k][0], ov_ids[k][1], s)
 		ovg[k]["instanceId"] = "t164_ov_" + k
+	ovg.axe.params[6] = -20   # 创建时敏捷会随机掷，固定成原版的 −20，免得偶发误报
 	XTianqiGear.clear_effective_cache()
 	_check("ov_direct_levels", XTianqiGear.applies(ovg.fire) and XTianqiGear.applies(ovg.driver) and XTianqiGear.applies(ovg.axe) and XTianqiGear._level(ovg.fire) == 40 and XTianqiGear._level(ovg.driver) == 40 and XTianqiGear._level(ovg.axe) == 15, [XTianqiGear._level(ovg.fire), XTianqiGear._level(ovg.driver), XTianqiGear._level(ovg.axe)])
 	var axe_eff := XTianqiGear.effective_params(ovg.axe)

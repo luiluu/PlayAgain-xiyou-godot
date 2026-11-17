@@ -1,9 +1,11 @@
+class_name XTianqiGemPower
+extends RefCounted
 ## 【T164·D186】光耀度：属于每一颗宝石（符文镶嵌、宝珠、符文之语），不属于装备。
 ## 【D190b】同一颗宝石镶在越高级的装备上越光耀：光耀度＝该宝石所加那一列的换算比 ÷ 80 级换算比，80 级＝100%、最高 100%（超 80 级按 80 算，见 XTianqiGear.CAP_80）；
 ## 宝石那一行写自己的光耀度和实际加成（实际值＝基础值×换算比＝光耀 100% 的值×光耀度），图鉴数字是光耀 100% 时的效果。只做显示：不新增数值、不改任何战斗结果（那 5 件超 80 级特例除外，见交付单）。
 ## 只认期四总开关 XTianqiBase.PHASE4 且这件装备读表（XTianqiGear.applies）；否则每个函数都返回空，界面逐字节回原样。
 const NAME := "光耀"
-const NOTE := "数字为光耀100%；装备越高级越光耀"
+const NOTE := "数字为光耀100%；低级装备光耀不足"
 const PREVIEW_HEAD := "这颗宝石镶在这件装备上："
 const LINE_COLOR := "#cfe8ff"
 

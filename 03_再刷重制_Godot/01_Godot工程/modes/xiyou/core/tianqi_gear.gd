@@ -536,7 +536,7 @@ static func _eff_fresh(c: Dictionary, item: Dictionary) -> bool:
 	if c.un != (item.get("upgrades", []) as Array).size():
 		return false
 	var meta: Dictionary = item.get("meta", {})
-	if c.meta != str(meta.get("req_level", "")) + "|" + str(meta.get("quality", "")):
+	if c.meta != _req_text(item) + "|" + str(meta.get("quality", "")):
 		return false
 	return c.orb == JSON.stringify(item.get("augmentSlotItems", []))
 
