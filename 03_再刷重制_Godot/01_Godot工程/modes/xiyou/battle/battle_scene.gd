@@ -116,7 +116,7 @@ var _fade: XSceneFade
 var screen_fx: XBattleScreen
 ## 自动测试用：强制自动战斗，胜利界面自动关闭。
 static var force_auto := false
-## O-待定-1：设置「进战斗默认自动」开着时，每场战斗开局自动按钮就是开（玩家反馈：想让自动一直开着，不用每场点）。
+## O-568：设置「进战斗默认自动」开着时，每场战斗开局自动按钮就是开（玩家反馈：想让自动一直开着，不用每场点）。
 ## 设置默认关＝照原来开局为关；回退＝设 false（设置页不列这一项，开局恒为关）。挂机另走 XHangUp，不受影响。
 static var AUTO_DEFAULT := true
 ## 怪物图鉴（AB_EnemyBook ResisterTiming 2）本场出现过的敌人 ID：战斗结束时登记
@@ -139,7 +139,7 @@ func setup(troop: int, escape: bool, lose: bool, map: Dictionary, background: Te
 	book_appeared = XEnemyBook.on_battle_start(XState.current, troop, map, logic.enemies)
 
 
-## 开局自动按钮的状态（O-待定-1）：开关开着且设置「进战斗默认自动」为 ON
+## 开局自动按钮的状态（O-568）：开关开着且设置「进战斗默认自动」为 ON
 static func start_auto() -> bool:
 	return AUTO_DEFAULT and XConfig.flag("codexBattleAutoDefault")
 
@@ -899,7 +899,7 @@ func _main() -> void:
 
 
 ## 敌群事件里的强制行动（339，如炎龙守护者开场连放三招）在「显示技能动画」关着时快放：行动序列一个物理帧走 FORCED_FAST_STEPS 步
-## （O-待定-1，T157 玩家反馈开战卡）。原版同样逐帧演（ui_reference 量 776 号开场三招：OFF 档 187 帧、三倍档 163 帧，约 3 秒，
+## （O-568，T157 玩家反馈开战卡）。原版同样逐帧演（ui_reference 量 776 号开场三招：OFF 档 187 帧、三倍档 163 帧，约 3 秒，
 ## 画面上只有招式名和数字），重制照原版是 166／154 帧；快放后约三分之一。只改演出节奏，结算在播放前已做完，不影响结果。
 ## 回退：FORCED_FAST = false（逐帧，同原版）
 static var FORCED_FAST := true
@@ -1531,7 +1531,7 @@ static func item_list_row(s: XState, e: Dictionary, enabled: bool) -> Dictionary
 ## Window_BattleSkill / Window_BattleItem（宽 450、最多 16 行），贴在角色旁 (+16, +16)。
 func _pick_from_list(a: XActor, entries: Array, items: bool, initial_index := 0):
 	_close_list()
-	XActor.read_begin()  # 只读窗口缓存（O-待定-1）：逐行算能不能用、费用都是只读
+	XActor.read_begin()  # 只读窗口缓存（O-568）：逐行算能不能用、费用都是只读
 	var rows := entries.map(func(e): return _list_entry(a, e, items))
 	XActor.read_end()
 	list_win = XBattleList.create(ui, rows, LIST_W)

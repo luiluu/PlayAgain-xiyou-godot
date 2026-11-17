@@ -40,7 +40,7 @@ var done := false
 var _event_pending := false
 ## 正在执行的序列指令（读它的 moves 快照）
 var _cur: Dictionary = {}
-## 一个物理帧里行动机走几步（1＝原版逐帧）。敌群事件里的强制行动在技能动画关着时快放（XBattleScene.FORCED_FAST，O-待定-1）
+## 一个物理帧里行动机走几步（1＝原版逐帧）。敌群事件里的强制行动在技能动画关着时快放（XBattleScene.FORCED_FAST，O-568）
 var turbo := 1
 
 
