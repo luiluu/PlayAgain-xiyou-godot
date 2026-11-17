@@ -911,7 +911,7 @@ const AI_HURT := 0.4
 
 
 static func super_strong(a) -> bool:
-	return a is XActor and XItemMarks.is_super_strong(int(a.actor_id))
+	return a is XActor and XItemMarks._super_in(XState.current, int(a.actor_id))  # T147：天启篇读天启档位表
 
 
 ## T.autoAction：武具态按规则易武（两人以上低于 40%、或下回合 Boss 霸体→盾；敌人 3 个以上→剑；只剩一个 Boss 且持剑→锤），
