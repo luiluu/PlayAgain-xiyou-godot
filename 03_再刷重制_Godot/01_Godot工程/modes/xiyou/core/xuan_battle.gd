@@ -777,7 +777,7 @@ static func _borrow(logic, a, key: String) -> bool:
 
 
 ## X.cast＋B.cast：内部施放（照常付费、进冷却，不插入行动序列），每个活着的目标 apply 一次，花 1 点星契
-static func _cast(logic, a, key: String, targets: Array, setup: Dictionary, protect: bool) -> bool:
+static func _cast(logic, a, key: String, targets: Array, setup: Dictionary, protect: bool, gate_trigger = null) -> bool:
 	if targets.is_empty() or not _live(a) or not auto_enabled() or not _ready_skill(logic, a, key):
 		return false
 	if not _can_spend(a, protect) and not (XBinding.charges(a) < 1 and protect and _borrow(logic, a, key)):
@@ -788,6 +788,8 @@ static func _cast(logic, a, key: String, targets: Array, setup: Dictionary, prot
 	var dead_scope := int(skill.get("scope", 0)) in [9, 10]
 	var list := targets.filter(func(x): return x != null and (x.is_dead() if dead_scope else x.is_alive()))
 	if list.is_empty():
+		return false
+	if gate_trigger != null and not XTianqiLedger.take_module_derived(logic, a, "module.xuan.follow_up", gate_trigger):  # 期四（T130）棱光每回合次数；关着恒真
 		return false
 	var prev := _act
 	var prev60 := _grants60
@@ -831,7 +833,9 @@ static func _try_liexing(logic, a) -> bool:
 
 
 ## followUp：棱光打宿主这次攻击的最后一个敌人（倒了打第一个活着的）；分光：全体攻击时分给 2／3／4 名；同调：2 级跟攻击元素、1 级用星谱指定元素
-static func _follow_up(logic, a, skill: Dictionary, target) -> bool:
+## gate_trigger（T137）：派生口子 take_module_derived 放到 _cast 查完能不能放之后再问（期四 T130 原来在 end_action 先问，没星契／冷却中也扣次数）；
+## 传触发它的宿主，专项按宿主那次行动量比例。总开关关着口子恒真，行为不变。
+static func _follow_up(logic, a, skill: Dictionary, target, gate_trigger = null) -> bool:
 	if target == null or not target.is_alive():
 		var alive: Array = logic.alive(logic.enemies)
 		target = alive[0] if not alive.is_empty() else null
@@ -849,7 +853,7 @@ static func _follow_up(logic, a, skill: Dictionary, target) -> bool:
 		setup.element = el
 	elif td >= 1 and chosen > 0:
 		setup.element = chosen
-	return _cast(logic, a, "lengguang", targets, setup, false)
+	return _cast(logic, a, "lengguang", targets, setup, false, gate_trigger)
 
 
 ## startAction 包装（原 startAction 之前，屠苏在外层）：敌人对我方的伤害行动打到受益者前璃壁（并轨 2 级：打到副宿主也给），每回合一次
@@ -883,9 +887,9 @@ static func end_action(logic, u, skill) -> Array:
 	_try_rescue(logic, a)
 	_try_liexing(logic, a)
 	if u is XActor and skill is Dictionary and not skill.is_empty() and XSmartAI.for_opponent(skill) \
-			and int(skill.get("damage", {}).get("type", 0)) in [1, 5] and in_cover(a, u) and XTianqiLedger.take_module_derived(logic, a, "module.xuan.follow_up", u):  # 期四（T130）；关着恒真。T137：u＝触发它的宿主（专项按宿主那次行动量比例）
-		_follow_up(logic, a, skill, _last_target.get_ref() if _last_target != null else null)
-		XTianqiLedger.derived_close(logic)
+			and int(skill.get("damage", {}).get("type", 0)) in [1, 5] and in_cover(a, u):
+		if _follow_up(logic, a, skill, _last_target.get_ref() if _last_target != null else null, u):
+			XTianqiLedger.derived_close(logic)
 	return take_logs()
 
 

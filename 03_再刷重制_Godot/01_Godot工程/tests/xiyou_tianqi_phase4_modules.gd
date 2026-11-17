@@ -214,7 +214,7 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 			a.equips[maxi(0, int(XDB.rec("Armors", int(XTusu.RELIC)).get("etypeId", 5)) - 1)] = relic
 	a.recover_all()
 	var logic := XBattleLogic.new()
-	logic.setup(TROOP, s)
+	logic.setup(TROOP, s, XBattleRandom.create(XRandomStream.hex64(20261117 * 7 + aid)))  # T137：钉住本场随机数（原来每跑一次都不同，量到的数会漂，饿狼合计偶尔过 1.0）
 	for e in logic.enemies:
 		e._rates[0] *= 1000
 		e.recover_all()
@@ -229,8 +229,18 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 	XActorDamageHooks.RECORD = []
 	var main := {"dmg": 0.0, "acts": 0}
 	var pick := 0
+	var bind_host = logic.actors.filter(func(x): return x != a)[0] if aid == 177 else null
+	if bind_host != null:
+		bind_host.hp = bind_host.mhp
 	for _round in rounds:
+		if bind_host != null:
+			a.mp = a.mmp
+			a.tp = a.max_tp()
+		if bind_host != null and not XBinding.is_bound(a) and a.is_alive() and bind_host.is_alive():
+			XBinding.bind(a, bind_host)  # T137：璇附身着才有棱光（宿主主动攻击后），解了就重新附身
 		logic.start_turn()
+		if bind_host != null and XBinding.data(a) != null:
+			XBinding.data(a).charges = maxi(int(XBinding.data(a).charges), 3)  # 棱光要 2 点星契（_can_spend），夹具补满只量比例（开回合会重算，放在它后面）
 		logic.take_turn_start_logs()
 		var count := 0
 		while count < 80:
@@ -239,7 +249,7 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 				break
 			count += 1
 			var cmd := logic.decide(u)
-			if u == a:
+			if u == a and bind_host == null:  # 璇附身时照她自己的自动（夹具硬选招会把附身解掉，棱光就没了）
 				a.mp = a.mmp
 				a.tp = a.max_tp()
 				var pool := _usable(logic, a)
@@ -251,6 +261,8 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 			var n0: int = (XTianqiLedger.TRACE as Array).size()
 			var hp0 := XTianqiLedger._foe_hp(logic)
 			logic.act(u, cmd[0], cmd[1])
+			if bind_host != null:
+				bind_host.hp = bind_host.mhp  # 宿主是弱者，被打死就解附身（夹具只量棱光）
 			if u is XActor:
 				var drop := hp0 - XTianqiLedger._foe_hp(logic)
 				for i in range(n0, (XTianqiLedger.TRACE as Array).size()):
@@ -291,7 +303,7 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 
 func _fixture_battles() -> void:
 	for aid in [167, 168, 169, 170, 171, 172, 173, 174, 176, 177, 179]:
-		var r := _battle(aid)
+		var r := _battle(aid, 30 if aid in [170, 171, 177] else 12)  # T137：触发少的（镜流追加段、甚尔武器库、璇棱光）多打几回合
 		trace_rows.append(r)
 	# 每个来源：触发次数、每回合每人最多几次、每次是原招的几成（派生伤害 ÷ 本人一次行动的主伤害）、每回合合计
 	var by := {}
