@@ -1,0 +1,245 @@
+{
+  "idle_items": 13,
+  "idle_frames": 39,
+  "walk_frames": 24,
+  "checks": [
+    {
+      "id": "anon",
+      "size": [
+        64,
+        64
+      ],
+      "head_rig": "down 1px, x fixed",
+      "support_region_unchanged": true
+    },
+    {
+      "id": "kotori",
+      "size": [
+        64,
+        64
+      ],
+      "head_rig": "down 1px, x fixed",
+      "support_region_unchanged": true
+    },
+    {
+      "id": "yomi",
+      "size": [
+        64,
+        64
+      ],
+      "head_rig": "down 1px, x fixed",
+      "support_region_unchanged": true
+    },
+    {
+      "id": "toji",
+      "size": [
+        64,
+        64
+      ],
+      "head_rig": "down 1px, x fixed",
+      "support_region_unchanged": true
+    },
+    {
+      "id": "sukuna",
+      "size": [
+        64,
+        64
+      ],
+      "head_rig": "down 1px, x fixed",
+      "support_region_unchanged": true
+    },
+    {
+      "id": "garou",
+      "size": [
+        192,
+        176
+      ],
+      "head_rig": "down 1px, x fixed",
+      "support_region_unchanged": true
+    },
+    {
+      "id": "garou_human",
+      "size": [
+        64,
+        64
+      ],
+      "head_rig": "down 1px, x fixed",
+      "support_region_unchanged": true
+    },
+    {
+      "id": "guyu",
+      "size": [
+        160,
+        160
+      ],
+      "head_rig": "down 1px, x fixed",
+      "support_region_unchanged": true
+    },
+    {
+      "id": "tusu",
+      "size": [
+        128,
+        128
+      ],
+      "head_rig": "down 1px, x fixed",
+      "support_region_unchanged": true
+    },
+    {
+      "id": "tusu_bow",
+      "size": [
+        128,
+        128
+      ],
+      "head_rig": "string glint",
+      "support_region_unchanged": true
+    },
+    {
+      "id": "xuan",
+      "size": [
+        128,
+        128
+      ],
+      "head_rig": "down 1px, x fixed",
+      "support_region_unchanged": true
+    },
+    {
+      "id": "cat",
+      "size": [
+        192,
+        160
+      ],
+      "head_rig": "down 1px, x fixed",
+      "support_region_unchanged": true
+    },
+    {
+      "id": "gojo",
+      "size": [
+        64,
+        64
+      ],
+      "head_rig": "down 1px, x fixed",
+      "support_region_unchanged": true
+    }
+  ],
+  "sha256": {
+    "native/anon_Idle.png": "a520994b3eed4e2a25540b671e55acca656902d0e6c1d17347f379e18573e87e",
+    "native/anon_idle_0.png": "0d37e55ae2e1c2c2181ad025fc54b1dfa9609017e79e872177b5539d583ceb6a",
+    "native/anon_idle_1.png": "53bf46a185a146e0b385affd2c480bb3dbe3ab59bcc995a9680fc876b3b87230",
+    "native/anon_idle_2.png": "0d37e55ae2e1c2c2181ad025fc54b1dfa9609017e79e872177b5539d583ceb6a",
+    "native/anon_idle_4x.png": "2a67f3087b26a919f5ce145c40e1fdb6468c21eb2adeeec4c57cb67b57461e78",
+    "native/anon_original.png": "909ed8d808b1babddcda9e2fd2c4adf98a4df13d14f6edc858129a57fa8572e2",
+    "native/anon_original_walk.png": "c02b43b713ae19c1c89dc795c7a8dbd3af4ff9f26e1fc2a03163d94c897b2a59",
+    "native/cat_Idle.png": "4f52a2bbe5278ce65986a81df17008054edbb3ae13adcde19adad741f06fe5cf",
+    "native/cat_idle_0.png": "c01f8a2cf5c108f7efd205a91eb6a4f220bf1e329c355b1704a1977af08da07b",
+    "native/cat_idle_1.png": "d04a7645d506e600a7cc53ced25e65b6725722ffa35096174c974f4f1279f5fe",
+    "native/cat_idle_2.png": "c01f8a2cf5c108f7efd205a91eb6a4f220bf1e329c355b1704a1977af08da07b",
+    "native/cat_idle_4x.png": "83b24208eb43aa1d22088642a83b59c3bcfb4ca5f835df6a1f3ba72dcafbe7c0",
+    "native/cat_original.png": "778f681f08e02e4530bcd55a4a6670129f5822c658171ea425366b0a2d6ffd25",
+    "native/cat_original_walk.png": "b3ea4764ebe68e617e4682b6f2aaabcdd8d95be73a5ee59bae89003d7582fc74",
+    "native/garou_Idle.png": "fc38bb8c89c8d3e373c0b4928c3f76229063116218d5b0c540f9115808af7ea2",
+    "native/garou_human_Idle.png": "3ba138008856ff084b224e7fd7ace5649742a4502d68b2c40fed37da6427c866",
+    "native/garou_human_idle_0.png": "90515df66812ba0990e64d9176f42baf2a190f661c3d1ae1a799077999d57341",
+    "native/garou_human_idle_1.png": "df283fe12e873974a0db11ddcab937664b7c2edbf03d200d73ca3a0c89b06cdd",
+    "native/garou_human_idle_2.png": "90515df66812ba0990e64d9176f42baf2a190f661c3d1ae1a799077999d57341",
+    "native/garou_human_idle_4x.png": "1b63941d4efd0967efc3503e56c60a58abddc06d2f14f726b69fae4c981563bd",
+    "native/garou_human_original.png": "4230aebaee4a80b27b4366ea4407c741601191870c026677bc4ae9a40114fe06",
+    "native/garou_human_original_walk.png": "c4294886bddfd33e5c207f227e37b6fea89b7d7ad01dfc39c9b0032936ca7816",
+    "native/garou_idle_0.png": "9137aa1277232e2b25718dfde85a9c91e5dc19d959db3091a2c7ce09fa9ef716",
+    "native/garou_idle_1.png": "b6112669af4e9dd8ba4c19406dd3742ce63230b5b9c20de06a34955503a7bc64",
+    "native/garou_idle_2.png": "9137aa1277232e2b25718dfde85a9c91e5dc19d959db3091a2c7ce09fa9ef716",
+    "native/garou_idle_4x.png": "6da0d1f13573454eaf15e0caf4a86a93cb608ee1a8378d0f43f741ff0ae7d9d1",
+    "native/garou_original.png": "23e3fa2e80b5604c494a326817a6879a8202da8fcb415c81922cfe6b19da3140",
+    "native/garou_original_walk.png": "c4294886bddfd33e5c207f227e37b6fea89b7d7ad01dfc39c9b0032936ca7816",
+    "native/gojo_Idle.png": "7d46021906362d0a7b3702cb2e24dbe394f6202dd2b68cd0d46ba95aaf114e9b",
+    "native/gojo_idle_0.png": "d1fde7335eecf24e071b8feec5b52cdd1d74ef15603b2f9726df5198da699f8d",
+    "native/gojo_idle_1.png": "8f29128666c58d0104223e7e8bc5ed941a9741a6b7c10fac09d1db4bf4c55388",
+    "native/gojo_idle_2.png": "d1fde7335eecf24e071b8feec5b52cdd1d74ef15603b2f9726df5198da699f8d",
+    "native/gojo_idle_4x.png": "453e1723f607cccd2d6e10692a7a70dbc3a28c4db1e27dc8cc7e4699771ef39d",
+    "native/gojo_original.png": "a458d324ca17702523a2d0583934fe3c7ac91871668335163dc464fa6c05ecd0",
+    "native/gojo_original_walk.png": "7097886c1c895d5adeefdf1b9c50746fccabe9e0ebbec245dac94b1f2cacf2a8",
+    "native/guyu_Idle.png": "86e2fa27ffc7ccae2b88dffecf597d6b51bc2dfef8f73e64200497f2a395bf27",
+    "native/guyu_idle_0.png": "67d29ac8b9f7ac99177ceccd56b5e8bc75822c5b24d435207cd1b33a1e899bad",
+    "native/guyu_idle_1.png": "596e7eb651274eb3331ad22747bd5aba4b6f38236ae95a4140f109fd4fc44e74",
+    "native/guyu_idle_2.png": "67d29ac8b9f7ac99177ceccd56b5e8bc75822c5b24d435207cd1b33a1e899bad",
+    "native/guyu_idle_4x.png": "5b08f60bc4e5da05ed6e0f3ca2f6aebefe2bb772f83f87ac4444875cb67b69b6",
+    "native/guyu_original.png": "88a5c8debac980bbddf99129896412cc0f62eea8320c565802e6f6a82a1cfb2e",
+    "native/guyu_original_walk.png": "348fb8d62dd5d418d15cfd8b8aa04545a5b388afe8d1c569b1967ac6d3e6eed7",
+    "native/kotori_Idle.png": "f6e1ebb2e4bb413caebe9db2a83105de675058670f5a83e3482f279b763c4634",
+    "native/kotori_idle_0.png": "fca9afa92180fde64fb9c9c83d46b7a96429b074a092298e2be60f74ecdc7bae",
+    "native/kotori_idle_1.png": "64edc9ce7e78ac3da46d4c8e6e322b94bfc5b36960ce96dd232b4d3b528b1c9a",
+    "native/kotori_idle_2.png": "fca9afa92180fde64fb9c9c83d46b7a96429b074a092298e2be60f74ecdc7bae",
+    "native/kotori_idle_4x.png": "60cabad9b0de153751cee2aa5dc68fb2b5d4a49a8c757a2b38c7bd6c5b865d72",
+    "native/kotori_original.png": "a58e847802f9897dc204a0a95b3c8326fdbdc39f72d3b113acc058954a493b90",
+    "native/kotori_original_walk.png": "512570b90047efc07c75db1648efee242d35be14c74e64669f48368b9940bbfb",
+    "native/sukuna_Idle.png": "cb022c47256094fe05e4473cd6755c456b6a79e2ba2f94e7b36ca8d0a00b0fdd",
+    "native/sukuna_idle_0.png": "245048c3083771a6035a9f4969698681a1837bb0c5e88c7f7f69864fd7b3ffa2",
+    "native/sukuna_idle_1.png": "5bb86f851d9aada0c72a00292bc3cfc727b8121bdd4528712852cd1089a19e0c",
+    "native/sukuna_idle_2.png": "245048c3083771a6035a9f4969698681a1837bb0c5e88c7f7f69864fd7b3ffa2",
+    "native/sukuna_idle_4x.png": "0b2500bd23bb048f554f82e49a36ee4111831f142acae4c390827601789abaa8",
+    "native/sukuna_original.png": "92c518c694ed6b55c4ef9d63906858e680c4320c4a4ac8109130d61dcb12079f",
+    "native/sukuna_original_walk.png": "046b17c747c7914730ecd4c10cb3fb6356103378fb6de8a703ce4bab52321ebc",
+    "native/toji_Idle.png": "def3ff4f9e71c4fc46d5b357cc464cbdcb655b428e34e8af4fb219b73a6d83fd",
+    "native/toji_Walk.png": "bed60393c0cc69fdad2b521d0a1992768e01616918aad7d63357503ce1d02a61",
+    "native/toji_idle_0.png": "e4f74e71f4e58550a9edd51f1e24c61a3286a2fcce6cd2cf0935d2a6df8201c6",
+    "native/toji_idle_1.png": "ce394abe5f699dc390696555dea9cee084db55a186008ab37737791c810201e6",
+    "native/toji_idle_2.png": "e4f74e71f4e58550a9edd51f1e24c61a3286a2fcce6cd2cf0935d2a6df8201c6",
+    "native/toji_idle_4x.png": "4977797601dcec2620e905e211c3fa023d1e8f0e4670da5dce3e08c334132e8e",
+    "native/toji_original.png": "c3254dbf109f169a92e322a6122bf7c1126dd32b8b76d271dfe5d08d35f6b07b",
+    "native/toji_original_walk.png": "1f1dce86312cccbdf0b9a18a35b0aa5348b2e8e88a78ab47aa6e4e73422829f2",
+    "native/toji_walk_0_0.png": "0d2bdf80219e31657c153d9849df7031a519a0133888850553a4c74c2c6ee7ee",
+    "native/toji_walk_0_1.png": "3e9ade86f0e9f61f0d757d02d89e30b65dcf3f907da0a1c045579bab6fd434ff",
+    "native/toji_walk_0_2.png": "299ef2aa6711c56c3c8b3547aff87dfdc7e74d7be5dd46cdac40cf17c05c5192",
+    "native/toji_walk_1_0.png": "bef71d3f3192989df324c9529f1e7613cd2d49071d707ec5638a4fa4a1a0148e",
+    "native/toji_walk_1_1.png": "ffa02aa0e95c3aafb03405e89d39a6ae8d1b38d7c6948f53db24e83ee0740dca",
+    "native/toji_walk_1_2.png": "3e907dd8e89027b7165e860f0ddda7bc39e5e7e1b660bf5c0dbbe929f88adfca",
+    "native/toji_walk_2_0.png": "81b571ea99df522e547eaebe950e9fb633fd5e41b1bc02cdb93b943304ddae67",
+    "native/toji_walk_2_1.png": "06d021226241cb42312d6ef44d954448736167308a9b306298d4a13866e16823",
+    "native/toji_walk_2_2.png": "8a889875662202b73d3490a95164b0ccd756ddde5a5528152279ab2affa406ad",
+    "native/toji_walk_3_0.png": "b710b67d2ac27171f36593c8afae91673aeab11e7808bf3aab59e716810889d9",
+    "native/toji_walk_3_1.png": "1c78f4ca8598dd2f6a72ffdf0b3abb2adeb73486a14f7ddb52086e58eccd5322",
+    "native/toji_walk_3_2.png": "539d33c8443e269fa18e5bd48194dcfa792b06152a8473b5525bd75d16e57a00",
+    "native/toji_walk_4x.png": "bce6a772acd4c346b9c021d4846b7c9f030c2e24f6c58c4d77a0356f5f8a0df4",
+    "native/tusu_Idle.png": "db3a9a565a6df0553e2ff03451c173fca95cd0d0e1e272e8064c4f833c2d99a7",
+    "native/tusu_bow_Idle.png": "bab13c4009f2c1ce4509cdc56a14959a3a24816a7943560c6b51451dba2d0121",
+    "native/tusu_bow_idle_0.png": "a25185a3290749ab433c72af8b100fd5144551d24ab28bb69f007a3629ca28df",
+    "native/tusu_bow_idle_1.png": "3e027b8b5a82859fa5ca98c0411c9d6784aa56d3590f28469442449c13109e5b",
+    "native/tusu_bow_idle_2.png": "a25185a3290749ab433c72af8b100fd5144551d24ab28bb69f007a3629ca28df",
+    "native/tusu_bow_idle_4x.png": "bab867ce717f4974ab1fb54ff644ff37fa1fdcc0282fdbf2aeba7113f7efa257",
+    "native/tusu_bow_original.png": "de1752e50b719526fab493e722b862f4ce4c7b4d04bb3fdd25d0ae157764acd3",
+    "native/tusu_bow_original_walk.png": "1a948db35425533f811c342b3fd96848c1ca1fdf4558e8e533298b20a30f8c7a",
+    "native/tusu_idle_0.png": "a612355f5596a5b7489759517df9204f9b7f360ca3ef6e520a41ac2d8dee5338",
+    "native/tusu_idle_1.png": "60d89f42213195ebcc2d0bbeb6fcf2e799f39f11b4c9636fc3eb5751ea467b8b",
+    "native/tusu_idle_2.png": "a612355f5596a5b7489759517df9204f9b7f360ca3ef6e520a41ac2d8dee5338",
+    "native/tusu_idle_4x.png": "bc9fe5dcfdae8b7bd1b83b69997236af096ff3a8433cf197feed60defdfd76b5",
+    "native/tusu_original.png": "7c35bbf11e31ebd5664ccb5499bc844387a145c55fd8c9dea8abf3d02ca0000f",
+    "native/tusu_original_walk.png": "1a948db35425533f811c342b3fd96848c1ca1fdf4558e8e533298b20a30f8c7a",
+    "native/xuan_Idle.png": "639b1e2952ffaebceec8e9d0309a2fd7bf87b176ff1c05477c956a5f4efa2b1a",
+    "native/xuan_idle_0.png": "1794e5c39ab17bdb03a368ab82615467f8f4f34146a91819b587b63f50a62ee8",
+    "native/xuan_idle_1.png": "ea2e1da089cda9d771674aeea9f370a0e4b659e2103476d8f2afdad90e7d2725",
+    "native/xuan_idle_2.png": "1794e5c39ab17bdb03a368ab82615467f8f4f34146a91819b587b63f50a62ee8",
+    "native/xuan_idle_4x.png": "b1f34247d0e26e602acf8a67493405f7dc546f678b72cdb14c56c7dd23080d7e",
+    "native/xuan_original.png": "3bf146496207d56e8c92350464d7bdb34badf111c01dd60caad7680d60f93ab5",
+    "native/xuan_original_walk.png": "775a1f4fc996d554a35a86b2aff3ea84f8c9cc29d6f8293e0b8d73a4e3645644",
+    "native/yomi_Idle.png": "ea9cb9081f1245d136dbd341a9027301e466afa2405de56c6a05d272a1ac946e",
+    "native/yomi_Walk.png": "23a7949c96a68a2494a5b806fb05b57271456e7baa75ce12a02ba19a3722eaf8",
+    "native/yomi_idle_0.png": "68f2bba6cf7d938e89882af79695a2484489bfc36f947b8dce1034a664e5316d",
+    "native/yomi_idle_1.png": "c281501bb9d2ef73fd47bd59d3fa3301724c911d93e03f92dd86b5cfb80453e1",
+    "native/yomi_idle_2.png": "68f2bba6cf7d938e89882af79695a2484489bfc36f947b8dce1034a664e5316d",
+    "native/yomi_idle_4x.png": "deef22e3131f5fc5ce65803ce158a7855b3006ec55274a9e5e42fd49f462d588",
+    "native/yomi_original.png": "3a2ccfd0841a4714860d0f7317b5946394acc8a9f09d8cec41ee0c8c06daa65a",
+    "native/yomi_original_walk.png": "409dcdc13f0c1be12a2db636080ce31031744857362b6ec279e33d0556ff8bf3",
+    "native/yomi_walk_0_0.png": "eb8e5a55805146681d0d141b6f483e1bdb38ab3b82b3f1f6bf22ee6f81010eda",
+    "native/yomi_walk_0_1.png": "6e3a4d948e8e133a766ff13f36aad247a9c68a0fae881122c3247578db28380c",
+    "native/yomi_walk_0_2.png": "de58151bb72c1eb220caf555cb87218b15c118899ac83113e2012af4c9877b10",
+    "native/yomi_walk_1_0.png": "ccee8a5757fb313a7c3451be355d7eb964478ba3354f9e56280fe131530e7c07",
+    "native/yomi_walk_1_1.png": "b61fb4ac59f94e2e16d0e7fb263624c45a29177c799e427cc273b96db1bc5c09",
+    "native/yomi_walk_1_2.png": "526cb46e9ac49565a3da069f00e809a39dc33b5667929a1be380e28ce3308ff5",
+    "native/yomi_walk_2_0.png": "bd693aa57d98b08b2160c31018eac9aa83b3dc65d5813654d8e594b9b6e224f8",
+    "native/yomi_walk_2_1.png": "be5a2b11888f3ce3b302bed729274ccebb6844bf5499efecccee5d9ce04993a8",
+    "native/yomi_walk_2_2.png": "2de5091932ce050a3bb88bb4c0fcd8fa416d680c0b8840ae41796f94a4a1afd3",
+    "native/yomi_walk_3_0.png": "eb031fb1106b49d8834ff85feb36bb059ddc057973d340b1c7af4d122a64ece0",
+    "native/yomi_walk_3_1.png": "7d0f5e5ae39215e5c0994de8efccb96d0799d5721c4bcea881ccfe7eff798eba",
+    "native/yomi_walk_3_2.png": "23fca2046a597ab8b9cf7f0e85a3efeca913be19568f91e15e47761ee5b8a146",
+    "native/yomi_walk_4x.png": "5ffddcdaab20762dd62fc8da241e5b5267ed475781c2c926a4071b5055b37212"
+  }
+}

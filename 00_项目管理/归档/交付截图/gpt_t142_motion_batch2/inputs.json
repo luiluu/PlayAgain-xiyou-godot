@@ -1,0 +1,110 @@
+[
+  {
+    "id": "anon",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/anon_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/anon.png",
+    "name": "千早爱音",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/anon_walk.png",
+    "characterIndex": "0"
+  },
+  {
+    "id": "kotori",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/kotori_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/kotori.png",
+    "name": "五河琴里",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/kotori_walk.png",
+    "characterIndex": "0"
+  },
+  {
+    "id": "yomi",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/yomi_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/yomi.png",
+    "walkRaw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/yomi_walk.png",
+    "walkSource": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/yomi_walk.png",
+    "name": "黄泉",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/yomi_walk.png",
+    "characterIndex": "0"
+  },
+  {
+    "id": "toji",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/toji_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/toji.png",
+    "walkRaw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/toji_walk.png",
+    "walkSource": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/toji_walk.png",
+    "name": "伏黑甚尔",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/toji_walk.png",
+    "characterIndex": "0"
+  },
+  {
+    "id": "sukuna",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/sukuna_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/sukuna.png",
+    "name": "宿傩",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/sukuna_walk.png",
+    "characterIndex": "0"
+  },
+  {
+    "id": "garou",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/garou_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/garou.png",
+    "name": "饿狼",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/garou_walk.png",
+    "characterIndex": "0"
+  },
+  {
+    "id": "garou_human",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/garou_human_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/garou_human.png",
+    "name": "饿狼·人类形态",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/garou_human_walk.png",
+    "characterIndex": "0"
+  },
+  {
+    "id": "guyu",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/guyu_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/guyu.png",
+    "name": "谷雨",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/guyu_walk.png",
+    "characterIndex": "0"
+  },
+  {
+    "id": "tusu",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/tusu_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/tusu.png",
+    "name": "屠苏",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/tusu_walk.png",
+    "characterIndex": "0"
+  },
+  {
+    "id": "tusu_bow",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/tusu_bow_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/tusu_bow.png",
+    "name": "屠苏·弓",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/tusu_bow_walk.png",
+    "characterIndex": "0"
+  },
+  {
+    "id": "xuan",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/xuan_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/xuan.png",
+    "name": "璇",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/xuan_walk.png",
+    "characterIndex": "0"
+  },
+  {
+    "id": "cat",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/cat_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/cat.png",
+    "name": "哈基米",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/cat_walk.png",
+    "characterIndex": "0"
+  },
+  {
+    "id": "gojo",
+    "source": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/gojo_battle.png",
+    "raw": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/raw/gojo.png",
+    "name": "五条悟",
+    "originalWalk": "00_项目管理/归档/交付截图/gpt_t142_motion_batch2/sources/gojo_walk.png",
+    "characterIndex": "-1"
+  }
+]

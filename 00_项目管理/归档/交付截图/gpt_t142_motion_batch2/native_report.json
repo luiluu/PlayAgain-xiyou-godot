@@ -1,0 +1,210 @@
+[
+  {
+    "breath_y" : 1,
+    "cell" : [
+      64,
+      64
+    ],
+    "head_cut" : 36,
+    "head_x_shift" : 0,
+    "id" : "anon",
+    "source_bbox" : [
+      12,
+      7,
+      40,
+      57
+    ]
+  },
+  {
+    "breath_y" : 1,
+    "cell" : [
+      64,
+      64
+    ],
+    "head_cut" : 33,
+    "head_x_shift" : 0,
+    "id" : "kotori",
+    "source_bbox" : [
+      1,
+      1,
+      62,
+      63
+    ]
+  },
+  {
+    "breath_y" : 1,
+    "cell" : [
+      64,
+      64
+    ],
+    "head_cut" : 34,
+    "head_x_shift" : 0,
+    "id" : "yomi",
+    "source_bbox" : [
+      10,
+      4,
+      54,
+      60
+    ]
+  },
+  {
+    "breath_y" : 1,
+    "cell" : [
+      64,
+      64
+    ],
+    "head_cut" : 34,
+    "head_x_shift" : 0,
+    "id" : "toji",
+    "source_bbox" : [
+      10,
+      4,
+      41,
+      60
+    ]
+  },
+  {
+    "breath_y" : 1,
+    "cell" : [
+      64,
+      64
+    ],
+    "head_cut" : 32,
+    "head_x_shift" : 0,
+    "id" : "sukuna",
+    "source_bbox" : [
+      10,
+      3,
+      39,
+      58
+    ]
+  },
+  {
+    "breath_y" : 1,
+    "cell" : [
+      192,
+      176
+    ],
+    "head_cut" : 72,
+    "head_x_shift" : 0,
+    "id" : "garou",
+    "source_bbox" : [
+      37,
+      36,
+      102,
+      136
+    ]
+  },
+  {
+    "breath_y" : 1,
+    "cell" : [
+      64,
+      64
+    ],
+    "head_cut" : 33,
+    "head_x_shift" : 0,
+    "id" : "garou_human",
+    "source_bbox" : [
+      13,
+      2,
+      38,
+      62
+    ]
+  },
+  {
+    "breath_y" : 1,
+    "cell" : [
+      160,
+      160
+    ],
+    "head_cut" : 95,
+    "head_x_shift" : 0,
+    "id" : "guyu",
+    "source_bbox" : [
+      36,
+      45,
+      96,
+      99
+    ]
+  },
+  {
+    "breath_y" : 1,
+    "cell" : [
+      128,
+      128
+    ],
+    "head_cut" : 75,
+    "head_x_shift" : 0,
+    "id" : "tusu",
+    "source_bbox" : [
+      38,
+      39,
+      58,
+      72
+    ]
+  },
+  {
+    "breath_y" : 0,
+    "cell" : [
+      128,
+      128
+    ],
+    "head_cut" : 68,
+    "head_x_shift" : 0,
+    "id" : "tusu_bow",
+    "source_bbox" : [
+      47,
+      16,
+      37,
+      102
+    ]
+  },
+  {
+    "breath_y" : 1,
+    "cell" : [
+      128,
+      128
+    ],
+    "head_cut" : 78,
+    "head_x_shift" : 0,
+    "id" : "xuan",
+    "source_bbox" : [
+      39,
+      43,
+      53,
+      69
+    ]
+  },
+  {
+    "breath_y" : 1,
+    "cell" : [
+      192,
+      160
+    ],
+    "head_cut" : 110,
+    "head_x_shift" : 0,
+    "id" : "cat",
+    "source_bbox" : [
+      60,
+      77,
+      73,
+      66
+    ]
+  },
+  {
+    "breath_y" : 1,
+    "cell" : [
+      64,
+      64
+    ],
+    "head_cut" : 34,
+    "head_x_shift" : 0,
+    "id" : "gojo",
+    "source_bbox" : [
+      11,
+      4,
+      37,
+      59
+    ]
+  }
+]
