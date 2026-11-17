@@ -30,9 +30,9 @@ static var INK_TEXT := true
 static var _copper_seal_tex: Texture2D
 static var _seal_loaded := false
 static var _crop_cache := {}
-static var _diamond_tmpl: Array = []
-static var _diamond_hits: PackedByteArray = PackedByteArray()
-static var _diamond_built := false
+var _last_face_mode := ""
+var _last_ink_text := true
+var _last_backing_draws := 0
 
 
 func _build() -> void:
@@ -81,56 +81,6 @@ static func copper_seal_texture() -> Texture2D:
 	return _copper_seal_tex
 
 
-static func _ensure_diamond_template() -> void:
-	if _diamond_built:
-		return
-	_diamond_built = true
-	var imgs: Array[Image] = []
-	var seen_paths := {}
-	var names := XBossHpBar.boss_list().values()
-	var stride := maxi(1, names.size() / 16)
-	for idx in range(0, names.size(), stride):
-		var fn := str(names[idx]).strip_edges()
-		if fn == "":
-			continue
-		var p := XDB.img_path("bosshp", fn)
-		if p == "" or seen_paths.has(p):
-			continue
-		seen_paths[p] = true
-		var t := XBossHpBar._tex("bosshp", fn)
-		if t == null:
-			continue
-		var im := t.get_image()
-		if im == null or im.get_width() != 85 or im.get_height() != 85:
-			continue
-		if im.is_compressed():
-			im.decompress()
-		imgs.append(im)
-		if imgs.size() >= 9:
-			break
-	if imgs.size() < 3:
-		return
-	_diamond_tmpl.resize(85 * 85)
-	_diamond_hits.resize(85 * 85)
-	for y in 85:
-		for x in 85:
-			var best_c := Color(0, 0, 0, 0)
-			var best_h := 0
-			for i in imgs.size():
-				var ci := imgs[i].get_pixel(x, y)
-				var hits := 0
-				for j in imgs.size():
-					var cj := imgs[j].get_pixel(x, y)
-					if absf(ci.r - cj.r) + absf(ci.g - cj.g) + absf(ci.b - cj.b) + absf(ci.a - cj.a) < 0.04:
-						hits += 1
-				if hits > best_h:
-					best_h = hits
-					best_c = ci
-			var k := y * 85 + x
-			_diamond_tmpl[k] = best_c
-			_diamond_hits[k] = best_h
-
-
 static func _opaque_bbox(img: Image) -> Rect2i:
 	var w := img.get_width()
 	var h := img.get_height()
@@ -159,15 +109,39 @@ static func _center_cutout_texture(src: Image, bbox: Rect2i) -> Texture2D:
 	return ImageTexture.create_from_image(out)
 
 
-## 识别原版 MOG 85×85 菱形金框头像，剥去外框菱形金边与黄底，保留完整头型与发冠装进圆章（无框大图按不透明包围盒自适应）。
+## MOG 85×85 菱形头像统一的黄/金渐变底色（345 张全量拟合，纯底色最大 RGB 偏差 0.012）
+static func _diamond_bg_pred(x: int, y: int) -> Vector3:
+	var c0 := Vector3(192.0 / 255.0, 142.0 / 255.0, 23.0 / 255.0)
+	var c1 := Vector3(228.0 / 255.0, 206.0 / 255.0, 154.0 / 255.0)
+	var dv := c1 - c0
+	var fx := (float(x) - 42.0) / 42.0
+	var fy := (float(y) - 42.0) / 42.0
+	var t := clampf(0.343702 + 0.620474 * fx + 0.049286 * fy + 0.145368 * fx * fx + 0.035060 * fx * fy - 0.018461 * fy * fy, 0.0, 1.0)
+	return c0 + dv * t
+
+
+static func _is_diamond_frame_pixel(c: Color, x: int, y: int) -> bool:
+	var m := absi(x - 42) + absi(y - 42)
+	if m < 39:
+		return false
+	if c.a < 0.85:
+		return true
+	var h := c.h * 360.0
+	if m == 39:
+		return h >= 38.0 and h <= 48.0 and c.s <= 0.30 and c.v >= 0.70
+	return h >= 33.0 and h <= 51.0 and c.s >= 0.08 and c.v <= 0.945
+
+
+## 识别原版 MOG 85×85 菱形金框头像：结合理论渐变拟合与相邻像素平滑度从边缘漫水剥离外框与黄底，
+## 再清理封闭纯底空腔；若扣除比例或中心区域破坏超阈值，兜底退回「圆形裁内框、保留原底色」。
 static func face_crop(tex: Texture2D) -> Dictionary:
 	if tex == null:
-		return {"center": Vector2(0.5, 0.5), "uv_r": 0.5, "diamond": false, "tex": null}
+		return {"center": Vector2(0.5, 0.5), "uv_r": 0.5, "diamond": false, "fallback": false, "tex": null}
 	var key := tex.get_rid().get_id()
 	if _crop_cache.has(key):
 		return _crop_cache[key]
 	var sz := tex.get_size()
-	var res := {"center": Vector2(0.5, 0.5), "uv_r": 0.46, "diamond": false, "tex": tex}
+	var res := {"center": Vector2(0.5, 0.5), "uv_r": 0.46, "diamond": false, "fallback": false, "tex": tex}
 	var img := tex.get_image()
 	if img != null and sz.x >= 80.0 and sz.y >= 80.0:
 		if img.is_compressed():
@@ -176,63 +150,104 @@ static func face_crop(tex: Texture2D) -> Dictionary:
 		var h := img.get_height()
 		var corner_clear := img.get_pixel(2, 2).a < 0.1 and img.get_pixel(w - 3, 2).a < 0.1 and img.get_pixel(2, h - 3).a < 0.1 and img.get_pixel(w - 3, h - 3).a < 0.1
 		if corner_clear and w == 85 and h == 85:
-			_ensure_diamond_template()
-			if _diamond_tmpl.size() == 85 * 85:
-				var work := img.duplicate() as Image
-				if work.get_format() != Image.FORMAT_RGBA8:
-					work.convert(Image.FORMAT_RGBA8)
-				var bg := PackedByteArray()
-				bg.resize(85 * 85)
-				var q: Array[Vector2i] = []
-				for i in 85:
-					for pt: Vector2i in [Vector2i(i, 0), Vector2i(i, 84), Vector2i(0, i), Vector2i(84, i)]:
-						var idx: int = pt.y * 85 + pt.x
-						if bg[idx] == 0:
-							bg[idx] = 1
-							q.append(pt)
-				var head := 0
-				var req_hits := 3 if _diamond_hits.size() == 85 * 85 else 0
-				while head < q.size():
-					var p := q[head]
-					head += 1
-					for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-						var nx: int = p.x + d.x
-						var ny: int = p.y + d.y
-						if nx < 0 or nx >= 85 or ny < 0 or ny >= 85:
-							continue
-						var nidx: int = ny * 85 + nx
-						if bg[nidx] != 0:
-							continue
-						var c := work.get_pixel(nx, ny)
-						var t: Color = _diamond_tmpl[nidx]
-						var diff := absf(c.r - t.r) + absf(c.g - t.g) + absf(c.b - t.b) + absf(c.a - t.a)
-						if c.a < 0.1 or (int(_diamond_hits[nidx]) >= req_hits and diff < 0.12):
-							bg[nidx] = 1
-							q.append(Vector2i(nx, ny))
-				# 清掉边缘 1px 孤立碎屑与半透明金边残渣
-				for y in 85:
-					for x in 85:
-						var k := y * 85 + x
-						if bg[k] != 0:
-							work.set_pixel(x, y, Color(0, 0, 0, 0))
-						elif abs(x - 42) + abs(y - 42) > 31:
-							var nfg := 0
-							for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-								var xx: int = x + d.x
-								var yy: int = y + d.y
-								if xx >= 0 and xx < 85 and yy >= 0 and yy < 85 and bg[yy * 85 + xx] == 0:
-									nfg += 1
-							if nfg <= 1:
-								work.set_pixel(x, y, Color(0, 0, 0, 0))
-				var bbox := _opaque_bbox(work)
-				var clean_tex := _center_cutout_texture(work, bbox)
-				res = {"center": Vector2(0.5, 0.5), "uv_r": 0.49, "diamond": true, "tex": clean_tex}
+			var work := img.duplicate() as Image
+			if work.get_format() != Image.FORMAT_RGBA8:
+				work.convert(Image.FORMAT_RGBA8)
+			var bg := PackedByteArray()
+			bg.resize(85 * 85)
+			var q: Array[Vector2i] = []
+			for i in 85:
+				for pt: Vector2i in [Vector2i(i, 0), Vector2i(i, 84), Vector2i(0, i), Vector2i(84, i)]:
+					var idx: int = pt.y * 85 + pt.x
+					var c0 := work.get_pixel(pt.x, pt.y)
+					if bg[idx] == 0 and (c0.a < 0.12 or _is_diamond_frame_pixel(c0, pt.x, pt.y)):
+						bg[idx] = 1
+						q.append(pt)
+			var head := 0
+			while head < q.size():
+				var p := q[head]
+				head += 1
+				var pc := work.get_pixel(p.x, p.y)
+				var p_is_inner := pc.a >= 0.12 and absi(p.x - 42) + absi(p.y - 42) <= 38
+				for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+					var nx: int = p.x + d.x
+					var ny: int = p.y + d.y
+					if nx < 0 or nx >= 85 or ny < 0 or ny >= 85:
+						continue
+					var nidx: int = ny * 85 + nx
+					if bg[nidx] != 0:
+						continue
+					var nc := work.get_pixel(nx, ny)
+					var is_bg := false
+					if nc.a < 0.12 or _is_diamond_frame_pixel(nc, nx, ny):
+						is_bg = true
+					else:
+						var bdist := Vector3(nc.r, nc.g, nc.b).distance_to(_diamond_bg_pred(nx, ny))
+						if bdist <= 0.038:
+							if not p_is_inner or bdist <= 0.022 or Vector3(nc.r - pc.r, nc.g - pc.g, nc.b - pc.b).length() <= 0.045:
+								is_bg = true
+					if is_bg:
+						bg[nidx] = 1
+						q.append(Vector2i(nx, ny))
+			# 封闭纯黄底空腔（被头发/角/翅围住且与理论渐变一致 >= 14px 的区域）
+			var pocket_vis := PackedByteArray()
+			pocket_vis.resize(85 * 85)
+			for py in 85:
+				for px in 85:
+					var pidx := py * 85 + px
+					if bg[pidx] != 0 or pocket_vis[pidx] != 0 or absi(px - 42) + absi(py - 42) > 38:
+						continue
+					var pc0 := work.get_pixel(px, py)
+					if pc0.a < 0.12 or Vector3(pc0.r, pc0.g, pc0.b).distance_to(_diamond_bg_pred(px, py)) > 0.016:
+						continue
+					var comp: Array[Vector2i] = [Vector2i(px, py)]
+					pocket_vis[pidx] = 1
+					var ch := 0
+					while ch < comp.size():
+						var cp := comp[ch]
+						ch += 1
+						for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+							var cx: int = cp.x + d.x
+							var cy: int = cp.y + d.y
+							if cx < 0 or cx >= 85 or cy < 0 or cy >= 85 or absi(cx - 42) + absi(cy - 42) > 38:
+								continue
+							var cidx := cy * 85 + cx
+							if bg[cidx] != 0 or pocket_vis[cidx] != 0:
+								continue
+							var cc := work.get_pixel(cx, cy)
+							if cc.a >= 0.12 and Vector3(cc.r, cc.g, cc.b).distance_to(_diamond_bg_pred(cx, cy)) <= 0.024:
+								pocket_vis[cidx] = 1
+								comp.append(Vector2i(cx, cy))
+					if comp.size() >= 14:
+						for cp in comp:
+							bg[cp.y * 85 + cp.x] = 1
+			var cleared_in := 0
+			var rem_in := 0
+			var ctr_cleared := 0
+			for y in 85:
+				for x in 85:
+					var m := absi(x - 42) + absi(y - 42)
+					if bg[y * 85 + x] != 0:
+						work.set_pixel(x, y, Color(0, 0, 0, 0))
+						if m <= 38:
+							cleared_in += 1
+							if (x - 42) * (x - 42) + (y - 42) * (y - 42) <= 64:
+								ctr_cleared += 1
+					elif m <= 38 and work.get_pixel(x, y).a >= 0.12:
+						rem_in += 1
+			var bbox := _opaque_bbox(work)
+			var cleared_ratio := float(cleared_in) / 2965.0
+			var ctr_ratio := float(ctr_cleared) / 197.0
+			if cleared_ratio > 0.90 or rem_in < 200 or ctr_ratio > 0.72 or bbox.size.x < 16 or bbox.size.y < 16:
+				# 保留率兜底：退回「圆形裁内框、保留原底色」，宁可留黄底也不吃掉主体
+				res = {"center": Vector2(0.5, 0.5), "uv_r": 0.30, "diamond": false, "fallback": true, "tex": tex}
 			else:
-				res = {"center": Vector2(0.5, 0.5), "uv_r": 0.30, "diamond": true, "tex": tex}
+				var clean_tex := _center_cutout_texture(work, bbox)
+				res = {"center": Vector2(0.5, 0.5), "uv_r": 0.49, "diamond": true, "fallback": false, "tex": clean_tex}
 		elif corner_clear:
 			var bbox := _opaque_bbox(img)
 			var clean_tex := _center_cutout_texture(img, bbox)
-			res = {"center": Vector2(0.5, 0.5), "uv_r": 0.49, "diamond": false, "tex": clean_tex}
+			res = {"center": Vector2(0.5, 0.5), "uv_r": 0.49, "diamond": false, "fallback": false, "tex": clean_tex}
 	_crop_cache[key] = res
 	return res
 
@@ -351,6 +366,9 @@ func _draw_race_glyph(c: Vector2, s: float, race_id: int, al: float) -> void:
 func _draw() -> void:
 	if battler == null or layout_alpha <= 0:
 		return
+	_last_ink_text = INK_TEXT
+	_last_face_mode = ""
+	_last_backing_draws = 0
 	var al := layout_alpha / 255.0
 	var ar := arc_range()
 	var a_left := deg_to_rad(ar.y)
@@ -374,6 +392,7 @@ func _draw() -> void:
 			draw_arc(CENTER, RADIUS, b1, b0, maxi(pts / segs, 4), Color(HP_DEEP.lerp(HP_LIGHT, tt), al), THICK, true)
 	if _face_tex != null:
 		if CLEAN_FACE:
+			_last_face_mode = "clean_crop"
 			draw_ink_mist(self, FACE_C.x, FACE_C.y + 2.0, FACE_R + 18.0, FACE_R + 18.0, 0.45 * al)
 			draw_circle(FACE_C, FACE_R + 1.5, Color(0.06, 0.045, 0.04, 0.92 * al))
 			var crop := face_crop(_face_tex)
@@ -383,10 +402,12 @@ func _draw() -> void:
 			draw_arc(FACE_C, FACE_R, 0.0, TAU, 56, Color(XUiSkin.GOLD, 0.88 * al), 1.4, true)
 			draw_arc(FACE_C, FACE_R - 2.4, 0.0, TAU, 56, Color(XUiSkin.GOLD_LIGHT, 0.24 * al), 0.7, true)
 		else:
+			_last_face_mode = "t096_round"
 			draw_circle(FACE_C, FACE_R + 2.0, Color(0, 0, 0, 0.6 * al))
 			XSkinPartyStrip.draw_round_texture(self, _face_tex, FACE_C, FACE_R)
 			draw_arc(FACE_C, FACE_R, 0.0, TAU, 48, Color(XUiSkin.GOLD, 0.7 * al), 1.5, true)
 	elif CLEAN_FACE:
+		_last_face_mode = "copper_seal"
 		var seal := copper_seal_texture()
 		if seal != null:
 			draw_ink_mist(self, FACE_C.x, FACE_C.y + 3.0, SEAL_SIZE * 0.72, SEAL_SIZE * 0.72, 0.55 * al)
@@ -405,6 +426,7 @@ func _draw() -> void:
 	if INK_TEXT:
 		draw_ink_mist(self, CENTER.x, NAME_Y + 17.0, nw * 0.5 + 34.0, 24.0, 0.52 * al)
 	elif XSkin4A.text_on():  # 新界面 4A（A5）：首领名垫深色胶囊底
+		_last_backing_draws += 1
 		XSkin4A.draw_text_backing(self, CENTER.x - nw / 2.0, NAME_Y + 27, nw, 27, al)
 	draw_string_outline(title, Vector2(CENTER.x - nw / 2.0, NAME_Y + 27), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, 5 if INK_TEXT else 4, shadow)
 	XUiSkin.ds(self, title, Vector2(CENTER.x - nw / 2.0, NAME_Y + 27), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, Color(name_color(), al))
@@ -418,6 +440,7 @@ func _draw() -> void:
 	if INK_TEXT:
 		draw_ink_mist(self, CENTER.x, NUM_Y + 18.0, (cw + mw) * 0.5 + 32.0, 24.0, 0.48 * al)
 	elif XSkin4A.text_on():  # 新界面 4A（A5）：血量数字垫深色胶囊底
+		_last_backing_draws += 1
 		XSkin4A.draw_text_backing(self, x0, NUM_Y + 30, cw + mw, 30, al)
 	draw_string_outline(num, Vector2(x0, NUM_Y + 30), cur, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, 5 if INK_TEXT else 4, shadow)
 	XUiSkin.ds(self, num, Vector2(x0, NUM_Y + 30), cur, HORIZONTAL_ALIGNMENT_LEFT, -1, 34, Color(XUiSkin.HP_TEXT, al))

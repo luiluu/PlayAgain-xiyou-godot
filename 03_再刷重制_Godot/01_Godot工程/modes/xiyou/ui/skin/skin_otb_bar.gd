@@ -80,9 +80,11 @@ func _slot_x(row: String, index: int, _n: int) -> float:
 
 
 static var SMOKE_RAIL := true
+var _last_smoke_rail_drawn := true
 
 
 func _draw() -> void:
+	_last_smoke_rail_drawn = SMOKE_RAIL
 	if SMOKE_RAIL:
 		_draw_smoke_rail()
 	if sep_node != null:

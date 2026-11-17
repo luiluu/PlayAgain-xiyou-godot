@@ -36,6 +36,10 @@ const STAR_OFFSET_B := 44.0
 const STAR_R_B := 5.4
 const SEAL_R_B := 9.2
 const CROSS_IN_TIME := 0.34
+static var SEL_MORPH_B := true
+const STAR_PINCH_B := 0.45
+const SQUARE_PINCH_B := 0.70710678
+const SEL_MORPH_PERIOD := 1.6
 
 var title := ""
 var radius := 124.0
@@ -48,12 +52,13 @@ var _drawn_active := true
 const SEL_PEAK := 1.2
 const OLD_SEL_PEAK := 1.08
 var sel_scale: XSkinSelScale
-## T096 动效：铺开计时（秒，≥ intro_total() 算铺完）、失活淡出（0～1）、新选中那颗的闪光（秒）
+## T096 动效：铺开计时（秒，≥ intro_total() 算铺完）、失活淡出（0～1）、新选中那颗的闪光（秒）、选中标记星/方循环计时
 var intro_elapsed := 999.0
 var vis := 1.0
 var _flash_i := -1
 var _flash_t := 999.0
 var _last_index := -1
+var _sel_morph_t := 0.0
 const FLASH_TIME := 0.25
 
 
@@ -111,7 +116,7 @@ func _layout_ring() -> void:
 	for i in n:
 		var p := orb_offset(i)
 		if BOWSTRING_B:
-			box = box.merge(Rect2(p - Vector2(STAR_OFFSET_B + 22.0, 22.0), Vector2(STAR_OFFSET_B + 78.0, 44.0)))
+			box = box.merge(Rect2(p - Vector2(STAR_OFFSET_B + 22.0, 24.0), Vector2(STAR_OFFSET_B + 78.0, 48.0)))
 		else:
 			box = box.merge(Rect2(p - Vector2(orb_r + 10, orb_r + 10), Vector2(orb_r + 10, orb_r + 10) * 2))
 	if title != "":
@@ -192,17 +197,52 @@ func _paint(_c: XMVCanvas) -> void:
 	pass
 
 
+func hit_rect_b(i: int) -> Rect2:
+	var lp := orb_pos(i)
+	var top := lp.y - 24.0
+	var bot := lp.y + 24.0
+	if i > 0:
+		top = maxf(top, (orb_pos(i - 1).y + lp.y) * 0.5)
+	if i < entries.size() - 1:
+		bot = minf(bot, (lp.y + orb_pos(i + 1).y) * 0.5)
+	return Rect2(Vector2(lp.x - (STAR_OFFSET_B + 22.0), top), Vector2(STAR_OFFSET_B + 78.0, maxf(bot - top, 32.0)))
+
+
 func _hit(p: Vector2) -> int:
 	var local := p - position
 	for i in entries.size():
 		if BOWSTRING_B:
-			var lp := orb_pos(i)
-			var box := Rect2(lp - Vector2(STAR_OFFSET_B + 16.0, 15.0), Vector2(STAR_OFFSET_B + 64.0, 30.0))
-			if box.has_point(local):
+			if hit_rect_b(i).has_point(local):
 				return i
 		elif local.distance_to(orb_pos(i)) <= orb_r + 2.0:
 			return i
 	return -1
+
+
+func sel_morph_active() -> bool:
+	return BOWSTRING_B and SEL_MORPH_B and XSkinBattleMotion.on() and XUiSkin.breathing() and active and intro_elapsed >= intro_total()
+
+
+static func sel_morph_values(t: float) -> Vector2:
+	var u := fposmod(t, SEL_MORPH_PERIOD) / SEL_MORPH_PERIOD
+	if u < 0.18:
+		return Vector2(0.0, 0.0)
+	if u < 0.50:
+		var s := (u - 0.18) / 0.32
+		var e := s * s * (3.0 - 2.0 * s)
+		return Vector2(e, e * PI * 0.5)
+	if u < 0.68:
+		return Vector2(1.0, PI * 0.5)
+	var s := (u - 0.68) / 0.32
+	var e := s * s * (3.0 - 2.0 * s)
+	return Vector2(1.0 - e, PI * 0.5 + e * PI * 0.5)
+
+
+func sel_morph_factor(t := -1.0) -> float:
+	if not sel_morph_active():
+		return 0.0
+	var tt := _sel_morph_t if t < 0.0 else t
+	return sel_morph_values(tt).x
 
 
 func _process(delta: float) -> void:
@@ -222,11 +262,18 @@ func _process(delta: float) -> void:
 		queue_redraw()
 	if index != _last_index:
 		_last_index = index
+		_sel_morph_t = 0.0
 		if moving and active and index >= 0:
 			_flash_i = index
 			_flash_t = 0.0
 	if _flash_t < FLASH_TIME:
 		_flash_t += delta
+		queue_redraw()
+	if sel_morph_active():
+		_sel_morph_t = fposmod(_sel_morph_t + delta, SEL_MORPH_PERIOD)
+		queue_redraw()
+	elif _sel_morph_t != 0.0 and not (moving and XUiSkin.breathing()):
+		_sel_morph_t = 0.0
 		queue_redraw()
 
 
@@ -356,7 +403,9 @@ func _draw_diamond_star(c: Vector2, r: float, pinch: float, rot: float, fill: Co
 	closed.append(outer[0])
 	draw_polyline(closed, rim, rim_w, true)
 	if inner_c.a > 0.01:
-		draw_colored_polygon(_diamond_star_pts(c, r * 0.44, minf(pinch + 0.12, 0.7), rot), inner_c)
+		var m := clampf((pinch - STAR_PINCH_B) / maxf(SQUARE_PINCH_B - STAR_PINCH_B, 0.001), 0.0, 1.0)
+		var inner_pinch := lerpf(minf(pinch + 0.12, SQUARE_PINCH_B), SQUARE_PINCH_B, m)
+		draw_colored_polygon(_diamond_star_pts(c, r * 0.44, inner_pinch, rot), inner_c)
 
 
 func _draw_bow_item(i: int, font: Font) -> void:
@@ -373,9 +422,9 @@ func _draw_bow_item(i: int, font: Font) -> void:
 	var sc := star_pos(i)
 	var lp := orb_pos(i) + Vector2(-8.0 * sf, 0.0)
 
-	# 菱形星放大＋打开时「旋转收成十字形再展开」动效（受界面动效设置管）
+	# 菱形星放大＋打开时「旋转收成十字形再展开」动效（受界面动效设置管）；铺完后选中项在菱形星↔菱形方块循环
 	var rot := 0.0
-	var pinch := 0.52
+	var pinch := STAR_PINCH_B if sel else 0.52
 	var star_mult := 1.0
 	var label_t := t
 	if CROSS_INTRO_B and t < 1.0:
@@ -393,6 +442,10 @@ func _draw_bow_item(i: int, font: Font) -> void:
 			star_mult = lerpf(1.05, 1.0, clampf(bp, 0.0, 1.15))
 		label_t = clampf((t - 0.35) / 0.65, 0.0, 1.0)
 		lp.x -= (1.0 - XSkinBattleMotion.ease_out(label_t)) * 10.0
+	elif sel and sel_morph_active():
+		var mv := sel_morph_values(_sel_morph_t)
+		pinch = lerpf(STAR_PINCH_B, SQUARE_PINCH_B, mv.x)
+		rot = mv.y
 
 	var text_alpha := en_alpha * XSkinBattleMotion.ease_out(label_t)
 	var g := XUiSkin.glow_texture()

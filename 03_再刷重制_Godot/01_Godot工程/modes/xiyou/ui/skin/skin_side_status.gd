@@ -173,6 +173,7 @@ static func _pill(ci: RID, r: Rect2, col: Color) -> void:
 ## 整块队伍条的面板底（行在它上面）：默认左 66%→右 46% 暖炭半透烟纱（SMOKE_BACK=false 回到 T096 实心黑面板）
 class Back extends Control:
 	static var SMOKE_BACK := true
+	var _last_smoke_drawn := true
 	var count := 4:
 		set(v):
 			count = v
@@ -189,6 +190,7 @@ class Back extends Control:
 	func _draw() -> void:
 		if count <= 0:
 			return
+		_last_smoke_drawn = SMOKE_BACK
 		if not SMOKE_BACK:
 			XUiSkin.draw_panel(get_canvas_item(), Rect2(Vector2.ZERO, size))
 			for i in range(1, count):
