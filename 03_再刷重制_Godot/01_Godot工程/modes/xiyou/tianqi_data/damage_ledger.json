@@ -991,52 +991,52 @@
   "derived_module": [
    {
     "id": "module.toji.armory",
-    "per_turn": null,
-    "ratio": null,
-    "enforced": false,
-    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+    "per_turn": 1,
+    "ratio": 0.46,
+    "enforced": true,
+    "note": "T130：夹具 12 回合（troop 77 四敌、99 级、进阶满）：每回合最多 1 次，每次是触发它那招主伤害的 0.43～0.46；每回合合计最高 0.46 ≤1.0，原样登记、强制执行"
    },
    {
     "id": "module.garou.follow",
-    "per_turn": null,
-    "ratio": null,
-    "enforced": false,
-    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+    "per_turn": 4,
+    "ratio": 0.18,
+    "enforced": true,
+    "note": "T130：追击（解析满 3 层）＋反击（30%）共一行：每回合最多 4 次，每次平均 0.18（最高 0.42），每回合合计最高 0.82 ≤1.0，原样登记、强制执行"
    },
    {
     "id": "module.xuan.follow_up",
     "per_turn": null,
     "ratio": null,
     "enforced": false,
-    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+    "note": "T130：夹具触发 2 次但量不准（棱光的『原招』是宿主那一下，不是璇自己的行动；璇本人主伤害为 0），没登记，报协调（T012-c 前补量法）"
    },
    {
     "id": "module.jingliu.segment",
     "per_turn": null,
     "ratio": null,
     "enforced": false,
-    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+    "note": "T130：夹具：每回合最多 1 次，但每次是原招的 1.3～1.9 倍（10190 其余敌人各追 3.0、10192 全体各追 2.0），每回合合计 >1.0，按稿不自己改，报协调"
    },
    {
     "id": "module.yunshang.derived",
-    "per_turn": null,
-    "ratio": null,
-    "enforced": false,
-    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+    "per_turn": 30,
+    "ratio": 0.02,
+    "enforced": true,
+    "note": "T130：符针、赊账、山河、守势反击都走 XYunshang.derived，每根针一次：每回合最多 30 次，每次平均 0.02（最高 0.05），每回合合计最高 0.54 ≤1.0，原样登记、强制执行"
    },
    {
     "id": "module.liuying.segment",
     "per_turn": null,
     "ratio": null,
     "enforced": false,
-    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+    "note": "T130：天火轰击每段各扩一次：夹具每回合最多 12 次、每次平均 0.10，每回合合计实测最高 0.90；但按代码上界（其余敌人各吃 30%×2 次出手）四个敌人时到 1.8，次数×比例 1.2 >1.0，报协调，不强制"
    },
    {
     "id": "module.tusu.segments",
     "per_turn": null,
     "ratio": null,
     "enforced": false,
-    "note": "留空，等 T012-b 的运行期夹具量了再填（每回合合计系数不超过 1.0 的登记并改强制执行；超过的报协调）"
+    "note": "T130：夹具没打出来（分段技能是持武者用的武装技，夹具没摆出化武）；按代码：分段合计 ×1.2（多 0.2），每回合最多 2 次出手 → 0.4。没量到，按稿不登记，报协调"
    }
   ],
   "nine_crit_dmg_cap": 0.3,
@@ -1052,6 +1052,160 @@
    ],
    "status": "pending_t073",
    "note": "状态照 T073（烙印稿）；九线不让（D141 丙），多出来的全由 K 收。K「天启注视」和它联动（基础数值重构 v0.4 第三节第 10 条，D139、D140、D146）：K 那一格按角色取乘数（XTianqiBase.k_actor_mult，现在恒 1），T073-b 把烙印接进来；面板只写「天启注视　伤害 ×K」和说明句「全员常驻、无法解除；烙印越深，受此注视的压制越轻。」，不出现烙印的数。烙印、换伤支（T073-a）：伤害基准 ＝ K ×（1 ＋ 配满加成 × 烙印 ÷ 100）×（1 ＋ 3% × 选了几条换伤支），数在 brand.json。曲线、中位、存档字段都归 T073，这里只登记一行（T081 没接烙印新规则）"
-  }
+  },
+  "module_whitelist": [],
+  "module_review": [
+   {
+    "module": "module.raven",
+    "field": "elementAdd",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（渡鸦：卡＋XRaven 天启分支（灵魂暴击 +20%、开局残响），收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.raven",
+    "field": "finalAdd",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（渡鸦：raven.gd 天启篇注明「暴伤池、终伤池去掉（预算在卡里）」，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.raven",
+    "field": "finalMultiplier",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（渡鸦，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.raven",
+    "field": "settlementMultiplier",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（渡鸦：残响 3 层追加 50% 改写在天启分支，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.number_boost",
+    "field": "criticalAdd",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（数字强化（米拉技能 10140～10151）：XMira.tq_ops，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.number_boost",
+    "field": "finalMultiplier",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（数字强化：XMira.tq_ops，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.number_boost",
+    "field": "settlementMultiplier",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（数字强化，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.sukuna",
+    "field": "settlementMultiplier",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（宿傩第三阶段 ×1.5：XSukuna.tq_ops，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.yomi_jingliu",
+    "field": "criticalAdd",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（黄泉 10183 暴伤 +666%：XYomiJingliu.tq_ops，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.yomi_jingliu",
+    "field": "elementAdd",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（黄泉 10180、镜流：XYomiJingliu.tq_ops，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.yomi_jingliu",
+    "field": "normalAdd",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（黄泉 10179、镜流 0.25：XYomiJingliu.tq_ops／_j_tq_mult，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.yomi_jingliu",
+    "field": "skillMultiplier",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（黄泉 16.55／赤雨双缨 1.77、镜流补段：XYomiJingliu.tq_ops（赤雨双缨 +20%、补段按卡系数折），收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.tusu",
+    "field": "finalMultiplier",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（屠苏锁定 +10%、和鸣 +20%：XTusu.tq_ops；五兵淬纹并进进阶 +5%／次。按持武者行动次数分摊（2÷行动次数）是原版机制，卡开着 >1 被拦、<1 照乘，不对称，另报协调，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.liuying",
+    "field": "elementAdd",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（流萤紫弦火物 +200%：卡「增伤并进预算 +30%」，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.liuying",
+    "field": "finalAdd",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（流萤坠落／长夜终伤、萤火印记全队终伤：XLiuying.tq_ops（印记只对流萤 +3%/层），收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.liuying",
+    "field": "skillMultiplier",
+    "keep": false,
+    "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（流萤天火 +400%、萨姆法宝 ×4、只有一个目标 ×1.2／×1.5：XLiuying.tq_ops，收口之后、卡预算内），不留"
+   },
+   {
+    "module": "module.mira",
+    "field": "*",
+    "keep": false,
+    "reason": "夹具（T130）卡开着三种情形都没打出增伤乘、增伤加：米拉：只有伤害方式、承伤"
+   },
+   {
+    "module": "module.toji",
+    "field": "*",
+    "keep": false,
+    "reason": "夹具（T130）卡开着三种情形都没打出增伤乘、增伤加：甚尔：卡开着时 damage_ops 自己去掉倍率乘区（toji.gd 天启分支），夹具只见溅射 ×0.2～0.5（<1，不是增伤）"
+   },
+   {
+    "module": "module.toji_incoming",
+    "field": "*",
+    "keep": false,
+    "reason": "夹具（T130）卡开着三种情形都没打出增伤乘、增伤加：甚尔承伤（靶）"
+   },
+   {
+    "module": "module.garou",
+    "field": "*",
+    "keep": false,
+    "reason": "夹具（T130）卡开着三种情形都没打出增伤乘、增伤加：饿狼：卡开着时不出增伤（XGarou.tq_ops 接管）"
+   },
+   {
+    "module": "module.yunshang",
+    "field": "*",
+    "keep": false,
+    "reason": "夹具（T130）卡开着三种情形都没打出增伤乘、增伤加：云裳：卡开着只见派生 ×0.3（<1）"
+   },
+   {
+    "module": "module.xuan_cast",
+    "field": "*",
+    "keep": false,
+    "reason": "夹具（T130）卡开着三种情形都没打出增伤乘、增伤加：璇分段乘 1÷段数，不是增伤（台账 xuan_cast 永久允许那一类）"
+   },
+   {
+    "module": "module.xuan_incoming",
+    "field": "*",
+    "keep": false,
+    "reason": "夹具（T130）卡开着三种情形都没打出增伤乘、增伤加：璇承伤"
+   },
+   {
+    "module": "module.xuan_damage",
+    "field": "*",
+    "keep": false,
+    "reason": "夹具（T130）卡开着三种情形都没打出增伤乘、增伤加：璇：卡开着不出增伤（XXuanBattle.tq_ops）"
+   },
+   {
+    "module": "module.black_flash",
+    "field": "criticalAdd",
+    "keep": false,
+    "reason": "原版黑闪暴伤 +100%～+160%（INCREMENT），不留。缺口：技能重构 v0.2 定的天启篇黑闪（甚尔爆伤 +30%、宿傩下一次斩击 +20%／领域中 +30%）卡里和 XTianqiModules 都没有落地，卡开着时黑闪的暴伤加成整份被拦；放白名单会放回原版数，所以不放，报协调另开单在 XBlackFlash 加天启分支（经 XTianqiModules，收口之后）"
+   }
+  ],
+  "module_review_note": "T130 白名单初审（基础数值重构 v0.4 第七节第 3 条、第十节 T012-b 第 6 条）：夹具 xiyou_tianqi_phase4_modules 在总开关开着时把 15 个钩子『普攻、没改写、改写、派生』打出的增伤逐条列出（P4MOD_BOOST），每个（钩子, 字段）一条结论。初审结果：一条不留——都是原版数，天启篇版本已按技能重构 v0.2 写在卡或 XTianqiModules（收口之后）。module_whitelist（期四新键，总开关开着时 XTianqiLedger.whitelisted 另读它）因此为空；T012-d 定稿。"
  }
 }

@@ -352,10 +352,15 @@ static func audit_confirm(holder, rows: Array, ctx: Dictionary) -> Array:
 
 # ---- MODULE_CAP 白名单 ----
 ## 卡开着时模块的增伤默认拦；白名单 [{module, skill, field}] 才放（skill 0＝该模块全部技能）
+## 期四（T130）：总开关 XTianqiBase.PHASE4 开着时另读 phase4.module_whitelist（白名单初审的结果，暗装在新小节里；关着只读旧键、期初为空）
 static func whitelisted(module: String, skill: int, field: String) -> bool:
-	for w in data().get("module_whitelist", []):
-		if str(w.get("module", "")) == module and str(w.get("field", "")) == field and (int(w.get("skill", 0)) == 0 or int(w.get("skill", 0)) == skill):
-			return true
+	var lists: Array = [data().get("module_whitelist", [])]
+	if XTianqiBase.on():
+		lists.append(XTianqiBase.ledger_phase4().get("module_whitelist", []))
+	for l in lists:
+		for w in l:
+			if str(w.get("module", "")) == module and str(w.get("field", "")) == field and (int(w.get("skill", 0)) == 0 or int(w.get("skill", 0)) == skill):
+				return true
 	return false
 
 
@@ -610,6 +615,54 @@ static func take_derived(logic, u, source: String) -> bool:
 	return true
 
 
+## 专属模块派生 7 行（damage_ledger.json phase4.derived_module，T130 夹具量的数）：派生打出去之前问一次。
+## 总开关关着、西游档、不归预算管的恒真（不记数，原来的行为逐字节不变）；开着时只认 enforced 为真、per_turn 是数的行，每回合到上限返回假（调用方就不打这一次）。
+## 一次派生＝一次触发（扩散到几个敌人也算一次），和七印的 take_derived 共用预算里的 derived 计数。
+## TRACE（专项用，游戏里恒 null）：非 null 时每次触发记 {turn, actor, source, ok, hp0}，derived_close 补 hp1（敌方合计生命，量「是原招的几成」）。
+static var TRACE = null
+
+
+static func take_module_derived(logic, u, source: String) -> bool:
+	var ok := true
+	if XTianqiBase.on() and budget_on(logic, u):
+		var row: Dictionary = module_derived_row(source)
+		if bool(row.get("enforced", false)) and (row.get("per_turn") is int or row.get("per_turn") is float):
+			var b := _budget(logic)
+			var key := "%d|%s" % [int(u.actor_id), source]
+			var n := int(b.derived.get(key, 0))
+			ok = n < int(row.per_turn)
+			if ok:
+				b.derived[key] = n + 1
+	if TRACE is Array and logic != null:
+		var hp := _foe_hp(logic)
+		TRACE.append({"turn": int(logic.turn), "actor": int(u.actor_id) if u is XActor else 0, "source": source, "ok": ok, "hp0": hp, "hp1": -1.0 if ok else hp})
+	return ok
+
+
+## 派生结算完（专项量伤害用）：给最近一条没收尾的记录补 hp1
+static func derived_close(logic) -> void:
+	if not TRACE is Array or logic == null:
+		return
+	for i in range((TRACE as Array).size() - 1, -1, -1):
+		if float(TRACE[i].hp1) < 0.0:
+			TRACE[i].hp1 = _foe_hp(logic)
+			return
+
+
+static func _foe_hp(logic) -> float:
+	var v := 0.0
+	for e in logic.enemies:
+		v += float(e.hp)
+	return v
+
+
+static func module_derived_row(source: String) -> Dictionary:
+	for r in XTianqiBase.ledger_phase4().get("derived_module", []):
+		if r is Dictionary and str(r.get("id", "")) == source:
+			return r
+	return {}
+
+
 static func derived_row(source: String) -> Dictionary:
 	for r in data().get("derived", []):
 		if str(r.get("id", "")) == source:
@@ -655,7 +708,14 @@ static func nine_off_skill(a, sk: Dictionary) -> bool:
 static func nine_kept_traits(a, code: int) -> Array:
 	var out := []
 	for o in a.trait_objects():
-		if not o is Dictionary or nine_off_source(a, o):
+		if not o is Dictionary:
+			continue
+		if nine_off_source(a, o):
+			# 卡改写的专属装备（skill_rework.gear 的 traits_set）：卡定的那几条照算，其余照停（T130）
+			var kept := XTianqiSkills.gear_set_traits(o).filter(func(e): return int(e.get("code", -1)) == code)
+			for t in o.get("traits", []):
+				if int(t.code) == code and not t.has("_codexOrb") and kept.any(func(e): return int(e.get("dataId", -1)) == int(t.get("dataId", -1))):
+					out.append(t)
 			continue
 		for t in o.get("traits", []):
 			if int(t.code) == code and not t.has("_codexOrb"):

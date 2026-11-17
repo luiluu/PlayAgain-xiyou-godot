@@ -719,8 +719,9 @@ static func finish(logic, u, skill) -> Array:
 			if not row.hit:
 				continue
 			hit = true
-			if p.followup and int(row.analysis) == 3:
+			if p.followup and int(row.analysis) == 3 and XTianqiLedger.take_module_derived(logic, u, "module.garou.follow"):  # 期四（T130）；关着恒真
 				logs.append_array(trigger(logic, u, row.target, TRIGGERED, "followup", int(f.evolution)))
+				XTianqiLedger.derived_close(logic)
 			add_analysis(u, row.target)
 		if hit and p.evolution:
 			evolution = mini(evolution_cap(), evolution + 1)
@@ -737,8 +738,10 @@ static func finish(logic, u, skill) -> Array:
 					evolution = mini(evolution_cap(), evolution + 1)
 					received = true
 				add_analysis(b, u)
-			if b.is_alive() and p.counter and logic._float("garou_counter") < (0.3 if _tq() else COUNTER_RATE):  # 天启篇：30%
+			if b.is_alive() and p.counter and logic._float("garou_counter") < (0.3 if _tq() else COUNTER_RATE) \
+					and XTianqiLedger.take_module_derived(logic, b, "module.garou.follow"):  # 天启篇：30%；期四（T130）追击、反击共一行，关着恒真
 				logs.append_array(trigger(logic, b, u, WATER, "counter"))
+				XTianqiLedger.derived_close(logic)
 	if own(u) and int(skill.id) == SERIOUS:
 		saitama = false
 	return logs

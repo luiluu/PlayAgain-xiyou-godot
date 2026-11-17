@@ -608,19 +608,24 @@ static func j_finish(logic, u, skill) -> Array:
 	var key = u.get_instance_id()
 	var extra := false
 	if id == 10188 and bool(_j_frame.get("had_frost", false)):
-		if not _tq():  # 天启篇：有霜痕时本招 +20%，不再多引爆一段
+		if not _tq() and XTianqiLedger.take_module_derived(logic, u, "module.jingliu.segment"):  # 天启篇：有霜痕时本招 +20%，不再多引爆一段；期四（T130）关着恒真
 			logs.append_array(_supplemental(logic, u, skill, main, _advanced_row(u, 10188)))
+			XTianqiLedger.derived_close(logic)
 		logic._state_remove(main, J_FROST)
 	if id == 10190 and bool(_j_frame.get("had_gap", false)):
 		var row := _advanced_row(u, 10190)
-		for e in logic.enemies.filter(func(x): return x.is_alive()):
-			if not is_same(e, main):
-				logs.append_array(_supplemental(logic, u, skill, e, row))
+		if XTianqiLedger.take_module_derived(logic, u, "module.jingliu.segment"):  # 期四（T130）一次触发记一次；关着恒真
+			for e in logic.enemies.filter(func(x): return x.is_alive()):
+				if not is_same(e, main):
+					logs.append_array(_supplemental(logic, u, skill, e, row))
+			XTianqiLedger.derived_close(logic)
 		logic._state_remove(main, J_GAP)
 	if id == 10192:
 		var row := _advanced_row(u, 10192)
-		for e in logic.enemies.filter(func(x): return x.is_alive()):
-			logs.append_array(_supplemental(logic, u, skill, e, row))
+		if XTianqiLedger.take_module_derived(logic, u, "module.jingliu.segment"):
+			for e in logic.enemies.filter(func(x): return x.is_alive()):
+				logs.append_array(_supplemental(logic, u, skill, e, row))
+			XTianqiLedger.derived_close(logic)
 		if main.state_ids.has(J_GAP):
 			logic._state_remove(main, J_GAP)
 	if hit and id == 10187:
