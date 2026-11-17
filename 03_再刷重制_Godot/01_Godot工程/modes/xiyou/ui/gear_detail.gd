@@ -123,16 +123,19 @@ func content_rows() -> Array:
 ## v0.41 rows41 的 mode 2（v0.43 去掉末行「说明较长时，在右侧上下滑动查看。」）
 static func socket_rows(e: Dictionary) -> Array:
 	var out := [[XGearSearch.star_name(e), ROW_SIZE, STAR_COLOR, false, 0]]
+	out.append_array(XTianqiGemPower.socket_head(e, ROW_SIZE))  # T164 宝石发挥度（期四开着才有）
 	var slots: Array = e.get("augmentSlots", [])
 	out.append(["宝珠插槽：%d个" % slots.size(), ROW_SIZE, "#ffffff", false, 0])
 	for n in slots.size():
 		var gem := XOrbs.gem_in_slot(e, n)
 		out.append(["%d．%s：%s" % [n + 1, str(slots[n]), str(gem.get("name", "")) if not gem.is_empty() else "空槽"], ROW_SIZE, "#ffffff", false, 0])
+		out.append_array(XTianqiGemPower.orb_slot_lines(e, n, ROW_SIZE))
 	out.append(["符文镶嵌：剩余 %d 孔" % maxi(0, int(e.get("upgradeSlots", 0))), ROW_SIZE, "#ffffff", false, 0])
 	var history: Array = e.get("upgrades", [])
 	for n in history.size():
 		var mat := XDB.rec("Items", int(history[n].get("item", 0)))
 		out.append(["%d．\\i[%d]%s" % [n + 1, int(mat.get("iconIndex", 0)), str(history[n].get("name", mat.get("name", "")))], ROW_SIZE, "#ffffff", false, 0])
+		out.append_array(XTianqiGemPower.upgrade_lines(e, n, ROW_SIZE))
 	if history.is_empty():
 		out.append(["尚无符文镶嵌记录。", ROW_SIZE, "#ffffff", false, 0])
 	out.append(["镶嵌操作可在物品菜单选择这件装备。", ROW_SIZE, NOTE_COLOR, false, 0])

@@ -634,6 +634,65 @@ static func upgrade_fixed(item: Dictionary, cur: Array) -> Dictionary:
 	return {"fixed": out, "random": rnd}
 
 
+## ---- T164 宝石发挥度（D186）：只读取值，不改上面任何算式 ----
+## 这件装备上宝石类固定值的「基础值」八项（镶嵌固定值＋符文之语＋宝珠固定加减，不含词缀、随机镶嵌、吸取），
+## 正是 _compute 里乘换算比的那三项；实际值＝换算比×基础值。不读表（关着、不适用）返回八个 0
+static func gem_base(item) -> Array:
+	var out := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	if not XTianqiBase.PHASE4 or not applies(item):
+		return out
+	var src: Dictionary = item
+	if item.has(XAffixAbsorb.VIEW_FLAG):
+		var raw = XAffixAbsorb.real(item)
+		if raw is Dictionary and not is_same(raw, item):
+			src = raw
+	var orb := orb_fixed(src)
+	var qiyin := _qiyin_mult(src) != 0.0
+	var b := {} if qiyin else XGear.template(_kind(src), int(src.get("base", src.get("id", 0))))
+	if qiyin or b.is_empty():
+		return orb
+	var t := XGear.affix_template(src, b)
+	var tp: Array = t.get("params", b.get("params", [])) if not t.is_empty() else b.get("params", src.get("params", []))
+	var up := upgrade_fixed(src, tp)
+	var rw := runeword_params(src)
+	for i in 8:
+		out[i] = float(up.fixed[i]) + float(orb[i]) + (float(rw[i]) if rw.size() >= 8 else 0.0)
+	return out
+
+
+## 一组 <Augment Attach> 行（某类型下）的固定加减八项（同 orb_fixed 的认法；镶嵌预览用，宝珠还没镶进去）
+static func orb_lines_fixed(lines: Array) -> Array:
+	var out := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	if _orb_res.is_empty():
+		for n in XRaceBattle.BODY_NAMES:
+			_orb_res.append(RegEx.create_from_string("(?i)^" + n + "\\s*:\\s*([+-]\\d+)$"))
+	for line in lines:
+		for p in 8:
+			var m: RegExMatch = _orb_res[p].search(str(line).strip_edges())
+			if m:
+				out[p] += float(m.get_string(1))
+	return out
+
+
+## 某一个宝珠孔的固定加减（同 orb_fixed 的认法，只算这一孔）
+static func orb_slot_fixed(eq: Dictionary, slot: int) -> Array:
+	var out := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	var slots: Array = eq.get("augmentSlots", [])
+	var gem := XOrbs.gem_in_slot(eq, slot)
+	var type := str(slots[slot] if slot >= 0 and slot < slots.size() else "").to_upper().strip_edges()
+	if gem.is_empty() or type == "":
+		return out
+	if _orb_res.is_empty():
+		for n in XRaceBattle.BODY_NAMES:
+			_orb_res.append(RegEx.create_from_string("(?i)^" + n + "\\s*:\\s*([+-]\\d+)$"))
+	for line in XOrbs.parse(gem).attach.get(type, []):
+		for p in 8:
+			var m: RegExMatch = _orb_res[p].search(str(line).strip_edges())
+			if m:
+				out[p] += float(m.get_string(1))
+	return out
+
+
 static func _compute(item: Dictionary) -> Array:
 	var src := item
 	var absorb := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

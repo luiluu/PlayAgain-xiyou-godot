@@ -186,6 +186,8 @@ static func status_ops(r: Dictionary, kind: int) -> Array:
 			ops.append(["i", int(item.get("iconIndex", 0)), nx + 2.0, y + 2.0])
 			ops.append(_t(str(item.get("name", "")), nx + 36.0, y, COLW - 36.0, XQuality.list_color(item)))
 		nx += COL2 / 2.0
+	if XTianqiBase.PHASE4:   # T164 宝石发挥度（D186）：数字仍是基础值，只加一行说明；期四关着不画
+		ops.append(["t", XTianqiGemPower.NOTE, x, LH * 18, 600.0, LH, "left", 20, XUI.DIM])
 	return ops
 
 
