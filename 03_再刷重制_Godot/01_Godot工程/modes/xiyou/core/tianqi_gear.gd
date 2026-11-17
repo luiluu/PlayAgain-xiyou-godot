@@ -482,7 +482,7 @@ static func flat_ratio(item, i: int) -> float:
 	return _ratio(_level(item), i)
 
 
-## 满额（光耀度 100%）时的换算比＝80 级那一行；CAP_80 关着返回 1（显示回到「基础值」口径）
+## 光耀 100% 时的换算比＝80 级那一行；CAP_80 关着返回 1（显示回到「基础值」口径）
 static func full_ratio(i: int) -> float:
 	return _ratio(CAP_LEVEL, i) if CAP_80 else 1.0
 

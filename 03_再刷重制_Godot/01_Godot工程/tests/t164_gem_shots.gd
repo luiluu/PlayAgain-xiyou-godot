@@ -54,7 +54,7 @@ func _run() -> void:
 			await _shot("%s_detail_mode%d" % [sc, mode])
 			bg.queue_free()
 			await _frames(3)
-		# 镶嵌预览（旧界面说明卡：磨刀石的说明＋追加「光耀度：…（本件）」行）
+		# 镶嵌预览（旧界面说明卡：磨刀石的说明＋追加「这颗宝石镶在这件装备上：光耀xx%　…」行）
 		var pbg := ColorRect.new()
 		pbg.color = Color("202020")
 		pbg.size = Vector2(1280, 720)

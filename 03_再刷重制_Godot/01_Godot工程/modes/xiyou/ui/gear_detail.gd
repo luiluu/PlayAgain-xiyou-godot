@@ -123,7 +123,6 @@ func content_rows() -> Array:
 ## v0.41 rows41 的 mode 2（v0.43 去掉末行「说明较长时，在右侧上下滑动查看。」）
 static func socket_rows(e: Dictionary) -> Array:
 	var out := [[XGearSearch.star_name(e), ROW_SIZE, STAR_COLOR, false, 0]]
-	out.append_array(XTianqiGemPower.socket_head(e, ROW_SIZE))  # T164 光耀度（期四开着才有）
 	var slots: Array = e.get("augmentSlots", [])
 	out.append(["宝珠插槽：%d个" % slots.size(), ROW_SIZE, "#ffffff", false, 0])
 	for n in slots.size():

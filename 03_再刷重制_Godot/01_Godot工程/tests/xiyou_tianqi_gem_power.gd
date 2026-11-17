@@ -1,9 +1,10 @@
 extends Node
-## 【cc·T164】光耀度（D186）：宝石效果＝基础值×光耀度（＝期四换算比），只显示、不改数值。
-## D190：光耀度＝换算比÷80 级换算比，80 级＝100%、最高 100%；图鉴数字＝满额值；XTianqiGear.CAP_80 关回旧口径。
+## 【cc·T164】光耀度（D186）：宝石效果＝基础值×换算比，只显示、不改数值。
+## D190：光耀度＝换算比÷80 级换算比，80 级＝100%、最高 100%；图鉴数字＝光耀 100% 时的效果；XTianqiGear.CAP_80 关回旧口径。
+## D190b（Kyo 11-18）：光耀度是每颗宝石的，写在宝石那一行（「红宝石 光耀87%　物理攻击 +11」），装备头行没有；加多列的宝石一列一行；预览「这颗宝石镶在这件装备上」；文字里不出现「满额」。
 ## 一、期四关着：所有显示函数返回空，镶嵌图鉴不画说明行，详情／插槽行数同原来，八项原样。
-## 二、开着：光耀度文字＝换算比（单列一个百分比、多列给范围）；逐项「实际值（基础值）」＝换算比×基础值，且与 effective_params 里宝石那份一致；
-##     镶嵌图鉴数字仍是基础值、只多一行说明；镶嵌预览给本件的实际值；开关开／关各一遍，八项数值、effective_params 不因显示函数改变。
+## 二、开着：宝石行的光耀度＝该列换算比÷80 级换算比，加成＝换算比×基础值，且与 effective_params 里宝石那份一致；
+##     镶嵌图鉴只多一行说明；镶嵌预览给本件的光耀度和加成；开关开／关各一遍，八项数值、effective_params 不因显示函数改变。
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
 const DAGGER := 972
 const STONE := 258  # 劣质磨刀石：镶嵌固定物攻 +2
@@ -77,14 +78,14 @@ func _run() -> void:
 	XTianqiGear.clear_effective_cache()
 	var params_off: Array = (XTianqiGear.effective_params(g) as Array).duplicate()
 	_check("off_inactive", not XTianqiGemPower.active(g))
-	_check("off_text_empty", XTianqiGemPower.power_text(g) == "")
-	_check("off_detail_rows_same", XTianqiGemPower.detail_rows(g).is_empty() and XTianqiGemPower.socket_head(g, 20).is_empty() and XTianqiGemPower.upgrade_lines(g, 0, 20).is_empty())
+	_check("off_text_empty", XTianqiGemPower.gems(g).is_empty() and XTianqiGemPower.gem_lines(g, [0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0]).size() == 1)
+	_check("off_detail_rows_same", XTianqiGemPower.detail_rows(g).is_empty() and XTianqiGemPower.upgrade_lines(g, 0, 20).is_empty())
 	_check("off_preview_empty", XTianqiGemPower.preview_rows(g, XDB.rec("Items", STONE), "upgrade").is_empty())
 	var detail_off := XHelpCard.detail_rows(g, 300.0)
 	var socket_off := XGearDetail.socket_rows(g)
 	_check("off_gem_base_zero", XTianqiGear.gem_base(g) == [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
 	var book_off := XInlayBook.status_ops(XInlayBook.recipes()[0][0], 0)
-	_check("off_book_no_note", not JSON.stringify(book_off).contains("光耀度"))
+	_check("off_book_no_note", not JSON.stringify(book_off).contains("光耀"))
 
 	# ---- 开着 ----
 	XTianqiBase.PHASE4 = true
@@ -96,61 +97,72 @@ func _run() -> void:
 	var base := XTianqiGear.gem_base(g)
 	_check("gem_base_stone_plus2", float(base[2]) == 2.0, base)
 	var want_pct := "%d%%" % roundi(pow_atk * 100.0)
-	_check("power_text_is_ratio", XTianqiGemPower.power_text(g) == want_pct, [XTianqiGemPower.power_text(g), want_pct])
-	var lines := XTianqiGemPower.value_lines(g, base)
-	var want_line := "%s %+d（%+d）" % [str(XDB.system().terms.params[2]), roundi(2.0 * ratio_atk), roundi(2.0 * XTianqiGear.full_ratio(2))]
-	_check("value_line_actual_of_base", lines.size() == 1 and lines[0] == want_line, [lines, want_line])
+	var gl := XTianqiGemPower.gems(g)
+	_check("gems_one_stone", gl.size() == 1 and str(gl[0].name) != "" and gl[0].base == base, gl)
+	var gname := str(gl[0].name)
+	var lines := XTianqiGemPower.gem_lines(g, base)
+	var want_line := "光耀%s　%s +%d" % [want_pct, str(XDB.system().terms.params[2]), roundi(2.0 * ratio_atk)]
+	_check("gem_line_power_and_actual", lines.size() == 1 and lines[0] == want_line, [lines, want_line])
+	_check("gem_line_with_name", XTianqiGemPower.gem_lines(g, base, gname) == [gname + " " + want_line], XTianqiGemPower.gem_lines(g, base, gname))
 	var drows := XHelpCard.detail_rows(g, 300.0)
-	_check("detail_has_power_and_line", _rows_text(drows).contains("光耀度：" + want_pct) and _rows_text(drows).contains(want_line), _rows_text(drows))
+	_check("detail_has_gem_line", _rows_text(drows).contains(gname + " " + want_line) and not _rows_text(drows).contains("光耀度"), _rows_text(drows))
 	_check("detail_prefix_unchanged", drows.size() > detail_off.size())
 	var srows := XGearDetail.socket_rows(g)
-	_check("socket_has_power_and_line", _rows_text(srows).contains("光耀度：" + want_pct) and _rows_text(srows).contains(want_line), _rows_text(srows))
-	_check("socket_row_count", srows.size() == socket_off.size() + 2, [srows.size(), socket_off.size()])
+	_check("socket_has_line", _rows_text(srows).contains(want_line) and not _rows_text(srows).contains("光耀度"), _rows_text(srows))
+	_check("socket_row_count", srows.size() == socket_off.size() + 1, [srows.size(), socket_off.size()])
+	# 全部文字不出现「满额」
+	var all_text := _rows_text(drows) + _rows_text(srows) + XTianqiGemPower.NOTE + XTianqiGemPower.PREVIEW_HEAD + JSON.stringify(XInlayBook.status_ops(XInlayBook.recipes()[0][0], 0))
+	_check("no_manE_word", not all_text.contains("满额"))
 	# 与 effective_params 的宝石那份一致：同一件去掉镶嵌记录，物攻差 = 换算比×2
 	var bare := g.duplicate(true)
 	bare.instanceId = "t164_bare"
 	bare.upgrades = []
 	var diff := float(XTianqiGear.effective_params(g)[2]) - float(XTianqiGear.effective_params(bare)[2])
 	_check("matches_effective_params", absf(diff - 2.0 * ratio_atk) <= 1.0, [diff, ratio_atk])
-	# 无宝石：只一行光耀度（物攻列）
+	# 无宝石：什么都不加
 	var none := XGear.create("weapon", DAGGER, s)
 	none["instanceId"] = "t164_none"
-	_check("no_gem_only_headline", XTianqiGemPower.value_lines(none, XTianqiGear.gem_base(none)).is_empty() and XTianqiGemPower.power_text(none) != "")
+	_check("no_gem_no_rows", XTianqiGemPower.gems(none).is_empty() and XTianqiGemPower.detail_rows(none).is_empty() and XTianqiGemPower.gem_lines(none, XTianqiGear.gem_base(none)).is_empty())
 	# 预览：磨刀石镶在这件上
 	var pv := XTianqiGemPower.preview_rows(none, XDB.rec("Items", STONE), "upgrade")
-	_check("preview_stone", pv.size() == 2 and str(pv[0][0]) == "光耀度：%s（本件）" % XTianqiGemPower.power_text(none, [0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0]) and str(pv[1][0]).contains("（+%d）" % roundi(2.0 * XTianqiGear.full_ratio(2))), pv)
-	# P1①：预览头行按「待镶材料自己加成的列」算，不读已镶宝石那一列（g 已镶物攻磨刀石，预览一颗只加物防的）
+	var want_pv := "光耀%d%%　%s +%d" % [roundi(XTianqiGemPower.power_of(none, 2) * 100.0), str(XDB.system().terms.params[2]), roundi(2.0 * XTianqiGear.flat_ratio(none, 2))]
+	_check("preview_stone", pv.size() == 2 and str(pv[0][0]) == XTianqiGemPower.PREVIEW_HEAD and str(pv[1][0]).lstrip("　 ") == want_pv, pv)
+	# 预览按「待镶这颗自己加成的列」算，不读已镶宝石那一列（g 已镶物攻磨刀石，预览一颗只加物防的）
 	var def_only := [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
-	var want_def := "%d%%" % roundi(XTianqiGemPower.power_of(g, 3) * 100.0)
-	_check("preview_head_uses_preview_column", XTianqiGemPower.power_text(g, def_only) == want_def and XTianqiGemPower.power_text(g, def_only) != XTianqiGemPower.power_text(g), [XTianqiGemPower.power_text(g, def_only), want_def, XTianqiGemPower.power_text(g)])
+	var want_def := "光耀%d%%" % roundi(XTianqiGemPower.power_of(g, 3) * 100.0)
+	var def_lines := XTianqiGemPower.gem_lines(g, def_only)
+	_check("preview_uses_preview_column", def_lines.size() == 1 and def_lines[0].begins_with(want_def) and def_lines[0].contains(str(XDB.system().terms.params[3])), [def_lines, want_def])
+	# 一颗宝石加多列：名字一行，每列一行各写各的光耀度，不写范围
 	var multi := [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
-	var mt := XTianqiGemPower.power_text(g, multi)
-	_check("multi_col_range", mt.contains("～") and XTianqiGemPower.head_text(g, multi).ends_with("（各项不同）"), mt)
-	# P2②：空槽看五列，不单取物攻列
-	var lo := INF
-	var hi := -INF
-	for i in [0, 2, 3, 6, 7]:
-		lo = minf(lo, XTianqiGemPower.power_of(none, i))
-		hi = maxf(hi, XTianqiGemPower.power_of(none, i))
-	var want_empty := "%d%%～%d%%" % [roundi(lo * 100.0), roundi(hi * 100.0)] if roundi(lo * 100.0) != roundi(hi * 100.0) else "%d%%" % roundi(lo * 100.0)
-	_check("empty_slot_five_columns", XTianqiGemPower.power_text(none) == want_empty, [XTianqiGemPower.power_text(none), want_empty])
-	# P1②：新皮肤详情牌，头行和逐项行同在「说明」，不被拆进「自带」
+	var ml := XTianqiGemPower.gem_lines(g, multi, "多项宝石")
+	_check("multi_col_one_line_each", ml.size() == 6 and ml[0] == "多项宝石" and ml.slice(1).all(func(l): return str(l).begins_with("光耀") and not str(l).contains("～")), ml)
+	# 同一颗宝石镶在越高级的装备上越光耀：40 级 < 80 级＝100%
+	var hi_g := none.duplicate(true)
+	hi_g.meta = (hi_g.meta as Dictionary).duplicate()
+	hi_g.meta["req_level"] = "40"
+	XTianqiGear.clear_effective_cache()
+	var l40 := XTianqiGemPower.gem_lines(hi_g, base)[0] as String
+	hi_g.meta["req_level"] = "80"
+	XTianqiGear.clear_effective_cache()
+	var l80 := XTianqiGemPower.gem_lines(hi_g, base)[0] as String
+	_check("same_gem_brighter_on_higher_gear", l80.begins_with("光耀100%") and not l40.begins_with("光耀100%"), [l40, l80])
+	# 新皮肤详情牌：宝石行（含名字行）留「说明」，不被拆进「自带」
 	var core_v2: bool = XUiSkin.CORE_V2
 	XUiSkin.CORE_V2 = true
-	var secs := XSkinTemplatePage.help_sections([{"text": "光耀度：566%"}, {"text": "　物理攻击 +11（+2）"}, {"text": "生命:+100"}])
+	var secs := XSkinTemplatePage.help_sections([{"text": "红宝石 光耀87%　物理攻击 +11"}, {"text": "　光耀87%　生命 +30"}, {"text": "生命:+100"}])
 	XUiSkin.CORE_V2 = core_v2
 	var head_sec := ""
 	var line_sec := ""
 	for sec in secs:
 		for r in sec.rows:
-			if str(r.text).begins_with("光耀度"):
+			if str(r.text).begins_with("红宝石"):
 				head_sec = sec.title
-			elif str(r.text).contains("物理攻击"):
+			elif str(r.text).contains("生命 +30"):
 				line_sec = sec.title
-	_check("skin_head_and_lines_same_section", head_sec != "" and head_sec == line_sec and head_sec != "自带", [head_sec, line_sec])
+	_check("skin_gem_lines_same_section", head_sec != "" and head_sec == line_sec and head_sec != "自带", [head_sec, line_sec])
 	var card := {"sections": []}
 	XTianqiGemPower.dress_card(none, XDB.rec("Items", STONE), "upgrade", -1, card)
-	_check("dress_card_section", card.sections.size() == 1 and card.sections[0].title == "镶在这件装备上" and str(card.sections[0].rows[0].text).begins_with("光耀度："), card)
+	_check("dress_card_section", card.sections.size() == 1 and card.sections[0].title == "镶在这件装备上" and str(card.sections[0].rows[0].text).begins_with("光耀"), card)
 	# 宝珠、符文之语：基础值进逐项
 	var orb_rec: Dictionary = {}
 	for id in range(1, 6000):
@@ -181,7 +193,7 @@ func _run() -> void:
 	ag["instanceId"] = "t164_aug"
 	ag["augmentSlots"] = [aug_type, ""]
 	var apv := XTianqiGemPower.preview_lines(ag, aug_rec, "augment", 0)
-	_check("augment_preview_lines", apv.size() >= 2 and str(apv[0]).begins_with("光耀度：") and str(apv[0]).ends_with("）"), apv)
+	_check("augment_preview_lines", apv.size() >= 2 and apv[0] == XTianqiGemPower.PREVIEW_HEAD and str(apv[1]).begins_with("光耀"), apv)
 	_check("augment_empty_type_short_circuit", XTianqiGemPower.preview_lines(ag, aug_rec, "augment", 1).is_empty())
 	_check("augment_slot_out_of_range_short_circuit", XTianqiGemPower.preview_lines(ag, aug_rec, "augment", 9).is_empty() and XTianqiGemPower.preview_lines(ag, aug_rec, "augment", -1).is_empty())
 	_check("augment_empty_rec_short_circuit", XTianqiGemPower.preview_lines(ag, {}, "augment", 0).is_empty())
@@ -199,13 +211,14 @@ func _run() -> void:
 	var rw_base := XTianqiGear.gem_base(rwg)
 	var rw_params: Array = XTianqiGear.runeword_params(rwg)
 	_check("runeword_in_gem_base", not rtpl.is_empty() and rw_params.size() >= 8 and absf(float(rw_base[2]) - float(rw_params[2])) < 0.01 and float(rw_base[2]) != 0.0, [rw_base, rw_params])
-	var rw_lines := XTianqiGemPower.value_lines(rwg, rw_base)
-	_check("runeword_value_lines", not rw_lines.is_empty() and XTianqiGemPower.head_text(rwg, rw_base).begins_with("光耀度："), rw_lines)
-	# 镶嵌图鉴：数字仍是基础值，只多一行说明
+	var rw_gems := XTianqiGemPower.gems(rwg)
+	var rw_lines := XTianqiGemPower.gem_lines(rwg, rw_base, "符文之语")
+	_check("runeword_gem_row", rw_gems.any(func(x): return x.name == "符文之语") and not rw_lines.is_empty() and str(rw_lines[0]).begins_with("符文之语"), [rw_gems, rw_lines])
+	# 镶嵌图鉴：只多一行说明
 	var rec: Dictionary = XInlayBook.recipes()[0][0]
 	var book_on := XInlayBook.status_ops(rec, 0)
-	_check("book_note_added", book_on.size() == book_off.size() + 1 and JSON.stringify(book_on).contains("光耀度"))
-	# D190：天启档图鉴数字＝基础值×80 级换算比（满额）；CAP_80 关回基础值，与期四关着时逐字节相同
+	_check("book_note_added", book_on.size() == book_off.size() + 1 and JSON.stringify(book_on).contains(XTianqiGemPower.NOTE))
+	# D190：天启档图鉴数字＝基础值×80 级换算比；CAP_80 关回基础值，与期四关着时逐字节相同
 	var btpl := XDB.rec("Weapons", int(rec.get("weapon", 0)))
 	var bbase := float(btpl.get("params", [0, 0, 0, 0, 0, 0, 0, 0])[2])
 	var bfull := XEnemyBookPage.js_num(roundf(bbase * XTianqiGear.full_ratio(2)))
@@ -232,8 +245,8 @@ func _run() -> void:
 	_check("level40_between", (pcts[40] as Array).all(func(x): return x > (pcts[0] as Array)[0] and x < 1.0))
 	lv.meta["req_level"] = "99"
 	XTianqiGear.clear_effective_cache()
-	var head99 := XTianqiGemPower.head_text(lv, [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0])
-	_check("level99_head_100", head99 == "光耀度：100%", head99)
+	var line99 := XTianqiGemPower.gem_lines(lv, [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+	_check("level99_gem_100", line99.size() == 1 and str(line99[0]).begins_with("光耀100%"), line99)
 	# CAP_80 关回旧口径：90 级换算比读到 90 行，光耀度＝换算比本身
 	XTianqiGear.CAP_80 = false
 	XTianqiGear.clear_effective_cache()
@@ -252,7 +265,7 @@ func _run() -> void:
 	# P2：非天启档（总开关开着、但当前存档不是天启档）——图鉴不画说明行
 	var keep_state: XState = XState.current
 	XState.current = null
-	_check("nontianqi_book_no_note", XInlayBook.status_ops(rec, 0).size() == book_off.size() and not JSON.stringify(XInlayBook.status_ops(rec, 0)).contains("光耀度"))
+	_check("nontianqi_book_no_note", XInlayBook.status_ops(rec, 0).size() == book_off.size() and not JSON.stringify(XInlayBook.status_ops(rec, 0)).contains("光耀"))
 	XState.current = keep_state
 	# 显示函数不改八项、不改伤害：开着先量一次，把所有显示函数都调一遍，再量一次，必须相同（真战斗，随机数固定）
 	var params_before: Array = (XTianqiGear.effective_params(g) as Array).duplicate()
@@ -261,7 +274,7 @@ func _run() -> void:
 		XHelpCard.detail_rows(g, 300.0)
 		XGearDetail.socket_rows(g)
 		XTianqiGemPower.preview_rows(none, XDB.rec("Items", STONE), "upgrade")
-		XTianqiGemPower.power_text(g)
+		XTianqiGemPower.gems(g)
 	XInlayBook.status_ops(rec, 0)
 	var dmg_on_after := _damage(s, g)
 	_check("params_unchanged", XTianqiGear.effective_params(g) == params_before and (g.params as Array).size() == 8)

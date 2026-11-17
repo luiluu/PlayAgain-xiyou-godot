@@ -543,7 +543,7 @@ static func help_sections(rows: Array) -> Array:
 			buckets["套装"].append(r)
 		elif affix_re.search(t) != null:
 			buckets["词条"].append(r)
-		elif t.begins_with(XTianqiGemPower.NAME):   # T164：光耀度头行与逐项行同留「说明」，不被 base_re 吸进「自带」
+		elif t.contains(XTianqiGemPower.NAME):   # T164：宝石光耀度行（含宝石名行）留「说明」，不被 base_re 吸进「自带」
 			buckets["说明"].append(r)
 		elif base_re.search(t) != null:
 			buckets["自带"].append(with_stat_spans(r) if STAT_COLORS_ON else r)
