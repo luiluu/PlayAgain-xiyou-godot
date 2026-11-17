@@ -1,7 +1,7 @@
 class_name XGuyu
 extends RefCounted
 
-## T114：原生像素美术；关闭或缺图回退正式旧图。
+## 175 谷雨 T114：原生像素美术；关闭或缺图回退正式旧图。
 static var ART := true
 static func art_path(folder: String, name: String) -> String:
 	if not ART:
