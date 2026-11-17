@@ -1,0 +1,140 @@
+{
+  "jobs": 2,
+  "globalJobs": 4,
+  "wallSeconds": 94.12,
+  "flakyRerunPassed": [],
+  "fingerprint": "",
+  "reused": [],
+  "failed": [
+    "xiyou_guyu_ui.tscn"
+  ],
+  "scenes": [
+    {
+      "name": "xiyou_determinism.tscn",
+      "seconds": 65.649,
+      "passed": true,
+      "userCpuSeconds": 48.666,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 65.649,
+          "userCpuSeconds": 48.666,
+          "sysCpuSeconds": 1.935,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_actor_book.tscn",
+      "seconds": 56.369,
+      "passed": true,
+      "userCpuSeconds": 49.209,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 56.369,
+          "userCpuSeconds": 49.209,
+          "sysCpuSeconds": 2.731,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_guyu_ui.tscn",
+      "seconds": 9.316,
+      "passed": false,
+      "userCpuSeconds": 6.221,
+      "attempts": [
+        {
+          "rc": 1,
+          "seconds": 9.316,
+          "userCpuSeconds": 6.221,
+          "sysCpuSeconds": 1.222,
+          "passed": false
+        },
+        {
+          "rc": 1,
+          "seconds": 8.74,
+          "userCpuSeconds": 5.948,
+          "sysCpuSeconds": 1.068,
+          "passed": false
+        }
+      ]
+    },
+    {
+      "name": "xiyou_guyu_battle.tscn",
+      "seconds": 9.108,
+      "passed": true,
+      "userCpuSeconds": 7.314,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 9.108,
+          "userCpuSeconds": 7.314,
+          "sysCpuSeconds": 1.387,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_guyu.tscn",
+      "seconds": 7.863,
+      "passed": true,
+      "userCpuSeconds": 6.304,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 7.863,
+          "userCpuSeconds": 6.304,
+          "sysCpuSeconds": 1.213,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_portrait1.tscn",
+      "seconds": 5.992,
+      "passed": true,
+      "userCpuSeconds": 4.705,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 5.992,
+          "userCpuSeconds": 4.705,
+          "sysCpuSeconds": 1.099,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_guyu_art.tscn",
+      "seconds": 5.84,
+      "passed": true,
+      "userCpuSeconds": 4.276,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 5.84,
+          "userCpuSeconds": 4.276,
+          "sysCpuSeconds": 1.327,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_yunshang_art.tscn",
+      "seconds": 5.706,
+      "passed": true,
+      "userCpuSeconds": 4.272,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 5.706,
+          "userCpuSeconds": 4.272,
+          "sysCpuSeconds": 1.154,
+          "passed": true
+        }
+      ]
+    }
+  ]
+}
