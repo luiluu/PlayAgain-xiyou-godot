@@ -8,6 +8,7 @@
 import importlib.util
 import json
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -172,9 +173,30 @@ class NameKillGuardTests(unittest.TestCase):
                     'killall godot'):
             self.assertIsNotNone(self.guard.verdict(cmd, str(self.tree)), cmd)
 
+    def test_name_only_or_generic_dirname_does_not_pass(self):
+        # 工作树叫 main（或任何泛名）：目录名出现在匹配串里不算「写了自己的路径」
+        d = Path(tempfile.mkdtemp()) / 'main'
+        d.mkdir()
+        try:
+            subprocess.run(['git', 'init', '-q', str(d)], check=True)
+            for cmd in ('pkill -f "检查.sh --affected main"', 'pkill -f "godot.*main"', 'pkill -f main.*检查.sh'):
+                self.assertIsNotNone(self.guard.verdict(cmd, str(d)), cmd)
+            real = self.guard.worktree(str(d))
+            self.assertIsNone(self.guard.verdict('pkill -f "godot.*--path.*%s"' % real, str(d)))
+            # 路径只是另一个树的前缀：不放行
+            self.assertIsNotNone(self.guard.verdict('pkill -f "godot.*--path.*%s-2"' % real, str(d)))
+        finally:
+            shutil.rmtree(d.parent, ignore_errors=True)
+
+    def test_quoted_pipe_does_not_truncate(self):
+        for cmd in ('pkill -f "检查.sh|并行测试.py"', "pkill -f 'godot|node'", 'echo hi; pkill -f "a|b" "检查.sh"',
+                    'pkill -f "x;y" 检查.sh', 'bash -c "echo 1; pkill -f 检查.sh"'):
+            self.assertIsNotNone(self.guard.verdict(cmd, str(self.tree)), cmd)
+        self.assertIsNone(self.guard.verdict('echo "pkill|x" | cat', str(self.tree)))
+
     def test_allows_scoped_and_unrelated(self):
-        name = Path(self.guard.worktree(str(self.tree))).name
-        for cmd in ('pkill -f "godot.*--path.*%s"' % name, 'ps aux | grep godot', 'kill %d' % os.getpid(),
+        real = self.guard.worktree(str(self.tree))
+        for cmd in ('pkill -f "godot.*--path.*%s"' % real, 'pkill -f "godot.*--path %s/03_再刷重制_Godot"' % real, 'ps aux | grep godot', 'kill %d' % os.getpid(),
                     'python3 07_开发环境/长任务.py stop x.log', 'pkill -f my_http_server'):
             self.assertIsNone(self.guard.verdict(cmd, str(self.tree)), cmd)
 
