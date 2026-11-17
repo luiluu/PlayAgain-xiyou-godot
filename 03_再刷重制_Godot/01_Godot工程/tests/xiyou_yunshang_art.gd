@@ -79,15 +79,18 @@ func capture(dir: String) -> void:
 	var file := FileAccess.open(dir.path_join("render_evidence.json"),FileAccess.WRITE)
 	file.store_string(JSON.stringify(evidence,"  "))
 	file.close()
-	await RenderingServer.frame_post_draw
-	get_viewport().get_texture().get_image().save_png(dir.path_join("battle_wait.png"))
-	for motion_name in ["swing", "damage"]:
+	for motion_name in ["wait", "swing", "damage"]:
 		for a in battle.sprites:
-			if a is XActor and a.actor_id == XGuyu.ACTOR:
+			if a is XActor and a.actor_id == XYunshang.ACTOR:
 				var actor_sprite: XBattlerSprite = battle.sprites[a]
 				actor_sprite.set_process(false)
+				actor_sprite.set_physics_process(false)
 				actor_sprite.set_motion(motion_name)
-		await RenderingServer.frame_post_draw
+				actor_sprite._frame = 1
+				actor_sprite._apply()
+				check("capture." + motion_name, actor_sprite.motion == motion_name)
+		await get_tree().process_frame
+		RenderingServer.force_draw()
 		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_" + motion_name + ".png"))
 	battle.queue_free()
 
@@ -103,6 +106,8 @@ func capture(dir: String) -> void:
 	map.player.direction = 6
 	map.player.move_straight(6)
 	for i in 5: await get_tree().process_frame
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw()
 	get_viewport().get_texture().get_image().save_png(dir.path_join("map_walk.png"))
 	map.queue_free()
+	await get_tree().process_frame
+	await get_tree().process_frame

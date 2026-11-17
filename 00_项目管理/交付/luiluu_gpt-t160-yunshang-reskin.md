@@ -1,7 +1,7 @@
 # 交付：luiluu/gpt-t160-yunshang-reskin
 
 - 车道／工作者：T160云裳换皮／小o（co，gpt-6.1-sol＋medium，P6）
-- 状态：进行中（首段WIP待形象确认，禁止合并接入）
+- 状态：可合并（工程验收完成；原尺寸比例差交协调判断，待小A跨模型核查）
 
 ## 变更记录草稿
 
@@ -107,3 +107,38 @@
 - 新增battle/raw_overview.jpg为18动作缩略总览（wait栏显示v8）；已查看总览，动作基本可辨，原始画布尺度/头身细节有差异，后续需要按统一缩放要求处理并量测，尤其倒地和蹲低姿势；不得逐帧拉伸追框，返工只改提示词。该图仅离线源图总览，绝非实机截图。
 - Python默认环境无Pillow，已用既有/tmp/t160-venv/bin/python生成总览；源图数量断言17通过、预算62/18核对通过。未改运行图与任何接线，未起Godot，未运行专项/T156/交付自检，不报告可合并。
 - **下一步直接从组装开始**：上节组装/appearance原生profile/回退开关/专项与实机四图步骤全部仍有效且未执行。原始图不用再生成一轮或重读大图；先看raw_overview.jpg定位必要返工，再写组装脚本、保留v8走路原像素与48色。完整交付仍需专项、T156证据、静音实机map/wait/swing/damage四图、提交后交付自检0及小A跨模型核查。
+
+## 2026-11-18 T160整套组装接线交付（dev.待定）
+
+### 变更记录草稿（替代首段试作说明）
+
+云裳第六轮已认可走路与wait原像素冻结，补齐其余51格，统一整人0.09缩放、48色、二值透明、谷雨脚底锚点平移，组成完整18动作54格。接入yunshang_v9，RESKIN关或缺新文件回退u2，ART关回退原版，头像保持u1；新SV复用原生1:1最近邻profile。谷雨左脸18像素小修cc027a8b6一起交付。
+
+### 本轮提交及接线
+
+- 组装与接线检查点：5e34d523e；原始图不再生成，预算仍62/80，剩18。
+- 归档/battle/assemble.py可复现；assembly.json记录51帧同一0.09及输出/参考脚底bbox，thrust按透明列切，避免伸手在三等分线裁断。走路与v8文件SHA256一致，wait三个64格逐字节一致。
+- runtime仅content/yunshang_v9两张PNG和README；修改yunshang.gd、appearance.gd、xiyou_yunshang_art.gd，无底层战斗/存档改动。
+
+### 原尺寸审图与量头（需协调判断，不伪称≤1px）
+
+- 18行原尺寸全动作：归档/battle/assembled_native.png；辅助3倍版assembled_3x.png；粗量表头区量测.md、head_measurements.json、橙框head_boxes_native.png。
+- 量法是人工头顶/下缘带＋亮色轮廓，排除髻但可能含耳侧发束，边界误差约2px，不冒称精准颅部标点。wait头区约40～42×30px，新walk约31～32×24px，其他动作见表；相对wait明显超1px，已保留完整对照。认可wait内部亦有2px轮廓差；不逐帧缩放、不换头、不分段拉伸、不为数字返工raw。
+- 协调已确认冻结认可像素、新51帧统一0.09，超差列证交协调判断；美感与比例最终裁决待协调/小A，执行者没有自核销账。
+
+### 验证
+
+- T156云裳原脚本原阈值：72项、0失败、2既有警告（wait脚底横漂1.39px、孔洞13,28），退出0；两图48色且alpha只有0/255。
+- T156谷雨修后：72项、1失败、0警告；既有正面长裙gait_repeat IoU0.955。修前同一失败证据在guyu_before_check，修改像素只在左脸，guyu_pixel_changes.json完整18像素清单；不改阈值、不改获认可正面来绕过。运行时专项xiyou_guyu_art仍171/171通过。
+- 语法检查1017个gd、0问题，24秒；工具快速回归23项全部通过，189秒。
+- xiyou_yunshang_art无窗口专项173/173；外观34/34、actor_looks35/35、actor_book28/28、costumes27/27、event_compare14/14、guyu_art171/171，6项专项全过，110秒。
+- 选测.py main --list已运行：新离线美术目录使保守结论full；本车道按派单跑美术与直接外观依赖，未改战斗数值/切片/转换器，未跑full或oracle，由总装按影响面选测。界面必跑event_compare、工具回归均已覆盖。
+- 实机OpenGL/M1 Pro、--audio-driver Dummy：battle/runtime/map_walk.png、battle_wait.png、battle_swing.png、battle_damage.png；render_evidence.json记录云裳新SV路径、scale1.0、filter1最近邻。仅new_game_blank测试状态，不读写真实存档；截图夹具明确冻结对应动作第2格，避免自然待机自动切walk或动作跨帧。截图后等待释放地图，避免退出残留资源警告。
+- 证据日志在battle/validation；交付自检结果待下方最终登记。
+
+### 待交叉核查
+
+- 小A核查5e34d523e及本轮收尾提交：全动作语义、原尺寸头部一致性/比例差异、脚底定位、回退与缺文件路径、静音实机四图；cc027a8b6谷雨左脸修平与原正面IoU既有误报证据一并核。
+- 可优化：美术raw与审样过程图放content会触发数百张无关导入；建议总装后续统一移到归档（本轮不跨范围清理旧版本）。
+
+- 最终静音实机夹具177/177，退出0，无SCRIPT ERROR/ERROR或退出资源泄漏；四图对应wait/swing/damage第2格及实际move_straight后的地图位置。
