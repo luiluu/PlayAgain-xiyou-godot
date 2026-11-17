@@ -79,5 +79,7 @@
   "XTianqiTrumpet.cost": "c",
   "XTianqiLedger.hook_bonus": "0.0",
   "XTianqiLedger.nine_attack_times": "0.0",
-  "XTianqiBase.param_base": "NAN"
+  "XTianqiBase.param_base": "NAN",
+  "XTianqiBrand.realm": "0",
+  "XTianqiBrand.last_realm": "6"
 }

@@ -140,6 +140,8 @@ static func k_actor_mult(a, s = null) -> float:
 
 ## 这个角色打出伤害要乘的 K × 烙印（dealt_parts、scale_direct 用）。总开关关着 K 按 1，烙印开关各管各的；两个都关着恒 1
 static func k_for(a, s = null) -> float:
+	if not on(s) and not XTianqiBrand.on(s):
+		return 1.0
 	return k_base(s) * k_actor_mult(a, s)
 
 
