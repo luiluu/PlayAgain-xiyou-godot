@@ -1,0 +1,16 @@
+{
+  "down": {
+    "neck_y": 27,
+    "note": "manual on this-round native output, visible chin/collar"
+  },
+  "left": {
+    "neck_y": 27,
+    "far_tassel_rect": [
+      34,
+      8,
+      41,
+      27
+    ],
+    "note": "this-round near-side tassel becomes far-side in left view; pin tip and navy rim remain"
+  }
+}
