@@ -117,7 +117,9 @@ func _hall_and_floors() -> void:
 	_check("npcs_hidden", shown.is_empty(), shown)
 	_check("hides_only_those", not XTianqiSect.hides(32, 8) and not XTianqiSect.hides(116, 7) and not XTianqiSect.hides(147, 5) and not XTianqiSect.hides(4, 54))
 	XTianqiSect.YI = false
+	XTianqiHall.ENABLED = false  # T079 大厅清理也删 EV003（xiyou_tianqi_hall 测）；这里只看包乙自己的开关
 	var off := NPCS.filter(func(p): return _page_of(int(p[0]), int(p[1])) < 0)
+	XTianqiHall.ENABLED = true
 	XTianqiSect.YI = true
 	_check("switch_off_npcs_shown", off.is_empty(), off)
 	var p := _plain()
