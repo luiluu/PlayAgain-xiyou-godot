@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-t079-hall-npc
 
 - 车道／工作者：T079 天启篇大厅 NPC 清理（cc，Opus＋medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -101,9 +101,9 @@
 
 - `语法检查.py` 通过。
 - 本机专项：`xiyou_tianqi_hall`（51/51）、`xiyou_tianqi_sect_a`、`xiyou_tianqi_sect_b`、`xiyou_tianqi_sect_bing`、`xiyou_tianqi_trim`、`xiyou_lobby_corruption`、`xiyou_fest_lobby`、`xiyou_lobby_shops`、`xiyou_tianqi_money`、`xiyou_tianqi_look`、`xiyou_casino_batch`、`xiyou_tianqi_qiyin_altar` 全过。
-- `检查.sh --affected main --cloud`：待写
-- `工具回归.py`：待写
-- `交付自检.py`：待写
+- `检查.sh --affected main --cloud`：通过（171 个场景：云端 161 个、沿用本机 10 个；非 Godot 检查含发行空壳覆盖全过）
+- `工具回归.py`：全部通过（99 秒）
+- `交付自检.py`：退出码 0（提交后跑）
 
 ## 可优化（流程／工具／效率）
 
@@ -113,3 +113,5 @@
 
 - 72d3c1d3d WIP: T079 天启篇大厅 NPC 清理（XTianqiHall 删 13 并 19、专项）
 - f3a820b39 WIP: T079 截图工具与截图、专项不碰本机配置
+- 05fbac1e6 WIP: T079 交付单、sect_b 专项让开本卡开关
+- （本提交）T079 交付单定稿
