@@ -1,7 +1,7 @@
 extends Node
 ## 【cc·T081】天启篇期四暗装接线（XTianqiBase.PHASE4，基础数值重构 v0.4 第七节第 2 条、第十节 T012-b）：
 ## 一、总开关默认关；关着每一行都是「关着」那一套（本体 NAN、K 1、U 1、守层者旧表、治疗照乘、绝对值原数、单段不封、九线爆伤不封、秘籍读旧键、面板没有天启注视）。
-## 二、开着、天启篇存档：每一行都和总开关一致（rows_state），本体读标准线×职责×速度档，K＝表里的 0.088、进 dealt_parts，面板一行「天启注视　伤害 ×0.088」。
+## 二、开着、天启篇存档：每一行都和总开关一致（rows_state），本体读标准线×职责×速度档，K＝表里的 base_damage（T082 实机标定 0.2）、进 dealt_parts，面板一行「天启注视　伤害 ×K」。
 ## 三、开着但是西游档：一律走关着那一套。
 ## 四、单段有效系数上限：开着时卡面系数×权重×条件超过档位上限压回上限，关着不封；全部卡在上限以内（数据校验同口径）。
 ## 五、角色卡跟着总开关开（CARDS 本身不动）。
@@ -14,6 +14,10 @@ const LVSIJI := 2
 
 var results: Array = []
 
+
+## T082 实机标定的 K（balance_table combat_rules.base_damage）；改标定只改这两行
+const K_TABLE := 0.2
+const K_TEXT := "0.2"
 
 func _ready() -> void:
 	_run.call_deferred()
@@ -122,15 +126,15 @@ func _on() -> void:
 	_check("on.base_agi", a.param_base_direct(6) == floorf((20.0 + 20.0 * lv) * 0.8), a.param_base_direct(6))
 	_check("on.base_not_curve", a.param_base_direct(2) != float(a.class_data().params[2][a.level]))
 	# K
-	_check("on.k_table", is_equal_approx(XTianqiBase.k_base(), 0.088), XTianqiBase.k_base())
+	_check("on.k_table", is_equal_approx(XTianqiBase.k_base(), K_TABLE), XTianqiBase.k_base())
 	var on_parts := XTianqiCombat.dealt_parts(a, s)
 	XTianqiBase.PHASE4 = false
 	var off_parts := XTianqiCombat.dealt_parts(a, s)
 	XTianqiBase.PHASE4 = true
-	_check("on.k_dealt", is_equal_approx(float(on_parts.mult), float(off_parts.mult) * 0.088) and is_equal_approx(float(on_parts.k), 0.088), [on_parts, off_parts])
-	_check("on.gaze_row", XTianqiBase.gaze_row() == ["天启注视", "伤害 ×0.088"], XTianqiBase.gaze_row())
+	_check("on.k_dealt", is_equal_approx(float(on_parts.mult), float(off_parts.mult) * K_TABLE) and is_equal_approx(float(on_parts.k), K_TABLE), [on_parts, off_parts])
+	_check("on.gaze_row", XTianqiBase.gaze_row() == ["天启注视", "伤害 ×" + K_TEXT], XTianqiBase.gaze_row())
 	var rows := XStatusPage.global_bonuses(a)
-	_check("on.gaze_panel", not rows.is_empty() and rows[0] == ["天启注视", "伤害 ×0.088"], rows.slice(0, 2))
+	_check("on.gaze_panel", not rows.is_empty() and rows[0] == ["天启注视", "伤害 ×" + K_TEXT], rows.slice(0, 2))
 	# U、守层者、治疗、九线、秘籍、绝对值、单段上限
 	_check("on.u", XTianqiBase.boss_hp_unit(false) == 1.0 and XTianqiBase.boss_hp_unit(true) == 1.0)  # 表里先填 1
 	var old := {1: 2.0}
@@ -307,7 +311,7 @@ func _e2e(on: bool) -> void:
 	# （5）伤害详情：开着带 gaze（K 本身），关着没有
 	var res := XDamage.calculate(XDB.rec("Skills", 1), a, XEnemy.new().setup(1, 3, 100.0), {"critical": false, "variance": false})
 	var g = res.breakdown.row.get("gaze")
-	_check(tag + "damage_gaze", (g is Dictionary and is_equal_approx(float(g.k), 0.088) and str(g.name) == "天启注视") if on else g == null, g)
+	_check(tag + "damage_gaze", (g is Dictionary and is_equal_approx(float(g.k), K_TABLE) and str(g.name) == "天启注视") if on else g == null, g)
 	# （6）骑士 U：表里先填 1，临时改成 crit 2／no_crit 3 看本体、影子血量跟着乘
 	var cr: Dictionary = XTianqiBalance.data().combat_rules
 	var keep_u = cr.get("boss_hp_temp_unit")
@@ -329,7 +333,7 @@ func _e2e(on: bool) -> void:
 	# （8）绕过结算直接扣敌人血（scale_direct）：开着再乘 K；反弹（gaze＝false）不乘
 	var en: XBattler = lg.enemies[0]
 	var base6 := maxf(1.0, floorf(600.0 * XTianqiNoX6.hp_unit())) if XTianqiNoX6.on() else 600.0
-	var want_k := maxf(1.0, floorf(base6 * 0.088)) if on else base6
+	var want_k := maxf(1.0, floorf(base6 * K_TABLE)) if on else base6
 	_check(tag + "scale_direct_k", XTianqiNoX6.scale_direct(a, en, 600.0) == want_k and XTianqiNoX6.scale_direct(a, en, 600.0, false) == base6 \
 		and XTianqiNoX6.scale_direct(en, a, 600.0) == 600.0, [XTianqiNoX6.scale_direct(a, en, 600.0), want_k, base6])
 	# （7）表外角色：开着也回落职业曲线
