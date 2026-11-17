@@ -1,10 +1,10 @@
 class_name XTianqiGemPower
 extends RefCounted
-## 【T164·D186】镶嵌发挥度：宝石（符文镶嵌、宝珠）的实际效果＝图鉴里的基础值×装备的「宝石发挥度」，装备等级越高发挥越多。
-## 发挥度就是期四装备八项里已经在用的换算比（XTianqiGear.flat_ratio），这里只做显示：不新增数值、不改任何战斗结果。
+## 【T164·D186】光耀度：宝石（符文镶嵌、宝珠）的实际效果＝图鉴里的基础值×装备的「光耀度」，装备等级越高越光耀。
+## 光耀度就是期四装备八项里已经在用的换算比（XTianqiGear.flat_ratio），这里只做显示：不新增数值、不改任何战斗结果。
 ## 只认期四总开关 XTianqiBase.PHASE4 且这件装备读表（XTianqiGear.applies）；否则每个函数都返回空，界面逐字节回原样。
-const NAME := "镶嵌发挥度"
-const NOTE := "仅基础属性＝基础值×发挥度（等级越高越多），特效不放大"
+const NAME := "光耀度"
+const NOTE := "基础值×光耀度，等级越高越盛；特效不放大"
 const COLOR := "#ffe499"
 const LINE_COLOR := "#cfe8ff"
 ## 八项 → 说明里的短名（生命、魔法、物攻、物防、魔攻、魔防、敏捷、幸运），同装备说明卡「属性:」用的术语
@@ -36,7 +36,7 @@ static func touched(base: Array) -> Array:
 	return out
 
 
-## 发挥度文字：各列换算比不同时给范围（生命、物攻、物防、敏捷、幸运各一列）。只看宝石真正加成的那几项（base 不给就看这件已镶的宝石）；
+## 光耀度文字：各列换算比不同时给范围（生命、物攻、物防、敏捷、幸运各一列）。只看宝石真正加成的那几项（base 不给就看这件已镶的宝石）；
 ## 没有宝石看五列
 static func power_text(item: Dictionary, base = null) -> String:
 	if not active(item):
@@ -53,7 +53,7 @@ static func power_text(item: Dictionary, base = null) -> String:
 	return _pct(lo) if roundi(lo * 100.0) == roundi(hi * 100.0) else "%s～%s" % [_pct(lo), _pct(hi)]
 
 
-## 头行：「镶嵌发挥度：566%」，范围时加「（各项不同）」
+## 头行：「光耀度：566%」，范围时加「（各项不同）」
 static func head_text(item: Dictionary, base = null) -> String:
 	var t := power_text(item, base)
 	return "%s：%s%s" % [NAME, t, "（各项不同）" if t.contains("～") else ""]
@@ -69,7 +69,7 @@ static func value_lines(item: Dictionary, base: Array) -> Array:
 	return out
 
 
-## 装备详情页（说明卡）末尾追加的行：发挥度＋宝石那几项逐行。关着返回空数组
+## 装备详情页（说明卡）末尾追加的行：光耀度＋宝石那几项逐行。关着返回空数组
 static func detail_rows(item: Dictionary) -> Array:
 	if not active(item):
 		return []
@@ -81,7 +81,7 @@ static func detail_rows(item: Dictionary) -> Array:
 	return rows
 
 
-## 「插槽与镶嵌」页：最前面一行发挥度。关着空
+## 「插槽与镶嵌」页：最前面一行光耀度。关着空
 static func socket_head(item: Dictionary, size: int) -> Array:
 	if not active(item):
 		return []

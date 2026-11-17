@@ -634,7 +634,7 @@ static func upgrade_fixed(item: Dictionary, cur: Array) -> Dictionary:
 	return {"fixed": out, "random": rnd}
 
 
-## ---- T164 宝石发挥度（D186）：只读取值，不改上面任何算式 ----
+## ---- T164 光耀度（D186）：只读取值，不改上面任何算式 ----
 ## 这件装备上宝石类固定值的「基础值」八项（镶嵌固定值＋符文之语＋宝珠固定加减，不含词缀、随机镶嵌、吸取），
 ## 正是 _compute 里乘换算比的那三项；实际值＝换算比×基础值。不读表（关着、不适用）返回八个 0
 static func gem_base(item) -> Array:

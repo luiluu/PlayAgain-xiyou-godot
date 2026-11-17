@@ -125,7 +125,7 @@ static func detail_rows(obj: Dictionary, width: float) -> Array:
 	if kind == "weapon" or kind == "armor":
 		for r in rows:
 			r[0] = gear_text(str(r[0]))
-	return panel_view(obj, rows, width) + XTianqiGemPower.detail_rows(obj)  # T164 宝石发挥度（期四开着才有行）
+	return panel_view(obj, rows, width) + XTianqiGemPower.detail_rows(obj)  # T164 光耀度（期四开着才有行）
 
 
 static func _content(obj: Dictionary, kind := "", skill_copy := false, power := true, elements := true) -> Array:
