@@ -4,9 +4,13 @@ extends Node2D
 
 var results: Array = []
 var out_dir := ""
+var fest_lobby_enabled := true
 
 
 func _ready() -> void:
+	fest_lobby_enabled = XFestLobby.ENABLED
+	XFestLobby.ENABLED = false  # 原版通行对照不叠庆典撤桌补丁；庆典由 xiyou_fest_lobby 专项核。
+	XFestLobby.reload_map()
 	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（优化登记三条）关掉，新行为由 xiyou_rift2_canglong 核
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
@@ -86,6 +90,8 @@ func _run() -> void:
 
 
 func _finish() -> void:
+	XFestLobby.ENABLED = fest_lobby_enabled
+	XFestLobby.reload_map()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:

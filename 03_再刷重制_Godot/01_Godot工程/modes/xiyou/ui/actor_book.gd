@@ -503,7 +503,7 @@ func _paint_status(c: XMVCanvas) -> void:
 	if _sprite_tex != null:
 		var pattern: int = [0, 1, 2, 1][floori(_frame / 12.0) % 4]
 		var r := sprite_rect(actor_id(), _sprite_spec, Vector2(_sprite_tex.get_size()), pattern)
-		c.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if native_smooth(actor_id(), _sprite_spec) else CanvasItem.TEXTURE_FILTER_PARENT_NODE
+		c.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if _sprite_spec.get("key", "") == "Yunshang_u2" else (CanvasItem.TEXTURE_FILTER_LINEAR if native_smooth(actor_id(), _sprite_spec) else CanvasItem.TEXTURE_FILTER_PARENT_NODE)
 		c.draw_texture_rect_region(_sprite_tex, r[0], r[1])
 	paint_ops(c, _status_ops)
 
@@ -558,6 +558,8 @@ static func sprite_spec(id: int) -> Dictionary:
 	elif id == XMira.ACTOR and XMira.ART and name == "BlackDragon_Mira_SV":
 		var mp_u2 := XDB.img_path("sv_actors", "Codex_Mira_SV_u2")
 		return {"path": mp_u2, "key": "Codex_Mira_SV_u2", "multi": false, "name": "Codex_Mira_SV_u2"} if mp_u2 != "" else {}
+	elif id == 174 and name == "Yunshang" and XYunshang.art_path("sv_actors", "Yunshang") != "":
+		return {"path": XYunshang.art_path("sv_actors", "Yunshang"), "key": "Yunshang_u2", "multi": false, "name": "Yunshang_u2"}
 	elif BOOK_MULTI.has(id) and (BOOK_MULTI[id][0] == "" or name == BOOK_MULTI[id][0]):
 		multi = BOOK_MULTI[id][1]
 	if multi != "":
@@ -579,13 +581,15 @@ static func book_scale(key: String) -> float:
 
 ## 状态窗立绘要不要线性取样：只在 BOOK_NATIVE_SMOOTH 打开、且是原版无档的原生侧视图时（同 sprite_rect 的「原生」支）
 static func native_smooth(id: int, spec: Dictionary) -> bool:
-	return BOOK_NATIVE_SMOOTH and (id < 167 or not XAppearance.PROFILES.has(str(spec.get("key", ""))))
+	return str(spec.get("key", "")) != "Yunshang_u2" and BOOK_NATIVE_SMOOTH and (id < 167 or not XAppearance.PROFILES.has(str(spec.get("key", ""))))
 
 
 ## 画在状态窗内容层上的目标矩形与取图范围。tex 为整张图，pattern 为侧视图第几格
 static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: int) -> Array:
 	var center := SPRITE_CENTER - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 	var src := Rect2(Vector2.ZERO, tex_size) if spec.get("multi", false) else Rect2(pattern * tex_size.x / 9.0, 0, tex_size.x / 9.0, tex_size.y / 6.0)
+	if spec.get("key", "") == "Yunshang_u2":
+		return [Rect2((center - src.size / 2.0).round(), src.size), src]
 	var prof: Array = XAppearance.profile_of(str(spec.get("key", ""))) if id >= 167 else []
 	if prof.is_empty():
 		return [Rect2(center - src.size / 2.0, src.size), src]  # 原生：锚点居中、原尺寸

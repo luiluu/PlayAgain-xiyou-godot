@@ -112,6 +112,8 @@ static func for_look(a: XActor, key: String) -> XAppearance:
 				var st: Dictionary = XDB.rec("States", int(id))
 				if not st.is_empty():
 					states.append(st.get("meta", {}))
+	if name == "Yunshang" and XYunshang.art_path("sv_actors", name) != "":
+		return for_image("sv_actors/" + name, XCostumes.strip_sv(meta), states)
 	if form == "MiraHuman_u2" or (form == "MiraHuman" and XMira.ART):
 		return for_image("sv_actors/Codex_Mira_SV_u2", XXuanTusuArt.meta(name, meta, art), states)
 	return for_image("sv_actors/" + name, XXuanTusuArt.meta(name, sv_provider(a, name, meta, form), art), states)
@@ -281,6 +283,9 @@ static func profile(f: Dictionary, motion: String) -> Dictionary:
 	var key := str(f.get("asset", ""))
 	if key == "" or not f.has("tex"):
 		return {}
+	# 新图只在实际加载原生64格图时用1:1；旧图继续旧归一。
+	if key == "Yunshang_u2":
+		return {"size": Vector2(64,64), "bounds": Rect2(13,2,38,60), "multi": false, "scale": 1.0, "native_pixels": true}
 	var multi := not (f.get("rect", Rect2()) as Rect2).has_area()
 	var p: Array = profile_of(key)
 	if p.is_empty():
@@ -328,6 +333,8 @@ func _single(t: Texture2D) -> void:
 
 
 func _mv_sheet(t: Texture2D, asset := "") -> void:
+	if t != null and t.resource_path.ends_with("/u2/Yunshang_SV_u2.png"):
+		asset = "Yunshang_u2"
 	sideview = true
 	if t == null:
 		cell = Vector2(64, 64)
