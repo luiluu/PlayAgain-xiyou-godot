@@ -898,6 +898,22 @@ func _main() -> void:
 		await get_tree().process_frame
 
 
+## 敌群事件里的强制行动（339，如炎龙守护者开场连放三招）在「显示技能动画」关着时快放：行动序列一个物理帧走 FORCED_FAST_STEPS 步
+## （O-待定-1，T157 玩家反馈开战卡）。原版同样逐帧演（ui_reference 量 776 号开场三招：OFF 档 187 帧、三倍档 163 帧，约 3 秒，
+## 画面上只有招式名和数字），重制照原版是 166／154 帧；快放后约三分之一。只改演出节奏，结算在播放前已做完，不影响结果。
+## 回退：FORCED_FAST = false（逐帧，同原版）
+static var FORCED_FAST := true
+const FORCED_FAST_STEPS := 3
+var _troop_event_play := false
+
+
+## 敌群事件里的行动序列快放几步（见 FORCED_FAST）
+func _seq_turbo() -> int:
+	if FORCED_FAST and _troop_event_play and not XConfig.flag("CombatSkillAnimation"):
+		return FORCED_FAST_STEPS
+	return 1
+
+
 ## 原版战斗流程里行动之间、回合交界的空帧（ui_reference/battle_pace_ref.cjs 逐帧：行动之间 1 帧、轮到角色再 1 帧；回合末
 ## 等伤害数字飘完，再按战斗成员数逐帧执行 popupDamage，回合开始日志窗等 8 帧）。复现原版，不登 O 号；
 ## PACE_GAPS = false 回到不留空帧（tests/xiyou_battle_pace 两支都测）
@@ -918,7 +934,9 @@ func _play_troop_events(logs: Array) -> void:
 			if l.type == "enemy_change":
 				_apply_enemy_change(l)
 		if not rest.is_empty():
+			_troop_event_play = true
 			await _play(rest)
+			_troop_event_play = false
 			_sync_appeared()
 			otb.show_orders(logic.current_order, logic.next_order)
 			_refresh_status()
@@ -1938,7 +1956,9 @@ func _play(logs: Array) -> void:
 				_set_active(l.user)
 			if XSukunaFx.shrine_action(l):
 				await _sukuna_fx("shrine")
-			await XSequencePlayer.create(self, l, logs.slice(i, j + 1)).play()
+			var player := XSequencePlayer.create(self, l, logs.slice(i, j + 1))
+			player.turbo = _seq_turbo()
+			await player.play()
 			combo.action_ended()
 			_banner("")
 			_set_active(null)
