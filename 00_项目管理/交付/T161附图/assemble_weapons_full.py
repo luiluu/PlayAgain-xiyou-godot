@@ -11,7 +11,7 @@ args=parser.parse_args()
 report={}
 board=Image.new('RGB',(576,4*400),'#607080')
 for ni,name in enumerate(args.names):
-    src=P/('raw_book_full_attempt3.png' if name=='book' else f'raw_{name}_full.png')
+    src=P/('raw_book_full_attempt3.png' if name=='book' else 'raw_shield_full_attempt2.png' if name=='shield' else f'raw_{name}_full.png')
     raw=Image.open(src).convert('RGBA')
     alpha=raw.getchannel('A'); hist=alpha.histogram()
     raw.putalpha(alpha.point(lambda a:255 if a>=128 else 0))
