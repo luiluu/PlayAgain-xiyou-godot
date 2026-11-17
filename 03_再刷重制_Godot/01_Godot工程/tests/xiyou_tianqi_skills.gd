@@ -511,6 +511,7 @@ func _p3() -> void:
 	_check("split_in_if", up.call(3645, "target") == 6 and up.call(1060, "target") == 12 and up.call(2058, "target") == 2, [up.call(3645, "target"), up.call(1060, "target"), up.call(2058, "target")])
 	_check("split_upper", up.call(6036, "whole") == 3 and up.call(10615, "whole") == 3 and up.call(10752, "target") == 3 and up.call(10125, "target") == 2, [up.call(6036, "whole"), up.call(10615, "whole"), up.call(10752, "target"), up.call(10125, "target")])
 	_check("split_yep_effects", int(XDB.rec("Skills", 6036).get("yepEffects", 0)) == int(XDB.table("Skills")[6036].get("yepEffects", 0)) * 3)
+	_check("seq_yep_effects_recount", int(XDB.rec("Skills", 2058).get("yepEffects", 0)) == 2 and int(XDB.table("Skills")[2058].get("yepEffects", 0)) == 22, XDB.rec("Skills", 2058).get("yepEffects"))  # 核查 R2 P3：drop_if 删条件块后 yepEffects 按差值重算（原来 22×2＝44）
 	_check("split_tp_gain", int(XDB.rec("Skills", 1060).tpGain) == 10 and int(XDB.table("Skills")[1060].tpGain) == 30)
 	var in_w := 0
 	var on := false

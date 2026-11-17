@@ -241,15 +241,18 @@ static func abs_data() -> Dictionary:
 		for e in _abs.get("entries", []):
 			if e is Dictionary:
 				var eid = e.get("id", "")
-				_abs_index[str(e.get("kind", "")) + ":" + (str(int(eid)) if eid is float else str(eid))] = e  # JSON 数字读成浮点，str(1.0) 是 "1.0"
+				var key := str(e.get("kind", "")) + ":" + (str(int(eid)) if eid is float else str(eid))  # JSON 数字读成浮点，str(1.0) 是 "1.0"
+				var st := str(e.get("stat", "")) if e.get("stat") != null else ""
+				_abs_index[key + (":" + st if st != "" else "")] = e  # 双回复药（28、51、140…）同一个 id 有 mhp、mmp 两行，按 stat 分开，不互相覆盖
 	return _abs
 
 
 ## 这一条有没有结构化的换算（new＝{pct_of, pct}）。T080 表里只有药品（item_fixed_heal）和纯数字的状态持续伤害（state_dot）是结构化的；
 ## 其余几类 new 还是文字说明（待逐条定写法），本期不接，交付单列着
-static func abs_entry(kind: String, id: int) -> Dictionary:
+## stat：这一行管的是哪项（药品 mhp／mmp，对应效果 11／12）；表里不分 stat 的类别传空
+static func abs_entry(kind: String, id: int, stat := "") -> Dictionary:
 	abs_data()
-	var e = _abs_index.get(kind + ":" + str(id))
+	var e = _abs_index.get(kind + ":" + str(id) + (":" + stat if stat != "" else ""))
 	if not e is Dictionary or not e.get("new") is Dictionary:
 		return {}
 	return e
@@ -257,10 +260,10 @@ static func abs_entry(kind: String, id: int) -> Dictionary:
 
 ## 一条绝对值换算：开着、表里有这一行时返回 ⌊对象(pct_of 那一项上限) × pct%⌋（保留原数的正负）；关着或没有这一行返回 old。
 ## target：按谁的上限算（药品＝用在谁身上，持续伤害＝持有者）
-static func abs_value(kind: String, id: int, old: float, target) -> float:
+static func abs_value(kind: String, id: int, old: float, target, stat := "") -> float:
 	if old == 0.0 or target == null or not on():
 		return old
-	var e := abs_entry(kind, id)
+	var e := abs_entry(kind, id, stat)
 	if e.is_empty():
 		return old
 	var n: Dictionary = e.new

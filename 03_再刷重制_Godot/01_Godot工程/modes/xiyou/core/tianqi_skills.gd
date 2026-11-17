@@ -200,12 +200,14 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 			dmg.critical = bool(sp.critical)
 		r.damage = dmg
 	if sp.has("seq") and r.get("yepSeq") is Dictionary:
+		var before := _seq_effect_count(r.yepSeq)
 		for ph in ["target", "whole"]:
 			if r.yepSeq.get(ph) is Array:
 				r.yepSeq[ph] = _seq_edit(r.yepSeq[ph], sp.seq)
-		for op in sp.seq:  # split_effects 每段拆成 n 段：智能 AI 估段数用的 yepEffects 跟着乘（T081）
-			if str(op.get("op", "")) == "split_effects" and r.has("yepEffects"):
-				r.yepEffects = int(r.yepEffects) * int(op.get("n", 1))
+		# 智能 AI 估段数用的 yepEffects 按编辑前后 whole＋target 段数的差值重算（drop_if／if_keep／keep_effects／split_effects 都会改段数；
+		# 原来只有 split_effects 乘 n，2058 删条件块后没减，核查 R2 P3）。口径同转换器 yep_action_effects：大小写不分、条件里的都算
+		if r.has("yepEffects"):
+			r.yepEffects = maxi(1, int(r.yepEffects) + _seq_effect_count(r.yepSeq) - before)
 	if sp.has("hit_type"):
 		r.hitType = int(sp.hit_type)
 	for k in sp.get("fields", {}):  # 记录上的其他字段直接改（奈叶自定义魔法消耗 mpCostCurrentRate／postDamageCostRepeat 关掉）
@@ -225,6 +227,15 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 					if e.has(k):
 						row[k] = e[k]
 	return r
+
+
+static func _seq_effect_count(seq: Dictionary) -> int:
+	var n := 0
+	for ph in ["whole", "target"]:
+		for c in seq.get(ph, []):
+			if c is Array and not c.is_empty() and str(c[0]).strip_edges().to_upper() == "ACTION EFFECT":
+				n += 1
+	return n
 
 
 ## 行动序列（yepSeq，转换器预编译）：段数在这里。drop_if 删掉条件段（match 是条件里的子串，空＝所有条件段）、if_keep 条件段只留前 n 段（cmd 换成别的命令前缀，如 "Add State"）、replace_cmd 整条换命令名、
@@ -264,7 +275,8 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 					var nm := str(out[i2][0])
 					res2.append(out[i2])
 					i2 += 1
-					if nm.begins_with("if ") and nm.contains(str(op.get("match", ""))):
+					var mt2 := str(op.get("match", ""))
+					if nm.begins_with("if ") and (mt2 == "" or nm.contains(mt2)):  # 同 drop_if：Godot 的 contains("") 为假，空 match 认所有条件段
 						var kept := 0
 						while i2 < out.size() and str(out[i2][0]) != "end":
 							if str(out[i2][0]).to_lower().begins_with(str(op.get("cmd", "action effect")).to_lower()):
