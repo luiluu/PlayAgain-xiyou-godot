@@ -37,6 +37,7 @@ const COLORS := {
 }
 
 var text := ""
+var raw_value := 0.0       # 原始数值（T096 新界面画法按它重排千分位；原版画法不用）
 var kind := "hp"            # hp / crit / hp_heal / mp / mp_heal / miss
 var on_actor := false
 var stack := 0             # 同一目标此前仍存活的回复弹数
@@ -54,6 +55,7 @@ func setup(value: float, is_mp := false, critical := false, miss := false, actor
 	_font = XUI.font()
 	on_actor = actor_target
 	stack = stacked
+	raw_value = value
 	if miss:
 		kind = "miss"
 		text = "Miss"
@@ -187,6 +189,9 @@ func anchor_y() -> float:
 
 
 func _draw() -> void:
+	if XSkinDamagePopup.on():   # T096：新界面按 v0.7 样稿画（窄体数字、千分位、「暴击」小字在上）；轨迹与时长不变
+		XSkinDamagePopup.draw(self)
+		return
 	if _scale <= 0.0 or text == "":
 		return
 	var bw := bitmap_width()

@@ -10,7 +10,7 @@ const W := 330.0
 const ROW_H := float(XUiSkin.ROW_H_SKILL)   # 44
 const VISIBLE := 8                         # 一屏最多 8 行（样稿 8 招）
 const HEAD_H := 40.0
-const FOOT_H := 52.0
+const FOOT_H := 58.0   # T096：两行（一句话说明＋目标 · 用完剩多少），原 52 一行
 const PAD_X := 8.0
 ## 列表右边离角色多远（样稿 819−782）
 static var GAP_TO_ACTOR := 37.0
@@ -50,6 +50,7 @@ static func create_list(parent: Control, list: Array, list_title: String, header
 	w.sel_scale = XSkinSelScale.attach(w)
 	parent.add_child(w)
 	w.select(0)
+	XSkinBattleMotion.list_in(w)   # T096：从环那边（右边中点）由小展开
 	return w
 
 
@@ -67,7 +68,31 @@ func row_rect(i := -1) -> Rect2:
 	return r
 
 
-## 说明栏的两段：目标、用完剩多少（用不了时只写原因）
+## 说明栏第一行：一句话说明（T096）
+func desc_line(i := -1) -> String:
+	if i < 0:
+		i = index
+	if i < 0 or i >= entries.size():
+		return ""
+	return str(entries[i].get("desc", ""))
+
+
+## 「详情」小胶囊（标题右边；点了展开／收起旧说明卡，同键盘、手柄 Y）
+func detail_rect() -> Rect2:
+	var f := XUiSkin.font("title")
+	var x := 16.0 + f.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x + 10.0
+	return Rect2(x, 9, 50, 26)
+
+
+func toggle_detail() -> void:
+	XSkinBattle.help_open = not XSkinBattle.help_open
+	XSound.system(0)
+	queue_redraw()
+	if index >= 0:
+		index_changed.emit(index)   # 战斗画面据此重摆说明卡（同换行）
+
+
+## 说明栏第二行：目标、用完剩多少（用不了时只写原因）
 func foot_text(i := -1) -> String:
 	if i < 0:
 		i = index
@@ -115,6 +140,15 @@ var _press_event: InputEventMouseButton
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if active and is_visible_in_tree() and XSkinBattle.HELP_COLLAPSE:   # T096：详情（键盘 Y、手柄 Y、点「详情」）
+		var hit_chip := event is InputEventMouseButton and (event as InputEventMouseButton).pressed \
+			and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT and detail_rect().has_point((event as InputEventMouseButton).position - position)
+		var key := event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo and (event as InputEventKey).keycode == KEY_Y
+		var pad := event is InputEventJoypadButton and (event as InputEventJoypadButton).pressed and (event as InputEventJoypadButton).button_index == JOY_BUTTON_Y
+		if hit_chip or key or pad:
+			toggle_detail()
+			XKeyMap.handled(self)
+			return
 	if XUiSkin.TOUCH_V2 and active and is_visible_in_tree():
 		if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
 			var mb := event as InputEventMouseButton
@@ -158,6 +192,17 @@ func _draw() -> void:
 	var num := XUiSkin.font("num")
 	# 标题＋右上
 	XUiSkin.ds(self, title_font, Vector2(16, 28), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, XUiSkin.GOLD)
+	if XSkinBattle.HELP_COLLAPSE:   # T096「详情」胶囊：展开时红乙选中色
+		var cr := detail_rect()
+		var sb := StyleBoxFlat.new()
+		sb.set_corner_radius_all(13)
+		sb.bg_color = Color(XUiSkin.SEL_FILL, 0.28) if XSkinBattle.help_open else Color(XUiSkin.BG, 0.6)
+		sb.border_color = XUiSkin.SEL_LINE if XSkinBattle.help_open else Color(XUiSkin.LINE, 0.5)
+		sb.set_border_width_all(1)
+		sb.draw(get_canvas_item(), cr)
+		var tw := body.get_string_size("详情", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+		XUiSkin.ds(self, body, Vector2(cr.position.x + (cr.size.x - tw) / 2.0, cr.position.y + 18), "详情", HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
+			Color.WHITE if XSkinBattle.help_open else XUiSkin.GOLD)
 	if header != "":
 		XUiSkin.ds(self, num, Vector2(16, 28), header, HORIZONTAL_ALIGNMENT_RIGHT, size.x - 32, 16, XUiSkin.TEXT_2)
 	# 行
@@ -179,8 +224,14 @@ func _draw() -> void:
 	var fy := HEAD_H + rows * ROW_H + 4.0
 	draw_line(Vector2(16, fy), Vector2(size.x - 16, fy), Color(XUiSkin.LINE, 0.3), 1.0)
 	var ft := foot_text()
-	if ft != "":
-		var en := index >= 0 and index < entries.size() and bool(entries[index].get("enabled", true))
+	var dl := desc_line()
+	var en := index >= 0 and index < entries.size() and bool(entries[index].get("enabled", true))
+	if dl != "":   # T096：同样稿两行——上行一句话说明（正文色 15），下行目标 · 用完剩（次要色 14；用不了时写原因，橙）
+		XUiSkin.ds(self, body, Vector2(16, fy + 22), XSkinOTBBar.fit(body, dl, size.x - 32, 15), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT)
+		if ft != "":
+			XUiSkin.ds(self, body, Vector2(16, fy + 44), XSkinOTBBar.fit(body, ft, size.x - 32, 14), HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
+				XUiSkin.TEXT_2 if en else XUiSkin.DOWN)
+	elif ft != "":
 		draw_multiline_string(body, Vector2(16, fy + 21), ft, HORIZONTAL_ALIGNMENT_LEFT, size.x - 32, 15, 2,
 			XUiSkin.TEXT_2 if en else XUiSkin.DOWN)
 
