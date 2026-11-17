@@ -286,6 +286,17 @@ static func _draw_round_toggle(btn: Button) -> void:
 	var sz := btn.size
 	var c := sz / 2.0
 	var r := minf(sz.x, sz.y) / 2.0
+	var mode := btn.get_draw_mode()
+	var bg := Color(0.065, 0.052, 0.048, 0.72)
+	var border := Color(XUiSkin.GOLD, 0.56)
+	if mode == BaseButton.DRAW_PRESSED or mode == BaseButton.DRAW_HOVER_PRESSED:
+		bg = Color(0.38, 0.11, 0.08, 0.90)
+		border = XUiSkin.SEL_LINE
+	elif mode == BaseButton.DRAW_HOVER:
+		bg = Color(0.24, 0.09, 0.07, 0.82)
+		border = Color(XUiSkin.SEL_LINE, 0.85)
+	btn.draw_circle(c, r - 0.5, bg)
+	btn.draw_arc(c, r - 0.5, 0.0, TAU, 48, border, 1.1, true)
 	var lines := toggle_display_lines(btn.text)
 	var active_state := lines[1] == "开" or (lines[1].begins_with("×") and lines[1] != "×1")
 	if active_state:
@@ -333,6 +344,10 @@ static func style_toggles(side: Control, buttons: Array, origin: Vector2) -> voi
 			var btn := b as Button
 			btn.custom_minimum_size = Vector2(120, 46)
 			btn.clip_text = false
+			btn.remove_theme_constant_override("outline_size")
+			btn.remove_theme_color_override("font_outline_color")
+			btn.remove_theme_color_override("font_focus_color")
+			btn.remove_theme_color_override("font_hover_pressed_color")
 			btn.add_theme_font_override("font", XUiSkin.font("body"))
 			btn.add_theme_font_size_override("font_size", 16)
 			btn.add_theme_stylebox_override("normal", normal)
@@ -343,25 +358,15 @@ static func style_toggles(side: Control, buttons: Array, origin: Vector2) -> voi
 			btn.queue_redraw()
 		return
 	side.add_theme_constant_override("separation", ROUND_TOGGLE_GAP)
-	var r_norm := StyleBoxFlat.new()
-	r_norm.bg_color = Color(0.065, 0.052, 0.048, 0.72)
-	r_norm.border_color = Color(XUiSkin.GOLD, 0.56)
-	r_norm.set_border_width_all(1)
-	r_norm.set_corner_radius_all(ceili(ROUND_TOGGLE_SIZE.x / 2.0))
-	var r_hover := r_norm.duplicate() as StyleBoxFlat
-	r_hover.bg_color = Color(0.24, 0.09, 0.07, 0.82)
-	r_hover.border_color = Color(XUiSkin.SEL_LINE, 0.85)
-	var r_press := r_norm.duplicate() as StyleBoxFlat
-	r_press.bg_color = Color(0.38, 0.11, 0.08, 0.90)
-	r_press.border_color = XUiSkin.SEL_LINE
+	var r_empty := StyleBoxEmpty.new()
 	for b in buttons:
 		var btn := b as Button
 		btn.custom_minimum_size = ROUND_TOGGLE_SIZE
 		btn.clip_text = true
-		btn.add_theme_stylebox_override("normal", r_norm)
-		btn.add_theme_stylebox_override("hover", r_hover)
-		btn.add_theme_stylebox_override("pressed", r_press)
-		for k in ["font_color", "font_hover_color", "font_pressed_color"]:
+		for st in ["normal", "hover", "pressed", "focus", "hover_pressed"]:
+			btn.add_theme_stylebox_override(st, r_empty)
+		btn.add_theme_constant_override("outline_size", 0)
+		for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color", "font_outline_color"]:
 			btn.add_theme_color_override(k, Color(0, 0, 0, 0))
 		if not btn.has_meta("skin_round_drawn"):
 			btn.set_meta("skin_round_drawn", true)

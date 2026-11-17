@@ -109,32 +109,39 @@ static func _center_cutout_texture(src: Image, bbox: Rect2i) -> Texture2D:
 	return ImageTexture.create_from_image(out)
 
 
-static func _is_diamond_bg_pixel(c: Color, x: int, y: int) -> bool:
-	if c.a < 0.12:
+## MOG 85×85 菱形头像统一的黄/金渐变底色（345 张全量拟合，纯底色最大 RGB 偏差 0.012）
+static func _diamond_bg_pred(x: int, y: int) -> Vector3:
+	var c0 := Vector3(192.0 / 255.0, 142.0 / 255.0, 23.0 / 255.0)
+	var c1 := Vector3(228.0 / 255.0, 206.0 / 255.0, 154.0 / 255.0)
+	var dv := c1 - c0
+	var fx := (float(x) - 42.0) / 42.0
+	var fy := (float(y) - 42.0) / 42.0
+	var t := clampf(0.343702 + 0.620474 * fx + 0.049286 * fy + 0.145368 * fx * fx + 0.035060 * fx * fy - 0.018461 * fy * fy, 0.0, 1.0)
+	return c0 + dv * t
+
+
+static func _is_diamond_frame_pixel(c: Color, x: int, y: int) -> bool:
+	var m := absi(x - 42) + absi(y - 42)
+	if m < 39:
+		return false
+	if c.a < 0.85:
 		return true
 	var h := c.h * 360.0
-	var s := c.s
-	var v := c.v
-	var manhattan: int = absi(x - 42) + absi(y - 42)
-	# 外圈菱形金框与白/暗斜边（manhattan >= 38）
-	if manhattan >= 38:
-		if (h >= 34.0 and h <= 50.0 and s >= 0.08) or c.a < 0.85:
-			return true
-	# 框内统一黄/金色渐变底（HSV 色相 35°～49°、饱和度 >= 0.28、明度 >= 0.65）
-	if h >= 35.0 and h <= 49.0 and s >= 0.28 and v >= 0.65:
-		return true
-	return false
+	if m == 39:
+		return h >= 38.0 and h <= 48.0 and c.s <= 0.30 and c.v >= 0.70
+	return h >= 33.0 and h <= 51.0 and c.s >= 0.08 and c.v <= 0.945
 
 
-## 识别原版 MOG 85×85 菱形金框头像，按 HSV 黄/金色从边缘漫水剥离外框与黄底并收 1px 边，保留完整头型与发冠装进圆章（无需跨首领建模板）。
+## 识别原版 MOG 85×85 菱形金框头像：结合理论渐变拟合与相邻像素平滑度从边缘漫水剥离外框与黄底，
+## 再清理封闭纯底空腔；若扣除比例或中心区域破坏超阈值，兜底退回「圆形裁内框、保留原底色」。
 static func face_crop(tex: Texture2D) -> Dictionary:
 	if tex == null:
-		return {"center": Vector2(0.5, 0.5), "uv_r": 0.5, "diamond": false, "tex": null}
+		return {"center": Vector2(0.5, 0.5), "uv_r": 0.5, "diamond": false, "fallback": false, "tex": null}
 	var key := tex.get_rid().get_id()
 	if _crop_cache.has(key):
 		return _crop_cache[key]
 	var sz := tex.get_size()
-	var res := {"center": Vector2(0.5, 0.5), "uv_r": 0.46, "diamond": false, "tex": tex}
+	var res := {"center": Vector2(0.5, 0.5), "uv_r": 0.46, "diamond": false, "fallback": false, "tex": tex}
 	var img := tex.get_image()
 	if img != null and sz.x >= 80.0 and sz.y >= 80.0:
 		if img.is_compressed():
@@ -152,13 +159,16 @@ static func face_crop(tex: Texture2D) -> Dictionary:
 			for i in 85:
 				for pt: Vector2i in [Vector2i(i, 0), Vector2i(i, 84), Vector2i(0, i), Vector2i(84, i)]:
 					var idx: int = pt.y * 85 + pt.x
-					if bg[idx] == 0 and _is_diamond_bg_pixel(work.get_pixel(pt.x, pt.y), pt.x, pt.y):
+					var c0 := work.get_pixel(pt.x, pt.y)
+					if bg[idx] == 0 and (c0.a < 0.12 or _is_diamond_frame_pixel(c0, pt.x, pt.y)):
 						bg[idx] = 1
 						q.append(pt)
 			var head := 0
 			while head < q.size():
 				var p := q[head]
 				head += 1
+				var pc := work.get_pixel(p.x, p.y)
+				var p_is_inner := pc.a >= 0.12 and absi(p.x - 42) + absi(p.y - 42) <= 38
 				for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
 					var nx: int = p.x + d.x
 					var ny: int = p.y + d.y
@@ -167,44 +177,77 @@ static func face_crop(tex: Texture2D) -> Dictionary:
 					var nidx: int = ny * 85 + nx
 					if bg[nidx] != 0:
 						continue
-					if _is_diamond_bg_pixel(work.get_pixel(nx, ny), nx, ny):
+					var nc := work.get_pixel(nx, ny)
+					var is_bg := false
+					if nc.a < 0.12 or _is_diamond_frame_pixel(nc, nx, ny):
+						is_bg = true
+					else:
+						var bdist := Vector3(nc.r, nc.g, nc.b).distance_to(_diamond_bg_pred(nx, ny))
+						if bdist <= 0.038:
+							if not p_is_inner or bdist <= 0.022 or Vector3(nc.r - pc.r, nc.g - pc.g, nc.b - pc.b).length() <= 0.045:
+								is_bg = true
+					if is_bg:
 						bg[nidx] = 1
 						q.append(Vector2i(nx, ny))
+			# 封闭纯黄底空腔（被头发/角/翅围住且与理论渐变一致 >= 14px 的区域）
+			var pocket_vis := PackedByteArray()
+			pocket_vis.resize(85 * 85)
+			for py in 85:
+				for px in 85:
+					var pidx := py * 85 + px
+					if bg[pidx] != 0 or pocket_vis[pidx] != 0 or absi(px - 42) + absi(py - 42) > 38:
+						continue
+					var pc0 := work.get_pixel(px, py)
+					if pc0.a < 0.12 or Vector3(pc0.r, pc0.g, pc0.b).distance_to(_diamond_bg_pred(px, py)) > 0.016:
+						continue
+					var comp: Array[Vector2i] = [Vector2i(px, py)]
+					pocket_vis[pidx] = 1
+					var ch := 0
+					while ch < comp.size():
+						var cp := comp[ch]
+						ch += 1
+						for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+							var cx: int = cp.x + d.x
+							var cy: int = cp.y + d.y
+							if cx < 0 or cx >= 85 or cy < 0 or cy >= 85 or absi(cx - 42) + absi(cy - 42) > 38:
+								continue
+							var cidx := cy * 85 + cx
+							if bg[cidx] != 0 or pocket_vis[cidx] != 0:
+								continue
+							var cc := work.get_pixel(cx, cy)
+							if cc.a >= 0.12 and Vector3(cc.r, cc.g, cc.b).distance_to(_diamond_bg_pred(cx, cy)) <= 0.024:
+								pocket_vis[cidx] = 1
+								comp.append(Vector2i(cx, cy))
+					if comp.size() >= 14:
+						for cp in comp:
+							bg[cp.y * 85 + cp.x] = 1
+			var cleared_in := 0
+			var rem_in := 0
+			var ctr_cleared := 0
 			for y in 85:
 				for x in 85:
+					var m := absi(x - 42) + absi(y - 42)
 					if bg[y * 85 + x] != 0:
 						work.set_pixel(x, y, Color(0, 0, 0, 0))
-			# 吃完黄底后收 1px 抗锯齿金黄/外框残渣边
-			var fringe: Array[Vector2i] = []
-			for y in 85:
-				for x in 85:
-					if bg[y * 85 + x] != 0:
-						continue
-					var c := work.get_pixel(x, y)
-					if c.a < 0.12:
-						continue
-					var touches_bg := false
-					for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-						var xx: int = x + d.x
-						var yy: int = y + d.y
-						if xx < 0 or xx >= 85 or yy < 0 or yy >= 85 or bg[yy * 85 + xx] != 0:
-							touches_bg = true
-							break
-					if not touches_bg:
-						continue
-					var hue := c.h * 360.0
-					var manhattan: int = absi(x - 42) + absi(y - 42)
-					if (manhattan >= 38 and ((hue >= 32.0 and hue <= 52.0 and c.s >= 0.06) or c.a < 0.88)) or (hue >= 35.0 and hue <= 49.0 and c.s >= 0.30 and c.v >= 0.42):
-						fringe.append(Vector2i(x, y))
-			for pt in fringe:
-				work.set_pixel(pt.x, pt.y, Color(0, 0, 0, 0))
+						if m <= 38:
+							cleared_in += 1
+							if (x - 42) * (x - 42) + (y - 42) * (y - 42) <= 64:
+								ctr_cleared += 1
+					elif m <= 38 and work.get_pixel(x, y).a >= 0.12:
+						rem_in += 1
 			var bbox := _opaque_bbox(work)
-			var clean_tex := _center_cutout_texture(work, bbox)
-			res = {"center": Vector2(0.5, 0.5), "uv_r": 0.49, "diamond": true, "tex": clean_tex}
+			var cleared_ratio := float(cleared_in) / 2965.0
+			var ctr_ratio := float(ctr_cleared) / 197.0
+			if cleared_ratio > 0.90 or rem_in < 200 or ctr_ratio > 0.72 or bbox.size.x < 16 or bbox.size.y < 16:
+				# 保留率兜底：退回「圆形裁内框、保留原底色」，宁可留黄底也不吃掉主体
+				res = {"center": Vector2(0.5, 0.5), "uv_r": 0.30, "diamond": false, "fallback": true, "tex": tex}
+			else:
+				var clean_tex := _center_cutout_texture(work, bbox)
+				res = {"center": Vector2(0.5, 0.5), "uv_r": 0.49, "diamond": true, "fallback": false, "tex": clean_tex}
 		elif corner_clear:
 			var bbox := _opaque_bbox(img)
 			var clean_tex := _center_cutout_texture(img, bbox)
-			res = {"center": Vector2(0.5, 0.5), "uv_r": 0.49, "diamond": false, "tex": clean_tex}
+			res = {"center": Vector2(0.5, 0.5), "uv_r": 0.49, "diamond": false, "fallback": false, "tex": clean_tex}
 	_crop_cache[key] = res
 	return res
 

@@ -236,6 +236,60 @@ func _boss_t125(b: XBattleScene, boss: XBattler) -> void:
 				rim.save_png(out_dir.path_join("face_raw_" + fn + ".png"))
 			im.save_png(out_dir.path_join("face_clean_" + fn + ".png"))
 	_check("boss_faces_hsv_clean_no_yellow_residue", multi_ok, multi_detail)
+	# R3 P1 复核：金发/橙金身体/金甲/金焰/金鸟不得被黄底漫水吃掉，检查主体像素保留率
+	var keep_ok := true
+	var keep_detail := {}
+	var min_opaque := {
+		"TCLH-BOSS-165": 2200,
+		"TCLH-BOSS-95": 3200,
+		"TCLH-BOSS-73": 2400,
+		"TCLH-BOSS-183": 2200,
+		"BOSS_23": 1400,
+		"TCLH-BOSS-208": 1950,
+	}
+	for fn: String in min_opaque.keys():
+		var t := XBossHpBar._tex("bosshp", fn)
+		var cr := XSkinBossArc.face_crop(t)
+		var ct: Texture2D = cr.get("tex")
+		var im := ct.get_image() if ct != null else null
+		if not bool(cr.get("diamond", false)) or bool(cr.get("fallback", false)) or im == null:
+			keep_ok = false
+			keep_detail[fn] = "invalid_or_fallback"
+			continue
+		var opaque_cnt := 0
+		for y in im.get_height():
+			for x in im.get_width():
+				if im.get_pixel(x, y).a >= 0.12:
+					opaque_cnt += 1
+		var c_mid := im.get_pixel(im.get_width() / 2, im.get_height() / 4)
+		var top_ok := fn != "TCLH-BOSS-165" or c_mid.a >= 0.12
+		if opaque_cnt < int(min_opaque[fn]) or not top_ok:
+			keep_ok = false
+		keep_detail[fn] = [opaque_cnt, int(min_opaque[fn]), top_ok]
+		if out_dir != "":
+			var rim := t.get_image()
+			if rim != null:
+				if rim.is_compressed():
+					rim.decompress()
+				rim.save_png(out_dir.path_join("face_raw_" + fn + ".png"))
+			im.save_png(out_dir.path_join("face_clean_" + fn + ".png"))
+	_check("boss_faces_gold_orange_subject_retained", keep_ok, keep_detail)
+	# 保留率兜底：构造纯背景菱形，确认抠除超阈值时退回「圆形裁内框、保留原底色」
+	var fb_img := Image.create(85, 85, false, Image.FORMAT_RGBA8)
+	fb_img.fill(Color(0, 0, 0, 0))
+	for y in 85:
+		for x in 85:
+			var m := absi(x - 42) + absi(y - 42)
+			if m <= 38:
+				var p := XSkinBossArc._diamond_bg_pred(x, y)
+				fb_img.set_pixel(x, y, Color(p.x, p.y, p.z, 1.0))
+			elif m <= 42:
+				fb_img.set_pixel(x, y, Color(0.55, 0.45, 0.22, 1.0))
+	var fb_tex := ImageTexture.create_from_image(fb_img)
+	var fb_res := XSkinBossArc.face_crop(fb_tex)
+	_check("boss_face_retention_fallback_circle", bool(fb_res.get("fallback", false)) and not bool(fb_res.get("diamond", false)) and is_equal_approx(float(fb_res.get("uv_r", 0.0)), 0.30) and fb_res.get("tex") == fb_tex, [fb_res.get("fallback"), fb_res.get("diamond"), fb_res.get("uv_r")])
+	# R3 P2：左上圆钮不用 corner_radius==w/2 的 StyleBoxFlat，改 StyleBoxEmpty + draw_circle 并清 outline
+	_check("round_toggles_no_stylebox_seam_or_outline", b.auto_btn.get_theme_stylebox("normal") is StyleBoxEmpty and b.speed_btn.get_theme_stylebox("normal") is StyleBoxEmpty and b.auto_btn.get_theme_constant("outline_size") == 0 and b.auto_btn.get_theme_color("font_outline_color").a == 0.0)
 	_check("boss_copper_seal_loaded", XSkinBossArc.copper_seal_texture() != null)
 	# CLEAN_FACE / INK_TEXT 回退开关实际行为验证（有头像首领）
 	XSkinBossArc.CLEAN_FACE = false
