@@ -18,6 +18,7 @@ var out_dir := ""
 
 func _ready() -> void:
 	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（优化登记三条）关掉，新行为由 xiyou_rift2_canglong 核
+	XGuyu.ART = false
 	XYunshang.ART = false  # 冻结旧图鉴参照；新图由 xiyou_yunshang_art 守护
 	XMira.ART = false  # 参照为 v0.62.12（168 用 UserSV_MiraHuman1_0）；米拉新美术见 xiyou_mira_art
 	for arg in OS.get_cmdline_user_args():
@@ -197,6 +198,7 @@ func _run() -> void:
 			pl.stream = null
 	await get_tree().create_timer(0.3, true, false, true).timeout
 	await frames(3)
+	XGuyu.ART = true
 	XYunshang.ART = true
 	XMira.ART = true
 	var passed := results.filter(func(x): return x.passed).size()

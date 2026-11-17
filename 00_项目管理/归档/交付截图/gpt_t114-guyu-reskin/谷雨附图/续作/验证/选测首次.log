@@ -1,0 +1,12 @@
+  · xiyou_guyu 只按全名选 1 个；另有 3 个同前缀场景没选（xiyou_guyu_art.tscn、xiyou_guyu_battle.tscn 等），要它们写成「xiyou_guyu*」
+  · xiyou_actor_book 只按全名选 1 个；另有 2 个同前缀场景没选（xiyou_actor_book_compare.tscn、xiyou_actor_book_review.tscn 等），要它们写成「xiyou_actor_book*」
+  ✗ xiyou_guyu_ui.tscn (rc=1)
+      FAIL scene.guyu_profile [{"bounds":"[P: (12.0, 2.0), S: (40.0, 60.0)]","multi":false,"native_pixels":true,"scale":1.0,"size":"(64.0, 64.0)"},1.0]
+      TEST_RESULT={"name":"xiyou_guyu_ui","passed":790,"total":791}
+      完整输出：/tmp/t114_selected_new/xiyou_guyu_ui.rerun1.log
+  · 测试用时 94 秒（并行 2，共用上限 4）；8 个场景，有失败
+  · 最慢 8 个场景：xiyou_determinism 65秒、xiyou_actor_book 56秒、xiyou_guyu_ui 9秒、xiyou_guyu_battle 9秒、xiyou_guyu 7秒、xiyou_portrait1 5秒、xiyou_guyu_art 5秒、xiyou_yunshang_art 5秒
+  · 本次结果记在提交 2d6050ebc3 名下（合并时差异没波及的场景可沿用）
+  · 日志：/tmp/t114_selected_new
+  ✗ 失败场景 1 个：
+      xiyou_guyu_ui.tscn → /tmp/t114_selected_new/xiyou_guyu_ui.rerun1.log
