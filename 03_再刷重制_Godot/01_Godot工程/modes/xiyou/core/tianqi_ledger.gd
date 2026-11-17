@@ -622,7 +622,8 @@ static func take_derived(logic, u, source: String) -> bool:
 static var TRACE = null
 
 
-static func take_module_derived(logic, u, source: String) -> bool:
+## trigger（T137）：替别人出手的来源（璇棱光）传触发它的那个行动者，TRACE 记 trigger，专项按那人那次行动的主伤害算比例；不影响计数（照旧记在 u 名下）
+static func take_module_derived(logic, u, source: String, trigger = null) -> bool:
 	var ok := true
 	if XTianqiBase.on() and budget_on(logic, u):
 		var row: Dictionary = module_derived_row(source)
@@ -635,7 +636,8 @@ static func take_module_derived(logic, u, source: String) -> bool:
 				b.derived[key] = n + 1
 	if TRACE is Array and logic != null:
 		var hp := _foe_hp(logic)
-		TRACE.append({"turn": int(logic.turn), "actor": int(u.actor_id) if u is XActor else 0, "source": source, "ok": ok, "hp0": hp, "hp1": -1.0 if ok else hp})
+		TRACE.append({"turn": int(logic.turn), "actor": int(u.actor_id) if u is XActor else 0, "source": source, "ok": ok, "hp0": hp, "hp1": -1.0 if ok else hp,
+			"trigger": int(trigger.actor_id) if trigger is XActor else 0, "hps": _foe_hps(logic)})
 	return ok
 
 
@@ -646,7 +648,18 @@ static func derived_close(logic) -> void:
 	for i in range((TRACE as Array).size() - 1, -1, -1):
 		if float(TRACE[i].hp1) < 0.0:
 			TRACE[i].hp1 = _foe_hp(logic)
+			var before: Array = TRACE[i].get("hps", [])
+			var now := _foe_hps(logic)
+			var n := 0
+			for k in mini(before.size(), now.size()):
+				if float(now[k]) < float(before[k]):
+					n += 1
+			TRACE[i]["targets"] = n  # T137：这次派生打到了几个敌人（per_target 口径的分母）
 			return
+
+
+static func _foe_hps(logic) -> Array:
+	return logic.enemies.map(func(e): return float(e.hp))
 
 
 static func _foe_hp(logic) -> float:

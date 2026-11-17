@@ -28,6 +28,13 @@ const CONFIGS := {
 	180: {"trigger": [10634], "awake": [10634, 10635, 10636, 10638, 10639, 10640, 10641, 10642], "awakening_skill": 10646, "state": 2799},  # 天启篇五条悟（XGojo）
 }
 const INCREMENT := [1.0, 1.2, 1.4, 1.6]
+## 天启篇（技能卡开着，XTianqiSkills.cards_on；T137）：原版暴伤加成 criticalAdd 被模块收口拦掉，按《全角色技能重构 v0.2》补回卡上的数
+## （XTianqiModules.damage_ops 调 tq_ops，在收口之后）：甚尔「黑闪必暴、爆伤 +30%」（不按连闪涨）、觉醒 2 回合。
+## 五条悟设计稿只写「暴伤照共用规则」，协调 11-17 推荐与甚尔一致 +30%（待 Kyo 拍板，单独一个数 TQ_CRIT_GOJO 可调，0＝不加）。
+## 宿傩卡上只有「下一次斩击 +20%（领域中 +30%）」（XSukuna.tq_ops），不加爆伤；必暴、觉醒 ×1.2、概率照共用规则。
+static var TQ_CRIT_GOJO := 0.3
+const TQ_CRIT := {171: 0.3}
+const TQ_AWAKE_ROUNDS := {171: 2}
 
 static var round := 0
 static var serial := 0
@@ -178,6 +185,19 @@ static func damage_ops(b) -> Array:
 	return [{"op": "add", "field": "criticalAdd", "value": float(hit.increment)}] if boosted(b) else []
 
 
+## 天启篇黑闪那次的爆伤（没写的角色 0）
+static func tq_crit(a) -> float:
+	var id := int(a.actor_id) if a is XActor else 0
+	return TQ_CRIT_GOJO if id == XGojo.ACTOR else float(TQ_CRIT.get(id, 0.0))
+
+
+## 天启篇（XTianqiModules.damage_ops，收口之后）：黑闪那次按卡加爆伤
+static func tq_ops(a, b) -> Array:
+	if not boosted(b) or cast.is_empty() or cast.actor != a or tq_crit(a) <= 0.0:
+		return []
+	return [{"op": "add", "field": "criticalAdd", "value": tq_crit(a)}]
+
+
 ## executeHpDamage 包装
 static func after_hp(u, t, loss: float, skill: Dictionary) -> void:
 	var c := _cast_for(u, skill)
@@ -226,7 +246,7 @@ static func finish(logic, u, skill) -> void:
 	if bool(c.success):
 		t.focus = 0
 		t.chain = int(c.chain) + 1
-		t.expires = round + 3
+		t.expires = round + (int(TQ_AWAKE_ROUNDS.get(int(u.actor_id), 3)) if XTianqiSkills.cards_on() else 3)
 		var cfg := config(u)
 		if u.skill_ids.has(int(cfg.awakening_skill)):
 			logic._state_add(u, int(cfg.state))
