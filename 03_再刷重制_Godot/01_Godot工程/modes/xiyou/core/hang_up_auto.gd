@@ -16,7 +16,7 @@ static var SAFE_RECOVERY := true
 const LOOP_CAP := 2000
 ## O-023：顺序号保持 1～N 且删去旧表残留，次数改动后重建已排过的顺序；false 恢复原版延迟刷新/残留。
 static var CONSISTENT_ORDER := true
-## O-待定-1：顺序表的技能按实际消耗判够不够（同手动出招：书、装备、状态、禁忌等减耗都算，canUse 已比过）；
+## O-562：顺序表的技能按实际消耗判够不够（同手动出招：书、装备、状态、禁忌等减耗都算，canUse 已比过）；
 ## false＝原版 makeAction 拿技能表的原始 mpCost／tpCost 比当前值（减耗到 0 也判 TP 不够、改放普攻）
 static var REAL_COST := true
 
