@@ -9,6 +9,14 @@ extends RefCounted
 ## 画面状态都写在 battler_key 里（|art:形态、|xt:primary／shadow、|held:武具），和显示中的读数同步，不抢在演出之前。
 ## 参照 mv_oracle/xuan_tusu_art_probe.cjs，专项 tests/xiyou_xuan_tusu_art。
 
+static var XUAN_ART := true
+static func xuan_path(folder: String, name: String) -> String:
+	if not XUAN_ART:
+		return ""
+	var file := str({"sv_actors/Codex_Xuan_SV_v1": "Xuan_SV_v2", "characters/$Codex_Xuan_v3_HD": "$Xuan_v2"}.get(folder + "/" + name, ""))
+	var path := "res://content/xuan_v2/%s.png" % file
+	return path if file != "" and ResourceLoader.exists(path) else ""
+
 const TUSU_ICON := 240000
 const XUAN_ICON := 240100
 const TUSU_COUNT := 30

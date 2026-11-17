@@ -212,6 +212,9 @@ static func img_path(folder: String, name: String) -> String:
 	var guyu_art := XGuyu.art_path(folder, name)
 	if guyu_art != "":
 		return guyu_art
+	var xuan_art := XXuanTusuArt.xuan_path(folder, name)
+	if xuan_art != "":
+		return xuan_art
 	var tusu_art := XTusu.art_path(folder, name)
 	if tusu_art != "":
 		return tusu_art
