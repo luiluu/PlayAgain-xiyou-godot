@@ -265,6 +265,16 @@ D148 区间按烙印 0 折 ÷1.5：超强者 168～232 万、强者 99～150 万
 
 - T163（D187、D189，cc，Opus＋medium）：法宝读表（`XTianqiGear.FABAO_TABLE`，99 级＝半件 80 级装备）；K 0.2→0.27；D189 逐个调角色覆盖层 `skill_rework.json`／`base_line.json` 的 `tune.D189`（开关 `XTianqiBase.TUNE_D189`）：弱者 97、90、53、4 下调，偏弱超强者 176（十招 ×1.56～1.67＋物攻成长 1.2）、177（棱光 2.5→5.8＋魔攻成长 1.2）、108（魔攻魔法成长 1.2）上调；天启篇数据校验读覆盖层；K 探针补进阶拉满、饿狼／屠苏／宿傩养满、黑印武器按本人武器类补齐（v5～v8 有 69/134 人没武器）、`--level=`、`--no-tune`；v10 全档复量：超 217／强 194／弱 85 万，超÷弱 2.56。
 
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | `modes/xiyou/core/tianqi_qiyin_equip.gd` `XTianqiQiyinEquip.CLEAR_BASE_FX` | 七印装备借原版底子时带着底子的 YEP、原版套装效果 | 七印装备清掉借来的底子 YEP 与套装 | 七印只认自己的印与词条，底子带的元素增幅 +200%～250% 是漏洞 | `XTianqiQiyinEquip.CLEAR_BASE_FX = false` | cc | 保留 |
+| O-待定 | `modes/xiyou/core/tianqi_base.gd` `XTianqiBase.CLASS_RATE_OFF` | 期四照算原版职业特性 21 属性倍率（惠惠魔攻 ×3 等） | 本体换标准线后扣掉职业那几条倍率 | 本体已按标准线，职业差异不该再算一次 | `XTianqiBase.CLASS_RATE_OFF = false` | cc | 保留 |
+| O-待定 | `modes/xiyou/core/tianqi_base.gd` `XTianqiBase.REALM_OFF` | 原版通用境界被动（圣者境界等）期四照样生效 | 天启篇里拦掉，说明改成「暂不生效（境界整套重做）」 | Kyo 已定境界整套重做、不参与标定 | `XTianqiBase.REALM_OFF = false` | cc | 保留 |
+| O-待定 | `modes/xiyou/core/tianqi_gear.gd` `XTianqiGear.FABAO_TABLE` | 法宝按原版每级成长给属性（99 级物攻 500～14850 不等） | 法宝读表：99 级＝半件 80 级装备（攻击、生命各 0.5×品质） | 基础数值重构 v0.4 第五节第 2 条；D187 | `XTianqiGear.FABAO_TABLE = false` | cc | 保留 |
+| O-待定 | `modes/xiyou/tianqi_data/skill_rework.json`、`base_line.json` 的 `tune.D189`；`XTianqiBase.TUNE_D189` | （天启篇卡）标定前的系数与成长 | D189 逐个调角色：弱者 97／90／53／4 下调，176／177／108 上调（分摊到多招与本体成长） | K 标定后各档区间与超÷弱（Kyo D189） | `XTianqiBase.TUNE_D189 = false` 后 `XTianqiSkills.reload()` | cc | 保留 |
+
 ## 我不同意的地方
 
 - 一个会话做完七步：第 4～6 步要先造丙档工具（T066 只造满养成档），稿子第十节本来就写这一半配 Sonnet＋medium；协调 11-17 同意拆。
