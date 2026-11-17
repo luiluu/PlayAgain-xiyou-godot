@@ -1,7 +1,7 @@
 # 交付：luiluu/gpt-t160-yunshang-reskin
 
 - 车道／工作者：T160云裳换皮／小o（co，gpt-6.1-sol＋medium，P6）
-- 状态：可合并（工程验收完成；原尺寸比例差交协调判断，待小A跨模型核查）
+- 状态：可合并（工程验收完成；wait偏大已返修，待小A跨模型核查）
 
 ## 变更记录草稿
 
@@ -155,3 +155,5 @@
 - assembly.json逐帧记录wait倍数0.072（原成品约0.089～0.092）、原始bbox、脚底参考与输出平移；头区量测.md注明改倍数理由，assembled_native.png及全部头量测/辅助图更新。wait_before_after.png保留原尺寸前后对照。
 - T156原脚本原阈值退出0：72项0失败2警告，脚底带横漂1.40px、wait#1孔洞(16,35)，不补画或改阈值；新报告在battle/wait_rescale_check。
 - 新增出图0，预算仍62/80；不改接线与GDScript，沿用已通过的语法/外观依赖专项，本轮重跑云裳专项、工具回归和静音实机四图，最终结果见收尾。
+
+- 返修验证完成：云裳专项173/173、静音实机177/177（退出0，无SCRIPT ERROR/ERROR）、工具回归23项全过153秒。battle/runtime四图已刷新，wait明确使用重缩后的第2格；已原尺寸查看wait截图，加载新SV且显示尺寸与其他动作接近。日志在battle/validation/wait_rescale/，首个修复提交1a8099c2e；最终交付自检见收尾记录。
