@@ -26,6 +26,8 @@
   "XTianqiDrop.signature_base": "0.0",
   "XTianqiDrop.table_rate": "0.2",
   "XTianqiGear.crown_bonus": "b",
+  "XTianqiGear.effective_params": "item.get(\"params\", [])",
+  "XTianqiGear.param_of": "BODY:var p: Array = item.get(\"params\", [])\nreturn float(p[i]) if i >= 0 and i < p.size() else 0.0",
   "XTianqiGear.heart_stage": "n",
   "XTianqiGear.hubris_stage": "n",
   "XTianqiGear.open_type": "true",
