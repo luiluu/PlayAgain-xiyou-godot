@@ -79,9 +79,44 @@ func _slot_x(row: String, index: int, _n: int) -> float:
 	return (x1 if row == "c" else x2) + index * step_px
 
 
+static var SMOKE_RAIL := true
+var _last_smoke_rail_drawn := true
+
+
 func _draw() -> void:
+	_last_smoke_rail_drawn = SMOKE_RAIL
+	if SMOKE_RAIL:
+		_draw_smoke_rail()
 	if sep_node != null:
 		sep_node.queue_redraw()
+
+
+func _draw_smoke_rail() -> void:
+	var x0 := -8.0
+	var x_mid := WIDTH * 0.72
+	var x1 := WIDTH + 18.0
+	var y_top := LH - 30.0
+	var y_mid := LH + 4.0
+	var y_bot := LH + 42.0
+	var c0 := Color(0.055, 0.042, 0.044, 0.0)
+	var cm_l := Color(0.055, 0.042, 0.044, 0.56)
+	var cm_m := Color(0.055, 0.042, 0.044, 0.44)
+	# 上半柔雾渐隐（顶 0 → 中 0.56，右尾渐散至 0）
+	draw_polygon(
+		PackedVector2Array([Vector2(x0, y_top), Vector2(x_mid, y_top), Vector2(x1, y_top), Vector2(x1, y_mid), Vector2(x_mid, y_mid), Vector2(x0, y_mid)]),
+		PackedColorArray([c0, c0, c0, c0, cm_m, cm_l]))
+	# 下半柔雾渐隐（中 0.56 → 底 0）
+	draw_polygon(
+		PackedVector2Array([Vector2(x0, y_mid), Vector2(x_mid, y_mid), Vector2(x1, y_mid), Vector2(x1, y_bot), Vector2(x_mid, y_bot), Vector2(x0, y_bot)]),
+		PackedColorArray([cm_l, cm_m, c0, c0, c0, c0]))
+	# 大圆行动者脚下补一团局部柔雾压住底光
+	draw_texture_rect(XUiSkin.glow_texture(), Rect2(Vector2(LH - 52.0, LH - 42.0), Vector2(104.0, 88.0)), false, Color(0.04, 0.03, 0.032, 0.48))
+	# 底部 0.9px 旧金游丝托底线（左 55% → 右渐隐至 0）
+	var y_line := LH + 34.0
+	draw_polyline_colors(
+		PackedVector2Array([Vector2(4.0, y_line), Vector2(WIDTH * 0.52, y_line), Vector2(WIDTH * 0.82, y_line)]),
+		PackedColorArray([Color(0.89, 0.74, 0.45, 0.55), Color(0.89, 0.74, 0.45, 0.24), Color(0.89, 0.74, 0.45, 0.0)]),
+		0.9, true)
 
 
 func _draw_sep() -> void:
@@ -129,7 +164,7 @@ static func name_of(node: Icon) -> String:
 	if node.battler is XEnemy:
 		var bar := node.get_parent() as XSkinOTBBar
 		if bar == null or bar.step_px >= R_ROW * 2.0 or node.selected:
-			return node.battler.display_name()
+			return short_name(node.battler.display_name())
 	return ""
 
 
@@ -159,6 +194,13 @@ func _paint_icon(node: Icon) -> void:
 			c.queue_redraw()
 
 
+## 敌人名字去掉前面的【称号】（样稿只写「里德」；圆下面地方小，原来「【守层…」看不出是谁）
+static func short_name(n: String) -> String:
+	if n.begins_with("【") and n.contains("】") and n.find("】") < n.length() - 1:
+		return n.substr(n.find("】") + 1)
+	return n
+
+
 static func fit(f: Font, text: String, width: float, fs: int) -> String:
 	if f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x <= width:
 		return text
@@ -173,6 +215,11 @@ class Disk extends Node2D:
 	var icon: XOTBBar.Icon
 	var _atlas: AtlasTexture
 
+	## 头像是侧视图（sv_actors 一格 64×64）的敌人
+	static func sv_sheet(ic: XOTBBar.Icon) -> bool:
+		var tex := ic.face.texture
+		return tex != null and ic.face.region_enabled and ic.face.region_rect.size == Vector2(64, 64) and tex.resource_path.contains("/sv_actors/")
+
 	func _region() -> Rect2:
 		var tex := icon.face.texture
 		var full := Rect2(Vector2.ZERO, tex.get_size())
@@ -184,7 +231,7 @@ class Disk extends Node2D:
 		var alpha := 0.55 if icon.has_meta("preview") else 1.0
 		if tex != null:
 			var reg := _region()
-			if icon.battler is XActor:
+			if icon.battler is XActor or sv_sheet(icon):   # T096：拿侧视图当战斗图的敌人（如【守层者】里德）也取头部，原来整格缩进圆里画出来是空的
 				var k := reg.size / 64.0
 				var head := Rect2(reg.position + Vector2(10, 8) * k, Vector2(44, 44) * k)
 				if _atlas == null:
@@ -195,7 +242,7 @@ class Disk extends Node2D:
 				else:
 					_atlas.atlas = tex
 				_atlas.region = head
-				XSkinPartyStrip.draw_round_texture(self, _atlas, Vector2.ZERO, r - 2.0)
+				XSkinPartyStrip.draw_round_texture(self, _atlas, Vector2.ZERO, r - 2.0, 32, icon.face.flip_h)
 				if alpha < 1.0:
 					draw_circle(Vector2.ZERO, r - 2.0, Color(0, 0, 0, 1.0 - alpha))
 			else:
