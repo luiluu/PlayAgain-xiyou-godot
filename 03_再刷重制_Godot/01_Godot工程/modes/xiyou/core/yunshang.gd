@@ -1,7 +1,7 @@
 class_name XYunshang
 extends RefCounted
 
-## D164：原生像素美术可回退开关，缺文件仍走旧资源。
+## 174 云裳 D164：原生像素美术可回退开关，缺文件仍走旧资源。
 static var ART := true
 static func art_path(folder: String, name: String) -> String:
 	if not ART:
