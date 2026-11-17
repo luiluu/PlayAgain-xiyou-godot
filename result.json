@@ -1,0 +1,22 @@
+{
+ "sha": "361b606b5e8ceb463a7aa4ee51bb7ae0a1ffa372",
+ "branch": "ci/gpt/fest-hall",
+ "mode": "affected",
+ "base": "512a21baa5fb2f1891f63140303205867f5cac57",
+ "passed": true,
+ "scenes": 1,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 27.2,
+ "testSeconds": 25,
+ "generatedRef": "refs/ci/generated/gpt/fest-hall",
+ "generatedCommit": "549c3ed166756f2886e0596f9ef2d46f4e72f46f",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43987654096",
+ "sceneNames": [
+  "xiyou_map.tscn"
+ ],
+ "time": "2026-11-17T00:29:12+00:00"
+}
