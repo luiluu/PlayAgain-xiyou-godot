@@ -170,14 +170,47 @@ func _rare_gear() -> void:
 	# 删除栏位重抽：和坐骑同组（普通、0～9 级）的替补里也没有它们
 	var subs := XTianqiGear.reroll_pool(XDB.rec("Armors", 7997)).filter(func(r): return int(r[0]) == 3 and mounts.has(int(r[1])))
 	_check("rare_not_reroll_sub", subs.is_empty() and not XTianqiGear.reroll_pool(XDB.rec("Armors", 7997)).is_empty(), subs)
-	# 品质照原版：<quality:1> → 普通
-	_check("rare_mount_label_original", XQuality.label(XDB.rec("Armors", 7997), "armor") == "普通" and XQuality.label(XDB.rec("Armors", 7998), "armor") == "普通",
-		XQuality.label(XDB.rec("Armors", 7997), "armor"))
+	# 品质显示（T112，D160）：天启篇的低档稀有坐骑显示不朽，数据与逻辑品质不动
+	_rare_show(s)
 	# 回退：RARE_KEEP 关掉回旧池
 	XTianqiDrop.RARE_KEEP = false
 	var back: bool = XTianqiDrop.pool(0).any(func(r): return int(r[0]) == 3 and int(r[1]) == 7997) and not XTianqiDrop.keeps_row(s, 3, 7997)
 	XTianqiDrop.RARE_KEEP = true
 	_check("rare_switch_off_restores", back)
+
+
+## T112：光明独角兽、嘶风逐日驹、白马·洪荒（rare_gear 且坐骑栏）在天启篇显示「不朽」；西游档、别的坐骑、属性、逻辑品质都不变
+func _rare_show(s: XState) -> void:
+	var shown := [7997, 7998, 4483]
+	var cfg: Dictionary = XQuality.config()
+	var gold := str(cfg.colors[5])
+	var recs := shown.map(func(id): return XDB.rec("Armors", id))
+	var before := recs.map(func(r): return JSON.stringify(r))
+	_check("show_names_tianqi", recs.all(func(r): return XQuality.grade_name(r) == "不朽" and XQuality.label(r, "armor") == "不朽"),
+		recs.map(func(r): return XQuality.label(r, "armor")))
+	_check("show_color_tianqi", recs.all(func(r): return XQuality.color_text(r) == gold and XQuality.list_color(r) == XQuality.parse_rgba(gold)),
+		recs.map(func(r): return XQuality.color_text(r)))
+	_check("show_window_skin", recs.all(func(r): return XQuality.window_skin(XQuality.show_legacy(r)) == int(cfg.windows[5])), recs.map(func(r): return XQuality.show_legacy(r)))
+	# 背包里的实例（kind／base）也一样
+	s.gain_gear("armor", 7997, 1)
+	var inst: Dictionary = s.gear.back()
+	_check("show_bag_instance", int(inst.get("base", 0)) == 7997 and XQuality.grade_name(inst) == "不朽" and XQuality.color_text(inst) == gold, [inst.get("base"), XQuality.grade_name(inst)])
+	# 逻辑品质、属性数据不动：旧档 1、七档 0（普通）；记录原样；掉落门槛仍按它
+	_check("show_logic_grade_unchanged", recs.all(func(r): return XQuality.legacy(r) == 1 and XQuality.grade(r) == 0), recs.map(func(r): return XQuality.grade(r)))
+	_check("show_stats_unchanged", recs.map(func(r): return JSON.stringify(r)) == before)
+	_check("show_not_other_mounts", XQuality.grade_name(XDB.rec("Armors", 4472)) == "普通" and XQuality.grade_name(XDB.rec("Armors", 4473)) == "不朽"
+		and XQuality.grade_name(XDB.rec("Armors", 53)) == XQuality.grade_name(XDB.rec("Armors", 53)) and not XQuality.rare_mount(XDB.rec("Armors", 53)))
+	# 西游档（没开天启篇规则）显示照数据：普通，颜色也是普通色
+	var tq := XState.current
+	XState.current = XState.new()
+	_check("show_xiyou_unchanged", recs.all(func(r): return XQuality.grade_name(r) == "普通" and XQuality.label(r, "armor") == "普通" and XQuality.color_text(r) == str(cfg.colors[0]) and XQuality.show_legacy(r) == 1),
+		recs.map(func(r): return XQuality.label(r, "armor")))
+	XState.current = tq
+	# 回退开关
+	XQuality.RARE_SHOW = false
+	var off: bool = recs.all(func(r): return XQuality.grade_name(r) == "普通")
+	XQuality.RARE_SHOW = true
+	_check("show_switch_off_restores", off)
 
 
 func _table_rows() -> void:
