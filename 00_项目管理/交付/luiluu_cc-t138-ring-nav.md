@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-t138-ring-nav
 
 - 车道／工作者：cc 车道 T138（Sonnet＋medium，职级 P6，乙档）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
