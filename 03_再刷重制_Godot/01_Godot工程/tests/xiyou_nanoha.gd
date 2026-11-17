@@ -224,6 +224,41 @@ func _domain_live() -> void:
 	# 队友的物攻／血量真被加上（G_ShuXing 按层数×1%，层数＝变量 1123／1120 起）
 	check("domain.mate_stronger", float(atk[true][0]) > float(atk[false][0]) and float(atk[true][1]) > float(atk[false][1]), atk)
 	_domain_all_matk()
+	_domain_refresh()
+
+
+## T135（玩家 11-17：奈叶领域在场开战、收场卡，下阵就好）：战斗 313 照原版不再每人另外 refresh（XBattleLogic.CMD313_NO_EXTRA_REFRESH）。
+## 五人队、50 级、领域 CE2478（先拿 8 个状态、再加 8 个）：开关两态跑完事件后各人生命、魔法、TP、八项能力值、状态、回合、状态私有数据都一样，
+## 开着的 refresh 次数少（每条 313 每人少一次）
+func _domain_refresh() -> void:
+	var sig := {}
+	var calls := {}
+	for fix in [true, false]:
+		var s := _new_state()
+		s.switches[2494] = true
+		s.party.clear()
+		s.battle_slots.clear()
+		for id in [1, 2, 3, 4, 108]:
+			s.actor(id).change_level_mv(50)
+			s.add_actor(id)
+		var rand := XBattleRandom.create("0000000000000135")
+		rand.rule = FixedMidStream.new()
+		rand.rule.domain = "rule"
+		var logic := XBattleLogic.new()
+		logic.setup(2, s, rand)
+		if fix:
+			XBattleLogic.CMD313_NO_EXTRA_REFRESH = true
+		else:
+			XBattleLogic.CMD313_NO_EXTRA_REFRESH = false  # 回退支：每人再 refresh 一次
+		var before := XResourceContext.refresh_total
+		logic.troop_events()
+		calls[fix] = XResourceContext.refresh_total - before
+		XBattleLogic.CMD313_NO_EXTRA_REFRESH = true
+		sig[fix] = logic.actors.map(func(a): return [a.actor_id, a.hp, a.mp, a.tp, range(8).map(func(i): return a.param(i)),
+			a.state_ids.duplicate(), a.state_turns.duplicate(true), a.state_data.duplicate(true)])
+	check("domain.refresh.same_result", JSON.stringify(sig[true]) == JSON.stringify(sig[false]), sig)
+	check("domain.refresh.buffed", sig[true].size() == 5 and sig[true].all(func(r): return r[5].has(1792) and r[5].has(1799)), sig[true])
+	check("domain.refresh.fewer", calls[false] - calls[true] >= 76, calls)  # CE2478 十五条全队＋一条只奈叶：至少 5×15＋1 次
 
 
 ## O-185 魔法领域魔攻全队（XDeadContent.DOMAIN_ALL_MATK）：CE2478 的 1783 改给全队，队友也带魔攻加成
