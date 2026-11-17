@@ -142,3 +142,5 @@
 - 可优化：美术raw与审样过程图放content会触发数百张无关导入；建议总装后续统一移到归档（本轮不跨范围清理旧版本）。
 
 - 最终静音实机夹具177/177，退出0，无SCRIPT ERROR/ERROR或退出资源泄漏；四图对应wait/swing/damage第2格及实际move_straight后的地图位置。
+
+- 提交后交付自检退出0（2f50e9a53，对main edb417ff7）：合并准备全过、试合并无冲突；**快车道（不动切片、转换器、参照探针，合并不用同步，先合先推）**。记录见battle/validation/delivery_check.log；末次收尾提交仅归档此结果。
