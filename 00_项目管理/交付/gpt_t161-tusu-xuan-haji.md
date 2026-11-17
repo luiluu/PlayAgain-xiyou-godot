@@ -14,7 +14,7 @@
 - 四武具216格已接入，书盾按Kyo授权原尺寸目视无模糊、明显跳变、穿帮；弓未重画。悬浮／宿主持武均用64格最近邻；ART关闭、未知路径与缺资源时回退旧资源。人形／璇／哈基米也有独立开关与回退，不改数值、结算、存档。
 - 回归：13项角色／外观专项首次11通过2失败，均为旧图路径断言（actor_looks猫、xuan_tusu_art璇）。猫旧基准段临时关ART并恢复，保留旧断言；璇场景断言识别实际开关，旧fixture未改；修改后4专项全部通过（actor_looks、xuan_tusu_art、t161_art、tusu_art）。尺寸改单后t161_art116/116、静音实机118/118。余下首次通过项含tusu、tusu_battle、tusu_ui、cat、xuan_chart、xuan_battle、actor_book、appearance、costumes、determinism。
 - 全部实机命令带`--audio-driver Dummy`，临时新局，不读真实存档。最新两人地图／wait／swing／damage四图及路径/scale/filter证据：`T161附图/runtime_resized/177/`、`178/`；scale1、filter1。截图脚本显式force_draw避免后台窗口等待重绘；退出后有9 ObjectDB/2资源清理告警，退出0，截图存在，不影响断言。
-- 必跑：选测建议因共享外观钩子保守扩为整轮，车道只跑直接角色／外观依赖与determinism，整轮留总装云端，未在本机重复全量。工具快速回归23项通过113秒；最新语法1019脚本0问题22秒。已合main，无冲突，后来不重复追main。最终交付自检记录待下行补齐。
+- 必跑：选测建议因共享外观钩子保守扩为整轮，车道只跑直接角色／外观依赖与determinism，整轮留总装云端，未在本机重复全量。工具快速回归23项通过113秒；最新语法1019脚本0问题22秒。已合main，无冲突，后来不重复追main。交付自检对main 3b70ea3a1退出0，分道为快车道；此前云裳v9资源分支冲突已保留双方路径解决，合并后五项专项（actor_looks、xuan_tusu_art、t161_art、tusu_art、yunshang_art）18秒全部通过，日志`T161附图/tusu_check/sixth_merged_specials.log`。首次合后漏导入云裳v9缓存导致其专项挂起，已精确停止本轮父子进程、补导入再跑，没有改云裳图或测试。
 
 ## 第六次核查阻点（非上下文停手）
 
