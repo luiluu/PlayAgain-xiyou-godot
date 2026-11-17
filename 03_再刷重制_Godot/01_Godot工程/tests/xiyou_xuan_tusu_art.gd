@@ -178,7 +178,7 @@ func _scene() -> void:
 	var sa: XBattlerSprite = b.sprites[a]
 	var st: XBattlerSprite = b.sprites[ts]
 	var sh: XBattlerSprite = b.sprites[host]
-	check("scene.idle_frames", str(sa.look.frame("wait", 0).get("asset", "")) == "Codex_Xuan_v1", sa.look.frame("wait", 0).get("asset"))
+	check("scene.idle_frames", str(sa.look.frame("wait", 0).get("asset", "")) == ("Xuan_v2" if XXuanTusuArt.XUAN_ART else "Codex_Xuan_v1"), sa.look.frame("wait", 0).get("asset"))
 	check("scene.idle_no_proj", not sh.has_meta("xt_proj") and not sh.has_meta("xt_held"))
 	var home_t: Vector2 = st.position
 	ts.mp = ts.mmp

@@ -163,12 +163,15 @@ func _mira() -> void:
 
 
 func _cat() -> void:
+	var original_art := XCat.ART
+	XCat.ART = false
 	var s := _game()
 	var a := s.actor(178)
 	var look := XAppearance.for_battler(a)
 	check("cat.frames", _all_from(look, "CatSwordSaint_v3") and look.frame_count("wait") == 1 and look.frame_count("swing") == 3 and look.wait_of("swing") == 12,
 		[_src(look, "walk"), look.frame_count("wait")])
 
+	XCat.ART = original_art
 
 func _order() -> void:
 	var cosmic: Dictionary = XDB.rec("States", 2650).meta

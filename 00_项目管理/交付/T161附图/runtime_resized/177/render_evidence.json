@@ -1,0 +1,20 @@
+[
+  {
+    "actor": 176,
+    "filter": 1,
+    "path": "res://content/tusu_v2/Tusu_SV_v2.png",
+    "scale": 1.0
+  },
+  {
+    "actor": 177,
+    "filter": 1,
+    "path": "res://content/xuan_v2/Xuan_SV_v2.png",
+    "scale": 1.0
+  },
+  {
+    "actor": 178,
+    "filter": 1,
+    "path": "res://content/hajimi_v2/Hajimi_SV_v2.png",
+    "scale": 1.0
+  }
+]

@@ -28,14 +28,14 @@ def build(name,walk=False):
  if walk:scale=(40 if name=="xuan" else 32)/statistics.median(q.height for q in parts)
  else:
   approved=rgba(P/('xuan_float_row0_64.png' if name=='xuan' else 'hajimi_greatsword_row0_64.png'))
-  scale=statistics.median((approved.crop((c*64,0,(c+1)*64,64)).getbbox()[3]-approved.crop((c*64,0,(c+1)*64,64)).getbbox()[1])/parts[c].height for c in range(3))
+  scale=min(60/statistics.median(q.height for q in parts),62/max(q.width for q in parts),62/max(q.height for q in parts))
  out=Image.new('RGBA',(cols*cell,rows*cell));records=[]
  for i,q in enumerate(parts):
   wh=(round(q.width*scale),round(q.height*scale));assert max(wh)<=cell-2,(i,wh)
   q=q.resize(wh,Image.Resampling.NEAREST);x=(cell-wh[0])//2;y=cell-wh[1]
   out.alpha_composite(q,((i%cols)*cell+x,(i//cols)*cell+y));records.append({'i':i,'size':wh,'pos':[x,y]})
  key='Walk' if walk else 'Battle';out.save(P/f'{name}_{key}_candidate.png')
- (P/f'{name}_{key}_alignment.json').write_text(json.dumps({'scale':scale,'frames':records},indent=2))
+ (P/f'{name}_{key}_alignment.json').write_text(json.dumps({'scale':scale,'target_median_height':60 if not walk else None,'actual_median_height':statistics.median(v['size'][1] for v in records),'max_width':max(v['size'][0] for v in records),'max_height':max(v['size'][1] for v in records),'limiting_source_width':max(q.width for q in parts),'limiting_source_height':max(q.height for q in parts),'frames':records},indent=2))
  bg=Image.new('RGBA',out.size,'#607080');bg.alpha_composite(out);bg.convert('RGB').save(P/f'{name}_{key}_native.png')
  print(name,key,len(parts),scale)
 if __name__=='__main__':

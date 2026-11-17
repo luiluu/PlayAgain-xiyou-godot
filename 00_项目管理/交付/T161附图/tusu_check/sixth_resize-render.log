@@ -1,0 +1,9 @@
+sandbox_extension_issue_file_to_process failed for /Users/kyo/orca/workspaces/再刷项目资料库/gpt-t161-tusu-xuan-haji/03_再刷重制_Godot/07_开发环境/当前Godot.app: 1 (Operation not permitted)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M1 Pro
+
+TEST_RESULT={"passed":118,"total":118}
+WARNING: 9 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 2 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

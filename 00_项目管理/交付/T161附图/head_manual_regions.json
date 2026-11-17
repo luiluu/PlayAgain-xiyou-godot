@@ -1,0 +1,1413 @@
+{
+  "method": "人工原尺寸头区选框，框含头发/耳朵；轮廓定位误差约±2px，侧躺为屏幕投影。此表不证明头宽/头高极差≤1px，不用于逐帧缩放。",
+  "characters": {
+    "xuan": [
+      {
+        "frame": 1,
+        "row": 0,
+        "col": 0,
+        "head_roi": [
+          16,
+          18,
+          44,
+          44
+        ],
+        "width_approx": 28,
+        "height_approx": 26
+      },
+      {
+        "frame": 2,
+        "row": 0,
+        "col": 1,
+        "head_roi": [
+          16,
+          18,
+          44,
+          44
+        ],
+        "width_approx": 28,
+        "height_approx": 26
+      },
+      {
+        "frame": 3,
+        "row": 0,
+        "col": 2,
+        "head_roi": [
+          16,
+          18,
+          44,
+          44
+        ],
+        "width_approx": 28,
+        "height_approx": 26
+      },
+      {
+        "frame": 4,
+        "row": 0,
+        "col": 3,
+        "head_roi": [
+          17,
+          19,
+          45,
+          45
+        ],
+        "width_approx": 28,
+        "height_approx": 26
+      },
+      {
+        "frame": 5,
+        "row": 0,
+        "col": 4,
+        "head_roi": [
+          19,
+          18,
+          47,
+          44
+        ],
+        "width_approx": 28,
+        "height_approx": 26
+      },
+      {
+        "frame": 6,
+        "row": 0,
+        "col": 5,
+        "head_roi": [
+          17,
+          18,
+          45,
+          44
+        ],
+        "width_approx": 28,
+        "height_approx": 26
+      },
+      {
+        "frame": 7,
+        "row": 0,
+        "col": 6,
+        "head_roi": [
+          13,
+          18,
+          42,
+          45
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 8,
+        "row": 0,
+        "col": 7,
+        "head_roi": [
+          14,
+          18,
+          43,
+          45
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 9,
+        "row": 0,
+        "col": 8,
+        "head_roi": [
+          14,
+          18,
+          43,
+          45
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 10,
+        "row": 1,
+        "col": 0,
+        "head_roi": [
+          15,
+          18,
+          44,
+          45
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 11,
+        "row": 1,
+        "col": 1,
+        "head_roi": [
+          16,
+          19,
+          45,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 12,
+        "row": 1,
+        "col": 2,
+        "head_roi": [
+          17,
+          18,
+          45,
+          45
+        ],
+        "width_approx": 28,
+        "height_approx": 27
+      },
+      {
+        "frame": 13,
+        "row": 1,
+        "col": 3,
+        "head_roi": [
+          15,
+          19,
+          44,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 14,
+        "row": 1,
+        "col": 4,
+        "head_roi": [
+          15,
+          19,
+          44,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 15,
+        "row": 1,
+        "col": 5,
+        "head_roi": [
+          14,
+          19,
+          43,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 16,
+        "row": 1,
+        "col": 6,
+        "head_roi": [
+          16,
+          19,
+          45,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 17,
+        "row": 1,
+        "col": 7,
+        "head_roi": [
+          17,
+          19,
+          46,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 18,
+        "row": 1,
+        "col": 8,
+        "head_roi": [
+          18,
+          19,
+          47,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 19,
+        "row": 2,
+        "col": 0,
+        "head_roi": [
+          16,
+          19,
+          45,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 20,
+        "row": 2,
+        "col": 1,
+        "head_roi": [
+          16,
+          20,
+          45,
+          47
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 21,
+        "row": 2,
+        "col": 2,
+        "head_roi": [
+          16,
+          19,
+          45,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 22,
+        "row": 2,
+        "col": 3,
+        "head_roi": [
+          16,
+          20,
+          45,
+          47
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 23,
+        "row": 2,
+        "col": 4,
+        "head_roi": [
+          16,
+          20,
+          45,
+          47
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 24,
+        "row": 2,
+        "col": 5,
+        "head_roi": [
+          16,
+          20,
+          45,
+          47
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 25,
+        "row": 2,
+        "col": 6,
+        "head_roi": [
+          13,
+          20,
+          43,
+          47
+        ],
+        "width_approx": 30,
+        "height_approx": 27
+      },
+      {
+        "frame": 26,
+        "row": 2,
+        "col": 7,
+        "head_roi": [
+          13,
+          20,
+          43,
+          47
+        ],
+        "width_approx": 30,
+        "height_approx": 27
+      },
+      {
+        "frame": 27,
+        "row": 2,
+        "col": 8,
+        "head_roi": [
+          10,
+          21,
+          40,
+          48
+        ],
+        "width_approx": 30,
+        "height_approx": 27
+      },
+      {
+        "frame": 28,
+        "row": 3,
+        "col": 0,
+        "head_roi": [
+          16,
+          18,
+          45,
+          45
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 29,
+        "row": 3,
+        "col": 1,
+        "head_roi": [
+          17,
+          18,
+          46,
+          45
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 30,
+        "row": 3,
+        "col": 2,
+        "head_roi": [
+          17,
+          18,
+          46,
+          45
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 31,
+        "row": 3,
+        "col": 3,
+        "head_roi": [
+          16,
+          19,
+          45,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 32,
+        "row": 3,
+        "col": 4,
+        "head_roi": [
+          16,
+          22,
+          45,
+          49
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 33,
+        "row": 3,
+        "col": 5,
+        "head_roi": [
+          16,
+          18,
+          45,
+          45
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 34,
+        "row": 3,
+        "col": 6,
+        "head_roi": [
+          16,
+          20,
+          45,
+          47
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 35,
+        "row": 3,
+        "col": 7,
+        "head_roi": [
+          16,
+          20,
+          45,
+          47
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 36,
+        "row": 3,
+        "col": 8,
+        "head_roi": [
+          16,
+          20,
+          45,
+          47
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 37,
+        "row": 4,
+        "col": 0,
+        "head_roi": [
+          15,
+          19,
+          44,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 38,
+        "row": 4,
+        "col": 1,
+        "head_roi": [
+          16,
+          19,
+          45,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 39,
+        "row": 4,
+        "col": 2,
+        "head_roi": [
+          16,
+          20,
+          45,
+          47
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 40,
+        "row": 4,
+        "col": 3,
+        "head_roi": [
+          15,
+          19,
+          44,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 41,
+        "row": 4,
+        "col": 4,
+        "head_roi": [
+          16,
+          18,
+          45,
+          45
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 42,
+        "row": 4,
+        "col": 5,
+        "head_roi": [
+          15,
+          19,
+          44,
+          46
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 43,
+        "row": 4,
+        "col": 6,
+        "head_roi": [
+          13,
+          20,
+          43,
+          47
+        ],
+        "width_approx": 30,
+        "height_approx": 27
+      },
+      {
+        "frame": 44,
+        "row": 4,
+        "col": 7,
+        "head_roi": [
+          13,
+          21,
+          43,
+          48
+        ],
+        "width_approx": 30,
+        "height_approx": 27
+      },
+      {
+        "frame": 45,
+        "row": 4,
+        "col": 8,
+        "head_roi": [
+          6,
+          23,
+          37,
+          52
+        ],
+        "width_approx": 31,
+        "height_approx": 29
+      },
+      {
+        "frame": 46,
+        "row": 5,
+        "col": 0,
+        "head_roi": [
+          14,
+          21,
+          43,
+          48
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 47,
+        "row": 5,
+        "col": 1,
+        "head_roi": [
+          14,
+          21,
+          43,
+          48
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 48,
+        "row": 5,
+        "col": 2,
+        "head_roi": [
+          15,
+          21,
+          44,
+          48
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 49,
+        "row": 5,
+        "col": 3,
+        "head_roi": [
+          16,
+          21,
+          45,
+          48
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 50,
+        "row": 5,
+        "col": 4,
+        "head_roi": [
+          16,
+          20,
+          45,
+          47
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 51,
+        "row": 5,
+        "col": 5,
+        "head_roi": [
+          16,
+          20,
+          45,
+          47
+        ],
+        "width_approx": 29,
+        "height_approx": 27
+      },
+      {
+        "frame": 52,
+        "row": 5,
+        "col": 6,
+        "head_roi": [
+          5,
+          35,
+          36,
+          64
+        ],
+        "width_approx": 31,
+        "height_approx": 29
+      },
+      {
+        "frame": 53,
+        "row": 5,
+        "col": 7,
+        "head_roi": [
+          6,
+          34,
+          37,
+          63
+        ],
+        "width_approx": 31,
+        "height_approx": 29
+      },
+      {
+        "frame": 54,
+        "row": 5,
+        "col": 8,
+        "head_roi": [
+          3,
+          32,
+          35,
+          62
+        ],
+        "width_approx": 32,
+        "height_approx": 30
+      }
+    ],
+    "hajimi": [
+      {
+        "frame": 1,
+        "row": 0,
+        "col": 0,
+        "head_roi": [
+          23,
+          18,
+          49,
+          44
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 2,
+        "row": 0,
+        "col": 1,
+        "head_roi": [
+          24,
+          21,
+          50,
+          47
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 3,
+        "row": 0,
+        "col": 2,
+        "head_roi": [
+          23,
+          18,
+          49,
+          44
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 4,
+        "row": 0,
+        "col": 3,
+        "head_roi": [
+          28,
+          22,
+          54,
+          48
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 5,
+        "row": 0,
+        "col": 4,
+        "head_roi": [
+          31,
+          23,
+          57,
+          49
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 6,
+        "row": 0,
+        "col": 5,
+        "head_roi": [
+          30,
+          24,
+          56,
+          50
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 7,
+        "row": 0,
+        "col": 6,
+        "head_roi": [
+          23,
+          19,
+          49,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 8,
+        "row": 0,
+        "col": 7,
+        "head_roi": [
+          24,
+          20,
+          50,
+          46
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 9,
+        "row": 0,
+        "col": 8,
+        "head_roi": [
+          24,
+          20,
+          50,
+          46
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 10,
+        "row": 1,
+        "col": 0,
+        "head_roi": [
+          22,
+          19,
+          48,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 11,
+        "row": 1,
+        "col": 1,
+        "head_roi": [
+          23,
+          20,
+          49,
+          46
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 12,
+        "row": 1,
+        "col": 2,
+        "head_roi": [
+          22,
+          19,
+          48,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 13,
+        "row": 1,
+        "col": 3,
+        "head_roi": [
+          23,
+          19,
+          49,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 14,
+        "row": 1,
+        "col": 4,
+        "head_roi": [
+          23,
+          27,
+          49,
+          53
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 15,
+        "row": 1,
+        "col": 5,
+        "head_roi": [
+          26,
+          23,
+          52,
+          49
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 16,
+        "row": 1,
+        "col": 6,
+        "head_roi": [
+          22,
+          19,
+          48,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 17,
+        "row": 1,
+        "col": 7,
+        "head_roi": [
+          23,
+          17,
+          49,
+          43
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 18,
+        "row": 1,
+        "col": 8,
+        "head_roi": [
+          23,
+          15,
+          49,
+          41
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 19,
+        "row": 2,
+        "col": 0,
+        "head_roi": [
+          16,
+          19,
+          42,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 20,
+        "row": 2,
+        "col": 1,
+        "head_roi": [
+          17,
+          19,
+          43,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 21,
+        "row": 2,
+        "col": 2,
+        "head_roi": [
+          18,
+          19,
+          44,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 22,
+        "row": 2,
+        "col": 3,
+        "head_roi": [
+          22,
+          19,
+          48,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 23,
+        "row": 2,
+        "col": 4,
+        "head_roi": [
+          27,
+          20,
+          53,
+          46
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 24,
+        "row": 2,
+        "col": 5,
+        "head_roi": [
+          29,
+          19,
+          55,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 25,
+        "row": 2,
+        "col": 6,
+        "head_roi": [
+          19,
+          25,
+          45,
+          51
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 26,
+        "row": 2,
+        "col": 7,
+        "head_roi": [
+          18,
+          25,
+          44,
+          51
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 27,
+        "row": 2,
+        "col": 8,
+        "head_roi": [
+          16,
+          30,
+          42,
+          56
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 28,
+        "row": 3,
+        "col": 0,
+        "head_roi": [
+          17,
+          19,
+          43,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 29,
+        "row": 3,
+        "col": 1,
+        "head_roi": [
+          18,
+          20,
+          44,
+          46
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 30,
+        "row": 3,
+        "col": 2,
+        "head_roi": [
+          18,
+          20,
+          44,
+          46
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 31,
+        "row": 3,
+        "col": 3,
+        "head_roi": [
+          23,
+          19,
+          49,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 32,
+        "row": 3,
+        "col": 4,
+        "head_roi": [
+          23,
+          18,
+          49,
+          44
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 33,
+        "row": 3,
+        "col": 5,
+        "head_roi": [
+          22,
+          17,
+          48,
+          43
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 34,
+        "row": 3,
+        "col": 6,
+        "head_roi": [
+          18,
+          22,
+          44,
+          48
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 35,
+        "row": 3,
+        "col": 7,
+        "head_roi": [
+          18,
+          25,
+          44,
+          51
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 36,
+        "row": 3,
+        "col": 8,
+        "head_roi": [
+          17,
+          28,
+          43,
+          54
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 37,
+        "row": 4,
+        "col": 0,
+        "head_roi": [
+          17,
+          19,
+          43,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 38,
+        "row": 4,
+        "col": 1,
+        "head_roi": [
+          19,
+          20,
+          45,
+          46
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 39,
+        "row": 4,
+        "col": 2,
+        "head_roi": [
+          19,
+          20,
+          45,
+          46
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 40,
+        "row": 4,
+        "col": 3,
+        "head_roi": [
+          21,
+          19,
+          47,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 41,
+        "row": 4,
+        "col": 4,
+        "head_roi": [
+          23,
+          17,
+          49,
+          43
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 42,
+        "row": 4,
+        "col": 5,
+        "head_roi": [
+          22,
+          17,
+          48,
+          43
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 43,
+        "row": 4,
+        "col": 6,
+        "head_roi": [
+          17,
+          27,
+          43,
+          53
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 44,
+        "row": 4,
+        "col": 7,
+        "head_roi": [
+          15,
+          30,
+          41,
+          56
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 45,
+        "row": 4,
+        "col": 8,
+        "head_roi": [
+          13,
+          36,
+          40,
+          61
+        ],
+        "width_approx": 27,
+        "height_approx": 25
+      },
+      {
+        "frame": 46,
+        "row": 5,
+        "col": 0,
+        "head_roi": [
+          19,
+          19,
+          45,
+          45
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 47,
+        "row": 5,
+        "col": 1,
+        "head_roi": [
+          20,
+          20,
+          46,
+          46
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 48,
+        "row": 5,
+        "col": 2,
+        "head_roi": [
+          20,
+          20,
+          46,
+          46
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 49,
+        "row": 5,
+        "col": 3,
+        "head_roi": [
+          23,
+          20,
+          49,
+          46
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 50,
+        "row": 5,
+        "col": 4,
+        "head_roi": [
+          23,
+          17,
+          49,
+          43
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 51,
+        "row": 5,
+        "col": 5,
+        "head_roi": [
+          22,
+          16,
+          48,
+          42
+        ],
+        "width_approx": 26,
+        "height_approx": 26
+      },
+      {
+        "frame": 52,
+        "row": 5,
+        "col": 6,
+        "head_roi": [
+          11,
+          34,
+          39,
+          61
+        ],
+        "width_approx": 28,
+        "height_approx": 27
+      },
+      {
+        "frame": 53,
+        "row": 5,
+        "col": 7,
+        "head_roi": [
+          10,
+          39,
+          38,
+          64
+        ],
+        "width_approx": 28,
+        "height_approx": 25
+      },
+      {
+        "frame": 54,
+        "row": 5,
+        "col": 8,
+        "head_roi": [
+          9,
+          41,
+          37,
+          64
+        ],
+        "width_approx": 28,
+        "height_approx": 23
+      }
+    ]
+  }
+}
