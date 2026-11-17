@@ -2,7 +2,7 @@
 
 - 车道／工作者：C 规则·天启篇烙印（cc 车道，claude-opus-5-5＋high，P8）；T119（T073-d1，甲）＋T118 小A 核的两条 P3
 - 基线：从 luiluu/cc-t118-brand-costs（T144＋T118）切出；**总装先合 T118 再合本分支**（本分支带着 T118 的交付单，T118 合并时删掉它，本分支没改过那份，合过来跟着删）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -53,8 +53,18 @@
 - `xiyou_tianqi_rewards` 80/80。
 - 虚拟玩家：`xiyou_virtual_player -- --vp-brand` 14/14（9.6 秒）；`-- --vp-brand --vp-mode=climb --vp-frames=60000` 9/9（4.2 分钟，7 场战斗含挂机练级 6 场），日志零 error。
 - `反向验证.py`：18 处改坏全部咬住（基线先过）——入口不拦（场景）、decide 不拦、生的第 1 回合也掷、间隔少 1、同回合不限人、解锁判 ≥（P2-1）、熟不收花样、熟不乘系数、不封顶 15%、能打倒、抽自己吃烙印加成、破防不进伤害、断片照吃点名、第二个行动位照打、烧命不扣、烧命仍在 execute 前扣、顺延的不发（`xiyou_tianqi_brand`）；混子之盾单体放过（`xiyou_tianqi_rewards`）。
-- 选测与 `检查.sh --oracle --affected main --cloud`：待写
-- `工具回归.py`：待写
+- `检查.sh --oracle --affected main --cloud`（提交 f09944f2f）：退出码 0。选中 433 个 Godot 场景，云端 16 片在 f6ac7d5a3 上全过（含 `xiyou_determinism`、`xiyou_random_streams`、`xiyou_tianqi_battle_seed`、`xiyou_battle_pace`、`xiyou_hangup_auto`、`xiyou_confusion`、`xiyou_smart_ai*`、四条线 `xiyou_tianqi_war／plague／death／famine*`、`xiyou_tianqi_horsemen*`、`xiyou_tianqi_weak_clear`、`xiyou_event_compare*`、`xiyou_virtual_player`），f09944f2f 只多一行发行空壳特例，云端沿用；MV 参照引擎启动、同源检查、事件对照空绿都过。第一次跑在发行空壳检查挂了（`XTianqiRewards.filter_targets` 要登记发行值），补 `07_开发环境/发行空壳特例.json` 一行 `"list"` 后过。
+- `工具回归.py`：全部通过（90 秒）。
+
+## 待交叉核查（甲档，请重点看这些核心文件）
+
+- `modes/xiyou/battle/battle_logic.gd`：`start_turn` 末尾掷发作；`decide` 末尾、新增 `brand_forced`；`run_turn` 的 `take_cleared` 只调一次后再问发作；`act` 开头合成技能换真行动、烧命改成 `_burn_armed`；`execute` 在甚尔封印早退之后扣烧命。
+- `modes/xiyou/battle/battle_scene.gd`：`_command` 第一行拦。
+- `modes/xiyou/core/damage.gd`：天启篇乘区对 HP 伤害、吸取乘 `XTianqiBrand.taken_mult`。
+- `modes/xiyou/core/tianqi_horsemen.gd`：`_strike` 的承伤乘 `taken_mult`。
+- `modes/xiyou/core/tianqi_rewards.gd`：混子之盾 `filter_targets`。
+- `modes/xiyou/core/battle_replay.gd`：回放时发作先行。
+- `modes/xiyou/core/tianqi_brand.gd`（主体）、`07_开发环境/发行空壳特例.json`（一行）、测试 `xiyou_tianqi_brand.gd`、`xiyou_tianqi_rewards.gd`。
 
 ## 交接板
 
@@ -69,4 +79,6 @@
 ## 本分支提交
 
 - c99ccac8a WIP: T119 烙印发作（自己疯、花样、生熟、入口拦截；开关关着）＋烧命挪到确实出手后＋混子之盾单体
-- （本提交）T119 测试补齐＋交付单
+- f6ac7d5a3 T119 测试补齐（封顶咬住、真开两场生熟、1000 场压力参数）＋交付单草稿
+- f09944f2f T119 发行空壳特例补 XTianqiRewards.filter_targets
+- （本提交）T119 交付单，可合并
