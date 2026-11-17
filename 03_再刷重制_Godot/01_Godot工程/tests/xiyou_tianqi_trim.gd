@@ -62,6 +62,12 @@ func _laoda() -> void:
 	_check("laoda_menu", labels == ["挑战30层守层者", "挑战31层守层者", "挑战32层守层者", "挑战33层守层者", "兑换商店", "离开"], labels)
 	var all := " ".join(labels)
 	_check("laoda_no_difficulty_items", not all.contains("debuff") and not all.contains("怪物难度"), labels)
+	# T140（Kyo 11-17「牢妲只保留守层挑战和商店」、D173 不许切难度）：打过 34 层后多出的 34～36 再挑战也只是守层挑战；不出难度、积分、减益
+	var s34 := _tianqi_state()
+	XTianqiSummit.progress(s34)["hongjun"] = true
+	var all34 := " ".join(XTianqiTrim.laoda_options(s34).map(func(o): return str(o[0])))
+	var kinds := XTianqiTrim.laoda_options(s34).map(func(o): return str(o[1][0]) if not (o[1] as Array).is_empty() else "")
+	_check("t140_laoda_only_guard_shop", kinds.has("summit") and kinds.all(func(k): return k in ["summit", "guard", "shop", ""]) and not all34.contains("难度") and not all34.contains("积分") and not all34.contains("减益"), [kinds, all34])
 	var acts := XTianqiTrim.laoda_options(s).map(func(o): return o[1])
 	_check("laoda_guard_troops", acts.slice(0, 4).map(func(a): return int(a[1])) == [466, 467, 468, 469], acts)
 	_check("laoda_original_untouched", not XTianqiTrim.intercepts(_plain_state(), 4, 62))
