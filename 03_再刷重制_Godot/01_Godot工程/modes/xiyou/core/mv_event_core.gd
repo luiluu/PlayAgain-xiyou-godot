@@ -271,10 +271,12 @@ func _execute(c: Dictionary):
 				index += 1
 				msg.lines.append(message_text(XLotteryRework.text(lottery_id, str(list[index].parameters[0])) if lottery_id != 0 else str(list[index].parameters[0])))
 			msg = XTianqiSect.rewrite_message(state(), _map_id(), _event_id(), msg)
+			msg = XTianqiHallText.rewrite_message(state(), _map_id(), _event_id(), msg)
 			if index + 1 < list.size() and int(list[index + 1].code) == 102:
 				index += 1
 				_merge_choices(index)
 				_choice_params(msg, list[index].parameters)
+				msg = XTianqiHallText.rewrite_choices(state(), _map_id(), _event_id(), msg)
 				return _request("message", "choice", {"msg": msg}, int(list[index].indent))
 			elif index + 1 < list.size() and int(list[index + 1].code) == 103:
 				index += 1
@@ -284,6 +286,7 @@ func _execute(c: Dictionary):
 			var msg := {}
 			_merge_choices(index)
 			_choice_params(msg, list[index].parameters)
+			msg = XTianqiHallText.rewrite_choices(state(), _map_id(), _event_id(), msg)
 			return _request("message", "choice", {"msg": msg}, indent)
 		103:
 			return _number_request({}, p)

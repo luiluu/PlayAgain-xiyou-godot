@@ -33,6 +33,7 @@ func _run() -> void:
 	_hidden()
 	_altar()
 	_healing_skill()
+	await _hall_text()
 	await _live()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -195,7 +196,7 @@ func _live() -> void:
 	_check("menu8_cleanup", _labels(map, s, 8).has("整理存档"), _labels(map, s, 8))
 	_check("menu60_no_debt", _labels(map, s, 60).is_empty(), _labels(map, s, 60))   # 没欠债：讨债人不成立，赌桌照原样
 	s.set_variable(206, -3000)
-	_check("menu60_debt", _labels(map, s, 60) == ["赌局", "讨债人的限制与福利", "离开"], _labels(map, s, 60))
+	_check("menu60_debt", _labels(map, s, 60) == ["赌局", "欠债限制与福利", "离开"], _labels(map, s, 60))
 	s.set_variable(206, 0)
 	# 招募、商店分组、传送：宿主不接；源本来就下架
 	_check("no_menu_recruit_shop_door", XTianqiHall.menu(map, s, 15).is_empty() and XTianqiHall.menu(map, s, 54).is_empty() and XTianqiHall.menu(map, s, 27).is_empty())
@@ -233,19 +234,77 @@ func _live() -> void:
 	await map.run_event(_event(map, 1))
 	_check("gift9_given", s.variable(206) == pts + 4500 and s.item_count(2530) == shard + 20, [s.variable(206) - pts, s.item_count(2530) - shard])
 	_check("gift9_self_switch", s.self_switch(4, 9, "A") and not s.self_switch(4, 1, "A"))
-	_check("gift9_given_line", XMessageBox.transcript.any(func(t): return str(t).contains("收好了")), XMessageBox.transcript)
+	_check("gift9_given_line", XMessageBox.transcript.any(func(t): return str(t).contains("给你，收好了。")), XMessageBox.transcript.duplicate())
 	_check("gift9_not_listed_again", not _labels(map, s, 1).has("开局补给"), _labels(map, s, 1))
+	# 奥尔夫尼新开场白与选项：首次跑 p0（「又来一位新面孔」），第二次跑 p2（「称号、改名与打听」→「关于抓宠」→「离开」）
+	XMessageBox.auto_answers = [0]
+	XMessageBox.transcript.clear()
+	await map.run_event(_event(map, 1))
+	var ev1_p0 := "\n".join(XMessageBox.transcript)
+	_check("live_ev1_p0_t133", ev1_p0.contains("找我有什么事，还是来领东西？") and ev1_p0.contains("称号、改名与打听") and ev1_p0.contains("又来一位新面孔") and not ev1_p0.contains("捕捉网"), XMessageBox.transcript.duplicate())
+	XMessageBox.auto_answers = [0, 3, 5]
+	XMessageBox.transcript.clear()
+	await map.run_event(_event(map, 1))
+	var ev1_said := "\n".join(XMessageBox.transcript)
+	_check("live_ev1_t133", ev1_said.contains("已经不开放抓宠了") and ev1_said.contains("选择：关于抓宠") and not ev1_said.contains("捕诱器"), XMessageBox.transcript.duplicate())
+	# 派蒙 70：写清去蜜雪冰城，先不去不传送；牢妲 62：31 层起开放页
+	s.set_switch(2481, true)
+	s.set_variable(20, 31)
+	map.refresh_events()
+	XMessageBox.auto_answers = [1]
+	XMessageBox.transcript.clear()
+	await map.run_event(_event(map, 70))
+	var ev70_said := "\n".join(XMessageBox.transcript)
+	_check("live_ev70_t133", ev70_said.contains("蜜雪冰城传送点") and ev70_said.contains("选择：先不去") and not ev70_said.contains("宝宝巴士") and map.map_id == 4, XMessageBox.transcript.duplicate())
+	# 大工匠 7、镜子 21、牢妲 62
+	XMessageBox.auto_answers = [3]
+	XMessageBox.transcript.clear()
+	await map.run_event(_event(map, 7))
+	var ev7_said := "\n".join(XMessageBox.transcript)
+	_check("live_ev7_t133", ev7_said.contains("重复刷怪觉得累的话") and ev7_said.contains("“L”或“G”") and ev7_said.contains("挂机按钮") and not ev7_said.contains("嘿嘿嘿"), XMessageBox.transcript.duplicate())
+	XMessageBox.auto_answers = []
+	XMessageBox.transcript.clear()
+	await map.run_event(_event(map, 21))
+	var ev21_said := "\n".join(XMessageBox.transcript)
+	_check("live_ev21_t133", ev21_said.contains("镜面蒙着一层淡淡的灰雾") and ev21_said.contains("高塔里的影子") and not ev21_said.contains("迈达斯"), XMessageBox.transcript.duplicate())
+	XMessageBox.auto_answers = [5]
+	XMessageBox.transcript.clear()
+	await map.run_event(_event(map, 62))
+	var ev62_said := "\n".join(XMessageBox.transcript)
+	_check("live_ev62_t133", ev62_said.contains("想要再次挑战强大的守层者吗？"), XMessageBox.transcript.duplicate())
+	s.set_switch(2481, false)
+	s.set_variable(20, 1)
+	map.refresh_events()
+	# 改版向导 71、商店向导 73
+	XMessageBox.auto_answers = [0, 0, 0, 1, 5]
+	XMessageBox.transcript.clear()
+	await map.run_event(_event(map, 71))
+	var ev71_said := "\n".join(XMessageBox.transcript)
+	_check("live_ev71_t133", ev71_said.contains("再刷一把·天启篇") and ev71_said.contains("天启篇要点") and ev71_said.contains("基础便利功能") and not ev71_said.contains("KYO改版") and not ev71_said.contains("v0.62"), XMessageBox.transcript.duplicate())
+	XMessageBox.auto_answers = [0, 1, 4]
+	XMessageBox.transcript.clear()
+	await map.run_event(_event(map, 73))
+	var ev73_said := "\n".join(XMessageBox.transcript)
+	_check("live_ev73_t133", ev73_said.contains("天启篇主要货币") and ev73_said.contains("天平") and not ev73_said.contains("天道币") and not ev73_said.contains("动保协会"), XMessageBox.transcript.duplicate())
 	# 名单：改版向导说
 	XMessageBox.auto_answers = [_labels(map, s, 71).find("强者名单")]
 	XMessageBox.transcript.clear()
 	await map.run_event(_event(map, 71))
 	var said := XMessageBox.transcript.duplicate()
 	_check("roster_by_guide", said.any(func(t): return str(t).contains("强者名单（")) and not said.any(func(t): return str(t).contains("破阵")), said)
-	# 移动速度（并进改版向导）：选「快」
+	# 移动速度（并进改版向导）：选「快」，说话人已统一成改版向导（transcript 剥去名框，名框由 _hall_text 锁定）
 	XMessageBox.auto_answers = [_labels(map, s, 71).find("调节移动速度"), 1]
 	XMessageBox.transcript.clear()
 	await map.run_event(_event(map, 71))
-	_check("speed_menu_ran", XMessageBox.transcript.has("选择：快"), XMessageBox.transcript)
+	_check("speed_menu_ran", XMessageBox.transcript.has("选择：快") and "\n".join(XMessageBox.transcript).contains("队伍在地图上的移动速度"), XMessageBox.transcript.duplicate())
+	# 希禾 60 并进来的欠债源 50：跑完整欠债对话
+	s.set_variable(206, -3000)
+	XMessageBox.auto_answers = [_labels(map, s, 60).find("欠债限制与福利"), 1]
+	XMessageBox.transcript.clear()
+	await map.run_event(_event(map, 60))
+	var ev50_said := "\n".join(XMessageBox.transcript)
+	_check("live_ev50_speaker_he", ev50_said.contains("换作别人我早就不客气了") and not ev50_said.contains("喂给史莱姆"), XMessageBox.transcript.duplicate())
+	s.set_variable(206, 0)
 	# 回退开关：宿主不弹选单
 	XTianqiHall.ENABLED = false
 	_check("switch_off_no_menu", XTianqiHall.menu(map, s, 6).is_empty() and not XTianqiHall.intercepts(map, s, 4, 6))
@@ -259,3 +318,96 @@ func _live() -> void:
 	for _f in 60:   # 淡入淡出、提示条的计时器跑完再退，免得退出时报资源还在用（偶发）
 		await get_tree().process_frame
 	await get_tree().create_timer(1.0).timeout
+
+
+class _FakeLaodaHost extends RefCounted:
+	var calls := []
+	func show_text_with_choices(face: String, idx: int, lines: Array, options: Array, _cancel: int) -> int:
+		calls.append({"face": face, "idx": idx, "lines": lines, "options": options})
+		return options.size() - 1
+
+
+## 六、T133 大厅引导文案 + 合并菜单说话人统一（全页静态扫 + 牢妲脸图 + 回退 + 西游档不动）
+func _hall_text() -> void:
+	var s := Kit.new_game("jiusi")
+	# 1. 小A T079 文字审 P3 落地
+	_check("t079_p3_host1", str(XTianqiHall.HOSTS[1][2]).contains("找我有什么事，还是来领东西？") and str(XTianqiHall.HOSTS[1][3]) == "称号、改名与打听", XTianqiHall.HOSTS[1])
+	_check("t079_p3_given", XTianqiHall.GIVEN_LINE == "给你，收好了。", XTianqiHall.GIVEN_LINE)
+	# 2. 7 个改文案 NPC 全页跑 rewrite_message / rewrite_choices：零西游词
+	var forbidden := ["神魔之塔", "天道币", "逆天币", "天道加持", "天道使者", "洪荒", "灭世", "天灾", "地狱", "混沌难度", "混沌鸿蒙", "鸿蒙", "求道者", "赌狗", "动保协会", "宝宝巴士", "捕捉网", "捕诱器", "迈达斯"]
+	var leak := []
+	var ev73_faces := []
+	for eid in [1, 7, 21, 70, 71, 73]:
+		var ev := _ev(4, eid)
+		for p in ev.get("pages", []):
+			var lst: Array = p.get("list", [])
+			for i in lst.size():
+				var cmd: Dictionary = lst[i]
+				if int(cmd.code) == 101:
+					var face := str(cmd.parameters[0])
+					var idx := int(cmd.parameters[1])
+					var lines := []
+					var j := i + 1
+					while j < lst.size() and int(lst[j].code) == 401:
+						lines.append(str(lst[j].parameters[0]))
+						j += 1
+					var msg := {"face": face, "index": idx, "lines": lines}
+					msg = XTianqiSect.rewrite_message(s, 4, eid, msg)
+					msg = XTianqiHallText.rewrite_message(s, 4, eid, msg)
+					if eid == 73 and i in [13, 15, 17, 19]:
+						ev73_faces.append(int(msg.index))
+					var joined := "\n".join(msg.lines)
+					for bad in forbidden:
+						if joined.contains(bad):
+							leak.append([eid, i, bad, joined])
+				elif int(cmd.code) == 102:
+					var m2 := {"choices": (cmd.parameters[0] as Array).duplicate()}
+					m2 = XTianqiHallText.rewrite_choices(s, 4, eid, m2)
+					var cj := "|".join(m2.choices)
+					for bad in forbidden:
+						if cj.contains(bad):
+							leak.append([eid, "choice", i, bad, cj])
+	_check("npcs_no_xiyou_leaks", leak.is_empty(), leak)
+	_check("ev73_fixed_face_index", ev73_faces == [6, 6, 6, 6], ev73_faces)
+	# 3. 牢妲 face = naxida#0 + 新台词
+	var fake := _FakeLaodaHost.new()
+	await XTianqiTrim.run_laoda(fake, s)
+	_check("laoda_face_and_copy", fake.calls.size() == 1 and str(fake.calls[0].face) == "naxida" and int(fake.calls[0].idx) == 0 and str(fake.calls[0].lines[0]).contains("想要再次挑战强大的守层者吗？"), fake.calls)
+	# 4. 所有合并菜单源事件（101+401）说话人、头像统一到宿主，零旧说话人残留
+	var old_speakers := ["<奇怪的老妪>", "<贪财的老妪>", "<小爱莉>", "<形象修复员>", "<大叔>", "<猫哥>", "<魂灯商人>", "<滑稽商人>", "<小盖盖>", "<天虎令>", "<讨债人>"]
+	var bad_merged := []
+	for src in XTianqiHallText.MERGED_SPEAKERS:
+		var sp: Array = XTianqiHallText.MERGED_SPEAKERS[src]
+		var ev := _ev(4, int(src))
+		for p in ev.get("pages", []):
+			var lst: Array = p.get("list", [])
+			for i in lst.size():
+				if int(lst[i].code) == 101:
+					var lines := []
+					var j := i + 1
+					while j < lst.size() and int(lst[j].code) == 401:
+						lines.append(str(lst[j].parameters[0]))
+						j += 1
+					var msg := {"face": str(lst[i].parameters[0]), "index": int(lst[i].parameters[1]), "lines": lines}
+					msg = XTianqiHallText.rewrite_message(s, 4, int(src), msg)
+					var joined := "\n".join(msg.lines)
+					if str(msg.face) != str(sp[0]) or int(msg.index) != int(sp[1]) or not str(msg.lines[0]).contains("<%s>" % str(sp[2])):
+						bad_merged.append([src, i, msg.face, msg.index, msg.lines[0]])
+					for old in old_speakers:
+						if joined.contains(old):
+							bad_merged.append([src, "old", old, joined])
+	_check("merged_speakers_unified", bad_merged.is_empty(), bad_merged)
+	# 5. 二阶段异化追记（24 仓库管理员、50 希禾）
+	var c24 := XTianqiHallText.corruption_after(s, 24)
+	var c50 := XTianqiHallText.corruption_after(s, 50)
+	_check("corruption_after_unified", c24.size() == 4 and c24[2] == "仓库管理员" and c24[0] == "People14" and c50.size() == 4 and c50[2] == "希禾" and c50[0] == "face1", [c24, c50])
+	# 6. 回退开关 + 西游档原样
+	var sample_msg := {"face": "face1", "index": 7, "lines": ["\\n<福利助手>宝宝巴士快乐大本营~"]}
+	var sample_ch := {"choices": ["前往宝宝巴士", "不去！"]}
+	XTianqiHallText.ENABLED = false
+	_check("hall_text_rollback", XTianqiHallText.rewrite_message(s, 4, 70, sample_msg.duplicate(true)) == sample_msg and XTianqiHallText.rewrite_choices(s, 4, 70, sample_ch.duplicate(true)) == sample_ch and XTianqiHallText.corruption_after(s, 50).is_empty())
+	XTianqiHallText.ENABLED = true
+	var plain := _plain_state()
+	_check("plain_text_untouched", XTianqiHallText.rewrite_message(plain, 4, 70, sample_msg.duplicate(true)) == sample_msg and XTianqiHallText.rewrite_choices(plain, 4, 70, sample_ch.duplicate(true)) == sample_ch and XTianqiHallText.corruption_after(plain, 24).is_empty())
+	XState.current = s
+

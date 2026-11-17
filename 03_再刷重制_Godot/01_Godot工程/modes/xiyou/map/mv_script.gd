@@ -453,6 +453,8 @@ static func _data_patch(js: String) -> bool:
 ## 每页拼成「文字＋选项（更早的更新／返回→跳主菜单）」插在本句之后，头像取本句之后第一条 101（没有用 People5_mvt 7）；
 ## 原版换成新数组（list.slice＋concat），这里同样换新数组，不改地图数据里的原列表
 static func _inject_changelog(interp) -> void:
+	if XTianqiHallText.on(XState.current):
+		return
 	var data = XDB.load_json("db/PlayerChangelog.json") if FileAccess.file_exists(XDB.BASE + "db/PlayerChangelog.json") else null
 	if not data is Dictionary:
 		return
