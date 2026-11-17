@@ -80,23 +80,33 @@ static func context(s: XState) -> Dictionary:
 	return {"route": r, "floor": f, "comp": XZhenqi.comp_for(r.key, f)}
 
 
+static var TIANQI_STATUS_ENABLED := true
+
+
+static func _tianqi_status_on(s = null) -> bool:
+	var st = s if s != null else XState.current
+	return TIANQI_STATUS_ENABLED and st != null and XTianqi.active(st)
+
+
 static func tips(s: XState, a: XActor, c: Dictionary) -> Array:
 	var out := []
-	var st := XZhenqi.state_of(s, a)
-	if st.pending:
-		out.append("\\C[17]有 %d 项突破奖励未选：打开菜单「真气」选择。" % int(st.pending))
-	if st.canBreak:
-		out.append("\\C[17]真气已到%s大圆满：打开菜单「真气」挑战%s，突破%s。" % [XZhenqi.REALMS[st.realm].name, XZhenqi.REALMS[st.realm + 1].trial, st.next])
+	var tq := _tianqi_status_on(s)
+	if not tq:
+		var st := XZhenqi.state_of(s, a)
+		if st.pending:
+			out.append("\\C[17]有 %d 项突破奖励未选：打开菜单「真气」选择。" % int(st.pending))
+		if st.canBreak:
+			out.append("\\C[17]真气已到%s大圆满：打开菜单「真气」挑战%s，突破%s。" % [XZhenqi.REALMS[st.realm].name, XZhenqi.REALMS[st.realm + 1].trial, st.next])
 	if c.now.cri < 1:
 		out.append("\\C[2]暴击率只有 %s（难度扣了 %s）：学暴击率被动，或换带暴击率的装备。" % [pct(c.now.cri), pct(-c.diff.cri)])
 	if 1.5 + c.now.crit <= 1:
-		out.append("\\C[2]爆伤被扣到底，暴击只有 ×1：学爆伤被动（爆伤书、天赋、境界奖励）。")
+		out.append("\\C[2]爆伤被扣到底，暴击只有 ×1：%s。" % ("从装备、词条、秘境被动书与种族祝福补充爆伤" if tq else "学爆伤被动（爆伤书、天赋、境界奖励）"))
 	if c.now.hit < 1:
 		out.append("\\C[2]命中只有 %s：带命中或暴击率的被动（命中书已改为暴击率）。" % pct(c.now.hit))
 	if c.diff.atk < 0.5 or c.diff.mat < 0.5:
-		out.append("\\C[2]难度把攻击压到 %s：学属性%%被动、吃淬元丹。" % XZhenqi.mult(maxf(c.diff.atk, c.diff.mat)))
+		out.append("\\C[2]难度把攻击压到 %s：%s。" % [XZhenqi.mult(maxf(c.diff.atk, c.diff.mat)), "从装备、词条、秘境被动书与种族祝福提升" if tq else "学属性%被动、吃淬元丹"])
 	if out.is_empty():
-		out.append("\\C[3]各项门槛都已越过：现在主要看伤害量（真气、装备、结算类被动）和首领机制。")
+		out.append("\\C[3]各项门槛都已越过：现在主要看伤害量（%s）和首领机制。" % ("装备、词条、结算类被动" if tq else "真气、装备、结算类被动"))
 	return out
 
 
@@ -146,11 +156,15 @@ static func page_rows(s: XState, a: XActor) -> Array:
 
 ## v0.28 一页写法：真气、（五个乘区不移植）、难度对照、建议
 static func page_rows_v028(s: XState, a: XActor) -> Array:
-	var rows := zhenqi_rows(s, a)
+	var tq := _tianqi_status_on(s)
+	var rows := [] if tq else zhenqi_rows(s, a)
 	var c := compare(a)
 	var ctx := context(s)
-	rows.append({"type": "blank"})
-	rows.append(_head("难度对照　%s·第 %d 层　天道补偿 %s" % [ctx.route.name, ctx.floor, XZhenqi.mult(ctx.comp)]))
+	if not tq:
+		rows.append({"type": "blank"})
+		rows.append(_head("难度对照　%s·第 %d 层　天道补偿 %s" % [ctx.route.name, ctx.floor, XZhenqi.mult(ctx.comp)]))
+	else:
+		rows.append(_head("难度对照　%s·第 %d 层" % [ctx.route.name, ctx.floor]))
 	rows.append(_cols(["项目", "难度（含补强）", "自身", "当前"], true))
 	rows.append(_cols(["暴击率", pct(c.diff.cri, true), pct(c.base.cri), pct(c.now.cri)], false, c.now.cri < 1))
 	rows.append(_cols(["爆伤", pct(c.diff.crit, true), pct(c.base.crit, true), "暴击 " + XZhenqi.mult(maxf(1, 1.5 + c.now.crit))], false, 1.5 + c.now.crit <= 1))
@@ -240,23 +254,25 @@ static func next_mijing(a: XActor, key: String) -> String:
 ## G.panelSuggestions：按优先级给出全部适用项，页面只显示前两条
 static func panel_suggestions(s: XState, a: XActor, c: Dictionary) -> Array:
 	var out := []
-	var st := XZhenqi.state_of(s, a)
-	if st.pending:
-		out.append({"key": "pending", "text": "选择突破奖励（菜单「真气」）"})
-	if st.canBreak and st.next != null:
-		out.append({"key": "break", "text": "挑战「%s」突破境界（菜单「真气」）" % XZhenqi.REALMS[st.realm + 1].trial})
+	var tq := _tianqi_status_on(s)
+	if not tq:
+		var st := XZhenqi.state_of(s, a)
+		if st.pending:
+			out.append({"key": "pending", "text": "选择突破奖励（菜单「真气」）"})
+		if st.canBreak and st.next != null:
+			out.append({"key": "break", "text": "挑战「%s」突破境界（菜单「真气」）" % XZhenqi.REALMS[st.realm + 1].trial})
 	if c.now.cri < 1 or c.now.hit < 1:
 		out.append({"key": "crit", "text": "镶嵌「宝珠·鹰眼」（菜单「宝珠坊」）"})
 	if 1.5 + c.now.crit <= 1:
 		var b := next_mijing(a, "爆伤")
-		out.append({"key": "critHarm", "text": "学习「%s」（方桌大厅·秘境被动书兑换）" % b if b != "" else "服用加暴伤的丹药（来源见物品说明）"})
+		out.append({"key": "critHarm", "text": "学习「%s」（方桌大厅·秘境被动书兑换）" % b if b != "" else ("从装备、词条与种族祝福补充爆伤" if tq else "服用加暴伤的丹药（来源见物品说明）")})
 	if c.diff.atk < 0.5 or c.diff.mat < 0.5:
-		out.append({"key": "atk", "text": "服用「%s」（蜜雪冰城·洪荒女皇）" % ("裂山霸力丹" if c.now.atk >= c.now.mat else "九霄焚天丹")})
+		out.append({"key": "atk", "text": "从装备、词条、秘境被动书与种族祝福提升攻击" if tq else ("服用「%s」（蜜雪冰城·洪荒女皇）" % ("裂山霸力丹" if c.now.atk >= c.now.mat else "九霄焚天丹"))})
 	if c.now.settle < 0.5:
 		var b2 := next_mijing(a, "结算伤害")
-		out.append({"key": "settle", "text": "学习「%s」（方桌大厅·秘境被动书兑换）" % b2 if b2 != "" else "服用加结算伤害的丹药（来源见物品说明）"})
+		out.append({"key": "settle", "text": "学习「%s」（方桌大厅·秘境被动书兑换）" % b2 if b2 != "" else ("从装备与结算类被动补充伤害" if tq else "服用加结算伤害的丹药（来源见物品说明）")})
 	if out.is_empty():
-		out.append({"key": "ok", "text": "挑战副本首领获取真气"})
+		out.append({"key": "ok", "text": "挑战副本首领获取抽奖券、神秘珠与专属掉落" if tq else "挑战副本首领获取真气"})
 	return out
 
 
@@ -280,21 +296,22 @@ static func challenge(c: Dictionary) -> String:
 static func panel_rows(s: XState, a: XActor) -> Array:
 	var c := compare(a)
 	var ctx := context(s)
-	var st := XZhenqi.state_of(s, a)
 	var rows := [_head("%s·第%d层" % [ctx.route.name, ctx.floor]), _line("挑战评估：" + challenge(c))]
-	rows.append(_line("境界：\\C[6]%s\\C[0]　真气：伤害 \\C[3]%s\\C[0]" % [st.name, dmg_pct(st.rate)]))
-	if st.next == null:
-		rows.append(_line("境界：已至道祖"))
-	elif st.capped and st.canBreak:
-		rows.append(_line("突破条件：挑战「%s」（菜单「真气」）" % XZhenqi.REALMS[st.realm + 1].trial))
-	elif st.capped:
-		rows.append(_line("突破条件：通关第%d层（已通关%d层）" % [int(st.gate.required), int(st.gate.passed)]))
-	else:
-		rows.append(_line("下一境所需真气：%s点" % big_panel(st.need)))
-	if st.pending:
-		rows.append(_line("\\C[17]待选突破奖励：%d项（菜单「真气」）\\C[0]" % int(st.pending)))
-	if ctx.comp > 1.0001:
-		rows.append(_line("天道加持：伤害 %s（本层自动获得）" % dmg_pct(ctx.comp)))
+	if not _tianqi_status_on(s):
+		var st := XZhenqi.state_of(s, a)
+		rows.append(_line("境界：\\C[6]%s\\C[0]　真气：伤害 \\C[3]%s\\C[0]" % [st.name, dmg_pct(st.rate)]))
+		if st.next == null:
+			rows.append(_line("境界：已至道祖"))
+		elif st.capped and st.canBreak:
+			rows.append(_line("突破条件：挑战「%s」（菜单「真气」）" % XZhenqi.REALMS[st.realm + 1].trial))
+		elif st.capped:
+			rows.append(_line("突破条件：通关第%d层（已通关%d层）" % [int(st.gate.required), int(st.gate.passed)]))
+		else:
+			rows.append(_line("下一境所需真气：%s点" % big_panel(st.need)))
+		if st.pending:
+			rows.append(_line("\\C[17]待选突破奖励：%d项（菜单「真气」）\\C[0]" % int(st.pending)))
+		if ctx.comp > 1.0001:
+			rows.append(_line("天道加持：伤害 %s（本层自动获得）" % dmg_pct(ctx.comp)))
 	var low: bool = c.now.settle < 0.5
 	rows.append(_line(("\\C[2]" if low else "") + "结算伤害：" + dmg_pct(c.now.settle) + ("" if c.now.settle >= 1 else "（本层难度削弱）") + ("\\C[0]" if low else "")))
 	var req := PackedStringArray()
@@ -319,13 +336,15 @@ static func _ratio(base: float, now: float) -> float:
 
 ## G.detailRows：第二页「修行·详细」。「战力构成」一段（CodexZones 五乘区预算）照 O-044 不移植，连同其后的空行整段不显示。
 static func detail_rows(s: XState, a: XActor) -> Array:
-	var st := XZhenqi.state_of(s, a)
-	var d := XZhenqi.data(a)
-	var rows := [_head("真气"), _line("境界：%s　真气：%s点" % [st.name, big_panel(st.qi)]), _line("真气：伤害 " + dmg_pct(st.rate))]
-	var df := XZhenqi.DAOFA.filter(func(k): return d.daofa.get(k, 0)).map(func(k): return XZhenqi.DAOFA_NAME[k])
-	rows.append(_line("道法：" + ("、".join(df) if not df.is_empty() else "未领悟")))
-	rows.append(_line("来源：守层者（每层一次）、副本首领、神兵试炼、溢出再动（每场最多10次）"))
-	rows.append({"type": "blank"})
+	var rows := []
+	if not _tianqi_status_on(s):
+		var st := XZhenqi.state_of(s, a)
+		var d := XZhenqi.data(a)
+		rows = [_head("真气"), _line("境界：%s　真气：%s点" % [st.name, big_panel(st.qi)]), _line("真气：伤害 " + dmg_pct(st.rate))]
+		var df := XZhenqi.DAOFA.filter(func(k): return d.daofa.get(k, 0)).map(func(k): return XZhenqi.DAOFA_NAME[k])
+		rows.append(_line("道法：" + ("、".join(df) if not df.is_empty() else "未领悟")))
+		rows.append(_line("来源：守层者（每层一次）、副本首领、神兵试炼、溢出再动（每场最多10次）"))
+		rows.append({"type": "blank"})
 	var c := compare(a)
 	var ctx := context(s)
 	rows.append(_head("难度对照　%s·第%d层" % [ctx.route.name, ctx.floor]))
@@ -349,6 +368,8 @@ static func detail_rows(s: XState, a: XActor) -> Array:
 
 ## 战力条旁的真气文字（refreshCombatPowerSummary 的右端 300 宽）：[文字, 是否瓶颈／待选（橙色）]
 static func strip_text(s: XState, a: XActor) -> Array:
+	if _tianqi_status_on(s):
+		return ["", false]
 	var st := XZhenqi.state_of(s, a)
 	return ["真气·" + st.name + " " + XZhenqi.mult(st.rate) + ("（待选）" if st.pending else ("（瓶颈）" if st.capped else "")), st.capped or st.pending > 0]
 
@@ -483,33 +504,57 @@ static func pending_milestone(s: XState) -> Dictionary:
 	return seg
 
 
-## G.adviceTexts（方桌大厅「商店向导」→「下一步建议」）：进度与待选／可突破、本段副本 Boss、养成入口与祝福石；战力短板段不移植（O-050）
+static var TIANQI_ADVICE_ENABLED := true
+
+
+static func _tianqi_advice_on(s = null) -> bool:
+	var st = s if s != null else XState.current
+	return TIANQI_ADVICE_ENABLED and st != null and XTianqi.active(st)
+
+
+## G.adviceTexts（方桌大厅「商店向导」→「下一步建议」）：进度与待选／可突破、本段副本首领、养成入口与祝福石；战力短板段不移植（O-050）
 static func advice_texts(s: XState) -> Array:
 	var f := XZhenqi.progress_floor(s)
 	var seg := segment_of(f)
 	var out := []
-	var pend := PackedStringArray()
-	var cap := PackedStringArray()
-	for a in s.members():
-		var st := XZhenqi.state_of(s, a)
-		if st.pending:
-			pend.append(a.display_name())
-		elif st.canBreak:
-			cap.append(a.display_name() + "→" + str(st.next))
-	var p1 := "\\C[6]修行建议\\C[0]　路线：%s，已通过第%d层，" % [XZhenqi.route(s).name, f]
-	p1 += "守层者已全部通过，真气主要靠副本首领、神兵试炼和溢出再动。" if f >= 33 else "下一个守层者在第%d层（每层只能打一次，首通给大量真气）。" % (f + 1)
-	if not pend.is_empty():
-		p1 += "\\C[2]待选奖励\\C[0]：" + "、".join(pend.slice(0, 6)) + (" 等" if pend.size() > 6 else "") + "——打开菜单「真气」补选。"
-	if not cap.is_empty():
-		p1 += "\\C[2]可突破\\C[0]：" + "、".join(cap.slice(0, 4)) + (" 等" if cap.size() > 4 else "") + "——打开菜单「真气」打瓶颈之战。"
-	out.append(p1)
-	if not seg.is_empty():
-		out.append("\\C[4]%s\\C[0]可反复刷：%s。胜利给抽奖券（另加 层数÷3 张）和真气（1～15层保留原奖励的1/3，16～25层保留1/2，26～33层保留2/3）；同一个副本首领打满 1／10／50 次另给 10／30／100 张券，10 次后权能和专属书掉率×2、50 次后×3；每场另有 10%% 掉神秘珠（宝珠坊鉴定，一半出原作宝珠）。" % [seg.title, _boss_summary(seg, 5)])
-		var sp := "".join(PackedStringArray(seg.get("special", [])))
-		var pw := _power_line(seg)
-		if sp != "" or pw != "":
-			out.append(sp + pw)
-	var entry := "\\C[4]养成入口\\C[0]：菜单「宝珠坊」鉴定、分解并查看套装；「种族祝福」逐人换族与进阶；菜单「真气」突破、领奖与挑战神兵试炼，大厅「闭关」也可操作。"
+	var tq := _tianqi_advice_on(s)
+	if tq:
+		var p1 := "\\C[6]修行建议\\C[0]　难度：%s，已通过第%d层，" % [XZhenqi.route(s).name, f]
+		p1 += "守层者已全部通过，可继续推进34～36层或挑战副本首领获取养成材料与专属掉落。" if f >= 33 else "下一个守层者在第%d层（每层只能打一次；每通关 5 层高塔可抽取一位新伙伴）。" % (f + 1)
+		out.append(p1)
+		if not seg.is_empty():
+			var rate := pct(float(XDB.table("CodexOrbs").get("dropRate", 0.1)))
+			out.append("\\C[4]%s\\C[0]可反复刷：%s。胜利给抽奖券（另加 层数÷3 张）；同一个副本首领打满 1／10／50 次另给 10／30／100 张券，10 次后专属书掉率×2、50 次后×3；每场另有 %s 掉未鉴定神秘珠（菜单「宝珠坊」鉴定，高层品质更好）。" % [str(seg.title).replace("神魔之塔", "高塔"), _boss_summary(seg, 5), rate])
+			var sp := "".join(PackedStringArray(seg.get("special", [])))
+			if sp != "":
+				out.append(sp)
+	else:
+		var pend := PackedStringArray()
+		var cap := PackedStringArray()
+		for a in s.members():
+			var st := XZhenqi.state_of(s, a)
+			if st.pending:
+				pend.append(a.display_name())
+			elif st.canBreak:
+				cap.append(a.display_name() + "→" + str(st.next))
+		var p1 := "\\C[6]修行建议\\C[0]　路线：%s，已通过第%d层，" % [XZhenqi.route(s).name, f]
+		p1 += "守层者已全部通过，真气主要靠副本首领、神兵试炼和溢出再动。" if f >= 33 else "下一个守层者在第%d层（每层只能打一次，首通给大量真气）。" % (f + 1)
+		if not pend.is_empty():
+			p1 += "\\C[2]待选奖励\\C[0]：" + "、".join(pend.slice(0, 6)) + (" 等" if pend.size() > 6 else "") + "——打开菜单「真气」补选。"
+		if not cap.is_empty():
+			p1 += "\\C[2]可突破\\C[0]：" + "、".join(cap.slice(0, 4)) + (" 等" if cap.size() > 4 else "") + "——打开菜单「真气」打瓶颈之战。"
+		out.append(p1)
+		if not seg.is_empty():
+			out.append("\\C[4]%s\\C[0]可反复刷：%s。胜利给抽奖券（另加 层数÷3 张）和真气（1～15层保留原奖励的1/3，16～25层保留1/2，26～33层保留2/3）；同一个副本首领打满 1／10／50 次另给 10／30／100 张券，10 次后权能和专属书掉率×2、50 次后×3；每场另有 10%% 掉神秘珠（宝珠坊鉴定，一半出原作宝珠）。" % [seg.title, _boss_summary(seg, 5)])
+			var sp := "".join(PackedStringArray(seg.get("special", [])))
+			var pw := _power_line(seg)
+			if sp != "" or pw != "":
+				out.append(sp + pw)
+	var entry := "\\C[4]养成入口\\C[0]：菜单「宝珠坊」鉴定、分解并查看套装；「种族祝福」逐人换族与进阶；"
+	if tq:
+		entry += "状态界面%s可查看挑战评估、必备属性与难度对照。" % ("「修行」与「修行·详细」页" if PANEL_V062 else "「修行」页")
+	else:
+		entry += "菜单「真气」突破、领奖与挑战神兵试炼，大厅「闭关」也可操作。"
 	var races = XDB.table("CodexRaces")
 	var bands: Array = races.get("bands", []) if races is Dictionary else []
 	var band := -1
