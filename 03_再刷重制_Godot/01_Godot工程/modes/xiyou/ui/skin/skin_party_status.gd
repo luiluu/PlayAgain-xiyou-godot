@@ -160,7 +160,7 @@ func _draw_tabs() -> void:
 		var col := XUiSkin.TEXT if on else XUiSkin.TEXT_2
 		var fit := XSkinList.fit_text(f, str(ts[i][1]), r.size.x - 8, XSkinSelScale.fs(17, tab_scale.k(ts[i][0]), floori(TAB_H * 0.66)), 14)
 		var tw := f.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
-		tab_row.draw_string(f, Vector2(r.position.x + (r.size.x - tw) / 2.0, TAB_H / 2.0 + int(fit[1]) * 0.36), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], col)
+		XUiSkin.ds(tab_row, f, Vector2(r.position.x + (r.size.x - tw) / 2.0, TAB_H / 2.0 + int(fit[1]) * 0.36), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], col)
 	tab_row.draw_line(Vector2(0, TAB_H + 3), Vector2(tab_row.size.x, TAB_H + 3), Color(XUiSkin.LINE, 0.18), 1.0)
 
 
@@ -274,9 +274,9 @@ func _draw() -> void:
 		return
 	var m := XSkinLayout.margin_for(view.x)
 	var tf := XUiSkin.font("title")
-	draw_string(tf, Vector2(m, 14 + XUiSkin.FS_PAGE * 0.92), a.display_name() + " · 状态详情", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	XUiSkin.ds(self, tf, Vector2(m, 14 + XUiSkin.FS_PAGE * 0.92), a.display_name() + " · 状态详情", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
 	var tw := tf.get_string_size(a.display_name() + " · 状态详情", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE).x
-	draw_string(XUiSkin.font("body"), Vector2(m + tw + 16, 14 + XUiSkin.FS_PAGE * 0.92), SUBTITLE, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
+	XUiSkin.ds(self, XUiSkin.font("body"), Vector2(m + tw + 16, 14 + XUiSkin.FS_PAGE * 0.92), SUBTITLE, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
 	XUiSkin.draw_panel(get_canvas_item(), Rect2(list.position - Vector2(8, TAB_H + 16), list.size + Vector2(16, TAB_H + 24)))
 
 

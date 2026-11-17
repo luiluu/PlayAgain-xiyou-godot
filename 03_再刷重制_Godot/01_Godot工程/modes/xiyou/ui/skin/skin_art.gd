@@ -215,7 +215,10 @@ static func bg_text_2() -> Color:
 static func bg_string(ci: CanvasItem, font: Font, pos: Vector2, text: String, fs: int, color: Color, width := -1.0) -> void:
 	if read_on():
 		ci.draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, width, fs, READ_OUTLINE, READ_OUTLINE_C)
-	ci.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, width, fs, color)
+	if read_on():   # 已描过 READ 的粗边，不再叠 FONT_V00300 的 1px
+		ci.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, width, fs, color)
+	else:
+		XUiSkin.ds(ci, font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, width, fs, color)
 
 
 ## ---- 组件 ----

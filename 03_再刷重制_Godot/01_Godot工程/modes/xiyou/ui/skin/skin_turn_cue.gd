@@ -86,7 +86,7 @@ func _draw() -> void:
 	var bf := XUiSkin.font("body")
 	var x := rr.position.x + 22.0
 	var y := rr.position.y + H / 2.0 + 8.0
-	draw_string(tf, Vector2(x, y), who, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Color(XUiSkin.TEXT, pa * pt))
+	XUiSkin.ds(self, tf, Vector2(x, y), who, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, Color(XUiSkin.TEXT, pa * pt))
 	x += tf.get_string_size(who, HORIZONTAL_ALIGNMENT_LEFT, -1, 21).x + 6.0
-	draw_string(bf, Vector2(x, y - 1.0), "的回合", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(XUiSkin.GOLD, pa * pt))
+	XUiSkin.ds(self, bf, Vector2(x, y - 1.0), "的回合", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(XUiSkin.GOLD, pa * pt))
 	draw_set_transform(Vector2.ZERO)

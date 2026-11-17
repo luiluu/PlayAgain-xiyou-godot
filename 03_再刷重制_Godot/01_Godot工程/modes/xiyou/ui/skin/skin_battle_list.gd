@@ -191,7 +191,7 @@ func _draw() -> void:
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	# 标题＋右上
-	draw_string(title_font, Vector2(16, 28), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, XUiSkin.GOLD)
+	XUiSkin.ds(self, title_font, Vector2(16, 28), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, XUiSkin.GOLD)
 	if XSkinBattle.HELP_COLLAPSE:   # T096「详情」胶囊：展开时红乙选中色
 		var cr := detail_rect()
 		var sb := StyleBoxFlat.new()
@@ -201,13 +201,13 @@ func _draw() -> void:
 		sb.set_border_width_all(1)
 		sb.draw(get_canvas_item(), cr)
 		var tw := body.get_string_size("详情", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
-		draw_string(body, Vector2(cr.position.x + (cr.size.x - tw) / 2.0, cr.position.y + 18), "详情", HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
+		XUiSkin.ds(self, body, Vector2(cr.position.x + (cr.size.x - tw) / 2.0, cr.position.y + 18), "详情", HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
 			Color.WHITE if XSkinBattle.help_open else XUiSkin.GOLD)
 	if header != "":
-		draw_string(num, Vector2(16, 28), header, HORIZONTAL_ALIGNMENT_RIGHT, size.x - 32, 16, XUiSkin.TEXT_2)
+		XUiSkin.ds(self, num, Vector2(16, 28), header, HORIZONTAL_ALIGNMENT_RIGHT, size.x - 32, 16, XUiSkin.TEXT_2)
 	# 行
 	if entries.is_empty():
-		draw_string(body, Vector2(16, HEAD_H + ROW_H * 0.64), "空", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST, XUiSkin.TEXT_3)
+		XUiSkin.ds(self, body, Vector2(16, HEAD_H + ROW_H * 0.64), "空", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST, XUiSkin.TEXT_3)
 	if sel_scale != null:
 		sel_scale.sel(index if index >= 0 else null)
 	for i in range(top, mini(top + rows, entries.size())):
@@ -227,9 +227,9 @@ func _draw() -> void:
 	var dl := desc_line()
 	var en := index >= 0 and index < entries.size() and bool(entries[index].get("enabled", true))
 	if dl != "":   # T096：同样稿两行——上行一句话说明（正文色 15），下行目标 · 用完剩（次要色 14；用不了时写原因，橙）
-		draw_string(body, Vector2(16, fy + 22), XSkinOTBBar.fit(body, dl, size.x - 32, 15), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT)
+		XUiSkin.ds(self, body, Vector2(16, fy + 22), XSkinOTBBar.fit(body, dl, size.x - 32, 15), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT)
 		if ft != "":
-			draw_string(body, Vector2(16, fy + 44), XSkinOTBBar.fit(body, ft, size.x - 32, 14), HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
+			XUiSkin.ds(self, body, Vector2(16, fy + 44), XSkinOTBBar.fit(body, ft, size.x - 32, 14), HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
 				XUiSkin.TEXT_2 if en else XUiSkin.DOWN)
 	elif ft != "":
 		draw_multiline_string(body, Vector2(16, fy + 21), ft, HORIZONTAL_ALIGNMENT_LEFT, size.x - 32, 15, 2,
@@ -254,7 +254,7 @@ func _draw_row(i: int, body: Font, num: Font) -> void:
 		var col: Color = c.get("color", XUiSkin.TEXT)
 		col.a = a
 		var tw := num.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x
-		draw_string(num, Vector2(x - tw, cy + 8), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, col)
+		XUiSkin.ds(self, num, Vector2(x - tw, cy + 8), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, col)
 		x -= tw
 		var ic := XSkinBattle.icon(int(c.get("icon", 0)))
 		if ic != null:
@@ -265,7 +265,7 @@ func _draw_row(i: int, body: Font, num: Font) -> void:
 	var reason := str(e.get("reason", "")) if not en else ""
 	if reason != "":
 		var rw := body.get_string_size(reason, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
-		draw_string(body, Vector2(x - rw, cy + 5), reason, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, Color(XUiSkin.DOWN, 0.9))
+		XUiSkin.ds(self, body, Vector2(x - rw, cy + 5), reason, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, Color(XUiSkin.DOWN, 0.9))
 		x -= rw + 10
 	# 名字（放不下就截短）
 	var nx := r.position.x + 50 + 16.0 * (sk - 1.0)
@@ -276,7 +276,7 @@ func _draw_row(i: int, body: Font, num: Font) -> void:
 	name_col.a = a
 	if XUiSkin.FONT_V2:   # 收口批（小A核 P2-3）：大字号时先缩字到 15，还放不下加「…」，不再硬裁
 		var fit := XSkinList.fit_text(body, str(e.get("text", "")), maxf(20.0, x - nx), nfs, XUiSkin.FS_MIN)
-		draw_string(body, Vector2(nx, cy + int(fit[1]) * 0.36), str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1]), name_col)
+		XUiSkin.ds(self, body, Vector2(nx, cy + int(fit[1]) * 0.36), str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1]), name_col)
 	else:
-		draw_string(body, Vector2(nx, cy + 7), str(e.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, maxf(20.0, x - nx), XUiSkin.FS_LIST, name_col,
+		XUiSkin.ds(self, body, Vector2(nx, cy + 7), str(e.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, maxf(20.0, x - nx), XUiSkin.FS_LIST, name_col,
 			TextServer.JUSTIFICATION_NONE)

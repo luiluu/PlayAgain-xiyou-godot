@@ -94,7 +94,7 @@ func _paint_now(c: XMVCanvas) -> void:
 			var st := str(row.stack)
 			var sw := num.get_string_size(st, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
 			c.draw_string_outline(num, Vector2(sx + 22 - sw, 5 + 22), st, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3, Color(0, 0, 0, 0.85))
-			c.draw_string(num, Vector2(sx + 22 - sw, 5 + 22), st, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, XUiSkin.TEXT)
+			XUiSkin.ds(c, num, Vector2(sx + 22 - sw, 5 + 22), st, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, XUiSkin.TEXT)
 	if rows.size() > MAX_ICONS:
 		sx -= 4
 	# 名字＋Lv 行
@@ -103,13 +103,13 @@ func _paint_now(c: XMVCanvas) -> void:
 	var name_w := maxf(sx - x - 6, 20)
 	nm = XSkinOTBBar.fit(body, nm, name_w, 18)
 	var y1 := 6 + 18.0
-	c.draw_string(body, Vector2(x, y1), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, name_col)
+	XUiSkin.ds(c, body, Vector2(x, y1), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, name_col)
 	var nw := body.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 	var info := info_text()
 	var ix := x + nw + 8
 	if ix < sx - 12:
 		info = XSkinOTBBar.fit(body, info, sx - 6 - ix, XUiSkin.FS_AUX)
-		c.draw_string(body, Vector2(ix, y1), info, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, Color(XUiSkin.TEXT_2, alpha))
+		XUiSkin.ds(c, body, Vector2(ix, y1), info, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, Color(XUiSkin.TEXT_2, alpha))
 	# 三条量条：血、蓝各 1 份，TP 0.6 份（同 XSkinPartyStrip）
 	var y2 := 6 + 24 + 12.0
 	var avail := right - x
@@ -129,7 +129,7 @@ func _paint_now(c: XMVCanvas) -> void:
 			_pill(ci, Rect2(track.position, Vector2(track.size.x * clampf(cur / mx, 0, 1), track.size.y)), Color(spec[2], alpha))
 		if spec[0] == "hp":
 			_shield_seg(ci, track, v)
-		c.draw_string(num, Vector2(bx + w - num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x, y2 + 6), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(spec[3], alpha))
+		XUiSkin.ds(c, num, Vector2(bx + w - num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x, y2 + 6), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(spec[3], alpha))
 		bx += w + 8
 
 

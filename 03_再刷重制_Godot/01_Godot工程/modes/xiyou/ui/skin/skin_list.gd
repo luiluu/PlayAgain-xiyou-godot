@@ -309,7 +309,7 @@ func _draw() -> void:
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	if items.is_empty():
-		draw_string(body, Vector2(XUiSkin.PAD, row_height / 2.0 + font_size * 0.35), empty_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, XUiSkin.TEXT_3)
+		XUiSkin.ds(self, body, Vector2(XUiSkin.PAD, row_height / 2.0 + font_size * 0.35), empty_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, XUiSkin.TEXT_3)
 		return
 	var first := top_row * columns
 	var last := mini(items.size(), (top_row + visible_rows()) * columns)
@@ -338,13 +338,13 @@ func _draw() -> void:
 		if it.has("right2"):
 			var r2 := str(it.right2)
 			var r2w := body.get_string_size(r2, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size - 3).x
-			draw_string(body, Vector2(end_x - r2w, base + (right_size - 3) * 0.36), r2, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size - 3,
+			XUiSkin.ds(self, body, Vector2(end_x - r2w, base + (right_size - 3) * 0.36), r2, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size - 3,
 				XUiSkin.TEXT_3 if dis else it.get("right2_color", XUiSkin.TEXT_2))
 			end_x -= right2_w
 		if right != "":
 			right_w = num.get_string_size(right, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size).x
 			var rc: Color = it.get("right_color", XUiSkin.TEXT)
-			draw_string(num, Vector2(end_x - right_w, base + right_size * 0.36), right, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size,
+			XUiSkin.ds(self, num, Vector2(end_x - right_w, base + right_size * 0.36), right, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size,
 				XUiSkin.TEXT_3 if dis else rc)
 		var max_w := end_x - right_w - (10.0 if right_w > 0 else 0.0) - x
 		var col: Color = it.get("color", XUiSkin.TEXT)
@@ -353,13 +353,13 @@ func _draw() -> void:
 		var fit := fit_text(body, str(it.get("text", "")), max_w, XSkinSelScale.fs(font_size, sk, sel_font_cap()), min_font_size)
 		var text: String = fit[0]
 		var fs: int = fit[1]
-		draw_string(body, Vector2(x, base + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_3 if dis else col)
+		XUiSkin.ds(self, body, Vector2(x, base + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_3 if dis else col)
 		var sub := str(it.get("sub", ""))
 		if sub != "":
 			var tw := body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			var sx := x + tw + 10.0
 			if sx < x + max_w - 20.0:
-				draw_string(body, Vector2(sx, base + sub_size * 0.36), sub, HORIZONTAL_ALIGNMENT_LEFT, x + max_w - sx, sub_size, XUiSkin.TEXT_2)
+				XUiSkin.ds(self, body, Vector2(sx, base + sub_size * 0.36), sub, HORIZONTAL_ALIGNMENT_LEFT, x + max_w - sx, sub_size, XUiSkin.TEXT_2)
 	if scrollable():
 		var track := Rect2(size.x - scroll_w(), 0, scroll_w(), visible_rows() * row_height)
 		draw_rect(track, Color(1, 1, 1, 0.06))

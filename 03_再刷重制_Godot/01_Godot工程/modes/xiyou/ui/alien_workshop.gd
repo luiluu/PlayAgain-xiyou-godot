@@ -1091,6 +1091,8 @@ func _skin_label(text: String, size_px: int, color: Color, bold: bool) -> Label:
 	ls.font = XUiSkin.font("title" if big else "body")
 	ls.font_size = XUiSkin.FS_PAGE if size_px >= SIZES.h1 else (24 if big else (XUiSkin.FS_LIST if bold else XUiSkin.FS_AUX_MAX))
 	ls.font_color = _skin_color(color)
+	ls.outline_size = XUiSkin.outline_size()
+	ls.outline_color = XUiSkin.outline_color()
 	ls.line_spacing = 4
 	l.label_settings = ls
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART

@@ -428,6 +428,31 @@ func _hooks() -> void:
 
 ## ---- 字体 ----
 func _fonts() -> void:
+	# T100：默认三种 kind 都是玩家版 GameFont（同一对象，选中不会换字）；下面照旧验三款裁字字体（回退支）
+	check("t100_all_kinds_game_font", XUiSkin.FONT_V00300 and XUiSkin.font("title") == GameFont.current() and XUiSkin.font("body") == GameFont.current() and XUiSkin.font("num") == GameFont.current())
+	check("t100_theme_default_font", XUiSkin.theme().default_font == GameFont.current() and XUiSkin.theme().get_constant("outline_size", "Label") == 1)
+	# T100 返修（小A 核）：描边也同玩家版——1px、黑 0.45；自绘字走 XUiSkin.ds，Label／按钮走 theme／apply
+	var th := XUiSkin.theme()
+	check("t100_outline_values", XUiSkin.outline_size() == 1 and is_equal_approx(XUiSkin.outline_color().a, 0.45) and XUiSkin.outline_color().r == 0.0)
+	check("t100_theme_outline_color", is_equal_approx(th.get_color("font_outline_color", "Label").a, 0.45) and th.get_constant("outline_size", "Button") == 1)
+	var tb := XSkinButton.apply(Button.new(), "", 20)
+	check("t100_skin_button_outline", tb.get_theme_constant("outline_size") == 1 and is_equal_approx(tb.get_theme_color("font_outline_color").a, 0.45))
+	tb.free()
+	# 全仓新皮肤分支：ui/ 与 map/（含 skin/）里的 draw_string 都得走 XUiSkin.ds。允许的裸调用按「文件: 条数」登记（旧页自己的描边／阴影、读背景的粗描边、Font.draw_string(RID)）
+	var raw_ok := {"skin_art.gd": 1, "skin_ring_nav.gd": 1, "mv_canvas.gd": 3, "item_scene.gd": 1, "power_notice.gd": 1, "skill_notice.gd": 1,
+		"fest_lobby.gd": 1, "designation_plate.gd": 1, "map_scene.gd": 2, "difficulty_notice.gd": 2, "treasure_popup.gd": 3}
+	var raw := []
+	var rx := RegEx.create_from_string("(?<![\\w])(?:\\w+\\.)?draw_string\\(")
+	for dir in ["res://modes/xiyou/ui", "res://modes/xiyou/ui/skin", "res://modes/xiyou/map"]:
+		for p in DirAccess.get_files_at(dir):
+			if p.ends_with(".gd") and p != "ui_skin.gd":
+				var n := rx.search_all(FileAccess.get_file_as_string(dir + "/" + p)).size()
+				if n != int(raw_ok.get(p, 0)):
+					raw.append("%s:%d" % [p, n])
+	check("t100_no_raw_draw_string", raw.is_empty(), raw)
+	XUiSkin.FONT_V00300 = false
+	check("t100_switch_off_no_outline", XUiSkin.outline_size() == 0)
+	XUiSkin._fonts.clear()
 	var ok := true
 	for k in ["title", "body", "num"]:
 		ok = ok and XUiSkin.has_font(k) and XUiSkin.font(k) is FontFile and XUiSkin.font(k) != GameFont.current()
@@ -443,6 +468,8 @@ func _fonts() -> void:
 	var raw_num := load(XUiSkin.FONT_DIR + XUiSkin.FONT_FILES.num) as FontFile   # 原资源（不带落回字体）
 	check("num_chars", raw_num.has_char("8".unicode_at(0)) and raw_num.has_char("%".unicode_at(0)) and not raw_num.has_char("菜".unicode_at(0)))
 	check("fallback_to_game_font", body.fallbacks.has(GameFont.current()))
+	XUiSkin.FONT_V00300 = true
+	XUiSkin._fonts.clear()
 
 
 ## ---- 陈列页（加 --out 时截图 16:9、20:9）----

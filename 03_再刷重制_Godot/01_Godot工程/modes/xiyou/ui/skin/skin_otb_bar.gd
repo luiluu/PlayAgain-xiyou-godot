@@ -131,7 +131,7 @@ func _draw_sep() -> void:
 	for i in SEP_TEXT.length():
 		var ch := SEP_TEXT[i]
 		var w := f.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		sep_node.draw_string(f, Vector2(sep_x + 2.0 - w / 2.0, LH - 20.0 + fs + i * (fs + 2)), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
+		XUiSkin.ds(sep_node, f, Vector2(sep_x + 2.0 - w / 2.0, LH - 20.0 + fs + i * (fs + 2)), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
 
 
 func _icon(b: XBattler) -> Icon:
@@ -186,7 +186,7 @@ func _paint_icon(node: Icon) -> void:
 		var w := f.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var col := XUiSkin.TEXT if node.big else ENEMY_NAME
 		node.draw_string_outline(f, Vector2(-w / 2.0, r + 4.0 + fs), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 3, Color(0, 0, 0, 0.7))
-		node.draw_string(f, Vector2(-w / 2.0, r + 4.0 + fs), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		XUiSkin.ds(node, f, Vector2(-w / 2.0, r + 4.0 + fs), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 	for c in node.get_children():
 		if c is Disk:
 			c.queue_redraw()

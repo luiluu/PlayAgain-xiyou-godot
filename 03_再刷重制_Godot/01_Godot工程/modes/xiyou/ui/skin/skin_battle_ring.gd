@@ -280,7 +280,7 @@ func _draw() -> void:
 		if XSkin4A.text_on() and ta >= 1.0:  # 新界面 4A（A5）：回合提示垫深色胶囊底
 			XSkin4A.draw_text_backing(self, pos.x, pos.y, tw, fs)
 		draw_string_outline(title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.7 * ta))
-		draw_string(title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(XUiSkin.GOLD, ta))
+		XUiSkin.ds(self, title_font, pos, title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(XUiSkin.GOLD, ta))
 	# 项
 	if sel_scale != null:
 		sel_scale.sel(index)
@@ -475,7 +475,7 @@ func _draw_bow_item(i: int, font: Font) -> void:
 		if sel:
 			draw_string_outline(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 7, Color(0.95, 0.25, 0.18, 0.28 * text_alpha))
 		draw_string_outline(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0.03, 0.02, 0.02, 0.95 * text_alpha))
-		draw_string(font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+		XUiSkin.ds(self, font, baseline, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
 func _draw_orb(i: int, font: Font) -> void:
@@ -569,7 +569,7 @@ func _orb_text(font: Font, text: String, p: Vector2, r: float, color: Color) -> 
 		var tw := font.get_string_size(lines[k], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var pos := Vector2(p.x - tw / 2.0, y0 + k * lh)
 		draw_string_outline(font, pos, lines[k], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 3, Color(0, 0, 0, 0.6 * color.a))
-		draw_string(font, pos, lines[k], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
+		XUiSkin.ds(self, font, pos, lines[k], HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
 
 
 func orb_font_size(text: String, max_w: float, start := 23, font: Font = null) -> int:

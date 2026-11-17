@@ -27,6 +27,8 @@ if [[ ${XIYOU_LONG_TASK_MANAGED:-0} != 1 ]]; then
   task_log=${XIYOU_TASK_LOG:-$ROOT/03_再刷重制_Godot/04_验证/本地结果/任务/check-$(date +%Y%m%d_%H%M%S)-$$.log}
   exec python3 "$ENV_DIR/长任务.py" run "$task_log" -- "${0:A}" "$@"
 fi
+# T108：11-16 三次有车道为重起自己的检查跑 pkill -f 检查.sh，把全机别的车道和总装的检查一起杀了
+[[ -z ${XIYOU_LONG_TASK_LOG:-} ]] || print -r -- "要停这轮检查只用：python3 $ENV_DIR/长任务.py stop $XIYOU_LONG_TASK_LOG（或 停止任务.sh；别 pkill／killall 检查.sh、并行测试.py、godot：按名字会杀掉别的车道）"
 PROJECT=$ROOT/03_再刷重制_Godot/01_Godot工程
 GODOT=${GODOT:-$ENV_DIR/godot}   # 云端等没有本机 Godot.app 时用环境变量指定（见 云端测试.md）
 FAIL=0
@@ -273,6 +275,7 @@ want tools && { if python3 "$ENV_DIR/测试探针登记检查.py" >/dev/null 2>&
 want tools && { if python3 "$ENV_DIR/测试工具回归.py" >/dev/null 2>&1; then ok "工具快速回归门禁（门禁清单与早停）"; else bad "工具快速回归门禁回归失败，单跑 07_开发环境/测试工具回归.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试提交守卫.py" >/dev/null 2>&1; then ok "主工作区 main 提交守卫"; else bad "提交守卫回归失败，单跑 07_开发环境/测试提交守卫.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试交付自检.py" >/dev/null 2>&1; then ok "交付自检与待合看板（只读、试合并、快慢分道）"; else bad "交付自检／待合看板回归失败，单跑 07_开发环境/测试交付自检.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试长任务停止.py" >/dev/null 2>&1; then ok "长任务只停自己（停止任务.sh、外来 SIGTERM 留痕、按名杀进程守卫）"; else bad "长任务停止回归失败，单跑 07_开发环境/测试长任务停止.py 看详情"; fi; }
 # 测试选测满载偶发 1 项失败、单跑复现不了：失败时打出用例名，整份输出留在 本地结果/选测回归/ 当证据（tools22）
 if want tools; then
   sel_log=$(mktemp -t xiyou_sel_test)

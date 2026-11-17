@@ -201,9 +201,9 @@ class _Chip extends Node2D:
 			kb.set_border_width_all(1)
 			kb.set_corner_radius_all(9)
 			kb.draw(get_canvas_item(), Rect2(x - 4, -H + 5, kw, H - 10))
-			draw_string(f, Vector2(x + 4, base), "确定", HORIZONTAL_ALIGNMENT_LEFT, -1, FS - 1, XUiSkin.TEXT)
+			XUiSkin.ds(self, f, Vector2(x + 4, base), "确定", HORIZONTAL_ALIGNMENT_LEFT, -1, FS - 1, XUiSkin.TEXT)
 			x += kw + 4
-		draw_string(f, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, FS, XUiSkin.GOLD)
+		XUiSkin.ds(self, f, Vector2(x, base), text, HORIZONTAL_ALIGNMENT_LEFT, -1, FS, XUiSkin.GOLD)
 
 
 func _draw() -> void:

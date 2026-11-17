@@ -323,13 +323,15 @@ func _skin_extras() -> void:
 			if l.label_settings != null:
 				var ls := l.label_settings.duplicate() as LabelSettings
 				ls.font = XUiSkin.font("body")
-				ls.outline_size = 0
+				ls.outline_size = XUiSkin.outline_size()
+				ls.outline_color = XUiSkin.outline_color()
 				ls.font_size = clampi(ls.font_size, XUiSkin.FS_AUX, XUiSkin.FS_AUX_MAX)
 				ls.font_color = XUiSkin.TEXT_2
 				l.label_settings = ls
 			else:
 				l.add_theme_font_override("font", XUiSkin.font("body"))
-				l.add_theme_constant_override("outline_size", 0)
+				l.add_theme_constant_override("outline_size", XUiSkin.outline_size())
+				l.add_theme_color_override("font_outline_color", XUiSkin.outline_color())
 				l.add_theme_color_override("font_color", XUiSkin.TEXT_2)
 			n.set_meta("skin_done", true)
 	# 反馈问卷行叠在群号行正上方（entry.gd 按换皮前的高度摆的）：换皮后两个按钮都可能撑高、各自往上长，问卷行重新贴到群号行新的顶上

@@ -120,7 +120,7 @@ static func _txt(c: CanvasItem, f: Font, text: String, x: float, y: float, w: fl
 		dx = x + (w - tw) / 2.0
 	elif align == "right":
 		dx = x + w - tw
-	c.draw_string(f, Vector2(dx, y + lh / 2.0 + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	XUiSkin.ds(c, f, Vector2(dx, y + lh / 2.0 + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
 static func _capsule(ci: RID, r: Rect2, edge: Color, fill := Color(XUiSkin.BG, 0.88)) -> void:

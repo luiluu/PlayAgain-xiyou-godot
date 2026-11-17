@@ -82,12 +82,12 @@ static func draw(p: XDamagePopup) -> void:
 		var g := XUiSkin.glow_texture()
 		p.draw_texture_rect(g, Rect2(Vector2(-w / 2.0 - 24, base - fs - 10), Vector2(w + 48, fs + 30)), false, Color(c[0], 0.35 * a))
 	p.draw_string_outline(font, pos, num_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, STROKE * 2, Color(c[1], a))
-	p.draw_string(font, pos, num_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(c[0], a))
+	XUiSkin.ds(p, font, pos, num_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(c[0], a))
 	if label != "":
 		var lf := XUiSkin.font("title")
 		var spaced := " ".join(label.split(""))   # 样稿 letter-spacing:8px
 		var lw := lf.get_string_size(spaced, HORIZONTAL_ALIGNMENT_LEFT, -1, FS_LABEL).x
 		var lp := Vector2(-lw / 2.0, base - fs * 0.86 - 2.0)
 		p.draw_string_outline(lf, lp, spaced, HORIZONTAL_ALIGNMENT_LEFT, -1, FS_LABEL, 4, Color(c[1], a))
-		p.draw_string(lf, lp, spaced, HORIZONTAL_ALIGNMENT_LEFT, -1, FS_LABEL, Color(c[0], a))
+		XUiSkin.ds(p, lf, lp, spaced, HORIZONTAL_ALIGNMENT_LEFT, -1, FS_LABEL, Color(c[0], a))
 	p.draw_set_transform(Vector2.ZERO)

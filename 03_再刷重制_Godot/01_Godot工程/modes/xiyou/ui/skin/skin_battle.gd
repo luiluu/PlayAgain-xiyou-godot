@@ -297,7 +297,7 @@ static func _draw_round_toggle(btn: Button) -> void:
 	var w1 := body.get_string_size(lines[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs1).x
 	var p1 := Vector2(c.x - w1 / 2.0, c.y - 3.0)
 	btn.draw_string_outline(body, p1, lines[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs1, 3, Color(0, 0, 0, 0.75))
-	btn.draw_string(body, p1, lines[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs1, Color(XUiSkin.GOLD_LIGHT if active_state else XUiSkin.TEXT_2))
+	XUiSkin.ds(btn, body, p1, lines[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs1, Color(XUiSkin.GOLD_LIGHT if active_state else XUiSkin.TEXT_2))
 	if lines[1] != "":
 		var is_mul := lines[1].begins_with("×")
 		var f2 := num if is_mul else body
@@ -306,7 +306,7 @@ static func _draw_round_toggle(btn: Button) -> void:
 		var p2 := Vector2(c.x - w2 / 2.0, c.y + 16.0)
 		var c2 := XUiSkin.GOLD_LIGHT if active_state else XUiSkin.TEXT
 		btn.draw_string_outline(f2, p2, lines[1], HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, 3, Color(0, 0, 0, 0.85))
-		btn.draw_string(f2, p2, lines[1], HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, c2)
+		XUiSkin.ds(btn, f2, p2, lines[1], HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, c2)
 
 
 static func style_toggles(side: Control, buttons: Array, origin: Vector2) -> void:

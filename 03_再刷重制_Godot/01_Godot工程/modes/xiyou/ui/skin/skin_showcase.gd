@@ -52,9 +52,9 @@ func _ready() -> void:
 			var nf := XUiSkin.font("num")
 			var v := _short(cap[2])
 			var vw := nf.get_string_size(v, HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
-			g.draw_string(nf, Vector2(60 - vw / 2.0, 66), v, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, XSkinArcGauge.color_of(cap[0]).lightened(0.55))
+			XUiSkin.ds(g, nf, Vector2(60 - vw / 2.0, 66), v, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, XSkinArcGauge.color_of(cap[0]).lightened(0.55))
 			var cw := f.get_string_size(cap[1], HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
-			g.draw_string(f, Vector2(60 - cw / 2.0, 90), cap[1], HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2))
+			XUiSkin.ds(g, f, Vector2(60 - cw / 2.0, 90), cap[1], HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2))
 	# 中块：一列直列表＋两列直列表（有滚动条）
 	var pane := Panel.new()
 	pane.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -78,8 +78,8 @@ func _ready() -> void:
 		list2.size.x = pane.size.x - 16)
 	pane.draw.connect(func():
 		var f := XUiSkin.font("body")
-		pane.draw_string(f, Vector2(XUiSkin.PAD, 10 + 21 * 0.9), "直列表 · 一列", HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD)
-		pane.draw_string(f, Vector2(XUiSkin.PAD, list2.position.y - 50 + 10 + 21 * 0.9), "直列表 · 两列", HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD)
+		XUiSkin.ds(pane, f, Vector2(XUiSkin.PAD, 10 + 21 * 0.9), "直列表 · 一列", HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD)
+		XUiSkin.ds(pane, f, Vector2(XUiSkin.PAD, list2.position.y - 50 + 10 + 21 * 0.9), "直列表 · 两列", HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD)
 		pane.draw_line(Vector2(XUiSkin.PAD, list2.position.y - 50), Vector2(pane.size.x - XUiSkin.PAD, list2.position.y - 50), Color(XUiSkin.LINE, 0.14), 1.0))
 	_focus = list1
 	# 右块：紧凑角色条＋详情牌
@@ -136,7 +136,7 @@ func _place_top() -> void:
 func _draw_top() -> void:
 	var view := layout.view_size()
 	var m := XSkinLayout.margin_for(view.x)
-	top.draw_string(XUiSkin.font("title"), Vector2(m, 14 + 34 * 0.92), TITLE, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	XUiSkin.ds(top, XUiSkin.font("title"), Vector2(m, 14 + 34 * 0.92), TITLE, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
 	# 货币：名字次要字 15、数值淡金窄体 26，右对齐
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
@@ -144,10 +144,10 @@ func _draw_top() -> void:
 	for pair in [["印屑", "126"], ["精魂", "12,480"]]:
 		var vw := num.get_string_size(pair[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
 		x -= vw
-		top.draw_string(num, Vector2(x, 42), pair[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 26, XUiSkin.GOLD_LIGHT)
+		XUiSkin.ds(top, num, Vector2(x, 42), pair[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 26, XUiSkin.GOLD_LIGHT)
 		var nw := body.get_string_size(pair[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
 		x -= nw + 6
-		top.draw_string(body, Vector2(x, 42), pair[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
+		XUiSkin.ds(top, body, Vector2(x, 42), pair[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
 		x -= 18
 	# 安全边距参考线（只在比 16:9 宽时画，验收截图看锚点用）
 	if view.x > 1280.0:
