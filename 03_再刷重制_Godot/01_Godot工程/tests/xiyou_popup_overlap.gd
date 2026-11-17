@@ -4,7 +4,6 @@ extends "res://tests/xiyou_battle_ui.gd"
 
 
 func _run() -> void:
-	XBattleLayout.ENABLED = false  # T126：本专项对照原版站位与大小，关掉战斗站位撑开（撑开由 xiyou_battle_layout 核）
 	XMessageBox.auto = true
 	XEnemy.force_roll = 100.0
 	seed(20261013)

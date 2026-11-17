@@ -2,7 +2,7 @@ extends Node
 ## 【cc·天启篇】T126 战斗站位撑开（XBattleLayout）＋小怪糖果粉血条（XSkinEnemyHp）＋触屏指令环跟角色（XUiSkin.TOUCH_RING_FIXED，D171）专项。
 ## 内存新游戏，不写存档；新皮肤强开、触屏强开（touch_override）。
 ## 核：首领战首领站首领点、放大且不超封顶；小怪战敌群收在左半场、我方在右半场且离敌人够远；我方 4 人／2 人都不压右上队伍栏；
-## 原版竖排不撑开；ENABLED＝false 回到原版坐标与大小；触屏指令环跟着当前行动的角色（不在右下角），TOUCH_RING_FIXED＝true 回到右下；
+## 原版竖排不撑开；旧界面（西游档、XUiSkin.FORCE＝false）不撑开不放大；ENABLED＝false 回到原版坐标与大小；触屏指令环跟着当前行动的角色（不在右下角），TOUCH_RING_FIXED＝true 回到右下；
 ## 小怪血条：条宽、条顶取值，开着时画面上脚下那一行是糖果粉（窗口模式取像素），首领不画；ENABLED＝false 回到原版小血条。
 ## 窗口模式加 -- --out=<目录> 出 800×450 截图（首领战、4 只小怪、8 只怨念之魂、3 只小怪＋2 人，都带指令环）。
 
@@ -84,6 +84,7 @@ func _run() -> void:
 	await _column()
 	await _off()
 	await _ring_fixed_back()
+	await _xiyou_old_ui()
 	XBattleLayout.ENABLED = true
 	XSkinEnemyHp.ENABLED = true
 	XUiSkin.TOUCH_RING_FIXED = false
@@ -133,6 +134,12 @@ func _unit() -> void:
 		and XBattleLayout.actor_home(Vector2(669, 280), false) == Vector2(669, 280)
 		and XBattleLayout.actor_mul(false) == 1.0 and XBattleLayout.enemy_factor(60.0, false) == 1.0)
 	XBattleLayout.ENABLED = true
+	# 旧界面（西游档）：开关开着也不撑开不放大（小A 核查 R2）
+	XUiSkin.FORCE = false
+	_check("old_ui_identity", not XUiSkin.on() and XBattleLayout.spec(true).is_empty() and XBattleLayout.spec(false).is_empty()
+		and XBattleLayout.actor_home(Vector2(669, 280), false) == Vector2(669, 280) and XBattleLayout.actor_mul(true) == 1.0
+		and XBattleLayout.enemy_factor(60.0, true) == 1.0)
+	XUiSkin.FORCE = true
 	# 小怪血条尺寸
 	_check("bar_width_clamp", XSkinEnemyHp.bar_width(40.0) == XSkinEnemyHp.W_MIN and XSkinEnemyHp.bar_width(400.0) == XSkinEnemyHp.W_MAX
 		and XSkinEnemyHp.bar_width(150.0) == 90.0)
@@ -160,6 +167,19 @@ func _check_actors(tag: String, b: XBattleScene, mul: float) -> void:
 		var body := Rect2(sp.home - Vector2(sp.width() / 2.0, sp.height()), Vector2(sp.width(), sp.height())).grow(-6.0)
 		return body.intersects(panel))
 	_check(tag + "_actor_clear_party_panel", hit.is_empty(), [panel, hit.map(func(a): return b.sprites[a].home)])
+
+
+## 选择光标跟着放大后的身高：侧视图在一格高×放大倍数处，其余在 height()（已含放大）处，且都在身体上沿或更高
+func _check_cursors(tag: String, b: XBattleScene) -> void:
+	var bad := []
+	for x in b.logic.actors + b.logic.enemies:
+		var sp: XBattlerSprite = b.sprites[x]
+		if sp.cursor == null:
+			continue
+		var want := -sp.look.cell.y * sp.layout_mul if sp.sv and sp.look.kind != "scene" else -sp.height()
+		if not is_equal_approx(sp.cursor.position.y, want) or (sp.layout_mul > 1.0 + 1e-6 and sp.cursor.position.y > -sp.height() * 0.8):
+			bad.append([x.display_name(), sp.cursor.position.y, want, sp.height(), sp.layout_mul])
+	_check(tag + "_cursor_above_scaled_body", bad.is_empty(), bad)
 
 
 ## 指令环跟着当前行动的角色：环心在角色上方附近（不在右下角）、整环在画面内
@@ -201,6 +221,7 @@ func _boss() -> void:
 	_check("boss_home", sp.home == XBattleLayout.BOSS.solo, sp.home)
 	_check("boss_scaled_capped", sp.layout_mul > 1.0 and sp.height() <= XBattleLayout.BOSS.solo_cap + 0.5, [sp.layout_mul, sp.height()])
 	_check_actors("boss", b, XBattleLayout.BOSS.actor_mul)
+	_check_cursors("boss", b)
 	var gap := _actor_box(b).position.x - (sp.home.x + sp.width() / 2.0)
 	_check("boss_gap", gap >= 300.0, gap)
 	_check_ring("boss", b)
@@ -218,6 +239,7 @@ func _mob4() -> void:
 	_check("mob4_enemy_rect", homes.all(func(p): return r.grow(1.0).has_point(p)), homes)
 	_check("mob4_enemy_cap", b.logic.enemies.all(func(e): return b.sprites[e].layout_mul <= 1.0 + 1e-6 or b.sprites[e].height() <= XBattleLayout.MOB.enemy_cap + 0.5))
 	_check_actors("mob4", b, XBattleLayout.MOB.actor_mul)
+	_check_cursors("mob4", b)
 	var right := 0.0
 	for e in b.logic.enemies:
 		right = maxf(right, b.sprites[e].home.x + b.sprites[e].width() / 2.0)
@@ -298,6 +320,30 @@ func _ring_fixed_back() -> void:
 		_check("fixed_ring_type", false)
 	await _close(b)
 	XUiSkin.TOUCH_RING_FIXED = false
+
+
+## 旧界面（西游档，XUiSkin.on()＝false）：开关开着也照原版站位与大小，小怪血条也不画；窗口模式出一张西游档截图
+func _xiyou_old_ui() -> void:
+	XBattleLayout.ENABLED = true
+	XSkinEnemyHp.ENABLED = true
+	XUiSkin.FORCE = false
+	XUiSkin.touch_override = 0
+	var b := await _battle(MOB4_TROOP, [8, 9, 10])
+	_check("old_ui_off", not XUiSkin.on())
+	_check("old_ui_enemy_src", b.logic.enemies.all(func(e): return b.sprites[e].home == b.enemy_src_home(e) and b.sprites[e].layout_mul == 1.0))
+	var want := XPartyFormation.points(XPartyFormation.ROWS, b.logic.actors.size())
+	_check("old_ui_actor_src", b.logic.actors.map(func(a): return b.sprites[a].home) == want, b.logic.actors.map(func(a): return b.sprites[a].home))
+	_check("old_ui_actor_mul_1", b.logic.actors.all(func(a): return b.sprites[a].layout_mul == 1.0))
+	_check("old_ui_actor_x_le_819", b.logic.actors.all(func(a): return b.sprites[a].home.x <= 819.0))
+	_check("old_ui_no_minion_bar", not XSkinEnemyHp.on())
+	await _shot("T126_西游档_4只小怪_800x450")
+	await _close(b)
+	b = await _battle(BOSS_TROOP, [8, 9, 10])
+	var boss: XEnemy = b.logic.enemies[0]
+	_check("old_ui_boss_src", b.sprites[boss].home == b.enemy_src_home(boss) and b.sprites[boss].layout_mul == 1.0)
+	await _close(b)
+	XUiSkin.FORCE = true
+	XUiSkin.touch_override = 1
 
 
 func _finish() -> void:

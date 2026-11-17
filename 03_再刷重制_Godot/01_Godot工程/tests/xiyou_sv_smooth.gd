@@ -128,7 +128,6 @@ func _invalid_imports(dir: String) -> Array:
 
 
 func _run() -> void:
-	XBattleLayout.ENABLED = false  # T126：本专项对照原版站位与大小，关掉战斗站位撑开（撑开由 xiyou_battle_layout 核）
 	var yunshang_art := XYunshang.ART
 	XYunshang.ART = false  # 此专项量旧正式源归一；新图由 xiyou_yunshang_art 守卫。
 	XMessageBox.auto = true

@@ -60,7 +60,6 @@ func _reload() -> void:
 
 
 func _run() -> void:
-	XBattleLayout.ENABLED = false  # T126：本专项对照原版站位与大小，关掉战斗站位撑开（撑开由 xiyou_battle_layout 核）
 	_fresh_config()
 	check("default_rows", XConfig.party_formation() == XPartyFormation.ROWS and XPartyFormation.current() == XPartyFormation.ROWS and XPartyFormation.text() == "两排错开")
 	_points()

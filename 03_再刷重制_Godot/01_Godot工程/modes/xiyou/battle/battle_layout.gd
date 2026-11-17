@@ -12,6 +12,7 @@ extends RefCounted
 ## 只改站位（home）与身体缩放，技能动画、受击、伤害数字都跟着精灵位置与高度走（XBattlerSprite.width／height 已含放大）；
 ## 行动序列里按像素写的位移距离（冲到目标前方多少像素）没跟着放大。
 ## 原版竖排（设置页「战斗站位」选原版竖排）不撑开、不放大我方，只撑开敌人。
+## 只在天启篇新界面（XUiSkin.on()）生效：西游档／设置页选原版界面时照原版站位与大小（小A 核查 R2：旧侧栏、旧指令窗、O-473 阵型都按原版坐标留位）。
 ## 回退：ENABLED＝false 回到原版站位与大小。
 
 static var ENABLED := true
@@ -32,7 +33,7 @@ const MOB := {"actor_mul": 1.9, "actor_center": Vector2(920, 465), "actor_spread
 
 ## solo＝本场敌群只有一名成员（首领战）
 static func spec(solo: bool) -> Dictionary:
-	if not ENABLED:
+	if not ENABLED or not XUiSkin.on():
 		return {}
 	return BOSS if solo else MOB
 

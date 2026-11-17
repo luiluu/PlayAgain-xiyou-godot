@@ -138,7 +138,7 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 		cursor = Sprite2D.new()
 		cursor.texture = XAppearance.kept_load(cp)
 		cursor.offset.y = -cursor.texture.get_height() / 2.0
-		cursor.position.y = -look.cell.y if sv and look.kind != "scene" else -height()
+		cursor.position.y = _cursor_y()
 		cursor.visible = false
 		add_child(cursor)
 	# EliteEnemyPlugins：神话敌人色相偏移（MV loadBitmap 的 hue）
@@ -197,6 +197,13 @@ func rescale(f: float) -> void:
 	_base_scale *= f
 	body_scale *= f
 	_apply_scale()
+	if cursor:
+		cursor.position.y = _cursor_y()
+
+
+## 选择光标在头顶：侧视图按一格高（原版不乘缩放），T126 放大后跟着乘 layout_mul（height() 已含放大）
+func _cursor_y() -> float:
+	return -look.cell.y * layout_mul if sv and look.kind != "scene" else -height()
 
 
 func _set_flip(f: bool) -> void:

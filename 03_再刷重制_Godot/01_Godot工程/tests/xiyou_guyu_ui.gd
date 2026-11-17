@@ -260,7 +260,6 @@ func _relic(c: Dictionary) -> void:
 
 
 func _run() -> void:
-	XBattleLayout.ENABLED = false  # T126：本专项对照原版站位与大小，关掉战斗站位撑开（撑开由 xiyou_battle_layout 核）
 	var ref = XDB.load_json(ORACLE)
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
 		return finish()
