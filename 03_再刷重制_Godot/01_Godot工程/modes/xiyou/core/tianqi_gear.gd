@@ -434,6 +434,7 @@ static func clear_effective_cache() -> void:
 	_gb = {}
 	_gb_slots = {}
 	_eff_cache = {}
+	_fabao_main = {}
 
 
 ## 这件装备在当前状态下读不读新底子（总开关开着、天启篇存档；武器／防具；部位 1～10 且不在例外里；有等级需求和品质标记；不是天启篇奖励装备）
@@ -523,6 +524,44 @@ static func _qiyin_mult(item: Dictionary) -> float:
 	if str(m.get("kind", "")) == "weapon" or bool(m.get("true_seal", false)):
 		return float(gear_base().get("qiyin", {}).get("weapon_and_true_seal_mult", 1.0))
 	return 1.0
+
+
+## T163（D187，Kyo 11-17「直接修法宝」）：法宝读表——成长满时相当于半件同级装备（gear_base.json 的 fabao 节）。
+## 开着（PHASE4＋天启篇存档）时 XActor.magic_param 改问这里：
+##   攻击、生命 ＝ 标准线(1＋折算装备等级×98÷90, 这一项) × share × 法宝自己的品质系数；折算装备等级＝法宝等级×80÷99（99 级＝80 级装备）。
+##   攻击给物攻还是魔攻看原版每级成长哪个大；一样大（含都为 0）两项都给。魔法、双防、敏捷、幸运不给。
+## 法宝等级照旧受 XMagicWeapon.FLOOR_CAP 封顶（读表只把「等级 → 属性」换掉）。三法宝 60 级成长翻倍（XThreeGrowth）在读表时不算。
+## 回退：`XTianqiGear.FABAO_TABLE = false`（照原版每级成长）。
+static var FABAO_TABLE := true
+static var _fabao_main := {}
+
+
+static func fabao_applies(item) -> bool:
+	return FABAO_TABLE and XTianqiBase.PHASE4 and item is Dictionary and XMagicWeapon.is_magic(item) and XTianqiBase.on() \
+		and gear_base().has("fabao")
+
+
+## 读表时这件法宝第 i 项给多少（不读表的项 0）；lv＜0 时 0
+static func fabao_param(item: Dictionary, i: int) -> float:
+	if i != 0 and i != 2 and i != 4:
+		return 0.0
+	var lv := float(XEquipmentView.level(item))
+	if lv < 0.0:
+		return 0.0
+	var fb: Dictionary = gear_base().get("fabao", {})
+	var key := str(item.get("kind", "")) + ":" + str(int(item.get("base", item.get("id", 0))))
+	if i != 0:
+		if not _fabao_main.has(key):
+			var rec := XDB.rec("Weapons" if str(item.get("kind", "")) == "weapon" else "Armors", int(item.get("base", item.get("id", 0))))
+			var g := XPower.magic_growth(rec if not rec.is_empty() else item)
+			_fabao_main[key] = [g[2] >= g[4], g[4] >= g[2]]
+		if not _fabao_main[key][0 if i == 2 else 1]:
+			return 0.0
+	var eq_lv := minf(lv, float(fb.get("full_level", 99))) * float(fb.get("equip_level_at_full", 80)) / float(fb.get("full_level", 99))
+	var conv := 1.0 + eq_lv * 98.0 / 90.0
+	var grade := float(_gb.get("grades", {}).get(XTianqiAffixRoll.QUALITY_KEYS[clampi(XQuality.grade(item), 0, 6)], 1.0))
+	var share := float(fb.get("share", {}).get("hp" if i == 0 else "atk", 0.0))
+	return floorf(XTianqiBase.line(conv, XTianqiBase.STATS[i]) * share * grade)
 
 
 ## 原版副属性留的那一小份（D182，Kyo 11-17：主属性的 10%～15%，T082 量 K 时定数；gear_base.json 的 sub_stat.ratio）；表里没有按 0（不留）

@@ -40,6 +40,7 @@ func _run() -> void:
 	_hit_cap()
 	_class_rate()
 	_realm()
+	_fabao()
 	_e2e(true)
 	_e2e(false)
 	XTianqiBase.PHASE4 = false
@@ -196,6 +197,39 @@ func _realm() -> void:
 	_check("realm.push_state", not str(XDB.rec("Skills", 5777).get("note", "")).contains("StartPushState"))
 	_check("realm.card_skill_untouched", XDB.rec("Skills", 9933) == XTianqiSkills.rec(9933, XDB.table("Skills")[9933]))
 	XTianqiBase.PHASE4 = false
+
+
+## 【cc·T163】法宝读表（D187）：期四开着、天启篇存档时 99 级法宝＝半件 80 级装备（攻击、生命 ×0.5×品质），其余六项 0；
+## FABAO_TABLE 关掉或总开关关着照原版每级成长；西游档照原版
+func _fabao() -> void:
+	var s := _state()
+	XTianqiGear.clear_effective_cache()
+	var e := XGear.template("armor", 4575)  # 阴阳扇·狂龙：原版每级物攻 +45、生命 +15，品质旧档 8（不朽 1.8）
+	e.level = 99.0
+	var raw := [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)]
+	XTianqiBase.PHASE4 = true
+	var conv := 1.0 + 80.0 * 98.0 / 90.0
+	var want_atk := floorf(XTianqiBase.line(conv, "atk") * 0.5 * 1.8)
+	var want_hp := floorf(XTianqiBase.line(conv, "mhp") * 0.5 * 1.8)
+	var on := [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4), XActor.magic_param(e, 3), XActor.magic_param(e, 1)]
+	_check("fabao.table", on[0] == want_hp and on[1] == want_atk and on[2] == 0.0 and on[3] == 0.0 and on[4] == 0.0, [on, want_hp, want_atk])
+	var g := XGear.template("armor", 4519)  # 戒指朱：物攻魔攻成长一样大 → 两项都给
+	g.level = 99.0
+	_check("fabao.tie_both", XActor.magic_param(g, 2) > 0.0 and XActor.magic_param(g, 2) == XActor.magic_param(g, 4))
+	var half := e.duplicate()
+	half.level = 39.0  # FLOOR_CAP 10 层上限 39 级：等级照旧封顶，读表按等级线性
+	_check("fabao.by_level", XActor.magic_param(half, 2) < want_atk and XActor.magic_param(half, 2) > 0.0)
+	XTianqiGear.FABAO_TABLE = false
+	var back := [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)]
+	XTianqiGear.FABAO_TABLE = true
+	_check("fabao.switch_back", back == raw and raw[1] > want_atk * 2.0, [back, raw])
+	XTianqiBase.PHASE4 = false
+	_check("fabao.phase4_off", [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)] == raw)
+	XTianqiBase.PHASE4 = true
+	_state(false)
+	_check("fabao.xiyou", [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)] == raw)
+	XTianqiBase.PHASE4 = false
+	XState.current = s
 
 
 ## 开着但是西游档：全走关着

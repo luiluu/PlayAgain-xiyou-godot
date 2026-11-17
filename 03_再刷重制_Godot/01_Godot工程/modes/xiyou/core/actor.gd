@@ -1287,6 +1287,8 @@ static func magic_param(e: Dictionary, i: int) -> float:
 	var lv = XEquipmentView.level(e)
 	if float(lv) < 0.0:
 		return 0.0
+	if XTianqiGear.fabao_applies(e):  # T163：天启篇期四法宝读表（半件同级装备），关着照原版每级成长
+		return XTianqiGear.fabao_param(e, i)
 	var grown := XThreeGrowth.sync_item(e)  # 三法宝成长 magicWeaponCustomParam 包装：所属人物 60 级进化，每级成长翻倍
 	if not grown.is_empty():
 		return float(lv) * float(grown[i])
