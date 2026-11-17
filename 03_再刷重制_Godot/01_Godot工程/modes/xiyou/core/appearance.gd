@@ -339,7 +339,7 @@ func _single(t: Texture2D) -> void:
 func _mv_sheet(t: Texture2D, asset := "") -> void:
 	if t != null and t.resource_path.ends_with("/guyu_v2/Guyu_SV_v2.png"):
 		asset = "Guyu_v2"
-	if t != null and t.resource_path.ends_with("/u2/Yunshang_SV_u2.png"):
+	if t != null and (t.resource_path.ends_with("/u2/Yunshang_SV_u2.png") or t.resource_path.ends_with("/yunshang_v9/Yunshang_SV_v9.png")):
 		asset = "Yunshang_u2"
 	sideview = true
 	if t == null:

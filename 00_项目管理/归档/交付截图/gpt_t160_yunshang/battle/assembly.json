@@ -1,0 +1,1398 @@
+{
+  "scale": 0.09,
+  "frames": [
+    {
+      "motion": "walk",
+      "frame": 0,
+      "source_bbox": [
+        165,
+        41,
+        543,
+        615
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        12
+      ],
+      "reference_bbox": [
+        12,
+        2,
+        54,
+        64
+      ],
+      "output_bbox": [
+        16,
+        12,
+        50,
+        64
+      ]
+    },
+    {
+      "motion": "walk",
+      "frame": 1,
+      "source_bbox": [
+        888,
+        42,
+        1259,
+        620
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        12
+      ],
+      "reference_bbox": [
+        12,
+        3,
+        53,
+        64
+      ],
+      "output_bbox": [
+        16,
+        12,
+        49,
+        64
+      ]
+    },
+    {
+      "motion": "walk",
+      "frame": 2,
+      "source_bbox": [
+        1612,
+        42,
+        1985,
+        615
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        12
+      ],
+      "reference_bbox": [
+        12,
+        4,
+        53,
+        64
+      ],
+      "output_bbox": [
+        16,
+        12,
+        50,
+        64
+      ]
+    },
+    {
+      "motion": "wait",
+      "frame": 0,
+      "frozen": true
+    },
+    {
+      "motion": "wait",
+      "frame": 1,
+      "frozen": true
+    },
+    {
+      "motion": "wait",
+      "frame": 2,
+      "frozen": true
+    },
+    {
+      "motion": "chant",
+      "frame": 0,
+      "source_bbox": [
+        161,
+        19,
+        530,
+        678
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        5
+      ],
+      "reference_bbox": [
+        11,
+        2,
+        55,
+        64
+      ],
+      "output_bbox": [
+        16,
+        5,
+        49,
+        64
+      ]
+    },
+    {
+      "motion": "chant",
+      "frame": 1,
+      "source_bbox": [
+        896,
+        19,
+        1267,
+        678
+      ],
+      "scale": 0.09,
+      "translation": [
+        17,
+        5
+      ],
+      "reference_bbox": [
+        12,
+        2,
+        55,
+        64
+      ],
+      "output_bbox": [
+        17,
+        5,
+        50,
+        64
+      ]
+    },
+    {
+      "motion": "chant",
+      "frame": 2,
+      "source_bbox": [
+        1629,
+        19,
+        2001,
+        678
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        5
+      ],
+      "reference_bbox": [
+        11,
+        2,
+        55,
+        64
+      ],
+      "output_bbox": [
+        16,
+        5,
+        49,
+        64
+      ]
+    },
+    {
+      "motion": "guard",
+      "frame": 0,
+      "source_bbox": [
+        171,
+        15,
+        569,
+        702
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        2
+      ],
+      "reference_bbox": [
+        12,
+        4,
+        55,
+        64
+      ],
+      "output_bbox": [
+        16,
+        2,
+        52,
+        64
+      ]
+    },
+    {
+      "motion": "guard",
+      "frame": 1,
+      "source_bbox": [
+        882,
+        15,
+        1273,
+        702
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        2
+      ],
+      "reference_bbox": [
+        12,
+        4,
+        55,
+        64
+      ],
+      "output_bbox": [
+        16,
+        2,
+        51,
+        64
+      ]
+    },
+    {
+      "motion": "guard",
+      "frame": 2,
+      "source_bbox": [
+        1599,
+        15,
+        1989,
+        702
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        2
+      ],
+      "reference_bbox": [
+        12,
+        4,
+        55,
+        64
+      ],
+      "output_bbox": [
+        16,
+        2,
+        51,
+        64
+      ]
+    },
+    {
+      "motion": "damage",
+      "frame": 0,
+      "source_bbox": [
+        202,
+        43,
+        571,
+        676
+      ],
+      "scale": 0.09,
+      "translation": [
+        20,
+        7
+      ],
+      "reference_bbox": [
+        16,
+        4,
+        57,
+        64
+      ],
+      "output_bbox": [
+        20,
+        7,
+        53,
+        64
+      ]
+    },
+    {
+      "motion": "damage",
+      "frame": 1,
+      "source_bbox": [
+        857,
+        73,
+        1350,
+        676
+      ],
+      "scale": 0.09,
+      "translation": [
+        14,
+        10
+      ],
+      "reference_bbox": [
+        16,
+        4,
+        57,
+        64
+      ],
+      "output_bbox": [
+        14,
+        10,
+        58,
+        64
+      ]
+    },
+    {
+      "motion": "damage",
+      "frame": 2,
+      "source_bbox": [
+        1616,
+        50,
+        1986,
+        676
+      ],
+      "scale": 0.09,
+      "translation": [
+        20,
+        8
+      ],
+      "reference_bbox": [
+        16,
+        4,
+        57,
+        64
+      ],
+      "output_bbox": [
+        20,
+        8,
+        53,
+        64
+      ]
+    },
+    {
+      "motion": "evade",
+      "frame": 0,
+      "source_bbox": [
+        168,
+        48,
+        562,
+        653
+      ],
+      "scale": 0.09,
+      "translation": [
+        18,
+        10
+      ],
+      "reference_bbox": [
+        12,
+        1,
+        58,
+        64
+      ],
+      "output_bbox": [
+        18,
+        10,
+        53,
+        64
+      ]
+    },
+    {
+      "motion": "evade",
+      "frame": 1,
+      "source_bbox": [
+        868,
+        54,
+        1398,
+        651
+      ],
+      "scale": 0.09,
+      "translation": [
+        10,
+        10
+      ],
+      "reference_bbox": [
+        12,
+        1,
+        57,
+        64
+      ],
+      "output_bbox": [
+        10,
+        10,
+        58,
+        64
+      ]
+    },
+    {
+      "motion": "evade",
+      "frame": 2,
+      "source_bbox": [
+        1637,
+        42,
+        2017,
+        653
+      ],
+      "scale": 0.09,
+      "translation": [
+        18,
+        9
+      ],
+      "reference_bbox": [
+        12,
+        1,
+        58,
+        64
+      ],
+      "output_bbox": [
+        18,
+        9,
+        52,
+        64
+      ]
+    },
+    {
+      "motion": "thrust",
+      "frame": 0,
+      "source_bbox": [
+        185,
+        43,
+        554,
+        666
+      ],
+      "scale": 0.09,
+      "translation": [
+        18,
+        8
+      ],
+      "reference_bbox": [
+        14,
+        3,
+        55,
+        64
+      ],
+      "output_bbox": [
+        18,
+        8,
+        51,
+        64
+      ]
+    },
+    {
+      "motion": "thrust",
+      "frame": 1,
+      "source_bbox": [
+        708,
+        43,
+        1329,
+        666
+      ],
+      "scale": 0.09,
+      "translation": [
+        0,
+        8
+      ],
+      "reference_bbox": [
+        2,
+        5,
+        48,
+        64
+      ],
+      "output_bbox": [
+        1,
+        8,
+        56,
+        64
+      ]
+    },
+    {
+      "motion": "thrust",
+      "frame": 2,
+      "source_bbox": [
+        1637,
+        43,
+        2004,
+        666
+      ],
+      "scale": 0.09,
+      "translation": [
+        9,
+        8
+      ],
+      "reference_bbox": [
+        4,
+        5,
+        47,
+        64
+      ],
+      "output_bbox": [
+        9,
+        8,
+        42,
+        64
+      ]
+    },
+    {
+      "motion": "swing",
+      "frame": 0,
+      "source_bbox": [
+        182,
+        35,
+        545,
+        666
+      ],
+      "scale": 0.09,
+      "translation": [
+        18,
+        7
+      ],
+      "reference_bbox": [
+        12,
+        3,
+        57,
+        64
+      ],
+      "output_bbox": [
+        18,
+        7,
+        51,
+        64
+      ]
+    },
+    {
+      "motion": "swing",
+      "frame": 1,
+      "source_bbox": [
+        804,
+        36,
+        1331,
+        666
+      ],
+      "scale": 0.09,
+      "translation": [
+        3,
+        7
+      ],
+      "reference_bbox": [
+        3,
+        5,
+        50,
+        64
+      ],
+      "output_bbox": [
+        3,
+        7,
+        50,
+        64
+      ]
+    },
+    {
+      "motion": "swing",
+      "frame": 2,
+      "source_bbox": [
+        1630,
+        35,
+        1994,
+        666
+      ],
+      "scale": 0.09,
+      "translation": [
+        10,
+        7
+      ],
+      "reference_bbox": [
+        4,
+        5,
+        50,
+        64
+      ],
+      "output_bbox": [
+        10,
+        7,
+        43,
+        64
+      ]
+    },
+    {
+      "motion": "missile",
+      "frame": 0,
+      "source_bbox": [
+        154,
+        10,
+        552,
+        657
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        6
+      ],
+      "reference_bbox": [
+        12,
+        3,
+        55,
+        64
+      ],
+      "output_bbox": [
+        16,
+        6,
+        52,
+        64
+      ]
+    },
+    {
+      "motion": "missile",
+      "frame": 1,
+      "source_bbox": [
+        728,
+        10,
+        1276,
+        657
+      ],
+      "scale": 0.09,
+      "translation": [
+        9,
+        6
+      ],
+      "reference_bbox": [
+        12,
+        3,
+        55,
+        64
+      ],
+      "output_bbox": [
+        9,
+        6,
+        58,
+        64
+      ]
+    },
+    {
+      "motion": "missile",
+      "frame": 2,
+      "source_bbox": [
+        1624,
+        10,
+        2000,
+        657
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        6
+      ],
+      "reference_bbox": [
+        12,
+        3,
+        55,
+        64
+      ],
+      "output_bbox": [
+        16,
+        6,
+        50,
+        64
+      ]
+    },
+    {
+      "motion": "skill",
+      "frame": 0,
+      "source_bbox": [
+        195,
+        13,
+        579,
+        676
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        4
+      ],
+      "reference_bbox": [
+        12,
+        4,
+        55,
+        64
+      ],
+      "output_bbox": [
+        16,
+        4,
+        51,
+        64
+      ]
+    },
+    {
+      "motion": "skill",
+      "frame": 1,
+      "source_bbox": [
+        848,
+        13,
+        1282,
+        676
+      ],
+      "scale": 0.09,
+      "translation": [
+        12,
+        4
+      ],
+      "reference_bbox": [
+        8,
+        1,
+        55,
+        64
+      ],
+      "output_bbox": [
+        12,
+        4,
+        51,
+        64
+      ]
+    },
+    {
+      "motion": "skill",
+      "frame": 2,
+      "source_bbox": [
+        1558,
+        13,
+        1982,
+        676
+      ],
+      "scale": 0.09,
+      "translation": [
+        12,
+        4
+      ],
+      "reference_bbox": [
+        8,
+        1,
+        55,
+        64
+      ],
+      "output_bbox": [
+        12,
+        4,
+        50,
+        64
+      ]
+    },
+    {
+      "motion": "spell",
+      "frame": 0,
+      "source_bbox": [
+        171,
+        17,
+        547,
+        681
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        4
+      ],
+      "reference_bbox": [
+        12,
+        4,
+        53,
+        64
+      ],
+      "output_bbox": [
+        16,
+        4,
+        50,
+        64
+      ]
+    },
+    {
+      "motion": "spell",
+      "frame": 1,
+      "source_bbox": [
+        830,
+        17,
+        1271,
+        681
+      ],
+      "scale": 0.09,
+      "translation": [
+        8,
+        4
+      ],
+      "reference_bbox": [
+        4,
+        3,
+        52,
+        64
+      ],
+      "output_bbox": [
+        8,
+        4,
+        48,
+        64
+      ]
+    },
+    {
+      "motion": "spell",
+      "frame": 2,
+      "source_bbox": [
+        1554,
+        17,
+        2035,
+        681
+      ],
+      "scale": 0.09,
+      "translation": [
+        6,
+        4
+      ],
+      "reference_bbox": [
+        4,
+        3,
+        52,
+        64
+      ],
+      "output_bbox": [
+        6,
+        4,
+        49,
+        64
+      ]
+    },
+    {
+      "motion": "item",
+      "frame": 0,
+      "source_bbox": [
+        209,
+        15,
+        568,
+        687
+      ],
+      "scale": 0.09,
+      "translation": [
+        18,
+        4
+      ],
+      "reference_bbox": [
+        12,
+        3,
+        55,
+        64
+      ],
+      "output_bbox": [
+        18,
+        4,
+        50,
+        64
+      ]
+    },
+    {
+      "motion": "item",
+      "frame": 1,
+      "source_bbox": [
+        920,
+        15,
+        1292,
+        687
+      ],
+      "scale": 0.09,
+      "translation": [
+        14,
+        4
+      ],
+      "reference_bbox": [
+        6,
+        1,
+        56,
+        64
+      ],
+      "output_bbox": [
+        14,
+        4,
+        47,
+        64
+      ]
+    },
+    {
+      "motion": "item",
+      "frame": 2,
+      "source_bbox": [
+        1658,
+        15,
+        2016,
+        687
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        4
+      ],
+      "reference_bbox": [
+        8,
+        1,
+        56,
+        64
+      ],
+      "output_bbox": [
+        16,
+        4,
+        48,
+        64
+      ]
+    },
+    {
+      "motion": "escape",
+      "frame": 0,
+      "source_bbox": [
+        214,
+        58,
+        582,
+        620
+      ],
+      "scale": 0.09,
+      "translation": [
+        20,
+        13
+      ],
+      "reference_bbox": [
+        16,
+        4,
+        56,
+        64
+      ],
+      "output_bbox": [
+        20,
+        13,
+        53,
+        64
+      ]
+    },
+    {
+      "motion": "escape",
+      "frame": 1,
+      "source_bbox": [
+        932,
+        58,
+        1308,
+        597
+      ],
+      "scale": 0.09,
+      "translation": [
+        19,
+        15
+      ],
+      "reference_bbox": [
+        16,
+        4,
+        56,
+        64
+      ],
+      "output_bbox": [
+        19,
+        15,
+        53,
+        64
+      ]
+    },
+    {
+      "motion": "escape",
+      "frame": 2,
+      "source_bbox": [
+        1624,
+        60,
+        2010,
+        620
+      ],
+      "scale": 0.09,
+      "translation": [
+        19,
+        14
+      ],
+      "reference_bbox": [
+        16,
+        4,
+        57,
+        64
+      ],
+      "output_bbox": [
+        19,
+        14,
+        54,
+        64
+      ]
+    },
+    {
+      "motion": "victory",
+      "frame": 0,
+      "source_bbox": [
+        167,
+        28,
+        551,
+        676
+      ],
+      "scale": 0.09,
+      "translation": [
+        16,
+        6
+      ],
+      "reference_bbox": [
+        10,
+        3,
+        57,
+        64
+      ],
+      "output_bbox": [
+        16,
+        6,
+        51,
+        64
+      ]
+    },
+    {
+      "motion": "victory",
+      "frame": 1,
+      "source_bbox": [
+        891,
+        28,
+        1275,
+        676
+      ],
+      "scale": 0.09,
+      "translation": [
+        14,
+        6
+      ],
+      "reference_bbox": [
+        8,
+        2,
+        55,
+        64
+      ],
+      "output_bbox": [
+        14,
+        6,
+        49,
+        64
+      ]
+    },
+    {
+      "motion": "victory",
+      "frame": 2,
+      "source_bbox": [
+        1585,
+        28,
+        1998,
+        676
+      ],
+      "scale": 0.09,
+      "translation": [
+        12,
+        6
+      ],
+      "reference_bbox": [
+        6,
+        1,
+        54,
+        64
+      ],
+      "output_bbox": [
+        12,
+        6,
+        49,
+        64
+      ]
+    },
+    {
+      "motion": "dying",
+      "frame": 0,
+      "source_bbox": [
+        130,
+        86,
+        546,
+        656
+      ],
+      "scale": 0.09,
+      "translation": [
+        12,
+        13
+      ],
+      "reference_bbox": [
+        9,
+        10,
+        53,
+        64
+      ],
+      "output_bbox": [
+        12,
+        13,
+        49,
+        64
+      ]
+    },
+    {
+      "motion": "dying",
+      "frame": 1,
+      "source_bbox": [
+        841,
+        115,
+        1288,
+        658
+      ],
+      "scale": 0.09,
+      "translation": [
+        11,
+        15
+      ],
+      "reference_bbox": [
+        9,
+        10,
+        53,
+        64
+      ],
+      "output_bbox": [
+        11,
+        15,
+        51,
+        64
+      ]
+    },
+    {
+      "motion": "dying",
+      "frame": 2,
+      "source_bbox": [
+        1546,
+        152,
+        2023,
+        658
+      ],
+      "scale": 0.09,
+      "translation": [
+        9,
+        18
+      ],
+      "reference_bbox": [
+        8,
+        10,
+        53,
+        64
+      ],
+      "output_bbox": [
+        9,
+        18,
+        52,
+        64
+      ]
+    },
+    {
+      "motion": "abnormal",
+      "frame": 0,
+      "source_bbox": [
+        142,
+        136,
+        552,
+        661
+      ],
+      "scale": 0.09,
+      "translation": [
+        12,
+        17
+      ],
+      "reference_bbox": [
+        9,
+        10,
+        53,
+        64
+      ],
+      "output_bbox": [
+        12,
+        17,
+        49,
+        64
+      ]
+    },
+    {
+      "motion": "abnormal",
+      "frame": 1,
+      "source_bbox": [
+        848,
+        110,
+        1243,
+        661
+      ],
+      "scale": 0.09,
+      "translation": [
+        13,
+        14
+      ],
+      "reference_bbox": [
+        9,
+        10,
+        53,
+        64
+      ],
+      "output_bbox": [
+        13,
+        14,
+        49,
+        64
+      ]
+    },
+    {
+      "motion": "abnormal",
+      "frame": 2,
+      "source_bbox": [
+        1580,
+        130,
+        1974,
+        661
+      ],
+      "scale": 0.09,
+      "translation": [
+        14,
+        16
+      ],
+      "reference_bbox": [
+        9,
+        10,
+        53,
+        64
+      ],
+      "output_bbox": [
+        14,
+        16,
+        49,
+        64
+      ]
+    },
+    {
+      "motion": "sleep",
+      "frame": 0,
+      "source_bbox": [
+        86,
+        220,
+        636,
+        613
+      ],
+      "scale": 0.09,
+      "translation": [
+        6,
+        29
+      ],
+      "reference_bbox": [
+        1,
+        10,
+        61,
+        64
+      ],
+      "output_bbox": [
+        6,
+        29,
+        56,
+        64
+      ]
+    },
+    {
+      "motion": "sleep",
+      "frame": 1,
+      "source_bbox": [
+        807,
+        212,
+        1362,
+        613
+      ],
+      "scale": 0.09,
+      "translation": [
+        6,
+        28
+      ],
+      "reference_bbox": [
+        0,
+        10,
+        61,
+        64
+      ],
+      "output_bbox": [
+        6,
+        28,
+        56,
+        64
+      ]
+    },
+    {
+      "motion": "sleep",
+      "frame": 2,
+      "source_bbox": [
+        1534,
+        224,
+        2087,
+        613
+      ],
+      "scale": 0.09,
+      "translation": [
+        6,
+        29
+      ],
+      "reference_bbox": [
+        1,
+        10,
+        61,
+        64
+      ],
+      "output_bbox": [
+        6,
+        29,
+        56,
+        64
+      ]
+    },
+    {
+      "motion": "dead",
+      "frame": 0,
+      "source_bbox": [
+        79,
+        290,
+        579,
+        669
+      ],
+      "scale": 0.09,
+      "translation": [
+        8,
+        30
+      ],
+      "reference_bbox": [
+        0,
+        26,
+        61,
+        64
+      ],
+      "output_bbox": [
+        8,
+        30,
+        53,
+        64
+      ]
+    },
+    {
+      "motion": "dead",
+      "frame": 1,
+      "source_bbox": [
+        776,
+        321,
+        1311,
+        669
+      ],
+      "scale": 0.09,
+      "translation": [
+        6,
+        33
+      ],
+      "reference_bbox": [
+        1,
+        26,
+        60,
+        64
+      ],
+      "output_bbox": [
+        6,
+        33,
+        54,
+        64
+      ]
+    },
+    {
+      "motion": "dead",
+      "frame": 2,
+      "source_bbox": [
+        1473,
+        365,
+        2046,
+        669
+      ],
+      "scale": 0.09,
+      "translation": [
+        4,
+        37
+      ],
+      "reference_bbox": [
+        0,
+        26,
+        60,
+        64
+      ],
+      "output_bbox": [
+        4,
+        37,
+        56,
+        64
+      ]
+    }
+  ],
+  "frozen_walk_sha256": "eed2db80973126b577adc312317f9bf4471222e2028878742535fc45e92534c4"
+}

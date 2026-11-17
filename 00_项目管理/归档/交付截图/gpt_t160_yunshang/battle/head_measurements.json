@@ -1,0 +1,977 @@
+{
+  "method": "Manual visible head-band landmarks in final native cells, not source fitting.\nBounds are visual estimates (+/-2px), not proof of the <=1px aesthetic criterion.\nGold/navy ornament and pixels below the chin are excluded; loose side hair may\nremain in the band. All outliers remain unchanged for coordinator judgment.\n",
+  "frames": [
+    {
+      "motion": "walk",
+      "frame": 0,
+      "head_band_box": [
+        17,
+        17,
+        48,
+        41
+      ],
+      "width": 31,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -9,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "walk",
+      "frame": 1,
+      "head_band_box": [
+        17,
+        17,
+        48,
+        41
+      ],
+      "width": 31,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -9,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "walk",
+      "frame": 2,
+      "head_band_box": [
+        17,
+        17,
+        49,
+        41
+      ],
+      "width": 32,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -8,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "wait",
+      "frame": 0,
+      "head_band_box": [
+        11,
+        7,
+        51,
+        37
+      ],
+      "width": 40,
+      "height": 30,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        0,
+        0
+      ],
+      "over_1px": false
+    },
+    {
+      "motion": "wait",
+      "frame": 1,
+      "head_band_box": [
+        11,
+        7,
+        52,
+        37
+      ],
+      "width": 41,
+      "height": 30,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        1,
+        0
+      ],
+      "over_1px": false
+    },
+    {
+      "motion": "wait",
+      "frame": 2,
+      "head_band_box": [
+        10,
+        7,
+        52,
+        37
+      ],
+      "width": 42,
+      "height": 30,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        2,
+        0
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "chant",
+      "frame": 0,
+      "head_band_box": [
+        17,
+        10,
+        47,
+        34
+      ],
+      "width": 30,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -10,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "chant",
+      "frame": 1,
+      "head_band_box": [
+        18,
+        10,
+        48,
+        34
+      ],
+      "width": 30,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -10,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "chant",
+      "frame": 2,
+      "head_band_box": [
+        17,
+        10,
+        47,
+        34
+      ],
+      "width": 30,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -10,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "guard",
+      "frame": 0,
+      "head_band_box": [
+        17,
+        7,
+        50,
+        31
+      ],
+      "width": 33,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -7,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "guard",
+      "frame": 1,
+      "head_band_box": [
+        17,
+        7,
+        49,
+        31
+      ],
+      "width": 32,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -8,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "guard",
+      "frame": 2,
+      "head_band_box": [
+        17,
+        7,
+        49,
+        31
+      ],
+      "width": 32,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -8,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "damage",
+      "frame": 0,
+      "head_band_box": [
+        21,
+        12,
+        52,
+        33
+      ],
+      "width": 31,
+      "height": 21,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -9,
+        -9
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "damage",
+      "frame": 1,
+      "head_band_box": [
+        20,
+        13,
+        57,
+        36
+      ],
+      "width": 37,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -3,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "damage",
+      "frame": 2,
+      "head_band_box": [
+        21,
+        13,
+        52,
+        36
+      ],
+      "width": 31,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -9,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "evade",
+      "frame": 0,
+      "head_band_box": [
+        19,
+        15,
+        52,
+        38
+      ],
+      "width": 33,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -7,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "evade",
+      "frame": 1,
+      "head_band_box": [
+        18,
+        13,
+        55,
+        36
+      ],
+      "width": 37,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -3,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "evade",
+      "frame": 2,
+      "head_band_box": [
+        19,
+        14,
+        51,
+        37
+      ],
+      "width": 32,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -8,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "thrust",
+      "frame": 0,
+      "head_band_box": [
+        19,
+        13,
+        48,
+        36
+      ],
+      "width": 29,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -11,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "thrust",
+      "frame": 1,
+      "head_band_box": [
+        4,
+        13,
+        55,
+        36
+      ],
+      "width": 51,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        11,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "thrust",
+      "frame": 2,
+      "head_band_box": [
+        10,
+        13,
+        39,
+        36
+      ],
+      "width": 29,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -11,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "swing",
+      "frame": 0,
+      "head_band_box": [
+        19,
+        12,
+        49,
+        35
+      ],
+      "width": 30,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -10,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "swing",
+      "frame": 1,
+      "head_band_box": [
+        3,
+        12,
+        49,
+        35
+      ],
+      "width": 46,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        6,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "swing",
+      "frame": 2,
+      "head_band_box": [
+        11,
+        12,
+        41,
+        35
+      ],
+      "width": 30,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -10,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "missile",
+      "frame": 0,
+      "head_band_box": [
+        19,
+        11,
+        51,
+        35
+      ],
+      "width": 32,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -8,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "missile",
+      "frame": 1,
+      "head_band_box": [
+        21,
+        11,
+        57,
+        35
+      ],
+      "width": 36,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -4,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "missile",
+      "frame": 2,
+      "head_band_box": [
+        17,
+        11,
+        49,
+        35
+      ],
+      "width": 32,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -8,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "skill",
+      "frame": 0,
+      "head_band_box": [
+        17,
+        9,
+        50,
+        33
+      ],
+      "width": 33,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -7,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "skill",
+      "frame": 1,
+      "head_band_box": [
+        17,
+        9,
+        50,
+        33
+      ],
+      "width": 33,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -7,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "skill",
+      "frame": 2,
+      "head_band_box": [
+        16,
+        9,
+        49,
+        33
+      ],
+      "width": 33,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -7,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "spell",
+      "frame": 0,
+      "head_band_box": [
+        16,
+        9,
+        48,
+        33
+      ],
+      "width": 32,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -8,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "spell",
+      "frame": 1,
+      "head_band_box": [
+        11,
+        9,
+        46,
+        33
+      ],
+      "width": 35,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -5,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "spell",
+      "frame": 2,
+      "head_band_box": [
+        9,
+        9,
+        43,
+        33
+      ],
+      "width": 34,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -6,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "item",
+      "frame": 0,
+      "head_band_box": [
+        19,
+        9,
+        49,
+        32
+      ],
+      "width": 30,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -10,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "item",
+      "frame": 1,
+      "head_band_box": [
+        16,
+        9,
+        46,
+        32
+      ],
+      "width": 30,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -10,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "item",
+      "frame": 2,
+      "head_band_box": [
+        16,
+        9,
+        47,
+        32
+      ],
+      "width": 31,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -9,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "escape",
+      "frame": 0,
+      "head_band_box": [
+        20,
+        18,
+        52,
+        40
+      ],
+      "width": 32,
+      "height": 22,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -8,
+        -8
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "escape",
+      "frame": 1,
+      "head_band_box": [
+        20,
+        20,
+        51,
+        42
+      ],
+      "width": 31,
+      "height": 22,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -9,
+        -8
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "escape",
+      "frame": 2,
+      "head_band_box": [
+        22,
+        19,
+        53,
+        41
+      ],
+      "width": 31,
+      "height": 22,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -9,
+        -8
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "victory",
+      "frame": 0,
+      "head_band_box": [
+        17,
+        11,
+        50,
+        35
+      ],
+      "width": 33,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -7,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "victory",
+      "frame": 1,
+      "head_band_box": [
+        15,
+        11,
+        48,
+        35
+      ],
+      "width": 33,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -7,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "victory",
+      "frame": 2,
+      "head_band_box": [
+        13,
+        11,
+        48,
+        35
+      ],
+      "width": 35,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -5,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "dying",
+      "frame": 0,
+      "head_band_box": [
+        13,
+        18,
+        45,
+        41
+      ],
+      "width": 32,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -8,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "dying",
+      "frame": 1,
+      "head_band_box": [
+        12,
+        20,
+        45,
+        43
+      ],
+      "width": 33,
+      "height": 23,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -7,
+        -7
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "dying",
+      "frame": 2,
+      "head_band_box": [
+        10,
+        23,
+        45,
+        45
+      ],
+      "width": 35,
+      "height": 22,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -5,
+        -8
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "abnormal",
+      "frame": 0,
+      "head_band_box": [
+        13,
+        22,
+        47,
+        46
+      ],
+      "width": 34,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -6,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "abnormal",
+      "frame": 1,
+      "head_band_box": [
+        14,
+        19,
+        47,
+        43
+      ],
+      "width": 33,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -7,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "abnormal",
+      "frame": 2,
+      "head_band_box": [
+        15,
+        21,
+        47,
+        45
+      ],
+      "width": 32,
+      "height": 24,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -8,
+        -6
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "sleep",
+      "frame": 0,
+      "head_band_box": [
+        6,
+        34,
+        52,
+        55
+      ],
+      "width": 46,
+      "height": 21,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        6,
+        -9
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "sleep",
+      "frame": 1,
+      "head_band_box": [
+        6,
+        33,
+        49,
+        54
+      ],
+      "width": 43,
+      "height": 21,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        3,
+        -9
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "sleep",
+      "frame": 2,
+      "head_band_box": [
+        7,
+        34,
+        52,
+        55
+      ],
+      "width": 45,
+      "height": 21,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        5,
+        -9
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "dead",
+      "frame": 0,
+      "head_band_box": [
+        8,
+        35,
+        44,
+        56
+      ],
+      "width": 36,
+      "height": 21,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        -4,
+        -9
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "dead",
+      "frame": 1,
+      "head_band_box": [
+        6,
+        38,
+        48,
+        59
+      ],
+      "width": 42,
+      "height": 21,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        2,
+        -9
+      ],
+      "over_1px": true
+    },
+    {
+      "motion": "dead",
+      "frame": 2,
+      "head_band_box": [
+        4,
+        42,
+        54,
+        63
+      ],
+      "width": 50,
+      "height": 21,
+      "uncertainty_px": 2,
+      "delta_from_wait0": [
+        10,
+        -9
+      ],
+      "over_1px": true
+    }
+  ]
+}

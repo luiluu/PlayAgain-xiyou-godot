@@ -17,7 +17,7 @@ func _run() -> void:
 	for m in XAppearance.MOTIONS:
 		for i in 3:
 			var f := look.frame(m, i)
-			check(m + str(i) + ".new_texture", str(f.tex.resource_path).ends_with("/u2/Yunshang_SV_u2.png"))
+			check(m + str(i) + ".new_texture", str(f.tex.resource_path).ends_with("/yunshang_v9/Yunshang_SV_v9.png"))
 			check(m + str(i) + ".cell", f.rect.size == Vector2(64,64))
 			var p := XAppearance.profile(f,m)
 			check(m + str(i) + ".native_scale", is_equal_approx(p.scale,1.0))
@@ -28,11 +28,15 @@ func _run() -> void:
 	check("body.native_scale", is_equal_approx(sp.body_scale,1.0))
 	check("body.explicit_nearest", (sp.sprite as Sprite2D).texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST)
 	check("body.integer_offset", sp.sprite.offset == sp.sprite.offset.round())
-	check("book.new_texture", XActorBook.sprite_path(174).ends_with("/u2/Yunshang_SV_u2.png"))
+	check("book.new_texture", XActorBook.sprite_path(174).ends_with("/yunshang_v9/Yunshang_SV_v9.png"))
 	check("book.nearest", not XActorBook.native_smooth(174, XActorBook.sprite_spec(174)))
 	sp.queue_free()
-	check("walk.path", XDB.img_path("characters", "$Yunshang").ends_with("/u2/$Yunshang_u2.png"))
+	check("walk.path", XDB.img_path("characters", "$Yunshang").ends_with("/yunshang_v9/$Yunshang_v9.png"))
 	check("face.path", XDB.img_path("faces", "Yunshang").ends_with("/Yunshang_Face_u1.png"))
+	XYunshang.RESKIN = false
+	check("reskin.rollback", XYunshang.art_path("sv_actors", "Yunshang").ends_with("/u2/Yunshang_SV_u2.png"))
+	XYunshang.RESKIN = true
+	check("reskin.missing", XYunshang.reskin_path("sv_actors", "Yunshang", false) == "")
 	XYunshang.ART = false
 	var old := XAppearance.for_battler(a).frame("wait",0)
 	check("rollback.old_texture", str(old.tex.resource_path).contains("/sv/yunshang/"))
@@ -76,5 +80,29 @@ func capture(dir: String) -> void:
 	file.store_string(JSON.stringify(evidence,"  "))
 	file.close()
 	await RenderingServer.frame_post_draw
-	get_viewport().get_texture().get_image().save_png(dir.path_join("battle_phone.png"))
+	get_viewport().get_texture().get_image().save_png(dir.path_join("battle_wait.png"))
+	for motion_name in ["swing", "damage"]:
+		for a in battle.sprites:
+			if a is XActor and a.actor_id == XGuyu.ACTOR:
+				var actor_sprite: XBattlerSprite = battle.sprites[a]
+				actor_sprite.set_process(false)
+				actor_sprite.set_motion(motion_name)
+		await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_png(dir.path_join("battle_" + motion_name + ".png"))
 	battle.queue_free()
+
+	await get_tree().process_frame
+	s.party = [174]
+	s.battle_slots = [174]
+	s.map_id = 4
+	s.x = 12
+	s.y = 12
+	var map := XMapScene.new()
+	add_child(map)
+	for i in 15: await get_tree().process_frame
+	map.player.direction = 6
+	map.player.move_straight(6)
+	for i in 5: await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_png(dir.path_join("map_walk.png"))
+	map.queue_free()
