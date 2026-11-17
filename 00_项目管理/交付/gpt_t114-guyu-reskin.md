@@ -24,6 +24,8 @@
 
 - P1：`tests/xiyou_sv_smooth.gd` 把 175 列入 SMOOTH 量旧正式源，却没关 `XGuyu.ART`；照云裳写法 `_run` 开头置 `XGuyu.ART=false`、结尾恢复。
 - P2-1：`选测对照.json` 新增 `guyu_art` 组并映射 `content/guyu_v2/*`（云裳无同类条目可照，参照 mira_art 格式），选 guyu／guyu_art／guyu_battle／guyu_ui／actor_book／sv_smooth。
+- 附带：`检查.sh --affected` 首轮暴露 `HookLineTests.test_real_role_whitelist_matches_code` 失败（guyu.gd 头注释无编号/名字），头注释补「175 谷雨」后通过。
+- 验证：xiyou_sv_smooth 140/140、guyu_art 171/171、guyu 78/78、guyu_ui 791/791、guyu_battle 1638/1638、actor_book 28/28（均 --audio-driver Dummy）；`检查.sh --affected main --cloud` 退出 0。
 - P2-2：本文「32 色压色」改为实际 177 色，不重新压色。
 
 ## 变更记录草稿
