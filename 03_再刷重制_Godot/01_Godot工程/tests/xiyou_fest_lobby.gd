@@ -17,7 +17,53 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
-	_run.call_deferred()
+	if OS.get_cmdline_user_args().has("--capture-only"):
+		_capture.call_deferred()
+	else:
+		_run.call_deferred()
+
+
+## 快速实机取景入口，避免对话专项的自动应答影响交付画面。
+func _capture() -> void:
+	TestEnv.isolate("xiyou_fest_lobby_capture")
+	XMessageBox.auto = true
+	XGuide.MILESTONE_ENABLED = false
+	XFest.ENABLED = true
+	XFestLobby.ENABLED = true
+	XRift.STAGE2 = true
+	XLobbyCorruption.STAGE_OVERRIDE = 0
+	(XConfig._values.codexWhisperSeen as Array).append("rift2")
+	for mode in ["xiyou", "tianqi", "baby"]:
+		print("CAPTURE_OPEN ", mode)
+		var view := await open_lobby(XFest.START, 14, 8, true, mode == "tianqi", mode == "baby")
+		print("CAPTURE_READY ", mode)
+		await get_tree().create_timer(5.0).timeout
+		var toast_layer := get_tree().root.get_node_or_null("XToast")
+		if toast_layer != null:
+			toast_layer.visible = false
+		await frames(2)
+		await shot("fest_lobby_default_%s.png" % mode)
+		var marker := Node2D.new()
+		marker.position = Vector2(19 * 48, 6 * 48)
+		marker.z_index = 100
+		marker.draw.connect(func(): marker.draw_rect(Rect2(Vector2.ZERO, Vector2(48, 48)), Color.MAGENTA, false, 3.0))
+		view.add_child(marker)
+		var label := Label.new()
+		label.text = "派蒙新位 (19,6)\n宝宝难度／宝宝巴士开启时出现"
+		label.position = Vector2(-60, 50)
+		label.add_theme_font_size_override("font_size", 16)
+		label.add_theme_color_override("font_outline_color", Color.BLACK)
+		label.add_theme_constant_override("outline_size", 6)
+		marker.add_child(label)
+		await frames(2)
+		await shot("fest_lobby_annotated_%s.png" % mode)
+		if mode == "xiyou":
+			marker.visible = false
+			view.player.locate(14, 15)
+			await frames(20)
+			await shot("fest_lobby_rift2_on.png")
+		await close(view)
+	get_tree().quit()
 
 
 func check(name: String, ok: bool, detail = null) -> bool:
@@ -30,7 +76,7 @@ func check(name: String, ok: bool, detail = null) -> bool:
 func shot(name: String) -> void:
 	if out_dir == "" or DisplayServer.get_name() == "headless":
 		return
-	await RenderingServer.frame_post_draw
+	RenderingServer.force_draw()
 	get_viewport().get_texture().get_image().save_png(out_dir.path_join(name))
 
 
@@ -152,6 +198,7 @@ func _run() -> void:
 	check("active.orig_events_kept", base_ids.all(func(i): return ids(m1).has(i)))
 	check("active.bgm_changed", str(m1.map_data.get("bgm", {}).get("name", "")) == XFestLobby.BGM and XFestLobby.BGM != "TCLH-60")
 	check("active.bgm_exists", XDB.audio_path("bgm", XFestLobby.BGM) != "", XFestLobby.BGM)
+	check("active.banner_above_wall_art", m1.fest_fx._banner_node.z_index > m1.upper.z_index and m1.fest_fx._bunting_node.z_index > m1.upper.z_index)
 	check("active.art_textured", m1.fest_fx.banner_textured() and m1.fest_fx.trophy_textured())
 	var expected_tiles := base_tiles.duplicate()
 	for x in range(13, 16):
