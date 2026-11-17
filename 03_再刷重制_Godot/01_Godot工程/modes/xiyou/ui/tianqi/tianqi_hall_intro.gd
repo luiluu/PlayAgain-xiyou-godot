@@ -128,6 +128,7 @@ func _ready() -> void:
 	_mask.mouse_filter = Control.MOUSE_FILTER_STOP   # 过场期间点不到下面的 HUD
 	_mask.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_mask)
+	_mask.add_to_group(XUiSkin.FULLSCREEN_GROUP)   # 触屏时虚拟摇杆、AB 键跟全屏菜单一样收起（XTouchControls 认这个组）
 	XUiSkin.menu_backdrop(_mask)   # 跟开局三页同一张底
 	# 揭开时挖洞：底的每一层都挂同一个材质（按屏幕坐标算，渐变、火星、正式美术背景都一起挖）
 	var sh := Shader.new()

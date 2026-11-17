@@ -3,7 +3,7 @@ extends Node
 ## 一、开关：新开局、新皮肤、动效不是「关」才播；动效「关」、界面风格原版、总开关关、开局指令取走后（读档、回大厅）都不播。
 ## 二、全部档整段播完：过场期间开局指令没取走、地图忙着、没有道号、EV020 没存档；地名条「方桌大厅」「九死 · 存档 3」，五人上场；
 ##     播完才跑问道号，EV020 首次到达存档照常；同图再进一次不播。
-## 三、任意键跳过、点屏幕（触屏「轻触 跳过」）跳过、鼠标点一下跳过：很快结束，开局照常；跳过后地图自己的地名条照常出。
+## 三、任意键跳过、点屏幕（触屏「轻触 跳过」）跳过、鼠标点一下、手柄键跳过：很快结束，开局照常；跳过后地图自己的地名条照常出。
 ## 四、简化档：直接合拢的漩涡＋徽记，比全部档短，播完开局照常。
 ## 五、读档进大厅不播。
 ## 存档写到 user://test_xiyou_hall_intro，测试结束删除；只改内存里的设置，不写本机 options.json。
@@ -67,6 +67,7 @@ func _run() -> void:
 	await _skip("key", 4)
 	await _skip("touch", 5)
 	await _skip("mouse", 6)
+	await _skip("joy", 10)
 	await _simple()
 	await _load_game()
 	await _off()
@@ -154,6 +155,8 @@ func _full() -> void:
 	_check("full.badge", it._badge.texture != null)
 	_check("full.skip_hint", (it.find_child("SkipKey", true, false) as Label).text == "任意键")
 	_check("full.map_plate_hidden", _scene().map_name_text == "")
+	# 触屏虚拟摇杆、AB 键：过场在全屏组里，跟全屏菜单一样收起
+	_check("full.touch_controls_hide", it._mask.is_in_group(XUiSkin.FULLSCREEN_GROUP) and XUiSkin.fullscreen_menu_open(get_tree()))
 	# 过场期间：开局指令还没取走、地图忙、没有道号、EV020 没存档
 	var bad := []
 	var frames := 0
@@ -213,6 +216,11 @@ func _skip(how: String, slot: int) -> void:
 			t.position = Vector2(400, 300)
 			t.pressed = true
 			ev = t
+		"joy":
+			var j := InputEventJoypadButton.new()
+			j.button_index = JOY_BUTTON_A
+			j.pressed = true
+			ev = j
 		_:
 			var m := InputEventMouseButton.new()
 			m.button_index = MOUSE_BUTTON_LEFT
@@ -239,6 +247,11 @@ func _skip(how: String, slot: int) -> void:
 		mu.position = Vector2(400, 300)
 		mu.pressed = false
 		Input.parse_input_event(mu)
+	elif how == "joy":
+		var ju := InputEventJoypadButton.new()
+		ju.button_index = JOY_BUTTON_A
+		ju.pressed = false
+		Input.parse_input_event(ju)
 	else:
 		var tu := InputEventScreenTouch.new()
 		tu.position = Vector2(400, 300)
@@ -269,7 +282,7 @@ func _simple() -> void:
 		secs += get_process_delta_time()   # 已乘 time_scale：过场自己的时间轴
 		n += 1
 	var ended := wr.get_ref() == null or (wr.get_ref() as XTianqiHallIntro).finished
-	# 全部档约 3.1 秒（含地名条），简化档约 1.6 秒
+	# 全部档约 3.1 秒（含地名条），简化档约 1.75 秒
 	_check("simple.shorter", ended and secs < _full_secs * 0.7 and secs > 1.0, [secs, _full_secs])
 	_check("simple.not_skipped", wr.get_ref() == null or not (wr.get_ref() as XTianqiHallIntro).skipped)
 	await _opening_done("simple", s, 7)
