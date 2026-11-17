@@ -155,11 +155,12 @@ func _actor_box(b: XBattleScene) -> Rect2:
 	return r
 
 
+## T174 统一大小时小怪战我方再右挪 15（后排脚底 1044），右界放到 1060
 ## 我方：右半场、上排身体在队伍栏下面（队伍栏 x≥975 只到 y 250）、脚底不进行动条高度
 func _check_actors(tag: String, b: XBattleScene, mul: float) -> void:
 	var feet := b.logic.actors.map(func(a): return b.sprites[a].home)
 	_check(tag + "_actor_mul", b.logic.actors.all(func(a): return is_equal_approx(b.sprites[a].layout_mul, mul)), mul)
-	_check(tag + "_actor_right_half", feet.all(func(p): return p.x >= 780.0 and p.x <= 1040.0 and p.y >= 320.0 and p.y <= 605.0), feet)
+	_check(tag + "_actor_right_half", feet.all(func(p): return p.x >= 780.0 and p.x <= 1060.0 and p.y >= 320.0 and p.y <= 605.0), feet)
 	var pr := b.party_rect()
 	var panel := Rect2(pr.position - b._origin, pr.size)
 	var hit := b.logic.actors.filter(func(a):
@@ -220,7 +221,7 @@ func _boss() -> void:
 	_check("boss_solo", b.layout_solo())
 	_check("boss_home", sp.home == XBattleLayout.BOSS.solo, sp.home)
 	_check("boss_scaled_capped", sp.layout_mul > 1.0 and sp.height() <= XBattleLayout.BOSS.solo_cap + 0.5, [sp.layout_mul, sp.height()])
-	_check_actors("boss", b, XBattleLayout.BOSS.actor_mul)
+	_check_actors("boss", b, XBattleLayout.actor_mul(true))
 	_check_cursors("boss", b)
 	var gap := _actor_box(b).position.x - (sp.home.x + sp.width() / 2.0)
 	_check("boss_gap", gap >= 300.0, gap)
@@ -238,7 +239,7 @@ func _mob4() -> void:
 	var homes := b.logic.enemies.map(func(e): return b.sprites[e].home)
 	_check("mob4_enemy_rect", homes.all(func(p): return r.grow(1.0).has_point(p)), homes)
 	_check("mob4_enemy_cap", b.logic.enemies.all(func(e): return b.sprites[e].layout_mul <= 1.0 + 1e-6 or b.sprites[e].height() <= XBattleLayout.MOB.enemy_cap + 0.5))
-	_check_actors("mob4", b, XBattleLayout.MOB.actor_mul)
+	_check_actors("mob4", b, XBattleLayout.actor_mul(false))
 	_check_cursors("mob4", b)
 	var right := 0.0
 	for e in b.logic.enemies:
@@ -264,7 +265,7 @@ func _mob8() -> void:
 	var homes := b.logic.enemies.map(func(e): return b.sprites[e].home)
 	_check("mob8_enemy_rect", homes.all(func(p): return (XBattleLayout.MOB.enemy_rect as Rect2).grow(1.0).has_point(p)), homes)
 	_check("mob8_big_no_scale", b.logic.enemies.all(func(e): return is_equal_approx(b.sprites[e].layout_mul, 1.0)))
-	_check_actors("mob8", b, XBattleLayout.MOB.actor_mul)
+	_check_actors("mob8", b, XBattleLayout.actor_mul(false))
 	_check_ring("mob8", b)
 	await _shot("T126_8只怨念之魂_800x450")
 	await _close(b)
@@ -273,7 +274,7 @@ func _mob8() -> void:
 func _mob3_two() -> void:
 	var b := await _battle(MOB3_TROOP, [8])
 	_check("two_actors", b.logic.actors.size() == 2)
-	_check_actors("mob3_2p", b, XBattleLayout.MOB.actor_mul)
+	_check_actors("mob3_2p", b, XBattleLayout.actor_mul(false))
 	_check_ring("mob3_2p", b)
 	await _shot("T126_3只小怪_2人_800x450")
 	await _close(b)

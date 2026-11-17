@@ -477,6 +477,7 @@ func _place_battlers() -> void:
 		var s := XBattlerSprite.new()
 		field.add_child(s)
 		s.layout_mul = XBattleLayout.actor_mul(layout_solo())
+		s.fixed_scale = XBattleLayout.actor_size(layout_solo())  # T174 我方统一大小（回退 XBattleLayout.ACTOR_SIZE＝0）
 		s.setup(a, ACTOR_SCALE * s.layout_mul)
 		s.home = points[i]
 		s.position = s.home + Vector2(300, 0)
@@ -1261,6 +1262,7 @@ func _tianqi_swap(out: XActor) -> void:
 	field.add_child(s)
 	field.move_child(s, old.get_index())  # 换上的人接替原来的绘制次序（站位交错时靠下的要画在上面）
 	s.layout_mul = XBattleLayout.actor_mul(layout_solo())
+	s.fixed_scale = XBattleLayout.actor_size(layout_solo())
 	s.setup(h, ACTOR_SCALE * s.layout_mul)
 	s.home = old.home
 	s.position = old.home
@@ -2730,6 +2732,16 @@ func _victory() -> void:
 	if str(params.get("Victory Screen Zoom", "true")) == "true":
 		_camera = {"from": BOX / 2.0, "to": Vector2(float(params.get("Victory Screen Zoom X", 700)), float(params.get("Victory Screen Zoom Y", 460))),
 			"scale": float(params.get("Victory Screen Zoom Scale", 2)), "frames": int(params.get("Victory Screen Zoom Duration", 300)), "t": 0, "base": {}}
+		# T174：站位撑开后镜头对准我方整队（XBattleLayout.VICTORY_FOCUS，回退＝false 照原版定点）
+		var bodies := []
+		for a in logic.actors:
+			var sp: XBattlerSprite = sprites.get(a)
+			if sp != null and sp.visible:
+				bodies.append(Rect2(sp.home - Vector2(sp.width() / 2.0, sp.height()), Vector2(sp.width(), sp.height())))
+		var focus := XBattleLayout.victory_focus(bodies, float(_camera.scale), layout_solo())
+		if not focus.is_empty():
+			_camera.to = focus.to
+			_camera.scale = focus.scale
 		for visual in get_children():
 			if visual != ui and visual != low_ui and visual != record and (visual is Control or visual is Node2D):
 				_camera.base[visual] = visual.position
