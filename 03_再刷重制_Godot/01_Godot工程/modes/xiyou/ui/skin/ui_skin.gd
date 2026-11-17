@@ -23,8 +23,11 @@ static var GLOBAL_FONT := false
 ## false＝详情牌照旧原样灌说明卡的行、战斗说明卡照旧位置。
 static var CORE_V2 := true
 ## TOUCH_V2（O-500，触屏）：底部按键提示触屏时变成能点的胶囊、整页左上「‹」返回、列表手指拖动、进全屏菜单收起虚拟摇杆／AB 键、
-## 触屏战斗指令环固定右下（Kyo 定）。false＝同 p1fix（提示只看、没有返回钮、指令环跟着角色）。
+## 触屏战斗指令环固定右下（Kyo 定；D171 起由 TOUCH_RING_FIXED 单独管）。false＝同 p1fix（提示只看、没有返回钮、指令环跟着角色）。
 static var TOUCH_V2 := true
+## TOUCH_RING_FIXED（T126，Kyo 2026-11-17 D171「改回去」）：触屏时战斗指令环固定右下（D41）。false（现在）＝触屏也跟着当前行动的角色，
+## 同 p1fix；TOUCH_V2 其余各项不受影响。环跟角色时照旧让开 A／B 键组与右上队伍面板（XBattleScene._place_near_actor）。回退：改 true。
+static var TOUCH_RING_FIXED := false
 ## COMFORT_V2（O-502，舒适）：正文骨白、禁用灰提亮、「优秀」绿调柔、常驻主按钮平时旧金选中才红、行动条选目标去 2Hz 急闪（改 2.4 秒慢呼吸）、
 ## 队伍血条 5→8px、七印状态字加 ◆／◇／·、u4 组图标选中红底调暗。false＝同 p1fix。
 static var COMFORT_V2 := true
