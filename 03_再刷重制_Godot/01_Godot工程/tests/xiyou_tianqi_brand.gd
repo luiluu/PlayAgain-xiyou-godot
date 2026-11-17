@@ -47,6 +47,13 @@ func _check(name: String, ok: bool, detail = null) -> void:
 	results.append({"name": name, "passed": ok, "detail": detail})
 
 
+func _arg(name: String, default := "") -> String:
+	for x in OS.get_cmdline_user_args():
+		if x.begins_with(name + "="):
+			return x.substr(name.length() + 1)
+	return default
+
+
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261117)
@@ -75,6 +82,7 @@ func _run() -> void:
 	_t119_fits()
 	await _t119_entry()
 	_t119_seed()
+	_t119_stress(int(_arg("--t119-stress", "40")))
 	XTianqiBrand.ENABLED = false
 	_t118_off()
 	_t119_off()
@@ -960,6 +968,13 @@ func _t119_fits() -> void:
 	var cap := floorf(b.mhp * 0.15)
 	var r := XTianqiBrand.strike(lg, a, b)
 	_check("t119.strike_cap", not r.is_empty() and float(r.hp) <= cap and (float(r.hp) == cap or float(r.hp) == XTianqiBrand.strike_value(lg, a, b)), [r.get("hp"), cap])
+	# 封顶一定咬得住的一例：打敌人 1（满烙印的普攻远超它最大生命的 15%）
+	var tiny: XEnemy = lg.enemies[0]
+	tiny.hp = tiny.mhp
+	var tcap := floorf(tiny.mhp * 0.15)
+	var raw_v := XTianqiBrand.strike_value(lg, a, tiny)
+	var rt := XTianqiBrand.strike(lg, a, tiny)
+	_check("t119.strike_cap_bites", raw_v > tcap and float(rt.get("hp", -1)) == tcap and tiny.hp == tiny.mhp - tcap, [tiny.mhp, raw_v, rt.get("hp"), tiny.hp])
 	lg.end_battle()
 
 	# 8. 六亲不认：普攻一个活着的队友（不是自己），同样封顶、打不倒；没有队友就发呆
@@ -1040,6 +1055,22 @@ func _t119_fits() -> void:
 	var heart := XTianqiBrand.is_ripe(s, {"kind": "special", "key": "", "tier": 1})
 	_check("t119.ripe_second", not raw and ripe and not heart, [raw, ripe, heart])
 	fl.erase("guardian:7")
+	# 真开两场 6 层守层者（敌群 39）：第一场生，记首胜后第二场熟，几率换成 ×0.4、花样换成三种
+	fl.erase("guardian:6")
+	var lr := XBattleLogic.new()
+	lr.setup(39, s)
+	var ar: XActor = lr.actors[0]
+	_setb(ar, 10000, 6)
+	var raw_p := XTianqiBrand.fit_chance(lr, ar)
+	var raw_k := XTianqiBrand.fit_kinds(lr, ar)
+	lr.end_battle()
+	fl["guardian:6"] = 1
+	var lr2 := XBattleLogic.new()
+	lr2.setup(39, s)
+	_check("t119.ripe_real", not bool(XTianqiBrand.fight(lr).ripe) and bool(XTianqiBrand.fight(lr2).ripe) and is_equal_approx(XTianqiBrand.fit_chance(lr2, ar), raw_p * 0.4)
+		and raw_k.size() == 6 and XTianqiBrand.fit_kinds(lr2, ar) == ["daze", "misfire", "break_guard"], [raw_p, raw_k, XTianqiBrand.fit_kinds(lr2, ar)])
+	lr2.end_battle()
+	fl.erase("guardian:6")
 
 
 ## 行动入口最顶上：挂机、场内自动、手动三条路同一个结果（第十一节第 9 步：同一个种子下哑火三条路一样）
@@ -1120,3 +1151,57 @@ func _t119_off() -> void:
 	_check("t119.off", logs.is_empty() and fs.reasons.get("brand_fit", 0) == 0 and lg.brand_forced(a).is_empty() and XTianqiBrand.taken_mult(a) == 1.0
 		and XTianqiBrand.trigger(lg, a)[0] == "", fs.reasons)
 	lg.end_battle()
+
+
+## 第十一节第 9 步的无界面那一半：自动战斗连打同一只守层者 n 场（先生 n/4 场、再熟 n 场，各自换种子），满烙印全队，
+## 每场最多 30 回合。不卡死（每场都结束或打满回合）、熟的场次里没有抽自己／六亲不认／断片、发作都在保护之内（同回合 ≤ 2 人、同一人间隔 ≥ 3）。
+## 默认 40 场（专项里跑）；--t119-stress=1000 手动跑满稿里的 1000 场
+func _t119_stress(n: int) -> void:
+	var s := _state()
+	var fl := XTianqiBrand._firsts_rw(s)
+	var bad := []
+	var fits := {"raw": 0, "ripe": 0}
+	var kinds := {}
+	var turns := 0
+	for phase in ["raw", "ripe"]:
+		var count := maxi(1, n / 4) if phase == "raw" else n
+		for i in count:
+			if phase == "raw":
+				fl.erase("guardian:6")
+			else:
+				fl["guardian:6"] = 1
+			for x in s.battle_members():
+				_setb(x, 10000, 6)
+				x.recover_all()
+			var lg := XBattleLogic.new()
+			lg.setup(39, s, XBattleRandom.create(XRandomStream.hex64(7000 + i + (100000 if phase == "ripe" else 0))))
+			lg.auto = true
+			var c := XTianqiBrand.fight(lg)
+			if bool(c.ripe) != (phase == "ripe"):
+				bad.append([phase, i, "ripe", c.ripe])
+			var t := 0
+			while not lg.is_over() and t < 30:
+				lg.run_turn({})
+				t += 1
+			turns += t
+			var per := {}
+			var last := {}
+			for r in c.get("fit_log", []):
+				fits[phase] += 1
+				kinds[r.kind] = int(kinds.get(r.kind, 0)) + 1
+				per[int(r.turn)] = int(per.get(int(r.turn), 0)) + 1
+				if phase == "ripe" and str(r.kind) in ["hit_self", "hit_ally", "blackout"]:
+					bad.append([phase, i, "ripe_kind", r])
+				if last.has(r.actor) and int(r.turn) - int(last[r.actor]) < 3:
+					bad.append([phase, i, "gap", r])
+				last[r.actor] = int(r.turn) + (1 if str(r.kind) == "blackout" else 0)
+				if phase == "ripe" and int(r.turn) <= 3:
+					bad.append([phase, i, "ripe_open", r])
+				if phase == "raw" and int(r.turn) <= 1:
+					bad.append([phase, i, "raw_open", r])
+			if per.values().any(func(v): return v > 2):
+				bad.append([phase, i, "per_round", per])
+			lg.end_battle()
+	fl.erase("guardian:6")
+	print("T119_STRESS ", JSON.stringify({"battles": n + maxi(1, n / 4), "turns": turns, "fits": fits, "kinds": kinds, "bad": bad.size()}))
+	_check("t119.stress", bad.is_empty() and fits.raw + fits.ripe > 0, bad.slice(0, 5))
