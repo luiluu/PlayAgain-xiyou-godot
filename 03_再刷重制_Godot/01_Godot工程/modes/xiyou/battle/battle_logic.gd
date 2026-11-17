@@ -839,6 +839,7 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null, confus
 	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, (XConfusion.targets(self, a, skill) if confusable and XConfusion.confused(a) else _targets_for(a, skill, chosen)) if tusu_list == null else tusu_list, chosen))  # 云裳云丝展幅、千军入袖收袖 makeTargets 包装在异化之内
 	list = XBinding.filter_targets(self, a, skill, list)  # 绑定 makeTargets 包装：敌方对敌技能滤掉形态中的本体
 	list = XXuanBattle.extend_targets(a, skill, list)  # 璇 makeTargets 包装：列星期间回光、璃壁加受益者，棱光多打几遍
+	list = XTianqiBrand.filter_group(self, a, skill, list)  # 天启篇烙印不合群：队友放的全体友方落不到过 55% 的人身上
 	var before_layers := list.duplicate()  # 天启篇弱者专属词条：下面三层改过目标，专属引导就不动
 	list = XTianqiHorsemen.filter_targets(self, a, list)  # 天启四骑士：混子嘲讽在时只能打混子
 	list = XTianqiPlagueAlien.filter_targets(self, a, skill, list)  # 天启篇瘟疫线异化：挑衅者在时我方单体只能打它
@@ -854,7 +855,9 @@ var guide_layers_changed := false
 ## execute 的选目标：targets_for 之后接专属引导（排在三层约束之后、定主目标之前）
 func _guided_targets(u: XBattler, skill: Dictionary, chosen: XBattler, forcing: bool) -> Array:
 	var list := targets_for(u, skill, chosen, not forcing)
-	return XTianqiWeakAffix.guide_targets(self, u, skill, list, guide_layers_changed, forcing)
+	list = XTianqiWeakAffix.guide_targets(self, u, skill, list, guide_layers_changed, forcing)
+	XTianqiBrand.note_hit(self, u, list)  # 天启篇烙印出头鸟：记这一回合打过敌人
+	return list
 
 
 func _targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Array:
@@ -868,14 +871,14 @@ func _targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Ar
 		1:
 			if chosen and chosen.is_alive() and foes.has(chosen):
 				return [chosen]
-			return [_random_target(alive(foes))] if not alive(foes).is_empty() else []
+			return [_random_target(alive(foes), a)] if not alive(foes).is_empty() else []
 		2:
 			return alive(foes)
 		3, 4, 5, 6:
 			var out := []
 			for i in range(scope - 2):
 				if not alive(foes).is_empty():
-					out.append(_random_target(alive(foes)))
+					out.append(_random_target(alive(foes), a))
 			return out
 		7:
 			if chosen and chosen.is_alive() and friends.has(chosen):
@@ -985,15 +988,18 @@ func _v8_shuffle(source: Array) -> Array:
 
 
 ## MV：按目标的 tgr（受击率）加权随机
-func _random_target(list: Array) -> XBattler:
+## user：选目标的行动者（敌人挑我方时天启篇烙印改权重：外人项、出头鸟；不给＝原样）
+func _random_target(list: Array, user: XBattler = null) -> XBattler:
+	var w := []
 	var total := 0.0
 	for b in list:
-		total += b.tgr
+		w.append(b.tgr * (XTianqiBrand.aggro_mult(self, user, b) if user != null else 1.0))
+		total += w[-1]
 	var r := _float("target") * total
-	for b in list:
-		r -= b.tgr
+	for i in list.size():
+		r -= w[i]
 		if r <= 0.0:
-			return XBinding.retarget(self, b)  # 绑定 randomTarget 包装：敌方行动中抽到形态中的本体就换人
+			return XBinding.retarget(self, list[i])  # 绑定 randomTarget 包装：敌方行动中抽到形态中的本体就换人
 	return XBinding.retarget(self, list[0])
 
 
@@ -1292,6 +1298,9 @@ func act(u: XBattler, skill, target) -> Array:
 		started = u.is_actor() or can_use(u, skill)  # 同 execute 开头的行动无效判断（非强制）
 		if started:
 			XBinding.start_action(u)  # 绑定 startAction 包装：validate、记行动者、回归扣充能
+		var burn := XTianqiBrand.burn(self, u)  # 天启篇烙印烧命：出手前付当前生命 4%（不算受到伤害）
+		if not burn.is_empty():
+			logs.append(burn)
 		XNanoha.begin(self)
 		logs.append_array(execute(u, skill, target))
 		XNanoha.end_execute(self)
@@ -3470,6 +3479,8 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 	if XTianqiQiyinRule.no_regen(self, b):  # 七印祭坛限时：魔法、TP 不恢复
 		dm = 0.0
 		dt = 0.0
+	if dh > 0.0 and not XAlienBattle.routes_regen(b):
+		dh = XTianqiBrand.heal(b, dh)  # 天启篇烙印虚不受补（各线之后乘；走 gainHp 改道的在 _gain 里乘）
 	var alien_hp := b.hp
 	if dh < 0.0 and XBinding.blocks_hp_loss(b):
 		dh = 0.0  # 璇附身期间 Game_Actor.gainHp 包装直接返回：持续伤害不扣、不吸护盾、不弹字（审查第 34 期 P2-1）
@@ -3760,6 +3771,7 @@ func _phase(name: String) -> void:
 ## Custom Victory／Escape／Defeat Effect 只对我方（含后备），在原 endBattle 之前；胜利时 processVictory 已先 removeBattleStates。
 func end_battle(result := -1) -> void:
 	XActor.batch_reset()
+	XTianqiBrand.end(self)  # 天启篇烙印：这一场结束，一条命、虚不受补不再拦
 	var weak_award := XWeakChallenge.before_end(self, result)  # 弱者挑战 endBattle 包装（原 endBattle 之前判定，之后发）
 	XAlienBattle.restore_gear(self)  # 异化 endBattle 包装（Adv:196，最外层，原 endBattle 之前）：吞器、献器空出的装备栏放回
 	_phase("end|guyu")  # 天启篇钉住的本场：谷种金缮石按自己的结算子流

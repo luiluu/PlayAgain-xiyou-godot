@@ -5,6 +5,7 @@ extends Node
 ## 三、专项 1～7（稿第十三节 T073-b 验收）；P2-2 甲二门禁；P2-3 正序撞节点高亮＋「烙印已到「某段」的极限」；P2-4 36 层首通那一场刻印者正好 95%。
 ## 四、端到端：真的 BattleLogic.setup 守层者敌群认出 guardian:<层>；grant 里接着 settle。
 ## 五、T140：七印灰印／默印精英（297、220）、死亡线／饥荒线节末精英（294、430）都认首领战；玩家看到的烙印文字不用「境」「锚」，说「加深」＋段名。
+## 七、T118（T073-c）：常驻六条代价各一组（生效、不生效、跨过那一点）；P2-1 判烙印不判境（4000 砥柱不吃虚不受补、4001 吃）；一条命两档、战后照常站起来；和嘲讽、七印、死亡线保命次序对一遍；开关关着不动。
 ## 六、T144：战争线 35、瘟疫线 248 节末那场与七印其余五场压轴前精英（250／34／11／123／188）按上下文认首领战；同敌群野外照名字不算。
 
 const XIAOYAO := 1
@@ -45,7 +46,9 @@ func _run() -> void:
 	_qiyin_real()
 	_t140_spread()
 	_t140_text()
+	_t118_costs()
 	XTianqiBrand.ENABLED = false
+	_t118_off()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -538,3 +541,242 @@ func _t140_text() -> void:
 	# 文件里定死的几句也一并扫（含没走到的分支）
 	var consts := [XTianqiBrand.TEXT_BOTTLENECK, XTianqiBrand.TEXT_NO_GAIN, XTianqiBrand.TEXT_GAIN] + XTianqiBrand.TEXT_CARVE_WARN + XTianqiBrand.TEXT_RETREAT
 	_check("t140.consts_no_jing", not consts.any(func(x): return str(x).contains("境") or str(x).contains("锚")), consts)
+
+
+# ---- T118（T073-c）常驻六条代价 ----
+## 每条代价「烙印超过 over」才有：境设成能装下这个烙印的那一段（value 按本段节点截断）
+func _cost_actor(lg: XBattleLogic, idx: int, brand: int) -> XActor:
+	var a: XActor = lg.actors[idx]
+	var r := 0
+	while r < XTianqiBrand.last_realm() and XTianqiBrand.node_of(r) <= brand:  # 正好在节点上的已立入下一段（P2-1 那种人）
+		r += 1
+	_setb(a, brand, r)
+	a.hp = a.mhp
+	return a
+
+
+func _cost_logic(s: XState, troop := 1) -> XBattleLogic:
+	var lg := XBattleLogic.new()
+	lg.setup(troop, s)
+	return lg
+
+
+func _kill(a: XActor) -> void:
+	a.hp = 0.0
+	if not a.state_ids.has(1):
+		a.add_state(1)
+
+
+func _t118_costs() -> void:
+	var s := _state()
+	# 0. P2-1 门槛：六条各在节点上不算、多 1 万分点算（境设成已在下一段）
+	var lg := _cost_logic(s)
+	var a: XActor = lg.actors[0]
+	for row in XTianqiBrand.data().costs.list:
+		var over := roundi(float(row.over) * 100)
+		var r := 0
+		while XTianqiBrand.node_of(r) < over:
+			r += 1
+		r += 1
+		_setb(a, over, r)
+		var at := XTianqiBrand.has_cost(a, str(row.key))
+		_setb(a, over + 1, r)
+		_check("t118.gate_%s" % row.key, not at and XTianqiBrand.has_cost(a, str(row.key)) and XTianqiBrand.realm(a) == r, [over, r])
+	lg.end_battle()
+
+	# 1. 出头鸟＋外人项
+	lg = _cost_logic(s)
+	var e: XEnemy = lg.enemies[0]
+	a = _cost_actor(lg, 0, 2000)
+	var b := _cost_actor(lg, 1, 0)
+	lg.turn = 2
+	lg.act(a, a.attack_skill(), e)  # 真出手记「打过敌人」
+	_check("t118.bird_noted", int(XTianqiBrand.fight(lg).hits.get(a, -1)) == 2, XTianqiBrand.fight(lg).hits)
+	lg.turn = 3
+	_check("t118.bird_on", is_equal_approx(XTianqiBrand.aggro_mult(lg, e, a), 1.8 * 2.0), XTianqiBrand.aggro_mult(lg, e, a))
+	_check("t118.outsider_zero", is_equal_approx(XTianqiBrand.aggro_mult(lg, e, b), 2.0), XTianqiBrand.aggro_mult(lg, e, b))
+	_check("t118.bird_actor_user", XTianqiBrand.aggro_mult(lg, a, b) == 1.0)
+	lg.turn = 4
+	_check("t118.bird_stale", is_equal_approx(XTianqiBrand.aggro_mult(lg, e, a), 1.8), XTianqiBrand.aggro_mult(lg, e, a))  # 上一回合没出手
+	lg.turn = 3
+	_setb(a, 1000, 1)
+	_check("t118.bird_at_node", is_equal_approx(XTianqiBrand.aggro_mult(lg, e, a), 1.9), XTianqiBrand.aggro_mult(lg, e, a))  # 正好 10% 不算出头鸟
+	_setb(a, 1001, 2)
+	_check("t118.bird_cross", is_equal_approx(XTianqiBrand.aggro_mult(lg, e, a), (2.0 - 0.1001) * 2.0), XTianqiBrand.aggro_mult(lg, e, a))
+	_setb(a, 2000, 2)
+	for x in lg.actors:
+		if x != a and x != b:
+			_kill(x)
+	var atk := e.attack_skill()
+	var share := func(n: int) -> float:  # 走敌人真的选目标（targets_for → _targets_for 单体随机）
+		var hit := 0
+		for i in n:
+			if lg.targets_for(e, atk) == [a]:
+				hit += 1
+		return float(hit) / n
+	var on_share: float = share.call(600)
+	_check("t118.bird_draws", on_share > 0.57, on_share)  # 3.6 : 2 ≈ 0.64（不带出头鸟 1.8 : 2 ≈ 0.47）
+	# 嘲讽照常盖过：挑衅状态 414（受击率大）挂在烙印 0 的坦克身上，出头鸟那位抽中的比例掉到两成以下
+	b.add_state(414)
+	var taunt_share: float = share.call(600)
+	_check("t118.taunt_over_bird", b.tgr >= 5.0 and taunt_share < 0.3, [b.tgr, taunt_share])  # 受击率型嘲讽是乘的：3.6 : 10 ≈ 0.26（不带烙印 1 : 5 ≈ 0.17）；四骑士混子、挑衅者、混子之盾在后面几层整个换目标
+	lg.end_battle()
+
+	# 2. 皮薄：物防、魔防倍率；攻击不动
+	lg = _cost_logic(s)
+	a = lg.actors[0]
+	var base3 := _rate_off(a, 3)
+	var base2 := _rate_off(a, 2)
+	var thin := func(brand: int, i: int) -> float:
+		_cost_actor(lg, 0, brand)
+		return a.param_rate(i) / (base3 if i == 3 else (_rate_off(a, 5) if i == 5 else base2))
+	_check("t118.thin_at25", is_equal_approx(thin.call(2500, 3), 1.0))
+	_check("t118.thin_2799", is_equal_approx(thin.call(2799, 3), 1.0))  # 多不到 3 点不降
+	_check("t118.thin_2800", is_equal_approx(thin.call(2800, 3), 0.99), thin.call(2800, 3))
+	_check("t118.thin_full", is_equal_approx(thin.call(10000, 3), 0.75) and is_equal_approx(thin.call(10000, 5), 0.75), [thin.call(10000, 3), thin.call(10000, 5)])
+	_check("t118.thin_atk", is_equal_approx(thin.call(10000, 2), 1.0))
+	lg.end_battle()
+
+	# 3. 虚不受补（P2-1 验收：烙印正好 4000、境在砥柱不吃，4001 吃）
+	lg = _cost_logic(s)
+	a = lg.actors[0]
+	var healed := func(brand: int, hp_rate: float, amt: float) -> float:
+		_cost_actor(lg, 0, brand)
+		a.hp = floorf(a.mhp * hp_rate)
+		var h0 := a.hp
+		lg.gain_hp(a, amt)
+		return a.hp - h0
+	_check("t118.weak_heal_4000", healed.call(4000, 0.6, 100.0) == 100.0 and XTianqiBrand.realm(a) == 3, healed.call(4000, 0.6, 100.0))
+	_check("t118.weak_heal_4001", healed.call(4001, 0.6, 100.0) == 50.0, healed.call(4001, 0.6, 100.0))
+	_check("t118.weak_heal_low", healed.call(4001, 0.4, 100.0) == 100.0, healed.call(4001, 0.4, 100.0))  # 一半以下照常
+	_check("t118.weak_heal_dmg", healed.call(4001, 0.6, -100.0) == -100.0)  # 扣血不动
+	_cost_actor(lg, 0, 4001)
+	lg.end_battle()
+	a.hp = floorf(a.mhp * 0.6)
+	var h1 := a.hp
+	var rc := XResourceContext.new()
+	rc.gain(a, "hp", 100.0)
+	_check("t118.weak_heal_outside", a.hp - h1 == 100.0, a.hp - h1)  # 战斗外不算
+
+	# 4. 不合群：队友放的全体友方落不到过 55% 的人身上，自己放的、点名给他的照吃
+	lg = _cost_logic(s)
+	a = _cost_actor(lg, 0, 0)
+	b = _cost_actor(lg, 1, 5501)
+	var group := XDB.rec("Skills", 108)
+	var one := XDB.rec("Skills", 108).duplicate()
+	one["scope"] = 7
+	var by_a := lg.targets_for(a, group)
+	_check("t118.no_group_on", int(group.scope) == 8 and by_a.has(a) and not by_a.has(b) and by_a.size() == lg.alive(lg.actors).size() - 1, by_a.size())
+	_check("t118.no_group_self", lg.targets_for(b, group).has(b))
+	_check("t118.no_group_single", lg.targets_for(a, one, b) == [b])
+	_setb(b, 5500, 4)
+	_check("t118.no_group_at_node", lg.targets_for(a, group).has(b))
+	lg.end_battle()
+
+	# 5. 烧命：出手前付当前生命 4%（向下取整），扣不死，不算受到伤害（不充 TP）
+	lg = _cost_logic(s)
+	e = lg.enemies[0]
+	a = _cost_actor(lg, 0, 7001)
+	a.hp = 1000.0 if a.mhp >= 1000.0 else a.mhp
+	var hp0 := a.hp
+	a.tp = 0.0
+	var bl := XTianqiBrand.burn(lg, a)
+	_check("t118.burn_on", bl.get("type", "") == "regen" and float(bl.hp) == floorf(hp0 * 0.04) and a.hp == hp0 - floorf(hp0 * 0.04) and a.tp == 0.0, [bl.get("hp"), a.hp, a.tp])
+	a.hp = 1.0
+	_check("t118.burn_no_kill", XTianqiBrand.burn(lg, a).is_empty() and a.hp == 1.0)
+	_cost_actor(lg, 0, 7000)
+	_check("t118.burn_at_node", XTianqiBrand.burn(lg, a).is_empty())
+	a = _cost_actor(lg, 0, 7001)
+	var logs := lg.act(a, a.attack_skill(), e)
+	_check("t118.burn_in_act", not logs.is_empty() and str(logs[0].get("type", "")) == "regen" and logs[0].target == a, logs.slice(0, 1).map(func(l): return l.get("type")))
+	_check("t118.burn_guard", not lg.act(a, XDB.rec("Skills", 2), null).any(func(l): return str(l.get("type", "")) == "regen" and l.get("target") == a))
+	lg.end_battle()
+
+	# 6. 一条命：过 70% 一场只能被复活一次，过 85% 不能；正好 70% 不限；战后照常站起来
+	lg = _cost_logic(s)
+	a = _cost_actor(lg, 0, 7001)
+	_kill(a)
+	a.remove_state(1)
+	var first := a.is_alive()
+	_kill(a)
+	a.remove_state(1)
+	_check("t118.one_life_once", first and a.is_dead(), [first, a.is_dead()])
+	a = _cost_actor(lg, 1, 7000)
+	for i in 3:
+		_kill(a)
+		a.remove_state(1)
+	_check("t118.one_life_at_node", a.is_alive())
+	a = _cost_actor(lg, 2, 8501)
+	_kill(a)
+	a.remove_state(1)
+	_check("t118.one_life_none", a.is_dead())
+	var c8 := _cost_actor(lg, 3, 8500)  # 正好 85%：只是「一场一次」那档
+	_kill(c8)
+	c8.remove_state(1)
+	var c8a := c8.is_alive()
+	_kill(c8)
+	c8.remove_state(1)
+	_check("t118.one_life_8500", c8a and c8.is_dead())
+	lg.end_battle()
+	a.remove_state(1)
+	_check("t118.one_life_after_battle", a.is_alive() and a.hp >= 1.0)  # 打完照常站起来（不拦战斗外的复活）
+
+	# 7. 和死亡线保命次序：死亡线先拦（不记次数），解开后烙印这一次照常给，再死被一条命拦
+	var sd := _state()
+	sd.flags.tianqi["line"] = "death"
+	var ok := XTianqiDeathAlien.prepare("spread", sd)
+	var ld := XBattleLogic.new()
+	ld.setup(294, sd)
+	a = _cost_actor(ld, 0, 7500)
+	var df := XTianqiDeathAlien.fight(ld)
+	df.no_revive[a] = true
+	_kill(a)
+	a.remove_state(1)
+	var line_first := a.is_dead() and int(XTianqiBrand.fight(ld).revived.get(a, 0)) == 0
+	df.no_revive.erase(a)
+	a.remove_state(1)
+	var once := a.is_alive() and int(XTianqiBrand.fight(ld).revived.get(a, 0)) == 1
+	_kill(a)
+	a.remove_state(1)
+	_check("t118.order_death_line", ok and line_first and once and a.is_dead(), [ok, line_first, once, a.is_dead()])
+	ld.end_battle()
+
+	# 8. 和七印规则一起：里副本（白印不愈）里六条照常算，七印规则不受影响
+	var sq := _state()
+	sq.set_variable(20, 33)
+	sq.flags.tianqi["line"] = "war"
+	XTianqiWarLine.progress(sq)["stage"] = XTianqiWarLine.STAGE_DONE
+	XTianqiQiyinRule.prepare("bai", false)
+	var lq := XBattleLogic.new()
+	lq.setup(250, sq)
+	a = _cost_actor(lq, 0, 8501)
+	_kill(a)
+	a.remove_state(1)
+	_check("t118.qiyin_rule", XTianqiQiyinRule.rule_of(lq) == "no_cure" and a.is_dead() and not XTianqiBrand.fight(lq).is_empty(), XTianqiQiyinRule.rule_of(lq))
+	lq.end_battle()
+
+
+## 烙印开关关着时的倍率（对照基准）
+func _rate_off(a: XActor, i: int) -> float:
+	var was := XTianqiBrand.ENABLED
+	XTianqiBrand.ENABLED = false
+	var r := a.param_rate(i)
+	XTianqiBrand.ENABLED = was
+	return r
+
+
+## 开关关着：六条都不生效（烙印满的人也一样）
+func _t118_off() -> void:
+	var s := _state()
+	var lg := _cost_logic(s)
+	var a: XActor = lg.actors[0]
+	_setb(a, 10000, 6)
+	var e: XEnemy = lg.enemies[0]
+	var ok := true
+	for row in XTianqiBrand.data().costs.list:
+		ok = ok and not XTianqiBrand.has_cost(a, str(row.key))
+	ok = ok and XTianqiBrand.aggro_mult(lg, e, a) == 1.0 and XTianqiBrand.def_rate(a, 3) == 1.0 and XTianqiBrand.burn(lg, a).is_empty()
+	_kill(a)
+	a.remove_state(1)
+	_check("t118.off_all", ok and a.is_alive() and XTianqiBrand.fight(lg).is_empty(), ok)
+	lg.end_battle()
