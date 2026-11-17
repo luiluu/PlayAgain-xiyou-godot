@@ -1,5 +1,5 @@
 extends Node
-## 【cc·T157·未经审查】敌群事件里的强制行动快放（XBattleScene.FORCED_FAST，O-待定-1）。
+## 【cc·T157·未经审查】敌群事件里的强制行动快放（XBattleScene.FORCED_FAST，O-568）。
 ## 玩家反馈开战卡：776「【传承者】炎龙守护者」第 2 页开场连放三招（339 霸者领域／回归／放逐），技能动画关着时原版也要逐帧演约 3 秒
 ## （ui_reference 同夹具量：OFF 档 startAction→第三次 endAction 187 帧、三倍档 163 帧），画面上只有招式名和数字。
 ## 夹具同 ui_reference：出战 1/8/9/10、99 级、学夹具技能，规则流恒 0.5（同原版 Math.random=0.5），敌群 776。
