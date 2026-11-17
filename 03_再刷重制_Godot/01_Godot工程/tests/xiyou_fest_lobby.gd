@@ -38,18 +38,21 @@ func _capture() -> void:
 		var view := await open_lobby(XFest.START, 14, 8, true, mode == "tianqi", mode == "baby")
 		print("CAPTURE_READY ", mode)
 		await get_tree().create_timer(5.0).timeout
+		var achievements := get_node_or_null("XAchievementPopups")
+		if achievements != null:
+			achievements.visible = false
 		var toast_layer := get_tree().root.get_node_or_null("XToast")
 		if toast_layer != null:
 			toast_layer.visible = false
 		await frames(2)
 		await shot("fest_lobby_default_%s.png" % mode)
 		var marker := Node2D.new()
-		marker.position = Vector2(19 * 48, 6 * 48)
+		marker.position = Vector2(11 * 48, 5 * 48)
 		marker.z_index = 100
 		marker.draw.connect(func(): marker.draw_rect(Rect2(Vector2.ZERO, Vector2(48, 48)), Color.MAGENTA, false, 3.0))
 		view.add_child(marker)
 		var label := Label.new()
-		label.text = "派蒙新位 (19,6)\n宝宝难度／宝宝巴士开启时出现"
+		label.text = "派蒙北墙新位 (11,5)\n宝宝难度／宝宝巴士开启时出现"
 		label.position = Vector2(-60, 50)
 		label.add_theme_font_size_override("font_size", 16)
 		label.add_theme_color_override("font_outline_color", Color.BLACK)
@@ -219,7 +222,7 @@ func _run() -> void:
 	check("active.trophy_blocks_22", not m1.player.can_pass(8))
 	check("active.table_floor_passable", m1.lower.is_passable(14, 11, 2))
 	check("active.gold_npc_moved", ev(m1, 1).grid == Vector2i(17, 5))
-	check("active.paimon_moved", Vector2i(m1.map_data.events[70].x, m1.map_data.events[70].y) == Vector2i(19, 6))
+	check("active.paimon_moved", Vector2i(m1.map_data.events[70].x, m1.map_data.events[70].y) == Vector2i(11, 5))
 	check("active.banner_north_wall", XFestLobby.BANNER_POS == Vector2(264, 3 * 48))
 	check("active.cells", ev(m1, 78).grid == XFestLobby.ENVOY_CELL and ev(m1, 79).grid == XFestLobby.ENROLL_CELL and ev(m1, 80).grid == Vector2i(14, 10) and ev(m1, 81).grid == Vector2i(15, 10))
 	# 方案 2.1：使者、报名处、奖杯都在异化中心 (14,19) 的 6 格圈外
@@ -407,11 +410,11 @@ func _run() -> void:
 		var view := await open_lobby(day1, 14, 8, true, mode == "tianqi", mode == "baby")
 		await frames(200)
 		check("layout.%s.gold" % mode, ev(view, 1).grid == Vector2i(17, 5))
-		check("layout.%s.paimon" % mode, Vector2i(view.map_data.events[70].x, view.map_data.events[70].y) == Vector2i(19, 6))
+		check("layout.%s.paimon" % mode, Vector2i(view.map_data.events[70].x, view.map_data.events[70].y) == Vector2i(11, 5))
 		for x in range(13, 16):
 			check("layout.%s.table_removed.%d" % [mode, x], view.map_data.data[(1 * 33 + 11) * 29 + x] == 0 and view.map_data.data[(3 * 33 + 11) * 29 + x] == 0)
 		if mode == "baby":
-			check("layout.baby.paimon_visible", ev(view, 70) != null and ev(view, 70).grid == Vector2i(19, 6))
+			check("layout.baby.paimon_visible", ev(view, 70) != null and ev(view, 70).grid == Vector2i(11, 5))
 		await shot("fest_lobby_default_%s.png" % mode)
 		await close(view)
 	XRift.STAGE2 = false
