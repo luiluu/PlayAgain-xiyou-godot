@@ -70,9 +70,9 @@ static func _actor_name(id: int) -> String:
 ## YEP_X_MessageEvalText：只支持切片里实际出现的表达式。
 static func _eval_text(expr: String) -> String:
 	if expr.replace(" ", "") == "$dataArmors.length+$dataWeapons.length-12000":
-		var arm = XDB.table("Armors")
-		var wpn = XDB.table("Weapons")
-		return str((arm.size() if arm is Array else 0) + (wpn.size() if wpn is Array else 0) - 12000)
+		# 大厅猫哥（Map004 EV024）：原版数的是独立装备在 $dataArmors／$dataWeapons 里堆出来的条数。重制装备是实例、不进数据表，
+		# 只按数据文件的条数算（＝原版清理后没有独立装备时的 6）；冠军戒指 8010～8012 补长的空号不算（T135：玩家看到 6 变 18）
+		return str(XDB.source_size("Armors") + XDB.source_size("Weapons") - 12000)
 	return ""
 
 

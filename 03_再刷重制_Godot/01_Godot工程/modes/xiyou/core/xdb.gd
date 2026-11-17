@@ -143,6 +143,16 @@ static func table(name: String) -> Variant:
 	return _tables[name]
 
 
+## 数据文件里的条数（不含重制运行时补的号段：冠军戒指等会把防具表补长）；大厅猫哥的「独立装备数组长度」按它算。
+## 单独读一次数据文件（走解析缓存）、记下条数，不碰 table() 里补过号的表
+static var _source_sizes := {}
+static func source_size(name: String) -> int:
+	if not _source_sizes.has(name):
+		var raw = load_json("db/%s.json" % name)
+		_source_sizes[name] = (raw as Array).size() if raw is Array else 0
+	return int(_source_sizes[name])
+
+
 ## 取一条记录；不存在或为空时返回 {}。
 static func rec(name: String, id: int) -> Dictionary:
 	var t: Array = table(name)
