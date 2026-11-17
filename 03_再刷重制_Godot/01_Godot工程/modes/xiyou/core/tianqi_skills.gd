@@ -1002,7 +1002,7 @@ static func _reflect(u, t, r: Dictionary) -> void:
 		return
 	if u is XEnemy and u.boss_difficulty_boss:  # 首领（开战时按 boss_id 记）
 		pct *= 0.5
-	u.hp = maxf(0.0, float(u.hp) - floorf(XTianqiNoX6.scale_direct(t, u, floorf(dmg * pct))))  # 去全队 ×6：敌人伤害没缩、敌人血量缩了，反弹跟着缩（O-470）
+	u.hp = maxf(0.0, float(u.hp) - floorf(XTianqiNoX6.scale_direct(t, u, floorf(dmg * pct), false)))  # 去全队 ×6：敌人伤害没缩、敌人血量缩了，反弹跟着缩（O-470）；反弹的是敌人的攻击，不乘期四 K
 	if u.hp <= 0.0:
 		u.add_state(1)
 

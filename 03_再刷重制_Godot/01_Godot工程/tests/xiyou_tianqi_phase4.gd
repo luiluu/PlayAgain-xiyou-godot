@@ -6,7 +6,7 @@ extends Node
 ## 四、单段有效系数上限：开着时卡面系数×权重×条件超过档位上限压回上限，关着不封；全部卡在上限以内（数据校验同口径）。
 ## 五、角色卡跟着总开关开（CARDS 本身不动）。
 ## 六、端到端（核查 R2 P2-1，开、关各跑一遍）：双回复药走 _effect 生命、魔法各认自己那一行；持续伤害走 XExtDot.tick；
-##     确认阶段治疗不乘 ×5（confirm_rows 的 skipTypes）；九线爆伤封顶走 apply_nine_cap；伤害详情 gaze 行；骑士 U 进 stats／shadow_stats；表外角色回落职业曲线。
+##     确认阶段治疗不乘 ×5（confirm_rows 的 skipTypes）；直接扣血 scale_direct 乘 K（反弹不乘）；九线爆伤封顶走 apply_nine_cap；伤害详情 gaze 行；骑士 U 进 stats／shadow_stats；表外角色回落职业曲线。
 ## 读的表：tianqi_data/base_line.json、abs_rescale.json、balance_table.json（combat_rules）、damage_ledger.json（phase4）、skill_rework.json（rules.single_hit_cap）。
 
 const XIAOYAO := 1  # 狗逍遥：强者、输出、慢
@@ -278,6 +278,12 @@ func _e2e(on: bool) -> void:
 		cr.erase("boss_hp_temp_unit")
 	else:
 		cr["boss_hp_temp_unit"] = keep_u
+	# （8）绕过结算直接扣敌人血（scale_direct）：开着再乘 K；反弹（gaze＝false）不乘
+	var en: XBattler = lg.enemies[0]
+	var base6 := maxf(1.0, floorf(600.0 * XTianqiNoX6.hp_unit())) if XTianqiNoX6.on() else 600.0
+	var want_k := maxf(1.0, floorf(base6 * 0.088)) if on else base6
+	_check(tag + "scale_direct_k", XTianqiNoX6.scale_direct(a, en, 600.0) == want_k and XTianqiNoX6.scale_direct(a, en, 600.0, false) == base6 \
+		and XTianqiNoX6.scale_direct(en, a, 600.0) == 600.0, [XTianqiNoX6.scale_direct(a, en, 600.0), want_k, base6])
 	# （7）表外角色：开着也回落职业曲线
 	var out_id := 0
 	for id in range(1, 400):
