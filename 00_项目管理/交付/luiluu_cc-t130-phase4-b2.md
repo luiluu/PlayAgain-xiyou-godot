@@ -71,6 +71,7 @@
 - 虚拟玩家 explore（种子 1）：14／14，卡死 0、脚本报错 0、violations 空、存档写入正常。
 - 虚拟玩家短帧 climb（种子 1、150000 帧，总开关关／开各一局，开着那局用本单新加的 `--vp-phase4`，均 `--audio-driver Dummy`）：两局都是 9／9、卡死 0、脚本报错 0、负血负钱 0（violations 空）、存档写入 1 次、读档（load_pressed）走到；关着 17 场战斗、开着 10 场，都停在第 1 层（时间用完，队伍 10 级）。两局日志里都有 `skin_ring_nav.gd:850 _ribbon_draw` 的引擎报错「Invalid polygon data, triangulation failed」（约 280 次，界面皮肤画缎带，不是本单代码、关开两局一样），建议界面车道看一下。
 - `检查.sh --oracle --affected main --cloud`（8b642c58a）：云端选测 119 个场景通过（运行页 actions/runs/44028101210，沿用车道结果 18 个）、MV 参照引擎过；红 1 项「天启篇数据表校验」＝设计数值不带 4（甚尔 0.46、饿狼 4），改成 0.5、5 后 `天启篇数据校验.py` 全过、本专项 68／68；改后的提交重跑见下。
+- 换号续做后并入最新 main（477f7b5dc，`发行空壳特例.json` 与 T103 的 `XTianqiHallIntro.pending_slot` 冲突，两行都留），重跑 `检查.sh --oracle --affected main --cloud`：选测全部通过（云端运行页 actions/runs/44047106279）、MV 参照引擎过、天启篇数据表校验过，退出码 0；`发行空壳.py check` 过；`交付自检.py` 退出码 0「可以交付」。
 
 ## 进度账
 
@@ -85,3 +86,6 @@
 ## 本分支提交
 
 - 0d0a2f841 WIP：模块派生口子、白名单初审表、专属武器攻击次数不误停、夹具专项
+- 8b642c58a 发行空壳补 take_module_derived、--vp-phase4、专项 uid、交付单草稿
+- 8503d98ac 派生登记数改不带 4
+- 477f7b5dc 并入 main
