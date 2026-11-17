@@ -15,7 +15,7 @@
 空壳函数体的来历，按顺序：
   1. 特例表 发行空壳特例.json（"类.成员": "一行 GDScript 表达式" 或 "pass"）；
   2. 真脚本第一句是 `if …: return <参数名或字面量>`：照搬那个返回值（关着时原样返回、返回 1.0／false 之类）；
-  3. 按返回类型给空值：bool→false、int→0、float→0.0、String→""、Array→[]、Dictionary→{}、Color→透明、其余→null。
+  3. 按返回类型给空值（被西游代码调用而得到 []／{}／""／null 的，check 要求进特例或特例表「已确认空值安全」，T149）：bool→false、int→0、float→0.0、String→""、Array→[]、Dictionary→{}、Color→透明、其余→null。
 常量和 static var：数字、布尔照留（不透露设计），字符串→""，数组→[]，字典→{}，其余表达式→特例表或 null。
 验收：发行模式（ReleaseEntry.simulate_release 改 true）下真脚本工程和空壳工程各跑一遍西游测试，PASS/FAIL 行一致（开发模式下天启篇开着，两边本来就不同，不能拿来比）。
 新加天启篇脚本被西游代码引用：check 会列出缺的成员，照真脚本发行时的行为加进特例表或确认默认值对。
@@ -63,6 +63,7 @@ MIXED_OK = {
 HAND = HERE / '发行空壳手写'  # 手写空壳：<类名>.gd，整份照用（要保留部分发行功能的，如漩涡二阶画面）
 NUMERIC = set()  # 返回 int／float 的成员（check 要求它们不靠按类型空值）
 PASSTHRU = set()  # 返回字典／数组、真脚本会原样传回同类型参数的成员（如消耗表 c）：按类型给空值会把参数吞掉，check 要求写特例
+EMPTY_RET = set()  # 被西游代码调用、空壳按类型给了容器／空值（[]、{}、""、null）的成员（T149：check 要求进特例或「已确认空值安全」）
 COPIED_TRUE = set()  # 规则 2 照搬出 return true 的成员（check 要求在 发行空壳特例.json「已确认放行」名单里）
 
 
@@ -205,6 +206,7 @@ def _empty_of(t: str) -> str:
     return EMPTY.get(t, 'null')
 
 
+CONTAINER_EMPTY = ('[]', '{}', '""', '&""', 'null')  # 「空容器」：西游代码拿到它会当成「没有」，而真脚本在西游档可能给的是西游自己的结果
 LITERAL = re.compile(r'^(-?\d+(\.\d+)?|true|false|null|\[\]|\{\}|""|-?INF)$')
 
 
@@ -313,7 +315,7 @@ def load_overrides() -> dict:
     if not OVERRIDES.is_file():
         return {}
     d = json.loads(OVERRIDES.read_text(encoding='utf-8'))
-    return {k: v for k, v in d.items() if not k.startswith('_') and k != '已确认放行'}
+    return {k: v for k, v in d.items() if not k.startswith('_') and k not in ('已确认放行', '已确认空值安全')}
 
 
 def load_allow_true() -> dict:
@@ -322,6 +324,16 @@ def load_allow_true() -> dict:
         return {}
     d = json.loads(OVERRIDES.read_text(encoding='utf-8'))
     raw = d.get('已确认放行') or d.get('_已确认放行') or {}
+    if not isinstance(raw, dict):
+        return {}
+    return {k: v.strip() for k, v in raw.items() if isinstance(k, str) and isinstance(v, str) and v.strip()}
+
+
+def load_allow_empty() -> dict:
+    """特例表里「已确认空值安全」名单：类.成员 → 理由（逐个核对过西游代码的调用处，拿到空容器也没事）。"""
+    if not OVERRIDES.is_file():
+        return {}
+    raw = json.loads(OVERRIDES.read_text(encoding='utf-8')).get('已确认空值安全') or {}
     if not isinstance(raw, dict):
         return {}
     return {k: v.strip() for k, v in raw.items() if isinstance(k, str) and isinstance(v, str) and v.strip()}
@@ -340,6 +352,7 @@ def build_all(root: Path = PROJECT) -> tuple:
     NUMERIC.clear()
     PASSTHRU.clear()
     COPIED_TRUE.clear()
+    EMPTY_RET.clear()
     tg = targets(root)
     refs = external_refs(root, tg)
     over = load_overrides()
@@ -361,6 +374,9 @@ def build_all(root: Path = PROJECT) -> tuple:
         info = parse((root / p).read_text(encoding='utf-8'))
         NUMERIC.update(f'{c}.{k}' for k in h if info['funcs'][k]['ret'] in ('int', 'float'))
         PASSTHRU.update(f'{c}.{k}' for k in h if _passes_through(info['funcs'][k]))
+        EMPTY_RET.update(f'{c}.{k}' for k in h if k in refs[c] and h[k] == '按类型空值'
+                         and _empty_of(info['funcs'][k]['ret']) in CONTAINER_EMPTY)
+    EMPTY_RET.difference_update(PASSTHRU)  # 原样传回参数的已由上一条（PASSTHRU）单独报，不重复
     return stubs, missing, how
 
 
@@ -432,6 +448,12 @@ def check_errors(missing: list, how: dict, sus: list = None) -> list:
     unapproved_true = sorted(COPIED_TRUE - set(allow_true))
     if unapproved_true:
         errs.append('发行空壳：这些函数由规则 2 照搬出 return true，但不在 发行空壳特例.json 的「已确认放行」名单里（逐个核对调用处后放行或写特例）：' + '、'.join(unapproved_true))
+    unapproved_empty = sorted(EMPTY_RET - set(load_allow_empty()))
+    if unapproved_empty:
+        errs.append('发行空壳：这些函数被西游代码调用，空壳却按类型返回了空容器（[]、{}、""、null）——真脚本在西游档可能给的是西游自己的结果'
+                    '（T104 effective_params 返回 []、T148 create_gear 返回 {}、battle_random 返回 null 都是这样漏的）。'
+                    '逐个看调用处：要真值的写进 发行空壳特例.json（类.成员），拿到空容器也没事的写进「已确认空值安全」并写理由：'
+                    + '、'.join(unapproved_empty))
     return errs
 
 

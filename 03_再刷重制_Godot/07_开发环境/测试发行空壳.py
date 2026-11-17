@@ -74,9 +74,12 @@ class T(unittest.TestCase):
         self.root = r
         self._over = K.OVERRIDES
         K.OVERRIDES = r / 'none.json'
+        self._ce = K.CONTAINER_EMPTY
+        K.CONTAINER_EMPTY = ('[]', '{}', 'null')  # 夹具里 label（String）被西游调用，别的用例不关心 T149 的空串检查
 
     def tearDown(self):
         K.OVERRIDES = self._over
+        K.CONTAINER_EMPTY = self._ce
         self.td.cleanup()
 
     def test_stub(self):
@@ -234,6 +237,7 @@ class T(unittest.TestCase):
                         orig_exec(mod)
                         mod.PROJECT = self.root
                         mod.OVERRIDES = K.OVERRIDES
+                        mod.CONTAINER_EMPTY = K.CONTAINER_EMPTY
                     sp.loader.exec_module = _exec
                 return m
 
@@ -315,6 +319,35 @@ class T(unittest.TestCase):
         for expected in ('XTianqiSect.intercepts', 'XTianqiSect.page_override', 'XTianqiSummit.intercepts',
                          'XTianqiSummit.run_event', 'XTianqiMoney.intercepts', 'XTianqiQiyin.intercepts', 'XTianqiTrim.intercepts'):
             self.assertIn(expected, checked)
+
+    def test_empty_container_return_needs_override_or_allow(self):
+        # T149：被西游代码调用、空壳按类型返回 []／{}／""／null 的函数（T104 effective_params、T148 create_gear 就这样漏的）：
+        # check 要求写特例或进「已确认空值安全」；没人调用的不管；返回数字／布尔的不归这条
+        (self.root / 'modes/xiyou/core/tianqi_foo.gd').write_text(
+            TQ + '\nstatic func rows_of(a) -> Array:\n\treturn [a]\n\nstatic func unused(a) -> Dictionary:\n\treturn {"a": a}\n', encoding='utf-8')
+        (self.root / 'modes/xiyou/core/user.gd').write_text(XIYOU + '\tvar r := XTianqiFoo.rows_of(1)\n', encoding='utf-8')
+        _, missing, how = K.build_all(self.root)
+        self.assertEqual(K.EMPTY_RET, {'XTianqiFoo.rows_of'})
+        errs = K.check_errors(missing, how)
+        self.assertEqual(len(errs), 1)
+        self.assertIn('XTianqiFoo.rows_of', errs[0])
+        self.assertNotIn('unused', errs[0])
+        K.OVERRIDES.write_text('{"已确认空值安全": {"XTianqiFoo.rows_of": "调用处在开关守卫内"}}', encoding='utf-8')
+        _, missing, how = K.build_all(self.root)
+        self.assertEqual(K.check_errors(missing, how), [])
+        K.OVERRIDES.write_text('{"XTianqiFoo.rows_of": "[a]"}', encoding='utf-8')
+        stubs, missing, how = K.build_all(self.root)
+        self.assertEqual(K.EMPTY_RET, set())
+        self.assertEqual(K.check_errors(missing, how), [])
+
+    def test_real_project_empty_returns_all_reviewed(self):
+        # 真工程：每个按空容器返回的成员都已登记理由，且登记的都还在用（防名单烂）
+        K.OVERRIDES = self._over
+        K.CONTAINER_EMPTY = self._ce
+        K.build_all()
+        allow = K.load_allow_empty()
+        self.assertEqual(sorted(K.EMPTY_RET - set(allow)), [])
+        self.assertEqual(sorted(set(allow) - K.EMPTY_RET), [])
 
     def test_copied_return_true_requires_allowlist_and_warns(self):
         # 规则 2 照搬出 return true 时：check 打印警告列表，且不在 发行空壳特例.json「已确认放行」名单里就失败
