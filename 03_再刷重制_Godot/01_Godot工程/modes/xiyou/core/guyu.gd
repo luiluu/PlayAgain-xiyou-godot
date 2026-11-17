@@ -1,5 +1,16 @@
 class_name XGuyu
 extends RefCounted
+
+## T114：原生像素美术；关闭或缺图回退正式旧图。
+static var ART := true
+static func art_path(folder: String, name: String) -> String:
+	if not ART:
+		return ""
+	var files := {"characters/$Guyu": "$Guyu_v2", "sv_actors/Guyu": "Guyu_SV_v2"}
+	var file := str(files.get(folder + "/" + name, ""))
+	var path := "res://content/guyu_v2/%s.png" % file
+	return path if file != "" and ResourceLoader.exists(path) else ""
+
 ## 175 谷雨（正式 js/codex/runtime/installNativeGuyuRuntime.js，W.Guyu v0.3.1）第一期：战斗外能定下来的部分。
 ## 原版按备注标签现找角色 <GuyuActor>、技能 <GuyuSkill:键>、法宝 <GuyuRelic>、号角 <GuyuHorn>、进阶石 <GuyuStone>；
 ## 冻结源里分别是 175、10288～10299、7912、2943、2944，重制写死（同其余专属角色）。

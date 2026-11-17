@@ -7,7 +7,7 @@ import json
 from PIL import Image
 P=Path(__file__).resolve().parent
 ROOT=P.parents[3]
-T=ROOT/'03_再刷重制_Godot/01_Godot工程/content/guyu_v2/template_battle.png'
+T=P.parent/'旧样板/template_battle.png'
 ref=Image.open(T).convert('RGBA')
 records=[]
 for row in range(6):

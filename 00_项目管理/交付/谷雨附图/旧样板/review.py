@@ -1,11 +1,11 @@
 from PIL import Image,ImageDraw,ImageFont
 from pathlib import Path
-P=Path(__file__).resolve().parent;E=P.parent.parent
+P=Path(__file__).resolve().parent;E=P.parents[3]/'03_再刷重制_Godot/01_Godot工程'
 F=ImageFont.truetype('/System/Library/Fonts/STHeiti Medium.ttc',23)
 def load(p):return Image.open(p).convert('RGBA')
 def paste(out,im,xy,scale=1):
  im=im.resize((im.width*scale,im.height*scale),Image.Resampling.NEAREST);out.paste(im,xy,im)
-w=load(P/'Guyu_Walk.png');i=load(P/'Guyu_Wait.png');t=load(P/'template_walk.png');s=load(P/'template_battle.png');g=load(P.parent/'gojo/$Codex_Gojo_Walk.png')
+w=load(P/'Guyu_Walk.png');i=load(P/'Guyu_Wait.png');t=load(P/'template_walk.png');s=load(P/'template_battle.png');g=load(E/'content/gojo/$Codex_Gojo_Walk.png')
 out=Image.new('RGB',(1080,1220),'#30343c');d=ImageDraw.Draw(out)
 for x,title in [(12,'参考：头像＋旧图'),(370,'原版模板：云霄'),(730,'试作：原生＋2倍')]:d.text((x,15),title,font=F,fill='white')
 paste(out,load(E/'modes/xiyou/generated/img/faces/Guyu_Face.png'),(20,60),2)
