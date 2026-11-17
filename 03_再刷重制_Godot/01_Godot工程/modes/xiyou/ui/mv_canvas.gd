@@ -45,6 +45,8 @@ var _blink_cursors: Array = []
 ## 行高、光标框不变）；换行时 0.12 秒从 1 长到位，界面动效关时直接到位。旧 MV 页（图鉴、商店……）都走这里，各页不用改。
 ## 只认在光标之后画的东西（MV 的画法是先光标后字，各页照这个顺序）。XSkinSelScale.ENABLED 关时不放大。
 const SEL_PEAK := 1.08
+## 选中放大后字高最多占行高的这么多（字号已经顶满行高时就不再放大）
+const SEL_FILL := 0.86
 var _sel_rect := Rect2()     # 本次重画里活动光标的行（没有＝不放大）
 var _sel_key := Rect2()      # 上一次的活动光标行（换了行才重新长）
 var _sel_k := 1.0
@@ -116,6 +118,9 @@ func text(s: String, x: float, y: float, max_w: float, align := "left", color :=
 	if max_w > 0 and w > max_w:
 		sx = max_w / w
 	var sk := sel_k_at(Vector2(x + 1.0, y + lh / 2.0)) if _sel_rect.has_area() else 1.0
+	# 放大后字高不超出行高（T095，Kyo 11-16：字体大小调大后 34 号字在 36 的行里再放大 1.08 就顶到上下行）
+	if sk > 1.0:
+		sk = minf(sk, maxf(1.0, lh * SEL_FILL / size))
 	var sy := sk
 	if sk != 1.0:
 		sx *= sk

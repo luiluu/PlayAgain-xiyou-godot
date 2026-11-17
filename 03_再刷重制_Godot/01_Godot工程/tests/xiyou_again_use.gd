@@ -5,6 +5,7 @@ extends Node
 ## 一、逐例逐随机数比 passive_repeats(attack_repeats(...))；MV 本体 attack_repeats 照旧。
 ## 二、开关关掉：回到只有 MV 本体，参照里有差的例子对不上（缺口复现）。
 ## 三、天启篇不走这层（只有小猫剑圣读，九线照停）；小猫剑圣自己的剑技、敌人不加。
+## 三之二、AgainUse<技能号> 分支（数据里 0 处，防将来加）、心钢 10227／10228 不加（T063）。
 ## 四、实战 execute 接上了：带 100% 再释放的角色用药水，效果打两次；开关关掉只打一次。
 
 var results := []
@@ -28,7 +29,7 @@ func check(name: String, ok: bool, detail = null) -> bool:
 
 
 func _run() -> void:
-	XBattleLogic.AGAIN_USE = true  # 11-16 默认临时关（raven_fx 回归），本专项照测开着的行为
+	XBattleLogic.AGAIN_USE = true  # 本专项测开着的行为，不依赖默认值（11-16 默认曾临时关，T088 开回；保留这行防默认再变）
 	var ref = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/again_use_oracle.json"))
 	if not check("oracle_present", ref is Dictionary and ref.has("cases") and not ref.cases.is_empty()):
 		return _finish()
@@ -36,6 +37,8 @@ func _run() -> void:
 	_oracle(ref)
 	_switch_off(ref)
 	_not_touched()
+	_own_skill_key()
+	_heartsteel()
 	_execute()
 	_finish()
 
@@ -132,6 +135,28 @@ func _not_touched() -> void:
 	var e := XEnemy.new().setup(1, 3)
 	e.add_state(1384)
 	check("enemy_untouched", L.passive_repeats(e, skill9, 1) == 1)
+
+
+## AgainUse<技能号>：只对那一招算，别的技能、物品同号也不算；和 All／Zj 相加（数据里还没有，用装备的元数据摆）
+func _own_skill_key() -> void:
+	var a := _actor({"actor": 1})
+	var war := XDB.rec("Skills", 9)
+	var other := XDB.rec("Skills", 10)
+	var potion := XDB.rec("Items", 1)
+	var fake := [{"kind": "armor", "id": 0, "meta": {"AgainUse9": "30%"}}, {"kind": "armor", "id": 0, "meta": {"AgainUseAll": "5%", "AgainUseZj": "7"}}]
+	var p9 := XBattleLogic.passive_again(a, war, fake)
+	var p10 := XBattleLogic.passive_again(a, other, fake)
+	var pi := XBattleLogic.passive_again(a, potion, fake)
+	check("own_key_only_that_skill", int(p9.again) == 42 and int(p10.again) == (12 if int(other.stypeId) == 1 else 5) and int(pi.again) == 5, [p9, p10, pi, other.stypeId])
+	check("own_key_again_in", XBattleLogic.again_in({"AgainUse9": "30%"}, war) == 30 and XBattleLogic.again_in({"AgainUse9": "30%"}, other) == 0)
+
+
+## 心钢 10227／10228：原版 100% 再释放时多出来的那段 _invoke 是空跑，不加（T046 核查 P2）
+func _heartsteel() -> void:
+	var L := RollLogic.new()
+	L.roll = 0.0
+	var a := _actor({"actor": 1, "skills": [7008]})
+	check("heartsteel_skipped", L.passive_repeats(a, XDB.rec("Skills", XHeartsteel.SKILL), 1) == 1 and L.passive_repeats(a, XDB.rec("Skills", XHeartsteel.LEV_SKILL), 1) == 1 and L.passive_repeats(a, XDB.rec("Skills", 9), 1) == 2)
 
 
 ## 实战：药水（物品 1）在原版也吃 AgainUse／atkk；技能 7008「觉醒:刹那」<AgainUseAll: 100%> → 效果打两次

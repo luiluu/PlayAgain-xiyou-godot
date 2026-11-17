@@ -50,6 +50,8 @@ SUSPECT_HEAD = re.compile(r'只在天启篇|只管天启篇|只进天启篇|天�
 MIXED_OK = {
     'modes/xiyou/ui/tianqi_title.gd': '标题画面，发行包要用（KEEP）',
     'modes/xiyou/core/xdb.gd': '数据库总表；只有 content/gojo 贴图路径一行，图在 DENY 里不进包',
+    'modes/xiyou/core/text_fix.gd': '原版文字错的加载时修正（XDB 读表／地图每次都走它，西游档也靠它改错字）；头注释的「只在天启篇」是指其中 tianqi_dict 一条，'
+        '由 DICT 开关＋天启篇存档才套用，发行包里西游档恒不套（T101，cc）。注意 text_fix/rules.json 的 tianqi_dict 条目随真脚本进包，是否要 DENY 或发行时剔掉由总协调定',
     'modes/xiyou/ui/skin/ui_skin.gd': '新界面皮肤开关（ui-skin-p0）：XWindowStyle／XUI 每次画都问 on()，发行包里恒为 false（天启篇发行门）；'
         '字体与法阵在 DENY 里不进包，缺了落回原字体',
     'modes/xiyou/ui/skin/skin_4a.gd': '新界面 4A（地图 HUD、铺满、战斗可读性）开关：地图、战斗、虚拟键每次画都问 XUiSkin.on()，发行包里恒为 false；'
