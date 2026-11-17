@@ -364,6 +364,9 @@ func setup(map: XMapScene) -> void:
 	# 横幅、彩旗、奖杯放进角色层（按 y 排序）：横幅与彩旗以上沿排序，人走过时踩在上面；奖杯以脚底排序，人走到后面被挡住
 	_banner_node = _deco(Vector2(0, BANNER_POS.y), _draw_banner)
 	_bunting_node = _deco(Vector2(0, BANNER_POS.y - 1), _draw_bunting)
+	# 北墙画像属于上层图块（z=10），挂墙的横幅／彩旗必须完整盖在墙饰上。
+	_banner_node.z_index = 11
+	_bunting_node.z_index = 11
 	_trophy_node = _deco(Vector2(0, TROPHY_FOOT.y), _draw_trophy)
 	_fx_node = Node2D.new()
 	_fx_node.draw.connect(_draw_fx)
