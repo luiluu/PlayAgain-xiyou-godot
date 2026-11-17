@@ -305,6 +305,40 @@ static func summary(slot: int) -> String:
 	return "存档 %d：%s Lv%d  %s  %s" % [slot, leader, lv, map_name, str(d.get("savedAt", "")).replace("T", " ")]
 
 
+## 开局选存档位页（T102，开局界面提案 v0.2 第四节）用的只读摘要：不写盘、不改 current_slot；summary() 字符串照旧给读档页、导出用。
+## state：empty（没文件）／ok／failed（校验失败，text＝XSaveSeal.FAIL_TEXT）／invalid（valid_data 不过，text＝「无法读取」）。
+## party 不够 5 个不补；Actors 表里查不到的 id 跳过。
+static func summary_dict(slot: int) -> Dictionary:
+	var out := {"slot": slot, "state": "empty", "text": "", "leader_id": 0, "leader_name": "", "level": 1, "map_name": "",
+		"saved_at": "", "play_seconds": 0.0, "is_tianqi": false, "difficulty": "", "party_ids": []}
+	if not exists(slot):
+		return out
+	var r := read_file(path(slot))
+	if str(r.status) == "failed":
+		out.state = "failed"
+		out.text = XSaveSeal.FAIL_TEXT
+		return out
+	var d = _parse(r.text)
+	if not valid_data(d):
+		out.state = "invalid"
+		out.text = "无法读取"
+		return out
+	out.state = "ok"
+	if not d.party.is_empty():
+		out.leader_id = int(d.party[0])
+		out.leader_name = str(XDB.rec("Actors", out.leader_id).get("name", ""))
+		out.level = int(d.actors.get(str(out.leader_id), {}).get("level", 1))
+	out.map_name = str(XDB.map(int(d.mapId)).get("displayName", ""))
+	out.saved_at = str(d.get("savedAt", "")).replace("T", " ")
+	out.play_seconds = float(d.get("playSeconds", 0))
+	var tq = d.get("flags", {}).get("tianqi") if d.get("flags") is Dictionary else null
+	out.is_tianqi = tq is Dictionary and int(tq.get("rules", 0)) >= 1
+	if out.is_tianqi:
+		out.difficulty = str(tq.get("difficulty", ""))
+		out.party_ids = Array(d.party).map(func(id): return int(id)).filter(func(id): return not XDB.rec("Actors", id).is_empty())
+	return out
+
+
 static func load_slot(slot: int) -> bool:
 	if not exists(slot):
 		return false

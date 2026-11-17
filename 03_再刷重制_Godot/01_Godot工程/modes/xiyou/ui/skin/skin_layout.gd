@@ -111,8 +111,9 @@ static func view_for(win: Vector2) -> Vector2:
 
 
 ## node 在树里期间视口按窗口比例换拉伸方式（比 16:9 宽的横向铺满、窄的上下留边）；node 离开树时自动还原。新皮肤关着时什么都不做。
-static func request_wide(node: Node) -> void:
-	if not XUiSkin.on() or node == null or not node.is_inside_tree():
+## force：标题、开局三页还没有天启篇存档，XUiSkin.on() 在那里恒为 false；这些页传 XTianqiTitle.skin_on() 放宽这道门（T102，提案 v0.2 P2-3）。
+static func request_wide(node: Node, force := false) -> void:
+	if not (force or XUiSkin.on()) or node == null or not node.is_inside_tree():
 		return
 	var root := node.get_tree().root
 	if _wide_users == 0:

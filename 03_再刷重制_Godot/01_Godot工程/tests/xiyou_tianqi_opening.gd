@@ -110,16 +110,70 @@ func _title_pages() -> void:
 	await get_tree().process_frame
 	var slots := range(1, 11).filter(func(i): return _find(entry, "TianqiSlot%d" % i) != null)
 	_check("page_slots", slots.size() == 10, slots)
+	var skin := XTianqiTitle.skin_on()
+	if skin:
+		# 新界面（T102）：10 格一列（同一 x、纵向递增），光标默认停第一个空格（本测试没预置存档＝1 号）
+		await get_tree().process_frame
+		var xs := {}
+		var ys := []
+		for i in range(1, 11):
+			var r := _find(entry, "TianqiSlot%d" % i) as Control
+			xs[r.position.x] = true
+			ys.append(r.position.y)
+		var asc := range(9).all(func(i): return ys[i] < ys[i + 1])
+		_check("page_slots_one_column", xs.size() == 1 and asc and _find(entry, "TianqiStartPage") != null, [xs.keys(), ys])
+		var fo = get_viewport().gui_get_focus_owner()
+		_check("page_slots_focus_first_empty", fo != null and str(fo.name) == "TianqiSlot1", fo.name if fo != null else null)
 	entry._tq_difficulty(2)
 	await get_tree().process_frame
 	var diffs := {}
 	for d in XTianqi.DIFFICULTIES:
 		var b = _find(entry, "TianqiDifficulty_" + str(d.key))
-		diffs[d.key] = b != null and b.icon != null and b.disabled == XTianqi.locked(d.key)
+		if skin:
+			# 新界面（T102）：徽记是卡里的 Badge；证道不设 disabled（焦点要能落上去），锁记在 meta locked
+			var badge = b.get_node_or_null("Badge") if b != null else null
+			diffs[d.key] = b != null and badge is TextureRect and badge.texture != null and not b.disabled and b.get_meta("locked", false) == XTianqi.locked(d.key)
+		else:
+			diffs[d.key] = b != null and b.icon != null and b.disabled == XTianqi.locked(d.key)
 	_check("page_difficulty", diffs.values().all(func(v): return v), diffs)
+	if skin and XTianqi.locked("zhengdao"):
+		# 证道能拿到焦点，按确定还停在难度页（抖一下、出提示）
+		var zd = _find(entry, "TianqiDifficulty_zhengdao") as Button
+		zd.grab_focus()
+		await get_tree().process_frame
+		var got: bool = get_viewport().gui_get_focus_owner() == zd
+		zd.pressed.emit()
+		await get_tree().process_frame
+		var toast = _find(entry, "TianqiToast")
+		_check("page_zhengdao_focus_stays", got and _find(entry, "TianqiDifficulty_zhengdao") != null and _find(entry, "TianqiReroll") == null
+			and toast is Label and toast.visible and toast.text == "「证道」暂未开放", [got, toast.text if toast is Label else null])
 	entry._tq_lineup(2, "lianyu", [])
 	await get_tree().process_frame
 	_check("page_lineup", _find(entry, "TianqiReroll") != null and _find(entry, "TianqiConfirm") != null)
+	if skin:
+		# 动效「关」：重抽后新卡直接到位，不翻牌（scale／透明度当帧就是 1）
+		var keep := XUiSkin.motion_override
+		XUiSkin.motion_override = XUiSkin.Motion.OFF
+		entry._tq_lineup(2, "lianyu", [])
+		await get_tree().process_frame
+		var cards := range(XTianqi.LINEUP_SIZE).map(func(i): return _find(entry, "TianqiActor%d" % i))
+		_check("page_lineup_motion_off_no_flip", cards.all(func(c): return c is Control and c.scale == Vector2.ONE and c.modulate.a == 1.0),
+			cards.map(func(c): return [c.scale, c.modulate.a] if c is Control else null))
+		XUiSkin.motion_override = keep
+		# 设置「界面风格」切原版：skin_on() 关，三页回旧窗口（不建 TianqiStartPage；难度按钮照旧 disabled 锁证道）。只改内存
+		XConfig._values["codexUiSkin"] = false
+		entry._tq_slot()
+		await get_tree().process_frame
+		var old_slots := _find(entry, "TianqiStartPage") == null and _find(entry, "TianqiSlot1") != null
+		entry._tq_difficulty(2)
+		await get_tree().process_frame
+		var zd = _find(entry, "TianqiDifficulty_zhengdao")
+		var old_diff: bool = _find(entry, "TianqiStartPage") == null and zd is Button and zd.disabled == XTianqi.locked("zhengdao")
+		entry._tq_lineup(2, "lianyu", [])
+		await get_tree().process_frame
+		var old_lineup := _find(entry, "TianqiStartPage") == null and _find(entry, "TianqiReroll") != null
+		_check("setting_old_pages_old_frame", not XTianqiTitle.skin_on() and old_slots and old_diff and old_lineup, [old_slots, old_diff, old_lineup])
+		XConfig._values["codexUiSkin"] = true
 
 
 func _opening() -> void:

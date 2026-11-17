@@ -714,7 +714,7 @@ func _act_load_page(obs: Dictionary) -> void:
 func _act_form(obs: Dictionary) -> void:
 	var entry = obs.entry
 	var focus: Button = obs.focus
-	var buttons: Array = entry.find_children("*", "Button", true, false).filter(func(b): return b.is_visible_in_tree() and not b.disabled and b.focus_mode != Control.FOCUS_NONE)
+	var buttons: Array = entry.find_children("*", "Button", true, false).filter(func(b): return b.is_visible_in_tree() and not b.disabled and not b.get_meta("locked", false) and b.focus_mode != Control.FOCUS_NONE)   # 证道（新界面不设 disabled，meta locked）不按
 	var want: Button = null
 	for b in buttons:
 		if str(b.name) == "TianqiConfirm":

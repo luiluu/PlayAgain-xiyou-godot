@@ -15,6 +15,11 @@ const TAB_GAP := 4.0
 ## T024 选中放大：选中页签的字放大、在页签里居中（页签宽照旧按原字号算，放大的字落在左右各 14 的内边距里，不碰邻签）
 var sel_scale: XSkinSelScale
 const TAB_GAP_ART := 18.0
+## 步骤条样式（T102 开局三页「① 存档位 — ② 难度 — ③ 阵容」，D156）：set_steps 打开；不能点、不能换，只表示走到哪一步。
+## 已走过的步次要字色、当前步同选中页签、没到的最暗字；步与步之间画一段短横线。
+var steps := false
+const STEP_GAP := 40.0
+const STEP_MARKS := ["①", "②", "③", "④", "⑤"]
 
 
 func _init() -> void:
@@ -30,6 +35,19 @@ func set_groups(src: Array = XUiSkin.GROUPS, s: XState = null, keep_key := "") -
 	if keep_key != "":
 		select_key(keep_key)
 	custom_minimum_size.x = total_width()
+	queue_redraw()
+
+
+## 步骤条：names 是各步名，current 是当前第几步（0 起）
+func set_steps(names: Array, current: int) -> void:
+	steps = true
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	groups = []
+	for i in names.size():
+		groups.append({"key": str(i), "name": "%s %s" % [STEP_MARKS[mini(i, STEP_MARKS.size() - 1)], str(names[i])], "items": []})
+	index = clampi(current, 0, maxi(names.size() - 1, 0))
+	custom_minimum_size.x = total_width()
+	size = Vector2(total_width(), TAB_H)
 	queue_redraw()
 
 
@@ -73,7 +91,7 @@ func current_direct() -> String:
 func tab_rect(i: int) -> Rect2:
 	var f := XUiSkin.font("body")
 	var x := 0.0
-	var gap := TAB_GAP_ART if XSkinArt.select_on() else TAB_GAP   # 第一期正式美术：外置箭头（1×，左探 15）落在页签缝里（小A核 P2-1）
+	var gap := STEP_GAP if steps else TAB_GAP_ART if XSkinArt.select_on() else TAB_GAP   # 第一期正式美术：外置箭头（1×，左探 15）落在页签缝里（小A核 P2-1）
 	for k in range(i):
 		x += f.get_string_size(str(groups[k].name), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + TAB_PAD * 2 + gap
 	var w := f.get_string_size(str(groups[i].name), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + TAB_PAD * 2
@@ -85,6 +103,8 @@ func total_width() -> float:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if steps:
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		for i in groups.size():
 			if tab_rect(i).has_point(event.position):
@@ -100,6 +120,15 @@ func _draw() -> void:
 	for i in groups.size():
 		var r := tab_rect(i)
 		var on := i == index
+		if steps and i > 0:
+			var x0 := tab_rect(i - 1).end.x + 8.0
+			draw_line(Vector2(x0, TAB_H / 2.0), Vector2(r.position.x - 8.0, TAB_H / 2.0), Color(XUiSkin.GOLD if i <= index else XUiSkin.TEXT_3, 0.7), 2.0)
+		if steps and not on:
+			var sfs := font_size
+			var sw := f.get_string_size(str(groups[i].name), HORIZONTAL_ALIGNMENT_LEFT, -1, sfs).x
+			draw_string(f, Vector2(r.get_center().x - sw / 2.0, r.position.y + TAB_H / 2.0 + sfs * 0.36), str(groups[i].name),
+				HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, XUiSkin.TEXT_2 if i < index else XUiSkin.TEXT_3)
+			continue
 		if on and XSkinArt.select_on():   # 第一期正式美术（D51）：tab_selected_assembly 几何（渐隐红底＋左外小箭头）
 			XSkinArt.draw_tab(ci, r)
 		elif on:

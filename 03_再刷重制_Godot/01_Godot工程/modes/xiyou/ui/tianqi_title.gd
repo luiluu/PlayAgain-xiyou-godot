@@ -14,7 +14,9 @@ extends Control
 ## 新界面（ui-skin-3b，盘点清册 #4）：skin_on() 时底图、Logo、五项两态字图照旧（标题美术是定稿），只换「选中」和角落按钮：
 ## 光标 T4 藏起来（位置照算），改成红乙选中条（XSkinSelectBar，0.09 秒滑动）垫在选中项后面；版本号、返回版本选择、继续、
 ## 导入导出、反馈这些 extras 换成黑面板细线按钮＋思源黑体；不是触屏时底部居中放按键提示。选中、执行、进场一律照旧。
-## skin_on()：标题还没读档，不能按存档判断，改按构建判断——开发构建（天启篇开着）开、发行构建不开；ENABLED／FORCE／--ui-skin= 同 XUiSkin。
+## skin_on()：标题还没读档，不能按存档判断，改按天启篇开局门＋全局设置判断（T102，开局界面提案 v0.2 P1-2）：
+## XTianqi.new_game_enabled()（发行构建要 RELEASE_OPEN，同游戏内新皮肤的发行门）且「界面风格」没选原版（codexUiSkin）；
+## 开局三页（entry.gd _tq_*）共用这道门。ENABLED／FORCE／--ui-skin= 同 XUiSkin。
 
 signal entrance_finished
 
@@ -92,7 +94,7 @@ var skin_bar: XSkinSelectBar     # 新界面的选中条（skin_on() 时才有�
 var skin_hints: XSkinKeyHints
 
 
-## 新界面开没开（标题页专用：标题还没读档，按构建判断；发行构建恒关，同天启篇发行门）
+## 新界面开没开（标题页和开局三页专用：标题还没读档，按天启篇开局门＋「界面风格」设置判断）
 static func skin_on() -> bool:
 	if not XUiSkin.ENABLED:
 		return false
@@ -101,7 +103,7 @@ static func skin_on() -> bool:
 	var c := XUiSkin.cli_mode()
 	if c >= 0:
 		return c == 1
-	return not ReleaseEntry.is_release()
+	return XTianqi.new_game_enabled() and XConfig.ui_skin_new()
 
 
 ## 开关开着、素材都在（不看天启篇内容开关：Kyo 11-11 整包带新标题、内容照改版）
