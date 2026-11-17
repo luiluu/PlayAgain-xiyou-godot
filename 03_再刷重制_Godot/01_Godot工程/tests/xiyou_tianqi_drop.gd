@@ -186,6 +186,13 @@ func _rare_show(s: XState) -> void:
 	var gold := str(cfg.colors[5])
 	var recs := shown.map(func(id): return XDB.rec("Armors", id))
 	var before := recs.map(func(r): return JSON.stringify(r))
+	# 全表扫坐骑栏：受影响的正好这三匹（口径变了要回来改交付单）
+	var hit := []
+	for r in XDB.table("Armors"):
+		if r is Dictionary and XQuality.rare_mount(r):
+			hit.append(int(r.id))
+	hit.sort()
+	_check("show_affected_exact", hit == [4483, 7997, 7998], hit)
 	_check("show_names_tianqi", recs.all(func(r): return XQuality.grade_name(r) == "不朽" and XQuality.label(r, "armor") == "不朽"),
 		recs.map(func(r): return XQuality.label(r, "armor")))
 	_check("show_color_tianqi", recs.all(func(r): return XQuality.color_text(r) == gold and XQuality.list_color(r) == XQuality.parse_rgba(gold)),

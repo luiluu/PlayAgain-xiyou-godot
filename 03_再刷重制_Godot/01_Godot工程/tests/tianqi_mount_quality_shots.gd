@@ -42,11 +42,11 @@ func _scene(title: String) -> Array:
 		var rec := XDB.rec("Armors", ids[i])
 		var card := XHelpCard.new()
 		holder.add_child(card)
-		card.place_original(Rect2(20 + i * 420, 120, 400, 36))
+		card.place_original(Rect2(i * 425 - 432, 110, 400, 36))  # 卡片落在矩形右侧约 440px 处
 		card.show_for(rec, "armor")
 		var pop := XTreasurePopup.new()
 		holder.add_child(pop)
-		pop.setup(rec, 1, Vector2(120 + i * 420, 600), 0, 1)
+		pop.setup(rec, 1, Vector2(500 + i * 260, 120), 0, 1)
 		pop._wait_in = 0
 		pop._wait_hold = 100000
 		pop._alpha = 255.0
