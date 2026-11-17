@@ -14,6 +14,13 @@ extends RefCounted
 ## | gain(s, 角色, 来源, 量) | 唯一的写入口：万分点四舍五入、封顶、到节点时提示 | settle |
 ## | carve／stand／can_stand | 刻印；打赢心魔立境；能不能打本境心魔（甲二门禁） | XZhenqi 闭关菜单 |
 ## | panel(s, 角色) | 面板：亮段、刻度线、「+」、暗段、封住段、瓶颈高亮 | XZhenqi 闭关菜单 |
+## | has_cost(角色, key) | T073-c 常驻六条：烙印 **超过** 那一条的节点（万分点）才有（P2-1：不判境） | 下面六个口子 |
+## | aggro_mult(logic, 敌人, 角色) | 外人项（2 − 烙印÷100）× 出头鸟（过 10%、上一回合打过敌人 ×2） | BattleLogic._random_target |
+## | def_rate(角色, i) | 皮薄：过 25% 每多 3 点物防、魔防 −1%，100% 时 −25% | XActor.param_rate |
+## | heal(角色, 量) | 虚不受补：过 40%、生命一半以上时受到的回复 ×0.5（各线削减之后乘） | XResourceContext._gain、BattleLogic._regenerate |
+## | filter_group(logic, 施放者, 技能, 目标) | 不合群：过 55%，队友放的全体友方（scope 8）落不到身上 | BattleLogic.targets_for |
+## | burn(logic, 角色) | 烧命：过 70%，每次出手前付当前生命 4%（扣不死、不算受到伤害） | BattleLogic.act |
+## | blocks_revive／on_revive | 一条命：过 70% 一场只能被复活一次，过 85% 不能被复活；战斗外不拦 | XBattler.remove_state(1) |
 ##
 ## 存档（稿第九节）：角色 XActor.zhenqi 的 brand／brand_carved／brand_realm（XZhenqi.from_save 只在读进来的数据里本来就有时原样留）；
 ## 首胜表在 flags.tianqi.brand.firsts（XTianqiSave 分区 brand，稿里叫 brand_firsts）：战斗键 → 打赢时的最高档位。西游档一个字不读不写。
@@ -26,7 +33,7 @@ const TEXT_BOTTLENECK := "%s 的烙印已到「%s」的极限，打赢心魔才�
 const TEXT_NO_GAIN := "%s 的烙印已到「%s」的极限，本场未再加深。"
 const TEXT_GAIN := "烙印 %s"
 const TEXT_CARVE_WARN := ["一旦刻印，烙印只涨不降，没有回头路。", "刻印后，每首通一位守层者都会加深烙印；不刻印则只在首领战挨打时记下烙印，上限 40%。"]
-const TEXT_RETREAT := ["\\C[6]烙印\\C[0]", "烙印随首领战加深；每到一段的极限，打赢心魔才能继续加深。", "未刻印的烙印最多加深至「铸骨」（40%），刻印后才能继续加深。"]
+const TEXT_RETREAT := ["\\C[6]烙印\\C[0]", "烙印随首领战加深；每次到达极限，打赢心魔才能继续加深。", "未刻印的烙印最多加深至「铸骨」（40%），刻印后才能继续加深。"]
 
 static var ENABLED := false
 
@@ -35,6 +42,8 @@ static var _data: Dictionary = {}
 static var toasts: Array = []
 ## 事件开战（mv_interpreter 301）时记下的地图、事件、敌群；BattleLogic.setup 吃掉（敌群不符作废）
 static var pending_event := {}
+## 正在打的这一场（battle_setup 记，end_battle 开头清）：一条命、虚不受补只在战斗里算
+static var _logic_ref: WeakRef = null
 
 
 static func data() -> Dictionary:
@@ -259,6 +268,17 @@ static func facts_of(logic, s: XState) -> Dictionary:
 	for e in logic.enemies:
 		if str(e.horseman.get("rec", {}).get("_ref", "")) == "hongjun":
 			summit = true
+	# T144（D174「四线节末精英都算」）：四条线异化怪的 spread 那一场（战争 35、瘟疫 248、死亡 294、饥荒 430）
+	var spread := false
+	for fd in [XTianqiWarAlien.fight(logic), XTianqiPlagueAlien.fight(logic), XTianqiDeathAlien.fight(logic), XTianqiFamineAlien.fight(logic)]:
+		if str(fd.get("preset", "")) == "spread":
+			spread = true
+	# T144（D178「都算」）：七印里副本压轴前那场精英（敌群表倒数第二个：250／34／11／297／123／188／220）
+	var qiyin_elite := ""
+	if not qr.is_empty() and not bool(qr.get("boss", false)) and not bool(qr.get("enemy_only", false)):
+		var tr: Array = XTianqiQiyin.seal_info(str(qr.get("seal", ""))).get("troops", [])
+		if tr.size() >= 2 and int(tr[tr.size() - 2]) == int(logic.troop_id):
+			qiyin_elite = str(qr.get("seal", ""))
 	return {
 		"heart": not zb.get("trial", {}).is_empty(),
 		"weapon": not zb.get("scaled", {}).is_empty(),
@@ -267,6 +287,7 @@ static func facts_of(logic, s: XState) -> Dictionary:
 		"dragon": XTianqiQiyinDragonRun.active(logic),
 		"qiyin_seal": str(qr.get("seal", "")) if bool(qr.get("boss", false)) and not bool(qr.get("enemy_only", false)) else "",
 		"summit": summit,
+		"line_spread": spread, "qiyin_elite": qiyin_elite,
 		"guardian_floor": XGuardianRework.troop_floor(logic) if not summit else 0,
 		"enemy_ids": ids, "enemy_names": names,
 		"map": int(ev.get("map", s.map_id)), "event": int(ev.get("event", 0)), "troop": int(logic.troop_id),
@@ -299,6 +320,8 @@ static func classify(f: Dictionary) -> Dictionary:
 		return {"kind": "boss", "key": "qiyin:" + str(f.qiyin_seal), "first_floor": 0}
 	if bool(f.get("summit", false)):
 		return {"kind": "boss", "key": "summit:34", "first_floor": 34}
+	if bool(f.get("line_spread", false)) or str(f.get("qiyin_elite", "")) != "":
+		return {"kind": "boss", "key": _ev_key(f), "first_floor": 0}  # T144：按上下文认，名字不带首领前缀也算（键同第 5 行）
 	var gf := int(f.get("guardian_floor", 0))
 	if gf >= 1 and gf <= 33:
 		return {"kind": "boss", "key": "guardian:%d" % gf, "first_floor": gf}  # 10／20／30 层的使徒是守层者变的，同一个键
@@ -310,8 +333,12 @@ static func classify(f: Dictionary) -> Dictionary:
 	var re := RegEx.create_from_string("【(" + "|".join(b.get("prefixes", [])) + ")】")
 	for n in f.get("enemy_names", []):
 		if re.search(str(n)):
-			return {"kind": "boss", "key": "ev:%d:%d:%d" % [int(f.get("map", 0)), int(f.get("event", 0)), int(f.get("troop", 0))], "first_floor": 0}
+			return {"kind": "boss", "key": _ev_key(f), "first_floor": 0}
 	return {"kind": "none", "key": "", "first_floor": 0}
+
+
+static func _ev_key(f: Dictionary) -> String:
+	return "ev:%d:%d:%d" % [int(f.get("map", 0)), int(f.get("event", 0)), int(f.get("troop", 0))]
 
 
 ## 生熟：特殊战生；不是首领战熟；首领战键在首胜表里、而且表里的档位 ≥ 这一场的档位才熟
@@ -332,6 +359,7 @@ static func is_brand_boss_fight(c: Dictionary) -> bool:
 static func battle_setup(logic, s: XState) -> void:
 	if logic.has_meta(META):
 		logic.remove_meta(META)
+	_logic_ref = null
 	if not on(s):
 		pending_event = {}
 		return
@@ -340,11 +368,132 @@ static func battle_setup(logic, s: XState) -> void:
 	c["tier"] = int(f.tier)
 	c["ripe"] = is_ripe(s, c)
 	c["fills"] = {}  # 灼痕这一场满过几次：actor_id → 次数（T073-d2 写；倒下的人照算）
+	c["hits"] = {}  # 出头鸟：角色 → 最近一次打敌人的回合
+	c["revived"] = {}  # 一条命：角色 → 这一场被复活几次
 	logic.set_meta(META, c)
+	_logic_ref = weakref(logic)
 
 
 static func fight(logic) -> Dictionary:
 	return logic.get_meta(META) if logic != null and logic.has_meta(META) else {}
+
+
+## BattleLogic.end_battle 开头：这一场结束，一条命、虚不受补不再拦（死亡状态战后不自动解，照常由大厅、道具等拉起来）
+static func end(logic) -> void:
+	if _logic_ref != null and _logic_ref.get_ref() == logic:
+		_logic_ref = null
+
+
+static func active_logic():
+	var l = _logic_ref.get_ref() if _logic_ref != null else null
+	return l if l != null and l.has_meta(META) else null
+
+
+# ---- 常驻六条代价（稿第四节第 2 条，第十三节 T073-c）----
+## P2-1：一律判「烙印 > 这一条的节点万分点」（1000／2500／4000／5500／7000／8500），不判 brand_realm；
+## 刚打赢心魔、烙印正好在节点上的人已在下一段，但这一段的代价要到「超过」才有。
+
+static func cost_row(key: String) -> Dictionary:
+	for r in data().get("costs", {}).get("list", []):
+		if str(r.get("key", "")) == key:
+			return r
+	return {}
+
+
+static func cost_over(key: String) -> int:
+	return roundi(float(cost_row(key).get("over", 101)) * scale())
+
+
+static func has_cost(a, key: String, s = null) -> bool:
+	return a is XActor and on(s) and value(a) > cost_over(key)
+
+
+## a 在正在打的这一场的我方出战里（一条命、虚不受补用）
+static func _fighting(b):
+	var logic = active_logic()
+	return logic if logic != null and b is XActor and logic.actors.has(b) else null
+
+
+## 出头鸟：我方出手目标里有敌人就记这一回合（BattleLogic._guided_targets；哑火普攻敌人也算出手）
+static func note_hit(logic, u, targets: Array) -> void:
+	var c := fight(logic)
+	if c.is_empty() or not u is XActor:
+		return
+	for t in targets:
+		if t is XEnemy:
+			c.hits[u] = int(logic.turn)
+			return
+
+
+## 被敌人随机单体选中的权重乘数（稿第四节「仇恨怎么算」）：外人项 ×（出头鸟 ×2）。只在烙印开着的天启篇战斗里、敌人挑我方时；
+## 嘲讽、挑衅在 targets_for 后面几层照常盖过，掩护在 substitute 照常
+static func aggro_mult(logic, user, b) -> float:
+	var c := fight(logic)
+	if c.is_empty() or not user is XEnemy or not b is XActor:
+		return 1.0
+	var ag: Dictionary = data().get("aggro", {})
+	var m := float(ag.get("outsider_base", 2)) - pct(b) / 100.0
+	if has_cost(b, "bird", logic.state) and int(c.hits.get(b, -99)) == int(logic.turn) - 1:
+		m *= float(ag.get("bird_mult", 2))
+	return m
+
+
+## 皮薄：物防（3）、魔防（5）倍率。过 25% 之后每多 step 点降 per_step，最多 at_full；走防御通过率，不进承伤池
+static func def_rate(a, i: int) -> float:
+	if (i != 3 and i != 5) or not has_cost(a, "thin"):
+		return 1.0
+	var r := cost_row("thin")
+	var steps := (value(a) - cost_over("thin")) / roundi(float(r.get("step", 3)) * scale())
+	return 1.0 - minf(float(steps) * float(r.get("per_step", 0.01)), float(r.get("at_full", 0.25)))
+
+
+## 虚不受补：战斗中生命高于一半时受到的生命回复 ×heal_mult（各线的回复削减先算；禁疗照禁，0 还是 0）
+static func heal(b, amount: float) -> float:
+	if amount <= 0.0 or not has_cost(b, "weak_heal") or _fighting(b) == null:
+		return amount
+	var r := cost_row("weak_heal")
+	if b.hp > b.mhp * float(r.get("hp_above", 0.5)):
+		return floorf(amount * float(r.get("heal_mult", 0.5)))
+	return amount
+
+
+## 不合群：我方别人放的全体友方（scope 8）技能、物品落不到过 55% 的人身上；自己放的照吃，点名给他的（scope 7）照吃
+static func filter_group(logic, a, skill: Dictionary, list: Array) -> Array:
+	if fight(logic).is_empty() or not a is XActor or int(skill.get("scope", 0)) != 8:
+		return list
+	return list.filter(func(b): return b == a or not has_cost(b, "no_group", logic.state))
+
+
+## 烧命：每次出手（技能、物品；防御、被控跳过不算）前付当前生命的 hp_pct，向下取整、扣不死；直接改生命，不算受到伤害、不涨灼痕。返回给画面的记录（没扣为空）
+static func burn(logic, u) -> Dictionary:
+	if fight(logic).is_empty() or not u is XActor or not has_cost(u, "burn", logic.state):
+		return {}
+	var paid := minf(floorf(u.hp * float(cost_row("burn").get("hp_pct", 0.04))), u.hp - 1.0)
+	if paid <= 0.0:
+		return {}
+	u.hp -= paid
+	u.refresh_resources()
+	return {"type": "regen", "target": u, "hp": paid, "views": logic.views([u])}
+
+
+## 一条命（D149）：过 revive_once_over（70%）一场只能被复活一次，过 no_revive_over（85%）不能被复活。
+## XBattler.remove_state(1) 在四骑士、死亡线、异化连命、灰镰之后问（不改它们的先后）；战斗外（end_battle 之后）不拦
+static func blocks_revive(b) -> bool:
+	if _fighting(b) == null:
+		return false
+	var ol: Dictionary = data().get("costs", {}).get("one_life", {})
+	var v := value(b)
+	if v > roundi(float(ol.get("no_revive_over", 85)) * scale()):
+		return true
+	return v > roundi(float(ol.get("revive_once_over", 70)) * scale()) and int(fight(_fighting(b)).revived.get(b, 0)) >= 1
+
+
+## 真的被拉起来了（remove_state(1) 把生命设成 1 之后）：记一次
+static func on_revive(b) -> void:
+	var logic = _fighting(b)
+	if logic != null:
+		var rv: Dictionary = fight(logic).revived
+		rv[b] = int(rv.get(b, 0)) + 1
 
 
 # ---- 打赢后结算（稿第五节第 5～7 条；P2-4 次序）----

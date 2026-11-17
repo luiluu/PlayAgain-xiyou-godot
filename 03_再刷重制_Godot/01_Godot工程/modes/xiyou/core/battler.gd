@@ -619,10 +619,13 @@ func remove_state(id: int) -> void:
 		return  # 异化 revive 包装（O-108）：连命复活回池，嫁祸的保护者倒下不能复活
 	if id == 1 and state_ids.has(id) and hp <= 0.0 and XTianqiQiyinEffects.blocks_revive(self):
 		return  # 天启篇灰镰代价：佩戴者不能被复活
+	if id == 1 and state_ids.has(id) and hp <= 0.0 and XTianqiBrand.blocks_revive(self):
+		return  # 天启篇烙印一条命：过 70% 一场只能被复活一次，过 85% 不能（排在各线之后，不改它们的次序）
 	var had := state_ids.has(id)
 	if id == 1 and state_ids.has(id) and hp <= 0.0:
 		hp = 1.0  # MV removeState(deathStateId) 先 revive，再去除阵亡状态。
 		XTianqiFamineAlien.on_revive(self)  # 天启篇饥荒线异化：终焉荒年者在场时这一下回复无效
+		XTianqiBrand.on_revive(self)  # 天启篇烙印一条命：记这一场被复活几次
 	state_ids.erase(id)
 	state_turns.erase(id)
 	if had:
