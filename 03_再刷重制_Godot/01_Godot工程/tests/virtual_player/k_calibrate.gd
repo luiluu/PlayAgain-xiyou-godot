@@ -2,12 +2,13 @@ extends Node
 ## 【cc·T082】期四实机标定 K（基础数值重构 v0.4 第九节第 1～3 步）：总开关开着，每人单独对木桩打自己「条件全中后最大的一段」，取暴击里最大的一个伤害数字。
 ## 不是专项（不在 tests/ 顶层，检查.sh 不跑）；单独跑：
 ##   godot --headless --audio-driver Dummy --path 01_Godot工程 -s res://tests/test_main_loop.gd res://tests/virtual_player/k_calibrate.tscn -- \
-##     [--tier=super|strong|weak|all] [--k=<K，缺省读表>] [--hits=20] [--out=<json>] [--actors=1,2]
+##     [--tier=super|strong|weak|all] [--k=<K，缺省读表>] [--hits=20] [--out=<json>] [--actors=1,2] [--single]
 ##
 ## 口径（稿第三节第 3 条，能做到的）：
 ## - 81 级；每栏从原版装备里挑主属性最高的一件（不限品质、不要专属），实例改成 80 级神话（meta req_level 80、quality 14）→ 新底子按表算；
 ##   本人专属法宝（没有就破攻／尊魔）99 级；技能熟练度拿满（MASTERY 开）；喝天平酒、助力位空、只上这一个人。
 ## - 木桩：这一场第一个敌人，物防魔防都改成 8200，每下之前回满；强制暴击（XStateEffects.force_critical）。
+## - D195（Kyo 11-18，T175）：口径＝一次施放的总伤害（每段先封单段上限再相加）＝下面的峰值单段 × 整次施放实测的「各段合计÷最大一段」（_cast_ratio，3 遍取中位；--single 回到旧口径）。
 ## - 「这一下」：卡上每个伤害技能各打 hits 次，取最大的一个数；条件全中靠换算——同一下里卡面公式值 v0（XTianqiSkills.formula，含当下的条件）
 ##   和条件全中的值 v_full（卡面系数×Σ权重×各条件最大倍率，封到档位上限，口径同 天启篇数据校验.py single_hit_effective）都是线性乘在后面所有乘区前面的，
 ##   所以 峰值 ＝ 量到的数 × v_full ÷ v0。
@@ -33,6 +34,8 @@ var out_path := ""
 var only: Array = []
 var debug := false
 var no_advance := false  # --no-advance：不进阶（T163 前的口径，对照用）
+var single := false  # --single：D195 前的口径（一次施放里跳出来最大的一个数），对照用
+const CAST_RUNS := 3  # D195：每招整次施放几遍，取段数比（合计÷最大段）的中位
 var per_skill := false  # --per-skill：每招打印一行（T163 查模块角色的大招有没有量到）
 var mastery_seen := 0
 var no_mastery := false
@@ -68,6 +71,8 @@ func _ready() -> void:
 			fabao_level = mini(FABAO, roundi(FABAO * level / float(LEVEL)))
 		elif a == "--no-tune":  # T163：D189 逐个调角色的覆盖层关掉（改前对照、量成长曲线用）
 			XTianqiBase.TUNE_D189 = false
+		elif a == "--single":
+			single = true
 		elif a == "--per-skill":
 			per_skill = true
 		elif a == "--debug":
@@ -90,7 +95,7 @@ func _run() -> void:
 	report = {"k": float(rules.get("base_damage", 1.0)), "hits": hits, "tune_d189": XTianqiBase.TUNE_D189, "level": level, "gear_level": gear_level, "fabao_level": fabao_level, "def": DEF, "rows": [], "tiers": {},
 		"brand_max_bonus": float(XTianqiBrand.data().get("power", {}).get("max_bonus", 0.5)),
 		"caps": XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}),
-		"build": "bare" if bare else "full",
+		"build": "bare" if bare else "full", "metric": "single" if single else "cast_total",
 		"missing": (["词条掷满挑最大", "黑印满配攒五层", "真印无视防御", "秘籍格", "号卷"] if bare else []) + ["烙印（XTianqiBrand 关着＝烙印 0；锚临时取 200 万＝300 万÷1.50，稿第九节第 3 条）"]}
 	var tiers := [XTier.SUPER, XTier.STRONG, XTier.WEAK] if tier_arg == "all" else [{"super": XTier.SUPER, "strong": XTier.STRONG, "weak": XTier.WEAK}[tier_arg]]
 	for tier in tiers:
@@ -376,6 +381,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 		var full := minf(eff_full(id, int(sid)), cap) if cap > 0.0 else eff_full(id, int(sid))
 		var d: Dictionary = sp.damage
 		var w := XTianqiSkills.hit_weight(d)
+		var sk_best := {}
 		for n in hits:
 			_pin_def(e)
 			e.hp = e.mhp * (0.3 if _has_trumpet(a) else 1.0)  # 二号血海：目标生命低于 33% 时 +50%（条件全中）
@@ -420,10 +426,62 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			var peak := dealt * v_full / v0
 			if per_skill and n == hits - 1:
 				print("K_SKILL %d %d peak=%d dealt=%d eff=%s" % [id, int(sid), roundf(peak), dealt, eff_full(id, int(sid))])
-			if best.is_empty() or peak > float(best.peak):
-				best = {"actor": id, "skill": int(sid), "dealt": dealt, "v0": v0, "v_full": v_full, "eff_full": eff_full(id, int(sid)),
+			if sk_best.is_empty() or peak > float(sk_best.peak):
+				sk_best = {"actor": id, "skill": int(sid), "dealt": dealt, "v0": v0, "v_full": v_full, "eff_full": eff_full(id, int(sid)),
 					"cap": cap, "peak": roundf(peak), "terminal": term, "formula": str(sk.get("damage", {}).get("formula", "")).left(60), "repeats": int(sk.get("repeats", 1)), "atk": a.param(2), "mat": a.param(4), "mhp": a.mhp}
+		if sk_best.is_empty():
+			continue
+		# D195（Kyo 11-18）：口径＝一次施放的总伤害（每段先封单段上限再相加）。峰值单段已是「条件全中、封到上限」；
+		# 整次施放实打几遍，量「各段合计÷最大一段」（每段在结算里已各自封顶），乘到峰值上。--single 回到旧口径
+		sk_best["peak_single"] = sk_best.peak
+		if not single:
+			var cr := _cast_ratio(a, e, logic, sk)
+			sk_best["segs"] = cr
+			sk_best["peak"] = roundf(float(sk_best.peak_single) * float(cr.ratio))
+		if per_skill:
+			print("K_CAST %d %d single=%d ratio=%s total=%d" % [id, int(sid), sk_best.peak_single, sk_best.get("segs", {}).get("ratio", 1.0), sk_best.peak])
+		if best.is_empty() or float(sk_best.peak) > float(best.peak):
+			best = sk_best
 	return best
+
+
+## D195：整次施放（logic.execute，强制暴击、木桩回满），收这一次打在木桩上的每一段（type hit、target＝木桩、shown.hp＞0），
+## 段数比＝合计÷最大一段；跑 CAST_RUNS 遍取中位（随机加段的角色不取最大）。打不到木桩（全随机目标打到别人）按 1
+func _cast_ratio(a, e, logic, sk: Dictionary) -> Dictionary:
+	var runs := []
+	for n in CAST_RUNS:
+		_pin_def(e)
+		e.hp = e.mhp * (0.3 if _has_trumpet(a) else 1.0)
+		a.hp = a.mhp
+		a.mp = a.mmp
+		a.tp = a.max_tp()
+		_prime(logic, a, e, sk)
+		XStateEffects.force_critical = true
+		var logs: Array = logic.execute(a, sk, e, true)
+		XStateEffects.force_critical = false
+		XSukuna.cast = {}
+		var segs := []
+		_collect_hits(logs, e, segs)
+		var mx := 0.0
+		var sum := 0.0
+		for v in segs:
+			mx = maxf(mx, v)
+			sum += v
+		runs.append({"n": segs.size(), "ratio": sum / mx if mx > 0.0 else 1.0, "segs": segs.map(func(v): return roundi(v))})
+	runs.sort_custom(func(x, y): return float(x.ratio) < float(y.ratio))
+	var mid: Dictionary = runs[runs.size() / 2]
+	return {"ratio": snappedf(float(mid.ratio), 0.001), "n": mid.n, "segs": mid.segs, "ratios": runs.map(func(r): return snappedf(float(r.ratio), 0.001))}
+
+
+static func _collect_hits(logs, e, out: Array) -> void:
+	for x in logs:
+		if x is Array:
+			_collect_hits(x, e, out)
+		elif x is Dictionary:
+			if str(x.get("type", "")) == "hit" and is_same(x.get("target"), e) and not bool(x.get("reflected", false)):
+				var v := float(x.get("shown", {}).get("hp", 0.0))
+				if v > 0.0:
+					out.append(v)
 
 
 ## 木桩物防魔防钉到 DEF：敌人的防御要乘难度、首领、天启篇楼层等倍率（还会在第一下时才挂上开战状态），
