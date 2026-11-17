@@ -239,8 +239,6 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 		if bind_host != null and not XBinding.is_bound(a) and a.is_alive() and bind_host.is_alive():
 			XBinding.bind(a, bind_host)  # T137：璇附身着才有棱光（宿主主动攻击后），解了就重新附身
 		logic.start_turn()
-		if bind_host != null and XBinding.data(a) != null:
-			XBinding.data(a).charges = maxi(int(XBinding.data(a).charges), 3)  # 棱光要 2 点星契（_can_spend），夹具补满只量比例（开回合会重算，放在它后面）
 		logic.take_turn_start_logs()
 		var count := 0
 		while count < 80:
@@ -260,6 +258,8 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 			XActorDamageHooks.RECORD_ACT = {"subject": u, "skill": int(cmd[0].id) if cmd[0] != null else -1}
 			var n0: int = (XTianqiLedger.TRACE as Array).size()
 			var hp0 := XTianqiLedger._foe_hp(logic)
+			if bind_host != null and XBinding.data(a) != null:
+				XBinding.data(a).charges = maxi(int(XBinding.data(a).charges), 3)  # 棱光要 2 点星契（_can_spend；只有一次行动的璇平时攒不到），夹具每次行动前补满只量比例
 			logic.act(u, cmd[0], cmd[1])
 			if bind_host != null:
 				bind_host.hp = bind_host.mhp  # 宿主是弱者，被打死就解附身（夹具只量棱光）
