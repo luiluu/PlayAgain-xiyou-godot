@@ -37,7 +37,7 @@ def subjects(im,count):
  return out
 records=[];ref=rgba(REF/'Guyu_SV_v2.png');sheet=Image.new('RGBA',(576,384));rows=[]
 for row in range(6):
- path=P/f'raw_tusu_guyu_row{row}.png'
+ path=P/('raw_tusu_guyu_row5_compact.png' if row==5 else f'raw_tusu_guyu_row{row}.png')
  if not path.exists():continue
  out=Image.new('RGBA',(576,64))
  for c,q in enumerate(subjects(rgba(path),9)):
@@ -51,8 +51,15 @@ if len(rows)==6:sheet.save(P/'Tusu_Battle_candidate.png')
 walkpath=P/'raw_tusu_guyu_walk.png'
 if walkpath.exists():
  raw=rgba(walkpath);rw=rgba(REF/'$Guyu_v2.png');out=Image.new('RGBA',(144,192))
+ bands=[];start=None
+ for y in range(raw.height+1):
+  active=y<raw.height and raw.getchannel('A').crop((0,y,raw.width,y+1)).getbbox() is not None
+  if active and start is None:start=y
+  if not active and start is not None:bands.append((start,y));start=None
+ bands=[(a,b) for a,b in bands if b-a>20]
+ assert len(bands)==4,bands
  for r in range(4):
-  strip=raw.crop((0,round(r*raw.height/4),raw.width,round((r+1)*raw.height/4)))
+  strip=raw.crop((0,bands[r][0],raw.width,bands[r][1]))
   for c,q in enumerate(subjects(strip,3)):
    bb=rw.crop((c*48,r*48,c*48+48,r*48+48)).getbbox();h=bb[3]-bb[1];w=round(q.width*h/q.height)
    assert w<=46,(r,c,w)

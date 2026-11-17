@@ -1,0 +1,74 @@
+[
+  {
+    "frame": 0,
+    "source_cat_height": 222,
+    "scale": 0.18018018018018017,
+    "native_cat_height": 40,
+    "native_width_with_sword": 36,
+    "baseline": 60
+  },
+  {
+    "frame": 1,
+    "source_cat_height": 217,
+    "scale": 0.18018018018018017,
+    "native_cat_height": 39,
+    "native_width_with_sword": 37,
+    "baseline": 60
+  },
+  {
+    "frame": 2,
+    "source_cat_height": 219,
+    "scale": 0.18018018018018017,
+    "native_cat_height": 39,
+    "native_width_with_sword": 38,
+    "baseline": 60
+  },
+  {
+    "frame": 3,
+    "source_cat_height": 209,
+    "scale": 0.18018018018018017,
+    "native_cat_height": 38,
+    "native_width_with_sword": 45,
+    "baseline": 60
+  },
+  {
+    "frame": 4,
+    "source_cat_height": 205,
+    "scale": 0.18018018018018017,
+    "native_cat_height": 37,
+    "native_width_with_sword": 52,
+    "baseline": 60
+  },
+  {
+    "frame": 5,
+    "source_cat_height": 207,
+    "scale": 0.18018018018018017,
+    "native_cat_height": 37,
+    "native_width_with_sword": 49,
+    "baseline": 60
+  },
+  {
+    "frame": 6,
+    "source_cat_height": 219,
+    "scale": 0.18018018018018017,
+    "native_cat_height": 39,
+    "native_width_with_sword": 35,
+    "baseline": 60
+  },
+  {
+    "frame": 7,
+    "source_cat_height": 220,
+    "scale": 0.18018018018018017,
+    "native_cat_height": 40,
+    "native_width_with_sword": 35,
+    "baseline": 60
+  },
+  {
+    "frame": 8,
+    "source_cat_height": 218,
+    "scale": 0.18018018018018017,
+    "native_cat_height": 39,
+    "native_width_with_sword": 36,
+    "baseline": 60
+  }
+]

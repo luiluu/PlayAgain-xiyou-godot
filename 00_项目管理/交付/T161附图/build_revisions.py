@@ -57,16 +57,26 @@ for i in range(len(a)):
 assert len(components)==9,[len(c) for c in components]
 components.sort(key=lambda c:min(x for x,y in c))
 gref=rgba(ROOT/'03_再刷重制_Godot/01_Godot工程/content/guyu_v2/Guyu_SV_v2.png')
+# In this selected raw row each blade stays below the ears and above the boots.
+# Thus these y extrema measure the cat, not the sword. One scale for all nine.
+body_heights=[max(y for x,y in c)-min(y for x,y in c)+1 for c in components]
+uniform_scale=40/max(body_heights)
+measurements=[]
 for c,pixels in enumerate(components):
  xs=[x for x,y in pixels];ys=[y for x,y in pixels];x0=min(xs);y0=min(ys)
  q=Image.new('RGBA',(max(xs)-x0+1,max(ys)-y0+1));qp=q.load();hp=hraw.load()
  for x,y in pixels:qp[x-x0,y-y0]=hp[x,y]
- bb=gref.crop((c*64,0,c*64+64,64)).getbbox();h=bb[3]-bb[1];w=round(q.width*h/q.height)
- if w>60:h=round(q.height*60/q.width);w=60
- q=q.resize((w,h),Image.Resampling.NEAREST);hnew.paste(q,(c*64+round((bb[0]+bb[2]-w)/2),bb[3]-h),q)
+ h=round(q.height*uniform_scale);w=round(q.width*uniform_scale)
+ assert w<=62 and h<=60,(c,w,h)
+ q=q.resize((w,h),Image.Resampling.NEAREST);hnew.paste(q,(c*64+(64-w)//2,60-h),q)
+ bb=q.getbbox();measurements.append({'frame':c,'source_cat_height':body_heights[c],'scale':uniform_scale,'native_cat_height':bb[3]-bb[1],'native_width_with_sword':w,'baseline':60})
+import json
+(P/'hajimi_uniform_measurements.json').write_text(json.dumps(measurements,indent=2))
+hnew.save(P/'hajimi_uniform_candidate_failed.png')
+assert max(r['native_cat_height'] for r in measurements)-min(r['native_cat_height'] for r in measurements)<=1,measurements
 hnew.save(P/'hajimi_greatsword_row0_64.png')
 board('哈基米',hold,hnew,'CatSwordSaint_Face_crop.png',[
  'Kyo：小猫双爪共握一把大剑；剑比身体有分量，猫与整剑都留在64格内。',
  '保留橘虎斑、粉耳结、银甲白披风与猫尾；一把剑，双爪共握同一柄。',
- '改提示词从头生成，仅头像＋谷雨定稿首行及外框＋五条悟；未引用旧稿或云霄。'])
+ '九格同一倍率，猫身高差≤1像素，脚底线统一；仅头像＋谷雨定稿＋五条悟参考。'])
 print('revised floating Xuan and single-greatsword Hajimi boards written')

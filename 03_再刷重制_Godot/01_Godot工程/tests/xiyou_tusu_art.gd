@@ -43,7 +43,7 @@ func _run() -> void:
 	XTusu.ART = false
 	var old := XAppearance.for_battler(a).frame("wait",0)
 	check("rollback.old_texture", str(old.tex.resource_path).contains("/sv/Codex_Tusu_v1/"))
-	check("rollback.old_scale", XAppearance.profile(old,"wait").scale < 1.0)
+	check("rollback.no_native_override", not bool(XAppearance.profile(old,"wait").get("native_pixels",false)))
 	XTusu.ART = true
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out=") and DisplayServer.get_name() != "headless":
