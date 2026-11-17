@@ -348,6 +348,7 @@ func _host_command(c: Dictionary):
 			var troop := int(p[1]) if int(p[0]) == 0 else int(state().variable(int(p[1])))
 			if host is XMapScene:
 				XAutoSave.battle_checkpoint(host, true)  # 开战前检查点（O-221；事件里开的战斗）
+			XTianqiBrand.pending_event = {"map": state().map_id, "event": event_id, "troop": troop}  # 天启篇烙印：常规事件战的战斗键（地图＋事件＋敌群）
 			var result: int = await host.start_battle(troop, bool(p[2]), bool(p[3]))
 			XDungeon.battle_finished(troop, result, state().map_id)
 			_branch[indent] = result

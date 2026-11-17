@@ -60,6 +60,8 @@ const POJIA_STATE := 2705
 
 ## 本场战斗（BattleManager.setup 时的 Z._battle 与 Z._ovf）；不存档，换档清空
 static var battle := {}
+## 天启篇烙印存在这份数据里的三个键（XTianqiBrand；from_save 只保留、不新建）
+const BRAND_KEYS := ["brand", "brand_carved", "brand_realm"]
 
 
 # ---- 数据 ----
@@ -96,6 +98,10 @@ static func from_save(d) -> Dictionary:
 			out.pendingDaofaRoll = {"realm": int(roll.realm), "key": str(roll.key)}
 			if roll.get("random") != null:
 				out.pendingDaofaRoll.random = int(roll.random)
+		# 天启篇烙印（XTianqiBrand，T117）：只在读进来的数据里本来就有时原样留，不新建（西游档读出来再存回去逐字节不变）
+		for k in BRAND_KEYS:
+			if d.has(k):
+				out[k] = int(d[k])
 	return out
 
 
@@ -318,6 +324,8 @@ static func on_victory(s: XState, actors: Array, enemies: Array) -> Array:
 		trial_done = b.trial
 		return []
 	unlock_specs(s, enemies, b)
+	if XTianqiBrand.on(s):
+		return []  # 天启篇烙印开着：真气不再涨，打赢后的烙印由 XTianqiBrand.settle 结算（BattleLogic.grant）
 	var boss := int(b.guardianFloor) == 0 and enemies.any(func(e): return is_boss_enemy(e))
 	var c := int(b.route.coef)
 	var f := int(b.guardianFloor) if int(b.guardianFloor) else int(b.floor)
@@ -837,6 +845,7 @@ static func menu(s: XState, node: Dictionary) -> Dictionary:
 		"actor": return _actor_page(s, s.actors[int(node.id)])
 		"trial": return _start_trial(s, s.actors[int(node.id)])
 		"trial_end": return _trial_end(s)
+		"carve": return _brand_carve(s, s.actors[int(node.id)], bool(node.get("ok", false)))
 		"pick": return _pick_flow(s, s.actors[int(node.id)])
 		"attr":
 			var a: XActor = s.actors[int(node.id)]
@@ -878,6 +887,10 @@ static func _retreat(s: XState, page: int) -> Dictionary:
 	page = clampi(page, 0, pages - 1)
 	var opts := []
 	for a in members.slice(page * size, (page + 1) * size):
+		if XTianqiBrand.on(s):
+			var bp := XTianqiBrand.panel(s, a)
+			opts.append({"label": "%s %s%s" % [a.display_name(), str(bp.text), "［可打心魔］" if bool(bp.plus) else ""], "next": {"page": "actor", "id": a.actor_id}})
+			continue
 		var st := state_of(s, a)
 		var tag := "［待选奖励］" if st.pending else ("［可突破］" if st.canBreak else ("［通关%d层后突破］" % int(st.gate.required) if st.capped else ""))
 		opts.append({"label": "%s %s ×%.1f%s" % [a.display_name(), st.name, st.rate, tag], "next": {"page": "actor", "id": a.actor_id}})
@@ -891,6 +904,8 @@ static func _retreat(s: XState, page: int) -> Dictionary:
 
 
 static func _actor_page(s: XState, a: XActor) -> Dictionary:
+	if XTianqiBrand.on(s):
+		return _brand_page(s, a)
 	var st := state_of(s, a)
 	var lines := ["\\C[6]%s\\C[0]：%s %s" % [a.display_name(), st.world, st.name], "真气 %d　加成 ×%.1f" % [st.qi, st.rate]]
 	if st.next == null:
@@ -912,6 +927,8 @@ static func _actor_page(s: XState, a: XActor) -> Dictionary:
 
 
 static func _start_trial(s: XState, a: XActor) -> Dictionary:
+	if XTianqiBrand.on(s):
+		return _brand_trial(s, a)
 	var d := data(a)
 	var i := int(d.realm) + 1
 	var g := gate(s, a)
@@ -936,9 +953,62 @@ static func _trial_end(s: XState) -> Dictionary:
 	if t.is_empty():
 		return {}
 	var a: XActor = s.actors[int(t.actorId)]
+	if bool(t.get("brand", false)):
+		var name := str(XTianqiBrand.data().get("nodes", {}).get("realms", [])[mini(int(t.target), XTianqiBrand.last_realm())])
+		if bool(t.get("won", false)) and XTianqiBrand.stand(a):
+			return _tell(["\\C[6]%s 立入%s！\\C[0]" % [a.display_name(), name]], {"page": "actor", "id": a.actor_id})
+		return _tell(["%s 未能立入%s。" % [a.display_name(), name], "（打心魔的角色需活到战斗结束）"], {"page": "actor", "id": a.actor_id})
 	if bool(t.get("won", false)) and breakthrough(s, a):
 		return _tell(["\\C[6]%s 突破至%s！\\C[0]" % [a.display_name(), REALMS[int(t.target)].name]], {"page": "pick", "id": a.actor_id})
 	return _tell(["%s 未能突破。" % a.display_name(), "（突破的角色需活到战斗结束）"], {"page": "actor", "id": a.actor_id})
+
+
+# ---- 天启篇烙印（XTianqiBrand 开着时代替真气那几页；T117）----
+static func _brand_page(s: XState, a: XActor) -> Dictionary:
+	var bp := XTianqiBrand.panel(s, a)
+	var realms: Array = XTianqiBrand.data().get("nodes", {}).get("realms", [])
+	var r := XTianqiBrand.realm(a)
+	var lines := ["\\C[6]%s\\C[0]：%s%s" % [a.display_name(), str(realms[r]) if r < realms.size() else "", "" if XTianqiBrand.carved(a) else "（未刻印）"],
+		"%s %s" % [XTianqiBrand.bar_text(s, a), str(bp.text)]]
+	var gz := XTianqiBase.gaze_row(s)
+	if not gz.is_empty():
+		lines.append("%s　%s" % [str(gz[0]), str(gz[1])])
+	if bool(bp.plus):
+		lines.append(XTianqiBrand.TEXT_BOTTLENECK % a.display_name())
+	var opts := []
+	if not XTianqiBrand.carved(a):
+		opts.append({"label": "刻印", "next": {"page": "carve", "id": a.actor_id}})
+	if bool(bp.plus):
+		opts.append({"label": "挑战心魔", "next": {"page": "trial", "id": a.actor_id}})
+	opts.append({"label": "返回", "next": {"page": "retreat"}})
+	opts.append({"label": "离开", "next": null})
+	return _ask(lines, opts)
+
+
+static func _brand_carve(s: XState, a: XActor, ok: bool) -> Dictionary:
+	if not XTianqiBrand.on(s) or XTianqiBrand.carved(a):
+		return _actor_page(s, a)
+	if not ok:
+		return _ask(["\\C[6]%s\\C[0] 刻印" % a.display_name()] + XTianqiBrand.TEXT_CARVE_WARN,
+			[{"label": "刻印", "next": {"page": "carve", "id": a.actor_id, "ok": true}}, {"label": "再想想", "next": {"page": "actor", "id": a.actor_id}}])
+	XTianqiBrand.carve(a)
+	return _tell(["\\C[6]%s 刻下了烙印。\\C[0]" % a.display_name()], {"page": "actor", "id": a.actor_id})
+
+
+## 心魔（立境）：gate 只看节点＋甲二，不看层数；对手照瓶颈之战幻化（心魔战自己的规则不在本卡）
+static func _brand_trial(s: XState, a: XActor) -> Dictionary:
+	if not XTianqiBrand.can_stand(a):
+		return _tell(["烙印还没到本境的头。" if not XTianqiBrand.at_node(a) else "没刻印的人到这里就停了，刻了印才能接着打心魔。"])
+	if not s.battle_members().has(a):
+		return _tell(["%s 不在出战队伍中。" % a.display_name(), "请先把%s编入出战队伍再打心魔。" % a.display_name()])
+	var i := XTianqiBrand.realm(a) + 1
+	var ref := trial_ref(s, 1)
+	var troop := int(HEART_TROOP.get(a.actor_id, 0))
+	if troop == 0:
+		troop = int(TRIAL_TROOP["心魔"])
+	pending_trial = {"actorId": a.actor_id, "target": i, "ref": ref, "kind": "心魔", "troopId": troop, "brand": true}
+	return {"lines": ["\\C[6]心魔\\C[0]幻化为第%d层守层者之力。" % ref.floor, "%s必须坚持到战斗结束，才能立入下一境。" % a.display_name()],
+		"options": [], "battle": troop, "next": {"page": "trial_end"}}
 
 
 static func _pick_flow(s: XState, a: XActor) -> Dictionary:

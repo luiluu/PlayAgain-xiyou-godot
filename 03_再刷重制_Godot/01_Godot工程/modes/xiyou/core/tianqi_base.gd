@@ -133,16 +133,14 @@ static func k_base(s = null) -> float:
 	return float(XTianqiBalance.data().get("combat_rules", {}).get("base_damage", 1.0))
 
 
-## 按角色取的乘数口子（D139：和烙印联动，T073-b 接进来）。现在恒 1
-static func k_actor_mult(_a) -> float:
-	return 1.0
+## 按角色取的乘数口子（D139：和烙印联动）：烙印的伤害乘数 XTianqiBrand.mult（T073-b；烙印开关关着、西游档恒 1）
+static func k_actor_mult(a, s = null) -> float:
+	return XTianqiBrand.mult(a, s)
 
 
-## 这个角色打出伤害要乘的 K（dealt_parts 用；关着 1）
+## 这个角色打出伤害要乘的 K × 烙印（dealt_parts、scale_direct 用）。总开关关着 K 按 1，烙印开关各管各的；两个都关着恒 1
 static func k_for(a, s = null) -> float:
-	if not on(s):
-		return 1.0
-	return k_base(s) * k_actor_mult(a)
+	return k_base(s) * k_actor_mult(a, s)
 
 
 ## 面板一行：[名字, 「伤害 ×K」]；关着为空。只显示表里的 K 本身（不含烙印口子）

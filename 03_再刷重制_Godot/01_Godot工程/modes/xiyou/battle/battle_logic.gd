@@ -212,6 +212,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XTianqiQiyinRule.setup(self, s)  # 天启篇七印祭坛里副本（prepare 过才开）：重标能力值、本印规则
 	XGuardianRework.setup(self, s)  # 守层者重算（O-402）：天启篇守层者、鸿钧、七印里副本的血量按层重标（在重标能力值之后）
 	XTianqiQiyinDragonRun.setup_rules(self)  # 天启篇七首之龙：七段揭印的规则记录（在里副本规则之后，免得被它清掉）
+	XTianqiBrand.battle_setup(self, s)  # 天启篇烙印（开关关着只清标记）：认特殊战／首领战、合成战斗键、档位、生熟（整场不变）
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
@@ -3717,6 +3718,7 @@ func grant(r: Dictionary) -> Array:
 	XXuanChart.credit_victory(state, actors, enemies)  # 璇 endBattle 包装：出战的璇胜利一场攒星砂（含 Boss 的敌群多给）
 	XStarburstBooks.on_victory(self)  # 星爆三本被动书 endBattle(0) 包装（真气、云裳外层，真气胜利结算之前）：8／18 层守层者、13 层不朽存在
 	XZhenqi.on_victory(state, actors, XZhenqi.troop_members(troop_id, enemies, state.difficulty))  # 真气胜利结算（含没出场的隐藏成员）（BattleManager.endBattle(0)；每场一次）
+	XTianqiBrand.settle(self)  # 天启篇烙印（开关关着不动）：首领战打赢后首通、再打、烙实，记首胜
 	state.gain_gold(r.gold)
 	if not drop_lock:
 		gain_drops(r.drops)
