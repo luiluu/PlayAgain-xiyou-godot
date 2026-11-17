@@ -431,7 +431,23 @@ func _fonts() -> void:
 	# T100：默认三种 kind 都是玩家版 GameFont（同一对象，选中不会换字）；下面照旧验三款裁字字体（回退支）
 	check("t100_all_kinds_game_font", XUiSkin.FONT_V00300 and XUiSkin.font("title") == GameFont.current() and XUiSkin.font("body") == GameFont.current() and XUiSkin.font("num") == GameFont.current())
 	check("t100_theme_default_font", XUiSkin.theme().default_font == GameFont.current() and XUiSkin.theme().get_constant("outline_size", "Label") == 1)
+	# T100 返修（小A 核）：描边也同玩家版——1px、黑 0.45；自绘字走 XUiSkin.ds，Label／按钮走 theme／apply
+	var th := XUiSkin.theme()
+	check("t100_outline_values", XUiSkin.outline_size() == 1 and is_equal_approx(XUiSkin.outline_color().a, 0.45) and XUiSkin.outline_color().r == 0.0)
+	check("t100_theme_outline_color", is_equal_approx(th.get_color("font_outline_color", "Label").a, 0.45) and th.get_constant("outline_size", "Button") == 1)
+	var tb := XSkinButton.apply(Button.new(), "", 20)
+	check("t100_skin_button_outline", tb.get_theme_constant("outline_size") == 1 and is_equal_approx(tb.get_theme_color("font_outline_color").a, 0.45))
+	tb.free()
+	var raw := []
+	for p in DirAccess.get_files_at("res://modes/xiyou/ui/skin"):
+		if p.ends_with(".gd") and p != "ui_skin.gd":
+			var src := FileAccess.get_file_as_string("res://modes/xiyou/ui/skin/" + p)
+			var rx := RegEx.create_from_string("(?<![\\w])(?:\\w+\\.)?draw_string\\(")
+			if rx.search(src) != null and not (p in ["skin_art.gd", "skin_ring_nav.gd"] and rx.search_all(src).size() == 1):   # 两处各留一条：READ 已描粗边／Font.draw_string(RID) 上一行已 draw_string_outline
+				raw.append(p)
+	check("t100_no_raw_draw_string", raw.is_empty(), raw)
 	XUiSkin.FONT_V00300 = false
+	check("t100_switch_off_no_outline", XUiSkin.outline_size() == 0)
 	XUiSkin._fonts.clear()
 	var ok := true
 	for k in ["title", "body", "num"]:

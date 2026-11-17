@@ -120,7 +120,7 @@ static func backed_text(ci: CanvasItem, font: Font, pos: Vector2, s: String, fs:
 	if text_on():
 		draw_text_backing(ci, pos.x, pos.y, w, fs, alpha)
 	ci.draw_string_outline(font, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.75 * alpha))
-	ci.draw_string(font, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(color, color.a * alpha))
+	XUiSkin.ds(ci, font, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(color, color.a * alpha))
 
 
 ## HUD 小图标：有替换图（ICON_DIR/hud_<name>.png）就画图，否则程序画（u4 组图标的画法：旧金主色、左上受光、1px 硬黑边）

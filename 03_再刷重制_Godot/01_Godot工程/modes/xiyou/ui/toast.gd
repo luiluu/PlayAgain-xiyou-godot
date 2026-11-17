@@ -146,7 +146,8 @@ func _add(message: String) -> void:
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", XUiSkin.TEXT if on else Color.WHITE)
 	if on:
-		label.add_theme_constant_override("outline_size", 0)
+		label.add_theme_constant_override("outline_size", XUiSkin.outline_size())
+		label.add_theme_color_override("font_outline_color", XUiSkin.outline_color())
 	else:
 		label.add_theme_color_override("font_outline_color", SHADOW)
 		label.add_theme_constant_override("outline_size", 2)

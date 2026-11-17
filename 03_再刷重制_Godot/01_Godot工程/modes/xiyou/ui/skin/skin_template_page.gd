@@ -352,11 +352,11 @@ func _draw_ring_center() -> void:
 	var body := XUiSkin.font("body")
 	var big := str(ring_center[0])
 	var bw := num.get_string_size(big, HORIZONTAL_ALIGNMENT_LEFT, -1, 44).x
-	ring.draw_string(num, Vector2(c.x - bw / 2.0, c.y + 8), big, HORIZONTAL_ALIGNMENT_LEFT, -1, 44, XUiSkin.TEXT)
+	XUiSkin.ds(ring, num, Vector2(c.x - bw / 2.0, c.y + 8), big, HORIZONTAL_ALIGNMENT_LEFT, -1, 44, XUiSkin.TEXT)
 	if ring_center.size() > 1:
 		var small := str(ring_center[1])
 		var sw := body.get_string_size(small, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
-		ring.draw_string(body, Vector2(c.x - sw / 2.0, c.y + 34), small, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+		XUiSkin.ds(ring, body, Vector2(c.x - sw / 2.0, c.y + 34), small, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 
 
 func _place_pager() -> void:
@@ -382,14 +382,14 @@ func _draw_list_panel() -> void:
 	var body := XUiSkin.font("body")
 	var s := list_panel.size
 	if list_title != "":
-		list_panel.draw_string(body, Vector2(XUiSkin.PAD + 8, XUiSkin.PAD + 20), list_title, HORIZONTAL_ALIGNMENT_LEFT, s.x - 48, 20, XUiSkin.GOLD)
+		XUiSkin.ds(list_panel, body, Vector2(XUiSkin.PAD + 8, XUiSkin.PAD + 20), list_title, HORIZONTAL_ALIGNMENT_LEFT, s.x - 48, 20, XUiSkin.GOLD)
 	var ft := footer_text()
 	if ft != "" and not (pager != null and pager.visible and footer == ""):   # 自动页码由翻页件画
 		var fw := body.get_string_size(ft, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
 		if pager != null and pager.visible:   # 自定义页脚遇上翻页件：靠左画、不超过翻页件左缘（T049 小A核 P3）
-			list_panel.draw_string(body, Vector2(XUiSkin.PAD + 8, s.y - XUiSkin.PAD), ft, HORIZONTAL_ALIGNMENT_LEFT, maxf(pager.position.x - XUiSkin.PAD - 16, 0.0), XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+			XUiSkin.ds(list_panel, body, Vector2(XUiSkin.PAD + 8, s.y - XUiSkin.PAD), ft, HORIZONTAL_ALIGNMENT_LEFT, maxf(pager.position.x - XUiSkin.PAD - 16, 0.0), XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 		else:
-			list_panel.draw_string(body, Vector2((s.x - fw) / 2.0, s.y - XUiSkin.PAD), ft, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+			XUiSkin.ds(list_panel, body, Vector2((s.x - fw) / 2.0, s.y - XUiSkin.PAD), ft, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 
 
 func _process(_delta: float) -> void:

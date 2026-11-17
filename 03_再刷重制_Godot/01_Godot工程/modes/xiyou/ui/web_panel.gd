@@ -85,8 +85,8 @@ static func _box(bg: Color, edge: Color, radius := 6, border := 1, pad := Vector
 
 
 static func _outline(c: Control) -> void:
-	c.add_theme_color_override("font_outline_color", Color.BLACK)
-	c.add_theme_constant_override("outline_size", 0 if XUiSkin.on() else 2)
+	c.add_theme_color_override("font_outline_color", XUiSkin.outline_color() if XUiSkin.on() and XUiSkin.FONT_V00300 else Color.BLACK)
+	c.add_theme_constant_override("outline_size", XUiSkin.outline_size() if XUiSkin.on() else 2)
 
 
 ## installGamePanelTheme 的按钮：17 号、黑 0.28 底、白 0.4 边、圆角 6；悬停光标色
@@ -132,8 +132,8 @@ static func _fixed(l: Label, line_h: float) -> Label:
 	ls.font = l.get_theme_font("font")
 	ls.font_size = l.get_theme_font_size("font_size")
 	ls.font_color = l.get_theme_color("font_color")
-	ls.outline_size = 0 if XUiSkin.on() else 2
-	ls.outline_color = Color.BLACK
+	ls.outline_size = XUiSkin.outline_size() if XUiSkin.on() else 2
+	ls.outline_color = XUiSkin.outline_color() if XUiSkin.on() and XUiSkin.FONT_V00300 else Color.BLACK
 	ls.line_spacing = 0
 	var f := ls.font
 	ls.line_spacing = line_h - (f.get_ascent(ls.font_size) + f.get_descent(ls.font_size))

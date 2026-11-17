@@ -44,10 +44,14 @@ func _run() -> void:
 	var s := XState.new_game(3, 8, [9])
 	s.actor_name = "k"
 	XState.current = s
-	s.flags["tianqi"] = {"rules": 1}
-	s.add_actor(168)
-	s.add_actor(127)
+	# 先加人再设天启篇标记：标记一设，add_actor 就弹「只从方桌大厅招募」toast 并拒绝入队（toast 会盖住标题）
+	s.add_actor(168, Callable())
+	s.add_actor(127, Callable())
 	s.party.assign([168, 127, 8, 9])
+	s.flags["tianqi"] = {"rules": 1}
+	for n in get_tree().root.get_children():
+		if n is XToast:
+			n.queue_free()
 	# 主菜单、工坊页签
 	var m := XMenu.new()
 	add_child(m)

@@ -93,7 +93,7 @@ func _draw() -> void:
 	var body := XUiSkin.font("body")
 	var x := r.position.x + 22.0
 	var base := r.position.y + H / 2.0 + 8.0
-	draw_string(title, Vector2(x, base), target_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, XUiSkin.TEXT)
+	XUiSkin.ds(self, title, Vector2(x, base), target_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, XUiSkin.TEXT)
 	if sub != "":
 		x += title.get_string_size(target_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 22).x + 10.0
-		draw_string(body, Vector2(x, base - 2.0), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.GOLD)
+		XUiSkin.ds(self, body, Vector2(x, base - 2.0), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.GOLD)

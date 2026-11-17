@@ -120,7 +120,7 @@ func _draw() -> void:
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	if title != "":
-		draw_string(head, Vector2(16, 10 + 21 * 0.9), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD)
+		XUiSkin.ds(self, head, Vector2(16, 10 + 21 * 0.9), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD)
 	sel_scale.sel(index if selectable and index >= 0 else null)
 	for i in members.size():
 		var m: Dictionary = members[i]
@@ -133,8 +133,8 @@ func _draw() -> void:
 			if bool(m.get("placeholder", false)):
 				var hc0 := Vector2(r.position.x + 14 + HEAD / 2.0, r.position.y + r.size.y / 2.0)
 				draw_circle(hc0, HEAD / 2.0, Color(XUiSkin.LINE, 0.4), false, 1.5, true)
-				draw_string(body, Vector2(hc0.x - 6, hc0.y + 8), "+", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, XUiSkin.TEXT_3)
-				draw_string(body, Vector2(r.position.x + 14 + HEAD + 12, hc0.y + 18 * 0.36), str(m.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT_2)
+				XUiSkin.ds(self, body, Vector2(hc0.x - 6, hc0.y + 8), "+", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, XUiSkin.TEXT_3)
+				XUiSkin.ds(self, body, Vector2(r.position.x + 14 + HEAD + 12, hc0.y + 18 * 0.36), str(m.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT_2)
 				continue
 		# 行比 60 高：内容竖直居中
 		r = Rect2(r.position.x, r.position.y + floorf((r.size.y - XUiSkin.MEMBER_H) / 2.0), r.size.x, XUiSkin.MEMBER_H)
@@ -154,12 +154,12 @@ func _draw() -> void:
 			var bfs := XSkinSelScale.fs(int(fit[1]), sk, 22)
 			if body.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x <= right - x - 80:
 				fit = [fit[0], bfs]
-		draw_string(body, Vector2(x, y1), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], XUiSkin.TEXT)
+		XUiSkin.ds(self, body, Vector2(x, y1), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], XUiSkin.TEXT)
 		var nw := body.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
 		var info := "Lv %d" % int(m.get("level", 1))
 		if str(m.get("cls", "")) != "":
 			info += " · " + str(m.cls)
-		draw_string(body, Vector2(x + nw + 8, y1), info, HORIZONTAL_ALIGNMENT_LEFT, maxf(right - x - nw - 8 - 80, 10), XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+		XUiSkin.ds(self, body, Vector2(x + nw + 8, y1), info, HORIZONTAL_ALIGNMENT_LEFT, maxf(right - x - nw - 8 - 80, 10), XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 		var states: Array = m.get("states", [])
 		var sx := right - (HELPER_TAG_ROOM if bool(m.get("helper", false)) else 0.0)   # 助力卡：状态图标让开右上角标（小A核 P3-2）
 		for k in range(mini(states.size(), 4)):
@@ -183,7 +183,7 @@ func _draw() -> void:
 			_pill(ci, track, Color(1, 1, 1, 0.12))
 			if mx > 0 and v > 0:
 				_pill(ci, Rect2(track.position, Vector2(track.size.x * clampf(v / mx, 0, 1), track.size.y)), spec[2])
-			draw_string(num, Vector2(bx + w - num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x, y2 + 6), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, spec[3])
+			XUiSkin.ds(self, num, Vector2(bx + w - num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x, y2 + 6), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, spec[3])
 			bx += w + 8
 
 
@@ -208,7 +208,7 @@ func _draw_helper_frame(ci: RID, r: Rect2, head: Font) -> void:
 		XSkinArt.draw_helper(ci, box)
 		var tr2 := XSkinArt.helper_tag_rect(box)
 		var tw := head.get_string_size("助力", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
-		draw_string(head, Vector2(tr2.position.x + (tr2.size.x - tw) / 2.0, tr2.position.y + 17), "助力", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, XUiSkin.TEXT)
+		XUiSkin.ds(self, head, Vector2(tr2.position.x + (tr2.size.x - tw) / 2.0, tr2.position.y + 17), "助力", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, XUiSkin.TEXT)
 		return
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0, 0, 0, 0.28)
@@ -223,7 +223,7 @@ func _draw_helper_frame(ci: RID, r: Rect2, head: Font) -> void:
 	tb.corner_radius_bottom_left = 6
 	tb.corner_radius_top_right = XUiSkin.ROW_RADIUS
 	tb.draw(ci, tr)
-	draw_string(head, Vector2(tr.position.x + 7, tr.position.y + 15), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, XUiSkin.BG)
+	XUiSkin.ds(self, head, Vector2(tr.position.x + 7, tr.position.y + 15), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, XUiSkin.BG)
 
 
 func _pill(ci: RID, r: Rect2, c: Color) -> void:

@@ -420,10 +420,10 @@ func _draw_ring() -> void:
 	var done := rows.filter(func(r): return int(r.state) == 2).size()
 	var big := "%d / %d" % [done, rows.size()]
 	var bw := num.get_string_size(big, HORIZONTAL_ALIGNMENT_LEFT, -1, 64).x
-	ring.draw_string(num, Vector2(c.x - bw / 2.0, c.y + 12), big, HORIZONTAL_ALIGNMENT_LEFT, -1, 64, XUiSkin.TEXT)
+	XUiSkin.ds(ring, num, Vector2(c.x - bw / 2.0, c.y + 12), big, HORIZONTAL_ALIGNMENT_LEFT, -1, 64, XUiSkin.TEXT)
 	var done_text := RING_DONE_TEXT   # 环心是「几/7 已揭开」的计数说明，不带 ◆ 记号（小A文字审）
 	var sw := body.get_string_size(done_text, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX).x
-	ring.draw_string(body, Vector2(c.x - sw / 2.0, c.y + 42), done_text, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT_2)
+	XUiSkin.ds(ring, body, Vector2(c.x - sw / 2.0, c.y + 42), done_text, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT_2)
 	# 七枚封蜡
 	for i in rows.size():
 		var r: Dictionary = rows[i]
@@ -446,7 +446,7 @@ func _draw_ring() -> void:
 			ring.draw_circle(p, s * 0.42, col.darkened(0.55) if st == 0 else col)
 			var g := XTianqiQiyinShow.seal_glyph(str(r.key))
 			var gw := head.get_string_size(g, HORIZONTAL_ALIGNMENT_LEFT, -1, 32).x
-			ring.draw_string(head, Vector2(p.x - gw / 2.0, p.y + 11), g, HORIZONTAL_ALIGNMENT_LEFT, -1, 32, XTianqiQiyinShow.seal_accent(str(r.key)))
+			XUiSkin.ds(ring, head, Vector2(p.x - gw / 2.0, p.y + 11), g, HORIZONTAL_ALIGNMENT_LEFT, -1, 32, XTianqiQiyinShow.seal_accent(str(r.key)))
 		# 名字和状态：在印外侧
 		var dir := Vector2.from_angle(deg_to_rad(_deg(i)))
 		var lp := ring_center() + dir * (RING_R + 92.0)
@@ -456,10 +456,10 @@ func _draw_ring() -> void:
 		var fs := 22 if not on else 24
 		var nw := head.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		ring.draw_string_outline(head, Vector2(lp.x - nw / 2.0, lp.y), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 4, Color(0, 0, 0, 0.6))
-		ring.draw_string(head, Vector2(lp.x - nw / 2.0, lp.y), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE if on else XUiSkin.TEXT)
+		XUiSkin.ds(ring, head, Vector2(lp.x - nw / 2.0, lp.y), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE if on else XUiSkin.TEXT)
 		var stt: String = STATE_TEXT[clampi(st, 0, 2)]
 		var tw := body.get_string_size(stt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-		ring.draw_string(body, Vector2(lp.x - tw / 2.0, lp.y + 22), stt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, state_color(st))
+		XUiSkin.ds(ring, body, Vector2(lp.x - tw / 2.0, lp.y + 22), stt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, state_color(st))
 
 
 func button_rect(i: int) -> Rect2:
@@ -501,33 +501,33 @@ func _draw_card() -> void:
 	y += big + 8
 	var name := str(r.seal)
 	var nw := head.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_CARD_MAX).x
-	card.draw_string(head, Vector2(cx - nw / 2.0, y + XUiSkin.FS_CARD_MAX * 0.86), name, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_CARD_MAX, XUiSkin.TEXT)
+	XUiSkin.ds(card, head, Vector2(cx - nw / 2.0, y + XUiSkin.FS_CARD_MAX * 0.86), name, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_CARD_MAX, XUiSkin.TEXT)
 	y += XUiSkin.FS_CARD_MAX + 8
 	for ln in _card_lines(r):
 		var t := str(ln[0])
 		var fs := int(ln[2])
 		var lw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		card.draw_string(body, Vector2(cx - lw / 2.0, y + fs * 0.9), t, HORIZONTAL_ALIGNMENT_LEFT, w - pad * 2, fs, ln[1])
+		XUiSkin.ds(card, body, Vector2(cx - lw / 2.0, y + fs * 0.9), t, HORIZONTAL_ALIGNMENT_LEFT, w - pad * 2, fs, ln[1])
 		y += fs + 8
 	# 本印封存
 	var bottom := button_rect(0).position.y - XUiSkin.GRID if not buttons.is_empty() else cr.size.y - pad
 	if y + 64 <= bottom:
 		y += 10
-		card.draw_string(body, Vector2(pad, y + XUiSkin.FS_AUX_MAX * 0.9), "本印封存", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
+		XUiSkin.ds(card, body, Vector2(pad, y + XUiSkin.FS_AUX_MAX * 0.9), "本印封存", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
 		y += XUiSkin.FS_AUX_MAX + 8
 		card.draw_line(Vector2(pad, y), Vector2(w - pad, y), Color(XUiSkin.LINE, 0.22), 1.0)
 		y += 6
 		var lines := sealed_lines(r)
 		if lines.is_empty():
 			if y + 28 <= bottom:
-				card.draw_string(body, Vector2(pad, y + 19), "这一印没有封着的东西", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_3)
+				XUiSkin.ds(card, body, Vector2(pad, y + 19), "这一印没有封着的东西", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_3)
 		for ln in lines:
 			if y + 28 > bottom:
 				break
-			card.draw_string(body, Vector2(pad, y + 19), str(ln[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, XUiSkin.TEXT)
+			XUiSkin.ds(card, body, Vector2(pad, y + 19), str(ln[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, XUiSkin.TEXT)
 			var v := "×%d" % int(ln[1])
 			var vw := num.get_string_size(v, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x
-			card.draw_string(num, Vector2(w - pad - vw, y + 20), v, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, XUiSkin.GOLD_LIGHT)
+			XUiSkin.ds(card, num, Vector2(w - pad - vw, y + 20), v, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, XUiSkin.GOLD_LIGHT)
 			y += 28
 	# 入口
 	btn_scale.sel(button if not rules_open and not buttons.is_empty() else null)
@@ -548,7 +548,7 @@ func _draw_card() -> void:
 		var t := str(b.get("text", ""))
 		var fit := XSkinList.fit_text(body, t, br.size.x - 24, XSkinSelScale.fs(XUiSkin.FS_LIST, btn_scale.k(i), floori(br.size.y * 0.62)), 15)
 		var tw := body.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
-		card.draw_string(body, Vector2(br.position.x + (br.size.x - tw) / 2.0, br.position.y + br.size.y / 2.0 + fit[1] * 0.36), fit[0],
+		XUiSkin.ds(card, body, Vector2(br.position.x + (br.size.x - tw) / 2.0, br.position.y + br.size.y / 2.0 + fit[1] * 0.36), fit[0],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], XUiSkin.TEXT_3 if bool(b.get("disabled", false)) else XUiSkin.TEXT)
 	card.draw_set_transform(Vector2.ZERO)
 
@@ -589,7 +589,7 @@ var back_button: XSkinBackButton
 func _draw_top() -> void:
 	var v := view()
 	var m := XSkinLayout.margin_for(v.x)
-	top.draw_string(XUiSkin.font("title"), Vector2(XSkinBackButton.place(back_button, m), 14 + 34 * 0.92), "七印祭坛", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
+	XUiSkin.ds(top, XUiSkin.font("title"), Vector2(XSkinBackButton.place(back_button, m), 14 + 34 * 0.92), "七印祭坛", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_PAGE, XUiSkin.TEXT)
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	var x := v.x - m
@@ -599,10 +599,10 @@ func _draw_top() -> void:
 		var val := str(pair[1])
 		var vw := num.get_string_size(val, HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
 		x -= vw
-		top.draw_string(num, Vector2(x, 42), val, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, XUiSkin.GOLD_LIGHT)
+		XUiSkin.ds(top, num, Vector2(x, 42), val, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, XUiSkin.GOLD_LIGHT)
 		var nw := body.get_string_size(str(pair[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
 		x -= nw + 6
-		top.draw_string(body, Vector2(x, 42), str(pair[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
+		XUiSkin.ds(top, body, Vector2(x, 42), str(pair[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
 		x -= 18
 
 
@@ -631,11 +631,11 @@ func _draw_rules() -> void:
 	var pad := float(XUiSkin.PAD_LG)
 	var x := box.position.x + pad
 	var y := box.position.y + pad
-	rules.draw_string(head, Vector2(x, y + XUiSkin.FS_CARD * 0.86), "怎么玩", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_CARD, XUiSkin.TEXT)
+	XUiSkin.ds(rules, head, Vector2(x, y + XUiSkin.FS_CARD * 0.86), "怎么玩", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_CARD, XUiSkin.TEXT)
 	y += XUiSkin.FS_CARD + 16
 	for ln in rules_lines():
-		rules.draw_string(body, Vector2(x, y + 17), str(ln[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, XUiSkin.GOLD)
-		rules.draw_string(body, Vector2(x + 22, y + 17), str(ln[1]), HORIZONTAL_ALIGNMENT_LEFT, w - pad * 2 - 22, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT)
+		XUiSkin.ds(rules, body, Vector2(x, y + 17), str(ln[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, XUiSkin.GOLD)
+		XUiSkin.ds(rules, body, Vector2(x + 22, y + 17), str(ln[1]), HORIZONTAL_ALIGNMENT_LEFT, w - pad * 2 - 22, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT)
 		y += 32
 	var r := current()
 	if r.is_empty():
@@ -643,7 +643,7 @@ func _draw_rules() -> void:
 	y += 6
 	rules.draw_line(Vector2(x, y), Vector2(box.end.x - pad, y), Color(XUiSkin.LINE, 0.22), 1.0)
 	y += 12
-	rules.draw_string(body, Vector2(x, y + 18), "%s · %s" % [str(r.seal), str(r.place)], HORIZONTAL_ALIGNMENT_LEFT, w - pad * 2, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
+	XUiSkin.ds(rules, body, Vector2(x, y + 18), "%s · %s" % [str(r.seal), str(r.place)], HORIZONTAL_ALIGNMENT_LEFT, w - pad * 2, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
 	y += 30
 	var para := TextParagraph.new()
 	para.width = w - pad * 2
@@ -651,5 +651,5 @@ func _draw_rules() -> void:
 	para.add_string(rt, body, 16)
 	for li in para.get_line_count():
 		var rg := para.get_line_range(li)
-		rules.draw_string(body, Vector2(x, y + 17), rt.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, XUiSkin.TEXT_2)
+		XUiSkin.ds(rules, body, Vector2(x, y + 17), rt.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, XUiSkin.TEXT_2)
 		y += 24

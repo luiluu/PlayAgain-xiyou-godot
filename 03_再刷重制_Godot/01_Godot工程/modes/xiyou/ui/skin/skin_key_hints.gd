@@ -187,7 +187,7 @@ func _draw() -> void:
 			cb.draw(ci, r)
 			var t := _chip_text(hints[i])
 			var tw := f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, TOUCH_FS).x
-			draw_string(f, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.size.y / 2.0 + TOUCH_FS * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, TOUCH_FS, XUiSkin.TEXT)
+			XUiSkin.ds(self, f, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.size.y / 2.0 + TOUCH_FS * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, TOUCH_FS, XUiSkin.TEXT)
 		return
 	var x := 0.0
 	for h in hints:

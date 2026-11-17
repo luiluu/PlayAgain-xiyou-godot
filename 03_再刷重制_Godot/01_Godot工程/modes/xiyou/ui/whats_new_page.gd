@@ -135,7 +135,8 @@ func _label(text: String, fs: int, col: Color) -> Label:
 		l.text = text
 		l.add_theme_font_size_override("font_size", fs)
 		l.add_theme_color_override("font_color", col)
-		l.add_theme_constant_override("outline_size", 0)
+		l.add_theme_constant_override("outline_size", XUiSkin.outline_size())
+		l.add_theme_color_override("font_outline_color", XUiSkin.outline_color())
 		return l
 	return XUI.label(text, fs, col)
 

@@ -426,6 +426,26 @@ static func font(kind := "body") -> Font:
 	return f
 
 
+## 描边（玩家版旧页：1px、黑 0.45，XMVCanvas.text／XUI.theme 同值）。FONT_V00300 开着时所有新皮肤自绘字都走 ds，Label／按钮走 theme。
+const T100_OUTLINE_PX := 1
+const T100_OUTLINE_A := 0.45
+
+
+static func outline_size() -> int:
+	return T100_OUTLINE_PX if FONT_V00300 else 0
+
+
+static func outline_color(a := 1.0) -> Color:
+	return Color(0, 0, 0, T100_OUTLINE_A * a)
+
+
+## 新皮肤画字的唯一入口（替代 draw_string）：FONT_V00300 开着先描 1px 黑 0.45 边再写字；关着＝原样 draw_string。
+static func ds(ci: CanvasItem, font: Font, pos: Vector2, text: String, align: int = HORIZONTAL_ALIGNMENT_LEFT, width: float = -1.0, fs: int = 16, color: Color = Color.WHITE, just: int = 3) -> void:
+	if FONT_V00300 and color.a > 0.0:
+		ci.draw_string_outline(font, pos, text, align, width, fs, T100_OUTLINE_PX, outline_color(color.a))
+	ci.draw_string(font, pos, text, align, width, fs, color, just)
+
+
 static func has_font(kind: String) -> bool:
 	return ResourceLoader.exists(FONT_DIR + str(FONT_FILES.get(kind, "")))
 
@@ -436,9 +456,9 @@ static func theme() -> Theme:
 	t.default_font = font("body")
 	t.default_font_size = FS_LIST
 	for type in ["Label", "Button", "RichTextLabel", "LineEdit"]:
-		t.set_constant("outline_size", type, 1 if FONT_V00300 else 0)
+		t.set_constant("outline_size", type, outline_size())
 		if FONT_V00300:
-			t.set_color("font_outline_color", type, Color(0, 0, 0, 0.45))
+			t.set_color("font_outline_color", type, outline_color())
 	t.set_color("font_color", "Label", TEXT)
 	t.set_color("default_color", "RichTextLabel", TEXT)
 	t.set_stylebox("panel", "PanelContainer", panel_style())

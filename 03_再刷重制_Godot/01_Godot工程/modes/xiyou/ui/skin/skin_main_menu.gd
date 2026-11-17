@@ -735,15 +735,15 @@ func _draw_pane() -> void:
 		match str(r.kind):
 			"group":
 				var nm := str(g.name)
-				text_layer.draw_string(body, Vector2(x, base + XUiSkin.FS_LIST * 0.36), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST, XUiSkin.TEXT)
+				XUiSkin.ds(text_layer, body, Vector2(x, base + XUiSkin.FS_LIST * 0.36), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST, XUiSkin.TEXT)
 				var sx := x + maxf(60.0, body.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_LIST).x + 16.0)
-				text_layer.draw_string(body, Vector2(sx, base + 15 * 0.36), collapsed_text(g), HORIZONTAL_ALIGNMENT_LEFT, rect.end.x - sx - 8.0, 15, XUiSkin.TEXT_2)
+				XUiSkin.ds(text_layer, body, Vector2(sx, base + 15 * 0.36), collapsed_text(g), HORIZONTAL_ALIGNMENT_LEFT, rect.end.x - sx - 8.0, 15, XUiSkin.TEXT_2)
 			"header":
-				text_layer.draw_string(head, Vector2(x, base + 21 * 0.36), str(g.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD)
+				XUiSkin.ds(text_layer, head, Vector2(x, base + 21 * 0.36), str(g.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD)
 			"note":
 				var it0: Dictionary = group_items(g)[0]
 				var ok0 := item_enabled(it0)
-				text_layer.draw_string(body, Vector2(x + 8.0, base + 17 * 0.36), "%s。确定直接打开" % str(it0.get("desc", it0.name)), HORIZONTAL_ALIGNMENT_LEFT,
+				XUiSkin.ds(text_layer, body, Vector2(x + 8.0, base + 17 * 0.36), "%s。确定直接打开" % str(it0.get("desc", it0.name)), HORIZONTAL_ALIGNMENT_LEFT,
 					rect.size.x - 32.0, 17, XUiSkin.TEXT_2 if ok0 else XUiSkin.TEXT_3)
 			"item":
 				var it: Dictionary = group_items(g)[r.i]
@@ -752,13 +752,13 @@ func _draw_pane() -> void:
 				var ix := x + (8.0 if group_items(g).size() > 1 else 0.0)
 				var fs := XSkinSelScale.fs(XUiSkin.FS_LIST_MAX, item_scale.k("%d:%d" % [r.g, r.i]), floori(rect.size.y * 0.62))
 				var nm := str(it.name)
-				text_layer.draw_string(head if on else body, Vector2(ix, base + fs * 0.36), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
+				XUiSkin.ds(text_layer, head if on else body, Vector2(ix, base + fs * 0.36), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
 					XUiSkin.TEXT_3 if not ok else (Color.WHITE if on else XUiSkin.TEXT))
 				var nw := (head if on else body).get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 				var desc := str(it.get("desc", ""))
 				if desc != "":
 					var dx := ix + nw + 14.0
-					text_layer.draw_string(body, Vector2(dx, base + 15 * 0.36), desc, HORIZONTAL_ALIGNMENT_LEFT, maxf(rect.end.x - dx - 12.0, 10.0), 15,
+					XUiSkin.ds(text_layer, body, Vector2(dx, base + 15 * 0.36), desc, HORIZONTAL_ALIGNMENT_LEFT, maxf(rect.end.x - dx - 12.0, 10.0), 15,
 						XUiSkin.TEXT_3 if not ok else XUiSkin.TEXT_2)
 
 
@@ -770,12 +770,12 @@ func _draw_run() -> void:
 	var s := _state()
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
-	run_panel.draw_string(body, Vector2(XUiSkin.PAD + 4, 18 + 20 * 0.86), run_text(s), HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - XUiSkin.PAD * 2, 20, XUiSkin.TEXT)
+	XUiSkin.ds(run_panel, body, Vector2(XUiSkin.PAD + 4, 18 + 20 * 0.86), run_text(s), HORIZONTAL_ALIGNMENT_LEFT, rect.size.x - XUiSkin.PAD * 2, 20, XUiSkin.TEXT)
 	var st := seal_states(s)
 	if st.is_empty():
 		return
 	var y := 66.0
-	run_panel.draw_string(body, Vector2(XUiSkin.PAD + 4, y + 15 * 0.36), "七印", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
+	XUiSkin.ds(run_panel, body, Vector2(XUiSkin.PAD + 4, y + 15 * 0.36), "七印", HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
 	var x := XUiSkin.PAD + 4 + body.get_string_size("七印", HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 12.0
 	for k in SEALS:
 		var v := int(st[k]) if k < st.size() else 0
@@ -791,7 +791,7 @@ func _draw_run() -> void:
 		x += 15.0
 	var t := "%d / %d" % [seals_cleared(st), SEALS]
 	var tw := num.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21).x
-	run_panel.draw_string(num, Vector2(rect.size.x - XUiSkin.PAD - 4 - tw, y + 21 * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD_LIGHT)
+	XUiSkin.ds(run_panel, num, Vector2(rect.size.x - XUiSkin.PAD - 4 - tw, y + 21 * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD_LIGHT)
 
 
 ## 环心：当前角色（选人时跟着队伍条）的圆头像

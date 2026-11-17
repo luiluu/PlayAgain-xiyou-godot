@@ -54,7 +54,8 @@ static func apply(b: Button, kind := "", font_size := -1) -> Button:
 	b.add_theme_font_override("font", XUiSkin.font("body"))
 	var fs := font_size if font_size > 0 else clampi(b.get_theme_font_size("font_size"), XUiSkin.FS_AUX, XUiSkin.FS_LIST)
 	b.add_theme_font_size_override("font_size", fs)
-	b.add_theme_constant_override("outline_size", 0)
+	b.add_theme_constant_override("outline_size", XUiSkin.outline_size())   # T100：FONT_V00300 开着＝旧页同款 1px
+	b.add_theme_color_override("font_outline_color", XUiSkin.outline_color())
 	var col := text_color(kind)
 	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
 		b.add_theme_color_override(k, col)
