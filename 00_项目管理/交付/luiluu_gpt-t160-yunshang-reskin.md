@@ -88,3 +88,14 @@
 
 - 修改content/guyu_v2走路图左向三帧脸颊外凸，各两行向内收1px，共18处像素变化，其他区域逐字节不变。修前/后原图、原尺寸＋4倍对比、像素变更清单在归档交付截图/gpt_t160_yunshang。
 - T156谷雨修前、修后均同一既有失败：正向步态IoU0.955（本次完全未改正向），其余通过、无警告；不是小修引入，不改已认可谷雨其他动作绕检查，留小A核。云裳整套仍在制作，未接入。
+
+### 上下文40%接力检查点（未完成，不可合并）
+
+- 本会话停止在6组新战斗raw：walk、chant、guard、damage、evade、thrust（18帧），原图/完整提示词已落盘于00_项目管理/归档/交付截图/gpt_t160_yunshang/battle；全部只参考指定头像＋已认可v8 Wait＋谷雨动作条。generation_ledger.json记累计51/80，剩29次；不是上轮剩5，而是Kyo追加30后已用6。
+- wait可直接复用Kyo认可的v8/Yunshang_Wait.png三帧。还缺11组：swing、missile、skill、spell、item、escape、victory、dying、abnormal、sleep、dead。继续逐动作3帧出图，用不完预算不要硬用；只看原生清晰自然，不再追8倍细节。现有raw尚未组装/审最终原尺寸，不能当已完成54格。
+- 已准备18条谷雨动作参考ref_*.png（从main的content/guyu_v2/Guyu_SV_v2.png按MV索引抽取，每条3格放大4倍）；motions.json为动作顺序。原图9列6行，每格64，动作i坐标列块i//6、行i%6，3帧横排。
+- 尚未写battle组装脚本：建议alpha>=128、每条分三主体整人同比缩到64格，用谷雨对应动作的脚底/中点，攻击/倒地保留整动作轮廓、不分段拉伸。全部战斗映射v8/palette.json同一48色，保持已认可走路像素不变；原生整套图576×384。保留54格完整动作语义，不能以待机复制填槽。
+- 尚未改运行接线：yunshang.gd第6～12行目前仍指向旧u2。新runtime计划content/yunshang_v9，只放Walk/SV运行图；ART仍是总回退开关，可另加RESKIN开关回退u2。头像继续u1，缺新文件安全回退。appearance.gd第340行附近_mv_sheet仅识别旧u2路径，应将新SV路径也设asset="Yunshang_u2"以复用原生1:1 profile；actor_book现有key仍Yunshang_u2，可沿用而避免额外共用文件变更。
+- tests/xiyou_yunshang_art.gd现断言旧u2路径，需改新路径并增RESKIN回退验证；可参tests/xiyou_guyu_art.gd的capture方法生成battle_wait、battle_swing、battle_damage、map_walk四张实机图，演员换云裳；启动Godot一律--audio-driver Dummy（包含headless导入和测试）。不能拿离线拼图冒充实机。
+- main已合入（本分支有merge checkpoint），本地godot入口已在，但尚未补齐/运行引擎；开工接续按需补齐缓存。选测.py main --list后跑相关专项（yunshang_art及受影响美术/外观专项），语法检查、工具回归、T156新云裳与谷雨，交付单完成/提交后跑交付自检0再worker_done给协调转小A。整套未完成，因此尚未跑专项、实机或交付自检；不能报可合并或worker_done succeeded。
+- 谷雨修平已独立提交cc027a8b6；修前/修后均既有正向IoU0.955失败，左向变更无新增失败，勿为了清零改已认可的其他动作。变更18像素清单与前后图齐全，需交付单单列给小A核。
