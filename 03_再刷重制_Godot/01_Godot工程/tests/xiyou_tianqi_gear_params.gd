@@ -69,7 +69,7 @@ func _gear(kind: String, id: int, s: XState) -> Dictionary:
 
 
 ## 独立按表算的新底子（不调 XTianqiGear.new_base）
-func _expect_base(item: Dictionary, ref: Array, mult := 1.0) -> Array:
+func _expect_base(item: Dictionary, ref: Array, mult := 1.0, qiyin := false) -> Array:
 	var lv := clampi(int(str(item.meta.req_level)), 0, 90)
 	var conv := 1.0 + lv * 98.0 / 90.0
 	var lv_atk := float(line.A0) + float(line.A1) * conv
@@ -84,8 +84,17 @@ func _expect_base(item: Dictionary, ref: Array, mult := 1.0) -> Array:
 	var sa := 1.0 if atk > mat else (0.5 if atk == mat else 0.0)
 	var sm := 1.0 if mat > atk else (0.5 if atk == mat else 0.0)
 	var c := func(k: String) -> float: return float(slot.get(k, 0.0)) * g * mult
-	return [lv_hp * c.call("hp"), 0.0, lv_atk * c.call("atk") * sa, lv_atk * c.call("def"), lv_atk * c.call("atk") * sm,
+	var out := [lv_hp * c.call("hp"), 0.0, lv_atk * c.call("atk") * sa, lv_atk * c.call("def"), lv_atk * c.call("atk") * sm,
 		lv_atk * c.call("def"), lv_atk * c.call("agi"), lv_atk * c.call("luk")]
+	# D182（T082）：表里没有、原版不为零的副属性 ＝ 标准线 × 本部位最大系数 × 品质 × sub_stat.ratio（七印不给）
+	var sub := 0.0 if qiyin else float(gb.get("sub_stat", {}).get("ratio", 0.0))
+	var k_main := 0.0
+	for k in ["atk", "hp", "def", "agi", "luk"]:
+		k_main = maxf(k_main, float(slot.get(k, 0.0)))
+	for i in 8:
+		if out[i] == 0.0 and float(ref[i]) != 0.0 and sub > 0.0:
+			out[i] = (lv_hp if i <= 1 else lv_atk) * k_main * g * sub * signf(float(ref[i]))
+	return out
 
 
 func _ratio(item: Dictionary, i: int) -> float:
@@ -185,6 +194,22 @@ func _on() -> void:
 	var erm := XTianqiGear.effective_params(rm)
 	var want_mp := roundf(float(_expect(d1)[1]) + XTianqiGear.flat_ratio(rm, 1) * 500.0)
 	_check("resid_zero_base_passes", float(nb[1]) == 0.0 and float(erm[1]) > 0.0 and absf(float(erm[1]) - want_mp) <= 1.0, [erm, want_mp, nb])
+	# T082（T104 小A 核第 3 条）：认得出的符文之语按 XRunewords.template_id 找回模板，加的八项当固定加值乘换算比、不夹 ±10%
+	var rtpl := {}
+	for r in XDB.table("Runewords"):
+		if r is Dictionary and XRunewords.template_id(r, d1) != 0:
+			var cand := XDB.rec("Weapons", XRunewords.template_id(r, d1))
+			if absf(float(cand.get("params", [0, 0, 0, 0, 0, 0, 0, 0])[2])) > 0.0:
+				rtpl = cand
+				break
+	var rk := d1.duplicate(true)
+	rk.instanceId = "t082_rw"
+	rk.runewordName = str(rtpl.get("name", ""))
+	for i in 8:
+		rk.params[i] = float(rk.params[i]) + float(rtpl.get("params", [0, 0, 0, 0, 0, 0, 0, 0])[i])
+	var erk := XTianqiGear.effective_params(rk)
+	var want_rk := _expect(d1, rtpl.get("params", [0, 0, 0, 0, 0, 0, 0, 0]))
+	_check("runeword_template_scaled", not rtpl.is_empty() and XTianqiGear.runeword_params(rk) == rtpl.params and _near(erk, want_rk, 1.0), [erk, want_rk, rtpl.get("name")])
 	# T148：upgrade_fixed 的 current 判定看前面已镶的固定值（0 → 前一块加成非 0 后，current 块生效）
 	var cz := XTianqiGear.upgrade_fixed({"kind": "weapon", "base": DAGGER, "upgrades": []}, [0, 0, 0, 0, 0, 0, 0, 0])
 	_check("upgrade_fixed_empty", cz.fixed == [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] and not cz.random)
@@ -196,7 +221,7 @@ func _on() -> void:
 	var qy := {"kind": "weapon", "base": float(DAGGER), "etypeId": 1, "wtypeId": 1, "params": [1, 1, 1, 1, 1, 1, 1, 1],
 		"meta": {"req_level": "80", "quality": "14"}, "qiyin": {"kind": "weapon"}, "instanceId": "t104_qy"}
 	var eq := XTianqiGear.effective_params(qy)
-	var nq := _expect_base(qy, qy.params, 1.1)
+	var nq := _expect_base(qy, qy.params, 1.1, true)
 	_check("qiyin_weapon", _near(eq, nq.map(func(v): return roundf(v))) and float(eq[2]) == float(eq[4]) and float(eq[2]) > 1.0, [eq, nq])
 	var qs := qy.duplicate(true)
 	qs.etypeId = 4
@@ -206,10 +231,10 @@ func _on() -> void:
 	qs.qiyin = {"kind": "set"}
 	qs.instanceId = "t104_qs"
 	var es := XTianqiGear.effective_params(qs)
-	_check("qiyin_set_no_mult", _near(es, _expect_base(qs, qs.params, 1.0).map(func(v): return roundf(v))), es)
+	_check("qiyin_set_no_mult", _near(es, _expect_base(qs, qs.params, 1.0, true).map(func(v): return roundf(v))), es)
 	qs.qiyin.true_seal = true
 	qs.instanceId = "t104_qs2"
-	_check("qiyin_true_seal_mult", _near(XTianqiGear.effective_params(qs), _expect_base(qs, qs.params, 1.1).map(func(v): return roundf(v))))
+	_check("qiyin_true_seal_mult", _near(XTianqiGear.effective_params(qs), _expect_base(qs, qs.params, 1.1, true).map(func(v): return roundf(v))))
 	# 不读表：法宝、奖励装备、没有等级需求的
 	var fb := XGear.template("armor", FABAO)
 	_check("fabao_not_read", is_same(XTianqiGear.effective_params(fb), fb.params) and not XTianqiGear.applies(fb))

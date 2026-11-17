@@ -395,8 +395,9 @@ static func cap_note(key: String, raw: float) -> String:
 ##     七印装备（实例带 qiyin 标记）照同一张表，武器和真印再 ×weapon_and_true_seal_mult。
 ##   - 词缀固定属性＝XGear.affix_template（底装备＋affixIds 各词缀＋备注参数）－底装备模板，按记录重拼，不倒推。
 ##   - 镶嵌固定值按 upgrades 历史从物品数据重算（百分比按底装备算，同 XGearUpgrade.apply_effects）；宝珠按孔里的宝珠重算固定加减。
-##   - 差值退路（稿第五节第 6 条）：实例 params 里剩下的（镶嵌随机值、符文之语、其它没记录的成长）只有在镶嵌历史里有随机项、
-##     或者有符文之语时才算，乘换算比后夹在新底子的 ±10% 以内；都没有时剩下的就是生成浮动，天启篇不算。
+##   - 符文之语加的八项按 XRunewords.template_id 找回模板重算，当固定加值乘换算比（T082；认不出的才走差值退路）。
+##   - 差值退路（稿第五节第 6 条）：实例 params 里剩下的（镶嵌随机值、认不出的符文之语、其它没记录的成长）只有在镶嵌历史里有随机项、
+##     或者有认不出的符文之语时才算，乘换算比后夹在新底子的 ±10% 以内；都没有时剩下的就是生成浮动，天启篇不算。
 ## 只在内存里算，装备实例一个字节不改、不写存档。按 instanceId 缓存，实例的八项、镶嵌、词缀、等级、品质变了就重算。
 const GEAR_BASE_PATH := "res://modes/xiyou/tianqi_data/gear_base.json"
 ## 八项 → 换算比表的列（魔法跟生命同一列：标准线两者都是 ×25）
@@ -524,7 +525,15 @@ static func _qiyin_mult(item: Dictionary) -> float:
 	return 1.0
 
 
-## 新底子（第五节第 1 条）。ref：判主攻用的原版八项（模板）
+## 原版副属性留的那一小份（D182，Kyo 11-17：主属性的 10%～15%，T082 量 K 时定数；gear_base.json 的 sub_stat.ratio）；表里没有按 0（不留）
+static func sub_ratio() -> float:
+	var sub = gear_base().get("sub_stat", {})
+	return float(sub.get("ratio", 0.0)) if sub is Dictionary else 0.0
+
+
+## 新底子（第五节第 1 条）。ref：判主攻用的原版八项（模板）。
+## D182：部位表里没有、原版这一项又不为零的（匕首的敏捷、法袍的魔法、物理武器上的魔攻等）给一小份：
+## 标准线(这一项) × 本部位最大的部位系数 × 品质 × sub_stat.ratio，正负随原版。七印装备（实例八项是占位）不给
 static func new_base(item: Dictionary, ref: Array = []) -> Array:
 	gear_base()
 	var lv := _level(item)
@@ -539,12 +548,42 @@ static func new_base(item: Dictionary, ref: Array = []) -> Array:
 	var atk := float(ref[2])
 	var mat := float(ref[4])
 	var share := [1.0, 1.0, 1.0 if atk > mat else (0.5 if atk == mat else 0.0), 1.0, 1.0 if mat > atk else (0.5 if atk == mat else 0.0), 1.0, 1.0, 1.0]
+	var sub := 0.0 if _qiyin_mult(item) != 0.0 else sub_ratio()
+	var k_main := 0.0
+	for col in ["atk", "hp", "def", "agi", "luk"]:
+		k_main = maxf(k_main, float(slot.get(col, 0.0)))
 	var out := []
 	for i in 8:
 		var col: String = SLOT_COLS[i]
 		var k := float(slot.get(col, 0.0)) if col != "" else 0.0
-		out.append(XTianqiBase.line(conv, XTianqiBase.STATS[i]) * k * grade * float(share[i]) * mult)
+		var v := XTianqiBase.line(conv, XTianqiBase.STATS[i]) * k * grade * float(share[i]) * mult
+		if v == 0.0 and sub > 0.0 and float(ref[i]) != 0.0:
+			v = XTianqiBase.line(conv, XTianqiBase.STATS[i]) * k_main * grade * sub * signf(float(ref[i]))
+		out.append(v)
 	return out
+
+
+## 符文之语加的八项（T082，T104 小A 核第 3 条：按 XRunewords.template_id 找回做成时加的那件模板，替代差值退路的 ±10% 夹值）。
+## 认不出（名字对不上任何对这件装备有模板的配方）返回空，调用方退回差值退路
+static func runeword_params(item: Dictionary) -> Array:
+	var name := str(item.get("runewordName", ""))
+	if name == "":
+		return []
+	var kind := _kind(item)
+	var probe := item
+	if str(item.get("kind", "")) != kind:
+		probe = item.duplicate()
+		probe["kind"] = kind
+	for r in XDB.table("Runewords"):
+		if not r is Dictionary:
+			continue
+		var tid := XRunewords.template_id(r, probe)
+		if tid == 0:
+			continue
+		var tpl := XDB.rec("Weapons" if kind == "weapon" else "Armors", tid)
+		if str(tpl.get("name", "")) == name:
+			return tpl.get("params", [])
+	return []
 
 
 ## 宝珠孔里各宝珠的固定加减（<Augment Attach> 的「属性: ±N」行，同 XRaceBattle.weapon_body 的认法）
@@ -621,14 +660,18 @@ static func _compute(item: Dictionary) -> Array:
 		return out
 	var tp: Array = t.get("params", bp) if not t.is_empty() else bp
 	var up := upgrade_fixed(src, tp)
-	var keep := bool(up.random) or src.has("runewordName") or not (src.get("runewords", []) as Array).is_empty()
+	var rw := runeword_params(src)
+	if rw.size() < 8:
+		rw = []
+	var keep := bool(up.random) or (rw.is_empty() and (src.has("runewordName") or not (src.get("runewords", []) as Array).is_empty()))
 	for i in 8:
 		var r := _ratio(lv, i)
 		var affix := float(tp[i]) - float(bp[i])
-		var fixed: float = affix + float(up.fixed[i]) + float(orb[i])
+		var rwi := float(rw[i]) if not rw.is_empty() else 0.0
+		var fixed: float = affix + float(up.fixed[i]) + float(orb[i]) + rwi
 		var v: float = float(nb[i]) + r * (fixed + float(absorb[i]))
 		if keep:
-			var resid: float = float(params[i]) - float(tp[i]) - float(up.fixed[i]) - float(orb[i])
+			var resid: float = float(params[i]) - float(tp[i]) - float(up.fixed[i]) - float(orb[i]) - rwi
 			if float(nb[i]) == 0.0:  # 新底子为 0 的项（MP、副属性）：没有「±10%」可夹，符文之语／随机石加的数照比例放行（T148，T104 小A P3）
 				v += r * resid
 			else:
