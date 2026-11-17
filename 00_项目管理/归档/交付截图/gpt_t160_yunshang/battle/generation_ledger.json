@@ -1,9 +1,9 @@
 {
   "previous_total": 45,
-  "new_calls": 6,
-  "total": 51,
+  "new_calls": 17,
+  "total": 62,
   "limit": 80,
-  "remaining": 29,
+  "remaining": 18,
   "outputs": [
     {
       "motion": "walk",
@@ -63,6 +63,61 @@
         "yunshang_v8/Yunshang_Wait.png",
         "battle/ref_thrust.png"
       ],
+      "status": "raw generated, not assembled/not accepted"
+    },
+    {
+      "motion": "swing",
+      "source": "/Users/kyo/Library/Application Support/orca/codex-accounts/0e61034f-e344-4383-9253-d8fef01a2091/home/generated_images/01a1eb9c-d745-7951-ba68-4cd45924e058/exec-cb2de1e0-398b-4ab2-97e7-4973e764489d.png",
+      "status": "raw generated, not assembled/not accepted"
+    },
+    {
+      "motion": "missile",
+      "source": "/Users/kyo/Library/Application Support/orca/codex-accounts/0e61034f-e344-4383-9253-d8fef01a2091/home/generated_images/01a1eb9c-d745-7951-ba68-4cd45924e058/exec-5b15b293-48a6-4cfb-9d4b-3809302fe789.png",
+      "status": "raw generated, not assembled/not accepted"
+    },
+    {
+      "motion": "skill",
+      "source": "/Users/kyo/Library/Application Support/orca/codex-accounts/0e61034f-e344-4383-9253-d8fef01a2091/home/generated_images/01a1eb9c-d745-7951-ba68-4cd45924e058/exec-5e2002ee-a622-4195-befa-5d913bff2540.png",
+      "status": "raw generated, not assembled/not accepted"
+    },
+    {
+      "motion": "spell",
+      "source": "/Users/kyo/Library/Application Support/orca/codex-accounts/0e61034f-e344-4383-9253-d8fef01a2091/home/generated_images/01a1eb9c-d745-7951-ba68-4cd45924e058/exec-2fc5650c-03bd-49ae-8eb4-9fa19b1e4f7d.png",
+      "status": "raw generated, not assembled/not accepted"
+    },
+    {
+      "motion": "item",
+      "source": "/Users/kyo/Library/Application Support/orca/codex-accounts/0e61034f-e344-4383-9253-d8fef01a2091/home/generated_images/01a1eb9c-d745-7951-ba68-4cd45924e058/exec-acba4acc-4277-46ae-a326-2f51f314f25b.png",
+      "status": "raw generated, not assembled/not accepted"
+    },
+    {
+      "motion": "escape",
+      "source": "/Users/kyo/Library/Application Support/orca/codex-accounts/0e61034f-e344-4383-9253-d8fef01a2091/home/generated_images/01a1eb9c-d745-7951-ba68-4cd45924e058/exec-83a889ff-ed9e-4498-aeaa-887e66640e80.png",
+      "status": "raw generated, not assembled/not accepted"
+    },
+    {
+      "motion": "victory",
+      "source": "/Users/kyo/Library/Application Support/orca/codex-accounts/0e61034f-e344-4383-9253-d8fef01a2091/home/generated_images/01a1eb9c-d745-7951-ba68-4cd45924e058/exec-8ec9105c-54f8-43fa-b0c8-96c816d938bc.png",
+      "status": "raw generated, not assembled/not accepted"
+    },
+    {
+      "motion": "dying",
+      "source": "/Users/kyo/Library/Application Support/orca/codex-accounts/0e61034f-e344-4383-9253-d8fef01a2091/home/generated_images/01a1eb9c-d745-7951-ba68-4cd45924e058/exec-1c88f39a-4f36-4b23-bf86-45e5df2fd62d.png",
+      "status": "raw generated, not assembled/not accepted"
+    },
+    {
+      "motion": "abnormal",
+      "source": "/Users/kyo/Library/Application Support/orca/codex-accounts/0e61034f-e344-4383-9253-d8fef01a2091/home/generated_images/01a1eb9c-d745-7951-ba68-4cd45924e058/exec-110fc64c-e9d4-4973-b91c-89250d697d69.png",
+      "status": "raw generated, not assembled/not accepted"
+    },
+    {
+      "motion": "sleep",
+      "source": "/Users/kyo/Library/Application Support/orca/codex-accounts/0e61034f-e344-4383-9253-d8fef01a2091/home/generated_images/01a1eb9c-d745-7951-ba68-4cd45924e058/exec-7b352bb7-14cc-41b1-8105-555f1aa0bdbb.png",
+      "status": "raw generated, not assembled/not accepted"
+    },
+    {
+      "motion": "dead",
+      "source": "/Users/kyo/Library/Application Support/orca/codex-accounts/0e61034f-e344-4383-9253-d8fef01a2091/home/generated_images/01a1eb9c-d745-7951-ba68-4cd45924e058/exec-036d96d3-8f8a-48e4-8839-a507c5491eb0.png",
       "status": "raw generated, not assembled/not accepted"
     }
   ]

@@ -99,3 +99,11 @@
 - tests/xiyou_yunshang_art.gd现断言旧u2路径，需改新路径并增RESKIN回退验证；可参tests/xiyou_guyu_art.gd的capture方法生成battle_wait、battle_swing、battle_damage、map_walk四张实机图，演员换云裳；启动Godot一律--audio-driver Dummy（包含headless导入和测试）。不能拿离线拼图冒充实机。
 - main已合入（本分支有merge checkpoint），本地godot入口已在，但尚未补齐/运行引擎；开工接续按需补齐缓存。选测.py main --list后跑相关专项（yunshang_art及受影响美术/外观专项），语法检查、工具回归、T156新云裳与谷雨，交付单完成/提交后跑交付自检0再worker_done给协调转小A。整套未完成，因此尚未跑专项、实机或交付自检；不能报可合并或worker_done succeeded。
 - 谷雨修平已独立提交cc027a8b6；修前/修后均既有正向IoU0.955失败，左向变更无新增失败，勿为了清零改已认可的其他动作。变更18像素清单与前后图齐全，需交付单单列给小A核。
+
+### 2026-11-18 接力第二检查点（额度紧停手，未完成，不可合并）
+
+- 本轮使用内置image_gen补齐缺少的11组原始动作（swing、missile、skill、spell、item、escape、victory、dying、abnormal、sleep、dead），每组3帧；完整prompt及raw均保存到同一battle目录。累计62/80，余18次。17组raw共51帧齐备，wait复用已认可v8三帧；这里的「齐备」只指源图，不指54格成品已合格。
+- 输入仅指定头像、已认可v8 Wait、对应谷雨ref动作条；没有使用云霄和旧云裳。generation_ledger.json逐次记来源；本轮生成全部成功落盘。每组仍需审原尺寸成品，不能以raw通过视为整套验收。
+- 新增battle/raw_overview.jpg为18动作缩略总览（wait栏显示v8）；已查看总览，动作基本可辨，原始画布尺度/头身细节有差异，后续需要按统一缩放要求处理并量测，尤其倒地和蹲低姿势；不得逐帧拉伸追框，返工只改提示词。该图仅离线源图总览，绝非实机截图。
+- Python默认环境无Pillow，已用既有/tmp/t160-venv/bin/python生成总览；源图数量断言17通过、预算62/18核对通过。未改运行图与任何接线，未起Godot，未运行专项/T156/交付自检，不报告可合并。
+- **下一步直接从组装开始**：上节组装/appearance原生profile/回退开关/专项与实机四图步骤全部仍有效且未执行。原始图不用再生成一轮或重读大图；先看raw_overview.jpg定位必要返工，再写组装脚本、保留v8走路原像素与48色。完整交付仍需专项、T156证据、静音实机map/wait/swing/damage四图、提交后交付自检0及小A跨模型核查。
