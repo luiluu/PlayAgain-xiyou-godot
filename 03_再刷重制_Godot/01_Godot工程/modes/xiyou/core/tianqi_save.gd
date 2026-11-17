@@ -42,13 +42,14 @@ const SECTIONS := {
 	"gojo": {"v": 3, "owner": "XTianqiGojoTrial", "vkey": "gojo_adv_v", "keys": ["gojo_trials"]},
 	"sect_bing": {"v": 1, "owner": "XTianqiSect"},  # 教派包丙（总装合并时补登记）
 	"fetters": {"v": 1, "owner": "XTianqiSect", "array": true},  # 教派包乙小小鱼破枷锁：发过的重数
+	"brand": {"v": 1, "owner": "XTianqiBrand"},  # 烙印首胜表 firsts（稿里叫 brand_firsts）：战斗键 → 打赢时的最高档位（T117）
 }
 ## 已接进门面（section／after_load 管迁移）的分区（no_diff_passive 是 vkey 标记，由 sync_difficulty_after_load 在能力刷新前跑）
 const WIRED := [
 	"war", "famine", "plague", "death",
 	"famine_prologue", "summit", "weak_clear", "rewards",
 	"qiyin", "drop", "elements", "money", "trumpet", "skill_grow",
-	"gojo", "sect_bing", "fetters",
+	"gojo", "sect_bing", "fetters", "brand",
 ]
 ## 根上的散键（开局写一次或单值）：rules 规则版本、difficulty、lineup、line、draws／offer 抽角色、reincarnate
 const ROOT_KEYS := ["rules", "difficulty", "lineup", "line", "draws", "offer", "reincarnate", VKEY]
