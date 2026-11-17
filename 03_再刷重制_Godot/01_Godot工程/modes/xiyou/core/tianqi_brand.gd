@@ -26,7 +26,7 @@ const TEXT_BOTTLENECK := "%s 的烙印已到「%s」的极限，打赢心魔才�
 const TEXT_NO_GAIN := "%s 的烙印已到「%s」的极限，本场未再加深。"
 const TEXT_GAIN := "烙印 %s"
 const TEXT_CARVE_WARN := ["一旦刻印，烙印只涨不降，没有回头路。", "刻印后，每首通一位守层者都会加深烙印；不刻印则只在首领战挨打时记下烙印，上限 40%。"]
-const TEXT_RETREAT := ["\\C[6]烙印\\C[0]", "烙印随首领战加深；每到一段的极限，打赢心魔才能继续加深。", "未刻印的烙印最多加深至「铸骨」（40%），刻印后才能继续加深。"]
+const TEXT_RETREAT := ["\\C[6]烙印\\C[0]", "烙印随首领战加深；每次到达极限，打赢心魔才能继续加深。", "未刻印的烙印最多加深至「铸骨」（40%），刻印后才能继续加深。"]
 
 static var ENABLED := false
 
@@ -259,6 +259,17 @@ static func facts_of(logic, s: XState) -> Dictionary:
 	for e in logic.enemies:
 		if str(e.horseman.get("rec", {}).get("_ref", "")) == "hongjun":
 			summit = true
+	# T144（D174「四线节末精英都算」）：四条线异化怪的 spread 那一场（战争 35、瘟疫 248、死亡 294、饥荒 430）
+	var spread := false
+	for fd in [XTianqiWarAlien.fight(logic), XTianqiPlagueAlien.fight(logic), XTianqiDeathAlien.fight(logic), XTianqiFamineAlien.fight(logic)]:
+		if str(fd.get("preset", "")) == "spread":
+			spread = true
+	# T144（D178「都算」）：七印里副本压轴前那场精英（敌群表倒数第二个：250／34／11／297／123／188／220）
+	var qiyin_elite := ""
+	if not qr.is_empty() and not bool(qr.get("boss", false)) and not bool(qr.get("enemy_only", false)):
+		var tr: Array = XTianqiQiyin.seal_info(str(qr.get("seal", ""))).get("troops", [])
+		if tr.size() >= 2 and int(tr[tr.size() - 2]) == int(logic.troop_id):
+			qiyin_elite = str(qr.get("seal", ""))
 	return {
 		"heart": not zb.get("trial", {}).is_empty(),
 		"weapon": not zb.get("scaled", {}).is_empty(),
@@ -267,6 +278,7 @@ static func facts_of(logic, s: XState) -> Dictionary:
 		"dragon": XTianqiQiyinDragonRun.active(logic),
 		"qiyin_seal": str(qr.get("seal", "")) if bool(qr.get("boss", false)) and not bool(qr.get("enemy_only", false)) else "",
 		"summit": summit,
+		"line_spread": spread, "qiyin_elite": qiyin_elite,
 		"guardian_floor": XGuardianRework.troop_floor(logic) if not summit else 0,
 		"enemy_ids": ids, "enemy_names": names,
 		"map": int(ev.get("map", s.map_id)), "event": int(ev.get("event", 0)), "troop": int(logic.troop_id),
@@ -299,6 +311,8 @@ static func classify(f: Dictionary) -> Dictionary:
 		return {"kind": "boss", "key": "qiyin:" + str(f.qiyin_seal), "first_floor": 0}
 	if bool(f.get("summit", false)):
 		return {"kind": "boss", "key": "summit:34", "first_floor": 34}
+	if bool(f.get("line_spread", false)) or str(f.get("qiyin_elite", "")) != "":
+		return {"kind": "boss", "key": _ev_key(f), "first_floor": 0}  # T144：按上下文认，名字不带首领前缀也算（键同第 5 行）
 	var gf := int(f.get("guardian_floor", 0))
 	if gf >= 1 and gf <= 33:
 		return {"kind": "boss", "key": "guardian:%d" % gf, "first_floor": gf}  # 10／20／30 层的使徒是守层者变的，同一个键
@@ -310,8 +324,12 @@ static func classify(f: Dictionary) -> Dictionary:
 	var re := RegEx.create_from_string("【(" + "|".join(b.get("prefixes", [])) + ")】")
 	for n in f.get("enemy_names", []):
 		if re.search(str(n)):
-			return {"kind": "boss", "key": "ev:%d:%d:%d" % [int(f.get("map", 0)), int(f.get("event", 0)), int(f.get("troop", 0))], "first_floor": 0}
+			return {"kind": "boss", "key": _ev_key(f), "first_floor": 0}
 	return {"kind": "none", "key": "", "first_floor": 0}
+
+
+static func _ev_key(f: Dictionary) -> String:
+	return "ev:%d:%d:%d" % [int(f.get("map", 0)), int(f.get("event", 0)), int(f.get("troop", 0))]
 
 
 ## 生熟：特殊战生；不是首领战熟；首领战键在首胜表里、而且表里的档位 ≥ 这一场的档位才熟

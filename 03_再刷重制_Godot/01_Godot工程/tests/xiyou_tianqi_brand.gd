@@ -5,6 +5,7 @@ extends Node
 ## 三、专项 1～7（稿第十三节 T073-b 验收）；P2-2 甲二门禁；P2-3 正序撞节点高亮＋「烙印已到「某段」的极限」；P2-4 36 层首通那一场刻印者正好 95%。
 ## 四、端到端：真的 BattleLogic.setup 守层者敌群认出 guardian:<层>；grant 里接着 settle。
 ## 五、T140：七印灰印／默印精英（297、220）、死亡线／饥荒线节末精英（294、430）都认首领战；玩家看到的烙印文字不用「境」「锚」，说「加深」＋段名。
+## 六、T144：战争线 35、瘟疫线 248 节末那场与七印其余五场压轴前精英（250／34／11／123／188）按上下文认首领战；同敌群野外照名字不算。
 
 const XIAOYAO := 1
 const LVSIJI := 2
@@ -422,6 +423,25 @@ func _qiyin_real() -> void:
 		var c := XTianqiBrand.fight(lg)
 		_check("qiyin_real.elite_%s" % pair[0], XTianqiQiyinRule.active(lg) and named and str(c.get("kind", "")) == "boss" and str(c.get("key", "")).ends_with(":%d" % int(pair[1])), [named, c])
 		lg.end_battle()
+	# T144（D178「都算」）：其余五印压轴前那场精英（名字不带首领前缀）也认首领战；同一敌群不经七印开战仍按名字（不是首领战）
+	for pair in [["bai", 250], ["hong", 34], ["hei", 11], ["xun", 123], ["zhen", 188]]:
+		_check("t144.qiyin_troop_%s" % pair[0], int(XTianqiQiyin.seal_info(str(pair[0])).troops[1]) == int(pair[1]))
+		XTianqiQiyinRule.prepare(str(pair[0]), false)
+		var lg := XBattleLogic.new()
+		lg.setup(int(pair[1]), s)
+		var c := XTianqiBrand.fight(lg)
+		_check("t144.qiyin_elite_%s" % pair[0], XTianqiQiyinRule.active(lg) and str(c.get("kind", "")) == "boss" and str(c.get("key", "")).ends_with(":%d" % int(pair[1])) and not bool(c.get("ripe", true)), c)
+		lg.end_battle()
+		var lp := XBattleLogic.new()
+		lp.setup(int(pair[1]), s)
+		_check("t144.plain_troop_%s" % pair[0], str(XTianqiBrand.fight(lp).get("kind", "")) == "none", XTianqiBrand.fight(lp))
+		lp.end_battle()
+	# 第一场精英（249）不在 D178 里：照名字认，不带前缀就不是首领战
+	XTianqiQiyinRule.prepare("bai", false)
+	var l1 := XBattleLogic.new()
+	l1.setup(249, s)
+	_check("t144.qiyin_first_elite_none", str(XTianqiBrand.fight(l1).get("kind", "")) == "none", XTianqiBrand.fight(l1))
+	l1.end_battle()
 	XTianqiQiyinRule.prepare("hui", true)
 	var lb := XBattleLogic.new()
 	lb.setup(296, s)
@@ -440,20 +460,38 @@ func _qiyin_real() -> void:
 
 # ---- T140：四线节末精英走真实路径（XTianqi<线>Alien.prepare("spread") → BattleLogic.setup → facts_of）----
 func _t140_spread() -> void:
-	for pair in [["death", 294], ["famine", 430]]:
+	for pair in [["death", 294], ["famine", 430], ["war", 35], ["plague", 248]]:
 		var s := _state()
 		s.flags.tianqi["line"] = str(pair[0])
-		var ok: bool = XTianqiDeathAlien.prepare("spread", s) if pair[0] == "death" else XTianqiFamineAlien.prepare("spread", s)
+		var ok := false
+		match str(pair[0]):
+			"death": ok = XTianqiDeathAlien.prepare("spread", s)
+			"famine": ok = XTianqiFamineAlien.prepare("spread", s)
+			"war": ok = XTianqiWarAlien.prepare("spread", s)
+			"plague": ok = XTianqiPlagueAlien.prepare("spread", s)
 		var lg := XBattleLogic.new()
 		lg.setup(int(pair[1]), s)
-		var alien: bool = XTianqiDeathAlien.active(lg) if pair[0] == "death" else XTianqiFamineAlien.active(lg)
+		var alien := false
+		match str(pair[0]):
+			"death": alien = XTianqiDeathAlien.active(lg)
+			"famine": alien = XTianqiFamineAlien.active(lg)
+			"war": alien = XTianqiWarAlien.active(lg)
+			"plague": alien = XTianqiPlagueAlien.active(lg)
 		var c := XTianqiBrand.fight(lg)
-		_check("t140.spread_%s" % pair[0], ok and alien and str(c.get("kind", "")) == "boss" and str(c.get("key", "")).ends_with(":%d" % int(pair[1])) and not bool(c.get("ripe", true)), [ok, alien, c])
+		_check(("t144" if pair[0] in ["war", "plague"] else "t140") + ".spread_%s" % pair[0], ok and alien and str(c.get("kind", "")) == "boss" and str(c.get("key", "")).ends_with(":%d" % int(pair[1])) and not bool(c.get("ripe", true)), [ok, alien, c])
 		var a: XActor = lg.actors[0]
 		_setb(a, 0, 0)
 		lg.grant({"gold": 0, "exp": 0, "drops": []})
-		_check("t140.spread_%s_firsts" % pair[0], XTianqiBrand.firsts(s).has(str(c.get("key", ""))), XTianqiBrand.firsts(s))
+		_check(("t144" if pair[0] in ["war", "plague"] else "t140") + ".spread_%s_firsts" % pair[0], XTianqiBrand.firsts(s).has(str(c.get("key", ""))), XTianqiBrand.firsts(s))
 		lg.end_battle()
+	# 同一敌群不经 spread 开战（野外遇到）仍按名字认：35【前所未见】、248【十分罕见】不是首领战
+	for tid in [35, 248]:
+		var s2 := _state()
+		var lp := XBattleLogic.new()
+		lp.setup(tid, s2)
+		_check("t144.plain_%d_none" % tid, str(XTianqiBrand.fight(lp).get("kind", "")) == "none", XTianqiBrand.fight(lp))
+		lp.end_battle()
+	_check("t144.retreat_text", XTianqiBrand.TEXT_RETREAT[1] == "烙印随首领战加深；每次到达极限，打赢心魔才能继续加深。", XTianqiBrand.TEXT_RETREAT[1])
 
 
 # ---- T140：玩家可见文字（闭关页头、角色页、心魔门槛、心魔开打、打完、提示）不用「境」「锚」，说「加深」＋段名 ----
