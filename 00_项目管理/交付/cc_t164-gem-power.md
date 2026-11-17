@@ -111,7 +111,7 @@
 - 代码：`XTianqiGemPower` 新增 `gem_lines`（一颗宝石的行）、`gems`（这件装备上每颗宝石）；删 `power_text`／`head_text`／`socket_head`／`value_lines`；`skin_template_page.gd` 把宝石行（含名字行）留「说明」改按 `contains("光耀")`；`gear_detail.gd` 去掉头行。关着（期四关／非天启档）仍全返回空。
 - 截图（重出）：`T164_截图/{on,off}_{detail_mode0,detail_mode2,preview,inlay_book}.png`、`on_130_{detail_mode0,inlay_book}.png`、`skin_{100,130}_tab{0,2}.png`。130% 图鉴说明行不挤；图鉴里符文之语备注行本来就有的重叠是原界面老毛病。
 
-## D190c 给 8 件无等级真装备补等级（草案，等 Kyo 过目；Sonnet＋medium）
+## D190c／D191 给 8 件无等级真装备补等级（Kyo 11-18「按推荐」，已实现；Sonnet＋medium）
 
 补等级＝`applies()` 开始为真，这件装备**自身**的八项也改读新底子（标准线×部位系数×品质系数，同其它同级装备），不止宝石。下表「自身变化」是实测（`effective_params`，期四开着，该件不带词缀）。镶宝石光耀度按物攻列（80 级＝100%）。
 
@@ -128,6 +128,18 @@
 
 - 可直接补、变化与同级装备一致的：秘火、超能螺丝刀、传承巨灵大斧（共 3 件）；其中巨灵大斧的敏捷惩罚被抹要 Kyo 点头。
 - 报 Kyo 的 5 件：传家宝×2（空壳占位）、真我之钥、冥河断罪镰、花与鸟之矢（专属机制）。若 Kyo 仍要补，建议只补「让镶宝石有光耀度」所需、不动自身数值的做法：做一张「仅宝石用的等级」覆盖表，使 `applies()` 对自身底子仍不读、只让 `flat_ratio` 取这张表的等级（需要另开接口，实现量小，等 Kyo 定）。
+
+### D191 实现与结果
+
+- **Kyo 定**：秘火 40、超能螺丝刀 40、传承巨灵大斧 15 直补，大斧保留敏捷 −20；真我之钥、冥河断罪镰、花与鸟之矢只给宝石用的等级 80、自身数值不变；传家宝×2 不补。
+- **实现**：`gear_base.json` 新增 `level_override` 表（`direct`／`gem_only`／`keep_params`，键「种类:底装备号」）；开关 `XTianqiGear.LEVEL_OVERRIDE`（static var，默认开，关＝完全回原样）；只在期四开着时生效，不改数据库原件。
+  - `direct`：`applies()` 的等级文字认覆盖表（`_req_text`），所以整件读新底子，`_level` 同源；
+  - `keep_params`：`_compute` 外包一层，大斧第 6 列（敏捷）输出原版实例值（负的惩罚保住；不加这层时被新底子抹成 0）；
+  - `gem_only`：`applies()` 仍为假（自身八项不读表，`effective_params` 只补宝石：`params＋(换算比−1)×宝石基础值`，因为原值里宝石已按 1 倍算过）；`gem_applies()`＝读表或 gem_only，`flat_ratio`／`gem_base`／`XTianqiGemPower.active` 改认它，所以光耀度按 80 级＝100%；
+  - 传家宝不在表里，行为不变。
+- **专项**（`xiyou_tianqi_gem_power` 59/59、`xiyou_tianqi_gear_params` 38/38、`xiyou_inlay_book` 19/19）：`ov_direct_levels`（40／40／15）、`ov_axe_agi_penalty_kept`、`ov_direct_reads_new_base`、`ov_gem_only_{key,scythe,arrow}`（自身八项不变、等级 80）、`ov_heirloom_untouched`、`ov_gem_only_gem_scaled`（冥河断罪镰镶磨刀石：物攻 +2 按 6.21 倍放大、魔攻不动、光耀 100%）、`ov_switch_off_original`、`ov_phase4_off_inert`。
+- **没改的**：`power.gd` 战力签名只在 `applies()` 为真时读 `effective_params`，gem_only 的 3 件宝石放大不进战力签名（战力本次本来就藏着，Kyo 11-08）；实际战斗读 `effective_params` 的地方（`param_of`）会读到放大后的宝石加成。
+- **补后实测数值**（见上表）：秘火魔攻 ~200→1312、物攻 ~2→157、敏捷 ~33→157；超能螺丝刀物攻 ~61→1312、敏捷 ~21→157；巨灵大斧物攻 ~88→660、敏捷保持原值（−20 级惩罚）；镶宝石光耀度：秘火／螺丝刀 91%、大斧 75%、gem_only 三件 100%。
 
 ## 可优化（流程／工具／效率）
 

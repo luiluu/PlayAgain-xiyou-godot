@@ -262,6 +262,42 @@ func _run() -> void:
 	XTianqiGear.CAP_80 = true
 	XTianqiGear.clear_effective_cache()
 	_check("damage_same_cap_on_off_le80", dmg_cap_on == dmg_cap_off and dmg_cap_on.size() >= 2, [dmg_cap_on, dmg_cap_off])
+	# D191：补等级覆盖表（gear_base.json level_override）
+	var ov_ids := {"fire": ["weapon", 1385], "driver": ["weapon", 1386], "axe": ["weapon", 1507], "key": ["weapon", 2222], "scythe": ["weapon", 4001], "arrow": ["armor", 4541], "h_w": ["weapon", 1500], "h_a": ["armor", 3000]}
+	var ovg := {}
+	for k in ov_ids:
+		ovg[k] = XGear.create(ov_ids[k][0], ov_ids[k][1], s)
+		ovg[k]["instanceId"] = "t164_ov_" + k
+	XTianqiGear.clear_effective_cache()
+	_check("ov_direct_levels", XTianqiGear.applies(ovg.fire) and XTianqiGear.applies(ovg.driver) and XTianqiGear.applies(ovg.axe) and XTianqiGear._level(ovg.fire) == 40 and XTianqiGear._level(ovg.driver) == 40 and XTianqiGear._level(ovg.axe) == 15, [XTianqiGear._level(ovg.fire), XTianqiGear._level(ovg.driver), XTianqiGear._level(ovg.axe)])
+	var axe_eff := XTianqiGear.effective_params(ovg.axe)
+	_check("ov_axe_agi_penalty_kept", float(axe_eff[6]) == float(ovg.axe.params[6]) and float(axe_eff[6]) < 0.0 and float(axe_eff[2]) > float(ovg.axe.params[2]), [axe_eff, ovg.axe.params])
+	_check("ov_direct_reads_new_base", float(XTianqiGear.effective_params(ovg.fire)[4]) > 1000.0 and float(XTianqiGear.effective_params(ovg.driver)[2]) > 1000.0, [XTianqiGear.effective_params(ovg.fire), XTianqiGear.effective_params(ovg.driver)])
+	for k in ["key", "scythe", "arrow"]:
+		var gk: Dictionary = ovg[k]
+		_check("ov_gem_only_%s" % k, not XTianqiGear.applies(gk) and XTianqiGear.gem_only_level(gk) == 80 and XTianqiGear.gem_applies(gk) and XTianqiGear.flat_ratio(gk, 2) == XTianqiGear.full_ratio(2) and XTianqiGear.effective_params(gk) == gk.params, [XTianqiGear.gem_only_level(gk), XTianqiGear.effective_params(gk), gk.params])
+	_check("ov_heirloom_untouched", [ovg.h_w, ovg.h_a].all(func(h): return not XTianqiGear.applies(h) and XTianqiGear.gem_only_level(h) < 0 and XTianqiGear.effective_params(h) == h.params and not XTianqiGemPower.active(h)))
+	# gem_only 装备镶宝石：自身八项不变，宝石那份按 80 级换算比放大，光耀度 100%
+	var sc: Dictionary = ovg.scythe
+	var sc_before := (sc.params as Array).duplicate()
+	XGearUpgrade.apply_effects(sc, XDB.rec("Items", STONE), true, s)
+	var sc_params := (sc.params as Array).duplicate()
+	var sc_eff := XTianqiGear.effective_params(sc)
+	var sc_gain := float(sc_params[2]) - float(sc_before[2])
+	var sc_want := roundf(float(sc_params[2]) + (XTianqiGear.full_ratio(2) - 1.0) * 2.0)
+	_check("ov_gem_only_gem_scaled", sc_gain == 2.0 and float(sc_eff[2]) == sc_want and (sc_eff[4] == sc_params[4]) and XTianqiGemPower.gem_lines(sc, XTianqiGear.gem_base(sc))[0].begins_with("光耀100%"), [sc_before, sc_params, sc_eff, sc_want])
+	# 开关关着：回原样
+	XTianqiGear.LEVEL_OVERRIDE = false
+	XTianqiGear.clear_effective_cache()
+	_check("ov_switch_off_original", not XTianqiGear.applies(ovg.fire) and not XTianqiGear.applies(ovg.axe) and XTianqiGear.gem_only_level(ovg.key) < 0 and XTianqiGear.effective_params(sc) == sc.params and XTianqiGear.flat_ratio(sc, 2) == 1.0)
+	XTianqiGear.LEVEL_OVERRIDE = true
+	XTianqiGear.clear_effective_cache()
+	# 期四关着：覆盖表不生效
+	XTianqiBase.PHASE4 = false
+	XTianqiGear.clear_effective_cache()
+	_check("ov_phase4_off_inert", not XTianqiGear.applies(ovg.fire) and XTianqiGear.gem_only_level(ovg.key) < 0 and XTianqiGear.effective_params(sc) == sc.params)
+	XTianqiBase.PHASE4 = true
+	XTianqiGear.clear_effective_cache()
 	# P2：非天启档（总开关开着、但当前存档不是天启档）——图鉴不画说明行
 	var keep_state: XState = XState.current
 	XState.current = null

@@ -9,7 +9,7 @@ const LINE_COLOR := "#cfe8ff"
 
 
 static func active(item) -> bool:
-	return XTianqiBase.PHASE4 and item is Dictionary and not item.is_empty() and XTianqiGear.applies(item)
+	return XTianqiBase.PHASE4 and item is Dictionary and not item.is_empty() and XTianqiGear.gem_applies(item)
 
 
 static func _names() -> Array:
