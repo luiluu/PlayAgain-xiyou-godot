@@ -1030,7 +1030,7 @@ static func _sort_by_priority(rows: Array) -> Array:
 
 func param_rate(i: int) -> float:
 	var suit := XEquipSuits.value(self,"param",i,true)
-	var base := super.param_rate(i)
+	var base := XTianqiBase.class_rate_strip(self, i, super.param_rate(i))  # 天启篇期四：职业属性倍率不算（CLASS_RATE_OFF）
 	return base * suit * XTianqiLedger.param_cap(self, i, base, suit) * (1.0 + XPowerBooks.param_rate_bonus(self, i) / 100.0) * XActorModules.param_rate(self, i) * XTianqiQiyinEffects.param_rate(self, i) * XTianqiQiyinDragonRun.param_rate(self, i) * XTianqiAffixBattle.param_rate(self, i) * XTianqiSkills.param_rate(self, i) * XTianqiBrand.def_rate(self, i)  # 天启篇烙印皮薄（物防、魔防）；伤害加成总账期三：九线属性封顶（param_cap，天启篇才不为 1）；天启篇技能重构：击杀成长；天启篇殉印 2 件最大生命、七首之龙龙血全属性、天启篇词条属性%；专属角色模块的 paramRate 包装（饿狼形态倍率）
 
 # ---- dsPassiveSkill：被动标签只从已有技能读取 ----

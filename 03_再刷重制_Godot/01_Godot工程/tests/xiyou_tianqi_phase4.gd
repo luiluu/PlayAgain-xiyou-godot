@@ -34,6 +34,7 @@ func _run() -> void:
 	_on()
 	_xiyou()
 	_hit_cap()
+	_class_rate()
 	_e2e(true)
 	_e2e(false)
 	XTianqiBase.PHASE4 = false
@@ -144,6 +145,34 @@ func _on() -> void:
 	_check("on.hit_cap_weak", XTianqiBase.single_hit_cap(s.actor(LVSIJI)) == float(XTianqiSkills.data().rules.single_hit_cap.get(XTianqiSkills.tier_of(s.actor(LVSIJI)), 0)))
 	_check("on.hit_cap_enemy", XTianqiBase.single_hit_cap(null) == 0.0)
 	XTianqiBase.PHASE4 = false
+
+
+## 【cc·T082】职业属性倍率（惠惠 153 职业魔攻 ×3）：期四开着不算，CLASS_RATE_OFF 关掉或总开关关着照算
+func _class_rate() -> void:
+	var s := _state()
+	XTianqi._joining = true
+	s.add_actor(153)
+	XTianqi._joining = false
+	var a: XActor = s.actor(153)
+	XTianqiBase.PHASE4 = true
+	a.param_mark_dirty()
+	var on_rate := a.param_rate(4)
+	XTianqiBase.CLASS_RATE_OFF = false
+	a.param_mark_dirty()
+	var kept := a.param_rate(4)
+	XTianqiBase.CLASS_RATE_OFF = true
+	XTianqiBase.PHASE4 = false
+	a.param_mark_dirty()
+	var off_rate := a.param_rate(4)
+	_check("class_rate.stripped", is_equal_approx(on_rate, kept - 2.0), [on_rate, kept])
+	_check("class_rate.switch_back", is_equal_approx(kept, off_rate) and off_rate >= 3.0, [kept, off_rate])
+	_check("class_rate.other_param", (func():
+		XTianqiBase.PHASE4 = true
+		a.param_mark_dirty()
+		var r := a.param_rate(2)
+		XTianqiBase.PHASE4 = false
+		a.param_mark_dirty()
+		return is_equal_approx(r, a.param_rate(2))).call())
 
 
 ## 开着但是西游档：全走关着

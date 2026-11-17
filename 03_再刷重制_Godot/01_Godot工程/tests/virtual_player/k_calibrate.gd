@@ -18,7 +18,7 @@ const LEVEL := 81
 const FABAO := 99
 const GENERAL_ATK := 3557
 const GENERAL_MAT := 3556
-const TROOP := 4
+const TROOP := 4  # 缺省敌群；_measure 里会往后找第一个「不是守层者、不是首领」的敌人（天启篇元素牌对它恒中性）
 const DEF := 8200.0
 const MYTH_QUALITY := "14"
 
@@ -30,6 +30,7 @@ var only: Array = []
 var debug := false
 var mastery_seen := 0
 var no_mastery := false
+var no_fabao := false
 var report := {}
 
 
@@ -43,6 +44,8 @@ func _ready() -> void:
 			hits = int(a.substr(7))
 		elif a.begins_with("--out="):
 			out_path = a.substr(6)
+		elif a == "--no-fabao":
+			no_fabao = true
 		elif a == "--no-mastery":
 			no_mastery = true
 		elif a == "--debug":
@@ -151,12 +154,24 @@ func _state(id: int) -> XState:
 	var item := XGear.template("armor", fid)
 	item.level = float(mini(FABAO, int(XMagicWeapon.max_level(item))))
 	var slot := a.equip_slots().find(int(item.etypeId))
-	if slot >= 0:
+	if slot >= 0 and not no_fabao:
 		a.equips[slot] = item
 	for sid in (a.skill_ids if not no_mastery else []):
 		XSkillMastery.set_level(a, int(sid), XSkillMastery.max_level(int(sid)))
 	if debug:
 		print("K_DEBUG mastery_on=%s M=%s on=%s active=%s max=%d" % [XTianqiSkills.mastery_on(), XTianqiSkills.MASTERY, XTianqiSkills.on(), XTianqi.active(s), XSkillMastery.max_level(5703)])
+	if debug:
+		for q in a.equips.size():
+			var it = a.equips[q]
+			if it is Dictionary and not it.is_empty():
+				print("K_DEBUG equip %d %s %s lv=%s q=%s eff=%s" % [q, it.get("id"), it.get("name"), it.get("level", ""), it.get("meta", {}).get("quality", ""), XTianqiGear.effective_params(it) if XTianqiGear.applies(it) else it.get("params")])
+		a.param_mark_dirty()
+		print("K_DEBUG layers native=%s rate=%s buff=%s plus=%s before_alien=%s gear_in=%s" % [a.param_native(4), a.param_rate(4), a.param_buff_rate(4), a.param_plus(4), a.param_before_alien(4), XActorModules.param(a, 4, XPercentPills.param(a, 4, a.param_native(4)))])
+		for o in a.trait_objects():
+			for t in (o.get("traits", []) if o is Dictionary else []):
+				if int(t.get("code", 0)) == 21 and int(t.get("dataId", -1)) == 4 and float(t.get("value", 1.0)) != 1.0:
+					print("K_DEBUG mat-rate %s %s %s" % [o.get("id"), o.get("name"), t.value])
+		print("K_DEBUG params %s base=%s" % [[a.param(0), a.param(2), a.param(4)], [a.param_base(2) if a.has_method("param_base") else "", a.param_base(4) if a.has_method("param_base") else ""]])
 	mastery_seen = maxi(mastery_seen, XSkillMastery.max_level(int(a.skill_ids[0])) if not a.skill_ids.is_empty() else 0)
 	a.param_mark_dirty()
 	a.refresh_passive()
@@ -220,15 +235,15 @@ func _measure(id: int, tier: String) -> Dictionary:
 	var a := s.actor(id)
 	var cap := float(XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}).get(tier, 0.0))
 	var logic := XBattleLogic.new()
-	logic.setup(TROOP, s, XBattleRandom.create(str(s.random_master)))
+	logic.setup(_troop(s), s, XBattleRandom.create(str(s.random_master)))
 	var foes: Array = logic.alive(logic.enemies)
 	if foes.is_empty():
 		return {}
 	var e = foes[0]
-	e.add_param(3, DEF - float(e.param(3)))
-	e.add_param(5, DEF - float(e.param(5)))
 	e.add_param(0, 1.0e9)
 	e.param_mark_dirty()
+	if XTianqiElements.enemy_profile(e, logic, s).get("source", "") != "":
+		push_error("K 木桩 %d 不是元素中性（%s）" % [int(e.enemy_id), XTianqiElements.enemy_profile(e, logic, s)])
 	var best := {}
 	for sid in a.skill_ids:
 		var sp := XTianqiSkills.spec(int(sid))
@@ -241,6 +256,7 @@ func _measure(id: int, tier: String) -> Dictionary:
 		var d: Dictionary = sp.damage
 		var w := XTianqiSkills.hit_weight(d)
 		for n in hits:
+			_pin_def(e)
 			e.hp = e.mhp
 			a.hp = a.mhp
 			a.mp = a.mmp
@@ -248,6 +264,7 @@ func _measure(id: int, tier: String) -> Dictionary:
 			XStateEffects.force_critical = true
 			var v0 := absf(XTianqiSkills.formula(a, e, sk))
 			if debug and n == 0:
+				print("K_DEBUG foe def=%s mdf=%s pdr=%s mdr=%s el=%s" % [e.def, e.mdf, e.pdr, e.mdr, [e.element_rate(1), e.element_rate(2), e.element_rate(3), e.element_rate(4)]])
 				var calc: Dictionary = logic._calculate_damage(a, sk, e, true)
 				print("K_DEBUG %d %s" % [int(sid), JSON.stringify({"value": calc.get("value"), "row": calc.get("breakdown", {}).get("row", {})})])
 			var r: Dictionary = logic.apply(a, sk, e)
@@ -264,6 +281,41 @@ func _measure(id: int, tier: String) -> Dictionary:
 					"cap": cap, "peak": roundf(peak), "formula": str(sk.get("damage", {}).get("formula", "")).left(60), "repeats": int(sk.get("repeats", 1)), "atk": a.param(2), "mat": a.param(4), "mhp": a.mhp}
 	logic.end_battle(0)
 	return best
+
+
+## 木桩物防魔防钉到 DEF：敌人的防御要乘难度、首领、天启篇楼层等倍率（还会在第一下时才挂上开战状态），
+## 所以每一下之前按「当前值÷加值前」反推加值，迭代到差 <1。v1 只在开场加一次差值：第一招打的是防御 46，后面是 1.2～1.5 万（T082 v1 的 153、163 两例）。
+static func _pin_def(e) -> void:
+	for i in [3, 5]:
+		for _n in 6:
+			e.param_mark_dirty()
+			e.param_refresh()  # 战斗中读的是能力值缓存格，标脏后要 refresh 才清
+			var cur := float(e.param(i))
+			if absf(cur - DEF) < 1.0:
+				break
+			var plus := float(e.added_params.get(i, 0.0))
+			var raw := float(e.param_base_unscaled(i)) + plus
+			var f := cur / raw if raw > 0.0 and cur > 0.0 else 1.0
+			e.add_param(i, (DEF - cur) / maxf(1e-6, f))
+	e.param_mark_dirty()
+	e.param_refresh()
+
+
+## 木桩敌群：从 TROOP 往后找第一个首个敌人不是守层者、不是首领的（元素牌对它恒中性，稿第九节第 1 条「元素中性」）
+static var _troop_id := 0
+static func _troop(s) -> int:
+	if _troop_id > 0:
+		return _troop_id
+	for t in range(TROOP, TROOP + 400):
+		var tr := XDB.rec("Troops", t)
+		if tr.is_empty() or (tr.get("members", []) as Array).is_empty():
+			continue
+		var eid := int(tr.members[0].get("enemyId", 0))
+		if eid <= 0 or XGuardianRework.floor_of(eid) > 0 or XEnemy.boss_id(eid):
+			continue
+		_troop_id = t
+		return t
+	return TROOP
 
 
 ## 这一下卡面系数×当下条件（不含属性基数和等级缩放）：formula 的 v0 ÷ 它 ＝ 基数×等级缩放
