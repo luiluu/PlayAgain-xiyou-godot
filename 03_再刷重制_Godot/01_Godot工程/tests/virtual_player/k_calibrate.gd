@@ -48,6 +48,8 @@ func _ready() -> void:
 			out_path = a.substr(6)
 		elif a == "--no-fabao":
 			no_fabao = true
+		elif a == "--no-fabao-table":  # T163：法宝不读表（XTianqiGear.FABAO_TABLE 关，对照用）
+			XTianqiGear.FABAO_TABLE = false
 		elif a == "--no-mastery":
 			no_mastery = true
 		elif a == "--bare":
