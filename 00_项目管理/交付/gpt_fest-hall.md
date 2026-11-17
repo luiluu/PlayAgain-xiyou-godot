@@ -1,7 +1,7 @@
 # 交付：gpt/fest-hall
 
 - 车道／工作者：小o（co），gpt-6.1-sol＋medium，T071
-- 状态：可合并
+- 状态：进行中
 
 ## 变更记录草稿
 
@@ -49,3 +49,10 @@
 - `fest_lobby_rift2_on.png`：下移视角，展示奖杯与二阶段漩涡同图共存。
 - 调用：`godot --audio-driver Dummy --path <工程> res://tests/xiyou_fest_lobby.tscn -- --capture-only --out=<私密交付目录>`；后续截图一律静音。
 - 取景入口用 `RenderingServer.force_draw()`，避免 macOS 遮挡窗口时 `frame_post_draw` 不唤醒；取景前隐藏初始成就提示，防止遮住布置。
+
+## 云端阻塞（待协调授权）
+
+- 最终批次 43985970712 的第 3 片中 `xiyou_map` 424/425，首次与重跑一致失败。
+- 唯一差异：`MISMATCH map4.passable [[13,11,15,0],[14,11,15,0],[15,11,15,0]]`，即撤除红桌后新增可通行三格。
+- 原版地图对照在 `_ready()` 已关闭漩涡二阶段等重制优化，却没有关闭庆典；当前真实日期在庆典内，故把本单有意变更与只读原版 oracle 比较。
+- 建议在 `tests/xiyou_map.gd` 原版对照初始化中加 `XFestLobby.ENABLED = false`（不动 oracle、不放宽断言），大厅庆典行为由本单专项 155 项覆盖。该文件超出独占范围，已准备向协调询问；授权前不修改。
