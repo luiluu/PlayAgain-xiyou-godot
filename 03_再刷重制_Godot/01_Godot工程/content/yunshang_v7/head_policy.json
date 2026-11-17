@@ -1,6 +1,0 @@
-{
-  "standard_head": "middle frame per down/left direction copied verbatim across 3 frames",
-  "right": "exact mirrored left body and face, then separate portrait ornament layer",
-  "up_wait": "round4 pixels retained; no visible rear face",
-  "warning": "alignment.json records pre-composite source fitting; final head copies/mirroring are explicitly recorded here"
-}

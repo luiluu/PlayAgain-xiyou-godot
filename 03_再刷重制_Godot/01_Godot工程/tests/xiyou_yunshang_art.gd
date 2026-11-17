@@ -35,12 +35,22 @@ func _run() -> void:
 	check("face.path", XDB.img_path("faces", "Yunshang").ends_with("/Yunshang_Face_u1.png"))
 	XYunshang.RESKIN = false
 	check("reskin.rollback", XYunshang.art_path("sv_actors", "Yunshang").ends_with("/u2/Yunshang_SV_u2.png"))
+	var rb := XAppearance.for_battler(a).frame("wait",0)
+	check("reskin.rollback.appearance", str(rb.tex.resource_path).ends_with("/u2/Yunshang_SV_u2.png"))
+	check("reskin.rollback.bounds_old", XAppearance.profile(rb,"wait").bounds == Rect2(13,2,38,60))
+	check("reskin.rollback.xdb", XDB.img_path("characters", "$Yunshang").ends_with("/u2/$Yunshang_u2.png"))
+	check("reskin.rollback.book", XActorBook.sprite_path(174).ends_with("/u2/Yunshang_SV_u2.png"))
 	XYunshang.RESKIN = true
+	var nw := XAppearance.for_battler(a).frame("wait",0)
+	check("v9.foot_end_y_64", XAppearance.profile(nw,"wait").bounds.end.y == 64.0)
 	check("reskin.missing", XYunshang.reskin_path("sv_actors", "Yunshang", false) == "")
 	XYunshang.ART = false
 	var old := XAppearance.for_battler(a).frame("wait",0)
 	check("rollback.old_texture", str(old.tex.resource_path).contains("/sv/yunshang/"))
 	check("rollback.old_scale", XAppearance.profile(old,"wait").scale < 1.0)
+	check("art_off.walk", not XDB.img_path("characters", "$Yunshang").contains("/yunshang_v"))
+	check("art_off.face", not XDB.img_path("faces", "Yunshang").contains("/yunshang_v"))
+	check("art_off.book", not XActorBook.sprite_path(174).contains("/yunshang_v"))
 	XYunshang.ART = true
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out=") and DisplayServer.get_name() != "headless":
