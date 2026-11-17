@@ -57,6 +57,7 @@
   "XTianqiSummit.run_event": "false",
   "XTianqiSkills.level_scale": "0.5 + 0.5 * clampf((float(a.level) - 1.0) / 98.0, 0.0, 1.0) if a is XActor else 1.0",
   "XTianqiMeter.make": "BODY:var m := XTianqiMeter.new()\nm.visible = false\nreturn m",
+  "XTianqiSearBar.make": "BODY:var m := XTianqiSearBar.new()\nm.visible = false\nreturn m",
   "XTianqiReforge.cost": "0",
   "XTianqiQiyin.shards": "0",
   "XTianqiSkills.boss_add": "0",
@@ -90,6 +91,7 @@
   "XTianqiHallIntro.pending_slot": "0",
   "XTianqiRandom.battle_random": "s.reserve_battle_random()",
   "已确认空值安全": {
+    "XTianqiBrand.perform": "只在 is_fit_command(skill) 为真时调用（BattleLogic.act），西游档／空壳里 is_fit_command 恒假（合成技能只由烙印发作生成），走不到；T120 顺手登记",
     "XGojo.begin": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",
     "XGojo.end_round": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",
     "XGojo.finish": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",

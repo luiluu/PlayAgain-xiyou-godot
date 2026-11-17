@@ -1262,6 +1262,7 @@ func act(u: XBattler, skill, target) -> Array:
 	var before := _movable_snapshot()
 	if is_over() or u.is_dead():
 		return logs
+	XTianqiBrand.act_begin(self)  # 天启篇烙印灼痕：开一次新的行动（一次行动对同一个人最多涨一次）
 	if XTianqiBrand.is_fit_command(skill):  # 天启篇烙印发作：哑火换成普攻敌人；发呆、断片、抽自己、六亲不认按放弃行动走（那一下在 perform 里结算）
 		var fx := XTianqiBrand.perform(self, u, skill, target)
 		logs.append_array(fx.logs)
@@ -1377,6 +1378,7 @@ func act(u: XBattler, skill, target) -> Array:
 	if started and skill is Dictionary:  # 被晕等跳过行动时 skill 已置空
 		logs.append_array(mark_views(XTianqiRewards.after_action(self, u, skill)))  # 天启篇奖励：钥匙串追加普攻、雷火弹
 	logs.append_array(XTianqiWeakAffix.root_end(self, u))  # 天启篇弱者专属词条：这一根全部结算完，各条专属出派生（反击、追击），收根
+	logs.append_array(XTianqiBrand.take_logs(self))  # 天启篇烙印灼痕：满了的那一行、当场开始的发作
 	_sync_orders(before, true)
 	resolve_collapses()
 	return logs
@@ -1804,6 +1806,7 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	if u == first_subject:
 		_cleared[u] = true
 	var before := _movable_snapshot()
+	XTianqiBrand.act_begin(self)  # 天启篇烙印灼痕：强制行动也算一次行动
 	XTianqiWeakAffix.root_begin(self, u, skill)  # 天启篇弱者专属词条：强制行动也是一根（不重置每回合次数）
 	XNanoha.begin(self)
 	var chain_step: int = 1 if XStateEffects.CHAIN_SKILLS.has(int(skill.get("id", 0))) else 0  # rules9 审查 39 P3-6：只有 5576／5577 自己打出的这一击算防连锁，别的强制行动不算
@@ -1834,6 +1837,7 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	XNanoha.finish(self, u)
 	logs.append_array(mark_views(XGuyu.after_action(self, u, skill)))  # 谷雨 endAction 包装 afterAction：强制行动也触发花期绽放（同 act，在奈叶之后）
 	logs.append_array(XTianqiWeakAffix.root_end(self, u))  # 天启篇弱者专属词条：强制行动这一根收尾
+	logs.append_array(XTianqiBrand.take_logs(self))  # 天启篇烙印灼痕：满了的那一行、当场开始的发作
 	_sync_orders(before, true)
 	return logs
 
@@ -3085,6 +3089,7 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 	XHubris.after_hp(self, u, t, value, hubris_before)  # 狂妄 executeHpDamage 包装：贡献、本方击杀、首领分段
 	XTusu.hp_after(u, t, value, item, tusu_cuoshi)  # 锻痕、挫势减伤标记的消费与新挂
 	XXuanBattle.hp_after(u, t, value, item)  # 璇 60 级列星：归宿、星幕的消费
+	XTianqiBrand.sear_hit(self, u, t, hubris_before)  # 天启篇烙印灼痕：敌人打中我方、生命确实掉了才涨（开关关着不取数）
 	return out
 
 

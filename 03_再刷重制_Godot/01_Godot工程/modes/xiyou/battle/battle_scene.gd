@@ -75,6 +75,7 @@ var list_win: XBattleList
 ## 异化百相切换仿形的选择窗（开着时）
 var mimic_win: XAlienMimicWindow
 var tianqi_meter: XTianqiMeter
+var tianqi_sear_bar: XTianqiSearBar
 ## 云裳的选择窗（赠行选人、裁身、七曜元素、收针选人、换锦选状态）
 var yun_win: XYunChoicesWindow
 ## 谷雨赠春／还春选择窗（开着时）
@@ -731,6 +732,10 @@ func _build_ui(vs: Vector2) -> void:
 	tianqi_meter = XTianqiMeter.make(logic, func(): return status_rows)
 	tianqi_meter.position = _origin + TIANQI_METER_POS
 	ui.add_child(tianqi_meter)
+	# 天启篇烙印的灼痕槽（XTianqiSearBar）：右侧状态栏生命条下面一条细槽；烙印关着、不在天启篇战斗里不画
+	tianqi_sear_bar = XTianqiSearBar.make(logic, func(): return status_rows)
+	tianqi_sear_bar.position = _origin
+	ui.add_child(tianqi_sear_bar)
 	XSkinBattleMotion.hud_in([hp_holder, boss_panel, holder, side, otb, tianqi_meter])  # T096：新界面开战时依次淡入（样稿 .in）；动效关、皮肤关什么也不做
 
 
