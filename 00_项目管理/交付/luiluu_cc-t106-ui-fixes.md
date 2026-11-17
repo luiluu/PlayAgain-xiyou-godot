@@ -8,9 +8,15 @@
 ## 2026-11-17 【cc·未经审查】T106／T107／T129 界面小修三张（dev.待定）
 
 - T106：新皮肤下 `XToast` 提示栈上沿由 y=30 改到页面上沿之下（`XToast.skin_top()`＝`XUiSkin.TOP`＋4，关新皮肤仍原版 20），不再盖菜单页名与页签；多条提示本来竖排，加断言两条不叠。`xiyou_ui_skin_4b` 加 `toast_below_header_*`（改前红、改后绿，实测）。
-- T107：差距清单第 10 项（左上自动／变速圆钮）T125 已做完（74×74 圆钮，截图核过），本卡不重做；第 11 项：队伍紧凑条队长行 Lv 后带当前称号（`XSkinSideStatus.title_text()`，称号是玩家级 `XState.designation`，只挂队长，非队长不带；`SHOW_TITLE=false` 回退，登记 O-待定）。T096 核 P2：`XSkinBattle.help_open` 每场重置（`XBattleScene._ready` 开战清、`tree_exiting` 收场清，`XSkinBattle.reset_help()`），`xiyou_ui_skin_battle` 加开战与收场两条断言；`xiyou_ui_skin_hud` 加队长称号／非队长／回退三项。
+- T107：差距清单第 10 项（左上自动／变速圆钮）T125 已做完（74×74 圆钮，截图核过），本卡不重做；第 11 项：队伍紧凑条队长行 Lv 后带当前称号（`XSkinSideStatus.title_text()`，称号是玩家级 `XState.designation`，只挂队长，非队长不带；`SHOW_TITLE=false` 回退，登记 O-待定·队伍条称号）。T096 核 P2：`XSkinBattle.help_open` 每场重置（`XBattleScene._ready` 开战清、`tree_exiting` 收场清，`XSkinBattle.reset_help()`），`xiyou_ui_skin_battle` 加开战与收场两条断言；`xiyou_ui_skin_hud` 加队长称号／非队长／回退三项。
 - T129：`xiyou_tianqi_title_flow` 收尾前停掉 `XSound._players` 回放并放流、等 0.3 秒（同 `xiyou_actor_book` 先例），存档目录改按进程号分开（原固定目录，多份同时跑会互踩存档、必红，和泄漏无关）。
 - 玩家可见：新皮肤下弹提示不再盖住菜单标题和页签；战斗右侧队伍栏队长一行显示称号。
+
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定·队伍条称号 | `modes/xiyou/ui/skin/skin_side_status.gd` | 战斗右侧队伍条 Lv 行只有「Lv · 职业」 | 队长行在 Lv 后带当前称号（`XState.designation`，只挂队长） | 对上界面风格 v0.7 稿「Lv 1 · 断腿狗」 | `XSkinSideStatus.SHOW_TITLE = false` | cc | 保留 |
 
 ## 交接板
 
