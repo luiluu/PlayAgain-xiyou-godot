@@ -16,6 +16,10 @@ extends Node
 
 const LEVEL := 81
 const FABAO := 99
+## --level=<L>（T163 量成长曲线）：角色 L 级，装备按 min(80, L−1) 级神话，法宝按 99×L÷81 级；缺省 81／80／99（甲档口径）
+static var level := LEVEL
+static var gear_level := 80
+static var fabao_level := FABAO
 const GENERAL_ATK := 3557
 const GENERAL_MAT := 3556
 const TROOP := 4  # 缺省敌群；_measure 里会往后找第一个「不是守层者、不是首领」的敌人（天启篇元素牌对它恒中性）
@@ -58,6 +62,10 @@ func _ready() -> void:
 			bare = true
 		elif a == "--no-advance":
 			no_advance = true
+		elif a.begins_with("--level="):
+			level = clampi(int(a.substr(8)), 1, LEVEL)
+			gear_level = mini(80, maxi(1, level - 1))
+			fabao_level = mini(FABAO, roundi(FABAO * level / float(LEVEL)))
 		elif a == "--per-skill":
 			per_skill = true
 		elif a == "--debug":
@@ -77,7 +85,7 @@ func _run() -> void:
 	var rules: Dictionary = XTianqiBalance.data().get("combat_rules", {})
 	if k_arg > 0.0:
 		rules["base_damage"] = k_arg
-	report = {"k": float(rules.get("base_damage", 1.0)), "hits": hits, "def": DEF, "rows": [], "tiers": {},
+	report = {"k": float(rules.get("base_damage", 1.0)), "hits": hits, "level": level, "gear_level": gear_level, "fabao_level": fabao_level, "def": DEF, "rows": [], "tiers": {},
 		"brand_max_bonus": float(XTianqiBrand.data().get("power", {}).get("max_bonus", 0.5)),
 		"caps": XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}),
 		"build": "bare" if bare else "full",
@@ -149,7 +157,7 @@ func _state(id: int) -> XState:
 	s.random_master = XRandomStream.hex64(20261117 + id)
 	seed(20261117 + id)
 	s.set_variable(20, 36)
-	s.actor_max_level = LEVEL
+	s.actor_max_level = level
 	XTianqiSkills.MASTERY = true  # 翻开关后熟练度和总开关一起开（稿第七节第 2 条）；开局流程会把它拨回默认值，这里再置一次
 	XState.current = s  # 熟练度上限（XTianqiSkills.mastery_on）、装备读表都看当前存档
 	if not s.party.has(id):
@@ -159,7 +167,7 @@ func _state(id: int) -> XState:
 	for i in 5:
 		s.set_battle_slot(i, id if i == 0 else 0)
 	var a := s.actor(id)
-	a.change_level_mv(LEVEL)
+	a.change_level_mv(level)
 	if not no_advance:
 		_advance_max(s, a)
 	_dress(a)
@@ -168,7 +176,7 @@ func _state(id: int) -> XState:
 		var mw := main_weights(a)
 		fid = GENERAL_ATK if float(mw.get("atk", 0.0)) >= float(mw.get("mat", 0.0)) else GENERAL_MAT
 	var item := XGear.template("armor", fid)
-	item.level = float(mini(FABAO, int(XMagicWeapon.max_level(item))))
+	item.level = float(mini(fabao_level, int(XMagicWeapon.max_level(item))))
 	var slot := a.equip_slots().find(int(item.etypeId))
 	if slot >= 0 and not no_fabao:
 		a.equips[slot] = item
@@ -281,7 +289,7 @@ static func _dress(a: XActor) -> void:
 		for rec in _pool[et]:
 			var item := XGear.template("weapon" if et == 1 else "armor", int(rec.id))
 			item.meta = (item.get("meta", {}) as Dictionary).duplicate()
-			item.meta["req_level"] = "80"
+			item.meta["req_level"] = str(gear_level)
 			item.meta["quality"] = MYTH_QUALITY
 			if not a.can_equip(item) or not XTianqiGear.applies(item):
 				continue
@@ -489,6 +497,24 @@ func _qiyin(a: XActor) -> void:
 				if str(t.key) == QIYIN_WTYPE_KEY:
 					wname = str(t.name)
 			item = XTianqiQiyinEquip.make({"kind": "weapon", "seal": QIYIN_SEAL, "wtype": wname, "true_seal": true, "grades": grades, "affixes": []}, "zhengdao", rng)
+			if not item.is_empty() and not a.can_equip(item):
+				# T163：拳套用不了的人（v5～v8 有 69/134 人）穿上后会被 release_unequippable 卸掉，等于没武器。黑印另一类是枪械，能用就换枪械；
+				# 都用不了就把这把黑印武器的武器类改成本人能用的第一类（口径照旧「人人黑印满配」，武器类只影响能不能穿）
+				var ok := false
+				for t in XTianqiQiyinGear.weapon_types():
+					if str(t.key) == "gun" and a.traits_set(51).has(int(t.wtype_id)):
+						var g := XTianqiQiyinEquip.make({"kind": "weapon", "seal": QIYIN_SEAL, "wtype": str(t.name), "true_seal": true, "grades": grades, "affixes": []}, "zhengdao", rng)
+						if not g.is_empty() and a.can_equip(g):
+							item = g
+							ok = true
+				if not ok:
+					for wt in a.traits_set(51):
+						item.wtypeId = int(wt)
+						if a.can_equip(item):
+							ok = true
+							break
+				if not ok:
+					push_error("K 黑印武器 %d 穿不上" % int(a.actor_id))
 		elif parts.has(et):
 			item = XTianqiQiyinEquip.make({"kind": "set", "seal": QIYIN_SEAL, "part": parts[et], "true_seal": true, "grades": grades, "affixes": []}, "zhengdao", rng)
 		else:
