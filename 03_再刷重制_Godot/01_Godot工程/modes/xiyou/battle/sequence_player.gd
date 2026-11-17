@@ -40,6 +40,8 @@ var done := false
 var _event_pending := false
 ## 正在执行的序列指令（读它的 moves 快照）
 var _cur: Dictionary = {}
+## 一个物理帧里行动机走几步（1＝原版逐帧）。敌群事件里的强制行动在技能动画关着时快放（XBattleScene.FORCED_FAST，O-待定-1）
+var turbo := 1
 
 
 static func create(s: XBattleScene, action: Dictionary, list: Array) -> XSequencePlayer:
@@ -57,20 +59,23 @@ func play() -> void:
 	for sp in scene.sprites.values():
 		sp.seq_driven = true
 	while not done:
-		scene.camera.update()
-		var running := _live_anims()
-		if not _busy():
-			_step()
-		scene.flush_popups()
-		for sp in scene.sprites.values():
-			(sp as XBattlerSprite).seq_update()
-		_tick_anims(running)
-		scene.update_gauges()
-		scene.apply_camera()
-		if on_frame.is_valid():
-			on_frame.call(self)
-		_log_update()
-		frame += 1
+		for _k in maxi(turbo, 1):
+			scene.camera.update()
+			var running := _live_anims()
+			if not _busy():
+				_step()
+			scene.flush_popups()
+			for sp in scene.sprites.values():
+				(sp as XBattlerSprite).seq_update()
+			_tick_anims(running)
+			scene.update_gauges()
+			scene.apply_camera()
+			if on_frame.is_valid():
+				on_frame.call(self)
+			_log_update()
+			frame += 1
+			if done:
+				break
 		await tree.physics_frame
 	for sp in scene.sprites.values():
 		sp.seq_driven = false
