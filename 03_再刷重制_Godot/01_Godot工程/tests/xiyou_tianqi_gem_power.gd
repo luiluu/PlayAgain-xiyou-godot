@@ -1,5 +1,6 @@
 extends Node
 ## 【cc·T164】光耀度（D186）：宝石效果＝基础值×光耀度（＝期四换算比），只显示、不改数值。
+## D190：光耀度＝换算比÷80 级换算比，80 级＝100%、最高 100%；图鉴数字＝满额值；XTianqiGear.CAP_80 关回旧口径。
 ## 一、期四关着：所有显示函数返回空，镶嵌图鉴不画说明行，详情／插槽行数同原来，八项原样。
 ## 二、开着：光耀度文字＝换算比（单列一个百分比、多列给范围）；逐项「实际值（基础值）」＝换算比×基础值，且与 effective_params 里宝石那份一致；
 ##     镶嵌图鉴数字仍是基础值、只多一行说明；镶嵌预览给本件的实际值；开关开／关各一遍，八项数值、effective_params 不因显示函数改变。
@@ -90,12 +91,14 @@ func _run() -> void:
 	XTianqiGear.clear_effective_cache()
 	_check("on_active", XTianqiGemPower.active(g))
 	var ratio_atk := XTianqiGear.flat_ratio(g, 2)
+	var pow_atk := XTianqiGemPower.power_of(g, 2)
+	_check("g_level_le_80", int(str(g.meta.get("req_level", "0"))) <= 80, g.meta)
 	var base := XTianqiGear.gem_base(g)
 	_check("gem_base_stone_plus2", float(base[2]) == 2.0, base)
-	var want_pct := "%d%%" % roundi(ratio_atk * 100.0)
+	var want_pct := "%d%%" % roundi(pow_atk * 100.0)
 	_check("power_text_is_ratio", XTianqiGemPower.power_text(g) == want_pct, [XTianqiGemPower.power_text(g), want_pct])
 	var lines := XTianqiGemPower.value_lines(g, base)
-	var want_line := "%s %+d（%+d）" % [str(XDB.system().terms.params[2]), roundi(2.0 * ratio_atk), 2]
+	var want_line := "%s %+d（%+d）" % [str(XDB.system().terms.params[2]), roundi(2.0 * ratio_atk), roundi(2.0 * XTianqiGear.full_ratio(2))]
 	_check("value_line_actual_of_base", lines.size() == 1 and lines[0] == want_line, [lines, want_line])
 	var drows := XHelpCard.detail_rows(g, 300.0)
 	_check("detail_has_power_and_line", _rows_text(drows).contains("光耀度：" + want_pct) and _rows_text(drows).contains(want_line), _rows_text(drows))
@@ -115,10 +118,10 @@ func _run() -> void:
 	_check("no_gem_only_headline", XTianqiGemPower.value_lines(none, XTianqiGear.gem_base(none)).is_empty() and XTianqiGemPower.power_text(none) != "")
 	# 预览：磨刀石镶在这件上
 	var pv := XTianqiGemPower.preview_rows(none, XDB.rec("Items", STONE), "upgrade")
-	_check("preview_stone", pv.size() == 2 and str(pv[0][0]) == "光耀度：%s（本件）" % XTianqiGemPower.power_text(none, [0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0]) and str(pv[1][0]).contains("（+2）"), pv)
+	_check("preview_stone", pv.size() == 2 and str(pv[0][0]) == "光耀度：%s（本件）" % XTianqiGemPower.power_text(none, [0.0, 0.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0]) and str(pv[1][0]).contains("（+%d）" % roundi(2.0 * XTianqiGear.full_ratio(2))), pv)
 	# P1①：预览头行按「待镶材料自己加成的列」算，不读已镶宝石那一列（g 已镶物攻磨刀石，预览一颗只加物防的）
 	var def_only := [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0]
-	var want_def := "%d%%" % roundi(XTianqiGear.flat_ratio(g, 3) * 100.0)
+	var want_def := "%d%%" % roundi(XTianqiGemPower.power_of(g, 3) * 100.0)
 	_check("preview_head_uses_preview_column", XTianqiGemPower.power_text(g, def_only) == want_def and XTianqiGemPower.power_text(g, def_only) != XTianqiGemPower.power_text(g), [XTianqiGemPower.power_text(g, def_only), want_def, XTianqiGemPower.power_text(g)])
 	var multi := [1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0]
 	var mt := XTianqiGemPower.power_text(g, multi)
@@ -127,8 +130,8 @@ func _run() -> void:
 	var lo := INF
 	var hi := -INF
 	for i in [0, 2, 3, 6, 7]:
-		lo = minf(lo, XTianqiGear.flat_ratio(none, i))
-		hi = maxf(hi, XTianqiGear.flat_ratio(none, i))
+		lo = minf(lo, XTianqiGemPower.power_of(none, i))
+		hi = maxf(hi, XTianqiGemPower.power_of(none, i))
 	var want_empty := "%d%%～%d%%" % [roundi(lo * 100.0), roundi(hi * 100.0)] if roundi(lo * 100.0) != roundi(hi * 100.0) else "%d%%" % roundi(lo * 100.0)
 	_check("empty_slot_five_columns", XTianqiGemPower.power_text(none) == want_empty, [XTianqiGemPower.power_text(none), want_empty])
 	# P1②：新皮肤详情牌，头行和逐项行同在「说明」，不被拆进「自带」
@@ -202,7 +205,50 @@ func _run() -> void:
 	var rec: Dictionary = XInlayBook.recipes()[0][0]
 	var book_on := XInlayBook.status_ops(rec, 0)
 	_check("book_note_added", book_on.size() == book_off.size() + 1 and JSON.stringify(book_on).contains("光耀度"))
-	_check("book_numbers_same", JSON.stringify(book_on.slice(0, book_off.size())) == JSON.stringify(book_off))
+	# D190：天启档图鉴数字＝基础值×80 级换算比（满额）；CAP_80 关回基础值，与期四关着时逐字节相同
+	var btpl := XDB.rec("Weapons", int(rec.get("weapon", 0)))
+	var bbase := float(btpl.get("params", [0, 0, 0, 0, 0, 0, 0, 0])[2])
+	var bfull := XEnemyBookPage.js_num(roundf(bbase * XTianqiGear.full_ratio(2)))
+	_check("book_numbers_full", bbase != 0.0 and bfull != XEnemyBookPage.js_num(bbase) and JSON.stringify(book_on).contains("\"" + bfull + "\""), [bbase, bfull])
+	XTianqiGear.CAP_80 = false
+	_check("book_numbers_cap_off_same", JSON.stringify(XInlayBook.status_ops(rec, 0).slice(0, book_off.size())) == JSON.stringify(book_off))
+	XTianqiGear.CAP_80 = true
+	# D190：光耀度口径——80 级＝100%、超 80 不超 100%、0 级约 23～32%
+	var lv := none.duplicate(true)
+	lv["instanceId"] = "t164_lv"
+	var pcts := {}
+	for L in [0, 40, 80, 81, 90, 99, 100]:
+		lv.meta = (lv.meta as Dictionary).duplicate()
+		lv.meta["req_level"] = str(L)
+		XTianqiGear.clear_effective_cache()
+		var row := []
+		for i in [0, 2, 3, 6, 7]:
+			row.append(XTianqiGemPower.power_of(lv, i))
+		pcts[L] = row
+	_check("level80_is_100", (pcts[80] as Array).all(func(x): return absf(x - 1.0) < 1e-9), pcts[80])
+	_check("level_over80_capped", [81, 90, 99, 100].all(func(L): return (pcts[L] as Array).all(func(x): return absf(x - 1.0) < 1e-9)), pcts)
+	_check("never_over_100", pcts.values().all(func(row): return (row as Array).all(func(x): return x <= 1.0 + 1e-9)))
+	_check("level0_23_to_32", (pcts[0] as Array).all(func(x): return x >= 0.225 and x <= 0.325), pcts[0])
+	_check("level40_between", (pcts[40] as Array).all(func(x): return x > (pcts[0] as Array)[0] and x < 1.0))
+	lv.meta["req_level"] = "99"
+	XTianqiGear.clear_effective_cache()
+	var head99 := XTianqiGemPower.head_text(lv, [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+	_check("level99_head_100", head99 == "光耀度：100%", head99)
+	# CAP_80 关回旧口径：90 级换算比读到 90 行，光耀度＝换算比本身
+	XTianqiGear.CAP_80 = false
+	XTianqiGear.clear_effective_cache()
+	lv.meta["req_level"] = "90"
+	_check("cap_off_old_ratio", absf(XTianqiGear.flat_ratio(lv, 2) - 6.27) < 1e-9 and absf(XTianqiGemPower.power_of(lv, 2) - 6.27) < 1e-9 and XTianqiGear.full_ratio(2) == 1.0)
+	XTianqiGear.CAP_80 = true
+	XTianqiGear.clear_effective_cache()
+	# 战斗结果：≤80 级的装备 CAP_80 开／关伤害相同；超 80 级特例才变（八项按 80 级读）
+	var dmg_cap_on := _damage(s, g)
+	XTianqiGear.CAP_80 = false
+	XTianqiGear.clear_effective_cache()
+	var dmg_cap_off := _damage(s, g)
+	XTianqiGear.CAP_80 = true
+	XTianqiGear.clear_effective_cache()
+	_check("damage_same_cap_on_off_le80", dmg_cap_on == dmg_cap_off and dmg_cap_on.size() >= 2, [dmg_cap_on, dmg_cap_off])
 	# P2：非天启档（总开关开着、但当前存档不是天启档）——图鉴不画说明行
 	var keep_state: XState = XState.current
 	XState.current = null

@@ -144,7 +144,8 @@ static func status_ops(r: Dictionary, kind: int) -> Array:
 		return ops
 	var tpl := XDB.rec("Weapons" if weapon else "Armors", tpl_id)
 	var params: Array = tpl.get("params", [0, 0, 0, 0, 0, 0, 0, 0])
-	var v := func(i: int) -> String: return XEnemyBookPage.js_num(float(params[i]))
+	var full := XTianqiBase.on()   # T164 D190：天启档数字是「光耀度 100% 时的满额效果」＝基础值×80 级换算比；期四关着原样
+	var v := func(i: int) -> String: return XEnemyBookPage.js_num(roundf(XTianqiGemPower.full_value(float(params[i]), i)) if full else float(params[i]))
 	ops.append(_t(v.call(0), x + _w(ATTRS[0] + "  "), y, COLW))
 	ops.append(_t(v.call(1), c3 + _w(ATTRS[1] + "        "), y, COLW))
 	ops.append(_t(v.call(2), x + _w(ATTRS[2] + "  "), y + LH, COLW))

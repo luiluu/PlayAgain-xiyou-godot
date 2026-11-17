@@ -482,6 +482,11 @@ static func flat_ratio(item, i: int) -> float:
 	return _ratio(_level(item), i)
 
 
+## 满额（光耀度 100%）时的换算比＝80 级那一行；CAP_80 关着返回 1（显示回到「基础值」口径）
+static func full_ratio(i: int) -> float:
+	return _ratio(CAP_LEVEL, i) if CAP_80 else 1.0
+
+
 static func _eff_fresh(c: Dictionary, item: Dictionary) -> bool:
 	var p: Array = item.get("params", [])
 	if not is_same(c.pref, p) or c.p != p or not is_same(c.aff, item.get("affixIds")):  # 不比对象本身：卡的改写视图（XTianqiSkills.gear_view）每次是新的浅拷贝，八项、词缀数组和本体是同一个
@@ -510,7 +515,15 @@ static func _level(item: Dictionary) -> int:
 	return clampi(int(str(item.get("meta", {}).get("req_level", "0"))), int(r[0]), int(r[1]))
 
 
+## 【T164·D190】换算比取表时装备等级夹到 CAP_LEVEL（80）：光耀度最高 100%，超 80 级的特例（81、99、100 级共 5 件）按 80 级算固定加值。
+## CAP_80 关掉回原样（读到 90 级）。只影响词缀／强化／镶嵌／宝珠的固定加值，不影响新底子（new_base 仍按原等级折算）
+static var CAP_80 := true
+const CAP_LEVEL := 80
+
+
 static func _ratio(level: int, i: int) -> float:
+	if CAP_80:
+		level = mini(level, CAP_LEVEL)
 	var row = gear_base().get("ratio", {}).get(str(level), {})
 	return float(row.get(RATIO_COLS[i], 1.0)) if row is Dictionary else 1.0
 

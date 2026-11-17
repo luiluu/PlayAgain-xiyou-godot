@@ -1,10 +1,11 @@
 class_name XTianqiGemPower
 extends RefCounted
 ## 【T164·D186】光耀度：宝石（符文镶嵌、宝珠）的实际效果＝图鉴里的基础值×装备的「光耀度」，装备等级越高越光耀。
-## 光耀度就是期四装备八项里已经在用的换算比（XTianqiGear.flat_ratio），这里只做显示：不新增数值、不改任何战斗结果。
+## 【D190】光耀度＝这件装备的换算比 ÷ 80 级换算比（各列各算），80 级＝100%、最高 100%（超 80 级按 80 算，见 XTianqiGear.CAP_80）；
+## 实际值＝满额值（基础值×80 级换算比）×光耀度＝基础值×换算比。只做显示：不新增数值、不改任何战斗结果（那 5 件超 80 级特例除外，见交付单）。
 ## 只认期四总开关 XTianqiBase.PHASE4 且这件装备读表（XTianqiGear.applies）；否则每个函数都返回空，界面逐字节回原样。
 const NAME := "光耀度"
-const NOTE := "基础值×光耀度，等级越高越盛；特效不放大"
+const NOTE := "满额效果；装备光耀度越高，发挥越足"
 const COLOR := "#ffe499"
 const LINE_COLOR := "#cfe8ff"
 ## 八项 → 说明里的短名（生命、魔法、物攻、物防、魔攻、魔防、敏捷、幸运），同装备说明卡「属性:」用的术语
@@ -17,6 +18,16 @@ static func active(item) -> bool:
 
 static func _names() -> Array:
 	return XDB.system().get("terms", {}).get("params", ["生命", "魔法", "物理攻击", "物理防御", "魔法攻击", "魔法防御", "敏捷", "幸运"])
+
+
+## 这一项的光耀度（0～1）：换算比÷满额换算比；CAP_80 关着时就是换算比本身（旧口径）
+static func power_of(item, i: int) -> float:
+	return XTianqiGear.flat_ratio(item, i) / XTianqiGear.full_ratio(i)
+
+
+## 一项的满额值（光耀度 100%）：基础值×满额换算比
+static func full_value(v: float, i: int) -> float:
+	return v * XTianqiGear.full_ratio(i)
 
 
 static func _pct(r: float) -> String:
@@ -47,7 +58,7 @@ static func power_text(item: Dictionary, base = null) -> String:
 	var lo := INF
 	var hi := -INF
 	for i in idx:
-		var r := XTianqiGear.flat_ratio(item, i)
+		var r := power_of(item, i)
 		lo = minf(lo, r)
 		hi = maxf(hi, r)
 	return _pct(lo) if roundi(lo * 100.0) == roundi(hi * 100.0) else "%s～%s" % [_pct(lo), _pct(hi)]
@@ -59,13 +70,12 @@ static func head_text(item: Dictionary, base = null) -> String:
 	return "%s：%s%s" % [NAME, t, "（各项不同）" if t.contains("～") else ""]
 
 
-## 一组基础值 → 「物理攻击 +84（+20）」逐项（实际值（基础值））
+## 一组基础值 → 「物理攻击 +84（+100）」逐项（实际值（满额值））
 static func value_lines(item: Dictionary, base: Array) -> Array:
 	var names := _names()
 	var out := []
 	for i in touched(base):
-		var r := XTianqiGear.flat_ratio(item, i)
-		out.append("%s %s（%s）" % [str(names[i]), _num(float(base[i]) * r), _num(float(base[i]))])
+		out.append("%s %s（%s）" % [str(names[i]), _num(float(base[i]) * XTianqiGear.flat_ratio(item, i)), _num(full_value(float(base[i]), i))])
 	return out
 
 
