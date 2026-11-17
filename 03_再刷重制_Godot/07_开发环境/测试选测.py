@@ -299,8 +299,10 @@ class SelectTests(Fixture):
         self.put(PROJECT / 'modes/xiyou/recipes.json', '{"a": 1}\n')  # 测试只引用加载它的 XCrafting
         self.assertEqual(self.pick()['scenes'], ['xiyou_craft.tscn', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn'])
         self.g('checkout', '--', '.')
-        self.put(PROJECT / 'modes/xiyou/lonely.json', '{"a": 1}\n')  # 只有 generated 下的脚本提到它：不算，整轮
-        self.assertTrue(self.pick()['full'])
+        self.put(PROJECT / 'modes/xiyou/lonely.json', '{"a": 1}\n')  # 只有 generated 下的脚本提到它：不算引用；T132 起不整轮，改跑数据校验场景
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertNotIn('xiyou_stale.tscn', s['scenes'])
         self.g('checkout', '--', '.')
         self.commit('noop') if self.g('status', '--porcelain') else None
         self.put(PROJECT / 'modes/xiyou/recipes.json', '{"b": 1}\n')
@@ -346,6 +348,49 @@ class SelectTests(Fixture):
             with self.subTest(table=rel):
                 self.assertEqual(sel.classify(rel, rules), 'tianqi_data', '%s 没归 tianqi_data 组（会静默判整轮或漏选）' % rel)
         for scene in groups['tianqi_data']['scenes']:
+            self.assertTrue((repo / TESTS / scene).exists(), '数据校验场景不存在：' + scene)
+
+    def test_mode_data_orphan_json_runs_validation_scenes_not_full(self):
+        """T132：modes/xiyou/*.json 里没有任何测试引用的表（代码读它、测试不提）只跑数据校验场景，不落整轮；有测试引用时照旧选引用它的测试；新加未登记的表同样不整轮。"""
+        data = PROJECT / 'modes/xiyou'
+        self.put(data / 'orphan.json', '{}\n')
+        self.put(data / 'used.json', '{}\n')
+        for name in ('xiyou_json_cache', 'xiyou_text_batch23', 'xiyou_tianqi_balance'):
+            self.scene(name, 'pass')
+        self.scene('xiyou_used', 'const F := "used.json"')
+        self.commit('mode data')
+        self.base = self.g('rev-parse', 'HEAD')
+        validation = ['xiyou_json_cache.tscn', 'xiyou_text_batch23.tscn', 'xiyou_tianqi_balance.tscn']
+        self.put(data / 'orphan.json', '{"a": 1}\n')
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertTrue(set(validation) <= set(s['scenes']))
+        self.g('checkout', '--', '.')
+        self.put(data / 'used.json', '{"a": 1}\n')
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertIn('xiyou_used.tscn', s['scenes'])
+        self.g('checkout', '--', '.')
+        self.put(data / 'brand_new.json', '{}\n')
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertTrue(set(validation) <= set(s['scenes']))
+
+    def test_real_mode_data_tables_classified_and_never_full(self):
+        """T132：真实对照表里 modes/xiyou/*.json 每张（含将来新加的）都归 mode_data 组，该组 fallback 不是整轮且场景都真实存在。
+        新表被更早的规则抢走、fallback 改回 FULL 或场景改名删除，这里会红。"""
+        repo = HERE.parents[1]
+        data = repo / PROJECT / 'modes/xiyou'
+        groups, rules = sel.load_table()
+        tables = sorted(data.glob('*.json'))
+        self.assertTrue(tables, 'modes/xiyou 下没有 json？路径变了？')
+        for t in tables:
+            rel = str(t.relative_to(repo))
+            with self.subTest(table=rel):
+                self.assertEqual(sel.classify(rel, rules), 'mode_data', '%s 没归 mode_data 组（会静默判整轮或漏选）' % rel)
+        fb = groups['mode_data'].get('fallback', [])
+        self.assertTrue(fb and 'FULL' not in fb, 'mode_data 的 fallback 不能是整轮')
+        for scene in fb:
             self.assertTrue((repo / TESTS / scene).exists(), '数据校验场景不存在：' + scene)
 
     def test_deleted_module_reads_class_name_from_base(self):
@@ -1747,8 +1792,8 @@ class CheckerTests(Fixture):
         self.assertIn('验证西游来源.py', self.names(ran))
 
     def test_unknown_change_is_full(self):
-        # 没有测试与加载者的手写数据：整轮，且它带出的事件对照不能把整轮缩成只跑选中的场景
-        self.put(PROJECT / 'modes/xiyou/recipes.json', '{}\n')
+        # 判整轮的改动（generated 导出数据；T132 起没人读的手写数据不再整轮）：整轮，且它带出的事件对照不能把整轮缩成只跑选中的场景
+        self.put(PROJECT / 'modes/xiyou/generated/x.json', '{}\n')
         rc, out, ran = self.check('--affected', self.base)
         self.assertEqual(rc, 0, out)
         self.assertIn('整轮', out)
