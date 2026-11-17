@@ -384,3 +384,252 @@ static func crown_bonus(b: float) -> float:
 const CAP_TEXT := "（已达上限）"
 static func cap_note(key: String, raw: float) -> String:
 	return CAP_TEXT if cap_on() and _cap(key) > 0.0 and raw >= _cap(key) else ""
+
+
+# ---- D. 装备八项 effective_params（T104：基础数值重构 v0.4 第五节第 1、6 条，第七节第 2 条「装备八项」那一行）----
+## 只认期四总开关 XTianqiBase.on()（关着、西游档一律返回实例原来的 params，同一个数组、逐字节不变）。
+## 开着、而且这件读表（applies）时：
+##   有效八项 ＝ 新底子 ＋ 换算比 ×（词缀固定属性 ＋ 镶嵌固定值 ＋ 宝珠固定值 ＋ 吸取特效加的属性） ［＋ 差值退路］
+##   - 新底子：标准线(折算等级, 这一项) × 部位系数 × 品质系数；折算等级＝1＋装备等级×98÷90（等级＝<req_level>，夹在 0～90）。
+##     主攻给物攻还是魔攻看原版那件（模板）物攻、魔攻哪个高，一样高各给一半；魔法上限表里没有部位系数，底子为 0。
+##     七印装备（实例带 qiyin 标记）照同一张表，武器和真印再 ×weapon_and_true_seal_mult。
+##   - 词缀固定属性＝XGear.affix_template（底装备＋affixIds 各词缀＋备注参数）－底装备模板，按记录重拼，不倒推。
+##   - 镶嵌固定值按 upgrades 历史从物品数据重算（百分比按底装备算，同 XGearUpgrade.apply_effects）；宝珠按孔里的宝珠重算固定加减。
+##   - 差值退路（稿第五节第 6 条）：实例 params 里剩下的（镶嵌随机值、符文之语、其它没记录的成长）只有在镶嵌历史里有随机项、
+##     或者有符文之语时才算，乘换算比后夹在新底子的 ±10% 以内；都没有时剩下的就是生成浮动，天启篇不算。
+## 只在内存里算，装备实例一个字节不改、不写存档。按 instanceId 缓存，实例的八项、镶嵌、词缀、等级、品质变了就重算。
+const GEAR_BASE_PATH := "res://modes/xiyou/tianqi_data/gear_base.json"
+## 八项 → 换算比表的列（魔法跟生命同一列：标准线两者都是 ×25）
+const RATIO_COLS := ["hp", "hp", "atk", "def", "atk", "def", "agi", "luk"]
+## 八项 → 部位系数的键（魔法没有，物攻／魔攻都读主攻 atk，物防／魔防都读 def）
+const SLOT_COLS := ["hp", "", "atk", "def", "atk", "def", "agi", "luk"]
+const RESID_BAND := 0.1
+static var _gb: Dictionary = {}
+static var _gb_slots: Dictionary = {}
+static var _eff_cache: Dictionary = {}
+static var _orb_res: Array = []
+
+
+static func gear_base() -> Dictionary:
+	if _gb.is_empty():
+		_gb = {}
+		_gb_slots = {}
+		if XDataFile.missing(GEAR_BASE_PATH):  # 发行包没有 tianqi_data
+			return _gb
+		var f := FileAccess.open(GEAR_BASE_PATH, FileAccess.READ)
+		var parsed = JSON.parse_string(f.get_as_text()) if f != null else null
+		if not parsed is Dictionary:
+			push_error("XTianqiGear: 读不到 " + GEAR_BASE_PATH)
+			return _gb
+		_gb = parsed
+		for k in _gb.get("slots", {}):
+			var row: Dictionary = _gb.slots[k]
+			_gb_slots[int(row.get("etype", 0))] = row
+	return _gb
+
+
+## 测试用：清表和缓存
+static func clear_effective_cache() -> void:
+	_gb = {}
+	_gb_slots = {}
+	_eff_cache = {}
+
+
+## 这件装备在当前状态下读不读新底子（总开关开着、天启篇存档；武器／防具；部位 1～10 且不在例外里；有等级需求和品质标记；不是天启篇奖励装备）
+static func applies(item) -> bool:
+	if not (item is Dictionary) or not XTianqiBase.on():
+		return false
+	if _kind(item) == "" or item.has(XTianqiRewards.FIELD):
+		return false
+	gear_base()
+	var etype := int(item.get("etypeId", 0))
+	var ex: Dictionary = _gb.get("exceptions", {})
+	if not _gb_slots.has(etype) or (ex.get("etypes", []) as Array).has(float(etype)) or (ex.get("ids", []) as Array).has(float(item.get("base", item.get("id", 0)))):
+		return false
+	return str(item.get("meta", {}).get("req_level", "")).strip_edges().is_valid_int() and XQuality.has_quality(item)
+
+
+## 统一入口：所有读装备八项的地方都走它。不读表时返回实例原来的 params（同一个数组，别改它）
+static func effective_params(item: Dictionary) -> Array:
+	if not XTianqiBase.PHASE4 or not applies(item):
+		return item.get("params", [])
+	var id := str(item.get("instanceId", ""))
+	var c = _eff_cache.get(id) if id != "" else null
+	if c != null and _eff_fresh(c, item):
+		return c.out
+	var out := _compute(item)
+	if id != "":
+		if _eff_cache.size() > 512:
+			_eff_cache.clear()
+		var p: Array = item.get("params", [])
+		_eff_cache[id] = {"pref": p, "p": p.duplicate(), "un": (item.get("upgrades", []) as Array).size(),
+			"aff": item.get("affixIds"), "meta": str(item.get("meta", {}).get("req_level", "")) + "|" + str(item.get("meta", {}).get("quality", "")),
+			"orb": JSON.stringify(item.get("augmentSlotItems", [])), "out": out}
+	return out
+
+
+## 一项（不读表时同 float(params[i])）
+static func param_of(item: Dictionary, i: int) -> float:
+	var p := effective_params(item)
+	return float(p[i]) if i >= 0 and i < p.size() else 0.0
+
+
+## 固定加值（词缀、镶嵌、宝珠）在这件装备上的换算比；不读表时 1
+static func flat_ratio(item, i: int) -> float:
+	if not applies(item):
+		return 1.0
+	return _ratio(_level(item), i)
+
+
+static func _eff_fresh(c: Dictionary, item: Dictionary) -> bool:
+	var p: Array = item.get("params", [])
+	if not is_same(c.pref, p) or c.p != p or not is_same(c.aff, item.get("affixIds")):  # 不比对象本身：卡的改写视图（XTianqiSkills.gear_view）每次是新的浅拷贝，八项、词缀数组和本体是同一个
+		return false
+	if c.un != (item.get("upgrades", []) as Array).size():
+		return false
+	var meta: Dictionary = item.get("meta", {})
+	if c.meta != str(meta.get("req_level", "")) + "|" + str(meta.get("quality", "")):
+		return false
+	return c.orb == JSON.stringify(item.get("augmentSlotItems", []))
+
+
+static func _kind(item: Dictionary) -> String:
+	var k := str(item.get("kind", ""))
+	if k == "weapon" or k == "armor":
+		return k
+	if item.has("wtypeId"):
+		return "weapon"
+	if item.has("atypeId"):
+		return "armor"
+	return ""
+
+
+static func _level(item: Dictionary) -> int:
+	var r := gear_base().get("level_map", {}).get("equip_level_range", [0, 90]) as Array
+	return clampi(int(str(item.get("meta", {}).get("req_level", "0"))), int(r[0]), int(r[1]))
+
+
+static func _ratio(level: int, i: int) -> float:
+	var row = gear_base().get("ratio", {}).get(str(level), {})
+	return float(row.get(RATIO_COLS[i], 1.0)) if row is Dictionary else 1.0
+
+
+## 七印装备的底子倍率：武器、真印 ×1.1，其余 1；不是七印 0
+static func _qiyin_mult(item: Dictionary) -> float:
+	var m := XTianqiQiyinEffects.mark_of(item)
+	if m.is_empty():
+		return 0.0
+	if str(m.get("kind", "")) == "weapon" or bool(m.get("true_seal", false)):
+		return float(gear_base().get("qiyin", {}).get("weapon_and_true_seal_mult", 1.0))
+	return 1.0
+
+
+## 新底子（第五节第 1 条）。ref：判主攻用的原版八项（模板）
+static func new_base(item: Dictionary, ref: Array = []) -> Array:
+	gear_base()
+	var lv := _level(item)
+	var conv := 1.0 + float(lv) * 98.0 / 90.0
+	var grade := float(_gb.get("grades", {}).get(XTianqiAffixRoll.QUALITY_KEYS[clampi(XQuality.grade(item), 0, 6)], 1.0))
+	var slot: Dictionary = _gb_slots.get(int(item.get("etypeId", 0)), {})
+	var mult := _qiyin_mult(item)
+	if mult == 0.0:
+		mult = 1.0
+	if ref.size() < 8:
+		ref = item.get("params", [0, 0, 0, 0, 0, 0, 0, 0])
+	var atk := float(ref[2])
+	var mat := float(ref[4])
+	var share := [1.0, 1.0, 1.0 if atk > mat else (0.5 if atk == mat else 0.0), 1.0, 1.0 if mat > atk else (0.5 if atk == mat else 0.0), 1.0, 1.0, 1.0]
+	var out := []
+	for i in 8:
+		var col: String = SLOT_COLS[i]
+		var k := float(slot.get(col, 0.0)) if col != "" else 0.0
+		out.append(XTianqiBase.line(conv, XTianqiBase.STATS[i]) * k * grade * float(share[i]) * mult)
+	return out
+
+
+## 宝珠孔里各宝珠的固定加减（<Augment Attach> 的「属性: ±N」行，同 XRaceBattle.weapon_body 的认法）
+static func orb_fixed(eq: Dictionary) -> Array:
+	var out := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	var slots: Array = eq.get("augmentSlots", [])
+	var held: Array = eq.get("augmentSlotItems", [])
+	if held.is_empty():
+		return out
+	if _orb_res.is_empty():
+		for n in XRaceBattle.BODY_NAMES:
+			_orb_res.append(RegEx.create_from_string("(?i)^" + n + "\\s*:\\s*([+-]\\d+)$"))
+	for i in held.size():
+		var gem := XOrbs.gem_in_slot(eq, i)
+		var type := str(slots[i] if i < slots.size() else "").to_upper().strip_edges()
+		if gem.is_empty() or type == "":
+			continue
+		for line in XOrbs.parse(gem).attach.get(type, []):
+			for p in 8:
+				var m: RegExMatch = _orb_res[p].search(str(line).strip_edges())
+				if m:
+					out[p] += float(m.get_string(1))
+	return out
+
+
+## 镶嵌历史里的固定值（随机项不算，has_random 记下来）。base：底装备数据库原件（百分比项按它算）；cur：判 current 项用的八项
+static func upgrade_fixed(item: Dictionary, cur: Array) -> Dictionary:
+	var out := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	var rnd := false
+	var kind := _kind(item)
+	var base := XDB.rec("Weapons" if kind == "weapon" else "Armors", int(item.get("base", 0)))
+	for u in item.get("upgrades", []):
+		var data := XGearUpgrade.rule(XDB.rec("Items", int(u.get("item", 0)) if u is Dictionary else 0))
+		for effect in data.get(kind, []):
+			if str(effect.get("op", "")) != "param":
+				continue
+			if bool(effect.get("random", false)):
+				rnd = true
+				continue
+			var ids: Array = range(8) if effect.param is String else [int(effect.param)]
+			for i in ids:
+				if effect.param is String and effect.param == "current" and float(cur[i]) == 0.0:
+					continue
+				var n := float(effect.value)
+				if bool(effect.get("percent", false)):
+					n *= float(base.get("params", [0, 0, 0, 0, 0, 0, 0, 0])[i]) / 100.0
+				out[i] += n
+	return {"fixed": out, "random": rnd}
+
+
+static func _compute(item: Dictionary) -> Array:
+	var src := item
+	var absorb := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	if item.has(XAffixAbsorb.VIEW_FLAG):  # 吸取视图：本体照算，视图多出来的（吸取的特效属性）当固定加值
+		var raw = XAffixAbsorb.real(item)
+		if raw is Dictionary and not is_same(raw, item):
+			src = raw
+			for i in 8:
+				absorb[i] = float(item.params[i]) - float(raw.params[i])
+	var params: Array = src.get("params", [0, 0, 0, 0, 0, 0, 0, 0])
+	var lv := _level(src)
+	var orb := orb_fixed(src)
+	var qiyin := _qiyin_mult(src) != 0.0
+	var b := {} if qiyin else XGear.template(_kind(src), int(src.get("base", src.get("id", 0))))
+	var t := {} if qiyin or b.is_empty() else XGear.affix_template(src, b)
+	var bp: Array = b.get("params", params) if not b.is_empty() else params
+	var nb := new_base(src, bp)
+	var out := []
+	if qiyin or b.is_empty():
+		# 七印装备：实例八项是占位（底表填 1），只有宝珠是后加的；底装备找不到的退回只换底子
+		for i in 8:
+			var v: float = float(nb[i]) + _ratio(lv, i) * (float(orb[i]) + float(absorb[i]))
+			out.append(roundf(maxf(0.0, v) if float(params[i]) >= 0.0 else v))
+		return out
+	var tp: Array = t.get("params", bp) if not t.is_empty() else bp
+	var up := upgrade_fixed(src, tp)
+	var keep := bool(up.random) or src.has("runewordName") or not (src.get("runewords", []) as Array).is_empty()
+	for i in 8:
+		var r := _ratio(lv, i)
+		var affix := float(tp[i]) - float(bp[i])
+		var fixed: float = affix + float(up.fixed[i]) + float(orb[i])
+		var v: float = float(nb[i]) + r * (fixed + float(absorb[i]))
+		if keep:
+			var resid: float = float(params[i]) - float(tp[i]) - float(up.fixed[i]) - float(orb[i])
+			var band: float = absf(float(nb[i])) * RESID_BAND
+			v += clampf(r * resid, -band, band)
+		out.append(roundf(maxf(0.0, v) if float(params[i]) >= 0.0 else v))
+	return out

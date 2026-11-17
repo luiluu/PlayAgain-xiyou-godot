@@ -498,7 +498,7 @@ func caption() -> String:
 
 ## 候选一行的主属性：武器看攻击；别的看八项里绝对值最大的那项（一样大取靠前的）
 static func main_param(rec: Dictionary) -> int:
-	var p: Array = rec.get("params", [])
+	var p: Array = XTianqiGear.effective_params(rec)  # 期四装备八项（T104）：关着同 rec.params
 	if p.size() < 8:
 		return -1
 	if str(rec.get("kind", "")) == "weapon" or rec.has("wtypeId"):
@@ -514,7 +514,7 @@ static func main_param(rec: Dictionary) -> int:
 static func param_of(rec, i: int) -> int:
 	if not (rec is Dictionary) or i < 0:
 		return 0
-	var p: Array = (rec as Dictionary).get("params", [])
+	var p: Array = XTianqiGear.effective_params(rec)  # 期四装备八项（T104）：关着同 rec.params
 	return int(p[i]) if i < p.size() else 0
 
 

@@ -73,7 +73,7 @@ static func _dark(c: XMVCanvas, r: Rect2) -> void:
 
 
 static func _equip_info(c: XMVCanvas, item: Dictionary, col_w: float) -> void:
-	var params: Array = item.get("params", [0, 0, 0, 0, 0, 0, 0, 0])
+	var params: Array = XTianqiGear.effective_params(item) if item.has("params") else [0, 0, 0, 0, 0, 0, 0, 0]  # 期四装备八项（T104）：关着同 item.params
 	for i in range(8):
 		var r := _cell(i, col_w)
 		var dx := r.position.x + 6

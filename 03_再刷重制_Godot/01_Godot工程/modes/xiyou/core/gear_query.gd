@@ -195,7 +195,7 @@ static func metric(item: Dictionary, f: Dictionary) -> float:
 	if sort == "power":
 		return float(XPower.equipment(item).get("total", 0.0))
 	if sort.begins_with("param"):
-		var params: Array = item.get("params", [])
+		var params: Array = XTianqiGear.effective_params(item)  # 期四装备八项（T104）：排序和面板同一组数；关着同 item.params
 		var i := int(sort.substr(5))
 		return float(params[i]) if i < params.size() else 0.0
 	if sort == "term":

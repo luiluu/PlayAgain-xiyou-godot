@@ -1244,7 +1244,7 @@ func _param_plus(i: int) -> float:
 	var weapons := 0
 	for e in XTianqiGear.stat_list(equip_list()):  # 天启篇：普通坐骑原来的属性不算
 		var w := 0.0
-		var p := float(e.params[i])
+		var p := XTianqiGear.param_of(e, i)  # 期四装备八项（T104）：关着同 float(e.params[i])
 		w += p
 		if p > 0.0:
 			var tag := ("passiveWPNM%02d" % int(e.wtypeId)) if e.kind == "weapon" else ("passiveARMM%02d" % int(e.atypeId))

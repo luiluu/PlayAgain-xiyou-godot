@@ -228,7 +228,7 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 			_prices(obj, rows)
 			pos[2] = rows.size()
 		1, 2:
-			var params: Array = obj.get("params", []) if not XYunshang.relic_item(obj) else XYunshang.relic_params(obj)
+			var params: Array = XTianqiGear.effective_params(obj) if not XYunshang.relic_item(obj) else XYunshang.relic_params(obj)  # 期四装备八项（T104）：关着同 obj.params
 			for i in range(params.size()):
 				if params[i] != null and float(params[i]) != 0.0:
 					rows.append([str(terms.get("params", [])[i]) + ":" + _num(params[i]), OTHER_SIZE, PARAM_COLORS[i], false, null])

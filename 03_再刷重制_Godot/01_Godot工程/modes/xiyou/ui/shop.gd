@@ -593,7 +593,7 @@ func _paint_status(c: XMVCanvas) -> void:
 		if not can:
 			c.text("-", 220 + 6, y, half - 12, "right", XUI.TEXT, 20, LH, XUI.DIM.a)
 			continue
-		var change := int(item.params[i]) - (int(cur.params[i]) if cur != null else 0)
+		var change := int(XTianqiGear.param_of(item, i)) - (int(XTianqiGear.param_of(cur, i)) if cur != null else 0)  # 期四装备八项（T104）
 		c.text(("+" if change > 0 else "") + XMenu._group(change), 220 + 6, y, half - 12, "right",
 			XItemStatusPainter.change_color(change), 20, LH, 1.0 if change != 0 else XUI.DIM.a)
 
@@ -661,7 +661,7 @@ func _paint_status_default(c: XMVCanvas, members: Array, item: Dictionary) -> vo
 		var alpha := 1.0 if can else XUI.DIM.a
 		c.text(a.display_name(), pad + 220, y, c.size.x - pad, "left", XUI.TEXT, XUI.FONT_SIZE, LH, alpha)
 		if can:
-			var change := int(item.params[_param_id]) - _worst_equipped_param(a, int(item.etypeId), _param_id)
+			var change := int(XTianqiGear.param_of(item, _param_id)) - _worst_equipped_param(a, int(item.etypeId), _param_id)  # 期四装备八项（T104）
 			c.text(("+" if change > 0 else "") + XMenu._group(change), pad, y, c.size.x - pad * 2, "right",
 				XItemStatusPainter.change_color(change), STAT_FONT, LH)
 		else:
@@ -676,7 +676,7 @@ static func _worst_equipped_param(a: XActor, etype: int, param_id: int) -> int:
 	for i in range(slots.size()):
 		if int(slots[i]) != etype or i >= a.equips.size() or a.equips[i] == null:
 			continue
-		var v := int(a.equips[i].params[param_id])
+		var v := int(XTianqiGear.param_of(a.equips[i], param_id))  # 期四装备八项（T104）
 		if not found or v < worst:
 			worst = v
 			found = true
