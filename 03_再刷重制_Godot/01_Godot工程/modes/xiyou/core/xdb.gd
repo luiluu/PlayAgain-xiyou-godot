@@ -199,6 +199,9 @@ static func map(map_id: int) -> Dictionary:
 
 
 static func img_path(folder: String, name: String) -> String:
+	var yunshang_art := XYunshang.art_path(folder, name)
+	if yunshang_art != "":
+		return yunshang_art
 	# 宿傩新美术（XSukuna.ART）：行走、常态战斗、完全体逐帧在 content/sukuna/img/，优先于同步出的原版图
 	if XSukuna.ART and name.trim_prefix("$").begins_with("Codex_Sukuna_"):
 		var own_s := "res://content/sukuna/img/%s/%s.png" % [folder, name]

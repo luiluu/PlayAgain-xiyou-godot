@@ -37,6 +37,7 @@ static var _state_recs: Dictionary = {}
 static var _tier: Dictionary = {}  # int 角色号 → 名单档位（含「不开放」）
 static var _gear: Dictionary = {}  # "armor:底号"／"weapon:底号" → 专属装备改写规格
 static var _gear_cache: Dictionary = {}
+static var _again: Dictionary = {}  # again_sources：读再释放的改写技能号（int）／装备键 → true（空表＝还没建）
 static var _counter_ids: Array = []  # 技能行带 counter／counter_next／guard 的技能号（data() 读表时列出）
 static var _counter_next_ids: Array = []
 static var _guard_ids: Array = []  # 同上键 → [原备注, 原特性数组, 新备注, 新 meta, 新特性]
@@ -102,6 +103,7 @@ static func reload() -> void:
 	_tier = {}
 	_gear = {}
 	_gear_cache = {}
+	_again = {}
 	_new_recs = {}
 	_new_state_recs = {}
 	_counter_ids = []
@@ -399,6 +401,49 @@ static func sync_learn(a) -> void:
 		var ok: bool = a.skill_ids.has(int(str(e[0]).substr(1))) if e[0] is String else int(a.level) >= int(e[0])
 		if ok and not a.skill_ids.has(int(e[1])):  # "s技能号"：学了那个技能（进阶给的被动）就补学（小青剑破万光）
 			a.learn_skill(int(e[1]))
+
+
+## 天启篇再释放（T063，Kyo D124=B「写着再释放却不生效」→接通）：这个角色出这招时，改写说明写了再释放的改写来源上的 AgainUse 几率合计
+## （键法同 XBattleLogic.again_in；读改写后记录的元数据）。名单＝改写稿 note_add 写了 AgainUse 的 22 处（20 个技能＋armor:3670、weapon:2021）
+## ＋AGAIN_KEEP（改写说明写着「战技 10% 再次释放」、标签沿用原版的 2071 战神、2356 强攻战法，设计稿 v0.2 同样保留）。
+## 名单外的不读：原版留下的再释放（没改写的 7190、8039、8053 等，状态、原版装备）、改写说明没写的遗留标签（7457 精灵至血 32%，
+## 设计稿已去掉、改写表漏了 note_remove；3232／4701 Boss 血脉）、atkk。改写稿是天启篇自己定的数，不按九线来源停
+## （同 XTianqiLedger.nine_off_skill 放过改写技能）。技能卡没开（cards_on）时改写稿整份不生效，返回 0。
+const AGAIN_KEEP := [2071, 2356]
+
+
+static func again_use(a, item: Dictionary) -> int:
+	if not cards_on() or not (a is XActor):
+		return 0
+	var tab := again_sources()
+	var total := 0
+	for sk in a.skills():
+		if sk is Dictionary and tab.has(int(sk.get("id", 0))):
+			total += XBattleLogic.again_in(sk.get("meta", {}), item)
+	for e in a.equip_list():
+		var key := gear_key(e)
+		if key != "" and tab.has(key):
+			var v = gear_view(e)
+			total += XBattleLogic.again_in(v.get("meta", {}) if v is Dictionary else {}, item)
+	return total
+
+
+## 读再释放的改写来源：技能号（int）／装备键（"armor:底号"）→ true
+static func again_sources() -> Dictionary:
+	if _again.is_empty():
+		data()
+		var out := {}
+		for id in _skills:
+			if _skills[id] is Dictionary and str(_skills[id].get("note_add", "")).contains("AgainUse"):
+				out[int(id)] = true
+		for id in AGAIN_KEEP:
+			if _skills.has(id):
+				out[int(id)] = true
+		for key in _gear:
+			if _gear[key] is Dictionary and str(_gear[key].get("note_add", "")).contains("AgainUse"):
+				out[str(key)] = true
+		_again = out
+	return _again
 
 
 # ---- 专属装备（法宝、武器）：按底号换成改写视图（第二期之二）----

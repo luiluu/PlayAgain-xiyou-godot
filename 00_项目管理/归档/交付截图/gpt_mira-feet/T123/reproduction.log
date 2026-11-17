@@ -1,0 +1,5 @@
+/Users/kyo/orca/workspaces/再刷项目资料库/gpt-mira-feet/03_再刷重制_Godot/01_Godot工程/content/sukuna/fix_sukuna_idle.py:26: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+  assert set(out.getdata())<=set(src.getdata())
+/Users/kyo/orca/workspaces/再刷项目资料库/gpt-mira-feet/03_再刷重制_Godot/01_Godot工程/content/sukuna/fix_sukuna_idle.py:27: DeprecationWarning: Image.Image.getdata is deprecated and will be removed in Pillow 14 (2027-10-15). Use get_flattened_data instead.
+  assert set(out.getchannel('A').getdata())=={0,255}
+PASS: frame0 base, all bounds (10,3,49,61), sole y60, head/hands/feet fixed; other51 cells exact; binary alpha and original palette

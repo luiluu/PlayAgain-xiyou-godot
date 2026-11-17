@@ -34,14 +34,23 @@ func _run() -> void:
 		await get_tree().physics_frame
 	check("first_is_1", page.current_actor() != null and page.current_actor().actor_id == 1, page.current_actor())
 	check("actor1_native_scale", page.sprite.scale == Vector2.ONE, page.sprite.scale)
-	var want := minf(72.0 / 132.0, 129.0 / 124.0)
-	check("yunshang_scale_value", is_equal_approx(XActorAdvancedScene.yunshang_scale(), want), XActorAdvancedScene.yunshang_scale())
+	var want_new := 1.0 if XYunshang.art_path("sv_actors", "Yunshang") != "" else minf(72.0 / 132.0, 129.0 / 124.0)
+	check("yunshang_scale_value", is_equal_approx(XActorAdvancedScene.yunshang_scale(), want_new), XActorAdvancedScene.yunshang_scale())
 	page.index = page.members.find(s.actor(XYunshang.ACTOR))
 	page._draw_status()
 	for i in 4:
 		await get_tree().physics_frame
 	check("yunshang_shown", page.shown_actor == s.actor(XYunshang.ACTOR) and page.sprite.texture != null, page.shown_actor)
-	check("yunshang_scale", page.sprite.scale.is_equal_approx(Vector2(want, want)), page.sprite.scale)
+	check("yunshang_scale", page.sprite.scale.is_equal_approx(Vector2(want_new, want_new)), page.sprite.scale)
+	var old_art := XYunshang.ART
+	XYunshang.ART = false
+	var want_old := minf(72.0 / 132.0, 129.0 / 124.0)
+	check("yunshang_rollback_scale_value", is_equal_approx(XActorAdvancedScene.yunshang_scale(), want_old), XActorAdvancedScene.yunshang_scale())
+	page._draw_status()
+	for i in 4:
+		await get_tree().physics_frame
+	check("yunshang_rollback_scale", page.sprite.scale.is_equal_approx(Vector2(want_old, want_old)), page.sprite.scale)
+	XYunshang.ART = old_art
 	page.queue_free()
 	_dash_pose()
 	_images()

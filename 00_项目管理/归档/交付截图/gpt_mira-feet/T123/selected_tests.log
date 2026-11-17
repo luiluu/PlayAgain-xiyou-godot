@@ -1,0 +1,11 @@
+  · xiyou_actor_book 只按全名选 1 个；另有 2 个同前缀场景没选（xiyou_actor_book_compare.tscn、xiyou_actor_book_review.tscn 等），要它们写成「xiyou_actor_book*」
+  ✓ xiyou_actor_book.tscn {"passed":28,"total":28}
+  ✓ xiyou_actor_looks.tscn {"passed":35,"total":35}
+  ✓ xiyou_actor_sv_compare.tscn {"passed":1,"skipped":"工具场景：设 XIYOU_SV_REAL 才比","total":1}
+  ✓ xiyou_mira_art.tscn {"passed":30,"total":30}
+  ✓ xiyou_mira_dragon_art.tscn {"passed":31,"total":31}
+  ✓ xiyou_mira_lift.tscn {"passed":57,"total":57}
+  ✓ xiyou_sukuna_art.tscn {"passed":24,"total":24}
+  · 测试用时 85 秒（并行 1，共用上限 4）
+  · 最慢 7 个场景：xiyou_actor_book 51秒、xiyou_mira_lift 6秒、xiyou_mira_dragon_art 5秒、xiyou_actor_looks 5秒、xiyou_sukuna_art 5秒、xiyou_mira_art 5秒、xiyou_actor_sv_compare 4秒
+  · 日志：/tmp/sukuna-t123/tests

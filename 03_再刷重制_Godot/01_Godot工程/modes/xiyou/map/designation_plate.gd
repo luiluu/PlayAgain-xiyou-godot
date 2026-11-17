@@ -13,6 +13,10 @@ const ICON_X := 74.0   # drawIcon(…, 58, 0)：Star 版 blt 到 x + pw/2
 const TITLE_Y := 32.0
 const NAME_Y := 54.0
 const LINE := 22.0
+## 新界面名牌字的描边（无底框后靠它压住浅色地面）
+const PLATE_OUTLINE := Color(0, 0, 0, 0.85)
+const PLATE_OUTLINE_SIZE := 4
+const PLATE_FONT_SIZE := 15
 
 var _sig := ""
 var _bold_font: FontVariation
@@ -54,36 +58,35 @@ func _paint(c: XMVCanvas) -> void:
 	var col := Color.from_string(str(d.get("color", "#ffffff")), Color.WHITE)
 	var d_name := str(d.get("name", ""))
 	if XUiSkin.on():
+		# 新界面：称号（标题字体）＋名字（正文字体），不再垫底框（T095，Kyo 11-16「玩家名怎么有个框」）；
+		# 地面颜色深浅都有，字带一圈黑描边保证看得清
 		c.clean_text = true
-		c.font = XUiSkin.font("body")
 		var ft := XUiSkin.font("title")
 		var fb := XUiSkin.font("body")
-		var tw := ft.get_string_size(d_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-		var nw := fb.get_string_size(s.actor_name, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-		var pw := clampf(maxf(tw, nw) + 28.0, 96.0, W - 4.0)
-		var px := roundf((W - pw) / 2.0)
 		var py := 26.0
-		var ph := H - py
-		var box := StyleBoxFlat.new()
-		box.bg_color = Color(0.055, 0.058, 0.07, 0.82)
-		box.border_color = Color(XUiSkin.GOLD, 0.48)
-		box.set_border_width_all(1)
-		box.set_corner_radius_all(8)
-		box.shadow_color = Color(0, 0, 0, 0.4)
-		box.shadow_size = 5
-		box.shadow_offset = Vector2(0, 2)
-		c.draw_style_box(box, Rect2(px, py, pw, ph))
 		var tex := XUI.icon_texture(int(d.get("icon", 0)))
 		if tex != null:
 			c._keep.append(tex)
 			c.draw_texture_rect(tex, Rect2((W - 28.0) / 2.0, 0.0, 28.0, 28.0), false)
-		c.font = ft
-		c.text(d_name, px + 6.0, py + 4.0, pw - 12.0, "center", col, 15, 22.0, 1.0, 1.0, Vector2.ZERO, Color(0, 0, 0, 0.8))
-		c.font = fb
-		c.text(s.actor_name, px + 6.0, py + 26.0, pw - 12.0, "center", XUiSkin.TEXT, 15, 22.0, 1.0, 1.0, Vector2.ZERO, Color(0, 0, 0, 0.8))
+		_outlined(c, ft, d_name, py + 4.0, col)
+		_outlined(c, fb, s.actor_name, py + 26.0, Color.WHITE)
 		return
 	c.clean_text = false
 	c.font = _bold_font
 	c.icon(int(d.get("icon", 0)), ICON_X, 0.0)
 	c.text(d_name, 0.0, TITLE_Y, W, "center", col, FONT_SIZE, LINE, 1.0, 1.0, Vector2.ZERO, Color.BLACK)
 	c.text(s.actor_name, 0.0, NAME_Y, W, "center", Color.WHITE, FONT_SIZE, LINE, 1.0, 1.0, Vector2.ZERO, Color.BLACK)
+
+
+## 新界面名牌一行字：居中、黑描边（太长按画布宽压窄）
+func _outlined(c: XMVCanvas, f: Font, s: String, y: float, col: Color) -> void:
+	if s == "":
+		return
+	var size := XFontScale.size(PLATE_FONT_SIZE)
+	var w := f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	var sx := minf(1.0, (W - 8.0) / maxf(w, 1.0))
+	var base := y + LINE - (LINE - size * 0.7) / 2.0
+	c.draw_set_transform(Vector2(roundf((W - w * sx) / 2.0), roundf(base)), 0.0, Vector2(sx, 1.0))
+	c.draw_string_outline(f, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, PLATE_OUTLINE_SIZE, PLATE_OUTLINE)
+	c.draw_string(f, Vector2.ZERO, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+	c.draw_set_transform(Vector2.ZERO)
