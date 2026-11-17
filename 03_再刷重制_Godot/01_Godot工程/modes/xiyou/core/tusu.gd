@@ -320,7 +320,7 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 		ops.append({"op": "set", "field": "mode", "value": "magical" if ARM_WEAPON[key.substr(4)] == "book" else "physical"})
 		var t = tusu()
 		var td = data(t)
-		if td != null and int(td.host_actions) > 0:
+		if td != null and int(td.host_actions) > 0 and not _tq():  # T137 天启篇：卡上持有者的招按均衡档系数、没有分摊；原来 >1 被收口拦、<1 照乘（只减不加），卡开着整条去掉
 			ops.append({"op": "mul", "field": "finalMultiplier", "value": float(ARM_ACTIONS) / maxi(1, int(td.host_actions))})
 		var wielder = a
 		if is_tusu(a) and holder(a) != null:
@@ -514,7 +514,7 @@ static func segments(skill: Dictionary) -> int:
 ## Game_Action.apply 包装（最外层）：一次行动分段打同一目标，目标倒下就停
 static func apply_segments(logic, u, skill: Dictionary, t) -> Array:
 	var n := segments(skill)
-	if n > 1 and not XTianqiLedger.take_module_derived(logic, u, "module.tusu.segments"):  # 期四（T130）分段（合计 ×1.2）每回合次数；超了照不分段打一下（不乘 1.2）；关着恒真
+	if n > 1 and not _tq() and not XTianqiLedger.take_module_derived(logic, u, "module.tusu.segments"):  # 期四（T130）分段（合计 ×1.2）每回合次数；超了照不分段打一下（不乘 1.2）；关着恒真。T137 天启篇分段不加伤（segment_bonus），不是派生、不问口子
 		return [logic.apply(u, skill, t)]
 	var out := []
 	_segment = {"count": n, "index": 0, "remainder": 0.0}
@@ -528,11 +528,16 @@ static func apply_segments(logic, u, skill: Dictionary, t) -> Array:
 	return out
 
 
-## makeDamageValue 包装：每段 ×1.2/段数向下取整，余数攒到最后一段
+## 分段合计倍率：原版 1.2；天启篇（卡开着，T137）1.0——卡把止戈环 60 级进化改成「易武不耗行动」，没有分段加伤，只拆段
+static func segment_bonus() -> float:
+	return 1.0 if _tq() else 1.2
+
+
+## makeDamageValue 包装：每段 ×segment_bonus/段数向下取整，余数攒到最后一段
 static func segment_value(value: float) -> float:
 	if _segment == null:
 		return value
-	var exact := value * 1.2 / int(_segment.count)
+	var exact := value * segment_bonus() / int(_segment.count)
 	var part := floorf(exact)
 	_segment.remainder = float(_segment.remainder) + exact - part
 	if int(_segment.index) == int(_segment.count) - 1:
