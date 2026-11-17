@@ -82,5 +82,6 @@
   "XTianqiBase.param_base": "NAN",
   "XTianqiBrand.realm": "0",
   "XTianqiBrand.last_realm": "6",
+  "XTianqiLedger.take_module_derived": "true",
   "XTianqiHallIntro.pending_slot": "0"
 }

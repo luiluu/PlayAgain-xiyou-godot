@@ -883,8 +883,9 @@ static func end_action(logic, u, skill) -> Array:
 	_try_rescue(logic, a)
 	_try_liexing(logic, a)
 	if u is XActor and skill is Dictionary and not skill.is_empty() and XSmartAI.for_opponent(skill) \
-			and int(skill.get("damage", {}).get("type", 0)) in [1, 5] and in_cover(a, u):
+			and int(skill.get("damage", {}).get("type", 0)) in [1, 5] and in_cover(a, u) and XTianqiLedger.take_module_derived(logic, a, "module.xuan.follow_up"):  # 期四（T130）；关着恒真
 		_follow_up(logic, a, skill, _last_target.get_ref() if _last_target != null else null)
+		XTianqiLedger.derived_close(logic)
 	return take_logs()
 
 

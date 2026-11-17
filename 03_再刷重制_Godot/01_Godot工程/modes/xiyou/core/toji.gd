@@ -496,7 +496,7 @@ static func begin(logic, u, skill: Dictionary, targets: Array) -> Array:
 			var pick: int = pool[floori(logic._float("toji_pick") * pool.size())]
 			var alive_foes: Array = logic.alive(logic.enemies)
 			var aim = target if target.is_alive() else (alive_foes[0] if not alive_foes.is_empty() else null)
-			if aim != null:
+			if aim != null and XTianqiLedger.take_module_derived(logic, u, "module.toji.armory"):  # 期四（T130）派生每回合次数；总开关关着恒真
 				var spear: bool = pick == 3 and logic._float("toji_spear") < 0.5
 				action.spear = spear
 				internal = true
@@ -504,6 +504,7 @@ static func begin(logic, u, skill: Dictionary, targets: Array) -> Array:
 				out = apply(logic, u, XDB.rec("Skills", RANDOM[pick]), aim)
 				XBlackFlash.nested -= 1
 				internal = false
+				XTianqiLedger.derived_close(logic)
 				u.action_mastery.append(ARMORY)  # actor._actionMastery.push(PASSIVE.armory)：武器库被动随 onAllActionsEnd 计一次
 				action.borrow = pick
 				if pick == 0:

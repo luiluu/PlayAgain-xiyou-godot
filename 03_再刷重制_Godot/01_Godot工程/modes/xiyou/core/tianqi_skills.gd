@@ -469,6 +469,16 @@ static func gear_key(item) -> String:
 	return "%s:%d" % [str(item.get("kind", "")), int(item.get("base", item.get("id", 0)))]
 
 
+## 改写稿给这件专属装备定的特性（traits_set）；卡没开、不在表里为空。九线来源停用放过它们（T130，期四开卡前口子：
+## 卡改写的专属武器攻击次数 +1 是卡定的数，同 XTianqiLedger.nine_off_skill 放过改写技能）
+static func gear_set_traits(item) -> Array:
+	if not cards_flag() or not cards_on() or not (item is Dictionary):
+		return []
+	data()
+	var sp = _gear.get(gear_key(item), {})
+	return (sp.get("traits_set", []) as Array) if sp is Dictionary else []
+
+
 static func gear_view(item):
 	if not cards_flag() or not (item is Dictionary) or item.is_empty() or not cards_on():
 		return item

@@ -609,13 +609,14 @@ static func _segment(logic, u, skill: Dictionary, t, replay: bool) -> Array:
 		if not _tq_explode_logs.is_empty():
 			out.append_array(_tq_explode_logs)
 			_tq_explode_logs = []
-	if id == TIANHUO:
+	if id == TIANHUO and _alive_enemies(logic).any(func(x): return x != t) and XTianqiLedger.take_module_derived(logic, u, "module.liuying.segment"):  # 期四（T130）扩散一次记一次；关着恒真
 		for other in _alive_enemies(logic):
 			if other == t:
 				continue
 			spread_rate = 0.5
 			out.append(logic.apply(u, skill, other))
 			spread_rate = 0.0
+		XTianqiLedger.derived_close(logic)
 	var flag := "extra_replay" if replay else "extra"
 	if id == RANSHAO and _alive_enemies(logic).size() == 1 and not bool(_frame.get(flag, false)) and not _tq():  # 天启篇：不再多打四段（单目标 +50% 在 tq_ops）
 		_frame[flag] = true

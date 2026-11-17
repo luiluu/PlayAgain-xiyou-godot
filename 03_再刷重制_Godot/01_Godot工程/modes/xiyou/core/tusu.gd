@@ -514,6 +514,8 @@ static func segments(skill: Dictionary) -> int:
 ## Game_Action.apply 包装（最外层）：一次行动分段打同一目标，目标倒下就停
 static func apply_segments(logic, u, skill: Dictionary, t) -> Array:
 	var n := segments(skill)
+	if n > 1 and not XTianqiLedger.take_module_derived(logic, u, "module.tusu.segments"):  # 期四（T130）分段（合计 ×1.2）每回合次数；超了照不分段打一下（不乘 1.2）；关着恒真
+		return [logic.apply(u, skill, t)]
 	var out := []
 	_segment = {"count": n, "index": 0, "remainder": 0.0}
 	for i in n:
@@ -522,6 +524,7 @@ static func apply_segments(logic, u, skill: Dictionary, t) -> Array:
 		_segment.index = i
 		out.append(logic.apply(u, skill, t))
 	_segment = null
+	XTianqiLedger.derived_close(logic)  # 专项量伤害（TRACE）用；游戏里空操作
 	return out
 
 

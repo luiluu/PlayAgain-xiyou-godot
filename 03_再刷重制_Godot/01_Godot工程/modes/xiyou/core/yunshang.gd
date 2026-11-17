@@ -964,6 +964,8 @@ static func burst(logic, t, all: bool) -> Array:
 static func derived(logic, src, t, skill_id: int, o: Dictionary) -> Array:
 	if src == null or t == null or t.is_dead():
 		return []
+	if not XTianqiLedger.take_module_derived(logic, src, "module.yunshang.derived"):  # 期四（T130）派生每回合次数；总开关关着恒真
+		return []
 	var skill := XDB.rec("Skills", skill_id)
 	var saved_frame := frame
 	derived_frame = o
@@ -994,6 +996,7 @@ static func derived(logic, src, t, skill_id: int, o: Dictionary) -> Array:
 	derived_frame = {}
 	frame = saved_frame
 	logic.gain_hp(t, -value)
+	XTianqiLedger.derived_close(logic)
 	var logs := [{"type": "yunshang_derived", "user": src, "skill": skill, "target": t, "hp": value, "critical": critical, "views": logic.views([t])}]
 	if t.is_dead():
 		logs.append({"type": "collapse", "target": t, "views": logic.views([t])})
