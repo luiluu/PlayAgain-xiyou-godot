@@ -186,7 +186,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	enemies.clear()
 	var t := XDB.rec("Troops", troop)
 	# Game_Troop.setup：所有成员 slot 都建出（隐藏成员也是，序号与敌群成员一致，335 出现时只改隐藏标记）
-	var strong_count := XEnemy.deployed_strong_count(actors)
+	var strong_count := XEnemy.deployed_strong_count(actors, s)
 	for m in t.get("members", []):
 		var e := XEnemy.new().setup(int(m.enemyId), s.difficulty, elite_roll, _rule(), strong_count)
 		XTianqi.strip_myth(e, s)  # 天启篇：不出「神话」（XTianqi.NO_MYTH；照样掷，随机流不变）

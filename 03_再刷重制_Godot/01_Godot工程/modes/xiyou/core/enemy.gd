@@ -34,8 +34,12 @@ var _updating_boss_armor := false
 static var _boss_ids := {}
 const BOSS_ARMOR_STATE := 2651
 
-static func deployed_strong_count(members: Array) -> int:
-	return members.filter(func(a): return a is XActor and XItemMarks.is_super_strong(a.actor_id)).size()
+## 上阵超强者人数（首领属性 1＋20%×N）。天启篇存档按天启篇档位名单（XTianqiSkills，跟上阵上限同一份，T146）；
+## 原版档照 super_strong_ids。members 只给出战栏（battle_members 不含助力位，助力位不计）；s 缺省取当前存档
+static func deployed_strong_count(members: Array, s: XState = null) -> int:
+	if s == null:
+		s = XState.current
+	return members.filter(func(a): return a is XActor and XItemMarks._super_in(s, int(a.actor_id))).size()
 
 static func boss_id(id: int) -> bool:
 	var rec := XDB.rec("Enemies", id)
@@ -115,7 +119,7 @@ func recover_all() -> void:
 
 ## roll < 0 时按几率随机决定神话；测试可传 0（必为神话，除非 NoElite）或 100（必不是）。
 func setup(id: int, difficulty: int, roll := -1.0, random: XRandomStream = null, strong_count := -1) -> XEnemy:
-	boss_strong_count = strong_count if strong_count >= 0 else (deployed_strong_count(XState.current.battle_members()) if XState.current != null else 0)
+	boss_strong_count = strong_count if strong_count >= 0 else (deployed_strong_count(XState.current.battle_members(), XState.current) if XState.current != null else 0)
 	boss_difficulty_boss = boss_id(id)
 	boss_hyper_armor = false
 	enemy_id = id
