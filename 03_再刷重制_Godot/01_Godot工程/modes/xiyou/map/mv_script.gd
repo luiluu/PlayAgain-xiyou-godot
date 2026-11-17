@@ -767,7 +767,8 @@ static func _guide_advise(interp) -> void:
 const _STRONG_IDS := [1, 8, 9, 10, 11, 13, 17, 38, 45, 47, 50, 59, 70, 71, 82, 84, 85, 92, 93, 95, 99, 109, 110, 111, 112, 113, 114, 115, 117, 118, 119, 128, 129, 130, 131, 170]
 
 
-static func _boss_roster(kind: String, interp, tier_ids = null, notes = null) -> void:
+## who：[脸图, 脸号, 名字框]（T079：天启篇名单挪到改版向导 EV071 说，名字框跟着换）
+static func _boss_roster(kind: String, interp, tier_ids = null, notes = null, who: Array = ["SF_People2", 5, "破阵·投影"]) -> void:
 	var is_super := kind == "super"
 	var ids: Array
 	if tier_ids is Array:
@@ -776,7 +777,7 @@ static func _boss_roster(kind: String, interp, tier_ids = null, notes = null) ->
 		ids = (XItemMarks.super_strong_ids() if is_super else _STRONG_IDS).duplicate()
 		if not is_super:
 			ids.append(XCat.ACTOR)
-	var lines := ["\\n<破阵·投影>%s（%d人）" % ["超强者名单" if is_super else "强者名单", ids.size()]]
+	var lines := ["\\n<%s>%s（%d人）" % [str(who[2]), "超强者名单" if is_super else "强者名单", ids.size()]]
 	var line := ""
 	for id in ids:
 		var nm := str(XDB.rec("Actors", int(id)).get("name", ""))
@@ -795,7 +796,7 @@ static func _boss_roster(kind: String, interp, tier_ids = null, notes = null) ->
 			"霸体回合每名超强者再令首领输出+20%。", "洪荒以下路线压制：灭世微幅、天灾小幅、地狱大幅。", "天灾、地狱：受到伤害×1.2、×1.5，", "给队友的治疗、护盾、增益×0.8、×0.5。"])
 	else:
 		lines.append_array(["镜流属于强者，不计入超强者难度加成。", "强者在普通、困难、地狱路线有小幅压制。"])
-	var list := [{"code": 101, "indent": 0, "parameters": ["SF_People2", 5, 0, 2]}]
+	var list := [{"code": 101, "indent": 0, "parameters": [str(who[0]), int(who[1]), 0, 2]}]
 	for l in lines:
 		list.append({"code": 401, "indent": 0, "parameters": [l]})
 	list.append({"code": 0, "indent": 0, "parameters": []})

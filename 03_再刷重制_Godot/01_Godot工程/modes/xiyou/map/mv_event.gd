@@ -93,6 +93,8 @@ func _is_hidden_event() -> bool:
 		return true  # 天启篇大厅不出洪荒女皇、兑换大厅传送、强者的礼物（O-410）
 	if XTianqiSect.hides(map_id, event_id):
 		return true  # 天启篇教派连带内容：大厅两位使者等整件不出（XTianqiSect）
+	if XTianqiHall.hides(map_id, event_id):
+		return true  # 天启篇大厅 NPC 清理：删掉的、并进别人选单的（T079，XTianqiHall）
 	return false
 
 

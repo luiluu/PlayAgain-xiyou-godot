@@ -51,13 +51,14 @@ MIXED_OK = {
     'modes/xiyou/ui/tianqi_title.gd': '标题画面，发行包要用（KEEP）',
     'modes/xiyou/core/xdb.gd': '数据库总表；只有 content/gojo 贴图路径一行，图在 DENY 里不进包',
     'modes/xiyou/core/text_fix.gd': '原版文字错的加载时修正（XDB 读表／地图每次都走它，西游档也靠它改错字）；头注释的「只在天启篇」是指其中 tianqi_dict 一条，'
-        '由 DICT 开关＋天启篇存档才套用，发行包里西游档恒不套（T101，cc）。注意 text_fix/rules.json 的 tianqi_dict 条目随真脚本进包，是否要 DENY 或发行时剔掉由总协调定',
+        '由 DICT 开关＋天启篇存档才套用，发行包里西游档恒不套（T101，cc）。发行克隆里 rules.json 的 tianqi_dict 由 make_tree 剔掉（scrub_rules）',
     'modes/xiyou/ui/skin/ui_skin.gd': '新界面皮肤开关（ui-skin-p0）：XWindowStyle／XUI 每次画都问 on()，发行包里恒为 false（天启篇发行门）；'
         '字体与法阵在 DENY 里不进包，缺了落回原字体',
     'modes/xiyou/ui/skin/skin_4a.gd': '新界面 4A（地图 HUD、铺满、战斗可读性）开关：地图、战斗、虚拟键每次画都问 XUiSkin.on()，发行包里恒为 false；'
         'content/ui_skin/hud/ 的替换图在 DENY 里不进包，缺了走程序画',
     'modes/xiyou/ui/skin/skin_art.gd': '新界面第一期正式美术（背景、烟色面板、选中条、环高亮）：只在 XUiSkin.on() 的画法里调，发行包里恒为 false；'
         'content/ui_skin/phase01/ 在 DENY 里不进包，缺图时 part()／bg_texture() 给 null、走程序画',
+    'modes/xiyou/ui/skin/skin_boss_arc.gd': '首领血弧：只在 XSkinBattle.on()（XUiSkin.on()）时创建，发行包里恒为 false；铜印贴图走 ResourceLoader.exists 守卫，在 DENY 里不进包',
 }
 HAND = HERE / '发行空壳手写'  # 手写空壳：<类名>.gd，整份照用（要保留部分发行功能的，如漩涡二阶画面）
 NUMERIC = set()  # 返回 int／float 的成员（check 要求它们不靠按类型空值）
@@ -434,6 +435,32 @@ def check_errors(missing: list, how: dict, sus: list = None) -> list:
     return errs
 
 
+RULES_REL = Path('modes/xiyou/text_fix/rules.json')
+# 发行包里 rules.json 只留西游档要用的条目：tianqi_dict（天启篇改名）整表去掉，注释字段（说明／why／ref 会点名天启篇改名）也去掉。
+# 运行时 text_fix.gd 对缺 tianqi_dict 按空表处理，西游档文字修正不受影响（T109，cc）
+RULES_COMMENT_KEYS = ('_说明', 'why', 'ref')
+
+
+def scrub_rules_data(d):
+    """返回发行用 rules.json 的内容（不改入参）：去掉 tianqi_dict 和注释字段。"""
+    def walk(x):
+        if isinstance(x, dict):
+            return {k: walk(v) for k, v in x.items() if k not in RULES_COMMENT_KEYS}
+        if isinstance(x, list):
+            return [walk(v) for v in x]
+        return x
+    return walk({k: v for k, v in d.items() if k != 'tianqi_dict'})
+
+
+def scrub_rules(root: Path) -> bool:
+    f = Path(root) / RULES_REL
+    if not f.is_file():
+        return False
+    d = json.loads(f.read_text(encoding='utf-8'))
+    f.write_text(json.dumps(scrub_rules_data(d), ensure_ascii=False, indent=1), encoding='utf-8')
+    return True
+
+
 def make_tree(out: Path, src: Path = None) -> Path:
     """克隆工程到 out 并换上空壳。out 不能已存在。src：要克隆的工程目录（默认本仓工程 PROJECT）。"""
     if out.exists():
@@ -451,6 +478,7 @@ def make_tree(out: Path, src: Path = None) -> Path:
         shutil.copytree(src, out, symlinks=True)
     for p, s in stubs.items():
         (out / p).write_text(s, encoding='utf-8')
+    scrub_rules(out)
     return out
 
 
@@ -461,6 +489,9 @@ def is_stub_tree(root: Path) -> list:
         s = (root / p).read_text(encoding='utf-8')
         if MARK not in s or STUB_TAG not in s:
             out.append(str(p))
+    f = root / RULES_REL
+    if f.is_file() and 'tianqi_dict' in json.loads(f.read_text(encoding='utf-8')):
+        out.append(f'{RULES_REL}（还带 tianqi_dict）')
     return out
 
 

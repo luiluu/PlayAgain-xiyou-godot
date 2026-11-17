@@ -460,18 +460,21 @@ static func party_layout(n: int, sprite_h := 72.0, sprite_w := 72.0) -> Array:
 
 
 func _place_battlers() -> void:
+	_enemy_fit = XBattleLayout.enemy_fit(logic.enemies.map(func(e): return enemy_src_home(e)))  # T126 敌群撑开（整场同一变换）
 	for e in logic.enemies:
 		_make_enemy_sprite(e)
 		_make_enemy_gauge(e)
 		_set_enemy_shown(e)
 	# 战斗站位（XPartyFormation，设置页「战斗站位」）：编队第 k 位站阵型第 k 个点；原版竖排＝party_layout
 	var points := XPartyFormation.points(XPartyFormation.current(), logic.actors.size())
+	points = XBattleLayout.actor_points(points, layout_solo())  # T126 站位撑开（XBattleLayout，回退 ENABLED＝false）
 	var mine := []
 	for i in range(logic.actors.size()):
 		var a: XActor = logic.actors[i]
 		var s := XBattlerSprite.new()
 		field.add_child(s)
-		s.setup(a, ACTOR_SCALE)
+		s.layout_mul = XBattleLayout.actor_mul(layout_solo())
+		s.setup(a, ACTOR_SCALE * s.layout_mul)
 		s.home = points[i]
 		s.position = s.home + Vector2(300, 0)
 		sprites[a] = s
@@ -491,18 +494,32 @@ func _sort_actor_sprites(mine: Array) -> void:
 
 
 
+var _enemy_fit := {}
+
+
+## T126：一名成员的敌群算首领战（首领站固定点、另放大，我方用首领战那套站位）
+func layout_solo() -> bool:
+	return logic.enemies.size() == 1
+
+
+## 敌人原版脚底：敌群编辑器坐标；YEP_CoreEngine Reposition Battlers：侧视时 y 加 (画面高 − 624) / 2
+func enemy_src_home(e: XEnemy) -> Vector2:
+	return Vector2(float(e.get_meta("x")), float(e.get_meta("y")) + floorf((BOX.y - 624.0) / 2.0))
+
+
 ## YEP_X_VisualHpGauge：宽 max(180, 图宽)、高 12，底色 19、渐变 20→21，显示当前 HP 数值。
 func _make_enemy_sprite(e: XEnemy) -> void:
 	var s := XBattlerSprite.new()
 	field.add_child(s)
 	s.setup(e, ELITE_SCALE if e.elite else 1.0)
+	var solo := layout_solo()
+	s.rescale(XBattleLayout.enemy_factor(s.height(), solo))
 	var br := XSvEnemy.breathing(e)  # 呼吸只给该给的敌人：非 SV 默认呼吸，SV 默认不呼吸；周期读备注（见 XSvEnemy）
 	s.breathing = br.on
 	s.breath_speed = br.speed
 	s.breath_rx = br.rx
 	s.breath_ry = br.ry
-	# YEP_CoreEngine Reposition Battlers：侧视时敌人 y 加 (画面高 − 624) / 2
-	s.home = Vector2(float(e.get_meta("x")), float(e.get_meta("y")) + floorf((BOX.y - 624.0) / 2.0))
+	s.home = XBattleLayout.enemy_home(enemy_src_home(e), _enemy_fit, solo)  # T126 站位撑开（关着＝原版坐标）
 	s.position = s.home
 	s.appeared = e.is_alive()  # Sprite_Enemy.initVisibility
 	sprites[e] = s
@@ -551,6 +568,12 @@ func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 		c.text(e.display_name(), 0, 0, 640, "center", color, 18, 36, name_alpha)
 		XEnemyStateIcon.paint(c, g.icons, c.text_width(e.display_name(), XEnemyStateIcon.NAME_SIZE), name_alpha)  # 名字右边的状态图标（ui12）
 	if not XBossHpBar.small_gauge_visible(e):  # YEP_X_VisualHpGauge：<HIDE HP GAUGE> 的敌人血条一直不出现（选中也不出）
+		return
+	if XSkinEnemyHp.on() and not (boss_hp != null and boss_hp.is_meter(e)):  # T126 新界面小怪血条（糖果粉细条，一直显示；首领有顶上血弧不画）
+		if not v.dead:
+			var sp: XBattlerSprite = sprites[e]
+			XSkinEnemyHp.paint(c, 320.0, XSkinEnemyHp.bar_top(sp.height()), XSkinEnemyHp.bar_width(sp.width()),
+				v.hp / maxf(v.mhp, 1.0), g.disp / maxf(v.mhp, 1.0))
 		return
 	if g.timer <= 0.0 and g.disp == g.cur and not (_target_mode == "enemy" and e == _hover):
 		return
@@ -706,6 +729,7 @@ func _build_ui(vs: Vector2) -> void:
 	tianqi_meter = XTianqiMeter.make(logic, func(): return status_rows)
 	tianqi_meter.position = _origin + TIANQI_METER_POS
 	ui.add_child(tianqi_meter)
+	XSkinBattleMotion.hud_in([hp_holder, boss_panel, holder, side, otb, tianqi_meter])  # T096：新界面开战时依次淡入（样稿 .in）；动效关、皮肤关什么也不做
 
 
 ## 说明卡（选技能／物品时右侧的详情）显示时的矩形（减 _origin，原版坐标）；没显示为空
@@ -755,7 +779,7 @@ func _help(entry = null) -> void:
 		# 原版说明卡是场景直属精灵，在窗口层（含 OTB 行动顺序条，z 8）之上
 		help_card.z_index = 10
 		ui.add_child(help_card)
-	if not (entry is Dictionary) or list_win == null or not is_instance_valid(list_win) or list_win.index < 0:
+	if not (entry is Dictionary) or list_win == null or not is_instance_valid(list_win) or list_win.index < 0 or not XSkinBattle.help_card_shown():  # T096：新界面默认收起，「详情」展开
 		help_card.visible = false
 		return
 	XHelpCard.scene_actor = _active  # 黑闪说明卡读 scene._skillWindow._actor
@@ -1171,6 +1195,7 @@ func _command(u: XBattler):
 	if not (u is XActor) or logic.auto or not logic.can_move(u) or XConfusion.confused(u):  # 混乱类状态：canInput 假，没有指令窗，直接普通攻击（自动战斗在上面先走）
 		return logic.decide(u)
 	_set_active(u)
+	XSkinBattle.turn_cue(self, u)  # T096：新界面换人提示（旧金圈＋「某某 的回合」），只是画面
 	while true:
 		inputting = true
 		var r = await _command_for(u)
@@ -1206,7 +1231,8 @@ func _tianqi_swap(out: XActor) -> void:
 	var s := XBattlerSprite.new()
 	field.add_child(s)
 	field.move_child(s, old.get_index())  # 换上的人接替原来的绘制次序（站位交错时靠下的要画在上面）
-	s.setup(h, ACTOR_SCALE)
+	s.layout_mul = XBattleLayout.actor_mul(layout_solo())
+	s.setup(h, ACTOR_SCALE * s.layout_mul)
 	s.home = old.home
 	s.position = old.home
 	sprites.erase(out)
@@ -1254,7 +1280,7 @@ func _open_status(a: XActor) -> void:
 func _close_windows() -> void:
 	for w in [cmd_win, list_win, mimic_win, yun_win, transfer_win]:
 		if w and is_instance_valid(w):
-			w.queue_free()
+			XSkinBattleMotion.dismiss(w)  # T096：新界面的环／列表淡出后再释放；其余同 queue_free
 	cmd_win = null
 	list_win = null
 	mimic_win = null
@@ -1341,9 +1367,11 @@ func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> voi
 	var s: XBattlerSprite = sprites[a]
 	if w.has_method("place_for_actor"):  # 新界面 2A：指令环、新列表自己按角色摆（XSkinBattleRing／XSkinBattleSkillList）
 		w.place_for_actor(s.position, BOX)
+		if w is XSkinBattleRing and XSkinBattleRing.fixed_corner() and not XUiSkin.TOUCH_RING_FIXED:
+			_ring_follow(w as XSkinBattleRing, s.position)  # T126／D171：触屏也跟着角色（环自己的 fixed_corner 还认 TOUCH_V2，这里改摆）
 		w.position += _origin
-		if w is XSkinBattleRing and XSkinBattleRing.fixed_corner():
-			XSkin4A.avoid_touch_keys(w, _origin.x + XSkinBattleRing.MARGIN)  # 新界面 4A：触屏固定右下的指令环让开 A／B 键组
+		if w is XSkinBattleRing and XUiSkin.TOUCH_V2 and XUiSkin.touch():
+			XSkin4A.avoid_touch_keys(w, _origin.x + XSkinBattleRing.MARGIN)  # 新界面 4A：触屏指令环（固定右下或跟着角色）让开 A／B 键组
 			var ring := w as XSkinBattleRing
 			var dr := ring.get_global_transform() * ring.drawn_rect()
 			XSkin4A.avoid_rect(w, dr, party_rect(), _origin.x + XSkinBattleRing.MARGIN)  # 再让开右上队伍面板（5 人出战时面板高到环顶）
@@ -1351,6 +1379,15 @@ func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> voi
 	var p := XPartyFormation.window_anchor(s.position + Vector2(32, -64))
 	w.place(minf(BOX.x - w.size.x, p.x) + offset.x, minf(BOX.y - w.size.y, p.y) + offset.y)
 	w.position += _origin
+
+
+## 指令环跟着角色摆（同 XSkinBattleRing.place_for_actor 不固定右下那一支）：环心＝脚底＋OFFSET，整环收在画面里
+func _ring_follow(ring: XSkinBattleRing, feet: Vector2) -> void:
+	var m := XSkinBattleRing.MARGIN
+	var p := feet + XSkinBattleRing.OFFSET - ring.center
+	p.x = clampf(p.x, m, maxf(m, BOX.x - ring.size.x - m))
+	p.y = clampf(p.y, m, maxf(m, BOX.y - ring.size.y - m))
+	ring.position = p
 
 
 func _command_for(a: XActor):
@@ -1698,7 +1735,7 @@ func _pick_transfer(a: XActor):
 
 func _close_list() -> void:
 	if list_win and is_instance_valid(list_win):
-		list_win.queue_free()
+		XSkinBattleMotion.dismiss(list_win)  # T096：新界面收起淡出后再释放；其余同 queue_free
 	list_win = null
 	_help()
 

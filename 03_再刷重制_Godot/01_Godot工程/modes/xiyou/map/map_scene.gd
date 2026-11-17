@@ -165,8 +165,16 @@ func _ready() -> void:
 	screen_fx.camera = camera
 	add_child(screen_fx)
 	var s := XState.current
+	# 天启篇进大厅过场「落印」（T103，XTianqiHallIntro）：只新开局播；load_map 之前先挂底盖住读图，
+	# 播完或跳过才跑开局指令（问道号 prompt、refresh_events 放 EV020 首次到达存档），所以过场里不会弹问道号、不会存档
+	var intro := XTianqiHallIntro.wanted()
+	if intro:
+		XTianqiHallIntro.cover(self)
 	await load_map(s.map_id, s.x, s.y, s.direction)
 	if XTianqi.has_pending():
+		if intro:
+			_set_busy(true)
+			await XTianqiHallIntro.play(self)
 		await _run_tianqi_opening()
 	XAutosaveNotice.map_ready(self)  # YEP_X_Autosave：Scene_Map.createAllWindows 建 Window_Autosave，刚读过档就出「存档加载成功！」
 	XFestReward.map_start()  # 冠军庆典：读档时攒下的提示（剩币换精魂、回大厅看庆典）
@@ -932,6 +940,13 @@ func run_event(e: MVEvent) -> void:
 	if XTianqiTrim.intercepts(XState.current, map_id, e.event_id):
 		_set_busy(true)
 		await XTianqiTrim.run_laoda(self, XState.current)
+		_set_busy(false)
+		refresh_events()
+		return
+	# 天启篇大厅 NPC 清理（XTianqiHall，T079）：并进来的 NPC 在宿主开口时多一层选单
+	if XTianqiHall.intercepts(self, XState.current, map_id, e.event_id):
+		_set_busy(true)
+		await XTianqiHall.run_host(self, XState.current, e)
 		_set_busy(false)
 		refresh_events()
 		return

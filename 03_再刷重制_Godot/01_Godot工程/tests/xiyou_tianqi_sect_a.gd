@@ -66,6 +66,7 @@ func _page_of(map_id: int, event_id: int) -> int:
 
 func _hall() -> void:
 	_tianqi_state()
+	XTianqiHall.ENABLED = false  # T079 大厅清理也删 3／16／35（xiyou_tianqi_hall 测）；这里只看包甲、乙自己
 	_check("hides_two_envoys", XTianqiSect.hides(4, 16) and XTianqiSect.hides(4, 35))
 	XTianqiSect.YI = false  # 讲抽奖被动上限的使者 EV003 归包乙（xiyou_tianqi_sect_b 测）；这里只看包甲自己隐藏的
 	_check("hides_only_those", not XTianqiSect.hides(4, 3) and not XTianqiSect.hides(4, 38) and not XTianqiSect.hides(4, 39) and not XTianqiSect.hides(5, 16))
@@ -79,6 +80,7 @@ func _hall() -> void:
 	XTianqiSect.JIA = false
 	_check("switch_off_ev016_shown", _page_of(4, 16) >= 0 and _page_of(4, 35) >= 0)
 	XTianqiSect.JIA = true
+	XTianqiHall.ENABLED = true
 
 
 func _opening() -> void:
