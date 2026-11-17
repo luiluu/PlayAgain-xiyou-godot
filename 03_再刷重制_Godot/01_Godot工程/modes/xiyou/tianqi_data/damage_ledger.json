@@ -957,7 +957,7 @@
   ]
  },
  "phase4": {
-  "_note": "T080 暗装填表（基础数值重构 v0.3 第七节第 5 条）：期四定数放这里，不动 derived、nine_caps（那两处现在就有代码在读：take_derived、apply_nine_cap）。总开关 XTianqiBase.PHASE4（T012-b）开着时读这个小节，关着读现在的键。现在没有代码读它。",
+  "_note": "T080 暗装填表（基础数值重构 v0.3 第七节第 5 条）：期四定数放这里，不动 derived、nine_caps（那两处现在就有代码在读：take_derived、apply_nine_cap）。总开关 XTianqiBase.PHASE4 开着时读这个小节，关着读现在的键（T081 接线：nine_crit_dmg_cap → XTianqiLedger.apply_nine_cap 的九线爆伤合计、secret_slot → XTianqiBase.secret_slot）。",
   "derived_qiyin": [
    {
     "id": "qiyin.kill_chain_slash",
@@ -1040,7 +1040,7 @@
    }
   ],
   "nine_crit_dmg_cap": 0.3,
-  "nine_crit_dmg_cap_note": "九线爆伤合计封顶 +30%（T041 暂定的数，和元素池的九线封顶同数）；九线三期逐条重做时各自带上限，这个封顶到时拿掉。注意：现在的 nine_caps 里没有爆伤这一项，T012-b 要加读它的地方",
+  "nine_crit_dmg_cap_note": "九线爆伤合计封顶 +30%（T041 暂定的数，和元素池的九线封顶同数）；九线三期逐条重做时各自带上限，这个封顶到时拿掉。nine_caps 里没有爆伤这一项，T081 在 apply_nine_cap 加了读它的地方（关着不封）",
   "secret_slot": 0.08,
   "secret_slot_note": "秘籍每格 +8%，不改（测算标骑士一直用的数）",
   "brand": {
