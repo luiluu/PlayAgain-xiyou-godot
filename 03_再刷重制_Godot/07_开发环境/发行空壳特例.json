@@ -79,5 +79,6 @@
   "XTianqiTrumpet.cost": "c",
   "XTianqiLedger.hook_bonus": "0.0",
   "XTianqiLedger.nine_attack_times": "0.0",
-  "XTianqiBase.param_base": "NAN"
+  "XTianqiBase.param_base": "NAN",
+  "XTianqiHallIntro.pending_slot": "0"
 }
