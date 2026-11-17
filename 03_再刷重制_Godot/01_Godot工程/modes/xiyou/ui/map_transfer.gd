@@ -489,7 +489,7 @@ func _paint_detail(c: XMVCanvas) -> void:
 	c.text(str(_detail.type) + quality, 305, y, w - 305, "left", val_col)
 	y += LH + 8
 	var stats: Array = []
-	var params: Array = item.get("params", [])
+	var params: Array = XTianqiGear.effective_params(item)  # 天启篇读表时显示新量级（T148）；关着时就是原数组
 	for i in params.size():
 		var v := int(params[i])
 		if v != 0:
