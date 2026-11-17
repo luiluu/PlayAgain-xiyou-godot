@@ -574,5 +574,25 @@ class SkillTune(unittest.TestCase):
         self.assertEqual(rules(self.table(4.2)), ['tune 覆盖后：skills/1/damage/coef=4.2'])
 
 
+class TuneInteger(unittest.TestCase):
+    """T175：覆盖层系数一律整数（附则 E）；权重可写整数百分比；10727=4 按路径豁免（D194）；本体成长覆盖层合并后照查范围（T163 甲核 P3-2）。"""
+    def test_decimal_coef_caught(self):
+        t = {'tune': {'D189': {'skills': {'1': {'damage': {'coef': 2.6}}, '2': {'damage': {'coef': 3, 'stats': {'atk': 2, 'mhp': 0.01}}}}}}}
+        self.assertEqual(chk.tune_integer_rules(t), ['tune.D189 系数要整数：skills/1/damage/coef=2.6'])
+
+    def test_decimal_weight_caught(self):
+        t = {'tune': {'D189': {'skills': {'1': {'damage': {'stats': {'mhp': 0.002}}}}}}}
+        self.assertEqual(len(chk.tune_integer_rules(t)), 1)
+
+    def test_exempt_only_10727(self):
+        self.assertEqual(chk.TUNE_NICE_EXEMPT, {'skills/10727/damage/coef=4'})
+
+    def test_base_tune_merged_and_ranged(self):
+        base = {'actors': {'7': {'tweak': {}}}, 'tune': {'D189': {'actors': {'7': {'_note': 'n', 'tweak': {'atk': 1.3}}, '9': {'tweak': {'atk': 1}}}}}}
+        tb, bad = chk.apply_base_tune(base)
+        self.assertEqual(tb['actors']['7']['tweak']['atk'], {'mult': 1.3, 'reason': 'n'})
+        self.assertEqual(bad, ['tune.D189.actors/9 不在 actors 里'])
+
+
 if __name__ == '__main__':
     unittest.main()

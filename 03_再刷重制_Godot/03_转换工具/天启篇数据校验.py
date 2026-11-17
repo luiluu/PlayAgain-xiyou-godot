@@ -1191,8 +1191,28 @@ def apply_skill_tune(table: dict) -> dict:
     return out
 
 
-# 覆盖后数字带 4 的豁免（只列具体路径）：508 的 5.4 是 Kyo 按推荐定的数（D189），和「数字避开 4」冲突，等 Kyo 定改 5.5 还是留（交付单 T163「要 Kyo 定」）
-TUNE_NICE_EXEMPT = {'skills/508/damage/coef=5.4'}
+# 覆盖后数字带 4 的豁免（只列具体路径）：10727（90 艾琳）的 4 是 Kyo D194 亲口定的数，和「数字避开 4」冲突（T175；508 已按 D194 改 5，原 5.4 的豁免去掉）
+TUNE_NICE_EXEMPT = {'skills/10727/damage/coef=4'}
+
+
+def _int_like(v, scale=1) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and abs(v * scale - round(v * scale)) < 1e-9
+
+
+def tune_integer_rules(table: dict) -> list:
+    """T175（附则 E，Kyo D137②、11-18「系数不要小数」）：覆盖层里我们定的系数一律整数；属性权重写整数或整数百分比（生命上限×1% 写 0.01）。"""
+    bad = []
+    for key, tune in table.get('tune', {}).items():
+        for sid, row in tune.get('skills', {}).items():
+            if str(sid).startswith('_') or not isinstance(row, dict):
+                continue
+            d = row.get('damage', {})
+            if 'coef' in d and not _int_like(d['coef']):
+                bad.append('tune.%s 系数要整数：skills/%s/damage/coef=%s' % (key, sid, num_text(d['coef'])))
+            for st, w in d.get('stats', {}).items():
+                if not (_int_like(w) or _int_like(w, 100)):
+                    bad.append('tune.%s 属性权重要整数或整数百分比：skills/%s/damage/stats/%s=%s' % (key, sid, st, num_text(w)))
+    return bad
 
 
 def _with_tune(rules):
@@ -1211,7 +1231,8 @@ def check_skill_rework(_args) -> bool:
         print('跳过：没有 skill_rework.json')
         return True
     try:
-        bad = _with_tune(skill_rework_rules)(json.loads(path.read_text(encoding='utf-8')))
+        table = json.loads(path.read_text(encoding='utf-8'))
+        bad = _with_tune(skill_rework_rules)(table) + tune_integer_rules(table)
     except Exception as e:
         bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
     return _report('skill_rework.json', '规则自检', bad)
@@ -1774,13 +1795,43 @@ def base_line_rules(table: dict, rework: dict = None) -> list:
     return bad
 
 
+def apply_base_tune(table: dict) -> tuple:
+    """游戏里开着 XTianqiBase.TUNE_D189 时读到的本体成长：tune.<键>.actors.<id>.tweak 逐项代替 actors.<id>.tweak（XTianqiBase.actor_mult）。
+    返回 (合并后的表, 覆盖层自己的问题)。覆盖层的值游戏按数读，合并时折成 {mult, reason} 好让 base_line_rules 照常查范围（T163 甲核 P3-2）。"""
+    import copy
+    out = copy.deepcopy(table)
+    bad = []
+    stats = ('mhp', 'mmp', 'atk', 'def', 'mat', 'mdf', 'agi', 'luk')
+    for key in TUNE_KEYS:
+        for aid, row in table.get('tune', {}).get(key, {}).get('actors', {}).items():
+            if str(aid).startswith('_'):
+                continue
+            if str(aid) not in out.get('actors', {}):
+                bad.append('tune.%s.actors/%s 不在 actors 里' % (key, aid))
+                continue
+            tw = out['actors'][str(aid)].setdefault('tweak', {})
+            for st, v in row.get('tweak', {}).items():
+                if st not in stats or isinstance(v, bool) or not isinstance(v, (int, float)):
+                    bad.append('tune.%s.actors/%s 微调要写成 属性: 数（游戏按数读）：%s=%r' % (key, aid, st, v))
+                    continue
+                tw[st] = {'mult': float(v), 'reason': row.get('_note') or 'tune.%s' % key}
+    return out, bad
+
+
 def check_base_line(_args) -> bool:
     if not (DATA_DIR / 'base_line.json').is_file():
         print('跳过：没有 base_line.json')
         return True
     rework = _load_opt('skill_rework.json')
     tuned = apply_skill_tune(rework) if rework else None
-    return _run_table('base_line.json', lambda t: base_line_rules(t, rework) + ['tune 覆盖后：' + b for b in base_line_rules(t, tuned) if tuned is not None and rework.get('tune')])
+
+    def rules(t):
+        bad = base_line_rules(t, rework)
+        if not t.get('tune') and not (rework or {}).get('tune'):
+            return bad
+        tb, tune_bad = apply_base_tune(t)
+        return bad + ['tune 覆盖后：' + b for b in tune_bad + base_line_rules(tb, tuned if tuned is not None else rework) if b not in bad]
+    return _run_table('base_line.json', rules)
 
 
 def gear_base_rules(table: dict, base: dict = None) -> list:
