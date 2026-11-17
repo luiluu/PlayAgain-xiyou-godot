@@ -1,0 +1,477 @@
+[
+  {
+    "number": 1,
+    "name": "五条悟",
+    "source": "content/gojo/Codex_Gojo_SV.png",
+    "branch": null,
+    "sha256": "1e63958af40a43737a33baa08665c0f380e2e5acdb38a158cca6da07e7627b56",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2,
+      1
+    ],
+    "duration_ms": 100,
+    "file": "01.gif",
+    "native_cell": [
+      64,
+      64
+    ]
+  },
+  {
+    "number": 2,
+    "name": "米拉·人形",
+    "source": "content/mira/img/sv_actors/Codex_Mira_SV_u2.png",
+    "branch": null,
+    "sha256": "4edf76ce0c0d67fb02d0d7a7bc86d0c2f74fdf625a5e9b41b30835d073bb3a52",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2,
+      1
+    ],
+    "duration_ms": 100,
+    "file": "02.gif",
+    "native_cell": [
+      64,
+      64
+    ]
+  },
+  {
+    "number": 3,
+    "name": "宿傩·人形",
+    "source": "content/sukuna/img/sv_actors/Codex_Sukuna_SV.png",
+    "branch": null,
+    "sha256": "bf9c5223e03305035f7d149ccc5180994cbed8bc1706beae806a72b83272a5f9",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2,
+      1
+    ],
+    "duration_ms": 100,
+    "file": "03.gif",
+    "native_cell": [
+      64,
+      64
+    ]
+  },
+  {
+    "number": 4,
+    "name": "镜流",
+    "source": "modes/xiyou/generated/img/sv_actors/Codex_Jingliu_SV.png",
+    "branch": null,
+    "sha256": "e8a63a07f4ad0a71aed59ef78f88ab16bd19af67781730c45e6a93646d0497e7",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2,
+      1
+    ],
+    "duration_ms": 100,
+    "file": "04.gif",
+    "native_cell": [
+      64,
+      64
+    ]
+  },
+  {
+    "number": 5,
+    "name": "流萤",
+    "source": "modes/xiyou/generated/img/sv_actors/Codex_Liuying_SV.png",
+    "branch": null,
+    "sha256": "01ed055096c2725cdf5a7094d16b9ddd31a6e6cd5181ae67fc6331fdf9ac1f78",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2,
+      1
+    ],
+    "duration_ms": 100,
+    "file": "05.gif",
+    "native_cell": [
+      128,
+      128
+    ]
+  },
+  {
+    "number": 6,
+    "name": "萨姆",
+    "source": "modes/xiyou/generated/img/sv_actors/Codex_Sam_SV.png",
+    "branch": null,
+    "sha256": "b0c15aefc57d549f70ad54809368773b96e5733b86b4f6d952181439fa789ab7",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2,
+      1
+    ],
+    "duration_ms": 100,
+    "file": "06.gif",
+    "native_cell": [
+      64,
+      64
+    ]
+  },
+  {
+    "number": 7,
+    "name": "伏黑甚尔",
+    "source": "modes/xiyou/generated/img/sv_actors/Codex_Toji_SV.png",
+    "branch": null,
+    "sha256": "07de6ef63843f5e2b15f3b8ac796c7c50c815a515977f58f73de5e6a21db2e4b",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2,
+      1
+    ],
+    "duration_ms": 100,
+    "file": "07.gif",
+    "native_cell": [
+      64,
+      64
+    ]
+  },
+  {
+    "number": 8,
+    "name": "屠苏·本体登记",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_v1",
+    "branch": null,
+    "sha256": "81a5e9f0ca95de41e66998b1d66693a27b50acef5d3e0a4fd685121f21999ed5",
+    "motion": "wait",
+    "sequence": [
+      0
+    ],
+    "duration_ms": 100,
+    "file": "08.png",
+    "native_cell": [
+      128,
+      128
+    ]
+  },
+  {
+    "number": 9,
+    "name": "璇·本体登记",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/Codex_Xuan_v1",
+    "branch": null,
+    "sha256": "076611167f43ba9a04eda54ab5bd920c3786d434ea23ec7c6b072b3ce5a1abb6",
+    "motion": "wait",
+    "sequence": [
+      0
+    ],
+    "duration_ms": 100,
+    "file": "09.png",
+    "native_cell": [
+      128,
+      128
+    ]
+  },
+  {
+    "number": 10,
+    "name": "黄泉",
+    "source": "modes/xiyou/generated/img/sv_actors/Codex_Yomi_SV.png",
+    "branch": null,
+    "sha256": "19ddda796bb15e0db4fd4b4556c70eb8fd90836a2b734353608db9458618227d",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2,
+      1
+    ],
+    "duration_ms": 100,
+    "file": "10.gif",
+    "native_cell": [
+      64,
+      64
+    ]
+  },
+  {
+    "number": 11,
+    "name": "云裳·旧版",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/yunshang",
+    "branch": null,
+    "sha256": "564caaf695f009c7c6cd6d9ad12b88c03f6c6378350280e51222fa14915a4c9b,ea108710bd118ada63dd6d6b1b5b92cd47763342e6b61db9188efe4315d4939c,43e1dc8f0a8c4876aa72df308a915cdc0a98d47d5f8c6cdbe8f6988f8f3f8f12",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2
+    ],
+    "duration_ms": 200,
+    "file": "11.gif",
+    "native_cell": [
+      192,
+      192
+    ]
+  },
+  {
+    "number": 12,
+    "name": "饿狼·星空",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/Codex_Garou_QCosmic",
+    "branch": null,
+    "sha256": "71503e1761c03bbb583d8a7b15ae525dc567c8c94962e3a653d31715040f3ee3,8fda556d10744e7561eec7623e0dd271dfc2ee18a784a7b94a7caa91ba3948a8,e7499148447e8e71de7c5f86efa92ff6c4af9f5c972c02c052e9c25311482e14",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2
+    ],
+    "duration_ms": 200,
+    "file": "12.gif",
+    "native_cell": [
+      112,
+      112
+    ]
+  },
+  {
+    "number": 13,
+    "name": "饿狼·人类形态",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/Codex_Garou_QHuman",
+    "branch": null,
+    "sha256": "2a5ff821b79fe654a9d4000649b7bc238a2b281195c0d6a068213ff400f8e3c9,30791fcce87523c578e56e31e9bd15964d0d09eae6dbe86c17ba4a7102386b8e,d146ccc29d2227b50cd7b8e895e00eb11510360dfdae07ab800b7cdb81c4e026",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2
+    ],
+    "duration_ms": 200,
+    "file": "13.gif",
+    "native_cell": [
+      64,
+      64
+    ]
+  },
+  {
+    "number": 14,
+    "name": "谷雨",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/Codex_Guyu",
+    "branch": null,
+    "sha256": "bef3952ece8e76278420c58058b0e1ff28a891555ac05e2c6c70c7eae6106226",
+    "motion": "wait",
+    "sequence": [
+      0
+    ],
+    "duration_ms": 100,
+    "file": "14.png",
+    "native_cell": [
+      160,
+      160
+    ]
+  },
+  {
+    "number": 15,
+    "name": "屠苏·书",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_book_v1",
+    "branch": null,
+    "sha256": "d3afd3346ff682c77b917c8eeedf39ccb04dc8c47dfd623f6e4cde06daea4fde,f84c5af0660768d37b1a196964abbec07fe9a0f6677d3cf967165dd39a2c7b8b,2905dbf5afec4f28f2716b5bd97a58e7fb7cedfc59dbf4397d6002c6831121ff",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2
+    ],
+    "duration_ms": 230,
+    "file": "15.gif",
+    "native_cell": [
+      128,
+      128
+    ]
+  },
+  {
+    "number": 16,
+    "name": "屠苏·弓",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_bow_v1",
+    "branch": null,
+    "sha256": "315602998933503ad5b0ecee8b684af93fe8fd0f2efce5a631fe5a3256b2b155,fc67e581c0f967e28a069df8d2008d6c293df313f55049556695e29c1548d341,fe1502b8edce46d04687947e38ef8252ba8ece9d9c335d459f12a779f375341e",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2
+    ],
+    "duration_ms": 230,
+    "file": "16.gif",
+    "native_cell": [
+      128,
+      128
+    ]
+  },
+  {
+    "number": 17,
+    "name": "屠苏·锤",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_hammer_v1",
+    "branch": null,
+    "sha256": "82b89d3300fbeec127f8d9107fe9e3734448e1c2904a05409c31c47ae6d6ae3f,d71dcdad9bdc5e7330cbcd209f0881ca6670babd06f798924f1d0a07d57c4c9f,85723957daf596b1916f3ada121b9d9943ee0d6dc61c2b65f72b5151589fb713",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2
+    ],
+    "duration_ms": 230,
+    "file": "17.gif",
+    "native_cell": [
+      128,
+      128
+    ]
+  },
+  {
+    "number": 18,
+    "name": "屠苏·盾",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_shield_v1",
+    "branch": null,
+    "sha256": "701c55775a1808aa4dda6b3dbb73727b1277f5a9baf3b611bf110c449d8df657,816addeb41279d5e5768329758a436de9d1057ede7f8043a1d6e7dac6e9577c5,da32720f061738c41964211fb64caa45974119e30880ad98d9de71045d1a087d",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2
+    ],
+    "duration_ms": 230,
+    "file": "18.gif",
+    "native_cell": [
+      128,
+      128
+    ]
+  },
+  {
+    "number": 19,
+    "name": "屠苏·剑",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_sword_v1",
+    "branch": null,
+    "sha256": "703ae9b246867860e3e6f5e6bdcbe0c2d42a9a0a00b03811922118047bf6b3d3,fe5e202229daba3209ea6082fcbd8f292b95df33e503fd65cc9425316ef9766b,d2fb332f26e22698de49b97f6089941bd2d7d441f51235e540d6a03cdfdcebde",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2
+    ],
+    "duration_ms": 230,
+    "file": "19.gif",
+    "native_cell": [
+      128,
+      128
+    ]
+  },
+  {
+    "number": 20,
+    "name": "屠苏·本体逐帧",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/Codex_Tusu_v1",
+    "branch": null,
+    "sha256": "81a5e9f0ca95de41e66998b1d66693a27b50acef5d3e0a4fd685121f21999ed5",
+    "motion": "wait",
+    "sequence": [
+      0
+    ],
+    "duration_ms": 100,
+    "file": "20.png",
+    "native_cell": [
+      128,
+      128
+    ]
+  },
+  {
+    "number": 21,
+    "name": "璇·本体逐帧",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/Codex_Xuan_v1",
+    "branch": null,
+    "sha256": "076611167f43ba9a04eda54ab5bd920c3786d434ea23ec7c6b072b3ce5a1abb6",
+    "motion": "wait",
+    "sequence": [
+      0
+    ],
+    "duration_ms": 100,
+    "file": "21.png",
+    "native_cell": [
+      128,
+      128
+    ]
+  },
+  {
+    "number": 22,
+    "name": "饿狼·基础",
+    "source": "modes/xiyou/generated/img/sv_actors/sv/garou_human_v2",
+    "branch": null,
+    "sha256": "c3698b11c265fc8ea8c85ee5430ba90aa3074ad66869d5831bc4d46125ddd7d5,7c691fb7d4c7dcbeeb917448a18142265f7189b4396171e934e335563be7dd7e,db4a68c0ca61c52db1041e026f408bf06acb1e239507360ddafa3ae083c8f3ad",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2
+    ],
+    "duration_ms": 200,
+    "file": "22.gif",
+    "native_cell": [
+      192,
+      176
+    ]
+  },
+  {
+    "number": 23,
+    "name": "宿傩·完全体",
+    "source": "content/sukuna/img/sv_actors/sv/Codex_Sukuna_QFull",
+    "branch": null,
+    "sha256": "5db52435117da45bc2dc41ee069db5843ce4f038ffb4d818241a11b88cf05ec5,4f4aa916ab8848ac99b058b9c22f9e49ea000ab6c09cefa89df82b2663d5e292,6dc7a929c9afbc9c5b04de534b042449dd358ca1840fb67c167b4c0d6359f7c4",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2
+    ],
+    "duration_ms": 100,
+    "file": "23.gif",
+    "native_cell": [
+      64,
+      64
+    ]
+  },
+  {
+    "number": 24,
+    "name": "米拉·黑龙",
+    "source": "content/mira/img/sv_actors/sv/UserSV_MiraDragon",
+    "branch": null,
+    "sha256": "599cc13b9459dfb8dd08351ef61a0418dbff93cdb773062f21fe8a689768ffe3,74e6b66b8c09e6abf666104cedc76b199164a1330a214820fd86191ce5e07ba6,caa56924057be9b80d330c4e44a87c3a0a2c3ee2401f656da220dfc036f315dc,622618cdf5bc121d66059ce88070f26518f7bf32c87a673b7d5242cdec656c75",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "duration_ms": 170,
+    "file": "24.gif",
+    "native_cell": [
+      340,
+      280
+    ]
+  },
+  {
+    "number": 25,
+    "name": "云裳·u2待合",
+    "source": "content/yunshang_v2/u2/Yunshang_SV_u2.png",
+    "branch": "gpt/yunshang-v2",
+    "sha256": "2c5b2637cfd2b05d9b57b63e50ee62d099a6362703e230422b244ed69fd2ef2e",
+    "motion": "walk",
+    "sequence": [
+      0,
+      1,
+      2,
+      1
+    ],
+    "duration_ms": 100,
+    "file": "25.gif",
+    "native_cell": [
+      64,
+      64
+    ]
+  }
+]

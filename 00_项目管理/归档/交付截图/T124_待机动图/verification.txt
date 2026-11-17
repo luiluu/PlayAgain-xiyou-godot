@@ -1,0 +1,2 @@
+PASS: 25 source SHA256 matches; 25 native-4x dimensions; 20 animation cycle durations; 5 static sequences; mobile overview 326874 bytes (<400000).
+Visual review: all 25 groups in frame contact sheet; final mobile labels inspected.
