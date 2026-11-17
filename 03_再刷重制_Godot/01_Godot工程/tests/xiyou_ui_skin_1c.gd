@@ -134,6 +134,15 @@ func _pure() -> void:
 	check("main_param_armor_biggest", XSkinEquipPage.main_param(ar) == 0)
 	check("main_param_none", XSkinEquipPage.main_param({"params": [0, 0, 0, 0, 0, 0, 0, 0]}) == -1)
 	var cur := {"kind": "weapon", "wtypeId": 1, "params": [0, 0, 12, 0, 0, 0, 0, 0]}
+	# T138：缎带急转弯四边形自交（蝴蝶结）会让 draw_polygon 三角化失败报错，构建时标记、绘制跳过
+	var rw := PackedFloat32Array([4, 4, 4, 4])
+	var rc := PackedColorArray([Color.RED, Color.RED, Color.RED, Color.RED])
+	var rb_ok := XSkinRingNav._ribbon_build(PackedVector2Array([Vector2(0, 0), Vector2(10, 0), Vector2(20, 5), Vector2(30, 0)]), rw, rc)
+	check("ribbon_gentle_all_drawable", Array(rb_ok.ok) == [1, 1, 1], rb_ok.ok)
+	var rb_bow := XSkinRingNav._ribbon_build(PackedVector2Array([Vector2(0, 0), Vector2(10, 0), Vector2(10, 0.5), Vector2(0, 0.5)]), rw, rc)
+	check("ribbon_bowtie_skipped", Array(rb_bow.ok) == [1, 0, 1], rb_bow.ok)
+	var rb_nan := XSkinRingNav._ribbon_build(PackedVector2Array([Vector2(0, 0), Vector2(10, 0), Vector2(20, 0), Vector2(30, 0)]), PackedFloat32Array([4, NAN, 4, 4]), rc)
+	check("ribbon_nan_skipped", rb_nan.ok[0] == 0 and rb_nan.ok[1] == 0 and rb_nan.ok[2] == 1, rb_nan.ok)
 	check("signed", XSkinEquipPage.signed(35) == "+35" and XSkinEquipPage.signed(-4) == "-4")
 
 

@@ -827,7 +827,7 @@ static func _ribbon_build(pts: PackedVector2Array, widths: PackedFloat32Array, c
 	var left := PackedVector2Array()
 	var right := PackedVector2Array()
 	if n < 2:
-		return {"left": left, "right": right, "cols": cols}
+		return {"left": left, "right": right, "cols": cols, "ok": PackedByteArray()}
 	for k in n:
 		var d0 := (pts[k] - pts[maxi(k - 1, 0)]).normalized() if k > 0 else (pts[1] - pts[0]).normalized()
 		var d1 := (pts[mini(k + 1, n - 1)] - pts[k]).normalized() if k < n - 1 else d0
@@ -839,14 +839,31 @@ static func _ribbon_build(pts: PackedVector2Array, widths: PackedFloat32Array, c
 		var h := widths[k] * 0.5 * miter
 		left.append(pts[k] + nrm * h)
 		right.append(pts[k] - nrm * h)
-	return {"left": left, "right": right, "cols": cols}
+	# T138：逐段标记能画的四边形。急转弯时相邻两段的左右点会交叉（蝴蝶结形）、坐标非有限时，
+	# draw_polygon 三角化必败并报「Invalid polygon data」（原来这些段本就画不出来），标 0 让绘制直接跳过
+	var ok := PackedByteArray()
+	ok.resize(n - 1)
+	for k in n - 1:
+		ok[k] = 1 if _quad_drawable(left[k], left[k + 1], right[k + 1], right[k]) else 0
+	return {"left": left, "right": right, "cols": cols, "ok": ok}
+
+
+## 四边形 a-b-c-d 能否交给 draw_polygon：坐标有限、对边（ab×cd、bc×da）不相交
+static func _quad_drawable(a: Vector2, b: Vector2, c: Vector2, d: Vector2) -> bool:
+	for v in [a, b, c, d]:
+		if not (is_finite(v.x) and is_finite(v.y)):
+			return false
+	return Geometry2D.segment_intersects_segment(a, b, c, d) == null and Geometry2D.segment_intersects_segment(b, c, d, a) == null
 
 
 func _ribbon_draw(rb: Dictionary) -> void:
 	var left: PackedVector2Array = rb.left
 	var right: PackedVector2Array = rb.right
 	var cols: PackedColorArray = rb.cols
+	var ok: PackedByteArray = rb.ok
 	for k in left.size() - 1:
+		if ok[k] == 0:
+			continue
 		draw_polygon(PackedVector2Array([left[k], left[k + 1], right[k + 1], right[k]]),
 			PackedColorArray([cols[k], cols[k + 1], cols[k + 1], cols[k]]))
 	draw_polyline_colors(left, cols, 1.0, true)
