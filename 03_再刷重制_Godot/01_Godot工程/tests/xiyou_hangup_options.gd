@@ -148,6 +148,7 @@ func _run() -> void:
 	var tail := XPartyFormation.KEY if XPartyFormation.ENABLED else "codexBattleAutoDefault" if XBattleScene.AUTO_DEFAULT else ("codexQuality" if XGraphics.ENABLED else ("codexScreenSmooth" if XScreenScale.ENABLED else "codexScreenFx"))
 	# 「定向遇怪」（XEncounterTarget.ENABLED）把原版三行合成一行，少两行
 	var merged := 2 if XEncounterTarget.ENABLED else 0
+	fx += 1 if XConfigTransfer.ENABLED else 0  # T154「导入／导出配置」排在原版各项之后、画面类各项之前（不在最后，tail 不变）
 	check("options_list", opt.symbols().size() == 33 + extra + fx - merged and (fx == 0 or opt.symbols().back() == tail) and opt.symbols()[0] == "MapXy" and opt.symbols()[1] == "HangUp"
 		and opt.symbols()[32 + extra - merged] == "codexFeedbackPending", opt.symbols())
 	check("options_status", opt.status_text(0) == "ON" and opt.status_text(1) == "" and opt.status_text(11) == str(XConfig.volume("bgmVolume")))

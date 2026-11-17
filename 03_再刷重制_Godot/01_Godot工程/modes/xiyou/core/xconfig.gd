@@ -443,6 +443,25 @@ static func save_clothes() -> bool:
 	return _write()
 
 
+## T154 导入配置：values 是 XConfigTransfer 筛过、类型对过的设置项；合进当前配置（嵌套的消息提醒、画质等按子项合并，
+## 没给的子项保持本机现值），写盘后重读一遍，范围、取值照读档的规矩校正（坏值回默认）。只在内存的配置（截图模式等）直接放进去。
+static func import_values(values: Dictionary) -> bool:
+	ensure_loaded()
+	var data := _values.duplicate(true)
+	for k in values:
+		if data.get(k) is Dictionary and values[k] is Dictionary:
+			data[k].merge(values[k], true)
+		else:
+			data[k] = values[k]
+	_values = data
+	if not _write():
+		return false
+	if path() != "":
+		_loaded_path = "<unloaded>"
+		ensure_loaded()
+	return true
+
+
 static func _write() -> bool:
 	XStarWarehouse.flush_pending()  # 星级仓库照原版落盘时机时（o_save_now 关）随配置一起写
 	var p := path()
