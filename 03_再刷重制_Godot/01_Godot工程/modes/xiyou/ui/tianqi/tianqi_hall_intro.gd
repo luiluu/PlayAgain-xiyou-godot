@@ -425,7 +425,7 @@ func _input(event: InputEvent) -> void:
 		hit = event.pressed
 	if not hit:
 		return
-	get_viewport().set_input_as_handled()
+	XKeyMap.handled(self)
 	skip()
 
 
