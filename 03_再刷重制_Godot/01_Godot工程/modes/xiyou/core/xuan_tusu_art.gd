@@ -318,11 +318,16 @@ static func _update_held(s, w: String) -> void:
 	var native_path := weapon_path(w)
 	var native := native_path != ""
 	if native:
-		var atlas := AtlasTexture.new()
-		atlas.atlas = load(native_path)
 		var mi := maxi(0, m) if moving else 1
-		atlas.region = Rect2((floori(mi / 6.0) * 3 + (f if moving else 0)) * 64, (mi % 6) * 64, 64, 64)
-		held.texture = atlas
+		var reg := Rect2((floori(mi / 6.0) * 3 + (f if moving else 0)) * 64, (mi % 6) * 64, 64, 64)
+		var atlas := held.texture as AtlasTexture
+		if atlas == null or atlas.get_meta("xt_path", "") != native_path:
+			atlas = AtlasTexture.new()
+			atlas.atlas = load(native_path)
+			atlas.set_meta("xt_path", native_path)
+			held.texture = atlas
+		if atlas.region != reg:
+			atlas.region = reg
 	else:
 		held.texture = load(p)
 	held.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if native else CanvasItem.TEXTURE_FILTER_LINEAR

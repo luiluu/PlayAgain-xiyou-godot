@@ -36,16 +36,24 @@ def subjects(im,count):
   out.append(q)
  return out
 records=[];ref=rgba(REF/'Guyu_SV_v2.png');sheet=Image.new('RGBA',(576,384));rows=[]
+def one_scale(qs,maxw,maxh):
+ # ONE uniform factor for the whole set (T161 acceptance 12): largest factor that keeps every frame inside the cell.
+ return min(min(maxw/q.width,maxh/q.height) for q in qs)
+def fit(q,s):
+ return q.resize((max(1,round(q.width*s)),max(1,round(q.height*s))),Image.Resampling.NEAREST)
+battle={}
 for row in range(6):
  path=P/('raw_tusu_guyu_row5_compact.png' if row==5 else f'raw_tusu_guyu_row{row}.png')
- if not path.exists():continue
+ if path.exists():battle[row]=subjects(rgba(path),9)
+S=one_scale([q for v in battle.values() for q in v],62,62)
+print('battle uniform scale',S)
+for row,qs in battle.items():
  out=Image.new('RGBA',(576,64))
- for c,q in enumerate(subjects(rgba(path),9)):
-  bb=ref.crop((c*64,row*64,c*64+64,row*64+64)).getbbox();h=bb[3]-bb[1];w=round(q.width*h/q.height)
-  assert w<=62,(row,c,w)
-  q=q.resize((w,h),Image.Resampling.NEAREST);x=round((bb[0]+bb[2]-w)/2);y=bb[3]-h
-  assert x>=0 and x+w<=64,(row,c,x,w)
-  out.paste(q,(c*64+x,y),q);records.append(dict(row=row,col=c,reference=list(bb),output=[x,y,x+w,y+h]))
+ for c,q in enumerate(qs):
+  bb=ref.crop((c*64,row*64,c*64+64,row*64+64)).getbbox();q=fit(q,S);w,h=q.size
+  # Horizontal centre on Guyu template, feet on the template baseline (bb bottom).
+  x=min(max(round((bb[0]+bb[2]-w)/2),0),64-w);y=min(max(bb[3]-h,0),64-h)
+  out.paste(q,(c*64+x,y),q);records.append(dict(row=row,col=c,reference=list(bb),output=[x,y,x+w,y+h],scale=S))
  out.save(P/f'tusu_guyu_row{row}_64.png');sheet.paste(out,(0,row*64));rows.append(row)
 if len(rows)==6:sheet.save(P/'Tusu_Battle_candidate.png')
 walkpath=P/'raw_tusu_guyu_walk.png'
@@ -58,14 +66,16 @@ if walkpath.exists():
   if not active and start is not None:bands.append((start,y));start=None
  bands=[(a,b) for a,b in bands if b-a>20]
  assert len(bands)==4,bands
+ cells=[]
  for r in range(4):
   strip=raw.crop((0,bands[r][0],raw.width,bands[r][1]))
-  for c,q in enumerate(subjects(strip,3)):
-   bb=rw.crop((c*48,r*48,c*48+48,r*48+48)).getbbox();h=bb[3]-bb[1];w=round(q.width*h/q.height)
-   assert w<=46,(r,c,w)
-   q=q.resize((w,h),Image.Resampling.NEAREST);x=round((bb[0]+bb[2]-w)/2);y=bb[3]-h
-   assert x>=0 and x+w<=48,(r,c,x,w)
-   out.paste(q,(c*48+x,r*48+y),q);records.append(dict(direction=r,col=c,reference=list(bb),output=[x,y,x+w,y+h]))
+  cells.append(subjects(strip,3))
+ WS=one_scale([q for v in cells for q in v],46,46);print('walk uniform scale',WS)
+ for r in range(4):
+  for c,q in enumerate(cells[r]):
+   bb=rw.crop((c*48,r*48,c*48+48,r*48+48)).getbbox();q=fit(q,WS);w,h=q.size
+   x=min(max(round((bb[0]+bb[2]-w)/2),0),48-w);y=min(max(bb[3]-h,0),48-h)
+   out.paste(q,(c*48+x,r*48+y),q);records.append(dict(direction=r,col=c,reference=list(bb),output=[x,y,x+w,y+h],scale=WS))
  out.save(P/'Tusu_Walk_candidate.png')
 (P/'tusu_guyu_alignment.json').write_text(json.dumps(records,indent=2))
 print('battle rows:',rows,'walk:',walkpath.exists(),'aligned cells:',len(records))

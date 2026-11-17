@@ -65,7 +65,7 @@ func capture(dir: String, leader: int) -> void:
  var file := FileAccess.open(dir.path_join("render_evidence.json"),FileAccess.WRITE)
  file.store_string(JSON.stringify(evidence,"  "))
  file.close()
- RenderingServer.force_draw()
+ await RenderingServer.frame_post_draw
  get_viewport().get_texture().get_image().save_png(dir.path_join("battle_wait.png"))
  for motion_name in ["swing", "damage"]:
   for a in battle.sprites:
@@ -73,7 +73,8 @@ func capture(dir: String, leader: int) -> void:
     var actor_sprite: XBattlerSprite = battle.sprites[a]
     actor_sprite.set_process(false)
     actor_sprite.set_motion(motion_name)
-  RenderingServer.force_draw()
+  await get_tree().process_frame
+  await RenderingServer.frame_post_draw
   get_viewport().get_texture().get_image().save_png(dir.path_join("battle_" + motion_name + ".png"))
  battle.queue_free()
 
@@ -89,6 +90,6 @@ func capture(dir: String, leader: int) -> void:
  map.player.direction = 6
  map.player.move_straight(6)
  for i in 5: await get_tree().process_frame
- RenderingServer.force_draw()
+ await RenderingServer.frame_post_draw
  get_viewport().get_texture().get_image().save_png(dir.path_join("map_walk.png"))
  map.queue_free()

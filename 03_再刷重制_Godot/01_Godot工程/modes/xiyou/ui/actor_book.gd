@@ -503,7 +503,7 @@ func _paint_status(c: XMVCanvas) -> void:
 	if _sprite_tex != null:
 		var pattern: int = [0, 1, 2, 1][floori(_frame / 12.0) % 4]
 		var r := sprite_rect(actor_id(), _sprite_spec, Vector2(_sprite_tex.get_size()), pattern)
-		c.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if _sprite_spec.get("key", "") in ["Yunshang_u2", "Guyu_v2"] else (CanvasItem.TEXTURE_FILTER_LINEAR if native_smooth(actor_id(), _sprite_spec) else CanvasItem.TEXTURE_FILTER_PARENT_NODE)
+		c.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if _sprite_spec.get("key", "") in ["Yunshang_u2", "Guyu_v2", "Tusu_v2", "Xuan_v2", "Hajimi_v2"] else (CanvasItem.TEXTURE_FILTER_LINEAR if native_smooth(actor_id(), _sprite_spec) else CanvasItem.TEXTURE_FILTER_PARENT_NODE)
 		c.draw_texture_rect_region(_sprite_tex, r[0], r[1])
 	paint_ops(c, _status_ops)
 
@@ -591,14 +591,14 @@ static func book_scale(key: String) -> float:
 static func native_smooth(id: int, spec: Dictionary) -> bool:
 	if str(spec.get("key", "")) in ["Tusu_v2", "Xuan_v2", "Hajimi_v2"]:
 		return false
-	return str(spec.get("key", "")) not in ["Yunshang_u2", "Guyu_v2"] and BOOK_NATIVE_SMOOTH and (id < 167 or not XAppearance.PROFILES.has(str(spec.get("key", ""))))
+	return str(spec.get("key", "")) not in ["Yunshang_u2", "Guyu_v2", "Tusu_v2", "Xuan_v2", "Hajimi_v2"] and BOOK_NATIVE_SMOOTH and (id < 167 or not XAppearance.PROFILES.has(str(spec.get("key", ""))))
 
 
 ## 画在状态窗内容层上的目标矩形与取图范围。tex 为整张图，pattern 为侧视图第几格
 static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: int) -> Array:
 	var center := SPRITE_CENTER - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 	var src := Rect2(Vector2.ZERO, tex_size) if spec.get("multi", false) else Rect2(pattern * tex_size.x / 9.0, 0, tex_size.x / 9.0, tex_size.y / 6.0)
-	if spec.get("key", "") in ["Yunshang_u2", "Guyu_v2"]:
+	if spec.get("key", "") in ["Yunshang_u2", "Guyu_v2", "Tusu_v2", "Xuan_v2", "Hajimi_v2"]:
 		return [Rect2((center - src.size / 2.0).round(), src.size), src]
 	var prof: Array = XAppearance.profile_of(str(spec.get("key", ""))) if id >= 167 else []
 	if prof.is_empty():
