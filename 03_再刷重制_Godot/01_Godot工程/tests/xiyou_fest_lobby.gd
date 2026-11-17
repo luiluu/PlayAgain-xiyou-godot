@@ -40,7 +40,7 @@ func frames(n: int) -> void:
 
 
 ## 开大厅。today 是「今天」（XFest.TODAY_OVERRIDE）；先清地图缓存让补丁按当天重做
-func open_lobby(today: String, x := 14, y := 24, reload := true, tianqi := false) -> XMapScene:
+func open_lobby(today: String, x := 14, y := 24, reload := true, tianqi := false, baby := false) -> XMapScene:
 	XFest.TODAY_OVERRIDE = today
 	if reload:
 		XFestLobby.reload_map()
@@ -48,6 +48,8 @@ func open_lobby(today: String, x := 14, y := 24, reload := true, tianqi := false
 	s.set_variable(206, -3000)
 	if tianqi:
 		s.flags["tianqi"] = {"rules": 1}   # 天启篇存档（XTianqi.active）
+	if baby:
+		s.set_switch(2496, true)
 	s.map_id = 4
 	s.x = x
 	s.y = y
@@ -131,9 +133,12 @@ func _run() -> void:
 	var after_day := _plus(XFest.START, XFest.DAYS + XFest.GRACE_DAYS)   # 结束后第一天
 
 	# ---- 基线：活动前（什么都没有）的大厅 ----
-	var m0 := await open_lobby(day_before)
+	var m0 := await open_lobby(day_before, 14, 8)
+	await frames(20)
+	await shot("fest_lobby_north_before.png")
 	check("before.no_layer", m0.fest_fx == null and m0.get_children().all(func(n): return not n is XFestLobby))
 	check("before.no_events", ids(m0).all(func(i): return i < XFestLobby.FIRST_EV), ids(m0))
+	var base_tiles: Array = m0.map_data.data.duplicate()
 	var base_pass := passability(m0)
 	var base_ids := ids(m0)
 	var base_bgm: String = str(m0.map_data.get("bgm", {}).get("name", ""))
@@ -148,15 +153,26 @@ func _run() -> void:
 	check("active.bgm_changed", str(m1.map_data.get("bgm", {}).get("name", "")) == XFestLobby.BGM and XFestLobby.BGM != "TCLH-60")
 	check("active.bgm_exists", XDB.audio_path("bgm", XFestLobby.BGM) != "", XFestLobby.BGM)
 	check("active.art_textured", m1.fest_fx.banner_textured() and m1.fest_fx.trophy_textured())
-	var pass1 := passability(m1)
+	var expected_tiles := base_tiles.duplicate()
+	for x in range(13, 16):
+		for z in [1, 3]:
+			expected_tiles[(z * 33 + 11) * 29 + x] = 0
+	check("active.only_table_tiles_changed", m1.map_data.data == expected_tiles)
+	check("active.trophy_center_on_original_npc", XFestLobby.TROPHY_FOOT == Vector2(14.5 * 48, 11 * 48))
+	for cell in [Vector2i(13, 10), Vector2i(13, 11), Vector2i(14, 11), Vector2i(15, 11), Vector2i(16, 11)]:
+		m1.player.locate(cell.x, cell.y)
+		check("active.route.%s" % cell, m1.player.can_pass(2))
 	# 奖杯两格：被事件挡住（通行表不变，事件挡路），脚下能走到的人不能进
-	m1.player.locate(6, 18)
+	m1.player.locate(14, 11)
 	m1.player.direction = 8
 	check("active.trophy_blocks_21", not m1.player.can_pass(8))
-	m1.player.locate(7, 18)
+	m1.player.locate(15, 11)
 	check("active.trophy_blocks_22", not m1.player.can_pass(8))
-	check("active.passability_unchanged", pass1 == base_pass)
-	check("active.cells", ev(m1, 78).grid == XFestLobby.ENVOY_CELL and ev(m1, 79).grid == XFestLobby.ENROLL_CELL and ev(m1, 80).grid == Vector2i(6, 17) and ev(m1, 81).grid == Vector2i(7, 17))
+	check("active.table_floor_passable", m1.lower.is_passable(14, 11, 2))
+	check("active.gold_npc_moved", ev(m1, 1).grid == Vector2i(17, 5))
+	check("active.paimon_moved", Vector2i(m1.map_data.events[70].x, m1.map_data.events[70].y) == Vector2i(19, 6))
+	check("active.banner_north_wall", XFestLobby.BANNER_POS == Vector2(264, 3 * 48))
+	check("active.cells", ev(m1, 78).grid == XFestLobby.ENVOY_CELL and ev(m1, 79).grid == XFestLobby.ENROLL_CELL and ev(m1, 80).grid == Vector2i(14, 10) and ev(m1, 81).grid == Vector2i(15, 10))
 	# 方案 2.1：使者、报名处、奖杯都在异化中心 (14,19) 的 6 格圈外
 	for id in [78, 79, 80, 81]:
 		var d := Vector2(ev(m1, id).grid - XLobbyCorruption.CENTER).length()
@@ -273,6 +289,7 @@ func _run() -> void:
 	var tg := join(await talk(mg, 78, [1]))   # 收尾期留兑换店：兑换／再见
 	check("grace.text", tg.contains(XFestText.ENVOY_GRACE[0][1].split("\n")[0]) and tg.contains("选择：") and not tg.contains(XFest.CONGRATS), tg)
 	check("grace.menu_shop_only", XFestReward.menu(XState.current).map(func(m): return m.label) == [XFestText.SHOP_MENU], XFestReward.menu(XState.current))
+	check("grace.original_npc_and_tiles", ev(mg, 1).grid == Vector2i(14, 10) and mg.map_data.events[70].x == 17 and mg.map_data.events[70].y == 5 and mg.map_data.data == base_tiles)
 	check("grace.passability_same", passability(mg) == base_pass)
 	await close(mg)
 
@@ -331,6 +348,26 @@ func _run() -> void:
 	XRift.STAGE2 = false
 	XRift.clear_cache()
 	XFestLobby.reload_map()
+
+	# T071：正式默认异化设置、同一视角，西游／天启篇／宝宝难度各一张。
+	XLobbyCorruption.STAGE_OVERRIDE = 0
+	XRift.STAGE2 = true
+	XRift.clear_cache()
+	(XConfig._values.codexWhisperSeen as Array).append("rift2")
+	for mode in ["xiyou", "tianqi", "baby"]:
+		var view := await open_lobby(day1, 14, 8, true, mode == "tianqi", mode == "baby")
+		await frames(200)
+		check("layout.%s.gold" % mode, ev(view, 1).grid == Vector2i(17, 5))
+		check("layout.%s.paimon" % mode, Vector2i(view.map_data.events[70].x, view.map_data.events[70].y) == Vector2i(19, 6))
+		for x in range(13, 16):
+			check("layout.%s.table_removed.%d" % [mode, x], view.map_data.data[(1 * 33 + 11) * 29 + x] == 0 and view.map_data.data[(3 * 33 + 11) * 29 + x] == 0)
+		if mode == "baby":
+			check("layout.baby.paimon_visible", ev(view, 70) != null and ev(view, 70).grid == Vector2i(19, 6))
+		await shot("fest_lobby_default_%s.png" % mode)
+		await close(view)
+	XRift.STAGE2 = false
+	XRift.clear_cache()
+	XLobbyCorruption.STAGE_OVERRIDE = 1
 
 	# ---- 文案 ----
 	var strs: Array = []

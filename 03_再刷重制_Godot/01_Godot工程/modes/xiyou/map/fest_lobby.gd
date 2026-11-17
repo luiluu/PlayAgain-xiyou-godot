@@ -10,8 +10,8 @@ extends Node2D
 ##    事件指令是一行 355 脚本「CodexFest.xxx();」，由 MVScript 转交本类的 run_script。
 ##    活动期间大厅 BGM 也在补丁里换成现成曲子（BGM），不引入新音乐文件。
 ##
-## 位置（Map004，格）：全在漩涡中心 (14,19) 的 6 格圈外（方案 2.1，不压异化层的地盘）：大厅左侧一排（T059 候选 B），报名处 (5,17)、奖杯占 (6,17)(7,17)、使者 (8,17)。
-## 横幅挂在大厅南段（行 23～24，x 264～1032 像素），进大厅第一眼就看到；彩旗挂在横幅上沿。
+## T071：奖杯移到原金甲 NPC (14,10)，报名处 (12,10)、使者 (16,10)，仍在异化圈外。
+## 横幅挂北墙画像／窗户一排；庆典期间移开金甲 NPC 与派蒙、清掉中央红桌，结束恢复原图。
 ## 和大厅异化层（XLobbyCorruption）不冲突：两层各有各的开关，浮砖等随机选格避开有事件的格。
 
 ## O-466：大厅庆典整套（叠加层＋NPC＋BGM）；false＝大厅回到没有活动时的样子
@@ -24,9 +24,9 @@ const FIRST_EV := 78
 const ENVOY_EV := 78
 const ENROLL_EV := 79
 const TROPHY_EVS := [80, 81]
-const ENVOY_CELL := Vector2i(8, 17)
-const ENROLL_CELL := Vector2i(5, 17)
-const TROPHY_CELLS := [Vector2i(6, 17), Vector2i(7, 17)]
+const ENVOY_CELL := Vector2i(16, 10)
+const ENROLL_CELL := Vector2i(12, 10)
+const TROPHY_CELLS := [Vector2i(14, 10), Vector2i(15, 10)]
 ## 使者、报名处的行走图（现成的：文件名、第几个角色，朝下）
 const ENVOY_SPRITE := ["People14", 2]
 const ENROLL_SPRITE := ["People13", 5]
@@ -41,10 +41,10 @@ const TROPHY_FILE := "Fest_Trophy.png"
 const CONFETTI_FILES := ["Fest_Confetti_01.png", "Fest_Confetti_02.png", "Fest_Confetti_03.png", "Fest_Confetti_04.png"]
 ## 横幅（768×96）左上角的像素位置与奖杯脚底中心（112×168，脚底 (56,167)）
 const BANNER_SIZE := Vector2(768, 96)
-const BANNER_POS := Vector2(264, 23 * TS)
+const BANNER_POS := Vector2(264, 3 * TS)
 ## co 给的字的安全区（图内像素）：x1, y1, x2, y2
 const BANNER_TEXT_RECT := Rect2(110, 20, 548, 38)
-const TROPHY_FOOT := Vector2(7 * TS, 18 * TS)   # 奖杯脚底中心（占 6、7 两列、行 17 的下沿；报名处、使者在两侧 5、8 列；T059 候选 B 左移 2 格以避开异化圈）
+const TROPHY_FOOT := Vector2(14.5 * TS, 11 * TS)   # 原金甲 NPC (14,10) 脚底中心
 const TROPHY_ANCHOR := Vector2(56, 167)
 
 const MAX_CONFETTI := 46
@@ -138,6 +138,7 @@ static func patch_map(map_id: int, data) -> void:
 		events.append(null)
 	events[ENVOY_EV] = _event(ENVOY_EV, XFestText.ENVOY_NAME, ENVOY_CELL, ENVOY_SPRITE, "CodexFest.envoy();")
 	if decor():
+		_patch_furniture(data, events)
 		events[ENROLL_EV] = _event(ENROLL_EV, XFestText.ENROLL_NAME, ENROLL_CELL, ENROLL_SPRITE, "CodexFest.enroll();")
 		for i in TROPHY_EVS.size():
 			events[TROPHY_EVS[i]] = _event(TROPHY_EVS[i], "庆典奖杯", TROPHY_CELLS[i], ["", 0], "CodexFest.trophy();")
@@ -148,6 +149,26 @@ static func patch_map(map_id: int, data) -> void:
 				bgm["volume"] = 90
 			data["bgm"] = bgm
 			data["autoplayBgm"] = true
+
+
+## 只修改 XDB 提供的当次地图副本；关闭庆典后重新读图自然恢复，不写转换产物。
+static func _patch_furniture(data: Dictionary, events: Array) -> void:
+	for placement in [[1, Vector2i(17, 5)], [70, Vector2i(19, 6)]]:
+		var id := int(placement[0])
+		if id < events.size() and events[id] is Dictionary:
+			var moved: Dictionary = events[id].duplicate(true)
+			moved["x"] = placement[1].x
+			moved["y"] = placement[1].y
+			events[id] = moved
+	# 红桌与两端烛台：行 11、列 13～15，图层 1 的桌面与图层 3 的烛台。
+	var tiles: Array = data.get("data", []).duplicate()
+	var w := int(data.get("width", 0))
+	var h := int(data.get("height", 0))
+	if w > 15 and h > 11 and tiles.size() >= w * h * 4:
+		for x in range(13, 16):
+			for z in [1, 3]:
+				tiles[(z * h + 11) * w + x] = 0
+		data["data"] = tiles
 
 
 ## 切片 keepEvents 之外也要放进地图的事件（map_scene 载入事件时问）
