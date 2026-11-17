@@ -20,12 +20,13 @@ extends RefCounted
 
 const PATH := "res://modes/xiyou/tianqi_data/brand.json"
 const META := "tianqi_brand"
-## 玩家可见文字（交付单单列，合前过小A 文字审）
-const TEXT_BOTTLENECK := "%s 的烙印已到瓶颈"
-const TEXT_NO_GAIN := "%s 的烙印已到瓶颈，本场未再增长。"
+## 玩家可见文字（交付单单列，合前过小A 文字审）。T140（Kyo 11-17、D174）：玩家看到的不用「境」「锚」作总称，说「加深」＋七段原名（守一～逆命）；
+## 代码里 realm／立境 这些内部名不动。%s 依次是角色名、这一段的名字（stage_name）。
+const TEXT_BOTTLENECK := "%s 的烙印已到「%s」的极限，打赢心魔才能继续加深"
+const TEXT_NO_GAIN := "%s 的烙印已到「%s」的极限，本场未再加深。"
 const TEXT_GAIN := "烙印 %s"
 const TEXT_CARVE_WARN := ["一旦刻印，烙印只涨不降，没有回头路。", "刻印后，每首通一位守层者都会加深烙印；不刻印则只在首领战挨打时记下烙印，上限 40%。"]
-const TEXT_RETREAT := ["\\C[6]烙印\\C[0]", "烙印随首领战加深，到每境节点后，打赢心魔即可立入下一境。", "未刻印只能停在铸骨（40%），刻印后可继续推进。"]
+const TEXT_RETREAT := ["\\C[6]烙印\\C[0]", "烙印随首领战加深；每到一段的极限，打赢心魔才能继续加深。", "未刻印的烙印最多加深至「铸骨」（40%），刻印后才能继续加深。"]
 
 static var ENABLED := false
 
@@ -87,6 +88,12 @@ static func carved(a) -> bool:
 static func node_of(i: int) -> int:
 	var caps: Array = data().get("nodes", {}).get("caps", [10, 25, 40, 55, 70, 85, 100])
 	return roundi(float(caps[clampi(i, 0, caps.size() - 1)]) * scale())
+
+
+## 第 i 段的名字（守一～逆命；超出按两头夹）
+static func stage_name(i: int) -> String:
+	var names: Array = data().get("nodes", {}).get("realms", [])
+	return str(names[clampi(i, 0, names.size() - 1)]) if not names.is_empty() else ""
 
 
 static func last_realm() -> int:
@@ -203,7 +210,7 @@ static func gain(s: XState, a, _source: String, amount: float, floor_now := -1, 
 	_ensure_keys(a)
 	(a as XActor).zhenqi["brand"] = nv
 	if can_stand(a):
-		_toast(TEXT_BOTTLENECK % a.display_name())
+		_toast(TEXT_BOTTLENECK % [a.display_name(), stage_name(realm(a))])
 	return nv - cur
 
 
@@ -259,7 +266,6 @@ static func facts_of(logic, s: XState) -> Dictionary:
 		"horse_line": str(horse.get("line", "")), "horse_mode": str(horse.get("mode", "")),
 		"dragon": XTianqiQiyinDragonRun.active(logic),
 		"qiyin_seal": str(qr.get("seal", "")) if bool(qr.get("boss", false)) and not bool(qr.get("enemy_only", false)) else "",
-		"qiyin_elite": not qr.is_empty() and not bool(qr.get("boss", false)) and not bool(qr.get("enemy_only", false)),  # 里副本前两场精英（灰印 297、默印 220 借【首领】敌群）
 		"summit": summit,
 		"guardian_floor": XGuardianRework.troop_floor(logic) if not summit else 0,
 		"enemy_ids": ids, "enemy_names": names,
@@ -274,6 +280,8 @@ static func tier_of(s: XState) -> int:
 
 
 ## {kind: special／boss／none, key, first_floor（有首通奖的键给楼层，没有 0）}
+## T140（Kyo 11-17「都算首领战」）：七印里副本借【首领】敌群的精英战（灰印 297、默印 220）、四线开场节末那一场
+## （死亡线 294 罗奇、饥荒线 430 光头强，都是【首领】名）照名字前缀认首领战，不另开例外（T117 R1 那条「七印精英判不是」撤掉）。
 static func classify(f: Dictionary) -> Dictionary:
 	if bool(f.get("heart", false)) or bool(f.get("weapon", false)) or bool(f.get("gojo", false)):
 		return {"kind": "special", "key": "", "first_floor": 0}
@@ -289,8 +297,6 @@ static func classify(f: Dictionary) -> Dictionary:
 		return {"kind": "boss", "key": "qiyin_dragon", "first_floor": 0}
 	if str(f.get("qiyin_seal", "")) != "":
 		return {"kind": "boss", "key": "qiyin:" + str(f.qiyin_seal), "first_floor": 0}
-	if bool(f.get("qiyin_elite", false)):
-		return {"kind": "none", "key": "", "first_floor": 0}  # 七印里副本的精英战：不按名字前缀认首领
 	if bool(f.get("summit", false)):
 		return {"kind": "boss", "key": "summit:34", "first_floor": 34}
 	var gf := int(f.get("guardian_floor", 0))
@@ -398,7 +404,7 @@ static func settle(logic) -> Array:
 		if d > 0:
 			lines.append("%s +%s%%" % [a.display_name(), _pct_text(d)])
 		elif stalled and can_stand(a):
-			_toast(TEXT_NO_GAIN % a.display_name())
+			_toast(TEXT_NO_GAIN % [a.display_name(), stage_name(realm(a))])
 	var tier := int(c.get("tier", 1))
 	var fw := _firsts_rw(s)
 	fw[key] = maxi(int(fw.get(key, 0)), tier)

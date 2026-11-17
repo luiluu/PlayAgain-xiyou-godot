@@ -956,10 +956,10 @@ static func _trial_end(s: XState) -> Dictionary:
 		return {}
 	var a: XActor = s.actors[int(t.actorId)]
 	if bool(t.get("brand", false)):
-		var name := str(XTianqiBrand.data().get("nodes", {}).get("realms", [])[mini(int(t.target), XTianqiBrand.last_realm())])
+		var name := XTianqiBrand.stage_name(int(t.target))
 		if bool(t.get("won", false)) and XTianqiBrand.stand(a):
-			return _tell(["\\C[6]%s 立入%s！\\C[0]" % [a.display_name(), name]], {"page": "actor", "id": a.actor_id})
-		return _tell(["%s 未能立入%s。" % [a.display_name(), name], "（打心魔的角色需活到战斗结束）"], {"page": "actor", "id": a.actor_id})
+			return _tell(["\\C[6]%s 的烙印加深至「%s」！\\C[0]" % [a.display_name(), name]], {"page": "actor", "id": a.actor_id})
+		return _tell(["%s 的烙印未能加深至「%s」。" % [a.display_name(), name], "（打心魔的角色需活到战斗结束）"], {"page": "actor", "id": a.actor_id})
 	if bool(t.get("won", false)) and breakthrough(s, a):
 		return _tell(["\\C[6]%s 突破至%s！\\C[0]" % [a.display_name(), REALMS[int(t.target)].name]], {"page": "pick", "id": a.actor_id})
 	return _tell(["%s 未能突破。" % a.display_name(), "（突破的角色需活到战斗结束）"], {"page": "actor", "id": a.actor_id})
@@ -970,13 +970,13 @@ static func _brand_page(s: XState, a: XActor) -> Dictionary:
 	var bp := XTianqiBrand.panel(s, a)
 	var realms: Array = XTianqiBrand.data().get("nodes", {}).get("realms", [])
 	var r := XTianqiBrand.realm(a)
-	var lines := ["\\C[6]%s\\C[0]：%s%s" % [a.display_name(), str(realms[r]) if r < realms.size() else "", "" if XTianqiBrand.carved(a) else "（未刻印）"],
+	var lines := ["\\C[6]%s\\C[0]：烙印「%s」%s" % [a.display_name(), str(realms[r]) if r < realms.size() else "", "" if XTianqiBrand.carved(a) else "（未刻印）"],
 		"%s %s" % [XTianqiBrand.bar_text(s, a), str(bp.text)]]
 	var gz := XTianqiBase.gaze_row(s)
 	if not gz.is_empty():
 		lines.append("%s　%s" % [str(gz[0]), str(gz[1])])
 	if bool(bp.plus):
-		lines.append(XTianqiBrand.TEXT_BOTTLENECK % a.display_name())
+		lines.append(XTianqiBrand.TEXT_BOTTLENECK % [a.display_name(), XTianqiBrand.stage_name(r)])
 	var opts := []
 	if not XTianqiBrand.carved(a):
 		opts.append({"label": "进行刻印", "next": {"page": "carve", "id": a.actor_id}})
@@ -1000,7 +1000,7 @@ static func _brand_carve(s: XState, a: XActor, ok: bool) -> Dictionary:
 ## 心魔（立境）：gate 只看节点＋甲二，不看层数；对手照瓶颈之战幻化（心魔战自己的规则不在本卡）
 static func _brand_trial(s: XState, a: XActor) -> Dictionary:
 	if not XTianqiBrand.can_stand(a):
-		return _tell(["烙印还没到本境上限，暂不能挑战心魔。" if not XTianqiBrand.at_node(a) else "未刻印到此为止，先进行「刻印」才能继续挑战心魔。"])
+		return _tell(["烙印还没到「%s」的极限，暂不能挑战心魔。" % XTianqiBrand.stage_name(XTianqiBrand.realm(a)) if not XTianqiBrand.at_node(a) else "未刻印到此为止，先进行「刻印」才能继续挑战心魔。"])
 	if not s.battle_members().has(a):
 		return _tell(["%s 不在出战队伍中。" % a.display_name(), "请先把%s编入出战队伍再打心魔。" % a.display_name()])
 	var i := XTianqiBrand.realm(a) + 1
@@ -1009,7 +1009,7 @@ static func _brand_trial(s: XState, a: XActor) -> Dictionary:
 	if troop == 0:
 		troop = int(TRIAL_TROOP["心魔"])
 	pending_trial = {"actorId": a.actor_id, "target": i, "ref": ref, "kind": "心魔", "troopId": troop, "brand": true}
-	return {"lines": ["\\C[6]心魔\\C[0]幻化为第%d层守层者之力。" % ref.floor, "%s必须坚持到战斗结束，才能立入下一境。" % a.display_name()],
+	return {"lines": ["\\C[6]心魔\\C[0]幻化为第%d层守层者之力。" % ref.floor, "%s必须坚持到战斗结束，烙印才能加深至「%s」。" % [a.display_name(), XTianqiBrand.stage_name(i)]],
 		"options": [], "battle": troop, "next": {"page": "trial_end"}}
 
 
