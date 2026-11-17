@@ -223,6 +223,7 @@ class T(unittest.TestCase):
             P = importlib.util.module_from_spec(spec_p)
             spec_p.loader.exec_module(P)
             P._export_presets = lambda *a, **kw: None
+            P.NO_STUB_SMOKE = True  # 夹具里没有真工程，别起 Godot（T150 的冒烟另有 SmokeBattleTests）
             P._check_patch = lambda tmp, dry, shas: tmp / 'Windows.pck'
 
             import sys
@@ -265,6 +266,15 @@ class T(unittest.TestCase):
                     sys.modules['发行空壳'] = old_mod
         finally:
             K.PROJECT = old_proj
+
+    def test_patch_entry_runs_smoke_before_export(self):
+        """T150：补丁入口导出前跑开战冒烟，失败抛 Fail、不导出（源码次序）。"""
+        src = (HERE / '发布补丁.py').read_text(encoding='utf-8')
+        body = src[src.index('def export_patch('):src.index('REAL_SCRIPTS = False')]
+        self.assertIn('smoke_battle(', body)
+        self.assertLess(body.index('smoke_battle('), body.index('_export_presets('))
+        self.assertIn('NO_STUB_SMOKE', body)
+
 
     def test_real_project_sect_stub(self):
         real_proj = HERE.parent / '01_Godot工程'
@@ -382,6 +392,66 @@ class T(unittest.TestCase):
             self.assertIn('XTianqiFoo.intercepts', buf2.getvalue())
         finally:
             K.PROJECT = old_proj
+
+
+class SmokeBattleTests(unittest.TestCase):
+    """T150：空壳树开战冒烟 smoke_battle。用假 godot（shell 脚本）模拟：通过、断言失败、SCRIPT ERROR 卡住不退出、没有结果行。"""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self._tmp.name)
+        self.tree = self.dir / 'tree'
+        self.tree.mkdir()
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _godot(self, body: str) -> Path:
+        g = self.dir / 'godot.sh'
+        g.write_text('#!/bin/sh\n' + body + '\n', encoding='utf-8')
+        g.chmod(0o755)
+        return g
+
+    def test_pass(self):
+        g = self._godot('echo \'TEST_RESULT={"passed":9,"total":9}\'')
+        self.assertEqual(K.smoke_battle(self.tree, g), [])
+
+    def test_failed_assert(self):
+        g = self._godot('echo \'TEST_RESULT={"passed":8,"total":9}\'; exit 1')
+        probs = K.smoke_battle(self.tree, g, scenes=('xiyou_battle',))
+        self.assertEqual(len(probs), 1)
+        self.assertIn('8/9', probs[0])
+
+    def test_script_error_hang_is_killed_fast(self):
+        # 真实现象：空壳返回 null → SCRIPT ERROR 后 headless Godot 不退出。要在超时前就拦下
+        g = self._godot("echo \"SCRIPT ERROR: Invalid call. Nonexistent function 'snapshot' in base 'Nil'.\"; sleep 60")
+        t = __import__('time').time()
+        probs = K.smoke_battle(self.tree, g, scenes=('xiyou_battle',), timeout=50)
+        self.assertLess(__import__('time').time() - t, 20)
+        self.assertEqual(len(probs), 1)
+        self.assertIn('脚本错误', probs[0])
+        self.assertIn('snapshot', probs[0])
+
+    def test_no_result_line(self):
+        g = self._godot('echo hello; exit 0')
+        probs = K.smoke_battle(self.tree, g, scenes=('xiyou_battle',))
+        self.assertIn('没有 TEST_RESULT', probs[0])
+
+    def test_timeout_and_log_written(self):
+        g = self._godot('echo working; sleep 60')
+        logs = self.dir / 'logs'
+        probs = K.smoke_battle(self.tree, g, logs, scenes=('xiyou_battle',), timeout=2)
+        self.assertIn('超过 2 秒', probs[0])
+        self.assertIn('working', (logs / '空壳冒烟_xiyou_battle.log').read_text(encoding='utf-8'))
+
+    def test_runs_both_scenes_by_default(self):
+        self.assertEqual(K.SMOKE_SCENES, ('xiyou_battle', 'xiyou_battle_ui'))
+        g = self._godot('echo "$@" > "$(dirname "$0")/args_$$"; echo \'TEST_RESULT={"passed":1,"total":1}\'')
+        self.assertEqual(K.smoke_battle(self.tree, g), [])
+        args = ' '.join(f.read_text() for f in self.dir.glob('args_*'))
+        self.assertIn('xiyou_battle.tscn', args)
+        self.assertIn('xiyou_battle_ui.tscn', args)
+        self.assertIn('--audio-driver Dummy', args)
 
 
 if __name__ == '__main__':

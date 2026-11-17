@@ -3,6 +3,7 @@
 
   python3 发行出包.py                  导出 → 冒烟 → SHA256SUMS.txt、体积.md、发行说明.txt → 冒烟全过就删掉旧发行目录
   python3 发行出包.py --no-smoke       不跑冒烟（只导包、写清单）
+  python3 发行出包.py --no-stub-smoke  导出前不跑空壳树开战冒烟（默认跑 xiyou_battle＋xiyou_battle_ui，约 40 秒，崩了不导包；T150）
   python3 发行出包.py --notes-only     只重写当前发行目录的发行说明（不导包）
   python3 发行出包.py --notes-audit    列出会进发行说明、但没写「- 玩家可见：」行的变更记录条目（只读，出包前补）
   python3 发行出包.py --out <目录>     发行目录的上一级（默认主工作区 03_再刷重制_Godot/05_发布/导出包）
@@ -224,7 +225,23 @@ def stub_tree(out: Path) -> Path:
     return tree
 
 
+def stub_smoke(tree: Path, logs: Path) -> list:
+    """T150：导出前在空壳树里前台开战冒烟（xiyou_battle＋xiyou_battle_ui，约 40 秒），崩了就拦，不导包。--no-stub-smoke 或 --real-scripts 时跳过。"""
+    if NO_STUB_SMOKE or tree == PROJECT:
+        return []
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('发行空壳', HERE / '发行空壳.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    t = time.time()
+    print('== 空壳树开战冒烟（xiyou_battle＋xiyou_battle_ui）')
+    probs = m.smoke_battle(tree, GODOT, logs)
+    print(f'  {time.time() - t:.0f} 秒，' + ('通过' if not probs else '失败'))
+    return probs
+
+
 REAL_SCRIPTS = False  # 回退开关：True＝发行包照旧带天启篇真脚本（--real-scripts）
+NO_STUB_SMOKE = False  # 回退开关：True＝导出前不跑空壳树开战冒烟（--no-stub-smoke）
 
 # 存档封存发行密钥（D28，co 甲档核查 P2④）：放在私密设计仓，不进本仓库；出包时写进导出用的工程（res://content/save_seal_key.json），
 # 导完就删。没有密钥时发行包不封存存档（照旧写明文），所以缺密钥算出包问题、不出包；--no-save-key 明知故出（不封存）。
@@ -306,6 +323,9 @@ def export_all(out: Path, logs: Path) -> list:
         bad = inject_save_key(src)
         if bad:
             return [bad]
+        bad = stub_smoke(src, logs)
+        if bad:
+            return bad
         problems = _export_all(out, logs, src, problems)
         return problems or verify_save_key(out)
     finally:
@@ -461,6 +481,7 @@ def main(argv=None) -> int:
     ap.add_argument('--out', help='发行目录的上一级')
     ap.add_argument('--no-smoke', action='store_true')
     ap.add_argument('--real-scripts', action='store_true', help='回退：发行包带天启篇真脚本（不换空壳）')
+    ap.add_argument('--no-stub-smoke', action='store_true', help='导出前不跑空壳树开战冒烟（默认跑，约 40 秒）')
     ap.add_argument('--no-save-key', action='store_true', help='不注入存档封存密钥（发行包不封存存档，照旧明文）')
     ap.add_argument('--notes-only', action='store_true')
     ap.add_argument('--notes-audit', action='store_true', help='列出会进说明但没写「- 玩家可见：」行的条目')
@@ -468,7 +489,8 @@ def main(argv=None) -> int:
     ap.add_argument('--keep-old', action='store_true', help='出完不删旧发行目录')
     ap.add_argument('--since', type=int, help='发行说明从哪个开发编号之后算起（默认上一个发行目录的号）')
     a = ap.parse_args(argv)
-    global REAL_SCRIPTS, NO_SAVE_KEY
+    global REAL_SCRIPTS, NO_SAVE_KEY, NO_STUB_SMOKE
+    NO_STUB_SMOKE = NO_STUB_SMOKE or a.no_stub_smoke
     REAL_SCRIPTS = REAL_SCRIPTS or a.real_scripts
     NO_SAVE_KEY = NO_SAVE_KEY or a.no_save_key
     parent = Path(a.out).resolve() if a.out else main_root() / '03_再刷重制_Godot' / '05_发布' / '导出包'

@@ -250,6 +250,31 @@ class SaveKeyTests(unittest.TestCase):
         self.assertIn('格式不对', problems[0])
         self.assertEqual(called, [])
 
+    def test_stub_smoke_failure_blocks_export(self):
+        """T150：空壳树开战冒烟失败就不导出。"""
+        self._key({'current': 1, 'keys': {'1': 'ab' * 32}})
+        proj = self.dir / 'proj'
+        (proj / 'content').mkdir(parents=True)
+        saved = (M.stub_tree, M._export_all, M.stub_smoke)
+        called = []
+        M.stub_tree = lambda out: proj
+        M._export_all = lambda *a: called.append(1) or []
+        M.stub_smoke = lambda tree, logs: ['空壳树开战冒烟 xiyou_battle：脚本错误（开战崩了）']
+        try:
+            problems = M.export_all(self.dir / 'out', self.dir)
+        finally:
+            M.stub_tree, M._export_all, M.stub_smoke = saved
+        self.assertIn('开战冒烟', problems[0])
+        self.assertEqual(called, [])
+
+    def test_stub_smoke_skipped_for_real_scripts_and_flag(self):
+        self.assertEqual(M.stub_smoke(M.PROJECT, self.dir), [])
+        M.NO_STUB_SMOKE = True
+        try:
+            self.assertEqual(M.stub_smoke(self.dir / 'x', self.dir), [])
+        finally:
+            M.NO_STUB_SMOKE = False
+
     def test_artifacts_read_back(self):
         key = self._key({'current': 1, 'keys': {'1': 'cd' * 32}})
         out = self.dir / 'out'

@@ -10,6 +10,7 @@
                                             同上，但克隆的是指定的工程目录（如发行提交的临时 git worktree 里的 01_Godot工程）；
                                             空壳规则（特例表、手写空壳、DENY）仍用本脚本旁边的。玩家资料包.py 用（T008，cc 11-16）
   python3 发行空壳.py check                 只生成空壳、不落盘：查西游代码用到的每个成员都有，没有就报（检查.sh 用）
+  python3 发行空壳.py smoke <空壳树目录>   在 tree 建好的空壳树里前台开战冒烟（xiyou_battle＋xiyou_battle_ui，T150；发行出包.py、发布补丁.py 导出前自动跑）
   python3 发行空壳.py show <类名>           打印某个类的空壳（核对用）
 
 空壳函数体的来历，按顺序：
@@ -21,6 +22,7 @@
 新加天启篇脚本被西游代码引用：check 会列出缺的成员，照真脚本发行时的行为加进特例表或确认默认值对。
 """
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -517,8 +519,72 @@ def is_stub_tree(root: Path) -> list:
     return out
 
 
+SMOKE_SCENES = ('xiyou_battle', 'xiyou_battle_ui')  # 空壳树开战冒烟（T150）：一条不传 random_context 直接开战，一条走地图→开战→战斗界面
+SMOKE_TIMEOUT = 300
+SMOKE_FATAL = re.compile(r'^SCRIPT ERROR: |^ERROR: Failed to load script ', re.M)
+
+
+def smoke_battle(tree: Path, godot, logs: Path = None, scenes=SMOKE_SCENES, timeout: int = SMOKE_TIMEOUT) -> list:
+    """T150：在已建好的空壳树里前台开战冒烟，返回问题列表（空＝通过）。
+
+    静态检查只能猜「空壳返回 null／[] 后调用处会不会崩」（T149：77 条报 1 条真），真跑一遍开战才可靠。
+    各场景并行起 Godot（--headless --audio-driver Dummy，独立临时 HOME，不碰真实存档）；
+    要 TEST_RESULT 全过、退出码 0、日志里没有 SCRIPT ERROR 才算通过。
+    """
+    import tempfile
+    import time
+    tree = Path(tree)
+    loop = ['-s', 'res://tests/test_main_loop.gd'] if (tree / 'tests/test_main_loop.gd').is_file() else []
+    tmp = Path(tempfile.mkdtemp(prefix='xiyou_stub_smoke_'))
+    procs = []
+    for name in scenes:
+        (tmp / name).mkdir()
+        cmd = [str(godot), '--headless', '--audio-driver', 'Dummy', '--path', str(tree)] + loop + [f'res://tests/{name}.tscn']
+        f = open(tmp / f'{name}.log', 'w', encoding='utf-8', errors='replace')
+        procs.append((name, f, subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT, env=dict(os.environ, HOME=str(tmp / name)))))
+    problems, t0, killed = [], time.time(), {}
+    try:
+        # 空壳返回 null 导致的脚本错误会让 headless Godot 停在原地不退出：看到 SCRIPT ERROR 就杀，不等超时
+        while any(p.poll() is None for _, _, p in procs):
+            time.sleep(1)
+            for name, f, p in procs:
+                if p.poll() is None and name not in killed:
+                    text = (tmp / f'{name}.log').read_text(encoding='utf-8', errors='replace')
+                    if SMOKE_FATAL.search(text):
+                        killed[name] = '脚本错误（开战崩了）'
+                        p.kill()
+                    elif time.time() - t0 > timeout:
+                        killed[name] = f'超过 {timeout} 秒'
+                        p.kill()
+        for name, f, p in procs:
+            p.wait()
+            f.close()
+            out = (tmp / f'{name}.log').read_text(encoding='utf-8', errors='replace')
+            if logs is not None:
+                Path(logs).mkdir(parents=True, exist_ok=True)
+                (Path(logs) / f'空壳冒烟_{name}.log').write_text(out, encoding='utf-8')
+            err = next((l for l in out.splitlines() if SMOKE_FATAL.match(l)), '')
+            tail = f'；{err[:160]}' if err else ''
+            line = next((l for l in out.splitlines() if l.startswith('TEST_RESULT=')), '')
+            m = re.search(r'"passed":\s*(\d+).*?"total":\s*(\d+)', line)
+            if name in killed:
+                problems.append(f'空壳树开战冒烟 {name}：{killed[name]}' + tail)
+            elif not m:
+                problems.append(f'空壳树开战冒烟 {name}：没有 TEST_RESULT（退出码 {p.returncode}，崩了或没跑完）' + tail)
+            elif m.group(1) != m.group(2) or p.returncode != 0:
+                problems.append(f'空壳树开战冒烟 {name}：{m.group(1)}/{m.group(2)} 通过，退出码 {p.returncode}' + tail)
+            elif err:
+                problems.append(f'空壳树开战冒烟 {name}：通过但日志里有脚本错误{tail}')
+    finally:
+        for _, _, p in procs:
+            if p.poll() is None:
+                p.kill()
+        shutil.rmtree(tmp, ignore_errors=True)
+    return problems
+
+
 def main(argv) -> int:
-    if not argv or argv[0] not in ('tree', 'check', 'show', 'report'):
+    if not argv or argv[0] not in ('tree', 'check', 'show', 'report', 'smoke'):
         print(__doc__)
         return 2
     if argv[0] == 'tree':
@@ -536,6 +602,14 @@ def main(argv) -> int:
             return 2
         print(make_tree(Path(rest[0]).resolve(), src))
         return 0
+    if argv[0] == 'smoke':
+        godot = Path(os.environ.get('XIYOU_GODOT') or HERE / 'godot')
+        if len(argv) != 2:
+            print(__doc__)
+            return 2
+        probs = smoke_battle(Path(argv[1]).resolve(), godot)
+        print('\n'.join(probs) if probs else '空壳树开战冒烟通过：' + '、'.join(SMOKE_SCENES))
+        return 1 if probs else 0
     stubs, missing, how = build_all(PROJECT)
     if argv[0] == 'show':
         tg = targets(PROJECT)

@@ -178,6 +178,12 @@ def export_patch(base: Path, out: Path, dry: bool) -> Path:
         sk.make_tree(src)
         if sk.is_stub_tree(src):
             raise Fail('发行空壳没换全：' + '、'.join(sk.is_stub_tree(src)))
+        if not NO_STUB_SMOKE:  # T150：导出前在空壳树里前台开战冒烟（约 40 秒），崩了就拦
+            print('· 空壳树开战冒烟（xiyou_battle＋xiyou_battle_ui）')
+            probs = sk.smoke_battle(src, GODOT, out / '日志')
+            if probs:
+                shutil.rmtree(src, ignore_errors=True)
+                raise Fail('；'.join(probs) + f'（日志在 {out / "日志"}；明知故发加 --no-stub-smoke）')
     try:
         _export_presets(base, tmp, dry, shas, src)
     finally:
@@ -187,6 +193,7 @@ def export_patch(base: Path, out: Path, dry: bool) -> Path:
 
 
 REAL_SCRIPTS = False  # 回退开关：True＝补丁照旧带天启篇真脚本
+NO_STUB_SMOKE = False  # 回退开关：True＝导出前不跑空壳树开战冒烟（--no-stub-smoke）
 
 
 def _export_presets(base: Path, tmp: Path, dry: bool, shas: dict, src: Path) -> None:
@@ -399,8 +406,11 @@ def main(argv=None) -> int:
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--old-tree')
     ap.add_argument('--no-files-manifest', action='store_true')
+    ap.add_argument('--no-stub-smoke', action='store_true', help='导出前不跑空壳树开战冒烟（默认跑，约 40 秒）')
     ap.add_argument('--no-player-pack', action='store_true')
     a = ap.parse_args(argv)
+    global NO_STUB_SMOKE
+    NO_STUB_SMOKE = NO_STUB_SMOKE or a.no_stub_smoke
     try:
         repos = [Path(p).expanduser() for p in a.repos] if a.repos else DEFAULT_REPOS
         embedded = embedded_public_key()
