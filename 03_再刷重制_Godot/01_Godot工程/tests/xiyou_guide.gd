@@ -11,9 +11,13 @@ const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results := []
 var s: XState
 var _cmp = Base.new()
+var out_dir := ""
 
 
 func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out_dir = arg.substr(6)
 	_run.call_deferred()
 
 
@@ -136,6 +140,7 @@ func _run() -> void:
 	await _shop_flow(shop_list)
 	await _map_milestone()
 	await _tianqi_milestone()
+	await _tianqi_advice_and_status()
 	var failed := results.filter(func(r): return not r.passed)
 	_cmp.free()
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_guide", "passed": results.size() - failed.size(), "total": results.size(), "failed": failed.map(func(r): return r.name)}))
@@ -309,3 +314,187 @@ func _tianqi_milestone() -> void:
 	await _frames(2)
 	XMessageBox.auto = false
 	kit.teardown()
+
+
+func _until(cond: Callable, n := 600) -> bool:
+	for i in range(n):
+		if cond.call():
+			return true
+		await get_tree().physics_frame
+	return false
+
+
+func _press(action: String) -> void:
+	var e := InputEventAction.new()
+	e.action = action
+	e.pressed = true
+	get_viewport().push_input(e)
+	await get_tree().physics_frame
+	var r := InputEventAction.new()
+	r.action = action
+	r.pressed = false
+	get_viewport().push_input(r)
+
+
+func _shot(name: String) -> void:
+	if out_dir == "" or DisplayServer.get_name() == "headless":
+		return
+	await _frames(6)
+	await RenderingServer.frame_post_draw
+	DirAccess.make_dir_recursive_absolute(out_dir)
+	var err := get_viewport().get_texture().get_image().save_png(out_dir.path_join(name + ".png"))
+	check("shot_" + name, err == OK, err)
+
+
+func _shot_advice(box: XMessageBox, texts: Array, tag: String) -> void:
+	var picks := [0, 1, texts.size() - 1]
+	var names := ["advice_p1_" + tag, "advice_p2_" + tag, "advice_entry_" + tag]
+	for k in picks.size():
+		var msg := {"face": "", "index": 0, "position": 2, "lines": ["<WordWrap>" + str(texts[picks[k]])]}
+		var done := {"v": null}
+		var go := func(): done.v = await box.run(msg)
+		go.call()
+		await _until(func(): return box.win.pause and box._wait == 0)
+		await _frames(8)
+		await _shot(names[k])
+		while done.v == null:
+			await _press("ui_accept")
+			await get_tree().physics_frame
+		await _frames(6)
+
+
+func _row_text(rows: Array) -> String:
+	var parts := PackedStringArray()
+	for r in rows:
+		if r.has("text"):
+			parts.append(str(r.text))
+		elif r.has("cells"):
+			parts.append(" ".join(PackedStringArray(r.cells)))
+	return "\n".join(parts)
+
+
+func _tianqi_advice_and_status() -> void:
+	var kit = Kit.new("xiyou_guide_tq_t145")
+	var tq := Kit.new_game("jiusi")
+	_set_zq(tq.actor(tq.party[0]), {"qi": 3000, "realm": 1, "pending": [1]})
+	# 1. advice_texts 天启篇全区段校验
+	var all_adv := ""
+	for prog in [0, 7, 13, 16, 19, 22, 26, 33]:
+		tq.set_variable(20, prog + 1)
+		all_adv += "\n".join(XGuide.advice_texts(tq)) + "\n"
+	var bad_adv := ["神魔之塔", "洪荒", "诅咒", "权能", "境界", "大圆满", "真气", "道法", "闭关", "瓶颈", "神兵试炼", "本命兵", "灵根", "溢出再动", "原作", "Boss", "boss", "锚"]
+	var adv_leaks := bad_adv.filter(func(b): return all_adv.contains(b))
+	check("tq_advice_no_residue", adv_leaks.is_empty(), adv_leaks)
+	check("tq_advice_no_jing", not all_adv.replace("秘境", "").contains("境"), all_adv)
+	tq.set_variable(20, 1)
+	var adv0 := "\n".join(XGuide.advice_texts(tq))
+	check("tq_advice_f0", adv0.contains("难度：九死，已通过第0层") and adv0.contains("下一个守层者在第1层") and adv0.contains("5 层高塔可抽取一位新伙伴") and adv0.contains("高塔 1～6 层") and adv0.contains("10% 掉未鉴定神秘珠（菜单「宝珠坊」鉴定，高层品质更好）") and adv0.contains("状态界面「修行」与「修行·详细」页"), adv0)
+	tq.set_variable(20, 34)
+	var adv33 := "\n".join(XGuide.advice_texts(tq))
+	check("tq_advice_f33", adv33.contains("守层者已全部通过，可继续推进34～36层") and adv33.contains("高塔 26～33 层"), adv33)
+	tq.set_variable(20, 8)
+	var adv7 := "\n".join(XGuide.advice_texts(tq))
+	check("tq_advice_f7_stone", adv7.contains("祝福进阶石·Ⅱ阶"), adv7)
+	# 回退开关 & 西游档不变
+	XGuide.TIANQI_ADVICE_ENABLED = false
+	tq.set_variable(20, 14)
+	var adv_rb := "\n".join(XGuide.advice_texts(tq))
+	check("tq_advice_rollback", adv_rb.contains("神魔之塔") and adv_rb.contains("权能") and adv_rb.contains("闭关") and adv_rb.contains("真气"), adv_rb)
+	XGuide.TIANQI_ADVICE_ENABLED = true
+	_fresh()
+	s.set_variable(20, 14)
+	var adv_xy := "\n".join(XGuide.advice_texts(s))
+	check("plain_advice_kept", adv_xy.contains("路线：普通") and adv_xy.contains("神魔之塔") and adv_xy.contains("权能") and adv_xy.contains("真气"), adv_xy)
+
+	# 2. 修行状态页（第 4 页「修行」、第 5 页「修行·详细」、v0.28 单页、建议与战力条）
+	XState._become_current(tq)
+	tq.set_variable(20, 20) # 第 19 进度层 -> 状态页显示 第20层
+	var a: XActor = tq.actor(tq.party[0])
+	var pr := _row_text(XGuide.panel_rows(tq, a))
+	var dr := _row_text(XGuide.detail_rows(tq, a))
+	var vr := _row_text(XGuide.page_rows_v028(tq, a))
+	# 覆测“爆伤/结算书学满”与“全达标 ok”分支
+	var c_bad := {"now": {"cri": 0.5, "hit": 0.5, "crit": -0.6, "fin": 0.0, "atk": 100.0, "mat": 100.0, "settle": 0.2}, "base": {"cri": 1.0, "hit": 1.0, "crit": 0.0, "fin": 0.0, "atk": 1000.0, "mat": 1000.0, "settle": 1.0}, "diff": {"cri": -0.5, "hit": -0.5, "crit": -0.6, "fin": 0.0, "atk": 0.1, "mat": 0.1, "settle": 0.2}}
+	var saved_skills := a.skill_ids.duplicate()
+	for sid in [6309, 6310, 6311, 6312, 6325, 6326, 6327, 6328]:
+		if not a.skill_ids.has(sid):
+			a.skill_ids.append(sid)
+	var maxbook_sug := "\n".join(XGuide.panel_suggestions(tq, a, c_bad).map(func(x): return str(x.text)))
+	var maxbook_tips := "\n".join(XGuide.tips(tq, a, c_bad))
+	var c_ok := {"now": {"cri": 1.0, "hit": 1.0, "crit": 0.5, "fin": 0.0, "atk": 1000.0, "mat": 1000.0, "settle": 1.0}, "base": {"cri": 1.0, "hit": 1.0, "crit": 0.5, "fin": 0.0, "atk": 1000.0, "mat": 1000.0, "settle": 1.0}, "diff": {"cri": 0.0, "hit": 0.0, "crit": 0.0, "fin": 0.0, "atk": 1.0, "mat": 1.0, "settle": 1.0}}
+	var ok_sug := "\n".join(XGuide.panel_suggestions(tq, a, c_ok).map(func(x): return str(x.text)))
+	var ok_tips := "\n".join(XGuide.tips(tq, a, c_ok))
+	a.skill_ids = saved_skills
+	var all_st := "\n".join([pr, dr, vr, maxbook_sug, maxbook_tips, ok_sug, ok_tips])
+	var bad_st := ["真气", "境界", "道祖", "道法", "天道加持", "天道补偿", "待选突破", "突破奖励", "突破条件", "大圆满", "淬元丹", "裂山霸力丹", "九霄焚天丹", "蜜雪冰城", "洪荒女皇", "丹药", "神兵试炼", "溢出再动", "锚"]
+	var st_leaks := bad_st.filter(func(b): return all_st.contains(b))
+	check("tq_status_no_residue", st_leaks.is_empty(), st_leaks)
+	check("tq_status_no_jing", not all_st.replace("秘境", "").contains("境"), all_st)
+	check("tq_panel_rows_keep", pr.contains("九死·第20层") and pr.contains("挑战评估：") and pr.contains("结算伤害：") and pr.contains("必备属性：") and pr.contains("建议：1. ") and pr.contains("详细数据：见「修行·详细」页"), pr)
+	var det := XGuide.detail_rows(tq, a)
+	check("tq_detail_starts_diff", not det.is_empty() and det[0].type == "head" and str(det[0].text).begins_with("难度对照　九死·第20层"), det.slice(0, 3))
+	check("tq_maxbook_sources", maxbook_sug.contains("从装备、词条与种族祝福补充爆伤") and maxbook_sug.contains("从装备、词条、秘境被动书与种族祝福提升攻击") and maxbook_sug.contains("从装备与结算类被动补充伤害"), maxbook_sug)
+	check("tq_ok_sources", ok_sug.contains("抽奖券、神秘珠与专属掉落") and ok_tips.contains("装备、词条、结算类被动"), [ok_sug, ok_tips])
+	check("tq_strip_empty", _same(XGuide.strip_text(tq, a), ["", false]), XGuide.strip_text(tq, a))
+	# 真 StatusPage 控件验证（含新皮肤）
+	var p := XStatusPage.new()
+	add_child(p)
+	await _frames(4)
+	p.set_page(3)
+	await _frames(2)
+	var p3_ops := "\n".join(XStatusPage.page_ops(a, 3, 612.0).filter(func(op): return op[0] == "text").map(func(op): return str(op[1])))
+	var p4_ops := "\n".join(XStatusPage.page_ops(a, 4, 612.0).filter(func(op): return op[0] == "text").map(func(op): return str(op[1])))
+	check("tq_status_page_ui", not p3_ops.contains("真气") and not p3_ops.contains("境界") and not p3_ops.contains("洪荒女皇") and not p4_ops.contains("真气") and not p4_ops.contains("道法") and p3_ops.contains("挑战评估：") and p4_ops.contains("难度对照"), [p3_ops, p4_ops])
+	p.queue_free()
+	await _frames(2)
+	# 回退开关 & 西游档不变
+	XGuide.TIANQI_STATUS_ENABLED = false
+	var pr_rb := _row_text(XGuide.panel_rows(tq, a))
+	var det_rb := XGuide.detail_rows(tq, a)
+	check("tq_status_rollback", pr_rb.contains("境界：") and pr_rb.contains("真气：伤害") and str(det_rb[0].text) == "真气", [pr_rb, det_rb[0]])
+	XGuide.TIANQI_STATUS_ENABLED = true
+	_fresh()
+	s.set_variable(20, 20)
+	var ax := s.actor(s.party[0])
+	var pr_xy := _row_text(XGuide.panel_rows(s, ax))
+	var det_xy := XGuide.detail_rows(s, ax)
+	check("plain_status_kept", pr_xy.contains("境界：") and pr_xy.contains("真气：伤害") and str(det_xy[0].text) == "真气" and str(XGuide.strip_text(s, ax)[0]).begins_with("真气·"), [pr_xy, det_xy[0]])
+
+	# 3. 可选改前／改后真画面截图（传入 -- --out=<目录> 且非 headless 时）
+	if out_dir != "" and DisplayServer.get_name() != "headless":
+		XMessageBox.auto = false
+		XState._become_current(tq)
+		var bg := ColorRect.new()
+		bg.color = Color(0.1, 0.12, 0.16)
+		bg.size = Vector2(1280, 720)
+		add_child(bg)
+		var box := XMessageBox.new()
+		add_child(box)
+		await _frames(4)
+		for on in [false, true]:
+			var tag := "after" if on else "before"
+			XGuide.TIANQI_ADVICE_ENABLED = on
+			XGuide.TIANQI_STATUS_ENABLED = on
+			tq.set_variable(20, 14)
+			await _shot_advice(box, XGuide.advice_texts(tq), tag)
+			tq.set_variable(20, 20)
+			var sp := XStatusPage.new()
+			add_child(sp)
+			await _frames(6)
+			sp.set_page(3)
+			await _shot("status_p4_" + tag)
+			sp.set_page(4)
+			await _shot("status_p5_" + tag)
+			sp.queue_free()
+			await _frames(4)
+		box.queue_free()
+		bg.queue_free()
+		await _frames(3)
+		XGuide.TIANQI_ADVICE_ENABLED = true
+		XGuide.TIANQI_STATUS_ENABLED = true
+	for pl in XSound._players:
+		if is_instance_valid(pl):
+			pl.stop()
+			pl.stream = null
+	kit.teardown()
+
