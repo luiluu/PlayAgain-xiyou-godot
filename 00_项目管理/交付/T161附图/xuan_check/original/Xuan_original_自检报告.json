@@ -1,0 +1,14 @@
+{
+  "name": "Xuan_original",
+  "profile": "biped",
+  "pass": false,
+  "items": [
+    {
+      "id": "native_size",
+      "level": "fail",
+      "ok": false,
+      "msg": "行走图集尺寸 (288, 384)，应为 (144, 192)（3×4 格，每格 48×48）",
+      "value": null
+    }
+  ]
+}

@@ -18,6 +18,8 @@ var out_dir := ""
 
 func _ready() -> void:
 	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（优化登记三条）关掉，新行为由 xiyou_rift2_canglong 核
+	XXuanTusuArt.XUAN_ART = false
+	XCat.ART = false
 	XTusu.ART = false  # 冻结旧图鉴参照；新图由 xiyou_tusu_art 守护
 	XGuyu.ART = false
 	XYunshang.ART = false  # 冻结旧图鉴参照；新图由 xiyou_yunshang_art 守护
@@ -199,6 +201,8 @@ func _run() -> void:
 			pl.stream = null
 	await get_tree().create_timer(0.3, true, false, true).timeout
 	await frames(3)
+	XXuanTusuArt.XUAN_ART = true
+	XCat.ART = true
 	XTusu.ART = true
 	XGuyu.ART = true
 	XYunshang.ART = true

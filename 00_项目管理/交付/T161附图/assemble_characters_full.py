@@ -25,7 +25,7 @@ def build(name,walk=False):
    q=strip.crop((cuts[c],0,cuts[c+1],strip.height));bb=q.getbbox();assert bb
    assert bb[0]>0 and bb[1]>0 and bb[2]<q.width and bb[3]<q.height,(r,c,bb,'touches cell')
    parts.append(q.crop(bb))
- if walk:scale=32/statistics.median(q.height for q in parts)
+ if walk:scale=(40 if name=="xuan" else 32)/statistics.median(q.height for q in parts)
  else:
   approved=rgba(P/('xuan_float_row0_64.png' if name=='xuan' else 'hajimi_greatsword_row0_64.png'))
   scale=statistics.median((approved.crop((c*64,0,(c+1)*64,64)).getbbox()[3]-approved.crop((c*64,0,(c+1)*64,64)).getbbox()[1])/parts[c].height for c in range(3))

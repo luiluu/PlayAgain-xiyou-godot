@@ -1,0 +1,427 @@
+{
+  "name": "T161_Xuan_walk",
+  "profile": "biped",
+  "pass": false,
+  "items": [
+    {
+      "id": "native_size",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走图集尺寸 (144, 192)，应为 (144, 192)（3×4 格，每格 48×48）",
+      "value": null
+    },
+    {
+      "id": "binary_alpha",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走图集二值透明",
+      "value": null
+    },
+    {
+      "id": "edge_margin",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-down 格边留空",
+      "value": null
+    },
+    {
+      "id": "walk_sole_span",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-down 三帧脚底行 [48, 48, 48]，浮动 0px（上限 0）",
+      "value": null
+    },
+    {
+      "id": "gait_repeat",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-down 腿区两两最大 IoU 0.785，≥0.95 视为步态重复（几乎没换腿）",
+      "value": null
+    },
+    {
+      "id": "foot_merge",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-down 脚底带最少只有 1 个独立落点，应 ≥1（脚粘连）",
+      "value": null
+    },
+    {
+      "id": "waist_break",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-down#0 腰带最细行仅为躯干中位宽的 0.6（≥0.5），独立大块 1 个，疑似上下半身断开",
+      "value": null
+    },
+    {
+      "id": "waist_break",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-down#1 腰带最细行仅为躯干中位宽的 0.6（≥0.5），独立大块 1 个，疑似上下半身断开",
+      "value": null
+    },
+    {
+      "id": "waist_break",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-down#2 腰带最细行仅为躯干中位宽的 0.6（≥0.5），独立大块 1 个，疑似上下半身断开",
+      "value": null
+    },
+    {
+      "id": "waist_shift",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-down 上下半身水平偏移三帧 [0.39, 0.12, -0.09]，浮动 0.48px（上限 2.0），疑似下半身按固定步距采样而错位",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-down#0 孤立/悬空小块 0 处，位置 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-down#0 体内透明孔洞 0 处（≥5px，原版本身最大 4px），位置 []",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-down#1 孤立/悬空小块 0 处，位置 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-down#1 体内透明孔洞 0 处（≥5px，原版本身最大 4px），位置 []",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-down#2 孤立/悬空小块 0 处，位置 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-down#2 体内透明孔洞 0 处（≥5px，原版本身最大 4px），位置 []",
+      "value": null
+    },
+    {
+      "id": "edge_margin",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-left 格边留空",
+      "value": null
+    },
+    {
+      "id": "walk_sole_span",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-left 三帧脚底行 [48, 48, 48]，浮动 0px（上限 0）",
+      "value": null
+    },
+    {
+      "id": "gait_repeat",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-left 腿区两两最大 IoU 0.776，≥0.95 视为步态重复（几乎没换腿）",
+      "value": null
+    },
+    {
+      "id": "stride",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-left 脚底带横向位移 1.69px，低于 0.3px 说明腿几乎没迈开",
+      "value": null
+    },
+    {
+      "id": "foot_merge",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-left 脚底带最少只有 1 个独立落点，应 ≥1（脚粘连）",
+      "value": null
+    },
+    {
+      "id": "waist_break",
+      "level": "fail",
+      "ok": false,
+      "msg": "行走-left#0 腰带最细行仅为躯干中位宽的 0.467（≥0.5），独立大块 1 个，疑似上下半身断开",
+      "value": null
+    },
+    {
+      "id": "waist_break",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-left#1 腰带最细行仅为躯干中位宽的 0.538（≥0.5），独立大块 1 个，疑似上下半身断开",
+      "value": null
+    },
+    {
+      "id": "waist_break",
+      "level": "fail",
+      "ok": false,
+      "msg": "行走-left#2 腰带最细行仅为躯干中位宽的 0.467（≥0.5），独立大块 1 个，疑似上下半身断开",
+      "value": null
+    },
+    {
+      "id": "waist_shift",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-left 上下半身水平偏移三帧 [0.01, 0.07, 0.83]，浮动 0.82px（上限 2.0），疑似下半身按固定步距采样而错位",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-left#0 孤立/悬空小块 0 处，位置 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-left#0 体内透明孔洞 0 处（≥5px，原版本身最大 4px），位置 []",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-left#1 孤立/悬空小块 0 处，位置 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-left#1 体内透明孔洞 0 处（≥5px，原版本身最大 4px），位置 []",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-left#2 孤立/悬空小块 0 处，位置 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-left#2 体内透明孔洞 0 处（≥5px，原版本身最大 4px），位置 []",
+      "value": null
+    },
+    {
+      "id": "edge_margin",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-right 格边留空",
+      "value": null
+    },
+    {
+      "id": "walk_sole_span",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-right 三帧脚底行 [48, 48, 48]，浮动 0px（上限 0）",
+      "value": null
+    },
+    {
+      "id": "gait_repeat",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-right 腿区两两最大 IoU 0.771，≥0.95 视为步态重复（几乎没换腿）",
+      "value": null
+    },
+    {
+      "id": "stride",
+      "level": "warn",
+      "ok": false,
+      "msg": "行走-right 脚底带横向位移 0.25px，低于 0.3px 说明腿几乎没迈开",
+      "value": null
+    },
+    {
+      "id": "foot_merge",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-right 脚底带最少只有 1 个独立落点，应 ≥1（脚粘连）",
+      "value": null
+    },
+    {
+      "id": "waist_break",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-right#0 腰带最细行仅为躯干中位宽的 0.571（≥0.5），独立大块 1 个，疑似上下半身断开",
+      "value": null
+    },
+    {
+      "id": "waist_break",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-right#1 腰带最细行仅为躯干中位宽的 0.538（≥0.5），独立大块 1 个，疑似上下半身断开",
+      "value": null
+    },
+    {
+      "id": "waist_break",
+      "level": "fail",
+      "ok": false,
+      "msg": "行走-right#2 腰带最细行仅为躯干中位宽的 0.462（≥0.5），独立大块 1 个，疑似上下半身断开",
+      "value": null
+    },
+    {
+      "id": "waist_shift",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-right 上下半身水平偏移三帧 [-1.31, -0.92, -0.56]，浮动 0.75px（上限 2.0），疑似下半身按固定步距采样而错位",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-right#0 孤立/悬空小块 0 处，位置 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-right#0 体内透明孔洞 0 处（≥5px，原版本身最大 4px），位置 []",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-right#1 孤立/悬空小块 0 处，位置 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-right#1 体内透明孔洞 0 处（≥5px，原版本身最大 4px），位置 []",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-right#2 孤立/悬空小块 0 处，位置 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-right#2 体内透明孔洞 0 处（≥5px，原版本身最大 4px），位置 []",
+      "value": null
+    },
+    {
+      "id": "edge_margin",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-up 格边留空",
+      "value": null
+    },
+    {
+      "id": "walk_sole_span",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-up 三帧脚底行 [48, 48, 48]，浮动 0px（上限 0）",
+      "value": null
+    },
+    {
+      "id": "gait_repeat",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-up 腿区两两最大 IoU 0.862，≥0.95 视为步态重复（几乎没换腿）",
+      "value": null
+    },
+    {
+      "id": "foot_merge",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-up 脚底带最少只有 1 个独立落点，应 ≥1（脚粘连）",
+      "value": null
+    },
+    {
+      "id": "waist_break",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-up#0 腰带最细行仅为躯干中位宽的 0.643（≥0.5），独立大块 1 个，疑似上下半身断开",
+      "value": null
+    },
+    {
+      "id": "waist_break",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-up#1 腰带最细行仅为躯干中位宽的 0.6（≥0.5），独立大块 1 个，疑似上下半身断开",
+      "value": null
+    },
+    {
+      "id": "waist_break",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-up#2 腰带最细行仅为躯干中位宽的 0.6（≥0.5），独立大块 1 个，疑似上下半身断开",
+      "value": null
+    },
+    {
+      "id": "waist_shift",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-up 上下半身水平偏移三帧 [-0.34, -0.38, -0.29]，浮动 0.09px（上限 2.0），疑似下半身按固定步距采样而错位",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-up#0 孤立/悬空小块 0 处，位置 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-up#0 体内透明孔洞 0 处（≥5px，原版本身最大 4px），位置 []",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-up#1 孤立/悬空小块 0 处，位置 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-up#1 体内透明孔洞 0 处（≥5px，原版本身最大 4px），位置 []",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "行走-up#2 孤立/悬空小块 0 处，位置 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "行走-up#2 体内透明孔洞 0 处（≥5px，原版本身最大 4px），位置 []",
+      "value": null
+    }
+  ]
+}

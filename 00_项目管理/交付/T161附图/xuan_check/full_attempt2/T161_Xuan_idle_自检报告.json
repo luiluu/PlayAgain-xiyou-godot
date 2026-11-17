@@ -1,0 +1,91 @@
+{
+  "name": "T161_Xuan_idle",
+  "profile": "biped",
+  "pass": true,
+  "items": [
+    {
+      "id": "native_size",
+      "level": "fail",
+      "ok": true,
+      "msg": "待机条尺寸 (192, 64)，应为 (192, 64)（3 帧，每帧 64×64）",
+      "value": null
+    },
+    {
+      "id": "binary_alpha",
+      "level": "fail",
+      "ok": true,
+      "msg": "待机条二值透明",
+      "value": null
+    },
+    {
+      "id": "idle_baseline",
+      "level": "fail",
+      "ok": true,
+      "msg": "待机脚底（包围盒下沿）[64, 64, 64]，对齐五条悟/狗逍遥/里德应为 64±0",
+      "value": null
+    },
+    {
+      "id": "idle_anchor_drift",
+      "level": "warn",
+      "ok": true,
+      "msg": "待机脚底带横向位移 0.75px（上限 1.0），脚/蹄锚点在漂",
+      "value": null
+    },
+    {
+      "id": "idle_sole_span",
+      "level": "warn",
+      "ok": true,
+      "msg": "待机脚底行浮动 0px，应为 0",
+      "value": null
+    },
+    {
+      "id": "idle_static",
+      "level": "warn",
+      "ok": true,
+      "msg": "待机有帧间变化",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "待机#0 孤立小块 0 处 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "待机#0 体内透明孔洞 0 处 []",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "待机#1 孤立小块 0 处 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "待机#1 体内透明孔洞 0 处 []",
+      "value": null
+    },
+    {
+      "id": "isolated_px",
+      "level": "fail",
+      "ok": true,
+      "msg": "待机#2 孤立小块 0 处 []",
+      "value": null
+    },
+    {
+      "id": "hole",
+      "level": "warn",
+      "ok": true,
+      "msg": "待机#2 体内透明孔洞 0 处 []",
+      "value": null
+    }
+  ]
+}
