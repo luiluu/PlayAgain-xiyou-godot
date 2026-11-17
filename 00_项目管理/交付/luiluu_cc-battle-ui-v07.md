@@ -37,25 +37,56 @@
 - 伤害数字新画法 XSkinDamagePopup（窄体、千分位、暴击小字在上），轨迹时长不变；战技列表说明栏两行、旧说明卡默认收起按「详情」展开。
 - 可回退：XSkinBattleMotion.ENABLED、XSkinDamagePopup.ENABLED、XSkinBattleRing.SMALL_ORBS／ORB_STYLE、XSkinBattle.HELP_COLLAPSE。
 - 测试：新增 tests/xiyou_ui_skin_battle_v07（44 项，带窗口加 `-- --out=<目录>` 出截图）；xiyou_ui_skin_battle 64/64、xiyou_otb 34/34；xiyou_ui_sel_scale 关过渡时的断言 1.08 改认 peak()。
-- 玩家可见：战斗界面的指令圈变小变好看、切换有动画、伤害数字换成新字体并带千分位、轮到谁有金色提示。
+- 玩家可见：战斗界面的指令圈变小变好看、切换有动画、伤害数字换新字体并带千分位、轮到谁有金色提示。
+
+## 2026-11-17 【小A·天启篇·未经审查】T125 战斗界面：指令换 B 金弦浮印＋首领头像/名字黑底＋HUD 剩余几块（dev.待定）
+
+- 依据：Kyo D167（指令 B、菱形星放大并旋转收成十字再展开、环小一圈、选中放大 20%）、Kyo D169 与 T125 合并、Kyo 11-17 反馈（首领头像去黑底与菱形金框并放宽到整颗头含头发、糖果粉血弧不变）；私密仓 `协作交接/附图/T111_第三轮_小A/README.md` 与 `00_项目管理/交付/luiluu_cc-battle-ui-v07.md`（#10 #11）。
+- 首领块（`modes/xiyou/ui/skin/skin_boss_arc.gd`）：以 85×85 像素共识模板剥离 RPGMV 菱形金框与黄底，居中放宽裁入整颗头与完整发冠后套旧金细圈圆章（`CLEAN_FACE`）；无头像首领改绘定稿红铜章（`res://content/tianqi/qiyin/seals/hong.png`）＋右下程序矢量种族小印（`1..12` 对应 `race_ids()`）；名字与血量数字拿掉 `XSkin4A.draw_text_backing` 深色底板，改字下柔墨韵＋描边（`INK_TEXT`）；糖果粉血弧（`HP_LIGHT`/`HP_DEEP`）不变。
+- 指令环（`modes/xiyou/ui/skin/skin_battle_ring.gd`）：换方向 B 金弦浮印——双道旧金游丝弓弦弧、选中项朱红焦点光弧与赤金双层菱印、绯红烟梭底＋上下渐隐细线、未选中项无框浮字＋柔墨韵（`BOWSTRING_B`）；半径由 T111 `136`／T096 `116` 缩至 `104.0`（`RADIUS_B`），选中项放大 `1.2×`（`peak()`），菱形星放大并配打开时旋转收成十字形再展开动效（`CROSS_INTRO_B`，受 `XSkinBattleMotion.on()` 控制，关闭动效时直接到位）。
+- HUD 剩余三块：`skin_battle.gd` 左上自动／变速按钮改两颗 `60×60` 圆钮，仅改显示为「自动 关／开」「变速 ×1／×2／×3／×4」（底层 `btn.text` 与 `xiyou_battle_options.gd` 功能不变，`ROUND_TOGGLES`）；`skin_side_status.gd` 队伍栏底板由实心黑改切角暖炭半透烟纱、左 66%→右 46% 渐变并配旧金脊线（`XSkinSideStatus.Back.SMOKE_BACK`）；`skin_otb_bar.gd` 行动条背后垫渐隐暖墨烟轨＋ `0.9px` 渐隐旧金底线（`XSkinOTBBar.SMOKE_RAIL`）。
+- 可回退：O-待定-1`XSkinBossArc.CLEAN_FACE`、O-待定-2`XSkinBossArc.INK_TEXT`、O-待定-3`XSkinBattleRing.BOWSTRING_B`、O-待定-4`XSkinBattleRing.CROSS_INTRO_B`、O-待定-5`XSkinBattle.ROUND_TOGGLES`、O-待定-6`XSkinSideStatus.Back.SMOKE_BACK`、O-待定-7`XSkinOTBBar.SMOKE_RAIL` 均在各自文件默认 `true`，设 `false` 即回退 T096 现状。
+- 测试与实机：`xiyou_ui_skin_battle_v07` 41/41（窗口模式含截图 56/56）、`xiyou_ui_skin_battle` 65/65、`xiyou_ui_skin_hud` 106/106、`xiyou_ui_sel_scale` 90/90、`xiyou_whats_new` 80/80、`xiyou_ui_skin_4a` 57/57、`xiyou_ui_skin_close` 71/71、`xiyou_battle_options` 99/99、`xiyou_battle_ui` 182/182；均以 `--audio-driver Dummy` 前台单跑通过；800×450 改前／改后对比图与指令环十字展开录屏 GIF 存私密仓 `协作交接/附图/T125/`。
+- 玩家可见：战斗界面首领头像换为干净圆章完整头型（无头像首领配红铜章与种族印）并去掉文字黑底；指令菜单换为无框金弦浮印与十字星展开动效；左上角自动／倍速按钮变为「×1」样式两颗小圆钮，右上队伍栏改半透烟纱，左下行动条加底线托衬。
+
+## T125 验收逐条自查（小A，2026-11-17）
+
+- 工作树已先 `git merge main`（合入主线 41 个提交，保留 T096 交付与皮肤基准），全程未碰 `battle_scene.gd` 战斗站位与敌人血条（留给 T126）。
+- **1. 首领块**：里德已去菱形金框与黄底并按 Kyo 反馈放宽至整颗头＋完整头发；无头像首领已接入 `res://content/tianqi/qiyin/seals/hong.png` 红铜章＋右下程序矢量种族印；名字与血量拿掉黑底改柔墨韵＋描边；糖果粉血弧保持不动。
+- **2–4. 指令环 B 金弦浮印**：双游丝金弦、无框浮字＋柔墨韵、选中赤金菱印＋绯红烟梭；半径缩至 `104.0`、选中 `1.2×`、菱形星放大并在打开时旋转收成十字形再展开（受「界面动效」开关管）。
+- **5–8. HUD 剩余三块与血弧**：自动／变速改 `60×60` 圆钮并把 `OFF` 仅显示成 `×1`；队伍栏改左 66%→右 46% 暖炭半透烟纱；行动条垫渐隐墨烟轨＋`0.9px` 旧金细线；首领血弧颜色未改。
+- **9–10. 开关、对照图与专项**：7 处改前／改后均有独立 `static var` 回退开关并在测试中显式置 `false` 验证；800×450 对比图与 GIF（`01_首领块_改前改后对比_800x450.png`、`T125_改前改后整屏对比_800x450.png`、`T125_无头像首领_红铜章种族印_800x450.png`、`T125_指令环十字展开_800x450.gif`、`T125_指令环十字展开特写_800x450.gif`）已放私密仓 `协作交接/附图/T125/`，游戏仓 `content/` 零新增截图。
+
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定-1 | `modes/xiyou/ui/skin/skin_boss_arc.gd` | T096 直接圆形裁剪带黄底金菱框的 85×85 MOG 头像，无头像首领不画章 | 像素模板去金菱框黄底并居中容纳整颗头入旧金圆章；无头像改绘红铜章＋种族小印 | 消除原版硬金菱框与黑边割裂感并补全无头像首领识别 | `XSkinBossArc.CLEAN_FACE = false` | 小A | 保留 |
+| O-待定-2 | `modes/xiyou/ui/skin/skin_boss_arc.gd` | T096 首领名字与血量数字后衬 `XSkin4A` 深色胶囊底板 | 去硬底板改柔墨韵＋加重描边，保留糖果粉血弧 | 消除首领名与背景、血弧交界处的黑块不协调感 | `XSkinBossArc.INK_TEXT = false` | 小A | 保留 |
+| O-待定-3 | `modes/xiyou/ui/skin/skin_battle_ring.gd` | T096 半径 116 的球形按钮环，文字装在实心／渐变圆球内 | 换方向 B 金弦浮印（半径缩至 104、双金弦、无框浮字、选中 1.2× 配朱红光弧与赤金菱印） | 对齐 D167 与 B 方向定稿，减少环身遮挡 | `XSkinBattleRing.BOWSTRING_B = false` | 小A | 保留 |
+| O-待定-4 | `modes/xiyou/ui/skin/skin_battle_ring.gd` | 指令环开场由 0.6 缩放弹出圆形按钮 | 菱形星放大并在打开时旋转收成十字形再展开（受界面动效设置管） | 对齐 D167 首领级指令出现质感 | `XSkinBattleRing.CROSS_INTRO_B = false` | 小A | 保留 |
+| O-待定-5 | `modes/xiyou/ui/skin/skin_battle.gd` | 左上自动／变速为 `120×46` 横条胶囊，显示「变速 OFF」 | 改为两颗 `60×60` 圆钮并仅把显示文字映射为「自动 关／开」「变速 ×1～×4」，不动功能逻辑 | 释放左上空间并统一手搓圆钮视觉 | `XSkinBattle.ROUND_TOGGLES = false` | 小A | 保留 |
+| O-待定-6 | `modes/xiyou/ui/skin/skin_side_status.gd` | 队伍紧凑条底板为 T096 实心深黑方盒 | 改左 66%→右 46% 暖炭半透烟纱切角底＋左侧渐隐旧金脊线 | 减轻右上角死黑压迫感，透出战场景深 | `XSkinSideStatus.Back.SMOKE_BACK = false` | 小A | 保留 |
+| O-待定-7 | `modes/xiyou/ui/skin/skin_otb_bar.gd` | 行动顺序条直接贴在场景上无托底 | 背后垫渐隐暖墨烟轨＋ `0.9px` 旧金细线托底 | 保证暗／亮战场上行动条圆头与名字稳定可读 | `XSkinOTBBar.SMOKE_RAIL = false` | 小A | 保留 |
 
 ## 交接板
 
-- 下一步：新增「战斗界面 v0.7 剩余小差：左上自动／变速改圆钮、队伍条带称号（T096 差距清单 10、11）」
-- 用户试玩说明：新界面开着时进战斗看指令圈、战技列表展开收起、伤害数字、换人提示；设置「界面动效：关」时全部直接到位
-- 需要用户决定：无
+- 下一步：送 cc Opus 核查（T125 与 T096 同分支一起合并）；T126 另开车道接手战斗站位与敌人血条。
+- 用户试玩说明：新界面开着时进战斗看首领去黑底整头圆章（无头像首领见红铜章＋种族印）、B 金弦浮印十字星展开、左上「自动 关」「变速 ×1」圆钮、右上暖炭烟纱队伍栏与左下墨烟轨行动条；设置「界面动效：关」时十字展开直接到位；可在代码里将对应 `static var` 置 `false` 回退单项。
+- 需要用户决定：无（D167／D169／首领整头裁剪／糖果粉血弧均已按 Kyo 指令拍板）
 
 ## 进度账
 
-- 天启篇界面 v0.7 第 2 期（战斗）：动效与数字补齐，剩差距清单 10、11 两项小差
+- 天启篇界面 v0.7 第 2 期（战斗）：动效与数字补齐（T096），并完成 B 金弦浮印、首领头像/名字去黑底、自动/变速圆钮、队伍烟纱、行动条墨烟轨（T125，残余 10/11 已消账）
 
 ## 可优化（流程／工具／效率）
 
-- 已做：v0.7 对照专项带 `--out` 直接出同状态截图，配 ffmpeg 抽样稿视频帧即可并排（命令写在本单「差距清单」上方说明里）
+- 已做：v0.7 对照专项带 `--out` 直接出同状态截图，配 ffmpeg 抽样稿视频帧即可并排（命令写在本单「差距清单」上方说明里）；T125 追加 `ring_intro_0..8` 冻结帧与 `v07_boss_faceless` 截图导出，可直接合成 800×450 展开录屏 GIF
 - 建议：别的页（主菜单、装备、物品）对齐 v0.7 时照这个专项骨架写，省得手工摆场面（归各页车道）
 
 ## 本分支提交
 
 - ed1954110 WIP: 行动条敌人头像、名字去称号；对照专项骨架
 - ee61517c8 WIP: 指令环缩球铺开、列表展开收起、换人提示、伤害数字、说明栏
-- （本提交）开战 HUD 淡入、指令球暗金底、交付单
+- 2a2460c6b 【cc·天启篇】T096 战斗界面对齐 v0.7 定稿：HUD 淡入、指令球暗金底、交付单
+- （T125 合并 main 后提交）T125 首领圆章与去黑底、指令环 B 金弦浮印与十字展开、圆钮／烟纱／墨烟轨与测试交付

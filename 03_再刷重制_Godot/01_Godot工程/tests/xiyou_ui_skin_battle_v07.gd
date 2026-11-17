@@ -104,6 +104,7 @@ func _run() -> void:
 	boss.state_turns[6] = 4
 	b._refresh_status()
 	await _ring(b)
+	await _boss_t125(b, boss)
 	await _skill_list(b)
 	await _popup(b, boss)
 	await _turn_cue(b)
@@ -112,29 +113,102 @@ func _run() -> void:
 	_finish()
 
 
-## 指令环：球直径 64、选中 1.2 倍（Kyo 11-16）；新建时球从 0.6 长到 1、逐个错开（FULL 档）
+## 指令环（B 金弦浮印）：小一圈半径 104、选中 1.2 倍；开场菱形星旋转收成十字再展开；开关可回退到 T096 球形环
 func _ring(b: XBattleScene) -> void:
 	var ring := b.cmd_win as XSkinBattleRing
 	_check("ring_type", ring != null)
 	if ring == null:
 		return
-	_check("ring_orb_64", is_equal_approx(ring.orb_r, 32.0) and XSkinBattleRing.peak() == 1.2, [ring.orb_r, ring.radius])
+	_check("ring_b_radius_smaller_and_peak", XSkinBattleRing.BOWSTRING_B and is_equal_approx(ring.radius, XSkinBattleRing.RADIUS_B) and is_equal_approx(ring.orb_r, XSkinBattleRing.ORB_R_B) and is_equal_approx(XSkinBattleRing.peak(), 1.2), [ring.orb_r, ring.radius, XSkinBattleRing.peak()])
 	var apart := true
 	for i in ring.entries.size() - 1:
 		apart = apart and ring.orb_pos(i).distance_to(ring.orb_pos(i + 1)) >= ring.orb_r * (1.0 + XSkinBattleRing.peak()) + 3.9
 	_check("ring_selected_not_touching", apart, ring.radius)
-	await _secs(0.6)
+	# 十字展开动效：先检查未展开态与回退开关
+	if XSkinBattleRing.CROSS_INTRO_B:
+		_check("ring_cross_intro_total", is_equal_approx(ring._item_intro_dur(), XSkinBattleRing.CROSS_IN_TIME))
+	if out_dir != "":
+		print("RING_RECT=", Rect2(ring.position, ring.size), " CENTER=", ring.ring_center())
+		var saved_elapsed := ring.intro_elapsed
+		var intro_ts := [0.02, 0.06, 0.11, 0.15, 0.21, 0.27, 0.34, 0.42, 0.57]
+		ring.set_process(false)
+		for k in intro_ts.size():
+			ring.intro_elapsed = float(intro_ts[k])
+			ring.queue_redraw()
+			await _shot("ring_intro_%d" % k, 2)
+		ring.intro_elapsed = saved_elapsed
+		ring.set_process(true)
+		ring.queue_redraw()
+	await _secs(0.65)
 	_check("ring_sel_scale_1_2", is_equal_approx(ring.orb_scale(ring.index), 1.2) and is_equal_approx(ring.orb_scale((ring.index + 1) % ring.entries.size()), 1.0))
 	_check("ring_intro_done", ring.intro_elapsed >= ring.intro_total() and ring.intro_of(ring.entries.size() - 1) == 1.0, [ring.intro_elapsed, ring.intro_total()])
-	await _secs(0.5)
+	await _secs(0.4)
 	await _shot("v07_ring", 2)
-	_check("ring_orb_style_default", XSkinBattleRing.ORB_STYLE == 3)
-	if out_dir != "":   # 追加：指令球底色三版对比（0＝修前全黑）
-		for st in [0, 1, 2, 3]:
-			XSkinBattleRing.ORB_STYLE = st
-			ring.queue_redraw()
-			await _shot("orb_style_%d" % st, 3)
-		XSkinBattleRing.ORB_STYLE = 3
+	# 回退开关验证：关闭 BOWSTRING_B / CROSS_INTRO_B 后回到 T096 球形环尺寸与铺开时长
+	XSkinBattleRing.BOWSTRING_B = false
+	XSkinBattleRing.CROSS_INTRO_B = false
+	var old_r := XSkinBattleRing.create_ring(b.ui, [{"text": "攻", "key": "a"}, {"text": "防", "key": "d"}], "测试")
+	_check("ring_rollback_t096", is_equal_approx(old_r.orb_r, XSkinBattleRing.ORB_R) and is_equal_approx(old_r._item_intro_dur(), XSkinBattleMotion.RING_ORB_IN), [old_r.orb_r, old_r._item_intro_dur()])
+	old_r.queue_free()
+	XSkinBattleRing.BOWSTRING_B = true
+	XSkinBattleRing.CROSS_INTRO_B = true
+
+
+## T125 首领块：剥离原版菱形金框、放宽保留完整头型；无头像首领用红铜章＋种族小印；底板改柔墨韵；回退开关可复原
+func _boss_t125(b: XBattleScene, boss: XBattler) -> void:
+	var arc := b.boss_hp as XSkinBossArc
+	var e := boss as XEnemy
+	_check("boss_arc_present", arc != null and e != null)
+	if arc == null or e == null:
+		return
+	var reed_tex: Texture2D = XBossHpBar._tex("bosshp", XBossHpBar.face_name(e.enemy_id))
+	var crop := XSkinBossArc.face_crop(reed_tex)
+	var clean_tex: Texture2D = crop.get("tex")
+	var cim := clean_tex.get_image() if clean_tex != null else null
+	var bbox := XSkinBossArc._opaque_bbox(cim) if cim != null else Rect2i()
+	_check("boss_face_diamond_stripped_full_head", bool(crop.get("diamond", false)) and cim != null and cim.get_pixel(0, 0).a < 0.05 and bbox.size.x >= 36 and bbox.size.y >= 34, [crop.get("diamond"), bbox])
+	_check("boss_copper_seal_loaded", XSkinBossArc.copper_seal_texture() != null)
+	# 无头像首领（例如天劫/神兵扩展首领）：换红铜章＋种族印并截图对照
+	var faceless_id := 0
+	var cands := []
+	for wid in XZhenqi.WEAPON_BOSS:
+		cands.append(int(wid))
+	for tid in [XZhenqi.TRIAL_TROOP["心魔"], XZhenqi.TRIAL_TROOP["天劫"], XZhenqi.HEART_TROOP[1]]:
+		for m in XDB.rec("Troops", int(tid)).get("members", []):
+			cands.append(int(m.enemyId))
+	for id in cands:
+		if not XBossHpBar.is_listed(id) and XBossHpBar.face_name(id) == "":
+			var probe := XEnemy.new().setup(id, 1)
+			if not probe.race_ids().is_empty():
+				faceless_id = id
+				break
+	_check("boss_faceless_fixture_found", faceless_id > 0, faceless_id)
+	if faceless_id > 0:
+		var saved_id := e.enemy_id
+		var saved_name := arc._name_text
+		var saved_face := arc._face_tex
+		var saved_shown := arc._shown_id
+		e.enemy_id = faceless_id
+		arc._shown_id = faceless_id
+		arc._face_tex = null
+		arc._name_text = e.display_name()
+		arc.queue_redraw()
+		await _frames(4)
+		_check("boss_faceless_race_id", arc._boss_race_id() > 0, arc._boss_race_id())
+		await _shot("v07_boss_faceless", 6)
+		e.enemy_id = saved_id
+		arc._shown_id = saved_shown
+		arc._face_tex = saved_face
+		arc._name_text = saved_name
+		arc.queue_redraw()
+		await _frames(2)
+	XSkinBossArc.CLEAN_FACE = false
+	XSkinBossArc.INK_TEXT = false
+	arc.queue_redraw()
+	await _frames(1)
+	XSkinBossArc.CLEAN_FACE = true
+	XSkinBossArc.INK_TEXT = true
+	arc.queue_redraw()
 
 
 ## 战技列表：确定后环淡出、列表从右边（环那边）由小展开；取消时列表收起成残影、新环重新铺开

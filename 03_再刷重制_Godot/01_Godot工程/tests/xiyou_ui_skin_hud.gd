@@ -112,8 +112,21 @@ func _run() -> void:
 	_check("fixture_actor", a == s.actor(10), null if a == null else a.actor_id)
 	_party(b, a)
 	var tx: float = XSkin4A.safe_rect(b).position.x if XSkin4A.hud_on() else XSkinBattle.TOGGLE_POS.x   # 4A：跟挂机胶囊一起贴安全边距
-	_check("toggles_moved", b.auto_btn.get_parent().position == Vector2(tx, b._origin.y + XSkinBattle.TOGGLE_POS.y) and b.auto_btn.custom_minimum_size == Vector2(120, 46), b.auto_btn.get_parent().position)
+	var expect_sz := Vector2(60, 60) if XSkinBattle.ROUND_TOGGLES else Vector2(120, 46)
+	_check("toggles_moved", b.auto_btn.get_parent().position == Vector2(tx, b._origin.y + XSkinBattle.TOGGLE_POS.y) and b.auto_btn.custom_minimum_size == expect_sz and b.speed_btn.custom_minimum_size == expect_sz, [b.auto_btn.get_parent().position, b.auto_btn.custom_minimum_size])
+	_check("toggles_display_x1", XSkinBattle.toggle_display_lines("自动：关") == PackedStringArray(["自动", "关"]) and XSkinBattle.toggle_display_lines("自动：开") == PackedStringArray(["自动", "开"]) and XSkinBattle.toggle_display_lines("变速 OFF") == PackedStringArray(["变速", "×1"]) and XSkinBattle.toggle_display_lines("变速 四倍") == PackedStringArray(["变速", "×4"]))
+	# T125 回退开关校验（圆钮→横条胶囊、烟纱底→实心黑底、墨烟轨开关）
+	var side_parent := b.auto_btn.get_parent() as Control
+	XSkinBattle.ROUND_TOGGLES = false
+	XSkinBattle.style_toggles(side_parent, [b.auto_btn, b.speed_btn], b._origin)
+	_check("toggles_rollback_120x46", b.auto_btn.custom_minimum_size == Vector2(120, 46), b.auto_btn.custom_minimum_size)
+	XSkinBattle.ROUND_TOGGLES = true
+	XSkinBattle.style_toggles(side_parent, [b.auto_btn, b.speed_btn], b._origin)
+	XSkinSideStatus.Back.SMOKE_BACK = false
+	XSkinOTBBar.SMOKE_RAIL = false
 	_otb(b, a)
+	XSkinSideStatus.Back.SMOKE_BACK = true
+	XSkinOTBBar.SMOKE_RAIL = true
 	await _boss(b)
 	await _shot("battle_2b_hud")
 	await _boss_detail(b)

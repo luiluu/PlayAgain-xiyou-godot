@@ -79,9 +79,42 @@ func _slot_x(row: String, index: int, _n: int) -> float:
 	return (x1 if row == "c" else x2) + index * step_px
 
 
+static var SMOKE_RAIL := true
+
+
 func _draw() -> void:
+	if SMOKE_RAIL:
+		_draw_smoke_rail()
 	if sep_node != null:
 		sep_node.queue_redraw()
+
+
+func _draw_smoke_rail() -> void:
+	var x0 := -8.0
+	var x_mid := WIDTH * 0.72
+	var x1 := WIDTH + 18.0
+	var y_top := LH - 30.0
+	var y_mid := LH + 4.0
+	var y_bot := LH + 42.0
+	var c0 := Color(0.055, 0.042, 0.044, 0.0)
+	var cm_l := Color(0.055, 0.042, 0.044, 0.56)
+	var cm_m := Color(0.055, 0.042, 0.044, 0.44)
+	# 上半柔雾渐隐（顶 0 → 中 0.56，右尾渐散至 0）
+	draw_polygon(
+		PackedVector2Array([Vector2(x0, y_top), Vector2(x_mid, y_top), Vector2(x1, y_top), Vector2(x1, y_mid), Vector2(x_mid, y_mid), Vector2(x0, y_mid)]),
+		PackedColorArray([c0, c0, c0, c0, cm_m, cm_l]))
+	# 下半柔雾渐隐（中 0.56 → 底 0）
+	draw_polygon(
+		PackedVector2Array([Vector2(x0, y_mid), Vector2(x_mid, y_mid), Vector2(x1, y_mid), Vector2(x1, y_bot), Vector2(x_mid, y_bot), Vector2(x0, y_bot)]),
+		PackedColorArray([cm_l, cm_m, c0, c0, c0, c0]))
+	# 大圆行动者脚下补一团局部柔雾压住底光
+	draw_texture_rect(XUiSkin.glow_texture(), Rect2(Vector2(LH - 52.0, LH - 42.0), Vector2(104.0, 88.0)), false, Color(0.04, 0.03, 0.032, 0.48))
+	# 底部 0.9px 旧金游丝托底线（左 55% → 右渐隐至 0）
+	var y_line := LH + 34.0
+	draw_polyline_colors(
+		PackedVector2Array([Vector2(4.0, y_line), Vector2(WIDTH * 0.52, y_line), Vector2(WIDTH * 0.82, y_line)]),
+		PackedColorArray([Color(0.89, 0.74, 0.45, 0.55), Color(0.89, 0.74, 0.45, 0.24), Color(0.89, 0.74, 0.45, 0.0)]),
+		0.9, true)
 
 
 func _draw_sep() -> void:
