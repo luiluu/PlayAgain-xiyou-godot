@@ -164,3 +164,506 @@ GENERATED_REF=refs/ci/generated/luiluu/cc-phase4-wiring b41ef84c6c3798c6e4b115ae
 选测结论是整轮：659 个场景，分 16 片；约用 196 分钟额度（每月免费 2000），约 14 分钟跑完（含准备）
 已推送 cc2197d1c6 → ci/luiluu/cc-phase4-wiring，云端开始选测（基准 456fa81727）
 等结果：python3 03_再刷重制_Godot/07_开发环境/云端选测.py wait cc2197d1c6e7c339f3f1e657d66b220884d6f8cc
+## ✓ 云端选测通过
+
+- 提交 cc2197d1c6（ci/luiluu/cc-phase4-wiring），选测（基准 456fa817274585b379c3d345e8930a9104e3c2c9），468 个场景、16 片，最长一片 15.2 分钟
+- 偶发（并行时失败、单跑通过，算通过）：xiyou_tianqi_skill_debt.tscn
+- 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/43995712148
+  ✓ 云端选测通过（cc2197d1c）
+== 参照工具访问守卫
+TEST_RESULT={"passed":16,"total":16}
+  ✓ MV 文件守卫
+TEST_RESULT={"passed": 12, "total": 12, "failures": []}
+  ✓ 界面参照服务守卫
+  ✓ 工作树清理保护
+  ✓ 车道参照与切片同批提示
+  ✓ 导出包排除测试与参照数据
+  ✗ 发行空壳缺成员：跑 07_开发环境/发行空壳.py check，照真脚本发行时的行为补 发行空壳特例.json
+共 0 处（直接 0）
+  ✓ 切场景后不再取视口／场景树（发行版空指针闪退同类）
+.........................
+----------------------------------------------------------------------
+Ran 25 tests in 0.004s
+
+OK
+TEST_RESULT={"passed": 25, "total": 25}
+  ✓ 共性参照对照工具保护
+{"referenceIntegrityOnly": true, "cases": 59, "passed": true, "issues": []}
+  ✓ 共性参照完整性（尚非Godot实现验收）
+.............................................................提示：没有工作树停在 claude/task 上（车道已换分支继续），按分支引用 0290cf505 合并
+提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+== /opt/homebrew/opt/python@3.15/bin/python3.15 03_再刷重制_Godot/03_转换工具/同步正式西游.py --accept-additions
+== /opt/homebrew/opt/python@3.15/bin/python3.15 03_再刷重制_Godot/07_开发环境/开发编号.py bump task
+....提示：没有工作树停在 claude/task 上（车道已换分支继续），按分支引用 70baff52b 合并
+提示：车道不在 git worktree 里，按交付单的车道路径 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/xiyou_merge_fixture_x17j_fyd/clone-lane 取产物
+提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+提示：没有工作树停在 claude/task 上（车道已换分支继续），按分支引用 70baff52b 合并
+提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+提示：没有工作树停在 claude/task 上（车道已换分支继续），按分支引用 70baff52b 合并
+提示：交付单的车道路径 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/xiyou_merge_fixture_x17j_fyd/clone-lane 有未提交改动，不用它的产物（照旧完整同步）
+提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+== /opt/homebrew/opt/python@3.15/bin/python3.15 03_再刷重制_Godot/03_转换工具/同步正式西游.py --accept-additions --from-worktree /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/xiyou_merge_fixture_x17j_fyd/clone-lane
+== /opt/homebrew/opt/python@3.15/bin/python3.15 03_再刷重制_Godot/07_开发环境/开发编号.py bump task
+提示：交付单的车道路径 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/xiyou_merge_fixture_x17j_fyd/clone-lane 分支头 22202e779 与交付提交 70baff52b 对不上，不用它的产物（照旧完整同步）
+............Merge made by the 'ort' strategy.
+ .../\344\272\244\344\273\230/claude_task.md"                  | 11 +++++++++++
+ .../modes/\346\265\213\350\257\225.gd"                        |  1 +
+ 2 files changed, 12 insertions(+)
+ create mode 100644 "00_\351\241\271\347\233\256\347\256\241\347\220\206/\344\272\244\344\273\230/claude_task.md"
+ create mode 100644 "03_\345\206\215\345\210\267\351\207\215\345\210\266_Godot/01_Godot\345\267\245\347\250\213/modes/\346\265\213\350\257\225.gd"
+已递增到 dev.002：task
+开发编号.json=dev.002 project.godot=dev.002 build_info=dev.002 一致
+......................提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+== /opt/homebrew/opt/python@3.15/bin/python3.15 03_再刷重制_Godot/03_转换工具/同步正式西游.py --accept-additions --accept-changes 03_再刷重制_Godot/04_验证/测量接受/claude_task.json --from-worktree /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/xiyou_merge_fixture_jhew_xx2/lane
+== /opt/homebrew/opt/python@3.15/bin/python3.15 03_再刷重制_Godot/07_开发环境/开发编号.py bump task
+............正在进行移走一行：| claude/task |
+待核查加一行：claude/task
+...........Merge made by the 'ort' strategy.
+ .../\344\272\244\344\273\230/claude_task.md"                  | 11 +++++++++++
+ .../\344\274\230\345\214\226\347\231\273\350\256\260.md"      |  1 +
+ .../00_\350\256\276\350\256\241/\350\257\264\346\230\216.md"  |  2 ++
+ .../modes/\346\265\213\350\257\225.gd"                        |  1 +
+ 4 files changed, 15 insertions(+)
+ create mode 100644 "00_\351\241\271\347\233\256\347\256\241\347\220\206/\344\272\244\344\273\230/claude_task.md"
+ create mode 100644 "03_\345\206\215\345\210\267\351\207\215\345\210\266_Godot/00_\350\256\276\350\256\241/\350\257\264\346\230\216.md"
+ create mode 100644 "03_\345\206\215\345\210\267\351\207\215\345\210\266_Godot/01_Godot\345\267\245\347\250\213/modes/\346\265\213\350\257\225.gd"
+已递增到 dev.002：task
+开发编号.json=dev.002 project.godot=dev.002 build_info=dev.002 一致
+{"rawPercent": "44", "percent": 44.0, "consistent": true, "written": false, "rows": [{"name": "甲", "contribution": "12"}, {"name": "乙", "contribution": "32"}]}
+[main 2c99982] 合并 claude/task（dev.002）收尾
+ Committer: lui <kyo@Kyo-ludeMacBook-Pro.local>
+Your name and email address were configured automatically based
+on your username and hostname. Please check that they are accurate.
+You can suppress this message by setting them explicitly:
+
+    git config --global user.name "Your Name"
+    git config --global user.email you@example.com
+
+After doing this, you may fix the identity used for this commit with:
+
+    git commit --amend --reset-author
+
+ 10 files changed, 38 insertions(+), 19 deletions(-)
+ delete mode 100644 "00_\351\241\271\347\233\256\347\256\241\347\220\206/\344\272\244\344\273\230/claude_task.md"
+...............提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/测试.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+..............................提示：车道新增的 1 个 .gd 没提交同名 .gd.uid（03_再刷重制_Godot/01_Godot工程/modes/main.gd）：收尾时会尝试带入主工作区生成的 .uid，车道下次记得一起提交
+.......................................................  不排队 4.47 秒，排队 0.65 秒
+....................................................................PROBE_PLAN={"executed": 0, "partial": {}, "reused": 1, "stashed": 0, "auditDue": []}
+PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": ["troop_event_probe.cjs"]}
+PROBE_DONE={"probe": "troop_event_probe.cjs", "seconds": 0.0, "command": ["troop_event_probe.cjs"], "exitCode": 0}
+PROBE_PLAN={"executed": 0, "partial": {}, "reused": 1, "stashed": 0, "auditDue": []}
+PROBE_PLAN={"executed": 0, "partial": {}, "reused": 1, "stashed": 0, "auditDue": []}
+PROBE_PLAN={"executed": 0, "partial": {}, "reused": 1, "stashed": 0, "auditDue": []}
+PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": ["event_state_probe.cjs"]}
+PROBE_DONE={"probe": "event_state_probe.cjs", "seconds": 0.0, "command": ["event_state_probe.cjs"], "exitCode": 0}
+PROBE_PLAN={"executed": 0, "partial": {}, "reused": 1, "stashed": 0, "auditDue": []}
+PROBE_PLAN={"executed": 0, "partial": {}, "reused": 1, "stashed": 0, "auditDue": []}
+.PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": ["troop_event_probe.cjs"]}
+PROBE_DONE={"probe": "troop_event_probe.cjs", "seconds": 0.0, "command": ["troop_event_probe.cjs"], "exitCode": 0}
+..PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+.PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 7}
+.PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+..PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "event_probe.cjs", "seconds": 0.002, "command": ["event_probe.cjs"], "exitCode": 0}
+.........PROBE_PLAN={"executed": 0, "partial": {}, "reused": 3, "stashed": 0, "auditDue": []}
+......PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 7}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_STASHED=["a_probe.cjs"]
+PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 7}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_STASHED=["a_probe.cjs"]
+PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 0}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 7}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 7}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_STASHED=["a_probe.cjs"]
+PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 7}
+PROBE_STASHED=["a_probe.cjs"]
+PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 0}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+.PROBE_PLAN={"executed": 2, "partial": {}, "reused": 0, "stashed": 0, "auditDue": []}
+PROBE_DONE={"probe": "a_probe.cjs", "seconds": 0.001, "command": ["a_probe.cjs"], "exitCode": 0}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 7}
+PROBE_STASHED=["a_probe.cjs"]
+PROBE_PLAN={"executed": 1, "partial": {}, "reused": 0, "stashed": 1, "auditDue": []}
+PROBE_DONE={"probe": "b_probe.cjs", "seconds": 0.001, "command": ["b_probe.cjs"], "exitCode": 0}
+....................................F
+======================================================================
+FAIL: test_success_failure_and_stall_have_consistent_marker_exit_and_wait (incremental_workflow_tests.TaskWatchTests.test_success_failure_and_stall_have_consistent_marker_exit_and_wait)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/kyo/orca/workspaces/再刷项目资料库/cc-phase4-wiring/03_再刷重制_Godot/07_开发环境/测试增量同步.py", line 1546, in test_success_failure_and_stall_have_consistent_marker_exit_and_wait
+    self.assertEqual(p.returncode, expected, p.stdout + p.stderr)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 124 != 0 : b'TASK_LOG=/private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp1fzvrdua/done.log\nTASK_RESULT={"runId": "cba82f417eb44616acb14e241e0cc545", "status": "stuck", "exitCode": 124, "pid": 63816, "startedAt": "2026-11-17T01:54:31.588342+00:00", "command": ["/opt/homebrew/opt/python@3.15/bin/python3.15", "-c", "print(\\"ok\\")"], "childPGID": 63818, "childIdentity": {"pid": 63818, "pgid": 63818, "startedAt": "Tue Nov 17 02:54:31 2026    "}, "finishedAt": "2026-11-17T01:54:33.747478+00:00"}\n'
+
+----------------------------------------------------------------------
+Ran 350 tests in 468.127s
+
+FAILED (failures=1)
+FAILED_CASE=incremental_workflow_tests.TaskWatchTests.test_success_failure_and_stall_have_consistent_marker_exit_and_wait
+TEST_RESULT={"passed": 349, "total": 350}
+  ✗ 合并工具回归失败
+............
+----------------------------------------------------------------------
+Ran 12 tests in 4.835s
+
+OK
+  ✓ 结构化公式编译边界
+  ✓ 天启篇存档登记检查
+  ✓ 随机守卫检查
+  ✓ 状态效果 js 再翻译整块边界
+........................
+----------------------------------------------------------------------
+Ran 24 tests in 24.236s
+
+OK
+  ✓ 转换器增量写入与中断恢复
+  ✓ 变更记录分卷与待核查清单工具
+.........................[云端选测] 产物 2 个对象，新写 3.0 MB
+[云端选测] 产物 2 个对象，新写 0.0 MB
+[云端选测] 产物 2 个对象，新写 0.0 MB
+.......
+----------------------------------------------------------------------
+Ran 32 tests in 35.495s
+
+OK
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.001s
+
+OK
+  ✓ 云端导入失败保护、推送重试
+· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpogxdtqs7/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpogxdtqs7/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpogxdtqs7/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 89fc1c0f、清单 ecb4c3bb），没有推送
+· github：已在本机提交（包 89fc1c0f、清单 ecb4c3bb），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpogxdtqs7/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpogxdtqs7/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpc9n3cju2/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpc9n3cju2/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpc9n3cju2/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 fb70686b、清单 84086a3b），没有推送
+· github：已在本机提交（包 fb70686b、清单 84086a3b），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpc9n3cju2/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpc9n3cju2/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpc9n3cju2/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpc9n3cju2/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_475.pck：0.00 MB，三个预设导出一致
+· 0.453 → 0.475：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpc9n3cju2/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.475，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 8d1873af、清单 142468b0），没有推送
+· github：已在本机提交（包 8d1873af、清单 142468b0），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpc9n3cju2/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpc9n3cju2/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7yyoq1qc/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7yyoq1qc/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.450 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 450
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7yyoq1qc/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+✗ --old-tree 的编号是 450，和底包 453 对不上：给的不是这个底包的工程目录
+..· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpv3sicbko/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpv3sicbko/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 8fc3bcae、清单 51b94771），没有推送
+· github：已在本机提交（包 8fc3bcae、清单 51b94771），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpv3sicbko/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpv3sicbko/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpv3sicbko/out
+✗ --stage 出补丁要给 --old-tree <底包对应的工程目录>，好写补丁文件清单（没有就加 --no-files-manifest）
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmprtsafqf7/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmprtsafqf7/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmprtsafqf7/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+  （没加 --stage：清单里的补丁地址是占位的，只能本地看，不能发）
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+..· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpn62iwfld/out
+✗ 底包编号 470 不比当前 470 小，没有可发的补丁
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzg9dwvpg/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzg9dwvpg/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：31.46 MB，三个预设导出一致
+✗ 补丁 31.5 MB 超过 30 MB：该发新底包了（硬要发加 --allow-big）
+· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzg9dwvpg/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpzg9dwvpg/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：31.46 MB，三个预设导出一致
+  （没加 --stage：清单里的补丁地址是占位的，只能本地看，不能发）
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+..✗ 更新说明里有内部编号、路径或掉率，改掉再发：修了 dev.453 的问题
+✗ 更新说明里有内部编号、路径或掉率，改掉再发：见 O-123
+✗ 更新说明里有内部编号、路径或掉率，改掉再发：改了 core/x.gd
+✗ 更新说明里有内部编号、路径或掉率，改掉再发：掉率提高
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpwjlel1za/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpwjlel1za/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpwjlel1za/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 742d8392、清单 b3b6bf25），没有推送
+· github：已在本机提交（包 742d8392、清单 b3b6bf25），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpwjlel1za/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpwjlel1za/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 465（玩家看到 0.465），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpwjlel1za/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpwjlel1za/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_465.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.465：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpwjlel1za/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+✗ 清单里的最新编号是 470，不能发更小的 465
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 4fdd1a24、清单 78b10812），没有推送
+· github：已在本机提交（包 4fdd1a24、清单 78b10812），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_475.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.475：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.475，有补丁的底包 ['453']，min_base 0，撤回 []，强制更新：开发编号低于 470 的进不了游戏
+· gitee：已在本机提交（包 2f0045a0、清单 cbdc7f2f），没有推送
+· github：已在本机提交（包 2f0045a0、清单 cbdc7f2f），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 480（玩家看到 0.480），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/out
+· 清单 channel.json、channel.sig 已写并验签：最新 0.480，有补丁的底包 ['453']，min_base 0，撤回 []，强制更新：开发编号低于 470 的进不了游戏
+· gitee：已在本机提交（包 无、清单 26991ccf），没有推送
+· github：已在本机提交（包 无、清单 26991ccf），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmph9e_8sx6/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+✗ 设了 min_playable（强制更新）就必须有手动下载页，不能同时 --download-url none：底包太旧的玩家只能靠它换整包，没有就卡在更新框里
+· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 强制更新没给下载页，默认用 https://gitee.com/kyoluu/play-again_-xiyou_-kyo/releases
+· 强制更新没给下载页，默认用 https://gitee.com/kyoluu/play-again_-xiyou_-kyo/releases
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，强制更新：开发编号低于 470 的进不了游戏
+· gitee：已在本机提交（包 51c579ec、清单 63f4c572），没有推送
+· github：已在本机提交（包 51c579ec、清单 63f4c572），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/out
+· 清单 channel.json、channel.sig 已写并验签：最新 0.475，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 无、清单 7560d04e），没有推送
+· github：已在本机提交（包 无、清单 7560d04e），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/out
+✗ --min-playable 476 比本次发布的编号 475 还大：玩家装到最新也过不了，会一直卡在更新框
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/out
+✗ --min-playable 要给开发编号（如 580）、latest 或 0，不认 abc
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/out
+✗ --download-url 要 https:// 开头（客户端不认别的）
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/out
+✗ 设了 min_playable（强制更新）就必须有手动下载页，不能同时 --download-url none：底包太旧的玩家只能靠它换整包，没有就卡在更新框里
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/out
+· 强制更新没给下载页，默认用 https://gitee.com/kyoluu/play-again_-xiyou_-kyo/releases
+· 强制更新没给下载页，默认用 https://gitee.com/kyoluu/play-again_-xiyou_-kyo/releases
+· 清单 channel.json、channel.sig 已写并验签：最新 0.475，有补丁的底包 ['453']，min_base 0，撤回 []，强制更新：开发编号低于 475 的进不了游戏
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7pbapbpi/out
+· 清单 channel.json、channel.sig 已写并验签：最新 0.475，有补丁的底包 ['453']，min_base 0，撤回 []，强制更新：开发编号低于 475 的进不了游戏
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpfugp705p/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpfugp705p/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+  （没加 --stage：清单里的补丁地址是占位的，只能本地看，不能发）
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+.✗ 私钥对应的公钥和游戏里内嵌的不是同一把（core/update_check.gd 的 PUBLIC_KEY）
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7ggzqu6u/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7ggzqu6u/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmp7ggzqu6u/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+✗ github 有没提交的改动，先处理
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptrb3z_0f/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptrb3z_0f/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptrb3z_0f/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 d6ff6871、清单 af123e1c），没有推送
+· github：已在本机提交（包 d6ff6871、清单 af123e1c），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptrb3z_0f/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptrb3z_0f/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 480（玩家看到 0.480），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptrb3z_0f/out
+· 清单 channel.json、channel.sig 已写并验签：最新 0.480，有补丁的底包 []，min_base 480，撤回 []，不强制更新
+· gitee：已在本机提交（包 无、清单 fb16ed90），没有推送
+· github：已在本机提交（包 无、清单 fb16ed90），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptrb3z_0f/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmptrb3z_0f/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmphf3iyw7j/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmphf3iyw7j/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmphf3iyw7j/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 ef7a7711、清单 64e768c0），没有推送
+· github：已在本机提交（包 ef7a7711、清单 64e768c0），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmphf3iyw7j/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmphf3iyw7j/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 cf5b5537、清单 e8d297d2），没有推送
+· github：已在本机提交（包 cf5b5537、清单 e8d297d2），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/base.pck（dev.460，0.0 MB）
+· 补丁 patch_460_470.pck：0.01 MB，三个预设导出一致
+· 0.460 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 460
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453', '460']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 44544c19、清单 67265e79），没有推送
+· github：已在本机提交（包 44544c19、清单 67265e79），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+· 当前开发编号 475（玩家看到 0.475），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_475.pck：0.00 MB，三个预设导出一致
+· 0.453 → 0.475：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.475，有补丁的底包 ['453', '460']，min_base 0，撤回 [470]，不强制更新
+· gitee：已在本机提交（包 0935df5d、清单 661d7e00），没有推送
+· github：已在本机提交（包 0935df5d、清单 661d7e00），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpw7e6u2u9/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.· 当前开发编号 470（玩家看到 0.470），输出 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpm7ro4xqq/out
+· 底包 /private/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpm7ro4xqq/base.pck（dev.453，0.0 MB）
+· 补丁 patch_453_470.pck：0.01 MB，三个预设导出一致
+· 0.453 → 0.470：补丁 2 个文件（0.00 MB），删掉 0 个；最低基线 453
+· 写了 /var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpm7ro4xqq/out/文件清单/patch_manifest.json、patch_manifest.sig（已验签）、patch_files.txt
+· 清单 channel.json、channel.sig 已写并验签：最新 0.470，有补丁的底包 ['453']，min_base 0，撤回 []，不强制更新
+· gitee：已在本机提交（包 6d00c023、清单 968f17d1），没有推送
+· github：已在本机提交（包 6d00c023、清单 968f17d1），没有推送
+下一步（等 Kyo 回「推」）：
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpm7ro4xqq/gitee" push origin main
+  git -C "/var/folders/43/nrsfzjvs6lv_3rg5j4f_qwz40000gn/T/tmpm7ro4xqq/github" push origin main
+  然后等一两分钟：python3 发布补丁.py --verify-online
+.
+----------------------------------------------------------------------
+Ran 21 tests in 13.106s
+
+OK
+  ✓ 发布补丁工具（清单、签名、两次提交）
+.............
+----------------------------------------------------------------------
+Ran 13 tests in 0.772s
+
+OK
+  ✓ 生成更新清单工具（比对、基线、签名）
+  ✓ 导出冒烟工具（结果解析与报告）
+  ✓ 切场景后调用扫描工具
+  ✓ 临时探针车道标签、clone 里 --补齐 转用主工作区脚本
+  ✓ 新建工作树 --快速（引擎软链、generated 克隆）
+  ✓ 补齐整轮重导入走长任务
+  ✓ 天启篇数据表校验（规则自检与回归）
+  ✓ 发行入口冒烟安卓分支
+  ✓ 发行出包（发行说明、旧目录、体积表）
+  ✓ 玩家资料包工具
+  ✗ 发行空壳工具回归失败，单跑 07_开发环境/测试发行空壳.py 看详情
+  ✓ Windows 实机冒烟（假 exe：入口、按键、存档目录）
+  ✓ 安卓实机冒烟（假 adb：返回键、新游戏、切后台、崩溃行、不碰真机）
+  ✓ 内容覆盖检查工具
+  ✓ 插件备注覆盖工具
+  ✓ 优化开关回退支覆盖检查
+  ✓ 探针五乘区检查
+  ✓ 工具快速回归门禁（门禁清单与早停）
+  ✓ 主工作区 main 提交守卫
+  ✓ 交付自检与待合看板（只读、试合并、快慢分道）
+  ✓ 选测对照与 检查.sh --affected
+  ✓ 扩角色同步提速（缓存携带、手动种子隔离、六难度共用并发池）
+  ✓ 事件探针分段并行（均衡分组、拼回顺序逐字相同）
+{"pages": 7141, "runnable": 7141, "counts": {"空页": 1182}, "hard": 0, "battleOnlyCommonEvents": 232, "new": 0, "resolved": 0}
+  ✓ 内容覆盖（无基线外新问题）
+用例 5959：空绿 92（全空 85、挡住 7），半空（有效果但另有分支没走到）1503
+按可达档：3档 85、2档 7 ；楼层地图 2；难度相关 0
+有状态变体 24699 个；仍无 delta 也无非文字 trace（观察面不够）1138 个：ce236#k13, ce1#c1, ce249#c1, m213e2p2#a3, ce1313#r1, ce334#r1, m4e8p0#s1, m187e2p0#s1, ce249#s1, m4e8p0#g3, m195e23p0#g3, ce1560#o1
+已补上，可更新基线（--update-baseline）：1 例，如 ce1604
+空绿 92 例，均在基线内
+其中写明走不到理由的 92 例，还没核的 0 例
+  ✓ 事件对照空绿（无基线外新增，变体与产物对得上）
+== MV 参照引擎
+  ✓ {"ms":3121,"scripts":277,"db":true,"plugins":165,"modulesFailed":[],"errors":[],"version":"v0.62.12"}
+{"releaseVersion": "v0.62.12", "inputs": 3435, "runtimeInputs": 411, "outputs": 3601, "issues": []}
+  ✓ 当前西游来源、转换产物、六难度参照同源
+== 失败项汇总（3 项）
+  ✗ 发行空壳缺成员：跑 07_开发环境/发行空壳.py check，照真脚本发行时的行为补 发行空壳特例.json
+  ✗ 合并工具回归失败
+  ✗ 发行空壳工具回归失败，单跑 07_开发环境/测试发行空壳.py 看详情
+== Git
+   M 04_验证/本地结果/t081_check.log
+有失败项，请先处理再提交
+
+TASK_RESULT={"runId": "238359d100db433abefa8c9eed2b7f77", "status": "failed", "exitCode": 1, "pid": 47069, "startedAt": "2026-11-17T01:25:20.937340+00:00", "command": ["03_再刷重制_Godot/07_开发环境/检查.sh", "--oracle", "--affected", "main", "--cloud"], "childPGID": 47080, "childIdentity": {"pid": 47080, "pgid": 47080, "startedAt": "Tue Nov 17 02:25:20 2026    "}, "startToken": "9e8a61ae875a4ffa9e4f3d3309c895f0", "launchdLabel": "xiyou.longtask.1794878720.9e8a61ae875a", "finishedAt": "2026-11-17T02:13:44.647619+00:00"}
