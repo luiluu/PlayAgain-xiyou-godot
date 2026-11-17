@@ -68,9 +68,10 @@ const DESC := {
 	"codexTestMode": "打开本机的测试功能。",
 	"codexGM": "打开测试工具。",
 	"codexWhatsNew": "再看一次这次更新了哪些内容。",
+	"codexConfigTransfer": "把当前设置导出成一段文本发给别人，或导入别人的配置，进入后操作。",
 }
 ## 子页类（确定进入，左右无用）
-const PAGE_SYMBOLS := ["HangUp", "pingbiDrop", "codexNotices", "codexAndroidControls", "codexQuality", "codexCostumes", "codexGM", "codexWhatsNew"]
+const PAGE_SYMBOLS := ["HangUp", "pingbiDrop", "codexNotices", "codexAndroidControls", "codexQuality", "codexCostumes", "codexGM", "codexWhatsNew", "codexConfigTransfer"]
 
 var scene: XOptionsScene
 var cats: Array = []   # [{key, name, icon, idx:[_list 下标]}]
