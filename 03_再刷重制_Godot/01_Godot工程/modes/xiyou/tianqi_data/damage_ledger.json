@@ -1206,9 +1206,9 @@
     "module": "module.black_flash",
     "field": "criticalAdd",
     "keep": false,
-    "reason": "原版黑闪暴伤 +100%～+160%（INCREMENT），不留。缺口：技能重构 v0.2 定的天启篇黑闪（甚尔爆伤 +30%、宿傩下一次斩击 +20%／领域中 +30%）卡里和 XTianqiModules 都没有落地，卡开着时黑闪的暴伤加成整份被拦；放白名单会放回原版数，所以不放，报协调另开单在 XBlackFlash 加天启分支（经 XTianqiModules，收口之后）"
+    "reason": "原版黑闪暴伤 +100%～+160%（INCREMENT），不留。缺口：技能重构 v0.2 定的天启篇黑闪（甚尔爆伤 +30%、宿傩下一次斩击 +20%／领域中 +30%）卡里和 XTianqiModules 都没有落地，卡开着时黑闪的暴伤加成整份被拦；放白名单会放回原版数，所以不放，报协调另开单在 XBlackFlash 加天启分支（经 XTianqiModules，收口之后）。T137 已补：天启篇版本在 XBlackFlash.tq_ops（经 XTianqiModules.damage_ops，收口之后）——甚尔黑闪那次爆伤 +30%（不按连闪涨）、觉醒 2 回合；五条悟 +30%（TQ_CRIT_GOJO，待 Kyo 拍板）；宿傩不加爆伤（卡只给下一次斩击 +20%／领域中 +30%，XSukuna.tq_ops）"
    }
   ],
-  "module_review_note": "T130 白名单初审（基础数值重构 v0.4 第七节第 3 条、第十节 T012-b 第 6 条）：夹具 xiyou_tianqi_phase4_modules 在总开关开着时把 15 个钩子『普攻、没改写、改写、派生』打出的增伤逐条列出（P4MOD_BOOST），每个（钩子, 字段）一条结论。初审结果：一条不留——都是原版数，天启篇版本已按技能重构 v0.2 写在卡或 XTianqiModules（收口之后）。module_whitelist（期四新键，总开关开着时 XTianqiLedger.whitelisted 另读它）因此为空；T012-d 定稿。"
+  "module_review_note": "T130 白名单初审（基础数值重构 v0.4 第七节第 3 条、第十节 T012-b 第 6 条）：夹具 xiyou_tianqi_phase4_modules 在总开关开着时把 15 个钩子『普攻、没改写、改写、派生』打出的增伤逐条列出（P4MOD_BOOST），每个（钩子, 字段）一条结论。初审结果：一条不留——都是原版数，天启篇版本已按技能重构 v0.2 写在卡或 XTianqiModules（收口之后）。module_whitelist（期四新键，总开关开着时 XTianqiLedger.whitelisted 另读它）因此为空；T012-d 定稿。 T137 更正计数：25 条＝17 个增伤（钩子, 字段）＋8 个不出增伤的钩子（T130 交付单误写 16＋9）。"
  }
 }
