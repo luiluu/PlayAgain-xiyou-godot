@@ -112,21 +112,41 @@ func _run() -> void:
 	_check("fixture_actor", a == s.actor(10), null if a == null else a.actor_id)
 	_party(b, a)
 	var tx: float = XSkin4A.safe_rect(b).position.x if XSkin4A.hud_on() else XSkinBattle.TOGGLE_POS.x   # 4A：跟挂机胶囊一起贴安全边距
-	var expect_sz := Vector2(60, 60) if XSkinBattle.ROUND_TOGGLES else Vector2(120, 46)
-	_check("toggles_moved", b.auto_btn.get_parent().position == Vector2(tx, b._origin.y + XSkinBattle.TOGGLE_POS.y) and b.auto_btn.custom_minimum_size == expect_sz and b.speed_btn.custom_minimum_size == expect_sz, [b.auto_btn.get_parent().position, b.auto_btn.custom_minimum_size])
+	var ty: float = XSkinBattle.ROUND_TOGGLE_Y if (XSkinBattle.ROUND_TOGGLES and XSkin4A.hud_on()) else XSkinBattle.TOGGLE_POS.y
+	var expect_sz := XSkinBattle.ROUND_TOGGLE_SIZE if XSkinBattle.ROUND_TOGGLES else Vector2(120, 46)
+	var expect_gap := XSkinBattle.ROUND_TOGGLE_GAP if XSkinBattle.ROUND_TOGGLES else 8
+	var side_parent := b.auto_btn.get_parent() as Control
+	_check("toggles_moved", side_parent.position == Vector2(tx, b._origin.y + ty) and b.auto_btn.custom_minimum_size == expect_sz and b.speed_btn.custom_minimum_size == expect_sz and side_parent.get_theme_constant("separation") == expect_gap, [side_parent.position, b.auto_btn.custom_minimum_size, side_parent.get_theme_constant("separation")])
 	_check("toggles_display_x1", XSkinBattle.toggle_display_lines("自动：关") == PackedStringArray(["自动", "关"]) and XSkinBattle.toggle_display_lines("自动：开") == PackedStringArray(["自动", "开"]) and XSkinBattle.toggle_display_lines("变速 OFF") == PackedStringArray(["变速", "×1"]) and XSkinBattle.toggle_display_lines("变速 四倍") == PackedStringArray(["变速", "×4"]))
 	# T125 回退开关校验（圆钮→横条胶囊、烟纱底→实心黑底、墨烟轨开关）
-	var side_parent := b.auto_btn.get_parent() as Control
 	XSkinBattle.ROUND_TOGGLES = false
 	XSkinBattle.style_toggles(side_parent, [b.auto_btn, b.speed_btn], b._origin)
-	_check("toggles_rollback_120x46", b.auto_btn.custom_minimum_size == Vector2(120, 46), b.auto_btn.custom_minimum_size)
+	_check("toggles_rollback_120x46", b.auto_btn.custom_minimum_size == Vector2(120, 46) and side_parent.position.y == b._origin.y + XSkinBattle.TOGGLE_POS.y and side_parent.get_theme_constant("separation") == 8, [b.auto_btn.custom_minimum_size, side_parent.position, side_parent.get_theme_constant("separation")])
 	XSkinBattle.ROUND_TOGGLES = true
 	XSkinBattle.style_toggles(side_parent, [b.auto_btn, b.speed_btn], b._origin)
+	var first_row: Node = b.status_rows.values()[0]
+	var backs: Array = first_row.get_parent().get_children().filter(func(c): return c is XSkinSideStatus.Back)
+	var back := backs[0] as XSkinSideStatus.Back if not backs.is_empty() else null
+	var so := b.otb as XSkinOTBBar
 	XSkinSideStatus.Back.SMOKE_BACK = false
 	XSkinOTBBar.SMOKE_RAIL = false
+	if back != null:
+		back.queue_redraw()
+	if so != null:
+		so.queue_redraw()
+	await _frames(2)
+	_check("smoke_back_off_drawn", back != null and not back._last_smoke_drawn, null if back == null else back._last_smoke_drawn)
+	_check("smoke_rail_off_drawn", so != null and not so._last_smoke_rail_drawn, null if so == null else so._last_smoke_rail_drawn)
 	_otb(b, a)
 	XSkinSideStatus.Back.SMOKE_BACK = true
 	XSkinOTBBar.SMOKE_RAIL = true
+	if back != null:
+		back.queue_redraw()
+	if so != null:
+		so.queue_redraw()
+	await _frames(2)
+	_check("smoke_back_on_drawn", back != null and back._last_smoke_drawn, null if back == null else back._last_smoke_drawn)
+	_check("smoke_rail_on_drawn", so != null and so._last_smoke_rail_drawn, null if so == null else so._last_smoke_rail_drawn)
 	await _boss(b)
 	await _shot("battle_2b_hud")
 	await _boss_detail(b)
