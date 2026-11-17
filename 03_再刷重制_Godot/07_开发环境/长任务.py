@@ -139,6 +139,147 @@ def stop(proc):
         print('停止任务进程组时出错：%s' % error, file=sys.stderr)
 
 
+# ── 只停自己的任务（T108，2026-11-17）──────────────────────────────────────────
+# 11-16 本机检查三次被 SIGTERM（09:05、18:06、21:24 UTC），每次都是某条车道想重起自己的检查，跑了
+# `pkill -f 检查.sh`／`pkill -f 并行测试.py`／`pkill -f Godot`：按名字匹配，全机所有车道的检查一起被杀。
+# 工具代码里没有任何按名字清进程的地方；缺的是「只停我这一轮」的现成命令。stop 只给登记过身份的进程组发信号。
+STOP_SUFFIX = '.stop'
+FOREIGN_TERM = '收到外来 SIGTERM（不是 长任务.py stop 发的，多半是别处跑了按名字的 pkill／killall）'
+OWN_STOP = '已由 长任务.py stop 主动停止'
+
+
+def registry_dir():
+    """本机正在跑的任务登记（每轮一个 <runId>.json，指向日志）；各工作树共用，stop --worktree 按它找自己树的任务。"""
+    return Path(os.environ.get('XIYOU_LONG_TASK_REGISTRY') or Path.home() / '.cache' / 'xiyou_longtasks')
+
+
+def worktree_of(path):
+    try:
+        out = subprocess.run(['git', 'rev-parse', '--show-toplevel'], cwd=str(path), capture_output=True,
+                             text=True, timeout=10)
+    except (OSError, subprocess.SubprocessError):
+        return ''
+    return str(Path(out.stdout.strip()).resolve()) if out.returncode == 0 and out.stdout.strip() else ''
+
+
+def register(job, log):
+    try:
+        d = registry_dir()
+        d.mkdir(parents=True, exist_ok=True)
+        atomic(d / (job['runId'] + '.json'), json.dumps(
+            {'runId': job['runId'], 'log': str(log), 'worktree': worktree_of(os.getcwd()), 'cwd': os.getcwd(),
+             'startedAt': job['startedAt']}, ensure_ascii=False) + '\n')
+    except OSError:
+        pass   # 登记失败只影响 stop --worktree 找不到它，stop <日志> 照旧可用
+
+
+def unregister(job):
+    try:
+        (registry_dir() / (job['runId'] + '.json')).unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
+def registered(worktree=None):
+    """登记里仍在跑的任务 [(登记, 状态)]；状态已终结或日志没了的登记顺手删掉。worktree=None 列全部。"""
+    out = []
+    d = registry_dir()
+    for f in sorted(d.glob('*.json')) if d.is_dir() else []:
+        try:
+            entry = json.loads(f.read_text())
+            state = json.loads(status_path(Path(entry['log'])).read_text())
+        except (OSError, ValueError, KeyError):
+            f.unlink(missing_ok=True)
+            continue
+        if state.get('runId') != entry.get('runId') or state.get('status') != 'running':
+            f.unlink(missing_ok=True)
+            continue
+        if worktree is None or entry.get('worktree') == worktree:
+            out.append((entry, state))
+    return out
+
+
+def alive_group(group):
+    return any(r['pgid'] == group and not r['zombie'] for r in process_table().values())
+
+
+def stop_task(log, grace=20):
+    """停一轮任务：先请包装器自己收尾（SIGTERM 给核实过身份的包装器，它停掉自己的进程组并写终态），
+    包装器不在或不收尾时才直接停核实过身份的任务进程组。绝不按名字找进程。返回 0 停了／本来就结束了，2 无法确认。"""
+    log = Path(log).resolve()
+    try:
+        state = json.loads(status_path(log).read_text())
+    except (OSError, ValueError):
+        print('没有有效的任务状态：%s' % log, file=sys.stderr)
+        return 2
+    if state.get('status') != 'running':
+        print('任务已是 %s，不用停：%s' % (state.get('status'), log))
+        return 0
+    run_id = state.get('runId')
+    atomic(Path(str(log) + STOP_SUFFIX), json.dumps({'runId': run_id, 'by': os.getpid()}) + '\n')
+    rows = process_table()
+    wrapper, wid = state.get('pid'), state.get('wrapperIdentity')
+    if type(wrapper) is int and wid and identity(rows.get(wrapper)) == wid:
+        try:
+            os.kill(wrapper, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        deadline = time.monotonic() + grace
+        while time.monotonic() < deadline:
+            try:
+                now = json.loads(status_path(log).read_text())
+            except (OSError, ValueError):
+                now = {}
+            if now.get('runId') != run_id or now.get('status') != 'running':
+                print('已停：%s（%s）' % (log, now.get('status')))
+                return 0
+            time.sleep(.1)
+    group, gid = state.get('childPGID'), state.get('childIdentity')
+    if type(group) is not int or group <= 1 or not gid:
+        print('状态里没有可核实的进程组身份，未发信号：%s' % log, file=sys.stderr)
+        return 2
+    if alive_group(group):
+        if identity(process_table().get(group)) != gid:
+            print('进程组身份已变（PID 被复用？），未发信号：%s' % log, file=sys.stderr)
+            return 2
+        signal_group(group, signal.SIGTERM)
+        deadline = time.monotonic() + 5
+        while time.monotonic() < deadline and alive_group(group):
+            time.sleep(.05)
+        if alive_group(group):
+            signal_group(group, signal.SIGKILL)
+            time.sleep(.3)
+    if alive_group(group):
+        print('进程组仍未退出：%s' % log, file=sys.stderr)
+        return 2
+    print('已停（直接停了任务进程组）：%s' % log)
+    return 0
+
+
+def stop_main(logs, worktree):
+    if logs:
+        targets = logs
+    else:
+        tree = str(Path(worktree).resolve()) if worktree else worktree_of(os.getcwd())
+        if not tree:
+            print('当前目录不在 git 工作树里；用 stop <日志> 指明要停哪一轮', file=sys.stderr)
+            return 2
+        found = registered(tree)
+        if not found:
+            print('本工作树（%s）没有登记在跑的任务' % tree)
+            return 0
+        targets = [e['log'] for e, _ in found]
+    return max(stop_task(t) for t in targets)
+
+
+def list_main(worktree, show_all):
+    tree = None if show_all else (str(Path(worktree).resolve()) if worktree else worktree_of(os.getcwd()))
+    for entry, state in registered(tree):
+        print('%s  %s  %s  %s' % (entry['startedAt'][:19], entry.get('worktree') or entry.get('cwd'),
+                                  entry['log'], ' '.join(map(str, state.get('command', [])))[-80:]))
+    return 0
+
+
 def run(log, command, idle=3600, poll=0.2, start_token=None):
     log = Path(log).resolve()
     attach = os.environ.pop('XIYOU_LONG_TASK_ERR', None)
@@ -167,7 +308,9 @@ def run(log, command, idle=3600, poll=0.2, start_token=None):
                 return 2
         job = {'runId': uuid.uuid4().hex, 'status': 'running', 'exitCode': None, 'pid': os.getpid(),
                'startedAt': dt.datetime.now(dt.timezone.utc).isoformat(), 'command': command,
-               'childPGID': None, 'childIdentity': None}
+               'childPGID': None, 'childIdentity': None,
+               'wrapperIdentity': identity(process_table().get(os.getpid()))}
+        Path(str(log) + STOP_SUFFIX).unlink(missing_ok=True)
         if start_token:
             job['startToken'] = start_token
         label = os.environ.get('XIYOU_LONG_TASK_LABEL')
@@ -197,15 +340,22 @@ def run(log, command, idle=3600, poll=0.2, start_token=None):
             old_term = signal.getsignal(signal.SIGTERM)
             def interrupted(_signum, _frame):
                 interrupted_code[0] = 128 + _signum
+                job['reason'] = OWN_STOP if own_stop_requested() else FOREIGN_TERM
                 raise KeyboardInterrupt
+            def own_stop_requested():
+                try:
+                    return json.loads(Path(str(log) + STOP_SUFFIX).read_text()).get('runId') == job['runId']
+                except (OSError, ValueError):
+                    return False
             signal.signal(signal.SIGTERM, interrupted)
             try:
-                env = dict(os.environ, XIYOU_LONG_TASK_MANAGED='1', PYTHONUNBUFFERED='1')
+                env = dict(os.environ, XIYOU_LONG_TASK_MANAGED='1', PYTHONUNBUFFERED='1', XIYOU_LONG_TASK_LOG=str(log))
                 env.pop('XIYOU_LONG_TASK_LABEL', None)  # 任务里再嵌套 run 时不要认成自己的作业
                 proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         env=env, start_new_session=True)
                 job.update(childPGID=proc.pid, childIdentity=identity(process_table().get(proc.pid)))
                 atomic(status_path(log), json.dumps(job) + '\n')
+                register(job, log)
                 reader = threading.Thread(target=forward, daemon=True)
                 reader.start()
                 while proc.poll() is None:
@@ -217,6 +367,8 @@ def run(log, command, idle=3600, poll=0.2, start_token=None):
                 else:
                     code = proc.returncode if proc.returncode >= 0 else 128 - proc.returncode
                     state = 'done' if code == 0 else 'failed'
+                    if proc.returncode in (-signal.SIGTERM, 128 + signal.SIGTERM):   # 信号直接打在任务进程上（没经过包装器）
+                        job['reason'] = OWN_STOP if own_stop_requested() else FOREIGN_TERM
                 reader.join(timeout=3)
                 if reader.is_alive():
                     stop(proc)
@@ -230,6 +382,7 @@ def run(log, command, idle=3600, poll=0.2, start_token=None):
                 output.write((str(error) + '\n').encode())
             finally:
                 signal.signal(signal.SIGTERM, old_term)
+                unregister(job)
                 orphaned = False
                 if reader and reader.is_alive():
                     reader.join(timeout=3)
@@ -255,6 +408,7 @@ def run(log, command, idle=3600, poll=0.2, start_token=None):
                     # The terminal status is published last, after the marker and exit code.
                     atomic(Path(str(log) + '.exit'), str(code) + '\n')
                     atomic(status_path(log), json.dumps(job, ensure_ascii=False) + '\n')
+                    Path(str(log) + STOP_SUFFIX).unlink(missing_ok=True)
                     print(marker, end='', flush=True)
             if orphaned:
                 return 2
@@ -506,6 +660,12 @@ def main():
     waiter = sub.add_parser('wait')
     waiter.add_argument('log', type=Path)
     waiter.add_argument('--timeout', type=float, default=0)
+    stopper = sub.add_parser('stop', help='只停自己的任务：stop <日志>…，或不给日志时停本工作树登记在跑的全部任务')
+    stopper.add_argument('log', type=Path, nargs='*')
+    stopper.add_argument('--worktree', help='停这个工作树的任务（默认当前目录所在工作树）')
+    lister = sub.add_parser('list', help='列本工作树（--all 全机）登记在跑的任务')
+    lister.add_argument('--worktree')
+    lister.add_argument('--all', action='store_true')
     argv = sys.argv[1:]
     command = []
     if argv[:1] in (['run'], ['start']) and '--' in argv:
@@ -514,6 +674,10 @@ def main():
     a = ap.parse_args(argv)
     if a.mode == 'wait':
         return wait(a.log, a.timeout)
+    if a.mode == 'stop':
+        return stop_main(a.log, a.worktree)
+    if a.mode == 'list':
+        return list_main(a.worktree, a.all)
     if not command:
         ap.error('缺少任务命令')
     if a.mode == 'start':
