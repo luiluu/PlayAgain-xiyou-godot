@@ -147,6 +147,8 @@ static func start_auto() -> bool:
 
 
 func _ready() -> void:
+	XSkinBattle.reset_help()  # T107：旧说明卡「详情」展开状态每场重置（开战、收场各清一次）
+	tree_exiting.connect(XSkinBattle.reset_help)
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	theme = XUI.theme()
 	mouse_filter = Control.MOUSE_FILTER_STOP

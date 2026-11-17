@@ -91,6 +91,11 @@ static var HELP_COLLAPSE := true
 static var help_open := false
 
 
+## T107（T096 核 P2）：static 的 help_open 跨战斗残留——每场开战、收场都清回收起（XBattleScene 调）
+static func reset_help() -> void:
+	help_open = false
+
+
 ## XBattleScene._help 问：这次要不要显示旧说明卡
 static func help_card_shown() -> bool:
 	return not (on() and HELP_COLLAPSE) or help_open

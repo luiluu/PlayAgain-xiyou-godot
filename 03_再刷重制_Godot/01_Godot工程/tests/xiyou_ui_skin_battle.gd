@@ -141,9 +141,11 @@ func _run() -> void:
 	XMessageBox.auto = false
 	map._set_busy(true)
 	var go := func(): await map.start_battle(2, true, false)
+	XSkinBattle.help_open = true   # T107：上一场残留的「详情」展开，新一场开战必须收起
 	go.call()
 	ok = await _until(func(): return _battle(map) != null and _battle(map).cmd_win != null)
 	_check("command_shown", ok)
+	_check("help_open_reset_on_start", not XSkinBattle.help_open)
 	var b: XBattleScene = _battle(map)
 	if b == null:
 		_finish()
@@ -160,6 +162,10 @@ func _run() -> void:
 	_ring_layout(b)
 	await _list_avoid_otb(b)
 	await _skin_off(b, a)
+	XSkinBattle.help_open = true   # T107：收场（离树）也要清回收起
+	b.queue_free()
+	await _frames(2)
+	_check("help_open_reset_on_exit", not XSkinBattle.help_open)
 	_finish()
 
 
