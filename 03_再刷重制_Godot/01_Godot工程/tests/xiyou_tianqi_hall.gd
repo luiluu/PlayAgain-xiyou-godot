@@ -280,7 +280,7 @@ func _live() -> void:
 	XMessageBox.transcript.clear()
 	await map.run_event(_event(map, 71))
 	var ev71_said := "\n".join(XMessageBox.transcript)
-	_check("live_ev71_t133", ev71_said.contains("再刷一把·天启篇") and ev71_said.contains("天启篇要点") and ev71_said.contains("选择：下一页") and ev71_said.contains("装备检索、批量抽奖与用丹") and not ev71_said.contains("战力评估") and not ev71_said.contains("KYO改版") and not ev71_said.contains("v0.62"), XMessageBox.transcript.duplicate())
+	_check("live_ev71_t133", ev71_said.contains("再刷一把·天启篇") and ev71_said.contains("天启篇要点") and ev71_said.contains("选择：下一页") and ev71_said.contains("装备检索、批量抽奖、法宝喂养") and not ev71_said.contains("用丹") and not ev71_said.contains("战力评估") and not ev71_said.contains("KYO改版") and not ev71_said.contains("v0.62"), XMessageBox.transcript.duplicate())
 	XMessageBox.auto_answers = [0, 1, 4]
 	XMessageBox.transcript.clear()
 	await map.run_event(_event(map, 73))
@@ -364,8 +364,11 @@ func _hall_text() -> void:
 						if joined.contains(bad):
 							leak.append([eid, i, bad, joined])
 				elif int(cmd.code) == 102:
-					var m2 := {"choices": (cmd.parameters[0] as Array).duplicate()}
+					var raw_choices: Array = cmd.parameters[0]
+					var m2 := {"choices": raw_choices.duplicate()}
 					m2 = XTianqiHallText.rewrite_choices(s, 4, eid, m2)
+					if m2.choices.size() != raw_choices.size():
+						leak.append([eid, "choice_size", i, raw_choices.size(), m2.choices.size()])
 					var cj := "|".join(m2.choices)
 					if eid == 71:
 						ev71_all += cj + "\n"
@@ -373,6 +376,10 @@ func _hall_text() -> void:
 						if cj.contains(bad):
 							leak.append([eid, "choice", i, bad, cj])
 	_check("npcs_no_xiyou_leaks", leak.is_empty(), leak)
+	var ev71_forbidden := ["Boss", "boss", "神武", "12.27", "×0.01", "境界", "大境界", "大圆满", "赌场", "移植", "真气乘算伤害", "真气（伤害加成）", "丹药批量使用", "用丹", "花橙、落芸、苍龙破晓等已停用"]
+	var ev71_leaks := ev71_forbidden.filter(func(b): return ev71_all.contains(b))
+	_check("ev71_t139_no_residue", ev71_leaks.is_empty(), ev71_leaks)
+	_check("ev71_t139_wording_locked", ev71_all.contains("助力位与后备均不计入") and ev71_all.contains("36层四骑士不吃霸体、改用各自阶段规则") and ev71_all.contains("当前仅用于闭关突破并领取属性与道法奖励") and ev71_all.contains("神器装备与打造") and ev71_all.contains("抽奖与法宝喂养") and ev71_all.contains("成长机制怎么看") and ev71_all.contains("品质、检索与排序") and ev71_all.contains("开放与停用角色") and ev71_all.contains("丹药下架与法宝喂养"), "missing t139 wording")
 	_check("ev73_fixed_face_index", ev73_faces == [6, 6, 6, 6], ev73_faces)
 	var ev26_m := XTianqiHallText.rewrite_message(s, 4, 26, {"face": "", "index": 0, "lines": ["\\n<奇怪的老太>又来\\c[4]白票\\c[0]啊。"]})
 	_check("p2_p3_wording_locked", ev71_all.contains("封卷") and ev71_all.contains("号卷不返还") and ev71_all.contains("每卷每个存档只掉一次") and ev71_all.contains("证道暂未开放") and ev71_all.contains("（暂未开放）将一命通关") and ev71_all.contains("下一页|返回") and str(ev26_m.lines[0]).contains("这些滑稽币拿去吧"), [ev26_m, ev71_all.contains("封卷"), ev71_all.contains("证道暂未开放")])

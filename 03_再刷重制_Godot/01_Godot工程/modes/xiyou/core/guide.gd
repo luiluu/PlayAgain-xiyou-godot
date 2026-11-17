@@ -400,12 +400,44 @@ static func _power_line(seg: Dictionary) -> String:
 		XHonghuang._fixed1(XHonghuang.power_chance(s) * 100.0), XHonghuang._fixed1(XHonghuang.party_bonus(s))]
 
 
-## 区段原表保留冻结来源；显示内容遵循已定数值原则与当前实际掉率。
-static func milestone_intro(seg: Dictionary) -> String:
+static var TIANQI_MILESTONE_ENABLED := true
+
+
+static func _tianqi_milestone_on(s = null) -> bool:
+	var st = s if s != null else XState.current
+	return TIANQI_MILESTONE_ENABLED and st != null and XTianqi.active(st)
+
+
+static func milestone_title(seg: Dictionary, s = null) -> String:
+	var title := str(seg.get("title", ""))
+	if _tianqi_milestone_on(s):
+		return title.replace("神魔之塔", "高塔")
+	return title
+
+
+## 区段原表保留冻结来源；显示内容遵循已定数值原则与当前实际掉率（天启篇存档单独改写为天启篇规则）。
+static func milestone_intro(seg: Dictionary, s = null) -> String:
 	var intro := str(seg.intro)
+	var rate := pct(float(XDB.table("CodexOrbs").get("dropRate", 0.1)))
+	if _tianqi_milestone_on(s):
+		match str(seg.key):
+			"a":
+				return "守层者每层只能打一次，首通给大量真气；每通关 5 层高塔还可抽取一位新伙伴。副本首领可反复刷，胜利给肝帝积分抽奖券（方桌大厅抽奖）和真气，并有 %s 掉未鉴定神秘珠（菜单「宝珠坊」鉴定，高层品质更好）。可随时向方桌大厅的「改版向导」或「商店向导」查看指引。" % rate
+			"b":
+				return "真气攒至突破瓶颈后，打开菜单「真气」（或方桌大厅「闭关」）挑战瓶颈之战，可按阶段领取固定与自选突破奖励；还可挑战神兵试炼，降服兵仙后即可指定本命兵。本段副本首领起也会掉落Ⅱ阶通用祝福石。"
+			"c":
+				return "首通守层者与反复挑战副本首领均可积累真气，用于闭关突破并领取属性与道法奖励（当前不直接乘算伤害）。13层起深渊抽书更容易出高等级秘境被动书；13层不朽深渊的未知存在还会掉落神器「心之钢」与「狂妄」。"
+			"d":
+				return "打开状态界面「%s」页的难度对照，核对暴击率、爆伤、命中、攻击与结算伤害的难度影响，再通过装备、词条、秘境被动书与种族祝福调整队伍。" % ("修行·详细" if PANEL_V062 else "修行")
+			"e":
+				return "专属掉落集中在深渊副本：同一个首领可以反复刷，书上写有来源；19层起抽秘境被动书更容易出高等级。"
+			"f":
+				return "后段敌人有固定减伤：打不穿时优先提高攻击、元素与技能增伤、暴击爆伤、破防或固定减伤穿透；结算类倍率也在固定减伤之前计算。"
+			"g":
+				return "高塔后段难度按本档难度系数与强弱档位结算，33层之后仍会延续至34～36层；炼狱、证道难度还可在不朽存在处获取号卷。「修行·详细」页的难度对照可以帮你判断差在哪。"
+		return intro
 	match str(seg.key):
 		"a":
-			var rate := pct(float(XDB.table("CodexOrbs").get("dropRate", 0.1)))
 			return intro.replace("20%", rate)
 		"c":
 			return "首通守层者可以获得真气；副本首领可以反复挑战。积累真气、突破境界、学习道法，提升队伍能力。"
@@ -417,14 +449,15 @@ static func milestone_intro(seg: Dictionary) -> String:
 
 
 ## G.milestoneTexts
-static func milestone_texts(seg: Dictionary) -> Array:
-	var t := ["\\C[6]%s\\C[0]　%s" % [seg.title, milestone_intro(seg)]]
+static func milestone_texts(seg: Dictionary, s = null) -> Array:
+	var t := ["\\C[6]%s\\C[0]　%s" % [milestone_title(seg, s), milestone_intro(seg, s)]]
 	if not seg.get("bosses", []).is_empty():
 		t.append("\\C[4]可反复刷的副本首领\\C[0]：" + _boss_summary(seg, 4) + "。")
 	var more: Array = seg.get("special", []).duplicate()
-	var pw := _power_line(seg)
-	if pw != "":
-		more.append(pw)
+	if not _tianqi_milestone_on(s):
+		var pw := _power_line(seg)
+		if pw != "":
+			more.append(pw)
 	if not more.is_empty():
 		t.append("".join(PackedStringArray(more)))
 	return t

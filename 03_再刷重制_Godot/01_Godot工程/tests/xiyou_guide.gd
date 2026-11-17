@@ -7,6 +7,7 @@ const Z := preload("res://tests/lib/zh_fwd.gd")
 
 const ORACLE := "res://modes/xiyou/generated/oracle/guide.json"
 const Base := preload("res://tests/xiyou_zhenqi.gd")
+const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results := []
 var s: XState
 var _cmp = Base.new()
@@ -134,6 +135,7 @@ func _run() -> void:
 	_word_wrap()
 	await _shop_flow(shop_list)
 	await _map_milestone()
+	await _tianqi_milestone()
 	var failed := results.filter(func(r): return not r.passed)
 	_cmp.free()
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_guide", "passed": results.size() - failed.size(), "total": results.size(), "failed": failed.map(func(r): return r.name)}))
@@ -262,3 +264,48 @@ func _map_milestone() -> void:
 	XMessageBox.auto = false
 	DirAccess.remove_absolute(XConfig.path_override)
 	DirAccess.remove_absolute(XSave.dir())
+
+
+func _tianqi_milestone() -> void:
+	var kit = Kit.new("xiyou_guide_tq")
+	XConfig.whisper_mark("rift1")
+	XConfig.whisper_mark("rift2")
+	var tq := Kit.new_game("jiusi")
+	var by := {}
+	for x in XGuide.atlas():
+		by[str(x.key)] = x
+	var all_tq := ""
+	for k in by:
+		var seg: Dictionary = by[k]
+		var tt := XGuide.milestone_title(seg, tq)
+		var txt := "\n".join(XGuide.milestone_texts(seg, tq))
+		all_tq += txt + "\n"
+		check("tq_title_" + k, tt.begins_with("高塔 ") and not tt.contains("神魔之塔"), tt)
+	var bad_tq := ["神魔之塔", "洪荒", "诅咒", "权能", "境界", "大境界", "大圆满", "赌场", "乘区", "和真气调整", "、真气或"]
+	var leaks := bad_tq.filter(func(b): return all_tq.contains(b))
+	check("tq_milestone_no_residue", leaks.is_empty(), leaks)
+	check("tq_milestone_content", XGuide.milestone_intro(by.a, tq).contains("5 层高塔") and XGuide.milestone_intro(by.a, tq).contains("10%") and XGuide.milestone_intro(by.b, tq).contains("突破瓶颈") and XGuide.milestone_intro(by.b, tq).contains("通用祝福石") and XGuide.milestone_intro(by.c, tq).contains("秘境被动书") and XGuide.milestone_intro(by.c, tq).contains("心之钢") and XGuide.milestone_intro(by.d, tq).contains("修行·详细") and XGuide.milestone_intro(by.e, tq).contains("19层起") and XGuide.milestone_intro(by.f, tq).contains("固定减伤") and XGuide.milestone_intro(by.g, tq).contains("34～36层") and XGuide.milestone_intro(by.g, tq).contains("号卷"), all_tq)
+	# 回退开关：关掉后回到西游原样文字
+	XGuide.TIANQI_MILESTONE_ENABLED = false
+	check("tq_milestone_rollback", XGuide.milestone_title(by.a, tq) == "神魔之塔 1～6 层" and "\n".join(XGuide.milestone_texts(by.c, tq)).contains("突破境界"), XGuide.milestone_texts(by.a, tq))
+	XGuide.TIANQI_MILESTONE_ENABLED = true
+	# 西游档：里程碑文字保持西游版
+	_fresh()
+	check("plain_milestone_kept", XGuide.milestone_title(by.a, s) == "神魔之塔 1～6 层" and "\n".join(XGuide.milestone_texts(by.c, s)).contains("突破境界"), XGuide.milestone_texts(by.a, s))
+	# 真地图：天启篇档进大厅首弹「高塔 1～6 层」且仅弹一次
+	tq = Kit.new_game("jiusi")
+	tq.map_id = 4
+	tq.x = 14
+	tq.y = 23
+	XMessageBox.auto = true
+	XMessageBox.transcript.clear()
+	var map := XMapScene.new()
+	add_child(map)
+	await _frames(90)
+	check("tq_map_milestone_a", _count("高塔 1～6 层") == 1 and _count("神魔之塔") == 0 and _count("5 层高塔") == 1 and XGuide.seen(tq, "seg:a"), XMessageBox.transcript)
+	await _frames(90)
+	check("tq_map_milestone_once", _count("高塔 1～6 层") == 1, XMessageBox.transcript)
+	map.queue_free()
+	await _frames(2)
+	XMessageBox.auto = false
+	kit.teardown()
