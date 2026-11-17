@@ -1695,6 +1695,8 @@ func battle_start_state_tags() -> Array:
 		for o in objs:
 			if o.has("stypeId") and XTianqiLedger.skips_passive(int(o.get("id", 0))):
 				continue  # 伤害加成总账期二：万灵增元丹类被动（5974～5977）天启篇不生效
+			if XTianqiLedger.nine_off_suit_skill(self, o):
+				continue  # T082（T137 核 P2）：原版套装给的技能开战挂的状态（套装 164／186 的 3609、3863 → 524「攻击次数 +1」）同九线停用
 			for k in o.get("meta", {}):
 				var key := str(k)
 				if key.begins_with(prefix) and key.substr(prefix.length()).is_valid_int():
