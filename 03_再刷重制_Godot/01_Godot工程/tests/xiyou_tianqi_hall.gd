@@ -241,7 +241,7 @@ func _live() -> void:
 	XMessageBox.transcript.clear()
 	await map.run_event(_event(map, 1))
 	var ev1_p0 := "\n".join(XMessageBox.transcript)
-	_check("live_ev1_p0_t133", ev1_p0.contains("找我有什么事，还是来领东西？") and ev1_p0.contains("称号、改名与打听") and ev1_p0.contains("又来一位新面孔") and not ev1_p0.contains("捕捉网"), XMessageBox.transcript.duplicate())
+	_check("live_ev1_p0_t133", ev1_p0.contains("找我有什么事，还是来领东西？") and ev1_p0.contains("称号、改名与打听") and ev1_p0.contains("路还得你自己走") and not ev1_p0.contains("捕捉网"), XMessageBox.transcript.duplicate())
 	XMessageBox.auto_answers = [0, 3, 5]
 	XMessageBox.transcript.clear()
 	await map.run_event(_event(map, 1))
@@ -255,7 +255,7 @@ func _live() -> void:
 	XMessageBox.transcript.clear()
 	await map.run_event(_event(map, 70))
 	var ev70_said := "\n".join(XMessageBox.transcript)
-	_check("live_ev70_t133", ev70_said.contains("蜜雪冰城传送点") and ev70_said.contains("选择：先不去") and not ev70_said.contains("宝宝巴士") and map.map_id == 4, XMessageBox.transcript.duplicate())
+	_check("live_ev70_t133", ev70_said.contains("蜜雪冰城传送点") and ev70_said.contains("各种福利补给和兑换") and ev70_said.contains("选择：先不去") and not ev70_said.contains("宝宝巴士") and not ev70_said.contains("测试补给") and map.map_id == 4, XMessageBox.transcript.duplicate())
 	# 大工匠 7、镜子 21、牢妲 62
 	XMessageBox.auto_answers = [3]
 	XMessageBox.transcript.clear()
@@ -280,12 +280,12 @@ func _live() -> void:
 	XMessageBox.transcript.clear()
 	await map.run_event(_event(map, 71))
 	var ev71_said := "\n".join(XMessageBox.transcript)
-	_check("live_ev71_t133", ev71_said.contains("再刷一把·天启篇") and ev71_said.contains("天启篇要点") and ev71_said.contains("基础便利功能") and not ev71_said.contains("KYO改版") and not ev71_said.contains("v0.62"), XMessageBox.transcript.duplicate())
+	_check("live_ev71_t133", ev71_said.contains("再刷一把·天启篇") and ev71_said.contains("天启篇要点") and ev71_said.contains("选择：下一页") and ev71_said.contains("装备检索、批量抽奖与用丹") and not ev71_said.contains("战力评估") and not ev71_said.contains("KYO改版") and not ev71_said.contains("v0.62"), XMessageBox.transcript.duplicate())
 	XMessageBox.auto_answers = [0, 1, 4]
 	XMessageBox.transcript.clear()
 	await map.run_event(_event(map, 73))
 	var ev73_said := "\n".join(XMessageBox.transcript)
-	_check("live_ev73_t133", ev73_said.contains("天启篇主要货币") and ev73_said.contains("天平") and not ev73_said.contains("天道币") and not ev73_said.contains("动保协会"), XMessageBox.transcript.duplicate())
+	_check("live_ev73_t133", ev73_said.contains("天启篇主要货币") and ev73_said.contains("天平") and ev73_said.contains("神器栏的仙道模式") and not ev73_said.contains("神武与仙道模式") and not ev73_said.contains("天道币") and not ev73_said.contains("动保协会"), XMessageBox.transcript.duplicate())
 	# 名单：改版向导说
 	XMessageBox.auto_answers = [_labels(map, s, 71).find("强者名单")]
 	XMessageBox.transcript.clear()
@@ -334,9 +334,10 @@ func _hall_text() -> void:
 	_check("t079_p3_host1", str(XTianqiHall.HOSTS[1][2]).contains("找我有什么事，还是来领东西？") and str(XTianqiHall.HOSTS[1][3]) == "称号、改名与打听", XTianqiHall.HOSTS[1])
 	_check("t079_p3_given", XTianqiHall.GIVEN_LINE == "给你，收好了。", XTianqiHall.GIVEN_LINE)
 	# 2. 7 个改文案 NPC 全页跑 rewrite_message / rewrite_choices：零西游词
-	var forbidden := ["神魔之塔", "天道币", "逆天币", "天道加持", "天道使者", "洪荒", "灭世", "天灾", "地狱", "混沌难度", "混沌鸿蒙", "鸿蒙", "求道者", "赌狗", "动保协会", "宝宝巴士", "捕捉网", "捕诱器", "迈达斯"]
+	var forbidden := ["神魔之塔", "天道币", "逆天币", "天道加持", "天道使者", "洪荒", "灭世", "天灾", "地狱", "混沌难度", "混沌鸿蒙", "鸿蒙", "求道者", "赌狗", "动保协会", "宝宝巴士", "捕捉网", "捕诱器", "迈达斯", "遗忘符", "战力评估"]
 	var leak := []
 	var ev73_faces := []
+	var ev71_all := ""
 	for eid in [1, 7, 21, 70, 71, 73]:
 		var ev := _ev(4, eid)
 		for p in ev.get("pages", []):
@@ -357,6 +358,8 @@ func _hall_text() -> void:
 					if eid == 73 and i in [13, 15, 17, 19]:
 						ev73_faces.append(int(msg.index))
 					var joined := "\n".join(msg.lines)
+					if eid == 71:
+						ev71_all += joined + "\n"
 					for bad in forbidden:
 						if joined.contains(bad):
 							leak.append([eid, i, bad, joined])
@@ -364,11 +367,15 @@ func _hall_text() -> void:
 					var m2 := {"choices": (cmd.parameters[0] as Array).duplicate()}
 					m2 = XTianqiHallText.rewrite_choices(s, 4, eid, m2)
 					var cj := "|".join(m2.choices)
+					if eid == 71:
+						ev71_all += cj + "\n"
 					for bad in forbidden:
 						if cj.contains(bad):
 							leak.append([eid, "choice", i, bad, cj])
 	_check("npcs_no_xiyou_leaks", leak.is_empty(), leak)
 	_check("ev73_fixed_face_index", ev73_faces == [6, 6, 6, 6], ev73_faces)
+	var ev26_m := XTianqiHallText.rewrite_message(s, 4, 26, {"face": "", "index": 0, "lines": ["\\n<奇怪的老太>又来\\c[4]白票\\c[0]啊。"]})
+	_check("p2_p3_wording_locked", ev71_all.contains("封卷") and ev71_all.contains("号卷不返还") and ev71_all.contains("每卷每个存档只掉一次") and ev71_all.contains("证道暂未开放") and ev71_all.contains("（暂未开放）将一命通关") and ev71_all.contains("下一页|返回") and str(ev26_m.lines[0]).contains("这些滑稽币拿去吧"), [ev26_m, ev71_all.contains("封卷"), ev71_all.contains("证道暂未开放")])
 	# 3. 牢妲 face = naxida#0 + 新台词
 	var fake := _FakeLaodaHost.new()
 	await XTianqiTrim.run_laoda(fake, s)
