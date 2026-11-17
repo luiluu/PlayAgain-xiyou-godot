@@ -1,5 +1,7 @@
 {
   "scale": 0.09,
+  "wait_scale": 0.072,
+  "wait_reason": "Approved raw uniformly reduced to match new-action head size; content unchanged, no head composite",
   "frames": [
     {
       "motion": "walk",
@@ -85,17 +87,83 @@
     {
       "motion": "wait",
       "frame": 0,
-      "frozen": true
+      "source_bbox": [
+        107,
+        12,
+        585,
+        712
+      ],
+      "scale": 0.072,
+      "translation": [
+        14,
+        14
+      ],
+      "reference_bbox": [
+        9,
+        4,
+        53,
+        64
+      ],
+      "output_bbox": [
+        14,
+        14,
+        48,
+        64
+      ]
     },
     {
       "motion": "wait",
       "frame": 1,
-      "frozen": true
+      "source_bbox": [
+        824,
+        6,
+        1309,
+        712
+      ],
+      "scale": 0.072,
+      "translation": [
+        14,
+        13
+      ],
+      "reference_bbox": [
+        9,
+        4,
+        53,
+        64
+      ],
+      "output_bbox": [
+        14,
+        13,
+        49,
+        64
+      ]
     },
     {
       "motion": "wait",
       "frame": 2,
-      "frozen": true
+      "source_bbox": [
+        1555,
+        24,
+        2032,
+        712
+      ],
+      "scale": 0.072,
+      "translation": [
+        14,
+        14
+      ],
+      "reference_bbox": [
+        9,
+        4,
+        53,
+        64
+      ],
+      "output_bbox": [
+        14,
+        14,
+        48,
+        64
+      ]
     },
     {
       "motion": "chant",

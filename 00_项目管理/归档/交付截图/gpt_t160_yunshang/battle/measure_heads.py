@@ -10,7 +10,7 @@ P=Path(__file__).resolve().parent;R=P.parents[4];C=R/'03_再刷重制_Godot/01_G
 M=json.loads((P/'motions.json').read_text());A=json.loads((P/'assembly.json').read_text())['frames']
 # Crown-to-chin landmarks relative to full silhouette's top, read from final
 # nearest-neighbour review. Inclined/reclining poses measured in screen axes.
-landmarks={'walk':[(5,29)]*3,'wait':[(6,36)]*3,'chant':[(5,29)]*3,'guard':[(5,29)]*3,'damage':[(5,26),(3,26),(5,28)],'evade':[(5,28),(3,26),(5,28)],'thrust':[(5,28)]*3,'swing':[(5,28)]*3,'missile':[(5,29)]*3,'skill':[(5,29)]*3,'spell':[(5,29)]*3,'item':[(5,28)]*3,'escape':[(5,27)]*3,'victory':[(5,29)]*3,'dying':[(5,28),(5,28),(5,27)],'abnormal':[(5,29)]*3,'sleep':[(5,26)]*3,'dead':[(5,26)]*3}
+landmarks={'walk':[(5,29)]*3,'wait':[(5,29)]*3,'chant':[(5,29)]*3,'guard':[(5,29)]*3,'damage':[(5,26),(3,26),(5,28)],'evade':[(5,28),(3,26),(5,28)],'thrust':[(5,28)]*3,'swing':[(5,28)]*3,'missile':[(5,29)]*3,'skill':[(5,29)]*3,'spell':[(5,29)]*3,'item':[(5,28)]*3,'escape':[(5,27)]*3,'victory':[(5,29)]*3,'dying':[(5,28),(5,28),(5,27)],'abnormal':[(5,29)]*3,'sleep':[(5,26)]*3,'dead':[(5,26)]*3}
 review=Image.open(P/'assembled_native.png').convert('RGB');d=ImageDraw.Draw(review);out=[]
 for i,m in enumerate(M):
  for j in range(3):
