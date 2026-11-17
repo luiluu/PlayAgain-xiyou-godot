@@ -111,7 +111,7 @@ func _draw() -> void:
 	var label := "第 %d / %d 页" % [page, pages]
 	var fs := XUiSkin.FS_AUX
 	var lw := body.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	draw_string(body, Vector2((size.x - lw) / 2.0, size.y / 2.0 + fs * 0.36), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
+	XUiSkin.ds(self, body, Vector2((size.x - lw) / 2.0, size.y / 2.0 + fs * 0.36), label, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
 	for side in [-1, 1]:
 		var r := button_rect(side).grow(-3)
 		var on := _enabled(side)

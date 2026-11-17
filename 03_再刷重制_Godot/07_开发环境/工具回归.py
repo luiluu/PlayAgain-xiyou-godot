@@ -43,6 +43,7 @@ GATE = [
     ('Windows 实机冒烟', '测试Windows实机冒烟.py', [], '假 exe：入口、按键、存档目录不落 _开发、按键组与发行入口冒烟一致'),
     ('安卓实机冒烟', '测试安卓实机冒烟.py', [], '假 adb：返回键两次退出、回车开新游戏、切后台同一进程、崩溃行、不碰真机'),
     ('交付自检与待合看板', '测试交付自检.py', [], '车道交付前自检照搬合并准备阶段的校验；待合看板的排队顺序与只读'),
+    ('长任务只停自己', '测试长任务停止.py', [], '两个工作树并发检查互不误杀：停止任务.sh 只停本树、外来 SIGTERM 留痕、按名杀进程守卫（T108）'),
     ('合并：删基线用例早停、车道探针结果复用', '测试合并工具.py',
      ['StatePrevFromLaneTests', 'MergeTests.test_lane_deleting_baseline_presets_stops_before_merge',
       'MergeTests.test_deleted_presets_three_way_and_baseline_filter'],

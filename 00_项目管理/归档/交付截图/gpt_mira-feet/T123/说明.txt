@@ -4,6 +4,6 @@
 
 原外接框三帧分别为(10,3,49,61)、(11,3,49,61)、(12,4,51,61)，本来就不同。协调者明确同意统一到所选底帧(10,3,49,61)，三帧最后脚底像素y60（下界61）；此为修漂移的必要变化，不声称每帧仍保留原来不同的外接框。没有改播放行或归一档。
 
-复现：从仓库根目录运行 `python3 03_再刷重制_Godot/01_Godot工程/content/sukuna/fix_sukuna_idle.py --source 00_项目管理/交付/附图/gpt_mira-feet/T123/before.png --output 03_再刷重制_Godot/01_Godot工程/content/sukuna/img/sv_actors/Codex_Sukuna_SV.png`。依赖Pillow，脚本断言头手脚、尺寸、外接框、调色板、alpha及其余51格不变。
+复现：从仓库根目录运行 `python3 03_再刷重制_Godot/01_Godot工程/content/sukuna/fix_sukuna_idle.py --source 00_项目管理/归档/交付截图/gpt_mira-feet/T123/before.png --output 03_再刷重制_Godot/01_Godot工程/content/sukuna/img/sv_actors/Codex_Sukuna_SV.png`。依赖Pillow，脚本断言头手脚、尺寸、外接框、调色板、alpha及其余51格不变。
 
 comparison_1x/4x.png 上旧下新；idle_comparison_1x/4x.gif 左旧右新（0,1,2,1）；before.png 为原图。idle_drift.json 为本树25组全部指标；idle_drift_summary.txt 为筛查名单，超标只报告、未顺手修改。

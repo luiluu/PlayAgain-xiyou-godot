@@ -11,6 +11,15 @@ const ICI_COLORS := {1: "ffffff", 2: "80ff80", 3: "39b9ff", 4: "8064f5", 5: "ff2
 	8: "b0b0b0", 9: "ffb100", 10: "8d0919", 11: "ab716e", 12: "a891c8", 13: "2c968c", 14: "fffa32", 15: "a873b9"}
 
 
+## 天启篇（T112，D160）：低档稀有坐骑（XTianqiDrop.rare_gear 且是坐骑栏 etypeId 16）只在显示上提到与稀有度相称的品质，
+## 数据里的旧档、属性、掉落、排序、词条都不动（逻辑一律用 grade／legacy，显示才用 show_*）。
+## 光明独角兽、嘶风逐日驹（原版 1 级「普通」、只在剑道争锋巅峰首领身上 1/700、1/500）、白马·洪荒（1/10000）显示「不朽」，
+## 依据：同系的嘶风逐日驹·洪荒 1/1000、嘶风逐日驹 1/1 都是不朽，全部装备里不朽档的掉率中位数约 1/500。
+## `RARE_SHOW = false` 回到数据原品质（西游档本来就不走这里）。
+static var RARE_SHOW := true
+const MOUNT_ETYPE := 16
+const RARE_SHOW_LEGACY := 8  # 旧档 8（不朽）→ 七档 5
+
 ## 转换器从正式版 installUnifiedQualityRuntime 导出；各处只通过本类取值。
 static func config() -> Dictionary:
 	return XDB.table("UnifiedQuality")
@@ -35,14 +44,34 @@ static func grade(item: Dictionary) -> int:
 	return grade_of(legacy(item))
 
 
+## 显示用的旧档：天启篇的低档稀有坐骑提到不朽，其余等于 legacy
+static func show_legacy(item: Dictionary) -> int:
+	var q := legacy(item)
+	return RARE_SHOW_LEGACY if rare_mount(item) and grade_of(q) < grade_of(RARE_SHOW_LEGACY) else q
+
+
+## 显示用的七档（名称、颜色、边框都按它；掉落门槛、词条档、排序仍按 grade／legacy）
+static func show_grade(item: Dictionary) -> int:
+	return grade_of(show_legacy(item))
+
+
+static func rare_mount(item: Dictionary) -> bool:
+	if not RARE_SHOW or int(item.get("etypeId", 0)) != MOUNT_ETYPE or not XTianqiDrop.on():
+		return false
+	var kind := gear_kind(item)
+	if kind != "armor":
+		return false
+	return XTianqiDrop.rare_gear(3, int(item.get("base", item.get("id", 0))))
+
+
 static func grade_name(item: Dictionary) -> String:
-	return str(config().names[grade(item)])
+	return str(config().names[show_grade(item)])
 
 
 static func color_text(item: Dictionary) -> String:
 	if XYunshang.is_robe(item):  # 云裳 normalcolor／namecolor 包装：15 件天衣用粉色
 		return XYunshang.ROBE_COLOR
-	return str(config().colors[grade(item)])
+	return str(config().colors[show_grade(item)])
 
 
 static func color(item: Dictionary) -> Color:

@@ -189,7 +189,7 @@ func _draw() -> void:
 	var font := XUiSkin.font("body")
 	var x := pad
 	if item.is_empty():
-		draw_string(head, Vector2(x, pad + 34), XSkinEquipPage.remove_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_CARD, XUiSkin.TEXT)
+		XUiSkin.ds(self, head, Vector2(x, pad + 34), XSkinEquipPage.remove_text(), HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_CARD, XUiSkin.TEXT)
 	else:
 		var d := XSkinItemPage.card_data(item)
 		var tex: Texture2D = d.get("icon")
@@ -197,8 +197,8 @@ func _draw() -> void:
 			draw_texture_rect(tex, Rect2(x, pad, 48, 48), false)
 			x += 60
 		var fit := XSkinList.fit_text(head, str(d.title), size.x - pad - x, XUiSkin.FS_CARD, 20)
-		draw_string(head, Vector2(x, pad + 26), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], d.title_color)
-		draw_string(font, Vector2(x, pad + 50), str(d.subtitle), HORIZONTAL_ALIGNMENT_LEFT, size.x - pad - x, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+		XUiSkin.ds(self, head, Vector2(x, pad + 26), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], d.title_color)
+		XUiSkin.ds(self, font, Vector2(x, pad + 50), str(d.subtitle), HORIZONTAL_ALIGNMENT_LEFT, size.x - pad - x, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 	tab_scale.sel(tab)
 	for i in TABS.size():
 		var r := tab_rect(i)
@@ -211,7 +211,7 @@ func _draw() -> void:
 		var t: String = fit[0]
 		var tfs: int = fit[1]
 		var tw := font.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, tfs).x
-		draw_string(font, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + tfs * 0.36), t,
+		XUiSkin.ds(self, font, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + tfs * 0.36), t,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, tfs, XUiSkin.TEXT if i == tab else XUiSkin.TEXT_2)
 	var ly := pad + HEAD_H + TAB_H + 3
 	draw_line(Vector2(pad, ly), Vector2(size.x - pad, ly), Color(XUiSkin.LINE, 0.14), 1.0)
@@ -244,7 +244,7 @@ func _draw_body() -> void:
 			if y + ROW_H >= 0 and y <= body.size.y:
 				body.draw_rect(Rect2(0, y + 2, w, ROW_H - 4), Color(1, 1, 1, 0.04))
 				var base := y + ROW_H / 2.0
-				body.draw_string(font, Vector2(12, base + 17 * 0.36), str(r[0]), HORIZONTAL_ALIGNMENT_LEFT, w * 0.4, 17, XUiSkin.TEXT_2)
+				XUiSkin.ds(body, font, Vector2(12, base + 17 * 0.36), str(r[0]), HORIZONTAL_ALIGNMENT_LEFT, w * 0.4, 17, XUiSkin.TEXT_2)
 				var before: int = r[1]
 				var after: int = r[2]
 				var t := XMenu._group(before)
@@ -254,7 +254,7 @@ func _draw_body() -> void:
 					t += " → %s %s%s" % [XMenu._group(after), "▲" if d > 0 else "▼", XMenu._group(absi(d))]
 					col = XUiSkin.UP if d > 0 else XUiSkin.DOWN
 				var tw := num.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21).x
-				body.draw_string(num, Vector2(w - 12 - tw, base + 21 * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, col)
+				XUiSkin.ds(body, num, Vector2(w - 12 - tw, base + 21 * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, col)
 			y += ROW_H
 	else:
 		var fs := XUiSkin.FS_AUX_MAX
@@ -265,10 +265,10 @@ func _draw_body() -> void:
 			for li in p.get_line_count():
 				if y + lh >= 0 and y <= body.size.y:
 					var rg := p.get_line_range(li)
-					body.draw_string(font, Vector2(0, y + fs * 1.15), text.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, r.get("color", XUiSkin.TEXT_2))
+					XUiSkin.ds(body, font, Vector2(0, y + fs * 1.15), text.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, r.get("color", XUiSkin.TEXT_2))
 				y += lh
 		if _rows.is_empty():
-			body.draw_string(font, Vector2(0, fs * 1.15), "空" if tab == 2 or item.is_empty() else "", HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_3)
+			XUiSkin.ds(body, font, Vector2(0, fs * 1.15), "空" if tab == 2 or item.is_empty() else "", HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_3)
 	if max_scroll() > 0.0:
 		var sw := 8.0 if XUiSkin.TOUCH_V2 else 4.0   # 收口批：滚动条手指找得到
 		var track := Rect2(body.size.x - sw, 0, sw, body.size.y)

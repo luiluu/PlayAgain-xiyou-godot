@@ -675,7 +675,7 @@ func _draw_ring_extra() -> void:
 		if bool(it.get("empty", false)):
 			var t := "空"
 			var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
-			ring_top.draw_string(body, Vector2(p.x - tw / 2.0, p.y + XUiSkin.FS_AUX * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_3)
+			XUiSkin.ds(ring_top, body, Vector2(p.x - tw / 2.0, p.y + XUiSkin.FS_AUX * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_3)
 		if bool(it.get("locked", false)):
 			ring_top.draw_circle(p, r, Color(0, 0, 0, 0.55))
 	_draw_center_frame()
@@ -724,7 +724,7 @@ func _draw_list_count() -> void:
 	var t := "可选 %d 件" % n
 	var body := XUiSkin.font("body")
 	var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
-	list_panel.draw_string(body, Vector2(list_panel.size.x - XUiSkin.PAD - 8 - tw, XUiSkin.PAD + 19), t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+	XUiSkin.ds(list_panel, body, Vector2(list_panel.size.x - XUiSkin.PAD - 8 - tw, XUiSkin.PAD + 19), t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 
 
 # ---- 按键：用掉了返回 true（新布局下旧页的按键处理都不走） ----
