@@ -6,6 +6,8 @@ extends Node
 ##     每一条都要在 damage_ledger.json phase4.module_review 里有初审结论；结论是留的，phase4.module_whitelist 里要有对应行，反过来也一样。
 ## 三、模块派生 7 行（phase4.derived_module）：真打量「每回合最多几次、每次是原招的几成」（P4DERIVED 行），口子 take_module_derived：
 ##     关着恒真、不记数；开着只认 enforced 的行、每回合到 per_turn 就拦；登记成 enforced 的行 per_turn×ratio 不超过 1.0。
+##     T137：basis per_target＝比例按每个敌人算（镜流、流萤：卡上写的群体系数）；own_action＝璇棱光是她自己那次出手（附身中她只防御）；
+##     璇按触发它的宿主那次行动量（take_module_derived 的 trigger）；屠苏分段卡开着不加伤、不登记。夹具钉了本场随机数（量到的数不再每跑一次都漂）。
 ## 四、开卡前的口子：白起 full_again 过回合预算（总开关开着）；卡改写的 8 把专属武器攻击次数 +1 不被九线停用误停、关着照旧停；
 ##     段数来源只剩词条「连击」、红印「多段连击」、卡改写专属武器三类；D175（Kyo 11-17）：每一件来源最多 +2，合计不封顶。
 ## 五（T137）：黑闪天启篇（甚尔爆伤 +30%、觉醒 2 回合；五条悟 +30% 待拍板；宿傩不加）；屠苏卡开着不分摊、分段不加伤；
@@ -394,8 +396,8 @@ func _fixture_battles() -> void:
 		for k in ok_turn:
 			if int(ok_turn[k]) > int(r.per_turn):
 				over.append([r.id, k, ok_turn[k]])
-		# 强制执行的行：夹具这一轮量到的每回合合计不超过 1.0
-		if float(measured.get(str(r.id), {}).get("coef", 0.0)) > 1.0:
+		# 强制执行的行：夹具这一轮量到的每回合合计不超过 1.0（own_action 的不按宿主比：棱光就是璇自己那次出手，T137）
+		if str(r.get("basis", "")) != "own_action" and float(measured.get(str(r.id), {}).get("coef", 0.0)) > 1.0:
 			over.append([r.id, "coef", measured[str(r.id)].coef])
 	_check("fixture_enforced_within", over.is_empty(), over)
 
@@ -471,7 +473,18 @@ func _derived_rows() -> void:
 				bad.append([r.id, "enforced 但没填或合计超过 1.0"])
 		elif str(r.get("note", "")).contains("留空"):
 			bad.append([r.id, "还是留空"])
+		if not bool(r.get("enforced", false)) and not str(r.get("note", "")).contains("不登记，理由"):
+			bad.append([r.id, "不登记要写理由"])
+		if r.has("basis") and not str(r.basis) in ["per_target", "own_action"]:
+			bad.append([r.id, "basis 只认 per_target、own_action", r.basis])
 	_check("derived_rows_filled", bad.is_empty(), bad)
+	# T137：4 行（镜流、流萤、璇、屠苏）有结论：前三行登记强制执行，屠苏卡开着不是派生、写理由不登记
+	var want := {"module.jingliu.segment": ["per_target", true], "module.liuying.segment": ["per_target", true], "module.xuan.follow_up": ["own_action", true], "module.tusu.segments": ["", false]}
+	var got := {}
+	for r in rows:
+		if want.has(str(r.id)):
+			got[str(r.id)] = [str(r.get("basis", "")), bool(r.get("enforced", false))]
+	_check("derived_four_settled", got == want, got)
 
 
 func _derived_gate() -> void:
