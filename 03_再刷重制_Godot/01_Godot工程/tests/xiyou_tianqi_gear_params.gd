@@ -177,6 +177,17 @@ func _on() -> void:
 	rw.params[2] = float(rw.params[2]) - 200000.0
 	er = XTianqiGear.effective_params(rw)
 	_check("resid_clamped_down", absf(float(er[2]) - roundf(float(_expect(d1)[2]) - nb[2] * 0.1)) <= 1.0, er)
+	# T148：新底子为 0 的项（MP）不再被 ±10% 夹成 0，符文之语加的数按换算比放行
+	var rm := d1.duplicate(true)
+	rm.instanceId = "t148_rm"
+	rm.runewordName = "测试"
+	rm.params[1] = float(rm.params[1]) + 500.0
+	var erm := XTianqiGear.effective_params(rm)
+	var want_mp := roundf(float(_expect(d1)[1]) + XTianqiGear.flat_ratio(rm, 1) * 500.0)
+	_check("resid_zero_base_passes", float(nb[1]) == 0.0 and float(erm[1]) > 0.0 and absf(float(erm[1]) - want_mp) <= 1.0, [erm, want_mp, nb])
+	# T148：upgrade_fixed 的 current 判定看前面已镶的固定值（0 → 前一块加成非 0 后，current 块生效）
+	var cz := XTianqiGear.upgrade_fixed({"kind": "weapon", "base": DAGGER, "upgrades": []}, [0, 0, 0, 0, 0, 0, 0, 0])
+	_check("upgrade_fixed_empty", cz.fixed == [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0] and not cz.random)
 	var plain := d1.duplicate(true)
 	plain.instanceId = "t104_plain"
 	plain.params[2] = float(plain.params[2]) + 100000.0

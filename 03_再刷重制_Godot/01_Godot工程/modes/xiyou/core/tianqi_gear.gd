@@ -586,7 +586,7 @@ static func upgrade_fixed(item: Dictionary, cur: Array) -> Dictionary:
 				continue
 			var ids: Array = range(8) if effect.param is String else [int(effect.param)]
 			for i in ids:
-				if effect.param is String and effect.param == "current" and float(cur[i]) == 0.0:
+				if effect.param is String and effect.param == "current" and float(cur[i]) + out[i] == 0.0:  # 同 XGearUpgrade.apply_effects：看镶到这一步时的当前值（前面已镶的固定值算进去）
 					continue
 				var n := float(effect.value)
 				if bool(effect.get("percent", false)):
@@ -629,7 +629,10 @@ static func _compute(item: Dictionary) -> Array:
 		var v: float = float(nb[i]) + r * (fixed + float(absorb[i]))
 		if keep:
 			var resid: float = float(params[i]) - float(tp[i]) - float(up.fixed[i]) - float(orb[i])
-			var band: float = absf(float(nb[i])) * RESID_BAND
-			v += clampf(r * resid, -band, band)
+			if float(nb[i]) == 0.0:  # 新底子为 0 的项（MP、副属性）：没有「±10%」可夹，符文之语／随机石加的数照比例放行（T148，T104 小A P3）
+				v += r * resid
+			else:
+				var band: float = absf(float(nb[i])) * RESID_BAND
+				v += clampf(r * resid, -band, band)
 		out.append(roundf(maxf(0.0, v) if float(params[i]) >= 0.0 else v))
 	return out
