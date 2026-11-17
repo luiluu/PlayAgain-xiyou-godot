@@ -35,6 +35,7 @@ func _run() -> void:
 	_xiyou()
 	_hit_cap()
 	_class_rate()
+	_realm()
 	_e2e(true)
 	_e2e(false)
 	XTianqiBase.PHASE4 = false
@@ -173,6 +174,24 @@ func _class_rate() -> void:
 		XTianqiBase.PHASE4 = false
 		a.param_mark_dirty()
 		return is_equal_approx(r, a.param_rate(2))).call())
+
+
+## 【cc·T082】原版境界被动（9976 圣者境界：终伤、爆伤各 +100%）：期四开着拦掉数值标签，REALM_OFF 关掉或总开关关着照原版
+func _realm() -> void:
+	_state()
+	XTianqiBase.PHASE4 = true
+	var on_note := str(XDB.rec("Skills", 9976).get("note", ""))
+	XTianqiBase.REALM_OFF = false
+	var kept := str(XDB.rec("Skills", 9976).get("note", ""))
+	XTianqiBase.REALM_OFF = true
+	XTianqiBase.PHASE4 = false
+	var off_note := str(XDB.rec("Skills", 9976).get("note", ""))
+	_check("realm.stripped", not on_note.contains("passiveHarmRi") and not on_note.contains("passiveCrHarmRi") and not on_note.contains("passivePBST"), on_note.left(200))
+	_check("realm.switch_back", kept.contains("passiveHarmRi") and kept == off_note)
+	XTianqiBase.PHASE4 = true
+	_check("realm.push_state", not str(XDB.rec("Skills", 5777).get("note", "")).contains("StartPushState"))
+	_check("realm.card_skill_untouched", XDB.rec("Skills", 9933) == XTianqiSkills.rec(9933, XDB.table("Skills")[9933]))
+	XTianqiBase.PHASE4 = false
 
 
 ## 开着但是西游档：全走关着

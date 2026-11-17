@@ -267,6 +267,16 @@ func _measure(id: int, tier: String) -> Dictionary:
 				print("K_DEBUG foe def=%s mdf=%s pdr=%s mdr=%s el=%s" % [e.def, e.mdf, e.pdr, e.mdr, [e.element_rate(1), e.element_rate(2), e.element_rate(3), e.element_rate(4)]])
 				var calc: Dictionary = logic._calculate_damage(a, sk, e, true)
 				print("K_DEBUG %d %s" % [int(sid), JSON.stringify({"value": calc.get("value"), "row": calc.get("breakdown", {}).get("row", {})})])
+				var bs: Dictionary = a.passive_cache().get("bySource", {})
+				for o in a.stat_equips() + a.skills() + a.states():
+					var sc := XActor._note_scans(str(o.get("note", "")))
+					if not (sc[4] as Array).is_empty() or not (sc[5] as Array).is_empty():
+						print("K_DEBUG obj %s %s fin=%s crit=%s bucket=%s new=%s" % [o.get("id"), o.get("name"), sc[4], sc[5], XTianqiLedger.bucket_of(o, a), o.get("_tianqi_new")])
+				print("K_DEBUG passive crit=%s fin=%s bySource crit=%s fin=%s" % [a.passive_cache().get("critHarmRi"), a.passive_cache().get("globalHarmRi"), bs.get("critHarmRi"), bs.get("globalHarmRi")])
+				for t in calc.get("moduleTrace", []):
+					var ops := (t.get("ops", []) as Array).filter(func(o): return o is Dictionary and str(o.get("field", "")) in ["criticalAdd", "finalAdd", "normalAdd", "finalMultiplier", "skillMultiplier"])
+					if not ops.is_empty():
+						print("K_DEBUG trace %s %s" % [t.get("module", t.get("id", "?")), JSON.stringify(ops)])
 			var r: Dictionary = logic.apply(a, sk, e)
 			var dealt := float(r.get("shown", {}).get("hp", r.get("hp", 0.0)))  # 跳出来的那一个数（木桩生命有上限，不能用掉血量）
 			XStateEffects.force_critical = false

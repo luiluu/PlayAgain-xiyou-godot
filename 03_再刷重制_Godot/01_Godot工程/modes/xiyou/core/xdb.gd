@@ -177,6 +177,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		out = XTianqiTrumpet.rec(name, id, out)  # 天启篇号卷：七卷与封卷换成改写后的记录（原版档原样返回）
 	if name == "Skills" and XTianqiSect.touches_skill(id):
 		out = XTianqiSect.skill_rec(id, out)  # 天启篇教派连带内容包乙：挣脱枷锁三个被动只留抽奖被动上限 +1
+	if name == "Skills" and XTianqiBase.realm_touches(id):
+		out = XTianqiBase.realm_rec(id, out)  # 天启篇期四：原版通用境界被动数值全拦（REALM_OFF）
 	if name == "Skills" and XTianqiSkills.has(id):
 		out = XTianqiSkills.rec(id, out)  # 天启篇全角色技能重构：天启篇存档换成改写后的记录
 	if name == "States" and XTianqiSkills.has_state(id):
