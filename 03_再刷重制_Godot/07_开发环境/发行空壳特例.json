@@ -91,6 +91,7 @@
   "XTianqiHallIntro.pending_slot": "0",
   "XTianqiRandom.battle_random": "s.reserve_battle_random()",
   "已确认空值安全": {
+    "XTianqiBrand.perform": "只在 is_fit_command(skill) 为真时调用（BattleLogic.act），西游档／空壳里 is_fit_command 恒假（合成技能只由烙印发作生成），走不到；T120 顺手登记",
     "XGojo.begin": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",
     "XGojo.end_round": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",
     "XGojo.finish": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",
