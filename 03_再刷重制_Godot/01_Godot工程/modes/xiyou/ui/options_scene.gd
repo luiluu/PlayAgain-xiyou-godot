@@ -49,6 +49,8 @@ const QUALITY_OPTION := ["画质设置", "codexQuality", true]
 
 ## 只在触屏（安卓）出现，排在最后；状态「调整」，确定音后打开 XTouchOptionsScene，左右无作用。
 const TOUCH_OPTION := ["手机按键设置", "codexAndroidControls", true]
+## T154：导入／导出配置（玩家建议）：排在原版各项之后，状态「打开」，确定音后打开 XConfigTransferScene，左右无作用
+const CONFIG_OPTION := ["导入／导出配置", "codexConfigTransfer", true]
 
 ## 开关类符号只在这里列一份：存配置的 ON/OFF 开关、四路音量用 XConfig.VOLUMES、本次运行开关用 XConfig.SESSION_FLAGS
 ## （含 pingbiDrop：状态恒空白、确定打开屏蔽页，只有左右键会改它）
@@ -79,6 +81,8 @@ func _ready() -> void:
 		_list = _list.filter(func(o): return o[1] != "codexPowerEnabled")
 	if XTestMode.unlocked():  # 只有 Kyo 本机有解锁文件时，测试模式／GM 工具两项才可点（没有时照旧留灰）
 		_list = _list.map(func(o): return [o[0], o[1], true] if o[1] == "codexTestMode" or o[1] == "codexGM" else o)
+	if XConfigTransfer.ENABLED:  # 导入／导出配置排在原版各项之后、重制新增的画面类各项之前
+		_list.append(CONFIG_OPTION)
 	if XLobbyCorruption.ENABLED:  # 重制新增「画面特效」（大厅初步异化的光尘与小字）排在原版各项之后；开关关掉时不列
 		_list.append(FX_OPTION)
 	if XScreenScale.ENABLED:  # 画面平滑排在画面特效后、手机按键设置前；开关关掉时不列
@@ -109,6 +113,8 @@ func symbols() -> Array:
 
 func status_text(i: int) -> String:
 	var symbol := str(_list[i][1])
+	if symbol == CONFIG_OPTION[1]:
+		return "打开"
 	match _group(symbol):
 		"flag":
 			return "ON" if XConfig.flag(symbol) else "OFF"
@@ -205,6 +211,9 @@ func ok() -> void:
 		"codexAndroidControls":
 			XSound.system(1)
 			_open_page(XTouchOptionsScene.new())
+		"codexConfigTransfer":
+			XSound.system(1)
+			_open_config_transfer()
 		"codexQuality":
 			XSound.system(1)
 			_open_page(XGraphicsOptionsScene.new())
@@ -326,6 +335,15 @@ func _open_hang_up() -> void:
 	var page := XHangUpOptionsScene.new()
 	page.map_shot = map_shot
 	page.player_tile = player_tile
+	_open_page(page)
+
+
+## 导入／撤回改了界面风格：照「界面风格」一行，关设置页时连菜单一起回地图（菜单是按旧风格建的，重开才换）
+func _open_config_transfer() -> void:
+	var page := XConfigTransferScene.new()
+	page.closed.connect(func():
+		if page.skin_changed and "to_map" in self:
+			set("to_map", true))
 	_open_page(page)
 
 
