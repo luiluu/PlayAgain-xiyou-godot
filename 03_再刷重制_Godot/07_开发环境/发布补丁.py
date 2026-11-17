@@ -56,6 +56,8 @@ DEFAULT_KEY = Path.home() / 'Library/Application Support/KYO/发版密钥/godot_
 DEFAULT_REPOS = [Path.home() / 'Documents/DSH/小小鱼/发版' / n for n in ('zaishuayiba-updates-gitee', 'zaishuayiba-updates-github')]
 SUBDIR = 'godot'
 # 强制更新的手动下载页默认值（Kyo 11-14 定：Gitee 更新仓的发行版页面）。只写进清单，客户端不写死
+# 第三方 GitHub 加速代理（T153，Kyo 11-17 提）：只当镜像，补丁照旧比 SHA-256；哪天挂了把它置空，就不再写进补丁地址、也不再在线核它。
+GH_PROXY = 'https://gh-proxy.com/'
 DEFAULT_DOWNLOAD_URL = 'https://gitee.com/kyoluu/play-again_-xiyou_-kyo/releases'
 MAX_PATCH = 30 * 1024 * 1024
 SCHEMA = 1
@@ -308,7 +310,8 @@ def remote_slug(repo: Path):
 
 
 def package_urls(repos: list, commits: dict, name: str) -> list:
-    """照 MOD 的顺序：Gitee raw 为主，再是 GitHub 仓库经 jsDelivr 各域名、raw；全部固定到包提交。
+    """照 MOD 的顺序：Gitee raw 为主，再是 GitHub raw 经 gh-proxy（T153，第三方代理，GH_PROXY 置空就不写）、
+    GitHub 仓库经 jsDelivr 各域名、raw；全部固定到包提交。
     githack 已去掉（Kyo 2026-11-13「删掉备用源」：0.01.09 上线时返回 403）。"""
     urls = []
     for repo in repos:
@@ -316,6 +319,11 @@ def package_urls(repos: list, commits: dict, name: str) -> list:
         c = commits[repo]
         if site == 'gitee.com':
             urls.append(f'https://gitee.com/{slug}/raw/{c}/{SUBDIR}/{name}')
+    for repo in repos:
+        site, slug = remote_slug(repo)
+        c = commits[repo]
+        if site == 'github.com' and GH_PROXY:
+            urls.append(f'{GH_PROXY}https://raw.githubusercontent.com/{slug}/{c}/{SUBDIR}/{name}')
     for repo in repos:
         site, slug = remote_slug(repo)
         c = commits[repo]
@@ -341,7 +349,8 @@ def verify_online(repos: list, pub: str) -> int:
         for repo in repos:
             site, slug = remote_slug(repo)
             bases = ([f'https://gitee.com/{slug}/raw/main/{SUBDIR}'] if site == 'gitee.com' else
-                     [f'https://raw.githubusercontent.com/{slug}/main/{SUBDIR}', f'https://cdn.jsdelivr.net/gh/{slug}@main/{SUBDIR}'])
+                     [f'https://raw.githubusercontent.com/{slug}/main/{SUBDIR}', f'https://cdn.jsdelivr.net/gh/{slug}@main/{SUBDIR}']
+                     + ([f'{GH_PROXY}https://raw.githubusercontent.com/{slug}/main/{SUBDIR}'] if GH_PROXY else []))
             for b in bases:
                 try:
                     cj, cs = td / 'c.json', td / 'c.sig'

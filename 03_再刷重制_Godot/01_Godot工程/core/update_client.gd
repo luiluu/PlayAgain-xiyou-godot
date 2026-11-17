@@ -1,7 +1,9 @@
 class_name XUpdateClient
 extends Node
 ## 自动更新第①批：读版本清单（联网）。挂在根节点下的单例，换场景不丢。
-## - check()：依次读每个清单源的 channel.json 和 channel.sig，交给 XUpdateCheck 验签、挑最高版本、判断该提示什么；
+## - check()：依次读每个清单源的 channel.json 和 channel.sig，交给 XUpdateCheck 验签、判断该提示什么；
+##   T153（Kyo 11-17：玩家都在国内）：按 channel_urls 的顺序读，第一份拿到且验签、格式都过的就用，后面的源不再请求；
+##   读不到／超时／验签不过才退到下一个（Gitee → gh-proxy 代理的 GitHub raw → jsDelivr → GitHub raw）。国内玩家不用等 GitHub 超时。
 ##   结果放在 last 里并发 checked 信号。只发普通 GET，不带任何玩家信息；读到的内容只当数据。
 ## - auto_check()：进标题时调，一天最多静默查一次（记在 user://updates/check.json）；只在发行构建、非无头时真去查。
 ## - has_update()：给「检查更新」按钮亮红点用（上次查到有新版，且比现在运行的新）。
@@ -20,9 +22,11 @@ const DAY_SEC := 86400
 static var ENABLED := true
 ## 进标题自动查（每天一次）。false 只在点按钮时查。
 static var AUTO := true
-## 清单源，依次读、逐个验签、取版本最高的。照 MOD 的做法：Gitee 为主，GitHub 更新仓库经 CDN 当镜像。
+## 清单源，按顺序读，第一份验签通过的就用（T153）。Gitee 为主，GitHub 更新仓库经代理／CDN 当镜像，Gitee 不通才用。
+## 镜像只管传字节，验签照旧：被篡改的清单验不过，换下一个。
 static var channel_urls: PackedStringArray = [
 	"https://gitee.com/kyoluu/play-again_-xiyou_-kyo/raw/main/godot/channel.json",
+	XUpdateCheck.GH_PROXY + "https://raw.githubusercontent.com/luiluu/zaishuayiba-updates/main/godot/channel.json",  # 第三方代理，挂了删这一行即可
 	"https://cdn.jsdelivr.net/gh/luiluu/zaishuayiba-updates@main/godot/channel.json",
 	"https://raw.githubusercontent.com/luiluu/zaishuayiba-updates/main/godot/channel.json",
 ]
@@ -108,15 +112,16 @@ func check() -> Dictionary:
 	if checking:
 		return await checked
 	checking = true
-	var sources: Array = []
+	var manifest := {}
 	if ENABLED:
 		for url in channel_urls:
 			var raw := await _fetch(url)
 			if raw.is_empty():
 				continue
 			var sig := await _fetch(url.trim_suffix(".json") + ".sig")
-			sources.append({"json": raw, "sig": sig})
-	var manifest := XUpdateCheck.pick_best(sources, public_key)
+			manifest = XUpdateCheck.pick_best([{"json": raw, "sig": sig}], public_key)  # 只这一份：验签、格式过了才算
+			if not manifest.is_empty():
+				break  # 前面的源能用就不再问后面的（T153）
 	last = XUpdateCheck.evaluate(manifest, base_code(), current_code())
 	# 已经登记了别的补丁、只差重启（pending_code()>0）时不退：那多半就是修正版，退了会把新登记抹掉（审查 78 P3-4）
 	if last["revoked"] and XUpdateInstall.pending_code() == 0 and get_tree().root.find_child("UpdatePage", true, false) == null:
