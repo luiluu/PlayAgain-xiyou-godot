@@ -285,7 +285,11 @@ func silent_gain(b: XBattler, resource: String, amount: float) -> void:
 		b.set(resource, old + amount)
 		refresh(b)
 
+## refresh 次数（只给测试数：T135 战斗 313 少了多余的 refresh）
+static var refresh_total := 0
+
 func refresh(b: XBattler) -> void:
+	refresh_total += 1
 	if XBattleLogic.STALE_REFRESH_POINTS:
 		XBattleLogic.stale_refreshed(b)  # raven5（审查 45 P3-2）：setHp／setMp／setTp 与状态增减的 refresh 重建特性缓存
 	var previous := b.lifecycle_context
