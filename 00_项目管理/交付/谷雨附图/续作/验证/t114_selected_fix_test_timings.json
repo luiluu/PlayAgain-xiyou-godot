@@ -1,0 +1,41 @@
+{
+  "jobs": 2,
+  "globalJobs": 4,
+  "wallSeconds": 10.111,
+  "flakyRerunPassed": [],
+  "fingerprint": "",
+  "reused": [],
+  "failed": [],
+  "scenes": [
+    {
+      "name": "xiyou_guyu_ui.tscn",
+      "seconds": 10.104,
+      "passed": true,
+      "userCpuSeconds": 6.208,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 10.104,
+          "userCpuSeconds": 6.208,
+          "sysCpuSeconds": 1.914,
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "xiyou_guyu_art.tscn",
+      "seconds": 6.64,
+      "passed": true,
+      "userCpuSeconds": 4.339,
+      "attempts": [
+        {
+          "rc": 0,
+          "seconds": 6.64,
+          "userCpuSeconds": 4.339,
+          "sysCpuSeconds": 1.835,
+          "passed": true
+        }
+      ]
+    }
+  ]
+}

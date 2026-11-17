@@ -1,0 +1,46 @@
+# 交付：gpt/t114-guyu-reskin
+
+- 车道／工作者：小o，gpt-6.1-sol＋medium（P6）。
+- 状态：可合并
+- 核查：待跨模型代码及美术核查；T156长裙误报保留。
+
+## 本次续作（2026-11-17）
+
+- 本次内置 imagegen 2 次：row0 统一花饰/裙摆/头身、四向行走精修。续作累计 8 次，40 次预算余 32；旧样板 9 次另计。原文提示词及原始图在 `谷雨附图/续作/prompt_row0_refine.txt`、`prompt_walk_refine.txt`、`raw_row0.png`、`raw_walk_refine.png`，旧 row0 留 before_refine。
+- 12 帧行走、54 格战斗均有独立生成源；Pillow 仅 alpha 二值化、压色（目标 32 色；实际成品 Guyu_SV_v2.png 为 177 色，Kyo 已认可当前画面，未重压）、逐主体缩放与模板中点/脚底对位，无复制/镜像/改腿绕检查。四向新图已无孔洞警告，未额外填像素。
+- 一次缩略总览审过跨行和四向，白花、侧辫、米白金边裙整体一致；row2/3/5 局部花瓣数量、刘海轮廓、裙褶与 row1 仍有细小差异，留美术核查。sleep 只有头为原模板动作规定，并非漏身体。
+- `content/guyu_v2/` 只留运行用两张 PNG（行走与完整战斗）及 import；旧样板、模板、raw、脚本和日志全部移到 `谷雨附图/旧样板/`，不进入发行包。头像沿用原图。
+- `XGuyu.ART` 默认 true；关掉/缺资源走旧图。路径取图、剥离旧逐帧元标签、原生 64 格 1:1、图鉴最近邻与整数锚点均照云裳例；不改战斗规则。
+
+## 验证（本次）
+
+- 行走脚本对位 12 帧、战斗脚本对位 54 格，退出 0；`精修缩略审样.png`。
+- T156 指定分支原脚本/原阈值，73 项中失败 1、警告 0，退出 1：down 裙摆区域最大 IoU 0.955 >= 0.95。原左向重复与孔洞已消失；当前正面为长裙遮腿的轮廓误报，依派单保留原判定及 `正面长裙三帧.png`，不改阈值/跳检查/硬改腿，交核查方确认。报告在 `续作/check_refine/`。
+- 新 `xiyou_guyu_art` 无头运行 171/171；真实图形后端截图运行 172/172，地图走路＋战斗 wait/swing/damage 四图在 `续作/实机/`，`实机四图缩略.png` 已肉眼复核；均用 `--audio-driver Dummy`，仅 blank fixture，不碰真实存档。
+- 语法检查 1012 个 GDScript，0 问题；工具快速回归23项全部通过（117秒）。八项相关专项首次7过1失败（旧图0.72倍断言），修正为按ART开关区分新旧图的bounds/scale后，受影响的guyu_ui和guyu_art重跑全过（10秒）；其余首次通过的证据保留，无未解决失败。日志和时序在 `续作/验证/`。
+- `选测.py main --list` 已运行；共享 xdb / appearance 和新 content 目录保守映射整轮。车道不跑全量，本次选 xiyou_guyu、guyu_battle、guyu_ui、guyu_art、portrait1、yunshang_art、actor_book、determinism；其余整轮留总装按三级验证处理。没有改数值/存档/原版底层逻辑，无 oracle 变更。
+
+## 返修（小A 核查 P1＋2×P2，Claude Sonnet 接手）
+
+- P1：`tests/xiyou_sv_smooth.gd` 把 175 列入 SMOOTH 量旧正式源，却没关 `XGuyu.ART`；照云裳写法 `_run` 开头置 `XGuyu.ART=false`、结尾恢复。
+- P2-1：`选测对照.json` 新增 `guyu_art` 组并映射 `content/guyu_v2/*`（云裳无同类条目可照，参照 mira_art 格式），选 guyu／guyu_art／guyu_battle／guyu_ui／actor_book／sv_smooth。
+- 附带：`检查.sh --affected` 首轮暴露 `HookLineTests.test_real_role_whitelist_matches_code` 失败（guyu.gd 头注释无编号/名字），头注释补「175 谷雨」后通过。
+- 验证：xiyou_sv_smooth 140/140、guyu_art 171/171、guyu 78/78、guyu_ui 791/791、guyu_battle 1638/1638、actor_book 28/28（均 --audio-driver Dummy）；`检查.sh --affected main --cloud` 退出 0。
+- P2-2：本文「32 色压色」改为实际 177 色，不重新压色。
+
+## 变更记录草稿
+
+T114：谷雨四向12帧与战斗54格像素换皮接入，默认开启且可回退，沿用头像；精修行走和首行造型，运行时仅两张成品PNG，过程素材移到交付附图，补图鉴原生取样及自检/实机证据。T156仍有正面长裙轮廓重复一项，按派单附三帧证据供跨模型美术复核。
+
+## 交接板草稿
+
+- 待交叉核查：guyu.gd、xdb.gd、appearance.gd、actor_book.gd；重点核路径回退、旧逐帧标签剥离、整数锚点，及长裙步态误报和整体造型。
+- 需要用户决定：无。
+- 可优化：生成主体不严格等宽，沿用 alpha 列分割且严格计数，逐主体贴模板；留可复现脚本，不将生成画布直接等宽裁格。
+
+## 合并与交付自检
+
+- 已在本树合入 main（2d6050ebc3，无冲突）；main 两条新增提交只涉及 T119 收口与编号，没有切片/转换器/探针变化，无需重新同步。
+- 快车道；交付自检已在提交3a99f125d后退出0：准备阶段、草稿、占位、试合并全部通过。main后续前进无冲突，按验收一轮规则不再重合；最终提交再自检。
+- 玩家可见：谷雨使用白花、侧辫和米白长裙像素行走及完整战斗动作，头像沿用。
+- 自检不替代交叉核查，尤其请核查方看 `精修缩略审样.png` 与 `正面长裙三帧.png`，确认长裙轮廓误报可接受。

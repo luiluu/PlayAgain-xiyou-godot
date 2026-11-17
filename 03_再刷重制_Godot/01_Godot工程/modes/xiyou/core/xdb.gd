@@ -209,6 +209,9 @@ static func map(map_id: int) -> Dictionary:
 
 
 static func img_path(folder: String, name: String) -> String:
+	var guyu_art := XGuyu.art_path(folder, name)
+	if guyu_art != "":
+		return guyu_art
 	var yunshang_art := XYunshang.art_path(folder, name)
 	if yunshang_art != "":
 		return yunshang_art

@@ -332,7 +332,10 @@ func _scene() -> void:
 	await _frames(20)
 	check("scene.planted_still", sp.motion == "wait" and sp._frame == 0, [sp.motion, sp._frame])
 	# 站姿归一用谷雨运行时登记的档 Codex_Guyu（160×160，可见 [23,45,137,145]）：缩放 min(72/100, 129/114)＝0.72，不走 inferProfile
-	check("scene.guyu_profile", not sp._profile.is_empty() and sp._profile.bounds == Rect2(23, 45, 114, 100) and is_equal_approx(sp.body_scale, 0.72),
+	var native_art := XGuyu.art_path("sv_actors", "Guyu") != ""
+	var expected_bounds := Rect2(9, 4, 44, 60) if native_art else Rect2(23, 45, 114, 100)
+	var expected_scale := 1.0 if native_art else 0.72
+	check("scene.guyu_profile", not sp._profile.is_empty() and sp._profile.bounds == expected_bounds and is_equal_approx(sp.body_scale, expected_scale),
 		[sp._profile, sp.body_scale])
 	b.status_rows[g].refresh()
 	await _shot("guyu_ui_side")
