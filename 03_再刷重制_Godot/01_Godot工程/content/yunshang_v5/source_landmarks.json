@@ -1,0 +1,150 @@
+{
+  "down": [
+    {
+      "crown_y": 51,
+      "neck_y": 404,
+      "head_left": 108,
+      "head_right": 551,
+      "shoulder_left": 223,
+      "shoulder_right": 418,
+      "shoulder_y": 435
+    },
+    {
+      "crown_y": 51,
+      "neck_y": 404,
+      "head_left": 832,
+      "head_right": 1275,
+      "shoulder_left": 947,
+      "shoulder_right": 1142,
+      "shoulder_y": 435
+    },
+    {
+      "crown_y": 51,
+      "neck_y": 404,
+      "head_left": 1556,
+      "head_right": 1999,
+      "shoulder_left": 1671,
+      "shoulder_right": 1866,
+      "shoulder_y": 435
+    }
+  ],
+  "left": [
+    {
+      "crown_y": 61,
+      "neck_y": 420,
+      "head_left": 112,
+      "head_right": 515,
+      "shoulder_left": 243,
+      "shoulder_right": 337,
+      "shoulder_y": 454
+    },
+    {
+      "crown_y": 61,
+      "neck_y": 420,
+      "head_left": 836,
+      "head_right": 1239,
+      "shoulder_left": 967,
+      "shoulder_right": 1061,
+      "shoulder_y": 454
+    },
+    {
+      "crown_y": 61,
+      "neck_y": 420,
+      "head_left": 1560,
+      "head_right": 1963,
+      "shoulder_left": 1691,
+      "shoulder_right": 1785,
+      "shoulder_y": 454
+    }
+  ],
+  "right": [
+    {
+      "crown_y": 43,
+      "neck_y": 401,
+      "head_left": 145,
+      "head_right": 547,
+      "shoulder_left": 325,
+      "shoulder_right": 436,
+      "shoulder_y": 439
+    },
+    {
+      "crown_y": 43,
+      "neck_y": 401,
+      "head_left": 869,
+      "head_right": 1271,
+      "shoulder_left": 1049,
+      "shoulder_right": 1160,
+      "shoulder_y": 439
+    },
+    {
+      "crown_y": 43,
+      "neck_y": 401,
+      "head_left": 1593,
+      "head_right": 1995,
+      "shoulder_left": 1773,
+      "shoulder_right": 1884,
+      "shoulder_y": 439
+    }
+  ],
+  "up": [
+    {
+      "crown_y": 44,
+      "neck_y": 405,
+      "head_left": 151,
+      "head_right": 520,
+      "shoulder_left": 236,
+      "shoulder_right": 439,
+      "shoulder_y": 468,
+      "uncertainty": "nape hidden under hair; inferred from visible shoulder/sleeve level; about +/-20 source px (~1.5 native px)"
+    },
+    {
+      "crown_y": 44,
+      "neck_y": 405,
+      "head_left": 875,
+      "head_right": 1244,
+      "shoulder_left": 960,
+      "shoulder_right": 1163,
+      "shoulder_y": 468,
+      "uncertainty": "nape hidden under hair; inferred from visible shoulder/sleeve level; about +/-20 source px (~1.5 native px)"
+    },
+    {
+      "crown_y": 44,
+      "neck_y": 405,
+      "head_left": 1599,
+      "head_right": 1968,
+      "shoulder_left": 1684,
+      "shoulder_right": 1887,
+      "shoulder_y": 468,
+      "uncertainty": "nape hidden under hair; inferred from visible shoulder/sleeve level; about +/-20 source px (~1.5 native px)"
+    }
+  ],
+  "wait": [
+    {
+      "crown_y": 58,
+      "neck_y": 405,
+      "head_left": 96,
+      "head_right": 495,
+      "shoulder_left": 227,
+      "shoulder_right": 325,
+      "shoulder_y": 439
+    },
+    {
+      "crown_y": 68,
+      "neck_y": 415,
+      "head_left": 820,
+      "head_right": 1219,
+      "shoulder_left": 951,
+      "shoulder_right": 1049,
+      "shoulder_y": 449
+    },
+    {
+      "crown_y": 58,
+      "neck_y": 405,
+      "head_left": 1544,
+      "head_right": 1943,
+      "shoulder_left": 1675,
+      "shoulder_right": 1773,
+      "shoulder_y": 439
+    }
+  ]
+}

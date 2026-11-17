@@ -1,0 +1,1234 @@
+{
+  "method": "single uniform whole-subject resize; no segmented body scaling; manual source landmark transforms rounded to native pixels",
+  "uncertainty": "Source landmarks visually annotated; hair hides rear neck/shoulders. Width includes normal head hair, excludes pin and hanging locks where separable.",
+  "frames": [
+    {
+      "direction": "down",
+      "frame": 0,
+      "source_span": [
+        105,
+        0
+      ],
+      "source_bbox": [
+        105,
+        17,
+        0,
+        698
+      ],
+      "source_marks": {
+        "crown_y": 51,
+        "neck_y": 404,
+        "head_left": 108,
+        "head_right": 551,
+        "shoulder_left": 223,
+        "shoulder_right": 418,
+        "shoulder_y": 435
+      },
+      "uniform_scale": 0.06754772393538913,
+      "output_bbox": [
+        7,
+        2,
+        40,
+        48
+      ],
+      "output_landmarks": {
+        "crown_y": 4,
+        "neck_y": 28,
+        "head_left": 7,
+        "head_right": 37,
+        "shoulder_left": 15,
+        "shoulder_right": 28,
+        "shoulder_y": 30
+      },
+      "measured": {
+        "head_height": 24,
+        "head_width": 30,
+        "height": 44,
+        "shoulder_width": 13,
+        "bun_height": 2
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "down",
+        "frame": 0,
+        "bbox": [
+          9,
+          3,
+          38,
+          48
+        ],
+        "crown_y": 3,
+        "chin_or_neck_y": 27,
+        "head_height": 24,
+        "head_width": 29,
+        "height": 45,
+        "shoulder_width": 12,
+        "shoulder_segment": [
+          18,
+          30,
+          30,
+          30
+        ],
+        "bun_height": 0,
+        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+      },
+      "delta_vs_guyu": {
+        "head_height": 0,
+        "head_width": 1,
+        "height": -1,
+        "shoulder_width": 1,
+        "bun_height": 2
+      },
+      "difference_over_1px": {
+        "bun_height": 2
+      }
+    },
+    {
+      "direction": "down",
+      "frame": 1,
+      "source_span": [
+        829,
+        0
+      ],
+      "source_bbox": [
+        829,
+        17,
+        0,
+        689
+      ],
+      "source_marks": {
+        "crown_y": 51,
+        "neck_y": 404,
+        "head_left": 832,
+        "head_right": 1275,
+        "shoulder_left": 947,
+        "shoulder_right": 1142,
+        "shoulder_y": 435
+      },
+      "uniform_scale": 0.06845238095238096,
+      "output_bbox": [
+        7,
+        2,
+        40,
+        48
+      ],
+      "output_landmarks": {
+        "crown_y": 4,
+        "neck_y": 28,
+        "head_left": 7,
+        "head_right": 38,
+        "shoulder_left": 15,
+        "shoulder_right": 28,
+        "shoulder_y": 31
+      },
+      "measured": {
+        "head_height": 24,
+        "head_width": 31,
+        "height": 44,
+        "shoulder_width": 13,
+        "bun_height": 2
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "down",
+        "frame": 1,
+        "bbox": [
+          8,
+          2,
+          38,
+          48
+        ],
+        "crown_y": 2,
+        "chin_or_neck_y": 26,
+        "head_height": 24,
+        "head_width": 30,
+        "height": 46,
+        "shoulder_width": 12,
+        "shoulder_segment": [
+          18,
+          29,
+          30,
+          29
+        ],
+        "bun_height": 0,
+        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+      },
+      "delta_vs_guyu": {
+        "head_height": 0,
+        "head_width": 1,
+        "height": -2,
+        "shoulder_width": 1,
+        "bun_height": 2
+      },
+      "difference_over_1px": {
+        "height": -2,
+        "bun_height": 2
+      }
+    },
+    {
+      "direction": "down",
+      "frame": 2,
+      "source_span": [
+        1553,
+        0
+      ],
+      "source_bbox": [
+        1553,
+        17,
+        0,
+        698
+      ],
+      "source_marks": {
+        "crown_y": 51,
+        "neck_y": 404,
+        "head_left": 1556,
+        "head_right": 1999,
+        "shoulder_left": 1671,
+        "shoulder_right": 1866,
+        "shoulder_y": 435
+      },
+      "uniform_scale": 0.06754772393538913,
+      "output_bbox": [
+        7,
+        2,
+        40,
+        48
+      ],
+      "output_landmarks": {
+        "crown_y": 4,
+        "neck_y": 28,
+        "head_left": 7,
+        "head_right": 37,
+        "shoulder_left": 15,
+        "shoulder_right": 28,
+        "shoulder_y": 30
+      },
+      "measured": {
+        "head_height": 24,
+        "head_width": 30,
+        "height": 44,
+        "shoulder_width": 13,
+        "bun_height": 2
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "down",
+        "frame": 2,
+        "bbox": [
+          9,
+          3,
+          38,
+          48
+        ],
+        "crown_y": 3,
+        "chin_or_neck_y": 27,
+        "head_height": 24,
+        "head_width": 29,
+        "height": 45,
+        "shoulder_width": 12,
+        "shoulder_segment": [
+          18,
+          30,
+          30,
+          30
+        ],
+        "bun_height": 0,
+        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+      },
+      "delta_vs_guyu": {
+        "head_height": 0,
+        "head_width": 1,
+        "height": -1,
+        "shoulder_width": 1,
+        "bun_height": 2
+      },
+      "difference_over_1px": {
+        "bun_height": 2
+      }
+    },
+    {
+      "direction": "left",
+      "frame": 0,
+      "source_span": [
+        116,
+        0
+      ],
+      "source_bbox": [
+        116,
+        33,
+        0,
+        696
+      ],
+      "source_marks": {
+        "crown_y": 61,
+        "neck_y": 420,
+        "head_left": 112,
+        "head_right": 515,
+        "shoulder_left": 243,
+        "shoulder_right": 337,
+        "shoulder_y": 454
+      },
+      "uniform_scale": 0.07088989441930618,
+      "output_bbox": [
+        8,
+        1,
+        39,
+        48
+      ],
+      "output_landmarks": {
+        "crown_y": 3,
+        "neck_y": 28,
+        "head_left": 8,
+        "head_right": 36,
+        "shoulder_left": 17,
+        "shoulder_right": 24,
+        "shoulder_y": 31
+      },
+      "measured": {
+        "head_height": 25,
+        "head_width": 28,
+        "height": 45,
+        "shoulder_width": 7,
+        "bun_height": 2
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "left",
+        "frame": 0,
+        "bbox": [
+          10,
+          3,
+          39,
+          48
+        ],
+        "crown_y": 3,
+        "chin_or_neck_y": 27,
+        "head_height": 24,
+        "head_width": 28,
+        "height": 45,
+        "shoulder_width": 8,
+        "shoulder_segment": [
+          20,
+          30,
+          28,
+          30
+        ],
+        "bun_height": 0,
+        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+      },
+      "delta_vs_guyu": {
+        "head_height": 1,
+        "head_width": 0,
+        "height": 0,
+        "shoulder_width": -1,
+        "bun_height": 2
+      },
+      "difference_over_1px": {
+        "bun_height": 2
+      }
+    },
+    {
+      "direction": "left",
+      "frame": 1,
+      "source_span": [
+        840,
+        0
+      ],
+      "source_bbox": [
+        840,
+        32,
+        0,
+        686
+      ],
+      "source_marks": {
+        "crown_y": 61,
+        "neck_y": 420,
+        "head_left": 836,
+        "head_right": 1239,
+        "shoulder_left": 967,
+        "shoulder_right": 1061,
+        "shoulder_y": 454
+      },
+      "uniform_scale": 0.07339449541284404,
+      "output_bbox": [
+        8,
+        0,
+        40,
+        48
+      ],
+      "output_landmarks": {
+        "crown_y": 2,
+        "neck_y": 28,
+        "head_left": 8,
+        "head_right": 37,
+        "shoulder_left": 17,
+        "shoulder_right": 24,
+        "shoulder_y": 31
+      },
+      "measured": {
+        "head_height": 26,
+        "head_width": 29,
+        "height": 46,
+        "shoulder_width": 7,
+        "bun_height": 2
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "left",
+        "frame": 1,
+        "bbox": [
+          10,
+          2,
+          40,
+          48
+        ],
+        "crown_y": 2,
+        "chin_or_neck_y": 26,
+        "head_height": 24,
+        "head_width": 29,
+        "height": 46,
+        "shoulder_width": 8,
+        "shoulder_segment": [
+          20,
+          29,
+          28,
+          29
+        ],
+        "bun_height": 0,
+        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+      },
+      "delta_vs_guyu": {
+        "head_height": 2,
+        "head_width": 0,
+        "height": 0,
+        "shoulder_width": -1,
+        "bun_height": 2
+      },
+      "difference_over_1px": {
+        "head_height": 2,
+        "bun_height": 2
+      }
+    },
+    {
+      "direction": "left",
+      "frame": 2,
+      "source_span": [
+        1564,
+        0
+      ],
+      "source_bbox": [
+        1564,
+        33,
+        0,
+        696
+      ],
+      "source_marks": {
+        "crown_y": 61,
+        "neck_y": 420,
+        "head_left": 1560,
+        "head_right": 1963,
+        "shoulder_left": 1691,
+        "shoulder_right": 1785,
+        "shoulder_y": 454
+      },
+      "uniform_scale": 0.07088989441930618,
+      "output_bbox": [
+        10,
+        1,
+        41,
+        48
+      ],
+      "output_landmarks": {
+        "crown_y": 3,
+        "neck_y": 28,
+        "head_left": 10,
+        "head_right": 38,
+        "shoulder_left": 19,
+        "shoulder_right": 26,
+        "shoulder_y": 31
+      },
+      "measured": {
+        "head_height": 25,
+        "head_width": 28,
+        "height": 45,
+        "shoulder_width": 7,
+        "bun_height": 2
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "left",
+        "frame": 2,
+        "bbox": [
+          10,
+          3,
+          39,
+          48
+        ],
+        "crown_y": 3,
+        "chin_or_neck_y": 27,
+        "head_height": 24,
+        "head_width": 28,
+        "height": 45,
+        "shoulder_width": 8,
+        "shoulder_segment": [
+          20,
+          30,
+          28,
+          30
+        ],
+        "bun_height": 0,
+        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+      },
+      "delta_vs_guyu": {
+        "head_height": 1,
+        "head_width": 0,
+        "height": 0,
+        "shoulder_width": -1,
+        "bun_height": 2
+      },
+      "difference_over_1px": {
+        "bun_height": 2
+      }
+    },
+    {
+      "direction": "right",
+      "frame": 0,
+      "source_span": [
+        144,
+        0
+      ],
+      "source_bbox": [
+        144,
+        31,
+        0,
+        706
+      ],
+      "source_marks": {
+        "crown_y": 43,
+        "neck_y": 401,
+        "head_left": 145,
+        "head_right": 547,
+        "shoulder_left": 325,
+        "shoulder_right": 436,
+        "shoulder_y": 439
+      },
+      "uniform_scale": 0.06814814814814815,
+      "output_bbox": [
+        8,
+        2,
+        38,
+        48
+      ],
+      "output_landmarks": {
+        "crown_y": 3,
+        "neck_y": 27,
+        "head_left": 8,
+        "head_right": 35,
+        "shoulder_left": 20,
+        "shoulder_right": 28,
+        "shoulder_y": 30
+      },
+      "measured": {
+        "head_height": 24,
+        "head_width": 27,
+        "height": 45,
+        "shoulder_width": 8,
+        "bun_height": 1
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "right",
+        "frame": 0,
+        "bbox": [
+          10,
+          3,
+          37,
+          48
+        ],
+        "crown_y": 3,
+        "chin_or_neck_y": 27,
+        "head_height": 24,
+        "head_width": 26,
+        "height": 45,
+        "shoulder_width": 9,
+        "shoulder_segment": [
+          19,
+          30,
+          28,
+          30
+        ],
+        "bun_height": 0,
+        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+      },
+      "delta_vs_guyu": {
+        "head_height": 0,
+        "head_width": 1,
+        "height": 0,
+        "shoulder_width": -1,
+        "bun_height": 1
+      },
+      "difference_over_1px": {}
+    },
+    {
+      "direction": "right",
+      "frame": 1,
+      "source_span": [
+        868,
+        0
+      ],
+      "source_bbox": [
+        868,
+        31,
+        0,
+        706
+      ],
+      "source_marks": {
+        "crown_y": 43,
+        "neck_y": 401,
+        "head_left": 869,
+        "head_right": 1271,
+        "shoulder_left": 1049,
+        "shoulder_right": 1160,
+        "shoulder_y": 439
+      },
+      "uniform_scale": 0.06814814814814815,
+      "output_bbox": [
+        8,
+        2,
+        38,
+        48
+      ],
+      "output_landmarks": {
+        "crown_y": 3,
+        "neck_y": 27,
+        "head_left": 8,
+        "head_right": 35,
+        "shoulder_left": 20,
+        "shoulder_right": 28,
+        "shoulder_y": 30
+      },
+      "measured": {
+        "head_height": 24,
+        "head_width": 27,
+        "height": 45,
+        "shoulder_width": 8,
+        "bun_height": 1
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "right",
+        "frame": 1,
+        "bbox": [
+          8,
+          2,
+          36,
+          48
+        ],
+        "crown_y": 2,
+        "chin_or_neck_y": 26,
+        "head_height": 24,
+        "head_width": 27,
+        "height": 46,
+        "shoulder_width": 9,
+        "shoulder_segment": [
+          19,
+          29,
+          28,
+          29
+        ],
+        "bun_height": 0,
+        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+      },
+      "delta_vs_guyu": {
+        "head_height": 0,
+        "head_width": 0,
+        "height": -1,
+        "shoulder_width": -1,
+        "bun_height": 1
+      },
+      "difference_over_1px": {}
+    },
+    {
+      "direction": "right",
+      "frame": 2,
+      "source_span": [
+        1592,
+        0
+      ],
+      "source_bbox": [
+        1592,
+        31,
+        0,
+        706
+      ],
+      "source_marks": {
+        "crown_y": 43,
+        "neck_y": 401,
+        "head_left": 1593,
+        "head_right": 1995,
+        "shoulder_left": 1773,
+        "shoulder_right": 1884,
+        "shoulder_y": 439
+      },
+      "uniform_scale": 0.06814814814814815,
+      "output_bbox": [
+        7,
+        2,
+        37,
+        48
+      ],
+      "output_landmarks": {
+        "crown_y": 3,
+        "neck_y": 27,
+        "head_left": 7,
+        "head_right": 34,
+        "shoulder_left": 19,
+        "shoulder_right": 27,
+        "shoulder_y": 30
+      },
+      "measured": {
+        "head_height": 24,
+        "head_width": 27,
+        "height": 45,
+        "shoulder_width": 8,
+        "bun_height": 1
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "right",
+        "frame": 2,
+        "bbox": [
+          8,
+          3,
+          35,
+          48
+        ],
+        "crown_y": 3,
+        "chin_or_neck_y": 27,
+        "head_height": 24,
+        "head_width": 26,
+        "height": 45,
+        "shoulder_width": 9,
+        "shoulder_segment": [
+          19,
+          30,
+          28,
+          30
+        ],
+        "bun_height": 0,
+        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+      },
+      "delta_vs_guyu": {
+        "head_height": 0,
+        "head_width": 1,
+        "height": 0,
+        "shoulder_width": -1,
+        "bun_height": 1
+      },
+      "difference_over_1px": {}
+    },
+    {
+      "direction": "up",
+      "frame": 0,
+      "source_span": [
+        124,
+        0
+      ],
+      "source_bbox": [
+        124,
+        11,
+        0,
+        712
+      ],
+      "source_marks": {
+        "crown_y": 44,
+        "neck_y": 405,
+        "head_left": 151,
+        "head_right": 520,
+        "shoulder_left": 236,
+        "shoulder_right": 439,
+        "shoulder_y": 468,
+        "uncertainty": "nape hidden under hair; inferred from visible shoulder/sleeve level; about +/-20 source px (~1.5 native px)"
+      },
+      "uniform_scale": 0.06704707560627675,
+      "output_bbox": [
+        8,
+        1,
+        37,
+        48
+      ],
+      "output_landmarks": {
+        "crown_y": 3,
+        "neck_y": 27,
+        "head_left": 10,
+        "head_right": 35,
+        "shoulder_left": 16,
+        "shoulder_right": 29,
+        "shoulder_y": 32
+      },
+      "measured": {
+        "head_height": 24,
+        "head_width": 25,
+        "height": 45,
+        "shoulder_width": 13,
+        "bun_height": 2
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "up",
+        "frame": 0,
+        "bbox": [
+          9,
+          3,
+          37,
+          48
+        ],
+        "crown_y": 3,
+        "chin_or_neck_y": 29,
+        "head_height": 26,
+        "head_width": 28,
+        "height": 45,
+        "shoulder_width": 12,
+        "shoulder_segment": [
+          18,
+          32,
+          30,
+          32
+        ],
+        "bun_height": 0,
+        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+      },
+      "delta_vs_guyu": {
+        "head_height": -2,
+        "head_width": -3,
+        "height": 0,
+        "shoulder_width": 1,
+        "bun_height": 2
+      },
+      "difference_over_1px": {
+        "head_height": -2,
+        "head_width": -3,
+        "bun_height": 2
+      }
+    },
+    {
+      "direction": "up",
+      "frame": 1,
+      "source_span": [
+        848,
+        0
+      ],
+      "source_bbox": [
+        848,
+        11,
+        0,
+        702
+      ],
+      "source_marks": {
+        "crown_y": 44,
+        "neck_y": 405,
+        "head_left": 875,
+        "head_right": 1244,
+        "shoulder_left": 960,
+        "shoulder_right": 1163,
+        "shoulder_y": 468,
+        "uncertainty": "nape hidden under hair; inferred from visible shoulder/sleeve level; about +/-20 source px (~1.5 native px)"
+      },
+      "uniform_scale": 0.0694645441389291,
+      "output_bbox": [
+        8,
+        0,
+        38,
+        48
+      ],
+      "output_landmarks": {
+        "crown_y": 2,
+        "neck_y": 27,
+        "head_left": 10,
+        "head_right": 36,
+        "shoulder_left": 16,
+        "shoulder_right": 30,
+        "shoulder_y": 32
+      },
+      "measured": {
+        "head_height": 25,
+        "head_width": 26,
+        "height": 46,
+        "shoulder_width": 14,
+        "bun_height": 2
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "up",
+        "frame": 1,
+        "bbox": [
+          9,
+          2,
+          38,
+          48
+        ],
+        "crown_y": 2,
+        "chin_or_neck_y": 28,
+        "head_height": 26,
+        "head_width": 29,
+        "height": 46,
+        "shoulder_width": 12,
+        "shoulder_segment": [
+          18,
+          31,
+          30,
+          31
+        ],
+        "bun_height": 0,
+        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+      },
+      "delta_vs_guyu": {
+        "head_height": -1,
+        "head_width": -3,
+        "height": 0,
+        "shoulder_width": 2,
+        "bun_height": 2
+      },
+      "difference_over_1px": {
+        "head_width": -3,
+        "shoulder_width": 2,
+        "bun_height": 2
+      }
+    },
+    {
+      "direction": "up",
+      "frame": 2,
+      "source_span": [
+        1572,
+        0
+      ],
+      "source_bbox": [
+        1572,
+        11,
+        0,
+        712
+      ],
+      "source_marks": {
+        "crown_y": 44,
+        "neck_y": 405,
+        "head_left": 1599,
+        "head_right": 1968,
+        "shoulder_left": 1684,
+        "shoulder_right": 1887,
+        "shoulder_y": 468,
+        "uncertainty": "nape hidden under hair; inferred from visible shoulder/sleeve level; about +/-20 source px (~1.5 native px)"
+      },
+      "uniform_scale": 0.06704707560627675,
+      "output_bbox": [
+        10,
+        1,
+        39,
+        48
+      ],
+      "output_landmarks": {
+        "crown_y": 3,
+        "neck_y": 27,
+        "head_left": 12,
+        "head_right": 37,
+        "shoulder_left": 18,
+        "shoulder_right": 31,
+        "shoulder_y": 32
+      },
+      "measured": {
+        "head_height": 24,
+        "head_width": 25,
+        "height": 45,
+        "shoulder_width": 13,
+        "bun_height": 2
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "up",
+        "frame": 2,
+        "bbox": [
+          10,
+          3,
+          38,
+          48
+        ],
+        "crown_y": 3,
+        "chin_or_neck_y": 29,
+        "head_height": 26,
+        "head_width": 28,
+        "height": 45,
+        "shoulder_width": 12,
+        "shoulder_segment": [
+          18,
+          32,
+          30,
+          32
+        ],
+        "bun_height": 0,
+        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+      },
+      "delta_vs_guyu": {
+        "head_height": -2,
+        "head_width": -3,
+        "height": 0,
+        "shoulder_width": 1,
+        "bun_height": 2
+      },
+      "difference_over_1px": {
+        "head_height": -2,
+        "head_width": -3,
+        "bun_height": 2
+      }
+    },
+    {
+      "direction": "wait",
+      "frame": 0,
+      "source_span": [
+        100,
+        0
+      ],
+      "source_bbox": [
+        100,
+        33,
+        0,
+        708
+      ],
+      "source_marks": {
+        "crown_y": 58,
+        "neck_y": 405,
+        "head_left": 96,
+        "head_right": 495,
+        "shoulder_left": 227,
+        "shoulder_right": 325,
+        "shoulder_y": 439
+      },
+      "uniform_scale": 0.09481481481481481,
+      "output_bbox": [
+        10,
+        0,
+        51,
+        64
+      ],
+      "output_landmarks": {
+        "crown_y": 2,
+        "neck_y": 35,
+        "head_left": 10,
+        "head_right": 47,
+        "shoulder_left": 22,
+        "shoulder_right": 31,
+        "shoulder_y": 38
+      },
+      "measured": {
+        "head_height": 33,
+        "head_width": 37,
+        "height": 62,
+        "shoulder_width": 9,
+        "bun_height": 2
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "wait",
+        "frame": 0,
+        "bbox": [
+          9,
+          4,
+          53,
+          64
+        ],
+        "crown_y": 4,
+        "chin_or_neck_y": 39,
+        "head_height": 35,
+        "head_width": 44,
+        "height": 60,
+        "shoulder_width": 10,
+        "shoulder_segment": [
+          25,
+          42,
+          35,
+          42
+        ],
+        "bun_height": 0,
+        "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+      },
+      "delta_vs_guyu": {
+        "head_height": -2,
+        "head_width": -7,
+        "height": 2,
+        "shoulder_width": -1,
+        "bun_height": 2
+      },
+      "difference_over_1px": {
+        "head_height": -2,
+        "head_width": -7,
+        "height": 2,
+        "bun_height": 2
+      }
+    },
+    {
+      "direction": "wait",
+      "frame": 1,
+      "source_span": [
+        826,
+        0
+      ],
+      "source_bbox": [
+        826,
+        46,
+        0,
+        708
+      ],
+      "source_marks": {
+        "crown_y": 68,
+        "neck_y": 415,
+        "head_left": 820,
+        "head_right": 1219,
+        "shoulder_left": 951,
+        "shoulder_right": 1049,
+        "shoulder_y": 449
+      },
+      "uniform_scale": 0.09667673716012085,
+      "output_bbox": [
+        10,
+        0,
+        52,
+        64
+      ],
+      "output_landmarks": {
+        "crown_y": 2,
+        "neck_y": 36,
+        "head_left": 9,
+        "head_right": 48,
+        "shoulder_left": 22,
+        "shoulder_right": 32,
+        "shoulder_y": 39
+      },
+      "measured": {
+        "head_height": 34,
+        "head_width": 39,
+        "height": 62,
+        "shoulder_width": 10,
+        "bun_height": 2
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "wait",
+        "frame": 1,
+        "bbox": [
+          9,
+          4,
+          53,
+          64
+        ],
+        "crown_y": 4,
+        "chin_or_neck_y": 39,
+        "head_height": 35,
+        "head_width": 44,
+        "height": 60,
+        "shoulder_width": 10,
+        "shoulder_segment": [
+          25,
+          42,
+          35,
+          42
+        ],
+        "bun_height": 0,
+        "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+      },
+      "delta_vs_guyu": {
+        "head_height": -1,
+        "head_width": -5,
+        "height": 2,
+        "shoulder_width": 0,
+        "bun_height": 2
+      },
+      "difference_over_1px": {
+        "head_width": -5,
+        "height": 2,
+        "bun_height": 2
+      }
+    },
+    {
+      "direction": "wait",
+      "frame": 2,
+      "source_span": [
+        1548,
+        0
+      ],
+      "source_bbox": [
+        1548,
+        33,
+        0,
+        708
+      ],
+      "source_marks": {
+        "crown_y": 58,
+        "neck_y": 405,
+        "head_left": 1544,
+        "head_right": 1943,
+        "shoulder_left": 1675,
+        "shoulder_right": 1773,
+        "shoulder_y": 439
+      },
+      "uniform_scale": 0.09481481481481481,
+      "output_bbox": [
+        10,
+        0,
+        51,
+        64
+      ],
+      "output_landmarks": {
+        "crown_y": 2,
+        "neck_y": 35,
+        "head_left": 10,
+        "head_right": 47,
+        "shoulder_left": 22,
+        "shoulder_right": 31,
+        "shoulder_y": 38
+      },
+      "measured": {
+        "head_height": 33,
+        "head_width": 37,
+        "height": 62,
+        "shoulder_width": 9,
+        "bun_height": 2
+      },
+      "guyu_target": {
+        "character": "Guyu",
+        "direction": "wait",
+        "frame": 2,
+        "bbox": [
+          9,
+          4,
+          53,
+          64
+        ],
+        "crown_y": 4,
+        "chin_or_neck_y": 39,
+        "head_height": 35,
+        "head_width": 44,
+        "height": 60,
+        "shoulder_width": 10,
+        "shoulder_segment": [
+          25,
+          42,
+          35,
+          42
+        ],
+        "bun_height": 0,
+        "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+      },
+      "delta_vs_guyu": {
+        "head_height": -2,
+        "head_width": -7,
+        "height": 2,
+        "shoulder_width": -1,
+        "bun_height": 2
+      },
+      "difference_over_1px": {
+        "head_height": -2,
+        "head_width": -7,
+        "height": 2,
+        "bun_height": 2
+      }
+    }
+  ]
+}
