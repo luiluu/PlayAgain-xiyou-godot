@@ -153,7 +153,7 @@ static func patch_map(map_id: int, data) -> void:
 
 ## 只修改 XDB 提供的当次地图副本；关闭庆典后重新读图自然恢复，不写转换产物。
 static func _patch_furniture(data: Dictionary, events: Array) -> void:
-	for placement in [[1, Vector2i(17, 5)], [70, Vector2i(19, 6)]]:
+	for placement in [[1, Vector2i(17, 5)], [70, Vector2i(11, 5)]]:
 		var id := int(placement[0])
 		if id < events.size() and events[id] is Dictionary:
 			var moved: Dictionary = events[id].duplicate(true)
