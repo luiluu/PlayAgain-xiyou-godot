@@ -1,0 +1,28 @@
+{
+ "sha": "8503d98acdb79c3d6c39d4094c7499c2f7990de7",
+ "branch": "ci/luiluu/cc-t130-phase4-b2",
+ "mode": "affected",
+ "base": "8b642c58a4ffdccab186e2383b4ba59d503b3917",
+ "passed": true,
+ "scenes": 7,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 285.5,
+ "testSeconds": 546,
+ "generatedRef": "refs/ci/generated/luiluu/cc-t130-phase4-b2",
+ "generatedCommit": "1b5ec245af94e099af434581b1eac1a7678a24d5",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/44033878637",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_tianqi_ledger.tscn",
+  "xiyou_tianqi_phase4.tscn",
+  "xiyou_tianqi_phase4_modules.tscn"
+ ],
+ "time": "2026-11-17T06:55:15+00:00"
+}
