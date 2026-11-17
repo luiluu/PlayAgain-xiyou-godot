@@ -126,7 +126,7 @@ func _draw() -> void:
 		if steps and not on:
 			var sfs := font_size
 			var sw := f.get_string_size(str(groups[i].name), HORIZONTAL_ALIGNMENT_LEFT, -1, sfs).x
-			draw_string(f, Vector2(r.get_center().x - sw / 2.0, r.position.y + TAB_H / 2.0 + sfs * 0.36), str(groups[i].name),
+			XUiSkin.ds(self, f, Vector2(r.get_center().x - sw / 2.0, r.position.y + TAB_H / 2.0 + sfs * 0.36), str(groups[i].name),
 				HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, XUiSkin.TEXT_2 if i < index else XUiSkin.TEXT_3)
 			continue
 		if on and XSkinArt.select_on():   # 第一期正式美术（D51）：tab_selected_assembly 几何（渐隐红底＋左外小箭头）
