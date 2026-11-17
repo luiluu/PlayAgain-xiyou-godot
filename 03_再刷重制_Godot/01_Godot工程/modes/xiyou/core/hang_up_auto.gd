@@ -16,6 +16,9 @@ static var SAFE_RECOVERY := true
 const LOOP_CAP := 2000
 ## O-023：顺序号保持 1～N 且删去旧表残留，次数改动后重建已排过的顺序；false 恢复原版延迟刷新/残留。
 static var CONSISTENT_ORDER := true
+## O-待定-1：顺序表的技能按实际消耗判够不够（同手动出招：书、装备、状态、禁忌等减耗都算，canUse 已比过）；
+## false＝原版 makeAction 拿技能表的原始 mpCost／tpCost 比当前值（减耗到 0 也判 TP 不够、改放普攻）
+static var REAL_COST := true
 
 static var _order_temp := {}
 static var better_frequency := 0
@@ -175,7 +178,7 @@ static func scheduled_id(s: XState, logic: XBattleLogic, a: XActor, turn: int) -
 
 ## 战斗中轮到 a（第 turn 回合）时按顺序表定下的技能；没有排或用不了返回空（交给自动战斗）。
 ## Codex_SmartBattleAI.scheduledSkill（能用、且是攻击/防御或学会的技能）后接 XdRs_HangUp 的 makeAction：
-## 原始 mpCost/tpCost 不超过当前值才用，否则普通攻击。
+## 原始 mpCost/tpCost 不超过当前值才用，否则普通攻击（REAL_COST 开着时改按实际消耗，can_use 已判过付不付得起）。
 static func scheduled_skill(s: XState, logic: XBattleLogic, a: XActor, turn: int) -> Dictionary:
 	var v = data(s, "ActSkill").get(a.display_name() + three(turn))
 	if v == null or int(v) <= 0:
@@ -189,7 +192,7 @@ static func scheduled_skill(s: XState, logic: XBattleLogic, a: XActor, turn: int
 	var attack := a.attack_skill()  # makeAction：表里是 1 或退回时都 setSkill(attackSkillId)
 	var usable := logic.usable_skills(a)
 	var listed := usable.any(func(x): return int(x.id) == id or id == 1 or id == 2)
-	if listed and float(sk.get("mpCost", 0)) <= a.mp and float(sk.get("tpCost", 0)) <= a.tp:
+	if listed and (REAL_COST or float(sk.get("mpCost", 0)) <= a.mp and float(sk.get("tpCost", 0)) <= a.tp):
 		return attack if id == 1 else sk
 	return attack
 

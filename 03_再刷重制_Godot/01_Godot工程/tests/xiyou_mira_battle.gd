@@ -294,7 +294,34 @@ func _run() -> void:
 		check(k + ".ratio", base[0] > 0.0 and absf(v[0] / base[0] - v[1] / base[1]) < 1e-6, [v, base])
 	check("incoming.cases", _incoming_values.size() == 3, _incoming_values.keys())
 	_otb_second_slot()
+	_hangup_free_cost()
 	finish()
+
+
+## T134 玩家反馈：洗髓经（技能消耗 −100%）把解放·黑龙的 TP 降到 0，挂机顺序表排了解放，开局 TP 不够原始 80 也要放（手动能放）；
+## 回退 REAL_COST＝false 照原版 makeAction 比原始 tpCost，退成普攻。不带书时 TP 不够照旧不放（MP 同一条判定）。
+func _hangup_free_cost() -> void:
+	var dragon := XDB.rec("Skills", XMira.LIBERATE)
+	var picks := {}
+	for book in [true, false]:
+		for real in [true, false]:
+			var r := _battle({"rank": 3, "level": 55, "drop": [10167]})
+			var logic: XBattleLogic = r[0]
+			var a: XActor = r[1]
+			if book:
+				a.learn_skill(7143)  # 洗髓经 <ConsumeReduceAll: 100%>
+				a.refresh_passive()
+			logic.start_turn()
+			a.tp = 0.0
+			logic.state.hang_up.ActSkill = {a.display_name() + XHangUpAuto.three(logic.turn): XMira.LIBERATE}
+			if book:
+				check("hangup_free.cost_zero", int(logic.skill_cost(a, dragon).tp) == 0 and int(dragon.tpCost) > 0 and logic.can_use(a, dragon), logic.skill_cost(a, dragon))
+			XHangUpAuto.REAL_COST = real
+			picks["%s_%s" % ["book" if book else "nobook", "real" if real else "raw"]] = int(logic.auto_battle_action(a)[0].get("id", 0))
+			XHangUpAuto.REAL_COST = true
+	check("hangup_free.book_real_liberates", picks.book_real == XMira.LIBERATE, picks)
+	check("hangup_free.book_raw_attacks", picks.book_raw != XMira.LIBERATE, picks)
+	check("hangup_free.nobook_no_liberate", picks.nobook_real != XMira.LIBERATE and picks.nobook_raw != XMira.LIBERATE, picks)
 
 
 ## 一回合两个行动位：第一个解放·黑龙，第二个普通攻击；敌人都放弃
