@@ -784,8 +784,8 @@ static func blacked_out(logic, b) -> bool:
 ## 掩护的人挨的打算在掩护的人身上，因为挂在实际扣血那一处 BattleLogic.execute_hp_damage）。一次行动（act／强制行动各算一次）
 ## 对同一个人、同一个出手的敌人最多一次；群体招每个被打中的人各算一次。一下涨多少按出手那只怪的异化级（守层者、使徒、骑士按终焉）。
 ## 涨到上限（60 ＋ 等级 × 0.5 ＋ 烙印 × 0.5，向下取整）：这一场「满过几次」（fills：actor_id → 次数，倒下不清）＋1、槽清零（溢出不留）、发作一次：
-## 他这一回合还没轮到行动就当场开始（XTianqiBrand.trigger，同一套保护，被隔回合、满人挡住就顺延）；这一回合已经行动过（或正在行动、
-## 被反击打满的）就顺延到下一回合开头发（start_turn 先发顺延的）。满了就算一次，发作有没有当场开始都算。净化、驱散不碰它，战斗结束随 fight 一起清。
+## 他这一回合还没轮到行动就当场开始（XTianqiBrand.trigger，同一套保护，被隔回合、满人挡住、正在发作就顺延）；这一回合已经行动过（或正在行动、
+## 被反击打满的）就顺延（start_turn 先发顺延的，照等间隔）。已经排着顺延的不再排第二个。满了就算一次，发作有没有当场开始都算。净化、驱散不碰它，战斗结束随 fight 一起清。
 ## 玩家可见文字（交付单单列，小A 文字审）：%s 依次是角色名、槽名（brand.json sear.name，占位名，最终名小A 起；不用「境」「锚」「异化」「病」「火」）
 const TEXT_SEAR_FULL := "%s 的%s满了！"
 const _TIER_CN := {"qinran": "侵染", "shigu": "蚀骨", "huaxing": "化形", "zhongyan": "终焉"}
@@ -888,8 +888,8 @@ static func sear_add(logic, a, amount: int) -> int:
 	if a.is_alive():
 		if logic.current_order.has(a):
 			c.sear_logs.append_array(trigger(logic, a, "sear")[1])
-		elif not _queued(c, a) and not _in_fit(c, a, int(logic.turn)):
-			c.fit_queue.append([a, "sear"])  # 这一回合已经行动过：下一回合开头发（同顺延）
+		elif not _queued(c, a):
+			c.fit_queue.append([a, "sear"])  # 这一回合已经行动过：顺延（同 trigger：发作中的也顺延，等间隔过了再发）
 	return 1
 
 
