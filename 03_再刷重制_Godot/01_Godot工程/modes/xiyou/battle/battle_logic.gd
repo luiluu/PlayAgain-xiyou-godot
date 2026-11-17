@@ -1551,7 +1551,7 @@ func make_unique_names() -> void:
 
 
 ## 313 [0 固定／1 变量, 角色（0 全队）, 0 附加／1 解除, 状态]（command313 / iterateActorEx：全队是战斗成员）
-## O-待定-2（T135 奈叶领域开战卡）：原版 command313 每人只 addState／removeState 再 clearResult，不另外 refresh
+## O-563（T135 奈叶领域开战卡）：原版 command313 每人只 addState／removeState 再 clearResult，不另外 refresh
 ## （addState 里的 refresh 还被 _Fix_StackOverflow 的锁压住；removeState 只在有该状态时 refresh，这两处 add/remove 自己已照做）。
 ## 重制原先每人再整套 refresh 一次：领域 CE2478 先拿 8 个状态（开战时一个都没有）再加 8 个，五人就是 80 次多余的 refresh，
 ## 装备、被动多的存档开战一顿。true＝照原版不另外 refresh；false＝每人再 refresh 一次（原来的做法）
