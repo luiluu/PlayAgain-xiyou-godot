@@ -1215,6 +1215,8 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 	list_costs = _list_costs_scene()
 	rows = content(obj, kind, skill_copy, note_width(obj, card_width) - PAD * 2)
 	quality = _quality(obj)
+	if quality > 0:
+		quality = XQuality.show_legacy(obj)  # T112：天启篇低档稀有坐骑边框跟显示品质
 	robe_card = XYunshang.is_robe(obj)
 	_apply(note_width(obj, card_width))
 	_set_extras(obj if with_extras and visible else {})  # 附卡与主卡同一场景
