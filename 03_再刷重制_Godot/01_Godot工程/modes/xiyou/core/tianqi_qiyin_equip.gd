@@ -14,7 +14,7 @@ extends RefCounted
 ## 开关（O-332）：ENABLED＝false 时揭开只亮成色、不生成装备（回到 cc/qiyin-altar 的样子），祭坛不出熔、分解、兑换，献只剩印屑。
 
 static var ENABLED := true
-## 开关（O-待定，T082）：true＝七印装备借底子（base_id）时连底子备注解析出的 YEP 效果（元素增幅等）、原版套装一起清掉；
+## 开关（O-569，T082）：true＝七印装备借底子（base_id）时连底子备注解析出的 YEP 效果（元素增幅等）、原版套装一起清掉；
 ## false＝照旧带过来（一套黑印＋真印毕业武器全系元素增幅 +1150%）。只管新生成的件，存档里已有的七印装备身上照旧带着
 static var CLEAR_BASE_FX := true
 
