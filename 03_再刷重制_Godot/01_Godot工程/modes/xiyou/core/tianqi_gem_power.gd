@@ -1,14 +1,14 @@
 class_name XTianqiGemPower
 extends RefCounted
-## 【T164·D186】宝石发挥度：宝石（符文镶嵌、宝珠）的实际效果＝图鉴里的基础值×装备的「宝石发挥度」，装备等级越高发挥越多。
+## 【T164·D186】镶嵌发挥度：宝石（符文镶嵌、宝珠）的实际效果＝图鉴里的基础值×装备的「宝石发挥度」，装备等级越高发挥越多。
 ## 发挥度就是期四装备八项里已经在用的换算比（XTianqiGear.flat_ratio），这里只做显示：不新增数值、不改任何战斗结果。
 ## 只认期四总开关 XTianqiBase.PHASE4 且这件装备读表（XTianqiGear.applies）；否则每个函数都返回空，界面逐字节回原样。
-const NAME := "宝石发挥度"
-const NOTE := "实际效果＝基础值×装备的宝石发挥度，装备等级越高发挥越多"
+const NAME := "镶嵌发挥度"
+const NOTE := "仅基础属性＝基础值×发挥度（等级越高越多），特效不放大"
 const COLOR := "#ffe499"
 const LINE_COLOR := "#cfe8ff"
 ## 八项 → 说明里的短名（生命、魔法、物攻、物防、魔攻、魔防、敏捷、幸运），同装备说明卡「属性:」用的术语
-const MAIN_COL := 2   # 没有宝石时用物攻那一列代表
+const EMPTY_COLS := [0, 2, 3, 6, 7]   # 没有宝石时看五列（生命、物攻、物防、敏捷、幸运），不单取物攻列，免得镶上宝石后头行跳变
 
 
 static func active(item) -> bool:
@@ -36,13 +36,14 @@ static func touched(base: Array) -> Array:
 	return out
 
 
-## 发挥度文字：各列换算比不同时给范围（生命、物攻、物防、敏捷、幸运各一列），只看宝石真正加成的那几项；没有宝石看物攻那一列
-static func power_text(item: Dictionary) -> String:
+## 发挥度文字：各列换算比不同时给范围（生命、物攻、物防、敏捷、幸运各一列）。只看宝石真正加成的那几项（base 不给就看这件已镶的宝石）；
+## 没有宝石看五列
+static func power_text(item: Dictionary, base = null) -> String:
 	if not active(item):
 		return ""
-	var idx := touched(XTianqiGear.gem_base(item))
+	var idx := touched(base if base is Array else XTianqiGear.gem_base(item))
 	if idx.is_empty():
-		idx = [MAIN_COL]
+		idx = EMPTY_COLS
 	var lo := INF
 	var hi := -INF
 	for i in idx:
@@ -50,6 +51,12 @@ static func power_text(item: Dictionary) -> String:
 		lo = minf(lo, r)
 		hi = maxf(hi, r)
 	return _pct(lo) if roundi(lo * 100.0) == roundi(hi * 100.0) else "%s～%s" % [_pct(lo), _pct(hi)]
+
+
+## 头行：「镶嵌发挥度：566%」，范围时加「（各项不同）」
+static func head_text(item: Dictionary, base = null) -> String:
+	var t := power_text(item, base)
+	return "%s：%s%s" % [NAME, t, "（各项不同）" if t.contains("～") else ""]
 
 
 ## 一组基础值 → 「物理攻击 +84（+20）」逐项（实际值（基础值））
@@ -68,7 +75,7 @@ static func detail_rows(item: Dictionary) -> Array:
 		return []
 	var size := int(XHelpCard.P43_SIZE.body)
 	var rows := [[" ", int(XHelpCard.P43_SIZE.gap), "#000000", false, 0],
-		["%s：%s" % [NAME, power_text(item)], size, COLOR, false, 0]]
+		[head_text(item), size, COLOR, false, 0]]
 	for l in value_lines(item, XTianqiGear.gem_base(item)):
 		rows.append(["　" + l, size, LINE_COLOR, false, 0])
 	return rows
@@ -78,7 +85,7 @@ static func detail_rows(item: Dictionary) -> Array:
 static func socket_head(item: Dictionary, size: int) -> Array:
 	if not active(item):
 		return []
-	return [["%s：%s" % [NAME, power_text(item)], size, COLOR, false, 0]]
+	return [[head_text(item), size, COLOR, false, 0]]
 
 
 ## 「插槽与镶嵌」页：第 n 个宝珠孔下面的逐项行
@@ -126,7 +133,8 @@ static func preview_lines(gear: Dictionary, rec: Dictionary, mode: String, slot 
 	var out := value_lines(gear, base)
 	if out.is_empty():
 		return []
-	return ["%s %s（本件）" % [NAME, power_text(gear)]] + out
+	var pt := power_text(gear, base)   # 按正在预览的这件材料／宝珠自己加成的列算，不读已镶的宝石
+	return ["%s：%s（%s）" % [NAME, pt, "本件，各项不同" if pt.contains("～") else "本件"]] + out
 
 
 ## 说明卡（旧界面）追加的行
