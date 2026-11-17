@@ -393,6 +393,21 @@ class SelectTests(Fixture):
         for scene in fb:
             self.assertTrue((repo / TESTS / scene).exists(), '数据校验场景不存在：' + scene)
 
+    def test_real_dynamic_loaded_json_reach_their_scenes(self):
+        """T132 复查：按常量路径／拼路径读、没有测试按文件名提的 json，改动必须选中真正读它的场景（不能只剩 3 个数据校验场景）。
+        text_fix/*.json 归 text_fix 组并带 xiyou_text_fix；每张 *_line.json 都有测试引用（XTianqiLine 拼 key＋_line.json 读）。"""
+        repo = HERE.parents[1]
+        data = repo / PROJECT / 'modes/xiyou'
+        groups, rules = sel.load_table()
+        for t in sorted((data / 'text_fix').glob('*.json')):
+            rel = str(t.relative_to(repo))
+            self.assertEqual(sel.classify(rel, rules), 'text_fix', rel)
+        self.assertIn('xiyou_text_fix.tscn', groups['text_fix']['scenes'])
+        self.assertTrue((repo / TESTS / 'xiyou_text_fix.tscn').exists())
+        tests_text = ' '.join(p.read_text(encoding='utf-8', errors='ignore') for p in (repo / TESTS).glob('*.gd'))
+        for t in sorted((data / 'tianqi_data').glob('*_line.json')):
+            self.assertIn(t.name, tests_text, '%s 没有测试按文件名引用（XTianqiLine 动态拼名读它，会只剩数据校验场景）' % t.name)
+
     def test_deleted_module_reads_class_name_from_base(self):
         (self.root / CORE / 'orbs.gd').unlink()
         self.assertIn('xiyou_orbs.tscn', self.pick()['scenes'])

@@ -29,3 +29,9 @@
 ## 本分支提交
 
 - 见 git log
+
+## 合前复查（动态加载 json）
+
+- rg 查 modes/xiyou 下 DirAccess／list_dir／get_files／拼 .json：没有目录扫描 modes/xiyou 手写数据的代码（DirAccess 都是存档与 generated/db 相关）；拼名加载只有 `tianqi_line.gd`（key＋"_line.json"，5 张）和 `text_fix.gd` 常量路径。
+- `*_line.json` 五张：测试按文件名引用，实测各选中 phase4／death／famine／plague／war 专项，没问题。
+- 漏的一张：`text_fix/overrides.json`（没有测试提它）原会只剩 3 个校验场景、漏 xiyou_text_fix。已新增 `text_fix` 组（xiyou_text_fix＋事件对照）和规则 `modes/xiyou/text_fix/*`，并加测试 `test_real_dynamic_loaded_json_reach_their_scenes`。
