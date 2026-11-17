@@ -2,7 +2,7 @@ class_name XTianqiHallText
 extends RefCounted
 ## 【小A·天启篇】方桌大厅 7 个改引导文案的 NPC 与合并菜单源事件说话人统一（T133）。
 ## 只对天启篇存档（XTianqi.active）生效，且只在 Map004 运行；不改 generated/ 与 XDB.map(4) 缓存，西游档原样。
-## 回退开关 ENABLED（O-待定）：false 时 Map004 对话与选项回到本卡前（T079 合并选单与原文案）。
+## 回退开关 ENABLED（O-561）：false 时 Map004 对话与选项回到本卡前（T079 合并选单与原文案）。
 
 static var ENABLED := true
 
