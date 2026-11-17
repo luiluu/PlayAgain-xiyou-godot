@@ -287,6 +287,8 @@ static func profile(f: Dictionary, motion: String) -> Dictionary:
 	var key := str(f.get("asset", ""))
 	if key == "" or not f.has("tex"):
 		return {}
+	if str((f.tex as Texture2D).resource_path).contains("/tusu_v2/") and key.begins_with("Codex_Tusu_"):
+		return {"size": Vector2(64,64), "bounds": Rect2(0,0,64,64), "multi": false, "scale": 1.0, "native_pixels": true}
 	# 新图只在实际加载原生64格图时用1:1；旧图继续旧归一。
 	if key == "Guyu_v2":
 		return {"size": Vector2(64,64), "bounds": Rect2(9,4,44,60), "multi": false, "scale": 1.0, "native_pixels": true}
@@ -368,6 +370,13 @@ func _super_sv(meta: Dictionary) -> void:
 	var name := str(meta.get("sv", "")).strip_edges()
 	if name == "" or name.contains("/"):
 		return
+	if name.begins_with("Codex_Tusu_") and name.ends_with("_v1"):
+		var w := name.trim_prefix("Codex_Tusu_").trim_suffix("_v1")
+		var p := XXuanTusuArt.weapon_path(w)
+		if p != "":
+			_mv_sheet(load(p), name)
+			hide_shadow = str(meta.get("YCyy", "")).to_lower() == "true"
+			return
 	var counts := {}
 	for i in range(MOTIONS.size()):
 		var n := int(str(meta.get("SVzs%d" % i, "0")).strip_edges()) if str(meta.get("SVzs%d" % i, "0")).strip_edges().is_valid_int() else 0

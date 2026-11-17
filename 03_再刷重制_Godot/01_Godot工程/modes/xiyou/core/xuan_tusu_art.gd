@@ -27,6 +27,13 @@ const HELD := {
 	"book": {"pivot": Vector2(64, 87), "height": 32.0, "bh": 74.0, "motions": [2, 9, 10], "x": 0.45, "y": 0.76, "scale": 0.9, "angle": 0.0},
 	"hammer": {"pivot": Vector2(64, 69), "height": 54.0, "bh": 101.0, "motions": [7, 9], "x": 0.10, "y": 0.64, "scale": 1.1, "angle": -0.20},
 }
+## T161: each complete sheet uses native 64px cells; bow retains its original art.
+static func weapon_path(w: String) -> String:
+	if not XTusu.ART or w not in ["book", "hammer", "shield", "sword"]:
+		return ""
+	var p := "res://content/tusu_v2/%s_SV_v2.png" % w
+	return p if ResourceLoader.exists(p) else ""
+
 ## POSSESSION
 const P_FRAME := 160.0
 const P_HEAD := Vector2(80, 20)
@@ -288,6 +295,7 @@ static func _update_held(s, w: String) -> void:
 		var mat := ShaderMaterial.new()
 		mat.shader = _held_shader
 		held.material = mat
+		held.set_meta("legacy_material", mat)
 		s.add_child(held)
 		s.move_child(held, s.sprite.get_index() + 1)
 		s.set_meta("xt_held", held)
@@ -299,19 +307,33 @@ static func _update_held(s, w: String) -> void:
 	if p == "":
 		held.visible = false
 		return
-	held.texture = load(p)
+	var native_path := weapon_path(w)
+	var native := native_path != ""
+	if native:
+		var atlas := AtlasTexture.new()
+		atlas.atlas = load(native_path)
+		var mi := maxi(0, m) if moving else 1
+		atlas.region = Rect2((floori(mi / 6.0) * 3 + (f if moving else 0)) * 64, (mi % 6) * 64, 64, 64)
+		held.texture = atlas
+	else:
+		held.texture = load(p)
+	held.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if native else CanvasItem.TEXTURE_FILTER_LINEAR
+	held.material = null if native else held.get_meta("legacy_material")
 	var body := body_rect(s)
 	var scale: float = float(c.height) / float(c.bh) * clampf(absf(body.size.y) / 72.0, 0.4, 1.6) * float(c.scale)
-	held.offset = -(c.pivot as Vector2)
+	if native:
+		scale = 1.0
+	held.offset = -(c.pivot as Vector2) * (0.5 if native else 1.0)
 	held.scale = Vector2(scale, scale)
 	held.position = body.position + Vector2(body.size.x * float(c.x), body.size.y * float(c.y))
-	(held.material as ShaderMaterial).set_shader_parameter("rim", Vector2.ONE / (float(CELL) * scale))
+	if held.material != null:
+		(held.material as ShaderMaterial).set_shader_parameter("rim", Vector2.ONE / (float(CELL) * scale))
 	var angle: float = c.angle
 	if moving and (w == "sword" or w == "hammer"):  # 出招时转起来；刺（6）另外往回收
 		angle = -PI / 2.0 if m == 6 else [0.4, -1.2, -2.2][f]
 		if m == 6:
 			held.position.x -= [0.0, 8.0, 12.0][f]
-	held.rotation = angle
+	held.rotation = 0.0 if native else angle
 	held.visible = true
 	if s.weapon != null:
 		if not s.has_meta("xt_weapon"):

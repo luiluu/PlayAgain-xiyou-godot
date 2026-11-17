@@ -38,7 +38,18 @@ func _run() -> void:
 	check("face.unchanged", XDB.img_path("faces", "Codex_Tusu_Face").ends_with("/Codex_Tusu_Face.png"))
 	for weapon in XTusu.WEAPONS:
 		var bound := XAppearance.for_look(a, "Codex_Tusu_SV_v1|art:Codex_Tusu_%s_v1" % weapon).frame("wait",0)
-		check("bound." + weapon, str(bound.tex.resource_path).contains("/sv/Codex_Tusu_%s_v1/" % weapon))
+		check("bound." + weapon, str(bound.tex.resource_path).ends_with("/%s_SV_v2.png" % weapon) if weapon != "bow" else str(bound.tex.resource_path).contains("/sv/Codex_Tusu_bow_v1/"))
+	for weapon in ["book", "hammer", "shield", "sword"]:
+		var weapon_look := XAppearance.for_look(a, "Codex_Tusu_SV_v1|art:Codex_Tusu_%s_v1" % weapon)
+		for motion_name in XAppearance.MOTIONS:
+			for frame_index in 3:
+				var wf := weapon_look.frame(motion_name, frame_index)
+				check("weapon.%s.%s.%d.native" % [weapon, motion_name, frame_index], wf.rect.size == Vector2(64,64) and XAppearance.profile(wf,motion_name).get("native_pixels",false))
+	XTusu.ART = false
+	for weapon in XTusu.WEAPONS:
+		var fallback := XAppearance.for_look(a, "Codex_Tusu_SV_v1|art:Codex_Tusu_%s_v1" % weapon).frame("wait",0)
+		check("weapon.rollback." + weapon, str(fallback.tex.resource_path).contains("/sv/Codex_Tusu_%s_v1/" % weapon))
+	XTusu.ART = true
 	check("unknown_art.empty", XTusu.art_path("sv_actors", "missing") == "")
 	XTusu.ART = false
 	var old := XAppearance.for_battler(a).frame("wait",0)

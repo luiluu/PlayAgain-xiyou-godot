@@ -4,6 +4,12 @@
 - 工作者：小o；派单配置 gpt-6.1-sol＋medium（P6）。
 - 开工基线：c5757cabb；工作区开工干净。
 
+## 第六次接续进展
+
+- 四武具已发布64格原生sheet；悬浮走完整18动作、宿主持武改64格切帧及半尺寸pivot，最近邻与1:1，不再叠加旧HD描边shader；弓保持旧资源。ART关闭回退原版，路径不存在时回退原版。
+- 原尺寸总览目视书盾未见模糊、跳变和穿帮，按Kyo本轮授权接入，不作为交叉核查。新增216帧native断言及5件ART回退断言；专项结果见weapons_sixth.log、xuan_tusu_sixth.log。
+- 璇整套源raw_xuan_full.png已生成，待裁格、行走与接线；哈基米整套待做。状态仍WIP不可合并。
+
 ## 第五次接力接续（2026-11-18，40%上下文收口）
 
 - 本轮已解决盾碰边：仅修改提示词，内置imagegen从批准的 `shield_gold_row0_64.png`＋谷雨定稿首行重出整套，未参考失败盾源、未硬裁速度线。新增 `prompt_shield_full_attempt2.txt`、`raw_shield_full_attempt2.png`。明确禁止速度线／冲击符号／脱离主体的闪点，橙金光仅贴金属边缘。
