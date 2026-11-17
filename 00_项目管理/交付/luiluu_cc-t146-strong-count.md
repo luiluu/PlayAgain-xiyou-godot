@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-t146-strong-count
 
 - 车道／工作者：T146 首领加成按超强者人数（cc，claude-opus-5-5＋medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -46,8 +46,10 @@
 ## 验证
 
 - 新专项 `xiyou_boss_strong_tianqi` 17/17；语法检查通过
-- `检查.sh --oracle --affected`：待写
+- `检查.sh --oracle --affected main --cloud`：通过（云端选测 419 个场景＋content、guards、same_source，提交 7bc974b31）；工具回归通过
 
 ## 本分支提交
 
-- 待写
+- ae0eb74cf T146 首领加成超强者人数：天启篇读天启档位表
+- 7bc974b31 T146 交付单草稿
+- 收尾提交：交付单标可合并
