@@ -4,6 +4,16 @@
 - 工作者：小o；派单配置 gpt-6.1-sol＋medium（P6）。
 - 开工基线：c5757cabb；工作区开工干净。
 
+## 第三次接力接续（2026-11-18，额度收口）
+
+- 本轮先完成屠苏专项与四张图。静音图形后端 `xiyou_tusu_art` 178/178；`tusu_check/runtime/` 保存 `map_walk.png`、`battle_wait.png`、`battle_swing.png`、`battle_damage.png`，均原尺寸目视；`render_evidence.json` 确认屠苏新图、scale=1、filter=1。Godot 全部带 `--audio-driver Dummy`，测试只用临时新局。
+- `specials_third.json` 与 `*_third.log` 保存10个相关专项首次结果：tusu、tusu_battle、tusu_ui、xuan_tusu_art、guyu_art、determinism、actor_looks、appearance、costumes通过。actor_book首次27/28，唯一失败是冻结原版fixture仍要求旧屠苏路径；按现有谷雨／云裳／米拉先例补XTusu.ART关闭／恢复，新图由tusu_art专项单独守护，复跑28/28、退出0，见 `actor_book_third_fixed.log`。未删除或改写fixture。
+- 工具快速回归23项全过，100秒，`tools_third.log`。语法1018个脚本0问题、退出0，见 `syntax_third.log`。
+- 选测再次给整轮建议，因xdb共享钩子和content保守映射；本车道只跑角色及外观直接依赖、确定性专项，整轮留总装云端选测，未在本机发起整轮。
+- 书的54格首轮已用内置imagegen生成，新增 `prompt_book_full.txt`、`raw_book_full_attempt1.png`。透明alpha覆盖约67%，大面积半透明金棕背景／光晕影响裁格，**作废，不能接入或作为下一轮参考**。返工仅改提示词，从批准的 `book_gold_row0_64.png`＋谷雨模板重新出，明确干净全透明空白、禁止大面积光晕；不抠背景冒充成品。本轮新增imagegen 1次。
+- 四武具整套未完成，璇整套未开始，哈基米仍等Kyo批准首行再做；未合main、未标可合并、未跑最终交付自检。运行资源无改动。本轮仅修改图鉴测试以冻结旧基准，其余为证据与接续。
+- 下一轮仍按：四武具整套→璇整套接入→收到Kyo哈基米意见后整套接入→最终专项、自检退出0。全部同角色同倍率，头宽/头高帧间≤1px；参考不含作废稿，弓不画。
+
 ## 本次接续（新口径优先，2026-11-18）
 
 - 已按协调更正废止「猫身高差≤1px」门槛。蹲低／突刺不再误判为整帧缩小；下文历史中重出和耳顶至靴底齐高要求均被此条取代。

@@ -1,0 +1,52 @@
+[
+  {
+    "scene": "xiyou_tusu",
+    "exit": 0,
+    "seconds": 6.9
+  },
+  {
+    "scene": "xiyou_tusu_battle",
+    "exit": 0,
+    "seconds": 35.21
+  },
+  {
+    "scene": "xiyou_tusu_ui",
+    "exit": 0,
+    "seconds": 6.38
+  },
+  {
+    "scene": "xiyou_xuan_tusu_art",
+    "exit": 0,
+    "seconds": 6.95
+  },
+  {
+    "scene": "xiyou_actor_book",
+    "exit": 1,
+    "seconds": 50.23
+  },
+  {
+    "scene": "xiyou_guyu_art",
+    "exit": 0,
+    "seconds": 5.26
+  },
+  {
+    "scene": "xiyou_determinism",
+    "exit": 0,
+    "seconds": 59.01
+  },
+  {
+    "scene": "xiyou_actor_looks",
+    "exit": 0,
+    "seconds": 5.98
+  },
+  {
+    "scene": "xiyou_appearance",
+    "exit": 0,
+    "seconds": 5.5
+  },
+  {
+    "scene": "xiyou_costumes",
+    "exit": 0,
+    "seconds": 5.23
+  }
+]

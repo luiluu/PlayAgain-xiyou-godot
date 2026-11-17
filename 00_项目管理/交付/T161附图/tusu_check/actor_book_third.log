@@ -1,0 +1,4 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+FAIL oracle_sprite {"count":1,"first":["176 Codex_Tusu_v11_0 图 res://content/tusu_v2/Tusu_SV_v2.png"]}
+TEST_RESULT={"passed":27,"total":28}
