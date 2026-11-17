@@ -49,7 +49,7 @@
 
 - 专项（本机）：`xiyou_battle_forced_fast` 12/12；`xiyou_battle_events`、`xiyou_battle_pace`、`xiyou_battle_log`、`xiyou_sequence_visual`、`xiyou_battle_ui`、`xiyou_newsrc_boss_events`、`xiyou_heir116`、`xiyou_floor_inherit`、`xiyou_determinism`、`xiyou_flow` 全过；语法检查 0 问题。
 - 原版对照：临时量具（`ui_reference/battle_pace_ref.cjs` 的副本，放 scratchpad、没提交）量 776 开场三招帧数，数字见上。
-- `检查.sh --oracle --affected main --cloud`：见下方「云端选测」行。
+- `检查.sh --oracle --affected main --cloud`：通过（基准 958f00b74，145 个场景分 6 片在云端跑，MV 参照引擎、守卫、探针登记全过，退出码 0；跑在 9791bba6f 上，之后只改了交付单）。
 
 ## 补丁线 cc/v00300 要摘的提交
 
@@ -66,3 +66,4 @@
 ## 本分支提交
 
 - 247706c0b T157 敌群事件强制行动快放（补丁线可摘）
+- 9791bba6f 等 交付单（不摘）
