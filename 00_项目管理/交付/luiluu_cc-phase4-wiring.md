@@ -58,6 +58,8 @@
 
 ## 验证
 
+- **R2（核查退回后）**：`xiyou_tianqi_phase4` 72／72、`xiyou_tianqi_skills` 238／238、`xiyou_tianqi_no_x6` 39／39（本机）；新断言反向验过（临时撤掉 11/12 区分，`e2e_on.item28_code11` 会红）；`检查.sh --oracle --affected main --cloud`（619b3dfc6）全部通过（选测 468 个场景，不再整轮；云端选测、事件对照、MV 参照、六难度同源都过）；误提交的 `04_验证/本地结果/t081_check.log*` 已删，根目录 `/04_验证/本地结果/` 进 .gitignore。
+
 - `xiyou_tianqi_phase4` 48／48、`xiyou_tianqi_skills` 237／237（本机单跑）；`天启篇数据校验.py` 全部通过（单段上限待拆名单已空）。
 - 虚拟玩家 explore（种子 1）：14／14 通过，卡死 0、脚本报错 0、violations 空。
 - 虚拟玩家短帧 climb（种子 1、150000 帧，总开关关／开各一局；开着那局用本机临时参数把 `XTianqiBase.PHASE4` 设真，没提交）：两局都是卡死 0、脚本报错 0、负血负钱 0（violations 空）、存档写入 1 次正常；关着 16 场战斗、开着 9 场，都停在第 1 层（时间用完，队伍 10 级）。climb 里没有读档这一步，读档没在这里验；总开关不写存档，存档结构没变。
