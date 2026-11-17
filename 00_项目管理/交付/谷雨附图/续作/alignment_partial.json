@@ -1,0 +1,362 @@
+[
+  {
+    "row": 0,
+    "col": 0,
+    "source_span": [
+      34,
+      201
+    ],
+    "template_bbox": [
+      10,
+      2,
+      55,
+      64
+    ],
+    "output_bbox": [
+      10,
+      2,
+      54,
+      64
+    ]
+  },
+  {
+    "row": 0,
+    "col": 1,
+    "source_span": [
+      276,
+      440
+    ],
+    "template_bbox": [
+      11,
+      3,
+      55,
+      64
+    ],
+    "output_bbox": [
+      12,
+      3,
+      55,
+      64
+    ]
+  },
+  {
+    "row": 0,
+    "col": 2,
+    "source_span": [
+      518,
+      681
+    ],
+    "template_bbox": [
+      11,
+      4,
+      55,
+      64
+    ],
+    "output_bbox": [
+      12,
+      4,
+      54,
+      64
+    ]
+  },
+  {
+    "row": 0,
+    "col": 3,
+    "source_span": [
+      763,
+      926
+    ],
+    "template_bbox": [
+      13,
+      3,
+      57,
+      64
+    ],
+    "output_bbox": [
+      14,
+      3,
+      56,
+      64
+    ]
+  },
+  {
+    "row": 0,
+    "col": 4,
+    "source_span": [
+      975,
+      1150
+    ],
+    "template_bbox": [
+      1,
+      5,
+      49,
+      64
+    ],
+    "output_bbox": [
+      2,
+      5,
+      47,
+      64
+    ]
+  },
+  {
+    "row": 0,
+    "col": 5,
+    "source_span": [
+      1215,
+      1398
+    ],
+    "template_bbox": [
+      1,
+      5,
+      49,
+      64
+    ],
+    "output_bbox": [
+      2,
+      5,
+      49,
+      64
+    ]
+  },
+  {
+    "row": 0,
+    "col": 6,
+    "source_span": [
+      1500,
+      1663
+    ],
+    "template_bbox": [
+      14,
+      4,
+      59,
+      64
+    ],
+    "output_bbox": [
+      16,
+      4,
+      57,
+      64
+    ]
+  },
+  {
+    "row": 0,
+    "col": 7,
+    "source_span": [
+      1740,
+      1903
+    ],
+    "template_bbox": [
+      14,
+      4,
+      59,
+      64
+    ],
+    "output_bbox": [
+      16,
+      4,
+      57,
+      64
+    ]
+  },
+  {
+    "row": 0,
+    "col": 8,
+    "source_span": [
+      1980,
+      2143
+    ],
+    "template_bbox": [
+      14,
+      4,
+      59,
+      64
+    ],
+    "output_bbox": [
+      16,
+      4,
+      57,
+      64
+    ]
+  },
+  {
+    "row": 1,
+    "col": 0,
+    "source_span": [
+      27,
+      190
+    ],
+    "template_bbox": [
+      9,
+      4,
+      53,
+      64
+    ],
+    "output_bbox": [
+      9,
+      4,
+      53,
+      64
+    ]
+  },
+  {
+    "row": 1,
+    "col": 1,
+    "source_span": [
+      270,
+      432
+    ],
+    "template_bbox": [
+      9,
+      4,
+      53,
+      64
+    ],
+    "output_bbox": [
+      9,
+      4,
+      53,
+      64
+    ]
+  },
+  {
+    "row": 1,
+    "col": 2,
+    "source_span": [
+      513,
+      675
+    ],
+    "template_bbox": [
+      9,
+      4,
+      53,
+      64
+    ],
+    "output_bbox": [
+      9,
+      4,
+      53,
+      64
+    ]
+  },
+  {
+    "row": 1,
+    "col": 3,
+    "source_span": [
+      763,
+      927
+    ],
+    "template_bbox": [
+      13,
+      3,
+      57,
+      64
+    ],
+    "output_bbox": [
+      12,
+      3,
+      57,
+      64
+    ]
+  },
+  {
+    "row": 1,
+    "col": 4,
+    "source_span": [
+      982,
+      1151
+    ],
+    "template_bbox": [
+      4,
+      5,
+      49,
+      64
+    ],
+    "output_bbox": [
+      3,
+      5,
+      50,
+      64
+    ]
+  },
+  {
+    "row": 1,
+    "col": 5,
+    "source_span": [
+      1228,
+      1397
+    ],
+    "template_bbox": [
+      4,
+      5,
+      49,
+      64
+    ],
+    "output_bbox": [
+      4,
+      5,
+      50,
+      64
+    ]
+  },
+  {
+    "row": 1,
+    "col": 6,
+    "source_span": [
+      1479,
+      1646
+    ],
+    "template_bbox": [
+      11,
+      3,
+      55,
+      64
+    ],
+    "output_bbox": [
+      10,
+      3,
+      57,
+      64
+    ]
+  },
+  {
+    "row": 1,
+    "col": 7,
+    "source_span": [
+      1720,
+      1888
+    ],
+    "template_bbox": [
+      8,
+      2,
+      55,
+      64
+    ],
+    "output_bbox": [
+      8,
+      2,
+      55,
+      64
+    ]
+  },
+  {
+    "row": 1,
+    "col": 8,
+    "source_span": [
+      1960,
+      2132
+    ],
+    "template_bbox": [
+      7,
+      1,
+      54,
+      64
+    ],
+    "output_bbox": [
+      6,
+      1,
+      54,
+      64
+    ]
+  }
+]
