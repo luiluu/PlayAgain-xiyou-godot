@@ -157,3 +157,5 @@
 - 新增出图0，预算仍62/80；不改接线与GDScript，沿用已通过的语法/外观依赖专项，本轮重跑云裳专项、工具回归和静音实机四图，最终结果见收尾。
 
 - 返修验证完成：云裳专项173/173、静音实机177/177（退出0，无SCRIPT ERROR/ERROR）、工具回归23项全过153秒。battle/runtime四图已刷新，wait明确使用重缩后的第2格；已原尺寸查看wait截图，加载新SV且显示尺寸与其他动作接近。日志在battle/validation/wait_rescale/，首个修复提交1a8099c2e；最终交付自检见收尾记录。
+
+- wait返修提交后交付自检退出0（52292da28，对main edb417ff7），快车道，试合并及交付单检查全部通过；记录battle/validation/wait_rescale/delivery_check.log。可转小A核查，本车道未自行标核查完成。
