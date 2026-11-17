@@ -7,7 +7,7 @@ extends RefCounted
 ## |---|---|---|---|
 ## | 角色卡 | 开 | 关（XTianqiSkills.CARDS 只剩测试隔离用） | XTianqiSkills.cards_on |
 ## | 角色本体 | 读标准线（base_line.json） | 原版职业曲线 | XActor.param_base_direct → param_base |
-## | 装备八项 | effective_params（T104 接） | 实例 params | —（本期不接） |
+## | 装备八项 | gear_base.json 新底子＋换算后的词缀、镶嵌、宝珠 | 实例 params | XTianqiGear.effective_params（T104；读八项的地方都走它，清单在交付单） |
 ## | K（天启注视） | combat_rules.base_damage × 每人乘数口子 | 1 | XTianqiCombat.dealt_parts |
 ## | 守层者三张表 | balance_table.guardian_phase4（T012-c 量；缺就退回旧表并警告一次） | 代码里的旧表 | XGuardianRework |
 ## | 治疗 ×5 | 不乘 | 照乘 | XTianqiNoDiffPassive.confirm_rows（skipTypes 加 3、4） |
@@ -286,4 +286,5 @@ static func rows_state() -> Dictionary:
 		"abs": o,
 		"boss_u": o,
 		"phase4_ledger": nine_crit_cap() >= 0.0,
+		"gear": XTianqiGear.applies({"kind": "weapon", "etypeId": 1, "meta": {"req_level": "1", "quality": "1"}}),
 	}

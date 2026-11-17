@@ -430,12 +430,13 @@ static func equipment(item: Dictionary) -> Dictionary:
 	if not enabled() or not _is_gear(item):
 		return _finish(_empty())
 	# 缓存键含全部输入：正式版按物品对象缓存，Godot 用一张表，故另加种类与武器／防具类型（_is_weapon、武器类型乘区要用）
-	var sig := JSON.stringify([item.get("kind"), item.get("wtypeId"), item.get("atypeId"), item.get("params"), item.get("traits"),
+	var eff = XTianqiGear.effective_params(item) if XTianqiGear.applies(item) else null  # 期四装备八项（T104）：关着为 null，签名、八项同原来
+	var sig := JSON.stringify([item.get("kind"), item.get("wtypeId"), item.get("atypeId"), item.get("params") if eff == null else eff, item.get("traits"),
 		item.get("note"), item.get("level"), item.get(XHeartsteel.STACKS), item.get(XHubris.FAME), item.get("base")])
 	if _gear_cache.has(sig):
 		return _gear_cache[sig]
 	var s := _empty()
-	var params: Array = item.get("params", []) if XItemMarks.is_gear(item) else base_params(item)
+	var params: Array = eff if eff != null else (item.get("params", []) if XItemMarks.is_gear(item) else base_params(item))
 	for i in range(mini(8, params.size())):
 		_attribute(s, i, float(params[i]), "基础属性 · " + NAMES[i])
 	var magic := RegEx.create_from_string("(?i)<Magic Weapon>").search(str(item.get("note", ""))) != null

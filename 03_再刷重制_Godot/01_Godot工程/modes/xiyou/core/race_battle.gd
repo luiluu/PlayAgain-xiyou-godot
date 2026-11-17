@@ -68,7 +68,8 @@ const BODY_NAMES := ["(?:max\\s*hp|mhp|hp)", "(?:max\\s*mp|mmp|mp)", "(?:atk|att
 static func weapon_body(eq: Dictionary, p: int) -> float:
 	if eq.is_empty() or str(eq.get("kind", "")) != "weapon":
 		return 0.0
-	var value := float(eq.params[p])
+	var value := XTianqiGear.param_of(eq, p)  # 期四装备八项（T104）：关着同 float(eq.params[p])
+	var flat := XTianqiGear.flat_ratio(eq, p)  # 开着时宝珠固定加减在有效八项里按换算比放大过，减的时候同样放大；关着 1
 	var slots: Array = eq.get("augmentSlots", [])
 	var held: Array = eq.get("augmentSlotItems", [])
 	var re := RegEx.create_from_string("(?i)^" + BODY_NAMES[p] + "\\s*:\\s*([+-]\\d+)$")
@@ -80,7 +81,7 @@ static func weapon_body(eq: Dictionary, p: int) -> float:
 		for line in XOrbs.parse(gem).attach.get(type, []):
 			var m := re.search(str(line).strip_edges())
 			if m:
-				value -= float(m.get_string(1))
+				value -= float(m.get_string(1)) * flat
 	return maxf(0.0, value)
 
 

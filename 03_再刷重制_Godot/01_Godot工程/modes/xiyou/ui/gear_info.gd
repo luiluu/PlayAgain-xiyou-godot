@@ -24,8 +24,9 @@ static func details(parent: Control, item: Dictionary, a: XActor = null) -> void
 	if item.has("runewordName"):text(parent,"符文之语："+str(item.runewordName),XUI.SYSTEM)
 	var req := int(item.get("meta",{}).get("req_level",0))
 	if req>0:text(parent,"需求等级：%d"%req)
+	var eff := XTianqiGear.effective_params(item)  # 期四装备八项（T104）：关着同 item.params
 	for i in range(8):
-		if int(item.params[i])!=0:text(parent,"%s  %+d"%[XMenu.PARAM_NAMES[i],int(item.params[i])])
+		if int(eff[i])!=0:text(parent,"%s  %+d"%[XMenu.PARAM_NAMES[i],int(eff[i])])
 	for suit_id in item.get("equipment",{}).get("suits",[]):
 		var suit := XDB.rec("EquipSuits",int(suit_id))
 		if suit.is_empty():continue

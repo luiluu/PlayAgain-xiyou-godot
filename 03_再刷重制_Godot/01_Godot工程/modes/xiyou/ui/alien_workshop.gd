@@ -219,7 +219,7 @@ func build() -> Array:
 		detail.append(el("p", "品质、普通词条、强化、镶嵌和独立成长全部保留。"))
 		var stats := []
 		for n in 8:
-			var v := float(item.get("params", [0, 0, 0, 0, 0, 0, 0, 0])[n])
+			var v := float(XTianqiGear.effective_params(item)[n]) if item.has("params") else 0.0  # 期四装备八项（T104）：关着同 item.params
 			if v != 0:
 				stats.append(PARAM_NAMES[n] + ("+" if v > 0 else "") + num(v))
 		detail.append(el("p", "装备属性：" + "　".join(PackedStringArray(stats)), "alien-note"))

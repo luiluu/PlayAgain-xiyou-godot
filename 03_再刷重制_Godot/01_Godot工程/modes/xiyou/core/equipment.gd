@@ -145,7 +145,7 @@ static func optimize(s: XState, a: XActor) -> void:
 			if not fits(a, slot, e) or (FIX_DUAL_EXCLUSIVE_BEST and dual_blocked(a, slot, e)):  # 另一栏已挑了专武就跳过专武（O-235；原版挑中后被 change 挡下）
 				continue
 			var value := 0.0
-			for p in e.params:
+			for p in XTianqiGear.effective_params(e):  # 期四装备八项（T104）：关着同 e.params
 				value += float(p)
 			if value > score:
 				best = e

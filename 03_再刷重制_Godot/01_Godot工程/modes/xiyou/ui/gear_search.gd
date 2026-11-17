@@ -93,7 +93,7 @@ static func detail_blocks(r: Dictionary) -> Array:
 		out.append({"tag": "note", "text": " · ".join(lines)})
 		out.append({"tag": "note", "text": NOTE_TEXT})
 	var pills := []
-	var params: Array = item.get("params", [])
+	var params: Array = XTianqiGear.effective_params(item)  # 期四装备八项（T104）：关着同 item.params
 	for i in range(mini(8, params.size())):
 		if float(params[i]) != 0.0:
 			pills.append(XGearQuery.PARAMS[i] + " " + _num(float(params[i])))
