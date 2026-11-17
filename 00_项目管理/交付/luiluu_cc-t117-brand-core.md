@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-t117-brand-core
 
 - 车道／工作者：T117（T073-b）烙印本体：力量、存档、一条线暗装（cc，Opus＋medium，P8）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -15,7 +15,7 @@
   - 认这一场：`facts_of`→`classify`（第五节第 4 条六步次序；骑士、影子先于守层者认，七首之龙、七印【里】首领、鸿钧各自的键；主席 745／752、研究员 893 按编号排除；名字前缀白名单；不调 `is_boss_enemy`）；`tier_of` 只有 `XDungeon.inside` 时才读副本档位变量；生熟 `is_ripe` 开战时定、整场不变。常规事件战的键 `ev:地图:事件:敌群` 由 `mv_interpreter` 301 开战前记 `pending_event`。
   - 结算 `settle`（`BattleLogic.grant` 里接在真气后面）：首通（出战 ×1 含倒下、助力位 ×0.5、后备 0）、再打（差距 10%，下限 0.25×难度系数，助力位 ×0.5）、烙实入口（灼痕满过几次 × 0.75、一场最多 2 次；T073-d2 之前 `fills` 为空＝按 0 条）。P2-4：层线按这一场的层算，「已通关 36 层」等结算完写首胜表才置位，36 层首通完正好 95%。
   - 面板：`panel`（亮段、刻度线、暗段、封住段、「+」、P2-3 高亮）、`bar_text`（文字条）。闭关菜单在开关开着的天启篇档里换成烙印页：一根文字条＋「烙印 N%+」＋天启注视一行（期四开着时），「刻印」（二次确认）、「挑战心魔」（只在能打时出现）。
-- 接线（只加烙印接线，不改别人逻辑）：`battle_logic.gd` setup 末尾 `battle_setup`、grant 里 `settle`；`zhenqi.gd` from_save 保留键、开关开着时 on_victory 不再涨真气、闭关页分流；`tianqi_base.gd` `k_actor_mult`／`k_for`；`tianqi_save.gd` 登记 `brand` 分区；`mv_interpreter.gd` 301 记事件；`tests/xiyou_virtual_player.gd` 加 `--vp-brand`（开着跑）。
+- 接线（只加烙印接线，不改别人逻辑）：`battle_logic.gd` setup 末尾 `battle_setup`、grant 里 `settle`；`zhenqi.gd` from_save 保留键、开关开着时 on_victory 不再涨真气、闭关页分流；`tianqi_base.gd` `k_actor_mult`／`k_for`；`tianqi_save.gd` 登记 `brand` 分区；`mv_interpreter.gd` 301 记事件；`tests/xiyou_virtual_player.gd` 加 `--vp-brand`（开着跑）；`07_开发环境/发行空壳特例.json` 补两行。
 - 专项 `tests/xiyou_tianqi_brand`（77 条）：关着逐字节同原来、西游档／天启篇档读存来回不变、第十一节第 1 步（0→100% 1.50 倍、七个节点逐个对，经 `XDamage.calculate` 对木桩）、稿内专项 1～7、P2-2／P2-3／P2-4、真开一场 6 层守层者 setup→grant 端到端。
 - 玩家可见：无（开关关着）。
 
@@ -78,8 +78,9 @@
 - `python3 07_开发环境/语法检查.py`：994 个 .gd，0 个问题。
 - 专项 `xiyou_tianqi_brand`：77/77，日志零 SCRIPT ERROR。
 - 虚拟玩家（`--vp-brand`）：explore 14/14；climb 4 万帧 6/6，stuck 0、stalemates 0、violations 0、脚本报错 0。
-- `检查.sh --oracle --affected main --cloud`：（待写结果）
-- 交付自检：（待写结果）
+- `检查.sh --oracle --affected main --cloud`：第一轮云端 421 个场景全过、只挂「发行空壳缺成员」（XTianqiBrand.realm／last_realm），补进 `07_开发环境/发行空壳特例.json`（发行值 0／6）后第二轮（提交 c58b99f18 快照）退出码 0：云端选测通过、MV 参照引擎启动检查通过、「选测全部通过」。
+- 交付自检：见回报（标可合并、提交之后跑）。
+- 附带：`k_for` 保留开头早返（两个开关都关着直接 1.0），发行空壳照规则 2 照搬 1.0，不会落到 float 默认 0.0。
 
 ## 本分支提交
 
