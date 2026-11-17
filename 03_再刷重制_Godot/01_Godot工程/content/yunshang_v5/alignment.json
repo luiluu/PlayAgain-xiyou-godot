@@ -1,6 +1,6 @@
 {
   "method": "single uniform whole-subject resize; no segmented body scaling; manual source landmark transforms rounded to native pixels",
-  "uncertainty": "Source landmarks visually annotated; hair hides rear neck/shoulders. Width includes normal head hair, excludes pin and hanging locks where separable.",
+  "uncertainty": "2026-11-17 coordinator definition: normal cranial+hair contour excludes ornaments/braids/hanging locks/bun. Hidden shoulders and rear neck NOT inferred; null means occluded. Bun recorded but not compared with Guyu.",
   "frames": [
     {
       "direction": "down",
@@ -18,11 +18,12 @@
       "source_marks": {
         "crown_y": 51,
         "neck_y": 404,
-        "head_left": 108,
-        "head_right": 551,
-        "shoulder_left": 223,
-        "shoulder_right": 418,
-        "shoulder_y": 435
+        "head_left": 145,
+        "head_right": 500,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Normal cranial/hair silhouette marked excluding ornaments and hanging locks; +/-1 native pixel. Shoulders hidden by hair: not measured."
       },
       "uniform_scale": 0.06754772393538913,
       "output_bbox": [
@@ -34,17 +35,17 @@
       "output_landmarks": {
         "crown_y": 4,
         "neck_y": 28,
-        "head_left": 7,
-        "head_right": 37,
-        "shoulder_left": 15,
-        "shoulder_right": 28,
-        "shoulder_y": 30
+        "head_left": 10,
+        "head_right": 34,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
         "head_height": 24,
-        "head_width": 30,
+        "head_width": 24,
         "height": 44,
-        "shoulder_width": 13,
+        "shoulder_width": null,
         "bun_height": 2
       },
       "guyu_target": {
@@ -60,28 +61,21 @@
         "crown_y": 3,
         "chin_or_neck_y": 27,
         "head_height": 24,
-        "head_width": 29,
+        "head_width": 24,
         "height": 45,
-        "shoulder_width": 12,
-        "shoulder_segment": [
-          18,
-          30,
-          30,
-          30
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 10,
+        "head_right": 34
       },
       "delta_vs_guyu": {
         "head_height": 0,
-        "head_width": 1,
-        "height": -1,
-        "shoulder_width": 1,
-        "bun_height": 2
+        "head_width": 0,
+        "height": -1
       },
-      "difference_over_1px": {
-        "bun_height": 2
-      }
+      "difference_over_1px": {}
     },
     {
       "direction": "down",
@@ -99,11 +93,12 @@
       "source_marks": {
         "crown_y": 51,
         "neck_y": 404,
-        "head_left": 832,
-        "head_right": 1275,
-        "shoulder_left": 947,
-        "shoulder_right": 1142,
-        "shoulder_y": 435
+        "head_left": 869,
+        "head_right": 1224,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Normal cranial/hair silhouette marked excluding ornaments and hanging locks; +/-1 native pixel. Shoulders hidden by hair: not measured."
       },
       "uniform_scale": 0.06845238095238096,
       "output_bbox": [
@@ -115,17 +110,17 @@
       "output_landmarks": {
         "crown_y": 4,
         "neck_y": 28,
-        "head_left": 7,
-        "head_right": 38,
-        "shoulder_left": 15,
-        "shoulder_right": 28,
-        "shoulder_y": 31
+        "head_left": 10,
+        "head_right": 34,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
         "head_height": 24,
-        "head_width": 31,
+        "head_width": 24,
         "height": 44,
-        "shoulder_width": 13,
+        "shoulder_width": null,
         "bun_height": 2
       },
       "guyu_target": {
@@ -141,28 +136,22 @@
         "crown_y": 2,
         "chin_or_neck_y": 26,
         "head_height": 24,
-        "head_width": 30,
+        "head_width": 24,
         "height": 46,
-        "shoulder_width": 12,
-        "shoulder_segment": [
-          18,
-          29,
-          30,
-          29
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 10,
+        "head_right": 34
       },
       "delta_vs_guyu": {
         "head_height": 0,
-        "head_width": 1,
-        "height": -2,
-        "shoulder_width": 1,
-        "bun_height": 2
+        "head_width": 0,
+        "height": -2
       },
       "difference_over_1px": {
-        "height": -2,
-        "bun_height": 2
+        "height": -2
       }
     },
     {
@@ -181,11 +170,12 @@
       "source_marks": {
         "crown_y": 51,
         "neck_y": 404,
-        "head_left": 1556,
-        "head_right": 1999,
-        "shoulder_left": 1671,
-        "shoulder_right": 1866,
-        "shoulder_y": 435
+        "head_left": 1593,
+        "head_right": 1948,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Normal cranial/hair silhouette marked excluding ornaments and hanging locks; +/-1 native pixel. Shoulders hidden by hair: not measured."
       },
       "uniform_scale": 0.06754772393538913,
       "output_bbox": [
@@ -197,17 +187,17 @@
       "output_landmarks": {
         "crown_y": 4,
         "neck_y": 28,
-        "head_left": 7,
-        "head_right": 37,
-        "shoulder_left": 15,
-        "shoulder_right": 28,
-        "shoulder_y": 30
+        "head_left": 10,
+        "head_right": 34,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
         "head_height": 24,
-        "head_width": 30,
+        "head_width": 24,
         "height": 44,
-        "shoulder_width": 13,
+        "shoulder_width": null,
         "bun_height": 2
       },
       "guyu_target": {
@@ -223,28 +213,21 @@
         "crown_y": 3,
         "chin_or_neck_y": 27,
         "head_height": 24,
-        "head_width": 29,
+        "head_width": 24,
         "height": 45,
-        "shoulder_width": 12,
-        "shoulder_segment": [
-          18,
-          30,
-          30,
-          30
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 10,
+        "head_right": 34
       },
       "delta_vs_guyu": {
         "head_height": 0,
-        "head_width": 1,
-        "height": -1,
-        "shoulder_width": 1,
-        "bun_height": 2
+        "head_width": 0,
+        "height": -1
       },
-      "difference_over_1px": {
-        "bun_height": 2
-      }
+      "difference_over_1px": {}
     },
     {
       "direction": "left",
@@ -262,11 +245,12 @@
       "source_marks": {
         "crown_y": 61,
         "neck_y": 420,
-        "head_left": 112,
-        "head_right": 515,
-        "shoulder_left": 243,
-        "shoulder_right": 337,
-        "shoulder_y": 454
+        "head_left": 121,
+        "head_right": 418,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Normal cranial/hair silhouette marked excluding ornaments and hanging locks; +/-1 native pixel. Shoulders hidden by hair: not measured."
       },
       "uniform_scale": 0.07088989441930618,
       "output_bbox": [
@@ -279,16 +263,16 @@
         "crown_y": 3,
         "neck_y": 28,
         "head_left": 8,
-        "head_right": 36,
-        "shoulder_left": 17,
-        "shoulder_right": 24,
-        "shoulder_y": 31
+        "head_right": 29,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
         "head_height": 25,
-        "head_width": 28,
+        "head_width": 21,
         "height": 45,
-        "shoulder_width": 7,
+        "shoulder_width": null,
         "bun_height": 2
       },
       "guyu_target": {
@@ -304,28 +288,21 @@
         "crown_y": 3,
         "chin_or_neck_y": 27,
         "head_height": 24,
-        "head_width": 28,
+        "head_width": 21,
         "height": 45,
-        "shoulder_width": 8,
-        "shoulder_segment": [
-          20,
-          30,
-          28,
-          30
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 11,
+        "head_right": 32
       },
       "delta_vs_guyu": {
         "head_height": 1,
         "head_width": 0,
-        "height": 0,
-        "shoulder_width": -1,
-        "bun_height": 2
+        "height": 0
       },
-      "difference_over_1px": {
-        "bun_height": 2
-      }
+      "difference_over_1px": {}
     },
     {
       "direction": "left",
@@ -343,11 +320,12 @@
       "source_marks": {
         "crown_y": 61,
         "neck_y": 420,
-        "head_left": 836,
-        "head_right": 1239,
-        "shoulder_left": 967,
-        "shoulder_right": 1061,
-        "shoulder_y": 454
+        "head_left": 845,
+        "head_right": 1142,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Normal cranial/hair silhouette marked excluding ornaments and hanging locks; +/-1 native pixel. Shoulders hidden by hair: not measured."
       },
       "uniform_scale": 0.07339449541284404,
       "output_bbox": [
@@ -360,16 +338,16 @@
         "crown_y": 2,
         "neck_y": 28,
         "head_left": 8,
-        "head_right": 37,
-        "shoulder_left": 17,
-        "shoulder_right": 24,
-        "shoulder_y": 31
+        "head_right": 30,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
         "head_height": 26,
-        "head_width": 29,
+        "head_width": 22,
         "height": 46,
-        "shoulder_width": 7,
+        "shoulder_width": null,
         "bun_height": 2
       },
       "guyu_target": {
@@ -385,28 +363,22 @@
         "crown_y": 2,
         "chin_or_neck_y": 26,
         "head_height": 24,
-        "head_width": 29,
+        "head_width": 21,
         "height": 46,
-        "shoulder_width": 8,
-        "shoulder_segment": [
-          20,
-          29,
-          28,
-          29
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 11,
+        "head_right": 32
       },
       "delta_vs_guyu": {
         "head_height": 2,
-        "head_width": 0,
-        "height": 0,
-        "shoulder_width": -1,
-        "bun_height": 2
+        "head_width": 1,
+        "height": 0
       },
       "difference_over_1px": {
-        "head_height": 2,
-        "bun_height": 2
+        "head_height": 2
       }
     },
     {
@@ -425,11 +397,12 @@
       "source_marks": {
         "crown_y": 61,
         "neck_y": 420,
-        "head_left": 1560,
-        "head_right": 1963,
-        "shoulder_left": 1691,
-        "shoulder_right": 1785,
-        "shoulder_y": 454
+        "head_left": 1569,
+        "head_right": 1866,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Normal cranial/hair silhouette marked excluding ornaments and hanging locks; +/-1 native pixel. Shoulders hidden by hair: not measured."
       },
       "uniform_scale": 0.07088989441930618,
       "output_bbox": [
@@ -442,16 +415,16 @@
         "crown_y": 3,
         "neck_y": 28,
         "head_left": 10,
-        "head_right": 38,
-        "shoulder_left": 19,
-        "shoulder_right": 26,
-        "shoulder_y": 31
+        "head_right": 31,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
         "head_height": 25,
-        "head_width": 28,
+        "head_width": 21,
         "height": 45,
-        "shoulder_width": 7,
+        "shoulder_width": null,
         "bun_height": 2
       },
       "guyu_target": {
@@ -467,28 +440,21 @@
         "crown_y": 3,
         "chin_or_neck_y": 27,
         "head_height": 24,
-        "head_width": 28,
+        "head_width": 21,
         "height": 45,
-        "shoulder_width": 8,
-        "shoulder_segment": [
-          20,
-          30,
-          28,
-          30
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 11,
+        "head_right": 32
       },
       "delta_vs_guyu": {
         "head_height": 1,
         "head_width": 0,
-        "height": 0,
-        "shoulder_width": -1,
-        "bun_height": 2
+        "height": 0
       },
-      "difference_over_1px": {
-        "bun_height": 2
-      }
+      "difference_over_1px": {}
     },
     {
       "direction": "right",
@@ -506,11 +472,12 @@
       "source_marks": {
         "crown_y": 43,
         "neck_y": 401,
-        "head_left": 145,
-        "head_right": 547,
-        "shoulder_left": 325,
-        "shoulder_right": 436,
-        "shoulder_y": 439
+        "head_left": 170,
+        "head_right": 500,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Normal cranial/hair silhouette marked excluding ornaments and hanging locks; +/-1 native pixel. Shoulders hidden by hair: not measured."
       },
       "uniform_scale": 0.06814814814814815,
       "output_bbox": [
@@ -522,17 +489,17 @@
       "output_landmarks": {
         "crown_y": 3,
         "neck_y": 27,
-        "head_left": 8,
-        "head_right": 35,
-        "shoulder_left": 20,
-        "shoulder_right": 28,
-        "shoulder_y": 30
+        "head_left": 10,
+        "head_right": 32,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
         "head_height": 24,
-        "head_width": 27,
+        "head_width": 22,
         "height": 45,
-        "shoulder_width": 8,
+        "shoulder_width": null,
         "bun_height": 1
       },
       "guyu_target": {
@@ -548,26 +515,23 @@
         "crown_y": 3,
         "chin_or_neck_y": 27,
         "head_height": 24,
-        "head_width": 26,
+        "head_width": 20,
         "height": 45,
-        "shoulder_width": 9,
-        "shoulder_segment": [
-          19,
-          30,
-          28,
-          30
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 15,
+        "head_right": 35
       },
       "delta_vs_guyu": {
         "head_height": 0,
-        "head_width": 1,
-        "height": 0,
-        "shoulder_width": -1,
-        "bun_height": 1
+        "head_width": 2,
+        "height": 0
       },
-      "difference_over_1px": {}
+      "difference_over_1px": {
+        "head_width": 2
+      }
     },
     {
       "direction": "right",
@@ -585,11 +549,12 @@
       "source_marks": {
         "crown_y": 43,
         "neck_y": 401,
-        "head_left": 869,
-        "head_right": 1271,
-        "shoulder_left": 1049,
-        "shoulder_right": 1160,
-        "shoulder_y": 439
+        "head_left": 894,
+        "head_right": 1224,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Normal cranial/hair silhouette marked excluding ornaments and hanging locks; +/-1 native pixel. Shoulders hidden by hair: not measured."
       },
       "uniform_scale": 0.06814814814814815,
       "output_bbox": [
@@ -601,17 +566,17 @@
       "output_landmarks": {
         "crown_y": 3,
         "neck_y": 27,
-        "head_left": 8,
-        "head_right": 35,
-        "shoulder_left": 20,
-        "shoulder_right": 28,
-        "shoulder_y": 30
+        "head_left": 10,
+        "head_right": 32,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
         "head_height": 24,
-        "head_width": 27,
+        "head_width": 22,
         "height": 45,
-        "shoulder_width": 8,
+        "shoulder_width": null,
         "bun_height": 1
       },
       "guyu_target": {
@@ -627,26 +592,23 @@
         "crown_y": 2,
         "chin_or_neck_y": 26,
         "head_height": 24,
-        "head_width": 27,
+        "head_width": 20,
         "height": 46,
-        "shoulder_width": 9,
-        "shoulder_segment": [
-          19,
-          29,
-          28,
-          29
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 15,
+        "head_right": 35
       },
       "delta_vs_guyu": {
         "head_height": 0,
-        "head_width": 0,
-        "height": -1,
-        "shoulder_width": -1,
-        "bun_height": 1
+        "head_width": 2,
+        "height": -1
       },
-      "difference_over_1px": {}
+      "difference_over_1px": {
+        "head_width": 2
+      }
     },
     {
       "direction": "right",
@@ -664,11 +626,12 @@
       "source_marks": {
         "crown_y": 43,
         "neck_y": 401,
-        "head_left": 1593,
-        "head_right": 1995,
-        "shoulder_left": 1773,
-        "shoulder_right": 1884,
-        "shoulder_y": 439
+        "head_left": 1618,
+        "head_right": 1948,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Normal cranial/hair silhouette marked excluding ornaments and hanging locks; +/-1 native pixel. Shoulders hidden by hair: not measured."
       },
       "uniform_scale": 0.06814814814814815,
       "output_bbox": [
@@ -680,17 +643,17 @@
       "output_landmarks": {
         "crown_y": 3,
         "neck_y": 27,
-        "head_left": 7,
-        "head_right": 34,
-        "shoulder_left": 19,
-        "shoulder_right": 27,
-        "shoulder_y": 30
+        "head_left": 9,
+        "head_right": 31,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
         "head_height": 24,
-        "head_width": 27,
+        "head_width": 22,
         "height": 45,
-        "shoulder_width": 8,
+        "shoulder_width": null,
         "bun_height": 1
       },
       "guyu_target": {
@@ -706,72 +669,69 @@
         "crown_y": 3,
         "chin_or_neck_y": 27,
         "head_height": 24,
-        "head_width": 26,
+        "head_width": 20,
         "height": 45,
-        "shoulder_width": 9,
-        "shoulder_segment": [
-          19,
-          30,
-          28,
-          30
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 15,
+        "head_right": 35
       },
       "delta_vs_guyu": {
         "head_height": 0,
-        "head_width": 1,
-        "height": 0,
-        "shoulder_width": -1,
-        "bun_height": 1
+        "head_width": 2,
+        "height": 0
       },
-      "difference_over_1px": {}
+      "difference_over_1px": {
+        "head_width": 2
+      }
     },
     {
       "direction": "up",
       "frame": 0,
       "source_span": [
-        124,
+        132,
         0
       ],
       "source_bbox": [
-        124,
-        11,
+        132,
+        33,
         0,
-        712
+        704
       ],
       "source_marks": {
-        "crown_y": 44,
-        "neck_y": 405,
-        "head_left": 151,
-        "head_right": 520,
-        "shoulder_left": 236,
-        "shoulder_right": 439,
-        "shoulder_y": 468,
-        "uncertainty": "nape hidden under hair; inferred from visible shoulder/sleeve level; about +/-20 source px (~1.5 native px)"
+        "crown_y": 90,
+        "neck_y": null,
+        "head_left": 155,
+        "head_right": 502,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Manual normal cranial hair contour excludes ornaments, bun and hanging locks; hidden shoulders/rear neck are not measured. +/-1 native px annotation uncertainty."
       },
-      "uniform_scale": 0.06704707560627675,
+      "uniform_scale": 0.07153502235469449,
       "output_bbox": [
         8,
-        1,
-        37,
+        0,
+        38,
         48
       ],
       "output_landmarks": {
-        "crown_y": 3,
-        "neck_y": 27,
+        "crown_y": 4,
+        "neck_y": null,
         "head_left": 10,
-        "head_right": 35,
-        "shoulder_left": 16,
-        "shoulder_right": 29,
-        "shoulder_y": 32
+        "head_right": 34,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
-        "head_height": 24,
-        "head_width": 25,
-        "height": 45,
-        "shoulder_width": 13,
-        "bun_height": 2
+        "head_height": null,
+        "head_width": 24,
+        "height": 44,
+        "shoulder_width": null,
+        "bun_height": 4
       },
       "guyu_target": {
         "character": "Guyu",
@@ -784,78 +744,68 @@
           48
         ],
         "crown_y": 3,
-        "chin_or_neck_y": 29,
-        "head_height": 26,
-        "head_width": 28,
+        "chin_or_neck_y": null,
+        "head_height": null,
+        "head_width": 24,
         "height": 45,
-        "shoulder_width": 12,
-        "shoulder_segment": [
-          18,
-          32,
-          30,
-          32
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 10,
+        "head_right": 34
       },
       "delta_vs_guyu": {
-        "head_height": -2,
-        "head_width": -3,
-        "height": 0,
-        "shoulder_width": 1,
-        "bun_height": 2
+        "head_width": 0,
+        "height": -1
       },
-      "difference_over_1px": {
-        "head_height": -2,
-        "head_width": -3,
-        "bun_height": 2
-      }
+      "difference_over_1px": {}
     },
     {
       "direction": "up",
       "frame": 1,
       "source_span": [
-        848,
+        853,
         0
       ],
       "source_bbox": [
-        848,
-        11,
+        853,
+        29,
         0,
-        702
+        693
       ],
       "source_marks": {
-        "crown_y": 44,
-        "neck_y": 405,
-        "head_left": 875,
-        "head_right": 1244,
-        "shoulder_left": 960,
-        "shoulder_right": 1163,
-        "shoulder_y": 468,
-        "uncertainty": "nape hidden under hair; inferred from visible shoulder/sleeve level; about +/-20 source px (~1.5 native px)"
+        "crown_y": 90,
+        "neck_y": null,
+        "head_left": 879,
+        "head_right": 1226,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Manual normal cranial hair contour excludes ornaments, bun and hanging locks; hidden shoulders/rear neck are not measured. +/-1 native px annotation uncertainty."
       },
-      "uniform_scale": 0.0694645441389291,
+      "uniform_scale": 0.07228915662650602,
       "output_bbox": [
         8,
         0,
-        38,
+        40,
         48
       ],
       "output_landmarks": {
-        "crown_y": 2,
-        "neck_y": 27,
+        "crown_y": 4,
+        "neck_y": null,
         "head_left": 10,
-        "head_right": 36,
-        "shoulder_left": 16,
-        "shoulder_right": 30,
-        "shoulder_y": 32
+        "head_right": 35,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
-        "head_height": 25,
-        "head_width": 26,
-        "height": 46,
-        "shoulder_width": 14,
-        "bun_height": 2
+        "head_height": null,
+        "head_width": 25,
+        "height": 44,
+        "shoulder_width": null,
+        "bun_height": 4
       },
       "guyu_target": {
         "character": "Guyu",
@@ -868,78 +818,70 @@
           48
         ],
         "crown_y": 2,
-        "chin_or_neck_y": 28,
-        "head_height": 26,
-        "head_width": 29,
+        "chin_or_neck_y": null,
+        "head_height": null,
+        "head_width": 24,
         "height": 46,
-        "shoulder_width": 12,
-        "shoulder_segment": [
-          18,
-          31,
-          30,
-          31
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 10,
+        "head_right": 34
       },
       "delta_vs_guyu": {
-        "head_height": -1,
-        "head_width": -3,
-        "height": 0,
-        "shoulder_width": 2,
-        "bun_height": 2
+        "head_width": 1,
+        "height": -2
       },
       "difference_over_1px": {
-        "head_width": -3,
-        "shoulder_width": 2,
-        "bun_height": 2
+        "height": -2
       }
     },
     {
       "direction": "up",
       "frame": 2,
       "source_span": [
-        1572,
+        1581,
         0
       ],
       "source_bbox": [
-        1572,
-        11,
+        1581,
+        33,
         0,
-        712
+        704
       ],
       "source_marks": {
-        "crown_y": 44,
-        "neck_y": 405,
-        "head_left": 1599,
-        "head_right": 1968,
-        "shoulder_left": 1684,
-        "shoulder_right": 1887,
-        "shoulder_y": 468,
-        "uncertainty": "nape hidden under hair; inferred from visible shoulder/sleeve level; about +/-20 source px (~1.5 native px)"
+        "crown_y": 90,
+        "neck_y": null,
+        "head_left": 1603,
+        "head_right": 1950,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Manual normal cranial hair contour excludes ornaments, bun and hanging locks; hidden shoulders/rear neck are not measured. +/-1 native px annotation uncertainty."
       },
-      "uniform_scale": 0.06704707560627675,
+      "uniform_scale": 0.07153502235469449,
       "output_bbox": [
-        10,
-        1,
+        9,
+        0,
         39,
         48
       ],
       "output_landmarks": {
-        "crown_y": 3,
-        "neck_y": 27,
-        "head_left": 12,
-        "head_right": 37,
-        "shoulder_left": 18,
-        "shoulder_right": 31,
-        "shoulder_y": 32
+        "crown_y": 4,
+        "neck_y": null,
+        "head_left": 11,
+        "head_right": 35,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
-        "head_height": 24,
-        "head_width": 25,
-        "height": 45,
-        "shoulder_width": 13,
-        "bun_height": 2
+        "head_height": null,
+        "head_width": 24,
+        "height": 44,
+        "shoulder_width": null,
+        "bun_height": 4
       },
       "guyu_target": {
         "character": "Guyu",
@@ -952,76 +894,67 @@
           48
         ],
         "crown_y": 3,
-        "chin_or_neck_y": 29,
-        "head_height": 26,
-        "head_width": 28,
+        "chin_or_neck_y": null,
+        "head_height": null,
+        "head_width": 24,
         "height": 45,
-        "shoulder_width": 12,
-        "shoulder_segment": [
-          18,
-          32,
-          30,
-          32
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 10,
+        "head_right": 34
       },
       "delta_vs_guyu": {
-        "head_height": -2,
-        "head_width": -3,
-        "height": 0,
-        "shoulder_width": 1,
-        "bun_height": 2
+        "head_width": 0,
+        "height": -1
       },
-      "difference_over_1px": {
-        "head_height": -2,
-        "head_width": -3,
-        "bun_height": 2
-      }
+      "difference_over_1px": {}
     },
     {
       "direction": "wait",
       "frame": 0,
       "source_span": [
-        100,
+        106,
         0
       ],
       "source_bbox": [
-        100,
-        33,
+        106,
+        20,
         0,
-        708
+        710
       ],
       "source_marks": {
-        "crown_y": 58,
-        "neck_y": 405,
-        "head_left": 96,
-        "head_right": 495,
-        "shoulder_left": 227,
-        "shoulder_right": 325,
-        "shoulder_y": 439
+        "crown_y": 47,
+        "neck_y": 402,
+        "head_left": 103,
+        "head_right": 468,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Manual normal cranial hair contour excludes ornaments, bun and hanging locks; hidden shoulders/rear neck are not measured. +/-1 native px annotation uncertainty."
       },
-      "uniform_scale": 0.09481481481481481,
+      "uniform_scale": 0.09130434782608696,
       "output_bbox": [
         10,
-        0,
-        51,
+        1,
+        52,
         64
       ],
       "output_landmarks": {
-        "crown_y": 2,
-        "neck_y": 35,
+        "crown_y": 3,
+        "neck_y": 36,
         "head_left": 10,
-        "head_right": 47,
-        "shoulder_left": 22,
-        "shoulder_right": 31,
-        "shoulder_y": 38
+        "head_right": 43,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
         "head_height": 33,
-        "head_width": 37,
-        "height": 62,
-        "shoulder_width": 9,
+        "head_width": 33,
+        "height": 61,
+        "shoulder_width": null,
         "bun_height": 2
       },
       "guyu_target": {
@@ -1037,75 +970,68 @@
         "crown_y": 4,
         "chin_or_neck_y": 39,
         "head_height": 35,
-        "head_width": 44,
+        "head_width": 34,
         "height": 60,
-        "shoulder_width": 10,
-        "shoulder_segment": [
-          25,
-          42,
-          35,
-          42
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 9,
+        "head_right": 43
       },
       "delta_vs_guyu": {
         "head_height": -2,
-        "head_width": -7,
-        "height": 2,
-        "shoulder_width": -1,
-        "bun_height": 2
+        "head_width": -1,
+        "height": 1
       },
       "difference_over_1px": {
-        "head_height": -2,
-        "head_width": -7,
-        "height": 2,
-        "bun_height": 2
+        "head_height": -2
       }
     },
     {
       "direction": "wait",
       "frame": 1,
       "source_span": [
-        826,
+        834,
         0
       ],
       "source_bbox": [
-        826,
-        46,
+        834,
+        32,
         0,
-        708
+        710
       ],
       "source_marks": {
-        "crown_y": 68,
-        "neck_y": 415,
-        "head_left": 820,
-        "head_right": 1219,
-        "shoulder_left": 951,
-        "shoulder_right": 1049,
-        "shoulder_y": 449
+        "crown_y": 57,
+        "neck_y": 412,
+        "head_left": 827,
+        "head_right": 1192,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Manual normal cranial hair contour excludes ornaments, bun and hanging locks; hidden shoulders/rear neck are not measured. +/-1 native px annotation uncertainty."
       },
-      "uniform_scale": 0.09667673716012085,
+      "uniform_scale": 0.09144542772861357,
       "output_bbox": [
         10,
-        0,
+        2,
         52,
         64
       ],
       "output_landmarks": {
-        "crown_y": 2,
-        "neck_y": 36,
+        "crown_y": 4,
+        "neck_y": 37,
         "head_left": 9,
-        "head_right": 48,
-        "shoulder_left": 22,
-        "shoulder_right": 32,
-        "shoulder_y": 39
+        "head_right": 43,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
-        "head_height": 34,
-        "head_width": 39,
-        "height": 62,
-        "shoulder_width": 10,
+        "head_height": 33,
+        "head_width": 34,
+        "height": 60,
+        "shoulder_width": null,
         "bun_height": 2
       },
       "guyu_target": {
@@ -1121,74 +1047,68 @@
         "crown_y": 4,
         "chin_or_neck_y": 39,
         "head_height": 35,
-        "head_width": 44,
+        "head_width": 34,
         "height": 60,
-        "shoulder_width": 10,
-        "shoulder_segment": [
-          25,
-          42,
-          35,
-          42
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 9,
+        "head_right": 43
       },
       "delta_vs_guyu": {
-        "head_height": -1,
-        "head_width": -5,
-        "height": 2,
-        "shoulder_width": 0,
-        "bun_height": 2
+        "head_height": -2,
+        "head_width": 0,
+        "height": 0
       },
       "difference_over_1px": {
-        "head_width": -5,
-        "height": 2,
-        "bun_height": 2
+        "head_height": -2
       }
     },
     {
       "direction": "wait",
       "frame": 2,
       "source_span": [
-        1548,
+        1554,
         0
       ],
       "source_bbox": [
-        1548,
-        33,
+        1554,
+        20,
         0,
-        708
+        710
       ],
       "source_marks": {
-        "crown_y": 58,
-        "neck_y": 405,
-        "head_left": 1544,
-        "head_right": 1943,
-        "shoulder_left": 1675,
-        "shoulder_right": 1773,
-        "shoulder_y": 439
+        "crown_y": 47,
+        "neck_y": 402,
+        "head_left": 1551,
+        "head_right": 1916,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null,
+        "uncertainty": "Manual normal cranial hair contour excludes ornaments, bun and hanging locks; hidden shoulders/rear neck are not measured. +/-1 native px annotation uncertainty."
       },
-      "uniform_scale": 0.09481481481481481,
+      "uniform_scale": 0.09130434782608696,
       "output_bbox": [
         10,
-        0,
-        51,
+        1,
+        52,
         64
       ],
       "output_landmarks": {
-        "crown_y": 2,
-        "neck_y": 35,
+        "crown_y": 3,
+        "neck_y": 36,
         "head_left": 10,
-        "head_right": 47,
-        "shoulder_left": 22,
-        "shoulder_right": 31,
-        "shoulder_y": 38
+        "head_right": 43,
+        "shoulder_left": null,
+        "shoulder_right": null,
+        "shoulder_y": null
       },
       "measured": {
         "head_height": 33,
-        "head_width": 37,
-        "height": 62,
-        "shoulder_width": 9,
+        "head_width": 33,
+        "height": 61,
+        "shoulder_width": null,
         "bun_height": 2
       },
       "guyu_target": {
@@ -1204,30 +1124,22 @@
         "crown_y": 4,
         "chin_or_neck_y": 39,
         "head_height": 35,
-        "head_width": 44,
+        "head_width": 34,
         "height": 60,
-        "shoulder_width": 10,
-        "shoulder_segment": [
-          25,
-          42,
-          35,
-          42
-        ],
+        "shoulder_width": null,
+        "shoulder_segment": null,
         "bun_height": 0,
-        "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+        "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+        "head_left": 9,
+        "head_right": 43
       },
       "delta_vs_guyu": {
         "head_height": -2,
-        "head_width": -7,
-        "height": 2,
-        "shoulder_width": -1,
-        "bun_height": 2
+        "head_width": -1,
+        "height": 1
       },
       "difference_over_1px": {
-        "head_height": -2,
-        "head_width": -7,
-        "height": 2,
-        "bun_height": 2
+        "head_height": -2
       }
     }
   ]

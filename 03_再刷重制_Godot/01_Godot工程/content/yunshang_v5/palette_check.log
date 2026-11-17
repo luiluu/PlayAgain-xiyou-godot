@@ -1,2 +1,3 @@
-Yunshang_Walk.png: (144, 192), 11 shared colors; alpha 0/255 PASS
-Yunshang_Wait.png: (192, 64), 11 shared colors; alpha 0/255 PASS
+Down/Left/Right pixels equal 236d3f7fa: PASS
+Yunshang_Walk.png: (144, 192), shared11color PASS; alpha0/255 PASS
+Yunshang_Wait.png: (192, 64), shared11color PASS; alpha0/255 PASS

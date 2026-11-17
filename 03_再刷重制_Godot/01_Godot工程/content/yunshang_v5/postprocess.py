@@ -31,13 +31,20 @@ def main():
    desired=target['height'] if target else rb[3]-rb[1]
    if target:
     # Minimax fit of ONE whole-subject scale to the four anatomical guide metrics.
-    source=[m['neck_y']-m['crown_y'],m['head_right']-m['head_left'],bb[3]-m['crown_y'],m['shoulder_right']-m['shoulder_left']]
-    target_values=[target[k] for k in ['head_height','head_width','height','shoulder_width']]
+    measurements={'head_height':None if m['neck_y'] is None else m['neck_y']-m['crown_y'],'head_width':m['head_right']-m['head_left'],'height':bb[3]-m['crown_y'],'shoulder_width':None if m['shoulder_left'] is None else m['shoulder_right']-m['shoulder_left']}
+    valid=[k for k in measurements if measurements[k] is not None and target[k] is not None]
+    source=[measurements[k] for k in valid];target_values=[target[k] for k in valid]
     def error(hh):
-     ds=[abs(round(v*hh/c.height)-t) for v,t in zip(source,target_values)]
-     return (max(ds),sum(ds),abs(round(source[2]*hh/c.height)-desired))
+     sc=hh/c.height
+     native_crown=rb[3]-hh+round((m['crown_y']-bb[1])*sc)
+     exact={'height':rb[3]-native_crown,'head_width':round((m['head_right']-a)*sc)-round((m['head_left']-a)*sc),'head_height':None if m['neck_y'] is None else round((m['neck_y']-bb[1])*sc)-round((m['crown_y']-bb[1])*sc),'shoulder_width':None if m['shoulder_left'] is None else round((m['shoulder_right']-a)*sc)-round((m['shoulder_left']-a)*sc)}
+     ds=[abs(exact[k]-target[k]) for k in valid]
+     return (max(ds),sum(ds),abs(exact['height']-desired))
     h=min(range(32,rb[3]+1),key=error)
    else:h=desired
+   # Three existing directions retain their 236d3f7fa pixel geometry; only remeasure.
+   preserved=json.loads((P/'preserved_scale_heights.json').read_text())
+   h=preserved.get(f'{n}/{col}',h)
    scale=h/c.height;w=round(c.width*scale)
    if w>size-2:raise ValueError((n,col,w))
    c=c.resize((w,h),Image.Resampling.NEAREST);x=round((rb[0]+rb[2]-w)/2);y=rb[3]-h
@@ -49,14 +56,14 @@ def main():
     if co not in cache:cache[co]=min(pal,key=lambda q:sum((q[i]-co[i])**2 for i in range(3)))
     data.append((*cache[co],255))
    c.putdata(data);cell=Image.new('RGBA',(size,size));cell.paste(c,(x,y))
-   def sy(v):return y+round((v-bb[1])*scale)
-   def sx(v):return x+round((v-a)*scale)
+   def sy(v):return None if v is None else y+round((v-bb[1])*scale)
+   def sx(v):return None if v is None else x+round((v-a)*scale)
    crown=sy(m['crown_y']);neck=sy(m['neck_y']);head_left=sx(m['head_left']);head_right=sx(m['head_right']);sl=sx(m['shoulder_left']);sr=sx(m['shoulder_right'])
-   measured=dict(head_height=neck-crown,head_width=head_right-head_left,height=rb[3]-crown,shoulder_width=sr-sl,bun_height=crown-y)
-   delta={k:measured[k]-target[k] for k in measured} if target else {};warnings={k:v for k,v in delta.items() if abs(v)>1}
+   measured=dict(head_height=None if neck is None else neck-crown,head_width=head_right-head_left,height=rb[3]-crown,shoulder_width=None if sl is None else sr-sl,bun_height=crown-y)
+   delta={k:measured[k]-target[k] for k in measured if k!='bun_height' and measured[k] is not None and target[k] is not None} if target else {};warnings={k:v for k,v in delta.items() if abs(v)>1}
    rec=dict(direction=n,frame=col,source_span=[a,b],source_bbox=[a,bb[1],b,bb[3]],source_marks=m,uniform_scale=scale,output_bbox=cell.getbbox(),output_landmarks=dict(crown_y=crown,neck_y=neck,head_left=head_left,head_right=head_right,shoulder_left=sl,shoulder_right=sr,shoulder_y=sy(m['shoulder_y'])),measured=measured,guyu_target=target,delta_vs_guyu=delta,difference_over_1px=warnings)
    records.append(rec)
    if row<4:walk.paste(cell,(col*48,row*48))
    else:wait.paste(cell,(col*64,0))
- walk.save(P/'Yunshang_Walk.png');wait.save(P/'Yunshang_Wait.png');(P/'alignment.json').write_text(json.dumps(dict(method='single uniform whole-subject resize; no segmented body scaling; manual source landmark transforms rounded to native pixels',uncertainty='Source landmarks visually annotated; hair hides rear neck/shoulders. Width includes normal head hair, excludes pin and hanging locks where separable.',frames=records),indent=2));(P/'palette.json').write_text(json.dumps(PALETTE,indent=2))
+ walk.save(P/'Yunshang_Walk.png');wait.save(P/'Yunshang_Wait.png');(P/'alignment.json').write_text(json.dumps(dict(method='single uniform whole-subject resize; no segmented body scaling; manual source landmark transforms rounded to native pixels',uncertainty='2026-11-17 coordinator definition: normal cranial+hair contour excludes ornaments/braids/hanging locks/bun. Hidden shoulders and rear neck NOT inferred; null means occluded. Bun recorded but not compared with Guyu.',frames=records),indent=2));(P/'palette.json').write_text(json.dumps(PALETTE,indent=2))
 if __name__=='__main__':main()

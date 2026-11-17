@@ -12,17 +12,14 @@
     "crown_y": 3,
     "chin_or_neck_y": 27,
     "head_height": 24,
-    "head_width": 29,
+    "head_width": 24,
     "height": 45,
-    "shoulder_width": 12,
-    "shoulder_segment": [
-      18,
-      30,
-      30,
-      30
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 10,
+    "head_right": 34
   },
   {
     "character": "Guyu",
@@ -37,17 +34,14 @@
     "crown_y": 2,
     "chin_or_neck_y": 26,
     "head_height": 24,
-    "head_width": 30,
+    "head_width": 24,
     "height": 46,
-    "shoulder_width": 12,
-    "shoulder_segment": [
-      18,
-      29,
-      30,
-      29
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 10,
+    "head_right": 34
   },
   {
     "character": "Guyu",
@@ -62,17 +56,14 @@
     "crown_y": 3,
     "chin_or_neck_y": 27,
     "head_height": 24,
-    "head_width": 29,
+    "head_width": 24,
     "height": 45,
-    "shoulder_width": 12,
-    "shoulder_segment": [
-      18,
-      30,
-      30,
-      30
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 10,
+    "head_right": 34
   },
   {
     "character": "Guyu",
@@ -87,17 +78,14 @@
     "crown_y": 3,
     "chin_or_neck_y": 27,
     "head_height": 24,
-    "head_width": 28,
+    "head_width": 21,
     "height": 45,
-    "shoulder_width": 8,
-    "shoulder_segment": [
-      20,
-      30,
-      28,
-      30
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 11,
+    "head_right": 32
   },
   {
     "character": "Guyu",
@@ -112,17 +100,14 @@
     "crown_y": 2,
     "chin_or_neck_y": 26,
     "head_height": 24,
-    "head_width": 29,
+    "head_width": 21,
     "height": 46,
-    "shoulder_width": 8,
-    "shoulder_segment": [
-      20,
-      29,
-      28,
-      29
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 11,
+    "head_right": 32
   },
   {
     "character": "Guyu",
@@ -137,17 +122,14 @@
     "crown_y": 3,
     "chin_or_neck_y": 27,
     "head_height": 24,
-    "head_width": 28,
+    "head_width": 21,
     "height": 45,
-    "shoulder_width": 8,
-    "shoulder_segment": [
-      20,
-      30,
-      28,
-      30
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 11,
+    "head_right": 32
   },
   {
     "character": "Guyu",
@@ -162,17 +144,14 @@
     "crown_y": 3,
     "chin_or_neck_y": 27,
     "head_height": 24,
-    "head_width": 26,
+    "head_width": 20,
     "height": 45,
-    "shoulder_width": 9,
-    "shoulder_segment": [
-      19,
-      30,
-      28,
-      30
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 15,
+    "head_right": 35
   },
   {
     "character": "Guyu",
@@ -187,17 +166,14 @@
     "crown_y": 2,
     "chin_or_neck_y": 26,
     "head_height": 24,
-    "head_width": 27,
+    "head_width": 20,
     "height": 46,
-    "shoulder_width": 9,
-    "shoulder_segment": [
-      19,
-      29,
-      28,
-      29
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 15,
+    "head_right": 35
   },
   {
     "character": "Guyu",
@@ -212,17 +188,14 @@
     "crown_y": 3,
     "chin_or_neck_y": 27,
     "head_height": 24,
-    "head_width": 26,
+    "head_width": 20,
     "height": 45,
-    "shoulder_width": 9,
-    "shoulder_segment": [
-      19,
-      30,
-      28,
-      30
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 15,
+    "head_right": 35
   },
   {
     "character": "Guyu",
@@ -235,19 +208,16 @@
       48
     ],
     "crown_y": 3,
-    "chin_or_neck_y": 29,
-    "head_height": 26,
-    "head_width": 28,
+    "chin_or_neck_y": null,
+    "head_height": null,
+    "head_width": 24,
     "height": 45,
-    "shoulder_width": 12,
-    "shoulder_segment": [
-      18,
-      32,
-      30,
-      32
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 10,
+    "head_right": 34
   },
   {
     "character": "Guyu",
@@ -260,19 +230,16 @@
       48
     ],
     "crown_y": 2,
-    "chin_or_neck_y": 28,
-    "head_height": 26,
-    "head_width": 29,
+    "chin_or_neck_y": null,
+    "head_height": null,
+    "head_width": 24,
     "height": 46,
-    "shoulder_width": 12,
-    "shoulder_segment": [
-      18,
-      31,
-      30,
-      31
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 10,
+    "head_right": 34
   },
   {
     "character": "Guyu",
@@ -285,19 +252,16 @@
       48
     ],
     "crown_y": 3,
-    "chin_or_neck_y": 29,
-    "head_height": 26,
-    "head_width": 28,
+    "chin_or_neck_y": null,
+    "head_height": null,
+    "head_width": 24,
     "height": 45,
-    "shoulder_width": 12,
-    "shoulder_segment": [
-      18,
-      32,
-      30,
-      32
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 10,
+    "head_right": 34
   },
   {
     "character": "Gojo",
@@ -322,7 +286,9 @@
       31
     ],
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 39
   },
   {
     "character": "Gojo",
@@ -347,7 +313,9 @@
       30
     ],
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 39
   },
   {
     "character": "Gojo",
@@ -372,7 +340,9 @@
       31
     ],
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 39
   },
   {
     "character": "Gojo",
@@ -397,7 +367,9 @@
       31
     ],
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 39
   },
   {
     "character": "Gojo",
@@ -412,7 +384,7 @@
     "crown_y": 0,
     "chin_or_neck_y": 27,
     "head_height": 27,
-    "head_width": 33,
+    "head_width": 32,
     "height": 46,
     "shoulder_width": 8,
     "shoulder_segment": [
@@ -422,7 +394,9 @@
       30
     ],
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 39
   },
   {
     "character": "Gojo",
@@ -447,7 +421,9 @@
       31
     ],
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 39
   },
   {
     "character": "Gojo",
@@ -472,7 +448,9 @@
       31
     ],
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 40
   },
   {
     "character": "Gojo",
@@ -497,7 +475,9 @@
       30
     ],
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 40
   },
   {
     "character": "Gojo",
@@ -522,7 +502,9 @@
       31
     ],
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 40
   },
   {
     "character": "Gojo",
@@ -535,19 +517,16 @@
       47
     ],
     "crown_y": 1,
-    "chin_or_neck_y": 28,
-    "head_height": 27,
+    "chin_or_neck_y": null,
+    "head_height": null,
     "head_width": 32,
     "height": 46,
-    "shoulder_width": 16,
-    "shoulder_segment": [
-      16,
-      31,
-      32,
-      31
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 39
   },
   {
     "character": "Gojo",
@@ -560,19 +539,16 @@
       47
     ],
     "crown_y": 1,
-    "chin_or_neck_y": 27,
-    "head_height": 26,
+    "chin_or_neck_y": null,
+    "head_height": null,
     "head_width": 32,
     "height": 46,
-    "shoulder_width": 16,
-    "shoulder_segment": [
-      16,
-      30,
-      32,
-      30
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 39
   },
   {
     "character": "Gojo",
@@ -585,19 +561,16 @@
       47
     ],
     "crown_y": 1,
-    "chin_or_neck_y": 28,
-    "head_height": 27,
+    "chin_or_neck_y": null,
+    "head_height": null,
     "head_width": 32,
     "height": 46,
-    "shoulder_width": 16,
-    "shoulder_segment": [
-      16,
-      31,
-      32,
-      31
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 39
   },
   {
     "character": "Yunxiao",
@@ -612,17 +585,14 @@
     "crown_y": 3,
     "chin_or_neck_y": 33,
     "head_height": 30,
-    "head_width": 37,
+    "head_width": 32,
     "height": 45,
-    "shoulder_width": 20,
-    "shoulder_segment": [
-      14,
-      36,
-      34,
-      36
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 39
   },
   {
     "character": "Yunxiao",
@@ -637,17 +607,14 @@
     "crown_y": 2,
     "chin_or_neck_y": 32,
     "head_height": 30,
-    "head_width": 37,
+    "head_width": 32,
     "height": 46,
-    "shoulder_width": 20,
-    "shoulder_segment": [
-      14,
-      35,
-      34,
-      35
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 39
   },
   {
     "character": "Yunxiao",
@@ -662,17 +629,14 @@
     "crown_y": 3,
     "chin_or_neck_y": 33,
     "head_height": 30,
-    "head_width": 37,
+    "head_width": 32,
     "height": 45,
-    "shoulder_width": 20,
-    "shoulder_segment": [
-      14,
-      36,
-      34,
-      36
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 39
   },
   {
     "character": "Yunxiao",
@@ -687,17 +651,14 @@
     "crown_y": 3,
     "chin_or_neck_y": 32,
     "head_height": 29,
-    "head_width": 32,
+    "head_width": 25,
     "height": 45,
-    "shoulder_width": 11,
-    "shoulder_segment": [
-      19,
-      35,
-      30,
-      35
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 9,
+    "head_right": 34
   },
   {
     "character": "Yunxiao",
@@ -712,17 +673,14 @@
     "crown_y": 2,
     "chin_or_neck_y": 31,
     "head_height": 29,
-    "head_width": 33,
+    "head_width": 25,
     "height": 46,
-    "shoulder_width": 11,
-    "shoulder_segment": [
-      19,
-      34,
-      30,
-      34
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 9,
+    "head_right": 34
   },
   {
     "character": "Yunxiao",
@@ -737,17 +695,14 @@
     "crown_y": 3,
     "chin_or_neck_y": 32,
     "head_height": 29,
-    "head_width": 34,
+    "head_width": 25,
     "height": 45,
-    "shoulder_width": 11,
-    "shoulder_segment": [
-      19,
-      35,
-      30,
-      35
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 9,
+    "head_right": 34
   },
   {
     "character": "Yunxiao",
@@ -762,17 +717,14 @@
     "crown_y": 3,
     "chin_or_neck_y": 32,
     "head_height": 29,
-    "head_width": 32,
+    "head_width": 25,
     "height": 45,
-    "shoulder_width": 11,
-    "shoulder_segment": [
-      18,
-      35,
-      29,
-      35
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 14,
+    "head_right": 39
   },
   {
     "character": "Yunxiao",
@@ -787,17 +739,14 @@
     "crown_y": 2,
     "chin_or_neck_y": 31,
     "head_height": 29,
-    "head_width": 33,
+    "head_width": 25,
     "height": 46,
-    "shoulder_width": 11,
-    "shoulder_segment": [
-      18,
-      34,
-      29,
-      34
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 14,
+    "head_right": 39
   },
   {
     "character": "Yunxiao",
@@ -812,17 +761,14 @@
     "crown_y": 3,
     "chin_or_neck_y": 32,
     "head_height": 29,
-    "head_width": 34,
+    "head_width": 25,
     "height": 45,
-    "shoulder_width": 11,
-    "shoulder_segment": [
-      18,
-      35,
-      29,
-      35
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 14,
+    "head_right": 39
   },
   {
     "character": "Yunxiao",
@@ -835,19 +781,16 @@
       48
     ],
     "crown_y": 3,
-    "chin_or_neck_y": 35,
-    "head_height": 32,
-    "head_width": 38,
+    "chin_or_neck_y": null,
+    "head_height": null,
+    "head_width": 33,
     "height": 45,
-    "shoulder_width": 20,
-    "shoulder_segment": [
-      14,
-      38,
-      34,
-      38
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 40
   },
   {
     "character": "Yunxiao",
@@ -860,19 +803,16 @@
       48
     ],
     "crown_y": 2,
-    "chin_or_neck_y": 34,
-    "head_height": 32,
-    "head_width": 37,
+    "chin_or_neck_y": null,
+    "head_height": null,
+    "head_width": 33,
     "height": 46,
-    "shoulder_width": 20,
-    "shoulder_segment": [
-      14,
-      37,
-      34,
-      37
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 40
   },
   {
     "character": "Yunxiao",
@@ -885,19 +825,16 @@
       48
     ],
     "crown_y": 3,
-    "chin_or_neck_y": 35,
-    "head_height": 32,
-    "head_width": 38,
+    "chin_or_neck_y": null,
+    "head_height": null,
+    "head_width": 33,
     "height": 45,
-    "shoulder_width": 20,
-    "shoulder_segment": [
-      14,
-      38,
-      34,
-      38
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "No separate bun; head width is visible head/hair silhouette, not skull. Shoulder endpoints manually marked excluding loose hair. Back neck is inferred and flagged."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 7,
+    "head_right": 40
   },
   {
     "character": "Guyu",
@@ -912,17 +849,14 @@
     "crown_y": 4,
     "chin_or_neck_y": 39,
     "head_height": 35,
-    "head_width": 44,
+    "head_width": 34,
     "height": 60,
-    "shoulder_width": 10,
-    "shoulder_segment": [
-      25,
-      42,
-      35,
-      42
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 9,
+    "head_right": 43
   },
   {
     "character": "Guyu",
@@ -937,17 +871,14 @@
     "crown_y": 4,
     "chin_or_neck_y": 39,
     "head_height": 35,
-    "head_width": 44,
+    "head_width": 34,
     "height": 60,
-    "shoulder_width": 10,
-    "shoulder_segment": [
-      25,
-      42,
-      35,
-      42
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 9,
+    "head_right": 43
   },
   {
     "character": "Guyu",
@@ -962,17 +893,14 @@
     "crown_y": 4,
     "chin_or_neck_y": 39,
     "head_height": 35,
-    "head_width": 44,
+    "head_width": 34,
     "height": 60,
-    "shoulder_width": 10,
-    "shoulder_segment": [
-      25,
-      42,
-      35,
-      42
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 9,
+    "head_right": 43
   },
   {
     "character": "Gojo",
@@ -987,7 +915,7 @@
     "crown_y": 5,
     "chin_or_neck_y": 38,
     "head_height": 33,
-    "head_width": 38,
+    "head_width": 35,
     "height": 59,
     "shoulder_width": 15,
     "shoulder_segment": [
@@ -997,7 +925,9 @@
       41
     ],
     "bun_height": 0,
-    "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 10,
+    "head_right": 45
   },
   {
     "character": "Gojo",
@@ -1012,7 +942,7 @@
     "crown_y": 5,
     "chin_or_neck_y": 38,
     "head_height": 33,
-    "head_width": 38,
+    "head_width": 35,
     "height": 59,
     "shoulder_width": 15,
     "shoulder_segment": [
@@ -1022,7 +952,9 @@
       41
     ],
     "bun_height": 0,
-    "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 10,
+    "head_right": 45
   },
   {
     "character": "Gojo",
@@ -1037,7 +969,7 @@
     "crown_y": 5,
     "chin_or_neck_y": 38,
     "head_height": 33,
-    "head_width": 38,
+    "head_width": 35,
     "height": 59,
     "shoulder_width": 15,
     "shoulder_segment": [
@@ -1047,7 +979,9 @@
       41
     ],
     "bun_height": 0,
-    "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 10,
+    "head_right": 45
   },
   {
     "character": "Yunxiao",
@@ -1062,17 +996,14 @@
     "crown_y": 4,
     "chin_or_neck_y": 39,
     "head_height": 35,
-    "head_width": 44,
+    "head_width": 31,
     "height": 60,
-    "shoulder_width": 12,
-    "shoulder_segment": [
-      26,
-      42,
-      38,
-      42
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 13,
+    "head_right": 44
   },
   {
     "character": "Yunxiao",
@@ -1087,17 +1018,14 @@
     "crown_y": 4,
     "chin_or_neck_y": 39,
     "head_height": 35,
-    "head_width": 44,
+    "head_width": 31,
     "height": 60,
-    "shoulder_width": 12,
-    "shoulder_segment": [
-      26,
-      42,
-      38,
-      42
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 13,
+    "head_right": 44
   },
   {
     "character": "Yunxiao",
@@ -1112,16 +1040,13 @@
     "crown_y": 4,
     "chin_or_neck_y": 39,
     "head_height": 35,
-    "head_width": 44,
+    "head_width": 31,
     "height": 60,
-    "shoulder_width": 12,
-    "shoulder_segment": [
-      26,
-      42,
-      38,
-      42
-    ],
+    "shoulder_width": null,
+    "shoulder_segment": null,
     "bun_height": 0,
-    "notes": "Manual visible neck/shoulder guide; loose hair may obscure boundary."
+    "notes": "Manual cranial + normal hair contour only; ornaments, side braids, hanging locks, bun excluded. +/-1px visual annotation uncertainty.",
+    "head_left": 13,
+    "head_right": 44
   }
 ]
