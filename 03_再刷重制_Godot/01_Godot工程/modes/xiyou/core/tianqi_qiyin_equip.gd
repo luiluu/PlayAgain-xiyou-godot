@@ -14,6 +14,9 @@ extends RefCounted
 ## 开关（O-332）：ENABLED＝false 时揭开只亮成色、不生成装备（回到 cc/qiyin-altar 的样子），祭坛不出熔、分解、兑换，献只剩印屑。
 
 static var ENABLED := true
+## 开关（O-待定，T082）：true＝七印装备借底子（base_id）时连底子备注解析出的 YEP 效果（元素增幅等）、原版套装一起清掉；
+## false＝照旧带过来（一套黑印＋真印毕业武器全系元素增幅 +1150%）。只管新生成的件，存档里已有的七印装备身上照旧带着
+static var CLEAR_BASE_FX := true
 
 const PATH := "res://modes/xiyou/tianqi_data/qiyin_equip.json"
 const T := preload("res://modes/xiyou/core/tianqi_affix_table.gd")
@@ -90,14 +93,16 @@ static func _blank(kind: String, base_id: int) -> Dictionary:
 	item.meta = {"quality": str(int(data().get("quality_legacy", 14)))}
 	item.price = 0
 	item.affixIds = []
-	item.erase("yep")  # T082：备注解析出的 YEP 效果也清掉（底子 4531～4534、2004 等带元素增幅 +200%～250%，没清时一套黑印加一把真印 = 全系 +1150%）
+	if CLEAR_BASE_FX:
+		item.erase("yep")  # T082：备注解析出的 YEP 效果也清掉（底子 4531～4534、2004 等带元素增幅 +200%～250%，没清时一套黑印加一把真印 = 全系 +1150%）
 	item.upgradeSlots = 0
 	item.originalUpgradeSlots = 0
 	var eq: Dictionary = item.get("equipment", {}).duplicate(true)
 	eq["affixes"] = []
 	eq["slots"] = 0
 	eq["requirements"] = {}
-	eq["suits"] = []  # T082：底子的原版套装（如 4384 套装 220）也不带过来
+	if CLEAR_BASE_FX:
+		eq["suits"] = []  # T082：底子的原版套装（如 4384 套装 220）也不带过来
 	item["equipment"] = eq
 	return item
 

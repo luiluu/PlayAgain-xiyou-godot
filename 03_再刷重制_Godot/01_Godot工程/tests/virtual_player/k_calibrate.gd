@@ -155,7 +155,8 @@ func _state(id: int) -> XState:
 	_dress(a)
 	var fid := _own_fabao(id)
 	if fid == 0:
-		fid = GENERAL_ATK if a.param(2) >= a.param(4) else GENERAL_MAT
+		var mw := main_weights(a)
+		fid = GENERAL_ATK if float(mw.get("atk", 0.0)) >= float(mw.get("mat", 0.0)) else GENERAL_MAT
 	var item := XGear.template("armor", fid)
 	item.level = float(mini(FABAO, int(XMagicWeapon.max_level(item))))
 	var slot := a.equip_slots().find(int(item.etypeId))
@@ -203,9 +204,34 @@ static func _own_fabao(actor_id: int) -> int:
 
 ## 每栏挑原版主属性最高的一件（不限品质、不要专属、不要法宝），改成 80 级神话
 static var _pool := {}
+const PKEYS := ["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"]
+## 本人条件全中后最大那一招的属性权重（折到标准角色前的原始权重）：挑装备、法宝按它（v4 按物攻魔攻谁高，主招吃魔攻的 108 挑错）
+static func main_weights(a: XActor) -> Dictionary:
+	var best := -1.0
+	var w := {}
+	for sid in a.skill_ids:
+		var sp := XTianqiSkills.spec(int(sid))
+		if not sp.has("damage") or sp.has("heal"):
+			continue
+		var v := eff_full(int(a.actor_id), int(sid))
+		if v > best:
+			best = v
+			w = sp.damage.get("stats", {})
+	return w if not w.is_empty() else ({"atk": 1.0} if a.param(2) >= a.param(4) else {"mat": 1.0})
+
+
+static func _wscore(p: Array, w: Dictionary) -> float:
+	var v := float(p[0]) / 1000.0
+	for k in w:
+		var i := PKEYS.find(str(k))
+		if i >= 0:
+			v += float(w[k]) * float(p[i])
+	return v
+
+
 static func _dress(a: XActor) -> void:
 	var slots := a.equip_slots()
-	var physical := a.param(2) >= a.param(4)
+	var w := main_weights(a)
 	for i in slots.size():
 		var et := int(slots[i])
 		if et == 13 or not XTianqiGear.open_type(et):
@@ -230,7 +256,7 @@ static func _dress(a: XActor) -> void:
 			if not a.can_equip(item) or not XTianqiGear.applies(item):
 				continue
 			var p := XTianqiGear.effective_params(item)
-			var score := float(p[2] if physical else p[4]) + float(p[0]) / 100.0
+			var score := _wscore(p, w)
 			if score > best_score:
 				best_score = score
 				best = item
