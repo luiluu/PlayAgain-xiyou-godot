@@ -15,7 +15,8 @@
 
 ## 验证
 - 语法检查 0 问题；`发行空壳.py check` 通过；并行测试 `xiyou_tianqi_gear_params`＋`xiyou_determinism` 全过。
-- `检查.sh --affected main`、交付自检：见回报。
+- 选测（相对 T104 提交 62ce45ff3 的 `选测.py` 名单，20 个场景＋`xiyou_determinism`）21 个全过；工具回归全过；交付自检退出码 0。
+- **`检查.sh --affected main` 没跑完**：本分支叠在未合 main 的 T104 上，相对 main 选中 449 个场景，本机约 40 分钟只完成 32 个（估 9 小时），已停。改用相对 T104 的增量选测代替；总装合并时（T104 先合）影响面会缩回本单这 3 个文件，按那时的 `--affected` 跑即可。
 
 ## 我不同意的地方
 - 无大分歧。`current` 一项我只做了顺序累加，没有做完整模拟（随机项、百分比项的先后），理由见上；加断言 `upgrade_fixed_empty` 只是冒烟，没有为「0 → 非 0 后 current 块生效」造专门用例（需要真实带 current 的石头数据，未去找）。
