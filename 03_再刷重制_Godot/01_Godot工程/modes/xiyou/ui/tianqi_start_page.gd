@@ -17,7 +17,7 @@ const ROW_STEP := 52.0
 const LIST_RECT := Rect2(24, 72, 624, 584)    # 存档位列表面板（底沿 656，离触屏胶囊 666 留 10）
 const CARD_RECT := Rect2(664, 72, 592, 584)   # 存档位详情牌
 const DIFF_W := 224.0
-const DIFF_H := 432.0
+const DIFF_H := 432.0    # 底沿 582；规则块最多到卡内 ~420（证道带小注）
 const DIFF_GAP := 16.0
 const DIFF_TOP := 150.0
 const DIFF_RISE := 10.0
@@ -598,13 +598,15 @@ func _difficulty_card(d: Dictionary) -> Button:
 	line.color = Color(XUiSkin.LINE, 0.42)
 	b.add_child(_at(line, Vector2(16, 244), Vector2(w - 32, 1)))
 	b.add_child(_at(_label("随机阵容", "body", XUiSkin.fs(15), XUiSkin.GOLD), Vector2(16, 254)))
-	var y := 284.0
+	# 每行：小字名＋一行值（值都短，不换行）；证道「超强者最多上阵」下面再加一行小注（助力位），整块不出卡底（T102 截图修：原来长值换行压到下一行、出卡底）
+	var y := 280.0
 	for row in _rule_rows(d):
 		b.add_child(_at(_label(str(row[0]), "body", XUiSkin.fs(15), XUiSkin.TEXT_2), Vector2(16, y)))
-		var v := _label(str(row[1]), "body", XUiSkin.fs(16), XUiSkin.TEXT)
-		v.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		b.add_child(_at(v, Vector2(16, y + 20), Vector2(w - 32, 24)))
-		y += 48.0 if str(row[1]).length() <= 12 else 66.0
+		b.add_child(_fit(_at(_label(str(row[1]), "body", XUiSkin.fs(16), XUiSkin.TEXT), Vector2(16, y + 20)) as Label, w - 32, 13))
+		y += 44.0
+		if row.size() > 2:
+			b.add_child(_fit(_at(_label(str(row[2]), "body", XUiSkin.fs(14), XUiSkin.TEXT_3), Vector2(16, y - 4)) as Label, w - 32, 12))
+			y += 20.0
 	if locked:
 		var chip := _chip("暂未开放", XUiSkin.TEXT_2, XUiSkin.fs(15))
 		b.add_child(chip)
@@ -615,16 +617,16 @@ func _difficulty_card(d: Dictionary) -> Button:
 	return b
 
 
-## 「随机阵容」小节三行：[名, 值]（数值表 roster；规则那几行都带「名」）
+## 「随机阵容」小节三行：[名, 值]或[名, 值, 小注]（数值表 roster；规则那几行都带「名」；证道的助力位规则作小注）
 static func _rule_rows(d: Dictionary) -> Array:
 	var tiers: Array = []
 	for t in [XTier.WEAK, XTier.STRONG, XTier.SUPER]:
 		if (d.get("pool", []) as Array).has(t):
 			tiers.append(t)
-	var cap := "%d 名" % int(d.get("super_cap", 0))
+	var cap: Array = ["超强者最多上阵", "%d 名" % int(d.get("super_cap", 0))]
 	if XTianqi.HELPER_RULES and bool(d.get("helper_super", false)):
-		cap += "（助力位可再放 1 名超强者）"
-	return [["能抽到", " · ".join(tiers)], ["超强者最多上阵", cap], ["弱者至少", "%d 名" % int(d.get("min_weak", 0))]]
+		cap.append("助力位可再放 1 名超强者")
+	return [["能抽到", " · ".join(tiers)], cap, ["弱者至少", "%d 名" % int(d.get("min_weak", 0))]]
 
 
 static func _card_tint(locked: bool, focused: bool) -> Color:
