@@ -27,7 +27,8 @@
     "entry": {"说明": "标题入口 modes/xiyou/entry.gd／entry.tscn（tools83，哪吒 save2 交付单「留给下一单」）：原来没有规则，落到最后一条整轮。改它只会坏入口、标题、读档进游戏、发行版冒烟：发行入口、标题冒烟、按键、转生入口、存档页、平台专项＋事件对照，再加引用了它的测试", "scenes": ["xiyou_entry_release.tscn", "ui_smoke.tscn", "xiyou_key_smoke.tscn", "xiyou_reincarnation_entry.tscn", "xiyou_tianqi_title_flow.tscn", "xiyou_tianqi_e2e.tscn", "xiyou_save_page.tscn", "xiyou_platform.tscn", "xiyou_input_handled.tscn", "xiyou_flow.tscn", "xiyou_event_compare*.tscn"], "refs": true, "checks": ["guards"]},
     "game": {"说明": "其它游戏模块：引用它的专项＋事件对照", "scenes": ["xiyou_event_compare*.tscn"], "refs": true, "checks": ["guards"]},
     "tianqi_data": {"说明": "天启篇数据表（modes/xiyou/tianqi_data/*.json，T131）：跑引用它的测试（文件名、加载它的 class_name），再加数据校验场景；没有任何代码或测试读的表（如 brand.json）也只跑这几个，不落整轮。新增表自动归本组（通配），不用逐个登记", "scenes": ["xiyou_json_cache.tscn", "xiyou_text_batch23.tscn", "xiyou_tianqi_balance.tscn"], "refs": true, "loaders": true, "checks": ["guards"]},
-    "mode_data": {"说明": "模式手写数据（modes/xiyou/*.json）：引用它或加载它的模块的专项＋事件对照", "scenes": ["xiyou_event_compare*.tscn"], "refs": true, "loaders": true, "fallback": ["FULL"], "checks": ["guards"]},
+    "text_fix": {"说明": "文字修正表（modes/xiyou/text_fix/*.json，T132 复查）：text_fix.gd 用常量路径读，没有测试按文件名提 overrides.json，所以固定加 xiyou_text_fix＋事件对照，再加引用它的测试", "scenes": ["xiyou_text_fix.tscn", "xiyou_event_compare*.tscn"], "refs": true, "loaders": true, "checks": ["guards"]},
+    "mode_data": {"说明": "模式手写数据（modes/xiyou/*.json）：引用它或加载它的模块的专项＋事件对照；没有任何测试引用的表（T132）只跑数据校验场景，不落整轮", "scenes": ["xiyou_event_compare*.tscn"], "refs": true, "loaders": true, "fallback": ["xiyou_json_cache.tscn", "xiyou_text_batch23.tscn", "xiyou_tianqi_balance.tscn"], "checks": ["guards"]},
     "export": {"说明": "导出设置", "scenes": ["xiyou_mac_export.tscn"], "checks": ["guards"]},
     "tools": {"说明": "开发工具：工具回归（含守卫）", "checks": ["guards", "tools"]},
     "full": {"说明": "拿不准：整轮", "full": true}
@@ -162,6 +163,7 @@
     {"match": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/entry.tscn", "group": "entry"},
     {"match": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/generated/*", "group": "full"},
     {"match": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/*", "group": "tianqi_data"},
+    {"match": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/text_fix/*", "group": "text_fix"},
     {"match": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/*.json", "group": "mode_data"},
     {"match": "03_再刷重制_Godot/03_转换工具/事件空绿基线.json", "group": "tool_readonly_content"},
     {"match": "03_再刷重制_Godot/03_转换工具/事件空绿扫描.py", "group": "tool_readonly_content"},
