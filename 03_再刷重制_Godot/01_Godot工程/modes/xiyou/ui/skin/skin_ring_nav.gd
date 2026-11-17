@@ -744,7 +744,7 @@ func _draw() -> void:
 		var ly: float = lay.pos.y
 		var rd := XSkinArt.read_on()   # 可读性：描边加粗加深、未选中的名字提亮
 		draw_string_outline(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5 if rd else 4, Color(0, 0, 0, 0.9 if rd else 0.6))
-		draw_string(body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE if on else XSkinArt.bg_text_2())
+		XUiSkin.ds(self, body, Vector2(lx, ly), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE if on else XSkinArt.bg_text_2())
 	_draw_layers()
 
 

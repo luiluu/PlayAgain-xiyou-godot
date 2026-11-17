@@ -98,11 +98,11 @@ func _draw() -> void:
 	if title != "":
 		var ty := y + (48 - title_size) / 2.0 + title_size * 0.86 if icon != null else y + title_size * 0.86
 		var fit := XSkinList.fit_text(head, title, pad + w - x, title_size, 20)   # 长名字先缩到 20 号，再放不下加省略号
-		draw_string(head, Vector2(x, ty), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], title_color)
+		XUiSkin.ds(self, head, Vector2(x, ty), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], title_color)
 		y += maxf(48.0 if icon != null else 0.0, title_size * 1.25)
 	if subtitle != "":
 		y += 4
-		draw_string(body, Vector2(pad, y + XUiSkin.FS_AUX_MAX * 0.86), subtitle, HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+		XUiSkin.ds(self, body, Vector2(pad, y + XUiSkin.FS_AUX_MAX * 0.86), subtitle, HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 		y += XUiSkin.FS_AUX_MAX + 6
 	if notice != "":
 		y += 6
@@ -121,7 +121,7 @@ func _draw() -> void:
 			nsb.draw(ci, Rect2(pad, y, w, nh))
 			for li in npara.get_line_count():
 				var r := npara.get_line_range(li)
-				draw_string(body, Vector2(pad + 10.0, y + 5.0 + float(li) * nlh + XUiSkin.FS_AUX * 0.96), notice.substr(r.x, r.y - r.x), HORIZONTAL_ALIGNMENT_LEFT, w - 20.0, XUiSkin.FS_AUX, XUiSkin.GOLD_LIGHT)
+				XUiSkin.ds(self, body, Vector2(pad + 10.0, y + 5.0 + float(li) * nlh + XUiSkin.FS_AUX * 0.96), notice.substr(r.x, r.y - r.x), HORIZONTAL_ALIGNMENT_LEFT, w - 20.0, XUiSkin.FS_AUX, XUiSkin.GOLD_LIGHT)
 			y += nh + 4
 	if desc != "":
 		y += 8
@@ -133,7 +133,7 @@ func _draw() -> void:
 		draw_line(Vector2(pad, y), Vector2(pad + w, y), Color(XUiSkin.LINE, 0.14), 1.0)
 		y += 4
 		if str(sec.get("title", "")) != "":
-			draw_string(body, Vector2(pad, y + XUiSkin.FS_AUX_MAX * 1.1), str(sec.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
+			XUiSkin.ds(self, body, Vector2(pad, y + XUiSkin.FS_AUX_MAX * 1.1), str(sec.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
 			y += SECTION_H - 10
 		for row in sec.get("rows", []):
 			y = _paragraph(body, str(row.get("text", "")), y, w, XUiSkin.FS_AUX, row.get("color", XUiSkin.TEXT_2), bottom, row.get("spans", []))
@@ -143,11 +143,11 @@ func _draw() -> void:
 			if y + LINE_H > bottom:
 				break
 			var base := y + LINE_H / 2.0
-			draw_string(body, Vector2(pad, base + 15 * 0.36), str(ln.get("left", "")), HORIZONTAL_ALIGNMENT_LEFT, w * 0.6, 15, ln.get("color", XUiSkin.TEXT_2))
+			XUiSkin.ds(self, body, Vector2(pad, base + 15 * 0.36), str(ln.get("left", "")), HORIZONTAL_ALIGNMENT_LEFT, w * 0.6, 15, ln.get("color", XUiSkin.TEXT_2))
 			var rt := str(ln.get("right", ""))
 			if rt != "":
 				var rw := num.get_string_size(rt, HORIZONTAL_ALIGNMENT_LEFT, -1, 21).x
-				draw_string(num, Vector2(pad + w - rw, base + 21 * 0.36), rt, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, ln.get("right_color", XUiSkin.TEXT))
+				XUiSkin.ds(self, num, Vector2(pad + w - rw, base + 21 * 0.36), rt, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, ln.get("right_color", XUiSkin.TEXT))
 			y += LINE_H
 	sel_scale.sel(button_index if button_index >= 0 and button_index < buttons.size() else null)
 	for i in buttons.size():
@@ -170,7 +170,7 @@ func _draw() -> void:
 		if bfs != XUiSkin.FS_LIST and tw > r.size.x - 12.0:
 			bfs = XUiSkin.FS_LIST
 			tw = body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x
-		draw_string(body, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + bfs * 0.36), t,
+		XUiSkin.ds(self, body, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + bfs * 0.36), t,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, bfs, XUiSkin.TEXT_3 if bool(b.get("disabled", false)) else XUiSkin.TEXT)
 
 
@@ -185,7 +185,7 @@ func _paragraph(f: Font, text: String, y: float, w: float, fs: int, col: Color, 
 			break
 		var line_text_range := para.get_line_range(li)
 		if spans.is_empty():
-			draw_string(f, Vector2(pad, y + fs * 1.1), text.substr(line_text_range.x, line_text_range.y - line_text_range.x), HORIZONTAL_ALIGNMENT_LEFT, w, fs, col)
+			XUiSkin.ds(self, f, Vector2(pad, y + fs * 1.1), text.substr(line_text_range.x, line_text_range.y - line_text_range.x), HORIZONTAL_ALIGNMENT_LEFT, w, fs, col)
 		else:
 			_span_line(f, spans, line_text_range.x, line_text_range.y, Vector2(pad, y + fs * 1.1), fs)
 		y += lh
@@ -202,6 +202,6 @@ func _span_line(f: Font, spans: Array, from: int, to: int, at: Vector2, fs: int)
 		var b := mini(to, off + s.length())
 		if b > a:
 			var piece := s.substr(a - off, b - a)
-			draw_string(f, Vector2(x, at.y), piece, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, sp[1])
+			XUiSkin.ds(self, f, Vector2(x, at.y), piece, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, sp[1])
 			x += f.get_string_size(piece, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		off += s.length()

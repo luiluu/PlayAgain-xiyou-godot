@@ -259,6 +259,10 @@ const FONT_DIR := "res://content/ui_skin/fonts/"
 const FONT_FILES := {"title": "TianqiUiSerif-Heavy.otf", "body": "TianqiUiSans-Medium.otf", "num": "TianqiUiNum-Medium.ttf"}
 const CIRCLE_PATH := "res://content/ui_skin/circle_generic.svg"
 
+## FONT_V00300（T100，Kyo 2026-11-16 D153「玩家玩的 v00300 字体就很舒服」）：新皮肤的 title／body／num 一律用玩家版
+## 正文字体 GameFont（方正兰亭中粗），描边也同旧页（1px、黑 0.45）。数字不再用 Barlow 窄体：混排时数字与汉字不同族，
+## 且玩家版一直是这款数字；列宽按旧页数字量过，换了反而对不齐。false＝回到思源宋体／黑体／Barlow 三款（content/ui_skin/fonts/）。
+static var FONT_V00300 := true
 static var _fonts := {}
 static var _cli_mode := -2   # -2 没读；-1 没给；0 强关；1 强开
 static var _tex := {}
@@ -404,6 +408,8 @@ static func snap(v: float) -> int:
 ## kind：title 思源宋体 Heavy（页名、牌上的名字）／body 思源黑体 Medium（正文）／num 窄体数字字（数值）。
 ## 裁过的字缺字时落回游戏原字体（GameFont），再落回系统字体。
 static func font(kind := "body") -> Font:
+	if FONT_V00300:   # T100：标题／正文／数字都用玩家版那一款（GameFont），三种 kind 同一字体，选中、换级都不会换字
+		return GameFont.current()
 	if _fonts.has(kind):
 		return _fonts[kind]
 	var f: Font = null
@@ -420,6 +426,26 @@ static func font(kind := "body") -> Font:
 	return f
 
 
+## 描边（玩家版旧页：1px、黑 0.45，XMVCanvas.text／XUI.theme 同值）。FONT_V00300 开着时所有新皮肤自绘字都走 ds，Label／按钮走 theme。
+const T100_OUTLINE_PX := 1
+const T100_OUTLINE_A := 0.45
+
+
+static func outline_size() -> int:
+	return T100_OUTLINE_PX if FONT_V00300 else 0
+
+
+static func outline_color(a := 1.0) -> Color:
+	return Color(0, 0, 0, T100_OUTLINE_A * a)
+
+
+## 新皮肤画字的唯一入口（替代 draw_string）：FONT_V00300 开着先描 1px 黑 0.45 边再写字；关着＝原样 draw_string。
+static func ds(ci: CanvasItem, font: Font, pos: Vector2, text: String, align: int = HORIZONTAL_ALIGNMENT_LEFT, width: float = -1.0, fs: int = 16, color: Color = Color.WHITE, just: int = 3) -> void:
+	if FONT_V00300 and color.a > 0.0:
+		ci.draw_string_outline(font, pos, text, align, width, fs, T100_OUTLINE_PX, outline_color(color.a))
+	ci.draw_string(font, pos, text, align, width, fs, color, just)
+
+
 static func has_font(kind: String) -> bool:
 	return ResourceLoader.exists(FONT_DIR + str(FONT_FILES.get(kind, "")))
 
@@ -430,7 +456,9 @@ static func theme() -> Theme:
 	t.default_font = font("body")
 	t.default_font_size = FS_LIST
 	for type in ["Label", "Button", "RichTextLabel", "LineEdit"]:
-		t.set_constant("outline_size", type, 0)
+		t.set_constant("outline_size", type, outline_size())
+		if FONT_V00300:
+			t.set_color("font_outline_color", type, outline_color())
 	t.set_color("font_color", "Label", TEXT)
 	t.set_color("default_color", "RichTextLabel", TEXT)
 	t.set_stylebox("panel", "PanelContainer", panel_style())

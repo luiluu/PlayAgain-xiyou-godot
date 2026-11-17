@@ -116,7 +116,7 @@ func _draw() -> void:
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	if title != "":
-		draw_string(body, Vector2(0, XUiSkin.FS_AUX_MAX + 4), title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
+		XUiSkin.ds(self, body, Vector2(0, XUiSkin.FS_AUX_MAX + 4), title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
 		draw_line(Vector2(0, TITLE_H - 4), Vector2(size.x, TITLE_H - 4), Color(XUiSkin.LINE, 0.14), 1.0)
 	sel_scale.sel(index if selectable and not all and index >= 0 else null)
 	for i in rows.size():
@@ -138,7 +138,7 @@ func _draw() -> void:
 		var right_w := 56.0
 		var name_w := 72.0
 		var nf := XSkinList.fit_text(body, str(m.get("name", "")), name_w, XSkinSelScale.fs(17, sk), 14)   # 长名字先缩字再加省略号
-		draw_string(body, Vector2(x, base + int(nf[1]) * 0.36), nf[0], HORIZONTAL_ALIGNMENT_LEFT, -1, nf[1], Color(XUiSkin.TEXT, a))
+		XUiSkin.ds(self, body, Vector2(x, base + int(nf[1]) * 0.36), nf[0], HORIZONTAL_ALIGNMENT_LEFT, -1, nf[1], Color(XUiSkin.TEXT, a))
 		x += name_w + 6
 		var kind := str(m.get("kind", "hp"))
 		var col: Color = XUiSkin.HP if kind == "hp" else (XUiSkin.MP if kind == "mp" else XUiSkin.TP)
@@ -152,13 +152,13 @@ func _draw() -> void:
 		_pill(ci, track, Color(1, 1, 1, 0.12))
 		if mx > 0 and cur > 0:
 			_pill(ci, Rect2(track.position, Vector2(track.size.x * clampf(cur / mx, 0, 1), 5)), Color(col, a))
-		draw_string(num, Vector2(x + bar_w + 8, base + 16 * 0.36), vt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(txt_col, a))
+		XUiSkin.ds(self, num, Vector2(x + bar_w + 8, base + 16 * 0.36), vt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(txt_col, a))
 		var rt := str(m.get("right", ""))
 		if rt != "":
 			var fs := 20 if rt.begins_with("+") else XUiSkin.FS_AUX
 			var f := num if rt.begins_with("+") else body
 			var rw := f.get_string_size(rt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			draw_string(f, Vector2(r.end.x - 10 - rw, base + fs * 0.36), rt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, m.get("right_color", XUiSkin.TEXT_3))
+			XUiSkin.ds(self, f, Vector2(r.end.x - 10 - rw, base + fs * 0.36), rt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, m.get("right_color", XUiSkin.TEXT_3))
 
 
 func _pill(ci: RID, r: Rect2, c: Color) -> void:

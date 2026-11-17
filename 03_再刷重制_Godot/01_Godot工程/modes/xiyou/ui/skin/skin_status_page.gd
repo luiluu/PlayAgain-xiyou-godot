@@ -139,19 +139,19 @@ func _draw_actor() -> void:
 	var name := a.display_name()
 	var fit := XSkinList.fit_text(head, name, w, XUiSkin.FS_CARD, 18)
 	var nw := head.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
-	actor_panel.draw_string(head, Vector2((sz.x - nw) / 2.0, y + 24), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], XUiSkin.TEXT)
+	XUiSkin.ds(actor_panel, head, Vector2((sz.x - nw) / 2.0, y + 24), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], XUiSkin.TEXT)
 	y += 34
 	if str(a.nickname) != "":
 		var nick := "「%s」" % a.nickname
 		var kw := body.get_string_size(nick, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
-		actor_panel.draw_string(body, Vector2((sz.x - kw) / 2.0, y + 16), nick, HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX, XUiSkin.GOLD)
+		XUiSkin.ds(actor_panel, body, Vector2((sz.x - kw) / 2.0, y + 16), nick, HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX, XUiSkin.GOLD)
 		y += 22
 	var info := "Lv %s" % XMenu._group(a.level)
 	var cls := str(a.class_data().get("name", ""))
 	if cls != "":
 		info += " · " + cls
 	var iw := body.get_string_size(info, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX).x
-	actor_panel.draw_string(body, Vector2((sz.x - iw) / 2.0, y + 18), info, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT_2)
+	XUiSkin.ds(actor_panel, body, Vector2((sz.x - iw) / 2.0, y + 18), info, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT_2)
 	y += 30
 	# 状态图标（最多 6 个，居中）
 	var icons := []
@@ -184,10 +184,10 @@ func _draw_actor() -> void:
 	for b in bars:
 		if y + 46 > sz.y - pad:
 			break
-		actor_panel.draw_string(body, Vector2(pad, y + 16), str(b[0]), HORIZONTAL_ALIGNMENT_LEFT, w * 0.5, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+		XUiSkin.ds(actor_panel, body, Vector2(pad, y + 16), str(b[0]), HORIZONTAL_ALIGNMENT_LEFT, w * 0.5, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 		var vt := str(b[5])
 		var vw := num.get_string_size(vt, HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
-		actor_panel.draw_string(num, Vector2(pad + w - vw, y + 17), vt, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, b[4])
+		XUiSkin.ds(actor_panel, num, Vector2(pad + w - vw, y + 17), vt, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, b[4])
 		var track := Rect2(pad, y + 26, w, 6)
 		_pill(ci, track, Color(1, 1, 1, 0.12))
 		var mx := float(b[2])
@@ -223,7 +223,7 @@ func _draw_page_frame() -> void:
 		var t := str(names[i])
 		var fit := XSkinList.fit_text(body, t, r.size.x - 12, XSkinSelScale.fs(XUiSkin.FS_AUX_MAX, tab_scale.k(i), floori(r.size.y * 0.66)), XUiSkin.FS_AUX)
 		var tw := body.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
-		page_panel.draw_string(body, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + int(fit[1]) * 0.36), fit[0],
+		XUiSkin.ds(page_panel, body, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + int(fit[1]) * 0.36), fit[0],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], XUiSkin.TEXT if i == scene.page else XUiSkin.TEXT_2)
 	var ly := XUiSkin.PAD + TAB_H + 8
 	page_panel.draw_line(Vector2(XUiSkin.PAD_LG, ly), Vector2(sz.x - XUiSkin.PAD_LG, ly), Color(XUiSkin.LINE, 0.14), 1.0)
@@ -292,7 +292,7 @@ func _draw_page_body() -> void:
 					# 放不下时右对齐／居中的往左让（不压到别的列，宁可超出列宽也不截字）
 					x -= (tw - w) if align == HORIZONTAL_ALIGNMENT_RIGHT else (tw - w) / 2.0
 					w = tw
-				page_body.draw_string(body, Vector2(x, row * ROW + ROW / 2.0 + f2 * 0.36), s, align, w if align != HORIZONTAL_ALIGNMENT_LEFT else -1.0, f2, col)
+				XUiSkin.ds(page_body, body, Vector2(x, row * ROW + ROW / 2.0 + f2 * 0.36), s, align, w if align != HORIZONTAL_ALIGNMENT_LEFT else -1.0, f2, col)
 			"icon":
 				var row2 := (float(op[3]) - 2.0 - y0) / XStatusPage.LH - top
 				if row2 < 0 or (row2 + 1) * ROW > sz.y + 0.5:

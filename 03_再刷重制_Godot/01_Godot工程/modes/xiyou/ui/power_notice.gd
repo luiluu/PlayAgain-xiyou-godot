@@ -170,20 +170,20 @@ class NoticeBox extends Control:
 						var left_s := ln.substr(0, sp + 1)
 						var right_s := ln.substr(sp + 1)
 						var col := XUiSkin.UP if right_s.begins_with("+") else (XUiSkin.DOWN if right_s.begins_with("-") else XUiSkin.TEXT_2)
-						draw_string(bf, Vector2(pad.x, cy + 18 * 0.36), left_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT)
+						XUiSkin.ds(self, bf, Vector2(pad.x, cy + 18 * 0.36), left_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT)
 						var lx := bf.get_string_size(left_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
-						draw_string(nf, Vector2(pad.x + lx, cy + 20 * 0.36), right_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, col)
+						XUiSkin.ds(self, nf, Vector2(pad.x + lx, cy + 20 * 0.36), right_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, col)
 						continue
 				elif i == 1:
 					var cidx := ln.find("：")
 					if cidx >= 0:
 						var left_s := ln.substr(0, cidx + 1)
 						var right_s := ln.substr(cidx + 1)
-						draw_string(bf, Vector2(pad.x, cy + 16 * 0.36), left_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, XUiSkin.TEXT_2)
+						XUiSkin.ds(self, bf, Vector2(pad.x, cy + 16 * 0.36), left_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, XUiSkin.TEXT_2)
 						var lx := bf.get_string_size(left_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
-						draw_string(nf, Vector2(pad.x + lx, cy + 20 * 0.36), right_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, XUiSkin.GOLD_LIGHT)
+						XUiSkin.ds(self, nf, Vector2(pad.x + lx, cy + 20 * 0.36), right_s, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, XUiSkin.GOLD_LIGHT)
 						continue
-				draw_string(bf, Vector2(pad.x, cy + 18 * 0.36), ln, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT)
+				XUiSkin.ds(self, bf, Vector2(pad.x, cy + 18 * 0.36), ln, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT)
 			return
 		draw_style_box(style, Rect2(Vector2.ZERO, size))
 		var asc := font.get_ascent(FONT_SIZE)

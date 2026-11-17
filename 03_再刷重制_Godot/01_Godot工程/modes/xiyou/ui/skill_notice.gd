@@ -192,7 +192,7 @@ class NoticeBox extends Control:
 				var fs := int(l[1])
 				y += float(l[3])
 				var at := Vector2(22.0, roundf(y + f.get_ascent(fs)))
-				draw_string(f, at, str(l[0]), HORIZONTAL_ALIGNMENT_LEFT, size.x - 38.0, fs, l[2])
+				XUiSkin.ds(self, f, at, str(l[0]), HORIZONTAL_ALIGNMENT_LEFT, size.x - 38.0, fs, l[2])
 				y += f.get_height(fs)
 			return
 		draw_style_box(style, Rect2(Vector2.ZERO, size))
