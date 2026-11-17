@@ -92,6 +92,18 @@ func _run() -> void:
 	check("xiyou_boss_four", e.boss_strong_count == 4 and is_equal_approx(e.boss_attribute_rate(), 1.8), [e.boss_strong_count, xy.battle_members().map(func(a): return a.actor_id)])
 	XState.current = null
 
+	# T147：自动战斗／智能 AI 的超强者判定（XTusu.super_strong）与号卷分档（XPowerBooks.actor_class）同口径
+	XState.current = tq
+	check("t147_tusu_tianqi_174_not_super", not XTusu.super_strong(tq.actor(174)) and XTusu.super_strong(tq.actor(152)))
+	check("t147_books_tianqi_174_not_super", XPowerBooks.actor_class(tq.actor(174)) != "超强者")
+	XTianqiSkills.TIERS = false
+	check("t147_tusu_tiers_off_rollback", XTusu.super_strong(tq.actor(174)))
+	XTianqiSkills.TIERS = true
+	XState.current = xy
+	check("t147_tusu_xiyou_174_super", XTusu.super_strong(xy.actor(174)))
+	check("t147_books_xiyou_174_super", XPowerBooks.actor_class(xy.actor(174)) == "超强者")
+	XState.current = null
+
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)

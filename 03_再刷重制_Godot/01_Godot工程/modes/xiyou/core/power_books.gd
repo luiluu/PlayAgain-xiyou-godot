@@ -40,7 +40,7 @@ static func strong_ids() -> Array:
 static func actor_class(a: XActor) -> String:
 	if XTianqiTrumpet.on():
 		return XTianqiTrumpet.tier_of(a)  # 天启篇号卷：按天启篇名单
-	if XItemMarks.is_super_strong(a.actor_id):
+	if XItemMarks._super_in(XState.current, a.actor_id):  # T147：天启篇读天启档位表
 		return "超强者"
 	return "强者" if strong_ids().has(a.actor_id) else "弱者"
 
