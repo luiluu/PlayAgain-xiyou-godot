@@ -246,6 +246,8 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 			if u == null:
 				break
 			count += 1
+			if bind_host != null and u == a:
+				continue  # 附身中的璇不自己行动（游戏里开战就绑、不进行动顺序；夹具开战后才绑，她的回合跳过，不然一动就解附身）
 			var cmd := logic.decide(u)
 			if u == a and bind_host == null:  # 璇附身时照她自己的自动（夹具硬选招会把附身解掉，棱光就没了）
 				a.mp = a.mmp
