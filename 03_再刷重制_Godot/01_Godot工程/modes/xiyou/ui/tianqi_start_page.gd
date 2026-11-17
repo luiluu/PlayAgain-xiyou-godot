@@ -297,7 +297,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventJoypadButton and event.pressed and (event as InputEventJoypadButton).button_index == JOY_BUTTON_Y:
 		hit = true
 	if hit:
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)   # 不直接调视口（xiyou_input_handled 守卫）
 		_reroll.pressed.emit()
 
 
