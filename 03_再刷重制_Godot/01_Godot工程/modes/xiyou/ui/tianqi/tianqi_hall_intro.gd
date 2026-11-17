@@ -30,7 +30,7 @@ uniform float radius = 0.0;
 uniform vec2 size = vec2(1280.0, 720.0);
 void fragment() {
 	if (radius > 0.0) {
-		COLOR.a *= smoothstep(radius - 3.0, radius + 3.0, distance(UV * size, center));
+		COLOR.a *= smoothstep(radius - 3.0, radius + 3.0, distance(SCREEN_UV * size, center));
 	}
 }
 """
@@ -45,7 +45,7 @@ var title_text := ""
 var sub_text := ""
 
 var _scene: Node = null
-var _mask: ColorRect
+var _mask: Control
 var _hole: ShaderMaterial
 var _stage: Control
 var _circle: TextureRect
@@ -123,19 +123,25 @@ func _init() -> void:
 
 func _ready() -> void:
 	mode = XUiSkin.motion()
-	_mask = ColorRect.new()
+	_mask = Control.new()
 	_mask.name = "Mask"
-	_mask.color = Color.WHITE
 	_mask.mouse_filter = Control.MOUSE_FILTER_STOP   # 过场期间点不到下面的 HUD
 	_mask.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_mask.clip_children = CanvasItem.CLIP_CHILDREN_ONLY   # 只用来做遮罩：底画在它里面，揭开时挖洞
+	add_child(_mask)
+	XUiSkin.menu_backdrop(_mask)   # 跟开局三页同一张底
+	# 揭开时挖洞：底的每一层都挂同一个材质（按屏幕坐标算，渐变、火星、正式美术背景都一起挖）
 	var sh := Shader.new()
 	sh.code = HOLE_SHADER
 	_hole = ShaderMaterial.new()
 	_hole.shader = sh
-	_mask.material = _hole
-	add_child(_mask)
-	XUiSkin.menu_backdrop(_mask)
+	_apply_hole(_mask)
+
+
+func _apply_hole(n: Node) -> void:
+	if n is CanvasItem:
+		(n as CanvasItem).material = _hole
+	for c in n.get_children():
+		_apply_hole(c)
 
 
 func _start() -> void:
@@ -322,15 +328,17 @@ func _run_full() -> void:
 	t.tween_property(_circle, "scale", Vector2(0.06, 0.06), 0.45).set_delay(1.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	t.tween_property(_circle, "modulate:a", 1.0, 0.45).set_delay(1.3)
 	t.tween_property(_circle, "modulate:a", 0.0, 0.15).set_delay(1.75)
-	# 五人：0～约 1.0 从左边走进来站成一排，1.3～1.65 卷进阵心（缩小、淡出）
+	# 五人：0～约 1.0 从左边走进来站成一排（队伍间距一路不变，排尾先停），1.3～1.65 卷进阵心（缩小、淡出）
+	var n := _walkers.size()
 	for w in _walkers:
 		var r: TextureRect = w.rect
 		var spot: Vector2 = w.spot
 		var i: int = w.i
-		_set_center(r, Vector2(-120.0 - 70.0 * i, spot.y))
+		var lead := (n - 1 - i) * 0.04   # 排头（最右）先动、走得最远
+		_set_center(r, Vector2(spot.x - 900.0, spot.y))
 		r.modulate.a = 1.0
 		r.pivot_offset = r.size / 2.0
-		t.tween_property(r, "position", spot - r.size / 2.0, 0.95 + 0.03 * i).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		t.tween_property(r, "position", spot - r.size / 2.0, 0.95 - lead).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		t.tween_property(r, "position", Vector2(CENTER.x, WALK_Y + 12.0) - r.size / 2.0, 0.35).set_delay(1.3).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 		t.tween_property(r, "scale", Vector2(0.2, 0.2), 0.35).set_delay(1.3)
 		t.tween_property(r, "modulate:a", 0.0, 0.35).set_delay(1.3)
@@ -365,6 +373,8 @@ func _run_simple() -> void:
 	_circle.modulate.a = 1.0
 	_badge.scale = Vector2(0.6, 0.6)
 	_badge.modulate.a = 1.0
+	_set_center(_badge, CENTER)   # 徽记压在合拢的漩涡正中
+	_set_center(_badge_glow, CENTER)
 	_badge_glow.modulate.a = 0.9
 	_skip_hint.modulate.a = 1.0
 	var t := create_tween().set_parallel(true)
