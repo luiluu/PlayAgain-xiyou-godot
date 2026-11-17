@@ -201,6 +201,9 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 		for ph in ["target", "whole"]:
 			if r.yepSeq.get(ph) is Array:
 				r.yepSeq[ph] = _seq_edit(r.yepSeq[ph], sp.seq)
+		for op in sp.seq:  # split_effects 每段拆成 n 段：智能 AI 估段数用的 yepEffects 跟着乘（T081）
+			if str(op.get("op", "")) == "split_effects" and r.has("yepEffects"):
+				r.yepEffects = int(r.yepEffects) * int(op.get("n", 1))
 	if sp.has("hit_type"):
 		r.hitType = int(sp.hit_type)
 	for k in sp.get("fields", {}):  # 记录上的其他字段直接改（奈叶自定义魔法消耗 mpCostCurrentRate／postDamageCostRepeat 关掉）
@@ -223,7 +226,8 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 
 
 ## 行动序列（yepSeq，转换器预编译）：段数在这里。drop_if 删掉条件段（match 是条件里的子串，空＝所有条件段）、if_keep 条件段只留前 n 段（cmd 换成别的命令前缀，如 "Add State"）、replace_cmd 整条换命令名、
-## if_to_effects 把条件段换成固定 n 段、add_effects 在最后一段后面再加 n 段、clear_effect_args 把「action effect: enemies」改成只打目标
+## if_to_effects 把条件段换成固定 n 段、add_effects 在最后一段后面再加 n 段、clear_effect_args 把「action effect: enemies」改成只打目标、
+## split_effects 每一段原地拆成 n 段（单段上限拆段用，卡上系数同时除以 n）
 static func _seq_edit(cmds: Array, ops: Array) -> Array:
 	var out: Array = cmds.duplicate(true)
 	for op in ops:
@@ -233,7 +237,8 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 				var i := 0
 				while i < out.size():
 					var name := str(out[i][0])
-					if name.begins_with("if ") and name.contains(str(op.get("match", ""))):
+					var mt := str(op.get("match", ""))
+					if name.begins_with("if ") and (mt == "" or name.contains(mt)):  # Godot 的 contains("") 为假：空 match 要单独判（T081 发现 2058 的 drop_if "" 一直没生效）
 						var depth := 1
 						i += 1
 						while i < out.size() and depth > 0:
@@ -299,6 +304,18 @@ static func _seq_edit(cmds: Array, ops: Array) -> Array:
 				for c in out:
 					if str(c[0]) == "action effect":
 						c[1] = []
+			"split_effects":  # 每一段（大小写 action effect 都算，条件块里的也算）原地拆成 n 段、参数照抄；系数在卡上除以 n，合计不变（T081 单段上限拆段）
+				var n3 := int(op.get("n", 1))
+				var res4 := []
+				for c in out:
+					if str(c[0]).to_lower() != "action effect":
+						res4.append(c)
+						continue
+					for k in n3:
+						if k > 0 and str(c[0]) == "action effect":
+							res4.append(["wait", ["6"]])
+						res4.append((c as Array).duplicate(true))  # 默认序列的大写段可能只有名字一项（["ACTION EFFECT"]）
+				out = res4
 	return out
 
 
@@ -588,7 +605,7 @@ static func formula(a, b, item: Dictionary) -> float:
 	if NATIVE_COUNTER and a is XActor and a.has_meta("xtq_cnext_on") and follow_scale == 1.0:
 		v *= float(a.get_meta("xtq_cnext_on"))  # 牛马之魂：反击后下一招（不含追加、反击本身）
 	var hit_cap := XTianqiBase.single_hit_cap(a)  # 期四：单段有效系数上限（总开关关着 0，不封）
-	var eff := float(d.get("coef", 0.0))
+	var eff := float(d.get("coef", 0.0)) * (hit_weight(d) if hit_cap > 0.0 else 1.0)  # 口径同 天启篇数据校验.py single_hit_effective
 	for c in d.get("conds", []):
 		var m := _cond(c, a, b)
 		v *= m
@@ -602,6 +619,23 @@ static func formula(a, b, item: Dictionary) -> float:
 		v *= hit_cap / eff  # 卡面系数×条件全中后超过上限：压回上限（数据校验已按上限拆段，这里只兜底）
 	v = maxf(0.0, v)
 	return -v if kind in [3, 4] else v
+
+
+## 单段有效系数里的属性权重合计（同 天启篇数据校验.py skill_weight）：生命、魔法上限按标准线折成攻击的 hp_mult／mp_mult 倍；max_of 再加 1
+static func hit_weight(d: Dictionary) -> float:
+	var l: Dictionary = XTianqiBase.line_data().get("line", {})
+	var w := 0.0
+	var stats: Dictionary = d.get("stats", {"atk": 1})
+	for k in stats:
+		var m := 1.0
+		if str(k) == "mhp":
+			m = float(l.get("hp_mult", 25))
+		elif str(k) == "mmp":
+			m = float(l.get("mp_mult", 25))
+		w += float(stats[k]) * m
+	if d.has("max_of"):
+		w += 1.0
+	return w
 
 
 ## 一条伤害条件成立时的倍率，不成立为 1。

@@ -44,7 +44,7 @@ static func on(s = null) -> bool:
 
 
 ## 测试用：清缓存
-static func reload() -> void:
+static func clear_cache() -> void:
 	_line = {}
 	_abs = {}
 	_abs_index = {}
@@ -240,7 +240,8 @@ static func abs_data() -> Dictionary:
 		_abs_index = {}
 		for e in _abs.get("entries", []):
 			if e is Dictionary:
-				_abs_index[str(e.get("kind", "")) + ":" + str(e.get("id", ""))] = e
+				var eid = e.get("id", "")
+				_abs_index[str(e.get("kind", "")) + ":" + (str(int(eid)) if eid is float else str(eid))] = e  # JSON 数字读成浮点，str(1.0) 是 "1.0"
 	return _abs
 
 
