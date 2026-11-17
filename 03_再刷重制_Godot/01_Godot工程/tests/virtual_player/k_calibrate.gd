@@ -8,7 +8,7 @@ extends Node
 ## - 81 级；每栏从原版装备里挑主属性最高的一件（不限品质、不要专属），实例改成 80 级神话（meta req_level 80、quality 14）→ 新底子按表算；
 ##   本人专属法宝（没有就破攻／尊魔）99 级；技能熟练度拿满（MASTERY 开）；喝天平酒、助力位空、只上这一个人。
 ## - 木桩：这一场第一个敌人，物防魔防都改成 8200，每下之前回满；强制暴击（XStateEffects.force_critical）。
-## - D195（Kyo 11-18，T175）：口径＝一次施放的总伤害（每段先封单段上限再相加）＝下面的峰值单段 × 整次施放实测的「各段合计÷最大一段」（_cast_ratio，3 遍取中位；--single 回到旧口径）。
+## - D195（Kyo 11-18，T175）：口径＝一次施放的总伤害（每段先封单段上限再相加）＝下面的峰值单段 × 整次施放实测的「各段合计÷最大一段」（_cast_ratio，每遍新开一场，3 遍取中位；--single 回到旧口径）。
 ## - 「这一下」：卡上每个伤害技能各打 hits 次，取最大的一个数；条件全中靠换算——同一下里卡面公式值 v0（XTianqiSkills.formula，含当下的条件）
 ##   和条件全中的值 v_full（卡面系数×Σ权重×各条件最大倍率，封到档位上限，口径同 天启篇数据校验.py single_hit_effective）都是线性乘在后面所有乘区前面的，
 ##   所以 峰值 ＝ 量到的数 × v_full ÷ v0。
@@ -334,6 +334,25 @@ func _measure(id: int, tier: String) -> Dictionary:
 			best = again
 		best["build"] = _build_desc(a)
 	logic.end_battle(0)
+	# D195（Kyo 11-18）：口径＝一次施放的总伤害（每段先封单段上限再相加）。上面量的峰值单段已是「条件全中、封到上限」；
+	# 每招另开一场新战斗整次施放（不让前一招的施放留下的状态、蓄力串到后一招），量「各段合计÷最大一段」（每段在结算里已各自封顶），乘到峰值上。--single 回到旧口径
+	if not single and not best.is_empty():
+		var affixes = best.get("affixes")
+		var build = best.get("build")
+		best = {}
+		for sid in _rows:
+			var row: Dictionary = _rows[sid]
+			var cr := _cast_ratio(s, a, XDB.rec("Skills", int(sid)))
+			row["segs"] = cr
+			row["peak"] = roundf(float(row.peak_single) * float(cr.ratio))
+			if per_skill:
+				print("K_CAST %d %d single=%d ratio=%s total=%d" % [id, int(sid), row.peak_single, cr.ratio, row.peak])
+			if best.is_empty() or float(row.peak) > float(best.peak):
+				best = row
+		if affixes != null:
+			best["affixes"] = affixes
+		if build != null:
+			best["build"] = build
 	return best
 
 
@@ -365,10 +384,12 @@ static func _sukuna_terminal(logic, a, e, sid: int) -> float:
 	return float(XSukuna.TQ_TERMINAL.get(t, 9.0)) / maxf(0.01, float(XTianqiSkills.spec(sid).get("damage", {}).get("coef", 1.0)))
 
 
-## 一组技能各打 hits 次，取峰值最大的那一行
+## 一组技能各打 hits 次，取峰值最大的那一行（每招的那一行另记在 _rows，D195 换算整次施放用）
+var _rows := {}
 func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 	var id := int(a.actor_id)
 	var best := {}
+	_rows = {}
 	for sid in sids:
 		var sp := XTianqiSkills.spec(int(sid))
 		if not sp.has("damage") or sp.has("heal"):
@@ -431,15 +452,8 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 					"cap": cap, "peak": roundf(peak), "terminal": term, "formula": str(sk.get("damage", {}).get("formula", "")).left(60), "repeats": int(sk.get("repeats", 1)), "atk": a.param(2), "mat": a.param(4), "mhp": a.mhp}
 		if sk_best.is_empty():
 			continue
-		# D195（Kyo 11-18）：口径＝一次施放的总伤害（每段先封单段上限再相加）。峰值单段已是「条件全中、封到上限」；
-		# 整次施放实打几遍，量「各段合计÷最大一段」（每段在结算里已各自封顶），乘到峰值上。--single 回到旧口径
 		sk_best["peak_single"] = sk_best.peak
-		if not single:
-			var cr := _cast_ratio(a, e, logic, sk)
-			sk_best["segs"] = cr
-			sk_best["peak"] = roundf(float(sk_best.peak_single) * float(cr.ratio))
-		if per_skill:
-			print("K_CAST %d %d single=%d ratio=%s total=%d" % [id, int(sid), sk_best.peak_single, sk_best.get("segs", {}).get("ratio", 1.0), sk_best.peak])
+		_rows[int(sid)] = sk_best
 		if best.is_empty() or float(sk_best.peak) > float(best.peak):
 			best = sk_best
 	return best
@@ -447,9 +461,17 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 
 ## D195：整次施放（logic.execute，强制暴击、木桩回满），收这一次打在木桩上的每一段（type hit、target＝木桩、shown.hp＞0），
 ## 段数比＝合计÷最大一段；跑 CAST_RUNS 遍取中位（随机加段的角色不取最大）。打不到木桩（全随机目标打到别人）按 1
-func _cast_ratio(a, e, logic, sk: Dictionary) -> Dictionary:
+func _cast_ratio(s: XState, a, sk: Dictionary) -> Dictionary:
 	var runs := []
 	for n in CAST_RUNS:
+		var logic := XBattleLogic.new()
+		logic.setup(_troop(s), s, XBattleRandom.create(str(s.random_master) + str(n)))
+		var foes: Array = logic.alive(logic.enemies)
+		if foes.is_empty():
+			break
+		var e = foes[0]
+		e.add_param(0, 1.0e9)
+		e.param_mark_dirty()
 		_pin_def(e)
 		e.hp = e.mhp * (0.3 if _has_trumpet(a) else 1.0)
 		a.hp = a.mhp
@@ -462,12 +484,15 @@ func _cast_ratio(a, e, logic, sk: Dictionary) -> Dictionary:
 		XSukuna.cast = {}
 		var segs := []
 		_collect_hits(logs, e, segs)
+		logic.end_battle(0)
 		var mx := 0.0
 		var sum := 0.0
 		for v in segs:
 			mx = maxf(mx, v)
 			sum += v
 		runs.append({"n": segs.size(), "ratio": sum / mx if mx > 0.0 else 1.0, "segs": segs.map(func(v): return roundi(v))})
+	if runs.is_empty():
+		return {"ratio": 1.0, "n": 0, "segs": [], "ratios": []}
 	runs.sort_custom(func(x, y): return float(x.ratio) < float(y.ratio))
 	var mid: Dictionary = runs[runs.size() / 2]
 	return {"ratio": snappedf(float(mid.ratio), 0.001), "n": mid.n, "segs": mid.segs, "ratios": runs.map(func(r): return snappedf(float(r.ratio), 0.001))}
