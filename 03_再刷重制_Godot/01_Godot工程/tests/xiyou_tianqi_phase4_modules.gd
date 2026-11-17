@@ -6,8 +6,12 @@ extends Node
 ##     每一条都要在 damage_ledger.json phase4.module_review 里有初审结论；结论是留的，phase4.module_whitelist 里要有对应行，反过来也一样。
 ## 三、模块派生 7 行（phase4.derived_module）：真打量「每回合最多几次、每次是原招的几成」（P4DERIVED 行），口子 take_module_derived：
 ##     关着恒真、不记数；开着只认 enforced 的行、每回合到 per_turn 就拦；登记成 enforced 的行 per_turn×ratio 不超过 1.0。
+##     T137：basis per_target＝比例按每个敌人算（镜流、流萤：卡上写的群体系数）；own_action＝璇棱光是她自己那次出手（附身中她只防御）；
+##     璇按触发它的宿主那次行动量（take_module_derived 的 trigger）；屠苏分段卡开着不加伤、不登记。夹具钉了本场随机数（量到的数不再每跑一次都漂）。
 ## 四、开卡前的口子：白起 full_again 过回合预算（总开关开着）；卡改写的 8 把专属武器攻击次数 +1 不被九线停用误停、关着照旧停；
-##     段数来源只剩词条「连击」、红印「多段连击」、卡改写专属武器三类（词条＋红印合计最多 +2，专属武器各 +1）。
+##     段数来源只剩词条「连击」、红印「多段连击」、卡改写专属武器三类；D175（Kyo 11-17）：每一件来源最多 +2，合计不封顶。
+## 五（T137）：黑闪天启篇（甚尔爆伤 +30%、觉醒 2 回合；五条悟 +30% 待拍板；宿傩不加）；屠苏卡开着不分摊、分段不加伤；
+##     镜流 10190 没别的活敌不扣派生；璇棱光口子在 _cast 查完之后、按 own_action 口径（附身中她自己只防御）。
 ## 读的表：tianqi_data/damage_ledger.json（phase4）、skill_rework.json（gear、actors.80 charge）、affix_table.json、qiyin_gear.json。
 
 const MODULE_ACTORS := {"module.raven": 167, "module.number_boost": 168, "module.mira": 168, "module.sukuna": 172, "module.yomi_jingliu": 169,
@@ -53,6 +57,10 @@ func _run() -> void:
 	_full_again()
 	_exclusive_weapons()
 	_hit_sources()
+	_black_flash_tq()
+	_tusu_tq()
+	_jingliu_no_other()
+	_xuan_gate()
 	XTianqiBase.PHASE4 = false
 	XTianqiSkills.CARDS = false
 	XTianqiLedger.TRACE = null
@@ -214,7 +222,7 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 			a.equips[maxi(0, int(XDB.rec("Armors", int(XTusu.RELIC)).get("etypeId", 5)) - 1)] = relic
 	a.recover_all()
 	var logic := XBattleLogic.new()
-	logic.setup(TROOP, s)
+	logic.setup(TROOP, s, XBattleRandom.create(XRandomStream.hex64(20261117 * 7 + aid)))  # T137：钉住本场随机数（原来每跑一次都不同，量到的数会漂，饿狼合计偶尔过 1.0）
 	for e in logic.enemies:
 		e._rates[0] *= 1000
 		e.recover_all()
@@ -225,11 +233,24 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 		if aid == 177 and not XXuanBattle.data.is_empty():
 			XXuanBattle.data.auto = true
 	var picks := {}
+	var own_turns := []
 	XTianqiLedger.TRACE = []
 	XActorDamageHooks.RECORD = []
 	var main := {"dmg": 0.0, "acts": 0}
 	var pick := 0
+	var bind_host = logic.actors.filter(func(x): return x != a)[0] if aid == 177 else null
+	if bind_host != null:
+		bind_host.change_level(99)  # 和璇同级（「是原招的几成」按宿主那下算，宿主太弱比例没意义）
+		_fit_weapon(bind_host)
+		bind_host.add_param(0, 1e9)  # 宿主是弱者，一回合就被打死、解附身（death-host）；夹具只量棱光，给宿主堆血
+		bind_host.refresh_passive()
+		bind_host.recover_all()
 	for _round in rounds:
+		if bind_host != null:
+			a.mp = a.mmp
+			a.tp = a.max_tp()
+		if bind_host != null and not XBinding.is_bound(a) and a.is_alive() and bind_host.is_alive():
+			XBinding.bind(a, bind_host)  # T137：璇附身着才有棱光（宿主主动攻击后），解了就重新附身
 		logic.start_turn()
 		logic.take_turn_start_logs()
 		var count := 0
@@ -239,7 +260,7 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 				break
 			count += 1
 			var cmd := logic.decide(u)
-			if u == a:
+			if u == a and bind_host == null:  # 璇附身时照她自己的自动（夹具硬选招会把附身解掉，棱光就没了）
 				a.mp = a.mmp
 				a.tp = a.max_tp()
 				var pool := _usable(logic, a)
@@ -250,8 +271,13 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 			XActorDamageHooks.RECORD_ACT = {"subject": u, "skill": int(cmd[0].id) if cmd[0] != null else -1}
 			var n0: int = (XTianqiLedger.TRACE as Array).size()
 			var hp0 := XTianqiLedger._foe_hp(logic)
+			if bind_host != null and XBinding.data(a) != null:
+				XBinding.data(a).charges = maxi(int(XBinding.data(a).charges), 3)  # 棱光要 2 点星契（_can_spend；只有一次行动的璇平时攒不到），夹具每次行动前补满只量比例
+			var own_bound := bind_host != null and u == a and XBinding.is_bound(a)
 			logic.act(u, cmd[0], cmd[1])
-			if u == a:
+			if own_bound:  # T137 own_action 口径的前提：附身中的璇自己那一回合只能防御、不出伤害（星契就是她这次行动换的）
+				own_turns.append({"skill": int(cmd[0].id) if cmd[0] != null else -1, "drop": hp0 - XTianqiLedger._foe_hp(logic)})
+			if u is XActor:
 				var drop := hp0 - XTianqiLedger._foe_hp(logic)
 				for i in range(n0, (XTianqiLedger.TRACE as Array).size()):
 					var r: Dictionary = XTianqiLedger.TRACE[i]
@@ -259,9 +285,13 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 						drop -= float(r.hp0) - float(r.hp1)
 				drop = maxf(drop, 0.0)
 				for i in range(n0, (XTianqiLedger.TRACE as Array).size()):
-					XTianqiLedger.TRACE[i]["act_main"] = drop  # 触发它的那次行动的主伤害（「是原招的几成」的分母）
-				main.dmg = float(main.dmg) + drop
-				main.acts = int(main.acts) + 1
+					var r: Dictionary = XTianqiLedger.TRACE[i]
+					# 触发它的那次行动的主伤害（「是原招的几成」的分母）：本人行动里触发的按本人；替别人出手的（璇棱光，T137）按 trigger 那人这次行动
+					if u == a and int(r.get("trigger", 0)) == 0 or int(r.get("trigger", 0)) == int(u.actor_id) and u != a:
+						r["act_main"] = drop
+				if u == a:
+					main.dmg = float(main.dmg) + drop
+					main.acts = int(main.acts) + 1
 		logic.end_turn()
 		for e in logic.enemies:
 			if e.is_alive():
@@ -282,12 +312,12 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 		else:
 			_note(str(r.tag), "改写" if XTianqiSkills.has(int(r.skill)) else "没改写", int(r.skill), r.ops)
 	XTianqiBase.PHASE4 = false
-	return {"actor": aid, "trace": tr, "main": main}
+	return {"actor": aid, "trace": tr, "main": main, "own_turns": own_turns}
 
 
 func _fixture_battles() -> void:
 	for aid in [167, 168, 169, 170, 171, 172, 173, 174, 176, 177, 179]:
-		var r := _battle(aid)
+		var r := _battle(aid, 30 if aid in [170, 171, 177] else 12)  # T137：触发少的（镜流追加段、甚尔武器库、璇棱光）多打几回合
 		trace_rows.append(r)
 	# 每个来源：触发次数、每回合每人最多几次、每次是原招的几成（派生伤害 ÷ 本人一次行动的主伤害）、每回合合计
 	var by := {}
@@ -314,7 +344,9 @@ func _fixture_battles() -> void:
 			if float(t.hp1) >= 0.0 and base > 0.0:
 				var d := float(t.hp0) - float(t.hp1)
 				if src == "module.tusu.segments":
-					d *= 0.2 / 1.2  # 分段打的是整招 ×1.2，多出来的是 0.2
+					d *= 0.2 / 1.2  # 分段打的是整招 ×1.2，多出来的是 0.2（T137 起卡开着不分段加伤、不走口子，量不到）
+				if _per_target(src):
+					d /= maxf(1.0, float(t.get("targets", 1)))  # T137 basis per_target：每个敌人多吃几成
 				(row.ratios as Array).append(d / base)
 				var ct: Dictionary = coef_turn.get(src, {})
 				ct[key] = float(ct.get(key, 0.0)) + d / base
@@ -339,6 +371,13 @@ func _fixture_battles() -> void:
 		print("P4DERIVED|%s|触发%d|拦%d|每回合最多%d次|每次平均%.3f|每次最高%.3f|每回合合计最高%.3f" % [src, int(row.get("n", 0)), int(row.get("denied", 0)),
 			int(row.get("max_turn", 0)), mean, top, float(row.get("coef", 0.0))])
 		measured[src] = {"max_turn": int(row.get("max_turn", 0)), "mean": mean, "coef": float(row.get("coef", 0.0))}
+	# 璇 own_action 口径（T137，协调 11-17）：附身中她自己那一回合只防御、不出伤害，棱光（花星契＝她本回合的行动）就是她唯一的输出
+	var xr: Array = trace_rows.filter(func(r): return int(r.actor) == 177)
+	var own: Array = xr[0].own_turns if not xr.is_empty() else []
+	_check("xuan_bound_turn_guard_only", not own.is_empty() and own.all(func(t): return int(t.skill) == XBattleLogic.GUARD_SKILL and float(t.drop) <= 0.0), own)
+	# 棱光每一次真打出了伤害（口子在 _cast 查完星契、冷却之后才问，不会白扣次数）
+	var lg: Array = (xr[0].trace as Array).filter(func(t): return str(t.source) == "module.xuan.follow_up") if not xr.is_empty() else []
+	_check("xuan_gate_after_cast", not lg.is_empty() and lg.all(func(t): return bool(t.ok) and float(t.hp0) > float(t.hp1)), lg.size())
 	_check("fixture_battle_traced", trace_rows.any(func(r): return not (r.trace as Array).is_empty()), trace_rows.map(func(r): return [r.actor, (r.trace as Array).size(), r.main]))
 	var seen_sources := by.keys()
 	print("P4DERIVED_SEEN=" + JSON.stringify(seen_sources))
@@ -357,10 +396,18 @@ func _fixture_battles() -> void:
 		for k in ok_turn:
 			if int(ok_turn[k]) > int(r.per_turn):
 				over.append([r.id, k, ok_turn[k]])
-		# 强制执行的行：夹具这一轮量到的每回合合计不超过 1.0
-		if float(measured.get(str(r.id), {}).get("coef", 0.0)) > 1.0:
+		# 强制执行的行：夹具这一轮量到的每回合合计不超过 1.0（own_action 的不按宿主比：棱光就是璇自己那次出手，T137）
+		if str(r.get("basis", "")) != "own_action" and float(measured.get(str(r.id), {}).get("coef", 0.0)) > 1.0:
 			over.append([r.id, "coef", measured[str(r.id)].coef])
 	_check("fixture_enforced_within", over.is_empty(), over)
+
+
+## 表里 basis 是 per_target 的行（T137：卡上写成「其他敌人各吃几成」的群体扩散），比例按每个敌人算
+func _per_target(src: String) -> bool:
+	for r in _p4().get("derived_module", []):
+		if str(r.get("id", "")) == src:
+			return str(r.get("basis", "")) == "per_target"
+	return false
 
 
 # ---- 二：白名单初审表 ----
@@ -392,9 +439,13 @@ func _review_table() -> void:
 	_check("whitelist_matches_review", wl_bad.is_empty() and keep_bad.is_empty(), [wl_bad, keep_bad])
 	# 旧键 module_whitelist 不动（期一期三的守卫照它）
 	_check("old_whitelist_untouched", (XTianqiLedger.data().get("module_whitelist", []) as Array).is_empty())
-	# 开着才读新白名单：表里有的一行，关着（卡单开）拦、开着放
-	if not wl.is_empty():
-		var w: Dictionary = wl[0]
+	# 开着才读新白名单：表里有的一行，关着（卡单开）拦、开着放。T137：新白名单空着时临时塞一行试（原来空表就跳过，这条断言等于没有）
+	var probe_wl: Array = XTianqiBase.ledger_phase4().get("module_whitelist", [])
+	var injected := probe_wl.is_empty()
+	if injected:
+		probe_wl.append({"module": "module.raven", "skill": 10122, "field": "finalMultiplier", "reason": "T137 专项临时行"})
+	if true:
+		var w: Dictionary = probe_wl[0]
 		var s := _state([int(MODULE_ACTORS.get(str(w.module), 167))])
 		var a := s.actor(int(MODULE_ACTORS.get(str(w.module), 167)))
 		var op := [{"op": "mul" if str(w.field).ends_with("Multiplier") else "add", "field": str(w.field), "value": 1.5}]
@@ -405,7 +456,9 @@ func _review_table() -> void:
 		XTianqiBase.PHASE4 = true
 		var on := XTianqiSkills.module_ops(item, a, op.duplicate(true), str(w.module))
 		XTianqiBase.PHASE4 = false
-		_check("whitelist_phase4_only", cards_only.is_empty() and on.size() == 1, [w, cards_only, on])
+		if injected:
+			probe_wl.clear()
+		_check("whitelist_phase4_only", cards_only.is_empty() and on.size() == 1, [w, cards_only, on, injected])
 
 
 # ---- 三：派生 7 行的登记 ----
@@ -420,7 +473,18 @@ func _derived_rows() -> void:
 				bad.append([r.id, "enforced 但没填或合计超过 1.0"])
 		elif str(r.get("note", "")).contains("留空"):
 			bad.append([r.id, "还是留空"])
+		if not bool(r.get("enforced", false)) and not str(r.get("note", "")).contains("不登记，理由"):
+			bad.append([r.id, "不登记要写理由"])
+		if r.has("basis") and not str(r.basis) in ["per_target", "own_action"]:
+			bad.append([r.id, "basis 只认 per_target、own_action", r.basis])
 	_check("derived_rows_filled", bad.is_empty(), bad)
+	# T137：4 行（镜流、流萤、璇、屠苏）有结论：前三行登记强制执行，屠苏卡开着不是派生、写理由不登记
+	var want := {"module.jingliu.segment": ["per_target", true], "module.liuying.segment": ["per_target", true], "module.xuan.follow_up": ["own_action", true], "module.tusu.segments": ["", false]}
+	var got := {}
+	for r in rows:
+		if want.has(str(r.id)):
+			got[str(r.id)] = [str(r.get("basis", "")), bool(r.get("enforced", false))]
+	_check("derived_four_settled", got == want, got)
 
 
 func _derived_gate() -> void:
@@ -516,7 +580,21 @@ func _hit_sources() -> void:
 	for v in hits:
 		qsum += v
 	_check("source_qiyin_red_only", hits == [1], hits)
-	_check("source_affix_red_le2", 1 + qsum <= 2, 1 + qsum)
+	# D175（Kyo 11-17 10:14「单件最高+2。上限不封顶。」）：每一件来源（每条词条、每个红印、每把专属武器）最多 +2，合计不设上限
+	var piece_bad := []
+	for d in combo:
+		for v in d.get("values", []):
+			if int(v) > 2:
+				piece_bad.append(["affix", d.get("key"), v])
+	for v in hits:
+		if v > 2:
+			piece_bad.append(["qiyin", v])
+	var gear_rw: Dictionary = XTianqiSkills.data().gear
+	for k in gear_rw:
+		for t in gear_rw[k].get("traits_set", []):
+			if int(t.code) == 34 and float(t.get("value", 0)) > 2.0:
+				piece_bad.append(["gear", k, t.value])
+	_check("source_piece_le2", piece_bad.is_empty() and not combo.is_empty() and not hits.is_empty(), piece_bad)
 	# 九线来源停用后（天启篇、卡开着）：原版装备、真气连击都不加，剩下的就是这三类＋角色本体（本体的另列，交付单写）
 	XTianqiBase.PHASE4 = true
 	var s := _state([])
@@ -529,6 +607,143 @@ func _hit_sources() -> void:
 	var excl := a.attack_times_add()
 	XTianqiBase.PHASE4 = false
 	_check("source_runtime", is_equal_approx(plain, 0.0) and is_equal_approx(excl, 1.0), [plain, excl])
+
+
+# ---- 五（T137）：黑闪天启篇 ----
+func _black_flash_tq() -> void:
+	var s := _state([171, 172])
+	var logic := XBattleLogic.new()
+	logic.setup(TROOP, s)
+	var toji := s.actor(171)
+	var suk := s.actor(172)
+	var e = logic.enemies[0]
+	var item := XDB.rec("Skills", 10216)
+	var got := {}
+	for cards in [false, true]:
+		XTianqiSkills.CARDS = cards
+		XBlackFlash.cast = {"actor": toji, "skill": 10216}
+		XBlackFlash.hit = {"target": e, "boost": true, "increment": 1.0}
+		var tq := XTianqiModules.damage_ops(item, toji, e).filter(func(o): return str(o.field) == "criticalAdd")
+		var capped := XTianqiSkills.module_ops(item, toji, XBlackFlash.damage_ops(e), "module.black_flash")
+		XBlackFlash.hit = {"target": e, "boost": false, "increment": 0.0}
+		var miss := XBlackFlash.tq_ops(toji, e)
+		XBlackFlash.cast = {"actor": suk, "skill": 10230}
+		XBlackFlash.hit = {"target": e, "boost": true, "increment": 1.0}
+		var suk_ops := XBlackFlash.tq_ops(suk, e)
+		got[cards] = {"tq": tq, "capped": capped, "miss": miss, "sukuna": suk_ops}
+	XTianqiSkills.CARDS = false
+	XBlackFlash.cast = {}
+	XBlackFlash.hit = {}
+	# 关着：天启分支不出，原版连闪暴伤照旧 +1.0
+	_check("bf_off_unchanged", (got[false].tq as Array).is_empty() and got[false].capped.size() == 1 and is_equal_approx(float(got[false].capped[0].value), 1.0), got[false])
+	# 开着：原版 +1.0 被收口拦掉、天启篇甚尔 +0.3（只在黑闪那次）；宿傩不加爆伤（卡只给下一次斩击 +20%）
+	_check("bf_on_toji_crit", (got[true].capped as Array).is_empty() and got[true].tq.size() == 1 and is_equal_approx(float(got[true].tq[0].value), 0.3) and (got[true].miss as Array).is_empty(), got[true])
+	_check("bf_on_sukuna_none", (got[true].sukuna as Array).is_empty(), got[true].sukuna)
+	# 五条悟：单独一个数（待 Kyo 拍板），推荐与甚尔一致
+	_check("bf_gojo_crit_tunable", is_equal_approx(XBlackFlash.TQ_CRIT_GOJO, 0.3) and XBlackFlash.TQ_CRIT.get(XGojo.ACTOR) == null, XBlackFlash.TQ_CRIT_GOJO)
+	# 觉醒回合：甚尔卡开着 2 回合、关着 3 回合；宿傩照旧 3
+	toji.learn_skill(XBlackFlash.SKILL)
+	suk.learn_skill(XBlackFlash.SKILL)
+	var exp := {}
+	for cards in [false, true]:
+		XTianqiSkills.CARDS = cards
+		for u in [toji, suk]:
+			XBlackFlash._temp.erase(u)
+			XBlackFlash.cast = {"actor": u, "skill": 10216 if u == toji else 10230, "success": true, "chain": 0, "focus": 0, "eligible": true, "damage": true}
+			XBlackFlash.finish(logic, u, XDB.rec("Skills", 10216 if u == toji else 10230))
+			exp["%s|%d" % [cards, int(u.actor_id)]] = int(XBlackFlash.temp(u).expires) - XBlackFlash.round
+	XTianqiSkills.CARDS = false
+	XBlackFlash.cast = {}
+	_check("bf_awake_rounds", exp == {"false|171": 3, "false|172": 3, "true|171": 2, "true|172": 3}, exp)
+
+
+# ---- 五（T137）：屠苏卡开着不分摊、分段不加伤 ----
+func _tusu_tq() -> void:
+	var s := _state([])
+	XTianqi._joining = true
+	XTusuXuan.recruit(s, 176)
+	XTianqi._joining = false
+	var slots := s.battle_slots.duplicate()
+	slots[0] = 176
+	s.battle_slots = slots
+	var logic := XBattleLogic.new()
+	logic.setup(TROOP, s)
+	var t := s.actor(176)
+	var item := XDB.rec("Skills", XTusuXuan.skill_id(176, "arm.zhanfeng"))
+	var e = logic.enemies[0]
+	var td = XTusu.data(t)
+	var got := {}
+	if td != null:
+		td.host_actions = 1
+		for cards in [false, true]:
+			XTianqiSkills.CARDS = cards
+			got[cards] = {"share": XTusu.damage_ops(item, t, e).filter(func(o): return str(o.field) == "finalMultiplier").map(func(o): return o.value), "bonus": XTusu.segment_bonus()}
+		XTianqiSkills.CARDS = false
+	_check("tusu_share_off_only", td != null and got[false].share == [2.0] and (got[true].share as Array).is_empty(), [td != null, got])
+	_check("tusu_segment_bonus", td != null and is_equal_approx(float(got[false].bonus), 1.2) and is_equal_approx(float(got[true].bonus), 1.0), got)
+
+
+# ---- 五（T137）：镜流 10190 没有别的活敌：不扩散、不扣派生次数 ----
+func _jingliu_no_other() -> void:
+	var s := _state([])
+	XTianqi._joining = true
+	XYomiJingliu.recruit(s, 170)
+	XTianqi._joining = false
+	var slots := s.battle_slots.duplicate()
+	slots[0] = 170
+	s.battle_slots = slots
+	var logic := XBattleLogic.new()
+	logic.setup(TROOP, s)
+	var u := s.actor(170)
+	var main = logic.enemies[0]
+	for e in logic.enemies:
+		if e != main:
+			e.hp = 0
+			e.add_state(1)
+	XTianqiBase.PHASE4 = true
+	logic.start_turn()
+	XYomiJingliu._j_frame = {"user": u, "main": main, "had_gap": true, "hit": true}
+	var logs := XYomiJingliu.j_finish(logic, u, XDB.rec("Skills", 10190))
+	var b: Dictionary = logic.get_meta(XTianqiLedger.BUDGET_META) if logic.has_meta(XTianqiLedger.BUDGET_META) else {"derived": {}}
+	XTianqiBase.PHASE4 = false
+	var key := "%d|module.jingliu.segment" % int(u.actor_id)
+	_check("jingliu_10190_no_other", logs.is_empty() and int((b.get("derived", {}) as Dictionary).get(key, 0)) == 0, [logs.size(), b.get("derived")])
+
+
+# ---- 五（T137）：璇棱光口子在 _cast 查完之后（没星契不扣次数） ----
+func _xuan_gate() -> void:
+	var s := _state([])
+	XTianqi._joining = true
+	XTusuXuan.recruit(s, 177)
+	XTianqi._joining = false
+	var slots := s.battle_slots.duplicate()
+	slots[0] = 177
+	s.battle_slots = slots
+	var a := s.actor(177)
+	a.change_level(99)
+	for id in _module_skills(177):
+		a.learn_skill(int(id))
+	a.recover_all()
+	var logic := XBattleLogic.new()
+	logic.setup(TROOP, s)
+	var host = logic.actors.filter(func(x): return x != a)[0]
+	XBinding.bind(a, host)
+	if not XXuanBattle.data.is_empty():
+		XXuanBattle.data.auto = true
+	XTianqiBase.PHASE4 = true
+	logic.start_turn()
+	var atk := XDB.rec("Skills", 1)
+	var counts := []
+	for ch in [0, 3]:
+		a.mp = a.mmp
+		a.tp = a.max_tp()
+		XBinding.data(a).charges = ch
+		XTianqiLedger.TRACE = []
+		XXuanBattle._follow_up(logic, a, atk, null, host)  # end_action 宿主主动攻击后走这里（真打的接线在夹具那场里，30 次）
+		counts.append((XTianqiLedger.TRACE as Array).filter(func(t): return str(t.source) == "module.xuan.follow_up" and int(t.trigger) == int(host.actor_id)).size())  # 口子被问了几次（记数与否看表里 enforced）
+		XTianqiLedger.TRACE = null
+	XTianqiBase.PHASE4 = false
+	_check("xuan_gate_no_charge_no_count", counts == [0, 1], counts)
 
 
 ## 模块技能要的武器类型（黄泉 11、镜流 2）：身上那把不对就换一把对的

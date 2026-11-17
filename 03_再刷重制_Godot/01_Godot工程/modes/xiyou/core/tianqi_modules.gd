@@ -22,4 +22,4 @@ static func battle_start(a, party: Array, foes: Array) -> void:
 static func damage_ops(item: Dictionary, a, b) -> Array:
 	if not XTianqiSkills.cards_on() or XBattleLogic.is_item(item):
 		return []
-	return XMira.tq_ops(item, a, b) + XYomiJingliu.tq_ops(item, a, b) + XSukuna.tq_ops(item, a, b) + XGarou.tq_ops(item, a, b) + XYunshang.tq_ops(item, a, b) + XTusu.tq_ops(item, a, b) + XXuanBattle.tq_ops(item, a, b) + XCat.tq_ops(item, a, b) + XLiuying.tq_ops(item, a, b)
+	return XMira.tq_ops(item, a, b) + XYomiJingliu.tq_ops(item, a, b) + XSukuna.tq_ops(item, a, b) + XGarou.tq_ops(item, a, b) + XYunshang.tq_ops(item, a, b) + XTusu.tq_ops(item, a, b) + XXuanBattle.tq_ops(item, a, b) + XCat.tq_ops(item, a, b) + XLiuying.tq_ops(item, a, b) + XBlackFlash.tq_ops(a, b)
