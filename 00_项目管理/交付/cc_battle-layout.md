@@ -1,7 +1,7 @@
 # 交付：cc/battle-layout
 
 - 车道／工作者：T126 战斗站位优化＋小怪血条＋触屏指令环跟角色（cc，Opus＋medium，P8）；基于 luiluu/cc-battle-ui-v07（T125 b2140b3eb），随 T096／T125 一起合
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -14,6 +14,8 @@
 - 触屏指令环（D171）：`XUiSkin.TOUCH_RING_FIXED`（默认 false）从 TOUCH_V2 里单拆，只管指令环位置；false 时触屏也跟着当前行动的角色（`XBattleScene._ring_follow`，同环自己不固定那一支），照旧让开 A／B 键组与右上队伍面板；TOUCH_V2 其余各项不变。没改 `skin_battle_ring.gd`（T125 在改；它的 `fixed_corner()` 仍认 TOUCH_V2，battle_scene 摆完后改摆一次）。
 - 回退开关：`XBattleLayout.ENABLED`、`XSkinEnemyHp.ENABLED`、`XUiSkin.TOUCH_RING_FIXED`（改 true 回到右下）。
 - 测试：新增 `tests/xiyou_battle_layout`（窗口 72 项含截图与取像素、无头 66 项）：首领点与封顶、敌群矩形、我方右半场不压队伍栏、我方与敌人间距、2 人队、原版竖排不撑开、两个开关关掉回原版、指令环跟角色且在画面内、TOUCH_RING_FIXED＝true 回右下、血条尺寸、拖尾先拖后追上、脚下那一行是糖果粉、首领不画。800×450 定稿图在私密仓 `协作交接/附图/T126/定稿_*.png`，出样三版四宫格同目录。
+- 原版对照专项关掉站位撑开：xiyou_battle_pixel、xiyou_battle_ui（含继承它的 xiyou_popup_overlap）、xiyou_guyu_ui、xiyou_party_formation、xiyou_sequence_visual、xiyou_sv_smooth 在 `_run` 开头设 `XBattleLayout.ENABLED = false`（它们拿原版坐标／MV 参照帧／原版缩放比对；battle_ui 的「默认选最右边的敌人」写死原版 x 353，撑开是保序变换，行为不变）。
+- 验证：云端选测 169 场景（57af843431）162 过、7 个即上面这些对照专项，加关开关后本机单跑 7 个全过（182／791／28／74／140／8／73）；xiyou_ui_skin_battle_v07、xiyou_ui_skin_4a、xiyou_ui_skin_hud 等云端已过；xiyou_battle_layout 窗口 72/72、无头 66/66。
 - 玩家可见：战斗里角色和怪物变大、拉开铺满画面，首领站到左边；小怪脚下多了一条粉色细血条（扣血有橙色拖尾）；手机上战斗指令环改回跟着当前行动的角色。
 
 ## 交接板

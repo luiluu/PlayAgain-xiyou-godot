@@ -128,6 +128,7 @@ func _invalid_imports(dir: String) -> Array:
 
 
 func _run() -> void:
+	XBattleLayout.ENABLED = false  # T126：本专项对照原版站位与大小，关掉战斗站位撑开（撑开由 xiyou_battle_layout 核）
 	XMessageBox.auto = true
 	var ids: Array = SMOOTH + CRISP
 	check("switch_default_on", XBattlerSprite.SV_NORM_SMOOTH == true)
