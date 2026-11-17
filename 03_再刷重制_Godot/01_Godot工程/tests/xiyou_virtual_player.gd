@@ -173,6 +173,7 @@ func _run() -> void:
 	bot.advance_enabled = not OS.get_cmdline_user_args().has("--vp-no-advance")
 	bot.fragments_enabled = not OS.get_cmdline_user_args().has("--vp-no-fragments")
 	VP_GROWTH.full_score = not OS.get_cmdline_user_args().has("--vp-plain-score")
+	XTianqiBase.PHASE4 = OS.get_cmdline_user_args().has("--vp-phase4")  # 期四总开关（翻开关前对照用，T130）；不带＝默认关
 	var goals_arg := _arg("--vp-goals")
 	bot.mode = _arg("--vp-mode", "explore")
 	var climb := bot.mode == "climb"
