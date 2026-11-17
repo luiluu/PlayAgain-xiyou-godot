@@ -26,6 +26,8 @@ static var ENABLED := true
 ## 现在的属性和敌人还是原版量级，没有固定底数时前期伤害只剩原来的十分之一左右，所以先默认关，等数值线那一轮一起开（Kyo 定）
 static var CARDS := false
 static var MASTERY := false
+## T163（D189，Kyo 11-18）：标定后逐个调角色——skill_rework.json 的 tune.D189 覆盖在 skills／actors 上（字典逐层合并、数组整段换，卡面 desc 一起换）。
+## 回退：`XTianqiBase.TUNE_D189 = false` 后 reload()（照覆盖前的卡；开关放在 XTianqiBase：放这里时 reload() 后读到的总是默认值，原因没查清）。
 static var ACTION_CAP := true
 static var TIERS := true
 
@@ -63,6 +65,12 @@ static func data() -> Dictionary:
 			push_error("XTianqiSkills: JSON 解析失败 " + PATH)
 			return {}
 		_data = parsed
+		if XTianqiBase.TUNE_D189:
+			var tune: Dictionary = _data.get("tune", {}).get("D189", {})
+			for sec in ["skills", "actors"]:
+				for k in tune.get(sec, {}):
+					var cur = _data.get(sec, {}).get(k)
+					_data[sec][k] = tune_merge(cur if cur is Dictionary else {}, tune[sec][k])
 		_skills = {}
 		for k in _data.get("skills", {}):
 			_skills[int(k)] = _data.skills[k]
@@ -91,6 +99,19 @@ static func data() -> Dictionary:
 				for id in _data.tiers[t]:
 					_tier[int(id)] = str(t)
 	return _data
+
+
+## tune 覆盖：字典逐层合并，其余（数、数组、字符串）整段换；_ 开头的说明键不进
+static func tune_merge(base: Dictionary, patch: Dictionary) -> Dictionary:
+	var out := base.duplicate(true)
+	for k in patch:
+		if str(k).begins_with("_"):
+			continue
+		if patch[k] is Dictionary and out.get(k) is Dictionary:
+			out[k] = tune_merge(out[k], patch[k])
+		else:
+			out[k] = patch[k]
+	return out
 
 
 ## 测试用：清掉缓存，下次重新读文件

@@ -37,6 +37,8 @@ static var CLASS_RATE_OFF := true
 ## 期四开着时数值标签按角色卡同一张 note_remove 表全拦（协调 11-17 同意：Kyo 已定天启篇境界整套重做、原版这几招不沿用、不参与标定）。
 ## T082 量 K：拳一 163 靠 9976＋10018 爆伤 +200%、终伤 +200%，峰值是第二名超强者的 5 倍。false＝照原版（回退）
 static var REALM_OFF := true
+## T163（D189，Kyo 11-18）：标定后逐个调角色的覆盖层（skill_rework.json、base_line.json 的 tune.D189）；false＋XTianqiSkills.reload() 照覆盖前
+static var TUNE_D189 := true
 const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
 const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",
 	"SkillPass\\d+", "passiveAPLUS", "AgainUseAll", "passiveIRUP", "passiveGRUP", "passiveSPBST\\d", "ConsumeReduce\\w+", "passiveEXTTP", "DepassiveHarmRe\\d+",
@@ -126,7 +128,10 @@ static func actor_mult(actor_id: int, stat: String) -> float:
 		m = float(role.get("def", 1.0))
 	elif stat == "agi":
 		m = float(d.get("speed", {}).get(str(row.get("speed", "中")), 1.0))
-	return m * float(row.get("tweak", {}).get(stat, 1.0))
+	var tw := float(row.get("tweak", {}).get(stat, 1.0))
+	if TUNE_D189:  # T163（D189）：逐个调角色的本体成长（base_line.json 的 tune.D189.actors.<id>.tweak），回退同 XTianqiBase.TUNE_D189
+		tw = float(d.get("tune", {}).get("D189", {}).get("actors", {}).get(str(actor_id), {}).get("tweak", {}).get(stat, tw))
+	return m * tw
 
 
 ## XActor.param_base_direct 的替身：开着、表里有这个人时返回标准线本体；否则 NAN（调用方照原版职业曲线）

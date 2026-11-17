@@ -16,8 +16,8 @@ var results: Array = []
 
 
 ## T082 实机标定的 K（balance_table combat_rules.base_damage）；改标定只改这两行
-const K_TABLE := 0.2
-const K_TEXT := "0.2"
+const K_TABLE := 0.27
+const K_TEXT := "0.27"
 
 func _ready() -> void:
 	_run.call_deferred()
@@ -41,6 +41,7 @@ func _run() -> void:
 	_class_rate()
 	_realm()
 	_fabao()
+	_tune_d189()
 	_e2e(true)
 	_e2e(false)
 	XTianqiBase.PHASE4 = false
@@ -231,6 +232,25 @@ func _fabao() -> void:
 	XTianqiBase.PHASE4 = false
 	XState.current = s
 
+
+
+## 【cc·T163】D189 逐个调角色的覆盖层（skill_rework.json tune.D189）：开着读覆盖后的系数和卡面，TUNE_D189 关掉 reload 后照原卡
+func _tune_d189() -> void:
+	XTianqiSkills.reload()
+	var on_coef := float(XTianqiSkills.spec(10727).damage.coef)
+	var on_hp := float(XTianqiSkills.spec(7057).damage.stats.mhp)
+	var on_atk := float(XTianqiSkills.spec(7057).damage.stats.atk)
+	var on_desc := str(XTianqiSkills.spec(10727).desc)
+	XTianqiBase.TUNE_D189 = false
+	XTianqiSkills.reload()
+	var off_coef := float(XTianqiSkills.spec(10727).damage.coef)
+	var off_hp := float(XTianqiSkills.spec(7057).damage.stats.mhp)
+	var off_desc := str(XTianqiSkills.spec(10727).desc)
+	XTianqiBase.TUNE_D189 = true
+	XTianqiSkills.reload()
+	_check("tune_d189.on", on_coef == 5.0 and on_hp == 0.002 and on_atk == 0.6667 and on_desc.contains("×5.0"), [on_coef, on_hp, on_desc])
+	_check("tune_d189.switch_back", off_coef == 6.0 and off_hp == 0.0133 and off_desc.contains("×6.0"), [off_coef, off_hp])
+	_check("tune_d189.no_note_keys", not XTianqiSkills.spec(10727).has("_note"))
 
 ## 开着但是西游档：全走关着
 func _xiyou() -> void:

@@ -28,6 +28,8 @@ var hits := 20
 var out_path := ""
 var only: Array = []
 var debug := false
+var no_advance := false  # --no-advance：不进阶（T163 前的口径，对照用）
+var per_skill := false  # --per-skill：每招打印一行（T163 查模块角色的大招有没有量到）
 var mastery_seen := 0
 var no_mastery := false
 var no_fabao := false
@@ -54,6 +56,10 @@ func _ready() -> void:
 			no_mastery = true
 		elif a == "--bare":
 			bare = true
+		elif a == "--no-advance":
+			no_advance = true
+		elif a == "--per-skill":
+			per_skill = true
 		elif a == "--debug":
 			debug = true
 		elif a.begins_with("--actors="):
@@ -154,6 +160,8 @@ func _state(id: int) -> XState:
 		s.set_battle_slot(i, id if i == 0 else 0)
 	var a := s.actor(id)
 	a.change_level_mv(LEVEL)
+	if not no_advance:
+		_advance_max(s, a)
 	_dress(a)
 	var fid := _own_fabao(id)
 	if fid == 0:
@@ -184,12 +192,31 @@ func _state(id: int) -> XState:
 				if int(t.get("code", 0)) == 21 and int(t.get("dataId", -1)) == 4 and float(t.get("value", 1.0)) != 1.0:
 					print("K_DEBUG mat-rate %s %s %s" % [o.get("id"), o.get("name"), t.value])
 		print("K_DEBUG params %s base=%s" % [[a.param(0), a.param(2), a.param(4)], [a.param_base(2) if a.has_method("param_base") else "", a.param_base(4) if a.has_method("param_base") else ""]])
+	if per_skill:
+		print("K_ADV %d rank=%d skills=%s" % [id, XAdvance.rank(s, id), a.skill_ids])
 	mastery_seen = maxi(mastery_seen, XSkillMastery.max_level(int(a.skill_ids[0])) if not a.skill_ids.is_empty() else 0)
 	a.param_mark_dirty()
 	a.refresh_passive()
 	a.recover_all()
 	XState.current = s
 	return s
+
+
+## T163：进阶拉满（「养满」包括进阶：进阶会学招、开形态——饿狼形态、渡鸦、甚尔、谷雨等都挂在进阶后面；T082 v1～v7 都没进阶）。
+## 钱、物品、饿狼累计突破和神之触媒都给够，走游戏自己的 XAdvance.advance（含各模块的进阶包装）
+static func _advance_max(s: XState, a: XActor) -> void:
+	s.gain_gold(999999999)
+	if XGarou.own(a):
+		s.garou["breakthroughs"] = 999
+		s.gain_item(XGarou.CATALYST, 1)
+	for _n in 12:
+		var r = XAdvance.row(s, int(a.actor_id))
+		if r != null:
+			for p in r.items:
+				s.gain_item(int(p[0]), int(p[1]))
+		if not XAdvance.advance(s, a):
+			break
+	a.refresh_passive()
 
 
 static var _own := {}
@@ -303,6 +330,8 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			continue
 		var sk := XDB.rec("Skills", int(sid))
 		if sk.is_empty() or not XSmartAI.for_opponent(sk):
+			if per_skill:
+				print("K_SKILL %d %d skip=not_for_opponent" % [id, int(sid)])
 			continue
 		var full := minf(eff_full(id, int(sid)), cap) if cap > 0.0 else eff_full(id, int(sid))
 		var d: Dictionary = sp.damage
@@ -336,11 +365,15 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			var dealt := float(r.get("shown", {}).get("hp", r.get("hp", 0.0)))  # 跳出来的那一个数（木桩生命有上限，不能用掉血量）
 			XStateEffects.force_critical = false
 			if v0 <= 0.0 or dealt <= 0.0:
+				if per_skill and n == 0:
+					print("K_SKILL %d %d skip=zero v0=%s dealt=%s" % [id, int(sid), v0, dealt])
 				continue
 			# v_full：同一个基数（Σ属性×权重 × 等级缩放）乘「条件全中、封到上限」的系数 full÷w
 			var base_lv := v0 / maxf(1e-9, _coef_now(a, e, d, int(sid)))
 			var v_full := base_lv * full / maxf(1e-9, w)
 			var peak := dealt * v_full / v0
+			if per_skill and n == hits - 1:
+				print("K_SKILL %d %d peak=%d dealt=%d eff=%s" % [id, int(sid), roundf(peak), dealt, eff_full(id, int(sid))])
 			if best.is_empty() or peak > float(best.peak):
 				best = {"actor": id, "skill": int(sid), "dealt": dealt, "v0": v0, "v_full": v_full, "eff_full": eff_full(id, int(sid)),
 					"cap": cap, "peak": roundf(peak), "formula": str(sk.get("damage", {}).get("formula", "")).left(60), "repeats": int(sk.get("repeats", 1)), "atk": a.param(2), "mat": a.param(4), "mhp": a.mhp}
