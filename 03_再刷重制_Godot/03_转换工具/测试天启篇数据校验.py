@@ -509,5 +509,52 @@ class SkillReworkGrowth(unittest.TestCase):
         self.assertTrue(any('growth' in b for b in chk.skill_rework_rules(t)))
 
 
+class BrandRules(unittest.TestCase):
+    """brand.json（T073-a）：真表全过；每条规则改坏一处都要报错。"""
+
+    def _t(self):
+        return json.loads((REAL_DIR / 'brand.json').read_text(encoding='utf-8'))
+
+    def test_real_ok(self):
+        self.assertEqual(chk.brand_rules(self._t()), [])
+
+    def test_mutations(self):
+        def nodes(t): t['nodes']['caps'][3] = 35
+        def last(t): t['nodes']['caps'][6] = 95
+        def bonus(t): t['power']['max_bonus'] = 0.6
+        def ucap(t): t['gain']['uncarved_cap'] = 45
+        def urealm(t): t['gain']['uncarved_max_realm'] = 3
+        def trade(t): t['trade']['branches'].pop()
+        def trade_eq(t): t['trade']['branches'][0]['taken'] = 0.04
+        def cost(t): t['costs']['list'].pop()
+        def fit(t): t['fits']['list'][0]['name'] = '发愣'
+        def ripe(t): t['ripe']['fits'].append('换人')
+        def sear(t): t['sear']['per_hit']['蚀骨'] = 6
+        def fold(t): t['sear']['settle']['折法'] = '按比例'
+        def first(t): t['gain']['first_clear']['segments'][1]['each'] = 4
+        def over(t): t['costs']['list'][2]['over'] = 41
+        def rng(t): t['ripe']['chance_coef'] = 0.9
+        def thin(t): t['costs']['list'][1]['at_full'] = 0.3
+        for fn in (nodes, last, bonus, ucap, urealm, trade, trade_eq, cost, fit, ripe, sear, fold, first, over, rng, thin):
+            with self.subTest(fn.__name__):
+                t = self._t()
+                fn(t)
+                self.assertTrue(chk.brand_rules(t), fn.__name__)
+
+    def test_check_reports_bad_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            t = self._t()
+            t['sear']['settle']['折法'] = '按比例'
+            Path(d, 'brand.json').write_text(json.dumps(t, ensure_ascii=False), encoding='utf-8')
+            old = chk.DATA_DIR
+            chk.DATA_DIR = Path(d)
+            try:
+                ok, out = run(chk.check_brand, None)
+            finally:
+                chk.DATA_DIR = old
+        self.assertFalse(ok, out)
+        self.assertIn('折法', out)
+
+
 if __name__ == '__main__':
     unittest.main()

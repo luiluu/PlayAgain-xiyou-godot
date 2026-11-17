@@ -1,0 +1,128 @@
+{
+ "_note": "T073-a：烙印填表（照《天启篇_烙印 v0.5》第十节第 1 条）。现在没有代码读它，nine_caps 不动；T073-b 起由 XTianqiBrand（暂名）读。烙印的数一律是百分数（10 ＝ 10%）；几率、比例是 0～1 的小数；存档按万分点取整（1% ＝ 100，见 store_scale）。范围栏是稿第十节第 2 条的参数范围，标定只在范围内动。稿定的数里带 4 的（0.4、40、4%）照稿填，所以这张表不套「数字避开 4」。",
+ "version": 1,
+ "source": "设计仓库《天启篇_烙印 v0.5》第三、四、五、十节；D143 ①②、D148～D152",
+ "dev": "dev.待定",
+ "store_scale": 100,
+ "power": {
+  "max_bonus": 0.5,
+  "shape": 1.0,
+  "shape_range": [1.0, 1.3],
+  "median_brand": 75,
+  "median_brand_range": [60, 90],
+  "note": "伤害加成 ＝ max_bonus × 烙印 ÷ 100（shape 是曲线形状，1.0 为直线）；只读烙印值，不读境、不读刻没刻"
+ },
+ "nodes": {
+  "realms": ["守一", "不染", "铸骨", "砥柱", "真形", "迎劫", "逆命"],
+  "caps": [10, 25, 40, 55, 70, 85, 100],
+  "carve_required_from": 3,
+  "note": "caps[i] ＝ realms[i] 这一境烙印最多到；carve_required_from ＝ 从第几境（0 起）开始要刻印才能立（砥柱）。100 是终点，不设第七场心魔"
+ },
+ "aggro": {
+  "outsider_base": 2,
+  "outsider_range": [1.5, 2.5],
+  "bird_mult": 2,
+  "bird_mult_range": [1.5, 3],
+  "bird_over": 10,
+  "note": "被敌人单体招选中的权重 ＝ 原权重 × 外人项 × 出头鸟项；外人项 ＝ outsider_base − 烙印÷100；出头鸟项只有烙印超过 bird_over 且上回合打过敌人的人有"
+ },
+ "costs": {
+  "list": [
+   {"realm": "不染", "key": "bird", "name": "出头鸟", "over": 10},
+   {"realm": "铸骨", "key": "thin", "name": "皮薄", "over": 25, "step": 3, "per_step": 0.01, "at_full": 0.25},
+   {"realm": "砥柱", "key": "weak_heal", "name": "虚不受补", "over": 40, "hp_above": 0.5, "heal_mult": 0.5},
+   {"realm": "真形", "key": "no_group", "name": "不合群", "over": 55},
+   {"realm": "迎劫", "key": "burn", "name": "烧命", "over": 70, "hp_pct": 0.04},
+   {"realm": "逆命", "key": "one_life", "name": "一条命", "over": 85}
+  ],
+  "one_life": {"revive_once_over": 70, "no_revive_over": 85},
+  "ranges": {"thin_at_full": [0.2, 0.3], "weak_heal_mult": [0.4, 0.7], "burn_hp_pct": [0.03, 0.06], "revive_once_over_min": 55},
+  "note": "烙印超过 over 时这一条开始算，之前的都在。皮薄：每多 step 点降 per_step，100% 时降 at_full。一条命带前一档：过 revive_once_over 一场只能被复活一次，过 no_revive_over 不能被复活"
+ },
+ "fits": {
+  "per_point": 0.15,
+  "per_point_range": [0.1, 0.2],
+  "from": 10,
+  "list": [
+   {"key": "daze", "name": "发呆", "over": 10},
+   {"key": "misfire", "name": "哑火", "over": 25},
+   {"key": "hit_self", "name": "抽自己", "over": 40},
+   {"key": "break_guard", "name": "破防", "over": 55, "taken_up": 0.3, "rounds": 2},
+   {"key": "hit_ally", "name": "六亲不认", "over": 70},
+   {"key": "swap", "name": "换人", "over": 85, "fallback": "断片", "fallback_rounds": 2}
+  ],
+  "protect": {
+   "gap_rounds": 2,
+   "gap_rounds_range": [1, 3],
+   "max_per_round": 2,
+   "max_per_round_range": [1, 2],
+   "first_round_no_self": true,
+   "self_hit_cap": 0.15,
+   "self_hit_cap_range": [0.1, 0.2]
+  },
+  "note": "自己疯几率（百分点）＝（烙印 − from）× per_point；生熟都守 protect"
+ },
+ "ripe": {
+  "chance_coef": 0.4,
+  "chance_coef_range": [0.25, 0.6],
+  "no_self_rounds": 3,
+  "no_self_rounds_range": [2, 4],
+  "fits": ["发呆", "哑火", "破防"],
+  "note": "熟：几率 × chance_coef，前 no_self_rounds 回合不自己疯，花样只出 fits（已解锁的里面有哪几种出哪几种）。生：第 1 回合不自己疯，花样全出。被打疯熟不熟都照常"
+ },
+ "sear": {
+  "per_hit": {"没异化": 3, "侵染": 6, "蚀骨": 9, "化形": 12, "终焉": 16},
+  "per_hit_note": "灼痕一下涨多少，按打你的怪异化级；守层者、使徒、骑士按终焉算；一次行动对同一人最多算一次",
+  "as_finale": ["守层者", "使徒", "骑士"],
+  "cap": {"base": 60, "per_level": 0.5, "per_brand": 0.5, "round": "floor"},
+  "cap_ranges": {"base": [40, 80], "per_level_at_max": [30, 60], "per_brand_at_full": [30, 80]},
+  "settle": {
+   "折法": "满了才算",
+   "折法_对照": "按比例",
+   "per_fill": 0.75,
+   "per_fill_range": [0.5, 1.5],
+   "max_per_fight": 2
+  },
+  "note": "灼痕上限 ＝ base ＋ 等级 × per_level ＋ 烙印 × per_brand，向下取整。settle：首领战打赢后，这一场灼痕满过几次 × per_fill 的永久烙印，一场最多 max_per_fight 次"
+ },
+ "gain": {
+  "first_clear": {
+   "segments": [
+    {"from": 1, "to": 5, "each": 2},
+    {"from": 6, "to": 30, "each": 3},
+    {"from": 31, "to": 34, "each": 1}
+   ],
+   "floors": {"35": 3, "36": 3},
+   "share": {"出战": 1, "助力位": 0.5, "后备": 0}
+  },
+  "layer_line": {"5": 10, "10": 25, "15": 40, "20": 55, "25": 70, "30": 85, "34": 89, "36": 95},
+  "replay": {
+   "ratio": 0.1,
+   "ratio_range": [0.05, 0.15],
+   "floor": 0.25,
+   "floor_range": [0.25, 1],
+   "assist_mult": 0.5,
+   "difficulty": {"xunchang": 1, "jianxian": 1.1, "jiusi": 1.3, "lianyu": 1.5, "zhengdao": 1.8}
+  },
+  "uncarved_cap": 40,
+  "uncarved_max_realm": 2,
+  "note": "首通每层给多少、35／36 层各给多少；layer_line 是层线（开局就刻印、一直在场、到节点就打心魔的人首通到该层的烙印，只用来算追赶和封顶）；replay：再打补『到层线的差距』的 ratio，最少 floor × 难度系数，助力位 × assist_mult；uncarved_cap 不刻印的封顶，uncarved_max_realm 不刻印最多立到第几境（0 起，2 ＝ 铸骨）"
+ },
+ "boss": {
+  "prefixes": ["首领", "守层者", "守护者", "被封印者", "未知存在", "古神", "旧古神", "超级Boos", "超级Boss", "霸主", "远古首领", "终焉恐惧"],
+  "exclude_enemy_ids": [745, 752, 893],
+  "exclude_enemy_ids_note": "745 【副本协会】主席、752 【副本协会】虚脱的主席、893 天道研究员（稿只写『副本协会主席、天道研究员』没写编号，cc 查 Enemies.json 补的，待核）",
+  "special": ["心魔", "五条悟试炼", "神兵试炼"],
+  "note": "prefixes 是名字里【】内的前缀；special 不涨永久烙印、不记首胜、发作按生"
+ },
+ "trade": {
+  "branches": [
+   {"key": "锋骨", "realm": "铸骨", "damage": 0.03, "taken": 0.03},
+   {"key": "化刃", "realm": "真形", "damage": 0.03, "taken": 0.03},
+   {"key": "劫火", "realm": "迎劫", "damage": 0.03, "taken": 0.03},
+   {"key": "开印", "realm": "逆命", "damage": 0.03, "taken": 0.03}
+  ],
+  "per_pick_range": [0.02, 0.04],
+  "note": "换伤支：伤害和承伤各 +3%，两半相等；伤害那一半并进 K 那一项，承伤那一半进承伤池"
+ }
+}
