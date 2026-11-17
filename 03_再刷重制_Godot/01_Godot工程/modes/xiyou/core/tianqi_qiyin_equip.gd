@@ -90,12 +90,14 @@ static func _blank(kind: String, base_id: int) -> Dictionary:
 	item.meta = {"quality": str(int(data().get("quality_legacy", 14)))}
 	item.price = 0
 	item.affixIds = []
+	item.erase("yep")  # T082：备注解析出的 YEP 效果也清掉（底子 4531～4534、2004 等带元素增幅 +200%～250%，没清时一套黑印加一把真印 = 全系 +1150%）
 	item.upgradeSlots = 0
 	item.originalUpgradeSlots = 0
 	var eq: Dictionary = item.get("equipment", {}).duplicate(true)
 	eq["affixes"] = []
 	eq["slots"] = 0
 	eq["requirements"] = {}
+	eq["suits"] = []  # T082：底子的原版套装（如 4384 套装 220）也不带过来
 	item["equipment"] = eq
 	return item
 

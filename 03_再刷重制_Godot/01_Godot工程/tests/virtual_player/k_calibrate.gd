@@ -31,6 +31,8 @@ var debug := false
 var mastery_seen := 0
 var no_mastery := false
 var no_fabao := false
+var bare := false  # --bare：不补甲档五样（回到 v3 口径，对照用）
+var trumpet_n := 2  # 号卷：七卷里打单体加伤害的只有二号血海（目标生命低于 33% +50%）；条件全中＝木桩生命压到 30%
 var report := {}
 
 
@@ -48,6 +50,8 @@ func _ready() -> void:
 			no_fabao = true
 		elif a == "--no-mastery":
 			no_mastery = true
+		elif a == "--bare":
+			bare = true
 		elif a == "--debug":
 			debug = true
 		elif a.begins_with("--actors="):
@@ -68,7 +72,8 @@ func _run() -> void:
 	report = {"k": float(rules.get("base_damage", 1.0)), "hits": hits, "def": DEF, "rows": [], "tiers": {},
 		"brand_max_bonus": float(XTianqiBrand.data().get("power", {}).get("max_bonus", 0.5)),
 		"caps": XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}),
-		"missing": ["词条掷满挑最大", "黑印满配攒五层", "真印无视防御", "秘籍格", "号卷", "烙印（按 ×(1＋max_bonus) 乘在结果上）"]}
+		"build": "bare" if bare else "full",
+		"missing": (["词条掷满挑最大", "黑印满配攒五层", "真印无视防御", "秘籍格", "号卷"] if bare else []) + ["烙印（XTianqiBrand 关着＝烙印 0；锚临时取 200 万＝300 万÷1.50，稿第九节第 3 条）"]}
 	var tiers := [XTier.SUPER, XTier.STRONG, XTier.WEAK] if tier_arg == "all" else [{"super": XTier.SUPER, "strong": XTier.STRONG, "weak": XTier.WEAK}[tier_arg]]
 	for tier in tiers:
 		var peaks := []
@@ -156,6 +161,10 @@ func _state(id: int) -> XState:
 	var slot := a.equip_slots().find(int(item.etypeId))
 	if slot >= 0 and not no_fabao:
 		a.equips[slot] = item
+	if not bare:
+		_qiyin(a)
+		_trumpet(a)  # 号卷先学：号卷和权能书共用 XPowerBooks 的上限，秘籍先学满会把号卷挤掉
+		_secrets(a)
 	for sid in (a.skill_ids if not no_mastery else []):
 		XSkillMastery.set_level(a, int(sid), XSkillMastery.max_level(int(sid)))
 	if debug:
@@ -244,8 +253,23 @@ func _measure(id: int, tier: String) -> Dictionary:
 	e.param_mark_dirty()
 	if XTianqiElements.enemy_profile(e, logic, s).get("source", "") != "":
 		push_error("K 木桩 %d 不是元素中性（%s）" % [int(e.enemy_id), XTianqiElements.enemy_profile(e, logic, s)])
+	var best := _scan(a, e, logic, a.skill_ids, cap)
+	if not bare and not best.is_empty():
+		best["affixes"] = _affix_greedy(a, e, logic, int(best.skill))  # 词条按「这一下最大」挑、掷满（极、四阶），挑完全部技能重量一遍
+		var again := _scan(a, e, logic, a.skill_ids, cap)
+		if not again.is_empty():
+			again["affixes"] = best.affixes
+			best = again
+		best["build"] = _build_desc(a)
+	logic.end_battle(0)
+	return best
+
+
+## 一组技能各打 hits 次，取峰值最大的那一行
+func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
+	var id := int(a.actor_id)
 	var best := {}
-	for sid in a.skill_ids:
+	for sid in sids:
 		var sp := XTianqiSkills.spec(int(sid))
 		if not sp.has("damage") or sp.has("heal"):
 			continue
@@ -257,14 +281,16 @@ func _measure(id: int, tier: String) -> Dictionary:
 		var w := XTianqiSkills.hit_weight(d)
 		for n in hits:
 			_pin_def(e)
-			e.hp = e.mhp
+			e.hp = e.mhp * (0.3 if _has_trumpet(a) else 1.0)  # 二号血海：目标生命低于 33% 时 +50%（条件全中）
 			a.hp = a.mhp
 			a.mp = a.mmp
 			a.tp = a.max_tp()
+			_prime(logic, a, e, sk)
 			XStateEffects.force_critical = true
 			var v0 := absf(XTianqiSkills.formula(a, e, sk))
 			if debug and n == 0:
 				print("K_DEBUG foe def=%s mdf=%s pdr=%s mdr=%s el=%s" % [e.def, e.mdf, e.pdr, e.mdr, [e.element_rate(1), e.element_rate(2), e.element_rate(3), e.element_rate(4)]])
+				print("K_DEBUG qiyin fx=%s ops=%s act_w=%s" % [XTianqiQiyinEffects.effects(logic, a).keys(), XTianqiQiyinEffects.damage_ops(sk, a, e), XTianqiQiyinEffects._store(logic).act.get("weight")])
 				var calc: Dictionary = logic._calculate_damage(a, sk, e, true)
 				print("K_DEBUG %d %s" % [int(sid), JSON.stringify({"value": calc.get("value"), "row": calc.get("breakdown", {}).get("row", {})})])
 				var bs: Dictionary = a.passive_cache().get("bySource", {})
@@ -272,9 +298,10 @@ func _measure(id: int, tier: String) -> Dictionary:
 					var sc := XActor._note_scans(str(o.get("note", "")))
 					if not (sc[4] as Array).is_empty() or not (sc[5] as Array).is_empty():
 						print("K_DEBUG obj %s %s fin=%s crit=%s bucket=%s new=%s" % [o.get("id"), o.get("name"), sc[4], sc[5], XTianqiLedger.bucket_of(o, a), o.get("_tianqi_new")])
+				print("K_DEBUG elem amp=%s elup=%s by=%s / %s" % [a.passive_cache().get("elementAmplify"), a.passive_cache().get("passiveELUP"), bs.get("elementAmplify"), bs.get("passiveELUP")])
 				print("K_DEBUG passive crit=%s fin=%s bySource crit=%s fin=%s" % [a.passive_cache().get("critHarmRi"), a.passive_cache().get("globalHarmRi"), bs.get("critHarmRi"), bs.get("globalHarmRi")])
 				for t in calc.get("moduleTrace", []):
-					var ops := (t.get("ops", []) as Array).filter(func(o): return o is Dictionary and str(o.get("field", "")) in ["criticalAdd", "finalAdd", "normalAdd", "finalMultiplier", "skillMultiplier"])
+					var ops := (t.get("ops", []) as Array).filter(func(o): return o is Dictionary and str(o.get("field", "")) in ["criticalAdd", "finalAdd", "normalAdd", "finalMultiplier", "skillMultiplier", "elementAdd", "elementMultiplier"])
 					if not ops.is_empty():
 						print("K_DEBUG trace %s %s" % [t.get("module", t.get("id", "?")), JSON.stringify(ops)])
 			var r: Dictionary = logic.apply(a, sk, e)
@@ -289,7 +316,6 @@ func _measure(id: int, tier: String) -> Dictionary:
 			if best.is_empty() or peak > float(best.peak):
 				best = {"actor": id, "skill": int(sid), "dealt": dealt, "v0": v0, "v_full": v_full, "eff_full": eff_full(id, int(sid)),
 					"cap": cap, "peak": roundf(peak), "formula": str(sk.get("damage", {}).get("formula", "")).left(60), "repeats": int(sk.get("repeats", 1)), "atk": a.param(2), "mat": a.param(4), "mhp": a.mhp}
-	logic.end_battle(0)
 	return best
 
 
@@ -341,3 +367,180 @@ func _coef_now(a, e, d: Dictionary, sid: int) -> float:
 	if cap > 0.0 and m * w > cap:
 		m = cap / w
 	return m
+
+
+# ---- 甲档补齐（稿第三节第 3 条「养成」；T082 第三会话） ----
+
+## 黑印满配：六个防具栏换黑印套装件（五件档：砝码攒满五层必暴、爆伤 +50%；三件档：每层伤害 +15%），
+## 武器换真印「一力降十会」（黑印流派：只出手一次 +50%；真印追加：无视目标 33% 防御；独有：上一回合防御再 +50%）。
+## 毕业武器按武器类限人（拳套），稿子口径是「人人黑印满配、真印无视防御」，所以这里不看 can_equip 直接穿（交付单写明）。
+const QIYIN_SEAL := "hei"
+const QIYIN_WTYPE_KEY := "fist"
+func _qiyin(a: XActor) -> void:
+	var rng := XRandomStream.create(XRandomStream.hex64(7700 + int(a.actor_id)), "rule")
+	var slots := a.equip_slots()
+	var parts := {}
+	for p in XTianqiQiyinGear.parts():
+		parts[int(p.etype)] = str(p.key)
+	var grades := ["perfect", "perfect", "perfect"]
+	for i in slots.size():
+		var et := int(slots[i])
+		var item := {}
+		if et == 1:
+			var wname := ""
+			for t in XTianqiQiyinGear.weapon_types():
+				if str(t.key) == QIYIN_WTYPE_KEY:
+					wname = str(t.name)
+			item = XTianqiQiyinEquip.make({"kind": "weapon", "seal": QIYIN_SEAL, "wtype": wname, "true_seal": true, "grades": grades, "affixes": []}, "zhengdao", rng)
+		elif parts.has(et):
+			item = XTianqiQiyinEquip.make({"kind": "set", "seal": QIYIN_SEAL, "part": parts[et], "true_seal": true, "grades": grades, "affixes": []}, "zhengdao", rng)
+		else:
+			continue
+		if item.is_empty():
+			push_error("K 七印装备造不出来：栏 %d" % et)
+			continue
+		item["instanceId"] = "kq_%d_%d" % [int(a.actor_id), i]
+		_set_aff(item, [])
+		a.equips[i] = item
+
+
+## 秘籍拿满：先把全部秘籍书的技能都学上，按游戏自己的取舍（XTianqiLedger.secret_kept：档位格数、每本各池封 8% 后按贡献排）
+## 取前几本，其余忘掉（只留生效的那几本，免得没生效的书的属性、特性也算进来）
+static var _secret_ids: Array = []
+func _secrets(a: XActor) -> void:
+	if _secret_ids.is_empty():
+		for sk in XDB.table("Skills"):
+			if sk is Dictionary and int(sk.get("id", 0)) > 0 and str(sk.get("name", "")) != "" \
+					and XTianqiLedger.is_secret_skill(int(sk.id), int(sk.get("stypeId", 0))):
+				_secret_ids.append(int(sk.id))
+	var had := a.skill_ids.duplicate()
+	for sid in _secret_ids:
+		if not had.has(sid):
+			a.learn_skill(sid)
+	a.param_mark_dirty()
+	a.refresh_passive()
+	var by: Dictionary = a.passive_cache().get("bySource", {})
+	var kept: Array = XTianqiLedger.secret_kept(a, by).map(func(b): return int(str(b).substr(1)))
+	for sid in _secret_ids:
+		if not had.has(sid) and not kept.has(sid):
+			a.forget_skill(sid)
+	a.set_meta("k_secrets", kept)
+	a.param_mark_dirty()
+	a.refresh_passive()
+
+
+## 号卷：只学二号血海（打单体加伤害的只有它；超强者 1 卷，强者、弱者多出来的是保命卷，不进这一下）
+func _trumpet(a: XActor) -> void:
+	var sc := XTianqiTrumpet.scroll(trumpet_n)
+	if not sc.is_empty() and XTianqiTrumpet.limit(a) > 0:
+		a.learn_skill(int(sc.skill))
+	if debug:
+		print("K_DEBUG trumpet on=%s limit=%d sc=%s has=%s" % [XTianqiTrumpet.on(), XTianqiTrumpet.limit(a), sc.get("skill"), XTianqiTrumpet.has(a, trumpet_n)])
+
+
+func _has_trumpet(a) -> bool:
+	return not bare and XTianqiTrumpet.has(a, trumpet_n)
+
+
+## 每一下之前：行动帧（XBattleLogic 出手时才建，探针直接 apply 要自己建）。砝码攒满 5 层、上一回合防御过、本回合第一次出手；词条先声每下都算第一下
+func _prime(logic, a, e, sk: Dictionary) -> void:
+	if bare:
+		return
+	var un := XTianqiQiyinEffects._unit(logic, a)
+	un.weights = 5
+	un.idle = true
+	un.acted = 0
+	XTianqiQiyinEffects.begin_action(logic, a, sk)
+	var au := XTianqiAffixBattle._unit(logic, a)
+	if not au.is_empty():
+		au.first_turn = -1
+	XTianqiAffixBattle.begin_action(logic, a, sk)
+
+
+func _set_aff(item: Dictionary, list: Array) -> void:
+	if item.has("qiyin"):
+		item.qiyin["affixes"] = list
+	else:
+		XTianqiAffixRoll.set_affixes(item, list)
+
+
+## 这一下的确定值（强制暴击；波动关掉）：贪心挑词条的比较用
+func _probe_value(a, e, logic, sk: Dictionary) -> float:
+	var st := XTianqiAffixBattle._store(logic)
+	if not st.is_empty():
+		st.views.erase(a)
+	a.param_mark_dirty()
+	a.refresh_passive()
+	_pin_def(e)
+	e.hp = e.mhp * (0.3 if _has_trumpet(a) else 1.0)
+	_prime(logic, a, e, sk)
+	XStateEffects.force_critical = true
+	var calc: Dictionary = logic._calculate_damage(a, sk, e, true)
+	XStateEffects.force_critical = false
+	return absf(float(calc.get("value", 0.0)))
+
+
+## 词条：每件三槽（神话：特效最多 2、传说最多 1，同件不重名），极、四阶；逐件逐槽在候选里挑让这一下最大的（元素增伤按每一系各试一次）
+const DMG_POOLS := ["stat", "crit_multiplier", "final_damage", "skill_damage", "element_damage"]
+const AFF := preload("res://modes/xiyou/core/tianqi_affix_table.gd")
+func _affix_greedy(a, e, logic, sid: int) -> Array:
+	var sk := XDB.rec("Skills", sid)
+	var out := []
+	var els: Array = AFF.data().get("elements", []).filter(func(x): return str(x.key) != "physical").map(func(x): return str(x.key))
+	for i in a.equips.size():
+		var item = a.equips[i]
+		if not item is Dictionary or item.is_empty():
+			continue
+		var slot := XTianqiAffixRoll.slot_key(item)
+		var group := AFF.slot_group(slot) if slot != "" else ""
+		if group == "" or group == "fabao" or group == "zuoqi":
+			continue
+		var cands := []
+		for layer in ["base", "special", "legendary"]:
+			for k in AFF.candidates(layer, group):
+				if not AFF.available(str(k), 4):
+					continue
+				var af := AFF.affix(str(k))
+				if not str(af.get("pool", "")) in DMG_POOLS:
+					continue  # 只挑进这一下的池（属性、暴击倍率、伤害加成、技能伤、元素增伤）；比较值有约千分之几的噪声，不过滤会挑进掉率之类
+				if bool(af.get("random_element", false)):
+					for el in els:
+						cands.append({"key": str(k), "tier": 4, "grade": "perfect", "extra": {"element": el}})
+				else:
+					var ex := {}
+					if not (af.get("variants", []) as Array).is_empty():
+						ex.variant = str(af.variants[0].key)
+					cands.append({"key": str(k), "tier": 4, "grade": "perfect", "extra": ex})
+		var list := []
+		for _slot in 3:
+			var best_v := _probe_value(a, e, logic, sk)
+			var best_c = null
+			var count := {}
+			for x in list:
+				var ly := str(AFF.affix(str(x.key)).get("layer", ""))
+				count[ly] = int(count.get(ly, 0)) + 1
+			for c in cands:
+				var ly := str(AFF.affix(str(c.key)).get("layer", ""))
+				var capn = AFF.layer(ly).get("per_item_max")
+				if capn != null and int(count.get(ly, 0)) >= int(capn):
+					continue
+				if list.any(func(x): return str(x.key) == str(c.key)):
+					continue
+				_set_aff(item, list + [c])
+				var v := _probe_value(a, e, logic, sk)
+				if v > best_v * 1.005:
+					best_v = v
+					best_c = c
+			if best_c == null:
+				break
+			list.append(best_c)
+			_set_aff(item, list)
+		_set_aff(item, list)
+		out.append({"slot": i, "name": str(item.get("name", "")), "affixes": list.map(func(x): return x.key + ("/" + str(x.extra.element) if x.extra.has("element") else ""))})
+	_probe_value(a, e, logic, sk)
+	return out
+
+
+func _build_desc(a) -> Dictionary:
+	return {"secrets": a.get_meta("k_secrets", []), "trumpet": XTianqiTrumpet.learned(a),
+		"equips": a.equips.map(func(it): return str(it.get("name", "")) if it is Dictionary else "")}
