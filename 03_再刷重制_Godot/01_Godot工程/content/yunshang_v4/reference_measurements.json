@@ -1,0 +1,386 @@
+[
+  {
+    "direction": "down",
+    "frame": 0,
+    "guyu": {
+      "bbox": [
+        9,
+        3,
+        38,
+        48
+      ],
+      "height": 45,
+      "neck_y": 27,
+      "head_height": 24,
+      "head_width": 29,
+      "body_height": 21,
+      "body_width": 26
+    },
+    "yunxiao": {
+      "bbox": [
+        5,
+        3,
+        42,
+        48
+      ],
+      "height": 45,
+      "neck_y": 33,
+      "head_height": 30,
+      "head_width": 37,
+      "body_height": 15,
+      "body_width": 29
+    }
+  },
+  {
+    "direction": "down",
+    "frame": 1,
+    "guyu": {
+      "bbox": [
+        8,
+        2,
+        38,
+        48
+      ],
+      "height": 46,
+      "neck_y": 27,
+      "head_height": 25,
+      "head_width": 30,
+      "body_height": 21,
+      "body_width": 27
+    },
+    "yunxiao": {
+      "bbox": [
+        5,
+        2,
+        42,
+        48
+      ],
+      "height": 46,
+      "neck_y": 33,
+      "head_height": 31,
+      "head_width": 37,
+      "body_height": 15,
+      "body_width": 29
+    }
+  },
+  {
+    "direction": "down",
+    "frame": 2,
+    "guyu": {
+      "bbox": [
+        9,
+        3,
+        38,
+        48
+      ],
+      "height": 45,
+      "neck_y": 27,
+      "head_height": 24,
+      "head_width": 29,
+      "body_height": 21,
+      "body_width": 26
+    },
+    "yunxiao": {
+      "bbox": [
+        5,
+        3,
+        42,
+        48
+      ],
+      "height": 45,
+      "neck_y": 33,
+      "head_height": 30,
+      "head_width": 37,
+      "body_height": 15,
+      "body_width": 29
+    }
+  },
+  {
+    "direction": "left",
+    "frame": 0,
+    "guyu": {
+      "bbox": [
+        10,
+        3,
+        39,
+        48
+      ],
+      "height": 45,
+      "neck_y": 27,
+      "head_height": 24,
+      "head_width": 28,
+      "body_height": 21,
+      "body_width": 25
+    },
+    "yunxiao": {
+      "bbox": [
+        8,
+        3,
+        40,
+        48
+      ],
+      "height": 45,
+      "neck_y": 32,
+      "head_height": 29,
+      "head_width": 32,
+      "body_height": 16,
+      "body_width": 25
+    }
+  },
+  {
+    "direction": "left",
+    "frame": 1,
+    "guyu": {
+      "bbox": [
+        10,
+        2,
+        40,
+        48
+      ],
+      "height": 46,
+      "neck_y": 27,
+      "head_height": 25,
+      "head_width": 29,
+      "body_height": 21,
+      "body_width": 25
+    },
+    "yunxiao": {
+      "bbox": [
+        8,
+        2,
+        41,
+        48
+      ],
+      "height": 46,
+      "neck_y": 32,
+      "head_height": 30,
+      "head_width": 33,
+      "body_height": 16,
+      "body_width": 22
+    }
+  },
+  {
+    "direction": "left",
+    "frame": 2,
+    "guyu": {
+      "bbox": [
+        10,
+        3,
+        39,
+        48
+      ],
+      "height": 45,
+      "neck_y": 27,
+      "head_height": 24,
+      "head_width": 28,
+      "body_height": 21,
+      "body_width": 22
+    },
+    "yunxiao": {
+      "bbox": [
+        8,
+        3,
+        42,
+        48
+      ],
+      "height": 45,
+      "neck_y": 32,
+      "head_height": 29,
+      "head_width": 34,
+      "body_height": 16,
+      "body_width": 23
+    }
+  },
+  {
+    "direction": "right",
+    "frame": 0,
+    "guyu": {
+      "bbox": [
+        10,
+        3,
+        37,
+        48
+      ],
+      "height": 45,
+      "neck_y": 27,
+      "head_height": 24,
+      "head_width": 26,
+      "body_height": 21,
+      "body_width": 24
+    },
+    "yunxiao": {
+      "bbox": [
+        7,
+        3,
+        39,
+        48
+      ],
+      "height": 45,
+      "neck_y": 32,
+      "head_height": 29,
+      "head_width": 32,
+      "body_height": 16,
+      "body_width": 25
+    }
+  },
+  {
+    "direction": "right",
+    "frame": 1,
+    "guyu": {
+      "bbox": [
+        8,
+        2,
+        36,
+        48
+      ],
+      "height": 46,
+      "neck_y": 27,
+      "head_height": 25,
+      "head_width": 27,
+      "body_height": 21,
+      "body_width": 24
+    },
+    "yunxiao": {
+      "bbox": [
+        6,
+        2,
+        39,
+        48
+      ],
+      "height": 46,
+      "neck_y": 32,
+      "head_height": 30,
+      "head_width": 33,
+      "body_height": 16,
+      "body_width": 22
+    }
+  },
+  {
+    "direction": "right",
+    "frame": 2,
+    "guyu": {
+      "bbox": [
+        8,
+        3,
+        35,
+        48
+      ],
+      "height": 45,
+      "neck_y": 27,
+      "head_height": 24,
+      "head_width": 26,
+      "body_height": 21,
+      "body_width": 23
+    },
+    "yunxiao": {
+      "bbox": [
+        5,
+        3,
+        39,
+        48
+      ],
+      "height": 45,
+      "neck_y": 32,
+      "head_height": 29,
+      "head_width": 34,
+      "body_height": 16,
+      "body_width": 23
+    }
+  },
+  {
+    "direction": "up",
+    "frame": 0,
+    "guyu": {
+      "bbox": [
+        9,
+        3,
+        37,
+        48
+      ],
+      "height": 45,
+      "neck_y": 27,
+      "head_height": 24,
+      "head_width": 28,
+      "body_height": 21,
+      "body_width": 23
+    },
+    "yunxiao": {
+      "bbox": [
+        4,
+        3,
+        42,
+        48
+      ],
+      "height": 45,
+      "neck_y": 32,
+      "head_height": 29,
+      "head_width": 38,
+      "body_height": 16,
+      "body_width": 30
+    }
+  },
+  {
+    "direction": "up",
+    "frame": 1,
+    "guyu": {
+      "bbox": [
+        9,
+        2,
+        38,
+        48
+      ],
+      "height": 46,
+      "neck_y": 27,
+      "head_height": 25,
+      "head_width": 29,
+      "body_height": 21,
+      "body_width": 23
+    },
+    "yunxiao": {
+      "bbox": [
+        5,
+        2,
+        42,
+        48
+      ],
+      "height": 46,
+      "neck_y": 32,
+      "head_height": 30,
+      "head_width": 37,
+      "body_height": 16,
+      "body_width": 29
+    }
+  },
+  {
+    "direction": "up",
+    "frame": 2,
+    "guyu": {
+      "bbox": [
+        10,
+        3,
+        38,
+        48
+      ],
+      "height": 45,
+      "neck_y": 27,
+      "head_height": 24,
+      "head_width": 28,
+      "body_height": 21,
+      "body_width": 22
+    },
+    "yunxiao": {
+      "bbox": [
+        5,
+        3,
+        43,
+        48
+      ],
+      "height": 45,
+      "neck_y": 32,
+      "head_height": 29,
+      "head_width": 38,
+      "body_height": 16,
+      "body_width": 30
+    }
+  }
+]

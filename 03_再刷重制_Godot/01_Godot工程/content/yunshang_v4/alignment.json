@@ -1,0 +1,778 @@
+{
+  "reference_commit": "14d355606",
+  "measurement": "Human neck guides; head region includes hair, back view uses same neck guide (not face landmark). Source neck fractions annotated from raw image.",
+  "source_neck_fractions": [
+    0.53,
+    0.52,
+    0.52,
+    0.54,
+    0.54
+  ],
+  "frames": [
+    {
+      "direction": "down",
+      "frame": 0,
+      "source_span": [
+        156,
+        541
+      ],
+      "source_bbox_size": [
+        385,
+        668
+      ],
+      "template_bbox": [
+        5,
+        3,
+        42,
+        48
+      ],
+      "guyu": {
+        "bbox": [
+          9,
+          3,
+          38,
+          48
+        ],
+        "height": 45,
+        "neck_y": 27,
+        "head_height": 24,
+        "head_width": 29,
+        "body_height": 21,
+        "body_width": 26
+      },
+      "yunxiao": {
+        "bbox": [
+          5,
+          3,
+          42,
+          48
+        ],
+        "height": 45,
+        "neck_y": 33,
+        "head_height": 30,
+        "head_width": 37,
+        "body_height": 15,
+        "body_width": 29
+      },
+      "target_head_height": 24,
+      "target_head_width": 29,
+      "output_bbox": [
+        5,
+        3,
+        40,
+        48
+      ],
+      "output_head_split": 27,
+      "baseline": 47,
+      "palette_shared": true
+    },
+    {
+      "direction": "down",
+      "frame": 1,
+      "source_span": [
+        880,
+        1265
+      ],
+      "source_bbox_size": [
+        385,
+        668
+      ],
+      "template_bbox": [
+        5,
+        2,
+        42,
+        48
+      ],
+      "guyu": {
+        "bbox": [
+          8,
+          2,
+          38,
+          48
+        ],
+        "height": 46,
+        "neck_y": 27,
+        "head_height": 25,
+        "head_width": 30,
+        "body_height": 21,
+        "body_width": 27
+      },
+      "yunxiao": {
+        "bbox": [
+          5,
+          2,
+          42,
+          48
+        ],
+        "height": 46,
+        "neck_y": 33,
+        "head_height": 31,
+        "head_width": 37,
+        "body_height": 15,
+        "body_width": 29
+      },
+      "target_head_height": 25,
+      "target_head_width": 30,
+      "output_bbox": [
+        5,
+        2,
+        40,
+        48
+      ],
+      "output_head_split": 27,
+      "baseline": 47,
+      "palette_shared": true
+    },
+    {
+      "direction": "down",
+      "frame": 2,
+      "source_span": [
+        1604,
+        1989
+      ],
+      "source_bbox_size": [
+        385,
+        668
+      ],
+      "template_bbox": [
+        5,
+        3,
+        42,
+        48
+      ],
+      "guyu": {
+        "bbox": [
+          9,
+          3,
+          38,
+          48
+        ],
+        "height": 45,
+        "neck_y": 27,
+        "head_height": 24,
+        "head_width": 29,
+        "body_height": 21,
+        "body_width": 26
+      },
+      "yunxiao": {
+        "bbox": [
+          5,
+          3,
+          42,
+          48
+        ],
+        "height": 45,
+        "neck_y": 33,
+        "head_height": 30,
+        "head_width": 37,
+        "body_height": 15,
+        "body_width": 29
+      },
+      "target_head_height": 24,
+      "target_head_width": 29,
+      "output_bbox": [
+        5,
+        3,
+        40,
+        48
+      ],
+      "output_head_split": 27,
+      "baseline": 47,
+      "palette_shared": true
+    },
+    {
+      "direction": "left",
+      "frame": 0,
+      "source_span": [
+        164,
+        542
+      ],
+      "source_bbox_size": [
+        378,
+        634
+      ],
+      "template_bbox": [
+        8,
+        3,
+        40,
+        48
+      ],
+      "guyu": {
+        "bbox": [
+          10,
+          3,
+          39,
+          48
+        ],
+        "height": 45,
+        "neck_y": 27,
+        "head_height": 24,
+        "head_width": 28,
+        "body_height": 21,
+        "body_width": 25
+      },
+      "yunxiao": {
+        "bbox": [
+          8,
+          3,
+          40,
+          48
+        ],
+        "height": 45,
+        "neck_y": 32,
+        "head_height": 29,
+        "head_width": 32,
+        "body_height": 16,
+        "body_width": 25
+      },
+      "target_head_height": 24,
+      "target_head_width": 28,
+      "output_bbox": [
+        8,
+        3,
+        40,
+        48
+      ],
+      "output_head_split": 27,
+      "baseline": 47,
+      "palette_shared": true
+    },
+    {
+      "direction": "left",
+      "frame": 1,
+      "source_span": [
+        904,
+        1266
+      ],
+      "source_bbox_size": [
+        362,
+        634
+      ],
+      "template_bbox": [
+        8,
+        2,
+        41,
+        48
+      ],
+      "guyu": {
+        "bbox": [
+          10,
+          2,
+          40,
+          48
+        ],
+        "height": 46,
+        "neck_y": 27,
+        "head_height": 25,
+        "head_width": 29,
+        "body_height": 21,
+        "body_width": 25
+      },
+      "yunxiao": {
+        "bbox": [
+          8,
+          2,
+          41,
+          48
+        ],
+        "height": 46,
+        "neck_y": 32,
+        "head_height": 30,
+        "head_width": 33,
+        "body_height": 16,
+        "body_width": 22
+      },
+      "target_head_height": 25,
+      "target_head_width": 29,
+      "output_bbox": [
+        8,
+        2,
+        41,
+        48
+      ],
+      "output_head_split": 27,
+      "baseline": 47,
+      "palette_shared": true
+    },
+    {
+      "direction": "left",
+      "frame": 2,
+      "source_span": [
+        1609,
+        1990
+      ],
+      "source_bbox_size": [
+        381,
+        635
+      ],
+      "template_bbox": [
+        8,
+        3,
+        42,
+        48
+      ],
+      "guyu": {
+        "bbox": [
+          10,
+          3,
+          39,
+          48
+        ],
+        "height": 45,
+        "neck_y": 27,
+        "head_height": 24,
+        "head_width": 28,
+        "body_height": 21,
+        "body_width": 22
+      },
+      "yunxiao": {
+        "bbox": [
+          8,
+          3,
+          42,
+          48
+        ],
+        "height": 45,
+        "neck_y": 32,
+        "head_height": 29,
+        "head_width": 34,
+        "body_height": 16,
+        "body_width": 23
+      },
+      "target_head_height": 24,
+      "target_head_width": 28,
+      "output_bbox": [
+        8,
+        3,
+        42,
+        48
+      ],
+      "output_head_split": 27,
+      "baseline": 47,
+      "palette_shared": true
+    },
+    {
+      "direction": "right",
+      "frame": 0,
+      "source_span": [
+        198,
+        517
+      ],
+      "source_bbox_size": [
+        319,
+        639
+      ],
+      "template_bbox": [
+        7,
+        3,
+        39,
+        48
+      ],
+      "guyu": {
+        "bbox": [
+          10,
+          3,
+          37,
+          48
+        ],
+        "height": 45,
+        "neck_y": 27,
+        "head_height": 24,
+        "head_width": 26,
+        "body_height": 21,
+        "body_width": 24
+      },
+      "yunxiao": {
+        "bbox": [
+          7,
+          3,
+          39,
+          48
+        ],
+        "height": 45,
+        "neck_y": 32,
+        "head_height": 29,
+        "head_width": 32,
+        "body_height": 16,
+        "body_width": 25
+      },
+      "target_head_height": 24,
+      "target_head_width": 26,
+      "output_bbox": [
+        7,
+        3,
+        36,
+        48
+      ],
+      "output_head_split": 27,
+      "baseline": 47,
+      "palette_shared": true
+    },
+    {
+      "direction": "right",
+      "frame": 1,
+      "source_span": [
+        901,
+        1241
+      ],
+      "source_bbox_size": [
+        340,
+        640
+      ],
+      "template_bbox": [
+        6,
+        2,
+        39,
+        48
+      ],
+      "guyu": {
+        "bbox": [
+          8,
+          2,
+          36,
+          48
+        ],
+        "height": 46,
+        "neck_y": 27,
+        "head_height": 25,
+        "head_width": 27,
+        "body_height": 21,
+        "body_width": 24
+      },
+      "yunxiao": {
+        "bbox": [
+          6,
+          2,
+          39,
+          48
+        ],
+        "height": 46,
+        "neck_y": 32,
+        "head_height": 30,
+        "head_width": 33,
+        "body_height": 16,
+        "body_width": 22
+      },
+      "target_head_height": 25,
+      "target_head_width": 27,
+      "output_bbox": [
+        6,
+        2,
+        39,
+        48
+      ],
+      "output_head_split": 27,
+      "baseline": 47,
+      "palette_shared": true
+    },
+    {
+      "direction": "right",
+      "frame": 2,
+      "source_span": [
+        1646,
+        1965
+      ],
+      "source_bbox_size": [
+        319,
+        640
+      ],
+      "template_bbox": [
+        5,
+        3,
+        39,
+        48
+      ],
+      "guyu": {
+        "bbox": [
+          8,
+          3,
+          35,
+          48
+        ],
+        "height": 45,
+        "neck_y": 27,
+        "head_height": 24,
+        "head_width": 26,
+        "body_height": 21,
+        "body_width": 23
+      },
+      "yunxiao": {
+        "bbox": [
+          5,
+          3,
+          39,
+          48
+        ],
+        "height": 45,
+        "neck_y": 32,
+        "head_height": 29,
+        "head_width": 34,
+        "body_height": 16,
+        "body_width": 23
+      },
+      "target_head_height": 24,
+      "target_head_width": 26,
+      "output_bbox": [
+        5,
+        3,
+        37,
+        48
+      ],
+      "output_head_split": 27,
+      "baseline": 47,
+      "palette_shared": true
+    },
+    {
+      "direction": "up",
+      "frame": 0,
+      "source_span": [
+        172,
+        534
+      ],
+      "source_bbox_size": [
+        362,
+        630
+      ],
+      "template_bbox": [
+        4,
+        3,
+        42,
+        48
+      ],
+      "guyu": {
+        "bbox": [
+          9,
+          3,
+          37,
+          48
+        ],
+        "height": 45,
+        "neck_y": 27,
+        "head_height": 24,
+        "head_width": 28,
+        "body_height": 21,
+        "body_width": 23
+      },
+      "yunxiao": {
+        "bbox": [
+          4,
+          3,
+          42,
+          48
+        ],
+        "height": 45,
+        "neck_y": 32,
+        "head_height": 29,
+        "head_width": 38,
+        "body_height": 16,
+        "body_width": 30
+      },
+      "target_head_height": 24,
+      "target_head_width": 28,
+      "output_bbox": [
+        4,
+        3,
+        42,
+        48
+      ],
+      "output_head_split": 27,
+      "baseline": 47,
+      "palette_shared": true
+    },
+    {
+      "direction": "up",
+      "frame": 1,
+      "source_span": [
+        893,
+        1253
+      ],
+      "source_bbox_size": [
+        360,
+        637
+      ],
+      "template_bbox": [
+        5,
+        2,
+        42,
+        48
+      ],
+      "guyu": {
+        "bbox": [
+          9,
+          2,
+          38,
+          48
+        ],
+        "height": 46,
+        "neck_y": 27,
+        "head_height": 25,
+        "head_width": 29,
+        "body_height": 21,
+        "body_width": 23
+      },
+      "yunxiao": {
+        "bbox": [
+          5,
+          2,
+          42,
+          48
+        ],
+        "height": 46,
+        "neck_y": 32,
+        "head_height": 30,
+        "head_width": 37,
+        "body_height": 16,
+        "body_width": 29
+      },
+      "target_head_height": 25,
+      "target_head_width": 29,
+      "output_bbox": [
+        5,
+        2,
+        42,
+        48
+      ],
+      "output_head_split": 27,
+      "baseline": 47,
+      "palette_shared": true
+    },
+    {
+      "direction": "up",
+      "frame": 2,
+      "source_span": [
+        1625,
+        1987
+      ],
+      "source_bbox_size": [
+        362,
+        635
+      ],
+      "template_bbox": [
+        5,
+        3,
+        43,
+        48
+      ],
+      "guyu": {
+        "bbox": [
+          10,
+          3,
+          38,
+          48
+        ],
+        "height": 45,
+        "neck_y": 27,
+        "head_height": 24,
+        "head_width": 28,
+        "body_height": 21,
+        "body_width": 22
+      },
+      "yunxiao": {
+        "bbox": [
+          5,
+          3,
+          43,
+          48
+        ],
+        "height": 45,
+        "neck_y": 32,
+        "head_height": 29,
+        "head_width": 38,
+        "body_height": 16,
+        "body_width": 30
+      },
+      "target_head_height": 24,
+      "target_head_width": 28,
+      "output_bbox": [
+        5,
+        3,
+        43,
+        48
+      ],
+      "output_head_split": 27,
+      "baseline": 47,
+      "palette_shared": true
+    },
+    {
+      "direction": "wait",
+      "frame": 0,
+      "source_span": [
+        213,
+        579
+      ],
+      "source_bbox_size": [
+        366,
+        646
+      ],
+      "template_bbox": [
+        9,
+        4,
+        53,
+        64
+      ],
+      "output_bbox": [
+        9,
+        4,
+        53,
+        64
+      ],
+      "output_head_split": 35,
+      "baseline": 63,
+      "palette_shared": true
+    },
+    {
+      "direction": "wait",
+      "frame": 1,
+      "source_span": [
+        893,
+        1261
+      ],
+      "source_bbox_size": [
+        368,
+        631
+      ],
+      "template_bbox": [
+        9,
+        4,
+        53,
+        64
+      ],
+      "output_bbox": [
+        9,
+        4,
+        53,
+        64
+      ],
+      "output_head_split": 35,
+      "baseline": 63,
+      "palette_shared": true
+    },
+    {
+      "direction": "wait",
+      "frame": 2,
+      "source_span": [
+        1571,
+        1938
+      ],
+      "source_bbox_size": [
+        367,
+        647
+      ],
+      "template_bbox": [
+        9,
+        4,
+        53,
+        64
+      ],
+      "output_bbox": [
+        9,
+        4,
+        53,
+        64
+      ],
+      "output_head_split": 35,
+      "baseline": 63,
+      "palette_shared": true
+    }
+  ]
+}
