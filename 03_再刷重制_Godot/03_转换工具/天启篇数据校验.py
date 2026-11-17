@@ -16,6 +16,7 @@
 - qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，数字避开 4（各表 nice_number_exempt 豁免）、印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
 - skill_rework.json（全角色技能重构）：只有 B 组，数字避开 4（nice_number_exempt 豁免）、超强者 17（含五条悟）／强者 52 不重叠、技能行系数大于 0、治疗比例与追加几率在 0～1。
 - reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，数字避开 4（各表 nice_number_exempt 豁免）、类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
+- brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4，这张表不套避 4。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -1862,6 +1863,143 @@ def check_abs_rescale(_args) -> bool:
     return _run_table('abs_rescale.json', abs_rescale_rules)
 
 
+# brand.json：烙印（T073-a，稿《天启篇_烙印 v0.5》第十节第 1 条）。现在没有代码读它；稿定的数带 4（0.4、40、4%），不套避 4
+BRAND_FITS = ['发呆', '哑火', '抽自己', '破防', '六亲不认', '换人']
+BRAND_COSTS = ['bird', 'thin', 'weak_heal', 'no_group', 'burn', 'one_life']
+BRAND_SEAR_LEVELS = ['没异化', '侵染', '蚀骨', '化形', '终焉']
+BRAND_RIPE_FORBID = ('抽自己', '六亲不认', '换人')
+
+
+def _brand_ranges(node, path, bad):
+    """任何 X 旁边有 X_range 的，X 要落在范围里（范围里的数就是稿第十节第 2 条的参数范围）。"""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            r = node.get(k + '_range')
+            if isinstance(v, (int, float)) and not isinstance(v, bool) and isinstance(r, list) and len(r) == 2:
+                if not r[0] - EPS <= v <= r[1] + EPS:
+                    bad.append('%s/%s=%s 不在范围 %s 里' % (path, k, num_text(v), r))
+            _brand_ranges(v, path + '/' + k, bad)
+    elif isinstance(node, list):
+        for i, x in enumerate(node):
+            _brand_ranges(x, '%s/%d' % (path, i), bad)
+
+
+def brand_rules(table: dict, balance: dict = None) -> list:
+    bad = []
+    num = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool)
+    try:
+        nodes, realms = table['nodes']['caps'], table['nodes']['realms']
+        power, costs, fits = table['power'], table['costs'], table['fits']
+        ripe, sear, gain = table['ripe'], table['sear'], table['gain']
+        boss, trade, aggro = table['boss'], table['trade'], table['aggro']
+    except (KeyError, TypeError) as e:
+        return ['brand.json 缺段：%s（要有 power、nodes、aggro、costs、fits、ripe、sear、gain、boss、trade）' % e]
+    # 节点
+    if len(realms) != 7 or len(nodes) != 7:
+        bad.append('nodes 要正好七境七个节点')
+    if not all(num(n) for n in nodes) or any(b <= a for a, b in zip(nodes, nodes[1:])):
+        bad.append('nodes.caps 要严格递增：%s' % nodes)
+    if nodes and nodes[-1] != 100:
+        bad.append('nodes.caps 末项要是 100：%s' % nodes[-1:])
+    if not num(power.get('max_bonus')) or power['max_bonus'] > 0.5 + EPS:
+        bad.append('power.max_bonus 不超过 0.5（D147）：%s' % power.get('max_bonus'))
+    # 不刻印
+    ucap, urealm = gain.get('uncarved_cap'), gain.get('uncarved_max_realm')
+    if ucap not in nodes:
+        bad.append('gain.uncarved_cap 要是节点之一：%s' % ucap)
+    elif not _is_int(urealm) or not 0 <= urealm < len(nodes) or nodes[urealm] != ucap:
+        bad.append('gain.uncarved_cap 要正好是 uncarved_max_realm 那一境的节点：%s／%s' % (ucap, urealm))
+    # 换伤支
+    br = trade.get('branches', [])
+    if len(br) != 4:
+        bad.append('trade.branches 要正好四条：%d' % len(br))
+    for b in br:
+        if b.get('damage') != b.get('taken'):
+            bad.append('trade/%s 伤害和承伤要相等：%s／%s' % (b.get('key'), b.get('damage'), b.get('taken')))
+        if b.get('realm') not in realms:
+            bad.append('trade/%s 的境不在七境里：%s' % (b.get('key'), b.get('realm')))
+    # 常驻六条、发作六种：齐，且 over 照节点（第 i 条在 caps[i] 之后）
+    ck = [c.get('key') for c in costs.get('list', [])]
+    if ck != BRAND_COSTS:
+        bad.append('costs.list 要是常驻六条（%s）：%s' % ('、'.join(BRAND_COSTS), ck))
+    fn = [f.get('name') for f in fits.get('list', [])]
+    if fn != BRAND_FITS:
+        bad.append('fits.list 要是发作六种（%s）：%s' % ('、'.join(BRAND_FITS), fn))
+    for what, rows in (('costs', costs.get('list', [])), ('fits', fits.get('list', []))):
+        if [r.get('over') for r in rows] != nodes[:6]:
+            bad.append('%s.list 各条的 over 要等于前六个节点 %s：%s' % (what, nodes[:6], [r.get('over') for r in rows]))
+        if [r.get('realm') for r in rows if 'realm' in r] and [r['realm'] for r in rows] != realms[1:]:
+            bad.append('%s.list 各条的境要是不染到逆命' % what)
+    thin = next((c for c in costs.get('list', []) if c.get('key') == 'thin'), None)
+    if thin and num(thin.get('step')) and thin['step'] > 0:
+        want = (100 - thin['over']) / thin['step'] * thin.get('per_step', 0)
+        if abs(want - thin.get('at_full', -1)) > 1e-6:
+            bad.append('皮薄 100%% 时要降 (100−over)÷step×per_step ＝ %s：%s' % (num_text(want), thin.get('at_full')))
+    ol = costs.get('one_life', {})
+    one = next((c for c in costs.get('list', []) if c.get('key') == 'one_life'), {})
+    if ol.get('no_revive_over') != one.get('over') or not num(ol.get('revive_once_over')) or ol['revive_once_over'] >= one.get('over', 0):
+        bad.append('一条命：no_revive_over 要等于它的 over，前一档 revive_once_over 要更早：%s／%s' % (ol, one.get('over')))
+    # 熟
+    rf = ripe.get('fits', [])
+    if not rf or not set(rf) <= set(BRAND_FITS):
+        bad.append('ripe.fits 要是六种花样的子集且不空：%s' % rf)
+    if set(rf) & set(BRAND_RIPE_FORBID):
+        bad.append('ripe.fits 不含抽自己、六亲不认、换人：%s' % sorted(set(rf) & set(BRAND_RIPE_FORBID)))
+    # 灼痕
+    ph = sear.get('per_hit', {})
+    vals = [ph.get(k) for k in BRAND_SEAR_LEVELS]
+    if set(ph) != set(BRAND_SEAR_LEVELS) or not all(num(v) for v in vals) or any(b <= a for a, b in zip(vals, vals[1:])):
+        bad.append('sear.per_hit 要有 %s 五级且逐级递增：%s' % ('、'.join(BRAND_SEAR_LEVELS), ph))
+    st = sear.get('settle', {})
+    if st.get('折法') != '满了才算':
+        bad.append('sear.settle.折法 要是「满了才算」（D143 ①）：%s' % st.get('折法'))
+    if not _is_int(st.get('max_per_fight')) or st['max_per_fight'] < 1:
+        bad.append('sear.settle.max_per_fight 要是正整数：%s' % st.get('max_per_fight'))
+    # 首通
+    fc = gain.get('first_clear', {})
+    per_floor = {}
+    for sg in fc.get('segments', []):
+        for f in range(sg['from'], sg['to'] + 1):
+            per_floor[f] = sg['each']
+    for f, v in fc.get('floors', {}).items():
+        per_floor[int(f)] = v
+    total, running = 0, {}
+    for f in sorted(per_floor):
+        total += per_floor[f]
+        running[f] = total
+    if total > 100:
+        bad.append('首通给的数加起来不超过 100：%s' % total)
+    for i, f in enumerate(range(5, 31, 5)):
+        if running.get(f) != nodes[i]:
+            bad.append('第 %d 层末首通累计要正好等于节点 %s：%s' % (f, nodes[i], running.get(f)))
+    for f, v in gain.get('layer_line', {}).items():
+        if running.get(int(f)) != v:
+            bad.append('layer_line/%s 要等于首通累计 %s：%s' % (f, running.get(int(f)), v))
+    # 难度系数的键照 balance_table
+    if balance:
+        keys = [d.get('key') for d in balance.get('difficulties', [])]
+        if keys and list(gain.get('replay', {}).get('difficulty', {})) != keys:
+            bad.append('gain.replay.difficulty 的键要和 balance_table 难度同序：%s' % keys)
+    # 首领判定
+    ids = boss.get('exclude_enemy_ids', [])
+    if not ids or not all(_is_int(i) for i in ids):
+        bad.append('boss.exclude_enemy_ids 要是敌人编号整数、不空：%s' % ids)
+    if not boss.get('prefixes') or len(set(boss['prefixes'])) != len(boss['prefixes']):
+        bad.append('boss.prefixes 不空、不重复')
+    if boss.get('special') != ['心魔', '五条悟试炼', '神兵试炼']:
+        bad.append('boss.special 要是心魔、五条悟试炼、神兵试炼：%s' % boss.get('special'))
+    if not (num(aggro.get('outsider_base')) and num(aggro.get('bird_mult')) and aggro['bird_mult'] >= 1):
+        bad.append('aggro 外人项、出头鸟项要是数且出头鸟 ≥ 1')
+    _brand_ranges(table, '', bad)
+    return bad
+
+
+def check_brand(_args) -> bool:
+    bal = DATA_DIR / 'balance_table.json'
+    balance = json.loads(bal.read_text(encoding='utf-8')) if bal.is_file() else None
+    return _run_table('brand.json', lambda t: brand_rules(t, balance))
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -1894,6 +2032,7 @@ CHECKS = [
     ('combat_rules_phase4', check_combat_rules_phase4),
     ('single_hit_cap', check_single_hit_cap),
     ('abs_rescale', check_abs_rescale),
+    ('brand', check_brand),
 ]
 
 
