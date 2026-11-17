@@ -220,6 +220,7 @@ func _run_notices_sample(skinned: bool) -> Image:
 	var bg := _backdrop()
 	XToast.shown.clear()
 	XToast.show_text("已生效：能量药剂（检测到角色或背包变化）", true)
+	XToast.show_text("第二条提示：多条不叠在一起", true)
 	var toast := get_tree().root.get_node_or_null("XToast") as XToast
 	var auto := XAutosaveNotice.new()
 	auto.name = "TestAutosave"
@@ -246,7 +247,12 @@ func _run_notices_sample(skinned: bool) -> Image:
 	sk.pump()
 	await frames(10)
 	var tag := "new" if skinned else "old"
-	check("toast_shown_" + tag, toast != null and XToast.shown.size() == 1 and toast.stack.get_child_count() == 1)
+	check("toast_shown_" + tag, toast != null and XToast.shown.size() == 2 and toast.stack.get_child_count() == 2)
+	# T106：新皮肤提示栈在页名／页签（上 72）之下；两条竖向不重叠
+	if toast != null and toast.stack.get_child_count() == 2:
+		var s0 := toast.stack.get_child(0) as Control
+		var s1 := toast.stack.get_child(1) as Control
+		check("toast_below_header_" + tag, toast.stack.position.y >= (float(XUiSkin.TOP) if skinned else 0.0) and s1.position.y >= s0.position.y + s0.size.y - 1.0, [toast.stack.position, s0.position, s0.size, s1.position])
 	check("autosave_skin_" + tag, auto.win.canvas.clean_text == skinned and (auto.win.size.y == 38.0 if skinned else auto.win.size == XAutosaveNotice.RECT.size))
 	check("autosave_host_" + tag, (auto._host.anchor_right == 1.0) if skinned else (auto._host.anchor_right == 0.0 and auto._host.size == Vector2(1280, 720)), [auto._host.anchor_right, auto._host.size])
 	check("power_notice_" + tag, pwr.box.visible and pwr.box.skinned == skinned)

@@ -133,10 +133,26 @@ func _paint_now(c: XMVCanvas) -> void:
 		bx += w + 8
 
 
+## T107（T096 差距 11）：队长那一行在 Lv 后带当前称号（稿「Lv 1 · 断腿狗」）；称号是玩家级的（XState.designation），只挂队长。
+## 可回退：SHOW_TITLE=false 回到只有「Lv · 职业」
+static var SHOW_TITLE := true
+
+
+## 这个角色该显示的称号（只有队长、已选称号时有；否则空串）
+func title_text() -> String:
+	var st := XState.current
+	if not SHOW_TITLE or st == null or actor == null or st.leader() != actor:
+		return ""
+	return str(st.designation.get("name", ""))
+
+
 ## Lv 行：「Lv 等级 · 职业」，有护盾加「盾 数值」，谷雨在队加状态字
 func info_text() -> String:
 	var v := _v()
 	var parts := ["Lv %d" % actor.level]
+	var title := title_text()
+	if title != "":
+		parts.append(title)
 	var cls := str(actor.class_data().get("name", ""))
 	if cls != "":
 		parts.append(cls)

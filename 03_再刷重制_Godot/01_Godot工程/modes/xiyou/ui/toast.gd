@@ -68,6 +68,11 @@ func _init() -> void:
 	add_child(stack)
 
 
+## 新皮肤下提示栈的上沿（页面上沿 XUiSkin.TOP 再留 4 像素）；关着新皮肤仍是原版的 TOP
+static func skin_top() -> float:
+	return float(XUiSkin.TOP) + 4.0 if XUiSkin.on() else TOP
+
+
 func _view_size() -> Vector2:
 	return get_viewport().get_visible_rect().size if get_viewport() else Vector2(1280, 720)
 
@@ -91,7 +96,8 @@ func _add(message: String) -> void:
 	var vs := _view_size()
 	if on:
 		width = minf(width, vs.x - XSkinLayout.margin_for(vs.x) * 2.0)
-		stack.position = Vector2(roundf((vs.x - width) / 2.0) + MARGIN, TOP + MARGIN)
+		# T106：新皮肤顶上 0～TOP(72) 是页名和页签，提示放到页面上沿之下，不盖住它们
+		stack.position = Vector2(roundf((vs.x - width) / 2.0) + MARGIN, skin_top() + MARGIN)
 	else:
 		stack.position = Vector2(LEFT + MARGIN, TOP + MARGIN)
 	stack.custom_minimum_size.x = width - MARGIN * 2

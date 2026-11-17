@@ -124,6 +124,28 @@ func _run() -> void:
 	_check("toggles_rollback_120x46", b.auto_btn.custom_minimum_size == Vector2(120, 46) and side_parent.position.y == b._origin.y + XSkinBattle.TOGGLE_POS.y and side_parent.get_theme_constant("separation") == 8, [b.auto_btn.custom_minimum_size, side_parent.position, side_parent.get_theme_constant("separation")])
 	XSkinBattle.ROUND_TOGGLES = true
 	XSkinBattle.style_toggles(side_parent, [b.auto_btn, b.speed_btn], b._origin)
+	# T107（T096 差距 11）：队长行 Lv 后带当前称号，非队长不带；SHOW_TITLE=false 回退
+	var st11 := XState.current
+	var old_dg: Dictionary = st11.designation
+	st11.designation = {"name": "断腿狗", "icon": 0, "color": "#ffffff"}
+	var lead_ok := false
+	var other_ok := false
+	for row in b.status_rows.values():
+		var sr := row as XSkinSideStatus
+		if sr == null:
+			continue
+		var is_leader := st11.leader() == sr.actor
+		var t := sr.info_text()
+		if is_leader:
+			lead_ok = t.begins_with("Lv %d · 断腿狗" % sr.actor.level)
+			XSkinSideStatus.SHOW_TITLE = false
+			lead_ok = lead_ok and not sr.info_text().contains("断腿狗")
+			XSkinSideStatus.SHOW_TITLE = true
+		elif not t.contains("断腿狗"):
+			other_ok = true
+	st11.designation = old_dg
+	_check("party_strip_leader_title", lead_ok)
+	_check("party_strip_other_no_title", other_ok or b.status_rows.size() == 1)
 	var first_row: Node = b.status_rows.values()[0]
 	var backs: Array = first_row.get_parent().get_children().filter(func(c): return c is XSkinSideStatus.Back)
 	var back := backs[0] as XSkinSideStatus.Back if not backs.is_empty() else null
