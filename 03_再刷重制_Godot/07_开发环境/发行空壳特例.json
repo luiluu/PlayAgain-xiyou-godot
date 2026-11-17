@@ -40,6 +40,7 @@
   "XTianqiMoney.training_price": "0",
   "XTianqiPlagueAlien.filter_targets": "list",
   "XTianqiRewards.cri_mult": "1.0",
+  "XTianqiRewards.filter_targets": "list",
   "XTianqiSkills.boss_turns": "n",
   "XTianqiSkills.build": "base",
   "XTianqiSkills.parse_meta": "BODY:var out := {}\nfor m in RegEx.create_from_string(\"<([^<>:]+)(:?)([^>]*)>\").search_all(note):\n\tout[m.get_string(1)] = m.get_string(3) if m.get_string(2) == \":\" else true\nreturn out",
