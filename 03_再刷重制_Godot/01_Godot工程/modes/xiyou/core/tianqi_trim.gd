@@ -136,7 +136,9 @@ static func laoda_options(s: XState) -> Array:
 static func run_laoda(host, s: XState) -> void:
 	var opts := laoda_options(s)
 	var labels := opts.map(func(o): return str(o[0]))
-	var i: int = await host.show_text_with_choices("", 0, ["\\n<牢妲>挑战强大的守层者。", "再挑战不耗门票：34～36 层每胜一场得 1 颗终焉核，遗物只在首次击败时给。"], labels, labels.size() - 1)
+	var face := "naxida" if XTianqiHallText.on(s) else ""
+	var intro := ["\\n<牢妲>想要再次挑战强大的守层者吗？", "再挑战不耗门票：34～36 层每胜一场得 1 颗终焉核，遗物只在首次击败时给。"] if XTianqiHallText.on(s) else ["\\n<牢妲>挑战强大的守层者。", "再挑战不耗门票：34～36 层每胜一场得 1 颗终焉核，遗物只在首次击败时给。"]
+	var i: int = await host.show_text_with_choices(face, 0, intro, labels, labels.size() - 1)
 	if i < 0 or i >= opts.size():
 		return
 	var act: Array = opts[i][1]

@@ -622,7 +622,8 @@ func after_event(event_id: int) -> void:
 	if said.has(str(event_id)):
 		return
 	said.append(str(event_id))
-	var row: Array = AFTER_LINES[event_id]
+	var custom := XTianqiHallText.corruption_after(s, event_id)
+	var row: Array = custom if not custom.is_empty() else AFTER_LINES[event_id]
 	await host.run_command_list(text_list(row[0], row[1], row[2], row[3]))
 
 
