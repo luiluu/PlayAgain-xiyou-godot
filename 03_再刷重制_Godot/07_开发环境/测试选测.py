@@ -307,6 +307,47 @@ class SelectTests(Fixture):
         self.commit('recipes')
         self.assertEqual(self.pick(head=self.g('rev-parse', 'HEAD'))['scenes'], ['xiyou_craft.tscn', 'xiyou_event_compare.tscn', 'xiyou_event_compare_b.tscn'])
 
+    def test_tianqi_data_orphan_table_runs_validation_scenes_not_full(self):
+        """T131：没有代码读的 tianqi_data 表（如 brand.json）只跑数据校验场景，不落整轮；有测试引用时再加引用它的测试。"""
+        data = PROJECT / 'modes/xiyou/tianqi_data'
+        self.put(data / 'brand.json', '{}\n')
+        self.put(data / 'money.json', '{}\n')
+        for name in ('xiyou_json_cache', 'xiyou_text_batch23', 'xiyou_tianqi_balance'):
+            self.scene(name, 'pass')
+        self.scene('xiyou_tianqi_money', 'const F := "tianqi_data/money.json"')
+        self.commit('tianqi data')
+        self.base = self.g('rev-parse', 'HEAD')
+        validation = ['xiyou_json_cache.tscn', 'xiyou_text_batch23.tscn', 'xiyou_tianqi_balance.tscn']
+        self.put(data / 'brand.json', '{"a": 1}\n')
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertEqual(s['scenes'], validation)
+        self.g('checkout', '--', '.')
+        self.put(data / 'money.json', '{"a": 1}\n')
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertEqual(s['scenes'], sorted(validation + ['xiyou_tianqi_money.tscn']))
+        self.g('checkout', '--', '.')
+        self.put(data / 'brand_new.json', '{}\n')  # 新加且没登记的表：自动归 tianqi_data 组，同样不整轮
+        s = self.pick()
+        self.assertFalse(s['full'])
+        self.assertEqual(s['scenes'], validation)
+
+    def test_real_tianqi_data_tables_all_classified_not_full(self):
+        """T131：真实对照表里，tianqi_data 下每张表（含将来新加的）都归 tianqi_data 组、不落整轮，且该组的场景都真实存在。
+        新增表被更早的规则抢走或组里的场景改名删除，这里会红。"""
+        repo = HERE.parents[1]
+        data = repo / PROJECT / 'modes/xiyou/tianqi_data'
+        groups, rules = sel.load_table()
+        tables = sorted(data.glob('*'))
+        self.assertTrue(tables, 'tianqi_data 下没有文件？路径变了？')
+        for t in tables:
+            rel = str(t.relative_to(repo))
+            with self.subTest(table=rel):
+                self.assertEqual(sel.classify(rel, rules), 'tianqi_data', '%s 没归 tianqi_data 组（会静默判整轮或漏选）' % rel)
+        for scene in groups['tianqi_data']['scenes']:
+            self.assertTrue((repo / TESTS / scene).exists(), '数据校验场景不存在：' + scene)
+
     def test_deleted_module_reads_class_name_from_base(self):
         (self.root / CORE / 'orbs.gd').unlink()
         self.assertIn('xiyou_orbs.tscn', self.pick()['scenes'])
