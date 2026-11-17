@@ -6,7 +6,7 @@ extends Node
 ##     → 回标题「旧的回忆」回车三次读回 2 号位，进大厅、天启篇标记与道号都在。
 ## 二、触屏（XPlatform.force_mobile）：点「新的游戏」→ 点 5 号空位 → 点第一档 → 点重抽 → 点确认 → 大厅 → 点「旧的回忆」读回。
 ## 三、开关回退：XTianqi.ENABLED = false 时回车「新的游戏」走原版 Map001 开局（Map001 之后的流程由 xiyou_flow 实走）。
-## 存档写到 user://test_xiyou_tianqi_title，测试结束删除。
+## 存档写到 user://test_xiyou_tianqi_title_<进程号>，测试结束删除。
 
 const HUB := 4
 
@@ -122,7 +122,7 @@ func _party_names(s: XState) -> Array:
 func _run() -> void:
 	XMessageBox.auto = true
 	XBattleScene.force_auto = true
-	XSave.dir_override = "user://test_xiyou_tianqi_title"
+	XSave.dir_override = "user://test_xiyou_tianqi_title_%d" % OS.get_process_id()   # T129：进程号分目录，多份并行互不踩存档
 	Engine.time_scale = 6.0
 	seed(20261111)
 	_clean()
@@ -130,6 +130,13 @@ func _run() -> void:
 	await _touch()
 	await _revert()
 	_clean()
+	# T129：退出前停掉音效回放（Save/Load.ogg 等）并放掉流，否则并行偶发「退出时资源仍在使用」泄漏（同 xiyou_actor_book 的收尾）
+	for pl in XSound._players:
+		if is_instance_valid(pl):
+			pl.stop()
+			pl.stream = null
+	await get_tree().create_timer(0.3, true, false, true).timeout
+	await _frames(3)
 	XPlatform.force_mobile = null
 	XTianqi.ENABLED = true
 	Engine.time_scale = 1.0
