@@ -21,6 +21,11 @@ extends RefCounted
 ## | filter_group(logic, 施放者, 技能, 目标) | 不合群：过 55%，队友放的全体友方（scope 8）落不到身上 | BattleLogic.targets_for |
 ## | burn(logic, 角色) | 烧命：过 70%，每次出手前付当前生命 4%（扣不死、不算受到伤害） | BattleLogic.act |
 ## | blocks_revive／on_revive | 一条命：过 70% 一场只能被复活一次，过 85% 不能被复活；战斗外不拦 | XBattler.remove_state(1) |
+## | start_turn(logic) | T073-d1 自己疯：回合开始掷、顺延的先发；保护（隔 2 回合、同回合最多 2 人、生 1／熟 3 回合不掷） | BattleLogic.start_turn 末尾 |
+## | forced_action(logic, 角色) | 行动入口最顶上：发呆／断片空过、哑火普攻敌人、抽自己、六亲不认 | BattleLogic.brand_forced ← BattleScene._command 最顶上、decide、run_turn、XBattleReplay |
+## | perform(logic, 角色, 合成技能, 目标) | 合成技能换成真的行动；抽自己、六亲不认那一下（15% 封顶、打不倒、不暴击、烙印加成按 1） | BattleLogic.act 开头 |
+## | taken_mult(角色) | 破防：这一回合和下一回合受到的生命伤害 ×1.3 | XDamage 天启篇乘区、XTianqiHorsemen._strike |
+## | trigger(logic, 角色, 来源) | 被打疯（T073-d2 灼痕满了调）：同一套保护，不能开始就顺延 | （d2） |
 ##
 ## 存档（稿第九节）：角色 XActor.zhenqi 的 brand／brand_carved／brand_realm（XZhenqi.from_save 只在读进来的数据里本来就有时原样留）；
 ## 首胜表在 flags.tianqi.brand.firsts（XTianqiSave 分区 brand，稿里叫 brand_firsts）：战斗键 → 打赢时的最高档位。西游档一个字不读不写。
@@ -139,7 +144,7 @@ static func can_stand(a) -> bool:
 
 ## 伤害乘数：1 ＋ 配满加成 ×（烙印÷100）^形状。只读烙印值；关着、西游档、不是角色恒 1
 static func mult(a, s = null) -> float:
-	if not a is XActor or not on(s):
+	if not a is XActor or not on(s) or is_same(a, _plain_hit):
 		return 1.0
 	var p: Dictionary = data().get("power", {})
 	return 1.0 + float(p.get("max_bonus", 0.5)) * pow(float(value(a)) / (100.0 * scale()), float(p.get("shape", 1.0)))
@@ -457,11 +462,17 @@ static func heal(b, amount: float) -> float:
 	return amount
 
 
-## 不合群：我方别人放的全体友方（scope 8）技能、物品落不到过 55% 的人身上；自己放的照吃，点名给他的（scope 7）照吃
+## 不合群：我方别人放的全体友方（scope 8）技能、物品落不到过 55% 的人身上；自己放的照吃，点名给他的（scope 7）照吃。
+## 断片（T073-d1）：这两回合队友点名给他的（scope 7）落不到他身上
 static func filter_group(logic, a, skill: Dictionary, list: Array) -> Array:
-	if fight(logic).is_empty() or not a is XActor or int(skill.get("scope", 0)) != 8:
+	if fight(logic).is_empty() or not a is XActor:
 		return list
-	return list.filter(func(b): return b == a or not has_cost(b, "no_group", logic.state))
+	match int(skill.get("scope", 0)):
+		8:
+			return list.filter(func(b): return b == a or not has_cost(b, "no_group", logic.state))
+		7:
+			return list.filter(func(b): return b == a or not blacked_out(logic, b))
+	return list
 
 
 ## 烧命：每次出手（技能、物品；防御、被控跳过不算）前付当前生命的 hp_pct，向下取整、扣不死；直接改生命，不算受到伤害、不涨灼痕。返回给画面的记录（没扣为空）
@@ -494,6 +505,278 @@ static func on_revive(b) -> void:
 	if logic != null:
 		var rv: Dictionary = fight(logic).revived
 		rv[b] = int(rv.get(b, 0)) + 1
+
+
+# ---- 发作：不听指挥一回合（稿第四节第 3、7 条，第十三节 T073-d1）----
+## 自己疯：每回合开始（BattleLogic.start_turn 末尾）每个能行动的角色掷一次，几率 ＝（烙印 − from）× per_point 个百分点；
+## 熟的战斗 × ripe.chance_coef，前 ripe.no_self_rounds 回合不掷（生的第 1 回合不掷）。用这一场的规则流（同种子可复现），几率为 0 时不取数。
+## 花样：已解锁的里面等几率抽（解锁判「烙印 > 那一条的节点万分点」，P2-1，不判境；发呆总在）；熟的只出 ripe.fits。
+## 保护：同一人两次发作之间至少隔 gap_rounds 回合（从上一次的最后一回合算）；同一回合全队最多 max_per_round 人开始发作，多的顺延到下一回合。
+## 拦截：forced_action 在行动入口最顶上问（BattleScene._command 挂机分支之前、BattleLogic.decide、run_turn、XBattleReplay），三条路同一个结果。
+## 被打疯（灼痕满，T073-d2）走 trigger，同一套保护。
+## 玩家可见文字（交付单单列，小A 文字审；花样名是 brand.json 里的占位名）：%s 依次是角色名、花样名
+const TEXT_FIT := "%s 的烙印发作了：%s！"
+const FIT_KEY := "tianqi_brand_fit"
+## 抽自己、六亲不认这一下正在算：mult 对这个人按 1（吃 K，不吃烙印加成）
+static var _plain_hit = null
+
+
+static func fit_row(key: String) -> Dictionary:
+	for r in data().get("fits", {}).get("list", []):
+		if str(r.get("key", "")) == key:
+			return r
+	return {}
+
+
+## 花样显示名（断片是换人的兜底）
+static func fit_name(kind: String) -> String:
+	if kind == "blackout":
+		return str(fit_row("swap").get("fallback", "断片"))
+	return str(fit_row(kind).get("name", kind))
+
+
+static func _protect() -> Dictionary:
+	return data().get("fits", {}).get("protect", {})
+
+
+static func _fc(logic) -> Dictionary:
+	var c := fight(logic)
+	if c.is_empty():
+		return c
+	for k in ["fit_now", "fit_last", "fit_queue", "fit_starts", "guard_break", "fit_log"]:
+		if not c.has(k):
+			c[k] = [] if k in ["fit_queue", "fit_log"] else {}
+	return c
+
+
+## 这一回合自己疯的几率（0～1）；熟的乘系数
+static func fit_chance(logic, a) -> float:
+	var c := fight(logic)
+	if c.is_empty() or not a is XActor:
+		return 0.0
+	var fd: Dictionary = data().get("fits", {})
+	var p := maxf(0.0, pct(a) - float(fd.get("from", 10))) * float(fd.get("per_point", 0.15)) / 100.0
+	if bool(c.get("ripe", false)):
+		p *= float(data().get("ripe", {}).get("chance_coef", 0.4))
+	return p
+
+
+## 这一场里 a 能抽到的花样（键，表里的次序）：发呆总在；其余要烙印超过那一条的 over；熟的只留 ripe.fits 里的
+static func fit_kinds(logic, a) -> Array:
+	var c := fight(logic)
+	var ripe := bool(c.get("ripe", false))
+	var allow: Array = data().get("ripe", {}).get("fits", [])
+	var out := []
+	for r in data().get("fits", {}).get("list", []):
+		var k := str(r.get("key", ""))
+		if k != "daze" and value(a) <= roundi(float(r.get("over", 101)) * scale()):
+			continue
+		if ripe and not allow.has(str(r.get("name", ""))):
+			continue
+		out.append(k)
+	if out.is_empty():
+		out.append("daze")
+	return out
+
+
+## 前几回合不自己疯：生的 1（first_round_no_self），熟的 ripe.no_self_rounds
+static func _guard_rounds(c: Dictionary) -> int:
+	if bool(c.get("ripe", false)):
+		return int(data().get("ripe", {}).get("no_self_rounds", 3))
+	return 1 if bool(_protect().get("first_round_no_self", true)) else 0
+
+
+## 这一回合 a 正在发作（forced 的那几种、断片两回合）
+static func _in_fit(c: Dictionary, a, turn: int) -> bool:
+	var f = c.get("fit_now", {}).get(a)
+	return f != null and turn >= int(f.from) and turn <= int(f.to)
+
+
+## 隔 gap 回合：上一次发作的最后一回合 last，下一次最早 last ＋ gap ＋ 1
+static func _cooling(c: Dictionary, a, turn: int) -> bool:
+	return c.get("fit_last", {}).has(a) and turn - int(c.fit_last[a]) <= int(_protect().get("gap_rounds", 2))
+
+
+static func _starts(c: Dictionary, turn: int) -> int:
+	return int(c.get("fit_starts", {}).get(turn, 0))
+
+
+static func _queued(c: Dictionary, a) -> bool:
+	return c.get("fit_queue", []).any(func(q): return is_same(q[0], a))
+
+
+## 开始一次发作：抽花样、记保护。返回给画面的记录（破防当场报；其余在轮到他行动时报）
+static func _start_fit(logic, c: Dictionary, a, source: String) -> Array:
+	var turn := int(logic.turn)
+	var kinds := fit_kinds(logic, a)
+	var kind: String = kinds[logic._mod(kinds.size(), "brand_fit_kind")] if kinds.size() > 1 else kinds[0]
+	var last := turn
+	var logs := []
+	match kind:
+		"break_guard":
+			var r := fit_row("break_guard")
+			last = turn + maxi(1, int(r.get("rounds", 2))) - 1
+			c.guard_break[a] = last
+			logs.append({"type": "battle_text", "text": TEXT_FIT % [a.display_name(), fit_name(kind)], "tianqi_fit": true})
+		"swap":
+			kind = "blackout"  # T086 落地前的兜底：断片，人还在场上
+			last = turn + maxi(1, int(fit_row("swap").get("fallback_rounds", 2))) - 1
+			c.fit_now[a] = {"kind": kind, "from": turn, "to": last}
+		_:
+			c.fit_now[a] = {"kind": kind, "from": turn, "to": turn}
+	c.fit_last[a] = last
+	c.fit_starts[turn] = _starts(c, turn) + 1
+	c.fit_log.append({"turn": turn, "actor": int(a.actor_id), "kind": kind, "source": source})
+	return logs
+
+
+## 能不能现在开始：活着、在出战里、不在发作中、不在间隔里、这一回合还没满人
+static func _may_start(logic, c: Dictionary, a, turn: int) -> bool:
+	return _starts(c, turn) < int(_protect().get("max_per_round", 2)) and not _in_fit(c, a, turn) and not _cooling(c, a, turn)
+
+
+## BattleLogic.start_turn 末尾：先发顺延下来的，再按出战次序给每个能行动的人掷自己疯。返回回合开始的记录
+static func start_turn(logic) -> Array:
+	var c := _fc(logic)
+	if c.is_empty():
+		return []
+	var turn := int(logic.turn)
+	var logs := []
+	var keep := []
+	for q in c.fit_queue:
+		var a = q[0]
+		if not a.is_alive() or not logic.actors.has(a):
+			continue
+		if logic.can_move(a) and _may_start(logic, c, a, turn):
+			logs.append_array(_start_fit(logic, c, a, str(q[1])))
+		else:
+			keep.append(q)
+	c.fit_queue = keep
+	if turn <= _guard_rounds(c):
+		return logs
+	for a in logic.actors:
+		if not a is XActor or not a.is_alive() or not logic.can_move(a) or _queued(c, a) or _in_fit(c, a, turn) or _cooling(c, a, turn):
+			continue
+		var p := fit_chance(logic, a)
+		if p <= 0.0 or logic._float("brand_fit") >= p:
+			continue
+		if _starts(c, turn) < int(_protect().get("max_per_round", 2)):
+			logs.append_array(_start_fit(logic, c, a, "self"))
+		else:
+			c.fit_queue.append([a, "self"])  # 同回合满人：顺延
+	return logs
+
+
+## 被打疯（T073-d2 的灼痕满了调）：能开始就当场开始，否则顺延（隔回合、满人都顺延）。返回 [开没开（"started"／"queued"／""）, 记录]
+static func trigger(logic, a, source := "sear") -> Array:
+	var c := _fc(logic)
+	if c.is_empty() or not a is XActor or not a.is_alive() or not logic.actors.has(a):
+		return ["", []]
+	var turn := int(logic.turn)
+	if _may_start(logic, c, a, turn) and not _queued(c, a):
+		return ["started", _start_fit(logic, c, a, source)]
+	# T119 返修（小A P3②）：发作中（发呆、断片等记在 fit_now 的）和破防一样顺延，不再直接丢掉；
+	# 发作中一定也在间隔里（fit_last 记到最后一回合），顺延下来的照「隔回合」等间隔过了再发
+	if not _queued(c, a):
+		c.fit_queue.append([a, source])
+		return ["queued", []]
+	return ["", []]
+
+
+## 行动入口最顶上：这一回合 a 在发作就给出这次行动 [合成技能, 目标]，否则 []。
+## 发呆、断片：空过；哑火：普攻随机一个活着的敌人；抽自己：普攻自己；六亲不认：普攻随机一个活着的队友（没有队友就发呆）。
+## 同一回合的第二个及以后的行动位一律空过（不听指挥的是这一整回合，不重复打人）。不能行动的照原来（被控跳过）
+static func forced_action(logic, u) -> Array:
+	var c := fight(logic)
+	if c.is_empty() or not u is XActor or not u.is_alive() or not logic.can_move(u):
+		return []
+	var turn := int(logic.turn)
+	if not _in_fit(c, u, turn):
+		return []
+	var f: Dictionary = c.fit_now[u]
+	var kind := str(f.kind)
+	if int(f.get("used", -1)) == turn:
+		return [_cmd("idle"), null]
+	f["used"] = turn
+	match kind:
+		"misfire":
+			var foes: Array = logic.alive(logic.enemies)
+			if foes.is_empty():
+				return [_cmd("daze"), null]
+			return [_cmd(kind), foes[logic._mod(foes.size(), "brand_fit_target")] if foes.size() > 1 else foes[0]]
+		"hit_self":
+			return [_cmd(kind), u]
+		"hit_ally":
+			var mates: Array = logic.alive(logic.actors).filter(func(b): return not is_same(b, u))
+			if mates.is_empty():
+				return [_cmd("daze"), null]
+			return [_cmd(kind), mates[logic._mod(mates.size(), "brand_fit_target")] if mates.size() > 1 else mates[0]]
+	return [_cmd(kind), null]
+
+
+## 合成技能：带 id 0（T119 返修，小A P3③：外部回放录制照 int(cmd[0].id) 读也不报错；0 号不是任何技能）
+static func _cmd(kind: String) -> Dictionary:
+	return {FIT_KEY: kind, "id": 0}
+
+
+static func is_fit_command(skill) -> bool:
+	return skill is Dictionary and skill.has(FIT_KEY)
+
+
+## BattleLogic.act 开头把合成技能换成真的行动：{logs, skill, target}。哑火换成普攻敌人（照常走 execute，算出手、照付烧命）；
+## 抽自己、六亲不认在这里直接结算那一下（不算出手：不付烧命、不加七印层、不走命中反击反射掩护、不涨灼痕、不进瘟疫病灶），之后按放弃行动走
+static func perform(logic, u, skill: Dictionary, target) -> Dictionary:
+	var kind := str(skill.get(FIT_KEY, ""))
+	var logs := []
+	if kind != "idle":
+		logs.append({"type": "battle_text", "text": TEXT_FIT % [u.display_name(), fit_name(kind)], "tianqi_fit": true})
+	match kind:
+		"misfire":
+			return {"logs": logs, "skill": u.attack_skill(), "target": target}
+		"hit_self", "hit_ally":
+			if target is XActor and target.is_alive():
+				var r := strike(logic, u, target)
+				if not r.is_empty():
+					logs.append(r)
+	return {"logs": logs, "skill": null, "target": null}
+
+
+## 抽自己、六亲不认那一下的伤害（封顶之前）：普攻的公式、K 照乘、烙印加成按 1、不暴击（预演口径，不挂状态）
+static func strike_value(logic, u, t) -> float:
+	var atk: Dictionary = u.attack_skill()
+	_plain_hit = u
+	var v := XDamage.finish(logic._calculate_damage(u, atk, t, false), atk, u, t, false)
+	_plain_hit = null
+	return floorf(maxf(0.0, v))
+
+
+## 结算那一下：单次不超过目标最大生命的 self_hit_cap，打不倒人（最多打到 1）；直接改生命，画面走一条 regen 记录弹字
+static func strike(logic, u, t) -> Dictionary:
+	var cap := floorf(t.mhp * float(_protect().get("self_hit_cap", 0.15)))
+	var v := minf(minf(strike_value(logic, u, t), cap), t.hp - 1.0)
+	if v <= 0.0:
+		return {}
+	t.hp -= v
+	t.refresh_resources()
+	return {"type": "regen", "target": t, "hp": v, "views": logic.views([t])}
+
+
+## 破防：这一回合和下一回合受到的生命伤害 ×(1 ＋ taken_up)（XDamage 的天启篇乘区、四骑士的出伤处乘；不碰瘟疫病灶、灼痕）
+static func taken_mult(b) -> float:
+	var logic = _fighting(b)
+	if logic == null:
+		return 1.0
+	var until = fight(logic).get("guard_break", {}).get(b)
+	if until == null or int(logic.turn) > int(until):
+		return 1.0
+	return 1.0 + float(fit_row("break_guard").get("taken_up", 0.3))
+
+
+## 断片的人：这两回合队友点名给他的（scope 7）治疗、增益落不到他身上
+static func blacked_out(logic, b) -> bool:
+	var c := fight(logic)
+	var f = c.get("fit_now", {}).get(b)
+	return f != null and str(f.kind) == "blackout" and _in_fit(c, b, int(logic.turn))
 
 
 # ---- 打赢后结算（稿第五节第 5～7 条；P2-4 次序）----

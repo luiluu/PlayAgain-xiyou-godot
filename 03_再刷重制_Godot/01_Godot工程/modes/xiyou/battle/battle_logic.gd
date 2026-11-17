@@ -843,7 +843,7 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null, confus
 	var before_layers := list.duplicate()  # 天启篇弱者专属词条：下面三层改过目标，专属引导就不动
 	list = XTianqiHorsemen.filter_targets(self, a, list)  # 天启四骑士：混子嘲讽在时只能打混子
 	list = XTianqiPlagueAlien.filter_targets(self, a, skill, list)  # 天启篇瘟疫线异化：挑衅者在时我方单体只能打它
-	list = XTianqiRewards.filter_targets(self, a, list)  # 天启篇奖励：混子之盾开场嘲讽
+	list = XTianqiRewards.filter_targets(self, a, list, skill)  # 天启篇奖励：混子之盾开场嘲讽
 	guide_layers_changed = list != before_layers
 	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
 	return list
@@ -1198,6 +1198,7 @@ func start_turn() -> void:
 	XYunshang.start_turn(self)  # 云裳 startTurn 包装：resetRound（储行加份、神纹自鸣随机唤醒）
 	XAlienBattle.start_turn(self)  # 异化 startTurn 包装：镜骸重新充能
 	XGuyu.start_turn(turn)  # 谷雨 startTurn 包装：跑完原 startTurn 设回 turnCount
+	turn_start_logs.append_array(XTianqiBrand.start_turn(self))  # 天启篇烙印发作：每个能行动的角色掷自己疯、发顺延下来的（开关关着不取数）
 	XBinding.start_turn(self)  # 绑定 startTurn 包装（原 startTurn 之后）：行动次数转为充能
 	turn_start_logs.append_array(XTianqiHorsemen.start_turn(self))  # 天启四骑士：死期、神圣剑亮目标、援军、疫病、破盾
 	turn_start_logs.append_array(XTianqiFamineAlien.start_turn(self))  # 天启篇饥荒线异化：报饥饿
@@ -1238,7 +1239,16 @@ func decide(b: XBattler) -> Array:
 			return XConfusion.prepare_enemy(b, cat)  # Game_Action.prepare：混乱类状态（restriction 1～3）的敌人行动换成普通攻击，行动选择的随机数照取
 		var sk := enemy_action(b)
 		return XConfusion.prepare_enemy(b, [null if sk.is_empty() else sk, null])  # 没有行动：同逃跑失败的放弃（processTurn 没有 currentAction 就 endAction）
+	var fit := brand_forced(b)  # 天启篇烙印发作：不听指挥（同 BattleScene._command 最顶上那一问；没有发作不取数）
+	if not fit.is_empty():
+		return fit
 	return auto_battle_action(b) if auto else [b.attack_skill(), null]
+
+
+## 天启篇烙印发作（稿第四节第 3 条）：行动入口最顶上问一次，排在挂机、场内自动、手动指令窗之前，三条路同一个结果；
+## 有就照它行动（[合成技能, 目标]，act 开头换成真的行动），没有返回 []。开关关着、西游档、敌人恒 []
+func brand_forced(b: XBattler) -> Array:
+	return XTianqiBrand.forced_action(self, b) if b is XActor else []
 
 
 ## 执行一位行动者的一次行动，返回记录。skill 为 null（或 {}）表示放弃本次行动（逃跑失败、敌人没有可用行动）。
@@ -1252,6 +1262,11 @@ func act(u: XBattler, skill, target) -> Array:
 	var before := _movable_snapshot()
 	if is_over() or u.is_dead():
 		return logs
+	if XTianqiBrand.is_fit_command(skill):  # 天启篇烙印发作：哑火换成普攻敌人；发呆、断片、抽自己、六亲不认按放弃行动走（那一下在 perform 里结算）
+		var fx := XTianqiBrand.perform(self, u, skill, target)
+		logs.append_array(fx.logs)
+		skill = fx.skill
+		target = fx.target
 	XTianqiWeakAffix.root_begin(self, u, skill)  # 天启篇弱者专属词条：开一根（act 末尾 root_end 收）
 	XTianqiQiyinRule.on_act(self, u, skill)  # 七印祭坛限时：记我方本回合放了几个技能
 	XWeakChallenge.start_action(state, u)  # 弱者挑战 startAction 包装：强者行动则最终战作废
@@ -1298,11 +1313,10 @@ func act(u: XBattler, skill, target) -> Array:
 		started = u.is_actor() or can_use(u, skill)  # 同 execute 开头的行动无效判断（非强制）
 		if started:
 			XBinding.start_action(u)  # 绑定 startAction 包装：validate、记行动者、回归扣充能
-		var burn := XTianqiBrand.burn(self, u)  # 天启篇烙印烧命：出手前付当前生命 4%（不算受到伤害）
-		if not burn.is_empty():
-			logs.append(burn)
+		_burn_armed = u  # 天启篇烙印烧命：主行动在 execute 里确实出手时才扣（被禁用、被封、准备时暴毙不扣）
 		XNanoha.begin(self)
 		logs.append_array(execute(u, skill, target))
+		_burn_armed = null
 		XNanoha.end_execute(self)
 		XImportedBalance.set_acting(null)
 	XTianqiWeakAffix.set_kind(self, XTianqiWeakAffix.FOLLOW)  # 天启篇弱者专属词条：主动根执行完，之后都是原生追加
@@ -1465,7 +1479,9 @@ func run_turn(commands: Dictionary) -> Array:
 		first = false
 		if u == null or is_over():
 			break
-		var cmd: Array = [null, null] if take_cleared(u) else ((commands[u] if commands.has(u) else decide(u)) if u is XActor else decide(u))
+		var cleared := take_cleared(u)  # 只调一次：它会记「首位这一格已清过」
+		var fit := [] if cleared else brand_forced(u)  # 天启篇烙印发作：排在给定指令之前
+		var cmd: Array = [null, null] if cleared else (fit if not fit.is_empty() else ((commands[u] if commands.has(u) else decide(u)) if u is XActor else decide(u)))
 		logs.append_array(act(u, cmd[0], cmd[1]))
 	if not is_over():
 		logs.append_array(end_turn())
@@ -2199,6 +2215,9 @@ func _lotus_all(skill: Dictionary) -> bool:
 	return XStateEffects.FIX_LOTUS_7303 and int(skill.get("id", 0)) == 7303
 
 
+## 天启篇烙印烧命：act 的主行动交给 execute 前记下行动者，execute 确实出手时扣一次（T118 小A P3②）
+var _burn_armed: XBattler = null
+
 func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false) -> Array:
 	var logs := []
 	# 行动无效（原版没有退回攻击）：敌人走核心 processTurn，isValid 为假整次跳过（不 startAction、不付费）；
@@ -2237,6 +2256,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 	else:
 		u.refresh_resources()
 		stale_refreshed(u)  # YEP useItem 的 refresh：出手者自己的陈旧状态进缓存（被挡的 useItem 原版直接返回、不 refresh）
+	var act_at := logs.size()  # 「行动」那一条的下标（烧命记录要插在它前面）
 	logs.append({"type": "action", "user": u, "skill": skill, "views": views()})
 	logs.append_array(XCat.start_action(u, skill))  # 小猫试炼 startAction 包装：巨龙蓄息时日志加一行
 	if blocked:
@@ -2245,6 +2265,14 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		XHeartsteel.suppressed(u)  # 心钢、狂妄 endAction 包装看 _tojiSuppressed：失效的行动不减蓄力、不计行动
 		XHubris.suppressed(u)
 		return logs
+	if _burn_armed != null and is_same(_burn_armed, u):
+		_burn_armed = null  # 只扣主行动这一次；里面再施放的 execute 不扣
+		var burn := XTianqiBrand.burn(self, u)  # 天启篇烙印烧命：确实出手（付完消耗、没被禁用／封印）才付当前生命 4%（不算受到伤害）
+		if not burn.is_empty():
+			# T119 返修（小A P1）：结算仍在这里（封印、禁用判完之后），记录插到「行动」之前，
+			# 「行动」后面紧跟 battle_text／seq_phase，BattleScene._play 才认得出序列交给 XSequencePlayer；行动那条的血量改成扣完之后
+			logs.insert(act_at, burn)
+			logs[act_at + 1]["views"] = views()
 	XImportedBalance.set_acting(u)  # YEP 附加状态记 BattleManager._subject 为来源
 	XTianqiQiyinEffects.begin_action(self, u, skill)  # 天启篇七印装备：行动帧（砝码、倾囊、换系、舍身、蓄势）
 	XTianqiAffixBattle.begin_action(self, u, skill)  # 天启篇词条：先声、本次行动的目标与击杀

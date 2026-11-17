@@ -1254,7 +1254,7 @@ static func _strike(logic, u, t, skill: Dictionary, base: float, critical: bool)
 	var magical := bool(skill.get("magical", false))
 	var power := float(u.mat) if magical else float(u.atk)
 	var def := float(t.mdf) if magical else float(t.def)
-	var taken := float(XTianqiCombat.taken_parts(t, logic.state).mult)
+	var taken := float(XTianqiCombat.taken_parts(t, logic.state).mult) * XTianqiBrand.taken_mult(t)  # 天启篇烙印发作「破防」（开关关着恒 1）
 	if is_same(u, fight(logic).get("knight")):
 		base *= enrage_mult(logic)  # 证道狂暴：只乘骑士本体（援军、小怪、混子小弟不乘）
 	return logic.horseman_strike(u, t, skill, hit_value(power, def, base, taken), critical)

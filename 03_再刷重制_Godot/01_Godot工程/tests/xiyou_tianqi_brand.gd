@@ -7,9 +7,34 @@ extends Node
 ## 五、T140：七印灰印／默印精英（297、220）、死亡线／饥荒线节末精英（294、430）都认首领战；玩家看到的烙印文字不用「境」「锚」，说「加深」＋段名。
 ## 七、T118（T073-c）：常驻六条代价各一组（生效、不生效、跨过那一点）；P2-1 判烙印不判境（4000 砥柱不吃虚不受补、4001 吃）；一条命两档、战后照常站起来；和嘲讽、七印、死亡线保命次序对一遍；开关关着不动。
 ## 六、T144：战争线 35、瘟疫线 248 节末那场与七印其余五场压轴前精英（250／34／11／123／188）按上下文认首领战；同敌群野外照名字不算。
+## 八、T119（T073-d1）：自己疯的几率、花样解锁（P2-1：4000 砥柱抽不到抽自己、4001 能）、生熟（开场、几率、花样；心魔是生的）、保护（隔 2 回合、
+## 同回合最多 2 人顺延、15% 封顶打不倒）、五种花样加断片各自的结果、行动入口最顶上（挂机、场内自动、手动三条路同一个结果）、同种子可复现；
+## 烧命挪到确实出手之后（T118 小A P3②：被禁用不扣）；开关关着不取数、不拦。
 
 const XIAOYAO := 1
 const LVSIJI := 2
+
+## 规则流替身：按取数原因给定值（没给的 next_float 给 default_float，取序号给 0），数取了几次照记
+class FixStream extends XRandomStream:
+	var floats := {}
+	var mods := {}
+	var default_float := 0.99
+	var reasons := {}
+	func _note(reason: String) -> void:
+		draws += 1
+		reasons[reason] = int(reasons.get(reason, 0)) + 1
+	func next_float(reason: String, _event_key := "") -> float:
+		_note(reason)
+		return float(floats.get(reason, default_float))
+	func next_uint(reason: String, _event_key := "") -> int:
+		_note(reason)
+		return 0
+	func next_index_mod(n: int, reason: String, _event_key := "") -> int:
+		_note(reason)
+		return clampi(int(mods.get(reason, 0)), 0, maxi(0, n - 1))
+	func next_int_inclusive(lo: int, _hi: int, reason: String, _event_key := "") -> int:
+		_note(reason)
+		return lo
 
 var results: Array = []
 
@@ -20,6 +45,13 @@ func _ready() -> void:
 
 func _check(name: String, ok: bool, detail = null) -> void:
 	results.append({"name": name, "passed": ok, "detail": detail})
+
+
+func _arg(name: String, default := "") -> String:
+	for x in OS.get_cmdline_user_args():
+		if x.begins_with(name + "="):
+			return x.substr(name.length() + 1)
+	return default
 
 
 func _run() -> void:
@@ -47,8 +79,13 @@ func _run() -> void:
 	_t140_spread()
 	_t140_text()
 	_t118_costs()
+	_t119_fits()
+	await _t119_entry()
+	_t119_seed()
+	_t119_stress(int(_arg("--t119-stress", "40")))
 	XTianqiBrand.ENABLED = false
 	_t118_off()
+	_t119_off()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -687,8 +724,26 @@ func _t118_costs() -> void:
 	_cost_actor(lg, 0, 7000)
 	_check("t118.burn_at_node", XTianqiBrand.burn(lg, a).is_empty())
 	a = _cost_actor(lg, 0, 7001)
+	var hp_pre := a.hp
 	var logs := lg.act(a, a.attack_skill(), e)
-	_check("t118.burn_in_act", not logs.is_empty() and str(logs[0].get("type", "")) == "regen" and logs[0].target == a, logs.slice(0, 1).map(func(l): return l.get("type")))
+	var burn_at := logs.find(logs.filter(func(l): return str(l.get("type", "")) == "regen" and l.get("target") == a).front() if logs.any(func(l): return str(l.get("type", "")) == "regen" and l.get("target") == a) else null)
+	var act_at := logs.find(logs.filter(func(l): return str(l.get("type", "")) == "action").front() if logs.any(func(l): return str(l.get("type", "")) == "action") else null)
+	# T119（T118 小A P3②）：挪到 execute 里确实出手之后扣。返修（小A P1）：记录插在「行动」之前，行动那条的血量是扣完的
+	_check("t118.burn_in_act", burn_at >= 0 and burn_at < act_at, logs.map(func(l): return l.get("type")))
+	var paid_hp := float(logs[burn_at].hp) if burn_at >= 0 else -1.0
+	_check("t119.burn_act_views", act_at >= 0 and paid_hp >= 1.0 and float(logs[act_at].views.get(a, {}).get("hp", -1.0)) == hp_pre - paid_hp,
+		[hp_pre, paid_hp, logs[act_at].views.get(a, {}).get("hp") if act_at >= 0 else null])
+	# 带 yepSeq 的技能＋烧命：「行动」后面（跳过 battle_text）紧跟 seq_phase，BattleScene._play 照样交给 XSequencePlayer
+	var seq_k := act_at + 1
+	while seq_k < logs.size() and str(logs[seq_k].type) == "battle_text":
+		seq_k += 1
+	_check("t119.burn_keeps_seq", XActionSequence.has_sequence(a.attack_skill()) and burn_at >= 0 and seq_k < logs.size() and str(logs[seq_k].type) == "seq_phase",
+		logs.map(func(l): return l.get("type")))
+	# 被禁用的行动（禁用号角）：execute 直接返回，不扣
+	a.hp = a.mhp
+	var hp_b := a.hp
+	var horn_logs := lg.act(a, XDB.rec("Items", 255), e)
+	_check("t119.burn_blocked_no_pay", a.hp == hp_b and not horn_logs.any(func(l): return str(l.get("type", "")) == "regen"), [hp_b, a.hp])
 	_check("t118.burn_guard", not lg.act(a, XDB.rec("Skills", 2), null).any(func(l): return str(l.get("type", "")) == "regen" and l.get("target") == a))
 	lg.end_battle()
 
@@ -780,3 +835,386 @@ func _t118_off() -> void:
 	a.remove_state(1)
 	_check("t118.off_all", ok and a.is_alive() and XTianqiBrand.fight(lg).is_empty(), ok)
 	lg.end_battle()
+
+
+# ---- T119（T073-d1）发作 ----
+## 真开一场（敌群 1），规则流换成 FixStream；ripe 按参数改；其余角色烙印 0（几率 0，不取数）
+func _fit_logic(s: XState, ripe := false, troop := 1) -> XBattleLogic:
+	for x in s.battle_members():
+		_setb(x, 0, 0)
+		x.recover_all()
+	var lg := _cost_logic(s, troop)
+	XTianqiBrand.fight(lg)["ripe"] = ripe
+	var fs := FixStream.new()
+	fs.domain = "rule"
+	fs.floats["brand_fit"] = 0.0  # 掷必中
+	lg.random.rule = fs
+	return lg
+
+
+func _fs(lg: XBattleLogic) -> FixStream:
+	return lg.random.rule as FixStream
+
+
+## 让 idx 号角色（烙印满）在第 2 回合开始发作 kinds[kind_idx]（生的：第 1 回合不掷）
+func _fit_at(lg: XBattleLogic, idx: int, kind_idx: int) -> XActor:
+	var a := _cost_actor(lg, idx, 10000)
+	_fs(lg).mods["brand_fit_kind"] = kind_idx
+	lg.start_turn()
+	lg.start_turn()
+	return a
+
+
+func _fit_turns(lg: XBattleLogic, a: XActor) -> Array:
+	return XTianqiBrand.fight(lg).get("fit_log", []).filter(func(r): return int(r.actor) == a.actor_id).map(func(r): return int(r.turn))
+
+
+func _types(logs: Array) -> Array:
+	return logs.map(func(l): return str(l.get("type", "")))
+
+
+func _t119_fits() -> void:
+	var s := _state()
+	# 1. 几率：满烙印生 13.5%、熟 5.4%；正好 10% 为 0
+	var lg := _fit_logic(s)
+	var a := _cost_actor(lg, 0, 10000)
+	_check("t119.chance_raw", is_equal_approx(XTianqiBrand.fit_chance(lg, a), 0.135), XTianqiBrand.fit_chance(lg, a))
+	XTianqiBrand.fight(lg).ripe = true
+	_check("t119.chance_ripe", is_equal_approx(XTianqiBrand.fit_chance(lg, a), 0.054), XTianqiBrand.fit_chance(lg, a))
+	XTianqiBrand.fight(lg).ripe = false
+	_cost_actor(lg, 0, 1000)
+	_check("t119.chance_at_10", XTianqiBrand.fit_chance(lg, a) == 0.0 and XTianqiBrand.fit_kinds(lg, a) == ["daze"], XTianqiBrand.fit_kinds(lg, a))  # 烙印 ≤ 1000 被打疯只有发呆
+	# 2. 花样解锁判烙印不判境（P2-1）：4000、境在砥柱抽不到抽自己；4001 能
+	_setb(a, 4000, 3)
+	var k4000 := XTianqiBrand.fit_kinds(lg, a)
+	_setb(a, 4001, 3)
+	var k4001 := XTianqiBrand.fit_kinds(lg, a)
+	_check("t119.kinds_4000", k4000 == ["daze", "misfire"] and XTianqiBrand.realm(a) == 3, k4000)
+	_check("t119.kinds_4001", k4001 == ["daze", "misfire", "hit_self"], k4001)
+	_setb(a, 10000, 6)
+	_check("t119.kinds_full_raw", XTianqiBrand.fit_kinds(lg, a) == ["daze", "misfire", "hit_self", "break_guard", "hit_ally", "swap"], XTianqiBrand.fit_kinds(lg, a))
+	XTianqiBrand.fight(lg).ripe = true
+	_check("t119.kinds_full_ripe", XTianqiBrand.fit_kinds(lg, a) == ["daze", "misfire", "break_guard"], XTianqiBrand.fit_kinds(lg, a))
+	_setb(a, 4001, 3)
+	_check("t119.kinds_ripe_partial", XTianqiBrand.fit_kinds(lg, a) == ["daze", "misfire"], XTianqiBrand.fit_kinds(lg, a))  # 已解锁的里面有哪几种出哪几种
+	lg.end_battle()
+
+	# 3. 开场与间隔：掷必中时生的 2／5／8 回合发作（第 1 回合不掷、隔 2 回合）；熟的 4／7（前 3 回合不掷）
+	lg = _fit_logic(s)
+	a = _cost_actor(lg, 0, 10000)
+	for i in 9:
+		lg.start_turn()
+	_check("t119.raw_turns", _fit_turns(lg, a) == [2, 5, 8], _fit_turns(lg, a))
+	_check("t119.no_draw_zero", int(_fs(lg).reasons.get("brand_fit", 0)) == 3, _fs(lg).reasons)  # 只有他掷（烙印 0 的人几率 0 不取数），间隔里不掷
+	lg.end_battle()
+	lg = _fit_logic(s, true)
+	a = _cost_actor(lg, 0, 10000)
+	for i in 9:
+		lg.start_turn()
+	_check("t119.ripe_turns", _fit_turns(lg, a) == [4, 7], _fit_turns(lg, a))
+	lg.end_battle()
+
+	# 4. 同回合最多 2 人：三个满烙印的人第 2 回合两个开始、第三个顺延到第 3 回合
+	lg = _fit_logic(s)
+	var three := [_cost_actor(lg, 0, 10000), _cost_actor(lg, 1, 10000), _cost_actor(lg, 2, 10000)]
+	for i in 6:
+		lg.start_turn()
+	var per := {}
+	for r in XTianqiBrand.fight(lg).fit_log:
+		per[int(r.turn)] = int(per.get(int(r.turn), 0)) + 1
+	_check("t119.max_two", per.values().all(func(n): return n <= 2) and _fit_turns(lg, three[0]) == [2, 5] and _fit_turns(lg, three[1]) == [2, 5] and _fit_turns(lg, three[2]) == [3, 6],
+		[per, _fit_turns(lg, three[0]), _fit_turns(lg, three[2])])
+	lg.end_battle()
+
+	# 5. 发呆：空过（不出招、敌人血不动），报一句；同回合第二个行动位也空过、不再报
+	lg = _fit_logic(s)
+	a = _fit_at(lg, 0, 0)
+	var e: XEnemy = lg.enemies[0]
+	var ehp := e.hp
+	var fa := lg.brand_forced(a)
+	var logs := lg.act(a, fa[0], fa[1])
+	_check("t119.daze", XTianqiBrand.is_fit_command(fa[0]) and str(fa[0][XTianqiBrand.FIT_KEY]) == "daze" and not _types(logs).has("action") and e.hp == ehp
+		and logs.any(func(l): return str(l.get("type", "")) == "battle_text" and str(l.text).contains("发呆")), _types(logs))
+	var fa2 := lg.brand_forced(a)
+	_check("t119.second_slot_idle", str(fa2[0].get(XTianqiBrand.FIT_KEY, "")) == "idle" and not _types(lg.act(a, fa2[0], fa2[1])).has("battle_text") and e.hp == ehp, fa2)
+	lg.turn = 3
+	_check("t119.one_round", lg.brand_forced(a).is_empty())
+	lg.end_battle()
+
+	# 6. 哑火：普攻随机一个敌人，算出手（出头鸟记打过人、过 70% 照付烧命）
+	lg = _fit_logic(s)
+	a = _fit_at(lg, 0, 1)
+	_fs(lg).mods["brand_fit_target"] = lg.alive(lg.enemies).size() - 1
+	fa = lg.brand_forced(a)
+	var tgt = fa[1]
+	logs = lg.act(a, fa[0], fa[1])
+	var acted := logs.filter(func(l): return str(l.get("type", "")) == "action")
+	_check("t119.misfire", tgt is XEnemy and tgt == lg.alive(lg.enemies).back() and not acted.is_empty() and int(acted[0].skill.id) == a.attack_skill_id()
+		and int(XTianqiBrand.fight(lg).hits.get(a, -1)) == int(lg.turn), [tgt, _types(logs)])
+	_check("t119.misfire_burns", logs.any(func(l): return str(l.get("type", "")) == "regen" and l.get("target") == a))
+	lg.end_battle()
+
+	# 7. 抽自己：打自己一下，≤ 最大生命 15%、打不倒、不算出手（不付烧命、没有「行动」）；烙印加成按 1、K 照乘
+	lg = _fit_logic(s)
+	a = _fit_at(lg, 0, 2)
+	fa = lg.brand_forced(a)
+	var hp0 := a.hp
+	logs = lg.act(a, fa[0], fa[1])
+	var regens := logs.filter(func(l): return str(l.get("type", "")) == "regen")
+	_check("t119.hit_self", fa[1] == a and regens.size() == 1 and regens[0].target == a and a.is_alive() and hp0 - a.hp == float(regens[0].hp)
+		and float(regens[0].hp) <= floorf(a.mhp * 0.15) and not _types(logs).has("action"), [_types(logs), hp0, a.hp, a.mhp])
+	var b: XActor = lg.actors[1]
+	var v_full := XTianqiBrand.strike_value(lg, a, b)
+	_setb(a, 0, 0)
+	var v_zero := XTianqiBrand.strike_value(lg, a, b)
+	_setb(a, 10000, 6)
+	_check("t119.strike_no_brand", v_full > 0.0 and v_full == v_zero and is_equal_approx(XTianqiBrand.mult(a), 1.5), [v_full, v_zero])
+	# 对照：平时这个人的烙印确实进了 K 那一项（不然上面那条是白比）
+	_check("t119.strike_k_live", is_equal_approx(float(XTianqiCombat.dealt_parts(a, s).get("k", 0.0)), XTianqiBase.k_base(s) * 1.5), XTianqiCombat.dealt_parts(a, s))
+	a.hp = 1.0
+	_check("t119.strike_no_kill", XTianqiBrand.strike(lg, a, a).is_empty() and a.hp == 1.0 and a.is_alive())
+	# 封顶：目标最大生命很小时按 15% 截
+	b.hp = b.mhp
+	var cap := floorf(b.mhp * 0.15)
+	var r := XTianqiBrand.strike(lg, a, b)
+	_check("t119.strike_cap", not r.is_empty() and float(r.hp) <= cap and (float(r.hp) == cap or float(r.hp) == XTianqiBrand.strike_value(lg, a, b)), [r.get("hp"), cap])
+	# 封顶一定咬得住的一例：打敌人 1（满烙印的普攻远超它最大生命的 15%）
+	var tiny: XEnemy = lg.enemies[0]
+	tiny.hp = tiny.mhp
+	var tcap := floorf(tiny.mhp * 0.15)
+	var raw_v := XTianqiBrand.strike_value(lg, a, tiny)
+	var rt := XTianqiBrand.strike(lg, a, tiny)
+	_check("t119.strike_cap_bites", raw_v > tcap and float(rt.get("hp", -1)) == tcap and tiny.hp == tiny.mhp - tcap, [tiny.mhp, raw_v, rt.get("hp"), tiny.hp])
+	lg.end_battle()
+
+	# 8. 六亲不认：普攻一个活着的队友（不是自己），同样封顶、打不倒；没有队友就发呆
+	lg = _fit_logic(s)
+	a = _fit_at(lg, 0, 4)
+	fa = lg.brand_forced(a)
+	var mate = fa[1]
+	var mhp0: float = mate.hp if mate is XActor else 0.0
+	logs = lg.act(a, fa[0], fa[1])
+	_check("t119.hit_ally", mate is XActor and mate != a and lg.actors.has(mate) and mate.is_alive() and mhp0 - mate.hp <= floorf(mate.mhp * 0.15) and not _types(logs).has("action"),
+		[mate, _types(logs)])
+	lg.turn = 5
+	XTianqiBrand.fight(lg).fit_now[a] = {"kind": "hit_ally", "from": 5, "to": 5}
+	for x in lg.actors:
+		if x != a:
+			_kill(x)
+	fa = lg.brand_forced(a)
+	_check("t119.hit_ally_alone", str(fa[0].get(XTianqiBrand.FIT_KEY, "")) == "daze", fa)
+	lg.end_battle()
+
+	# 9. 破防：不拦行动；这一回合和下一回合受到的生命伤害 ×1.3（XDamage 天启篇乘区），第三回合恢复
+	lg = _fit_logic(s)
+	a = _fit_at(lg, 0, 3)
+	e = lg.enemies[0]
+	var dmg := func() -> float:
+		return float(XDamage.calculate(e.attack_skill(), e, a, {"critical": false, "variance": false}).breakdown.row.beforeFixed)  # 取整之前（小怪伤害个位数，比取整后的比例不准）
+	var on2: float = dmg.call()
+	var forced2 := lg.brand_forced(a)
+	lg.turn = 3
+	var on3: float = dmg.call()
+	lg.turn = 4
+	var off4: float = dmg.call()
+	_check("t119.break_guard", forced2.is_empty() and is_equal_approx(XTianqiBrand.taken_mult(a), 1.0) and off4 > 0.0 and absf(on2 / off4 - 1.3) < 0.001 and on2 == on3,
+		[on2, on3, off4])
+	lg.turn = 2
+	_check("t119.break_guard_mult", is_equal_approx(XTianqiBrand.taken_mult(a), 1.3))
+	lg.end_battle()
+
+	# 10. 断片（换人 T086 落地前的兜底）：两回合不行动、人在场上；这两回合队友点名给他的落不到他身上，全体的照吃
+	lg = _fit_logic(s)
+	a = _fit_at(lg, 0, 5)
+	b = lg.actors[1]
+	var f2 := lg.brand_forced(a)
+	var named2 := XTianqiBrand.filter_group(lg, b, {"scope": 7}, [a])
+	lg.turn = 3
+	var f3 := lg.brand_forced(a)
+	lg.turn = 4
+	var f4 := lg.brand_forced(a)
+	var named4 := XTianqiBrand.filter_group(lg, b, {"scope": 7}, [a])
+	_check("t119.blackout", str(f2[0].get(XTianqiBrand.FIT_KEY, "")) == "blackout" and str(f3[0].get(XTianqiBrand.FIT_KEY, "")) == "blackout" and f4.is_empty() and a.is_alive(), [f2, f3, f4])
+	_check("t119.blackout_named", named2.is_empty() and named4 == [a] and XTianqiBrand.filter_group(lg, a, {"scope": 7}, [a]) == [a], [named2, named4])
+	# 断片是两回合，间隔从最后一回合算：第 2、3 回合断片，最早第 6 回合再发作
+	_check("t119.blackout_gap", int(XTianqiBrand.fight(lg).fit_last.get(a, 0)) == 3)
+	lg.end_battle()
+
+	# 11. 被打疯（d2 的口子）：同回合满 2 人时顺延到下一回合
+	lg = _fit_logic(s)
+	var c0 := _cost_actor(lg, 0, 10000)
+	var c1 := _cost_actor(lg, 1, 10000)
+	var c2 := _cost_actor(lg, 2, 0)
+	lg.start_turn()  # 第 1 回合不自己疯
+	var t0 := XTianqiBrand.trigger(lg, c0)
+	var t1 := XTianqiBrand.trigger(lg, c1)
+	var t2 := XTianqiBrand.trigger(lg, c2)
+	_fs(lg).floats["brand_fit"] = 0.99
+	lg.start_turn()
+	_check("t119.trigger_queue", t0[0] == "started" and t1[0] == "started" and t2[0] == "queued" and _fit_turns(lg, c2) == [2] and XTianqiBrand.fit_kinds(lg, c2) == ["daze"],
+		[t0[0], t1[0], t2[0], _fit_turns(lg, c2)])
+	# 返修（小A P3②）：发作中被打疯也顺延（和破防一样），不丢；间隔过了再发
+	var t3 := XTianqiBrand.trigger(lg, c2)
+	_check("t119.trigger_in_fit_queues", t3[0] == "queued" and XTianqiBrand._queued(XTianqiBrand.fight(lg), c2), t3[0])
+	lg.end_battle()
+
+	# 12. 生熟：首领战第一次是生的，打赢记首胜后同一键再打是熟的（几率 ×0.4、前 3 回合不掷、花样只三种）；心魔、五条悟试炼总是生的
+	var fl := XTianqiBrand._firsts_rw(s)
+	fl.erase("guardian:7")
+	var cb := _boss("guardian:7", 7)
+	var raw := XTianqiBrand.is_ripe(s, cb)
+	fl["guardian:7"] = 1
+	var ripe := XTianqiBrand.is_ripe(s, cb)
+	var heart := XTianqiBrand.is_ripe(s, {"kind": "special", "key": "", "tier": 1})
+	_check("t119.ripe_second", not raw and ripe and not heart, [raw, ripe, heart])
+	fl.erase("guardian:7")
+	# 真开两场 6 层守层者（敌群 39）：第一场生，记首胜后第二场熟，几率换成 ×0.4、花样换成三种
+	fl.erase("guardian:6")
+	var lr := XBattleLogic.new()
+	lr.setup(39, s)
+	var ar: XActor = lr.actors[0]
+	_setb(ar, 10000, 6)
+	var raw_p := XTianqiBrand.fit_chance(lr, ar)
+	var raw_k := XTianqiBrand.fit_kinds(lr, ar)
+	lr.end_battle()
+	fl["guardian:6"] = 1
+	var lr2 := XBattleLogic.new()
+	lr2.setup(39, s)
+	_check("t119.ripe_real", not bool(XTianqiBrand.fight(lr).ripe) and bool(XTianqiBrand.fight(lr2).ripe) and is_equal_approx(XTianqiBrand.fit_chance(lr2, ar), raw_p * 0.4)
+		and raw_k.size() == 6 and XTianqiBrand.fit_kinds(lr2, ar) == ["daze", "misfire", "break_guard"], [raw_p, raw_k, XTianqiBrand.fit_kinds(lr2, ar)])
+	lr2.end_battle()
+	fl.erase("guardian:6")
+
+
+## 行动入口最顶上：挂机、场内自动、手动三条路同一个结果（第十一节第 9 步：同一个种子下哑火三条路一样）
+func _t119_entry() -> void:
+	var s := _state()
+	var got := []
+	var prohibited = s.flags.get("HangUpProhibited", false)
+	s.flags["HangUpProhibited"] = false
+	for mode in ["hangup", "auto", "manual"]:
+		var lg := _fit_logic(s)
+		var a := _fit_at(lg, 0, 1)
+		_fs(lg).mods["brand_fit_target"] = 1
+		s.hang_up_active = mode == "hangup"
+		s.hang_up_origin = Vector2i(1, 1) if mode == "hangup" else Vector2i(-1, -1)
+		lg.auto = mode == "auto"
+		var sc := XBattleScene.new()
+		sc.logic = lg
+		var cmd = await sc._command(a)
+		got.append([mode, XHangUp.is_active(s), lg.auto, str(cmd[0].get(XTianqiBrand.FIT_KEY, "")) if cmd is Array and cmd[0] is Dictionary else "", lg.enemies.find(cmd[1]) if cmd is Array else -9])
+		sc.free()
+		lg.end_battle()
+	s.hang_up_active = false
+	s.hang_up_origin = Vector2i(-1, -1)
+	s.flags["HangUpProhibited"] = prohibited
+	_check("t119.entry_hangup", got[0][1] and got[0][3] == "misfire", got)
+	_check("t119.entry_auto", got[1][2] and got[1][3] == "misfire", got)
+	_check("t119.entry_same", got.all(func(g): return g[3] == "misfire" and g[4] == got[0][4] and g[4] >= 0), got)
+	# 同一回合 decide、run_turn 走的也是它（自动战斗的专属出手、智能 AI 都在它后面）
+	var lg2 := _fit_logic(s)
+	var a2 := _fit_at(lg2, 0, 0)
+	lg2.auto = true
+	var d := lg2.decide(a2)
+	_check("t119.entry_decide", str(d[0].get(XTianqiBrand.FIT_KEY, "")) == "daze", d)
+	lg2.end_battle()
+
+
+## 同种子可复现：同一个种子开两场满烙印的战斗，各跑 12 回合（run_turn，角色不给指令＝普攻），发作记录和双方血量逐项一样
+func _t119_seed() -> void:
+	var runs := []
+	for i in 2:
+		var s := _state()
+		for x in s.battle_members():
+			_setb(x, 10000, 6)
+			x.recover_all()
+		var lg := XBattleLogic.new()
+		lg.setup(1, s, XBattleRandom.create(XRandomStream.hex64(20261117)))
+		XTianqiBrand.fight(lg)["ripe"] = false
+		for e in lg.enemies:
+			var p: Array = (e as XEnemy).data().params.duplicate()
+			p[0] = float(p[0]) + 1000000.0
+			(e as XEnemy).zq_ref = {"p": p, "k": 1}
+			e.param_mark_dirty()
+			e.param_refresh()
+			e.hp = e.mhp
+		var hps := []
+		for t in 12:
+			if lg.is_over():
+				break
+			lg.run_turn({})
+			hps.append((lg.actors + lg.enemies).map(func(x): return x.hp))
+		runs.append([XTianqiBrand.fight(lg).fit_log.duplicate(true), hps])
+		lg.end_battle()
+	_check("t119.seed_same", runs[0][0] == runs[1][0] and runs[0][1] == runs[1][1], [runs[0][0].size(), runs[1][0].size()])
+	_check("t119.seed_fits_happen", runs[0][0].size() >= 3, runs[0][0])
+
+
+## 开关关着：不认这一场，不掷、不拦、不破防
+func _t119_off() -> void:
+	var s := _state()
+	var lg := _cost_logic(s)
+	var a: XActor = lg.actors[0]
+	_setb(a, 10000, 6)
+	var fs := FixStream.new()
+	fs.domain = "rule"
+	fs.floats["brand_fit"] = 0.0
+	lg.random.rule = fs
+	var logs := XTianqiBrand.start_turn(lg)
+	_check("t119.off", logs.is_empty() and fs.reasons.get("brand_fit", 0) == 0 and lg.brand_forced(a).is_empty() and XTianqiBrand.taken_mult(a) == 1.0
+		and XTianqiBrand.trigger(lg, a)[0] == "", fs.reasons)
+	lg.end_battle()
+
+
+## 第十一节第 9 步的无界面那一半：自动战斗连打同一只守层者 n 场（先生 n/4 场、再熟 n 场，各自换种子），满烙印全队，
+## 每场最多 30 回合。不卡死（每场都结束或打满回合）、熟的场次里没有抽自己／六亲不认／断片、发作都在保护之内（同回合 ≤ 2 人、同一人间隔 ≥ 3）。
+## 默认 40 场（专项里跑）；--t119-stress=1000 手动跑满稿里的 1000 场
+func _t119_stress(n: int) -> void:
+	var s := _state()
+	var fl := XTianqiBrand._firsts_rw(s)
+	var bad := []
+	var fits := {"raw": 0, "ripe": 0}
+	var kinds := {}
+	var turns := 0
+	for phase in ["raw", "ripe"]:
+		var count := maxi(1, n / 4) if phase == "raw" else n
+		for i in count:
+			if phase == "raw":
+				fl.erase("guardian:6")
+			else:
+				fl["guardian:6"] = 1
+			for x in s.battle_members():
+				_setb(x, 10000, 6)
+				x.recover_all()
+			var lg := XBattleLogic.new()
+			lg.setup(39, s, XBattleRandom.create(XRandomStream.hex64(7000 + i + (100000 if phase == "ripe" else 0))))
+			lg.auto = true
+			var c := XTianqiBrand.fight(lg)
+			if bool(c.ripe) != (phase == "ripe"):
+				bad.append([phase, i, "ripe", c.ripe])
+			var t := 0
+			while not lg.is_over() and t < 30:
+				lg.run_turn({})
+				t += 1
+			turns += t
+			var per := {}
+			var last := {}
+			for r in c.get("fit_log", []):
+				fits[phase] += 1
+				kinds[r.kind] = int(kinds.get(r.kind, 0)) + 1
+				per[int(r.turn)] = int(per.get(int(r.turn), 0)) + 1
+				if phase == "ripe" and str(r.kind) in ["hit_self", "hit_ally", "blackout"]:
+					bad.append([phase, i, "ripe_kind", r])
+				if last.has(r.actor) and int(r.turn) - int(last[r.actor]) < 3:
+					bad.append([phase, i, "gap", r])
+				last[r.actor] = int(r.turn) + (1 if str(r.kind) == "blackout" else 0)
+				if phase == "ripe" and int(r.turn) <= 3:
+					bad.append([phase, i, "ripe_open", r])
+				if phase == "raw" and int(r.turn) <= 1:
+					bad.append([phase, i, "raw_open", r])
+			if per.values().any(func(v): return v > 2):
+				bad.append([phase, i, "per_round", per])
+			lg.end_battle()
+	fl.erase("guardian:6")
+	print("T119_STRESS ", JSON.stringify({"battles": n + maxi(1, n / 4), "turns": turns, "fits": fits, "kinds": kinds, "bad": bad.size()}))
+	_check("t119.stress", bad.is_empty() and fits.raw + fits.ripe > 0, bad.slice(0, 5))

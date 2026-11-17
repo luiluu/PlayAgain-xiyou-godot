@@ -337,6 +337,21 @@ func _relic_effects() -> void:
 		and b.param(3) > def0 * 1.3, [def0, b.param(3)])
 	lg.turn = 1
 	_check("plague_taunt", XTianqiRewards.filter_targets(lg, e, [a, b, c]) == [b])
+	# T119（T118 小A P3①）：敌人单体随机（scope 1，先抽好了别人）也换成嘲讽的人；真走 targets_for 抽 30 次全是他；敌人给自己人放的不动
+	_check("plague_taunt_single", XTianqiRewards.filter_targets(lg, e, [a]) == [b] and XTianqiRewards.filter_targets(lg, e, [e]) == [e])
+	var single_all := true
+	for i in 30:
+		single_all = single_all and lg.targets_for(e, e.attack_skill()) == [b]
+	_check("plague_taunt_single_real", single_all)
+	# T119 返修（小A P2）：随机 N 体（scope 3～6）保留段数，每段都打嘲讽的人；全体照旧一下
+	var rnd := e.attack_skill().duplicate(true)
+	rnd["scope"] = 5  # 随机 3 体
+	_check("plague_taunt_random_keep", XTianqiRewards.filter_targets(lg, e, [a, c, a], rnd) == [b, b, b]
+		and XTianqiRewards.filter_targets(lg, e, [a, b, c], {"scope": 2}) == [b])
+	var rnd_all := true
+	for i in 20:
+		rnd_all = rnd_all and lg.targets_for(e, rnd) == [b, b, b]
+	_check("plague_taunt_random_real", rnd_all, lg.targets_for(e, rnd))
 	lg.turn = 2
 	_check("plague_taunt_ends", XTianqiRewards.filter_targets(lg, e, [a, b, c]).size() == 3)
 	# 卷子：受到的回复 −33%；技能击倒攒资历，10 层全属性 +3%

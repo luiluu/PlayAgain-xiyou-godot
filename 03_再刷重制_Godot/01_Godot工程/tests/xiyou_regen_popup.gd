@@ -5,8 +5,13 @@ var passed := 0
 var total := 0
 
 class QuietBattle extends XBattleScene:
+	var seq_popups := 0  # 序列播放器在演时出的弹字（T119 返修专项看序列有没有真演）
 	func _main() -> void:
 		pass
+	func _popup(b: XBattler, value: float, critical: bool, text := "", is_mp := false, is_tp := false) -> void:
+		if seq_player != null:
+			seq_popups += 1
+		super(b, value, critical, text, is_mp, is_tp)
 
 func check(tag: String, ok: bool, detail = null) -> void:
 	total += 1
@@ -109,6 +114,25 @@ func _run() -> void:
 	logs = []
 	XAlienBattle._lose_hp(live.logic, e, 10.0, logs)
 	await expect("alien", live, logs, "hp", 10.0)
+
+	# T119 返修（小A P1）：烧命 regen 在「行动」之前时，带 yepSeq 的技能照样交给 XSequencePlayer（命中弹字照出）；
+	# 夹在「行动」与 seq_phase 之间（返修前的次序）就掉进非序列分支，seq_* 全丢、只剩烧命一个弹字
+	e.hp = mhp
+	var a: XActor = live.logic.actors[0]
+	var act_logs := live.logic.act(a, a.attack_skill(), e)
+	var ai := act_logs.find(act_logs.filter(func(l): return l.type == "action").front())
+	check("burn_seq.has_seq", XActionSequence.has_sequence(a.attack_skill()) and ai >= 0 and act_logs.slice(ai + 1).any(func(l): return l.type == "seq_phase"))
+	var burn := {"type": "regen", "target": a, "hp": 7.0, "views": live.logic.views([a])}
+	var fixed := act_logs.duplicate()
+	fixed.insert(ai, burn)
+	live.seq_popups = 0
+	await popups_after(live, fixed)
+	var seq_fixed := live.seq_popups
+	var broken := act_logs.duplicate()
+	broken.insert(ai + 1, burn)
+	live.seq_popups = 0
+	await popups_after(live, broken)
+	check("burn_seq.plays", seq_fixed >= 1 and live.seq_popups == 0, [seq_fixed, live.seq_popups])
 
 	live.logic.end_battle()
 	live.queue_free()

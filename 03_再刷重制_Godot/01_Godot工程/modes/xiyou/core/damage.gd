@@ -330,6 +330,8 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var guard := 1.0 if kind == "true" else (1.0 / (2.0 * b.grd) if b.is_guard() else 1.0)
 	var growth := maxf(0.0, frame.growthMultiplier)
 	var tianqi := XTianqiCombat.damage_mult(a, b)  # 天启篇档位出伤／承伤、弱者协力、助力位光环（独立乘区，只乘一次；原版档恒 1）
+	if dmg_type in [1, 5]:
+		tianqi *= XTianqiBrand.taken_mult(b)  # 天启篇烙印发作「破防」：这一回合和下一回合受到的生命伤害 ×1.3（只生命伤害、吸取；开关关着恒 1）
 	var tq_elem := XTianqiElements.deck_on() and b is XEnemy
 	var conv_e := 0 if (explicit != null or frame.noElement) else conversion_id(item, a)
 	var orig_list := originals if not originals.is_empty() else ([] if explicit != null or frame.noElement else original_elements(item, a))
