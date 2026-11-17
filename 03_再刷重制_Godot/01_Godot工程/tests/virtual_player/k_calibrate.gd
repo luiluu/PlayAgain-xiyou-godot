@@ -207,9 +207,10 @@ func _state(id: int) -> XState:
 static func _advance_max(s: XState, a: XActor) -> void:
 	s.gain_gold(999999999)
 	if XGarou.own(a):
-		s.garou["breakthroughs"] = 999
 		s.gain_item(XGarou.CATALYST, 1)
 	for _n in 12:
+		if XGarou.own(a):
+			s.garou["breakthroughs"] = 999  # 每次进阶后 XGarou.sync 会把累计突破夹到当前门槛，下一阶要重新给够（不然停在 2 阶）
 		var r = XAdvance.row(s, int(a.actor_id))
 		if r != null:
 			for p in r.items:
@@ -308,16 +309,45 @@ func _measure(id: int, tier: String) -> Dictionary:
 	e.param_mark_dirty()
 	if XTianqiElements.enemy_profile(e, logic, s).get("source", "") != "":
 		push_error("K 木桩 %d 不是元素中性（%s）" % [int(e.enemy_id), XTianqiElements.enemy_profile(e, logic, s)])
-	var best := _scan(a, e, logic, a.skill_ids, cap)
+	var sids := _scan_ids(a)
+	var best := _scan(a, e, logic, sids, cap)
 	if not bare and not best.is_empty():
 		best["affixes"] = _affix_greedy(a, e, logic, int(best.skill))  # 词条按「这一下最大」挑、掷满（极、四阶），挑完全部技能重量一遍
-		var again := _scan(a, e, logic, a.skill_ids, cap)
+		var again := _scan(a, e, logic, sids, cap)
 		if not again.is_empty():
 			again["affixes"] = best.affixes
 			best = again
 		best["build"] = _build_desc(a)
 	logic.end_battle(0)
 	return best
+
+
+## 要量的技能：自己学会的；176 屠苏另加武装技能（持武者施放，XTusu.apply_subject 让整次结算以屠苏为出手者、按屠苏的属性，
+## 卡面写「屠苏属性」——是屠苏的输出，单人木桩上没有持武者，直接让屠苏打，T163）
+static func _scan_ids(a) -> Array:
+	var ids: Array = a.skill_ids.duplicate()
+	if XTusu.is_tusu(a):
+		for w in XTusu.ARM_OF:
+			for k in XTusu.ARM_OF[w]:
+				var sid := XTusu.skill_id(str(k))
+				if sid > 0 and not ids.has(sid):
+					ids.append(sid)
+	return ids
+
+
+## 172 宿傩终式：主技能（解／捌／伏魔御厨子）打看破三层的目标时转空间斩 9.0／次元斩 10.8（XSukuna.tq_ops 乘在 finalMultiplier 上，
+## 不经过 formula 的单段上限）。木桩挂满三层、按游戏的 _new_cast 建施放帧；返回终式对卡面系数的倍数（没转 1.0）
+static func _sukuna_terminal(logic, a, e, sid: int) -> float:
+	XSukuna.cast = {}
+	if not XSukuna.own(a) or not XSukuna.PRIMARY.has(sid):
+		return 1.0
+	XSukuna._layers(logic, e, 3)
+	XSukuna.cast = XSukuna._new_cast(a, sid, e)
+	var t := int(XSukuna.cast.get("terminal", 0))
+	if t == 0:
+		XSukuna.cast = {}
+		return 1.0
+	return float(XSukuna.TQ_TERMINAL.get(t, 9.0)) / maxf(0.01, float(XTianqiSkills.spec(sid).get("damage", {}).get("coef", 1.0)))
 
 
 ## 一组技能各打 hits 次，取峰值最大的那一行
@@ -343,6 +373,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			a.mp = a.mmp
 			a.tp = a.max_tp()
 			_prime(logic, a, e, sk)
+			var term := _sukuna_terminal(logic, a, e, int(sid))
 			XStateEffects.force_critical = true
 			var v0 := absf(XTianqiSkills.formula(a, e, sk))
 			if debug and n == 0:
@@ -364,6 +395,11 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			var r: Dictionary = logic.apply(a, sk, e)
 			var dealt := float(r.get("shown", {}).get("hp", r.get("hp", 0.0)))  # 跳出来的那一个数（木桩生命有上限，不能用掉血量）
 			XStateEffects.force_critical = false
+			XSukuna.cast = {}
+			if term != 1.0 and cap > 0.0:
+				# 终式倍数乘在单段上限后面：按「条件全中×终式」再封一次上限折回（报告 term、term_capped 两个数都留）
+				var ef := eff_full(id, int(sid))
+				dealt *= minf(ef * term, cap) / (minf(ef, cap) * term)
 			if v0 <= 0.0 or dealt <= 0.0:
 				if per_skill and n == 0:
 					print("K_SKILL %d %d skip=zero v0=%s dealt=%s" % [id, int(sid), v0, dealt])
@@ -376,7 +412,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 				print("K_SKILL %d %d peak=%d dealt=%d eff=%s" % [id, int(sid), roundf(peak), dealt, eff_full(id, int(sid))])
 			if best.is_empty() or peak > float(best.peak):
 				best = {"actor": id, "skill": int(sid), "dealt": dealt, "v0": v0, "v_full": v_full, "eff_full": eff_full(id, int(sid)),
-					"cap": cap, "peak": roundf(peak), "formula": str(sk.get("damage", {}).get("formula", "")).left(60), "repeats": int(sk.get("repeats", 1)), "atk": a.param(2), "mat": a.param(4), "mhp": a.mhp}
+					"cap": cap, "peak": roundf(peak), "terminal": term, "formula": str(sk.get("damage", {}).get("formula", "")).left(60), "repeats": int(sk.get("repeats", 1)), "atk": a.param(2), "mat": a.param(4), "mhp": a.mhp}
 	return best
 
 
