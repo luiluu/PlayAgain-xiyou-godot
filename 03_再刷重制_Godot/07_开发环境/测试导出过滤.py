@@ -86,12 +86,42 @@ with tempfile.TemporaryDirectory() as td:
         'stub_text.pck': ({'res://modes/xiyou/core/guardian_rework.gd': b'const _RELEASE_STUB := "' + _tag + b'"'}, []),
         'text_real.pck': ({'res://modes/xiyou/core/guardian_rework.gd': b'class_name XGuardianRework'},
                           ['modes/xiyou/core/guardian_rework.gd：不是发行空壳（天启篇真脚本进包了）']),
+        # T109：text_fix/rules.json 带 tianqi_dict／说明字段要拦，剔干净的放行
+        'rules_bad.pck': ({'res://modes/xiyou/text_fix/rules.json': b'{"dict": [], "tianqi_dict": [{"from": "a", "to": "b"}]}'},
+                          ['modes/xiyou/text_fix/rules.json：带 tianqi_dict（天启篇改名词典进包了）']),
+        'rules_note.pck': ({'res://modes/xiyou/text_fix/rules.json': '{"_说明": "x", "dict": []}'.encode()},
+                           ['modes/xiyou/text_fix/rules.json：带注释字段 _说明']),
+        'rules_ok.pck': ({'res://modes/xiyou/text_fix/rules.json': b'{"dict": [{"from": "a", "to": "b"}], "trad": {}}'}, []),
     }
     for f, (files, want) in cases.items():
         (Path(td) / f).write_bytes(_fake_pck_files(files))
         got = 审计.audit(Path(td) / f)
         if got != want:
             problems.append(f'发行内容审计查空壳 {f} 不对：{got}')
+# T109：发行克隆的 rules.json 剔掉 tianqi_dict 与注释字段，西游档 dict／trad／namebox_skip 原样
+import json as _json
+_spec = importlib.util.spec_from_file_location('发行空壳', Path(__file__).resolve().parent / '发行空壳.py')
+_K = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_K)
+_real = _json.loads((_K.PROJECT / _K.RULES_REL).read_text(encoding='utf-8'))
+_clean = _K.scrub_rules_data(_real)
+if 'tianqi_dict' in _clean or not _real.get('tianqi_dict'):
+    problems.append('scrub_rules_data 没剔掉 tianqi_dict（或真表本来就是空，回归失效）')
+for _k in ('dict', 'trad', 'namebox_skip'):
+    _a = _K.scrub_rules_data({_k: _real.get(_k)})[_k]
+    if _clean.get(_k) != _a or not _a:
+        problems.append(f'西游档 {_k} 被改动或为空')
+if len(_clean['dict']) != len(_real['dict']):
+    problems.append('西游档 dict 条数变了')
+_txt = _json.dumps(_clean, ensure_ascii=False)
+for _w in ('晨星币', '霸主', '见证使者', '远古首领', 'D126'):
+    if _w in _txt:
+        problems.append(f'发行 rules.json 仍含 {_w}')
+with tempfile.TemporaryDirectory() as td:
+    (Path(td) / _K.RULES_REL).parent.mkdir(parents=True)
+    (Path(td) / _K.RULES_REL).write_text(_json.dumps(_real, ensure_ascii=False), encoding='utf-8')
+    if not _K.scrub_rules(Path(td)) or 'tianqi_dict' in _json.loads((Path(td) / _K.RULES_REL).read_text(encoding='utf-8')):
+        problems.append('scrub_rules 落盘后仍带 tianqi_dict')
 problems += [f'缺少导出预设「{n}」' for n in PRESETS if n not in seen]
 
 for p in problems:
