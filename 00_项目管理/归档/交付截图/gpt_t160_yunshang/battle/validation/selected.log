@@ -1,0 +1,11 @@
+  · xiyou_actor_book 只按全名选 1 个；另有 2 个同前缀场景没选（xiyou_actor_book_compare.tscn、xiyou_actor_book_review.tscn 等），要它们写成「xiyou_actor_book*」
+  · xiyou_event_compare 只按全名选 1 个；另有 3 个同前缀场景没选（xiyou_event_compare_b.tscn、xiyou_event_compare_c.tscn 等），要它们写成「xiyou_event_compare*」
+  ✓ xiyou_actor_book.tscn {"passed":28,"total":28}
+  ✓ xiyou_actor_looks.tscn {"passed":35,"total":35}
+  ✓ xiyou_appearance.tscn {"passed":34,"total":34}
+  ✓ xiyou_costumes.tscn {"passed":27,"total":27}
+  ✓ xiyou_event_compare.tscn {"passed":14,"total":14}
+  ✓ xiyou_guyu_art.tscn {"passed":171,"total":171}
+  · 测试用时 110 秒（并行 2，共用上限 4）
+  · 最慢 6 个场景：xiyou_event_compare 110秒、xiyou_actor_book 51秒、xiyou_appearance 6秒、xiyou_costumes 6秒、xiyou_actor_looks 5秒、xiyou_guyu_art 5秒
+  · 日志：/tmp/t160-tests

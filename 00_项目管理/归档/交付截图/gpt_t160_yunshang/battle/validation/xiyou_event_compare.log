@@ -1,0 +1,5 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+EVENT_SKIPPED {"cases":9,"keys":69,"new":0,"noLongerSkipped":0}
+EVENT_COMPARE {"cases":7665,"match":7664,"mismatch":1,"nowMatching":[],"oracleErrors":[],"regressions":[]}
+TEST_RESULT={"passed":14,"total":14}

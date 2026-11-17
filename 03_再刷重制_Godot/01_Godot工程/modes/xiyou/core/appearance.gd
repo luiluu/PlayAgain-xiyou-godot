@@ -289,7 +289,9 @@ static func profile(f: Dictionary, motion: String) -> Dictionary:
 	if key == "Guyu_v2":
 		return {"size": Vector2(64,64), "bounds": Rect2(9,4,44,60), "multi": false, "scale": 1.0, "native_pixels": true}
 	if key == "Yunshang_u2":
-		return {"size": Vector2(64,64), "bounds": Rect2(13,2,38,60), "multi": false, "scale": 1.0, "native_pixels": true}
+		# v9 新图脚底 end.y=64（u2 旧图 62），按贴图路径单列，免得影子相对脚底低 2px。
+		var v9 := (f.tex as Texture2D).resource_path.ends_with("/yunshang_v9/Yunshang_SV_v9.png")
+		return {"size": Vector2(64,64), "bounds": Rect2(13,2,38,62 if v9 else 60), "multi": false, "scale": 1.0, "native_pixels": true}
 	var multi := not (f.get("rect", Rect2()) as Rect2).has_area()
 	var p: Array = profile_of(key)
 	if p.is_empty():
@@ -339,7 +341,7 @@ func _single(t: Texture2D) -> void:
 func _mv_sheet(t: Texture2D, asset := "") -> void:
 	if t != null and t.resource_path.ends_with("/guyu_v2/Guyu_SV_v2.png"):
 		asset = "Guyu_v2"
-	if t != null and t.resource_path.ends_with("/u2/Yunshang_SV_u2.png"):
+	if t != null and (t.resource_path.ends_with("/u2/Yunshang_SV_u2.png") or t.resource_path.ends_with("/yunshang_v9/Yunshang_SV_v9.png")):
 		asset = "Yunshang_u2"
 	sideview = true
 	if t == null:

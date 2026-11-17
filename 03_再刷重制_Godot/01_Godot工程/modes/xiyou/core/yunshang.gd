@@ -3,9 +3,22 @@ extends RefCounted
 
 ## 174 云裳 D164：原生像素美术可回退开关，缺文件仍走旧资源。
 static var ART := true
+static var RESKIN := true
+
+static func reskin_path(folder: String, name: String, available := true) -> String:
+	if not RESKIN or not available:
+		return ""
+	var files := {"characters/$Yunshang": "$Yunshang_v9", "sv_actors/Yunshang": "Yunshang_SV_v9"}
+	var file := str(files.get(folder + "/" + name, ""))
+	var path := "res://content/yunshang_v9/%s.png" % file
+	return path if file != "" and ResourceLoader.exists(path) else ""
+
 static func art_path(folder: String, name: String) -> String:
 	if not ART:
 		return ""
+	var fresh := reskin_path(folder, name)
+	if fresh != "":
+		return fresh
 	var files := {"characters/$Yunshang": "u2/$Yunshang_u2", "sv_actors/Yunshang": "u2/Yunshang_SV_u2", "faces/Yunshang": "Yunshang_Face_u1"}
 	var file := str(files.get(folder + "/" + name, ""))
 	var path := "res://content/yunshang_v2/%s.png" % file
