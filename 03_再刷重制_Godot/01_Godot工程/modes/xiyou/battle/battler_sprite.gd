@@ -171,14 +171,32 @@ static func _load(folder: String, name: String) -> Texture2D:
 ## Game_Actor.spriteWidth／spriteHeight：有归一档时按可见范围（选择光标、状态图标跟着看得见的身体），浮空另加高
 func width() -> float:
 	if not _profile.is_empty():
-		return _profile.bounds.size.x * _profile.scale
+		return _profile.bounds.size.x * _profile.scale * _layout_mul()
 	return (look.cell.x if look.cell.x > 0 else 64.0) * body_scale
 
 
 func height() -> float:
 	if not _profile.is_empty():
-		return _profile.bounds.size.y * _profile.scale + maxf(0.0, -_float_px)
+		return _profile.bounds.size.y * _profile.scale * _layout_mul() + maxf(0.0, -_float_px)
 	return (look.cell.y if look.cell.y > 0 else 64.0) * body_scale
+
+
+## T126 站位放大（XBattleLayout）：归一档角色（167 号起）的缩放不读 _base_scale，另乘战斗场景给的放大倍数（setup 前设 layout_mul）
+var layout_mul := 1.0
+
+
+func _layout_mul() -> float:
+	return layout_mul
+
+
+## T126：setup 之后整体再放大 f 倍（敌人按显示高封顶，要先知道原版大小）
+func rescale(f: float) -> void:
+	if is_equal_approx(f, 1.0):
+		return
+	layout_mul *= f
+	_base_scale *= f
+	body_scale *= f
+	_apply_scale()
 
 
 func _set_flip(f: bool) -> void:
@@ -468,7 +486,7 @@ func _show_frame(f: Dictionary) -> void:
 		body.region_rect = r
 	_frame_h = r.size.y if r.has_area() else float((f.tex as Texture2D).get_height())
 	_profile = XAppearance.profile(f, motion) if battler is XActor and int((battler as XActor).actor_id) >= 167 else {}
-	body_scale = (_profile.scale if not _profile.is_empty() else _base_scale) * look.scale * fd
+	body_scale = (_profile.scale * _layout_mul() if not _profile.is_empty() else _base_scale) * look.scale * fd
 	_apply_scale()
 	_apply_smooth()
 	if weapon and _profile.get("multi", false):

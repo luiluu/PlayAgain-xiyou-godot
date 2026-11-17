@@ -460,18 +460,21 @@ static func party_layout(n: int, sprite_h := 72.0, sprite_w := 72.0) -> Array:
 
 
 func _place_battlers() -> void:
+	_enemy_fit = XBattleLayout.enemy_fit(logic.enemies.map(func(e): return enemy_src_home(e)))  # T126 敌群撑开（整场同一变换）
 	for e in logic.enemies:
 		_make_enemy_sprite(e)
 		_make_enemy_gauge(e)
 		_set_enemy_shown(e)
 	# 战斗站位（XPartyFormation，设置页「战斗站位」）：编队第 k 位站阵型第 k 个点；原版竖排＝party_layout
 	var points := XPartyFormation.points(XPartyFormation.current(), logic.actors.size())
+	points = XBattleLayout.actor_points(points)  # T126 站位撑开（XBattleLayout，回退 ENABLED＝false）
 	var mine := []
 	for i in range(logic.actors.size()):
 		var a: XActor = logic.actors[i]
 		var s := XBattlerSprite.new()
 		field.add_child(s)
-		s.setup(a, ACTOR_SCALE)
+		s.layout_mul = XBattleLayout.actor_mul()
+		s.setup(a, ACTOR_SCALE * s.layout_mul)
 		s.home = points[i]
 		s.position = s.home + Vector2(300, 0)
 		sprites[a] = s
@@ -491,18 +494,27 @@ func _sort_actor_sprites(mine: Array) -> void:
 
 
 
+var _enemy_fit := {}
+
+
+## 敌人原版脚底：敌群编辑器坐标；YEP_CoreEngine Reposition Battlers：侧视时 y 加 (画面高 − 624) / 2
+func enemy_src_home(e: XEnemy) -> Vector2:
+	return Vector2(float(e.get_meta("x")), float(e.get_meta("y")) + floorf((BOX.y - 624.0) / 2.0))
+
+
 ## YEP_X_VisualHpGauge：宽 max(180, 图宽)、高 12，底色 19、渐变 20→21，显示当前 HP 数值。
 func _make_enemy_sprite(e: XEnemy) -> void:
 	var s := XBattlerSprite.new()
 	field.add_child(s)
 	s.setup(e, ELITE_SCALE if e.elite else 1.0)
+	var solo := logic.enemies.size() == 1  # T126：一名成员的敌群（首领战）站首领点、另放大
+	s.rescale(XBattleLayout.enemy_factor(s.height(), solo))
 	var br := XSvEnemy.breathing(e)  # 呼吸只给该给的敌人：非 SV 默认呼吸，SV 默认不呼吸；周期读备注（见 XSvEnemy）
 	s.breathing = br.on
 	s.breath_speed = br.speed
 	s.breath_rx = br.rx
 	s.breath_ry = br.ry
-	# YEP_CoreEngine Reposition Battlers：侧视时敌人 y 加 (画面高 − 624) / 2
-	s.home = Vector2(float(e.get_meta("x")), float(e.get_meta("y")) + floorf((BOX.y - 624.0) / 2.0))
+	s.home = XBattleLayout.enemy_home(enemy_src_home(e), _enemy_fit, solo)  # T126 站位撑开（关着＝原版坐标）
 	s.position = s.home
 	s.appeared = e.is_alive()  # Sprite_Enemy.initVisibility
 	sprites[e] = s
@@ -551,6 +563,12 @@ func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 		c.text(e.display_name(), 0, 0, 640, "center", color, 18, 36, name_alpha)
 		XEnemyStateIcon.paint(c, g.icons, c.text_width(e.display_name(), XEnemyStateIcon.NAME_SIZE), name_alpha)  # 名字右边的状态图标（ui12）
 	if not XBossHpBar.small_gauge_visible(e):  # YEP_X_VisualHpGauge：<HIDE HP GAUGE> 的敌人血条一直不出现（选中也不出）
+		return
+	if XSkinEnemyHp.on() and not (boss_hp != null and boss_hp.is_meter(e)):  # T126 新界面小怪血条（糖果粉细条，一直显示；首领有顶上血弧不画）
+		if not v.dead:
+			var sp: XBattlerSprite = sprites[e]
+			XSkinEnemyHp.paint(c, 320.0, XSkinEnemyHp.bar_top(sp.height()), XSkinEnemyHp.bar_width(sp.width()),
+				v.hp / maxf(v.mhp, 1.0), g.disp / maxf(v.mhp, 1.0))
 		return
 	if g.timer <= 0.0 and g.disp == g.cur and not (_target_mode == "enemy" and e == _hover):
 		return
@@ -1208,7 +1226,8 @@ func _tianqi_swap(out: XActor) -> void:
 	var s := XBattlerSprite.new()
 	field.add_child(s)
 	field.move_child(s, old.get_index())  # 换上的人接替原来的绘制次序（站位交错时靠下的要画在上面）
-	s.setup(h, ACTOR_SCALE)
+	s.layout_mul = XBattleLayout.actor_mul()
+	s.setup(h, ACTOR_SCALE * s.layout_mul)
 	s.home = old.home
 	s.position = old.home
 	sprites.erase(out)
