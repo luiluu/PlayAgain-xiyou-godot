@@ -560,6 +560,8 @@ static func sprite_spec(id: int) -> Dictionary:
 		return {"path": mp_u2, "key": "Codex_Mira_SV_u2", "multi": false, "name": "Codex_Mira_SV_u2"} if mp_u2 != "" else {}
 	elif id == XGuyu.ACTOR and name == "Guyu" and XGuyu.art_path("sv_actors", "Guyu") != "":
 		return {"path": XGuyu.art_path("sv_actors", "Guyu"), "key": "Guyu_v2", "multi": false, "name": "Guyu_v2"}
+	elif id == XTusu.ACTOR and name == "Codex_Tusu_SV_v1" and XTusu.art_path("sv_actors", name) != "":
+		return {"path": XTusu.art_path("sv_actors", name), "key": "Tusu_v2", "multi": false, "name": "Tusu_v2"}
 	elif id == 174 and name == "Yunshang" and XYunshang.art_path("sv_actors", "Yunshang") != "":
 		return {"path": XYunshang.art_path("sv_actors", "Yunshang"), "key": "Yunshang_u2", "multi": false, "name": "Yunshang_u2"}
 	elif BOOK_MULTI.has(id) and (BOOK_MULTI[id][0] == "" or name == BOOK_MULTI[id][0]):
@@ -583,6 +585,8 @@ static func book_scale(key: String) -> float:
 
 ## 状态窗立绘要不要线性取样：只在 BOOK_NATIVE_SMOOTH 打开、且是原版无档的原生侧视图时（同 sprite_rect 的「原生」支）
 static func native_smooth(id: int, spec: Dictionary) -> bool:
+	if str(spec.get("key", "")) == "Tusu_v2":
+		return false
 	return str(spec.get("key", "")) not in ["Yunshang_u2", "Guyu_v2"] and BOOK_NATIVE_SMOOTH and (id < 167 or not XAppearance.PROFILES.has(str(spec.get("key", ""))))
 
 

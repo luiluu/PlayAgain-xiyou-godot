@@ -114,6 +114,8 @@ static func for_look(a: XActor, key: String) -> XAppearance:
 					states.append(st.get("meta", {}))
 	if name == "Guyu" and XGuyu.art_path("sv_actors", name) != "":
 		return for_image("sv_actors/" + name, XCostumes.strip_sv(meta), states)
+	if name == "Codex_Tusu_SV_v1" and art == "" and XTusu.art_path("sv_actors", name) != "":
+		return for_image("sv_actors/" + name, XCostumes.strip_sv(meta), states)
 	if name == "Yunshang" and XYunshang.art_path("sv_actors", name) != "":
 		return for_image("sv_actors/" + name, XCostumes.strip_sv(meta), states)
 	if form == "MiraHuman_u2" or (form == "MiraHuman" and XMira.ART):
@@ -288,6 +290,8 @@ static func profile(f: Dictionary, motion: String) -> Dictionary:
 	# 新图只在实际加载原生64格图时用1:1；旧图继续旧归一。
 	if key == "Guyu_v2":
 		return {"size": Vector2(64,64), "bounds": Rect2(9,4,44,60), "multi": false, "scale": 1.0, "native_pixels": true}
+	if key == "Tusu_v2":
+		return {"size": Vector2(64,64), "bounds": Rect2(9,4,44,60), "multi": false, "scale": 1.0, "native_pixels": true}
 	if key == "Yunshang_u2":
 		return {"size": Vector2(64,64), "bounds": Rect2(13,2,38,60), "multi": false, "scale": 1.0, "native_pixels": true}
 	var multi := not (f.get("rect", Rect2()) as Rect2).has_area()
@@ -339,6 +343,8 @@ func _single(t: Texture2D) -> void:
 func _mv_sheet(t: Texture2D, asset := "") -> void:
 	if t != null and t.resource_path.ends_with("/guyu_v2/Guyu_SV_v2.png"):
 		asset = "Guyu_v2"
+	if t != null and t.resource_path.ends_with("/tusu_v2/Tusu_SV_v2.png"):
+		asset = "Tusu_v2"
 	if t != null and t.resource_path.ends_with("/u2/Yunshang_SV_u2.png"):
 		asset = "Yunshang_u2"
 	sideview = true

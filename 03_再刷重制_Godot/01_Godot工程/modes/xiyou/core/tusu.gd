@@ -1,5 +1,15 @@
 class_name XTusu
 extends RefCounted
+## T161：屠苏人形原生像素图；开关关闭／资源缺失回退旧图，化武仍走原逐帧。
+static var ART := true
+static func art_path(folder: String, name: String) -> String:
+	if not ART:
+		return ""
+	var files := {"characters/$Codex_Tusu_v4_HD": "$Tusu_v2", "sv_actors/Codex_Tusu_SV_v1": "Tusu_SV_v2"}
+	var file := str(files.get(folder + "/" + name, ""))
+	var path := "res://content/tusu_v2/%s.png" % file
+	return path if file != "" and ResourceLoader.exists(path) else ""
+
 ## 【cc·白龙_14·未经审查】176 屠苏第三期（正式 js/codex/runtime/installNativeTusuRuntime.js，W.CodexTusu 0.4.1）：五相武具的战斗内骨架。
 ## - 武具数据（a._codexTusu，战斗内）：weapon 当前武相、reserve 预约（下个自然回合换）、pending 化武选的武相、host_actions 持武者本回合行动次数；
 ##   上次武相 _codexTusuLast 记在角色上、跨战斗（重制存 s.flags）。
