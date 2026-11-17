@@ -5,7 +5,13 @@
     "scale": 0.18018018018018017,
     "native_cat_height": 40,
     "native_width_with_sword": 36,
-    "baseline": 60
+    "baseline": 60,
+    "source_head_width": 121,
+    "native_head_width": 22,
+    "native_head_top": 20,
+    "native_chin_bottom": 40,
+    "native_head_height": 21,
+    "height_method": "manual ear-tip to chin; excludes collar"
   },
   {
     "frame": 1,
@@ -13,7 +19,13 @@
     "scale": 0.18018018018018017,
     "native_cat_height": 39,
     "native_width_with_sword": 37,
-    "baseline": 60
+    "baseline": 60,
+    "source_head_width": 118,
+    "native_head_width": 21,
+    "native_head_top": 21,
+    "native_chin_bottom": 41,
+    "native_head_height": 21,
+    "height_method": "manual ear-tip to chin; excludes collar"
   },
   {
     "frame": 2,
@@ -21,7 +33,13 @@
     "scale": 0.18018018018018017,
     "native_cat_height": 39,
     "native_width_with_sword": 38,
-    "baseline": 60
+    "baseline": 60,
+    "source_head_width": 117,
+    "native_head_width": 21,
+    "native_head_top": 21,
+    "native_chin_bottom": 41,
+    "native_head_height": 21,
+    "height_method": "manual ear-tip to chin; excludes collar"
   },
   {
     "frame": 3,
@@ -29,7 +47,13 @@
     "scale": 0.18018018018018017,
     "native_cat_height": 38,
     "native_width_with_sword": 45,
-    "baseline": 60
+    "baseline": 60,
+    "source_head_width": 120,
+    "native_head_width": 22,
+    "native_head_top": 22,
+    "native_chin_bottom": 42,
+    "native_head_height": 21,
+    "height_method": "manual ear-tip to chin; excludes collar"
   },
   {
     "frame": 4,
@@ -37,7 +61,13 @@
     "scale": 0.18018018018018017,
     "native_cat_height": 37,
     "native_width_with_sword": 52,
-    "baseline": 60
+    "baseline": 60,
+    "source_head_width": 121,
+    "native_head_width": 22,
+    "native_head_top": 23,
+    "native_chin_bottom": 42,
+    "native_head_height": 20,
+    "height_method": "manual ear-tip to chin; excludes collar"
   },
   {
     "frame": 5,
@@ -45,7 +75,13 @@
     "scale": 0.18018018018018017,
     "native_cat_height": 37,
     "native_width_with_sword": 49,
-    "baseline": 60
+    "baseline": 60,
+    "source_head_width": 120,
+    "native_head_width": 22,
+    "native_head_top": 23,
+    "native_chin_bottom": 42,
+    "native_head_height": 20,
+    "height_method": "manual ear-tip to chin; excludes collar"
   },
   {
     "frame": 6,
@@ -53,7 +89,13 @@
     "scale": 0.18018018018018017,
     "native_cat_height": 39,
     "native_width_with_sword": 35,
-    "baseline": 60
+    "baseline": 60,
+    "source_head_width": 118,
+    "native_head_width": 21,
+    "native_head_top": 21,
+    "native_chin_bottom": 40,
+    "native_head_height": 20,
+    "height_method": "manual ear-tip to chin; excludes collar"
   },
   {
     "frame": 7,
@@ -61,7 +103,13 @@
     "scale": 0.18018018018018017,
     "native_cat_height": 40,
     "native_width_with_sword": 35,
-    "baseline": 60
+    "baseline": 60,
+    "source_head_width": 118,
+    "native_head_width": 21,
+    "native_head_top": 20,
+    "native_chin_bottom": 40,
+    "native_head_height": 21,
+    "height_method": "manual ear-tip to chin; excludes collar"
   },
   {
     "frame": 8,
@@ -69,6 +117,12 @@
     "scale": 0.18018018018018017,
     "native_cat_height": 39,
     "native_width_with_sword": 36,
-    "baseline": 60
+    "baseline": 60,
+    "source_head_width": 119,
+    "native_head_width": 21,
+    "native_head_top": 21,
+    "native_chin_bottom": 41,
+    "native_head_height": 21,
+    "height_method": "manual ear-tip to chin; excludes collar"
   }
 ]
