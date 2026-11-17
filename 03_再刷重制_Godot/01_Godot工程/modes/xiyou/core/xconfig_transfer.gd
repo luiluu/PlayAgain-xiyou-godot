@@ -19,13 +19,13 @@ const BACKUP_NAME := "options_before_import.json"
 ## 可导出、可导入的设置项（XConfig.DEFAULTS 的键）。新加设置时三份清单必须选一份放（专项会查有没有漏）。
 const SETTINGS := ["MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "battleCamera",
 	"bgmVolume", "bgsVolume", "meVolume", "seVolume", "CombatDamageShow", "CombatSkillAnimation", "battleAniSpeed",
-	"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexNotices", "codexSkillLevelNotice", "cq", "codexPowerEnabled",
+	"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexNotices", "codexSkillLevelNotice", "codexPowerEnabled",
 	"codexBossStatusPanel", "codexEquipmentSort", "codexScreenFx", "codexBattleAutoDefault", "codexFontSize", "codexUiSkin",
 	"codexBattleDim", "codexRingStyle", "codexUiMotion", "codexEncounterTarget", "codexPartyFormation", "codexQuality"]
 ## 画质里只有这两项是口味（像素柔边、地图平滑移动），其余（窗口、帧率上限、整数缩放、省电）跟着机器走
 const QUALITY_SHARED := ["crisp", "motion"]
-## 本机专属：不导出、不导入（画面平滑按平台给默认、看屏幕；手机按键位置存在 user://touch_controls.json，另不在这里）
-const DEVICE := ["codexScreenSmooth"]
+## 本机专属：不导出、不导入（cq 穿墙是调试项，也不跟着走；画面平滑按平台给默认、看屏幕；手机按键位置存在 user://touch_controls.json，另不在这里）
+const DEVICE := ["codexScreenSmooth", "cq"]
 ## 进度类：存在设置文件里但不是设置，导入别人的等于白拿成就／解锁
 const PROGRESS := ["SAchievementS", "ChangeClothesLite", "DesignationN", "codexWeakFiveClearV2", "codexWhisperSeen",
 	"codexTianqiBadges", "codexTianqiAliens", "codexTianqiQiyinParts", "codexTianqiGojo"]
@@ -80,23 +80,18 @@ static func preview(text: String) -> Dictionary:
 		if i < 0:
 			out["error"] = "这不是本游戏导出的配置。"
 			return out
-		var b64 := ""
-		for ch in t.substr(i + PREFIX.length()):
-			if not ch in [" ", "\t", "\n", "\r"]:
-				b64 += ch
-		var raw := Marshalls.base64_to_raw(b64) if _looks_base64(b64) else PackedByteArray()
-		json_text = raw.get_string_from_utf8()
+		json_text = _decode_tail(t.substr(i + PREFIX.length()))
 	var j := JSON.new()
 	if json_text == "" or j.parse(json_text) != OK or typeof(j.data) != TYPE_DICTIONARY:
-		out["error"] = "配置文本不完整或已损坏，请重新复制。"
+		out["error"] = "配置文本不完整或已损坏，请重新导出后再试。"
 		return out
 	var d: Dictionary = j.data
 	var settings = d.get("settings")
 	if typeof(settings) != TYPE_DICTIONARY or not (d.get("format") is float or d.get("format") is int):
-		out["error"] = "配置文本不完整或已损坏，请重新复制。"
+		out["error"] = "配置文本不完整或已损坏，请重新导出后再试。"
 		return out
 	out["format"] = int(d["format"])
-	out["game"] = str(d.get("game", ""))
+	out["game"] = d["game"] if d.get("game") is String else ""
 	out["code"] = int(d.get("code", 0)) if (d.get("code") is float or d.get("code") is int) else 0
 	var values := {}
 	var skipped: Array = []
@@ -113,6 +108,37 @@ static func preview(text: String) -> Dictionary:
 		out["error"] = "这份配置里没有本版本能用的设置。"
 		return out
 	out["ok"] = true
+	return out
+
+
+## 前缀后面的文本 → JSON 文本。按空白切段，从第一段起逐段拼，取第一个能解成 JSON 字典的前缀：
+## 聊天软件插在中间的换行空格照样认，末尾多出的附言忽略（T154③）。都不行返回 ""。
+static func _decode_tail(tail: String) -> String:
+	var parts := _split_ws(tail)
+	var b64 := ""
+	for part in parts:
+		b64 += part
+		if not _looks_base64(b64):
+			continue
+		var txt := Marshalls.base64_to_raw(b64).get_string_from_utf8()
+		var j := JSON.new()
+		if txt != "" and j.parse(txt) == OK and typeof(j.data) == TYPE_DICTIONARY:
+			return txt
+	return ""
+
+
+static func _split_ws(s: String) -> PackedStringArray:
+	var out := PackedStringArray()
+	var cur := ""
+	for ch in s:
+		if ch in [" ", "\t", "\n", "\r"]:
+			if cur != "":
+				out.append(cur)
+				cur = ""
+		else:
+			cur += ch
+	if cur != "":
+		out.append(cur)
 	return out
 
 
@@ -173,6 +199,7 @@ static func apply(text: String) -> Dictionary:
 	var backup := export_text()
 	var b := backup_path()
 	if b != "":
+		DirAccess.make_dir_recursive_absolute(b.get_base_dir())  # 全新安装时配置目录还没建
 		var f := FileAccess.open(b, FileAccess.WRITE)
 		if f == null:
 			r["ok"] = false
@@ -255,7 +282,7 @@ static func result_text(r: Dictionary) -> String:
 		return str(r.get("error", ""))
 	var s := "已导入 %d 项设置" % r["values"].size()
 	if int(r["skipped"]) > 0:
-		s += "，跳过 %d 项本版本不认识的设置" % int(r["skipped"])
+		s += "（跳过 %d 项本版本不认识的设置）" % int(r["skipped"])
 	return s + "。"
 
 
@@ -263,8 +290,8 @@ static func result_text(r: Dictionary) -> String:
 static func confirm_text(r: Dictionary) -> String:
 	var s := "将导入 %d 项设置" % r["values"].size()
 	if int(r["skipped"]) > 0:
-		s += "（跳过 %d 项不认识的）" % int(r["skipped"])
+		s += "（跳过 %d 项本版本不认识的设置）" % int(r["skipped"])
 	var from := str(r.get("game", ""))
 	if from != "" and from != game_version():
-		s += "，配置来自版本 %s，本机是 %s" % [from, game_version()]
+		s += "，配置来自版本 %s，当前版本是 %s" % [from, game_version()]
 	return s + "。再按一次确定导入，导入前会自动备份当前设置。"
