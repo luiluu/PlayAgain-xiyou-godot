@@ -155,6 +155,10 @@ func _cleanup(ref: Dictionary) -> void:
 		_check("cleanup_warehouse_%s" % keep, w.items.armor.size() == (1 if keep else 0) and w.items.item == [5] and int(w.qtty.item["5"]) == 3
 			and int(w.currentCapacity) == (4 if keep else 3), [w.items.armor.size(), w.items.item, w.currentCapacity])
 	MVScript.o_cleanup_keep_warehouse = true
+	# T135：猫哥报的「独立装备数组长度」按数据文件条数算（原版没有独立装备时＝6）；冠军戒指 8010～8012 把防具表补长 12 格不算进去
+	var shown := XMVText._eval_text("$dataArmors.length+$dataWeapons.length-12000")
+	_check("cleanup_array_length_6", shown == "6" and (XDB.table("Armors") as Array).size() > XDB.source_size("Armors")
+		and XDB.rec("Armors", XFestRing.armor_id(0)).size() > 0, [shown, (XDB.table("Armors") as Array).size(), XDB.source_size("Armors")])
 
 
 func _batch2(ref: Dictionary) -> void:
