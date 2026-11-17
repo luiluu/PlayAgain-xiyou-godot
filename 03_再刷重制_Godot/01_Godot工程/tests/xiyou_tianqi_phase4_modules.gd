@@ -251,7 +251,7 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 			var n0: int = (XTianqiLedger.TRACE as Array).size()
 			var hp0 := XTianqiLedger._foe_hp(logic)
 			logic.act(u, cmd[0], cmd[1])
-			if u == a:
+			if u is XActor:
 				var drop := hp0 - XTianqiLedger._foe_hp(logic)
 				for i in range(n0, (XTianqiLedger.TRACE as Array).size()):
 					var r: Dictionary = XTianqiLedger.TRACE[i]
@@ -259,9 +259,13 @@ func _battle(aid: int, rounds := 12) -> Dictionary:
 						drop -= float(r.hp0) - float(r.hp1)
 				drop = maxf(drop, 0.0)
 				for i in range(n0, (XTianqiLedger.TRACE as Array).size()):
-					XTianqiLedger.TRACE[i]["act_main"] = drop  # 触发它的那次行动的主伤害（「是原招的几成」的分母）
-				main.dmg = float(main.dmg) + drop
-				main.acts = int(main.acts) + 1
+					var r: Dictionary = XTianqiLedger.TRACE[i]
+					# 触发它的那次行动的主伤害（「是原招的几成」的分母）：本人行动里触发的按本人；替别人出手的（璇棱光，T137）按 trigger 那人这次行动
+					if u == a and int(r.get("trigger", 0)) == 0 or int(r.get("trigger", 0)) == int(u.actor_id) and u != a:
+						r["act_main"] = drop
+				if u == a:
+					main.dmg = float(main.dmg) + drop
+					main.acts = int(main.acts) + 1
 		logic.end_turn()
 		for e in logic.enemies:
 			if e.is_alive():
@@ -314,7 +318,9 @@ func _fixture_battles() -> void:
 			if float(t.hp1) >= 0.0 and base > 0.0:
 				var d := float(t.hp0) - float(t.hp1)
 				if src == "module.tusu.segments":
-					d *= 0.2 / 1.2  # 分段打的是整招 ×1.2，多出来的是 0.2
+					d *= 0.2 / 1.2  # 分段打的是整招 ×1.2，多出来的是 0.2（T137 起卡开着不分段加伤、不走口子，量不到）
+				if _per_target(src):
+					d /= maxf(1.0, float(t.get("targets", 1)))  # T137 basis per_target：每个敌人多吃几成
 				(row.ratios as Array).append(d / base)
 				var ct: Dictionary = coef_turn.get(src, {})
 				ct[key] = float(ct.get(key, 0.0)) + d / base
@@ -361,6 +367,14 @@ func _fixture_battles() -> void:
 		if float(measured.get(str(r.id), {}).get("coef", 0.0)) > 1.0:
 			over.append([r.id, "coef", measured[str(r.id)].coef])
 	_check("fixture_enforced_within", over.is_empty(), over)
+
+
+## 表里 basis 是 per_target 的行（T137：卡上写成「其他敌人各吃几成」的群体扩散），比例按每个敌人算
+func _per_target(src: String) -> bool:
+	for r in _p4().get("derived_module", []):
+		if str(r.get("id", "")) == src:
+			return str(r.get("basis", "")) == "per_target"
+	return false
 
 
 # ---- 二：白名单初审表 ----
