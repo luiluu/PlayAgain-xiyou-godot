@@ -159,9 +159,11 @@ func _run() -> void:
 			expected_tiles[(z * 33 + 11) * 29 + x] = 0
 	check("active.only_table_tiles_changed", m1.map_data.data == expected_tiles)
 	check("active.trophy_center_on_original_npc", XFestLobby.TROPHY_FOOT == Vector2(14.5 * 48, 11 * 48))
-	for cell in [Vector2i(13, 10), Vector2i(13, 11), Vector2i(14, 11), Vector2i(15, 11), Vector2i(16, 11)]:
-		m1.player.locate(cell.x, cell.y)
-		check("active.route.%s" % cell, m1.player.can_pass(2))
+	# 绕过奖杯下沿到两侧；13/15 列的行 12 是原有讨债人小弟，路线沿行 11 横穿。
+	for step in [[13, 10, 2], [13, 11, 6], [14, 11, 6], [15, 11, 6], [16, 11, 2]]:
+		m1.player.locate(step[0], step[1])
+		check("active.route.%s" % str(step), m1.player.can_pass(step[2]))
+
 	# 奖杯两格：被事件挡住（通行表不变，事件挡路），脚下能走到的人不能进
 	m1.player.locate(14, 11)
 	m1.player.direction = 8
