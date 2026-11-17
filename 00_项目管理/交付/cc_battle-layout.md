@@ -27,6 +27,9 @@
   - 验证：xiyou_battle_layout 无头 78/78、窗口 85/85；xiyou_ui_skin_battle_v07 41/41；检查.sh --affected 71bb39aa0 见下行。
   - 验证：检查.sh --affected 71bb39aa0 选中 39 个 Godot 场景全过；非 Godot 只剩 1 项「发行空壳缺成员」：`modes/xiyou/ui/skin/skin_boss_arc.gd`（T125 b2140b3eb 的文件，本轮没动；引用 DENY 里的 hong.png）。本分支自己的 battle_layout.gd 也曾因 R2 头注释写「只在天启篇新界面」被认成天启篇专属，已改措辞（它在发行包里要用、恒走原版站位）。
   - **要总装登记**（共用文件，车道不改）：`发行空壳.py` 的 MIXED_OK 加 `'modes/xiyou/ui/skin/skin_boss_arc.gd': '首领血弧：只在 XSkinBattle.on()（XUiSkin.on()）时创建，发行包里恒为 false；铜印贴图走 ResourceLoader.exists 守卫，在 DENY 里不进包'`，加上后 检查.sh 即全过。
+  - 合并（协调追加）：合 main（T100 字体 FONT_V00300）解 skin_battle_list／ring／boss_arc 冲突——取 T125／T096 的逻辑（详情胶囊、标题淡入 ta、INK_TEXT 描边宽），自绘字照 main 改走 `XUiSkin.ds`；T125／T096 新加的 9 处裸 draw_string（skin_battle、skin_battle_list、skin_battle_ring、skin_damage_popup、skin_turn_cue）也改走 `XUiSkin.ds`，过 xiyou_ui_skin 的 t100_no_raw_draw_string。再合 luiluu/cc-battle-ui-v07（T125 R2 141893e95、R3 88bad1661：首领头像去黄底、圆钮修正）无冲突，再合 main（b27ba2cab）无冲突。
+  - 完整战斗画面（合完后）：私密仓 `协作交接/附图/T126/R2_新界面_首领战.png`、`R2_新界面_小怪战.png`、`R2_西游档_4只小怪.png`（800×450）。
+  - 合完后验证：检查.sh --affected 3132281d0 选中 66 个场景全过（xiyou_battle_layout 78、xiyou_ui_skin_battle_v07 56、xiyou_battle_ui 182、xiyou_ui_skin_hud 110、xiyou_ui_skin_4a 57、xiyou_guyu_ui 791 等），本机补跑 xiyou_ui_skin 111、xiyou_party_formation 74、xiyou_sv_smooth 140、xiyou_popup_overlap 8、xiyou_battle_pixel 28、xiyou_sequence_visual 73 全过；窗口 xiyou_battle_layout 85/85。非 Godot 仍只差上面「要总装登记」的 skin_boss_arc 一项（发行空壳 check 与其工具回归是同一原因）。
   - P3：冲锋类行动序列像素位移不放大，小A 查实不做精灵横移、不会打空，不改。
 ## 交接板
 
