@@ -26,7 +26,9 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
-	XMessageBox.auto = true
+	var kit = Kit.new("xiyou_tianqi_hall")   # 存档、配置都写测试目录，不碰本机设置
+	XConfig.whisper_mark("rift1")   # 大厅漩涡过场（EV76）、二阶段过场当作播过：不占住大厅，退出时也不挂在色调等待上
+	XConfig.whisper_mark("rift2")
 	_lists()
 	_hidden()
 	_altar()
@@ -36,6 +38,7 @@ func _run() -> void:
 	for r in results:
 		if not r.passed:
 			print("FAIL ", r.name, " ", JSON.stringify(r.detail))
+	kit.teardown()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
 
