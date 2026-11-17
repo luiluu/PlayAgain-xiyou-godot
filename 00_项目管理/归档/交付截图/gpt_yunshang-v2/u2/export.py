@@ -1,7 +1,7 @@
 from pathlib import Path
 from PIL import Image
 import json,shutil
-P=Path(__file__).parent;GAME=P.parents[3]/'03_再刷重制_Godot/01_Godot工程/content/yunshang_v2/u2';R=Path('/Users/kyo/.codex/generated_images/01a1e678-5c12-79f3-9540-014e18747978')
+P=Path(__file__).parent;GAME=P.parents[4]/'03_再刷重制_Godot/01_Godot工程/content/yunshang_v2/u2';R=Path('/Users/kyo/.codex/generated_images/01a1e678-5c12-79f3-9540-014e18747978')
 for dst,src in [('battle0','a3e7e8c5-0116-4445-9773-c789572290df'),('battle1','1dffec05-52d8-4366-aee3-66061b77dd77'),('battle2','89e5d995-25c6-4a6a-be5c-881dbce9e1e5'),('walk','76e1e075-8769-4484-8ec5-3538d3c9b4ef')]:
  if not (P/f'{dst}_raw.png').exists():shutil.copyfile(R/f'exec-{src}.png',P/f'{dst}_raw.png')
 def cut(name,cols,rows,cuts=None):

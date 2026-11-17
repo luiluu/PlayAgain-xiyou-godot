@@ -2,7 +2,7 @@ from PIL import Image,ImageDraw,ImageChops
 from pathlib import Path
 import json
 root=Path(__file__).resolve().parent/'img/sv_actors'
-e=Path(__file__).resolve().parents[4]/'00_项目管理/交付/附图/gpt_mira-feet/T122'
+e=Path(__file__).resolve().parents[4]/'00_项目管理/归档/交付截图/gpt_mira-feet/T122'
 b=Image.open(e/'before.png').convert('RGBA');a=Image.open(root/'Codex_Mira_SV_u2.png').convert('RGBA')
 def bg(im):
  out=Image.new('RGBA',im.size,'#40404a');out.alpha_composite(im);return out.convert('RGB')
