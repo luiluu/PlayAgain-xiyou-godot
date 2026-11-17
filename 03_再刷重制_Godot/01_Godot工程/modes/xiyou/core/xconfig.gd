@@ -453,8 +453,10 @@ static func import_values(values: Dictionary) -> bool:
 			data[k].merge(values[k], true)
 		else:
 			data[k] = values[k]
+	var old := _values
 	_values = data
 	if not _write():
+		_values = old  # 写盘失败：内存也回到导入前
 		return false
 	if path() != "":
 		_loaded_path = "<unloaded>"

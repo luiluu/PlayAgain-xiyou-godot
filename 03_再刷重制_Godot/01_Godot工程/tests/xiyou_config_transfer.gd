@@ -132,7 +132,7 @@ func _run() -> void:
 	# 导入：备份、合并、写盘、进度不动、本机专属不动
 	check("没导入过没有备份", not T.has_backup())
 	var r := T.apply(encode(foreign))
-	check("导入成功", r["ok"] and T.result_text(r) == "已导入 5 项设置，跳过 5 项本版本不认识的设置。", T.result_text(r))
+	check("导入成功", r["ok"] and T.result_text(r) == "已导入 5 项设置（跳过 5 项本版本不认识的设置）。", T.result_text(r))
 	check("导入前自动备份", T.has_backup() and FileAccess.file_exists(DIR.path_join(T.BACKUP_NAME)))
 	reload()
 	check("导入的值写进设置文件", XConfig.volume("seVolume") == 20 and XConfig.battle_speed() == 2 and XConfig.flag("MapXy"))
@@ -156,6 +156,33 @@ func _run() -> void:
 	# 坏文本导入不动任何东西
 	var before := FileAccess.get_file_as_string(XConfig.path())
 	check("坏文本导入失败且不备份、不改设置", not T.apply("坏的")["ok"] and not T.has_backup() and FileAccess.get_file_as_string(XConfig.path()) == before)
+
+	# T154③ 末尾多出的聊天附言忽略；中间插了空白也认
+	check("末尾多出附言（中文）也认", T.preview(text + " 谢谢收到")["ok"])
+	check("末尾多出附言（英文单词）也认", T.preview(text + "\nthanks a lot\nok")["ok"] and T.preview(text + " abcd")["ok"])
+	check("末尾附言不影响导入的值", T.preview(text + " thanks")["values"] == T.preview(text)["values"])
+	# T154② 调试项 cq（穿墙）不导出、不导入
+	XConfig._values["cq"] = true
+	check("导出不含 cq", not T.current_settings().has("cq") and not doc_of(T.export_text())["settings"].has("cq"))
+	var cqpv := T.preview(encode({"format": 1, "settings": {"cq": true, "seVolume": 10}}))
+	check("导入跳过 cq", not cqpv["values"].has("cq") and Array(cqpv["skipped_keys"]).has("cq"), cqpv)
+	XConfig._values.erase("cq")
+	# 预览：game 是 null 不显示成 <null>
+	check("game 为 null 当没写", T.preview(encode({"format": 1, "game": null, "settings": {"seVolume": 10}}))["game"] == "")
+	# 写盘失败：内存不被污染（配置路径的上级是个普通文件，建不了目录）
+	var old_override := XConfig.path_override
+	var blocker := DIR.path_join("out/挡路文件")
+	var bf := FileAccess.open(blocker, FileAccess.WRITE)
+	bf.store_string("x")
+	bf.close()
+	XConfig.path_override = blocker.path_join("options.json")
+	XConfig._loaded_path = "<unloaded>"
+	XConfig._values = XConfig.DEFAULTS.duplicate(true)
+	XConfig._loaded_path = XConfig.path()
+	var keep := XConfig._values.duplicate(true)
+	check("写盘失败 import_values 返回 false 且内存回滚", not XConfig.import_values({"seVolume": 33}) and XConfig._values == keep)
+	XConfig.path_override = old_override
+	reload()
 
 	# 文件
 	check("PC／Mac 能存文件", T.file_supported())
@@ -188,7 +215,7 @@ func _run() -> void:
 	# 导出到文件
 	p.select(1)
 	p.ok()
-	check("导出到文件给路径", p.message.begins_with("已存到："))
+	check("导出到文件给路径", p.message.begins_with("已导出配置文件：") and p.message.contains("再刷一把配置_") and not p.message.contains(DIR))
 	# 从剪贴板导入：先确认、再导入
 	_clip[0] = encode({"format": 1, "game": "0.01", "settings": {"meVolume": 0}})
 	p.select(2)
@@ -250,6 +277,18 @@ func _run() -> void:
 	XConfigTransfer.clipboard_get = Callable()
 	XConfigTransfer.clipboard_set = Callable()
 	XFeedback.export_dir_override = ""
+	# P1：全新安装、配置目录还不存在时导入也要成功（备份要自己建目录）
+	XSave.dir_override = DIR
+	XConfig.path_override = DIR.path_join("options.json")
+	_cleanup()
+	DirAccess.remove_absolute(DIR + "/.sealed_v1")  # 存档封印文件（隐藏）不在 get_files 里
+	DirAccess.remove_absolute(DIR)
+	XConfig._loaded_path = "<unloaded>"
+	check("（前提）配置目录不存在", not DirAccess.dir_exists_absolute(DIR))
+	var fresh := T.apply(encode({"format": 1, "settings": {"seVolume": 15}}))
+	check("全新安装目录不存在时导入成功且有备份", fresh["ok"] and T.has_backup() and DirAccess.dir_exists_absolute(DIR), fresh)
+	reload()
+	check("全新安装导入的值写进去了", XConfig.volume("seVolume") == 15)
 	_cleanup()
 	XConfig.path_override = ""
 	XSave.dir_override = ""

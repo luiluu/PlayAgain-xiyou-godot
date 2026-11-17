@@ -19,7 +19,7 @@ const TITLE := "导入／导出配置"
 const NOTE := "导出的配置带游戏版本号，可以发给别人。窗口、帧率、手机按键位置等本机设置，以及成就、解锁记录不会导出。"
 
 ## [键, 名字, 说明]
-const ROWS := [["copy", "导出配置", "复制到剪贴板，可以直接粘贴发给别人。"],
+const ROWS := [["copy", "导出到剪贴板", "复制到剪贴板，可以直接粘贴发给别人。"],
 	["save", "导出到文件", "存进「下载」文件夹。"],
 	["paste", "从剪贴板导入", "先复制别人发来的配置文本，再点这里。"],
 	["open", "从文件导入", "选一个导出的配置文件。"],
@@ -126,7 +126,7 @@ func ok() -> void:
 		"save":
 			XSound.system(1)
 			var p := XConfigTransfer.export_file()
-			_say(("已存到：" + p) if p != "" else "存文件失败，请改用「导出配置」复制到剪贴板。")
+			_say(("已导出配置文件：%s（已放进「下载」文件夹）。" % p.get_file()) if p != "" else "存文件失败，请改用「导出到剪贴板」。")
 		"paste":
 			if _confirming("paste"):
 				_do_import()
@@ -171,7 +171,7 @@ func _do_import() -> void:
 	XSound.system(1 if r["ok"] else 3)
 	if r["ok"]:
 		skin_changed = skin_changed or before != XConfigTransfer.skin_value()
-	_say(XConfigTransfer.result_text(r) + ("可在「撤回上次导入」换回。" if r["ok"] else ""))
+	_say(XConfigTransfer.result_text(r) + ("可用「撤回上次导入」换回。" if r["ok"] else ""))
 
 
 func _pick_file() -> void:
@@ -189,7 +189,7 @@ func _pick_file() -> void:
 	XSound.system(1)
 	DisplayServer.file_dialog_show("选择配置文件", XFeedback.export_dir(), "", false, DisplayServer.FILE_DIALOG_MODE_OPEN_FILE,
 		PackedStringArray(["*.txt ; 配置文件"]), func(status: bool, paths: PackedStringArray, _filter: int):
-			if status and not paths.is_empty():
+			if status and not paths.is_empty() and is_instance_valid(self) and is_inside_tree():
 				on_picked.call(paths[0]))
 
 
