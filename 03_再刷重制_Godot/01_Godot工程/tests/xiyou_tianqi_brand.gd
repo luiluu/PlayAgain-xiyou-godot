@@ -2,8 +2,9 @@ extends Node
 ## 【cc·T117】天启篇烙印本体（XTianqiBrand，稿《天启篇_烙印 v0.5》第十三节 T073-b 验收）：
 ## 一、开关关着：mult 恒 1、K 那一项不变、不认这一场、不结算、闭关菜单照真气；西游档、天启篇档读出来再存回去逐字节不变（没有烙印键时不新建）。
 ## 二、开着：第十一节第 1 步（烙印 0 和 100% 对木桩 1.50 倍，七个节点逐个对）；存档带着三个角色键和首胜表来回。
-## 三、专项 1～7（稿第十三节 T073-b 验收）；P2-2 甲二门禁；P2-3 正序撞节点高亮＋「烙印已到瓶颈」；P2-4 36 层首通那一场刻印者正好 95%。
+## 三、专项 1～7（稿第十三节 T073-b 验收）；P2-2 甲二门禁；P2-3 正序撞节点高亮＋「烙印已到「某段」的极限」；P2-4 36 层首通那一场刻印者正好 95%。
 ## 四、端到端：真的 BattleLogic.setup 守层者敌群认出 guardian:<层>；grant 里接着 settle。
+## 五、T140：七印灰印／默印精英（297、220）、死亡线／饥荒线节末精英（294、430）都认首领战；玩家看到的烙印文字不用「境」「锚」，说「加深」＋段名。
 
 const XIAOYAO := 1
 const LVSIJI := 2
@@ -41,6 +42,8 @@ func _run() -> void:
 	_p24_climb()
 	_e2e()
 	_qiyin_real()
+	_t140_spread()
+	_t140_text()
 	XTianqiBrand.ENABLED = false
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -202,7 +205,7 @@ func _t1_node_stall() -> void:
 	for i in 10:
 		XTianqiBrand.settle(_logic(s, _boss("guardian:6", 6)))
 	_check("t1.stall_10", XTianqiBrand.value(a) == 1000, XTianqiBrand.value(a))
-	_check("t1.no_gain_toast", XTianqiBrand.toasts.any(func(t): return str(t).contains("未再增长")), XTianqiBrand.toasts)
+	_check("t1.no_gain_toast", XTianqiBrand.toasts.any(func(t): return str(t).contains("的烙印已到「守一」的极限，本场未再加深。")), XTianqiBrand.toasts)
 	_check("t1.stand", XTianqiBrand.stand(a) and XTianqiBrand.realm(a) == 1)
 	XTianqiBrand.settle(_logic(s, _boss("guardian:6", 6)))
 	_check("t1.grows_after", XTianqiBrand.value(a) > 1000, XTianqiBrand.value(a))
@@ -376,7 +379,7 @@ func _p24_climb() -> void:
 		if f % 5 == 0:
 			ends[f] = XTianqiBrand.value(a)
 			if f <= 30:
-				hl[f] = bool(XTianqiBrand.panel(s, a).highlight) and XTianqiBrand.toasts.any(func(t): return str(t).contains("烙印已到瓶颈"))
+				hl[f] = bool(XTianqiBrand.panel(s, a).highlight) and XTianqiBrand.toasts.any(func(t): return str(t).contains("的极限，打赢心魔才能继续加深"))
 		for x in [a, h]:
 			if x != null and XTianqiBrand.can_stand(x):
 				XTianqiBrand.stand(x)
@@ -405,7 +408,7 @@ func _e2e() -> void:
 
 
 # ---- 甲核 R1 P1：七印里副本走真实路径（XTianqiQiyinRule.setup → facts_of）----
-## 灰印、默印第 2 场精英（297、220）借了【首领】名的敌群，不能按名字前缀认成首领；里副本首领那场认 qiyin:<印>
+## 灰印、默印第 2 场精英（297、220）借了【首领】名的敌群：T140 起照名字前缀算首领战（Kyo 11-17「都算首领战」，撤 T117 R1 的例外）；里副本首领那场认 qiyin:<印>
 func _qiyin_real() -> void:
 	var s := _state()
 	s.set_variable(20, 33)
@@ -417,7 +420,7 @@ func _qiyin_real() -> void:
 		lg.setup(int(pair[1]), s)
 		var named := lg.enemies.any(func(e): return str(e.data().get("name", "")).contains("【首领】"))
 		var c := XTianqiBrand.fight(lg)
-		_check("qiyin_real.elite_%s" % pair[0], XTianqiQiyinRule.active(lg) and named and str(c.get("kind", "")) == "none", [named, c])
+		_check("qiyin_real.elite_%s" % pair[0], XTianqiQiyinRule.active(lg) and named and str(c.get("kind", "")) == "boss" and str(c.get("key", "")).ends_with(":%d" % int(pair[1])), [named, c])
 		lg.end_battle()
 	XTianqiQiyinRule.prepare("hui", true)
 	var lb := XBattleLogic.new()
@@ -433,3 +436,67 @@ func _qiyin_real() -> void:
 	# P2-2：开着烙印时闭关列表页头不出真气文案
 	var r := XZhenqi.menu(s, {"page": "retreat"})
 	_check("retreat_head_brand", not " ".join(r.lines).contains("真气") and str(r.lines[0]).contains("烙印"), r.lines)
+
+
+# ---- T140：四线节末精英走真实路径（XTianqi<线>Alien.prepare("spread") → BattleLogic.setup → facts_of）----
+func _t140_spread() -> void:
+	for pair in [["death", 294], ["famine", 430]]:
+		var s := _state()
+		s.flags.tianqi["line"] = str(pair[0])
+		var ok: bool = XTianqiDeathAlien.prepare("spread", s) if pair[0] == "death" else XTianqiFamineAlien.prepare("spread", s)
+		var lg := XBattleLogic.new()
+		lg.setup(int(pair[1]), s)
+		var alien: bool = XTianqiDeathAlien.active(lg) if pair[0] == "death" else XTianqiFamineAlien.active(lg)
+		var c := XTianqiBrand.fight(lg)
+		_check("t140.spread_%s" % pair[0], ok and alien and str(c.get("kind", "")) == "boss" and str(c.get("key", "")).ends_with(":%d" % int(pair[1])) and not bool(c.get("ripe", true)), [ok, alien, c])
+		var a: XActor = lg.actors[0]
+		_setb(a, 0, 0)
+		lg.grant({"gold": 0, "exp": 0, "drops": []})
+		_check("t140.spread_%s_firsts" % pair[0], XTianqiBrand.firsts(s).has(str(c.get("key", ""))), XTianqiBrand.firsts(s))
+		lg.end_battle()
+
+
+# ---- T140：玩家可见文字（闭关页头、角色页、心魔门槛、心魔开打、打完、提示）不用「境」「锚」，说「加深」＋段名 ----
+func _t140_text() -> void:
+	var s := _state()
+	var a: XActor = s.actors[XIAOYAO]
+	_setb(a, 4000, 2)  # 铸骨到顶（40%）
+	var said := []
+	var head := XZhenqi.menu(s, {"page": "retreat"})
+	said.append_array(head.lines)
+	for o in head.options:
+		said.append(str(o.label))
+	var page := XZhenqi.menu(s, {"page": "actor", "id": a.actor_id})
+	said.append_array(page.lines)
+	_check("t140.page_stage", " ".join(page.lines).contains("烙印「铸骨」") and " ".join(page.lines).contains("%s 的烙印已到「铸骨」的极限，打赢心魔才能继续加深" % a.display_name()), page.lines)
+	var tr := XZhenqi.menu(s, {"page": "trial", "id": a.actor_id})
+	said.append_array(tr.lines)
+	_check("t140.trial_line", " ".join(tr.lines).contains("烙印才能加深至「砥柱」"), tr.lines)
+	XZhenqi.pending_trial = {}
+	XZhenqi.trial_done = {"actorId": a.actor_id, "target": 3, "brand": true, "won": true}
+	var won := XZhenqi.menu(s, {"page": "trial_end"})
+	said.append_array(won.lines)
+	_check("t140.stand_line", " ".join(won.lines).contains("%s 的烙印加深至「砥柱」！" % a.display_name()) and XTianqiBrand.realm(a) == 3, won.lines)
+	_setb(a, 4000, 2)
+	XZhenqi.trial_done = {"actorId": a.actor_id, "target": 3, "brand": true, "won": false}
+	var lost := XZhenqi.menu(s, {"page": "trial_end"})
+	said.append_array(lost.lines)
+	_check("t140.lose_line", " ".join(lost.lines).contains("%s 的烙印未能加深至「砥柱」。" % a.display_name()), lost.lines)
+	_setb(a, 2000, 2)
+	var gate := XZhenqi.menu(s, {"page": "trial", "id": a.actor_id})
+	said.append_array(gate.lines)
+	_check("t140.gate_line", " ".join(gate.lines).contains("烙印还没到「铸骨」的极限，暂不能挑战心魔。"), gate.lines)
+	_setb(a, 0, 0, false)
+	var carve := XZhenqi.menu(s, {"page": "carve", "id": a.actor_id})
+	said.append_array(carve.lines)
+	XTianqiBrand.toasts.clear()
+	_setb(a, 900, 0)
+	XTianqiSave.section(s, "brand").firsts = {"guardian:5": 1}  # 层线到 10%，才涨得到守一的头
+	XTianqiBrand.gain(s, a, "test", 1.0)
+	said.append_array(XTianqiBrand.toasts)
+	_check("t140.toast_stage", XTianqiBrand.toasts.any(func(x): return str(x) == "%s 的烙印已到「守一」的极限，打赢心魔才能继续加深" % a.display_name()), XTianqiBrand.toasts)
+	var bad := said.filter(func(x): return str(x).contains("境") or str(x).contains("锚") or str(x).contains("瓶颈"))
+	_check("t140.no_jing_anchor", bad.is_empty() and said.size() >= 10, [bad, said.size()])
+	# 文件里定死的几句也一并扫（含没走到的分支）
+	var consts := [XTianqiBrand.TEXT_BOTTLENECK, XTianqiBrand.TEXT_NO_GAIN, XTianqiBrand.TEXT_GAIN] + XTianqiBrand.TEXT_CARVE_WARN + XTianqiBrand.TEXT_RETREAT
+	_check("t140.consts_no_jing", not consts.any(func(x): return str(x).contains("境") or str(x).contains("锚")), consts)
