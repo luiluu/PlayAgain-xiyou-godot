@@ -5,6 +5,7 @@ extends Node
 ## 三、开着但是西游档：一律走关着那一套。
 ## 四、单段有效系数上限：开着时卡面系数×权重×条件超过档位上限压回上限，关着不封；全部卡在上限以内（数据校验同口径）。
 ## 五、角色卡跟着总开关开（CARDS 本身不动）。
+## 读的表：tianqi_data/base_line.json、abs_rescale.json、balance_table.json（combat_rules）、damage_ledger.json（phase4）、skill_rework.json（rules.single_hit_cap）。
 
 const XIAOYAO := 1  # 狗逍遥：强者、输出、慢
 const LVSIJI := 2
