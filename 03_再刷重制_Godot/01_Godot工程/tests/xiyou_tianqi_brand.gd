@@ -10,6 +10,9 @@ extends Node
 ## 八、T119（T073-d1）：自己疯的几率、花样解锁（P2-1：4000 砥柱抽不到抽自己、4001 能）、生熟（开场、几率、花样；心魔是生的）、保护（隔 2 回合、
 ## 同回合最多 2 人顺延、15% 封顶打不倒）、五种花样加断片各自的结果、行动入口最顶上（挂机、场内自动、手动三条路同一个结果）、同种子可复现；
 ## 烧命挪到确实出手之后（T118 小A P3②：被禁用不扣）；开关关着不取数、不拦。
+## 九、T120（T073-d2）：灼痕的上限（向下取整）、一下涨多少（按异化级，骑士／守层者／使徒按终焉）、一次行动对同一个人最多一次、满了清零发作（熟只出三种）；
+## 和自己疯共用隔 2 回合、同回合最多 2 人（被顺延的仍算满一次）；打赢首领战烙实（每次 +0.75、一场最多 2 次、没满过为 0、倒下的照算）；
+## 不刻印 40% 照发作、烙印不变；不是首领战不烙实；真的敌人普攻打中才涨（没命中、护盾全挡不涨）；灼痕槽界面读数；开关关着不涨、不画。
 
 const XIAOYAO := 1
 const LVSIJI := 2
@@ -83,9 +86,14 @@ func _run() -> void:
 	await _t119_entry()
 	_t119_seed()
 	_t119_stress(int(_arg("--t119-stress", "40")))
+	_t120_sear()
+	_t120_settle()
+	_t120_real()
+	_t120_text()
 	XTianqiBrand.ENABLED = false
 	_t118_off()
 	_t119_off()
+	_t120_off()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -1175,6 +1183,7 @@ func _t119_stress(n: int) -> void:
 	var bad := []
 	var fits := {"raw": 0, "ripe": 0}
 	var kinds := {}
+	var sources := {}
 	var turns := 0
 	for phase in ["raw", "ripe"]:
 		var count := maxi(1, n / 4) if phase == "raw" else n
@@ -1202,19 +1211,352 @@ func _t119_stress(n: int) -> void:
 			for r in c.get("fit_log", []):
 				fits[phase] += 1
 				kinds[r.kind] = int(kinds.get(r.kind, 0)) + 1
+				sources[r.source] = int(sources.get(r.source, 0)) + 1
 				per[int(r.turn)] = int(per.get(int(r.turn), 0)) + 1
 				if phase == "ripe" and str(r.kind) in ["hit_self", "hit_ally", "blackout"]:
 					bad.append([phase, i, "ripe_kind", r])
 				if last.has(r.actor) and int(r.turn) - int(last[r.actor]) < 3:
 					bad.append([phase, i, "gap", r])
 				last[r.actor] = int(r.turn) + (1 if str(r.kind) == "blackout" else 0)
-				if phase == "ripe" and int(r.turn) <= 3:
+				if phase == "ripe" and int(r.turn) <= 3 and str(r.source) == "self":  # 被打疯（T120 灼痕）不管前几回合
 					bad.append([phase, i, "ripe_open", r])
-				if phase == "raw" and int(r.turn) <= 1:
+				if phase == "raw" and int(r.turn) <= 1 and str(r.source) == "self":
 					bad.append([phase, i, "raw_open", r])
 			if per.values().any(func(v): return v > 2):
 				bad.append([phase, i, "per_round", per])
 			lg.end_battle()
 	fl.erase("guardian:6")
-	print("T119_STRESS ", JSON.stringify({"battles": n + maxi(1, n / 4), "turns": turns, "fits": fits, "kinds": kinds, "bad": bad.size()}))
+	print("T119_STRESS ", JSON.stringify({"battles": n + maxi(1, n / 4), "turns": turns, "fits": fits, "kinds": kinds, "sources": sources, "bad": bad.size()}))
 	_check("t119.stress", bad.is_empty() and fits.raw + fits.ripe > 0, bad.slice(0, 5))
+
+
+# ---- T120（T073-d2）：灼痕和烙实 ----
+
+func _sear_kinds(lg: XBattleLogic, a: XActor) -> Array:
+	return XTianqiBrand.fight(lg).get("fit_log", []).filter(func(r): return int(r.actor) == a.actor_id and str(r.source) == "sear").map(func(r): return str(r.kind))
+
+
+func _t120_sear() -> void:
+	var s := _state()
+	# 1. 上限：60 ＋ 等级 × 0.5 ＋ 烙印 × 0.5，向下取整（稿第四节第 4 条那张表）
+	var lg := _fit_logic(s)
+	var a: XActor = lg.actors[0]
+	var lv0 := a.level
+	a.change_level(81)
+	_setb(a, 0, 0)
+	var c0 := XTianqiBrand.sear_cap(a)
+	_setb(a, 4000, 2, false)
+	var c40 := XTianqiBrand.sear_cap(a)
+	_setb(a, 10000, 6)
+	var c100 := XTianqiBrand.sear_cap(a)
+	_setb(a, 4050, 3)
+	var c405 := XTianqiBrand.sear_cap(a)  # 100 ＋ 20.25 → 120（向下取整）
+	a.change_level(20)
+	_setb(a, 0, 0)
+	var c20 := XTianqiBrand.sear_cap(a)
+	a.change_level(21)
+	var c21 := XTianqiBrand.sear_cap(a)  # 60 ＋ 10.5 → 70
+	_check("t120.cap", [c0, c40, c100, c405, c20, c21] == [100, 120, 150, 120, 70, 70], [c0, c40, c100, c405, c20, c21])
+	a.change_level(lv0)
+	_setb(a, 0, 0)
+	# 2. 一下涨多少：没异化 3；各线、漩涡记的级；骑士、守层者、使徒按终焉
+	var e: XEnemy = lg.enemies[0]
+	var per := [XTianqiBrand.sear_per_hit(lg, e)]
+	for t in ["qinran", "shigu", "huaxing", "zhongyan"]:
+		lg.set_meta("xwar_alien", {"preset": "", "units": {e: {"tier": t}}})
+		per.append(XTianqiBrand.sear_per_hit(lg, e))
+	lg.set_meta("xrift_alien", {"units": {e: {"tier": "huaxing"}}})
+	lg.remove_meta("xwar_alien")
+	per.append(XTianqiBrand.sear_per_hit(lg, e))
+	lg.remove_meta("xrift_alien")
+	lg.set_meta("xdeath_alien", {"preset": "apostle20", "units": {e: {"tier": "shigu"}}})
+	per.append(XTianqiBrand.sear_per_hit(lg, e))
+	lg.remove_meta("xdeath_alien")
+	e.horseman = {"rec": {}}
+	per.append(XTianqiBrand.sear_per_hit(lg, e))
+	e.horseman = {}
+	per.append(XTianqiBrand.sear_per_hit(lg, XEnemy.new().setup(_guardian_enemy(), 0, 100.0)) if _guardian_enemy() > 0 else 16)
+	_check("t120.per_hit", per == [3, 6, 9, 12, 16, 12, 16, 16, 16], per)
+	lg.end_battle()
+
+	# 3. 一次行动对同一个人最多一次；换一次行动再算；同一次行动里两只敌人各算一次；没掉血（没命中、护盾全挡）不涨；不在出战里的不涨
+	lg = _fit_logic(s)
+	a = lg.actors[0]
+	e = lg.enemies[0]
+	var e2: XEnemy = lg.enemies[1] if lg.enemies.size() > 1 else XEnemy.new().setup(1, 1, 100.0)
+	XTianqiBrand.act_begin(lg)
+	a.hp = a.mhp
+	var hp0 := a.hp
+	a.hp -= 1.0
+	XTianqiBrand.sear_hit(lg, e, a, hp0)
+	XTianqiBrand.sear_hit(lg, e, a, hp0)  # 同一次行动第二段
+	var once := XTianqiBrand.sear_of(lg, a)
+	XTianqiBrand.sear_hit(lg, e2, a, hp0)  # 同一次行动里另一只敌人（反击那种）
+	var two := XTianqiBrand.sear_of(lg, a)
+	XTianqiBrand.act_begin(lg)
+	XTianqiBrand.sear_hit(lg, e, a, a.hp)  # 生命没掉
+	var none := XTianqiBrand.sear_of(lg, a)
+	XTianqiBrand.sear_hit(lg, e, a, hp0)
+	var again := XTianqiBrand.sear_of(lg, a)
+	XTianqiBrand.sear_hit(lg, a, lg.actors[1], 999999.0)  # 队友打的不算
+	var bench := XActor.new()
+	XTianqiBrand.sear_hit(lg, e, bench, 999999.0)
+	_check("t120.once_per_action", [once, two, none, again] == [3, 6, 6, 9] and XTianqiBrand.sear_of(lg, lg.actors[1]) == 0 and XTianqiBrand.sear_of(lg, bench) == 0, [once, two, none, again])
+	lg.end_battle()
+
+	# 4. 满了：满过几次 +1、槽清零（溢出不留）、这一回合还没行动就当场发作；已经行动过的顺延到下一回合开头
+	lg = _fit_logic(s)
+	_fs(lg).floats["brand_fit"] = 0.99  # 不自己疯
+	a = _cost_actor(lg, 0, 10000)
+	var b := _cost_actor(lg, 1, 10000)
+	lg.start_turn()
+	lg.start_turn()
+	lg.current_order = [a]  # a 还没行动，b 行动过了
+	var cap := XTianqiBrand.sear_cap(a)
+	var f1 := XTianqiBrand.sear_add(lg, a, cap - 1)
+	var f2 := XTianqiBrand.sear_add(lg, a, 5)
+	var fb := XTianqiBrand.sear_add(lg, b, XTianqiBrand.sear_cap(b) + 40)
+	var tl := XTianqiBrand.take_logs(lg)
+	_check("t120.fill", f1 == 0 and f2 == 1 and fb == 1 and XTianqiBrand.sear_of(lg, a) == 0 and XTianqiBrand.sear_of(lg, b) == 0
+		and XTianqiBrand.fills_of(lg, a) == 1 and XTianqiBrand.fills_of(lg, b) == 1, [f1, f2, fb, XTianqiBrand.sear_of(lg, a)])
+	_check("t120.fill_now", _fit_turns(lg, a) == [2] and _sear_kinds(lg, a).size() == 1 and _fit_turns(lg, b).is_empty() and XTianqiBrand._queued(XTianqiBrand.fight(lg), b), [_fit_turns(lg, a), _fit_turns(lg, b)])
+	_check("t120.fill_text", tl.filter(func(l): return str(l.get("type", "")) == "battle_text" and str(l.text).contains("满了")).size() == 2, tl)
+	lg.start_turn()
+	_check("t120.fill_next_turn", _fit_turns(lg, b) == [3], _fit_turns(lg, b))
+	_check("t120.take_logs_once", XTianqiBrand.take_logs(lg).is_empty())
+	lg.end_battle()
+
+	# 5. 熟的战斗：被打疯照常、不管前 3 回合，花样只出发呆、哑火、破防
+	var got := []
+	for k in 6:
+		lg = _fit_logic(s, true)
+		_fs(lg).mods["brand_fit_kind"] = k
+		a = _cost_actor(lg, 0, 10000)
+		lg.start_turn()
+		lg.current_order = [a]
+		XTianqiBrand.sear_add(lg, a, XTianqiBrand.sear_cap(a))
+		got.append_array(_sear_kinds(lg, a))
+		lg.end_battle()
+	_check("t120.ripe_kinds", got.size() == 6 and got.all(func(k): return k in ["daze", "misfire", "break_guard"]) and got.has("break_guard"), got)
+
+	# 6. 和自己疯共用保护：自己疯过的人隔 2 回合内灼痕满了顺延（仍算满一次）；同回合已有 2 人发作时第三个顺延
+	lg = _fit_logic(s)
+	a = _fit_at(lg, 0, 0)  # 第 2 回合自己疯
+	_fs(lg).floats["brand_fit"] = 0.99
+	lg.turn = 3
+	lg.current_order = [a]
+	var fa := XTianqiBrand.sear_add(lg, a, XTianqiBrand.sear_cap(a))
+	_check("t120.gap_shared", fa == 1 and XTianqiBrand.fills_of(lg, a) == 1 and _fit_turns(lg, a) == [2] and XTianqiBrand._queued(XTianqiBrand.fight(lg), a), _fit_turns(lg, a))
+	lg.turn = 4
+	lg.start_turn()  # 第 5 回合：过了间隔，顺延的发
+	_check("t120.gap_later", _fit_turns(lg, a) == [2, 5] and _sear_kinds(lg, a).size() == 1, _fit_turns(lg, a))
+	lg.end_battle()
+	lg = _fit_logic(s)
+	var p0 := _cost_actor(lg, 0, 10000)
+	var p1 := _cost_actor(lg, 1, 10000)
+	var p2 := _cost_actor(lg, 2, 0)
+	lg.start_turn()
+	lg.start_turn()  # 第 2 回合 p0、p1 自己疯
+	_fs(lg).floats["brand_fit"] = 0.99
+	lg.current_order = [p2]
+	var fp := XTianqiBrand.sear_add(lg, p2, XTianqiBrand.sear_cap(p2))
+	_check("t120.max_two_shared", fp == 1 and XTianqiBrand.fills_of(lg, p2) == 1 and _fit_turns(lg, p2).is_empty() and _fit_turns(lg, p0) == [2] and _fit_turns(lg, p1) == [2], _fit_turns(lg, p2))
+	lg.start_turn()
+	_check("t120.max_two_later", _fit_turns(lg, p2) == [3], _fit_turns(lg, p2))
+	lg.end_battle()
+
+	# 7. 倒下的人：满了照记、不发作；后面战斗里也不清
+	lg = _fit_logic(s)
+	a = lg.actors[0]
+	lg.start_turn()
+	XTianqiBrand.sear_add(lg, a, XTianqiBrand.sear_cap(a))
+	_kill(a)
+	var dead_fill := XTianqiBrand.sear_add(lg, a, XTianqiBrand.sear_cap(a))
+	_check("t120.dead_fills_kept", dead_fill == 1 and XTianqiBrand.fills_of(lg, a) == 2, XTianqiBrand.fills_of(lg, a))
+	a.remove_state(1)
+	a.hp = a.mhp
+	lg.end_battle()
+
+
+## 找一只名字带【守层者】的敌人（没有就 0）
+func _guardian_enemy() -> int:
+	for e in XDB.table("Enemies"):
+		if e is Dictionary and str(e.get("name", "")).begins_with("【守层者】"):
+			return int(e.id)
+	return 0
+
+
+func _sear_gain(out: Array, a: XActor) -> int:
+	var n := 0
+	for r in out:
+		if int(r[0]) == a.actor_id and str(r[2]) == "sear":
+			n += int(r[1])
+	return n
+
+
+func _t120_settle() -> void:
+	var s := _state()
+	var bm := s.battle_members()
+	var a: XActor = bm[0]
+	var b: XActor = bm[1]
+	var d: XActor = bm[2]
+	var u: XActor = bm[3]
+	_setb(a, 5000, 4)
+	_setb(b, 5000, 4)
+	_setb(d, 5000, 4)
+	_setb(u, 4000, 2, false)
+	XTianqiSave.section(s, "brand").firsts = {"guardian:12": 1, "horseman:war": 1}
+	# 再打一只打赢过的守层者：fills a 1 次、b 3 次（封顶 2）、d 倒下 2 次、u 不刻印 40% 2 次；不刻印的人只有烙实这一路
+	var lg := _logic(s, _boss("guardian:12", 12))
+	XTianqiBrand.fight(lg).fills = {a.actor_id: 1, b.actor_id: 3, d.actor_id: 2, u.actor_id: 2}
+	_kill(d)
+	var out := XTianqiBrand.settle(lg)
+	var ga := _sear_gain(out, a)
+	var gb := _sear_gain(out, b)
+	var gd := _sear_gain(out, d)
+	_check("t120.settle_per_fill", ga == 75, out)
+	_check("t120.settle_cap_two", gb == 150, out)
+	_check("t120.settle_dead", gd == 150, out)
+	_check("t120.uncarved_40_stays", XTianqiBrand.value(u) == 4000 and _sear_gain(out, u) == 0, [XTianqiBrand.value(u), out])
+	d.remove_state(1)
+	d.hp = d.mhp
+	# 没满过的首领战：烙实 0（刻印的人再打的追赶照给，但没有 sear 那一笔）
+	_setb(a, 5000, 4)
+	lg = _logic(s, _boss("guardian:12", 12))
+	out = XTianqiBrand.settle(lg)
+	_check("t120.settle_zero", _sear_gain(out, a) == 0 and not out.any(func(r): return str(r[2]) == "sear"), out)
+	# 不是首领战：满过也不变
+	_setb(a, 5000, 4)
+	lg = _logic(s, {"kind": "none", "key": "", "first_floor": 0})
+	XTianqiBrand.fight(lg).fills = {a.actor_id: 2}
+	out = XTianqiBrand.settle(lg)
+	_check("t120.not_boss", out.is_empty() and XTianqiBrand.value(a) == 5000, out)
+	lg = _logic(s, {"kind": "special", "key": "", "first_floor": 0})
+	XTianqiBrand.fight(lg).fills = {a.actor_id: 2}
+	out = XTianqiBrand.settle(lg)
+	_check("t120.special", out.is_empty() and XTianqiBrand.value(a) == 5000, out)
+	# 不刻印的人到 40% 后在首领战里照常发作（自己疯 4.5%、被打疯照常），烙印不变
+	lg = _fit_logic(s)
+	u = lg.actors[3]
+	_setb(u, 4000, 2, false)
+	var p := XTianqiBrand.fit_chance(lg, u)
+	lg.start_turn()
+	lg.current_order = [u]
+	XTianqiBrand.sear_add(lg, u, XTianqiBrand.sear_cap(u))
+	XTianqiBrand.fight(lg).kind = "boss"
+	XTianqiBrand.fight(lg).key = "guardian:12"
+	XTianqiBrand.settle(lg)
+	_check("t120.uncarved_fits", is_equal_approx(p, 0.045) and _fit_turns(lg, u).size() == 1 and XTianqiBrand.value(u) == 4000, [p, _fit_turns(lg, u), XTianqiBrand.value(u)])
+	lg.end_battle()
+	XTianqiSave.section(s, "brand").firsts = {}
+
+
+## 真的战斗：敌人普攻打中才涨（照稿 3 点），没命中不涨；灼痕槽界面读到这一格
+func _t120_real() -> void:
+	var s := _state()
+	var lg := _fit_logic(s)
+	_fs(lg).floats["brand_fit"] = 0.99
+	var a: XActor = lg.actors[0]
+	var e: XEnemy = lg.enemies[0]
+	lg.start_turn()
+	_fs(lg).floats["hit"] = 0.0
+	_fs(lg).floats["evade"] = 0.99
+	_fs(lg).floats["critical"] = 0.99
+	a.hp = a.mhp
+	var hp0 := a.hp
+	var logs := lg.act(e, e.attack_skill(), a)
+	var hit := XTianqiBrand.sear_of(lg, a)
+	_check("t120.real_hit", a.hp < hp0 and hit == 3, [hp0, a.hp, hit, _types(logs)])
+	# 护盾全挡：生命不掉、不涨
+	var granted := XShieldLedger.grant(a, "t120", 1.0e9, 99)
+	var hp2 := a.hp
+	lg.act(e, e.attack_skill(), a)
+	_check("t120.real_shield", granted > 0.0 and a.hp == hp2 and XTianqiBrand.sear_of(lg, a) == hit, [granted, hp2, a.hp, XTianqiBrand.sear_of(lg, a)])
+	# 界面：出战每人一行，读当前值和上限
+	var bar := XTianqiSearBar.make(lg, func(): return {})
+	bar.refresh()
+	_check("t120.ui_rows", bar.rows.size() == lg.actors.size() and int(bar.rows[0].value) == hit and int(bar.rows[0].cap) == XTianqiBrand.sear_cap(a), bar.rows)
+	bar.free()
+	lg.end_battle()
+
+	# 真打一场（敌群 1 当首领战认、生的）：敌人血加厚、自动连打 30 回合，没异化的一下临时调到 20（小怪一下 3 点，30 回合满不了），
+	# 灼痕真的会满、满了真的发作（来源 sear），发作记录守保护（同回合 ≤ 2 人、同一人间隔 ≥ 3）；把这一场当打赢结算，烙实按满过几次给（每人 ≤ 1.5%）
+	var fl := XTianqiBrand._firsts_rw(s)
+	fl["horseman:war"] = 1
+	for x in s.battle_members():
+		_setb(x, 5000, 4)
+		x.recover_all()
+	var ph: Dictionary = XTianqiBrand.data().sear.per_hit
+	var ph0 := int(ph["没异化"])
+	ph["没异化"] = 20
+	var lr := XBattleLogic.new()
+	lr.setup(1, s, XBattleRandom.create(XRandomStream.hex64(20261120)))
+	var cr := XTianqiBrand.fight(lr)
+	cr.kind = "boss"
+	cr.key = "ev:t120"
+	cr.ripe = false
+	lr.auto = true
+	for en in lr.enemies:
+		var pp: Array = (en as XEnemy).data().params.duplicate()
+		pp[0] = float(pp[0]) + 100000000.0
+		(en as XEnemy).zq_ref = {"p": pp, "k": 1}
+		en.param_mark_dirty()
+		en.param_refresh()
+		en.hp = en.mhp
+	var t := 0
+	while not lr.is_over() and t < 30:
+		for x in lr.actors:
+			if x.is_alive():
+				x.hp = x.mhp  # 不让人倒下，专看灼痕
+		lr.run_turn({})
+		t += 1
+	var c := XTianqiBrand.fight(lr)
+	var sear_fits: Array = c.get("fit_log", []).filter(func(r): return str(r.source) == "sear")
+	var total_fills := 0
+	for k in c.fills:
+		total_fills += int(c.fills[k])
+	var per := {}
+	var last := {}
+	var bad := []
+	for r in c.get("fit_log", []):
+		per[int(r.turn)] = int(per.get(int(r.turn), 0)) + 1
+		if last.has(r.actor) and int(r.turn) - int(last[r.actor]) < 3:
+			bad.append(r)
+		last[r.actor] = int(r.turn) + (1 if str(r.kind) == "blackout" else 0)
+	print("T120_REAL ", JSON.stringify({"turns": t, "fills": c.fills, "sear_fits": sear_fits.size(), "all_fits": c.get("fit_log", []).size()}))
+	_check("t120.real_fills", total_fills > 0 and not sear_fits.is_empty() and sear_fits.size() <= total_fills, [total_fills, sear_fits.size()])
+	_check("t120.real_protect", bad.is_empty() and per.values().all(func(n): return n <= 2), [bad, per])
+	var before := {}
+	for x in lr.actors:
+		before[x] = XTianqiBrand.value(x)
+	var out := XTianqiBrand.settle(lr)
+	var ok := true
+	for x in lr.actors:
+		var want := mini(int(c.fills.get(x.actor_id, 0)), 2) * 75
+		if _sear_gain(out, x) != want:
+			ok = false
+	_check("t120.real_settle", ok and total_fills > 0, [c.fills, out])
+	lr.end_battle()
+	ph["没异化"] = ph0
+	fl.erase("ev:t120")
+	fl.erase("horseman:war")
+
+
+func _t120_text() -> void:
+	var txt := XTianqiBrand.TEXT_SEAR_FULL % ["x", XTianqiBrand.sear_name()]
+	_check("t120.text", txt == "x 的灼痕满了！" and not ["境", "锚", "异化", "病", "火"].any(func(w): return txt.contains(w)), txt)
+
+
+func _t120_off() -> void:
+	var s := _state()
+	var lg := _cost_logic(s)
+	var a: XActor = lg.actors[0]
+	var e: XEnemy = lg.enemies[0]
+	XTianqiBrand.act_begin(lg)
+	XTianqiBrand.sear_hit(lg, e, a, 999999.0)
+	var bar := XTianqiSearBar.make(lg, func(): return {})
+	bar.refresh()
+	_check("t120.off", XTianqiBrand.fight(lg).is_empty() and XTianqiBrand.sear_of(lg, a) == 0 and XTianqiBrand.sear_add(lg, a, 999) == 0 and XTianqiBrand.take_logs(lg).is_empty()
+		and XTianqiBrand.sear_rows(lg).is_empty() and bar.rows.is_empty())
+	bar.free()
+	lg.end_battle()

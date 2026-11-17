@@ -779,6 +779,142 @@ static func blacked_out(logic, b) -> bool:
 	return f != null and str(f.kind) == "blackout" and _in_fit(c, b, int(logic.turn))
 
 
+# ---- 灼痕（稿第四节第 4 条，第十三节 T073-d2）----
+## 每个上场的角色一条，只在这一场里（fight 上的 sear：角色 → 当前值）；被敌人打中、生命确实掉了才涨（闪掉、没命中、护盾全挡下的不涨；
+## 掩护的人挨的打算在掩护的人身上，因为挂在实际扣血那一处 BattleLogic.execute_hp_damage）。一次行动（act／强制行动各算一次）
+## 对同一个人、同一个出手的敌人最多一次；群体招每个被打中的人各算一次。一下涨多少按出手那只怪的异化级（守层者、使徒、骑士按终焉）。
+## 涨到上限（60 ＋ 等级 × 0.5 ＋ 烙印 × 0.5，向下取整）：这一场「满过几次」（fills：actor_id → 次数，倒下不清）＋1、槽清零（溢出不留）、发作一次：
+## 他这一回合还没轮到行动就当场开始（XTianqiBrand.trigger，同一套保护，被隔回合、满人挡住就顺延）；这一回合已经行动过（或正在行动、
+## 被反击打满的）就顺延到下一回合开头发（start_turn 先发顺延的）。满了就算一次，发作有没有当场开始都算。净化、驱散不碰它，战斗结束随 fight 一起清。
+## 玩家可见文字（交付单单列，小A 文字审）：%s 依次是角色名、槽名（brand.json sear.name，占位名，最终名小A 起；不用「境」「锚」「异化」「病」「火」）
+const TEXT_SEAR_FULL := "%s 的%s满了！"
+const _TIER_CN := {"qinran": "侵染", "shigu": "蚀骨", "huaxing": "化形", "zhongyan": "终焉"}
+const _ALIEN_METAS := ["xwar_alien", "xfamine_alien", "xplague_alien", "xdeath_alien", "xrift_alien"]
+const _FINALE := "终焉"
+
+
+static func sear_name() -> String:
+	return str(data().get("sear", {}).get("name", "灼痕"))
+
+
+## 灼痕上限（向下取整）：base ＋ 等级 × per_level ＋ 烙印（百分数）× per_brand
+static func sear_cap(a) -> int:
+	var cp: Dictionary = data().get("sear", {}).get("cap", {})
+	var v := float(cp.get("base", 60)) + float(a.level) * float(cp.get("per_level", 0.5)) + pct(a) * float(cp.get("per_brand", 0.5))
+	return int(floorf(v + 1e-6)) if str(cp.get("round", "floor")) == "floor" else roundi(v)
+
+
+## 这一场 a 的灼痕当前值
+static func sear_of(logic, a) -> int:
+	return int(fight(logic).get("sear", {}).get(a, 0))
+
+
+## 这一场 a 的灼痕满过几次（倒下的照算）
+static func fills_of(logic, a) -> int:
+	return int(fight(logic).get("fills", {}).get(int(a.actor_id), 0)) if a is XActor else 0
+
+
+## 出手那只敌人的异化级（中文级名；没异化为「没异化」）：骑士、守层者（含变成使徒的）、本线使徒那一场的异化怪按终焉；
+## 其余读四线异化模块和漩涡异化记在战斗对象上的 units（按段异化也记在各线模块里）
+static func enemy_tier(logic, e) -> String:
+	if not e is XEnemy:
+		return "没异化"
+	if not e.horseman.is_empty():
+		return _FINALE
+	var as_finale: Array = data().get("sear", {}).get("as_finale", [])
+	var nm := str(e.data().get("name", ""))
+	for p in as_finale:
+		if nm.begins_with("【%s】" % str(p)):
+			return _FINALE
+	for m in _ALIEN_METAS:
+		if not logic.has_meta(m):
+			continue
+		var f = logic.get_meta(m)
+		if not f is Dictionary or not f.get("units", {}).has(e):
+			continue
+		if str(f.get("preset", "")).begins_with("apostle"):
+			return _FINALE
+		var t := str(f.units[e].get("tier", ""))
+		return str(_TIER_CN.get(t, t)) if t != "" else "没异化"
+	return "没异化"
+
+
+## 一下涨多少
+static func sear_per_hit(logic, e) -> int:
+	var ph: Dictionary = data().get("sear", {}).get("per_hit", {})
+	return int(ph.get(enemy_tier(logic, e), ph.get("没异化", 3)))
+
+
+## BattleLogic.act、_forced_run 开头：开一次新的行动（「一次行动对同一个人最多一次」按这个分）
+static func act_begin(logic) -> void:
+	var c := fight(logic)
+	if c.is_empty():
+		return
+	c["sear_seen"] = {}
+
+
+## BattleLogic.execute_hp_damage 末尾：敌人打中我方出战的人、生命确实掉了 → 这次行动里头一次就涨
+static func sear_hit(logic, u, t, hp_before: float) -> void:
+	var c := fight(logic)
+	if c.is_empty() or not u is XEnemy or not t is XActor or not logic.actors.has(t) or not (t.hp < hp_before):
+		return
+	if not c.has("sear_seen"):
+		c["sear_seen"] = {}
+	var seen: Dictionary = c.sear_seen.get(u, {})
+	if seen.has(t):
+		return
+	seen[t] = true
+	c.sear_seen[u] = seen
+	sear_add(logic, t, sear_per_hit(logic, u))
+
+
+## 灼痕涨 amount（测试也直接调）；满了记一次、清零、发作。返回这次满了没有（0／1）
+static func sear_add(logic, a, amount: int) -> int:
+	var c := _fc(logic)
+	if c.is_empty() or not a is XActor or amount <= 0:
+		return 0
+	if not c.has("sear"):
+		c["sear"] = {}
+	if not c.has("sear_logs"):
+		c["sear_logs"] = []
+	var v := int(c.sear.get(a, 0)) + amount
+	if v < sear_cap(a):
+		c.sear[a] = v
+		return 0
+	c.sear[a] = 0
+	var id := int(a.actor_id)
+	c.fills[id] = int(c.fills.get(id, 0)) + 1
+	c.sear_logs.append({"type": "battle_text", "text": TEXT_SEAR_FULL % [a.display_name(), sear_name()]})
+	if a.is_alive():
+		if logic.current_order.has(a):
+			c.sear_logs.append_array(trigger(logic, a, "sear")[1])
+		elif not _queued(c, a) and not _in_fit(c, a, int(logic.turn)):
+			c.fit_queue.append([a, "sear"])  # 这一回合已经行动过：下一回合开头发（同顺延）
+	return 1
+
+
+## BattleLogic.act、_forced_run 末尾：灼痕满了的记录（满了的那一行、当场开始的破防）
+static func take_logs(logic) -> Array:
+	var c := fight(logic)
+	if c.is_empty() or c.get("sear_logs", []).is_empty():
+		return []
+	var out: Array = c.sear_logs
+	c.sear_logs = []
+	return out
+
+
+## 灼痕槽界面读：[{actor, value, cap, fills}]（出战的人，烙印关着、不在天启篇战斗里为空）
+static func sear_rows(logic) -> Array:
+	var c := fight(logic)
+	if c.is_empty():
+		return []
+	var out := []
+	for a in logic.actors:
+		if a is XActor:
+			out.append({"actor": a, "value": sear_of(logic, a), "cap": sear_cap(a), "fills": fills_of(logic, a)})
+	return out
+
+
 # ---- 打赢后结算（稿第五节第 5～7 条；P2-4 次序）----
 
 ## 难度系数（五档草案）
