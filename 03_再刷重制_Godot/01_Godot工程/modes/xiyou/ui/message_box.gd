@@ -18,6 +18,8 @@ extends Control
 
 signal _finished(result: int)
 
+## 新界面选项字号（XFontScale 之前）
+const CHOICE_FS := 21
 const MSG_HEIGHT := 172.0
 const SCREEN := Vector2(1280, 720)
 const FACE_INDENT := 168.0
@@ -117,8 +119,9 @@ func _msg_h() -> float:
 	return 180.0 if XUiSkin.on() else MSG_HEIGHT
 
 
+## 新界面选项行高：默认 42；字体大小调大时跟着字号放大（T095，Kyo 11-16：字号 130 时 27 号字放大后挤在 42 的行里，选中项贴住下一行）
 func _choice_lh() -> float:
-	return 42.0 if XUiSkin.on() else LH
+	return maxf(42.0, roundf(XFontScale.size(CHOICE_FS) * 2.0)) if XUiSkin.on() else LH
 
 
 func _digit_w() -> float:
@@ -588,7 +591,7 @@ func _start_choice() -> void:
 	var max_w := 140.0 if on else 96.0
 	_choice_glyphs = []
 	for c in _choices:
-		var t := XMVText.new(XMVText.convert_escapes(str(c)), 12.0 if on else 6.0, 0.0, 0.0, 21 if on else XUI.FONT_SIZE, XUiSkin.font("body") if on else null, on)
+		var t := XMVText.new(XMVText.convert_escapes(str(c)), 12.0 if on else 6.0, 0.0, 0.0, CHOICE_FS if on else XUI.FONT_SIZE, XUiSkin.font("body") if on else null, on)
 		max_w = maxf(max_w, t.run() + (24.0 if on else 12.0))
 		_choice_glyphs.append(t.glyphs)
 	var lh := _choice_lh()
@@ -908,7 +911,7 @@ func _paint_name(c: XMVCanvas) -> void:
 
 func _paint_choices(c: XMVCanvas) -> void:
 	var lh := _choice_lh()
-	var dy := roundf((lh - 29.0) / 2.0) if XUiSkin.on() else 0.0
+	var dy := roundf((lh - XFontScale.size(CHOICE_FS) * 29.0 / CHOICE_FS) / 2.0) if XUiSkin.on() else 0.0
 	for i in range(_choices.size()):
 		var y := (i - _choice_top) * lh
 		if y < 0 or y >= _choice_rows * lh:

@@ -290,7 +290,7 @@ static func enroll(interp) -> void:
 		if r == 0:
 			var road = _road()
 			if road != null:
-				await road.call(ROAD_METHOD, interp)
+				await road.call(ROAD_METHOD, interp.host)   # 入口要的是地图宿主（show_text_with_choices／start_battle 在它身上），不是解释器
 			else:
 				await say(interp, XFestText.ENROLL_SOON)
 			return

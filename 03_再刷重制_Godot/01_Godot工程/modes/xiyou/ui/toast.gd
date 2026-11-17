@@ -128,8 +128,12 @@ func _add(message: String) -> void:
 		style.bg_color = BACK
 		style.set_content_margin_all(PADDING)
 	box.add_theme_stylebox_override("panel", style)
+	var accent: ColorRect = null
 	if on:
-		var accent := ColorRect.new()
+		# 左边 3px 金色竖条。T095（Kyo 11-16「存档成功」带一条黄底）：原先挂在 PanelContainer 下，容器把它撑满内容区，
+		# 成了字底下一整块金底；改挂在外层 slot（普通 Control，锚点生效），画在框上面
+		accent = ColorRect.new()
+		accent.name = "Accent"
 		accent.color = XUiSkin.GOLD
 		accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		accent.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
@@ -137,7 +141,6 @@ func _add(message: String) -> void:
 		accent.offset_right = 11
 		accent.offset_top = 8
 		accent.offset_bottom = -8
-		box.add_child(accent)
 	var label := Label.new()
 	label.text = text
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # 与浏览器一样：句末标点不单独起行
@@ -158,6 +161,8 @@ func _add(message: String) -> void:
 	box.size.y = h
 	slot.custom_minimum_size.y = h
 	slot.add_child(box)
+	if accent != null:
+		slot.add_child(accent)
 	slot.modulate.a = 0.0
 	stack.add_child(slot)
 	# 入树后的Container排序与回退字形塑形会再修正最小高度；栈同步实际框高。

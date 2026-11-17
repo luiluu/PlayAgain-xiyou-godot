@@ -475,6 +475,59 @@ static func drop_help_row(t: String) -> bool:
 	return RegEx.create_from_string("^(?:品质|武器种类|防具种类|装备类型|类别)\\s*[：:]|^(?:购买价格|出售价格|无法出售)").search(t) != null
 
 
+## 装备「自带」属性分色（T095，Kyo 11-16「生命值绿色、魔法值蓝色等等」）：每条「名：数」整段按属性上色，暗底可读；
+## 颜色只是辅助，字照旧写着属性名（色弱也不靠颜色分）。false＝回到整行一色
+static var STAT_COLORS_ON := true
+## [名里含的词, 颜色]，按顺序认第一个（「魔法攻击」要排在「攻击」前）
+const STAT_COLORS := [
+	["魔法攻击", Color("c79bff")], ["魔攻", Color("c79bff")],
+	["魔法防御", Color("62d2cf")], ["魔防", Color("62d2cf")],
+	["生命", Color("7fd67a")], ["HP", Color("7fd67a")],
+	["魔法", Color("63a4ff")], ["法力", Color("63a4ff")], ["MP", Color("63a4ff")],
+	["攻击", Color("ff9b5e")],
+	["防御", Color("a9bdd6")],
+	["敏捷", Color("f1dc6a")],
+	["幸运", Color("ff8fc6")],
+	["暴击", Color("ff6b6b")],
+]
+
+
+## 属性名对应的颜色；认不出返回 null
+static func stat_color(name: String):
+	for pair in STAT_COLORS:
+		if name.contains(str(pair[0])):
+			return pair[1]
+	return null
+
+
+## 给一行「自带」加 spans：[[字, 颜色], …]（拼起来就是原文；空白照原色）。认不出任何属性就原样返回
+static func with_stat_spans(r: Dictionary) -> Dictionary:
+	var t := str(r.get("text", ""))
+	var base: Color = r.get("color", XUiSkin.TEXT_2)
+	var spans := []
+	var hit := false
+	var re := RegEx.create_from_string("[\\s　]+")
+	var pos := 0
+	for m in re.search_all(t):
+		var chunk := t.substr(pos, m.get_start() - pos)
+		if chunk != "":
+			var c = stat_color(chunk.split("：")[0].split(":")[0])
+			hit = hit or c != null
+			spans.append([chunk, c if c != null else base])
+		spans.append([m.get_string(), base])
+		pos = m.get_end()
+	var tail := t.substr(pos)
+	if tail != "":
+		var c2 = stat_color(tail.split("：")[0].split(":")[0])
+		hit = hit or c2 != null
+		spans.append([tail, c2 if c2 != null else base])
+	if not hit:
+		return r
+	var out := r.duplicate()
+	out["spans"] = spans
+	return out
+
+
 ## 收口批（CORE_V2）：装备说明按样稿分节——自带（「名：数」的基础属性）、词条（特效／效果／成长／异化等）、套装、说明（其余）。
 ## rows 是 help_rows 的结果。CORE_V2 关时原样一节无标题（同旧）。
 static func help_sections(rows: Array) -> Array:
@@ -491,7 +544,7 @@ static func help_sections(rows: Array) -> Array:
 		elif affix_re.search(t) != null:
 			buckets["词条"].append(r)
 		elif base_re.search(t) != null:
-			buckets["自带"].append(r)
+			buckets["自带"].append(with_stat_spans(r) if STAT_COLORS_ON else r)
 		else:
 			buckets["说明"].append(r)
 	var out := []

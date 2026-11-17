@@ -752,9 +752,10 @@ func _draw_pane() -> void:
 				var ix := x + (8.0 if group_items(g).size() > 1 else 0.0)
 				var fs := XSkinSelScale.fs(XUiSkin.FS_LIST_MAX, item_scale.k("%d:%d" % [r.g, r.i]), floori(rect.size.y * 0.62))
 				var nm := str(it.name)
-				XUiSkin.ds(text_layer, head if on else body, Vector2(ix, base + fs * 0.36), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
+				# T095（Kyo 11-16）：选中只放大、不换字体（原先选中用标题衬线体，切换时跳字体）
+				XUiSkin.ds(text_layer, body, Vector2(ix, base + fs * 0.36), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
 					XUiSkin.TEXT_3 if not ok else (Color.WHITE if on else XUiSkin.TEXT))
-				var nw := (head if on else body).get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+				var nw := body.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 				var desc := str(it.get("desc", ""))
 				if desc != "":
 					var dx := ix + nw + 14.0
@@ -829,25 +830,70 @@ var _sprite_layer: Control
 var _sprite_step := 0
 
 
-## 当前角色战斗侧视图（sv_actors，9×6 格）第 0 行第 1 格（站立）；没有时 null
-static func sv_frame(a: XActor, col := 1) -> AtlasTexture:
+## 当前角色的待机动作（wait）第 step 格（循环 0,1,2,1）；没有时 null。
+## T095（Kyo 11-16「米拉是走路帧」）：原先自己按 9×6 切第 0 行＝MV 的 walk（前进）动作；改按 XAppearance.look_key／for_look 取（只读，不像 battler_key 会改宿傩状态），
+## 跟战斗里同一套（米拉人形 u2 逐帧图、Mx_SuperSV、appearances.json 覆盖都认），动作取 wait。
+static func sv_frame(a: XActor, step := 0) -> AtlasTexture:
 	if a == null:
 		return null
-	var p := XDB.img_path("sv_actors", str(a.data().get("battlerName", "")))
-	if p == "" or not ResourceLoader.exists(p):
+	var look_key := XAppearance.look_key(a)
+	var info := _sv_info(a, look_key)
+	if info.is_empty():
 		return null
-	var key := "sv:%s#%d" % [p, col]
+	var frames: Array = info.frames
+	var key := "svw:%s#%d" % [look_key, posmod(step, frames.size())]
 	if not XUiSkin._icon_cache.has(key):
-		var sheet := load(p) as Texture2D
-		var at: AtlasTexture = null
-		if sheet != null:
-			at = AtlasTexture.new()
-			at.atlas = sheet
-			var cw := sheet.get_width() / 9.0
-			var ch := sheet.get_height() / 6.0
-			at.region = Rect2(cw * col, 0, cw, ch)
+		var f: Dictionary = frames[posmod(step, frames.size())]
+		var at := AtlasTexture.new()
+		at.atlas = f.tex
+		var r: Rect2 = f.get("rect", Rect2())
+		at.region = r if r.has_area() else Rect2(Vector2.ZERO, (f.tex as Texture2D).get_size())
 		XUiSkin._icon_cache[key] = at
 	return XUiSkin._icon_cache[key]
+
+
+## 待机动作的帧表与「画了东西的范围」（各帧不透明像素的并集，格内坐标）；取不到图（场景外观、没有侧视图）时空字典。
+## 小人按这块范围居中（T095，Kyo 11-16「小铃兰不居中」：小铃兰的侧视图格里人只占下半格，按整格居中就偏下）
+static func _sv_info(a: XActor, look_key: String) -> Dictionary:
+	var key := "svinfo:" + look_key
+	if XUiSkin._icon_cache.has(key):
+		return XUiSkin._icon_cache[key]
+	var info := {}
+	var look := XAppearance.for_look(a, look_key)
+	if look != null and look.kind != "scene" and look.sideview:
+		var frames := []
+		for i in look.frame_count("wait"):
+			var f := look.frame("wait", i)
+			if f.has("tex") and f.tex != null:
+				frames.append(f)
+		if not frames.is_empty():
+			var used := Rect2()
+			for f in frames:
+				var r: Rect2 = f.get("rect", Rect2())
+				if not r.has_area():
+					r = Rect2(Vector2.ZERO, (f.tex as Texture2D).get_size())
+				var u := _opaque_rect(f.tex, r)
+				if u.has_area():
+					used = u if not used.has_area() else used.merge(u)
+			var cell: Rect2 = frames[0].get("rect", Rect2())
+			var size: Vector2 = cell.size if cell.has_area() else (frames[0].tex as Texture2D).get_size()
+			info = {"frames": frames, "cell": size, "used": used if used.has_area() else Rect2(Vector2.ZERO, size)}
+	XUiSkin._icon_cache[key] = info
+	return info
+
+
+## 贴图 region 里不透明像素的外框（格内坐标）；读不到像素时空 Rect2
+static func _opaque_rect(tex: Texture2D, region: Rect2) -> Rect2:
+	var img := tex.get_image() if tex != null else null
+	if img == null or img.is_empty():
+		return Rect2()
+	if img.is_compressed():
+		img.decompress()
+	var r := Rect2i(region).intersection(Rect2i(Vector2i.ZERO, img.get_size()))
+	if not r.has_area():
+		return Rect2()
+	var used := img.get_region(r).get_used_rect()
+	return Rect2(used) if used.has_area() else Rect2()
 
 
 func _ensure_sprite_layer() -> void:
@@ -860,7 +906,7 @@ func _ensure_sprite_layer() -> void:
 	_sprite_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_sprite_layer.draw.connect(_draw_sprite)
 	face.add_child(_sprite_layer)
-	var t := Timer.new()   # 站立动作 0-1-2-1 每格 0.2 秒（动效「全部」档才动）
+	var t := Timer.new()   # 待机动作每格 0.2 秒（MV 侧视图 0-1-2-1；动效「全部」档才动）
 	t.wait_time = 0.2
 	t.autostart = true
 	t.timeout.connect(func():
@@ -879,21 +925,26 @@ func _draw_sprite() -> void:
 		return
 	var idx := host._actor_index if host._mode == "actor" else host._selected_actor
 	var a: XActor = members[clampi(idx, 0, members.size() - 1)]
-	var fr := sv_frame(a, [0, 1, 2, 1][_sprite_step % 4] if XUiSkin.breathing() else 1)
+	var fr := sv_frame(a, _sprite_step if XUiSkin.breathing() else 1)
 	if fr == null:
 		return
+	var info := _sv_info(a, XAppearance.look_key(a))
+	var used: Rect2 = info.used
 	var c := ring.center()
 	var rad := ring.radius - 62.0
 	var fs := fr.get_size()
-	var k := clampi(floori(rad * 2.0 * 0.9 / maxf(fs.x, fs.y)), 1, 3)
+	# 倍数按人实际占的大小算（格子四周的空白不算），整数倍保持像素清楚
+	var k := clampi(floori(rad * 2.0 * 0.9 / maxf(used.size.x, used.size.y)), 1, 3)
 	var sz := fs * k
-	var feet := c + Vector2(0, sz.y * 0.42)
+	# 让人（不透明范围）的中心落在环心；脚底＝不透明范围的底边
+	var origin := (c - (used.position + used.size / 2.0) * k).round()
+	var feet := Vector2(c.x, origin.y + used.end.y * k - 6.0)
 	var shadow := PackedVector2Array()
 	for i in 24:
 		shadow.append(feet + Vector2(cos(TAU * i / 24.0) * 48.0, sin(TAU * i / 24.0) * 12.0))
 	_sprite_layer.draw_colored_polygon(shadow, Color(0, 0, 0, 0.55))
 	_sprite_layer.draw_arc(feet, 52.0, 0, TAU, 32, Color(XUiSkin.GOLD, 0.25), 1.5, true)
-	_sprite_layer.draw_texture_rect(fr, Rect2((c - sz / 2.0).round(), sz), false)
+	_sprite_layer.draw_texture_rect(fr, Rect2(origin, sz), false)
 
 
 ## 收口批（TOUCH_V2）：左上「‹」返回（点＝取消），_ready 时加上
