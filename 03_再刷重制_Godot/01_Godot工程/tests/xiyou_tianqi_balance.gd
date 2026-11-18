@@ -5,7 +5,6 @@ extends Node
 ## 三、档位盖过本体 ±20%：0.8×强者出伤倍率 ≥ 1.2×弱者，0.8×超强者 > 1.2×强者。
 ## 四、协力不让弱者多的队更强：4 人上场，三弱一强 < 二弱二强 < 一弱三强、四弱 < 三弱一强（出伤）；承伤反过来；换上超强者也一样。
 ## 五、难度单调：敌人血量、攻击从寻常到证道不降；寻常、艰险候选池没有超强者、上限 0。
-## 六、数值好看：表里设计数值不含 4（豁免键写在表头）。
 ## 和设计仓库 参数.json 的逐项对照在 03_转换工具/天启篇数据校验.py --params（游戏仓库里没有参数.json）。
 ## 不用转换产物，不建存档。
 
@@ -29,12 +28,11 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
-	XTianqiBalance.reload()
+	XTianqiBalance.reload_table()
 	_complete()
 	_tiers()
 	_assist()
 	_difficulties()
-	_nice()
 	var passed := 0
 	for r in results:
 		if r.passed:
@@ -124,9 +122,3 @@ func _difficulties() -> void:
 	for k in XTianqiBalance.difficulty_keys():
 		_check("助力位放超强者只有证道（D57）：" + k, XTianqiBalance.difficulty(k).get("helper_super") == (k == "zhengdao"), XTianqiBalance.difficulty(k))
 
-
-func _nice() -> void:
-	var bad := XTianqiBalance.nice_number_violations()
-	_check("设计数值不含 4", bad.is_empty(), bad)
-	_check("豁免键只放个数类", XTianqiBalance.data().get("nice_number_exempt", []).all(
-		func(k): return k in ["version", "secret_cap", "super_cap", "min_weak"]))

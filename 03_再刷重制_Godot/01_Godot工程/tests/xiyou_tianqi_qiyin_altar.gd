@@ -107,8 +107,7 @@ func _run() -> void:
 # ---- 一、数据 ----
 
 func _data() -> void:
-	XTianqiQiyin.reload()
-	_check("nice_numbers", XTianqiQiyin.nice_number_violations().is_empty(), XTianqiQiyin.nice_number_violations())
+	XTianqiQiyin.reload_table()
 	var keys := XTianqiQiyin.seal_keys()
 	_check("seals_match_drop", keys == XTianqiQiyinDrop.seals(), [keys, XTianqiQiyinDrop.seals()])
 	_check("seals_match_gear", keys == XTianqiQiyinGear.seal_keys().map(func(x): return str(x.key) if x is Dictionary else str(x)) or keys.all(func(k): return not XTianqiQiyinGear.set_of(k).is_empty()))

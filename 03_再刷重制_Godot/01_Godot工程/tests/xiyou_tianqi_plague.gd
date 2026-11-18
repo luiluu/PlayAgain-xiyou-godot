@@ -120,10 +120,8 @@ func _run() -> void:
 
 
 func _data() -> void:
-	XTianqiLine.reload()
-	XTianqiHorsemen.reload()
-	_check("nice_numbers_plague_line", XTianqiLine.nice_number_violations("plague").is_empty(), XTianqiLine.nice_number_violations("plague"))
-	_check("nice_numbers_horsemen", XTianqiHorsemen.nice_number_violations().is_empty(), XTianqiHorsemen.nice_number_violations())
+	XTianqiLine.reload_table()
+	XTianqiHorsemen.reload_table()
 	var keys := ["choose", "omen_before", "omen_arrive", "omen_win", "spread_before", "spread_win", "lose_retry",
 		"rift_before", "rift_survived", "rift_lost", "rift_after", "rift_home", "apostle10", "apostle20", "apostle30", "echo15", "rumor25",
 		"shard_offer", "shard_take", "shadow_before", "final_before", "final_win", "final_lost"]

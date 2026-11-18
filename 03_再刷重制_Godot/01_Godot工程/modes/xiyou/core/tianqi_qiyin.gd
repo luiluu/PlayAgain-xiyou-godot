@@ -46,15 +46,8 @@ static func data() -> Dictionary:
 	return _data
 
 
-static func reload() -> void:
+static func reload_table() -> void:
 	_data = {}
-
-
-## 表里设计数值含数字 4 的（豁免键见表头）
-static func nice_number_violations() -> Array:
-	var out := []
-	XTianqiHorsemen._scan(data(), "", data().get("nice_number_exempt", []), out)
-	return out
 
 
 ## 开关（O-427）：true＝祭坛和七首之龙的随机流由存档派生（progress.seed＋存档里的计数 rng_n），读档不能重掷；

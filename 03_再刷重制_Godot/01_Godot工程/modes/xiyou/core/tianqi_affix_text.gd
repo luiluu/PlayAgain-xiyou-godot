@@ -24,7 +24,7 @@ static func data() -> Dictionary:
 
 
 ## 测试用：换掉文字表（传空字典＝下次重新读文件）
-static func reload(d := {}) -> void:
+static func reload_table(d := {}) -> void:
 	_data = d
 
 

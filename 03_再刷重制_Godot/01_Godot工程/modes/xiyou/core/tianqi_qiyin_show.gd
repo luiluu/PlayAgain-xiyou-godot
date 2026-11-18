@@ -42,14 +42,8 @@ static func data() -> Dictionary:
 	return _data
 
 
-static func reload() -> void:
+static func reload_table() -> void:
 	_data = {}
-
-
-static func nice_number_violations() -> Array:
-	var out := []
-	XTianqiHorsemen._scan(data(), "", data().get("nice_number_exempt", []), out)
-	return out
 
 
 static func _sec(key: String) -> Dictionary:

@@ -117,10 +117,9 @@ func _run() -> void:
 # ---- 一、数据 ----
 
 func _data() -> void:
-	XTianqiRewards.reload()
+	XTianqiRewards.reload_table()
 	var d := XTianqiRewards.data()
 	_check("draft", d.get("draft") == true)
-	_check("nice_numbers", XTianqiRewards.nice_number_violations().is_empty(), XTianqiRewards.nice_number_violations())
 	for line in XTianqiRewards.LINES:
 		_check("seal_three_" + line, (XTianqiRewards.seal_info(line).get("values", []) as Array).size() == 3)
 		_check("relic_two_" + line, not XTianqiRewards.relic_params(line, false).is_empty() and not XTianqiRewards.relic_params(line, true).is_empty())

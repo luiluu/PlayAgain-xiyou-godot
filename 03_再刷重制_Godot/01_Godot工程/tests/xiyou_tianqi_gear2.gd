@@ -33,7 +33,7 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 func _run() -> void:
 	XMessageBox.auto = true
-	XTianqiGear.reload()
+	XTianqiGear.reload_table()
 	_table()
 	_shop()
 	_drops()

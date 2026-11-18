@@ -22,7 +22,7 @@ func _check(name: String, ok: bool, detail = null) -> void:
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261112)
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	XGojo.unlock_override = 1  # 默认按已解锁最强之名（不读本机配置）；解锁的专门检查见 _unlock
 	_data()
 	_marks()

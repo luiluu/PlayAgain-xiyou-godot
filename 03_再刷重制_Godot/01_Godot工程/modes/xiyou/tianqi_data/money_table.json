@@ -3,7 +3,6 @@
   "source": "天启篇金钱重构方案 v0.2（私密设计仓库 重制设定/，Kyo 2026-11-14 00:44「全可以，按你的建议来，9的话根据难度调整」）",
   "_note": "天启篇金钱规则表（XTianqiMoney），只读。只对天启篇存档生效。规则已定，数是草案（draft），等虚拟玩家学会花钱后实测再校。数字避开 4；个数、层号类写进 nice_number_exempt。难度奖励倍率不在这里，在 balance_table.json 每档 scaling.reward（和掉落共用）。",
   "draft": true,
-  "nice_number_exempt": ["version", "floor_max", "levels", "floors_per_level", "max_buys", "params", "lock_max", "ignore_skills"],
   "field_gold": {
     "_note": "场钱：本档已到最高层（变量 20）打一场随机遇敌的平均金钱，未乘难度奖励倍率。1～27 层按方案盘点的锚点（1 层 300、5 层 2200、10 层 3300、15 层 9500、19 层 1.26 万、20～27 层每层约 ×1.25）平滑补齐；28 层起没有随机遇敌，按 ×1.2 往上补（方案：由数值线补一张平滑的表）。都是草案，等实测场均替换。",
     "floor_max": 36,

@@ -3,12 +3,6 @@
  "draft": true,
  "source": "天启篇_七印祭坛_里副本套装毕业武器方案 v0.4 第 4.1、5.1、6.3、6.4 节；底子数值是占位（cc 起草，进数值阶段再定）",
  "_note": "七印装备变成能穿的装备（XTianqiQiyinEquip）：借 base_id 那件的图标，属性、特性、原版词缀、备注清空，名字、说明、底子换成这里的。params 照 RPG Maker 八项 [最大生命, 最大魔法, 物攻, 物防, 魔攻, 魔防, 敏捷, 幸运]，是神话 80 级的同级参照，再乘 qiyin_gear.json 的 base_mult（武器 1.1）和真印 base_mult（套装件 1.1）。base_id、wtype_id 是原版编号，不是设计数。",
- "nice_number_exempt": [
-  "version",
-  "base_id",
-  "quality_legacy",
-  "atype"
- ],
  "quality_legacy": 14,
  "armor": {
   "atype": 1,

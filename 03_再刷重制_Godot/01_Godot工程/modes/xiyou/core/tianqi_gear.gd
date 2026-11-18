@@ -189,7 +189,7 @@ static func table() -> Dictionary:
 
 
 ## 测试用：清掉缓存，下次重新读文件（反向验证改表后用）
-static func reload() -> void:
+static func reload_table() -> void:
 	_table = {}
 	_drop_pool = []
 

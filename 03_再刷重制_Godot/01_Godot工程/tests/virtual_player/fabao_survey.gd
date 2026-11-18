@@ -17,7 +17,7 @@ func _survey() -> void:
 	XMessageBox.auto = true
 	XTianqiBase.PHASE4 = true
 	XTianqiSkills.MASTERY = true
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	XTianqiBase.clear_cache()
 	XTianqiGear.clear_effective_cache()
 	_own_fabao(0)

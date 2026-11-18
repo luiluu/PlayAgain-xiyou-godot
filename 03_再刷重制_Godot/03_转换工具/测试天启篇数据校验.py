@@ -362,8 +362,8 @@ BATCH3_CASES = [
     ('qiyin_dragon_run', _set(['logs', 'cut'], ''), 'logs.cut 是非空字符串'),
 ]
 
-# D205（Kyo 11-18）：带 4 的数不再报（原来要靠 nice_number_exempt 豁免）
-BATCH3_EXEMPT = [
+# D205（Kyo 11-18）：带 4 的数不再报（表头已无 nice_number_exempt 键）
+BATCH3_WITH_FOUR = [
     ('qiyin_equip', _set(['quality_legacy'], 14), None),
     ('qiyin_show', _set(['true_seal', 'power'], 4), None),
     ('qiyin_dragon_run', _set(['fight', 'troop'], 241), None),
@@ -451,8 +451,8 @@ class Batch3Fixture(unittest.TestCase):
                 self.assertFalse(ok, out)
                 self.assertIn(needle, out)
 
-    def test_own_exempt_respected(self):
-        for i, (name, mutate, _) in enumerate(BATCH3_EXEMPT):
+    def test_values_with_four_pass_d205(self):
+        for i, (name, mutate, _) in enumerate(BATCH3_WITH_FOUR):
             with self.subTest(i=i, table=name):
                 t = self.copy_all()
                 mutate(t[name + '.json'])

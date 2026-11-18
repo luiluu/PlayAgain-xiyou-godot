@@ -46,7 +46,6 @@ const WANT := {
 
 
 func _table() -> void:
-	_check("nice_numbers", XTianqiHorsemen.nice_number_violations().is_empty(), XTianqiHorsemen.nice_number_violations())
 	_check("hp_rate_row", KEYS.map(func(k): return XTianqiHorsemen.hp_rate(k)) == [0.7, 1.0, 1.5, 3.0, 5.0])
 	for line in WANT:
 		var w: Dictionary = WANT[line]

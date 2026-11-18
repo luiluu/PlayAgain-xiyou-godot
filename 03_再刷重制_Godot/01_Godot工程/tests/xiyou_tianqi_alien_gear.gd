@@ -81,10 +81,9 @@ func _run() -> void:
 # ---- 一、数据 ----
 
 func _data() -> void:
-	XTianqiAlienGear.reload()
+	XTianqiAlienGear.reload_table()
 	var d := XTianqiAlienGear.data()
 	_check("draft", d.get("draft") == true)
-	_check("nice_numbers", XTianqiAlienGear.nice_number_violations().is_empty(), XTianqiAlienGear.nice_number_violations())
 	_check("levels_four", (d.level_order as Array).size() == 4 and (d.level_order as Array).all(func(k): return d.levels.has(k)))
 	_check("rates", XTianqiAlienGear.level_info("qinran").rate == 0.03 and XTianqiAlienGear.level_info("zhongyan").rate == 1.0)
 	for line in ["war", "famine", "plague", "death"]:

@@ -30,7 +30,7 @@ func _check(name: String, ok: bool, detail = null) -> void:
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261117)
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	XTianqiBase.clear_cache()
 	XGojo.unlock_override = 0
 	_check("default_off", not XTianqiBase.PHASE4 and not XTianqiSkills.CARDS)
@@ -239,7 +239,7 @@ func _fabao() -> void:
 
 ## 【cc·T163】D189 逐个调角色的覆盖层（skill_rework.json tune.D189）：开着读覆盖后的系数和卡面，TUNE_D189 关掉 reload 后照原卡
 func _tune_d189() -> void:
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	var on_coef := float(XTianqiSkills.spec(10727).damage.coef)
 	var on_hp := float(XTianqiSkills.spec(7057).damage.stats.mhp)
 	var on_atk := float(XTianqiSkills.spec(7057).damage.stats.atk)
@@ -247,13 +247,13 @@ func _tune_d189() -> void:
 	var on_rem := [float(XTianqiSkills.spec(5757).damage.coef), float(XTianqiSkills.spec(5757).damage.stats.mhp), float(XTianqiSkills.spec(5759).damage.coef), float(XTianqiSkills.spec(5758).damage.coef), float(XTianqiSkills.spec(508).damage.coef)]
 	var on_desc := str(XTianqiSkills.spec(10727).desc)
 	XTianqiBase.TUNE_D189 = false
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	var off_coef := float(XTianqiSkills.spec(10727).damage.coef)
 	var off_hp := float(XTianqiSkills.spec(7057).damage.stats.mhp)
 	var off_desc := str(XTianqiSkills.spec(10727).desc)
 	var off_rem := [float(XTianqiSkills.spec(5757).damage.coef), float(XTianqiSkills.spec(5757).damage.stats.mhp), float(XTianqiSkills.spec(5759).damage.coef), float(XTianqiSkills.spec(5758).damage.coef), float(XTianqiSkills.spec(508).damage.coef)]
 	XTianqiBase.TUNE_D189 = true
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	# T175（附则 E 系数整数、D194 艾琳 4／508 5、D193 115 三招降）：7057 改成 物攻×2＋生命上限×1%（系数 1）
 	# T191（D199 Kyo 11-18）：10727 4→5
 	_check("tune_d189.on", on_coef == 5.0 and on_hp == 0.01 and on_atk == 2.0 and on_7057 == 1.0 and on_desc.contains("×5"), [on_coef, on_hp, on_atk, on_7057, on_desc])
@@ -263,19 +263,19 @@ func _tune_d189() -> void:
 	# 【cc·T191】D200 A：原卡小数系数全表取整（tune.D200，叠在 D189 之后）；TUNE_D200 关掉 reload 后照取整前
 	var d200_on := [float(XTianqiSkills.spec(101).damage.coef), float(XTianqiSkills.spec(160).damage.coef), (XTianqiSkills.spec(160).damage.conds as Array).size(), str(XTianqiSkills.spec(101).desc)]
 	XTianqiBase.TUNE_D200 = false
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	var d200_off := [float(XTianqiSkills.spec(101).damage.coef), float(XTianqiSkills.spec(160).damage.coef), (XTianqiSkills.spec(160).damage.conds as Array).size(), str(XTianqiSkills.spec(101).desc)]
 	var d200_off_10727 := float(XTianqiSkills.spec(10727).damage.coef)
 	XTianqiBase.TUNE_D200 = true
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	_check("tune_d200.switch", d200_on.slice(0, 3) == [4.0, 0.45, 0] and str(d200_on[3]).contains("物理攻击×4") and d200_off.slice(0, 3) == [3.6, 0.5, 1] and str(d200_off[3]).contains("×3.6") and d200_off_10727 == 5.0, [d200_on, d200_off, d200_off_10727])
 	# 第二批（偏弱超强者调高）：176 贯日 6.0→10、177 棱光 2.5→6（T175 取整；T163 的本体成长 ×1.2 撤掉，开着也是 1）；关掉照原卡
 	var on_gr := [float(XTianqiSkills.spec(10315).damage.coef), float(XTianqiSkills.spec(10337).damage.coef), XTianqiBase.actor_mult(177, "mat"), XTianqiBase.actor_mult(176, "atk"), XTianqiBase.actor_mult(108, "mmp")]
 	XTianqiBase.TUNE_D189 = false
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	var off_gr := [float(XTianqiSkills.spec(10315).damage.coef), float(XTianqiSkills.spec(10337).damage.coef), XTianqiBase.actor_mult(177, "mat"), XTianqiBase.actor_mult(176, "atk"), XTianqiBase.actor_mult(108, "mmp")]
 	XTianqiBase.TUNE_D189 = true
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	_check("tune_d189.raise_on", on_gr == [10.0, 6.0, 1.0, 1.0, 1.0] and str(XTianqiSkills.spec(10337).desc).contains("×6；"), on_gr)  # T175：成长 ×1.2 撤掉、系数取整
 	var frac := []
 	for sid in (XTianqiSkills.data().get("tune", {}).get("D189", {}).get("skills", {}) as Dictionary).keys():

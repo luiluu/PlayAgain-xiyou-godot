@@ -364,7 +364,6 @@ def build_abs():
     return {
         '_note': 'T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 %.0f、魔法 %.0f。T081 起只接了结构化的两类：药品固定回复（battle_logic._apply_effect）、常数状态持续伤害（ext_dot），其余几类 new 还是文字说明、未接。' % (b['mhp'], b['mmp']),
         'version': 1,
-        'nice_number_exempt': ['entries', 'id', 'unscanned', 'base', 'groups'],
         'base': {'weak_mhp81': b['mhp'], 'weak_mmp81': b['mmp'], 'weak_main81': b['main']},
         'entries': entries,
         'groups': groups,
@@ -409,7 +408,6 @@ def main():
         base_line = {
             '_note': '天启篇角色本体标准线（T080，基础数值重构 v0.3 第四节）。只读；开关关着时没有代码读它。line：攻击类六项＝A0＋A1×等级，生命＝×hp_mult，魔法＝×mp_mult；roles：职责对生命、物防魔防的系数（dmg_in_cards 只是说明：伤害系数已经写在技能卡里，不再乘）；speed：只管敏捷；tweak：个人微调（项 → ×0.8～1.2，要写理由）；actors：每人职责、速度档（唯一来源是技能重构 v0.2 每张角色卡的「X型」句和标题行；卡上没写清的填均衡、中，id 列在 unclear）；backtest_notes：回验偏差超 ±10% 的逐条理由。',
             'version': 1,
-            'nice_number_exempt': ['dev', 'unclear', 'skill', 'actor'],
             'line': LINE,
             'roles': ROLES,
             'speed': SPEED,
@@ -425,7 +423,6 @@ def main():
         gear_base = {
             '_note': '天启篇装备底子（T080，基础数值重构 v0.3 第五节）。只读；开关关着时没有代码读它。一件装备某一项的底子＝标准线(折算等级)×部位系数×品质系数，折算等级＝1＋装备等级×98÷90，标准线读 base_line.json。slots：部位系数（etype＝原装备类型号；主攻 atk、生命 hp、物防魔防 def 各自、敏捷 agi、幸运 luk）；grades：七档品质系数（键同 tianqi_affix_roll.gd 的 QUALITY_KEYS）；main_stat：主攻给物攻还是魔攻；ratio：换算比（词缀、强化加的固定属性 × 它，按装备等级 0～90 一张表，列 atk／hp／def／agi／luk＝标准线÷原版同等级弱者本体中位）；qiyin：七印装备、毕业武器、真印（80 级神话，武器和真印再 ×base_mult，也读这张表）；exceptions：不读这张表的装备。',
             'version': 1,
-            'nice_number_exempt': ['ratio', 'etype', 'slot_totals_range'],
             'slots': SLOTS,
             'slot_totals_range': {'atk': [2.5, 3.0], 'hp': [3.0, 4.0], 'def': [2.5, 3.0], 'agi': [0.3, 0.3], 'luk': [0.3, 0.3]},
             'grades': GRADES,

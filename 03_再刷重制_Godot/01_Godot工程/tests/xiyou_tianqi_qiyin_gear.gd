@@ -5,7 +5,6 @@ extends Node
 ## 三、13 把毕业武器、名字不重；前六印各两类、12 类不重不漏；默印一把、随机类。
 ## 四、5 件神器，神器栏类型 17。
 ## 五、表里用到的效果码都在 _note.effect_codes 列过，每条效果都有 text。
-## 六、数值好看：设计数值不含 4（豁免键写在表头）。
 ## 不用转换产物，不建存档。
 
 const SEALS := ["bai", "hong", "hei", "hui", "xun", "zhen", "mo"]
@@ -29,14 +28,13 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
-	XTianqiQiyinGear.reload()
+	XTianqiQiyinGear.reload_table()
 	_header()
 	_seals()
 	_sets()
 	_weapons()
 	_artifacts()
 	_codes()
-	_nice()
 	var passed := 0
 	for r in results:
 		if r.passed:
@@ -170,9 +168,3 @@ func _effects_without_text(v, out: Array) -> void:
 		for x in v:
 			_effects_without_text(x, out)
 
-
-func _nice() -> void:
-	var bad := XTianqiQiyinGear.nice_number_violations()
-	_check("设计数值不含 4", bad.is_empty(), bad)
-	_check("豁免键只放编号、类型号、层数、件数", XTianqiQiyinGear.data().get("nice_number_exempt", []).all(
-		func(k): return k in ["version", "order", "etype", "affix_tier", "count", "first_kill_floors", "wtype_id"]))
