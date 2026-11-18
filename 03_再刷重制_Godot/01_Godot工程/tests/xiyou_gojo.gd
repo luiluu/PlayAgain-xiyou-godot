@@ -179,7 +179,7 @@ func _purple() -> void:
 	_check("purple_in_1", is_equal_approx(XGojo.formula(a, b, p_in), a.mat * 1.8))
 	XGojo.cast = {}
 	var red := XDB.rec("Skills", XGojo.RED)
-	_check("red_table_coef", is_equal_approx(XTianqiSkills.formula(a, b, red), a.mat * 3.6))
+	_check("red_table_coef", is_equal_approx(XTianqiSkills.formula(a, b, red), a.mat * 4.0))  # T191（D200）卡上 3.6 取整成 4
 	_check("adv2_ops", XGojo.damage_ops(p_out, a).size() == 2 and XGojo.damage_ops(p_in, a).is_empty())
 	lg.end_battle(0)
 

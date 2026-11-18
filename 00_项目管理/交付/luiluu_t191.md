@@ -44,8 +44,14 @@
 
 - `天启篇数据校验.py` 全部通过（退出码 0）；`测试天启篇数据校验.py` 60 个过。
 - `语法检查.py`：1032 个 .gd 0 问题；`工具回归.py` 全过（124 秒）。
-- Godot 场景（--headless，静音）：见下「场景」行（结果抄自 并行测试.py 输出）。
+- Godot 场景（`并行测试.py`，--headless 静音），共 61 个全过：
+  - T175 那 25 个（t164_gem_shots、xiyou_tianqi_gear_params、xiyou_tianqi_gem_power、xiyou_tianqi_drop、xiyou_tianqi_nine_off、xiyou_tianqi_gear2、xiyou_tianqi_qiyin_gear、xiyou_tianqi_ring_style、xiyou_tianqi_qiyin_equip、xiyou_tianqi_skills 238/238、xiyou_tianqi_rewards、xiyou_tianqi_gear、xiyou_tianqi_phase4 94/94、xiyou_tianqi_phase4_modules、xiyou_json_cache、xiyou_text_batch23、xiyou_tianqi_balance、xiyou_tianqi_ledger、xiyou_tianqi_affix_text、xiyou_fabao_rework、xiyou_magic_level、xiyou_magic_weapon、xiyou_magic_weapon_level、xiyou_determinism、xiyou_tianqi_ledger_p3）；
+  - 读技能卡的另 36 个（text_batch23_shots、xiyou_all_scope_repeat、xiyou_boss_strong_tianqi、xiyou_gojo 84/84、xiyou_gojo_trials、xiyou_hall_intro、xiyou_tianqi_again_use／brand／e2e／elements／no_diff_passive／no_x6／numbers／opening／party／real_swap／save／sect_b／sect_ren／skill_debt／swap_view／trim／trumpet／weak_clear／zhengdao_party、xiyou_cat_help、xiyou_cat_trial、xiyou_liuying／liuying2／liuying3／liuying_help、xiyou_xuan_auto／battle／bind／chart、xiyou_yomi_battle）。
+  - 改了期望值的：`xiyou_tianqi_skills`（101 3.6→4、102 2.5→3、3632 ×4、破魂对万剑合计 1.5 倍→16 比 12、露丝取高 ×4）、`xiyou_tianqi_phase4`（cap.within ×4、寒锋权重 3.6→4、10727 ×5，新加 `tune_d200.switch`：开着 101＝4、160＝45% 且无条件倍率并掉，关掉 reload 回 3.6／0.5）、`xiyou_gojo`（赫 red 卡上 3.6→4）。
 - 没跑：K 复量（T192）；全量 `检查.sh`（车道不跑）；实机看卡面。
+
+- 附录放在 `交付/T191_附录/系数取整改前改后.md`（.md，交付自检提示它像另一份交付单；合并时 `--also` 带上或挪进归档）。
+- 取整后 4748 破魂 2 段 ×8 对 万剑归一 3 段 ×4，合计比从 1.5 倍变成 1.33 倍（T081 拆段时定的 1.5 倍）；五条悟紫 1.8 是 `gojo.gd` 代码常数，不在卡上，没动。
 
 ## 要 Kyo 定
 
@@ -88,4 +94,6 @@
 ## 本分支提交
 
 - c8a0a6c82 WIP：D200 覆盖层、10727→5、校验系数整数、D205 去避 4
-- （附录、交付单、测试结果：见 git log）
+- 5251af9da／附录挪目录：交付单＋附录
+- 3841aee60：期四、技能专项期望值、tune_d200.switch
+- （xiyou_gojo 期望值、交付单测试结果：本单最后一个提交）
