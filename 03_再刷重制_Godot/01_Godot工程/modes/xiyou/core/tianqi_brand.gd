@@ -606,10 +606,10 @@ static func _queued(c: Dictionary, a) -> bool:
 
 
 ## 开始一次发作：抽花样、记保护。返回给画面的记录（破防当场报；其余在轮到他行动时报）
-static func _start_fit(logic, c: Dictionary, a, source: String) -> Array:
+static func _start_fit(logic, c: Dictionary, a, source: String, forced_kind := "") -> Array:
 	var turn := int(logic.turn)
 	var kinds := fit_kinds(logic, a)
-	var kind: String = kinds[logic._mod(kinds.size(), "brand_fit_kind")] if kinds.size() > 1 else kinds[0]
+	var kind: String = forced_kind if forced_kind != "" else (kinds[logic._mod(kinds.size(), "brand_fit_kind")] if kinds.size() > 1 else kinds[0])
 	var last := turn
 	var logs := []
 	match kind:
@@ -655,6 +655,10 @@ static func start_turn(logic) -> Array:
 		else:
 			keep.append(q)
 	c.fit_queue = keep
+	for a in logic.actors.duplicate():
+		var tf = TEST_FIT.get(int(a.actor_id)) if a is XActor else null
+		if tf != null and int(tf[0]) == turn and a.is_alive() and not _in_fit(c, a, turn):
+			logs.append_array(_start_fit(logic, c, a, "test", str(tf[1])))  # 测试／量数钩子：点名触发，不取随机数
 	if turn <= _guard_rounds(c):
 		return logs
 	for a in logic.actors:
@@ -797,6 +801,8 @@ static func blacked_out(logic, b) -> bool:
 ## （XItemMarks.enforce_party）、开新一场先清扫（sweep）、回放导出写留底（patch_save）都只认它。
 ## 开关默认关：关着第六种一律断片（同 T086 前）。打开之前画面演出 T086-c 必须先合（设计稿第十节）。
 static var REAL_SWAP := false
+## 测试／量数钩子（设计稿第八节「触发用测试钩子点名，不靠掷」）：{actor_id: [回合, 花样键]}，那一回合开头直接开这次发作（不掷几率、不取随机数、不看保护）。游戏里恒空
+static var TEST_FIT := {}
 ## 玩家可见文字（待小A 文字审）：%s 是角色名。轮到他时能换、收尾之后换不了了（这次行动里助力位倒下等）
 const TEXT_SWAP_FALLBACK := "%s 没能退下，断片了！"
 static var _holds: Array = []  # [{state: WeakRef, logic: WeakRef, snap: Array}]
