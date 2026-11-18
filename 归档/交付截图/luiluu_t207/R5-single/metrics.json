@@ -1,0 +1,96 @@
+{
+  "original_bbox": [
+    61,
+    89,
+    260,
+    217
+  ],
+  "trial_bbox": [
+    61,
+    89,
+    260,
+    217
+  ],
+  "bbox_width_change_percent": 0,
+  "bbox_height_change_percent": 0,
+  "scale": 0.2522179974651457,
+  "alpha_values": [
+    0,
+    255
+  ],
+  "head_measurement": "manual anatomical bounding boxes excluding horns; approximate, not segmentation ground truth",
+  "head_original_box": [
+    68,
+    155,
+    109,
+    205
+  ],
+  "head_trial_box": [
+    61,
+    151,
+    114,
+    204
+  ],
+  "head_width_original": 41,
+  "head_width_trial": 53,
+  "head_width_change_percent": 29.268292682926834,
+  "torso_measurement": "manual shoulder-to-ventral torso landmarks, excluding wings/feet",
+  "torso_original_y": [
+    144,
+    193
+  ],
+  "torso_trial_y": [
+    145,
+    193
+  ],
+  "torso_height_change_percent": -2.0408163265306145,
+  "holes_original": [
+    {
+      "pixels": 16,
+      "box": [
+        146,
+        102,
+        151,
+        106
+      ]
+    },
+    {
+      "pixels": 7,
+      "box": [
+        153,
+        103,
+        156,
+        107
+      ]
+    }
+  ],
+  "holes_trial": [
+    {
+      "pixels": 81,
+      "box": [
+        164,
+        96,
+        179,
+        105
+      ]
+    },
+    {
+      "pixels": 33,
+      "box": [
+        146,
+        102,
+        153,
+        109
+      ]
+    },
+    {
+      "pixels": 3,
+      "box": [
+        70,
+        146,
+        71,
+        149
+      ]
+    }
+  ]
+}

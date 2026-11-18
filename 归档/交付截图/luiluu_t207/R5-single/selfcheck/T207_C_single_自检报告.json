@@ -1,0 +1,14 @@
+{
+  "name": "T207_C_single",
+  "profile": "biped",
+  "pass": false,
+  "items": [
+    {
+      "id": "native_size",
+      "level": "fail",
+      "ok": false,
+      "msg": "待机条尺寸 (340, 280)，应为 (192, 64)（3 帧，每帧 64×64）",
+      "value": null
+    }
+  ]
+}
