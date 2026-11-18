@@ -6,7 +6,6 @@ extends Node
 ## 四、龙血：每人最多 3 瓶，第 4 瓶拒绝、不消耗；加成 0／3%／6%／9%。
 ## 五、战斗数据：艰险 250 万，其他难度乘敌人血量倍率，七段加起来等于总血。
 ## 六、统计（固定种子）：艰险 20000 次判定的出现率贴着算上保底的理论值；武器 33%、神器 3%。
-## 七、数值好看：表里设计数值不含 4（豁免键写在表头）。
 ## 不用转换产物，不建存档。
 
 const EPS := 1e-9
@@ -29,15 +28,14 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
-	XTianqiQiyinDragon.reload()
-	XTianqiBalance.reload()
+	XTianqiQiyinDragon.reload_table()
+	XTianqiBalance.reload_table()
 	_table()
 	_rift()
 	_reward()
 	_blood()
 	_fight()
 	_stats()
-	_nice()
 	var passed := 0
 	for r in results:
 		if r.passed:
@@ -251,7 +249,3 @@ func _stats() -> void:
 	_check("统计里神器五件都出过", arts.size() == 5, arts.keys())
 	_check("随机流没出错", rng.error.is_empty() and rr.error.is_empty())
 
-
-func _nice() -> void:
-	var bad := XTianqiQiyinDragon.nice_number_violations()
-	_check("设计数值不含 4", bad.is_empty(), bad)

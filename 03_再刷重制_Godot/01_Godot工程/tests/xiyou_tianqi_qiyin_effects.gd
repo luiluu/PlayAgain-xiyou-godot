@@ -120,7 +120,7 @@ static func _sd(v: float) -> float:  # 去全队 ×6（XTianqiNoX6，O-470）开
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261112)
-	XTianqiQiyinGear.reload()
+	XTianqiQiyinGear.reload_table()
 	_marks()
 	_damage()
 	_cost_hp()

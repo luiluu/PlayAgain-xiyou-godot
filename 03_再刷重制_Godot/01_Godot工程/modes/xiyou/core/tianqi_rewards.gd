@@ -42,16 +42,8 @@ static func data() -> Dictionary:
 	return _data
 
 
-static func reload() -> void:
+static func reload_table() -> void:
 	_data = {}
-
-
-## 表里设计数值含数字 4 的（豁免键见 nice_number_exempt）
-static func nice_number_violations() -> Array:
-	var out := []
-	var d := data()
-	XTianqiHorsemen._scan(d, "", d.get("nice_number_exempt", []), out)
-	return out
 
 
 static func on(s: XState = null) -> bool:

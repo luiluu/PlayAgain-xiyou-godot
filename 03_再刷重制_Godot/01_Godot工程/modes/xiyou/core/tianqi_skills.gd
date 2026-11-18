@@ -120,7 +120,7 @@ static func tune_merge(base: Dictionary, patch: Dictionary) -> Dictionary:
 
 
 ## 测试用：清掉缓存，下次重新读文件
-static func reload() -> void:
+static func reload_table() -> void:
 	_data = {}
 	_skills = {}
 	_states = {}

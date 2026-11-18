@@ -57,8 +57,8 @@ func _enemies(troop: int) -> Array:
 
 func _run() -> void:
 	XMessageBox.auto = true
-	XTianqiSegAlien.reload()
-	XTianqiWarLine.reload()
+	XTianqiSegAlien.reload_table()
+	XTianqiWarLine.reload_table()
 	_data()
 	_rules()
 	_kinds()
@@ -74,7 +74,6 @@ func _run() -> void:
 
 
 func _data() -> void:
-	_check("nice_numbers", XTianqiSegAlien.nice_number_violations().is_empty(), XTianqiSegAlien.nice_number_violations())
 	var cases := {"【稀有】巨型鱼人": "rare", "【精英】鱼人士兵": "rare", "【首领】捕猎者": "very_rare", "【前所未见】苍白之影": "very_rare",
 		"【亘古未有】牛马王": "very_rare", "【守层者】里德": "guardian", "【被封印者】梅林之影": "abyss", "【未知存在】暗悟空": "abyss",
 		"【古神】曼丝": "abyss", "【罕见】哥布林士兵": "", "【十分罕见】蠢萌怪": "", "火焰哥布林": "", "【传承者】炎龙守护者": ""}

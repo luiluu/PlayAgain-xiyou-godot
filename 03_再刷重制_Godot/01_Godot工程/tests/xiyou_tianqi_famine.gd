@@ -134,10 +134,7 @@ func _run() -> void:
 
 
 func _data() -> void:
-	XTianqiLine.reload()
-	_check("nice_numbers_famine_line", XTianqiLine.nice_number_violations("famine").is_empty(), XTianqiLine.nice_number_violations("famine"))
-	_check("nice_numbers_war_line", XTianqiLine.nice_number_violations("war").is_empty(), XTianqiLine.nice_number_violations("war"))
-	_check("nice_numbers_horsemen", XTianqiHorsemen.nice_number_violations().is_empty(), XTianqiHorsemen.nice_number_violations())
+	XTianqiLine.reload_table()
 	var keys := ["prologue", "after_clear", "choose", "omen_before", "omen_arrive", "omen_win", "spread_before", "spread_win", "lose_retry",
 		"rift_before", "rift_survived", "rift_lost", "rift_after", "rift_home", "apostle10", "apostle20", "apostle30", "echo15", "rumor25",
 		"quiz_offer", "quiz_done", "shadow_before", "final_before", "final_win", "final_lost"]

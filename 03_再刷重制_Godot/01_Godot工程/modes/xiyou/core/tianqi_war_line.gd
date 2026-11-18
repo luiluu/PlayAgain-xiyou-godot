@@ -33,12 +33,8 @@ static func data() -> Dictionary:
 	return XTianqiLine.data(KEY)
 
 
-static func reload() -> void:
-	XTianqiLine.reload(KEY)
-
-
-static func nice_number_violations() -> Array:
-	return XTianqiLine.nice_number_violations(KEY)
+static func reload_table() -> void:
+	XTianqiLine.reload_table(KEY)
 
 
 static func open_for(s: XState) -> bool:

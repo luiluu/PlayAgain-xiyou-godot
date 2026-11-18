@@ -54,10 +54,10 @@ func _run() -> void:
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
 
 
-## XTianqiSkills.reload() 会把 CARDS 等静态开关清回默认（main 上就这样），重读表后把当前开关补回去
+## XTianqiSkills.reload_table() 会把 CARDS 等静态开关清回默认（main 上就这样），重读表后把当前开关补回去
 func _reload() -> void:
 	var keep := [XTianqiSkills.CARDS, XTianqiSkills.FOLLOW_FULL, XTianqiSkills.NATIVE_COUNTER, XTianqiSkills.COUNTER_ONCE, XTianqiSkills.GUARD]
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	XTianqiSkills.CARDS = keep[0]
 	XTianqiSkills.FOLLOW_FULL = keep[1]
 	XTianqiSkills.NATIVE_COUNTER = keep[2]

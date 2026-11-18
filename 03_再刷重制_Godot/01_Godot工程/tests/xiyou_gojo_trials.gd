@@ -23,7 +23,7 @@ func _check(name: String, ok: bool, detail = null) -> void:
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261114)
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	XGojo.unlock_override = 1
 	_tables()
 	_conditions()

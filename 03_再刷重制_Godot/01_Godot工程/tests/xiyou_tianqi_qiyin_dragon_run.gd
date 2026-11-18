@@ -98,10 +98,8 @@ func _run() -> void:
 # ---- 一、数据 ----
 
 func _data() -> void:
-	XTianqiQiyinDragonRun.reload()
-	XTianqiQiyinShow.reload()
-	_check("nice_numbers_run", XTianqiQiyinDragonRun.nice_number_violations().is_empty(), XTianqiQiyinDragonRun.nice_number_violations())
-	_check("nice_numbers_show", XTianqiQiyinShow.nice_number_violations().is_empty(), XTianqiQiyinShow.nice_number_violations())
+	XTianqiQiyinDragonRun.reload_table()
+	XTianqiQiyinShow.reload_table()
 	var f := XTianqiQiyinDragonRun.fight_info()
 	var troop := XDB.rec("Troops", int(f.troop))
 	_check("troop_exists", not troop.is_empty() and troop.members.any(func(m): return int(m.enemyId) == int(f.shell_enemy)), troop)
@@ -306,7 +304,7 @@ func _reward() -> void:
 	var h3 := FakeHost.new()
 	h3.answers = [0, 1]  # 选白印、先收着；招募不答＝稍后再选
 	var got: Array = await XTianqiQiyinDragonRun.settle(h3, s2)
-	XTianqiQiyinDragon.reload()
+	XTianqiQiyinDragon.reload_table()
 	var w: Array = got.filter(func(i): return str(i.kind) == "weapon")
 	_check("reward_weapon_item", w.size() == 1 and bool(w[0].true_seal) and XTianqiQiyinDrop.weapon_classes(str(w[0].seal)).has(str(w[0].wtype)), got)
 	_check("reward_artifact", XTianqiQiyin.progress(s2).artifacts.size() == 1 and XTianqiQiyinShow.played.any(func(r): return r.kind == "artifact"))

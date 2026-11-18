@@ -41,7 +41,7 @@ const T := preload("res://modes/xiyou/core/tianqi_affix_table.gd")
 
 
 func _run() -> void:
-	T.reload()
+	T.reload_table()
 	var d := T.data()
 	_check("能读表", not d.is_empty())
 	var aff: Array = d.get("affixes", [])

@@ -3,7 +3,6 @@
   "draft": true,
   "source": "七印祭坛方案 v0.4 第 6.1 节第 6 条（演出「实装时不要省」）、第 3.1 节（龙隙）；美术素材清单 v0.2（S1 七印徽记、P1～P5 神器大图、P6 龙隙裂缝）",
   "_note": "七印的掉落、揭开、龙隙演出（XTianqiQiyinShow），只读。颜色照美术清单第 2.2 节主色；音效借原版 SE。美术没到之前一律引擎画占位（色块、圆印、文字）；图放进 art 里写的路径就自动换上，不用改代码。时长单位秒。",
-  "nice_number_exempt": ["version", "frames", "power", "speed"],
   "art": {
     "_note": "美术清单的编号：S1 七印徽记（每枚 256×256 透明，按 seals 顺序切成 bai.png 等七张）；P1～P5 神器大图（512×512 透明，按神器键命名）；P6 龙隙裂缝（1280×720 透明）。文件不在就画占位。",
     "seal_dir": "res://content/tianqi/qiyin/seals/",

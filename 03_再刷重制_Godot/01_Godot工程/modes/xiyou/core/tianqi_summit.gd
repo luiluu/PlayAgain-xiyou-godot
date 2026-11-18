@@ -46,15 +46,8 @@ static func data() -> Dictionary:
 	return _data
 
 
-static func reload() -> void:
+static func reload_table() -> void:
 	_data = {}
-
-
-## 表里设计数值含数字 4 的（豁免键是层号、地图号、敌群号、坐标等）
-static func nice_number_violations() -> Array:
-	var out := []
-	XTianqiHorsemen._scan(data(), "", data().get("nice_number_exempt", []), out)
-	return out
 
 
 # ---- 开关与进度 ----

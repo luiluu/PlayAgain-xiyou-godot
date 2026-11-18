@@ -290,7 +290,7 @@ func _test_fixed_and_alien() -> void:
 		over_p_after.append(JSON.stringify(XTianqiElements.fixed_deal(XState.current, "knight", ph)))
 	XTianqiElements.data()["fixed_entries"]["knight"] = orig_knight_spec
 	XTianqiElements._silence_knight_clamp_error = false
-	XTianqiElements.reload()
+	XTianqiElements.reload_table()
 	_check("knight_oversized_spec_clamped_and_no_redeal",
 		over_ok and saved_over and loaded_over and not over_redeal_needed
 		and JSON.stringify(over_p) == JSON.stringify(over_p_after),

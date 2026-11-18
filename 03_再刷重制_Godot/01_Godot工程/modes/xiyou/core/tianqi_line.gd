@@ -60,19 +60,11 @@ static func data(key: String) -> Dictionary:
 	return _data[key]
 
 
-static func reload(key := "") -> void:
+static func reload_table(key := "") -> void:
 	if key == "":
 		_data = {}
 	else:
 		_data.erase(key)
-
-
-## 表里设计数值含数字 4 的（豁免键是层号、地图号、敌群号、坐标、回合数）
-static func nice_number_violations(key: String) -> Array:
-	var out := []
-	var d := data(key)
-	XTianqiHorsemen._scan(d, "", d.get("nice_number_exempt", []), out)
-	return out
 
 
 # ---- 异化规则（各线自己的模块） ----

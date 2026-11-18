@@ -1,12 +1,6 @@
 {
  "_note": "天启篇角色本体标准线（T080，基础数值重构 v0.3 第四节）。只读；开关关着时没有代码读它。line：攻击类六项＝A0＋A1×等级，生命＝×hp_mult，魔法＝×mp_mult；roles：职责对生命、物防魔防的系数（dmg_in_cards 只是说明：伤害系数已经写在技能卡里，不再乘）；speed：只管敏捷；tweak：个人微调（项 → ×0.8～1.2，要写理由）；actors：每人职责、速度档（唯一来源是技能重构 v0.2 每张角色卡的「X型」句和标题行；卡上没写清的填均衡、中，id 列在 unclear）；backtest_notes：回验偏差超 ±10% 的逐条理由。",
  "version": 1,
- "nice_number_exempt": [
-  "dev",
-  "unclear",
-  "skill",
-  "actor"
- ],
  "line": {
   "A0": 20,
   "A1": 20,

@@ -110,7 +110,7 @@ func _log_digest(logs: Array) -> String:
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261116)
-	XTianqiWeakAffix.reload()
+	XTianqiWeakAffix.reload_table()
 	_table()
 	_guide_cover_reflect()      # 断言 1
 	_multi_segment_fallback()   # 断言 2、3；v0.3.1 一

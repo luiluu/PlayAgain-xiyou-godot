@@ -30,7 +30,7 @@ static func _sd(v: float) -> float:  # 去全队 ×6（XTianqiNoX6，O-470）开
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261112)
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	XGojo.unlock_override = 0  # 五条悟没解锁最强之名（不读本机配置）：超强者照 16 人
 	_check("defaults", not XTianqiSkills.CARDS and not XTianqiSkills.MASTERY and XTianqiSkills.ACTION_CAP and XTianqiSkills.TIERS)
 	_default_off()

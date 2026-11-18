@@ -58,7 +58,7 @@ static func data() -> Dictionary:
 	return _data
 
 
-static func reload(d := {}) -> void:
+static func reload_table(d := {}) -> void:
 	_data = d
 	_load_failed = false
 

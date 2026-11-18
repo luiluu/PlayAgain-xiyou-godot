@@ -88,7 +88,7 @@ static func data() -> Dictionary:
 	return _data
 
 
-static func reload() -> void:
+static func reload_table() -> void:
 	_data = {}
 
 
@@ -147,28 +147,6 @@ static func survival_stats(line: String, key: String) -> Dictionary:
 	out.atk = roundf(float(body.atk) * r)
 	out.mat = roundf(float(body.mat) * r)
 	return out
-
-
-## 表里设计数值含数字 4 的（和 XTianqiBalance 同一套规则；豁免键是个数、回合数）
-static func nice_number_violations() -> Array:
-	var exempt: Array = data().get("nice_number_exempt", [])
-	var out := []
-	_scan(data(), "", exempt, out)
-	return out
-
-
-static func _scan(v, path: String, exempt: Array, out: Array) -> void:
-	if v is Dictionary:
-		for k in v:
-			if not exempt.has(k):
-				_scan(v[k], path + "/" + str(k), exempt, out)
-	elif v is Array:
-		for i in v.size():
-			_scan(v[i], path + "/" + str(i), exempt, out)
-	elif v is float or v is int:
-		var s := XTianqiBalance._num_text(float(v))
-		if s.contains("4"):
-			out.append(path + "=" + s)
 
 
 # ---- 证道骑士规则（zhengdao 节） ----

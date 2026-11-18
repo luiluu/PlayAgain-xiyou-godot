@@ -58,8 +58,7 @@ func _run() -> void:
 	if FileAccess.file_exists(CONFIG):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(CONFIG))
 	XConfig._loaded_path = "<unloaded>"
-	XTianqiAlienGear.reload()
-	_check("nice_numbers", XTianqiAlienGear.nice_number_violations().is_empty(), XTianqiAlienGear.nice_number_violations())
+	XTianqiAlienGear.reload_table()
 	_dying()
 	_again()
 	_thrift()

@@ -37,9 +37,9 @@ static var CLASS_RATE_OFF := true
 ## 期四开着时数值标签按角色卡同一张 note_remove 表全拦（协调 11-17 同意：Kyo 已定天启篇境界整套重做、原版这几招不沿用、不参与标定）。
 ## T082 量 K：拳一 163 靠 9976＋10018 爆伤 +200%、终伤 +200%，峰值是第二名超强者的 5 倍。false＝照原版（回退）
 static var REALM_OFF := true
-## T163（D189，Kyo 11-18）：标定后逐个调角色的覆盖层（skill_rework.json、base_line.json 的 tune.D189）；false＋XTianqiSkills.reload() 照覆盖前
+## T163（D189，Kyo 11-18）：标定后逐个调角色的覆盖层（skill_rework.json、base_line.json 的 tune.D189）；false＋XTianqiSkills.reload_table() 照覆盖前
 static var TUNE_D189 := true
-## T191（D200 A，Kyo 11-18）：原卡小数系数全表取整的覆盖层（skill_rework.json 的 tune.D200，叠在 D189 之后）；false＋XTianqiSkills.reload() 照取整前
+## T191（D200 A，Kyo 11-18）：原卡小数系数全表取整的覆盖层（skill_rework.json 的 tune.D200，叠在 D189 之后）；false＋XTianqiSkills.reload_table() 照取整前
 static var TUNE_D200 := true
 const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
 const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",

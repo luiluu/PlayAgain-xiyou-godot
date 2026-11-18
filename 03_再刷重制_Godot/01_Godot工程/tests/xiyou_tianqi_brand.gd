@@ -60,7 +60,7 @@ func _arg(name: String, default := "") -> String:
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261117)
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	XTianqiBase.clear_cache()
 	XTianqiBrand.clear_cache()
 	XGojo.unlock_override = 0

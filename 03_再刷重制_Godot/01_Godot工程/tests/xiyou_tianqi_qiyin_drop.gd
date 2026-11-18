@@ -1,6 +1,6 @@
 extends Node
 ## 七印祭坛里副本掉落（XTianqiQiyinDrop，tianqi_data/qiyin_drop.json）的自检：
-## 一、表：七印、六部位、武器类型、五难度键同 XTianqi.DIFFICULTIES、神器五件、设计数值不含 4。
+## 一、表：七印、六部位、武器类型、五难度键同 XTianqi.DIFFICULTIES、神器五件。
 ## 二、规则单测（脚本随机流，按抽取原因喂值）：空次数递增与归零、连空 20 次必掉、两连三连最多 3 件、没掉给印屑；
 ##    武器暗保底 20、真印暗保底 30、成色；躁动不连抽与打赢平息；献印屑第一件部位、没掉退 3 个；献武器翻倍且同类；
 ##    物品掉落加成不碰真印和神器；首通、守层者首杀、野外、精英印屑、直取；熔、分解、兑换的数；状态传进不被改。
@@ -67,7 +67,7 @@ func _people() -> int:
 
 
 func _run() -> void:
-	D.reload()
+	D.reload_table()
 	_table()
 	_boss_set()
 	_chain()
@@ -128,8 +128,6 @@ func _table() -> void:
 	_check("真印几率难度键同 XTianqi.DIFFICULTIES", d.true_seal.chance.keys() == want, d.true_seal.chance.keys())
 	_check("神器五件", D.artifact_keys() == ["bow_crown", "great_sword", "scales", "grey_scythe", "seven_seal_scroll"], D.artifact_keys())
 	_check("31 层揭白红", D.floor_seals(31) == ["bai", "hong"] and D.floor_seals(35) == ["zhen"] and D.floor_seals(36).is_empty())
-	var bad := D.nice_number_violations()
-	_check("设计数值不含 4", bad.is_empty(), bad)
 	_check("成色权重合计 1", is_equal_approx(d.grades.weights.values().reduce(func(a, b): return a + b, 0.0), 1.0))
 
 

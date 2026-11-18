@@ -50,8 +50,8 @@ func _ici_ids() -> Array:
 
 
 func _run() -> void:
-	T.reload()
-	X.reload()
+	T.reload_table()
+	X.reload_table()
 	var d := X.data()
 	var td := T.data()
 	_check("能读文字表", not d.is_empty())

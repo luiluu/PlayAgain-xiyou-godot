@@ -103,8 +103,7 @@ func _run() -> void:
 
 
 func _data() -> void:
-	XTianqiSummit.reload()
-	_check("nice_numbers", XTianqiSummit.nice_number_violations().is_empty(), XTianqiSummit.nice_number_violations())
+	XTianqiSummit.reload_table()
 	var keys := ["door", "door_top", "arrive34", "arrive35", "arrive36", "ask", "hongjun_before", "hongjun_win", "hongjun_lost",
 		"shadow_win", "lost", "not_ready", "honghuang_ask", "honghuang_done", "honghuang_skip", "rechallenge_head"]
 	_check("scenes_all", keys.all(func(k): return not XTianqiSummit.scene(k).is_empty()), keys.filter(func(k): return XTianqiSummit.scene(k).is_empty()))
