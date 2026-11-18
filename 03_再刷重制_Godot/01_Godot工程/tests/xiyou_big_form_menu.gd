@@ -3,7 +3,8 @@ extends "res://tests/xiyou_battle_actor_size.gd"
 ## 核：① 167／168 行动时指令环、列表都不压其身体可见框，不出屏、不压行动顺序条；外侧压到队友时改放画面下方中间；
 ##     R2（Kyo 11-18）：指令环贴着身体左边（或右边），压前排队友也留在身边、不落下方中间（RING_BESIDE＝false 回 R1 时落下方中间）；
 ##     只有两人时同样贴身体左边、不压队友；R3：两只大型变身的环一样大（渡鸦 7 项走紧凑排法：同半径、竖向等距，BIG_RING_COMPACT 关时变大）、
-##     环心对身体中段的偏移一样、贴身间距一样；
+##     贴身间距一样；R4（Kyo「这个指令环感觉都不是渡鸦的指令环」）：渡鸦神话贴斗篷躯干（BIG_CORE）、环心对躯干中段、不压脸、
+##     「渡鸦的行动」在渡鸦头侧；米拉黑龙跟 R3 逐像素一样；
 ##   ② 普通大小角色（狗逍遥、里德）指令环、列表位置与开关关（BIG_MAKE_ROOM＝false）逐像素一样；开关关时龙身确实被压（断言咬得住）；
 ##   ③ 头顶宝石：指令环开着淡出、关掉淡入（原逻辑）；T197 小A P2-2：set_target(null) 等淡出的 HIDE_DELAY 里不淡入、消息窗开着当作挡住，
 ##     两个开关关掉时确实会淡入（咬得住）。
@@ -142,13 +143,31 @@ func _four(troop: int) -> void:
 		var m := b.menu_rect(ring)
 		if id in BIG:
 			_check(tag + "_old_hits_body", old_m.intersects(body) and old_list_m.intersects(body), [old_m, old_list_m, body])
-			_clear(tag + "_ring", b, ring, b.big_body_rect(a))
+			_clear(tag + "_ring", b, ring, b.ring_hug_rect(a, b.big_body_rect(a)))  # R4：指令环只躲身体主体
 			# R2（Kyo 11-18「我还是要在精灵身边。哪怕挡一下别的角色」）：贴着身体左边或右边（压队友可以），不压首领信息区，不落到下方中间
-			var left := absf(m.end.x - (body.position.x - XBattleScene.BIG_ROOM_GAP)) <= 0.5
-			var right := absf(m.position.x - (body.end.x + XBattleScene.BIG_ROOM_GAP)) <= 0.5
-			_check(tag + "_ring_beside_body", left or right, [m, body])
+			# R4：贴的是身体主体（渡鸦神话＝斗篷躯干，BIG_CORE；米拉黑龙＝外框）
+			var hug := b.ring_hug_rect(a, body)
+			var left := absf(m.end.x - (hug.position.x - XBattleScene.BIG_ROOM_GAP)) <= 0.5
+			var right := absf(m.position.x - (hug.end.x + XBattleScene.BIG_ROOM_GAP)) <= 0.5
+			_check(tag + "_ring_beside_body", left or right, [m, hug])
 			var zone := b._boss_zone()
-			_check(tag + "_ring_clear_boss_info", not zone.has_area() or not m.intersects(zone), [m, zone])
+			var items := b.ring_item_rects(ring)
+			_check(tag + "_ring_clear_boss_info", not zone.has_area() or not items.any(func(r): return r.intersects(zone)), [items, zone])
+			if id == 167:
+				# 不压脸（兜帽 x 0.35～0.56、y 0.16～0.38）；环心对躯干中段；「渡鸦的行动」标签在渡鸦头侧（右沿离躯干左沿 ≤60），不压小队友
+				var face := Rect2(body.position + body.size * Vector2(0.35, 0.16), body.size * Vector2(0.21, 0.22))
+				_check(tag + "_ring_clear_face", not items.any(func(r): return r.intersects(face)), [items, face])
+				var rc := ring.ring_center() - b._origin
+				_check(tag + "_ring_center_torso", absf(rc.y - hug.get_center().y) <= 2.0, [rc, hug])
+				var title: Rect2 = items[-1]
+				_check(tag + "_title_by_raven", title.end.x >= hug.position.x - 60.0 and _teammates_hit(b, a, title).is_empty(), [title, hug, _teammates_hit(b, a, title)])
+				_check(tag + "_ring_nearer_than_r3", hug.position.x - m.end.x <= XBattleScene.BIG_ROOM_GAP + 0.5 and m.end.x > body.position.x + 40.0, [m, body])
+			else:
+				XBattleScene.RING_HUG_CORE = false   # 米拉黑龙没列在 BIG_CORE：跟 R3 逐像素一样
+				var r3 := _ring_for(b, a).position
+				XBattleScene.RING_HUG_CORE = true
+				ring = _ring_for(b, a)
+				_check(tag + "_mira_same_as_r3", ring.position == r3, [ring.position, r3])
 			notes.append({"troop": tname, "id": id, "ring": "左侧" if left else ("右侧" if right else "其他"), "menu": [m.position, m.size], "body": [body.position, body.size], "teammate_hit": _teammates_hit(b, a, m)})
 			# 回退 RING_BESIDE＝false（R1）：4 人满队压前排就落到下方中间（开关咬得住）
 			XBattleScene.RING_BESIDE = false
@@ -157,7 +176,7 @@ func _four(troop: int) -> void:
 			_check(tag + "_r1_rollback_bottom", absf(r1.end.y - (XBattleScene.BOX.y - XSkinBattleRing.MARGIN)) <= 0.5, r1)
 			ring = _ring_for(b, a)
 			var rm := b.menu_rect(ring)
-			var bd := b.big_body_rect(a)
+			var bd := b.ring_hug_rect(a, b.big_body_rect(a))
 			rings[id] = {"radius": ring.radius, "n": ring.entries.size(), "compact": ring.compact, "h": rm.size.y, "pos": ring.position,
 				"gap": bd.position.x - rm.end.x, "center_off": (ring.ring_center().y - b._origin.y) - bd.get_center().y}
 			if ring.entries.size() > 6:
@@ -206,7 +225,8 @@ func _four(troop: int) -> void:
 		_check(tname + "_big_rings_same_radius", is_equal_approx(r7.radius, r6.radius), rings)
 		_check(tname + "_big_rings_same_size", r7.h - r6.h <= XSkinBattleRing.MIN_GAP_B * (r7.n - r6.n) + 12.0, rings)
 		# 两只同一摆法（环心＝脚底上 32）；渡鸦身体框高 211.7（含浮空）比龙 200 高、环还要让开首领信息区几像素，所以留 8 像素
-		_check(tname + "_big_rings_same_center", absf(r7.center_off - r6.center_off) <= 8.0, rings)
+		# R4：渡鸦环心对躯干中段（center_off≈0），米拉照常（环心＝脚底上 32），不再要求两只偏移一样
+		_check(tname + "_raven_center_torso", absf(r7.center_off) <= 2.0, rings)
 		_check(tname + "_big_rings_same_gap", absf(r7.gap - r6.gap) <= 0.5, rings)
 		_check(tname + "_mira_not_compact", not r6.compact, r6)
 	notes.append({"troop": tname, "rings": rings})
@@ -240,7 +260,7 @@ func _touch() -> void:
 	for id in BIG:
 		var a := _actor(b, id)
 		var ring := _ring_for(b, a)
-		_clear("touch_%d_ring" % id, b, ring, b.big_body_rect(a))
+		_clear("touch_%d_ring" % id, b, ring, b.ring_hug_rect(a, b.big_body_rect(a)))
 	await _close(b)
 	XUiSkin.touch_override = 0
 
@@ -305,6 +325,7 @@ func _finish() -> void:
 	XBattleScene.BIG_MAKE_ROOM = true
 	XBattleScene.RING_BESIDE = true
 	XBattleScene.BIG_RING_COMPACT = true
+	XBattleScene.RING_HUG_CORE = true
 	XTurnMarker.HOLD_WHILE_HIDING = true
 	XTurnMarker.HIDE_ON_MESSAGE = true
 	for n in notes:
