@@ -255,10 +255,20 @@ func _tune_d189() -> void:
 	XTianqiBase.TUNE_D189 = true
 	XTianqiSkills.reload()
 	# T175（附则 E 系数整数、D194 艾琳 4／508 5、D193 115 三招降）：7057 改成 物攻×2＋生命上限×1%（系数 1）
-	_check("tune_d189.on", on_coef == 4.0 and on_hp == 0.01 and on_atk == 2.0 and on_7057 == 1.0 and on_desc.contains("×4"), [on_coef, on_hp, on_atk, on_7057, on_desc])
+	# T191（D199 Kyo 11-18）：10727 4→5
+	_check("tune_d189.on", on_coef == 5.0 and on_hp == 0.01 and on_atk == 2.0 and on_7057 == 1.0 and on_desc.contains("×5"), [on_coef, on_hp, on_atk, on_7057, on_desc])
 	_check("tune_d189.d193_d194", on_rem == [18.0, 0.01, 3.0, 5.0, 5.0] and off_rem == [8.0, 0.03, 1.6, 7.2, 6.0], [on_rem, off_rem])
 	_check("tune_d189.switch_back", off_coef == 6.0 and off_hp == 0.0133 and off_desc.contains("×6.0"), [off_coef, off_hp])
 	_check("tune_d189.no_note_keys", not XTianqiSkills.spec(10727).has("_note"))
+	# 【cc·T191】D200 A：原卡小数系数全表取整（tune.D200，叠在 D189 之后）；TUNE_D200 关掉 reload 后照取整前
+	var d200_on := [float(XTianqiSkills.spec(101).damage.coef), float(XTianqiSkills.spec(160).damage.coef), (XTianqiSkills.spec(160).damage.conds as Array).size(), str(XTianqiSkills.spec(101).desc)]
+	XTianqiBase.TUNE_D200 = false
+	XTianqiSkills.reload()
+	var d200_off := [float(XTianqiSkills.spec(101).damage.coef), float(XTianqiSkills.spec(160).damage.coef), (XTianqiSkills.spec(160).damage.conds as Array).size(), str(XTianqiSkills.spec(101).desc)]
+	var d200_off_10727 := float(XTianqiSkills.spec(10727).damage.coef)
+	XTianqiBase.TUNE_D200 = true
+	XTianqiSkills.reload()
+	_check("tune_d200.switch", d200_on.slice(0, 3) == [4.0, 0.45, 0] and str(d200_on[3]).contains("物理攻击×4") and d200_off.slice(0, 3) == [3.6, 0.5, 1] and str(d200_off[3]).contains("×3.6") and d200_off_10727 == 5.0, [d200_on, d200_off, d200_off_10727])
 	# 第二批（偏弱超强者调高）：176 贯日 6.0→10、177 棱光 2.5→6（T175 取整；T163 的本体成长 ×1.2 撤掉，开着也是 1）；关掉照原卡
 	var on_gr := [float(XTianqiSkills.spec(10315).damage.coef), float(XTianqiSkills.spec(10337).damage.coef), XTianqiBase.actor_mult(177, "mat"), XTianqiBase.actor_mult(176, "atk"), XTianqiBase.actor_mult(108, "mmp")]
 	XTianqiBase.TUNE_D189 = false
@@ -301,7 +311,8 @@ func _hit_cap() -> void:
 	var b: XBattler = lg.enemies[0]
 	var sk := XDB.rec("Skills", 3632)
 	var slow := 1.3 if a.agi < b.agi else 1.0
-	_check("cap.within", is_equal_approx(XTianqiSkills.formula(a, b, sk), a.atk * 3.6 * slow), [XTianqiSkills.formula(a, b, sk), a.atk])
+	_check("cap.within", is_equal_approx(XTianqiSkills.formula(a, b, sk), a.atk * 4.0 * slow), [  # T191（D200）3.6 取整成 4
+		XTianqiSkills.formula(a, b, sk), a.atk])
 	var row: Dictionary = XTianqiSkills.data().skills["3632"].damage
 	var keep := float(row.coef)
 	row.coef = 30.0
@@ -313,8 +324,8 @@ func _hit_cap() -> void:
 	_check("cap.off_unclamped", is_equal_approx(XTianqiSkills.formula(a, b, sk), a.atk * 30.0 * slow2), [XTianqiSkills.formula(a, b, sk), a.atk, slow2])
 	XTianqiSkills.CARDS = false
 	row.coef = keep
-	# 权重口径：寒锋（物攻 1.8＋敏捷 1.8）权重 3.6，和数据校验同口径
-	_check("cap.weight", is_equal_approx(XTianqiSkills.hit_weight(XTianqiSkills.data().skills["3645"].damage), 3.6) and is_equal_approx(XTianqiSkills.hit_weight({"stats": {"atk": 1, "mhp": 0.007}}), 1.175))
+	# 权重口径：寒锋（物攻 1.8＋敏捷 1.8，T191 取整成 2＋2）权重 4，和数据校验同口径
+	_check("cap.weight", is_equal_approx(XTianqiSkills.hit_weight(XTianqiSkills.data().skills["3645"].damage), 4.0) and is_equal_approx(XTianqiSkills.hit_weight({"stats": {"atk": 1, "mhp": 0.007}}), 1.175))
 
 
 ## 端到端：每一处结算点开、关各断一次（只改测试里的临时数据，结束复原）
