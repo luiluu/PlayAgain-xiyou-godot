@@ -40,7 +40,8 @@ const TEXT_GAIN := "烙印 %s"
 const TEXT_CARVE_WARN := ["一旦刻印，烙印只涨不降，没有回头路。", "刻印后，每首通一位守层者都会加深烙印；不刻印则只在首领战挨打时记下烙印，上限 40%。"]
 const TEXT_RETREAT := ["\\C[6]烙印\\C[0]", "烙印随首领战加深；每次到达极限，打赢心魔才能继续加深。", "未刻印的烙印最多加深至「铸骨」（40%），刻印后才能继续加深。"]
 
-static var ENABLED := false
+## T220（T073-e）翻开；false＝回退（关着每个入口都是「没有烙印」）
+static var ENABLED := true
 
 static var _data: Dictionary = {}
 ## 本进程发过的烙印提示（测试核对）

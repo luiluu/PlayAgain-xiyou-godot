@@ -2,7 +2,7 @@ extends Node
 ## 【cc·T082】期四实机标定 K（基础数值重构 v0.4 第九节第 1～3 步）：总开关开着，每人单独对木桩打自己「条件全中后最大的一段」，取暴击里最大的一个伤害数字。
 ## 不是专项（不在 tests/ 顶层，检查.sh 不跑）；单独跑：
 ##   godot --headless --audio-driver Dummy --path 01_Godot工程 -s res://tests/test_main_loop.gd res://tests/virtual_player/k_calibrate.tscn -- \
-##     [--tier=super|strong|weak|all] [--k=<K，缺省读表>] [--hits=20] [--out=<json>] [--actors=1,2] [--single]
+##     [--tier=super|strong|weak|all] [--k=<K，缺省读表>] [--hits=20] [--out=<json>] [--actors=1,2] [--single] [--brand=<0～100，缺省 100>]
 ##
 ## 口径（稿第三节第 3 条，能做到的）：
 ## - 81 级；每栏从原版装备里挑主属性最高的一件（不限品质、不要专属），实例改成 80 级神话（meta req_level 80、quality 14）→ 新底子按表算；
@@ -12,7 +12,9 @@ extends Node
 ## - 「这一下」：卡上每个伤害技能各打 hits 次，取最大的一个数；条件全中靠换算——同一下里卡面公式值 v0（XTianqiSkills.formula，含当下的条件）
 ##   和条件全中的值 v_full（卡面系数×Σ权重×各条件最大倍率，封到档位上限，口径同 天启篇数据校验.py single_hit_effective）都是线性乘在后面所有乘区前面的，
 ##   所以 峰值 ＝ 量到的数 × v_full ÷ v0。
-## - 没做到的（报告里列着，交付单写差多少）：词条掷满挑最大、黑印满配攒五层、真印无视防御、秘籍格、号卷——这几样都进伤害池；烙印 100% 按 ×(1＋max_bonus) 乘在结果上（XTianqiBrand 开关现在关着）。
+## - 没做到的（报告里列着，交付单写差多少）：词条掷满挑最大、黑印满配攒五层、真印无视防御、秘籍格、号卷——这几样都进伤害池。
+## - 烙印（T220，T073-e 翻开关后）：XTianqiBrand 开着、每人刻印、立到逆命、烙印 --brand（缺省 100%）真打进去（K 那一项按角色取的乘数）；
+##   --brand=0 回到 T082～T205 的口径（烙印 0，报告里 max_brand 照 ×(1＋max_bonus) 换算）。只调 execute／apply，不走 start_turn，发作不会出现。
 ## 输出：每人一行（技能、量到的最大数、v0、v_full、峰值），再按档位取最大、中位。
 
 const LEVEL := 81
@@ -49,6 +51,8 @@ const PROBE_ENABLE := [152]
 ## 179 流萤余烬（天启篇封顶 3000，--ember=N）；167 渡鸦灵魂在条件里按满算（cond_max），天启篇封顶 15 万／20 万
 var nanoha_kills := 2000
 var ember := 3000.0
+## T220：烙印（百分数）；-1＝缺省（开关开着时 100）
+var brand_pct := -1.0
 
 
 func _ready() -> void:
@@ -85,6 +89,8 @@ func _ready() -> void:
 			XTianqiBase.TUNE_D209 = false
 		elif a.begins_with("--nanoha-kills="):
 			nanoha_kills = maxi(0, int(a.substr(15)))
+		elif a.begins_with("--brand="):
+			brand_pct = clampf(float(a.substr(8)), 0.0, 100.0)
 		elif a.begins_with("--ember="):
 			ember = maxf(0.0, float(a.substr(8)))
 		elif a == "--single":
@@ -102,8 +108,12 @@ func _ready() -> void:
 
 func _run() -> void:
 	XMessageBox.auto = true
+	var was := [XTianqiBase.PHASE4, XTianqiSkills.MASTERY, XTianqiBrand.ENABLED]
 	XTianqiBase.PHASE4 = true
 	XTianqiSkills.MASTERY = true
+	if brand_pct < 0.0:
+		brand_pct = 100.0 if XTianqiBrand.ENABLED else 0.0
+	XTianqiBrand.ENABLED = brand_pct > 0.0
 	XTianqiSkills.reload_table()
 	XTianqiBase.clear_cache()
 	XTianqiGear.clear_effective_cache()
@@ -114,7 +124,8 @@ func _run() -> void:
 		"brand_max_bonus": float(XTianqiBrand.data().get("power", {}).get("max_bonus", 0.5)),
 		"caps": XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}),
 		"build": "bare" if bare else "full", "metric": "single" if single else "cast_total",
-		"missing": (["词条掷满挑最大", "黑印满配攒五层", "真印无视防御", "秘籍格", "号卷"] if bare else []) + ["烙印（XTianqiBrand 关着＝烙印 0；锚临时取 200 万＝300 万÷1.50，稿第九节第 3 条）"]}
+		"brand_pct": brand_pct,
+		"missing": (["词条掷满挑最大", "黑印满配攒五层", "真印无视防御", "秘籍格", "号卷"] if bare else []) + ([] if brand_pct > 0.0 else ["烙印（--brand=0＝烙印 0；锚临时取 200 万＝300 万÷1.50，稿第九节第 3 条）"])}
 	var tiers := [XTier.SUPER, XTier.STRONG, XTier.WEAK] if tier_arg == "all" else [{"super": XTier.SUPER, "strong": XTier.STRONG, "weak": XTier.WEAK}[tier_arg]]
 	# T204＋T209（协调 11-18）：超强者 18 人都要进量表——152 徐凤年（停用中）走 probe_enabled、180 五条悟（天启篇专属、要解锁最强之名）临时当已解锁；量完还原
 	var probe_was: Array = XImportedBalance.probe_enabled.duplicate()
@@ -140,11 +151,12 @@ func _run() -> void:
 		peaks.sort()
 		if not peaks.is_empty():
 			report.tiers[tier] = {"n": peaks.size(), "max": peaks[-1], "median": peaks[peaks.size() / 2],
-				"max_brand": peaks[-1] * (1.0 + float(report.brand_max_bonus))}
+				"max_brand": peaks[-1] * (1.0 + float(report.brand_max_bonus)) if brand_pct <= 0.0 else peaks[-1]}
 	XImportedBalance.probe_enabled = probe_was
 	XGojo.unlock_override = gojo_was
-	XTianqiBase.PHASE4 = false
-	XTianqiSkills.MASTERY = false
+	XTianqiBase.PHASE4 = was[0]
+	XTianqiSkills.MASTERY = was[1]
+	XTianqiBrand.ENABLED = was[2]
 	report["mastery_max_level_seen"] = mastery_seen
 	print("K_REPORT " + JSON.stringify(report.tiers) + " mastery=" + str(mastery_seen))
 	if out_path != "":
@@ -222,6 +234,11 @@ func _state(id: int) -> XState:
 		_advance_max(s, a)
 	_dress(a)
 	_growth(s, a)
+	if brand_pct > 0.0:  # T220：刻印、立到逆命（节点 100%），烙印照 --brand 写；mult 只读烙印值
+		XZhenqi.data(a)  # 先建全键（daofa 等），不然只写三个键的字典让 has_daofa 读空
+		a.zhenqi["brand_carved"] = 1
+		a.zhenqi["brand_realm"] = XTianqiBrand.last_realm()
+		a.zhenqi["brand"] = roundi(brand_pct * XTianqiBrand.scale())
 	var fid := _own_fabao(id)
 	if fid == 0:
 		var mw := main_weights(a)
@@ -403,6 +420,8 @@ func _measure(id: int, tier: String) -> Dictionary:
 			best["build"] = build
 	if XGarou.own(a) and not best.is_empty():
 		best["form"] = XGarou.FORM_NAMES[XGarou.stage(a)]  # T209：饿狼按星空形态量（进阶满＝形态 6）
+	if not best.is_empty():
+		best["brand_mult"] = XTianqiBrand.mult(a, s)  # T220：K 那一项按角色取的烙印乘数（100%＝1.5）
 	return best
 
 

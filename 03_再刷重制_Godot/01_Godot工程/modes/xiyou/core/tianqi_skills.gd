@@ -25,7 +25,8 @@ static var ENABLED := true
 ## 角色卡（技能表改写：伤害、费用、被动、状态、追加、变招、击杀成长）。卡上的系数按新数值线（本体标准线、敌人重做）写，
 ## 现在的属性和敌人还是原版量级，没有固定底数时前期伤害只剩原来的十分之一左右，所以先默认关，等数值线那一轮一起开（Kyo 定）
 static var CARDS := false
-static var MASTERY := false
+## T220（T012-c）：和总开关一起默认开（稿第七节第 2 条，可单关；false＝回退）
+static var MASTERY := true
 ## T163（D189，Kyo 11-18）：标定后逐个调角色——skill_rework.json 的 tune.D189 覆盖在 skills／actors 上（字典逐层合并、数组整段换，卡面 desc 一起换）。
 ## T191（D200）：tune.D200 把原卡剩下的小数系数全表取整，叠在 D189 之后；回退 `XTianqiBase.TUNE_D200 = false` 后 reload()。
 ## 回退：`XTianqiBase.TUNE_D189 = false` 后 reload()（照覆盖前的卡；开关放在 XTianqiBase：放这里时 reload() 后读到的总是默认值，原因没查清）。
