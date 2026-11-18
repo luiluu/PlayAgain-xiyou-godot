@@ -8,6 +8,8 @@ extends Node
 ##     秘籍格来源（2441 我祖我宗 ×1.8）封到每本 ＋8%；同一本书书上已有③增伤时合并封，不各吃 ＋8%（T185 P3-1）；
 ##     value_steps（2771 超赛1 加 150%）照样归池；停用（2300 天顶剑 ×2）不乘也不进池；九线合计封顶收住 2302 紫炎混沌 ＋900%。
 ## 四、守卫：开着时那一步带标记不再认；关着认成 state_confirm_pool 回退中不报。reload 清归池表缓存（T185 P3-2）。
+## 五、T200：live 清零——T187 留下的 32 个逐个给去向（never 14、归池 1、program 类 17）；program 类各条有 kind 和理由、没有一个是固定 ×k；
+##     38 缝合（程序写法的固定 ×1.05）按 as 换写归池：打敌人 ③ ＋5% 算九线、确认阶段不乘；打自己人和关着时一样；守卫不报；关着照原版。
 
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
@@ -64,7 +66,8 @@ func _run() -> void:
 
 ## 固定 ×k（mul 的 k；只有加成段的 value_steps 折成连乘）
 func _fixed_k(sid: int) -> float:
-	for e in XDB.rec("States", sid).get("effects", []):
+	var row: Dictionary = XTianqiLedger.live_table().get(sid, {})
+	for e in row.get("as", XDB.rec("States", sid).get("effects", [])):
 		if XTianqiLedger._live_effect(e):
 			if str(e.op) == "mul":
 				return float(e.k)
@@ -116,7 +119,23 @@ func _table() -> void:
 		for e in cls.live[g]:
 			if _fixed_k(int(e.id)) > 0.0:
 				fixed_left.append(e.id)
-	_check("live_only_dynamic", fixed_left.is_empty() and XTianqiLedger.confirm_source(1062) == "state_confirm" and XTianqiLedger.confirm_source(838) == "state_confirm_pool", fixed_left)
+	_check("live_only_dynamic", fixed_left.is_empty() and XTianqiLedger.confirm_source(1062) == "state_confirm_program" and XTianqiLedger.confirm_source(838) == "state_confirm_pool", fixed_left)
+	# 五、T200：live 清零；program 类各有 kind、理由，没有固定 ×k；新挪 never 的有代表
+	var prog: Array = cls.get("program", [])
+	var bad_prog := []
+	for e in prog:
+		if not str(e.get("kind", "")) in ["inert", "extra", "dynamic", "crit"] or str(e.get("reason", "")).length() < 10 or _fixed_k(int(e.id)) > 0.0 \
+				or XTianqiLedger.confirm_source(int(e.id)) != "state_confirm_program":
+			bad_prog.append(e.id)
+	var live_n := 0
+	for g in cls.get("live", {}):
+		live_n += (cls.live[g] as Array).size()
+	_check("t200_live_cleared", live_n == 0 and prog.size() == 17 and bad_prog.is_empty() and XTianqiLedger.row("state_confirm_program").get("status") == "allowed"
+		and XTianqiLedger.check("state_confirm_program", "confirm") == "", [live_n, prog.size(), bad_prog])
+	_check("t200_never", never.get(543) == "NO_SOURCE" and never.get(1424) == "NO_SOURCE" and never.get(2522) == "NO_SOURCE" and never.get(1259) == "NO_HONGHUANG"
+		and never.get(2803) == "CARDS" and XTianqiLedger.confirm_source(1259) == "state_confirm_never", never)
+	var r38: Dictionary = XTianqiLedger.live_table().get(38, {})
+	_check("t200_38_as", is_equal_approx(_fixed_k(38), 1.05) and int(r38.get("add", 0)) == 5 and str(r38.get("cap", "")) == "nine" and (r38.get("as", []) as Array).size() == 2, r38)
 	_check("default_off", XTianqiLedger.POOL_LIVE == false and XTianqiLedger.switch_on("POOL_LIVE") == false)
 	XTianqiBase.PHASE4 = true
 	_check("phase4_turns_on", XTianqiLedger.switch_on("POOL_LIVE"))
@@ -131,7 +150,7 @@ func _table() -> void:
 
 
 func _fresh(a: XActor, ids: Array) -> void:
-	for sid in [838, 2441, 2300, 2302, 2771]:
+	for sid in [838, 2441, 2300, 2302, 2771, 38]:
 		a.remove_state(sid)
 	for sid in ids:
 		a.add_state(int(sid))
@@ -212,4 +231,19 @@ func _runtime() -> void:
 	var rows_off: Array = XTianqiLedger.live_confirm_rows(a, a.effect_states("confirm", false))
 	var got_off := XTianqiLedger.audit_confirm(a, rows_off, ctx).filter(func(r): return int(r.state) in [838, 2300])
 	_check("guard_marks", got_on.is_empty() and got_off.size() == 2 and got_off.all(func(r): return r.ok and r.source == "state_confirm_pool"), [got_on, got_off])
+	# 五、T200：38 缝合（程序写法的固定 ×1.05）按 as 换写归池
+	XTianqiLedger.POOL_LIVE = false
+	_fresh(a, [38])
+	var s_off := _confirm(a, e)
+	var s_mate_off := _confirm(a, mate)  # 打自己人另有难度合成行 ×6，只比开关前后一样
+	XTianqiLedger.POOL_LIVE = true
+	var sew: Dictionary = XTianqiLedger.live_confirm_add(a, e, 1)
+	var s_on := _confirm(a, e)
+	var s_mate := _confirm(a, mate)
+	var rows38: Array = XTianqiLedger.live_confirm_rows(a, a.effect_states("confirm", false))
+	var g38 := XTianqiLedger.audit_confirm(a, rows38, ctx).filter(func(r): return int(r.state) == 38)
+	var st38: Array = rows38.filter(func(r): return int(r.get("id", 0)) == 38)
+	var kept_anim: bool = st38.size() == 1 and (st38[0].effects as Array).any(func(x): return str(x.get("op", "")) == "effect_program" and bool(x.get(XTianqiLedger.LIVE_POOLED, false)))
+	_check("t200_38_runtime", absf(s_off - 105.0) <= 0.01 and is_equal_approx(float(sew.add), 0.05) and is_equal_approx(float(sew.nine), 0.05)
+		and absf(s_on - 100.0) <= 0.01 and absf(s_mate - s_mate_off) <= 0.01 and s_mate_off >= 105.0 and g38.is_empty() and kept_anim, [s_off, sew, s_on, s_mate, s_mate_off, g38])
 	_fresh(a, [])

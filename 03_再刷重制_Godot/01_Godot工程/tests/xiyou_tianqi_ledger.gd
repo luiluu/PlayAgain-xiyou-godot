@@ -114,7 +114,8 @@ func _registry_shape() -> void:
 	_check("p4_no_exempt_left", left4.is_empty(), left4)
 	_check("p4_confirm_rows", XTianqiLedger.row("state_confirm").get("status") == "exempt" and int(XTianqiLedger.row("state_confirm").get("expires")) == 5
 		and XTianqiLedger.row("state_confirm_card").get("status") == "allowed" and XTianqiLedger.row("state_confirm_never").get("status") == "never"
-		and XTianqiLedger.row("state_confirm_pool").get("status") == "pooled" and str(XTianqiLedger.row("state_confirm_pool").get("switch")) == "POOL_LIVE" and XTianqiLedger.row("state_confirm_reduce").get("status") == "allowed")
+		and XTianqiLedger.row("state_confirm_pool").get("status") == "pooled" and str(XTianqiLedger.row("state_confirm_pool").get("switch")) == "POOL_LIVE" and XTianqiLedger.row("state_confirm_reduce").get("status") == "allowed"
+		and XTianqiLedger.row("state_confirm_program").get("status") == "allowed")
 	# 191 个状态分类：三类不重不漏；never 每条有回退开关和理由，开关名守卫认得；card 都是卡改写过、去掉了 effects 的
 	var cls: Dictionary = d.get("state_confirm_class", {})
 	var seen := {}
@@ -125,7 +126,7 @@ func _registry_shape() -> void:
 	for g in cls.get("live", {}):
 		for e in cls.live[g]:
 			all_ids.append(int(e.id))
-	for key in ["pool", "reduce"]:  # T187：live 铺开后拆出的归池／停用、缩小类
+	for key in ["pool", "reduce", "program"]:  # T187：live 铺开后拆出的归池／停用、缩小类；T200：程序类永久允许
 		for e in cls.get(key, []):
 			all_ids.append(int(e.id))
 	all_ids.append_array(cls.get("suit_pooled", {}).get("ids", []))
