@@ -2,7 +2,7 @@ class_name XTianqiLedger
 extends RefCounted
 ## 【cc·天启篇·未经审查】伤害加成总账·期一「总账入口（不改数）」（设计仓《天启篇_伤害加成总账_v0.4》第八节期一细则）。只对天启篇存档生效，原版档不进这里。
 ## 表：modes/xiyou/tianqi_data/damage_ledger.json（只读）。每个「乘」一行，三种状态：
-##   pooled 已归池（出现就失败）／exempt 豁免（写到期 expires，到期那一期起出现就失败）／allowed 永久允许（不判）。
+##   pooled 已归池（出现就失败）／exempt 豁免（写到期 expires，到期那一期起出现就失败）／allowed 永久允许（不判）／never 天启篇不会出现（期四 T083，出现就失败）。
 ## 守卫（GUARD）：天启篇里我方出手的每一下伤害，把落在单独相乘字段上的操作（钩子帧、技能专属被动起点、种族乘数、原版独立乘区）
 ##   按「来源」认一遍；来源没登记、字段不在这一行、已归池或豁免到期 → push_error（并行测试把 ERROR 行判失败）并记进 violations。
 ##   只记、不改数：伤害照算。来源由 XActorDamageHooks.capture 分段打标签（tags 跟 ops 一一对应），别的注册表模块按模块号认。
@@ -103,6 +103,8 @@ static func reload() -> void:
 	_data = {}
 	_rows = {}
 	_confirm_ids = {}
+	_confirm_card = {}
+	_confirm_never = {}
 	_load_failed = false
 
 
@@ -148,6 +150,11 @@ static func switch_on(name: String) -> bool:
 		"NO_PILLS": return NO_PILLS
 		"CAP_NINE": return CAP_NINE
 		"TURN_BUDGET": return TURN_BUDGET
+		# 期四（T083）：16 个旧模块行归池＝卡开着时 MODULE_CAP_ALL 把增伤拦掉；卡或收口关着就是回退中
+		"MODULE_CAP": return XTianqiSkills.MODULE_CAP and XTianqiSkills.MODULE_CAP_ALL and XTianqiSkills.cards_on()
+		# 期四（T083）：state_confirm_class.never 各条「不会出现」靠的开关，关着＝回到会出现
+		"NO_DIFF_PASSIVE": return XTianqiNoDiffPassive.ENABLED
+		"UNIFIED_LEGACY": return XTianqi.UNIFIED_LEGACY
 	return true
 
 
@@ -243,6 +250,12 @@ static func is_mul(op: Dictionary) -> bool:
 	return not (v == 0.0 if kind == "add" else v == 1.0)
 
 
+## 这一条乘是不是增伤（乘或设 >1、加 >0）；pooled_scope＝boost 的行只判这种
+static func _boost_op(op: Dictionary) -> bool:
+	var v := float(op.get("value", 0.0))
+	return v > 0.0 if str(op.get("op", "")) == "add" else v > 1.0
+
+
 ## 来源 source 在字段 field 上乘一次合不合规：返回 "" 合规，否则是原因
 static func check(source: String, field: String) -> String:
 	var r := row(source)
@@ -259,6 +272,8 @@ static func check(source: String, field: String) -> String:
 			return "" if phase() < int(r.get("expires", 0)) else "exempt_expired"
 		"pooled":
 			return "pooled"
+		"never":  # 期四（T083）：天启篇里不会出现，出现就失败
+			return "never"
 	return "bad_status"
 
 
@@ -289,6 +304,8 @@ static func audit(item: Dictionary, a, trace: Array, facts: Dictionary, extras: 
 				continue
 			var source: String = str(tags[i]) if i < tags.size() else str(MODULE_SOURCE.get(mod, "module:" + mod))
 			var why := check(source, str(op.field))
+			if why == "pooled" and str(row(source).get("pooled_scope", "")) == "boost" and not _boost_op(op):
+				why = ""  # 期四（T083）：旧模块行归池只管增伤；收口之后留下的缩小（拆段、扩散比例）是机制、不是加成
 			found.append({"source": source, "field": str(op.field), "op": str(op.op), "value": float(op.get("value", 0.0)), "ok": why == ""})
 			if why != "":
 				_flag(source, str(op.field), why, ctx)
@@ -312,6 +329,28 @@ static func state_confirm_registered(state_id: int) -> bool:
 		for id in data().get("state_confirm_ids", []):
 			_confirm_ids[int(id)] = true
 	return _confirm_ids.has(state_id)
+
+
+## 期四（T083）：191 个状态的分类（damage_ledger.json state_confirm_class）→ 走哪一行：
+## card 卡改写过 → state_confirm_card（允许）；never 天启篇不会出现 → state_confirm_never（出现就失败，各条带回退开关）；其余 live → state_confirm（豁免）。
+## 表里没有 state_confirm_class（期四以前）一律走 state_confirm。
+static var _confirm_card := {}
+static var _confirm_never := {}
+
+static func confirm_source(state_id: int) -> String:
+	if _confirm_card.is_empty() and _confirm_never.is_empty():
+		var cls: Dictionary = data().get("state_confirm_class", {})
+		for id in cls.get("card", {}).get("ids", []):
+			_confirm_card[int(id)] = true
+		for e in cls.get("never", []):
+			_confirm_never[int(e.id)] = e
+		if _confirm_card.is_empty() and _confirm_never.is_empty():
+			_confirm_card[-1] = true  # 占位：表里没有分类，别每次都重读
+	if _confirm_card.has(state_id):
+		return "state_confirm_card"
+	if _confirm_never.has(state_id):
+		return "state_confirm_never"
+	return "state_confirm"
 
 
 ## 一个状态确认阶段效果的指纹（只取 phase＝confirm、op 不是 noop 的那几条，键排序后 md5 前 8 位）；
@@ -339,14 +378,16 @@ static func audit_confirm(holder, rows: Array, ctx: Dictionary) -> Array:
 		if effects.is_empty():
 			continue
 		var sid := int(st.get("id", 0))
+		var source := confirm_source(sid)
 		var why := "" if state_confirm_registered(sid) else "unregistered"
-		if why == "":
-			why = check("state_confirm", "confirm")
-		found.append({"source": "state_confirm", "state": sid, "ok": why == ""})
+		var rollback := source == "state_confirm_never" and not switch_on(str(_confirm_never.get(sid, {}).get("switch", "")))
+		if why == "" and not rollback:  # rollback：这一条「不会出现」靠的开关关着＝回退中，不报
+			why = check(source, "confirm")
+		found.append({"source": source, "state": sid, "ok": why == ""})
 		if why != "":
 			var c := ctxx.duplicate()
 			c.state = sid
-			_flag("state_confirm", "confirm#%d" % sid, why, c)
+			_flag(source, "confirm#%d" % sid, why, c)
 	return found
 
 
