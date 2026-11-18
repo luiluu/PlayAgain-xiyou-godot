@@ -423,7 +423,20 @@ func _measure_guyu(s: XState, a, logic, e) -> Dictionary:
 		var r_before := XGuyu.reserve(a)
 		var mhp_before: float = a.mhp
 		var calc := XDamage.calculate(heal, a, a, {})
-		print("K_GUYU_HEAL_CALC value %s breakdown %s" % [str(calc.get("value")), str(calc.get("breakdown"))])
+		print("K_GUYU_HEAL_CALC value %s breakdown %s confirm %s finish %s" % [str(calc.get("value")), str(calc.get("breakdown")),
+			str(XDamage.apply_state_effects(calc.value, heal, a, a, [], "confirm", false, false, {})), str(XDamage.finish(calc, heal, a, a, false))])
+		if heals == 1:  # 逐个状态看确认阶段把治疗乘了多少
+			print("K_GUYU_PHASE4 on %s skip %s current_is_s %s" % [str(XTianqiBase.on()), str(XTianqiBase.heal_skip_types()), str(XState.current == s)])
+			var rows: Array = a.effect_states("confirm", false)
+			rows = XTianqiNoDiffPassive.confirm_rows(a, rows)
+			rows = XTianqiLedger.suit_confirm_rows(a, rows)
+			rows = XTianqiLedger.live_confirm_rows(a, rows)
+			var v := float(calc.value)
+			for st in rows:
+				var nv := XStateEffects.run_one("confirm", a, st, {"attacker": a, "defender": a, "item": heal, "untranslated": [], "execute": false, "critical": false, "value": v})
+				if nv != v:
+					print("K_GUYU_CONFIRM_STATE %s %s %d→%d" % [str(st.get("id")), str(st.get("name")), v, nv])
+				v = nv
 		var heal_logs: Array = logic.execute(a, heal, a, true)
 		var healed := 0.0
 		for l in heal_logs:
