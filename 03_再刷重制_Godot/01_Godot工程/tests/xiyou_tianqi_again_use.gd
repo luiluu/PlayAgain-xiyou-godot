@@ -68,7 +68,7 @@ func _state() -> XState:
 func _run() -> void:
 	kit = Kit.new("xiyou_tianqi_again_use")
 	seed(20261116)
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	XTianqiSkills.CARDS = true
 	_table()
 	_each()

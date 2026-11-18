@@ -90,7 +90,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	XTianqiBase.PHASE4 = true
 	XTianqiSkills.MASTERY = true
-	XTianqiSkills.reload()
+	XTianqiSkills.reload_table()
 	XTianqiBase.clear_cache()
 	XTianqiGear.clear_effective_cache()
 	var rules: Dictionary = XTianqiBalance.data().get("combat_rules", {})

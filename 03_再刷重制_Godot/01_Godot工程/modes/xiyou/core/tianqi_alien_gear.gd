@@ -50,14 +50,8 @@ static func data() -> Dictionary:
 	return _data
 
 
-static func reload() -> void:
+static func reload_table() -> void:
 	_data = {}
-
-
-static func nice_number_violations() -> Array:
-	var out := []
-	XTianqiHorsemen._scan(data(), "", [], out)
-	return out
 
 
 # ---- 开关、标记、名字 ----

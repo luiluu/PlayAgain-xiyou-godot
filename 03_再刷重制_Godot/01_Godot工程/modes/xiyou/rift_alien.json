@@ -2,7 +2,6 @@
   "version": 1,
   "source": "方案/重制版_漩涡五阶段怪物异化设计稿_v0.1.md（Kyo 2026-11-12 第 7 节六项全按默认）；表结构照 tianqi_data/seg_alien.json，层段换成漩涡阶段",
   "_note": "西游侧（玩家手里的重制版）漩涡阶段怪物异化。几率是百分数；tier 基础级，up／up_rate 异化后升一级的级和百分比。守层者按楼层分段（bands）。都是测试参数，以后用测算工具调。数字避开 4。",
-  "nice_number_exempt": ["from", "to", "max_units", "floor_max", "period", "fade"],
   "tier_order": ["qinran", "shigu", "huaxing"],
   "tiers": {
     "qinran": {"name": "侵染", "hp": 1.25, "idx": 0, "drop": 3, "energy": 1},

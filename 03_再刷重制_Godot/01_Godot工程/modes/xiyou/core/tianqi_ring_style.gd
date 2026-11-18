@@ -62,7 +62,7 @@ static func data() -> Dictionary:
 	return _data
 
 
-static func reload() -> void:
+static func reload_table() -> void:
 	_data = {}
 	_tex.clear()
 

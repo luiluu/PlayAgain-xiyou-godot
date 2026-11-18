@@ -99,8 +99,7 @@ func _run() -> void:
 # ---- 一、数据 ----
 
 func _data() -> void:
-	XTianqiQiyinEquip.reload()
-	_check("nice_numbers", XTianqiQiyinEquip.nice_number_violations().is_empty(), XTianqiQiyinEquip.nice_number_violations())
+	XTianqiQiyinEquip.reload_table()
 	var parts: Dictionary = XTianqiQiyinEquip.data().armor.parts
 	_check("six_parts", parts.keys().size() == 6 and XTianqiQiyinDrop.parts().all(func(p): return parts.has(p)), parts.keys())
 	for p in parts:

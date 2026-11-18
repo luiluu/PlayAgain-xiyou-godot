@@ -67,8 +67,8 @@ func _state(diff: String, slots: Array) -> XState:
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261113)
-	XTianqiWarLine.reload()
-	XTianqiHorsemen.reload()
+	XTianqiWarLine.reload_table()
+	XTianqiHorsemen.reload_table()
 	weak = XTianqiSkills.ids(XTier.WEAK, true).filter(_usable).filter(func(id): return not XTianqiWeakClear.is_growth(int(id)))
 	strong = XTianqiSkills.ids(XTier.STRONG, true).filter(_usable)
 	_check("pool", weak.size() >= 6 and strong.size() >= 1, [weak.size(), strong.size()])

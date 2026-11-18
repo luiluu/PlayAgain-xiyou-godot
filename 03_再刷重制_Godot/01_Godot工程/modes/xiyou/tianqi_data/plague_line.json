@@ -2,7 +2,6 @@
  "version": 1,
  "source": "天启篇_四线剧情与关卡设计稿 v0.4（设计仓库 xiyou-design-docs，Kyo 2026-11-11 09:41 第 8 节全部定完）第 2、4.4、5.1、5.5、5.7、9.2 节；四线异化与异化装备重构 v0.8 第 2.2、3.4 节（带 4 的测试参数按 v0.4 附录换）",
  "_note": "瘟疫线（混子）的关卡流程、对话和异化战斗规则，只读（XTianqiLine、XTianqiPlagueLine、XTianqiPlagueAlien）。台词标 cc 起草的是设计稿只给了方向、由 cc 补的；数字都是测试参数，避开 4（层号、地图号、敌群号、坐标、回合数照实写）。",
- "nice_number_exempt": ["version", "maps", "pos", "door", "troop", "units", "floor", "map", "event", "troops", "idx", "turns", "copies", "extend", "confusion_state", "full", "full_end"],
  "maps": {"hall": 4, "farm": 61, "ruins": 32, "upper": 147, "tianwai": 158},
  "pos": {
   "hall": [14, 23, 8],

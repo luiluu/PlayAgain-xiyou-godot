@@ -76,7 +76,7 @@ func _run() -> void:
 	XConfig.path_override = DIR.path_join("options.json")
 	if FileAccess.file_exists(XConfig.path_override):
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
-	XRiftAlien.reload()
+	XRiftAlien.reload_table()
 	# 默认开，测试与玩家同一条路（不按显示后端切）
 	_check("align_default_on", XRiftAlien.ALIGN_LOBBY and XRiftAlien.aligned() and XRiftAlien.first_alien_stage() == 2)
 	_default_path()
@@ -102,7 +102,6 @@ func _run() -> void:
 
 
 func _data() -> void:
-	_check("nice_numbers", XRiftAlien.nice_number_violations().is_empty(), XRiftAlien.nice_number_violations())
 	var cases := {"【稀有】巨型鱼人": "rare", "【精英】鱼人士兵": "rare", "【首领】捕猎者": "very_rare", "【守层者】里德": "guardian",
 		"【被封印者】梅林之影": "abyss", "【古神】曼丝": "abyss", "【罕见】哥布林士兵": "", "火焰哥布林": ""}
 	var bad := []

@@ -488,7 +488,7 @@ func _orb_fx_frames() -> void:
 
 func _textures() -> void:
 	var R := XTianqiRingStyle
-	R.reload()
+	R.reload_table()
 	var reds := {}
 	for key in (R.data().styles as Dictionary):
 		var st := R.style(key)

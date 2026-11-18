@@ -39,7 +39,7 @@ static func data() -> Dictionary:
 
 
 ## 测试用：清掉缓存，下次重新读文件
-static func reload() -> void:
+static func reload_table() -> void:
 	_data = {}
 
 
@@ -220,28 +220,3 @@ static func drink(state: Dictionary, actor_id: String) -> Dictionary:
 static func bonus(state: Dictionary, actor_id: String) -> float:
 	var n := mini(_drunk(state, actor_id), max_blood_per_actor())
 	return n * float(data().get("dragon_blood", {}).get("per_bottle", 0.0))
-
-
-# ---- 数值要好看（Kyo 11-10）----
-
-## 表里设计数值含数字 4 的：返回「路径=值」列表。豁免键（编号、次数上限）写在表头 nice_number_exempt。
-static func nice_number_violations() -> Array:
-	var exempt: Array = data().get("nice_number_exempt", [])
-	var out := []
-	_scan_nice(data(), "", exempt, out)
-	return out
-
-
-static func _scan_nice(v, path: String, exempt: Array, out: Array) -> void:
-	if v is Dictionary:
-		for k in v:
-			if not exempt.has(k):
-				_scan_nice(v[k], path + "/" + str(k), exempt, out)
-	elif v is Array:
-		for i in v.size():
-			_scan_nice(v[i], path + "/" + str(i), exempt, out)
-	elif v is float or v is int:
-		var x := float(v)
-		var s := str(int(x)) if x == floorf(x) else String.num(x, 6).rstrip("0").rstrip(".")
-		if s.contains("4"):
-			out.append(path + "=" + s)

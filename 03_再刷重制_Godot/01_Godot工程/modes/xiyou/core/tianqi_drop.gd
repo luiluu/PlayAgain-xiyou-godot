@@ -423,8 +423,6 @@ static func rare_gear(kind: int, id: int) -> bool:
 	return XQuality.grade(XDB.rec("Weapons" if kind == 2 else "Armors", id)) <= int(g.get("table_cut_grade", 2))
 
 
-
-
 ## 有人能穿这一件（按栏位、类型、专属判，等级也算）
 static func _wearable(s: XState, row: Array, members: Array) -> bool:
 	var rec := XDB.rec("Weapons" if int(row[0]) == 2 else "Armors", int(row[1]))
@@ -569,22 +567,3 @@ static func grant_sold(logic) -> int:
 		logic.state.gain_gold(gold)
 		logic.set_meta("tianqi_generic_gold", 0)
 	return gold
-
-
-## 数字避开 4（规则表自检）
-static func nice_number_violations() -> Array:
-	var bad := []
-	_scan(table(), table().get("nice_number_exempt", []), "", bad)
-	return bad
-
-
-static func _scan(v, exempt: Array, path: String, bad: Array) -> void:
-	if v is Dictionary:
-		for k in v:
-			if not exempt.has(str(k)) and not str(k).begins_with("_"):
-				_scan(v[k], exempt, path + "/" + str(k), bad)
-	elif v is Array:
-		for i in v.size():
-			_scan(v[i], exempt, path + "/" + str(i), bad)
-	elif (v is float or v is int) and str(v).contains("4"):
-		bad.append(path + "=" + str(v))

@@ -4,7 +4,6 @@
   "source": "七印祭坛方案 v0.4 第 3.1 节（Kyo 11-12 定稿）；美术素材清单 v0.2 E1、P6",
   "_recruit_note": "首杀多招一人：照本档难度 recruit_floor 层（qiyin_dragon.json）那一档的招募表（XTianqi.DRAW_TABLE 第 recruit_floor÷5 次），当场在祭坛抽（不用回大厅），可以「稍后再选」留到下次开祭坛。",
   "_note": "七首之龙的流程表（XTianqiQiyinDragonRun），只读。出现判定、奖励、龙血的数在 qiyin_dragon.json（XTianqiQiyinDragon），这里只放战斗怎么搭、流程台词。数字避开 4（敌人号、敌群号、编号照实写）。",
-  "nice_number_exempt": ["version", "troop", "shell_enemy", "extra_actions", "reprieve_turns_from"],
   "fight": {
     "_note": "借 19 层副本古龙祭坛的普拉顿（敌群 221、敌人 238）的行动；外观换成新画的七首之龙（美术 E1，躯干＋七个头拆件，battler，XTianqiQiyinArt，每断一首藏一个头）。能力值按里副本的参照敌人（qiyin_altar.json 的 rebase.ref，鸿蒙老祖 537）乘 rate，生命直接取 XTianqiQiyinDragon.fight_data 的本档最大生命（已乘本档敌人血量）。rate 是测试参数，进数值阶段再按 36 层普通首领一击约 8.5 万校。每回合 3 次行动＝加 extra_actions 条必定追加行动。",
     "troop": 221,

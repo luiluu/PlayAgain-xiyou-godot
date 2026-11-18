@@ -69,15 +69,6 @@
    "reveal_self": "揭开的规则佩戴者自己也受（其余队友不受；XTianqiQiyinRule，开关 SCROLL_COST）"
   }
  },
- "nice_number_exempt": [
-  "version",
-  "order",
-  "etype",
-  "affix_tier",
-  "count",
-  "first_kill_floors",
-  "wtype_id"
- ],
  "seals": [
   {
    "key": "bai",

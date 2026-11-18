@@ -106,7 +106,7 @@ func _fresh(lg: XBattleLogic) -> void:
 func _run() -> void:
 	XMessageBox.auto = true
 	seed(20261112)
-	XTianqiAffixTable.reload()
+	XTianqiAffixTable.reload_table()
 	_fold()
 	_panel()
 	_damage()

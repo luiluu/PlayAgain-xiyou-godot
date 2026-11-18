@@ -2,7 +2,6 @@
  "version": 1,
  "source": "天启篇_四骑士Boss数值稿 v0.4（Kyo 2026-11-11 10:22 定稿）、数值测算 参数.json「骑士」一节（设计仓库 xiyou-design-docs）",
  "_note": "天启四骑士 36 层本体战的数值与技能表，只读（XTianqiHorsemen）。全部以艰险为基准：生命乘 hp_rate（骑士单用的血量倍率，hp_override 直接给某档生命），攻击、魔攻乘 balance_table.json 的敌人攻击；防御、魔防、敏捷、系数、冷却、计量、终焉五档一样。改数先改设计仓库的 参数.json 和数值稿，再改这里并跑 天启篇数据校验.py --params。",
- "nice_number_exempt": ["respawn_gap", "defiance_targets", "version", "actions", "hits", "fire_hits", "bonus_hits", "full", "every", "per_wave", "max_adds", "start_adds", "lines", "survive_turns", "turns", "max", "rand_hits", "cap_layers", "interval", "phase_interval", "confusion_state", "knight", "add", "add_enemy_famine", "enrage", "doom_every_from"],
  "pass_rate": "atk / (atk + def)：骑士打我方照重制版公式，36 层骑士攻击远大于我方防御，约 0.9（测算占位 0.9）",
  "phase_hp": [0.66, 0.33],
  "hp_rate": {"xunchang": 0.7, "jianxian": 1.0, "jiusi": 1.5, "lianyu": 3.0, "zhengdao": 5.0},

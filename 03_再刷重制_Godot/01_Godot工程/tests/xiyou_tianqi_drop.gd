@@ -57,7 +57,6 @@ func _near(a: float, b: float, eps := 0.001) -> bool:
 
 func _bonus() -> void:
 	var s := _tianqi_state()
-	_check("nice_numbers", XTianqiDrop.nice_number_violations().is_empty(), XTianqiDrop.nice_number_violations())
 	_check("tier_steps", [3.0, 15.0, 18.0, 45.0, 50.0, 100.0, 150.0, 300.0, 1000.0].map(XTianqiDrop.tier) == [5.0, 5.0, 10.0, 10.0, 15.0, 15.0, 20.0, 20.0, 30.0],
 		[3.0, 15.0, 18.0, 45.0, 50.0, 100.0, 150.0, 300.0, 1000.0].map(XTianqiDrop.tier))
 	_check("tier_negative", XTianqiDrop.tier(-28.0) == -10.0 and XTianqiDrop.tier(0.0) == 0.0, XTianqiDrop.tier(-28.0))

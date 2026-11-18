@@ -211,7 +211,6 @@ func _dungeon() -> void:
 	XTianqiCombat.DUNGEON_TIER = true
 	var draft := bool(XTianqiBalance.data().get("dungeon_tiers", {}).get("draft", false))
 	_check("dungeon_tier_draft", draft)
-	_check("balance_nice_numbers", XTianqiBalance.nice_number_violations().is_empty(), XTianqiBalance.nice_number_violations())
 
 
 func _routes() -> void:

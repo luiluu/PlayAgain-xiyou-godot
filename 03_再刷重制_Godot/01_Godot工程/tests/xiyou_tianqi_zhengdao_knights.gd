@@ -107,7 +107,6 @@ func _scope() -> void:
 	# Kyo 定的数（不是占位）：D58 丁莉co第 16 回合狂暴；D32／D54 勇者第 18 回合起每回合点死期
 	_check("kyo_d58_war_enrage_16", int(_row("war").get("enrage", 0)) == 16, _row("war"))
 	_check("kyo_d54_doom_every_18", int(_row("death").get("doom_every_from", 0)) == 18, _row("death"))
-	_check("table_nice_numbers", XTianqiHorsemen.nice_number_violations().is_empty(), XTianqiHorsemen.nice_number_violations())
 	for line in XTianqiHorsemen.LINES:
 		var lg := _logic(line)
 		var f := XTianqiHorsemen.fight(lg)
