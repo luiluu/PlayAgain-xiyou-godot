@@ -253,33 +253,47 @@ def fx_overlay(R, pose, shape):
         out[Y[ok], X[ok]] = im[ys[ok], xs[ok]]
     return out
 
-def mouth_wedge(R, wg, jaw_rot, shape):
-    """口腔：上颚线 tip→hinge 与「下颚上沿绕铰点转 jaw_rot 后」围成的楔形（rest 坐标）。
-    按到上颚线的距离分层（色取自 1_0），上獠牙从上颚线往下长。原做法是把下颚原位整块补红，
-    张开后像一块红砖、外缘还描黑框（Kyo R1 4_0 头部异常之一）。"""
+def mouth_transplant(R, src, mo, shape):
+    """张嘴（T213 R1 第 2 轮，Kyo「这个嘴有问题」后改用派单第 3 条）：从原稿同号帧只抠嘴（上獠牙、口腔、舌头、
+    下颚连下牙，不含吻部上沿、角和头顶），颜色换成 1_0 色板里最近的色，按两点对齐（原稿上颚线→1_0 上颚线，
+    只转不缩放，原稿和 1_0 是同一比例）贴到 rest 坐标；只留 1_0 上颚线以下的像素，吻部本身不动。"""
     h, w = shape[:2]; a = np.zeros(shape, np.uint8)
-    (ux, uy), (hx, hy) = wg['upper']; lx, ly = wg['lower_tip']
-    M = mat(jaw_rot, R['bones']['jaw']['pivot']); Lx, Ly = (M @ np.array([lx, ly, 1.0]))[:2]
-    tri = [(ux, uy), (hx, hy), (Lx, Ly)]
-    m = Image.new('L', (w, h), 0); ImageDraw.Draw(m).polygon(tri, fill=1); m = np.array(m) > 0
-    L2 = math.hypot(hx - ux, hy - uy); nx, ny = -(hy - uy) / L2, (hx - ux) / L2
-    if ny < 0: nx, ny = -nx, -ny
-    fang = {fx: fl for fx, fl in wg.get('fangs', [])}
-    for y, x in zip(*np.nonzero(m)):
-        d = max((x + 0.5 - ux) * nx + (y + 0.5 - uy) * ny, 0)
-        if x in fang and d < fang[x]: c = wg['teeth']
-        else: band = wg['bands']; c = band[min(int(d / wg.get('band_w', 2)), len(band) - 1)]
-        a[y, x] = list(c) + [255]
+    o = np.array(Image.open(Path(R['_dir']) / R['fx_dir'] / mo['from']).convert('RGBA'))
+    m = Image.new('L', (w, h), 0); ImageDraw.Draw(m).polygon([tuple(p) for p in mo['poly']], fill=1); om = (np.array(m) > 0) & (o[..., 3] > 0)
+    (sx0, sy0), (sx1, sy1) = mo['src_line']; (dx0, dy0), (dx1, dy1) = mo['dst_line']
+    th = math.atan2(dy1 - dy0, dx1 - dx0) - math.atan2(sy1 - sy0, sx1 - sx0); c, s_ = math.cos(th), math.sin(th)
+    pal = np.unique(src[src[..., 3] > 0][:, :3], axis=0).astype(int)
+    ex, ey = dx1 - dx0, dy1 - dy0
+    for y in range(h):
+        for x in range(w):
+            px, py = x + 0.5 - dx0, y + 0.5 - dy0
+            if ex * py - ey * px <= 0: continue  # 1_0 上颚线以上（吻部）不贴
+            X = int(math.floor(c * px + s_ * py + sx0)); Y = int(math.floor(-s_ * px + c * py + sy0))  # 反解回原稿
+            if 0 <= X < w and 0 <= Y < h and om[Y, X]:
+                col = o[Y, X, :3].astype(int); k = int(((pal - col) ** 2).sum(1).argmin())
+                a[y, x, :3] = pal[k]; a[y, x, 3] = 255
     return a
 
+def jaw_open_rig(R, src, L, pose):
+    """张嘴帧：原 jaw 多边形把吻尖也切了进去，归还头颈链；jaw_open.poly（吻部下面的暗下巴）拿掉，由原稿的嘴补上。
+    不张嘴的帧不走这里，烘焙结果不变。"""
+    jo = R.get('jaw_open')
+    if not jo or not pose.get('_mouth'): return R, L
+    h, w = src.shape[:2]; L = L.copy()
+    L[L == 'jaw'] = 'chain'
+    m = Image.new('L', (w, h), 0); ImageDraw.Draw(m).polygon([tuple(p) for p in jo['poly']], fill=1)
+    L[(np.array(m) > 0) & (L == 'chain')] = '_cut'
+    return R, L
+
 def bake(R, src, pose, fills=None):
-    L = label_map(R, src); Mw = world(R, pose)
+    L = label_map(R, src); R, L = jaw_open_rig(R, src, L, pose); Mw = world(R, pose)
     out = np.zeros_like(src)
     for layer in R['layers']:
-        if 'wedge' in layer:  # 口腔楔形（T213 R1）：只在下颚张开时画，画在头颈链底下
-            if not pose.get(layer['when'], {}).get('rot'): continue
-            a = mouth_wedge(R, layer['wedge'], pose[layer['when']]['rot'], src.shape)
+        if 'wedge' in layer:  # 张嘴（T213 R1）：原稿的嘴贴在头颈链上面，跟头走
+            if not pose.get('_mouth'): continue
+            a = mouth_transplant(R, src, pose['_mouth'], src.shape)
             out = comp(out, render_layer(layer, upscale(a), Mw, src.shape)); continue
+        if layer['name'] == 'jaw' and pose.get('_mouth'): continue  # 张嘴帧不用旧下颚
         if 'pixels' in layer:  # 补画小件（如下牙）：只在 when 骨骼转动时画，rest 姿势不出现
             if not pose.get(layer['when'], {}).get('rot'): continue
             a = np.zeros_like(src)
@@ -287,7 +301,7 @@ def bake(R, src, pose, fills=None):
             out = comp(out, render_layer(layer, upscale(a), Mw, src.shape)); continue
         fl = (fills or {}).get(layer['name'])
         mo = layer.get('fill', {}).get('mouth')
-        if mo and pose.get(mo.get('off_when', ''), {}).get('rot'):  # 张嘴帧改由 mouth 楔形层画口腔，不再整块补红
+        if mo and pose.get(mo.get('off_when', '')):  # 贴原稿嘴的帧（_mouth）不再整块补红
             fl = make_fill(src, L, {**layer, 'fill': {k: v for k, v in layer['fill'].items() if k != 'mouth'}})
         if fl is None: fl = make_fill(src, L, layer)
         a = layer_src(src, L, layer['parts'], fl)
