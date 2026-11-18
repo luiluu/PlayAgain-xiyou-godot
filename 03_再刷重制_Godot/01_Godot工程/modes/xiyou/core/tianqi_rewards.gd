@@ -542,15 +542,23 @@ static func actor_param(a, i: int, v: float) -> float:
 ## 敌人单体随机（scope 1，先抽好一个人）拦不住；改成目标里有我方就换成嘲讽的人（嘲讽的人从出战里找，不要求他已被抽中）
 ## T119 返修（小A P2）：敌人随机 N 体（scope 3～6）保留段数，每一段都改打嘲讽的人（缩成一下等于白吞段数）；全体、单体照旧只打他一下
 static func filter_targets(logic, a, list: Array, skill: Dictionary = {}) -> Array:
-	if _fight(logic).is_empty() or not a is XEnemy or not list.any(func(x): return x is XActor):
+	var b = taunter(logic, a, list)
+	if b == null:
 		return list
+	if [3, 4, 5, 6].has(int(skill.get("scope", 0))):
+		return list.map(func(x): return b if x is XActor else x)
+	return [b]
+
+
+## 混子之盾嘲讽这一次生效的话是谁在嘲讽（null＝不生效）。弱者专属词条看它让步，不看目标列表改没改（T018，小A 核 T015 契约漏洞 1）
+static func taunter(logic, a, list: Array):
+	if _fight(logic).is_empty() or not a is XEnemy or not list.any(func(x): return x is XActor):
+		return null
 	for b in logic.actors:
 		var p := _relic_p(b, "plague")
 		if not p.is_empty() and b.is_alive() and int(logic.turn) <= int(p.taunt_turns):
-			if [3, 4, 5, 6].has(int(skill.get("scope", 0))):
-				return list.map(func(x): return b if x is XActor else x)
-			return [b]
-	return list
+			return b
+	return null
 
 
 ## 行动之后：钥匙串追加普攻（每回合第一次放技能后；普攻 attack_skill_id、防御 2 号不算）、雷火弹攒火花满了轰炸

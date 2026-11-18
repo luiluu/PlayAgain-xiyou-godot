@@ -365,21 +365,33 @@ static func after_action(logic, _u) -> Array:
 
 ## BattleLogic.targets_for：挑衅者活着时，我方打敌人的单体技能只能打它（群体不受限）
 static func filter_targets(logic, a, skill: Dictionary, list: Array) -> Array:
-	if not active(logic) or not _our(logic, a) or not list.any(func(t): return t is XEnemy):
+	if not taunting(logic, a, skill, list):
 		return list
+	var taunters := _taunters(logic)[0] as Array
+	if int(skill.get("scope", 0)) != 1:
+		return list.filter(func(t): return not (t is XEnemy) or taunters.has(t))
+	var kept := list.filter(func(t): return taunters.has(t))
+	return kept if not kept.is_empty() else [taunters[0]]
+
+
+## 场上活着的挑衅者，和有没有终焉挑衅者（全体挑衅，群体攻击也只打它）：[taunters, total]
+static func _taunters(logic) -> Array:
 	var f := fight(logic)
 	var taunters := []
 	var total := false
 	for e in f.units:
 		if e.is_alive() and str(f.units[e].kind) == "taunt":
 			taunters.append(e)
-			total = total or int(f.units[e].idx) >= 3  # 终焉挑衅者：全体挑衅，群体攻击也只打它
-	if taunters.is_empty() or (int(skill.get("scope", 0)) != 1 and not total):
-		return list
-	if int(skill.get("scope", 0)) != 1:
-		return list.filter(func(t): return not (t is XEnemy) or taunters.has(t))
-	var kept := list.filter(func(t): return taunters.has(t))
-	return kept if not kept.is_empty() else [taunters[0]]
+			total = total or int(f.units[e].idx) >= 3
+	return [taunters, total]
+
+
+## 瘟疫挑衅这一次生效没有（filter_targets 会不会接管目标）：弱者专属词条看它让步，不看目标列表改没改（T018，小A 核 T015 契约漏洞 1）
+static func taunting(logic, a, skill: Dictionary, list: Array) -> bool:
+	if not active(logic) or not _our(logic, a) or not list.any(func(t): return t is XEnemy):
+		return false
+	var tt := _taunters(logic)
+	return not (tt[0] as Array).is_empty() and (int(skill.get("scope", 0)) == 1 or bool(tt[1]))
 
 
 ## BattleLogic.execute_hp_damage：毒腺、混乱者命中我方附加中毒、混乱；打挑衅者的人「不服」，化形挑衅者被群体打减半

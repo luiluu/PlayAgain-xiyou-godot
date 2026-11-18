@@ -843,16 +843,17 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null, confus
 	list = XBinding.filter_targets(self, a, skill, list)  # 绑定 makeTargets 包装：敌方对敌技能滤掉形态中的本体
 	list = XXuanBattle.extend_targets(a, skill, list)  # 璇 makeTargets 包装：列星期间回光、璃壁加受益者，棱光多打几遍
 	list = XTianqiBrand.filter_group(self, a, skill, list)  # 天启篇烙印不合群：队友放的全体友方落不到过 55% 的人身上
-	var before_layers := list.duplicate()  # 天启篇弱者专属词条：下面三层改过目标，专属引导就不动
+	# 天启篇弱者专属词条：下面三层约束这一次生效（不管目标列表改没改，T018 起不再比列表）专属引导就让步
+	guide_layers_changed = XTianqiHorsemen.taunting(self, a, list) or XTianqiPlagueAlien.taunting(self, a, skill, list) \
+		or XTianqiRewards.taunter(self, a, list) != null
 	list = XTianqiHorsemen.filter_targets(self, a, list)  # 天启四骑士：混子嘲讽在时只能打混子
 	list = XTianqiPlagueAlien.filter_targets(self, a, skill, list)  # 天启篇瘟疫线异化：挑衅者在时我方单体只能打它
 	list = XTianqiRewards.filter_targets(self, a, list, skill)  # 天启篇奖励：混子之盾开场嘲讽
-	guide_layers_changed = list != before_layers
 	XYunshang.set_primary(a, list)  # 云裳 startAction 包装：_yunPrimary＝第一个目标
 	return list
 
 
-## 天启篇弱者专属词条：最近一次 targets_for 里四骑士嘲讽、瘟疫挑衅、混子之盾三层改没改过目标
+## 天启篇弱者专属词条：最近一次 targets_for 里四骑士嘲讽、瘟疫挑衅、混子之盾三层约束生效没有（生效即让步，T018）
 var guide_layers_changed := false
 
 ## execute 的选目标：targets_for 之后接专属引导（排在三层约束之后、定主目标之前）
@@ -1327,6 +1328,8 @@ func act(u: XBattler, skill, target) -> Array:
 		logs.append_array(fx.logs)
 		skill = fx.skill
 		target = fx.target
+	if skill is Dictionary and u is XActor:
+		skill = XTianqiWeakAffix.skill_view(skill, u)  # 天启篇弱者专属词条批 1：命令里存的是共享记录时也换成本人投影（范围）
 	XTianqiWeakAffix.root_begin(self, u, skill)  # 天启篇弱者专属词条：开一根（act 末尾 root_end 收）
 	XTianqiQiyinRule.on_act(self, u, skill)  # 七印祭坛限时：记我方本回合放了几个技能
 	XWeakChallenge.start_action(state, u)  # 弱者挑战 startAction 包装：强者行动则最终战作废
@@ -1867,6 +1870,7 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 		_cleared[u] = true
 	var before := _movable_snapshot()
 	XTianqiBrand.act_begin(self)  # 天启篇烙印灼痕：强制行动也算一次行动
+	skill = XTianqiWeakAffix.skill_view(skill, u)  # 天启篇弱者专属词条批 1：本人投影（范围）
 	XTianqiWeakAffix.root_begin(self, u, skill)  # 天启篇弱者专属词条：强制行动也是一根（不重置每回合次数）
 	XNanoha.begin(self)
 	var chain_step: int = 1 if XStateEffects.CHAIN_SKILLS.has(int(skill.get("id", 0))) else 0  # rules9 审查 39 P3-6：只有 5576／5577 自己打出的这一击算防连锁，别的强制行动不算
