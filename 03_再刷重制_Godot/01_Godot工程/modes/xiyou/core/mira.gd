@@ -44,6 +44,10 @@ static var DRAGON_ART := true
 ## 升空变身演出（O-481，co 出 u7，Kyo 11-15 通过 D35）：人形换成黑龙时放 2320ms 升空、龙化、落地（XMiraLiftFx，素材 content/mira/fx/lift_u7/），
 ## 「显示技能动画」关着时直接是黑龙。只是画面，2592 与结算照旧在 liberate 当场做完。false＝回到旧表现（外观一变直接换成黑龙）。
 static var LIFT_ART := true
+## O-待定（T212，Kyo 11-18「米拉变身加了多少上限的血量和魔法都要自动补上」）：解放·黑龙加上 2592 时，生命上限、魔法上限各涨多少，
+## 当前生命、魔法就同步补多少（直接补，不算治疗，不吃减疗）。原版不补：2592 让生命上限 ×2、当前生命不变，变身后血条比例骤降。
+## 变回人形（2592 解除）照原版夹到上限、不额外扣。只管解放·黑龙这一处，别的加上限状态不变。false＝回到原版不补。
+static var FILL_ON_LIFT := true
 const ARMOR := 4577
 const DRAGON := 2592
 const DRAGON_ATTACKS := [10148, 10149, 10150, 10151]
@@ -259,6 +263,7 @@ static func pay_hp(u, skill) -> void:
 static func liberate(logic, u, skill) -> void:
 	if not own(u) or not skill is Dictionary or int(skill.get("id", 0)) != LIBERATE or rank(u) < 3 or not has(u, LIBERATE, 3):
 		return
+	var caps_before := [u.mhp, u.mmp]
 	logic._state_add(u, DRAGON)
 	if XTianqiSkills.cards_on() and heart_equipped(u):  # 天启篇：黑龙心鳞变身时回满 TP
 		u.tp = float(u.max_tp())
@@ -271,6 +276,20 @@ static func liberate(logic, u, skill) -> void:
 				if u.buffs[pid] < 0:
 					logic.sequence_buff(u, pid, false, false, 0)
 	u.param_refresh()
+	if FILL_ON_LIFT:
+		fill_lift(u, caps_before)
+
+
+## FILL_ON_LIFT：变身前后上限的差值补进当前生命、魔法（只补涨的部分，补完不超新上限；已倒下不补）
+static func fill_lift(u, caps_before: Array) -> void:
+	if not u.is_alive():
+		return
+	var dh := float(u.mhp) - float(caps_before[0])
+	var dm := float(u.mmp) - float(caps_before[1])
+	if dh > 0.0:
+		u.hp = minf(float(u.mhp), u.hp + dh)
+	if dm > 0.0:
+		u.mp = minf(float(u.mmp), u.mp + dm)
 
 
 ## Game_Action.apply 包装：黑龙形态或解放命中敌人的火属性生命伤害记进本回合劫火
