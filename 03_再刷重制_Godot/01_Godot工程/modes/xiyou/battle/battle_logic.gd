@@ -159,6 +159,8 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	_treasure.clear()
 	_drop_granted.clear()
 	_rewards_granted = false
+	_pre_restore_actors = null
+	_swap_logs = []
 	advance_loot_on_collapse = XConfig.flag("MOG_TrPopUpBattle_Key")
 	current_order.clear()
 	next_order.clear()
@@ -172,6 +174,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	troop_id = troop
 	XWeakChallenge.battle_setup(s, troop)  # 弱者挑战 BattleManager.setup 包装：同步 10357，记最终战判定
 	XImportedBalance.set_acting(null)
+	XTianqiBrand.sweep(s)  # T086-a：这份存档上还有上一场没还原的发作换人留底，先还原出战栏再开打
 	actors = s.battle_members()
 	XYomiJingliu.start_battle(self)  # 镜流 startBattle 包装：放血累计清零
 	XGuyu.after_load(s)  # 谷雨 startBattle 包装：syncAll（同读档）
@@ -1110,7 +1113,9 @@ var _escape_ratio := -1.0
 
 ## 天启篇战斗中换人（XTianqi.SWAP_IN_BATTLE）：上场的 out 换下、助力位的上来，接手 out 在本回合／下回合顺序里剩下的位置；
 ## 出战栏两格互换（助力位与上场格）。助力位要活着；超强者换上来不能超过本难度上限；专属模块角色（XActorModules.IDS）开战时另建本场数据，不能换。
-func can_tianqi_swap(out) -> bool:
+## forced：发作强制换人（XTianqiBrand.after_act）。T086-a：发作换人锁定期间谁都不能换（助力位封住）；九死、炼狱带着留底的这一场开临时口子
+## （强制换下的超强者许坐助力位、许照锁定规则换回来；设计稿第五节，D201 第 6 件），上场上限照旧每回合都成立
+func can_tianqi_swap(out, forced := false) -> bool:
 	if not XTianqi.SWAP_IN_BATTLE or not XTianqi.active(state) or not out is XActor or not actors.has(out):
 		return false
 	var h := state.helper()
@@ -1118,19 +1123,23 @@ func can_tianqi_swap(out) -> bool:
 		return false
 	if XTianqi.HELPER_RULES and not out.is_alive():
 		return false  # 倒下的人不能换（没有阵亡补位；设计稿 v0.4.4 一.2）
+	if XTianqiBrand.swap_locked(self):
+		return false  # T086-a：发作换下去的人锁定期间，助力位封住
 	if XTianqi.HELPER_RULES and not XTianqi.helper_super_ok(state) \
-			and (XTianqiSkills.is_super(h.actor_id, true) or XTianqiSkills.is_super(out.actor_id, true)):
-		return false  # D57：本档助力位不许超强者——助力位的超强者不能换上来（读档清理漏了也拦），场上的超强者也不能换进助力位
+			and (XTianqiSkills.is_super(h.actor_id, true) or XTianqiSkills.is_super(out.actor_id, true)) \
+			and not (XTianqiBrand.REAL_SWAP and (forced or (not XTianqiBrand.snap_of(self).is_empty() and XTianqiSkills.is_super(h.actor_id, true)))):
+		return false  # D57：本档助力位不许超强者——助力位的超强者不能换上来（读档清理漏了也拦），场上的超强者也不能换进助力位（T086-a 临时口子除外）
 	if XTianqiSkills.is_super(h.actor_id, true) and not XTianqiSkills.is_super(out.actor_id, true):
 		# 场上超强者（倒下的也算，仍占出战栏）已满额就不能把强者／弱者换成超强者；超强者换超强者、超强者换下强者照常
 		return actors.filter(func(a): return a is XActor and XTianqiSkills.is_super(a.actor_id, true)).size() < XTianqi.super_cap(state)
 	return true
 
 
-func tianqi_swap(out: XActor) -> XActor:
-	if not can_tianqi_swap(out):
+func tianqi_swap(out: XActor, forced := false) -> XActor:
+	if not can_tianqi_swap(out, forced):
 		return null
 	var h := state.helper()
+	_swap_logs.append_array(XGojo.leave(self, out))  # T086-a：五条悟离场（发作、手动都算），无量空处当场消散
 	XTianqiWeakClear.note_actor(h, state)  # 天启篇全弱者通关资格：换上场的记下（没行动就倒下也算）
 	actors[actors.find(out)] = h
 	for list in [current_order, next_order]:
@@ -1148,6 +1157,56 @@ func tianqi_swap(out: XActor) -> XActor:
 	if XTianqi.SWAP_INIT:
 		_tianqi_enter(h)
 	return h
+
+
+## 换人时离场收尾的记录（五条悟领域消散）：发作换人由 XTianqiBrand.after_act 并进 act 的记录；手动换人由画面取走播放
+var _swap_logs: Array = []
+
+func take_swap_logs() -> Array:
+	var out := _swap_logs
+	_swap_logs = []
+	return out
+
+
+## T086-a 还原入口（设计稿第三节第 4 条，P1-1）：这一场有发作换人的留底时，出战栏 5 格和在场名单（actors，按留底前 4 格）一起还原，
+## 之后烙印份额、法宝经验、真气、打输复活都按发作前的位置算。胜利结算开头（rewards、grant）、收口开头（end_battle）各调一次，
+## 画面在调结算之前先调（XBattleScene._tianqi_restore_view，换回图）；第二次调是空的。返回 [[还原前在这一位的人, 还原后的人], …]（画面换图用）。
+## 留底的 5 个人和现在出战栏的 5 个人不是同一批就不还原，记一条日志。还原前记下这一刻的在场名单（心魔判胜用，_pre_restore_actors）
+var _pre_restore_actors = null
+
+func tianqi_restore() -> Array:
+	var snap := XTianqiBrand.take_snap(self)
+	if snap.is_empty():
+		return []
+	var now := state.battle_slots.duplicate()
+	if not XTianqiBrand.same_people(snap, now):
+		push_warning("XBattleLogic.tianqi_restore: 留底和出战栏不是同一批人，不还原 %s / %s" % [snap, now])
+		return []
+	_pre_restore_actors = actors.duplicate()
+	var pairs := []
+	var at := []
+	for i in XTianqi.FIGHTERS:
+		var cur := int(state.battle_slots[i])
+		var want := int(snap[i])
+		at.append(actors.find(state.actor(cur)) if cur > 0 and cur != want else -1)
+	for i in XTianqi.FIGHTERS:
+		var j: int = at[i]
+		if j < 0:
+			continue
+		var old: XActor = actors[j]
+		var nw := state.actor(int(snap[i]))
+		actors[j] = nw
+		pairs.append([old, nw])
+	for i in snap.size():
+		state.set_battle_slot(i, int(snap[i]))  # 出战栏写入都走 set_battle_slot（同一批人，全弱者资格记的还是这 5 个）
+	return pairs
+
+
+## 心魔判胜用的名单：还原过就用还原前那一刻的在场名单（被考的人那时在不在场、活没活着；设计稿第三节第 4 条「心魔战例外」）
+func _trial_actors() -> Array:
+	if _pre_restore_actors != null and not (XZhenqi.battle.get("trial", {}) as Dictionary).is_empty():
+		return _pre_restore_actors
+	return actors
 
 
 ## 审查 78 P3-1（O-281）：换上来的助力位补上开战时出战成员才有的初始化——初始 TP（保留 TP 的不动）、技能预热、
@@ -1381,6 +1440,7 @@ func act(u: XBattler, skill, target) -> Array:
 	logs.append_array(XTianqiBrand.take_logs(self))  # 天启篇烙印灼痕：满了的那一行、当场开始的发作
 	_sync_orders(before, true)
 	resolve_collapses()
+	logs.append_array(XTianqiBrand.after_act(self, u))  # T086-a 发作真换人／自动换回：行动收尾全部跑完、人还活着才和助力位对调
 	return logs
 
 
@@ -3580,6 +3640,7 @@ func _liuying_core() -> Array:
 
 
 func rewards() -> Dictionary:
+	tianqi_restore()  # T086-a：胜利结算前还原出战栏＋在场名单（读 actors 的套装金钱率等按发作前的位置）
 	if XTianqiGojoTrial.no_rewards(self):
 		return {"exp": 0, "gold": 0, "drops": []}  # 天启篇五条悟专属试炼：没有任何战斗奖励
 	var exp := 0
@@ -3756,6 +3817,7 @@ static func _extra_drops(d: Dictionary) -> Array:
 
 ## 发放奖励，返回升级信息 [{actor, levels}]
 func grant(r: Dictionary) -> Array:
+	tianqi_restore()  # T086-a：胜利结算开头还原（事件中止时敌人全灭那条路也经过这里）
 	if _rewards_granted:
 		return []
 	_rewards_granted = true
@@ -3767,7 +3829,7 @@ func grant(r: Dictionary) -> Array:
 		victory_texts.append(garou_text)
 	XXuanChart.credit_victory(state, actors, enemies)  # 璇 endBattle 包装：出战的璇胜利一场攒星砂（含 Boss 的敌群多给）
 	XStarburstBooks.on_victory(self)  # 星爆三本被动书 endBattle(0) 包装（真气、云裳外层，真气胜利结算之前）：8／18 层守层者、13 层不朽存在
-	XZhenqi.on_victory(state, actors, XZhenqi.troop_members(troop_id, enemies, state.difficulty))  # 真气胜利结算（含没出场的隐藏成员）（BattleManager.endBattle(0)；每场一次）
+	XZhenqi.on_victory(state, _trial_actors(), XZhenqi.troop_members(troop_id, enemies, state.difficulty))  # 真气胜利结算（含没出场的隐藏成员）（BattleManager.endBattle(0)；每场一次）
 	XTianqiBrand.settle(self)  # 天启篇烙印（开关关着不动）：首领战打赢后首通、再打、烙实，记首胜
 	state.gain_gold(r.gold)
 	if not drop_lock:
@@ -3803,6 +3865,7 @@ func _phase(name: String) -> void:
 ## result：0 胜、1 逃、2 败，-1 不跑胜逃败效果（测试夹具等）。
 ## Custom Victory／Escape／Defeat Effect 只对我方（含后备），在原 endBattle 之前；胜利时 processVictory 已先 removeBattleStates。
 func end_battle(result := -1) -> void:
+	tianqi_restore()  # T086-a：收口开头再还原一次（打输、逃跑、事件中止、回标题都经过这里；结算前已还原过的是空的）
 	XActor.batch_reset()
 	XTianqiBrand.end(self)  # 天启篇烙印：这一场结束，一条命、虚不受补不再拦
 	var weak_award := XWeakChallenge.before_end(self, result)  # 弱者挑战 endBattle 包装（原 endBattle 之前判定，之后发）

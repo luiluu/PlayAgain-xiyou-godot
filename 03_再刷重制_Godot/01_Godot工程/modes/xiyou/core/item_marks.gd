@@ -557,6 +557,8 @@ static func can_deploy(s: XState, actor_id: int, slot := -1) -> bool:
 static func enforce_party(s: XState) -> bool:
 	if s == null or s.battle_slots.size() != XState.MAX_BATTLE_MEMBERS:
 		return false
+	if XTianqiBrand.swap_hold(s):
+		return false  # T086-a：这份存档有一场没收口的战斗带着发作换人留底（九死、炼狱超强者临时坐助力位），收口还原之前不清
 	if XTianqi.active(s) and XTianqi.HELPER_RULES:
 		return _tianqi_enforce(s)
 	var cap := XTianqi.super_cap(s)  # 天启篇：按格序留前 cap 个超强者，多的清出；原版档 -1

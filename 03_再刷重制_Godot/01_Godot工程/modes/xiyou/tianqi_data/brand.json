@@ -49,7 +49,7 @@
    {"key": "hit_self", "name": "抽自己", "over": 40},
    {"key": "break_guard", "name": "破防", "over": 55, "taken_up": 0.3, "rounds": 2},
    {"key": "hit_ally", "name": "六亲不认", "over": 70},
-   {"key": "swap", "name": "换人", "over": 85, "fallback": "断片", "fallback_rounds": 2}
+   {"key": "swap", "name": "换人", "over": 85, "fallback": "断片", "fallback_rounds": 2, "lock_rounds": 2, "lock_rounds_range": [1, 3], "blackout_only": [167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 179], "note": "T086-a 真换人（XTianqiBrand.REAL_SWAP）：lock_rounds 换下那回合算第 1 回合；blackout_only 是只做断片的专属模块角色（发作真换人 v0.2 第四节）"}
   ],
   "protect": {
    "gap_rounds": 2,

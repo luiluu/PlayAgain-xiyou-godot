@@ -575,6 +575,19 @@ static func end_round(logic) -> Array:
 	return logs
 
 
+## T086-a（发作真换人 v0.2 第四节）：五条悟离场（发作换下、手动换下都算）无量空处当场消散；苍印、赫印、自动反转这些记在人身上的照旧。
+## 开关关掉回到 T086 前（领域回合数停住，换回来接着算）
+static var LEAVE_DOMAIN := true
+
+static func leave(logic, a) -> Array:
+	if not LEAVE_DOMAIN or not own(a) or int(temp(a).domain) <= 0:
+		return []
+	temp(a).domain = 0
+	if a.state_ids.has(ST_DOMAIN):
+		logic._state_remove(a, ST_DOMAIN)
+	return [_text(a.display_name() + "的无量空处消散了。")]
+
+
 ## 信息过载：有五条悟的领域开着时，敌人每次行动前判一次，中了这次不能行动
 static func overload(logic, u) -> bool:
 	if not u is XEnemy or not u.is_alive():

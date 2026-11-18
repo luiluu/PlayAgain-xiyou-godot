@@ -971,6 +971,9 @@ func _main() -> void:
 			await _play(logs)
 			if _tianqi_swap_out != null:
 				await _tianqi_swap(_tianqi_swap_out)
+			for l in logs:
+				if str(l.get("type", "")) == "tianqi_swap":
+					await _tianqi_swap_view(l.out, l["in"])  # T086-a 发作换人／自动换回：逻辑层已对调，画面照记录换图（演出 T086-c／T182）
 			if PACE_GAPS:
 				await _pace_frames(1)  # endAction 之后那一帧阶段是 turn，下一帧 updateTurn 才取下一位（逐次行动起点间隔与原版一样，见 battle_pace）
 			if (logic.is_won() or logic.is_lost()) and XBattleCommonEvent.reserved(logic) > 0: await _play_troop_events(logic.troop_events())  # 打完最后一击，预约的公共事件照样跑（YEP checkBattleEnd）
@@ -1254,7 +1257,47 @@ func _tianqi_swap(out: XActor) -> void:
 	var h := logic.tianqi_swap(out)
 	if h == null:
 		return
+	await _play(logic.take_swap_logs())  # T086-a：五条悟离场无量空处消散
+	await _tianqi_swap_view(out, h)
+
+
+## 换人的画面：out 的角色图与状态行原地换成 h 的（逻辑层已经对调好；手动换人、发作换人、自动换回共用）。
+## T182（T086-c）的换人演出接在这里
+func _tianqi_swap_view(out: XActor, h: XActor) -> void:
+	if not sprites.has(out) or sprites.has(h):
+		return
+	_swap_sprite(out, h)
+	_refresh_status()
+	await message.run({"lines": ["%s退下，%s上场了！" % [out.display_name(), h.display_name()]]})
+
+
+## T086-a 胜利结算之前的还原钩子：逻辑层还原出战栏＋在场名单（XBattleLogic.tianqi_restore），画面把图和状态行换回发作之前的人，
+## 胜利姿势、升级对照表才找得到他们。只换图不演出（还原演出归 T182）；先把旧图、旧状态行都取下来再建，同一个人前后换了位置也不会取错
+func _tianqi_restore_view() -> void:
+	var pairs := logic.tianqi_restore()
+	if pairs.is_empty():
+		return
+	var olds := []
+	for p in pairs:
+		olds.append([sprites.get(p[0]), status_rows.get(p[0])])
+	for p in pairs:
+		sprites.erase(p[0])
+		status_rows.erase(p[0])
+	for k in pairs.size():
+		if olds[k][0] != null and olds[k][1] != null:
+			_swap_sprite_from(olds[k][0], olds[k][1], pairs[k][1])
+	_refresh_status()
+
+
+func _swap_sprite(out: XActor, h: XActor) -> void:
 	var old: XBattlerSprite = sprites[out]
+	var row: XSideStatus = status_rows[out]
+	sprites.erase(out)
+	status_rows.erase(out)
+	_swap_sprite_from(old, row, h)
+
+
+func _swap_sprite_from(old: XBattlerSprite, row: XSideStatus, h: XActor) -> void:
 	var s := XBattlerSprite.new()
 	field.add_child(s)
 	field.move_child(s, old.get_index())  # 换上的人接替原来的绘制次序（站位交错时靠下的要画在上面）
@@ -1263,20 +1306,15 @@ func _tianqi_swap(out: XActor) -> void:
 	s.setup(h, ACTOR_SCALE * s.layout_mul)
 	s.home = old.home
 	s.position = old.home
-	sprites.erase(out)
 	old.queue_free()
 	sprites[h] = s
-	var row: XSideStatus = status_rows[out]
 	var nr := XSkinBattle.side_status()  # 新界面 2B（关着同 XSideStatus.new()）
 	nr.setup(h, logic.actors.find(h))
 	row.get_parent().add_child(nr)
 	row.get_parent().move_child(nr, row.get_index())
 	nr.cell_pressed.connect(_open_status)
-	status_rows.erase(out)
 	row.queue_free()
 	status_rows[h] = nr
-	_refresh_status()
-	await message.run({"lines": ["%s退下，%s上场了！" % [out.display_name(), h.display_name()]]})
 
 
 ## 状态详情（installEquipmentStatusRuntime open('status')）：点右侧状态格打开。正式版打开时 BattleManager.update 整个停住、
@@ -2705,6 +2743,7 @@ func _end_record() -> void:
 
 ## 胜利：先发放一次奖励，再放大胜利镜头，最后显示 Olivia 的结算布局。
 func _victory() -> void:
+	_tianqi_restore_view()  # T086-a：调结算之前先还原出战栏＋在场名单，图和状态行换回发作之前的人
 	boss_hp.ended()
 	_close_windows()
 	_end_record()
