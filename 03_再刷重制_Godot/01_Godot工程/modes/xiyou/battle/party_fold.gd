@@ -339,7 +339,7 @@ func _input(event: InputEvent) -> void:
 		if n is CanvasItem and (n as CanvasItem).is_visible_in_tree():
 			return
 	toggle()
-	get_viewport().set_input_as_handled()
+	XKeyMap.handled(self)
 
 
 ## 栏头：旧金箭头（转 90°）＋「队伍」；悬停时字提亮
