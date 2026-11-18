@@ -207,7 +207,9 @@ static func complete(s: XState, interp = null) -> bool:
 	var misses := int(l.misses.get(who.key, 0))
 	cur.appeared = misses >= int(c.pity) - 1 or MVEventCore.random_float(s) < float(c.encounterRate)
 	l.misses[who.key] = 0 if cur.appeared else misses + 1
-	var text := "获得%s＋%d。" % [points_name(str(who.key)), gain] + ((str(who.kind) + "出现了。") if cur.appeared else "")
+	# 按层合账时带上这一份现有的点数（Kyo 11-19 清单 3；玩家可见文字，待小A 审）
+	var total := ("（本层共 %d 点）" % int(l.balances[who.key])) if LAYER_LEDGER else ""
+	var text := "获得%s＋%d%s。" % [points_name(str(who.key)), gain, total] + ((str(who.kind) + "出现了。") if cur.appeared else "")
 	if interp != null:
 		if interp.host.has_method("refresh_events"):
 			interp.host.refresh_events()

@@ -140,7 +140,7 @@ func _ready() -> void:
 	list_win = XMVWindow.make(self, LIST_RECT, op, _paint_list)
 	status_win = XMVWindow.make(self, STATUS_RECT, op, _paint_status)
 	gold_win = XMVWindow.make(self, GOLD_RECT, op, _paint_gold)
-	var n := XItemMarks.onekey_commands(XState.current).size()
+	var n := _onekey_rows().size()
 	onekey_win = XMVWindow.make(self, Rect2(ONEKEY_POS, Vector2(ONEKEY_SAFE_W if XSafeSell.ENABLED else ONEKEY_W, n * LH + XMVWindow.PADDING * 2)), op, _paint_onekey)
 	onekey_win.visible = false
 	var ch := 4 * LH + XMVWindow.PADDING * 2
@@ -366,7 +366,7 @@ func _cmd_enabled(i: int) -> bool:
 
 
 func _paint_onekey(c: XMVCanvas) -> void:
-	var rows := XItemMarks.onekey_commands(XState.current)
+	var rows := _onekey_rows()
 	for i in range(rows.size()):
 		if i == _onekey:
 			c.cursor(Rect2(0, i * LH, c.size.x, LH))
@@ -395,9 +395,143 @@ func _paint_confirm(c: XMVCanvas) -> void:
 
 func _paint_info(c: XMVCanvas) -> void:
 	XItemStatusPainter.paint(c, _current_rec())
+	var hint := ""
 	if _gear_sell_list():
-		var hint := "已选 %d 件，共 %s 金币｜确定：出售已选" % [live_marks().size(), XMenu._group(marked_gold())] if not _marks.is_empty() else MARK_HINT
+		hint = "已选 %d 件，共 %s 金币｜确定：出售已选" % [marked_count(), XMenu._group(marked_gold())] if has_marks() else MARK_HINT
+	elif _mode == "number" and NUM_INPUT:
+		hint = NUM_HINT + (("｜" + (NUM_MARK_OK_HINT if _number_mark else NUM_MARK_HINT)) if _number_markable() else "")
+	if hint != "":
 		c.text(hint, 0, c.size.y - LH, c.size.x, "right", XUI.TEXT, GOLD_FONT, LH)
+
+
+# ---- 一键出售按类别（ONEKEY_KIND） ----
+
+## 一键出售多一道类别过滤（Kyo 11-19 清单 4，O-待定）：安全出售开着时窗里最后一行「出售类别」，确定循环「全部／只卖武器／只卖护甲」；
+## 品质选择和保留判断（XSafeSell.plan）照旧，只把计划里别的类别去掉（待出售、保留两边都去）。每次进商店从「全部」起。false＝没有这一行
+static var ONEKEY_KIND := true
+const ONEKEY_KIND_ROW := -2
+## 玩家可见文字（待小A 审）
+const ONEKEY_KINDS := [["全部", ""], ["只卖武器", "weapon"], ["只卖护甲", "armor"]]
+var _onekey_kind := 0
+
+
+func _onekey_rows() -> Array:
+	var rows := XItemMarks.onekey_commands(XState.current)
+	if ONEKEY_KIND and XSafeSell.ENABLED:
+		rows.append({"grade": ONEKEY_KIND_ROW, "text": "出售类别：" + str(ONEKEY_KINDS[_onekey_kind][0])})
+	return rows
+
+
+func _onekey_plan(s: XState, g: int) -> Dictionary:
+	var p := XSafeSell.plan(s, g)
+	var k: String = ONEKEY_KINDS[_onekey_kind][1] if ONEKEY_KIND else ""
+	if k != "":
+		p.sell = p.sell.filter(func(e): return str(e.get("kind", "")) == k)
+		p.keep = p.keep.filter(func(r): return str(r.item.get("kind", "")) == k)
+	return p
+
+
+# ---- 自定义数量（NUM_INPUT） ----
+
+## 数量窗自己填数（Kyo 11-19，O-待定）：键盘数字键直接敲（进窗或按过方向键后第一个数字重新开始，退格删一位）；
+## 点数量那一行弹数字键盘（手机）。超过可买／可卖上限夹到上限，0 或空算 1。false＝只有 ±1／±10／到头
+static var NUM_INPUT := true
+## 玩家可见文字（待小A 审）
+const NUM_HINT := "点数量处：自定义数量"
+const NUM_MARK_HINT := "C：按此数量加入已选"
+const NUM_MARK_OK_HINT := "确定：加入已选"
+var _num_text := ""
+var _num_edit: LineEdit = null
+
+
+## 敲一位数字（d＝0～9）或退格（d＜0）
+func type_digit(d: int) -> void:
+	var before := _number
+	_num_text = _num_text.left(-1) if d < 0 else _num_text + str(d)
+	_set_number_text(_num_text)
+	if _number != before:
+		XSound.system(0)
+
+
+## 按文字定数量：只认数字，超上限夹到上限（文字也改成上限），0 或空算 1
+func _set_number_text(text: String) -> void:
+	var digits := ""
+	for ch in text:
+		if ch >= "0" and ch <= "9":
+			digits += ch
+	digits = digits.left(9)
+	var mx := maxi(1, _max_number())
+	var n := int(digits) if digits != "" else 0
+	if n > mx:
+		n = mx
+		digits = str(mx)
+	_num_text = digits
+	_number = maxi(1, n)
+
+
+## 点数量那一行：弹数字键盘（藏起来的 LineEdit 拿焦点；桌面上也能直接打字，回车或点别处收起）
+func open_number_editor() -> void:
+	if _num_edit == null:
+		_num_edit = LineEdit.new()
+		_num_edit.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_NUMBER
+		_num_edit.modulate.a = 0.0
+		_num_edit.size = Vector2(4, 4)
+		_num_edit.position = LIST_RECT.position + Vector2(LIST_RECT.size.x - 40, LH * 2)
+		_num_edit.text_changed.connect(func(tx: String) -> void:
+			_set_number_text(tx)
+			if _num_edit.text != _num_text:
+				_num_edit.text = _num_text
+				_num_edit.caret_column = _num_text.length()
+			_refresh())
+		_num_edit.text_submitted.connect(func(_tx: String) -> void: close_number_editor())
+		_num_edit.focus_exited.connect(close_number_editor)
+		add_child(_num_edit)
+	_num_text = ""
+	_num_edit.text = ""
+	_num_edit.visible = true
+	_num_edit.grab_focus()
+
+
+func close_number_editor() -> void:
+	if _num_edit != null and _num_edit.visible:
+		_num_edit.visible = false
+		_num_edit.release_focus()
+	_num_text = ""
+
+
+func _digit_of(event: InputEvent) -> int:
+	if not (event is InputEventKey and event.pressed):
+		return -2
+	var k: int = event.keycode
+	if k >= KEY_0 and k <= KEY_9:
+		return k - KEY_0
+	if k >= KEY_KP_0 and k <= KEY_KP_9:
+		return k - KEY_KP_0
+	if k == KEY_BACKSPACE:
+		return -1
+	return -2
+
+
+## 数量窗里按 C：卖物品时按当前数量加入已选，回到出售列表
+func _number_markable() -> bool:
+	if not (MULTI_SELL and ITEM_MULTI and _mode == "number" and _number_from == "sell"):
+		return false
+	var e := _number_entry()
+	return not e.is_empty() and int(e.kind) == 0 and can_mark_item(e.rec)
+
+
+func mark_number() -> void:
+	if not _number_markable():
+		XSound.system(3)
+		return
+	_item_marks[int(_number_entry().rec.id)] = _number
+	XSound.system(0)
+	close_number_editor()
+	_number_mark = false
+	_mode = "sell"
+	if _sell_index < _sell_data().size() - 1:
+		_sell_index += 1
+		_sell_top = XMenu._scroll_to(_sell_index, _sell_top, _list_rows())
 
 
 # ---- 批量出售（MULTI_SELL） ----
@@ -407,12 +541,59 @@ const MARK_HINT := "按 C 或点图标：标记多选，一次出售"
 const MARK_COLOR := Color(1.0, 0.85, 0.3, 0.22)
 
 
+## 能多选的出售列表：武器、护甲；ITEM_MULTI 开着时还有物品、消耗品（重要物品不行）
 func _gear_sell_list() -> bool:
-	return MULTI_SELL and _mode == "sell" and CATEGORIES[_cat][1] in ["weapon", "armor"]
+	return MULTI_SELL and _mode == "sell" and (CATEGORIES[_cat][1] in ["weapon", "armor"] or ITEM_MULTI and CATEGORIES[_cat][1] in ["item", "consumable"])
 
 
 func is_marked(rec: Dictionary) -> bool:
+	if not XItemMarks.is_gear(rec):
+		return _item_marks.has(int(rec.get("id", 0)))
 	return _marks.any(func(m): return is_same(m, rec))
+
+
+func has_marks() -> bool:
+	return not _marks.is_empty() or not _item_marks.is_empty()
+
+
+func clear_marks() -> void:
+	_marks.clear()
+	_item_marks.clear()
+
+
+## 物品多选（Kyo 11-19 清单 5，O-待定）：消耗品、材料跟装备同一套标记——C／点图标弹数量窗（预填全部），选好数确定就加入已选
+## （单件出售的数量窗里按 C 也能按当前数量加入）；已选的再按一次 C（或点图标）取消。已选按物品 ID 记数量，
+## 真卖时不超过手上现有数。重要物品、不能卖（价为 0 又没别的出售货币、cannotSell）、锁定的标不上。false＝只有装备能多选
+static var ITEM_MULTI := true
+var _item_marks := {}   # 物品 ID → 要卖的数量
+var _number_mark := false   # 数量窗是「加入已选」用的（确定＝加入，不卖）
+
+
+static func can_mark_item(rec: Dictionary) -> bool:
+	var s := XState.current
+	if s == null or rec.is_empty() or XItemMarks.is_gear(rec):
+		return false
+	var base := XDB.rec("Items", int(rec.get("id", 0)))
+	return not base.is_empty() and int(base.get("itypeId", 1)) != 2 and s.item_count(int(base.id)) > 0 and XItemMarks.can_sell(base) \
+		and XSafeSell.sellable(base) and not XItemMarks.is_locked(s, base)
+
+
+## 物品已选里还能卖的：{ID: min(已选数, 手上数)}
+func live_item_marks() -> Dictionary:
+	var out := {}
+	for id in _item_marks:
+		var rec := XDB.rec("Items", int(id))
+		if can_mark_item(rec):
+			out[id] = mini(int(_item_marks[id]), XState.current.item_count(int(id)))
+	return out
+
+
+## 已选总数：装备件数＋物品个数
+func marked_count() -> int:
+	var n := live_marks().size()
+	for v in live_item_marks().values():
+		n += int(v)
+	return n
 
 
 ## 能标：在背包里（身上的不算）、单件能卖（XItemMarks.can_sell），且过安全出售同一套保留判断 XSafeSell.reason——
@@ -433,7 +614,23 @@ func toggle_mark() -> void:
 	if _sell_index >= d.size():
 		return
 	var rec: Dictionary = d[_sell_index].rec
-	if is_marked(rec):
+	if not XItemMarks.is_gear(rec):
+		var id := int(rec.get("id", 0))
+		if _item_marks.has(id):
+			_item_marks.erase(id)
+		elif can_mark_item(rec):
+			# 弹数量窗选这一组卖几个（预填全部），确定才加入已选
+			XSound.system(1)
+			_number_from = "sell"
+			_number_mark = true
+			_num_text = ""
+			_mode = "number"
+			_number = maxi(1, _max_number())
+			return
+		else:
+			XSound.system(3)
+			return
+	elif is_marked(rec):
 		_marks = _marks.filter(func(m): return not is_same(m, rec))
 	elif can_mark(rec):
 		_marks.append(rec)
@@ -459,11 +656,22 @@ func marked_gold() -> int:
 	var g := 0
 	for m in live_marks():
 		g += XItemMarks.selling_price(m)
+	var items := live_item_marks()
+	for id in items:
+		g += XItemMarks.selling_price(XDB.rec("Items", int(id))) * int(items[id])
 	return g
 
 
+## 玩家可见文字（待小A 审）：「已选装备 N 件、物品 N 个，共得 N 金币」，没有的那半不写
 func multi_rows() -> Array:
-	return [["已选装备 %d 件，共得 %s 金币" % [live_marks().size(), XMenu._group(marked_gold())], false], ["出售已选", not _marks.is_empty()],
+	var parts := []
+	var ng := live_marks().size()
+	var ni := marked_count() - ng
+	if ng > 0 or ni == 0:
+		parts.append("装备 %d 件" % ng)
+	if ni > 0:
+		parts.append("物品 %d 个" % ni)
+	return [["已选%s，共得 %s 金币" % ["、".join(parts), XMenu._group(marked_gold())], false], ["出售已选", has_marks()],
 		["清空选择", true], ["取消", true]]
 
 
@@ -478,8 +686,16 @@ func sell_marked() -> Array:
 		XItemMarks.sell(s, e, 1)
 		XShopStock.record_sale(s, stock_group, 1 if str(e.get("kind", "")) == "weapon" else 2, int(e.get("base", e.get("id", 0))), 1)
 	XAlienation.end_batch()
-	_marks.clear()
-	return [list.size(), gold]
+	var n := list.size()
+	var items := live_item_marks()
+	for id in items:
+		var rec := XDB.rec("Items", int(id))
+		gold += XItemMarks.selling_price(rec) * int(items[id])
+		XItemMarks.sell(s, rec, int(items[id]))
+		XShopStock.record_sale(s, stock_group, 0, int(id), int(items[id]))
+		n += int(items[id])
+	clear_marks()
+	return [n, gold]
 
 
 ## MV drawItemName：图标 (x+2, y+2)，名字从 x+36 起，品质颜色（ItemQuality）。
@@ -819,6 +1035,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_change_stat_page()
 	elif MULTI_SELL and event is InputEventKey and event.pressed and not event.echo and event.keycode == MARK_KEY and _gear_sell_list():
 		toggle_mark()
+	elif MULTI_SELL and event is InputEventKey and event.pressed and not event.echo and event.keycode == MARK_KEY and _mode == "number" and _number_markable():
+		mark_number()
+	elif NUM_INPUT and _mode == "number" and _digit_of(event) >= -1:
+		type_digit(_digit_of(event))
 	elif MULTI_SELL and XMenu.page_dir(event) != 0 and _mode == "number":
 		jump_number(XMenu.page_dir(event))
 	elif XMenu.page_dir(event) != 0 and _mode in ["buy", "sell", "category"]:
@@ -894,7 +1114,7 @@ func _move_inner(d: int, wrap: bool) -> void:
 		"number":
 			_change_number(d)
 		"onekey":
-			_onekey = XMenu._move(_onekey, d, XItemMarks.onekey_commands(XState.current).size(), wrap)
+			_onekey = XMenu._move(_onekey, d, _onekey_rows().size(), wrap)
 		"confirm":
 			_confirm = XMenu._move(_confirm, d, 4, wrap)
 
@@ -935,6 +1155,7 @@ func _wheel(d: int) -> void:
 
 ## MV Window_ShopNumber：上下 ±10、左右 ±1，范围 1～最大可买/可卖数
 func _change_number(d: int) -> void:
+	_num_text = ""
 	var before := _number
 	_number = clampi(_number + d, 1, maxi(1, _max_number()))
 	if _number != before:
@@ -943,6 +1164,7 @@ func _change_number(d: int) -> void:
 
 ## 数量窗一步到头：d＞0 到最大可卖／可买数，d＜0 回到 1
 func jump_number(d: int) -> void:
+	_num_text = ""
 	var before := _number
 	_number = maxi(1, _max_number()) if d > 0 else 1
 	if _number != before:
@@ -965,6 +1187,7 @@ func _max_buy(e: Dictionary) -> int:
 
 func _ok() -> void:
 	_drop_cache()
+	close_number_editor()
 	_ok_inner()
 	_refresh()
 
@@ -1001,10 +1224,13 @@ func _ok_inner() -> void:
 				XSound.system(1)
 				_number_from = "buy"
 				_number = 1
+				_num_text = ""
+				_number_mark = false
 				_mode = "number"
 		"sell":
-			if _gear_sell_list() and not _marks.is_empty():
+			if _gear_sell_list() and has_marks():
 				_marks = live_marks()
+				_item_marks = live_item_marks()
 				XSound.system(1)
 				_confirm_kind = "multi"
 				_confirm = 3
@@ -1021,19 +1247,26 @@ func _ok_inner() -> void:
 					return
 				_number_from = "sell"
 				_number = 1
+				_num_text = ""
+				_number_mark = false
 				_mode = "number"
 		"number":
-			_trade()
+			if _number_mark:
+				mark_number()
+			else:
+				_trade()
 		"onekey":
 			XSound.system(1)
-			var rows := XItemMarks.onekey_commands(s)
+			var rows := _onekey_rows()
 			var g := int(rows[_onekey].grade)
-			if g < 0:
+			if g == ONEKEY_KIND_ROW:
+				_onekey_kind = (_onekey_kind + 1) % ONEKEY_KINDS.size()   # 「出售类别」行：全部→只卖武器→只卖护甲，留在一键出售窗
+			elif g < 0:
 				XSafeSell.cycle(s, 1)   # 「保留词条」行：门槛往后一档，留在一键出售窗
 			elif XSafeSell.ENABLED:
 				_confirm_kind = "safe"
 				_plan_grade = g
-				_plan = XSafeSell.plan(s, g)
+				_plan = _onekey_plan(s, g)
 				_confirm = 3
 				_mode = "confirm"
 			else:
@@ -1051,7 +1284,7 @@ func _ok_inner() -> void:
 				_mode = "onekey"
 				return
 			# 确认前重算：和弹窗时的计划不同（期间背包变了）就刷新计划、停在「取消」，不卖
-			var now := XSafeSell.plan(s, _plan_grade)
+			var now := _onekey_plan(s, _plan_grade)
 			if now.sell.size() != _plan.sell.size() or range(now.sell.size()).any(func(i): return not is_same(now.sell[i], _plan.sell[i])):
 				_plan = now
 				_confirm = 3
@@ -1066,8 +1299,10 @@ func _multi_confirm() -> void:
 		1:
 			# 确认前重筛：期间背包变了（件数不同）就刷新、停在「取消」，不卖
 			var live := live_marks()
-			if live.size() != _marks.size():
+			var live_items := live_item_marks()
+			if live.size() != _marks.size() or live_items != _item_marks:
 				_marks = live
+				_item_marks = live_items
 				_confirm = 3
 				return
 			sell_marked()
@@ -1075,7 +1310,7 @@ func _multi_confirm() -> void:
 			_sell_index = clampi(_sell_index, 0, maxi(0, _sell_data().size() - 1))
 			_sell_top = XMenu._scroll_to(_sell_index, mini(_sell_top, _sell_index), _list_rows())
 		2:
-			_marks.clear()
+			clear_marks()
 			_mode = "sell"
 		_:
 			_mode = "sell"
@@ -1102,7 +1337,7 @@ func _trade() -> void:
 	else:
 		# 装备的 e.rec 就是背包实例；物品的 e.rec 可能是加了标记名的副本，按 ID 卖
 		XItemMarks.sell(s, e.rec if int(e.kind) != 0 else XDB.rec("Items", int(e.rec.id)), _number)
-		XShopStock.record_sale(s, stock_group, int(e.kind), int(e.rec.get("id", 0)), _number)
+		XShopStock.record_sale(s, stock_group, int(e.kind), int(e.rec.get("base", e.rec.get("id", 0))), _number)
 		_mode = "sell"
 		var n := _sell_data().size()
 		_sell_index = clampi(_sell_index, 0, maxi(0, n - 1))
@@ -1110,6 +1345,7 @@ func _trade() -> void:
 
 func _cancel() -> void:
 	_drop_cache()
+	close_number_editor()
 	_cancel_inner()
 	_refresh()
 
@@ -1126,9 +1362,10 @@ func _cancel_inner() -> void:
 		"confirm":
 			_mode = "sell" if _confirm_kind == "multi" else "onekey"
 		"sell":
-			_marks.clear()
+			clear_marks()
 			_mode = "category"
 		"number":
+			_number_mark = false
 			_mode = _number_from
 
 
@@ -1155,7 +1392,7 @@ func _gui_input(event: InputEvent) -> void:
 	if _mode == "onekey":
 		var r := Rect2(onekey_win.position, onekey_win.size)
 		var i := floori((p - r.position - pad).y / LH)
-		if r.has_point(p) and i >= 0 and i < XItemMarks.onekey_commands(XState.current).size():
+		if r.has_point(p) and i >= 0 and i < _onekey_rows().size():
 			if i == _onekey:
 				_click_ok()
 			else:
@@ -1197,6 +1434,9 @@ func _gui_input(event: InputEvent) -> void:
 				_click_ok()
 			else:
 				_sell_index = i + _sell_top
+		elif _mode == "number" and NUM_INPUT and i == 2:
+			_clicked_ok = true
+			open_number_editor()   # 点数量那一行：自定义数量
 		elif _mode == "number":
 			_click_ok()
 	elif STATUS_RECT.has_point(p):

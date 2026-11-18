@@ -5,6 +5,8 @@ extends Node
 ## - 数量窗：E 到最大可卖数，Q 回 1。
 ## - R1（小A 核 P1-1／P2-1）：点行首图标能标；专属、已培养、锁定、模板缺失、不可出售、身上（不在背包）的按 C 和点图标都标不上；
 ##   标后变成不能卖的，预览金币和确认窗只算能卖的。
+## - R1 清单 4：一键出售「出售类别」行循环全部／只卖武器／只卖护甲；清单 5：物品多选（整组、数量窗 C 按数量加入，重要物品、
+##   卖不了的标不上）；自定义数量：数字键、退格、夹上限、0／空回 1，点数量行弹数字键盘编辑框。
 ## - 回退：MULTI_SELL＝false 时按 C 不标、确定照旧进单件出售（装备数量窗）。
 var checks := 0
 var failures := []
@@ -130,6 +132,182 @@ func r1_guards(shop: XShop, s: XState) -> void:
 	shop._cancel()
 
 
+## 找物品：key＝true 找重要物品，否则找能卖的普通物品；sellable＝false 找卖不了的（价 0 又没别的出售货币）
+func find_item(key: bool, sellable := true, skip := []) -> int:
+	var tab = XDB.table("Items")
+	for r in tab:
+		if not (r is Dictionary) or str(r.get("name", "")) == "" or skip.has(int(r.id)):
+			continue
+		if (int(r.get("itypeId", 1)) == 2) != key:
+			continue
+		if XItemMarks.can_sell(r) == sellable and XSafeSell.sellable(r) == sellable:
+			return int(r.id)
+	return 0
+
+
+func click_list(shop: XShop, row: int, x := 200.0) -> void:
+	click_icon(shop, row, x)
+
+
+## 清单 4：一键出售按类别；清单 5：物品多选；自定义数量
+func r1_more(shop: XShop, s: XState) -> void:
+	# ---- 一键出售按类别 ----
+	s.gear.clear()
+	var w := XGear.create("weapon", 1, s)
+	var a := XGear.create("armor", 1, s)
+	for e in [w, a]:
+		s.register_gear(e)
+		s.gear.append(e)
+	var rows := shop._onekey_rows()
+	check("kind.row", str(rows.back().text) == "出售类别：全部" and int(rows.back().grade) == XShop.ONEKEY_KIND_ROW, rows.back())
+	shop._mode = "onekey"
+	shop._onekey = rows.size() - 1
+	shop._ok()
+	check("kind.cycle", shop._mode == "onekey" and str(shop._onekey_rows().back().text) == "出售类别：只卖武器", shop._onekey_rows().back())
+	var g := XQuality.grade_of(XQuality.legacy(w))
+	var p_all := XSafeSell.plan(s, g)
+	var p_w := shop._onekey_plan(s, g)
+	check("kind.weapon_only", p_w.sell.all(func(e): return str(e.kind) == "weapon") and p_w.keep.all(func(r): return str(r.item.kind) == "weapon")
+		and p_w.sell.size() + p_w.keep.size() <= p_all.sell.size() + p_all.keep.size(), [p_w.sell.size(), p_all.sell.size()])
+	shop._ok()
+	var p_a := shop._onekey_plan(s, XQuality.grade_of(XQuality.legacy(a)))
+	check("kind.armor_only", str(shop._onekey_rows().back().text) == "出售类别：只卖护甲" and p_a.sell.all(func(e): return str(e.kind) == "armor"))
+	shop._ok()
+	check("kind.wrap", str(shop._onekey_rows().back().text) == "出售类别：全部")
+	XShop.ONEKEY_KIND = false
+	check("kind.off", shop._onekey_rows().size() == rows.size() - 1 and shop._onekey_rows().all(func(r): return int(r.grade) != XShop.ONEKEY_KIND_ROW))
+	XShop.ONEKEY_KIND = true
+	shop._mode = "command"
+	# ---- 物品多选 ----
+	var it := find_item(false)
+	var it2 := find_item(false, true, [it])
+	var key_id := find_item(true)
+	var bad := find_item(false, false)
+	check("item.found", it > 0 and it2 > 0 and key_id > 0 and bad > 0, [it, it2, key_id, bad])
+	for id in s.items.keys():
+		s.items.erase(id)
+	s.gain_item(it, 20)
+	s.gain_item(it2, 5)
+	s.gain_item(bad, 3)
+	check("item.can", XShop.can_mark_item(XDB.rec("Items", it)) and not XShop.can_mark_item(XDB.rec("Items", bad)) and not XShop.can_mark_item(XDB.rec("Items", key_id)))
+	shop._mode = "sell"
+	shop._cat = 0
+	shop._sell_top = 0
+	shop._drop_cache()
+	shop._refresh()
+	var row_of := func(id: int) -> int:
+		var dd := shop._sell_data()
+		for i in dd.size():
+			if int(dd[i].rec.id) == id:
+				return i
+		return -1
+	shop._sell_index = row_of.call(bad)
+	key(shop, XShop.MARK_KEY)
+	check("item.bad", shop._item_marks.is_empty())
+	click_icon(shop, row_of.call(bad))
+	check("item.bad.click", shop._item_marks.is_empty())
+	click_icon(shop, row_of.call(it))   # 点图标：弹数量窗，预填全部
+	check("item.number", shop._mode == "number" and shop._number_mark and shop._number == 20, [shop._mode, shop._number])
+	shop._ok()
+	check("item.mark_all", shop._mode == "sell" and int(shop._item_marks.get(it, 0)) == 20, shop._item_marks)
+	# 按 C：it2 只选 2 个
+	shop._sell_index = row_of.call(it2)
+	key(shop, XShop.MARK_KEY)
+	check("item.number2", shop._mode == "number" and shop._number == 5)
+	shop.jump_number(-1)
+	shop._change_number(1)
+	check("item.number_hint", shop._number_markable())
+	shop._ok()
+	check("item.mark_part", shop._mode == "sell" and int(shop._item_marks.get(it2, 0)) == 2, shop._item_marks)
+	# 再按 C 取消；数量窗里取消不加入
+	shop._sell_index = row_of.call(it2)
+	key(shop, XShop.MARK_KEY)
+	check("item.unmark", not shop._item_marks.has(it2))
+	shop._sell_index = row_of.call(it2)
+	key(shop, XShop.MARK_KEY)
+	shop._cancel()
+	check("item.mark_cancel", shop._mode == "sell" and not shop._item_marks.has(it2) and not shop._number_mark)
+	shop._sell_index = row_of.call(it2)
+	key(shop, XShop.MARK_KEY)
+	key(shop, KEY_2)
+	shop._ok()
+	check("item.mark_typed", int(shop._item_marks.get(it2, 0)) == 2, shop._item_marks)
+	var pi := XItemMarks.selling_price(XDB.rec("Items", it))
+	var pi2 := XItemMarks.selling_price(XDB.rec("Items", it2))
+	check("item.gold", shop.marked_gold() == pi * 20 + pi2 * 2 and shop.marked_count() == 22, [shop.marked_gold(), shop.marked_count()])
+	check("item.rows", str(shop.multi_rows()[0][0]) == "已选物品 22 个，共得 %s 金币" % XMenu._group(pi * 20 + pi2 * 2), shop.multi_rows()[0])
+	# 卖之前手上少了：按手上数卖
+	s.gain_item(it, -5)
+	var gold0 := s.gold
+	shop._ok()
+	check("item.confirm", shop._mode == "confirm" and shop._confirm_kind == "multi" and int(shop._item_marks.get(it, 0)) == 15, shop._item_marks)
+	shop._confirm = 1
+	shop._ok()
+	check("item.sold", s.item_count(it) == 0 and s.item_count(it2) == 3 and s.item_count(bad) == 3 and s.gold == gold0 + pi * 15 + pi2 * 2
+		and shop._item_marks.is_empty(), [s.item_count(it), s.item_count(it2), s.gold - gold0])
+	# 退出列表清物品标记
+	shop._drop_cache()
+	shop._sell_index = row_of.call(it2)
+	key(shop, XShop.MARK_KEY)
+	shop._ok()
+	check("item.remark", not shop._item_marks.is_empty())
+	shop._cancel()
+	check("item.leave", shop._item_marks.is_empty())
+	# 回退：ITEM_MULTI 关时物品列表不能标
+	XShop.ITEM_MULTI = false
+	shop._mode = "sell"
+	shop._cat = 0
+	shop._drop_cache()
+	shop._sell_index = row_of.call(it2)
+	key(shop, XShop.MARK_KEY)
+	check("item.off", shop._item_marks.is_empty() and not shop._gear_sell_list())
+	XShop.ITEM_MULTI = true
+	# ---- 自定义数量 ----
+	s.gain_item(it2, 40)   # 共 43
+	shop._drop_cache()
+	shop._sell_index = row_of.call(it2)
+	shop._ok()
+	check("num.open", shop._mode == "number" and shop._number == 1)
+	key(shop, KEY_1)
+	key(shop, KEY_2)
+	check("num.type", shop._number == 12, shop._number)
+	key(shop, KEY_BACKSPACE)
+	check("num.back", shop._number == 1 and shop._num_text == "1", [shop._number, shop._num_text])
+	key(shop, KEY_KP_9)
+	key(shop, KEY_9)
+	check("num.clamp", shop._number == 43 and shop._num_text == "43", [shop._number, shop._num_text])
+	key(shop, KEY_RIGHT)
+	shop._change_number(-1)
+	key(shop, KEY_0)
+	check("num.zero", shop._number == 1, shop._number)
+	key(shop, KEY_BACKSPACE)
+	check("num.empty", shop._number == 1)
+	key(shop, KEY_5)
+	check("num.restart", shop._number == 5, shop._number)
+	# 点数量那一行：弹编辑框（手机数字键盘）
+	click_list(shop, 2)
+	check("num.editor", shop._mode == "number" and shop._num_edit != null and shop._num_edit.visible
+		and shop._num_edit.virtual_keyboard_type == LineEdit.KEYBOARD_TYPE_NUMBER)
+	shop._num_edit.text_changed.emit("100")
+	check("num.editor.clamp", shop._number == 43 and shop._num_edit.text == "43", [shop._number, shop._num_edit.text])
+	shop._num_edit.text_changed.emit("")
+	check("num.editor.empty", shop._number == 1)
+	shop._num_edit.text_changed.emit("7")
+	shop._num_edit.text_submitted.emit("7")
+	check("num.editor.close", not shop._num_edit.visible and shop._number == 7)
+	var c0 := s.item_count(it2)
+	shop._ok()
+	check("num.sell", s.item_count(it2) == c0 - 7, [c0, s.item_count(it2)])
+	# 回退：NUM_INPUT 关时数字键不改
+	XShop.NUM_INPUT = false
+	shop._ok()
+	key(shop, KEY_5)
+	check("num.off", shop._number == 1)
+	XShop.NUM_INPUT = true
+	shop._cancel()
+	shop._cancel()
+
+
 func _run() -> void:
 	var s := XState.new_game(3, 1, [8, 9, 10])
 	XState.current = s
@@ -198,6 +376,7 @@ func _run() -> void:
 	check("number.min", shop._number == 1, shop._number)
 	shop._cancel()
 	r1_guards(shop, s)
+	r1_more(shop, s)
 	var spare := XGear.create("weapon", 1, s)
 	s.register_gear(spare)
 	s.gear.append(spare)

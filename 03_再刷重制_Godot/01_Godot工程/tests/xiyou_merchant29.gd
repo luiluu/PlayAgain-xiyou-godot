@@ -344,12 +344,12 @@ func layer_cases() -> void:
 	goto(s, 37)
 	fight(s, 145, 0)
 	check("layer.claim.37", await complete(s, 0.9) and str(XAbyssMerchant.run(s).identity.key) == "layer:13:abyss" and XAbyssMerchant.balance(s, "layer:13:abyss") == 32
-		and toasts.back().begins_with("获得本层深渊战利品点＋8。"), [XAbyssMerchant.run(s), l.balances, toasts])
+		and toasts.back() == "获得本层深渊战利品点＋8（本层共 32 点）。深渊商人出现了。", [XAbyssMerchant.run(s), l.balances, toasts])
 	# 保底按这一份算：并账后深渊份已连续 2 次没出现（＝pity−1）→ 这次必出
 	check("layer.pity", bool(XAbyssMerchant.run(s).appeared) and int(l.misses.get("layer:13:abyss", -1)) == 0, [XAbyssMerchant.run(s), l.misses])
 	goto(s, 38)
 	fight(s, 152, 0)
-	check("layer.claim.38", await complete(s, 0.9) and XAbyssMerchant.balance(s, "layer:13:abyss") == 44 and toasts.back() == "获得本层深渊战利品点＋12。", [l.balances, toasts])
+	check("layer.claim.38", await complete(s, 0.9) and XAbyssMerchant.balance(s, "layer:13:abyss") == 44 and toasts.back() == "获得本层深渊战利品点＋12（本层共 44 点）。", [l.balances, toasts])
 	check("layer.miss.38", not bool(XAbyssMerchant.run(s).appeared) and int(l.misses.get("layer:13:abyss", -1)) == 1 and int(l.misses.get("layer:13:unknown", -1)) == 1, l.misses)
 	# 152 普通（来源 37）8、不朽（来源 38）12，共一份未知存在点，跟深渊那份不通
 	goto(s, 152)
@@ -357,7 +357,7 @@ func layer_cases() -> void:
 	fight(s, 454, 0)
 	var who: Dictionary = XAbyssMerchant.battle.identity
 	check("layer.152.normal", await complete(s, 0.9) and str(who.key) == "layer:13:unknown" and str(who.kind) == "深渊商人"
-		and XAbyssMerchant.balance(s, "layer:13:unknown") == 23 and toasts.back() == "获得本层未知存在战利品点＋8。", [who, l.balances, toasts])
+		and XAbyssMerchant.balance(s, "layer:13:unknown") == 23 and toasts.back() == "获得本层未知存在战利品点＋8（本层共 23 点）。", [who, l.balances, toasts])
 	check("layer.152.pity", not bool(XAbyssMerchant.run(s).appeared) and int(l.misses.get("layer:13:unknown", -1)) == 2, l.misses)
 	goto(s, 37)
 	goto(s, 152)
@@ -365,7 +365,7 @@ func layer_cases() -> void:
 	fight(s, 454, 0)
 	who = XAbyssMerchant.battle.identity
 	check("layer.152.immortal", await complete(s, 0.9) and str(who.key) == "layer:13:unknown" and str(who.kind) == "不朽商人"
-		and XAbyssMerchant.balance(s, "layer:13:unknown") == 35 and toasts.back() == "获得本层未知存在战利品点＋12。不朽商人出现了。", [who, l.balances, toasts])
+		and XAbyssMerchant.balance(s, "layer:13:unknown") == 35 and toasts.back() == "获得本层未知存在战利品点＋12（本层共 35 点）。不朽商人出现了。", [who, l.balances, toasts])
 	check("layer.apart", XAbyssMerchant.balance(s, "layer:13:abyss") == 44 and int(l.misses.get("layer:13:unknown", -1)) == 0 and int(l.misses.get("layer:13:abyss", -1)) == 1,
 		[l.balances, l.misses])
 	# 单图层、其它层
