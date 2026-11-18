@@ -4,18 +4,18 @@ extends RefCounted
 ## - 演出：发作强制换人、自动换回照逻辑层的 tianqi_swap 记录换图（XBattleScene._tianqi_swap_view）。被换下的先闪红淡出，上场的淡入，
 ##   日志报一句、停一下；不弹对话框（挂机、自动战斗不卡）。玩家自己点的「换人」照旧（对话框那句）。
 ## - 锁定：助力位锁着时「换人」指令照样列出、变灰，选中时在指令旁边写原因；队伍面板下面挂一行「助力位：谁、锁定还剩几回合」。
-## - 文字全部是占位（「锁定」等是占位词），待小A 定稿；交付单列全。
+## - 文字小A 定稿（T182 核查报告第二节）。
 
 ## 演出时长（物理帧，60／秒）
 const FADE_OUT_FRAMES := 14
 const FADE_IN_FRAMES := 14
 const HOLD_FRAMES := 30
 
-## 玩家可见文字（占位，待小A 定稿）。%s 是角色名，%d 是回合数
-const TEXT_FORCED := "%s被烙印逼下场，%s顶了上来！"
-const TEXT_AUTO_BACK := "%s退下，%s回到场上。"
-const TEXT_LOCK_REASON := "助力位锁定中：%s还要歇%d回合"
-const TEXT_LOCK_HUD := "助力位　%s　锁定 · 还剩%d回合"
+## 玩家可见文字（小A 定稿，T182 核查报告第二节）。%s 是角色名，%d 是回合数
+const TEXT_FORCED := "%s被迫退下，%s接替上场！"
+const TEXT_AUTO_BACK := "%s退下，%s重返场上。"
+const TEXT_LOCK_REASON := "助力位暂不可换：%s还需 %d 回合"
+const TEXT_LOCK_HUD := "助力位　%s　暂不可换 · 还剩 %d 回合"
 const TEXT_SWAP_CMD := "换人"
 
 
@@ -62,13 +62,23 @@ static func command_entry(logic, a) -> Dictionary:
 	return {"text": TEXT_SWAP_CMD, "key": "tianqiSwap", "enabled": false, "reason": TEXT_LOCK_REASON % [h.display_name(), lock_left(logic)]}
 
 
-## 撇开锁定，这个人平常有没有「换人」这一项（can_tianqi_swap 锁定之前的那几条；超强者上限照样不算，锁着时只说锁定这一个原因）
+## 撇开锁定，这个人平常有没有「换人」这一项：can_tianqi_swap 除锁定以外的每一条（助力位活着、D57 超强者拦截含临时口子、上场上限），
+## 锁过之后有就是有、没有就是没有，锁着时不会先灰后消失（T182 核查 P3-2）
 static func _would_swap(logic, a, h: XActor) -> bool:
-	if not XTianqi.SWAP_IN_BATTLE or not XTianqi.active(logic.state) or not a is XActor or not logic.actors.has(a):
+	var s: XState = logic.state
+	if not XTianqi.SWAP_IN_BATTLE or not XTianqi.active(s) or not a is XActor or not logic.actors.has(a):
 		return false
-	if h == a or logic.actors.has(h) or XActorModules.IDS.has(h.actor_id) or XActorModules.IDS.has(a.actor_id):
+	if h == a or logic.actors.has(h) or not h.is_alive() or XActorModules.IDS.has(h.actor_id) or XActorModules.IDS.has(a.actor_id):
 		return false
-	return a.is_alive() or not XTianqi.HELPER_RULES
+	if XTianqi.HELPER_RULES and not a.is_alive():
+		return false
+	var h_super := XTianqiSkills.is_super(h.actor_id, true)
+	if XTianqi.HELPER_RULES and not XTianqi.helper_super_ok(s) and (h_super or XTianqiSkills.is_super(a.actor_id, true)) \
+			and not (XTianqiBrand.REAL_SWAP and not XTianqiBrand.snap_of(logic).is_empty() and h_super):
+		return false
+	if h_super and not XTianqiSkills.is_super(a.actor_id, true):
+		return logic.actors.filter(func(x): return x is XActor and XTianqiSkills.is_super(x.actor_id, true)).size() < XTianqi.super_cap(s)
+	return true
 
 
 static func hud_text(logic) -> String:

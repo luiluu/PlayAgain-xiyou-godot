@@ -803,8 +803,8 @@ static func blacked_out(logic, b) -> bool:
 static var REAL_SWAP := false
 ## 测试／量数钩子（设计稿第八节「触发用测试钩子点名，不靠掷」）：{actor_id: [回合, 花样键]}，那一回合开头直接开这次发作（不掷几率、不取随机数、不看保护）。游戏里恒空
 static var TEST_FIT := {}
-## 玩家可见文字（待小A 文字审）：%s 是角色名。轮到他时能换、收尾之后换不了了（这次行动里助力位倒下等）
-const TEXT_SWAP_FALLBACK := "%s 没能退下，断片了！"
+## 玩家可见文字（小A 定稿，T182 核查报告第二节）：%s 是角色名。轮到他时能换、收尾之后换不了了（这次行动里助力位倒下等）
+const TEXT_SWAP_FALLBACK := "%s没能退下，当场失神了！"
 static var _holds: Array = []  # [{state: WeakRef, logic: WeakRef, snap: Array}]
 
 

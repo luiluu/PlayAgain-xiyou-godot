@@ -158,10 +158,12 @@ func _run() -> void:
 	XTianqiBrand.ENABLED = true
 	_real(true)
 	_commands()
+	_would_gaps()
 	_hold_p3_2()
 	_grant_ledger()
 	await _scene()
 	await _scene_victory()
+	await _scene_old_skin()
 	_real(false)
 	XTianqiBrand.ENABLED = false
 	XZhenqi.battle = {}
@@ -217,6 +219,49 @@ func _commands() -> void:
 	_real(true)
 	# 记录分类与句子
 	_check("kind_of", XTianqiSwapView.kind_of({"forced": true}) == "forced" and XTianqiSwapView.kind_of({"auto": true}) == "auto" and XTianqiSwapView.kind_of({}) == "manual")
+
+
+## 回退开关用字面量赋值
+func _skin(on: bool) -> void:
+	if on:
+		XUiSkin.ENABLED = true
+	else:
+		XUiSkin.ENABLED = false
+
+
+func _super_lineup(n_front_super: int) -> Array:
+	var sup := XTianqiSkills.ids(XTier.SUPER, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not XActorModules.IDS.has(id) and id != XGojo.ACTOR)
+	var weak := _ids(XTier.WEAK).filter(func(id): return not XTianqiSkills.is_super(id, true))
+	var out := []
+	for i in 4:
+		out.append(sup[i] if i < n_front_super else weak[i])
+	out.append(weak[4])
+	return out
+
+
+## T182 核查 P3-2：锁着时只在「撇开锁定平常有换人」时列变灰项——助力位倒下不列；九死场上超强者（助力位非超强者，D57 拦）不列，锁过后也没有
+func _would_gaps() -> void:
+	var s := _state()
+	var lg := _logic(s)
+	var b: XActor = lg.actors[1]
+	_force_swap(lg, lg.actors[0])
+	var h := s.helper()
+	_check("gap_locked_gray_alive", XTianqiSwapView.command_entry(lg, b).get("enabled", true) == false)
+	h.hp = 0.0
+	_check("gap_helper_dead_none", XTianqiSwapView.command_entry(lg, b).is_empty(), XTianqiSwapView.command_entry(lg, b))
+	lg.end_battle()
+	s = _state("jiusi", _super_lineup(1))
+	lg = _logic(s)
+	var sup: XActor = lg.actors[0]
+	var w: XActor = lg.actors[2]
+	_check("gap_super_fixture", XTianqiSkills.is_super(sup.actor_id, true) and not XTianqi.helper_super_ok(s) and not lg.can_tianqi_swap(sup))
+	_force_swap(lg, lg.actors[1])
+	_check("gap_super_swapped", XTianqiBrand.swap_locked(lg) and not XTianqiSkills.is_super(s.helper().actor_id, true))
+	_check("gap_super_none_locked", XTianqiSwapView.command_entry(lg, sup).is_empty(), XTianqiSwapView.command_entry(lg, sup))
+	_check("gap_weak_gray_locked", XTianqiSwapView.command_entry(lg, w).get("enabled", true) == false)
+	lg.turn = 4
+	_check("gap_super_none_open", XTianqiSwapView.command_entry(lg, sup).is_empty() and not XTianqiSwapView.command_entry(lg, w).is_empty())
+	lg.end_battle()
 
 
 ## 六、T181 P3-2：战斗对象没了，swap_hold 放开；下一场开战清扫照样还原
@@ -376,6 +421,24 @@ func _scene() -> void:
 	lg.end_battle(1)
 	scene.queue_free()
 	await _frames(3)
+
+
+## T182 核查 P3-1：关新界面（旧 XSideStatus 面板右边伸出画面）锁定行夹回画面里
+func _scene_old_skin() -> void:
+	_skin(false)
+	var s := _state()
+	var scene: XBattleScene = await _new_scene()
+	var lg: XBattleLogic = scene.logic
+	var ok := await _play_swap(scene, _force_swap(lg, lg.actors[0]))
+	scene._refresh_status()
+	var tag := scene.swap_lock_tag
+	_check("old_skin_swapped", ok and s.helper() != null and XTianqiBrand.swap_locked(lg))
+	_check("old_skin_lock_inside", tag != null and tag.visible and _inside(scene, tag), [tag.get_global_rect() if tag else null, scene.party_rect()])
+	await _shot(scene, "swap_lock_old_skin")
+	lg.end_battle(1)
+	scene.queue_free()
+	await _frames(3)
+	_skin(true)
 
 
 ## 截图（XIYOU_SHOT_DIR 设了才截；原尺寸）

@@ -1317,7 +1317,8 @@ func _refresh_swap_lock() -> void:
 		return
 	var r := party_rect()
 	var w := swap_lock_tag.get_combined_minimum_size().x
-	var top_left := Vector2(r.end.x - w, r.end.y + 4) if r.size != Vector2.ZERO else _origin + Vector2(BOX.x - w - 8, 8)
+	var right := _origin.x + BOX.x - w - 8  # 旧界面队伍面板右边伸出画面（HOME_X 1080＋宽 296），夹回画面里（T182 核查 P3-1）
+	var top_left := Vector2(minf(r.end.x - w, right), r.end.y + 4) if r.size != Vector2.ZERO else Vector2(right, _origin.y + 8)
 	swap_lock_tag.global_position = top_left
 
 
