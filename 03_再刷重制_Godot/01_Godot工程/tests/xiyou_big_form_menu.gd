@@ -37,6 +37,8 @@ func _run() -> void:
 
 func _prep(s: XState) -> void:
 	s.switches[2494] = true
+	s.actor_advance[XRaven.ACTOR] = 5  # 渡鸦满进阶：技能按真实解锁门槛学全（setupRaven），战技列表是真实技能表（P2-1）
+	XRaven.sync(s.actor(XRaven.ACTOR))
 	s.raven["myth"] = 3
 	s.actor_advance[XMira.ACTOR] = 3
 	var m := s.actor(XMira.ACTOR)
@@ -71,18 +73,27 @@ func _ring_for(b: XBattleScene, a: XActor) -> XSkinBattleRing:
 	return w as XSkinBattleRing
 
 
-## 给 a 新建 8 行的战技列表（满屏最高的那种）并按真实战斗摆法放好
+## 给 a 开真实的技能列表并按真实战斗摆法放好：照指令环上的技能类指令（同 _command_for 的 stype 过滤，含屠苏包装），
+## 取技能最多的那一类，标题＝指令名（不填假技能；协调预筛 P2-1）
 func _list_for(b: XBattleScene, a: XActor) -> XSkinBattleSkillList:
 	b._close_windows()
-	var entries: Array = b.logic.battle_skills(a)
-	while entries.size() < 8 and not entries.is_empty():
-		entries = entries + entries
-	entries = entries.slice(0, 8)
-	var rows := entries.map(func(e): return b._list_entry(a, e, false))
-	rows = XSkinBattle.decorate_all(b.logic, a, entries, rows, false)
-	var w = XSkinBattle.list(b.ui, rows, b.LIST_W, false, a, "战技")
+	var best := []
+	var title := ""
+	for o in b._command_entries(a):
+		var k := str(o.get("key", ""))
+		if not k.begins_with("stype:"):
+			continue
+		var st := int(k.substr(6))
+		var es: Array = b.logic.battle_skills(a).filter(func(x): return XTusu.battle_listed(a, x, st))
+		if es.size() > best.size():
+			best = es
+			title = str(o.text)
+	var rows := best.map(func(e): return b._list_entry(a, e, false))
+	rows = XSkinBattle.decorate_all(b.logic, a, best, rows, false)
+	var w = XSkinBattle.list(b.ui, rows, b.LIST_W, false, a, title)
 	b.list_win = w
 	b._place_near_actor(w, a, Vector2(16, 16))
+	notes.append({"list_for": a.actor_id, "title": title, "n": best.size(), "names": best.map(func(e): return str(e.get("name", "")))})
 	return w as XSkinBattleSkillList
 
 
@@ -141,7 +152,18 @@ func _four(troop: int) -> void:
 		var lw := _list_for(b, a)
 		if id in BIG:
 			_clear(tag + "_list", b, lw, b.big_body_rect(a))
-			_check(tag + "_list_rows8", lw.rows == 8, lw.rows)
+			_check(tag + "_list_real", lw.entries.size() >= 1, lw.entries.size())
+			var zone := b._boss_zone()
+			_check(tag + "_list_clear_boss_info", not zone.has_area() or not b.menu_rect(lw).intersects(zone), [b.menu_rect(lw), zone])
+			_check(tag + "_list_index_visible", lw.index >= lw.top and lw.index < lw.top + lw.rows, [lw.index, lw.top, lw.rows])
+			# 放不下时减行数滚动（XSkinBattleSkillList.fit_rows）：选末项再缩到 300 高，行数变少、高度不超、选中行仍看得见
+			if lw.rows >= 3:
+				lw.select(lw.entries.size() - 1)
+				var r0 := lw.rows
+				var shrunk := lw.fit_rows(300.0)
+				_check(tag + "_fit_rows", shrunk and lw.rows < r0 and lw.size.y <= 300.0 and lw.back.size == lw.size
+					and lw.index >= lw.top and lw.index < lw.top + lw.rows, [r0, lw.rows, lw.size, lw.top, lw.index])
+				_check(tag + "_fit_rows_noop", not lw.fit_rows(720.0))
 		else:
 			_check(tag + "_list_same", lw.position == old_list_pos, [lw.position, old_list_pos])
 		if _windowed() and troop == BOSS_TROOP and id in BIG:

@@ -1554,7 +1554,8 @@ func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> voi
 ## Kyo 11-18「战斗中指令栏会挡住大型精灵」→「指令栏按A」：米拉黑龙、渡鸦神话等按 BIG_FORM_H 放大的形态行动时，
 ## 指令环（连同上方「某某的行动」）和战技／物品列表若压到它的身体可见框：
 ## ① 外侧：整块往左挪到右边离身体 BIG_ROOM_GAP（上下不动；压到左下行动顺序条再抬到条上方）；
-##    挪完出屏、压身体或行动顺序条，或（只看指令环；列表照原摆法本来就盖前排、首领信息区）压到别的队友、首领信息区、队伍面板，就改 ②；
+##    列表另让开首领信息区（顶边压到它下沿以下，放不下就减行数滚动）；挪完出屏、压身体、行动顺序条或首领信息区，
+##    或（只看指令环；列表照原摆法本来就盖前排）压到别的队友、队伍面板，就改 ②；
 ## ② 画面下方中间：贴画面底、横向居中，压到行动顺序条就往右让开（再压身体就贴身体左边、抬到条上方）；②也不行就按 ① 的位置。
 ## 普通大小角色（不压身体）一步也不挪，位置同 T208 前逐像素一样。只是画面。
 ## 回退：BIG_MAKE_ROOM = false（菜单照旧贴着角色摆，会压龙身）。
@@ -1610,12 +1611,29 @@ func make_room_for_big(w: Control, a: XActor) -> void:
 	w.position = outer  # 两处都不行（极少：画面太窄）：至少不压身体
 
 
-## 整块往左挪到右边离身体 BIG_ROOM_GAP；压到行动顺序条就抬到条上方
+## 整块往左挪到右边离身体 BIG_ROOM_GAP；压到行动顺序条就抬到条上方。
+## 列表（协调预筛 P1-1：挪到画面中间后表头被首领信息区的「详情」胶囊盖住）另要让开首领信息区：顶边压到它下沿以下，
+## 底边再碰行动顺序条（或画面底）就减行数滚动（XSkinBattleSkillList.fit_rows）
 func _beside_body(w: Control, body: Rect2) -> void:
 	w.position.x -= menu_rect(w).end.x - (body.position.x - BIG_ROOM_GAP)
 	var otb := XSkinOTBBar.occupied_rect()
 	if menu_rect(w).intersects(otb):
 		w.position.y -= menu_rect(w).end.y - (otb.position.y - XSkinBattleSkillList.OTB_GAP)
+	if w is XSkinBattleSkillList:
+		var zone := _boss_zone()
+		if zone.has_area() and menu_rect(w).intersects(zone):
+			w.position.y += zone.end.y + BIG_ROOM_GAP - menu_rect(w).position.y
+			var m := menu_rect(w)
+			var floor_y := BOX.y - XSkinBattleRing.MARGIN
+			if Rect2(m.position.x, m.position.y, m.size.x, BOX.y).intersects(otb):
+				floor_y = otb.position.y - XSkinBattleSkillList.OTB_GAP
+			(w as XSkinBattleSkillList).fit_rows(floor_y - m.position.y)
+
+
+## 首领信息区（原版坐标；没有为空）
+func _boss_zone() -> Rect2:
+	var zone := boss_info_rect()
+	return Rect2(zone.position - _origin, zone.size) if zone.has_area() else Rect2()
 
 
 ## 画面下方中间：菜单画出来的范围横向居中、底边离画面底 MARGIN；压到行动顺序条就往右让开；
@@ -1632,17 +1650,17 @@ func _place_bottom_center(w: Control, body: Rect2) -> void:
 		_beside_body(w, body)
 
 
-## 挪完的位置能不能用：不出屏、不压身体、不压行动顺序条；指令环在外侧那一档另要不压首领信息区、队伍面板、别的队友
+## 挪完的位置能不能用：不出屏、不压身体、不压行动顺序条；列表两档、指令环外侧那档不压首领信息区；指令环外侧另不压队伍面板、别的队友
 func _room_ok(w: Control, a: XActor, body: Rect2, outer: bool) -> bool:
 	var m := menu_rect(w)
 	var screen := Rect2(Vector2.ZERO, BOX).grow(0.5)
 	if not screen.encloses(m) or m.intersects(body) or m.intersects(XSkinOTBBar.occupied_rect()):
 		return false
+	var zone := _boss_zone()
+	if (outer or w is XSkinBattleSkillList) and zone.has_area() and m.intersects(zone):
+		return false  # 列表两档都要让开首领信息区（P1-1）
 	if not outer or not (w is XSkinBattleRing):
-		return true  # 列表照它原来的摆法只躲行动顺序条（8 行高 458，普通角色的列表本来就盖首领信息区、前排队友）
-	var zone := boss_info_rect()
-	if zone.has_area() and m.intersects(Rect2(zone.position - _origin, zone.size)):
-		return false
+		return true  # 列表不查队友、队伍面板（照原摆法本来就盖前排）
 	var pr := party_rect()
 	if pr.has_area() and m.intersects(Rect2(pr.position - _origin, pr.size)):
 		return false

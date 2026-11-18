@@ -121,6 +121,21 @@ func place_for_actor(feet: Vector2, box: Vector2) -> void:
 	position = Vector2(x, y)
 
 
+## T208：最多 max_h 高——行数减到装得下（至少 1 行，多出的照常滚动），面板、选中行跟着改；返回有没有减
+func fit_rows(max_h: float) -> bool:
+	var want := clampi(floori((max_h - HEAD_H - FOOT_H - 8.0) / ROW_H), 1, rows)
+	if want >= rows:
+		return false
+	rows = want
+	size = Vector2(W, HEAD_H + rows * ROW_H + FOOT_H + 8.0)
+	if back != null:
+		back.size = size
+	pivot_offset = Vector2(size.x, size.y / 2.0) if pivot_offset != Vector2.ZERO else pivot_offset
+	top = clampi(top, 0, maxi(0, entries.size() - rows))
+	select(index)
+	return true
+
+
 func refresh() -> void:
 	if bar != null and index >= 0 and index < entries.size():
 		bar.visible = true
