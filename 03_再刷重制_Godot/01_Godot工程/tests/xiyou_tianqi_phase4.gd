@@ -44,6 +44,7 @@ func _run() -> void:
 	_tune_d189()
 	_e2e(true)
 	_e2e(false)
+	_joint_smoke()
 	XTianqiBase.PHASE4 = false
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -501,3 +502,56 @@ func _e2e(on: bool) -> void:
 	else:
 		_check(tag + "out_of_table_found", false, "表外角色没找到")
 	XTianqiBase.PHASE4 = false
+
+
+## 【cc·T220 R1】小A P2-3：三开关（期四、熟练度、烙印）全开＋七印＋词条，真跑两回合（start_turn → 逐个 decide/act → end_turn）。
+## 只查跑得通：没有脚本卡死、我方 K 那一项＝表里的 K×烙印、敌人掉血、没有负生命
+func _joint_smoke() -> void:
+	XTianqiBase.PHASE4 = true
+	XTianqiSkills.MASTERY = true
+	XTianqiBrand.ENABLED = true
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
+	var s := _state()
+	var a: XActor = s.actor(XIAOYAO)
+	a.change_level(81)
+	XZhenqi.data(a)
+	a.zhenqi["brand_carved"] = 1
+	a.zhenqi["brand_realm"] = XTianqiBrand.last_realm()
+	a.zhenqi["brand"] = 100 * XTianqiBrand.scale()
+	a.keep_unequippable = true
+	var w := XGear.create("weapon", 1, s)
+	if w.is_empty():
+		w = {"kind": "weapon", "name": "测试", "params": [0, 0, 0, 0, 0, 0, 0, 0], "traits": [], "etypeId": 1}
+	XTianqiQiyinEffects.mark(w, {"kind": "weapon", "seal": "bai", "wtype": "hidden"})
+	a.equips[0] = w
+	a.equips[1] = {"kind": "armor", "name": "测试", "params": [0, 0, 0, 0, 0, 0, 0, 0], "traits": [], "etypeId": 3,
+		"tianqi_affixes": [{"key": "lifesteal", "tier": 4, "grade": "perfect", "extra": {}}, {"key": "expose", "tier": 4, "grade": "normal", "extra": {}}]}
+	for id in s.party:
+		s.actor(id).param_mark_dirty()
+		s.actor(id).recover_all()
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var k_ok := is_equal_approx(float(XTianqiCombat.dealt_parts(a, s).k), XTianqiBase.k_base(s) * 1.5)
+	var hp0: float = lg.enemies.reduce(func(acc, e): return acc + e.hp, 0.0)
+	var acted := 0
+	for round_i in 2:
+		if lg.is_over():
+			break
+		lg.start_turn()
+		var guard := 0
+		while not lg.is_over() and guard < 40:
+			guard += 1
+			var u = lg.next_subject()
+			if u == null:
+				break
+			var cmd: Array = lg.decide(u)
+			lg.act(u, cmd[0], cmd[1])
+			acted += 1
+		if not lg.is_over():
+			lg.end_turn()
+	var hp1: float = lg.enemies.reduce(func(acc, e): return acc + e.hp, 0.0)
+	var neg := (lg.actors + lg.enemies).filter(func(b): return float(b.hp) < 0.0)
+	_check("joint_smoke", XTianqiSkills.cards_on(s) and XTianqiSkills.mastery_on() and XTianqiBrand.on(s) and k_ok and acted >= 4 and hp1 < hp0 and neg.is_empty(),
+		[XTianqiSkills.cards_on(s), XTianqiSkills.mastery_on(), XTianqiBrand.on(s), k_ok, acted, hp0, hp1, neg.size()])
+	lg.end_battle(0)

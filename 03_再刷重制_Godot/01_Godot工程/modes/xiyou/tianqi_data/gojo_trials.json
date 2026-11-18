@@ -31,6 +31,8 @@
    "agi_rate": 1.2,
    "actions": 1,
    "ratio": {"dismantle": 0.09, "cleave": 0.16, "fuga": 0.25, "slash": 0.5},
+   "phase4_dmg_pct": 70,
+   "_phase4_note": "T220：期四开着时影子出招伤害 ×70%（XTianqiGojoTrial.PHASE4_DMG）。期四去掉我方回复 ×5，反转术式续航降到五分之一，新宿五个种子全输；70% 时会用领域的 14～18 回合赢、不用领域的 4 回合输（期四关着时 12～17／4），80% 五个种子全输、60% 不用领域能撑 7～8 回合",
    "domain": {"first": 2, "every": 5, "turns": 3}
   }
  }

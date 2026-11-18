@@ -21,9 +21,9 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
-	# T220（T012-c）：期四总开关、熟练度默认开了；本专项是总开关关着时写的（原版量级、K 按 1、治疗 ×5、CARDS 单独隔离卡），照原条件拨回关跑
-	XTianqiBase.PHASE4 = false
-	XTianqiSkills.MASTERY = false
+	# T220 R1（小A P1-1）：照默认（期四、熟练度、烙印都开）跑。新宿影子期四下出招 ×phase4_dmg_pct（70%），会用领域的五个种子都要赢
+	_check("phase4_defaults_on", XTianqiBase.PHASE4 and XTianqiSkills.MASTERY and XTianqiGojoTrial.PHASE4_DMG
+		and int(XTianqiGojoTrial.trial(2).get("phase4_dmg_pct", 0)) == 70 and int(XTianqiGojoTrial.trial(1).get("phase4_dmg_pct", 100)) == 100)
 	XTianqiSkills.reload_table()
 	XTianqiBase.clear_cache()
 	XMessageBox.auto = true

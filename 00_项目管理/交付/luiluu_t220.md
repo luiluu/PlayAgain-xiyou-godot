@@ -16,6 +16,7 @@
 - D185：烙印临时槽玩家可见名「灼痕」→「印纹」（`brand.json` `sear.name`），满了的提示「%s 的印纹发亮了！」（`TEXT_SEAR_FULL`）。
 - 虚拟玩家（`tests/xiyou_virtual_player.gd`）：不带参数照默认开期四；`--vp-no-phase4`（连熟练度）、`--vp-no-brand` 拨回关做对照（原来不带 `--vp-phase4` 会强制关）。
 - 17 个天启篇专项是期四关着写的（原版量级、K 按 1、治疗 ×5、`CARDS` 单独隔离卡），开头照原条件把期四、熟练度拨回关跑；5 个加「默认开」检查。
+- R1（小A 甲核退回 P1×1、P2×3，协调把 T221 五条悟试炼并进来）：五条悟二阶试炼「新宿」期四开着时影子出招 ×70%（`gojo_trials.json` `trials.2.phase4_dmg_pct`，开关 `XTianqiGojoTrial.PHASE4_DMG`）；`xiyou_gojo_trials`、`xiyou_tianqi_qiyin_effects`、`xiyou_tianqi_affix_battle` 改成期四开着跑（后两个另把期四关着那一支补跑一遍），修两处测试期望（七印直接扣血漏乘 K、吸血漏乘 steal_mult）；`xiyou_tianqi_phase4` 加三开关全开＋七印＋词条真跑两回合的联合冒烟，`xiyou_nanoha` 加天启篇三开关全开的自动战斗冒烟；卡面照小A 定稿：奈叶「魔法上限」→「最大魔法」，渡鸦「5段伤害」→「五段伤害」。
 - 玩家可见：天启篇存档里角色卡、标准线、K「天启注视」、熟练度新上限、烙印全部生效；烙印临时槽改叫「印纹」，满了说「发亮了」。
 
 ## 优化登记草稿
@@ -23,6 +24,7 @@
 | 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | O-待定 | `modes/xiyou/tianqi_data/skill_rework.json` `tune.D209`（9938、5706／5708／5709、10125） | （天启篇卡）D209 层按旧探针（词条贪心带浮动）量的名次：拳一 446 万第 1、奈叶 370 万第 2、渡鸦 300 万第 4 | 拳一每段物攻 7→5、奈叶魔攻 4→3＋魔法上限 20%→14%、渡鸦已损生命 +60%→+40%，回到 Kyo 的名次 | D209 名次 Kyo 定，探针修正后重量出了名次（协调 11-18 同意 A） | `XTianqiBase.TUNE_D209 = false` 后 `XTianqiSkills.reload_table()`（连同整层 D209） | cc（T220） | 保留 |
+| O-待定 | `modes/xiyou/core/tianqi_gojo_trial.gd` `XTianqiGojoTrial.PHASE4_DMG`（`gojo_trials.json` `trials.2.phase4_dmg_pct`） | （天启篇专属）五条悟试炼影子出招＝本体生命×比例，按期四前「我方回复 ×5」的续航标定 | 期四开着时新宿影子出招 ×70% | 期四去掉回复 ×5，反转术式续航降到五分之一，新宿五个种子全输（T220 小A 甲核 P1-1） | `XTianqiGojoTrial.PHASE4_DMG = false` | cc（T220） | 保留 |
 | O-待定 | `modes/xiyou/tianqi_data/skill_rework.json` `tune.D209`（6026、6039） | （天启篇卡）T205 归池后狂刀 172.8 万掉到超强者最后、武道 92.5 万掉到强者第 9 | 狂刀两段×物攻7（230.8 万，璇与黄泉之间）；武道每段物攻4（140.4 万，强者第 4） | Kyo D215 A（11-18 21:17） | `XTianqiBase.TUNE_D209 = false` 后 `XTianqiSkills.reload_table()` | cc（T220） | 保留 |
 
 ## 验收逐条（派单 9 条）
@@ -121,6 +123,46 @@
 - **其中一条可能是真问题，要协调看**：`xiyou_gojo_trials` 的 `xinsu_smart_wins_0～4`。期四开着时五条悟试炼（新宿）五个种子全输，五条悟输出被 K 乘到 ×0.13，试炼的影子没跟着换量级。本卡按专项的原条件拨回关跑，没改试炼。**试炼敌人在期四下要不要重量，要协调派**（不是守层者三张表的范围）。
 - 同样只在期四关着时测的：`xiyou_tianqi_qiyin_effects` 的 plague_tick、judgment_once_per_target，`xiyou_nanoha` 的 auto.tq.*，`xiyou_tianqi_affix_battle` 的 lifesteal（吸血 101／1000）。这几条在期四开着时的行为没有专项盯，我猜是量级问题，没逐条查。
 
+## R1 返修（小A 甲核 `协作交接/核查报告/T220_审_r1_小A.md`）
+
+- **P1-1 五条悟试炼「新宿」**：先核真因。期四开着、只把回复 ×5 放回来（`XTianqiBase.HEAL_SKIP_ALLY = false`），161／161 全过，新宿 5 个种子 14～18 回合赢。所以真因是小A 说的①：期四 `heal_skip_types [3,4]` 去掉回复 ×5，反转术式续航降到五分之一。②标准线的影响不大：影子出招本来就是「本体生命×比例」，生命跟着标准线一起变。
+  - 交付单 R0 写「影子没跟着换量级」是错的，撤回。影子生命那一处 `tianqi_gojo_trial.gd:403` 已经乘了 K。
+  - 去掉回复 ×5 是期四的设计（卡里治疗按生命比例），不把 ×5 放回来。改成期四开着时影子出招乘 `phase4_dmg_pct`（只新宿，怀玉不变）。扫过的档位：
+
+    | 档位 | 会用领域 | 不用领域 |
+    |---|---|---|
+    | 60% | 全赢 12～17 回合 | 撑 7～8 回合才输 |
+    | **70%（取这个）** | **全赢 14～18 回合** | **4 回合输，影子剩约 70%** |
+    | 80% | 五个种子全输（影子剩 6%～28%） | — |
+    | 期四关着（原设计） | 12～17 回合 | 4 回合，剩约 70% |
+
+  - 70% 和原设计的胜负、回合几乎一样。离全输的 80% 只有一档，余量不大，M5 实机标再看。
+  - 专项改成照默认（三开关开）跑：162／162，加 `phase4_defaults_on`。怀玉期四开着 6 回合赢（原 10～14），在 5～20 的线内，没动。
+- **P2-1**：属实。`_sd` 只缩了 hp_unit、没乘出手人的 K。改成照 `scale_direct` 的次序（先 hp_unit 再 K，各步向下取整、至少 1），专项改成期四开着跑，伤害一节在期四关着时再跑一遍：63／63。
+- **P2-2**：属实。`lifesteal` 照 `harvest_once` 乘 `steal_mult`；专项改成期四开着跑，结算一节期四关着再跑一遍：86／86。
+- **P2-3**：`auto.tq` 那几条比的是期四关着时的原版智能 AI 和挂机表（5703 按当前魔法 30%），保留在期四关着跑。另加两条冒烟：
+  - `xiyou_nanoha` 的 `auto.p4.*`：智能 AI 开／关 × 有／没挂机表，共 4 条。每条查选得出招、放出去、敌人掉血、魔法不为负、不卡预约选单。311／311。
+  - `xiyou_tianqi_phase4` 的 `joint_smoke`：三开关全开，逍遥刻印、烙印 100%，七印武器（白印暗器）＋词条（吸血、破绽）。真跑两回合（start_turn → decide/act → end_turn），查 K 那一项＝K×1.5、敌人掉血、没有负生命。113／113。
+- 文字：照小A 定稿，奈叶「魔法上限×14%」→「最大魔法×14%」（三档），渡鸦「5段伤害」→「五段伤害」；其余照原。
+
+### 仍在期四关着跑的专项（13 个，各自的理由）
+
+| 专项 | 理由 |
+|---|---|
+| `xiyou_tianqi_brand` | 力量两端用 1 级普攻打 1 级敌人，期四开着伤害只有几十点，取整让 1.05 量成 1.044；期四开着的力量两端由 K 探针 81 级量（烙印第 1 步，误差 0） |
+| `xiyou_tianqi_skills` | 靠 `CARDS` 单独开关卡（`cards_on() = CARDS or PHASE4`，期四开着隔离不了）；期四开着的卡由 `xiyou_tianqi_phase4*` 测 |
+| `xiyou_nanoha`（auto.tq） | 比原版智能 AI、挂机表 5703（当前魔法 30%）；期四开着加了 `auto.p4.*` 冒烟 |
+| `xiyou_tianqi_again_use` | `cards_off` 一条靠 `CARDS=false` 隔离 |
+| `xiyou_tianqi_elements` | 被动 1116 的元素增幅断言绑原版被动；期四开着时境界、职业被动按 `REALM_OFF`／卡拦掉，由 phase4 专项测 |
+| `xiyou_tianqi_gear_params` | 自己就分「关／开」两段测（`_off`、`_on`），开头的默认检查已改认开 |
+| `xiyou_tianqi_ledger` | `cap_cards_off_untouched`、守卫行要 `CARDS=false`；期四开着的守卫由 `xiyou_tianqi_phase4_modules` 测 |
+| `xiyou_tianqi_live_sample` | 断言 `POOL_LIVE` 产品默认关、开总开关才开，本来就自己切两种 |
+| `xiyou_tianqi_no_diff_passive` | 断言绑「我方回复 ×5、伤害 ×6」，期四开着时这两项本来就去掉（`heal_skip_types`） |
+| `xiyou_tianqi_no_x6` | 断言绑 K＝1 的绝对伤害（415 对 68）；期四开着的 `scale_direct` 由 qiyin_effects 新期望和 phase4 专项测 |
+| `xiyou_tianqi_numbers` | 档位出伤、协力断言绑 K＝1（`dealt` 里乘了 K 后 1.113→0.145）；期四开着的 `dealt_parts` 由 phase4 专项测 |
+| `xiyou_tianqi_phase4_modules` | 自己就分关／开两种（`PHASE4` 在用例里切），开头的默认检查已改认开 |
+| `xiyou_tianqi_skill_debt` | `cards_off_original` 要 `CARDS=false` 隔离 |
+
 ## 验证
 
 - 云端整轮 22b9a01cd（三开关开）：693／693 过。之后的 533f82462 只改了 D209 覆盖层、`xiyou_tianqi_skills` 一个计数、虚拟玩家参数，本机跑 `xiyou_tianqi_skills` 245／245、虚拟玩家 explore 14／14、climb 6／6。
@@ -142,6 +184,7 @@
 - 建议：K 探针峰值「取 20 下最大」对浮动大的招（狂刀、拳一、奈叶，浮动 20%～33%）每次差 ±5%～8%，名次贴着的几个人排不稳。可以改成比较时去浮动、只报一个「浮动上沿」的确定值（伤害×(1＋浮动)），名次就稳了。改了口径要重排 D209，建议协调另开小卡。
 
 ## 本分支提交
+- （R1）五条悟试炼期四量级；三专项改期四开着跑、两处期望修正；联合冒烟；文字定稿
 - aaea7df73 三开关默认开；K 探针 --brand
 - 23539139f K 探针词条贪心去浮动；D185 印纹／发亮了
 - 7a8dddf98 K 定 0.13；D209 回调 163／108／167；三个专项改认新默认
