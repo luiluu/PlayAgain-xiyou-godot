@@ -1532,6 +1532,9 @@ func party_rect() -> Rect2:
 func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> void:
 	var s: XBattlerSprite = sprites[a]
 	if w.has_method("place_for_actor"):  # 新界面 2A：指令环、新列表自己按角色摆（XSkinBattleRing／XSkinBattleSkillList）
+		if w is XSkinBattleRing and BIG_MAKE_ROOM and BIG_RING_COMPACT and (w as XSkinBattleRing).entries.size() > 6 and big_body_rect(a).has_area():
+			(w as XSkinBattleRing).compact = true  # T208：大型变身 7 项起的环不放大（跟 6 项的米拉黑龙一样大）
+			(w as XSkinBattleRing).relayout()
 		w.place_for_actor(s.position, BOX)
 		if w is XSkinBattleRing and XSkinBattleRing.fixed_corner() and not XUiSkin.TOUCH_RING_FIXED:
 			_ring_follow(w as XSkinBattleRing, s.position)  # T126／D171：触屏也跟着角色（环自己的 fixed_corner 还认 TOUCH_V2，这里改摆）
@@ -1564,6 +1567,9 @@ static var BIG_MAKE_ROOM := true
 ## R2（Kyo 11-18「指令环位置不行。我还是要在精灵身边。哪怕挡一下别的角色」）：指令环只躲自己的身体——贴身体左边，
 ## 左边出屏／压首领信息区挪不开时贴右边；压前排队友不再算放不下，两侧都不行才用 ② 下方中间。回退：false＝R1（压队友就落下方中间）
 static var RING_BESIDE := true
+## T208（Kyo 11-18「渡鸦那个怎么这么大。米拉的挺合适的」）：渡鸦神话 7 项（多「其他」）走 T190 七项排法，半径被放大到相邻两项竖向 ≥34，
+## 环高约 330；大型变身改用紧凑排法（XSkinBattleRing.compact：半径同 6 项、各项竖向等距 34）。回退：false
+static var BIG_RING_COMPACT := true
 const BIG_ROOM_GAP := 8.0
 ## 指令环选中项放大（1.2 倍）、弦星描边的余量
 const BIG_ROOM_PAD := 6.0

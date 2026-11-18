@@ -45,6 +45,8 @@ const SQUARE_PINCH_B := 0.70710678
 const SEL_MORPH_PERIOD := 1.6
 
 var title := ""
+## T208：大型变身用的紧凑排法（7 项起不放大半径，见 _layout_ring）；XBattleScene 摆之前设、再 relayout()
+var compact := false
 var radius := 124.0
 var orb_r := 41.0
 var center := Vector2.ZERO       # 本节点里的环心
@@ -113,7 +115,15 @@ func _layout_ring() -> void:
 	radius = clampf((base_orb_r() * grow + 2.0) / half, base_radius(), maxf(base_radius(), MAX_RADIUS))
 	orb_r = minf(base_orb_r(), (radius * half - 2.0) / grow)
 	_angles = []
-	if BOWSTRING_B and n > 6 and SEVEN_FIX:
+	if BOWSTRING_B and n > 6 and compact:
+		# T208（Kyo 11-18「渡鸦那个怎么这么大。米拉的挺合适的」）：大型变身的 7 项起不放大半径——仍是 6 项那么大的弧（base_radius），
+		# 各项竖向等距 MIN_GAP_B 排在弧上（多一项多一行）；排不下（8 项起）才把半径加到刚好装得下
+		var g := MIN_GAP_B
+		radius = maxf(base_radius(), g * float(n - 1) / 2.0 + 1.0)
+		for i in n:
+			var y := (float(i) - float(n - 1) / 2.0) * g
+			_angles.append(180.0 - rad_to_deg(asin(clampf(y / radius, -1.0, 1.0))))
+	elif BOWSTRING_B and n > 6 and SEVEN_FIX:
 		# T190：弦弧过底部时相邻项竖向间距被压扁（sin 在 90° 附近变化慢），7 项的末两项文字叠在一起。
 		# 7 项起弧段对称放在 180°（正左）两侧，半径加大到相邻项竖向间距 ≥ MIN_GAP_B。
 		var mid := 180.0
@@ -138,6 +148,12 @@ func _layout_ring() -> void:
 		box = box.merge(Rect2(Vector2(-110, top - 30), Vector2(220, 30)))
 	center = -box.position
 	size = box.size
+
+
+## T208：换排法（compact）后重算角度、半径、节点大小
+func relayout() -> void:
+	_layout_ring()
+	queue_redraw()
 
 
 ## 第 i 项中心相对环心

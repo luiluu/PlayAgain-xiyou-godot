@@ -2,7 +2,8 @@ extends "res://tests/xiyou_battle_actor_size.gd"
 ## 【cc·天启篇】T208：大型变身（米拉黑龙、渡鸦神话，BIG_FORM_H＝200）行动时指令环（连同「某某的行动」）与战技／物品列表让开身体（XBattleScene.make_room_for_big）。
 ## 核：① 167／168 行动时指令环、列表都不压其身体可见框，不出屏、不压行动顺序条；外侧压到队友时改放画面下方中间；
 ##     R2（Kyo 11-18）：指令环贴着身体左边（或右边），压前排队友也留在身边、不落下方中间（RING_BESIDE＝false 回 R1 时落下方中间）；
-##     只有两人时同样贴身体左边、不压队友；
+##     只有两人时同样贴身体左边、不压队友；R3：两只大型变身的环一样大（渡鸦 7 项走紧凑排法：同半径、竖向等距，BIG_RING_COMPACT 关时变大）、
+##     环心对身体中段的偏移一样、贴身间距一样；
 ##   ② 普通大小角色（狗逍遥、里德）指令环、列表位置与开关关（BIG_MAKE_ROOM＝false）逐像素一样；开关关时龙身确实被压（断言咬得住）；
 ##   ③ 头顶宝石：指令环开着淡出、关掉淡入（原逻辑）；T197 小A P2-2：set_target(null) 等淡出的 HIDE_DELAY 里不淡入、消息窗开着当作挡住，
 ##     两个开关关掉时确实会淡入（咬得住）。
@@ -119,6 +120,7 @@ func _four(troop: int) -> void:
 	var b := await _big_battle(troop, [1, 11, 167, 168])
 	b.party_fold.set_expanded(false, false)
 	await _secs(0.6)
+	var rings := {}
 	for id in [1, 11, 167, 168]:
 		var a := _actor(b, id)
 		var tag := "%s_%d" % [tname, id]
@@ -154,6 +156,20 @@ func _four(troop: int) -> void:
 			XBattleScene.RING_BESIDE = true
 			_check(tag + "_r1_rollback_bottom", absf(r1.end.y - (XBattleScene.BOX.y - XSkinBattleRing.MARGIN)) <= 0.5, r1)
 			ring = _ring_for(b, a)
+			var rm := b.menu_rect(ring)
+			var bd := b.big_body_rect(a)
+			rings[id] = {"radius": ring.radius, "n": ring.entries.size(), "compact": ring.compact, "h": rm.size.y, "pos": ring.position,
+				"gap": bd.position.x - rm.end.x, "center_off": (ring.ring_center().y - b._origin.y) - bd.get_center().y}
+			if ring.entries.size() > 6:
+				var mg := INF
+				for i in range(1, ring.entries.size()):
+					mg = minf(mg, absf(ring.orb_pos(i).y - ring.orb_pos(i - 1).y))
+				_check(tag + "_compact_gap", ring.compact and mg >= XSkinBattleRing.MIN_GAP_B - 0.5, [ring.compact, mg])
+				XBattleScene.BIG_RING_COMPACT = false   # 回退：T190 七项排法，半径放大（咬得住）
+				var big_r := _ring_for(b, a).radius
+				XBattleScene.BIG_RING_COMPACT = true
+				_check(tag + "_compact_rollback_bigger", big_r > ring.radius + 1.0, [big_r, ring.radius])
+				ring = _ring_for(b, a)
 		else:
 			_check(tag + "_ring_same", ring.position == old_pos, [ring.position, old_pos])
 		var lw := _list_for(b, a)
@@ -182,6 +198,18 @@ func _four(troop: int) -> void:
 			lw = _list_for(b, a)
 			await _secs(0.8)
 			await _shot_plain("T208_首领战_%s行动_战技列表" % ("渡鸦神话" if id == 167 else "米拉黑龙"))
+	# T208 R3（Kyo「渡鸦那个怎么这么大。米拉的挺合适的」「渡鸦的指令环位置也不太对」）：两只大型变身的环一样大（同半径，7 项只多一行 ≈34）、
+	# 环心相对身体中段的偏移一样、环右沿离身体一样近；6 项的米拉不走紧凑排法
+	if rings.has(167) and rings.has(168):
+		var r7: Dictionary = rings[167]
+		var r6: Dictionary = rings[168]
+		_check(tname + "_big_rings_same_radius", is_equal_approx(r7.radius, r6.radius), rings)
+		_check(tname + "_big_rings_same_size", r7.h - r6.h <= XSkinBattleRing.MIN_GAP_B * (r7.n - r6.n) + 12.0, rings)
+		# 两只同一摆法（环心＝脚底上 32）；渡鸦身体框高 211.7（含浮空）比龙 200 高、环还要让开首领信息区几像素，所以留 8 像素
+		_check(tname + "_big_rings_same_center", absf(r7.center_off - r6.center_off) <= 8.0, rings)
+		_check(tname + "_big_rings_same_gap", absf(r7.gap - r6.gap) <= 0.5, rings)
+		_check(tname + "_mira_not_compact", not r6.compact, r6)
+	notes.append({"troop": tname, "rings": rings})
 	await _marker(b)
 	await _close(b)
 
@@ -276,6 +304,7 @@ func _shot_plain(name: String) -> void:
 func _finish() -> void:
 	XBattleScene.BIG_MAKE_ROOM = true
 	XBattleScene.RING_BESIDE = true
+	XBattleScene.BIG_RING_COMPACT = true
 	XTurnMarker.HOLD_WHILE_HIDING = true
 	XTurnMarker.HIDE_ON_MESSAGE = true
 	for n in notes:
