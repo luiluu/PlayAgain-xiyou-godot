@@ -956,11 +956,12 @@ static func release(logic) -> void:
 	_holds = _holds.filter(func(x): return x.state.get_ref() != null and x.logic.get_ref() != logic)
 
 
-## 这份存档有一场还没收口的战斗带着留底（出战栏超强者清理在这时停手，认的是这份存档自己的那一场）
+## 这份存档有一场还没收口的战斗带着留底（出战栏超强者清理在这时停手，认的是这份存档自己的那一场）。
+## 战斗对象已经没了（异常路径没走收口）的登记不算：不让 enforce_party 一直停着（T181 P3-2，T182）；出战栏由下一场开战 sweep 还原
 static func swap_hold(s) -> bool:
 	if _holds.is_empty() or s == null:
 		return false
-	return _holds.any(func(x): return x.state.get_ref() == s)
+	return _holds.any(func(x): return x.state.get_ref() == s and x.logic.get_ref() != null)
 
 
 ## 开新一场（BattleLogic.setup 最前）：这份存档上还有上一场没还原的留底，先还原出战栏再开打

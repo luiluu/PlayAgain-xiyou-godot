@@ -767,6 +767,7 @@ func _refresh_auto() -> void:
 func _refresh_status(idle := true) -> void:
 	for row in status_rows.values():
 		row.refresh()
+	_refresh_swap_lock()
 	if not idle:
 		return
 	for s in sprites.values():
@@ -973,7 +974,7 @@ func _main() -> void:
 				await _tianqi_swap(_tianqi_swap_out)
 			for l in logs:
 				if str(l.get("type", "")) == "tianqi_swap":
-					await _tianqi_swap_view(l.out, l["in"])  # T086-a 发作换人／自动换回：逻辑层已对调，画面照记录换图（演出 T086-c／T182）
+					await _tianqi_swap_view(l.out, l["in"], l)  # T086-a 发作换人／自动换回：逻辑层已对调，画面照记录换图＋演出（T182，XTianqiSwapView）
 			if PACE_GAPS:
 				await _pace_frames(1)  # endAction 之后那一帧阶段是 turn，下一帧 updateTurn 才取下一位（逐次行动起点间隔与原版一样，见 battle_pace）
 			if (logic.is_won() or logic.is_lost()) and XBattleCommonEvent.reserved(logic) > 0: await _play_troop_events(logic.troop_events())  # 打完最后一击，预约的公共事件照样跑（YEP checkBattleEnd）
@@ -1262,13 +1263,88 @@ func _tianqi_swap(out: XActor) -> void:
 
 
 ## 换人的画面：out 的角色图与状态行原地换成 h 的（逻辑层已经对调好；手动换人、发作换人、自动换回共用）。
-## T182（T086-c）的换人演出接在这里
-func _tianqi_swap_view(out: XActor, h: XActor) -> void:
+## rec 是逻辑层的 tianqi_swap 记录：forced（发作强制换下）、auto（自动换回）走 T182 演出——被换下的闪红淡出、上场的淡入、
+## 日志报一句停一下，不弹对话框（挂机、自动战斗不卡）；没有记录（玩家自己点的）照旧对话框那句。记录的人没有图只换不演
+func _tianqi_swap_view(out: XActor, h: XActor, rec := {}) -> void:
 	if not sprites.has(out) or sprites.has(h):
 		return
+	var kind := XTianqiSwapView.kind_of(rec)
+	if kind == "manual":
+		_swap_sprite(out, h)
+		_refresh_status()
+		await message.run({"lines": ["%s退下，%s上场了！" % [out.display_name(), h.display_name()]]})
+		return
+	var old: XBattlerSprite = sprites[out]
+	if kind == "forced":
+		old.flash(Color(1, 0.3, 0.3))
+	await _tween_alpha(old, 0.0, XTianqiSwapView.FADE_OUT_FRAMES)
 	_swap_sprite(out, h)
 	_refresh_status()
-	await message.run({"lines": ["%s退下，%s上场了！" % [out.display_name(), h.display_name()]]})
+	var s: XBattlerSprite = sprites[h]
+	s.modulate.a = 0.0
+	_log_add(XTianqiSwapView.line(kind, out, h))
+	await _tween_alpha(s, 1.0, XTianqiSwapView.FADE_IN_FRAMES)
+	await _wait_frames(XTianqiSwapView.HOLD_FRAMES)
+
+
+## 整个角色图（含状态图标等子节点）的不透明度在 frames 物理帧内线性变到 to（演出用；图被收掉了就停）
+func _tween_alpha(node: CanvasItem, to: float, frames: int) -> void:
+	var from := node.modulate.a
+	for i in range(1, maxi(frames, 1) + 1):
+		await get_tree().physics_frame
+		if not is_instance_valid(node):
+			return
+		node.modulate.a = lerpf(from, to, float(i) / maxi(frames, 1))
+
+
+## T182：助力位锁定一行（队伍面板下面）、变灰指令的原因（指令窗旁边）。都只读逻辑层（XTianqiSwapView）
+var swap_lock_tag: PanelContainer
+var cmd_reason_tag: PanelContainer
+
+
+func _refresh_swap_lock() -> void:
+	var text := XTianqiSwapView.hud_text(logic) if logic != null else ""
+	if swap_lock_tag == null:
+		if text == "" or ui == null:
+			return
+		swap_lock_tag = XTianqiSwapView.make_tag()
+		if swap_lock_tag == null:
+			return  # 发行空壳（天启篇脚本换成空壳）返回 null
+		swap_lock_tag.name = "TianqiSwapLock"
+		ui.add_child(swap_lock_tag)
+	XTianqiSwapView.set_tag(swap_lock_tag, text)
+	if text == "":
+		return
+	var r := party_rect()
+	var w := swap_lock_tag.get_combined_minimum_size().x
+	var top_left := Vector2(r.end.x - w, r.end.y + 4) if r.size != Vector2.ZERO else _origin + Vector2(BOX.x - w - 8, 8)
+	swap_lock_tag.global_position = top_left
+
+
+## 指令窗光标停在变灰、带原因的一项（现在只有助力位锁着时的「换人」）时，在指令窗下边写原因；别的项或关窗时收起
+func _cmd_reason(opts: Array, i: int) -> void:
+	var text := ""
+	if i >= 0 and i < opts.size() and not bool(opts[i].get("enabled", true)):
+		text = str(opts[i].get("reason", ""))
+	if cmd_reason_tag == null:
+		if text == "" or ui == null:
+			return
+		cmd_reason_tag = XTianqiSwapView.make_tag(11)
+		if cmd_reason_tag == null:
+			return  # 发行空壳（天启篇脚本换成空壳）返回 null
+		cmd_reason_tag.name = "CmdReason"
+		ui.add_child(cmd_reason_tag)
+	XTianqiSwapView.set_tag(cmd_reason_tag, text)
+	if text == "" or cmd_win == null or not is_instance_valid(cmd_win):
+		return
+	var rect: Rect2 = (cmd_win.get_global_transform() * (cmd_win as XSkinBattleRing).drawn_rect()) if cmd_win is XSkinBattleRing else cmd_win.get_global_rect()
+	var sz := cmd_reason_tag.get_combined_minimum_size()
+	var p := Vector2(rect.get_center().x - sz.x / 2.0, rect.end.y + 6)
+	var lo := _origin + Vector2(4, 4)
+	var hi := _origin + BOX - sz - Vector2(4, 4)
+	if p.y > hi.y:
+		p.y = rect.position.y - sz.y - 6  # 下边放不下放上边
+	cmd_reason_tag.global_position = Vector2(clampf(p.x, lo.x, maxf(lo.x, hi.x)), clampf(p.y, lo.y, maxf(lo.y, hi.y)))
 
 
 ## T086-a 胜利结算之前的还原钩子：逻辑层还原出战栏＋在场名单（XBattleLogic.tianqi_restore），画面把图和状态行换回发作之前的人，
@@ -1353,6 +1429,7 @@ func _close_windows() -> void:
 	yun_win = null
 	transfer_win = null
 	_help()
+	_cmd_reason([], -1)
 	otb.clear_preview()
 
 
@@ -1401,8 +1478,9 @@ func _command_entries(a: XActor) -> Array:
 			opts.append({"text": str(stypes[int(t)]), "key": "stype:%d" % int(t)})
 	opts.append({"text": str(terms[3]), "key": "guard", "enabled": logic.can_use(a, grd), "preview": grd})
 	opts.append({"text": str(terms[4]), "key": "item"})
-	if logic.can_tianqi_swap(a):
-		opts.append({"text": "换人", "key": "tianqiSwap"})  # 天启篇：和助力位换（用掉这次行动）
+	var swap_opt := XTianqiSwapView.command_entry(logic, a)  # 天启篇：和助力位换（用掉这次行动）；T182 助力位锁着时变灰带原因
+	if not swap_opt.is_empty():
+		opts.append(swap_opt)
 	opts.append({"text": str(terms[1]), "key": "escape", "enabled": logic.can_escape})
 	opts = XTusu.command_entries(logic, a, opts)  # 屠苏 makeCommandList 包装：持武者技能栏去重；武具态插「武相支援」、防御改「待命」
 	opts.append_array(XXuanBattle.command_entries(logic, a))  # 璇 makeCommandList 包装：附身时「回身」
@@ -1463,10 +1541,11 @@ func _command_for(a: XActor):
 		_close_windows()
 		cmd_win = XSkinBattle.command(ui, opts, CMD_W, a)  # 新界面 2A：开着新皮肤是指令环，关着同 XBattleList.create
 		cmd_win.cancel_enabled = false
-		cmd_win.index_changed.connect(func(i): _preview(a, opts[i].get("preview") if i >= 0 else null))
+		cmd_win.index_changed.connect(func(i): _preview(a, opts[i].get("preview") if i >= 0 else null); _cmd_reason(opts, i))
 		cmd_win.chosen.connect(func(i): _picked.emit(opts[i].key))
 		cmd_win.select(last_index)
 		_place_near_actor(cmd_win, a)
+		_cmd_reason(opts, cmd_win.index)  # T182：摆好位置再放原因条（select 时窗还没摆）
 		var pick = await _picked
 		last_index = cmd_win.index if cmd_win else 0
 		if pick is String and pick == "auto":
