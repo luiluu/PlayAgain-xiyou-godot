@@ -358,25 +358,27 @@ func _big_forms() -> void:
 				_check(tag + "_smooth_%d" % id, ((sp.sprite as Sprite2D).texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR) == (sp.body_scale < 1.0), [sp.body_scale, (sp.sprite as Sprite2D).texture_filter])
 		_check(tag + "_gxy_nearest", (by[1].sprite as Sprite2D).texture_filter != CanvasItem.TEXTURE_FILTER_LINEAR)
 		notes.append({"size": 1.6, "troop": troop, "group": "大画布逐帧形态", "actors": rows})
-		if XBattleLayout.BIG_FORM_H <= 130.0:  # T197：200 档下大型变身会压展开的队伍栏、身体框互叠（Kyo 11-18 接受，栏自动收起另卡），只在小档位断言
-			_layout_checks(tag, b)
+		_layout_checks(tag, b)
 		await _shot("T188_变身形态_%s" % ("首领战" if troop == BOSS_TROOP else "小怪战"), "T188每人99高 · 狗逍遥 里德 渡鸦神话 米拉黑龙 · %s（敌群 %d）" % [
 			"首领战" if troop == BOSS_TROOP else "小怪战", troop])
 		await _close(b)
 
 
 ## 不压右上队伍栏、前后排身体不重叠（各让 6 像素）、不出画面
+## T197：BIG_FORM_H 大于 130 时，只豁免已接受的两项——渡鸦神话压展开的队伍栏、大型变身（167／168）与相邻队友身体框互叠（Kyo 11-18，栏自动收起另卡）；其余（168 不压栏、1／11 不压栏不互叠、不出屏）照常断言
 func _layout_checks(tag: String, b: XBattleScene) -> void:
+	var big_ok: bool = XBattleLayout.BIG_FORM_H > 130.0
 	var pr := b.party_rect()
 	var panel := Rect2(pr.position - b._origin, pr.size)
-	var hit := b.logic.actors.filter(func(a): return _body(b.sprites[a]).grow(-6.0).intersects(panel))
+	var hit := b.logic.actors.filter(func(a): return not (big_ok and a.actor_id == 167) and _body(b.sprites[a]).grow(-6.0).intersects(panel))
 	_check(tag + "_clear_party_panel", hit.is_empty(), [panel, hit.map(func(a): return [a.display_name(), _body(b.sprites[a])])])
 	var over := []
 	for i in range(b.logic.actors.size()):
 		for j in range(i + 1, b.logic.actors.size()):
 			var ri := _body(b.sprites[b.logic.actors[i]]).grow(-6.0)
 			var rj := _body(b.sprites[b.logic.actors[j]]).grow(-6.0)
-			if ri.intersects(rj):
+			var pair_big: bool = big_ok and (b.logic.actors[i].actor_id in [167, 168] or b.logic.actors[j].actor_id in [167, 168])
+			if not pair_big and ri.intersects(rj):
 				over.append([b.logic.actors[i].display_name(), b.logic.actors[j].display_name(), ri, rj])
 	_check(tag + "_no_overlap", over.is_empty(), over)
 	_check(tag + "_on_screen", b.logic.actors.all(func(a):

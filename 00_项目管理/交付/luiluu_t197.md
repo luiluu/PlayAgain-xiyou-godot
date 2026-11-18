@@ -1,6 +1,6 @@
 # T197 交付单：大型变身 BIG_FORM_H＝200 试样＋T196 小A P3 两条
 
-配置：Sonnet＋medium。默认值未改（`battle_layout.gd:54` 仍 99.0）；只在试样脚本里设 200。
+配置：Sonnet＋medium。Kyo 后来定「就定200大小」，默认已改 200（`battle_layout.gd:54`，e00b474da）；actor_size 专项期望同步（大型变身按 BIG_FORM_H；只豁免渡鸦神话压展开栏与大型变身互叠，不出屏等照常断言），实测 actor_size、big_form_sizes、battle_layout 通过。
 样张脚本：`03_再刷重制_Godot/01_Godot工程/tests/xiyou_big_form_sizes.gd`（T194 脚本改：HEIGHTS＝[200]，队伍栏展开／收起各一轮，首领战加两张头顶宝石入镜张）。专项 12/12。
 附图（1280×720 原尺寸，未缩放）：`00_项目管理/交付/luiluu_t197附图/`，数据 `样张记录.json`。
 
