@@ -37,6 +37,9 @@ const STAR_R_B := 5.4
 const SEAL_R_B := 9.2
 const CROSS_IN_TIME := 0.34
 static var SEL_MORPH_B := true
+## T190：7 项起指令环重排防重叠（可回退）、相邻项最小竖向间距（选中字 26 号放大后仍不碰）
+static var SEVEN_FIX := true
+const MIN_GAP_B := 34.0
 const STAR_PINCH_B := 0.45
 const SQUARE_PINCH_B := 0.70710678
 const SEL_MORPH_PERIOD := 1.6
@@ -110,8 +113,19 @@ func _layout_ring() -> void:
 	radius = clampf((base_orb_r() * grow + 2.0) / half, base_radius(), maxf(base_radius(), MAX_RADIUS))
 	orb_r = minf(base_orb_r(), (radius * half - 2.0) / grow)
 	_angles = []
-	for i in n:
-		_angles.append(start_d - i * step)
+	if BOWSTRING_B and n > 6 and SEVEN_FIX:
+		# T190：弦弧过底部时相邻项竖向间距被压扁（sin 在 90° 附近变化慢），7 项的末两项文字叠在一起。
+		# 7 项起弧段对称放在 180°（正左）两侧，半径加大到相邻项竖向间距 ≥ MIN_GAP_B。
+		var mid := 180.0
+		for i in n:
+			_angles.append(mid + (float(n - 1) / 2.0 - i) * step)
+		var min_dy := 1.0
+		for i in range(1, n):
+			min_dy = minf(min_dy, absf(sin(deg_to_rad(float(_angles[i]))) - sin(deg_to_rad(float(_angles[i - 1])))))
+		radius = clampf(maxf(radius, MIN_GAP_B / maxf(min_dy, 0.05)), base_radius(), maxf(base_radius(), MAX_RADIUS))
+	else:
+		for i in n:
+			_angles.append(start_d - i * step)
 	var box := Rect2(Vector2(-radius - 4, -radius - 4), Vector2(radius + 4, radius + 4) * 2)
 	for i in n:
 		var p := orb_offset(i)
