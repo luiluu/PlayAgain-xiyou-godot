@@ -63,7 +63,13 @@
 - P3-3 专项补两条显式断言：`marsha_xiyou_save_no_proj`（存档去掉天启篇标记＝西游档，条目开着、本人装着，`proj_of` 空、技能页不带专属行）、`marsha_cards_off_no_proj`（期四总开关、`CARDS` 都关，同样不投影），外加 `marsha_restored_proj`（拨回后照常投影，防夹具漏拨回）。
 - 其余 P3 留给批 2，本次没改：`proj_of` 缓存、`VIEW_MARK` 回退、逆祷早退、换招重走 `skill_view`。
 - 验证（本机，`--headless --audio-driver Dummy`）：`xiyou_tianqi_weak_b1` 31/31、`xiyou_tianqi_weak_affix` 101/101，另跑上面六个相关专项全过。没跑云端选测、没跑虚拟玩家（条目默认关，R1 只动追加目标记账和说明文字）。
-- 优化登记要总装补一行：| O-待定 | `modes/xiyou/core/tianqi_skills.gd` `XTianqiSkills.MAIN_TARGETS_ONLY` | 同一角色这次行动里放的所有招（含七印派生）打到的目标都进追加目标 | 只记主招本身打到的目标 | 精准击中「主目标倒下取消追加」被派生绕过（T018 小A 甲核 P2-1） | `XTianqiSkills.MAIN_TARGETS_ONLY = false` | cc（T018） | 保留 |
+- 优化登记：见下「优化登记草稿」。
+
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | `modes/xiyou/core/tianqi_skills.gd` `XTianqiSkills.MAIN_TARGETS_ONLY` | （天启篇技能重构）同一角色这次行动里放的所有招（含七印派生）打到的目标都进追加目标 | 只记主招本身打到的目标（技能号＝主招、且不在七印派生里） | 精准击中「主目标倒下取消追加」被七印派生绕过（T018 小A 甲核 P2-1） | `XTianqiSkills.MAIN_TARGETS_ONLY = false` | cc（T018） | 保留 |
 
 ## 异议
 
