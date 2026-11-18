@@ -1515,6 +1515,8 @@ func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> voi
 		if w is XSkinBattleRing and XSkinBattleRing.fixed_corner() and not XUiSkin.TOUCH_RING_FIXED:
 			_ring_follow(w as XSkinBattleRing, s.position)  # T126／D171：触屏也跟着角色（环自己的 fixed_corner 还认 TOUCH_V2，这里改摆）
 		w.position += _origin
+		if w is XSkinBattleRing:
+			(w as XSkinBattleRing).push_below(boss_info_rect(), _origin.y + BOX.y - XSkinBattleRing.MARGIN)  # T190：任何项数的指令环都不压首领信息区（不相交就不动）
 		if w is XSkinBattleRing and XUiSkin.TOUCH_V2 and XUiSkin.touch():
 			XSkin4A.avoid_touch_keys(w, _origin.x + XSkinBattleRing.MARGIN)  # 新界面 4A：触屏指令环（固定右下或跟着角色）让开 A／B 键组
 			var ring := w as XSkinBattleRing
@@ -1524,6 +1526,19 @@ func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> voi
 	var p := XPartyFormation.window_anchor(s.position + Vector2(32, -64))
 	w.place(minf(BOX.x - w.size.x, p.x) + offset.x, minf(BOX.y - w.size.y, p.y) + offset.y)
 	w.position += _origin
+
+
+## 首领信息区（顶上血弧的名字、血量、详情／状态胶囊、弱抗行）的矩形，ui 坐标（已加 _origin）；没有首领信息返回空矩形（T190）
+func boss_info_rect() -> Rect2:
+	if boss_panel == null or not is_instance_valid(boss_panel) or not boss_panel is XSkinBossStatus:
+		return Rect2()
+	var bp := boss_panel as XSkinBossStatus
+	var bar_r := Rect2(bp.position + bp.bar.position, bp.bar.size)
+	if not bp.arc_shows_boss():
+		return bar_r if bp.visible else Rect2()
+	var x0 := _origin.x + XSkinBossArc.CENTER.x - 150.0
+	var y0 := _origin.y + XSkinBossArc.NAME_Y - 6.0
+	return Rect2(x0, y0, 300.0, maxf(bar_r.end.y - y0, 0.0))
 
 
 ## 指令环跟着角色摆（同 XSkinBattleRing.place_for_actor 不固定右下那一支）：环心＝脚底＋OFFSET，整环收在画面里

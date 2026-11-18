@@ -37,6 +37,9 @@ const STAR_R_B := 5.4
 const SEAL_R_B := 9.2
 const CROSS_IN_TIME := 0.34
 static var SEL_MORPH_B := true
+## T190：7 项起指令环重排防重叠（可回退）、相邻项最小竖向间距（选中字 26 号放大后仍不碰）
+static var SEVEN_FIX := true
+const MIN_GAP_B := 34.0
 const STAR_PINCH_B := 0.45
 const SQUARE_PINCH_B := 0.70710678
 const SEL_MORPH_PERIOD := 1.6
@@ -110,8 +113,19 @@ func _layout_ring() -> void:
 	radius = clampf((base_orb_r() * grow + 2.0) / half, base_radius(), maxf(base_radius(), MAX_RADIUS))
 	orb_r = minf(base_orb_r(), (radius * half - 2.0) / grow)
 	_angles = []
-	for i in n:
-		_angles.append(start_d - i * step)
+	if BOWSTRING_B and n > 6 and SEVEN_FIX:
+		# T190：弦弧过底部时相邻项竖向间距被压扁（sin 在 90° 附近变化慢），7 项的末两项文字叠在一起。
+		# 7 项起弧段对称放在 180°（正左）两侧，半径加大到相邻项竖向间距 ≥ MIN_GAP_B。
+		var mid := 180.0
+		for i in n:
+			_angles.append(mid + (float(n - 1) / 2.0 - i) * step)
+		var min_dy := 1.0
+		for i in range(1, n):
+			min_dy = minf(min_dy, absf(sin(deg_to_rad(float(_angles[i]))) - sin(deg_to_rad(float(_angles[i - 1])))))
+		radius = clampf(maxf(radius, MIN_GAP_B / maxf(min_dy, 0.05)), base_radius(), maxf(base_radius(), MAX_RADIUS))
+	else:
+		for i in n:
+			_angles.append(start_d - i * step)
 	var box := Rect2(Vector2(-radius - 4, -radius - 4), Vector2(radius + 4, radius + 4) * 2)
 	for i in n:
 		var p := orb_offset(i)
@@ -185,6 +199,40 @@ func drawn_rect() -> Rect2:
 
 
 ## 环心在父节点里的位置（测试、截图看）
+## T190：每项（弦星＋浮字）的矩形与上方「某某的行动」的矩形，本节点坐标；防压首领信息区、专项断言用
+func item_rects() -> Array:
+	var out := []
+	if entries.is_empty():
+		return out
+	var top := INF
+	for i in entries.size():
+		if BOWSTRING_B:
+			out.append(Rect2(orb_pos(i) - Vector2(STAR_OFFSET_B + 14.0, 16.0), Vector2(STAR_OFFSET_B + 64.0, 32.0)))
+		else:
+			out.append(Rect2(orb_pos(i) - Vector2(orb_r, orb_r), Vector2(orb_r, orb_r) * 2.0))
+		top = minf(top, (out[i] as Rect2).position.y if not BOWSTRING_B else orb_pos(i).y - 16.0)
+	if title != "":
+		var tw := XUiSkin.font("title").get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
+		var tx := (orb_pos(0).x - tw / 2.0 + 4.0) if BOWSTRING_B else (center.x - tw / 2.0)
+		out.append(Rect2(tx - 8.0, top - 10.0 - 22.0, tw + 16.0, 28.0))
+	return out
+
+
+## T190：整环往下挪到所有项都不压 zone（本节点父坐标）；挪不动（贴着画面底）就挪到底。返回有没有挪过
+func push_below(zone: Rect2, bottom_limit: float) -> bool:
+	if not (BOWSTRING_B and SEVEN_FIX) or not zone.has_area():
+		return false
+	var need := 0.0
+	for r: Rect2 in item_rects():
+		var g := Rect2(position + r.position, r.size)
+		if g.intersects(zone):
+			need = maxf(need, zone.end.y + 4.0 - g.position.y)
+	if need <= 0.0:
+		return false
+	position.y = minf(position.y + need, maxf(position.y, bottom_limit - size.y))
+	return true
+
+
 func ring_center() -> Vector2:
 	return position + center
 
