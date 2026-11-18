@@ -1115,6 +1115,7 @@ func _sync_appeared() -> void:
 static var ESCAPE_MAP_AUDIO_EARLY := true
 
 func _escape_success() -> void:
+	_set_active(null)  # T197 小A P3：逃跑成功关窗后清当前行动者，等消息窗时头顶宝石不再淡入
 	boss_hp.ended()
 	_close_windows()
 	_end_record()
