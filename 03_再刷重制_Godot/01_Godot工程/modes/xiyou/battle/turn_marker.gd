@@ -15,7 +15,7 @@ extends Node2D
 
 static var ENABLED := true
 
-const GAP := 8.0            # 宝石尖离头顶
+const GAP := 3.0            # 宝石尖离头顶（Kyo 11-18「头顶上一点就行」）
 const R := 9.0              # 腰圈半径
 const CROWN_H := 4.5         # 冠部高
 const TABLE_R := 4.75         # 台面半径
@@ -23,17 +23,13 @@ const DEPTH := 14.5          # 亭部深（腰圈到尖）
 const TILT := 0.34           # 俯视的压扁量（圆在屏幕上的纵横比）
 const SIDES := 4
 const SPIN := 3.6            # 一圈秒数
-const BOB := 2.0             # 浮动幅度（px）
+const BOB := 1.5             # 浮动幅度（px，只往上浮，不飘高）
 const BOB_T := 1.6           # 浮动一回秒数
 const GLIDE := 0.3           # 换人滑过去
 const HOP := 18.0            # 滑过去时弧顶抬高
 const FADE := 0.18
 const HIDE_DELAY := 0.35
-const TOP_MARGIN := 4.0      # 头顶太高（大型变身）或上抬让菜单时，宝石最上沿（含浮动）离画布上沿至少这么多
-const AVOID_GAP := 6.0       # 让开指令菜单时离菜单项（含「某某的行动」）的空隙
-const LIFT_MAX := 170.0      # 往上抬也再高就不抬了（大列表盖住整片时宝石就在列表底下，不硬顶到画面外）
-const AVOID_SPEED := 14.0    # 挪开／挪回的跟随快慢（指数逼近，每秒）
-const VIEW_W := 1280.0
+const TOP_MARGIN := 4.0      # 头顶太高（大型变身）时，宝石最上沿（含浮动）离画布上沿至少这么多
 const OUTLINE := Color(0.06, 0.03, 0.03, 0.8)   # 外轮廓深描边：雪地、亮背景上也压得住
 const LIGHT := -2.3          # 光从左前方来（腰圈上的角度，0＝正右、PI/2＝正对镜头）
 
@@ -47,8 +43,6 @@ var _hide_in := -1.0
 var _glide := 1.0
 var _glide_from := Vector2.ZERO
 var _anchor := Vector2.ZERO
-## 为让开指令菜单挪开的量（px，平滑跟随；x 往右、y 负＝往上）
-var shift := Vector2.ZERO
 
 
 static func on() -> bool:
@@ -122,9 +116,11 @@ func anchor_for(b: XBattler) -> Vector2:
 	return p
 
 
-## 这会儿要不要让开（换人回合提示演出中、目标提示挂在它头上）
+## 这会儿要不要让开（换人回合提示演出中、目标提示挂在它头上、指令菜单或技能／物品列表开着）
 func blocked() -> bool:
 	if shown_for == null:
+		return true
+	if menu_open():
 		return true
 	if XSkinBattleMotion.on() and XSkinTurnCue.title_alpha() < 1.0:
 		return true
@@ -156,14 +152,7 @@ func _process(delta: float) -> void:
 			_anchor = _glide_from.lerp(to, e) + Vector2(0, -HOP * sin(PI * _glide))
 		else:
 			_anchor = to
-	var want_shift := menu_shift(_anchor) if shown_for != null else Vector2.ZERO
-	if _motion() == XUiSkin.Motion.OFF:
-		shift = want_shift
-	else:
-		shift = shift.lerp(want_shift, 1.0 - exp(-AVOID_SPEED * delta))
-		if shift.distance_to(want_shift) < 0.25:
-			shift = want_shift
-	position = _anchor + shift + Vector2(0, -bob())
+	position = _anchor + Vector2(0, -bob())
 	visible = alpha > 0.0
 	if visible:
 		queue_redraw()
@@ -175,49 +164,12 @@ static func gem_rect(anchor: Vector2) -> Rect2:
 	return Rect2(anchor + Vector2(-R - 4.0, -top), Vector2(R * 2.0 + 8.0, top + 2.0))
 
 
-## 指令菜单（指令环各项＋「某某的行动」，或旧式指令窗）、技能／物品列表开着时，它们在 fx 层坐标里占的框
-func avoid_rects() -> Array:
-	var out := []
-	if scene == null or scene.fx == null:
-		return out
-	var inv := scene.fx.get_global_transform().affine_inverse()
+## Kyo 11-18「A」：指令菜单（指令环／旧式指令窗）或技能／物品列表开着时宝石淡出（菜单上「某某的行动」已写明是谁），关掉再淡入
+func menu_open() -> bool:
+	if scene == null:
+		return false
 	for w in [scene.cmd_win, scene.list_win]:
-		if w == null or not is_instance_valid(w) or not (w as Control).is_visible_in_tree() or not w.active:
-			continue
-		var g := (w as Control).get_global_transform()
-		if w is XSkinBattleRing:
-			for r in (w as XSkinBattleRing).item_rects():
-				out.append(inv * (g * (r as Rect2)))
-		else:
-			out.append(inv * (w as Control).get_global_rect())
-	return out
-
-
-## T196 核查 P1-1＋Kyo 审样（11-18「位置在角色正中间」）：宝石始终水平居中在角色头顶中线；指令菜单（各项＋「某某的行动」）或列表开着、
-## 压到宝石时只往上抬到菜单顶上（不左右挪），抬起时画一道旧金虚线连回头顶；抬也超过 LIFT_MAX 就不动。返回相对 anchor 的偏移
-func menu_shift(anchor: Vector2) -> Vector2:
-	var zones := avoid_rects()
-	if zones.is_empty():
-		return Vector2.ZERO
-	var up := 0.0
-	for pass_i in 4:
-		var moved := false
-		var g := gem_rect(anchor + Vector2(0, -up))
-		for z in zones:
-			var zz := (z as Rect2).grow(AVOID_GAP)
-			if g.intersects(zz):
-				up = maxf(up, anchor.y - zz.position.y + BOB)
-				moved = true
-		if not moved:
-			break
-	if up > LIFT_MAX:
-		return Vector2.ZERO
-	return Vector2(0, -minf(up, maxf(0.0, anchor.y - top_min())))
-
-
-static func _hits(zones: Array, g: Rect2) -> bool:
-	for z in zones:
-		if g.intersects((z as Rect2).grow(AVOID_GAP)):
+		if w != null and is_instance_valid(w) and (w as Control).is_visible_in_tree() and w.active:
 			return true
 	return false
 
@@ -255,16 +207,6 @@ func _draw() -> void:
 	if alpha <= 0.0:
 		return
 	var a := alpha
-	# 抬高让开菜单时：从尖往下一道旧金虚线连回头顶（菜单盖在上面也看得出连着谁）
-	if shift.length() > 10.0:
-		var head := Vector2(-shift.x, -shift.y + bob() - 2.0)   # 头顶（本节点坐标）
-		var from := Vector2(0, 4.0)
-		var n := maxi(1, int(from.distance_to(head) / 7.0))
-		for i in n:
-			var p0 := from.lerp(head, float(i) / n)
-			var p1 := from.lerp(head, minf(1.0, (float(i) + 0.57) / n))
-			draw_line(p0, p1, Color(XUiSkin.GOLD, 0.75 * a), 1.2, true)
-		draw_circle(head, 1.8, Color(XUiSkin.GOLD_LIGHT, 0.85 * a))
 	var rot := spin()
 	var waist := -DEPTH
 	var table := -DEPTH - CROWN_H

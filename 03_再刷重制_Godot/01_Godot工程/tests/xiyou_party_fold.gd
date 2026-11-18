@@ -134,7 +134,7 @@ func _run() -> void:
 	await _layout(b, actors)
 	await _shot("t196_mob_expanded")
 	await _marker(b, actors)
-	await _menu_avoid(b, actors)
+	await _menu_hide(b, actors)
 	await _fold(b, actors)
 	await _boss_shot(b)
 	_rollback(b)
@@ -162,35 +162,31 @@ func _layout(b: XBattleScene, actors: Array) -> void:
 		[XPartyFold.ease_board(0.1), XPartyFold.ease_board(0.5)])
 
 
-## ---- 头顶标记 ----
+## ---- 头顶标记（指令菜单收起时看；菜单开着时淡出，见 _menu_hide）----
 func _marker(b: XBattleScene, actors: Array) -> void:
 	var m := b.turn_marker
 	_check("marker_exists", m != null and m.get_parent() == b.fx and m.z_index == XBattleScene.POPUP_Z - 1, null if m == null else [m.get_parent(), m.z_index])
 	if m == null:
 		return
+	var ring_was := b.cmd_win != null and b.cmd_win.active
+	if b.cmd_win != null:
+		b.cmd_win.active = false
 	var a: XActor = b._active
 	await _until(func(): return m.alpha >= 1.0, 120)
 	_check("marker_on_active", m.shown_for == a and m.visible and m.alpha == 1.0, [m.shown_for, m.alpha])
 	var s: XBattlerSprite = b.sprites[a]
 	var head := s.position + Vector2(0, -s.height() - XTurnMarker.GAP)
-	await _until(func(): return m.shift.distance_to(m.menu_shift(m._anchor)) < 0.01, 120)
-	var p0 := m.position - m.shift
-	_check("marker_above_head", absf(p0.x - head.x) < 0.5 and p0.y <= head.y + 0.01 and p0.y >= head.y - XTurnMarker.BOB - 0.01, [m.position, m.shift, head])
+	_check("marker_above_head", absf(m.position.x - head.x) < 0.5 and m.position.y <= head.y + 0.01 and m.position.y >= head.y - XTurnMarker.BOB - 0.01, [m.position, head])
+	# Kyo 11-18「头顶上一点就行」：尖离头顶不超过 GAP＋浮动
+	_check("marker_close_to_head", (s.position.y - s.height()) - m.position.y <= XTurnMarker.GAP + XTurnMarker.BOB + 0.01 and XTurnMarker.GAP <= 4.0, [m.position, s.position.y - s.height()])
 	# 会动：浮动＋转
 	var y0 := m.position.y
 	var r0 := m.spin()
 	await _frames(20)
 	_check("marker_moves", m.position.y != y0 and m.spin() != r0, [y0, m.position.y, r0, m.spin()])
-	# 特写（原尺寸，宝石周围 128×128）
-	# 特写拍菜单收起时（宝石落回头顶正中）
-	var ring_was := b.cmd_win != null and b.cmd_win.active
-	if b.cmd_win != null:
-		b.cmd_win.active = false
-	await _until(func(): return m.shift == Vector2.ZERO, 120)
+	# 特写（原尺寸，宝石周围 96×96）
 	var c := b._origin + m.position + Vector2(0, -XTurnMarker.DEPTH / 2.0)
-	await _record("frames_marker", 120, 2, Rect2i(Vector2i(c) - Vector2i(60, 60), Vector2i(120, 120)))
-	if b.cmd_win != null:
-		b.cmd_win.active = ring_was
+	await _record("frames_marker", 120, 2, Rect2i(Vector2i(c) - Vector2i(48, 48), Vector2i(96, 96)))
 	# 换人：滑到新角色头上
 	var other: XActor = actors[0] if actors[0] != a else actors[1]
 	b._set_active(other)
@@ -200,9 +196,7 @@ func _marker(b: XBattleScene, actors: Array) -> void:
 	var so: XBattlerSprite = b.sprites[other]
 	var head2 := so.position + Vector2(0, -so.height() - XTurnMarker.GAP)
 	await _frames(1)
-	await _until(func(): return m.shift.distance_to(m.menu_shift(m._anchor)) < 0.01, 120)
-	var p2 := m.position - m.shift
-	_check("marker_on_other", absf(p2.x - head2.x) < 0.5 and absf(p2.y - head2.y) <= XTurnMarker.BOB + 0.01, [m.position, m.shift, head2])
+	_check("marker_on_other", absf(m.position.x - head2.x) < 0.5 and absf(m.position.y - head2.y) <= XTurnMarker.BOB + 0.01, [m.position, head2])
 	# 敌人行动（_active 空）：停一会再淡出
 	b._set_active(null)
 	await _frames(3)
@@ -217,54 +211,55 @@ func _marker(b: XBattleScene, actors: Array) -> void:
 	_check("marker_yields_cue", m.alpha < 1.0, m.alpha)
 	XSkinTurnCue.last_ms = -100000
 	await _until(func(): return m.alpha >= 1.0, 120)
+	if b.cmd_win != null:
+		b.cmd_win.active = ring_was
 
 
 func ok_wait(ok: bool, name: String) -> void:
 	_check(name, ok)
 
 
-## ---- T196 核查 P1-1：指令菜单开着时宝石让开菜单（抬到菜单上方，x 仍对着头），菜单开在各个角色身上都试 ----
-func _gem_clear(m: XTurnMarker) -> bool:
-	var g := XTurnMarker.gem_rect(m.position + Vector2(0, m.bob()))
-	for z in m.avoid_rects():
-		if g.intersects(z as Rect2):
-			return false
-	return true
-
-
-func _menu_avoid(b: XBattleScene, actors: Array) -> void:
+## ---- Kyo 11-18「A」：指令菜单／技能列表开着时宝石淡出，关掉再淡入；四个站位菜单关着时都在头顶正中 ----
+func _menu_hide(b: XBattleScene, actors: Array) -> void:
 	var m := b.turn_marker
 	var ring := b.cmd_win as XSkinBattleRing
 	_check("menu_ring_fixture", m != null and ring != null and ring.active, [m, b.cmd_win])
 	if m == null or ring == null:
 		return
 	var a: XActor = b._active
-	var old_title := ring.title
+	# 菜单开着：淡出（美娜同角度「菜单开」）
+	await _until(func(): return m.alpha == 0.0, 120)
+	_check("menu_open_hidden", m.menu_open() and m.alpha == 0.0 and not m.visible, m.alpha)
+	await _shot("t196_美娜_菜单开")
+	# 关掉：淡入，回到头顶正中（「菜单关」）
+	ring.active = false
+	await _frames(3)
+	_check("menu_close_fading_in", m.alpha > 0.0 and m.alpha < 1.0, m.alpha)
+	await _until(func(): return m.alpha >= 1.0, 120)
+	_check("menu_closed_shown", not m.menu_open() and m.alpha == 1.0)
+	await _shot("t196_美娜_菜单关")
+	# 技能／物品列表开着也淡出（列表沿用同一个 active 判定；拿指令环当列表试）
+	b.list_win = ring
+	ring.active = true
+	await _until(func(): return m.alpha == 0.0, 120)
+	_check("list_open_hidden", m.alpha == 0.0)
+	ring.active = false
+	b.list_win = null
+	await _until(func(): return m.alpha >= 1.0, 120)
+	# 四个站位：菜单关着时在头顶正中、紧贴头顶
 	var idx := 0
-	if _windowed():
-		DirAccess.make_dir_recursive_absolute(out_dir.path_join("frames_menu"))
 	for x in actors:
 		var who: XActor = x
-		b._place_near_actor(ring, who)
-		ring.title = who.display_name() + "的行动"
-		ring.queue_redraw()
 		b._set_active(who)
-		await _until(func(): return m.shown_for == who and m._glide >= 1.0 and m.shift.distance_to(m.menu_shift(m._anchor)) < 0.01 and m.alpha >= 1.0, 180)
+		await _until(func(): return m.shown_for == who and m._glide >= 1.0 and m.alpha >= 1.0, 180)
 		await _frames(2)
 		var s: XBattlerSprite = b.sprites[who]
-		_check("menu_clear_%d" % idx, _gem_clear(m), [who.display_name(), m.position, m.shift, m.avoid_rects()])
-		_check("menu_centered_%d" % idx, absf(m.position.x - s.position.x) < 0.5 and m.shift.x == 0.0, [m.position, s.position, m.shift])
-		_check("menu_inside_canvas_%d" % idx, XTurnMarker.gem_rect(m.position + Vector2(0, m.bob())).position.y >= 0.0, m.position)
-		_check("menu_above_head_%d" % idx, m.position.y < s.position.y - s.height(), [m.position, s.position, s.height()])
-		await _shot("t196_menu_%d_%s" % [idx, who.display_name()])
+		_check("closed_centered_%d" % idx, absf(m.position.x - s.position.x) < 0.5, [m.position, s.position])
+		_check("closed_near_head_%d" % idx, (s.position.y - s.height()) - m.position.y <= XTurnMarker.GAP + XTurnMarker.BOB + 0.01 and m.position.y < s.position.y - s.height(), [m.position, s.position, s.height()])
+		_check("closed_inside_canvas_%d" % idx, XTurnMarker.gem_rect(m.position + Vector2(0, m.bob())).position.y >= 0.0, m.position)
+		await _shot("t196_站位%d_%s_菜单关" % [idx, who.display_name()])
 		idx += 1
-	# 换着角色开菜单的动图（右半屏原尺寸）
-	for x in [actors[0], actors[actors.size() - 1]]:
-		b._place_near_actor(ring, x)
-		ring.title = (x as XActor).display_name() + "的行动"
-		b._set_active(x)
-		await _record("frames_menu_%s" % (x as XActor).actor_id, 50, 2)
-	# 小A P3-2：上抬夹取按宝石实际高算，整颗不出画布上沿
+	# 小A P3-2：头顶太高时夹取按宝石实际高算，整颗不出画布上沿
 	_check("top_min_by_gem", XTurnMarker.gem_rect(Vector2(640, XTurnMarker.top_min())).position.y >= 0.0, XTurnMarker.top_min())
 	# 小A P3-1：战斗内 Shift 图鉴开着时 Tab 不切队伍栏
 	var f := b.party_fold
@@ -276,15 +271,7 @@ func _menu_avoid(b: XBattleScene, actors: Array) -> void:
 		b.book_page.free()
 		b.book_page = null
 		await _frames(1)
-	# 菜单关掉（失活）落回头顶
-	b._place_near_actor(ring, a)
-	ring.title = old_title
 	b._set_active(a)
-	await _frames(30)
-	_check("menu_shifted_on_fixture", m.shift != Vector2.ZERO, m.shift)
-	ring.active = false
-	await _until(func(): return m.shift == Vector2.ZERO, 120)
-	_check("menu_closed_back", m.shift == Vector2.ZERO and m.avoid_rects().is_empty(), m.shift)
 	ring.active = true
 	await _frames(30)
 

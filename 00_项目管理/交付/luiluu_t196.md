@@ -22,6 +22,9 @@
   - 位置水平居中在头顶中线；去掉「往右挪」（SHIFT_MAX 删掉）。指令菜单（各项＋「某某的行动」）或列表压到宝石时只往上抬到菜单顶上，抬起时留旧金虚线连回头顶（抬起后宝石常落在后排角色身上，没这道线看不出标的是谁）。
   - 小A P3-1：`XPartyFold.input_blocked`（XBattleScene 设）：战斗内 Shift 图鉴、状态详情开着时 Tab／Back 不切队伍栏；专项加 tab_blocked_by_book。
   - 小A P3-2：上抬与大型变身的夹取改按宝石实际高（`XTurnMarker.top_min()`＝冠＋亭＋描边余量＋浮动＋4），整颗不出画布上沿；专项加 top_min_by_gem、menu_inside_canvas_*。
+- Kyo 二审（11-18「A，然后宝石太高了，就头顶上一点就行」）：
+  - 指令菜单（指令环／旧式指令窗）或技能／物品列表开着时宝石淡出，关掉再淡入（`XTurnMarker.menu_open`，并进 `blocked()`）；上抬让开、旧金虚线、avoid_rects／menu_shift／shift 全部删掉（上面两次返工里的右挪、上抬描述已作废）。
+  - 平时位置放低：尖离头顶 8→3px，浮动 2→1.5px（只往上浮）；仍水平居中，按精灵 `height()`（可见范围＋浮空）算头顶，大体型／变身同样适用。
 - `xconfig.gd`／`xconfig_transfer.gd`：加设置键 `codexPartyExpanded`（默认 true，归「可导出设置」）。
 - 只在新界面（`XUiSkin.on()`）里有；旧界面不加（理由见下「没做／偏离」）。
 - 回退：`XPartyFold.ENABLED = false`（没有栏头、不裁剪，各行原位）；`XTurnMarker.ENABLED = false`（没有头顶标记，队伍栏那一行的左外小箭头回来）。
@@ -57,6 +60,7 @@
 ## 测试
 
 - 本机选测 29 场景全部通过（并行测试 20261118_104216）：xiyou_party_fold、xiyou_ui_skin_hud、xiyou_ui_skin_battle、xiyou_ui_skin_battle_v07、xiyou_ui_skin_4a、xiyou_ui_skin_4b、xiyou_ui_sel_scale、xiyou_config_transfer、xiyou_determinism、xiyou_battle_layout、xiyou_battle_actor_size、xiyou_big_form_sizes、xiyou_tianqi_swap_view、xiyou_tianqi_brand、xiyou_tianqi_doom_follow、xiyou_tianqi_real_swap、xiyou_tianqi_party、xiyou_battle_ui、xiyou_hud、xiyou_battle_pixel、xiyou_ui_pixel、xiyou_options_basic、xiyou_options_misc、xiyou_ui_skin_close、xiyou_ui_skin_offshot、xiyou_battle_options、xiyou_party_formation、xiyou_difficulty_notice、xiyou_party_status_panel。
+- 二审返工后：xiyou_party_fold 79/79；party_fold、ui_skin_hud、ui_skin_battle、ui_skin_battle_v07、ui_skin_4a、tianqi_doom_follow、determinism 7 场景全过（20261118_114326）。
 - 返工后：xiyou_party_fold 72/72；再跑 xiyou_party_fold、xiyou_ui_skin_hud、xiyou_tianqi_doom_follow、xiyou_tianqi_brand、xiyou_ui_skin_battle、xiyou_ui_skin_battle_v07、xiyou_ui_skin_4a、xiyou_tianqi_e2e、xiyou_determinism 9 场景全过（20261118_110458）。
 - 偶发（首跑失败、单跑通过，各累计 1 次）：xiyou_ui_skin_battle_v07（list_grows_from_right，列表展开动画计时）、xiyou_tianqi_doom_follow（首跑 74/74 但退出码 1）。都不是本单文件。
 - `选测.py main --list` 共列 274 个（xconfig.gd 牵出 222 个），其余没在本机跑，留给总装按影响面选测。
@@ -64,9 +68,8 @@
 
 ## 附图（00_项目管理/交付/luiluu_t196附图/）
 
-- `t196_队伍栏展开收起换人.gif`：右上队伍面板原尺寸裁切（420×300），展开→Tab 收起→收起中换人（修→罗琳）→点栏头再展开。
-- `t196_头顶标记特写.gif`：头顶宝石原尺寸 120×120 特写（菜单收起时，居中在美娜头顶；转＋浮＋呼吸光），约 4 秒。
-- `t196_菜单开着时标记让开.gif`：指令环先开在狗逍遥（上排）、再开在美娜（下排）时宝石往上抬让开菜单（原尺寸裁切 460×460，10 帧／秒）。
-- `t196_menu_0_狗逍遥.png`～`t196_menu_3_美娜.png`：指令环分别开在四个站位不同的角色身上时的整屏截图（美娜那张＝返工前问题截图同角度）。
-- `t196_mob_expanded.png`／`t196_mob_collapsed.png`：小怪战展开／收起静态截图。
-- `t196_boss_expanded.png`／`t196_boss_collapsed.png`：首领战展开／收起静态截图。
+- `t196_美娜_菜单开.png`／`t196_美娜_菜单关.png`：美娜同角度，指令菜单开着（宝石淡出）与关着（头顶正中）。
+- `t196_站位0_狗逍遥_菜单关.png`～`t196_站位3_美娜_菜单关.png`：四个站位菜单关着时宝石紧贴各自头顶正中。
+- `t196_头顶标记特写.gif`：头顶宝石原尺寸 96×96 特写（转＋浮＋呼吸光），约 4 秒，35KB。
+- `t196_队伍栏展开收起换人.gif`：右上队伍面板原尺寸裁切（420×300），展开→Tab 收起→收起中换人→点栏头再展开，156KB。
+- `t196_mob_expanded.png`／`t196_mob_collapsed.png`、`t196_boss_expanded.png`／`t196_boss_collapsed.png`：小怪战、首领战展开／收起。
