@@ -27,6 +27,15 @@ extends RefCounted
 ## 哈基米底图是 128 格但实际画逐帧图（CatSwordSaint_v3），不算大格，照 ACTOR_SIZE（115 高，同 1d9694d0e）。
 ## 逐帧图（167 号起归一档）只缩不放：倍数＝ACTOR_SIZE×min(1, 归一缩放)，渡鸦神话、米拉黑龙等大画布形态缩到约 115 高（XBattlerSprite._prof_scale，小A 核 P1-1）。
 ## 回退：ACTOR_SIZE＝0 回到 T126（旧角色 1.425／1.2、新角色归一 ×1.9／×1.6）。原版竖排、旧界面、ENABLED＝false 照旧不放大。
+##
+## T188 屏幕身高按 99 像素逐角色算倍数（Kyo 11-18 01:19「要定的其实是这个99像素大小，而不是倍数」，公共规矩附则 E）：
+## 统一 1.6 倍下各人原图身高不同，流萤 116、屠苏／璇／哈基米 115、大画布逐帧形态约 115、云裳 96、五条悟 94。
+## 改成每张图按原图待机帧可见身高算自己的倍数：倍数＝TARGET_H ÷ 可见高，整张图（同一套帧）同一个倍数；
+## T174 的倍数（ACTOR_SIZE／大格 1 倍／逐帧只缩不放）算出来已在 TARGET_RANGE（98～102）里的不动（狗逍遥、里德、谷雨、奈叶、小铃兰等）。
+## 可见高：量这张图待机动作各帧里最高那帧（idle_height，不透明度 ≥ 12）；167 号起的逐帧图里不是待机那套图的帧（别的动作另一套画布）
+## 按归一档（72÷归一缩放）；璇、屠苏绑定形态（悬浮武具、透明形态，不是人身）带 targetHeight 的照归一档按 72 基准等比，跟人形的比例不变。
+## 装备／状态的 SvPngFd 放大和外观 scale 照旧乘在上面。变身形态（渡鸦神话、米拉黑龙）也按 99（附则 E）。
+## 回退：TARGET_H＝0 回到 T174 统一倍数（ACTOR_SIZE 等三个开关照旧）。
 
 static var ENABLED := true
 ## T174 我方统一身体倍数（见上；0＝回退到 T126 分档小数倍）
@@ -36,6 +45,10 @@ static var NATIVE_CELL := 128.0
 ## T174 胜利镜头对准我方：原版镜头点 (700,460) 放大 2 倍是按原版站位（我方 x 669～819）定的，撑开后后排在画面外。
 ## 开着（且站位撑开生效）时镜头点＝我方身体外框中心，放大倍数＝原版倍数与「整队装得下」取小（不小于 1）；false＝照原版定点
 static var VICTORY_FOCUS := true
+## T188 我方待机屏幕身高（见上）；0＝回退到 T174 统一倍数
+static var TARGET_H := 99.0
+## T188：T174 倍数下屏幕身高已落在这个范围里的不改倍数
+const TARGET_RANGE := Vector2(98.0, 102.0)
 
 ## 我方两排错开 4 人点位 (669..819, 280..580) 的中心（原版坐标、1280×720 画面）
 const ACTOR_SRC := Vector2(744.0, 430.0)
@@ -85,6 +98,58 @@ static func sheet_size(size: float, look: XAppearance) -> float:
 	if look != null and look.sideview and look.cell.y >= NATIVE_CELL and (look.frame("walk", 0).get("rect", Rect2()) as Rect2).has_area():
 		return 1.0  # 帧真从这张 9×6 图切（哈基米底图 128 格、实际画逐帧图，不算）
 	return size
+
+
+## T188：按原图待机可见高 src_h 定倍数。base＝T174 算出的倍数（0＝没开统一大小，原样返回）；
+## base×src_h（四舍五入到整像素）已在 TARGET_RANGE 里不动，否则 TARGET_H÷src_h；TARGET_H＝0 或量不出可见高时照 base
+static func fit_height(base: float, src_h: float) -> float:
+	if base <= 0.0 or TARGET_H <= 0.0 or src_h <= 0.0:
+		return base
+	var h := roundf(base * src_h)  # 按整像素判：64 高满格的 1.6 倍 102.4 算 102（里德、狗逍遥这档不动）
+	if h >= TARGET_RANGE.x and h <= TARGET_RANGE.y:
+		return base
+	return TARGET_H / src_h
+
+
+## T188：外观待机动作（MV 侧视图「走路」那行 3 帧、逐帧图的待机各帧）里最高那帧的可见高（原图像素，不透明度 ≥ 12，同 XAppearance._infer）；
+## 量不出 0。按贴图＋格子记一次。不用归一档表里的可见高：表是原版旧图的数，换过新图的（云裳 v9 实际 52、表里 62）对不上
+static var _idle_h := {}
+
+
+static func idle_height(look: XAppearance) -> float:
+	if look == null:
+		return 0.0
+	var h := 0.0
+	for i in range(maxi(look.frame_count("walk"), 1)):
+		h = maxf(h, frame_height(look.frame("walk", i)))
+	return h
+
+
+static func frame_height(f: Dictionary) -> float:
+	var t: Texture2D = f.get("tex")
+	if t == null:
+		return 0.0
+	var r: Rect2 = f.get("rect", Rect2())
+	var key := "%s#%s" % [t.resource_path if t.resource_path != "" else str(t.get_instance_id()), r]
+	if _idle_h.has(key):
+		return _idle_h[key]
+	var h := 0.0
+	var img := t.get_image()
+	if img != null:
+		if img.is_compressed():
+			img.decompress()
+		var area := (Rect2i(r) if r.has_area() else Rect2i(Vector2i.ZERO, img.get_size())).intersection(Rect2i(Vector2i.ZERO, img.get_size()))
+		var top := area.end.y
+		var btm := area.position.y
+		for y in range(area.position.y, area.end.y):
+			for x in range(area.position.x, area.end.x):
+				if img.get_pixel(x, y).a8 >= 12:
+					top = mini(top, y)
+					btm = maxi(btm, y + 1)
+					break
+		h = float(btm - top) if btm > top else 0.0
+	_idle_h[key] = h
+	return h
 
 
 ## 敌人放大倍数：h＝原版大小时的显示高；放大后不超过封顶，原本就超过的保持 1 倍
