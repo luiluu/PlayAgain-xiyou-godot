@@ -158,6 +158,7 @@ static func switch_on(name: String) -> bool:
 		"MODULE_CAP": return XTianqiSkills.MODULE_CAP and XTianqiSkills.MODULE_CAP_ALL and XTianqiSkills.cards_on()
 		# 期四（T083）：state_confirm_class.never 各条「不会出现」靠的开关，关着＝回到会出现
 		"POOL_LIVE": return POOL_LIVE or XTianqiBase.PHASE4  # T185／T187：live 增伤归池或停用（产品默认关，期四总开关开着就开，同角色卡）
+		"POOL_LIVE_PROBE": return POOL_LIVE_PROBE  # T205：程序类增伤按探针运行期归池（pool 表带 probe 的那几条）
 		"CARDS": return XTianqiSkills.cards_flag()  # T187：卡已删掉挂状态的标签（技能卡、装备卡）
 		"GEAR_SLOTS": return XTianqiGear.ENABLED  # T187：来源是删除栏位的装备（O-266）
 		"NO_HONGHUANG": return XTianqiTrim.NO_HONGHUANG  # T187（D203②）：来源是洪荒（O-410）
@@ -256,7 +257,13 @@ static func suit_confirm_rows(holder, rows: Array) -> Array:
 ##   （as 里的 mul 照上面带 skipTypes；不改 value 的程序原样执行，只打放行标记）。
 ## 产品默认关，期四总开关（XTianqiBase.PHASE4）开着就开；关着＝原版现状，守卫当回退中不报。
 static var POOL_LIVE := false
+## T205（O-待定）：程序类增伤（倍率跟变量、血量比、状态数、存活人数、暴击走）pool 表带 probe：
+##   出手时用这一击的上下文、探针值空跑一遍那一步（不执行），得出这一下的 k，max(k−1, 0) 进③；确认阶段那一步打敌人只留缩小那部分
+##   （XStateEffects._keep_down，2583 目标血量比小时 <1 照乘）。暴击专属段（1522、2556）表里带 crit：非暴击段 add 进③、暴击段 crit 进④。
+##   1666 半步真仙按 as 换写成固定 ③＋100%。这 8 条都挂这个开关，关＝回到确认阶段照乘（守卫当回退中不报）。要 POOL_LIVE 也开着。
+static var POOL_LIVE_PROBE := true
 const LIVE_POOLED := "_ledgerLivePooled"
+const PROBE_VALUE := 1000000.0
 static var _live_table := {}
 
 static func live_table() -> Dictionary:
@@ -277,9 +284,13 @@ static func _plain_steps(e: Dictionary) -> bool:
 	return true
 
 
-static func _live_effect(e) -> bool:
+static func _live_effect(e, row := {}) -> bool:
 	if not e is Dictionary or str(e.get("phase", "")) != "confirm":
 		return false
+	if bool(row.get("probe", false)):  # T205：倍率按探针算，程序、查询都认
+		return str(e.get("op", "")) in ["value_program", "value_query"]
+	if row.has("crit"):  # T205：带暴击专属段的 value_steps（1522、2556），非暴击段 add 进③、暴击段 crit 进④
+		return str(e.get("op", "")) == "value_steps"
 	match str(e.get("op", "")):
 		"mul":
 			return float(e.get("k", 1.0)) > 1.0
@@ -305,10 +316,10 @@ static func live_pool_effects(a) -> Array:
 	var tab := live_table()
 	for st in a.states():
 		var sid := int(st.get("id", 0))
-		if sid <= 0 or not tab.has(sid):
+		if sid <= 0 or not tab.has(sid) or not switch_on(str(tab[sid].get("switch", ""))):
 			continue
 		for e in _live_source_effects(st, tab[sid]):
-			if _live_effect(e):
+			if _live_effect(e, tab[sid]):
 				out.append([sid, tab[sid], e])
 	return out
 
@@ -322,8 +333,9 @@ static func _live_source_effects(st: Dictionary, row: Dictionary) -> Array:
 
 ## damage._calculate：这一下（我方打敌人、伤害类型 dmg_type）表内状态进③的量：
 ## {add 进 finalAdd 的总量（秘籍格已按本合并封到 ＋8%）, nine 算进九线合计封顶的那部分, books {"#书号": 这本书进③的量}（交给 apply_nine_cap 和书上别的增伤合并封顶、排秘籍格）}
-static func live_confirm_add(a, b, dmg_type := 1) -> Dictionary:
-	var out := {"add": 0.0, "nine": 0.0, "books": {}}
+## item、critical、vars：probe 条目（T205）空跑那一步要用这一击的上下文；不给 item 时 probe 条目恒 ＋0
+static func live_confirm_add(a, b, dmg_type := 1, item := {}, critical := false, vars = null) -> Dictionary:
+	var out := {"add": 0.0, "nine": 0.0, "books": {}, "crit": 0.0}
 	if not b is XEnemy or not dmg_type in SUIT_SKIP_TYPES:
 		return out
 	var per := XTianqiBase.secret_slot(nine_cap("secret_slot"))
@@ -333,7 +345,8 @@ static func live_confirm_add(a, b, dmg_type := 1) -> Dictionary:
 		var e: Dictionary = trip[2]
 		if str(row.get("action", "")) != "pool" or not _live_hp_ok(e, dmg_type):
 			continue
-		var x := float(int(row.get("add", 0))) / 100.0
+		var x := maxf(0.0, _probe_k(a, b, int(trip[0]), e, item, critical, vars) - 1.0) if bool(row.get("probe", false)) else float(int(row.get("add", 0))) / 100.0
+		out.crit += float(int(row.get("crit", 0))) / 100.0  # T205（协调定 B）：暴击专属段进④（frame.criticalAdd，只在暴击时生效）
 		match str(row.get("cap", "")):
 			"secret":
 				var key := "#%d" % int(row.get("book", trip[0]))
@@ -347,6 +360,18 @@ static func live_confirm_add(a, b, dmg_type := 1) -> Dictionary:
 		out.books[key] = x
 		out.add += x
 	return out
+
+
+## T205：probe 条目这一下的倍率——用这一击的上下文、探针值空跑那一步（execute 假：不改变量、不扣血、不删状态）
+static func _probe_k(a, b, sid: int, e: Dictionary, item: Dictionary, critical: bool, vars) -> float:
+	if item.is_empty():
+		return 1.0
+	var ctx := {"attacker": a, "defender": b, "item": item, "critical": critical, "execute": false, "value": PROBE_VALUE}
+	if vars is Array and not vars.is_empty():
+		ctx.variables = vars
+	if not (XStateEffects.battle_units.get("actors", []) as Array).is_empty():
+		ctx.party_members = XStateEffects.battle_units.actors  # 同 battle_logic 出手时给确认阶段的 party_members（孤世独行 1834 数活着的人）
+	return XStateEffects.run_one("confirm", a, {"id": sid, "effects": [e]}, ctx) / PROBE_VALUE
 
 
 ## XStateEffects.run("confirm")：表内状态那一步换成带 skipTypes 的副本（对敌人的伤害不乘；pool 的已进③，stop 的就没了）
@@ -371,9 +396,10 @@ static func live_confirm_rows(holder, rows: Array) -> Array:
 				var e3: Dictionary = (e as Dictionary).duplicate(true)
 				if not _live_effect(e3):
 					e3[LIVE_POOLED] = true
+					XStateEffects.fix_self_remove(e3, int(st.get("id", 0)))  # T205 R1：1666 原版删的是被打的人，按 FIX_HALFSTEP_1666 改删持有者
 				src.append(e3)
 		for e in src:
-			if _live_effect(e):
+			if _live_effect(e, row):
 				var e2: Dictionary = e.duplicate(true)
 				if str(e2.op) == "value_steps":
 					for g in e2.groups:
@@ -504,7 +530,7 @@ static func confirm_source(state_id: int) -> String:
 		for e in cls.get("never", []):
 			_confirm_never[int(e.id)] = e
 		for e in cls.get("pool", []):  # T187：归池或停用的增伤
-			_confirm_pool[int(e.id)] = true
+			_confirm_pool[int(e.id)] = e
 		for e in cls.get("reduce", []):  # T187：缩小类（机制）
 			_confirm_reduce[int(e.id)] = true
 		for e in cls.get("program", []):  # T200：程序类（不改伤害、附加扣血、倍率随运行期量变、暴击专属段）
@@ -554,7 +580,8 @@ static func audit_confirm(holder, rows: Array, ctx: Dictionary) -> Array:
 		confirm_seen[sid] = int(confirm_seen.get(sid, 0)) + 1
 		var source := confirm_source(sid)
 		var why := "" if state_confirm_registered(sid) else "unregistered"
-		var rollback := source == "state_confirm_never" and not switch_on(str(_confirm_never.get(sid, {}).get("switch", "")))
+		var entry: Dictionary = _confirm_never.get(sid, {}) if source == "state_confirm_never" else _confirm_pool.get(sid, {}) if source == "state_confirm_pool" else {}
+		var rollback := not switch_on(str(entry.get("switch", "")))  # never 各条、pool 的 probe 条（T205）带自己的回退开关，关着＝回退中
 		if why == "" and not rollback:  # rollback：这一条「不会出现」靠的开关关着＝回退中，不报
 			why = check(source, "confirm")
 		found.append({"source": source, "state": sid, "ok": why == ""})

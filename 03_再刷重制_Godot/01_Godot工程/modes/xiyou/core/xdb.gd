@@ -121,6 +121,7 @@ static func table(name: String) -> Variant:
 				"States": XGojo.patch_states(_tables[name])
 		if name == "States" and _tables[name] is Array:
 			XSukunaFx.patch_states(_tables[name])  # 宿傩新状态图标（content/sukuna/art_optional，开关 XSukunaFx.FX）
+			XStateEffects.patch_states(_tables[name])  # 半步真仙效果 1666 从持有者自删（FIX_HALFSTEP_1666，T205 R1）
 		if name == "Plugins" and _tables[name] is Dictionary:
 			XGojo.patch_plugins(_tables[name])  # 五条悟的进阶行
 		if name == "Armors" and _tables[name] is Array:

@@ -1512,6 +1512,7 @@ func _fixes_off() -> void:
 	XStateEffects.FIX_LOTUS_7303 = false
 	XStateEffects.LOTUS_DAMAGE_7303 = false
 	XStateEffects.FIX_CRIT_1749 = false
+	XStateEffects.FIX_HALFSTEP_1666 = false
 
 
 func _fixes_on() -> void:
@@ -1532,6 +1533,7 @@ func _fixes_on() -> void:
 	XStateEffects.FIX_LOTUS_7303 = true
 	XStateEffects.LOTUS_DAMAGE_7303 = true
 	XStateEffects.FIX_CRIT_1749 = true
+	XStateEffects.FIX_HALFSTEP_1666 = true
 
 
 func _fix_blocks() -> void:

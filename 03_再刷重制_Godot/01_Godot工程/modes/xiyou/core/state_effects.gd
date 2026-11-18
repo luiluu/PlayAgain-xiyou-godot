@@ -84,6 +84,10 @@ static var LOTUS_DAMAGE_7303 := true
 const LOTUS_DAMAGE_RATE := 0.5
 ## O-179（rules10）：数据错误:暴击 1749 原版调 user.criticalRate()（不存在）报错无效果。按说明：持有者每 1% 最终暴击率，暴击时伤害 +1%
 static var FIX_CRIT_1749 := true
+## O-待定（T205 R1）：半步真仙效果 1666 挂在攻击方身上（1665 每回合开始、2566 开战 user.addState），确认阶段原版写 target.removeState(1666)，
+## target 是被打的人，持有者身上的删不掉，整回合每击都另扣一次（＝×2）；修成从持有者自删（只吃一下）。false＝原版
+static var FIX_HALFSTEP_1666 := true
+const HALFSTEP_STATE := 1666
 
 
 ## Private value-only adapter: current signed phase input, without the damage
@@ -374,7 +378,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		elif op == "value_program":
 			var out := PhaseValueProgram.new().run_phase(e.program, c, c.value, execute)
 			if out.available:
-				c.value = out.value
+				c.value = _keep_down(e, c, out.value)
 			elif execute:
 				_diagnose(phase, int(st.id), holder, "value_program_unavailable")
 		elif op == "costume_image" and execute:
@@ -388,7 +392,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		elif op == "value_query":
 			# 护盾一族：HP 伤害>0 就破盾（先判，清零后 value 已是 0）；元素只决定这一击挡不挡
 			var breaks: bool = e.get("remove_self", false) and _active({"cond": "positive", "hpOnly": true}, c)
-			c.value = _query_value(e, c, execute)
+			c.value = _keep_down(e, c, _query_value(e, c, execute))
 			if breaks and execute:
 				_break_shield(e, holder, int(st.id), c)
 		elif op == "param_add" and execute:
@@ -536,6 +540,39 @@ static func queue_force_quiet(b: XBattler, skill: int, target_index: int) -> voi
 	_forces.append([1 if b is XActor else 0, b.actor_id if b is XActor else _unit_of(b).find(b), skill, target_index])
 
 
+## XDB 读 States 时调用：给 1666 确认阶段那段程序挂上 FIX_HALFSTEP_1666 的修正版（run_one 按开关选）
+static func patch_states(t: Array) -> void:
+	if HALFSTEP_STATE < t.size() and t[HALFSTEP_STATE] is Dictionary:
+		for e in t[HALFSTEP_STATE].get("effects", []):
+			fix_self_remove(e, HALFSTEP_STATE)
+
+
+## 程序里有 remove_state(b, sid)（删被打的人身上的 sid）就挂 fix＝FIX_HALFSTEP_1666、fixed＝改成删 a（持有者）的副本；
+## 总账 1666 的 as 换写（XTianqiLedger.live_confirm_rows）也走这里
+static func fix_self_remove(e: Dictionary, sid: int) -> void:
+	if str(e.get("op", "")) != "effect_program" or e.has("fix"):
+		return
+	var fixed: Dictionary = (e.program as Dictionary).duplicate(true)
+	if _self_remove(fixed, sid):
+		e.fix = "FIX_HALFSTEP_1666"
+		e.fixed = fixed
+
+
+static func _self_remove(node, sid: int) -> bool:
+	var hit := false
+	if node is Dictionary:
+		if node.get("op") == "phase_call" and node.get("name") == "remove_state" and node.get("receiver") == "b" \
+				and not (node.get("args", []) as Array).is_empty() and float(node.args[0].get("value", -1)) == float(sid):
+			node.receiver = "a"
+			hit = true
+		for k in node:
+			hit = _self_remove(node[k], sid) or hit
+	elif node is Array:
+		for x in node:
+			hit = _self_remove(x, sid) or hit
+	return hit
+
+
 static func fix_on(name: String) -> bool:
 	match name:
 		"FIX_UNDYING_2554": return FIX_UNDYING_2554
@@ -549,6 +586,7 @@ static func fix_on(name: String) -> bool:
 		"FIX_QI_RATE_2562": return FIX_QI_RATE_2562
 		"FIX_SWORD_RATE_2575": return FIX_SWORD_RATE_2575
 		"FIX_CRIT_1749": return FIX_CRIT_1749
+		"FIX_HALFSTEP_1666": return FIX_HALFSTEP_1666
 	return false
 
 
@@ -893,6 +931,12 @@ static func _active(effect: Dictionary, ctx: Dictionary) -> bool:
 	var cond := str(effect.get("cond", ""))
 	var active: bool = ctx.value != 0.0 if cond == "nonzero" else ctx.value > 0.0 if cond == "positive" else ctx.value >= 0.0 if cond == "nonnegative" else false
 	return active and (not effect.get("hpOnly", false) or hp)
+
+
+## T205：带 skipTypes 的程序／查询（只有总账 live_confirm_rows 的 probe 副本带）打敌人时只留缩小那部分，放大的已按探针进③
+static func _keep_down(effect: Dictionary, ctx: Dictionary, v: float) -> float:
+	var dtype := int(ctx.get("item", {}).get("damage", {}).get("type", 0))
+	return minf(v, float(ctx.value)) if effect.has("skipTypes") and dtype in effect.skipTypes and ctx.get("target") is XEnemy else v
 
 
 static func _rounded(value: float, kind: String) -> float:

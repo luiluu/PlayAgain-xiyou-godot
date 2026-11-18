@@ -1,0 +1,12 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+WARNING: Camera2D overridden to physics process mode due to use of physics interpolation.
+     at: _update_process_callback (scene/2d/camera_2d.cpp:88)
+     GDScript backtrace (most recent call first):
+         [0] _ready (res://modes/xiyou/map/map_scene.gd:163)
+XSaveSlim: {"after":40568,"at":"2026-11-18T18:10:56","backup":"","before":42024,"file":"save_1.ksv","gear":3,"kind":"save","pooled":0,"saved":1456,"seen":0}
+VP_CONFIRM_SEEN={}
+VP_REPORT={"aborted":"","battles":[],"climb_stop":"","debug_floor":0,"debug_items":{},"defeats":0,"dungeon_defeats":0,"dungeon_kills":0,"dungeon_runs":0,"equip_changes":0,"equip_passes":0,"events_tried":7,"farm_block":{},"final":{"gold":0,"map":4,"party":[90,76,150,35,30],"screen":"map","steps":28},"fixed_random":true,"floor":-1,"floor_log":[],"frames":902,"gifted_floors":[],"grind_battles":0,"growth":{"advance_ranks":[0,0,0,0],"advances":0,"bag_uses":0,"boss_mastery":{},"fabao":{"cap":12,"items":[]},"fabao_feeds":0,"formations":0,"fragment_buys":0,"fragments":0,"gold":0,"greet_failed":[],"greet_paid":[],"guard_shops":0,"lamps":0,"lottery_draws":0,"materials":{"fragments":0,"gems":0,"pearls":0,"race_ranks":[1,1,1,1,1],"stones":[0,0,0,0,0,0]},"points":0,"realms":["炼气一层","炼气一层","炼气一层","炼气一层","炼气一层"],"slots":[90,76,150,35,30],"spend_buys":0,"spend_uses":0,"tickets":0,"zhenqi":[0,0,0,0,0]},"growth_log":[],"keys":110,"levels":[1,1,1,1,1],"lineup":[90,76,150,35,30],"maps":{"4":2,"132":1},"messages":11,"milestones":{"choice_made":233,"event_tried":71,"form_pressed":2,"in_game":7,"map_132":184,"map_4":7,"new_game_pressed":1,"overlay_seen":47,"second_map":184,"title":1,"transfer_nothing":148},"mode":"explore","msec":20098,"pass_after":0,"seed":1,"settled":true,"stalemates":0,"stuck":[],"ticks":234,"violations":[]}
+TEST_RESULT={"passed":14,"total":14}
+
+TASK_RESULT={"runId": "ad5358a88c304962abc3dea9ebb51400", "status": "done", "exitCode": 0, "pid": 53008, "startedAt": "2026-11-18T17:10:26.715120+00:00", "command": ["07_开发环境/godot", "--headless", "--audio-driver", "Dummy", "--path", "01_Godot工程", "res://tests/xiyou_virtual_player.tscn", "--", "--vp-seed=1", "--vp-phase4"], "childPGID": 53011, "childIdentity": {"pid": 53011, "pgid": 53011, "startedAt": "Wed Nov 18 18:10:26 2026    "}, "wrapperIdentity": {"pid": 53008, "pgid": 53008, "startedAt": "Wed Nov 18 18:10:26 2026    "}, "startToken": "baae905be0e04ad2adb1404bb6210b65", "launchdLabel": "xiyou.longtask.1795021826.baae905be0e0", "finishedAt": "2026-11-18T17:11:11.506468+00:00"}

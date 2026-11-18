@@ -1,0 +1,62 @@
+# 交付：luiluu/t205
+
+- 车道／工作者：T205 D203① 补：8 个程序类增伤运行期归池（cc，Opus＋medium，ponytail 试用卡，规矩公共 v1.3＋附则 P＋附则 E）
+- 状态：可合并（POOL_LIVE 产品默认关、期四总开关开着才开，关着时新代码不起作用；另有 K 复量名次变化要 Kyo 定，见「需要用户决定」）
+
+## 变更记录草稿
+
+## 2026-11-18 【cc·天启篇·未经审查】T205 程序类增伤 8 个运行期归池（D203①）：探针 5 个、暴击段 2 个、半步真仙 1 个（dev.待定）
+
+依据：T200 交付单「可优化」（dynamic 6 个、crit 2 个其实是增伤，按 D203①也该归池）；协调 11-18 定暴击专属段进④（B）。
+
+- `damage_ledger.json` `state_confirm_class`：1421、1422、2583、2731、1834、1666、1522、2556 从 program 挪进 pool，都挂回退开关 `POOL_LIVE_PROBE`，cap 全是 none（来源都是职业习得、卡、抽卡事件，没有物品教的书，算角色桶）。program 剩 11 个（inert 3、extra 6、enemy 2）。
+  - **probe 5 个**（1421 欧皇之证、1422 非酋之证、2583 雷道之威、2731 虚无、1834 孤世独行）：每次出手用这一击的上下文，拿探针值空跑一遍那一步（不执行，不改变量、不扣血），得出这一下的 k，max(k−1, 0) 进③。确认阶段那一步打敌人时只保留缩小的部分：2583 在目标最大 HP 不到角色 10 倍时 k<1，这一下照乘缩小、不进池。
+  - **crit 2 个**：1522 神秘成圣 ③＋50%、④＋50%；2556 胡桃 ④＋150%。暴击专属段进 `frame.criticalAdd`（④爆伤池，本来就只在暴击时生效，跟 critHarmRi 同一口径）。
+  - **1666 半步真仙**：照 38 缝合的 as 换写成 mul ×2（③＋100%）＋只留自删那段原程序。探针空跑不出它的 k：「另扣一次等于本击的血」是执行时才发生的副作用。它打一下就自删，所以只吃一下 ＋100%，不会变成每击都加。打自己人时由「另扣一次」改成「本击 ×2」，扣血总量一样。
+- `tianqi_ledger.gd`：新开关 `POOL_LIVE_PROBE`（默认开，要 POOL_LIVE 也开着才起作用）。pool 条目认 `switch`（关着时这条不归池，守卫当回退中不报）、`probe`（`_probe_k` 空跑）、`crit`（进④）。`live_confirm_add` 多三个可选参数 item、critical、vars，返回值多一个 crit。`_confirm_pool` 存整条，`audit_confirm` 的回退判断从 never 扩到 pool。
+- `state_effects.gd`：value_program／value_query 的结果过 `_keep_down`：带 skipTypes 的副本（只有总账 probe 副本带）打敌人时取 min(新值, 原值)。原版数据没有带 skipTypes 的程序或查询，所以别处行为不变。
+- `damage.gd`：`live_confirm_add` 传这一击的 item、critical、vars；live 的 crit 加进 `frame.criticalAdd`。
+- 专项：`xiyou_tianqi_live_sample` 加 8 条（R0 共 29 条全过；R1 再加 3 条，共 32 条）（t205_table、t205_2731_probe、t205_1421_var、t205_1834_query、t205_2583_keep_down、t205_1666_as、t205_1522_crit、t205_2556_crit；暴击、非暴击各打一下），表检查认 probe 和 crit，program 数 19→11。反向验证 4 处都能让专项失败：去掉 keep_down、④不加 crit、探针不进池、不认回退开关。
+- K 复量（`--tier=all`，开关关和开各量一遍，136 人）：没有冒尖，只有两人往下掉，都是 1834 孤世独行。K 是单人对木桩量的，「只剩自己活着 ×1.5」原来一直生效，现在改成 ③＋50% 后被稀释：南宫恨·狂刀（122）152.4 万 → 115.2 万（超强者从第 13 掉到最后，低于流萤 140.2、钟离 140.6，也低于强者最高 136.1）；南宫恨·武道（123，强者）81.6 万 → 61.0 万。别人一个数都没变。1522、2556 的持有者在 K 名单里没有被量到（量数没变），由专项断言覆盖。量数在 `00_项目管理/归档/交付截图/luiluu_t205/T205_量数/`。
+- R1 返修（小A 甲核 r1）：
+  - P1-1：查原版，1666 挂在攻击方身上（1665「Custom Turn Start Effect」、2566「Custom Battle Effect」都是 `user.addState(1666)`）。它确认阶段写的是 `target.removeState(1666)`，确认阶段的 target 是被打的人，所以持有者身上的 1666 原版就删不掉：整回合（autoRemovalTiming 2）每击都另扣一次，等于 ×2。这是原版笔误（同一段先 `target.gainHp(-value)` 再删自己，本意是只吃一下）。按「原版 bug 要修」做成修正开关 `XStateEffects.FIX_HALFSTEP_1666`（O-待定，默认开）：XDB 读 States 时给 1666 那段程序挂 fix／fixed，fixed 把 `remove_state` 的接收方从 b 改成 a（`patch_states`／`fix_self_remove`）。总账 1666 的 as 换写也走同一个函数。修正对西游档同样生效（不归池时也是打一下就自删）。`damage_ledger.json` `state_confirm_fp` 里 1666 的指纹跟着更新（c07a9e59→80d4629d，多了 fix／fixed 两个键）。`xiyou_state_effects` 比原版参照前照例关修正（`_fixes_off` 加 FIX_HALFSTEP_1666）。
+  - P2-1：`t205_1666_self_remove` 实战（execute）连打两下：第一下进③ ＋100% 并自删，第二下 ＋0；`t205_1666_fix_switch`：修正关掉＝原版，两下都吃；不归池时修正照样自删。
+  - P3-1：`t205_2583_up` 从敌人表挑最大 HP ≥ 角色 13 倍的敌人、满血打：③ ＋30%，确认阶段不再乘（关开关时 ×1.3）。
+  - mv_oracle `boot_check.cjs`：本工作树没装 node_modules，用 `NODE_PATH` 指向主工作区的 `mv_oracle/node_modules` 跑通：277 个脚本、165 个插件，模块失败 0、错误 0（v0.62.12）。
+  - 反向验证 2 处：fixed 不改接收方、as 不挂修正，专项都会失败。
+  - R1 验证：本机 xiyou_tianqi_live_sample 32/32、xiyou_tianqi_ledger 82/82、xiyou_tianqi_ledger_p3 40/40、xiyou_state_effects 32816/32816、xiyou_state_effects_tp 544/544、xiyou_custom_damage 145/145、xiyou_state_js 1733/1733；`发行空壳.py check` 680 个函数都有；云端选测（基准 2bb2aa00c，xdb.gd 改了，选中 554 个场景）全过。
+- 玩家可见：（待小A 审）西游档里张楚岚「神明灵」、贝吉特「超级赛亚人」带的半步真仙效果改成只让下一击伤害翻倍，打完一下就消失；原来是整个回合每一击都翻倍（原版写错了删除对象）。
+- 验证：`语法检查.py` 0 问题；`发行空壳.py check` 680 个函数都有（合 main 后）；`工具回归.py` 全过；云端选测（`选测.py` 列的 136 个场景）全过；虚拟玩家期四开：explore 种子 1 14/14，climb 30000 帧种子 2 6/6，violations 0，没有 ERROR 行。没跑：`--oracle`、全量检查.sh。
+
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | `modes/xiyou/core/state_effects.gd` `XStateEffects.FIX_HALFSTEP_1666`（`patch_states`／`fix_self_remove`，`xdb.gd` 读 States 时挂上） | 半步真仙效果 1666 确认阶段 `target.removeState(1666)` 删的是被打的人，持有者身上的删不掉，整回合每击都另扣一次（×2） | 改成从持有者自删，只吃一下（天启篇归池时的 as 换写同样） | 原版笔误（T205 R1，小A 甲核 P1-1） | `XStateEffects.FIX_HALFSTEP_1666 = false` | cc（T205） | 保留 |
+| O-待定 | `modes/xiyou/core/tianqi_ledger.gd` `XTianqiLedger.POOL_LIVE_PROBE`（`damage_ledger.json` pool 表带 switch 的 8 条；`state_effects.gd` `_keep_down`；`damage.gd` live crit） | 1421、1422、2583、2731、1834、1666、1522、2556 在确认阶段单独相乘 | （天启篇期四）按 D203① 运行期归池：probe 进③、暴击段进④、1666 ③＋100% | Kyo D203①、协调 11-18 定 B（T205） | `XTianqiLedger.POOL_LIVE_PROBE = false` | cc（T205） | 保留 |
+
+## 交接板
+
+- 下一步：狂刀名次（见下）定了再按结果改 D209 层或 K 口径。
+- 用户试玩说明：无（期四总开关默认关）。
+- 需要用户决定：南宫恨·狂刀的 K 峰值从 152.4 万掉到 115.2 万，超强者名次从第 13 掉到最后（D209 定的是「璇＞狂刀＞黄泉」）。原因是 K 单人量，孤世独行「只剩自己 ×1.5」一直生效、原来单独相乘，现在归池被稀释。选项：A＝在 D209 层给狂刀补系数，追回名次；B＝不补，认为原来的 152.4 是单人量法夸出来的（实战只剩自己才有）；C＝K 量法把 1834 这类「只剩自己」条件按不生效算，重排。我倾向 B 或 C，没改 Kyo 定过的数。
+
+## 进度账
+
+- 无
+
+## 可优化（流程／工具／效率）
+
+- 建议：K 量法（`k_calibrate.gd`）是单人上场，「只剩自己活着」这类条件被当成恒生效。量超强者名次时要不要排除这类条件，要统一口径（归 K 标定车道）。
+
+## 没做／没验（附则 P）
+
+- 没做：1834 在 K 里的名次补偿（Kyo 定过的数不自己改）；`_probe_k` 的缓存（同一下 live_confirm_add 只空跑一次，只有带这 8 个状态的人才跑，没加缓存）。
+- 没验：1522、2556 的实战（K 名单和 climb 都没碰到持有者，只有专项）；1834 实战里用 `XStateEffects.battle_units.actors` 数活人，跟出手时确认阶段的 party_members 应是同一批（battle_logic 开战时设成同一个数组），只按代码看过，没在多人战斗里单独测；FIX_HALFSTEP_1666 对西游档张楚岚、贝吉特实战伤害的影响没有量（只有专项）；R1 没重跑 K 复量（R0 时 1666 的持有者在 K 里量数开关前后没变，说明 K 没碰到它）。
+
+## 本分支提交
+
+- 0cdfa1c8a T205 程序类增伤 8 个运行期归池：probe 5 个出手空跑得 k 进③、crit 2 个暴击段进④、1666 as 换写③＋100%（开关 POOL_LIVE_PROBE）
+- 12b14362b Merge branch 'main' into luiluu/t205
+- 01ad11399 T205 交付单、K 复量与虚拟玩家量数
+- 76fdb59d6 T205 R1：1666 半步真仙从持有者自删（FIX_HALFSTEP_1666）；补实战连打两下、2583 k>1 断言

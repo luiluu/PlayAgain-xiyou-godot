@@ -300,9 +300,10 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var suit_add := XTianqiLedger.suit_confirm_add(a, b, dmg_type) if dmg_type in [1, 2, 5, 6] else 0.0
 	if suit_add != 0.0:  # 伤害加成总账期二：原版套装状态确认阶段「结果 ×k」改成 ＋(k−1) 进③（确认阶段那一步对敌人的伤害不再乘）
 		frame.finalAdd = float(frame.finalAdd) + suit_add
-	var live: Dictionary = XTianqiLedger.live_confirm_add(a, b, dmg_type) if dmg_type in [1, 2, 5, 6] else {"add": 0.0, "nine": 0.0}
+	var live: Dictionary = XTianqiLedger.live_confirm_add(a, b, dmg_type, item, bool(options.get("critical", false)), vars) if dmg_type in [1, 2, 5, 6] else {"add": 0.0, "nine": 0.0}
 	if live.add != 0.0:  # 期四 live 增伤归池（T185 样板、T187 铺开，POOL_LIVE）：确认阶段「结果 ×k」归池改成 ＋add% 进③
 		frame.finalAdd = float(frame.finalAdd) + float(live.add)
+	frame.criticalAdd = float(frame.criticalAdd) + float(live.get("crit", 0.0))  # T205：live 暴击专属段进④（爆伤池）
 	if XTianqiLedger.CAP_NINE and b is XEnemy:  # 伤害加成总账期三：九线来源临时封顶（秘籍格单列、其余九线各池合计封顶；只扣超出的）
 		XTianqiLedger.apply_nine_cap(item, a, frame, cache, {"race": XTianqiLedger.hook_bonus(report.trace, "race-blessings"), "orb": XTianqiLedger.hook_bonus(report.trace, "orb-sets"), "suit": suit_add, "live": live.nine, "live_books": live.get("books", {})})
 	var critical: bool = options.get("critical", false)
