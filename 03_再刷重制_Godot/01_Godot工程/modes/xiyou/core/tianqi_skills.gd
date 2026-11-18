@@ -163,6 +163,26 @@ static func spec(id: int) -> Dictionary:
 	return v if v is Dictionary else {}
 
 
+## T052：天启篇技能列表收起空壳——改写稿 desc 每行都是「已并入…」「原…已移除」的技能（效果挪去别处，本身没东西可看）。
+## 只管菜单列表显示（skill_scene.entries）；存档里的 skill_ids、战斗指令、AI、装备效果照旧能读到，不动可用性。关掉回到全列出。
+static var HIDE_SHELLS := true
+static var _shell_re: RegEx = null
+
+
+static func is_shell(id: int) -> bool:
+	if not HIDE_SHELLS or not cards_on():
+		return false
+	var d = spec(id).get("desc")
+	if not d is Array or (d as Array).is_empty():
+		return false
+	if _shell_re == null:
+		_shell_re = RegEx.create_from_string("^效果：(已并入.*|原.*已移除)$")
+	for line in d:
+		if _shell_re.search(str(line)) == null:
+			return false
+	return true
+
+
 ## XDB.rec 包装：天启篇存档里换成改写后的记录
 static func cards_on(s = null) -> bool:
 	return cards_flag() and on(s)
