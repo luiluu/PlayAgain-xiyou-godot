@@ -23,6 +23,21 @@ func _ids(tier: String) -> Array:
 	return XTier.ids(tier).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not XActorModules.IDS.has(id))
 
 
+## 回退开关用字面量赋值（回退开关覆盖.py 只认字面量）
+func _follow(on: bool) -> void:
+	if on:
+		XTianqiHorsemen.DOOM_FOLLOW = true
+	else:
+		XTianqiHorsemen.DOOM_FOLLOW = false
+
+
+func _entry(on: bool) -> void:
+	if on:
+		XTianqiDeathAlien.DIE_ENTRY = true
+	else:
+		XTianqiDeathAlien.DIE_ENTRY = false
+
+
 func _texts(logs: Array) -> Array:
 	return logs.filter(func(l): return l.type == "battle_text").map(func(l): return str(l.text))
 
@@ -78,7 +93,7 @@ func _run() -> void:
 
 ## 一、四骑士死期（死亡线生存战）：挂上死期后换下去
 func _horsemen(on: bool) -> void:
-	XTianqiHorsemen.DOOM_FOLLOW = on
+	_follow(on)
 	var tag := "on" if on else "off"
 	var s := _state()
 	_check("horse_prepare_%s" % tag, XTianqiHorsemen.prepare("death", s, "survival"))
@@ -107,7 +122,7 @@ func _horsemen(on: bool) -> void:
 
 ## 二①、宣判者死期：被挂的人换到助力位，回合末照样死（走倒下入口，带阵亡状态）
 func _verdict(on: bool) -> void:
-	XTianqiHorsemen.DOOM_FOLLOW = on
+	_follow(on)
 	var tag := "on" if on else "off"
 	var s := _state()
 	_check("verdict_prepare_%s" % tag, XTianqiDeathAlien.prepare("omen", s))
@@ -130,7 +145,7 @@ func _verdict(on: bool) -> void:
 ## 二②、倒下入口：场上被宣判者死期带走的人，开关开关结果一样（倒下、带阵亡状态、收尸登记、日志照报）
 func _die_entry_onfield(on: bool) -> void:
 	XTianqiHorsemen.DOOM_FOLLOW = true
-	XTianqiDeathAlien.DIE_ENTRY = on
+	_entry(on)
 	var tag := "on" if on else "off"
 	var s := _state()
 	XTianqiDeathAlien.prepare("omen", s)
@@ -151,7 +166,7 @@ func _die_entry_onfield(on: bool) -> void:
 
 ## 二③、收尸人扫 5 个人：死在助力位的人照样喂（变强、回血）；关掉只扫场上
 func _reaper(on: bool) -> void:
-	XTianqiHorsemen.DOOM_FOLLOW = on
+	_follow(on)
 	var tag := "on" if on else "off"
 	var s := _state()
 	XTianqiDeathAlien.prepare("spread", s)
@@ -174,7 +189,7 @@ func _reaper(on: bool) -> void:
 
 ## 三、35 层影子：「死去的人本场不能复活」认 5 个人
 func _shadow(on: bool) -> void:
-	XTianqiHorsemen.DOOM_FOLLOW = on
+	_follow(on)
 	var tag := "on" if on else "off"
 	var s := _state()
 	XTianqiHorsemen.prepare("death", s, "shadow")
@@ -189,7 +204,7 @@ func _shadow(on: bool) -> void:
 
 ## 四、允许失败的战斗打输复活：出战成员＋助力位都扶到 1 血；关掉助力位照旧躺着
 func _lose_revive(on: bool) -> void:
-	XTianqiHorsemen.DOOM_FOLLOW = on
+	_follow(on)
 	var tag := "on" if on else "off"
 	var s := _state()
 	var h := s.helper()
@@ -206,7 +221,7 @@ func _lose_revive(on: bool) -> void:
 
 ## 六、七首之龙灰印缓期：挂着缓期的人换到助力位，到点照样倒下；打输复活扫得到他
 func _dragon_reprieve(on: bool) -> void:
-	XTianqiHorsemen.DOOM_FOLLOW = on
+	_follow(on)
 	var tag := "on" if on else "off"
 	var s := _state("war")
 	s.set_variable(20, 36)

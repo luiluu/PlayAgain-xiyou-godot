@@ -24,7 +24,7 @@ extends RefCounted
 
 const META := "xdeath_alien"
 
-## O-待定（T180，发作真换人 v0.2 第三节第 5 条①）：true＝死期、丧钟、替身带走人时走战斗的倒下入口 logic._die（和四骑士死期、
+## O-待定-2（T180，发作真换人 v0.2 第三节第 5 条①）：true＝死期、丧钟、替身带走人时走战斗的倒下入口 logic._die（和四骑士死期、
 ## 七首之龙缓期一样：谷雨代命、云裳衣魂、五条悟试炼兜底这些「倒下包装」照常起作用）；免即死已在前面判过，倒下入口只因
 ## 死亡抵抗特性没加上时仍直接加阵亡状态。false＝照旧直接写阵亡状态（add_new_state）
 static var DIE_ENTRY := true
