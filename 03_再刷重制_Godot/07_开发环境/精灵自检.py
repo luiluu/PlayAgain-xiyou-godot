@@ -134,6 +134,20 @@ def waist_metrics(m, cfg):
     rows = {}
     for x, y in m:
         rows[y] = rows.get(y, 0) + 1
+    frac = cfg.get('torso_half_frac', 0)
+    if frac and rows:
+        # T172：只量躯干主块。以头脚两带的横向中心为轴，轴两侧各 frac×身高 以外的像素
+        # （飘带、披风、长发等外挂轮廓）不计入每行宽度，避免它们把躯干中位宽撑大而误报断腰。
+        # torso_half_frac=0 关闭（回退到旧算法）。
+        # 轴取头部带（上 20%）与脚部带（下 20%）横向中心的平均，不看腰带行本身（飘带常贴着腰）
+        head = [x for x, y in m if y < y0 + h * 0.2]
+        foot = [x for x, y in m if y >= y0 + h * 0.8]
+        cx = (sum(head) / len(head) + sum(foot) / len(foot)) / 2
+        hw = h * frac
+        rows = {}
+        for x, y in m:
+            if abs(x - cx) <= hw:
+                rows[y] = rows.get(y, 0) + 1
     body = [rows[y] for y in range(y0, y1) if y in rows]
     body.sort()
     median = body[len(body) // 2]
