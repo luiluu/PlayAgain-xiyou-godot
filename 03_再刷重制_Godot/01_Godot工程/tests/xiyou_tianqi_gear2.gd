@@ -83,20 +83,6 @@ func _undress(a: XActor, etype: int) -> void:
 
 
 # ---- 五、表 ----
-func _no_four(v, path: String, out: Array) -> void:
-	if v is Dictionary:
-		for k in v:
-			if k != "version":
-				_no_four(v[k], path + "/" + str(k), out)
-	elif v is Array:
-		for i in v.size():
-			_no_four(v[i], "%s/%d" % [path, i], out)
-	elif v is float or v is int:
-		var t := str(int(v)) if float(v) == floorf(float(v)) else str(v)
-		if t.contains("4"):
-			out.append("%s=%s" % [path, t])
-
-
 func _table() -> void:
 	var t := XTianqiGear.table()
 	var m: Dictionary = t.get("mount", {})
@@ -105,9 +91,6 @@ func _table() -> void:
 	var c: Dictionary = t.get("artifact_cap", {})
 	_check("table_cap", float(c.get("heartsteel_stage", 0)) == 10.0 and float(c.get("hubris_stage", 0)) == 10.0
 		and float(c.get("crown_bonus_pct", 0)) == 300.0, c)
-	var fours := []
-	_no_four(t, "", fours)
-	_check("table_no_four", fours.is_empty(), fours)
 	_check("table_draft", bool(t.get("draft", false)))
 
 

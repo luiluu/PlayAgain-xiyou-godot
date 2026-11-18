@@ -4,7 +4,7 @@ extends RefCounted
 ## 9的话根据难度调整」）。规则表 tianqi_data/money_table.json（数是草案）。只认天启篇存档（XTianqi.active），西游本体不变。
 ##
 ## 钱只买「服务和确定的结果」。新增消耗都按「场钱」标价：本档最高到达层（变量 20）一场随机遇敌的平均金钱 × 难度奖励倍率
-## （XTianqiBalance.reward_mult，和掉落共用）；再乘各档价格倍数（寻常 0.6～证道 1.7）。算出的价钱取两位有效数字、避开 4（nice）。
+## （XTianqiBalance.reward_mult，和掉落共用）；再乘各档价格倍数（寻常 0.6～证道 1.7）。算出的价钱取两位有效数字（nice，D205 起不再避 4）。
 ## - INCOME：战斗金钱的全队加成（被动 passiveGRUP、套装、词条阅历、金钱翻倍）相加后递减（同掉落：合计×200÷(合计＋200)），
 ##   乘难度奖励倍率；原版难度被动（「普通难度」等）不算，牢妲改的难度号金钱倍率不算。battle_logic.rewards 末尾调 battle_gold。
 ## - SELL：装备卖价按品质（0.1～2 场钱），不看原价；物品照旧（XItemMarks.selling_price 调 sell_price）。
@@ -48,7 +48,7 @@ static func data() -> Dictionary:
 	return _data
 
 
-static func reload() -> void:
+static func reload_table() -> void:
 	_data = {}
 
 
@@ -96,18 +96,17 @@ static func price_mult(s: XState) -> float:
 	return float(_sec("price_mult").get(difficulty_key(s), 1.0))
 
 
-## 标价：units 场钱 × 价格倍数，取整到两位有效数字、避开 4
+## 标价：units 场钱 × 价格倍数，取整到两位有效数字
 static func price(s: XState, units: float) -> int:
 	return nice(units * field_money(s) * price_mult(s))
 
 
-## 两位有效数字（四舍五入），有 4 的那位往上进一（4→5）；小于 10 的取整
+## 两位有效数字（四舍五入）；小于 10 的取整（D205：不再避 4）
 static func nice(x: float) -> int:
 	if x <= 0.0:
 		return 0
 	if x < 10.0:
-		var n := maxi(1, roundi(x))
-		return 5 if n == 4 else n
+		return maxi(1, roundi(x))
 	var e := 0
 	var m := x
 	while m >= 100.0:
@@ -117,10 +116,6 @@ static func nice(x: float) -> int:
 	if mi >= 100:
 		mi = 10
 		e += 1
-	if mi / 10 == 4:
-		mi = 50
-	elif mi % 10 == 4:
-		mi += 1
 	return mi * int(pow(10.0, e))
 
 

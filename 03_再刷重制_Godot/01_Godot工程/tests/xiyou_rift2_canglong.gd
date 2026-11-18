@@ -108,7 +108,6 @@ func _canglong_data() -> void:
 		check("module.%d" % id, str(s.damage.formulaProgram.get("module", "")) == "canglong" and str(s.damage.formula).contains("a.level*a.level*0.02"), s.damage.formula)
 		check("text.%d" % id, str(s.note).contains("真龙之力 size=18") and not str(s.note).contains("麒麟除魔值"))
 		check("ai_safe.%d" % id, XSmartAI.formula_safe(str(s.damage.formula)))
-		check("no4.%d" % id, not str(XCanglong.RATE[id]).contains("4"))
 	check("yuxi.no_wtype", int(XDB.rec("Skills", 10093).requiredWtypeId1) == 0)
 	check("zhudao.cd", str(XDB.rec("Skills", 10096).meta.get("Cooldown", "")).strip_edges() == "3" and str(XDB.rec("Skills", 10096).note).contains("<Cooldown: 3>") and str(XDB.rec("Skills", 10096).note).contains("冷却时间:3回合"))
 	check("zhumie.cd_kept", str(XDB.rec("Skills", 10092).meta.get("Cooldown", "")).strip_edges() == "3")
