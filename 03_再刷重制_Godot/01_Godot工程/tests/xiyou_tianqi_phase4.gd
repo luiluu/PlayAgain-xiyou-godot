@@ -18,6 +18,9 @@ var results: Array = []
 ## T082 实机标定的 K（balance_table combat_rules.base_damage）；改标定只改这两行
 const K_TABLE := 0.13
 const K_TEXT := "0.13"
+## T162 丙档实机量的首领生命临时折算 U（balance_table combat_rules.boss_hp_temp_unit）；重量只改这两行
+const U_CRIT := 1.43
+const U_NO_CRIT := 0.89
 
 func _ready() -> void:
 	_run.call_deferred()
@@ -139,7 +142,7 @@ func _on() -> void:
 	var rows := XStatusPage.global_bonuses(a)
 	_check("on.gaze_panel", not rows.is_empty() and rows[0] == ["天启注视", "伤害 ×" + K_TEXT], rows.slice(0, 2))
 	# U、守层者、治疗、九线、秘籍、绝对值、单段上限
-	_check("on.u", XTianqiBase.boss_hp_unit(false) == 1.0 and XTianqiBase.boss_hp_unit(true) == 1.0)  # 表里先填 1
+	_check("on.u", is_equal_approx(XTianqiBase.boss_hp_unit(false), U_CRIT) and is_equal_approx(XTianqiBase.boss_hp_unit(true), U_NO_CRIT))  # T162 丙档实机量（表里的数）
 	var old := {1: 2.0}
 	_check("on.guardian_fallback", is_same(XTianqiBase.guardian_table("hp_base", old), old))  # guardian_phase4 由 T012-c 补，缺就退回旧表
 	_check("on.heal_x5_off", XTianqiBase.heal_skip_types() == [3, 4])
