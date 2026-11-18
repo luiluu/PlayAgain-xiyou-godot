@@ -49,9 +49,9 @@ static var VICTORY_FOCUS := true
 static var TARGET_H := 99.0
 ## T188：T174 倍数下屏幕身高已落在这个范围里的不改倍数
 const TARGET_RANGE := Vector2(98.0, 102.0)
-## T194（D204 B）：大型变身（米拉黑龙、渡鸦神话）单独的屏幕身高，默认＝99（跟 TARGET_H 一样，行为不变）。
-## Kyo 从样张里挑定后改这个数；样张档位 99／115／130／150／170。TARGET_H＝0 时不起作用（回到 T174）
-static var BIG_FORM_H := 99.0
+## T194（D204 B）：大型变身（米拉黑龙、渡鸦神话）单独的屏幕身高。T197 Kyo 11-18「就定200大小」，默认 200。
+## 回退：设成跟 TARGET_H 一样（99）＝回到统一身高；TARGET_H＝0 时不起作用（回到 T174）
+static var BIG_FORM_H := 200.0
 ## 算 BIG_FORM_H 的外观键片段
 const BIG_FORM_KEYS := ["RavenMythic", "MiraDragon"]
 

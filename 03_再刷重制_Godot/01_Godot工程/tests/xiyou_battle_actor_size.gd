@@ -348,16 +348,18 @@ func _big_forms() -> void:
 		for id in by:
 			var sp: XBattlerSprite = by[id]
 			rows.append({"id": id, "key": sp._look_key, "w": roundf(sp.width()), "h": roundf(sp.height()), "idle_h": snappedf(_screen_h(sp), 0.1), "body_scale": snappedf(sp.body_scale, 0.0001)})
-			_check(tag + "_h_%d" % id, sp.height() >= 80.0 and sp.height() <= 130.0, [sp._look_key, sp.width(), sp.height(), sp.body_scale])
+			_check(tag + "_h_%d" % id, sp.height() >= 80.0 and sp.height() <= (XBattleLayout.BIG_FORM_H * 1.3 if id in [167, 168] else 130.0), [sp._look_key, sp.width(), sp.height(), sp.body_scale])
 		for id in [167, 168]:
 			if by.has(id):
 				var sp: XBattlerSprite = by[id]
-				_check(tag + "_shrink_%d" % id, sp.body_scale < 1.0 and _screen_h(sp) >= 98.0 and _screen_h(sp) <= 102.0,
+				_check(tag + "_big_h_%d" % id, absf(_screen_h(sp) - XBattleLayout.BIG_FORM_H) <= 2.0,
 					[sp.body_scale, _screen_h(sp), sp._profile.get("scale")])
-				_check(tag + "_smooth_%d" % id, (sp.sprite as Sprite2D).texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR, (sp.sprite as Sprite2D).texture_filter)
+				# T197：200 档下是放大（倍数≥1），照 T174 规则走最近邻；只有缩小（<1）才平滑
+				_check(tag + "_smooth_%d" % id, ((sp.sprite as Sprite2D).texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR) == (sp.body_scale < 1.0), [sp.body_scale, (sp.sprite as Sprite2D).texture_filter])
 		_check(tag + "_gxy_nearest", (by[1].sprite as Sprite2D).texture_filter != CanvasItem.TEXTURE_FILTER_LINEAR)
 		notes.append({"size": 1.6, "troop": troop, "group": "大画布逐帧形态", "actors": rows})
-		_layout_checks(tag, b)
+		if XBattleLayout.BIG_FORM_H <= 130.0:  # T197：200 档下大型变身会压展开的队伍栏、身体框互叠（Kyo 11-18 接受，栏自动收起另卡），只在小档位断言
+			_layout_checks(tag, b)
 		await _shot("T188_变身形态_%s" % ("首领战" if troop == BOSS_TROOP else "小怪战"), "T188每人99高 · 狗逍遥 里德 渡鸦神话 米拉黑龙 · %s（敌群 %d）" % [
 			"首领战" if troop == BOSS_TROOP else "小怪战", troop])
 		await _close(b)
@@ -423,7 +425,10 @@ func _roster() -> void:
 			var row := {"id": c[0], "key": sp._look_key, "src_h": XBattleLayout.idle_height(sp.look, sp._idle_planted()), "scale": snappedf(sp.body_scale, 0.0001), "h": snappedf(h, 0.1)}
 			if size_on:
 				rows.append(row)
-				if roundf(h) < 98.0 or roundf(h) > 102.0:
+				var big := XBattleLayout.BIG_FORM_KEYS.any(func(k): return str(sp._look_key).contains(k))  # T197：大型变身按 BIG_FORM_H
+				var lo := XBattleLayout.BIG_FORM_H - 2.0 if big else 98.0
+				var hi := XBattleLayout.BIG_FORM_H + 2.0 if big else 102.0
+				if roundf(h) < lo or roundf(h) > hi:
 					bad.append(row)
 			else:
 				rows[-1]["t174_scale"] = row.scale
