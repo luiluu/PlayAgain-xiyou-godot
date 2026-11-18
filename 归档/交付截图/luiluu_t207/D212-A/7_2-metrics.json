@@ -1,0 +1,26 @@
+{
+  "frame": "7_2",
+  "fixed_scale": 0.2460202604920405,
+  "bbox": [
+    61,
+    63,
+    291,
+    217
+  ],
+  "alpha_levels": [
+    0,
+    255
+  ],
+  "components": [
+    18793
+  ],
+  "enclosed_holes_sizes": [
+    2,
+    30,
+    194
+  ],
+  "translation": [
+    16,
+    9
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "frame": "15_0",
+  "fixed_scale": 0.2460202604920405,
+  "bbox": [
+    61,
+    82,
+    287,
+    217
+  ],
+  "alpha_levels": [
+    0,
+    255
+  ],
+  "components": [
+    18660,
+    396
+  ],
+  "enclosed_holes_sizes": [],
+  "translation": [
+    3,
+    12
+  ]
+}

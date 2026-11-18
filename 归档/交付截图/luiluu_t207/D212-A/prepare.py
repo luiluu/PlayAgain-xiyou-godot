@@ -11,7 +11,8 @@ im=Image.open(p/(name+'-raw.png')).convert('RGBA')
 scale=340/1382
 im=im.resize((round(im.width*scale),round(im.height*scale)),Image.Resampling.NEAREST)
 im.putalpha(im.getchannel('A').point(lambda a:255 if a>=128 else 0))
-bb=im.getbbox();dx=61-bb[0];dy=217-bb[3]
+bb=im.getbbox();target_left=min(61,339-(bb[2]-bb[0]));dx=target_left-bb[0];dy=217-bb[3]
+if target_left<0:raise ValueError('Generated subject wider than canvas at shared scale')
 out=Image.new('RGBA',(340,280));out.paste(im,(dx,dy));out.save(p/(name+'-native.png'))
 m=sc.opaque(out); hs=sc.holes(m,340,280,1,340*280);cc=sc.components(m)
 metrics={'frame':name,'fixed_scale':scale,'bbox':out.getbbox(),'alpha_levels':sorted(set(out.getchannel('A').getdata())),'components':sorted([len(c) for c in cc],reverse=True),'enclosed_holes_sizes':sorted([h[1] for h in hs]),'translation':[dx,dy]}
