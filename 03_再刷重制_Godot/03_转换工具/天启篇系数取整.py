@@ -373,18 +373,38 @@ def main(argv):
         print('已写', P)
     if '--report' in argv:
         rp = Path(argv[argv.index('--report') + 1])
-        lines = ['| 技能 | 角色 | 名字 | 改前 | 改后 | 变化 |', '|---|---|---|---|---|---|']
-        for sid, actor, name, terms, _, _, _ in sorted(rows, key=lambda r: (int(r[1] or 0), int(r[0]))):
-            ch = []
-            for st, e, ne, _ in terms:
-                ch.append('%+d%%' % round((ne / e - 1) * 100) if e else '—')
-            lines.append('| %s | %s | %s | %s | %s | %s |' % (
-                sid, actor, name,
-                '；'.join('%s×%s' % (st, num(e * 100) + '%' if st in PCT_STATS else num(e)) for st, e, _, _ in terms),
-                '；'.join('%s×%s' % (st, shown) for st, _, _, shown in terms), '；'.join(ch)))
-        rp.write_text('\n'.join(lines) + '\n', encoding='utf-8')
-        print('报告', rp)
-
+        show = lambda st, e: (num(round(e * 100, 2)) + '%') if st in PCT_STATS or e < 1 else num(round(e, 4))
+        name = lambda st: '取高' if st == 'max_of' else st
+        coef_rows = sorted([r for r in rows if r[3]], key=lambda r: (int(r[1] or 0), int(r[0])))
+        big = [r for r in coef_rows if any(st not in PCT_STATS and e >= 1 and abs(ne / e - 1) > 0.2 for st, e, ne, _ in r[3])]
+        pct_big = [r for r in coef_rows if any((st in PCT_STATS or e < 1) and e > 0 and abs(ne / e - 1) > 0.2 for st, e, ne, _ in r[3])]
+        out = ['# T191 附录：系数取整改前改后（tune.D200，生成：03_转换工具/天启篇系数取整.py --report）', '',
+               '口径：每项有效系数＝coef×权重×无条件 always；≥1 就近取整 .5 进位；<1 和生命、魔法写整数百分比（最少 1%）。'
+               '「变化」按每项有效系数算（条件倍率、段数不变）。', '',
+               '## 一、≥1 取整后变化超过 ±20%% 的招（%d 条，给 T192 复量参考）' % len(big), '',
+               '| 技能 | 角色 | 名字 | 改前 | 改后 | 变化 |', '|---|---|---|---|---|---|']
+        def line(r):
+            sid, actor, nm, terms = r[0], r[1], r[2], r[3]
+            return '| %s | %s | %s | %s | %s | %s |' % (
+                sid, actor, nm.replace('|', '／'),
+                '；'.join('%s×%s' % (name(st), show(st, e)) for st, e, _, _ in terms),
+                '；'.join('%s×%s' % (name(st), sh) for st, _, _, sh in terms),
+                '；'.join(('%+d%%' % round((ne / e - 1) * 100)) if e else '—' for st, e, ne, _ in terms))
+        out += [line(r) for r in big]
+        out += ['', '## 二、百分比项取整后变化超过 ±20%% 的（%d 条；多是生命上限 0.3%% 这类最少取 1%%）' % len(pct_big), '',
+                '| 技能 | 角色 | 名字 | 改前 | 改后 | 变化 |', '|---|---|---|---|---|---|']
+        out += [line(r) for r in pct_big]
+        out += ['', '## 三、全部改系数的招（%d 条）' % len(coef_rows), '', '| 技能 | 角色 | 名字 | 改前 | 改后 | 变化 |', '|---|---|---|---|---|---|']
+        out += [line(r) for r in coef_rows]
+        out += ['', '## 四、卡面改前改后（%d 条技能；含只换卡面的 %d 条）' % (len(rows), len([r for r in rows if not r[3]])), '']
+        for sid, actor, nm, terms, old, new, left in sorted(rows, key=lambda r: (int(r[1] or 0), int(r[0]))):
+            for a, b in zip(old, new):
+                if a != b:
+                    out.append('- %s %s：%s → %s' % (sid, nm, a, b))
+            if len(old) != len(new):
+                out.append('- %s %s：%s → %s' % (sid, nm, '／'.join(old), '／'.join(new)))
+        rp.write_text('\n'.join(out) + '\n', encoding='utf-8')
+        print('报告', rp, '±20%%：%d，百分比±20%%：%d' % (len(big), len(pct_big)))
 
 if __name__ == '__main__':
     main(sys.argv[1:])
