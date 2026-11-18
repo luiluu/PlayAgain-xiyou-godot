@@ -154,7 +154,9 @@ func _run() -> void:
 	bot.fixed_random = not OS.get_cmdline_user_args().has("--vp-loose-random")
 	bot.debug_floor = int(_arg("--vp-debug-floor", "0"))
 	if OS.get_cmdline_user_args().has("--vp-brand"):
-		XTianqiBrand.ENABLED = true  # 天启篇烙印开着跑（T117 数值卡 DoD；默认关）
+		XTianqiBrand.ENABLED = true  # 天启篇烙印开着跑（T117 数值卡 DoD；T220 起默认就开）
+	elif OS.get_cmdline_user_args().has("--vp-no-brand"):
+		XTianqiBrand.ENABLED = false  # T220：翻开关前的对照
 	for pair in _arg("--vp-debug-items").split(",", false):
 		bot.debug_items[int(pair.get_slice(":", 0))] = int(pair.get_slice(":", 1))
 	bot.zhenqi_enabled = not OS.get_cmdline_user_args().has("--vp-no-zhenqi")
@@ -175,7 +177,12 @@ func _run() -> void:
 	bot.advance_enabled = not OS.get_cmdline_user_args().has("--vp-no-advance")
 	bot.fragments_enabled = not OS.get_cmdline_user_args().has("--vp-no-fragments")
 	VP_GROWTH.full_score = not OS.get_cmdline_user_args().has("--vp-plain-score")
-	XTianqiBase.PHASE4 = OS.get_cmdline_user_args().has("--vp-phase4")  # 期四总开关（翻开关前对照用，T130）；不带＝默认关
+	# 期四总开关（T130 起 --vp-phase4 对照用）。T220 翻开关后不带参数＝照默认（开）；--vp-no-phase4 拨回关（连熟练度），对照翻开关前
+	if OS.get_cmdline_user_args().has("--vp-no-phase4"):
+		XTianqiBase.PHASE4 = false
+		XTianqiSkills.MASTERY = false
+	elif OS.get_cmdline_user_args().has("--vp-phase4"):
+		XTianqiBase.PHASE4 = true
 	var goals_arg := _arg("--vp-goals")
 	bot.mode = _arg("--vp-mode", "explore")
 	var climb := bot.mode == "climb"
