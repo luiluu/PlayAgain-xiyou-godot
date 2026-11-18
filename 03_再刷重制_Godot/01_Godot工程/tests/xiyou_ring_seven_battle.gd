@@ -5,12 +5,15 @@ extends Node
 
 var results := []
 var out_dir := ""
+var six := false   # --six：关掉战斗中换人，指令 6 项，出对照图
 
 
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
+		if arg == "--six":
+			six = true
 	if has_meta("runner"):
 		_run.call_deferred()
 		return
@@ -61,6 +64,17 @@ func _state() -> XState:
 	return s
 
 
+## 关掉现有指令窗，给 a 新建指令环并按真实战斗的摆法放好（_place_near_actor）
+func _ring_for(b: XBattleScene, a: XActor) -> Control:
+	b._close_windows()
+	var opts := b._command_entries(a)
+	var w = XSkinBattle.command(b.ui, opts, b.CMD_W, a)
+	b.cmd_win = w
+	b._place_near_actor(w, a)
+	await _secs(1.0)   # 铺开动效走完再截
+	return w
+
+
 func _run() -> void:
 	var windowed := out_dir != "" and DisplayServer.get_name() != "headless"
 	if windowed:
@@ -74,6 +88,8 @@ func _run() -> void:
 	XConfig._loaded_path = "<unloaded>"
 	XEnemy.force_roll = 100.0
 	seed(20261118)
+	if six:
+		XTianqi.SWAP_IN_BATTLE = false
 	for troop in [88, 37]:
 		var s := _state()
 		_check("helper_present_%d" % troop, s.helper() != null)
@@ -83,25 +99,43 @@ func _run() -> void:
 		var ok := await _until(func(): return b.cmd_win != null and b.cmd_win.active)
 		_check("command_shown_%d" % troop, ok)
 		await _secs(1.0)
-		var ring := b.cmd_win as XSkinBattleRing
-		_check("ring_7_items_%d" % troop, ring != null and ring.entries.size() == 7, ring.entries.map(func(e): return e.text) if ring != null else null)
-		if ring != null and ring.entries.size() == 7:
-			var m := INF
-			for i in range(1, 7):
-				m = minf(m, absf(ring.orb_pos(i).y - ring.orb_pos(i - 1).y))
-			_check("ring_7_gap_%d" % troop, m >= XSkinBattleRing.MIN_GAP_B - 0.5, m)
-			ring.select(ring.entries.size() - 3)   # 选到「换人」那一行（倒数第 3 项：…换人、逃跑、?）以便图里看到两项相邻
-		if windowed:
-			await _frames(12)
-			RenderingServer.force_draw(false)
-			var nm := "首领战_7项" if troop == 88 else "小怪战_7项"
-			_check("screenshot_" + nm, get_viewport().get_texture().get_image().save_png(out_dir.path_join(nm + ".png")) == OK)
+		# 每个行动者（含第一排、最后一排）各摆一次指令环：每项矩形与行动提示都不压首领信息区
+		var shot_actor: XActor = b.logic.actors[0]
+		for a in b.logic.actors:
+			var w := await _ring_for(b, a)
+			var ring := w as XSkinBattleRing
+			var want := 6 if six else 7
+			_check("ring_items_%d_%d" % [troop, a.actor_id], ring != null and ring.entries.size() == want, ring.entries.map(func(e): return e.text) if ring != null else null)
+			if ring == null:
+				continue
+			var zone := b.boss_info_rect()
+			var hit := []
+			for r: Rect2 in ring.item_rects():
+				if Rect2(ring.position + r.position, r.size).intersects(zone):
+					hit.append(r)
+			if want == 7:   # 6 项照旧不动（旧排法个别行动者本来就压首领信息区，只在 --six 对照里记一笔）
+				_check("ring_clear_of_boss_info_%d_%d" % [troop, a.actor_id], hit.is_empty(), [zone, ring.position, hit])
+			elif not hit.is_empty():
+				print("NOTE six-item ring overlaps boss info (old behavior): troop ", troop, " actor ", a.actor_id)
+			if want == 7:
+				var m := INF
+				for i in range(1, 7):
+					m = minf(m, absf(ring.orb_pos(i).y - ring.orb_pos(i - 1).y))
+				_check("ring_gap_%d_%d" % [troop, a.actor_id], m >= XSkinBattleRing.MIN_GAP_B - 0.5, m)
+				_check("ring_inside_screen_%d_%d" % [troop, a.actor_id], Rect2(Vector2.ZERO, b.BOX + b._origin).grow(2.0).encloses(Rect2(ring.position, ring.size)), [ring.position, ring.size])
+			if a == shot_actor and windowed:
+				ring.select(ring.entries.size() - 3 if want == 7 else 0)
+				await _frames(12)
+				RenderingServer.force_draw(false)
+				var nm := ("首领战" if troop == 88 else "小怪战") + ("_6项对照" if six else "_7项")
+				_check("screenshot_" + nm, get_viewport().get_texture().get_image().save_png(out_dir.path_join(nm + ".png")) == OK)
 		b.bgm.stop()
 		b.queue_free()
 		await _frames(3)
 	XUiSkin.FORCE = false
 	XUiSkin.motion_override = -1
 	XEnemy.force_roll = -1.0
+	XTianqi.SWAP_IN_BATTLE = true
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:

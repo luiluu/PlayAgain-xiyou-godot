@@ -199,6 +199,40 @@ func drawn_rect() -> Rect2:
 
 
 ## 环心在父节点里的位置（测试、截图看）
+## T190：每项（弦星＋浮字）的矩形与上方「某某的行动」的矩形，本节点坐标；防压首领信息区、专项断言用
+func item_rects() -> Array:
+	var out := []
+	if entries.is_empty():
+		return out
+	var top := INF
+	for i in entries.size():
+		if BOWSTRING_B:
+			out.append(Rect2(orb_pos(i) - Vector2(STAR_OFFSET_B + 14.0, 16.0), Vector2(STAR_OFFSET_B + 64.0, 32.0)))
+		else:
+			out.append(Rect2(orb_pos(i) - Vector2(orb_r, orb_r), Vector2(orb_r, orb_r) * 2.0))
+		top = minf(top, (out[i] as Rect2).position.y if not BOWSTRING_B else orb_pos(i).y - 16.0)
+	if title != "":
+		var tw := XUiSkin.font("title").get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
+		var tx := (orb_pos(0).x - tw / 2.0 + 4.0) if BOWSTRING_B else (center.x - tw / 2.0)
+		out.append(Rect2(tx - 8.0, top - 10.0 - 22.0, tw + 16.0, 28.0))
+	return out
+
+
+## T190：整环往下挪到所有项都不压 zone（本节点父坐标）；挪不动（贴着画面底）就挪到底。返回有没有挪过
+func push_below(zone: Rect2, bottom_limit: float) -> bool:
+	if not (BOWSTRING_B and SEVEN_FIX) or not zone.has_area():
+		return false
+	var need := 0.0
+	for r: Rect2 in item_rects():
+		var g := Rect2(position + r.position, r.size)
+		if g.intersects(zone):
+			need = maxf(need, zone.end.y + 4.0 - g.position.y)
+	if need <= 0.0:
+		return false
+	position.y = minf(position.y + need, maxf(position.y, bottom_limit - size.y))
+	return true
+
+
 func ring_center() -> Vector2:
 	return position + center
 
