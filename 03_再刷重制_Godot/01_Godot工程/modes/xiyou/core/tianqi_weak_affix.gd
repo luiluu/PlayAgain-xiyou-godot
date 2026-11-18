@@ -2,7 +2,7 @@ class_name XTianqiWeakAffix
 extends RefCounted
 ## 【cc·未经审查】天启篇弱者专属词条：批 0A 规则地基（私密仓 重制设定/天启篇_弱者专属词条设计_v0.3 第二节第 1、2、4（一句）、5、6 条
 ## ＋ v0.3.1 第二节四条；Kyo D65～D72，D72：先做批 0A，具体词条等基础数值定了再做）。这里只有地基，**一条具体词条都没有**：
-## 表 tianqi_data/weak_affix_table.json 的 entries 是空的，「可引导」名单也是空的，所以开着时战斗结果和没有本模块逐字节一样。
+## 表 tianqi_data/weak_affix_table.json 的 entries 一律默认关（批 1 起有条目），「可引导」名单是空的，所以开着时战斗结果和没有本模块逐字节一样。
 ##
 ## 一、装备与作用域（第 5 条）
 ##   装备实例上 tianqi_exclusive: {key}；只认武器、副手两格（rules.slots），两格同一条只算一条。
@@ -24,6 +24,8 @@ extends RefCounted
 ## 五、看得见（v0.3.1 第二节第 4 条）：badges（角标文字）、say（战斗日志一行）只留出口，图标和文案交小A。
 ## 六、掉落（第 5 条末句、D65）：drop_candidates／roll_drop 只给接口，**还没接进掉落**（条目为空时池恒空，接了也不改任何结果）；
 ##   开第一条时连同可获得兵器交集表、深渊商人指定、重铸保护一起接。
+## 七、本人投影（批 1，T018）：表 entries[键].proj 按技能号写换属性、整数倍率、新范围和说明替换；skill_view 给本人复制一份改过的技能，
+##   formula 按出手者 proj_of 换属性、乘倍率。批 1：w21 玛莎「御风术」、w17 克洛什「精准击中」，默认关。
 ## 具体词条以 register(key, 处理对象) 挂进来：处理对象可有 root_end(logic, frame) -> Array（这一根结算完后出专属派生，派生用 derived_invoke）、
 ## turn_begin(logic)、turn_end(logic)、badge(logic, b) -> String。
 
