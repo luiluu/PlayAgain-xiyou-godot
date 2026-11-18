@@ -24,11 +24,16 @@ const LAYERS := {37: "13", 38: "13", 152: "13", 50: "15", 51: "15", 160: "15", 5
 	164: "20", 165: "20", 176: "20", 167: "22", 168: "22", 141: "22", 174: "24", 177: "24", 175: "25",
 	184: "26", 223: "26", 211: "28", 210: "28", 216: "29", 159: "159"}
 
-## 按难度给点（T224，Kyo 11-19「难度低的点数少一点，难度高的点数多一点」，O-待定，随 LAYER_LEDGER）：
-## 高难＝深渊图是云裳未知存在表里的不朽来源图（XYunshangOrders.UNKNOWN 各图的 immortal，如 13 层的 38），未知存在是不朽通关；其余为低难。
-## 平均仍约 10，不改商人 30／90／150 档价。false＝每场照原版 reward（10）。
+## 按难度、出现概率给点（T224，Kyo 11-19 定 C 方案，O-待定，随 LAYER_LEDGER）：同层高难恒多于低难，红柱越少见差距越大，
+## 每层按两档出现概率算的期望正好 10（商人 30／90／150 档价不动）。高难＝深渊图是云裳未知存在表里的不朽来源图
+## （XYunshangOrders.UNKNOWN 各图的 immortal，如 13 层的 38），未知存在是不朽通关；其余为低难。
+## 出现概率（原版各层首领通关事件先掷变量 106＝1 出门，再掷 107 选图；19 层先掷 136 选一对）：13 层高难 1/3 → 低 8、高 14；
+## 15～22 层高难 2/3 → 低 8、高 11。同层未知存在两档入口率相同，不朽率＝本层高难图率，用同一行。
+## 表外的层（天之上不分高低、单图层、只有不朽的未知存在）每场 REWARD_FLAT。false＝每场照原版 reward（10）。
 static var TIERED_REWARD := true
-const REWARDS := {"low": 8, "high": 12}
+## 层 → [低难, 高难]
+const REWARDS := {"13": [8, 14], "15": [8, 11], "17": [8, 11], "19": [8, 11], "20": [8, 11], "22": [8, 11]}
+const REWARD_FLAT := 10
 
 const RUN_FLAG := "_merchantRun29"
 const LEDGER_FLAG := "_codexMerchants29"
@@ -79,10 +84,11 @@ static func high_abyss(map_id: int) -> bool:
 	return XYunshangOrders.UNKNOWN.values().any(func(r): return (r.get("immortal", []) as Array).has(map_id))
 
 
-## 这一场领多少点：按难度时高难 12、低难 8，否则照配置 reward
+## 这一场领多少点：按层表取低／高难，表外的层 REWARD_FLAT；关掉时照配置 reward
 static func reward_of(who: Dictionary) -> int:
 	if LAYER_LEDGER and TIERED_REWARD and who.has("high"):
-		return int(REWARDS.high if bool(who.high) else REWARDS.low)
+		var row: Array = REWARDS.get(str(LAYERS.get(int(who.get("map", 0)), "")), [])
+		return int(row[1 if bool(who.high) else 0]) if row.size() == 2 else REWARD_FLAT
 	return int(config().get("reward", 10))
 
 
