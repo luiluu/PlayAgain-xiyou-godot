@@ -307,6 +307,9 @@ func _tune_d189() -> void:
 			if float(v) >= 1.0 and float(v) != floorf(float(v)):
 				frac198.append([sid, v])
 	_check("tune_d198.integer", frac198.is_empty(), frac198)
+	# T192 R1（小A P1-1）：小魔炮六档同组，60%／90% 档跟 30% 档一起调
+	var tiers198 := [5703, 5704, 5705].map(func(i): return float(XTianqiSkills.spec(i).damage.coef)) + [5706, 5708, 5709].map(func(i): return (XTianqiSkills.spec(i).get("seq", []) as Array).size())
+	_check("tune_d198.cannon_tiers", tiers198 == [2.0, 2.0, 2.0, 1, 1, 1] and str(XTianqiSkills.spec(5692).desc).contains("×4＋魔法上限×14%"), tiers198)
 	# cap_hits：卡上 12（九段合计）×流萤角色条件，按每段封不压；没写 cap_hits 的照整招封
 	_check("tune_d198.cap_hits", XTianqiSkills.cap_hits({"coef": 12, "cap_hits": 9}) == 9.0 and XTianqiSkills.cap_hits({"coef": 12}) == 1.0)
 
