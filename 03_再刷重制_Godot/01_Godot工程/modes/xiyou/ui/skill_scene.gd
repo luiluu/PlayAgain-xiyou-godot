@@ -98,7 +98,7 @@ func entries() -> Array:
 	if list.is_empty():
 		return []
 	var st: int = list[clampi(type_index, 0, list.size() - 1)]
-	return actor().skills().filter(func(s): return int(s.get("stypeId", 0)) == st)
+	return actor().skills().filter(func(s): return int(s.get("stypeId", 0)) == st and not XTianqiSkills.is_shell(int(s.get("id", 0))))
 
 
 func current() -> Dictionary:
