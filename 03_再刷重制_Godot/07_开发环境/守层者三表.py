@@ -47,7 +47,7 @@ def build(rows: list) -> dict:
             hp[str(f)] = int(sig3(float(r['dmg'])))
         if f <= 4:
             atk[str(f)] = 1
-        elif float(r.get('enemyDmg', 0)) > 0 and float(r.get('partyHp', 0)) > 0:
+        elif f <= 33 and float(r.get('enemyDmg', 0)) > 0 and float(r.get('partyHp', 0)) > 0:
             atk[str(f)] = sig3(float(r.get('atkScale', 1.0)) * (float(r['partyHp']) / PARTY_HP_DIV) / float(r['enemyDmg']))
         if f in RESIST_FLOORS and float(r.get('hit', 0)) > 0:
             resist[str(f)] = int(sig3(float(r['hit']) * RESIST_SHARE))

@@ -12,7 +12,7 @@ extends Node
 ##   以后每次重量读同一份（--rebuild 才重掷）。不掷词条、不挑词条（词条是甲档「掷满」那一半；丙档「自然」＝没挑过的，这一版没做）。
 ## - 法宝：本人专属，没有就破攻／尊魔（同甲档），等级＝第 36 层的法宝上限 min(99, 9＋3×层)。
 ## - 等级 81（第 36 层的等级上限）；不进阶、不喂熟练度、不带号卷／秘籍／黑印（31 层起才出现的东西，「按层数自然拿到的」这一版取没有）。
-## - 酒：天平酒喝上（XTianqiMoney 的 scale 记录，--no-wine 不喝）；助力位空；烙印（XTianqiBrand）现在关着＝烙印 0（输出签约按 T073 中位 75% 那一档等烙印实装再量）。
+## - 酒：天平酒喝上（XTianqiMoney 的 scale 记录，--no-wine 不喝）；助力位空；烙印：职责＝输出的刻印、立到逆命、生效 75%（--brand=N），坦克、辅助不签（T220 后烙印开关默认开）。
 ## - 木桩：物防魔防 8200（K 脚本的 _pin_def）、元素中性、不免暴击；另备免暴击木桩（给 U 的第二个数，给它加暴击回避特性）；生命每回合补满、我方每回合回满；
 ##   木桩的攻击压到 1，只量我方每次行动让木桩掉的血。--foes=1,3：单敌、多敌（缺省各量一次，多敌＝3 个木桩）。
 
@@ -33,6 +33,7 @@ var out_path := ""
 var rebuild := false
 var gear_file := DEFAULT_GEAR_FILE
 var wine := true
+var brand_pct := 75.0  # 输出职责签约、生效烙印（T073 中位起点 75%）；坦克、辅助不签。--brand=0 关烙印
 
 
 func _ready() -> void:
@@ -55,6 +56,8 @@ func _ready() -> void:
 			rebuild = true
 		elif a.begins_with("--gear-file="):
 			gear_file = a.substr(12)
+		elif a.begins_with("--brand="):
+			brand_pct = clampf(float(a.substr(8)), 0.0, 100.0)
 		elif a == "--no-wine":
 			wine = false
 	_run.call_deferred()
@@ -198,6 +201,11 @@ func _state(team: Array, gear: Dictionary) -> XState:
 		var slot := a.equip_slots().find(int(f.etypeId))
 		if slot >= 0:
 			a.equips[slot] = f
+		if brand_pct > 0.0 and str(XTianqiBase.line_data().get("actors", {}).get(str(id), {}).get("role", "")) == "输出":
+			XZhenqi.data(a)
+			a.zhenqi["brand_carved"] = 1
+			a.zhenqi["brand_realm"] = XTianqiBrand.last_realm()
+			a.zhenqi["brand"] = roundi(brand_pct * XTianqiBrand.scale())
 		a.param_mark_dirty()
 		a.refresh_passive()
 		a.recover_all()
@@ -314,6 +322,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	XTianqiBase.PHASE4 = true
 	XTianqiSkills.MASTERY = true
+	XTianqiBrand.ENABLED = brand_pct > 0.0
 	XTianqiSkills.reload_table()
 	XTianqiBase.clear_cache()
 	XTianqiGear.clear_effective_cache()
@@ -343,7 +352,7 @@ func _run() -> void:
 		print("C_SUMMARY foes=%s %s" % [k, JSON.stringify(summary[k])])
 	var report := {"difficulty": DIFFICULTY, "floor": FLOOR, "level": LEVEL, "wine": wine, "turns": turns, "seed": seed_v, "teams": rows.size(),
 		"k": float(XTianqiBalance.data().get("combat_rules", {}).get("base_damage", 1.0)), "summary": summary, "rows": rows,
-		"missing": ["烙印（XTianqiBrand 关着＝0；输出签约 T073 中位 75% 等烙印实装再量）", "词条", "进阶", "熟练度", "号卷／秘籍／黑印"]}
+		"brand_pct": brand_pct, "missing": ["词条", "进阶", "熟练度", "号卷／秘籍／黑印"]}
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
 		fh.store_string(JSON.stringify(report, "\t"))
