@@ -3,8 +3,8 @@ extends Node
 ## 核：我方全员（旧式角色、167 号起的新角色）身体都是 ACTOR_SIZE 倍（×SvPngFd×外观 scale），小怪战与首领战一样；
 ## 同尺寸原图屏上一样大；不压右上队伍栏、前后排身体不重叠、头顶不出画面、指令环在画面里；
 ## 选择光标、状态图标、伤害数字按 height() 走（含新大小）；ACTOR_SIZE＝0 回到 T126（旧角色 1.425／1.2、新角色归一 ×1.9／×1.6）。
-## 窗口模式加 -- --out=<目录> 出 1280×720 对照截图：现状（0）／A 版 1.6／B 版 2，敌群 37（小怪战）与 88（首领战），A、B 两组；
-## 另出 A、B 两版的胜利镜头各一张。
+## D196 预留：倍数按图的格子大小算（128 格＝1 倍、64 格＝ACTOR_SIZE），假造 128 格图断言；流萤、奈叶、小铃兰（现有大格图）实战按 1 倍。
+## 窗口模式加 -- --out=<目录> 出 1280×720 对照截图：现状（0）／A 版 1.6，敌群 37（小怪战）与 88（首领战），A、B 两组；另出胜利镜头一张。
 ## 用法：Godot --audio-driver Dummy --path . res://tests/xiyou_battle_actor_size.tscn [-- --out=<目录>]
 
 var results := []
@@ -15,8 +15,9 @@ const GROUPS := {"A": [1, 11, 175, 174], "B": [176, 177, 178, 180]}
 const GROUP_NAMES := {"A": "狗逍遥 里德 谷雨 云裳", "B": "屠苏 璇 哈基米 五条悟"}
 const MOB_TROOP := 37    # 英雄谷护卫×3＋【首领】首席法师（多名成员＝小怪战站位）
 const BOSS_TROOP := 88   # 守护石巨人（一名成员＝首领战站位）
-const SIZES := [0.0, 1.6, 2.0]
-const SIZE_NAMES := {0.0: "现状", 1.6: "A版1.6倍", 2.0: "B版2倍"}
+const SIZES := [0.0, 1.6]
+const SIZE_NAMES := {0.0: "现状", 1.6: "A版1.6倍"}
+const BIG_CELL := {179: 128, 108: 128, 127: 256}  # 现有大格侧视图：流萤、奈叶、小铃兰（格高）
 
 
 func _ready() -> void:
@@ -81,12 +82,12 @@ func _run() -> void:
 			for g in GROUPS:
 				await _one(troop, g, size)
 	if _windowed():
-		for size in [1.6, 2.0]:
-			XBattleLayout.ACTOR_SIZE = size
-			await _victory_shot(size)
+		XBattleLayout.ACTOR_SIZE = 1.6
+		await _victory_shot(1.6)
 		var f := FileAccess.open(out_dir.path_join("t174_尺寸记录.json"), FileAccess.WRITE)
 		f.store_string(JSON.stringify(notes, "  "))
 		f.close()
+	await _cell128_battle()
 	await _column()
 	XBattleLayout.ACTOR_SIZE = keep
 	_finish()
@@ -117,6 +118,28 @@ func _unit() -> void:
 	XBattleLayout.VICTORY_FOCUS = false
 	_check("victory_focus_off", XBattleLayout.victory_focus(bodies, 2.0, false).is_empty())
 	XBattleLayout.VICTORY_FOCUS = true
+	_unit_cell()
+
+
+## D196：倍数按格子大小（图宽÷9、图高÷6）。假造一张 128 格（1152×768）、一张 64 格（576×384）侧视图
+func _unit_cell() -> void:
+	var looks := {}
+	for c in [64, 128]:
+		var img := Image.create(c * 9, c * 6, false, Image.FORMAT_RGBA8)
+		var look := XAppearance.new()
+		look._mv_sheet(ImageTexture.create_from_image(img))
+		looks[c] = look
+	_check("cell_from_sheet", looks[64].cell == Vector2(64, 64) and looks[128].cell == Vector2(128, 128), [looks[64].cell, looks[128].cell])
+	_check("cell64_actor_size", XBattleLayout.sheet_size(1.6, looks[64]) == 1.6, XBattleLayout.sheet_size(1.6, looks[64]))
+	_check("cell128_native", XBattleLayout.sheet_size(1.6, looks[128]) == 1.0, XBattleLayout.sheet_size(1.6, looks[128]))
+	_check("cell_off_zero", XBattleLayout.sheet_size(0.0, looks[128]) == 0.0)
+	var single := XAppearance.new()
+	single._single(ImageTexture.create_from_image(Image.create(256, 256, false, Image.FORMAT_RGBA8)))
+	_check("single_actor_size", XBattleLayout.sheet_size(1.6, single) == 1.6)
+	var keep := XBattleLayout.NATIVE_CELL
+	XBattleLayout.NATIVE_CELL = 100000.0
+	_check("native_cell_rollback", XBattleLayout.sheet_size(1.6, looks[128]) == 1.6)
+	XBattleLayout.NATIVE_CELL = keep
 
 
 func _battle(troop: int, party: Array) -> XBattleScene:
@@ -245,6 +268,38 @@ func _victory_shot(size: float) -> void:
 	_check("victory_cam_%s" % size, b._camera.get("to") == want.get("to") and b._camera.get("scale") == want.get("scale"), [b._camera.get("to"), want])
 	await _secs(5.5)
 	await _shot("T174_%s_胜利镜头" % SIZE_NAMES[size], "%s · 胜利镜头（小怪战 A组）" % SIZE_NAMES[size])
+	await _close(b)
+
+
+## 大格旧图（流萤 128、奈叶 128、小铃兰 256）同狗逍遥一场：大格的 1 倍、归一档的可见身高落在约 100（80～130）；狗逍遥 1.6 倍；光标同高。
+## 哈基米底图 128 格但画逐帧图，照 1.6（B 组的 size_178 核）
+func _cell128_battle() -> void:
+	XBattleLayout.ACTOR_SIZE = 1.6
+	var b := await _battle(MOB_TROOP, [1] + BIG_CELL.keys())
+	var gxy: XBattlerSprite = null
+	for a in b.logic.actors:
+		if a.actor_id == 1:
+			gxy = b.sprites[a]
+	_check("big_cell_on_field", gxy != null and b.logic.actors.size() == 1 + BIG_CELL.size(), b.logic.actors.map(func(a): return a.actor_id))
+	if gxy == null:
+		await _close(b)
+		return
+	_check("gxy_1_6", is_equal_approx(gxy.body_scale, 1.6 * gxy.look.scale * gxy.fd), gxy.body_scale)
+	var rows := [{"id": 1, "h": roundf(gxy.height()), "body_scale": gxy.body_scale}]
+	for a in b.logic.actors:
+		if not BIG_CELL.has(a.actor_id):
+			continue
+		var sp: XBattlerSprite = b.sprites[a]
+		var tag := "big_cell_%d" % a.actor_id
+		_check(tag + "_cell", sp.look.cell.y == float(BIG_CELL[a.actor_id]), sp.look.cell)
+		_check(tag + "_native_1x", is_equal_approx(sp.body_scale, 1.0 * sp.look.scale * sp.fd), [sp.body_scale, sp.look.scale, sp.fd])
+		# 归一档（167 号起）的 height() 是可见身高；旧角色（奈叶、小铃兰）照原版按一格算，可见身高另量过（98／102），这里只核归一档
+		if not sp._profile.is_empty():
+			_check(tag + "_height_about_100", sp.height() >= 80.0 and sp.height() <= 130.0, sp.height())
+		if sp.cursor and gxy.cursor:
+			_check(tag + "_cursor_same", is_equal_approx(sp.cursor.position.y, gxy.cursor.position.y), [sp.cursor.position.y, gxy.cursor.position.y])
+		rows.append({"id": a.actor_id, "h": roundf(sp.height()), "body_scale": sp.body_scale})
+	notes.append({"size": 1.6, "troop": MOB_TROOP, "group": "大格旧图", "actors": rows})
 	await _close(b)
 
 

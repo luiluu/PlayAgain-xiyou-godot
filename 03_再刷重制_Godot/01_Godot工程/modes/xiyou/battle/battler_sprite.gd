@@ -126,7 +126,8 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	_make_overlay()
 	if b is XEnemy and look.sideview:
 		_set_flip(true)
-	_base_scale = fixed_scale if fixed_scale > 0.0 and b is XActor else sprite_scale
+	_fixed = XBattleLayout.sheet_size(fixed_scale, look) if b is XActor else 0.0
+	_base_scale = _fixed if _fixed > 0.0 else sprite_scale
 	if b is XActor:
 		fd = XSvPngFd.scale(b as XActor)
 		_fd_sig = XSvPngFd.signature(b as XActor)
@@ -192,12 +193,14 @@ func _layout_mul() -> float:
 ## T174 我方统一大小（XBattleLayout.actor_size，setup 前设）：>0 时所有我方身体（旧式、归一档都一样）＝fixed_scale 倍，
 ## 归一档只用来量可见范围（光标、状态图标），不再改大小；0＝照原来（旧式 _base_scale、归一档 归一缩放×layout_mul）
 var fixed_scale := 0.0
+## 按这张图的格子大小换算后的实际倍数（XBattleLayout.sheet_size：128 格＝1，64 格＝fixed_scale）；setup／换装时算
+var _fixed := 0.0
 
 
 ## 归一档此刻的缩放（不含外观 scale、SvPngFd）
 func _prof_scale() -> float:
-	if fixed_scale > 0.0:
-		return fixed_scale
+	if _fixed > 0.0:
+		return _fixed
 	return _profile.scale * _layout_mul()
 
 
@@ -215,6 +218,8 @@ func rescale(f: float) -> void:
 
 ## 选择光标在头顶：侧视图按一格高（原版不乘缩放），T126 放大后跟着乘 layout_mul（height() 已含放大）
 func _cursor_y() -> float:
+	if _fixed > 0.0 and sv and look.kind != "scene":
+		return -64.0 * layout_mul  # T174 统一大小：人一样高，光标都按 64 格算（128 格图人也是约 100 高）
 	return -look.cell.y * layout_mul if sv and look.kind != "scene" else -height()
 
 
@@ -447,6 +452,10 @@ func swap_look(key: String) -> void:
 		return
 	body_scale = body_scale / maxf(look.scale, 0.0001) * next.scale
 	look = next
+	if fixed_scale > 0.0:  # T174：换的图格子大小不同时倍数跟着换（64 格↔128 格）
+		_fixed = XBattleLayout.sheet_size(fixed_scale, look)
+		_base_scale = _fixed
+		body_scale = _fixed * look.scale * fd
 	sv = look.animated()
 	(sprite as Sprite2D).region_enabled = look.sideview
 	_apply_scale()
@@ -529,7 +538,7 @@ func _apply_smooth() -> void:
 		body.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		_apply_crisp(false)  # 保持原生像素边界，不套可选柔边着色器。
 		return
-	var smooth := SV_NORM_SMOOTH and not _profile.is_empty() and float(_profile.scale) * fd < 1.0 and fixed_scale <= 0.0  # T174 统一大小不缩小原图，照最近邻
+	var smooth := SV_NORM_SMOOTH and not _profile.is_empty() and float(_profile.scale) * fd < 1.0 and _fixed <= 0.0  # T174 统一大小不缩小原图，照最近邻
 	body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if smooth else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 	_apply_crisp(not smooth)
 

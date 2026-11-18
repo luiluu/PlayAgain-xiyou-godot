@@ -20,12 +20,18 @@ extends RefCounted
 ## 我方所有角色、前后排、小怪战与首领战，身体都是同一个倍数 ACTOR_SIZE（原图一个像素画成 ACTOR_SIZE 个屏幕像素）。
 ## 不再按小怪战／首领战（actor_mul 1.9／1.6）、新旧角色（167 号起的归一档 profile 缩放）各乘各的：同样大的原图屏上一样大。
 ## 装备／状态的 SvPngFd 放大（整数）和外观 scale 照旧乘在上面（那是玩法效果，不是站位倍数）。
-## Kyo 要的大小是 1.6（像素宽窄不一），整数 2 像素干净但大约大 25%：两版出图给 Kyo 选，选完只改 ACTOR_SIZE 这一个数。
+## Kyo 11-18 01:18 定 A 版 1.6（B 版整数 2 候选已删）。
+## D196 预留（Kyo 11-18：新角色以后按 128 格画、人高约 100、显示 1 倍）：倍数按图的格子大小算——MV 侧视图格子＝图宽÷9×图高÷6，
+## 格高 ≥ NATIVE_CELL（128）的画成 1 倍（原图像素＝屏幕像素），其余（64 格旧图）ACTOR_SIZE；逐帧图、单图、场景外观照 ACTOR_SIZE。
+## 已有大格旧图也按 1 倍，屏上身高正好落在约 100：奈叶 128 格 98、小铃兰 256 格 102、流萤 128 格 116（照 1.6 会是 157／163／186）。
+## 哈基米底图是 128 格但实际画逐帧图（CatSwordSaint_v3），不算大格，照 ACTOR_SIZE（115 高，同 1d9694d0e）。
 ## 回退：ACTOR_SIZE＝0 回到 T126（旧角色 1.425／1.2、新角色归一 ×1.9／×1.6）。原版竖排、旧界面、ENABLED＝false 照旧不放大。
 
 static var ENABLED := true
 ## T174 我方统一身体倍数（见上；0＝回退到 T126 分档小数倍）
 static var ACTOR_SIZE := 1.6
+## T174／D196：格高到这个数的侧视图画成 1 倍（见上）；回退：设成很大（如 100000）＝全按 ACTOR_SIZE
+static var NATIVE_CELL := 128.0
 ## T174 胜利镜头对准我方：原版镜头点 (700,460) 放大 2 倍是按原版站位（我方 x 669～819）定的，撑开后后排在画面外。
 ## 开着（且站位撑开生效）时镜头点＝我方身体外框中心，放大倍数＝原版倍数与「整队装得下」取小（不小于 1）；false＝照原版定点
 static var VICTORY_FOCUS := true
@@ -69,6 +75,15 @@ static func actor_size(solo: bool) -> float:
 	if ACTOR_SIZE <= 0.0 or spec(solo).is_empty() or XPartyFormation.current() == XPartyFormation.COLUMN:
 		return 0.0
 	return ACTOR_SIZE
+
+
+## T174／D196：这张外观实际画的倍数。size＝actor_size()（0＝不统一，原样返回 0）；格高 ≥ NATIVE_CELL 的侧视图 1 倍，其余 size
+static func sheet_size(size: float, look: XAppearance) -> float:
+	if size <= 0.0:
+		return 0.0
+	if look != null and look.sideview and look.cell.y >= NATIVE_CELL and (look.frame("walk", 0).get("rect", Rect2()) as Rect2).has_area():
+		return 1.0  # 帧真从这张 9×6 图切（哈基米底图 128 格、实际画逐帧图，不算）
+	return size
 
 
 ## 敌人放大倍数：h＝原版大小时的显示高；放大后不超过封顶，原本就超过的保持 1 倍
