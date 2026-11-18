@@ -26,7 +26,9 @@
 
 ## 优化登记草稿
 
-- O-待定　天启篇「启示眷属」换字：开关 `MVScript.QISHI_RENAME`（true＝换字，false＝原版「天道眷顾者」）；状态：保留（默认接受，Kyo 11-11）。
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | `modes/xiyou/map/mv_script.gd` `MVScript._toaster_text`；`text_fix/rules.json` `tianqi_dict` | 18 张图的 toaster 与 Skills 6162 写「天道眷顾者」 | 天启篇档显示「启示眷属」（西游档原样） | 去西游化，Kyo 11-18 D197 | `MVScript.QISHI_RENAME = false`（Skills 6162 另关 XTextFix.DICT） | cc | 保留 |
 
 ## 可优化（流程／工具／效率）
 
