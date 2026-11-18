@@ -1,0 +1,3683 @@
+{
+	"aborted": "",
+	"battles": [
+		{
+			"actions": 199,
+			"assist": false,
+			"auto_clicks": 1,
+			"boss": 0,
+			"boss_left": 0.971269296740995,
+			"end": 13308,
+			"enemies": 1,
+			"floor": 1,
+			"frame0": 40011,
+			"frames": 1179,
+			"gifted": false,
+			"hp": 566250.0,
+			"hp0": 583000.0,
+			"map": 5,
+			"result": "全灭",
+			"start": 13109,
+			"trace": [
+				[
+					0,
+					1.0,
+					1.0,
+					4,
+					1.0,
+					1
+				],
+				[
+					1,
+					1.0,
+					1.0,
+					4,
+					1.0,
+					1
+				],
+				[
+					2,
+					0.972,
+					0.78,
+					3,
+					0.972,
+					1
+				],
+				[
+					3,
+					0.972,
+					0.49,
+					2,
+					0.972,
+					1
+				],
+				[
+					4,
+					0.971,
+					0.24,
+					1,
+					0.971,
+					1
+				]
+			],
+			"troop": 4,
+			"turn": 4
+		},
+		{
+			"actions": 113,
+			"assist": false,
+			"auto_clicks": 1,
+			"boss": 0,
+			"boss_left": 0.0,
+			"end": 13942,
+			"enemies": 3,
+			"floor": 1,
+			"frame0": 42590,
+			"frames": 679,
+			"gifted": false,
+			"hp": 0.0,
+			"hp0": 6996.0,
+			"map": 5,
+			"result": "胜利",
+			"start": 13829,
+			"trace": [
+				[
+					0,
+					1.0,
+					1.0,
+					4,
+					1.0,
+					3
+				],
+				[
+					1,
+					1.0,
+					1.0,
+					4,
+					1.0,
+					3
+				],
+				[
+					2,
+					0.437,
+					0.97,
+					4,
+					0.31,
+					2
+				]
+			],
+			"troop": 2,
+			"turn": 2
+		},
+		{
+			"actions": 102,
+			"assist": false,
+			"auto_clicks": 1,
+			"boss": 0,
+			"boss_left": 0.0,
+			"end": 14066,
+			"enemies": 3,
+			"floor": 1,
+			"frame0": 43445,
+			"frames": 614,
+			"gifted": false,
+			"hp": 0.0,
+			"hp0": 6996.0,
+			"map": 5,
+			"result": "胜利",
+			"start": 13964,
+			"trace": [
+				[
+					0,
+					1.0,
+					0.44,
+					4,
+					1.0,
+					3
+				],
+				[
+					1,
+					1.0,
+					0.44,
+					4,
+					1.0,
+					3
+				],
+				[
+					2,
+					0.376,
+					0.44,
+					4,
+					0.128,
+					2
+				]
+			],
+			"troop": 2,
+			"turn": 2
+		},
+		{
+			"actions": 103,
+			"assist": false,
+			"auto_clicks": 1,
+			"boss": 0,
+			"boss_left": 0.0,
+			"end": 14182,
+			"enemies": 3,
+			"floor": 1,
+			"frame0": 44163,
+			"frames": 619,
+			"gifted": false,
+			"hp": 0.0,
+			"hp0": 6996.0,
+			"map": 5,
+			"result": "胜利",
+			"start": 14079,
+			"trace": [
+				[
+					0,
+					1.0,
+					0.46,
+					4,
+					1.0,
+					3
+				],
+				[
+					1,
+					1.0,
+					0.46,
+					4,
+					1.0,
+					3
+				],
+				[
+					2,
+					0.342,
+					0.46,
+					4,
+					0.027,
+					2
+				]
+			],
+			"troop": 2,
+			"turn": 2
+		},
+		{
+			"actions": 59,
+			"assist": false,
+			"auto_clicks": 1,
+			"boss": 0,
+			"boss_left": 0.0,
+			"end": 14263,
+			"enemies": 3,
+			"floor": 1,
+			"frame0": 44958,
+			"frames": 355,
+			"gifted": false,
+			"hp": 0.0,
+			"hp0": 6996.0,
+			"map": 5,
+			"result": "胜利",
+			"start": 14204,
+			"trace": [
+				[
+					0,
+					1.0,
+					0.47,
+					4,
+					1.0,
+					3
+				],
+				[
+					1,
+					1.0,
+					0.47,
+					4,
+					1.0,
+					3
+				]
+			],
+			"troop": 2,
+			"turn": 1
+		},
+		{
+			"actions": 90,
+			"assist": false,
+			"auto_clicks": 1,
+			"boss": 0,
+			"boss_left": 0.0,
+			"end": 14373,
+			"enemies": 3,
+			"floor": 1,
+			"frame0": 45473,
+			"frames": 541,
+			"gifted": false,
+			"hp": 0.0,
+			"hp0": 6996.0,
+			"map": 5,
+			"result": "胜利",
+			"start": 14283,
+			"trace": [
+				[
+					0,
+					1.0,
+					0.48,
+					4,
+					1.0,
+					3
+				],
+				[
+					1,
+					1.0,
+					0.48,
+					4,
+					1.0,
+					3
+				],
+				[
+					2,
+					0.067,
+					0.48,
+					4,
+					0.0,
+					1
+				]
+			],
+			"troop": 2,
+			"turn": 2
+		},
+		{
+			"actions": 94,
+			"assist": false,
+			"auto_clicks": 1,
+			"boss": 0,
+			"boss_left": 0.0,
+			"end": 14478,
+			"enemies": 3,
+			"floor": 1,
+			"frame0": 46102,
+			"frames": 565,
+			"gifted": false,
+			"hp": 0.0,
+			"hp0": 6996.0,
+			"map": 5,
+			"result": "胜利",
+			"start": 14384,
+			"trace": [
+				[
+					0,
+					1.0,
+					0.48,
+					4,
+					1.0,
+					3
+				],
+				[
+					1,
+					1.0,
+					0.48,
+					4,
+					1.0,
+					3
+				],
+				[
+					2,
+					0.141,
+					0.48,
+					4,
+					0.0,
+					1
+				]
+			],
+			"troop": 2,
+			"turn": 2
+		},
+		{
+			"actions": 255,
+			"assist": false,
+			"auto_clicks": 1,
+			"boss": 0,
+			"boss_left": 0.0,
+			"end": 31431,
+			"enemies": 3,
+			"floor": 1,
+			"frame0": 96293,
+			"frames": 1531,
+			"gifted": false,
+			"hp": 0.0,
+			"hp0": 104940.0,
+			"map": 220,
+			"result": "胜利",
+			"start": 31176,
+			"trace": [
+				[
+					0,
+					1.0,
+					0.47,
+					4,
+					1.0,
+					3
+				],
+				[
+					1,
+					1.0,
+					0.47,
+					4,
+					1.0,
+					3
+				],
+				[
+					2,
+					0.659,
+					0.43,
+					4,
+					0.0,
+					2
+				],
+				[
+					3,
+					0.317,
+					0.42,
+					4,
+					0.0,
+					1
+				]
+			],
+			"troop": 423,
+			"turn": 3
+		},
+		{
+			"actions": 247,
+			"assist": false,
+			"auto_clicks": 1,
+			"boss": 0,
+			"boss_left": 0.0,
+			"end": 31783,
+			"enemies": 3,
+			"floor": 1,
+			"frame0": 97967,
+			"frames": 1483,
+			"gifted": false,
+			"hp": 0.0,
+			"hp0": 104940.0,
+			"map": 220,
+			"result": "胜利",
+			"start": 31536,
+			"trace": [
+				[
+					0,
+					1.0,
+					0.41,
+					4,
+					1.0,
+					3
+				],
+				[
+					1,
+					1.0,
+					0.41,
+					4,
+					1.0,
+					3
+				],
+				[
+					2,
+					0.64,
+					0.39,
+					4,
+					0.0,
+					2
+				],
+				[
+					3,
+					0.317,
+					0.36,
+					4,
+					0.0,
+					1
+				]
+			],
+			"troop": 423,
+			"turn": 3
+		},
+		{
+			"actions": 196,
+			"assist": false,
+			"auto_clicks": 1,
+			"boss": 0,
+			"boss_left": 0.0,
+			"end": 32036,
+			"enemies": 3,
+			"floor": 1,
+			"frame0": 99526,
+			"frames": 1177,
+			"gifted": false,
+			"hp": 0.0,
+			"hp0": 104940.0,
+			"map": 220,
+			"result": "胜利",
+			"start": 31840,
+			"trace": [
+				[
+					0,
+					1.0,
+					0.35,
+					4,
+					1.0,
+					3
+				],
+				[
+					1,
+					1.0,
+					0.35,
+					4,
+					1.0,
+					3
+				],
+				[
+					2,
+					0.333,
+					0.31,
+					4,
+					0.0,
+					1
+				]
+			],
+			"troop": 423,
+			"turn": 2
+		},
+		{
+			"actions": 170,
+			"assist": false,
+			"auto_clicks": 1,
+			"boss": 0,
+			"boss_left": 0.0,
+			"end": 32343,
+			"enemies": 3,
+			"floor": 1,
+			"frame0": 100886,
+			"frames": 1021,
+			"gifted": false,
+			"hp": 0.0,
+			"hp0": 104940.0,
+			"map": 220,
+			"result": "胜利",
+			"start": 32173,
+			"trace": [
+				[
+					0,
+					1.0,
+					0.3,
+					3,
+					1.0,
+					3
+				],
+				[
+					1,
+					1.0,
+					0.3,
+					3,
+					1.0,
+					3
+				],
+				[
+					2,
+					0.333,
+					0.26,
+					3,
+					0.0,
+					1
+				]
+			],
+			"troop": 423,
+			"turn": 2
+		},
+		{
+			"actions": 430,
+			"assist": false,
+			"auto_clicks": 1,
+			"boss": 0,
+			"boss_left": 0.0,
+			"end": 32851,
+			"enemies": 1,
+			"floor": 1,
+			"frame0": 102025,
+			"frames": 2584,
+			"gifted": false,
+			"hp": 0.0,
+			"hp0": 349800.0,
+			"map": 220,
+			"result": "胜利",
+			"start": 32421,
+			"trace": [
+				[
+					0,
+					1.0,
+					0.26,
+					3,
+					1.0,
+					1
+				],
+				[
+					1,
+					1.0,
+					0.26,
+					3,
+					1.0,
+					1
+				],
+				[
+					2,
+					0.804,
+					0.22,
+					3,
+					0.804,
+					1
+				],
+				[
+					3,
+					0.617,
+					0.22,
+					3,
+					0.617,
+					1
+				],
+				[
+					4,
+					0.828,
+					0.21,
+					1,
+					0.828,
+					1
+				],
+				[
+					5,
+					0.677,
+					0.21,
+					1,
+					0.677,
+					1
+				],
+				[
+					6,
+					0.504,
+					0.21,
+					1,
+					0.504,
+					1
+				],
+				[
+					7,
+					0.828,
+					0.21,
+					1,
+					0.828,
+					1
+				],
+				[
+					8,
+					0.634,
+					0.21,
+					1,
+					0.634,
+					1
+				],
+				[
+					9,
+					0.472,
+					0.21,
+					1,
+					0.472,
+					1
+				],
+				[
+					10,
+					0.792,
+					0.21,
+					1,
+					0.792,
+					1
+				],
+				[
+					11,
+					0.584,
+					0.21,
+					1,
+					0.584,
+					1
+				],
+				[
+					12,
+					0.399,
+					0.21,
+					1,
+					0.399,
+					1
+				],
+				[
+					13,
+					0.792,
+					0.21,
+					1,
+					0.792,
+					1
+				],
+				[
+					14,
+					0.41,
+					0.21,
+					1,
+					0.41,
+					1
+				]
+			],
+			"troop": 422,
+			"turn": 14
+		}
+	],
+	"climb_stop": "时间用完",
+	"debug_floor": 0,
+	"debug_items": {},
+	"defeats": 1,
+	"dungeon_defeats": 0,
+	"dungeon_kills": 1,
+	"dungeon_runs": 1,
+	"equip_changes": 1,
+	"equip_passes": 8,
+	"event_visits": {
+		"132:12": 7,
+		"132:14": 1,
+		"132:2": 1,
+		"220:1": 2,
+		"220:3": 1,
+		"220:4": 1,
+		"220:5": 1,
+		"220:6": 1,
+		"4:22": 3,
+		"4:27": 1,
+		"4:36": 3,
+		"4:4": 10,
+		"4:43": 3,
+		"4:54": 18,
+		"4:6": 4,
+		"4:63": 6,
+		"5:2": 1,
+		"5:8": 1
+	},
+	"events_tried": 18,
+	"farm_block": {},
+	"final": {
+		"gold": 11955,
+		"map": 4,
+		"party": [
+			30,
+			90,
+			150,
+			35,
+			76
+		],
+		"screen": "map",
+		"steps": 507
+	},
+	"fixed_random": true,
+	"floor": 1,
+	"floor_log": [
+		{
+			"challenges": 1,
+			"defeats": 1,
+			"dungeon_kills": 1,
+			"dungeon_runs": 1,
+			"dungeon_top_tier": 0,
+			"floor": 1,
+			"frames": 1178,
+			"grind_battles": 6,
+			"levels": [
+				1,
+				1,
+				1,
+				1,
+				1
+			],
+			"msec": 2001,
+			"tick": 61
+		}
+	],
+	"frames": 129568,
+	"gifted_floors": [],
+	"grind_battles": 6,
+	"growth": {
+		"advance_ranks": [
+			0,
+			0,
+			0,
+			0
+		],
+		"advances": 0,
+		"bag_uses": 0,
+		"boss_mastery": {},
+		"fabao": {
+			"cap": 12,
+			"items": []
+		},
+		"fabao_feeds": 0,
+		"formations": 2,
+		"fragment_buys": 0,
+		"fragments": 0,
+		"gold": 11955,
+		"greet_failed": [],
+		"greet_paid": [],
+		"guard_shops": 0,
+		"lamps": 999,
+		"lottery_draws": 0,
+		"materials": {
+			"fragments": 0,
+			"gems": 0,
+			"pearls": 0,
+			"race_ranks": [
+				1,
+				1,
+				1,
+				1,
+				1
+			],
+			"stones": [
+				0,
+				0,
+				0,
+				0,
+				0,
+				0
+			]
+		},
+		"points": 1,
+		"realms": [
+			"炼气一层",
+			"炼气一层",
+			"炼气一层",
+			"炼气一层",
+			"炼气一层"
+		],
+		"slots": [
+			30,
+			90,
+			150,
+			35,
+			76
+		],
+		"spend_buys": 10,
+		"spend_uses": 0,
+		"tickets": 0,
+		"zhenqi": [
+			0,
+			0,
+			0,
+			0,
+			0
+		]
+	},
+	"growth_log": [
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 4192,
+			"what": "整队：出战栏 [90, 76, 150, 35, 30] → [30, 90, 76, 35, 150]"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 12954,
+			"what": "给 西凉女帝 的 练习剑 镶上 宝珠:宝藏猎人"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 12954,
+			"what": "给 西凉女帝 的 练习剑 镶上 宝珠:妖兽化形"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 18553,
+			"what": "整队：出战栏 [30, 90, 76, 35, 150] → [30, 90, 150, 35, 76]"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 22636,
+			"what": "买装备 新手火铳（给 90 号，预计涨 360%）花 金币 300"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 22636,
+			"what": "买装备 新手砍柴斧（给 35 号，预计涨 214%）花 金币 260"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 22636,
+			"what": "买装备 新手小太刀（给 150 号，预计涨 83%）花 金币 240"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 22636,
+			"what": "买装备 新手短矛（给 30 号，预计涨 139%）花 金币 240"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 22636,
+			"what": "买装备 新手练习剑（给 150 号，预计涨 69%）花 金币 150"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 26652,
+			"what": "买装备 新手皮甲（给 90 号，预计涨 109%）花 金币 1400"
+		},
+		{
+			"detail": {
+				"gold": 0
+			},
+			"floor": 1,
+			"tick": 31034,
+			"what": "买 初级副本挑战符文×5"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 37133,
+			"what": "买装备 新手火铳（给 90 号，预计涨 360%）花 金币 300"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 37133,
+			"what": "买装备 新手砍柴斧（给 35 号，预计涨 214%）花 金币 260"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 37133,
+			"what": "买装备 新手小太刀（给 150 号，预计涨 83%）花 金币 240"
+		},
+		{
+			"detail": null,
+			"floor": 1,
+			"tick": 37133,
+			"what": "买装备 新手练习剑（给 150 号，预计涨 69%）花 金币 150"
+		}
+	],
+	"keys": 37327,
+	"levels": [
+		10,
+		10,
+		10,
+		10,
+		10
+	],
+	"lineup": [
+		90,
+		76,
+		150,
+		35,
+		30
+	],
+	"maps": {
+		"4": 5,
+		"5": 4,
+		"132": 1,
+		"220": 1
+	},
+	"messages": 93,
+	"milestones": {
+		"battle_finished": 13308,
+		"battle_started": 13109,
+		"battle_won": 13942,
+		"choice_made": 8253,
+		"dungeon_boss_killed": 32851,
+		"dungeon_entered": 31095,
+		"equipped": 26640,
+		"event_tried": 159,
+		"exchange_gift": 8708,
+		"form_pressed": 2,
+		"formation_changed": 4192,
+		"game_over": 13308,
+		"grind_started": 13801,
+		"growth_done": 4192,
+		"guardian_challenged": 13092,
+		"in_game": 7,
+		"load_pressed": 13321,
+		"map_132": 8687,
+		"map_220": 31091,
+		"map_4": 7,
+		"map_5": 13047,
+		"new_game_pressed": 1,
+		"overlay_seen": 52,
+		"saved": 12954,
+		"second_map": 8687,
+		"shop_bought": 22636,
+		"title": 1
+	},
+	"mode": "climb",
+	"msec": 615665,
+	"pass_after": 0,
+	"seed": 1,
+	"settled": true,
+	"stalemates": 0,
+	"stuck": [],
+	"ticks": 41137,
+	"timeline": [
+		{
+			"frame": 0,
+			"screen": "none",
+			"tick": 0
+		},
+		{
+			"frame": 1,
+			"screen": "title",
+			"tick": 1
+		},
+		{
+			"frame": 8,
+			"screen": "form",
+			"tick": 2
+		},
+		{
+			"at": [
+				14,
+				23
+			],
+			"frame": 974,
+			"map": 4,
+			"screen": "map_busy",
+			"tick": 7
+		},
+		{
+			"at": [
+				14,
+				23
+			],
+			"frame": 1060,
+			"map": 4,
+			"screen": "message",
+			"tick": 28
+		},
+		{
+			"at": [
+				14,
+				23
+			],
+			"frame": 1143,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 52
+		},
+		{
+			"at": [
+				14,
+				23
+			],
+			"frame": 1155,
+			"map": 4,
+			"screen": "message",
+			"tick": 54
+		},
+		{
+			"at": [
+				14,
+				23
+			],
+			"frame": 1178,
+			"map": 4,
+			"screen": "map",
+			"tick": 61
+		},
+		{
+			"at": [
+				12,
+				19
+			],
+			"frame": 1206,
+			"map": 4,
+			"screen": "message",
+			"tick": 83
+		},
+		{
+			"at": [
+				12,
+				19
+			],
+			"frame": 1254,
+			"map": 4,
+			"screen": "map",
+			"tick": 99
+		},
+		{
+			"at": [
+				14,
+				6
+			],
+			"frame": 1335,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 160
+		},
+		{
+			"at": [
+				14,
+				6
+			],
+			"frame": 1371,
+			"map": 4,
+			"screen": "map",
+			"tick": 166
+		},
+		{
+			"at": [
+				14,
+				6
+			],
+			"frame": 1377,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 167
+		},
+		{
+			"at": [
+				14,
+				6
+			],
+			"frame": 1435,
+			"map": 4,
+			"screen": "map",
+			"tick": 176
+		},
+		{
+			"at": [
+				14,
+				6
+			],
+			"frame": 1444,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 177
+		},
+		{
+			"at": [
+				14,
+				6
+			],
+			"frame": 1511,
+			"map": 4,
+			"screen": "map",
+			"tick": 188
+		},
+		{
+			"at": [
+				14,
+				6
+			],
+			"frame": 1521,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 189
+		},
+		{
+			"at": [
+				14,
+				6
+			],
+			"frame": 13537,
+			"map": 4,
+			"screen": "map",
+			"tick": 4191
+		},
+		{
+			"at": [
+				14,
+				7
+			],
+			"frame": 13552,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 4197
+		},
+		{
+			"at": [
+				14,
+				7
+			],
+			"frame": 25568,
+			"map": 4,
+			"screen": "map",
+			"tick": 8199
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 25637,
+			"map": 4,
+			"screen": "message",
+			"tick": 8245
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 25646,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8248
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 25654,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 8254
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 25660,
+			"map": 4,
+			"screen": "map",
+			"tick": 8255
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 25666,
+			"map": 4,
+			"screen": "message",
+			"tick": 8256
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 25675,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8259
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 25687,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 8265
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 25693,
+			"map": 4,
+			"screen": "map",
+			"tick": 8266
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 25703,
+			"map": 4,
+			"screen": "message",
+			"tick": 8267
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 25712,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8270
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 25729,
+			"map": 4,
+			"screen": "map",
+			"tick": 8276
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 25759,
+			"map": 4,
+			"screen": "message",
+			"tick": 8293
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 25765,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8295
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 25782,
+			"map": 4,
+			"screen": "map",
+			"tick": 8301
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 25861,
+			"map": 4,
+			"screen": "message",
+			"tick": 8350
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 25882,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8357
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 25906,
+			"map": 4,
+			"screen": "message",
+			"tick": 8364
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 25922,
+			"map": 4,
+			"screen": "map",
+			"tick": 8369
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 25974,
+			"map": 4,
+			"screen": "message",
+			"tick": 8402
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26010,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8413
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26022,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 8421
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26028,
+			"map": 4,
+			"screen": "map",
+			"tick": 8422
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26034,
+			"map": 4,
+			"screen": "message",
+			"tick": 8423
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26067,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8434
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26083,
+			"map": 4,
+			"screen": "message",
+			"tick": 8442
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26104,
+			"map": 4,
+			"screen": "map",
+			"tick": 8449
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26110,
+			"map": 4,
+			"screen": "message",
+			"tick": 8450
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26147,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8462
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26164,
+			"map": 4,
+			"screen": "message",
+			"tick": 8469
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26193,
+			"map": 4,
+			"screen": "map",
+			"tick": 8477
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26199,
+			"map": 4,
+			"screen": "message",
+			"tick": 8478
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26235,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8490
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26250,
+			"map": 4,
+			"screen": "message",
+			"tick": 8497
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26275,
+			"map": 4,
+			"screen": "map",
+			"tick": 8505
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26281,
+			"map": 4,
+			"screen": "message",
+			"tick": 8506
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26318,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8518
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26330,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 8524
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26336,
+			"map": 4,
+			"screen": "map",
+			"tick": 8525
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26342,
+			"map": 4,
+			"screen": "message",
+			"tick": 8526
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26374,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8536
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26392,
+			"map": 4,
+			"screen": "map",
+			"tick": 8543
+		},
+		{
+			"at": [
+				15,
+				14
+			],
+			"frame": 26470,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8596
+		},
+		{
+			"at": [
+				15,
+				14
+			],
+			"frame": 26479,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 8603
+		},
+		{
+			"at": [
+				15,
+				14
+			],
+			"frame": 26485,
+			"map": 4,
+			"screen": "map",
+			"tick": 8604
+		},
+		{
+			"at": [
+				15,
+				14
+			],
+			"frame": 26491,
+			"map": 4,
+			"screen": "choice",
+			"tick": 8605
+		},
+		{
+			"at": [
+				15,
+				14
+			],
+			"frame": 26504,
+			"map": 4,
+			"screen": "map",
+			"tick": 8611
+		},
+		{
+			"at": [
+				14,
+				30
+			],
+			"frame": 26596,
+			"map": 4,
+			"screen": "map_busy",
+			"tick": 8684
+		},
+		{
+			"at": [
+				8,
+				3
+			],
+			"frame": 26628,
+			"map": 132,
+			"screen": "map",
+			"tick": 8692
+		},
+		{
+			"at": [
+				8,
+				7
+			],
+			"frame": 26657,
+			"map": 132,
+			"screen": "message",
+			"tick": 8709
+		},
+		{
+			"at": [
+				8,
+				7
+			],
+			"frame": 26723,
+			"map": 132,
+			"screen": "map",
+			"tick": 8719
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26781,
+			"map": 132,
+			"screen": "message",
+			"tick": 8748
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26801,
+			"map": 132,
+			"screen": "choice",
+			"tick": 8752
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26809,
+			"map": 132,
+			"screen": "overlay",
+			"tick": 8758
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26815,
+			"map": 132,
+			"screen": "map",
+			"tick": 8759
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26821,
+			"map": 132,
+			"screen": "message",
+			"tick": 8760
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26844,
+			"map": 132,
+			"screen": "choice",
+			"tick": 8765
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26861,
+			"map": 132,
+			"screen": "overlay",
+			"tick": 8771
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26867,
+			"map": 132,
+			"screen": "map",
+			"tick": 8772
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26874,
+			"map": 132,
+			"screen": "message",
+			"tick": 8773
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26898,
+			"map": 132,
+			"screen": "choice",
+			"tick": 8778
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26922,
+			"map": 132,
+			"screen": "overlay",
+			"tick": 8785
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26928,
+			"map": 132,
+			"screen": "map",
+			"tick": 8786
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26938,
+			"map": 132,
+			"screen": "message",
+			"tick": 8787
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 26965,
+			"map": 132,
+			"screen": "choice",
+			"tick": 8792
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27001,
+			"map": 132,
+			"screen": "overlay",
+			"tick": 8799
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27007,
+			"map": 132,
+			"screen": "map",
+			"tick": 8800
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27018,
+			"map": 132,
+			"screen": "message",
+			"tick": 8801
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27046,
+			"map": 132,
+			"screen": "choice",
+			"tick": 8806
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27079,
+			"map": 132,
+			"screen": "overlay",
+			"tick": 8813
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27085,
+			"map": 132,
+			"screen": "map",
+			"tick": 8814
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27093,
+			"map": 132,
+			"screen": "message",
+			"tick": 8815
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27134,
+			"map": 132,
+			"screen": "choice",
+			"tick": 8820
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27179,
+			"map": 132,
+			"screen": "overlay",
+			"tick": 8827
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27185,
+			"map": 132,
+			"screen": "map",
+			"tick": 8828
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27193,
+			"map": 132,
+			"screen": "message",
+			"tick": 8829
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27224,
+			"map": 132,
+			"screen": "choice",
+			"tick": 8834
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 27283,
+			"map": 132,
+			"screen": "map",
+			"tick": 8841
+		},
+		{
+			"at": [
+				6,
+				11
+			],
+			"frame": 27302,
+			"map": 132,
+			"screen": "map_busy",
+			"tick": 8846
+		},
+		{
+			"at": [
+				14,
+				21
+			],
+			"frame": 27723,
+			"map": 4,
+			"screen": "map",
+			"tick": 8950
+		},
+		{
+			"at": [
+				14,
+				21
+			],
+			"frame": 27733,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 8951
+		},
+		{
+			"at": [
+				14,
+				21
+			],
+			"frame": 39749,
+			"map": 4,
+			"screen": "map",
+			"tick": 12953
+		},
+		{
+			"at": [
+				14,
+				5
+			],
+			"frame": 39869,
+			"map": 4,
+			"screen": "message",
+			"tick": 13036
+		},
+		{
+			"at": [
+				14,
+				5
+			],
+			"frame": 39879,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13039
+		},
+		{
+			"at": [
+				14,
+				5
+			],
+			"frame": 39887,
+			"map": 4,
+			"screen": "map_busy",
+			"tick": 13045
+		},
+		{
+			"at": [
+				11,
+				14
+			],
+			"frame": 39915,
+			"map": 5,
+			"screen": "map",
+			"tick": 13052
+		},
+		{
+			"at": [
+				7,
+				8
+			],
+			"frame": 39977,
+			"map": 5,
+			"screen": "message",
+			"tick": 13093
+		},
+		{
+			"at": [
+				7,
+				8
+			],
+			"frame": 39986,
+			"map": 5,
+			"screen": "choice",
+			"tick": 13096
+		},
+		{
+			"at": [
+				7,
+				8
+			],
+			"frame": 39996,
+			"map": 5,
+			"screen": "message",
+			"tick": 13104
+		},
+		{
+			"at": [
+				7,
+				8
+			],
+			"frame": 40011,
+			"map": 5,
+			"screen": "battle",
+			"tick": 13109
+		},
+		{
+			"at": [
+				7,
+				8
+			],
+			"frame": 41190,
+			"map": 5,
+			"screen": "game_over",
+			"tick": 13308
+		},
+		{
+			"frame": 41299,
+			"screen": "title",
+			"tick": 13320
+		},
+		{
+			"frame": 41309,
+			"screen": "load_page",
+			"tick": 13322
+		},
+		{
+			"at": [
+				14,
+				21
+			],
+			"frame": 41330,
+			"map": 4,
+			"screen": "map",
+			"tick": 13325
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 41427,
+			"map": 4,
+			"screen": "message",
+			"tick": 13394
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 41436,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13397
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 41444,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 13403
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 41450,
+			"map": 4,
+			"screen": "map",
+			"tick": 13404
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 41456,
+			"map": 4,
+			"screen": "message",
+			"tick": 13405
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 41466,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13408
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 41478,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 13414
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 41484,
+			"map": 4,
+			"screen": "map",
+			"tick": 13415
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 41494,
+			"map": 4,
+			"screen": "message",
+			"tick": 13416
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 41503,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13419
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 41520,
+			"map": 4,
+			"screen": "map",
+			"tick": 13425
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 41554,
+			"map": 4,
+			"screen": "message",
+			"tick": 13442
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 41564,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13445
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 41580,
+			"map": 4,
+			"screen": "map",
+			"tick": 13451
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 41655,
+			"map": 4,
+			"screen": "message",
+			"tick": 13500
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 41679,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13507
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 41700,
+			"map": 4,
+			"screen": "map",
+			"tick": 13514
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41753,
+			"map": 4,
+			"screen": "message",
+			"tick": 13547
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41790,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13558
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41801,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 13565
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41807,
+			"map": 4,
+			"screen": "map",
+			"tick": 13566
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41813,
+			"map": 4,
+			"screen": "message",
+			"tick": 13567
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41837,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13575
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41856,
+			"map": 4,
+			"screen": "message",
+			"tick": 13584
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41877,
+			"map": 4,
+			"screen": "map",
+			"tick": 13591
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41885,
+			"map": 4,
+			"screen": "message",
+			"tick": 13592
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41924,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13604
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41939,
+			"map": 4,
+			"screen": "message",
+			"tick": 13611
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41963,
+			"map": 4,
+			"screen": "map",
+			"tick": 13619
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 41969,
+			"map": 4,
+			"screen": "message",
+			"tick": 13620
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 42002,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13631
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 42020,
+			"map": 4,
+			"screen": "message",
+			"tick": 13638
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 42044,
+			"map": 4,
+			"screen": "map",
+			"tick": 13646
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 42050,
+			"map": 4,
+			"screen": "message",
+			"tick": 13647
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 42086,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13659
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 42099,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 13666
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 42105,
+			"map": 4,
+			"screen": "map",
+			"tick": 13667
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 42111,
+			"map": 4,
+			"screen": "message",
+			"tick": 13668
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 42138,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13677
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 42157,
+			"map": 4,
+			"screen": "map",
+			"tick": 13685
+		},
+		{
+			"at": [
+				17,
+				6
+			],
+			"frame": 42248,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13754
+		},
+		{
+			"at": [
+				17,
+				6
+			],
+			"frame": 42256,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 13760
+		},
+		{
+			"at": [
+				17,
+				6
+			],
+			"frame": 42262,
+			"map": 4,
+			"screen": "map",
+			"tick": 13761
+		},
+		{
+			"at": [
+				17,
+				6
+			],
+			"frame": 42268,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13762
+		},
+		{
+			"at": [
+				17,
+				6
+			],
+			"frame": 42282,
+			"map": 4,
+			"screen": "map",
+			"tick": 13768
+		},
+		{
+			"at": [
+				14,
+				5
+			],
+			"frame": 42326,
+			"map": 4,
+			"screen": "message",
+			"tick": 13786
+		},
+		{
+			"at": [
+				14,
+				5
+			],
+			"frame": 42335,
+			"map": 4,
+			"screen": "choice",
+			"tick": 13789
+		},
+		{
+			"at": [
+				14,
+				5
+			],
+			"frame": 42344,
+			"map": 4,
+			"screen": "map_busy",
+			"tick": 13796
+		},
+		{
+			"at": [
+				11,
+				14
+			],
+			"frame": 42364,
+			"map": 5,
+			"screen": "map",
+			"tick": 13801
+		},
+		{
+			"at": [
+				12,
+				18
+			],
+			"frame": 42590,
+			"map": 5,
+			"screen": "battle",
+			"tick": 13829
+		},
+		{
+			"at": [
+				12,
+				18
+			],
+			"frame": 43269,
+			"map": 5,
+			"screen": "map",
+			"tick": 13942
+		},
+		{
+			"at": [
+				10,
+				20
+			],
+			"frame": 43445,
+			"map": 5,
+			"screen": "battle",
+			"tick": 13964
+		},
+		{
+			"at": [
+				10,
+				20
+			],
+			"frame": 44059,
+			"map": 5,
+			"screen": "map",
+			"tick": 14066
+		},
+		{
+			"at": [
+				6,
+				19
+			],
+			"frame": 44163,
+			"map": 5,
+			"screen": "battle",
+			"tick": 14079
+		},
+		{
+			"at": [
+				6,
+				19
+			],
+			"frame": 44782,
+			"map": 5,
+			"screen": "map",
+			"tick": 14182
+		},
+		{
+			"at": [
+				7,
+				11
+			],
+			"frame": 44958,
+			"map": 5,
+			"screen": "battle",
+			"tick": 14204
+		},
+		{
+			"at": [
+				7,
+				11
+			],
+			"frame": 45313,
+			"map": 5,
+			"screen": "map",
+			"tick": 14263
+		},
+		{
+			"at": [
+				7,
+				8
+			],
+			"frame": 45473,
+			"map": 5,
+			"screen": "battle",
+			"tick": 14283
+		},
+		{
+			"at": [
+				7,
+				8
+			],
+			"frame": 46014,
+			"map": 5,
+			"screen": "map",
+			"tick": 14373
+		},
+		{
+			"at": [
+				8,
+				7
+			],
+			"frame": 46102,
+			"map": 5,
+			"screen": "battle",
+			"tick": 14384
+		},
+		{
+			"at": [
+				8,
+				7
+			],
+			"frame": 46667,
+			"map": 5,
+			"screen": "map",
+			"tick": 14478
+		},
+		{
+			"at": [
+				8,
+				6
+			],
+			"frame": 46687,
+			"map": 5,
+			"screen": "map_busy",
+			"tick": 14480
+		},
+		{
+			"at": [
+				14,
+				21
+			],
+			"frame": 46963,
+			"map": 4,
+			"screen": "map",
+			"tick": 14549
+		},
+		{
+			"at": [
+				14,
+				21
+			],
+			"frame": 46973,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 14550
+		},
+		{
+			"at": [
+				14,
+				21
+			],
+			"frame": 58989,
+			"map": 4,
+			"screen": "map",
+			"tick": 18552
+		},
+		{
+			"at": [
+				13,
+				21
+			],
+			"frame": 59004,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 18558
+		},
+		{
+			"at": [
+				13,
+				21
+			],
+			"frame": 71020,
+			"map": 4,
+			"screen": "map",
+			"tick": 22560
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 71113,
+			"map": 4,
+			"screen": "message",
+			"tick": 22626
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 71123,
+			"map": 4,
+			"screen": "choice",
+			"tick": 22629
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 71132,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 22636
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 71138,
+			"map": 4,
+			"screen": "map",
+			"tick": 22637
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 71148,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 22638
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 83169,
+			"map": 4,
+			"screen": "map",
+			"tick": 26640
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 83175,
+			"map": 4,
+			"screen": "message",
+			"tick": 26642
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 83181,
+			"map": 4,
+			"screen": "choice",
+			"tick": 26644
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 83195,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 26652
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 83201,
+			"map": 4,
+			"screen": "map",
+			"tick": 26653
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 83211,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 26654
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 95227,
+			"map": 4,
+			"screen": "map",
+			"tick": 30656
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 95233,
+			"map": 4,
+			"screen": "message",
+			"tick": 30658
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 95242,
+			"map": 4,
+			"screen": "choice",
+			"tick": 30661
+		},
+		{
+			"at": [
+				9,
+				9
+			],
+			"frame": 95260,
+			"map": 4,
+			"screen": "map",
+			"tick": 30667
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 95294,
+			"map": 4,
+			"screen": "message",
+			"tick": 30684
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 95300,
+			"map": 4,
+			"screen": "choice",
+			"tick": 30686
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 95320,
+			"map": 4,
+			"screen": "map",
+			"tick": 30694
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 95391,
+			"map": 4,
+			"screen": "message",
+			"tick": 30743
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 95412,
+			"map": 4,
+			"screen": "choice",
+			"tick": 30750
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 95434,
+			"map": 4,
+			"screen": "map",
+			"tick": 30757
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95485,
+			"map": 4,
+			"screen": "message",
+			"tick": 30790
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95515,
+			"map": 4,
+			"screen": "choice",
+			"tick": 30800
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95526,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 30807
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95532,
+			"map": 4,
+			"screen": "map",
+			"tick": 30808
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95542,
+			"map": 4,
+			"screen": "message",
+			"tick": 30809
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95572,
+			"map": 4,
+			"screen": "choice",
+			"tick": 30818
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95589,
+			"map": 4,
+			"screen": "message",
+			"tick": 30827
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95610,
+			"map": 4,
+			"screen": "map",
+			"tick": 30834
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95616,
+			"map": 4,
+			"screen": "message",
+			"tick": 30835
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95646,
+			"map": 4,
+			"screen": "choice",
+			"tick": 30845
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95664,
+			"map": 4,
+			"screen": "message",
+			"tick": 30854
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95685,
+			"map": 4,
+			"screen": "map",
+			"tick": 30861
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95691,
+			"map": 4,
+			"screen": "message",
+			"tick": 30862
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95723,
+			"map": 4,
+			"screen": "choice",
+			"tick": 30872
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95741,
+			"map": 4,
+			"screen": "message",
+			"tick": 30881
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95762,
+			"map": 4,
+			"screen": "map",
+			"tick": 30888
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95768,
+			"map": 4,
+			"screen": "message",
+			"tick": 30889
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95798,
+			"map": 4,
+			"screen": "choice",
+			"tick": 30899
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95812,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 30907
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95818,
+			"map": 4,
+			"screen": "map",
+			"tick": 30908
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95824,
+			"map": 4,
+			"screen": "message",
+			"tick": 30909
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95848,
+			"map": 4,
+			"screen": "choice",
+			"tick": 30917
+		},
+		{
+			"at": [
+				5,
+				11
+			],
+			"frame": 95869,
+			"map": 4,
+			"screen": "map",
+			"tick": 30925
+		},
+		{
+			"at": [
+				15,
+				11
+			],
+			"frame": 95928,
+			"map": 4,
+			"screen": "choice",
+			"tick": 30966
+		},
+		{
+			"at": [
+				15,
+				11
+			],
+			"frame": 95936,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 30972
+		},
+		{
+			"at": [
+				15,
+				11
+			],
+			"frame": 95942,
+			"map": 4,
+			"screen": "map",
+			"tick": 30973
+		},
+		{
+			"at": [
+				15,
+				11
+			],
+			"frame": 95948,
+			"map": 4,
+			"screen": "choice",
+			"tick": 30974
+		},
+		{
+			"at": [
+				15,
+				11
+			],
+			"frame": 95963,
+			"map": 4,
+			"screen": "map",
+			"tick": 30980
+		},
+		{
+			"at": [
+				14,
+				5
+			],
+			"frame": 96028,
+			"map": 4,
+			"screen": "message",
+			"tick": 31018
+		},
+		{
+			"at": [
+				14,
+				5
+			],
+			"frame": 96034,
+			"map": 4,
+			"screen": "choice",
+			"tick": 31020
+		},
+		{
+			"at": [
+				14,
+				5
+			],
+			"frame": 96044,
+			"map": 4,
+			"screen": "map_busy",
+			"tick": 31028
+		},
+		{
+			"at": [
+				11,
+				14
+			],
+			"frame": 96068,
+			"map": 5,
+			"screen": "map",
+			"tick": 31034
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 96140,
+			"map": 5,
+			"screen": "message",
+			"tick": 31079
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 96149,
+			"map": 5,
+			"screen": "choice",
+			"tick": 31082
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 96158,
+			"map": 5,
+			"screen": "map_busy",
+			"tick": 31089
+		},
+		{
+			"at": [
+				16,
+				26
+			],
+			"frame": 96182,
+			"map": 220,
+			"screen": "map",
+			"tick": 31095
+		},
+		{
+			"at": [
+				26,
+				16
+			],
+			"frame": 96293,
+			"map": 220,
+			"screen": "battle",
+			"tick": 31176
+		},
+		{
+			"at": [
+				26,
+				16
+			],
+			"frame": 97824,
+			"map": 220,
+			"screen": "map",
+			"tick": 31431
+		},
+		{
+			"at": [
+				5,
+				21
+			],
+			"frame": 97967,
+			"map": 220,
+			"screen": "battle",
+			"tick": 31536
+		},
+		{
+			"at": [
+				5,
+				21
+			],
+			"frame": 99450,
+			"map": 220,
+			"screen": "map",
+			"tick": 31783
+		},
+		{
+			"at": [
+				4,
+				8
+			],
+			"frame": 99526,
+			"map": 220,
+			"screen": "battle",
+			"tick": 31840
+		},
+		{
+			"at": [
+				4,
+				8
+			],
+			"frame": 100703,
+			"map": 220,
+			"screen": "map",
+			"tick": 32036
+		},
+		{
+			"at": [
+				24,
+				22
+			],
+			"frame": 100886,
+			"map": 220,
+			"screen": "battle",
+			"tick": 32173
+		},
+		{
+			"at": [
+				24,
+				22
+			],
+			"frame": 101907,
+			"map": 220,
+			"screen": "map",
+			"tick": 32343
+		},
+		{
+			"at": [
+				16,
+				13
+			],
+			"frame": 101998,
+			"map": 220,
+			"screen": "message",
+			"tick": 32412
+		},
+		{
+			"at": [
+				16,
+				13
+			],
+			"frame": 102025,
+			"map": 220,
+			"screen": "battle",
+			"tick": 32421
+		},
+		{
+			"at": [
+				16,
+				13
+			],
+			"frame": 104609,
+			"map": 220,
+			"screen": "map",
+			"tick": 32851
+		},
+		{
+			"at": [
+				16,
+				13
+			],
+			"frame": 104615,
+			"map": 220,
+			"screen": "map_busy",
+			"tick": 32852
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 104987,
+			"map": 5,
+			"screen": "map",
+			"tick": 32945
+		},
+		{
+			"at": [
+				4,
+				18
+			],
+			"frame": 105004,
+			"map": 5,
+			"screen": "map_busy",
+			"tick": 32946
+		},
+		{
+			"at": [
+				14,
+				21
+			],
+			"frame": 105295,
+			"map": 4,
+			"screen": "map",
+			"tick": 33019
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 105403,
+			"map": 4,
+			"screen": "message",
+			"tick": 33096
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 105412,
+			"map": 4,
+			"screen": "choice",
+			"tick": 33099
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 105428,
+			"map": 4,
+			"screen": "map_busy",
+			"tick": 33106
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 105480,
+			"map": 4,
+			"screen": "map",
+			"tick": 33119
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 105490,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 33120
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 117506,
+			"map": 4,
+			"screen": "map",
+			"tick": 37122
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 117519,
+			"map": 4,
+			"screen": "message",
+			"tick": 37124
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 117528,
+			"map": 4,
+			"screen": "choice",
+			"tick": 37127
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 117536,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 37133
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 117542,
+			"map": 4,
+			"screen": "map",
+			"tick": 37134
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 117552,
+			"map": 4,
+			"screen": "overlay",
+			"tick": 37135
+		},
+		{
+			"at": [
+				7,
+				9
+			],
+			"frame": 129568,
+			"map": 4,
+			"screen": "map",
+			"tick": 41137
+		}
+	],
+	"transcript": [
+		"<小小鱼>先收好这两样：一个是去副本协会的传送阵控制器，一个是牛马关的指路灯。塔里的事，多问问身边的人。",
+		"<小小鱼>抽奖学来的被动，每个人能学几个是有上限的。往上走的路上，这条规矩我找机会替你松一松。",
+		"<小小鱼>你终于来了。这里是方桌大厅，往后每一次出发，都从这里开始。",
+		"<小小鱼>在出发之前……该怎么称呼你？",
+		"<小小鱼>记住了。去吧，塔就在前面。",
+		"<WordWrap>高塔 1～6 层　守层者每层只能打一次，每通关 5 层高塔可抽取一位新伙伴。副本首领可反复刷，胜利给肝帝积分抽奖券（方桌大厅抽奖），并有 1",
+		"<WordWrap>可反复刷的副本首领：1层 方间林地→嘤嘤怪的巢穴、2层 溪流森林→土地庙内、3层 训练场→伐木者小屋、4层 远古海滩→洞窟深处 等 6 处。",
+		"<WordWrap>流派书：4层 远古海滩→洞窟深处的「双刀」帕奇掉星爆气流斩；被动书：8层守层者送封弊者，13层不朽存在概率掉阐释者，18层守层者送流光闪。",
+		"<李老嗨>我回来了，终于有人，接替我送碎片了~~~！ 〔选项：购买武器 / 购买防具 / 离开〕",
+		"<阿卡拉>要买东西，还是要歇一歇？ 〔选项：买东西／治疗 / 限时免费治疗 / 离开〕",
+		"<天平>一钱银子买一升麦子，三升大麦；油和酒不可糟蹋。",
+		"第 1 层（只管这一层）　已买 0／3　下一样 5500精魂　身上 0精魂 〔选项：麦：每场开战全队回满生命与魔法 / 油：全队承伤 −10% / 酒：全队伤害 +10% / 离开〕",
+		"<动保协会成员>最近的奇珍异兽都不肯靠近大厅中间。我也不肯。",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：低阶功法 / 高阶功法 / 返回〕",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：低阶功法 / 高阶功法 / 返回〕",
+		"<人族首领>继续探索神魔之塔，即可解锁高阶功法。",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：低阶功法 / 高阶功法 / 返回〕",
+		"<人族首领>继续探索神魔之塔，即可解锁高阶功法。",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：低阶功法 / 高阶功法 / 返回〕",
+		"<人族首领>继续探索神魔之塔，即可解锁高阶功法。",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：特殊物品购买 / 离开〕",
+		"哈~！",
+		"<炼器师>总有一款法宝适合你 〔选项：不朽角色法宝 / 神圣角色法宝 / 史诗角色法宝 / 其他角色法宝 / 通用法宝 / 兑换物品 / 否〕",
+		"是否前往神魔之塔，当前层数:1 〔选项：进入该层 / 离开〕",
+		"<守层者 里德>我乃本层守层者，你将我击败后方能进入下一层。 〔选项：挑战 / 关于本层 / 离开〕",
+		"<守层者 里德>看来你是准备好了。",
+		"<李老嗨>我回来了，终于有人，接替我送碎片了~~~！ 〔选项：购买武器 / 购买防具 / 离开〕",
+		"<阿卡拉>要买东西，还是要歇一歇？ 〔选项：买东西／治疗 / 限时免费治疗 / 离开〕",
+		"<天平>一钱银子买一升麦子，三升大麦；油和酒不可糟蹋。",
+		"第 1 层（只管这一层）　已买 0／3　下一样 5500精魂　身上 0精魂 〔选项：麦：每场开战全队回满生命与魔法 / 油：全队承伤 −10% / 酒：全队伤害 +10% / 离开〕",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：低阶功法 / 高阶功法 / 返回〕",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：低阶功法 / 高阶功法 / 返回〕",
+		"<人族首领>继续探索神魔之塔，即可解锁高阶功法。",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：低阶功法 / 高阶功法 / 返回〕",
+		"<人族首领>继续探索神魔之塔，即可解锁高阶功法。",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：低阶功法 / 高阶功法 / 返回〕",
+		"<人族首领>继续探索神魔之塔，即可解锁高阶功法。",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：特殊物品购买 / 离开〕",
+		"是否前往神魔之塔，当前层数:1 〔选项：进入该层 / 离开〕",
+		"<李老嗨>我回来了，终于有人，接替我送碎片了~~~！ 〔选项：购买武器 / 购买防具 / 离开〕",
+		"<阿卡拉>要买东西，还是要歇一歇？ 〔选项：买东西／治疗 / 限时免费治疗 / 离开〕",
+		"<天平>一钱银子买一升麦子，三升大麦；油和酒不可糟蹋。",
+		"第 1 层（只管这一层）　已买 0／3　下一样 5500精魂　身上 1310精魂 〔选项：麦：每场开战全队回满生命与魔法 / 油：全队承伤 −10% / 酒：全队伤害 +10% / 离开〕",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：低阶功法 / 高阶功法 / 返回〕",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：低阶功法 / 高阶功法 / 返回〕",
+		"<人族首领>继续探索神魔之塔，即可解锁高阶功法。",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：低阶功法 / 高阶功法 / 返回〕",
+		"<人族首领>继续探索神魔之塔，即可解锁高阶功法。",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：低阶功法 / 高阶功法 / 返回〕",
+		"<人族首领>继续探索神魔之塔，即可解锁高阶功法。",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		"<人族首领>人族的后来者，我们在那场试炼中失败了。你是我们的希望。",
+		" 〔选项：购买被动技能 / 购买丹药 / 离开〕",
+		" 〔选项：特殊物品购买 / 离开〕",
+		"是否前往神魔之塔，当前层数:1 〔选项：进入该层 / 离开〕",
+		"<嘤嘤怪的巢穴> 〔选项：挑战副本 / 重置副本 / 离开〕",
+		"<嘤孙>嘤嘤嘤~~嘤嘤嘤~~嘤嘤嘤！",
+		"<阿卡拉>要买东西，还是要歇一歇？ 〔选项：买东西／治疗 / 限时免费治疗 / 离开〕",
+		"<阿卡拉>我可以免费帮你治愈所有状态，每次施法后需要歇一阵子才能再用。 〔选项：治愈 / 离开〕",
+		"<李老嗨>我回来了，终于有人，接替我送碎片了~~~！ 〔选项：购买武器 / 购买防具 / 离开〕"
+	],
+	"violations": []
+}
