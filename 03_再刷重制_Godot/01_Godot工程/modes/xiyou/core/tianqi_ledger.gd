@@ -105,6 +105,9 @@ static func reload() -> void:
 	_confirm_ids = {}
 	_confirm_card = {}
 	_confirm_never = {}
+	_confirm_pool = {}
+	_confirm_reduce = {}
+	_live_table = {}  # T185 核查 P3-2：换表（专项改 data、reload）后 live 归池表要跟着重读
 	_load_failed = false
 
 
@@ -153,7 +156,12 @@ static func switch_on(name: String) -> bool:
 		# 期四（T083）：16 个旧模块行归池＝卡开着时 MODULE_CAP_ALL 把增伤拦掉；卡或收口关着就是回退中
 		"MODULE_CAP": return XTianqiSkills.MODULE_CAP and XTianqiSkills.MODULE_CAP_ALL and XTianqiSkills.cards_on()
 		# 期四（T083）：state_confirm_class.never 各条「不会出现」靠的开关，关着＝回到会出现
-		"POOL_LIVE": return POOL_LIVE  # T185：live 状态样板归池或停用（默认关）
+		"POOL_LIVE": return POOL_LIVE or XTianqiBase.PHASE4  # T185／T187：live 增伤归池或停用（产品默认关，期四总开关开着就开，同角色卡）
+		"CARDS": return XTianqiSkills.cards_flag()  # T187：卡已删掉挂状态的标签（技能卡、装备卡）
+		"GEAR_SLOTS": return XTianqiGear.ENABLED  # T187：来源是删除栏位的装备（O-266）
+		"NO_HONGHUANG": return XTianqiTrim.NO_HONGHUANG  # T187（D203②）：来源是洪荒（O-410）
+		"TRUMPET": return XTianqiTrumpet.ENABLED  # T187：来源技能号被天启篇号卷改写（2709／2711）
+		"NO_SOURCE": return true  # T187 R1：工程里找不到任何挂它的路径（1454、1669、1766、1722），没有回退
 		"NO_DIFF_PASSIVE": return XTianqiNoDiffPassive.ENABLED
 		"UNIFIED_LEGACY": return XTianqi.UNIFIED_LEGACY
 	return true
@@ -236,35 +244,62 @@ static func suit_confirm_rows(holder, rows: Array) -> Array:
 	return out
 
 
-# ---- T185 期四 live 状态样板：归池或停用（damage_ledger.json state_confirm_class.sample，基础数值重构 v0.3 第七节第 7 条）----
-## POOL_LIVE 开着时，天启篇我方打敌人（伤害类型 1/2/5/6），样板里的状态确认阶段「结果 ×k」那一步对敌人的伤害不再乘：
-##   pool 归池 → 改成 ＋add% 进③（add 是整数百分数＝k−1）。封顶照九线口径：cap＝nine（原版装备来的）和种族、宝珠、套装合计封 ＋35%；
-##     cap＝secret（秘籍格的书教的）每本封 ＋8%（样板阶段的近似：不跟别的书抢格数，铺开时并进 secret_kept）；cap＝none 不封。
+# ---- 期四 live 状态归池或停用（T185 样板 → T187 铺开；damage_ledger.json state_confirm_class.pool，基础数值重构 v0.3 第七节第 7 条，D203）----
+## POOL_LIVE 开着时，天启篇我方打敌人（伤害类型 1/2/5/6），pool 表里的状态确认阶段「结果 ×k」那一步对敌人的伤害不再乘：
+##   pool 归池 → 改成 ＋add% 进③（add 是整数百分数＝k−1）。cap＝nine（装备来的）算进九线③合计封 ＋35%；
+##     cap＝secret（秘籍格的书 book 教的）同一本书的几个状态先合并封 ＋8%，再交给 apply_nine_cap 和这本书上别的③增伤合并封顶、
+##     并进秘籍格排序（T185 核查 P3-1：不各吃 ＋8%）；cap＝none（角色桶、机制）不封。
 ##   stop 停用 → 只是不乘，不进池。
-## 治疗、打自己人照旧乘（同套装那一步）。默认关：Kyo 看过样板再开、再铺；关着＝原版现状，守卫照旧按 live 豁免。
+## 认的效果：mul（k>1），或只有加成段的 value_steps（暴击专属段的 k 是 0）。治疗、打自己人照旧乘（同套装那一步）。
+## 产品默认关，期四总开关（XTianqiBase.PHASE4）开着就开；关着＝原版现状，守卫当回退中不报。
 static var POOL_LIVE := false
 const LIVE_POOLED := "_ledgerLivePooled"
-static var _live_sample := {}
+static var _live_table := {}
 
-static func live_sample() -> Dictionary:
-	if _live_sample.is_empty():
-		for e in data().get("state_confirm_class", {}).get("sample", []):
-			_live_sample[int(e.id)] = e
-		if _live_sample.is_empty():
-			_live_sample[-1] = {}  # 占位：表里没有样板，别每次都重读
-	return _live_sample
+static func live_table() -> Dictionary:
+	if _live_table.is_empty():
+		for e in data().get("state_confirm_class", {}).get("pool", []):
+			_live_table[int(e.id)] = e
+		if _live_table.is_empty():
+			_live_table[-1] = {}  # 占位：表里没有，别每次都重读
+	return _live_table
+
+
+## value_steps 能当固定 ×k 的：每组只有「加」段，暴击专属段的 k 都是 0
+static func _plain_steps(e: Dictionary) -> bool:
+	for g in e.get("groups", []):
+		for step in g.get("steps", []):
+			if str(step.get("kind", "")) != "add" or (bool(step.get("criticalOnly", false)) and float(step.get("k", 0.0)) != 0.0):
+				return false
+	return true
 
 
 static func _live_effect(e) -> bool:
-	return e is Dictionary and str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) == "mul" and float(e.get("k", 1.0)) > 1.0
+	if not e is Dictionary or str(e.get("phase", "")) != "confirm":
+		return false
+	match str(e.get("op", "")):
+		"mul":
+			return float(e.get("k", 1.0)) > 1.0
+		"value_steps":
+			return _plain_steps(e)
+	return false
 
 
-## 这个角色身上生效的样板状态 [[状态号, 条目, 效果], ...]（开关关、不在天启篇恒空）
-static func live_sample_effects(a) -> Array:
+## 这一下 hpOnly 认不认（mul 在效果上，value_steps 在组上）
+static func _live_hp_ok(e: Dictionary, dmg_type: int) -> bool:
+	if dmg_type in [1, 5]:
+		return true
+	if bool(e.get("hpOnly", false)):
+		return false
+	return not (e.get("groups", []) as Array).any(func(g): return bool(g.get("hpOnly", false)))
+
+
+## 这个角色身上生效的表内状态 [[状态号, 条目, 效果], ...]（开关关、不在天启篇恒空）
+static func live_pool_effects(a) -> Array:
 	var out := []
 	if not a is XActor or not pool_on("POOL_LIVE"):
 		return out
-	var tab := live_sample()
+	var tab := live_table()
 	for st in a.states():
 		var sid := int(st.get("id", 0))
 		if sid <= 0 or not tab.has(sid):
@@ -275,31 +310,39 @@ static func live_sample_effects(a) -> Array:
 	return out
 
 
-## damage._calculate：这一下（我方打敌人、伤害类型 dmg_type）样板状态进③的量：{add 进 finalAdd 的总量（秘籍格已按本封好）, nine 算进九线合计封顶的那部分}
+## damage._calculate：这一下（我方打敌人、伤害类型 dmg_type）表内状态进③的量：
+## {add 进 finalAdd 的总量（秘籍格已按本合并封到 ＋8%）, nine 算进九线合计封顶的那部分, books {"#书号": 这本书进③的量}（交给 apply_nine_cap 和书上别的增伤合并封顶、排秘籍格）}
 static func live_confirm_add(a, b, dmg_type := 1) -> Dictionary:
-	var out := {"add": 0.0, "nine": 0.0}
+	var out := {"add": 0.0, "nine": 0.0, "books": {}}
 	if not b is XEnemy or not dmg_type in SUIT_SKIP_TYPES:
 		return out
 	var per := XTianqiBase.secret_slot(nine_cap("secret_slot"))
-	for trip in live_sample_effects(a):
+	var raw_books := {}
+	for trip in live_pool_effects(a):
 		var row: Dictionary = trip[1]
 		var e: Dictionary = trip[2]
-		if str(row.get("action", "")) != "pool" or (bool(e.get("hpOnly", false)) and not dmg_type in [1, 5]):
+		if str(row.get("action", "")) != "pool" or not _live_hp_ok(e, dmg_type):
 			continue
 		var x := float(int(row.get("add", 0))) / 100.0
 		match str(row.get("cap", "")):
 			"secret":
-				x = minf(x, per)
+				var key := "#%d" % int(row.get("book", trip[0]))
+				raw_books[key] = float(raw_books.get(key, 0.0)) + x
+				continue
 			"nine":
 				out.nine += x
+		out.add += x
+	for key in raw_books:
+		var x := minf(float(raw_books[key]), per)
+		out.books[key] = x
 		out.add += x
 	return out
 
 
-## XStateEffects.run("confirm")：样板状态那一步换成带 skipTypes 的副本（对敌人的伤害不乘；pool 的已进③，stop 的就没了）
+## XStateEffects.run("confirm")：表内状态那一步换成带 skipTypes 的副本（对敌人的伤害不乘；pool 的已进③，stop 的就没了）
 static func live_confirm_rows(holder, rows: Array) -> Array:
 	var ids := {}
-	for trip in live_sample_effects(holder):
+	for trip in live_pool_effects(holder):
 		ids[int(trip[0])] = true
 	if ids.is_empty():
 		return rows
@@ -312,8 +355,12 @@ static func live_confirm_rows(holder, rows: Array) -> Array:
 		var effects := []
 		for e in st.get("effects", []):
 			if _live_effect(e):
-				var e2: Dictionary = e.duplicate()
-				e2.skipTypes = SUIT_SKIP_TYPES
+				var e2: Dictionary = e.duplicate(true)
+				if str(e2.op) == "value_steps":
+					for g in e2.groups:
+						g.skipTypes = SUIT_SKIP_TYPES  # value_steps 按组判 _active
+				else:
+					e2.skipTypes = SUIT_SKIP_TYPES
 				e2[LIVE_POOLED] = true  # audit_confirm 认这个标记放行
 				effects.append(e2)
 			else:
@@ -419,11 +466,14 @@ static func state_confirm_registered(state_id: int) -> bool:
 	return _confirm_ids.has(state_id)
 
 
-## 期四（T083）：191 个状态的分类（damage_ledger.json state_confirm_class）→ 走哪一行：
-## card 卡改写过 → state_confirm_card（允许）；never 天启篇不会出现 → state_confirm_never（出现就失败，各条带回退开关）；其余 live → state_confirm（豁免）。
+## 期四（T083，T187 铺开）：191 个状态的分类（damage_ledger.json state_confirm_class）→ 走哪一行：
+## card 卡改写过 → state_confirm_card（允许）；never 天启篇不会出现 → state_confirm_never（出现就失败，各条带回退开关）；
+## pool 归池或停用 → state_confirm_pool（归池，开关 POOL_LIVE）；reduce 缩小类 → state_confirm_reduce（允许）；其余 live（程序／脚本类）→ state_confirm（豁免）。
 ## 表里没有 state_confirm_class（期四以前）一律走 state_confirm。
 static var _confirm_card := {}
 static var _confirm_never := {}
+static var _confirm_pool := {}
+static var _confirm_reduce := {}
 
 static func confirm_source(state_id: int) -> String:
 	if _confirm_card.is_empty() and _confirm_never.is_empty():
@@ -432,12 +482,20 @@ static func confirm_source(state_id: int) -> String:
 			_confirm_card[int(id)] = true
 		for e in cls.get("never", []):
 			_confirm_never[int(e.id)] = e
+		for e in cls.get("pool", []):  # T187：归池或停用的增伤
+			_confirm_pool[int(e.id)] = true
+		for e in cls.get("reduce", []):  # T187：缩小类（机制）
+			_confirm_reduce[int(e.id)] = true
 		if _confirm_card.is_empty() and _confirm_never.is_empty():
 			_confirm_card[-1] = true  # 占位：表里没有分类，别每次都重读
 	if _confirm_card.has(state_id):
 		return "state_confirm_card"
 	if _confirm_never.has(state_id):
 		return "state_confirm_never"
+	if _confirm_pool.has(state_id):
+		return "state_confirm_pool"
+	if _confirm_reduce.has(state_id):
+		return "state_confirm_reduce"
 	return "state_confirm"
 
 
@@ -986,11 +1044,11 @@ static func _max_nested(d: Dictionary, b: String) -> float:
 
 
 ## damage._calculate：钩子之后、算乘区之前调用。扣掉这一下九线超出的部分（frame 的 normalAdd、finalAdd、criticalAdd、elementAdd），
-## 记在 frame.nineCap。hooks＝{race, orb, suit}：种族祝福、宝珠共鸣、套装确认阶段这一下进③的量（钩子帧里分不出，调用方给）。
+## 记在 frame.nineCap。hooks＝{race, orb, suit, live, live_books}：种族祝福、宝珠共鸣、套装确认阶段这一下进③的量（钩子帧里分不出，调用方给）。
 static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictionary, hooks: Dictionary) -> Dictionary:
 	if not CAP_NINE or not a is XActor or not active() or not cache.has("bySource"):
 		return {}
-	var by: Dictionary = cache.bySource
+	var by: Dictionary = _with_live_books(cache.bySource, hooks.get("live_books", {}))
 	var types := []
 	var parsed = JSON.parse_string(str(item.get("meta", {}).get("SkillTypes", "[]")))
 	if parsed is Array:
@@ -1045,6 +1103,24 @@ static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictio
 		frame.elementAdd[str(e)] = float(frame.elementAdd.get(str(e), 0.0)) - float(cut.element[e])
 	frame.nineCap = cut
 	return cut
+
+
+## T187（T185 核查 P3-1）：确认阶段归池的秘籍格那份（live_confirm_add 的 books）并进这本书的 ③，和书上别的增伤合并封顶、一起排秘籍格。
+## 只在这一下的副本上加，不改被动缓存
+static func _with_live_books(by: Dictionary, live_books: Dictionary) -> Dictionary:
+	if live_books.is_empty():
+		return by
+	var out := by.duplicate()
+	var books: Dictionary = by.get("books", {}).duplicate()
+	var g: Dictionary = by.get("globalHarmRi", {}).duplicate()
+	var bg: Dictionary = books.get("globalHarmRi", {}).duplicate()
+	for key in live_books:
+		g["secret"] = float(g.get("secret", 0.0)) + float(live_books[key])
+		bg[key] = float(bg.get(key, 0.0)) + float(live_books[key])
+	out.globalHarmRi = g
+	books.globalHarmRi = bg
+	out.books = books
+	return out
 
 
 ## 虚空～风（11～15）的元素加成是 max(自身, 火～暗 2～9 里最低的一系)（XDamage.element_bonus）：照同样的取法算封顶前后，

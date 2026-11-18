@@ -231,6 +231,7 @@ func _equivalence() -> void:
 	_check("bites_agi", float(new["agi"]) < float(bare["agi"]) and float(new["agi_field"]) == float(bare["agi_field"]), [new["agi"], bare["agi"], new["agi_field"]])
 	_check("bites_crit", _near(float(new["cri"]) - float(bare["cri"]), 0.5), [new["cri"], bare["cri"]])
 	# 和因果丝线（1254 ×3、2709 ×1.5，同为确认阶段 ceil 乘、优先级同 50）同一乘区逐个连乘，次序照状态号
+	XTianqiLedger.QUIET = true  # T187：1254（洪荒传承）、2709（号段给了号卷）天启篇已是 never，这里是人为挂上去比连乘，总账守卫不报
 	for extra in [[1254], [2709], [1254, 2709]]:
 		for st in extra:
 			a.add_state(st)
@@ -242,6 +243,7 @@ func _equivalence() -> void:
 			a.remove_state(st)
 		_compare("chain_%s" % "_".join(extra.map(func(x): return str(x))), n2, o2)
 		_check("chain_bites_%s" % "_".join(extra.map(func(x): return str(x))), float(n2["dmg_1_false"]) > float(new["dmg_1_false"]) * 1.4, [n2["dmg_1_false"], new["dmg_1_false"]])
+	XTianqiLedger.QUIET = false
 	# 其它难度（九死）：数值表的等价项不分档，一样等价
 	var s9 := _state("jiusi", lineup)
 	var a9 := s9.actor(lineup[0])
