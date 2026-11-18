@@ -1,7 +1,7 @@
 extends Node
 ## 【cc·未经审查】米拉黑龙无剑 21 张＋头顶召剑层接入（content/mira/，开关 XMira.DRAGON_ART；XDB.img_path、XMiraSwordFx）：
 ## - path.*：黑龙 18 动作的每一帧都读 content/mira/img/sv_actors/sv/UserSV_MiraDragon/，不读同步出的带剑旧图；21 张文件齐。
-## - art.*：每张 340×280、可见框在 [61,58,260,217] 内、脚底 217、alpha 只有 0／255；站姿归一档不变。
+## - art.*：每张 340×280、可见框在画布内（T213 骨骼法重铺后头前伸，原 [61,58,260,217] 框放宽，Kyo 11-18）、脚底 217、alpha 只有 0／255；站姿归一档不变。
 ## - human.*：人形外观（Codex_Mira_SV_u2）不受 DRAGON_ART 影响。
 ## - fx.*：召剑层时间线（出现 3×100ms → 悬停 3×140ms 循环 → 消散 3＋clear ×100ms）、层中心＝脚底＋[-40,-200]×身体缩放、
 ##   SKILLS 默认只有 10151 黑日焚界（Kyo 11-15 定，D34）、别的技能不召、名单空时不召、名单里的技能号才召并在行动结束消散、人形或开关关时不召。
@@ -123,7 +123,8 @@ func _art() -> void:
 				bad.append([m, f, "size"])
 				continue
 			var b := _bbox(t)
-			if b[0] < 61 or b[1] < 58 or b[2] > 260 or b[3] != 217 or b[4] != 0:
+			# T213 骨骼法重铺后头会前伸、比原稿宽（Kyo 11-18 可接受，但不能超出画布）：只卡画布内＋脚底 217。
+			if b[0] < 0 or b[1] < 0 or b[2] > 340 or b[3] != 217 or b[4] != 0:
 				bad.append([m, f, b])
 	check("art.340x280_box_foot217_binary_alpha", bad.is_empty(), bad)
 

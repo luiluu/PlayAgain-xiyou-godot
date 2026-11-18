@@ -304,8 +304,8 @@ def cleanup(a, ref_holes=()):
 def export_parts(R, src, outdir):
     L = label_map(R, src); outdir = Path(outdir); outdir.mkdir(parents=True, exist_ok=True)
     names = []
-    for i, layer in enumerate(R['layers']):
-        if 'pixels' in layer: continue  # 补画小件不属于 1_0 拆件
+    for layer in [l for l in R['layers'] if 'pixels' not in l]:  # 补画小件（下牙）不属于 1_0 拆件
+        i = len(names)
         a = layer_src(src, L, layer['parts'], make_fill(src, L, layer))
         fn = f"{i}_{layer['name']}.png"; Image.fromarray(a).save(outdir / fn); names.append(fn)
     return names
