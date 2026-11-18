@@ -52,6 +52,14 @@ func _swapped(s: String) -> String:
 	return s.replace("天道眷顾者", "启示眷属")
 
 
+## T199：这几条记录同时在 rules.json tianqi_note_by_id 里的话（1001～1003、2442 的 StateNote「造成的所有伤害结果*…」），天启篇备注也换了说明，比对时一起换
+func _by_id_swap(table: String, id: int, s: String) -> String:
+	var by_id: Dictionary = XDB.parse_file("res://modes/xiyou/text_fix/rules.json").get("tianqi_note_by_id", {})
+	for p in by_id.get(table, {}).get(str(id), []):
+		s = s.replace(p[0], p[1])
+	return s
+
+
 func _keys() -> Array:
 	var out := []
 	for id in STATES.keys() + NOTE_STATES:
@@ -115,7 +123,7 @@ func _run() -> void:
 	# 二、状态备注：恰好只换了这几处字面
 	bad = []
 	for id in NOTE_STATES:
-		var want := _swapped(str(plain[["States", id]].note))
+		var want := _by_id_swap("States", id, _swapped(str(plain[["States", id]].note)))
 		if str(_t("States", id).note) != want or want == str(plain[["States", id]].note):
 			bad.append([id, _t("States", id).note])
 	_check("tq_state_notes", bad.is_empty(), bad)
@@ -126,7 +134,7 @@ func _run() -> void:
 	# 三、技能说明
 	bad = []
 	for id in NOTE_SKILLS:
-		var want := _swapped(str(plain[["Skills", id]].note))
+		var want := _by_id_swap("Skills", id, _swapped(str(plain[["Skills", id]].note)))
 		if str(_t("Skills", id).note) != want or want == str(plain[["Skills", id]].note):
 			bad.append([id, _t("Skills", id).note])
 	_check("tq_skill_notes", bad.is_empty(), bad)

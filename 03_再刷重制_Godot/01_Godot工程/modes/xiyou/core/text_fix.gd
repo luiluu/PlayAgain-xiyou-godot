@@ -9,6 +9,7 @@ extends RefCounted
 ## 天启篇词典 tianqi_dict（D126 去西游化）跟 DICT 开关，只在天启篇存档套用，换档清缓存（sync_mode）。
 ## tianqi_dict 里带 "note": true 的条目（T193 D202「天道*」→「启示·」）不进字段词典，只对整段备注按字面替换，
 ## 用来改 <StateNote>、<RightDownNote:"…"> 这类不在 <pos> 行里的说明；from 写带上下文的字面（如整个 RightDownNote 标签），不碰脚本。
+## rules.json 的 tianqi_note_by_id（T199，T187 文案草稿）：按「表名→记录号→[[原文, 改成]]」只改那一条记录的备注，用来把归池增伤的旧乘数说明改成「伤害加成 +20%」；同样只在天启篇套用、跟 DICT 开关。
 ## 六个开关各一个 O 号（00_设计/优化登记.md），默认开；关掉后 clear_cache() 让表重读即回原版文字：
 ## - STRIP_ZW（O-489）：剥零宽控制符 U+FEFF、U+200B、U+200C。
 ## - NAMEBOX（O-490）：事件对话名字框——行首 <名字> 补前导 \n、/n< 写反改 \n<、\c\[ 双转义改 \c[、行首孤立 \n（后面不是 <、[、字母）删掉。
@@ -44,6 +45,8 @@ static var _tq_dict := []
 static var _tq_gate: RegEx
 ## tianqi_dict 里 "note": true 的条目：[[from, to]]，只在天启篇对整段备注字面替换（T193）
 static var _tq_note := []
+## rules.json 的 tianqi_note_by_id（T199）：{表名: {记录号字符串: [[原文, 改成]]}}，只对那一条记录的备注按字面替换，只在天启篇套用
+static var _tq_by_id := {}
 ## 上一次读表／地图时用的是不是天启篇口径；和现在不一样就要清缓存（sync_mode）
 static var _applied_tq := false
 static var _gate: RegEx  # 零宽／繁体／词典任一命中的总预筛
@@ -109,6 +112,12 @@ static func rules() -> Dictionary:
 					_tq_note.append([str(e.get("from", "")), str(e.get("to", ""))])
 			else:
 				tq_fields.append(e)
+		_tq_by_id = {}
+		var by_id = _rules.get("tianqi_note_by_id", {})
+		if by_id is Dictionary:
+			for tab in by_id:
+				if not str(tab).begins_with("_") and by_id[tab] is Dictionary:
+					_tq_by_id[str(tab)] = by_id[tab]
 		_tq_dict = _build_dict(tq_fields, tq_gate)
 		_tq_gate = RegEx.create_from_string("|".join(tq_gate)) if not tq_gate.is_empty() else null
 		_pos_re = RegEx.create_from_string("^(<pos=\\S+\\s+text=)([\\s\\S]*?)(\\s+size=[\\s\\S]*)$")
@@ -215,7 +224,9 @@ static func patch_table(name: String, data) -> void:
 	if not (STRIP_ZW or NAMEBOX or PAIRS or DICT or TRAD):
 		return
 	rules()
-	var tq_note := DICT and not _tq_note.is_empty() and tq_on()
+	var tq_on_now := DICT and tq_on()
+	var tq_note := tq_on_now and not _tq_note.is_empty()
+	var by_id: Dictionary = _tq_by_id.get(name, {}) if tq_on_now else {}
 	for r in data:
 		if not r is Dictionary:
 			continue
@@ -228,6 +239,8 @@ static func patch_table(name: String, data) -> void:
 			r["note"] = _fix_note(note)
 		if tq_note and r.get("note") is String:
 			r["note"] = _fix_tq_note(r["note"])
+		if not by_id.is_empty() and r.get("note") is String and by_id.has(str(int(r.get("id", 0)))):
+			r["note"] = _fix_tq_by_id(r["note"], by_id[str(int(r.get("id", 0)))])
 		match name:
 			"CommonEvents":
 				_fix_list(r.get("list"))
@@ -326,6 +339,14 @@ static func _fix_tq_note(note: String) -> String:
 	for d in _tq_note:
 		if note.contains(d[0]):
 			note = note.replace(d[0], d[1])
+	return note
+
+
+## 天启篇按记录号的备注字面替换（tianqi_note_by_id；调用方已判 DICT 与天启篇）
+static func _fix_tq_by_id(note: String, pairs: Array) -> String:
+	for d in pairs:
+		if d is Array and d.size() >= 2 and note.contains(str(d[0])):
+			note = note.replace(str(d[0]), str(d[1]))
 	return note
 
 
