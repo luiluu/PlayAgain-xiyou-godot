@@ -153,7 +153,7 @@
 | `xiyou_tianqi_skills` | 靠 `CARDS` 单独开关卡（`cards_on() = CARDS or PHASE4`，期四开着隔离不了）；期四开着的卡由 `xiyou_tianqi_phase4*` 测 |
 | `xiyou_nanoha`（auto.tq） | 比原版智能 AI、挂机表 5703（当前魔法 30%）；期四开着加了 `auto.p4.*` 冒烟 |
 | `xiyou_tianqi_again_use` | `cards_off` 一条靠 `CARDS=false` 隔离 |
-| `xiyou_tianqi_elements` | 被动 1116 的元素增幅断言绑原版被动；期四开着时境界、职业被动按 `REALM_OFF`／卡拦掉，由 phase4 专项测 |
+| `xiyou_tianqi_elements` | 期四开着只挂 `passive_1116_elup14` 一条（原版被动 1116 的元素增幅 ELUP14）；我猜是期四拦原版被动数值标签（`REALM_OFF` 那张 note_remove 表）所致，没逐条查 |
 | `xiyou_tianqi_gear_params` | 自己就分「关／开」两段测（`_off`、`_on`），开头的默认检查已改认开 |
 | `xiyou_tianqi_ledger` | `cap_cards_off_untouched`、守卫行要 `CARDS=false`；期四开着的守卫由 `xiyou_tianqi_phase4_modules` 测 |
 | `xiyou_tianqi_live_sample` | 断言 `POOL_LIVE` 产品默认关、开总开关才开，本来就自己切两种 |
@@ -184,7 +184,7 @@
 - 建议：K 探针峰值「取 20 下最大」对浮动大的招（狂刀、拳一、奈叶，浮动 20%～33%）每次差 ±5%～8%，名次贴着的几个人排不稳。可以改成比较时去浮动、只报一个「浮动上沿」的确定值（伤害×(1＋浮动)），名次就稳了。改了口径要重排 D209，建议协调另开小卡。
 
 ## 本分支提交
-- （R1）五条悟试炼期四量级；三专项改期四开着跑、两处期望修正；联合冒烟；文字定稿
+- 7a192351e R1：五条悟试炼期四量级；三专项改期四开着跑、两处期望修正；联合冒烟；文字定稿
 - aaea7df73 三开关默认开；K 探针 --brand
 - 23539139f K 探针词条贪心去浮动；D185 印纹／发亮了
 - 7a8dddf98 K 定 0.13；D209 回调 163／108／167；三个专项改认新默认
