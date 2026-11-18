@@ -2,7 +2,7 @@ class_name XTianqiWeakAffix
 extends RefCounted
 ## 【cc·未经审查】天启篇弱者专属词条：批 0A 规则地基（私密仓 重制设定/天启篇_弱者专属词条设计_v0.3 第二节第 1、2、4（一句）、5、6 条
 ## ＋ v0.3.1 第二节四条；Kyo D65～D72，D72：先做批 0A，具体词条等基础数值定了再做）。这里只有地基，**一条具体词条都没有**：
-## 表 tianqi_data/weak_affix_table.json 的 entries 是空的，「可引导」名单也是空的，所以开着时战斗结果和没有本模块逐字节一样。
+## 表 tianqi_data/weak_affix_table.json 的 entries 一律默认关（批 1 起有条目），「可引导」名单是空的，所以开着时战斗结果和没有本模块逐字节一样。
 ##
 ## 一、装备与作用域（第 5 条）
 ##   装备实例上 tianqi_exclusive: {key}；只认武器、副手两格（rules.slots），两格同一条只算一条。
@@ -24,6 +24,8 @@ extends RefCounted
 ## 五、看得见（v0.3.1 第二节第 4 条）：badges（角标文字）、say（战斗日志一行）只留出口，图标和文案交小A。
 ## 六、掉落（第 5 条末句、D65）：drop_candidates／roll_drop 只给接口，**还没接进掉落**（条目为空时池恒空，接了也不改任何结果）；
 ##   开第一条时连同可获得兵器交集表、深渊商人指定、重铸保护一起接。
+## 七、本人投影（批 1，T018）：表 entries[键].proj 按技能号写换属性、整数倍率、新范围和说明替换；skill_view 给本人复制一份改过的技能，
+##   formula 按出手者 proj_of 换属性、乘倍率。批 1：w21 玛莎「御风术」、w17 克洛什「精准击中」，默认关。
 ## 具体词条以 register(key, 处理对象) 挂进来：处理对象可有 root_end(logic, frame) -> Array（这一根结算完后出专属派生，派生用 derived_invoke）、
 ## turn_begin(logic)、turn_end(logic)、badge(logic, b) -> String。
 
@@ -522,6 +524,118 @@ static func badges(logic, b) -> Array:
 ## 战斗日志一行
 static func say(text: String) -> Dictionary:
 	return {"type": "battle_text", "text": text}
+
+
+# ---- 本人投影（批 1：纯数据样板，v0.3 第三节＋v0.3.1 第三节 21、17） ----
+## 表 entries[键].proj：{技能号: {stat_swap {原属性: 新属性}, mult 整数倍率, scope 新范围, header {表头: 值}, text {原词: 新词}}}。
+## 只改本人看到的那一份技能（skill_view 复制一份改，不碰共享的改写表、XDB 记录）：技能页、帮助卡、战斗技能表、自动战斗、追加招都读这一份；
+## 伤害（stat_swap、mult）在 XTianqiSkills.formula 里按出手者 proj_of 算。要角色卡开着（cards_on）：卡关着时技能不走模块公式，投影整个不做。
+
+const VIEW_MARK := "_tq_weak_proj"
+const STAT_NAMES := {"atk": "物理攻击", "def": "物理防御", "mat": "魔法攻击", "mdf": "魔法防御", "agi": "敏捷", "luk": "幸运", "mhp": "最大生命", "mmp": "最大魔法"}
+static var _views := {}  # 技能号 → [原记录, 签名, 投影后的记录]
+
+
+## 开着的条目里有投影的技能号（快速排除：没有就不看装备）
+static func _proj_ids() -> Dictionary:
+	var out := {}
+	if not ENABLED:
+		return out
+	var keys: Array = data().get("entries", {}).keys() + test_entries.keys()
+	for k in keys:
+		if enabled(k):
+			for id in entry(k).get("proj", {}):
+				out[int(id)] = true
+	return out
+
+
+## 这个人放 skill_id 时的投影规格（没有＝{}）：本人装着、条目开着、天启篇档、角色卡开着
+static func proj_of(a, skill_id: int, s = null) -> Dictionary:
+	if not (a is XActor) or not _proj_ids().has(skill_id) or not on(s) or not XTianqiSkills.cards_on(s):
+		return {}
+	for k in keys_of(a):
+		var e := entry(k)
+		if enabled(k) and int(e.get("actor", 0)) == int(a.actor_id):
+			var p = e.get("proj", {}).get(str(skill_id), null)
+			if p is Dictionary:
+				var out: Dictionary = p.duplicate()
+				out["key"] = k
+				return out
+	return {}
+
+
+## 属性换算：stats {属性: 权重} 按 swap {原: 新} 换键，系数不变
+static func swap_stats(stats: Dictionary, swap: Dictionary) -> Dictionary:
+	var out := {}
+	for k in stats:
+		var nk := str(swap.get(str(k), str(k)))
+		out[nk] = float(out.get(nk, 0.0)) + float(stats[k])
+	return out
+
+
+## 本人看到的技能记录（XActor._skill_records、XTianqiSkills._follow_of、XBattleLogic.act 都过这里）：没有投影原样返回；已经投影过的不再投影
+static func skill_view(sk: Dictionary, a) -> Dictionary:
+	if sk.is_empty() or sk.has(VIEW_MARK):
+		return sk
+	var id := int(sk.get("id", 0))
+	var p := proj_of(a, id)
+	if p.is_empty():
+		return sk
+	var sig := JSON.stringify(p)
+	var hit = _views.get(id)
+	if hit is Array and is_same(hit[0], sk) and str(hit[1]) == sig:
+		return hit[2]
+	var v: Dictionary = sk.duplicate(true)
+	v[VIEW_MARK] = str(p.key)
+	if p.has("scope"):
+		v.scope = int(p.scope)
+	v.note = _proj_note(str(v.get("note", "")), p)
+	v.meta = XTianqiSkills.parse_meta(v.note)
+	_views[id] = [sk, sig, v]
+	return v
+
+
+## 说明跟着变（v0.3.1 第二节第 4 条）：表头（对象）、「伤害」行里的属性名和 × 后面的系数、指定的词；末尾加一行专属说明
+static func _proj_note(note: String, p: Dictionary) -> String:
+	var style := " size=18 color=rgba(255,255,255,1) line=false align=0"
+	var m := RegEx.create_from_string("<pos=APs text=[^>]*?( size=[^>]*)>").search(note)
+	if m != null:
+		style = m.get_string(1)
+	for key in p.get("header", {}):
+		note = RegEx.create_from_string("<pos=APs text=%s:[^>]*?( size=[^>]*)>" % str(key)).sub(note, "<pos=APs text=%s:%s$1>" % [key, p.header[key]], true)
+	var rx := RegEx.create_from_string("<pos=APs text=\\\\c\\[1\\]伤害[：:][^>]*?(?= size=)")
+	var mult := int(p.get("mult", 1))
+	var out := ""
+	var pos := 0
+	for hit in rx.search_all(note):
+		out += note.substr(pos, hit.get_start() - pos)
+		var line := hit.get_string()
+		for k in p.get("stat_swap", {}):
+			line = line.replace(str(STAT_NAMES.get(str(k), k)), str(STAT_NAMES.get(str(p.stat_swap[k]), p.stat_swap[k])))
+		for w in p.get("text", {}):
+			line = line.replace(str(w), str(p.text[w]))
+		if mult != 1:
+			line = _mult_line(line, mult)
+		out += line
+		pos = hit.get_end()
+	note = out + note.substr(pos)
+	var extra := str(p.get("line", ""))
+	if extra != "":
+		note += "\n<pos=APs text=\\c[1]%s%s>" % [extra, style]
+	return note
+
+
+## 「×数」乘整数倍（×40% → ×80%，×1 → ×2）；「+1%」这类加成不动
+static func _mult_line(line: String, mult: int) -> String:
+	var rx := RegEx.create_from_string("×(\\d+(?:\\.\\d+)?)")
+	var out := ""
+	var pos := 0
+	for hit in rx.search_all(line):
+		out += line.substr(pos, hit.get_start() - pos)
+		var n := float(hit.get_string(1)) * mult
+		out += "×" + (str(int(n)) if n == floorf(n) else str(snappedf(n, 0.01)))
+		pos = hit.get_end()
+	return out + line.substr(pos)
 
 
 # ---- 掉落（接口；还没接进掉落，见文件头第六条） ----

@@ -709,6 +709,9 @@ static func formula(a, b, item: Dictionary) -> float:
 	_cur_skill = int(item.get("id", 0))
 	var base := 0.0
 	var stats: Dictionary = d.get("stats", {"atk": 1})
+	var wp := XTianqiWeakAffix.proj_of(a, _cur_skill)  # 天启篇弱者专属词条批 1：本人投影（玛莎换属性、克洛什单体 ×2）
+	if wp.has("stat_swap"):
+		stats = XTianqiWeakAffix.swap_stats(stats, wp.stat_swap)
 	for k in stats:
 		base += float(stats[k]) * float(a.param(STATS.find(str(k))))
 	if d.has("max_of"):  # 取几项里最高的那项（露丝：物攻、魔攻取高）
@@ -716,11 +719,11 @@ static func formula(a, b, item: Dictionary) -> float:
 		for k in d.max_of:
 			hi = maxf(hi, float(a.param(STATS.find(str(k)))))
 		base += hi
-	var v := base * float(d.get("coef", 0.0)) * level_scale(a) * follow_scale
+	var v := base * float(d.get("coef", 0.0)) * level_scale(a) * follow_scale * float(wp.get("mult", 1))
 	if NATIVE_COUNTER and a is XActor and a.has_meta("xtq_cnext_on") and follow_scale == 1.0:
 		v *= float(a.get_meta("xtq_cnext_on"))  # 牛马之魂：反击后下一招（不含追加、反击本身）
 	var hit_cap := XTianqiBase.single_hit_cap(a)  # 期四：单段有效系数上限（总开关关着 0，不封）
-	var eff := float(d.get("coef", 0.0)) * (hit_weight(d) if hit_cap > 0.0 else 1.0)  # 口径同 天启篇数据校验.py single_hit_effective
+	var eff := float(d.get("coef", 0.0)) * (hit_weight(d) if hit_cap > 0.0 else 1.0) * float(wp.get("mult", 1))  # 口径同 天启篇数据校验.py single_hit_effective（专属倍率也算进单段上限）
 	for c in d.get("conds", []):
 		var m := _cond(c, a, b)
 		v *= m
@@ -1022,6 +1025,10 @@ static func begin_action(logic, u, skill) -> void:
 	u.set_meta("xtq_turn", int(logic.get("turn")) if logic is Object and logic.get("turn") != null else 0)  # 本场第几回合（battle_turn 条件）
 
 
+## 开关 MAIN_TARGETS_ONLY（T018 P2-1，O-待定）：false 回到旧样（这次行动里同一角色放的所有招、含七印派生打到的目标都记进追加目标）
+static var MAIN_TARGETS_ONLY := true
+
+
 static func after_apply(logic, u, skill, t, r := {}) -> void:
 	_reflect(u, t, r)
 	if t == null or not logic.has_meta("xtqs"):
@@ -1033,7 +1040,9 @@ static func after_apply(logic, u, skill, t, r := {}) -> void:
 			gh.append(t)
 		_fstore(logic).guard_hit = gh
 	var f: Dictionary = _fstore(logic).act
-	if not f.is_empty() and is_same(f.u, u) and not f.targets.has(t):
+	# 只记主招本身打到的目标（T018 P2-1）：七印派生（连斩、横扫、再射、放两次）和别的模块收尾时另放的招也走这里，
+	# 记进来会让追加释放（克洛什精准击中 189／190）在主目标倒下后追打派生打到的旁人
+	if not f.is_empty() and is_same(f.u, u) and not f.targets.has(t) and (not MAIN_TARGETS_ONLY or (skill is Dictionary and int(skill.get("id", 0)) == int(f.skill.get("id", 0)) and not XTianqiQiyinEffects.in_derived(logic))):
 		f.targets.append(t)
 	if not f.is_empty() and is_same(f.u, u) and bool(r.get("critical", false)):
 		f.crit = true  # 这次行动打出过暴击（charge.gain_crit）
@@ -1560,7 +1569,7 @@ static func _follow_of(u: XActor, skill: Dictionary) -> Array:
 		var rate := _rate(u, r)
 		if rate <= 0.0:
 			continue
-		var cast := XDB.rec("Skills", int(r.get("cast", skill.get("id", 0))))
+		var cast := XTianqiWeakAffix.skill_view(XDB.rec("Skills", int(r.get("cast", skill.get("id", 0)))), u)  # 弱者专属词条：追加招也按本人投影（克洛什极、破改单体）
 		if not cast.is_empty():
 			out.append([cast, rate, float(r.get("scale", 1.0)), r.get("then", {})])
 	return out

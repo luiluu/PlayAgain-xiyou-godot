@@ -1,0 +1,49 @@
+{
+ "tests": [
+  "xiyou_tianqi_weak_b1"
+ ],
+ "items": [
+  {
+   "name": "三层回到比列表",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+   "find": "\tlist = XTianqiRewards.filter_targets(self, a, list, skill)  # 天启篇奖励：混子之盾开场嘲讽\n",
+   "replace": "\tvar _pre := list.duplicate()\n\tlist = XTianqiRewards.filter_targets(self, a, list, skill)  # 天启篇奖励：混子之盾开场嘲讽\n\tguide_layers_changed = list != _pre\n"
+  },
+  {
+   "name": "投影不改范围",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_weak_affix.gd",
+   "find": "\t\tv.scope = int(p.scope)",
+   "replace": "\t\tpass"
+  },
+  {
+   "name": "追加招不投影",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_skills.gd",
+   "find": "var cast := XTianqiWeakAffix.skill_view(XDB.rec(\"Skills\", int(r.get(\"cast\", skill.get(\"id\", 0)))), u)",
+   "replace": "var cast := XDB.rec(\"Skills\", int(r.get(\"cast\", skill.get(\"id\", 0))))"
+  },
+  {
+   "name": "公式不换属性",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_skills.gd",
+   "find": "\tif wp.has(\"stat_swap\"):\n",
+   "replace": "\tif false:\n"
+  },
+  {
+   "name": "公式不乘倍率",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_skills.gd",
+   "find": "level_scale(a) * follow_scale * float(wp.get(\"mult\", 1))",
+   "replace": "level_scale(a) * follow_scale"
+  },
+  {
+   "name": "act 不投影共享记录",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/battle/battle_logic.gd",
+   "find": "\t\tskill = XTianqiWeakAffix.skill_view(skill, u)  # 天启篇弱者专属词条批 1：命令里存的是共享记录时也换成本人投影（范围）",
+   "replace": "\t\tpass"
+  },
+  {
+   "name": "说明不跟着变",
+   "file": "03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_weak_affix.gd",
+   "find": "\tv.note = _proj_note(str(v.get(\"note\", \"\")), p)",
+   "replace": "\tpass"
+  }
+ ]
+}

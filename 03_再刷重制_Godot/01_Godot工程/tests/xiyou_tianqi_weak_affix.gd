@@ -139,7 +139,8 @@ func _run() -> void:
 func _table() -> void:
 	var d := XTianqiWeakAffix.data()
 	_check("table_loads", not d.is_empty() and d.get("entries", null) is Dictionary, d.keys())
-	_check("table_no_entries_yet", (d.entries as Dictionary).is_empty())  # 具体词条等基础数值定了再做（D72）
+	# 批 1（T018）起表里有了具体词条：一律默认关（v0.3 第二节第 5 条：验收一条开一条），所以开着时战斗结果仍和没有本模块一样
+	_check("table_entries_default_off", (d.entries as Dictionary).values().all(func(e): return not bool(e.get("enabled", false))), (d.entries as Dictionary).keys())
 	_check("table_no_guidable_yet", (d.get("guidable_skills", []) as Array).is_empty())  # 默认一个都不可引导（D68）
 	_check("table_drop_rate_placeholder", is_equal_approx(float(XTianqiWeakAffix.rules().get("drop_rate", 0)), 0.3))
 

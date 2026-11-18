@@ -1393,11 +1393,9 @@ static func crit_immune(dt) -> bool:
 ## 【口径 Kyo 11-15，#016 P3】混子嘲讽是**全体挑衅**：群攻也只能打混子、小怪打不到（与同线异化「挑衅者」只限单体不同，那条群攻不受限）。
 ## 二阶段小怪「不攻击、只传不服」，群攻清不掉，只有碎混子之盾那一回合能清——这是想要的设计，不改；设计稿四骑士数值稿已写明。
 static func filter_targets(logic, a, list: Array) -> Array:
-	if not active(logic) or not a is XActor:
+	if not taunting(logic, a, list):
 		return list
 	var f := fight(logic)
-	if str(f.line) != "plague" or not bool(f.taunt) or not f.knight.is_alive():
-		return list
 	var out := []
 	var any_foe := false
 	for t in list:
@@ -1408,6 +1406,14 @@ static func filter_targets(logic, a, list: Array) -> Array:
 	if any_foe:
 		out.append(f.knight)
 	return out
+
+
+## 混子嘲讽这一次生效没有（我方行动、列表里有敌人、瘟疫骑士嘲讽中）：弱者专属词条看它让步，不看目标列表改没改（T018，小A 核 T015 契约漏洞 1）
+static func taunting(logic, a, list: Array) -> bool:
+	if not active(logic) or not a is XActor:
+		return false
+	var f := fight(logic)
+	return str(f.line) == "plague" and bool(f.taunt) and f.knight.is_alive() and list.any(func(t): return t is XEnemy)
 
 
 ## XEnemy.add_state：骑士免疫停手的控制和即死（生命没归零时挂不上死亡）

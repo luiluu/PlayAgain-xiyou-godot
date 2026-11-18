@@ -656,7 +656,7 @@ func _skill_records(ids: Array[int]) -> Array:
 	for id in ids:
 		var s := XDB.rec("Skills", id)
 		if not s.is_empty():
-			out.append(XTianqiGear.skill_view(XZhenqi.skill_view(s, self)))  # 道法按境界缩放（CodexZhenqi.skillView）；天启篇软绑定被动生效
+			out.append(XTianqiWeakAffix.skill_view(XTianqiGear.skill_view(XZhenqi.skill_view(s, self)), self))  # 道法按境界缩放（CodexZhenqi.skillView）；天启篇软绑定被动生效；弱者专属词条本人投影
 	return out
 
 
