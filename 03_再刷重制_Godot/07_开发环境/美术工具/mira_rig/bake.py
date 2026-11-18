@@ -19,7 +19,7 @@ HERE = Path(__file__).resolve().parent
 K = 8  # Scale2x 三次 = 8 倍
 
 def load_rig(path):
-    R = json.load(open(path, encoding='utf-8'))
+    R = json.load(open(path, encoding='utf-8')); R['_dir'] = str(Path(path).resolve().parent)
     src = Image.open((Path(path).parent / R['source']).resolve()).convert('RGBA')
     return R, np.array(src)
 
@@ -77,15 +77,27 @@ def mat(rot_deg, pivot, offset=(0, 0)):
     return np.array([[c, -s, px + ox - c * px + s * py], [s, c, py + oy - s * px - c * py], [0, 0, 1.0]])
 
 def world(R, pose):
-    B = R['bones']; out = {}
+    """各骨骼的世界矩阵。姿势可写 rot／offset／scale；scale 只压本骨骼自己，
+    子骨骼不继承压扁，只跟着挂点（pivot）被压后的位置走。"""
+    B = R['bones']; full = {}; rigid = {}
     def get(n):
-        if n in out: return out[n]
+        if n in full: return full[n], rigid[n]
         b = B[n]; p = pose.get(n, {})
         M = mat(p.get('rot', 0), b['pivot'], p.get('offset', (0, 0)))
-        if b.get('parent'): M = get(b['parent']) @ M
-        out[n] = M; return M
+        sx, sy = p.get('scale', (1, 1))
+        px, py = b['pivot']
+        S = np.array([[sx, 0, px - sx * px], [0, sy, py - sy * py], [0, 0, 1.0]])
+        if b.get('parent'):
+            PF, PR = get(b['parent'])
+            q = np.array([px, py, 1.0]); d = PF @ q - PR @ q  # 挂点被父骨压扁后的位移
+            T = np.array([[1, 0, d[0]], [0, 1, d[1]], [0, 0, 1.0]])
+            Rm = T @ PR @ M
+        else:
+            Rm = M
+        full[n] = Rm @ S; rigid[n] = Rm
+        return full[n], rigid[n]
     for n in B: get(n)
-    return out
+    return {n: full[n] for n in B}
 
 def smooth(t):
     t = np.clip(t, 0, 1); return t * t * (3 - 2 * t)
@@ -190,6 +202,23 @@ def make_fill(src, L, layer):
                 if y + i < h and m[y + i, x]: out[y + i, x] = c
     return out
 
+def fx_overlay(R, pose, shape):
+    """从原稿同号帧抠特效（多边形内、颜色在范围内的像素），叠在最上层。"""
+    out = np.zeros(shape, np.uint8)
+    for fx in pose.get('_fx', []):
+        im = np.array(Image.open(Path(R['_dir']) / R['fx_dir'] / fx['from']).convert('RGBA'))
+        h, w = shape[:2]
+        m = Image.new('L', (w, h), 0); ImageDraw.Draw(m).polygon([tuple(p) for p in fx['poly']], fill=1)
+        m = (np.array(m) > 0) & (im[..., 3] > 0)
+        if 'rgb_min' in fx:
+            c = im[..., :3].astype(int)
+            m &= np.all((c >= fx['rgb_min']) & (c <= fx['rgb_max']), -1)
+        dx, dy = fx.get('offset', (0, 0))  # 特效整体平移，对到新姿势的嘴／爪
+        ys, xs = np.nonzero(m); Y = ys + dy; X = xs + dx
+        ok = (Y >= 0) & (Y < h) & (X >= 0) & (X < w)
+        out[Y[ok], X[ok]] = im[ys[ok], xs[ok]]
+    return out
+
 def bake(R, src, pose, fills=None):
     L = label_map(R, src); Mw = world(R, pose)
     out = np.zeros_like(src)
@@ -199,7 +228,7 @@ def bake(R, src, pose, fills=None):
         a = layer_src(src, L, layer['parts'], fl)
         up = upscale(a)
         out = comp(out, render_layer(layer, up, Mw, src.shape))
-    return out
+    return comp(out, fx_overlay(R, pose, src.shape))
 
 N8 = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)]
 N4 = [(0, -1), (-1, 0), (1, 0), (0, 1)]
