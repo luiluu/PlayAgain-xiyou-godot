@@ -543,6 +543,20 @@ class ParallelTestRunnerTests(unittest.TestCase):
         rc, out, _ = par.run_with_rusage(['sh', '-c', 'echo "assert: JSON Parse Error: bad input"; exit 0'], dict(os.environ), 10, par.FATAL_LOAD)
         self.assertEqual((rc, 'JSON Parse Error' in out), (0, True))
 
+    def test_runtime_script_error_fails_fast(self):
+        """T226：运行期 SCRIPT ERROR（不止解析错误）也立即终止、rc 143、保留错误行；正文里非行首的字样和长测试不误杀。"""
+        import time as _t
+        par = load('par_fatal2', HERE / '并行测试.py')
+        t0 = _t.monotonic()
+        rc, out, _ = par.run_with_rusage(['sh', '-c', 'echo "SCRIPT ERROR: Invalid call. Nonexistent function foo" >&2; sleep 60'],
+                                         dict(os.environ), 60, par.FATAL_ERROR)
+        self.assertLess(_t.monotonic() - t0, 20)
+        self.assertEqual(rc, 143)
+        self.assertIn('Nonexistent function foo', out)
+        rc, out, _ = par.run_with_rusage(['sh', '-c', 'echo "note: expect SCRIPT ERROR: x"; sleep 1; echo TEST_RESULT=ok'],
+                                         dict(os.environ), 30, par.FATAL_ERROR)
+        self.assertEqual(rc, 0)
+
     def test_failure_summary_is_last_and_written_for_checker(self):
         """哪吒_7 t4 第 1 项：长任务日志里失败明细夹在几百行进度中间，收尾单列失败场景与日志路径，并交给 检查.sh 汇总。"""
         summary = self.tmp / 'failed.tsv'
