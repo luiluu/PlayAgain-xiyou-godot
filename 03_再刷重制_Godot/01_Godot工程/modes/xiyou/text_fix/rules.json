@@ -206,6 +206,12 @@
    "why": "去西游化（Kyo 11-16 D126）。只改玩家可见字段；Map204 的 356 指令串、System 变量名不在改字范围"
   },
   {
+   "from": "天道眷顾者",
+   "to": "启示眷属",
+   "ref": "T177",
+   "why": "去西游化（Kyo 11-18 D197，只在天启篇存档套用）。数据库侧（Skills 6162 劫天运备注）；18 张图 code=355 的 $.toaster 不扫，由 MVScript.QISHI_RENAME 在执行时换"
+  },
+  {
    "from": "超级[Bb]oss",
    "to": "霸主",
    "re": true,

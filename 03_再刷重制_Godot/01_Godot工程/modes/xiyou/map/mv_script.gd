@@ -838,7 +838,22 @@ static func _reincarnation_open(interp) -> void:
 ## 上一次 _toaster_text 返回空，是因为原版这句会抛错（角色不存在时读 null 的 name()），不是认不出
 static var toaster_threw := false
 
+## T177（Kyo 11-18 D197）：天启篇里 $.toaster 的「天道眷顾者」显示为「启示眷属」（XTextFix 不扫 code=355）。
+## 只在天启篇存档换，西游档原样；false＝回原版文字。
+static var QISHI_RENAME := true
+
+
+static func _qishi_text(text: String) -> String:
+	if QISHI_RENAME and text.contains("天道眷顾者") and XState.current != null and XTianqi.active(XState.current):
+		return text.replace("天道眷顾者", "启示眷属")
+	return text
+
+
 static func _toaster_text(js: String) -> String:
+	return _qishi_text(_toaster_text_raw(js))
+
+
+static func _toaster_text_raw(js: String) -> String:
 	toaster_threw = false
 	var m := _re("\\$\\.toaster\\(\\s*\\{\\s*message\\s*:\\s*(.*?)\\s*\\}\\s*\\)").search(js)
 	if m == null:
