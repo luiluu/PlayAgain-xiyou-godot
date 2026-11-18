@@ -25,6 +25,7 @@ extends RefCounted
 ## 格高 ≥ NATIVE_CELL（128）的画成 1 倍（原图像素＝屏幕像素），其余（64 格旧图）ACTOR_SIZE；逐帧图、单图、场景外观照 ACTOR_SIZE。
 ## 已有大格旧图也按 1 倍，屏上身高正好落在约 100：奈叶 128 格 98、小铃兰 256 格 102、流萤 128 格 116（照 1.6 会是 157／163／186）。
 ## 哈基米底图是 128 格但实际画逐帧图（CatSwordSaint_v3），不算大格，照 ACTOR_SIZE（115 高，同 1d9694d0e）。
+## 逐帧图（167 号起归一档）只缩不放：倍数＝ACTOR_SIZE×min(1, 归一缩放)，渡鸦神话、米拉黑龙等大画布形态缩到约 115 高（XBattlerSprite._prof_scale，小A 核 P1-1）。
 ## 回退：ACTOR_SIZE＝0 回到 T126（旧角色 1.425／1.2、新角色归一 ×1.9／×1.6）。原版竖排、旧界面、ENABLED＝false 照旧不放大。
 
 static var ENABLED := true

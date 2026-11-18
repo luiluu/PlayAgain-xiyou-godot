@@ -200,6 +200,10 @@ var _fixed := 0.0
 ## 归一档此刻的缩放（不含外观 scale、SvPngFd）
 func _prof_scale() -> float:
 	if _fixed > 0.0:
+		# 逐帧图（不从 9×6 图切）画布大小不一：渡鸦神话、米拉黑龙等大画布的人物可见高 150～180，原本靠归一档缩回 72 基准。
+		# 统一大小时只缩不放：倍数＝_fixed×min(1, 归一缩放)，可见高 >72 的缩到约 72×1.6≈115，≤72 的（屠苏、璇、哈基米、五条悟）照 _fixed（小A 核 P1-1）
+		if _profile.get("multi", false):
+			return _fixed * minf(1.0, float(_profile.scale))
 		return _fixed
 	return _profile.scale * _layout_mul()
 
@@ -538,7 +542,8 @@ func _apply_smooth() -> void:
 		body.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		_apply_crisp(false)  # 保持原生像素边界，不套可选柔边着色器。
 		return
-	var smooth := SV_NORM_SMOOTH and not _profile.is_empty() and float(_profile.scale) * fd < 1.0 and _fixed <= 0.0  # T174 统一大小不缩小原图，照最近邻
+	# T174：统一大小时按实际倍数判（大画布逐帧图缩到 <1 照旧平滑；64 格 1.6、大格 1 倍照最近邻），小A 核 P2-1
+	var smooth := SV_NORM_SMOOTH and not _profile.is_empty() and (_prof_scale() if _fixed > 0.0 else float(_profile.scale)) * fd < 1.0
 	body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if smooth else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 	_apply_crisp(not smooth)
 

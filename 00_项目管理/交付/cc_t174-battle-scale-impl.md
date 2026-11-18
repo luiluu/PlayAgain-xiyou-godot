@@ -55,6 +55,15 @@
 - 已知未改（之前就这样）：奈叶、小铃兰是 167 号前的旧角色，没有归一档，`height()`（状态图标、伤害数字抬高的依据）照原版按一格算：小铃兰 256、奈叶 128，比可见身高高；T126 时是 365／182，现在反而更贴近。要贴身体得给它们补归一档，另开单。
 - 其余同 1d9694d0e：我方全员、前后排、小怪战首领战同一倍数；胜利镜头 `VICTORY_FOCUS` 对准我方整队；统一大小时小怪战我方右挪 15；原版竖排、旧界面、`ENABLED＝false` 不放大。
 
+### 返修（小A 甲核退回 P1×1 P2×2）
+
+- **P1-1 大画布逐帧形态被乘 1.6**：`battler_sprite.gd` `_prof_scale()` 改为逐帧图（归一档 `multi`）按 `ACTOR_SIZE × min(1, 归一缩放)`：可见高 >72 的大画布只缩不放，≤72 的（屠苏、璇、哈基米、五条悟）照 1.6 不变；9×6 切块图照旧（64 格 1.6、大格 1）。
+  渡鸦神话 `UserSV_RavenMythic` 294×250 → 约 136×115，米拉黑龙 `UserSV_MiraDragon` 318×254 → 约 144×115；同路径的米拉人形旧图、`garou_human_v2`、宿傩 `Codex_Sukuna_Full`、谷雨旧 `Codex_Guyu` 一样缩到约 115。
+- **P2-1 平滑采样锁死**：`_apply_smooth` 去掉写死的 `_fixed <= 0.0`，统一大小时按实际倍数 `_prof_scale()×fd < 1` 判（大画布缩小照旧线性平滑；64 格 1.6、大格 1 倍照最近邻）；没统一时照原判断不变。
+- **P2-2 补测**：专项 `xiyou_battle_actor_size` 加 `_big_forms`（小怪战 37、首领战 88 各一场，队伍 狗逍遥／里德／渡鸦神话形态／米拉）：断言 `big_form_*_keys`（真进神话形态、黑龙）、`_h_<id>`（全员 80～130 高）、`_shrink_167/168`（倍数＝1.6×归一缩放且 <1）、`_smooth_167/168`（线性平滑）、`_gxy_nearest`、`_clear_party_panel`、`_no_overlap`、`_on_screen`；米拉开战人形 `_mira_human_h`，战中加 2592 状态由精灵走 `swap_look` 换黑龙后再核。
+  `_cell128_battle` 加 `swap_to_cell64`／`swap_back_cell128`（流萤 128 格 ↔ 萨姆态 64 格换装，倍数 1 ↔ 1.6）。
+  反向验证：把逐帧缩小那句临时关掉重跑，`_h_167/168`（294／318 宽、254～263 高）、`_shrink`、`_smooth`、`_clear_party_panel`（渡鸦压队伍栏）、`_no_overlap`（渡鸦米拉互叠）全挂，与小A 实算一致；还原后 157/157。
+
 ### 回退方法
 
 - 整个统一大小：`XBattleLayout.ACTOR_SIZE = 0` → 回到 T126（旧角色 1.425／1.2、167 号起新角色归一 ×1.9／×1.6，小怪战不右挪）。
@@ -64,6 +73,7 @@
 ## 验证
 
 - 专项 `xiyou_battle_actor_size` 125/125、`xiyou_battle_layout` 78/78（本机无头，`--audio-driver Dummy`）。
+- 返修后：`并行测试.py` 本机 10 个场景全过（xiyou_battle_actor_size 157/157、xiyou_battle_layout、xiyou_sv_smooth、xiyou_mira_lift、xiyou_mira_dragon_art、xiyou_mira_art、xiyou_raven_visual、xiyou_actor_looks、xiyou_crisp_scale、xiyou_sukuna_art）。
 - `语法检查.py`：1023 个 .gd 0 问题。
 - 选测：`选测.py main --list` 选 162 个场景，走云端（`云端选测.py run`，提交 c65119c28）；结果见回执。
 - `工具回归.py`、`交付自检.py`：见回执。
@@ -73,6 +83,7 @@
 
 ## 2026-11-18 【cc·未经审查】T174 战斗我方统一大小 1.6＋新角色按格子大小定倍数（dev.待定）
 - `XBattleLayout.ACTOR_SIZE＝1.6`：我方全员（旧角色、167 号起新角色）、前后排、小怪战与首领战同一个倍数，64 格的里德、狗逍遥屏上约 98～102 高（Kyo 11-18 定 A 版 1.6）；不再按战斗类型、新旧角色各乘各的。
+- 逐帧图大画布形态（渡鸦神话、米拉黑龙等）只缩不放，约 115 高。
 - D196 预留：MV 侧视图格高 ≥ 128（`NATIVE_CELL`）的画成 1 倍；现有大格旧图奈叶 98、小铃兰 102、流萤 116 高（原来 1.6 会画成 157～186）；哈基米实画逐帧图照 1.6。
 - 胜利镜头对准我方整队（`VICTORY_FOCUS`）；统一大小时小怪战我方右挪 15；原版竖排、旧界面不放大。专项 `xiyou_battle_actor_size`。
 - 回退：`ACTOR_SIZE = 0`（回 T126）、`NATIVE_CELL = 100000`（全按 1.6）、`VICTORY_FOCUS = false`。优化登记 O-待定。

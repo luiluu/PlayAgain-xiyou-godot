@@ -88,6 +88,7 @@ func _run() -> void:
 		f.store_string(JSON.stringify(notes, "  "))
 		f.close()
 	await _cell128_battle()
+	await _big_forms()
 	await _column()
 	XBattleLayout.ACTOR_SIZE = keep
 	_finish()
@@ -142,7 +143,7 @@ func _unit_cell() -> void:
 	XBattleLayout.NATIVE_CELL = keep
 
 
-func _battle(troop: int, party: Array) -> XBattleScene:
+func _battle(troop: int, party: Array, prep := Callable()) -> XBattleScene:
 	seed(20261118)
 	var s := XState.new_game(9, int(party[0]), party.slice(1))  # 难度 9 才放超强者（谷雨、云裳…）入队，建完改回 3
 	s.set_switch(XItemMarks.SUPER_SWITCHES[0], true)
@@ -158,6 +159,8 @@ func _battle(troop: int, party: Array) -> XBattleScene:
 		a.refresh_passive()
 		a.param_mark_dirty()
 		a.recover_all()
+	if prep.is_valid():
+		prep.call(s)
 	s.random_master = XRandomStream.hex64(20261118)
 	var b := XBattleScene.new()
 	b.setup(troop, true, false, {})
@@ -300,7 +303,78 @@ func _cell128_battle() -> void:
 			_check(tag + "_cursor_same", is_equal_approx(sp.cursor.position.y, gxy.cursor.position.y), [sp.cursor.position.y, gxy.cursor.position.y])
 		rows.append({"id": a.actor_id, "h": roundf(sp.height()), "body_scale": sp.body_scale})
 	notes.append({"size": 1.6, "troop": MOB_TROOP, "group": "大格旧图", "actors": rows})
+	# swap_look 换到不同格子大小的图：流萤 128 格 → 萨姆态 64 格（Codex_Sam_SV）→ 换回
+	for a in b.logic.actors:
+		if a.actor_id != 179:
+			continue
+		var sp: XBattlerSprite = b.sprites[a]
+		var own_key: String = sp._look_key
+		sp.swap_look("Codex_Sam_SV")  # 不等帧：精灵每帧会按角色此刻的外观键换回来，这里直接核换装那一下
+		_check("swap_to_cell64", sp.look.cell.y == 64.0 and is_equal_approx(sp.body_scale, 1.6 * sp.look.scale * sp.fd), [sp._look_key, sp.look.cell, sp.body_scale])
+		sp.swap_look(own_key)
+		_check("swap_back_cell128", sp.look.cell.y == 128.0 and is_equal_approx(sp.body_scale, 1.0 * sp.look.scale * sp.fd), [sp._look_key, sp.look.cell, sp.body_scale])
 	await _close(b)
+
+
+## 小A 核 P1-1／P2-1／P2-2：大画布逐帧形态（167 渡鸦神话 UserSV_RavenMythic 380×280、168 米拉黑龙 UserSV_MiraDragon 340×280）
+## 统一大小时按归一缩放只缩不放：屏上身高约 115（≤130），不碰队伍栏、前后排不叠；缩到 <1 照旧平滑采样。
+## 米拉开战是人形（≤130），战中 swap_look 换黑龙后再核；64↔128 格换装在 _cell128_battle 里核（流萤↔萨姆态）。
+func _big_forms() -> void:
+	XBattleLayout.ACTOR_SIZE = 1.6
+	for troop in [MOB_TROOP, BOSS_TROOP]:
+		var b := await _battle(troop, [1, 11, 167, 168], func(s: XState):
+			s.switches[2494] = true
+			s.raven["myth"] = 3
+			s.actor_advance[XMira.ACTOR] = 3
+			var m := s.actor(XMira.ACTOR)
+			m.learn_skill(10161)
+			m.state_ids.append(XMira.DRAGON))
+		var tag := "big_form_%d" % troop
+		var by := {}
+		for a in b.logic.actors:
+			by[a.actor_id] = b.sprites[a]
+		# 开战时状态会重算，米拉照人形进场：战中加黑龙状态，精灵走 swap_look 换黑龙，换完再核
+		if by.has(168):
+			var mira: XBattlerSprite = by[168]
+			_check(tag + "_mira_human_h", mira.height() >= 80.0 and mira.height() <= 130.0, [mira._look_key, mira.height(), mira.body_scale])
+			b.logic._state_add(mira.battler, XMira.DRAGON)  # 变身：加 2592，精灵下一帧按新外观键 swap_look 换黑龙
+			await _until(func(): return str(mira._look_key).contains("MiraDragon"), 60)
+		_check(tag + "_keys", by.has(167) and by.has(168) and str(by[167]._look_key).contains("RavenMythic") and str(by[168]._look_key).contains("MiraDragon"),
+			[by.get(167).get("_look_key") if by.has(167) else null, by.get(168).get("_look_key") if by.has(168) else null])
+		var rows := []
+		for id in by:
+			var sp: XBattlerSprite = by[id]
+			rows.append({"id": id, "key": sp._look_key, "w": roundf(sp.width()), "h": roundf(sp.height()), "body_scale": snappedf(sp.body_scale, 0.0001)})
+			_check(tag + "_h_%d" % id, sp.height() >= 80.0 and sp.height() <= 130.0, [sp._look_key, sp.width(), sp.height(), sp.body_scale])
+		for id in [167, 168]:
+			if by.has(id):
+				var sp: XBattlerSprite = by[id]
+				_check(tag + "_shrink_%d" % id, sp.body_scale < 1.0 and is_equal_approx(sp.body_scale, 1.6 * float(sp._profile.get("scale", 0.0)) * sp.look.scale * sp.fd),
+					[sp.body_scale, sp._profile.get("scale")])
+				_check(tag + "_smooth_%d" % id, (sp.sprite as Sprite2D).texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR, (sp.sprite as Sprite2D).texture_filter)
+		_check(tag + "_gxy_nearest", (by[1].sprite as Sprite2D).texture_filter != CanvasItem.TEXTURE_FILTER_LINEAR)
+		notes.append({"size": 1.6, "troop": troop, "group": "大画布逐帧形态", "actors": rows})
+		_layout_checks(tag, b)
+		await _close(b)
+
+
+## 不压右上队伍栏、前后排身体不重叠（各让 6 像素）、不出画面
+func _layout_checks(tag: String, b: XBattleScene) -> void:
+	var pr := b.party_rect()
+	var panel := Rect2(pr.position - b._origin, pr.size)
+	var hit := b.logic.actors.filter(func(a): return _body(b.sprites[a]).grow(-6.0).intersects(panel))
+	_check(tag + "_clear_party_panel", hit.is_empty(), [panel, hit.map(func(a): return [a.display_name(), _body(b.sprites[a])])])
+	var over := []
+	for i in range(b.logic.actors.size()):
+		for j in range(i + 1, b.logic.actors.size()):
+			var ri := _body(b.sprites[b.logic.actors[i]]).grow(-6.0)
+			var rj := _body(b.sprites[b.logic.actors[j]]).grow(-6.0)
+			if ri.intersects(rj):
+				over.append([b.logic.actors[i].display_name(), b.logic.actors[j].display_name(), ri, rj])
+	_check(tag + "_no_overlap", over.is_empty(), over)
+	_check(tag + "_on_screen", b.logic.actors.all(func(a):
+		var r := _body(b.sprites[a])
+		return r.position.y >= 0.0 and r.end.x <= XBattleScene.BOX.x and r.position.x >= 0.0), b.logic.actors.map(func(a): return _body(b.sprites[a])))
 
 
 ## 原版竖排：我方不放大（同列间隔按 72 高留的）
