@@ -70,7 +70,7 @@ static func data() -> Dictionary:
 			if not {"D189": XTianqiBase.TUNE_D189, "D200": XTianqiBase.TUNE_D200, "D198": XTianqiBase.TUNE_D198, "D208": XTianqiBase.TUNE_D208, "D209": XTianqiBase.TUNE_D209}[key]:
 				continue
 			var tune: Dictionary = _data.get("tune", {}).get(key, {})
-			for sec in ["skills", "actors"]:
+			for sec in ["skills", "actors", "gear"]:  # gear：T209＋D213 改百谷生卡面
 				for k in tune.get(sec, {}):
 					if str(k).begins_with("_"):
 						continue

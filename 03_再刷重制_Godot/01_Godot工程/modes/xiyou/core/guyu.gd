@@ -285,7 +285,7 @@ static var tq_substituted := false
 
 
 static func heal_ratio(a) -> float:
-	var p := 0.1 if _tq() else curve(int(a.level), [0.25, 0.30, 0.35, 0.40])
+	var p := tq_pct("heal_pct", 10.0) if _tq() else curve(int(a.level), [0.25, 0.30, 0.35, 0.40])
 	for v in a.passive_values("passiveHEUP"):
 		p *= 1.0 + float(v) * 0.01
 	return p
@@ -427,6 +427,14 @@ static func tq_cap_rate(g) -> float:
 	var relic := has_relic(g)
 	var pct := float((row as Dictionary).get("reserve_cap_relic" if relic else "reserve_cap", 0)) if row is Dictionary else 0.0
 	return pct / 100.0 if pct > 0.0 else (1.2 if relic else 1.0)
+
+
+## 天启篇谷雨的整数百分比参数（T209＋D213，Kyo 11-18「改成333%，然后谷雨的治疗强度加高一点」选甲）：技能表 actors.175 的
+## heal_pct（泽苍生治疗比例，稿子 10%）、finish_pct（终结按储备的比例，稿子 100%）；tune.D209 写，TUNE_D209 关掉回稿子的数
+static func tq_pct(key: String, fallback: float) -> float:
+	var row = XTianqiSkills.data().get("actors", {}).get(str(ACTOR), {})
+	var pct := float((row as Dictionary).get(key, 0)) if row is Dictionary else 0.0
+	return (pct if pct > 0.0 else fallback) / 100.0
 
 
 ## cap：谷雨本人无上限
@@ -817,7 +825,7 @@ static func _special(logic, u, k: String, t) -> void:
 			return
 		_special_done = true
 		var q := reserve(u)
-		_finish_power = q * (1.0 if _tq() else curve(int(u.level), [33, 50], [40, 60]))  # 天启篇：按储备 ×1.0
+		_finish_power = q * (tq_pct("finish_pct", 100.0) if _tq() else curve(int(u.level), [33, 50], [40, 60]))  # 天启篇：按储备 ×1.0（D213 起读表 finish_pct）
 		pay(u, q)
 		close_flower()
 

@@ -1075,9 +1075,9 @@ func _p7() -> void:
 	var cap_off := XGarou.evolution_cap()
 	XTianqiSkills.CARDS = true
 	_check("p7_garou_cap", cap_on == 10 and cap_off == 3, [cap_on, cap_off])
-	# 谷雨：治疗 10%，储备上限＝谷雨生命上限
+	# 谷雨：治疗 10%，储备上限＝谷雨生命上限；T209＋D213（Kyo 11-18 选甲）起治疗 18%（TUNE_D209 关掉回 10%，见 p7_d209_table）
 	var gy: XActor = s.actor(175)
-	_check("p7_guyu", is_equal_approx(XGuyu.heal_ratio(gy) / maxf(0.0001, _heup(gy)), 0.1), XGuyu.heal_ratio(gy))
+	_check("p7_guyu", is_equal_approx(XGuyu.heal_ratio(gy) / maxf(0.0001, _heup(gy)), 0.18 if XTianqiBase.TUNE_D209 else 0.1), XGuyu.heal_ratio(gy))
 	# 哈基米：剑心多出的段每段只算 +0.5，连携 30%
 	var lg := XBattleLogic.new()
 	lg.setup(2, s)
@@ -1151,7 +1151,7 @@ func _p7() -> void:
 	_check("p7_sukuna_terminal_switch_back", d8_34 == [4.0, 5.0] and d8_35 == [5.0, 6.0] and off34 == [9.0] and off35 == [11.0]
 		and XSukuna.tq_terminal_hits(10235) == [6.0, 7.0, 8.0], [d8_34, d8_35, off34, off35])
 	# 【cc·T204＋T209】D209 覆盖层：奈叶厄临星爆三档（5706／5708／5709＝小魔炮六选一同一招的 30／60／90% 功率）同改四段×(魔攻4＋魔法上限20%)；
-	# 谷雨储备上限读表 310%（百谷生 372%）；系数整数（附则 E：coef 整数，系数×属性权重是整数或整数百分比）；关掉 TUNE_D209 回 D208（奈叶两段×12、谷雨 100%）
+	# 谷雨（D213 甲）储备上限读表 333%（百谷生 400%）、终结按储备 93%、治疗 18%，百谷生卡面跟着改；系数整数（附则 E：coef 整数，系数×属性权重是整数或整数百分比）；关掉 TUNE_D209 回 D208（奈叶两段×12、谷雨 100%）
 	var d9 := XTianqiSkills.data().get("tune", {}).get("D209", {}).get("skills", {}) as Dictionary
 	var d9_int := d9.keys().all(func(k):
 		var dm: Dictionary = d9[k].get("damage", {})
@@ -1163,16 +1163,20 @@ func _p7() -> void:
 	var nano := [5706, 5708, 5709].map(func(id): return [XTianqiSkills.spec(id).get("damage", {}).get("stats"), XTianqiSkills.spec(id).get("damage", {}).get("coef"), XTianqiSkills.spec(id).get("seq")])
 	var gy9 := s.actor(175)
 	var gy_on := XGuyu.tq_cap_rate(gy9)
+	var gy_pct_on := [XGuyu.tq_pct("heal_pct", 10.0), XGuyu.tq_pct("finish_pct", 100.0), str(XTianqiSkills.data().get("gear", {}).get("armor:7912", {}).get("desc", [""])[0])]
 	XTianqiBase.TUNE_D209 = false
 	XTianqiSkills.reload_table()
 	var nano_off := [float(XTianqiSkills.spec(5706).damage.coef), XTianqiSkills.spec(5706).get("seq")]
 	var gy_off := XGuyu.tq_cap_rate(gy9)
+	var gy_pct_off := [XGuyu.tq_pct("heal_pct", 10.0), XGuyu.tq_pct("finish_pct", 100.0), str(XTianqiSkills.data().get("gear", {}).get("armor:7912", {}).get("desc", [""])[0])]
 	XTianqiBase.TUNE_D209 = true
 	XTianqiSkills.reload_table()
 	_check("p7_d209_table", d9.size() == 18 and d9_int and nano[0] == nano[1] and nano[1] == nano[2] and int(nano[0][1]) == 10
 		and is_equal_approx(float(nano[0][0].mat), 0.4) and is_equal_approx(float(nano[0][0].mmp), 0.02) and int(nano[0][2][0].n) == 4
-		and is_equal_approx(gy_on, 3.72 if XGuyu.has_relic(gy9) else 3.1) and is_equal_approx(gy_off, 1.2 if XGuyu.has_relic(gy9) else 1.0)
-		and is_equal_approx(nano_off[0], 12.0) and int(nano_off[1][0].n) == 2, [d9.size(), d9_int, nano, gy_on, gy_off, nano_off])
+		and is_equal_approx(gy_on, 4.0 if XGuyu.has_relic(gy9) else 3.33) and is_equal_approx(gy_off, 1.2 if XGuyu.has_relic(gy9) else 1.0)
+		and is_equal_approx(gy_pct_on[0], 0.18) and is_equal_approx(gy_pct_on[1], 0.93) and gy_pct_on[2].contains("333%提到400%")
+		and is_equal_approx(gy_pct_off[0], 0.1) and is_equal_approx(gy_pct_off[1], 1.0) and gy_pct_off[2].contains("100%提到120%")
+		and is_equal_approx(nano_off[0], 12.0) and int(nano_off[1][0].n) == 2, [d9.size(), d9_int, nano, gy_on, gy_off, nano_off, gy_pct_on, gy_pct_off])
 	# 模块法宝：百分比属性去掉
 	var view: Dictionary = XTianqiSkills.gear_view(XDB.rec("Armors", 4577).merged({"kind": "armor", "base": 4577}, true))
 	_check("p7_gear", (view.get("traits", []) as Array).filter(func(t): return int(t.code) == 21).is_empty(), view.get("traits"))

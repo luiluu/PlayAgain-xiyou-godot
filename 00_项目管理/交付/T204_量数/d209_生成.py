@@ -68,14 +68,15 @@ sk(10623,"179 流萤（第 18，约 140 万，余烬 3000 标定）：完全燃�
 sk(10641,"180 五条悟（第 7，约 188 万）：茈·放 3 对 11 一段 → 17 四段（split 2 后实测 4 段，gojo_hits 4，卡上写合计）",
    gojo_pairs=[4,7,17],gojo_hits=4,seq=[{"op":"split_effects","n":2}],
    desc=["条件：苍印、赫印都至少1，上一个术式是赫","效果：四段；施放后苍印、赫印全部清空；对数＝较少的一个","伤害：四段合计 魔法攻击×4／7／17（按1～3对）"])
-_ACT={"175":{"_note":"175 谷雨（第 9，约 179 万；Kyo 11-18「谷雨走A，通过调整储备上限」）：储备上限 谷雨生命上限 100%→310%、百谷生 120%→372%（XGuyu.tq_cap_rate 读）","reserve_cap":310,"reserve_cap_relic":372}}
+_ACT={"175":{"_note":"175 谷雨（第 9，约 179 万）：D209 A（Kyo 11-18「谷雨走A，通过调整储备上限」）＋D213 甲（Kyo 11-18「改成333%，然后谷雨的治疗强度加高一点」）：储备上限 谷雨生命上限 100%→333%、百谷生 120%→400%（同 1.2 倍）；终结按储备 100%→93%（峰值留在约 179 万、第 9）；泽苍生治疗比例 10%→18%（叠满：百谷生 5 次、不戴 8 次，按不乘 5 算）（XGuyu.tq_cap_rate／tq_pct 读）","reserve_cap":333,"reserve_cap_relic":400,"finish_pct":93,"heal_pct":18}}
+GEAR={"armor:7912":{"_note":"D213：百谷生卡面跟储备上限（333%→400%）","desc":["特效：储备上限从333%提到400%；60级起战斗开始自带30%储备"]}}
 EXTRA=json.load(open(sys.argv[1])) if len(sys.argv)>1 else {}
 S.update(EXTRA)
 ACT={}
 if '_ACT' in globals(): ACT=_ACT
 import subprocess,os
 t=subprocess.run(['git','show','29f6b5be1~1:03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/skill_rework.json'],capture_output=True,text=True,check=True,cwd=os.path.dirname(P)).stdout  # 改 D209 前的原文
-body=',\n  "skills": {\n'+',\n'.join('   %s: %s'%(json.dumps(k),json.dumps(v,ensure_ascii=False)) for k,v in S.items())+'\n  },\n  "actors": '+json.dumps(ACT,ensure_ascii=False)+'\n }'
+body=',\n  "skills": {\n'+',\n'.join('   %s: %s'%(json.dumps(k),json.dumps(v,ensure_ascii=False)) for k,v in S.items())+'\n  },\n  "actors": '+json.dumps(ACT,ensure_ascii=False)+',\n  "gear": '+json.dumps(GEAR,ensure_ascii=False)+'\n }'
 ins=', "D209": {\n  "_note": '+json.dumps(NOTE,ensure_ascii=False)+body
 t=t.rstrip(); idx=t.rfind('}}')
 t=t[:idx+1]+ins+'}\n}\n'
