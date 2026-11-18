@@ -593,9 +593,10 @@ static var FABAO_TABLE := true
 static var _fabao_main := {}
 
 
+## 只认法宝栏（etypeId 13，同 XTianqiAffixRoll）：别的栏带 Magic Weapon 备注的不读表（T163 甲核 P3-1）
 static func fabao_applies(item) -> bool:
-	return FABAO_TABLE and XTianqiBase.PHASE4 and item is Dictionary and XMagicWeapon.is_magic(item) and XTianqiBase.on() \
-		and gear_base().has("fabao")
+	return FABAO_TABLE and XTianqiBase.PHASE4 and item is Dictionary and XMagicWeapon.is_magic(item) and int(item.get("etypeId", 0)) == 13 \
+		and XTianqiBase.on() and gear_base().has("fabao")
 
 
 ## 读表时这件法宝第 i 项给多少（不读表的项 0）；lv＜0 时 0

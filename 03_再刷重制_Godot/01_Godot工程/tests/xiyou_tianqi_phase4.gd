@@ -16,8 +16,8 @@ var results: Array = []
 
 
 ## T082 实机标定的 K（balance_table combat_rules.base_damage）；改标定只改这两行
-const K_TABLE := 0.27
-const K_TEXT := "0.27"
+const K_TABLE := 0.13
+const K_TEXT := "0.13"
 
 func _ready() -> void:
 	_run.call_deferred()
@@ -224,6 +224,9 @@ func _fabao() -> void:
 	var back := [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)]
 	XTianqiGear.FABAO_TABLE = true
 	_check("fabao.switch_back", back == raw and raw[1] > want_atk * 2.0, [back, raw])
+	var other := e.duplicate(true)
+	other.etypeId = 5  # T175（T163 甲核 P3-1）：只认法宝栏 etypeId 13，别的栏带 Magic Weapon 备注照原版
+	_check("fabao.etype_only", int(e.get("etypeId", 0)) == 13 and [XActor.magic_param(other, 0), XActor.magic_param(other, 2), XActor.magic_param(other, 4)] == raw, [e.get("etypeId"), raw])
 	XTianqiBase.PHASE4 = false
 	_check("fabao.phase4_off", [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)] == raw)
 	XTianqiBase.PHASE4 = true
@@ -240,25 +243,36 @@ func _tune_d189() -> void:
 	var on_coef := float(XTianqiSkills.spec(10727).damage.coef)
 	var on_hp := float(XTianqiSkills.spec(7057).damage.stats.mhp)
 	var on_atk := float(XTianqiSkills.spec(7057).damage.stats.atk)
+	var on_7057 := float(XTianqiSkills.spec(7057).damage.coef)
+	var on_rem := [float(XTianqiSkills.spec(5757).damage.coef), float(XTianqiSkills.spec(5757).damage.stats.mhp), float(XTianqiSkills.spec(5759).damage.coef), float(XTianqiSkills.spec(5758).damage.coef), float(XTianqiSkills.spec(508).damage.coef)]
 	var on_desc := str(XTianqiSkills.spec(10727).desc)
 	XTianqiBase.TUNE_D189 = false
 	XTianqiSkills.reload()
 	var off_coef := float(XTianqiSkills.spec(10727).damage.coef)
 	var off_hp := float(XTianqiSkills.spec(7057).damage.stats.mhp)
 	var off_desc := str(XTianqiSkills.spec(10727).desc)
+	var off_rem := [float(XTianqiSkills.spec(5757).damage.coef), float(XTianqiSkills.spec(5757).damage.stats.mhp), float(XTianqiSkills.spec(5759).damage.coef), float(XTianqiSkills.spec(5758).damage.coef), float(XTianqiSkills.spec(508).damage.coef)]
 	XTianqiBase.TUNE_D189 = true
 	XTianqiSkills.reload()
-	_check("tune_d189.on", on_coef == 5.0 and on_hp == 0.002 and on_atk == 0.6667 and on_desc.contains("×5.0"), [on_coef, on_hp, on_desc])
+	# T175（附则 E 系数整数、D194 艾琳 4／508 5、D193 115 三招降）：7057 改成 物攻×2＋生命上限×1%（系数 1）
+	_check("tune_d189.on", on_coef == 4.0 and on_hp == 0.01 and on_atk == 2.0 and on_7057 == 1.0 and on_desc.contains("×4"), [on_coef, on_hp, on_atk, on_7057, on_desc])
+	_check("tune_d189.d193_d194", on_rem == [18.0, 0.01, 3.0, 5.0, 5.0] and off_rem == [8.0, 0.03, 1.6, 7.2, 6.0], [on_rem, off_rem])
 	_check("tune_d189.switch_back", off_coef == 6.0 and off_hp == 0.0133 and off_desc.contains("×6.0"), [off_coef, off_hp])
 	_check("tune_d189.no_note_keys", not XTianqiSkills.spec(10727).has("_note"))
-	# 第二批（偏弱超强者调高，分摊到全部伤害招＋本体成长）：176 贯日 6.0→9.6、177 棱光 2.5→5.8、本体成长 tweak；关掉照原卡、tweak 回 1
+	# 第二批（偏弱超强者调高）：176 贯日 6.0→10、177 棱光 2.5→6（T175 取整；T163 的本体成长 ×1.2 撤掉，开着也是 1）；关掉照原卡
 	var on_gr := [float(XTianqiSkills.spec(10315).damage.coef), float(XTianqiSkills.spec(10337).damage.coef), XTianqiBase.actor_mult(177, "mat"), XTianqiBase.actor_mult(176, "atk"), XTianqiBase.actor_mult(108, "mmp")]
 	XTianqiBase.TUNE_D189 = false
 	XTianqiSkills.reload()
 	var off_gr := [float(XTianqiSkills.spec(10315).damage.coef), float(XTianqiSkills.spec(10337).damage.coef), XTianqiBase.actor_mult(177, "mat"), XTianqiBase.actor_mult(176, "atk"), XTianqiBase.actor_mult(108, "mmp")]
 	XTianqiBase.TUNE_D189 = true
 	XTianqiSkills.reload()
-	_check("tune_d189.raise_on", on_gr == [9.6, 5.8, 1.2, 1.2, 1.2] and str(XTianqiSkills.spec(10337).desc).contains("×5.8"), on_gr)
+	_check("tune_d189.raise_on", on_gr == [10.0, 6.0, 1.0, 1.0, 1.0] and str(XTianqiSkills.spec(10337).desc).contains("×6；"), on_gr)  # T175：成长 ×1.2 撤掉、系数取整
+	var frac := []
+	for sid in (XTianqiSkills.data().get("tune", {}).get("D189", {}).get("skills", {}) as Dictionary).keys():
+		var c = XTianqiSkills.spec(int(sid)).get("damage", {}).get("coef", 1)
+		if float(c) != floorf(float(c)):
+			frac.append([sid, c])
+	_check("tune_d189.integer", frac.is_empty(), frac)
 	_check("tune_d189.raise_switch_back", off_gr == [6.0, 2.5, 1.0, 1.0, 1.0], off_gr)
 
 ## 开着但是西游档：全走关着
