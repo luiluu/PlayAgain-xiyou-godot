@@ -53,6 +53,10 @@ static var ZD_DEATH_REGEN := true
 static var ZD_WAR_REGEN := true
 ## 勇者甲：死期从出战栏最后一格往前点、到某回合起每回合点一人（D32、D54）
 static var ZD_DOOM := true
+## O-待定-1（T180，发作真换人 v0.2 第三节第 5 条、D201 第 2 件）：死期挂在人身上，不挂在格子上。true＝「到点就死」认这 5 个人
+## （上场 4 格＋助力位，doom_people）：四骑士回合末死期扫被挂的所有人（换到助力位照样到点死、日志照报）、35 层影子「不能复活」、
+## 死亡线异化收尸人扫新倒下的人与「不能复活」、允许失败战打输复活（lose_revive）。false＝回到只认场上 4 格／出战成员
+static var DOOM_FOLLOW := true
 
 static var _data: Dictionary = {}
 ## 下一场开战要换成哪位骑士（prepare 设、setup 取走）
@@ -523,6 +527,33 @@ static func _alive_actors(logic) -> Array:
 	return logic.actors.filter(func(a): return a.is_alive())
 
 
+## 死期认人的「这 5 个人」：场上的 actors，加上不在场上的助力位（手动或发作换下去的人坐在这里）。DOOM_FOLLOW 关掉只回场上
+static func doom_people(logic) -> Array:
+	var out: Array = logic.actors.duplicate()
+	if not DOOM_FOLLOW or logic.state == null:
+		return out
+	var h = logic.state.helper()
+	if h != null and not out.has(h):
+		out.append(h)
+	return out
+
+
+## 允许失败的战斗打输后（MV updateBattleEnd）复活到 1 血的人：出战成员；DOOM_FOLLOW 开着再加助力位
+## （换下去的人可能死在助力位：四骑士死期、宣判者死期、七首之龙灰印缓期）。关掉照原版只扫出战成员
+static func lose_revive(s: XState) -> void:
+	if s == null:
+		return
+	var members: Array = s.battle_members()
+	if DOOM_FOLLOW:
+		var h := s.helper()
+		if h != null and not members.has(h):
+			members.append(h)
+	for member in members:
+		if member.is_dead():
+			member.hp = 1.0
+			member.refresh_resources()
+
+
 static func _hp_ratio(f: Dictionary) -> float:
 	return f.knight.hp_rate()
 
@@ -600,6 +631,18 @@ static func end_turn(logic) -> Array:
 		for k in ["seen", "shrapnel"]:
 			if int(m.get(k, 0)) > 0:
 				m[k] = int(m[k]) - 1
+	# 死期跟着人走（DOOM_FOLLOW）：被换到助力位的人到点照样死；灼烧、疫病这些持续掉血的下场暂停（照现行，只扫场上）
+	for a in doom_people(logic):
+		if logic.actors.has(a):
+			continue
+		var m: Dictionary = f.marks.get(a, {})
+		if m.get("doom", false):
+			m.doom = false
+			if a.is_alive():
+				m.no_revive = true
+				_say(f, "%s的死期到了。" % a.display_name())
+				logs.append_array(take_logs(logic))
+				_lose_hp(logic, a, a.hp + a.shield, logs, true)
 	if str(f.line) == "plague":
 		var p: Dictionary = knight("plague").plague
 		f.plague_down = minf(float(p.down_cap), float(f.plague_down) + float(p.down_per))
@@ -1404,7 +1447,7 @@ static func blocks_revive(b) -> bool:
 	if logic == null or not b is XActor:
 		return false
 	var f := fight(logic)
-	if str(f.get("line", "")) == "death" and str(f.get("mode", "")) == "shadow" and logic.actors.has(b):
+	if str(f.get("line", "")) == "death" and str(f.get("mode", "")) == "shadow" and doom_people(logic).has(b):
 		return true  # 35 层影子带本线终焉：死去的人本场不能复活
 	return bool(mark_of(logic, b).get("no_revive", false))
 

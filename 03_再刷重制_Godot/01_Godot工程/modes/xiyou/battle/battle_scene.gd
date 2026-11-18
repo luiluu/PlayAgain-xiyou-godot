@@ -989,10 +989,7 @@ func _main() -> void:
 			# MV updateBattleEnd：允许失败时，只将阵亡出战成员复活到 1 HP。事件 353 游戏结束不看可不可输（原版直接 goto Scene_Gameover，
 			# 不走 updateBattleEnd，不复活；地图那边见 XMapScene.last_battle_game_over，审查第 75 期 P3-1）
 			if can_lose and not logic.game_over:
-				for member in XState.current.battle_members():
-					if member.is_dead():
-						member.hp = 1.0
-						member.refresh_resources()
+				XTianqiHorsemen.lose_revive(XState.current)  # 出战成员；天启篇死期认人（DOOM_FOLLOW）再加助力位
 			finished.emit(2)
 			return
 		if logic.is_won():
@@ -2104,6 +2101,8 @@ func _play(logs: Array) -> void:
 	while i < logs.size():
 		var l: Dictionary = logs[i]
 		i += 1
+		if _offstage_target(l):
+			continue
 		if l.type in ["action", "regen", "collapse"] and l.has("views"):
 			show_views(l.views)
 		# YEP 行动序列：行动记录后面跟着 seq_* 条目时交给 XSequencePlayer 逐帧演出（到 seq_end 为止）
@@ -2229,6 +2228,23 @@ func _play(logs: Array) -> void:
 	XMiraSwordFx.vanish_all(sprites.values())
 	for s in sprites.values():
 		s.position = s.home
+
+
+## 画面守卫（T180，发作真换人 v0.2 第三节第 5 条）：记录的目标不在场上、没有角色图（死期跟着人走，人会死在助力位上）时
+## 只报日志、不演出——倒下、掉血弹字、受伤闪烁、动画、谷雨特效都要按角色取图。不设开关：只是把会报错的地方改成不演出。
+const OFFSTAGE_SKIP := ["collapse", "regen", "mastery_up", "guyu_visual"]
+var offstage_skipped: Array = []  # 测试看：跳过的记录类型
+
+
+func _offstage_target(l: Dictionary) -> bool:
+	if not str(l.get("type", "")) in OFFSTAGE_SKIP:
+		return false
+	var t = l.get("target")
+	if not t is XActor or sprites.has(t):  # 只放过角色（会坐助力位）；敌人缺图是别的问题，照旧报错（T180 返修 P2-2）
+		return false
+	offstage_skipped.append(str(l.type))
+	print("[战斗画面] %s 的目标 %s 不在场上（没有角色图），只记日志不演出" % [str(l.type), t.display_name()])
+	return true
 
 
 ## 行动收尾：到第 41 帧清日志、第 52 帧结束（已超过就不再等）。
