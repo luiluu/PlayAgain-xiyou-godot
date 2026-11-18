@@ -556,5 +556,23 @@ class BrandRules(unittest.TestCase):
         self.assertIn('折法', out)
 
 
+class SkillTune(unittest.TestCase):
+    """T163：skill_rework.json 的 tune.D189 覆盖层也要过规则（开关开着时游戏读的是覆盖后的表）。"""
+    def table(self, coef):
+        return {'skills': {'1': {'damage': {'coef': 3.0, 'stats': {'atk': 1}}, 'desc': ['a']}},
+                'tune': {'D189': {'_note': 'x', 'skills': {'1': {'_note': 'y', 'damage': {'coef': coef}}}}}}
+
+    def test_merge_keeps_other_keys(self):
+        t = chk.apply_skill_tune(self.table(5.0))
+        self.assertEqual(t['skills']['1']['damage'], {'coef': 5.0, 'stats': {'atk': 1}})
+        self.assertNotIn('_note', t['skills']['1'])
+
+    def test_tuned_four_caught(self):
+        rules = chk._with_tune(lambda tb: ['%s=%s' % ('skills/1/damage/coef', chk.num_text(tb['skills']['1']['damage']['coef']))]
+                               if '4' in chk.num_text(tb['skills']['1']['damage']['coef']) else [])
+        self.assertEqual(rules(self.table(5.0)), [])
+        self.assertEqual(rules(self.table(4.2)), ['tune 覆盖后：skills/1/damage/coef=4.2'])
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -1159,13 +1159,59 @@ def skill_rework_rules(table: dict) -> list:
     return bad
 
 
+TUNE_KEYS = ('D189',)
+
+
+def tune_merge(base: dict, patch: dict) -> dict:
+    """同 XTianqiSkills.tune_merge：字典逐层合并，其余整段换；_ 开头的说明键不进。"""
+    import copy
+    out = copy.deepcopy(base)
+    for k, v in patch.items():
+        if str(k).startswith('_'):
+            continue
+        if isinstance(v, dict) and isinstance(out.get(k), dict):
+            out[k] = tune_merge(out[k], v)
+        else:
+            out[k] = copy.deepcopy(v)
+    return out
+
+
+def apply_skill_tune(table: dict) -> dict:
+    """游戏里开着 XTianqiBase.TUNE_D189 时读到的表：tune.<键>.skills／actors 覆盖到原卡上（T163）。"""
+    import copy
+    out = copy.deepcopy(table)
+    for key in TUNE_KEYS:
+        tune = table.get('tune', {}).get(key, {})
+        for sec in ('skills', 'actors'):
+            for k, v in tune.get(sec, {}).items():
+                if str(k).startswith('_'):
+                    continue
+                cur = out.setdefault(sec, {}).get(k)
+                out[sec][k] = tune_merge(cur if isinstance(cur, dict) else {}, v)
+    return out
+
+
+# 覆盖后数字带 4 的豁免（只列具体路径）：508 的 5.4 是 Kyo 按推荐定的数（D189），和「数字避开 4」冲突，等 Kyo 定改 5.5 还是留（交付单 T163「要 Kyo 定」）
+TUNE_NICE_EXEMPT = {'skills/508/damage/coef=5.4'}
+
+
+def _with_tune(rules):
+    """原卡、覆盖后各查一遍（开关两边都是游戏会读到的表），覆盖后的失败前面标「tune 覆盖后」。"""
+    def run(table):
+        bad = list(rules(table))
+        if table.get('tune'):
+            bad += ['tune 覆盖后：' + b for b in rules(apply_skill_tune(table)) if b not in bad and b not in TUNE_NICE_EXEMPT]
+        return bad
+    return run
+
+
 def check_skill_rework(_args) -> bool:
     path = DATA_DIR / 'skill_rework.json'
     if not path.is_file():
         print('跳过：没有 skill_rework.json')
         return True
     try:
-        bad = skill_rework_rules(json.loads(path.read_text(encoding='utf-8')))
+        bad = _with_tune(skill_rework_rules)(json.loads(path.read_text(encoding='utf-8')))
     except Exception as e:
         bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
     return _report('skill_rework.json', '规则自检', bad)
@@ -1733,7 +1779,8 @@ def check_base_line(_args) -> bool:
         print('跳过：没有 base_line.json')
         return True
     rework = _load_opt('skill_rework.json')
-    return _run_table('base_line.json', lambda t: base_line_rules(t, rework))
+    tuned = apply_skill_tune(rework) if rework else None
+    return _run_table('base_line.json', lambda t: base_line_rules(t, rework) + ['tune 覆盖后：' + b for b in base_line_rules(t, tuned) if tuned is not None and rework.get('tune')])
 
 
 def gear_base_rules(table: dict, base: dict = None) -> list:
@@ -1842,7 +1889,7 @@ def check_combat_rules_phase4(_args) -> bool:
 
 
 def check_single_hit_cap(_args) -> bool:
-    return _run_table('skill_rework.json', single_hit_cap_rules)
+    return _run_table('skill_rework.json', _with_tune(single_hit_cap_rules))
 
 
 def abs_rescale_rules(table: dict) -> list:

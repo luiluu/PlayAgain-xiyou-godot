@@ -128,11 +128,13 @@ static func socket_rows(e: Dictionary) -> Array:
 	for n in slots.size():
 		var gem := XOrbs.gem_in_slot(e, n)
 		out.append(["%d．%s：%s" % [n + 1, str(slots[n]), str(gem.get("name", "")) if not gem.is_empty() else "空槽"], ROW_SIZE, "#ffffff", false, 0])
+		out.append_array(XTianqiGemPower.orb_slot_lines(e, n, ROW_SIZE))
 	out.append(["符文镶嵌：剩余 %d 孔" % maxi(0, int(e.get("upgradeSlots", 0))), ROW_SIZE, "#ffffff", false, 0])
 	var history: Array = e.get("upgrades", [])
 	for n in history.size():
 		var mat := XDB.rec("Items", int(history[n].get("item", 0)))
 		out.append(["%d．\\i[%d]%s" % [n + 1, int(mat.get("iconIndex", 0)), str(history[n].get("name", mat.get("name", "")))], ROW_SIZE, "#ffffff", false, 0])
+		out.append_array(XTianqiGemPower.upgrade_lines(e, n, ROW_SIZE))
 	if history.is_empty():
 		out.append(["尚无符文镶嵌记录。", ROW_SIZE, "#ffffff", false, 0])
 	out.append(["镶嵌操作可在物品菜单选择这件装备。", ROW_SIZE, NOTE_COLOR, false, 0])

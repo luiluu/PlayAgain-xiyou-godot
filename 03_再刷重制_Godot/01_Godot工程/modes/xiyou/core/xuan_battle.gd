@@ -914,10 +914,14 @@ static func _tonggui_strike(logic, a) -> void:
 	var alive: Array = logic.alive(logic.enemies)
 	if alive.is_empty():
 		return
+	# T082（T137 核 P2）：同轨协同也是棱光，和跟攻共用 own_action 的每回合次数（module.xuan.follow_up）；总开关关着恒真
+	if not XTianqiLedger.take_module_derived(logic, a, "module.xuan.follow_up", a):
+		return
 	var prev := _act
 	_act = {"internal": "xuan-tonggui", "tonggui": true}
 	_logs.append(logic.apply(a, _key_skill("lengguang"), alive[0]))
 	_act = prev
+	XTianqiLedger.derived_close(logic)
 
 
 ## roundEndRelease（绑定 onRoundEnd）：剩下的星契按 受益者缺血或被控→回光、璇自己半血以下或被控→回光、棱光、给宿主璃壁 依次放到放不出
@@ -932,7 +936,9 @@ static func _round_end_release(owner) -> void:
 			done = _cast(logic, owner, "huiguang", [owner], {}, true)
 		var alive: Array = logic.alive(logic.enemies)
 		if not done and not alive.is_empty():
-			done = _cast(logic, owner, "lengguang", [alive[0]], {}, true)
+			done = _cast(logic, owner, "lengguang", [alive[0]], {}, true, owner)  # T082（T137 核 P2）：回合末放的棱光也走派生门控（同跟攻共用次数）
+			if done:
+				XTianqiLedger.derived_close(logic)
 		var h = XBinding.host(owner)
 		if not done and h != null:
 			done = _cast(logic, owner, "libi", [h], {}, true)

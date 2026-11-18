@@ -417,6 +417,8 @@ func _update_help() -> void:
 		if _mode in ["list", "upgrade", "augment"] and XItemRow.shows_new(XState.current, rec):
 			_pending_seen = rec
 	help_card.show_for(rec if row >= 0 and not gear_shown() else {})
+	if help_card.visible and _mode in ["upgrade", "augment"]:
+		help_card.append_rows(XTianqiGemPower.preview_rows(_item, rec, _mode, _aug_slot))  # T164 镶嵌预览：镶在这件装备上的实际值（期四开着才有）
 	if help_card.visible:
 		help_card.place_for_row(Rect2(LIST_RECT.position + Vector2(0, XMVWindow.PADDING + row * LH), Vector2(LIST_RECT.size.x, LH)))
 	# 用道具的结果提示：光标换了行（或回到分类、进了升级／宝珠列表）才被说明盖掉；选人阶段只是暂时隐藏

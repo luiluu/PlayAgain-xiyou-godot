@@ -1,7 +1,7 @@
 extends Node
 ## 【cc·T081】天启篇期四暗装接线（XTianqiBase.PHASE4，基础数值重构 v0.4 第七节第 2 条、第十节 T012-b）：
 ## 一、总开关默认关；关着每一行都是「关着」那一套（本体 NAN、K 1、U 1、守层者旧表、治疗照乘、绝对值原数、单段不封、九线爆伤不封、秘籍读旧键、面板没有天启注视）。
-## 二、开着、天启篇存档：每一行都和总开关一致（rows_state），本体读标准线×职责×速度档，K＝表里的 0.088、进 dealt_parts，面板一行「天启注视　伤害 ×0.088」。
+## 二、开着、天启篇存档：每一行都和总开关一致（rows_state），本体读标准线×职责×速度档，K＝表里的 base_damage（T082 实机标定 0.2）、进 dealt_parts，面板一行「天启注视　伤害 ×K」。
 ## 三、开着但是西游档：一律走关着那一套。
 ## 四、单段有效系数上限：开着时卡面系数×权重×条件超过档位上限压回上限，关着不封；全部卡在上限以内（数据校验同口径）。
 ## 五、角色卡跟着总开关开（CARDS 本身不动）。
@@ -14,6 +14,10 @@ const LVSIJI := 2
 
 var results: Array = []
 
+
+## T082 实机标定的 K（balance_table combat_rules.base_damage）；改标定只改这两行
+const K_TABLE := 0.27
+const K_TEXT := "0.27"
 
 func _ready() -> void:
 	_run.call_deferred()
@@ -34,6 +38,10 @@ func _run() -> void:
 	_on()
 	_xiyou()
 	_hit_cap()
+	_class_rate()
+	_realm()
+	_fabao()
+	_tune_d189()
 	_e2e(true)
 	_e2e(false)
 	XTianqiBase.PHASE4 = false
@@ -120,15 +128,15 @@ func _on() -> void:
 	_check("on.base_agi", a.param_base_direct(6) == floorf((20.0 + 20.0 * lv) * 0.8), a.param_base_direct(6))
 	_check("on.base_not_curve", a.param_base_direct(2) != float(a.class_data().params[2][a.level]))
 	# K
-	_check("on.k_table", is_equal_approx(XTianqiBase.k_base(), 0.088), XTianqiBase.k_base())
+	_check("on.k_table", is_equal_approx(XTianqiBase.k_base(), K_TABLE), XTianqiBase.k_base())
 	var on_parts := XTianqiCombat.dealt_parts(a, s)
 	XTianqiBase.PHASE4 = false
 	var off_parts := XTianqiCombat.dealt_parts(a, s)
 	XTianqiBase.PHASE4 = true
-	_check("on.k_dealt", is_equal_approx(float(on_parts.mult), float(off_parts.mult) * 0.088) and is_equal_approx(float(on_parts.k), 0.088), [on_parts, off_parts])
-	_check("on.gaze_row", XTianqiBase.gaze_row() == ["天启注视", "伤害 ×0.088"], XTianqiBase.gaze_row())
+	_check("on.k_dealt", is_equal_approx(float(on_parts.mult), float(off_parts.mult) * K_TABLE) and is_equal_approx(float(on_parts.k), K_TABLE), [on_parts, off_parts])
+	_check("on.gaze_row", XTianqiBase.gaze_row() == ["天启注视", "伤害 ×" + K_TEXT], XTianqiBase.gaze_row())
 	var rows := XStatusPage.global_bonuses(a)
-	_check("on.gaze_panel", not rows.is_empty() and rows[0] == ["天启注视", "伤害 ×0.088"], rows.slice(0, 2))
+	_check("on.gaze_panel", not rows.is_empty() and rows[0] == ["天启注视", "伤害 ×" + K_TEXT], rows.slice(0, 2))
 	# U、守层者、治疗、九线、秘籍、绝对值、单段上限
 	_check("on.u", XTianqiBase.boss_hp_unit(false) == 1.0 and XTianqiBase.boss_hp_unit(true) == 1.0)  # 表里先填 1
 	var old := {1: 2.0}
@@ -145,6 +153,113 @@ func _on() -> void:
 	_check("on.hit_cap_enemy", XTianqiBase.single_hit_cap(null) == 0.0)
 	XTianqiBase.PHASE4 = false
 
+
+## 【cc·T082】职业属性倍率（惠惠 153 职业魔攻 ×3）：期四开着不算，CLASS_RATE_OFF 关掉或总开关关着照算
+func _class_rate() -> void:
+	var s := _state()
+	XTianqi._joining = true
+	s.add_actor(153)
+	XTianqi._joining = false
+	var a: XActor = s.actor(153)
+	XTianqiBase.PHASE4 = true
+	a.param_mark_dirty()
+	var on_rate := a.param_rate(4)
+	XTianqiBase.CLASS_RATE_OFF = false
+	a.param_mark_dirty()
+	var kept := a.param_rate(4)
+	XTianqiBase.CLASS_RATE_OFF = true
+	XTianqiBase.PHASE4 = false
+	a.param_mark_dirty()
+	var off_rate := a.param_rate(4)
+	_check("class_rate.stripped", is_equal_approx(on_rate, kept - 2.0), [on_rate, kept])
+	_check("class_rate.switch_back", is_equal_approx(kept, off_rate) and off_rate >= 3.0, [kept, off_rate])
+	_check("class_rate.other_param", (func():
+		XTianqiBase.PHASE4 = true
+		a.param_mark_dirty()
+		var r := a.param_rate(2)
+		XTianqiBase.PHASE4 = false
+		a.param_mark_dirty()
+		return is_equal_approx(r, a.param_rate(2))).call())
+
+
+## 【cc·T082】原版境界被动（9976 圣者境界：终伤、爆伤各 +100%）：期四开着拦掉数值标签，REALM_OFF 关掉或总开关关着照原版
+func _realm() -> void:
+	_state()
+	XTianqiBase.PHASE4 = true
+	var on_note := str(XDB.rec("Skills", 9976).get("note", ""))
+	XTianqiBase.REALM_OFF = false
+	var kept := str(XDB.rec("Skills", 9976).get("note", ""))
+	XTianqiBase.REALM_OFF = true
+	XTianqiBase.PHASE4 = false
+	var off_note := str(XDB.rec("Skills", 9976).get("note", ""))
+	_check("realm.stripped", not on_note.contains("passiveHarmRi") and not on_note.contains("passiveCrHarmRi") and not on_note.contains("passivePBST"), on_note.left(200))
+	_check("realm.switch_back", kept.contains("passiveHarmRi") and kept == off_note)
+	XTianqiBase.PHASE4 = true
+	_check("realm.push_state", not str(XDB.rec("Skills", 5777).get("note", "")).contains("StartPushState"))
+	_check("realm.card_skill_untouched", XDB.rec("Skills", 9933) == XTianqiSkills.rec(9933, XDB.table("Skills")[9933]))
+	XTianqiBase.PHASE4 = false
+
+
+## 【cc·T163】法宝读表（D187）：期四开着、天启篇存档时 99 级法宝＝半件 80 级装备（攻击、生命 ×0.5×品质），其余六项 0；
+## FABAO_TABLE 关掉或总开关关着照原版每级成长；西游档照原版
+func _fabao() -> void:
+	var s := _state()
+	XTianqiGear.clear_effective_cache()
+	var e := XGear.template("armor", 4575)  # 阴阳扇·狂龙：原版每级物攻 +45、生命 +15，品质旧档 8（不朽 1.8）
+	e.level = 99.0
+	var raw := [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)]
+	XTianqiBase.PHASE4 = true
+	var conv := 1.0 + 80.0 * 98.0 / 90.0
+	var want_atk := floorf(XTianqiBase.line(conv, "atk") * 0.5 * 1.8)
+	var want_hp := floorf(XTianqiBase.line(conv, "mhp") * 0.5 * 1.8)
+	var on := [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4), XActor.magic_param(e, 3), XActor.magic_param(e, 1)]
+	_check("fabao.table", on[0] == want_hp and on[1] == want_atk and on[2] == 0.0 and on[3] == 0.0 and on[4] == 0.0, [on, want_hp, want_atk])
+	var g := XGear.template("armor", 4519)  # 戒指朱：物攻魔攻成长一样大 → 两项都给
+	g.level = 99.0
+	_check("fabao.tie_both", XActor.magic_param(g, 2) > 0.0 and XActor.magic_param(g, 2) == XActor.magic_param(g, 4))
+	var half := e.duplicate()
+	half.level = 39.0  # FLOOR_CAP 10 层上限 39 级：等级照旧封顶，读表按等级线性
+	_check("fabao.by_level", XActor.magic_param(half, 2) < want_atk and XActor.magic_param(half, 2) > 0.0)
+	XTianqiGear.FABAO_TABLE = false
+	var back := [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)]
+	XTianqiGear.FABAO_TABLE = true
+	_check("fabao.switch_back", back == raw and raw[1] > want_atk * 2.0, [back, raw])
+	XTianqiBase.PHASE4 = false
+	_check("fabao.phase4_off", [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)] == raw)
+	XTianqiBase.PHASE4 = true
+	_state(false)
+	_check("fabao.xiyou", [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)] == raw)
+	XTianqiBase.PHASE4 = false
+	XState.current = s
+
+
+
+## 【cc·T163】D189 逐个调角色的覆盖层（skill_rework.json tune.D189）：开着读覆盖后的系数和卡面，TUNE_D189 关掉 reload 后照原卡
+func _tune_d189() -> void:
+	XTianqiSkills.reload()
+	var on_coef := float(XTianqiSkills.spec(10727).damage.coef)
+	var on_hp := float(XTianqiSkills.spec(7057).damage.stats.mhp)
+	var on_atk := float(XTianqiSkills.spec(7057).damage.stats.atk)
+	var on_desc := str(XTianqiSkills.spec(10727).desc)
+	XTianqiBase.TUNE_D189 = false
+	XTianqiSkills.reload()
+	var off_coef := float(XTianqiSkills.spec(10727).damage.coef)
+	var off_hp := float(XTianqiSkills.spec(7057).damage.stats.mhp)
+	var off_desc := str(XTianqiSkills.spec(10727).desc)
+	XTianqiBase.TUNE_D189 = true
+	XTianqiSkills.reload()
+	_check("tune_d189.on", on_coef == 5.0 and on_hp == 0.002 and on_atk == 0.6667 and on_desc.contains("×5.0"), [on_coef, on_hp, on_desc])
+	_check("tune_d189.switch_back", off_coef == 6.0 and off_hp == 0.0133 and off_desc.contains("×6.0"), [off_coef, off_hp])
+	_check("tune_d189.no_note_keys", not XTianqiSkills.spec(10727).has("_note"))
+	# 第二批（偏弱超强者调高，分摊到全部伤害招＋本体成长）：176 贯日 6.0→9.6、177 棱光 2.5→5.8、本体成长 tweak；关掉照原卡、tweak 回 1
+	var on_gr := [float(XTianqiSkills.spec(10315).damage.coef), float(XTianqiSkills.spec(10337).damage.coef), XTianqiBase.actor_mult(177, "mat"), XTianqiBase.actor_mult(176, "atk"), XTianqiBase.actor_mult(108, "mmp")]
+	XTianqiBase.TUNE_D189 = false
+	XTianqiSkills.reload()
+	var off_gr := [float(XTianqiSkills.spec(10315).damage.coef), float(XTianqiSkills.spec(10337).damage.coef), XTianqiBase.actor_mult(177, "mat"), XTianqiBase.actor_mult(176, "atk"), XTianqiBase.actor_mult(108, "mmp")]
+	XTianqiBase.TUNE_D189 = true
+	XTianqiSkills.reload()
+	_check("tune_d189.raise_on", on_gr == [9.6, 5.8, 1.2, 1.2, 1.2] and str(XTianqiSkills.spec(10337).desc).contains("×5.8"), on_gr)
+	_check("tune_d189.raise_switch_back", off_gr == [6.0, 2.5, 1.0, 1.0, 1.0], off_gr)
 
 ## 开着但是西游档：全走关着
 func _xiyou() -> void:
@@ -259,7 +374,7 @@ func _e2e(on: bool) -> void:
 	# （5）伤害详情：开着带 gaze（K 本身），关着没有
 	var res := XDamage.calculate(XDB.rec("Skills", 1), a, XEnemy.new().setup(1, 3, 100.0), {"critical": false, "variance": false})
 	var g = res.breakdown.row.get("gaze")
-	_check(tag + "damage_gaze", (g is Dictionary and is_equal_approx(float(g.k), 0.088) and str(g.name) == "天启注视") if on else g == null, g)
+	_check(tag + "damage_gaze", (g is Dictionary and is_equal_approx(float(g.k), K_TABLE) and str(g.name) == "天启注视") if on else g == null, g)
 	# （6）骑士 U：表里先填 1，临时改成 crit 2／no_crit 3 看本体、影子血量跟着乘
 	var cr: Dictionary = XTianqiBalance.data().combat_rules
 	var keep_u = cr.get("boss_hp_temp_unit")
@@ -281,7 +396,7 @@ func _e2e(on: bool) -> void:
 	# （8）绕过结算直接扣敌人血（scale_direct）：开着再乘 K；反弹（gaze＝false）不乘
 	var en: XBattler = lg.enemies[0]
 	var base6 := maxf(1.0, floorf(600.0 * XTianqiNoX6.hp_unit())) if XTianqiNoX6.on() else 600.0
-	var want_k := maxf(1.0, floorf(base6 * 0.088)) if on else base6
+	var want_k := maxf(1.0, floorf(base6 * K_TABLE)) if on else base6
 	_check(tag + "scale_direct_k", XTianqiNoX6.scale_direct(a, en, 600.0) == want_k and XTianqiNoX6.scale_direct(a, en, 600.0, false) == base6 \
 		and XTianqiNoX6.scale_direct(en, a, 600.0) == 600.0, [XTianqiNoX6.scale_direct(a, en, 600.0), want_k, base6])
 	# （7）表外角色：开着也回落职业曲线
