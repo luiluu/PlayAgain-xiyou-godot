@@ -17,6 +17,13 @@ extends RefCounted
 static var STATE_CMD := RegEx.create_from_string("^(?:HP|MP|TP)[ ]|^(?:ADD_STATE|ADD STATE|REMOVE_STATE|REMOVE STATE)[ ]\\d|^(?:ADD|REMOVE)[ ].*[ ](?:BUFF|DEBUFF)|^IMMORTAL$")
 ## CHANGE VARIABLE 照原版改变量（五河琴里攒火力值，v0.01.07 玩家反馈攒不了）；false＝回退到旧重制（跳过，火力值永远 0）
 static var CHANGE_VARIABLE := true
+## T178（O-待定）原版缺陷：全体技能（范围 2 敌方全体／8 我方全体／10 我方全体倒下）的 target 段对每个目标各跑一遍，
+## 段里写「action effect: enemies」这类整组目标时每遍又打整组，n 个敌人时每人挨 n 倍段数（91 豪龙火之术五段、三敌每人 13 段；mv_oracle 实跑同样）。
+## true＝target 段里同一行整组写法对同一个人只打一次（第一遍打全组，之后各遍跳过已打过的人；每人段数＝卡面段数，与敌人数无关）；
+## 不改成「只打当前目标」：IF 栈在目标之间不清，条件为假时第二个目标起整段不跑（5838／5850 乾坤倒置），只打当前目标会让后面的人一段都挨不到。
+## false＝照原版（n 倍）。随机范围（4～6）不动：每人挨的段数本来就与敌人数无关
+static var FIX_ALL_SCOPE_REPEAT := true
+const ALL_SCOPES := [2, 8, 10]
 const PHASES :=["setup", "whole", "target", "follow", "finish"]
 const PARAMS := {"MAXHP": 0, "MHP": 0, "MAX HP": 0, "HP": 0, "MAXMP": 1, "MMP": 1, "MAX MP": 1, "MP": 1, "ATK": 2, "STR": 2,
 	"DEF": 3, "MAT": 4, "INT": 4, "SPI": 4, "MDF": 5, "RES": 5, "AGI": 6, "SPD": 6, "LUK": 7}
@@ -33,6 +40,10 @@ var _gains: Array = []
 var _flags: Array = []
 var _true_flags: Array = []
 var _break := false
+## 当前在跑的段与行号、target 段里整组写法已打过的「行号:对象」（FIX_ALL_SCOPE_REPEAT）
+var _phase := ""
+var _line := -1
+var _group_hit := {}
 ## 数值序列持有独立结果槽；嵌套时只共享当前战斗的Boss域。
 var _resources: XResourceContext
 
@@ -57,6 +68,8 @@ func run() -> Array:
 		_resources.boss_output = logic._action_resources.boss_output
 	var seq: Dictionary = skill.yepSeq
 	for phase in PHASES:
+		_phase = phase
+		_group_hit.clear()
 		targets = all_targets.duplicate()
 		_flags.clear()
 		_true_flags.clear()
@@ -81,7 +94,9 @@ func run() -> Array:
 
 
 func _run_list(list: Array) -> void:
-	for entry in list:
+	for li in list.size():
+		var entry = list[li]
+		_line = li
 		var name := str(entry[0])
 		var args: Array = entry[1] if entry.size() > 1 else []
 		if not _conditions_met(name):
@@ -251,6 +266,8 @@ func _change_variable(name: String) -> void:
 ## BattleManager.actionActionEffect 本体：对指定目标（缺省为当前目标）各 invoke 一次
 func _action_effect(args: Array) -> void:
 	var list := make_targets(str(args[0])) if not args.is_empty() and str(args[0]) != "" else targets
+	if list != targets and repeat_fixed():
+		list = list.filter(func(x): return _group_once(x))
 	for t0 in list:
 		var t = XTianqiWeakAffix.segment_target(logic, user, skill, t0) if t0 != null else null  # 天启篇弱者专属词条：引导者这一段前不合法回原目标、都不合法跳过
 		if t == null:
@@ -258,6 +275,22 @@ func _action_effect(args: Array) -> void:
 		if t.is_dead() and not [9, 10].has(int(skill.get("scope", 0))) and not (XStateEffects.FIX_LOTUS_7303 and int(skill.get("id", 0)) == 7303):
 			continue
 		logs.append_array(logic.mark_views(logic._invoke(user, skill, t)))
+
+
+## FIX_ALL_SCOPE_REPEAT：全体技能 target 段里整组写法的 ACTION EFFECT 要去重
+func repeat_fixed() -> bool:
+	return FIX_ALL_SCOPE_REPEAT and _phase == "target" and ALL_SCOPES.has(int(skill.get("scope", 0)))
+
+
+## 本次 target 段里这一行还没打过 t：记下并返回 true
+func _group_once(t) -> bool:
+	if t == null:
+		return true
+	var k := "%d:%d" % [_line, t.get_instance_id()]
+	if _group_hit.has(k):
+		return false
+	_group_hit[k] = true
+	return true
 
 
 static func _ids(text: String) -> Array:
