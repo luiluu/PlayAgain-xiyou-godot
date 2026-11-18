@@ -1162,21 +1162,30 @@ func _p7() -> void:
 		return ok)
 	var nano := [5706, 5708, 5709].map(func(id): return [XTianqiSkills.spec(id).get("damage", {}).get("stats"), XTianqiSkills.spec(id).get("damage", {}).get("coef"), XTianqiSkills.spec(id).get("seq")])
 	var gy9 := s.actor(175)
+	# T209 R1（小A 核查加做）：谷雨 10288～10298 卡面进 D209（只换文字），天启篇卡面写 18%／333%（百谷生 400%）／93%，原版 419MP、系数50 那几行去掉
+	var gy_cards := [10288, 10289, 10290, 10291, 10292, 10293, 10294, 10295, 10297, 10298]
+	var gy_note := func(id): return str(XDB.rec("Skills", id).get("note", ""))
+	var gy_card_on: bool = XTianqiSkills.cards_on() and gy_cards.all(func(id): return XTianqiSkills.has(id) and not XTianqiSkills.spec(id).has("damage")) \
+		and gy_note.call(10288).contains("×18%") and gy_note.call(10288).contains("最大魔法6%") and not gy_note.call(10288).contains("419MP") and not gy_note.call(10288).contains("治疗比例40%") \
+		and gy_note.call(10292).contains("×93%") and not gy_note.call(10292).contains("伤害系数50") and gy_note.call(10293).contains("333%（戴百谷生400%）") and not gy_note.call(10293).contains("无上限") \
+		and gy_note.call(10294).contains("每场战斗一次") and gy_note.call(10289).contains("2个回合") and gy_note.call(10288).contains("<GuyuSkill:heal>") and gy_note.call(10288).contains("目标：我方全体")
 	var gy_on := XGuyu.tq_cap_rate(gy9)
 	var gy_pct_on := [XGuyu.tq_pct("heal_pct", 10.0), XGuyu.tq_pct("finish_pct", 100.0), str(XTianqiSkills.data().get("gear", {}).get("armor:7912", {}).get("desc", [""])[0])]
 	XTianqiBase.TUNE_D209 = false
 	XTianqiSkills.reload_table()
 	var nano_off := [float(XTianqiSkills.spec(5706).damage.coef), XTianqiSkills.spec(5706).get("seq")]
 	var gy_off := XGuyu.tq_cap_rate(gy9)
+	var gy_card_off: bool = gy_cards.all(func(id): return not XTianqiSkills.has(id)) and gy_note.call(10288).contains("419MP")
 	var gy_pct_off := [XGuyu.tq_pct("heal_pct", 10.0), XGuyu.tq_pct("finish_pct", 100.0), str(XTianqiSkills.data().get("gear", {}).get("armor:7912", {}).get("desc", [""])[0])]
 	XTianqiBase.TUNE_D209 = true
 	XTianqiSkills.reload_table()
-	_check("p7_d209_table", d9.size() == 18 and d9_int and nano[0] == nano[1] and nano[1] == nano[2] and int(nano[0][1]) == 10
-		and is_equal_approx(float(nano[0][0].mat), 0.4) and is_equal_approx(float(nano[0][0].mmp), 0.02) and int(nano[0][2][0].n) == 4
+	_check("p7_d209_table", d9.keys().filter(func(k): return int(d9[k].get("actor", 0)) != 175).size() == 18 and d9_int and nano[0] == nano[1] and nano[1] == nano[2] and int(nano[0][1]) == 1
+		and is_equal_approx(float(nano[0][0].mat), 4.0) and is_equal_approx(float(nano[0][0].mmp), 0.2) and int(nano[0][2][0].n) == 4  # T209 R1 P3-1：写成 coef 1、mat 4、mmp 0.2（同 9938、10731）
 		and is_equal_approx(gy_on, 4.0 if XGuyu.has_relic(gy9) else 3.33) and is_equal_approx(gy_off, 1.2 if XGuyu.has_relic(gy9) else 1.0)
 		and is_equal_approx(gy_pct_on[0], 0.18) and is_equal_approx(gy_pct_on[1], 0.93) and gy_pct_on[2].contains("333%提到400%")
 		and is_equal_approx(gy_pct_off[0], 0.1) and is_equal_approx(gy_pct_off[1], 1.0) and gy_pct_off[2].contains("100%提到120%")
 		and is_equal_approx(nano_off[0], 12.0) and int(nano_off[1][0].n) == 2, [d9.size(), d9_int, nano, gy_on, gy_off, nano_off, gy_pct_on, gy_pct_off])
+	_check("p7_d209_guyu_cards", gy_card_on and gy_card_off, [gy_card_on, gy_card_off, gy_note.call(10288)])
 	# 模块法宝：百分比属性去掉
 	var view: Dictionary = XTianqiSkills.gear_view(XDB.rec("Armors", 4577).merged({"kind": "armor", "base": 4577}, true))
 	_check("p7_gear", (view.get("traits", []) as Array).filter(func(t): return int(t.code) == 21).is_empty(), view.get("traits"))
