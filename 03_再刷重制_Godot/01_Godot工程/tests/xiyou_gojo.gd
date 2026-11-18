@@ -167,9 +167,11 @@ func _purple() -> void:
 	var b: XBattler = lg.enemies[0]
 	XGojo.begin(lg, a, p_out)
 	var v := XGojo.formula(a, b, p_out)
-	_check("purple_out_3", is_equal_approx(v, a.mat * 11.0), [v, a.mat])  # T191（D200）gojo_pairs 10.8 取整成 11
+	# T191（D200）gojo_pairs 10.8 取整成 11；T209（D209）3 对合计 17、分 4 段（gojo_hits 4），每段公式值＝17÷4；TUNE_D209 关掉回 11 一段
+	var purple_each := 17.0 / 4.0 if XTianqiBase.TUNE_D209 else 11.0
+	_check("purple_out_3", is_equal_approx(v, a.mat * purple_each), [v, a.mat])
 	var via: Dictionary = XFormulaExecution.run_item(p_out, a, b, {})
-	_check("purple_pipeline", via.available and is_equal_approx(float(via.value), a.mat * 11.0), via)
+	_check("purple_pipeline", via.available and is_equal_approx(float(via.value), a.mat * purple_each), via)
 	XGojo.finish(lg, a, p_out)
 	_check("purple_clears_blindfold", XGojo.marks(a) == [1, 1] and not a.state_ids.has(XGojo.ST_BLUE + 2), XGojo.marks(a))
 	XGojo.temp(a).blue = 1
