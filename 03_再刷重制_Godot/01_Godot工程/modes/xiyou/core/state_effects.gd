@@ -374,7 +374,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		elif op == "value_program":
 			var out := PhaseValueProgram.new().run_phase(e.program, c, c.value, execute)
 			if out.available:
-				c.value = out.value
+				c.value = _keep_down(e, c, out.value)
 			elif execute:
 				_diagnose(phase, int(st.id), holder, "value_program_unavailable")
 		elif op == "costume_image" and execute:
@@ -388,7 +388,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		elif op == "value_query":
 			# 护盾一族：HP 伤害>0 就破盾（先判，清零后 value 已是 0）；元素只决定这一击挡不挡
 			var breaks: bool = e.get("remove_self", false) and _active({"cond": "positive", "hpOnly": true}, c)
-			c.value = _query_value(e, c, execute)
+			c.value = _keep_down(e, c, _query_value(e, c, execute))
 			if breaks and execute:
 				_break_shield(e, holder, int(st.id), c)
 		elif op == "param_add" and execute:
@@ -893,6 +893,12 @@ static func _active(effect: Dictionary, ctx: Dictionary) -> bool:
 	var cond := str(effect.get("cond", ""))
 	var active: bool = ctx.value != 0.0 if cond == "nonzero" else ctx.value > 0.0 if cond == "positive" else ctx.value >= 0.0 if cond == "nonnegative" else false
 	return active and (not effect.get("hpOnly", false) or hp)
+
+
+## T205：带 skipTypes 的程序／查询（只有总账 live_confirm_rows 的 probe 副本带）打敌人时只留缩小那部分，放大的已按探针进③
+static func _keep_down(effect: Dictionary, ctx: Dictionary, v: float) -> float:
+	var dtype := int(ctx.get("item", {}).get("damage", {}).get("type", 0))
+	return minf(v, float(ctx.value)) if effect.has("skipTypes") and dtype in effect.skipTypes and ctx.get("target") is XEnemy else v
 
 
 static func _rounded(value: float, kind: String) -> float:

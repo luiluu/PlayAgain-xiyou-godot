@@ -10,6 +10,9 @@ extends Node
 ## 四、守卫：开着时那一步带标记不再认；关着认成 state_confirm_pool 回退中不报。reload 清归池表缓存（T185 P3-2）。
 ## 五、T200：live 清零——T187 留下的 32 个逐个给去向（never 12、归池 1、program 类 19；R1：1703／1707 有敌群 831 来源，进 program 类 enemy）；program 类各条有 kind 和理由、没有一个是固定 ×k；
 ##     38 缝合（程序写法的固定 ×1.05）按 as 换写归池：打敌人 ③ ＋5% 算九线、确认阶段不乘；打自己人和关着时一样；守卫不报；关着照原版。
+## 六、T205：program 类里的增伤 8 个挪进 pool（开关 POOL_LIVE_PROBE）：probe 5 个出手时空跑得 k（2731 按目标状态数、1421 按变量、
+##     1834 只剩自己活着、2583 k<1 那一下照乘缩小）；crit 2 个非暴击段进③、暴击段进④（1522 ③＋50% ④＋50%，2556 ④＋150%）；
+##     1666 as 换写 ③＋100%；打敌人确认阶段不放大、打自己人照旧；关开关回到原样、守卫当回退中不报。
 
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
@@ -68,7 +71,7 @@ func _run() -> void:
 func _fixed_k(sid: int) -> float:
 	var row: Dictionary = XTianqiLedger.live_table().get(sid, {})
 	for e in row.get("as", XDB.rec("States", sid).get("effects", [])):
-		if XTianqiLedger._live_effect(e):
+		if XTianqiLedger._live_effect(e, row) and str(e.op) != "value_program" and str(e.op) != "value_query":
 			if str(e.op) == "mul":
 				return float(e.k)
 			var k := 1.0
@@ -80,6 +83,18 @@ func _fixed_k(sid: int) -> float:
 	return 0.0
 
 
+## 暴击专属段加的百分数（value_steps criticalOnly 那一段的 k）
+func _crit_pct(sid: int) -> int:
+	var pct := 0
+	for e in XDB.rec("States", sid).get("effects", []):
+		if str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) == "value_steps":
+			for g in e.groups:
+				for step in g.steps:
+					if bool(step.get("criticalOnly", false)):
+						pct += int(roundf(float(step.k) * 100.0))
+	return pct
+
+
 # ---- 一、表 ----
 func _table() -> void:
 	var cls: Dictionary = XTianqiLedger.data().get("state_confirm_class", {})
@@ -88,10 +103,16 @@ func _table() -> void:
 	for e in pool:
 		var sid := int(e.id)
 		var k := _fixed_k(sid)
-		var ok: bool = k > 1.0 and str(e.get("reason", "")).length() >= 4 and str(e.get("before", "")) != "" and str(e.get("after", "")) != "" and str(e.get("source", "")) != ""
+		var probe := bool(e.get("probe", false))
+		var ok: bool = (k > 1.0 or probe or e.has("crit")) and str(e.get("reason", "")).length() >= 4 and str(e.get("before", "")) != "" and str(e.get("after", "")) != "" and str(e.get("source", "")) != ""
 		match str(e.get("action", "")):
 			"pool":
-				ok = ok and float(e.add) == floorf(float(e.add)) and int(e.add) == int(roundf((k - 1.0) * 100.0)) and str(e.get("cap", "")) in ["secret", "nine", "none"]
+				if probe:  # T205：k 出手时算，表里不写 add
+					ok = ok and not e.has("add") and str(e.get("switch", "")) == "POOL_LIVE_PROBE" and str(e.get("cap", "")) == "none"
+				else:
+					ok = ok and float(e.add) == floorf(float(e.add)) and int(e.add) == int(roundf((k - 1.0) * 100.0)) and str(e.get("cap", "")) in ["secret", "nine", "none"]
+				if e.has("crit"):  # T205：暴击专属段的 k（百分数整数）
+					ok = ok and float(e.crit) == floorf(float(e.crit)) and int(e.crit) == _crit_pct(int(e.id))
 				ok = ok and (str(e.cap) != "secret" or XTianqiLedger.is_secret_skill(int(e.get("book", 0)), int(XDB.rec("Skills", int(e.get("book", 0))).get("stypeId", 0))))
 			"stop":
 				ok = ok and int(e.get("add", 0)) == 0
@@ -130,11 +151,16 @@ func _table() -> void:
 	var live_n := 0
 	for g in cls.get("live", {}):
 		live_n += (cls.live[g] as Array).size()
-	_check("t200_live_cleared", live_n == 0 and prog.size() == 19 and bad_prog.is_empty() and XTianqiLedger.row("state_confirm_program").get("status") == "allowed"
+	_check("t200_live_cleared", live_n == 0 and prog.size() == 11 and bad_prog.is_empty() and XTianqiLedger.row("state_confirm_program").get("status") == "allowed"
 		and XTianqiLedger.check("state_confirm_program", "confirm") == "", [live_n, prog.size(), bad_prog])
 	_check("t200_never", never.get(543) == "NO_SOURCE" and never.get(1424) == "NO_SOURCE" and never.get(2522) == "NO_SOURCE" and never.get(1259) == "NO_HONGHUANG"
 		and never.get(2803) == "CARDS" and XTianqiLedger.confirm_source(1259) == "state_confirm_never"
 		and not never.has(1703) and not never.has(1707) and prog.filter(func(e): return int(e.id) in [1703, 1707] and str(e.kind) == "enemy").size() == 2, never)
+	# 六、T205：8 个增伤都在 pool、都挂 POOL_LIVE_PROBE、program 里不剩
+	var t205 := [1421, 1422, 2583, 2731, 1834, 1666, 1522, 2556]
+	var miss := t205.filter(func(id): return str(XTianqiLedger.live_table().get(id, {}).get("switch", "")) != "POOL_LIVE_PROBE" \
+		or XTianqiLedger.confirm_source(id) != "state_confirm_pool" or prog.any(func(e): return int(e.id) == id))
+	_check("t205_table", miss.is_empty() and XTianqiLedger.POOL_LIVE_PROBE and XTianqiLedger.switch_on("POOL_LIVE_PROBE"), miss)
 	var r38: Dictionary = XTianqiLedger.live_table().get(38, {})
 	_check("t200_38_as", is_equal_approx(_fixed_k(38), 1.05) and int(r38.get("add", 0)) == 5 and str(r38.get("cap", "")) == "nine" and (r38.get("as", []) as Array).size() == 2, r38)
 	_check("default_off", XTianqiLedger.POOL_LIVE == false and XTianqiLedger.switch_on("POOL_LIVE") == false)
@@ -151,7 +177,7 @@ func _table() -> void:
 
 
 func _fresh(a: XActor, ids: Array) -> void:
-	for sid in [838, 2441, 2300, 2302, 2771, 38]:
+	for sid in [838, 2441, 2300, 2302, 2771, 38, 1421, 1422, 2583, 2731, 1834, 1666, 1522, 2556]:
 		a.remove_state(sid)
 	for sid in ids:
 		a.add_state(int(sid))
@@ -164,9 +190,11 @@ func _terminal(a, e) -> float:
 
 
 ## 确认阶段（对敌人、伤害 100）跑完的值
-func _confirm(a, target, dtype := 1, value := 100.0) -> float:
+func _confirm(a, target, dtype := 1, value := 100.0, extra := {}) -> float:
 	var item: Dictionary = XDB.rec("Skills", 1).merged({"damage": {"type": dtype}}, true)
-	return XStateEffects.run("confirm", a, {"attacker": a, "defender": target, "item": item, "value": value, "execute": false})
+	var ctx := {"attacker": a, "defender": target, "item": item, "value": value, "execute": false}
+	ctx.merge(extra, true)
+	return XStateEffects.run("confirm", a, ctx)
 
 
 # ---- 二～四、运行期 ----
@@ -247,4 +275,95 @@ func _runtime() -> void:
 	var kept_anim: bool = st38.size() == 1 and (st38[0].effects as Array).any(func(x): return str(x.get("op", "")) == "effect_program" and bool(x.get(XTianqiLedger.LIVE_POOLED, false)))
 	_check("t200_38_runtime", absf(s_off - 105.0) <= 0.01 and is_equal_approx(float(sew.add), 0.05) and is_equal_approx(float(sew.nine), 0.05)
 		and absf(s_on - 100.0) <= 0.01 and absf(s_mate - s_mate_off) <= 0.01 and s_mate_off >= 105.0 and g38.is_empty() and kept_anim, [s_off, sew, s_on, s_mate, s_mate_off, g38])
+	_t205(a, mate, e, ctx)
 	_fresh(a, [])
+
+
+## 六、T205：程序类增伤运行期归池
+func _add(a, b, critical := false, item := XDB.rec("Skills", 1)) -> Dictionary:
+	return XTianqiLedger.live_confirm_add(a, b, 1, item, critical)
+
+
+func _t205(a, mate, e, ctx: Dictionary) -> void:
+	XTianqiLedger.POOL_LIVE = true
+	XTianqiLedger.QUIET = true
+	# 2731 虚无：×(1＋目标状态数×1%)
+	_fresh(a, [2731])
+	for sid in [4, 5, 6]:
+		e.add_state(sid)
+	var n: int = e.states().size()
+	var x := _add(a, e)
+	var c_on := _confirm(a, e)
+	var g := XTianqiLedger.audit_confirm(a, XTianqiLedger.live_confirm_rows(a, a.effect_states("confirm", false)), ctx).filter(func(r): return int(r.state) == 2731)
+	XTianqiLedger.POOL_LIVE_PROBE = false
+	var x_off := _add(a, e)
+	var c_off := _confirm(a, e)
+	var g_off := XTianqiLedger.audit_confirm(a, XTianqiLedger.live_confirm_rows(a, a.effect_states("confirm", false)), ctx).filter(func(r): return int(r.state) == 2731)
+	XTianqiLedger.POOL_LIVE_PROBE = true
+	_check("t205_2731_probe", n >= 3 and is_equal_approx(float(x.add), n / 100.0) and absf(c_on - 100.0) <= 0.01 and g.is_empty()
+		and is_equal_approx(float(x_off.add), 0.0) and absf(c_off - (100.0 + n)) <= 0.01 and g_off.size() == 1 and g_off[0].ok, [n, x, c_on, x_off, c_off, g, g_off])
+	# 1421 欧皇之证：×min(1＋变量1181×0.01%, 1.1)
+	_fresh(a, [1421])
+	XState.current.set_variable(1181, 500)
+	var x1 := _add(a, e)
+	XState.current.set_variable(1181, 5000)
+	var x2 := _add(a, e)
+	_check("t205_1421_var", is_equal_approx(float(x1.add), 0.05) and is_equal_approx(float(x2.add), 0.1) and absf(_confirm(a, e) - 100.0) <= 0.01, [x1, x2])
+	XState.current.set_variable(1181, 0)
+	# 1834 孤世独行：只剩自己活着时 ×1.5（value_query）
+	_fresh(a, [1834])
+	var keep_units := XStateEffects.battle_units
+	XStateEffects.battle_units = {"actors": [a], "enemies": [e]}
+	var solo := _add(a, e)
+	var solo_c := _confirm(a, e, 1, 100.0, {"party_members": [a]})
+	XTianqiLedger.POOL_LIVE_PROBE = false
+	var solo_off := _confirm(a, e, 1, 100.0, {"party_members": [a]})
+	XTianqiLedger.POOL_LIVE_PROBE = true
+	XStateEffects.battle_units = {"actors": [a, mate], "enemies": [e]}
+	var duo := _add(a, e)
+	XStateEffects.battle_units = keep_units
+	_check("t205_1834_query", is_equal_approx(float(solo.add), 0.5) and absf(solo_c - 100.0) <= 0.01 and absf(solo_off - 150.0) <= 0.01 and is_equal_approx(float(duo.add), 0.0), [solo, solo_c, solo_off, duo])
+	# 2583 雷道之威：k<1（目标最大 HP 不到角色 10 倍）不进池、照乘缩小
+	_fresh(a, [2583])
+	var k2583: float = minf(e.mhp / a.mhp * 0.1, 1.3)
+	var phys: Dictionary = XDB.rec("Skills", 1).merged({"hitType": 1, "damage": {"type": 1}}, true)  # 只认物理 HP 伤害（技能 1 是魔法）
+	var x3 := _add(a, e, false, phys)
+	var c3 := _confirm(a, e, 1, 100.0, {"item": phys})
+	XTianqiLedger.POOL_LIVE_PROBE = false
+	var c3_off := _confirm(a, e, 1, 100.0, {"item": phys})
+	XTianqiLedger.POOL_LIVE_PROBE = true
+	_check("t205_2583_keep_down", k2583 < 1.0 and is_equal_approx(float(x3.add), 0.0) and absf(c3 - c3_off) <= 0.01 and c3 < 100.0, [k2583, x3, c3, c3_off])
+	# 1666 半步真仙：as 换写 ③＋100%，自删那段原程序留着（打标记）
+	_fresh(a, [1666])
+	var x4 := _add(a, e)
+	var rows4: Array = XTianqiLedger.live_confirm_rows(a, a.effect_states("confirm", false)).filter(func(r): return int(r.get("id", 0)) == 1666)
+	var kept: bool = rows4.size() == 1 and (rows4[0].effects as Array).any(func(z): return str(z.get("op", "")) == "effect_program" and bool(z.get(XTianqiLedger.LIVE_POOLED, false)))
+	_check("t205_1666_as", is_equal_approx(float(x4.add), 1.0) and absf(_confirm(a, e) - 100.0) <= 0.01 and _confirm(a, mate) >= 199.0 and kept, [x4])
+	# 1522 神秘成圣：③＋50%、④＋50%；2556 胡桃：④＋150%。暴击／非暴击各一下
+	_fresh(a, [1522])
+	var x5 := _add(a, e)
+	var crit_on := _crit(a, e, true)
+	var plain_on := _crit(a, e, false)
+	var cc_on := _confirm(a, e, 1, 100.0, {"critical": true})
+	XTianqiLedger.POOL_LIVE_PROBE = false
+	var crit_off := _crit(a, e, true)
+	var cc_off := _confirm(a, e, 1, 100.0, {"critical": true})
+	XTianqiLedger.POOL_LIVE_PROBE = true
+	_check("t205_1522_crit", is_equal_approx(float(x5.add), 0.5) and is_equal_approx(float(x5.crit), 0.5) and is_equal_approx(crit_on - crit_off, 0.5)
+		and is_equal_approx(plain_on, 1.0) and absf(cc_on - 100.0) <= 0.01 and absf(cc_off - 225.0) <= 0.01, [x5, crit_on, crit_off, plain_on, cc_on, cc_off])
+	_fresh(a, [2556])
+	var x6 := _add(a, e)
+	var crit6 := _crit(a, e, true)
+	XTianqiLedger.POOL_LIVE_PROBE = false
+	var crit6_off := _crit(a, e, true)
+	var c6_off := _confirm(a, e, 1, 100.0, {"critical": true})
+	XTianqiLedger.POOL_LIVE_PROBE = true
+	_check("t205_2556_crit", is_equal_approx(float(x6.add), 0.0) and is_equal_approx(float(x6.crit), 1.5) and is_equal_approx(crit6 - crit6_off, 1.5)
+		and absf(_confirm(a, e, 1, 100.0, {"critical": true}) - 100.0) <= 0.01 and absf(c6_off - 250.0) <= 0.01 and absf(_confirm(a, e) - 100.0) <= 0.01, [x6, crit6, crit6_off, c6_off])
+	XTianqiLedger.POOL_LIVE = false
+	_fresh(a, [])
+
+
+## 这一下的暴击倍率（breakdown.row.critical）
+func _crit(a, e, critical: bool) -> float:
+	return float(XDamage.calculate(XDB.rec("Skills", 1), a, e, {"critical": critical, "variance": false}).breakdown.row.critical)
