@@ -375,6 +375,10 @@ func motion_tick() -> void:
 				_weapon_frame()
 	if not sv:
 		return
+	var act := _input_walk()
+	if act != _was_active:  # T206：轮到／轮完输入、行动时按 refreshMotion 重判一次
+		_was_active = act
+		refresh_idle()
 	if look.kind == "scene":
 		return
 	if _guyu_planted():
@@ -505,7 +509,38 @@ func swap_look(key: String) -> void:
 	XMiraLiftFx.on_swap(self, old_key, key, old_scale)  # 米拉人形→黑龙：升空变身演出（XMira.LIFT_ART；技能动画关着时直接是黑龙）
 
 
+## T206：YEP_BattleEngineCore Sprite_Actor.refreshMotion 第一条——输入中（OTB changeActor 给轮到的人设 inputting）或行动中（acting）
+## 的角色播 idleMotion（walk），排在阵亡／睡眠／咏唱／防御／异常／濒死之前；防御指令不设 acting（performActionStart），照旧往下判。
+## 原先漏了这条：生命低于 1/4 的角色轮到输入时仍趴在濒死帧（米拉黑龙解放后生命上限 ×2，满血也只剩一半，掉一点就趴下，
+## Kyo 11-18 看成「待机像吃异常」）。false＝回到原先（输入、行动中也按濒死／防御判）。
+static var INPUT_WALK := true
+var _scene_ref: Node = null
+var _was_active := false
+
+
+func _battle_scene() -> Node:
+	if _scene_ref != null and is_instance_valid(_scene_ref):
+		return _scene_ref
+	var n := get_parent()
+	while n != null and not n is XBattleScene:
+		n = n.get_parent()
+	_scene_ref = n
+	return n
+
+
+## 此刻按 MV 算「输入中或行动中」（XBattleScene._active 在等指令和角色行动演出期间是这个人）
+func _input_walk() -> bool:
+	if not INPUT_WALK or not battler is XActor:
+		return false
+	var sc := _battle_scene()
+	if sc == null or sc._active != battler:
+		return false
+	return sc.inputting or not battler.guarding
+
+
 func _idle_motion() -> String:
+	if _input_walk():
+		return "walk"
 	if not view.is_empty():
 		if view.dead:
 			return "dead"
