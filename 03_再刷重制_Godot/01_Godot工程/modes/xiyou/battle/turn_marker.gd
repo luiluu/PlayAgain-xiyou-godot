@@ -16,10 +16,10 @@ extends Node2D
 static var ENABLED := true
 
 const GAP := 10.0            # 宝石尖离头顶
-const R := 15.0              # 腰圈半径
-const CROWN_H := 7.5         # 冠部高
-const TABLE_R := 8.0         # 台面半径
-const DEPTH := 24.0          # 亭部深（腰圈到尖）
+const R := 18.0              # 腰圈半径
+const CROWN_H := 9.0         # 冠部高
+const TABLE_R := 9.5         # 台面半径
+const DEPTH := 29.0          # 亭部深（腰圈到尖）
 const TILT := 0.34           # 俯视的压扁量（圆在屏幕上的纵横比）
 const SIDES := 4
 const SPIN := 3.6            # 一圈秒数
@@ -30,6 +30,12 @@ const HOP := 18.0            # 滑过去时弧顶抬高
 const FADE := 0.18
 const HIDE_DELAY := 0.35
 const TOP_MIN := 30.0        # 头顶太高（大型变身）时尖最高到这（原版坐标）
+const AVOID_GAP := 6.0       # 让开指令菜单时离菜单项（含「某某的行动」）的空隙
+const SHIFT_MAX := 56.0      # 先试往右挪（指令环在角色左边，多数只差一点）；挪超过这么多才改往上抬
+const LIFT_MAX := 170.0      # 往上抬也再高就不抬了（大列表盖住整片时宝石就在列表底下，不硬顶到画面外）
+const AVOID_SPEED := 14.0    # 挪开／挪回的跟随快慢（指数逼近，每秒）
+const VIEW_W := 1280.0
+const OUTLINE := Color(0.06, 0.03, 0.03, 0.8)   # 外轮廓深描边：雪地、亮背景上也压得住
 const LIGHT := -2.3          # 光从左前方来（腰圈上的角度，0＝正右、PI/2＝正对镜头）
 
 var scene: XBattleScene
@@ -42,6 +48,8 @@ var _hide_in := -1.0
 var _glide := 1.0
 var _glide_from := Vector2.ZERO
 var _anchor := Vector2.ZERO
+## 为让开指令菜单挪开的量（px，平滑跟随；x 往右、y 负＝往上）
+var shift := Vector2.ZERO
 
 
 static func on() -> bool:
@@ -139,10 +147,84 @@ func _process(delta: float) -> void:
 			_anchor = _glide_from.lerp(to, e) + Vector2(0, -HOP * sin(PI * _glide))
 		else:
 			_anchor = to
-	position = _anchor + Vector2(0, -bob())
+	var want_shift := menu_shift(_anchor) if shown_for != null else Vector2.ZERO
+	if _motion() == XUiSkin.Motion.OFF:
+		shift = want_shift
+	else:
+		shift = shift.lerp(want_shift, 1.0 - exp(-AVOID_SPEED * delta))
+		if shift.distance_to(want_shift) < 0.25:
+			shift = want_shift
+	position = _anchor + shift + Vector2(0, -bob())
 	visible = alpha > 0.0
 	if visible:
 		queue_redraw()
+
+
+## 宝石（含浮动余量）在 fx 层坐标里占的框，尖在 anchor
+static func gem_rect(anchor: Vector2) -> Rect2:
+	var top := DEPTH + CROWN_H + 6.0 + BOB
+	return Rect2(anchor + Vector2(-R - 4.0, -top), Vector2(R * 2.0 + 8.0, top + 2.0))
+
+
+## 指令菜单（指令环各项＋「某某的行动」，或旧式指令窗）、技能／物品列表开着时，它们在 fx 层坐标里占的框
+func avoid_rects() -> Array:
+	var out := []
+	if scene == null or scene.fx == null:
+		return out
+	var inv := scene.fx.get_global_transform().affine_inverse()
+	for w in [scene.cmd_win, scene.list_win]:
+		if w == null or not is_instance_valid(w) or not (w as Control).is_visible_in_tree() or not w.active:
+			continue
+		var g := (w as Control).get_global_transform()
+		if w is XSkinBattleRing:
+			for r in (w as XSkinBattleRing).item_rects():
+				out.append(inv * (g * (r as Rect2)))
+		else:
+			out.append(inv * (w as Control).get_global_rect())
+	return out
+
+
+## T196 核查 P1-1：指令菜单开着、宝石压到菜单项时让开：先试往右挪出菜单（指令环弧在角色左边，「攻击」那项的右端常伸到头顶，
+## 一般挪十几二十 px 就够，宝石仍贴在这个角色头顶右上）；要挪超过 SHIFT_MAX 或出画面，改往上抬到菜单顶上；抬也超过 LIFT_MAX 就不动。
+## 挪开时从尖画一道旧金虚线连回头顶。返回相对 anchor 的偏移
+func menu_shift(anchor: Vector2) -> Vector2:
+	var zones := avoid_rects()
+	if zones.is_empty():
+		return Vector2.ZERO
+	var dx := 0.0
+	for pass_i in 4:
+		var moved := false
+		var g := gem_rect(anchor + Vector2(dx, 0))
+		for z in zones:
+			var zz := (z as Rect2).grow(AVOID_GAP)
+			if g.intersects(zz):
+				dx = maxf(dx, zz.end.x - (anchor.x - R - 4.0) + 0.5)
+				moved = true
+		if not moved:
+			break
+	if not _hits(zones, gem_rect(anchor + Vector2(dx, 0))) and dx <= SHIFT_MAX and anchor.x + dx + R + 6.0 <= VIEW_W:
+		return Vector2(dx, 0)
+	var up := 0.0
+	for pass_i in 4:
+		var moved := false
+		var g := gem_rect(anchor + Vector2(0, -up))
+		for z in zones:
+			var zz := (z as Rect2).grow(AVOID_GAP)
+			if g.intersects(zz):
+				up = maxf(up, anchor.y - zz.position.y + BOB)
+				moved = true
+		if not moved:
+			break
+	if up > LIFT_MAX:
+		return Vector2.ZERO
+	return Vector2(0, -minf(up, maxf(0.0, anchor.y - TOP_MIN)))
+
+
+static func _hits(zones: Array, g: Rect2) -> bool:
+	for z in zones:
+		if g.intersects((z as Rect2).grow(AVOID_GAP)):
+			return true
+	return false
 
 
 ## 浮动（简化档也有）、转角（只在全部档）
@@ -178,6 +260,16 @@ func _draw() -> void:
 	if alpha <= 0.0:
 		return
 	var a := alpha
+	# 抬高让开菜单时：从尖往下一道旧金虚线连回头顶（菜单盖在上面也看得出连着谁）
+	if shift.length() > 10.0:
+		var head := Vector2(-shift.x, -shift.y + bob() - 2.0)   # 头顶（本节点坐标）
+		var from := Vector2(0, 4.0)
+		var n := maxi(1, int(from.distance_to(head) / 7.0))
+		for i in n:
+			var p0 := from.lerp(head, float(i) / n)
+			var p1 := from.lerp(head, minf(1.0, (float(i) + 0.57) / n))
+			draw_line(p0, p1, Color(XUiSkin.GOLD, 0.75 * a), 1.5, true)
+		draw_circle(head, 2.5, Color(XUiSkin.GOLD_LIGHT, 0.85 * a))
 	var rot := spin()
 	var waist := -DEPTH
 	var table := -DEPTH - CROWN_H
@@ -189,7 +281,7 @@ func _draw() -> void:
 	# 光晕（呼吸）
 	var g := XUiSkin.glow_texture()
 	if g != null:
-		var gr := 32.0 + 5.0 * breath()
+		var gr := 38.0 + 6.0 * breath()
 		draw_texture_rect(g, Rect2(Vector2(-gr, waist - gr * 0.85), Vector2(gr * 2.0, gr * 2.0)), false,
 			Color(XUiSkin.SEL_FILL, (0.30 + 0.18 * breath()) * a))
 	var w := []   # 腰圈各点
@@ -212,6 +304,9 @@ func _draw() -> void:
 		for p in outline:
 			sh.append(p + Vector2(1.5, 2.5))
 		draw_colored_polygon(sh, Color(0, 0, 0, 0.45 * a))
+		var ol := PackedVector2Array(outline)
+		ol.append(outline[0])
+		draw_polyline(ol, Color(OUTLINE, OUTLINE.a * a), 3.0, true)
 	# 面：[深度(越大越近), 点, 颜色]
 	var faces := []
 	for i in SIDES:

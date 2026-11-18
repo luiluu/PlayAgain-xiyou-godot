@@ -126,6 +126,7 @@ func _run() -> void:
 	await _layout(b, actors)
 	await _shot("t196_mob_expanded")
 	await _marker(b, actors)
+	await _menu_avoid(b, actors)
 	await _fold(b, actors)
 	await _boss_shot(b)
 	_rollback(b)
@@ -164,15 +165,17 @@ func _marker(b: XBattleScene, actors: Array) -> void:
 	_check("marker_on_active", m.shown_for == a and m.visible and m.alpha == 1.0, [m.shown_for, m.alpha])
 	var s: XBattlerSprite = b.sprites[a]
 	var head := s.position + Vector2(0, -s.height() - XTurnMarker.GAP)
-	_check("marker_above_head", absf(m.position.x - head.x) < 0.5 and m.position.y <= head.y + 0.01 and m.position.y >= head.y - XTurnMarker.BOB - 0.01, [m.position, head])
+	await _until(func(): return m.shift.distance_to(m.menu_shift(m._anchor)) < 0.01, 120)
+	var p0 := m.position - m.shift
+	_check("marker_above_head", absf(p0.x - head.x) < 0.5 and p0.y <= head.y + 0.01 and p0.y >= head.y - XTurnMarker.BOB - 0.01, [m.position, m.shift, head])
 	# 会动：浮动＋转
 	var y0 := m.position.y
 	var r0 := m.spin()
 	await _frames(20)
 	_check("marker_moves", m.position.y != y0 and m.spin() != r0, [y0, m.position.y, r0, m.spin()])
 	# 特写（原尺寸，宝石周围 128×128）
-	var c := b._origin + m.position + Vector2(0, -XTurnMarker.DEPTH)
-	await _record("frames_marker", 120, 2, Rect2i(Vector2i(c) - Vector2i(64, 64), Vector2i(128, 128)))
+	var c := b._origin + m.position + Vector2(0, -XTurnMarker.DEPTH / 2.0)
+	await _record("frames_marker", 120, 2, Rect2i(Vector2i(c) - Vector2i(80, 80), Vector2i(160, 160)))
 	# 换人：滑到新角色头上
 	var other: XActor = actors[0] if actors[0] != a else actors[1]
 	b._set_active(other)
@@ -182,7 +185,9 @@ func _marker(b: XBattleScene, actors: Array) -> void:
 	var so: XBattlerSprite = b.sprites[other]
 	var head2 := so.position + Vector2(0, -so.height() - XTurnMarker.GAP)
 	await _frames(1)
-	_check("marker_on_other", absf(m.position.x - head2.x) < 0.5 and absf(m.position.y - head2.y) <= XTurnMarker.BOB + 0.01, [m.position, head2])
+	await _until(func(): return m.shift.distance_to(m.menu_shift(m._anchor)) < 0.01, 120)
+	var p2 := m.position - m.shift
+	_check("marker_on_other", absf(p2.x - head2.x) < 0.5 and absf(p2.y - head2.y) <= XTurnMarker.BOB + 0.01, [m.position, m.shift, head2])
 	# 敌人行动（_active 空）：停一会再淡出
 	b._set_active(null)
 	await _frames(3)
@@ -201,6 +206,59 @@ func _marker(b: XBattleScene, actors: Array) -> void:
 
 func ok_wait(ok: bool, name: String) -> void:
 	_check(name, ok)
+
+
+## ---- T196 核查 P1-1：指令菜单开着时宝石让开菜单（抬到菜单上方，x 仍对着头），菜单开在各个角色身上都试 ----
+func _gem_clear(m: XTurnMarker) -> bool:
+	var g := XTurnMarker.gem_rect(m.position + Vector2(0, m.bob()))
+	for z in m.avoid_rects():
+		if g.intersects(z as Rect2):
+			return false
+	return true
+
+
+func _menu_avoid(b: XBattleScene, actors: Array) -> void:
+	var m := b.turn_marker
+	var ring := b.cmd_win as XSkinBattleRing
+	_check("menu_ring_fixture", m != null and ring != null and ring.active, [m, b.cmd_win])
+	if m == null or ring == null:
+		return
+	var a: XActor = b._active
+	var old_title := ring.title
+	var idx := 0
+	if _windowed():
+		DirAccess.make_dir_recursive_absolute(out_dir.path_join("frames_menu"))
+	for x in actors:
+		var who: XActor = x
+		b._place_near_actor(ring, who)
+		ring.title = who.display_name() + "的行动"
+		ring.queue_redraw()
+		b._set_active(who)
+		await _until(func(): return m.shown_for == who and m._glide >= 1.0 and m.shift.distance_to(m.menu_shift(m._anchor)) < 0.01 and m.alpha >= 1.0, 180)
+		await _frames(2)
+		var s: XBattlerSprite = b.sprites[who]
+		_check("menu_clear_%d" % idx, _gem_clear(m), [who.display_name(), m.position, m.shift, m.avoid_rects()])
+		_check("menu_near_head_%d" % idx, m.position.x - s.position.x >= -0.5 and m.position.x - s.position.x <= XTurnMarker.SHIFT_MAX + 0.5, [m.position, s.position])
+		_check("menu_above_head_%d" % idx, m.position.y < s.position.y - s.height(), [m.position, s.position, s.height()])
+		await _shot("t196_menu_%d_%s" % [idx, who.display_name()])
+		idx += 1
+	# 换着角色开菜单的动图（右半屏原尺寸）
+	for x in [actors[0], actors[actors.size() - 1]]:
+		b._place_near_actor(ring, x)
+		ring.title = (x as XActor).display_name() + "的行动"
+		b._set_active(x)
+		await _record("frames_menu_%s" % (x as XActor).actor_id, 50, 2)
+	# 菜单关掉（失活）落回头顶
+	b._place_near_actor(ring, a)
+	ring.title = old_title
+	b._set_active(a)
+	await _frames(30)
+	_check("menu_shifted_on_fixture", m.shift != Vector2.ZERO, m.shift)
+	ring.active = false
+	await _until(func(): return m.shift == Vector2.ZERO, 120)
+	_check("menu_closed_back", m.shift == Vector2.ZERO and m.avoid_rects().is_empty(), m.shift)
+	ring.active = true
+	await _frames(30)
 
 
 ## ---- 展开／收起 ----
@@ -227,6 +285,16 @@ func _fold(b: XBattleScene, actors: Array) -> void:
 	var r2: XSkinSideStatus = b.status_rows[second]
 	_check("collapsed_focus_top", r2.position.y == XSkinSideStatus.row_pos(0).y and r2.visible and r2.modulate.a == 1.0, [r2.position, r2.modulate.a])
 	_check("collapsed_others_hidden", rows.filter(func(r): return r != r2 and r.visible).is_empty(), rows.map(func(r): return r.visible))
+	# T196 核查 P2-2：死期小钟不画在被藏起的行上（焦点那一行照画）
+	var meter := b.tianqi_meter
+	if meter != null:
+		var hidden_actor: XActor = actors[0]
+		meter.doomed = [hidden_actor, second]
+		var dr := meter.doom_mark_rows()
+		_check("doom_skips_hidden_row", not dr.has(b.status_rows[hidden_actor]) and dr.has(r2), dr.size())
+		meter.doomed = []
+	else:
+		_check("doom_meter_fixture", false)
 	_check("collapsed_clip_one_row", is_equal_approx(f.clip.size.y, XSkinSideStatus.ROW_H + 4.0), f.clip.size)
 	_check("collapsed_party_rect", is_equal_approx(b.party_rect().size.y, XPartyFold.HEAD_H + XSkinSideStatus.ROW_H + 4.0), b.party_rect())
 	_check("chevron_right", f.k == 0.0)
