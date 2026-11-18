@@ -1025,7 +1025,7 @@ static func begin_action(logic, u, skill) -> void:
 	u.set_meta("xtq_turn", int(logic.get("turn")) if logic is Object and logic.get("turn") != null else 0)  # 本场第几回合（battle_turn 条件）
 
 
-## 开关 MAIN_TARGETS_ONLY（T018 P2-1，O-待定）：false 回到旧样（这次行动里同一角色放的所有招、含七印派生打到的目标都记进追加目标）
+## 开关 MAIN_TARGETS_ONLY（T018 P2-1，O-602）：false 回到旧样（这次行动里同一角色放的所有招、含七印派生打到的目标都记进追加目标）
 static var MAIN_TARGETS_ONLY := true
 
 
