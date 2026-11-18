@@ -1,0 +1,62 @@
+[
+  {
+    "frame": "14_0",
+    "changed_pixels": 2578,
+    "outside_mask": 0,
+    "alpha": [
+      0,
+      255
+    ],
+    "bbox": [
+      65,
+      89,
+      260,
+      217
+    ]
+  },
+  {
+    "frame": "15_0",
+    "changed_pixels": 2654,
+    "outside_mask": 0,
+    "alpha": [
+      0,
+      255
+    ],
+    "bbox": [
+      62,
+      59,
+      258,
+      217
+    ]
+  },
+  {
+    "frame": "7_2",
+    "changed_pixels": 1558,
+    "outside_mask": 0,
+    "alpha": [
+      0,
+      255
+    ],
+    "bbox": [
+      61,
+      82,
+      260,
+      217
+    ]
+  },
+  {
+    "frame": "13_0",
+    "changed_pixels": 1215,
+    "outside_mask": 0,
+    "alpha": [
+      0,
+      255
+    ],
+    "bbox": [
+      78,
+      58,
+      244,
+      217
+    ]
+  }
+]

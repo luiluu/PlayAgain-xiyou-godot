@@ -1,0 +1,7 @@
+sandbox_extension_issue_file_to_process failed for /Users/kyo/orca/workspaces/再刷项目资料库/t207/03_再刷重制_Godot/07_开发环境/当前Godot.app: 1 (Operation not permitted)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+OpenGL API 4.1 Metal - 91.7 - Compatibility - Using Device: Apple - Apple M1 Pro
+
+ROW {"actors":[{"id":1,"rect":[774.799987792969,227.600006103516,102.400001525879,102.400001525879],"screen_h":101.0},{"id":11,"rect":[774.799987792969,407.600006103516,102.400001525879,102.400001525879],"screen_h":102.0},{"id":167,"rect":[928.276733398438,209.878494262695,231.446548461914,210.121505737305],"screen_h":200.0},{"id":168,"rect":[918.8427734375,400.0,250.314468383789,200.0],"screen_h":200.0}],"h":200.0,"hit_panel":[167],"off_screen":[],"overlap":[[167,168]],"panel":[974.0,12.0,290.0,262.0],"troop":"小怪战"}
+ROW {"actors":[{"id":1,"rect":[771.799987792969,227.600006103516,102.400001525879,102.400001525879],"screen_h":101.0},{"id":11,"rect":[771.799987792969,407.600006103516,102.400001525879,102.400001525879],"screen_h":102.0},{"id":167,"rect":[902.276733398438,210.811172485352,231.446548461914,209.188827514648],"screen_h":200.0},{"id":168,"rect":[892.8427734375,400.0,250.314468383789,200.0],"screen_h":200.0}],"h":200.0,"hit_panel":[167],"off_screen":[],"overlap":[[167,168]],"panel":[974.0,12.0,290.0,262.0],"troop":"首领战"}
+TEST_RESULT={"passed":12,"total":12}
