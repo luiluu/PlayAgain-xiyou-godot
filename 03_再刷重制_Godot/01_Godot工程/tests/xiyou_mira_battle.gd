@@ -148,6 +148,7 @@ func _act(c: Dictionary, debuff_fix := true) -> void:
 	var o: Dictionary = c.observed
 	var setup: Dictionary = c.setup
 	XMira.DEBUFF_FIX = debuff_fix
+	XMira.FILL_ON_LIFT = false  # T212：变身补生命魔法是重制优化（原版不补），与参照逐例比时关掉，补的部分见 xiyou_mira_fill
 	var r := _battle(setup)
 	var logic: XBattleLogic = r[0]
 	var a: XActor = r[1]
@@ -181,6 +182,7 @@ func _act(c: Dictionary, debuff_fix := true) -> void:
 		check(tag + ".states", _sorted(a.state_ids) == _ints(o.states), [a.state_ids, o.states])
 		check(tag + ".debuffs", _debuffs(a) == ([] if debuff_fix else _ints(o.debuffs)), [_debuffs(a), o.debuffs])
 		XMira.DEBUFF_FIX = true
+		XMira.FILL_ON_LIFT = true
 		logic.end_battle(0)
 		return
 	check(c.id + ".hp", [hp0, a.hp] == [float(o.hpBefore), float(o.hpAfterAction)], [[hp0, a.hp], [o.hpBefore, o.hpAfterAction]])
@@ -211,6 +213,7 @@ func _act(c: Dictionary, debuff_fix := true) -> void:
 	check(c.id + ".turn_end", delta[0] == want_delta[0] and foe_ok, [delta, o.turnEndDelta])
 	check(c.id + ".flame_after", _same_flame(_flame(logic), o.flameAfterTurn), [_flame(logic), o.flameAfterTurn])
 	XMira.DEBUFF_FIX = true
+	XMira.FILL_ON_LIFT = true
 	logic.end_battle(0)
 
 

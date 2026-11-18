@@ -436,7 +436,8 @@ func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
 		return finish()
-	var keep := [XSmartAI.o_profile_hits, XSmartAIProfiles.o_profile_chain, XSmartAIProfiles.o_future_real, XYomiJingliu.CRIT_FIX]
+	var keep := [XSmartAI.o_profile_hits, XSmartAIProfiles.o_profile_chain, XSmartAIProfiles.o_future_real, XYomiJingliu.CRIT_FIX, XMira.FILL_ON_LIFT]
+	XMira.FILL_ON_LIFT = false  # T212：原版变身不补生命魔法（米拉脚本里有解放·黑龙）
 	XYomiJingliu.CRIT_FIX = false  # O-098：原版黄泉 10185 的暴击 +9.99 不生效
 	XSmartAI.o_profile_hits = false
 	XSmartAIProfiles.o_profile_chain = false
@@ -448,6 +449,7 @@ func _run() -> void:
 	XSmartAIProfiles.o_profile_chain = keep[1]
 	XSmartAIProfiles.o_future_real = keep[2]
 	XYomiJingliu.CRIT_FIX = keep[3]
+	XMira.FILL_ON_LIFT = keep[4]
 	_local()
 	finish()
 
