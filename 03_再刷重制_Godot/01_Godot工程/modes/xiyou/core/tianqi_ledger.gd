@@ -107,6 +107,7 @@ static func reload_table() -> void:
 	_confirm_never = {}
 	_confirm_pool = {}
 	_confirm_reduce = {}
+	_confirm_program = {}
 	_live_table = {}  # T185 核查 P3-2：换表（专项改 data、reload）后 live 归池表要跟着重读
 	_load_failed = false
 
@@ -251,6 +252,8 @@ static func suit_confirm_rows(holder, rows: Array) -> Array:
 ##     并进秘籍格排序（T185 核查 P3-1：不各吃 ＋8%）；cap＝none（角色桶、机制）不封。
 ##   stop 停用 → 只是不乘，不进池。
 ## 认的效果：mul（k>1），或只有加成段的 value_steps（暴击专属段的 k 是 0）。治疗、打自己人照旧乘（同套装那一步）。
+## T200：程序写法、但确认阶段其实是固定 ×k 的（38 缝合），表里带 as＝换写后的效果列表：归池时这个状态确认阶段那几条整个换成 as
+##   （as 里的 mul 照上面带 skipTypes；不改 value 的程序原样执行，只打放行标记）。
 ## 产品默认关，期四总开关（XTianqiBase.PHASE4）开着就开；关着＝原版现状，守卫当回退中不报。
 static var POOL_LIVE := false
 const LIVE_POOLED := "_ledgerLivePooled"
@@ -304,10 +307,17 @@ static func live_pool_effects(a) -> Array:
 		var sid := int(st.get("id", 0))
 		if sid <= 0 or not tab.has(sid):
 			continue
-		for e in st.get("effects", []):
+		for e in _live_source_effects(st, tab[sid]):
 			if _live_effect(e):
 				out.append([sid, tab[sid], e])
 	return out
+
+
+## T200：表里带 as 的状态（且身上这条确实有确认阶段效果）认 as；其余认状态自己的 effects
+static func _live_source_effects(st: Dictionary, row: Dictionary) -> Array:
+	if row.has("as") and (st.get("effects", []) as Array).any(func(e): return e is Dictionary and str(e.get("phase", "")) == "confirm"):
+		return row.as
+	return st.get("effects", [])
 
 
 ## damage._calculate：这一下（我方打敌人、伤害类型 dmg_type）表内状态进③的量：
@@ -343,7 +353,7 @@ static func live_confirm_add(a, b, dmg_type := 1) -> Dictionary:
 static func live_confirm_rows(holder, rows: Array) -> Array:
 	var ids := {}
 	for trip in live_pool_effects(holder):
-		ids[int(trip[0])] = true
+		ids[int(trip[0])] = trip[1]
 	if ids.is_empty():
 		return rows
 	var out := []
@@ -353,7 +363,16 @@ static func live_confirm_rows(holder, rows: Array) -> Array:
 			continue
 		var copy: Dictionary = st.duplicate()
 		var effects := []
-		for e in st.get("effects", []):
+		var src: Array = st.get("effects", [])
+		var row: Dictionary = ids[int(st.get("id", 0))]
+		if row.has("as"):  # T200：确认阶段那几条换成 as（不改 value 的程序也打放行标记）
+			src = src.filter(func(e): return not (e is Dictionary and str(e.get("phase", "")) == "confirm"))
+			for e in row.as:
+				var e3: Dictionary = (e as Dictionary).duplicate(true)
+				if not _live_effect(e3):
+					e3[LIVE_POOLED] = true
+				src.append(e3)
+		for e in src:
 			if _live_effect(e):
 				var e2: Dictionary = e.duplicate(true)
 				if str(e2.op) == "value_steps":
@@ -468,12 +487,14 @@ static func state_confirm_registered(state_id: int) -> bool:
 
 ## 期四（T083，T187 铺开）：191 个状态的分类（damage_ledger.json state_confirm_class）→ 走哪一行：
 ## card 卡改写过 → state_confirm_card（允许）；never 天启篇不会出现 → state_confirm_never（出现就失败，各条带回退开关）；
-## pool 归池或停用 → state_confirm_pool（归池，开关 POOL_LIVE）；reduce 缩小类 → state_confirm_reduce（允许）；其余 live（程序／脚本类）→ state_confirm（豁免）。
+## pool 归池或停用 → state_confirm_pool（归池，开关 POOL_LIVE）；reduce 缩小类 → state_confirm_reduce（允许）；
+## program 程序类 → state_confirm_program（允许，T200）；其余（T200 起 live 已清零，只剩 POOL_SUIT 关着时的 713）→ state_confirm（豁免）。
 ## 表里没有 state_confirm_class（期四以前）一律走 state_confirm。
 static var _confirm_card := {}
 static var _confirm_never := {}
 static var _confirm_pool := {}
 static var _confirm_reduce := {}
+static var _confirm_program := {}
 
 static func confirm_source(state_id: int) -> String:
 	if _confirm_card.is_empty() and _confirm_never.is_empty():
@@ -486,6 +507,8 @@ static func confirm_source(state_id: int) -> String:
 			_confirm_pool[int(e.id)] = true
 		for e in cls.get("reduce", []):  # T187：缩小类（机制）
 			_confirm_reduce[int(e.id)] = true
+		for e in cls.get("program", []):  # T200：程序类（不改伤害、附加扣血、倍率随运行期量变、暴击专属段）
+			_confirm_program[int(e.id)] = true
 		if _confirm_card.is_empty() and _confirm_never.is_empty():
 			_confirm_card[-1] = true  # 占位：表里没有分类，别每次都重读
 	if _confirm_card.has(state_id):
@@ -496,6 +519,8 @@ static func confirm_source(state_id: int) -> String:
 		return "state_confirm_pool"
 	if _confirm_reduce.has(state_id):
 		return "state_confirm_reduce"
+	if _confirm_program.has(state_id):
+		return "state_confirm_program"
 	return "state_confirm"
 
 
