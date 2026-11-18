@@ -1,0 +1,7 @@
+K_GUYU_HEAL_CALC value -85042.0 breakdown { "base": -85041.8, "elementMultiplier": 1.0 } confirm -425210.0 finish -425210.0
+K_GUYU_CONFIRM_STATE 1691 天启篇·难度被动等价 -85042→-425210
+K_GUYU_HEAL_LOG hp 425210 type hit elements [10] bonus [0.0]
+K_GUYU_HEAL 1 reserve 448519→958771 mhp 850418 base 401899 heal_ratio 0.100 healed 425210 cap 1495064 rec 1.000
+K_GUYU_HEAL_CALC value -85042.0 breakdown { "base": -85041.8, "elementMultiplier": 1.0 } confirm -425210.0 finish -425210.0
+K_GUYU_HEAL_LOG hp 680335 type hit elements [10] bonus [0.0]
+K_GUYU_HEAL 2 reserve 958771→1495064 mhp 1360670 base 401899 heal_ratio 0.100 healed 680335 cap 1495064 rec 1.000

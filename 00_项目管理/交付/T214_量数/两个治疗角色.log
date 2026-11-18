@@ -1,0 +1,3 @@
+T214_HEAL actor 7 <null> skill 108 次级治疗术 type 3 on=true | 修前 calc -117 finish -585 | 修后 calc -117 finish -117
+T214_HEAL actor 16 <null> skill 4550 次级治疗术 type 3 on=true | 修前 calc -90 finish -450 | 修后 calc -90 finish -90
+T214_HEAL actor 180 <null> skill 10637 反转术式 type 3 on=true | 修前 calc -270 finish -1350 | 修后 calc -270 finish -270

@@ -143,14 +143,18 @@ static func confirm_rows(holder: XBattler, rows: Array) -> Array:
 	if settle.is_empty():
 		return rows
 	var out := rows
-	var skip := XTianqiNoX6.skip_types() + XTianqiBase.heal_skip_types()  # 去全队 ×6（O-470）：HP 伤害、吸取不乘，MP 伤害与回复照旧；期四总开关开着回复也不乘 ×5
+	var skip := XTianqiNoX6.skip_types()  # 去全队 ×6（O-470）：打敌人的 HP 伤害、吸取不乘，MP 伤害照旧
+	var skip_any := XTianqiBase.heal_skip_types()  # 期四总开关开着回复（3、4）也不乘 ×5；治疗目标是自己人，要不论目标都跳过（T214）
+	if not XTianqiBase.HEAL_SKIP_ALLY:
+		skip = skip + skip_any  # 回退：并进只对敌人生效的 skipTypes（我方回复照乘 ×5）
+		skip_any = []
 	for row in settle:
 		var sid := int(row.get("state", 0))
 		if sid <= 0 or holder.is_state_affected(sid):
 			continue
 		var prio := int(XDB.rec("States", sid).get("priority", 0))
 		var syn := {"id": sid, "priority": prio, "name": "天启篇·难度被动等价", "effects": [{"phase": "confirm", "op": "mul",
-			"cond": str(row.get("cond", "positive")), "hpOnly": false, "k": float(row.get("k", 1.0)), "round": str(row.get("round", "ceil")), "skipTypes": skip}]}
+			"cond": str(row.get("cond", "positive")), "hpOnly": false, "k": float(row.get("k", 1.0)), "round": str(row.get("round", "ceil")), "skipTypes": skip, "skipTypesAny": skip_any}]}
 		var at := out.size()
 		for i in out.size():
 			var p := int(out[i].get("priority", 0))

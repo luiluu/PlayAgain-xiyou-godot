@@ -1,0 +1,25 @@
+K_GUYU_HEAL_CALC value -85042.0 breakdown { "base": -85041.8, "elementMultiplier": 1.0 } confirm -85042.0 finish -85042.0
+K_GUYU_HEAL_LOG hp 85042 type hit elements [10] bonus [0.0]
+K_GUYU_HEAL 1 reserve 448519→550569 mhp 850418 base 401899 heal_ratio 0.100 healed 85042 cap 1495064 rec 1.000
+K_GUYU_HEAL_CALC value -85042.0 breakdown { "base": -85041.8, "elementMultiplier": 1.0 } confirm -85042.0 finish -85042.0
+K_GUYU_HEAL_LOG hp 95247 type hit elements [10] bonus [0.0]
+K_GUYU_HEAL 2 reserve 550569→664865 mhp 952468 base 401899 heal_ratio 0.100 healed 95247 cap 1495064 rec 1.000
+K_GUYU_HEAL_CALC value -95247.0 breakdown { "base": -95246.8, "elementMultiplier": 1.0 } confirm -95247.0 finish -95247.0
+K_GUYU_HEAL_LOG hp 106676 type hit elements [10] bonus [0.0]
+K_GUYU_HEAL 3 reserve 664865→792876 mhp 1066764 base 401899 heal_ratio 0.100 healed 106676 cap 1495064 rec 1.000
+K_GUYU_HEAL_CALC value -106676.0 breakdown { "base": -106676.4, "elementMultiplier": 1.0 } confirm -106676.0 finish -106676.0
+K_GUYU_HEAL_LOG hp 119477 type hit elements [10] bonus [0.0]
+K_GUYU_HEAL 4 reserve 792876→936248 mhp 1194775 base 401899 heal_ratio 0.100 healed 119477 cap 1495064 rec 1.000
+K_GUYU_HEAL_CALC value -119477.0 breakdown { "base": -119477.5, "elementMultiplier": 1.0 } confirm -119477.0 finish -119477.0
+K_GUYU_HEAL_LOG hp 133815 type hit elements [10] bonus [0.0]
+K_GUYU_HEAL 5 reserve 936248→1096826 mhp 1338147 base 401899 heal_ratio 0.100 healed 133815 cap 1495064 rec 1.000
+K_GUYU_HEAL_CALC value -133815.0 breakdown { "base": -133814.7, "elementMultiplier": 1.0 } confirm -133815.0 finish -133815.0
+K_GUYU_HEAL_LOG hp 149872 type hit elements [10] bonus [0.0]
+K_GUYU_HEAL 6 reserve 1096826→1276672 mhp 1498725 base 401899 heal_ratio 0.100 healed 149872 cap 1495064 rec 1.000
+K_GUYU_HEAL_CALC value -149872.0 breakdown { "base": -149872.5, "elementMultiplier": 1.0 } confirm -149872.0 finish -149872.0
+K_GUYU_HEAL_LOG hp 167857 type hit elements [10] bonus [0.0]
+K_GUYU_HEAL 7 reserve 1276672→1478100 mhp 1678571 base 401899 heal_ratio 0.100 healed 167857 cap 1495064 rec 1.000
+K_GUYU_HEAL_CALC value -167857.0 breakdown { "base": -167857.1, "elementMultiplier": 1.0 } confirm -167857.0 finish -167857.0
+K_GUYU_HEAL_LOG hp 188000 type hit elements [10] bonus [0.0]
+K_GUYU_HEAL 8 reserve 1478100→1495064 mhp 1879999 base 401899 heal_ratio 0.100 healed 188000 cap 1495064 rec 1.000
+K_ROW {"actor":175,"atk":11388.0,"build":{"equips":["【真印】一发入魂","","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","百谷生","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"dealt":1789501.0,"guyu":{"base_mhp":401899.0,"cap":1495064.0,"cap_rate":3.72,"heal_rounds":8,"relic":true,"reserve":1495064.0,"reserve_start":448519.0,"rounds_total":10},"mat":4445.0,"mhp":1149431.0,"peak":1789501.0,"peak_single":1789501.0,"segs":{"n":1,"ratio":1.0,"segs":[1789501.0]},"skill":10292,"tier":"超强者"}

@@ -12,7 +12,7 @@ extends RefCounted
 ## | 装备八项 | gear_base.json 新底子＋换算后的词缀、镶嵌、宝珠 | 实例 params | XTianqiGear.effective_params（T104；读八项的地方都走它，清单在交付单） |
 ## | K（天启注视） | combat_rules.base_damage × 每人乘数口子 | 1 | XTianqiCombat.dealt_parts |
 ## | 守层者三张表 | balance_table.guardian_phase4（T012-c 量；缺就退回旧表并警告一次） | 代码里的旧表 | XGuardianRework |
-## | 治疗 ×5 | 不乘 | 照乘 | XTianqiNoDiffPassive.confirm_rows（skipTypes 加 3、4） |
+## | 治疗 ×5 | 不乘 | 照乘 | XTianqiNoDiffPassive.confirm_rows（skipTypesAny 放 3、4，不论目标；T214） |
 ## | 绝对值清单 | abs_rescale.json 换算后的数 | 原数 | abs_value（各结算处） |
 ## | 首领生命临时折算 U | combat_rules.boss_hp_temp_unit | 1 | XTianqiHorsemen |
 ## | 单段上限、九线爆伤、秘籍格 | skill_rework.rules.single_hit_cap、damage_ledger.phase4 | 现在的键 | XTianqiSkills.formula、XTianqiLedger.apply_nine_cap |
@@ -247,6 +247,12 @@ static func guardian_table(name: String, old: Dictionary) -> Dictionary:
 ## 难度被动等价行（XTianqiNoDiffPassive.confirm_rows）要多跳过的伤害类型：开着时 HP、MP 回复（3、4）不再 ×5
 static func heal_skip_types() -> Array:
 	return [3, 4] if on() else []
+
+
+## T214（O-待定）：上面这两类放进合成行的 skipTypesAny——不管目标是谁都跳过。原来并进 skipTypes，
+## 而 XStateEffects._active 认 skipTypes 只在目标是敌人时跳过，治疗打的是自己人，期四开着我方回复照样 ×5（T204 谷雨 85042→425210）。
+## false＝照原来并进 skipTypes（回退：我方回复照乘 ×5）
+static var HEAL_SKIP_ALLY := true
 
 
 # ---- 单段有效系数上限（skill_rework.rules.single_hit_cap，按名单档位）----
