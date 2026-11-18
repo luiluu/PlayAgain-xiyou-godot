@@ -342,6 +342,8 @@ func _big_forms() -> void:
 			_check(tag + "_mira_human_h", mira.height() >= 80.0 and mira.height() <= 130.0, [mira._look_key, mira.height(), mira.body_scale])
 			b.logic._state_add(mira.battler, XMira.DRAGON)  # 变身：加 2592，精灵下一帧按新外观键 swap_look 换黑龙
 			await _until(func(): return str(mira._look_key).contains("MiraDragon"), 60)
+			mira.battler.hp = mira.battler.mhp  # T210：进阶 3 与 2592（上限 ×2）之后回满血，不然照规则趴濒死
+			mira.refresh_idle()
 		_check(tag + "_keys", by.has(167) and by.has(168) and str(by[167]._look_key).contains("RavenMythic") and str(by[168]._look_key).contains("MiraDragon"),
 			[by.get(167).get("_look_key") if by.has(167) else null, by.get(168).get("_look_key") if by.has(168) else null])
 		var rows := []

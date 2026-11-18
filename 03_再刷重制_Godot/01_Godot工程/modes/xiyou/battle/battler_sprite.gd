@@ -551,21 +551,22 @@ func _input_walk() -> bool:
 	return _battle_scene().inputting or not not_acting
 
 
+## T210：原版 refreshMotion（YEP_BattleEngineCore:3197）防御排在濒死之前；false＝回到原先（濒死压过防御）。
+static var GUARD_FIRST := true
+
+
 func _idle_motion() -> String:
 	if _input_walk():
 		return "walk"
-	if not view.is_empty():
-		if view.dead:
-			return "dead"
-		if view.hp / maxf(view.mhp, 1.0) < 0.25:
-			return "dying"
-		return "guard" if view.guarding else "walk"
-	if battler.is_dead():
+	var dead: bool = view.dead if not view.is_empty() else battler.is_dead()
+	var dying: bool = (view.hp / maxf(view.mhp, 1.0) if not view.is_empty() else battler.hp_rate()) < 0.25
+	var guard: bool = view.guarding if not view.is_empty() else battler.is_guard()
+	if dead:
 		return "dead"
-	if battler.hp_rate() < 0.25:
-		return "dying"
-	if battler.is_guard():
+	if guard and (GUARD_FIRST or not dying):
 		return "guard"
+	if dying:
+		return "dying"
 	return "walk"
 
 

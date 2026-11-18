@@ -8,6 +8,7 @@ extends "res://tests/xiyou_battle_actor_size.gd"
 ##   低血播濒死；轮完（_active 清掉）not_acting 自动清。
 ## - human.*：米拉人形（Codex_Mira_SV_u2）同一条规则，换图不变。
 ## - xiyou.*：西游档角色（狗逍遥 1）同一条规则；回退照原先。
+## - guard_first.*（T210）：防御排在濒死之前（XBattlerSprite.GUARD_FIRST），实时读数与演出读数都认；回退濒死压过防御。
 ## 窗口模式加 -- --out=<目录> 存修前／修后原尺寸截图。
 
 
@@ -34,6 +35,7 @@ func _run() -> void:
 	XBattleLayout.ACTOR_SIZE = keep_s
 	XMira.LIFT_ART = true
 	XBattlerSprite.INPUT_WALK = true
+	XBattlerSprite.GUARD_FIRST = true
 	_finish()
 
 
@@ -142,7 +144,24 @@ func _xiyou() -> void:
 	b._active = null
 	await _frames(3)
 	_check("xiyou.low_not_active_dying", sp.motion == "dying", sp.motion)
+	# T210：原版 refreshMotion 防御排在濒死之前（YEP_BattleEngineCore:3210 先 isGuard、3214 才 isDying）
+	a.guarding = true
+	await _settle(sp)
+	_check("guard_first.low_guard", sp.motion == "guard", [sp.motion, a.hp_rate()])
+	sp.view = {"dead": false, "hp": floorf(a.mhp * 0.12), "mhp": a.mhp, "guarding": true}
+	await _settle(sp)
+	_check("guard_first.view_low_guard", sp.motion == "guard", sp.motion)
+	XBattlerSprite.GUARD_FIRST = false
+	await _settle(sp)
+	_check("rollback.guard_first_view_dying", sp.motion == "dying", sp.motion)
+	sp.view = {}
+	await _settle(sp)
+	_check("rollback.guard_first_dying", sp.motion == "dying", sp.motion)
+	XBattlerSprite.GUARD_FIRST = true
 	a.hp = a.mhp
+	await _settle(sp)
+	_check("guard_first.full_guard", sp.motion == "guard", sp.motion)
+	a.guarding = false
 	await _settle(sp)
 	_check("xiyou.full_walk", sp.motion == "walk", sp.motion)
 	await _close(b)
