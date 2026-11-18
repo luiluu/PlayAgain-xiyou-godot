@@ -168,8 +168,8 @@ func _purple() -> void:
 	var b: XBattler = lg.enemies[0]
 	XGojo.begin(lg, a, p_out)
 	var v := XGojo.formula(a, b, p_out)
-	# T191（D200）gojo_pairs 10.8 取整成 11；T209（D209）3 对合计 17、分 4 段（gojo_hits 4），每段公式值＝17÷4；TUNE_D209 关掉回 11 一段
-	var purple_each := 17.0 / 4.0 if XTianqiBase.TUNE_D209 else 11.0
+	# T191（D200）gojo_pairs 10.8 取整成 11；T209（D209）3 对合计 18（原 17，协调 11-18 改）、分 4 段（gojo_hits 4），每段公式值＝18÷4；TUNE_D209 关掉回 11 一段
+	var purple_each := 18.0 / 4.0 if XTianqiBase.TUNE_D209 else 11.0
 	_check("purple_out_3", is_equal_approx(v, a.mat * purple_each), [v, a.mat])
 	var via: Dictionary = XFormulaExecution.run_item(p_out, a, b, {})
 	_check("purple_pipeline", via.available and is_equal_approx(float(via.value), a.mat * purple_each), via)
@@ -278,8 +278,8 @@ func _real_turns() -> void:
 	XTianqiNoDiffPassive.ENABLED = true
 
 
-## T209 R1 P1-1：茈·放只在 XTianqiSkills.rec 套一次卡——底表不改（1 段），D209 split 4＝4 段（gojo_hits 4，每段 17÷4）；
-## 期四总开关 PHASE4 开、关都一样 4 段、合计魔攻×17；TUNE_D209 关掉＋reload_table 后回 1 段×11，再开回 4 段（底表没被写脏）
+## T209 R1 P1-1：茈·放只在 XTianqiSkills.rec 套一次卡——底表不改（1 段），D209 split 4＝4 段（gojo_hits 4，每段 18÷4）；
+## 期四总开关 PHASE4 开、关都一样 4 段、合计魔攻×18；TUNE_D209 关掉＋reload_table 后回 1 段×11，再开回 4 段（底表没被写脏）
 func _purple_segments() -> void:
 	var fx := func(r: Dictionary) -> int:
 		return ((r.get("yepSeq", {}).get("target", []) as Array).filter(func(c): return str(c[0]).to_lower() == "action effect")).size()
@@ -313,7 +313,7 @@ func _purple_segments() -> void:
 		var hits := logs.filter(func(l): return l is Dictionary and str(l.get("type", "")) == "hit" and l.get("target") == e \
 			and l.get("skill") is Dictionary and int(l.skill.get("id", 0)) == XGojo.PURPLE_OUT)
 		_check("purple_act_4_hits_p4_%s" % p4, pairs == 3 and hits.size() == 4, [pairs, hits.size()])
-		_check("purple_total_17_p4_%s" % p4, is_equal_approx(each * hits.size(), a.mat * 17.0), [each, hits.size(), a.mat])
+		_check("purple_total_18_p4_%s" % p4, is_equal_approx(each * hits.size(), a.mat * 18.0), [each, hits.size(), a.mat])
 		# 双 build 时被动「最强」的 note_add <passiveHarmRi:10> 也叠了两遍（damage.gd 逐个扫，伤害 +20%）；单入口后只一个
 		var harm := RegEx.create_from_string("(?i)<passiveHarmRi:").search_all(str(XDB.rec("Skills", XGojo.STRONGEST).get("note", ""))).size()
 		_check("strongest_harm_once_p4_%s" % p4, harm == 1, harm)
