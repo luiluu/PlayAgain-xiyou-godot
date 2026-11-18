@@ -1,0 +1,12 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+K_GUYU_HEAL_CALC value -159152.0 breakdown { "base": -159151.86, "elementMultiplier": 1.0 } confirm -795760.0 finish -795760.0
+K_GUYU_PHASE4 on true skip [3, 4] current_is_s true
+K_GUYU_CONFIRM_STATE 1691 天启篇·难度被动等价 -159152→-795760
+K_GUYU_HEAL_LOG hp 795760 type hit elements [10] bonus [0.0]
+K_GUYU_HEAL 1 reserve 482278→1437190 mhp 884177 base 401899 heal_ratio 0.180 healed 795760 cap 1607596 rec 1.000
+K_GUYU_HEAL_CALC value -159152.0 breakdown { "base": -159151.86, "elementMultiplier": 1.0 } confirm -795760.0 finish -795760.0
+K_GUYU_HEAL_LOG hp 1655180 type hit elements [10] bonus [0.0]
+K_GUYU_HEAL 2 reserve 1437190→1607596 mhp 1839089 base 401899 heal_ratio 0.180 healed 1655180 cap 1607596 rec 1.000
+K_ROW {"actor":175,"atk":11388.0,"build":{"equips":["【真印】一发入魂","","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","百谷生","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"dealt":1789502.0,"guyu":{"base_mhp":401899.0,"cap":1607596.0,"cap_rate":4.0,"heal_rounds":2,"relic":true,"reserve":1607596.0,"reserve_start":482278.0,"rounds_total":4},"mat":4445.0,"mhp":1205697.0,"peak":1789502.0,"peak_single":1789502.0,"segs":{"n":1,"ratio":1.0,"segs":[1789502.0]},"skill":10292,"tier":"超强者"}
+K_REPORT {"超强者":{"max":1789502.0,"max_brand":2684253.0,"median":1789502.0,"n":1}} mastery=10

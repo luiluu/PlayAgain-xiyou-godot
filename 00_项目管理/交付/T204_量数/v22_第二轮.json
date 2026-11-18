@@ -1,0 +1,1418 @@
+{
+ "brand_max_bonus": 0.5,
+ "build": "full",
+ "caps": {
+  "弱者": 8.0,
+  "强者": 11.0,
+  "超强者": 11.0
+ },
+ "def": 8200.0,
+ "ember": 3000.0,
+ "fabao_level": 99,
+ "gear_level": 80,
+ "guyu_affixes": [
+  {
+   "affixes": [
+    "element_damage/nature",
+    "skill_damage",
+    "first_strike"
+   ],
+   "name": "【真印】一发入魂",
+   "slot": 0
+  },
+  {
+   "affixes": [],
+   "name": "【真印】斤斤计较·头",
+   "slot": 2
+  },
+  {
+   "affixes": [],
+   "name": "【真印】斤斤计较·甲",
+   "slot": 3
+  },
+  {
+   "affixes": [],
+   "name": "【真印】斤斤计较·裤",
+   "slot": 4
+  },
+  {
+   "affixes": [],
+   "name": "【真印】斤斤计较·手",
+   "slot": 5
+  },
+  {
+   "affixes": [],
+   "name": "【真印】斤斤计较·鞋",
+   "slot": 6
+  },
+  {
+   "affixes": [],
+   "name": "【真印】斤斤计较·腰",
+   "slot": 7
+  },
+  {
+   "affixes": [
+    "element_damage/nature",
+    "skill_damage",
+    "mat"
+   ],
+   "name": "狂怒项圈",
+   "slot": 8
+  },
+  {
+   "affixes": [
+    "element_damage/nature",
+    "skill_damage",
+    "mat"
+   ],
+   "name": "悲伤之戒",
+   "slot": 9
+  }
+ ],
+ "hits": 20,
+ "k": 0.13,
+ "level": 81,
+ "mastery_max_level_seen": 10,
+ "metric": "cast_total",
+ "missing": [
+  "烙印（XTianqiBrand 关着＝烙印 0；锚临时取 200 万＝300 万÷1.50，稿第九节第 3 条）"
+ ],
+ "nanoha_kills": 2000,
+ "rows": [
+  {
+   "actor": 95,
+   "affixes": [
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "atk"
+     ],
+     "name": "【真印】一发入魂",
+     "slot": 0
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "atk"
+     ],
+     "name": "【真印】一发入魂",
+     "slot": 1
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·头",
+     "slot": 2
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·甲",
+     "slot": 3
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·裤",
+     "slot": 4
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·手",
+     "slot": 5
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·鞋",
+     "slot": 6
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·腰",
+     "slot": 7
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "first_strike",
+      "atk"
+     ],
+     "name": "狂怒项圈",
+     "slot": 8
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "atk"
+     ],
+     "name": "悲伤之戒",
+     "slot": 9
+    }
+   ],
+   "atk": 18137.0,
+   "build": {
+    "equips": [
+     "【真印】一发入魂",
+     "【真印】一发入魂",
+     "【真印】斤斤计较·头",
+     "【真印】斤斤计较·甲",
+     "【真印】斤斤计较·裤",
+     "【真印】斤斤计较·手",
+     "【真印】斤斤计较·鞋",
+     "【真印】斤斤计较·腰",
+     "狂怒项圈",
+     "悲伤之戒",
+     "",
+     "",
+     "红色围巾",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     6150,
+     6151,
+     6152,
+     6153
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "cap": 11.0,
+   "dealt": 297094.0,
+   "eff_full": 8.9375,
+   "formula": "XTianqiSkills.formula(a,b,10731)",
+   "mat": 2228.0,
+   "mhp": 405179.0,
+   "peak": 1669637.0,
+   "peak_single": 424844.0,
+   "repeats": 1,
+   "segs": {
+    "n": 4,
+    "ratio": 3.93,
+    "ratios": [
+     3.93,
+     3.93,
+     3.93
+    ],
+    "segs": [
+     123280,
+     132523,
+     132523,
+     132523
+    ],
+    "yep_effects": 4
+   },
+   "skill": 10731,
+   "terminal": 1.0,
+   "tier": "超强者",
+   "v0": 102507.829693878,
+   "v_full": 146586.196462245
+  },
+  {
+   "actor": 107,
+   "affixes": [
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "first_strike"
+     ],
+     "name": "【真印】一力降十会",
+     "slot": 0
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "atk"
+     ],
+     "name": "基础元素卷轴",
+     "slot": 1
+    },
+    {
+     "affixes": [
+      "mhp"
+     ],
+     "name": "【真印】斤斤计较·头",
+     "slot": 2
+    },
+    {
+     "affixes": [
+      "mhp"
+     ],
+     "name": "【真印】斤斤计较·甲",
+     "slot": 3
+    },
+    {
+     "affixes": [
+      "mhp"
+     ],
+     "name": "【真印】斤斤计较·裤",
+     "slot": 4
+    },
+    {
+     "affixes": [
+      "mhp"
+     ],
+     "name": "【真印】斤斤计较·手",
+     "slot": 5
+    },
+    {
+     "affixes": [
+      "mhp"
+     ],
+     "name": "【真印】斤斤计较·鞋",
+     "slot": 6
+    },
+    {
+     "affixes": [
+      "mhp"
+     ],
+     "name": "【真印】斤斤计较·腰",
+     "slot": 7
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "mhp"
+     ],
+     "name": "涓滴意念",
+     "slot": 8
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "mhp"
+     ],
+     "name": "寒冰之戒",
+     "slot": 9
+    }
+   ],
+   "atk": 9924.0,
+   "build": {
+    "equips": [
+     "【真印】一力降十会",
+     "基础元素卷轴",
+     "【真印】斤斤计较·头",
+     "【真印】斤斤计较·甲",
+     "【真印】斤斤计较·裤",
+     "【真印】斤斤计较·手",
+     "【真印】斤斤计较·鞋",
+     "【真印】斤斤计较·腰",
+     "涓滴意念",
+     "寒冰之戒",
+     "",
+     "",
+     "贯虹之槊",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     6150,
+     6151,
+     6152
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "cap": 11.0,
+   "dealt": 702832.0,
+   "eff_full": 4.0,
+   "formula": "XTianqiSkills.formula(a,b,5673)",
+   "mat": 8888.0,
+   "mhp": 949627.0,
+   "peak": 1405664.0,
+   "peak_single": 702832.0,
+   "repeats": 1,
+   "segs": {
+    "n": 2,
+    "ratio": 2.0,
+    "ratios": [
+     2.0,
+     2.0,
+     2.0
+    ],
+    "segs": [
+     374079,
+     374079
+    ],
+    "yep_effects": 2
+   },
+   "skill": 5673,
+   "terminal": 1.0,
+   "tier": "超强者",
+   "v0": 111561.717959184,
+   "v_full": 111561.717959184
+  },
+  {
+   "actor": 108,
+   "affixes": [
+    {
+     "affixes": [
+      "element_damage/arcane",
+      "first_strike",
+      "skill_damage"
+     ],
+     "name": "【真印】一力降十会",
+     "slot": 0
+    },
+    {
+     "affixes": [
+      "element_damage/arcane",
+      "mat",
+      "atk"
+     ],
+     "name": "基础元素卷轴",
+     "slot": 1
+    },
+    {
+     "affixes": [
+      "mhp",
+      "def",
+      "agi"
+     ],
+     "name": "【真印】斤斤计较·头",
+     "slot": 2
+    },
+    {
+     "affixes": [
+      "def",
+      "mmp",
+      "agi"
+     ],
+     "name": "【真印】斤斤计较·甲",
+     "slot": 3
+    },
+    {
+     "affixes": [
+      "mdf"
+     ],
+     "name": "【真印】斤斤计较·裤",
+     "slot": 4
+    },
+    {
+     "affixes": [
+      "agi"
+     ],
+     "name": "【真印】斤斤计较·手",
+     "slot": 5
+    },
+    {
+     "affixes": [
+      "mmp"
+     ],
+     "name": "【真印】斤斤计较·鞋",
+     "slot": 6
+    },
+    {
+     "affixes": [
+      "luk",
+      "def",
+      "agi"
+     ],
+     "name": "【真印】斤斤计较·腰",
+     "slot": 7
+    },
+    {
+     "affixes": [
+      "mat",
+      "crit_damage",
+      "mhp"
+     ],
+     "name": "首席法师的晶石挂坠",
+     "slot": 8
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "mat"
+     ],
+     "name": "寒冰之戒",
+     "slot": 9
+    }
+   ],
+   "atk": 9924.0,
+   "build": {
+    "equips": [
+     "【真印】一力降十会",
+     "基础元素卷轴",
+     "【真印】斤斤计较·头",
+     "【真印】斤斤计较·甲",
+     "【真印】斤斤计较·裤",
+     "【真印】斤斤计较·手",
+     "【真印】斤斤计较·鞋",
+     "【真印】斤斤计较·腰",
+     "首席法师的晶石挂坠",
+     "寒冰之戒",
+     "",
+     "",
+     "旭日之心",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     6150,
+     6151,
+     6152
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "cap": 11.0,
+   "dealt": 586108.0,
+   "eff_full": 10.8,
+   "formula": "XTianqiSkills.formula(a,b,5706)",
+   "mat": 11021.0,
+   "mhp": 560371.0,
+   "peak": 1625277.0,
+   "peak_single": 586108.0,
+   "repeats": 1,
+   "segs": {
+    "n": 3,
+    "ratio": 2.773,
+    "ratios": [
+     2.715,
+     2.773,
+     2.83
+    ],
+    "segs": [
+     227895,
+     216746,
+     250785
+    ],
+    "yep_effects": 3
+   },
+   "skill": 5706,
+   "terminal": 1.0,
+   "tier": "超强者",
+   "v0": 86129.6010612245,
+   "v_full": 86129.6010612245
+  },
+  {
+   "actor": 163,
+   "affixes": [
+    {
+     "affixes": [
+      "skill_damage",
+      "atk",
+      "element_damage/fire"
+     ],
+     "name": "【真印】一力降十会",
+     "slot": 0
+    },
+    {
+     "affixes": [
+      "def",
+      "mdf",
+      "mhp"
+     ],
+     "name": "【真印】斤斤计较·头",
+     "slot": 2
+    },
+    {
+     "affixes": [
+      "def",
+      "luk",
+      "mmp"
+     ],
+     "name": "【真印】斤斤计较·甲",
+     "slot": 3
+    },
+    {
+     "affixes": [
+      "luk",
+      "mdf",
+      "agi"
+     ],
+     "name": "【真印】斤斤计较·裤",
+     "slot": 4
+    },
+    {
+     "affixes": [
+      "mmp",
+      "mhp",
+      "luk"
+     ],
+     "name": "【真印】斤斤计较·手",
+     "slot": 5
+    },
+    {
+     "affixes": [
+      "agi",
+      "mmp",
+      "mhp"
+     ],
+     "name": "【真印】斤斤计较·鞋",
+     "slot": 6
+    },
+    {
+     "affixes": [
+      "mhp",
+      "mmp",
+      "def"
+     ],
+     "name": "【真印】斤斤计较·腰",
+     "slot": 7
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "atk",
+      "element_damage/dark"
+     ],
+     "name": "狂怒项圈",
+     "slot": 8
+    },
+    {
+     "affixes": [
+      "first_strike",
+      "final_damage",
+      "atk"
+     ],
+     "name": "悲伤之戒",
+     "slot": 9
+    }
+   ],
+   "atk": 14121.0,
+   "build": {
+    "equips": [
+     "【真印】一力降十会",
+     "",
+     "【真印】斤斤计较·头",
+     "【真印】斤斤计较·甲",
+     "【真印】斤斤计较·裤",
+     "【真印】斤斤计较·手",
+     "【真印】斤斤计较·鞋",
+     "【真印】斤斤计较·腰",
+     "狂怒项圈",
+     "悲伤之戒",
+     "",
+     "",
+     "一拳",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     6150,
+     6151,
+     6152
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "cap": 11.0,
+   "dealt": 491961.0,
+   "eff_full": 8.775,
+   "formula": "XTianqiSkills.formula(a,b,9938)",
+   "mat": 3832.0,
+   "mhp": 588743.0,
+   "peak": 2195583.0,
+   "peak_single": 603348.0,
+   "repeats": 1,
+   "segs": {
+    "n": 4,
+    "ratio": 3.639,
+    "ratios": [
+     3.573,
+     3.639,
+     3.919
+    ],
+    "segs": [
+     219593,
+     191617,
+     182253,
+     205590
+    ],
+    "yep_effects": 4
+   },
+   "skill": 9938,
+   "terminal": 1.0,
+   "tier": "超强者",
+   "v0": 98564.4008020408,
+   "v_full": 120880.868908163
+  },
+  {
+   "actor": 167,
+   "affixes": [
+    {
+     "affixes": [
+      "element_damage/dark",
+      "crit_damage",
+      "mat"
+     ],
+     "name": "【真印】一力降十会",
+     "slot": 0
+    },
+    {
+     "affixes": [
+      "crit_damage",
+      "skill_damage",
+      "mat"
+     ],
+     "name": "基础元素卷轴",
+     "slot": 1
+    },
+    {
+     "affixes": [
+      "agi",
+      "luk"
+     ],
+     "name": "【真印】斤斤计较·头",
+     "slot": 2
+    },
+    {
+     "affixes": [
+      "mdf",
+      "agi",
+      "mhp"
+     ],
+     "name": "【真印】斤斤计较·甲",
+     "slot": 3
+    },
+    {
+     "affixes": [
+      "mdf",
+      "luk",
+      "def"
+     ],
+     "name": "【真印】斤斤计较·裤",
+     "slot": 4
+    },
+    {
+     "affixes": [
+      "def",
+      "mdf",
+      "luk"
+     ],
+     "name": "【真印】斤斤计较·手",
+     "slot": 5
+    },
+    {
+     "affixes": [
+      "luk",
+      "mhp",
+      "mdf"
+     ],
+     "name": "【真印】斤斤计较·鞋",
+     "slot": 6
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·腰",
+     "slot": 7
+    },
+    {
+     "affixes": [
+      "element_damage/dark",
+      "skill_damage",
+      "mat"
+     ],
+     "name": "涓滴意念",
+     "slot": 8
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "first_strike",
+      "agi"
+     ],
+     "name": "寒冰之戒",
+     "slot": 9
+    }
+   ],
+   "atk": 7147.0,
+   "build": {
+    "equips": [
+     "【真印】一力降十会",
+     "基础元素卷轴",
+     "【真印】斤斤计较·头",
+     "【真印】斤斤计较·甲",
+     "【真印】斤斤计较·裤",
+     "【真印】斤斤计较·手",
+     "【真印】斤斤计较·鞋",
+     "【真印】斤斤计较·腰",
+     "涓滴意念",
+     "寒冰之戒",
+     "",
+     "",
+     "冥河断罪镰",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     6150,
+     6151,
+     6152
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "cap": 11.0,
+   "dealt": 203290.0,
+   "eff_full": 5.4405,
+   "formula": "XTianqiSkills.formula(a,b,10125)",
+   "mat": 10497.0,
+   "mhp": 526420.0,
+   "peak": 1696129.0,
+   "peak_single": 354913.0,
+   "repeats": 1,
+   "segs": {
+    "n": 5,
+    "ratio": 4.779,
+    "ratios": [
+     4.631,
+     4.779,
+     9.158
+    ],
+    "segs": [
+     89045,
+     89091,
+     97616,
+     94721,
+     96001
+    ],
+    "yep_effects": 5
+   },
+   "skill": 10125,
+   "terminal": 1.0,
+   "tier": "超强者",
+   "v0": 33027.7247244898,
+   "v_full": 57661.2998065748
+  },
+  {
+   "actor": 168,
+   "affixes": [
+    {
+     "affixes": [
+      "element_damage/fire",
+      "skill_damage",
+      "atk"
+     ],
+     "name": "【真印】一力降十会",
+     "slot": 0
+    },
+    {
+     "affixes": [
+      "element_damage/fire",
+      "skill_damage",
+      "atk"
+     ],
+     "name": "警戒小刀",
+     "slot": 1
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·头",
+     "slot": 2
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·甲",
+     "slot": 3
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·裤",
+     "slot": 4
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·手",
+     "slot": 5
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·鞋",
+     "slot": 6
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·腰",
+     "slot": 7
+    },
+    {
+     "affixes": [
+      "element_damage/fire",
+      "skill_damage",
+      "first_strike"
+     ],
+     "name": "狂怒项圈",
+     "slot": 8
+    },
+    {
+     "affixes": [
+      "element_damage/fire",
+      "skill_damage",
+      "atk"
+     ],
+     "name": "悲伤之戒",
+     "slot": 9
+    }
+   ],
+   "atk": 16331.0,
+   "build": {
+    "equips": [
+     "【真印】一力降十会",
+     "警戒小刀",
+     "【真印】斤斤计较·头",
+     "【真印】斤斤计较·甲",
+     "【真印】斤斤计较·裤",
+     "【真印】斤斤计较·手",
+     "【真印】斤斤计较·鞋",
+     "【真印】斤斤计较·腰",
+     "狂怒项圈",
+     "悲伤之戒",
+     "",
+     "",
+     "黑龙心鳞",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     6150,
+     6151,
+     6152
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "cap": 11.0,
+   "dealt": 1071815.0,
+   "eff_full": 11.0,
+   "formula": "XTianqiSkills.formula(a,b,10151)",
+   "mat": 3832.0,
+   "mhp": 436832.0,
+   "peak": 4287260.0,
+   "peak_single": 1071815.0,
+   "repeats": 1,
+   "segs": {
+    "n": 4,
+    "ratio": 4.0,
+    "ratios": [
+     4.0,
+     4.0,
+     4.0
+    ],
+    "segs": [
+     524357,
+     524357,
+     524357,
+     524357
+    ],
+    "yep_effects": 4
+   },
+   "skill": 10151,
+   "terminal": 1.0,
+   "tier": "超强者",
+   "v0": 117738.826530612,
+   "v_full": 117738.826530612
+  },
+  {
+   "actor": 169,
+   "affixes": [
+    {
+     "affixes": [
+      "element_damage/thunder",
+      "skill_damage",
+      "atk"
+     ],
+     "name": "【真印】一力降十会",
+     "slot": 0
+    },
+    {
+     "affixes": [
+      "element_damage/thunder",
+      "skill_damage",
+      "atk"
+     ],
+     "name": "【真印】一力降十会",
+     "slot": 1
+    },
+    {
+     "affixes": [
+      "luk"
+     ],
+     "name": "【真印】斤斤计较·头",
+     "slot": 2
+    },
+    {
+     "affixes": [
+      "luk"
+     ],
+     "name": "【真印】斤斤计较·甲",
+     "slot": 3
+    },
+    {
+     "affixes": [
+      "luk"
+     ],
+     "name": "【真印】斤斤计较·裤",
+     "slot": 4
+    },
+    {
+     "affixes": [
+      "luk"
+     ],
+     "name": "【真印】斤斤计较·手",
+     "slot": 5
+    },
+    {
+     "affixes": [
+      "luk"
+     ],
+     "name": "【真印】斤斤计较·鞋",
+     "slot": 6
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·腰",
+     "slot": 7
+    },
+    {
+     "affixes": [
+      "element_damage/thunder",
+      "skill_damage",
+      "first_strike"
+     ],
+     "name": "狂怒项圈",
+     "slot": 8
+    },
+    {
+     "affixes": [
+      "element_damage/thunder",
+      "crit_damage",
+      "atk"
+     ],
+     "name": "悲伤之戒",
+     "slot": 9
+    }
+   ],
+   "atk": 17991.0,
+   "build": {
+    "equips": [
+     "【真印】一力降十会",
+     "【真印】一力降十会",
+     "【真印】斤斤计较·头",
+     "【真印】斤斤计较·甲",
+     "【真印】斤斤计较·裤",
+     "【真印】斤斤计较·手",
+     "【真印】斤斤计较·鞋",
+     "【真印】斤斤计较·腰",
+     "狂怒项圈",
+     "悲伤之戒",
+     "",
+     "",
+     "赤雨双缨",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     6150,
+     6151,
+     6152
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "cap": 11.0,
+   "dealt": 749041.0,
+   "eff_full": 7.8,
+   "formula": "XTianqiSkills.formula(a,b,10173)",
+   "mat": 2228.0,
+   "mhp": 397799.0,
+   "peak": 1498082.0,
+   "peak_single": 749041.0,
+   "repeats": 1,
+   "segs": {
+    "n": 2,
+    "ratio": 2.0,
+    "ratios": [
+     2.0,
+     2.0,
+     2.0
+    ],
+    "segs": [
+     413191,
+     413191
+    ],
+    "yep_effects": 1
+   },
+   "skill": 10173,
+   "terminal": 1.0,
+   "tier": "超强者",
+   "v0": 90222.387755102,
+   "v_full": 90222.3877551021
+  },
+  {
+   "actor": 175,
+   "atk": 11388.0,
+   "build": {
+    "equips": [
+     "【真印】一发入魂",
+     "",
+     "【真印】斤斤计较·头",
+     "【真印】斤斤计较·甲",
+     "【真印】斤斤计较·裤",
+     "【真印】斤斤计较·手",
+     "【真印】斤斤计较·鞋",
+     "【真印】斤斤计较·腰",
+     "狂怒项圈",
+     "悲伤之戒",
+     "",
+     "",
+     "百谷生",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     6150,
+     6151,
+     6152
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "dealt": 577258.0,
+   "guyu": {
+    "base_mhp": 401899.0,
+    "cap": 482278.0,
+    "cap_rate": 1.2,
+    "heal_rounds": 2,
+    "relic": true,
+    "reserve": 482278.0,
+    "reserve_start": 144683.0,
+    "rounds_total": 4
+   },
+   "mat": 4445.0,
+   "mhp": 643038.0,
+   "peak": 577258.0,
+   "peak_single": 577258.0,
+   "segs": {
+    "n": 1,
+    "ratio": 1.0,
+    "segs": [
+     577258.0
+    ]
+   },
+   "skill": 10292,
+   "tier": "超强者"
+  },
+  {
+   "actor": 179,
+   "affixes": [
+    {
+     "affixes": [
+      "element_damage/fire",
+      "skill_damage",
+      "atk"
+     ],
+     "name": "【真印】一力降十会",
+     "slot": 0
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·头",
+     "slot": 2
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·甲",
+     "slot": 3
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·裤",
+     "slot": 4
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·手",
+     "slot": 5
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·鞋",
+     "slot": 6
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·腰",
+     "slot": 7
+    },
+    {
+     "affixes": [
+      "element_damage/fire",
+      "skill_damage",
+      "atk"
+     ],
+     "name": "狂怒项圈",
+     "slot": 8
+    },
+    {
+     "affixes": [
+      "element_damage/fire",
+      "skill_damage",
+      "atk"
+     ],
+     "name": "悲伤之戒",
+     "slot": 9
+    }
+   ],
+   "atk": 14121.0,
+   "build": {
+    "equips": [
+     "【真印】一力降十会",
+     "",
+     "【真印】斤斤计较·头",
+     "【真印】斤斤计较·甲",
+     "【真印】斤斤计较·裤",
+     "【真印】斤斤计较·手",
+     "【真印】斤斤计较·鞋",
+     "【真印】斤斤计较·腰",
+     "狂怒项圈",
+     "悲伤之戒",
+     "",
+     "",
+     "萨姆变身器",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     6150,
+     6151,
+     6152
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "cap": 11.0,
+   "dealt": 157191.0,
+   "eff_full": 19.5638625,
+   "formula": "XTianqiSkills.formula(a,b,10623)",
+   "mat": 2228.0,
+   "mhp": 480958.0,
+   "peak": 1401672.0,
+   "peak_single": 157191.0,
+   "repeats": 1,
+   "segs": {
+    "n": 9,
+    "ratio": 8.917,
+    "ratios": [
+     8.917,
+     8.917,
+     8.917
+    ],
+    "segs": [
+     113502,
+     123717,
+     123717,
+     123717,
+     123717,
+     123717,
+     123717,
+     123717,
+     123717
+    ],
+    "yep_effects": 1
+   },
+   "skill": 10623,
+   "terminal": 1.0,
+   "tier": "超强者",
+   "v0": 250890.36643125,
+   "v_full": 250890.36643125
+  },
+  {
+   "actor": 180,
+   "affixes": [
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "mat"
+     ],
+     "name": "【真印】一力降十会",
+     "slot": 0
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "mat"
+     ],
+     "name": "基础元素卷轴",
+     "slot": 1
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·头",
+     "slot": 2
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·甲",
+     "slot": 3
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·裤",
+     "slot": 4
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·手",
+     "slot": 5
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·鞋",
+     "slot": 6
+    },
+    {
+     "affixes": [],
+     "name": "【真印】斤斤计较·腰",
+     "slot": 7
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "mat"
+     ],
+     "name": "涓滴意念",
+     "slot": 8
+    },
+    {
+     "affixes": [
+      "skill_damage",
+      "crit_damage",
+      "mat"
+     ],
+     "name": "寒冰之戒",
+     "slot": 9
+    }
+   ],
+   "atk": 7147.0,
+   "build": {
+    "equips": [
+     "【真印】一力降十会",
+     "基础元素卷轴",
+     "【真印】斤斤计较·头",
+     "【真印】斤斤计较·甲",
+     "【真印】斤斤计较·裤",
+     "【真印】斤斤计较·手",
+     "【真印】斤斤计较·鞋",
+     "【真印】斤斤计较·腰",
+     "涓滴意念",
+     "寒冰之戒",
+     "",
+     "",
+     "尊魔",
+     "",
+     "",
+     "",
+     "",
+     "",
+     ""
+    ],
+    "secrets": [
+     6150,
+     6151,
+     6152
+    ],
+    "trumpet": [
+     2
+    ]
+   },
+   "cap": 11.0,
+   "dealt": 926792.0,
+   "eff_full": 0.0,
+   "formula": "XGojo(a,b,10641)",
+   "mat": 12561.0,
+   "mhp": 418545.0,
+   "peak": 3707168.0,
+   "peak_single": 926792.0,
+   "repeats": 1,
+   "segs": {
+    "n": 4,
+    "ratio": 4.0,
+    "ratios": [
+     4.0,
+     4.0,
+     4.0
+    ],
+    "segs": [
+     524150,
+     524150,
+     524150,
+     524150
+    ],
+    "yep_effects": 4
+   },
+   "skill": 10641,
+   "terminal": 1.0,
+   "tier": "超强者",
+   "v0": 96963.2295918367,
+   "v_full": 96963.2295918367
+  }
+ ],
+ "tiers": {
+  "超强者": {
+   "max": 4287260.0,
+   "max_brand": 6430890.0,
+   "median": 1669637.0,
+   "n": 10
+  }
+ },
+ "tune_d189": true,
+ "tune_d198": true,
+ "tune_d208": true,
+ "tune_d209": true
+}

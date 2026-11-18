@@ -66,11 +66,11 @@ static func data() -> Dictionary:
 			push_error("XTianqiSkills: JSON 解析失败 " + PATH)
 			return {}
 		_data = parsed
-		for key in ["D189", "D200", "D198"]:  # T191：D200（小数系数全表取整）叠在 D189 之后；T192：D198（偏弱超强者调高）再叠在后面，各自开关
-			if not {"D189": XTianqiBase.TUNE_D189, "D200": XTianqiBase.TUNE_D200, "D198": XTianqiBase.TUNE_D198}[key]:
+		for key in ["D189", "D200", "D198", "D208", "D209"]:  # T191：D200（小数系数全表取整）叠在 D189 之后；T192：D198（偏弱超强者调高）再叠在后面；T204：D208（宿傩终式按段）、D209（超强者按名次重排）最后，各自开关
+			if not {"D189": XTianqiBase.TUNE_D189, "D200": XTianqiBase.TUNE_D200, "D198": XTianqiBase.TUNE_D198, "D208": XTianqiBase.TUNE_D208, "D209": XTianqiBase.TUNE_D209}[key]:
 				continue
 			var tune: Dictionary = _data.get("tune", {}).get(key, {})
-			for sec in ["skills", "actors"]:
+			for sec in ["skills", "actors", "gear"]:  # gear：T209＋D213 改百谷生卡面
 				for k in tune.get(sec, {}):
 					if str(k).begins_with("_"):
 						continue
@@ -173,8 +173,9 @@ static func cards_flag() -> bool:
 	return CARDS or XTianqiBase.PHASE4
 
 
+## base._tq_always（五条悟这类天启篇专属、底表只放底子的招）：卡总开关关着也套卡；整条链只在这里 build 一次（T209 R1 P1-1：原来 gojo.gd 底表先 build 一次、这里再 build 一次，split_effects 叠乘）
 static func rec(id: int, base: Dictionary) -> Dictionary:
-	if base.is_empty() or not has(id) or not cards_on():
+	if base.is_empty() or not has(id) or not (cards_on() or bool(base.get("_tq_always", false))):
 		return base
 	var hit = _recs.get(id)
 	if hit is Array and is_same(hit[0], base):

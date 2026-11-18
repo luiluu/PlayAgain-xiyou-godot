@@ -1,0 +1,28 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+K_ADV 108 rank=3 skills=[1240, 1241, 1242, 1244, 5682, 5683, 5684, 5685, 5686, 5687, 5688, 5689, 5690, 5691, 5692, 5693, 5694, 5695, 5696, 5697, 5699, 5700, 5701, 5702, 5703, 5706, 5707, 5710, 5714, 6150, 6151, 6152, 7239, 10168]
+K_SKILL 108 5696 peak=114404 dealt=114404 eff=8.0
+K_SKILL 108 5703 peak=103755 dealt=103755 eff=7.5
+K_SKILL 108 5706 peak=92595 dealt=92595 eff=7.2
+K_SKILL 108 5710 peak=12494 dealt=12494 eff=0.95
+K_SKILL 108 5696 peak=420535 dealt=420535 eff=8.0
+K_SKILL 108 5703 peak=470203 dealt=470203 eff=7.5
+K_SKILL 108 5706 peak=420472 dealt=420472 eff=7.2
+K_SKILL 108 5710 peak=26877 dealt=26877 eff=0.95
+K_CAST 108 5696 single=534103 ratio=1.0 total=534103
+K_CAST 108 5703 single=525836 ratio=1.0 total=525836
+K_CAST 108 5706 single=466318 ratio=4.51 total=2103094
+K_CAST 108 5710 single=32056 ratio=1.959 total=62798
+K_ROW {"actor":108,"affixes":[{"affixes":["mat","skill_damage","element_damage/arcane"],"name":"【真印】一力降十会","slot":0},{"affixes":["element_damage/arcane","skill_damage","mat"],"name":"基础元素卷轴","slot":1},{"affixes":["mdf","mmp"],"name":"【真印】斤斤计较·头","slot":2},{"affixes":["def","mmp","luk"],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":[],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":["mdf","mmp","luk"],"name":"【真印】斤斤计较·手","slot":5},{"affixes":["def","mdf","agi"],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":["mhp","mdf"],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["crit_damage","def","element_damage/arcane"],"name":"首席法师的晶石挂坠","slot":8},{"affixes":["element_damage/arcane","mat","crit_damage"],"name":"寒冰之戒","slot":9}],"atk":9189.0,"build":{"equips":["【真印】一力降十会","基础元素卷轴","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","首席法师的晶石挂坠","寒冰之戒","","","旭日之心","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":466318.0,"eff_full":7.2,"formula":"XTianqiSkills.formula(a,b,5706)","mat":11021.0,"mhp":506141.0,"peak":2103094.0,"peak_single":466318.0,"repeats":1,"segs":{"n":5,"ratio":4.51,"ratios":[4.232,4.51,4.635],"segs":[231598,179765,218270,193970,220857],"yep_effects":5},"skill":5706,"terminal":1.0,"tier":"超强者","v0":59489.5180408163,"v_full":59489.5180408163}
+K_ADV 163 rank=0 skills=[6150, 6151, 6152, 6216, 7239, 9933, 9934, 9935, 9936, 9937, 9938, 9939, 9976, 9982, 10018, 10454, 10455]
+K_SKILL 163 9934 peak=111977 dealt=91304 eff=4.225
+K_SKILL 163 9938 peak=271352 dealt=221256 eff=9.425
+K_SKILL 163 9939 peak=34750 dealt=28335 eff=1.3
+K_SKILL 163 9934 peak=229576 dealt=187193 eff=4.225
+K_SKILL 163 9938 peak=562763 dealt=458868 eff=9.425
+K_SKILL 163 9939 peak=70553 dealt=57528 eff=1.3
+K_CAST 163 9934 single=229576 ratio=2.0 total=459152
+K_CAST 163 9938 single=580066 ratio=3.615 total=2096939
+K_CAST 163 9939 single=75444 ratio=13.763 total=1038336
+K_ROW {"actor":163,"affixes":[{"affixes":["skill_damage","atk","element_damage/nature"],"name":"【真印】一力降十会","slot":0},{"affixes":["agi","mdf","luk"],"name":"【真印】斤斤计较·头","slot":2},{"affixes":["mhp","mdf","luk"],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":["mhp","mmp","def"],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":["mmp","luk","def"],"name":"【真印】斤斤计较·手","slot":5},{"affixes":["agi","luk","def"],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":[],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["first_strike","mat","crit_damage"],"name":"狂怒项圈","slot":8},{"affixes":["skill_damage","crit_damage","mdf"],"name":"悲伤之戒","slot":9}],"atk":12299.0,"build":{"equips":["【真印】一力降十会","","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","一拳","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":472977.0,"eff_full":9.425,"formula":"XTianqiSkills.formula(a,b,9938)","mat":4139.0,"mhp":493271.0,"peak":2096939.0,"peak_single":580066.0,"repeats":1,"segs":{"n":4,"ratio":3.615,"ratios":[3.481,3.615,3.873],"segs":[199506,213658,196134,233033],"yep_effects":4},"skill":9938,"terminal":1.0,"tier":"超强者","v0":87626.1783816327,"v_full":107466.067826531}
+K_REPORT {"超强者":{"max":2103094.0,"max_brand":3154641.0,"median":2103094.0,"n":2}} mastery=10

@@ -1099,7 +1099,7 @@ def skill_rework_rules(table: dict) -> list:
     return bad
 
 
-TUNE_KEYS = ('D189', 'D200', 'D198')  # 同 XTianqiSkills.data()：按这个顺序叠（T192 加 D198）
+TUNE_KEYS = ('D189', 'D200', 'D198', 'D208', 'D209')  # 同 XTianqiSkills.data()：按这个顺序叠（T192 加 D198；T204 加 D208、D209）
 
 
 def tune_merge(base: dict, patch: dict) -> dict:
@@ -1122,7 +1122,7 @@ def apply_skill_tune(table: dict) -> dict:
     out = copy.deepcopy(table)
     for key in TUNE_KEYS:
         tune = table.get('tune', {}).get(key, {})
-        for sec in ('skills', 'actors'):
+        for sec in ('skills', 'actors', 'gear'):  # gear：T209＋D213 改百谷生卡面
             for k, v in tune.get(sec, {}).items():
                 if str(k).startswith('_'):
                     continue

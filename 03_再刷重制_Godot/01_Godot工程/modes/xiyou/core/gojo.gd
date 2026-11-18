@@ -163,7 +163,7 @@ static func patch_classes(t: Array) -> void:
 	t[CLASS] = r
 
 
-## 技能：主动按宿傩「解」的样子、被动按「黑闪觉醒：宿傩」的样子建底子，再按技能表改写（XTianqiSkills.build：费用、冷却、被动标签、说明）
+## 技能：主动按宿傩「解」的样子、被动按「黑闪觉醒：宿傩」的样子建底子，再由 XDB.rec → XTianqiSkills.rec 按技能表改写一次（费用、冷却、被动标签、说明；_tq_always：卡总开关关着也套）
 static func patch_skills(t: Array) -> void:
 	if not ENABLED:
 		return
@@ -203,8 +203,8 @@ static func patch_skills(t: Array) -> void:
 		if id == RED:
 			r.effects = [{"code": 21, "dataId": ST_SLOW, "value1": 1, "value2": 0}]
 		_set_module(r, "gojo" if id in [PURPLE_IN, PURPLE_OUT] else XTianqiSkills.MODULE)
-		t[id] = XTianqiSkills.build(id, r) if XTianqiSkills.has(id) else r
-		t[id].id = id
+		r._tq_always = true  # T209 R1 P1-1：底表只放底子，卡（XTianqiSkills.build）只在 XDB.rec → XTianqiSkills.rec 套一次（不看 PHASE4），reload_table 后随 TUNE_* 切换
+		t[id] = r
 	var passives := {SIX_EYES: ["六眼", icon(11)], INFINITY: ["无下限", icon(12)], STRONGEST: ["最强", icon(13)], AWAKENING: ["黑闪觉醒：五条悟", icon(14)],
 		ADV[0]: ["进阶·茈收束", icon(15)], ADV[1]: ["进阶·茈贯穿", icon(16)], ADV[2]: ["进阶·自动反转", icon(17)], ADV[3]: ["进阶·领域强化", icon(10)]}
 	for id in passives:
@@ -214,8 +214,8 @@ static func patch_skills(t: Array) -> void:
 		r.name = passives[id][0]
 		r.iconIndex = passives[id][1]
 		r.note = "<quality:13>\n<ici:13>\n<Hide in Battle>\n<Max Mastery Level: 0>\n<No Damage Mastery Effect>\n<HelpWidth: 520>"
-		t[id] = XTianqiSkills.build(id, r) if XTianqiSkills.has(id) else r
-		t[id].id = id
+		r._tq_always = true  # 同上：只在 XTianqiSkills.rec 套卡一次
+		t[id] = r
 	XTianqiGojoTrial.patch_skills(t)  # 专属试炼战影子的招（10651～10658）
 
 
@@ -399,7 +399,7 @@ static func formula(a, b, item: Dictionary) -> float:
 	var n := int(cast.get("pairs", 0)) if own(a) else MARK_CAP
 	if pairs.is_empty() or n < 1:
 		return 0.0
-	var coef := float(pairs[mini(n, pairs.size()) - 1])
+	var coef := float(pairs[mini(n, pairs.size()) - 1]) / maxf(1.0, float(sp.get("gojo_hits", 1)))  # T209：gojo_hits 段（卡上写合计，按段分；seq split_effects 同段数）
 	return maxf(0.0, float(a.mat) * coef * XTianqiSkills.level_scale(a))
 
 

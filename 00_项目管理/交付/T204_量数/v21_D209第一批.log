@@ -1,0 +1,257 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+K_ADV 95 rank=4 skills=[1240, 1241, 1242, 1244, 6150, 6151, 6152, 6153, 7239, 8115, 8116, 8118, 8119, 8120, 8121, 8122, 10728, 10729, 10730, 10731]
+K_SKILL 95 8119 peak=8407 dealt=5879 eff=0.6435
+K_SKILL 95 10729 peak=56043 dealt=39191 eff=4.29
+K_SKILL 95 10730 peak=56043 dealt=39191 eff=4.29
+K_SKILL 95 10731 peak=123103 dealt=86086 eff=9.295
+K_SKILL 95 8119 peak=30762 dealt=21512 eff=0.6435
+K_SKILL 95 10729 peak=205082 dealt=143414 eff=4.29
+K_SKILL 95 10730 peak=205082 dealt=143414 eff=4.29
+K_SKILL 95 10731 peak=466086 dealt=325934 eff=9.295
+K_CAST 95 8119 single=30762 ratio=8.0 total=246096
+K_CAST 95 10729 single=205082 ratio=4.0 total=820328
+K_CAST 95 10730 single=205082 ratio=1.0 total=205082
+K_CAST 95 10731 single=466086 ratio=3.927 total=1830320
+K_ROW {"actor":95,"affixes":[{"affixes":["skill_damage","crit_damage","atk"],"name":"【真印】一发入魂","slot":0},{"affixes":["skill_damage","crit_damage","atk"],"name":"【真印】一发入魂","slot":1},{"affixes":["mhp"],"name":"【真印】斤斤计较·头","slot":2},{"affixes":["mhp"],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":["mhp"],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":["mhp"],"name":"【真印】斤斤计较·手","slot":5},{"affixes":["mhp"],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":["mhp"],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["skill_damage","crit_damage","first_strike"],"name":"狂怒项圈","slot":8},{"affixes":["skill_damage","atk","crit_damage"],"name":"悲伤之戒","slot":9}],"atk":17038.0,"build":{"equips":["【真印】一发入魂","【真印】一发入魂","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","红色围巾","","","","","",""],"secrets":[6150,6151,6152,6153],"trumpet":[2]},"cap":11.0,"dealt":325934.0,"eff_full":9.295,"formula":"XTianqiSkills.formula(a,b,10731)","mat":2228.0,"mhp":696908.0,"peak":1830320.0,"peak_single":466086.0,"repeats":1,"segs":{"n":4,"ratio":3.927,"ratios":[3.927,3.927,3.927],"segs":[137256,148088,148088,148088],"yep_effects":4},"skill":10731,"terminal":1.0,"tier":"超强者","v0":105497.839183673,"v_full":150861.910032653}
+K_ADV 107 rank=6 skills=[1240, 1241, 1242, 1244, 5668, 5669, 5670, 5672, 5673, 5674, 5675, 5676, 5677, 5678, 5679, 5680, 6150, 6151, 6152, 7239]
+K_SKILL 107 5668 peak=8804 dealt=8804 eff=0.5
+K_SKILL 107 5669 peak=29133 dealt=29133 eff=1.1
+K_SKILL 107 5670 peak=60756 dealt=46735 eff=2.1528
+K_SKILL 107 5673 peak=136189 dealt=136189 eff=4.75
+K_SKILL 107 5668 peak=28389 dealt=28389 eff=0.5
+K_SKILL 107 5669 peak=142731 dealt=142731 eff=1.1
+K_SKILL 107 5670 peak=310075 dealt=238519 eff=2.1528
+K_SKILL 107 5673 peak=699352 dealt=699352 eff=4.75
+K_CAST 107 5668 single=28389 ratio=5.0 total=141945
+K_CAST 107 5669 single=142731 ratio=1.0 total=142731
+K_CAST 107 5670 single=310075 ratio=2.0 total=620150
+K_CAST 107 5673 single=699352 ratio=2.0 total=1398704
+K_ROW {"actor":107,"affixes":[{"affixes":["skill_damage","crit_damage","first_strike"],"name":"【真印】一力降十会","slot":0},{"affixes":["skill_damage","crit_damage","atk"],"name":"基础元素卷轴","slot":1},{"affixes":["mhp"],"name":"【真印】斤斤计较·头","slot":2},{"affixes":["mhp"],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":["mhp"],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":["mhp"],"name":"【真印】斤斤计较·手","slot":5},{"affixes":["mhp"],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":["mhp"],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["skill_damage","crit_damage","mhp"],"name":"涓滴意念","slot":8},{"affixes":["skill_damage","crit_damage","mhp"],"name":"寒冰之戒","slot":9}],"atk":9924.0,"build":{"equips":["【真印】一力降十会","基础元素卷轴","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","涓滴意念","寒冰之戒","","","贯虹之槊","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":699352.0,"eff_full":4.75,"formula":"XTianqiSkills.formula(a,b,5673)","mat":8888.0,"mhp":949627.0,"peak":1398704.0,"peak_single":699352.0,"repeats":1,"segs":{"n":2,"ratio":2.0,"ratios":[2.0,2.0,2.0],"segs":[372227,372227],"yep_effects":2},"skill":5673,"terminal":1.0,"tier":"超强者","v0":111009.309489796,"v_full":111009.309489796}
+K_ADV 108 rank=3 skills=[1240, 1241, 1242, 1244, 5682, 5683, 5684, 5685, 5686, 5687, 5688, 5689, 5690, 5691, 5692, 5693, 5694, 5695, 5696, 5697, 5699, 5700, 5701, 5702, 5703, 5706, 5707, 5710, 5714, 6150, 6151, 6152, 7239, 10168]
+K_SKILL 108 5696 peak=114404 dealt=114404 eff=8.0
+K_SKILL 108 5703 peak=103755 dealt=103755 eff=7.5
+K_SKILL 108 5706 peak=148258 dealt=148258 eff=10.8
+K_SKILL 108 5710 peak=12494 dealt=12494 eff=0.95
+K_SKILL 108 5696 peak=396939 dealt=396939 eff=8.0
+K_SKILL 108 5703 peak=327088 dealt=327088 eff=7.5
+K_SKILL 108 5706 peak=458371 dealt=458371 eff=10.8
+K_SKILL 108 5710 peak=24034 dealt=24034 eff=0.95
+K_CAST 108 5696 single=417009 ratio=1.0 total=417009
+K_CAST 108 5703 single=401299 ratio=1.0 total=401299
+K_CAST 108 5706 single=586108 ratio=1.937 total=1135291
+K_CAST 108 5710 single=32531 ratio=1.876 total=61028
+K_ROW {"actor":108,"affixes":[{"affixes":["element_damage/arcane","first_strike","skill_damage"],"name":"【真印】一力降十会","slot":0},{"affixes":["element_damage/arcane","mat","atk"],"name":"基础元素卷轴","slot":1},{"affixes":["mhp","def","agi"],"name":"【真印】斤斤计较·头","slot":2},{"affixes":["def","mmp","agi"],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":["mdf"],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":["agi"],"name":"【真印】斤斤计较·手","slot":5},{"affixes":["mmp"],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":["luk","def","agi"],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["mat","crit_damage","mhp"],"name":"首席法师的晶石挂坠","slot":8},{"affixes":["skill_damage","crit_damage","mat"],"name":"寒冰之戒","slot":9}],"atk":9924.0,"build":{"equips":["【真印】一力降十会","基础元素卷轴","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","首席法师的晶石挂坠","寒冰之戒","","","旭日之心","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":586108.0,"eff_full":10.8,"formula":"XTianqiSkills.formula(a,b,5706)","mat":11021.0,"mhp":560371.0,"peak":1135291.0,"peak_single":586108.0,"repeats":1,"segs":{"n":2,"ratio":1.937,"ratios":[1.812,1.937,1.951],"segs":[252363,236498],"yep_effects":2},"skill":5706,"terminal":1.0,"tier":"超强者","v0":86129.6010612245,"v_full":86129.6010612245}
+K_ADV 122 rank=1 skills=[1240, 1241, 1242, 1244, 6021, 6022, 6023, 6024, 6025, 6026, 6027, 6028, 6039, 6040, 6041, 6042, 6043, 6150, 6151, 6152, 6721, 7239, 10455]
+K_SKILL 122 6021 peak=50356 dealt=44481 eff=1.2
+K_SKILL 122 6022 peak=201425 dealt=177925 eff=4.8
+K_SKILL 122 6023 peak=151068 dealt=133443 eff=3.6
+K_SKILL 122 6024 peak=100712 dealt=88962 eff=2.4
+K_SKILL 122 6025 peak=201425 dealt=177925 eff=4.8
+K_SKILL 122 6026 peak=266778 dealt=235654 eff=6.3
+K_SKILL 122 6027 peak=352493 dealt=311368 eff=8.4
+K_SKILL 122 6028 peak=50356 dealt=44481 eff=1.2
+K_SKILL 122 6039 peak=93360 dealt=82468 eff=4.8
+K_SKILL 122 6021 peak=145434 dealt=128467 eff=1.2
+K_SKILL 122 6022 peak=581739 dealt=513868 eff=4.8
+K_SKILL 122 6023 peak=436304 dealt=385401 eff=3.6
+K_SKILL 122 6024 peak=290868 dealt=256933 eff=2.4
+K_SKILL 122 6025 peak=581739 dealt=513868 eff=4.8
+K_SKILL 122 6026 peak=762108 dealt=673194 eff=6.3
+K_SKILL 122 6027 peak=1018044 dealt=899269 eff=8.4
+K_SKILL 122 6028 peak=145434 dealt=128467 eff=1.2
+K_SKILL 122 6039 peak=187237 dealt=165393 eff=4.8
+K_CAST 122 6021 single=145434 ratio=3.0 total=436302
+K_CAST 122 6022 single=581739 ratio=1.0 total=581739
+K_CAST 122 6023 single=436304 ratio=1.0 total=436304
+K_CAST 122 6024 single=290868 ratio=1.0 total=290868
+K_CAST 122 6025 single=581739 ratio=1.0 total=581739
+K_CAST 122 6026 single=762108 ratio=2.0 total=1524216
+K_CAST 122 6027 single=1018044 ratio=1.0 total=1018044
+K_CAST 122 6028 single=145434 ratio=5.0 total=727170
+K_CAST 122 6039 single=297005 ratio=3.3 total=980117
+K_ROW {"actor":122,"affixes":[{"affixes":["skill_damage","crit_damage","atk"],"name":"【真印】一力降十会","slot":0},{"affixes":[],"name":"【真印】斤斤计较·头","slot":2},{"affixes":[],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":[],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":[],"name":"【真印】斤斤计较·手","slot":5},{"affixes":[],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":[],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["skill_damage","crit_damage","atk"],"name":"狂怒项圈","slot":8},{"affixes":["skill_damage","crit_damage","atk"],"name":"悲伤之戒","slot":9}],"atk":16945.0,"build":{"equips":["【真印】一力降十会","","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","阴阳扇·狂龙","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":673194.0,"eff_full":6.3,"formula":"XTianqiSkills.formula(a,b,6026)","mat":2228.0,"mhp":407024.0,"peak":1524216.0,"peak_single":762108.0,"repeats":1,"segs":{"n":2,"ratio":2.0,"ratios":[2.0,2.0,2.0],"segs":[366705,366705],"yep_effects":2},"skill":6026,"terminal":1.0,"tier":"超强者","v0":85479.0096081633,"v_full":96768.9535089686}
+K_ADV 152 rank=0 skills=[6150, 6151, 6152, 6216, 7239, 9976, 9985, 9986, 9987, 9988, 9989, 9990, 9991, 9992, 9993, 9994, 9995, 9996, 9997, 9998, 10085, 10455]
+K_SKIP 152 no_damage_row
+K_ADV 163 rank=0 skills=[6150, 6151, 6152, 6216, 7239, 9933, 9934, 9935, 9936, 9937, 9938, 9939, 9976, 9982, 10018, 10454, 10455]
+K_SKILL 163 9934 peak=111977 dealt=91304 eff=4.225
+K_SKILL 163 9938 peak=271352 dealt=221256 eff=9.425
+K_SKILL 163 9939 peak=34750 dealt=28335 eff=1.3
+K_SKILL 163 9934 peak=229576 dealt=187193 eff=4.225
+K_SKILL 163 9938 peak=562763 dealt=458868 eff=9.425
+K_SKILL 163 9939 peak=70553 dealt=57528 eff=1.3
+K_CAST 163 9934 single=229576 ratio=2.0 total=459152
+K_CAST 163 9938 single=580066 ratio=3.615 total=2096939
+K_CAST 163 9939 single=75444 ratio=13.763 total=1038336
+K_ROW {"actor":163,"affixes":[{"affixes":["skill_damage","atk","element_damage/nature"],"name":"【真印】一力降十会","slot":0},{"affixes":["agi","mdf","luk"],"name":"【真印】斤斤计较·头","slot":2},{"affixes":["mhp","mdf","luk"],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":["mhp","mmp","def"],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":["mmp","luk","def"],"name":"【真印】斤斤计较·手","slot":5},{"affixes":["agi","luk","def"],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":[],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["first_strike","mat","crit_damage"],"name":"狂怒项圈","slot":8},{"affixes":["skill_damage","crit_damage","mdf"],"name":"悲伤之戒","slot":9}],"atk":12299.0,"build":{"equips":["【真印】一力降十会","","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","一拳","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":472977.0,"eff_full":9.425,"formula":"XTianqiSkills.formula(a,b,9938)","mat":4139.0,"mhp":493271.0,"peak":2096939.0,"peak_single":580066.0,"repeats":1,"segs":{"n":4,"ratio":3.615,"ratios":[3.481,3.615,3.873],"segs":[199506,213658,196134,233033],"yep_effects":4},"skill":9938,"terminal":1.0,"tier":"超强者","v0":87626.1783816327,"v_full":107466.067826531}
+K_ADV 167 rank=5 skills=[6150, 6151, 6152, 6216, 7239, 10122, 10123, 10124, 10125, 10126, 10127, 10129, 10130, 10131, 10132, 10133, 10134, 10136, 10137, 10138, 10139, 10170]
+K_SKILL 167 10122 peak=85359 dealt=54717 eff=6.24
+K_SKILL 167 10123 peak=40097 dealt=25703 eff=3.12
+K_SKILL 167 10124 peak=43540 dealt=27910 eff=3.12
+K_SKILL 167 10125 peak=82373 dealt=47523 eff=5.265
+K_SKILL 167 10126 peak=117588 dealt=75377 eff=9.36
+K_SKILL 167 10122 peak=375882 dealt=240950 eff=6.24
+K_SKILL 167 10123 peak=167516 dealt=107382 eff=3.12
+K_SKILL 167 10124 peak=174469 dealt=111839 eff=3.12
+K_SKILL 167 10125 peak=345559 dealt=199361 eff=5.265
+K_SKILL 167 10126 peak=507998 dealt=325640 eff=9.36
+K_CAST 167 10122 single=375882 ratio=1.0 total=375882
+K_CAST 167 10123 single=184089 ratio=1.995 total=367258
+K_CAST 167 10124 single=190170 ratio=1.0 total=190170
+K_CAST 167 10125 single=346382 ratio=4.856 total=1682031
+K_CAST 167 10126 single=570929 ratio=1.0 total=570929
+K_ROW {"actor":167,"affixes":[{"affixes":["element_damage/dark","crit_damage","mat"],"name":"【真印】一力降十会","slot":0},{"affixes":["crit_damage","skill_damage","mat"],"name":"基础元素卷轴","slot":1},{"affixes":["agi","luk"],"name":"【真印】斤斤计较·头","slot":2},{"affixes":["mdf","agi","mhp"],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":["mdf","luk","def"],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":["def","mdf","luk"],"name":"【真印】斤斤计较·手","slot":5},{"affixes":["luk","mhp","mdf"],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":[],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["element_damage/dark","skill_damage","mat"],"name":"涓滴意念","slot":8},{"affixes":["skill_damage","first_strike","agi"],"name":"寒冰之戒","slot":9}],"atk":7147.0,"build":{"equips":["【真印】一力降十会","基础元素卷轴","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","涓滴意念","寒冰之戒","","","冥河断罪镰","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":199836.0,"eff_full":5.265,"formula":"XTianqiSkills.formula(a,b,10125)","mat":10497.0,"mhp":526420.0,"peak":1682031.0,"peak_single":346382.0,"repeats":1,"segs":{"n":5,"ratio":4.856,"ratios":[4.748,4.856,9.516],"segs":[93839,93321,90094,91582,95642],"yep_effects":5},"skill":10125,"terminal":1.0,"tier":"超强者","v0":32193.0890816327,"v_full":55801.2659073732}
+K_ADV 168 rank=3 skills=[6150, 6151, 6152, 6216, 7239, 10140, 10141, 10142, 10143, 10144, 10145, 10146, 10148, 10149, 10150, 10151, 10152, 10154, 10155, 10156, 10157, 10158, 10160, 10161, 10162, 10165, 10166, 10167]
+K_SKILL 168 10140 peak=168660 dealt=168660 eff=4.68
+K_SKILL 168 10141 peak=140204 dealt=130498 eff=3.887
+K_SKILL 168 10142 peak=39947 dealt=39947 eff=4.68
+K_SKILL 168 10143 peak=15979 dealt=15979 eff=1.872
+K_SKILL 168 10146 peak=73971 dealt=73971 eff=4.0
+K_SKILL 168 10148 peak=206343 dealt=206343 eff=5.72
+K_SKILL 168 10149 peak=19663 dealt=19663 eff=2.36
+K_SKILL 168 10150 peak=206343 dealt=206343 eff=5.72
+K_SKILL 168 10151 peak=176610 dealt=176610 eff=9.0
+K_SKILL 168 10140 peak=862799 dealt=862799 eff=4.68
+K_SKILL 168 10141 peak=707931 dealt=658923 eff=3.887
+K_SKILL 168 10142 peak=146172 dealt=146172 eff=4.68
+K_SKILL 168 10143 peak=58469 dealt=58469 eff=1.872
+K_SKILL 168 10146 peak=333312 dealt=333312 eff=4.0
+K_SKILL 168 10148 peak=1040169 dealt=1040169 eff=5.72
+K_SKILL 168 10149 peak=71951 dealt=71951 eff=2.36
+K_SKILL 168 10150 peak=1040169 dealt=1040169 eff=5.72
+K_SKILL 168 10151 peak=801688 dealt=801688 eff=9.0
+K_CAST 168 10140 single=862799 ratio=1.0 total=862799
+K_CAST 168 10141 single=707931 ratio=1.0 total=707931
+K_CAST 168 10142 single=146172 ratio=1.0 total=146172
+K_CAST 168 10143 single=58469 ratio=3.0 total=175407
+K_CAST 168 10146 single=333312 ratio=1.0 total=333312
+K_CAST 168 10148 single=1040169 ratio=1.0 total=1040169
+K_CAST 168 10149 single=71951 ratio=1.0 total=71951
+K_CAST 168 10150 single=1040169 ratio=1.0 total=1040169
+K_CAST 168 10151 single=801688 ratio=4.0 total=3206752
+K_ROW {"actor":168,"affixes":[{"affixes":["element_damage/fire","skill_damage","atk"],"name":"【真印】一力降十会","slot":0},{"affixes":["element_damage/fire","skill_damage","atk"],"name":"警戒小刀","slot":1},{"affixes":["def"],"name":"【真印】斤斤计较·头","slot":2},{"affixes":["def"],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":["def"],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":["def"],"name":"【真印】斤斤计较·手","slot":5},{"affixes":["def"],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":["def"],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["element_damage/fire","skill_damage","first_strike"],"name":"狂怒项圈","slot":8},{"affixes":["element_damage/fire","skill_damage","atk"],"name":"悲伤之戒","slot":9}],"atk":16331.0,"build":{"equips":["【真印】一力降十会","警戒小刀","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","黑龙心鳞","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":801688.0,"eff_full":9.0,"formula":"XTianqiSkills.formula(a,b,10151)","mat":3832.0,"mhp":436832.0,"peak":3206752.0,"peak_single":801688.0,"repeats":1,"segs":{"n":4,"ratio":4.0,"ratios":[4.0,4.0,4.0],"segs":[392204,392204,392204,392204],"yep_effects":4},"skill":10151,"terminal":1.0,"tier":"超强者","v0":88076.3979591837,"v_full":88076.3979591837}
+K_ADV 169 rank=2 skills=[6150, 6151, 6152, 6216, 7239, 10171, 10172, 10173, 10174, 10175, 10176, 10177, 10178, 10179, 10180, 10181, 10182, 10183, 10184, 10185, 10186]
+K_SKILL 169 10171 peak=93820 dealt=72169 eff=3.38
+K_SKILL 169 10172 peak=72169 dealt=72169 eff=2.6
+K_SKILL 169 10173 peak=154352 dealt=154352 eff=5.525
+K_SKILL 169 10174 peak=46098 dealt=46098 eff=1.625
+K_SKILL 169 10171 peak=453991 dealt=349224 eff=3.38
+K_SKILL 169 10172 peak=349224 dealt=349224 eff=2.6
+K_SKILL 169 10173 peak=765387 dealt=765387 eff=5.525
+K_SKILL 169 10174 peak=241551 dealt=241551 eff=1.625
+K_CAST 169 10171 single=453991 ratio=2.0 total=907982
+K_CAST 169 10172 single=349224 ratio=2.0 total=698448
+K_CAST 169 10173 single=765387 ratio=2.0 total=1530774
+K_CAST 169 10174 single=241551 ratio=6.0 total=1449306
+K_ROW {"actor":169,"affixes":[{"affixes":["element_damage/thunder","skill_damage","atk"],"name":"【真印】一力降十会","slot":0},{"affixes":["element_damage/thunder","skill_damage","atk"],"name":"【真印】一力降十会","slot":1},{"affixes":["mhp","luk"],"name":"【真印】斤斤计较·头","slot":2},{"affixes":["mhp","luk"],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":["mhp","luk"],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":["mhp"],"name":"【真印】斤斤计较·手","slot":5},{"affixes":["mhp"],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":["mhp"],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["element_damage/thunder","skill_damage","first_strike"],"name":"狂怒项圈","slot":8},{"affixes":["element_damage/thunder","crit_damage","atk"],"name":"悲伤之戒","slot":9}],"atk":17848.0,"build":{"equips":["【真印】一力降十会","【真印】一力降十会","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","赤雨双缨","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":765387.0,"eff_full":5.525,"formula":"XTianqiSkills.formula(a,b,10173)","mat":2228.0,"mhp":684214.0,"peak":1530774.0,"peak_single":765387.0,"repeats":1,"segs":{"n":2,"ratio":2.0,"ratios":[2.0,2.0,2.0],"segs":[422208,422208],"yep_effects":1},"skill":10173,"terminal":1.0,"tier":"超强者","v0":92364.1836530612,"v_full":92364.1836530612}
+K_ADV 171 rank=1 skills=[6150, 6151, 6152, 6216, 7239, 10203, 10205, 10206, 10207, 10209, 10210, 10211, 10212, 10213, 10214, 10215, 10216, 10217, 10218, 10219, 10225, 10226]
+K_SKILL 171 10216 peak=38316 dealt=38316 eff=3.9
+K_SKILL 171 10217 peak=63860 dealt=63860 eff=1.3
+K_SKILL 171 10218 peak=485903 dealt=485903 eff=9.425
+K_SKILL 171 10219 peak=127721 dealt=127721 eff=2.6
+K_SKILL 171 10216 peak=81631 dealt=81631 eff=3.9
+K_SKILL 171 10217 peak=217683 dealt=217683 eff=1.3
+K_SKILL 171 10218 peak=1653251 dealt=1653251 eff=9.425
+K_SKILL 171 10219 peak=435366 dealt=435366 eff=2.6
+K_CAST 171 10216 single=81631 ratio=5.0 total=408155
+K_CAST 171 10217 single=217683 ratio=1.0 total=217683
+K_CAST 171 10218 single=1653251 ratio=1.0 total=1653251
+K_CAST 171 10219 single=435366 ratio=1.0 total=435366
+K_ROW {"actor":171,"affixes":[{"affixes":["skill_damage","crit_damage","first_strike"],"name":"【真印】一力降十会","slot":0},{"affixes":["mhp","mmp"],"name":"【真印】斤斤计较·头","slot":2},{"affixes":["mhp","mmp"],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":["mhp","mmp"],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":["mhp","mmp"],"name":"【真印】斤斤计较·手","slot":5},{"affixes":["mhp"],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":["mhp"],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["skill_damage","crit_damage","mhp"],"name":"狂怒项圈","slot":8},{"affixes":["skill_damage","crit_damage","mhp"],"name":"悲伤之戒","slot":9}],"atk":30423.0,"build":{"equips":["【真印】一力降十会","","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","藏兵咒灵","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":1653251.0,"eff_full":9.425,"formula":"XTianqiSkills.formula(a,b,10218)","mat":0.0,"mhp":840366.0,"peak":1653251.0,"peak_single":1653251.0,"repeats":1,"segs":{"n":1,"ratio":1.0,"ratios":[1.0,1.0,1.076],"segs":[799461],"yep_effects":1},"skill":10218,"terminal":1.0,"tier":"超强者","v0":261345.828183673,"v_full":261345.828183673}
+K_ADV 172 rank=3 skills=[6150, 6151, 6152, 6216, 7239, 10225, 10229, 10230, 10231, 10232, 10233, 10235, 10239, 10240, 10241, 10242, 10245, 10246]
+K_SKILL 172 10229 peak=265886 dealt=265886 eff=5.2
+K_SKILL 172 10230 peak=271373 dealt=271373 eff=9.1
+K_SKILL 172 10231 peak=255552 dealt=255552 eff=1.3
+K_SKILL 172 10232 peak=32892 dealt=32892 eff=7.8
+K_SKILL 172 10233 peak=32892 dealt=32892 eff=7.8
+K_SKILL 172 10229 peak=748773 dealt=748773 eff=5.2
+K_SKILL 172 10230 peak=761593 dealt=761593 eff=9.1
+K_SKILL 172 10231 peak=724385 dealt=724385 eff=1.3
+K_SKILL 172 10232 peak=72363 dealt=72363 eff=7.8
+K_SKILL 172 10233 peak=72363 dealt=72363 eff=7.8
+K_CAST 172 10229 single=748773 ratio=2.625 total=1965529
+K_CAST 172 10230 single=761593 ratio=2.625 total=1999182
+K_CAST 172 10231 single=724385 ratio=2.625 total=1901511
+K_CAST 172 10232 single=72363 ratio=1.0 total=72363
+K_CAST 172 10233 single=72363 ratio=1.0 total=72363
+K_ROW {"actor":172,"affixes":[{"affixes":["skill_damage","crit_damage","atk"],"name":"【真印】一力降十会","slot":0},{"affixes":[],"name":"【真印】斤斤计较·头","slot":2},{"affixes":[],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":[],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":[],"name":"【真印】斤斤计较·手","slot":5},{"affixes":[],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":[],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["skill_damage","crit_damage","atk"],"name":"狂怒项圈","slot":8},{"affixes":["skill_damage","crit_damage","atk"],"name":"悲伤之戒","slot":9}],"atk":14121.0,"build":{"equips":["【真印】一力降十会","","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","神武解","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":761593.0,"eff_full":9.1,"formula":"XTianqiSkills.formula(a,b,10230)","mat":3832.0,"mhp":397799.0,"peak":1999182.0,"peak_single":761593.0,"repeats":1,"segs":{"n":3,"ratio":2.625,"ratios":[2.625,2.625,2.625],"segs":[299955,349948,399941],"yep_effects":1},"skill":10230,"terminal":1.14285714285714,"tier":"超强者","v0":116699.978571429,"v_full":116699.978571429}
+K_ADV 173 rank=6 skills=[6150, 6151, 6152, 7239, 10259, 10260, 10261, 10262, 10263, 10265, 10266, 10267, 10268, 10269]
+K_SKILL 173 10259 peak=21694 dealt=21694 eff=1.2
+K_SKILL 173 10260 peak=34174 dealt=34174 eff=2.0
+K_SKILL 173 10261 peak=68347 dealt=68347 eff=4.0
+K_SKILL 173 10263 peak=247453 dealt=247453 eff=11.0
+K_SKILL 173 10259 peak=57052 dealt=57052 eff=1.2
+K_SKILL 173 10260 peak=89118 dealt=89118 eff=2.0
+K_SKILL 173 10261 peak=178235 dealt=178235 eff=4.0
+K_SKILL 173 10263 peak=669215 dealt=669215 eff=11.0
+K_CAST 173 10259 single=57052 ratio=3.0 total=171156
+K_CAST 173 10260 single=89118 ratio=5.0 total=445590
+K_CAST 173 10261 single=178235 ratio=3.0 total=534705
+K_CAST 173 10263 single=669215 ratio=3.0 total=2007645
+K_ROW {"actor":173,"affixes":[{"affixes":["skill_damage","crit_damage","atk"],"name":"【真印】一力降十会","slot":0},{"affixes":[],"name":"【真印】斤斤计较·头","slot":2},{"affixes":[],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":[],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":[],"name":"【真印】斤斤计较·手","slot":5},{"affixes":[],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":[],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["skill_damage","crit_damage","atk"],"name":"狂怒项圈","slot":8},{"affixes":["skill_damage","crit_damage","atk"],"name":"悲伤之戒","slot":9}],"atk":14121.0,"build":{"equips":["【真印】一力降十会","","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","破限之心·星空","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":669215.0,"eff_full":11.0,"form":"星空","formula":"XTianqiSkills.formula(a,b,10263)","mat":3832.0,"mhp":397799.0,"peak":2007645.0,"peak_single":669215.0,"repeats":1,"segs":{"n":3,"ratio":3.0,"ratios":[3.0,3.0,3.0],"segs":[377376,377376,377376],"yep_effects":3},"skill":10263,"terminal":1.0,"tier":"超强者","v0":122377.724489796,"v_full":122377.724489796}
+K_ADV 175 rank=5 skills=[6150, 6151, 6152, 7239, 10288, 10289, 10290, 10291, 10292, 10293, 10294, 10295, 10296, 10297, 10298]
+K_SKIP 175 no_damage_row
+K_ADV 176 rank=3 skills=[6150, 6151, 6152, 7239, 10301, 10302, 10303, 10304, 10305, 10306, 10307, 10308, 10309, 10310, 10311, 10324, 10325, 10326, 10332, 10350, 10351, 10352, 10353, 10354, 10355, 10358, 10359, 10360, 10451]
+K_SKILL 176 10324 peak=61722 dealt=61722 eff=3.0
+K_SKILL 176 10325 peak=8434 dealt=8434 eff=2.0
+K_SKILL 176 10312 peak=91000 dealt=91000 eff=5.0
+K_SKILL 176 10313 peak=36400 dealt=36400 eff=2.0
+K_SKILL 176 10314 peak=91000 dealt=91000 eff=5.0
+K_SKILL 176 10315 peak=188423 dealt=188423 eff=10.25
+K_SKILL 176 10317 peak=18652 dealt=18652 eff=5.0
+K_SKILL 176 10318 peak=91000 dealt=91000 eff=5.0
+K_SKILL 176 10324 peak=179694 dealt=179694 eff=3.0
+K_SKILL 176 10325 peak=18555 dealt=18555 eff=2.0
+K_SKILL 176 10312 peak=264933 dealt=264933 eff=5.0
+K_SKILL 176 10313 peak=105973 dealt=105973 eff=2.0
+K_SKILL 176 10314 peak=264933 dealt=264933 eff=5.0
+K_SKILL 176 10315 peak=544946 dealt=544946 eff=10.25
+K_SKILL 176 10317 peak=41034 dealt=41034 eff=5.0
+K_SKILL 176 10318 peak=264933 dealt=264933 eff=5.0
+K_CAST 176 10324 single=179694 ratio=1.0 total=179694
+K_CAST 176 10325 single=18555 ratio=1.0 total=18555
+K_CAST 176 10312 single=264933 ratio=1.0 total=264933
+K_CAST 176 10313 single=105973 ratio=1.0 total=105973
+K_CAST 176 10314 single=264933 ratio=2.0 total=529866
+K_CAST 176 10315 single=544946 ratio=3.0 total=1634838
+K_CAST 176 10317 single=41034 ratio=2.0 total=82068
+K_CAST 176 10318 single=264933 ratio=1.0 total=264933
+K_ROW {"actor":176,"affixes":[{"affixes":["skill_damage","crit_damage","atk"],"name":"【真印】一力降十会","slot":0},{"affixes":[],"name":"【真印】斤斤计较·头","slot":2},{"affixes":[],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":[],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":[],"name":"【真印】斤斤计较·手","slot":5},{"affixes":[],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":[],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["skill_damage","crit_damage","atk"],"name":"狂怒项圈","slot":8},{"affixes":["skill_damage","crit_damage","atk"],"name":"悲伤之戒","slot":9}],"atk":14121.0,"build":{"equips":["【真印】一力降十会","","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","止戈环","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":544946.0,"eff_full":10.25,"formula":"XTianqiSkills.formula(a,b,10315)","mat":3832.0,"mhp":401899.0,"peak":1634838.0,"peak_single":544946.0,"repeats":1,"segs":{"n":3,"ratio":3.0,"ratios":[3.0,3.0,3.0],"segs":[95390,95390,95391],"yep_effects":1},"skill":10315,"terminal":1.0,"tier":"超强者","v0":131891.63377551,"v_full":131891.63377551}
+K_ADV 177 rank=3 skills=[6150, 6151, 6152, 7239, 10333, 10334, 10335, 10336, 10337, 10338, 10339, 10349, 10356, 10361, 10362, 10363, 10364, 10424, 10452]
+K_SKILL 177 10337 peak=226711 dealt=226711 eff=10.0
+K_SKILL 177 10337 peak=824307 dealt=824307 eff=10.0
+K_CAST 177 10337 single=824307 ratio=1.914 total=1577724
+K_ROW {"actor":177,"affixes":[{"affixes":["skill_damage","crit_damage","first_strike"],"name":"【真印】一力降十会","slot":0},{"affixes":["skill_damage","crit_damage","mat"],"name":"基础元素卷轴","slot":1},{"affixes":[],"name":"【真印】斤斤计较·头","slot":2},{"affixes":[],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":[],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":[],"name":"【真印】斤斤计较·手","slot":5},{"affixes":[],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":[],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["skill_damage","crit_damage","mat"],"name":"涓滴意念","slot":8},{"affixes":["skill_damage","crit_damage","mat"],"name":"寒冰之戒","slot":9}],"atk":7147.0,"build":{"equips":["【真印】一力降十会","基础元素卷轴","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","涓滴意念","寒冰之戒","","","璇玑星盘","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":824307.0,"eff_full":10.0,"formula":"XTianqiSkills.formula(a,b,10337)","mat":10497.0,"mhp":428632.0,"peak":1577724.0,"peak_single":824307.0,"repeats":1,"segs":{"n":2,"ratio":1.914,"ratios":[1.914,1.914,1.914],"segs":[266505,291547],"yep_effects":2},"skill":10337,"terminal":1.0,"tier":"超强者","v0":95329.8979591837,"v_full":95329.8979591837}
+K_ADV 179 rank=3 skills=[6150, 6151, 6152, 7239, 10455, 10622, 10623, 10624, 10625, 10626, 10627, 10628, 10629, 10630, 10631, 10632, 10633]
+K_SKILL 179 10622 peak=33542 dealt=33542 eff=9.029475
+K_SKILL 179 10623 peak=41283 dealt=41283 eff=18.05895
+K_SKILL 179 10622 peak=117894 dealt=117894 eff=9.029475
+K_SKILL 179 10623 peak=145100 dealt=145100 eff=18.05895
+K_CAST 179 10622 single=117894 ratio=5.971 total=703945
+K_CAST 179 10623 single=145100 ratio=8.917 total=1293857
+K_ROW {"actor":179,"affixes":[{"affixes":["element_damage/fire","skill_damage","atk"],"name":"【真印】一力降十会","slot":0},{"affixes":[],"name":"【真印】斤斤计较·头","slot":2},{"affixes":[],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":[],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":[],"name":"【真印】斤斤计较·手","slot":5},{"affixes":[],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":[],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["element_damage/fire","skill_damage","atk"],"name":"狂怒项圈","slot":8},{"affixes":["element_damage/fire","skill_damage","atk"],"name":"悲伤之戒","slot":9}],"atk":14121.0,"build":{"equips":["【真印】一力降十会","","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","狂怒项圈","悲伤之戒","","","萨姆变身器","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":145100.0,"eff_full":18.05895,"formula":"XTianqiSkills.formula(a,b,10623)","mat":2228.0,"mhp":480958.0,"peak":1293857.0,"peak_single":145100.0,"repeats":1,"segs":{"n":9,"ratio":8.917,"ratios":[8.917,8.917,8.917],"segs":[104771,114201,114201,114201,114201,114201,114201,114201,114201],"yep_effects":1},"skill":10623,"terminal":1.0,"tier":"超强者","v0":231591.107475,"v_full":231591.107475}
+K_ADV 180 rank=2 skills=[1240, 1241, 1242, 1244, 6150, 6151, 6152, 7239, 10225, 10634, 10635, 10636, 10637, 10638, 10639, 10640, 10641, 10642, 10643, 10644, 10645, 10646, 10647, 10648, 10649, 10650]
+K_SKILL 180 10634 peak=16061 dealt=16061 eff=1.0
+K_SKILL 180 10635 peak=36019 dealt=36019 eff=2.0
+K_SKILL 180 10636 peak=72037 dealt=72037 eff=4.0
+K_SKILL 180 10638 peak=72037 dealt=72037 eff=4.0
+K_SKILL 180 10639 peak=126066 dealt=126066 eff=7.0
+K_SKILL 180 10640 skip=zero v0=0.0 dealt=141824.0
+K_SKILL 180 10641 skip=zero v0=0.0 dealt=318254.0
+K_SKILL 180 10642 peak=54028 dealt=54028 eff=3.0
+K_SKILL 180 10634 peak=31800 dealt=31800 eff=1.0
+K_SKILL 180 10635 peak=140869 dealt=140869 eff=2.0
+K_SKILL 180 10636 peak=281738 dealt=281738 eff=4.0
+K_SKILL 180 10638 peak=281738 dealt=281738 eff=4.0
+K_SKILL 180 10639 peak=493041 dealt=493041 eff=7.0
+K_SKILL 180 10640 skip=zero v0=0.0 dealt=554671.0
+K_SKILL 180 10641 skip=zero v0=0.0 dealt=1199378.0
+K_SKILL 180 10642 peak=211303 dealt=211303 eff=3.0
+K_CAST 180 10634 single=31800 ratio=1.0 total=31800
+K_CAST 180 10635 single=140869 ratio=1.0 total=140869
+K_CAST 180 10636 single=281738 ratio=1.0 total=281738
+K_CAST 180 10638 single=281738 ratio=1.0 total=281738
+K_CAST 180 10639 single=493041 ratio=1.0 total=493041
+K_CAST 180 10642 single=211303 ratio=1.0 total=211303
+K_ROW {"actor":180,"affixes":[{"affixes":["skill_damage","crit_damage","mat"],"name":"【真印】一力降十会","slot":0},{"affixes":["skill_damage","crit_damage","mat"],"name":"基础元素卷轴","slot":1},{"affixes":[],"name":"【真印】斤斤计较·头","slot":2},{"affixes":[],"name":"【真印】斤斤计较·甲","slot":3},{"affixes":[],"name":"【真印】斤斤计较·裤","slot":4},{"affixes":[],"name":"【真印】斤斤计较·手","slot":5},{"affixes":[],"name":"【真印】斤斤计较·鞋","slot":6},{"affixes":[],"name":"【真印】斤斤计较·腰","slot":7},{"affixes":["skill_damage","crit_damage","mat"],"name":"涓滴意念","slot":8},{"affixes":["skill_damage","crit_damage","mat"],"name":"寒冰之戒","slot":9}],"atk":7147.0,"build":{"equips":["【真印】一力降十会","基础元素卷轴","【真印】斤斤计较·头","【真印】斤斤计较·甲","【真印】斤斤计较·裤","【真印】斤斤计较·手","【真印】斤斤计较·鞋","【真印】斤斤计较·腰","涓滴意念","寒冰之戒","","","尊魔","","","","","",""],"secrets":[6150,6151,6152],"trumpet":[2]},"cap":11.0,"dealt":493041.0,"eff_full":7.0,"formula":"XTianqiSkills.formula(a,b,10639)","mat":12561.0,"mhp":418545.0,"peak":493041.0,"peak_single":493041.0,"repeats":1,"segs":{"n":1,"ratio":1.0,"ratios":[1.0,1.0,1.0],"segs":[278841],"yep_effects":1},"skill":10639,"terminal":1.0,"tier":"超强者","v0":79852.0714285714,"v_full":79852.0714285714}
+K_REPORT {"超强者":{"max":3206752.0,"max_brand":4810128.0,"median":1634838.0,"n":15}} mastery=10

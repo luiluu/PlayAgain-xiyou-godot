@@ -505,11 +505,11 @@ func _p3() -> void:
 	_check("p3_replace_cmd", (seq.call(1067) as Array).any(func(c): return str(c[0]) == "Hp -1%") and not (seq.call(1067) as Array).any(func(c): return str(c[0]) == "Hp -3%"))
 	_check("p3_keep_effects", (fx.call(10710) as Array).size() == 1 and (fx.call(2067) as Array).size() == 5)
 	_check("p3_drop_area", (fx.call(1212) as Array).all(func(c): return (c[1] as Array).is_empty()))
-	# T081 单段上限拆段（split_effects）：每段原地拆 n 段，条件块里的也拆；大写默认序列也拆；万剑归一*灭 原生 3 段不动；后颈斩纯数据 keep_effects 3
+	# T081 单段上限拆段（split_effects）：每段原地拆 n 段，条件块里的也拆；大写默认序列也拆；万剑归一*灭 原生 3 段不动；后颈斩纯数据 keep_effects 3（T209 D209 起 4）；黑翼裁决 D209 起 split 5
 	var up := func(id, ph): return ((XDB.rec("Skills", id).yepSeq.get(ph, []) as Array).filter(func(c): return str(c[0]).to_lower() == "action effect")).size()
-	_check("split_plain", up.call(3632, "target") == 3 and up.call(3631, "target") == 3 and up.call(4749, "target") == 2 and up.call(10731, "target") == 3, [up.call(3632, "target"), up.call(3631, "target"), up.call(4749, "target"), up.call(10731, "target")])
+	_check("split_plain", up.call(3632, "target") == 3 and up.call(3631, "target") == 3 and up.call(4749, "target") == 2 and up.call(10731, "target") == 4, [up.call(3632, "target"), up.call(3631, "target"), up.call(4749, "target"), up.call(10731, "target")])
 	_check("split_in_if", up.call(3645, "target") == 6 and up.call(1060, "target") == 12 and up.call(2058, "target") == 2, [up.call(3645, "target"), up.call(1060, "target"), up.call(2058, "target")])
-	_check("split_upper", up.call(6036, "whole") == 3 and up.call(10615, "whole") == 3 and up.call(10752, "target") == 3 and up.call(10125, "target") == 2, [up.call(6036, "whole"), up.call(10615, "whole"), up.call(10752, "target"), up.call(10125, "target")])
+	_check("split_upper", up.call(6036, "whole") == 3 and up.call(10615, "whole") == 3 and up.call(10752, "target") == 3 and up.call(10125, "target") == 5, [up.call(6036, "whole"), up.call(10615, "whole"), up.call(10752, "target"), up.call(10125, "target")])
 	_check("split_yep_effects", int(XDB.rec("Skills", 6036).get("yepEffects", 0)) == int(XDB.table("Skills")[6036].get("yepEffects", 0)) * 3)
 	_check("seq_yep_effects_recount", int(XDB.rec("Skills", 2058).get("yepEffects", 0)) == 2 and int(XDB.table("Skills")[2058].get("yepEffects", 0)) == 22, XDB.rec("Skills", 2058).get("yepEffects"))  # 核查 R2 P3：drop_if 删条件块后 yepEffects 按差值重算（原来 22×2＝44）
 	_check("split_tp_gain", int(XDB.rec("Skills", 1060).tpGain) == 10 and int(XDB.table("Skills")[1060].tpGain) == 30)
@@ -1075,9 +1075,9 @@ func _p7() -> void:
 	var cap_off := XGarou.evolution_cap()
 	XTianqiSkills.CARDS = true
 	_check("p7_garou_cap", cap_on == 10 and cap_off == 3, [cap_on, cap_off])
-	# 谷雨：治疗 10%，储备上限＝谷雨生命上限
+	# 谷雨：治疗 10%，储备上限＝谷雨生命上限；T209＋D213（Kyo 11-18 选甲）起治疗 18%（TUNE_D209 关掉回 10%，见 p7_d209_table）
 	var gy: XActor = s.actor(175)
-	_check("p7_guyu", is_equal_approx(XGuyu.heal_ratio(gy) / maxf(0.0001, _heup(gy)), 0.1), XGuyu.heal_ratio(gy))
+	_check("p7_guyu", is_equal_approx(XGuyu.heal_ratio(gy) / maxf(0.0001, _heup(gy)), 0.18 if XTianqiBase.TUNE_D209 else 0.1), XGuyu.heal_ratio(gy))
 	# 哈基米：剑心多出的段每段只算 +0.5，连携 30%
 	var lg := XBattleLogic.new()
 	lg.setup(2, s)
@@ -1103,6 +1103,89 @@ func _p7() -> void:
 	_check("p7_liuying_total_card", is_equal_approx(tq_per, 6.0) and is_equal_approx(tq_m * tq_per * 5.0, tq_per), [tq_per, tq_m])
 	_check("p7_sukuna_terminal_card", is_equal_approx(XSukuna.tq_terminal_coef(10234), 9.0) and is_equal_approx(XSukuna.tq_terminal_coef(10235), 11.0)
 		and str(XTianqiSkills.spec(10245).get("desc", [""])[0]).contains("10.8") == false, [XSukuna.tq_terminal_coef(10234), XSukuna.tq_terminal_coef(10235), XTianqiSkills.spec(10245).get("desc")])
+	# 【cc·T204】D208：终式按段打（10245 terminal_hits 空间斩 4、5，次元斩 5、6，合计同原 9／11；整数、×诅咒之王 1.3 后每段 ≤ 单段上限 11、最后一段最大）；
+	# D209（T204＋T209）再改成空间斩 5、6、7，次元斩 6、7、8（每段×1.3 最大 10.4）；
+	# 二十指宿傩打看破三层的目标：解转次元斩、三段跳数，每段 finalMultiplier＝段倍率÷解卡上 4；TUNE_D209 关掉照 D208 两段，再关 TUNE_D208 照一段 9／11
+	var h34 := XSukuna.tq_terminal_hits(10234)
+	var h35 := XSukuna.tq_terminal_hits(10235)
+	var cap11 := float(XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}).get("超强者", 0.0))
+	_check("p7_sukuna_terminal_hits", h34 == [5.0, 6.0, 7.0] and h35 == [6.0, 7.0, 8.0] and (h34 + h35).all(func(x): return x == roundf(x) and x * 1.3 <= cap11)
+		and float(h35.back()) == h35.max() and float(h34.back()) == h34.max() and str(XTianqiSkills.spec(10245).desc[0]).contains("6、7、8）"), [h34, h35, cap11])
+	XState.current = s
+	s.actor_max_level = 99
+	s.actor_advance[172] = 3
+	var sk: XActor = s.actor(172)
+	sk.change_level_mv(55)
+	XSukuna.sync(sk)
+	var foe := _enemy(lg)
+	foe.add_param(0, 1.0e12)
+	foe.param_mark_dirty()
+	foe.param_refresh()
+	foe.recover_all()
+	XSukuna._layers(lg, foe, 3)
+	var jie := XDB.rec("Skills", 10229)
+	XSukuna.begin(lg, sk, jie, [foe])
+	var segm := []
+	for i in 3:
+		XSukuna.term_seg = i
+		for op in XSukuna.tq_ops(jie, sk, foe):
+			if str(op.field) == "finalMultiplier":
+				segm.append(snappedf(float(op.value), 0.0001))
+	XSukuna.term_seg = 0
+	var tlogs: Array = XSukuna.apply(lg, sk, jie, foe)
+	var tn := tlogs.filter(func(x): return x is Dictionary and str(x.get("type", "")) == "hit").size()
+	var term_id := int(XSukuna.cast.get("terminal", 0))
+	XSukuna.finish(lg, sk, jie)
+	_check("p7_sukuna_terminal_segs", term_id == 10235 and tn == 3 and segm == [1.5, 1.75, 2.0] and int(XSukuna.target_data(foe).layers) == 0, [term_id, tn, segm, XSukuna.target_data(foe), sk.level, XSukuna.stage(sk), sk.skill_ids.has(10235)])
+	XTianqiBase.TUNE_D209 = false
+	XTianqiSkills.reload_table()
+	var d8_34 := XSukuna.tq_terminal_hits(10234)
+	var d8_35 := XSukuna.tq_terminal_hits(10235)
+	XTianqiBase.TUNE_D208 = false
+	XTianqiSkills.reload_table()
+	var off34 := XSukuna.tq_terminal_hits(10234)
+	var off35 := XSukuna.tq_terminal_hits(10235)
+	XTianqiBase.TUNE_D208 = true
+	XTianqiBase.TUNE_D209 = true
+	XTianqiSkills.reload_table()
+	_check("p7_sukuna_terminal_switch_back", d8_34 == [4.0, 5.0] and d8_35 == [5.0, 6.0] and off34 == [9.0] and off35 == [11.0]
+		and XSukuna.tq_terminal_hits(10235) == [6.0, 7.0, 8.0], [d8_34, d8_35, off34, off35])
+	# 【cc·T204＋T209】D209 覆盖层：奈叶厄临星爆三档（5706／5708／5709＝小魔炮六选一同一招的 30／60／90% 功率）同改四段×(魔攻4＋魔法上限20%)；
+	# 谷雨（D213 甲）储备上限读表 333%（百谷生 400%）、终结按储备 93%、治疗 18%，百谷生卡面跟着改；系数整数（附则 E：coef 整数，系数×属性权重是整数或整数百分比）；关掉 TUNE_D209 回 D208（奈叶两段×12、谷雨 100%）
+	var d9 := XTianqiSkills.data().get("tune", {}).get("D209", {}).get("skills", {}) as Dictionary
+	var d9_int := d9.keys().all(func(k):
+		var dm: Dictionary = d9[k].get("damage", {})
+		var ok := not dm.has("coef") or float(dm.coef) == roundf(float(dm.coef))
+		for st in dm.get("stats", {}):
+			var v := float(dm.stats[st]) * float(dm.get("coef", 1.0))  # 有效系数：整数，或 1%～99% 的整数百分比（同 天启篇数据校验.py）
+			ok = ok and (is_equal_approx(v, roundf(v)) or (v < 1.0 and is_equal_approx(v * 100.0, roundf(v * 100.0))))
+		return ok)
+	var nano := [5706, 5708, 5709].map(func(id): return [XTianqiSkills.spec(id).get("damage", {}).get("stats"), XTianqiSkills.spec(id).get("damage", {}).get("coef"), XTianqiSkills.spec(id).get("seq")])
+	var gy9 := s.actor(175)
+	# T209 R1（小A 核查加做）：谷雨 10288～10298 卡面进 D209（只换文字），天启篇卡面写 18%／333%（百谷生 400%）／93%，原版 419MP、系数50 那几行去掉
+	var gy_cards := [10288, 10289, 10290, 10291, 10292, 10293, 10294, 10295, 10297, 10298]
+	var gy_note := func(id): return str(XDB.rec("Skills", id).get("note", ""))
+	var gy_card_on: bool = XTianqiSkills.cards_on() and gy_cards.all(func(id): return XTianqiSkills.has(id) and not XTianqiSkills.spec(id).has("damage")) \
+		and gy_note.call(10288).contains("×18%") and gy_note.call(10288).contains("最大魔法6%") and not gy_note.call(10288).contains("419MP") and not gy_note.call(10288).contains("治疗比例40%") \
+		and gy_note.call(10292).contains("×93%") and not gy_note.call(10292).contains("伤害系数50") and gy_note.call(10293).contains("333%（戴百谷生400%）") and not gy_note.call(10293).contains("无上限") \
+		and gy_note.call(10294).contains("每场战斗一次") and gy_note.call(10289).contains("2个回合") and gy_note.call(10288).contains("<GuyuSkill:heal>") and gy_note.call(10288).contains("目标：我方全体")
+	var gy_on := XGuyu.tq_cap_rate(gy9)
+	var gy_pct_on := [XGuyu.tq_pct("heal_pct", 10.0), XGuyu.tq_pct("finish_pct", 100.0), str(XTianqiSkills.data().get("gear", {}).get("armor:7912", {}).get("desc", [""])[0])]
+	XTianqiBase.TUNE_D209 = false
+	XTianqiSkills.reload_table()
+	var nano_off := [float(XTianqiSkills.spec(5706).damage.coef), XTianqiSkills.spec(5706).get("seq")]
+	var gy_off := XGuyu.tq_cap_rate(gy9)
+	var gy_card_off: bool = gy_cards.all(func(id): return not XTianqiSkills.has(id)) and gy_note.call(10288).contains("419MP")
+	var gy_pct_off := [XGuyu.tq_pct("heal_pct", 10.0), XGuyu.tq_pct("finish_pct", 100.0), str(XTianqiSkills.data().get("gear", {}).get("armor:7912", {}).get("desc", [""])[0])]
+	XTianqiBase.TUNE_D209 = true
+	XTianqiSkills.reload_table()
+	_check("p7_d209_table", d9.keys().filter(func(k): return int(d9[k].get("actor", 0)) != 175).size() == 18 and d9_int and nano[0] == nano[1] and nano[1] == nano[2] and int(nano[0][1]) == 1
+		and is_equal_approx(float(nano[0][0].mat), 4.0) and is_equal_approx(float(nano[0][0].mmp), 0.2) and int(nano[0][2][0].n) == 4  # T209 R1 P3-1：写成 coef 1、mat 4、mmp 0.2（同 9938、10731）
+		and is_equal_approx(gy_on, 4.0 if XGuyu.has_relic(gy9) else 3.33) and is_equal_approx(gy_off, 1.2 if XGuyu.has_relic(gy9) else 1.0)
+		and is_equal_approx(gy_pct_on[0], 0.18) and is_equal_approx(gy_pct_on[1], 0.93) and gy_pct_on[2].contains("333%提到400%")
+		and is_equal_approx(gy_pct_off[0], 0.1) and is_equal_approx(gy_pct_off[1], 1.0) and gy_pct_off[2].contains("100%提到120%")
+		and is_equal_approx(nano_off[0], 12.0) and int(nano_off[1][0].n) == 2, [d9.size(), d9_int, nano, gy_on, gy_off, nano_off, gy_pct_on, gy_pct_off])
+	_check("p7_d209_guyu_cards", gy_card_on and gy_card_off, [gy_card_on, gy_card_off, gy_note.call(10288)])
 	# 模块法宝：百分比属性去掉
 	var view: Dictionary = XTianqiSkills.gear_view(XDB.rec("Armors", 4577).merged({"kind": "armor", "base": 4577}, true))
 	_check("p7_gear", (view.get("traits", []) as Array).filter(func(t): return int(t.code) == 21).is_empty(), view.get("traits"))

@@ -30,6 +30,7 @@ func _run() -> void:
 	_six_eyes_infinity()
 	_domain_flash()
 	_real_turns()
+	_purple_segments()
 	_unlock()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -167,9 +168,11 @@ func _purple() -> void:
 	var b: XBattler = lg.enemies[0]
 	XGojo.begin(lg, a, p_out)
 	var v := XGojo.formula(a, b, p_out)
-	_check("purple_out_3", is_equal_approx(v, a.mat * 11.0), [v, a.mat])  # T191（D200）gojo_pairs 10.8 取整成 11
+	# T191（D200）gojo_pairs 10.8 取整成 11；T209（D209）3 对合计 18（原 17，协调 11-18 改）、分 4 段（gojo_hits 4），每段公式值＝18÷4；TUNE_D209 关掉回 11 一段
+	var purple_each := 18.0 / 4.0 if XTianqiBase.TUNE_D209 else 11.0
+	_check("purple_out_3", is_equal_approx(v, a.mat * purple_each), [v, a.mat])
 	var via: Dictionary = XFormulaExecution.run_item(p_out, a, b, {})
-	_check("purple_pipeline", via.available and is_equal_approx(float(via.value), a.mat * 11.0), via)
+	_check("purple_pipeline", via.available and is_equal_approx(float(via.value), a.mat * purple_each), via)
 	XGojo.finish(lg, a, p_out)
 	_check("purple_clears_blindfold", XGojo.marks(a) == [1, 1] and not a.state_ids.has(XGojo.ST_BLUE + 2), XGojo.marks(a))
 	XGojo.temp(a).blue = 1
@@ -273,6 +276,63 @@ func _real_turns() -> void:
 	_check("act_reverse_heals", a.hp > hp1 and XGojo.marks(a)[1] == 2, [a.hp, hp1, a.mhp, XGojo.marks(a)])
 	lg.end_battle(0)
 	XTianqiNoDiffPassive.ENABLED = true
+
+
+## T209 R1 P1-1：茈·放只在 XTianqiSkills.rec 套一次卡——底表不改（1 段），D209 split 4＝4 段（gojo_hits 4，每段 18÷4）；
+## 期四总开关 PHASE4 开、关都一样 4 段、合计魔攻×18；TUNE_D209 关掉＋reload_table 后回 1 段×11，再开回 4 段（底表没被写脏）
+func _purple_segments() -> void:
+	var fx := func(r: Dictionary) -> int:
+		return ((r.get("yepSeq", {}).get("target", []) as Array).filter(func(c): return str(c[0]).to_lower() == "action effect")).size()
+	_check("purple_raw_table_one_seg", fx.call(XDB.table("Skills")[XGojo.PURPLE_OUT]) == 1 and int(XDB.table("Skills")[XGojo.PURPLE_OUT].get("yepEffects", 0)) == 1,
+		[fx.call(XDB.table("Skills")[XGojo.PURPLE_OUT]), XDB.table("Skills")[XGojo.PURPLE_OUT].get("yepEffects")])
+	var phase0 := XTianqiBase.PHASE4
+	var cards0 := XTianqiSkills.CARDS
+	XTianqiNoDiffPassive.ENABLED = false
+	for p4 in [false, true]:
+		XTianqiBase.PHASE4 = p4
+		XTianqiSkills.CARDS = false
+		XTianqiSkills.reload_table()
+		var rec := XDB.rec("Skills", XGojo.PURPLE_OUT)
+		_check("purple_seg4_rec_p4_%s" % p4, fx.call(rec) == 4 and int(rec.get("yepEffects", 0)) == 4, [fx.call(rec), rec.get("yepEffects")])
+		var s := _state()
+		var a := _gojo(s)
+		var lg := _logic(s)
+		var e: XBattler = lg.enemies[0]
+		e.immortal = true  # 四段打完再看（DEATH BREAK 不提前断）
+		e.hp = e.mhp
+		_cast(lg, a, XGojo.BLUE_MAX)
+		_cast(lg, a, XGojo.RED_MAX)
+		_cast(lg, a, XGojo.BLUE)
+		_cast(lg, a, XGojo.RED)
+		a.mp = a.mmp
+		var pairs := XGojo.pairs(a)
+		XGojo.begin(lg, a, rec)
+		var each := XGojo.formula(a, e, rec)
+		XGojo.cast = {}
+		var logs := lg.act(a, rec, e)
+		var hits := logs.filter(func(l): return l is Dictionary and str(l.get("type", "")) == "hit" and l.get("target") == e \
+			and l.get("skill") is Dictionary and int(l.skill.get("id", 0)) == XGojo.PURPLE_OUT)
+		_check("purple_act_4_hits_p4_%s" % p4, pairs == 3 and hits.size() == 4, [pairs, hits.size()])
+		_check("purple_total_18_p4_%s" % p4, is_equal_approx(each * hits.size(), a.mat * 18.0), [each, hits.size(), a.mat])
+		# 双 build 时被动「最强」的 note_add <passiveHarmRi:10> 也叠了两遍（damage.gd 逐个扫，伤害 +20%）；单入口后只一个
+		var harm := RegEx.create_from_string("(?i)<passiveHarmRi:").search_all(str(XDB.rec("Skills", XGojo.STRONGEST).get("note", ""))).size()
+		_check("strongest_harm_once_p4_%s" % p4, harm == 1, harm)
+		lg.end_battle(0)
+	XTianqiBase.PHASE4 = phase0
+	XTianqiSkills.CARDS = cards0
+	XTianqiNoDiffPassive.ENABLED = true
+	# 回退：TUNE_D209 关掉＋reload_table → 1 段、3 对 ×11；再开回 4 段
+	var d209 := XTianqiBase.TUNE_D209
+	XTianqiBase.TUNE_D209 = false
+	XTianqiSkills.reload_table()
+	var off := XDB.rec("Skills", XGojo.PURPLE_OUT)
+	var sp_off := XTianqiSkills.spec(XGojo.PURPLE_OUT)
+	_check("purple_d209_off_one_seg", fx.call(off) == 1 and int(off.get("yepEffects", 0)) == 1 and int(sp_off.get("gojo_hits", 1)) == 1 and is_equal_approx(float((sp_off.get("gojo_pairs", []) as Array)[2]), 11.0),
+		[fx.call(off), off.get("yepEffects"), sp_off.get("gojo_hits"), sp_off.get("gojo_pairs")])
+	XTianqiBase.TUNE_D209 = d209
+	XTianqiSkills.reload_table()
+	var back := XDB.rec("Skills", XGojo.PURPLE_OUT)
+	_check("purple_d209_back_seg4", fx.call(back) == (4 if d209 else 1), fx.call(back))
 
 
 ## 最强之名：证道、36 层骑士战上场的人里有宿傩或甚尔才解锁；证道开放前临时炼狱也算（Kyo 11-14），开放后只认证道；

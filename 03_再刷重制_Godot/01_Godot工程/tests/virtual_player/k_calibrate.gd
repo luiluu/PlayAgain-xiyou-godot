@@ -43,6 +43,12 @@ var no_fabao := false
 var bare := false  # --bare：不补甲档五样（回到 v3 口径，对照用）
 var trumpet_n := 2  # 号卷：七卷里打单体加伤害的只有二号血海（目标生命低于 33% +50%）；条件全中＝木桩生命压到 30%
 var report := {}
+## T204＋T209：停用中但要进量表的超强者（152 徐凤年）
+const PROBE_ENABLE := [152]
+## T209（协调 11-18）：成长型角色按标定点的成长量量，不是 0 也不是无穷——108 奈叶适应击杀次数（--nanoha-kills=N，缺省 2000＝软上限起点）、
+## 179 流萤余烬（天启篇封顶 3000，--ember=N）；167 渡鸦灵魂在条件里按满算（cond_max），天启篇封顶 15 万／20 万
+var nanoha_kills := 2000
+var ember := 3000.0
 
 
 func _ready() -> void:
@@ -73,6 +79,14 @@ func _ready() -> void:
 			XTianqiBase.TUNE_D189 = false
 		elif a == "--no-d198":  # T192：只关 D198（偏弱超强者调高）覆盖层，改前对照用
 			XTianqiBase.TUNE_D198 = false
+		elif a == "--no-d208":  # T204：只关 D208（宿傩终式按段）覆盖层，改前对照用
+			XTianqiBase.TUNE_D208 = false
+		elif a == "--no-d209":  # T204＋T209：只关 D209（超强者按名次重排）覆盖层，改前对照用
+			XTianqiBase.TUNE_D209 = false
+		elif a.begins_with("--nanoha-kills="):
+			nanoha_kills = maxi(0, int(a.substr(15)))
+		elif a.begins_with("--ember="):
+			ember = maxf(0.0, float(a.substr(8)))
 		elif a == "--single":
 			single = true
 		elif a == "--debug-cast":
@@ -96,21 +110,28 @@ func _run() -> void:
 	var rules: Dictionary = XTianqiBalance.data().get("combat_rules", {})
 	if k_arg > 0.0:
 		rules["base_damage"] = k_arg
-	report = {"k": float(rules.get("base_damage", 1.0)), "hits": hits, "tune_d189": XTianqiBase.TUNE_D189, "tune_d198": XTianqiBase.TUNE_D198, "level": level, "gear_level": gear_level, "fabao_level": fabao_level, "def": DEF, "rows": [], "tiers": {},
+	report = {"k": float(rules.get("base_damage", 1.0)), "hits": hits, "tune_d189": XTianqiBase.TUNE_D189, "tune_d198": XTianqiBase.TUNE_D198, "tune_d208": XTianqiBase.TUNE_D208, "tune_d209": XTianqiBase.TUNE_D209, "level": level, "gear_level": gear_level, "fabao_level": fabao_level, "def": DEF, "rows": [], "tiers": {},
 		"brand_max_bonus": float(XTianqiBrand.data().get("power", {}).get("max_bonus", 0.5)),
 		"caps": XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}),
 		"build": "bare" if bare else "full", "metric": "single" if single else "cast_total",
 		"missing": (["词条掷满挑最大", "黑印满配攒五层", "真印无视防御", "秘籍格", "号卷"] if bare else []) + ["烙印（XTianqiBrand 关着＝烙印 0；锚临时取 200 万＝300 万÷1.50，稿第九节第 3 条）"]}
 	var tiers := [XTier.SUPER, XTier.STRONG, XTier.WEAK] if tier_arg == "all" else [{"super": XTier.SUPER, "strong": XTier.STRONG, "weak": XTier.WEAK}[tier_arg]]
+	# T204＋T209（协调 11-18）：超强者 18 人都要进量表——152 徐凤年（停用中）走 probe_enabled、180 五条悟（天启篇专属、要解锁最强之名）临时当已解锁；量完还原
+	var probe_was: Array = XImportedBalance.probe_enabled.duplicate()
+	var gojo_was := XGojo.unlock_override
+	XImportedBalance.probe_enabled = probe_was + PROBE_ENABLE
+	XGojo.unlock_override = 1
 	for tier in tiers:
 		var peaks := []
 		for id in XTianqiSkills.ids(tier, true):
 			if not only.is_empty() and not only.has(int(id)):
 				continue
-			if XImportedBalance.is_disabled_actor(int(id)):
+			if XImportedBalance.is_disabled_actor(int(id)) and int(id) != XGojo.ACTOR:  # 五条悟的 hidden 看「当前存档」，_state 之前可能还不是天启篇档
+				print("K_SKIP %d disabled" % int(id))
 				continue
 			var row := _measure(int(id), tier)
 			if row.is_empty():
+				print("K_SKIP %d no_damage_row" % int(id))  # 量不出伤害（如 175 谷雨全是治疗）
 				continue
 			row["tier"] = tier
 			report.rows.append(row)
@@ -120,14 +141,32 @@ func _run() -> void:
 		if not peaks.is_empty():
 			report.tiers[tier] = {"n": peaks.size(), "max": peaks[-1], "median": peaks[peaks.size() / 2],
 				"max_brand": peaks[-1] * (1.0 + float(report.brand_max_bonus))}
+	XImportedBalance.probe_enabled = probe_was
+	XGojo.unlock_override = gojo_was
 	XTianqiBase.PHASE4 = false
 	XTianqiSkills.MASTERY = false
 	report["mastery_max_level_seen"] = mastery_seen
 	print("K_REPORT " + JSON.stringify(report.tiers) + " mastery=" + str(mastery_seen))
 	if out_path != "":
-		var f := FileAccess.open(out_path, FileAccess.WRITE)
-		f.store_string(JSON.stringify(report, " "))
+		var f := FileAccess.open(out_path, FileAccess.WRITE)  # 相对路径按 Godot 的工作目录算，写不出时报错（T204：用绝对路径）
+		if f == null:
+			push_error("K 探针写不出 %s（%s）；--out 用绝对路径" % [out_path, FileAccess.get_open_error()])
+		else:
+			f.store_string(JSON.stringify(report, " "))
 	get_tree().quit.call_deferred(0)
+
+
+## T209：成长型角色的标定点成长量（见 nanoha_kills、ember）
+func _growth(s: XState, a) -> void:
+	if int(a.actor_id) == 108:
+		for i in nanoha_kills:
+			XNanoha.adapt(a)
+		report["nanoha_kills"] = nanoha_kills
+	elif XLiuying.own(a):
+		a.state_data["_codexLbEmber"] = ember
+		a.state_data["_codexLbEmberWins"] = 0.0
+		report["ember"] = ember
+	a.param_mark_dirty()
 
 
 ## 条件「成立到最大」的倍率（同 天启篇数据校验.py cond_max）
@@ -182,6 +221,7 @@ func _state(id: int) -> XState:
 	if not no_advance:
 		_advance_max(s, a)
 	_dress(a)
+	_growth(s, a)
 	var fid := _own_fabao(id)
 	if fid == 0:
 		var mw := main_weights(a)
@@ -328,6 +368,10 @@ func _measure(id: int, tier: String) -> Dictionary:
 	e.param_mark_dirty()
 	if XTianqiElements.enemy_profile(e, logic, s).get("source", "") != "":
 		push_error("K 木桩 %d 不是元素中性（%s）" % [int(e.enemy_id), XTianqiElements.enemy_profile(e, logic, s)])
+	if XGuyu.own(a):
+		var g := _measure_guyu(s, a, logic, e)
+		logic.end_battle(0)
+		return g
 	var sids := _scan_ids(a)
 	var best := _scan(a, e, logic, sids, cap)
 	if not bare and not best.is_empty():
@@ -357,7 +401,84 @@ func _measure(id: int, tier: String) -> Dictionary:
 			best["affixes"] = affixes
 		if build != null:
 			best["build"] = build
+	if XGarou.own(a) and not best.is_empty():
+		best["form"] = XGarou.FORM_NAMES[XGarou.stage(a)]  # T209：饿狼按星空形态量（进阶满＝形态 6）
 	return best
+
+
+## T209（Kyo 11-18「谷雨走A」）：175 谷雨的伤害是多回合叠生命储备再爆发——峰值＝储备叠满后花期里「终结」那一下（同别人「条件全中的一次施放」）。
+## 单人木桩：开战（百谷生 60 级自带 30%）后每回合给自己治疗一次（治疗量全记储备，生未央不在花期再 +20%），数到储备到上限要几回合；
+## 然后开花期、终结（威力＝全部储备×1.0，减木桩魔防一半；不会心）。词条按终结那一下贪心挑。报告记 rounds（治疗回合数，另加开花期、终结各 1 回合）、cap、reserve。
+func _measure_guyu(s: XState, a, logic, e) -> Dictionary:
+	if XGuyu.reserve(a) <= 0.0:
+		XGuyu.tq_battle_start(a)  # 开战没走 XTianqiModules.battle_start 时补（百谷生 60 级自带 30%）
+	var cap := XGuyu.cap(a)
+	var r0 := XGuyu.reserve(a)
+	var heal := XDB.rec("Skills", int(XGuyu.SKILL.heal))
+	var heals := 0
+	while XGuyu.reserve(a) < cap and heals < 60:
+		heals += 1
+		XGuyu.start_turn(heals)
+		a.mp = a.mmp
+		var r_before := XGuyu.reserve(a)
+		var mhp_before: float = a.mhp
+		var calc := XDamage.calculate(heal, a, a, {})
+		print("K_GUYU_HEAL_CALC value %s breakdown %s confirm %s finish %s" % [str(calc.get("value")), str(calc.get("breakdown")),
+			str(XDamage.apply_state_effects(calc.value, heal, a, a, [], "confirm", false, false, {})), str(XDamage.finish(calc, heal, a, a, false))])
+		if heals == 1:  # 逐个状态看确认阶段把治疗乘了多少
+			print("K_GUYU_PHASE4 on %s skip %s current_is_s %s" % [str(XTianqiBase.on()), str(XTianqiBase.heal_skip_types()), str(XState.current == s)])
+			var rows: Array = a.effect_states("confirm", false)
+			rows = XTianqiNoDiffPassive.confirm_rows(a, rows)
+			rows = XTianqiLedger.suit_confirm_rows(a, rows)
+			rows = XTianqiLedger.live_confirm_rows(a, rows)
+			var v := float(calc.value)
+			for st in rows:
+				var nv := XStateEffects.run_one("confirm", a, st, {"attacker": a, "defender": a, "item": heal, "untranslated": [], "execute": false, "critical": false, "value": v})
+				if nv != v:
+					print("K_GUYU_CONFIRM_STATE %s %s %d→%d" % [str(st.get("id")), str(st.get("name")), v, nv])
+				v = nv
+		var heal_logs: Array = logic.execute(a, heal, a, true)
+		var healed := 0.0
+		for l in heal_logs:
+			if l is Dictionary and l.get("target") == a:
+				healed += -float(l.get("hp", 0.0))
+				print("K_GUYU_HEAL_LOG hp %d type %s elements %s bonus %s" % [-float(l.get("hp", 0.0)), str(l.get("type", "")), str(XDamage.original_elements(heal, a)),
+					str(XDamage.original_elements(heal, a).map(func(x): return XDamage.element_bonus(a, int(x))))])
+		# T209 第 4 条（核实叠满回合数）：每次治疗记下储备、最大生命（含储备）、治疗比例、这次的回血量
+		print("K_GUYU_HEAL %d reserve %d→%d mhp %d base %d heal_ratio %.3f healed %d cap %d rec %.3f" % [heals, r_before, XGuyu.reserve(a), mhp_before, XGuyu.base_mhp(a), XGuyu.heal_ratio(a), healed, cap, a.rec])
+		XGuyu.end_round()
+	var reserve := XGuyu.reserve(a)
+	var fin := XDB.rec("Skills", int(XGuyu.SKILL.finish))
+	var opn := XDB.rec("Skills", int(XGuyu.SKILL.open))
+	if not bare:
+		XGuyu._finish_power = reserve  # 贪心挑词条只算结算（calculating，不减魔防），先把威力摆上
+		var affixes := _affix_greedy(a, e, logic, int(fin.id))
+		XGuyu._finish_power = 0.0
+		report["guyu_affixes"] = affixes
+	var segs := []
+	XGuyu.start_turn(heals + 1)
+	a.mp = a.mmp
+	_pin_def(e)
+	e.hp = e.mhp
+	logic.execute(a, opn, e, true)
+	XGuyu.end_round()
+	XGuyu.start_turn(heals + 2)
+	XGuyu.reserves[a.actor_id] = reserve  # 开花期那回合的绽放付掉的补回来（峰值按叠满算）
+	a.mp = a.mmp
+	_pin_def(e)
+	e.hp = e.mhp
+	XStateEffects.force_critical = true
+	var logs: Array = logic.execute(a, fin, e, true)
+	XStateEffects.force_critical = false
+	_collect_hits(logs, e, segs)
+	var dealt := 0.0
+	for v in segs:
+		dealt += float(v)
+	if dealt <= 0.0:
+		return {}
+	return {"actor": int(a.actor_id), "skill": int(fin.id), "peak": roundf(dealt), "peak_single": roundf(dealt), "dealt": dealt, "segs": {"n": segs.size(), "ratio": 1.0, "segs": segs},
+		"guyu": {"heal_rounds": heals, "rounds_total": heals + 2, "cap": cap, "cap_rate": XGuyu.tq_cap_rate(a), "reserve_start": r0, "reserve": reserve, "relic": XGuyu.has_relic(a), "base_mhp": XGuyu.base_mhp(a)},
+		"atk": a.param(2), "mat": a.param(4), "mhp": a.mhp, "build": _build_desc(a)}
 
 
 ## 要量的技能：自己学会的；176 屠苏另加武装技能（持武者施放，XTusu.apply_subject 让整次结算以屠苏为出手者、按屠苏的属性，
@@ -385,7 +506,10 @@ static func _sukuna_terminal(logic, a, e, sid: int) -> float:
 	if t == 0:
 		XSukuna.cast = {}
 		return 1.0
-	return XSukuna.tq_terminal_coef(t) / maxf(0.01, float(XTianqiSkills.spec(sid).get("damage", {}).get("coef", 1.0)))
+	# T204（D208）：终式按段打时单打取最大那段（term_seg 指过去，tq_ops 按它取倍率）；合计在 _cast_ratio 的整次施放里收
+	var h := XSukuna.tq_terminal_hits(t)
+	XSukuna.term_seg = h.find(h.max())
+	return float(h.max()) / maxf(0.01, float(XTianqiSkills.spec(sid).get("damage", {}).get("coef", 1.0)))
 
 
 ## 一组技能各打 hits 次，取峰值最大的那一行（每招的那一行另记在 _rows，D195 换算整次施放用）
@@ -396,17 +520,18 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 	_rows = {}
 	for sid in sids:
 		var sp := XTianqiSkills.spec(int(sid))
-		if not sp.has("damage") or sp.has("heal"):
+		var gojo_pairs := sp.has("gojo_pairs")  # T209：五条悟茈卡上没 damage、按苍赫印对数取 gojo_pairs（XGojo.formula），木桩前印满 3 对（_prime）
+		if (not sp.has("damage") and not gojo_pairs) or sp.has("heal"):
 			continue
 		var sk := XDB.rec("Skills", int(sid))
 		if sk.is_empty() or not XSmartAI.for_opponent(sk):
 			if per_skill:
 				print("K_SKILL %d %d skip=not_for_opponent" % [id, int(sid)])
 			continue
-		var d: Dictionary = sp.damage
+		var d: Dictionary = sp.get("damage", {})
 		# D195：「一直生效」的减成条件（如 3922 三连击时每段 ×1/3、4848 每段 ×0.6）是拿段数换的，按总伤算时要算进去，
 		# 不然「峰值单段（不含减成）× 段数」会多算 3 倍（T175 v12：9、10、19）。--single 照旧口径不算
-		var full_raw := eff_full(id, int(sid)) * (1.0 if single else _always_reduce(a, e, d, id, int(sid)))
+		var full_raw := (float((sp.gojo_pairs as Array).max()) if gojo_pairs else eff_full(id, int(sid)) * (1.0 if single else _always_reduce(a, e, d, id, int(sid))))
 		var full := minf(full_raw, cap * XTianqiSkills.cap_hits(d)) if cap > 0.0 else full_raw  # T192：cap_hits 按每段封
 		var w := XTianqiSkills.hit_weight(d)
 		var sk_best := {}
@@ -419,7 +544,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			_prime(logic, a, e, sk)
 			var term := _sukuna_terminal(logic, a, e, int(sid))
 			XStateEffects.force_critical = true
-			var v0 := absf(XTianqiSkills.formula(a, e, sk))
+			var v0 := absf(XGojo.formula(a, e, sk) if gojo_pairs else XTianqiSkills.formula(a, e, sk))
 			if debug and n == 0:
 				print("K_DEBUG foe def=%s mdf=%s pdr=%s mdr=%s el=%s" % [e.def, e.mdf, e.pdr, e.mdr, [e.element_rate(1), e.element_rate(2), e.element_rate(3), e.element_rate(4)]])
 				print("K_DEBUG qiyin fx=%s ops=%s act_w=%s" % [XTianqiQiyinEffects.effects(logic, a).keys(), XTianqiQiyinEffects.damage_ops(sk, a, e), XTianqiQiyinEffects._store(logic).act.get("weight")])
@@ -440,6 +565,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			var dealt := float(r.get("shown", {}).get("hp", r.get("hp", 0.0)))  # 跳出来的那一个数（木桩生命有上限，不能用掉血量）
 			XStateEffects.force_critical = false
 			XSukuna.cast = {}
+			XSukuna.term_seg = 0
 			if term != 1.0 and cap > 0.0:
 				# 终式倍数乘在单段上限后面：按「条件全中×终式」再封一次上限折回（报告 term、term_capped 两个数都留）
 				var ef := eff_full(id, int(sid))
@@ -450,7 +576,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 				continue
 			# v_full：同一个基数（Σ属性×权重 × 等级缩放）乘「条件全中、封到上限」的系数 full÷w
 			var base_lv := v0 / maxf(1e-9, _coef_now(a, e, d, int(sid)))
-			var v_full := base_lv * full / maxf(1e-9, w)
+			var v_full := v0 if gojo_pairs else base_lv * full / maxf(1e-9, w)  # 茈：印已按满 3 对摆好，量到的就是条件全中
 			var peak := dealt * v_full / v0
 			if per_skill and n == hits - 1:
 				print("K_SKILL %d %d peak=%d dealt=%d eff=%s" % [id, int(sid), roundf(peak), dealt, eff_full(id, int(sid))])
@@ -487,6 +613,8 @@ func _cast_ratio(s: XState, a, sk: Dictionary) -> Dictionary:
 		a.mp = a.mmp
 		a.tp = a.max_tp()
 		_prime(logic, a, e, sk)
+		if XSukuna.own(a) and XSukuna.PRIMARY.has(int(sk.get("id", 0))):
+			XSukuna._layers(logic, e, 3)  # T204：整次施放同单打口径（看破三层转终式），终式按段打的合计在这里收（T192 前这里没挂层，量的是捌冲击＋斩击两段）
 		XStateEffects.force_critical = true
 		var logs: Array = logic.execute(a, sk, e, true)
 		XStateEffects.force_critical = false
@@ -679,6 +807,13 @@ func _has_trumpet(a) -> bool:
 
 ## 每一下之前：行动帧（XBattleLogic 出手时才建，探针直接 apply 要自己建）。砝码攒满 5 层、上一回合防御过、本回合第一次出手；词条先声每下都算第一下
 func _prime(logic, a, e, sk: Dictionary) -> void:
+	var sid := int(sk.get("id", 0))
+	if XGojo.own(a) and sid in [XGojo.PURPLE_IN, XGojo.PURPLE_OUT]:  # T209：茈条件全中＝苍印、赫印各 3（上限），形状对上
+		var t := XGojo.temp(a)
+		t.blue = XGojo.MARK_CAP
+		t.red = XGojo.MARK_CAP
+		t.last = "blue" if sid == XGojo.PURPLE_IN else "red"
+		XGojo.cast = {"skill": sid, "pairs": XGojo.MARK_CAP}
 	if bare:
 		return
 	var un := XTianqiQiyinEffects._unit(logic, a)
