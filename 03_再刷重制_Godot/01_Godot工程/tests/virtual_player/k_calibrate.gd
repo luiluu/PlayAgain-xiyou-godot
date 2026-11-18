@@ -420,7 +420,19 @@ func _measure_guyu(s: XState, a, logic, e) -> Dictionary:
 		heals += 1
 		XGuyu.start_turn(heals)
 		a.mp = a.mmp
-		logic.execute(a, heal, a, true)
+		var r_before := XGuyu.reserve(a)
+		var mhp_before: float = a.mhp
+		var calc := XDamage.calculate(heal, a, a, {})
+		print("K_GUYU_HEAL_CALC value %s breakdown %s" % [str(calc.get("value")), str(calc.get("breakdown"))])
+		var heal_logs: Array = logic.execute(a, heal, a, true)
+		var healed := 0.0
+		for l in heal_logs:
+			if l is Dictionary and l.get("target") == a:
+				healed += -float(l.get("hp", 0.0))
+				print("K_GUYU_HEAL_LOG hp %d type %s elements %s bonus %s" % [-float(l.get("hp", 0.0)), str(l.get("type", "")), str(XDamage.original_elements(heal, a)),
+					str(XDamage.original_elements(heal, a).map(func(x): return XDamage.element_bonus(a, int(x))))])
+		# T209 第 4 条（核实叠满回合数）：每次治疗记下储备、最大生命（含储备）、治疗比例、这次的回血量
+		print("K_GUYU_HEAL %d reserve %d→%d mhp %d base %d heal_ratio %.3f healed %d cap %d rec %.3f" % [heals, r_before, XGuyu.reserve(a), mhp_before, XGuyu.base_mhp(a), XGuyu.heal_ratio(a), healed, cap, a.rec])
 		XGuyu.end_round()
 	var reserve := XGuyu.reserve(a)
 	var fin := XDB.rec("Skills", int(XGuyu.SKILL.finish))
