@@ -448,13 +448,55 @@ static func applies(item) -> bool:
 	var ex: Dictionary = _gb.get("exceptions", {})
 	if not _gb_slots.has(etype) or (ex.get("etypes", []) as Array).has(float(etype)) or (ex.get("ids", []) as Array).has(float(item.get("base", item.get("id", 0)))):
 		return false
-	return str(item.get("meta", {}).get("req_level", "")).strip_edges().is_valid_int() and XQuality.has_quality(item)
+	return _req_text(item).is_valid_int() and XQuality.has_quality(item)
+
+
+## 【T164·D191】补等级覆盖表（gear_base.json level_override）：8 件原版没写 req_level 字段的真装备。开关 LEVEL_OVERRIDE，关着回原样。
+## direct：补成这个等级，整件读新底子（秘火 40、超能螺丝刀 40、传承：巨灵大斧 15——说明文字里本来就写着）；
+## gem_only：只给宝石算光耀度用的等级（80），装备自身八项不读新表、数值不变，只有宝石那份固定加值按 80 级换算比放大；
+## keep_params：direct 里这几列保持原版实例值（巨灵大斧敏捷 −20 的惩罚）。传家宝×2 不在表里（占位，不补）。键 "weapon:1385"＝种类:底装备号
+static var LEVEL_OVERRIDE := true
+
+
+static func _ov_key(item: Dictionary) -> String:
+	return "%s:%d" % [_kind(item), int(item.get("base", item.get("id", 0)))]
+
+
+static func _ov(item: Dictionary, group: String):
+	if not LEVEL_OVERRIDE or _kind(item) == "":
+		return null
+	var t = gear_base().get("level_override", {}).get(group, {})
+	return t.get(_ov_key(item)) if t is Dictionary else null
+
+
+## 有效的等级文字：实例自己的 req_level；没有就看 direct 覆盖表
+static func _req_text(item: Dictionary) -> String:
+	var t := str(item.get("meta", {}).get("req_level", "")).strip_edges()
+	if t.is_valid_int():
+		return t
+	var o = _ov(item, "direct")
+	return str(int(o)) if o != null else t
+
+
+## 只给宝石用的等级（gem_only）；没有返回 -1
+static func gem_only_level(item) -> int:
+	if not (item is Dictionary) or not XTianqiBase.on() or item.has(XTianqiRewards.FIELD) or applies(item):
+		return -1
+	var o = _ov(item, "gem_only")
+	return int(o) if o != null else -1
+
+
+## 宝石固定加值要不要按换算比放大：读表的装备，或表里「只给宝石用等级」的装备
+static func gem_applies(item) -> bool:
+	return applies(item) or gem_only_level(item) >= 0
 
 
 ## 统一入口：所有读装备八项的地方都走它。不读表时返回实例原来的 params（同一个数组，别改它）
 static func effective_params(item: Dictionary) -> Array:
-	if not XTianqiBase.PHASE4 or not applies(item):
+	if not XTianqiBase.PHASE4:
 		return item.get("params", [])
+	if not applies(item):
+		return _gem_only_params(item) if gem_only_level(item) >= 0 else item.get("params", [])
 	var id := str(item.get("instanceId", ""))
 	var c = _eff_cache.get(id) if id != "" else null
 	if c != null and _eff_fresh(c, item):
@@ -465,7 +507,7 @@ static func effective_params(item: Dictionary) -> Array:
 			_eff_cache.clear()
 		var p: Array = item.get("params", [])
 		_eff_cache[id] = {"pref": p, "p": p.duplicate(), "un": (item.get("upgrades", []) as Array).size(),
-			"aff": item.get("affixIds"), "meta": str(item.get("meta", {}).get("req_level", "")) + "|" + str(item.get("meta", {}).get("quality", "")),
+			"aff": item.get("affixIds"), "meta": _req_text(item) + "|" + str(item.get("meta", {}).get("quality", "")),
 			"orb": JSON.stringify(item.get("augmentSlotItems", [])), "out": out}
 	return out
 
@@ -478,9 +520,14 @@ static func param_of(item: Dictionary, i: int) -> float:
 
 ## 固定加值（词缀、镶嵌、宝珠）在这件装备上的换算比；不读表时 1
 static func flat_ratio(item, i: int) -> float:
-	if not applies(item):
+	if not gem_applies(item):
 		return 1.0
 	return _ratio(_level(item), i)
+
+
+## 光耀 100% 时的换算比＝80 级那一行；CAP_80 关着返回 1（显示回到「基础值」口径）
+static func full_ratio(i: int) -> float:
+	return _ratio(CAP_LEVEL, i) if CAP_80 else 1.0
 
 
 static func _eff_fresh(c: Dictionary, item: Dictionary) -> bool:
@@ -490,7 +537,7 @@ static func _eff_fresh(c: Dictionary, item: Dictionary) -> bool:
 	if c.un != (item.get("upgrades", []) as Array).size():
 		return false
 	var meta: Dictionary = item.get("meta", {})
-	if c.meta != str(meta.get("req_level", "")) + "|" + str(meta.get("quality", "")):
+	if c.meta != _req_text(item) + "|" + str(meta.get("quality", "")):
 		return false
 	return c.orb == JSON.stringify(item.get("augmentSlotItems", []))
 
@@ -508,10 +555,20 @@ static func _kind(item: Dictionary) -> String:
 
 static func _level(item: Dictionary) -> int:
 	var r := gear_base().get("level_map", {}).get("equip_level_range", [0, 90]) as Array
-	return clampi(int(str(item.get("meta", {}).get("req_level", "0"))), int(r[0]), int(r[1]))
+	var t := _req_text(item)
+	var lv := int(t) if t.is_valid_int() else maxi(gem_only_level(item), 0)
+	return clampi(lv, int(r[0]), int(r[1]))
+
+
+## 【T164·D190】换算比取表时装备等级夹到 CAP_LEVEL（80）：光耀度最高 100%，超 80 级的特例（81、99、100 级共 5 件）按 80 级算固定加值。
+## CAP_80 关掉回原样（读到 90 级）。只影响词缀／强化／镶嵌／宝珠的固定加值，不影响新底子（new_base 仍按原等级折算）
+static var CAP_80 := true
+const CAP_LEVEL := 80
 
 
 static func _ratio(level: int, i: int) -> float:
+	if CAP_80:
+		level = mini(level, CAP_LEVEL)
 	var row = gear_base().get("ratio", {}).get(str(level), {})
 	return float(row.get(RATIO_COLS[i], 1.0)) if row is Dictionary else 1.0
 
@@ -674,7 +731,94 @@ static func upgrade_fixed(item: Dictionary, cur: Array) -> Dictionary:
 	return {"fixed": out, "random": rnd}
 
 
+## ---- T164 光耀度（D186）：只读取值，不改上面任何算式 ----
+## 这件装备上宝石类固定值的「基础值」八项（镶嵌固定值＋符文之语＋宝珠固定加减，不含词缀、随机镶嵌、吸取），
+## 正是 _compute 里乘换算比的那三项；实际值＝换算比×基础值。不读表（关着、不适用）返回八个 0
+static func gem_base(item) -> Array:
+	var out := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	if not XTianqiBase.PHASE4 or not gem_applies(item):
+		return out
+	var src: Dictionary = item
+	if item.has(XAffixAbsorb.VIEW_FLAG):
+		var raw = XAffixAbsorb.real(item)
+		if raw is Dictionary and not is_same(raw, item):
+			src = raw
+	var orb := orb_fixed(src)
+	var qiyin := _qiyin_mult(src) != 0.0
+	var b := {} if qiyin else XGear.template(_kind(src), int(src.get("base", src.get("id", 0))))
+	if qiyin or b.is_empty():
+		return orb
+	var t := XGear.affix_template(src, b)
+	var tp: Array = t.get("params", b.get("params", [])) if not t.is_empty() else b.get("params", src.get("params", []))
+	var up := upgrade_fixed(src, tp)
+	var rw := runeword_params(src)
+	for i in 8:
+		out[i] = float(up.fixed[i]) + float(orb[i]) + (float(rw[i]) if rw.size() >= 8 else 0.0)
+	return out
+
+
+## 一组 <Augment Attach> 行（某类型下）的固定加减八项（同 orb_fixed 的认法；镶嵌预览用，宝珠还没镶进去）
+static func orb_lines_fixed(lines: Array) -> Array:
+	var out := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	if _orb_res.is_empty():
+		for n in XRaceBattle.BODY_NAMES:
+			_orb_res.append(RegEx.create_from_string("(?i)^" + n + "\\s*:\\s*([+-]\\d+)$"))
+	for line in lines:
+		for p in 8:
+			var m: RegExMatch = _orb_res[p].search(str(line).strip_edges())
+			if m:
+				out[p] += float(m.get_string(1))
+	return out
+
+
+## 某一个宝珠孔的固定加减（同 orb_fixed 的认法，只算这一孔）
+static func orb_slot_fixed(eq: Dictionary, slot: int) -> Array:
+	var out := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	var slots: Array = eq.get("augmentSlots", [])
+	var gem := XOrbs.gem_in_slot(eq, slot)
+	var type := str(slots[slot] if slot >= 0 and slot < slots.size() else "").to_upper().strip_edges()
+	if gem.is_empty() or type == "":
+		return out
+	if _orb_res.is_empty():
+		for n in XRaceBattle.BODY_NAMES:
+			_orb_res.append(RegEx.create_from_string("(?i)^" + n + "\\s*:\\s*([+-]\\d+)$"))
+	for line in XOrbs.parse(gem).attach.get(type, []):
+		for p in 8:
+			var m: RegExMatch = _orb_res[p].search(str(line).strip_edges())
+			if m:
+				out[p] += float(m.get_string(1))
+	return out
+
+
 static func _compute(item: Dictionary) -> Array:
+	var out := _compute_core(item)
+	var keep = _ov(item, "keep_params")
+	if keep is Array:   # D191：这几列保持原版实例值（巨灵大斧敏捷 −20）
+		var raw: Dictionary = item
+		if item.has(XAffixAbsorb.VIEW_FLAG):
+			var real = XAffixAbsorb.real(item)
+			if real is Dictionary and not is_same(real, item):
+				raw = real
+		var p: Array = raw.get("params", [])
+		for c in keep:
+			if int(c) >= 0 and int(c) < 8 and int(c) < p.size():
+				out[int(c)] = float(p[int(c)])
+	return out
+
+
+## D191 gem_only：自身八项原样，宝石固定加值（镶嵌、宝珠、符文之语）在原值里已按 1 倍算过，这里补到换算比倍：params＋(换算比−1)×宝石基础值
+static func _gem_only_params(item: Dictionary) -> Array:
+	var base: Array = item.get("params", [])
+	if base.size() < 8:
+		return base
+	var gb := gem_base(item)
+	var out := []
+	for i in 8:
+		out.append(roundf(float(base[i]) + (_ratio(_level(item), i) - 1.0) * float(gb[i])))
+	return out
+
+
+static func _compute_core(item: Dictionary) -> Array:
 	var src := item
 	var absorb := [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 	if item.has(XAffixAbsorb.VIEW_FLAG):  # 吸取视图：本体照算，视图多出来的（吸取的特效属性）当固定加值

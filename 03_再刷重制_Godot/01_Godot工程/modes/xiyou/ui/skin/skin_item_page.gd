@@ -241,6 +241,8 @@ func _sync_card(mode: String) -> void:
 		show_targets([])
 		return
 	var d := card_data(rec)
+	if mode in ["upgrade", "augment"]:
+		XTianqiGemPower.dress_card(sc._item, rec, mode, sc._aug_slot, d)  # T164 镶嵌预览（期四开着才有）
 	# 用完的提示（notifyBag）：光标没离开那一行就一直写在牌上（含动作菜单返回）
 	d.notice = str(sc._notice.text) if (not sc._notice.is_empty() and mode in ["list", "action"] and sc._index == int(sc._notice.get("index", -1))) else ""
 	var usable := mode in ["list", "action", "actor"] and not XItemMarks.is_gear(rec) and sc._usable(rec)

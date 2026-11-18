@@ -125,7 +125,7 @@ static func detail_rows(obj: Dictionary, width: float) -> Array:
 	if kind == "weapon" or kind == "armor":
 		for r in rows:
 			r[0] = gear_text(str(r[0]))
-	return panel_view(obj, rows, width)
+	return panel_view(obj, rows, width) + XTianqiGemPower.detail_rows(obj)  # T164 光耀度（期四开着才有行）
 
 
 static func _content(obj: Dictionary, kind := "", skill_copy := false, power := true, elements := true) -> Array:
@@ -1221,6 +1221,14 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 	_apply(note_width(obj, card_width))
 	_set_extras(obj if with_extras and visible else {})  # 附卡与主卡同一场景
 	list_costs = false
+
+
+## T164：在已显示的卡末尾追加几行（镶嵌预览），空数组不动
+func append_rows(extra: Array) -> void:
+	if extra.is_empty() or not visible:
+		return
+	rows = rows + extra
+	_apply(size.x)
 
 
 ## Sprite_ItemHelp.setText：假物品，内容只一行 [文字, ItemDescOtherSize 12, 白, 不分隔, 靠左]，品质 0、没有附卡

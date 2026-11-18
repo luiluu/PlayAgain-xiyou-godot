@@ -161,7 +161,7 @@ func _run() -> void:
 	# 客户端：假 fetcher
 	DirAccess.make_dir_recursive_absolute(DIR)
 	var saved := {"urls": XUpdateClient.channel_urls, "key": XUpdateClient.public_key, "stamp": XUpdateClient.stamp_path}
-	XUpdateClient.channel_urls = PackedStringArray(["https://a.invalid/godot/channel.json", "https://b.invalid/godot/channel.json", "https://c.invalid/godot/channel.json"])
+	XUpdateClient.channel_urls = PackedStringArray(["https://a.invalid/godot/channel.json", C.GH_PROXY + "https://raw.githubusercontent.com/b/godot/channel.json", "https://c.invalid/godot/channel.json"])
 	XUpdateClient.public_key = pub
 	XUpdateClient.stamp_path = DIR.path_join("check.json")
 	var client := XUpdateClient.instance(get_tree())
@@ -171,15 +171,49 @@ func _run() -> void:
 	var cur := XUpdateClient.current_code()
 	_check("测试里没装补丁，底包号＝运行号", base > 0 and base == cur)
 	_check("没查过没有红点", not client.has_update())
-	# a 源读不到；b 源旧一版；c 源新版带补丁
+	# T153：按顺序第一份能用的就用（a＝Gitee、b＝gh-proxy、c＝其后的镜像）
 	var mb := JSON.stringify(_manifest(cur + 1, base)).to_utf8_buffer()
 	var mc := JSON.stringify(_manifest(cur + 5, base, cur + 5)).to_utf8_buffer()
-	_served = {"https://b.invalid/godot/channel.json": mb, "https://b.invalid/godot/channel.sig": _sign(key, mb),
-		"https://c.invalid/godot/channel.json": mc, "https://c.invalid/godot/channel.sig": _sign(key, mc)}
+	var ua := "https://a.invalid/godot/channel"
+	var ub := C.GH_PROXY + "https://raw.githubusercontent.com/b/godot/channel"  # b＝gh-proxy 那一格（签名地址照样是同目录 .sig）
+	var uc := "https://c.invalid/godot/channel"
+	# ① Gitee 正常：只问 Gitee，后面两个源一次都不请求（哪怕后面版本更高）
+	_served = {ua + ".json": mb, ua + ".sig": _sign(key, mb), ub + ".json": mc, ub + ".sig": _sign(key, mc), uc + ".json": mc, uc + ".sig": _sign(key, mc)}
+	_asked.clear()
 	r = await client.check()
-	_check("一个源读不到不影响，取最高版本", r["state"] == C.PATCH and r["code"] == cur + 5)
-	_check("每个源都问了清单，读到清单的才问签名", _asked == ["https://a.invalid/godot/channel.json", "https://b.invalid/godot/channel.json",
-		"https://b.invalid/godot/channel.sig", "https://c.invalid/godot/channel.json", "https://c.invalid/godot/channel.sig"])
+	_check("Gitee 正常：直接用 Gitee 的清单", r["state"] == C.FULL and r["code"] == cur + 1)
+	_check("Gitee 正常：不再请求后面的镜像", _asked == [ua + ".json", ua + ".sig"])
+	# ② Gitee 签名坏：退到下一个，用到就停
+	_served = {ua + ".json": mc, ua + ".sig": _sign(key, mb), ub + ".json": mb, ub + ".sig": _sign(key, mb), uc + ".json": mc, uc + ".sig": _sign(key, mc)}
+	_asked.clear()
+	r = await client.check()
+	_check("Gitee 签名坏：不信 Gitee 的高版本，退到下一个镜像", r["state"] == C.FULL and r["code"] == cur + 1)
+	_check("Gitee 签名坏：问到下一个能用的就停", _asked == [ua + ".json", ua + ".sig", ub + ".json", ub + ".sig"])
+	# ②b Gitee 内容坏（验签过但格式不对）也算不能用
+	var junk := "{\"schema\": 1}".to_utf8_buffer()
+	_served = {ua + ".json": junk, ua + ".sig": _sign(key, junk), ub + ".json": mb, ub + ".sig": _sign(key, mb)}
+	r = await client.check()
+	_check("Gitee 清单格式坏：退到下一个", r["state"] == C.FULL and r["code"] == cur + 1)
+	# ②c Gitee 挂、gh-proxy 通：用 gh-proxy，不再问后面
+	_served = {ub + ".json": mc, ub + ".sig": _sign(key, mc), uc + ".json": mb, uc + ".sig": _sign(key, mb)}
+	_asked.clear()
+	r = await client.check()
+	_check("Gitee 挂、gh-proxy 通：用 gh-proxy 的清单", r["state"] == C.PATCH and r["code"] == cur + 5 and _asked == [ua + ".json", ub + ".json", ub + ".sig"])
+	# ③ 前两个都挂：读第三个
+	_served = {uc + ".json": mc, uc + ".sig": _sign(key, mc)}
+	_asked.clear()
+	r = await client.check()
+	_check("前两个都读不到：用第三个", r["state"] == C.PATCH and r["code"] == cur + 5)
+	_check("读不到清单的源不问签名", _asked == [ua + ".json", ub + ".json", uc + ".json", uc + ".sig"])
+	# 补丁地址：Gitee → gh-proxy → jsDelivr → GitHub raw → 其它（不管清单里怎么排），同类照原顺序
+	var mixed := _manifest(cur + 5, base, cur + 5)
+	var gp := C.GH_PROXY + "https://raw.githubusercontent.com/x.pck"
+	mixed["bases"][str(base)]["patch"]["urls"] = ["https://other.example/x.pck", "https://cdn.jsdelivr.net/x.pck", "https://raw.githubusercontent.com/x.pck", gp, "https://fastly.jsdelivr.net/x.pck", "https://gitee.com/k/raw/c/x.pck"]
+	var pu := C.evaluate(mixed, base, cur)
+	_check("补丁地址 Gitee、gh-proxy、jsDelivr、GitHub raw、其它的顺序", pu["state"] == C.PATCH and pu["patch"]["urls"] == ["https://gitee.com/k/raw/c/x.pck", gp, "https://cdn.jsdelivr.net/x.pck", "https://fastly.jsdelivr.net/x.pck", "https://raw.githubusercontent.com/x.pck", "https://other.example/x.pck"])
+	_check("清单本身的地址顺序不被改动", mixed["bases"][str(base)]["patch"]["urls"][0] == "https://other.example/x.pck")
+	_check("Gitee 子域名、主机名大小写都认", C.url_rank("https://Gitee.com/2") == 0 and C.url_rank("https://x.gitee.com/3") == 0 and C.url_rank("https://gitee.com.evil.io/4") == 4)
+	_check("正式清单源顺序：Gitee、gh-proxy、jsDelivr、GitHub raw", saved["urls"].size() == 4 and C.url_rank(saved["urls"][0]) == 0 and saved["urls"][1] == C.GH_PROXY + "https://raw.githubusercontent.com/luiluu/zaishuayiba-updates/main/godot/channel.json" and C.url_rank(saved["urls"][2]) == 2 and C.url_rank(saved["urls"][3]) == 3)
 	_check("查到新版后有红点", client.has_update())
 	_check("查到结果就记时间", FileAccess.file_exists(XUpdateClient.stamp_path))
 	_check("一天内不到期、满一天到期、时钟回拨算到期", not XUpdateClient.due(1000, 1000 + 86399) and XUpdateClient.due(1000, 1000 + 86400) and XUpdateClient.due(1000, 500) and XUpdateClient.due(0, 1000))

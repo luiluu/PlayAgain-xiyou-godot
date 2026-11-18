@@ -17,6 +17,8 @@ extends RefCounted
 ## 公钥写在这里；私钥只在 Kyo 的 Mac 上仓库之外，不进任何仓库。验签不过的清单一律当读不到。
 
 const SCHEMA := 1
+## 第三方 GitHub 加速代理（T153，Kyo 11-17）：在 GitHub 地址前加这个前缀。只当镜像（验签、SHA-256 照旧）。
+const GH_PROXY := "https://gh-proxy.com/"
 const PUBLIC_KEY := """-----BEGIN PUBLIC KEY-----
 MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAv9EIRElfaFHqp5aAlHyI
 wzU/7YoiD0E7ftj4WVS5nufJkJFOKhnzT2596xhUaNW2m2j2gA7RJP6FFQtVzr3F
@@ -163,8 +165,33 @@ static func evaluate(manifest: Dictionary, base_code: int, current_code: int) ->
 	if out["forced"] and int(p["code"]) < out["min_playable"]:
 		return out  # 强制时补丁不够新（装完重启还是被拦）：当整包，只给手动下载（gpt 核查 P2-1）
 	out["state"] = PATCH
-	out["patch"] = {"code": int(p["code"]), "size": int(p["size"]), "sha256": str(p["sha256"]).to_lower(), "urls": p["urls"].duplicate()}
+	out["patch"] = {"code": int(p["code"]), "size": int(p["size"]), "sha256": str(p["sha256"]).to_lower(), "urls": order_urls(p["urls"])}
 	return out
+
+
+## 补丁下载地址按国内能用的先后排（T153）：Gitee → gh-proxy → jsDelivr → GitHub raw → 其它；同一类保持清单里的先后。
+## 发布补丁.py 本来就这么写，这里再兜一次底，不靠清单的顺序（旧清单也照这个顺序试）。镜像只传字节，下完照旧比字节数和 SHA-256。
+static func order_urls(urls: Array) -> Array:
+	var buckets: Array = [[], [], [], [], []]
+	for u in urls:
+		buckets[url_rank(str(u))].append(u)
+	var out: Array = []
+	for b in buckets:
+		out.append_array(b)
+	return out
+
+
+static func url_rank(u: String) -> int:
+	if GH_PROXY != "" and u.begins_with(GH_PROXY):
+		return 1
+	var host := u.trim_prefix("https://").trim_prefix("http://").get_slice("/", 0).get_slice(":", 0).to_lower()
+	if host == "gitee.com" or host.ends_with(".gitee.com"):
+		return 0
+	if host.ends_with("jsdelivr.net"):
+		return 2
+	if host == "raw.githubusercontent.com":
+		return 3
+	return 4
 
 
 ## 补丁条目是否完整：编号、字节数为正，SHA-256 是 64 位十六进制，至少一个 https 地址。

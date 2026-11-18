@@ -1,0 +1,347 @@
+[
+  {
+    "direction": "down",
+    "frame": 0,
+    "template_bbox": [
+      5,
+      3,
+      42,
+      48
+    ],
+    "raw_bbox": [
+      90,
+      35,
+      627,
+      721
+    ],
+    "output_bbox": [
+      6,
+      3,
+      41,
+      48
+    ],
+    "baseline": 47
+  },
+  {
+    "direction": "down",
+    "frame": 1,
+    "template_bbox": [
+      5,
+      2,
+      42,
+      48
+    ],
+    "raw_bbox": [
+      91,
+      35,
+      627,
+      721
+    ],
+    "output_bbox": [
+      6,
+      2,
+      42,
+      48
+    ],
+    "baseline": 47
+  },
+  {
+    "direction": "down",
+    "frame": 2,
+    "template_bbox": [
+      5,
+      3,
+      42,
+      48
+    ],
+    "raw_bbox": [
+      92,
+      35,
+      628,
+      721
+    ],
+    "output_bbox": [
+      6,
+      3,
+      41,
+      48
+    ],
+    "baseline": 47
+  },
+  {
+    "direction": "left",
+    "frame": 0,
+    "template_bbox": [
+      8,
+      3,
+      40,
+      48
+    ],
+    "raw_bbox": [
+      100,
+      42,
+      609,
+      724
+    ],
+    "output_bbox": [
+      7,
+      3,
+      41,
+      48
+    ],
+    "baseline": 47
+  },
+  {
+    "direction": "left",
+    "frame": 1,
+    "template_bbox": [
+      8,
+      2,
+      41,
+      48
+    ],
+    "raw_bbox": [
+      100,
+      42,
+      609,
+      724
+    ],
+    "output_bbox": [
+      8,
+      2,
+      42,
+      48
+    ],
+    "baseline": 47
+  },
+  {
+    "direction": "left",
+    "frame": 2,
+    "template_bbox": [
+      8,
+      3,
+      42,
+      48
+    ],
+    "raw_bbox": [
+      100,
+      42,
+      609,
+      724
+    ],
+    "output_bbox": [
+      8,
+      3,
+      42,
+      48
+    ],
+    "baseline": 47
+  },
+  {
+    "direction": "right",
+    "frame": 0,
+    "template_bbox": [
+      7,
+      3,
+      39,
+      48
+    ],
+    "raw_bbox": [
+      94,
+      31,
+      566,
+      708
+    ],
+    "output_bbox": [
+      8,
+      3,
+      39,
+      48
+    ],
+    "baseline": 47
+  },
+  {
+    "direction": "right",
+    "frame": 1,
+    "template_bbox": [
+      6,
+      2,
+      39,
+      48
+    ],
+    "raw_bbox": [
+      94,
+      31,
+      566,
+      707
+    ],
+    "output_bbox": [
+      6,
+      2,
+      38,
+      48
+    ],
+    "baseline": 47
+  },
+  {
+    "direction": "right",
+    "frame": 2,
+    "template_bbox": [
+      5,
+      3,
+      39,
+      48
+    ],
+    "raw_bbox": [
+      94,
+      31,
+      566,
+      707
+    ],
+    "output_bbox": [
+      6,
+      3,
+      37,
+      48
+    ],
+    "baseline": 47
+  },
+  {
+    "direction": "up",
+    "frame": 0,
+    "template_bbox": [
+      4,
+      3,
+      42,
+      48
+    ],
+    "raw_bbox": [
+      92,
+      31,
+      610,
+      716
+    ],
+    "output_bbox": [
+      6,
+      3,
+      40,
+      48
+    ],
+    "baseline": 47
+  },
+  {
+    "direction": "up",
+    "frame": 1,
+    "template_bbox": [
+      5,
+      2,
+      42,
+      48
+    ],
+    "raw_bbox": [
+      92,
+      31,
+      610,
+      716
+    ],
+    "output_bbox": [
+      6,
+      2,
+      41,
+      48
+    ],
+    "baseline": 47
+  },
+  {
+    "direction": "up",
+    "frame": 2,
+    "template_bbox": [
+      5,
+      3,
+      43,
+      48
+    ],
+    "raw_bbox": [
+      92,
+      31,
+      610,
+      716
+    ],
+    "output_bbox": [
+      7,
+      3,
+      41,
+      48
+    ],
+    "baseline": 47
+  },
+  {
+    "direction": "wait",
+    "frame": 0,
+    "template_bbox": [
+      9,
+      4,
+      53,
+      64
+    ],
+    "raw_bbox": [
+      97,
+      34,
+      602,
+      705
+    ],
+    "output_bbox": [
+      8,
+      4,
+      53,
+      64
+    ],
+    "baseline": 63
+  },
+  {
+    "direction": "wait",
+    "frame": 1,
+    "template_bbox": [
+      9,
+      4,
+      53,
+      64
+    ],
+    "raw_bbox": [
+      99,
+      39,
+      603,
+      705
+    ],
+    "output_bbox": [
+      8,
+      4,
+      53,
+      64
+    ],
+    "baseline": 63
+  },
+  {
+    "direction": "wait",
+    "frame": 2,
+    "template_bbox": [
+      9,
+      4,
+      53,
+      64
+    ],
+    "raw_bbox": [
+      99,
+      36,
+      605,
+      705
+    ],
+    "output_bbox": [
+      8,
+      4,
+      53,
+      64
+    ],
+    "baseline": 63
+  }
+]

@@ -98,6 +98,9 @@ class StageTests(Base):
         github_pkg = sh('git', 'rev-parse', 'HEAD~1', cwd=self.repos[1])
         self.assertEqual(p['urls'][0], f'https://gitee.com/someone/some-repo/raw/{gitee_pkg}/godot/patch_453_470.pck')
         self.assertIn(f'https://cdn.jsdelivr.net/gh/someone/updates@{github_pkg}/godot/patch_453_470.pck', p['urls'])
+        # T153：gh-proxy（GitHub raw 加前缀）排第二，在 jsDelivr 前；置空 GH_PROXY 就不写
+        self.assertEqual(p['urls'][1], f'https://gh-proxy.com/https://raw.githubusercontent.com/someone/updates/{github_pkg}/godot/patch_453_470.pck')
+        self.assertTrue(p['urls'][2].startswith('https://cdn.jsdelivr.net/'))
         self.assertIn(f'https://raw.githubusercontent.com/someone/updates/{github_pkg}/godot/patch_453_470.pck', p['urls'])
         self.assertTrue(all(u.startswith('https://') and '/main/' not in u and '@main' not in u for u in p['urls']))
         # 两个仓库里的清单逐字节相同，签名用公钥验得过
