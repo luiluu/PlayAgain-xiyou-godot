@@ -37,7 +37,7 @@ const STAR_R_B := 5.4
 const SEAL_R_B := 9.2
 const CROSS_IN_TIME := 0.34
 static var SEL_MORPH_B := true
-## T190：7 项起指令环重排防重叠（可回退）、相邻项最小竖向间距（选中字 26 号放大后仍不碰）
+## T190（O-583）：7 项起指令环重排防重叠（可回退）、相邻项最小竖向间距（选中字 26 号放大后仍不碰）
 static var SEVEN_FIX := true
 const MIN_GAP_B := 34.0
 const STAR_PINCH_B := 0.45
