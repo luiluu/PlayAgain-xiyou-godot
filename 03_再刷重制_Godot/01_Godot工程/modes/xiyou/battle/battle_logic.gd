@@ -1178,8 +1178,9 @@ func tianqi_restore() -> Array:
 	var snap := XTianqiBrand.take_snap(self)
 	if snap.is_empty():
 		return []
-	if not XTianqiBrand.same_people(snap, state.battle_slots):
-		push_warning("XBattleLogic.tianqi_restore: 留底和出战栏不是同一批人，不还原 %s / %s" % [snap, state.battle_slots])
+	var now := state.battle_slots.duplicate()
+	if not XTianqiBrand.same_people(snap, now):
+		push_warning("XBattleLogic.tianqi_restore: 留底和出战栏不是同一批人，不还原 %s / %s" % [snap, now])
 		return []
 	_pre_restore_actors = actors.duplicate()
 	var pairs := []
@@ -1197,7 +1198,7 @@ func tianqi_restore() -> Array:
 		actors[j] = nw
 		pairs.append([old, nw])
 	for i in snap.size():
-		state.battle_slots[i] = int(snap[i])
+		state.set_battle_slot(i, int(snap[i]))  # 出战栏写入都走 set_battle_slot（同一批人，全弱者资格记的还是这 5 个）
 	return pairs
 
 

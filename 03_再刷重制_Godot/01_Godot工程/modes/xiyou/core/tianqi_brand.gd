@@ -975,11 +975,12 @@ static func sweep(s) -> void:
 		if st != s:
 			keep.append(x)
 			continue
-		if same_people(x.snap, s.battle_slots):
+		var now: Array = s.battle_slots.duplicate()
+		if same_people(x.snap, now):
 			for i in (x.snap as Array).size():
-				s.battle_slots[i] = int(x.snap[i])
+				s.set_battle_slot(i, int(x.snap[i]))
 		else:
-			push_warning("XTianqiBrand.sweep: 留底和出战栏不是同一批人，不还原 %s / %s" % [x.snap, s.battle_slots])
+			push_warning("XTianqiBrand.sweep: 留底和出战栏不是同一批人，不还原 %s / %s" % [x.snap, now])
 	_holds = keep
 
 
