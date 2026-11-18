@@ -1,0 +1,25 @@
+{
+  "original_bbox": [
+    61,
+    89,
+    260,
+    217
+  ],
+  "generated_binary_bbox": [
+    266,
+    280,
+    1041,
+    794
+  ],
+  "uniform_scale": 0.2567741935483871,
+  "trial_bbox": [
+    61,
+    85,
+    260,
+    217
+  ],
+  "bottom_anchor_original": 216,
+  "bottom_anchor_trial": 216,
+  "bbox_pass": false,
+  "note": "Uniform width alignment gives height 132 vs original 128, exceeds 2px tolerance. No silhouette warping or filling performed."
+}
