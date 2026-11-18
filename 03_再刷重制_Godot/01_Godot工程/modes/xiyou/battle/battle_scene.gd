@@ -1553,13 +1553,17 @@ func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> voi
 ## ---- T208 大型变身行动时指令菜单让开身体 ----
 ## Kyo 11-18「战斗中指令栏会挡住大型精灵」→「指令栏按A」：米拉黑龙、渡鸦神话等按 BIG_FORM_H 放大的形态行动时，
 ## 指令环（连同上方「某某的行动」）和战技／物品列表若压到它的身体可见框：
-## ① 外侧：整块往左挪到右边离身体 BIG_ROOM_GAP（上下不动；压到左下行动顺序条再抬到条上方）；
+## ① 外侧：整块往左挪到右边离身体 BIG_ROOM_GAP（上下不动；压到左下行动顺序条再抬到条上方；指令环压首领信息区就往下挪）；
+##    指令环见 RING_BESIDE（R2：压队友也留在身边，左边不行试右边）；
 ##    列表另让开首领信息区（顶边压到它下沿以下，放不下就减行数滚动）；挪完出屏、压身体、行动顺序条或首领信息区，
 ##    或（只看指令环；列表照原摆法本来就盖前排）压到别的队友、队伍面板，就改 ②；
 ## ② 画面下方中间：贴画面底、横向居中，压到行动顺序条就往右让开（再压身体就贴身体左边、抬到条上方）；②也不行就按 ① 的位置。
 ## 普通大小角色（不压身体）一步也不挪，位置同 T208 前逐像素一样。只是画面。
 ## 回退：BIG_MAKE_ROOM = false（菜单照旧贴着角色摆，会压龙身）。
 static var BIG_MAKE_ROOM := true
+## R2（Kyo 11-18「指令环位置不行。我还是要在精灵身边。哪怕挡一下别的角色」）：指令环只躲自己的身体——贴身体左边，
+## 左边出屏／压首领信息区挪不开时贴右边；压前排队友不再算放不下，两侧都不行才用 ② 下方中间。回退：false＝R1（压队友就落下方中间）
+static var RING_BESIDE := true
 const BIG_ROOM_GAP := 8.0
 ## 指令环选中项放大（1.2 倍）、弦星描边的余量
 const BIG_ROOM_PAD := 6.0
@@ -1604,21 +1608,34 @@ func make_room_for_big(w: Control, a: XActor) -> void:
 	if _room_ok(w, a, body, true):
 		return
 	var outer := w.position
+	if w is XSkinBattleRing and RING_BESIDE:
+		w.position = keep
+		_beside_body(w, body, true)  # R2：左边放不下再贴身体右边
+		if _room_ok(w, a, body, true):
+			return
 	w.position = keep
 	_place_bottom_center(w, body)
 	if _room_ok(w, a, body, false):
 		return
-	w.position = outer  # 两处都不行（极少：画面太窄）：至少不压身体
+	w.position = outer  # 都不行（极少：画面太窄）：至少不压身体
 
 
 ## 整块往左挪到右边离身体 BIG_ROOM_GAP；压到行动顺序条就抬到条上方。
 ## 列表（协调预筛 P1-1：挪到画面中间后表头被首领信息区的「详情」胶囊盖住）另要让开首领信息区：顶边压到它下沿以下，
 ## 底边再碰行动顺序条（或画面底）就减行数滚动（XSkinBattleSkillList.fit_rows）
-func _beside_body(w: Control, body: Rect2) -> void:
-	w.position.x -= menu_rect(w).end.x - (body.position.x - BIG_ROOM_GAP)
+## R2 指令环（right＝贴身体右边）：压到首领信息区就往下挪到它下沿以下（再碰行动顺序条、出屏由 _room_ok 判不行）
+func _beside_body(w: Control, body: Rect2, right := false) -> void:
+	if right:
+		w.position.x += body.end.x + BIG_ROOM_GAP - menu_rect(w).position.x
+	else:
+		w.position.x -= menu_rect(w).end.x - (body.position.x - BIG_ROOM_GAP)
 	var otb := XSkinOTBBar.occupied_rect()
 	if menu_rect(w).intersects(otb):
 		w.position.y -= menu_rect(w).end.y - (otb.position.y - XSkinBattleSkillList.OTB_GAP)
+	if w is XSkinBattleRing and RING_BESIDE:
+		var z := _boss_zone()
+		if z.has_area() and menu_rect(w).intersects(z):
+			w.position.y += z.end.y + BIG_ROOM_GAP - menu_rect(w).position.y
 	if w is XSkinBattleSkillList:
 		var zone := _boss_zone()
 		if zone.has_area() and menu_rect(w).intersects(zone):
@@ -1664,6 +1681,8 @@ func _room_ok(w: Control, a: XActor, body: Rect2, outer: bool) -> bool:
 	var pr := party_rect()
 	if pr.has_area() and m.intersects(Rect2(pr.position - _origin, pr.size)):
 		return false
+	if RING_BESIDE:
+		return true  # R2（Kyo 11-18「我还是要在精灵身边。哪怕挡一下别的角色」）：压队友可以
 	for o in logic.actors:
 		if o == a or not sprites.has(o) or not (sprites[o] as XBattlerSprite).visible:
 			continue

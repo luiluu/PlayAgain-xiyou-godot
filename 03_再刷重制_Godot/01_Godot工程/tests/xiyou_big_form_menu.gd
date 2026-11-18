@@ -1,7 +1,8 @@
 extends "res://tests/xiyou_battle_actor_size.gd"
 ## 【cc·天启篇】T208：大型变身（米拉黑龙、渡鸦神话，BIG_FORM_H＝200）行动时指令环（连同「某某的行动」）与战技／物品列表让开身体（XBattleScene.make_room_for_big）。
 ## 核：① 167／168 行动时指令环、列表都不压其身体可见框，不出屏、不压行动顺序条；外侧压到队友时改放画面下方中间；
-##     只有两人（外侧放得下）时走外侧：环在身体左边、上下不动，不压队友；
+##     R2（Kyo 11-18）：指令环贴着身体左边（或右边），压前排队友也留在身边、不落下方中间（RING_BESIDE＝false 回 R1 时落下方中间）；
+##     只有两人时同样贴身体左边、不压队友；
 ##   ② 普通大小角色（狗逍遥、里德）指令环、列表位置与开关关（BIG_MAKE_ROOM＝false）逐像素一样；开关关时龙身确实被压（断言咬得住）；
 ##   ③ 头顶宝石：指令环开着淡出、关掉淡入（原逻辑）；T197 小A P2-2：set_target(null) 等淡出的 HIDE_DELAY 里不淡入、消息窗开着当作挡住，
 ##     两个开关关掉时确实会淡入（咬得住）。
@@ -140,13 +141,19 @@ func _four(troop: int) -> void:
 		if id in BIG:
 			_check(tag + "_old_hits_body", old_m.intersects(body) and old_list_m.intersects(body), [old_m, old_list_m, body])
 			_clear(tag + "_ring", b, ring, b.big_body_rect(a))
-			var outer := absf(m.end.x - (body.position.x - XBattleScene.BIG_ROOM_GAP)) <= 0.5
-			# 外侧（右边贴身体左边）时不压队友、不压首领信息区；不然就是画面下方中间（底边贴画面底）
-			if outer:
-				_check(tag + "_ring_outer_no_teammate", _teammates_hit(b, a, m).is_empty(), _teammates_hit(b, a, m))
-			else:
-				_check(tag + "_ring_bottom", absf(m.end.y - (XBattleScene.BOX.y - XSkinBattleRing.MARGIN)) <= 0.5, m)
-			notes.append({"troop": tname, "id": id, "ring": "外侧" if outer else "下方中间", "menu": [m.position, m.size], "body": [body.position, body.size]})
+			# R2（Kyo 11-18「我还是要在精灵身边。哪怕挡一下别的角色」）：贴着身体左边或右边（压队友可以），不压首领信息区，不落到下方中间
+			var left := absf(m.end.x - (body.position.x - XBattleScene.BIG_ROOM_GAP)) <= 0.5
+			var right := absf(m.position.x - (body.end.x + XBattleScene.BIG_ROOM_GAP)) <= 0.5
+			_check(tag + "_ring_beside_body", left or right, [m, body])
+			var zone := b._boss_zone()
+			_check(tag + "_ring_clear_boss_info", not zone.has_area() or not m.intersects(zone), [m, zone])
+			notes.append({"troop": tname, "id": id, "ring": "左侧" if left else ("右侧" if right else "其他"), "menu": [m.position, m.size], "body": [body.position, body.size], "teammate_hit": _teammates_hit(b, a, m)})
+			# 回退 RING_BESIDE＝false（R1）：4 人满队压前排就落到下方中间（开关咬得住）
+			XBattleScene.RING_BESIDE = false
+			var r1 := b.menu_rect(_ring_for(b, a))
+			XBattleScene.RING_BESIDE = true
+			_check(tag + "_r1_rollback_bottom", absf(r1.end.y - (XBattleScene.BOX.y - XSkinBattleRing.MARGIN)) <= 0.5, r1)
+			ring = _ring_for(b, a)
 		else:
 			_check(tag + "_ring_same", ring.position == old_pos, [ring.position, old_pos])
 		var lw := _list_for(b, a)
@@ -268,6 +275,7 @@ func _shot_plain(name: String) -> void:
 
 func _finish() -> void:
 	XBattleScene.BIG_MAKE_ROOM = true
+	XBattleScene.RING_BESIDE = true
 	XTurnMarker.HOLD_WHILE_HIDING = true
 	XTurnMarker.HIDE_ON_MESSAGE = true
 	for n in notes:
