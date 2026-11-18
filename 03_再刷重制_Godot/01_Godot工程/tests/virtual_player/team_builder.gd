@@ -5,10 +5,10 @@ extends RefCounted
 ##   TB.random_teams("A", 8, seed, "jianxian")   # 合理随机队（量中位）：模板内、合法档位内随机抽
 ##   TB.strongest("A", "jianxian")               # 最强队（量上限）：每个职责位挑同档最强的人
 ##   TB.strongest_all("jianxian")                # {模板: 队}，调用方四个都量、取表现最好的那支
-##   TB.report("jianxian")                       # 缺人／缺职责的清单（不静默补）
+##   TB.report("jianxian")                       # 缺人／缺职责的清单（不静默补），含并入输出池的「均衡」名单
 ##
 ## 职责模板（Kyo 11-18）：A 2输出＋1坦克＋1辅助；B 1输出＋1坦克＋2辅助；C 1输出＋3辅助；D 2输出＋2辅助。
-## 职责读 base_line.json 的 actors[id].role（输出／坦克／辅助／均衡）。「均衡」不在任何模板里，一律不入队（report 里列出人数）。
+## 职责读 base_line.json 的 actors[id].role（输出／坦克／辅助／均衡）。「均衡」先并入输出池（协调 11-18；要 Kyo 定「均衡算哪个职责」，report 列名单）。
 ## 队伍是上场 4 人，顺序＝模板里的职责顺序（输出、坦克、辅助）；助力位（第 5 格）一律空着，同稿第九节「助力位空着」。
 ## 档位规则（balance_table.json difficulties[].roster，游戏里的 XTianqi.lineup_ok 是 5 人整栏校验）：
 ##   - 候选池＝本档 pool 里的档位（艰险只有弱者、强者；九死起有超强者），停用的角色不要（XTianqi.pool 已滤），上不了场的不要；
@@ -35,8 +35,17 @@ static var _bulk := {}
 static var _playable := {}
 
 
-## id → 职责（base_line.json）
+## 「均衡」职责并入输出池（协调 11-18 定，待 Kyo 定「均衡算哪个职责」）：BALANCED_AS_OUTPUT 关掉就回到「均衡不入队」
+static var BALANCED_AS_OUTPUT := true
+
+
+## id → 职责（base_line.json；均衡按 BALANCED_AS_OUTPUT 并入输出）
 static func role_of(id: int) -> String:
+	var r := raw_role(id)
+	return "输出" if r == "均衡" and BALANCED_AS_OUTPUT else r
+
+
+static func raw_role(id: int) -> String:
 	return str(XTianqiBase.line_data().get("actors", {}).get(str(id), {}).get("role", ""))
 
 
@@ -219,15 +228,16 @@ static func report(difficulty: String) -> Dictionary:
 			var t := XTianqiSkills.tier_of(int(id), true)
 			counts[role][t] = int(counts[role].get(t, 0)) + 1
 	var pool: Dictionary = XTianqi.pool(difficulty)
-	var balanced := 0
+	var balanced := []
 	var unrole := []
 	for tier in pool:
 		for id in pool[tier]:
-			var r := role_of(int(id))
+			var r := raw_role(int(id))
 			if r == "均衡":
-				balanced += 1
+				balanced.append(int(id))
 			elif not ROLE_ORDER.has(r):
 				unrole.append(int(id))
+	balanced.sort()
 	var short := []
 	for t in TEMPLATES:
 		for role in TEMPLATES[t]:
@@ -240,8 +250,8 @@ static func report(difficulty: String) -> Dictionary:
 		if not _peaks().has(str(id)):
 			no_peak.append(int(id))
 	var notes := []
-	if balanced > 0:
-		notes.append("%d 人职责是「均衡」，不在任何模板里，没入队" % balanced)
+	if not balanced.is_empty():
+		notes.append("%d 人职责是「均衡」，%s：%s（要 Kyo 定：均衡算哪个职责）" % [balanced.size(), "先并入输出池" if BALANCED_AS_OUTPUT else "不入队", str(balanced)])
 	if not unrole.is_empty():
 		notes.append("职责表里没有这些角色（候选池里有）：%s" % str(unrole))
 	if not no_peak.is_empty():

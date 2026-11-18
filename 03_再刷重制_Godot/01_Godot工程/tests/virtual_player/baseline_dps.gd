@@ -48,10 +48,12 @@ var resist := -1.0   # --resist=N：守层者伤害抵抗换成 N（0＝去掉�
 var duel := false   # --duel：不补血、打到分出胜负或 turns 回合，量真实回合数（去全队 ×6 开关对照，cc/tianqi-no-x6）
 var max_quality := 3   # UnifiedQuality：0、1 普通，2 优秀，3 精良，4 史诗
 var skipped_ids: Array = []
+## T162（Kyo 11-18）：--shape=tb 用配队器（tests/virtual_player/team_builder.gd）的职责模板 A～D 随机队，--teams 是每个模板几队。
 ## T162（协调 11-18）：--shape=3s1w（3 强＋1 弱）／2s2w（2 强＋2 弱，艰险合法最大强者数）：队伍按层等级、按掉落表掷 sets 套取中位的装备（c_tier.floor_gears）、
 ## 本人法宝、输出职责烙印 75%、天平酒——和丙档、U 同口径；缺省 4w＝原来的弱者 4 人白装基准队。
 const CT := preload("res://tests/virtual_player/c_tier.gd")
 var shape := "4w"
+var templates: Array = ["A", "B", "C", "D"]   # --shape=tb 时的职责模板
 var sets := 20
 var battles := 10
 var brand_pct := 75.0
@@ -107,6 +109,8 @@ func _ready() -> void:
 			seed = int(a.substr(7))
 		elif a.begins_with("--shape="):
 			shape = a.substr(8)
+		elif a.begins_with("--templates="):
+			templates = Array(a.substr(12).split(","))
 		elif a.begins_with("--sets="):
 			sets = int(a.substr(7))
 		elif a.begins_with("--battles="):
@@ -150,6 +154,11 @@ static func own_fabao(actor_id: int) -> int:
 
 
 func _teams() -> Array:
+	if shape == "tb":   # 配队器：每个职责模板 teams 支合理随机队（缺省 A～D 四个模板），汇总取各队中位
+		var out := []
+		for tpl in templates:
+			out.append_array(CT.TB.random_teams(tpl, teams, seed, difficulty))
+		return out
 	if shape != "4w":
 		var sn := int(shape.substr(0, 1))
 		return CT.pick_teams(teams, seed, sn, 4 - sn)

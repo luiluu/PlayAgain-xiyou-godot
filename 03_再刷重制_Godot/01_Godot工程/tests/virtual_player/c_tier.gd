@@ -3,7 +3,7 @@ extends Node
 ## 艰险第 36 层的常见队（3 强者＋1 弱者），自然掉落装备取中位（掉落表掷 100 套取中位那套），对木桩量每回合全队伤害和常规一下。
 ## 不是专项（不在 tests/ 顶层，检查.sh 不跑）；专项在 tests/xiyou_tianqi_c_tier.gd（只测纯函数，不量数）。单独跑：
 ##   godot --headless --audio-driver Dummy --path 01_Godot工程 -s res://tests/test_main_loop.gd res://tests/virtual_player/c_tier.tscn -- \
-##     [--teams=8] [--sets=100] [--battles=10] [--turns=5] [--foes=1,3] [--seed=20261118] [--out=<json>] [--rebuild] [--gear-file=<res 路径>] [--no-wine]
+##     [--teams=4（每个模板）] [--templates=A,B,C,D] [--shape=old] [--sets=100] [--battles=10] [--turns=5] [--foes=1,3] [--seed=20261118] [--out=<json>] [--rebuild] [--gear-file=<res 路径>] [--no-wine]
 ##
 ## 口径（稿第九节第 1 条，能做到的）：
 ## - 队伍：艰险候选池里随机抽 3 强者＋1 弱者（种子定住），共 teams 队；每队各自造一套「中位装备」，最后取各队的中位。
@@ -17,13 +17,16 @@ extends Node
 ##   木桩的攻击压到 1，只量我方每次行动让木桩掉的血。--foes=1,3：单敌、多敌（缺省各量一次，多敌＝3 个木桩）。
 
 const K := preload("res://tests/virtual_player/k_calibrate.gd")
+const TB := preload("res://tests/virtual_player/team_builder.gd")
 const DIFFICULTY := "jianxian"
 const FLOOR := 36
 const LEVEL := 81
 const DEFAULT_GEAR_FILE := "res://tests/virtual_player/c_tier_gear.json"
 const NO_CRIT_TRAIT := {"code": 22, "dataId": 3, "value": 10.0}  # 暴击回避 +1000%：(暴击率)×(1－回避) ≤ 0
 
-var teams_n := 8
+var teams_n := 4
+var templates: Array = ["A", "B", "C", "D"]
+var shape_old := false
 var sets_n := 100
 var battles := 10
 var turns := 5
@@ -40,6 +43,10 @@ func _ready() -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--teams="):
 			teams_n = int(a.substr(8))
+		elif a.begins_with("--templates="):
+			templates = Array(a.substr(12).split(","))
+		elif a == "--shape=old":
+			shape_old = true
 		elif a.begins_with("--sets="):
 			sets_n = int(a.substr(7))
 		elif a.begins_with("--battles="):
@@ -405,11 +412,23 @@ func _run() -> void:
 		var p = JSON.parse_string(FileAccess.get_file_as_string(gear_file))
 		if p is Dictionary:
 			cache = p
-	var list := pick_teams(teams_n, seed_v)
+	# T162（Kyo 11-18）：队伍用配队器——每个职责模板 teams_n 支合理随机队（量中位）＋每个模板一支最强队（量上限）。--shape=old 回到原来的随机 3 强＋1 弱
+	var list := []
+	if shape_old:
+		for team in pick_teams(teams_n, seed_v):
+			list.append({"label": "old", "kind": "random", "team": team})
+	else:
+		for tpl in templates:
+			for team in TB.random_teams(tpl, teams_n, seed_v, DIFFICULTY):
+				list.append({"label": tpl, "kind": "random", "team": team})
+			var best := TB.strongest(tpl, DIFFICULTY)
+			if not best.is_empty():
+				list.append({"label": tpl, "kind": "strongest", "team": best})
 	var rows := []
-	for team in list:
+	for item in list:
+		var team: Array = item.team
 		var rec := _team_gear(team, cache)
-		var row := {"team": team, "gear_score": float(rec.score), "foes": {}}
+		var row := {"label": item.label, "kind": item.kind, "team": team, "gear_score": float(rec.score), "foes": {}}
 		for foes in foes_list:
 			var normal := _fight(_state(team, rec.gear), int(foes), false)
 			var immune := _fight(_state(team, rec.gear), int(foes), true)
@@ -420,11 +439,23 @@ func _run() -> void:
 	var summary := {}
 	for foes in foes_list:
 		var k := str(foes)
-		summary[k] = {"dmg": median(rows.map(func(r): return float(r.foes[k].dmg))), "common_hit": median(rows.map(func(r): return float(r.foes[k].common_hit))),
-			"dmg_no_crit": median(rows.map(func(r): return float(r.foes[k].dmg_no_crit))), "common_hit_no_crit": median(rows.map(func(r): return float(r.foes[k].common_hit_no_crit)))}
+		var groups := {"random_all": rows.filter(func(r): return r.kind == "random")}
+		for tpl in templates:
+			groups["random_" + tpl] = rows.filter(func(r): return r.kind == "random" and r.label == tpl)
+			groups["strongest_" + tpl] = rows.filter(func(r): return r.kind == "strongest" and r.label == tpl)
+		groups["strongest_all"] = rows.filter(func(r): return r.kind == "strongest")
+		summary[k] = {}
+		for g in groups:
+			var rs: Array = groups[g]
+			if rs.is_empty():
+				continue
+			var pick_max: bool = str(g).begins_with("strongest_all")
+			var f := func(key): return rs.map(func(r): return float(r.foes[k][key]))
+			summary[k][g] = {"n": rs.size(), "dmg": (f.call("dmg").max() if pick_max else median(f.call("dmg"))), "common_hit": median(f.call("common_hit")),
+				"dmg_no_crit": (f.call("dmg_no_crit").max() if pick_max else median(f.call("dmg_no_crit"))), "common_hit_no_crit": median(f.call("common_hit_no_crit"))}
 		print("C_SUMMARY foes=%s %s" % [k, JSON.stringify(summary[k])])
 	var report := {"difficulty": DIFFICULTY, "floor": FLOOR, "level": LEVEL, "wine": wine, "turns": turns, "seed": seed_v, "teams": rows.size(),
-		"k": float(XTianqiBalance.data().get("combat_rules", {}).get("base_damage", 1.0)), "summary": summary, "rows": rows,
+		"k": float(XTianqiBalance.data().get("combat_rules", {}).get("base_damage", 1.0)), "summary": summary, "rows": rows, "team_report": TB.report(DIFFICULTY),
 		"brand_pct": brand_pct, "missing": ["词条", "进阶", "熟练度", "号卷／秘籍／黑印"]}
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
