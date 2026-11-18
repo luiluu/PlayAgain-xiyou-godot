@@ -651,6 +651,15 @@ func remove_state(id: int) -> void:
 	_state_mark_dirty(id)
 	XAlienBattle.after_removal(self, id, _leaving_state)
 
+## Game_BattlerBase.stateMotionIndex：按优先级第一个 motion 非 0 的状态（1 abnormal、2 sleep、3 dead；T210 战斗待机动作用）
+func state_motion_index() -> int:
+	for st in states():
+		var m := int(st.get("motion", 0))
+		if m != 0:
+			return m
+	return 0
+
+
 func _sort_states() -> void:
 	# MV：按优先级降序，同优先级按 ID 升序
 	state_ids.sort_custom(func(a, b):

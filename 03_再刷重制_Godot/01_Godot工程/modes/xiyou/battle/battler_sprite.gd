@@ -551,21 +551,33 @@ func _input_walk() -> bool:
 	return _battle_scene().inputting or not not_acting
 
 
+## T210：原版 refreshMotion（YEP_BattleEngineCore:3197）防御排在濒死之前；false＝回到原先（濒死压过防御）。
+static var GUARD_FIRST := true
+## T210：原版 refreshMotion 的状态动作（stateMotionIndex＝按优先级第一个 motion 非 0 的状态）：3 倒地 dead、2 sleep 排在防御前，
+## 1 abnormal 排在防御后、濒死前。咏唱 chant、未决定 walk／否则 wait 没做（OTB 下基本走不到）。
+## VisualStateFX 的 stateMotion≥4（<State Motion:x>）数据里没有标签，不做。false＝回到原先（不看状态动作）。
+static var STATE_MOTION := true
+
+
 func _idle_motion() -> String:
 	if _input_walk():
 		return "walk"
-	if not view.is_empty():
-		if view.dead:
-			return "dead"
-		if view.hp / maxf(view.mhp, 1.0) < 0.25:
-			return "dying"
-		return "guard" if view.guarding else "walk"
-	if battler.is_dead():
+	var dead: bool = view.dead if not view.is_empty() else battler.is_dead()
+	var dying: bool = (view.hp / maxf(view.mhp, 1.0) if not view.is_empty() else battler.hp_rate()) < 0.25
+	var guard: bool = view.guarding if not view.is_empty() else battler.is_guard()
+	var sm: int = 0
+	if STATE_MOTION:
+		sm = int(view["state_motion"]) if view.has("state_motion") else battler.state_motion_index()
+	if dead or sm == 3:
 		return "dead"
-	if battler.hp_rate() < 0.25:
-		return "dying"
-	if battler.is_guard():
+	if sm == 2:
+		return "sleep"
+	if guard and (GUARD_FIRST or not dying):
 		return "guard"
+	if sm == 1:
+		return "abnormal"
+	if dying:
+		return "dying"
 	return "walk"
 
 

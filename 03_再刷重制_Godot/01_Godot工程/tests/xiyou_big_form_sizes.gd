@@ -40,6 +40,8 @@ func _run() -> void:
 				var mira: XBattlerSprite = by[168]
 				b.logic._state_add(mira.battler, XMira.DRAGON)
 				await _until(func(): return str(mira._look_key).contains("MiraDragon"), 60)
+				mira.battler.hp = mira.battler.mhp  # T210：进阶 3 与 2592（上限 ×2）之后回满血，不然生命只剩一成多、照规则趴濒死
+				mira.refresh_idle()
 				await _frames(5)
 				b.party_fold.set_expanded(fold_open, false)
 				await _secs(1.0)
