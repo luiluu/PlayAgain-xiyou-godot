@@ -34,7 +34,7 @@
       "leg_frac": 0.6,
       "stride_min_side": 0.3,
       "foot_components_min": {"left": 1, "right": 1, "front": 1, "back": 1},
-      "waist": {"upper_frac": 0.35, "waist_band": [0.4, 0.7], "min_part_px": 6, "pinch_min": 0.5, "shift_span_max": 2.0}
+      "waist": {"upper_frac": 0.35, "waist_band": [0.4, 0.7], "min_part_px": 6, "pinch_min": 0.5, "shift_span_max": 2.0, "torso_half_frac": 0.18}
     },
     "quadruped": {
       "leg_frac": 0.6,
@@ -48,6 +48,7 @@
     "idle_baseline": "狗逍遥 gxysv2、里德 Actor11_1、五条悟 SV 的待机三帧包围盒下沿全是 64（零基行 63）；T141 首轮 60，返修2 63",
     "gait_iou": "参照图腿区 IoU 最高 0.894（0.6 切线）；原版 Centaur/Dryad 站立几乎不动≈1.0；T141 首轮／返修2稿本身在 0.45～0.88，IoU 不能单独抓步态，只抓『完全没换腿』",
     "foot_merge": "原版 Centaur1 / Dryad 侧向脚底带恒为 3 个独立落点；T141 布兰德瓦登侧向最低 2",
+    "waist_outer": "T172：torso_half_frac=只量腰轴两侧各 身高×该值 内的躯干主块，滤掉飘带/披风/长发（biped 0.18；quadruped 0=关，T141 真断腰样例全是四足，保持旧算法；回退=改 0）。璇原版 v3_HD 缩 144×192 后 left 占比 0.444/0.471/0.444 旧算法误报，改后 ≥0.533；五条悟/狗逍遥/里德不变地通过",
     "waist": "参照图腰带最细行占比≥0.5、上下半身水平偏移三帧浮动≤1.1px；返修2露丝/碧池浮动 2.8～5.9px、占比 0.33～0.42",
     "hole": "原版 Centaur/Dryad 本身有 4px 体内孔、参照人形有 1～2px，故只报≥5px",
     "idle_anchor": "狗逍遥/里德待机脚底带质心零位移，五条悟待机有意走动（3.3px）会报 warn，属已知误报"

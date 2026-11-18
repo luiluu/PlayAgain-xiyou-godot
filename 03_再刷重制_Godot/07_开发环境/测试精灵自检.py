@@ -210,5 +210,65 @@ class ReverseValidationTests(unittest.TestCase):
             self.assertIn('waist_break', f, n)  # 腰部断裂
 
 
+@unittest.skipUnless(HAVE, '需要 Pillow')
+class WaistOuterTrimTests(unittest.TestCase):
+    """T172：waist_break 不被飘带/披风等外挂轮廓误报；真断腰仍报；torso_half_frac=0 可回退。"""
+    FIX = HERE / '测试夹具/xuan_original_native_144x192.png'
+
+    def setUp(self):
+        self.sc = load()
+        self.cfg = self.sc.load_cfg(HERE / '精灵自检阈值.json')
+
+    def walk_fails(self, im, cfg=None):
+        rep = self.sc.Report()
+        self.sc.check_walk(rep, cfg or self.cfg, 'biped', im, 't')
+        return [i for i in rep.fails if i['id'] == 'waist_break']
+
+    def test_xuan_original_no_waist_break(self):
+        self.assertEqual(self.walk_fails(Image.open(self.FIX).convert('RGBA')), [])
+
+    def test_xuan_original_rollback_switch(self):
+        import copy
+        cfg = copy.deepcopy(self.cfg)
+        cfg['profiles']['biped']['waist']['torso_half_frac'] = 0
+        self.assertTrue(self.walk_fails(Image.open(self.FIX).convert('RGBA'), cfg))  # 关掉开关＝旧行为，原版璇 left 误报
+
+    def figure(self, waist_w, cape=0):
+        """48×48 小人：头、肩（宽 12）、腰（waist_w）、髋、腿；cape>0 时在肩背后挂一块大披风。"""
+        im = Image.new('RGBA', (48, 48))
+        px = im.load()
+        c = (200, 120, 60, 255)
+        def row(y, x0, x1):
+            for x in range(x0, x1):
+                px[x, y] = c
+        for y in range(4, 10): row(y, 20, 28)
+        for y in range(10, 22): row(y, 18, 30)
+        for y in range(22, 27): row(y, 24 - waist_w // 2, 24 + (waist_w + 1) // 2)
+        for y in range(27, 33): row(y, 18, 30)
+        for y in range(33, 44):
+            row(y, 19, 23); row(y, 26, 30)
+        if cape:
+            for y in range(10, 36): row(y, 30, 30 + cape)
+        return im
+
+    def test_cape_not_misreported(self):
+        f = self.figure(waist_w=8, cape=9)
+        self.assertEqual(self.walk_fails(self._sheet(f)), [])
+
+    def _sheet(self, f):
+        im = Image.new('RGBA', (144, 192))
+        for r in range(4):
+            for k in range(3):
+                im.paste(f, (k * 48, r * 48))
+        return im
+
+    def test_real_pinch_still_fails_with_cape(self):
+        f = self.figure(waist_w=2, cape=9)  # 腰只剩 2px：真断
+        self.assertTrue(self.walk_fails(self._sheet(f)))
+
+    def test_real_pinch_still_fails_without_cape(self):
+        self.assertTrue(self.walk_fails(self._sheet(self.figure(waist_w=3))))
+
+
 if __name__ == '__main__':
     unittest.main()
