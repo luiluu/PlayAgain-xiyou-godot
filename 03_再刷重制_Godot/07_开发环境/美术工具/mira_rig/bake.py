@@ -97,7 +97,9 @@ def world(R, pose):
         full[n] = Rm @ S; rigid[n] = Rm
         return full[n], rigid[n]
     for n in B: get(n)
-    return {n: full[n] for n in B}
+    out = {n: full[n] for n in B}
+    out['_local'] = {n: mat(pose.get(n, {}).get('rot', 0), B[n]['pivot']) for n in B}  # 只含本骨骼自身转角
+    return out
 
 def smooth(t):
     t = np.clip(t, 0, 1); return t * t * (3 - 2 * t)
@@ -135,7 +137,11 @@ def weights(layer, px, py):
     raise ValueError(kind)
 
 def forward(layer, Mw, px, py):
-    W = weights(layer, px, py); X = np.zeros_like(px); Y = np.zeros_like(py)
+    W = weights(layer, px, py)
+    if layer.get('local'):  # 先绕自身铰点转（如下颚开合），再按 rest 位置的链式权重跟脖子/头走，和头部像素严丝合缝
+        Lm = Mw['_local'][layer['local']]
+        px, py = Lm[0, 0] * px + Lm[0, 1] * py + Lm[0, 2], Lm[1, 0] * px + Lm[1, 1] * py + Lm[1, 2]
+    X = np.zeros_like(px); Y = np.zeros_like(py)
     for n, w in W.items():
         M = Mw[n]; X += w * (M[0, 0] * px + M[0, 1] * py + M[0, 2]); Y += w * (M[1, 0] * px + M[1, 1] * py + M[1, 2])
     return X, Y
@@ -146,7 +152,7 @@ def render_layer(layer, up, Mw, shape, iters=15):
     out = np.zeros((h, w, 4), np.uint8); done = np.zeros((h, w), bool)
     bones = list(weights(layer, np.zeros(1), np.zeros(1)).keys())
     for n in bones[::-1]:
-        Mi = np.linalg.inv(Mw[n])
+        Mi = np.linalg.inv(Mw[n] @ Mw['_local'][layer['local']]) if layer.get('local') else np.linalg.inv(Mw[n])
         px = Mi[0, 0] * qx + Mi[0, 1] * qy + Mi[0, 2]; py = Mi[1, 0] * qx + Mi[1, 1] * qy + Mi[1, 2]
         for _ in range(iters):  # 牛顿迭代解 F(p)=q
             fx, fy = forward(layer, Mw, px, py)
@@ -188,10 +194,27 @@ def make_fill(src, L, layer):
     out = np.zeros_like(src); todo = m & ~(np.isin(L, layer['parts']) & (src[..., 3] > 0))
     ys, xs = np.nonzero(todo)
     for y, x in zip(ys, xs):
-        for dx, dy in f['offsets']:
+        for dx, dy in f.get('offsets', []):
             X, Y = x + dx, y + dy
             if 0 <= X < w and 0 <= Y < h and own[Y, X]:
                 out[y, x] = src[Y, X]; break
+    if f.get('mouth'):  # 口腔：按到上颚线（line）的距离分层上色；颜色全取自 1_0 色板
+        mo = f['mouth']; (ax, ay), (bx, by) = mo['line']; L2 = math.hypot(bx - ax, by - ay)
+        nx, ny = -(by - ay) / L2, (bx - ax) / L2  # 线的下侧法向（y 向下）
+        if ny < 0: nx, ny = -nx, -ny
+        mm = todo & np.isin(L, mo.get('over_parts', ['jaw']))  # 只补被下颚盖住的位置（翼膜等别层的像素不碰）
+        for y, x in zip(*np.nonzero(mm)):
+            d = (x + 0.5 - ax) * nx + (y + 0.5 - ay) * ny
+            d = max(d, 0)  # 线以上（下颚轮廓压进上颚的那一两行）按口腔最深色补
+            fang = {fx: fl for fx, fl in mo.get('fangs', [])}  # 上獠牙：列 x（rest 坐标）→ 长度
+            edge = any(not (0 <= y + dy < h and 0 <= x + dx < w and mm[y + dy, x + dx]) for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))
+            if edge and x < mo.get('outline_x', 0):  # 吻端一侧外缘描轮廓，张嘴时口腔不会直接漏到外面
+                c = mo.get('outline', [0, 0, 0])
+            elif x in fang and d < fang[x]:
+                c = mo['teeth']
+            else:
+                band = mo['bands']; c = band[min(int(d / mo.get('band_w', 2)), len(band) - 1)]
+            out[y, x] = list(c) + [255]
     if f.get('rim'):
         sx, sy = f['rim']['sample']  # 顶边取色点：从 sy 往下找第一个不透明像素
         col = [src[y, sx] for y in range(sy, h) if src[y, sx, 3] > 0][:f['rim'].get('n', 2)]
@@ -223,6 +246,11 @@ def bake(R, src, pose, fills=None):
     L = label_map(R, src); Mw = world(R, pose)
     out = np.zeros_like(src)
     for layer in R['layers']:
+        if 'pixels' in layer:  # 补画小件（如下牙）：只在 when 骨骼转动时画，rest 姿势不出现
+            if not pose.get(layer['when'], {}).get('rot'): continue
+            a = np.zeros_like(src)
+            for x, y, c in layer['pixels']: a[y, x] = list(c) + [255]
+            out = comp(out, render_layer(layer, upscale(a), Mw, src.shape)); continue
         fl = (fills or {}).get(layer['name'])
         if fl is None: fl = make_fill(src, L, layer)
         a = layer_src(src, L, layer['parts'], fl)
@@ -277,6 +305,7 @@ def export_parts(R, src, outdir):
     L = label_map(R, src); outdir = Path(outdir); outdir.mkdir(parents=True, exist_ok=True)
     names = []
     for i, layer in enumerate(R['layers']):
+        if 'pixels' in layer: continue  # 补画小件不属于 1_0 拆件
         a = layer_src(src, L, layer['parts'], make_fill(src, L, layer))
         fn = f"{i}_{layer['name']}.png"; Image.fromarray(a).save(outdir / fn); names.append(fn)
     return names
