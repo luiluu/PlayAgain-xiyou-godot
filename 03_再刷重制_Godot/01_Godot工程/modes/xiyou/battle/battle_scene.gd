@@ -2240,7 +2240,7 @@ func _offstage_target(l: Dictionary) -> bool:
 	if not str(l.get("type", "")) in OFFSTAGE_SKIP:
 		return false
 	var t = l.get("target")
-	if not t is XBattler or sprites.has(t):
+	if not t is XActor or sprites.has(t):  # 只放过角色（会坐助力位）；敌人缺图是别的问题，照旧报错（T180 返修 P2-2）
 		return false
 	offstage_skipped.append(str(l.type))
 	print("[战斗画面] %s 的目标 %s 不在场上（没有角色图），只记日志不演出" % [str(l.type), t.display_name()])

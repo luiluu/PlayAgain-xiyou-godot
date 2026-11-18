@@ -6,6 +6,7 @@ extends Node
 ## 四、允许失败的战斗打输复活扫 5 个人（XTianqiHorsemen.lose_revive）。
 ## 五、画面守卫：真战斗画面里手动换下挂着宣判者死期的人，回合末倒下演出不取图、不报错（XBattleScene._offstage_target）。
 ## 六、七首之龙灰印缓期：换到助力位照样到点倒下，打输复活清查扫得到。
+## 七、返修（小A 甲核）：倒下入口接住的人不被强杀（云裳衣魂期间再吃死期、丧钟）；替身不走倒下入口；画面守卫只放过角色。
 ## 各开关关掉回到只认场上 4 格。
 
 var results: Array = []
@@ -80,6 +81,9 @@ func _run() -> void:
 	_lose_revive(false)
 	_dragon_reprieve(true)
 	_dragon_reprieve(false)
+	_ghost(true)
+	_ghost(false)
+	_double_no_entry()
 	await _scene_guard()
 	XTianqiHorsemen.DOOM_FOLLOW = true
 	XTianqiDeathAlien.DIE_ENTRY = true
@@ -247,6 +251,69 @@ func _dragon_reprieve(on: bool) -> void:
 	XTianqiQiyinDragonRun.rng_override = null
 
 
+## 测试直接穿上不渡黄泉（天衣 3；不走云裳等级、阶段的穿戴条件）
+func _wear_ghost_robe(s: XState, t: XActor) -> void:
+	s.gain_gear("armor", XYunshang.ROBE_FIRST + 3, 1)
+	t.keep_unequippable = true
+	t.equips[t.equip_slots().find(4)] = s.gear[s.gear.size() - 1]
+	s.gear.remove_at(s.gear.size() - 1)
+
+
+func _robed() -> Array:
+	var s := _state()
+	XTianqiDeathAlien.prepare("omen", s)
+	var t: XActor = s.battle_members()[1]
+	_wear_ghost_robe(s, t)
+	var lg := XBattleLogic.new()
+	lg.setup(291, s)
+	return [lg, t]
+
+
+## 返修 P1-1①：倒下入口接住的人（云裳不渡黄泉衣魂）：第一次死期留衣魂（生命 1）；衣魂期间再吃一次死期、丧钟也不死、生命不归 0。
+## DIE_ENTRY 关掉照旧直接写阵亡
+func _ghost(on: bool) -> void:
+	_entry(on)
+	_follow(true)
+	var tag := "on" if on else "off"
+	var r := _robed()
+	var lg: XBattleLogic = r[0]
+	var t: XActor = r[1]
+	_check("ghost_fixture_%s" % tag, XYunshang.key(t) == 3 and XYunshang.battle != 0 and lg.actors.has(t), [XYunshang.key(t), XYunshang.battle])
+	var killed := XTianqiDeathAlien._kill(lg, t, false, "死期")
+	if on:
+		_check("ghost_first_saved", not killed and t.is_alive() and is_equal_approx(t.hp, 1.0) and XYunshang.ghost(t), [killed, t.hp, t.state_ids])
+		var killed2 := XTianqiDeathAlien._kill(lg, t, false, "丧钟")
+		_check("ghost_again_saved", not killed2 and t.is_alive() and not t.state_ids.has(1) and t.hp >= 1.0, [killed2, t.hp, t.state_ids])
+		var logs := XTianqiDeathAlien.take_logs(lg)
+		_check("ghost_no_fall_text", not _texts(logs).any(func(x): return x.contains("%s倒下了" % t.display_name())) and not logs.any(func(l): return l.type == "collapse"), _texts(logs))
+	else:
+		_check("ghost_off_dies", killed and t.is_dead() and t.state_ids.has(1), [t.hp, t.state_ids])
+	lg.end_battle(0)
+	_entry(true)
+
+
+## 返修 P1-1②／P2-1：替身不走倒下入口（在行动当中，谷雨代命会被进两次）：DIE_ENTRY 开着，戴不渡黄泉的人被替身带走照样倒下，
+## 日志「代它倒下了」、不能复活、本体回血口径一致
+func _double_no_entry() -> void:
+	_entry(true)
+	var s := _state()
+	XTianqiDeathAlien.prepare("apostle20", s)
+	var t: XActor = s.battle_members()[0]
+	_wear_ghost_robe(s, t)
+	var lg := XBattleLogic.new()
+	lg.setup(456, s)
+	var g: XEnemy = lg.enemies.filter(func(x): return XTianqiDeathAlien.is_alien(lg, x))[0]
+	XTianqiDeathAlien.unit(lg, g).idx = 3
+	for a in lg.actors:
+		a.hp = a.mhp if a != t else maxf(1.0, floorf(a.mhp * 0.01))
+	var v := XTianqiDeathAlien.hp_damage(lg, null, g, g.hp * 2.0)
+	var logs := XTianqiDeathAlien.take_logs(lg)
+	_check("double_fixture", XYunshang.key(t) == 3, XYunshang.key(t))
+	_check("double_victim_falls", is_zero_approx(v) and t.is_dead() and t.state_ids.has(1) and g.is_alive(), [v, t.hp, t.state_ids])
+	_check("double_text_consistent", _texts(logs).any(func(x): return x.contains("%s代它倒下了" % t.display_name())) and XTianqiDeathAlien.blocks_revive(t), _texts(logs))
+	lg.end_battle(0)
+
+
 ## 五、画面守卫：真战斗画面，手动换下挂着宣判者死期的人，回合末倒下记录指向没有图的人：只记日志、不演出、不报错
 func _scene_guard() -> void:
 	XTianqiHorsemen.DOOM_FOLLOW = true
@@ -294,6 +361,9 @@ func _scene_guard() -> void:
 			break
 		await get_tree().physics_frame
 	_check("scene_onfield_played", done[0] and b.offstage_skipped.is_empty(), b.offstage_skipped)
+	# 返修 P2-2：守卫只放过角色；敌人不在 sprites 不算「不在场上」（照旧走演出，这里只查判定）
+	var fake_enemy := XEnemy.new()
+	_check("scene_guard_actor_only", not b._offstage_target({"type": "collapse", "target": fake_enemy}) and b._offstage_target({"type": "collapse", "target": t}))
 	b.queue_free()
 	for i in 3:
 		await get_tree().physics_frame

@@ -24,9 +24,11 @@ extends RefCounted
 
 const META := "xdeath_alien"
 
-## O-待定-2（T180，发作真换人 v0.2 第三节第 5 条①）：true＝死期、丧钟、替身带走人时走战斗的倒下入口 logic._die（和四骑士死期、
-## 七首之龙缓期一样：谷雨代命、云裳衣魂、五条悟试炼兜底这些「倒下包装」照常起作用）；免即死已在前面判过，倒下入口只因
-## 死亡抵抗特性没加上时仍直接加阵亡状态。false＝照旧直接写阵亡状态（add_new_state）
+## O-待定-2（T180，发作真换人 v0.2 第三节第 5 条①）：true＝宣判者死期、丧钟带走人时走战斗的倒下入口 logic._die（和四骑士死期、
+## 七首之龙缓期一样，倒下包装照常起作用：云裳不渡黄泉衣魂、五条悟试炼兜底）。谷雨代命只在行动事件里成立（XGuyu._events），
+## 死期、丧钟在行动收尾之后／回合末结算，接不到。免即死已在前面判过，倒下入口只因死亡抵抗特性没加上时仍直接加阵亡状态。
+## 替身（hp_damage）不走这条：它在行动当中，代命口径另算，照旧直接写阵亡（T180 返修，小A P1-1②、P2-1）。
+## false＝照旧直接写阵亡状态（add_new_state）
 static var DIE_ENTRY := true
 static var _pending := ""
 ## 正在打的死亡异化战（复活挂钩不带 logic，从这里取）
@@ -277,25 +279,34 @@ static func _captain_breaks(logic) -> bool:
 	return rate >= 1.0 or logic._int(0, 99, "tianqi_death_captain") < roundi(rate * 100.0)
 
 
-## 让我方一人倒下：resistible＝免即死（抵抗阵亡状态）挡得住（骑士队长可能让它失效）。返回是不是真倒下了
-static func _kill(logic, a, resistible: bool, why: String) -> bool:
+## 让我方一人倒下：resistible＝免即死（抵抗阵亡状态）挡得住（骑士队长可能让它失效）；entry＝DIE_ENTRY 开着时走倒下入口
+## （替身传 false）。返回是不是真倒下了
+static func _kill(logic, a, resistible: bool, why: String, entry := true) -> bool:
 	if not a.is_alive():
 		return false
 	var f := fight(logic)
 	if resistible and a.traits_set(XBattler.TRAIT_STATE_RESIST).has(1) and not _captain_breaks(logic):
 		_say(f, "%s挡住了%s。" % [a.display_name(), why])
 		return false
+	var before := [a.hp, a.shield, a.immortal]
 	a.immortal = false
 	a.shield = 0.0
 	a.hp = 0.0
-	if DIE_ENTRY:
-		a.refresh_resources()
-		logic._die(a)
-		if not a.state_ids.has(1) and a.hp > 0.0:
-			a.refresh_resources()
-			return false  # 倒下包装代命（谷雨、云裳衣魂、五条悟试炼兜底），生命已由包装改写，同别的倒下路一样不另报
+	if DIE_ENTRY and entry:
+		logic._die(a)  # 只调这一次（先 refresh 会让 _refresh_death 先进一次倒下包装，T180 返修 P1-1②）
+		f.queue.append_array(XGuyu.take_visuals())  # 谷雨本人被带走：归根反馈跟着本条记录出（P3-3）
 		if not a.state_ids.has(1):
-			a.add_new_state(1)  # 只因死亡抵抗特性没加上（免即死上面已判过、这次挡不住）
+			if a.traits_set(XBattler.TRAIT_STATE_RESIST).has(1):
+				a.add_new_state(1)  # 只因死亡抵抗特性没加上（免即死上面已判过、这次挡不住）；有这条特性时倒下包装根本没跑到
+			else:
+				# 倒下包装接住了（云裳衣魂、五条悟试炼兜底）：这一下没有死。包装没改生命（衣魂期间再吃一次）就还原，
+				# 不留生命 0 的活人（T180 返修 P1-1①）；同别的倒下路一样不另报
+				if a.hp <= 0.0:
+					a.hp = float(before[0])
+				a.shield = float(before[1])
+				a.immortal = bool(before[2])
+				a.refresh_resources()
+				return false
 	elif not a.state_ids.has(1):
 		a.add_new_state(1)
 	_say(f, "%s：%s倒下了。" % [why, a.display_name()])
@@ -480,7 +491,7 @@ static func hp_damage(logic, u, t, value: float) -> float:
 	r.used = int(r.used) + 1
 	var victim = cands[0]
 	_say(f, "%s的替身：%s代它倒下了。" % [t.display_name(), victim.display_name()])
-	_kill(logic, victim, false, "替身")
+	_kill(logic, victim, false, "替身", false)  # 不走倒下入口（DIE_ENTRY 注释）
 	if idx >= 3:
 		f.no_revive[victim] = true
 	t.hp = maxf(1.0, floorf(float(t.mhp) * float(info.heal[idx])))
