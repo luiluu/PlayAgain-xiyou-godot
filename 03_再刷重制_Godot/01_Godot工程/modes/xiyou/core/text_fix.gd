@@ -7,6 +7,8 @@ extends RefCounted
 ## 公共事件／敌群／地图事件的 401／405 对话行与 102 选项。备注的其余部分（notetag、动作序列、脚本）、伤害公式、插件参数都不碰。
 ##
 ## 天启篇词典 tianqi_dict（D126 去西游化）跟 DICT 开关，只在天启篇存档套用，换档清缓存（sync_mode）。
+## tianqi_dict 里带 "note": true 的条目（T193 D202「天道*」→「启示·」）不进字段词典，只对整段备注按字面替换，
+## 用来改 <StateNote>、<RightDownNote:"…"> 这类不在 <pos> 行里的说明；from 写带上下文的字面（如整个 RightDownNote 标签），不碰脚本。
 ## 六个开关各一个 O 号（00_设计/优化登记.md），默认开；关掉后 clear_cache() 让表重读即回原版文字：
 ## - STRIP_ZW（O-489）：剥零宽控制符 U+FEFF、U+200B、U+200C。
 ## - NAMEBOX（O-490）：事件对话名字框——行首 <名字> 补前导 \n、/n< 写反改 \n<、\c\[ 双转义改 \c[、行首孤立 \n（后面不是 <、[、字母）删掉。
@@ -27,7 +29,7 @@ static var OVERRIDES := true
 const RULES_PATH := "res://modes/xiyou/text_fix/rules.json"
 const OVERRIDES_PATH := "res://modes/xiyou/text_fix/overrides.json"
 ## 改了修正逻辑（不只是 rules／overrides 数据）就加 1，让旧的修正缓存作废（导出版脚本源码可能读不到，不能只靠源码哈希）
-const CACHE_VER := 3
+const CACHE_VER := 4
 const TABLES := ["Actors", "Classes", "Skills", "Items", "Weapons", "Armors", "Enemies", "States", "Troops", "CommonEvents",
 	"MapInfos", "EquipSuits", "Runewords"]
 const TEXT_KEYS := ["name", "nickname", "profile", "description", "message1", "message2", "message3", "message4"]
@@ -40,6 +42,8 @@ static var _dict := []  # [[RegEx 或 null, from, to]]
 ## 只在天启篇存档套用的词典（rules.json 的 tianqi_dict，D126 去西游化；西游档 1:1 原貌）
 static var _tq_dict := []
 static var _tq_gate: RegEx
+## tianqi_dict 里 "note": true 的条目：[[from, to]]，只在天启篇对整段备注字面替换（T193）
+static var _tq_note := []
 ## 上一次读表／地图时用的是不是天启篇口径；和现在不一样就要清缓存（sync_mode）
 static var _applied_tq := false
 static var _gate: RegEx  # 零宽／繁体／词典任一命中的总预筛
@@ -97,7 +101,15 @@ static func rules() -> Dictionary:
 		gate.append("\u200c")
 		_gate = RegEx.create_from_string("|".join(gate))
 		var tq_gate := []
-		_tq_dict = _build_dict(_rules.get("tianqi_dict", []), tq_gate)
+		var tq_fields := []
+		_tq_note = []
+		for e in _rules.get("tianqi_dict", []):
+			if bool(e.get("note", false)):
+				if str(e.get("from", "")) != "":
+					_tq_note.append([str(e.get("from", "")), str(e.get("to", ""))])
+			else:
+				tq_fields.append(e)
+		_tq_dict = _build_dict(tq_fields, tq_gate)
 		_tq_gate = RegEx.create_from_string("|".join(tq_gate)) if not tq_gate.is_empty() else null
 		_pos_re = RegEx.create_from_string("^(<pos=\\S+\\s+text=)([\\s\\S]*?)(\\s+size=[\\s\\S]*)$")
 		_namebox_re = RegEx.create_from_string("^<([^<>\\\\:]{1,20})>")
@@ -203,6 +215,7 @@ static func patch_table(name: String, data) -> void:
 	if not (STRIP_ZW or NAMEBOX or PAIRS or DICT or TRAD):
 		return
 	rules()
+	var tq_note := DICT and not _tq_note.is_empty() and tq_on()
 	for r in data:
 		if not r is Dictionary:
 			continue
@@ -213,6 +226,8 @@ static func patch_table(name: String, data) -> void:
 		var note = r.get("note")
 		if note is String and note.contains("<pos="):
 			r["note"] = _fix_note(note)
+		if tq_note and r.get("note") is String:
+			r["note"] = _fix_tq_note(r["note"])
 		match name:
 			"CommonEvents":
 				_fix_list(r.get("list"))
@@ -306,8 +321,17 @@ static func _fix_note(note: String) -> String:
 	return note if last == 0 else out + note.substr(last)
 
 
+## 天启篇备注字面替换（tianqi_dict 的 "note": true 条目；调用方已判 DICT 与天启篇）
+static func _fix_tq_note(note: String) -> String:
+	for d in _tq_note:
+		if note.contains(d[0]):
+			note = note.replace(d[0], d[1])
+	return note
+
+
 static func _fix_pos_line(line: String) -> String:
-	if _gate.search(line) == null and not (PAIRS and _pair_hint(line)):
+	var tq_hit := DICT and _tq_gate != null and tq_on() and _tq_gate.search(line) != null  # 天启篇词典单独命中也要改（T193：5568「免疫天道·封魔」行不含统一规则的字）
+	if not tq_hit and _gate.search(line) == null and not (PAIRS and _pair_hint(line)):
 		return line
 	var m := _pos_re.search(line)
 	if m == null:
