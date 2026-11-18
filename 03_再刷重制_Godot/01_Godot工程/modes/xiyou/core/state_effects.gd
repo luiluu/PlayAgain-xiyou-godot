@@ -84,7 +84,7 @@ static var LOTUS_DAMAGE_7303 := true
 const LOTUS_DAMAGE_RATE := 0.5
 ## O-179（rules10）：数据错误:暴击 1749 原版调 user.criticalRate()（不存在）报错无效果。按说明：持有者每 1% 最终暴击率，暴击时伤害 +1%
 static var FIX_CRIT_1749 := true
-## O-待定（T205 R1）：半步真仙效果 1666 挂在攻击方身上（1665 每回合开始、2566 开战 user.addState），确认阶段原版写 target.removeState(1666)，
+## O-597（T205 R1）：半步真仙效果 1666 挂在攻击方身上（1665 每回合开始、2566 开战 user.addState），确认阶段原版写 target.removeState(1666)，
 ## target 是被打的人，持有者身上的删不掉，整回合每击都另扣一次（＝×2）；修成从持有者自删（只吃一下）。false＝原版
 static var FIX_HALFSTEP_1666 := true
 const HALFSTEP_STATE := 1666

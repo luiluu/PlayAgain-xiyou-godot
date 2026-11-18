@@ -257,7 +257,7 @@ static func suit_confirm_rows(holder, rows: Array) -> Array:
 ##   （as 里的 mul 照上面带 skipTypes；不改 value 的程序原样执行，只打放行标记）。
 ## 产品默认关，期四总开关（XTianqiBase.PHASE4）开着就开；关着＝原版现状，守卫当回退中不报。
 static var POOL_LIVE := false
-## T205（O-待定）：程序类增伤（倍率跟变量、血量比、状态数、存活人数、暴击走）pool 表带 probe：
+## T205（O-598）：程序类增伤（倍率跟变量、血量比、状态数、存活人数、暴击走）pool 表带 probe：
 ##   出手时用这一击的上下文、探针值空跑一遍那一步（不执行），得出这一下的 k，max(k−1, 0) 进③；确认阶段那一步打敌人只留缩小那部分
 ##   （XStateEffects._keep_down，2583 目标血量比小时 <1 照乘）。暴击专属段（1522、2556）表里带 crit：非暴击段 add 进③、暴击段 crit 进④。
 ##   1666 半步真仙按 as 换写成固定 ③＋100%。这 8 条都挂这个开关，关＝回到确认阶段照乘（守卫当回退中不报）。要 POOL_LIVE 也开着。
