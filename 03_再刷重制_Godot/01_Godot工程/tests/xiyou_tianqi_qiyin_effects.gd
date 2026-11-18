@@ -118,6 +118,11 @@ static func _sd(v: float) -> float:  # 去全队 ×6（XTianqiNoX6，O-470）开
 
 
 func _run() -> void:
+	# T220（T012-c）：期四总开关、熟练度默认开了；本专项是总开关关着时写的（原版量级、K 按 1、治疗 ×5、CARDS 单独隔离卡），照原条件拨回关跑
+	XTianqiBase.PHASE4 = false
+	XTianqiSkills.MASTERY = false
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
 	XMessageBox.auto = true
 	seed(20261112)
 	XTianqiQiyinGear.reload_table()
