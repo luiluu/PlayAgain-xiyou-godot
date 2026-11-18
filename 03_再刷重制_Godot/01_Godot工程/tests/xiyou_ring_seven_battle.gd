@@ -5,7 +5,7 @@ extends Node
 
 var results := []
 var out_dir := ""
-var six := false   # --six：关掉战斗中换人，指令 6 项，出对照图
+var six := false   # --six：关掉战斗中换人，指令 6 项（T190 起 6 项同样不压首领信息区）
 
 
 func _ready() -> void:
@@ -113,10 +113,16 @@ func _run() -> void:
 			for r: Rect2 in ring.item_rects():
 				if Rect2(ring.position + r.position, r.size).intersects(zone):
 					hit.append(r)
-			if want == 7:   # 6 项照旧不动（旧排法个别行动者本来就压首领信息区，只在 --six 对照里记一笔）
-				_check("ring_clear_of_boss_info_%d_%d" % [troop, a.actor_id], hit.is_empty(), [zone, ring.position, hit])
-			elif not hit.is_empty():
-				print("NOTE six-item ring overlaps boss info (old behavior): troop ", troop, " actor ", a.actor_id)
+			_check("ring_clear_of_boss_info_%d_%d" % [troop, a.actor_id], hit.is_empty(), [zone, ring.position, hit])
+			if want == 6:   # 旧排法（开关关）不压的行动者，位置必须和旧排法逐像素一样；压的才被挪
+				var fixed_pos := ring.position
+				XSkinBattleRing.SEVEN_FIX = false
+				var old := await _ring_for(b, a) as XSkinBattleRing
+				XSkinBattleRing.SEVEN_FIX = true
+				var old_hit := old.item_rects().any(func(r): return Rect2(old.position + r.position, r.size).intersects(zone))
+				_check("ring_untouched_when_clear_%d_%d" % [troop, a.actor_id], old_hit or old.position.is_equal_approx(fixed_pos), [old.position, fixed_pos])
+				_check("ring_moved_down_only_%d_%d" % [troop, a.actor_id], not old_hit or (is_equal_approx(old.position.x, fixed_pos.x) and fixed_pos.y >= old.position.y), [old.position, fixed_pos])
+				ring = await _ring_for(b, a) as XSkinBattleRing
 			if want == 7:
 				var m := INF
 				for i in range(1, 7):
@@ -127,7 +133,7 @@ func _run() -> void:
 				ring.select(ring.entries.size() - 3 if want == 7 else 0)
 				await _frames(12)
 				RenderingServer.force_draw(false)
-				var nm := ("首领战" if troop == 88 else "小怪战") + ("_6项对照" if six else "_7项")
+				var nm := ("首领战" if troop == 88 else "小怪战") + ("_6项" if six else "_7项")
 				_check("screenshot_" + nm, get_viewport().get_texture().get_image().save_png(out_dir.path_join(nm + ".png")) == OK)
 		b.bgm.stop()
 		b.queue_free()
