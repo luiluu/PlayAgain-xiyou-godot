@@ -204,10 +204,18 @@ var _idle_asset := ""
 var _frame_asset := ""
 
 
+## T189：停在 wait 第 0 帧的角色（_guyu_planted 的判据，不含 _moving）按 wait 第 0 帧量身高；测试也读这里
+func _idle_planted() -> bool:
+	if not battler is XActor:
+		return false
+	return (XGuyu.own(battler) and _look_key == "Guyu") or XAppearance.cat_visual(battler) or XXuanTusuArt.planted(battler, _look_key)
+
+
 ## T188：setup／换装时量一次待机身高，定这套外观的倍数
 func _measure_idle() -> void:
-	_idle_h = XBattleLayout.idle_height(look) if _fixed > 0.0 else 0.0
-	_idle_asset = str(look.frame("walk", 0).get("asset", ""))
+	var planted := _idle_planted()
+	_idle_h = XBattleLayout.idle_height(look, planted) if _fixed > 0.0 else 0.0
+	_idle_asset = str(look.frame("wait" if planted else "walk", 0).get("asset", ""))
 	_fit = XBattleLayout.fit_height(_fixed, _idle_h) if _fixed > 0.0 else 0.0
 
 
@@ -722,9 +730,7 @@ var _last_pos := Vector2.INF
 
 ## 谷雨（installNativeGuyuRuntime）与小猫剑圣（installNativeCharacterVisualRuntime planted）同一套：不在移动时「走」改「待机」，待机停在第 0 帧
 func _guyu_planted() -> bool:
-	if _moving or not battler is XActor:
-		return false
-	return (XGuyu.own(battler) and _look_key == "Guyu") or XAppearance.cat_visual(battler) or XXuanTusuArt.planted(battler, _look_key)
+	return not _moving and _idle_planted()
 
 
 ## queueVisual 的画面反馈（只属于精灵，不进存档、不用战斗随机数）：归根 root 48 帧——脚下落八片金边瓷片、五片枯叶，

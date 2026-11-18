@@ -116,9 +116,12 @@ static func fit_height(base: float, src_h: float) -> float:
 static var _idle_h := {}
 
 
-static func idle_height(look: XAppearance) -> float:
+## T189：planted＝true（谷雨、小猫剑圣等停在 wait 第 0 帧的角色）只量 wait 第 0 帧，实际站的就是那一帧
+static func idle_height(look: XAppearance, planted := false) -> float:
 	if look == null:
 		return 0.0
+	if planted:
+		return frame_height(look.frame("wait", 0))
 	var h := 0.0
 	for i in range(maxi(look.frame_count("walk"), 1)):
 		h = maxf(h, frame_height(look.frame("walk", i)))
