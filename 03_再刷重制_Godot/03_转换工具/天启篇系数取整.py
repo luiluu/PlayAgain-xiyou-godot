@@ -474,7 +474,7 @@ def main(argv):
             print(r[0], r[2], r[6])
     if '--write' in argv:
         note = ('T191（D200 A，Kyo 11-18）：原卡剩下的小数系数全表取整（≥1 就近取整、.5 进位；<1 和生命、魔法写整数百分比；'
-                '无条件 always 并进系数）。XTianqiBase.TUNE_D200 开着时叠在 D189 之后；关掉后 XTianqiSkills.reload() 照取整前。'
+                '无条件 always 并进系数）。XTianqiBase.TUNE_D200 开着时叠在 D189 之后；关掉后 XTianqiSkills.reload_table() 照取整前。'
                 '生成：03_转换工具/天启篇系数取整.py；改前改后见交付单 T191 附录。')
         dump = lambda v: json.dumps(v, ensure_ascii=False)
         body = ',\n'.join('   %s: %s' % (dump(k), dump(v)) for k, v in d200.items())

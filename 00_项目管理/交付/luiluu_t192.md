@@ -1,7 +1,7 @@
 # 交付：luiluu/t192
 
 - 车道／工作者：T192 D198 偏弱超强者调高＋统一复量 K（cc，Opus＋medium，P8）
-- 状态：进行中
+- 状态：可合并
 
 依据：Kyo 11-18 08:4x D198 选 A（K 留 0.13，偏弱超强者分摊调高到约 120～150 万，只往上调）；D148（判线按烙印满 ×1.5）；附则 E（系数整数）；协调 11-18 两次回复（名单＝原 8 人＋172；cap_hits 按 A）。从 main 47df7b32c 切出（含 T187 dev.723、T191 dev.725）。
 
@@ -105,6 +105,7 @@
 - `语法检查.py`：0 问题。`天启篇数据校验.py`：全部通过。
 - `并行测试.py` 98 个场景（xiyou_tianqi_* 全组 84 个＋xiyou_actor_looks、actor_modules、actor_p0、all_scope_repeat、battle_log、black_flash_ui、boss_strong_tianqi、character_help_dyn、determinism、gojo、gojo_trials、json_cache、liuying、liuying2、liuying3、liuying_help、text_batch23）：98/98 过；⚠ xiyou_tianqi_money、xiyou_tianqi_opening 并行时失败、单跑通过（各累计偶发 1 次）。
 - 新断言：`xiyou_tianqi_skills` p7_liuying_total_card（天火每段×段数＝卡上合计）、p7_sukuna_terminal_card（终式 9／11、卡面不留 10.8）；`xiyou_tianqi_phase4` tune_d198.on／switch_back／integer／cap_hits；tune_d189.raise_on 那段先关 D198（D198 又调了 177 棱光）。
+- 合 main（T201 静态 `reload()` 改名 `reload_table()`、T202 拆避 4）后：本单新加的 5 处 `XTianqiSkills.reload()` 跟着改名（D198／D200 注释串、取整脚本同改；取整脚本重跑结果与表一字不差）；重跑 xiyou_tianqi_phase4、tianqi_skills、tianqi_phase4_modules、tianqi_balance、tianqi_ledger、tianqi_live_sample、liuying、liuying2、actor_modules、determinism 共 10 个：10/10 过；`工具回归.py` 全过；数据校验、语法检查 0 问题。
 - 没跑：`选测.py` 判整轮（K 探针文件没归属）；事件对照、xiyou_rules*、`--oracle` 没跑——改动只在天启篇卡开着（`cards_on`／PHASE4）时走，西游档不经过；避 4 断言没撞到。
 
 ## 变更记录草稿
@@ -122,7 +123,7 @@
 
 | 号 | 位置 | 原版 | 现在 | 理由 | 回退 | 谁 | 状态 |
 |---|---|---|---|---|---|---|---|
-| O-待定 | `modes/xiyou/tianqi_data/skill_rework.json` 的 `tune.D198`（含 `cap_hits`）；`XTianqiBase.TUNE_D198` | （天启篇卡）D200 取整后的系数；单段上限按整招算 | D198：8 个偏弱超强者分摊调高到 117～140 万；卡上写合计的流萤两招按每段封 | Kyo D198 A、协调 11-18 cap_hits 按 A | `XTianqiBase.TUNE_D198 = false` 后 `XTianqiSkills.reload()` | cc | 保留 |
+| O-待定 | `modes/xiyou/tianqi_data/skill_rework.json` 的 `tune.D198`（含 `cap_hits`）；`XTianqiBase.TUNE_D198` | （天启篇卡）D200 取整后的系数；单段上限按整招算 | D198：8 个偏弱超强者分摊调高到 117～140 万；卡上写合计的流萤两招按每段封 | Kyo D198 A、协调 11-18 cap_hits 按 A | `XTianqiBase.TUNE_D198 = false` 后 `XTianqiSkills.reload_table()` | cc | 保留 |
 
 ## 交接板
 
@@ -149,3 +150,6 @@
 ## 本分支提交
 
 - 23a06fe62 WIP：D198 覆盖层、cap_hits、读卡、改前复量
+- 6e466ff12 172 撤出 D198 层、D198 开关专项、改后复量与虚拟玩家、交付单
+- b74b1964e 合并 main
+- （本提交）跟 main 的 reload_table 改名
