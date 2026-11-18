@@ -237,6 +237,7 @@ func _run() -> void:
 			_check("climb_floors_cleared", rep.milestones.has("floor_%d_cleared" % floors), [rep.floor, rep.climb_stop])
 		print("VP_CLIMB=" + JSON.stringify({"floor": rep.floor, "stop": rep.climb_stop, "defeats": rep.defeats, "grind_battles": rep.grind_battles, "levels": rep.levels, "floor_log": rep.floor_log,
 			"dungeon": [rep.dungeon_runs, rep.dungeon_kills, rep.dungeon_defeats], "farm_block": rep.farm_block, "growth": rep.growth, "frames": rep.frames}))
+	print("VP_CONFIRM_SEEN=" + JSON.stringify(XTianqiLedger.confirm_seen))  # T185：总账守卫确认阶段实际碰到的状态号（只记不报）
 	await _check_spend_rules(climb)
 	# 报告：给了 --vp-out 就写文件；摘要总是打印
 	if bot.out_dir != "":

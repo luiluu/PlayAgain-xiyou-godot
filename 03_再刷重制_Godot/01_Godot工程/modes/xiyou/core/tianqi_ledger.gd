@@ -153,6 +153,7 @@ static func switch_on(name: String) -> bool:
 		# 期四（T083）：16 个旧模块行归池＝卡开着时 MODULE_CAP_ALL 把增伤拦掉；卡或收口关着就是回退中
 		"MODULE_CAP": return XTianqiSkills.MODULE_CAP and XTianqiSkills.MODULE_CAP_ALL and XTianqiSkills.cards_on()
 		# 期四（T083）：state_confirm_class.never 各条「不会出现」靠的开关，关着＝回到会出现
+		"POOL_LIVE": return POOL_LIVE  # T185：live 状态样板归池或停用（默认关）
 		"NO_DIFF_PASSIVE": return XTianqiNoDiffPassive.ENABLED
 		"UNIFIED_LEGACY": return XTianqi.UNIFIED_LEGACY
 	return true
@@ -227,6 +228,93 @@ static func suit_confirm_rows(holder, rows: Array) -> Array:
 				var e2: Dictionary = e.duplicate()
 				e2.skipTypes = SUIT_SKIP_TYPES
 				e2[SUIT_POOLED] = true  # audit_confirm 只认这个标记放行（期三收紧 T004 P3-1：原来凡带 skipTypes 的都放行）
+				effects.append(e2)
+			else:
+				effects.append(e)
+		copy.effects = effects
+		out.append(copy)
+	return out
+
+
+# ---- T185 期四 live 状态样板：归池或停用（damage_ledger.json state_confirm_class.sample，基础数值重构 v0.3 第七节第 7 条）----
+## POOL_LIVE 开着时，天启篇我方打敌人（伤害类型 1/2/5/6），样板里的状态确认阶段「结果 ×k」那一步对敌人的伤害不再乘：
+##   pool 归池 → 改成 ＋add% 进③（add 是整数百分数＝k−1）。封顶照九线口径：cap＝nine（原版装备来的）和种族、宝珠、套装合计封 ＋35%；
+##     cap＝secret（秘籍格的书教的）每本封 ＋8%（样板阶段的近似：不跟别的书抢格数，铺开时并进 secret_kept）；cap＝none 不封。
+##   stop 停用 → 只是不乘，不进池。
+## 治疗、打自己人照旧乘（同套装那一步）。默认关：Kyo 看过样板再开、再铺；关着＝原版现状，守卫照旧按 live 豁免。
+static var POOL_LIVE := false
+const LIVE_POOLED := "_ledgerLivePooled"
+static var _live_sample := {}
+
+static func live_sample() -> Dictionary:
+	if _live_sample.is_empty():
+		for e in data().get("state_confirm_class", {}).get("sample", []):
+			_live_sample[int(e.id)] = e
+		if _live_sample.is_empty():
+			_live_sample[-1] = {}  # 占位：表里没有样板，别每次都重读
+	return _live_sample
+
+
+static func _live_effect(e) -> bool:
+	return e is Dictionary and str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) == "mul" and float(e.get("k", 1.0)) > 1.0
+
+
+## 这个角色身上生效的样板状态 [[状态号, 条目, 效果], ...]（开关关、不在天启篇恒空）
+static func live_sample_effects(a) -> Array:
+	var out := []
+	if not a is XActor or not pool_on("POOL_LIVE"):
+		return out
+	var tab := live_sample()
+	for st in a.states():
+		var sid := int(st.get("id", 0))
+		if sid <= 0 or not tab.has(sid):
+			continue
+		for e in st.get("effects", []):
+			if _live_effect(e):
+				out.append([sid, tab[sid], e])
+	return out
+
+
+## damage._calculate：这一下（我方打敌人、伤害类型 dmg_type）样板状态进③的量：{add 进 finalAdd 的总量（秘籍格已按本封好）, nine 算进九线合计封顶的那部分}
+static func live_confirm_add(a, b, dmg_type := 1) -> Dictionary:
+	var out := {"add": 0.0, "nine": 0.0}
+	if not b is XEnemy or not dmg_type in SUIT_SKIP_TYPES:
+		return out
+	var per := XTianqiBase.secret_slot(nine_cap("secret_slot"))
+	for trip in live_sample_effects(a):
+		var row: Dictionary = trip[1]
+		var e: Dictionary = trip[2]
+		if str(row.get("action", "")) != "pool" or (bool(e.get("hpOnly", false)) and not dmg_type in [1, 5]):
+			continue
+		var x := float(int(row.get("add", 0))) / 100.0
+		match str(row.get("cap", "")):
+			"secret":
+				x = minf(x, per)
+			"nine":
+				out.nine += x
+		out.add += x
+	return out
+
+
+## XStateEffects.run("confirm")：样板状态那一步换成带 skipTypes 的副本（对敌人的伤害不乘；pool 的已进③，stop 的就没了）
+static func live_confirm_rows(holder, rows: Array) -> Array:
+	var ids := {}
+	for trip in live_sample_effects(holder):
+		ids[int(trip[0])] = true
+	if ids.is_empty():
+		return rows
+	var out := []
+	for st in rows:
+		if not ids.has(int(st.get("id", 0))):
+			out.append(st)
+			continue
+		var copy: Dictionary = st.duplicate()
+		var effects := []
+		for e in st.get("effects", []):
+			if _live_effect(e):
+				var e2: Dictionary = e.duplicate()
+				e2.skipTypes = SUIT_SKIP_TYPES
+				e2[LIVE_POOLED] = true  # audit_confirm 认这个标记放行
 				effects.append(e2)
 			else:
 				effects.append(e)
@@ -365,6 +453,8 @@ static func confirm_fingerprint(st: Dictionary) -> String:
 ##   原版数据自带 skipTypes 的确认阶段效果照样要过 check，期三收紧）；天启篇难度被动等价行不算；
 ## 其余按 state_confirm 那一行判（没登记的状态号＝unregistered，到期＝exempt_expired）。只记不改数。
 const CONFIRM_SYNTH := "天启篇·难度被动等价"
+## T185：只记不报的计数——audit_confirm 实际碰到的状态号 → 次数（期四长 climb 打出来，查静态扫描没找到来源的 41 个）
+static var confirm_seen := {}
 
 static func audit_confirm(holder, rows: Array, ctx: Dictionary) -> Array:
 	var found := []
@@ -374,10 +464,11 @@ static func audit_confirm(holder, rows: Array, ctx: Dictionary) -> Array:
 	for st in rows:
 		if not st is Dictionary or str(st.get("name", "")) == CONFIRM_SYNTH:
 			continue
-		var effects := (st.get("effects", []) as Array).filter(func(e): return e is Dictionary and str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) != "noop" and not bool(e.get(SUIT_POOLED, false)))
+		var effects := (st.get("effects", []) as Array).filter(func(e): return e is Dictionary and str(e.get("phase", "")) == "confirm" and str(e.get("op", "")) != "noop" and not bool(e.get(SUIT_POOLED, false)) and not bool(e.get(LIVE_POOLED, false)))
 		if effects.is_empty():
 			continue
 		var sid := int(st.get("id", 0))
+		confirm_seen[sid] = int(confirm_seen.get(sid, 0)) + 1
 		var source := confirm_source(sid)
 		var why := "" if state_confirm_registered(sid) else "unregistered"
 		var rollback := source == "state_confirm_never" and not switch_on(str(_confirm_never.get(sid, {}).get("switch", "")))
@@ -927,7 +1018,7 @@ static func apply_nine_cap(item: Dictionary, a, frame: Dictionary, cache: Dictio
 		if x > 0.0:
 			cut.element[e] = x
 	# （2）其余九线合计
-	var nine := {"skill": 0.0, "bonus": float(hooks.get("race", 0.0)) + float(hooks.get("orb", 0.0)) + float(hooks.get("suit", 0.0)), "crit": 0.0, "element": {}}
+	var nine := {"skill": 0.0, "bonus": float(hooks.get("race", 0.0)) + float(hooks.get("orb", 0.0)) + float(hooks.get("suit", 0.0)) + float(hooks.get("live", 0.0)), "crit": 0.0, "element": {}}
 	for b in NINE_BUCKETS:
 		var sh := _hit_share(by, b, hit)
 		nine.skill += sh.skill
