@@ -24,6 +24,10 @@ extends RefCounted
 
 const META := "xdeath_alien"
 
+## O-待定（T180，发作真换人 v0.2 第三节第 5 条①）：true＝死期、丧钟、替身带走人时走战斗的倒下入口 logic._die（和四骑士死期、
+## 七首之龙缓期一样：谷雨代命、云裳衣魂、五条悟试炼兜底这些「倒下包装」照常起作用）；免即死已在前面判过，倒下入口只因
+## 死亡抵抗特性没加上时仍直接加阵亡状态。false＝照旧直接写阵亡状态（add_new_state）
+static var DIE_ENTRY := true
 static var _pending := ""
 ## 正在打的死亡异化战（复活挂钩不带 logic，从这里取）
 static var _logic_ref: WeakRef = null
@@ -281,12 +285,20 @@ static func _kill(logic, a, resistible: bool, why: String) -> bool:
 	if resistible and a.traits_set(XBattler.TRAIT_STATE_RESIST).has(1) and not _captain_breaks(logic):
 		_say(f, "%s挡住了%s。" % [a.display_name(), why])
 		return false
-	_say(f, "%s：%s倒下了。" % [why, a.display_name()])
 	a.immortal = false
 	a.shield = 0.0
 	a.hp = 0.0
-	if not a.state_ids.has(1):
+	if DIE_ENTRY:
+		a.refresh_resources()
+		logic._die(a)
+		if not a.state_ids.has(1) and a.hp > 0.0:
+			a.refresh_resources()
+			return false  # 倒下包装代命（谷雨、云裳衣魂、五条悟试炼兜底），生命已由包装改写，同别的倒下路一样不另报
+		if not a.state_ids.has(1):
+			a.add_new_state(1)  # 只因死亡抵抗特性没加上（免即死上面已判过、这次挡不住）
+	elif not a.state_ids.has(1):
 		a.add_new_state(1)
+	_say(f, "%s：%s倒下了。" % [why, a.display_name()])
 	a.refresh_resources()
 	f.queue.append({"type": "collapse", "target": a, "views": logic.views([a])})
 	if _zhongyan(logic):
@@ -319,7 +331,7 @@ static func _resolve_doom(logic, a) -> void:
 static func _scan_deaths(logic) -> void:
 	var f := fight(logic)
 	var fresh := []
-	for a in logic.actors:
+	for a in XTianqiHorsemen.doom_people(logic):  # 死在助力位的人照样喂收尸人（DOOM_FOLLOW；发作真换人 v0.2 第三节第 5 条）
 		if a.is_dead():
 			if not f.dead.has(a):
 				f.dead[a] = true
@@ -484,7 +496,7 @@ static func blocks_escape(logic) -> bool:
 ## XBattler.remove_state(1)：终焉在场时的死者、替身终焉换下的人、收尸人化形锁住的、丧钟终焉归零那回合，不能复活
 static func blocks_revive(b) -> bool:
 	var logic = active_logic()
-	if logic == null or not b is XActor or not logic.actors.has(b):
+	if logic == null or not b is XActor or not XTianqiHorsemen.doom_people(logic).has(b):
 		return false
 	var f := fight(logic)
 	if f.no_revive.has(b) or int(f.knell_lock) == int(logic.turn):

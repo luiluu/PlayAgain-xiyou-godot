@@ -552,6 +552,9 @@ static func end_action(logic) -> Array:
 
 
 ## BattleLogic.start_turn（XTianqiQiyinRule.start_turn 之后）：星坠等扣过之后再看断首；缓期到点就倒下
+## 缓期是「到点就死」三种之一（另两种：四骑士死期、宣判者死期；发作真换人 v0.2 第三节第 5 条）：记的是人不是格子，
+## 被换到助力位照样到点倒下（走倒下入口 logic._die，不发倒下演出，所以没有取图的问题）；新挂只在场上活人里挑（_put_reprieve）。
+## 允许失败的战斗打输后的复活由 XTianqiHorsemen.lose_revive 扫 5 个人，死在助力位的也复活到 1 血（T180）
 static func start_turn(logic) -> Array:
 	if not active(logic):
 		return []
