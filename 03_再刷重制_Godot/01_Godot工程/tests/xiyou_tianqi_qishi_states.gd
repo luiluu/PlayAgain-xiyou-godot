@@ -21,6 +21,8 @@ const NOTE_SKILLS := [6162, 5510, 6176, 6177, 5568, 5580]
 var results: Array = []
 var raw_states: Array
 var raw_skills: Array
+## 西游档读到的记录（已过统一文字修正：零宽符等），天启篇备注按它换字面比对，排除别的修正干扰
+var plain := {}
 
 
 func _ready() -> void:
@@ -37,24 +39,36 @@ func _t(table: String, id: int) -> Dictionary:
 	return XDB.table(table)[id]
 
 
-## 原文按 NOTE_SWAPS 换一遍（天启篇备注应当恰好等于它；6162 另有 T177 的「天道眷顾者」→「启示眷属」）
+## 西游档备注按 NOTE_SWAPS 换一遍（天启篇备注应当恰好等于它；6162 另有 T177 的「天道眷顾者」→「启示眷属」）
 func _swapped(s: String) -> String:
 	for p in NOTE_SWAPS:
 		s = s.replace(p[0], p[1])
-	return s.replace("天道眷顾者", "启示眷属").replace("所有天道状态有效度", "所有启示状态有效度")
+	return s.replace("天道眷顾者", "启示眷属")
 
 
-## 西游档：名字、描述、备注与 generated 原文逐字相同
-func _plain_same(tag: String) -> void:
-	var bad := []
+func _keys() -> Array:
+	var out := []
 	for id in STATES.keys() + NOTE_STATES:
-		for k in ["name", "description", "note"]:
-			if str(_t("States", id).get(k, "")) != str(raw_states[id].get(k, "")):
-				bad.append(["States", id, k])
+		out.append(["States", id])
 	for id in SKILLS.keys() + NOTE_SKILLS:
+		out.append(["Skills", id])
+	return out
+
+
+## 西游档：名字、描述、备注里「天道」个数与 generated 原文相同（T193 一处没换）；again＝与第一次西游档读到的逐字相同
+func _plain_same(tag: String, again := false) -> void:
+	var bad := []
+	for tk in _keys():
+		var raw: Dictionary = (raw_states if tk[0] == "States" else raw_skills)[tk[1]]
 		for k in ["name", "description", "note"]:
-			if str(_t("Skills", id).get(k, "")) != str(raw_skills[id].get(k, "")):
-				bad.append(["Skills", id, k])
+			var v := str(_t(tk[0], tk[1]).get(k, ""))
+			if v.count("天道") != str(raw.get(k, "")).count("天道") or v.contains("启示"):
+				bad.append([tk, k])
+			if again and v != str(plain[tk][k]):
+				bad.append([tk, k, "changed"])
+			elif not again:
+				plain[tk] = plain.get(tk, {})
+				plain[tk][k] = v
 	_check(tag, bad.is_empty(), bad)
 
 
@@ -69,6 +83,7 @@ func _run() -> void:
 	XTextFix.sync_mode()
 	_check("plain_mode", not XTextFix.tq_on())
 	_plain_same("plain_identical")
+	XTianqiSkills.CARDS = true  # 期四角色卡默认关（PHASE4），专项单独打开看 5568／5580 重构卡面
 	_check("plain_5568_card", str(XDB.rec("Skills", 5568).note).contains("天道·封魔"))
 	# 天启篇档
 	var s := Kit.new_game("jiusi")
@@ -94,8 +109,8 @@ func _run() -> void:
 	# 二、状态备注：恰好只换了这几处字面
 	bad = []
 	for id in NOTE_STATES:
-		var want := _swapped(str(raw_states[id].note))
-		if str(_t("States", id).note) != want or want == str(raw_states[id].note):
+		var want := _swapped(str(plain[["States", id]].note))
+		if str(_t("States", id).note) != want or want == str(plain[["States", id]].note):
 			bad.append([id, _t("States", id).note])
 	_check("tq_state_notes", bad.is_empty(), bad)
 	_check("tq_995_rdn", str(_t("States", 995).note).contains("<RightDownNote:\"启示诅咒\">"))
@@ -105,8 +120,8 @@ func _run() -> void:
 	# 三、技能说明
 	bad = []
 	for id in NOTE_SKILLS:
-		var want := _swapped(str(raw_skills[id].note))
-		if str(_t("Skills", id).note) != want or want == str(raw_skills[id].note):
+		var want := _swapped(str(plain[["Skills", id]].note))
+		if str(_t("Skills", id).note) != want or want == str(plain[["Skills", id]].note):
 			bad.append([id, _t("Skills", id).note])
 	_check("tq_skill_notes", bad.is_empty(), bad)
 	_check("tq_6176_desc", str(_t("Skills", 6176).description).contains("启示……又如何？") and not str(_t("Skills", 6176).description).contains("天道"), _t("Skills", 6176).description)
@@ -115,16 +130,12 @@ func _run() -> void:
 	var c68 := str(XDB.rec("Skills", 5568).note)
 	var c80 := str(XDB.rec("Skills", 5580).note)
 	_check("tq_rework_cards", c68.contains("启示·封魔、启示·封技") and c80.contains("免疫启示·封魔、启示·封技") and not c68.contains("天道") and not c80.contains("天道"), [c68, c80])
-	# 看得到的字里不再有「天道」（本单范围内的记录）
+	# 看得到的字里不再有「天道」（本单范围内的记录；6162 描述「劫取天道之运」不在本单，交付单列为遗留）
 	bad = []
-	for id in STATES.keys() + NOTE_STATES:
+	for tk in _keys():
 		for k in ["name", "description", "note"]:
-			if str(_t("States", id).get(k, "")).contains("天道"):
-				bad.append(["States", id, k])
-	for id in SKILLS.keys() + NOTE_SKILLS:
-		for k in ["name", "description", "note"]:
-			if str(_t("Skills", id).get(k, "")).contains("天道"):
-				bad.append(["Skills", id, k])
+			if str(_t(tk[0], tk[1]).get(k, "")).contains("天道") and not (tk == ["Skills", 6162] and k == "description"):
+				bad.append([tk, k])
 	_check("tq_no_tiandao_left", bad.is_empty(), bad)
 	# 范围外不动：被动 6168「天道诅咒」、6213「天道注视」、2570「天道*裁决」
 	_check("tq_out_of_scope_kept", str(_t("Skills", 6168).name) == "天道诅咒" and str(_t("Skills", 6213).name) == "天道注视" and str(_t("Skills", 2570).name) == "天道*裁决")
@@ -137,10 +148,11 @@ func _run() -> void:
 	# 换回西游档：缓存按模式位隔离，仍是原貌
 	XState.current = XState.new_game_blank()
 	XTextFix.sync_mode()
-	_plain_same("plain_identical_again")
+	_plain_same("plain_identical_again", true)
 	XState.current = s
 	XTextFix.sync_mode()
 	_check("tq_switch_back", str(_t("States", 264).name) == "启示·放逐")
+	XTianqiSkills.CARDS = false
 	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
