@@ -33,8 +33,14 @@ static func record(logic: XBattleLogic, initial: Dictionary, commands: Array, lo
 		"finalRuntime": logic.state.runtime_random_snapshot(),
 		"rules": {"advanceLootOnCollapse": logic.advance_loot_on_collapse}, "commands": commands.duplicate(true),
 		"random": logic.random.snapshot(), "journal": _journal(logic.random),
-		"logs": freeze(logs, logic), "final": freeze(logic.state.to_dict(), logic),
+		"logs": freeze(logs, logic), "final": freeze(_final_save(logic), logic),
 		"enemies": logic.enemies.map(func(e): return [logic.stable_id(e), e.hp, e.mp, e.tp, e.state_ids.duplicate(), e.state_turns.duplicate(true)])}
+
+## 末态存档：回放不走收口，这场战斗还带着发作换人的留底时，出战栏写留底（T086-a，XTianqiBrand.patch_save；没有留底时原样）
+static func _final_save(logic: XBattleLogic) -> Dictionary:
+	var d := logic.state.to_dict()
+	XTianqiBrand.patch_save(logic, d)
+	return d
 
 ## 取数记录：rule、reward；天启篇钉住的本场另记布阵流和各奖励子流（西游档与原来逐字节相同）
 static func _journal(random: XBattleRandom) -> Dictionary:
@@ -89,6 +95,7 @@ static func replay(data: Dictionary) -> Dictionary:
 			if (0 if decision[0] == null else int(decision[0].id)) != int(cmd.skill):  # 0：敌人没有可用行动
 				diagnostic = "replay_ai_mismatch"
 				break
+			skill = decision[0] if decision[0] is Dictionary else {}  # 复核 P3-3：自动出招照 decide 给的行动执行（物品、合成技能不按技能表重查），不只取目标
 			chosen = decision[1]
 		logs.append_array(logic.act(user, skill, chosen))
 		commands.append(cmd)
@@ -98,6 +105,7 @@ static func replay(data: Dictionary) -> Dictionary:
 			if JSON.parse_string(JSON.stringify(actual[key])) != JSON.parse_string(JSON.stringify(data[key])):
 				diagnostic = "replay_result_mismatch:" + key
 				break
+	XTianqiBrand.release(logic)  # T086-a：回放的战斗对象到此为止，留底登记跟着放开（不残留到下一场）
 	XState.current = prior
 	XZhenqi.battle = prior_zhenqi
 	XDungeon.battle = prior_contexts[0]

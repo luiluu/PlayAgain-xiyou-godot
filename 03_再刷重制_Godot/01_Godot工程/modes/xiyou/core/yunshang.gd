@@ -493,6 +493,7 @@ static func start_turn(logic) -> void:
 
 ## endTurn 包装：到期的债扣生命、衣魂过期倒下、六衡裁身回合末清除
 static func end_turn(logic) -> void:
+	_helper_ghost(logic)  # T180 P3-2：助力位上的人衣魂到期照样结束
 	for a in logic.actors:
 		var d := data(a)
 		if d.is_empty():
@@ -515,12 +516,34 @@ static func end_turn(logic) -> void:
 	XYunshangOrders.end_turn(logic)  # 云裳出战时给天衣订单记一格
 
 
+## T180 留下的 P3-2（T086-a 处理）：衣魂只在场上扫，换到助力位的人（死期死在助力位触发不渡黄泉）衣魂到期不结算。
+## 开着时回合末也扫助力位：只结衣魂（赊账、裁身这些持续的照现行，下场暂停）；收口时赊账、衣魂连助力位一起结清。关掉回到只扫场上
+static var HELPER_GHOST := true
+
+static func _five(logic) -> Array:
+	var out: Array = logic.actors.duplicate()
+	if HELPER_GHOST and logic.get("state") != null:
+		var h = logic.state.helper()
+		if h != null and not out.has(h):
+			out.append(h)
+	return out
+
+
+static func _helper_ghost(logic) -> void:
+	for a in _five(logic):
+		if logic.actors.has(a):
+			continue
+		var d := data(a)
+		if not d.is_empty() and int(d.get("ghost", 0)) > 0 and round >= int(d.ghost_expires):
+			end_ghost(logic, a, d)
+
+
 ## endBattle 包装：先发不朽天丝（result 0 胜利，见 XYunshangOrders），再结清赊账、结束衣魂，清所有战斗数据
 static func end_battle(logic = null, result := -1) -> void:
 	if logic != null:
 		XYunshangOrders.end_battle(logic, result)
 	if logic != null and battle != 0:
-		for a in logic.actors:
+		for a in _five(logic):  # T180 P3-2：助力位上的人（手动换下、死期死在助力位）赊账、衣魂同样结清
 			var d: Dictionary = _data.get(a, {})
 			if d.is_empty() or int(d.battle) != battle:
 				continue

@@ -619,9 +619,12 @@ static func _start_fit(logic, c: Dictionary, a, source: String) -> Array:
 			c.guard_break[a] = last
 			logs.append({"type": "battle_text", "text": TEXT_FIT % [a.display_name(), fit_name(kind)], "tianqi_fit": true})
 		"swap":
-			kind = "blackout"  # T086 落地前的兜底：断片，人还在场上
-			last = turn + maxi(1, int(fit_row("swap").get("fallback_rounds", 2))) - 1
-			c.fit_now[a] = {"kind": kind, "from": turn, "to": last}
+			if swap_possible(logic, a):
+				c.fit_now[a] = {"kind": kind, "from": turn, "to": turn}  # T086-a 真换人：轮到他时这次行动没了，收尾跑完、人还活着才换（after_act）
+			else:
+				kind = "blackout"  # 换不了（开关关着、助力位空或倒下、模块角色、超上限、锁定、心魔被考的人）：断片，人还在场上
+				last = turn + _blackout_rounds() - 1
+				c.fit_now[a] = {"kind": kind, "from": turn, "to": last}
 		_:
 			c.fit_now[a] = {"kind": kind, "from": turn, "to": turn}
 	c.fit_last[a] = last
@@ -692,11 +695,14 @@ static func forced_action(logic, u) -> Array:
 		return []
 	var turn := int(logic.turn)
 	if not _in_fit(c, u, turn):
-		return []
+		return auto_back(logic, u)
 	var f: Dictionary = c.fit_now[u]
 	var kind := str(f.kind)
 	if int(f.get("used", -1)) == turn:
 		return [_cmd("idle"), null]
+	if kind == "swap" and not swap_possible(logic, u):
+		_to_blackout(logic, c, u)  # 抽到时能换、轮到他时换不了（同回合别人先换锁住了助力位等）：当场改成完整的断片
+		return [_cmd("blackout"), null]
 	f["used"] = turn
 	match kind:
 		"misfire":
@@ -728,11 +734,13 @@ static func is_fit_command(skill) -> bool:
 static func perform(logic, u, skill: Dictionary, target) -> Dictionary:
 	var kind := str(skill.get(FIT_KEY, ""))
 	var logs := []
-	if kind != "idle":
+	if kind != "idle" and kind != "swap_back":
 		logs.append({"type": "battle_text", "text": TEXT_FIT % [u.display_name(), fit_name(kind)], "tianqi_fit": true})
 	match kind:
 		"misfire":
 			return {"logs": logs, "skill": u.attack_skill(), "target": target}
+		"swap", "swap_back":
+			_fc(logic)["swap_due"] = {"actor": u, "kind": kind}  # 按放弃行动走完，act 末尾（收尾之后）after_act 再换
 		"hit_self", "hit_ally":
 			if target is XActor and target.is_alive():
 				var r := strike(logic, u, target)
@@ -777,6 +785,213 @@ static func blacked_out(logic, b) -> bool:
 	var c := fight(logic)
 	var f = c.get("fit_now", {}).get(b)
 	return f != null and str(f.kind) == "blackout" and _in_fit(c, b, int(logic.turn))
+
+
+# ---- 真换人（T086-a；设计仓库《天启篇_发作真换人 v0.2》第三～七节，D201）----
+## 抽到第六种「换人」时先判一次能不能真换（swap_possible）：能就记成 swap（只这一回合），轮到他时这次行动按放弃走完，
+## act 末尾行动收尾全部跑完、人还活着才和助力位对调（after_act ← BattleLogic.act 最后；手动换人也是先放弃一次行动再对调）；
+## 换不了退回断片（完整 2 回合，间隔从断片最后一回合算）。被换下去的人锁定 lock_rounds 回合（换下那回合算第 1 回合），
+## 锁定期间谁都不能换人（BattleLogic.can_tianqi_swap）；过了锁定，自动战斗、挂机时被强制换上来的人在自己下一次行动现判换回（auto_back，不挂记号）。
+## 留底：这一场第一次强制换人之前的出战栏 5 格，挂在这场战斗的 fight 上（c.swap.snap），不进存档；BattleLogic.tianqi_restore
+## 在胜利结算开头、收口开头还原出战栏＋在场名单。_holds 另记「这份存档有一场没收口的战斗带着留底」：出战栏超强者清理停手
+## （XItemMarks.enforce_party）、开新一场先清扫（sweep）、回放导出写留底（patch_save）都只认它。
+## 开关默认关：关着第六种一律断片（同 T086 前）。打开之前画面演出 T086-c 必须先合（设计稿第十节）。
+static var REAL_SWAP := false
+## 玩家可见文字（待小A 文字审）：%s 是角色名。轮到他时能换、收尾之后换不了了（这次行动里助力位倒下等）
+const TEXT_SWAP_FALLBACK := "%s 没能退下，断片了！"
+static var _holds: Array = []  # [{state: WeakRef, logic: WeakRef, snap: Array}]
+
+
+static func _swap_row() -> Dictionary:
+	return fit_row("swap")
+
+
+static func _blackout_rounds() -> int:
+	return maxi(1, int(_swap_row().get("fallback_rounds", 2)))
+
+
+static func lock_rounds() -> int:
+	return maxi(1, int(_swap_row().get("lock_rounds", 2)))
+
+
+## 只做断片的专属模块角色（brand.json swap.blackout_only；设计稿第四节，D201 第 3 件）
+static func blackout_only(id: int) -> bool:
+	return (_swap_row().get("blackout_only", []) as Array).any(func(x): return int(x) == id)
+
+
+## 这一场的换人数据（只在 fight 上，战斗没了跟着没）
+static func swap_data(logic) -> Dictionary:
+	var c := fight(logic)
+	if c.is_empty():
+		return {}
+	if not c.has("swap"):
+		c["swap"] = {"snap": [], "lock_until": -1, "last_out": 0, "last_in": 0, "log": []}
+	return c.swap
+
+
+static func snap_of(logic) -> Array:
+	var c := fight(logic)
+	return (c.swap.snap as Array) if not c.is_empty() and c.has("swap") else []
+
+
+static func swap_locked(logic) -> bool:
+	var c := fight(logic)
+	return not c.is_empty() and c.has("swap") and int(logic.turn) <= int(c.swap.lock_until)
+
+
+## 心魔战（真气瓶颈、烙印立境）被考的人：他得自己站到最后，抽到换人只断片（设计稿第三节第 6 条第 5 行）
+static func trial_actor() -> int:
+	var t = XZhenqi.battle.get("trial", {})
+	return int(t.get("actorId", 0)) if t is Dictionary else 0
+
+
+## 能不能真换（第三节第 6 条的表）：开关、助力位活着、两边都不是只断片的模块角色、不是心魔被考的人、没在锁定、上场上限（含九死炼狱的临时口子）
+static func swap_possible(logic, a) -> bool:
+	if not REAL_SWAP or fight(logic).is_empty() or not a is XActor or not logic.actors.has(a) or logic.state == null:
+		return false
+	var h = logic.state.helper()
+	if h == null or blackout_only(int(a.actor_id)) or blackout_only(int(h.actor_id)) or trial_actor() == int(a.actor_id):
+		return false
+	return not swap_locked(logic) and logic.can_tianqi_swap(a, true)
+
+
+## 改成完整的断片：从这一回合起 fallback_rounds 回合不行动，「两次发作隔 2 回合」从断片的最后一回合起算
+static func _to_blackout(logic, c: Dictionary, u) -> void:
+	var turn := int(logic.turn)
+	var last := turn + _blackout_rounds() - 1
+	c.fit_now[u] = {"kind": "blackout", "from": turn, "to": last, "used": turn}
+	c.fit_last[u] = maxi(int(c.fit_last.get(u, turn)), last)
+	for i in range(c.fit_log.size() - 1, -1, -1):
+		var r: Dictionary = c.fit_log[i]
+		if int(r.actor) == int(u.actor_id) and str(r.kind) == "swap":
+			r.kind = "blackout"
+			r["fallback"] = true
+			break
+
+
+## 自动战斗、挂机：锁定一过，被强制换上来的人在自己下一次行动时换回（每次现判，不挂记号；设计稿第三节第 3 条）。
+## 条件：有留底；助力位上正是最近一次被强制换下去的人、活着；行动的正是那次被强制换上来的人；不在锁定、不超上限（can_tianqi_swap）
+static func auto_back(logic, u) -> Array:
+	if not REAL_SWAP or not u is XActor or logic.state == null or not (logic.auto or XHangUp.is_active(logic.state)):
+		return []
+	return [_cmd("swap_back"), null] if _back_ok(logic, u) else []
+
+
+static func _back_ok(logic, u) -> bool:
+	if snap_of(logic).is_empty():
+		return false
+	var sw := swap_data(logic)
+	var h = logic.state.helper()
+	return h != null and h.is_alive() and int(h.actor_id) == int(sw.last_out) and int(u.actor_id) == int(sw.last_in) \
+		and logic.actors.has(u) and logic.can_tianqi_swap(u)
+
+
+## BattleLogic.act 最后（行动收尾、倒下结算全部跑完）：这次行动是发作换人／自动换回的，人还活着才换。返回记录（tianqi_swap 一条给画面换图）
+static func after_act(logic, u) -> Array:
+	var c := fight(logic)
+	if c.is_empty() or not c.has("swap_due"):
+		return []
+	var due: Dictionary = c.swap_due
+	c.erase("swap_due")
+	if not is_same(due.actor, u) or not u.is_alive() or not logic.actors.has(u):
+		return []  # 收尾里倒下了：不换（倒下不补位，D57），这次发作算完
+	var kind := str(due.kind)
+	var sw := swap_data(logic)
+	if kind == "swap":
+		if not swap_possible(logic, u):
+			_to_blackout(logic, c, u)
+			return [{"type": "battle_text", "text": TEXT_SWAP_FALLBACK % u.display_name(), "tianqi_fit": true}]
+		var first: bool = (sw.snap as Array).is_empty()
+		if first:
+			sw.snap = logic.state.battle_slots.duplicate()
+		var h = logic.tianqi_swap(u, true)
+		if h == null:
+			if first:
+				sw.snap = []
+			_to_blackout(logic, c, u)
+			return [{"type": "battle_text", "text": TEXT_SWAP_FALLBACK % u.display_name(), "tianqi_fit": true}]
+		if first:
+			_hold(logic, sw.snap)
+		sw.lock_until = int(logic.turn) + lock_rounds() - 1
+		sw.last_out = int(u.actor_id)
+		sw.last_in = int(h.actor_id)
+		sw.log.append({"turn": int(logic.turn), "out": int(u.actor_id), "in": int(h.actor_id), "kind": kind})
+		return logic.take_swap_logs() + [{"type": "tianqi_swap", "out": u, "in": h, "forced": true}]
+	if kind == "swap_back" and _back_ok(logic, u):
+		var h = logic.tianqi_swap(u)
+		if h != null:
+			sw.log.append({"turn": int(logic.turn), "out": int(u.actor_id), "in": int(h.actor_id), "kind": kind})
+			return logic.take_swap_logs() + [{"type": "tianqi_swap", "out": u, "in": h, "auto": true}]
+	return []
+
+
+## 还原用：取走留底（之后这一场不再有留底，第二次调是空的），放开 _holds
+static func take_snap(logic) -> Array:
+	var snap := snap_of(logic)
+	if snap.is_empty():
+		return []
+	var out := snap.duplicate()
+	swap_data(logic).snap = []
+	release(logic)
+	return out
+
+
+static func _hold(logic, snap: Array) -> void:
+	_prune()
+	_holds.append({"state": weakref(logic.state), "logic": weakref(logic), "snap": snap.duplicate()})
+
+
+static func _prune() -> void:
+	_holds = _holds.filter(func(x): return x.state.get_ref() != null)
+
+
+## 放开这场战斗的留底登记（不还原）：回放结束、战斗对象要丢掉时
+static func release(logic) -> void:
+	_holds = _holds.filter(func(x): return x.state.get_ref() != null and x.logic.get_ref() != logic)
+
+
+## 这份存档有一场还没收口的战斗带着留底（出战栏超强者清理在这时停手，认的是这份存档自己的那一场）
+static func swap_hold(s) -> bool:
+	if _holds.is_empty() or s == null:
+		return false
+	return _holds.any(func(x): return x.state.get_ref() == s)
+
+
+## 开新一场（BattleLogic.setup 最前）：这份存档上还有上一场没还原的留底，先还原出战栏再开打
+static func sweep(s) -> void:
+	if _holds.is_empty() or s == null:
+		return
+	var keep := []
+	for x in _holds:
+		var st = x.state.get_ref()
+		if st == null:
+			continue
+		if st != s:
+			keep.append(x)
+			continue
+		if same_people(x.snap, s.battle_slots):
+			for i in (x.snap as Array).size():
+				s.battle_slots[i] = int(x.snap[i])
+		else:
+			push_warning("XTianqiBrand.sweep: 留底和出战栏不是同一批人，不还原 %s / %s" % [x.snap, s.battle_slots])
+	_holds = keep
+
+
+static func same_people(a: Array, b: Array) -> bool:
+	if a.size() != b.size():
+		return false
+	var x := a.map(func(v): return int(v))
+	var y := b.map(func(v): return int(v))
+	x.sort()
+	y.sort()
+	return x == y
+
+
+## 回放导出（XBattleReplay.record）不走收口：这场战斗还带着留底时，导出的出战栏写留底（设计稿第三节第 4 条「保险」）
+static func patch_save(logic, d: Dictionary) -> void:
+	var snap := snap_of(logic)
+	if not snap.is_empty() and d.has("battleSlots"):
+		d["battleSlots"] = snap.duplicate()
 
 
 # ---- 灼痕（稿第四节第 4 条，第十三节 T073-d2）----
