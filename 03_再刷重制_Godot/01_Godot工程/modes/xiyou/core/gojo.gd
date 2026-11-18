@@ -399,7 +399,7 @@ static func formula(a, b, item: Dictionary) -> float:
 	var n := int(cast.get("pairs", 0)) if own(a) else MARK_CAP
 	if pairs.is_empty() or n < 1:
 		return 0.0
-	var coef := float(pairs[mini(n, pairs.size()) - 1])
+	var coef := float(pairs[mini(n, pairs.size()) - 1]) / maxf(1.0, float(sp.get("gojo_hits", 1)))  # T209：gojo_hits 段（卡上写合计，按段分；seq split_effects 同段数）
 	return maxf(0.0, float(a.mat) * coef * XTianqiSkills.level_scale(a))
 
 

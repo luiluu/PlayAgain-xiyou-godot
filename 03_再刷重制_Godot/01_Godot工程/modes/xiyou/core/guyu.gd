@@ -416,8 +416,17 @@ static func reference_cap(b) -> float:
 	if g == null:
 		return 0.0
 	if _tq():
-		return floorf(base_mhp(g) * (1.2 if has_relic(g) else 1.0))
+		return floorf(base_mhp(g) * tq_cap_rate(g))
 	return floorf((curve(int(g.level), CAP_CURVE) + 0.15 * stage(g)) * base_mhp(b))
+
+
+## 天启篇储备上限（谷雨生命上限的百分比，整数）：技能表 actors.175 的 reserve_cap／reserve_cap_relic（T209：Kyo 11-18「谷雨走A，通过调整储备上限」，
+## tune.D209 写；XTianqiBase.TUNE_D209 关掉＋XTianqiSkills.reload_table() 后表里没有，回到稿子的 100%／百谷生 120%）
+static func tq_cap_rate(g) -> float:
+	var row = XTianqiSkills.data().get("actors", {}).get(str(ACTOR), {})
+	var relic := has_relic(g)
+	var pct := float((row as Dictionary).get("reserve_cap_relic" if relic else "reserve_cap", 0)) if row is Dictionary else 0.0
+	return pct / 100.0 if pct > 0.0 else (1.2 if relic else 1.0)
 
 
 ## cap：谷雨本人无上限

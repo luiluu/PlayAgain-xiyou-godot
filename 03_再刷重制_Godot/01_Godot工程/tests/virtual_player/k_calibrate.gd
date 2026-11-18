@@ -45,6 +45,10 @@ var trumpet_n := 2  # 号卷：七卷里打单体加伤害的只有二号血海�
 var report := {}
 ## T204＋T209：停用中但要进量表的超强者（152 徐凤年）
 const PROBE_ENABLE := [152]
+## T209（协调 11-18）：成长型角色按标定点的成长量量，不是 0 也不是无穷——108 奈叶适应击杀次数（--nanoha-kills=N，缺省 2000＝软上限起点）、
+## 179 流萤余烬（天启篇封顶 3000，--ember=N）；167 渡鸦灵魂在条件里按满算（cond_max），天启篇封顶 15 万／20 万
+var nanoha_kills := 2000
+var ember := 3000.0
 
 
 func _ready() -> void:
@@ -77,6 +81,12 @@ func _ready() -> void:
 			XTianqiBase.TUNE_D198 = false
 		elif a == "--no-d208":  # T204：只关 D208（宿傩终式按段）覆盖层，改前对照用
 			XTianqiBase.TUNE_D208 = false
+		elif a == "--no-d209":  # T204＋T209：只关 D209（超强者按名次重排）覆盖层，改前对照用
+			XTianqiBase.TUNE_D209 = false
+		elif a.begins_with("--nanoha-kills="):
+			nanoha_kills = maxi(0, int(a.substr(15)))
+		elif a.begins_with("--ember="):
+			ember = maxf(0.0, float(a.substr(8)))
 		elif a == "--single":
 			single = true
 		elif a == "--debug-cast":
@@ -100,7 +110,7 @@ func _run() -> void:
 	var rules: Dictionary = XTianqiBalance.data().get("combat_rules", {})
 	if k_arg > 0.0:
 		rules["base_damage"] = k_arg
-	report = {"k": float(rules.get("base_damage", 1.0)), "hits": hits, "tune_d189": XTianqiBase.TUNE_D189, "tune_d198": XTianqiBase.TUNE_D198, "tune_d208": XTianqiBase.TUNE_D208, "level": level, "gear_level": gear_level, "fabao_level": fabao_level, "def": DEF, "rows": [], "tiers": {},
+	report = {"k": float(rules.get("base_damage", 1.0)), "hits": hits, "tune_d189": XTianqiBase.TUNE_D189, "tune_d198": XTianqiBase.TUNE_D198, "tune_d208": XTianqiBase.TUNE_D208, "tune_d209": XTianqiBase.TUNE_D209, "level": level, "gear_level": gear_level, "fabao_level": fabao_level, "def": DEF, "rows": [], "tiers": {},
 		"brand_max_bonus": float(XTianqiBrand.data().get("power", {}).get("max_bonus", 0.5)),
 		"caps": XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}),
 		"build": "bare" if bare else "full", "metric": "single" if single else "cast_total",
@@ -138,9 +148,25 @@ func _run() -> void:
 	report["mastery_max_level_seen"] = mastery_seen
 	print("K_REPORT " + JSON.stringify(report.tiers) + " mastery=" + str(mastery_seen))
 	if out_path != "":
-		var f := FileAccess.open(out_path, FileAccess.WRITE)
-		f.store_string(JSON.stringify(report, " "))
+		var f := FileAccess.open(out_path, FileAccess.WRITE)  # 相对路径按 Godot 的工作目录算，写不出时报错（T204：用绝对路径）
+		if f == null:
+			push_error("K 探针写不出 %s（%s）；--out 用绝对路径" % [out_path, FileAccess.get_open_error()])
+		else:
+			f.store_string(JSON.stringify(report, " "))
 	get_tree().quit.call_deferred(0)
+
+
+## T209：成长型角色的标定点成长量（见 nanoha_kills、ember）
+func _growth(s: XState, a) -> void:
+	if int(a.actor_id) == 108:
+		for i in nanoha_kills:
+			XNanoha.adapt(a)
+		report["nanoha_kills"] = nanoha_kills
+	elif XLiuying.own(a):
+		a.state_data["_codexLbEmber"] = ember
+		a.state_data["_codexLbEmberWins"] = 0.0
+		report["ember"] = ember
+	a.param_mark_dirty()
 
 
 ## 条件「成立到最大」的倍率（同 天启篇数据校验.py cond_max）
@@ -195,6 +221,7 @@ func _state(id: int) -> XState:
 	if not no_advance:
 		_advance_max(s, a)
 	_dress(a)
+	_growth(s, a)
 	var fid := _own_fabao(id)
 	if fid == 0:
 		var mw := main_weights(a)
@@ -341,6 +368,10 @@ func _measure(id: int, tier: String) -> Dictionary:
 	e.param_mark_dirty()
 	if XTianqiElements.enemy_profile(e, logic, s).get("source", "") != "":
 		push_error("K 木桩 %d 不是元素中性（%s）" % [int(e.enemy_id), XTianqiElements.enemy_profile(e, logic, s)])
+	if XGuyu.own(a):
+		var g := _measure_guyu(s, a, logic, e)
+		logic.end_battle(0)
+		return g
 	var sids := _scan_ids(a)
 	var best := _scan(a, e, logic, sids, cap)
 	if not bare and not best.is_empty():
@@ -373,6 +404,56 @@ func _measure(id: int, tier: String) -> Dictionary:
 	if XGarou.own(a) and not best.is_empty():
 		best["form"] = XGarou.FORM_NAMES[XGarou.stage(a)]  # T209：饿狼按星空形态量（进阶满＝形态 6）
 	return best
+
+
+## T209（Kyo 11-18「谷雨走A」）：175 谷雨的伤害是多回合叠生命储备再爆发——峰值＝储备叠满后花期里「终结」那一下（同别人「条件全中的一次施放」）。
+## 单人木桩：开战（百谷生 60 级自带 30%）后每回合给自己治疗一次（治疗量全记储备，生未央不在花期再 +20%），数到储备到上限要几回合；
+## 然后开花期、终结（威力＝全部储备×1.0，减木桩魔防一半；不会心）。词条按终结那一下贪心挑。报告记 rounds（治疗回合数，另加开花期、终结各 1 回合）、cap、reserve。
+func _measure_guyu(s: XState, a, logic, e) -> Dictionary:
+	if XGuyu.reserve(a) <= 0.0:
+		XGuyu.tq_battle_start(a)  # 开战没走 XTianqiModules.battle_start 时补（百谷生 60 级自带 30%）
+	var cap := XGuyu.cap(a)
+	var r0 := XGuyu.reserve(a)
+	var heal := XDB.rec("Skills", int(XGuyu.SKILL.heal))
+	var heals := 0
+	while XGuyu.reserve(a) < cap and heals < 60:
+		heals += 1
+		XGuyu.start_turn(heals)
+		a.mp = a.mmp
+		logic.execute(a, heal, a, true)
+		XGuyu.end_round()
+	var reserve := XGuyu.reserve(a)
+	var fin := XDB.rec("Skills", int(XGuyu.SKILL.finish))
+	var opn := XDB.rec("Skills", int(XGuyu.SKILL.open))
+	if not bare:
+		XGuyu._finish_power = reserve  # 贪心挑词条只算结算（calculating，不减魔防），先把威力摆上
+		var affixes := _affix_greedy(a, e, logic, int(fin.id))
+		XGuyu._finish_power = 0.0
+		report["guyu_affixes"] = affixes
+	var segs := []
+	XGuyu.start_turn(heals + 1)
+	a.mp = a.mmp
+	_pin_def(e)
+	e.hp = e.mhp
+	logic.execute(a, opn, e, true)
+	XGuyu.end_round()
+	XGuyu.start_turn(heals + 2)
+	XGuyu.reserves[a.actor_id] = reserve  # 开花期那回合的绽放付掉的补回来（峰值按叠满算）
+	a.mp = a.mmp
+	_pin_def(e)
+	e.hp = e.mhp
+	XStateEffects.force_critical = true
+	var logs: Array = logic.execute(a, fin, e, true)
+	XStateEffects.force_critical = false
+	_collect_hits(logs, e, segs)
+	var dealt := 0.0
+	for v in segs:
+		dealt += float(v)
+	if dealt <= 0.0:
+		return {}
+	return {"actor": int(a.actor_id), "skill": int(fin.id), "peak": roundf(dealt), "peak_single": roundf(dealt), "dealt": dealt, "segs": {"n": segs.size(), "ratio": 1.0, "segs": segs},
+		"guyu": {"heal_rounds": heals, "rounds_total": heals + 2, "cap": cap, "cap_rate": XGuyu.tq_cap_rate(a), "reserve_start": r0, "reserve": reserve, "relic": XGuyu.has_relic(a), "base_mhp": XGuyu.base_mhp(a)},
+		"atk": a.param(2), "mat": a.param(4), "mhp": a.mhp, "build": _build_desc(a)}
 
 
 ## 要量的技能：自己学会的；176 屠苏另加武装技能（持武者施放，XTusu.apply_subject 让整次结算以屠苏为出手者、按屠苏的属性，
@@ -414,17 +495,18 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 	_rows = {}
 	for sid in sids:
 		var sp := XTianqiSkills.spec(int(sid))
-		if not sp.has("damage") or sp.has("heal"):
+		var gojo_pairs := sp.has("gojo_pairs")  # T209：五条悟茈卡上没 damage、按苍赫印对数取 gojo_pairs（XGojo.formula），木桩前印满 3 对（_prime）
+		if (not sp.has("damage") and not gojo_pairs) or sp.has("heal"):
 			continue
 		var sk := XDB.rec("Skills", int(sid))
 		if sk.is_empty() or not XSmartAI.for_opponent(sk):
 			if per_skill:
 				print("K_SKILL %d %d skip=not_for_opponent" % [id, int(sid)])
 			continue
-		var d: Dictionary = sp.damage
+		var d: Dictionary = sp.get("damage", {})
 		# D195：「一直生效」的减成条件（如 3922 三连击时每段 ×1/3、4848 每段 ×0.6）是拿段数换的，按总伤算时要算进去，
 		# 不然「峰值单段（不含减成）× 段数」会多算 3 倍（T175 v12：9、10、19）。--single 照旧口径不算
-		var full_raw := eff_full(id, int(sid)) * (1.0 if single else _always_reduce(a, e, d, id, int(sid)))
+		var full_raw := (float((sp.gojo_pairs as Array).max()) if gojo_pairs else eff_full(id, int(sid)) * (1.0 if single else _always_reduce(a, e, d, id, int(sid))))
 		var full := minf(full_raw, cap * XTianqiSkills.cap_hits(d)) if cap > 0.0 else full_raw  # T192：cap_hits 按每段封
 		var w := XTianqiSkills.hit_weight(d)
 		var sk_best := {}
@@ -437,7 +519,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			_prime(logic, a, e, sk)
 			var term := _sukuna_terminal(logic, a, e, int(sid))
 			XStateEffects.force_critical = true
-			var v0 := absf(XTianqiSkills.formula(a, e, sk))
+			var v0 := absf(XGojo.formula(a, e, sk) if gojo_pairs else XTianqiSkills.formula(a, e, sk))
 			if debug and n == 0:
 				print("K_DEBUG foe def=%s mdf=%s pdr=%s mdr=%s el=%s" % [e.def, e.mdf, e.pdr, e.mdr, [e.element_rate(1), e.element_rate(2), e.element_rate(3), e.element_rate(4)]])
 				print("K_DEBUG qiyin fx=%s ops=%s act_w=%s" % [XTianqiQiyinEffects.effects(logic, a).keys(), XTianqiQiyinEffects.damage_ops(sk, a, e), XTianqiQiyinEffects._store(logic).act.get("weight")])
@@ -469,7 +551,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 				continue
 			# v_full：同一个基数（Σ属性×权重 × 等级缩放）乘「条件全中、封到上限」的系数 full÷w
 			var base_lv := v0 / maxf(1e-9, _coef_now(a, e, d, int(sid)))
-			var v_full := base_lv * full / maxf(1e-9, w)
+			var v_full := v0 if gojo_pairs else base_lv * full / maxf(1e-9, w)  # 茈：印已按满 3 对摆好，量到的就是条件全中
 			var peak := dealt * v_full / v0
 			if per_skill and n == hits - 1:
 				print("K_SKILL %d %d peak=%d dealt=%d eff=%s" % [id, int(sid), roundf(peak), dealt, eff_full(id, int(sid))])
@@ -700,6 +782,13 @@ func _has_trumpet(a) -> bool:
 
 ## 每一下之前：行动帧（XBattleLogic 出手时才建，探针直接 apply 要自己建）。砝码攒满 5 层、上一回合防御过、本回合第一次出手；词条先声每下都算第一下
 func _prime(logic, a, e, sk: Dictionary) -> void:
+	var sid := int(sk.get("id", 0))
+	if XGojo.own(a) and sid in [XGojo.PURPLE_IN, XGojo.PURPLE_OUT]:  # T209：茈条件全中＝苍印、赫印各 3（上限），形状对上
+		var t := XGojo.temp(a)
+		t.blue = XGojo.MARK_CAP
+		t.red = XGojo.MARK_CAP
+		t.last = "blue" if sid == XGojo.PURPLE_IN else "red"
+		XGojo.cast = {"skill": sid, "pairs": XGojo.MARK_CAP}
 	if bare:
 		return
 	var un := XTianqiQiyinEffects._unit(logic, a)
