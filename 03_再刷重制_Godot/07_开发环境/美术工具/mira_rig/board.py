@@ -13,7 +13,7 @@ BG = (46, 42, 52, 255)  # 偏暗的战斗底色
 name = sys.argv[1]
 R, src = load_rig(HERE / 'rig.json')
 sv = (HERE / R['source']).resolve().parent
-orig = Image.open(sv / f'UserSV_MiraDragon{name}.png').convert('RGBA')
+orig = Image.open(Path(R['_dir']) / R['fx_dir'] / f'UserSV_MiraDragon{name}.png').convert('RGBA')  # 原稿取旧图备份（工程图已替换）
 new = Image.open(HERE / 'out' / f'UserSV_MiraDragon{name}.png').convert('RGBA')
 idle = Image.fromarray(src)
 

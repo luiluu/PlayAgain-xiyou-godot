@@ -23,6 +23,7 @@ co 出图、Kyo 已确认定稿的人形美术：行走图 u3 定稿（11-15，`
 co 出的 `Mira_Dragon_Unarmed_Motions_u1`（21 张，原版文件名，340×280、可见框 [61,58,260,217]、底锚 y=217、alpha 只 0/255）与 `Sword_FX_u2`（128×128，出现／悬停／消散各 3 张＋clear）。来源目录 `/Users/kyo/.codex/visualizations/2026/11/12/01a1d218-ec06-7b73-ba92-c1fb2dcae350/local_art/Mira_Dragon_Redo/`，说明 `README_Unarmed21_SwordFX_u2.md`。
 
 - `img/sv_actors/sv/UserSV_MiraDragon/`：21 张，`XDB.img_path` 在开关开着时优先读这里（外观按 `sv_actors/sv/UserSV_MiraDragon/UserSV_MiraDragon<动作>_<帧>` 取），站姿归一档 `UserSV_MiraDragon` 不变。`dragon_unarmed_manifest.json` 是 co 的动作映射。
+  - **T213（11-18）骨骼法重铺**：除 1_0 外 20 张改为从 1_0 拆件绑骨离线烘焙（文件名、尺寸、底锚 217 不变），工具与姿势在 `07_开发环境/美术工具/mira_rig/`（`rig.json`、`bake.py`、`check.py`）；被替换的 co 原稿备份在 `00_项目管理/归档/交付截图/luiluu_t213/旧图/`，要回退就把那 20 张拷回来。
 - `fx/sword_u2/`：召剑特效 10 张＋`manifest.json`（中心锚 [64,64]，相对龙底锚 [160,217] 偏移 [-40,-200]；出现、消散每帧 100ms，悬停 140ms 循环）。
 - 召剑是独立层 `XMiraSwordFx`（`modes/xiyou/battle/mira_sword_fx.gd`），挂在 `XBattlerSprite` 下；`SKILLS = [10151]`：**只有 10151 黑日焚界召剑**，平时不挂剑（Kyo 11-15 定，D34）。`battle_scene._perform_action` 末尾调 `on_skill`，行动收尾调 `vanish_all`。
 - 回退：`XMira.DRAGON_ART = false` → 回到原版带剑 `UserSV_MiraDragon`，召剑层也不建；人形开关 `XMira.ART` 另算。
