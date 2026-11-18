@@ -631,6 +631,8 @@ func _perform_finish() -> void:
 			sp.set_mirror(false)
 			sp.move_left = XBattleTiming.move_frames(12)
 		sp.refresh_idle()
+	if user is XActor:
+		_sprite(user).not_acting = true  # T206：performActionEnd 已清 acting，refreshMotion 不再按行动中播 walk
 	_sprite(user).refresh_idle()
 
 

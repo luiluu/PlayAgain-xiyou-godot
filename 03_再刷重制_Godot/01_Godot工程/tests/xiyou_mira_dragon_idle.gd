@@ -3,6 +3,9 @@ extends "res://tests/xiyou_battle_actor_size.gd"
 ## 「输入中或行动中 → idleMotion（walk）」排在濒死之前（XBattlerSprite.INPUT_WALK）。
 ## - dragon.*：黑龙生命 < 1/4 轮到输入时播 walk（UserSV_MiraDragon0_x），不是濒死 14_0；不轮到时照 MV 播濒死；满血不轮到时 walk；
 ##   轮到但不是输入（行动演出）且下的是防御指令时照旧防御；回退 INPUT_WALK = false 输入中也趴濒死（修前）。
+## - acting.*（小A 核 R1）：行动中被反击／反射／自伤打死锁在 dead（原版 requestMotionRefresh 阵亡守卫，演出读数 view.dead 也认）；
+##   同回合先防御、再获追加行动放别的技能（guarding 仍真）照样算行动中播 walk；PERFORM FINISH 之后（not_acting）不算行动中、
+##   低血播濒死；轮完（_active 清掉）not_acting 自动清。
 ## - human.*：米拉人形（Codex_Mira_SV_u2）同一条规则，换图不变。
 ## - xiyou.*：西游档角色（狗逍遥 1）同一条规则；回退照原先。
 ## 窗口模式加 -- --out=<目录> 存修前／修后原尺寸截图。
@@ -83,11 +86,13 @@ func _dragon() -> void:
 	_check("dragon.low_input_walk", sp.motion == "walk" and _tex(sp).contains("UserSV_MiraDragon0_"), [sp.motion, _tex(sp)])
 	b._refresh_status(false)
 	await _shot("修后_黑龙生命12%_输入中", "T206 修后 · 黑龙生命 12% · 轮到输入 → walk（0 号）")
-	a.hp = a.mhp  # 防御指令行动中（不算 acting）：照旧防御，不强制 walk
+	a.hp = a.mhp  # 防御指令行动中（场景按技能设 not_acting）：照旧防御，不强制 walk
 	b.inputting = false
 	a.guarding = true
+	sp.not_acting = true
 	await _settle(sp)
 	_check("dragon.guard_action_guard", sp.motion == "guard", sp.motion)
+	sp.not_acting = false
 	a.guarding = false
 	b.inputting = true
 	a.hp = floorf(a.mhp * 0.12)
@@ -100,6 +105,7 @@ func _dragon() -> void:
 	XBattlerSprite.INPUT_WALK = true
 	await _frames(3)
 	_check("dragon.switch_back_walk", sp.motion == "walk", sp.motion)
+	await _acting(b, sp, a)
 	a.hp = a.mhp
 	await _settle(sp)
 	b._refresh_status(false)
@@ -140,3 +146,47 @@ func _xiyou() -> void:
 	await _settle(sp)
 	_check("xiyou.full_walk", sp.motion == "walk", sp.motion)
 	await _close(b)
+
+
+## 行动演出中（_active＝行动者、不在输入）的几种情况；进来时 a 生命 12%、轮到输入
+func _acting(b: XBattleScene, sp: XBattlerSprite, a: XActor) -> void:
+	b.inputting = false
+	await _settle(sp)
+	_check("acting.low_walk", sp.motion == "walk", sp.motion)
+	# P2-1：同回合先防御（guarding 留到回合末），追加行动放别的技能：仍算行动中
+	a.guarding = true
+	await _settle(sp)
+	_check("acting.guarded_then_act_walk", sp.motion == "walk" and not sp.not_acting, [sp.motion, sp.not_acting])
+	a.guarding = false
+	# P3-1：PERFORM FINISH 之后到 seq_end 前（_active 还没清）不算行动中
+	sp.not_acting = true
+	await _frames(3)
+	_check("acting.after_finish_dying", sp.motion == "dying", sp.motion)
+	sp.not_acting = false
+	await _frames(3)
+	_check("acting.back_walk", sp.motion == "walk", sp.motion)
+	# P1-1：行动中被反击打死（真实读数）→ 倒下后刷新仍是 dead
+	var keep_hp := a.hp
+	a.hp = 0.0
+	await sp.collapse()
+	sp.refresh_idle()
+	b._refresh_status()
+	await _frames(3)
+	_check("acting.dead_stays_dead", a.is_dead() and sp.motion == "dead" and _tex(sp).ends_with("UserSV_MiraDragon17_0.png"), [a.is_dead(), sp.motion, _tex(sp)])
+	a.hp = keep_hp
+	# P1-1：演出读数里已阵亡（实时还活着也照读数）→ dead
+	sp.view = {"dead": true, "hp": 0.0, "mhp": a.mhp, "guarding": false}
+	sp.refresh_idle()
+	await _frames(3)
+	_check("acting.view_dead_stays_dead", sp.motion == "dead", sp.motion)
+	sp.view = {}
+	sp.revive_visual()
+	# 轮完：not_acting 自动清
+	sp.not_acting = true
+	b._active = null
+	await _frames(3)
+	_check("acting.flag_cleared", not sp.not_acting, sp.not_acting)
+	b._active = a
+	b.inputting = true
+	sp.refresh_idle()
+	await _frames(3)

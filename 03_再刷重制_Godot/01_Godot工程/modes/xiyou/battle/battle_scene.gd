@@ -2277,6 +2277,7 @@ func _play(logs: Array) -> void:
 				j += 1
 			combo.action_started()
 			if l.user is XActor:
+				sprites[l.user].not_acting = int(l.skill.get("id", 0)) == XBattleLogic.GUARD_SKILL  # T206：防御指令不算 acting
 				_set_active(l.user)
 			if XSukunaFx.shrine_action(l):
 				await _sukuna_fx("shrine")
@@ -2301,6 +2302,7 @@ func _play(logs: Array) -> void:
 				var s: XBattlerSprite = sprites[l.user]
 				_log_action(l.skill)
 				if l.user is XActor:
+					sprites[l.user].not_acting = int(l.skill.get("id", 0)) == XBattleLogic.GUARD_SKILL  # T206：防御指令不算 acting
 					_set_active(l.user)
 				if XSukunaFx.shrine_action(l):
 					await _sukuna_fx("shrine")
