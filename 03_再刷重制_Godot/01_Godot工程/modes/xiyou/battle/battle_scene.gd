@@ -693,6 +693,7 @@ func _build_ui(vs: Vector2) -> void:
 	# T196：新界面队伍栏可展开／收起（栏头＋裁剪框，各行搬进去）；旧界面返回 null 什么也不动
 	party_fold = XPartyFold.attach(holder, side_back, func(): return logic.actors.map(func(m): return status_rows.get(m)).filter(func(r): return r != null and is_instance_valid(r)))
 	if party_fold != null:
+		party_fold.input_blocked = func(): return (book_page != null and is_instance_valid(book_page)) or (status_panel != null and is_instance_valid(status_panel))  # 小A P3-1：Shift 图鉴、状态详情开着时 Tab 不切
 		party_fold.changed.connect(func():
 			if swap_lock_tag != null and is_instance_valid(swap_lock_tag) and swap_lock_tag.visible:
 				_refresh_swap_lock())

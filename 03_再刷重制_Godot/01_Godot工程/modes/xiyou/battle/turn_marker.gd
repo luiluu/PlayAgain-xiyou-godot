@@ -2,10 +2,10 @@ class_name XTurnMarker
 extends Node2D
 ## 【cc·天启篇·未经审查】T196 行动标记：当前行动的我方角色头顶一颗立体的倒置宝石（Kyo 11-18：「三角标改到目前行动角色头上，做立体一点也要能动」）。
 ## 取代新界面队伍栏那一行左外的红色小箭头（XSkinSideStatus.draw_active 在标记开着时不画箭头）。只在新界面（XUiSkin.on()）里有。
-## - 形状：四面的宝石——上面一圈冠部（斜面＋顶面台面）、下面倒金字塔亭部，尖朝下指着角色；每帧按 3D 投影画（略俯视），
+## - 形状：四面的宝石——上面一圈冠部（斜面＋顶面台面）、下面倒金字塔亭部，尖朝下指着角色（原尺寸约 18×21px，Kyo 11-18 审样「小到 1/2」）；每帧按 3D 投影画（略俯视），
 ##   各面按朝向打光（左上前方来光）：亮面朱红→淡珊瑚、暗面深红，边线旧金，台面左上一点高光星；背后一圈暖红光晕。
 ##   配色同新界面红乙（SEL_FILL／SEL_LINE／SEL2_FILL）＋旧金（GOLD／GOLD_LIGHT）。
-## - 会动：界面动效「全部」——绕竖轴慢转（一圈 3.6 秒）＋上下浮动 3px（1.6 秒一回）＋光晕呼吸；「简化」只浮动；「关」静止。
+## - 会动：界面动效「全部」——绕竖轴慢转（一圈 3.6 秒）＋上下浮动 2px（1.6 秒一回）＋光晕呼吸；「简化」只浮动；「关」静止。
 ## - 跟随：每帧贴着角色精灵当前位置（走上前出招也跟着），尖离头顶 GAP；换人时从旧角色头顶沿一道小弧滑过去（0.3 秒，团队看板缓动）；
 ##   轮到敌人行动（_active 为空）时停 HIDE_DELAY 再淡出，免得两次行动之间闪一下。
 ## - 不挡：放在 fx 层、z 比伤害数字（POPUP_Z）低一级，伤害数字盖在它上面；换人回合提示（XSkinTurnCue 的「某某 的回合」胶囊）演出时先隐去，
@@ -15,23 +15,22 @@ extends Node2D
 
 static var ENABLED := true
 
-const GAP := 10.0            # 宝石尖离头顶
-const R := 18.0              # 腰圈半径
-const CROWN_H := 9.0         # 冠部高
-const TABLE_R := 9.5         # 台面半径
-const DEPTH := 29.0          # 亭部深（腰圈到尖）
+const GAP := 8.0            # 宝石尖离头顶
+const R := 9.0              # 腰圈半径
+const CROWN_H := 4.5         # 冠部高
+const TABLE_R := 4.75         # 台面半径
+const DEPTH := 14.5          # 亭部深（腰圈到尖）
 const TILT := 0.34           # 俯视的压扁量（圆在屏幕上的纵横比）
 const SIDES := 4
 const SPIN := 3.6            # 一圈秒数
-const BOB := 3.0             # 浮动幅度（px）
+const BOB := 2.0             # 浮动幅度（px）
 const BOB_T := 1.6           # 浮动一回秒数
 const GLIDE := 0.3           # 换人滑过去
 const HOP := 18.0            # 滑过去时弧顶抬高
 const FADE := 0.18
 const HIDE_DELAY := 0.35
-const TOP_MIN := 30.0        # 头顶太高（大型变身）时尖最高到这（原版坐标）
+const TOP_MARGIN := 4.0      # 头顶太高（大型变身）或上抬让菜单时，宝石最上沿（含浮动）离画布上沿至少这么多
 const AVOID_GAP := 6.0       # 让开指令菜单时离菜单项（含「某某的行动」）的空隙
-const SHIFT_MAX := 56.0      # 先试往右挪（指令环在角色左边，多数只差一点）；挪超过这么多才改往上抬
 const LIFT_MAX := 170.0      # 往上抬也再高就不抬了（大列表盖住整片时宝石就在列表底下，不硬顶到画面外）
 const AVOID_SPEED := 14.0    # 挪开／挪回的跟随快慢（指数逼近，每秒）
 const VIEW_W := 1280.0
@@ -97,6 +96,16 @@ func replaced(old: XBattler, h: XBattler) -> void:
 		target = h
 
 
+## 宝石尖最高能到的 y（fx 层＝原版坐标）：按宝石实际高（冠＋亭＋浮动）算，整颗不出画布上沿（小A P3-2）
+static func top_min() -> float:
+	return gem_top() + TOP_MARGIN
+
+
+## 宝石（冠＋亭＋描边光晕余量＋浮动）在尖上方占的高（gem_rect 同一个数）
+static func gem_top() -> float:
+	return DEPTH + CROWN_H + 6.0 + BOB
+
+
 static func _motion() -> int:
 	return XUiSkin.motion()
 
@@ -109,7 +118,7 @@ func anchor_for(b: XBattler) -> Vector2:
 	if s == null or not is_instance_valid(s):
 		return position
 	var p := s.position + Vector2(0, -s.height() - GAP)
-	p.y = maxf(p.y, TOP_MIN)
+	p.y = maxf(p.y, top_min())
 	return p
 
 
@@ -162,7 +171,7 @@ func _process(delta: float) -> void:
 
 ## 宝石（含浮动余量）在 fx 层坐标里占的框，尖在 anchor
 static func gem_rect(anchor: Vector2) -> Rect2:
-	var top := DEPTH + CROWN_H + 6.0 + BOB
+	var top := gem_top()
 	return Rect2(anchor + Vector2(-R - 4.0, -top), Vector2(R * 2.0 + 8.0, top + 2.0))
 
 
@@ -184,26 +193,12 @@ func avoid_rects() -> Array:
 	return out
 
 
-## T196 核查 P1-1：指令菜单开着、宝石压到菜单项时让开：先试往右挪出菜单（指令环弧在角色左边，「攻击」那项的右端常伸到头顶，
-## 一般挪十几二十 px 就够，宝石仍贴在这个角色头顶右上）；要挪超过 SHIFT_MAX 或出画面，改往上抬到菜单顶上；抬也超过 LIFT_MAX 就不动。
-## 挪开时从尖画一道旧金虚线连回头顶。返回相对 anchor 的偏移
+## T196 核查 P1-1＋Kyo 审样（11-18「位置在角色正中间」）：宝石始终水平居中在角色头顶中线；指令菜单（各项＋「某某的行动」）或列表开着、
+## 压到宝石时只往上抬到菜单顶上（不左右挪），抬起时画一道旧金虚线连回头顶；抬也超过 LIFT_MAX 就不动。返回相对 anchor 的偏移
 func menu_shift(anchor: Vector2) -> Vector2:
 	var zones := avoid_rects()
 	if zones.is_empty():
 		return Vector2.ZERO
-	var dx := 0.0
-	for pass_i in 4:
-		var moved := false
-		var g := gem_rect(anchor + Vector2(dx, 0))
-		for z in zones:
-			var zz := (z as Rect2).grow(AVOID_GAP)
-			if g.intersects(zz):
-				dx = maxf(dx, zz.end.x - (anchor.x - R - 4.0) + 0.5)
-				moved = true
-		if not moved:
-			break
-	if not _hits(zones, gem_rect(anchor + Vector2(dx, 0))) and dx <= SHIFT_MAX and anchor.x + dx + R + 6.0 <= VIEW_W:
-		return Vector2(dx, 0)
 	var up := 0.0
 	for pass_i in 4:
 		var moved := false
@@ -217,7 +212,7 @@ func menu_shift(anchor: Vector2) -> Vector2:
 			break
 	if up > LIFT_MAX:
 		return Vector2.ZERO
-	return Vector2(0, -minf(up, maxf(0.0, anchor.y - TOP_MIN)))
+	return Vector2(0, -minf(up, maxf(0.0, anchor.y - top_min())))
 
 
 static func _hits(zones: Array, g: Rect2) -> bool:
@@ -268,8 +263,8 @@ func _draw() -> void:
 		for i in n:
 			var p0 := from.lerp(head, float(i) / n)
 			var p1 := from.lerp(head, minf(1.0, (float(i) + 0.57) / n))
-			draw_line(p0, p1, Color(XUiSkin.GOLD, 0.75 * a), 1.5, true)
-		draw_circle(head, 2.5, Color(XUiSkin.GOLD_LIGHT, 0.85 * a))
+			draw_line(p0, p1, Color(XUiSkin.GOLD, 0.75 * a), 1.2, true)
+		draw_circle(head, 1.8, Color(XUiSkin.GOLD_LIGHT, 0.85 * a))
 	var rot := spin()
 	var waist := -DEPTH
 	var table := -DEPTH - CROWN_H
@@ -281,7 +276,7 @@ func _draw() -> void:
 	# 光晕（呼吸）
 	var g := XUiSkin.glow_texture()
 	if g != null:
-		var gr := 38.0 + 6.0 * breath()
+		var gr := 19.0 + 3.0 * breath()
 		draw_texture_rect(g, Rect2(Vector2(-gr, waist - gr * 0.85), Vector2(gr * 2.0, gr * 2.0)), false,
 			Color(XUiSkin.SEL_FILL, (0.30 + 0.18 * breath()) * a))
 	var w := []   # 腰圈各点
@@ -302,11 +297,11 @@ func _draw() -> void:
 	if outline.size() >= 3:
 		var sh := PackedVector2Array()
 		for p in outline:
-			sh.append(p + Vector2(1.5, 2.5))
+			sh.append(p + Vector2(1.0, 1.5))
 		draw_colored_polygon(sh, Color(0, 0, 0, 0.45 * a))
 		var ol := PackedVector2Array(outline)
 		ol.append(outline[0])
-		draw_polyline(ol, Color(OUTLINE, OUTLINE.a * a), 3.0, true)
+		draw_polyline(ol, Color(OUTLINE, OUTLINE.a * a), 2.0, true)
 	# 面：[深度(越大越近), 点, 颜色]
 	var faces := []
 	for i in SIDES:
@@ -332,7 +327,7 @@ func _draw() -> void:
 		draw_colored_polygon(f[1], Color(f[2], a))
 		var edge := PackedVector2Array(f[1])
 		edge.append(edge[0])
-		draw_polyline(edge, Color(dark.darkened(0.3), 0.55 * a), 1.0, true)
+		draw_polyline(edge, Color(dark.darkened(0.3), 0.4 * a), 0.8, true)
 	if not drawn_table:
 		_draw_table(table_poly, lite, gold, a)
 	# 腰圈旧金边（前半圈亮、后半圈暗）
@@ -340,26 +335,26 @@ func _draw() -> void:
 		var j := (i + 1) % SIDES
 		var m: float = (angs[i] + angs[j]) / 2.0 if j != 0 else angs[i] + PI / SIDES
 		var ga := 0.95 if sin(m) > 0.0 else 0.45
-		draw_line(w[i], w[j], Color(gold, ga * a), 1.4, true)
+		draw_line(w[i], w[j], Color(gold, ga * a), 1.0, true)
 	# 亭部朝镜头的棱：旧金细线引到尖
 	for i in SIDES:
 		if sin(angs[i]) > 0.0:
-			draw_line(w[i], apex, Color(gold, 0.55 * a * sin(angs[i])), 1.0, true)
+			draw_line(w[i], apex, Color(gold, 0.55 * a * sin(angs[i])), 0.8, true)
 	# 高光：台面左上一颗淡金四芒星（呼吸）＋尖上一点
 	var hp := table_poly[0]
 	for p in table_poly:
 		if p.x + p.y < hp.x + hp.y:
 			hp = p
 	var sp := hp.lerp(Vector2(0, table), 0.45)
-	var s := 3.0 + 1.5 * breath()
+	var s := 2.0 + 0.8 * breath()
 	var star := Color(XUiSkin.GOLD_LIGHT.lerp(Color.WHITE, 0.5), (0.65 + 0.35 * breath()) * a)
 	draw_colored_polygon(PackedVector2Array([sp + Vector2(0, -s), sp + Vector2(s * 0.28, 0), sp + Vector2(0, s), sp + Vector2(-s * 0.28, 0)]), star)
 	draw_colored_polygon(PackedVector2Array([sp + Vector2(-s, 0), sp + Vector2(0, -s * 0.28), sp + Vector2(s, 0), sp + Vector2(0, s * 0.28)]), star)
-	draw_circle(apex + Vector2(0, -2.0), 1.2, Color(XUiSkin.GOLD_LIGHT, 0.8 * a))
+	draw_circle(apex + Vector2(0, -1.0), 0.8, Color(XUiSkin.GOLD_LIGHT, 0.8 * a))
 
 
 func _draw_table(poly: PackedVector2Array, lite: Color, gold: Color, a: float) -> void:
 	draw_colored_polygon(poly, Color(lite.lerp(XUiSkin.GOLD_LIGHT, 0.25), a))
 	var edge := PackedVector2Array(poly)
 	edge.append(edge[0])
-	draw_polyline(edge, Color(gold, 0.9 * a), 1.2, true)
+	draw_polyline(edge, Color(gold, 0.9 * a), 0.9, true)

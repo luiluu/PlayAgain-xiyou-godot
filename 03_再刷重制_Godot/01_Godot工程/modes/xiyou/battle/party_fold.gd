@@ -25,6 +25,8 @@ signal changed
 
 ## 每帧取当前队伍行（按出战顺序）：Array[XSideStatus]
 var rows_source: Callable
+## 返回 true 时 Tab／Back 不切（XBattleScene 设：战斗内 Shift 图鉴、状态详情开着时；小A P3-1）
+var input_blocked: Callable
 var back: Control
 var clip: Control
 var inner: Control
@@ -331,6 +333,8 @@ func _input(event: InputEvent) -> void:
 	if not hit:
 		return
 	# 状态详情、图鉴等全屏页开着时不切（那时队伍栏被盖住）
+	if input_blocked.is_valid() and input_blocked.call():
+		return
 	for n in get_tree().get_nodes_in_group(XUiSkin.FULLSCREEN_GROUP):
 		if n is CanvasItem and (n as CanvasItem).is_visible_in_tree():
 			return

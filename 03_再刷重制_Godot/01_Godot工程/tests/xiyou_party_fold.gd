@@ -78,6 +78,14 @@ func _battle(map: XMapScene) -> XBattleScene:
 	return null
 
 
+func _tab_event() -> InputEventKey:
+	var e := InputEventKey.new()
+	e.keycode = KEY_TAB
+	e.physical_keycode = KEY_TAB
+	e.pressed = true
+	return e
+
+
 func _tab() -> void:
 	var e := InputEventKey.new()
 	e.keycode = KEY_TAB
@@ -174,8 +182,15 @@ func _marker(b: XBattleScene, actors: Array) -> void:
 	await _frames(20)
 	_check("marker_moves", m.position.y != y0 and m.spin() != r0, [y0, m.position.y, r0, m.spin()])
 	# 特写（原尺寸，宝石周围 128×128）
+	# 特写拍菜单收起时（宝石落回头顶正中）
+	var ring_was := b.cmd_win != null and b.cmd_win.active
+	if b.cmd_win != null:
+		b.cmd_win.active = false
+	await _until(func(): return m.shift == Vector2.ZERO, 120)
 	var c := b._origin + m.position + Vector2(0, -XTurnMarker.DEPTH / 2.0)
-	await _record("frames_marker", 120, 2, Rect2i(Vector2i(c) - Vector2i(80, 80), Vector2i(160, 160)))
+	await _record("frames_marker", 120, 2, Rect2i(Vector2i(c) - Vector2i(60, 60), Vector2i(120, 120)))
+	if b.cmd_win != null:
+		b.cmd_win.active = ring_was
 	# 换人：滑到新角色头上
 	var other: XActor = actors[0] if actors[0] != a else actors[1]
 	b._set_active(other)
@@ -238,7 +253,8 @@ func _menu_avoid(b: XBattleScene, actors: Array) -> void:
 		await _frames(2)
 		var s: XBattlerSprite = b.sprites[who]
 		_check("menu_clear_%d" % idx, _gem_clear(m), [who.display_name(), m.position, m.shift, m.avoid_rects()])
-		_check("menu_near_head_%d" % idx, m.position.x - s.position.x >= -0.5 and m.position.x - s.position.x <= XTurnMarker.SHIFT_MAX + 0.5, [m.position, s.position])
+		_check("menu_centered_%d" % idx, absf(m.position.x - s.position.x) < 0.5 and m.shift.x == 0.0, [m.position, s.position, m.shift])
+		_check("menu_inside_canvas_%d" % idx, XTurnMarker.gem_rect(m.position + Vector2(0, m.bob())).position.y >= 0.0, m.position)
 		_check("menu_above_head_%d" % idx, m.position.y < s.position.y - s.height(), [m.position, s.position, s.height()])
 		await _shot("t196_menu_%d_%s" % [idx, who.display_name()])
 		idx += 1
@@ -248,6 +264,18 @@ func _menu_avoid(b: XBattleScene, actors: Array) -> void:
 		ring.title = (x as XActor).display_name() + "的行动"
 		b._set_active(x)
 		await _record("frames_menu_%s" % (x as XActor).actor_id, 50, 2)
+	# 小A P3-2：上抬夹取按宝石实际高算，整颗不出画布上沿
+	_check("top_min_by_gem", XTurnMarker.gem_rect(Vector2(640, XTurnMarker.top_min())).position.y >= 0.0, XTurnMarker.top_min())
+	# 小A P3-1：战斗内 Shift 图鉴开着时 Tab 不切队伍栏
+	var f := b.party_fold
+	if f != null:
+		var was := f.expanded
+		b.book_page = XEnemyBookPage.new()
+		f._input(_tab_event())
+		_check("tab_blocked_by_book", f.expanded == was, f.expanded)
+		b.book_page.free()
+		b.book_page = null
+		await _frames(1)
 	# 菜单关掉（失活）落回头顶
 	b._place_near_actor(ring, a)
 	ring.title = old_title
