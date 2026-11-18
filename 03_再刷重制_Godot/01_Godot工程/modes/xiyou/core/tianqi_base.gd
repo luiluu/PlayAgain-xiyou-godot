@@ -43,6 +43,8 @@ static var TUNE_D189 := true
 static var TUNE_D200 := true
 ## T192（D198 A，Kyo 11-18）：偏弱超强者 9 人往上调的覆盖层（skill_rework.json 的 tune.D198，叠在 D200 之后；含 cap_hits）；false＋XTianqiSkills.reload_table() 照调前
 static var TUNE_D198 := true
+## T204（D208 A，Kyo 11-18）：宿傩终式按段打、每段不超单段上限的覆盖层（skill_rework.json 的 tune.D208，叠在 D198 之后；10245 的 terminal_hits）；false＋XTianqiSkills.reload_table() 照一段
+static var TUNE_D208 := true
 const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
 const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",
 	"SkillPass\\d+", "passiveAPLUS", "AgainUseAll", "passiveIRUP", "passiveGRUP", "passiveSPBST\\d", "ConsumeReduce\\w+", "passiveEXTTP", "DepassiveHarmRe\\d+",

@@ -175,6 +175,22 @@ static func tq_terminal_coef(terminal: int) -> float:
 	return float(TQ_TERMINAL.get(terminal, 9.0))
 
 
+## T204（D208 A，Kyo 11-18）：终式按段打，每段倍率读 10245 卡上的 terminal_hits（D208 层：空间斩 7、8，次元斩 5、6、8；
+## ×诅咒之王 1.3 后每段不超单段上限 11，最后一段最大）。卡上没有（TUNE_D208 关）就一段、倍率 tq_terminal_coef。
+## term_seg：apply 正在打第几段（tq_ops 读它取这一段的倍率；K 探针单打时置成最大那段）
+static var term_seg := 0
+static func tq_terminal_hits(terminal: int) -> Array:
+	var t = XTianqiSkills.spec(10245).get("terminal_hits", {})
+	if t is Dictionary and t.get(str(terminal)) is Array and not (t[str(terminal)] as Array).is_empty():
+		return (t[str(terminal)] as Array).map(func(x): return float(x))
+	return [tq_terminal_coef(terminal)]
+
+
+static func tq_terminal_seg_coef(terminal: int) -> float:
+	var h := tq_terminal_hits(terminal)
+	return float(h[clampi(term_seg, 0, h.size() - 1)])
+
+
 
 static func tq_ops(item: Dictionary, a, b) -> Array:
 	var ops := []
@@ -190,7 +206,7 @@ static func tq_ops(item: Dictionary, a, b) -> Array:
 	if terminal != 0 or actual in [10234, 10235]:
 		ops.append({"op": "mul", "field": "physicalDefenseRate", "value": 0.5})
 	if terminal != 0:
-		m *= tq_terminal_coef(terminal) / maxf(0.01, float(XTianqiSkills.spec(id).get("damage", {}).get("coef", 1.0)))
+		m *= tq_terminal_seg_coef(terminal) / maxf(0.01, float(XTianqiSkills.spec(id).get("damage", {}).get("coef", 1.0)))  # T204：按段取倍率
 	if id == 10230 and terminal == 0:
 		m *= (0.3 if part == "impact" else 1.6) / 1.9
 	if actual == 10233:
@@ -458,11 +474,23 @@ static func apply(logic, a, skill: Dictionary, t) -> Array:
 			part = ""
 			return logs
 	var used: bool = t.is_alive() or int(skill.get("scope", 0)) in [9, 10]
+	# T204（D208）：天启篇终式按 10245 卡上的段数打（每段一次 action.apply，倍率见 tq_terminal_hits）；目标倒了就停。别的照旧一段
+	var segs := 1
+	if _tq() and not internal and not cast.is_empty() and int(cast.terminal) != 0:
+		segs = tq_terminal_hits(int(cast.terminal)).size()
 	part = "slash"
-	var r: Dictionary = logic.apply(a, skill, t)
+	var landed := false
+	for i in segs:
+		term_seg = i
+		var r: Dictionary = logic.apply(a, skill, t)
+		logs.append(r)
+		if not r.missed and not r.evaded:
+			landed = true
+		if not t.is_alive():
+			break
+	term_seg = 0
 	part = ""
-	logs.append(r)
-	var hit: bool = used and not r.missed and not r.evaded
+	var hit: bool = used and landed
 	var layers := int(cast.layers) if not cast.is_empty() else int(target_data(t).layers)
 	if hit and slash(id) and layers >= 2:
 		_wound(logic, t)

@@ -73,6 +73,8 @@ func _ready() -> void:
 			XTianqiBase.TUNE_D189 = false
 		elif a == "--no-d198":  # T192：只关 D198（偏弱超强者调高）覆盖层，改前对照用
 			XTianqiBase.TUNE_D198 = false
+		elif a == "--no-d208":  # T204：只关 D208（宿傩终式按段）覆盖层，改前对照用
+			XTianqiBase.TUNE_D208 = false
 		elif a == "--single":
 			single = true
 		elif a == "--debug-cast":
@@ -96,7 +98,7 @@ func _run() -> void:
 	var rules: Dictionary = XTianqiBalance.data().get("combat_rules", {})
 	if k_arg > 0.0:
 		rules["base_damage"] = k_arg
-	report = {"k": float(rules.get("base_damage", 1.0)), "hits": hits, "tune_d189": XTianqiBase.TUNE_D189, "tune_d198": XTianqiBase.TUNE_D198, "level": level, "gear_level": gear_level, "fabao_level": fabao_level, "def": DEF, "rows": [], "tiers": {},
+	report = {"k": float(rules.get("base_damage", 1.0)), "hits": hits, "tune_d189": XTianqiBase.TUNE_D189, "tune_d198": XTianqiBase.TUNE_D198, "tune_d208": XTianqiBase.TUNE_D208, "level": level, "gear_level": gear_level, "fabao_level": fabao_level, "def": DEF, "rows": [], "tiers": {},
 		"brand_max_bonus": float(XTianqiBrand.data().get("power", {}).get("max_bonus", 0.5)),
 		"caps": XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}),
 		"build": "bare" if bare else "full", "metric": "single" if single else "cast_total",
@@ -385,7 +387,10 @@ static func _sukuna_terminal(logic, a, e, sid: int) -> float:
 	if t == 0:
 		XSukuna.cast = {}
 		return 1.0
-	return XSukuna.tq_terminal_coef(t) / maxf(0.01, float(XTianqiSkills.spec(sid).get("damage", {}).get("coef", 1.0)))
+	# T204（D208）：终式按段打时单打取最大那段（term_seg 指过去，tq_ops 按它取倍率）；合计在 _cast_ratio 的整次施放里收
+	var h := XSukuna.tq_terminal_hits(t)
+	XSukuna.term_seg = h.find(h.max())
+	return float(h.max()) / maxf(0.01, float(XTianqiSkills.spec(sid).get("damage", {}).get("coef", 1.0)))
 
 
 ## 一组技能各打 hits 次，取峰值最大的那一行（每招的那一行另记在 _rows，D195 换算整次施放用）
@@ -440,6 +445,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			var dealt := float(r.get("shown", {}).get("hp", r.get("hp", 0.0)))  # 跳出来的那一个数（木桩生命有上限，不能用掉血量）
 			XStateEffects.force_critical = false
 			XSukuna.cast = {}
+			XSukuna.term_seg = 0
 			if term != 1.0 and cap > 0.0:
 				# 终式倍数乘在单段上限后面：按「条件全中×终式」再封一次上限折回（报告 term、term_capped 两个数都留）
 				var ef := eff_full(id, int(sid))
@@ -487,6 +493,8 @@ func _cast_ratio(s: XState, a, sk: Dictionary) -> Dictionary:
 		a.mp = a.mmp
 		a.tp = a.max_tp()
 		_prime(logic, a, e, sk)
+		if XSukuna.own(a) and XSukuna.PRIMARY.has(int(sk.get("id", 0))):
+			XSukuna._layers(logic, e, 3)  # T204：整次施放同单打口径（看破三层转终式），终式按段打的合计在这里收（T192 前这里没挂层，量的是捌冲击＋斩击两段）
 		XStateEffects.force_critical = true
 		var logs: Array = logic.execute(a, sk, e, true)
 		XStateEffects.force_critical = false

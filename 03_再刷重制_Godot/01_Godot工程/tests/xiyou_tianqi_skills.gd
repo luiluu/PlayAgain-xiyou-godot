@@ -1103,6 +1103,46 @@ func _p7() -> void:
 	_check("p7_liuying_total_card", is_equal_approx(tq_per, 6.0) and is_equal_approx(tq_m * tq_per * 5.0, tq_per), [tq_per, tq_m])
 	_check("p7_sukuna_terminal_card", is_equal_approx(XSukuna.tq_terminal_coef(10234), 9.0) and is_equal_approx(XSukuna.tq_terminal_coef(10235), 11.0)
 		and str(XTianqiSkills.spec(10245).get("desc", [""])[0]).contains("10.8") == false, [XSukuna.tq_terminal_coef(10234), XSukuna.tq_terminal_coef(10235), XTianqiSkills.spec(10245).get("desc")])
+	# 【cc·T204】D208：终式按段打（10245 terminal_hits 空间斩 7、8，次元斩 5、6、8；整数、×诅咒之王 1.3 后每段 ≤ 单段上限 11、最后一段最大）；
+	# 二十指宿傩打看破三层的目标：解转次元斩、三段跳数，每段 finalMultiplier＝段倍率÷解卡上 4；TUNE_D208 关掉照一段 9／11
+	var h34 := XSukuna.tq_terminal_hits(10234)
+	var h35 := XSukuna.tq_terminal_hits(10235)
+	var cap11 := float(XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}).get("超强者", 0.0))
+	_check("p7_sukuna_terminal_hits", h34 == [7.0, 8.0] and h35 == [5.0, 6.0, 8.0] and (h34 + h35).all(func(x): return x == roundf(x) and x * 1.3 <= cap11)
+		and float(h35.back()) == h35.max() and float(h34.back()) == h34.max() and str(XTianqiSkills.spec(10245).desc[0]).contains("5、6、8"), [h34, h35, cap11])
+	XState.current = s
+	s.actor_max_level = 99
+	s.actor_advance[172] = 3
+	var sk: XActor = s.actor(172)
+	sk.change_level_mv(55)
+	XSukuna.sync(sk)
+	var foe := _enemy(lg)
+	foe.add_param(0, 1.0e12)
+	foe.param_mark_dirty()
+	foe.param_refresh()
+	foe.recover_all()
+	XSukuna._layers(lg, foe, 3)
+	var jie := XDB.rec("Skills", 10229)
+	XSukuna.begin(lg, sk, jie, [foe])
+	var segm := []
+	for i in 3:
+		XSukuna.term_seg = i
+		for op in XSukuna.tq_ops(jie, sk, foe):
+			if str(op.field) == "finalMultiplier":
+				segm.append(snappedf(float(op.value), 0.0001))
+	XSukuna.term_seg = 0
+	var tlogs: Array = XSukuna.apply(lg, sk, jie, foe)
+	var tn := tlogs.filter(func(x): return x is Dictionary and str(x.get("type", "")) == "hit").size()
+	var term_id := int(XSukuna.cast.get("terminal", 0))
+	XSukuna.finish(lg, sk, jie)
+	_check("p7_sukuna_terminal_segs", term_id == 10235 and tn == 3 and segm == [1.25, 1.5, 2.0] and int(XSukuna.target_data(foe).layers) == 0, [term_id, tn, segm, XSukuna.target_data(foe), sk.level, XSukuna.stage(sk), sk.skill_ids.has(10235)])
+	XTianqiBase.TUNE_D208 = false
+	XTianqiSkills.reload_table()
+	var off34 := XSukuna.tq_terminal_hits(10234)
+	var off35 := XSukuna.tq_terminal_hits(10235)
+	XTianqiBase.TUNE_D208 = true
+	XTianqiSkills.reload_table()
+	_check("p7_sukuna_terminal_switch_back", off34 == [9.0] and off35 == [11.0] and XSukuna.tq_terminal_hits(10235) == [5.0, 6.0, 8.0], [off34, off35])
 	# 模块法宝：百分比属性去掉
 	var view: Dictionary = XTianqiSkills.gear_view(XDB.rec("Armors", 4577).merged({"kind": "armor", "base": 4577}, true))
 	_check("p7_gear", (view.get("traits", []) as Array).filter(func(t): return int(t.code) == 21).is_empty(), view.get("traits"))
