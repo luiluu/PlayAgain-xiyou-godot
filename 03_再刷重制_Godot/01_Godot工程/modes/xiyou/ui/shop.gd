@@ -397,7 +397,7 @@ func _paint_info(c: XMVCanvas) -> void:
 	XItemStatusPainter.paint(c, _current_rec())
 	var hint := ""
 	if _gear_sell_list():
-		hint = "已选 %d 件，共 %s 金币｜确定：出售已选" % [marked_count(), XMenu._group(marked_gold())] if has_marks() else MARK_HINT
+		hint = "已选%s，共 %s 金币｜确定：出售已选" % [marked_label(), XMenu._group(marked_gold())] if has_marks() else MARK_HINT
 	elif _mode == "number" and NUM_INPUT:
 		hint = NUM_HINT + (("｜" + (NUM_MARK_OK_HINT if _number_mark else NUM_MARK_HINT)) if _number_markable() else "")
 	if hint != "":
@@ -492,6 +492,13 @@ func open_number_editor() -> void:
 	_num_edit.grab_focus()
 
 
+## 编辑框开着时用方向键／E／Q 改了数：框里同步成新数（再敲接在后面）
+func _sync_number_editor() -> void:
+	if _num_edit != null and _num_edit.visible:
+		_num_edit.text = str(_number)
+		_num_edit.caret_column = _num_edit.text.length()
+
+
 func close_number_editor() -> void:
 	if _num_edit != null and _num_edit.visible:
 		_num_edit.visible = false
@@ -552,8 +559,21 @@ func is_marked(rec: Dictionary) -> bool:
 	return _marks.any(func(m): return is_same(m, rec))
 
 
+## 已选里还有能卖的（全失效时不显示「已选 0」、「出售已选」不可点）
 func has_marks() -> bool:
-	return not _marks.is_empty() or not _item_marks.is_empty()
+	return not live_marks().is_empty() or not live_item_marks().is_empty()
+
+
+## 玩家可见文字（小A 定稿）：「装备 N 件」「物品 N 个」「装备 N 件、物品 N 个」，没有的那半不写
+func marked_label() -> String:
+	var parts := []
+	var ng := live_marks().size()
+	var ni := marked_count() - ng
+	if ng > 0 or ni == 0:
+		parts.append("装备 %d 件" % ng)
+	if ni > 0:
+		parts.append("物品 %d 个" % ni)
+	return "、".join(parts)
 
 
 func clear_marks() -> void:
@@ -598,8 +618,9 @@ func marked_count() -> int:
 
 ## 能标：在背包里（身上的不算）、单件能卖（XItemMarks.can_sell），且过安全出售同一套保留判断 XSafeSell.reason——
 ## 锁定、模板缺失、专属、已培养或镶嵌、已被借用、不可出售（cannotSell）都标不上。
-## 只有词条门槛（词条保留／词条待确认）不挡：那是一键出售替玩家自动筛的，手选一件件点出来的照单卖（同单件出售）。
-const MARK_KEEP_OK := ["", "词条保留", "词条待确认"]
+## 词条门槛（词条保留／词条待确认）也挡（小A 核 R1 P1-1：列表只按基础品质着色、C 标完自动下移、确认窗不列明细，易误卖）；
+## 要卖这种装备走单件出售。
+const MARK_KEEP_OK := [""]
 
 static func can_mark(rec: Dictionary) -> bool:
 	var s := XState.current
@@ -664,14 +685,7 @@ func marked_gold() -> int:
 
 ## 玩家可见文字（待小A 审）：「已选装备 N 件、物品 N 个，共得 N 金币」，没有的那半不写
 func multi_rows() -> Array:
-	var parts := []
-	var ng := live_marks().size()
-	var ni := marked_count() - ng
-	if ng > 0 or ni == 0:
-		parts.append("装备 %d 件" % ng)
-	if ni > 0:
-		parts.append("物品 %d 个" % ni)
-	return [["已选%s，共得 %s 金币" % ["、".join(parts), XMenu._group(marked_gold())], false], ["出售已选", has_marks()],
+	return [["已选%s，共得 %s 金币" % [marked_label(), XMenu._group(marked_gold())], false], ["出售已选", has_marks()],
 		["清空选择", true], ["取消", true]]
 
 
@@ -1158,6 +1172,7 @@ func _change_number(d: int) -> void:
 	_num_text = ""
 	var before := _number
 	_number = clampi(_number + d, 1, maxi(1, _max_number()))
+	_sync_number_editor()
 	if _number != before:
 		XSound.system(0)
 
@@ -1167,6 +1182,7 @@ func jump_number(d: int) -> void:
 	_num_text = ""
 	var before := _number
 	_number = maxi(1, _max_number()) if d > 0 else 1
+	_sync_number_editor()
 	if _number != before:
 		XSound.system(0)
 

@@ -62,7 +62,7 @@ func r1_guards(shop: XShop, s: XState) -> void:
 	var ex_id := exclusive_weapon_id()
 	check("r1.exclusive_found", ex_id > 0, ex_id)
 	var g := {}
-	for k in ["a", "b", "ex", "grown", "lock", "orphan", "nosell"]:
+	for k in ["a", "b", "ex", "grown", "lock", "orphan", "nosell", "keep", "unsure"]:
 		var e := XGear.create("weapon", ex_id if k == "ex" else 1, s)
 		s.register_gear(e)
 		s.gear.append(e)
@@ -71,6 +71,10 @@ func r1_guards(shop: XShop, s: XState) -> void:
 	g.lock.name = str(g.lock.name) + XItemMarks.LOCK
 	g.orphan["base"] = 999999
 	g.nosell["cannotSell"] = true
+	# 词条门槛（R1 复核 P1-1）：门槛调到「普通及以上」，多一条 <quality:5>＝词条保留；词条认不出＝词条待确认
+	XSafeSell._cfg(s)["keepAffixTier41"] = 0
+	g.keep["note"] = str(g.keep.get("note", "")) + "\n<quality: 5>"
+	g.unsure["affixIds"] = [{"table": "Weapons", "id": 999999}]
 	var worn := XGear.create("weapon", 1, s)   # 不在背包（身上的）
 	s.register_gear(worn)
 	check("r1.worn", not XShop.can_mark(worn))
@@ -81,13 +85,15 @@ func r1_guards(shop: XShop, s: XState) -> void:
 	shop._drop_cache()
 	shop._refresh()
 	var d := shop._sell_data()
-	check("r1.list", d.size() == 7, d.size())
+	check("r1.list", d.size() == 9, d.size())
 	var row_of := func(e) -> int:
 		for i in d.size():
 			if is_same(d[i].rec, e):
 				return i
 		return -1
-	for k in ["ex", "grown", "lock", "orphan", "nosell"]:
+	check("r1.reason.keep", XSafeSell.reason(s, g.keep) == "词条保留" and XSafeSell.reason(s, g.unsure) == "词条待确认",
+		[XSafeSell.reason(s, g.keep), XSafeSell.reason(s, g.unsure)])
+	for k in ["ex", "grown", "lock", "orphan", "nosell", "keep", "unsure"]:
 		check("r1.can_mark." + k, not XShop.can_mark(g[k]), XSafeSell.reason(s, g[k]))
 		shop._sell_index = row_of.call(g[k])
 		key(shop, XShop.MARK_KEY)
@@ -105,6 +111,7 @@ func r1_guards(shop: XShop, s: XState) -> void:
 	click_icon(shop, row_of.call(g.a))
 	click_icon(shop, row_of.call(g.b))
 	check("r1.two", shop._marks.size() == 2)
+	check("r1.label.gear", shop.marked_label() == "装备 2 件", shop.marked_label())
 	g.b["boostCount"] = 1
 	var pa := XItemMarks.selling_price(g.a)
 	check("r1.gold_live", shop.marked_gold() == pa, [shop.marked_gold(), pa])
@@ -115,6 +122,16 @@ func r1_guards(shop: XShop, s: XState) -> void:
 	shop._confirm = 1
 	shop._ok()
 	check("r1.sold_only_a", s.gold == gold0 + pa and not s.gear.has(g.a) and s.gear.has(g.b) and s.gear.has(g.ex), [s.gold - gold0, pa])
+	# 已选全失效（P3-1 复核）：不显示「已选 0」、出售已选不可点
+	var c := XGear.create("weapon", 1, s)
+	s.register_gear(c)
+	s.gear.append(c)
+	shop._marks = [c]
+	check("r1.live.on", shop.has_marks() and bool(shop.multi_rows()[1][1]))
+	c.name = str(c.name) + XItemMarks.LOCK
+	check("r1.live.off", not shop.has_marks() and not bool(shop.multi_rows()[1][1]))
+	shop._marks.clear()
+	XSafeSell._cfg(s)["keepAffixTier41"] = 5
 	# 越界（P3-2）：列表比可见行多时，点在列表框底部、可见行之外的那一截不标
 	for n in shop._list_rows() + 4:
 		var e := XGear.create("weapon", 1, s)
@@ -236,6 +253,7 @@ func r1_more(shop: XShop, s: XState) -> void:
 	var pi2 := XItemMarks.selling_price(XDB.rec("Items", it2))
 	check("item.gold", shop.marked_gold() == pi * 20 + pi2 * 2 and shop.marked_count() == 22, [shop.marked_gold(), shop.marked_count()])
 	check("item.rows", str(shop.multi_rows()[0][0]) == "已选物品 22 个，共得 %s 金币" % XMenu._group(pi * 20 + pi2 * 2), shop.multi_rows()[0])
+	check("item.label", shop.marked_label() == "物品 22 个", shop.marked_label())
 	# 卖之前手上少了：按手上数卖
 	s.gain_item(it, -5)
 	var gold0 := s.gold
@@ -292,6 +310,10 @@ func r1_more(shop: XShop, s: XState) -> void:
 	check("num.editor.clamp", shop._number == 43 and shop._num_edit.text == "43", [shop._number, shop._num_edit.text])
 	shop._num_edit.text_changed.emit("")
 	check("num.editor.empty", shop._number == 1)
+	shop.jump_number(1)   # 框开着用 E／Q、方向键改数：框里同步
+	check("num.editor.sync_max", shop._number == 43 and shop._num_edit.text == "43", [shop._number, shop._num_edit.text])
+	shop._change_number(-10)
+	check("num.editor.sync_step", shop._num_edit.text == "33", shop._num_edit.text)
 	shop._num_edit.text_changed.emit("7")
 	shop._num_edit.text_submitted.emit("7")
 	check("num.editor.close", not shop._num_edit.visible and shop._number == 7)
