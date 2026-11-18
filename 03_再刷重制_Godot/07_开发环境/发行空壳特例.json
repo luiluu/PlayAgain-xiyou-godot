@@ -138,6 +138,7 @@
     "XTianqiGojoTrial.trial_name": "调用处在天启篇开关守卫内（西游档不进；已逐个看过调用处）",
     "XTianqiHallIntro.cover": "无返回值使用，空壳不做事",
     "XTianqiHorsemen.perform": "返回追加动作／日志数组，调用处按「空＝没有」处理（append_array 或 is_empty 判断），西游档真脚本也是 []",
+    "XTianqiBrand.snap_of": "battle_logic 只在 REAL_SWAP 开着时读，且西游档没有天启篇战斗记录，真脚本也返回 []",
     "XTianqiLedger.audit": "伤害总账只在 detail_on／auditing／bucketing／nine 开着时调用，空壳这些开关恒 false（西游档不建账）",
     "XTianqiLedger.audit_confirm": "伤害总账只在 detail_on／auditing／bucketing／nine 开着时调用，空壳这些开关恒 false（西游档不建账）",
     "XTianqiLedger.nine_action_plus": "伤害总账只在 detail_on／auditing／bucketing／nine 开着时调用，空壳这些开关恒 false（西游档不建账）",
