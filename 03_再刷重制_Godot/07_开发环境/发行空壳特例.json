@@ -94,6 +94,7 @@
   "XTianqiBase.realm_rec": "base",
   "XTianqiGemPower.full_value": "v",
   "已确认空值安全": {
+    "XTianqiSkills.data": "T209：西游代码里调用方（guyu.gd tq_cap_rate／tq_pct、tianqi_base、tianqi_weak_clear、tianqi_drop）都是 .get 链带默认；谷雨只在天启篇分支 _tq() 读，空表回落稿值 1.0／1.2 和 fallback",
     "XGojo.begin": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",
     "XGojo.end_round": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",
     "XGojo.finish": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",
