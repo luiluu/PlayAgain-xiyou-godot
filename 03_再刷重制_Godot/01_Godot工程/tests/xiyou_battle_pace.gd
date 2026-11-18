@@ -85,6 +85,9 @@ func _battle(n: int) -> PaceBattle:
 
 
 func _run() -> void:
+	# 每个渲染帧最多补跑 1 个物理帧：负载下渲染帧拖长时 Godot 默认一帧补跑最多 8 个物理帧，回合末 `await process_frame`
+	# 就会吃进多个物理帧（回合交界空档 80 变 81～87，T186 并行 40 路 32 次失败）。测的是物理帧数，不是墙钟。
+	Engine.max_physics_steps_per_frame = 1
 	XSave.dir_override = "user://test_xiyou_battle_pace"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XEnemy.force_roll = 100.0
@@ -165,4 +168,5 @@ func _run() -> void:
 	DirAccess.remove_absolute(XSave.dir())
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
+	Engine.max_physics_steps_per_frame = 8
 	get_tree().quit(0 if passed == results.size() else 1)

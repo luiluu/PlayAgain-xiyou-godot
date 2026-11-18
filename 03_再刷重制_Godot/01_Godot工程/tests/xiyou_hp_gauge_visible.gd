@@ -126,6 +126,9 @@ func _run() -> void:
 			get_viewport().get_texture().get_image().save_png(out_dir.path_join("gauge_%s.png" % case[0]))
 		check("paint_%s_name_still_drawn" % case[0], rec.texts >= 1, rec.texts)
 	scene.queue_free()
+	# 等释放走完再退出：立刻 quit 时负载下偶发「resources still in use at exit」的 ERROR 行，并行运行器按 ^ERROR: 判失败（T186）
+	await get_tree().process_frame
+	await get_tree().process_frame
 	DirAccess.remove_absolute(XConfig.path_override)
 	DirAccess.remove_absolute(XSave.dir())
 	var passed := results.filter(func(r): return r.passed).size()
