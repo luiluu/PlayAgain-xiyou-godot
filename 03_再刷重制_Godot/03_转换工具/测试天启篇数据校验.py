@@ -588,6 +588,19 @@ class CoefInteger(unittest.TestCase):
         t = {'skills': {'10437': {'damage': {'coef': 1, 'stats': {'atk': 2}}, 'desc': ['伤害：剑心多一段（+0.5）']}}}
         self.assertEqual(chk.coef_integer_rules(t), [])
 
+    def test_product_checked(self):
+        # T191 R1（小A P2-3）：各自合规、乘起来出小数百分比或低于 1% 的也要拦
+        self.assertEqual(len(chk.coef_integer_rules(self._t({'coef': 0.5, 'stats': {'atk': 0.15}}))), 1)
+        self.assertEqual(len(chk.coef_integer_rules(self._t({'coef': 0.5, 'stats': {'mhp': 0.01}}))), 1)
+        self.assertEqual(chk.coef_integer_rules(self._t({'coef': 12, 'stats': {'mat': 0.5, 'mmp': 0.02}})), [])
+
+    def test_gojo_pairs_checked(self):
+        # T191 R1（小A P1-1）：五条悟茈的对数系数表也要整数
+        t = {'skills': {'1': {'gojo_pairs': [1.8, 3.6, 6.0], 'desc': ['伤害：魔法攻击×2']}}}
+        self.assertEqual(len(chk.coef_integer_rules(t)), 2)
+        t['skills']['1']['gojo_pairs'] = [2, 4, 6]
+        self.assertEqual(chk.coef_integer_rules(t), [])
+
     def test_tune_layers_in_order(self):
         tune = {'D189': {'skills': {'1': {'damage': {'coef': 2.6}}}}, 'D200': {'skills': {'1': {'damage': {'coef': 3}}}}}
         self.assertEqual(chk.coef_integer_rules(self._t({'coef': 1.8, 'stats': {'atk': 1}}, tune=tune)), [])

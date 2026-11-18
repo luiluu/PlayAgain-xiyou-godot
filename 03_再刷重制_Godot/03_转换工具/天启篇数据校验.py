@@ -1150,23 +1150,33 @@ DESC_DECIMAL_EXEMPT = {'10437', '10438', '10439', '10337'}
 
 def coef_integer_rules(table: dict) -> list:
     """T175／T191（附则 E，Kyo D137②、11-18「系数不要小数」，D200 A 全表取整）：覆盖层全开（D189＋D200）后游戏读到的每一行伤害——
-    系数写整数或小于 1 的整数百分比；属性权重写整数或整数百分比（生命上限×1% 写 0.01）；无条件的 always 倍率要并进系数；卡面伤害行不带小数。"""
+    系数写整数或小于 1 的整数百分比；属性权重写整数或整数百分比（生命上限×1% 写 0.01）；每项有效系数 coef×权重 也只能是整数或 1%～99% 的整数百分比；
+    无条件的 always 倍率要并进系数；五条悟茈的 gojo_pairs 也要整数；卡面伤害行不带小数（代码常数的几招豁免）。"""
     bad = []
     merged = apply_skill_tune(table)
     for sid, row in merged.get('skills', {}).items():
         if not str(sid).isdigit() or not isinstance(row, dict):
             continue
         d = row.get('damage')
-        if not isinstance(d, dict):
-            continue
-        if 'coef' in d and not _int_or_pct(float(d['coef'])):
-            bad.append('系数不得有小数：skills/%s/damage/coef=%s' % (sid, num_text(d['coef'])))
-        for st, w in d.get('stats', {}).items():
-            if not _int_or_pct(float(w)):
-                bad.append('属性权重要整数或整数百分比：skills/%s/damage/stats/%s=%s' % (sid, st, num_text(w)))
-        for c in d.get('conds', []):
-            if _plain_always(c):
-                bad.append('无条件倍率要并进系数：skills/%s/damage/conds always×%s' % (sid, num_text(c.get('mult', 1))))
+        if isinstance(d, dict):
+            coef = float(d.get('coef', 0))
+            if 'coef' in d and not _int_or_pct(coef):
+                bad.append('系数不得有小数：skills/%s/damage/coef=%s' % (sid, num_text(d['coef'])))
+            for st, w in d.get('stats', {}).items():
+                if not _int_or_pct(float(w)):
+                    bad.append('属性权重要整数或整数百分比：skills/%s/damage/stats/%s=%s' % (sid, st, num_text(w)))
+                    continue
+                e = coef * float(w)
+                if _int_or_pct(coef) and e and not (_int_like(e) or (0.01 - 1e-9 <= e < 1 and _int_like(e, 100))):
+                    bad.append('有效系数（系数×权重）要整数或不低于 1%% 的整数百分比：skills/%s/damage %s=%s' % (sid, st, num_text(round(e, 6))))
+            for c in d.get('conds', []):
+                if _plain_always(c):
+                    bad.append('无条件倍率要并进系数：skills/%s/damage/conds always×%s' % (sid, num_text(c.get('mult', 1))))
+        pairs = row.get('gojo_pairs')
+        if isinstance(pairs, list):
+            for i, x in enumerate(pairs):
+                if not _int_like(float(x)):
+                    bad.append('系数不得有小数：skills/%s/gojo_pairs/%d=%s' % (sid, i, num_text(x)))
         if sid not in DESC_DECIMAL_EXEMPT:
             for line in row.get('desc', []):
                 if str(line).startswith('伤害') and re.search(r'\d\.\d', str(line)):
