@@ -113,7 +113,8 @@ func _registry_shape() -> void:
 	var left4 := (d.get("rows", []) as Array).filter(func(r): return str(r.get("status")) == "exempt" and int(r.get("expires", 0)) <= 4).map(func(r): return r.id)
 	_check("p4_no_exempt_left", left4.is_empty(), left4)
 	_check("p4_confirm_rows", XTianqiLedger.row("state_confirm").get("status") == "exempt" and int(XTianqiLedger.row("state_confirm").get("expires")) == 5
-		and XTianqiLedger.row("state_confirm_card").get("status") == "allowed" and XTianqiLedger.row("state_confirm_never").get("status") == "never")
+		and XTianqiLedger.row("state_confirm_card").get("status") == "allowed" and XTianqiLedger.row("state_confirm_never").get("status") == "never"
+		and XTianqiLedger.row("state_confirm_pool").get("status") == "pooled" and str(XTianqiLedger.row("state_confirm_pool").get("switch")) == "POOL_LIVE" and XTianqiLedger.row("state_confirm_reduce").get("status") == "allowed")
 	# 191 个状态分类：三类不重不漏；never 每条有回退开关和理由，开关名守卫认得；card 都是卡改写过、去掉了 effects 的
 	var cls: Dictionary = d.get("state_confirm_class", {})
 	var seen := {}
@@ -124,6 +125,10 @@ func _registry_shape() -> void:
 	for g in cls.get("live", {}):
 		for e in cls.live[g]:
 			all_ids.append(int(e.id))
+	for key in ["pool", "reduce"]:  # T187：live 铺开后拆出的归池／停用、缩小类
+		for e in cls.get(key, []):
+			all_ids.append(int(e.id))
+	all_ids.append_array(cls.get("suit_pooled", {}).get("ids", []))
 	for id in all_ids:
 		if seen.has(int(id)):
 			dup.append(id)
@@ -133,7 +138,7 @@ func _registry_shape() -> void:
 	var rw: Dictionary = XTianqiSkills.data().get("states", {})
 	var bad_card := (cls.get("card", {}).get("ids", []) as Array).filter(func(id): return not bool(rw.get(str(int(id)), {}).get("effects_remove", false)))
 	_check("p4_card_effects_removed", bad_card.is_empty() and str(cls.get("card", {}).get("reason", "")) != "", bad_card)
-	var bad_never := (cls.get("never", []) as Array).filter(func(e): return str(e.get("reason", "")) == "" or not str(e.get("switch", "")) in ["NO_DIFF_PASSIVE", "UNIFIED_LEGACY", "NO_PILL_PASSIVES"])
+	var bad_never := (cls.get("never", []) as Array).filter(func(e): return str(e.get("reason", "")) == "" or not str(e.get("switch", "")) in ["NO_DIFF_PASSIVE", "UNIFIED_LEGACY", "NO_PILL_PASSIVES", "CARDS", "GEAR_SLOTS", "NO_HONGHUANG"])
 	_check("p4_never_entries", bad_never.is_empty() and (cls.get("never", []) as Array).size() > 0, bad_never)
 	_check("p4_never_sources", XTianqiLedger.confirm_source(1631) == "state_confirm_never" and XTianqiLedger.confirm_source(1073) == "state_confirm_card" and XTianqiLedger.confirm_source(713) == "state_confirm")
 	# 白名单定稿：每条初审结论都有理由；留的（keep）才进 phase4.module_whitelist，反过来也一样；期初旧键仍为空
