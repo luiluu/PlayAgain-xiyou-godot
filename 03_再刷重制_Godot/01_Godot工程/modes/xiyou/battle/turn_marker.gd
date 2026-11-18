@@ -32,6 +32,10 @@ const HIDE_DELAY := 0.35
 const TOP_MARGIN := 4.0      # 头顶太高（大型变身）时，宝石最上沿（含浮动）离画布上沿至少这么多
 const OUTLINE := Color(0.06, 0.03, 0.03, 0.8)   # 外轮廓深描边：雪地、亮背景上也压得住
 const LIGHT := -2.3          # 光从左前方来（腰圈上的角度，0＝正右、PI/2＝正对镜头）
+## T208（T197 小A P2-2）：逃跑成功／失败关窗等消息窗时宝石短暂淡入——set_target(null) 后 HIDE_DELAY 里还留着 shown_for、
+## menu_open() 不看消息窗。HOLD_WHILE_HIDING＝等淡出那段只许保持或变淡；HIDE_ON_MESSAGE＝消息窗开着当作挡住。回退：都设 false
+static var HOLD_WHILE_HIDING := true
+static var HIDE_ON_MESSAGE := true
 
 var scene: XBattleScene
 ## 现在要标的人（null＝没人在行动）；正画在谁头上
@@ -116,11 +120,13 @@ func anchor_for(b: XBattler) -> Vector2:
 	return p
 
 
-## 这会儿要不要让开（换人回合提示演出中、目标提示挂在它头上、指令菜单或技能／物品列表开着）
+## 这会儿要不要让开（换人回合提示演出中、目标提示挂在它头上、指令菜单或技能／物品列表开着、战斗消息窗开着）
 func blocked() -> bool:
 	if shown_for == null:
 		return true
 	if menu_open():
+		return true
+	if HIDE_ON_MESSAGE and message_open():
 		return true
 	if XSkinBattleMotion.on() and XSkinTurnCue.title_alpha() < 1.0:
 		return true
@@ -140,6 +146,8 @@ func _process(delta: float) -> void:
 	if shown_for != null and not is_instance_valid(shown_for):
 		shown_for = null
 	var want := 0.0 if (shown_for == null or (target == null and _hide_in < 0.0) or blocked()) else 1.0
+	if HOLD_WHILE_HIDING and target == null and _hide_in >= 0.0:
+		want = minf(want, alpha)  # T208（T197 小A P2-2）：等着淡出的这 HIDE_DELAY 里只许保持或变淡，不许淡入（逃跑关窗后宝石不再闪出来）
 	if _motion() == XUiSkin.Motion.OFF:
 		alpha = want
 	else:
@@ -172,6 +180,11 @@ func menu_open() -> bool:
 		if w != null and is_instance_valid(w) and (w as Control).is_visible_in_tree() and w.active:
 			return true
 	return false
+
+
+## T208（T197 小A P2-2）：战斗消息窗（逃跑成功／失败等）开着时宝石也让开（消息窗关掉、下一个人轮到再出来）
+func message_open() -> bool:
+	return scene != null and scene.message != null and is_instance_valid(scene.message) and scene.message.is_busy()
 
 
 ## 浮动（简化档也有）、转角（只在全部档）

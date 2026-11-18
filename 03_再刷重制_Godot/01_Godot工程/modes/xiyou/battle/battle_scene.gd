@@ -1532,6 +1532,9 @@ func party_rect() -> Rect2:
 func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> void:
 	var s: XBattlerSprite = sprites[a]
 	if w.has_method("place_for_actor"):  # 新界面 2A：指令环、新列表自己按角色摆（XSkinBattleRing／XSkinBattleSkillList）
+		if w is XSkinBattleRing and BIG_MAKE_ROOM and BIG_RING_COMPACT and (w as XSkinBattleRing).entries.size() > 6 and big_body_rect(a).has_area():
+			(w as XSkinBattleRing).compact = true  # T208：大型变身 7 项起的环不放大（跟 6 项的米拉黑龙一样大）
+			(w as XSkinBattleRing).relayout()
 		w.place_for_actor(s.position, BOX)
 		if w is XSkinBattleRing and XSkinBattleRing.fixed_corner() and not XUiSkin.TOUCH_RING_FIXED:
 			_ring_follow(w as XSkinBattleRing, s.position)  # T126／D171：触屏也跟着角色（环自己的 fixed_corner 还认 TOUCH_V2，这里改摆）
@@ -1543,10 +1546,198 @@ func _place_near_actor(w: XBattleList, a: XActor, offset := Vector2.ZERO) -> voi
 			var ring := w as XSkinBattleRing
 			var dr := ring.get_global_transform() * ring.drawn_rect()
 			XSkin4A.avoid_rect(w, dr, party_rect(), _origin.x + XSkinBattleRing.MARGIN)  # 再让开右上队伍面板（5 人出战时面板高到环顶）
+		make_room_for_big(w, a)  # T208：大型变身行动时让开身体（普通大小角色不动）
 		return
 	var p := XPartyFormation.window_anchor(s.position + Vector2(32, -64))
 	w.place(minf(BOX.x - w.size.x, p.x) + offset.x, minf(BOX.y - w.size.y, p.y) + offset.y)
 	w.position += _origin
+
+
+## ---- T208 大型变身行动时指令菜单让开身体 ----
+## Kyo 11-18「战斗中指令栏会挡住大型精灵」→「指令栏按A」：米拉黑龙、渡鸦神话等按 BIG_FORM_H 放大的形态行动时，
+## 指令环（连同上方「某某的行动」）和战技／物品列表若压到它的身体可见框：
+## ① 外侧：整块往左挪到右边离身体 BIG_ROOM_GAP（上下不动；压到左下行动顺序条再抬到条上方；指令环压首领信息区就往下挪）；
+##    指令环见 RING_BESIDE（R2：压队友也留在身边，左边不行试右边）；
+##    列表另让开首领信息区（顶边压到它下沿以下，放不下就减行数滚动）；挪完出屏、压身体、行动顺序条或首领信息区，
+##    或（只看指令环；列表照原摆法本来就盖前排）压到别的队友、队伍面板，就改 ②；
+## ② 画面下方中间：贴画面底、横向居中，压到行动顺序条就往右让开（再压身体就贴身体左边、抬到条上方）；②也不行就按 ① 的位置。
+## 普通大小角色（不压身体）一步也不挪，位置同 T208 前逐像素一样。只是画面。
+## 回退：BIG_MAKE_ROOM = false（菜单照旧贴着角色摆，会压龙身）。
+static var BIG_MAKE_ROOM := true
+## R2（Kyo 11-18「指令环位置不行。我还是要在精灵身边。哪怕挡一下别的角色」）：指令环只躲自己的身体——贴身体左边，
+## 左边出屏／压首领信息区挪不开时贴右边；压前排队友不再算放不下，两侧都不行才用 ② 下方中间。回退：false＝R1（压队友就落下方中间）
+static var RING_BESIDE := true
+## T208（Kyo 11-18「渡鸦那个怎么这么大。米拉的挺合适的」）：渡鸦神话 7 项（多「其他」）走 T190 七项排法，半径被放大到相邻两项竖向 ≥34，
+## 环高约 330；大型变身改用紧凑排法（XSkinBattleRing.compact：半径同 6 项、各项竖向等距 34）。回退：false
+static var BIG_RING_COMPACT := true
+const BIG_ROOM_GAP := 8.0
+## 指令环选中项放大（1.2 倍）、弦星描边的余量
+const BIG_ROOM_PAD := 6.0
+
+
+## a 若正以大型变身（外观键含 XBattleLayout.BIG_FORM_KEYS，且 BIG_FORM_H 比普通身高大）出现，返回其身体可见框（原版坐标）；否则空矩形
+func big_body_rect(a: XBattler) -> Rect2:
+	var s: XBattlerSprite = sprites.get(a)
+	if s == null or not is_instance_valid(s) or XBattleLayout.BIG_FORM_H <= XBattleLayout.TARGET_RANGE.y:
+		return Rect2()
+	var key := str(s._look_key)
+	if not XBattleLayout.BIG_FORM_KEYS.any(func(k): return key.contains(k)):
+		return Rect2()
+	return body_rect(s)
+
+
+## 精灵身体可见框（原版坐标）：脚底居中、宽 width()、高 height()（同选择光标、专项 _body）
+static func body_rect(s: XBattlerSprite) -> Rect2:
+	return Rect2(s.position - Vector2(s.width() / 2.0, s.height()), Vector2(s.width(), s.height()))
+
+
+## 菜单实际画出来的范围（原版坐标）：指令环＝各项＋「某某的行动」（加放大余量），列表＝整块
+func menu_rect(w: Control) -> Rect2:
+	if w is XSkinBattleRing:
+		var ring := w as XSkinBattleRing
+		var r := Rect2()
+		for it: Rect2 in ring.item_rects():
+			r = it if not r.has_area() else r.merge(it)
+		return Rect2(ring.position - _origin + r.position, r.size).grow(BIG_ROOM_PAD)
+	return Rect2(w.position - _origin, w.size)
+
+
+## T208：w（指令环或战技／物品列表，已按普通摆法摆好、ui 坐标）压到大型变身的身体时挪开（见上）
+func make_room_for_big(w: Control, a: XActor) -> void:
+	if not BIG_MAKE_ROOM or w == null:
+		return
+	var body := big_body_rect(a)
+	if not body.has_area() or not menu_rect(w).intersects(body):
+		return
+	var keep := w.position
+	_hug_center = false
+	if w is XSkinBattleRing and RING_BESIDE:
+		body = ring_hug_rect(a, body)  # R4：指令环贴身体主体（渡鸦神话＝斗篷躯干），竖向对躯干中段
+	_beside_body(w, body)
+	if _room_ok(w, a, body, true):
+		return
+	var outer := w.position
+	if w is XSkinBattleRing and RING_BESIDE:
+		w.position = keep
+		_beside_body(w, body, true)  # R2：左边放不下再贴身体右边
+		if _room_ok(w, a, body, true):
+			return
+	w.position = keep
+	_place_bottom_center(w, body)
+	if _room_ok(w, a, body, false):
+		return
+	w.position = outer  # 都不行（极少：画面太窄）：至少不压身体
+
+
+## 整块往左挪到右边离身体 BIG_ROOM_GAP；压到行动顺序条就抬到条上方。
+## 列表（协调预筛 P1-1：挪到画面中间后表头被首领信息区的「详情」胶囊盖住）另要让开首领信息区：顶边压到它下沿以下，
+## 底边再碰行动顺序条（或画面底）就减行数滚动（XSkinBattleSkillList.fit_rows）
+## R2 指令环（right＝贴身体右边）：压到首领信息区就往下挪到它下沿以下（再碰行动顺序条、出屏由 _room_ok 判不行）
+func _beside_body(w: Control, body: Rect2, right := false) -> void:
+	if right:
+		w.position.x += body.end.x + BIG_ROOM_GAP - menu_rect(w).position.x
+	else:
+		w.position.x -= menu_rect(w).end.x - (body.position.x - BIG_ROOM_GAP)
+	var otb := XSkinOTBBar.occupied_rect()
+	if menu_rect(w).intersects(otb):
+		w.position.y -= menu_rect(w).end.y - (otb.position.y - XSkinBattleSkillList.OTB_GAP)
+	if w is XSkinBattleRing and RING_BESIDE:
+		if _hug_center:
+			w.position.y += body.get_center().y - (w as XSkinBattleRing).ring_center().y + _origin.y  # R4：环心对躯干中段
+			var mo := menu_rect(w)
+			if mo.intersects(otb):
+				w.position.y -= mo.end.y - (otb.position.y - XSkinBattleSkillList.OTB_GAP)
+		var z := _boss_zone()
+		var need := 0.0
+		for r: Rect2 in ring_item_rects(w as XSkinBattleRing):   # R4：逐项看（不拿整环外框），环顶那两项在头侧时不被弧左边那一截连累
+			if z.has_area() and r.intersects(z):
+				need = maxf(need, z.end.y + BIG_ROOM_GAP - r.position.y)
+		w.position.y += need
+	if w is XSkinBattleSkillList:
+		var zone := _boss_zone()
+		if zone.has_area() and menu_rect(w).intersects(zone):
+			w.position.y += zone.end.y + BIG_ROOM_GAP - menu_rect(w).position.y
+			var m := menu_rect(w)
+			var floor_y := BOX.y - XSkinBattleRing.MARGIN
+			if Rect2(m.position.x, m.position.y, m.size.x, BOX.y).intersects(otb):
+				floor_y = otb.position.y - XSkinBattleSkillList.OTB_GAP
+			(w as XSkinBattleSkillList).fit_rows(floor_y - m.position.y)
+
+
+## T208 R4（Kyo 11-18「这个指令环感觉都不是渡鸦的指令环」）：渡鸦神话的外框含左伸的镰刀和右展的翅膀，按外框贴身时环离斗篷躯干
+## 七八十像素、弧心正好包着前排两个小队友。各形态的身体主体（占外框的比例：x、y、宽、高，量自 200 档待机图），指令环贴它的左沿、
+## 环心对它的竖向中段；允许压住镰刀杆、斗篷和翅膀外沿，不压脸（兜帽 x 约 0.35～0.56）。没列的形态（米拉黑龙）照外框、竖向照常（环心＝脚底上 32）
+const BIG_CORE := {"RavenMythic": Rect2(0.316, 0.15, 0.37, 0.78)}
+## R4 开关：false＝回 R3（贴外框）
+static var RING_HUG_CORE := true
+var _hug_center := false
+
+
+## 指令环要贴的身体框：列在 BIG_CORE 的形态按比例取主体（并让 _beside_body 把环心对它的竖向中段），其余＝外框
+func ring_hug_rect(a: XBattler, body: Rect2) -> Rect2:
+	_hug_center = false
+	var s: XBattlerSprite = sprites.get(a)
+	if not RING_HUG_CORE or s == null:
+		return body
+	var key := str(s._look_key)
+	for k in BIG_CORE:
+		if key.contains(k):
+			var f: Rect2 = BIG_CORE[k]
+			_hug_center = true
+			return Rect2(body.position + body.size * f.position, body.size * f.size)
+	return body
+
+
+## 指令环各项与「某某的行动」的矩形（原版坐标，加放大余量）
+func ring_item_rects(ring: XSkinBattleRing) -> Array:
+	return ring.item_rects().map(func(r: Rect2): return Rect2(ring.position - _origin + r.position, r.size).grow(BIG_ROOM_PAD))
+
+
+## 首领信息区（原版坐标；没有为空）
+func _boss_zone() -> Rect2:
+	var zone := boss_info_rect()
+	return Rect2(zone.position - _origin, zone.size) if zone.has_area() else Rect2()
+
+
+## 画面下方中间：菜单画出来的范围横向居中、底边离画面底 MARGIN；压到行动顺序条就往右让开；
+## 往右让开又压到身体（大型变身站前排、身体伸到画面中间）就贴身体左边、抬到条上方
+func _place_bottom_center(w: Control, body: Rect2) -> void:
+	var m := menu_rect(w)
+	var mg := XSkinBattleRing.MARGIN
+	w.position += Vector2(BOX.x / 2.0 - m.get_center().x, BOX.y - mg - m.end.y)
+	var otb := XSkinOTBBar.occupied_rect()
+	m = menu_rect(w)
+	if m.intersects(otb):
+		w.position.x += otb.end.x + mg - m.position.x
+	if menu_rect(w).intersects(body):
+		_beside_body(w, body)
+
+
+## 挪完的位置能不能用：不出屏、不压身体、不压行动顺序条；列表两档、指令环外侧那档不压首领信息区；指令环外侧另不压队伍面板、别的队友
+func _room_ok(w: Control, a: XActor, body: Rect2, outer: bool) -> bool:
+	var m := menu_rect(w)
+	var screen := Rect2(Vector2.ZERO, BOX).grow(0.5)
+	if not screen.encloses(m) or m.intersects(body) or m.intersects(XSkinOTBBar.occupied_rect()):
+		return false
+	var zone := _boss_zone()
+	if w is XSkinBattleRing and RING_BESIDE:
+		if outer and zone.has_area() and ring_item_rects(w as XSkinBattleRing).any(func(r): return r.intersects(zone)):
+			return false
+	elif (outer or w is XSkinBattleSkillList) and zone.has_area() and m.intersects(zone):
+		return false  # 列表两档都要让开首领信息区（P1-1）
+	if not outer or not (w is XSkinBattleRing):
+		return true  # 列表不查队友、队伍面板（照原摆法本来就盖前排）
+	var pr := party_rect()
+	if pr.has_area() and m.intersects(Rect2(pr.position - _origin, pr.size)):
+		return false
+	if RING_BESIDE:
+		return true  # R2（Kyo 11-18「我还是要在精灵身边。哪怕挡一下别的角色」）：压队友可以
+	for o in logic.actors:
+		if o == a or not sprites.has(o) or not (sprites[o] as XBattlerSprite).visible:
+			continue
+		if m.intersects(body_rect(sprites[o]).grow(-6.0)):
+			return false
+	return true
 
 
 ## 首领信息区（顶上血弧的名字、血量、详情／状态胶囊、弱抗行）的矩形，ui 坐标（已加 _origin）；没有首领信息返回空矩形（T190）
