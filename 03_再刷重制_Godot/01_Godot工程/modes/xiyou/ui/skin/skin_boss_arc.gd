@@ -149,7 +149,12 @@ static func face_crop(tex: Texture2D) -> Dictionary:
 		var w := img.get_width()
 		var h := img.get_height()
 		var corner_clear := img.get_pixel(2, 2).a < 0.1 and img.get_pixel(w - 3, 2).a < 0.1 and img.get_pixel(2, h - 3).a < 0.1 and img.get_pixel(w - 3, h - 3).a < 0.1
-		if corner_clear and w == 85 and h == 85:
+		# 主体盖住 1～2 个角点的 85×85 菱形头像（BOSS_57 等）也按菱形处理：至少 2 个角点透明即认
+		var clear_cnt := 0
+		for cp: Vector2i in [Vector2i(2, 2), Vector2i(w - 3, 2), Vector2i(2, h - 3), Vector2i(w - 3, h - 3)]:
+			if img.get_pixel(cp.x, cp.y).a < 0.1:
+				clear_cnt += 1
+		if (corner_clear or clear_cnt >= 2) and w == 85 and h == 85:
 			var work := img.duplicate() as Image
 			if work.get_format() != Image.FORMAT_RGBA8:
 				work.convert(Image.FORMAT_RGBA8)
@@ -163,6 +168,7 @@ static func face_crop(tex: Texture2D) -> Dictionary:
 					if bg[idx] == 0 and (c0.a < 0.12 or _is_diamond_frame_pixel(c0, pt.x, pt.y)):
 						bg[idx] = 1
 						q.append(pt)
+			var fit_miss := 0
 			var head := 0
 			while head < q.size():
 				var p := q[head]
@@ -186,9 +192,69 @@ static func face_crop(tex: Texture2D) -> Dictionary:
 						if bdist <= 0.038:
 							if not p_is_inner or bdist <= 0.022 or Vector3(nc.r - pc.r, nc.g - pc.g, nc.b - pc.b).length() <= 0.045:
 								is_bg = true
+						elif bdist <= 0.25 and (Vector3(nc.r, nc.g, nc.b).distance_to(Vector3(192.0 / 255.0, 142.0 / 255.0, 23.0 / 255.0)) <= 0.012 or Vector3(nc.r, nc.g, nc.b).distance_to(Vector3(221.0 / 255.0, 195.0 / 255.0, 132.0 / 255.0)) <= 0.012) and Vector3(nc.r - pc.r, nc.g - pc.g, nc.b - pc.b).length() <= 0.006:
+							# 个别头像（SL_TX_73）底色两端是不随位置变的平台（左暗金 c0、右浅金 ddc384），不贴拟合渐变：只认这两个平台本色并与相邻像素严格平滑（差 ≤0.006），不碰主体
+							is_bg = true
+							fit_miss += 1
 					if is_bg:
 						bg[nidx] = 1
 						q.append(Vector2i(nx, ny))
+			# 本图底色与拟合渐变对不上（走了平台放宽 ≥20 次）：改用本图已确认底色的逐列色表再延伸一轮（单张估底色），差 ≤0.02 才算底
+			if fit_miss >= 20:
+				var col_sum: Array[Vector3] = []
+				var col_n := PackedInt32Array()
+				col_sum.resize(85)
+				col_n.resize(85)
+				for cy in 85:
+					for cx in 85:
+						if bg[cy * 85 + cx] != 0 and work.get_pixel(cx, cy).a >= 0.12 and absi(cx - 42) + absi(cy - 42) <= 36:
+							var cc0 := work.get_pixel(cx, cy)
+							col_sum[cx] += Vector3(cc0.r, cc0.g, cc0.b)
+							col_n[cx] += 1
+				var col_col: Array[Vector3] = []
+				col_col.resize(85)
+				var col_ok := PackedByteArray()
+				col_ok.resize(85)
+				for cx in 85:
+					if col_n[cx] >= 3:
+						col_col[cx] = col_sum[cx] / float(col_n[cx])
+						col_ok[cx] = 1
+				for cx in 85:
+					if col_ok[cx] == 0:
+						var lo := -1
+						var hi := -1
+						for k in range(cx - 1, -1, -1):
+							if col_ok[k] == 1:
+								lo = k
+								break
+						for k in range(cx + 1, 85):
+							if col_ok[k] == 1:
+								hi = k
+								break
+						if lo >= 0 and hi >= 0:
+							col_col[cx] = col_col[lo].lerp(col_col[hi], float(cx - lo) / float(hi - lo))
+						elif lo >= 0 or hi >= 0:
+							col_col[cx] = col_col[maxi(lo, hi)]
+						else:
+							col_col[cx] = _diamond_bg_pred(cx, 42)
+				var q2: Array[Vector2i] = []
+				for cy in 85:
+					for cx in 85:
+						if bg[cy * 85 + cx] != 0 and absi(cx - 42) + absi(cy - 42) <= 38:
+							q2.append(Vector2i(cx, cy))
+				var h2 := 0
+				while h2 < q2.size():
+					var p2 := q2[h2]
+					h2 += 1
+					for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+						var nx2: int = p2.x + d.x
+						var ny2: int = p2.y + d.y
+						if nx2 < 0 or nx2 >= 85 or ny2 < 0 or ny2 >= 85 or absi(nx2 - 42) + absi(ny2 - 42) > 38 or bg[ny2 * 85 + nx2] != 0:
+							continue
+						var nc2 := work.get_pixel(nx2, ny2)
+						if nc2.a >= 0.12 and Vector3(nc2.r, nc2.g, nc2.b).distance_to(col_col[nx2]) <= 0.03:
+							bg[ny2 * 85 + nx2] = 1
+							q2.append(Vector2i(nx2, ny2))
 			# 封闭纯黄底空腔（被头发/角/翅围住且与理论渐变一致 >= 14px 的区域）
 			var pocket_vis := PackedByteArray()
 			pocket_vis.resize(85 * 85)

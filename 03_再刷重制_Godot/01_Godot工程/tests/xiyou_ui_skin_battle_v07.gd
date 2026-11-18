@@ -274,6 +274,33 @@ func _boss_t125(b: XBattleScene, boss: XBattler) -> void:
 				rim.save_png(out_dir.path_join("face_raw_" + fn + ".png"))
 			im.save_png(out_dir.path_join("face_clean_" + fn + ".png"))
 	_check("boss_faces_gold_orange_subject_retained", keep_ok, keep_detail)
+	# T128：盖角点首领头像（≥2 个角点透明即按菱形处理）与 SL_TX_73（底色两端是平台、逐列估底色）补漏
+	var t128_ok := true
+	var t128_detail := {}
+	var t128_min := {"BOSS_57": 1500, "BOSS_TX_132": 1900, "BOSS_TX_145": 1500, "TCLH-BOSS-82": 1500, "SL_TX_73": 900}
+	for fn: String in t128_min.keys():
+		var t := XBossHpBar._tex("bosshp", fn)
+		var cr := XSkinBossArc.face_crop(t)
+		var ct: Texture2D = cr.get("tex")
+		var im := ct.get_image() if ct != null else null
+		if not bool(cr.get("diamond", false)) or bool(cr.get("fallback", false)) or im == null:
+			t128_ok = false
+			t128_detail[fn] = "invalid_or_fallback"
+			continue
+		var opq := 0
+		var bgish := 0
+		for y in im.get_height():
+			for x in im.get_width():
+				var c := im.get_pixel(x, y)
+				if c.a >= 0.12:
+					opq += 1
+					# 纯底色（暗金 c0／浅金 ddc384）残留计数
+					if Vector3(c.r, c.g, c.b).distance_to(Vector3(192.0 / 255.0, 142.0 / 255.0, 23.0 / 255.0)) <= 0.012 or Vector3(c.r, c.g, c.b).distance_to(Vector3(221.0 / 255.0, 195.0 / 255.0, 132.0 / 255.0)) <= 0.012:
+						bgish += 1
+		if opq < int(t128_min[fn]) or bgish > 40:
+			t128_ok = false
+		t128_detail[fn] = [opq, int(t128_min[fn]), bgish]
+	_check("boss_faces_t128_corner_cover_and_plateau_bg", t128_ok, t128_detail)
 	# 保留率兜底：构造纯背景菱形，确认抠除超阈值时退回「圆形裁内框、保留原底色」
 	var fb_img := Image.create(85, 85, false, Image.FORMAT_RGBA8)
 	fb_img.fill(Color(0, 0, 0, 0))
