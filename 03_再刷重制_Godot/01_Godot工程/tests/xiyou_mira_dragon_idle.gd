@@ -8,6 +8,8 @@ extends "res://tests/xiyou_battle_actor_size.gd"
 ##   低血播濒死；轮完（_active 清掉）not_acting 自动清。
 ## - human.*：米拉人形（Codex_Mira_SV_u2）同一条规则，换图不变。
 ## - xiyou.*：西游档角色（狗逍遥 1）同一条规则；回退照原先。
+## - state.*（T210）：状态动作 stateMotionIndex——中毒 4→abnormal、睡眠 10→sleep、破阵 1043（motion 3）→dead、同优先级按 ID（中毒 4＋炎爆暴击 96 仍 abnormal）；
+##   顺序照原版：sleep／dead 压过防御，防御压过 abnormal，abnormal 压过濒死；演出读数 state_motion 也认；回退 STATE_MOTION = false 不看状态。
 ## - guard_first.*（T210）：防御排在濒死之前（XBattlerSprite.GUARD_FIRST），实时读数与演出读数都认；回退濒死压过防御。
 ## 窗口模式加 -- --out=<目录> 存修前／修后原尺寸截图。
 
@@ -32,10 +34,12 @@ func _run() -> void:
 	await _dragon()
 	await _human()
 	await _xiyou()
+	await _state_motions()
 	XBattleLayout.ACTOR_SIZE = keep_s
 	XMira.LIFT_ART = true
 	XBattlerSprite.INPUT_WALK = true
 	XBattlerSprite.GUARD_FIRST = true
+	XBattlerSprite.STATE_MOTION = true
 	_finish()
 
 
@@ -209,3 +213,57 @@ func _acting(b: XBattleScene, sp: XBattlerSprite, a: XActor) -> void:
 	b.inputting = true
 	sp.refresh_idle()
 	await _frames(3)
+
+
+## T210：原版 refreshMotion 状态动作（YEP_BattleEngineCore:3203～3215）；不轮到时（_active 清掉）判
+func _state_motions() -> void:
+	var b := await _battle(BOSS_TROOP, [1], Callable())
+	var sp := _sprite_of(b, 1)
+	var a: XActor = sp.battler
+	b._active = null
+	b.inputting = false
+	a.hp = a.mhp
+	b.logic._state_add(a, 4)  # 中毒 motion 1
+	await _settle(sp)
+	_check("state.poison_abnormal", a.state_motion_index() == 1 and sp.motion == "abnormal", [a.state_ids, a.state_motion_index(), sp.motion])
+	a.hp = floorf(a.mhp * 0.12)
+	await _settle(sp)
+	_check("state.poison_low_abnormal", sp.motion == "abnormal", sp.motion)  # abnormal 在濒死之前
+	a.guarding = true
+	await _settle(sp)
+	_check("state.poison_guard_guard", sp.motion == "guard", sp.motion)  # 防御在 abnormal 之前
+	b.logic._state_add(a, 10)  # 睡眠 motion 2，优先级 90 > 中毒 50
+	await _settle(sp)
+	_check("state.sleep_over_guard", a.state_motion_index() == 2 and sp.motion == "sleep", [a.state_ids, a.state_motion_index(), sp.motion])
+	b.logic._state_remove(a, 10)
+	a.guarding = false
+	b.logic._state_add(a, 96)  # 炎爆暴击 motion 3，优先级 50 跟中毒一样：同优先级按 ID 升序，中毒 4 在前，照原版仍 abnormal
+	await _settle(sp)
+	_check("state.tie_by_id_abnormal", a.state_motion_index() == 1 and sp.motion == "abnormal", [a.state_ids, a.state_motion_index(), sp.motion])
+	b.logic._state_remove(a, 96)
+	b.logic._state_add(a, 1043)  # 破阵——无法行动一回合 motion 3、优先级 100：活着也照倒地
+	await _settle(sp)
+	_check("state.motion3_dead", a.is_alive() and a.state_motion_index() == 3 and sp.motion == "dead", [a.is_alive(), a.state_ids, a.state_motion_index(), sp.motion])
+	b.logic._state_remove(a, 1043)
+	await _settle(sp)
+	_check("state.back_abnormal", sp.motion == "abnormal", sp.motion)
+	# 演出读数：快照带 state_motion，按快照不按实时
+	var v: Dictionary = b.logic.view_of(a)
+	_check("state.view_has_motion", int(v.get("state_motion", -1)) == 1, v.get("state_motion"))
+	v["state_motion"] = 2
+	sp.view = v
+	await _settle(sp)
+	_check("state.view_sleep", sp.motion == "sleep", sp.motion)
+	sp.view = {}
+	XBattlerSprite.STATE_MOTION = false
+	await _settle(sp)
+	_check("rollback.state_motion_dying", sp.motion == "dying", sp.motion)
+	XBattlerSprite.STATE_MOTION = true
+	# 轮到输入照旧 walk（T206 第一条在状态动作之前）
+	b._active = a
+	b.inputting = true
+	await _settle(sp)
+	_check("state.input_walk", sp.motion == "walk", sp.motion)
+	b.logic._state_remove(a, 4)
+	a.hp = a.mhp
+	await _close(b)

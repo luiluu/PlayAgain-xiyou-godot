@@ -452,9 +452,9 @@ func view_of(b: XBattler) -> Dictionary:
 
 func _view_now(b: XBattler) -> Dictionary:
 	return {"hp": b.hp, "mp": b.mp, "tp": b.tp, "mhp": b.mhp, "mmp": b.mmp, "mtp": b.max_tp(), "dead": b.is_dead(),
-		"guarding": b.is_guard(), "can_move": can_move(b), "cell_rows": XSideStatus.cell_rows(b), "shield": b.shield, "look": XAppearance.battler_key(b),
+		"guarding": b.is_guard(), "state_motion": b.state_motion_index(), "can_move": can_move(b), "cell_rows": XSideStatus.cell_rows(b), "shield": b.shield, "look": XAppearance.battler_key(b),
 		"guyu_shield": XGuyu.shield_of(b), "guyu_text": XGuyu.status_text(b),
-		"domain": XBattleIndicators.domain_shown(b), "flash_awake": XBattleIndicators.outline_shown(b)}  # look：换装卡换图；guyu_*：谷雨花荫与侧栏状态字；domain／flash_awake：领域法阵与黑闪描边（画面用）
+		"domain": XBattleIndicators.domain_shown(b), "flash_awake": XBattleIndicators.outline_shown(b)}  # look：换装卡换图；guyu_*：谷雨花荫与侧栏状态字；domain／flash_awake：领域法阵与黑闪描边（画面用）；state_motion：待机状态动作（T210）
 
 
 ## 全体战斗者 → view_of
