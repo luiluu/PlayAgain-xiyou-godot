@@ -1488,13 +1488,15 @@ func _command_entries(a: XActor) -> Array:
 	if XTusu.bound_tusu(a):
 		forced = []  # 屠苏 addSkillCommands 包装：武具态只有一栏「易武」（技能类型 1）
 		opts.append({"text": "易武", "key": "stype:1"})
+	var have := _stype_have(a, forced == [])  # T215：天启篇某类技能一个都没有就不列
 	if forced != null:
 		for t in forced:
-			opts.append({"text": str(stypes[int(t)]), "key": "stype:%d" % int(t)})
+			if have.is_empty() or have.has(int(t)):
+				opts.append({"text": str(stypes[int(t)]), "key": "stype:%d" % int(t)})
 	var added := a.traits_set(XBattler.TRAIT_STYPE_ADD) if forced == null else []
 	added.sort()
 	for t in added:
-		if not [3, 4, 5, 6].has(int(t)) and int(t) < stypes.size():
+		if not [3, 4, 5, 6].has(int(t)) and int(t) < stypes.size() and (have.is_empty() or have.has(int(t))):
 			opts.append({"text": str(stypes[int(t)]), "key": "stype:%d" % int(t)})
 	opts.append({"text": str(terms[3]), "key": "guard", "enabled": logic.can_use(a, grd), "preview": grd})
 	opts.append({"text": str(terms[4]), "key": "item"})
@@ -1510,6 +1512,26 @@ func _command_entries(a: XActor) -> Array:
 	if blood != "":
 		opts.append({"text": blood, "key": "raceBlood"})
 	return opts
+
+
+## T215（Kyo 11-18「渡鸦为什么会有其他」「所有角色统一，某类技能一个都没有时不显示该指令」）：
+## 原版 addSkillCommands 不看有没有技能，渡鸦／宿傩／饿狼／云裳写死 [魔法,战技,其他] 全列。天启篇改成：该类下点开列表里一个技能都没有就不列。
+## 「有没有」照点开列表用的那份：logic.battle_skills(a)（Window_BattleSkill 的 actor.skills()：含装备、状态给的，含冷却／魔法不足灰显的）按 stypeId 分。
+## 返回有技能的类型集合；开关关、不是天启篇、屠苏武具态（固定「易武」）返回空数组＝不过滤。回退：HIDE_EMPTY_STYPE = false
+static var HIDE_EMPTY_STYPE := true
+
+
+func _stype_have(a: XActor, bound_tusu: bool) -> Array:
+	if not HIDE_EMPTY_STYPE or bound_tusu or not XTianqi.active(XState.current):  # 天启篇存档；不用 XTianqiBase.on（还挂着默认关的 PHASE4 总开关，用了等于没生效）
+		return []
+	var out := []
+	for sk in logic.battle_skills(a):
+		var t := int(sk.get("stypeId", 0))
+		if not out.has(t):
+			out.append(t)
+	if out.is_empty():
+		out.append(-1)  # 一个技能都没有：全不列（非空数组才表示「要过滤」）
+	return out
 
 
 ## 右侧队伍面板（各行连同新皮肤的面板底）合起来的范围（画面坐标；没有行为空）
@@ -1570,6 +1592,8 @@ static var RING_BESIDE := true
 ## T208（Kyo 11-18「渡鸦那个怎么这么大。米拉的挺合适的」）：渡鸦神话 7 项（多「其他」）走 T190 七项排法，半径被放大到相邻两项竖向 ≥34，
 ## 环高约 330；大型变身改用紧凑排法（XSkinBattleRing.compact：半径同 6 项、各项竖向等距 34）。回退：false
 static var BIG_RING_COMPACT := true
+## T215（T208 核查 P2-1）：boss_info_rect 在血弧显示首领时把血条矩形并进 300 宽的弧区。回退：false
+static var BOSS_INFO_MERGE_BAR := true
 const BIG_ROOM_GAP := 8.0
 ## 指令环选中项放大（1.2 倍）、弦星描边的余量
 const BIG_ROOM_PAD := 6.0
@@ -1610,6 +1634,7 @@ func make_room_for_big(w: Control, a: XActor) -> void:
 	if not body.has_area() or not menu_rect(w).intersects(body):
 		return
 	var keep := w.position
+	var keep_rows: int = (w as XSkinBattleSkillList).rows if w is XSkinBattleSkillList else 0  # T215：回退别的摆法时恢复（P3-1）
 	_hug_center = false
 	if w is XSkinBattleRing and RING_BESIDE:
 		body = ring_hug_rect(a, body)  # R4：指令环贴身体主体（渡鸦神话＝斗篷躯干），竖向对躯干中段
@@ -1617,16 +1642,21 @@ func make_room_for_big(w: Control, a: XActor) -> void:
 	if _room_ok(w, a, body, true):
 		return
 	var outer := w.position
+	var outer_rows: int = (w as XSkinBattleSkillList).rows if w is XSkinBattleSkillList else 0
 	if w is XSkinBattleRing and RING_BESIDE:
 		w.position = keep
 		_beside_body(w, body, true)  # R2：左边放不下再贴身体右边
 		if _room_ok(w, a, body, true):
 			return
 	w.position = keep
+	if keep_rows > 0:
+		(w as XSkinBattleSkillList).set_rows(keep_rows)  # T215 P3-1：_beside_body 缩过的行数先还原，下方中间那档按原行数摆
 	_place_bottom_center(w, body)
 	if _room_ok(w, a, body, false):
 		return
 	w.position = outer  # 都不行（极少：画面太窄）：至少不压身体
+	if outer_rows > 0:
+		(w as XSkinBattleSkillList).set_rows(outer_rows)
 
 
 ## 整块往左挪到右边离身体 BIG_ROOM_GAP；压到行动顺序条就抬到条上方。
@@ -1750,7 +1780,10 @@ func boss_info_rect() -> Rect2:
 		return bar_r if bp.visible else Rect2()
 	var x0 := _origin.x + XSkinBossArc.CENTER.x - 150.0
 	var y0 := _origin.y + XSkinBossArc.NAME_Y - 6.0
-	return Rect2(x0, y0, 300.0, maxf(bar_r.end.y - y0, 0.0))
+	var arc := Rect2(x0, y0, 300.0, maxf(bar_r.end.y - y0, 0.0))
+	if BOSS_INFO_MERGE_BAR and bar_r.has_area():
+		arc = arc.merge(bar_r)  # T215（T208 核查 P2-1）：首领信息区长时条比 300 宽，并进来，环不压右侧详情按钮
+	return arc
 
 
 ## 指令环跟着角色摆（同 XSkinBattleRing.place_for_actor 不固定右下那一支）：环心＝脚底＋OFFSET，整环收在画面里

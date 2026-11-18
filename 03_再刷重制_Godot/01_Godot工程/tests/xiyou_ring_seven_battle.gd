@@ -61,6 +61,10 @@ func _state() -> XState:
 		var a := s.actor(id)
 		a.change_level(99)
 		a.recover_all()
+		for sk in XDB.table("Skills"):  # T215：天启篇某类技能一个都没有就不列指令——补一个战技，指令才凑满 7 项
+			if sk != null and int(sk.get("stypeId", 0)) == 1 and int(sk.id) > XBattleLogic.GUARD_SKILL and not sk.get("meta", {}).has("Hide in Battle"):
+				a.learn_skill(int(sk.id))
+				break
 	return s
 
 

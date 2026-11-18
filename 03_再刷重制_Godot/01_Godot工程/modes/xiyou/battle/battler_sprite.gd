@@ -567,7 +567,7 @@ func _idle_motion() -> String:
 	var guard: bool = view.guarding if not view.is_empty() else battler.is_guard()
 	var sm: int = 0
 	if STATE_MOTION:
-		sm = int(view["state_motion"]) if view.has("state_motion") else battler.state_motion_index()
+		sm = int(view.get("state_motion", 0)) if not view.is_empty() else battler.state_motion_index()  # T215：非空旧快照缺键按 0，不串读实时
 	if dead or sm == 3:
 		return "dead"
 	if sm == 2:

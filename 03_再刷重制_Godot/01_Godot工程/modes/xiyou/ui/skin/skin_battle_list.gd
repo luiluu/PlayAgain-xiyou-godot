@@ -126,14 +126,21 @@ func fit_rows(max_h: float) -> bool:
 	var want := clampi(floori((max_h - HEAD_H - FOOT_H - 8.0) / ROW_H), 1, rows)
 	if want >= rows:
 		return false
-	rows = want
+	set_rows(want)
+	return true
+
+
+## 行数改成 n（fit_rows 缩行、T215 回退摆法时恢复原行数共用）
+func set_rows(n: int) -> void:
+	if n == rows:
+		return
+	rows = n
 	size = Vector2(W, HEAD_H + rows * ROW_H + FOOT_H + 8.0)
 	if back != null:
 		back.size = size
 	pivot_offset = Vector2(size.x, size.y / 2.0) if pivot_offset != Vector2.ZERO else pivot_offset
 	top = clampi(top, 0, maxi(0, entries.size() - rows))
 	select(index)
-	return true
 
 
 func refresh() -> void:
