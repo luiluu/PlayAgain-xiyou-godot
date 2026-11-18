@@ -6,7 +6,7 @@ extends Node
 ## 四、单段有效系数上限：开着时卡面系数×权重×条件超过档位上限压回上限，关着不封；全部卡在上限以内（数据校验同口径）。
 ## 五、角色卡跟着总开关开（CARDS 本身不动）。
 ## 六、端到端（核查 R2 P2-1，开、关各跑一遍）：双回复药走 _effect 生命、魔法各认自己那一行；持续伤害走 XExtDot.tick；
-##     确认阶段治疗不乘 ×5（confirm_rows 的 skipTypes）；直接扣血 scale_direct 乘 K（反弹不乘）；九线爆伤封顶走 apply_nine_cap；伤害详情 gaze 行；骑士 U 进 stats／shadow_stats；表外角色回落职业曲线。
+##     确认阶段治疗不乘 ×5（confirm_rows 的 skipTypesAny，按真实结算比；T214 回退 HEAL_SKIP_ALLY）；直接扣血 scale_direct 乘 K（反弹不乘）；九线爆伤封顶走 apply_nine_cap；伤害详情 gaze 行；骑士 U 进 stats／shadow_stats；表外角色回落职业曲线。
 ## 读的表：tianqi_data/base_line.json、abs_rescale.json、balance_table.json（combat_rules）、damage_ledger.json（phase4）、skill_rework.json（rules.single_hit_cap）。
 
 const XIAOYAO := 1  # 狗逍遥：强者、输出、慢
@@ -409,13 +409,42 @@ func _e2e(on: bool) -> void:
 		dot.erase("variance")
 	else:
 		dot["variance"] = keep_var
-	# （3）确认阶段：开着回复（3、4）也跳过 ×5
+	# （3）确认阶段：开着回复（3、4）也跳过 ×5——按真实结算比（T214：原来只看表里有没有 3、4，没看出 _active 只对敌人目标跳过）
 	var rows := XTianqiNoDiffPassive.confirm_rows(a, [])
 	var skip_ok := not rows.is_empty()
 	for row in rows:
-		var sk: Array = row.effects[0].skipTypes
+		var sk: Array = row.effects[0].skipTypes + row.effects[0].get("skipTypesAny", [])
 		skip_ok = skip_ok and (sk.has(3) and sk.has(4)) == on
 	_check(tag + "confirm_heal_x5", skip_ok, rows)
+	var ally: XActor = s.actor(LVSIJI)
+	var foe := XEnemy.new().setup(1, 3, 100.0)
+	var heal := XDB.rec("Skills", 8)  # HP 回复（type 3）
+	var mp_heal := heal.duplicate(true)
+	mp_heal.damage.type = 4
+	var confused := XDB.rec("Skills", 1)  # HP 伤害（type 1）打自己人
+	var ratios := {}
+	for pair in [["heal", heal, ally], ["mp_heal", mp_heal, ally], ["heal_self", heal, a], ["heal_foe", heal, foe], ["hit_ally", confused, ally], ["hit_foe", confused, foe]]:
+		var r0 := XDamage.calculate(pair[1], a, pair[2], {"critical": false, "variance": false})
+		var v0 := float(r0.value)
+		var fin := XDamage.apply_state_effects(v0, pair[1], a, pair[2], [], "confirm")
+		ratios[pair[0]] = fin / v0 if v0 != 0.0 else NAN
+	var x5 := func(r) -> bool: return r > 4.99 and r < 5.01
+	var x1 := func(r) -> bool: return r > 0.999 and r < 1.001
+	var x6 := func(r) -> bool: return r > 5.9 and r < 6.1
+	# 开着：我方回复（打自己人、自己、敌人）都不乘；关着：照乘 ×5（原版难度适应连治疗一起乘）
+	for k in ["heal", "mp_heal", "heal_self", "heal_foe"]:
+		_check(tag + "confirm_value." + k, x1.call(ratios[k]) if on else x5.call(ratios[k]), ratios)
+	# 伤害：打敌人跟去全队 ×6（XTianqiNoX6，O-470，不随期四总开关）走；打自己人（混乱）都 ×6——T214 没动伤害这一支
+	_check(tag + "confirm_value.hit_foe", x1.call(ratios.hit_foe) if not XTianqiNoX6.skip_types().is_empty() else x6.call(ratios.hit_foe), ratios)
+	_check(tag + "confirm_value.hit_ally", x6.call(ratios.hit_ally), ratios)
+	if on:  # 回退：HEAL_SKIP_ALLY = false 照原来——回复并进只对敌人生效的 skipTypes，打自己人照乘 ×5、打敌人不乘
+		XTianqiBase.HEAL_SKIP_ALLY = false
+		var back := {}
+		for pair in [["heal", ally], ["heal_foe", foe]]:
+			var v0 := float(XDamage.calculate(heal, a, pair[1], {"critical": false, "variance": false}).value)
+			back[pair[0]] = XDamage.apply_state_effects(v0, heal, a, pair[1], [], "confirm") / v0
+		XTianqiBase.HEAL_SKIP_ALLY = true
+		_check(tag + "confirm_value.rollback", x5.call(back.heal) and x1.call(back.heal_foe), back)
 	# （4）九线爆伤合计封顶：装备 0.5＋宝珠 0.2＝0.7，开着封到 0.3（扣 0.4），关着不封
 	var by := {"SkETypeHarmRi": {}, "skillTypeDvup": {}, "skillPass": {}, "elementAmplify": {}, "passiveELUP": {}, "globalHarmRi": {},
 		"critHarmRi": {"equip": 0.5, "orb": 0.2}, "books": {"globalHarmRi": {}, "critHarmRi": {}, "skillTypeDvup": {}, "SkETypeHarmRi": {}, "skillPass": {}, "elementAmplify": {}, "passiveELUP": {}}}

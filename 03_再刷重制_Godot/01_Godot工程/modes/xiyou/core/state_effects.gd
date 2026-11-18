@@ -888,6 +888,8 @@ static func _active(effect: Dictionary, ctx: Dictionary) -> bool:
 	var hp: bool = dtype in [1, 3, 5]
 	if effect.has("skipTypes") and dtype in effect.skipTypes and ctx.get("target") is XEnemy:
 		return false  # 只有天启篇难度被动的合成行带它（XTianqiNoX6，去全队 ×6）：打敌人的 HP 伤害不乘；打自己人（混乱）照旧 ×6。原版数据没有这个键
+	if effect.has("skipTypesAny") and dtype in effect.skipTypesAny:
+		return false  # 同上，不论目标（XTianqiBase.heal_skip_types，T214）：期四开着回复不乘 ×5，治疗目标是自己人
 	var cond := str(effect.get("cond", ""))
 	var active: bool = ctx.value != 0.0 if cond == "nonzero" else ctx.value > 0.0 if cond == "positive" else ctx.value >= 0.0 if cond == "nonnegative" else false
 	return active and (not effect.get("hpOnly", false) or hp)
