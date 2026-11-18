@@ -233,7 +233,7 @@ func _prof_scale() -> float:
 		var src_h := b.size.y if native else XAppearance.PROFILE_H / maxf(float(_profile.scale), 0.0001)
 		if not custom and _idle_h > 0.0 and _frame_asset == _idle_asset:
 			src_h = _idle_h
-		return XBattleLayout.fit_height(t174, src_h)
+		return XBattleLayout.fit_height(t174, src_h, XBattleLayout.BIG_FORM_KEYS.any(func(k): return str(_look_key).contains(k)))
 	return _profile.scale * _layout_mul()
 
 

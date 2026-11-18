@@ -49,6 +49,11 @@ static var VICTORY_FOCUS := true
 static var TARGET_H := 99.0
 ## T188：T174 倍数下屏幕身高已落在这个范围里的不改倍数
 const TARGET_RANGE := Vector2(98.0, 102.0)
+## T194（D204 B）：大型变身（米拉黑龙、渡鸦神话）单独的屏幕身高，默认＝99（跟 TARGET_H 一样，行为不变）。
+## Kyo 从样张里挑定后改这个数；样张档位 99／115／130／150／170。TARGET_H＝0 时不起作用（回到 T174）
+static var BIG_FORM_H := 99.0
+## 算 BIG_FORM_H 的外观键片段
+const BIG_FORM_KEYS := ["RavenMythic", "MiraDragon"]
 
 ## 我方两排错开 4 人点位 (669..819, 280..580) 的中心（原版坐标、1280×720 画面）
 const ACTOR_SRC := Vector2(744.0, 430.0)
@@ -102,9 +107,11 @@ static func sheet_size(size: float, look: XAppearance) -> float:
 
 ## T188：按原图待机可见高 src_h 定倍数。base＝T174 算出的倍数（0＝没开统一大小，原样返回）；
 ## base×src_h（四舍五入到整像素）已在 TARGET_RANGE 里不动，否则 TARGET_H÷src_h；TARGET_H＝0 或量不出可见高时照 base
-static func fit_height(base: float, src_h: float) -> float:
+static func fit_height(base: float, src_h: float, big_form := false) -> float:
 	if base <= 0.0 or TARGET_H <= 0.0 or src_h <= 0.0:
 		return base
+	if big_form and not is_equal_approx(BIG_FORM_H, TARGET_H):
+		return BIG_FORM_H / src_h
 	var h := roundf(base * src_h)  # 按整像素判：64 高满格的 1.6 倍 102.4 算 102（里德、狗逍遥这档不动）
 	if h >= TARGET_RANGE.x and h <= TARGET_RANGE.y:
 		return base
