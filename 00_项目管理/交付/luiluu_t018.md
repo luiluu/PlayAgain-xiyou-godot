@@ -49,7 +49,7 @@
 - 专项 `xiyou_tianqi_weak_b1`（新）26/26：欠账 1；玛莎 ①～④（读敏捷、交换等量、脱下读魔攻、说明、别人装照读魔攻＋灰字、共享表没改、开关关不生效、预算两路线记录）；克洛什 ①～⑤（三招都改、×2、多敌只打一个、追加同一目标、共享记录也投影、主目标倒下不追加且不占次数、别人装无效）、② 固定种子、单首领档 ×2；三层让步两面；8 人审计。
 - 反向验证 `04_验证/反向验证清单/luiluu_t018.json` 7 项全部咬住。
 - 本机专项（期四默认开）：`xiyou_tianqi_weak_affix` 101/101（`table_no_entries_yet` 改为 `table_entries_default_off`）、`xiyou_tianqi_skill_debt`、`xiyou_tianqi_skills`、`xiyou_tianqi_rewards`、`xiyou_tianqi_plague`、`xiyou_tianqi_horsemen`、`xiyou_tianqi_horsemen_battle`、`xiyou_tianqi_alien_finale`、`xiyou_determinism`、`xiyou_tianqi_ledger_p3`、`xiyou_tianqi_phase4`、`xiyou_growth_help`、`xiyou_tianqi_balance` 全过。
-- 云端选测（478 个场景）：见回执。
+- 云端选测（提交 bba3f291c，478 个场景、16 片）：477 过；挂的 1 个是 `xiyou_tianqi_weak_affix` 的 `table_no_entries_yet`（表里有了词条），12bdae0c1 已改成 `table_entries_default_off`，本机复跑 101/101。
 - 预算两路线记录（验收 ④，数值线拿去跑寻常、证道）：魔攻装（魔攻 13635、敏捷 3409）没戴 风旋术 13635／狂风术 6818，戴着 3409／1705；敏捷装（对调）没戴 3409／1705，戴着 13635／6818。出手顺序只看敏捷，戴不戴不变；寻常、证道整场没打，归数值线。
 
 ## 异议
@@ -79,4 +79,5 @@
 
 - bba3f291c T018 弱者专属词条批 1：玛莎御风术、克洛什精准击中本人投影；三层约束生效即让步；专项 26/26
 - 12bdae0c1 批 0A 专项：表里有词条后改断言为「全部默认关」
-- （本交付单与文件头注释一起提交）
+- e1fe50969 交付单；文件头补第七节
+- （云端结果写进交付单）
