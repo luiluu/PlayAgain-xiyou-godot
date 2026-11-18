@@ -99,13 +99,16 @@ def world(R, pose):
     for n in B: get(n)
     out = {n: full[n] for n in B}
     out['_local'] = {n: mat(pose.get(n, {}).get('rot', 0), B[n]['pivot']) for n in B}  # 只含本骨骼自身转角
+    out['_cut'] = R.get('head_cut') if pose.get('_head_rigid') else None  # T213 R1：整颗头刚性挂 head 骨
     return out
 
 def smooth(t):
     t = np.clip(t, 0, 1); return t * t * (3 - 2 * t)
 
-def weights(layer, px, py):
-    """返回 {bone: 权重数组}，px/py 为原图连续坐标。"""
+def weights(layer, px, py, cut=None):
+    """返回 {bone: 权重数组}，px/py 为原图连续坐标。
+    cut（rig.json 的 head_cut，姿势写 _head_rigid 才启用）：切线以上整颗头（吻、下颚、腮、角）权重全给 head，
+    切线以下 blend 像素内渐变回链式权重。原链式权重的分界横穿脸部（吻部一半挂 n3），头一相对脖子转，脸就被折成钩。"""
     kind = layer['skin']
     if kind == 'rigid':
         return {layer['bone']: np.ones_like(px)}
@@ -133,11 +136,19 @@ def weights(layer, px, py):
             lo = S[k - 1] if k >= 1 else np.ones(px.shape)
             hi = S[k] if k < len(S) else np.zeros(px.shape)
             W[bones[k]] = W.get(bones[k], 0) + lo - hi
+        if cut and 'head' in W:
+            xs, ys = np.array(cut['line'], float).T
+            yb = np.interp(px, xs, ys)
+            s = smooth((yb + cut['blend'] - py) / cut['blend'])
+            wh = np.maximum(W['head'], s); rest = 1 - W['head']
+            f = np.where(rest > 1e-9, (1 - wh) / np.where(rest > 1e-9, rest, 1), 0)
+            for k in W:
+                W[k] = wh if k == 'head' else W[k] * f
         return W
     raise ValueError(kind)
 
 def forward(layer, Mw, px, py):
-    W = weights(layer, px, py)
+    W = weights(layer, px, py, Mw.get('_cut'))
     if layer.get('local'):  # 先绕自身铰点转（如下颚开合），再按 rest 位置的链式权重跟脖子/头走，和头部像素严丝合缝
         Lm = Mw['_local'][layer['local']]
         px, py = Lm[0, 0] * px + Lm[0, 1] * py + Lm[0, 2], Lm[1, 0] * px + Lm[1, 1] * py + Lm[1, 2]
@@ -242,16 +253,42 @@ def fx_overlay(R, pose, shape):
         out[Y[ok], X[ok]] = im[ys[ok], xs[ok]]
     return out
 
+def mouth_wedge(R, wg, jaw_rot, shape):
+    """口腔：上颚线 tip→hinge 与「下颚上沿绕铰点转 jaw_rot 后」围成的楔形（rest 坐标）。
+    按到上颚线的距离分层（色取自 1_0），上獠牙从上颚线往下长。原做法是把下颚原位整块补红，
+    张开后像一块红砖、外缘还描黑框（Kyo R1 4_0 头部异常之一）。"""
+    h, w = shape[:2]; a = np.zeros(shape, np.uint8)
+    (ux, uy), (hx, hy) = wg['upper']; lx, ly = wg['lower_tip']
+    M = mat(jaw_rot, R['bones']['jaw']['pivot']); Lx, Ly = (M @ np.array([lx, ly, 1.0]))[:2]
+    tri = [(ux, uy), (hx, hy), (Lx, Ly)]
+    m = Image.new('L', (w, h), 0); ImageDraw.Draw(m).polygon(tri, fill=1); m = np.array(m) > 0
+    L2 = math.hypot(hx - ux, hy - uy); nx, ny = -(hy - uy) / L2, (hx - ux) / L2
+    if ny < 0: nx, ny = -nx, -ny
+    fang = {fx: fl for fx, fl in wg.get('fangs', [])}
+    for y, x in zip(*np.nonzero(m)):
+        d = max((x + 0.5 - ux) * nx + (y + 0.5 - uy) * ny, 0)
+        if x in fang and d < fang[x]: c = wg['teeth']
+        else: band = wg['bands']; c = band[min(int(d / wg.get('band_w', 2)), len(band) - 1)]
+        a[y, x] = list(c) + [255]
+    return a
+
 def bake(R, src, pose, fills=None):
     L = label_map(R, src); Mw = world(R, pose)
     out = np.zeros_like(src)
     for layer in R['layers']:
+        if 'wedge' in layer:  # 口腔楔形（T213 R1）：只在下颚张开时画，画在头颈链底下
+            if not pose.get(layer['when'], {}).get('rot'): continue
+            a = mouth_wedge(R, layer['wedge'], pose[layer['when']]['rot'], src.shape)
+            out = comp(out, render_layer(layer, upscale(a), Mw, src.shape)); continue
         if 'pixels' in layer:  # 补画小件（如下牙）：只在 when 骨骼转动时画，rest 姿势不出现
             if not pose.get(layer['when'], {}).get('rot'): continue
             a = np.zeros_like(src)
             for x, y, c in layer['pixels']: a[y, x] = list(c) + [255]
             out = comp(out, render_layer(layer, upscale(a), Mw, src.shape)); continue
         fl = (fills or {}).get(layer['name'])
+        mo = layer.get('fill', {}).get('mouth')
+        if mo and pose.get(mo.get('off_when', ''), {}).get('rot'):  # 张嘴帧改由 mouth 楔形层画口腔，不再整块补红
+            fl = make_fill(src, L, {**layer, 'fill': {k: v for k, v in layer['fill'].items() if k != 'mouth'}})
         if fl is None: fl = make_fill(src, L, layer)
         a = layer_src(src, L, layer['parts'], fl)
         up = upscale(a)
@@ -304,7 +341,7 @@ def cleanup(a, ref_holes=()):
 def export_parts(R, src, outdir):
     L = label_map(R, src); outdir = Path(outdir); outdir.mkdir(parents=True, exist_ok=True)
     names = []
-    for layer in [l for l in R['layers'] if 'pixels' not in l]:  # 补画小件（下牙）不属于 1_0 拆件
+    for layer in [l for l in R['layers'] if 'pixels' not in l and 'wedge' not in l]:  # 补画小件（下牙、口腔楔形）不属于 1_0 拆件
         i = len(names)
         a = layer_src(src, L, layer['parts'], make_fill(src, L, layer))
         fn = f"{i}_{layer['name']}.png"; Image.fromarray(a).save(outdir / fn); names.append(fn)
