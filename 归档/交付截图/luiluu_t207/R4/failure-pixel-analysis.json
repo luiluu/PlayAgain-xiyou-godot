@@ -1,0 +1,46 @@
+[
+  {
+    "frame": "14_0",
+    "solid_to_transparent": 540,
+    "bbox_inclusive": [
+      61,
+      113,
+      100,
+      178
+    ],
+    "removed_outside_mask": 0
+  },
+  {
+    "frame": "15_0",
+    "solid_to_transparent": 867,
+    "bbox_inclusive": [
+      62,
+      88,
+      114,
+      166
+    ],
+    "removed_outside_mask": 0
+  },
+  {
+    "frame": "7_2",
+    "solid_to_transparent": 101,
+    "bbox_inclusive": [
+      105,
+      128,
+      128,
+      138
+    ],
+    "removed_outside_mask": 0
+  },
+  {
+    "frame": "13_0",
+    "solid_to_transparent": 290,
+    "bbox_inclusive": [
+      124,
+      58,
+      184,
+      83
+    ],
+    "removed_outside_mask": 0
+  }
+]
