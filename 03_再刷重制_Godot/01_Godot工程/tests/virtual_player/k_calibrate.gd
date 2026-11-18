@@ -73,6 +73,8 @@ func _ready() -> void:
 			XTianqiBase.TUNE_D189 = false
 		elif a == "--single":
 			single = true
+		elif a == "--debug-cast":
+			_debug_cast = true
 		elif a == "--per-skill":
 			per_skill = true
 		elif a == "--debug":
@@ -399,8 +401,11 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			if per_skill:
 				print("K_SKILL %d %d skip=not_for_opponent" % [id, int(sid)])
 			continue
-		var full := minf(eff_full(id, int(sid)), cap) if cap > 0.0 else eff_full(id, int(sid))
 		var d: Dictionary = sp.damage
+		# D195：「一直生效」的减成条件（如 3922 三连击时每段 ×1/3、4848 每段 ×0.6）是拿段数换的，按总伤算时要算进去，
+		# 不然「峰值单段（不含减成）× 段数」会多算 3 倍（T175 v12：9、10、19）。--single 照旧口径不算
+		var full_raw := eff_full(id, int(sid)) * (1.0 if single else _always_reduce(a, e, d, id, int(sid)))
+		var full := minf(full_raw, cap) if cap > 0.0 else full_raw
 		var w := XTianqiSkills.hit_weight(d)
 		var sk_best := {}
 		for n in hits:
@@ -470,6 +475,8 @@ func _cast_ratio(s: XState, a, sk: Dictionary) -> Dictionary:
 		if foes.is_empty():
 			break
 		var e = foes[0]
+		# 场上只留木桩：全体技能的 target 阶段每个目标跑一遍、里面的「action effect: enemies」又打全体，3 个敌人时木桩挨 3 遍（T175 v12 91 号 5 段量成 13 段）
+		logic.enemies = [e]
 		e.add_param(0, 1.0e9)
 		e.param_mark_dirty()
 		_pin_def(e)
@@ -495,9 +502,12 @@ func _cast_ratio(s: XState, a, sk: Dictionary) -> Dictionary:
 		return {"ratio": 1.0, "n": 0, "segs": [], "ratios": []}
 	runs.sort_custom(func(x, y): return float(x.ratio) < float(y.ratio))
 	var mid: Dictionary = runs[runs.size() / 2]
-	return {"ratio": snappedf(float(mid.ratio), 0.001), "n": mid.n, "segs": mid.segs, "ratios": runs.map(func(r): return snappedf(float(r.ratio), 0.001))}
+	# yep_effects：数据里的段数（yepEffects×repeats，智能 AI 估段数同口径），和实测 n 对照（卡面写的段数对不上时看这个）
+	return {"ratio": snappedf(float(mid.ratio), 0.001), "n": mid.n, "segs": mid.segs, "ratios": runs.map(func(r): return snappedf(float(r.ratio), 0.001)),
+		"yep_effects": int(sk.get("yepEffects", 1)) * maxi(1, int(sk.get("repeats", 1)))}
 
 
+static var _debug_cast := false
 static func _collect_hits(logs, e, out: Array) -> void:
 	for x in logs:
 		if x is Array:
@@ -507,6 +517,8 @@ static func _collect_hits(logs, e, out: Array) -> void:
 				var v := float(x.get("shown", {}).get("hp", 0.0))
 				if v > 0.0:
 					out.append(v)
+					if _debug_cast:
+						print("K_SEG skill=%s v=%d" % [x.get("skill", {}).get("id"), v])
 
 
 ## 木桩物防魔防钉到 DEF：敌人的防御要乘难度、首领、天启篇楼层等倍率（还会在第一下时才挂上开战状态），
@@ -542,6 +554,19 @@ static func _troop(s) -> int:
 		_troop_id = t
 		return t
 	return TROOP
+
+
+## D195：卡上和角色行里 if＝always、倍率＜1 的条件（学会某招后每段打折、换更多段），按当下是否成立取实际倍率
+static func _always_reduce(a, e, d: Dictionary, id: int, sid: int) -> float:
+	var m := 1.0
+	XTianqiSkills._cur_skill = sid
+	var conds: Array = (d.get("conds", []) as Array) + (XTianqiSkills.data().get("actors", {}).get(str(id), {}).get("conds", []) as Array)
+	for c in conds:
+		if c.has("skills") and not (c.skills as Array).any(func(x): return int(x) == sid):
+			continue
+		if str(c.get("if", "")) == "always" and float(c.get("mult", 1.0)) < 1.0:
+			m *= minf(1.0, XTianqiSkills._cond(c, a, e))
+	return m
 
 
 ## 这一下卡面系数×当下条件（不含属性基数和等级缩放）：formula 的 v0 ÷ 它 ＝ 基数×等级缩放
