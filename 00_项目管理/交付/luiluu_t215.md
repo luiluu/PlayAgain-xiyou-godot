@@ -11,15 +11,18 @@
 
 ## 偏离／要知道
 - 派单写「XTianqiBase.on() 下生效」，我用的是 `XTianqi.active(XState.current)`（天启篇存档）：`XTianqiBase.on()` 还挂着默认关的 PHASE4 总开关，用了等于没生效。
-- 现状：天启篇测试里 167 渡鸦等 IDS 角色没法上场（战斗名单没有他们），所以专项在西游起的战斗上、事后打天启篇标记验证过滤逻辑。天启篇里渡鸦能不能上场我没查。
+- 小A 查清：167～174 九死及以上能正常上场；我测试里上不了是 flags.tianqi 缺 difficulty 致 super_cap=-1，不是 bug。专项因此在西游起的战斗上事后打天启篇标记验证过滤逻辑。
 - 天启篇普通角色没学战技时指令会少一项（6 项），xiyou_ring_seven_battle 的 _state 因此补了一个战技才凑满 7 项。
 
 ## 测试（--audio-driver Dummy，无头）
 xiyou_hide_empty_stype 14/14、xiyou_big_form_menu 136/136、xiyou_appearance 37/37、xiyou_mira_dragon_idle 41/41、xiyou_ring_seven_battle 36/36、xiyou_tianqi_party 33/33、xiyou_tianqi_swap_view 62/62、xiyou_battle_ui 182/182、xiyou_ui_skin_battle 67/67、xiyou_battle_log 77/77；语法检查通过。没跑 检查.sh 全量。
 
 ## 变更记录草稿
-dev.待定｜T215｜战斗指令：天启篇里某类技能一个都没有就不列（HIDE_EMPTY_STYPE）；T208 首领信息区并入血条（BOSS_INFO_MERGE_BAR）、列表回退摆法还原行数；T210 缺帧回落专项、旧快照缺 state_motion 按 0。玩家可见句（待小A 审）：「战斗指令里，某一类技能你一个都没有时，这一类不再显示。」
+dev.待定｜T215｜战斗指令：天启篇里某类技能一个都没有就不列（HIDE_EMPTY_STYPE）；T208 首领信息区并入血条（BOSS_INFO_MERGE_BAR）、列表回退摆法还原行数；T210 缺帧回落专项、旧快照缺 state_motion 按 0。玩家可见句（待小A 审）：「天启篇战斗指令里，某一类技能一个都没有时，不再显示这一类。」
 
 ## O-待定登记草稿
 - O-待定A｜战斗指令空技能类隐藏｜XBattleScene.HIDE_EMPTY_STYPE（false＝回原版全列）｜状态：保留
 - O-待定B｜首领信息区并入血条矩形｜XBattleScene.BOSS_INFO_MERGE_BAR（false＝回 300 宽）｜状态：保留
+
+## 补（小A 核后）
+xiyou_big_form_menu 加 set_rows 还原断言（140/140）；xiyou_mira_dragon_idle 加旧快照缺 state_motion 键按 0 断言（中毒场景）。

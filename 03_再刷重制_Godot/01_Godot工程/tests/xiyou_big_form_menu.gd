@@ -211,10 +211,15 @@ func _four(troop: int) -> void:
 			if lw.rows >= 3:
 				lw.select(lw.entries.size() - 1)
 				var r0 := lw.rows
+				var size0 := lw.size
 				var shrunk := lw.fit_rows(300.0)
 				_check(tag + "_fit_rows", shrunk and lw.rows < r0 and lw.size.y <= 300.0 and lw.back.size == lw.size
 					and lw.index >= lw.top and lw.index < lw.top + lw.rows, [r0, lw.rows, lw.size, lw.top, lw.index])
 				_check(tag + "_fit_rows_noop", not lw.fit_rows(720.0))
+				# T215 P3-1 回退摆法（下方中间或再回退 outer）前，缩过的行数用 set_rows 还原：rows、size、back.size 都回到缩前
+				lw.set_rows(r0)
+				_check(tag + "_set_rows_restore", lw.rows == r0 and lw.size.is_equal_approx(size0) and lw.back.size.is_equal_approx(size0)
+					and lw.index >= lw.top and lw.index < lw.top + lw.rows, [r0, lw.rows, size0, lw.size, lw.back.size])
 		else:
 			_check(tag + "_list_same", lw.position == old_list_pos, [lw.position, old_list_pos])
 		if _windowed() and troop == BOSS_TROOP and id in BIG:
