@@ -396,6 +396,7 @@ static func live_confirm_rows(holder, rows: Array) -> Array:
 				var e3: Dictionary = (e as Dictionary).duplicate(true)
 				if not _live_effect(e3):
 					e3[LIVE_POOLED] = true
+					XStateEffects.fix_self_remove(e3, int(st.get("id", 0)))  # T205 R1：1666 原版删的是被打的人，按 FIX_HALFSTEP_1666 改删持有者
 				src.append(e3)
 		for e in src:
 			if _live_effect(e, row):

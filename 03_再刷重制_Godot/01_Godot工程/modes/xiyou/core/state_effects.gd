@@ -84,6 +84,10 @@ static var LOTUS_DAMAGE_7303 := true
 const LOTUS_DAMAGE_RATE := 0.5
 ## O-179（rules10）：数据错误:暴击 1749 原版调 user.criticalRate()（不存在）报错无效果。按说明：持有者每 1% 最终暴击率，暴击时伤害 +1%
 static var FIX_CRIT_1749 := true
+## O-待定（T205 R1）：半步真仙效果 1666 挂在攻击方身上（1665 每回合开始、2566 开战 user.addState），确认阶段原版写 target.removeState(1666)，
+## target 是被打的人，持有者身上的删不掉，整回合每击都另扣一次（＝×2）；修成从持有者自删（只吃一下）。false＝原版
+static var FIX_HALFSTEP_1666 := true
+const HALFSTEP_STATE := 1666
 
 
 ## Private value-only adapter: current signed phase input, without the damage
@@ -536,6 +540,39 @@ static func queue_force_quiet(b: XBattler, skill: int, target_index: int) -> voi
 	_forces.append([1 if b is XActor else 0, b.actor_id if b is XActor else _unit_of(b).find(b), skill, target_index])
 
 
+## XDB 读 States 时调用：给 1666 确认阶段那段程序挂上 FIX_HALFSTEP_1666 的修正版（run_one 按开关选）
+static func patch_states(t: Array) -> void:
+	if HALFSTEP_STATE < t.size() and t[HALFSTEP_STATE] is Dictionary:
+		for e in t[HALFSTEP_STATE].get("effects", []):
+			fix_self_remove(e, HALFSTEP_STATE)
+
+
+## 程序里有 remove_state(b, sid)（删被打的人身上的 sid）就挂 fix＝FIX_HALFSTEP_1666、fixed＝改成删 a（持有者）的副本；
+## 总账 1666 的 as 换写（XTianqiLedger.live_confirm_rows）也走这里
+static func fix_self_remove(e: Dictionary, sid: int) -> void:
+	if str(e.get("op", "")) != "effect_program" or e.has("fix"):
+		return
+	var fixed: Dictionary = (e.program as Dictionary).duplicate(true)
+	if _self_remove(fixed, sid):
+		e.fix = "FIX_HALFSTEP_1666"
+		e.fixed = fixed
+
+
+static func _self_remove(node, sid: int) -> bool:
+	var hit := false
+	if node is Dictionary:
+		if node.get("op") == "phase_call" and node.get("name") == "remove_state" and node.get("receiver") == "b" \
+				and not (node.get("args", []) as Array).is_empty() and float(node.args[0].get("value", -1)) == float(sid):
+			node.receiver = "a"
+			hit = true
+		for k in node:
+			hit = _self_remove(node[k], sid) or hit
+	elif node is Array:
+		for x in node:
+			hit = _self_remove(x, sid) or hit
+	return hit
+
+
 static func fix_on(name: String) -> bool:
 	match name:
 		"FIX_UNDYING_2554": return FIX_UNDYING_2554
@@ -549,6 +586,7 @@ static func fix_on(name: String) -> bool:
 		"FIX_QI_RATE_2562": return FIX_QI_RATE_2562
 		"FIX_SWORD_RATE_2575": return FIX_SWORD_RATE_2575
 		"FIX_CRIT_1749": return FIX_CRIT_1749
+		"FIX_HALFSTEP_1666": return FIX_HALFSTEP_1666
 	return false
 
 

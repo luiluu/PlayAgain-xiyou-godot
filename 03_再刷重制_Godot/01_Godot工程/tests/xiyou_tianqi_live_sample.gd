@@ -333,12 +333,32 @@ func _t205(a, mate, e, ctx: Dictionary) -> void:
 	var c3_off := _confirm(a, e, 1, 100.0, {"item": phys})
 	XTianqiLedger.POOL_LIVE_PROBE = true
 	_check("t205_2583_keep_down", k2583 < 1.0 and is_equal_approx(float(x3.add), 0.0) and absf(c3 - c3_off) <= 0.01 and c3 < 100.0, [k2583, x3, c3, c3_off])
+	# 2583 k>1（R1 P3-1）：目标最大 HP ≥ 角色 13 倍、满血 → ③＋30%，确认阶段不再乘
+	var big = _big_enemy(a, 13.0)
+	var x3b := _add(a, big, false, phys) if big != null else {}
+	var c3b := _confirm(a, big, 1, 100.0, {"item": phys}) if big != null else -1.0
+	XTianqiLedger.POOL_LIVE_PROBE = false
+	var c3b_off := _confirm(a, big, 1, 100.0, {"item": phys}) if big != null else -1.0
+	XTianqiLedger.POOL_LIVE_PROBE = true
+	_check("t205_2583_up", big != null and is_equal_approx(float(x3b.get("add", -1.0)), 0.3) and absf(c3b - 100.0) <= 0.01 and absf(c3b_off - 130.0) <= 0.01,
+		[big.mhp / a.mhp if big != null else 0.0, x3b, c3b, c3b_off])
 	# 1666 半步真仙：as 换写 ③＋100%，自删那段原程序留着（打标记）
 	_fresh(a, [1666])
 	var x4 := _add(a, e)
 	var rows4: Array = XTianqiLedger.live_confirm_rows(a, a.effect_states("confirm", false)).filter(func(r): return int(r.get("id", 0)) == 1666)
 	var kept: bool = rows4.size() == 1 and (rows4[0].effects as Array).any(func(z): return str(z.get("op", "")) == "effect_program" and bool(z.get(XTianqiLedger.LIVE_POOLED, false)))
 	_check("t205_1666_as", is_equal_approx(float(x4.add), 1.0) and absf(_confirm(a, e) - 100.0) <= 0.01 and _confirm(a, mate) >= 199.0 and kept, [x4])
+	# R1 P1-1／P2-1：实战（execute）连打两下：第一下吃 ③＋100% 并从持有者自删，第二下不吃；FIX_HALFSTEP_1666 关＝原版删不掉、第二下还吃
+	_check("t205_1666_self_remove", _halfstep_hits(a, e) == [1.0, 0.0], _halfstep_hits(a, e))
+	XStateEffects.FIX_HALFSTEP_1666 = false
+	var orig := _halfstep_hits(a, e)
+	XStateEffects.FIX_HALFSTEP_1666 = true
+	XTianqiLedger.POOL_LIVE = false  # 不归池（西游档、期四关）：修正照样删持有者身上的
+	_fresh(a, [1666])
+	_hit(a, e)
+	var gone_unpooled: bool = not a.is_state_affected(1666)
+	XTianqiLedger.POOL_LIVE = true
+	_check("t205_1666_fix_switch", orig == [1.0, 1.0] and gone_unpooled, [orig, gone_unpooled])
 	# 1522 神秘成圣：③＋50%、④＋50%；2556 胡桃：④＋150%。暴击／非暴击各一下
 	_fresh(a, [1522])
 	var x5 := _add(a, e)
@@ -362,6 +382,36 @@ func _t205(a, mate, e, ctx: Dictionary) -> void:
 		and absf(_confirm(a, e, 1, 100.0, {"critical": true}) - 100.0) <= 0.01 and absf(c6_off - 250.0) <= 0.01 and absf(_confirm(a, e) - 100.0) <= 0.01, [x6, crit6, crit6_off, c6_off])
 	XTianqiLedger.POOL_LIVE = false
 	_fresh(a, [])
+
+
+## 挂 1666 连打两下（execute），每下打之前看进③的量
+func _halfstep_hits(a, e) -> Array:
+	_fresh(a, [1666])
+	var out := []
+	for i in 2:
+		out.append(float(_add(a, e).add))
+		_hit(a, e)
+	return out
+
+
+func _hit(a, e) -> void:
+	var item: Dictionary = XDB.rec("Skills", 1)
+	e.hp = e.mhp
+	XDamage.finish(XDamage.calculate(item, a, e, {"critical": false, "variance": false}), item, a, e, true, {})
+	a.effect_snapshot_valid = false
+	a.effect_lists = {}
+
+
+## 最大 HP 至少是 a 的 ratio 倍的敌人（2583 k>1 用）
+func _big_enemy(a, ratio: float):
+	var rows: Array = (XDB.table("Enemies") as Array).filter(func(r): return r is Dictionary and int(r.get("id", 0)) > 0)
+	rows.sort_custom(func(x, y): return float(x.get("params", [0])[0]) > float(y.get("params", [0])[0]))
+	for r in rows.slice(0, 40):
+		var big := XEnemy.new().setup(int(r.id), 3, 100.0)
+		if big.mhp >= a.mhp * ratio:
+			big.hp = big.mhp
+			return big
+	return null
 
 
 ## 这一下的暴击倍率（breakdown.row.critical）
