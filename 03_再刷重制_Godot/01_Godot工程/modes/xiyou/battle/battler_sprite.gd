@@ -126,11 +126,12 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	_make_overlay()
 	if b is XEnemy and look.sideview:
 		_set_flip(true)
-	_base_scale = sprite_scale
+	_fixed = XBattleLayout.sheet_size(fixed_scale, look) if b is XActor else 0.0
+	_base_scale = _fixed if _fixed > 0.0 else sprite_scale
 	if b is XActor:
 		fd = XSvPngFd.scale(b as XActor)
 		_fd_sig = XSvPngFd.signature(b as XActor)
-	body_scale = sprite_scale * look.scale * fd
+	body_scale = _base_scale * look.scale * fd
 	_apply_scale()
 	var cursor_name := str(XDB.plugin("YEP_BattleSelectCursor").get("Ally Cursor" if b is XActor else "Enemy Cursor", ""))
 	var cp := XDB.img_path("pictures", cursor_name)
@@ -171,13 +172,13 @@ static func _load(folder: String, name: String) -> Texture2D:
 ## Game_Actor.spriteWidth／spriteHeight：有归一档时按可见范围（选择光标、状态图标跟着看得见的身体），浮空另加高
 func width() -> float:
 	if not _profile.is_empty():
-		return _profile.bounds.size.x * _profile.scale * _layout_mul()
+		return _profile.bounds.size.x * _prof_scale()
 	return (look.cell.x if look.cell.x > 0 else 64.0) * body_scale
 
 
 func height() -> float:
 	if not _profile.is_empty():
-		return _profile.bounds.size.y * _profile.scale * _layout_mul() + maxf(0.0, -_float_px)
+		return _profile.bounds.size.y * _prof_scale() + maxf(0.0, -_float_px)
 	return (look.cell.y if look.cell.y > 0 else 64.0) * body_scale
 
 
@@ -187,6 +188,24 @@ var layout_mul := 1.0
 
 func _layout_mul() -> float:
 	return layout_mul
+
+
+## T174 我方统一大小（XBattleLayout.actor_size，setup 前设）：>0 时所有我方身体（旧式、归一档都一样）＝fixed_scale 倍，
+## 归一档只用来量可见范围（光标、状态图标），不再改大小；0＝照原来（旧式 _base_scale、归一档 归一缩放×layout_mul）
+var fixed_scale := 0.0
+## 按这张图的格子大小换算后的实际倍数（XBattleLayout.sheet_size：128 格＝1，64 格＝fixed_scale）；setup／换装时算
+var _fixed := 0.0
+
+
+## 归一档此刻的缩放（不含外观 scale、SvPngFd）
+func _prof_scale() -> float:
+	if _fixed > 0.0:
+		# 逐帧图（不从 9×6 图切）画布大小不一：渡鸦神话、米拉黑龙等大画布的人物可见高 150～180，原本靠归一档缩回 72 基准。
+		# 统一大小时只缩不放：倍数＝_fixed×min(1, 归一缩放)，可见高 >72 的缩到约 72×1.6≈115，≤72 的（屠苏、璇、哈基米、五条悟）照 _fixed（小A 核 P1-1）
+		if _profile.get("multi", false):
+			return _fixed * minf(1.0, float(_profile.scale))
+		return _fixed
+	return _profile.scale * _layout_mul()
 
 
 ## T126：setup 之后整体再放大 f 倍（敌人按显示高封顶，要先知道原版大小）
@@ -203,6 +222,8 @@ func rescale(f: float) -> void:
 
 ## 选择光标在头顶：侧视图按一格高（原版不乘缩放），T126 放大后跟着乘 layout_mul（height() 已含放大）
 func _cursor_y() -> float:
+	if _fixed > 0.0 and sv and look.kind != "scene":
+		return -64.0 * layout_mul  # T174 统一大小：人一样高，光标都按 64 格算（128 格图人也是约 100 高）
 	return -look.cell.y * layout_mul if sv and look.kind != "scene" else -height()
 
 
@@ -435,6 +456,10 @@ func swap_look(key: String) -> void:
 		return
 	body_scale = body_scale / maxf(look.scale, 0.0001) * next.scale
 	look = next
+	if fixed_scale > 0.0:  # T174：换的图格子大小不同时倍数跟着换（64 格↔128 格）
+		_fixed = XBattleLayout.sheet_size(fixed_scale, look)
+		_base_scale = _fixed
+		body_scale = _fixed * look.scale * fd
 	sv = look.animated()
 	(sprite as Sprite2D).region_enabled = look.sideview
 	_apply_scale()
@@ -493,7 +518,7 @@ func _show_frame(f: Dictionary) -> void:
 		body.region_rect = r
 	_frame_h = r.size.y if r.has_area() else float((f.tex as Texture2D).get_height())
 	_profile = XAppearance.profile(f, motion) if battler is XActor and int((battler as XActor).actor_id) >= 167 else {}
-	body_scale = (_profile.scale * _layout_mul() if not _profile.is_empty() else _base_scale) * look.scale * fd
+	body_scale = (_prof_scale() if not _profile.is_empty() else _base_scale) * look.scale * fd
 	_apply_scale()
 	_apply_smooth()
 	if weapon and _profile.get("multi", false):
@@ -517,7 +542,8 @@ func _apply_smooth() -> void:
 		body.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		_apply_crisp(false)  # 保持原生像素边界，不套可选柔边着色器。
 		return
-	var smooth := SV_NORM_SMOOTH and not _profile.is_empty() and float(_profile.scale) * fd < 1.0
+	# T174：统一大小时按实际倍数判（大画布逐帧图缩到 <1 照旧平滑；64 格 1.6、大格 1 倍照最近邻），小A 核 P2-1
+	var smooth := SV_NORM_SMOOTH and not _profile.is_empty() and (_prof_scale() if _fixed > 0.0 else float(_profile.scale)) * fd < 1.0
 	body.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR if smooth else CanvasItem.TEXTURE_FILTER_PARENT_NODE
 	_apply_crisp(not smooth)
 
