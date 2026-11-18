@@ -24,9 +24,9 @@ sk(10245,"172 宿傩（第 5，约 197 万）：空间斩 4、5 → 5、6、7；
    terminal_hits={"10234":[5,6,7],"10235":[6,7,8]},
    desc=["效果：空间斩分三段（倍率5、6、7）、次元斩分三段（倍率6、7、8），每段无视50%物防，不再造成真实伤害"])
 # 11 三笠 171
-sk(10731,"95 三笠（第 11，约 171 万）：后颈斩 三段×物攻7 → 四段×(物攻6＋生命1%)",
-   damage={"stats":{"atk":6,"mhp":0.01},"coef":1},seq=[{"op":"keep_effects","n":4}],
-   desc=["效果：4段伤害；专砍要害；目标生命低于30%时必定暴击并无视物防30%（50级学会）","伤害：每段 物理攻击×6＋生命上限×1%"])
+sk(10731,"95 三笠（第 11，约 171 万）：后颈斩 三段×物攻7 → 四段×(物攻6＋魔攻1＋生命1%)",
+   damage={"stats":{"atk":6,"mat":1,"mhp":0.01},"coef":1},seq=[{"op":"keep_effects","n":4}],
+   desc=["效果：4段伤害；专砍要害；目标生命低于30%时必定暴击并无视物防30%（50级学会）","伤害：每段 物理攻击×6＋魔法攻击×1＋生命上限×1%"])
 # 12 甚尔 166
 sk(10218,"171 甚尔（第 12，约 166 万）：释魂刀 物攻6 → 物攻7＋生命1%",
    damage={"stats":{"atk":7,"mhp":0.01},"coef":1},
@@ -58,9 +58,10 @@ sk(5673,"107 钟离（第 17，约 144 万）：天星·陨 每段生命10% → 
 sk(10125,"167 渡鸦（D210 B 中段，约 175 万）：黑翼裁决 两段×魔攻4 → 五段×(魔攻2＋生命1%)，已损生命加成最多 +50% → +60%",
    damage={"stats":{"mat":2,"mhp":0.01},"coef":1,"conds":[{"if":"target_hp_lost","per":0.6,"cap":0.6}]},seq=[{"op":"split_effects","n":5}],
    desc=["效果：5段伤害；按目标已损生命最多再 +60%","伤害：每段 魔法攻击×2＋生命上限×1%"])
-sk(5706,"108 奈叶（第 10，约 175 万，适应 2000 次标定）：厄临星爆 两段×12 → 五段×8",
-   damage={"coef":8},seq=[{"op":"split_effects","n":5}],
-   desc=["效果：五段；耗光魔法，按耗掉的魔法比例出伤（最多按 90% 算）","伤害：每段 (魔法攻击×4＋魔法上限×16%)×耗掉的魔法比例"])
+for _sid,_dang in ((5706,""),(5708,"，60% 档同改"),(5709,"，90% 档同改")):
+  sk(_sid,"108 奈叶（第 10，约 175 万，适应 2000 次标定）：厄临星爆 两段×12 → 四段×(魔攻4＋魔法上限20%)"+_dang+"（5706／5708／5709 是小魔炮六选一里同一招的三档功率，smart_ai.gd CANNON_POWER）",
+     damage={"stats":{"mat":0.4,"mmp":0.02},"coef":10},seq=[{"op":"split_effects","n":4}],
+     desc=["效果：四段；耗光魔法，按耗掉的魔法比例出伤（最多按 90% 算）","伤害：每段 (魔法攻击×4＋魔法上限×20%)×耗掉的魔法比例"])
 sk(10623,"179 流萤（第 18，约 140 万，余烬 3000 标定）：完全燃烧 九段合计 物攻12 → 13",
    damage={"coef":13},
    desc=["伤害：每个敌人 九段合计 物理攻击×13（火）；只有一个目标 +50%；叠3层印记；消耗自己全部护盾，每生命上限10%再 +10%（最多 +30%）"])
@@ -72,7 +73,8 @@ EXTRA=json.load(open(sys.argv[1])) if len(sys.argv)>1 else {}
 S.update(EXTRA)
 ACT={}
 if '_ACT' in globals(): ACT=_ACT
-t=open('/private/tmp/claude-501/-Users-kyo-orca-workspaces---------t204/d9a2a53b-fde2-4ea9-a0ae-5aa9f678c747/scratchpad/skill_rework.orig.json').read()
+import subprocess,os
+t=subprocess.run(['git','show','29f6b5be1~1:03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/skill_rework.json'],capture_output=True,text=True,check=True,cwd=os.path.dirname(P)).stdout  # 改 D209 前的原文
 body=',\n  "skills": {\n'+',\n'.join('   %s: %s'%(json.dumps(k),json.dumps(v,ensure_ascii=False)) for k,v in S.items())+'\n  },\n  "actors": '+json.dumps(ACT,ensure_ascii=False)+'\n }'
 ins=', "D209": {\n  "_note": '+json.dumps(NOTE,ensure_ascii=False)+body
 t=t.rstrip(); idx=t.rfind('}}')
