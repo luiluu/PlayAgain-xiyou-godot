@@ -48,6 +48,8 @@ var can_lose := false
 var sprites := {}                 # XBattler -> XBattlerSprite
 var gauges := {}                  # XEnemy -> {box, timer}
 var status_rows := {}             # XActor -> XSideStatus
+var party_fold: XPartyFold        # T196 新界面队伍栏展开／收起（旧界面 null）
+var turn_marker: XTurnMarker      # T196 新界面当前行动角色头顶的立体标记（旧界面 null）
 var field: Node2D
 var fx: Node2D
 ## 渡鸦特效层（XRavenFx，战场里），第一次放时才建
@@ -681,13 +683,20 @@ func _build_ui(vs: Vector2) -> void:
 	holder.position = _origin
 	holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(holder)
-	XSkinBattle.side_backdrop(holder, logic.actors.size())  # 新界面 2B：队伍紧凑条的面板底（关着不加）
+	var side_back := XSkinBattle.side_backdrop(holder, logic.actors.size())  # 新界面 2B：队伍紧凑条的面板底（关着不加）
 	for i in range(logic.actors.size()):
 		var row := XSkinBattle.side_status()  # 新界面 2B：开着是紧凑条的一行，关着同 XSideStatus.new()
 		row.setup(logic.actors[i], i)
 		holder.add_child(row)
 		status_rows[logic.actors[i]] = row
 		row.cell_pressed.connect(_open_status)
+	# T196：新界面队伍栏可展开／收起（栏头＋裁剪框，各行搬进去）；旧界面返回 null 什么也不动
+	party_fold = XPartyFold.attach(holder, side_back, func(): return logic.actors.map(func(m): return status_rows.get(m)).filter(func(r): return r != null and is_instance_valid(r)))
+	if party_fold != null:
+		party_fold.changed.connect(func():
+			if swap_lock_tag != null and is_instance_valid(swap_lock_tag) and swap_lock_tag.visible:
+				_refresh_swap_lock())
+	turn_marker = XTurnMarker.make(self, POPUP_Z - 1)  # T196：头顶行动标记，伤害数字（POPUP_Z）盖在它上面
 	_refresh_status()
 	# 自动/加速：左上角小窗，避免挡住 OTB（优化 O-006）；让出左上 (20,10,240,74) 给挂机快捷界面。
 	# 层次（ui-zorder1）：在 screen_fx 之下（221 淡出的黑幕盖住按钮；原版没有这两个按钮，画面上只剩窗口），
@@ -779,6 +788,10 @@ func _set_active(a: XActor) -> void:
 	_active = a
 	for b in status_rows:
 		status_rows[b].active = b == a
+	if party_fold != null and is_instance_valid(party_fold):
+		party_fold.set_focus(a)  # T196：收起时只露轮到的人（敌人行动时 a 为空，不换）
+	if turn_marker != null and is_instance_valid(turn_marker):
+		turn_marker.set_target(a)  # T196：头顶标记跟过去
 
 
 ## HelpExtend：Window_BattleSkill/BattleItem.updateHelp 让说明卡跟着选中行（列表左侧，见 XHelpCard.place_for_row）。
@@ -1392,6 +1405,10 @@ func _swap_sprite_from(old: XBattlerSprite, row: XSideStatus, h: XActor) -> void
 	nr.cell_pressed.connect(_open_status)
 	row.queue_free()
 	status_rows[h] = nr
+	if party_fold != null and is_instance_valid(party_fold):
+		party_fold.replaced(row.actor, h)  # T196：换上的人接替焦点、新行按折叠状态摆好
+	if turn_marker != null and is_instance_valid(turn_marker):
+		turn_marker.replaced(row.actor, h)
 
 
 ## 状态详情（installEquipmentStatusRuntime open('status')）：点右侧状态格打开。正式版打开时 BattleManager.update 整个停住、
@@ -1495,6 +1512,8 @@ func _command_entries(a: XActor) -> Array:
 
 ## 右侧队伍面板（各行连同新皮肤的面板底）合起来的范围（画面坐标；没有行为空）
 func party_rect() -> Rect2:
+	if party_fold != null and is_instance_valid(party_fold):
+		return party_fold.panel_global_rect()  # T196：栏头＋现在露出的行（收起时只一行）
 	var r := Rect2()
 	for row in status_rows.values():
 		if not (row is Control):
