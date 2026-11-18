@@ -24,7 +24,7 @@
   - 小A P3-2：上抬与大型变身的夹取改按宝石实际高（`XTurnMarker.top_min()`＝冠＋亭＋描边余量＋浮动＋4），整颗不出画布上沿；专项加 top_min_by_gem、menu_inside_canvas_*。
 - Kyo 二审（11-18「A，然后宝石太高了，就头顶上一点就行」）：
   - 指令菜单（指令环／旧式指令窗）或技能／物品列表开着时宝石淡出，关掉再淡入（`XTurnMarker.menu_open`，并进 `blocked()`）；上抬让开、旧金虚线、avoid_rects／menu_shift／shift 全部删掉（上面两次返工里的右挪、上抬描述已作废）。
-  - 平时位置放低：尖离头顶 8→3px，浮动 2→1.5px（只往上浮）；仍水平居中，按精灵 `height()`（可见范围＋浮空）算头顶，大体型／变身同样适用。
+  - 平时位置放低：尖离头顶 8→3px（三审 Kyo「改成头顶5像素」再改 5px），浮动 2→1.5px（只往上浮）；仍水平居中，按精灵 `height()`（可见范围＋浮空）算头顶，大体型／变身同样适用。
 - `xconfig.gd`／`xconfig_transfer.gd`：加设置键 `codexPartyExpanded`（默认 true，归「可导出设置」）。
 - 只在新界面（`XUiSkin.on()`）里有；旧界面不加（理由见下「没做／偏离」）。
 - 回退：`XPartyFold.ENABLED = false`（没有栏头、不裁剪，各行原位）；`XTurnMarker.ENABLED = false`（没有头顶标记，队伍栏那一行的左外小箭头回来）。

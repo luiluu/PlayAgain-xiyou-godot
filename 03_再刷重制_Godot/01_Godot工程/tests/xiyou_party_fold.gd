@@ -178,7 +178,7 @@ func _marker(b: XBattleScene, actors: Array) -> void:
 	var head := s.position + Vector2(0, -s.height() - XTurnMarker.GAP)
 	_check("marker_above_head", absf(m.position.x - head.x) < 0.5 and m.position.y <= head.y + 0.01 and m.position.y >= head.y - XTurnMarker.BOB - 0.01, [m.position, head])
 	# Kyo 11-18「头顶上一点就行」：尖离头顶不超过 GAP＋浮动
-	_check("marker_close_to_head", (s.position.y - s.height()) - m.position.y <= XTurnMarker.GAP + XTurnMarker.BOB + 0.01 and XTurnMarker.GAP <= 4.0, [m.position, s.position.y - s.height()])
+	_check("marker_close_to_head", (s.position.y - s.height()) - m.position.y <= XTurnMarker.GAP + XTurnMarker.BOB + 0.01 and XTurnMarker.GAP == 5.0, [m.position, s.position.y - s.height()])
 	# 会动：浮动＋转
 	var y0 := m.position.y
 	var r0 := m.spin()

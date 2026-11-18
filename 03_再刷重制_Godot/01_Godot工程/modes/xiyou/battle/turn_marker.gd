@@ -15,7 +15,7 @@ extends Node2D
 
 static var ENABLED := true
 
-const GAP := 3.0            # 宝石尖离头顶（Kyo 11-18「头顶上一点就行」）
+const GAP := 5.0            # 宝石尖离头顶（Kyo 11-18「改成头顶5像素」）
 const R := 9.0              # 腰圈半径
 const CROWN_H := 4.5         # 冠部高
 const TABLE_R := 4.75         # 台面半径
