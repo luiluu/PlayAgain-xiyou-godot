@@ -53,7 +53,7 @@ static var ZD_DEATH_REGEN := true
 static var ZD_WAR_REGEN := true
 ## 勇者甲：死期从出战栏最后一格往前点、到某回合起每回合点一人（D32、D54）
 static var ZD_DOOM := true
-## O-待定-1（T180，发作真换人 v0.2 第三节第 5 条、D201 第 2 件）：死期挂在人身上，不挂在格子上。true＝「到点就死」认这 5 个人
+## O-576（T180，发作真换人 v0.2 第三节第 5 条、D201 第 2 件）：死期挂在人身上，不挂在格子上。true＝「到点就死」认这 5 个人
 ## （上场 4 格＋助力位，doom_people）：四骑士回合末死期扫被挂的所有人（换到助力位照样到点死、日志照报）、35 层影子「不能复活」、
 ## 死亡线异化收尸人扫新倒下的人与「不能复活」、允许失败战打输复活（lose_revive）。false＝回到只认场上 4 格／出战成员
 static var DOOM_FOLLOW := true
