@@ -9,14 +9,14 @@
   B 组：规则自检，和 tests/xiyou_tianqi_balance 同一套（难度键与 core/tianqi.gd 的 DIFFICULTIES 用正则对照）。
 - horsemen.json（天启四骑士）：
   A 组：和 参数.json「骑士」一节逐项对照（生命、攻防、行动、系数、计量、终焉、骑士血量倍率）；不给 --params 时跳过。
-  B 组：规则自检（数字避开 4，豁免键另列；五档骑士血量倍率齐全）。
-- war_line.json、famine_line.json、plague_line.json、death_line.json（各线关卡流程与异化，XTianqiLine）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标豁免）、预设和台词齐全、开场步骤用到的台词／地图／坐标／预设都在表里。
-- summit.json（31～36 层重做）：只有 B 组，数字避开 4（层号、地图号、敌群号、坐标等豁免）、34～36 层齐全、台词齐全。
-- seg_alien.json（按段异化，四线共用）：只有 B 组，数字避开 4、1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
-- qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，数字避开 4（各表 nice_number_exempt 豁免）、印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
-- skill_rework.json（全角色技能重构）：只有 B 组，数字避开 4（nice_number_exempt 豁免）、超强者 17（含五条悟）／强者 52 不重叠、技能行系数大于 0、治疗比例与追加几率在 0～1。
-- reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，数字避开 4（各表 nice_number_exempt 豁免）、类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
-- brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4，这张表不套避 4。
+  B 组：规则自检（五档骑士血量倍率齐全）。
+- war_line.json、famine_line.json、plague_line.json、death_line.json（各线关卡流程与异化，XTianqiLine）：只有 B 组，预设和台词齐全、开场步骤用到的台词／地图／坐标／预设都在表里。
+- summit.json（31～36 层重做）：只有 B 组，34～36 层齐全、台词齐全。
+- seg_alien.json（按段异化，四线共用）：只有 B 组，1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
+- qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
+- skill_rework.json（全角色技能重构）：只有 B 组，超强者 17（含五条悟）／强者 52 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1。
+- reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
+- brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -37,7 +37,6 @@ FIELD_SIZE = 4  # 同一场上场人数，同 XTianqiBalance.FIELD_SIZE
 SCALING_KEYS = {'enemy_hp': '敌人血量', 'enemy_atk': '敌人攻击', 'party_damage': '我方伤害', 'quality_offset': '品质偏移'}
 ROSTER_KEYS = {'pool': '候选池', 'super_cap': '超强者上限', 'min_weak': '至少弱者', 'helper_super': '助力位放超强者'}
 TIER_KEYS = {'damage_dealt': '出伤', 'damage_taken': '承伤', 'secret_cap': '秘籍上限'}
-NICE_EXEMPT_ALLOWED = {'version', 'secret_cap', 'super_cap', 'min_weak'}
 
 
 def num_text(x) -> str:
@@ -90,20 +89,6 @@ def team(table, tiers, kind):
     """全队相对出伤（kind='damage'）或承伤（'taken'）：Σ(1＋档位) ×(1＋上场弱者数×协力)。"""
     tk, ak = ('damage_dealt', 'damage_dealt_per') if kind == 'damage' else ('damage_taken', 'damage_taken_per')
     return sum(tier_mult(table, t, tk) for t in tiers) * (1.0 + assist(table, tiers.count(WEAK), ak))
-
-
-def nice_violations(v, path, exempt, out):
-    if isinstance(v, dict):
-        for k, x in v.items():
-            if k not in exempt:
-                nice_violations(x, path + '/' + k, exempt, out)
-    elif isinstance(v, list):
-        for i, x in enumerate(v):
-            nice_violations(x, '%s/%d' % (path, i), exempt, out)
-    elif isinstance(v, (int, float)) and not isinstance(v, bool):
-        s = num_text(v)
-        if '4' in s:
-            out.append('%s=%s' % (path, s))
 
 
 def balance_rules(table: dict, tianqi: list) -> list:
@@ -174,12 +159,6 @@ def balance_rules(table: dict, tianqi: list) -> list:
     for k in ('xunchang', 'jianxian'):
         r = by_key.get(k, {}).get('roster', {})
         check('低难度候选池没有超强者：' + k, SUPER not in r.get('pool', []) and r.get('super_cap') == 0, r)
-    # 6. 数值好看
-    exempt = table.get('nice_number_exempt', [])
-    check('豁免键只放个数类', set(exempt) <= NICE_EXEMPT_ALLOWED, exempt)
-    out = []
-    nice_violations(table, '', set(exempt), out)
-    check('设计数值不含 4', not out, '，'.join(out))
     return bad
 
 
@@ -310,10 +289,6 @@ def horsemen_vs_params(table: dict, params: dict) -> list:
 
 def horsemen_rules(table: dict) -> list:
     bad = []
-    out = []
-    nice_violations(table, '', set(table.get('nice_number_exempt', [])), out)
-    if out:
-        bad.append('数字带 4：' + '，'.join(out))
     if set(table.get('hp_rate', {})) != set(DIFF_NAMES):
         bad.append('骑士血量倍率不是五档齐全：%s' % sorted(table.get('hp_rate', {})))
     if set(table.get('knights', {})) != set(LINE_NAMES):
@@ -360,10 +335,6 @@ WAR_SCENES = ['choose', 'omen_before', 'omen_arrive', 'omen_win', 'spread_before
 
 def war_line_rules(table: dict) -> list:
     bad = []
-    out = []
-    nice_violations(table, '', set(table.get('nice_number_exempt', [])), out)
-    if out:
-        bad.append('数字带 4：' + '，'.join(out))
     miss = [k for k in WAR_PRESETS if k not in table.get('presets', {})]
     if miss:
         bad.append('缺异化预设：%s' % miss)
@@ -420,10 +391,6 @@ SUMMIT_SCENES = ['door', 'door_top', 'arrive34', 'arrive35', 'arrive36', 'ask', 
 
 def summit_rules(table: dict) -> list:
     bad = []
-    out = []
-    nice_violations(table, '', set(table.get('nice_number_exempt', [])), out)
-    if out:
-        bad.append('数字带 4：' + '，'.join(out))
     top, low = int(table.get('top', 0)), int(table.get('from', 0))
     miss = [n for n in range(low, top + 1) if str(n) not in table.get('floors', {})]
     if not low or top < low or miss:
@@ -459,10 +426,6 @@ SEG_DIFFS = ['xunchang', 'jianxian', 'jiusi', 'lianyu', 'zhengdao']
 
 def seg_alien_rules(table: dict) -> list:
     bad = []
-    out = []
-    nice_violations(table, '', set(table.get('nice_number_exempt', [])), out)
-    if out:
-        bad.append('数字带 4：' + '，'.join(out))
     tiers = table.get('tiers', [])
     want = 1
     for seg in table.get('segments', []):
@@ -533,9 +496,6 @@ def gear_rules(table: dict) -> list:
         check('神器上限 %s 是正整数' % k, isinstance(c.get(k), int) and c.get(k) > 0, c.get(k))
     band = table.get('drop_reroll', {}).get('level_band')
     check('重抽等级段是正整数', isinstance(band, int) and band > 0, band)
-    fours = []
-    nice_violations(table, '', {'version'}, fours)
-    check('设计数值不带 4', not fours, '、'.join(fours))
     return bad
 
 
@@ -714,7 +674,7 @@ def affix_text_rules(text: dict, table_data: dict, ici: set) -> list:
         miss = sorted({a[k] for a in table_data['affixes']} - set(text.get('stack_text', {})))
         check('每种叠法都有说明', not miss, miss)
     # 2. 全部词条 × 能出的阶 × 三种成色 × 变体：填得上
-    bad_fill, too_long, digit4, minus = [], [], [], []
+    bad_fill, too_long, minus = [], [], []
     for a in table_data['affixes']:
         k = a['key']
         for tier in range(1, 5):
@@ -727,8 +687,6 @@ def affix_text_rules(text: dict, table_data: dict, ici: set) -> list:
                     for s in (ln, dt):
                         if s == '' or '{' in s or '}' in s or 'null' in s.lower() or 'nan' in s.lower() or 'none' in s.lower():
                             bad_fill.append('%s：%s' % (tag, s))
-                        if '4' in s:
-                            digit4.append('%s：%s' % (tag, s))
                         if re.search(r'-\d', s):
                             minus.append('%s：%s' % (tag, s))
                     if han_count(bd) > AFFIX_LINE_MAX_HAN:
@@ -737,7 +695,6 @@ def affix_text_rules(text: dict, table_data: dict, ici: set) -> list:
             if t.value(k, tier, 'normal') is None:
                 check('不能出的阶返回空：%s/%d' % (k, tier), x.line(k, tier, 'normal') == '' and x.detail(k, tier, 'normal') == '')
     check('模板都填得上（不剩花括号、没有 null／nan）', not bad_fill, '；'.join(bad_fill[:5]))
-    check('填好的文字不含数字 4', not digit4, '；'.join(digit4[:5]))
     check('负号用全角「−」', not minus, '；'.join(minus[:5]))
     check('词条行不超过 %d 个汉字' % AFFIX_LINE_MAX_HAN, not too_long, '；'.join(too_long[:5]))
     # 3. 抽查（设计稿 v0.3 与 Kyo 11-11 01:21 整数版）
@@ -760,9 +717,6 @@ def affix_text_rules(text: dict, table_data: dict, ici: set) -> list:
     check('光环说明写出同名全队只生效最高', '同名光环全队只生效数值最高的一条' in x.detail('aura_guard', 2, 'normal'))
     check('元素说明写全九系', all(e['name'] in x.detail('element_resist', 3, 'fine') for e in table_data['elements']))
     check('连击说明不写阶和成色', (x.detail('combo', 4, 'perfect').splitlines() or [''])[0] == '传说词条', x.detail('combo', 4, 'perfect'))
-    # 4. 文字表本身不含数字 4
-    raw = json.dumps({k: v for k, v in text.items() if k != 'dev'}, ensure_ascii=False)  # dev 是合并时盖的开发编号，不是设计数
-    check('文字表本身不含数字 4', '4' not in raw, re.findall(r'.{0,8}4.{0,8}', raw)[:3])
     return bad
 
 
@@ -821,9 +775,6 @@ def rewards_rules(table: dict) -> list:
         keys.extend(f)
     check('终焉词条不重复', len(keys) == len(set(keys)), keys)
     check('终焉词条都有名字', all(k in fin.get('names', {}) for k in keys), [k for k in keys if k not in fin.get('names', {})])
-    fours = []
-    nice_violations(table, '', set(table.get('nice_number_exempt', [])), fours)
-    check('设计数值不带 4', not fours, '、'.join(fours))
     return bad
 
 
@@ -887,13 +838,8 @@ def _is_chance_key(k) -> bool:
 
 
 def qiyin_common_rules(table: dict) -> list:
-    """四张表共用：数字避开 4（表自己的 nice_number_exempt 豁免）、几率在 0～1、权重非负且不全为 0。"""
+    """四张表共用：几率在 0～1、权重非负且不全为 0（D205 起不再查数字避开 4）。"""
     bad = []
-    fours = []
-    nice_violations({k: v for k, v in table.items() if k not in ('_note', 'dev')}, '',
-                    set(table.get('nice_number_exempt', [])), fours)
-    if fours:
-        bad.append('设计数值不带 4：' + '、'.join(fours))
     for p, k, v in _walk(table):
         if _is_chance_key(k):
             vals = list(v.values()) if isinstance(v, dict) else [v]
@@ -1118,15 +1064,9 @@ def check_qiyin_refs(_args) -> bool:
 
 # ---- skill_rework.json（全角色技能重构，XTianqiSkills） ----
 
-SKILL_EXEMPT_EXTRA = {'effects_remove', 'rate_with'}
-
-
 def skill_rework_rules(table: dict) -> list:
-    """数字避开 4（豁免键另列）、档位名单人数和不重叠、技能行的系数／比例／几率范围。"""
+    """档位名单人数和不重叠、技能行的系数／比例／几率范围（D205 起不再查数字避开 4）。"""
     bad = []
-    exempt = set(table.get('nice_number_exempt', [])) | SKILL_EXEMPT_EXTRA
-    for sec in ('rules', 'skills', 'states', 'actors'):
-        nice_violations(table.get(sec, {}), sec, exempt, bad)
     tiers = table.get('tiers', {})
     sup, strong, hidden = (set(tiers.get(k, [])) for k in (SUPER, STRONG, '不开放'))
     if len(sup) != 17:
@@ -1159,7 +1099,7 @@ def skill_rework_rules(table: dict) -> list:
     return bad
 
 
-TUNE_KEYS = ('D189',)
+TUNE_KEYS = ('D189', 'D200')  # 同 XTianqiSkills.data()：按这个顺序叠
 
 
 def tune_merge(base: dict, patch: dict) -> dict:
@@ -1191,27 +1131,46 @@ def apply_skill_tune(table: dict) -> dict:
     return out
 
 
-# 覆盖后数字带 4 的豁免（只列具体路径）：10727（90 艾琳）的 4 是 Kyo D194 亲口定的数，和「数字避开 4」冲突（T175；508 已按 D194 改 5，原 5.4 的豁免去掉）
-TUNE_NICE_EXEMPT = {'skills/10727/damage/coef=4'}
-
-
 def _int_like(v, scale=1) -> bool:
     return isinstance(v, (int, float)) and not isinstance(v, bool) and abs(v * scale - round(v * scale)) < 1e-9
 
 
-def tune_integer_rules(table: dict) -> list:
-    """T175（附则 E，Kyo D137②、11-18「系数不要小数」）：覆盖层里我们定的系数一律整数；属性权重写整数或整数百分比（生命上限×1% 写 0.01）。"""
+def _int_or_pct(v) -> bool:
+    """整数，或小于 1 的整数百分比（0.45＝45%）。"""
+    return _int_like(v) or (0 < v < 1 and _int_like(v, 100))
+
+
+def _plain_always(c: dict) -> bool:
+    return c.get('if') == 'always' and not any(k not in ('if', 'mult', '_fix', '_note') for k in c)
+
+
+# 卡面伤害行允许留小数的技能：数不是我们定的系数（剑心多一段 +0.5 是 cat.gd 里的代码常数；棱光星影加段 +1.2 是 xuan_battle.gd 的「每个星影 20%×系数」，T175 已列）
+DESC_DECIMAL_EXEMPT = {'10437', '10438', '10439', '10337'}
+
+
+def coef_integer_rules(table: dict) -> list:
+    """T175／T191（附则 E，Kyo D137②、11-18「系数不要小数」，D200 A 全表取整）：覆盖层全开（D189＋D200）后游戏读到的每一行伤害——
+    系数写整数或小于 1 的整数百分比；属性权重写整数或整数百分比（生命上限×1% 写 0.01）；无条件的 always 倍率要并进系数；卡面伤害行不带小数。"""
     bad = []
-    for key, tune in table.get('tune', {}).items():
-        for sid, row in tune.get('skills', {}).items():
-            if str(sid).startswith('_') or not isinstance(row, dict):
-                continue
-            d = row.get('damage', {})
-            if 'coef' in d and not _int_like(d['coef']):
-                bad.append('tune.%s 系数要整数：skills/%s/damage/coef=%s' % (key, sid, num_text(d['coef'])))
-            for st, w in d.get('stats', {}).items():
-                if not (_int_like(w) or _int_like(w, 100)):
-                    bad.append('tune.%s 属性权重要整数或整数百分比：skills/%s/damage/stats/%s=%s' % (key, sid, st, num_text(w)))
+    merged = apply_skill_tune(table)
+    for sid, row in merged.get('skills', {}).items():
+        if not str(sid).isdigit() or not isinstance(row, dict):
+            continue
+        d = row.get('damage')
+        if not isinstance(d, dict):
+            continue
+        if 'coef' in d and not _int_or_pct(float(d['coef'])):
+            bad.append('系数不得有小数：skills/%s/damage/coef=%s' % (sid, num_text(d['coef'])))
+        for st, w in d.get('stats', {}).items():
+            if not _int_or_pct(float(w)):
+                bad.append('属性权重要整数或整数百分比：skills/%s/damage/stats/%s=%s' % (sid, st, num_text(w)))
+        for c in d.get('conds', []):
+            if _plain_always(c):
+                bad.append('无条件倍率要并进系数：skills/%s/damage/conds always×%s' % (sid, num_text(c.get('mult', 1))))
+        if sid not in DESC_DECIMAL_EXEMPT:
+            for line in row.get('desc', []):
+                if str(line).startswith('伤害') and re.search(r'\d\.\d', str(line)):
+                    bad.append('卡面伤害行带小数：skills/%s「%s」' % (sid, line))
     return bad
 
 
@@ -1220,7 +1179,7 @@ def _with_tune(rules):
     def run(table):
         bad = list(rules(table))
         if table.get('tune'):
-            bad += ['tune 覆盖后：' + b for b in rules(apply_skill_tune(table)) if b not in bad and b not in TUNE_NICE_EXEMPT]
+            bad += ['tune 覆盖后：' + b for b in rules(apply_skill_tune(table)) if b not in bad]
         return bad
     return run
 
@@ -1232,7 +1191,7 @@ def check_skill_rework(_args) -> bool:
         return True
     try:
         table = json.loads(path.read_text(encoding='utf-8'))
-        bad = _with_tune(skill_rework_rules)(table) + tune_integer_rules(table)
+        bad = _with_tune(skill_rework_rules)(table) + coef_integer_rules(table)
     except Exception as e:
         bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
     return _report('skill_rework.json', '规则自检', bad)
@@ -1240,8 +1199,6 @@ def check_skill_rework(_args) -> bool:
 
 def elements_table_rules(table: dict) -> list:
     bad = []
-    exempt = set(table.get('nice_number_exempt', []))
-    nice_violations(table, 'elements_table', exempt, bad)
     base = table.get('base_elements', [])
     higher = table.get('higher_elements', [])
     if sorted(base) != [2, 3, 4, 5, 6, 7, 8, 9, 14, 15]:
@@ -1300,14 +1257,6 @@ def _is_int(v) -> bool:
     return isinstance(v, int) and not isinstance(v, bool)
 
 
-def _fours(table: dict, extra=()) -> list:
-    """数字避开 4：表自己的 nice_number_exempt 豁免（加上 extra）；_note、dev 不查。"""
-    out = []
-    nice_violations({k: v for k, v in table.items() if k not in ('_note', 'dev')}, '',
-                    set(table.get('nice_number_exempt', [])) | set(extra), out)
-    return ['设计数值不带 4：' + '、'.join(out)] if out else []
-
-
 def _checker():
     bad = []
 
@@ -1341,7 +1290,6 @@ def affix_layer_keys(affix: dict) -> list:
 
 def reforge_rules(table: dict, affix: dict = None) -> list:
     bad, check = _checker()
-    bad += _fours(table)
     if 'costs' in table:
         c = table['costs']
         check('costs 是非空列表', isinstance(c, list) and c, c)
@@ -1369,7 +1317,6 @@ ALIEN_PCT_FIELDS = {('thrift', 'cost'), ('thrift', 'heal'), ('venom', 'chance'),
 
 def alien_gear_rules(table: dict, rewards: dict = None) -> list:
     bad, check = _checker()
-    bad += _fours(table)
     levels = {k: v for k, v in table.get('levels', {}).items() if k != '_note'}
     for k, lv in levels.items():
         if not isinstance(lv, dict):
@@ -1442,7 +1389,6 @@ ABYSS_SHELVES = ('treasure', 'collection')
 
 def abyss_shelves_rules(table: dict, affix: dict = None, qualities: list = None) -> list:
     bad, check = _checker()
-    bad += _fours(table)
     layers = affix_layer_keys(affix) if affix else []
     tiers = affix_tier_ids(affix) if affix else []
     for k in ABYSS_SHELVES:
@@ -1481,7 +1427,6 @@ def _params_ok(p) -> bool:
 
 def qiyin_equip_rules(table: dict, gear: dict = None) -> list:
     bad, check = _checker()
-    bad += _fours(table)
     if 'quality_legacy' in table:
         check('quality_legacy 是非负整数', _is_int(table['quality_legacy']) and table['quality_legacy'] >= 0, table['quality_legacy'])
     armor = table.get('armor', {})
@@ -1533,7 +1478,6 @@ SHOW_SHAKE = ('power', 'speed', 'frames')
 
 def qiyin_show_rules(table: dict, gear: dict = None) -> list:
     bad, check = _checker()
-    bad += _fours(table)
     seals = {k: v for k, v in table.get('seals', {}).items() if k != '_note'}
     if 'seals' in table:
         check('seals 七印齐全', sorted(seals) == sorted(QIYIN_SEALS), sorted(seals))
@@ -1582,7 +1526,6 @@ def check_qiyin_show(_args) -> bool:
 
 def qiyin_dragon_run_rules(table: dict) -> list:
     bad, check = _checker()
-    bad += _fours(table)
     f = table.get('fight', {})
     for k in ('troop', 'shell_enemy'):
         if k in f:
@@ -1744,7 +1687,7 @@ def backtest_rules(base: dict, rework: dict) -> list:
 
 
 def base_line_rules(table: dict, rework: dict = None) -> list:
-    bad = _fours(table)
+    bad = []
     line = table.get('line', {})
     for k in ('A0', 'A1', 'hp_mult', 'mp_mult'):
         if not isinstance(line.get(k), (int, float)) or line[k] <= 0:
@@ -1830,12 +1773,18 @@ def check_base_line(_args) -> bool:
         if not t.get('tune') and not (rework or {}).get('tune'):
             return bad
         tb, tune_bad = apply_base_tune(t)
-        return bad + ['tune 覆盖后：' + b for b in tune_bad + base_line_rules(tb, tuned if tuned is not None else rework) if b not in bad]
+        tuned_bad = base_line_rules(tb, tuned if tuned is not None else rework)
+        # T191：回验理由只要覆盖前或覆盖后有一边用得上就留（取整改了权重比例，偏差只在覆盖后超 ±10%）；两边都用不上才报多余
+        stale = 'backtest_notes 里的'
+        both = {b for b in bad if b.startswith(stale)} & {b for b in tuned_bad if b.startswith(stale)}
+        bad = [b for b in bad if not b.startswith(stale) or b in both]
+        tuned_bad = [b for b in tuned_bad if not b.startswith(stale) or b in both]
+        return bad + ['tune 覆盖后：' + b for b in tune_bad + tuned_bad if b not in bad]
     return _run_table('base_line.json', rules)
 
 
 def gear_base_rules(table: dict, base: dict = None) -> list:
-    bad = _fours(table)
+    bad = []
     slots = table.get('slots', {})
     if len(slots) != 10:
         bad.append('slots 要 10 个部位（武器、副手、头部、盔甲、护手、腰带、裤子、鞋子、项链、戒指），现在 %d 个' % len(slots))
@@ -1894,7 +1843,6 @@ def ledger_phase4_rules(table: dict, balance: dict = None) -> list:
     p4 = table.get('phase4')
     if not isinstance(p4, dict):
         return ['damage_ledger.json 要有 phase4 小节']
-    bad += _fours({k: v for k, v in p4.items() if k not in ('derived_qiyin',)}, extra=())
     now = {r['id']: r for r in table.get('derived', [])}
     rows = p4.get('derived_qiyin', [])
     if [r['id'] for r in rows] != [i for i in now if i.startswith('qiyin.')]:
@@ -1944,7 +1892,7 @@ def check_single_hit_cap(_args) -> bool:
 
 
 def abs_rescale_rules(table: dict) -> list:
-    bad = _fours(table)
+    bad = []
     for i, e in enumerate(table.get('entries', [])):
         if not all(k in e for k in ('kind', 'id', 'name', 'orig', 'new')):
             bad.append('entries/%d 要有 kind、id、name、orig、new' % i)
@@ -1961,7 +1909,7 @@ def check_abs_rescale(_args) -> bool:
     return _run_table('abs_rescale.json', abs_rescale_rules)
 
 
-# brand.json：烙印（T073-a，稿《天启篇_烙印 v0.5》第十节第 1 条）。现在没有代码读它；稿定的数带 4（0.4、40、4%），不套避 4
+# brand.json：烙印（T073-a，稿《天启篇_烙印 v0.5》第十节第 1 条）。现在没有代码读它；稿定的数带 4（0.4、40、4%）
 BRAND_FITS = ['发呆', '哑火', '抽自己', '破防', '六亲不认', '换人']
 BRAND_COSTS = ['bird', 'thin', 'weak_heal', 'no_group', 'burn', 'one_life']
 BRAND_SEAR_LEVELS = ['没异化', '侵染', '蚀骨', '化形', '终焉']

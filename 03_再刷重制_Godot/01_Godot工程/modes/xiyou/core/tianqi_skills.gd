@@ -27,6 +27,7 @@ static var ENABLED := true
 static var CARDS := false
 static var MASTERY := false
 ## T163（D189，Kyo 11-18）：标定后逐个调角色——skill_rework.json 的 tune.D189 覆盖在 skills／actors 上（字典逐层合并、数组整段换，卡面 desc 一起换）。
+## T191（D200）：tune.D200 把原卡剩下的小数系数全表取整，叠在 D189 之后；回退 `XTianqiBase.TUNE_D200 = false` 后 reload()。
 ## 回退：`XTianqiBase.TUNE_D189 = false` 后 reload()（照覆盖前的卡；开关放在 XTianqiBase：放这里时 reload() 后读到的总是默认值，原因没查清）。
 static var ACTION_CAP := true
 static var TIERS := true
@@ -65,10 +66,14 @@ static func data() -> Dictionary:
 			push_error("XTianqiSkills: JSON 解析失败 " + PATH)
 			return {}
 		_data = parsed
-		if XTianqiBase.TUNE_D189:
-			var tune: Dictionary = _data.get("tune", {}).get("D189", {})
+		for key in ["D189", "D200"]:  # T191：D200（小数系数全表取整）叠在 D189 之后，各自开关
+			if not (XTianqiBase.TUNE_D189 if key == "D189" else XTianqiBase.TUNE_D200):
+				continue
+			var tune: Dictionary = _data.get("tune", {}).get(key, {})
 			for sec in ["skills", "actors"]:
 				for k in tune.get(sec, {}):
+					if str(k).begins_with("_"):
+						continue
 					var cur = _data.get(sec, {}).get(k)
 					_data[sec][k] = tune_merge(cur if cur is Dictionary else {}, tune[sec][k])
 		_skills = {}

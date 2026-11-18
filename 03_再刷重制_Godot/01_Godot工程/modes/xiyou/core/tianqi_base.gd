@@ -39,6 +39,8 @@ static var CLASS_RATE_OFF := true
 static var REALM_OFF := true
 ## T163（D189，Kyo 11-18）：标定后逐个调角色的覆盖层（skill_rework.json、base_line.json 的 tune.D189）；false＋XTianqiSkills.reload() 照覆盖前
 static var TUNE_D189 := true
+## T191（D200 A，Kyo 11-18）：原卡小数系数全表取整的覆盖层（skill_rework.json 的 tune.D200，叠在 D189 之后）；false＋XTianqiSkills.reload() 照取整前
+static var TUNE_D200 := true
 const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
 const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",
 	"SkillPass\\d+", "passiveAPLUS", "AgainUseAll", "passiveIRUP", "passiveGRUP", "passiveSPBST\\d", "ConsumeReduce\\w+", "passiveEXTTP", "DepassiveHarmRe\\d+",
