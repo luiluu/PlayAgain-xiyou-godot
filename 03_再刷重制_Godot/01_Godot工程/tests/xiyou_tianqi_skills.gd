@@ -1094,6 +1094,15 @@ func _p7() -> void:
 	var rates := []
 	XLiuying.action_plus_set(ly, rates)
 	_check("p7_liuying", rates == [0.1] and XLiuying.repeats(ly, XDB.rec("Skills", 10622), 1) == 5, rates)
+	# 【cc·T192】天火五段合计读卡（D200 取整 4、D198 调到 6，原代码写死 3.6）；宿傩终式倍率读 10245 卡上的 terminal（9／11，原代码 9.0／10.8）
+	var tq_per := float(XTianqiSkills.spec(10622).damage.coef)
+	var tq_m := 0.0
+	for op in XLiuying.tq_ops(XDB.rec("Skills", 10622), ly, _enemy(lg)):
+		if str(op.field) == "finalMultiplier":
+			tq_m = float(op.value)
+	_check("p7_liuying_total_card", is_equal_approx(tq_per, 6.0) and is_equal_approx(tq_m * tq_per * 5.0, tq_per), [tq_per, tq_m])
+	_check("p7_sukuna_terminal_card", is_equal_approx(XSukuna.tq_terminal_coef(10234), 9.0) and is_equal_approx(XSukuna.tq_terminal_coef(10235), 11.0)
+		and str(XTianqiSkills.spec(10245).get("desc", [""])[0]).contains("10.8") == false, [XSukuna.tq_terminal_coef(10234), XSukuna.tq_terminal_coef(10235), XTianqiSkills.spec(10245).get("desc")])
 	# 模块法宝：百分比属性去掉
 	var view: Dictionary = XTianqiSkills.gear_view(XDB.rec("Armors", 4577).merged({"kind": "armor", "base": 4577}, true))
 	_check("p7_gear", (view.get("traits", []) as Array).filter(func(t): return int(t.code) == 21).is_empty(), view.get("traits"))

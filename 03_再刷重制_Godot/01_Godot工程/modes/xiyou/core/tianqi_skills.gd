@@ -66,8 +66,8 @@ static func data() -> Dictionary:
 			push_error("XTianqiSkills: JSON 解析失败 " + PATH)
 			return {}
 		_data = parsed
-		for key in ["D189", "D200"]:  # T191：D200（小数系数全表取整）叠在 D189 之后，各自开关
-			if not (XTianqiBase.TUNE_D189 if key == "D189" else XTianqiBase.TUNE_D200):
+		for key in ["D189", "D200", "D198"]:  # T191：D200（小数系数全表取整）叠在 D189 之后；T192：D198（偏弱超强者调高）再叠在后面，各自开关
+			if not {"D189": XTianqiBase.TUNE_D189, "D200": XTianqiBase.TUNE_D200, "D198": XTianqiBase.TUNE_D198}[key]:
 				continue
 			var tune: Dictionary = _data.get("tune", {}).get(key, {})
 			for sec in ["skills", "actors"]:
@@ -708,10 +708,16 @@ static func formula(a, b, item: Dictionary) -> float:
 			var m2 := _cond(c, a, b)
 			v *= m2
 			eff *= m2
-	if hit_cap > 0.0 and eff > hit_cap:
-		v *= hit_cap / eff  # 卡面系数×条件全中后超过上限：压回上限（数据校验已按上限拆段，这里只兜底）
+	if hit_cap > 0.0 and eff > hit_cap * cap_hits(d):  # T192：卡上写合计、模块再按段分的（cap_hits），按每段封
+		v *= hit_cap * cap_hits(d) / eff  # 卡面系数×条件全中后超过上限：压回上限（数据校验已按上限拆段，这里只兜底）
 	v = maxf(0.0, v)
 	return -v if kind in [3, 4] else v
+
+
+## T192（D198 A，协调 11-18）：卡上系数是「N 段合计」、由模块代码按段分的技能（流萤天火 5、完全燃烧 9），damage.cap_hits 写段数，
+## 单段上限按「合计÷段数」封（formula、K 探针共用这一个；天启篇数据校验.py cap_hits 同口径）。没写的为 1，照旧
+static func cap_hits(d: Dictionary) -> float:
+	return maxf(1.0, float(d.get("cap_hits", 1)))
 
 
 ## 单段有效系数里的属性权重合计（同 天启篇数据校验.py skill_weight）：生命、魔法上限按标准线折成攻击的 hp_mult／mp_mult 倍；max_of 再加 1

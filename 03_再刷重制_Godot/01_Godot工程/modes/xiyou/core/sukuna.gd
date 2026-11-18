@@ -167,6 +167,13 @@ static func _tq() -> bool:
 ## 终式（空间斩 9.0、次元斩 10.8）、捌的冲击段／斩击段、领域 +20%、黑闪 +20%（领域中 +30%）、魔虚罗每层 +5%、
 ## 捌打护盾 +30%、神武解对裂伤 +20%、神灶：开每点准备 +10%（最多 +30%）；终式无视物防 50%（不再是真实伤害）
 const TQ_TERMINAL := {10234: 9.0, 10235: 10.8}
+## T192：终式倍率读 10245（二十指完全体）卡上的 terminal（D200 取整后 9／11），卡上没有才用上面的常数
+static func tq_terminal_coef(terminal: int) -> float:
+	var t = XTianqiSkills.spec(10245).get("terminal", {})
+	if t is Dictionary and t.has(str(terminal)):
+		return float(t[str(terminal)])
+	return float(TQ_TERMINAL.get(terminal, 9.0))
+
 
 
 static func tq_ops(item: Dictionary, a, b) -> Array:
@@ -183,7 +190,7 @@ static func tq_ops(item: Dictionary, a, b) -> Array:
 	if terminal != 0 or actual in [10234, 10235]:
 		ops.append({"op": "mul", "field": "physicalDefenseRate", "value": 0.5})
 	if terminal != 0:
-		m *= float(TQ_TERMINAL.get(terminal, 9.0)) / maxf(0.01, float(XTianqiSkills.spec(id).get("damage", {}).get("coef", 1.0)))
+		m *= tq_terminal_coef(terminal) / maxf(0.01, float(XTianqiSkills.spec(id).get("damage", {}).get("coef", 1.0)))
 	if id == 10230 and terminal == 0:
 		m *= (0.3 if part == "impact" else 1.6) / 1.9
 	if actual == 10233:

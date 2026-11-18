@@ -178,6 +178,13 @@ def transform(dm: dict):
 MANUAL_LINES['4814'] = '伤害：物理攻击×4（已含心法 +30%）；滑稽值每点 +1%，最多 +20%'
 MANUAL_LINES['4815'] = '伤害：每次 物理攻击×4（已含心法 +30%）'
 MANUAL_LINES['4816'] = '伤害：物理攻击×1（已含心法 +30%）'
+# T192：天火的系数是五段合计（liuying.gd 按「合计÷段数」分到每段，T192 起读卡），不是每段
+MANUAL_LINES['10622'] = '伤害：五段合计 物理攻击×4（每段×80%，火）；其他敌人各吃30%；只有一个目标 +20%；10%再放；叠1层印记'
+# T192：宿傩终式倍率（空间斩／次元斩）原写死在 sukuna.gd 的 TQ_TERMINAL，改读 10245 卡上的 terminal；随 D200 取整 9.0／10.8 → 9／11
+EXTRA = {
+    '10245': {'_note': 'T192 取整：终式 terminal 9.0／10.8 → 9／11（sukuna.gd 读卡）', 'terminal': {'10234': 9, '10235': 11},
+              'desc': ['效果：空间斩倍率9、次元斩倍率11（无视50%物防，不再造成真实伤害）']},
+}
 
 # T191 R1（小A 核查 P2-2、P3-1）：非「伤害：」行（效果行）里引用的系数、条件倍率，以及几处卡面润色。
 # 技能号 -> {旧整行: 新整行}；旧行对不上就报错（防止原卡改了这里还按旧的换）。
@@ -449,6 +456,10 @@ def build(table: dict):
             assert old_line in desc, (sid, old_line, desc)
             desc[desc.index(old_line)] = new_line
         put_desc(sid, row, desc, 'T191 只换卡面（效果行引用的系数、条件倍率跟着取整后的写法）')
+    for sid, e in EXTRA.items():
+        row = merged['skills'][sid]
+        d200[sid] = e
+        rows.append((sid, row.get('actor', ''), row.get('name', ''), [], row.get('desc', []), e['desc'], []))
     return d200, rows
 
 
