@@ -1025,6 +1025,10 @@ static func begin_action(logic, u, skill) -> void:
 	u.set_meta("xtq_turn", int(logic.get("turn")) if logic is Object and logic.get("turn") != null else 0)  # 本场第几回合（battle_turn 条件）
 
 
+## 开关 MAIN_TARGETS_ONLY（T018 P2-1，O-待定）：false 回到旧样（这次行动里同一角色放的所有招、含七印派生打到的目标都记进追加目标）
+static var MAIN_TARGETS_ONLY := true
+
+
 static func after_apply(logic, u, skill, t, r := {}) -> void:
 	_reflect(u, t, r)
 	if t == null or not logic.has_meta("xtqs"):
@@ -1036,7 +1040,9 @@ static func after_apply(logic, u, skill, t, r := {}) -> void:
 			gh.append(t)
 		_fstore(logic).guard_hit = gh
 	var f: Dictionary = _fstore(logic).act
-	if not f.is_empty() and is_same(f.u, u) and not f.targets.has(t):
+	# 只记主招本身打到的目标（T018 P2-1）：七印派生（连斩、横扫、再射、放两次）和别的模块收尾时另放的招也走这里，
+	# 记进来会让追加释放（克洛什精准击中 189／190）在主目标倒下后追打派生打到的旁人
+	if not f.is_empty() and is_same(f.u, u) and not f.targets.has(t) and (not MAIN_TARGETS_ONLY or (skill is Dictionary and int(skill.get("id", 0)) == int(f.skill.get("id", 0)) and not XTianqiQiyinEffects.in_derived(logic))):
 		f.targets.append(t)
 	if not f.is_empty() and is_same(f.u, u) and bool(r.get("critical", false)):
 		f.crit = true  # 这次行动打出过暴击（charge.gain_crit）

@@ -14,12 +14,13 @@
 - `w17` 克洛什「精准击中」（设计稿 17）：绿矢 188、追加的极 189、破 190 都改单体、伤害 ×2；追加打主招那个目标；主目标被主招打倒时照常先掷概率、再取消，不占本回合次数（`XTianqiSkills.end_action` 原本就是这个顺序，没改）。
 - 三层约束让步（`battle_logic.gd` `targets_for`）：不再比较三层前后的目标列表，改成问三层「这一次生效没有」：`XTianqiHorsemen.taunting`、`XTianqiPlagueAlien.taunting`、`XTianqiRewards.taunter`（三个 `filter_targets` 改成调它们，行为不变）。修的漏洞：混子之盾嘲讽中、敌人本来就选了嘲讽的人时，列表没变，专属引导会把他引走。
 - 两条默认关：没接掉落（批 0A 地基的掉落接口还没接，开第一条时要连同兵器交集表、深渊商人、重铸保护一起接），玩家现在拿不到。
+- R1（小A 甲核 P2×2 P3×1）：`XTianqiSkills.after_apply` 只把主招本身打到的目标记进追加目标（技能号＝主招、且不在七印派生里，新 `XTianqiQiyinEffects.in_derived`）；修的漏洞：克洛什戴 w17＋七印再射／连斩／横扫／放两次，主招打倒主目标后派生打到另一名敌人，追加 189／190 追打旁人。开关 `XTianqiSkills.MAIN_TARGETS_ONLY`（O-待定，默认开）。专属说明行换成小A 定稿句。
 - 玩家可见：无（条目默认关）。
 
 ## 验收逐条（卡上 8 条）
 
 1. ✓（批 1 部分）玛莎、克洛什两条实装，默认关；批 2 另派。
-2. －：说明行只写草稿（表里 `proj.*.line` 三句、`_note`），**待小A 审**。投影后的说明见下「说明行」。
+2. ✓（R1）说明行换成小A 定稿句（`proj.*.line` 五处，见下「说明行」）。
 3. ✓ 虚拟玩家 explore 14/14、短帧 climb（40000 帧）6/6；卡死 0、脚本错 0、违规（负值等）0。条目默认关，这两局等于回归。
 4. ✓ 三层改成「约束生效即让步」：专项 `layers_taunt_yields_unchanged_list`（嘲讽中敌人本来就打嘲讽者，列表没变，不引导）、`layers_after_taunt_guides`（嘲讽过了照常引导）；反向验证把让步改回比列表 → 咬住。
 5. －：批 2 的事（张三丰、布兰德瓦登开张时在 `counter_rule`／`_guard` 补按人屏蔽原生触发），本单不涉及。
@@ -33,14 +34,14 @@
 - 欠账 2（布兰德瓦登重构反击、进阶 4 牛马之魂）：T016（d25e06d89＋返修 393c1e4fb）补了 `NATIVE_COUNTER`／`COUNTER_ONCE`／`counter_next`；T035（cfb5ae422）只是把护短归 COUNTER、`segment_target` 只认 ROOT，没碰欠账 2。
 - 欠账 3（张三丰）：太极拳 5860／5868、太极剑 5862／5869 已在改写表；重构护短 `GUARD`（5863）已实装、开局不再挂原版 2007（T016）。**结论：欠账 2、3 都已补，批 2 可以按 v0.3.1 放行顺序走**；批 2 开张时仍要做卡上第 5 条（按人屏蔽原生触发）。
 
-## 说明行（草稿，待小A 审）
+## 说明行（R1 起为小A 定稿）
 
 戴着时本人看到的帮助卡（专项 `marsha_text`、`kloss_text` 原样打出）：
 
-- 风旋术：「伤害：每段 敏捷×1；风法天下第一每层 +1%，最多 +20%」＋「专属·御风术：伤害改按敏捷计算，系数不变」
+- 风旋术：「伤害：每段 敏捷×1；风法天下第一每层 +1%，最多 +20%」＋「专属·御风术：本招伤害改按敏捷计算」
 - 狂风术：「伤害：每个敌人每段 敏捷×50%；…」＋同一句
-- 绿矢：表头「对象:单个敌人」；「伤害：单个敌人 物理攻击、敏捷、幸运各×80%」＋「专属·精准击中：改为单体，伤害×2；追加的极、破打同一个目标，目标已倒下则不追加」
-- 绿矢*极／破：「伤害：单个敌人每段 物理攻击、敏捷、幸运各×14%／×26%（三段）」＋「专属·精准击中：改为单体，伤害×2」
+- 绿矢：表头「对象:单个敌人」；「伤害：单个敌人 物理攻击、敏捷、幸运各×80%」＋「专属·精准击中：改为单体，伤害翻倍（已计入）；追加招锁定同一目标，目标倒下则取消追加」
+- 绿矢*极／破：「伤害：单个敌人每段 物理攻击、敏捷、幸运各×14%／×26%（三段）」＋「专属·精准击中：改为单体，伤害翻倍（已计入）」
 
 （说明行里的数是自动从卡面「×数」乘出来的，卡面以后再调也会跟着变；「（三段）」是原卡面写的，学了弩炮精通实际 6 段，原卡面的事，不在本单改。）
 
@@ -51,6 +52,18 @@
 - 本机专项（期四默认开）：`xiyou_tianqi_weak_affix` 101/101（`table_no_entries_yet` 改为 `table_entries_default_off`）、`xiyou_tianqi_skill_debt`、`xiyou_tianqi_skills`、`xiyou_tianqi_rewards`、`xiyou_tianqi_plague`、`xiyou_tianqi_horsemen`、`xiyou_tianqi_horsemen_battle`、`xiyou_tianqi_alien_finale`、`xiyou_determinism`、`xiyou_tianqi_ledger_p3`、`xiyou_tianqi_phase4`、`xiyou_growth_help`、`xiyou_tianqi_balance` 全过。
 - 云端选测（提交 bba3f291c，478 个场景、16 片）：477 过；挂的 1 个是 `xiyou_tianqi_weak_affix` 的 `table_no_entries_yet`（表里有了词条），12bdae0c1 已改成 `table_entries_default_off`，本机复跑 101/101。
 - 预算两路线记录（验收 ④，数值线拿去跑寻常、证道）：魔攻装（魔攻 13635、敏捷 3409）没戴 风旋术 13635／狂风术 6818，戴着 3409／1705；敏捷装（对调）没戴 3409／1705，戴着 13635／6818。出手顺序只看敏捷，戴不戴不变；寻常、证道整场没打，归数值线。
+
+## R1（小A 甲核 Neon：P1 0、P2 2、P3 若干；11-18）
+
+- P2-1 追加追打派生打到的旁人：`modes/xiyou/core/tianqi_skills.gd` `after_apply` 记追加目标时加条件「技能号＝`f.skill` 且不在七印派生里」（`XTianqiQiyinEffects.in_derived`：`_derived` 期间 `act.derived` 为真）。只看技能号不够：弓与冠「再射」和震印「放两次」派生的就是主招同号。`battle_logic.gd` 收尾顺序（七印 end_action 在技能追加之前）没动。开关 `MAIN_TARGETS_ONLY`（O-待定）：false 回到旧样。
+  - 回归 `kloss_qiyin_derived_no_follow`：克洛什戴 w17、给他挂七印「再射」（100%），主招 188 打倒主目标，再射改打另一名活着的敌人（派生命中 1），追加不出；`kloss_qiyin_derived_switch_off_old`：开关关掉，同场面追加 189 出了（旧漏洞复现）。
+  - 回归用「再射」不用「连斩」：连斩认击倒看 `f.killed`，主招是动作序列招时目标在序列里是 immortal，`after_apply` 时 `is_dead()` 还是假，本场面连斩不触发（实测 killed=0）。**我猜**这是七印「送行连斩」「溢出」「击倒再动」在序列招上的旧问题（序列招打倒目标不算击倒），不在本单范围，没改，报给总装另派。
+  - 只记主招：其它模块收尾时另放的招（宿傩追斩、五条悟、镜流追加段等，技能号不同）打到的目标也不再进追加目标；`xiyou_tianqi_skills` 245/245、`xiyou_tianqi_skill_debt` 31/31、`xiyou_tianqi_doom_follow` 74/74、`xiyou_tianqi_again_use` 14/14、`xiyou_tianqi_qiyin_effects` 63/63、`xiyou_counter_guard` 27/27 本机全过。
+- P2-2 说明行：`weak_affix_table.json` `proj.4507／10707／188／189／190.line` 换成小A 定稿句，`_note` 里「草稿，待小A 审」改成「小A 定稿」。
+- P3-3 专项补两条显式断言：`marsha_xiyou_save_no_proj`（存档去掉天启篇标记＝西游档，条目开着、本人装着，`proj_of` 空、技能页不带专属行）、`marsha_cards_off_no_proj`（期四总开关、`CARDS` 都关，同样不投影），外加 `marsha_restored_proj`（拨回后照常投影，防夹具漏拨回）。
+- 其余 P3 留给批 2，本次没改：`proj_of` 缓存、`VIEW_MARK` 回退、逆祷早退、换招重走 `skill_view`。
+- 验证（本机，`--headless --audio-driver Dummy`）：`xiyou_tianqi_weak_b1` 31/31、`xiyou_tianqi_weak_affix` 101/101，另跑上面六个相关专项全过。没跑云端选测、没跑虚拟玩家（条目默认关，R1 只动追加目标记账和说明文字）。
+- 优化登记要总装补一行：| O-待定 | `modes/xiyou/core/tianqi_skills.gd` `XTianqiSkills.MAIN_TARGETS_ONLY` | 同一角色这次行动里放的所有招（含七印派生）打到的目标都进追加目标 | 只记主招本身打到的目标 | 精准击中「主目标倒下取消追加」被派生绕过（T018 小A 甲核 P2-1） | `XTianqiSkills.MAIN_TARGETS_ONLY = false` | cc（T018） | 保留 |
 
 ## 异议
 
@@ -73,7 +86,7 @@
 
 ## 可优化（流程／工具／效率）
 
-- 无。
+- 七印击倒类效果（送行连斩、溢出、击倒再动）在动作序列招上可能认不到击倒（见 R1，我猜，没验）：建议另派一单核。
 
 ## 本分支提交
 
@@ -81,3 +94,4 @@
 - 12bdae0c1 批 0A 专项：表里有词条后改断言为「全部默认关」
 - e1fe50969 交付单；文件头补第七节
 - （云端结果写进交付单）
+- R1：追加只记主招目标（MAIN_TARGETS_ONLY）、说明行小A 定稿、专项 31/31

@@ -172,6 +172,11 @@ static func fold(list: Array) -> Dictionary:
 
 # ---- 战斗数据 ----
 
+## 现在是不是在七印派生攻击里（连斩、横扫、再射、放两次、补刀）：XTianqiSkills.after_apply 不把派生打到的目标记成主招目标（T018 P2-1）
+static func in_derived(logic) -> bool:
+	return logic is Object and logic.has_meta("xqiyin") and bool((logic.get_meta("xqiyin").get("act", {}) as Dictionary).get("derived", false))
+
+
 static func _store(logic) -> Dictionary:
 	if logic == null:
 		return {}

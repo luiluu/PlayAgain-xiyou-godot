@@ -212,6 +212,24 @@ func _marsha() -> void:
 	XTianqiWeakAffix.test_entries.erase("w21")
 	_check("marsha_switch_off", _view(a, 4507).get(XTianqiWeakAffix.VIEW_MARK, "") == "")
 	_on("w21")
+	# T018 P3-3：西游档（不是天启篇档）条目开着、本人装着也不投影
+	var tq = s.flags.get("tianqi")
+	s.flags.erase("tianqi")
+	var xiyou_view := _view(a, 4507)
+	_check("marsha_xiyou_save_no_proj", not XTianqi.active(s) and XTianqiWeakAffix.proj_of(a, 4507).is_empty() and XTianqiWeakAffix.proj_of(a, 4507, XState.new()).is_empty()
+		and xiyou_view.get(XTianqiWeakAffix.VIEW_MARK, "") == "" and not str(xiyou_view.get("note", "")).contains("专属·御风术"))
+	s.flags["tianqi"] = tq
+	# T018 P3-3：角色卡关着（期四总开关、CARDS 都关）条目开着、本人装着也不投影
+	var keep_p4 := XTianqiBase.PHASE4
+	var keep_cards := XTianqiSkills.CARDS
+	XTianqiBase.PHASE4 = false
+	XTianqiSkills.CARDS = false
+	var card_off_view := _view(a, 4507)
+	_check("marsha_cards_off_no_proj", not XTianqiSkills.cards_on(s) and XTianqiWeakAffix.proj_of(a, 4507).is_empty()
+		and card_off_view.get(XTianqiWeakAffix.VIEW_MARK, "") == "" and not str(card_off_view.get("note", "")).contains("专属·御风术"))
+	XTianqiBase.PHASE4 = keep_p4
+	XTianqiSkills.CARDS = keep_cards
+	_check("marsha_restored_proj", _view(a, 4507).get(XTianqiWeakAffix.VIEW_MARK, "") == "w21")
 	# 验收 ④：固定属性预算（魔攻＋敏捷总和不变），纯魔攻装、纯敏捷装各一次，记单招伤害和出手顺序用的敏捷（数值线拿去跑寻常、证道）
 	var budget := float(a.param(4)) + float(a.param(6))
 	var rows := []
@@ -310,6 +328,26 @@ func _kloss() -> void:
 	var logs4 := lg.act(u, _view(u, 188), t2)
 	var acts4 := logs4.filter(func(l): return l is Dictionary and l.get("type") == "action" and is_same(l.get("user"), u)).map(func(l): return int(l.skill.id))
 	_check("kloss_kill_not_counted", acts4.has(189), acts4)
+	# T018 P2-1 回归：主招打倒主目标后，七印「弓与冠」再射（收尾派生，同一招 188）改打另一名活着的敌人，追加不追打这名旁人
+	# （派生打到的不算主招目标；同号派生只认技能号会漏，所以另看 in_derived）。开关 MAIN_TARGETS_ONLY 关掉回到旧样，追打旁人。
+	# 连斩、横扫走同一个 _derived；连斩认击倒在序列里（目标 immortal）看不到，这里用再射
+	var qd := []
+	for only in [true, false]:
+		XTianqiSkills.MAIN_TARGETS_ONLY = only
+		_fresh(lg)
+		XTianqiSkills._fstore(lg).used.erase(u)
+		lg.turn += 1
+		var qst := XTianqiQiyinEffects._store(lg)
+		qst.fx[u] = {"single_skill_repeat": {"chance_pct": 100, "dmg_pct": 1}}
+		t.hp = 1.0
+		var logs5 := lg.act(u, _view(u, 188), t)
+		qst.fx.erase(u)
+		var acts5 := logs5.filter(func(l): return l is Dictionary and l.get("type") == "action" and is_same(l.get("user"), u)).map(func(l): return int(l.skill.id))
+		var derived_others := logs5.filter(func(l): return _own_hit(l, u, 188) and not is_same(l.get("target"), t)).size()
+		qd.append({"dead": t.is_dead(), "acts": acts5, "derived_others": derived_others, "follow": acts5.has(189) or acts5.has(190)})
+	XTianqiSkills.MAIN_TARGETS_ONLY = true
+	_check("kloss_qiyin_derived_no_follow", qd[0].dead and qd[0].derived_others > 0 and not qd[0].follow, qd[0])
+	_check("kloss_qiyin_derived_switch_off_old", qd[1].dead and qd[1].derived_others > 0 and qd[1].follow, qd[1])
 	sp.follow = keep
 	# ⑤ 别人装无效、共享表没改
 	var other: XActor = s.actor(23)
