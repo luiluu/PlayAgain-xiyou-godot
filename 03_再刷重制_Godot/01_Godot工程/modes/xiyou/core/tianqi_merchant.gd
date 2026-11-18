@@ -84,7 +84,7 @@ static func draw(s: XState, shelf_key: String, g: String, affix := "") -> Varian
 	if int(cur.used) >= int(XAbyssMerchant.config().visitLimit):
 		return "本次商人的抽取次数已用完。"
 	if XAbyssMerchant.balance(s, key) < price:
-		return "本层深渊战利品点不足。" if XAbyssMerchant.LAYER_LEDGER else "本副本战利品点不足。"
+		return XAbyssMerchant.points_name(key) + "不足。"
 	var list := bodies(s, g, shelf_key, affix)
 	if list.is_empty():
 		return "本路线没有能出%s的装备。" % ("这条传说词条" if shelf_key == "collection" else "特效词条")
