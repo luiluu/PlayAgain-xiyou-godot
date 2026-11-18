@@ -26,7 +26,9 @@
 
 ## 优化登记草稿
 
-- O-待定｜`XTianqiSkills.HIDE_SHELLS`｜天启篇技能页收起已并入／已移除的空壳技能｜恢复方法：`XTianqiSkills.HIDE_SHELLS` 设 `false`｜状态：保留（按 Kyo 11-11 优化直接接受）；专项 `xiyou_tianqi_shell_hide.tscn` 已把它设成 false 测过回退支
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | `modes/xiyou/core/tianqi_skills.gd` `XTianqiSkills.HIDE_SHELLS`（`modes/xiyou/ui/skill_scene.gd` `entries()`） | （天启篇卡）技能页列出改写稿里只剩「已并入」「原…已移除」的空壳技能约 245 条 | 天启篇技能页不再列出这些空壳；只管列表显示，存档技能 id、战斗指令、AI、装备效果不动 | 空壳点开没有可看效果，列表更清爽（T027 拆卡建议 #28①，T052） | `XTianqiSkills.HIDE_SHELLS = false` | cc（T052） | 保留 |
 
 ## 可优化（流程／工具／效率）
 
