@@ -249,7 +249,7 @@ static func heal_skip_types() -> Array:
 	return [3, 4] if on() else []
 
 
-## T214（O-待定）：上面这两类放进合成行的 skipTypesAny——不管目标是谁都跳过。原来并进 skipTypes，
+## T214（O-589）：上面这两类放进合成行的 skipTypesAny——不管目标是谁都跳过。原来并进 skipTypes，
 ## 而 XStateEffects._active 认 skipTypes 只在目标是敌人时跳过，治疗打的是自己人，期四开着我方回复照样 ×5（T204 谷雨 85042→425210）。
 ## false＝照原来并进 skipTypes（回退：我方回复照乘 ×5）
 static var HEAL_SKIP_ALLY := true
