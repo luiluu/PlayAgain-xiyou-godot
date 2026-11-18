@@ -67,6 +67,17 @@ func _grid() -> void:
 	check("grid.walk", a.frame_count("walk") == 6 and a.frame("walk", 5).rect == Rect2(7 * 32, 48, 32, 48), a.frame("walk", 5).rect)
 	check("grid.fallback_swing_to_skill", a.resolve("swing") == "skill" and a.resolve("thrust") == "skill" and a.resolve("guard") == "walk",
 		[a.resolve("swing"), a.resolve("guard")])
+	# T215（T210 核查 P2-1）：状态动作缺帧回落——有 dying／dead 帧但没有 abnormal／sleep 帧时，abnormal→dying、sleep→dead（删 FALLBACK 里这两条映射就变红）
+	XAppearance.overrides = {"battlers": {"sv_actors/gxysv2": {"kind": "grid", "cell": [32, 48], "wait": 2,
+		"motions": {"walk": {"row": 1, "frames": 4}, "dying": {"row": 2, "frames": 4}, "dead": {"row": 3, "frames": 1}}}}}
+	var fb := XAppearance.for_image("sv_actors/gxysv2")
+	check("grid.fallback_abnormal_to_dying", fb.resolve("abnormal") == "dying", fb.resolve("abnormal"))
+	check("grid.fallback_sleep_to_dead", fb.resolve("sleep") == "dead", fb.resolve("sleep"))
+	check("grid.fallback_state_map", XAppearance.FALLBACK.get("abnormal") == "dying" and XAppearance.FALLBACK.get("sleep") == "dead")
+	XAppearance.overrides = {"battlers": {"sv_actors/gxysv2": {"kind": "grid", "cell": [32, 48],
+		"wait": 2, "scale": 2.0, "hideShadow": true,
+		"motions": {"walk": {"row": 1, "col": 2, "frames": 6}, "skill": {"row": 3, "frames": 5, "loop": false, "wait": 4}}}}}
+	a = XAppearance.for_image("sv_actors/gxysv2")
 	check("grid.wait", a.wait_of("walk") == 2 and a.wait_of("swing") == 4)
 	var s := XState.new_game(3, 1, [])
 	var sp := XBattlerSprite.new()

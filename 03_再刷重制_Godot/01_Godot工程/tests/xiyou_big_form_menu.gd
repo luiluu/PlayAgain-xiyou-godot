@@ -121,6 +121,15 @@ func _four(troop: int) -> void:
 	var b := await _big_battle(troop, [1, 11, 167, 168])
 	b.party_fold.set_expanded(false, false)
 	await _secs(0.6)
+	if troop == BOSS_TROOP:  # T215（T208 核查 P2-1）：首领信息区并入血条矩形（宽度不再硬编码 300）
+		var bp := b.boss_panel as XSkinBossStatus
+		var bar_r := Rect2(bp.position + bp.bar.position, bp.bar.size)
+		var z := b.boss_info_rect()
+		_check("boss_zone_covers_bar", z.encloses(bar_r), [z, bar_r])
+		XBattleScene.BOSS_INFO_MERGE_BAR = false
+		var z0 := b.boss_info_rect()
+		XBattleScene.BOSS_INFO_MERGE_BAR = true
+		_check("boss_zone_switch_off_300", not bp.arc_shows_boss() or is_equal_approx(z0.size.x, 300.0), z0)
 	var rings := {}
 	for id in [1, 11, 167, 168]:
 		var a := _actor(b, id)
@@ -202,10 +211,15 @@ func _four(troop: int) -> void:
 			if lw.rows >= 3:
 				lw.select(lw.entries.size() - 1)
 				var r0 := lw.rows
+				var size0 := lw.size
 				var shrunk := lw.fit_rows(300.0)
 				_check(tag + "_fit_rows", shrunk and lw.rows < r0 and lw.size.y <= 300.0 and lw.back.size == lw.size
 					and lw.index >= lw.top and lw.index < lw.top + lw.rows, [r0, lw.rows, lw.size, lw.top, lw.index])
 				_check(tag + "_fit_rows_noop", not lw.fit_rows(720.0))
+				# T215 P3-1 回退摆法（下方中间或再回退 outer）前，缩过的行数用 set_rows 还原：rows、size、back.size 都回到缩前
+				lw.set_rows(r0)
+				_check(tag + "_set_rows_restore", lw.rows == r0 and lw.size.is_equal_approx(size0) and lw.back.size.is_equal_approx(size0)
+					and lw.index >= lw.top and lw.index < lw.top + lw.rows, [r0, lw.rows, size0, lw.size, lw.back.size])
 		else:
 			_check(tag + "_list_same", lw.position == old_list_pos, [lw.position, old_list_pos])
 		if _windowed() and troop == BOSS_TROOP and id in BIG:

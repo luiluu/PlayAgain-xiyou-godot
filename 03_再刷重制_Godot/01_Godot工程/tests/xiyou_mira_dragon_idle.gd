@@ -254,6 +254,10 @@ func _state_motions() -> void:
 	sp.view = v
 	await _settle(sp)
 	_check("state.view_sleep", sp.motion == "sleep", sp.motion)
+	# T215 P3-1：非空旧快照缺 state_motion 键按 0，不串读实时（实时＝中毒 abnormal，不是 0）
+	sp.view = {"dead": false, "hp": a.mhp, "mhp": a.mhp, "guarding": false}
+	await _settle(sp)
+	_check("state.view_missing_key_poison_zero", a.state_motion_index() == 1 and sp.motion != "abnormal" and sp.motion != "sleep", [a.state_motion_index(), sp.motion])
 	sp.view = {}
 	XBattlerSprite.STATE_MOTION = false
 	await _settle(sp)
