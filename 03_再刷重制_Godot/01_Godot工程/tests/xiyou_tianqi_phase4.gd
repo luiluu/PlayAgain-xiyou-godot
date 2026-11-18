@@ -16,8 +16,8 @@ var results: Array = []
 
 
 ## T082 实机标定的 K（balance_table combat_rules.base_damage）；改标定只改这两行
-const K_TABLE := 0.27
-const K_TEXT := "0.27"
+const K_TABLE := 0.13
+const K_TEXT := "0.13"
 
 func _ready() -> void:
 	_run.call_deferred()
