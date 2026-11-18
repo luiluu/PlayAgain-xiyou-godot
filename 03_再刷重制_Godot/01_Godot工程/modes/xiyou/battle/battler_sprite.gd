@@ -127,7 +127,8 @@ func setup(b: XBattler, sprite_scale: float) -> void:
 	if b is XEnemy and look.sideview:
 		_set_flip(true)
 	_fixed = XBattleLayout.sheet_size(fixed_scale, look) if b is XActor else 0.0
-	_base_scale = _fixed if _fixed > 0.0 else sprite_scale
+	_measure_idle()
+	_base_scale = _fit if _fixed > 0.0 else sprite_scale
 	if b is XActor:
 		fd = XSvPngFd.scale(b as XActor)
 		_fd_sig = XSvPngFd.signature(b as XActor)
@@ -195,6 +196,19 @@ func _layout_mul() -> float:
 var fixed_scale := 0.0
 ## 按这张图的格子大小换算后的实际倍数（XBattleLayout.sheet_size：128 格＝1，64 格＝fixed_scale）；setup／换装时算
 var _fixed := 0.0
+## T188：没有归一档的帧（旧角色全部、新角色从 9×6 图切又没档的）按待机可见高算的倍数（XBattleLayout.fit_height；TARGET_H＝0 时＝_fixed）
+var _fit := 0.0
+## T188：这套外观待机动作的可见高（原图像素）与待机帧所属的图（逐帧图文件夹／侧视图名）；此刻显示的帧属于哪张图
+var _idle_h := 0.0
+var _idle_asset := ""
+var _frame_asset := ""
+
+
+## T188：setup／换装时量一次待机身高，定这套外观的倍数
+func _measure_idle() -> void:
+	_idle_h = XBattleLayout.idle_height(look) if _fixed > 0.0 else 0.0
+	_idle_asset = str(look.frame("walk", 0).get("asset", ""))
+	_fit = XBattleLayout.fit_height(_fixed, _idle_h) if _fixed > 0.0 else 0.0
 
 
 ## 归一档此刻的缩放（不含外观 scale、SvPngFd）
@@ -202,9 +216,16 @@ func _prof_scale() -> float:
 	if _fixed > 0.0:
 		# 逐帧图（不从 9×6 图切）画布大小不一：渡鸦神话、米拉黑龙等大画布的人物可见高 150～180，原本靠归一档缩回 72 基准。
 		# 统一大小时只缩不放：倍数＝_fixed×min(1, 归一缩放)，可见高 >72 的缩到约 72×1.6≈115，≤72 的（屠苏、璇、哈基米、五条悟）照 _fixed（小A 核 P1-1）
-		if _profile.get("multi", false):
-			return _fixed * minf(1.0, float(_profile.scale))
-		return _fixed
+		var t174 := _fixed * minf(1.0, float(_profile.scale)) if _profile.get("multi", false) else _fixed
+		# T188：屏幕待机身高算到 99。待机那套图的帧按实量的待机可见高（_idle_h）；别的动作另一套画布的帧、
+		# 绑定形态（悬浮武具／透明，档里另给 targetHeight）按归一档：等效可见高＝72÷归一缩放（原生 64 格档缩放恒 1，用档里的可见高）
+		var b: Rect2 = _profile.bounds
+		var native: bool = _profile.get("native_pixels", false)
+		var custom := not native and not is_equal_approx(float(_profile.scale), minf(XAppearance.PROFILE_H / b.size.y, XAppearance.PROFILE_W / b.size.x))
+		var src_h := b.size.y if native else XAppearance.PROFILE_H / maxf(float(_profile.scale), 0.0001)
+		if not custom and _idle_h > 0.0 and _frame_asset == _idle_asset:
+			src_h = _idle_h
+		return XBattleLayout.fit_height(t174, src_h)
 	return _profile.scale * _layout_mul()
 
 
@@ -458,8 +479,9 @@ func swap_look(key: String) -> void:
 	look = next
 	if fixed_scale > 0.0:  # T174：换的图格子大小不同时倍数跟着换（64 格↔128 格）
 		_fixed = XBattleLayout.sheet_size(fixed_scale, look)
-		_base_scale = _fixed
-		body_scale = _fixed * look.scale * fd
+		_measure_idle()
+		_base_scale = _fit
+		body_scale = _fit * look.scale * fd
 	sv = look.animated()
 	(sprite as Sprite2D).region_enabled = look.sideview
 	_apply_scale()
@@ -517,6 +539,7 @@ func _show_frame(f: Dictionary) -> void:
 	if r.has_area():
 		body.region_rect = r
 	_frame_h = r.size.y if r.has_area() else float((f.tex as Texture2D).get_height())
+	_frame_asset = str(f.get("asset", ""))
 	_profile = XAppearance.profile(f, motion) if battler is XActor and int((battler as XActor).actor_id) >= 167 else {}
 	body_scale = (_prof_scale() if not _profile.is_empty() else _base_scale) * look.scale * fd
 	_apply_scale()

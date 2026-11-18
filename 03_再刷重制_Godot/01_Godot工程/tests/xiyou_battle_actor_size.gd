@@ -4,6 +4,8 @@ extends Node
 ## 同尺寸原图屏上一样大；不压右上队伍栏、前后排身体不重叠、头顶不出画面、指令环在画面里；
 ## 选择光标、状态图标、伤害数字按 height() 走（含新大小）；ACTOR_SIZE＝0 回到 T126（旧角色 1.425／1.2、新角色归一 ×1.9／×1.6）。
 ## D196 预留：倍数按图的格子大小算（128 格＝1 倍、64 格＝ACTOR_SIZE），假造 128 格图断言；流萤、奈叶、小铃兰（现有大格图）实战按 1 倍。
+## T188（Kyo 11-18 01:19 定 99 像素，不定倍数）：每张图待机屏幕身高 98～102（_roster 全员＋换装卡图＋变身形态；实战每人再核），
+## T174 下已在范围里的倍数不变；XBattleLayout.TARGET_H＝0 回到 T174。上面「同尺寸原图一样大」改为「人人约 99 高」。
 ## 窗口模式加 -- --out=<目录> 出 1280×720 对照截图：现状（0）／A 版 1.6，敌群 37（小怪战）与 88（首领战），A、B 两组；另出胜利镜头一张。
 ## 用法：Godot --audio-driver Dummy --path . res://tests/xiyou_battle_actor_size.tscn [-- --out=<目录>]
 
@@ -16,7 +18,7 @@ const GROUP_NAMES := {"A": "狗逍遥 里德 谷雨 云裳", "B": "屠苏 璇 �
 const MOB_TROOP := 37    # 英雄谷护卫×3＋【首领】首席法师（多名成员＝小怪战站位）
 const BOSS_TROOP := 88   # 守护石巨人（一名成员＝首领战站位）
 const SIZES := [0.0, 1.6]
-const SIZE_NAMES := {0.0: "现状", 1.6: "A版1.6倍"}
+const SIZE_NAMES := {0.0: "T126旧倍数", 1.6: "T188每人99高"}
 const BIG_CELL := {179: 128, 108: 128, 127: 256}  # 现有大格侧视图：流萤、奈叶、小铃兰（格高）
 
 
@@ -87,6 +89,7 @@ func _run() -> void:
 		var f := FileAccess.open(out_dir.path_join("t174_尺寸记录.json"), FileAccess.WRITE)
 		f.store_string(JSON.stringify(notes, "  "))
 		f.close()
+	await _roster()
 	await _cell128_battle()
 	await _big_forms()
 	await _column()
@@ -137,6 +140,14 @@ func _unit_cell() -> void:
 	var single := XAppearance.new()
 	single._single(ImageTexture.create_from_image(Image.create(256, 256, false, Image.FORMAT_RGBA8)))
 	_check("single_actor_size", XBattleLayout.sheet_size(1.6, single) == 1.6)
+	# T188：倍数按待机可见高算到 99，T174 下已 98～102（整像素）的不动；TARGET_H＝0 回 T174
+	_check("fit_keep_64", XBattleLayout.fit_height(1.6, 64.0) == 1.6 and XBattleLayout.fit_height(1.6, 62.0) == 1.6)
+	_check("fit_72_to_99", is_equal_approx(XBattleLayout.fit_height(1.6, 72.0), 99.0 / 72.0) and is_equal_approx(XBattleLayout.fit_height(1.0, 116.0), 99.0 / 116.0))
+	_check("fit_off_zero", XBattleLayout.fit_height(0.0, 72.0) == 0.0 and XBattleLayout.fit_height(1.6, 0.0) == 1.6)
+	var keep_t := XBattleLayout.TARGET_H
+	XBattleLayout.TARGET_H = 0.0
+	_check("fit_rollback_t174", XBattleLayout.fit_height(1.6, 72.0) == 1.6)
+	XBattleLayout.TARGET_H = keep_t
 	var keep := XBattleLayout.NATIVE_CELL
 	XBattleLayout.NATIVE_CELL = 100000.0
 	_check("native_cell_rollback", XBattleLayout.sheet_size(1.6, looks[128]) == 1.6)
@@ -199,9 +210,9 @@ func _one(troop: int, g: String, size: float) -> void:
 		var sp: XBattlerSprite = b.sprites[a]
 		var extra := sp.look.scale * sp.fd
 		rows.append({"id": a.actor_id, "name": a.display_name(), "body_scale": snappedf(sp.body_scale, 0.0001), "fd": sp.fd,
-			"w": roundf(sp.width()), "h": roundf(sp.height()), "src_h": roundf(_src_h(sp)), "home": [sp.home.x, sp.home.y]})
-		if size > 0.0:
-			_check(tag + "_size_%d" % a.actor_id, is_equal_approx(sp.body_scale, size * extra), [sp.body_scale, size, extra])
+			"w": roundf(sp.width()), "h": roundf(sp.height()), "src_h": roundf(_src_h(sp)), "idle_h": snappedf(_screen_h(sp), 0.1), "home": [sp.home.x, sp.home.y]})
+		if size > 0.0:  # T188：每人待机屏幕身高 98～102（倍数各算各的）
+			_check(tag + "_h99_%d" % a.actor_id, _screen_h(sp) >= 98.0 and _screen_h(sp) <= 102.0, [sp._look_key, _screen_h(sp), sp.body_scale, extra])
 		elif a.actor_id < 167:
 			_check(tag + "_old_t126_%d" % a.actor_id, is_equal_approx(sp.body_scale, XBattleScene.ACTOR_SCALE * (XBattleLayout.BOSS.actor_mul if solo else XBattleLayout.MOB.actor_mul) * extra),
 				sp.body_scale)
@@ -233,14 +244,6 @@ func _one(troop: int, g: String, size: float) -> void:
 		mine_left = minf(mine_left, _body(b.sprites[a]).position.x)
 	_check(tag + "_gap_to_enemy", mine_left - foe_right >= 40.0, [mine_left, foe_right])
 	_check_ring(tag, b)
-	if size > 0.0:
-		# 同尺寸原图一样大：原图可见高相同的两人，屏上高也相同
-		var by_src := {}
-		for a in b.logic.actors:
-			var sp: XBattlerSprite = b.sprites[a]
-			var k := roundi(_src_h(sp) * sp.look.scale * sp.fd)
-			by_src[k] = by_src.get(k, []) + [roundf(sp.height())]
-		_check(tag + "_same_src_same_h", by_src.values().all(func(v): return v.min() == v.max()), by_src)
 	# 伤害数字、状态图标按 height() 走：伤害数字落点在身体中部（我方是脚底原点＋原版偏移，敌人按高度抬）
 	await _shot("T174_%s_%s组_%s" % [SIZE_NAMES[size], g, "首领战" if solo else "小怪战"], "%s · %s组（%s）· %s（敌群 %d）" % [
 		SIZE_NAMES[size], g, GROUP_NAMES[g], "首领战" if solo else "小怪战", troop])
@@ -287,7 +290,7 @@ func _cell128_battle() -> void:
 	if gxy == null:
 		await _close(b)
 		return
-	_check("gxy_1_6", is_equal_approx(gxy.body_scale, 1.6 * gxy.look.scale * gxy.fd), gxy.body_scale)
+	_check("gxy_1_6", is_equal_approx(gxy.body_scale, 1.6 * gxy.look.scale * gxy.fd), gxy.body_scale)  # 狗逍遥 T174 下已 99～102，不动
 	var rows := [{"id": 1, "h": roundf(gxy.height()), "body_scale": gxy.body_scale}]
 	for a in b.logic.actors:
 		if not BIG_CELL.has(a.actor_id):
@@ -295,7 +298,7 @@ func _cell128_battle() -> void:
 		var sp: XBattlerSprite = b.sprites[a]
 		var tag := "big_cell_%d" % a.actor_id
 		_check(tag + "_cell", sp.look.cell.y == float(BIG_CELL[a.actor_id]), sp.look.cell)
-		_check(tag + "_native_1x", is_equal_approx(sp.body_scale, 1.0 * sp.look.scale * sp.fd), [sp.body_scale, sp.look.scale, sp.fd])
+		_check(tag + "_h99", _screen_h(sp) >= 98.0 and _screen_h(sp) <= 102.0, [sp.body_scale, _screen_h(sp)])
 		# 归一档（167 号起）的 height() 是可见身高；旧角色（奈叶、小铃兰）照原版按一格算，可见身高另量过（98／102），这里只核归一档
 		if not sp._profile.is_empty():
 			_check(tag + "_height_about_100", sp.height() >= 80.0 and sp.height() <= 130.0, sp.height())
@@ -310,9 +313,9 @@ func _cell128_battle() -> void:
 		var sp: XBattlerSprite = b.sprites[a]
 		var own_key: String = sp._look_key
 		sp.swap_look("Codex_Sam_SV")  # 不等帧：精灵每帧会按角色此刻的外观键换回来，这里直接核换装那一下
-		_check("swap_to_cell64", sp.look.cell.y == 64.0 and is_equal_approx(sp.body_scale, 1.6 * sp.look.scale * sp.fd), [sp._look_key, sp.look.cell, sp.body_scale])
+		_check("swap_to_cell64", sp.look.cell.y == 64.0 and _screen_h(sp) >= 98.0 and _screen_h(sp) <= 102.0, [sp._look_key, sp.look.cell, sp.body_scale, _screen_h(sp)])
 		sp.swap_look(own_key)
-		_check("swap_back_cell128", sp.look.cell.y == 128.0 and is_equal_approx(sp.body_scale, 1.0 * sp.look.scale * sp.fd), [sp._look_key, sp.look.cell, sp.body_scale])
+		_check("swap_back_cell128", sp.look.cell.y == 128.0 and _screen_h(sp) >= 98.0 and _screen_h(sp) <= 102.0 and sp.body_scale < 1.0, [sp._look_key, sp.look.cell, sp.body_scale, _screen_h(sp)])
 	await _close(b)
 
 
@@ -344,17 +347,19 @@ func _big_forms() -> void:
 		var rows := []
 		for id in by:
 			var sp: XBattlerSprite = by[id]
-			rows.append({"id": id, "key": sp._look_key, "w": roundf(sp.width()), "h": roundf(sp.height()), "body_scale": snappedf(sp.body_scale, 0.0001)})
+			rows.append({"id": id, "key": sp._look_key, "w": roundf(sp.width()), "h": roundf(sp.height()), "idle_h": snappedf(_screen_h(sp), 0.1), "body_scale": snappedf(sp.body_scale, 0.0001)})
 			_check(tag + "_h_%d" % id, sp.height() >= 80.0 and sp.height() <= 130.0, [sp._look_key, sp.width(), sp.height(), sp.body_scale])
 		for id in [167, 168]:
 			if by.has(id):
 				var sp: XBattlerSprite = by[id]
-				_check(tag + "_shrink_%d" % id, sp.body_scale < 1.0 and is_equal_approx(sp.body_scale, 1.6 * float(sp._profile.get("scale", 0.0)) * sp.look.scale * sp.fd),
-					[sp.body_scale, sp._profile.get("scale")])
+				_check(tag + "_shrink_%d" % id, sp.body_scale < 1.0 and _screen_h(sp) >= 98.0 and _screen_h(sp) <= 102.0,
+					[sp.body_scale, _screen_h(sp), sp._profile.get("scale")])
 				_check(tag + "_smooth_%d" % id, (sp.sprite as Sprite2D).texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR, (sp.sprite as Sprite2D).texture_filter)
 		_check(tag + "_gxy_nearest", (by[1].sprite as Sprite2D).texture_filter != CanvasItem.TEXTURE_FILTER_LINEAR)
 		notes.append({"size": 1.6, "troop": troop, "group": "大画布逐帧形态", "actors": rows})
 		_layout_checks(tag, b)
+		await _shot("T188_变身形态_%s" % ("首领战" if troop == BOSS_TROOP else "小怪战"), "T188每人99高 · 狗逍遥 里德 渡鸦神话 米拉黑龙 · %s（敌群 %d）" % [
+			"首领战" if troop == BOSS_TROOP else "小怪战", troop])
 		await _close(b)
 
 
@@ -375,6 +380,71 @@ func _layout_checks(tag: String, b: XBattleScene) -> void:
 	_check(tag + "_on_screen", b.logic.actors.all(func(a):
 		var r := _body(b.sprites[a])
 		return r.position.y >= 0.0 and r.end.x <= XBattleScene.BOX.x and r.position.x >= 0.0), b.logic.actors.map(func(a): return _body(b.sprites[a])))
+
+
+## T188 屏幕待机身高（原图待机帧可见高 × 身体倍数，不含 SvPngFd／外观 scale）
+func _screen_h(sp: XBattlerSprite) -> float:
+	return roundf(XBattleLayout.idle_height(sp.look) * sp.body_scale / maxf(sp.look.scale * sp.fd, 0.0001))
+
+
+## T188 全员（含换装卡图、变身形态）：每张图待机屏幕身高 98～102；T174 下已在范围里的倍数不变；TARGET_H＝0 回到 T174
+## 不进战斗：每人建一个精灵按战斗里的设法 setup，换装／形态走 swap_look（同战斗里换图那条路）
+const ROSTER_FORMS := [
+	[167, "Raven_Mythic_SV|form:RavenMythic"], [168, "BlackDragon_Mira_SV|form:MiraDragon"], [168, "BlackDragon_Mira_SV|form:MiraHuman_u2"],
+	[172, "Codex_Sukuna_SV|st:2643"], [173, "Garou_Human|st:2644"], [173, "Garou_Human|st:2650"], [179, "Codex_Sam_SV"],
+	[164, "clbjt"], [164, "cjbjt3"], [164, "cjbjt2"], [164, "bjtc1"]]
+
+func _roster() -> void:
+	XBattleLayout.ACTOR_SIZE = 1.6
+	var s := XState.new_game(9, 1, [])
+	var rows := []
+	var bad := []
+	var cases := []
+	for rec in XDB.table("Actors"):
+		if rec is Dictionary and str(rec.get("battlerName", "")) != "":
+			cases.append([int(rec.id), ""])
+	cases.append_array(ROSTER_FORMS)
+	for card in XCostumes.registry().values():
+		cases.append([1, str(card.image) + "|card"])
+	for c in cases:
+		var a := s.actor(int(c[0]))
+		for size_on in [true, false]:
+			var keep_t := XBattleLayout.TARGET_H
+			if not size_on:
+				XBattleLayout.TARGET_H = 0.0
+			var sp := XBattlerSprite.new()
+			sp.layout_mul = 1.6 / XBattleScene.ACTOR_SCALE
+			sp.fixed_scale = 1.6
+			add_child(sp)
+			sp.setup(a, XBattleScene.ACTOR_SCALE * sp.layout_mul)
+			if c[1] != "":
+				sp.swap_look(c[1])
+			var h := _screen_h(sp)
+			var row := {"id": c[0], "key": sp._look_key, "src_h": XBattleLayout.idle_height(sp.look), "scale": snappedf(sp.body_scale, 0.0001), "h": snappedf(h, 0.1)}
+			if size_on:
+				rows.append(row)
+				if roundf(h) < 98.0 or roundf(h) > 102.0:
+					bad.append(row)
+			else:
+				rows[-1]["t174_scale"] = row.scale
+				rows[-1]["t174_h"] = row.h
+				var t174_h: float = row.h
+				# 回退＝T174 统一倍数；T174 下已在 98～102 的，T188 倍数不变
+				if roundf(t174_h) >= 98.0 and roundf(t174_h) <= 102.0 and not is_equal_approx(rows[-1].scale, row.scale):
+					bad.append(["kept_changed", rows[-1]])
+			XBattleLayout.TARGET_H = keep_t
+			sp.free()
+	_check("roster_count", rows.size() >= 167 + ROSTER_FORMS.size(), rows.size())
+	_check("roster_h_98_102", bad.is_empty(), bad)
+	var moved := rows.filter(func(r): return not is_equal_approx(r.scale, r.t174_scale))
+	_check("roster_t174_off_back", rows.any(func(r): return r.id == 176 and is_equal_approx(r.t174_scale, 1.6)), moved.size())
+	notes.append({"size": 1.6, "group": "T188 全员待机身高", "actors": rows})
+	if out_dir != "":
+		DirAccess.make_dir_recursive_absolute(out_dir)
+		var f := FileAccess.open(out_dir.path_join("t188_全员身高.json"), FileAccess.WRITE)
+		f.store_string(JSON.stringify(rows, "  "))
+		f.close()
+	await _frames(1)
 
 
 ## 原版竖排：我方不放大（同列间隔按 72 高留的）
