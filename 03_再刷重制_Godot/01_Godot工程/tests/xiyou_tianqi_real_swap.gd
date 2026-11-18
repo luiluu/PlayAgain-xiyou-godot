@@ -507,7 +507,10 @@ func _record(swap: bool) -> Dictionary:
 	var before := _slots(s)
 	var commands := []
 	var logs := []
-	XTianqiBrand.TEST_FIT = {a.actor_id: [1, "swap"]} if swap else {}
+	XTianqiBrand.TEST_FIT = {}
+	if swap:
+		for x in lg.actors:
+			XTianqiBrand.TEST_FIT[x.actor_id] = [1, "swap"]  # 全员点名：谁先轮到谁换（敌人可能两下就倒，别等指定的人），后面的锁定改断片
 	lg.start_turn()
 	for i in 12:
 		var user := lg.next_subject()
