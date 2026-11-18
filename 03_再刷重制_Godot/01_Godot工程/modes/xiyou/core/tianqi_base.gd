@@ -41,6 +41,8 @@ static var REALM_OFF := true
 static var TUNE_D189 := true
 ## T191（D200 A，Kyo 11-18）：原卡小数系数全表取整的覆盖层（skill_rework.json 的 tune.D200，叠在 D189 之后）；false＋XTianqiSkills.reload_table() 照取整前
 static var TUNE_D200 := true
+## T192（D198 A，Kyo 11-18）：偏弱超强者 9 人往上调的覆盖层（skill_rework.json 的 tune.D198，叠在 D200 之后；含 cap_hits）；false＋XTianqiSkills.reload_table() 照调前
+static var TUNE_D198 := true
 const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
 const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",
 	"SkillPass\\d+", "passiveAPLUS", "AgainUseAll", "passiveIRUP", "passiveGRUP", "passiveSPBST\\d", "ConsumeReduce\\w+", "passiveEXTTP", "DepassiveHarmRe\\d+",

@@ -270,6 +270,8 @@ func _tune_d189() -> void:
 	XTianqiSkills.reload_table()
 	_check("tune_d200.switch", d200_on.slice(0, 3) == [4.0, 0.45, 0] and str(d200_on[3]).contains("物理攻击×4") and d200_off.slice(0, 3) == [3.6, 0.5, 1] and str(d200_off[3]).contains("×3.6") and d200_off_10727 == 5.0, [d200_on, d200_off, d200_off_10727])
 	# 第二批（偏弱超强者调高）：176 贯日 6.0→10、177 棱光 2.5→6（T175 取整；T163 的本体成长 ×1.2 撤掉，开着也是 1）；关掉照原卡
+	XTianqiBase.TUNE_D198 = false  # T192：D198 又调了 177 棱光，这段只看 D189 层
+	XTianqiSkills.reload_table()
 	var on_gr := [float(XTianqiSkills.spec(10315).damage.coef), float(XTianqiSkills.spec(10337).damage.coef), XTianqiBase.actor_mult(177, "mat"), XTianqiBase.actor_mult(176, "atk"), XTianqiBase.actor_mult(108, "mmp")]
 	XTianqiBase.TUNE_D189 = false
 	XTianqiSkills.reload_table()
@@ -284,6 +286,32 @@ func _tune_d189() -> void:
 			frac.append([sid, c])
 	_check("tune_d189.integer", frac.is_empty(), frac)
 	_check("tune_d189.raise_switch_back", off_gr == [6.0, 2.5, 1.0, 1.0, 1.0], off_gr)
+	XTianqiBase.TUNE_D198 = true
+	XTianqiSkills.reload_table()
+	# 【cc·T192】D198 A：偏弱超强者调高（tune.D198，叠在 D200 之后）；超上限的拆段、流萤两招 cap_hits；TUNE_D198 关掉 reload 后照调前
+	var ids198 := [10731, 5706, 9938, 10151, 10218, 10263, 10337, 10623, 10622]
+	var pick := func() -> Array:
+		return ids198.map(func(i): return [float(XTianqiSkills.spec(i).damage.get("coef", 0)), (XTianqiSkills.spec(i).get("seq", []) as Array).filter(func(o): return str(o.get("op", "")) == "split_effects").map(func(o): return int(o.n)), XTianqiSkills.cap_hits(XTianqiSkills.spec(i).damage)])
+	var d198_on: Array = pick.call()
+	XTianqiBase.TUNE_D198 = false
+	XTianqiSkills.reload_table()
+	var d198_off: Array = pick.call()
+	XTianqiBase.TUNE_D198 = true
+	XTianqiSkills.reload_table()
+	_check("tune_d198.on", d198_on == [[7.0, [], 1.0], [12.0, [2], 1.0], [1.0, [2], 1.0], [1.0, [3], 1.0], [6.0, [], 1.0], [9.0, [2], 1.0], [8.0, [2], 1.0], [12.0, [], 9.0], [6.0, [], 5.0]], d198_on)
+	_check("tune_d198.switch_back", d198_off == [[4.0, [], 1.0], [12.0, [], 1.0], [1.0, [], 1.0], [1.0, [], 1.0], [2.0, [], 1.0], [11.0, [], 1.0], [6.0, [], 1.0], [6.0, [], 1.0], [4.0, [], 1.0]], d198_off)
+	var frac198 := []
+	for sid in (XTianqiSkills.data().get("tune", {}).get("D198", {}).get("skills", {}) as Dictionary).keys():
+		var dm: Dictionary = XTianqiSkills.spec(int(sid)).get("damage", {})
+		for v in [dm.get("coef", 1)] + (dm.get("stats", {}) as Dictionary).values():
+			if float(v) >= 1.0 and float(v) != floorf(float(v)):
+				frac198.append([sid, v])
+	_check("tune_d198.integer", frac198.is_empty(), frac198)
+	# T192 R1（小A P1-1）：小魔炮六档同组，60%／90% 档跟 30% 档一起调
+	var tiers198 := [5703, 5704, 5705].map(func(i): return float(XTianqiSkills.spec(i).damage.coef)) + [5706, 5708, 5709].map(func(i): return (XTianqiSkills.spec(i).get("seq", []) as Array).size())
+	_check("tune_d198.cannon_tiers", tiers198 == [2.0, 2.0, 2.0, 1, 1, 1] and str(XTianqiSkills.spec(5692).desc).contains("×4＋魔法上限×14%"), tiers198)
+	# cap_hits：卡上 12（九段合计）×流萤角色条件，按每段封不压；没写 cap_hits 的照整招封
+	_check("tune_d198.cap_hits", XTianqiSkills.cap_hits({"coef": 12, "cap_hits": 9}) == 9.0 and XTianqiSkills.cap_hits({"coef": 12}) == 1.0)
 
 ## 开着但是西游档：全走关着
 func _xiyou() -> void:

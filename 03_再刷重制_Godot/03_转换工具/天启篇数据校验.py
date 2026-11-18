@@ -1099,7 +1099,7 @@ def skill_rework_rules(table: dict) -> list:
     return bad
 
 
-TUNE_KEYS = ('D189', 'D200')  # 同 XTianqiSkills.data()：按这个顺序叠
+TUNE_KEYS = ('D189', 'D200', 'D198')  # 同 XTianqiSkills.data()：按这个顺序叠（T192 加 D198）
 
 
 def tune_merge(base: dict, patch: dict) -> dict:
@@ -1622,7 +1622,7 @@ def tier_of(rework: dict, actor) -> str:
 
 
 def single_hit_effective(rework: dict, sid: str, row: dict) -> float:
-    """单段有效系数 ＝ 卡上的系数 × Σ属性权重 × 这一段能同时成立的全部条件倍率（技能自己的 conds＋角色行里点到这个技能的 conds）。"""
+    """单段有效系数 ＝ 卡上的系数 × Σ属性权重 × 这一段能同时成立的全部条件倍率（技能自己的 conds＋角色行里点到这个技能的 conds）÷ cap_hits（T192）。"""
     d = row['damage']
     m = 1.0
     for c in d.get('conds', []):
@@ -1633,7 +1633,12 @@ def single_hit_effective(rework: dict, sid: str, row: dict) -> float:
             if 'skills' in c and int(sid) not in [int(x) for x in c['skills']]:
                 continue
             m *= cond_max(c)
-    return float(d.get('coef', 0)) * skill_weight(d) * m
+    return float(d.get('coef', 0)) * skill_weight(d) * m / cap_hits(d)
+
+
+def cap_hits(d: dict) -> float:
+    """T192：卡上系数是「N 段合计」、由模块代码按段分的技能写 damage.cap_hits（段数），单段按合计÷段数算（同 XTianqiSkills.cap_hits）。"""
+    return max(1.0, float(d.get('cap_hits', 1)))
 
 
 def single_hit_cap_rules(rework: dict) -> list:
