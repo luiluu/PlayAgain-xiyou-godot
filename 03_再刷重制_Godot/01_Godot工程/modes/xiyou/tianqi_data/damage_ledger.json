@@ -1,6 +1,6 @@
 {
- "说明": "天启篇伤害加成总账（设计仓 重制设定/天启篇_伤害加成总账_v0.4.md 第八节期一细则（1）（2）、期二「归池清场」）。每个「乘」一行：status＝pooled 已归池（出现就失败）／exempt 豁免（写到期 expires，到期那一期改 pooled）／allowed 永久允许。fields 是这个来源允许写的单独相乘字段；守卫只认登记过的（来源, 字段）。module_whitelist：卡开着时 MODULE_CAP 放行的 [{module, skill, field, reason}]，期初为空。 期二起：switch＝这一行的归池回退开关（XTianqiLedger 同名 static var），关着时守卫当「回退中」不报；state_confirm_fp＝确认阶段效果指纹（XTianqiLedger.confirm_fingerprint）的期一快照，专项比对。 期三：phase＝3；nine_caps＝九线来源临时封顶（第五节第 4 条：skill ①、element ② 每一系、bonus ③、param 属性、secret_slot 秘籍每本每池）；qiyin_derived 当派生攻击的伤害比例（期二补记 2）；qiyin_dot 持续伤害 ×1.2 保留（补记 3）。",
- "phase": 3,
+ "说明": "天启篇伤害加成总账（设计仓 重制设定/天启篇_伤害加成总账_v0.4.md 第八节期一细则（1）（2）、期二「归池清场」）。每个「乘」一行：status＝pooled 已归池（出现就失败）／exempt 豁免（写到期 expires，到期那一期改 pooled）／allowed 永久允许。fields 是这个来源允许写的单独相乘字段；守卫只认登记过的（来源, 字段）。module_whitelist：卡开着时 MODULE_CAP 放行的 [{module, skill, field, reason}]，期初为空。 期二起：switch＝这一行的归池回退开关（XTianqiLedger 同名 static var），关着时守卫当「回退中」不报；state_confirm_fp＝确认阶段效果指纹（XTianqiLedger.confirm_fingerprint）的期一快照，专项比对。 期三：phase＝3；nine_caps＝九线来源临时封顶（第五节第 4 条：skill ①、element ② 每一系、bonus ③、param 属性、secret_slot 秘籍每本每池）；qiyin_derived 当派生攻击的伤害比例（期二补记 2）；qiyin_dot 持续伤害 ×1.2 保留（补记 3）。 期四（T083 台账收尾）：phase＝4；16 个旧模块行 pooled（switch MODULE_CAP：卡和 MODULE_CAP_ALL 开着才算归池）、xuan_cast 和 tianqi_modules 永久允许；state_confirm 按 state_confirm_class 拆三行（card 允许、never 断言、live 留豁免到期 5）；status 多一种 never＝不会出现（出现就失败）。",
+ "phase": 4,
  "pools": {
   "skill": "① 技能池",
   "element": "② 元素池",
@@ -26,8 +26,10 @@
     "settlementMultiplier",
     "skillMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4
+   "status": "pooled",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.number_boost",
@@ -37,17 +39,21 @@
     "finalMultiplier",
     "settlementMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4
+   "status": "pooled",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.mira",
    "name": "米拉 XActorDamageHooks.mira_ops",
    "ref": "C5",
    "fields": [],
-   "status": "exempt",
-   "expires": 4,
-   "note": "只有伤害方式、承伤，无乘"
+   "status": "pooled",
+   "note": "只有伤害方式、承伤，无乘",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.sukuna",
@@ -57,8 +63,10 @@
     "finalMultiplier",
     "settlementMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4
+   "status": "pooled",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.yomi_jingliu",
@@ -68,8 +76,10 @@
     "finalMultiplier",
     "skillMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4
+   "status": "pooled",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.toji",
@@ -78,17 +88,21 @@
    "fields": [
     "skillMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4
+   "status": "pooled",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.toji_incoming",
    "name": "甚尔 XToji.incoming_ops",
    "ref": "C5",
    "fields": [],
-   "status": "exempt",
-   "expires": 4,
-   "note": "承伤（靶），无乘"
+   "status": "pooled",
+   "note": "承伤（靶），无乘",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.garou",
@@ -98,8 +112,10 @@
     "finalMultiplier",
     "skillMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4
+   "status": "pooled",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.yunshang",
@@ -110,17 +126,21 @@
     "settlementMultiplier",
     "skillMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4
+   "status": "pooled",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.black_flash",
    "name": "黑闪 XBlackFlash.damage_ops",
    "ref": "C5",
    "fields": [],
-   "status": "exempt",
-   "expires": 4,
-   "note": "爆伤是加（④），无乘"
+   "status": "pooled",
+   "note": "爆伤是加（④），无乘",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.xuan_cast",
@@ -129,18 +149,20 @@
    "fields": [
     "finalMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4,
-   "note": "分段 ×1/段数（缩小也算乘）"
+   "status": "allowed",
+   "note": "分段 ×1/段数（缩小也算乘）",
+   "phase4": "T083：拆段不是加伤害：乘的是 1÷段数（缩小），合计不变；永久允许（第七节第 7 条）"
   },
   {
    "id": "module.xuan_incoming",
    "name": "璇 XXuanBattle.incoming_ops",
    "ref": "C5",
    "fields": [],
-   "status": "exempt",
-   "expires": 4,
-   "note": "承伤（靶），无乘"
+   "status": "pooled",
+   "note": "承伤（靶），无乘",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.xuan_damage",
@@ -149,8 +171,10 @@
    "fields": [
     "finalMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4
+   "status": "pooled",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.tusu",
@@ -159,8 +183,10 @@
    "fields": [
     "finalMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4
+   "status": "pooled",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.liuying",
@@ -170,8 +196,10 @@
     "finalMultiplier",
     "skillMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4
+   "status": "pooled",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.cat",
@@ -180,9 +208,11 @@
    "fields": [
     "settlementMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4,
-   "note": "C5「另有猫」"
+   "status": "pooled",
+   "note": "C5「另有猫」",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "module.tianqi_modules",
@@ -191,18 +221,20 @@
    "fields": [
     "finalMultiplier"
    ],
-   "status": "exempt",
-   "expires": 4,
-   "note": "第七期 tq_ops：米拉、黄泉镜流、宿傩、饿狼、云裳、屠苏、璇、猫、流萤"
+   "status": "allowed",
+   "note": "第七期 tq_ops：米拉、黄泉镜流、宿傩、饿狼、云裳、屠苏、璇、猫、流萤",
+   "phase4": "T083：天启篇专属模块，卡开着才有，本来就在卡的预算里；永久允许（第七节第 7 条）"
   },
   {
    "id": "module.gojo",
    "name": "五条悟 XGojo.damage_ops",
    "ref": "C5",
    "fields": [],
-   "status": "exempt",
-   "expires": 4,
-   "note": "只有无视双防（靶），无乘"
+   "status": "pooled",
+   "note": "只有无视双防（靶），无乘",
+   "switch": "MODULE_CAP",
+   "phase4": "T083 期四到期改已归池：卡开着时 MODULE_CAP_ALL 把它的增伤拦掉（名单外乘为零），白名单 phase4.module_whitelist 定稿为空（module_review 每条写了理由）；卡关着或 MODULE_CAP 关着＝回退中，守卫不报；pooled_scope＝boost：只判增伤（乘或设 >1、加 >0），收口之后留下的缩小（甚尔 ×0.2、云裳扩散 ×0.555／×0.3 这类拆段、扩散比例）是机制，不报",
+   "pooled_scope": "boost"
   },
   {
    "id": "qiyin",
@@ -352,14 +384,36 @@
   },
   {
    "id": "state_confirm",
-   "name": "原版状态确认阶段结算（攻击方状态 Confirm 乘）",
+   "name": "原版状态确认阶段结算（攻击方状态 Confirm 乘）·live 类",
    "ref": "设计稿未列",
    "fields": [
     "confirm"
    ],
    "status": "exempt",
-   "expires": 4,
-   "note": "期一时有确认阶段效果的状态号见 state_confirm_ids（转换数据 190 个＋贝吉特合体复制 2803），效果指纹见 state_confirm_fp；只认这批，新状态出现确认阶段乘、或既有状态的确认阶段效果变了就失败（专项）。期二起运行期也逐个认（XTianqiLedger.audit_confirm，过 check，到期会报）。套装给的状态里「结果 ×k」那一步期二已进③（suit_confirm 行）。归哪一期仍待设计稿补记（暂定期四）"
+   "expires": 5,
+   "note": "期一时有确认阶段效果的状态号见 state_confirm_ids（转换数据 190 个＋贝吉特合体复制 2803），效果指纹见 state_confirm_fp；只认这批，新状态出现确认阶段乘、或既有状态的确认阶段效果变了就失败（专项）。期二起运行期也逐个认（XTianqiLedger.audit_confirm，过 check，到期会报）。套装给的状态里「结果 ×k」那一步期二已进③（suit_confirm 行）。归哪一期仍待设计稿补记（暂定期四）",
+   "phase4": "T083：191 个状态分类见 state_confirm_class；这一行只管 live 类（154 个，没改写、天启篇还会出现或来源没扫清），留豁免、到期改 5，逐个归池或停用另开卡（协调 11-18：本卡只改登记、不改战斗行为）；card 类走 state_confirm_card、never 类走 state_confirm_never"
+  },
+  {
+   "id": "state_confirm_card",
+   "name": "原版状态确认阶段结算·卡改写过的状态（state_confirm_class.card）",
+   "ref": "第七节第 7 条",
+   "fields": [
+    "confirm"
+   ],
+   "status": "allowed",
+   "pool": "卡的预算",
+   "note": "T083：卡开着这些状态的 effects 已去掉（确认阶段不再乘），卡关着照原版；按卡的预算永久允许"
+  },
+  {
+   "id": "state_confirm_never",
+   "name": "原版状态确认阶段结算·天启篇不会出现的状态（state_confirm_class.never）",
+   "ref": "第七节第 7 条",
+   "fields": [
+    "confirm"
+   ],
+   "status": "never",
+   "note": "T083：断言——天启篇我方身上出现就失败（reason never）；每条的回退开关（never[].switch）关着＝回到会出现，不报"
   },
   {
    "id": "fest_road",
@@ -1210,5 +1264,1130 @@
    }
   ],
   "module_review_note": "T130 白名单初审（基础数值重构 v0.4 第七节第 3 条、第十节 T012-b 第 6 条）：夹具 xiyou_tianqi_phase4_modules 在总开关开着时把 15 个钩子『普攻、没改写、改写、派生』打出的增伤逐条列出（P4MOD_BOOST），每个（钩子, 字段）一条结论。初审结果：一条不留——都是原版数，天启篇版本已按技能重构 v0.2 写在卡或 XTianqiModules（收口之后）。module_whitelist（期四新键，总开关开着时 XTianqiLedger.whitelisted 另读它）因此为空；T012-d 定稿。 T137 更正计数：25 条＝17 个增伤（钩子, 字段）＋8 个不出增伤的钩子（T130 交付单误写 16＋9）。"
+ },
+ "state_confirm_class": {
+  "_note": "T083（基础数值重构 v0.3 第七节第 7 条，T012-d 开工先出的清单）：state_confirm 底下 191 个状态分三类。card＝卡改写过（skill_rework.json states，全部 effects_remove，卡开着确认阶段那段整个没了）→ 永久允许（行 state_confirm_card）；never＝天启篇里不会出现 → 运行期断言（行 state_confirm_never，status never：出现就失败；各条带回退开关，开关关着＝回到会出现，不报）；live＝没改写、天启篇里还会出现或来源没扫清 → 留豁免（行 state_confirm，expires 改 5），逐个归池或停用另开卡（协调 11-18 定：本卡只改登记、不改战斗行为）。live 按来源分组：skill 原版技能、gear 原版武器防具套装、skill_gear 两样都有、state 由别的状态挂、unscanned 静态扫描没找到来源（多半是插件脚本、地图事件或运行期代码挂的）。来源是静态扫描 generated/db（被动状态备注、技能物品效果 21、攻击附加、套装 states、公共事件 313／脚本），只列前 6 处。",
+  "card": {
+   "ids": [
+    1073,
+    1096,
+    1098,
+    1120,
+    1123,
+    1124,
+    1134,
+    1146,
+    1160,
+    1165,
+    1177,
+    1189,
+    1521,
+    1571,
+    1831,
+    1838,
+    2525,
+    2526,
+    2529,
+    2544,
+    2545,
+    2563,
+    2565,
+    2588,
+    2721,
+    2723,
+    2724,
+    2725,
+    2770,
+    2777
+   ],
+   "reason": "卡改写过的状态：XTianqiSkills.rec_state 卡开着去掉 effects（effects_remove），确认阶段的乘不再跑；增伤按卡里写的被动、条件走预算"
+  },
+  "never": [
+   {
+    "id": 995,
+    "name": "破阵——天道诅咒",
+    "switch": "NO_DIFF_PASSIVE",
+    "reason": "天道诅咒 6168 的开战状态：天启篇不学这个被动（XTianqiNoDiffPassive，拦在 XActor.learn_skill），净效果改由确认阶段的「天启篇·难度被动等价」行给"
+   },
+   {
+    "id": 1631,
+    "name": "普通难度·结算伤害",
+    "switch": "NO_DIFF_PASSIVE",
+    "reason": "普通难度 5548 的开战状态：同上，天启篇不学"
+   },
+   {
+    "id": 1691,
+    "name": "难度适应",
+    "switch": "NO_DIFF_PASSIVE",
+    "reason": "难度适应 5980 的开战状态：同上，天启篇不学"
+   },
+   {
+    "id": 1629,
+    "name": "宝宝难度·结算伤害",
+    "switch": "UNIFIED_LEGACY",
+    "reason": "宝宝难度 5561 的开战状态：天启篇开局跳过原版难度事件、五档一律借原版普通（XTianqi.UNIFIED_LEGACY），这个难度被动学不到"
+   },
+   {
+    "id": 1630,
+    "name": "简单难度·结算伤害",
+    "switch": "UNIFIED_LEGACY",
+    "reason": "简单难度 5547 的开战状态：同上，学不到"
+   },
+   {
+    "id": 1287,
+    "name": "焚天摧敌丹",
+    "switch": "NO_PILL_PASSIVES",
+    "reason": "焚天摧敌丹被动 5975 的开战状态：天启篇不挂（XTianqiLedger.NO_PILL_PASSIVES，pill_passives 行），丹药期三已下架"
+   },
+   {
+    "id": 1289,
+    "name": "轮回护元丹",
+    "switch": "NO_PILL_PASSIVES",
+    "reason": "轮回护元丹被动 5977 的开战状态：同上"
+   }
+  ],
+  "live": {
+   "skill": [
+    {
+     "id": 978,
+     "name": "破阵——逆命伐天",
+     "src": [
+      "Skills:6139:逆命伐天"
+     ]
+    },
+    {
+     "id": 991,
+     "name": "破阵——混元星宿劫",
+     "src": [
+      "Skills:6159:混元星宿劫"
+     ]
+    },
+    {
+     "id": 1001,
+     "name": "破阵——挣脱枷锁·一重",
+     "src": [
+      "Skills:6178:挣脱枷锁·一重"
+     ]
+    },
+    {
+     "id": 1002,
+     "name": "破阵——挣脱枷锁·二重",
+     "src": [
+      "Skills:6179:挣脱枷锁·二重"
+     ]
+    },
+    {
+     "id": 1003,
+     "name": "破阵——挣脱枷锁·三重",
+     "src": [
+      "Skills:6180:挣脱枷锁·三重"
+     ]
+    },
+    {
+     "id": 1038,
+     "name": "破阵——红魔遗泽",
+     "src": [
+      "Skills:2822:红魔遗泽"
+     ]
+    },
+    {
+     "id": 1062,
+     "name": "九曲黄河阵·生门",
+     "src": [
+      "Skills:5572:九曲黄河阵·生门"
+     ]
+    },
+    {
+     "id": 1074,
+     "name": "破阵——神魔威压",
+     "src": [
+      "Skills:6250:灭世挑战"
+     ]
+    },
+    {
+     "id": 1126,
+     "name": "万物回春",
+     "src": [
+      "Skills:5584:万物回春"
+     ]
+    },
+    {
+     "id": 1132,
+     "name": "碧游决·友",
+     "src": [
+      "Skills:5590:碧游决"
+     ]
+    },
+    {
+     "id": 1143,
+     "name": "过饱和心意注射",
+     "src": [
+      "Skills:5625:过饱和心意注射"
+     ]
+    },
+    {
+     "id": 1149,
+     "name": "最光辉的精灵，可否为我祷告",
+     "src": [
+      "Skills:5631:最光辉的精灵，可否为我祷告"
+     ]
+    },
+    {
+     "id": 1150,
+     "name": "最光辉的精灵，可否为我祷告",
+     "src": [
+      "Skills:5631:最光辉的精灵，可否为我祷告"
+     ]
+    },
+    {
+     "id": 1151,
+     "name": "最光辉的精灵，可否为我祷告",
+     "src": [
+      "Skills:5631:最光辉的精灵，可否为我祷告"
+     ]
+    },
+    {
+     "id": 1152,
+     "name": "最光辉的精灵，可否为我祷告",
+     "src": [
+      "Skills:5631:最光辉的精灵，可否为我祷告"
+     ]
+    },
+    {
+     "id": 1153,
+     "name": "最光辉的精灵，可否为我祷告",
+     "src": [
+      "Skills:5631:最光辉的精灵，可否为我祷告"
+     ]
+    },
+    {
+     "id": 1154,
+     "name": "最光辉的精灵，可否为我祷告",
+     "src": [
+      "Skills:5631:最光辉的精灵，可否为我祷告"
+     ]
+    },
+    {
+     "id": 1161,
+     "name": "天才手感﻿",
+     "src": [
+      "Skills:5638:天才手感"
+     ]
+    },
+    {
+     "id": 1168,
+     "name": "结算伤害*120%，暴击命中+100%",
+     "src": [
+      "Skills:5644:MyGO乐队成员(5)"
+     ]
+    },
+    {
+     "id": 1186,
+     "name": "共鸣重奏2",
+     "src": [
+      "Skills:5661:共鸣重奏"
+     ]
+    },
+    {
+     "id": 1192,
+     "name": "执念和声2",
+     "src": [
+      "Skills:5666:执念和声"
+     ]
+    },
+    {
+     "id": 1245,
+     "name": "抽奖·结算伤害1",
+     "src": [
+      "Skills:6325:秘境抽奖·结算伤害·Lv1"
+     ]
+    },
+    {
+     "id": 1246,
+     "name": "抽奖·结算伤害2",
+     "src": [
+      "Skills:6326:秘境抽奖·结算伤害·Lv2"
+     ]
+    },
+    {
+     "id": 1247,
+     "name": "抽奖·结算伤害3",
+     "src": [
+      "Skills:6327:秘境抽奖·结算伤害·Lv3"
+     ]
+    },
+    {
+     "id": 1248,
+     "name": "抽奖·结算伤害4",
+     "src": [
+      "Skills:6328:秘境抽奖·结算伤害·LvMax"
+     ]
+    },
+    {
+     "id": 1254,
+     "name": "因果丝线",
+     "src": [
+      "Skills:7193:因果丝线"
+     ]
+    },
+    {
+     "id": 1257,
+     "name": "死之掌握2",
+     "src": [
+      "Skills:7195:死之掌握"
+     ]
+    },
+    {
+     "id": 1261,
+     "name": "劲儿特大",
+     "src": [
+      "Skills:7199:劲儿特大"
+     ]
+    },
+    {
+     "id": 1266,
+     "name": "陨伤折罚",
+     "src": [
+      "Skills:7202:陨伤折罚"
+     ]
+    },
+    {
+     "id": 1311,
+     "name": "水晶·修改",
+     "src": [
+      "Skills:7316:命定此生·璀璨永恒"
+     ]
+    },
+    {
+     "id": 1352,
+     "name": "前世今生·蜀山",
+     "src": [
+      "Skills:8002:前世今生·蜀山"
+     ]
+    },
+    {
+     "id": 1397,
+     "name": "乾坤挪移",
+     "src": [
+      "Skills:8057:乾坤挪移"
+     ]
+    },
+    {
+     "id": 1419,
+     "name": "欠债结算",
+     "src": [
+      "Skills:8091:欠债人设下的束缚"
+     ]
+    },
+    {
+     "id": 1420,
+     "name": "轮回模式·困难",
+     "src": [
+      "Skills:8100:轮回模式·困难"
+     ]
+    },
+    {
+     "id": 1421,
+     "name": "欧皇之证",
+     "src": [
+      "Skills:8101:欧皇之证"
+     ]
+    },
+    {
+     "id": 1422,
+     "name": "非酋之证",
+     "src": [
+      "Skills:8102:非酋之证"
+     ]
+    },
+    {
+     "id": 1424,
+     "name": "赌场之证",
+     "src": [
+      "Skills:8092:赌场之证"
+     ]
+    },
+    {
+     "id": 1522,
+     "name": "神秘成圣",
+     "src": [
+      "Skills:5707:圣者境界",
+      "Skills:5778:圣者境界"
+     ]
+    },
+    {
+     "id": 1531,
+     "name": "辅助",
+     "src": [
+      "Skills:5732:辅助干员"
+     ]
+    },
+    {
+     "id": 1545,
+     "name": "流星锤",
+     "src": [
+      "Skills:5758:流星锤"
+     ]
+    },
+    {
+     "id": 1637,
+     "name": "天龙之力",
+     "src": [
+      "Skills:5565:天龙之力"
+     ]
+    },
+    {
+     "id": 1638,
+     "name": "神魔压制·困难1",
+     "src": [
+      "Skills:2872:轮回模式·神魔挑战Lv1"
+     ]
+    },
+    {
+     "id": 1639,
+     "name": "神魔压制·地狱1",
+     "src": [
+      "Skills:2877:轮回模式·神魔挑战Lv6",
+      "Skills:2878:轮回模式·神魔挑战·地狱Lv1"
+     ]
+    },
+    {
+     "id": 1642,
+     "name": "千刃乱雨",
+     "src": [
+      "Skills:5546:千刃乱雨"
+     ]
+    },
+    {
+     "id": 1645,
+     "name": "地狱淬体",
+     "src": [
+      "Skills:6530:地狱淬体V"
+     ]
+    },
+    {
+     "id": 1671,
+     "name": "终伤250% 圣剑",
+     "src": [
+      "Skills:6278:伊莉雅·升华"
+     ]
+    },
+    {
+     "id": 1684,
+     "name": "最终伤害",
+     "src": [
+      "Skills:5745:神明灵"
+     ]
+    },
+    {
+     "id": 1685,
+     "name": "元素领域",
+     "src": [
+      "Skills:6280:元素领域"
+     ]
+    },
+    {
+     "id": 1690,
+     "name": "治愈修正",
+     "src": [
+      "Skills:5978:治愈辅"
+     ]
+    },
+    {
+     "id": 1708,
+     "name": "奈叶适应",
+     "src": [
+      "Skills:5683:适应"
+     ]
+    },
+    {
+     "id": 1747,
+     "name": "错误数据:普攻",
+     "src": [
+      "Skills:8224:错误数据"
+     ]
+    },
+    {
+     "id": 1834,
+     "name": "孤世独行",
+     "src": [
+      "Skills:6040:孤世独行"
+     ]
+    },
+    {
+     "id": 1836,
+     "name": "武痴执念1",
+     "src": [
+      "Skills:6042:武痴执念"
+     ]
+    },
+    {
+     "id": 2441,
+     "name": "我祖我宗",
+     "src": [
+      "Skills:7135:炎黄后裔"
+     ]
+    },
+    {
+     "id": 2442,
+     "name": "传承升华",
+     "src": [
+      "Skills:7187:《传承升华》"
+     ]
+    },
+    {
+     "id": 2522,
+     "name": "虚无",
+     "src": [
+      "Skills:10075:剑*唯一",
+      "Skills:10086:【三尊封神剑】灵宝镇山河",
+      "Skills:10087:【三尊封神剑】元始炼阴阳",
+      "Skills:10088:【三尊封神剑】道德漫天下"
+     ]
+    },
+    {
+     "id": 2539,
+     "name": "真·剑九",
+     "src": [
+      "Skills:9998:剑气滚龙壁·封印"
+     ]
+    },
+    {
+     "id": 2556,
+     "name": "胡桃150爆伤",
+     "src": [
+      "Skills:10064:伴君眠花房"
+     ]
+    },
+    {
+     "id": 2559,
+     "name": "血梅香",
+     "src": [
+      "Skills:10069:血梅香"
+     ]
+    },
+    {
+     "id": 2568,
+     "name": "神的力量竟如此渺小",
+     "src": [
+      "Skills:9947:神的力量竟如此渺小！"
+     ]
+    },
+    {
+     "id": 2583,
+     "name": "雷道之威",
+     "src": [
+      "Skills:10090:雷道之威"
+     ]
+    },
+    {
+     "id": 2672,
+     "name": "终伤折算·神话挑战·天灾Lv7",
+     "src": [
+      "Skills:2897:轮回模式·神话挑战·天灾Lv7"
+     ]
+    },
+    {
+     "id": 2673,
+     "name": "终伤折算·灭世挑战【神罚】",
+     "src": [
+      "Skills:6252:灭世挑战【神罚】"
+     ]
+    },
+    {
+     "id": 2674,
+     "name": "终伤折算·灭世挑战【天劫】",
+     "src": [
+      "Skills:6253:灭世挑战【天劫】"
+     ]
+    },
+    {
+     "id": 2675,
+     "name": "终伤折算·终途溃灭",
+     "src": [
+      "Skills:7206:终途溃灭"
+     ]
+    },
+    {
+     "id": 2676,
+     "name": "神话压制·逐层",
+     "src": [
+      "Skills:2891:轮回模式·神话挑战·天灾Lv1"
+     ]
+    },
+    {
+     "id": 2677,
+     "name": "灭世压制·逐层",
+     "src": [
+      "Skills:6250:灭世挑战"
+     ]
+    },
+    {
+     "id": 2678,
+     "name": "神魔压制·地狱逐层",
+     "src": [
+      "Skills:2878:轮回模式·神魔挑战·地狱Lv1"
+     ]
+    },
+    {
+     "id": 2679,
+     "name": "洪荒压制",
+     "src": [
+      "Skills:10300:轮回模式·洪荒压制"
+     ]
+    },
+    {
+     "id": 2709,
+     "name": "权能·因果丝线",
+     "src": [
+      "Skills:7241:权能·因果丝线"
+     ]
+    },
+    {
+     "id": 2711,
+     "name": "权能·死之掌握",
+     "src": [
+      "Skills:7243:权能·死之掌握"
+     ]
+    },
+    {
+     "id": 2731,
+     "name": "虚无",
+     "src": [
+      "Skills:10485:剑*唯一",
+      "Skills:10486:【三尊封神剑】灵宝镇山河",
+      "Skills:10487:【三尊封神剑】元始炼阴阳",
+      "Skills:10488:【三尊封神剑】道德漫天下"
+     ]
+    },
+    {
+     "id": 2762,
+     "name": "天破壤碎",
+     "src": [
+      "Skills:10556:天破壤碎"
+     ]
+    },
+    {
+     "id": 2771,
+     "name": "超赛1",
+     "src": [
+      "Skills:10563:超级贝吉特"
+     ]
+    },
+    {
+     "id": 2772,
+     "name": "超赛2",
+     "src": [
+      "Skills:10564:超级贝吉特2"
+     ]
+    },
+    {
+     "id": 2773,
+     "name": "超赛3",
+     "src": [
+      "Skills:10565:超级贝吉特3"
+     ]
+    },
+    {
+     "id": 2774,
+     "name": "超蓝",
+     "src": [
+      "Skills:10566:超级贝吉特蓝"
+     ]
+    }
+   ],
+   "gear": [
+    {
+     "id": 38,
+     "name": "缝合",
+     "src": [
+      "EquipSuits:8:缝合小刀"
+     ]
+    },
+    {
+     "id": 50,
+     "name": "附加伤害 雷鸣符文手套",
+     "src": [
+      "EquipSuits:25:雷鸣附魔"
+     ]
+    },
+    {
+     "id": 97,
+     "name": "附加伤害 狂风符文手套",
+     "src": [
+      "EquipSuits:55:狂风护手"
+     ]
+    },
+    {
+     "id": 713,
+     "name": "铁头娃II",
+     "src": [
+      "EquipSuits:201:红魔套装"
+     ]
+    },
+    {
+     "id": 838,
+     "name": "落炎之语",
+     "src": [
+      "Weapons:1868:落炎之语"
+     ]
+    },
+    {
+     "id": 1087,
+     "name": "星鹫",
+     "src": [
+      "Weapons:2020:幽灵魔刀·武道",
+      "Weapons:2021:星鹫赤羽"
+     ]
+    },
+    {
+     "id": 1088,
+     "name": "阿莫斯",
+     "src": [
+      "Weapons:2019:幽灵魔刀·狂龙",
+      "Weapons:2022:阿莫斯之弓"
+     ]
+    },
+    {
+     "id": 1089,
+     "name": "麒麟",
+     "src": [
+      "Weapons:2023:星穹麒麟弩"
+     ]
+    },
+    {
+     "id": 1442,
+     "name": "虚无",
+     "src": [
+      "Armors:4978:虚无的阴影"
+     ]
+    },
+    {
+     "id": 1443,
+     "name": "神秘1",
+     "src": [
+      "Armors:4977:神秘的构史"
+     ]
+    },
+    {
+     "id": 1444,
+     "name": "神秘2",
+     "src": [
+      "Armors:4977:神秘的构史"
+     ]
+    },
+    {
+     "id": 1445,
+     "name": "神秘3",
+     "src": [
+      "Armors:4977:神秘的构史"
+     ]
+    },
+    {
+     "id": 1446,
+     "name": "神秘4",
+     "src": [
+      "Armors:4977:神秘的构史"
+     ]
+    },
+    {
+     "id": 1447,
+     "name": "神秘5",
+     "src": [
+      "Armors:4977:神秘的构史"
+     ]
+    },
+    {
+     "id": 1448,
+     "name": "神秘6",
+     "src": [
+      "Armors:4977:神秘的构史"
+     ]
+    },
+    {
+     "id": 1624,
+     "name": "降低伤害",
+     "src": [
+      "Armors:4537:禁锢之皇冕"
+     ]
+    },
+    {
+     "id": 1647,
+     "name": "神话·结算伤害",
+     "src": [
+      "Armors:4717:",
+      "Armors:4773:",
+      "Armors:4858:"
+     ]
+    },
+    {
+     "id": 1648,
+     "name": "混沌神话·结算伤害",
+     "src": [
+      "Armors:4797:",
+      "Armors:4901:"
+     ]
+    },
+    {
+     "id": 1651,
+     "name": "神话2·结算伤害",
+     "src": [
+      "Armors:4774:",
+      "Armors:4859:"
+     ]
+    },
+    {
+     "id": 1661,
+     "name": "湮灭",
+     "src": [
+      "Armors:4712:",
+      "Armors:4758:",
+      "Armors:4826:"
+     ]
+    },
+    {
+     "id": 1715,
+     "name": "秩序-1",
+     "src": [
+      "Armors:4972:秩序的合奏"
+     ]
+    },
+    {
+     "id": 1731,
+     "name": "均衡",
+     "src": [
+      "Armors:4965:均衡的天平"
+     ]
+    },
+    {
+     "id": 1732,
+     "name": "终末",
+     "src": [
+      "Armors:4964:终末的未来"
+     ]
+    },
+    {
+     "id": 1735,
+     "name": "111",
+     "src": [
+      "Armors:4979:欢愉的诡面"
+     ]
+    },
+    {
+     "id": 2300,
+     "name": "天顶剑",
+     "src": [
+      "Weapons:2025:天顶剑·极"
+     ]
+    },
+    {
+     "id": 2301,
+     "name": "紫炎",
+     "src": [
+      "Armors:129:春雷",
+      "Weapons:2010:紫炎莲华",
+      "Weapons:76:绣冬"
+     ]
+    },
+    {
+     "id": 2302,
+     "name": "紫炎混沌",
+     "src": [
+      "Weapons:2011:天道制裁·混沌至高"
+     ]
+    },
+    {
+     "id": 2727,
+     "name": "极光剑一",
+     "src": [
+      "Weapons:4002:极光剑一"
+     ]
+    },
+    {
+     "id": 2760,
+     "name": "双刀斩月",
+     "src": [
+      "Weapons:68:斩月-虚与死神结合之力",
+      "Weapons:69:斩月-灭却师之力"
+     ]
+    }
+   ],
+   "skill_gear": [
+    {
+     "id": 1640,
+     "name": "神魔压制·天灾1",
+     "src": [
+      "Skills:2891:轮回模式·神话挑战·天灾Lv1",
+      "Weapons:79:护摩之杖"
+     ]
+    },
+    {
+     "id": 1770,
+     "name": "升级减少终伤",
+     "src": [
+      "Skills:5690:魔力限制",
+      "States:1764:减少终伤",
+      "States:1771:穷极加全属性"
+     ]
+    },
+    {
+     "id": 2739,
+     "name": "极光剑一*破",
+     "src": [
+      "Skills:10072:剑*非天",
+      "Skills:10481:剑*非天*麒麟湮灭斩",
+      "Skills:10483:剑*非天",
+      "Skills:10484:剑*非天*万剑灭 ",
+      "Skills:10485:剑*唯一",
+      "Skills:10486:【三尊封神剑】灵宝镇山河",
+      "…共 10 处"
+     ]
+    },
+    {
+     "id": 2761,
+     "name": "真正的天锁斩月",
+     "src": [
+      "Skills:10528:卍解-真月牙天冲",
+      "Skills:10530:银箭【雨龙】",
+      "Skills:10531:镜花水月【蓝染】",
+      "Skills:10536:虚闪",
+      "Skills:10539:王虚的闪光",
+      "Skills:10540:卍解-月牙天冲",
+      "…共 10 处"
+     ]
+    }
+   ],
+   "state": [
+    {
+     "id": 1259,
+     "name": "轮回不止2",
+     "src": [
+      "States:1258:轮回不止"
+     ]
+    },
+    {
+     "id": 1666,
+     "name": "半步真仙效果",
+     "src": [
+      "States:1665:半步真仙",
+      "States:2566:免死判断"
+     ]
+    },
+    {
+     "id": 1726,
+     "name": "不朽2",
+     "src": [
+      "States:1725:不朽1"
+     ]
+    }
+   ],
+   "unscanned": [
+    {
+     "id": 34,
+     "name": "越战越勇",
+     "src": []
+    },
+    {
+     "id": 52,
+     "name": "女儿泪",
+     "src": []
+    },
+    {
+     "id": 543,
+     "name": "魔耗2倍",
+     "src": []
+    },
+    {
+     "id": 712,
+     "name": "铁头娃",
+     "src": []
+    },
+    {
+     "id": 719,
+     "name": "吸血",
+     "src": []
+    },
+    {
+     "id": 1034,
+     "name": "破阵——强者压制",
+     "src": []
+    },
+    {
+     "id": 1035,
+     "name": "破阵——弱者强化",
+     "src": []
+    },
+    {
+     "id": 1052,
+     "name": "破阵——强者压制·削弱",
+     "src": []
+    },
+    {
+     "id": 1056,
+     "name": "破阵——神魔威压",
+     "src": []
+    },
+    {
+     "id": 1273,
+     "name": "弱者增强·天灾",
+     "src": []
+    },
+    {
+     "id": 1275,
+     "name": "强者增强·天灾",
+     "src": []
+    },
+    {
+     "id": 1276,
+     "name": "弱者增强·灭世",
+     "src": []
+    },
+    {
+     "id": 1278,
+     "name": "强者增强·灭世",
+     "src": []
+    },
+    {
+     "id": 1279,
+     "name": "弱者增强·洪荒",
+     "src": []
+    },
+    {
+     "id": 1281,
+     "name": "强者增强·洪荒",
+     "src": []
+    },
+    {
+     "id": 1310,
+     "name": "水晶",
+     "src": []
+    },
+    {
+     "id": 1401,
+     "name": "玄心",
+     "src": []
+    },
+    {
+     "id": 1406,
+     "name": "玄心奥义",
+     "src": []
+    },
+    {
+     "id": 1441,
+     "name": "欢愉",
+     "src": []
+    },
+    {
+     "id": 1454,
+     "name": "智识2",
+     "src": []
+    },
+    {
+     "id": 1644,
+     "name": "神魔压制·地狱",
+     "src": []
+    },
+    {
+     "id": 1669,
+     "name": "花好月圆",
+     "src": []
+    },
+    {
+     "id": 1681,
+     "name": "天劫压制·灭世",
+     "src": []
+    },
+    {
+     "id": 1688,
+     "name": "神魔压制·天灾2",
+     "src": []
+    },
+    {
+     "id": 1689,
+     "name": "神魔压制·天灾3",
+     "src": []
+    },
+    {
+     "id": 1703,
+     "name": "免疫必中",
+     "src": []
+    },
+    {
+     "id": 1707,
+     "name": "高频运算",
+     "src": []
+    },
+    {
+     "id": 1712,
+     "name": "秩序1",
+     "src": []
+    },
+    {
+     "id": 1713,
+     "name": "秩序2",
+     "src": []
+    },
+    {
+     "id": 1714,
+     "name": "秩序3",
+     "src": []
+    },
+    {
+     "id": 1717,
+     "name": "同谐1",
+     "src": []
+    },
+    {
+     "id": 1718,
+     "name": "同谐2",
+     "src": []
+    },
+    {
+     "id": 1719,
+     "name": "同谐3",
+     "src": []
+    },
+    {
+     "id": 1720,
+     "name": "同谐4",
+     "src": []
+    },
+    {
+     "id": 1722,
+     "name": "记忆",
+     "src": []
+    },
+    {
+     "id": 1730,
+     "name": "纯美",
+     "src": []
+    },
+    {
+     "id": 1733,
+     "name": "开拓",
+     "src": []
+    },
+    {
+     "id": 1766,
+     "name": "亿万年星光2",
+     "src": []
+    },
+    {
+     "id": 2626,
+     "name": "欢迎来到异次元",
+     "src": []
+    },
+    {
+     "id": 2718,
+     "name": "紫炎",
+     "src": []
+    },
+    {
+     "id": 2803,
+     "name": "（状态表里没有：贝吉特合体复制）",
+     "src": []
+    }
+   ]
+  }
  }
 }

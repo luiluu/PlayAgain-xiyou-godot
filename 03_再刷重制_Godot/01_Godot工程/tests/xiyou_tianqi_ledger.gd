@@ -93,7 +93,7 @@ func _registry_shape() -> void:
 	var bad := []
 	for r in d.get("rows", []):
 		var st := str(r.get("status", ""))
-		if not st in ["pooled", "exempt", "allowed"] or (st == "exempt" and int(r.get("expires", 0)) <= 1):
+		if not st in ["pooled", "exempt", "allowed", "never"] or (st == "exempt" and int(r.get("expires", 0)) <= 1):
 			bad.append(r.id)
 	_check("ledger_rows_valid", bad.is_empty(), bad)
 	_check("module_whitelist_empty_at_p1", (d.get("module_whitelist", []) as Array).is_empty())
@@ -104,9 +104,45 @@ func _registry_shape() -> void:
 	var left := (d.get("rows", []) as Array).filter(func(r): return str(r.get("status")) == "exempt" and int(r.get("expires", 0)) <= 2).map(func(r): return r.id)
 	_check("p2_no_exempt_left", left.is_empty(), left)
 	_check("p2_new_rows", ["qiyin_derived", "combat_rules"].all(func(k): return XTianqiLedger.row(k).get("status") == "allowed"))
-	var p4: bool = XActorDamageHooks.MODULE_TAGS.all(func(k): return XTianqiLedger.row(k).get("status") == "exempt" and int(XTianqiLedger.row(k).get("expires")) == 4) \
-		and XTianqiLedger.row("state_confirm").get("status") == "exempt" and int(XTianqiLedger.row("state_confirm").get("expires")) == 4
-	_check("p1_modules_exempt_phase4", p4 and XActorDamageHooks.MODULE_TAGS.size() == 15)
+	# 期四（T083 台账收尾，基础数值重构 v0.3 第七节第 7 条）：19 行豁免逐类改状态
+	_check("p4_phase", XTianqiLedger.phase() == 4)
+	var mod16 := XActorDamageHooks.MODULE_TAGS.filter(func(k): return k != "module.xuan_cast") + ["module.cat", "module.gojo"]
+	var not_p4 := mod16.filter(func(k): return XTianqiLedger.row(k).get("status") != "pooled" or str(XTianqiLedger.row(k).get("switch", "")) != "MODULE_CAP" or XTianqiLedger.row(k).has("expires"))
+	_check("p4_modules_pooled", not_p4.is_empty() and mod16.size() == 16, not_p4)
+	_check("p4_not_boost_allowed", ["module.xuan_cast", "module.tianqi_modules"].all(func(k): return XTianqiLedger.row(k).get("status") == "allowed" and str(XTianqiLedger.row(k).get("phase4", "")) != ""))
+	var left4 := (d.get("rows", []) as Array).filter(func(r): return str(r.get("status")) == "exempt" and int(r.get("expires", 0)) <= 4).map(func(r): return r.id)
+	_check("p4_no_exempt_left", left4.is_empty(), left4)
+	_check("p4_confirm_rows", XTianqiLedger.row("state_confirm").get("status") == "exempt" and int(XTianqiLedger.row("state_confirm").get("expires")) == 5
+		and XTianqiLedger.row("state_confirm_card").get("status") == "allowed" and XTianqiLedger.row("state_confirm_never").get("status") == "never")
+	# 191 个状态分类：三类不重不漏；never 每条有回退开关和理由，开关名守卫认得；card 都是卡改写过、去掉了 effects 的
+	var cls: Dictionary = d.get("state_confirm_class", {})
+	var seen := {}
+	var dup := []
+	var all_ids: Array = (cls.get("card", {}).get("ids", []) as Array).duplicate()
+	for e in cls.get("never", []):
+		all_ids.append(int(e.id))
+	for g in cls.get("live", {}):
+		for e in cls.live[g]:
+			all_ids.append(int(e.id))
+	for id in all_ids:
+		if seen.has(int(id)):
+			dup.append(id)
+		seen[int(id)] = true
+	var reg: Array = d.get("state_confirm_ids", [])
+	_check("p4_confirm_class_cover", dup.is_empty() and seen.size() == reg.size() and reg.all(func(id): return seen.has(int(id))) and reg.size() == 191, [dup, seen.size(), reg.size()])
+	var rw: Dictionary = XTianqiSkills.data().get("states", {})
+	var bad_card := (cls.get("card", {}).get("ids", []) as Array).filter(func(id): return not bool(rw.get(str(int(id)), {}).get("effects_remove", false)))
+	_check("p4_card_effects_removed", bad_card.is_empty() and str(cls.get("card", {}).get("reason", "")) != "", bad_card)
+	var bad_never := (cls.get("never", []) as Array).filter(func(e): return str(e.get("reason", "")) == "" or not str(e.get("switch", "")) in ["NO_DIFF_PASSIVE", "UNIFIED_LEGACY", "NO_PILL_PASSIVES"])
+	_check("p4_never_entries", bad_never.is_empty() and (cls.get("never", []) as Array).size() > 0, bad_never)
+	_check("p4_never_sources", XTianqiLedger.confirm_source(1631) == "state_confirm_never" and XTianqiLedger.confirm_source(1073) == "state_confirm_card" and XTianqiLedger.confirm_source(713) == "state_confirm")
+	# 白名单定稿：每条初审结论都有理由；留的（keep）才进 phase4.module_whitelist，反过来也一样；期初旧键仍为空
+	var review: Array = d.get("phase4", {}).get("module_review", [])
+	var wl4: Array = d.get("phase4", {}).get("module_whitelist", [])
+	var no_reason := review.filter(func(r): return str(r.get("reason", "")).length() < 4)
+	var kept := review.filter(func(r): return bool(r.get("keep", false))).map(func(r): return "%s|%s" % [r.module, r.field])
+	var listed := wl4.map(func(w): return "%s|%s" % [w.module, w.field])
+	_check("p4_whitelist_final", no_reason.is_empty() and review.size() == 25 and kept == listed and wl4.all(func(w): return str(w.get("reason", "")) != ""), [no_reason, kept, listed])
 	# 来源名都有一行（tags、注册表模块）
 	var missing := []
 	for t in XActorDamageHooks.MODULE_TAGS + ["qiyin", "affix_skill", "module.tianqi_modules"] + XTianqiLedger.MODULE_SOURCE.values().filter(func(v): return v != "alienation"):
@@ -161,7 +197,7 @@ func _note_ops(tag: String, item: Dictionary, a: XActor, raw: Array, scen: Strin
 			acc.seen[key] = true
 			dump.append(key)
 			print("LEDGER_DUMP|" + key + "|" + ("乘" if mul else "加") + ("|卡开" if cards else ""))
-		if mul and XTianqiLedger.check(tag, str(o.field)) != "":
+		if mul and XTianqiLedger.check(tag, str(o.field)) in ["unregistered", "field_not_registered", "bad_status"]:  # 期四起旧模块行已归池：这里只核「登记过」，归池由守卫在收口之后判
 			acc.unregistered.append(key)
 		if cards and boost:
 			if capped.any(func(c): return c.field == o.field and c.op == o.op and is_equal_approx(float(c.value), float(o.value))):
@@ -327,12 +363,40 @@ func _guard() -> void:
 	_check("guard_switch_off_rollback_quiet", XTianqiLedger.violations.is_empty(), XTianqiLedger.violations)
 	XTianqiLedger.POOL_ORB = true
 	XTianqiLedger.POOL_QIYIN = true
-	# 豁免到期：期数到了就判失败（专属模块期四到期）
-	XTianqiLedger.data()["phase"] = 4
+	# 期四（T083）：旧模块行已归池——卡开着（MODULE_CAP 收口生效）再出现乘就失败；拆段（xuan_cast）、天启篇专属模块永久允许；卡关着＝回退中不报
+	var ph := XTianqiLedger.phase()
+	XTianqiSkills.CARDS = true
+	XTianqiLedger.violations.clear()
+	var f4 := XTianqiLedger.audit(item, a, [{"module": "actor-modules", "ops": [{"op": "mul", "field": "finalMultiplier", "value": 1.1}, {"op": "mul", "field": "finalMultiplier", "value": 0.5},
+		{"op": "mul", "field": "finalMultiplier", "value": 1.2}]}], {"actorModules": {"tags": ["module.raven", "module.xuan_cast", "module.tianqi_modules"]}}, {})
+	_check("guard_p4_module_pooled", XTianqiLedger.violations.size() == 1 and XTianqiLedger.violations[0].source == "module.raven" and XTianqiLedger.violations[0].reason == "pooled"
+		and f4.filter(func(f): return f.ok).size() == 2, [XTianqiLedger.violations, f4])
+	# 收口之后留下的缩小（×0.2 之类，拆段、扩散比例）不是加成：归池行只判增伤
+	XTianqiLedger.violations.clear()
+	XTianqiLedger.audit(item, a, [{"module": "actor-modules", "ops": [{"op": "mul", "field": "skillMultiplier", "value": 0.2}]}], {"actorModules": {"tags": ["module.toji"]}}, {})
+	_check("guard_p4_reduction_ok", XTianqiLedger.violations.is_empty(), XTianqiLedger.violations)
+	XTianqiSkills.MODULE_CAP_ALL = false
 	XTianqiLedger.violations.clear()
 	XTianqiLedger.audit(item, a, [{"module": "actor-modules", "ops": [{"op": "mul", "field": "finalMultiplier", "value": 1.1}]}], {"actorModules": {"tags": ["module.raven"]}}, {})
+	_check("guard_p4_cap_off_quiet", XTianqiLedger.violations.is_empty(), XTianqiLedger.violations)
+	XTianqiSkills.MODULE_CAP_ALL = true
+	XTianqiSkills.CARDS = false
+	XTianqiLedger.violations.clear()
+	XTianqiLedger.audit(item, a, [{"module": "actor-modules", "ops": [{"op": "mul", "field": "finalMultiplier", "value": 1.1}]}], {"actorModules": {"tags": ["module.raven"]}}, {})
+	_check("guard_p4_cards_off_quiet", XTianqiLedger.violations.is_empty(), XTianqiLedger.violations)
+	# 豁免到期：期数到了就判失败（还剩的豁免是 state_confirm 的 live 类，期五到期；这里拿一行模块行改回豁免造一次）
+	var rr := XTianqiLedger.row("module.mira")
+	var keep_rr := rr.duplicate()
+	rr.status = "exempt"
+	rr.expires = 4
+	rr.erase("switch")
+	rr.fields = ["finalMultiplier"]
+	XTianqiLedger.violations.clear()
+	XTianqiLedger.audit(item, a, [{"module": "actor-modules", "ops": [{"op": "mul", "field": "finalMultiplier", "value": 1.1}]}], {"actorModules": {"tags": ["module.mira"]}}, {})
 	_check("guard_exempt_expires", XTianqiLedger.violations.size() == 1 and XTianqiLedger.violations[0].reason == "exempt_expired", XTianqiLedger.violations)
-	XTianqiLedger.data()["phase"] = 2
+	rr.clear()
+	rr.merge(keep_rr)
+	XTianqiLedger.data()["phase"] = ph
 	# GUARD 关：不记
 	XTianqiLedger.GUARD = false
 	XTianqiLedger.violations.clear()
@@ -522,11 +586,22 @@ func _state_confirm() -> void:
 	XTianqiLedger.violations.clear()
 	var got2 := XTianqiLedger.audit_confirm(a, [{"id": 99998, "effects": [{"phase": "confirm", "op": "mul", "k": 2.0, "skipTypes": [1, 2]}]}], ctx)
 	_check("confirm_skiptypes_not_free", got2.size() == 1 and not got2[0].ok and XTianqiLedger.violations.size() == 1, [got2, XTianqiLedger.violations])
-	XTianqiLedger.data()["phase"] = 4
+	var ph := XTianqiLedger.phase()
+	XTianqiLedger.data()["phase"] = 5  # live 类（713 铁头娃II 来自原版套装）期五到期
 	XTianqiLedger.violations.clear()
 	XTianqiLedger.audit_confirm(a, [XDB.rec("States", 713)], ctx)
 	_check("confirm_runtime_expires", XTianqiLedger.violations.size() == 1 and XTianqiLedger.violations[0].reason == "exempt_expired", XTianqiLedger.violations)
-	XTianqiLedger.data()["phase"] = 2
+	XTianqiLedger.data()["phase"] = ph
+	# 期四（T083）：card 类（卡改写过）永久允许；never 类（天启篇不会出现）出现就失败，它靠的开关关着＝回退中不报；live 类期四还在豁免里
+	XTianqiLedger.violations.clear()
+	var g4 := XTianqiLedger.audit_confirm(a, [{"id": 1073, "effects": [{"phase": "confirm", "op": "mul", "k": 2.0}]}, XDB.rec("States", 1631), XDB.rec("States", 713)], ctx)
+	_check("confirm_p4_classes", g4.size() == 3 and g4[0].ok and g4[0].source == "state_confirm_card" and not g4[1].ok and g4[2].ok
+		and XTianqiLedger.violations.size() == 1 and XTianqiLedger.violations[0].reason == "never" and int(XTianqiLedger.violations[0].state) == 1631, [g4, XTianqiLedger.violations])
+	XTianqiNoDiffPassive.ENABLED = false
+	XTianqiLedger.violations.clear()
+	XTianqiLedger.audit_confirm(a, [XDB.rec("States", 1631)], ctx)
+	XTianqiNoDiffPassive.ENABLED = true
+	_check("confirm_p4_never_rollback_quiet", XTianqiLedger.violations.is_empty(), XTianqiLedger.violations)
 	XTianqiLedger.violations.clear()
 	XTianqiLedger.audit_confirm(a, [XDB.rec("States", 713)], {"defender": s.actor(int(s.battle_slots[1])), "item": XDB.rec("Skills", 1)})
 	XTianqiLedger.audit_confirm(e, [{"id": 99999, "effects": [{"phase": "confirm", "op": "mul", "k": 9.0}]}], ctx)

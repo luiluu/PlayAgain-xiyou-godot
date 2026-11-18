@@ -403,4 +403,4 @@ func _notes() -> void:
 	_check("qiyin_derived_under_follow", i_follow > 0 and i_follow < i_qiyin and i_qiyin < i_root_end, [i_follow, i_qiyin, i_root_end])
 	_check("note2_qiyin_derived_allowed", XTianqiLedger.row("qiyin_derived").get("status") == "allowed" and XTianqiLedger.row("qiyin_derived").has("phase3"))
 	_check("note3_qiyin_dot_allowed", XTianqiLedger.row("qiyin_dot").get("status") == "allowed")
-	_check("ledger_phase3", XTianqiLedger.phase() == 3 and not XTianqiLedger.data().get("nine_caps", {}).is_empty())
+	_check("ledger_phase3", XTianqiLedger.phase() >= 3 and not XTianqiLedger.data().get("nine_caps", {}).is_empty())
