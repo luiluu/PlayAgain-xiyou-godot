@@ -36,7 +36,7 @@ const OLD_VERSION := 2  # 关开关反迁移后记的：阶数明确是旧四阶
 static var ENABLED := true
 static var LEARN_SHIFT := true
 static var OWN_GOLD := true
-## 【cc·T220】期四（XTianqiBase.on）开着时影子出招伤害再乘 trials.<档>.phase4_dmg_pct ÷ 100（O-待定）。期四去掉了我方回复 ×5
+## 【cc·T220】期四（XTianqiBase.on）开着时影子出招伤害再乘 trials.<档>.phase4_dmg_pct ÷ 100（O-600）。期四去掉了我方回复 ×5
 ## （heal_skip_types [3,4]），反转术式只剩卡上的 30% 生命，新宿五个种子全输；影子伤害本来就按本体生命走，只差这一截续航。false＝不乘（回退）
 static var PHASE4_DMG := true
 static var RESTORE_ON_WIN := true
