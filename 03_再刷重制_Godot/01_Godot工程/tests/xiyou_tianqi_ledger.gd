@@ -58,7 +58,7 @@ func _state(extra: Array, tianqi := true, difficulty := "jianxian") -> XState:
 func _run() -> void:
 	kit = Kit.new("xiyou_tianqi_ledger")
 	seed(20261115)
-	XTianqiLedger.reload()
+	XTianqiLedger.reload_table()
 	_registry_shape()
 	_dump_and_cap()
 	_guard()
