@@ -32,7 +32,13 @@ func _run() -> void:
 	seed(20261112)
 	XTianqiSkills.reload_table()
 	XGojo.unlock_override = 0  # 五条悟没解锁最强之名（不读本机配置）：超强者照 16 人
-	_check("defaults", not XTianqiSkills.CARDS and not XTianqiSkills.MASTERY and XTianqiSkills.ACTION_CAP and XTianqiSkills.TIERS)
+	# T220（T012-c）：期四总开关、熟练度默认开（卡跟总开关走，CARDS 照旧关、只给专项隔离用）。本专项靠 CARDS 单独开关卡，
+	# 照写的时候的条件把总开关、熟练度拨回关再跑（总开关开着时 cards_on() 恒真，CARDS＝false 隔离不了）
+	_check("defaults", not XTianqiSkills.CARDS and XTianqiSkills.MASTERY and XTianqiBase.PHASE4 and XTianqiSkills.cards_flag() and XTianqiSkills.ACTION_CAP and XTianqiSkills.TIERS)
+	XTianqiBase.PHASE4 = false
+	XTianqiSkills.MASTERY = false
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
 	_default_off()
 	XTianqiSkills.CARDS = true  # 角色卡、熟练度默认关（等数值线），专项打开测
 	XTianqiSkills.MASTERY = true
@@ -1180,7 +1186,7 @@ func _p7() -> void:
 	XTianqiBase.TUNE_D209 = true
 	XTianqiSkills.reload_table()
 	_check("p7_d209_table", d9.keys().filter(func(k): return int(d9[k].get("actor", 0)) != 175).size() == 18 and d9_int and nano[0] == nano[1] and nano[1] == nano[2] and int(nano[0][1]) == 1
-		and is_equal_approx(float(nano[0][0].mat), 4.0) and is_equal_approx(float(nano[0][0].mmp), 0.2) and int(nano[0][2][0].n) == 4  # T209 R1 P3-1：写成 coef 1、mat 4、mmp 0.2（同 9938、10731）
+		and is_equal_approx(float(nano[0][0].mat), 3.0) and is_equal_approx(float(nano[0][0].mmp), 0.14) and int(nano[0][2][0].n) == 4  # T209 R1 P3-1：写成 coef 1；T220 词条去浮动重量后 mat 4→3、mmp 0.2→0.14（同 9938、10731）
 		and is_equal_approx(gy_on, 4.0 if XGuyu.has_relic(gy9) else 3.33) and is_equal_approx(gy_off, 1.2 if XGuyu.has_relic(gy9) else 1.0)
 		and is_equal_approx(gy_pct_on[0], 0.18) and is_equal_approx(gy_pct_on[1], 0.93) and gy_pct_on[2].contains("333%提到400%")
 		and is_equal_approx(gy_pct_off[0], 0.1) and is_equal_approx(gy_pct_off[1], 1.0) and gy_pct_off[2].contains("100%提到120%")

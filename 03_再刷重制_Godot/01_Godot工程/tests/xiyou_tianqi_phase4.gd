@@ -33,7 +33,7 @@ func _run() -> void:
 	XTianqiSkills.reload_table()
 	XTianqiBase.clear_cache()
 	XGojo.unlock_override = 0
-	_check("default_off", not XTianqiBase.PHASE4 and not XTianqiSkills.CARDS)
+	_check("default_on", XTianqiBase.PHASE4 and XTianqiSkills.MASTERY and not XTianqiSkills.CARDS and XTianqiSkills.cards_flag(), [XTianqiBase.PHASE4, XTianqiSkills.MASTERY, XTianqiSkills.CARDS])  # T220（T012-c）翻开关：总开关、熟练度默认开；CARDS 只给专项隔离用、照旧关，卡跟总开关走
 	_off()
 	_on()
 	_xiyou()

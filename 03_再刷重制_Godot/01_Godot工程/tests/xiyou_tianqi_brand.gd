@@ -64,7 +64,13 @@ func _run() -> void:
 	XTianqiBase.clear_cache()
 	XTianqiBrand.clear_cache()
 	XGojo.unlock_override = 0
-	_check("default_off", not XTianqiBrand.ENABLED)
+	# T220（T073-e）：烙印、期四总开关、熟练度默认都开了。本专项各条是在期四关着时写的（小数字的伤害比、受击率），
+	# 照原条件把期四和熟练度拨回关跑；期四开着、量级 81 级的力量两端由 K 探针（tests/virtual_player/k_calibrate.gd --brand）量
+	_check("default_on", XTianqiBrand.ENABLED and XTianqiBase.PHASE4 and XTianqiSkills.MASTERY, [XTianqiBrand.ENABLED, XTianqiBase.PHASE4, XTianqiSkills.MASTERY])
+	XTianqiBase.PHASE4 = false
+	XTianqiSkills.MASTERY = false
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
 	_off()
 	XTianqiBrand.ENABLED = true
 	_power()
