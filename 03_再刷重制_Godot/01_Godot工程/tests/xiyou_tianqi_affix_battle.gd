@@ -104,6 +104,8 @@ func _fresh(lg: XBattleLogic) -> void:
 
 
 func _run() -> void:
+	# T220 R1（小A P2-2）：照默认（期四开）跑；结算类（_actions）在期四关着时再跑一遍（回退那一支）
+	_check("phase4_default_on", XTianqiBase.PHASE4)
 	XMessageBox.auto = true
 	seed(20261112)
 	XTianqiAffixTable.reload_table()
@@ -113,6 +115,13 @@ func _run() -> void:
 	_actions()
 	_start_rewards()
 	_switches()
+	XTianqiBase.PHASE4 = false
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
+	_actions()
+	XTianqiBase.PHASE4 = true
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -256,7 +265,7 @@ func _actions() -> void:
 	var sk := _hit()
 	XTianqiAffixBattle.begin_action(lg, a, sk)
 	XTianqiAffixBattle.after_apply(lg, a, sk, e, {"hp": 1000.0})
-	_check("lifesteal", _near(a.hp, 1.0 + floorf(minf(60.0, a.mhp * 0.1))), [a.hp, a.mhp])
+	_check("lifesteal", _near(a.hp, 1.0 + floorf(minf(60.0 * XTianqiNoX6.steal_mult(a), a.mhp * 0.1))), [a.hp, a.mhp, XTianqiNoX6.steal_mult(a)])  # T220 R1（小A P2-2）：照 harvest_once 乘 steal_mult（原来 1 级生命不到 600 碰巧过）
 	a.hp = 1.0
 	XTianqiAffixBattle.after_apply(lg, a, sk, e, {"hp": 1.0e9})
 	_check("lifesteal_cap", _near(a.hp, 1.0 + floorf(a.mhp * 0.1)), [a.hp, a.mhp])

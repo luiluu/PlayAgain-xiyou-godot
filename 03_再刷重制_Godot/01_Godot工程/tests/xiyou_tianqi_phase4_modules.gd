@@ -47,7 +47,12 @@ func _run() -> void:
 	XTianqiBase.clear_cache()
 	XTianqiLedger.reload_table()
 	XGojo.unlock_override = 0
-	_check("default_off", not XTianqiBase.PHASE4 and not XTianqiSkills.CARDS and XTianqiLedger.TRACE == null)
+	_check("default_on", XTianqiBase.PHASE4 and not XTianqiSkills.CARDS and XTianqiLedger.TRACE == null, [XTianqiBase.PHASE4, XTianqiSkills.CARDS])  # T220 翻开关
+	# T220（T012-c）：期四总开关、熟练度默认开了；本专项是总开关关着时写的（原版量级、K 按 1、治疗 ×5、CARDS 单独隔离卡），照原条件拨回关跑
+	XTianqiBase.PHASE4 = false
+	XTianqiSkills.MASTERY = false
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
 	_cap_matrix()
 	_fixture_direct()
 	_fixture_battles()

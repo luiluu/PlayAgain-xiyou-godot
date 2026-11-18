@@ -59,6 +59,11 @@ func _plain_state(lineup: Array) -> XState:
 
 
 func _run() -> void:
+	# T220（T012-c）：期四总开关、熟练度默认开了；本专项是总开关关着时写的（原版量级、K 按 1、治疗 ×5、CARDS 单独隔离卡），照原条件拨回关跑
+	XTianqiBase.PHASE4 = false
+	XTianqiSkills.MASTERY = false
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
 	seed(20261111)
 	kit = Kit.new("xiyou_tianqi_numbers")
 	_enemy_rates()

@@ -21,6 +21,11 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
+	# T220 R1（小A P1-1）：照默认（期四、熟练度、烙印都开）跑。新宿影子期四下出招 ×phase4_dmg_pct（70%），会用领域的五个种子都要赢
+	_check("phase4_defaults_on", XTianqiBase.PHASE4 and XTianqiSkills.MASTERY and XTianqiGojoTrial.PHASE4_DMG
+		and int(XTianqiGojoTrial.trial(2).get("phase4_dmg_pct", 0)) == 70 and int(XTianqiGojoTrial.trial(1).get("phase4_dmg_pct", 100)) == 100)
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
 	XMessageBox.auto = true
 	seed(20261114)
 	XTianqiSkills.reload_table()

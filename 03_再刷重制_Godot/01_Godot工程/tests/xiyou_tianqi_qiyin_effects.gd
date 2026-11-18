@@ -112,12 +112,22 @@ func _fresh(lg: XBattleLogic) -> void:
 	XTianqiQiyinEffects.start(lg)
 
 
-static func _sd(v: float) -> float:  # 去全队 ×6（XTianqiNoX6，O-470）开着时，按绝对值直接扣敌人血的跟着缩 1/6
+## 按绝对值直接扣敌人血的我方效果，期望值照 XTianqiNoX6.scale_direct 的次序算：去全队 ×6（O-470）开着先缩 hp_unit，
+## 再乘出手人的 K（期四「天启注视」×烙印，T220 R1 小A P2-1：原来漏乘 K，只能在期四关着时过）；各步向下取整、至少 1
+static func _sd(v: float, who = null) -> float:
+	var r := v
 	var u := XTianqiNoX6.hp_unit()
-	return v if u == 1.0 else maxf(1.0, floorf(v * u))
+	if XTianqiNoX6.on() and u != 1.0:
+		r = maxf(1.0, floorf(r * u))
+	var k := XTianqiBase.k_for(who) if who != null else 1.0
+	if k != 1.0:
+		r = maxf(1.0, floorf(r * k))
+	return r
 
 
 func _run() -> void:
+	# T220 R1（小A P2-1）：照默认（期四开）跑；直接扣血的期望值按 scale_direct 乘 K。期四关着那一支由 _phase4_off 补跑一遍
+	_check("phase4_default_on", XTianqiBase.PHASE4)
 	XMessageBox.auto = true
 	seed(20261112)
 	XTianqiQiyinGear.reload_table()
@@ -127,6 +137,14 @@ func _run() -> void:
 	_actions()
 	_burst_views()
 	_switches()
+	# 期四关着（回退）那一支：伤害类照原来的量级再跑一遍（K 按 1、只缩 hp_unit）
+	XTianqiBase.PHASE4 = false
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
+	_damage()
+	XTianqiBase.PHASE4 = true
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -234,7 +252,7 @@ func _actions() -> void:
 	XTianqiQiyinEffects.end_action(lg, a, sk)
 	var hp0 := e.hp
 	XTianqiQiyinEffects.end_turn(lg)
-	var expect := _sd(floorf(a.atk * 0.1 * 2))
+	var expect := _sd(floorf(a.atk * 0.1 * 2), a)
 	_check("plague_tick", is_equal_approx(hp0 - e.hp, expect) or (e.shield > 0.0), [hp0 - e.hp, expect])
 	# 判决：攻击时追加最大生命 5%
 	var b: XActor = lg.actors[1]
@@ -247,7 +265,7 @@ func _actions() -> void:
 	XTianqiQiyinEffects.begin_action(lg, b, sk)
 	XTianqiQiyinEffects.after_apply(lg, b, sk, e, {"hp": 1.0})
 	XTianqiQiyinEffects.after_apply(lg, b, sk, e, {"hp": 1.0})
-	_check("judgment_once_per_target", is_equal_approx(hp0 - e.hp, _sd(floorf(b.mhp * 0.05))), [hp0 - e.hp, b.mhp])
+	_check("judgment_once_per_target", is_equal_approx(hp0 - e.hp, _sd(floorf(b.mhp * 0.05), b)), [hp0 - e.hp, b.mhp, XTianqiBase.k_for(b)])
 	XTianqiQiyinEffects.end_action(lg, b, sk)
 	# 免死（灰印 5 件）一场一次
 	var c: XActor = lg.actors[2]

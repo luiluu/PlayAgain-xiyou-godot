@@ -93,6 +93,11 @@ func _act(logic: XBattleLogic, s: XState, who: int, skill: int) -> void:
 
 
 func _run() -> void:
+	# T220（T012-c）：期四总开关、熟练度默认开了；本专项是总开关关着时写的（原版量级、K 按 1、治疗 ×5、CARDS 单独隔离卡），照原条件拨回关跑
+	XTianqiBase.PHASE4 = false
+	XTianqiSkills.MASTERY = false
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if not check("oracle_present", ref is Dictionary and ref.has("cases") and ref.cases.size() == 14):
 		return finish()
@@ -123,6 +128,7 @@ func _run() -> void:
 	_cast()
 	_manual()
 	_auto()
+	_auto_phase4()
 	# 本地断言：追击等 execute 之外的 apply 不记（目标表在 execute 结束时关闭）
 	var b := _battle({"party": [1, 108], "hp": [1, BIG_HP, BIG_HP]})
 	var logic: XBattleLogic = b[0]
@@ -578,3 +584,38 @@ func finish() -> void:
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_nanoha", "passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## 【cc·T220 R1】小A P2-3：上面 auto.tq 比的是期四关着时的原版智能 AI／挂机表（5703 按当前魔法 30%）；期四开着卡改了 5703、5710，
+## 这里只查天启篇存档三开关全开时自动战斗跑得通：选得出能放的招、放出去、敌人掉血、魔法不为负、不卡预约选单
+func _auto_phase4() -> void:
+	var keep := [XTianqiBase.PHASE4, XTianqiSkills.MASTERY, XTianqiBrand.ENABLED]
+	XTianqiBase.PHASE4 = true
+	XTianqiSkills.MASTERY = true
+	XTianqiBrand.ENABLED = true
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
+	var was_smart := XConfig.smart_ai()
+	for smart in [true, false]:
+		for sched in [false, true]:
+			var b := _auto_battle(true)
+			var logic: XBattleLogic = b[0]
+			var n: XActor = b[2]
+			XConfig._values.codexSmartAI = smart
+			if sched:
+				_schedule(b[1], n, 5692)
+			var r := logic.auto_battle_action(n)
+			var id := int(r[0].get("id", 0))
+			var hp0: float = logic.enemies.reduce(func(acc, e): return acc + e.hp, 0.0)
+			logic.act(n, r[0], r[1] if r[1] != null else logic.enemies[0])
+			logic.run_events()
+			var hp1: float = logic.enemies.reduce(func(acc, e): return acc + e.hp, 0.0)
+			check("auto.p4.%s.%s" % ["smart" if smart else "off", "sched" if sched else "free"], XTianqiSkills.cards_on() and id > 0 and hp1 < hp0 and n.mp >= 0.0
+				and XBattleCommonEvent.reserved(logic) != 2483 and not logic.is_event_waiting(), [id, hp0, hp1, n.mp])
+			XHangUpAuto.data(b[1], "ActSkill").clear()
+	XConfig._values.codexSmartAI = was_smart
+	XTianqiBase.PHASE4 = keep[0]
+	XTianqiSkills.MASTERY = keep[1]
+	XTianqiBrand.ENABLED = keep[2]
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()

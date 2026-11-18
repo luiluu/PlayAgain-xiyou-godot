@@ -64,7 +64,13 @@ func _run() -> void:
 	XTianqiBase.clear_cache()
 	XTianqiBrand.clear_cache()
 	XGojo.unlock_override = 0
-	_check("default_off", not XTianqiBrand.ENABLED)
+	# T220（T073-e）：烙印、期四总开关、熟练度默认都开了。本专项各条是在期四关着时写的（小数字的伤害比、受击率），
+	# 照原条件把期四和熟练度拨回关跑；期四开着、量级 81 级的力量两端由 K 探针（tests/virtual_player/k_calibrate.gd --brand）量
+	_check("default_on", XTianqiBrand.ENABLED and XTianqiBase.PHASE4 and XTianqiSkills.MASTERY, [XTianqiBrand.ENABLED, XTianqiBase.PHASE4, XTianqiSkills.MASTERY])
+	XTianqiBase.PHASE4 = false
+	XTianqiSkills.MASTERY = false
+	XTianqiSkills.reload_table()
+	XTianqiBase.clear_cache()
 	_off()
 	XTianqiBrand.ENABLED = true
 	_power()
@@ -1320,7 +1326,7 @@ func _t120_sear() -> void:
 	_check("t120.fill", f1 == 0 and f2 == 1 and fb == 1 and XTianqiBrand.sear_of(lg, a) == 0 and XTianqiBrand.sear_of(lg, b) == 0
 		and XTianqiBrand.fills_of(lg, a) == 1 and XTianqiBrand.fills_of(lg, b) == 1, [f1, f2, fb, XTianqiBrand.sear_of(lg, a)])
 	_check("t120.fill_now", _fit_turns(lg, a) == [2] and _sear_kinds(lg, a).size() == 1 and _fit_turns(lg, b).is_empty() and XTianqiBrand._queued(XTianqiBrand.fight(lg), b), [_fit_turns(lg, a), _fit_turns(lg, b)])
-	_check("t120.fill_text", tl.filter(func(l): return str(l.get("type", "")) == "battle_text" and str(l.text).contains("满了")).size() == 2, tl)
+	_check("t120.fill_text", tl.filter(func(l): return str(l.get("type", "")) == "battle_text" and str(l.text).contains("发亮了")).size() == 2, tl)
 	lg.start_turn()
 	_check("t120.fill_next_turn", _fit_turns(lg, b) == [3], _fit_turns(lg, b))
 	_check("t120.take_logs_once", XTianqiBrand.take_logs(lg).is_empty())
@@ -1544,7 +1550,7 @@ func _t120_real() -> void:
 
 func _t120_text() -> void:
 	var txt := XTianqiBrand.TEXT_SEAR_FULL % ["x", XTianqiBrand.sear_name()]
-	_check("t120.text", txt == "x 的灼痕满了！" and not ["境", "锚", "异化", "病", "火"].any(func(w): return txt.contains(w)), txt)
+	_check("t120.text", txt == "x 的印纹发亮了！" and not ["境", "锚", "异化", "病", "火"].any(func(w): return txt.contains(w)), txt)
 
 
 func _t120_off() -> void:
