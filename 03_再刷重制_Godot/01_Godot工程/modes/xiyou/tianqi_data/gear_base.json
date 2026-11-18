@@ -4,7 +4,8 @@
  "nice_number_exempt": [
   "ratio",
   "etype",
-  "slot_totals_range"
+  "slot_totals_range",
+  "level_override"
  ],
  "slots": {
   "武器": {

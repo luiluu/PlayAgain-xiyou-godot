@@ -90,6 +90,8 @@
   "XTianqiLedger.take_module_derived": "true",
   "XTianqiHallIntro.pending_slot": "0",
   "XTianqiRandom.battle_random": "s.reserve_battle_random()",
+  "XTianqiBase.realm_rec": "base",
+  "XTianqiGemPower.full_value": "v",
   "已确认空值安全": {
     "XGojo.begin": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",
     "XGojo.end_round": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",
@@ -120,7 +122,7 @@
     "XTianqiAlienGear.tq": "调用处在天启篇开关守卫内（西游档不进；已逐个看过调用处）",
     "XTianqiBrand.bar_text": "调用处在天启篇开关守卫内（西游档不进；已逐个看过调用处）",
     "XTianqiBrand.perform": "T119：BattleLogic.act 只在 is_fit_command(skill) 为真时调用；空壳 is_fit_command 恒 false（西游档也不会生成烙印发作的合成技能），走不到",
-    "XTianqiBrand.panel":"调用处在天启篇开关守卫内（西游档不进；已逐个看过调用处）",
+    "XTianqiBrand.panel": "调用处在天启篇开关守卫内（西游档不进；已逐个看过调用处）",
     "XTianqiBrand.stage_name": "调用处在天启篇开关守卫内（西游档不进；已逐个看过调用处）",
     "XTianqiDrop._members": "成员列表只喂给 party_mult（空壳恒 1.0）",
     "XTianqiElements.element_name": "调用处在天启篇开关守卫内（西游档不进；已逐个看过调用处）",
@@ -167,7 +169,9 @@
     "XTianqiSkills.new_rec": "调用前先过 has_new／has_new_state（空壳恒 false），走不到",
     "XTianqiSkills.spec": "调用处 .get(\"damage\", {}).get(\"coef\", 1.0) 带默认值，西游档拿到 1.0",
     "XTianqiTrumpet.famine_raw": "只在饥荒异化「饥饿」时调用（XTianqiFamineAlien.hungry 恒 false），走不到",
-    "XTianqiTrumpet.forget_name": "号卷名字只在 XTianqiTrumpet.on() 为真时拼进文案（西游档恒 false）"
+    "XTianqiTrumpet.forget_name": "号卷名字只在 XTianqiTrumpet.on() 为真时拼进文案（西游档恒 false）",
+    "XTianqiGemPower.detail_rows": "装备说明卡末尾追加的光耀度行，调用处 panel_view(...) + 它，空数组＝不加行；西游档期四关着真脚本也返回 []",
+    "XTianqiGemPower.preview_rows": "镶嵌预览追加行，调用处 append_rows，空数组＝不加行；西游档期四关着真脚本也返回 []"
   },
   "_已确认空值安全说明": "T149：被西游代码调用、空壳按类型返回 []／{}／\"\"／null 的成员，逐个核对调用处后登记在此（值是理由）。新加的天启篇函数被西游档调用时，check 会要求来这里登记或写特例。"
 }
