@@ -384,7 +384,7 @@ func _layout_checks(tag: String, b: XBattleScene) -> void:
 
 ## T188 屏幕待机身高（原图待机帧可见高 × 身体倍数，不含 SvPngFd／外观 scale）
 func _screen_h(sp: XBattlerSprite) -> float:
-	return roundf(XBattleLayout.idle_height(sp.look) * sp.body_scale / maxf(sp.look.scale * sp.fd, 0.0001))
+	return roundf(XBattleLayout.idle_height(sp.look, sp._idle_planted()) * sp.body_scale / maxf(sp.look.scale * sp.fd, 0.0001))
 
 
 ## T188 全员（含换装卡图、变身形态）：每张图待机屏幕身高 98～102；T174 下已在范围里的倍数不变；TARGET_H＝0 回到 T174
@@ -420,7 +420,7 @@ func _roster() -> void:
 			if c[1] != "":
 				sp.swap_look(c[1])
 			var h := _screen_h(sp)
-			var row := {"id": c[0], "key": sp._look_key, "src_h": XBattleLayout.idle_height(sp.look), "scale": snappedf(sp.body_scale, 0.0001), "h": snappedf(h, 0.1)}
+			var row := {"id": c[0], "key": sp._look_key, "src_h": XBattleLayout.idle_height(sp.look, sp._idle_planted()), "scale": snappedf(sp.body_scale, 0.0001), "h": snappedf(h, 0.1)}
 			if size_on:
 				rows.append(row)
 				if roundf(h) < 98.0 or roundf(h) > 102.0:
