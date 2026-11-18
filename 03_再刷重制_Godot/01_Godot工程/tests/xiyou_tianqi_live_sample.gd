@@ -102,7 +102,7 @@ func _table() -> void:
 	for e in cls.get("never", []):
 		never[int(e.id)] = str(e.switch)
 	_check("reclass_never", never.get(1126) == "CARDS" and never.get(1087) == "CARDS" and never.get(1442) == "GEAR_SLOTS" and never.get(1624) == "GEAR_SLOTS"
-		and never.get(1712) == "GEAR_SLOTS" and never.get(1261) == "NO_HONGHUANG" and never.get(2709) == "NO_HONGHUANG" and never.get(2679) == "NO_HONGHUANG", never)
+		and never.get(1712) == "GEAR_SLOTS" and never.get(1261) == "NO_HONGHUANG" and never.get(2709) == "TRUMPET" and never.get(2679) == "NO_HONGHUANG", never)
 	_check("reclass_suit_713", (cls.get("suit_pooled", {}).get("ids", []) as Array).has(713.0) and XTianqiLedger.confirm_source(713) == "state_confirm")
 	var bad_reduce := (cls.get("reduce", []) as Array).filter(func(e):
 		for x in XDB.rec("States", int(e.id)).get("effects", []):

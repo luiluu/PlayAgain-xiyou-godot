@@ -138,7 +138,7 @@ func _registry_shape() -> void:
 	var rw: Dictionary = XTianqiSkills.data().get("states", {})
 	var bad_card := (cls.get("card", {}).get("ids", []) as Array).filter(func(id): return not bool(rw.get(str(int(id)), {}).get("effects_remove", false)))
 	_check("p4_card_effects_removed", bad_card.is_empty() and str(cls.get("card", {}).get("reason", "")) != "", bad_card)
-	var bad_never := (cls.get("never", []) as Array).filter(func(e): return str(e.get("reason", "")) == "" or not str(e.get("switch", "")) in ["NO_DIFF_PASSIVE", "UNIFIED_LEGACY", "NO_PILL_PASSIVES", "CARDS", "GEAR_SLOTS", "NO_HONGHUANG"])
+	var bad_never := (cls.get("never", []) as Array).filter(func(e): return str(e.get("reason", "")) == "" or not str(e.get("switch", "")) in ["NO_DIFF_PASSIVE", "UNIFIED_LEGACY", "NO_PILL_PASSIVES", "CARDS", "GEAR_SLOTS", "NO_HONGHUANG", "TRUMPET"])
 	_check("p4_never_entries", bad_never.is_empty() and (cls.get("never", []) as Array).size() > 0, bad_never)
 	_check("p4_never_sources", XTianqiLedger.confirm_source(1631) == "state_confirm_never" and XTianqiLedger.confirm_source(1073) == "state_confirm_card" and XTianqiLedger.confirm_source(713) == "state_confirm")
 	# 白名单定稿：每条初审结论都有理由；留的（keep）才进 phase4.module_whitelist，反过来也一样；期初旧键仍为空
