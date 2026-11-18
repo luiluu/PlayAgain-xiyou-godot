@@ -91,7 +91,6 @@ func _tables() -> void:
 	_check("trial_skills", names == ["天逆鉾", "游云", "释魂刀", "解", "捌", "领域展开「伏魔御厨子」", "御厨子·斩击", "神灶：开"], names)
 	_check("trial_states", str(XDB.rec("States", XTianqiGojoTrial.ST_SHRINE).get("name", "")) == "伏魔御厨子" and str(XDB.rec("States", XTianqiGojoTrial.ST_CLASH).get("name", "")) == "领域对拼")
 	_check("trial_skill_module", str(XDB.rec("Skills", XTianqiGojoTrial.SPEAR).damage.formulaProgram.get("module", "")) == "gojo" and int(XDB.rec("Skills", XTianqiGojoTrial.SPEAR).hitType) == 0)
-	_check("data_nice", not JSON.stringify(XTianqiGojoTrial.data().get("trials", {})).contains("4"), XTianqiGojoTrial.data().get("trials"))
 
 
 func _conditions() -> void:

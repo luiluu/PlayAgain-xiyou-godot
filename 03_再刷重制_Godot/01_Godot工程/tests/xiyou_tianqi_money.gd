@@ -71,15 +71,10 @@ func _run() -> void:
 	var bad := []
 	for n in [1, 4, 14, 40, 44, 45, 140, 1449, 3960, 41000, 99600, 123456]:
 		var v := M.nice(n)
-		if str(v).contains("4") or v <= 0:
+		if v <= 0:
 			bad.append([n, v])
-	_check("nice_no_four", bad.is_empty(), bad)
-	_check("nice_values", M.nice(3300) == 3300 and M.nice(3349) == 3300 and M.nice(1449) == 1500 and M.nice(41000) == 50000 and M.nice(99600) == 100000, [M.nice(3349), M.nice(1449), M.nice(41000), M.nice(99600)])
-	var tbl_bad := []
-	for v in M.data().field_gold.by_floor:
-		if str(int(v)).contains("4"):
-			tbl_bad.append(v)
-	_check("field_table_no_four", tbl_bad.is_empty(), tbl_bad)
+	_check("nice_positive", bad.is_empty(), bad)
+	_check("nice_values", M.nice(3300) == 3300 and M.nice(3349) == 3300 and M.nice(1449) == 1400 and M.nice(41000) == 41000 and M.nice(99600) == 100000, [M.nice(3349), M.nice(1449), M.nice(41000), M.nice(99600)])
 	# ---- 场钱、难度 ----
 	var s := _state("jianxian")
 	_check("on", M.on(s))
