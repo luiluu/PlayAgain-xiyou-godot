@@ -864,7 +864,12 @@ func _probe_value(a, e, logic, sk: Dictionary) -> float:
 	e.hp = e.mhp * (0.3 if _has_trumpet(a) else 1.0)
 	_prime(logic, a, e, sk)
 	XStateEffects.force_critical = true
-	var calc: Dictionary = logic._calculate_damage(a, sk, e, true)
+	# T220：比较用的这一下去掉浮动（variance 0）。带浮动时候选之间的差被 ±浮动淹没，挑法随随机流变（T175 核 P3「词条贪心」）：
+	# 同一角色烙印 0／100% 挑出的词条不同，峰值比从 1.5 偏到 0.96～2.9；量峰值那一步照旧带浮动、取最大
+	var flat := sk.duplicate(true)
+	if flat.get("damage") is Dictionary:
+		flat.damage["variance"] = 0
+	var calc: Dictionary = logic._calculate_damage(a, flat, e, true)
 	XStateEffects.force_critical = false
 	return absf(float(calc.get("value", 0.0)))
 

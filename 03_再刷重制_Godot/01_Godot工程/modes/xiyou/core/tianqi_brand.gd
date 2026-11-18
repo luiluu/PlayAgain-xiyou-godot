@@ -1011,14 +1011,15 @@ static func patch_save(logic, d: Dictionary) -> void:
 ## 他这一回合还没轮到行动就当场开始（XTianqiBrand.trigger，同一套保护，被隔回合、满人挡住、正在发作就顺延）；这一回合已经行动过（或正在行动、
 ## 被反击打满的）就顺延（start_turn 先发顺延的，照等间隔）。已经排着顺延的不再排第二个。满了就算一次，发作有没有当场开始都算。净化、驱散不碰它，战斗结束随 fight 一起清。
 ## 玩家可见文字（交付单单列，小A 文字审）：%s 依次是角色名、槽名（brand.json sear.name，占位名，最终名小A 起；不用「境」「锚」「异化」「病」「火」）
-const TEXT_SEAR_FULL := "%s 的%s满了！"
+## D185（Kyo 11-17）：「%s 的印纹发亮了！」——界面上不说「满了」（T220 改）
+const TEXT_SEAR_FULL := "%s 的%s发亮了！"
 const _TIER_CN := {"qinran": "侵染", "shigu": "蚀骨", "huaxing": "化形", "zhongyan": "终焉"}
 const _ALIEN_METAS := ["xwar_alien", "xfamine_alien", "xplague_alien", "xdeath_alien", "xrift_alien"]
 const _FINALE := "终焉"
 
 
 static func sear_name() -> String:
-	return str(data().get("sear", {}).get("name", "灼痕"))
+	return str(data().get("sear", {}).get("name", "印纹"))
 
 
 ## 灼痕上限（向下取整）：base ＋ 等级 × per_level ＋ 烙印（百分数）× per_brand
