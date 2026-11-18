@@ -8,7 +8,7 @@ extends Node
 ##     秘籍格来源（2441 我祖我宗 ×1.8）封到每本 ＋8%；同一本书书上已有③增伤时合并封，不各吃 ＋8%（T185 P3-1）；
 ##     value_steps（2771 超赛1 加 150%）照样归池；停用（2300 天顶剑 ×2）不乘也不进池；九线合计封顶收住 2302 紫炎混沌 ＋900%。
 ## 四、守卫：开着时那一步带标记不再认；关着认成 state_confirm_pool 回退中不报。reload 清归池表缓存（T185 P3-2）。
-## 五、T200：live 清零——T187 留下的 32 个逐个给去向（never 14、归池 1、program 类 17）；program 类各条有 kind 和理由、没有一个是固定 ×k；
+## 五、T200：live 清零——T187 留下的 32 个逐个给去向（never 12、归池 1、program 类 19；R1：1703／1707 有敌群 831 来源，进 program 类 enemy）；program 类各条有 kind 和理由、没有一个是固定 ×k；
 ##     38 缝合（程序写法的固定 ×1.05）按 as 换写归池：打敌人 ③ ＋5% 算九线、确认阶段不乘；打自己人和关着时一样；守卫不报；关着照原版。
 
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
@@ -124,16 +124,17 @@ func _table() -> void:
 	var prog: Array = cls.get("program", [])
 	var bad_prog := []
 	for e in prog:
-		if not str(e.get("kind", "")) in ["inert", "extra", "dynamic", "crit"] or str(e.get("reason", "")).length() < 10 or _fixed_k(int(e.id)) > 0.0 \
+		if not str(e.get("kind", "")) in ["inert", "extra", "dynamic", "crit", "enemy"] or str(e.get("reason", "")).length() < 10 or _fixed_k(int(e.id)) > 0.0 \
 				or XTianqiLedger.confirm_source(int(e.id)) != "state_confirm_program":
 			bad_prog.append(e.id)
 	var live_n := 0
 	for g in cls.get("live", {}):
 		live_n += (cls.live[g] as Array).size()
-	_check("t200_live_cleared", live_n == 0 and prog.size() == 17 and bad_prog.is_empty() and XTianqiLedger.row("state_confirm_program").get("status") == "allowed"
+	_check("t200_live_cleared", live_n == 0 and prog.size() == 19 and bad_prog.is_empty() and XTianqiLedger.row("state_confirm_program").get("status") == "allowed"
 		and XTianqiLedger.check("state_confirm_program", "confirm") == "", [live_n, prog.size(), bad_prog])
 	_check("t200_never", never.get(543) == "NO_SOURCE" and never.get(1424) == "NO_SOURCE" and never.get(2522) == "NO_SOURCE" and never.get(1259) == "NO_HONGHUANG"
-		and never.get(2803) == "CARDS" and XTianqiLedger.confirm_source(1259) == "state_confirm_never", never)
+		and never.get(2803) == "CARDS" and XTianqiLedger.confirm_source(1259) == "state_confirm_never"
+		and not never.has(1703) and not never.has(1707) and prog.filter(func(e): return int(e.id) in [1703, 1707] and str(e.kind) == "enemy").size() == 2, never)
 	var r38: Dictionary = XTianqiLedger.live_table().get(38, {})
 	_check("t200_38_as", is_equal_approx(_fixed_k(38), 1.05) and int(r38.get("add", 0)) == 5 and str(r38.get("cap", "")) == "nine" and (r38.get("as", []) as Array).size() == 2, r38)
 	_check("default_off", XTianqiLedger.POOL_LIVE == false and XTianqiLedger.switch_on("POOL_LIVE") == false)
