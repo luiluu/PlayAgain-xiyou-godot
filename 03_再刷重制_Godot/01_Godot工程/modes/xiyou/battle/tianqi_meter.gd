@@ -184,20 +184,28 @@ func _draw() -> void:
 	_draw_doom_marks()
 
 
-## 死期标记：被挂死期的角色，右侧状态栏左边画一枚骨白小钟（冷蓝指针），一闪一闪
-func _draw_doom_marks() -> void:
+## 要画死期小钟的状态行：被挂死期、行还在且看得见（T196：队伍栏收起时被藏起的行不画，免得小钟悬在空处）
+func doom_mark_rows() -> Array:
+	var out := []
 	if doomed.is_empty() or not rows_source.is_valid():
-		return
+		return out
 	var rs = rows_source.call()
 	if not rs is Dictionary:
-		return
+		return out
+	for a in doomed:
+		var row = rs.get(a)
+		if row == null or not is_instance_valid(row) or not row.is_visible_in_tree():
+			continue
+		out.append(row)
+	return out
+
+
+## 死期标记：被挂死期的角色，右侧状态栏左边画一枚骨白小钟（冷蓝指针），一闪一闪
+func _draw_doom_marks() -> void:
 	var pulse := 0.65 + 0.35 * sin(Time.get_ticks_msec() / 160.0)
 	var bone := XTianqiLook.main_color("death")
 	var blue := XTianqiLook.accent_color("death")
-	for a in doomed:
-		var row = rs.get(a)
-		if row == null or not is_instance_valid(row):
-			continue
+	for row in doom_mark_rows():
 		var c: Vector2 = row.global_position - global_position + Vector2(-56, 36)
 		draw_circle(c, 15, Color(0, 0, 0, 0.6))
 		draw_circle(c, 12, Color(bone, pulse))

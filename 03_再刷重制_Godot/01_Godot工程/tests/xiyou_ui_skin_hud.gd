@@ -147,7 +147,7 @@ func _run() -> void:
 	_check("party_strip_leader_title", lead_ok)
 	_check("party_strip_other_no_title", other_ok or b.status_rows.size() == 1)
 	var first_row: Node = b.status_rows.values()[0]
-	var backs: Array = first_row.get_parent().get_children().filter(func(c): return c is XSkinSideStatus.Back)
+	var backs: Array = _party_holder(first_row).get_children().filter(func(c): return c is XSkinSideStatus.Back)
 	var back := backs[0] as XSkinSideStatus.Back if not backs.is_empty() else null
 	var so := b.otb as XSkinOTBBar
 	XSkinSideStatus.Back.SMOKE_BACK = false
@@ -183,12 +183,13 @@ func _run() -> void:
 func _party(b: XBattleScene, a: XActor) -> void:
 	var rows: Array = b.logic.actors.map(func(m): return b.status_rows.get(m))
 	_check("party_rows_skin", rows.all(func(r): return r is XSkinSideStatus), rows.map(func(r): return r.get_class() if r else null))
-	var holder: Node = rows[0].get_parent()
+	var holder: Node = _party_holder(rows[0])
 	var backs := holder.get_children().filter(func(c): return c is XSkinSideStatus.Back)
-	_check("party_backdrop", backs.size() == 1 and backs[0].count == rows.size() and backs[0].get_index() < rows[0].get_index(), backs.size())
+	var first_in_holder: Node = rows[0] if rows[0].get_parent() == holder else rows[0].get_parent().get_parent()   # T196：行在折叠裁剪框里
+	_check("party_backdrop", backs.size() == 1 and backs[0].count == rows.size() and backs[0].get_index() < first_in_holder.get_index(), backs.size())
 	if not backs.is_empty():
 		var bk: Control = backs[0]
-		_check("party_backdrop_rect", bk.position == Vector2(1280 - 16 - 290, 12) and bk.size == Vector2(290, rows.size() * 58 + 4), [bk.position, bk.size])
+		_check("party_backdrop_rect", bk.position == Vector2(1280 - 16 - 290, 12) and bk.size == Vector2(290, XPartyFold.head_h() + rows.size() * 58 + 4), [bk.position, bk.size])
 	for i in rows.size():
 		var r: XSkinSideStatus = rows[i]
 		_check("party_row_pos_%d" % i, r.position == XSkinSideStatus.row_pos(i) and r.size == Vector2(290, 58), [r.position, r.size])
@@ -209,6 +210,14 @@ func _party(b: XBattleScene, a: XActor) -> void:
 	ra.view = {"hp": 1, "mhp": 100, "mp": 2, "mmp": 50, "tp": 3, "mtp": 100, "dead": false, "cell_rows": []}
 	_check("party_view_first", ra._v().hp == 1 and ra._rows().is_empty())
 	ra.view = {}
+
+
+## 队伍面板的父节点（T196 起各行在 XPartyFold 的裁剪框里：行 → PartyFoldRows → PartyFoldClip → holder）
+func _party_holder(row: Node) -> Node:
+	var p := row.get_parent()
+	if p != null and p.name == "PartyFoldRows":
+		return p.get_parent().get_parent()
+	return p
 
 
 ## ---- 行动顺序 ----

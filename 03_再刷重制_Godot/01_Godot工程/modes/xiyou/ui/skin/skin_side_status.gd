@@ -24,9 +24,9 @@ static func panel_x() -> float:
 	return 1280.0 - RIGHT - ROW_W
 
 
-## 第 i 行的位置（原版坐标）
+## 第 i 行的位置（原版坐标）；T196 队伍栏折叠开着时上面让出栏头（XPartyFold.HEAD_H）
 static func row_pos(i: int) -> Vector2:
-	return Vector2(panel_x(), TOP + PAD_Y + i * ROW_H)
+	return Vector2(panel_x(), TOP + XPartyFold.head_h() + PAD_Y + i * ROW_H)
 
 
 func setup(a: XActor, index: int) -> void:
@@ -60,7 +60,7 @@ func _paint_now(c: XMVCanvas) -> void:
 	var dead := bool(v.get("dead", false))
 	var r := Rect2(Vector2.ZERO, size)
 	if active:
-		XUiSkin.draw_select(ci, r.grow_individual(-4, -2, -4, -2))
+		draw_active(ci, r.grow_individual(-4, -2, -4, -2))
 	elif selected:
 		var sb := StyleBoxFlat.new()
 		sb.draw_center = false
@@ -133,6 +133,17 @@ func _paint_now(c: XMVCanvas) -> void:
 		bx += w + 8
 
 
+## T196：行动标记挪到角色头顶（XTurnMarker）后，轮到的那一行只铺红底、不画左外小箭头（Kyo 11-18「队伍栏三角标去掉」）。
+## 没有正式美术（XSkinArt.select_on 假）时照旧 draw_select（那套的左光标是行的一部分）。XTurnMarker.ENABLED=false 回到带箭头。
+static func draw_active(ci: RID, r: Rect2) -> void:
+	if XTurnMarker.on() and XSkinArt.select_on():
+		var rr := Rect2(r.position.round(), r.size.round())
+		var wash := XSkinArt.scaled("selection_wash_128x24", Vector2i(XSkinArt.wash_w(rr.size.x), int(rr.size.y)))
+		RenderingServer.canvas_item_add_texture_rect(ci, rr, wash.get_rid(), false)
+		return
+	XUiSkin.draw_select(ci, r)
+
+
 ## T107（T096 差距 11）：队长那一行在 Lv 后带当前称号（稿「Lv 1 · 断腿狗」）；称号是玩家级的（XState.designation），只挂队长。
 ## 可回退：SHOW_TITLE=false 回到只有「Lv · 职业」
 static var SHOW_TITLE := true
@@ -190,6 +201,10 @@ static func _pill(ci: RID, r: Rect2, col: Color) -> void:
 class Back extends Control:
 	static var SMOKE_BACK := true
 	var _last_smoke_drawn := true
+	## T196 折叠（XPartyFold 每帧设）：栏头高、露出几行（小数；-1＝全部 count 行）、行间分隔线的透明度
+	var head := 0.0
+	var rows_shown := -1.0
+	var sep_alpha := 1.0
 	var count := 4:
 		set(v):
 			count = v
@@ -199,9 +214,13 @@ class Back extends Control:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	func _place() -> void:
+		var n := float(count) if rows_shown < 0.0 else rows_shown
 		position = Vector2(XSkinSideStatus.panel_x(), XSkinSideStatus.TOP)
-		size = Vector2(XSkinSideStatus.ROW_W, count * XSkinSideStatus.ROW_H + PAD_Y * 2.0)
+		size = Vector2(XSkinSideStatus.ROW_W, head + n * XSkinSideStatus.ROW_H + PAD_Y * 2.0)
 		queue_redraw()
+
+	func place() -> void:
+		_place()
 
 	func _draw() -> void:
 		if count <= 0:
@@ -210,8 +229,11 @@ class Back extends Control:
 		if not SMOKE_BACK:
 			XUiSkin.draw_panel(get_canvas_item(), Rect2(Vector2.ZERO, size))
 			for i in range(1, count):
-				var y := PAD_Y + i * XSkinSideStatus.ROW_H
-				draw_line(Vector2(10, y), Vector2(size.x - 10, y), Color(XUiSkin.LINE, 0.14), 1.0)
+				var y := head + PAD_Y + i * XSkinSideStatus.ROW_H
+				if y < size.y - 1.0:
+					draw_line(Vector2(10, y), Vector2(size.x - 10, y), Color(XUiSkin.LINE, 0.14 * sep_alpha), 1.0)
+			if head > 0.0:
+				draw_line(Vector2(10, head), Vector2(size.x - 10, head), Color(XUiSkin.LINE, 0.14), 1.0)
 			return
 		var w := size.x
 		var h := size.y
@@ -235,8 +257,15 @@ class Back extends Control:
 				PackedColorArray([Color(XUiSkin.GOLD, 0.34), Color(XUiSkin.GOLD, 0.06)]),
 				1.0, true)
 		for i in range(1, count):
-			var y := PAD_Y + i * XSkinSideStatus.ROW_H
+			var y := head + PAD_Y + i * XSkinSideStatus.ROW_H
+			if y >= h - 1.0 or sep_alpha <= 0.01:
+				continue
 			draw_polyline_colors(
 				PackedVector2Array([Vector2(10, y), Vector2(w - 10, y)]),
-				PackedColorArray([Color(XUiSkin.LINE, 0.16), Color(XUiSkin.LINE, 0.06)]),
+				PackedColorArray([Color(XUiSkin.LINE, 0.16 * sep_alpha), Color(XUiSkin.LINE, 0.06 * sep_alpha)]),
+				1.0, true)
+		if head > 0.0:   # 栏头下一道旧金细线（同上下沿的轻烟细边）
+			draw_polyline_colors(
+				PackedVector2Array([Vector2(cut, head), Vector2(w - cut, head)]),
+				PackedColorArray([Color(XUiSkin.GOLD, 0.26), Color(XUiSkin.GOLD, 0.05)]),
 				1.0, true)

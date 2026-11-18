@@ -21,7 +21,7 @@ const SETTINGS := ["MapXy", "codexSmartAI", "alwaysDash", "commandRemember", "ba
 	"bgmVolume", "bgsVolume", "meVolume", "seVolume", "CombatDamageShow", "CombatSkillAnimation", "battleAniSpeed",
 	"MOG_TrPopUpBattle_Key", "CombatDamageRecordKey", "codexNotices", "codexSkillLevelNotice", "codexPowerEnabled",
 	"codexBossStatusPanel", "codexEquipmentSort", "codexScreenFx", "codexBattleAutoDefault", "codexFontSize", "codexUiSkin",
-	"codexBattleDim", "codexRingStyle", "codexUiMotion", "codexEncounterTarget", "codexPartyFormation", "codexQuality"]
+	"codexBattleDim", "codexRingStyle", "codexUiMotion", "codexPartyExpanded", "codexEncounterTarget", "codexPartyFormation", "codexQuality"]
 ## 画质里只有这两项是口味（像素柔边、地图平滑移动），其余（窗口、帧率上限、整数缩放、省电）跟着机器走
 const QUALITY_SHARED := ["crisp", "motion"]
 ## 本机专属：不导出、不导入（cq 穿墙是调试项，也不跟着走；画面平滑按平台给默认、看屏幕；手机按键位置存在 user://touch_controls.json，另不在这里）
