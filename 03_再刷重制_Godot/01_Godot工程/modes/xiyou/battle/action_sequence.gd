@@ -17,7 +17,7 @@ extends RefCounted
 static var STATE_CMD := RegEx.create_from_string("^(?:HP|MP|TP)[ ]|^(?:ADD_STATE|ADD STATE|REMOVE_STATE|REMOVE STATE)[ ]\\d|^(?:ADD|REMOVE)[ ].*[ ](?:BUFF|DEBUFF)|^IMMORTAL$")
 ## CHANGE VARIABLE 照原版改变量（五河琴里攒火力值，v0.01.07 玩家反馈攒不了）；false＝回退到旧重制（跳过，火力值永远 0）
 static var CHANGE_VARIABLE := true
-## T178（O-待定）原版缺陷：全体技能（范围 2 敌方全体／8 我方全体／10 我方全体倒下）的 target 段对每个目标各跑一遍，
+## T178（O-575）原版缺陷：全体技能（范围 2 敌方全体／8 我方全体／10 我方全体倒下）的 target 段对每个目标各跑一遍，
 ## 段里写「action effect: enemies」这类整组目标时每遍又打整组，n 个敌人时每人挨 n 倍段数（91 豪龙火之术五段、三敌每人 13 段；mv_oracle 实跑同样）。
 ## true＝target 段里同一行整组写法对同一个人只打一次（第一遍打全组，之后各遍跳过已打过的人；每人段数＝卡面段数，与敌人数无关）；
 ## 不改成「只打当前目标」：IF 栈在目标之间不清，条件为假时第二个目标起整段不跑（5838／5850 乾坤倒置），只打当前目标会让后面的人一段都挨不到。

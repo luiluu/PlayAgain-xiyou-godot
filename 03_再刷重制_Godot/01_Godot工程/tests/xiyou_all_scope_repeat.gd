@@ -1,5 +1,5 @@
 extends Node
-## 【cc·T178】全体技能多敌时同一敌人重复挨打（XActionSequence.FIX_ALL_SCOPE_REPEAT，O-待定）。
+## 【cc·T178】全体技能多敌时同一敌人重复挨打（XActionSequence.FIX_ALL_SCOPE_REPEAT，O-575）。
 ## 原版：范围「敌方全体」的技能 target 段对每个目标各跑一遍，段里的「action effect: enemies」又打全体，
 ## 三个敌人时 91 豪龙火之术（whole 1 段＋target 4 段）每人挨 1＋4×3＝13 段、一个敌人 5 段（mv_oracle 实跑，T178 交付单）。
 ## 修好后每人段数与敌人数无关。本专项：

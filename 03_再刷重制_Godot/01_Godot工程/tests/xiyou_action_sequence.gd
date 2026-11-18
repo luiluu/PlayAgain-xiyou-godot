@@ -7,7 +7,7 @@ var results := []
 
 func _ready() -> void:
 	XCanglong.original_data()  # 按原版比：漩涡二阶段、苍龙重做与解放（优化登记三条）关掉，新行为由 xiyou_rift2_canglong 核
-	XActionSequence.FIX_ALL_SCOPE_REPEAT = false  # 按原版比：全体技能 target 段整组写法照原版每遍打全组（T178，O-待定），修正由 xiyou_all_scope_repeat 核
+	XActionSequence.FIX_ALL_SCOPE_REPEAT = false  # 按原版比：全体技能 target 段整组写法照原版每遍打全组（T178，O-575），修正由 xiyou_all_scope_repeat 核
 	_run.call_deferred()
 
 
