@@ -161,6 +161,7 @@ static func switch_on(name: String) -> bool:
 		"GEAR_SLOTS": return XTianqiGear.ENABLED  # T187：来源是删除栏位的装备（O-266）
 		"NO_HONGHUANG": return XTianqiTrim.NO_HONGHUANG  # T187（D203②）：来源是洪荒（O-410）
 		"TRUMPET": return XTianqiTrumpet.ENABLED  # T187：来源技能号被天启篇号卷改写（2709／2711）
+		"NO_SOURCE": return true  # T187 R1：工程里找不到任何挂它的路径（1454、1669、1766、1722），没有回退
 		"NO_DIFF_PASSIVE": return XTianqiNoDiffPassive.ENABLED
 		"UNIFIED_LEGACY": return XTianqi.UNIFIED_LEGACY
 	return true

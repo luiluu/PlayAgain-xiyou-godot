@@ -96,13 +96,14 @@ func _table() -> void:
 				ok = false
 		if not ok:
 			bad.append(sid)
-	_check("pool_shape", pool.size() >= 40 and bad.is_empty() and pool.any(func(e): return e.action == "stop") and pool.any(func(e): return str(e.get("cap")) == "secret"), [pool.size(), bad])
+	_check("pool_shape", pool.size() >= 35 and bad.is_empty() and pool.any(func(e): return e.action == "stop") and pool.any(func(e): return str(e.get("cap")) == "secret"), [pool.size(), bad])
 	# 重分类：never 新增三种开关、各有代表；713 走套装；缩小类都是 ×k<1；live 里不剩固定 ×k 的
 	var never := {}
 	for e in cls.get("never", []):
 		never[int(e.id)] = str(e.switch)
 	_check("reclass_never", never.get(1126) == "CARDS" and never.get(1087) == "CARDS" and never.get(1442) == "GEAR_SLOTS" and never.get(1624) == "GEAR_SLOTS"
-		and never.get(1712) == "GEAR_SLOTS" and never.get(1261) == "NO_HONGHUANG" and never.get(2709) == "TRUMPET" and never.get(2679) == "NO_HONGHUANG", never)
+		and never.get(1712) == "GEAR_SLOTS" and never.get(1261) == "NO_HONGHUANG" and never.get(2709) == "TRUMPET" and never.get(2679) == "NO_HONGHUANG"
+		and never.get(2739) == "CARDS" and never.get(2761) == "CARDS" and never.get(1454) == "NO_SOURCE" and never.get(1722) == "NO_SOURCE", never)
 	_check("reclass_suit_713", (cls.get("suit_pooled", {}).get("ids", []) as Array).has(713.0) and XTianqiLedger.confirm_source(713) == "state_confirm")
 	var bad_reduce := (cls.get("reduce", []) as Array).filter(func(e):
 		for x in XDB.rec("States", int(e.id)).get("effects", []):
