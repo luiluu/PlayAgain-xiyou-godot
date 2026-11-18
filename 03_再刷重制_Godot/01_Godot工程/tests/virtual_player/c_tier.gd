@@ -81,8 +81,8 @@ static func median_index(scores: Array) -> int:
 	return int(idx[(idx.size() - 1) / 2]) if not idx.is_empty() else -1
 
 
-## 艰险候选池里按种子抽 n 队：每队 3 强者＋1 弱者（上不了场的不要，同 baseline_dps）。返回 [[强, 强, 强, 弱], ...]
-static func pick_teams(n: int, seed_val: int) -> Array:
+## 艰险候选池里按种子抽 n 队：每队 strong_n 强者＋weak_n 弱者（缺省 3 强＋1 弱；上不了场的不要，同 baseline_dps）。返回 [[强…, 弱…], ...]
+static func pick_teams(n: int, seed_val: int, strong_n := 3, weak_n := 1) -> Array:
 	var pool: Dictionary = XTianqi.pool(DIFFICULTY)
 	var ok := func(id):
 		var t := XState.new_game(XTianqi.legacy_of(DIFFICULTY), int(id), [])
@@ -99,43 +99,70 @@ static func pick_teams(n: int, seed_val: int) -> Array:
 	for _t in n:
 		var bag := strong.duplicate()
 		var team := []
-		for _i in 3:
+		for _i in strong_n:
 			team.append(bag.pop_at(rng.randi_range(0, bag.size() - 1)))
-		team.append(weak[rng.randi_range(0, weak.size() - 1)])
+		var wbag := weak.duplicate()
+		for _i in weak_n:
+			team.append(wbag.pop_at(rng.randi_range(0, wbag.size() - 1)))
 		out.append(team)
 	return out
 
 
-## 掷一堆装备：从第 1 层到第 30 层，每层 battles 场通用掉落＋守层者首杀固定掉落。返回 [{kind, id}, ...]（kind 2 武器、3 防具）
-static func roll_pile(s: XState, members: Array, battles_per_floor: int, rng: RandomNumberGenerator) -> Array:
+## 掷这一层的掉落：battles_per_floor 场通用掉落＋守层者首杀固定掉落（31 层起不掉通用装备，返回空）。返回 [{kind, id}, ...]（kind 2 武器、3 防具）
+static func roll_floor(s: XState, members: Array, f: int, battles_per_floor: int, rng: RandomNumberGenerator) -> Array:
 	var out := []
 	var g: Dictionary = XTianqiDrop.table().get("generic", {})
 	var range_: Array = g.get("floors", [1, 30])
-	for f in range(int(range_[0]), int(range_[1]) + 1):
-		s.set_variable(20, f)
-		for _b in battles_per_floor:
-			var n := XTianqiDrop.pieces(s, f, members)
-			var count := floori(n)
-			if rng.randf() < n - float(count):
-				count += 1
-			for _i in count:
-				var d := XTianqiDrop.pick(s, f, XTianqiDrop.roll_grade(f, rng.randf()), members, rng.randf(), rng.randf())
-				if not d.is_empty():
-					out.append({"kind": int(d.kind), "id": int(d.id)})
-		var gate := XTianqiDrop.gate_grade(f)
-		var top := int(g.get("top_grade", 5))
-		var gd: Dictionary = XTianqiDrop.table().get("guardian", {})
-		var first: Array = gd.get("first", [1, 3])
-		var grades := []
-		for _i in int(first[0]):
-			grades.append(mini(gate + 1, top))
-		for _i in int(first[1]):
-			grades.append(gate)
-		for gr in grades:
-			var d := XTianqiDrop.pick(s, f, int(gr), members, rng.randf(), rng.randf())
+	if f < int(range_[0]) or f > int(range_[1]):
+		return out
+	s.set_variable(20, f)
+	for _b in battles_per_floor:
+		var n := XTianqiDrop.pieces(s, f, members)
+		var count := floori(n)
+		if rng.randf() < n - float(count):
+			count += 1
+		for _i in count:
+			var d := XTianqiDrop.pick(s, f, XTianqiDrop.roll_grade(f, rng.randf()), members, rng.randf(), rng.randf())
 			if not d.is_empty():
 				out.append({"kind": int(d.kind), "id": int(d.id)})
+	var gate := XTianqiDrop.gate_grade(f)
+	var top := int(g.get("top_grade", 5))
+	var gd: Dictionary = XTianqiDrop.table().get("guardian", {})
+	var first: Array = gd.get("first", [1, 3])
+	var grades := []
+	for _i in int(first[0]):
+		grades.append(mini(gate + 1, top))
+	for _i in int(first[1]):
+		grades.append(gate)
+	for gr in grades:
+		var d := XTianqiDrop.pick(s, f, int(gr), members, rng.randf(), rng.randf())
+		if not d.is_empty():
+			out.append({"kind": int(d.kind), "id": int(d.id)})
 	return out
+
+
+## 掷一堆装备：从第 1 层到第 30 层（roll_floor 逐层累加）
+static func roll_pile(s: XState, members: Array, battles_per_floor: int, rng: RandomNumberGenerator) -> Array:
+	var out := []
+	var range_: Array = XTianqiDrop.table().get("generic", {}).get("floors", [1, 30])
+	for f in range(int(range_[0]), int(range_[1]) + 1):
+		out.append_array(roll_floor(s, members, f, battles_per_floor, rng))
+	return out
+
+
+## （人、等级、装备）→ [栏位类型, 穿不穿得上, 得分]，assign 反复用，不缓存每掷一套都要重算几百件
+static var _cache := {}
+static func clear_cache() -> void:
+	_cache.clear()
+
+
+static func _rate(a: XActor, d: Dictionary, w: Dictionary) -> Array:
+	var key := "%d:%d:%d:%d" % [int(a.actor_id), int(a.level), int(d.kind), int(d.id)]
+	if not _cache.has(key):
+		var item := item_of(d, "c_rate")
+		var ok: bool = a.can_equip(item) and XTianqiGear.applies(item)
+		_cache[key] = [int(item.get("etypeId", 0)), ok, K._wscore(XTianqiGear.effective_params(item), w) if ok else 0.0]
+	return _cache[key]
 
 
 ## 4 人按顺序、每栏从堆里挑本人主属性权重最高的一件（一件只给一个人）。返回 {actor_id: [{slot, kind, id}], "score": 总分}
@@ -154,10 +181,10 @@ static func assign(members: Array, pile: Array) -> Dictionary:
 			var best := -1
 			var best_score := -1.0
 			for j in left.size():
-				var item := item_of(left[j], "c_%d_%d" % [int(a.actor_id), i])
-				if int(item.get("etypeId", 0)) != et or not a.can_equip(item) or not XTianqiGear.applies(item):
+				var r := _rate(a, left[j], w)
+				if int(r[0]) != et or not bool(r[1]):
 					continue
-				var sc := K._wscore(XTianqiGear.effective_params(item), w)
+				var sc := float(r[2])
 				if sc > best_score:
 					best_score = sc
 					best = j
@@ -179,17 +206,22 @@ static func item_of(d: Dictionary, instance: String) -> Dictionary:
 # ---- 建档与量数 ----
 
 func _state(team: Array, gear: Dictionary) -> XState:
+	return build_state(team, gear, FLOOR, LEVEL, mini(XMagicWeapon.CAP_TOP, 9 + 3 * FLOOR), seed_v, brand_pct, wine)
+
+
+## 建一队的档：第 floor 层、等级 level、本人专属法宝（没有就破攻／尊魔）fabao_level 级、输出职责刻印烙印 brand_pct%、天平酒
+static func build_state(team: Array, gear: Dictionary, floor_no: int, level: int, fabao_level: int, seed_val: int, brand: float, drink: bool) -> XState:
 	var s := XState.new_game(XTianqi.legacy_of(DIFFICULTY), int(team[0]), team.slice(1))
 	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": DIFFICULTY, "lineup": team.duplicate()}
-	s.random_master = XRandomStream.hex64(seed_v + int(team[0]))
-	s.orb_seed = seed_v * 1000 + int(team[0])
-	seed(seed_v * 1000 + int(team[0]))
-	s.set_variable(20, FLOOR)
-	s.actor_max_level = LEVEL
+	s.random_master = XRandomStream.hex64(seed_val + int(team[0]) + floor_no)
+	s.orb_seed = seed_val * 1000 + int(team[0]) + floor_no
+	seed(seed_val * 1000 + int(team[0]) + floor_no)
+	s.set_variable(20, floor_no)
+	s.actor_max_level = level
 	XState.current = s
 	for id in team:
 		var a := s.actor(int(id))
-		a.change_level_mv(LEVEL)
+		a.change_level_mv(level)
 		for r in gear.get(int(id), gear.get(str(id), [])):
 			a.equips[int(r.slot)] = item_of(r, "c_%d_%d" % [int(id), int(r.slot)])
 		var fid := K._own_fabao(int(id))
@@ -197,22 +229,63 @@ func _state(team: Array, gear: Dictionary) -> XState:
 			var mw := K.main_weights(a)
 			fid = K.GENERAL_ATK if float(mw.get("atk", 0.0)) >= float(mw.get("mat", 0.0)) else K.GENERAL_MAT
 		var f := XGear.template("armor", fid)
-		f.level = float(mini(mini(XMagicWeapon.CAP_TOP, 9 + 3 * FLOOR), int(XMagicWeapon.max_level(f))))
+		f.level = float(mini(fabao_level, int(XMagicWeapon.max_level(f))))
 		var slot := a.equip_slots().find(int(f.etypeId))
 		if slot >= 0:
 			a.equips[slot] = f
-		if brand_pct > 0.0 and str(XTianqiBase.line_data().get("actors", {}).get(str(id), {}).get("role", "")) == "输出":
+		if brand > 0.0 and str(XTianqiBase.line_data().get("actors", {}).get(str(id), {}).get("role", "")) == "输出":
 			XZhenqi.data(a)
 			a.zhenqi["brand_carved"] = 1
 			a.zhenqi["brand_realm"] = XTianqiBrand.last_realm()
-			a.zhenqi["brand"] = roundi(brand_pct * XTianqiBrand.scale())
+			a.zhenqi["brand"] = roundi(brand * XTianqiBrand.scale())
 		a.param_mark_dirty()
 		a.refresh_passive()
 		a.recover_all()
-	if wine:
-		XTianqiMoney.money(s)["scale"] = {"floor": FLOOR, "goods": ["wine"], "buys": 1}
+	if drink:
+		XTianqiMoney.money(s)["scale"] = {"floor": floor_no, "goods": ["wine"], "buys": 1}
 	XState.current = s
 	return s
+
+
+## 每层的中位装备（T162 守层者三表，同丙档口径）：每掷一套就是一次从第 1 层打到第 f 层的累计（逐层掷、每层按当层等级的队伍挑能穿的），
+## 每层把 sets 套按得分取中位那一套。返回 {层: {actor_id: [{slot, kind, id}]}}。level_of：层→等级（baseline_dps.level_cap）
+static func floor_gears(team: Array, floors: Array, sets: int, battles_per_floor: int, seed_val: int, level_of: Callable) -> Dictionary:
+	var states := {}
+	for f in floors:
+		var lv := int(level_of.call(f))
+		states[f] = build_state(team, {}, f, lv, 0, seed_val, 0.0, false)
+	var top := int(floors.max())
+	var scores := {}
+	var assigned := {}
+	for f in floors:
+		scores[f] = []
+		assigned[f] = []
+	var rng := RandomNumberGenerator.new()
+	for i in sets:
+		rng.seed = seed_val + int(team[0]) * 7919 + i * 104729
+		var pile := []
+		for f in range(1, top + 1):
+			var st: XState = states[f] if states.has(f) else states[_floor_at_or_after(floors, f)]
+			pile.append_array(roll_floor(st, st.battle_members(), f, battles_per_floor, rng))
+			if states.has(f):
+				var asg := assign(st.battle_members(), pile)
+				scores[f].append(float(asg.score))
+				assigned[f].append(asg)
+	var out := {}
+	for f in floors:
+		var chosen: Dictionary = assigned[f][median_index(scores[f])]
+		var g := {}
+		for id in team:
+			g[int(id)] = chosen[int(id)]
+		out[f] = g
+	return out
+
+
+static func _floor_at_or_after(floors: Array, f: int) -> int:
+	for x in floors:
+		if int(x) >= f:
+			return int(x)
+	return int(floors[-1])
 
 
 ## 木桩敌群：第一个敌人往后 foes 个都不是守层者、不是首领
