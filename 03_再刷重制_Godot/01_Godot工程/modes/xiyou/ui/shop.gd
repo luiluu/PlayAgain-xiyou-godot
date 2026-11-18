@@ -396,14 +396,14 @@ func _paint_confirm(c: XMVCanvas) -> void:
 func _paint_info(c: XMVCanvas) -> void:
 	XItemStatusPainter.paint(c, _current_rec())
 	if _gear_sell_list():
-		var hint := "已选 %d 件，共 %s 金币｜确定：出售已选" % [_marks.size(), XMenu._group(marked_gold())] if not _marks.is_empty() else MARK_HINT
+		var hint := "已选 %d 件，共 %s 金币｜确定：出售已选" % [live_marks().size(), XMenu._group(marked_gold())] if not _marks.is_empty() else MARK_HINT
 		c.text(hint, 0, c.size.y - LH, c.size.x, "right", XUI.TEXT, GOLD_FONT, LH)
 
 
 # ---- 批量出售（MULTI_SELL） ----
 
 ## 玩家可见文字（待小A 审）
-const MARK_HINT := "按 C 或点图标：标记多选，一次卖掉"
+const MARK_HINT := "按 C 或点图标：标记多选，一次出售"
 const MARK_COLOR := Color(1.0, 0.85, 0.3, 0.22)
 
 
@@ -415,9 +415,16 @@ func is_marked(rec: Dictionary) -> bool:
 	return _marks.any(func(m): return is_same(m, rec))
 
 
-## 能标：能卖、没锁定
+## 能标：在背包里（身上的不算）、单件能卖（XItemMarks.can_sell），且过安全出售同一套保留判断 XSafeSell.reason——
+## 锁定、模板缺失、专属、已培养或镶嵌、已被借用、不可出售（cannotSell）都标不上。
+## 只有词条门槛（词条保留／词条待确认）不挡：那是一键出售替玩家自动筛的，手选一件件点出来的照单卖（同单件出售）。
+const MARK_KEEP_OK := ["", "词条保留", "词条待确认"]
+
 static func can_mark(rec: Dictionary) -> bool:
-	return XItemMarks.is_gear(rec) and XItemMarks.can_sell(rec) and not XItemMarks.is_locked(XState.current, rec)
+	var s := XState.current
+	if s == null or not XItemMarks.is_gear(rec) or not s.gear.any(func(e): return is_same(e, rec)):
+		return false
+	return XItemMarks.can_sell(rec) and MARK_KEEP_OK.has(XSafeSell.reason(s, rec))
 
 
 ## 标记／取消当前行，光标下移一行
@@ -441,19 +448,22 @@ func toggle_mark() -> void:
 
 ## 标记里还在背包、还能卖的（打开确认窗、真卖之前都重筛）
 func live_marks() -> Array:
-	var s := XState.current
-	return _marks.filter(func(m): return s.gear.any(func(e): return is_same(e, m)) and can_mark(m))
+	XAlienation.begin_batch(XState.current)  # O-441：整批查吞器供体表
+	var out := _marks.filter(func(m): return can_mark(m))
+	XAlienation.end_batch()
+	return out
 
 
+## 只算还能卖的（与确认窗、真卖一致）
 func marked_gold() -> int:
 	var g := 0
-	for m in _marks:
+	for m in live_marks():
 		g += XItemMarks.selling_price(m)
 	return g
 
 
 func multi_rows() -> Array:
-	return [["已选装备 %d 件，共得 %s 金币" % [_marks.size(), XMenu._group(marked_gold())], false], ["出售已选", not _marks.is_empty()],
+	return [["已选装备 %d 件，共得 %s 金币" % [live_marks().size(), XMenu._group(marked_gold())], false], ["出售已选", not _marks.is_empty()],
 		["清空选择", true], ["取消", true]]
 
 
@@ -466,7 +476,7 @@ func sell_marked() -> Array:
 	for e in list:
 		gold += XItemMarks.selling_price(e)
 		XItemMarks.sell(s, e, 1)
-		XShopStock.record_sale(s, stock_group, 1 if str(e.get("kind", "")) == "weapon" else 2, int(e.get("id", 0)), 1)
+		XShopStock.record_sale(s, stock_group, 1 if str(e.get("kind", "")) == "weapon" else 2, int(e.get("base", e.get("id", 0))), 1)
 	XAlienation.end_batch()
 	_marks.clear()
 	return [list.size(), gold]
@@ -1177,12 +1187,12 @@ func _gui_input(event: InputEvent) -> void:
 				_click_ok()
 			else:
 				_buy_index = i + _buy_top
-		elif _mode == "sell" and i + _sell_top < _sell_data().size() and i >= 0 and _gear_sell_list() \
+		elif _mode == "sell" and i >= 0 and i < _list_rows() and i + _sell_top < _sell_data().size() and _gear_sell_list() \
 				and (p - LIST_RECT.position - pad).x < MARK_ICON_W:
 			_sell_index = i + _sell_top
 			_clicked_ok = true
 			toggle_mark()
-		elif _mode == "sell" and i + _sell_top < _sell_data().size() and i >= 0:
+		elif _mode == "sell" and i >= 0 and i < _list_rows() and i + _sell_top < _sell_data().size():
 			if i + _sell_top == _sell_index:
 				_click_ok()
 			else:
