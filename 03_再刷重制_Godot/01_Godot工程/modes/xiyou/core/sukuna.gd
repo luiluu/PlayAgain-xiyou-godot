@@ -175,7 +175,7 @@ static func tq_terminal_coef(terminal: int) -> float:
 	return float(TQ_TERMINAL.get(terminal, 9.0))
 
 
-## T204（D208 A，Kyo 11-18）：终式按段打，每段倍率读 10245 卡上的 terminal_hits（D208 层：空间斩 7、8，次元斩 5、6、8；
+## T204（D208 A，Kyo 11-18）：终式按段打，每段倍率读 10245 卡上的 terminal_hits（D208 层：空间斩 4、5，次元斩 5、6，合计同原 9／11；
 ## ×诅咒之王 1.3 后每段不超单段上限 11，最后一段最大）。卡上没有（TUNE_D208 关）就一段、倍率 tq_terminal_coef。
 ## term_seg：apply 正在打第几段（tq_ops 读它取这一段的倍率；K 探针单打时置成最大那段）
 static var term_seg := 0

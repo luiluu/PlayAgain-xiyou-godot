@@ -43,6 +43,8 @@ var no_fabao := false
 var bare := false  # --bare：不补甲档五样（回到 v3 口径，对照用）
 var trumpet_n := 2  # 号卷：七卷里打单体加伤害的只有二号血海（目标生命低于 33% +50%）；条件全中＝木桩生命压到 30%
 var report := {}
+## T204＋T209：停用中但要进量表的超强者（152 徐凤年）
+const PROBE_ENABLE := [152]
 
 
 func _ready() -> void:
@@ -104,15 +106,22 @@ func _run() -> void:
 		"build": "bare" if bare else "full", "metric": "single" if single else "cast_total",
 		"missing": (["词条掷满挑最大", "黑印满配攒五层", "真印无视防御", "秘籍格", "号卷"] if bare else []) + ["烙印（XTianqiBrand 关着＝烙印 0；锚临时取 200 万＝300 万÷1.50，稿第九节第 3 条）"]}
 	var tiers := [XTier.SUPER, XTier.STRONG, XTier.WEAK] if tier_arg == "all" else [{"super": XTier.SUPER, "strong": XTier.STRONG, "weak": XTier.WEAK}[tier_arg]]
+	# T204＋T209（协调 11-18）：超强者 18 人都要进量表——152 徐凤年（停用中）走 probe_enabled、180 五条悟（天启篇专属、要解锁最强之名）临时当已解锁；量完还原
+	var probe_was: Array = XImportedBalance.probe_enabled.duplicate()
+	var gojo_was := XGojo.unlock_override
+	XImportedBalance.probe_enabled = probe_was + PROBE_ENABLE
+	XGojo.unlock_override = 1
 	for tier in tiers:
 		var peaks := []
 		for id in XTianqiSkills.ids(tier, true):
 			if not only.is_empty() and not only.has(int(id)):
 				continue
-			if XImportedBalance.is_disabled_actor(int(id)):
+			if XImportedBalance.is_disabled_actor(int(id)) and int(id) != XGojo.ACTOR:  # 五条悟的 hidden 看「当前存档」，_state 之前可能还不是天启篇档
+				print("K_SKIP %d disabled" % int(id))
 				continue
 			var row := _measure(int(id), tier)
 			if row.is_empty():
+				print("K_SKIP %d no_damage_row" % int(id))  # 量不出伤害（如 175 谷雨全是治疗）
 				continue
 			row["tier"] = tier
 			report.rows.append(row)
@@ -122,6 +131,8 @@ func _run() -> void:
 		if not peaks.is_empty():
 			report.tiers[tier] = {"n": peaks.size(), "max": peaks[-1], "median": peaks[peaks.size() / 2],
 				"max_brand": peaks[-1] * (1.0 + float(report.brand_max_bonus))}
+	XImportedBalance.probe_enabled = probe_was
+	XGojo.unlock_override = gojo_was
 	XTianqiBase.PHASE4 = false
 	XTianqiSkills.MASTERY = false
 	report["mastery_max_level_seen"] = mastery_seen
@@ -359,6 +370,8 @@ func _measure(id: int, tier: String) -> Dictionary:
 			best["affixes"] = affixes
 		if build != null:
 			best["build"] = build
+	if XGarou.own(a) and not best.is_empty():
+		best["form"] = XGarou.FORM_NAMES[XGarou.stage(a)]  # T209：饿狼按星空形态量（进阶满＝形态 6）
 	return best
 
 
