@@ -10,7 +10,13 @@ const STATES := {264: "启示·放逐", 686: "启示·祝福", 691: "启示·眷
 	695: "启示·屠戮", 696: "启示·灭绝", 698: "启示·终焉", 1101: "启示·封魔", 1102: "启示·封技", 1103: "启示·不灭",
 	1104: "启示·永恒", 2420: "启示·道争（神魔战纹）", 995: "破阵——启示诅咒", 996: "破阵——胜天半子", 997: "破阵——胜天半子*伪"}
 const SKILLS := {3778: "启示·终焉", 3789: "启示·祝福", 3794: "启示·眷顾", 3795: "启示·灭绝", 3813: "启示·无情", 3814: "启示·泯灭",
-	3815: "启示·压制", 3816: "启示·屠戮", 6107: "启示·放逐", 6102: "启示·封魔", 6103: "启示·封技"}
+	3815: "启示·压制", 3816: "启示·屠戮", 6107: "启示·放逐", 6102: "启示·封魔", 6103: "启示·封技",
+	# T198（D202 补漏）：同族技能名
+	6070: "启示领域", 6071: "启示领域*伪", 6101: "启示·屠灭", 6104: "启示·成长", 6105: "启示·回归", 6106: "启示·茁壮",
+	2570: "启示·裁决", 2572: "启示·裁决"}
+## T198：这些技能名的后半截（去掉旧前缀后）必须与原名后半截一致
+const T198_OLD := {6070: ["天道", "启示"], 6071: ["天道", "启示"], 6101: ["天道*", "启示·"], 6104: ["天道*", "启示·"],
+	6105: ["天道*", "启示·"], 6106: ["天道*", "启示·"], 2570: ["天道*", "启示·"], 2572: ["天道*", "启示·"]}
 ## 备注（字段 note）里天启篇该换的字面：旧 → 新
 const NOTE_SWAPS := [["<RightDownNote:\"天道诅咒\">", "<RightDownNote:\"启示诅咒\">"], ["所有天道状态有效度", "所有启示状态有效度"],
 	["<RightDownNote:\"挣脱天道的枷锁\">", "<RightDownNote:\"挣脱启示的枷锁\">"], ["能释放天道状态", "能释放启示状态"],
@@ -125,24 +131,32 @@ func _run() -> void:
 			bad.append([id, _t("Skills", id).note])
 	_check("tq_skill_notes", bad.is_empty(), bad)
 	_check("tq_6176_desc", str(_t("Skills", 6176).description).contains("启示……又如何？") and not str(_t("Skills", 6176).description).contains("天道"), _t("Skills", 6176).description)
+	_check("tq_6162_desc", str(_t("Skills", 6162).description) == "被动\n劫取启示之运，加持己身", _t("Skills", 6162).description)
+	# T198：后半截不动
+	bad = []
+	for id in T198_OLD:
+		var pf: Array = T198_OLD[id]
+		if str(raw_skills[id].name).trim_prefix(pf[0]) != str(_t("Skills", id).name).trim_prefix(pf[1]):
+			bad.append(id)
+	_check("tq_t198_suffix_kept", bad.is_empty(), bad)
 	_check("tq_6162_paren", str(_t("Skills", 6162).note).contains("启示眷属(能释放启示状态)"))
 	# 天启篇重构卡面（skill_rework.json desc）
 	var c68 := str(XDB.rec("Skills", 5568).note)
 	var c80 := str(XDB.rec("Skills", 5580).note)
 	_check("tq_rework_cards", c68.contains("启示·封魔、启示·封技") and c80.contains("免疫启示·封魔、启示·封技") and not c68.contains("天道") and not c80.contains("天道"), [c68, c80])
-	# 看得到的字里不再有「天道」（本单范围内的记录；6162 描述「劫取天道之运」不在本单，交付单列为遗留）
+	# 看得到的字里不再有「天道」（T193＋T198 范围内的记录）
 	bad = []
 	for tk in _keys():
 		for k in ["name", "description", "note"]:
-			if str(_t(tk[0], tk[1]).get(k, "")).contains("天道") and not (tk == ["Skills", 6162] and k == "description"):
+			if str(_t(tk[0], tk[1]).get(k, "")).contains("天道"):
 				bad.append([tk, k])
 	_check("tq_no_tiandao_left", bad.is_empty(), bad)
-	# 范围外不动：被动 6168「天道诅咒」、6213「天道注视」、2570「天道*裁决」
-	_check("tq_out_of_scope_kept", str(_t("Skills", 6168).name) == "天道诅咒" and str(_t("Skills", 6213).name) == "天道注视" and str(_t("Skills", 2570).name) == "天道*裁决")
+	# 范围外不动：被动 6168「天道诅咒」（名字与描述）、6213「天道注视」
+	_check("tq_out_of_scope_kept", str(_t("Skills", 6168).name) == "天道诅咒" and str(_t("Skills", 6213).name) == "天道注视" and str(_t("Skills", 6168).description) == str(raw_skills[6168].description))
 	# 四、DICT 开关关掉回原貌
 	XTextFix.DICT = false
 	XTextFix.clear_cache()
-	_check("tq_dict_off", str(_t("States", 264).name) == "天道*放逐" and str(_t("States", 995).note) == str(raw_states[995].note))
+	_check("tq_dict_off", str(_t("States", 264).name) == "天道*放逐" and str(_t("States", 995).note) == str(raw_states[995].note) and str(_t("Skills", 6070).name) == "天道领域" and str(_t("Skills", 6162).description) == str(raw_skills[6162].description))
 	XTextFix.DICT = true
 	XTextFix.clear_cache()
 	# 换回西游档：缓存按模式位隔离，仍是原貌
