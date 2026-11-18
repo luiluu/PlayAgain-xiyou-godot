@@ -375,6 +375,12 @@ func motion_tick() -> void:
 				_weapon_frame()
 	if not sv:
 		return
+	if not_acting and not _is_current():
+		not_acting = false
+	var act := _input_walk()
+	if act != _was_active:  # T206：轮到／轮完输入、行动时按 refreshMotion 重判一次
+		_was_active = act
+		refresh_idle()
 	if look.kind == "scene":
 		return
 	if _guyu_planted():
@@ -505,7 +511,49 @@ func swap_look(key: String) -> void:
 	XMiraLiftFx.on_swap(self, old_key, key, old_scale)  # 米拉人形→黑龙：升空变身演出（XMira.LIFT_ART；技能动画关着时直接是黑龙）
 
 
+## T206：YEP_BattleEngineCore Sprite_Actor.refreshMotion 第一条——输入中（OTB changeActor 给轮到的人设 inputting）或行动中（acting）
+## 的角色播 idleMotion（walk），排在睡眠／咏唱／防御／异常／濒死之前；防御指令不设 acting（performActionStart 判 !action.isGuard()），
+## actionPerformFinish（PERFORM FINISH）先 performActionEnd 清掉 acting，这两种照旧往下判（not_acting）。
+## 阵亡优先：原版 Game_Battler.requestMotionRefresh（YEP_BattleEngineCore:4144）在 isDead() 且已是 dead 动作时不再刷新，
+## 行动中被反击／反射／自伤打死也锁在 dead，所以阵亡（有演出读数时看 view.dead）不算输入／行动中。
+## 原先漏了这条：生命低于 1/4 的角色轮到输入时仍趴在濒死帧（米拉黑龙解放后生命上限 ×2，满血也只剩一半，掉一点就趴下，
+## Kyo 11-18 看成「待机像吃异常」）。false＝回到原先（输入、行动中也按濒死／防御判）。
+static var INPUT_WALK := true
+## 轮到这人但按原版不算 acting：这次行动是防御指令（XBattleScene 设 _active 前按技能设），或序列已过 PERFORM FINISH（XSequencePlayer._perform_finish）；
+## 不再是 _active 时清掉
+var not_acting := false
+var _scene_ref: Node = null
+var _was_active := false
+
+
+func _battle_scene() -> Node:
+	if _scene_ref != null and is_instance_valid(_scene_ref):
+		return _scene_ref
+	var n := get_parent()
+	while n != null and not n is XBattleScene:
+		n = n.get_parent()
+	_scene_ref = n
+	return n
+
+
+## XBattleScene._active 是不是这人（等指令和角色行动演出期间）
+func _is_current() -> bool:
+	var sc := _battle_scene()
+	return sc != null and sc._active == battler
+
+
+## 此刻按 MV 算「输入中或行动中」且没阵亡
+func _input_walk() -> bool:
+	if not INPUT_WALK or not battler is XActor or not _is_current():
+		return false
+	if bool(view.get("dead", false)) if not view.is_empty() else battler.is_dead():
+		return false
+	return _battle_scene().inputting or not not_acting
+
+
 func _idle_motion() -> String:
+	if _input_walk():
+		return "walk"
 	if not view.is_empty():
 		if view.dead:
 			return "dead"
