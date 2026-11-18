@@ -55,7 +55,7 @@ func _state(tianqi := true) -> XState:
 func _run() -> void:
 	kit = Kit.new("xiyou_tianqi_ledger_p3")
 	seed(20261116)
-	XTianqiLedger.reload()
+	XTianqiLedger.reload_table()
 	_pills()
 	_nine_cap()
 	_budget()

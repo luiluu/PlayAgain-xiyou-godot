@@ -45,7 +45,7 @@ func _run() -> void:
 	seed(20261117)
 	XTianqiSkills.reload()
 	XTianqiBase.clear_cache()
-	XTianqiLedger.reload()
+	XTianqiLedger.reload_table()
 	XGojo.unlock_override = 0
 	_check("default_off", not XTianqiBase.PHASE4 and not XTianqiSkills.CARDS and XTianqiLedger.TRACE == null)
 	_cap_matrix()

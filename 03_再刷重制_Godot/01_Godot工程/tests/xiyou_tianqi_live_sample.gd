@@ -45,14 +45,14 @@ func _state() -> XState:
 func _run() -> void:
 	kit = Kit.new("xiyou_tianqi_live_sample")
 	seed(20261118)
-	XTianqiLedger.reload()
+	XTianqiLedger.reload_table()
 	_table()
 	_runtime()
 	XTianqiLedger.POOL_LIVE = false
 	XTianqiBase.PHASE4 = false
 	XTianqiLedger.CAP_NINE = true
 	XTianqiLedger.QUIET = false
-	XTianqiLedger.reload()
+	XTianqiLedger.reload_table()
 	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -121,12 +121,11 @@ func _table() -> void:
 	XTianqiBase.PHASE4 = true
 	_check("phase4_turns_on", XTianqiLedger.switch_on("POOL_LIVE"))
 	XTianqiBase.PHASE4 = false
-	# T185 P3-2：reload 清归池表缓存。注意：在类外写 XTianqiLedger.reload() 调到的是 Script.reload()（整个脚本重载、开关回默认），
-	# 不是这里的静态函数；要从实例上调才走到它
+	# T185 P3-2／T201：reload_table 清归池表缓存且不动开关（原名 reload() 在类外会调到 Script.reload()，开关回默认）
 	XTianqiLedger.live_table()
 	var probe_on := XTianqiLedger.POOL_QIYIN
 	XTianqiLedger.POOL_QIYIN = not probe_on
-	XTianqiLedger.new().reload()
+	XTianqiLedger.reload_table()
 	_check("reload_clears_cache", XTianqiLedger._live_table.is_empty() and XTianqiLedger.POOL_QIYIN != probe_on)
 	XTianqiLedger.POOL_QIYIN = probe_on
 
