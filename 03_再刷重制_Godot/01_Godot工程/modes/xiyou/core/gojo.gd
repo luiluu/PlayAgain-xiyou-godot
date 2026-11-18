@@ -389,7 +389,7 @@ static func domain_shown(logic) -> bool:
 
 # ---- 公式 ----
 
-## 茈：表里 gojo_pairs 按对数取满级系数（收 1.8／3.6／6.0，放 3.6／7.2／10.8），乘魔攻和等级缩放
+## 茈：表里 gojo_pairs 按对数取满级系数（收 1.8／3.6／6.0，放 3.6／7.2／10.8；T191 tune.D200 取整成 2／4／6、4／7／11），乘魔攻和等级缩放
 static func formula(a, b, item: Dictionary) -> float:
 	var id := int(item.get("id", 0))
 	if XTianqiGojoTrial.owns_skill(id):

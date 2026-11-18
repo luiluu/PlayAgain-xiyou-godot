@@ -120,30 +120,14 @@ class QiyinFixture(unittest.TestCase):
             self.passes(n)
         self.passes('refs')
 
-    # ---- 数字避开 4，各表 nice_number_exempt 豁免 ----
-    def test_four_gear(self):
+    # ---- D205（Kyo 11-18）：数值不用避开 4，带 4 的数照常通过 ----
+    def test_four_allowed_d205(self):
         self.t['gear']['set_rule']['level'] = 84
-        self.fails('gear', '设计数值不带 4')
-
-    def test_four_drop(self):
         self.t['drop']['boss_set']['pity_misses'] = 24
-        self.fails('drop', '/boss_set/pity_misses=24')
-
-    def test_four_dragon(self):
         self.t['dragon']['fight']['max_hp_jianxian'] = 2400000
-        self.fails('dragon', '设计数值不带 4')
-
-    def test_four_altar(self):
         self.t['altar']['keys']['first_open'] = 4
-        self.fails('altar', '/keys/first_open=4')
-
-    def test_four_exempt_by_own_table(self):
-        self.t['altar']['keys']['first_open'] = 4
-        self.t['altar']['nice_number_exempt'].append('first_open')
-        self.passes('altar')
-        # 别的表的豁免不算：drop 没豁免 order
-        self.t['drop']['restless']['order'] = 4
-        self.fails('drop', '/restless/order=4')
+        for n in ('gear', 'drop', 'dragon', 'altar'):
+            self.passes(n)
 
     # ---- 印键只有七个 ----
     def test_seal_key_gear(self):
@@ -304,7 +288,6 @@ def _seq(*fns):
 # (表, 改坏法, 输出里应有的字)。每条规则一个反例；表名不带 .json；'ref:xxx' 表示改的是参照表 xxx。
 BATCH3_CASES = [
     # reforge.json
-    ('reforge', _set(['costs', 1], 3400), '设计数值不带 4：/costs/1=3400'),
     ('reforge', _set(['costs'], []), 'costs 是非空列表'),
     ('reforge', _set(['costs', 0], -1), 'costs 都是非负整数'),
     ('reforge', _set(['costs', 0], 1.5), 'costs 都是非负整数'),
@@ -312,7 +295,6 @@ BATCH3_CASES = [
     ('reforge', _set(['costs'], [1000, 3000, 6000, 10000, 20000]), 'costs 档数不超过 affix_table 的阶数'),
     ('reforge', _set(['allow_rare'], 'no'), 'allow_rare 是布尔'),
     # alien_gear.json
-    ('alien_gear', _set(['levels', 'shigu', 'energy'], 4), '设计数值不带 4：/levels/shigu/energy=4'),
     ('alien_gear', _set(['levels', 'shigu', 'rate'], 8), '异化几率在 0～1：shigu'),
     ('alien_gear', _set(['levels', 'qinran', 'energy'], 0), '分解能量是正整数：qinran'),
     ('alien_gear', _set(['levels', 'qinran', 'refund'], -1), '净化退还是非负整数：qinran'),
@@ -335,7 +317,6 @@ BATCH3_CASES = [
     ('alien_gear', lambda t: t['new_affixes'].__setitem__('bogus', {}), 'new_affixes 在 rewards.json 的 finale.lines 里'),
     ('ref:rewards', lambda t: t['finale']['lines']['war'].remove('again'), 'new_affixes 在 rewards.json 的 finale.lines 里'),
     # abyss_shelves.json
-    ('abyss_shelves', _set(['treasure', 'cost'], 14), '设计数值不带 4：/treasure/cost=14'),
     ('abyss_shelves', _set(['treasure', 'cost'], -10), 'treasure.cost 是非负整数'),
     ('abyss_shelves', _set(['collection', 'rare_cost'], 30), 'collection 稀有价不低于原价'),
     ('abyss_shelves', _set(['treasure', 'layer'], 'epic'), 'treasure.layer 在 affix_table 的 layers 里'),
@@ -344,7 +325,6 @@ BATCH3_CASES = [
     ('abyss_shelves', _set(['collection', 'min_quality'], 'shenqi'), 'collection.min_quality 在 QUALITY_KEYS 里'),
     ('abyss_shelves', _set(['treasure'], 'x'), '货架是字典：treasure'),
     # qiyin_equip.json
-    ('qiyin_equip', _set(['armor', 'parts', 'head', 'params', 3], 94), '设计数值不带 4：/armor/parts/head/params/3=94'),
     ('qiyin_equip', _set(['quality_legacy'], -1), 'quality_legacy 是非负整数'),
     ('qiyin_equip', _set(['armor', 'atype'], 0), 'armor.atype 是正整数'),
     ('qiyin_equip', _set(['armor', 'any_class'], 1), 'armor.any_class 是布尔'),
@@ -359,7 +339,6 @@ BATCH3_CASES = [
     ('qiyin_equip', _set(['weapons', 'book'], DEL), 'qiyin_gear 的武器类型都有底子'),
     ('qiyin_equip', lambda t: t['weapons'].__setitem__('whip', t['weapons']['bow']), 'weapons 的类型在 qiyin_gear 的 weapon_types 里'),
     # qiyin_show.json
-    ('qiyin_show', _set(['set', 'hold'], 0.4), '设计数值不带 4：/set/hold=0.4'),
     ('qiyin_show', _set(['seals', 'mo'], DEL), 'seals 七印齐全'),
     ('qiyin_show', lambda t: t['seals'].__setitem__('qing', t['seals']['bai']), '印键只有 bai、hong、hei、hui、xun、zhen、mo：seals 里有 qing'),
     ('qiyin_show', _set(['seals', 'hong', 'color'], 'red'), 'hong.color 是 #RRGGBB'),
@@ -372,7 +351,6 @@ BATCH3_CASES = [
     ('qiyin_show', _set(['art', 'rift'], 'content/rift.png'), 'art.rift 是 res:// 路径'),
     ('ref:qiyin_gear', lambda t: t['seals'].append({'key': 'qing'}), 'qiyin_gear 的印都有演出'),
     # qiyin_dragon_run.json
-    ('qiyin_dragon_run', _set(['fight', 'rate', 2], 0.4), '设计数值不带 4：/fight/rate/2=0.4'),
     ('qiyin_dragon_run', _set(['fight', 'troop'], 0), 'fight.troop 是正整数'),
     ('qiyin_dragon_run', _set(['fight', 'shell_enemy'], '238'), 'fight.shell_enemy 是正整数'),
     ('qiyin_dragon_run', _set(['fight', 'extra_actions'], -1), 'fight.extra_actions 是非负整数'),
@@ -384,12 +362,15 @@ BATCH3_CASES = [
     ('qiyin_dragon_run', _set(['logs', 'cut'], ''), 'logs.cut 是非空字符串'),
 ]
 
-# 表自己的 nice_number_exempt 认：加进豁免就不报
+# D205（Kyo 11-18）：带 4 的数不再报（原来要靠 nice_number_exempt 豁免）
 BATCH3_EXEMPT = [
     ('qiyin_equip', _set(['quality_legacy'], 14), None),
     ('qiyin_show', _set(['true_seal', 'power'], 4), None),
     ('qiyin_dragon_run', _set(['fight', 'troop'], 241), None),
-    ('qiyin_dragon_run', _seq(lambda t: t['nice_number_exempt'].append('rate'), _set(['fight', 'rate', 0], 0.4)), None),
+    ('qiyin_dragon_run', _set(['fight', 'rate', 0], 0.4), None),
+    ('reforge', _set(['costs', 1], 3400), None),
+    ('alien_gear', _set(['levels', 'shigu', 'energy'], 4), None),
+    ('abyss_shelves', _set(['treasure', 'cost'], 14), None),
 ]
 
 
@@ -479,14 +460,13 @@ class Batch3Fixture(unittest.TestCase):
                 ok, out = self.run_all()
                 self.assertTrue(ok, out)
 
-    def test_exempt_not_borrowed(self):
-        # 豁免只认本表的：reforge 没豁免 base_id
+    def test_no_four_check_d205(self):
         t = self.copy_all()
         t['reforge.json']['base_id'] = 4533
         self.write(t)
         ok, out = self.run_all()
-        self.assertFalse(ok, out)
-        self.assertIn('/base_id=4533', out)
+        self.assertTrue(ok, out)
+        self.assertNotIn('带 4', out)
 
 
 class SkillReworkGrowth(unittest.TestCase):
@@ -574,18 +554,64 @@ class SkillTune(unittest.TestCase):
         self.assertEqual(rules(self.table(4.2)), ['tune 覆盖后：skills/1/damage/coef=4.2'])
 
 
-class TuneInteger(unittest.TestCase):
-    """T175：覆盖层系数一律整数（附则 E）；权重可写整数百分比；10727=4 按路径豁免（D194）；本体成长覆盖层合并后照查范围（T163 甲核 P3-2）。"""
+class CoefInteger(unittest.TestCase):
+    """T175／T191：覆盖层全开（D189＋D200）后游戏读到的系数一律整数或小于 1 的整数百分比（附则 E、D200 A）；权重同；
+    无条件 always 要并进系数；卡面伤害行不带小数（代码常数的几招豁免）；本体成长覆盖层合并后照查范围（T163 甲核 P3-2）。"""
+    def _t(self, dm, desc=('伤害：x',), tune=None):
+        t = {'skills': {'1': {'damage': dm, 'desc': list(desc)}}}
+        if tune:
+            t['tune'] = tune
+        return t
+
     def test_decimal_coef_caught(self):
-        t = {'tune': {'D189': {'skills': {'1': {'damage': {'coef': 2.6}}, '2': {'damage': {'coef': 3, 'stats': {'atk': 2, 'mhp': 0.01}}}}}}}
-        self.assertEqual(chk.tune_integer_rules(t), ['tune.D189 系数要整数：skills/1/damage/coef=2.6'])
+        self.assertEqual(chk.coef_integer_rules(self._t({'coef': 2.6, 'stats': {'atk': 1}})),
+                         ['系数不得有小数：skills/1/damage/coef=2.6'])
+
+    def test_integer_and_percent_pass(self):
+        for dm in ({'coef': 3, 'stats': {'atk': 1}}, {'coef': 0.45, 'stats': {'atk': 1}},
+                   {'coef': 18, 'stats': {'mhp': 0.01}}, {'coef': 1, 'stats': {'atk': 2, 'agi': 0.6, 'mhp': 0.03}}):
+            self.assertEqual(chk.coef_integer_rules(self._t(dm)), [], dm)
 
     def test_decimal_weight_caught(self):
-        t = {'tune': {'D189': {'skills': {'1': {'damage': {'stats': {'mhp': 0.002}}}}}}}
-        self.assertEqual(len(chk.tune_integer_rules(t)), 1)
+        self.assertEqual(len(chk.coef_integer_rules(self._t({'coef': 1, 'stats': {'mhp': 0.002}}))), 1)
+        self.assertEqual(len(chk.coef_integer_rules(self._t({'coef': 1, 'stats': {'atk': 1.5}}))), 1)
 
-    def test_exempt_only_10727(self):
-        self.assertEqual(chk.TUNE_NICE_EXEMPT, {'skills/10727/damage/coef=4'})
+    def test_plain_always_caught_need_skill_kept(self):
+        bad = chk.coef_integer_rules(self._t({'coef': 2, 'stats': {'atk': 1}, 'conds': [{'if': 'always', 'mult': 0.9}]}))
+        self.assertEqual(len(bad), 1)
+        self.assertIn('无条件倍率', bad[0])
+        self.assertEqual(chk.coef_integer_rules(self._t({'coef': 2, 'stats': {'atk': 1}, 'conds': [{'if': 'always', 'need_skill': 5, 'mult': 0.3333}]})), [])
+
+    def test_desc_decimal_caught_and_exempt(self):
+        self.assertEqual(len(chk.coef_integer_rules(self._t({'coef': 2, 'stats': {'atk': 1}}, ['伤害：物理攻击×2.0']))), 1)
+        self.assertEqual(chk.coef_integer_rules(self._t({'coef': 2, 'stats': {'atk': 1}}, ['效果：三段共5.0', '伤害：物理攻击×2'])), [])
+        t = {'skills': {'10437': {'damage': {'coef': 1, 'stats': {'atk': 2}}, 'desc': ['伤害：剑心多一段（+0.5）']}}}
+        self.assertEqual(chk.coef_integer_rules(t), [])
+
+    def test_product_checked(self):
+        # T191 R1（小A P2-3）：各自合规、乘起来出小数百分比或低于 1% 的也要拦
+        self.assertEqual(len(chk.coef_integer_rules(self._t({'coef': 0.5, 'stats': {'atk': 0.15}}))), 1)
+        self.assertEqual(len(chk.coef_integer_rules(self._t({'coef': 0.5, 'stats': {'mhp': 0.01}}))), 1)
+        self.assertEqual(chk.coef_integer_rules(self._t({'coef': 12, 'stats': {'mat': 0.5, 'mmp': 0.02}})), [])
+
+    def test_gojo_pairs_checked(self):
+        # T191 R1（小A P1-1）：五条悟茈的对数系数表也要整数
+        t = {'skills': {'1': {'gojo_pairs': [1.8, 3.6, 6.0], 'desc': ['伤害：魔法攻击×2']}}}
+        self.assertEqual(len(chk.coef_integer_rules(t)), 2)
+        t['skills']['1']['gojo_pairs'] = [2, 4, 6]
+        self.assertEqual(chk.coef_integer_rules(t), [])
+
+    def test_tune_layers_in_order(self):
+        tune = {'D189': {'skills': {'1': {'damage': {'coef': 2.6}}}}, 'D200': {'skills': {'1': {'damage': {'coef': 3}}}}}
+        self.assertEqual(chk.coef_integer_rules(self._t({'coef': 1.8, 'stats': {'atk': 1}}, tune=tune)), [])
+        self.assertEqual(chk.apply_skill_tune(self._t({'coef': 1.8, 'stats': {'atk': 1}}, tune=tune))['skills']['1']['damage']['coef'], 3)
+
+    def test_real_table(self):
+        t = json.loads((REAL_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+        self.assertEqual(chk.coef_integer_rules(t), [])
+        merged = chk.apply_skill_tune(t)
+        self.assertEqual(merged['skills']['10727']['damage']['coef'], 5)  # D199
+        self.assertGreater(len(chk.coef_integer_rules({k: v for k, v in t.items() if k != 'tune'})), 500)  # 关掉覆盖层就是原卡的小数
 
     def test_base_tune_merged_and_ranged(self):
         base = {'actors': {'7': {'tweak': {}}}, 'tune': {'D189': {'actors': {'7': {'_note': 'n', 'tweak': {'atk': 1.3}}, '9': {'tweak': {'atk': 1}}}}}}

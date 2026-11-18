@@ -167,19 +167,19 @@ func _purple() -> void:
 	var b: XBattler = lg.enemies[0]
 	XGojo.begin(lg, a, p_out)
 	var v := XGojo.formula(a, b, p_out)
-	_check("purple_out_3", is_equal_approx(v, a.mat * 10.8), [v, a.mat])
+	_check("purple_out_3", is_equal_approx(v, a.mat * 11.0), [v, a.mat])  # T191（D200）gojo_pairs 10.8 取整成 11
 	var via: Dictionary = XFormulaExecution.run_item(p_out, a, b, {})
-	_check("purple_pipeline", via.available and is_equal_approx(float(via.value), a.mat * 10.8), via)
+	_check("purple_pipeline", via.available and is_equal_approx(float(via.value), a.mat * 11.0), via)
 	XGojo.finish(lg, a, p_out)
 	_check("purple_clears_blindfold", XGojo.marks(a) == [1, 1] and not a.state_ids.has(XGojo.ST_BLUE + 2), XGojo.marks(a))
 	XGojo.temp(a).blue = 1
 	XGojo.temp(a).red = 3
 	XGojo.temp(a).last = "blue"
 	XGojo.begin(lg, a, p_in)
-	_check("purple_in_1", is_equal_approx(XGojo.formula(a, b, p_in), a.mat * 1.8))
+	_check("purple_in_1", is_equal_approx(XGojo.formula(a, b, p_in), a.mat * 2.0))  # T191 1.8 取整成 2
 	XGojo.cast = {}
 	var red := XDB.rec("Skills", XGojo.RED)
-	_check("red_table_coef", is_equal_approx(XTianqiSkills.formula(a, b, red), a.mat * 3.6))
+	_check("red_table_coef", is_equal_approx(XTianqiSkills.formula(a, b, red), a.mat * 4.0))  # T191（D200）卡上 3.6 取整成 4
 	_check("adv2_ops", XGojo.damage_ops(p_out, a).size() == 2 and XGojo.damage_ops(p_in, a).is_empty())
 	lg.end_battle(0)
 

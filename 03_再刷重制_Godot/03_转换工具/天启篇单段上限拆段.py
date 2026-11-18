@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""T081：把 skill_rework.json 里 rules.single_hit_cap_pending 的待拆技能按单段上限拆段（合计不变、系数避开 4）。
+"""T081：把 skill_rework.json 里 rules.single_hit_cap_pending 的待拆技能按单段上限拆段（合计不变；当时系数避开 4，D205 起不再要求）。
 
 做法：技能行 seq 末尾加 {"op": "split_effects", "n": N}（XTianqiSkills._seq_edit 把每一段原地拆成 N 段），
 damage.coef 除以 N，说明改成「N段伤害／每段」；每次命中都给的 tpGain 用 fields 同比例分掉。
