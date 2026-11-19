@@ -150,6 +150,7 @@ func _run() -> void:
 	bot.verbose = OS.get_cmdline_user_args().has("--vp-verbose")
 	bot.equip_enabled = not OS.get_cmdline_user_args().has("--vp-no-equip")
 	bot.upgrade_enabled = not OS.get_cmdline_user_args().has("--vp-no-upgrade")
+	bot.ff_retry_gate = not OS.get_cmdline_user_args().has("--vp-ff-live-retry")
 	bot.farm_enabled = not OS.get_cmdline_user_args().has("--vp-no-farm")
 	bot.farm_first = int(_arg("--vp-farm-first", "0"))
 	bot.fixed_random = not OS.get_cmdline_user_args().has("--vp-loose-random")

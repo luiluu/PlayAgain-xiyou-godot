@@ -25,6 +25,7 @@ var settled := 0                   # 快进结算了几场（练级＋副本首�
 var grind_battles := 0
 var dungeon_runs := 0
 var dungeon_kings := 0             # 其中选到「王者难度」的几次
+var mobs := 0                      # 为了让首领页出来先清掉的挡路小怪事件（照快进结算）
 var log_lines: Array = []
 var msec := 0                      # 快进一共花了多少毫秒（墙钟）
 
@@ -345,6 +346,12 @@ func dungeon_once(st: XState, floor_map: int, buy_rune: Callable) -> Dictionary:
 		await _run_page(host, int(ent[0]), ent[1])
 	host.want = "挑战副本"
 	await _run_page(host, int(ent[0]), ent[1])
+	if not XDungeon.inside(st) and str(host.trace).contains("请重置副本"):
+		# 游戏说要先重置（上一次没走到领奖页之类）：照它说的先「重置副本」再「挑战副本」
+		host.want = "重置副本"
+		await _run_page(host, int(ent[0]), ent[1])
+		host.want = "挑战副本"
+		await _run_page(host, int(ent[0]), ent[1])
 	if not XDungeon.inside(st):
 		out.why = "入口没进去（%s）" % str(host.trace.slice(-3))
 	else:
@@ -352,6 +359,23 @@ func dungeon_once(st: XState, floor_map: int, buy_rune: Callable) -> Dictionary:
 		# 首领那一页（开战→结算）；打完首领事件换到领奖页（宝箱、传回楼层、重置）
 		var bmap := int(boss[0])
 		st.map_id = bmap
+		# 首领页要先清挡路的小怪（如 3 层伐木办公室：变量 288 到 4 才出首领页）：把这张图上会开战的别的事件按顺序跑一遍（战斗照快进结算、发它们的奖励），直到首领那一页出来
+		var cleared := {}
+		for guard in 12:
+			if _boss_troop(page_of(bmap, boss[1])) > 0:
+				break
+			var next = null
+			for ev in XDB.map(bmap).get("events", []):
+				if ev is Dictionary and int(ev.id) != int(boss[1].id) and not cleared.has(int(ev.id)):
+					var pg := page_of(bmap, ev)
+					if (pg.get("list", []) as Array).any(func(c): return int(c.get("code", 0)) == 301):
+						next = ev
+						break
+			if next == null:
+				break
+			cleared[int(next.id)] = true
+			mobs += 1
+			await _run_page(host, bmap, next)
 		await _run_page(host, bmap, boss[1])
 		if host.battles.is_empty():
 			out.why = "首领页没开战（%s）" % str(host.trace.slice(-3))
