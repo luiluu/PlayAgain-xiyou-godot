@@ -835,24 +835,31 @@ func cached_param(i: int, compute: Callable) -> float:
 func param(i: int) -> float:
 	var v := param_base(i) + param_plus(i)
 	v *= param_rate(i) * param_buff_rate(i)
-	v += param_state(i)
+	v += param_state(i, v)
 	return roundf(clampf(v, param_min(i), param_max(i)))
 
 ## G_StateParam paramState：各状态 <G_ShuXing> 的固定值 × 层数之和。层数取 YEP 状态计数（state_data._stateCounter，
 ## 状态脚本写入）；v0.62.05 起每个状态只乘自己的层数（state_js_probe counter.carry；v0.28 的层数变量在循环外，会连带后面的状态）。
+## pre：这一项在加状态固定值之前的数（T228：天启篇期四把固定值换成 pre 的百分比，XTianqiBase.shuxing_value；关着不读它）
 static var _state_param_cache := {}
-func param_state(i: int) -> float:
+func param_state(i: int, pre := 0.0) -> float:
 	# G_StateParam（v0.62.05）：每个状态只乘自己的层数（_stateCounter），没有层数按 1 层（旧版 ceng 放在循环外会连带后面的状态）
 	var v := 0.0
 	var counters: Dictionary = state_data.get("_stateCounter", {})
+	var shux := XTianqiBase.shuxing_on()
 	for id in state_ids:
 		var key := XTianqiSkills.state_key(id)  # 天启篇改写过的状态另存一份
 		if not _state_param_cache.has(key):
 			_state_param_cache[key] = XPower.state_params(XDB.rec("States", id))
+		var raw := float(_state_param_cache[key][i])
+		if raw == 0.0:
+			continue
+		if shux:
+			raw = XTianqiBase.shuxing_value(int(id), i, raw, pre)
 		var ceng := XStateEffects._truthy_number(counters.get(str(id)))
 		if ceng == 0.0:
 			ceng = 1.0
-		v += float(_state_param_cache[key][i]) * ceng
+		v += raw * ceng
 	return v
 
 func xparam(i: int) -> float:

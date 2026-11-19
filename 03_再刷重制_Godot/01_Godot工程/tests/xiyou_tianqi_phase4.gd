@@ -40,6 +40,7 @@ func _run() -> void:
 	_off()
 	_on()
 	_xiyou()
+	_shuxing()
 	_hit_cap()
 	_class_rate()
 	_realm()
@@ -332,6 +333,61 @@ func _xiyou() -> void:
 	_check("xiyou.k", XTianqiBase.k_for(a) == 1.0 and XTianqiBase.gaze_row().is_empty())
 	_check("xiyou.abs", XTianqiBase.abs_value("item_fixed_heal", 1, 500.0, a, "mhp") == 500.0)
 	_check("xiyou.cards", not XTianqiSkills.cards_on())
+	XTianqiBase.PHASE4 = false
+
+
+## T228：状态备注 <G_ShuXing> 固定加减换成持有者自身该项的整数百分比（abs_rescale.json state_shuxing；ABS_SHUXING 可单独关）
+func _shuxing() -> void:
+	XTianqiBase.clear_cache()
+	var d := XTianqiBase.abs_data()
+	var rows: Array = d.get("entries", []).filter(func(e): return e is Dictionary and e.get("kind") == "state_shuxing")
+	_check("shuxing.rows", rows.size() == 452, rows.size())
+	var ints := rows.all(func(e): return (e.new.pct as Array).size() == 8 and (e.new.pct as Array).all(func(x): return float(x) == floorf(float(x))))
+	_check("shuxing.int_pct", ints)  # 附则 E：整数
+	var min1_ok := rows.all(func(e):
+		for k in e.get("min1", []):
+			var i := XTianqiBase.STATS.find(k)
+			if absf(float(e.new.pct[i])) != 1.0 or float(e.orig[i]) == 0.0:
+				return false
+		return true)
+	_check("shuxing.min1", min1_ok)
+	var nz := rows.all(func(e):  # 原数不为 0 的格 pct 也不为 0，同号
+		for i in 8:
+			if (float(e.orig[i]) == 0.0) != (float(e.new.pct[i]) == 0.0) or float(e.orig[i]) * float(e.new.pct[i]) < 0.0:
+				return false
+		return true)
+	_check("shuxing.sign", nz)
+	var ref := XTianqiBase.shuxing_ref()
+	_check("shuxing.ref", ref == [10778.0, 4366.0, 1854.0, 550.0, 1854.0, 533.0, 824.0, 282.0], ref)
+	# 终焉 698：攻击 −1000 → −54%
+	XTianqiBase.PHASE4 = true
+	var s := _state()
+	var a: XActor = s.actor(XIAOYAO)
+	a.change_level(81)
+	a.add_state(698)
+	a.param_mark_dirty()
+	_check("shuxing.on", XTianqiBase.shuxing_on())
+	_check("shuxing.pct", a.param_state(2, 1000.0) == -540.0, a.param_state(2, 1000.0))
+	_check("shuxing.zero_cell", a.param_state(3, 1000.0) == 0.0)
+	_check("shuxing.pre_zero", XTianqiBase.shuxing_value(698, 2, -1000.0, 0.0) == 0.0)
+	_check("shuxing.mismatch", XTianqiBase.shuxing_value(698, 2, -500.0, 1000.0) == -270.0)  # 原数对不上按参考值现算：500÷1854＝27%
+	_check("shuxing.unknown_id", XTianqiBase.shuxing_value(999999, 2, -500.0, 1000.0) == -270.0)
+	var p_on := a.param(2)
+	XTianqiBase.ABS_SHUXING = false
+	a.param_mark_dirty()
+	_check("shuxing.switch_off", not XTianqiBase.shuxing_on() and a.param_state(2, 1000.0) == -1000.0)
+	var p_off := a.param(2)
+	_check("shuxing.param_changes", p_on != p_off, [p_on, p_off])
+	XTianqiBase.ABS_SHUXING = true
+	XTianqiBase.PHASE4 = false
+	a.param_mark_dirty()
+	_check("shuxing.phase4_off", not XTianqiBase.shuxing_on() and a.param_state(2, 1000.0) == -1000.0)
+	XTianqiBase.PHASE4 = true
+	var x := _state(false)
+	var b: XActor = x.actor(XIAOYAO)
+	b.add_state(698)
+	b.param_mark_dirty()
+	_check("shuxing.xiyou", not XTianqiBase.shuxing_on() and b.param_state(2, 1000.0) == -1000.0)
 	XTianqiBase.PHASE4 = false
 
 

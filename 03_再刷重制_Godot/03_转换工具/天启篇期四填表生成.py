@@ -3,6 +3,7 @@
 只读游戏数据（generated/db 要有，用 新建工作树.sh --补齐 取）和设计仓库的《全角色技能重构 v0.2》；写 tianqi_data/base_line.json、gear_base.json。
   python3 03_转换工具/天启篇期四填表生成.py [--设计仓库 ~/Documents/xiyou-design-docs] [--写表]      不加 --写表只打印
   python3 03_转换工具/天启篇期四填表生成.py --清单            打印件数表／超上限技能清单（交付单附件用）
+  python3 03_转换工具/天启篇期四填表生成.py --写属性换算 [--属性清单]   T228：只换 abs_rescale.json 的 <G_ShuXing> 行；清单打成 markdown
 """
 import argparse
 import collections
@@ -361,14 +362,203 @@ def build_abs():
                             'new': '待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）'})
     more_entries, groups = scan_more(b, set(jload(DATA / 'skill_rework.json')['skills']))
     entries += more_entries
+    entries += build_shuxing()  # T228
     return {
         '_note': 'T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 %.0f、魔法 %.0f。T081 起只接了结构化的两类：药品固定回复（battle_logic._apply_effect）、常数状态持续伤害（ext_dot），其余几类 new 还是文字说明、未接。' % (b['mhp'], b['mmp']),
         'version': 1,
-        'base': {'weak_mhp81': b['mhp'], 'weak_mmp81': b['mmp'], 'weak_main81': b['main']},
+        'base': {'weak_mhp81': b['mhp'], 'weak_mmp81': b['mmp'], 'weak_main81': b['main'], 'shuxing_ref': SHUXING_REF},
         'entries': entries,
-        'groups': groups,
+        'groups': dict(groups, state_shuxing={'_note': SHUXING_GROUP_NOTE}),
         'unscanned': ['公式型状态持续伤害（41 条里 %d 条是读属性的公式）和 Custom Regenerate Effect 脚本型回复（25 个状态）：底数要逐条拆脚本，没拆，只列号；七首之龙、骑士等 horsemen.json 里的绝对值不在本清单（D78 M5 标）' % sum(1 for e in entries if e['kind'] == 'state_dot' and not isinstance(e['new'], dict))],
     }
+
+
+# ---- T228：状态备注 <G_ShuXing> 写死的八项加减（G_StateParam），换成「持有者自身该项的整数百分比」 ----
+# 口径（协调 11-19 回 T228 问，选 A）：pct＝原数÷参考值×100，四舍五入成整数；原数不为 0 但取整成 0 的记 ±1（min1 列出）。
+# 参考值＝T220 前（dev.743，8a4f9d4a4）基准队 81 级八项实测中位：4 弱者随机 8 队（27 人）、等级 81、法宝上限、精良装备，
+# 开战前的 param（探针 tests/virtual_player/t228_ref_probe.gd，--floor=36；HEAD 上 --phase4=off 量出同一组数）。
+# 攻击、魔攻两项都用「主攻」中位 1854（每人攻击、魔攻取高的那项；协调 11-19 定甲）：27 人里物理 19、法系 8，各项直接取中位时
+# 魔攻只有 489（物理系拉低）、攻击 1493（法系拉低），魔攻 −500 会变 −102%、法系直接清零。分开量：物理系攻击中位 1854、法系魔攻中位 1786。
+# 其余六项照各自中位（幸运 282：−500 幸运变 −177%，跟原版 81 级一样扣到 0，不另处理）。
+# 战斗里：持有者该项（基础＋加值）×比率×强化率 × pct% × 层数，见 core/battler.gd param_state、core/tianqi_base.gd shuxing_value。
+SHUXING_REF = {'mhp': 10778, 'mmp': 4366, 'atk': 1854, 'def': 550, 'mat': 1854, 'mdf': 533, 'agi': 824, 'luk': 282}
+SHUXING_NAMES = [(('MHP', 'MAXHP', 'MAX HP', 'HP'), 0), (('MMP', 'MAXMP', 'MAX MP', 'MP'), 1), (('ATK', 'ATTACK'), 2), (('DEF', 'DEFENSE'), 3),
+                 (('MAT', 'MAGIC ATTACK', 'M.ATTACK', 'INT'), 4), (('MDF', 'MAGIC DEFENSE', 'M.DEFENSE', 'RES'), 5), (('AGI', 'AGILITY', 'SPD'), 6), (('LUK',), 7), (('ALL',), 8)]
+
+
+def shuxing_params(note):
+    """照 core/power.gd state_params：<G_ShuXing> … </G_ShuXing> 之间每行「名字 = ±数」，ALL 加到八项。返回 (八项, 有没有这个标签)。"""
+    out, on, has = [0] * 8, False, False
+    for line in note.split('\n'):
+        if re.search(r'(?i)<G_ShuXing>', line):
+            on = has = True
+        elif re.search(r'(?i)</G_ShuXing>', line):
+            on = False
+        elif on:
+            m = re.search(r'(.*)[ ]=[ ]([\+\-]\d+)', line)
+            if m:
+                nm = m.group(1).upper().strip()
+                sid = next((i for names, i in SHUXING_NAMES if nm in names), -1)
+                if sid == 8:
+                    out = [v + int(m.group(2)) for v in out]
+                elif sid >= 0:
+                    out[sid] += int(m.group(2))
+    return out, has
+
+
+def shuxing_pct(v, ref):
+    if v == 0:
+        return 0, False
+    q = abs(v) / ref * 100
+    pct = int(q + 0.5)
+    low = pct == 0
+    pct = max(1, pct)
+    return (pct if v > 0 else -pct), low
+
+
+def build_shuxing():
+    rows = []
+    for x in jload(DB / 'States.json'):
+        if not x:
+            continue
+        orig, has = shuxing_params(x.get('note', ''))
+        if not has:
+            continue
+        pct, low = [], []
+        for i, k in enumerate(STATS):
+            p, l = shuxing_pct(orig[i], SHUXING_REF[k])
+            pct.append(p)
+            if l:
+                low.append(k)
+        e = {'kind': 'state_shuxing', 'id': x['id'], 'name': x['name'], 'orig': orig, 'new': {'pct_of': 'self', 'pct': pct}}
+        if low:
+            e['min1'] = low
+        rows.append(e)
+    return rows
+
+
+SHUXING_GROUP_NOTE = ('T228：状态备注 <G_ShuXing> 写死的八项加减（kind＝state_shuxing，orig、new.pct 都按 mhp,mmp,atk,def,mat,mdf,agi,luk 八格）。'
+                      '期四开着且 XTianqiBase.ABS_SHUXING 开着时，战斗里每个状态加的是「持有者该项（基础＋加值）×比率×强化率 × pct% × 层数」，向零取整；关着照原数。'
+                      'pct＝原数÷base.shuxing_ref 同项×100 四舍五入成整数，原数不为 0 但取整成 0 的记 ±1（min1 列出是哪几项）。'
+                      'pct 可以直接改表；状态备注被天启篇改写、原数跟 orig 对不上时按参考值现算并警告一次。')
+
+
+def write_shuxing(path):
+    """只换 abs_rescale.json 里 state_shuxing 那几行和参考值，其余原样（--写表 会把整张表重生成）。"""
+    d = jload(path)
+    d['entries'] = [e for e in d['entries'] if e.get('kind') != 'state_shuxing'] + build_shuxing()
+    d['base']['shuxing_ref'] = SHUXING_REF
+    d['groups']['state_shuxing'] = {'_note': SHUXING_GROUP_NOTE}
+    path.write_text(dumps(d), encoding='utf-8')
+    return d
+
+
+# 守层者敌群（同 tests/virtual_player/baseline_dps.gd GUARDIAN）
+GUARDIAN_TROOPS = {4, 5, 8, 22, 28, 39, 52, 53, 67, 69, 109, 110, 111, 118, 138, 172, 173, 174, 333} | set(range(456, 470))
+
+
+def shuxing_holders():
+    """每个状态挂在谁身上（静态扫，尽量全）：返回 {状态号: set(标签)}。标签：我方、敌方、守层者，再加来源说明。"""
+    skills = {x['id']: x for x in jload(DB / 'Skills.json') if x}
+    items = {x['id']: x for x in jload(DB / 'Items.json') if x}
+    enemies = {x['id']: x for x in jload(DB / 'Enemies.json') if x}
+    troops = {x['id']: x for x in jload(DB / 'Troops.json') if x}
+    ces = {x['id']: x for x in jload(DB / 'CommonEvents.json') if x}
+    guardian_enemies = set()
+    for t in GUARDIAN_TROOPS:
+        for m in troops.get(t, {}).get('members', []):
+            guardian_enemies.add(m['enemyId'])
+    enemy_skill_users = collections.defaultdict(set)
+    for e in enemies.values():
+        for a in e.get('actions', []):
+            enemy_skill_users[a.get('skillId')].add(e['id'])
+    actor_skills = set()
+    for c in jload(DB / 'Classes.json'):
+        if c:
+            actor_skills |= {l['skillId'] for l in c.get('learnings', [])}
+    actor_skills |= {int(k) for k in jload(DATA / 'skill_rework.json')['skills']}
+    out = collections.defaultdict(set)
+    sid_re = re.compile(r'(?i)<(?:passive state|passive states)\s*:\s*([\d,\s\-]+)>')
+
+    def add_ids(text, tag):
+        for m in sid_re.finditer(text):
+            for part in m.group(1).split(','):
+                part = part.strip()
+                if '-' in part:
+                    a, b = part.split('-')
+                    for i in range(int(a), int(b) + 1):
+                        out[i].add(tag)
+                elif part.isdigit():
+                    out[int(part)].add(tag)
+    # 技能、物品的「附加状态」效果：按使用者和范围判挂到哪边
+    for tab, recs in (('技能', skills), ('物品', items)):
+        for x in recs.values():
+            for ef in x.get('effects', []):
+                if ef.get('code') != 21 or not ef.get('dataId'):
+                    continue
+                sc = x.get('scope', 0)
+                to_opp = 1 <= sc <= 6
+                users = enemy_skill_users.get(x['id'], set()) if tab == '技能' else set()
+                if users:
+                    if to_opp:
+                        out[ef['dataId']].add('我方')
+                    else:
+                        out[ef['dataId']].add('守层者' if users & guardian_enemies else '敌方')
+                        if users - guardian_enemies:
+                            out[ef['dataId']].add('敌方')
+                if tab == '物品' or x['id'] in actor_skills:
+                    out[ef['dataId']].add('敌方' if to_opp else '我方')
+    # 被动状态：角色、职业、装备、技能备注里写的是我方；敌人备注里写的是敌方（守层者另记）
+    for f in ('Actors', 'Classes', 'Weapons', 'Armors', 'Skills'):
+        for x in jload(DB / (f + '.json')):
+            if x:
+                add_ids(x.get('note', ''), '我方')
+    for e in enemies.values():
+        add_ids(e.get('note', ''), '守层者' if e['id'] in guardian_enemies else '敌方')
+        for st in [t for t in e.get('traits', []) if t.get('code') == 14]:
+            pass
+
+    def scan_list(lst, actor_tag, enemy_tag, ce_tag):
+        called = []
+        for c in lst:
+            code, p = c.get('code'), c.get('parameters', [])
+            if code == 313 and len(p) > 3 and p[2] == 0:
+                out[p[3]].add(actor_tag)
+            elif code == 333 and len(p) > 2 and p[1] == 0:
+                out[p[2]].add(enemy_tag)
+            elif code == 117 and p:
+                called.append(p[0])
+        return called
+    seen_ce = set()
+
+    def walk_ce(cid, actor_tag, enemy_tag):
+        key = (cid, enemy_tag)
+        if key in seen_ce or cid not in ces:
+            return
+        seen_ce.add(key)
+        for c2 in scan_list(ces[cid].get('list', []), actor_tag, enemy_tag, None):
+            walk_ce(c2, actor_tag, enemy_tag)
+    for t in troops.values():
+        etag = '守层者' if t['id'] in GUARDIAN_TROOPS else '敌方'
+        for pg in t.get('pages', []):
+            for cid in scan_list(pg.get('list', []), '我方', etag, None):
+                walk_ce(cid, '我方', etag)
+    for cid in list(ces):
+        walk_ce(cid, '我方', '敌方')
+    return out
+
+
+def shuxing_table():
+    """交付单附表（markdown）：编号、名称、原值、换算后、挂在谁身上"""
+    hold = shuxing_holders()
+    lines = ['| 编号 | 名称 | 原值（非 0 项） | 换算后（持有者该项的 %） | 挂在谁身上 |', '|---|---|---|---|---|']
+    nm = ['生命', '魔法', '攻击', '物防', '魔攻', '魔防', '敏捷', '幸运']
+    for e in build_shuxing():
+        o = '、'.join('%s%+d' % (nm[i], v) for i, v in enumerate(e['orig']) if v)
+        n = '、'.join('%s%+d%%%s' % (nm[i], v, '＊' if STATS[i] in e.get('min1', []) else '') for i, v in enumerate(e['new']['pct']) if v)
+        h = '、'.join(t for t in ('我方', '敌方', '守层者') if t in hold.get(e['id'], ())) or '没扫到（脚本／插件挂）'
+        lines.append('| %d | %s | %s | %s | %s |' % (e['id'], e['name'].replace('|', '／'), o or '（空）', n or '（空）', h))
+    return '\n'.join(lines)
 
 
 def dumps(d):
@@ -380,7 +570,17 @@ def main():
     ap.add_argument('--设计仓库', default=str(Path.home() / 'Documents' / 'xiyou-design-docs'))
     ap.add_argument('--写表', action='store_true')
     ap.add_argument('--清单', action='store_true')
+    ap.add_argument('--写属性换算', action='store_true', help='T228：只换 abs_rescale.json 里 <G_ShuXing> 那几行（state_shuxing）和参考值，别的表不动')
+    ap.add_argument('--属性清单', action='store_true', help='T228：打印 <G_ShuXing> 状态换算清单（markdown，交付单附表）')
     args = ap.parse_args()
+    if args.写属性换算 or args.属性清单:
+        if args.写属性换算:
+            d = write_shuxing(DATA / 'abs_rescale.json')
+            rows = [e for e in d['entries'] if e['kind'] == 'state_shuxing']
+            print('已写 abs_rescale.json：state_shuxing %d 行，取整到 ±1 的 %d 行' % (len(rows), sum(1 for e in rows if e.get('min1'))))
+        if args.属性清单:
+            print(shuxing_table())
+        return 0
     doc = Path(args.设计仓库) / '重制设定' / '天启篇_全角色技能重构_v0.2.md'
     actors, unclear, rework = build_actors(doc)
     dev = backtest(actors, rework)
