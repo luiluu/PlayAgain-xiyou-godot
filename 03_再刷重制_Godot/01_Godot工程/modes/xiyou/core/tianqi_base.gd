@@ -14,7 +14,7 @@ extends RefCounted
 ## | 守层者三张表 | balance_table.guardian_phase4（T012-c 量；缺就退回旧表并警告一次） | 代码里的旧表 | XGuardianRework |
 ## | 治疗 ×5 | 不乘 | 照乘 | XTianqiNoDiffPassive.confirm_rows（skipTypesAny 放 3、4，不论目标；T214） |
 ## | 绝对值清单 | abs_rescale.json 换算后的数 | 原数 | abs_value（各结算处） |
-## | 首领生命临时折算 U | combat_rules.boss_hp_temp_unit | 1 | XTianqiHorsemen |
+## | 首领生命临时折算 U（整数百分比） | combat_rules.boss_hp_temp_unit | 100 | XTianqiHorsemen |
 ## | 单段上限、九线爆伤、秘籍格 | skill_rework.rules.single_hit_cap、damage_ledger.phase4 | 现在的键 | XTianqiSkills.formula、XTianqiLedger.apply_nine_cap |
 ##
 ## 全部只在代码和表里，不写存档；西游档（XTianqi.active 为假）一律走「关着」那一套。
@@ -218,14 +218,21 @@ static func _k_text(k: float) -> String:
 
 # ---- 首领生命临时折算 U（稿第三节第 7 条（2）、D137）----
 
-## crit_immune：这个首领免不免暴击（免暴击的读 no_crit）。关着 1
-static func boss_hp_unit(crit_immune := false, s = null) -> float:
+## 整数百分比（D222 丙、附则 E）：100＝不打折，6＝6%。M5 实机标定骑士血量后删掉这一节。crit_immune：这个首领免不免暴击（免暴击的读 no_crit）。关着 100
+static func boss_hp_unit(crit_immune := false, s = null) -> int:
 	if not on(s):
-		return 1.0
+		return 100
 	var u = XTianqiBalance.data().get("combat_rules", {}).get("boss_hp_temp_unit", {})
 	if not u is Dictionary:
-		return 1.0
-	return float(u.get("no_crit" if crit_immune else "crit", 1.0))
+		return 100
+	return int(u.get("no_crit" if crit_immune else "crit", 100))
+
+
+## 血量 × U ÷ 100，向零取整（整数运算）
+static func apply_hp_unit(hp: float, u: int) -> float:
+	if u == 100:
+		return hp
+	return float(int(hp) * u / 100)
 
 
 # ---- 守层者三张表（稿第七节第 2 条；新表 T012-c 实机量）----
