@@ -357,13 +357,13 @@ static func rescale_params(logic) -> void:
 	if logic == null or not XTianqi.active(logic.state):
 		return
 	var ref_q: Array = []
-	if PARAMS_QIYIN:
-		ref_q = XDB.rec("Enemies", int(XTianqiQiyin.data().get("rebase", {}).get("ref", 537))).get("params", [])
 	for e in logic.enemies:
 		var f := params_floor(e)
 		var qiyin := PARAMS_QIYIN and is_qiyin_ref(e)
 		if not qiyin and (not PARAMS or f < 31 or f > 34):
 			continue
+		if qiyin and ref_q.is_empty():  # T245 复核 P3：命中七印重标的敌人才读七印表（普通战不碰）
+			ref_q = XDB.rec("Enemies", int(XTianqiQiyin.data().get("rebase", {}).get("ref", 537))).get("params", [])
 		var p: Array = ref_q if qiyin else e.data().get("params", [])
 		var changed := false
 		for i in range(1, 8):

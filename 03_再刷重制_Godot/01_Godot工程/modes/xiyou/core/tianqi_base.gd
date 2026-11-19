@@ -15,6 +15,7 @@ extends RefCounted
 ## | 治疗 ×5 | 不乘 | 照乘 | XTianqiNoDiffPassive.confirm_rows（skipTypesAny 放 3、4，不论目标；T214） |
 ## | 绝对值清单 | abs_rescale.json 换算后的数 | 原数 | abs_value（各结算处） |
 ## | 状态 <G_ShuXing> 固定加减（T228，ABS_SHUXING 可单独关） | 持有者该项 × abs_rescale.json state_shuxing 的整数 % | 原数 | XBattler.param_state → shuxing_value |
+## | 公式型状态持续伤害的固定底数（T246，ABS_DOT_FORMULA 可单独关） | 持有者生命上限 × abs_rescale.json state_dot 的整数 %（只换底数，a.atk×7 等照旧） | 原公式 | XExtDot._one → dot_value |
 ## | 技能固定回复、固定吸取的底数（T243，ABS_SKILL 可单独关） | 对象生命／魔法上限 × abs_rescale.json skill_fixed_heal／skill_fixed_drain 的整数 %（只换底数，a.mat×N 等照旧） | 原公式 | XFormulaExecution.run_item → skill_formula |
 ## | 首领生命临时折算 U（整数百分比） | combat_rules.boss_hp_temp_unit | 100 | XTianqiHorsemen |
 ## | 单段上限、九线爆伤、秘籍格 | skill_rework.rules.single_hit_cap、damage_ledger.phase4 | 现在的键 | XTianqiSkills.formula、XTianqiLedger.apply_nine_cap |
@@ -61,6 +62,9 @@ static var ABS_SKILL := true
 ## T243 R1：敌人给敌人（含自疗）的技能固定回复，换算后的百分比统一封顶（整数 %，100＝不封顶，表里各行 pct 照旧可改）。
 ## T247（D229 乙）：定为 100＝不封顶；16 招敌人自疗的表值已按原版占比填好（占比＝原数÷用这招的首领原版生命上限的中位数）。0＝敌人自疗的底数不回，可作回退
 static var ENEMY_HEAL_CAP := 100
+## T246：公式型状态持续伤害（43 猛击之伤、643 奇怪的治疗、644 奇怪的复活）公式最前面写死的底数 1025 换成「持有者生命上限 × 表里整数 %」，
+## 公式其余部分照旧。只在总开关开着、天启篇存档时生效；false＝照原公式（回退，常数持续伤害不受它管）
+static var ABS_DOT_FORMULA := true
 const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
 const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",
 	"SkillPass\\d+", "passiveAPLUS", "AgainUseAll", "passiveIRUP", "passiveGRUP", "passiveSPBST\\d", "ConsumeReduce\\w+", "passiveEXTTP", "DepassiveHarmRe\\d+",
@@ -333,8 +337,8 @@ static func abs_data() -> Dictionary:
 	return _abs
 
 
-## 这一条有没有结构化的换算（new 是字典）。结构化的类：药品 item_fixed_heal、纯数字状态持续伤害 state_dot（T081）、状态 <G_ShuXing> state_shuxing（T228）、
-## 技能固定回复／吸取 skill_fixed_heal／skill_fixed_drain（T243）；公式型 state_dot、state_shield、note_* 还是文字说明，这里返回空
+## 这一条有没有结构化的换算（new 是字典）。T246 起表里全部是字典：mode＝raw 的行（护盾、吸血倍率、随属性走的公式等）也会返回，调用方自己认 raw；
+## 表里没有这一行返回空
 ## stat：这一行管的是哪项（药品 mhp／mmp，对应效果 11／12）；表里不分 stat 的类别传空
 static func abs_entry(kind: String, id: int, stat := "") -> Dictionary:
 	abs_data()
@@ -353,9 +357,31 @@ static func abs_value(kind: String, id: int, old: float, target, stat := "") -> 
 	if e.is_empty():
 		return old
 	var n: Dictionary = e.new
+	if str(n.get("mode", "")) == "raw" or n.has("base"):
+		return old  # T246：raw 照原数；带 base 的是公式底数（dot_value 管），不能整条换
 	var cap := float(target.mmp) if str(n.get("pct_of", "mhp")) == "mmp" else float(target.mhp)
 	var v := floorf(cap * float(n.get("pct", 0.0)) / 100.0)
 	return -v if old < 0.0 else v
+
+
+## T246：状态持续伤害公式算完（XExtDot._one，正数）以后换算。常数的（T081）整条换成持有者生命上限 × pct%（abs_value）；
+## 表里带 base 的公式型（43、643、644），value − base + ⌊持有者生命上限 × pct%⌋，公式其余部分照旧（ABS_DOT_FORMULA 关着照原值）。
+## 程序 sha256 跟表里 new.sha256 对不上（天启篇改写过）的照原值并警告一次。b：持有者
+static func dot_value(id: int, value: float, b, program: Dictionary) -> float:
+	if b == null or is_nan(value) or not on():
+		return value
+	var e := abs_entry("state_dot", id)
+	if e.is_empty():
+		return value
+	var n: Dictionary = e.new
+	if not n.has("base"):
+		return abs_value("state_dot", id, value, b)
+	if not ABS_DOT_FORMULA or str(n.get("mode", "")) == "raw":
+		return value
+	if str(program.get("source", {}).get("sha256", "")) != str(n.get("sha256", "")):
+		warn_once("dot:%d" % id, "状态 %d 的持续伤害公式跟 abs_rescale.json 对不上（天启篇改写过？），照原公式" % id)
+		return value
+	return value - float(n.get("base", 0.0)) + floorf(float(b.mhp) * float(n.get("pct", 0.0)) / 100.0)
 
 
 ## T243：技能公式算完（XFormulaExecution.run_item，带正负：回复为负）以后，把表里那一行的固定底数 new.base 换成 ⌊对象 new.pct_of 上限 × new.pct%⌋，

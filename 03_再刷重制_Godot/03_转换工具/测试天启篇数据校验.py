@@ -648,5 +648,38 @@ class GuardianParams(unittest.TestCase):
         self.assertEqual(chk.guardian_params_rules(self.t), [])
 
 
+class AbsRescaleT246(unittest.TestCase):
+    """T246：abs_rescale.json 五类定口径后全部结构化；药品、持续伤害 pct 整数；guardian_params 不放行 mhp（T245 复核 P3）。"""
+    def setUp(self):
+        self.t = json.loads((REAL_DIR / 'abs_rescale.json').read_text(encoding='utf-8'))
+
+    def row(self, kind, i):
+        return next(e for e in self.t['entries'] if e['kind'] == kind and e['id'] == i)
+
+    def test_real_passes(self):
+        self.assertEqual(chk.abs_rescale_rules(self.t), [])
+
+    def test_item_pct_decimal(self):
+        self.row('item_fixed_heal', 1)['new']['pct'] = 7.2
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_dot_formula_sha(self):
+        self.row('state_dot', 43)['new']['sha256'] = 'x'
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_shield_must_be_raw(self):
+        self.row('state_shield', 1174)['new'] = {'pct_of': 'mhp', 'pct': 20}
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_text_new_rejected(self):
+        self.row('note_dbhplsteal', 72)['new'] = '待定'
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_guardian_qiyin_mhp(self):
+        g = json.loads((REAL_DIR / 'guardian_params.json').read_text(encoding='utf-8'))
+        g['qiyin']['mhp'] = 50
+        self.assertTrue(chk.guardian_params_rules(g))
+
+
 if __name__ == '__main__':
     unittest.main()

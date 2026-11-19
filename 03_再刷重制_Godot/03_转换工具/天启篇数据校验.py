@@ -1941,10 +1941,33 @@ def abs_rescale_rules(table: dict) -> list:
                       and isinstance(e['orig'], str) and e['orig']):
                 bad.append(tag + 'new 要是 pct_of mhp／mmp、pct 1～100 的整数、base 正数、over100（有的话）大于 100 的整数，orig 是完整原公式：%s' % (n,))
             continue
-        if isinstance(n, dict) and not (0 < float(n.get('pct', 0)) <= 100 and n.get('pct_of') in ('mhp', 'mmp')):
-            bad.append('entries/%d（%s %s）换算后要是 mhp／mmp 的 0～100%%：%s' % (i, e['kind'], e['id'], n))
-    if not table.get('unscanned'):
-        bad.append('unscanned 要列出还没扫的范围（稿第七节第 4 条的六类里扫不到的）')
+        # T246：其余几类也全部结构化：药品、常数持续伤害 {pct_of, pct}（整数，附则 E）；公式型持续伤害另带 base、sha256；
+        # 护盾（state_shield、note_shieldeffect）、吸血（note_dbhplsteal）、重复的 note_regen_formula 只能 mode＝raw
+        tag = 'entries/%d（%s %s）' % (i, e['kind'], e['id'])
+        isint = lambda x: isinstance(x, int) and not isinstance(x, bool)
+        if not isinstance(n, dict):
+            bad.append(tag + 'new 要是结构化的 {pct_of, pct} 或 {mode: raw, reason}，不能是文字说明：%s' % (n,))
+            continue
+        if n.get('mode') == 'raw':
+            if not n.get('reason'):
+                bad.append(tag + 'mode＝raw 要写 reason')
+            continue
+        if e['kind'] in ('state_shield', 'note_shieldeffect', 'note_dbhplsteal', 'note_regen_formula'):
+            bad.append(tag + '护盾／吸血倍率、重复列出的回复公式只能 mode＝raw（没有代码按 pct 读它）：%s' % (n,))
+            continue
+        if not (isint(n.get('pct')) and 1 <= n['pct'] <= 100 and n.get('pct_of') in ('mhp', 'mmp')
+                and ('over100' not in n or (isint(n['over100']) and n['over100'] > 100))):
+            bad.append(tag + 'new 要是 pct_of mhp／mmp、pct 1～100 的整数（附则 E）、over100（有的话）大于 100 的整数：%s' % (n,))
+        elif 'base' in n:
+            if e['kind'] != 'state_dot' or n['pct_of'] != 'mhp':
+                bad.append(tag + '带 base 的只认公式型 state_dot（按持有者生命上限）：%s' % (n,))
+            elif not (isinstance(n['base'], (int, float)) and not isinstance(n['base'], bool) and n['base'] > 0
+                      and isinstance(n.get('sha256'), str) and len(n['sha256']) == 64 and isinstance(e['orig'], str) and e['orig']):
+                bad.append(tag + '公式型要有正数 base、64 位 sha256（程序指纹，运行时对不上照原式）、orig 是公式原文：%s' % (n,))
+        elif not isinstance(e['orig'], (int, float)) or isinstance(e['orig'], bool):
+            bad.append(tag + '整条换算的 orig 要是原数：%r' % (e['orig'],))
+    if not isinstance(table.get('unscanned'), list):
+        bad.append('unscanned 要是列表（还没扫的范围；T246 起五类都定了口径，可以空）')
     return bad
 
 
@@ -2097,6 +2120,8 @@ def _gp_row(name: str, row, stats: dict) -> list:
             continue
         if k not in stats:
             bad.append('%s 的 %s 不在 stats 里' % (name, k))
+        elif k == 'mhp':
+            bad.append('%s 写了 mhp（rescale_params 只换 1～7 项，血量走 HP_BASE，写了不生效）' % name)
         if isinstance(v, bool) or not isinstance(v, (int, float)) or float(v) != int(v) or int(v) <= 0:
             bad.append('%s 的 %s＝%r 不是正整数百分比' % (name, k, v))
     return bad

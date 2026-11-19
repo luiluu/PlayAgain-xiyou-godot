@@ -221,5 +221,7 @@ func _dragon() -> void:
 	print("T245 dragon def/mdf on=", [on.param(3), on.param(5)], " off=", [off.param(3), off.param(5)])
 	var r := float(on.param(3)) / float(off.param(3))
 	_check("dragon.def_ratio", absf(r - 5990.0 / 322950.0) < 0.0005, [on.param(3), off.param(3)])
+	var r5 := float(on.param(5)) / float(off.param(5))  # T245 复核 P3：魔防同样按 121％重锚
+	_check("dragon.mdf_ratio", absf(r5 - 5990.0 / 322950.0) < 0.0005, [on.param(5), off.param(5)])
 	_check("dragon.atk_same", int(on.param(2)) == int(off.param(2)), [on.param(2), off.param(2)])
 	_check("dragon.hp_same", absf(on.mhp - off.mhp) <= 2.0, [on.mhp, off.mhp])
