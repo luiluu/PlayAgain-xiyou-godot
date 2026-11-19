@@ -1968,7 +1968,47 @@ def abs_rescale_rules(table: dict) -> list:
             bad.append(tag + '整条换算的 orig 要是原数：%r' % (e['orig'],))
     un = table.get('unscanned')
     if not (isinstance(un, list) and un and all(isinstance(x, str) and x for x in un)):
-        bad.append('unscanned 要列出还没扫的范围（T246 R1：Custom Regenerate Effect 脚本型回复、horsemen.json 没盘，不能清空）')
+        bad.append('unscanned 要列出还没扫的范围（horsemen.json 没盘，不能清空）')
+    elif any('Custom Regenerate' in x for x in un):
+        bad.append('unscanned 不该再列 Custom Regenerate Effect（T249 已盘进 groups.custom_regen）')
+    bad += abs_groups_rules(table.get('groups', {}))
+    return bad
+
+
+# T249：groups 里敌人技能底数、属性门槛、脚本型回复三组定口径，都不接线；口径写在 new（mode、reason）
+THRESHOLD_MODES = ('card', 'card_off', 'raw')
+
+
+def abs_groups_rules(groups: dict) -> list:
+    bad = []
+    raw_ok = lambda n: isinstance(n, dict) and n.get('mode') == 'raw' and isinstance(n.get('reason'), str) and n['reason']
+    g = groups.get('enemy_skill_fixed_base')
+    if not isinstance(g, dict) or not raw_ok(g.get('new')):
+        bad.append('groups.enemy_skill_fixed_base 要有 new {mode: raw, reason}（T249：期四敌人攻击魔攻没换，底数占比不变，不接线）')
+    elif 'new_rule' in g:
+        bad.append('groups.enemy_skill_fixed_base 不该再有 new_rule（T249 已定 raw，没有代码按它换）')
+    elif not all(isinstance(r, list) and len(r) == 4 and isinstance(r[0], int) for r in g.get('rows', [])) or not g.get('rows'):
+        bad.append('groups.enemy_skill_fixed_base.rows 要是 [技能号, 名字, 底数, 占比] 四格')
+    t = groups.get('abs_threshold_in_notes', {})
+    for r in t.get('rows', []) if isinstance(t, dict) else []:
+        n = r.get('new')
+        tag = 'groups.abs_threshold_in_notes/%s ' % r.get('id')
+        if not (isinstance(n, dict) and n.get('mode') in THRESHOLD_MODES and isinstance(n.get('reason'), str) and n['reason']):
+            bad.append(tag + 'new 要是 {mode: card／card_off／raw, reason}：%s' % (n,))
+        elif (n['mode'] == 'card') != bool(r.get('in_card')):
+            bad.append(tag + 'mode＝card 只给 in_card＝true 的行（卡里 drop_if 去掉门槛段），反过来也一样：%s' % (n,))
+    c = groups.get('custom_regen')
+    if not isinstance(c, dict) or not raw_ok(c.get('new')):
+        bad.append('groups.custom_regen 要有 new {mode: raw, reason}（T249：脚本型回复随施法者属性走，不接线）')
+    else:
+        rows = c.get('rows', [])
+        ids = [r.get('id') for r in rows if isinstance(r, dict)]
+        if not rows or len(ids) != len(rows) or len(set(ids)) != len(ids) or not all(isinstance(i, int) for i in ids):
+            bad.append('groups.custom_regen.rows 要是 {id, name, uses} 且 id 不重复')
+        for r in rows:
+            u = r.get('uses') if isinstance(r, dict) else None
+            if not isinstance(u, list) or not all(isinstance(x, str) for x in u):
+                bad.append('groups.custom_regen/%s uses 要是属性名列表' % (r.get('id') if isinstance(r, dict) else r))
     return bad
 
 
