@@ -83,6 +83,25 @@ func _run() -> void:
 	var r2 := _cast(lg, 98, 7074)
 	_check("tq.7074_cast", r2[1].has(7074), r2)
 	_check("tq.7074_no_followup", r2[0] != 2366 and not r2[1].has(7063), r2)
+	# 一补（T249 核查 P2-1）：去掉强制追击后双生花「同场 +20%」照旧生效：97 放 7057、98 放 7074 各 ×1.2，单人上场回 1.0，不受影响的技能不变
+	var st: XState = lg.state
+	var a97: XActor = st.actor(97)
+	var a98: XActor = st.actor(98)
+	var foe: XBattler = lg.enemies[0]
+	var slots_save: Array = st.battle_slots.duplicate()
+	var duo := [XTianqiSkills.formula(a97, foe, XDB.rec("Skills", 7057)), XTianqiSkills.formula(a98, foe, XDB.rec("Skills", 7074)), XTianqiSkills.formula(a97, foe, XDB.rec("Skills", 7056))]
+	st.battle_slots = [97]
+	var solo97 := [XTianqiSkills.formula(a97, foe, XDB.rec("Skills", 7057)), XTianqiSkills.formula(a97, foe, XDB.rec("Skills", 7056))]
+	st.battle_slots = [98]
+	var solo98 := XTianqiSkills.formula(a98, foe, XDB.rec("Skills", 7074))
+	st.battle_slots = slots_save
+	_check("twin.7057_plus20", solo97[0] > 0.0 and absf(duo[0] / solo97[0] - 1.2) < 0.01, [duo[0], solo97[0]])
+	_check("twin.7074_plus20", solo98 > 0.0 and absf(duo[1] / solo98 - 1.2) < 0.01, [duo[1], solo98])
+	_check("twin.7056_unchanged", solo97[1] > 0.0 and absf(duo[2] / solo97[1] - 1.0) < 0.01, [duo[2], solo97[1]])
+	# 一补2（T255）：扫表补的 7 张卡（强制追击没进卡的）天启篇档记录里都没有对应的 44；西游档记录不变
+	var t255 := {502: 105, 523: 911, 2192: 1085, 5727: 1224, 5782: 1223, 7059: 2368, 7072: 2367}
+	for sid in t255:
+		_check("t255.%d_no_ce" % sid, not _has_effect(XDB.rec("Skills", sid), 44, int(t255[sid])))
 	# 二、西游档对照
 	var og := _logic(false)
 	_check("xy.not_active", not XTianqi.active(og.state))
@@ -90,6 +109,8 @@ func _run() -> void:
 	_check("xy.7074_has_ce", _has_effect(XDB.rec("Skills", 7074), 44, 2366))
 	var x1 := _cast(og, 97, 7057)
 	_check("xy.7057_followup", x1[0] == 2365 or x1[1].has(7075), x1)
+	for sid in t255:
+		_check("xy.t255_%d_has_ce" % sid, _has_effect(XDB.rec("Skills", sid), 44, int(t255[sid])))
 	var x2 := _cast(og, 98, 7074)
 	_check("xy.7074_followup", x2[0] == 2366 or x2[1].has(7063), x2)
 	# 三、表

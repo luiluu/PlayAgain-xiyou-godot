@@ -14,7 +14,7 @@
 - summit.json（31～36 层重做）：只有 B 组，34～36 层齐全、台词齐全。
 - seg_alien.json（按段异化，四线共用）：只有 B 组，1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
 - qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
-- skill_rework.json（全角色技能重构）：只有 B 组，超强者 17（含五条悟）／强者 52 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1。
+- skill_rework.json（全角色技能重构）：forced_copy_pending（T255 登记：技能号→原因）；卡里技能的效果 44 调公共事件强制放副本、副本没进卡的，要 effects_remove 或副本进卡或登记；只有 B 组，超强者 17（含五条悟）／强者 52 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1。
 - reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
 - brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。
 - guardian_params.json（守层者能力值重锚，T237／T245）：只有 B 组，ref_enemy 是正整数、stats 八项对 0～7、floors 只有 31～34 层、qiyin 行（可没有）和每层只写 stats 里的项（下划线开头的注释键除外）、取值是正整数百分比（附则 E）。
@@ -1195,6 +1195,64 @@ def _with_tune(rules):
     return run
 
 
+DB_DIR = PROJECT / 'modes' / 'xiyou' / 'generated' / 'db'
+
+
+def _forced_targets(ce: dict, cid: int, seen=None) -> set:
+    """公共事件 cid（含嵌套 117 调用）里强制行动（339）放的技能号。"""
+    seen = seen if seen is not None else set()
+    if cid in seen or cid not in ce:
+        return set()
+    seen.add(cid)
+    out = set()
+    for c in ce[cid]['list']:
+        if c['code'] == 339:
+            out.add(int(c['parameters'][2]))
+        elif c['code'] == 117:
+            out |= _forced_targets(ce, int(c['parameters'][0]), seen)
+    return out
+
+
+def forced_copy_gaps(table: dict, skills: dict, ce: dict) -> dict:
+    """T255：卡里技能有效果 44→公共事件→强制放副本技能，副本不在卡里、又没 effects_remove 去掉 → {技能号: [(公共事件, 副本)]}。"""
+    cards = {**table.get('skills', {}), **table.get('new_skills', {})}
+    gaps = {}
+    for sid, row in cards.items():
+        if not str(sid).isdigit() or int(sid) not in skills:
+            continue
+        removed = {(int(e[0]), int(e[1])) for e in row.get('effects_remove', [])}
+        for e in skills[int(sid)].get('effects', []):
+            if e['code'] != 44 or (44, e['dataId']) in removed:
+                continue
+            for t in sorted(_forced_targets(ce, e['dataId'])):
+                if str(t) not in cards:
+                    gaps.setdefault(str(sid), []).append((e['dataId'], t))
+    return gaps
+
+
+def forced_copy_rules(table: dict, db_dir: Path = None) -> list:
+    """T255：副本技能没进卡的强制追击要么 effects_remove 去掉、要么副本进卡；还没定的登记在 forced_copy_pending（技能号→原因），登记了却已不是缺口的要删。"""
+    db_dir = db_dir or DB_DIR
+    if not (db_dir / 'Skills.json').is_file() or not (db_dir / 'CommonEvents.json').is_file():
+        return []
+    skills = {x['id']: x for x in json.loads((db_dir / 'Skills.json').read_text(encoding='utf-8')) if x}
+    ce = {x['id']: x for x in json.loads((db_dir / 'CommonEvents.json').read_text(encoding='utf-8')) if x}
+    pending = table.get('forced_copy_pending', {})
+    bad = []
+    if not isinstance(pending, dict):
+        return ['forced_copy_pending 要是 {技能号: 原因}']
+    gaps = forced_copy_gaps(table, skills, ce)
+    for sid, rows in gaps.items():
+        if sid not in pending:
+            bad.append('技能 %s 的效果 44 调公共事件强制放副本 %s，副本没进卡：在卡上加 effects_remove [44, 公共事件号]，或让副本进卡，或先登记 forced_copy_pending' % (sid, sorted({r[1] for r in rows})))
+    for sid, why in pending.items():
+        if sid not in gaps:
+            bad.append('forced_copy_pending.%s 已经不是缺口，删掉登记' % sid)
+        elif not isinstance(why, str) or not why.strip():
+            bad.append('forced_copy_pending.%s 要写原因' % sid)
+    return bad
+
+
 def check_skill_rework(_args) -> bool:
     path = DATA_DIR / 'skill_rework.json'
     if not path.is_file():
@@ -1202,7 +1260,7 @@ def check_skill_rework(_args) -> bool:
         return True
     try:
         table = json.loads(path.read_text(encoding='utf-8'))
-        bad = _with_tune(skill_rework_rules)(table) + coef_integer_rules(table)
+        bad = _with_tune(skill_rework_rules)(table) + coef_integer_rules(table) + forced_copy_rules(table)
     except Exception as e:
         bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
     return _report('skill_rework.json', '规则自检', bad)
