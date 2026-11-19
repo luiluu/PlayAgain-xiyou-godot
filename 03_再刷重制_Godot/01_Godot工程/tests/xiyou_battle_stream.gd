@@ -55,7 +55,7 @@ const GROUPS := {
 		[170, 0, 80, false, false], [171, 0, 80, false, false], [176, 0, 80, false, false], [177, 0, 80, false, false]],
 	"d": [[175, 0, 80, false, false], [174, 0, 80, false, false], [168, 0, 80, false, false], [108, 0, 80, false, false],
 		[178, 0, 80, false, false], [179, 0, 80, false, false], [36, 0, 80, false, false]],
-	"e": [[173, 0, 80, true, false], [163, 9939, 2, true, false, "collapse"], [172, 0, 80, true, false], [163, 9939, 80, true, true], [163, 9938, 80, true, true]],
+	"e": [[173, 0, 80, true, false], [163, 9939, 2, true, false], [172, 0, 80, true, false], [163, 9939, 80, true, true], [163, 9938, 80, true, true]],
 }
 ## 场景（xiyou_battle_stream、_b…_e）里设
 @export var group := "a"
