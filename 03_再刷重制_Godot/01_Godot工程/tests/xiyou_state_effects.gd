@@ -92,7 +92,7 @@ class ReserveLogic:
 class DepthLogic:
 	extends ReviveLogic
 	var depths := []
-	func execute(u, skill, target = null, forced := false):
+	func execute(u, skill, target = null, forced := false, _stream_root := false):
 		depths.append(XStateEffects.chain_depth)
 		return []
 

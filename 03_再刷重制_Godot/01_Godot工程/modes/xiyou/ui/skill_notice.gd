@@ -62,11 +62,15 @@ static func _flush() -> void:
 	for k in _pending:
 		queue.append(_pending[k])
 	_pending.clear()
-	_layer().pump()
+	var l := _layer()
+	if l != null:
+		l.pump()
 
 
 ## 换局、回标题：清空（原版 setupNewGame／loadGame 的 clear）
 static func clear() -> void:
+	if XMainThread.defer(XSkillNotice.clear):  # T225 线程保险（XMainThread）：结算线程上调到就转回主线程
+		return
 	_pending.clear()
 	queue.clear()
 	var l := _existing()
@@ -83,6 +87,8 @@ static func _existing() -> XSkillNotice:
 
 
 static func _layer() -> XSkillNotice:
+	if not XMainThread.require("XSkillNotice._layer"):  # T225：只由 _flush（call_deferred，主线程）调
+		return null
 	var l := _existing()
 	if l == null:
 		l = XSkillNotice.new()

@@ -12,6 +12,8 @@ static var play_count := 0         # Successful player.play requests, for runtim
 
 
 static func play(name: String, volume := 90, pitch := 100) -> void:
+	if XMainThread.defer(XSound.play.bind(name, volume, pitch)):  # T225 线程保险（XMainThread）：结算线程上调到就转回主线程
+		return
 	if name == "":
 		return
 	var tree := Engine.get_main_loop() as SceneTree

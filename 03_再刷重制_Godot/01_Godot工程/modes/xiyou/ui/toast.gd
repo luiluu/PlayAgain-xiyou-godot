@@ -28,6 +28,8 @@ var stack: VBoxContainer
 
 ## 显示一条提示（挂在场景树根上，跨场景保留，与原版网页层一样）
 static func show_text(message: String, in_menu := false, key := "") -> void:
+	if XMainThread.defer(XToast.show_text.bind(message, in_menu, key)):  # T225 线程保险（XMainThread）：结算线程上调到就转回主线程
+		return
 	if key == "":
 		key = classify(message)
 	if key != "" and not in_menu and not XConfig.notice_on(key):

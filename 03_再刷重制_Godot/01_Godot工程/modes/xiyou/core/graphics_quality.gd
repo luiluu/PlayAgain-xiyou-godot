@@ -142,6 +142,8 @@ static func set_value(key: String, value: Variant) -> bool:
 
 ## 按当前设置把引擎状态设好。进西游模式时与每次改动后调用；tree 为空时取主循环。
 static func apply(tree: SceneTree = null) -> void:
+	if XMainThread.defer(XGraphics.apply.bind(tree)):  # T225 线程保险（XMainThread）：结算线程上调到就转回主线程
+		return
 	if not ENABLED:
 		return
 	if tree == null:

@@ -112,6 +112,10 @@ var _cam_base := {}
 var _cam_applied := false
 ## 正在演出的行动序列（它自己逐帧推进镜头）
 var seq_player: XSequencePlayer
+## T225 逐段结算：正在演的这次行动（XBattleStream）；演到哪段才结算哪段
+var _stream: XBattleStream = null
+## T225：结算没跑完时倒下动画先演完的敌人（掉落要等行动结束 resolve_collapses 才定），行动结束再弹掉落
+var _stream_collapsed: Array = []
 ## 开战转场（XBattleTransition，battlefx1）：地图在转场开着时设 fade_in，开战 24 帧黑幕淡入；
 ## prestarted_bgm 是地图在遇敌演出第 30 帧放起的战斗 BGM（节点归地图，战斗结束由地图收掉）
 var fade_in := false
@@ -982,8 +986,15 @@ func _main() -> void:
 				return
 			_close_windows()
 			_set_active(null)
-			var logs := logic.act(u, cmd[0], cmd[1])
-			await _play(logs)
+			var logs: Array
+			if XBattleStream.PER_SEGMENT:
+				_stream = XBattleStream.start(logic, u, cmd[0], cmd[1])  # T225：先算到第一段之前，后面演到哪段算哪段
+				logs = _stream.out
+				await _play(logs)
+				_stream_finish()
+			else:
+				logs = logic.act(u, cmd[0], cmd[1])
+				await _play(logs)
 			if _tianqi_swap_out != null:
 				await _tianqi_swap(_tianqi_swap_out)
 			for l in logs:
@@ -2474,11 +2485,36 @@ func _wait_frames(n: int) -> void:
 		await get_tree().physics_frame
 
 
+## T225：logs 是正在逐段结算的那次行动的记录时，再结算一段（拿到新记录或刚结束返回 true）
+func _stream_pull(logs: Array) -> bool:
+	return _stream != null and is_same(logs, _stream.out) and _stream.pull()
+
+
+## T225：这次行动剩下的结算一次做完、收线程；倒下时等着定掉落的敌人这时弹掉落
+func _stream_finish() -> void:
+	if _stream == null:
+		return
+	_stream.finish()
+	_stream = null
+	var list := _stream_collapsed.duplicate()
+	_stream_collapsed.clear()
+	for e in list:
+		_enemy_collapsed(e)
+
+
+func _exit_tree() -> void:
+	if _stream != null:
+		_stream.finish()  # 战斗中途被关掉：剩下的段算完、收线程（不留挂着的线程）
+		_stream = null
+
+
 func _play(logs: Array) -> void:
 	var started := Engine.get_physics_frames()
 	var acting := false
 	var i := 0
-	while i < logs.size():
+	while i < logs.size() or _stream_pull(logs):
+		if i >= logs.size():
+			continue
 		var l: Dictionary = logs[i]
 		i += 1
 		if _offstage_target(l):
@@ -2500,6 +2536,7 @@ func _play(logs: Array) -> void:
 			var j := i
 			while j < logs.size() and logs[j].type != "seq_end":
 				j += 1
+			var s0 := i
 			combo.action_started()
 			if l.user is XActor:
 				sprites[l.user].not_acting = int(l.skill.get("id", 0)) == XBattleLogic.GUARD_SKILL  # T206：防御指令不算 acting
@@ -2508,7 +2545,23 @@ func _play(logs: Array) -> void:
 				await _sukuna_fx("shrine")
 			var player := XSequencePlayer.create(self, l, logs.slice(i, j + 1))
 			player.turbo = _seq_turbo()
+			if j >= logs.size() and _stream != null and is_same(logs, _stream.out):
+				# T225：序列还没结算完，演到末尾再结算一段，接到 seq_end 为止
+				# 演出器由参数传进来，不在闭包里抓（抓了就成环：场景中途拆掉时演出器和它的协程还活着）
+				player.feed = func(p: XSequencePlayer) -> bool:
+					if not _stream_pull(logs):
+						return false
+					var n := s0 + p.entries.size()
+					while n < logs.size():
+						p.entries.append(logs[n])
+						n += 1
+						if str(logs[n - 1].type) == "seq_end":
+							p.feed = Callable()
+							break
+					return true
 			await player.play()
+			player.feed = Callable()
+			j = s0 + player.entries.size() - 1
 			combo.action_ended()
 			_banner("")
 			_set_active(null)
@@ -2520,6 +2573,8 @@ func _play(logs: Array) -> void:
 				if acting:
 					await _finish_action(started)
 				started = Engine.get_physics_frames()
+				while _stream_pull(logs):
+					pass  # T225：不走序列的行动（没有分段停点）要往后看命中记录，剩下的先算完
 				_raven_action_serial += 1
 				_raven_hits = logs.slice(i).filter(func(x): return x.type == "hit" and is_same(x.get("user"), l.user) and int(x.skill.get("id", 0)) == int(l.skill.get("id", 0)))
 				acting = true
@@ -3067,6 +3122,10 @@ func _custom_popup(b: XBattler, text: String, format: int) -> void:
 ## MOG_TrPopUpBattle：敌人倒下动画结束时抽定它的掉落（不论设置）；开着「掉落动画」就立即获得、弹出图标，
 ## 并锁住胜利时的物品发放（结算画面照样列出）。所以开着时，逃跑前打倒的敌人的掉落也会留下（同原版）。
 func _enemy_collapsed(e: XEnemy) -> void:
+	if _stream != null and not _stream.done:
+		if not _stream_collapsed.has(e):  # P3-1：倒下→复活→再倒下只弹一次
+			_stream_collapsed.append(e)  # T225：还在逐段结算，掉落要等行动结束（resolve_collapses）才定
+		return
 	var drops := logic.drop_snapshot(e)
 	if drops.is_empty() or not XConfig.flag("MOG_TrPopUpBattle_Key"):
 		return

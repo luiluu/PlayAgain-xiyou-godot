@@ -35,6 +35,8 @@ static func frame_path(name: String, i: int) -> String:
 
 ## 开始放一段片子，返回播放器（await 它的 finished）；没有转出的片子（云端缺 ffmpeg 等）返回 null，调用方照常往下走
 static func start(name: String) -> XMoviePlayer:
+	if not XMainThread.require("XMoviePlayer.start"):  # T225：只在画面主循环里调
+		return null
 	played.append(name)
 	var meta := info(name)
 	var tree := Engine.get_main_loop() as SceneTree

@@ -60,6 +60,8 @@ static func _same(x: Array, y: Array) -> bool:
 
 
 static func notify(a: XActor, before: float, after: float) -> void:
+	if XMainThread.defer(XPowerNotice.notify.bind(a, before, after)):  # T225 线程保险（XMainThread）：结算线程上调到就转回主线程
+		return
 	if not XPower.ui_enabled():
 		return
 	last_change = {"actorId": a.actor_id, "before": before, "after": after, "delta": after - before}

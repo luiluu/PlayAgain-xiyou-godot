@@ -46,6 +46,8 @@ var _line := -1
 var _group_hit := {}
 ## 数值序列持有独立结果槽；嵌套时只共享当前战斗的Boss域。
 var _resources: XResourceContext
+## T225 逐段结算：主行动的根序列才有（XBattleStream），每条 ACTION EFFECT 前停下等画面演到
+var stream = null
 
 
 static func create(l: XBattleLogic, u: XBattler, rec: Dictionary, list: Array) -> XActionSequence:
@@ -107,6 +109,8 @@ func _run_list(list: Array) -> void:
 			_flags.append(v == true)
 			_true_flags.append(false)
 			continue
+		if stream != null and name.to_upper() == "ACTION EFFECT":
+			stream.gate()
 		var mark := _visual_entry(name.to_upper(), args)
 		logs.append(mark)
 		_gains = []
