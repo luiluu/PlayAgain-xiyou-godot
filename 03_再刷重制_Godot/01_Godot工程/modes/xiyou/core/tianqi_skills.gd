@@ -1163,7 +1163,7 @@ static func after_formula(a, b, item: Dictionary) -> void:
 ## 击杀成长（kill_grow）、击杀回 TP（kill_tp）原来在 after_apply 当场看 t.is_alive()。动作序列招（转换后所有技能都带 yepSeq，
 ## 16 张带这两项的卡全在内）打的过程中目标挂 IMMORTAL，0 血不倒、序列收尾才倒，当场永远认不到。
 ## 改成：挂 IMMORTAL 被打到 0 血的先记待定（kpend），序列收尾以后（end_action 开头、追加释放 _cast 跑完序列后）按此刻倒没倒再认；
-## 不死、序列里被救回的不算。同七印、词条斩获的 SEQ_KILLS 办法，单独开关（O-待定-3）：false＝回到旧行为（序列招认不到）
+## 不死、序列里被救回的不算。同七印、词条斩获的 SEQ_KILLS 办法，单独开关（O-612）：false＝回到旧行为（序列招认不到）
 static var SEQ_KILLS := true
 
 

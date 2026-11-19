@@ -35,7 +35,7 @@ const ARTIFACT_ETYPE := 17
 ## 开关（O-426）：true＝默印 5 件在战斗技能列表里多出「万籁俱寂」（TUNE.silence_skill_id），放了就 use_silence_all；false＝不给
 static var SILENCE_SKILL := true
 
-## 开关（O-待定-1，T232）：true＝动作序列招（含普攻）挂着 IMMORTAL 打到 0 血的目标先记成待定击倒，行动收尾（end_action，
+## 开关（O-610，T232）：true＝动作序列招（含普攻）挂着 IMMORTAL 打到 0 血的目标先记成待定击倒，行动收尾（end_action，
 ## 序列已解除 IMMORTAL、该倒的已倒）再按 is_dead() 认，击倒再动、送行连斩、溢出、击杀叠层在序列招上也触发；
 ## false＝回退：只认 after_apply 当场 is_dead() 的（序列招上认不到）
 static var SEQ_KILLS := true

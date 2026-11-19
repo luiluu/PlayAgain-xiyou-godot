@@ -1,6 +1,6 @@
 extends Node
-## 【cc·T232·未经审查】七印「击倒」类效果在各类出招上认不认得到击倒（XTianqiQiyinEffects.SEQ_KILLS，O-待定-1）；
-## 词条「斩获」同病同法（XTianqiAffixBattle.SEQ_KILLS，O-待定-2）；技能重构击杀成长／击杀回 TP 同病同法（XTianqiSkills.SEQ_KILLS，O-待定-3，R1）。
+## 【cc·T232·未经审查】七印「击倒」类效果在各类出招上认不认得到击倒（XTianqiQiyinEffects.SEQ_KILLS，O-610）；
+## 词条「斩获」同病同法（XTianqiAffixBattle.SEQ_KILLS，O-611）；技能重构击杀成长／击杀回 TP 同病同法（XTianqiSkills.SEQ_KILLS，O-612，R1）。
 ## 背景：动作序列招（含普攻）开头把目标挂 IMMORTAL，打到 0 血也不倒，序列收尾解除时才倒下；
 ## after_apply 当场用 is_dead() 认击倒，序列招上永远认不到 → 击倒再动、送行连斩、溢出、击杀叠层都不触发（T230 另查）。
 ## 修法：after_apply 里「这一击把 IMMORTAL 目标打到 0 血」先记成待定击倒（连同溢出），end_action（序列已收尾、IMMORTAL 已解除）再按 is_dead() 认。

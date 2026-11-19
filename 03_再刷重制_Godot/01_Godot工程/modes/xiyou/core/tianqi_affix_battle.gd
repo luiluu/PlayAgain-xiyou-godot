@@ -22,7 +22,7 @@ extends RefCounted
 ## 开关（O-335）：false＝天启篇词条在战斗里没有任何效果（只显示在装备说明里）
 static var ENABLED := true
 
-## 开关（O-待定-2，T232）：true＝「斩获」在动作序列招（含普攻）上也认击倒：挂 IMMORTAL 被打到 0 血的目标先记待定，
+## 开关（O-611，T232）：true＝「斩获」在动作序列招（含普攻）上也认击倒：挂 IMMORTAL 被打到 0 血的目标先记待定，
 ## end_action（序列已收尾、该倒的已倒）再按 is_dead() 认、回血回魔；false＝回退：只认 after_apply 当场 is_dead() 的（序列招上认不到）。
 ## 和七印的 XTianqiQiyinEffects.SEQ_KILLS 同一办法，分开关
 static var SEQ_KILLS := true
