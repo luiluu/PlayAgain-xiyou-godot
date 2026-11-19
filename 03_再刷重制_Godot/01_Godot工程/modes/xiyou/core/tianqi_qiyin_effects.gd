@@ -46,8 +46,11 @@ static var SEQ_KILLS := true
 static var SEQ_REDIRECT := true
 
 ## 开关（O-待定-2，T234）：「0 血挂 IMMORTAL 算不算活着」的统一口径（见 standing）。
-## true＝挑「另一个敌人」接效果（转段、疫满层穿透）和每个目标每场一次的名额（一力降十会）时，0 血挂 IMMORTAL 的算倒了；
-## false＝回退：这几处只看 is_alive()（0 血挂 IMMORTAL 的算活着，转段、穿透可能落到它身上，名额可能用在它身上）。
+## true＝挑「另一个敌人」接效果（非序列转段 redirect、疫满层穿透）、每个目标每场一次的名额（一力降十会）、
+##   殉印 3 件替挡（挑生命最低的队友、挑替挡者）时，0 血挂 IMMORTAL 的算倒了；
+## false＝回退：这几处只看 is_alive()（0 血挂 IMMORTAL 的算活着，转段、穿透可能落到它身上，名额可能用在它身上，
+##   替挡可能锁定它、也可能让它白挡）。
+## 序列转段（seq_redirect）不归这个开关管：它本身就是「目标 0 血挂 IMMORTAL 才转」，挑接段的人始终只挑站着的；要回退关 SEQ_REDIRECT
 ## 对它本身的结算（伤害、判决、处决、落星、上疫、挂状态）不归这个开关管，照常算活着：被救回的应当照吃，改了还要挪随机流
 static var DOWN_RULE := true
 
@@ -449,10 +452,12 @@ static func seq_redirect(logic, u, skill: Dictionary, t):
 		return null
 	if not t.is_dead() and not (t.immortal and t.hp <= 0.0):
 		return null
-	var nt = redirect(logic, u, skill, t)
-	if nt != null and not standing(nt):
-		return null  # DOWN_RULE 关时 redirect 可能挑到另一个 0 血挂 IMMORTAL 的：转过去也是打在倒下的人身上，不转
-	return nt
+	if not _active(logic) or not _has(logic, u, "overflow_hits_redirect"):
+		return null
+	for e in logic.enemies:  # 始终只挑站着的（不看 DOWN_RULE，见开关注释）：转到另一个 0 血挂 IMMORTAL 的身上等于白打
+		if standing(e) and not is_same(e, t):
+			return e
+	return null
 
 
 ## 统一口径（T234）：此刻「站着」＝活着且不是 0 血挂 IMMORTAL。0 血挂 IMMORTAL＝已被击倒、等动作序列收尾倒下（除非之后被救回）。
@@ -883,11 +888,11 @@ static func hp_damage(logic, u, t, value: float) -> float:
 		return value
 	var st := _store(logic)
 	if int(st.get("guarding", 0)) == 0:
-		var low = _lowest(logic.actors)
+		var low = _lowest(logic.actors, true)  # T234：敌方序列招里我方挂 IMMORTAL，0 血的（必倒）不当生命最低的
 		if is_same(low, t):
 			for g in logic.actors:
 				var gp := _p(logic, g, "guard_lowest_ally")
-				if not is_same(g, t) and g.is_alive() and not gp.is_empty():
+				if not is_same(g, t) and _alive_for_pick(g) and not gp.is_empty():  # 0 血挂 IMMORTAL 的不替挡（扣不动血＝白挡）
 					var share := floorf(value * float(gp.share_pct) / 100.0)
 					st.guarding = 1
 					_lose_hp(logic, g, share, st.logs)
@@ -1022,10 +1027,11 @@ static func _elements(skill: Dictionary, a) -> Array:
 	return XDamage.action_elements(skill, a)
 
 
-static func _lowest(list: Array):
+## pick＝true：按 DOWN_RULE 口径挑（0 血挂 IMMORTAL 的不算）；默认只看 is_alive
+static func _lowest(list: Array, pick := false):
 	var best = null
 	for a in list:
-		if a.is_alive() and a.mhp > 0.0 and (best == null or a.hp / a.mhp < best.hp / best.mhp):
+		if (_alive_for_pick(a) if pick else a.is_alive()) and a.mhp > 0.0 and (best == null or a.hp / a.mhp < best.hp / best.mhp):
 			best = a
 	return best
 

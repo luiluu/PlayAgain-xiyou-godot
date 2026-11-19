@@ -60,7 +60,7 @@
 1. ✓ 普攻、序列单体、序列群体招上都转（表见上）；PER_SEGMENT 开、关一致。
 2. ✓ 见「口径」节：规则写清（按场合四条），改 3 处，其余写了不改的理由。
 3. ✓ 随机流：西游档不进七印（`_active` 为假，`seq_redirect` 直接返回 null），`xiyou_determinism` 372/372；`mv_oracle/boot_check.cjs` 正常（db true、modulesFailed []、errors []）。天启篇战真印持有者的出招按设计换了目标（总段数不变）。没跑整份 `检查.sh --oracle`（车道不跑全量）。
-4. ✓ 两个开关单独可回退：`SEQ_REDIRECT = false` 回到序列招不转（`off_wasted_*`）；`DOWN_RULE = false` 回到只看 `is_alive`（`next_enemy_off_old`、`lose_action_off`、`seq_redirect_off_not_to_down`）。新专项 `xiyou_tianqi_qiyin_redirect` 51/51。
+4. ✓ 两个开关单独可回退：`SEQ_REDIRECT = false` 回到序列招不转（`off_wasted_*`）；`DOWN_RULE = false` 回到只看 `is_alive`（`next_enemy_off_old`、`lose_action_off`、`guard_seq_off_*`）。新专项 `xiyou_tianqi_qiyin_redirect` 52/52（热修后）。
 
 ## 变更记录草稿
 
@@ -86,6 +86,13 @@
 - 语法检查 1059 个 .gd 0 问题；工具快速回归全部通过；参照引擎启动检查正常（`boot_check.cjs`：db true、modulesFailed []、errors []）。
 - 没跑：整份 `检查.sh`、`--oracle` 全量对照、云端选测、虚拟玩家。
 
+## 核后热修（小A Neon 核过：P2×1、P3×2）
+
+- **P2-1 殉印 3 件替挡**：`hp_damage` 在敌方序列招里跑，我方挂 IMMORTAL。改：挑「生命最低的队友」用 `_lowest(logic.actors, true)`（按 DOWN_RULE 口径，0 血挂 IMMORTAL 的不算），挑替挡者用 `_alive_for_pick(g)`；都挂在 `DOWN_RULE` 下，关掉回到只看 `is_alive`。不取随机数。`_lowest` 另两处调用（献血护盾、普攻治疗最低）不动（pick 默认 false）。专项 `xiyou_tianqi_qiyin_effects` 加 `_guard_seq`：按段重放敌方群体多段序列招（我方全挂 IMMORTAL、第一段把一名队友打到 0 血），后续段残血队友照被替挡、0 血的不被锁定、0 血的替挡者不白挡；开关关时回到旧口径（8 条），71/71。
+- **P3-1 选「改行为」**：`seq_redirect` 不再先调 `redirect`（DOWN_RULE 关时取第一个 `is_alive` 的、若它 0 血就整段不转），改成自己挑第一个 `standing` 的敌人，不看 DOWN_RULE；第 50 行附近注释写明「序列转段不归 DOWN_RULE 管，要回退关 SEQ_REDIRECT」，并把替挡列进 DOWN_RULE 管的范围。理由：序列转段本身的触发条件就是「目标 0 血挂 IMMORTAL」，DOWN_RULE 关时仍可能转到另一个 0 血的人身上是白转，旧写法则会在有站着的敌人时也不转。专项加 `seq_redirect_off_skips_down`，原 `seq_redirect_off_not_to_down` 改名 `seq_redirect_off_only_down_left`（只剩倒下的人时不转）。
+- **P3-2**：`legacy_no_redirect` 改成 `not leg.has("skip") and …`（探针没找到技能不再算过）。
+- 重跑：`xiyou_tianqi_qiyin_redirect` 52/52、`xiyou_tianqi_qiyin_effects` 71/71、`xiyou_determinism` 372/372（`并行测试.py --full`）；语法检查 1059 个 .gd 0 问题。
+
 ## 要 Kyo 定
 
 - 无。（口径只动天启篇七印自己的挑人与名额，没改原版行为，所以没 ask。）
@@ -100,4 +107,5 @@
 
 ## 本分支提交
 
+- （热修提交见 git log）
 - 68ea9b54a WIP：战真印转段接序列路（SEQ_REDIRECT）＋0 血 IMMORTAL 挑人口径（DOWN_RULE）；专项 51/51

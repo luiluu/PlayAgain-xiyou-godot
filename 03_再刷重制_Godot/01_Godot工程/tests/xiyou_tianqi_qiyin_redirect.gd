@@ -184,7 +184,7 @@ func _measure() -> void:
 func _edges() -> void:
 	# 西游档：七印不生效，序列普攻照旧打在 0 血目标上
 	var leg := _probe("西游档普攻", func(u): return u.attack_skill(), 1, false, false)
-	_check("legacy_no_redirect", leg.has("skip") or int(leg.hits_other) == 0, leg)
+	_check("legacy_no_redirect", not leg.has("skip") and int(leg.hits_other) == 0, leg)
 	# 没戴战真印（同流派武器但不是真印）：普攻 2 段，第二段照打 0 血目标
 	var plain := _probe("非真印普攻", func(u): return u.attack_skill(), 1, false, true, [{"kind": "weapon", "seal": "hong", "wtype": "sword", "true_seal": false}])
 	_check("no_true_seal_no_redirect", int(plain.hits_other) == 0 and int(plain.hits_low) == 2, plain)
@@ -222,14 +222,19 @@ func _rule() -> void:
 	_check("redirect_skips_down", not is_same(XTianqiQiyinEffects.redirect(lg, u, u.attack_skill(), e0), e1))
 	XTianqiQiyinEffects.DOWN_RULE = false
 	_check("next_enemy_off_old", is_same(XTianqiQiyinEffects._next_enemy(lg, e0), e1))
-	# 关着时 redirect 可能挑到 0 血挂 IMMORTAL 的，seq_redirect 不转过去（不转＝照原样）
+	# seq_redirect 不归 DOWN_RULE 管（T234 P3-1）：关着时也越过 0 血挂 IMMORTAL 的 e1、转给后面站着的
 	e0.immortal = true
 	e0.hp = 0.0
+	if lg.enemies.size() >= 3:
+		var nt2 = XTianqiQiyinEffects.seq_redirect(lg, u, u.attack_skill(), e0)
+		_check("seq_redirect_off_skips_down", nt2 != null and XTianqiQiyinEffects.standing(nt2) and not is_same(nt2, e1), nt2)
+	else:
+		_check("seq_redirect_off_skips_down_need3", false, lg.enemies.size())
 	var only_down := lg.enemies.filter(func(x): return not is_same(x, e0) and not is_same(x, e1))
 	for x in only_down:
 		x.hp = 0.0
 		lg._die(x)
-	_check("seq_redirect_off_not_to_down", XTianqiQiyinEffects.seq_redirect(lg, u, u.attack_skill(), e0) == null)
+	_check("seq_redirect_off_only_down_left", XTianqiQiyinEffects.seq_redirect(lg, u, u.attack_skill(), e0) == null)
 	XTianqiQiyinEffects.DOWN_RULE = true
 	_check("seq_redirect_none_left", XTianqiQiyinEffects.seq_redirect(lg, u, u.attack_skill(), e0) == null)
 	lg.end_battle(0)

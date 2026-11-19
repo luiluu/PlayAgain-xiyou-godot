@@ -295,6 +295,7 @@ func _actions() -> void:
 	var g0 := g.hp
 	var got := XTianqiQiyinEffects.hp_damage(lg, e, low, 100.0)
 	_check("guard_half", is_equal_approx(got, 50.0) and is_equal_approx(g0 - g.hp, 50.0), [got, g0 - g.hp])
+	_guard_seq(lg, e, g)
 	# 击倒后再行动（红印 5 件）每回合一次
 	var h: XActor = lg.actors[1]
 	_wear(h, _gear_set("hong", 5))
@@ -352,6 +353,64 @@ func _actions() -> void:
 		XTianqiQiyinEffects.end_action(lg, s2, sk)
 		_check("scythe_execute", mob.is_dead())
 	_check("scythe_no_revive", XTianqiQiyinEffects.blocks_revive(s2))
+
+
+## 替挡在敌方群体多段序列招里（T234 P2-1）：序列期间我方全挂 IMMORTAL，第一段把一名队友打到 0 血（不倒、等收尾），
+## 后续段：0 血的不再被当成「生命最低」锁定（不然真正残血的队友没人挡），0 血的替挡者也不白挡。DOWN_RULE 关回到旧口径。
+## 按段直接调 hp_damage 重放（同序列路：每段每个目标走一次 execute_hp_damage），不取随机数
+func _guard_seq(lg: XBattleLogic, e: XEnemy, g: XActor) -> void:
+	var low: XActor = lg.actors[0]
+	var down: XActor = lg.actors[1]
+	for on in [true, false]:
+		XTianqiQiyinEffects.DOWN_RULE = on
+		var tag := "on" if on else "off"
+		_fresh(lg)
+		for x in lg.actors:
+			x.recover_all()
+			x.shield = 0.0
+			x.immortal = true  # 序列开始挂 IMMORTAL
+		low.hp = low.mhp * 0.5
+		down.hp = 1.0
+		# 第一段：群体打到每个人；down 吃满致命一段、0 血挂着
+		for x in lg.actors:
+			var v := XTianqiQiyinEffects.hp_damage(lg, e, x, 2.0 if is_same(x, down) else 1.0)  # down 1 血：吃 2（替挡分走 1）正好 0 血
+			x.hp = maxf(0.0, x.hp - v)
+		_check("guard_seq_down_zero_%s" % tag, down.hp <= 0.0 and down.is_alive(), [down.hp, down.is_alive()])
+		# 第二段：残血的 low 挨打
+		var g0 := g.hp
+		var got := XTianqiQiyinEffects.hp_damage(lg, e, low, 100.0)
+		if on:
+			_check("guard_seq_low_guarded", is_equal_approx(got, 50.0) and is_equal_approx(g0 - g.hp, 50.0), [got, g0 - g.hp])
+		else:
+			_check("guard_seq_off_old", is_equal_approx(got, 100.0) and is_equal_approx(g0, g.hp), [got, g0 - g.hp])
+		# 第二段：0 血的 down 挨打
+		g0 = g.hp
+		got = XTianqiQiyinEffects.hp_damage(lg, e, down, 100.0)
+		if on:
+			_check("guard_seq_down_not_locked", is_equal_approx(got, 100.0) and is_equal_approx(g0, g.hp), [got, g0 - g.hp])
+		else:
+			_check("guard_seq_off_locks_down", is_equal_approx(got, 50.0) and is_equal_approx(g0 - g.hp, 50.0), [got, g0 - g.hp])
+	# 替挡者自己 0 血挂 IMMORTAL：开＝不替挡（扣不动血；low 是站着的里生命最低，只有 g 那一关拦得住）；
+	# 关＝旧口径：0 血的 g 自己成了「生命最低」，low 没人挡
+	for on in [true, false]:
+		XTianqiQiyinEffects.DOWN_RULE = on
+		_fresh(lg)
+		for x in lg.actors:
+			x.recover_all()
+			x.shield = 0.0
+			x.immortal = true
+		low.hp = low.mhp * 0.2
+		g.hp = 0.0
+		var got := XTianqiQiyinEffects.hp_damage(lg, e, low, 100.0)
+		if on:
+			_check("guard_seq_guard_down_skips", is_equal_approx(got, 100.0), got)
+		else:
+			_check("guard_seq_guard_down_off_old", is_equal_approx(got, 100.0), got)
+	XTianqiQiyinEffects.DOWN_RULE = true
+	for x in lg.actors:
+		x.immortal = false
+		x.recover_all()
+		x.shield = 0.0
 
 
 func _switches() -> void:
