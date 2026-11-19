@@ -1425,6 +1425,7 @@ func act(u: XBattler, skill, target) -> Array:
 	logs.append_array(XTianqiAffixBattle.end_action(self, u, skill))  # 天启篇词条「再释放」（弱者专属词条：原生再释放）
 	XTianqiWeakAffix.pop_kind(self)
 	logs.append_array(XTianqiSkills.end_action(self, u, skill))  # 天启篇技能重构：追加释放（每人每回合最多 1 次）
+	logs.append_array(XTianqiQiyinEffects.followup_settle(self, u, skill))  # 天启篇 T240：追加出手打倒的也算击倒（叠层、连斩、斩获、再动，最多 3 轮）
 	logs.append_array(XTianqiQiyinDragonRun.end_action(self))  # 七首之龙：打到段底断首、揭下一道印
 	if ended:
 		XBinding.end_action()  # 绑定 endAction 包装（原 endAction 之后）：清行动者、validate（被控角色也走，参照 xuan_auto skip_validate）

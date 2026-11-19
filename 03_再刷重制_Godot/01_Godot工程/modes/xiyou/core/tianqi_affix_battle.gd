@@ -524,6 +524,7 @@ static func end_action(logic, u, skill) -> Array:
 	st.act = {}
 	if int(st.depth) == 0 and not f.is_empty() and is_same(f.u, u):
 		_confirm_harvest(f)
+		st.last = {"u": u, "harvested": bool(f.harvested)}  # T240：追加出手打倒的再回斩获时认「这次行动回过没有」
 	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not (skill is Dictionary) or skill.is_empty():
 		return logs
 	if u.is_attack(skill) or not u.is_alive():
@@ -539,7 +540,9 @@ static func end_action(logic, u, skill) -> Array:
 	for t in f.targets:
 		if t.is_alive():
 			logs.append({"type": "action", "user": u, "skill": skill, "views": logic.views()})
+			var before := XTianqiQiyinEffects.fu_snap(logic, u)  # T240：再释放打倒的记进七印的追加击倒窗口
 			logs.append_array(logic.mark_views([logic.apply(u, skill, t)]))  # 打完当场取画面快照（评审 v0.1 第 8 条）
+			XTianqiQiyinEffects.fu_note(logic, u, before)
 	st.depth = int(st.depth) - 1
 	return logs
 
@@ -558,6 +561,23 @@ static func _confirm_harvest(f: Dictionary) -> void:
 	if not p.has("harvest"):
 		return
 	f.harvested = true
+	u.hp = minf(u.mhp, u.hp + floorf(u.mhp * float(p.harvest) / 100.0))
+	u.mp = minf(u.mmp, u.mp + floorf(u.mmp * float(p.harvest) / 100.0))
+
+
+## T240（XTianqiQiyinEffects.FOLLOW_KILLS）：追加出手（七印派生、再释放、技能追加释放）打倒了敌人，XTianqiQiyinEffects.followup_settle 调：
+## 这次行动还没回过斩获、出手者还活着就回一次（一次行动仍只一次）
+static func followup_harvest(logic, u) -> void:
+	if not _active(logic) or not (u is XActor) or not u.is_alive():
+		return
+	var st := _store(logic)
+	var last: Dictionary = st.get("last", {})
+	if last.is_empty() or not is_same(last.u, u) or bool(last.harvested):
+		return
+	var p: Dictionary = view(u).get("p", {})
+	if not p.has("harvest"):
+		return
+	last.harvested = true
 	u.hp = minf(u.mhp, u.hp + floorf(u.mhp * float(p.harvest) / 100.0))
 	u.mp = minf(u.mmp, u.mp + floorf(u.mmp * float(p.harvest) / 100.0))
 
