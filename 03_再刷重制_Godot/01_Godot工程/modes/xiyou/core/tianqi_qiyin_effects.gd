@@ -40,12 +40,12 @@ static var SILENCE_SKILL := true
 ## false＝回退：只认 after_apply 当场 is_dead() 的（序列招上认不到）
 static var SEQ_KILLS := true
 
-## 开关（O-待定-1，T234）：true＝战真印「击倒后剩下的段转给另一个敌人」（overflow_hits_redirect）在动作序列招（含普攻）上也生效：
+## 开关（O-613，T234）：true＝战真印「击倒后剩下的段转给另一个敌人」（overflow_hits_redirect）在动作序列招（含普攻）上也生效：
 ## 序列每条 ACTION EFFECT 打之前，目标已倒或 0 血挂 IMMORTAL（已被击倒、等收尾倒下）就转给另一个站着的敌人（seq_redirect）；
 ## false＝回退：只有非序列招转段（库里技能全带 yepSeq，等于一招都不转）
 static var SEQ_REDIRECT := true
 
-## 开关（O-待定-2，T234）：「0 血挂 IMMORTAL 算不算活着」的统一口径（见 standing）。
+## 开关（O-614，T234）：「0 血挂 IMMORTAL 算不算活着」的统一口径（见 standing）。
 ## true＝挑「另一个敌人」接效果（非序列转段 redirect、疫满层穿透）、每个目标每场一次的名额（一力降十会）、
 ##   殉印 3 件替挡（挑生命最低的队友、挑替挡者）时，0 血挂 IMMORTAL 的算倒了；
 ## false＝回退：这几处只看 is_alive()（0 血挂 IMMORTAL 的算活着，转段、穿透可能落到它身上，名额可能用在它身上，
