@@ -276,8 +276,12 @@ func _action_effect(args: Array) -> void:
 		var t = XTianqiWeakAffix.segment_target(logic, user, skill, t0) if t0 != null else null  # 天启篇弱者专属词条：引导者这一段前不合法回原目标、都不合法跳过
 		if t == null:
 			continue
-		if t.is_dead() and not [9, 10].has(int(skill.get("scope", 0))) and not (XStateEffects.FIX_LOTUS_7303 and int(skill.get("id", 0)) == 7303):
-			continue
+		if not [9, 10].has(int(skill.get("scope", 0))) and not (XStateEffects.FIX_LOTUS_7303 and int(skill.get("id", 0)) == 7303):
+			var rt = XTianqiQiyinEffects.seq_redirect(logic, user, skill, t)  # 天启篇战真印（T234）：已倒或 0 血挂 IMMORTAL 的，这一段转给另一个站着的敌人；不转为 null
+			if rt != null:
+				t = rt
+			if t.is_dead():
+				continue
 		logs.append_array(logic.mark_views(logic._invoke(user, skill, t)))
 
 

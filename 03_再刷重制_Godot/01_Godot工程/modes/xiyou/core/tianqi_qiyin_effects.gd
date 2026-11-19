@@ -11,7 +11,7 @@ extends RefCounted
 ## 神器：全队同时只生效一件（出战顺序里第一个戴神器的人）。
 ##
 ## 接法（battle_logic 里各一行）：开战 start；行动 begin_action／plan_hits／end_action；每次 apply 前后 before_apply／after_apply；
-## 连击段数 repeats；目标死了转段 redirect；扣血入口 hp_damage（替队友挡、免死）；回合开始 start_turn、回合结束 end_turn；
+## 连击段数 repeats；目标死了转段 redirect（序列路 seq_redirect，T234）；扣血入口 hp_damage（替队友挡、免死）；回合开始 start_turn、回合结束 end_turn；
 ## 技能消耗 cost；暴击率 cri；复活 blocks_revive。伤害乘区走 XActorDamageHooks（damage_ops，只做加和乘），最大生命走 XActor.param_rate（param_rate）。
 ## 数值是占位（表头 draft），表里没有的手感参数集中在 TUNE。
 ## 击倒（T232，SEQ_KILLS）：动作序列招（转换后几乎所有技能、含普攻）打的过程中目标挂 IMMORTAL，0 血不倒；after_apply 先记待定，end_action 开头 confirm_pending 认。
@@ -39,6 +39,17 @@ static var SILENCE_SKILL := true
 ## 序列已解除 IMMORTAL、该倒的已倒）再按 is_dead() 认，击倒再动、送行连斩、溢出、击杀叠层在序列招上也触发；
 ## false＝回退：只认 after_apply 当场 is_dead() 的（序列招上认不到）
 static var SEQ_KILLS := true
+
+## 开关（O-待定-1，T234）：true＝战真印「击倒后剩下的段转给另一个敌人」（overflow_hits_redirect）在动作序列招（含普攻）上也生效：
+## 序列每条 ACTION EFFECT 打之前，目标已倒或 0 血挂 IMMORTAL（已被击倒、等收尾倒下）就转给另一个站着的敌人（seq_redirect）；
+## false＝回退：只有非序列招转段（库里技能全带 yepSeq，等于一招都不转）
+static var SEQ_REDIRECT := true
+
+## 开关（O-待定-2，T234）：「0 血挂 IMMORTAL 算不算活着」的统一口径（见 standing）。
+## true＝挑「另一个敌人」接效果（转段、疫满层穿透）和每个目标每场一次的名额（一力降十会）时，0 血挂 IMMORTAL 的算倒了；
+## false＝回退：这几处只看 is_alive()（0 血挂 IMMORTAL 的算活着，转段、穿透可能落到它身上，名额可能用在它身上）。
+## 对它本身的结算（伤害、判决、处决、落星、上疫、挂状态）不归这个开关管，照常算活着：被救回的应当照吃，改了还要挪随机流
+static var DOWN_RULE := true
 
 ## 七印书卷：开战揭的规则（只对敌方）。里副本规则由祭坛车道（cc/qiyin-altar）实现，读 enemy_only_rule(logic)。
 ## 免死对这个即死无效：死期（终焉规则）结算时由实现方把它置真、结算完置假。
@@ -426,8 +437,34 @@ static func repeats(logic, u, skill: Dictionary, n: int) -> int:
 static func redirect(logic, u, skill: Dictionary, dead):
 	if not _active(logic) or not _has(logic, u, "overflow_hits_redirect") or not (dead is XEnemy):
 		return null
-	var alive: Array = logic.enemies.filter(func(e): return e.is_alive() and not is_same(e, dead))
+	var alive: Array = logic.enemies.filter(func(e): return _alive_for_pick(e) and not is_same(e, dead))
 	return alive[0] if not alive.is_empty() else null
+
+
+## 动作序列路（XActionSequence._action_effect，每条 ACTION EFFECT 打之前）：目标已倒、或 0 血挂 IMMORTAL（已被击倒、序列收尾才倒）时，
+## 战真印把这一段转给另一个站着的敌人（同 redirect，取第一个）。不转（开关关、没战真印、目标还站着、没有别的敌人）返回 null，调用方照原样。
+## 只读写结算数据、不碰场景树（PER_SEGMENT 交接线程里也跑）
+static func seq_redirect(logic, u, skill: Dictionary, t):
+	if not SEQ_REDIRECT or t == null or not (t is XEnemy):
+		return null
+	if not t.is_dead() and not (t.immortal and t.hp <= 0.0):
+		return null
+	var nt = redirect(logic, u, skill, t)
+	if nt != null and not standing(nt):
+		return null  # DOWN_RULE 关时 redirect 可能挑到另一个 0 血挂 IMMORTAL 的：转过去也是打在倒下的人身上，不转
+	return nt
+
+
+## 统一口径（T234）：此刻「站着」＝活着且不是 0 血挂 IMMORTAL。0 血挂 IMMORTAL＝已被击倒、等动作序列收尾倒下（除非之后被救回）。
+## 用在：挑另一个敌人接效果（转段、疫满层穿透）、每个目标每场一次的名额（一力降十会）——这些落到必倒的人身上是浪费。
+## 不用在：对目标本身的结算、我方受击方的自保、「此刻在场几人」类加成（见 T234 交付单「口径」节）。同 XTianqiWeakAffix.legal（批 0A）
+static func standing(b) -> bool:
+	return b != null and b.is_alive() and not (b.immortal and b.hp <= 0.0)
+
+
+## 挑人用：DOWN_RULE 开＝standing，关＝回退只看 is_alive
+static func _alive_for_pick(b) -> bool:
+	return standing(b) if DOWN_RULE else b.is_alive()
 
 
 static func before_apply(logic, u, skill: Dictionary, t) -> void:
@@ -490,7 +527,7 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 		if logic._float("qiyin_star") < float(star.chance_pct) / 100.0:
 			_star_fall(logic, u, hp_dmg * float(star.dmg_pct) / 100.0)
 	# 一力降十会：蓄势这一击让目标下回合少动一次（每个目标每场一次）
-	if bool(f.idle) and _has(logic, u, "target_lose_action") and not bool(tu.lose_used) and t.is_alive():
+	if bool(f.idle) and _has(logic, u, "target_lose_action") and not bool(tu.lose_used) and _alive_for_pick(t):  # T234：0 血挂 IMMORTAL 的（必倒）不占名额
 		tu.lose_used = true
 		tu.lose_next = int(tu.lose_next) + int(_p(logic, u, "target_lose_action").get("count", 1))
 	# 灰镰：普通敌人低于线直接处决
@@ -997,7 +1034,7 @@ static func _next_enemy(logic, t):
 	var i: int = logic.enemies.find(t)
 	for k in range(1, logic.enemies.size()):
 		var e = logic.enemies[(i + k) % logic.enemies.size()]
-		if e.is_alive() and not is_same(e, t):
+		if _alive_for_pick(e) and not is_same(e, t):  # T234：疫满层穿透不穿到 0 血挂 IMMORTAL 的（必倒）身上
 			return e
 	return null
 
