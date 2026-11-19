@@ -802,5 +802,18 @@ class ForcedCopyT255(unittest.TestCase):
         self.assertFalse(any("技能 7057" in b for b in chk.forced_copy_rules(self.t)))
 
 
+class FateCopyT263(unittest.TestCase):
+    """T263：命运编织者 6861→公共事件 1213 的七种命运副本（6862～6867、6875）都在卡里，6861 不再登记待定。"""
+    def setUp(self):
+        self.t = json.loads((REAL_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+
+    def test_not_pending(self):
+        self.assertNotIn('6861', self.t['forced_copy_pending'])
+        self.assertFalse(any('6861' in b for b in chk.forced_copy_rules(self.t)))
+
+    def test_ultimate_card_needed(self):
+        del self.t['skills']['6875']
+        self.assertTrue(any('技能 6861' in b and '6875' in b for b in chk.forced_copy_rules(self.t)))
+
 if __name__ == '__main__':
     unittest.main()
