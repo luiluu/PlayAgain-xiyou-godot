@@ -18,6 +18,7 @@
 - reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
 - brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。
 - guardian_params.json（守层者能力值重锚，T237／T245）：只有 B 组，ref_enemy 是正整数、stats 八项对 0～7、floors 只有 31～34 层、qiyin 行（可没有）和每层只写 stats 里的项（下划线开头的注释键除外）、取值是正整数百分比（附则 E）。
+- growth.json（渡鸦、奈叶、流萤无限成长，T256）：只有 B 组，全表整数（附则 E）、层价分段从 1 层起连续且份数不降、翻倍倍数 ≥2、拐点在分段里、Q6 判定四项范围、三人行齐全且角色号对、一份是正整数、平加只认能力编号 0～7 且渡鸦只加魔攻、奈叶只加生命魔法、流萤不走平加。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -2193,6 +2194,106 @@ def check_guardian_params(_args) -> bool:
     return _run_table('guardian_params.json', guardian_params_rules)
 
 
+# ---- growth.json（渡鸦、奈叶、流萤无限成长，T256） ----
+
+GROWTH_ACTORS = {'raven': 167, 'nanoha': 108, 'liuying': 179}
+
+
+def _growth_ints(node, path, bad):
+    """附则 E：表里的数一律整数（下划线开头的注释键、字符串除外）。"""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if not str(k).startswith('_'):
+                _growth_ints(v, '%s.%s' % (path, k) if path else str(k), bad)
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            _growth_ints(v, '%s[%d]' % (path, i), bad)
+    elif isinstance(node, float):
+        bad.append('%s＝%r 不是整数（附则 E）' % (path, node))
+
+
+def _pos_int(v, allow_zero=False) -> bool:
+    return _is_int(v) and (v >= 0 if allow_zero else v > 0)
+
+
+def growth_rules(table: dict) -> list:
+    bad = []
+    _growth_ints(table, '', bad)
+    price = table.get('price', {})
+    segs = price.get('segments', [])
+    if not isinstance(segs, list) or not segs:
+        bad.append('price.segments 是空的')
+        segs = []
+    nxt, last = 1, 0
+    for i, sg in enumerate(segs):
+        f, t, sh = sg.get('from'), sg.get('to'), sg.get('shares')
+        if not (_pos_int(f) and _pos_int(t) and _pos_int(sh)):
+            bad.append('price.segments[%d] 的 from／to／shares 不是正整数：%r' % (i, sg))
+            continue
+        if f != nxt or t < f:
+            bad.append('price.segments[%d] 不连续：从 %d 层起，应从 %d 层起、到不早于起' % (i, f, nxt))
+        if sh < last:
+            bad.append('price.segments[%d] 每层份数 %d 比上一段 %d 少（层价只升不降）' % (i, sh, last))
+        nxt, last = t + 1, sh
+    if not (_is_int(price.get('grow')) and price.get('grow') >= 2):
+        bad.append('price.grow＝%r 不是 ≥2 的整数' % (price.get('grow'),))
+    if not (_pos_int(price.get('turn')) and price.get('turn') < nxt):
+        bad.append('price.turn＝%r 不在分段写明的层里（1～%d）' % (price.get('turn'), nxt - 1))
+    if not (_is_int(price.get('max_layer')) and price.get('max_layer') >= nxt):
+        bad.append('price.max_layer＝%r 比分段末层还小' % (price.get('max_layer'),))
+    fr = table.get('floor_rule', {})
+    if not _pos_int(fr.get('window'), True):
+        bad.append('floor_rule.window＝%r 不是非负整数' % (fr.get('window'),))
+    if not (_pos_int(fr.get('abyss_cap')) and fr.get('abyss_cap') <= 36):
+        bad.append('floor_rule.abyss_cap＝%r 不在 1～36' % (fr.get('abyss_cap'),))
+    if not (isinstance(fr.get('abyss_prefix'), str) and fr.get('abyss_prefix')):
+        bad.append('floor_rule.abyss_prefix 不是非空字符串')
+    if not (_pos_int(fr.get('king_tier')) and fr.get('king_tier') <= 4):
+        bad.append('floor_rule.king_tier＝%r 不在 1～4（XDungeon.VAR_TIER 的档）' % (fr.get('king_tier'),))
+    acts = table.get('actors', {})
+    for key, aid in GROWTH_ACTORS.items():
+        r = acts.get(key)
+        if not isinstance(r, dict):
+            bad.append('actors 缺 %s' % key)
+            continue
+        if r.get('actor') != aid:
+            bad.append('actors.%s.actor＝%r，应是 %d' % (key, r.get('actor'), aid))
+        if not _pos_int(r.get('base'), True):
+            bad.append('actors.%s.base＝%r 不是非负整数' % (key, r.get('base')))
+        if not _pos_int(r.get('share')):
+            bad.append('actors.%s.share＝%r 不是正整数（一份）' % (key, r.get('share')))
+        flat = r.get('flat', {})
+        if not isinstance(flat, dict):
+            bad.append('actors.%s.flat 不是对象' % key)
+            flat = {}
+        for k, v in flat.items():
+            if str(k) not in ('0', '1', '2', '3', '4', '5', '6', '7'):
+                bad.append('actors.%s.flat 的键 %s 不是能力编号 0～7' % (key, k))
+            if not _pos_int(v):
+                bad.append('actors.%s.flat.%s＝%r 不是正整数' % (key, k, v))
+    rv, nh, ly = acts.get('raven', {}), acts.get('nanoha', {}), acts.get('liuying', {})
+    if isinstance(rv, dict):
+        if not _pos_int(rv.get('need_skill')):
+            bad.append('actors.raven.need_skill 不是正整数（至尊鸦皇 10136）')
+        if set(rv.get('flat', {}).keys()) != {'4'}:
+            bad.append('actors.raven.flat 只该有 4（魔法攻击）：%r' % (rv.get('flat'),))
+    if isinstance(nh, dict) and set(nh.get('flat', {}).keys()) != {'0', '1'}:
+        bad.append('actors.nanoha.flat 只该有 0、1（最大生命、最大魔法）：%r' % (nh.get('flat'),))
+    if isinstance(ly, dict):
+        if ly.get('flat'):
+            bad.append('actors.liuying 不走平加，不该有 flat（稿 3.5 末条）')
+        for k in ('ember', 'ember_cap', 'dmg_step'):
+            if not _pos_int(ly.get(k)):
+                bad.append('actors.liuying.%s＝%r 不是正整数' % (k, ly.get(k)))
+        if not _pos_int(ly.get('dmg_pct'), True):
+            bad.append('actors.liuying.dmg_pct＝%r 不是非负整数' % (ly.get('dmg_pct'),))
+    return bad
+
+
+def check_growth(_args) -> bool:
+    return _run_table('growth.json', growth_rules)
+
+
 def check_brand(_args) -> bool:
     bal = DATA_DIR / 'balance_table.json'
     balance = json.loads(bal.read_text(encoding='utf-8')) if bal.is_file() else None
@@ -2233,6 +2334,7 @@ CHECKS = [
     ('abs_rescale', check_abs_rescale),
     ('brand', check_brand),
     ('guardian_params', check_guardian_params),
+    ('growth', check_growth),
 ]
 
 

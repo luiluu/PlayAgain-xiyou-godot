@@ -726,5 +726,50 @@ class AbsGroupsT249(unittest.TestCase):
         self.assertTrue(chk.abs_rescale_rules(self.t))
 
 
+class Growth(unittest.TestCase):
+    """growth.json（T256）：全整数、层价分段连续、三人行齐全、平加只认对的能力项。"""
+
+    def setUp(self):
+        self.t = json.loads((chk.DATA_DIR / 'growth.json').read_text(encoding='utf-8'))
+
+    def _bad(self, part):
+        return any(part in b for b in chk.growth_rules(self.t))
+
+    def test_real_passes(self):
+        self.assertEqual(chk.growth_rules(self.t), [])
+
+    def test_decimal_fails(self):
+        self.t['actors']['nanoha']['flat']['1'] = 2000.5
+        self.assertTrue(self._bad('附则 E'))
+
+    def test_gap_in_segments(self):
+        self.t['price']['segments'][1]['from'] = 14
+        self.assertTrue(self._bad('不连续'))
+
+    def test_price_down(self):
+        self.t['price']['segments'][2]['shares'] = 1
+        self.assertTrue(self._bad('层价只升不降'))
+
+    def test_missing_actor(self):
+        del self.t['actors']['liuying']
+        self.assertTrue(self._bad('缺 liuying'))
+
+    def test_raven_flat_only_mat(self):
+        self.t['actors']['raven']['flat']['2'] = 100
+        self.assertTrue(self._bad('raven.flat 只该有 4'))
+
+    def test_liuying_no_flat(self):
+        self.t['actors']['liuying']['flat'] = {'0': 500}
+        self.assertTrue(self._bad('不走平加'))
+
+    def test_share_zero(self):
+        self.t['actors']['raven']['share'] = 0
+        self.assertTrue(self._bad('一份'))
+
+    def test_note_keys_ignored(self):
+        self.t['actors']['raven']['_x'] = 1.5
+        self.assertEqual(chk.growth_rules(self.t), [])
+
+
 if __name__ == '__main__':
     unittest.main()

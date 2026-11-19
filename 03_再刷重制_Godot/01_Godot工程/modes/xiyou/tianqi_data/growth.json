@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "source": "天启篇无限成长 v0.4（私密设计仓库 重制设定/天启篇_无限成长_v0.4.md 第二节、3.5 节、第八节卡①；Kyo 2026-11-19「216全推荐」：Q1 甲、Q6 乙）",
+  "_note": "天启篇渡鸦、奈叶、流萤无限成长（XTianqiGrowth），只读，只对天启篇存档生效。全部整数（附则 E）。层价表三人共用；「一份」和每层给多少各人一行，标定（T258 探针、T260 实量场数）只改这张表、不改代码。draft＝每层给多少还是草案，等 T258 标定。",
+  "draft": true,
+  "price": {
+    "_note": "层价表（稿第二节）：第 from～to 层每层要 shares 份；最后一段之后每层是上一层的 grow 倍（26 层 8 份、27 层 16 份……）。turn＝拐点层（累计 36 份），只给界面和探针看。max_layer 只是算层数的循环保险。",
+    "segments": [
+      {"from": 1, "to": 12, "shares": 1},
+      {"from": 13, "to": 24, "shares": 2},
+      {"from": 25, "to": 25, "shares": 4}
+    ],
+    "grow": 2,
+    "turn": 24,
+    "max_layer": 200
+  },
+  "floor_rule": {
+    "_note": "哪些战斗算成长（Q6 乙，稿 v0.2 第 2.1 节）：超出基础段的累加才判。主塔、野外：地图层号 ≥ 已通主塔层 − window；深渊（地图名以 abyss_prefix 开头）：层号 ≥ min(已通主塔层, abyss_cap) − window，层号 0 的深渊不算；王者难度副本（副本档位 king_tier）、七印里副本、34～36 层终局战一律算。",
+    "window": 5,
+    "abyss_cap": 29,
+    "abyss_prefix": "深渊",
+    "king_tier": 4
+  },
+  "actors": {
+    "raven": {
+      "_note": "渡鸦 167：灵魂（XState.raven.soul）超过 base 的部分成层；没学 need_skill（至尊鸦皇 10136）不成层。flat：每层平加的能力值（键＝能力编号，4 魔法攻击）。N 稿给范围 90～125，T258 标定。",
+      "actor": 167,
+      "base": 200000,
+      "share": 10000,
+      "need_skill": 10136,
+      "flat": {"4": 110}
+    },
+    "nanoha": {
+      "_note": "奈叶 108：适应次数（存档 flags.codexNanohaAdapt）超过 base 的部分成层（队友击杀半次，计数可以是 x.5）。flat：0 最大生命、1 最大魔法；魔法 Y 稿给范围 1800～2200，生命取 Y 的三分之一取整到百，T258 标定。",
+      "actor": 108,
+      "base": 2000,
+      "share": 150,
+      "flat": {"0": 700, "1": 2000}
+    },
+    "liuying": {
+      "_note": "流萤 179：胜场（_codexLbEmberWins）超过 base 的部分成层。不走平加：每层余烬生命 ember（前 ember_cap 照旧），余烬超过 ember_cap 的部分每满 dmg_step 层伤害 +dmg_pct%（Q3-A：1 层 1%）。由 T257 在 liuying.gd 里接，本表只给数。",
+      "actor": 179,
+      "base": 300,
+      "share": 50,
+      "ember": 500,
+      "ember_cap": 3000,
+      "dmg_step": 1,
+      "dmg_pct": 1
+    }
+  }
+}
