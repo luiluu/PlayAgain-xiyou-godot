@@ -16,6 +16,13 @@ extends Node
 ## - 烙印（T220，T073-e 翻开关后）：XTianqiBrand 开着、每人刻印、立到逆命、烙印 --brand（缺省 100%）真打进去（K 那一项按角色取的乘数）；
 ##   --brand=0 回到 T082～T205 的口径（烙印 0，报告里 max_brand 照 ×(1＋max_bonus) 换算）。只调 execute／apply，不走 start_turn，发作不会出现。
 ## 输出：每人一行（技能、量到的最大数、v0、v_full、峰值），再按档位取最大、中位。
+## T258（无限成长③，稿 天启篇_无限成长_v0.4 第四节「定装量法」）：
+##   --layers=0,12,24,30  直接给层数（不用真去攒）：0 层那一次按老办法挑整套装备和词条（定装），之后每层原样套回，不重挑；
+##                        渡鸦灌满魂（soul＝表里 base＝20 万再加层数的计数）、奈叶先走满 2000 次基础段再给超出的计数、流萤余烬 3000＋胜场超出的计数。
+##   --reconfig=24,30     这几层在定装量完以后再「放开重挑」量一次（重配上界），D148 按定装和重配里高的那个判。
+##   --exact／--noisy     浮动关成 0 再乘 (1＋浮动%)（掷满的上限），数每次一样；--layers 缺省开，--noisy 回「取 hits 次里最大」。
+##   --set-flat=167:4:110,108:1:2000,108:0:700  临时改表里每层平加（只改内存，标定用；定下的数再写进 growth.json）。
+##   输出 K_LAYER 行：actor、layers、mode(fixed/reconfig)、peak（含烙印）、no_brand（÷烙印乘数）、mat、mhp、mmp。
 
 const LEVEL := 81
 const FABAO := 99
@@ -53,6 +60,16 @@ var nanoha_kills := 2000
 var ember := 3000.0
 ## T220：烙印（百分数）；-1＝缺省（开关开着时 100）
 var brand_pct := -1.0
+## T258：--layers 的层数列表（空＝老口径）、--reconfig 的层数列表、层数模式下 K_LAYER 行收集
+var layer_list: Array = []
+var reconfig_list: Array = []
+var set_flat: Array = []
+var noisy := false
+var relic := ""  # --relic=famine：多穿一件骑士遗物（不占栏，追加在装备表末尾）、开战后资历叠到 --relic-stacks（缺省 30，满）：量饥荒遗物放大层数那一截（T258 验收 5）
+var relic_stacks := 30
+var soul_arg := -1.0  # --soul=N：渡鸦灵魂（缺省：--layers 时灌满 20 万，否则不动）
+var seed_off := 0  # --seed=N：随机流偏移（--noisy 重复量偏差用）
+var exact := false  # --exact：浮动关掉、乘上限（T258；--layers 时缺省开，--noisy 关）
 
 
 func _ready() -> void:
@@ -93,6 +110,27 @@ func _ready() -> void:
 			brand_pct = clampf(float(a.substr(8)), 0.0, 100.0)
 		elif a.begins_with("--ember="):
 			ember = maxf(0.0, float(a.substr(8)))
+		elif a == "--exact":
+			exact = true
+		elif a.begins_with("--seed="):
+			seed_off = int(a.substr(7)) * 1000
+		elif a.begins_with("--soul="):
+			soul_arg = float(a.substr(7))
+		elif a.begins_with("--relic="):
+			relic = a.substr(8)
+		elif a.begins_with("--relic-stacks="):
+			relic_stacks = int(a.substr(15))
+		elif a == "--noisy":
+			noisy = true
+		elif a.begins_with("--layers="):
+			layer_list = Array(a.substr(9).split(",")).map(func(x): return int(x))
+		elif a.begins_with("--reconfig="):
+			reconfig_list = Array(a.substr(11).split(",")).map(func(x): return int(x))
+		elif a.begins_with("--set-flat="):
+			for it in a.substr(11).split(","):
+				var q := it.split(":")
+				if q.size() == 3:
+					set_flat.append([int(q[0]), str(q[1]), int(q[2])])
 		elif a == "--single":
 			single = true
 		elif a == "--debug-cast":
@@ -117,6 +155,9 @@ func _run() -> void:
 	XTianqiSkills.reload_table()
 	XTianqiBase.clear_cache()
 	XTianqiGear.clear_effective_cache()
+	_apply_set_flat()
+	if (not layer_list.is_empty() and not noisy) or exact:
+		exact = true
 	var rules: Dictionary = XTianqiBalance.data().get("combat_rules", {})
 	if k_arg > 0.0:
 		rules["base_damage"] = k_arg
@@ -139,6 +180,9 @@ func _run() -> void:
 				continue
 			if XImportedBalance.is_disabled_actor(int(id)) and int(id) != XGojo.ACTOR:  # 五条悟的 hidden 看「当前存档」，_state 之前可能还不是天启篇档
 				print("K_SKIP %d disabled" % int(id))
+				continue
+			if not layer_list.is_empty():
+				_measure_layers(int(id), tier)
 				continue
 			var row := _measure(int(id), tier)
 			if row.is_empty():
@@ -174,6 +218,8 @@ func _growth(s: XState, a) -> void:
 		for i in nanoha_kills:
 			XNanoha.adapt(a)
 		report["nanoha_kills"] = nanoha_kills
+	elif int(a.actor_id) == 167 and (not layer_list.is_empty() or soul_arg >= 0.0):  # T258：渡鸦灌满魂（基础段 20 万；--soul=N 指定，0＝T220 原口径没灌）
+		s.raven["soul"] = soul_arg if soul_arg >= 0.0 else float(XTianqiGrowth.actor_row(XTianqiGrowth.RAVEN).get("base", 200000))
 	elif XLiuying.own(a):
 		a.state_data["_codexLbEmber"] = ember
 		a.state_data["_codexLbEmberWins"] = 0.0
@@ -216,8 +262,8 @@ static func eff_full(actor_id: int, sid: int) -> float:
 func _state(id: int) -> XState:
 	var s := XState.new_game(XTianqi.legacy_of("zhengdao"), id, [])
 	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": "zhengdao", "lineup": [id]}
-	s.random_master = XRandomStream.hex64(20261117 + id)
-	seed(20261117 + id)
+	s.random_master = XRandomStream.hex64(20261117 + id + seed_off)
+	seed(20261117 + id + seed_off)
 	s.set_variable(20, 36)
 	s.actor_max_level = level
 	XTianqiSkills.MASTERY = true  # 翻开关后熟练度和总开关一起开（稿第七节第 2 条）；开局流程会把它拨回默认值，这里再置一次
@@ -239,6 +285,10 @@ func _state(id: int) -> XState:
 		a.zhenqi["brand_carved"] = 1
 		a.zhenqi["brand_realm"] = XTianqiBrand.last_realm()
 		a.zhenqi["brand"] = roundi(brand_pct * XTianqiBrand.scale())
+	if relic != "":
+		a.keep_unequippable = true
+		var rit := XTianqiRewards.make_item("relic", relic, 0, false)
+		a.equips.append(rit)
 	var fid := _own_fabao(id)
 	if fid == 0:
 		var mw := main_weights(a)
@@ -374,12 +424,99 @@ static func _dress(a: XActor) -> void:
 func _measure(id: int, tier: String) -> Dictionary:
 	var s := _state(id)
 	var a := s.actor(id)
+	return _measure_in(s, a, tier, true)
+
+
+## T258：--set-flat 改表里每层平加（内存里改、不写盘）
+func _apply_set_flat() -> void:
+	for it in set_flat:
+		var key := ""
+		for k in XTianqiGrowth.data().get("actors", {}):
+			if int(XTianqiGrowth.data().actors[k].get("actor", 0)) == int(it[0]):
+				key = str(k)
+		if key != "":
+			XTianqiGrowth.data().actors[key].flat[str(it[1])] = int(it[2])
+			print("K_SETFLAT %s %s=%d" % [key, str(it[1]), int(it[2])])
+
+
+## T258：把某人的计数调到「刚好 L 层」。渡鸦灵魂＝base＋累计份×一份；奈叶适应次数同理（基础段的 +10／+30 已在 _growth 里走满）；流萤胜场同理
+func _set_layers(s: XState, a, n: int) -> void:
+	var G := XTianqiGrowth
+	var id := int(a.actor_id)
+	for key in [G.RAVEN, G.NANOHA, G.LIUYING]:
+		var r := G.actor_row(key)
+		if int(r.get("actor", 0)) != id:
+			continue
+		var count := float(r.get("base", 0)) + G.cumulative(n) * float(r.get("share", 0))
+		match key:
+			G.RAVEN:
+				s.raven["soul"] = count
+			G.NANOHA:
+				var book: Dictionary = s.flags.get(G.NANOHA_FLAG, {})
+				book[str(id)] = count
+				s.flags[G.NANOHA_FLAG] = book
+			G.LIUYING:
+				a.state_data[G.LIUYING_WINS] = count
+	a.param_mark_dirty()
+	a.refresh_passive()
+	a.recover_all()
+
+
+## T258：定装量法。先 0 层按老办法挑整套（词条贪心），之后 --layers 里每层原样套回再量；--reconfig 的层数最后放开重挑再量一次
+func _measure_layers(id: int, tier: String) -> void:
+	var s := _state(id)
+	var a := s.actor(id)
+	var G := XTianqiGrowth
+	var order := layer_list.duplicate()
+	order.sort()
+	var first := true
+	for n in order:
+		_set_layers(s, a, int(n))
+		var row := _measure_in(s, a, tier, first)
+		first = false
+		_emit_layer(a, int(n), "fixed", row)
+	for n in reconfig_list:
+		# 重配上界＝玩家照新属性重新配装：新开一份状态（同样的 0 层底子装备）、先把层数给到 n、再整套重挑词条（K 的老办法）
+		var s2 := _state(id)
+		var a2 := s2.actor(id)
+		_set_layers(s2, a2, int(n))
+		var row2 := _measure_in(s2, a2, tier, true)
+		a = a2
+		_emit_layer(a, int(n), "reconfig", row2)
+
+
+func _emit_layer(a, n: int, mode: String, row: Dictionary) -> void:
+	if row.is_empty():
+		print("K_LAYER_SKIP %d %d %s" % [int(a.actor_id), n, mode])
+		return
+	var bm := maxf(1e-9, float(row.get("brand_mult", 1.0)))
+	var out := {"actor": int(a.actor_id), "layers": n, "mode": mode, "skill": row.skill, "peak": int(row.peak), "brand_mult": bm,
+		"no_brand": roundi(float(row.peak) / bm), "mat": roundi(float(row.mat)), "mhp": roundi(float(row.mhp)), "mmp": roundi(float(a.mmp)),
+		"pl": XTianqiGrowth.layers_of(_key_of(a), a)}
+	report.rows.append(out)
+	print("K_LAYER %s" % JSON.stringify(out))
+
+
+static func _key_of(a) -> String:
+	for k in XTianqiGrowth.data().get("actors", {}):
+		if int(XTianqiGrowth.data().actors[k].get("actor", 0)) == int(a.actor_id):
+			return str(k)
+	return ""
+
+
+func _measure_in(s: XState, a, tier: String, greedy: bool) -> Dictionary:
+	var id := int(a.actor_id)
 	var cap := float(XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}).get(tier, 0.0))
 	var logic := XBattleLogic.new()
 	logic.setup(_troop(s), s, XBattleRandom.create(str(s.random_master)))
 	var foes: Array = logic.alive(logic.enemies)
 	if foes.is_empty():
 		return {}
+	if relic != "":
+		for m in logic.actors:  # 开战时 XTianqiRewards.setup 把资历记成 0 层，这里直接叠满
+			if m is XActor and m.has_meta(XTianqiRewards.META):
+				m.get_meta(XTianqiRewards.META).stacks = relic_stacks
+				m.param_mark_dirty()
 	var e = foes[0]
 	e.add_param(0, 1.0e9)
 	e.param_mark_dirty()
@@ -391,7 +528,7 @@ func _measure(id: int, tier: String) -> Dictionary:
 		return g
 	var sids := _scan_ids(a)
 	var best := _scan(a, e, logic, sids, cap)
-	if not bare and not best.is_empty():
+	if not bare and not best.is_empty() and greedy:
 		best["affixes"] = _affix_greedy(a, e, logic, int(best.skill))  # 词条按「这一下最大」挑、掷满（极、四阶），挑完全部技能重量一遍
 		var again := _scan(a, e, logic, sids, cap)
 		if not again.is_empty():
@@ -547,6 +684,13 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			if per_skill:
 				print("K_SKILL %d %d skip=not_for_opponent" % [id, int(sid)])
 			continue
+		var vmax := 1.0
+		if exact and sk.get("damage") is Dictionary:
+			# T258：浮动是三角分布（±variance%），「取 20 次里最大」的数噪声约 ±3%，比 ±0.7% 的标定容差还大；
+			# exact＝浮动关成 0、最后乘 (1＋variance%)（浮动掷满的上限），同一份状态每次量都一样
+			sk = sk.duplicate(true)
+			vmax = 1.0 + float(int(sk.damage.get("variance", 0))) / 100.0 * emax(EXACT_N)
+			sk.damage["variance"] = 0
 		var d: Dictionary = sp.get("damage", {})
 		# D195：「一直生效」的减成条件（如 3922 三连击时每段 ×1/3、4848 每段 ×0.6）是拿段数换的，按总伤算时要算进去，
 		# 不然「峰值单段（不含减成）× 段数」会多算 3 倍（T175 v12：9、10、19）。--single 照旧口径不算
@@ -596,7 +740,9 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			# v_full：同一个基数（Σ属性×权重 × 等级缩放）乘「条件全中、封到上限」的系数 full÷w
 			var base_lv := v0 / maxf(1e-9, _coef_now(a, e, d, int(sid)))
 			var v_full := v0 if gojo_pairs else base_lv * full / maxf(1e-9, w)  # 茈：印已按满 3 对摆好，量到的就是条件全中
-			var peak := dealt * v_full / v0
+			var peak := dealt * vmax * v_full / v0
+			if per_skill:
+				print("K_HIT %d %d n=%d dealt=%d v0=%d v_full=%d peak=%d" % [id, int(sid), n, dealt, v0, v_full, peak])
 			if per_skill and n == hits - 1:
 				print("K_SKILL %d %d peak=%d dealt=%d eff=%s" % [id, int(sid), roundf(peak), dealt, eff_full(id, int(sid))])
 			if sk_best.is_empty() or peak > float(sk_best.peak):
@@ -614,6 +760,9 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 ## D195：整次施放（logic.execute，强制暴击、木桩回满），收这一次打在木桩上的每一段（type hit、target＝木桩、shown.hp＞0），
 ## 段数比＝合计÷最大一段；跑 CAST_RUNS 遍取中位（随机加段的角色不取最大）。打不到木桩（全随机目标打到别人）按 1
 func _cast_ratio(s: XState, a, sk: Dictionary) -> Dictionary:
+	if exact and sk.get("damage") is Dictionary:  # T258：段数比也去掉浮动（带浮动时每段掷的点数让比值随层数乱跳 ±3%）
+		sk = sk.duplicate(true)
+		sk.damage["variance"] = 0
 	var runs := []
 	for n in CAST_RUNS:
 		var logic := XBattleLogic.new()
@@ -668,6 +817,19 @@ static func _collect_hits(logs, e, out: Array) -> void:
 					out.append(v)
 					if _debug_cast:
 						print("K_SEG skill=%s v=%d" % [x.get("skill", {}).get("id"), v])
+
+
+## T258：浮动是三角分布（两个 0～amp 的整数随机数相加减 amp），取 n 次里最大的期望＝amp×(1−∫F^n)，F 是它的分布函数。n＝20（T220 以来 hits 的缺省）约 0.725、100 约 0.875。
+## exact 用 n＝EXACT_N 的期望：跟 T220 起「取 20 次里最大」同一把尺，只是去掉抽样噪声
+const EXACT_N := 20
+static func emax(n: int) -> float:
+	var steps := 20000
+	var s := 0.0
+	for i in steps:
+		var x := -1.0 + 2.0 * (float(i) + 0.5) / steps
+		var f := (1.0 + x) * (1.0 + x) / 2.0 if x < 0.0 else 1.0 - (1.0 - x) * (1.0 - x) / 2.0
+		s += pow(f, n) * 2.0 / steps
+	return 1.0 - s
 
 
 ## 木桩物防魔防钉到 DEF：敌人的防御要乘难度、首领、天启篇楼层等倍率（还会在第一下时才挂上开战状态），
@@ -862,6 +1024,9 @@ func _probe_value(a, e, logic, sk: Dictionary) -> float:
 	a.refresh_passive()
 	_pin_def(e)
 	e.hp = e.mhp * (0.3 if _has_trumpet(a) else 1.0)
+	a.hp = a.mhp  # T258（稿第四节第 4 条）：试词条前回满生命、魔法、TP（试「最大魔法 +12%」时上限变大而当前魔法没跟上，大招按耗掉的比例算会被错扣，魔法词条被低估）
+	a.mp = a.mmp
+	a.tp = a.max_tp()
 	_prime(logic, a, e, sk)
 	XStateEffects.force_critical = true
 	# T220：比较用的这一下去掉浮动（variance 0）。带浮动时候选之间的差被 ±浮动淹没，挑法随随机流变（T175 核 P3「词条贪心」）：
