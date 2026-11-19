@@ -685,5 +685,46 @@ class AbsRescaleT246(unittest.TestCase):
         self.assertTrue(chk.guardian_params_rules(g))
 
 
+class AbsGroupsT249(unittest.TestCase):
+    """T249：敌人技能底数、属性门槛、脚本型回复三组口径（mode、reason）。"""
+    def setUp(self):
+        self.t = json.loads((REAL_DIR / 'abs_rescale.json').read_text(encoding='utf-8'))
+        self.g = self.t['groups']
+
+    def th(self, i):
+        return next(r for r in self.g['abs_threshold_in_notes']['rows'] if r['id'] == i)
+
+    def test_real_passes(self):
+        self.assertEqual(chk.abs_rescale_rules(self.t), [])
+
+    def test_enemy_base_new_rule_back(self):
+        self.g['enemy_skill_fixed_base']['new_rule'] = '固定底数 → 标准线攻击(81级) × 占比%'
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_enemy_base_needs_reason(self):
+        self.g['enemy_skill_fixed_base']['new'] = {'mode': 'raw'}
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_threshold_card_only_in_card(self):
+        self.th(10474)['new'] = {'mode': 'card', 'reason': 'x'}
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_threshold_bad_mode(self):
+        self.th(7063)['new'] = {'mode': 'pct', 'reason': 'x'}
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_regen_must_be_raw(self):
+        self.g['custom_regen']['new'] = {'pct_of': 'mhp', 'pct': 5}
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_regen_back_in_unscanned(self):
+        self.t['unscanned'].append('Custom Regenerate Effect 脚本型回复（25 个状态）')
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_regen_dup_id(self):
+        self.g['custom_regen']['rows'].append(dict(self.g['custom_regen']['rows'][0]))
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+
 if __name__ == '__main__':
     unittest.main()
