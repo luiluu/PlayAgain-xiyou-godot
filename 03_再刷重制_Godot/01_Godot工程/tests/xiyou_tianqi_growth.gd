@@ -97,6 +97,7 @@ func _run() -> void:
 	raven.change_level(60)
 	s.actor_advance[XRaven.ACTOR] = 5
 	raven.learn_skill(10136)
+	set_soul.call(r24)  # T257：没学 10136 时升级 sync 会把灵魂压回 15 万，学会以后再灌
 	_check("raven_learned", XRaven.has(raven, 10136) and G.layers_of("raven", raven) == 24, G.layers_of("raven", raven))
 	_check("raven_only_mat", G.param_flat(raven, 4) == 24.0 * r_mat and G.param_flat(raven, 0) == 0.0 and G.param_flat(raven, 2) == 0.0)
 	_check("nanoha_not_mat", G.param_flat(nanoha, 4) == 0.0)

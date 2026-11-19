@@ -125,13 +125,41 @@ static func on_enemy_death(e) -> void:
 	if not active(a):
 		return
 	e.set_meta("raven_soul_counted", true)
-	s.raven["soul"] = soul(a) + soul_gain(e)
-	a.param_mark_dirty()
+	s.raven["soul"] = soul(a) + growth_gain(s, a, soul_gain(e))
+	a.param_mark_dirty()  # 天启篇无限成长：灵魂跨层时魔攻平加跟着变（XTianqiGrowth.param_flat 现算）
 	award_seal(s, a)
 	if has(a, RESIDUE):
 		_add_residue(a)
 	if is_myth(a) and myth_turns(a) < 5:
 		s.raven["myth"] = myth_turns(a) + 1
+
+
+## ---- 天启篇无限成长（T257，稿 天启篇_无限成长_v0.4 3.1、第八节卡②第 2 条；Kyo D216 Q6 乙）----
+## 只在天启篇且 XTianqiGrowth 开着时走（关掉回 T220：灵魂照旧不封顶地记）。层数魔攻由 XTianqiGrowth.param_flat 平加，
+## 只判学会至尊鸦皇 10136、不判镰刀，所以不写进 param_plus（它第一行就是「没戴镰刀直接返回」）。这里只管计数：
+## - 没学 10136：灵魂存到 15 万（REQUIRE[5]）就停，免得 45～59 级预先攒魂、学会那一刻一起兑现；超过的在 sync（学 10136 之前）压回。
+## - 学了 10136：20 万（表里 base）以内哪儿打都算；超出的那部分过 XTianqiGrowth.floor_ok（Q6 乙），不过就只记到 20 万。
+static func growth_gain(s: XState, a, gain: float) -> float:
+	if gain <= 0.0 or not XTianqiGrowth.on(s):
+		return gain
+	var old := soul(a)
+	if not has(a, int(XTianqiGrowth.actor_row(XTianqiGrowth.RAVEN).get("need_skill", 10136))):
+		return clampf(REQUIRE[5] - old, 0.0, gain)
+	var base := float(XTianqiGrowth.actor_row(XTianqiGrowth.RAVEN).get("base", 200000))
+	var free := clampf(base - old, 0.0, gain)
+	if free >= gain or XTianqiGrowth.floor_ok(s, XRaceBattle.active_logic()):
+		return gain
+	return free
+
+
+## 没学 10136 时把超过 15 万的灵魂压回（sync 开头、学技能之前调；旧档读进来下一次 sync 就压回）
+static func growth_clamp(a) -> void:
+	var s := XState.current
+	if not XTianqiGrowth.on(s) or has(a, int(XTianqiGrowth.actor_row(XTianqiGrowth.RAVEN).get("need_skill", 10136))):
+		return
+	if soul(a) > REQUIRE[5]:
+		s.raven["soul"] = float(REQUIRE[5])
+		a.param_mark_dirty()
 
 
 static func can_forge(a) -> bool:
@@ -201,6 +229,7 @@ static func has(a, skill: int) -> bool:
 static func sync(a) -> void:
 	if not own(a):
 		return
+	growth_clamp(a)  # 天启篇无限成长（T257）：学 10136 之前先把预攒的灵魂压回 15 万
 	for id in LEGACY + [10168]:
 		a.forget_skill(id)
 	var all := []
