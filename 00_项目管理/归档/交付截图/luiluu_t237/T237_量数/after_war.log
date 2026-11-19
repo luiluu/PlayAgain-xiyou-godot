@@ -1,0 +1,6 @@
+BOTH line= floor=30 raw=10007 dmg=456 enemyDmg=15285 hit=352 partyHp=552328 enemyHp=10710000
+BOTH line= floor=31 raw=7682 dmg=269 enemyDmg=17138 hit=268 partyHp=562016 enemyHp=9860000
+BOTH line= floor=32 raw=10065 dmg=30 enemyDmg=15915 hit=68 partyHp=562016 enemyHp=10600000
+BOTH line= floor=33 raw=10312 dmg=18 enemyDmg=13449 hit=35 partyHp=562016 enemyHp=13276667
+BOTH line= floor=34 raw=35241 dmg=0 enemyDmg=61986 hit=0 partyHp=562016 enemyHp=14256667
+BASELINE_DONE
