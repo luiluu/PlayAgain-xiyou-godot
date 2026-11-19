@@ -55,6 +55,38 @@ static var measure_neutral := false
 
 static var _floor_of := {}
 
+## 守层者领域关掉（T229，Kyo 11-19「220丙」：天启篇里交不交见面礼都不开）。只管天启篇存档、13～33 层守层者那场（34 层鸿钧借 469 同场）。
+## 原版 13～19 层第 1 回合（变量 842＝0）调公共事件 1398 大道领域、强制 6069；20～30 层 1399 天道领域／交礼走 1400 伪领域，强制 6070／6071；
+## 20～22 层首领血 ≤20%＋变量 853 再开 1399；30 层变身页、31～33 层第 1 回合与残血页的 1397 霸者领域／1399，强制 6068／6070。
+## 关掉时：这几个公共事件只跑开头的 334「敌人完全恢复」（回满是阶段机制，不是领域；第 1 回合本来就满血），
+## 后面加我方减益（696／698／695／1106）、守层者增益（691／686／1103／1104／1110／1108／44）、解我方 996／997／1008 都不跑；
+## 强制的领域技能（全能力强化一级＋公共事件 1401 回满）不放。轮回困难 8111、天道屠灭／回归／放逐、破阵阶段状态等照旧。
+## 回退：`XGuardianRework.DOMAIN_OFF = false`。
+static var DOMAIN_OFF := true
+const DOMAIN_EVENTS := [1397, 1398, 1399, 1400]
+const DOMAIN_SKILLS := [6068, 6069, 6070, 6071]
+const DOMAIN_FLOORS := [13, 33]
+
+
+## 这场战斗的守层者领域关着没有（天启篇存档、13～33 层守层者敌群）
+static func domain_off(logic) -> bool:
+	if not DOMAIN_OFF or logic == null or not XTianqi.active(logic.state):
+		return false
+	for f in range(DOMAIN_FLOORS[0], DOMAIN_FLOORS[1] + 1):
+		if int(TROOPS[f]) == int(logic.troop_id):
+			return true
+	return false
+
+
+## 领域公共事件关掉时留下的指令：只留顶层的 334（敌人完全恢复），收尾补一条结束
+static func domain_keep(ce_list: Array) -> Array:
+	var out := []
+	for c in ce_list:
+		if int(c.get("code", 0)) == 334 and int(c.get("indent", 0)) == 0:
+			out.append(c)
+	out.append({"code": 0, "indent": 0, "parameters": []})
+	return out
+
 
 ## 敌人号是哪一层的守层者（不是返回 0）
 static func floor_of(enemy_id: int) -> int:
@@ -76,6 +108,8 @@ static func harm_re(e: XEnemy, table: Dictionary) -> Dictionary:
 	var v := measure_resist
 	if v < 0.0:
 		var rt := XTianqiBase.guardian_table("resist", RESIST_TABLE)  # 期四总开关开着读新表（T012-c 量；缺就退回旧表）
+		if not rt.has(f):
+			rt = RESIST_TABLE  # T229：新表缺这一层时逐层退回旧表
 		if not RESIST or not rt.has(f) or not _on():
 			return table
 		v = float(rt[f])
@@ -98,7 +132,7 @@ static func atk_scale(e: XEnemy) -> float:
 		return 1.0
 	if ref:
 		return HONGJUN_SCALE if str(rec.get("_ref", "")) == "hongjun" else REF_SCALE
-	return float(XTianqiBase.guardian_table("atk_scale", ATK_SCALE).get(f, 1.0))  # 期四总开关开着读新表（缺就退回旧表）
+	return float(XTianqiBase.guardian_table("atk_scale", ATK_SCALE).get(f, ATK_SCALE.get(f, 1.0)))  # 期四总开关开着读新表（缺就退回旧表；T229 起缺的层逐层退回）
 
 
 ## 守层者认敌人号；楼层里别的敌人认 setup 记下的层（WORLD）
@@ -177,8 +211,8 @@ static func troop_floor(logic) -> int:
 ## 以后用虚拟玩家按去 ×6 后的伤害重量、换表时，把这里的 hp_unit 去掉。
 static func hp_base(f: int) -> float:
 	var t := XTianqiBase.guardian_table("hp_base", HP_BASE)  # 期四总开关开着读新表（T012-c 按新口径实机量，不再乘 hp_unit；缺就退回旧表照旧乘）
-	if not is_same(t, HP_BASE):
-		return float(t.get(f, 0.0))
+	if not is_same(t, HP_BASE) and t.has(f):  # T229：新表缺这一层（如 31～34 层没写）时逐层退回旧表，不按 0 取
+		return float(t[f])
 	return float(HP_BASE[f]) * XTianqiNoX6.hp_unit()
 
 

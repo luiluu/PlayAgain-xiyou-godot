@@ -290,7 +290,7 @@ func sparam(i: int) -> float:
 func param_now(i: int) -> float:
 	var v := param_base_unscaled(i) + param_plus(i)
 	v *= (param_rate(i) * float(_rates[i])) * param_buff_rate(i)
-	v += param_state(i)
+	v += param_state(i, v)
 	return roundf(clampf(v, param_min(i), param_max(i)))
 
 func trait_objects() -> Array:

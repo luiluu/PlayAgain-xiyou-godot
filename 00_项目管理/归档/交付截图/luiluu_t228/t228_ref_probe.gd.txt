@@ -1,0 +1,42 @@
+extends "res://tests/virtual_player/baseline_dps.gd"
+## T228 临时探针（不是专项）：量基准队（4 弱者随机队、等级取 --floor 那层上限、法宝上限、精良装备）开战前的八项，取中位。
+##   --floor=N（默认 36，等级 81）  --phase4=off（把总开关关掉量）
+var probe_floor := 36
+
+func _ready() -> void:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--floor="):
+			probe_floor = int(a.substr(8))
+		elif a == "--phase4=off":
+			XTianqiBase.PHASE4 = false
+	super()
+
+func _run() -> void:
+	var cols := [[], [], [], [], [], [], [], []]
+	var main := []
+	var phys := [[], [], [], [], [], [], [], []]
+	var mag := [[], [], [], [], [], [], [], []]
+	var seen := {}
+	for team in _teams():
+		var s := _state(team, probe_floor)
+		for id in team:
+			if seen.has(int(id)):
+				continue
+			seen[int(id)] = true
+			var a := s.actor(int(id))
+			var is_phys := a.param(2) >= a.param(4)
+			main.append(maxf(a.param(2), a.param(4)))
+			for i in 8:
+				cols[i].append(float(a.param(i)))
+				(phys if is_phys else mag)[i].append(float(a.param(i)))
+	var med := cols.map(_med)
+	print("T228REF " + JSON.stringify({"floor": probe_floor, "level": level_cap(probe_floor), "n": seen.size(), "phase4": XTianqiBase.PHASE4, "median": med,
+		"main": _med(main), "phys": phys.map(_med), "nPhys": phys[0].size(), "mag": mag.map(_med), "nMag": mag[0].size()}))
+	get_tree().quit()
+
+
+static func _med(c: Array) -> float:
+	if c.is_empty():
+		return 0.0
+	c.sort()
+	return c[c.size() / 2] if c.size() % 2 == 1 else (c[c.size() / 2 - 1] + c[c.size() / 2]) / 2.0
