@@ -1,6 +1,6 @@
 extends Node
 ## 【cc·T081】天启篇期四暗装接线（XTianqiBase.PHASE4，基础数值重构 v0.4 第七节第 2 条、第十节 T012-b）：
-## 一、总开关默认关；关着每一行都是「关着」那一套（本体 NAN、K 1、U 1、守层者旧表、治疗照乘、绝对值原数、单段不封、九线爆伤不封、秘籍读旧键、面板没有天启注视）。
+## 一、总开关默认关；关着每一行都是「关着」那一套（本体 NAN、K 1、U 100、守层者旧表、治疗照乘、绝对值原数、单段不封、九线爆伤不封、秘籍读旧键、面板没有天启注视）。
 ## 二、开着、天启篇存档：每一行都和总开关一致（rows_state），本体读标准线×职责×速度档，K＝表里的 base_damage（T082 实机标定 0.2）、进 dealt_parts，面板一行「天启注视　伤害 ×K」。
 ## 三、开着但是西游档：一律走关着那一套。
 ## 四、单段有效系数上限：开着时卡面系数×权重×条件超过档位上限压回上限，关着不封；全部卡在上限以内（数据校验同口径）。
@@ -18,9 +18,9 @@ var results: Array = []
 ## T082 实机标定的 K（balance_table combat_rules.base_damage）；改标定只改这两行
 const K_TABLE := 0.13
 const K_TEXT := "0.13"
-## 首领生命临时折算 U（T162 配队器量数不稳，没写，仍是 1）（balance_table combat_rules.boss_hp_temp_unit）；重量只改这两行
-const U_CRIT := 1.0
-const U_NO_CRIT := 1.0
+## 首领生命临时折算 U（整数百分比，先填 100＝不打折，D222 丙）（balance_table combat_rules.boss_hp_temp_unit）；重量只改这两行
+const U_CRIT := 100
+const U_NO_CRIT := 100
 
 func _ready() -> void:
 	_run.call_deferred()
@@ -99,7 +99,7 @@ func _off() -> void:
 	var cls: Array = a.class_data().params
 	_check("off.base_curve", is_equal_approx(a.param_base_direct(2), float(cls[2][a.level])), [a.param_base_direct(2), cls[2][a.level]])
 	_check("off.k", XTianqiBase.k_for(a) == 1.0 and float(XTianqiCombat.dealt_parts(a, s).get("k", 0.0)) == 1.0)
-	_check("off.u", XTianqiBase.boss_hp_unit(false) == 1.0 and XTianqiBase.boss_hp_unit(true) == 1.0)
+	_check("off.u", XTianqiBase.boss_hp_unit(false) == 100 and XTianqiBase.boss_hp_unit(true) == 100)
 	var old := {1: 2.0}
 	_check("off.guardian_old", is_same(XTianqiBase.guardian_table("hp_base", old), old))
 	_check("off.heal_x5", XTianqiBase.heal_skip_types().is_empty())
@@ -142,7 +142,7 @@ func _on() -> void:
 	var rows := XStatusPage.global_bonuses(a)
 	_check("on.gaze_panel", not rows.is_empty() and rows[0] == ["天启注视", "伤害 ×" + K_TEXT], rows.slice(0, 2))
 	# U、守层者、治疗、九线、秘籍、绝对值、单段上限
-	_check("on.u", is_equal_approx(XTianqiBase.boss_hp_unit(false), U_CRIT) and is_equal_approx(XTianqiBase.boss_hp_unit(true), U_NO_CRIT))  # T162 丙档实机量（表里的数）
+	_check("on.u", XTianqiBase.boss_hp_unit(false) == U_CRIT and XTianqiBase.boss_hp_unit(true) == U_NO_CRIT)  # T162 丙档实机量（表里的数）
 	var old := {1: 2.0}
 	_check("on.guardian_fallback", is_same(XTianqiBase.guardian_table("hp_base", old), old))  # guardian_phase4 由 T012-c 补，缺就退回旧表
 	_check("on.heal_x5_off", XTianqiBase.heal_skip_types() == [3, 4])
@@ -465,7 +465,7 @@ func _e2e(on: bool) -> void:
 	var res := XDamage.calculate(XDB.rec("Skills", 1), a, XEnemy.new().setup(1, 3, 100.0), {"critical": false, "variance": false})
 	var g = res.breakdown.row.get("gaze")
 	_check(tag + "damage_gaze", (g is Dictionary and is_equal_approx(float(g.k), K_TABLE) and str(g.name) == "天启注视") if on else g == null, g)
-	# （6）骑士 U：表里先填 1，临时改成 crit 2／no_crit 3 看本体、影子血量跟着乘
+	# （6）骑士 U（整数百分比）：表里先填 100＝等于原稿；临时改成 crit 6／no_crit 6 看本体、影子血量是 6%（向零取整）
 	var cr: Dictionary = XTianqiBalance.data().combat_rules
 	var keep_u = cr.get("boss_hp_temp_unit")
 	var line := "plague"
@@ -474,11 +474,13 @@ func _e2e(on: bool) -> void:
 	var hp0 := float(XTianqiHorsemen.stats(line, key).hp)
 	var sh0 := float(XTianqiHorsemen.shadow_stats(line, key).hp)
 	XTianqiBase.PHASE4 = on
-	cr["boss_hp_temp_unit"] = {"crit": 2.0, "no_crit": 3.0}
-	var u := 3.0 if bool(XTianqiHorsemen.knight(line).get("crit_immune", false)) else 2.0
+	var hp100 := float(XTianqiHorsemen.stats(line, key).hp)  # U＝100（表里默认）：血量等于原稿
+	_check(tag + "knight_u100", hp100 == hp0, [hp100, hp0])
+	cr["boss_hp_temp_unit"] = {"crit": 6, "no_crit": 6}
+	var u := 6
 	var hp1 := float(XTianqiHorsemen.stats(line, key).hp)
 	var sh1 := float(XTianqiHorsemen.shadow_stats(line, key).hp)
-	_check(tag + "knight_u", hp1 == (roundf(hp0 * u) if on else hp0) and sh1 == (roundf(sh0 * u) if on else sh0), [hp0, hp1, sh0, sh1, u])
+	_check(tag + "knight_u", hp1 == (float(int(hp0) * u / 100) if on else hp0) and sh1 == (float(int(sh0) * u / 100) if on else sh0), [hp0, hp1, sh0, sh1, u])
 	if keep_u == null:
 		cr.erase("boss_hp_temp_unit")
 	else:

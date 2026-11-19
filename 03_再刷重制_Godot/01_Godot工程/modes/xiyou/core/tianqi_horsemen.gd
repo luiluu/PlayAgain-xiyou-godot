@@ -110,9 +110,8 @@ static func stats(line: String, key: String) -> Dictionary:
 		return {}
 	var over: Dictionary = k.get("hp_override", {})
 	var hp := float(over[key]) if over.has(key) else roundf(float(k.hp) * hp_rate(key))
-	var u := XTianqiBase.boss_hp_unit(bool(k.get("crit_immune", false)))  # 期四首领生命临时折算 U（总开关关着 1，D137；M5 删）
-	if u != 1.0:
-		hp = roundf(hp * u)
+	var u := XTianqiBase.boss_hp_unit(bool(k.get("crit_immune", false)))  # 期四首领生命临时折算 U（总开关关着 100，整数百分比，D137／D222；M5 删）
+	hp = XTianqiBase.apply_hp_unit(hp, u)
 	var atk_rate := float(row.enemy_atk)
 	return {"hp": hp, "atk": roundf(float(k.get("atk", 0)) * atk_rate), "mat": roundf(float(k.get("mat", 0)) * atk_rate),
 		"def": float(k.get("def", 0)), "mdf": float(k.get("mdf", 0)), "agi_rate": float(k.get("agi_rate", 1.0)),
@@ -128,9 +127,8 @@ static func shadow_stats(line: String, key: String) -> Dictionary:
 	var r := float(sh.get("atk_rate", {}).get(line, 1.0))
 	var out := body.duplicate()
 	out.hp = roundf(float(sh.get("hp", 0)) * float(XTianqiBalance.difficulty(key).enemy_hp))
-	var u := XTianqiBase.boss_hp_unit(bool(knight(line).get("crit_immune", false)))  # 期四 U（关着 1）
-	if u != 1.0:
-		out.hp = roundf(float(out.hp) * u)
+	var u := XTianqiBase.boss_hp_unit(bool(knight(line).get("crit_immune", false)))  # 期四 U（整数百分比，关着 100）
+	out.hp = XTianqiBase.apply_hp_unit(float(out.hp), u)
 	out.atk = roundf(float(body.atk) * r)
 	out.mat = roundf(float(body.mat) * r)
 	out.actions = 1
