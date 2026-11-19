@@ -173,6 +173,8 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false, power := 
 		# 专属角色技能（10122～10299）走 characterHelpView（XCharacterHelp），其余技能走 genericHelpView
 		rows = XCharacterHelp.view(obj, rows, list_costs) if XCharacterHelp.target(obj) else XCharacterHelp.now_growth(obj, _generic_view(obj, rows))
 		rows.append_array(XBlackFlash.help_rows(obj, scene_actor))  # 黑闪 Sprite_ItemHelp.setItem 包装（在 characterHelpView 之内）：卡尾两行现况
+		if not skill_copy:
+			rows.append_array(XTianqiGrowth.help_rows(obj, scene_actor))
 	for r in rows:
 		r[0] = _terms(str(r[0]))
 	# v0.18 starredHead：名字行（第一行、名字字号）前加星级，只给武器/防具

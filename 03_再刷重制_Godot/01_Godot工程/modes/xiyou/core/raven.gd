@@ -521,7 +521,11 @@ static func ledger_help(a, skill: Dictionary) -> Array:
 	var st := stage(a)
 	var seals := XState.current.item_count(SEAL) if XState.current != null else 0
 	var destination := "已完成五阶；灵魂可继续积累" if st >= 5 else "本阶达" + XMenu._group(REQUIRE[mini(5, st + 1)]) + "魂得印；进阶后清零"
-	return ["灵魂：" + XMenu._group(soul(a)) + "　进阶：%d/5　进阶印：%d" % [st, seals], destination]
+	var out := ["灵魂：" + XMenu._group(soul(a)) + "　进阶：%d/5　进阶印：%d" % [st, seals], destination]
+	var grow := XTianqiGrowth.status_line(XTianqiGrowth.RAVEN, a)
+	if grow != "":
+		out.append(grow)
+	return out
 
 
 ## 战斗画面要放的渡鸦特效（XRavenFx）记在命中记录上

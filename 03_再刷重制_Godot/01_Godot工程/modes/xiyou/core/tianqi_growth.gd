@@ -171,6 +171,79 @@ static func dmg_pct_of(n: int) -> int:
 	return (maxi(0, n) / step) * int(r.get("dmg_pct", 0))
 
 
+# ---- 状态行（T259：私密设计仓 天启篇_无限成长_v0.4 第八节 Carbon 定稿原文，数值全从表里现读）----
+
+static func _fmt_int(v: int) -> String:
+	var neg := v < 0
+	var s := str(absi(v))
+	var out := ""
+	while s.length() > 3:
+		out = "," + s.substr(s.length() - 3) + out
+		s = s.substr(0, s.length() - 3)
+	return ("-" if neg else "") + s + out
+
+
+static func _fmt_num(v: float) -> String:
+	var tenths := roundi(v * 10.0)
+	if tenths % 10 == 0:
+		return _fmt_int(tenths / 10)
+	return "%s.%d" % [_fmt_int(tenths / 10), absi(tenths % 10)]
+
+
+## 三人状态行（空串＝未达起点、缺前置技能、或未在天启篇无限成长里）
+static func status_line(key: String, a) -> String:
+	if not on():
+		return ""
+	var r := actor_row(key)
+	if r.is_empty() or not (a is XActor) or int(a.actor_id) != int(r.get("actor", 0)):
+		return ""
+	if key == LIUYING and not XTianqiSkills.cards_on():
+		return ""
+	var need := int(r.get("need_skill", 0))
+	if need > 0 and key == RAVEN and not XRaven.has(a, need):
+		return ""
+	var base := float(r.get("base", 0))
+	var share := float(r.get("share", 0))
+	var cnt := count_of(key, a)
+	if share <= 0.0 or cnt < base:
+		return ""
+	var n := layers(cnt, base, share)
+	var y := next_need(cnt, base, share)
+	match key:
+		RAVEN:
+			var per_mat := roundi(flat_per_layer(RAVEN, 4))
+			if n >= 1:
+				return "冥冠·第%d层：魔法攻击＋%s（下层还需 %s 灵魂）" % [n, _fmt_int(per_mat * n), _fmt_int(roundi(y))]
+			return "冥冠（未成层）：下层还需 %s 灵魂（每层魔法攻击＋%s）" % [_fmt_int(roundi(y)), _fmt_int(per_mat)]
+		NANOHA:
+			var per_hp := roundi(flat_per_layer(NANOHA, 0))
+			var per_mp := roundi(flat_per_layer(NANOHA, 1))
+			if n >= 1:
+				return "超限适应·第%d层：最大生命＋%s、最大魔法＋%s（下层还需 %s 次适应）" % [n, _fmt_int(per_hp * n), _fmt_int(per_mp * n), _fmt_num(y)]
+			return "超限适应（未成层）：下层还需 %s 次适应（每层最大生命＋%s、最大魔法＋%s）" % [_fmt_num(y), _fmt_int(per_hp), _fmt_int(per_mp)]
+		LIUYING:
+			if n >= 1:
+				return "不熄之火·第%d层：余烬生命＋%s、伤害＋%d%%（下层还需 %s 胜场）" % [n, _fmt_int(ember_bonus(n)), dmg_pct_of(n), _fmt_int(roundi(y))]
+			return "不熄之火（未成层）：下层还需 %s 胜场（每层余烬生命＋%s、伤害＋%d%%）" % [_fmt_int(roundi(y)), _fmt_int(int(r.get("ember", 0))), dmg_pct_of(1)]
+	return ""
+
+
+## 5683 适应、10624 模组-偏时迸发 说明卡尾的状态行（渡鸦 10137 走 XRaven.ledger_help）
+static func help_rows(skill: Dictionary, a) -> Array:
+	if not skill.has("stypeId"):
+		return []
+	var id := int(skill.get("id", 0))
+	var key := ""
+	if id == 5683:
+		key = NANOHA
+	elif id == 10624:
+		key = LIUYING
+	else:
+		return []
+	var line := status_line(key, a)
+	return [[line, 18, "#ffffff", false, 0]] if line != "" else []
+
+
 # ---- 平加（稿 3.5）----
 
 ## 每层平加多少（表里没有这项 0）
