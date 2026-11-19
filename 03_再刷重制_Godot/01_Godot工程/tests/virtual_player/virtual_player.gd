@@ -75,6 +75,7 @@ var snapshot_dir := ""             # 给了就在每层第一次去挑战守层�
 var _snap_done := {}
 var pass_after := 0                # 量数用（>0 时）：同一层守层者输满这么多次后不收工，下一次挑战把守层者的血压到 1 放水通过（小结里标出来），好把后面各层的队伍快照也拿到
 var gifted_floors: Array = []      # 放水通过的层
+var ff_inline_retry := true        # 快进局守层者样本输了就地加刷、连着量，赢了或到放水才回大厅；--vp-ff-lobby-retry 关
 var ff_shop_once := true           # 快进局同一层的店只整轮逛一次（钱翻倍再逛）；--vp-ff-shop-every 关
 var resumed_from := ""             # --vp-resume 接着爬的那份存档（文件名；meta 的 msec 从接着爬那一刻算起）
 var fabao_enabled := true          # 出战的人有谁没戴法宝，就去兑换大厅领礼物（法宝积分）、找铁匠买法宝戴上
@@ -1083,6 +1084,43 @@ func _on_defeat() -> void:
 			int(row.get("grind_battles", 0)), int(row.get("dungeon_kills", 0)), ("（%s）" % str(_farm_block[_floor])) if _farm_block.has(_floor) else "", str(_levels())]
 
 
+## 守层者样本没打赢：记一次失败（报告每层一行的 sample_fights），照翻倍规则定下一轮加刷
+func _sample_loss(gt: int) -> void:
+	var row0 := _floor_row()
+	row0["sample_defeats"] = int(row0.get("sample_defeats", 0)) + 1
+	var fights: Array = row0.get("sample_fights", [])
+	fights.append(ff.last_sample)
+	row0["sample_fights"] = fights
+	sample_defeats += 1
+	_log("快进：守层者（敌群 %d）无画面样本没打赢（%d 回合，打掉 %d%%），记一次失败、再加刷" % [gt, int(ff.last_sample.get("turns", 0)), int(ff.last_sample.get("dealt_pct", 0))])
+	_mark("guardian_sample_loss")
+	_on_defeat()
+
+
+## 就地加刷之间的养成：只做直接调的那几样（同大厅里的换装、强化石、宝珠、种族进阶、喂法宝），走路的（逛店、进阶、抽奖）留到回大厅
+func _inline_growth(st: XState) -> void:
+	var did := []
+	if equip_enabled:
+		var ch: Array = Growth.equip_direct(st)
+		equip_passes += 1
+		equip_changes += ch.size()
+		did.append_array(ch)
+	if upgrade_enabled:
+		var up: Array = Growth.upgrade_gear(st)
+		upgrade_uses += up.size()
+		did.append_array(up)
+	if orbs_enabled:
+		did.append_array(Growth.orbs(st))
+	if race_enabled:
+		did.append_array(Growth.race(st))
+	if feed_enabled:
+		var fed: Array = Growth.feed_fabao(st)
+		fabao_feeds += fed.size()
+		did.append_array(fed)
+	for line in did:
+		_note_growth(str(line))
+
+
 ## 打过几场（实打＋快进）：大厅里「打过仗回来再做一遍」的那些戳用它
 func _bcount() -> int:
 	return battles.size() + (ff.settled if ff != null else 0)
@@ -1703,15 +1741,19 @@ func _climb_floor(map: XMapScene, st: XState, floor: int) -> void:
 		if gt > 0:
 			_snapshot(st, floor)
 		if gt > 0 and int(_floor_row().get("defeats", 0)) < cap - (1 if pass_after <= 0 else 0) and not ff.sample(st, gt):
-			var row0 := _floor_row()
-			row0["sample_defeats"] = int(row0.get("sample_defeats", 0)) + 1
-			var fights: Array = row0.get("sample_fights", [])
-			fights.append(ff.last_sample)
-			row0["sample_fights"] = fights
-			sample_defeats += 1
-			_log("快进：守层者（敌群 %d）无画面样本没打赢（%d 回合，打掉 %d%%），记一次失败、再加刷" % [gt, int(ff.last_sample.get("turns", 0)), int(ff.last_sample.get("dealt_pct", 0))])
-			_mark("guardian_sample_loss")
-			_on_defeat()
+			_sample_loss(gt)
+			if ff_inline_retry:
+				# 就地连着加刷（T238 第三棒）：样本没打赢就在这里快进加刷、直接调换装／强化石／宝珠／种族／喂法宝，再量样本，
+				# 赢了或输到放水那一次才回大厅一趟（逛店、进阶、抽奖、存档）再开画面打。原来每输一次都回大厅走一整轮，一层五六趟
+				while true:
+					await _ff_run(map, st, floor)
+					_inline_growth(st)
+					if climb_stop != "" or int(_floor_row().get("defeats", 0)) >= cap - (1 if pass_after <= 0 else 0):
+						break
+					if ff.sample(st, gt):
+						break
+					_sample_loss(gt)
+				await _hotkey_lobby(map)
 			return
 	if _need_farm > 0 and _need_grind <= 0 and await _go_dungeon(map, st, floor):
 		return
