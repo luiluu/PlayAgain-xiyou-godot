@@ -77,6 +77,7 @@ var list_win: XBattleList
 ## 异化百相切换仿形的选择窗（开着时）
 var mimic_win: XAlienMimicWindow
 var tianqi_meter: XTianqiMeter
+var seal_dial: XSkinSealDial
 var tianqi_weak_badges: XTianqiWeakBadges  # 天启篇弱者专属词条的头顶角标（T230）
 var tianqi_sear_bar: XTianqiSearBar
 ## 云裳的选择窗（赠行选人、裁身、七曜元素、收针选人、换锦选状态）
@@ -189,6 +190,8 @@ func _ready() -> void:
 		var members := logic.actors.size()
 		record.setup(XState.current.battle_slots if XState.current else [], members)
 		record.position += _origin
+		record.members_source = func(): return logic.actors  # T267 新界面 2C 卡 B：谁占格（在场 ∪ 有伤害）、伤害统计让战斗窗口
+		record.windows_source = record_window_rects
 		add_child(record)
 	_place_battlers()
 	ui = Control.new()
@@ -573,10 +576,13 @@ func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 	var name_alpha: float = g.name_alpha / 255.0 if NAME_FADE else (1.0 if not v.dead and (g.name_timer > 0.0 or e == _hover) else 0.0)
 	if name_alpha > 0.0:
 		var color := _enemy_name_color(e) if rate > 0.5 else XUI.text_color(2 if rate > 0.25 else 10)
-		if XSkin4A.text_on():  # 新界面 4A（A5）：名字垫深色胶囊底，亮背景上也看得清
-			var nw := c.text_width(e.display_name(), 18)
-			XSkin4A.draw_text_backing(c, 320.0 - nw / 2.0, 26.0, nw, 18, name_alpha)
-		c.text(e.display_name(), 0, 0, 640, "center", color, 18, 36, name_alpha)
+		if XSkin2C.names_on():  # T267（T254 R3）：小怪名字一律 TEXT，难度色／半血变色挪到名字前的小菱形
+			XSkin2C.enemy_name(c, e.display_name(), color, name_alpha)
+		else:
+			if XSkin4A.text_on():  # 新界面 4A（A5）：名字垫深色胶囊底，亮背景上也看得清
+				var nw := c.text_width(e.display_name(), 18)
+				XSkin4A.draw_text_backing(c, 320.0 - nw / 2.0, 26.0, nw, 18, name_alpha)
+			c.text(e.display_name(), 0, 0, 640, "center", color, 18, 36, name_alpha)
 		XEnemyStateIcon.paint(c, g.icons, c.text_width(e.display_name(), XEnemyStateIcon.NAME_SIZE), name_alpha)  # 名字右边的状态图标（ui12）
 	if not XBossHpBar.small_gauge_visible(e):  # YEP_X_VisualHpGauge：<HIDE HP GAUGE> 的敌人血条一直不出现（选中也不出）
 		return
@@ -748,6 +754,10 @@ func _build_ui(vs: Vector2) -> void:
 	tianqi_meter = XTianqiMeter.make(logic, func(): return status_rows)
 	tianqi_meter.position = _origin + TIANQI_METER_POS
 	ui.add_child(tianqi_meter)
+	seal_dial = XSkinSealDial.make(tianqi_meter, combo)  # T267 新界面 2C 卡 B：本线计量＋连击合成印盘（开关都关时不建）
+	if seal_dial != null:
+		XSkinSealDial.place(seal_dial, side, _origin)
+		ui.add_child(seal_dial)
 	# 天启篇弱者专属词条：头顶文字角标（蓄雷格数、传球库存…，只写状态不写词条名；模块不在天启篇档时不建）
 	tianqi_weak_badges = XTianqiWeakBadges.make(logic, func(): return sprites)
 	if tianqi_weak_badges != null:
@@ -756,7 +766,7 @@ func _build_ui(vs: Vector2) -> void:
 	tianqi_sear_bar = XTianqiSearBar.make(logic, func(): return status_rows)
 	tianqi_sear_bar.position = _origin
 	ui.add_child(tianqi_sear_bar)
-	XSkinBattleMotion.hud_in([hp_holder, boss_panel, holder, side, otb, tianqi_meter])  # T096：新界面开战时依次淡入（样稿 .in）；动效关、皮肤关什么也不做
+	XSkinBattleMotion.hud_in([hp_holder, boss_panel, holder, side, otb, tianqi_meter] + ([seal_dial] if seal_dial != null else []))  # T096：新界面开战时依次淡入（样稿 .in）；动效关、皮肤关什么也不做
 
 
 ## 说明卡（选技能／物品时右侧的详情）显示时的矩形（减 _origin，原版坐标）；没显示为空
@@ -1735,6 +1745,26 @@ func ring_hug_rect(a: XBattler, body: Rect2) -> Rect2:
 
 
 ## 指令环各项与「某某的行动」的矩形（原版坐标，加放大余量）
+## T267 伤害统计要让的战斗窗口（战斗画面坐标）：指令环各项（不加放大余量）＋原因条、战技／魔法／物品列表、说明卡、其余选择窗
+func record_window_rects() -> Array:
+	var out := []
+	if cmd_win != null and is_instance_valid(cmd_win) and cmd_win.is_visible_in_tree():
+		if cmd_win is XSkinBattleRing:
+			var ring := cmd_win as XSkinBattleRing
+			for r: Rect2 in ring.item_rects():   # 项框上下各收 6：框比字高（圆钮余量），按看得见的字算（稿：6 项环「逃跑」下沿约 671）
+				out.append(Rect2(ring.position - _origin + r.position, r.size).grow_individual(0, -6, 0, -6))
+		else:
+			out.append(menu_rect(cmd_win))
+	if cmd_reason_tag != null and is_instance_valid(cmd_reason_tag) and cmd_reason_tag.is_visible_in_tree():
+		out.append(Rect2(cmd_reason_tag.global_position - _origin, cmd_reason_tag.size))
+	for w in [list_win, mimic_win, yun_win, transfer_win]:
+		if w != null and is_instance_valid(w) and w.is_visible_in_tree():
+			out.append(menu_rect(w))
+	if help_card != null and is_instance_valid(help_card) and help_card.is_visible_in_tree():
+		out.append(Rect2(help_card.global_position - _origin, help_card.size))
+	return out
+
+
 func ring_item_rects(ring: XSkinBattleRing) -> Array:
 	return ring.item_rects().map(func(r: Rect2): return Rect2(ring.position - _origin + r.position, r.size).grow(BIG_ROOM_PAD))
 

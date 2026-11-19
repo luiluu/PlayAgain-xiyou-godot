@@ -14,12 +14,15 @@ var _done := []
 var b: XBattleScene
 var lg: XBattleLogic
 var _helper: XActor
+var only := ""        # -- --only=a／b：只跑卡 A 或卡 B（开发时用；检查脚本不带参数，两张都跑）
 
 
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
+		elif arg.begins_with("--only="):
+			only = arg.substr(7)
 	if has_meta("runner"):
 		_run.call_deferred()
 		return
@@ -82,6 +85,11 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0
 	if _shooting():
 		DirAccess.make_dir_recursive_absolute(out_dir)
+	if only == "b":
+		_done = ["victory", "gameover"]
+		await _card_b()
+		_finish()
+		return
 	_unit()
 	if not await _open_battle():
 		_finish()
@@ -105,6 +113,8 @@ func _run() -> void:
 	b.bgm.stop()
 	b.queue_free()
 	await _frames(3)
+	if only != "a":
+		await _card_b()
 	_finish()
 
 
@@ -541,7 +551,7 @@ func _mixed_drops(n: int) -> Array:
 
 
 func _finish() -> void:
-	_check("all_parts_reached_end", _done == ["victory", "gameover"], _done)
+	_check("all_parts_reached_end", _done == ["victory", "gameover"] + ([] if only == "a" else ["card_b"]), _done)
 	XUiSkin.FORCE = false
 	XUiSkin.motion_override = -1
 	XEnemy.force_roll = -1.0
@@ -551,3 +561,680 @@ func _finish() -> void:
 			print("FAIL ", r.name, " ", JSON.stringify(r.detail))
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## ======== 卡 B（T267，照 T254 1.3～1.6、原卡 D）：印盘、连击、伤害统计、掉落图标、首领名小怪名 ========
+
+var bb: XBattleScene
+var blg: XBattleLogic
+
+
+## 开一场真战斗当底（新皮肤／旧皮肤），伤害统计、掉落动画两个设置打开；troop 4 是小怪战
+func _open_b(new_skin: bool, troop := 4, members := [8, 9, 10], prep := Callable()) -> bool:
+	if bb != null and is_instance_valid(bb):
+		bb.bgm.stop()
+		bb.queue_free()
+		await _frames(2)
+	XUiSkin.FORCE = new_skin
+	XConfig.set_flag("CombatDamageRecordKey", true)
+	XConfig.set_flag("MOG_TrPopUpBattle_Key", true)
+	seed(20261120)
+	var s := XState.new_game(3, 1, members)
+	XState.current = s
+	for a in s.members():
+		a.refresh_passive()
+		a.param_mark_dirty()
+		a.recover_all()
+	s.random_master = XRandomStream.hex64(20261120)
+	if prep.is_valid():
+		prep.call(s)
+	bb = XBattleScene.new()
+	bb.setup(troop, true, false, {})
+	add_child(bb)
+	var ok := await _until(func(): return bb.cmd_win != null and bb.cmd_win.active)
+	blg = bb.logic
+	return ok
+
+
+## 战争线：火花 n／上限（spark_full 读模块），印盘本线设成 line
+func _war(n: int, line := "war") -> void:
+	blg.set_meta("xwar_alien", {"units": {blg.enemies[0]: {"tier": "omen"}}, "sparks": n})
+	if bb.seal_dial != null:
+		bb.seal_dial.line = line
+	bb.tianqi_meter.refresh()
+
+
+func _combo(n: int) -> void:
+	var c := bb.combo
+	c.hits = n
+	c._fresh = true
+	c.step()
+
+
+const B_SWITCHES := ["METER", "COMBO", "RECORD", "DROPS", "EDGE_FLASH", "NAMES"]
+var _b_suffix := ""
+
+
+func _b_switches(on: bool) -> void:
+	XSkin2C.METER = on
+	XSkin2C.COMBO = on
+	XSkin2C.RECORD = on
+	XSkin2C.DROPS = on
+	XSkin2C.EDGE_FLASH = on
+	XSkin2C.NAMES = on
+
+
+## 新旧对照一张：新画法拍一张，卡 B 六个开关全关拍一张（旧画法），拼成「左旧右新」存 JPG
+func _ab(name: String, settle := 2) -> void:
+	if not _shooting():
+		return
+	await _frames(settle)
+	await _shot("新_" + name + _b_suffix)
+	_b_switches(false)
+	await _frames(2)
+	await _shot("旧_" + name + _b_suffix)
+	_b_switches(true)
+	var a: Image = _shots["旧_" + name + _b_suffix]
+	var c: Image = _shots["新_" + name + _b_suffix]
+	var out := Image.create(a.get_width() + c.get_width() + 8, 450, false, a.get_format())
+	out.fill(Color.BLACK)
+	out.blit_rect(a, Rect2i(Vector2i.ZERO, a.get_size()), Vector2i(0, 0))
+	out.blit_rect(c, Rect2i(Vector2i.ZERO, c.get_size()), Vector2i(a.get_width() + 8, 0))
+	_check("pair_B_" + name + _b_suffix, out.save_jpg(out_dir.path_join("B对照_" + name + _b_suffix + ".jpg"), 0.85) == OK)
+	for k in ["新_" + name + _b_suffix, "旧_" + name + _b_suffix]:
+		DirAccess.remove_absolute(out_dir.path_join(k + ".png"))
+		_shots.erase(k)
+
+
+## 原尺寸局部放大（掉落七档、印盘细节）：从视口裁一块、放大 zoom 倍存 PNG
+func _crop(name: String, r: Rect2, zoom := 2) -> void:
+	if not _shooting():
+		return
+	await _frames(2)
+	await RenderingServer.frame_post_draw
+	var img := get_viewport().get_texture().get_image()
+	var k := img.get_width() / get_viewport().get_visible_rect().size.x
+	var ri := Rect2i(Vector2i(r.position * k), Vector2i(r.size * k))
+	var sub := img.get_region(ri)
+	sub.resize(int(r.size.x * zoom), int(r.size.y * zoom), Image.INTERPOLATE_NEAREST)
+	_check("crop_" + name, sub.save_png(out_dir.path_join("B局部_" + name + _b_suffix + ".png")) == OK)
+
+
+func _famine(cost_idx: int, lean_idx: int) -> void:
+	blg.set_meta("xfamine_alien", {"units": {blg.enemies[0]: {"kind": "exhaust", "idx": cost_idx}, blg.enemies[-1]: {"kind": "lean", "idx": lean_idx}}})
+	bb.tianqi_meter.refresh()
+
+
+func _plague(layers: int, idx := 1, burst := false) -> void:
+	blg.set_meta("xplague_alien", {"units": {blg.enemies[0]: {"idx": idx}}, "layers": layers, "burst": burst})
+	bb.tianqi_meter.refresh()
+
+
+func _death(doomed: Array) -> void:
+	var d := {}
+	for a in doomed:
+		d[a] = 2
+	blg.set_meta("xdeath_alien", {"units": {blg.enemies[0]: {}}, "doom": d})
+	bb.tianqi_meter.refresh()
+
+
+func _clear_lines() -> void:
+	for k in ["xwar_alien", "xfamine_alien", "xplague_alien", "xdeath_alien"]:
+		if blg.has_meta(k):
+			blg.remove_meta(k)
+	bb.tianqi_meter.refresh()
+
+
+func _dial() -> XSkinSealDial:
+	return bb.seal_dial
+
+
+## 关掉所有战斗窗口（截图里只看浮层）／把指令环重新放出来
+func _no_windows() -> void:
+	for w in [bb.cmd_win, bb.list_win]:
+		if w != null and is_instance_valid(w):
+			w.visible = false
+	if bb.cmd_reason_tag != null:
+		bb.cmd_reason_tag.visible = false
+
+
+func _windows_back() -> void:
+	if bb.cmd_win != null and is_instance_valid(bb.cmd_win):
+		bb.cmd_win.visible = true
+
+
+func _card_b() -> void:
+	_b_switches(true)
+	_check("b_switches_default", XSkin2C.METER and XSkin2C.COMBO and XSkin2C.RECORD and XSkin2C.DROPS and XSkin2C.EDGE_FLASH and XSkin2C.NAMES)
+	XUiSkin.FORCE = true
+	_check("b_switch_off", (func():
+		XSkin2C.METER = false
+		var r := not XSkin2C.meter_on() and XSkin2C.combo_on()
+		XSkin2C.METER = true
+		return r).call())
+	XUiSkin.FORCE = false
+	_check("b_xiyou_old", not XSkin2C.meter_on() and not XSkin2C.record_on() and not XSkin2C.drops_on() and not XSkin2C.names_on())
+	await _b_rules()
+	await _b_record_layouts()
+	_b_record_values_same()
+	_b_drop_rng_same()
+	if _shooting():
+		for sz in [[Vector2i(1280, 720), ""], [Vector2i(1600, 720), "_20x9"]]:
+			_b_suffix = str(sz[1])
+			get_window().size = sz[0]
+			await _frames(4)
+			await _b_shots()
+		_b_suffix = ""
+		get_window().size = Vector2i(1280, 720)
+		await _frames(4)
+	if bb != null and is_instance_valid(bb):
+		bb.bgm.stop()
+		bb.queue_free()
+		bb = null
+	await _frames(2)
+	XUiSkin.motion_override = -1
+	_done.append("card_b")
+
+
+## ---- 印盘、连击规则 ----
+
+func _b_rules() -> void:
+	var ok := await _open_b(true)
+	_check("b_battle_shown", ok)
+	if not ok:
+		return
+	var d := _dial()
+	_check("b_dial_built", d != null and d.get_parent() == bb.ui)
+	if d == null:
+		return
+	_check("b_dial_pos", absf(d.position.x - (bb.auto_btn.get_parent().position.x - 4.0)) < 0.5 and absf(d.position.y - (bb._origin.y + 142.0)) < 0.5, d.position)
+	# 火花：菱形颗数＝上限、亮的颗数＝当前值
+	_war(7)
+	await _frames(2)
+	var full := XTianqiWarAlien.spark_full(blg)
+	_check("b_war_diamonds", d.last.get("diamonds") == full and d.last.get("lit") == 7, d.last)
+	_check("b_war_tag", str(d.last.tags[0].text) == "火花7 / %d" % full, d.last.get("tags"))
+	_check("b_war_center_wax", d.last.get("center") == "wax")
+	# 满了归零：签上「全体再动」、四边一闪
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	_war(0)
+	await _frames(2)
+	_check("b_war_full_tag", str(d.last.tags[0].text).ends_with("全体再动") and d.last.get("edge", false), d.last)
+	await _until(func(): return bb.tianqi_meter.flash_left("war") <= 0.0, 90)
+	await _frames(2)
+	_check("b_war_flash_ends", not str(d.last.tags[0].text).ends_with("全体再动"), d.last.get("tags"))
+	# 上限超过 14：弧形条
+	var war_data: Dictionary = XTianqiWarAlien.data().sparks
+	var keep_full = war_data.full
+	war_data.full = 16
+	_war(4)
+	await _frames(2)
+	_check("b_arc_bar_over14", d.last.get("diamonds") == -1 and is_equal_approx(float(d.last.get("arc_bar", -1.0)), 0.25), d.last)
+	war_data.full = keep_full
+	# 病灶：常态 12、终焉 8；爆发时签上「爆发」
+	_clear_lines()
+	_plague(5, 1)
+	await _frames(2)
+	_check("b_plague_12", d.last.get("ring_key") == "plague" and d.last.get("diamonds") == 12 and d.last.get("lit") == 5, d.last)
+	_plague(5, 3)
+	await _frames(2)
+	_check("b_plague_finale_8", d.last.get("diamonds") == 8 and str(d.last.tags[0].text) == "病灶5 / 8", d.last)
+	_plague(6, 3, true)
+	await _frames(2)
+	_check("b_plague_burst_tag", str(d.last.tags[0].text) == "病灶爆发" and not d.last.get("edge", false), d.last.get("tags"))
+	# 饥荒：环上没有菱形，只有七颗小圆
+	_clear_lines()
+	_famine(1, 1)
+	await _frames(2)
+	_check("b_famine_no_diamonds", d.last.get("ring_key") == "famine" and d.last.get("diamonds") == 0 and d.last.get("circles") == 7, d.last)
+	_check("b_famine_tag", str(d.last.tags[0].text).begins_with("饥饿消耗 ×") and str(d.last.tags[0].text).contains("回复 ×"), d.last.get("tags"))
+	# 死亡：一人一颗，被挂的亮；被挂的人换去助力位时 +1
+	_clear_lines()
+	_death([])
+	await _frames(2)
+	_check("b_death_none", d.last.get("diamonds") == blg.actors.size() and d.last.get("lit") == 0 and str(d.last.tags[0].text) == "死期暂无", d.last)
+	_death([blg.actors[0], blg.actors[1]])
+	await _frames(2)
+	_check("b_death_two", d.last.get("diamonds") == blg.actors.size() and d.last.get("lit") == 2, d.last)
+	_death([blg.actors[0], blg.actors[1], blg.actors[2]])
+	await _frames(2)
+	_check("b_death_many_text", str(d.last.tags[0].text).contains("等 3 人"), d.last.get("tags"))
+	var helper := XState.current.actor(5)
+	if helper != null:
+		helper.recover_all()
+		_death([blg.actors[0], helper])
+		await _frames(2)
+		_check("b_death_helper_plus1", d.last.get("diamonds") == blg.actors.size() + 1 and d.last.get("lit") == 2, d.last)
+	# 多条线：环上是本线、签的顺序照旧、四枚签不超出环高
+	_war(3, "plague")
+	_plague(4, 1)
+	_famine(1, 1)
+	_death([blg.actors[0]])
+	await _frames(2)
+	var keys: Array = d.last.get("tags", []).map(func(t): return str(t.key))
+	_check("b_multi_ring_is_line", d.last.get("ring_key") == "plague" and keys == ["plague", "war", "death", "famine"], keys)
+	var tg: Array = d.last.get("tags", [])
+	_check("b_multi_tags_in_ring", tg.size() == 4 and float(tg[0].y) >= 0.0 and float(tg[-1].y) + XSkinSealDial.TAG_H <= XSkinSealDial.RING + 0.5, tg)
+	d.line = "war"
+	# 连击：数字在环心、没有计量时出素环、断了淡出
+	_clear_lines()
+	await _frames(2)
+	_check("b_no_line_no_ring", not d.last.has("center"), d.last)
+	_combo(12)
+	await _frames(2)
+	_check("b_combo_plain_ring", d.last.get("center") == "combo" and d.last.get("combo") == 12 and d.last.get("ring_key") == "" and d.last.get("circles") == 7 and d.last.get("tier") == 2, d.last)
+	_combo(123)
+	await _frames(2)
+	_check("b_combo_three_digits_40", d.last.get("combo_fs") == 40 and d.last.get("tier") == 4, d.last)
+	bb.combo._broken = true
+	bb.combo.step()
+	await _until(func(): return bb.combo.num_alpha() <= 0.0, 400)   # 连击按物理帧淡，机器忙时物理帧少
+	await _frames(2)
+	_check("b_combo_fades", not d.last.has("center"), d.last)
+	_check("b_combo_tiers", [0, 1, 9, 10, 29, 30, 49, 50, 999].map(func(h): return XComboCounter.tier(h)) == [0, 1, 1, 2, 2, 3, 3, 4, 4])
+	# METER 关、COMBO 开：只有素环；METER 开、COMBO 关：连击回旧画法接在环下
+	_war(5)
+	XSkin2C.METER = false
+	_combo(5)
+	await _frames(2)
+	_check("b_meter_off_plain", d.last.get("ring_key") == "" and d.last.get("center") == "combo", d.last)
+	XSkin2C.METER = true
+	XSkin2C.COMBO = false
+	await _frames(2)
+	_check("b_combo_off_old_under", d.last.get("center") == "wax" and bb.combo.under_dial, d.last)
+	XSkin2C.COMBO = true
+	XUiSkin.motion_override = -1
+
+
+## ---- 伤害统计：各人数、各站位、首领／小怪，上沿 ≥ 616、不压我方身体 ----
+
+func _bodies() -> Array:
+	var out := []
+	for a in blg.actors:
+		if bb.sprites.has(a):
+			out.append(XBattleScene.body_rect(bb.sprites[a]))
+	return out
+
+
+func _record_clear_of_bodies(tag: String) -> void:
+	var r := bb.record
+	if r == null:
+		_check("b_rec_exists_" + tag, false)
+		return
+	await _frames(3)
+	var bodies := _bodies()
+	for lvl in [0, 1]:
+		r.collapsed = lvl == 1
+		r.avoid = 0
+		await _frames(2)
+		var rect: Rect2 = r.current_rect()
+		var hit := bodies.filter(func(bd): return bd.intersects(rect))
+		_check("b_rec_top616_%s_%d" % [tag, lvl], rect.position.y >= 616.0 and hit.is_empty(), [rect, hit])
+	r.collapsed = false
+
+
+func _b_record_layouts() -> void:
+	var keep := XConfig.party_formation()
+	for f in [XPartyFormation.ROWS, XPartyFormation.DIAMOND, XPartyFormation.COLUMN]:
+		XConfig.set_party_formation(f)
+		for troop in [4, 430]:
+			for members in [[8, 9, 10], [8], [8, 9]]:
+				if not await _open_b(true, troop, members):
+					_check("b_open_%d_%d" % [f, troop], false)
+					continue
+				_no_windows()
+				await _record_clear_of_bodies("%d_%d_%d" % [f, troop, members.size() + 1])
+				await _frames(1)
+	XConfig.set_party_formation(keep)
+	# 谁占格、排序、超过 4 人、窗口避让（四人小怪战）
+	await _open_b(true)
+	var r := bb.record
+	if r == null:
+		return
+	r.values = [0.0, 0.0, 0.0, 0.0, 0.0]
+	await _frames(2)
+	var occ := r.occupants()
+	_check("b_rec_occupants_on_field", occ.size() == blg.actors.size(), [occ, r.slots])
+	_check("b_rec_ties_by_slot", occ == range(occ.size()), occ)
+	r.values = [10.0, 300.0, 300.0, 50.0, 0.0]
+	_check("b_rec_sorted", r.occupants() == [1, 2, 3, 0], r.occupants())
+	# 助力位：没上过场、0 伤不占格；换下场的有伤害照样留格；五人有伤害只排前 4、合计是全队
+	r.slots = r.slots.duplicate()
+	while r.slots.size() < 5:
+		r.slots.append(0)
+	r.slots[4] = 5
+	_check("b_rec_helper_zero_no_cell", not r.occupants().has(4), r.occupants())
+	r.values = [10.0, 300.0, 300.0, 50.0, 70.0]
+	_check("b_rec_five_top4", r.shown_cells() == [1, 2, 4, 3] and is_equal_approx(r.total(), 730.0), [r.shown_cells(), r.total()])
+	r.values = [10.0, 300.0, 300.0, 50.0, 0.0]
+	r.slots[4] = 0
+	# 窗口避让：相交 → 一行；一行仍相交 → 隐藏；窗口全关 0.15 秒后恢复
+	_windows_back()
+	var fake := Control.new()
+	var wins := []
+	r.windows_source = func(): return wins
+	wins.append(Rect2(r.band_rect().position + Vector2(r.band_rect().size.x - 40, 4), Vector2(30, 20)))
+	await _frames(3)
+	_check("b_rec_avoid_line", r.level() == 1, [r.level(), r.band_rect(), r.line_rect()])
+	wins.clear()
+	wins.append(r.line_rect().grow(-2))
+	await _frames(3)
+	_check("b_rec_avoid_hide", r.level() == 2, r.level())
+	await _until(func(): return not r.visible, 30)
+	_check("b_rec_hidden_fades", not r.visible)
+	wins.clear()
+	await _frames(2)
+	_check("b_rec_restore_waits", r.level() == 2)
+	await _until(func(): return r.level() == 0, 30)
+	_check("b_rec_restored", r.level() == 0 and r.avoid == 0)
+	r.windows_source = bb.record_window_rects
+	fake.free()
+	# 真实指令环：6 项环在后下位，不该压着展开带以外的东西；有就让
+	await _frames(3)
+	var real := bb.record_window_rects()
+	_check("b_rec_real_windows", real.size() > 0, real.size())
+	# 点一下暗带：收成一行、记在本机，再点展开
+	r.windows_source = func(): return []
+	await _until(func(): return r.level() == 0, 30)
+	var ev := InputEventMouseButton.new()
+	ev.button_index = MOUSE_BUTTON_LEFT
+	ev.pressed = true
+	r._gui_input(ev)
+	_check("b_rec_tap_collapse", r.collapsed and XDamageRecord._load_collapsed() and r.level() == 1)
+	r._gui_input(ev)
+	_check("b_rec_tap_expand", not r.collapsed and not XDamageRecord._load_collapsed())
+	r.windows_source = bb.record_window_rects
+
+
+## values 和旧画法逐次一致：同一串 record() 喂新旧两块，values 每次都一样
+func _b_record_values_same() -> void:
+	if blg == null:
+		return
+	var a := XDamageRecord.new()
+	var c := XDamageRecord.new()
+	XUiSkin.FORCE = false
+	a.setup(XState.current.battle_slots, 4)
+	XUiSkin.FORCE = true
+	c.setup(XState.current.battle_slots, 4)
+	var same := a.skin == false and c.skin == true
+	var e: XEnemy = blg.enemies[0]
+	for i in 40:
+		var u: XActor = blg.actors[i % blg.actors.size()]
+		var dmg := float((i * 7919) % 5000) - 300.0
+		a.record(u, e, dmg)
+		c.record(u, e, dmg)
+		same = same and a.values == c.values
+	_check("b_rec_values_same", same, [a.values, c.values])
+	a.free()
+	c.free()
+
+
+## 掉落：新画法下弹跳轨迹与旧画法逐帧一致（随机数同种子）
+func _b_drop_rng_same() -> void:
+	if blg == null or bb == null:
+		return
+	var items := _mixed_drops(6).map(func(d): return XDB.rec(["", "Items", "Weapons", "Armors"][int(d.kind)], int(d.id)))
+	var tracks := []
+	for on in [false, true]:
+		XSkin2C.DROPS = on
+		var p := XDropPopup.new()
+		p._visual_rng.seed = 4242
+		var host := Node2D.new()
+		bb.field.add_child(host)
+		p.setup(host, 120.0, items)
+		bb.field.add_child(p)
+		var tr := []
+		for f in 120:
+			p.step()
+			tr.append(p.icons.map(func(g): return [g.x, g.y, g.alpha]))
+		tracks.append(tr)
+		p.queue_free()
+		host.queue_free()
+	XSkin2C.DROPS = true
+	_check("b_drop_track_same", tracks[0] == tracks[1] and not tracks[0].is_empty())
+
+
+## ---- 验收截图 ----
+
+func _drop_at(e: XEnemy, grades: Array) -> XDropPopup:
+	var items := []
+	for g in grades:
+		items.append(_item_of_grade(g))
+	var p := XDropPopup.new()
+	p.setup(bb.sprites[e], bb.sprites[e].height(), items)
+	bb.field.add_child(p)
+	return p
+
+
+func _item_of_grade(g: int) -> Dictionary:
+	for d in _mixed_drops(80):
+		var rec := XSkin2C.drop_rec(d)
+		if XSkin2C.drop_grade(d) == g:
+			return rec
+	return XDB.rec("Items", 1)
+
+
+func _b_shots() -> void:
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	await _open_b(true, 4, [8, 9, 10])
+	var d := _dial()
+	var r := bb.record
+	# 1. 整屏：火花、连击、伤害统计、掉落（岩浆暗底）
+	_war(8)
+	_combo(37)
+	r.values = [123500.0, 45700.0, 9876.0, 3210.0, 0.0]
+	_no_windows()
+	_drop_at(blg.enemies[-1], [4, 3, 0])
+	await _frames(70)
+	await _ab("1_整屏_暗底")
+	# 2. 印盘：火花四个时刻
+	_combo(0)
+	bb.combo._broken = true
+	bb.combo.step()
+	for st in [[3, "平时"], [6, "过半"], [8, "最后三颗"]]:
+		_war(int(st[0]))
+		await _frames(30)
+		await _ab("2_火花_" + str(st[1]))
+		await _crop("火花_" + str(st[1]), Rect2(d.position, Vector2(330, 128)))
+	_war(10)
+	await _frames(2)
+	_war(0)
+	await _frames(6)
+	await _ab("2_火花_满的那一下", 0)
+	await _frames(40)
+	_war(5)
+	for st in [[3, "1档"], [12, "2档"], [30, "3档"], [58, "4档"]]:
+		_combo(int(st[0]))
+		await _frames(14)
+		await _crop("连击_" + str(st[1]), Rect2(d.position, Vector2(330, 128)))
+	_combo(9)
+	await _frames(12)
+	_combo(10)
+	await _frames(3)
+	await _crop("连击_升档那一下", Rect2(d.position, Vector2(330, 128)))
+	await _ab("2_连击_升档", 0)
+	bb.combo._broken = true
+	bb.combo.step()
+	await _frames(40)
+	# 3. 四条线
+	_clear_lines()
+	_plague(5, 1)
+	await _ab("3_瘟疫")
+	_clear_lines()
+	_death([])
+	await _ab("3_死亡_没人被挂")
+	_death([blg.actors[0], blg.actors[1]])
+	await _ab("3_死亡_两人被挂")
+	_death([blg.actors[0], blg.actors[1], blg.actors[2]])
+	await _ab("3_死亡_超过两人")
+	_clear_lines()
+	_famine(1, 1)
+	await _ab("3_饥荒")
+	_clear_lines()
+	_war(6)
+	_plague(9, 1)
+	await _ab("3_两条线")
+	_death([blg.actors[0]])
+	_famine(1, 1)
+	await _ab("3_四条线")
+	await _crop("四条线", Rect2(d.position, Vector2(420, 128)))
+	_clear_lines()
+	_combo(7)
+	await _ab("3_素环_只有连击")
+	bb.combo._broken = true
+	bb.combo.step()
+	await _frames(40)
+	var war_data: Dictionary = XTianqiWarAlien.data().sparks
+	var keep_full = war_data.full
+	war_data.full = 16
+	_war(11)
+	await _ab("3_上限16弧形条")
+	await _crop("上限16弧形条", Rect2(d.position, Vector2(330, 128)))
+	war_data.full = keep_full
+	_war(8)
+	# 4. 伤害统计
+	for n in [1, 2, 3]:
+		await _open_b(true, 4, [[], [8], [8, 9]][n - 1])
+		_war(8)
+		_no_windows()
+		bb.record.values = [123500.0, 45700.0, 9876.0, 0.0, 0.0]
+		await _ab("4_伤害统计_%d人" % n, 4)
+	await _open_b(true, 4, [8, 9, 10])
+	r = bb.record
+	d = _dial()
+	_war(8)
+	_no_windows()
+	r.values = [123500.0, 45700.0, 9876.0, 3210.0, 0.0]
+	await _ab("4_伤害统计_4人", 4)
+	r.slots = r.slots.duplicate()
+	while r.slots.size() < 5:
+		r.slots.append(0)
+	r.slots[4] = 5
+	r.values = [123500.0, 45700.0, 9876.0, 3210.0, 88000.0]
+	await _ab("4_伤害统计_换过人5人排前4", 4)
+	r.slots[4] = 0
+	r.values = [123500.0, 45700.0, 9876.0, 3210.0, 0.0]
+	r.collapsed = true
+	await _ab("4_伤害统计_一行", 4)
+	r.collapsed = false
+	await _frames(4)
+	r.values = [123500.0, 145700.0, 9876.0, 3210.0, 0.0]
+	await _frames(5)
+	await _ab("4_伤害统计_超过第一名那一下", 0)
+	_windows_back()
+	await _frames(20)
+	await _ab("4_伤害统计_指令环开着", 4)
+	# 后下位（4 人两排第 4 位）出 6 项环 → 让成一行；7 项环（带「换人」）→ 整条淡出；8 行战技列表 → 淡出
+	var back: XActor = blg.actors[3]
+	for n in [6, 7]:
+		await _ring_for(back, n)
+		await _frames(20)
+		_check("b_rec_ring%d_level" % n, r.level() == (1 if n == 6 else 2), [n, r.level(), bb.record_window_rects()])
+		await _ab("4_伤害统计_后下位%d项环" % n, 2)
+	_list_for(back, 8)
+	await _frames(20)
+	_check("b_rec_list8_hidden", r.level() == 2, r.level())
+	await _ab("4_伤害统计_后下位8行战技列表", 2)
+	bb._close_windows()
+	await _frames(30)
+	# 菱形站位、首领战、大体型站后下位
+	var keep := XConfig.party_formation()
+	XConfig.set_party_formation(XPartyFormation.DIAMOND)
+	await _open_b(true, 4, [8, 9, 10])
+	_no_windows()
+	bb.record.values = [123500.0, 45700.0, 9876.0, 3210.0, 0.0]
+	await _ab("4_伤害统计_菱形站位", 4)
+	XConfig.set_party_formation(keep)
+	await _open_b(true, 430, [8, 9, 10])
+	_war(8)
+	_no_windows()
+	bb.record.values = [123500.0, 45700.0, 9876.0, 3210.0, 0.0]
+	await _ab("7_高首领_光头强", 20)
+	await _open_b(true, 4, [8, 9, 10], func(st: XState):
+		if not st.party.has(XMira.ACTOR):
+			st.actor(XMira.ACTOR)
+			st.party.append(XMira.ACTOR)
+		st.set_switch(XItemMarks.SUPER_SWITCHES[0], true)
+		st.set_battle_slot(3, XMira.ACTOR)
+		st.actor(XMira.ACTOR).recover_all()
+		st.actor_advance[XMira.ACTOR] = 3
+		var m := st.actor(XMira.ACTOR)
+		m.learn_skill(10161)
+		m.state_ids.append(XMira.DRAGON))
+	var mira: XActor = blg.actors[-1]
+	_check("b_mira_back_low", mira.actor_id == XMira.ACTOR and blg.actors.size() == 4, blg.actors.map(func(a): return a.actor_id))
+	blg._state_add(mira, XMira.DRAGON)
+	await _until(func(): return str(bb.sprites[mira]._look_key).contains("MiraDragon"), 60)
+	_no_windows()
+	bb.record.values = [123500.0, 45700.0, 9876.0, 3210.0, 0.0]
+	await _ab("4_伤害统计_大体型后下位", 10)
+	_check("b_rec_clear_big_form", not XBattleScene.body_rect(bb.sprites[mira]).intersects(bb.record.current_rect()), [XBattleScene.body_rect(bb.sprites[mira]), bb.record.current_rect()])
+	# 5. 掉落七档、传说落地那一下
+	await _open_b(true, 4, [8, 9, 10])
+	_no_windows()
+	var en: XEnemy = blg.enemies[-1]
+	var p := _drop_at(en, [0, 1, 2, 3, 4, 5, 6])
+	for g in p.icons:   # 七个摆开：横向排、同一高度，看得清
+		g.vx = 0.0
+	for k in p.icons.size():
+		p.icons[k].x = -150.0 + 50.0 * int(p.icons[k].node.grade)
+	await _until(func(): return p.icons.all(func(g): return g.node.land_ms >= 0 and absf(float(g.dy)) < 1.5 and float(g.y) == -float(g.intY)), 150)
+	var sp: Node2D = bb.sprites[en]
+	await _crop("掉落七档", Rect2(bb.field.position + sp.position + Vector2(-190, -sp.height() / 3.0 - 130), Vector2(380, 180)), 2)
+	await _ab("5_掉落七档", 0)
+	await _frames(240)
+	var leg := _drop_at(en, [4])
+	await _until(func(): return leg.icons[0].node.land_ms >= 0, 120)
+	await _frames(3)
+	await _ab("5_传说落地那一下", 0)
+	await _frames(60)
+	# 6. 字体 130%；动效简化、关（满的那一下）
+	_war(8)
+	_combo(37)
+	bb.record.values = [123500.0, 45700.0, 9876.0, 3210.0, 0.0]
+	XConfig.set_font_size_percent("global", 130)
+	await _frames(10)
+	await _ab("6_字体130", 4)
+	XConfig.set_font_size_percent("global", 100)
+	bb.combo._broken = true
+	bb.combo.step()
+	for m in [[XUiSkin.Motion.SIMPLE, "简化"], [XUiSkin.Motion.OFF, "关"]]:
+		XUiSkin.motion_override = int(m[0])
+		_war(10)
+		await _frames(2)
+		_war(0)
+		await _frames(6)
+		await _ab("6_动效%s_满的那一下" % str(m[1]), 0)
+		await _frames(40)
+	XUiSkin.motion_override = -1
+
+
+## 给某人开一个 n 项的指令环（按他的真实指令，不够补「换人」等），摆法照战斗场景
+func _ring_for(a: XActor, n: int) -> void:
+	bb._close_windows()
+	await _frames(1)
+	var opts: Array = bb._command_entries(a)
+	var extra := ["换人", "三系技能"]
+	while opts.size() < n:
+		var o: Dictionary = opts[0].duplicate()
+		o.text = extra[(opts.size()) % extra.size()]
+		o.key = "x%d" % opts.size()
+		opts.append(o)
+	opts = opts.slice(0, n)
+	bb.cmd_win = XSkinBattle.command(bb.ui, opts, XBattleScene.CMD_W, a)
+	bb.cmd_win.select(0)
+	bb._place_near_actor(bb.cmd_win, a)
+
+
+func _list_for(a: XActor, n: int) -> void:
+	bb._close_windows()
+	var rows := []
+	for i in n:
+		rows.append({"text": "战技 %d" % (i + 1), "icon": 64 + i, "enabled": true, "costs": [{"text": "10MP"}]})
+	bb.list_win = XSkinBattle.list(bb.ui, rows, XBattleScene.LIST_W, false, a, "战技")
+	bb.list_win.select(0)
+	bb._place_near_actor(bb.list_win, a, Vector2(16, 16))
+
+
+func _finish_b() -> void:
+	pass

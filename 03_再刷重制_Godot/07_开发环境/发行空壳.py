@@ -61,6 +61,7 @@ MIXED_OK = {
     'modes/xiyou/ui/skin/skin_art.gd': '新界面第一期正式美术（背景、烟色面板、选中条、环高亮）：只在 XUiSkin.on() 的画法里调，发行包里恒为 false；'
         'content/ui_skin/phase01/ 在 DENY 里不进包，缺图时 part()／bg_texture() 给 null、走程序画',
     'modes/xiyou/ui/skin/skin_boss_arc.gd': '首领血弧：只在 XSkinBattle.on()（XUiSkin.on()）时创建，发行包里恒为 false；铜印贴图走 ResourceLoader.exists 守卫，在 DENY 里不进包',
+    'modes/xiyou/ui/skin/skin_seal_dial.gd': '新界面 2C 卡 B 印盘（T267）：只在 XSkin2C.meter_on()／combo_on()（XUiSkin.on()）时创建，发行包里恒为 false；骑士徽记 content/tianqi/qiyin/icons/badge_ 走 ResourceLoader.exists 守卫，在 DENY 里不进包',
     'modes/xiyou/ui/skin/skin_battle_2c.gd': '新界面 2C 结算落印／全灭灭印（T265）：只在 XSkin2C.on()（XUiSkin.on()）时走，发行包里恒为 false；本线底图 content/ui_skin/phase01/bg/ 走 ResourceLoader.exists 守卫，在 DENY 里不进包',
 }
 HAND = HERE / '发行空壳手写'  # 手写空壳：<类名>.gd，整份照用（要保留部分发行功能的，如漩涡二阶画面）
