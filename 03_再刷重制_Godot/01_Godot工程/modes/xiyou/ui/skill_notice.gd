@@ -73,6 +73,7 @@ static func clear() -> void:
 		return
 	_pending.clear()
 	queue.clear()
+	XSkinNoticeLane.clear_kind("skill")
 	var l := _existing()
 	if l != null:
 		l.epoch += 1
@@ -117,6 +118,12 @@ func pump() -> void:
 	if XState.current == null or not XConfig.notice_on("skillLevel"):
 		queue.clear()
 		return
+	if XSkinNoticeLane.on():   # T254 卡 C（R1）：新皮肤下进提示道；同一人同一招再升就并成一条 from→最新
+		while not queue.is_empty():
+			var r: Dictionary = queue.pop_front()
+			dispatched.append(r)
+			XSkinNoticeLane.push(lane_item(r))
+		return
 	var on := XUiSkin.on()
 	while shown.size() < MAX_VISIBLE and not queue.is_empty():
 		var row: Dictionary = queue.pop_front()
@@ -136,6 +143,22 @@ func pump() -> void:
 			_layout()
 			pump())
 	_layout()
+
+
+## 提示道的一条：「角色 · 技能」（旧金）＋「技能升级 Lv a → Lv b」
+static func lane_item(r: Dictionary) -> Dictionary:
+	return {"kind": "skill", "key": "skill|%d:%d" % [int(r.actorId), int(r.skillId)], "replace": true,
+		"title": str(r.actorName) + " · " + str(r.skillName), "sub": lane_sub(int(r.from), int(r.to)),
+		"from": int(r.from), "to": int(r.to), "sub_color": XUiSkin.UP, "merge_sub": XSkillNotice._merge_sub}
+
+
+static func lane_sub(a: int, b: int) -> String:
+	return "技能升级 Lv %d → Lv %d" % [a, b]
+
+
+static func _merge_sub(dst: Dictionary, it: Dictionary) -> String:
+	dst["to"] = int(it.to)
+	return lane_sub(int(dst.get("from", it.from)), int(it.to))
 
 
 func _layout() -> void:

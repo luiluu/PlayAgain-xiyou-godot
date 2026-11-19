@@ -13,6 +13,7 @@ func _ready() -> void:
 	_bold_font.base_font = XUI.font()
 	_bold_font.variation_embolden = 0.7
 	font = _bold_font
+	add_to_group(XSkinNoticeLane.AVOID_GROUP)   # T254 卡 C：提示道亮着时让到这条横幅下面
 	clock = XDifficultyNotice.ensure(get_tree())
 	clock.painted.connect(refresh)
 	painter = _paint_notice
@@ -40,6 +41,9 @@ func refresh() -> void:
 		font = XUiSkin.font("title")
 		clean_text = true
 		var tw := font.get_string_size(clock.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+		if XSkinNoticeLane.on():
+			font = XUiSkin.font("body")
+			tw = _v2_width()
 		var bw := maxf(240.0, tw + 48.0)
 		var bh := 36.0
 		size = Vector2(bw, bh)
@@ -54,7 +58,44 @@ func refresh() -> void:
 	queue_redraw()
 
 
+## T254 卡 C（R2）：「当前难度：」和难度名分开量、分开上色
+func _v2_parts() -> Array:
+	var s := clock.text
+	var i := s.find("：")
+	return [s.substr(0, i + 1), s.substr(i + 1)] if i >= 0 else ["", s]
+
+
+func _v2_width() -> float:
+	var p := _v2_parts()
+	return XUiSkin.font("body").get_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x + XUiSkin.font("title").get_string_size(p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+
+
+## T254 卡 C（R2）：v0.7 深色胶囊（PANEL_LOW 92%＋1px 线），前缀最亮字、难度名旧金；不再用难度色的框和竖条
+func _paint_v2(c: XMVCanvas) -> void:
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(XUiSkin.PANEL_LOW, 0.92)
+	box.border_color = Color(XUiSkin.LINE, 0.45)
+	box.set_border_width_all(1)
+	box.set_corner_radius_all(int(size.y / 2.0))
+	box.shadow_color = Color(0, 0, 0, 0.4)
+	box.shadow_size = 8
+	box.shadow_offset = Vector2(0, 3)
+	box.anti_aliasing = true
+	c.draw_style_box(box, Rect2(Vector2.ZERO, size))
+	var p := _v2_parts()
+	var bf := XUiSkin.font("body")
+	var tf := XUiSkin.font("title")
+	var x := roundf((size.x - _v2_width()) / 2.0)
+	var y := roundf(size.y / 2.0 + 18.0 * 0.36)
+	XUiSkin.ds(c, bf, Vector2(x, y), p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT_HI)
+	x += bf.get_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+	XUiSkin.ds(c, tf, Vector2(x, y), p[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.GOLD)
+
+
 func _paint_notice(c: XMVCanvas) -> void:
+	if XSkinNoticeLane.on():
+		_paint_v2(c)
+		return
 	if XUiSkin.on():
 		var col: Color = clock.color
 		var box := StyleBoxFlat.new()
