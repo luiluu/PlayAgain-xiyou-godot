@@ -317,14 +317,17 @@ static func params_target(f: int, i: int) -> float:
 	var row: Dictionary = d.get("floors", {}).get(str(f), {})
 	for k in row:
 		if int(d.get("stats", {}).get(k, -1)) == i:
-			return roundf(float(XDB.rec("Enemies", int(d.get("ref_enemy", 534))).get("params", [])[i]) * int(row[k]) / 100.0)
+			var ref_p: Array = XDB.rec("Enemies", int(d.get("ref_enemy", 534))).get("params", [])
+			if i >= ref_p.size():
+				return -1.0
+			return roundf(float(ref_p[i]) * int(row[k]) / 100.0)
 	return -1.0
 
 
 ## BattleLogic.setup 末尾（鸿钧换记录之后）调：31～34 层守层者表里写了的项，本只敌人这一项的倍率乘「目标原数据 ÷ 自己原数据」
 ## （自己原数据：鸿钧是乘过 summit rate 的合成记录）。难度倍率、首领倍率、线上异化照旧叠在上面；血量不在这里（HP_BASE）。
 static func rescale_params(logic) -> void:
-	if not PARAMS:
+	if not PARAMS or logic == null or not XTianqi.active(logic.state):
 		return
 	for e in logic.enemies:
 		var f := params_floor(e)

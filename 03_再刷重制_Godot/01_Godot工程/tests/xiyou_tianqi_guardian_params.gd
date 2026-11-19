@@ -124,10 +124,14 @@ func _off() -> void:
 
 
 func _xiyou() -> void:
+	# 漩涡怪物异化对齐大厅稿会把西游档守层者随机变成异化怪（战狂 ×1.5），两次开档抽到的不一样；这里关掉（同 xiyou_combat.gd），由 tests/xiyou_rift_alien 核
+	var align := XRiftAlien.ALIGN_LOBBY
+	XRiftAlien.ALIGN_LOBBY = false
 	XGuardianRework.PARAMS = true
 	var on := _guardian(467, false)
 	XGuardianRework.PARAMS = false
 	var off := _guardian(467, false)
 	XGuardianRework.PARAMS = true
+	XRiftAlien.ALIGN_LOBBY = align
 	_check("xiyou.same", on != null and off != null and int(on.param(3)) == int(off.param(3)) and int(on.param(3)) > 30000,
 		[on.param(3) if on != null else null, off.param(3) if off != null else null])

@@ -13,7 +13,7 @@
   - 只管天启篇存档；西游档原样。骑士、援军、七印里副本、七首之龙（走 horseman 记录、不是鸿钧的）不动。
   - 回退：`XGuardianRework.PARAMS = false`。
 - 专项：新增 `xiyou_tianqi_guardian_params` 22 项（31～33 层双防、攻击敏捷不动、30 层不动、鸿钧开关比值、回退开关、西游档原样、表全是整数）。
-- 玩家可见：天启篇 31～34 层守层者（女娲、伏羲、鸿蒙老祖、鸿钧）的物理防御、魔法防御大幅下调，与 30 层守层者处在同一量级，不再出现几乎打不动的情况。（待小A 审）
+- 玩家可见：天启篇 31～34 层守层者（女娲、伏羲、鸿蒙老祖、鸿钧）的物防、魔防大幅下调并平滑衔接 30 层，不再出现几乎打不动的情况。（小A 定稿）
 
 ## 交接板
 
@@ -31,7 +31,8 @@
 
 ## 验证
 
-- `xiyou_tianqi_guardian_params` 22/22。
+- `xiyou_tianqi_guardian_params` 22/22；小A（Neon）核出的偶发失败已修（西游档那支没关 `XRiftAlien.ALIGN_LOBBY`，开档重取种子约 15% 抽到战狂 ×1.5，`xiyou.same` 偶发挂；现在关掉再恢复，同 `xiyou_combat.gd`），修后连跑 5 次 22/22 ×5。
+- 核查 P3-1 顺手：`rescale_params` 加 `XTianqi.active(logic.state)` 判断；`params_target` 加参照敌人 params 越界保护。改后 guardian_domain 23/23、summit 78/78，发行空壳、语法检查通过。
 - 相关专项单跑全过：xiyou_tianqi_guardian_domain 23/23、xiyou_tianqi_guardian_gift 180/180、xiyou_tianqi_summit 78/78、xiyou_tianqi_phase4 140/140、xiyou_tianqi_phase4_modules 85/85、xiyou_tianqi_no_x6 39/39、xiyou_tianqi_elements 57/57、xiyou_tianqi_seg_alien 69/69、xiyou_tianqi_qiyin_dragon 91/91、xiyou_tianqi_qiyin_dragon_run 88/88。
 - `发行空壳.py check`：76 个脚本、696 个函数都有；`语法检查.py` 通过；`回退开关覆盖.py` 无本单新增问题。
 - 没跑：`--oracle`、全量（西游档 `setup` 第一句 `XTianqi.active` 为假就返回，不经过改动）；虚拟玩家 climb（三表交 T239）。
@@ -70,3 +71,4 @@
 
 - 91ea3fe84 31～34 层守层者物防魔防按期四重锚（XGuardianRework.PARAMS）＋专项 22/22＋量数归档
 - 交付单
+- 核查返修：专项关 ALIGN_LOBBY、rescale_params 认天启篇存档、params_target 越界保护、玩家可见句换小A 定稿
