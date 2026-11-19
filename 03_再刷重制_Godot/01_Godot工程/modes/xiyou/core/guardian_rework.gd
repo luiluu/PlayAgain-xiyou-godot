@@ -55,6 +55,38 @@ static var measure_neutral := false
 
 static var _floor_of := {}
 
+## 守层者领域关掉（T229，Kyo 11-19「220丙」：天启篇里交不交见面礼都不开）。只管天启篇存档、13～33 层守层者那场（34 层鸿钧借 469 同场）。
+## 原版 13～19 层第 1 回合（变量 842＝0）调公共事件 1398 大道领域、强制 6069；20～30 层 1399 天道领域／交礼走 1400 伪领域，强制 6070／6071；
+## 20～22 层首领血 ≤20%＋变量 853 再开 1399；30 层变身页、31～33 层第 1 回合与残血页的 1397 霸者领域／1399，强制 6068／6070。
+## 关掉时：这几个公共事件只跑开头的 334「敌人完全恢复」（回满是阶段机制，不是领域；第 1 回合本来就满血），
+## 后面加我方减益（696／698／695／1106）、守层者增益（691／686／1103／1104／1110／1108／44）、解我方 996／997／1008 都不跑；
+## 强制的领域技能（全能力强化一级＋公共事件 1401 回满）不放。轮回困难 8111、天道屠灭／回归／放逐、破阵阶段状态等照旧。
+## 回退：`XGuardianRework.DOMAIN_OFF = false`。
+static var DOMAIN_OFF := true
+const DOMAIN_EVENTS := [1397, 1398, 1399, 1400]
+const DOMAIN_SKILLS := [6068, 6069, 6070, 6071]
+const DOMAIN_FLOORS := [13, 33]
+
+
+## 这场战斗的守层者领域关着没有（天启篇存档、13～33 层守层者敌群）
+static func domain_off(logic) -> bool:
+	if not DOMAIN_OFF or logic == null or not XTianqi.active(logic.state):
+		return false
+	for f in range(DOMAIN_FLOORS[0], DOMAIN_FLOORS[1] + 1):
+		if int(TROOPS[f]) == int(logic.troop_id):
+			return true
+	return false
+
+
+## 领域公共事件关掉时留下的指令：只留顶层的 334（敌人完全恢复），收尾补一条结束
+static func domain_keep(ce_list: Array) -> Array:
+	var out := []
+	for c in ce_list:
+		if int(c.get("code", 0)) == 334 and int(c.get("indent", 0)) == 0:
+			out.append(c)
+	out.append({"code": 0, "indent": 0, "parameters": []})
+	return out
+
 
 ## 敌人号是哪一层的守层者（不是返回 0）
 static func floor_of(enemy_id: int) -> int:

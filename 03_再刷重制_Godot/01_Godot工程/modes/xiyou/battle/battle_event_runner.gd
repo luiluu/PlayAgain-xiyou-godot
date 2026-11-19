@@ -38,6 +38,10 @@ func _execute(c: Dictionary):
 			logic.abort_yield = true
 			halted = true
 			return false
+	if logic != null and (int(c.code) == 117 or int(c.code) == 339) and XGuardianRework.domain_off(logic):
+		var r = _domain_off(c)
+		if r != null:
+			return r
 	if COVER == null:
 		return super._execute(c)
 	var where := _cover_where()
@@ -48,6 +52,22 @@ func _execute(c: Dictionary):
 		for i in range(start, last + 1):
 			COVER["%s:%d" % [where, i]] = true
 	return r
+
+
+## 守层者领域关着（XGuardianRework.domain_off，T229）：领域公共事件只跑 334 回满，强制的领域技能不放。不归这里管的返回 null
+func _domain_off(c: Dictionary):
+	var p: Array = c.parameters
+	if int(c.code) == 339:
+		if p.size() > 2 and XGuardianRework.DOMAIN_SKILLS.has(int(p[2])):
+			return true
+		return null
+	var ce_id := int(p[0]) if not p.is_empty() else 0
+	if not XGuardianRework.DOMAIN_EVENTS.has(ce_id) or _depth >= 30:
+		return null
+	_child = _make_child(XGuardianRework.domain_keep(XDB.rec("CommonEvents", ce_id).get("list", [])))
+	_child._depth = _depth + 1
+	_child.common_id = ce_id
+	return {"kind": "child"}
 
 
 func _cover_where() -> String:
