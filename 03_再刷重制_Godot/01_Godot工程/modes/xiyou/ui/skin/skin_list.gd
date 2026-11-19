@@ -3,6 +3,9 @@ extends Control
 ## 【cc·天启篇·未经审查】直列表：一列／两列、行高可设、超出时右侧细滚动条，选中用红乙选中条（XSkinSelectBar）。
 ## 每项 {text, icon（图标号或 Texture2D）, badge（图标左上角的小角标贴图，如「新」）, sub（名字后的辅助小字）, right（右对齐数值，窄体数字字）, color, right_color, disabled}。
 ## 1C 加（可不给）：right2（right 再右边的第二列，正文字、右对齐，如装备候选的「▲23」）、right2_color；列宽 right2_w（整表一致，列才对得齐）。
+## T283 加（可不给，不给就不画、和以前逐像素一样）：tags（名字后的小标 XSkinTag：["新"] 或 [{text, color}]，名字放不下先缩名字、小标不缩）、
+## check（多选方框：0 空框、1 金色 ✓；没这个键的行不画框；要整表先设 check_column = true 才留出行首 28 的位置）；
+## 表级 empty_center（空列表一句画在列表区正中、19 号 TEXT_3，T254 3.0「空列表」）。
 ## 按键：handle_input 认 ui_up／ui_down／ui_left／ui_right／ui_accept／ui_cancel（页面在自己的 _input／_unhandled_input 里转进来）；
 ## 鼠标、触屏：点非当前项＝选中，点当前项＝确定；滚轮滚一行。上下到头循环（同 MV 列表按一下时的行为）。
 
@@ -36,6 +39,11 @@ var icon_size := 32
 var right2_w := 64.0
 var wrap := true
 var empty_text := "空"
+## T283：空列表一句居中（XSkinTag.draw_empty）；false＝照旧左上一行
+var empty_center := false
+## T283：行首留多选方框的位置（行键 check）；false＝不留
+var check_column := false
+const CHECK_W := 28.0
 ## 列表有没有焦点：没有时不画选中条（模板页里分类环有焦点时，列表只显示内容）
 var active := true:
 	set(v):
@@ -234,6 +242,20 @@ func _drag_input(event: InputEvent) -> void:
 			accept_event()
 
 
+## T283 多选方框（行键 check）：14×14 圆角框，标上是金色 ✓（不画框）；pos＝左缘、竖直中线
+func _draw_check(pos: Vector2, on: bool, dis: bool) -> void:
+	if on:
+		var c := XUiSkin.GOLD if not dis else XUiSkin.TEXT_3
+		draw_polyline(PackedVector2Array([pos + Vector2(1, 0), pos + Vector2(6, 5), pos + Vector2(15, -6)]), c, 2.5, true)
+		return
+	var sb := StyleBoxFlat.new()
+	sb.draw_center = false
+	sb.border_color = Color(XUiSkin.TEXT_2 if not dis else XUiSkin.TEXT_3, 0.8)
+	sb.set_border_width_all(1)
+	sb.set_corner_radius_all(2)
+	sb.draw(get_canvas_item(), Rect2(pos.x, pos.y - 7.0, 14.0, 14.0))
+
+
 ## 滚动条宽：触屏版 8（手指找得到），旧 4
 func scroll_w() -> float:
 	return 8.0 if XUiSkin.TOUCH_V2 else SCROLL_W
@@ -309,6 +331,9 @@ func _draw() -> void:
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	if items.is_empty():
+		if empty_center:
+			XSkinTag.draw_empty(self, Rect2(0, 0, size.x, size.y), empty_text)
+			return
 		XUiSkin.ds(self, body, Vector2(XUiSkin.PAD, row_height / 2.0 + font_size * 0.35), empty_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, XUiSkin.TEXT_3)
 		return
 	var first := top_row * columns
@@ -321,6 +346,10 @@ func _draw() -> void:
 		var base := r.position.y + r.size.y / 2.0
 		var dis := bool(it.get("disabled", false))
 		var sk := sel_scale.k(i)
+		if check_column:
+			if it.has("check"):
+				_draw_check(Vector2(x + 2.0, base), int(it.check) == 1, dis)
+			x += CHECK_W
 		var icon = it.get("icon")
 		var tex: Texture2D = icon if icon is Texture2D else (XUiSkin.icon(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
 		if tex != null:
@@ -350,13 +379,26 @@ func _draw() -> void:
 		var col: Color = it.get("color", XUiSkin.TEXT)
 		if i == index and active:
 			col = XUiSkin.sel_text(col)
-		var fit := fit_text(body, str(it.get("text", "")), max_w, XSkinSelScale.fs(font_size, sk, sel_font_cap()), min_font_size)
+		var tags: Array = it.get("tags", [])
+		var tags_w := XSkinTag.row_width(tags) + XSkinTag.GAP * 2.0 if not tags.is_empty() else 0.0
+		var fit := fit_text(body, str(it.get("text", "")), max_w - tags_w, XSkinSelScale.fs(font_size, sk, sel_font_cap()), min_font_size)
 		var text: String = fit[0]
 		var fs: int = fit[1]
 		XUiSkin.ds(self, body, Vector2(x, base + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_3 if dis else col)
+		var after := 0.0   # 小标占掉的宽（sub 接在小标后面）
+		if not tags.is_empty():
+			var tx := x + body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + XSkinTag.GAP * 2.0
+			for t in tags:
+				var p := XSkinTag.parse(t)
+				if str(p[0]) == "":
+					continue
+				var tw2 := XSkinTag.draw(self, Vector2(tx, base), str(p[0]), XUiSkin.TEXT_3 if dis else p[1])
+				tx += tw2 + XSkinTag.GAP
+				after += tw2 + XSkinTag.GAP
+			after += XSkinTag.GAP
 		var sub := str(it.get("sub", ""))
 		if sub != "":
-			var tw := body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			var tw := body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + after
 			var sx := x + tw + 10.0
 			if sx < x + max_w - 20.0:
 				XUiSkin.ds(self, body, Vector2(sx, base + sub_size * 0.36), sub, HORIZONTAL_ALIGNMENT_LEFT, x + max_w - sx, sub_size, XUiSkin.TEXT_2)

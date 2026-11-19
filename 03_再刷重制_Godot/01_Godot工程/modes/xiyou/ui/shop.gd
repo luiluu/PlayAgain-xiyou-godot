@@ -107,6 +107,10 @@ var _cache := {}
 var data_builds := 0
 var _gold_item := {}            # 金钱窗跟随的商品（Window_Gold._item）
 var _gold_buy := true
+## T283 新界面（天启篇，XUiSkin.on() 且 XSkinShopPage.ENABLED 时）：同一套状态，换成模板页布局画（XSkinShopPage）；
+## 关着时为 null，旧页一行不变。开着时只差三处走法：出售不经「分类」那一层（分类变成列表上方的页签）、
+## 出售列表取消直接回环上、只买不卖的店进门直接在购买列表（取消就离开）。
+var skin: XSkinShopPage
 
 
 func setup(g: Array, only: bool, group := "") -> void:
@@ -152,6 +156,12 @@ func _ready() -> void:
 	# 卡片不盖状态窗首行（「持有数」）：状态窗 y＋MV 标准内边距 18＋一行＝原版说明窗 y 227，再让出品质框外扩 10，本体 237（O-251，XHelpCard.NEAR_BELOW_HEADER）
 	help_card.near_min_y = STATUS_RECT.position.y + 18.0 + LH + 10.0
 	add_child(help_card)
+	if XUiSkin.on() and XSkinShopPage.ENABLED:
+		skin = XSkinShopPage.new(self)
+		add_child(skin)
+		if purchase_only:
+			_mode = "buy"   # 只买不卖：没有环，进门就在购买列表
+			_buy_index = clampi(_buy_index, 0, maxi(0, _buy_data().size() - 1))
 	_refresh()
 	if auto_close:
 		auto_log.append({"goods": goods.duplicate(true), "purchase_only": purchase_only, "stock_group": stock_group})
@@ -181,6 +191,9 @@ func _refresh() -> void:
 	list_win.up_arrow = (_mode == "sell" and _sell_top > 0) or (_mode == "buy" and _buy_top > 0)
 	onekey_win.visible = _mode == "onekey"
 	confirm_win.visible = _mode == "confirm"
+	if skin != null:
+		skin.sync()   # 新界面：旧窗口、说明卡都藏起来，不再画
+		return
 	for w in [cmd_win, info_win, list_win, status_win, gold_win, onekey_win, confirm_win]:
 		w.refresh()
 	_update_help()
@@ -1024,6 +1037,9 @@ func _toggle_stat_mode() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	var handled := true
 	if event.is_action_pressed("ui_cancel"):
 		_cancel()
@@ -1222,7 +1238,12 @@ func _ok_inner() -> void:
 					_buy_index = clampi(_buy_index, 0, maxi(0, _buy_data().size() - 1))
 					_buy_top = XMenu._scroll_to(_buy_index, _buy_top, _list_rows())
 				"sell":
-					_mode = "category"
+					if skin != null:   # 新界面：分类是列表上方的页签，直接进出售列表
+						_mode = "sell"
+						_sell_index = 0
+						_sell_top = 0
+					else:
+						_mode = "category"
 				"onekey":
 					_mode = "onekey"
 				"cancel":
@@ -1375,11 +1396,13 @@ func _cancel_inner() -> void:
 			closed.emit()
 		"buy", "category", "onekey":
 			_mode = "command"
+			if skin != null and purchase_only:
+				closed.emit()   # 新界面只买不卖的店没有环：购买列表上取消＝离开
 		"confirm":
 			_mode = "sell" if _confirm_kind == "multi" else "onekey"
 		"sell":
 			clear_marks()
-			_mode = "category"
+			_mode = "command" if skin != null else "category"
 		"number":
 			_number_mark = false
 			_mode = _number_from
@@ -1389,6 +1412,10 @@ func _cancel_inner() -> void:
 func _gui_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.pressed):
 		return
+	if skin != null:
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			_cancel()
+		return   # 新布局的点击由各组件自己接（XSkinShopPage）
 	var wd := XMenu.wheel_dir(event)
 	if wd != 0:
 		_wheel(wd)
