@@ -1,11 +1,19 @@
 # 交付：luiluu/t240
 
 - 车道／工作者：C 规则·机制／cc（T240 追加出手打倒的敌人也算击倒＋连锁上限，D223 乙；Opus＋medium）
-- 状态：可合并
+- 状态：可合并（R1 返修：小A Neon 甲核 P1×2 P2×1 P3×1 已改）
 
 ## 一句话
 
 T232 之后，主行动（含动作序列招）打倒的已经认得到；但追加出手（七印派生、词条再释放、技能重构追加释放）打倒的仍不算：再释放、追加释放在七印 `end_action` 之后才跑，七印行动帧已清；七印派生开自己的临时帧、打倒的随帧丢掉。改成：七印 `end_action` 开「追加击倒窗口」，这三类出手前后比对还活着的敌人，新倒下的记给行动者；`act` 里三者跑完后新加 `XTianqiQiyinEffects.followup_settle` 按轮结算，最多 `FOLLOW_KILL_MAX`（3）轮。开关 `XTianqiQiyinEffects.FOLLOW_KILLS`（O-待定），关掉回到现在（追加打倒的不算）。
+
+## R1 返修（小A 甲核退回）
+
+- **P1-1**：`XTianqiQiyinEffects.followup_settle` 登进 `03_再刷重制_Godot/07_开发环境/发行空壳特例.json`「已确认空值安全」（返回日志数组，调用处 append_array，西游档真脚本也是 []）；`发行空壳.py check` 退出码 0。
+- **P1-2**：原样「送行」（`chain: true`）在 `_chain_slash` 里自己连出来的击倒记成 `chained`：结算轮照数叠层、斩获、击倒再动，但**这一轮只有 chained 击倒时不重开连斩**；只有再释放、追加释放、其他派生、`chain: false` 的连斩打倒的才在结算里开连斩。所以断连后不补斩、不绕过 `chain_max`。专项改用原样 `chain: true`（`_raw_songxing`：怨念之魂×8，其余 1 血、留 1 个满血，两种位置）：主收尾刀数＝连斩砍倒数＋1，结算轮 `chain_runs` 0、结算日志没有出手，满血的那个结算前后血量不变、还活着，叠层＝倒下数。
+- **P2-1**：不再整场比对存活，改成**只认行动者本人这一击打到 0 血（或当场打倒）的目标**（`fu_mark`，在七印 `after_apply` 开头、`_active` 判断之前；出手者不是行动者的不记），窗口结束时真倒下才算。反击被反伤反死（挨打时没到 0）、连命同步倒下（没挨这一击）都不算（`not_mine_reflect_linked`：打没死后反死的、连命倒下的不算，只有挨致命一击的那个算 1）。
+- **P3-1**：窗口挪到战斗对象自己的 meta（`FU_META`），不靠七印本场数据；七印 `ENABLED=false` 时由词条 `end_action` 开窗口，再释放打倒的照样回斩获（`qiyin_off_recast_harvest`）；结算里叠层、连斩、再动只在七印开着时做。词条 `begin_action` 清 `st.last`（`affix_begin_clears_last`）。
+- 文字：「玩家可见」一行换成小A 原文。
 
 ## 口径（项目经理cc 11-19 回 ask 定）
 
@@ -19,7 +27,7 @@ T232 之后，主行动（含动作序列招）打倒的已经认得到；但追
 ## 随机数
 
 - 西游档：七印没有本场数据（`_active` 为假），窗口不开、`followup_settle` 直接返回，不取随机数，零变化（`legacy_no_store`、`legacy_settle_noop`；`xiyou_determinism` 372/372、`xiyou_event_compare` 四份全过）。
-- 天启篇档：**只在追加出手真打倒了敌人时**才会多取：送行连斩选目标（`qiyin_target`）和那一刀的 `apply`。比对存活本身不取随机数；没有追加击倒的行动，随机流与改前完全一样。
+- 天启篇档：**只在追加出手真打倒了敌人时**才会多取：送行连斩选目标（`qiyin_target`）和那一刀的 `apply`（R1 后原样「送行」自己连出来的击倒不再重开连斩，多取的更少）。记致命一击、比对存活本身不取随机数；没有追加击倒的行动，随机流与改前完全一样。
 
 ## 独占文件
 
@@ -27,6 +35,7 @@ T232 之后，主行动（含动作序列招）打倒的已经认得到；但追
 - 改：`modes/xiyou/core/tianqi_affix_battle.gd`（`end_action` 记 `st.last` 这次回没回过斩获；再释放每击前后比对；新 `followup_harvest`）
 - 改：`modes/xiyou/core/tianqi_skills.gd`（`_cast` 外包一层前后比对，原体改名 `_cast_run`，内容不变）
 - 改：`modes/xiyou/battle/battle_logic.gd`（`act` 里 `XTianqiSkills.end_action` 之后加一行 `followup_settle`）
+- 改（R1）：`03_再刷重制_Godot/07_开发环境/发行空壳特例.json`（登 `XTianqiQiyinEffects.followup_settle`）；`tianqi_qiyin_effects.gd`（窗口挪到 `FU_META`、`fu_open`／`fu_clear`／`fu_mark`、`chained`、结算结果记 `FU_LAST_META`）；`tianqi_affix_battle.gd`（`begin_action` 清 `last`、七印没开时清窗口；`end_action` 开窗口）
 - 新：`tests/xiyou_tianqi_followup_kill.gd／.tscn／.gd.uid`
 
 ## 验收逐条（卡上 4 条）
@@ -42,6 +51,8 @@ T232 之后，主行动（含动作序列招）打倒的已经认得到；但追
 
 ## 验证
 
+- R1：专项 `xiyou_tianqi_followup_kill` 30/30；先合 main（4e7a2e034）再跑上面同一组 31 个＋`xiyou_battle` 9/9，32 个全过；`发行空壳.py check` 退出码 0；语法检查通过。
+
 - 新专项 `xiyou_tianqi_followup_kill` 19/19（本机 `并行测试.py`，headless）。
 - 先合了 main（c73321b64）再跑：`xiyou_tianqi_qiyin_seq_kill` 71/71、`_qiyin_effects` 71/71、`_qiyin_redirect` 52/52、`_qiyin_endgame` 62/62、`_qiyin_dragon_run` 88/88、`_affix_battle` 86/86、`_skills` 245/245、`_again_use` 14/14、`_doom_follow` 74/74、`_ledger` 82/82、`_ledger_p3` 40/40、`_weak_affix` 101/101、`_weak_b2` 60/60、`_alien_affix` 37/37、`_brand` 234/234、`_horsemen_battle` 142/142、`_e2e` 60/60、`xiyou_determinism` 372/372、`xiyou_battle_stream`～`_f`（6 个）、`xiyou_event_compare`～`_d`（4 个）、`xiyou_otb` 34/34、`xiyou_gojo` 97/97：31 个全过。
 - 语法检查 1060 个 .gd 0 问题；工具快速回归全部通过。
@@ -53,8 +64,9 @@ T232 之后，主行动（含动作序列招）打倒的已经认得到；但追
 - 原因：D223 乙（Kyo 11-19）。T232 后主行动的击倒认得到了，但词条再释放、技能重构追加释放在七印行动收尾之后才跑，七印派生打倒的随临时帧丢掉，这些击倒不触发击倒再动、送行连斩、击杀叠层、词条斩获。
 - 修法（`modes/xiyou/core/tianqi_qiyin_effects.gd`）：七印 `end_action` 开追加击倒窗口，行动者本人的派生、再释放（`tianqi_affix_battle.gd`）、追加释放（`tianqi_skills.gd` `_cast`）前后比对还活着的敌人，新倒下的记下；`battle_logic.act` 在三者之后调 `followup_settle` 按轮结算叠层、连斩、斩获（一次行动一次）、击倒再动（per_turn、回合预算照旧），一次行动最多 `FOLLOW_KILL_MAX`＝3 轮。补刀（队友）不记、大刀阔斧溢出不认追加击倒。开关 `XTianqiQiyinEffects.FOLLOW_KILLS`（O-待定）。
 - 随机数：西游档零变化；天启篇档只在追加出手真打倒敌人时多取送行连斩的选目标与那一刀。
-- 专项 `xiyou_tianqi_followup_kill`（新）19/19。
-- 玩家可见：天启篇里再释放、追加释放、七印追加的攻击打倒敌人，现在也能触发击倒后再行动、送行连斩、击杀叠层和词条「斩获」。
+- 只认行动者本人致命一击打倒的（反伤反死、连命同步倒下不算）；原样「送行」自己连出来的击倒不在结算里重开连斩；七印关着时再释放打倒照样回斩获（R1）。
+- 专项 `xiyou_tianqi_followup_kill`（新）30/30。
+- 玩家可见：天启篇里再释放、追加释放和七印追加的攻击打倒敌人，现在也能触发击倒后再行动、「送行」连斩、红印击倒叠层和词条「斩获」（单次行动最多连锁 3 轮）。
 
 ## 优化登记草稿
 
@@ -83,5 +95,8 @@ T232 之后，主行动（含动作序列招）打倒的已经认得到；但追
 
 - e198d74e7 WIP：追加出手打倒也算击倒（FOLLOW_KILLS）＋连锁上限 3 轮；专项 19/19
 - （合 main）bc962afbb
-- 专项 uid
-- 交付单（本提交）
+- ba74d5c69 专项 uid
+- d35097b25 交付单
+- 49d11ede6 WIP：R1 返修（P1-1、P1-2、P2-1、P3-1）；专项 30/30
+- （合 main）16bf968ac
+- R1 交付单（本提交）
