@@ -208,6 +208,7 @@ static func map(map_id: int) -> Dictionary:
 		XRift.patch_map(map_id, _tables[key])  # 时空漩涡二阶段（Map004；O-312，开关 XRift.STAGE2）
 		XLobbyDebugNpc.patch_map(map_id, _tables[key])  # 大厅全图鉴 NPC 只留怪物图鉴（Kyo 11-12）
 		XFestLobby.patch_map(map_id, _tables[key])  # 冠军庆典：大厅使者、报名处、奖杯、BGM（只在活动期间，O-466）
+		XTianqiGuardianGift.patch_map(map_id, _tables[key])  # 天启篇守层者去见面礼、首胜必给宝珠必开压箱底店（T236）
 	return _tables[key] if _tables[key] != null else {}
 
 
