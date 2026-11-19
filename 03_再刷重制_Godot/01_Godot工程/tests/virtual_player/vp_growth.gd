@@ -306,6 +306,9 @@ static func shop(shop_page: XShop, st: XState, wanted: Dictionary = {}) -> Dicti
 		var e2: Dictionary = d[i]
 		if int(e2.kind) != 0 or not is_upgrade_stone(e2.item) or not shop_page._buy_enabled(e2):
 			continue
+		# 不占升级槽的（庚金这类炼化法宝的材料，Slots: 0）不买：用多少块都不减槽，按槽算的「还能用几块」永远不减，每趟都会再买。掉落捡到的照用
+		if int(XGearUpgrade.rule(e2.item).get("cost", 1)) <= 0:
+			continue
 		var room := upgrade_room(st, e2.item) - st.item_count(int(e2.gid))
 		var price := maxi(1, int(e2.get("price", 1)))
 		var n2 := mini(room, (budget - spent) / price)

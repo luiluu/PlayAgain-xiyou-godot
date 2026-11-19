@@ -75,6 +75,7 @@ var snapshot_dir := ""             # 给了就在每层第一次去挑战守层�
 var _snap_done := {}
 var pass_after := 0                # 量数用（>0 时）：同一层守层者输满这么多次后不收工，下一次挑战把守层者的血压到 1 放水通过（小结里标出来），好把后面各层的队伍快照也拿到
 var gifted_floors: Array = []      # 放水通过的层
+var ff_shop_once := true           # 快进局同一层的店只整轮逛一次（钱翻倍再逛）；--vp-ff-shop-every 关
 var resumed_from := ""             # --vp-resume 接着爬的那份存档（文件名；meta 的 msec 从接着爬那一刻算起）
 var fabao_enabled := true          # 出战的人有谁没戴法宝，就去兑换大厅领礼物（法宝积分）、找铁匠买法宝戴上
 var _door_id := 0                  # 大厅塔门的事件号（第一次认出来时记下）
@@ -2328,7 +2329,8 @@ func _next_shop(map: XMapScene, st: XState) -> MVEvent:
 		if x.erased or x.page.is_empty() or _shop_done.has(x.event_id) or not _is_shop(x):
 			continue
 		var memo: Dictionary = _shop_memo.get(x.event_id, {})
-		if not memo.is_empty() and int(memo.bought) == 0 and int(memo.floor) == int(st.variable(FLOOR_VAR)) and int(st.gold) < int(memo.gold) * 2:
+		# 快进局（T238 第三棒）：同一层逛过的店，买到东西也先不去，钱翻倍再去（快进局一层要回大厅五六趟，每趟整轮逛店三十来家、一千多步）
+		if not memo.is_empty() and (int(memo.bought) == 0 or (ff_enabled and ff_shop_once)) and int(memo.floor) == int(st.variable(FLOOR_VAR)) and int(st.gold) < int(memo.gold) * 2:
 			_shop_done[x.event_id] = true
 			continue
 		if int(_shop_visits.get(x.event_id, 0)) >= 12 or not _aim(map, x, "shop"):
