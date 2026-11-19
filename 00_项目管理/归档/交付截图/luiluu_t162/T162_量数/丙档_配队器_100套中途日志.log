@@ -1,0 +1,33 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+C_TEAM {"foes":{"1":{"common_hit":3505.0,"common_hit_no_crit":2336.0,"dmg":16907.0,"dmg_no_crit":9265.0,"turns":[3977.0,16907.0,16907.0,23142.0,16907.0],"turns_no_crit":[2621.0,9265.0,9265.0,12726.0,9265.0]},"3":{"common_hit":4801.0,"common_hit_no_crit":2775.0,"dmg":18331.0,"dmg_no_crit":10889.0,"turns":[17889.0,18331.0,18331.0,18337.0,18331.0],"turns_no_crit":[10447.0,10889.0,10889.0,10895.0,10889.0]}},"gear_score":31213.563,"kind":"random","label":"A","team":[52,15,27,33]}
+C_TEAM {"foes":{"1":{"common_hit":4166.0,"common_hit_no_crit":3841.0,"dmg":15418.0,"dmg_no_crit":11255.0,"turns":[11252.0,15418.0,15418.0,25898.0,19770.0],"turns_no_crit":[11252.0,15418.0,8837.0,14659.0,11255.0]},"3":{"common_hit":4166.0,"common_hit_no_crit":3841.0,"dmg":19770.0,"dmg_no_crit":11255.0,"turns":[46858.0,15418.0,15418.0,19770.0,19770.0],"turns_no_crit":[46858.0,15418.0,8837.0,11255.0,11255.0]}},"gear_score":32064.082,"kind":"random","label":"A","team":[12,6,27,130]}
+C_TEAM {"foes":{"1":{"common_hit":1295.0,"common_hit_no_crit":617.0,"dmg":1249.0,"dmg_no_crit":595.0,"turns":[0.0,1295.0,1249.0,9958.0,1249.0],"turns_no_crit":[0.0,617.0,595.0,5424.0,595.0]},"3":{"common_hit":7809.0,"common_hit_no_crit":4338.0,"dmg":26708.0,"dmg_no_crit":14735.0,"turns":[1295.0,26708.0,84040.0,1249.0,33672.0],"turns_no_crit":[617.0,14735.0,46591.0,595.0,18607.0]}},"gear_score":24189.589,"kind":"random","label":"A","team":[78,91,119,40]}
+ERROR: 伤害加成总账：天启篇出现没登记的乘区 state_confirm_pool.confirm#1666（pooled，技能 5746）——登记进 tianqi_data/damage_ledger.json 或归池
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _flag (res://modes/xiyou/core/tianqi_ledger.gd:467)
+       [1] audit_confirm (res://modes/xiyou/core/tianqi_ledger.gd:591)
+       [2] run (res://modes/xiyou/core/state_effects.gd:314)
+       [3] apply_state_effects (res://modes/xiyou/core/damage.gd:567)
+       [4] finish (res://modes/xiyou/core/damage.gd:402)
+       [5] _damage_value (res://modes/xiyou/battle/battle_logic.gd:2821)
+       [6] _apply (res://modes/xiyou/battle/battle_logic.gd:3035)
+       [7] _apply_core (res://modes/xiyou/battle/battle_logic.gd:2958)
+       [8] <anonymous lambda> (res://modes/xiyou/battle/battle_logic.gd:2898)
+       [9] apply (res://modes/xiyou/core/guyu.gd:773)
+       [10] apply (res://modes/xiyou/battle/battle_logic.gd:2893)
+       [11] _invoke_normal (res://modes/xiyou/battle/battle_logic.gd:2696)
+       [12] _invoke (res://modes/xiyou/battle/battle_logic.gd:2633)
+       [13] _action_effect (res://modes/xiyou/battle/action_sequence.gd:277)
+       [14] _command (res://modes/xiyou/battle/action_sequence.gd:161)
+       [15] _run_list (res://modes/xiyou/battle/action_sequence.gd:113)
+       [16] run (res://modes/xiyou/battle/action_sequence.gd:91)
+       [17] execute (res://modes/xiyou/battle/battle_logic.gd:2362)
+       [18] act (res://modes/xiyou/battle/battle_logic.gd:1378)
+       [19] _fight (res://tests/virtual_player/c_tier.gd:354)
+       [20] _run (res://tests/virtual_player/c_tier.gd:433)
+C_TEAM {"foes":{"1":{"common_hit":7545.0,"common_hit_no_crit":3593.0,"dmg":290960.0,"dmg_no_crit":150189.0,"turns":[4142.0,67801.0,290960.0,291734.0,290978.0],"turns_no_crit":[2761.0,33087.0,150189.0,150556.0,150195.0]},"3":{"common_hit":7447.0,"common_hit_no_crit":3546.0,"dmg":79311.0,"dmg_no_crit":38760.0,"turns":[146623.0,78617.0,79311.0,78617.0,79361.0],"turns_no_crit":[88195.0,38430.0,38760.0,38430.0,38796.0]}},"gear_score":27084.101,"kind":"random","label":"A","team":[4,55,128,105]}
+C_TEAM {"foes":{"1":{"common_hit":3911.0,"common_hit_no_crit":2173.0,"dmg":19517.0,"dmg_no_crit":12192.0,"turns":[3726.0,19783.0,19517.0,19517.0,19783.0],"turns_no_crit":[2070.0,12340.0,12192.0,12192.0,12340.0]},"3":{"common_hit":3911.0,"common_hit_no_crit":2173.0,"dmg":19783.0,"dmg_no_crit":12340.0,"turns":[19783.0,19783.0,19517.0,19783.0,19783.0],"turns_no_crit":[12340.0,12340.0,12192.0,12340.0,12340.0]}},"gear_score":84309.955,"kind":"strongest","label":"A","team":[153,170,27,29]}
+C_TEAM {"foes":{"1":{"common_hit":8784.0,"common_hit_no_crit":4183.0,"dmg":24348.0,"dmg_no_crit":12830.0,"turns":[10129.0,24348.0,24348.0,24348.0,23635.0],"turns_no_crit":[5627.0,12830.0,12830.0,12830.0,12434.0]},"3":{"common_hit":8784.0,"common_hit_no_crit":4183.0,"dmg":24348.0,"dmg_no_crit":12830.0,"turns":[121764.0,24348.0,24348.0,24348.0,24299.0],"turns_no_crit":[66836.0,12830.0,12830.0,12830.0,12750.0]}},"gear_score":26394.607,"kind":"random","label":"B","team":[64,128,13,44]}
+C_TEAM {"foes":{"1":{"common_hit":3566.0,"common_hit_no_crit":1981.0,"dmg":1819573.0,"dmg_no_crit":983558.0,"turns":[1819573.0,1822770.0,1758276.0,1858456.0,1757670.0],"turns_no_crit":[983558.0,985334.0,950485.0,1004748.0,950149.0]},"3":{"common_hit":3475.0,"common_hit_no_crit":1931.0,"dmg":1792453.0,"dmg_no_crit":969224.0,"turns":[1822660.0,1823397.0,1792453.0,1757670.0,1764469.0],"turns_no_crit":[985273.0,985683.0,969224.0,950149.0,953926.0]}},"gear_score":24268.132,"kind":"random","label":"B","team":[1,119,63,77]}

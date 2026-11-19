@@ -48,6 +48,16 @@ var resist := -1.0   # --resist=N：守层者伤害抵抗换成 N（0＝去掉�
 var duel := false   # --duel：不补血、打到分出胜负或 turns 回合，量真实回合数（去全队 ×6 开关对照，cc/tianqi-no-x6）
 var max_quality := 3   # UnifiedQuality：0、1 普通，2 优秀，3 精良，4 史诗
 var skipped_ids: Array = []
+## T162（Kyo 11-18）：--shape=tb 用配队器（tests/virtual_player/team_builder.gd）的职责模板 A～D 随机队，--teams 是每个模板几队。
+## T162（协调 11-18）：--shape=3s1w（3 强＋1 弱）／2s2w（2 强＋2 弱，艰险合法最大强者数）：队伍按层等级、按掉落表掷 sets 套取中位的装备（c_tier.floor_gears）、
+## 本人法宝、输出职责烙印 75%、天平酒——和丙档、U 同口径；缺省 4w＝原来的弱者 4 人白装基准队。
+const CT := preload("res://tests/virtual_player/c_tier.gd")
+var shape := "4w"
+var templates: Array = ["A", "B", "C", "D"]   # --shape=tb 时的职责模板
+var sets := 20
+var battles := 10
+var brand_pct := 75.0
+var _gears := {}   # 队伍键 → {层: gear}
 
 
 func _ready() -> void:
@@ -97,9 +107,22 @@ func _ready() -> void:
 			no_fabao = true
 		elif a.begins_with("--seed="):
 			seed = int(a.substr(7))
+		elif a.begins_with("--shape="):
+			shape = a.substr(8)
+		elif a.begins_with("--templates="):
+			templates = Array(a.substr(12).split(","))
+		elif a.begins_with("--sets="):
+			sets = int(a.substr(7))
+		elif a.begins_with("--battles="):
+			battles = int(a.substr(10))
+		elif a.begins_with("--brand="):
+			brand_pct = float(a.substr(8))
 		elif a.begins_with("--floors="):
-			var p := a.substr(9).split("-")
-			floors = range(int(p[0]), int(p[p.size() - 1]) + 1)
+			if a.contains(","):
+				floors = Array(a.substr(9).split(",")).map(func(x): return int(x))
+			else:
+				var p := a.substr(9).split("-")
+				floors = range(int(p[0]), int(p[p.size() - 1]) + 1)
 	_run.call_deferred()
 
 
@@ -131,6 +154,14 @@ static func own_fabao(actor_id: int) -> int:
 
 
 func _teams() -> Array:
+	if shape == "tb":   # 配队器：每个职责模板 teams 支合理随机队（缺省 A～D 四个模板），汇总取各队中位
+		var out := []
+		for tpl in templates:
+			out.append_array(CT.TB.random_teams(tpl, teams, seed, difficulty))
+		return out
+	if shape != "4w":
+		var sn := int(shape.substr(0, 1))
+		return CT.pick_teams(teams, seed, sn, 4 - sn)
 	var weak: Array = XTianqi.pool(difficulty)[XTier.WEAK].duplicate()
 	weak.sort()
 	# 上不了场的不要（如 156：建了队也不进出战成员）
@@ -150,7 +181,18 @@ func _teams() -> Array:
 	return out
 
 
+func _shape_state(team: Array, f: int) -> XState:
+	var key := ",".join(team.map(func(x): return str(x)))
+	if not _gears.has(key):
+		_gears[key] = CT.floor_gears(team, floors, sets, battles, seed, func(x): return level_cap(int(x)))
+	var s := CT.build_state(team, _gears[key][f], f, level_cap(f), fabao_cap(f), seed, brand_pct, true)
+	s.set_variable(20, f)
+	return s
+
+
 func _state(team: Array, f: int) -> XState:
+	if shape != "4w":
+		return _shape_state(team, f)
 	var s := XState.new_game(XTianqi.legacy_of(difficulty), int(team[0]), team.slice(1))
 	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": difficulty, "lineup": team.duplicate()}
 	s.random_master = XRandomStream.hex64(seed + f)
