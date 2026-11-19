@@ -121,6 +121,10 @@ var troop_event_skipped: Array = []
 var common_event_skipped: Array = []
 ## 脚本里 BattleManager.forceAction 记下的强制行动 {user, skill}（只留最后一次，同 _actionForcedBattler）：公共事件跑完、下一次事件检查前结算
 var pending_force: Dictionary = {}
+## 天启篇西西卡拷贝之眼：15 个复制版（5891～5926）每场各最多被公共事件 1614 强放 2 次（T262 R1）；西游档不限。键＝技能号，值＝已放次数，随战斗对象一起重置
+const TQ_COPY_IDS := [5891, 5894, 5896, 5898, 5900, 5904, 5906, 5908, 5910, 5912, 5913, 5918, 5919, 5924, 5926]
+const TQ_COPY_MAX := 2
+var tq_copy_uses: Dictionary = {}
 ## 战斗内事件的游标（XBattleEventRunner）：当前页没执行完时非空；本次检查的条件 {first, turn_end, moment, guard}
 var _runner: XBattleEventRunner = null
 var _check := {}
@@ -1848,6 +1852,11 @@ func _force_action(p: Array, first_subject: XBattler) -> Array:
 			users = [a]
 	var logs := []
 	var skill := XDB.rec("Skills", int(p[2]))
+	if int(p[0]) == 1 and TQ_COPY_IDS.has(int(p[2])) and XTianqi.active(state):
+		var used := int(tq_copy_uses.get(int(p[2]), 0))
+		if used >= TQ_COPY_MAX:
+			return logs
+		tq_copy_uses[int(p[2])] = used + 1
 	for u in users:
 		if u.is_dead() or skill.is_empty():
 			continue
