@@ -14,7 +14,10 @@ extends RefCounted
 ##   血量是按元素中性量的，这样九系、无属性、水风虚空混沌空间（数据里没抗性条）打上去都一样，回合数对得上。
 ##   吸收元素（19、28～33 层）照旧，等元素重做定了再说；元素重做去掉一刀切时把 ELEM 关掉即可。
 ##   HP_BASE 暂用基准队（只算等级、法宝、精良装备）每回合伤害的平滑值，Kyo 11-13 定改用虚拟玩家每层实队（C）重量，量好换表。
-## 回退：`XGuardianRework.ATK = false`；`XGuardianRework.HP = false`；`XGuardianRework.WORLD = false`（只改守层者）；`XGuardianRework.RESIST = false`。
+## - PARAMS（T237）：31～34 层守层者（女娲、伏羲、鸿蒙老祖、鸿钧）的物防、魔防按 tianqi_data/guardian_params.json 重锚到
+##   「30 层玉皇大帝原数据 × 整数%」（期四我方 80 级攻击约 4000，原数据 3.3 万～48 万的物防把防御率压到下限 0.05）。
+## 回退：`XGuardianRework.ATK = false`；`XGuardianRework.HP = false`；`XGuardianRework.WORLD = false`（只改守层者）；`XGuardianRework.RESIST = false`；
+## `XGuardianRework.PARAMS = false`（31～34 层守层者能力值照原数据）。
 ## 量数接口（tests/virtual_player/baseline_dps.tscn）：measure_resist、measure_neutral。
 
 static var ATK := true
@@ -25,6 +28,10 @@ static var HP := true
 static var WORLD := true
 static var ELEM := true
 static var RESIST := true
+## T237：31～34 层守层者能力值按 guardian_params.json 重锚（见头注释）；false＝照原数据
+static var PARAMS := true
+const PARAMS_PATH := "res://modes/xiyou/tianqi_data/guardian_params.json"
+static var _params_data := {}
 
 const ATK_SCALE := {1: 1.0, 2: 1.0, 3: 1.0, 4: 1.0, 5: 0.00884, 6: 3.07, 7: 1.29, 8: 1.9, 9: 0.589, 10: 1.09, 11: 0.952,
 	12: 0.511, 13: 0.946, 14: 0.0151, 15: 0.284, 16: 0.439, 17: 0.115, 18: 0.634, 19: 0.33, 20: 0.074, 21: 0.0303, 22: 0.0585,
@@ -223,7 +230,10 @@ static func turns(s: XState) -> int:
 
 ## BattleLogic.setup 末尾（各种重标之后）调：守层者那场、鸿钧、七印里副本的血量
 static func setup(logic, s: XState) -> void:
-	if not HP or s == null or not XTianqi.active(s) or logic.enemies.is_empty():
+	if s == null or not XTianqi.active(s) or logic.enemies.is_empty():
+		return
+	rescale_params(logic)
+	if not HP:
 		return
 	var qiyin: bool = logic.enemies.any(func(e): return str(e.horseman.get("rec", {}).get("_ref", "")) == "qiyin")
 	if qiyin:
@@ -272,3 +282,66 @@ static func _world(logic, s: XState) -> void:
 		e.refresh_passive()
 		# 本层守层者原总血量（乘本档难度倍率）→ 新总血量，同一比例
 		_scale_hp(e, hp_base(f) * turns(s) / (old_total(f) * float(e._rates[0])))
+
+
+## T237：31～34 层守层者能力值表（guardian_params.json）；读不到为空（不动）
+static func params_data() -> Dictionary:
+	if _params_data.is_empty():
+		if XDataFile.missing(PARAMS_PATH):  # 发行包里没有
+			return {}
+		var f := FileAccess.open(PARAMS_PATH, FileAccess.READ)
+		if f == null:
+			push_error("XGuardianRework: 读不到 " + PARAMS_PATH)
+			return {}
+		var parsed = JSON.parse_string(f.get_as_text())
+		if parsed is Dictionary:
+			_params_data = parsed
+		else:
+			push_error("XGuardianRework: JSON 解析失败 " + PARAMS_PATH)
+	return _params_data
+
+
+## 这只敌人按哪一层重锚能力值（鸿钧 34；31～33 层守层者认敌人号；别的 0）
+static func params_floor(e: XEnemy) -> int:
+	var rec: Dictionary = e.horseman.get("rec", {})
+	if str(rec.get("_ref", "")) == "hongjun":
+		return 34
+	if not e.horseman.is_empty():
+		return 0  # 骑士、援军、七印里副本、七首之龙走自己的数值
+	return floor_of(e.enemy_id)
+
+
+## 第 f 层守层者第 i 项的目标原数据：30 层玉皇大帝（ref_enemy）同一项 × 表里的整数%；表里没写为 -1（不动）
+static func params_target(f: int, i: int) -> float:
+	var d := params_data()
+	var row: Dictionary = d.get("floors", {}).get(str(f), {})
+	for k in row:
+		if int(d.get("stats", {}).get(k, -1)) == i:
+			var ref_p: Array = XDB.rec("Enemies", int(d.get("ref_enemy", 534))).get("params", [])
+			if i >= ref_p.size():
+				return -1.0
+			return roundf(float(ref_p[i]) * int(row[k]) / 100.0)
+	return -1.0
+
+
+## BattleLogic.setup 末尾（鸿钧换记录之后）调：31～34 层守层者表里写了的项，本只敌人这一项的倍率乘「目标原数据 ÷ 自己原数据」
+## （自己原数据：鸿钧是乘过 summit rate 的合成记录）。难度倍率、首领倍率、线上异化照旧叠在上面；血量不在这里（HP_BASE）。
+static func rescale_params(logic) -> void:
+	if not PARAMS or logic == null or not XTianqi.active(logic.state):
+		return
+	for e in logic.enemies:
+		var f := params_floor(e)
+		if f < 31 or f > 34:
+			continue
+		var p: Array = e.data().get("params", [])
+		var changed := false
+		for i in range(1, 8):
+			var want := params_target(f, i)
+			if want < 0.0 or i >= p.size() or float(p[i]) <= 0.0:
+				continue
+			if not changed:
+				e._rates = e._rates.duplicate()
+				changed = true
+			e._rates[i] = float(e._rates[i]) * want / float(p[i])
+		if changed:
+			e.param_mark_dirty()
