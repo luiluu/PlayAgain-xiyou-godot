@@ -1367,6 +1367,15 @@ static func _black_rect() -> ColorRect:
 
 ## 淡出淡入的帧数：Game_Interpreter.fadeSpeed／Scene_Base.fadeSpeed 都是 24 帧（0.4 秒；原来写成 0.3 秒）
 const FADE_FRAMES := 24
+## 传送提速（T224，Kyo 11-18「传送动画速度要优化」，O-605）：
+## - 「光柱」动画 117（37 帧、地图 rate 4＝约 2.47 秒）：原版 602 处显示动画里 597 处是「等它播完」再场所移动（传送阵、回城等），
+##   地图上播它改 rate 2（约 1.23 秒，帧序、闪光、音效时间点都按帧照旧，只是快一倍）。
+## - 场所移动黑幕（201、地图传送页）淡出淡入各 24 帧→12 帧（0.4→0.2 秒）；事件 221／222 的淡出淡入不动。
+## 合计一次光柱传送约 3.3 秒→1.7 秒（读图另算，见交付单量数）。false＝回到原版。
+static var FAST_TRANSFER := true
+const TRANSFER_ANIM := 117
+const TRANSFER_ANIM_RATE := 2
+const TRANSFER_FADE_FRAMES := 12
 
 ## 事件 221／222（解释器调）：淡出淡入画面，窗口不被盖住
 func fade(out: bool) -> void:
@@ -1378,11 +1387,11 @@ func transfer_fade(out: bool, fade_type := 0) -> void:
 	if fade_type == 2:
 		return
 	fader.color = Color.WHITE if fade_type == 1 else Color.BLACK
-	await _tween_alpha(fader, out)
+	await _tween_alpha(fader, out, TRANSFER_FADE_FRAMES if FAST_TRANSFER else FADE_FRAMES)
 
-func _tween_alpha(rect: ColorRect, out: bool) -> void:
+func _tween_alpha(rect: ColorRect, out: bool, frames := FADE_FRAMES) -> void:
 	var t := create_tween()
-	t.tween_property(rect, "modulate:a", 1.0 if out else 0.0, FADE_FRAMES / 60.0)
+	t.tween_property(rect, "modulate:a", 1.0 if out else 0.0, frames / 60.0)
 	await t.finished
 
 func transfer(id: int, x: int, y: int, d: int, fade_type := 0) -> void:
@@ -1778,7 +1787,7 @@ func show_animation(ch: MVCharacter, anim_id: int) -> MVAnimation:
 		3:
 			at = camera.get_screen_center_position()
 	animations_shown.append({"target": ch.event_id if ch is MVEvent else 0, "anim": anim_id, "frame": Engine.get_physics_frames()})
-	var anim := MVAnimation.play(self, anim_id, at)
+	var anim := MVAnimation.play(self, anim_id, at, false, TRANSFER_ANIM_RATE if FAST_TRANSFER and anim_id == TRANSFER_ANIM else 4)
 	if anim:
 		anim.z_index = 50
 		anim.target = ch    # Sprite_Animation._target 是这个角色：flashScope 1 闪光、3 隐藏作用在它身上

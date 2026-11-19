@@ -376,7 +376,7 @@ func _item_marks_oracle() -> void:
 	add_child(shop)
 	await frames()
 	var rect: Array = data.layout.rect
-	check("onekey_oracle_layout", shop.onekey_win.position == Vector2(rect[0], rect[1]) and shop.onekey_win.size == Vector2(rect[2], rect[3]) and XShop.LH == data.layout.lineHeight and XMVWindow.PADDING == data.layout.padding and XItemMarks.onekey_commands(state).map(func(row): return row.text) == data.layout.commands, [shop.onekey_win.size, data.layout])
+	check("onekey_oracle_layout", shop.onekey_win.position == Vector2(rect[0], rect[1]) and shop.onekey_win.size == Vector2(rect[2], rect[3] + (XShop.LH if XShop.ONEKEY_KIND else 0.0)) and XShop.LH == data.layout.lineHeight and XMVWindow.PADDING == data.layout.padding and XItemMarks.onekey_commands(state).map(func(row): return row.text) == data.layout.commands, [shop.onekey_win.size, data.layout])
 	shop.queue_free()
 	_safe_sell_extra(data.onekey[6].specs)
 	var tilemap := MVTilemap.new()
@@ -582,7 +582,7 @@ func _safe_shop_flow(s: XState) -> void:
 	await frames()
 	shop._cmd = 2
 	shop._ok()
-	check("safe_onekey_window", shop._mode == "onekey" and Rect2(shop.onekey_win.position, shop.onekey_win.size) == Rect2(350, 150, 680, 8 * 36 + XMVWindow.PADDING * 2), Rect2(shop.onekey_win.position, shop.onekey_win.size))
+	check("safe_onekey_window", shop._mode == "onekey" and Rect2(shop.onekey_win.position, shop.onekey_win.size) == Rect2(350, 150, 680, (9 if XShop.ONEKEY_KIND else 8) * 36 + XMVWindow.PADDING * 2), Rect2(shop.onekey_win.position, shop.onekey_win.size))
 	shop._onekey = 0
 	shop._ok()
 	check("safe_onekey_cycle", shop._mode == "onekey" and XSafeSell.label(s) == "神话★及以上" and XItemMarks.onekey_commands(s)[0].text == "保留词条：神话★及以上")

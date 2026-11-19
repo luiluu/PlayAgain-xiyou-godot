@@ -432,7 +432,7 @@ def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progres
         with tempfile.TemporaryDirectory(prefix='xiyou_test_home_') as home:
             env = dict(os.environ, HOME=home)
             loop = ['-s', MAIN_LOOP] if (Path(project) / MAIN_LOOP[len('res://'):]).is_file() else []
-            rc, out, cpu = run_with_rusage([godot, '--headless', '--path', project] + loop + ['res://tests/' + name], env, TIMEOUT, FATAL_LOAD)
+            rc, out, cpu = run_with_rusage([godot, '--headless', '--path', project] + loop + ['res://tests/' + name], env, TIMEOUT, FATAL_ERROR)
         if progress:
             with progress.lock:
                 progress.running.discard(name)
@@ -443,6 +443,12 @@ def run_one(godot: str, project: str, name: str, sdir: Path, limit: int, progres
 # 脚本解析失败（加载不了测试场景或它依赖的脚本）：Godot 不退出，一直等到单场景超时（600 秒）才被杀。出现这些行就没必要再等了。
 # 只认 Godot 自己的这两种报错行；测试正文里打印的 "Parse Error"（如 JSON 解析失败的断言信息）不匹配。
 FATAL_LOAD = re.compile(r'^SCRIPT ERROR: Parse Error: |^ERROR: Failed to load script "[^"]*" with error "Parse error"', re.M)
+
+
+# 运行期脚本错误（SCRIPT ERROR: Invalid call／Cannot call 等）：协程停在报错处、场景再也不到终点，同样会挂到超时（T224 临时探针一晚两次）。
+# result_ok 本来就把任何 SCRIPT ERROR 行判失败，所以提前终止不会改变判定，只省掉等待；FATAL_LOAD 只留给「不重跑、提示语法检查」的判断。
+# 测试正文里打印的预期日志不会以行首 "SCRIPT ERROR: " 开头（工程内 grep 只在注释里出现）。
+FATAL_ERROR = re.compile(FATAL_LOAD.pattern + r'|^SCRIPT ERROR: ', re.M)
 
 
 def run_with_rusage(cmd: list, env: dict, timeout: float, fatal=None) -> tuple:
@@ -485,7 +491,7 @@ def run_with_rusage(cmd: list, env: dict, timeout: float, fatal=None) -> tuple:
         p.stderr.close()
     out = ''.join(b''.join(b).decode(errors='replace') for b in bufs)
     if early:
-        out += '\n提前终止：出现脚本解析错误，不等超时（并行测试.py FATAL_LOAD）\n'
+        out += '\n提前终止：出现脚本错误（SCRIPT ERROR／解析失败），不等超时（并行测试.py FATAL_ERROR）\n'
         p.returncode = 143
     return 142 if timed_out else p.returncode, out, {'user': round(usage.ru_utime, 3), 'sys': round(usage.ru_stime, 3)}
 
