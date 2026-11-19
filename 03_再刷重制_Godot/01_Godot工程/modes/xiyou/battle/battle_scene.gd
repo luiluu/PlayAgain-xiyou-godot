@@ -987,7 +987,7 @@ func _main() -> void:
 			_close_windows()
 			_set_active(null)
 			var logs: Array
-			if XBattleStream.ENABLED:
+			if XBattleStream.PER_SEGMENT:
 				_stream = XBattleStream.start(logic, u, cmd[0], cmd[1])  # T225：先算到第一段之前，后面演到哪段算哪段
 				logs = _stream.out
 				await _play(logs)

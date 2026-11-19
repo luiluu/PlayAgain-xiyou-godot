@@ -8,10 +8,10 @@ extends RefCounted
 ## 所以结果（伤害、随机数、状态、日志）不变，只是摊到了各段的帧上。
 ## 记录：act → execute → 根序列三层各自的记录数组按引用登记在 parts，拼起来就是「到此为止」的记录前缀；
 ## 前缀只追加不改写，画面拿到的 out 永远是最终 act 返回值的前缀（不是就报错，见 _collect）。
-## 回退：ENABLED = false（战斗画面照旧一次算完再演）。无界面测试、回放、参照对照不走这里。
+## 回退：PER_SEGMENT = false（战斗画面照旧一次算完再演）。无界面测试、回放、参照对照不走这里。
 
 ## false＝回退：开招那一帧一次算完全部段数（T225 之前）
-static var ENABLED := true
+static var PER_SEGMENT := true
 
 var logic
 ## 画面已拿到的记录（最终 act 返回值的前缀，只追加）

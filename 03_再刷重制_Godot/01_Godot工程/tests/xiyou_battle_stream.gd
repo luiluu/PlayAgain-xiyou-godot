@@ -5,10 +5,10 @@ extends Node
 ## - 结果相同：这次行动演完后敌我 HP／MP／TP／状态，整次行动的记录（类型、伤害、命中、暴击、目标、追加、反击、倒下、日志行）逐条相同；
 ## - 开着时：记录前缀从没对不上（mismatches 0），画面拿到的就是 act 的全部记录，停的次数＝根序列实际跑的 ACTION EFFECT 条数；
 ## - 开招那一帧（指令定下→开始演出）的耗时：TIMING 用例三次取中，多段招开着时不到关着的一半，打印量数。
-## 用例：拳一（163）认真连续拳打嘤嘤怪×3（中途打死：剩下的段换目标／落空）与 776 炎龙守护者（打不死，段数打满）；
+## 用例：拳一（163）认真连续拳打嘤嘤怪×3（中途打死：剩下的段换目标／落空）与 80 苏醒的黝石巨人（单个首领、没有开场事件，打不死，段数打满）；
 ## 各专属模块角色（饿狼、宿傩、渡鸦、黄泉、镜流、甚尔、屠苏、璇、谷雨、云裳、米拉、奈叶、小猫、流萤、至尊宝）用职业里段数最多的招；
 ## 天启篇（五条悟、拳一、宿傩）；技能动画开关、战斗速度两档。
-## 夹具：单人出战 99 级（拳一 70 级），超强者开关打开；规则流按种子（两边同种子）。
+## 夹具：单人出战 99 级（拳一 70 级），加最大生命与敏捷（扛得住首领、先出手），超强者开关打开；规则流按种子（两边同种子）。
 
 class P extends XBattleScene:
 	var cmd_skill := 0
@@ -48,13 +48,13 @@ class P extends XBattleScene:
 
 ## [角色, 技能（0＝职业里 ACTION EFFECT 最多的招）, 敌群, 天启篇, 计时]
 const CASES := [
-	[163, 9939, 2, false, false], [163, 9939, 776, false, true], [163, 9934, 776, false, true], [163, 9938, 776, false, true],
-	[163, 2058, 776, false, true], [163, 1098, 776, false, true], [163, 9926, 776, false, true],
-	[173, 0, 776, false, false], [172, 0, 776, false, false], [167, 0, 776, false, false], [169, 0, 776, false, false],
-	[170, 0, 776, false, false], [171, 0, 776, false, false], [176, 0, 776, false, false], [177, 0, 776, false, false],
-	[175, 0, 776, false, false], [174, 0, 776, false, false], [168, 0, 776, false, false], [108, 0, 776, false, false],
-	[178, 0, 776, false, false], [179, 0, 776, false, false], [36, 0, 776, false, false],
-	[180, 0, 776, true, false], [163, 9939, 2, true, false], [172, 0, 776, true, false],
+	[163, 9939, 2, false, false], [163, 9939, 80, false, true], [163, 9934, 80, false, true], [163, 9938, 80, false, true],
+	[163, 2058, 80, false, true], [163, 1098, 80, false, true], [163, 9926, 80, false, true],
+	[173, 0, 80, false, false], [172, 0, 80, false, false], [167, 0, 80, false, false], [169, 0, 80, false, false],
+	[170, 0, 80, false, false], [171, 0, 80, false, false], [176, 0, 80, false, false], [177, 0, 80, false, false],
+	[175, 0, 80, false, false], [174, 0, 80, false, false], [168, 0, 80, false, false], [108, 0, 80, false, false],
+	[178, 0, 80, false, false], [179, 0, 80, false, false], [36, 0, 80, false, false],
+	[180, 0, 80, true, false], [163, 9939, 2, true, false], [172, 0, 80, true, false],
 ]
 const RUNS := 3
 
@@ -100,15 +100,17 @@ static func pick_skill(actor_id: int) -> int:
 
 
 func _battle(c: Array, skill: int, on: bool, seed: int) -> Dictionary:
-	XBattleStream.ENABLED = on
+	XBattleStream.PER_SEGMENT = on
 	var actor_id: int = c[0]
 	var s: XState
 	if c[3]:
-		s = XTianqi.start_new_game(3, "jianxian", [actor_id])
+		s = XTianqi.start_new_game(3, "lianyu", [actor_id])  # 炼狱：一场能上 2 个超强者
 		XTianqi.take_pending()
 		XTianqi._joining = true
 		s.add_actor(actor_id)
 		XTianqi._joining = false
+		if not s.battle_slots.has(actor_id):
+			s.set_battle_slot(0, actor_id)
 	else:
 		s = XState.new_game(3, 1, [])
 		s.set_switch(XItemMarks.SUPER_SWITCHES[0], true)  # 超强者开放
@@ -120,6 +122,8 @@ func _battle(c: Array, skill: int, on: bool, seed: int) -> Dictionary:
 	for a in s.battle_members():
 		a.learn_skill(skill)
 		a.change_level_mv(70 if actor_id == 163 else 99)
+		a.add_param(0, 500000)  # 夹具：扛得住首领、先出手（只为走到指令窗，两边一样）
+		a.add_param(6, 99999)
 		a.refresh_passive()
 		a.param_mark_dirty()
 		a.recover_all()
@@ -127,6 +131,8 @@ func _battle(c: Array, skill: int, on: bool, seed: int) -> Dictionary:
 	var scene := P.new()
 	scene.cmd_skill = skill
 	scene.setup(int(c[2]), true, false, {})
+	for e in scene.logic.enemies:
+		e.tp = 0  # 天启篇敌人开场 TP 不走种子（关对关两场也不同），夹具清零
 	add_child(scene)
 	var t0 := Engine.get_physics_frames()
 	while not scene.done and Engine.get_physics_frames() - t0 < 3000:
@@ -138,7 +144,7 @@ func _battle(c: Array, skill: int, on: bool, seed: int) -> Dictionary:
 		"members": s.battle_members().size()}
 	scene.queue_free()
 	await get_tree().physics_frame
-	XBattleStream.ENABLED = true
+	XBattleStream.PER_SEGMENT = true
 	return out
 
 
@@ -200,12 +206,12 @@ static func _median(a: Array) -> int:
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_battle_stream"
 	XConfig.path_override = XSave.dir().path_join("options.json")
-	var quick := OS.get_environment("STREAM_QUICK") == "1"
+	var only := OS.get_environment("STREAM_CASE")  # 调试：只跑第几个用例
 	var n := 0
 	for c in CASES:
-		if quick and n > 0:
-			break
 		n += 1
+		if only != "" and int(only) != n:
+			continue
 		var skill: int = c[1] if int(c[1]) > 0 else pick_skill(c[0])
 		var timing: bool = c[4]
 		# 计时用例：技能动画开、默认速度；其余轮流用动画关＋最快速度（自动战斗常用档），两种画面节奏都走到
@@ -233,9 +239,10 @@ func _run() -> void:
 		if timing and int(on.stats.get("gates", 0)) >= 8:
 			check("start_cheaper_%d" % skill, _median(on_t) * 2 < _median(off_t), [on_t, off_t])  # 多段招：开招那一帧不到关着的一半
 	# 回退：关着时战斗画面不开 XBattleStream
-	var r: Dictionary = await _battle(CASES[0], 9939, false, 1)
+	XBattleStream.PER_SEGMENT = false
+	var r: Dictionary = await _battle(CASES[0], 9939, XBattleStream.PER_SEGMENT, 1)
 	check("rollback_no_stream", r.done and r.stats.is_empty(), r.stats)
-	XBattleStream.ENABLED = true
+	XBattleStream.PER_SEGMENT = true
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size(), "results": results}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
