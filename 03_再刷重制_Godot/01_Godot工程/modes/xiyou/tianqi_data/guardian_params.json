@@ -8,5 +8,10 @@
     "32": {"def": 114, "mdf": 114},
     "33": {"def": 121, "mdf": 121},
     "34": {"def": 128, "mdf": 128}
+  },
+  "qiyin": {
+    "_note": "T245（cc，11-19）：七印里副本的敌人、七首之龙（XTianqiQiyinRule.rebase、XTianqiQiyinDragonRun 按鸿蒙老祖 537 × rate 重标，_ref qiyin／dragon）原来双防跟着鸿蒙老祖 322950，精英 ×0.5、Boss 与龙 ×0.8 也有 16～26 万。这里写的是顶替鸿蒙老祖那一项的「30 层玉皇大帝原数据整数%」，elite／boss／龙的 rate、各印 boss_rate、难度、首领倍率、线上异化照旧乘在上面。取 121＝33 层守层者那一档（里副本出伤 REF_SCALE、血量 HP_BASE[33] 也认 33 层）。回退 XGuardianRework.PARAMS_QIYIN = false。",
+    "def": 121,
+    "mdf": 121
   }
 }

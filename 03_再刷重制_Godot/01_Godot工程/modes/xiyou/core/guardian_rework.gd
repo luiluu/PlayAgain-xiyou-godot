@@ -16,8 +16,10 @@ extends RefCounted
 ##   HP_BASE 暂用基准队（只算等级、法宝、精良装备）每回合伤害的平滑值，Kyo 11-13 定改用虚拟玩家每层实队（C）重量，量好换表。
 ## - PARAMS（T237）：31～34 层守层者（女娲、伏羲、鸿蒙老祖、鸿钧）的物防、魔防按 tianqi_data/guardian_params.json 重锚到
 ##   「30 层玉皇大帝原数据 × 整数%」（期四我方 80 级攻击约 4000，原数据 3.3 万～48 万的物防把防御率压到下限 0.05）。
+## - PARAMS_QIYIN（T245）：七印里副本的敌人、七首之龙（按鸿蒙老祖重标的，_ref qiyin／dragon）的物防、魔防，把参照的鸿蒙老祖
+##   那一项换成表里 qiyin 行「30 层玉皇大帝原数据 × 整数%」（跟出伤、血量一样认 33 层一档），elite／boss／龙的 rate 照旧乘在上面。
 ## 回退：`XGuardianRework.ATK = false`；`XGuardianRework.HP = false`；`XGuardianRework.WORLD = false`（只改守层者）；`XGuardianRework.RESIST = false`；
-## `XGuardianRework.PARAMS = false`（31～34 层守层者能力值照原数据）。
+## `XGuardianRework.PARAMS = false`（31～34 层守层者能力值照原数据）；`XGuardianRework.PARAMS_QIYIN = false`（七印里副本、七首之龙双防照鸿蒙老祖原数据）。
 ## 量数接口（tests/virtual_player/baseline_dps.tscn）：measure_resist、measure_neutral。
 
 static var ATK := true
@@ -30,6 +32,8 @@ static var ELEM := true
 static var RESIST := true
 ## T237：31～34 层守层者能力值按 guardian_params.json 重锚（见头注释）；false＝照原数据
 static var PARAMS := true
+## T245：七印里副本的敌人、七首之龙（按鸿蒙老祖重标的）双防按 guardian_params.json 的 qiyin 行重锚；false＝照鸿蒙老祖原数据
+static var PARAMS_QIYIN := true
 const PARAMS_PATH := "res://modes/xiyou/tianqi_data/guardian_params.json"
 static var _params_data := {}
 
@@ -324,19 +328,46 @@ static func params_target(f: int, i: int) -> float:
 	return -1.0
 
 
-## BattleLogic.setup 末尾（鸿钧换记录之后）调：31～34 层守层者表里写了的项，本只敌人这一项的倍率乘「目标原数据 ÷ 自己原数据」
-## （自己原数据：鸿钧是乘过 summit rate 的合成记录）。难度倍率、首领倍率、线上异化照旧叠在上面；血量不在这里（HP_BASE）。
+## T245：七印里副本、七首之龙第 i 项的参照目标原数据：30 层玉皇大帝（ref_enemy）同一项 × qiyin 行的整数%（顶替鸿蒙老祖那一项）；没写为 -1（不动）
+static func qiyin_target(i: int) -> float:
+	var d := params_data()
+	var row = d.get("qiyin", {})
+	if not row is Dictionary:
+		return -1.0
+	for k in row:
+		if int(d.get("stats", {}).get(k, -1)) == i:
+			var ref_p: Array = XDB.rec("Enemies", int(d.get("ref_enemy", 534))).get("params", [])
+			if i >= ref_p.size():
+				return -1.0
+			return roundf(float(ref_p[i]) * int(row[k]) / 100.0)
+	return -1.0
+
+
+## 这只敌人是不是七印里副本按鸿蒙老祖重标的（里副本精英、Boss，七首之龙）
+static func is_qiyin_ref(e: XEnemy) -> bool:
+	var r := str(e.horseman.get("rec", {}).get("_ref", ""))
+	return r == "qiyin" or r == "dragon"
+
+
+## BattleLogic.setup 末尾（鸿钧换记录、七印重标之后）调：
+## - 31～34 层守层者表里写了的项，本只敌人这一项的倍率乘「目标原数据 ÷ 自己原数据」（自己原数据：鸿钧是乘过 summit rate 的合成记录）；
+## - 七印里副本、七首之龙（T245）：记录是「鸿蒙老祖 × rate」，这一项的倍率乘「qiyin 目标 ÷ 鸿蒙老祖原数据」，rate 照旧。
+## 难度倍率、首领倍率、线上异化照旧叠在上面；血量不在这里（HP_BASE）。
 static func rescale_params(logic) -> void:
-	if not PARAMS or logic == null or not XTianqi.active(logic.state):
+	if logic == null or not XTianqi.active(logic.state):
 		return
+	var ref_q: Array = []
+	if PARAMS_QIYIN:
+		ref_q = XDB.rec("Enemies", int(XTianqiQiyin.data().get("rebase", {}).get("ref", 537))).get("params", [])
 	for e in logic.enemies:
 		var f := params_floor(e)
-		if f < 31 or f > 34:
+		var qiyin := PARAMS_QIYIN and is_qiyin_ref(e)
+		if not qiyin and (not PARAMS or f < 31 or f > 34):
 			continue
-		var p: Array = e.data().get("params", [])
+		var p: Array = ref_q if qiyin else e.data().get("params", [])
 		var changed := false
 		for i in range(1, 8):
-			var want := params_target(f, i)
+			var want := qiyin_target(i) if qiyin else params_target(f, i)
 			if want < 0.0 or i >= p.size() or float(p[i]) <= 0.0:
 				continue
 			if not changed:

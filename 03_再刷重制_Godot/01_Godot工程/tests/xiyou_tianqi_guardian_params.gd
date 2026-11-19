@@ -6,6 +6,8 @@ extends Node
 ## 三、30 层玉皇大帝不动（7425）；回退开关关掉时 31 层女娲物防照原数据 49425。
 ## 四、西游档 31 层照原数据（开关开关一样）。
 ## 五、表里的数都是整数（附则 E）。
+## 六（T245）、七印里副本（白印 Boss 战 Boss ×0.8、白印精英战 ×0.5）和七首之龙（×0.8）双防：开着÷关着＝玉皇大帝 4950×121％÷鸿蒙老祖 322950
+##     （顶替参照那一项，rate 照旧）；攻击不动；PARAMS_QIYIN 和 PARAMS 各管各的。
 
 var results: Array = []
 
@@ -24,13 +26,18 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0  # 守层者不按神话
 	seed(20261119)
 	var was := XGuardianRework.PARAMS
+	var was_q := XGuardianRework.PARAMS_QIYIN
+	_check("qiyin.default_on", XGuardianRework.PARAMS_QIYIN)
 	_check("default_on", XGuardianRework.PARAMS)
 	_table()
 	_floors()
 	_hongjun()
 	_off()
 	_xiyou()
+	_qiyin()
+	_dragon()
 	XGuardianRework.PARAMS = was
+	XGuardianRework.PARAMS_QIYIN = was_q
 	XEnemy.force_roll = -1.0
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -135,3 +142,84 @@ func _xiyou() -> void:
 	XRiftAlien.ALIGN_LOBBY = align
 	_check("xiyou.same", on != null and off != null and int(on.param(3)) == int(off.param(3)) and int(on.param(3)) > 30000,
 		[on.param(3) if on != null else null, off.param(3) if off != null else null])
+
+
+## T245：白印 Boss 战（boss）或第一场精英战，返回按鸿蒙老祖重标的敌人（Boss 在前）
+func _qiyin_fight(params_q: bool, params := true, boss := true) -> Array:
+	XGuardianRework.PARAMS_QIYIN = params_q
+	XGuardianRework.PARAMS = params
+	var s := _state()
+	s.flags.tianqi["line"] = "death"
+	XTianqiQiyin.set_current("")
+	XTianqiQiyinRule.prepare("bai", boss)
+	var troops: Array = XTianqiQiyin.seal_info("bai").troops
+	var logic := XBattleLogic.new()
+	logic.setup(int(troops[-1] if boss else troops[0]), s)
+	XGuardianRework.PARAMS_QIYIN = true
+	XGuardianRework.PARAMS = true
+	var out := logic.enemies.filter(func(e): return XGuardianRework.is_qiyin_ref(e))
+	out.sort_custom(func(a, b): return bool(a.data().get("_qiyin_boss", false)) and not bool(b.data().get("_qiyin_boss", false)))
+	return out
+
+
+func _qiyin() -> void:
+	var want := 5990.0 / 322950.0  # round(4950×121%) ÷ 鸿蒙老祖物防
+	_check("qiyin.target", int(XGuardianRework.qiyin_target(3)) == 5990 and int(XGuardianRework.qiyin_target(5)) == 5990
+		and XGuardianRework.qiyin_target(2) < 0.0, [XGuardianRework.qiyin_target(3), XGuardianRework.qiyin_target(2)])
+	var on := _qiyin_fight(true)
+	var off := _qiyin_fight(false)
+	var ok := on.size() >= 1 and on.size() == off.size() and bool(on[0].data().get("_qiyin_boss", false))
+	_check("qiyin.found", ok, [on.size(), off.size()])
+	var eon := _qiyin_fight(true, true, false)
+	var eoff := _qiyin_fight(false, true, false)
+	var eok := eon.size() >= 1 and eon.size() == eoff.size() and not bool(eon[0].data().get("_qiyin_boss", false))
+	_check("qiyin.elite_found", eok, [eon.size(), eoff.size()])
+	if not ok or not eok:
+		return
+	var on_all: Array = [on[0], eon[0]]
+	var off_all: Array = [off[0], eoff[0]]
+	on = on_all
+	off = off_all
+	print("T245 qiyin def/mdf/atk on=", [on[0].param(3), on[0].param(5), on[0].param(2), eon[0].param(3), eon[0].param(5)],
+		" off=", [off[0].param(3), off[0].param(5), off[0].param(2), eoff[0].param(3), eoff[0].param(5)])
+	for k in on.size():
+		var tag := "boss" if k == 0 else "elite"
+		for i in [3, 5]:
+			var r := float(on[k].param(i)) / float(off[k].param(i))
+			_check("qiyin.%s.p%d_ratio" % [tag, i], absf(r - want) < 0.0005, [on[k].param(i), off[k].param(i)])
+		_check("qiyin.%s.atk_same" % tag, int(on[k].param(2)) == int(off[k].param(2)), [on[k].param(2), off[k].param(2)])
+	# 起点量级：Boss（×0.8）双防不超过 33 层守层者 8985，精英（×0.5）在它一半上下
+	_check("qiyin.boss_level", on[0].param(3) > 4000.0 and on[0].param(3) < 9000.0, on[0].param(3))
+	_check("qiyin.elite_level", on[1].param(3) > 2000.0 and on[1].param(3) < 6000.0, on[1].param(3))
+	_check("qiyin.off_raw", off[0].param(3) > 200000.0, off[0].param(3))
+	# 两个开关各管各的：PARAMS 关掉不影响里副本
+	var p_off := _qiyin_fight(true, false)
+	_check("qiyin.independent", not p_off.is_empty() and int(p_off[0].param(3)) == int(on[0].param(3)), [p_off[0].param(3) if not p_off.is_empty() else null, on[0].param(3)])
+
+
+func _dragon_one(params_q: bool) -> XEnemy:
+	XGuardianRework.PARAMS_QIYIN = params_q
+	var s := _state()
+	s.set_variable(20, 36)
+	s.flags.tianqi["line"] = "war"
+	XTianqiWarLine.progress(s)["stage"] = XTianqiWarLine.STAGE_DONE
+	XTianqiQiyin.set_current("")
+	XTianqiQiyinDragonRun.prepare("jianxian")
+	var logic := XBattleLogic.new()
+	logic.setup(int(XTianqiQiyinDragonRun.fight_info().troop), s)
+	XGuardianRework.PARAMS_QIYIN = true
+	return XTianqiQiyinDragonRun.dragon(logic)
+
+
+func _dragon() -> void:
+	var on := _dragon_one(true)
+	var off := _dragon_one(false)
+	var ok := on != null and off != null and str(on.data().get("_ref", "")) == "dragon"
+	_check("dragon.found", ok)
+	if not ok:
+		return
+	print("T245 dragon def/mdf on=", [on.param(3), on.param(5)], " off=", [off.param(3), off.param(5)])
+	var r := float(on.param(3)) / float(off.param(3))
+	_check("dragon.def_ratio", absf(r - 5990.0 / 322950.0) < 0.0005, [on.param(3), off.param(3)])
+	_check("dragon.atk_same", int(on.param(2)) == int(off.param(2)), [on.param(2), off.param(2)])
+	_check("dragon.hp_same", absf(on.mhp - off.mhp) <= 2.0, [on.mhp, off.mhp])
