@@ -50,7 +50,7 @@ def missing_classes(project: Path) -> list:
 
 def shoot(project: Path, out: Path):
     out.mkdir(parents=True, exist_ok=True)
-    r = subprocess.run([str(GODOT), '--path', str(project), f'res://{TEST}.tscn', '--', f'--out={out}'],
+    r = subprocess.run([str(GODOT), '--audio-driver', 'Dummy', '--path', str(project), f'res://{TEST}.tscn', '--', f'--out={out}'],
                        capture_output=True, text=True, timeout=600)
     tail = [x for x in (r.stdout + r.stderr).splitlines() if 'TEST_RESULT' in x or 'SCRIPT ERROR' in x or x.startswith('SKIP') or 'ENABLED' in x]
     print('\n'.join(tail))
