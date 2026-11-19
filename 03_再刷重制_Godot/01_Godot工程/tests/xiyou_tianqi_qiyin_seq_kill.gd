@@ -1,6 +1,6 @@
 extends Node
 ## 【cc·T232·未经审查】七印「击倒」类效果在各类出招上认不认得到击倒（XTianqiQiyinEffects.SEQ_KILLS，O-待定-1）；
-## 词条「斩获」同病同法（XTianqiAffixBattle.SEQ_KILLS，O-待定-2）。
+## 词条「斩获」同病同法（XTianqiAffixBattle.SEQ_KILLS，O-待定-2）；技能重构击杀成长／击杀回 TP 同病同法（XTianqiSkills.SEQ_KILLS，O-待定-3，R1）。
 ## 背景：动作序列招（含普攻）开头把目标挂 IMMORTAL，打到 0 血也不倒，序列收尾解除时才倒下；
 ## after_apply 当场用 is_dead() 认击倒，序列招上永远认不到 → 击倒再动、送行连斩、溢出、击杀叠层都不触发（T230 另查）。
 ## 修法：after_apply 里「这一击把 IMMORTAL 目标打到 0 血」先记成待定击倒（连同溢出），end_action（序列已收尾、IMMORTAL 已解除）再按 is_dead() 认。
@@ -266,10 +266,35 @@ func _edges() -> void:
 	XTianqiQiyinEffects.after_apply(lg, u, sk, e2, {"hp": 10.0, "state_value": 10.0 + 0.0})
 	e.immortal = false
 	lg._die(e)
-	var f: Dictionary = XTianqiQiyinEffects._store(lg).act
-	XTianqiQiyinEffects.confirm_pending(f)
-	_check("edge_multi_kill", f.killed.size() == 2 and f.killed.has(e) and f.killed.has(e2), f.killed.size())
+	XTianqiQiyinEffects.end_action(lg, u, sk)  # R1 P3-2：不再手动 confirm_pending，看 end_action 自己认的结果
+	_check("edge_multi_kill", int(un.kills) == 2 and lg.current_order.size() >= 1, [un.kills, lg.current_order.size()])
+	# 4b 不死（状态抗死 TRAIT_STATE_RESIST 1）：序列收尾 0 血不倒 → 不算（R1 P3-2）
+	_prep(lg, [])
+	un.kills = 0
+	un.extra_used = 0
+	lg.current_order.clear()
+	XTianqiQiyinEffects.begin_action(lg, u, sk)
+	_hit_to_zero(lg, u, sk, e, 30.0)
+	e.immortal = false
+	var resists := _add_resist(e)
+	var undying2 := resists and not e.is_dead()
 	XTianqiQiyinEffects.end_action(lg, u, sk)
+	_drop_resist(e)
+	_check("edge_state_resist_not_kill", undying2 and int(un.kills) == 0 and lg.current_order.is_empty(), [resists, undying2, un.kills])
+	# 4c 救回后不经 after_apply 再倒（序列 HP＋救回、HP－打回 0、收尾倒下）：击倒照算，旧溢出作废（R1 P3-1）
+	_prep(lg, [])
+	un.kills = 0
+	un.extra_used = 0
+	lg.current_order.clear()
+	var nx1 := nx.hp
+	XTianqiQiyinEffects.begin_action(lg, u, sk)
+	_hit_to_zero(lg, u, sk, e, 500.0)
+	e.hp = 40.0  # 序列 HP＋（不经 apply）
+	e.hp = 0.0  # 序列 HP－（不经 apply）
+	e.immortal = false
+	lg._die(e)
+	XTianqiQiyinEffects.end_action(lg, u, sk)
+	_check("edge_rescued_then_dead_no_stale_overflow", int(un.kills) == 1 and is_equal_approx(nx.hp, nx1), [un.kills, nx1, nx.hp])
 	# 5 开关关：0 血 IMMORTAL 不记待定
 	XTianqiQiyinEffects.SEQ_KILLS = false
 	_prep(lg, [])
@@ -279,6 +304,28 @@ func _edges() -> void:
 	XTianqiQiyinEffects.end_action(lg, u, sk)
 	XTianqiQiyinEffects.SEQ_KILLS = true
 	lg.end_battle(0)
+
+
+## 给敌人挂一个带「抗死」特性的状态；返回 traits_set 认没认到
+func _add_resist(e: XEnemy) -> bool:
+	e.add_state(_resist_state())
+	e.param_mark_dirty()
+	return e.traits_set(XBattler.TRAIT_STATE_RESIST).has(1)
+
+
+func _drop_resist(e: XEnemy) -> void:
+	e.remove_state(_resist_state())
+	e.param_mark_dirty()
+
+
+## 库里第一个带「抗死（状态抗性 1）」特性的状态
+func _resist_state() -> int:
+	for rec in XDB.table("States"):
+		if rec is Dictionary and int(rec.get("id", 0)) > 1:
+			for tr in rec.get("traits", []):
+				if int(tr.get("code", 0)) == XBattler.TRAIT_STATE_RESIST and int(tr.get("dataId", 0)) == 1:
+					return int(rec.id)
+	return 0
 
 
 ## 一段：挂 IMMORTAL，从当前血打到 0，伤害 dmg（state_value）
@@ -404,6 +451,97 @@ func _harvest() -> void:
 	lg.end_battle(0)
 
 
+## 技能重构 kill_grow／kill_tp（T232 R1，P1-1）：16 张卡全是动作序列招；各挑代表一个——
+## 击杀成长：关羽 14「青龙乱舞」521（需 4526）；击杀回 TP：「射虎」2586（需 5119，+30）。开关开／关、逐段结算
+func _skill_logic(extra: int) -> XBattleLogic:
+	var w := _ids()
+	var lineup := [extra, w[0], w[1], w[2], w[3]]
+	var s := XTianqi.start_new_game(3, "jianxian", lineup)
+	XTianqi.take_pending()
+	for id in lineup:
+		XTianqi._joining = true
+		s.add_actor(int(id))
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	for id in lineup:
+		s.actor(id).recover_all()
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	return lg
+
+
+func _skill_probe(kind: String, actor_id: int, skill_id: int, need: int, per_segment: bool) -> Dictionary:
+	var lg := _skill_logic(actor_id)
+	var u: XActor = null
+	for a in lg.actors:
+		if int(a.actor_id) == actor_id:
+			u = a
+	if u == null:
+		lg.end_battle(0)
+		return {"kind": kind, "skip": "no_actor"}
+	if not u.skill_ids.has(need):
+		u.skill_ids.append(need)
+	var sk: Dictionary = XDB.rec("Skills", skill_id).duplicate(true)
+	sk.mpCost = 0
+	sk.tpCost = 0
+	_prep(lg, lg.enemies)  # 全部敌人 1 血：单体、群体、随机目标都打得倒
+	u.tp = 0.0
+	var g0 := XTianqiSkills.grow_count("guanyu")
+	if per_segment:
+		XBattleStream.start(lg, u, sk, lg.enemies[0]).finish()
+	else:
+		lg.act(u, sk, lg.enemies[0])
+	var row := {"kind": kind, "seq": XActionSequence.has_sequence(sk), "per_segment": per_segment, "switch": XTianqiSkills.SEQ_KILLS,
+		"dead": lg.enemies.filter(func(x): return x.is_dead()).size(), "grow": XTianqiSkills.grow_count("guanyu") - g0, "tp": u.tp,
+		"spec": XTianqiSkills.spec(skill_id).has("kill_grow") or XTianqiSkills.spec(skill_id).has("kill_tp")}
+	lg.end_battle(0)
+	return row
+
+
+func _skill_kills() -> void:
+	var rows := []
+	for on in [false, true]:
+		XTianqiSkills.SEQ_KILLS = on
+		rows.append(_skill_probe("击杀成长", 14, 521, 4526, false))
+		rows.append(_skill_probe("击杀回TP", 14, 2586, 5119, false))
+	XTianqiSkills.SEQ_KILLS = true
+	rows.append(_skill_probe("击杀成长", 14, 521, 4526, true))
+	rows.append(_skill_probe("击杀回TP", 14, 2586, 5119, true))
+	print("SKILL_SEQ_KILL_TABLE ", JSON.stringify(rows))
+	var tp_off := -1.0
+	for r in rows:
+		if r.has("skip"):
+			_check("skill_probe_" + str(r.kind), false, r)
+			continue
+		var tag := "skill_%s_%s%s" % [r.kind, "on" if r.switch else "off", "_stream" if r.per_segment else ""]
+		_check(tag + "_fixture", bool(r.seq) and bool(r.spec) and int(r.dead) >= 1, r)
+		if r.kind == "击杀成长":
+			_check(tag, (int(r.grow) >= 1) == bool(r.switch) and (r.switch or int(r.grow) == 0), r)
+		elif not r.switch:
+			tp_off = float(r.tp)
+		else:
+			_check(tag, tp_off >= 0.0 and is_equal_approx(float(r.tp) - tp_off, 30.0), [r, tp_off])
+	# 序列里被救回：不算（直接调 begin_action／after_apply／end_action）
+	var lg := _skill_logic(14)
+	var u: XActor = lg.actors.filter(func(a): return int(a.actor_id) == 14)[0]
+	if not u.skill_ids.has(5119):
+		u.skill_ids.append(5119)
+	var sk: Dictionary = XDB.rec("Skills", 2586)
+	var e: XEnemy = lg.enemies[0]
+	_prep(lg, [])
+	u.tp = 0.0
+	XTianqiSkills.begin_action(lg, u, sk)
+	e.immortal = true
+	e.hp = 0.0
+	XTianqiSkills.after_apply(lg, u, sk, e, {"hp": 30.0})
+	e.immortal = false
+	e.hp = 50.0
+	XTianqiSkills.end_action(lg, u, sk)
+	_check("skill_tp_rescued_none", is_equal_approx(u.tp, 0.0), u.tp)
+	lg.end_battle(0)
+
+
 func _run() -> void:
 	XTianqiQiyinEffects.ENABLED = true
 	_measure()
@@ -411,6 +549,7 @@ func _run() -> void:
 	_edges()
 	_legacy()
 	_harvest()
+	_skill_kills()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:

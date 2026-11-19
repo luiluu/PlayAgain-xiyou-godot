@@ -26,11 +26,15 @@ static var FIX_RESTRICT_REMOVE := true
 ## hp／mp／tp 一写就作废只读窗口缓存（O-348）：被动的 HPUP／HPLW 等条件让能力值跟着资源变
 var hp := 0.0:
 	set(v):
+		if immortal and v > 0.0 and hp <= 0.0:
+			immortal_rescues += 1  # T232 R1：序列 IMMORTAL 下 0 血被救回（回血／复活）的次数，七印待定击倒认溢出用
 		hp = v
 		XActor._read_gen += 1
 		XActor._write_gen += 1
 ## YEP 行动序列的 IMMORTAL（Game_Battler._immortalState）：期间 HP 为 0 也不倒下、阵亡状态视为抵抗
 var immortal := false
+## T232 R1：挂 IMMORTAL 时从 0 血被救回（hp 从 ≤0 写成 >0）计一次；不参与任何结算，只给七印判「待定击倒的溢出还算不算数」
+var immortal_rescues := 0
 ## A resource refresh can leave HP zero while death is resisted/removed in this result.
 var resource_death_blocked := false
 ## krz_state_re 的能力值缓存（Game_Enemy.param 的 _ParamCache2／need_refresh_param，正式版战斗中才用）：开战后读过的格子

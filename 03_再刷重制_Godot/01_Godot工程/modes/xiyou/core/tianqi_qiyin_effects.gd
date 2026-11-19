@@ -514,7 +514,7 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 		pend.append(t)
 		f.pending = pend
 		var over: Dictionary = f.get("pending_over", {})
-		over[t] = maxf(0.0, float(r.get("state_value", 0.0)) - float(f.cur_hp))
+		over[t] = [maxf(0.0, float(r.get("state_value", 0.0)) - float(f.cur_hp)), int(t.immortal_rescues)]  # 溢出＋记下时的救回次数（R1 P3-1）
 		f.pending_over = over
 
 
@@ -651,13 +651,18 @@ static func end_action(logic, u, skill) -> Array:
 
 ## T232：待定击倒（序列 IMMORTAL 下打到 0 血的）在行动收尾时认：此刻真倒下的记进 killed（按打倒先后），溢出取最后一个；
 ## 不死（打到 0 血不倒）、序列里被救回或复活的不算。SEQ_KILLS 关着时 pending 恒空
+## R1 P3-1：记下待定之后又被救回过（不经 after_apply 的序列 HP＋、复活等，XBattler.immortal_rescues 变了），
+## 之后再被不经 after_apply 的路子弄倒（序列 HP－、收尾 ADD STATE 1）：击倒照算，旧溢出作废记 0；再挨致命一击的照最后一击重记
 static func confirm_pending(f: Dictionary) -> void:
 	var pend: Array = f.get("pending", [])
+	var over: Dictionary = f.get("pending_over", {})
 	for t in pend:
 		if t.is_dead() and not f.killed.has(t):
 			f.killed.append(t)
-			f.overflow = float(f.pending_over.get(t, 0.0))
+			var o = over.get(t, [0.0, 0])
+			f.overflow = float(o[0]) if o is Array and int(o[1]) == int(t.immortal_rescues) else 0.0
 	f.pending = []
+	f.pending_over = {}
 
 
 ## 派生的一击（连斩、横扫、再射、放两次、补刀）：直接 apply，伤害 × scale，不付费、不再触发派生
