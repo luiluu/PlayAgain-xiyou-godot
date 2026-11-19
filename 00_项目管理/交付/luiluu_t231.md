@@ -45,10 +45,21 @@
 6. ✓ 专项 49/49（含关开关、GUARD 关、西游档 `xiyou_save_off`）；虚拟玩家 explore 14/14、短帧 climb 6/6，卡死 0、违规 0、僵局 0、SCRIPT ERROR 0。
 7. ✓ `发行空壳.py check` 通过；西游 `battle_logic` 新调的只有 `XTianqiWeakB2.counter_cut`，空壳按 float 给 `0.0`（`show XTianqiWeakB2` 核过）＝不扣反击率，与西游档真脚本结果一样，**不用登记特例**。`masks_guard` 只在天启篇脚本 `tianqi_skills.gd` 里调（整份换空壳）。
 
-## 文字（玩家可见；草稿，待小A 审）
+## 文字（玩家可见；小A 定稿，核过后热修已换）
 
 - 头顶角标：`受邀`（受邀敌人）、`受护`（张三丰的被护者）
-- 战斗日志：`%s 受邀，攻击将引向 %s`（敌人名、布兰德瓦登）；`邀战反击！`；`护犊：本回合守护 %s`（每回合第一根收尾时出一次）；`护犊：%s 追击 %s`（张三丰、敌人名）
+- 战斗日志：`掷矛邀战：%s 受邀，本回合攻击将引向 %s`（敌人名、布兰德瓦登）；`掷矛邀战：%s 反击 %s！`（布兰德瓦登、敌人名）；`护犊：本回合守护 %s`（每回合第一根收尾时出一次）；`护犊：%s 追击 %s！`（张三丰、敌人名）
+
+## 核过后热修（小A 核过：P2×2、P3×3，无 P1；Opus＋medium）
+
+- P2-1 `tianqi_weak_b2.gd` `Brand.root_end`：反击前 `cast.tpGain = 0`，`_counter_attack` 的结果过 `logic.mark_views`（补结算后读数，实机血条不滞后），`b.tp = tp` 留作兜底。断言 `brand_counter_views`。
+- P2-2 `battle_logic.gd` `_invoke`：戴 w42 时改为在**没夹的** `xparam(6)` 上先扣 `counter_cut` 再夹 0～1（原来先夹到 1 再扣，叠了别的来源时少算）。新断言：叠屏障术 92（反击率 +100%）后被打 40 次 40 次反击、0 次被吞（旧写法约七成）`brand_stacked_cut_before_clamp`；反击用的是重构半伤凌空斩 1153 且原攻击照常命中 `brand_stacked_rework_cast`。
+- P3-1 护犊要学了原生护短 5863 才生效：`XTianqiWeakB2.zhang_on`（GUARD＋角色卡＋戴着＋`XTianqiSkills.owns(z, 5863)`，号码读表 `w86.ward.guard_skill`），`masks_guard`／选被护者／追击／角标都走它。断言 `zhang_needs_5863`。
+- P3-2 受邀随布兰德瓦登倒下作废：倒下的人没有生效键、`Brand` 处理对象收不到 `root_end`，所以放在地基 `XTianqiWeakAffix.root_end` 开头扫一遍（`_drop_dead_guiders`：引导者已倒，他挂的引导全摘；`mark_guide` 目前只有 w42 用）。断言 `brand_down_invite_void`（投掷受邀→他倒下→敌人一根收尾→拉起来后敌人普攻照打原目标、不反、无角标）。**边角没盖**：同一根里倒下又被立即拉起（自动复活类）时，这一根收尾时他已活着，旧受邀不摘。
+- P3-3 混子用例夹具改 `shield_open: true`，补断言护盾照扣（`brand_counter_hunzi_shield`、`zhang_chase_hunzi_shield`）。
+- 文字换小A 定稿（见上节），专项按定稿全文断言（`brand_counter_text`、`zhang_chase_text`，受邀行在 `brand_throw_invites`）。
+- 派单外改动：`tianqi_weak_affix.gd`（P3-2 放地基，见上）、`weak_affix_table.json`（`w86.ward` 加 `guard_skill: 5863`）。
+- 重跑（本机 `--headless --audio-driver Dummy`）：`xiyou_tianqi_weak_b2b` 58/58、`xiyou_tianqi_weak_b2` 60/60、`xiyou_counter_guard` 27/27；`发行空壳.py check` 通过（75 个脚本，690 个函数都有）。其余专项没重跑。
 
 ## 验证
 
@@ -84,3 +95,4 @@
 - dd710c81a WIP：两条规则＋专项 49/49
 - d39ab99fa 交付单
 - 新专项 uid（见 git log）
+- 核过后热修（见 git log，提交名「T231 核过后热修」）

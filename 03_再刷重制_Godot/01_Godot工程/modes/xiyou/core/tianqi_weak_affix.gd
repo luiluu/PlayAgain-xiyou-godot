@@ -268,6 +268,7 @@ static func root_end(logic, _u = null) -> Array:
 	var f: Dictionary = st.frames.back()
 	cut = {}
 	f.kinds = [DERIVED]  # 派生不能自称主动根
+	_drop_dead_guiders(st)
 	var logs := []
 	for k in _live_keys(logic):
 		var h = _handlers.get(k)
@@ -446,6 +447,17 @@ static func unmark_guide(logic, foe, guider = null) -> void:
 		marks.erase(foe)
 	elif marks.has(foe):
 		marks[foe].erase(guider)
+
+
+## 引导者倒下：他挂出去的引导全部作废（同回合被拉起来，旧的也不再生效）。倒下的人没有生效键、处理对象收不到，所以在这里扫
+static func _drop_dead_guiders(st: Dictionary) -> void:
+	for foe in st.marks.keys():
+		var m: Dictionary = st.marks[foe]
+		for g in m.keys():
+			if g == null or not is_instance_valid(g) or g.is_dead():
+				m.erase(g)
+		if m.is_empty():
+			st.marks.erase(foe)
 
 
 static func guiders_of(logic, foe) -> Array:

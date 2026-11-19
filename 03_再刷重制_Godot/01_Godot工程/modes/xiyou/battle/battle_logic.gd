@@ -2632,7 +2632,9 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 		return [{"type": "reflect", "user": u, "target": t}] + rs
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure and not XGarou.no_counter(t) else 0.0  # 饿狼 itemCnt 包装：不被原生反击
 	if cnt > 0.0:
-		cnt = maxf(0.0, cnt - XTianqiWeakB2.counter_cut(self, t))  # 天启篇弱者专属词条批 2B 布兰德瓦登「掷矛邀战」：戴着时扣掉反击 1162 那 30%（别的来源不动）
+		var cut := XTianqiWeakB2.counter_cut(self, t)  # 天启篇弱者专属词条批 2B 布兰德瓦登「掷矛邀战」：戴着时扣掉反击 1162 那 30%（别的来源不动）
+		if cut > 0.0:
+			cnt = clampf(t.xparam(6) - cut, 0.0, 1.0)  # 在未夹的 xparam(6) 上先扣再夹：别的来源叠到 100% 以上时扣完仍可能满（先夹再扣会少算）
 	if cnt > 0.0 and XTianqiSkills.counter_rule(t) != null:
 		return XTianqiSkills.invoke_counter(self, u, skill, t, cnt)  # 天启篇技能重构的原生反击（布兰德瓦登）：挨打后半伤凌空斩、同一次敌人行动最多反一次
 	if _float("counter") < cnt:

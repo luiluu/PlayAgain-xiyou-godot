@@ -8,6 +8,8 @@ const ZHANG := 86
 const STUN := 29
 const PHYS := 1153  # 物理单体（敌人放；不在可引导名单里）
 const AOE := 636  # 物理全体「攻击」
+const CNT_TXT := " 反击 "  # 「掷矛邀战：他 反击 甲！」（受邀那行没有这几个字）
+const BARRIER := 92  # 屏障术：反击率＋100%（叠加别的反击来源）
 
 
 func _ready() -> void:
@@ -211,7 +213,7 @@ func _brand() -> void:
 	_next_turn(lg)
 	_fresh(lg)
 	var logs := _act(lg, b, 1159, e0)
-	_check("brand_throw_invites", XTianqiWeakAffix.guiders_of(lg, e0).has(b) and _has_text(logs, "受邀"), _texts(logs))
+	_check("brand_throw_invites", XTianqiWeakAffix.guiders_of(lg, e0).has(b) and _has_text(logs, "掷矛邀战：%s 受邀，本回合攻击将引向 %s" % [e0.display_name(), b.display_name()]), _texts(logs))
 	_check("brand_badge_invited", XTianqiWeakAffix.badges(lg, e0) == ["受邀"] and XTianqiWeakAffix.badges(lg, b).is_empty(), XTianqiWeakAffix.badges(lg, e0))
 	# 同回合再投另一个：只留最近一个
 	if not is_same(e0, e1):
@@ -223,23 +225,26 @@ func _brand() -> void:
 	XTianqiSkills.clear_marks([b])  # 前面原生反击挂过、投掷时用掉了牛马之魂（同回合不再挂）：清掉再看这次反击挂不挂
 	logs = _act(lg, e0, 1, ally)
 	_check("brand_guided_hits_him", _hits(logs, e0, b) >= 1 and _hits(logs, e0, ally) == 0, [_hits(logs, e0, b), _hits(logs, e0, ally)])
-	var ci := _idx_text(logs, "邀战反击")
+	var ci := _idx_text(logs, CNT_TXT)
 	_check("brand_counter_once", ci >= 0 and _hits(logs, b, e0) == 1 and ci > _last_hit_idx(logs, e0, b), [ci, _hits(logs, b, e0), _texts(logs)])
-	_check("brand_counter_arms_next", b.has_meta("xtq_cnext"))  # 进阶 4 牛马之魂认这次反击
+	_check("brand_counter_arms_next", b.has_meta("xtq_cnext"))
+	var bh := logs.filter(func(l): return l is Dictionary and l.get("type") == "hit" and is_same(l.get("user"), b))
+	_check("brand_counter_views", bh.size() == 1 and bh[0].has("views") and (bh[0].views as Dictionary).has(e0), bh.map(func(l): return l.keys()))
+	_check("brand_counter_text", _has_text(logs, "掷矛邀战：%s 反击 %s！" % [b.display_name(), e0.display_name()]), _texts(logs))  # 进阶 4 牛马之魂认这次反击
 	# 同回合甲再打：不再反击（每自然回合 1 次）
 	_fresh(lg)
 	logs = _act(lg, e0, 1, ally)
-	_check("brand_once_per_turn", _hits(logs, e0, b) >= 1 and not _has_text(logs, "邀战反击"), _texts(logs))
+	_check("brand_once_per_turn", _hits(logs, e0, b) >= 1 and not _has_text(logs, CNT_TXT), _texts(logs))
 	# ③ 不可引导的技能：目标不改；打的不是他就不反击
 	_next_turn(lg)
 	_act(lg, b, 1159, e0)
 	_fresh(lg)
 	logs = _act(lg, e0, PHYS, ally)
-	_check("brand_unguidable_no_redirect", _hits(logs, e0, ally) >= 1 and _hits(logs, e0, b) == 0 and not _has_text(logs, "邀战反击"), _texts(logs))
+	_check("brand_unguidable_no_redirect", _hits(logs, e0, ally) >= 1 and _hits(logs, e0, b) == 0 and not _has_text(logs, CNT_TXT), _texts(logs))
 	# 受邀者用不可引导的技能本来就打中他：也反击
 	_fresh(lg)
 	logs = _act(lg, e0, PHYS, b)
-	_check("brand_direct_hit_counters", _hits(logs, e0, b) >= 1 and _has_text(logs, "邀战反击"), _texts(logs))
+	_check("brand_direct_hit_counters", _hits(logs, e0, b) >= 1 and _has_text(logs, CNT_TXT), _texts(logs))
 	# ⑤ 全体技打到他：反击 1 次，目标没被改（队友照样挨打）
 	_next_turn(lg)
 	_act(lg, b, 1159, e0)
@@ -255,14 +260,14 @@ func _brand() -> void:
 	five.repeats = 5
 	five.erase("yepSeq")  # 不走动作序列，按重复次数打五段
 	logs = _act(lg, e0, five, b)
-	ci = _idx_text(logs, "邀战反击")
+	ci = _idx_text(logs, CNT_TXT)
 	_check("brand_after_all_segments", _hits(logs, e0, b) == 5 and ci > _last_hit_idx(logs, e0, b) and _hits(logs, b, e0) == 1, [_hits(logs, e0, b), ci, _last_hit_idx(logs, e0, b)])
 	# ⑧ 反击不回 TP（手工一根，他身上不挨真打）
 	_next_turn(lg)
 	XTianqiWeakAffix.mark_guide(lg, e0, b, "w42")
 	b.tp = 0.0
 	logs = _frame_hit(lg, e0, XDB.rec("Skills", 1), b)
-	_check("brand_counter_no_tp", _has_text(logs, "邀战反击") and b.tp == 0.0, b.tp)
+	_check("brand_counter_no_tp", _has_text(logs, CNT_TXT) and b.tp == 0.0, b.tp)
 	# 四骑士主动技（horseman_strike）的直接命中也算
 	_next_turn(lg)
 	XTianqiWeakAffix.mark_guide(lg, e0, b, "w42")
@@ -270,22 +275,22 @@ func _brand() -> void:
 	XTianqiWeakAffix.root_begin(lg, e0, hs)
 	lg.horseman_strike(e0, b, hs, 10.0, false)
 	logs = XTianqiWeakAffix.root_end(lg)
-	_check("brand_horseman_strike_counters", _has_text(logs, "邀战反击"), _texts(logs))
+	_check("brand_horseman_strike_counters", _has_text(logs, CNT_TXT), _texts(logs))
 	# ⑦ 被眩晕：不反、不扣次数；同回合解控后再被打中：反击
 	_next_turn(lg)
 	XTianqiWeakAffix.mark_guide(lg, e0, b, "w42")
 	b.add_state(STUN)
 	logs = _frame_hit(lg, e0, XDB.rec("Skills", 1), b)
-	var stunned_ok := b.is_state_affected(STUN) and not _has_text(logs, "邀战反击") and XTianqiWeakAffix.turn_count(lg, b, "w42") == 0
+	var stunned_ok := b.is_state_affected(STUN) and not _has_text(logs, CNT_TXT) and XTianqiWeakAffix.turn_count(lg, b, "w42") == 0
 	b.remove_state(STUN)
 	logs = _frame_hit(lg, e0, XDB.rec("Skills", 1), b)
-	_check("brand_stunned_no_counter_no_charge", stunned_ok and _has_text(logs, "邀战反击"), _texts(logs))
+	_check("brand_stunned_no_counter_no_charge", stunned_ok and _has_text(logs, CNT_TXT), _texts(logs))
 	# 甲已倒：不反、不扣
 	_next_turn(lg)
 	XTianqiWeakAffix.mark_guide(lg, e0, b, "w42")
 	e0.add_state(1)
 	logs = _frame_hit(lg, e0, XDB.rec("Skills", 1), b)
-	_check("brand_foe_dead_no_counter", not _has_text(logs, "邀战反击") and XTianqiWeakAffix.turn_count(lg, b, "w42") == 0)
+	_check("brand_foe_dead_no_counter", not _has_text(logs, CNT_TXT) and XTianqiWeakAffix.turn_count(lg, b, "w42") == 0)
 	_fresh(lg)
 	# 回合结束摘掉受邀
 	XTianqiWeakAffix.mark_guide(lg, e0, b, "w42")
@@ -307,15 +312,41 @@ func _brand() -> void:
 	_check("brand_counter_half", ratio > 0.38 and ratio < 0.62, [ratio, half, full])
 	# 打混子：反击是专属派生，盾照扣，不记他「打过混子」
 	_next_turn(lg)
-	var f := {"line": "plague", "mode": "body", "knight": e0, "hit_knight": {}, "queue": [], "shield_open": false, "broken_turn": -1}
+	var f := {"line": "plague", "mode": "body", "knight": e0, "hit_knight": {}, "queue": [], "shield_open": true, "shield_acc": 0.0, "phase": 1, "broken_turn": -1}
 	lg.set_meta(XTianqiHorsemen.META, f)
 	if XTianqiHorsemen.active(lg):
 		XTianqiWeakAffix.mark_guide(lg, e0, b, "w42")
 		logs = _frame_hit(lg, e0, XDB.rec("Skills", 1), b)
-		_check("brand_counter_hunzi_no_mark", _has_text(logs, "邀战反击") and not XTianqiHorsemen.fight(lg).hit_knight.has(b), XTianqiHorsemen.fight(lg).hit_knight.size())
+		_check("brand_counter_hunzi_no_mark", _has_text(logs, CNT_TXT) and not XTianqiHorsemen.fight(lg).hit_knight.has(b), XTianqiHorsemen.fight(lg).hit_knight.size())
+		_check("brand_counter_hunzi_shield", float(f.shield_acc) > 0.0 or int(f.broken_turn) >= 0, [f.shield_acc, f.broken_turn])
 	else:
 		_check("brand_counter_hunzi_no_mark", false, "混子夹具没起来")
 	lg.remove_meta(XTianqiHorsemen.META)
+	# 他倒下：受邀作废；同回合拉起来，旧受邀不再引导、不反击
+	_next_turn(lg)
+	_fresh(lg)
+	_act(lg, b, 1159, e0)
+	var invited := XTianqiWeakAffix.guiders_of(lg, e0).has(b)
+	b.add_state(1)
+	_act(lg, e0, 1, ally)
+	var dropped := not XTianqiWeakAffix.guiders_of(lg, e0).has(b)
+	b.remove_state(1)
+	b.hp = b.mhp
+	_fresh(lg)
+	logs = _act(lg, e0, 1, ally)
+	_check("brand_down_invite_void", invited and dropped and _hits(logs, e0, ally) >= 1 and _hits(logs, e0, b) == 0 and not _has_text(logs, CNT_TXT) and XTianqiWeakAffix.badges(lg, e0).is_empty(), [invited, dropped, _texts(logs)])
+	# 叠别的反击来源（屏障术 +100%）：在没夹的反击率上扣 30% 还满，每次都走重构半伤凌空斩、不吞攻击
+	_fresh(lg)
+	b.add_state(BARRIER)
+	var raw6 := b.xparam(6)
+	var stk := _counter_stats(lg, b, e0, 40)
+	_check("brand_stacked_cut_before_clamp", raw6 >= 1.3 and b.is_state_affected(BARRIER) and stk.with_counter == 40 and stk.swallowed == 0, [raw6, stk])
+	XTianqiSkills.begin_action(lg, e0, XDB.rec("Skills", PHYS))
+	logs = lg._invoke(e0, XDB.rec("Skills", PHYS), b)
+	logs.append_array(XTianqiSkills.end_action(lg, e0, XDB.rec("Skills", PHYS)))
+	var ch := logs.filter(func(l): return l is Dictionary and l.get("type") == "hit" and is_same(l.get("user"), b))
+	_check("brand_stacked_rework_cast", ch.size() >= 1 and int(ch[0].get("skill", {}).get("id", 0)) == 1153 and _hits(logs, e0, b) >= 1, ch.map(func(l): return l.get("skill", {}).get("id")))
+	b.remove_state(BARRIER)
 	lg.end_battle(0)
 
 
@@ -374,6 +405,7 @@ func _zhang() -> void:
 	var v1204 := float(lg.state.variable(1204))
 	var logs := _act(lg, e0, PHYS, a2)
 	var chase := logs.filter(func(l): return l is Dictionary and l.get("type") == "action" and l.get("w86", false))
+	_check("zhang_chase_text", _has_text(logs, "护犊：%s 追击 %s！" % [z.display_name(), e0.display_name()]) and _has_text(logs, "护犊：本回合守护 %s" % a2.display_name()), _texts(logs))
 	_check("zhang_chase_on_ward", _has_text(logs, "护犊：") and chase.size() == 1 and _hits(logs, z, e0) >= 4, [_texts(logs), _hits(logs, z, e0)])
 	_check("zhang_chase_taiji_only", chase.size() == 1 and int(chase[0].skill.id) == 5860 and not (chase[0].skill.get("effects", []) as Array).any(func(x): return int(x.get("code", 0)) == 44))
 	_check("zhang_no_taiji_power", float(lg.state.variable(1204)) == v1204, [v1204, lg.state.variable(1204)])
@@ -466,14 +498,22 @@ func _zhang() -> void:
 	# 打混子：追击是专属派生，盾照扣，不记他「打过混子」
 	_next_turn(lg)
 	XTianqiWeakAffix.stock(lg, z, "w86").ward = a2
-	var f := {"line": "plague", "mode": "body", "knight": e0, "hit_knight": {}, "queue": [], "shield_open": false, "broken_turn": -1}
+	var f := {"line": "plague", "mode": "body", "knight": e0, "hit_knight": {}, "queue": [], "shield_open": true, "shield_acc": 0.0, "phase": 1, "broken_turn": -1}
 	lg.set_meta(XTianqiHorsemen.META, f)
 	if XTianqiHorsemen.active(lg):
 		logs = _frame_hit(lg, e0, XDB.rec("Skills", PHYS), a2)
 		_check("zhang_chase_hunzi_no_mark", _has_text(logs, "追击") and not XTianqiHorsemen.fight(lg).hit_knight.has(z), XTianqiHorsemen.fight(lg).hit_knight.size())
+		_check("zhang_chase_hunzi_shield", float(f.shield_acc) > 0.0 or int(f.broken_turn) >= 0, [f.shield_acc, f.broken_turn])
 	else:
 		_check("zhang_chase_hunzi_no_mark", false, "混子夹具没起来")
 	lg.remove_meta(XTianqiHorsemen.META)
+	# 没学原生护短 5863：护犊不生效（不遮、不选、不追）
+	z.forget_skill(5863)
+	_next_turn(lg)
+	XTianqiWeakAffix.stock(lg, z, "w86").ward = a2
+	logs = _frame_hit(lg, e0, XDB.rec("Skills", PHYS), a2)
+	_check("zhang_needs_5863", not XTianqiWeakB2.masks_guard(lg, z) and not _has_text(logs, "追击") and XTianqiWeakAffix.badges(lg, a2).is_empty(), _texts(logs))
+	_learn(z, [5863])
 	# GUARD 关（回原版 2007）：专属不生效
 	XTianqiSkills.GUARD = false
 	_next_turn(lg)
