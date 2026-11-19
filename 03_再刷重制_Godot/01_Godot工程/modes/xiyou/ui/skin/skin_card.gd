@@ -50,6 +50,10 @@ var _overflow := false
 var _max_scroll := 0.0
 var _content_key := ""
 var _sheet: Control
+## 画的时候：_top_cut 以上、_cut_y 以下的行不画；_fade_y 往下的行渐淡（牌底渐隐）
+var _top_cut := -INF
+var _cut_y := INF
+var _fade_y := INF
 var _drag := XSkinDrag.new()
 
 
@@ -239,8 +243,10 @@ func _draw() -> void:
 	if fold:
 		_overflow = natural_height(size.x) > size.y + 0.5
 	if _overflow:
-		_body(self, pad, pad, size.x - pad * 2, bottom - 22.0, false)
-		_draw_fade(self, Rect2(0, bottom - FADE_H, size.x, FADE_H), _strip_text(false))
+		_fade_y = bottom - FADE_H
+		_body(self, pad, pad, size.x - pad * 2, bottom - 20.0, false)
+		_fade_y = INF
+		_draw_strip(self, Rect2(0, bottom - 24.0, size.x, 24.0), _strip_text(false))
 	else:
 		_body(self, pad, pad, size.x - pad * 2, bottom, false)
 	sel_scale.sel(button_index if button_index >= 0 and button_index < buttons.size() else null)
@@ -289,7 +295,13 @@ func _draw_sheet() -> void:
 	s.draw_rect(r, Color(XUiSkin.PANEL_LOW, 0.55))   # 压在下面的列表上，面板要不透明些
 	_draw_border(ci, r)
 	var bottom := s.size.y - pad - STRIP_H
-	var end := _body(s, pad, pad - scroll, s.size.x - pad * 2, INF, false, pad, bottom)
+	_top_cut = pad
+	_cut_y = bottom
+	_fade_y = bottom - 28.0 if scroll < _max_scroll - 0.5 else INF
+	var end := _body(s, pad, pad - scroll, s.size.x - pad * 2, INF, false)
+	_top_cut = -INF
+	_cut_y = INF
+	_fade_y = INF
 	_max_scroll = maxf(0.0, end + scroll - bottom)
 	scroll = clampf(scroll, 0.0, _max_scroll)
 	if _max_scroll > 0.0:   # 右边一条细滚动条
@@ -297,7 +309,8 @@ func _draw_sheet() -> void:
 		var th := maxf(24.0, track * track / (track + _max_scroll))
 		var ty := pad + (track - th) * (scroll / _max_scroll)
 		s.draw_rect(Rect2(s.size.x - 6.0, ty, 3.0, th), Color(XUiSkin.LINE, 0.45))
-	_draw_fade(s, Rect2(0, bottom - 16.0, s.size.x, s.size.y - bottom + 16.0), _strip_text(true))
+	s.draw_line(Vector2(pad, bottom + 6.0), Vector2(s.size.x - pad, bottom + 6.0), Color(XUiSkin.LINE, 0.14), 1.0)
+	_draw_strip(s, Rect2(0, bottom + 6.0, s.size.x, s.size.y - pad * 0.5 - bottom - 6.0), _strip_text(true))
 
 
 func _strip_text(open: bool) -> String:
@@ -307,42 +320,47 @@ func _strip_text(open: bool) -> String:
 	return "看完整说明 ▾" if touch else "Y 看完整说明 ▾"
 
 
-## 牌底渐隐（上透明→下面板色）＋居中一行提示
-func _draw_fade(t: Control, r: Rect2, text: String) -> void:
-	var c0 := Color(XUiSkin.PANEL_LOW, 0.0)
-	var c1 := Color(XUiSkin.PANEL_LOW, 0.96)
-	var mid := r.position.y + r.size.y * 0.55
-	t.draw_polygon(PackedVector2Array([Vector2(r.position.x + 1, r.position.y), Vector2(r.end.x - 1, r.position.y), Vector2(r.end.x - 1, mid), Vector2(r.position.x + 1, mid)]),
-		PackedColorArray([c0, c0, c1, c1]))
-	t.draw_rect(Rect2(r.position.x + 1, mid, r.size.x - 2, r.end.y - mid - XUiSkin.RADIUS * 0.5), c1)
+## 牌底居中一行提示（「看完整说明 ▾」「收起 ▴」），r 是这一条
+func _draw_strip(t: Control, r: Rect2, text: String) -> void:
 	var body := XUiSkin.font("body")
 	var fs := XUiSkin.FS_AUX
 	var tw := body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	XUiSkin.ds(t, body, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.end.y - pad * 0.5 - 4.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
+	XUiSkin.ds(t, body, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
+
+
+## 这一行（y 起、高 lh）画多亮：0＝不画（在 _top_cut 之上或 _cut_y 之下）；_fade_y 往下渐淡
+func _vis(y: float, lh: float) -> float:
+	if y < _top_cut - 2.0 or y + lh > _cut_y + 0.5:
+		return 0.0
+	if y + lh > _fade_y:
+		return clampf(1.0 - (y + lh - _fade_y) / FADE_H, 0.12, 1.0)
+	return 1.0
+
+
+func _fa(c: Color, a: float) -> Color:
+	return Color(c, c.a * a) if a < 1.0 else c
 
 
 ## 牌头＋各节，从 (x0, y) 往下排，宽 w；画在 t 上（dry：只量不画）。bottom 以下的不画（行、节放不下就停）；
-## top（展开滚动时）以上的行不画。返回排完的 y。
-func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool, top := -INF, sheet_bottom := INF) -> float:
+## 展开滚动、渐隐时按 _vis 定每行画不画、多亮。返回排完的 y。
+func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) -> float:
 	var body := XUiSkin.font("body")
 	var head := XUiSkin.font("title")
 	var num := XUiSkin.font("num")
-	if sheet_bottom < INF:
-		bottom = INF   # 展开的牌整张排完（_sheet 裁），只用来量滚动
 	var x := x0
 	if icon != null:
-		if not dry:
+		if not dry and _vis(y, 48.0) > 0.0:
 			t.draw_texture_rect(icon, Rect2(x, y, 48, 48), false)
 		x += 48 + 12
 	if title != "":
-		if not dry:
+		if not dry and _vis(y, 48.0) > 0.0:
 			var ty := y + (48 - title_size) / 2.0 + title_size * 0.86 if icon != null else y + title_size * 0.86
 			var fit := XSkinList.fit_text(head, title, x0 + w - x, title_size, 20)   # 长名字先缩到 20 号，再放不下加省略号
 			XUiSkin.ds(t, head, Vector2(x, ty), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], title_color)
 		y += maxf(48.0 if icon != null else 0.0, title_size * 1.25)
 	if subtitle != "":
 		y += 4
-		if not dry:
+		if not dry and _vis(y, XUiSkin.FS_AUX_MAX) > 0.0:
 			XUiSkin.ds(t, body, Vector2(x0, y + XUiSkin.FS_AUX_MAX * 0.86), subtitle, HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 		y += XUiSkin.FS_AUX_MAX + 6
 	if notice != "":
@@ -354,7 +372,7 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool, 
 		var ncnt := maxi(1, npara.get_line_count())
 		var nh := float(ncnt) * nlh + 10.0
 		if y + nh <= bottom:
-			if not dry:
+			if not dry and _vis(y, nh) > 0.0:
 				var nsb := StyleBoxFlat.new()
 				nsb.bg_color = Color(XUiSkin.GOLD, 0.14)
 				nsb.border_color = Color(XUiSkin.GOLD, 0.55)
@@ -368,7 +386,7 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool, 
 	if desc != "":
 		y += 8
 		for part in (desc.split("\n", false) if fold else PackedStringArray([desc])):
-			y = _paragraph(t, body, part, y, x0, w, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT_2 if fold else XUiSkin.TEXT, bottom, [], dry, -1.0, top)
+			y = _paragraph(t, body, part, y, x0, w, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT_2 if fold else XUiSkin.TEXT, bottom, [], dry)
 	for sec in sections:
 		if y + SECTION_H > bottom:
 			break
@@ -376,24 +394,25 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool, 
 		var fs := int(sec.get("size", XUiSkin.FS_AUX))
 		var lh := roundf(fs * 1.6) if big else -1.0
 		y += 6
-		if not dry and y >= top:
-			t.draw_line(Vector2(x0, y), Vector2(x0 + w, y), Color(XUiSkin.LINE, 0.14), 1.0)
+		var va := _vis(y, SECTION_H)
+		if not dry and va > 0.0:
+			t.draw_line(Vector2(x0, y), Vector2(x0 + w, y), Color(XUiSkin.LINE, 0.14 * va), 1.0)
 		y += 4
 		if str(sec.get("title", "")) != "":
-			if not dry and y >= top:
-				XUiSkin.ds(t, body, Vector2(x0, y + XUiSkin.FS_AUX_MAX * 1.1), str(sec.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
+			if not dry and va > 0.0:
+				XUiSkin.ds(t, body, Vector2(x0, y + XUiSkin.FS_AUX_MAX * 1.1), str(sec.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX_MAX, _fa(XUiSkin.GOLD, va))
 			y += SECTION_H - 10
 		for row in sec.get("rows", []):
 			var col: Color = XUiSkin.TEXT_3 if bool(row.get("dim", false)) else row.get("color", XUiSkin.TEXT_2)
-			y = _paragraph(t, body, str(row.get("text", "")), y, x0, w, fs, col, bottom, row.get("spans", []), dry, lh, top)
+			y = _paragraph(t, body, str(row.get("text", "")), y, x0, w, fs, col, bottom, row.get("spans", []), dry, lh)
 		if sec.has("cells"):
-			y = _cells(t, body, sec.cells, y, x0, w, fs, roundf(fs * 1.6), bottom, dry, top)
+			y = _cells(t, body, sec.cells, y, x0, w, fs, roundf(fs * 1.6), bottom, dry)
 		if sec.has("text"):
-			y = _paragraph(t, body, str(sec.text), y, x0, w, XUiSkin.FS_AUX, XUiSkin.TEXT_2, bottom, [], dry, -1.0, top)
+			y = _paragraph(t, body, str(sec.text), y, x0, w, XUiSkin.FS_AUX, XUiSkin.TEXT_2, bottom, [], dry)
 		for ln in sec.get("lines", []):
 			if y + LINE_H > bottom:
 				break
-			if not dry and y >= top:
+			if not dry and _vis(y, LINE_H) > 0.0:
 				var base := y + LINE_H / 2.0
 				XUiSkin.ds(t, body, Vector2(x0, base + 15 * 0.36), str(ln.get("left", "")), HORIZONTAL_ALIGNMENT_LEFT, w * 0.6, 15, ln.get("color", XUiSkin.TEXT_2))
 				var rt := str(ln.get("right", ""))
@@ -405,7 +424,7 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool, 
 
 
 ## 两列「名 值」格子：名次要字、值正文，两格一行；一格比半宽还宽就独占一行（再长自动换行）
-func _cells(t: Control, f: Font, cells: Array, y: float, x0: float, w: float, fs: int, lh: float, bottom: float, dry: bool, top: float) -> float:
+func _cells(t: Control, f: Font, cells: Array, y: float, x0: float, w: float, fs: int, lh: float, bottom: float, dry: bool) -> float:
 	var half := w / 2.0
 	var col := 0
 	for c in cells:
@@ -418,16 +437,17 @@ func _cells(t: Control, f: Font, cells: Array, y: float, x0: float, w: float, fs
 				y += lh
 				col = 0
 			var spans := [[nm + ("　" if val != "" else ""), XUiSkin.TEXT_2], [val, XUiSkin.TEXT]]
-			y = _paragraph(t, f, nm + ("　" if val != "" else "") + val, y, x0, w, fs, XUiSkin.TEXT, bottom, spans, dry, lh, top)
+			y = _paragraph(t, f, nm + ("　" if val != "" else "") + val, y, x0, w, fs, XUiSkin.TEXT, bottom, spans, dry, lh)
 			continue
 		if col == 0 and y + lh > bottom:
 			return y
-		if not dry and y >= top:
+		var a := _vis(y, lh)
+		if not dry and a > 0.0:
 			var cx := x0 + half * col
 			var by := y + fs * 1.1 + (lh - roundf(fs * 1.5)) / 2.0
-			XUiSkin.ds(t, f, Vector2(cx, by), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
+			XUiSkin.ds(t, f, Vector2(cx, by), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _fa(XUiSkin.TEXT_2, a))
 			if val != "":
-				XUiSkin.ds(t, f, Vector2(cx + nw + 8.0, by), val, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT)
+				XUiSkin.ds(t, f, Vector2(cx + nw + 8.0, by), val, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _fa(XUiSkin.TEXT, a))
 		col += 1
 		if col == 2:
 			col = 0
@@ -438,8 +458,8 @@ func _cells(t: Control, f: Font, cells: Array, y: float, x0: float, w: float, fs
 
 
 ## spans（可选）：[[字, 颜色], …] 拼起来＝text，逐段上色（装备「自带」属性分色，T095）
-## lh：行距（<0＝字号×1.5，同旧）；top 以上的行只占位不画（展开滚动）
-func _paragraph(t: Control, f: Font, text: String, y: float, x0: float, w: float, fs: int, col: Color, bottom: float, spans := [], dry := false, lh := -1.0, top := -INF) -> float:
+## lh：行距（<0＝字号×1.5，同旧）；展开滚动、渐隐按 _vis
+func _paragraph(t: Control, f: Font, text: String, y: float, x0: float, w: float, fs: int, col: Color, bottom: float, spans := [], dry := false, lh := -1.0) -> float:
 	if lh < 0.0:
 		lh = roundf(fs * 1.5)
 	var para := TextParagraph.new()
@@ -449,18 +469,19 @@ func _paragraph(t: Control, f: Font, text: String, y: float, x0: float, w: float
 	for li in para.get_line_count():
 		if y + lh > bottom:
 			break
-		if not dry and y + lh >= top:
+		var a := _vis(y, lh)
+		if not dry and a > 0.0:
 			var line_text_range := para.get_line_range(li)
 			if spans.is_empty():
-				XUiSkin.ds(t, f, Vector2(x0, y + off + fs * 1.1), text.substr(line_text_range.x, line_text_range.y - line_text_range.x), HORIZONTAL_ALIGNMENT_LEFT, w, fs, col)
+				XUiSkin.ds(t, f, Vector2(x0, y + off + fs * 1.1), text.substr(line_text_range.x, line_text_range.y - line_text_range.x), HORIZONTAL_ALIGNMENT_LEFT, w, fs, _fa(col, a))
 			else:
-				_span_line(t, f, spans, line_text_range.x, line_text_range.y, Vector2(x0, y + off + fs * 1.1), fs)
+				_span_line(t, f, spans, line_text_range.x, line_text_range.y, Vector2(x0, y + off + fs * 1.1), fs, a)
 		y += lh
 	return y
 
 
 ## 画一行里 [from, to) 这段字，按 spans 换色
-func _span_line(t: Control, f: Font, spans: Array, from: int, to: int, at: Vector2, fs: int) -> void:
+func _span_line(t: Control, f: Font, spans: Array, from: int, to: int, at: Vector2, fs: int, alpha := 1.0) -> void:
 	var off := 0
 	var x := at.x
 	for sp in spans:
@@ -469,6 +490,6 @@ func _span_line(t: Control, f: Font, spans: Array, from: int, to: int, at: Vecto
 		var b := mini(to, off + s.length())
 		if b > a:
 			var piece := s.substr(a - off, b - a)
-			XUiSkin.ds(t, f, Vector2(x, at.y), piece, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, sp[1])
+			XUiSkin.ds(t, f, Vector2(x, at.y), piece, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _fa(sp[1], alpha))
 			x += f.get_string_size(piece, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		off += s.length()
