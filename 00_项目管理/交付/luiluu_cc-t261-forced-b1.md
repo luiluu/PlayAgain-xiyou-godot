@@ -70,7 +70,7 @@
 
 - 已做：`forced_copy_unreachable`（见上），副本分支走不到时写原因就放行，走得到了会报。
 - 建议：测试里「前」用 `XTianqiSkills._skills.erase` 拿掉卡对比，比对旧提交方便；别的卡也可以抄这个写法（专项 `xiyou_tianqi_forced_b1`）。
-- 备注：新专项只有 `.gd`／`.tscn`，`.gd.uid` 没生成（本机无头跑不产 uid），合并后在编辑器打开一次会自动补。
+- 备注：新专项 `.gd.uid` 已随提交补上。
 
 ## 本分支提交
 
