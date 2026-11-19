@@ -5,6 +5,8 @@ extends Node
 ## 二、开着、天启篇存档：屏障术 1301（敌人自疗，3000000）＝ −⌊对象生命上限 × 100%⌋；治愈 8（200＋魔攻）只换 200 那一截；
 ##     折磨 897（吸生命 5000）、吞魔术 500（吸魔法 10000）按被吸的人的上限；raw 行、公式对不上表、物品同号照原值。
 ## 三、ABS_SKILL 关、总开关关、西游档：照原公式。同一输入跑两遍结果一样（不取随机数）。
+## 五、R1 P1-1：经 lg.apply 实战，敌人屏障术 1301 自疗回满（普通敌 k＝1、带守层者缩血比 k 的都不再被 enemy_heal 的 1/6×k 二次缩小）；
+##     3570 清心咒（450＋魔攻×1000）只有底数那一截不乘 enemy_heal，魔攻项照旧乘；ENEMY_HEAL_CAP 封顶敌人给敌人的回复百分比。
 ## 四、T240 复核 P3-2：判决（on_attack）、灰镰处决这两下打倒的敌人补记成行动者的致命一击（fu.lethal → fu_note 记进 kills）。
 
 var results: Array = []
@@ -56,6 +58,9 @@ func _run() -> void:
 	_table()
 	_on()
 	_off_paths()
+	_real_heal()
+	_split()
+	_cap()
 	_p3_2()
 	XTianqiBase.PHASE4 = true
 	XTianqiBase.ABS_SKILL = true
@@ -125,7 +130,7 @@ func _on() -> void:
 	_check("on.mismatch", lg._formula_raw(a, sk, b) == off8 and XTianqiBase._warned.has("skill:8"), lg._formula_raw(a, sk, b))
 	# 物品同号（没有 stypeId）不算
 	var it := {"id": 8, "damage": {"type": 3, "formula": "200 + a.mat"}}
-	_check("on.item_same_id", XTianqiBase.skill_formula(it, b, -1234.0) == -1234.0)
+	_check("on.item_same_id", XTianqiBase.skill_formula(it, a, b, -1234.0) == -1234.0 and XTianqiBase.skill_abs_part(it, a, b) == -1.0)
 	lg.end_battle(0)
 
 
@@ -185,3 +190,72 @@ func _p3_2() -> void:
 		_check("p3_2." + code, e.is_dead() and before.has(e) and lethal and kills.has(e), [e.is_dead(), before.has(e), lethal, kills.size()])
 		XTianqiQiyinEffects.fu_clear(lg)
 		lg.end_battle(0)
+
+
+## R1 P1-1：实战（lg.apply → XDamage）屏障术 1301 敌人自疗：回量＝生命上限 × 100%，普通敌、带守层者 k 的都回满
+func _real_heal() -> void:
+	XTianqiBase.PHASE4 = true
+	XTianqiBase.ABS_SKILL = true
+	for k in [1.0, 0.001]:
+		var lg := _logic(true)
+		var e: XEnemy = lg.enemies[0]
+		if k != 1.0:
+			e.set_meta(XTianqiNoX6.META_HP_K, k)
+		var eh := XTianqiNoX6.enemy_heal(XDB.rec("Skills", 1301), e, e)
+		e.hp = 1.0
+		var r: Dictionary = lg.apply(e, XDB.rec("Skills", 1301), e)
+		_check("real.1301_k%s" % str(k), eh < 1.0 and e.hp == e.mhp and e.mhp > 1.0, [eh, e.hp, e.mhp, r.get("hp")])
+		# 回退：ABS_SKILL 关时照旧 3000000 × enemy_heal（不回满或回满都照原口径），只核开关能关
+		XTianqiBase.ABS_SKILL = false
+		e.hp = 1.0
+		lg.apply(e, XDB.rec("Skills", 1301), e)
+		var off_hp := e.hp
+		XTianqiBase.ABS_SKILL = true
+		var want_off := minf(e.mhp, 1.0 + floorf(3000000.0 * eh))
+		_check("real.1301_off_k%s" % str(k), absf(off_hp - want_off) <= 1.0, [off_hp, want_off, eh])
+		lg.end_battle(0)
+
+
+## R1 P1-1：混合公式 3570（450＋魔攻×1000），敌人给敌人：结果＝（原式−新底数）× 缩放 ＋ 新底数（底数那截不再乘 enemy_heal）
+func _split() -> void:
+	XTianqiBase.PHASE4 = true
+	XTianqiBase.ABS_SKILL = true
+	var lg := _logic(true)
+	var e: XEnemy = lg.enemies[0]
+	var e2: XEnemy = lg.enemies[1] if lg.enemies.size() > 1 else e
+	e2.set_meta(XTianqiNoX6.META_HP_K, 0.01)
+	var sk: Dictionary = XDB.rec("Skills", 3570).duplicate(true)
+	sk.damage.elementId = 0  # 不取元素加成（frame 只给 healingMultiplier），倍率只剩 rec
+	var raw := lg._formula_raw(e, sk, e2)
+	var part := XTianqiBase.skill_abs_part(sk, e, e2)
+	var eh := XTianqiNoX6.enemy_heal(sk, e, e2)
+	var opt := {"rawValue": raw, "variance": false}
+	var frame := {"healingMultiplier": 1.0}
+	var full: float = XDamage._healing(sk, e, e2, opt, lg.vars(), frame).settled
+	var probe: Dictionary = sk.duplicate(true)
+	probe.damage.formula = "b.mhp"  # enemy_heal 见 mhp 不缩：量出 1 点回复的倍率（元素、rec）
+	var unit: float = XDamage._healing(probe, e, e2, {"rawValue": -1.0, "variance": false}, lg.vars(), frame).settled
+	var want := ((raw + part) * eh - part) * absf(unit)
+	_check("split.3570", part > 0.0 and eh < 1.0 and raw < -part and absf(full - want) <= 1e-6 * maxf(1.0, absf(want)), [full, want, raw, part, eh, unit])
+	XTianqiBase.ABS_SKILL = false
+	var old: float = XDamage._healing(sk, e, e2, {"rawValue": lg._formula_raw(e, sk, e2), "variance": false}, lg.vars(), frame).settled
+	XTianqiBase.ABS_SKILL = true
+	_check("split.3570_off_all_scaled", absf(old - (-(450.0 + float(e.mat) * 1000.0)) * eh * absf(unit)) <= 1e-6 * maxf(1.0, absf(old)), [old, e.mat, eh])
+	lg.end_battle(0)
+
+
+## ENEMY_HEAL_CAP：敌人给敌人的固定回复百分比封顶（默认 100＝不封顶）；我方回复不受影响
+func _cap() -> void:
+	XTianqiBase.PHASE4 = true
+	XTianqiBase.ABS_SKILL = true
+	var lg := _logic(true)
+	var e: XEnemy = lg.enemies[0]
+	var a: XActor = lg.actors[0]
+	var b: XActor = lg.actors[1]
+	_check("cap.default", XTianqiBase.ENEMY_HEAL_CAP == 100)
+	XTianqiBase.ENEMY_HEAL_CAP = 30
+	var v := _raw(lg, e, 1301, e)
+	_check("cap.enemy", v == -floorf(float(e.mhp) * 30.0 / 100.0), [v, e.mhp])
+	_check("cap.actor_free", XTianqiBase.skill_abs_part(XDB.rec("Skills", 1218), a, b) == floorf(float(b.mhp)), XTianqiBase.skill_abs_part(XDB.rec("Skills", 1218), a, b))
+	XTianqiBase.ENEMY_HEAL_CAP = 100
+	lg.end_battle(0)

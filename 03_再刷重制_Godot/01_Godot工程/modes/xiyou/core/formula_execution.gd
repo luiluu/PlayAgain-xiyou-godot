@@ -107,7 +107,8 @@ static func _run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swi
 	out.results = {"a": vm.resources.result(first).duplicate(true), "b": vm.resources.result(second).duplicate(true)}
 	out.after = {"a": vm.resources.snapshot(first), "b": vm.resources.snapshot(second)}
 	out.executed = execute
-	out.value = XTianqiBase.skill_formula(item, b, float(out.value))  # 天启篇期四（ABS_SKILL）：技能固定回复／吸取的底数换成对象上限的整数百分比（abs_rescale.json；关着、西游档原样）
+	if bool(out.get("available", true)):  # R1 P3-1：公式求值失败（不可用）的不换
+		out.value = XTianqiBase.skill_formula(item, a, b, float(out.value))  # 天启篇期四（ABS_SKILL）：技能固定回复／吸取的底数换成对象上限的整数百分比（abs_rescale.json；关着、西游档原样）
 	out.value = XImportedBalance.formula_value(float(out.value), a, item)  # Game_Action.evalDamageFormula 的导入效果平衡（÷10）
 	return _report(item, execute, out)
 

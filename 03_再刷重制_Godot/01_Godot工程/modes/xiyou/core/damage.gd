@@ -446,7 +446,15 @@ static func _healing(item: Dictionary, a: XBattler, b: XBattler, options: Dictio
 			mult += _module_element_bonus(a, e, frame)
 		mult /= es.size()
 	var value: float = base * mult * maxf(0.0, frame.healingMultiplier) * maxf(0.0, b.rec)
-	value *= XTianqiNoX6.enemy_heal(item, a, b)  # 天启篇：敌人给敌人的绝对值回复跟血量同缩（O-470／O-469）
+	var eh := XTianqiNoX6.enemy_heal(item, a, b)  # 天启篇：敌人给敌人的绝对值回复跟血量同缩（O-470／O-469）
+	if eh != 1.0:
+		# T243 R1 P1-1：期四把公式固定底数换成了 b 生命上限的百分比（已含 1/6、守层者 k），这一截不再乘；只缩原公式剩下的属性项（如 a.mat×1000）
+		var part := minf(XTianqiBase.skill_abs_part(item, a, b), absf(base))
+		if part > 0.0:
+			var abs_v := -part if base < 0.0 else part
+			value = (value - abs_v * mult * maxf(0.0, frame.healingMultiplier) * maxf(0.0, b.rec)) * eh + abs_v * mult * maxf(0.0, frame.healingMultiplier) * maxf(0.0, b.rec)
+		else:
+			value *= eh
 	# installDamageElementRuntime.healing：治疗被动在浮动与取整之前相乘。
 	if value < 0.0 and a is XActor and not XGuyu.skip_heal_rate(item, a):  # 谷雨 applyPassiveHealRate 包装：泽苍生已算过
 		for bonus in a.passive_values("passiveHEUP"):

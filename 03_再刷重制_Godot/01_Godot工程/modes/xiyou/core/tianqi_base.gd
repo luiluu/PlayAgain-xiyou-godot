@@ -55,6 +55,8 @@ static var ABS_SHUXING := true
 ## T243：技能公式里写死的固定回复底数（skill_fixed_heal，如「200 + a.mat」的 200、屏障术 1301 的 3000000）和固定吸取量（skill_fixed_drain）
 ## 换成「对象该项上限的整数百分比」（abs_rescale.json）。只在总开关开着、天启篇存档时生效；false＝照原公式（回退）
 static var ABS_SKILL := true
+## T243 R1：敌人给敌人（含自疗）的技能固定回复，换算后的百分比统一封顶（整数 %，默认 100＝不封顶；Kyo 定了直接改这个数，表里各行 pct 照旧可改）
+static var ENEMY_HEAL_CAP := 100
 const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
 const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",
 	"SkillPass\\d+", "passiveAPLUS", "AgainUseAll", "passiveIRUP", "passiveGRUP", "passiveSPBST\\d", "ConsumeReduce\\w+", "passiveEXTTP", "DepassiveHarmRe\\d+",
@@ -327,8 +329,8 @@ static func abs_data() -> Dictionary:
 	return _abs
 
 
-## 这一条有没有结构化的换算（new＝{pct_of, pct}）。T080 表里只有药品（item_fixed_heal）和纯数字的状态持续伤害（state_dot）是结构化的；
-## 其余几类 new 还是文字说明（待逐条定写法），本期不接，交付单列着
+## 这一条有没有结构化的换算（new 是字典）。结构化的类：药品 item_fixed_heal、纯数字状态持续伤害 state_dot（T081）、状态 <G_ShuXing> state_shuxing（T228）、
+## 技能固定回复／吸取 skill_fixed_heal／skill_fixed_drain（T243）；公式型 state_dot、state_shield、note_* 还是文字说明，这里返回空
 ## stat：这一行管的是哪项（药品 mhp／mmp，对应效果 11／12）；表里不分 stat 的类别传空
 static func abs_entry(kind: String, id: int, stat := "") -> Dictionary:
 	abs_data()
@@ -355,27 +357,51 @@ static func abs_value(kind: String, id: int, old: float, target, stat := "") -> 
 ## T243：技能公式算完（XFormulaExecution.run_item，带正负：回复为负）以后，把表里那一行的固定底数 new.base 换成 ⌊对象 new.pct_of 上限 × new.pct%⌋，
 ## 公式其余部分（a.mat×N、v[364] 等）照旧：|值| − base + 新底数，不低于 0，正负照伤害类型（3、4 回复为负）。
 ## 只认技能（有 stypeId；物品同号不算）；mode＝raw 的行、表里没有的技能照原值。公式被改写、跟表里 orig 对不上（天启篇技能卡等）的照原值并警告一次。
-## b：公式里的 b（回复＝被治疗的人，吸取＝被吸的人）
-static func skill_formula(item: Dictionary, b, value: float) -> float:
+## a：出手的人（敌人给敌人回复时套 ENEMY_HEAL_CAP）；b：公式里的 b（回复＝被治疗的人，吸取＝被吸的人）
+static func skill_formula(item: Dictionary, a, b, value: float) -> float:
 	if not ABS_SKILL or b == null or is_nan(value) or not on():
 		return value
-	if not item.has("stypeId"):
+	var nb := skill_abs_part(item, a, b)
+	if nb < 0.0:
 		return value
+	var dmg: Dictionary = item.get("damage", {})
+	var mag := maxf(0.0, absf(value) - float(_skill_entry(item).new.base) + nb)
+	return -mag if int(dmg.get("type", 0)) in [3, 4] else mag
+
+
+## T243：这条技能换上去的新底数 ⌊对象上限 × pct%⌋（正数）；不换（开关关、西游档、raw、对不上 orig、不是技能）返回 -1。
+## XDamage._healing 用它把「新底数」从「原公式剩余项」里分出来：新底数已按对象生命上限（含 1/6、守层者 k）算，不能再乘 XTianqiNoX6.enemy_heal（R1 P1-1）
+static func skill_abs_part(item: Dictionary, a, b) -> float:
+	if not ABS_SKILL or b == null or not on():
+		return -1.0
+	var e := _skill_entry(item)
+	if e.is_empty():
+		return -1.0
+	var pct := float(e.new.get("pct", 0))
+	if str(e.kind) == "skill_fixed_heal" and a is XEnemy and b is XEnemy:
+		pct = minf(pct, float(ENEMY_HEAL_CAP))
+	var cap := float(b.mmp) if str(e.new.get("pct_of", "mhp")) == "mmp" else float(b.mhp)
+	return floorf(cap * pct / 100.0)
+
+
+## 表里这条技能的换算行（结构化、不是 raw、公式对得上 orig）；不是就返回空
+static func _skill_entry(item: Dictionary) -> Dictionary:
+	if not item.has("stypeId"):
+		return {}
 	var id := int(item.get("id", 0))
 	var e := abs_entry("skill_fixed_heal", id)
 	if e.is_empty():
 		e = abs_entry("skill_fixed_drain", id)
 	if e.is_empty() or str(e.new.get("mode", "")) == "raw" or not e.new.has("base"):
-		return value
+		return {}
 	var dmg: Dictionary = item.get("damage", {})
-	var f = dmg.get("formulaGd", dmg.get("formula", ""))
-	if str(f) != str(e.get("orig", "")):
+	var f := str(dmg.get("formulaGd", ""))
+	if f == "":
+		f = str(dmg.get("formula", ""))  # R1 P3-2：同生成脚本 formulaGd or formula
+	if f != str(e.get("orig", "")):
 		warn_once("skill:%d" % id, "技能 %d 的公式跟 abs_rescale.json 对不上（天启篇改写过？），照原公式" % id)
-		return value
-	var cap := float(b.mmp) if str(e.new.get("pct_of", "mhp")) == "mmp" else float(b.mhp)
-	var nb := floorf(cap * float(e.new.get("pct", 0)) / 100.0)
-	var mag := maxf(0.0, absf(value) - float(e.new.base) + nb)
-	return -mag if int(dmg.get("type", 0)) in [3, 4] else mag
+		return {}
+	return e
 
 
 ## T228：<G_ShuXing> 换算开着没有（总开关开、ABS_SHUXING 开、天启篇存档）。param_state 每次先问一次，关着整段不碰表
