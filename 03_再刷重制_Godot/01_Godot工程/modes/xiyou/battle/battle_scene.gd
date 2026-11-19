@@ -748,6 +748,8 @@ func _build_ui(vs: Vector2) -> void:
 	tianqi_meter = XTianqiMeter.make(logic, func(): return status_rows)
 	tianqi_meter.position = _origin + TIANQI_METER_POS
 	ui.add_child(tianqi_meter)
+	if XSkin2C.meter_on():   # 新界面 2C：挪到自动／变速圆钮下面（样稿位置）
+		tianqi_meter.position = XSkin2C.meter_pos(tianqi_meter, _origin)
 	# 天启篇弱者专属词条：头顶文字角标（蓄雷格数、传球库存…，只写状态不写词条名；模块不在天启篇档时不建）
 	tianqi_weak_badges = XTianqiWeakBadges.make(logic, func(): return sprites)
 	if tianqi_weak_badges != null:

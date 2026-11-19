@@ -70,6 +70,9 @@ static func _js_number(v: float) -> String:
 
 
 func _draw() -> void:
+	if XSkin2C.record_on():   # 新界面 2C：烟色面板
+		XSkin2C.record_back(self)
+		return
 	# Star_Record.refreshDimmerBitmap：左半 dimColor2→dimColor1 横向渐变，右半实心 dimColor1，上下各留内边距
 	var c1 := Color(0, 0, 0, 0.6)
 	var c2 := Color(0, 0, 0, 0)
@@ -81,6 +84,9 @@ func _draw() -> void:
 
 
 func _paint(c: XMVCanvas) -> void:
+	if XSkin2C.record_on():
+		XSkin2C.record_paint(self, c)
+		return
 	var t := total()
 	var w := c.size.x
 	var sys := XUI.text_color(16)

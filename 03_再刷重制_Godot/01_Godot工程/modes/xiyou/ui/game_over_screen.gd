@@ -20,6 +20,7 @@ var _fading_out := false
 var _pressed := false
 var _done := false
 var _image_name := ""
+var _skin: Control   # 新界面 2C：开着新皮肤时盖在图上的一层（A 版暗角＋提示；B 版整页换掉）
 
 
 func _init() -> void:
@@ -46,6 +47,9 @@ func _init() -> void:
 			_tex.texture = load(p)
 			_image_name = "GameOver"
 	add_child(_tex)
+	if XSkin2C.gameover_on():
+		_skin = XSkin2C.gameover_overlay(self)
+		add_child(_skin)
 	_apply()
 
 
@@ -99,6 +103,8 @@ func step(ok := false) -> void:
 
 func _apply() -> void:
 	_tex.modulate.a = float(_frame) / FADE_FRAMES
+	if _skin != null:
+		_skin.modulate.a = _tex.modulate.a
 
 
 ## 测试用

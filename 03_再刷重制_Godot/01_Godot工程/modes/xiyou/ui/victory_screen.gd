@@ -56,6 +56,8 @@ func _ready() -> void:
 	hint.painter = func(c): XMVText.paint(c, _hint_text.glyphs)
 	hint.visible = false
 	add_child(hint)
+	if XSkin2C.victory_on():   # 新界面 2C：整屏压暗＋新画法，提示画在页内（旧提示窗不显示）
+		XSkin2C.victory_setup(self)
 	modulate.a = 0
 	create_tween().tween_property(self, "modulate:a", 1.0, 32.0 / 60.0)
 	_update_exp(0)
@@ -163,7 +165,7 @@ func _process(delta: float) -> void:
 	_update_exp(clampf(_elapsed / 3.0, 0, 1))
 	if _elapsed >= 1.0:
 		_ready_to_close = true
-		hint.visible = true
+		hint.visible = not XSkin2C.victory_on()
 	if automatic and _elapsed >= 3.4:
 		set_process(false)
 		continued.emit()
@@ -193,16 +195,23 @@ func _update_exp(progress: float) -> void:
 		canvas.queue_redraw()
 
 
+## 滚动上限：旧页一次一行、最多看 11 行；新界面 2C 的 B 版按图标格整行滚
+func _drop_scroll_max() -> int:
+	if XSkin2C.victory_on():
+		return XSkin2C.drop_scroll_max(self)
+	return maxi(0,_drops.size()-11)
+
+
 func _input(event: InputEvent) -> void:
 	if not visible or WindowFit.is_fullscreen_shortcut(event):
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_DOWN,MOUSE_BUTTON_WHEEL_UP]:
-		_drop_top = clampi(_drop_top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0,_drops.size()-11))
+		_drop_top = clampi(_drop_top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, _drop_scroll_max())
 		canvas.queue_redraw()
 		XKeyMap.handled(self)
 		return
 	if event.is_action_pressed("ui_down",true) or event.is_action_pressed("ui_up",true):
-		_drop_top = clampi(_drop_top + (1 if event.is_action_pressed("ui_down",true) else -1),0,maxi(0,_drops.size()-11))
+		_drop_top = clampi(_drop_top + (1 if event.is_action_pressed("ui_down",true) else -1),0,_drop_scroll_max())
 		canvas.queue_redraw()
 		XKeyMap.handled(self)
 		return
@@ -219,4 +228,5 @@ func _input(event: InputEvent) -> void:
 			_elapsed = 3.0
 			_update_exp(1.0)
 			_ready_to_close = true
-			hint.visible = true
+			hint.visible = not XSkin2C.victory_on()
+			canvas.queue_redraw()

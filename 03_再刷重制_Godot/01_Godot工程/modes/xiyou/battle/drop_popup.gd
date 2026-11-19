@@ -49,6 +49,8 @@ class DropIcon:
 		var h := XDropPopup.ICON * float(g.sy)
 		if w == 0.0 or h <= 0.0:
 			return
+		if XSkin2C.drops_on():   # 新界面 2C：图标下垫暗圆片＋品质色细圈
+			XSkin2C.draw_drop_back(self, g, w, h)
 		# 锚点 (0.5, 1)；横向缩放变负时左右翻转
 		draw_texture_rect(tex, Rect2(g.x - w / 2.0, g.y - h, w, h), false, Color(1, 1, 1, g.alpha / 255.0))
 
