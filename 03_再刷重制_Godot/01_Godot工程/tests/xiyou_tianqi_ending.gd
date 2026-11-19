@@ -162,7 +162,7 @@ func _ending() -> void:
 	_check("final_win", r == 0 and bool(s.flags.tianqi.get("reincarnate", false)))
 	_check("final_clear_said", h.said.any(func(t): return str(t).contains("本档记下了「已清除异化·战争线」") and str(t).contains("战争线·终")), h.said)
 	_check("final_no_old_name", not h.said.any(func(t): return str(t).contains("可轮回")), h.said)
-	_check("final_cc_easter_egg", h.said.any(func(t): return str(t).contains("未经姐姐复核")))
+	_check("final_cc_easter_egg", h.said.any(func(t): return str(t).contains("彼岸未允")))
 	var h2 := FakeHost.new()
 	h2.results = [0]
 	await XTianqiLine.run_final(h2, s, "war")
