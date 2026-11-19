@@ -12,6 +12,29 @@ extends RefCounted
 ## MERCHANT29_FIX（MVEvent，O-286）：新源 v0.62.12 的 33 条 355 把 parameters 存成字符串，原版只 eval 第一个字符，complete 与 openCurrent
 ## 从不生效（v0.62.13 正式 MOD 已修）；默认按修好的跑，false 回到 v0.62.12 原版（商人永不出现）。
 
+## 按层合账（T224，Kyo 11-18「同一层深渊战利点不再分 boss 计算」；11-19 改每层两份，O-待定）：同一层塔里分两份战利品点——
+## 深渊一份「layer:层:abyss」（同层各张深渊图共用，如 13 层的 37、38）、未知存在一份「layer:层:unknown」（同层未知存在图，普通和不朽共用，
+## 如 152）；只有一张图的层照样按这张图是哪种记。领点、出现保底、商人抽取都按所属那份算，两份互不相通。
+## 旧存档里按图／来源／不朽分开的点数，第一次读账时并进对应那份（记在账本 merged 里，每个旧键只并一次）。
+## false＝回到原版：每张图、未知存在按来源、不朽另算（已并过的点数不拆回）。
+static var LAYER_LEDGER := true
+## 地图 → 层（MapInfos 的父链：各深渊挂在哪一层下面；天之上三图合一层；159 单独一张图）
+const LAYERS := {37: "13", 38: "13", 152: "13", 50: "15", 51: "15", 160: "15", 52: "17", 53: "17", 161: "17",
+	56: "19", 57: "19", 58: "19", 59: "19", 162: "19", 107: "天之上", 110: "天之上", 113: "天之上",
+	164: "20", 165: "20", 176: "20", 167: "22", 168: "22", 141: "22", 174: "24", 177: "24", 175: "25",
+	184: "26", 223: "26", 211: "28", 210: "28", 216: "29", 159: "159"}
+
+## 按难度、出现概率给点（T224，Kyo 11-19 定 C 方案，O-待定，随 LAYER_LEDGER）：同层高难恒多于低难，红柱越少见差距越大，
+## 每层按两档出现概率算的期望正好 10（商人 30／90／150 档价不动）。高难＝深渊图是云裳未知存在表里的不朽来源图
+## （XYunshangOrders.UNKNOWN 各图的 immortal，如 13 层的 38），未知存在是不朽通关；其余为低难。
+## 出现概率（原版各层首领通关事件先掷变量 106＝1 出门，再掷 107 选图；19 层先掷 136 选一对）：13 层高难 1/3 → 低 8、高 14；
+## 15～22 层高难 2/3 → 低 8、高 11。同层未知存在两档入口率相同，不朽率＝本层高难图率，用同一行。
+## 表外的层（天之上不分高低、单图层、只有不朽的未知存在）每场 REWARD_FLAT。false＝每场照原版 reward（10）。
+static var TIERED_REWARD := true
+## 层 → [低难, 高难]
+const REWARDS := {"13": [8, 14], "15": [8, 11], "17": [8, 11], "19": [8, 11], "20": [8, 11], "22": [8, 11]}
+const REWARD_FLAT := 10
+
 const RUN_FLAG := "_merchantRun29"
 const LEDGER_FLAG := "_codexMerchants29"
 const LABELS := ["Mod特效", "神话特效", "混沌神话特效"]
@@ -35,7 +58,68 @@ static func route(map_id: int) -> Dictionary:
 static func ledger(s: XState) -> Dictionary:
 	if not s.flags.get(LEDGER_FLAG) is Dictionary:
 		s.flags[LEDGER_FLAG] = {"sequence": 0, "balances": {}, "misses": {}}
-	return s.flags[LEDGER_FLAG]
+	var l: Dictionary = s.flags[LEDGER_FLAG]
+	if LAYER_LEDGER:
+		merge_layers(l)
+	return l
+
+
+## 本层这张图记哪一份：layer:层:abyss／layer:层:unknown；不在层表里返回空
+static func layer_key(map_id: int) -> String:
+	if not LAYERS.has(map_id):
+		return ""
+	return "layer:%s:%s" % [LAYERS[map_id], "unknown" if is_unknown(map_id) else "abyss"]
+
+
+## 旧键（abyss:地图[:from:来源]、immortal:地图[:from:来源]）→ 所属那份的层键；认不出的地图返回空（不动）
+static func layer_key_of(old_key: String) -> String:
+	var parts := old_key.split(":")
+	if parts.size() < 2 or not (parts[0] == "abyss" or parts[0] == "immortal") or not parts[1].is_valid_int():
+		return ""
+	return layer_key(int(parts[1]))
+
+
+## 高难的深渊图：未知存在表里各图的不朽来源
+static func high_abyss(map_id: int) -> bool:
+	return XYunshangOrders.UNKNOWN.values().any(func(r): return (r.get("immortal", []) as Array).has(map_id))
+
+
+## 这一场领多少点：按层表取低／高难，表外的层 REWARD_FLAT；关掉时照配置 reward
+static func reward_of(who: Dictionary) -> int:
+	if LAYER_LEDGER and TIERED_REWARD and who.has("high"):
+		var row: Array = REWARDS.get(str(LAYERS.get(int(who.get("map", 0)), "")), [])
+		return int(row[1 if bool(who.high) else 0]) if row.size() == 2 else REWARD_FLAT
+	return int(config().get("reward", 10))
+
+
+## 点数名（提示文字用）
+static func points_name(key: String) -> String:
+	if not LAYER_LEDGER:
+		return "本副本战利品点"
+	return "本层未知存在战利品点" if ledger_key(key).ends_with(":unknown") else "本层深渊战利品点"
+
+
+## 把账本里的旧键并进层键：点数相加，保底计数取大；并过的记进 merged（旧键→点数），旧键删掉
+static func merge_layers(l: Dictionary) -> void:
+	var bal: Dictionary = l.get("balances", {})
+	var miss: Dictionary = l.get("misses", {})
+	var olds := []
+	for k in bal.keys() + miss.keys():
+		if not olds.has(k) and layer_key_of(str(k)) != "":
+			olds.append(k)
+	if olds.is_empty():
+		return
+	if not l.get("merged") is Dictionary:
+		l.merged = {}
+	for k in olds:
+		var to := layer_key_of(str(k))
+		if bal.has(k):
+			bal[to] = int(bal.get(to, 0)) + int(bal[k])
+			l.merged[k] = int(l.merged.get(k, 0)) + int(bal[k])
+			bal.erase(k)
+		if miss.has(k):
+			miss[to] = maxi(int(miss.get(to, 0)), int(miss[k]))
+			miss.erase(k)
 
 
 static func run(s: XState):
@@ -68,6 +152,9 @@ static func identity(s: XState, troop: int) -> Dictionary:
 	var unknown := is_unknown(id)
 	var immortal := unknown and XYunshangOrders.immortal_clear(s, troop)
 	var key := ("immortal:" if immortal else "abyss:") + str(id)
+	if LAYER_LEDGER and LAYERS.has(id):
+		return {"key": layer_key(id), "kind": "不朽商人" if immortal else "深渊商人", "map": id,
+			"high": immortal if unknown else high_abyss(id)}
 	if unknown:
 		key += ":from:" + (("legacy-" + str(int(s.variable(107)))) if origin == null else str(int(origin)))
 	return {"key": key, "kind": "不朽商人" if immortal else "深渊商人", "map": id}
@@ -96,7 +183,16 @@ static func has_merchant(s: XState) -> bool:
 
 
 static func balance(s: XState, key: String) -> int:
-	return int(ledger(s).balances.get(key, 0))
+	return int(ledger(s).balances.get(ledger_key(key), 0))
+
+
+## 记账用的键：按层合账时旧身份键（升级前就开着的这一轮）也落到所属层
+static func ledger_key(key: String) -> String:
+	if LAYER_LEDGER:
+		var k := layer_key_of(key)
+		if k != "":
+			return k
+	return key
 
 
 ## M.complete(interpreter)：领到点数返回 true；出现时提示后打开商人（interp 为 null 时不开）
@@ -112,11 +208,14 @@ static func complete(s: XState, interp = null) -> bool:
 	cur.claimed = true
 	cur.identity = who.duplicate()
 	cur.pool = (r.get("pool", []) as Array).duplicate(true)
-	l.balances[who.key] = int(l.balances.get(who.key, 0)) + int(c.reward)
+	var gain := reward_of(who)
+	l.balances[who.key] = int(l.balances.get(who.key, 0)) + gain
 	var misses := int(l.misses.get(who.key, 0))
 	cur.appeared = misses >= int(c.pity) - 1 or MVEventCore.random_float(s) < float(c.encounterRate)
 	l.misses[who.key] = 0 if cur.appeared else misses + 1
-	var text := "获得本副本战利品点＋%d。" % int(c.reward) + ((str(who.kind) + "出现了。") if cur.appeared else "")
+	# 按层合账时带上这一份现有的点数（Kyo 11-19 清单 3；玩家可见文字，待小A 审）
+	var total := ("（本层共 %d 点）" % int(l.balances[who.key])) if LAYER_LEDGER else ""
+	var text := "获得%s＋%d%s。" % [points_name(str(who.key)), gain, total] + ((str(who.kind) + "出现了。") if cur.appeared else "")
 	if interp != null:
 		if interp.host.has_method("refresh_events"):
 			interp.host.refresh_events()
@@ -186,7 +285,7 @@ static func draw(s: XState, tier, g := "") -> Variant:
 	if int(cur.used) >= int(c.visitLimit):
 		return "本次商人的抽取次数已用完。"
 	if balance(s, key) < cost:
-		return "本副本战利品点不足。"
+		return points_name(key) + "不足。"
 	var list := pool(s, g)
 	if list.is_empty():
 		return "本分组暂无装备。"
@@ -198,7 +297,7 @@ static func draw(s: XState, tier, g := "") -> Variant:
 	var made := generate(s, d, affix, random, "abyss|%s" % key)
 	if made.is_empty():
 		return "装备生成失败，未扣除点数。"
-	ledger(s).balances[key] = balance(s, key) - cost
+	ledger(s).balances[ledger_key(key)] = balance(s, key) - cost
 	cur.used = int(cur.used) + 1
 	return made
 

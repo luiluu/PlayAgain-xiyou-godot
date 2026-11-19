@@ -121,12 +121,15 @@ func _run() -> void:
 	check("cases", o.cases.size() == 26 and o.cases.all(func(c): return c.errors.is_empty()))
 	var c := XAbyssMerchant.config()
 	check("config", norm({"costs": c.costs, "reward": c.reward, "encounterRate": c.encounterRate, "pity": c.pity, "visitLimit": c.visitLimit}) == norm(o.config), o.config)
+	XAbyssMerchant.LAYER_LEDGER = false  # 原版对照段：每图／来源／不朽分账（T224 按层合账的回退支）
 	await complete_cases()
 	await draw_cases()
 	pool_cases()
 	await fix_switch()
 	await ui_layout()
 	ui_rows()
+	XAbyssMerchant.LAYER_LEDGER = true
+	await layer_cases()
 	MVEventCore.fixed_random = -1.0
 	print("TEST_RESULT=" + JSON.stringify({"passed": checks - failures.size(), "total": checks, "failures": failures}))
 	get_tree().quit(0 if failures.is_empty() else 1)
@@ -320,3 +323,93 @@ func ui_layout() -> void:
 	page._pool_pick(page.rows[1])
 	check("ui2.pool.pick", page.detail_key.begins_with("item:") and page.page == mini(1, page.pages - 1), [page.page, page.pages])
 	page.queue_free()
+
+
+## T224 按层合账（XAbyssMerchant.LAYER_LEDGER）：每层两份——深渊一份（同层各深渊图）、未知存在一份（普通和不朽共用）；
+## 旧存档分开的点数并进对应那份；按难度、出现概率给点（TIERED_REWARD）：13 层低 8 高 14，15～22 层低 8 高 11，其余 10
+func layer_cases() -> void:
+	var s := fresh()
+	s.flags[XAbyssMerchant.LEDGER_FLAG] = {"sequence": 3, "balances": {"abyss:37": 20, "abyss:38": 4, "abyss:152:from:37": 10, "immortal:152:from:38": 5, "abyss:999": 3},
+		"misses": {"abyss:37": 1, "abyss:38": 2, "abyss:152:from:37": 1}}
+	var l := XAbyssMerchant.ledger(s)
+	check("layer.merge.abyss", int(l.balances.get("layer:13:abyss", 0)) == 24 and not l.balances.has("abyss:37") and not l.balances.has("abyss:38"), l.balances)
+	check("layer.merge.unknown", int(l.balances.get("layer:13:unknown", 0)) == 15 and not l.balances.has("immortal:152:from:38")
+		and not l.balances.has("abyss:152:from:37"), l.balances)
+	check("layer.merge.other", int(l.balances.get("abyss:999", 0)) == 3 and l.balances.size() == 3, l.balances)
+	check("layer.merge.misses", int(l.misses.get("layer:13:abyss", 0)) == 2 and int(l.misses.get("layer:13:unknown", 0)) == 1 and l.misses.size() == 2, l.misses)
+	check("layer.merge.record", norm(l.merged) == {"abyss:37": 20, "abyss:38": 4, "abyss:152:from:37": 10, "immortal:152:from:38": 5}, l.get("merged"))
+	XAbyssMerchant.ledger(s)
+	check("layer.merge.once", int(l.balances.get("layer:13:abyss", 0)) == 24 and int(l.balances.get("layer:13:unknown", 0)) == 15, l.balances)
+	# 同层 37（低难 8）、38（高难 14）共一份深渊点
+	goto(s, 37)
+	fight(s, 145, 0)
+	check("layer.claim.37", await complete(s, 0.9) and str(XAbyssMerchant.run(s).identity.key) == "layer:13:abyss" and XAbyssMerchant.balance(s, "layer:13:abyss") == 32
+		and toasts.back() == "获得本层深渊战利品点＋8（本层共 32 点）。深渊商人出现了。", [XAbyssMerchant.run(s), l.balances, toasts])
+	# 保底按这一份算：并账后深渊份已连续 2 次没出现（＝pity−1）→ 这次必出
+	check("layer.pity", bool(XAbyssMerchant.run(s).appeared) and int(l.misses.get("layer:13:abyss", -1)) == 0, [XAbyssMerchant.run(s), l.misses])
+	goto(s, 38)
+	fight(s, 152, 0)
+	check("layer.claim.38", await complete(s, 0.9) and XAbyssMerchant.balance(s, "layer:13:abyss") == 46 and toasts.back() == "获得本层深渊战利品点＋14（本层共 46 点）。", [l.balances, toasts])
+	check("layer.miss.38", not bool(XAbyssMerchant.run(s).appeared) and int(l.misses.get("layer:13:abyss", -1)) == 1 and int(l.misses.get("layer:13:unknown", -1)) == 1, l.misses)
+	# 152 普通（来源 37）8、不朽（来源 38）14，共一份未知存在点，跟深渊那份不通
+	goto(s, 152)
+	s.flags[XYunshangOrders.ORIGIN_FLAG] = 37
+	fight(s, 454, 0)
+	var who: Dictionary = XAbyssMerchant.battle.identity
+	check("layer.152.normal", await complete(s, 0.9) and str(who.key) == "layer:13:unknown" and str(who.kind) == "深渊商人"
+		and XAbyssMerchant.balance(s, "layer:13:unknown") == 23 and toasts.back() == "获得本层未知存在战利品点＋8（本层共 23 点）。", [who, l.balances, toasts])
+	check("layer.152.pity", not bool(XAbyssMerchant.run(s).appeared) and int(l.misses.get("layer:13:unknown", -1)) == 2, l.misses)
+	goto(s, 37)
+	goto(s, 152)
+	s.flags[XYunshangOrders.ORIGIN_FLAG] = 38
+	fight(s, 454, 0)
+	who = XAbyssMerchant.battle.identity
+	check("layer.152.immortal", await complete(s, 0.9) and str(who.key) == "layer:13:unknown" and str(who.kind) == "不朽商人"
+		and XAbyssMerchant.balance(s, "layer:13:unknown") == 37 and toasts.back() == "获得本层未知存在战利品点＋14（本层共 37 点）。不朽商人出现了。", [who, l.balances, toasts])
+	check("layer.apart", XAbyssMerchant.balance(s, "layer:13:abyss") == 46 and int(l.misses.get("layer:13:unknown", -1)) == 0 and int(l.misses.get("layer:13:abyss", -1)) == 1,
+		[l.balances, l.misses])
+	# 单图层、其它层
+	s.map_id = 223
+	check("layer.identity.unknown26", str(XAbyssMerchant.identity(s, 647).key) == "layer:26:unknown")
+	s.map_id = 184
+	check("layer.identity.abyss26", str(XAbyssMerchant.identity(s, 0).key) == "layer:26:abyss" and bool(XAbyssMerchant.identity(s, 0).high))
+	s.map_id = 175
+	check("layer.identity.single", str(XAbyssMerchant.identity(s, 0).key) == "layer:25:abyss" and bool(XAbyssMerchant.identity(s, 0).high))
+	s.map_id = 113
+	check("layer.identity.low", str(XAbyssMerchant.identity(s, 0).key) == "layer:天之上:abyss" and not bool(XAbyssMerchant.identity(s, 0).high))
+	# 抽取扣在所属那份；点数不足的提示跟着那份
+	var cur = XAbyssMerchant.run(s)
+	s.map_id = 152
+	check("layer.draw.unknown", XAbyssMerchant.draw(s, 0, "") is Dictionary and XAbyssMerchant.balance(s, "layer:13:unknown") == 7
+		and XAbyssMerchant.balance(s, "layer:13:abyss") == 46, l.balances)
+	check("layer.draw.short", str(XAbyssMerchant.draw(s, 0, "")) == "本层未知存在战利品点不足。")
+	# 升级前就开着的这一轮（身份还是旧键）：读、扣都落到所属那份
+	s.map_id = 37
+	cur.identity = {"key": "abyss:37", "kind": "深渊商人", "map": 37}
+	cur.used = 0
+	check("layer.oldkey.balance", XAbyssMerchant.balance(s, "abyss:37") == 46)
+	var got = XAbyssMerchant.draw(s, 0, "")
+	check("layer.oldkey.draw", got is Dictionary and XAbyssMerchant.balance(s, "layer:13:abyss") == 16 and not l.balances.has("abyss:37"), [got if got is String else "ok", l.balances])
+	# 按难度给点的回退：每场照配置 10
+	# 按层表：每层低／高难点数（同层未知存在普通／不朽同一行），表外 10
+	var want := {37: [8, 14], 50: [8, 11], 52: [8, 11], 56: [8, 11], 58: [8, 11], 164: [8, 11], 167: [8, 11],
+		152: [8, 14], 160: [8, 11], 161: [8, 11], 162: [8, 11], 176: [8, 11], 141: [8, 11],
+		107: [10, 10], 110: [10, 10], 113: [10, 10], 174: [10, 10], 175: [10, 10], 184: [10, 10], 211: [10, 10], 216: [10, 10], 159: [10, 10],
+		177: [10, 10], 223: [10, 10], 210: [10, 10]}
+	var got_t := {}
+	for m in want:
+		got_t[m] = [XAbyssMerchant.reward_of({"map": m, "high": false}), XAbyssMerchant.reward_of({"map": m, "high": true})]
+	check("layer.tier.table", norm(got_t) == norm(want), got_t)
+	check("layer.tier.high_maps", [38, 51, 53, 57, 59, 165, 168].all(func(m): return XAbyssMerchant.high_abyss(m))
+		and not [37, 50, 52, 56, 58, 164, 167, 107, 110, 113].any(func(m): return XAbyssMerchant.high_abyss(m)))
+	# 期望：13 层 2/3×8＋1/3×14、15～22 层 1/3×8＋2/3×11 都正好 10
+	check("layer.tier.mean", (2 * 8 + 14) == 30 and (8 + 2 * 11) == 30)
+	XAbyssMerchant.TIERED_REWARD = false
+	check("layer.tier.off", XAbyssMerchant.reward_of({"map": 38, "high": true}) == 10 and XAbyssMerchant.reward_of({"map": 37, "high": false}) == 10)
+	XAbyssMerchant.TIERED_REWARD = true
+	# 回退：关掉后照原版分开记、每场 10，已并过的不拆回
+	XAbyssMerchant.LAYER_LEDGER = false
+	s.map_id = 37
+	check("layer.off.identity", str(XAbyssMerchant.identity(s, 145).key) == "abyss:37" and int(XAbyssMerchant.ledger(s).balances.get("layer:13:abyss", 0)) == 16
+		and XAbyssMerchant.reward_of(XAbyssMerchant.identity(s, 145)) == 10)
+	XAbyssMerchant.LAYER_LEDGER = true

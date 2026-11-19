@@ -276,7 +276,7 @@ static func tier_rows(s: XState) -> Array:
 	for tier in XAbyssMerchant.LABELS.size():
 		var cost := int(c.costs[tier])
 		out.append({"text": "%d点　必出1条%s" % [cost, XAbyssMerchant.LABELS[tier]], "tier": tier,
-			"help": "消耗本路线战利品点%d；装备本体和具体特效随机。" % cost,
+			"help": (("消耗本层战利品点%d；" if XAbyssMerchant.LAYER_LEDGER else "消耗本路线战利品点%d；") % cost) + "装备本体和具体特效随机。",
 			"enabled": XAbyssMerchant.balance(s, key) >= cost and int(cur.get("used", 0)) < int(c.get("visitLimit", 0))})
 	return out
 
@@ -316,7 +316,7 @@ static func tianqi_rows(s: XState, g: String) -> Array:
 	var t_ok := not XTianqiMerchant.bodies(s, g, "treasure").is_empty()
 	var c_ok := not XTianqiMerchant.collection_choices(s, g).is_empty()
 	return [{"text": "%d点　%s：必出1条特效词条" % [int(tr.cost), str(tr.name)], "shelf": "treasure",
-			"help": "消耗本路线战利品点%d；装备本体和特效词条随机。" % int(tr.cost) if t_ok else "本路线这一组没有能出特效词条的装备。",
+			"help": (("消耗本层战利品点%d；" if XAbyssMerchant.LAYER_LEDGER else "消耗本路线战利品点%d；") % int(tr.cost)) + "装备本体和特效词条随机。" if t_ok else "本路线这一组没有能出特效词条的装备。",
 			"enabled": t_ok and _can_pay(s, int(tr.cost))},
 		{"text": "%d点起　%s：指定1条传说词条" % [int(co.cost), str(co.name)], "shelf": "collection",
 			"help": "先选要哪一条传说词条；稀有词条%d点。本体只出三阶以上的不朽、神话装备。" % int(co.rare_cost) if c_ok else "本路线这一组没有三阶以上的不朽、神话装备，珍藏不可用。",

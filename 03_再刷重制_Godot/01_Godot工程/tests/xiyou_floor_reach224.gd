@@ -219,6 +219,13 @@ func _house() -> void:
 	# 信徒、求道者：对话跑完（没有队员 3 走「否则」分支；求道者选「离开」）
 	await _run_event(map, 6, [], "")
 	await _run_event(map, 7, [1], "")
+	# T224（玩家反馈「苍龙少两个技能」）：化龙「接受」一支——高难度变量 14＝1、斯盖已学龙魂强击 318 → 学天龙帝爪 2839、帝龙威 2840，忘 318
+	var sky := XState.current.actor(12)
+	sky.learn_skill(318)
+	XState.current.set_variable(14, 1)
+	map.refresh_events()
+	await _run_event(map, 7, [0], "")
+	_check("sky_dragon_learned", sky.skill_ids.has(2839) and sky.skill_ids.has(2840) and not sky.skill_ids.has(318), sky.skill_ids)
 	# 没手动存过：出门不存档
 	XSave.current_slot = 0
 	await _run_event(map, 5, [], "")
