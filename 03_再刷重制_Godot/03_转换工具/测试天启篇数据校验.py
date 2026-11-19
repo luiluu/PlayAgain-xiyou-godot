@@ -620,5 +620,33 @@ class CoefInteger(unittest.TestCase):
         self.assertEqual(bad, ['tune.D189.actors/9 不在 actors 里'])
 
 
+
+class GuardianParams(unittest.TestCase):
+    """guardian_params.json（T237／T245）：只认 31～34 层和 qiyin 行，取值是正整数百分比。"""
+
+    def setUp(self):
+        self.t = json.loads((chk.DATA_DIR / 'guardian_params.json').read_text(encoding='utf-8'))
+
+    def test_real_passes(self):
+        self.assertEqual(chk.guardian_params_rules(self.t), [])
+        self.assertIn('qiyin', self.t)
+
+    def test_decimal_fails(self):
+        self.t['qiyin']['def'] = 12.5
+        self.assertTrue(any('qiyin 的 def' in b for b in chk.guardian_params_rules(self.t)))
+
+    def test_unknown_stat_fails(self):
+        self.t['qiyin']['hit'] = 100
+        self.assertTrue(any('hit 不在 stats' in b for b in chk.guardian_params_rules(self.t)))
+
+    def test_floor_out_of_range(self):
+        self.t['floors']['35'] = {'def': 130}
+        self.assertTrue(any('35 层' in b for b in chk.guardian_params_rules(self.t)))
+
+    def test_qiyin_optional(self):
+        del self.t['qiyin']
+        self.assertEqual(chk.guardian_params_rules(self.t), [])
+
+
 if __name__ == '__main__':
     unittest.main()

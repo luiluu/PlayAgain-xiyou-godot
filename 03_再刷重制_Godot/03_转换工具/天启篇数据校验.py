@@ -17,6 +17,7 @@
 - skill_rework.json（全角色技能重构）：只有 B 组，超强者 17（含五条悟）／强者 52 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1。
 - reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
 - brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。
+- guardian_params.json（守层者能力值重锚，T237／T245）：只有 B 组，ref_enemy 是正整数、stats 八项对 0～7、floors 只有 31～34 层、qiyin 行（可没有）和每层只写 stats 里的项（下划线开头的注释键除外）、取值是正整数百分比（附则 E）。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -2066,6 +2067,50 @@ def brand_rules(table: dict, balance: dict = None) -> list:
     return bad
 
 
+# ---- guardian_params.json（守层者能力值重锚，T237；七印里副本 qiyin 行 T245） ----
+
+GP_STATS = {'mhp': 0, 'mmp': 1, 'atk': 2, 'def': 3, 'mat': 4, 'mdf': 5, 'agi': 6, 'luk': 7}
+
+
+def _gp_row(name: str, row, stats: dict) -> list:
+    bad = []
+    if not isinstance(row, dict):
+        return ['%s 不是对象' % name]
+    for k, v in row.items():
+        if str(k).startswith('_'):
+            continue
+        if k not in stats:
+            bad.append('%s 的 %s 不在 stats 里' % (name, k))
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or float(v) != int(v) or int(v) <= 0:
+            bad.append('%s 的 %s＝%r 不是正整数百分比' % (name, k, v))
+    return bad
+
+
+def guardian_params_rules(table: dict) -> list:
+    bad = []
+    ref = table.get('ref_enemy')
+    if isinstance(ref, bool) or not isinstance(ref, int) or ref <= 0:
+        bad.append('ref_enemy＝%r 不是正整数' % (ref,))
+    stats = table.get('stats', {})
+    if stats != GP_STATS:
+        bad.append('stats 不是八项 0～7：%r' % (stats,))
+    floors = table.get('floors', {})
+    if not isinstance(floors, dict):
+        bad.append('floors 不是对象')
+        floors = {}
+    for f, row in floors.items():
+        if f not in ('31', '32', '33', '34'):
+            bad.append('floors 有 %s 层（只认 31～34，代码 rescale_params 只看这四层）' % f)
+        bad += _gp_row('%s 层' % f, row, GP_STATS)
+    if 'qiyin' in table:
+        bad += _gp_row('qiyin', table['qiyin'], GP_STATS)
+    return bad
+
+
+def check_guardian_params(_args) -> bool:
+    return _run_table('guardian_params.json', guardian_params_rules)
+
+
 def check_brand(_args) -> bool:
     bal = DATA_DIR / 'balance_table.json'
     balance = json.loads(bal.read_text(encoding='utf-8')) if bal.is_file() else None
@@ -2105,6 +2150,7 @@ CHECKS = [
     ('single_hit_cap', check_single_hit_cap),
     ('abs_rescale', check_abs_rescale),
     ('brand', check_brand),
+    ('guardian_params', check_guardian_params),
 ]
 
 
