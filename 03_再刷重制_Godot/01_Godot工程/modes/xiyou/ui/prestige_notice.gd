@@ -66,30 +66,13 @@ func step() -> void:
 			count = 0
 			for r in items:
 				count += int(r.count)
-			frames = FRAMES
 			flash_frames = FLASH_FRAMES
-			var on := XUiSkin.on()
-			win.padding = 18.0 if on else XMVWindow.PADDING
-			win.canvas.font = XUiSkin.font("body") if on else XUI.font()
-			win.canvas.clean_text = on
-			if on:
+			if XSkinNoticeLane.on():   # T254 卡 C（R1）：字进提示道，这里只留一下金色闪光
+				XSkinNoticeLane.push(lane_item(items, count))
 				flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-				host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-				var vs := get_viewport().get_visible_rect().size if get_viewport() else Vector2(1280, 720)
-				var w := minf(680.0, vs.x - XSkinLayout.margin_for(vs.x) * 2.0)
-				var h := 176.0
-				win.set_rect(Rect2(roundf((vs.x - w) / 2.0), maxf(24.0, roundf(vs.y * 0.11)), w, h))
 				flash.color = Color(XUiSkin.GOLD, flash.color.a)
 			else:
-				flash.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-				flash.size = Vector2(1280, 720)
-				host.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-				host.size = Vector2(1280, 720)
-				win.set_rect(RECT)
-				flash.color = Color(FLASH_COLOR, flash.color.a)
-			win.visible = true
-			win.canvas.modulate.a = 1.0
-			win.refresh()
+				_open_window()
 	if flash_frames > 0:
 		flash.color.a = floorf(128.0 * flash_frames / FLASH_FRAMES) / 255.0
 		flash_frames -= 1
@@ -100,6 +83,43 @@ func step() -> void:
 		win.canvas.modulate.a = minf(255.0, frames * 12.0) / 255.0
 		if frames == 0:
 			win.visible = false
+
+
+func _open_window() -> void:
+	frames = FRAMES
+	var on := XUiSkin.on()
+	win.padding = 18.0 if on else XMVWindow.PADDING
+	win.canvas.font = XUiSkin.font("body") if on else XUI.font()
+	win.canvas.clean_text = on
+	if on:
+		flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		var vs := get_viewport().get_visible_rect().size if get_viewport() else Vector2(1280, 720)
+		var w := minf(680.0, vs.x - XSkinLayout.margin_for(vs.x) * 2.0)
+		var h := 176.0
+		win.set_rect(Rect2(roundf((vs.x - w) / 2.0), maxf(24.0, roundf(vs.y * 0.11)), w, h))
+		flash.color = Color(XUiSkin.GOLD, flash.color.a)
+	else:
+		flash.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+		flash.size = Vector2(1280, 720)
+		host.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+		host.size = Vector2(1280, 720)
+		win.set_rect(RECT)
+		flash.color = Color(FLASH_COLOR, flash.color.a)
+	win.visible = true
+	win.canvas.modulate.a = 1.0
+	win.refresh()
+
+
+## 提示道的一条（T254 卡 C）：第一件的图标＋「至臻现世 · 获得 N 件」＋前两种的名字（多的接「，另有 k 种」，小A 文字审定稿）
+static func lane_item(rows: Array, n: int) -> Dictionary:
+	var names: Array = []
+	for i in mini(2, rows.size()):
+		var r: Dictionary = rows[i]
+		names.append(str(r.name) + (" × %d" % int(r.count) if int(r.count) > 1 else ""))
+	var sub := "、".join(names) + ("，另有 %d 种" % (rows.size() - 2) if rows.size() > 2 else "")
+	return {"kind": "prestige", "title": "至臻现世 · 获得 %d 件" % n, "sub": sub,
+		"icon": int(rows[0].icon) if not rows.is_empty() else 0, "sub_color": XUiSkin.GOLD_LIGHT}
 
 
 func _paint(c: XMVCanvas) -> void:

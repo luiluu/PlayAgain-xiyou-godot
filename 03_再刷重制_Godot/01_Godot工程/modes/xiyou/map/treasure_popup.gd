@@ -50,7 +50,21 @@ func _display_text() -> String:
 func _tint_color() -> Color:
 	if rec.is_empty():
 		return XUiSkin.GOLD_LIGHT
+	if XSkinNoticeLane.on():
+		return name_color(rec)
 	return XQuality.list_color(rec)
+
+
+## T254 卡 C（R4）：名字走皮肤的品质七档（XUiSkin.quality_color）；没有品质标记的道具按 ici 档对过去，对不上的照旧色
+const ICI_TO_QUALITY := {1: 0, 2: 1, 3: 2, 4: 3, 6: 4, 7: 5}
+
+
+static func name_color(item: Dictionary) -> Color:
+	if XQuality.has_quality(item):
+		return XUiSkin.quality_color(XQuality.show_grade(item))
+	var ici := str(item.get("meta", {}).get("ici", "1")).strip_edges()
+	var k := int(ici) if ici.is_valid_int() else 1
+	return XUiSkin.quality_color(ICI_TO_QUALITY[k]) if ICI_TO_QUALITY.has(k) else XQuality.list_color(item)
 
 
 func _physics_process(_delta: float) -> void:
@@ -80,8 +94,9 @@ func _draw() -> void:
 		var pill_h := 30.0
 		var col := _tint_color()
 		var box := StyleBoxFlat.new()
-		box.bg_color = Color(0.06, 0.062, 0.075, 0.88 * a)
-		box.border_color = Color(col, 0.65 * a)
+		var v2 := XSkinNoticeLane.on()   # T254 卡 C（R4）：深色胶囊＋1px 线，品质色只给名字
+		box.bg_color = Color(XUiSkin.PANEL_LOW, 0.88 * a) if v2 else Color(0.06, 0.062, 0.075, 0.88 * a)
+		box.border_color = Color(XUiSkin.LINE, 0.45 * a) if v2 else Color(col, 0.65 * a)
 		box.set_border_width_all(1)
 		box.set_corner_radius_all(8)
 		box.shadow_color = Color(0, 0, 0, 0.4 * a)

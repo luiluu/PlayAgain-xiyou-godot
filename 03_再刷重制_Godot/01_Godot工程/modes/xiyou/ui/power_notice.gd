@@ -65,6 +65,11 @@ static func notify(a: XActor, before: float, after: float) -> void:
 	if not XPower.ui_enabled():
 		return
 	last_change = {"actorId": a.actor_id, "before": before, "after": after, "delta": after - before}
+	if XSkinNoticeLane.on():   # T254 卡 C（R1）：新皮肤下进提示道；同一人再换装就换成最新的那次
+		var lines := message(a, before, after).split("\n")
+		XSkinNoticeLane.push({"kind": "power", "key": "power|%d" % a.actor_id, "replace": true,
+			"title": lines[0], "sub": lines[1] if lines.size() > 1 else ""})
+		return
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree == null:
 		return

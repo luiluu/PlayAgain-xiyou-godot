@@ -51,6 +51,9 @@ static func saved() -> void:
 	loading = false  # saveGameWithoutRescue 清 _autosaveLoading
 	if not ENABLED:
 		return
+	if XSkinNoticeLane.on():   # T254 卡 C（R1）：新皮肤下进提示道
+		XSkinNoticeLane.push(lane_item(MSG_SAVE))
+		return
 	var n := ensure()
 	if n != null:
 		n.reveal(MSG_SAVE)
@@ -63,12 +66,21 @@ static func map_ready(scene: Node) -> void:
 	loading = false
 	if not ENABLED or scene == null:
 		return
+	if XSkinNoticeLane.on():
+		XSkinNoticeLane.push(lane_item(MSG_LOAD))
+		return
 	var n := scene.get_node_or_null("XAutosaveNotice") as XAutosaveNotice
 	if n == null:
 		n = XAutosaveNotice.new()
 		n.name = "XAutosaveNotice"
 		scene.add_child(n)
 	n.reveal(MSG_LOAD)
+
+
+## 提示道的一条（T254 卡 C）：\\i[n] 的图标＋字
+static func lane_item(msg: String) -> Dictionary:
+	var m := RegEx.create_from_string("\\\\i\\[(\\d+)\\]").search(msg)
+	return {"kind": "save", "title": XMVText.plain(msg), "icon": int(m.get_string(1)) if m != null else 0}
 
 
 var _host: Control

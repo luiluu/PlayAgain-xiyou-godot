@@ -6,7 +6,9 @@ extends Node
 ## - 传送页 XMapTransferScene（含 20:9 宽屏适配与按键提示）
 ## - 顺带 1：物品页 item_bag_return「已生效…」提示条放进 XSkinCard、XHelpCard 暗底可读配色与 20:9 让位
 ## - 顺带 2：挂机设置主/子页 ON/OFF/YES/NO/Open/open 仅在天启篇新皮肤下汉化，重制版／皮肤关闭保持原样
-## 加 -- --out=<目录> 且有窗口时保存新旧并排对比截图（全部 16:9 + 2 页 20:9）。
+## - T254 卡 C（T266）：提示道 XSkinNoticeLane（成就、自动存档、战力、至臻、技能升级、XToast 统一上沿正中排队）、
+##   难度横幅深色胶囊（R2）、宝箱浮字换底（R4）、挂机胶囊写状态（R14）；上面 3、4 两节是开关 NOTICE_V2 关着时的 4B 画法（回退支）
+## 加 -- --out=<目录> 且有窗口时保存新旧并排对比截图（全部 16:9 + 2 页 20:9）；卡 C 另存 c*_ 开头的 800×450（20:9 为 1000×450）对照图。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 var results: Array = []
@@ -106,6 +108,7 @@ func _run() -> void:
 	await _test_map_transfer()
 	await _test_item_notice_and_help_card()
 	await _test_hangup_options()
+	await _test_notice_lane()
 	XUiSkin.ENABLED = true
 	XUiSkin.motion_override = -1
 	XState.current = null
@@ -216,6 +219,7 @@ func _test_choice_window() -> void:
 
 func _run_notices_sample(skinned: bool) -> Image:
 	XUiSkin.ENABLED = skinned
+	XSkinNoticeLane.NOTICE_V2 = false   # 卡 C 开关关着：各提示照 4B 各画各的（回退支）
 	var s := _state(true)
 	var bg := _backdrop()
 	XToast.shown.clear()
@@ -266,6 +270,7 @@ func _run_notices_sample(skinned: bool) -> Image:
 	XSkillNotice.shown.clear()
 	XSkillNotice.queue.clear()
 	XTreasureBatch.queue.clear()
+	XSkinNoticeLane.NOTICE_V2 = true
 	await frames(4)
 	return img
 
@@ -280,6 +285,7 @@ func _test_notices() -> void:
 
 func _run_ach_sample(skinned: bool) -> Image:
 	XUiSkin.ENABLED = skinned
+	XSkinNoticeLane.NOTICE_V2 = false
 	_state(true)
 	var bg := _backdrop()
 	var layer := CanvasLayer.new()
@@ -307,6 +313,7 @@ func _run_ach_sample(skinned: bool) -> Image:
 	var img := await _capture()
 	layer.queue_free()
 	bg.queue_free()
+	XSkinNoticeLane.NOTICE_V2 = true
 	await frames(2)
 	return img
 
@@ -315,6 +322,7 @@ func _test_achievement_popup() -> void:
 	var old_img := await _run_ach_sample(false)
 	var new_img := await _run_ach_sample(true)
 	await _save_side_by_side("04_achievement_popup_16x9", old_img, new_img)
+	XSkinNoticeLane.NOTICE_V2 = false
 	for sk in [false, true]:
 		XUiSkin.ENABLED = sk
 		_state(true)
@@ -343,6 +351,7 @@ func _test_achievement_popup() -> void:
 			pop_layer.queue_free()
 		XAchievementPopup._stack.clear()
 		await frames(2)
+	XSkinNoticeLane.NOTICE_V2 = true
 
 
 # ---- 5. 难度横幅、2B 首领血弧让位、地名横幅、拾取浮字、称号铭牌 ----
@@ -569,3 +578,408 @@ func _test_hangup_options() -> void:
 	var s_old := await _run_hangup_sub(false)
 	var s_new := await _run_hangup_sub(true)
 	await _save_side_by_side("09_hangup_subpage_16x9", s_old, s_new)
+
+
+# ---- 9. T254 卡 C（T266）：提示道、难度横幅、宝箱浮字、挂机胶囊 ----
+
+func _lane() -> XSkinNoticeLane:
+	return XSkinNoticeLane.existing()
+
+
+func _lane_chips() -> int:
+	var l := _lane()
+	if l == null:
+		return 0
+	return l.get_children().filter(func(c): return c is Control and (c as Control).visible).size()
+
+
+func _lane_titles() -> Array:
+	return XSkinNoticeLane.history.map(func(h): return str(h.get("kind", "")) + ":" + str(h.get("title", "")))
+
+
+func _lane_logic() -> void:
+	XUiSkin.ENABLED = true
+	XSkinNoticeLane.NOTICE_V2 = true
+	var s := _state(true)
+	XSkinNoticeLane.auto_tick = false
+	XSkinNoticeLane.reset()
+	XAchievementPopup._stack.clear()
+	# 前面旧画法样例留下的层（4 秒内还在淡出）先清掉，下面只看这一段新建了什么
+	for old in [get_tree().current_scene.get_node_or_null("XAchievementPopups"), get_tree().root.get_node_or_null("XToast")]:
+		if old != null:
+			old.free()
+	check("lane_on", XSkinNoticeLane.on())
+	# 三条同时来：同一帧只显示一条，另两条排队；不再叠窗
+	XAchievementPopup.show_for({"id": 1, "name": "初入西游", "icon": 100})
+	XAchievementPopup.show_for({"id": 2, "name": "第二个成就", "icon": 101})
+	XAchievementPopup.show_for({"id": 3, "name": "第三个成就", "icon": 102})
+	var l := _lane()
+	check("lane_three_one_at_a_time", l != null and str(l.cur.get("title", "")) == "初入西游" and XSkinNoticeLane.queue.size() == 2 and _lane_chips() == 1, [_lane_titles(), XSkinNoticeLane.queue.size(), _lane_chips()])
+	check("lane_ach_no_old_popup", XAchievementPopup._stack.is_empty() and get_tree().current_scene.get_node_or_null("XAchievementPopups") == null)
+	check("lane_ach_item", l != null and str(l.cur.get("sub", "")) != "" and int(l.cur.get("icon", 0)) == 100, l.cur if l else null)
+	if l == null:
+		return
+	l.step(0.5)
+	check("lane_top_center", is_equal_approx(l.chip.position.y, XSkinNoticeLane.Y) and l.chip.position.y + l.chip.size.y <= 58.0 + 0.1
+		and absf(l.chip.position.x + l.chip.size.x / 2.0 - get_viewport().get_visible_rect().size.x / 2.0) <= 1.0, [l.chip.position, l.chip.size])
+	check("lane_alpha_full", is_equal_approx(l.chip.modulate.a, 1.0), l.chip.modulate.a)
+	# 每条 2 秒
+	l.step(1.4)
+	var still := str(l.cur.get("title", ""))
+	l.step(0.15)
+	check("lane_hold_2s", still == "初入西游" and str(l.cur.get("title", "")) == "第二个成就", [still, l.cur.get("title", "")])
+	# 积压超过 2 条：每条 0.7 秒
+	XSkinNoticeLane.reset()
+	for i in 5:
+		XToast.show_text("提示 %d" % i, true)
+	check("lane_backlog_queue", XSkinNoticeLane.queue.size() == 4, XSkinNoticeLane.queue.size())
+	check("lane_backlog_fast", is_equal_approx(l._total(l.cur), XSkinNoticeLane.HOLD_FAST), l._total(l.cur))
+	l.step(0.69)
+	var a := str(l.cur.get("title", ""))
+	l.step(0.02)
+	check("lane_backlog_next", a == "提示 0" and str(l.cur.get("title", "")) == "提示 1", [a, l.cur.get("title", "")])
+	# 积压降到 2 条以内就回到 2 秒
+	l.step(0.71)
+	check("lane_backlog_back_to_2s", XSkinNoticeLane.queue.size() == 2 and is_equal_approx(l._total(l.cur), XSkinNoticeLane.HOLD), [XSkinNoticeLane.queue.size(), l._total(l.cur)])
+	# 同名同类合并成「×N」；正在显示的那条也能并
+	XSkinNoticeLane.reset()
+	XToast.show_text("锁定完成", true)
+	XToast.show_text("已锁定 无法出售", true)
+	XToast.show_text("已锁定 无法出售", true)
+	XToast.show_text("已锁定 无法出售", true)
+	XToast.show_text("锁定完成", true)
+	check("lane_merge_queue_xN", XSkinNoticeLane.queue.size() == 1 and int(XSkinNoticeLane.queue[0].count) == 3, XSkinNoticeLane.queue)
+	check("lane_merge_showing_xN", int(l.cur.get("count", 0)) == 2, l.cur)
+	check("lane_toast_shown_kept", XToast.shown.slice(-5) == ["锁定完成", "已锁定 无法出售", "已锁定 无法出售", "已锁定 无法出售", "锁定完成"])
+	check("lane_toast_no_old_stack", get_tree().root.get_node_or_null("XToast") == null or (get_tree().root.get_node("XToast") as XToast).stack.get_child_count() == 0)
+	# 长句：折两行，不缩字
+	XSkinNoticeLane.reset()
+	XToast.show_text("宝箱收获：太虚裂空剑、星渊护腕、天启圣戒、能量药剂 × 2、生命药剂 × 5、金钱 12000、还有一些很长很长的东西放不下了要用省略号收住的一句话再长一点", true)
+	check("lane_toast_wraps_2", int(l.cur.get("_lines", 0)) == 2 and l.chip.size.x <= XUiSkin.CENTER_MAX + 0.1, [l.cur.get("_lines"), l.chip.size])
+	# T266 核查 P3-3：纯中文截断处接回去不夹半角空格
+	var wf := XUiSkin.font("body")
+	var wl := XSkinNoticeLane.wrap("一二三四五六七八九十甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥", wf, 18, 120.0, 2)
+	check("lane_wrap_cjk_no_space", wl.size() == 2 and not str(wl[1]).contains(" "), wl)
+	# T266 核查 P3-3：正在显示的那条快淡出时并进新内容，至少再亮 MERGE_LEFT 秒
+	XSkinNoticeLane.reset()
+	XToast.show_text("锁定完成", true)
+	l.step(1.8)
+	XToast.show_text("锁定完成", true)
+	check("lane_merge_extends", int(l.cur.get("count", 0)) == 2 and l._total(l.cur) - l.t >= XSkinNoticeLane.MERGE_LEFT - 0.001, [l.cur, l.t])
+	# 自动存档、读档
+	XSkinNoticeLane.reset()
+	XAutosaveNotice.saved()
+	check("lane_autosave", _lane_titles() == ["save:存档成功！"] and int(l.cur.get("icon", 0)) == 907 and get_tree().current_scene.get_node_or_null("XAutosaveNotice") == null, [_lane_titles(), l.cur])
+	# 战力：同一人再换装换成最新那次，不 ×N
+	XSkinNoticeLane.reset()
+	XToast.show_text("占位", true)
+	var old_ui := XPower.SHOW_POWER_UI
+	XPower.SHOW_POWER_UI = true
+	if XPower.ui_enabled():
+		var ac := s.actor(8)
+		XPowerNotice.notify(ac, 100.0, 200.0)
+		XPowerNotice.notify(ac, 200.0, 150.0)
+		var pw: Array = XSkinNoticeLane.queue.filter(func(q): return q.kind == "power")
+		check("lane_power_replace", pw.size() == 1 and int(pw[0].count) == 1 and str(pw[0].title).contains("战力下降") and XPowerNotice.current() == null, pw)
+	XPower.SHOW_POWER_UI = old_ui
+	# 技能升级：同一人同一招并成 from→最新
+	XSkinNoticeLane.reset()
+	XToast.show_text("占位", true)
+	var sk := XSkillNotice.new()
+	add_child(sk)
+	XSkillNotice.queue = [{"actorId": 8, "skillId": 1, "actorName": "孙悟空", "skillName": "如意金箍棒", "from": 2, "to": 3}]
+	sk.pump()
+	XSkillNotice.queue = [{"actorId": 8, "skillId": 1, "actorName": "孙悟空", "skillName": "如意金箍棒", "from": 3, "to": 4}]
+	sk.pump()
+	var sq: Array = XSkinNoticeLane.queue.filter(func(q): return q.kind == "skill")
+	check("lane_skill_merge", sq.size() == 1 and str(sq[0].sub) == XSkillNotice.lane_sub(2, 4) and XSkillNotice.shown.is_empty() and sk.host.get_child_count() == 0, sq)
+	XSkillNotice.clear()
+	check("lane_skill_clear", XSkinNoticeLane.queue.filter(func(q): return q.kind == "skill").is_empty())
+	sk.queue_free()
+	# 至臻：字进提示道，不开大窗
+	XSkinNoticeLane.reset()
+	var pre := XPrestigeNotice.new()
+	add_child(pre)
+	XTreasureBatch._sync_owner(s)
+	XTreasureBatch.queue = {"w1": {"name": "太虚裂空剑", "icon": 160, "count": 1}, "a1": {"name": "星渊护腕", "icon": 9, "count": 2}, "a2": {"name": "天启圣戒", "icon": 100, "count": 1}}
+	pre.step()
+	check("lane_prestige", _lane_titles() == ["prestige:至臻现世 · 获得 4 件"] and not pre.win.visible and str(l.cur.get("sub", "")) == "太虚裂空剑、星渊护腕 × 2，另有 1 种", [_lane_titles(), l.cur])
+	pre.queue_free()
+	XTreasureBatch.queue.clear()
+	# 开关关着：照 4B 各画各的，提示道不收
+	XSkinNoticeLane.reset()
+	XSkinNoticeLane.NOTICE_V2 = false
+	XToast.show_text("回退：照旧", true)
+	check("lane_switch_off", not XSkinNoticeLane.on() and XSkinNoticeLane.history.is_empty() and get_tree().root.get_node_or_null("XToast") != null)
+	XSkinNoticeLane.NOTICE_V2 = true
+	XUiSkin.ENABLED = false
+	check("lane_skin_off", not XSkinNoticeLane.on())
+	XUiSkin.ENABLED = true
+	# 挂机胶囊（R14）的字
+	check("hang_short_time", XHangUpOverlay.short_time("00:12:40") == "12:40" and XHangUpOverlay.short_time("01:02:03") == "1:02:03" and XHangUpOverlay.short_time("---") == "---")
+	check("hang_key_name", XHangUpOverlay.key_name() == "G", XHangUpOverlay.key_name())
+	XUiSkin.touch_override = 1
+	var touch_cap := XHangUpOverlay.show_keycap()
+	XUiSkin.touch_override = 0
+	check("hang_keycap_keyboard_only", not touch_cap and XHangUpOverlay.show_keycap())
+	XUiSkin.touch_override = -1
+	XSkinNoticeLane.reset()
+	XSkinNoticeLane.auto_tick = true
+	var t := get_tree().root.get_node_or_null("XToast")
+	if t != null:
+		t.queue_free()
+	await frames(2)
+
+
+## 一套卡 C 场面：地图 5（雪地），v2＝新画法（提示道开）／false＝旧画法（4B）。windowed 时按 shots 存图
+func _lane_scenes(v2: bool, wide := false) -> Dictionary:
+	var imgs := {}
+	XUiSkin.ENABLED = true
+	XSkinNoticeLane.NOTICE_V2 = v2
+	XSkinNoticeLane.auto_tick = false
+	XSkinNoticeLane.reset()
+	XAchievementPopup._stack.clear()
+	var s := _state(true)
+	s.map_id = 5
+	s.x = 10
+	s.y = 10
+	var win := get_window()
+	var old_sz := win.size
+	var old_aspect := get_tree().root.content_scale_aspect
+	if windowed():
+		win.size = Vector2i(1000, 450) if wide else Vector2i(800, 450)
+		if wide:
+			get_tree().root.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP_HEIGHT
+		await frames(4)
+	var map := XMapScene.new()
+	add_child(map)
+	if wide:
+		XSkinLayout.request_wide(map)
+	await frames(8)
+	var clock: XDifficultyNotice = map.difficulty_notice.clock
+	clock.set_process(false)   # 不按墙钟走，下面手动 paint
+	clock.remaining = 0
+	clock.paint()
+	var tag := "new" if v2 else "old"
+	var lane_step := func(dt := 0.5):
+		var l := _lane()
+		if l != null:
+			l.step(dt)
+	var clear_all := func():
+		XSkinNoticeLane.reset()
+		for n in get_tree().current_scene.get_children():
+			if n.name == "XAchievementPopups" or n.name == "XAutosaveNotice":
+				n.free()
+		XAchievementPopup._stack.clear()
+		var ts := get_tree().root.get_node_or_null("XToast")
+		if ts != null:
+			ts.free()
+	if wide:
+		XAchievementPopup.show_for({"id": 1, "name": "初入西游", "icon": 100})
+		lane_step.call()
+		await frames(40)
+		imgs["c11_wide_20x9"] = await _capture()
+		if v2 and windowed():
+			var l := _lane()
+			var vs := get_viewport().get_visible_rect().size
+			check("lane_wide_center", l != null and vs.x > 1500.0 and absf(l.chip.position.x + l.chip.size.x / 2.0 - vs.x / 2.0) <= 1.0, [vs, l.chip.position if l else null])
+		clear_all.call()
+	else:
+		# 1. 地图上来一条成就
+		XAchievementPopup.show_for({"id": 1, "name": "初入西游", "icon": 100})
+		lane_step.call()
+		await frames(40)
+		imgs["c01_map_one"] = await _capture()
+		if v2:
+			var plate: Control = map.hud.find_child("MapNamePlate", true, false)
+			var l := _lane()
+			if plate != null and l != null:
+				plate.visible = true
+				plate.modulate.a = 1.0
+				plate.position.y = 48.0
+				l._plate_miss = 30   # 不等节流，马上重找
+				l.step(0.0)
+				check("lane_yields_map_plate", l.chip.position.y >= plate.get_global_rect().end.y + 8.0 - 0.5, [l.chip.position, plate.get_global_rect()])
+		clear_all.call()
+		await frames(2)
+		# 2. 同时来三条
+		XAchievementPopup.show_for({"id": 1, "name": "初入西游", "icon": 100})
+		XAchievementPopup.show_for({"id": 2, "name": "百战百胜", "icon": 101})
+		XAutosaveNotice.saved()
+		lane_step.call()
+		await frames(40)
+		imgs["c02_three"] = await _capture()
+		if v2:
+			check("lane_scene_three_one_chip", _lane_chips() == 1 and XSkinNoticeLane.queue.size() == 2, [_lane_chips(), XSkinNoticeLane.queue.size()])
+		clear_all.call()
+		await frames(2)
+		# 3. 积压 5 条（含同名）：提速、合并
+		for m in ["锁定完成", "已锁定 无法出售", "已锁定 无法出售", "已锁定 无法出售", "已保存到存档 1。"]:
+			XToast.show_text(m, true)
+		lane_step.call(2.05)   # 5 条并成 3 条（不到积压线，照 2 秒），第一条走完下一条是合并好的「×3」
+		lane_step.call(0.3)
+		await frames(30)
+		if v2:
+			var l := _lane()
+			check("lane_scene_merged_x3", l != null and int(l.cur.get("count", 0)) == 3, l.cur if l else null)
+		imgs["c03_backlog5"] = await _capture()
+		clear_all.call()
+		await frames(2)
+		# 4. 物品页开着时来一条：不盖列表、不碰面板顶（y 72）
+		var sc := XItemScene.new()
+		map.ui.add_child(sc)
+		await frames(6)
+		XAchievementPopup.show_for({"id": 1, "name": "初入西游", "icon": 100})
+		lane_step.call()
+		await frames(40)
+		imgs["c04_item_page"] = await _capture()
+		if v2:
+			var l := _lane()
+			check("lane_menu_top", l != null and l.chip.position.y + l.chip.size.y <= float(XUiSkin.TOP) - 8.0, l.chip.position if l else null)
+			# T266 核查 P3-1：同一行页签右边空档放得下就挪进空档，不压页签、不压货币；放不下照旧居中
+			var pg := _find_template_page(sc)
+			if l != null and pg != null and pg.tabs != null:
+				var tr := pg.tabs.get_global_rect()
+				var cl := pg.get_global_rect().position.x + XSkinNoticeLane.currency_left(pg)
+				var fits := cl - tr.end.x - 2.0 * XSkinNoticeLane.MENU_GAP_PAD >= l.chip.size.x
+				var cx := l.chip.position.x
+				check("lane_menu_gap", is_equal_approx(l.chip.position.y, XSkinNoticeLane.Y) and (cx >= tr.end.x + XSkinNoticeLane.MENU_GAP_PAD - 0.5 and cx + l.chip.size.x <= cl - XSkinNoticeLane.MENU_GAP_PAD + 0.5 if fits else is_equal_approx(cx, roundf((get_viewport().get_visible_rect().size.x - l.chip.size.x) / 2.0))), [fits, l.chip.position, l.chip.size, tr, cl])
+			else:
+				check("lane_menu_gap_page_found", false, [sc])
+		sc.queue_free()
+		clear_all.call()
+		await frames(4)
+		# 5. 对话框开着时来一条
+		var box := XMessageBox.new()
+		add_child(box)
+		await frames(2)
+		box.run({"face": "Actor1", "index": 0, "background": 0, "position": 2, "lines": ["对话框开着时来一条提示，", "提示在上沿，不压对话。"]})
+		await pframes(28)
+		XAchievementPopup.show_for({"id": 1, "name": "初入西游", "icon": 100})
+		lane_step.call()
+		await frames(40)
+		imgs["c05_dialog"] = await _capture()
+		box.queue_free()
+		clear_all.call()
+		await frames(4)
+		# 6. 开箱一次拿 5 样：原地浮字换胶囊，不进提示道
+		var ev_id := 0
+		for ev in map.map_data.get("events", []):
+			if ev is Dictionary and int(ev.get("x", -1)) >= 6 and int(ev.get("x", -1)) <= 14 and int(ev.get("y", -1)) >= 5 and int(ev.get("y", -1)) <= 12:
+				ev_id = int(ev.id)
+				break
+		var hist := XSkinNoticeLane.history.size()
+		var before_pops := map.popups.size()
+		for pair in [[532, 2], [1, 5], [2, 3], [3, 1], [4, 1]]:
+			map.treasure_popup(XDB.rec("Items", pair[0]), pair[1], ev_id)
+		map._flush_popups()
+		await frames(30)
+		imgs["c06_chest5"] = await _capture()
+		check("treasure_not_in_lane_" + tag, XSkinNoticeLane.history.size() == hist and XSkinNoticeLane.queue.is_empty() and map.popups.size() == before_pops + 5, [map.popups.size(), ev_id])
+		for c in map.get_children():
+			if c is XTreasurePopup:
+				c.free()
+		await frames(2)
+		# 7. 切难度的 4 秒横幅（同时来一条，看让位）
+		var dn: XDifficultyNoticeCanvas = map.difficulty_notice
+		clock.remaining = 200   # 横幅亮着的那段（淡入后、淡出前）
+		clock.paint()
+		XAchievementPopup.show_for({"id": 1, "name": "初入西游", "icon": 100})
+		lane_step.call()
+		await frames(40)
+		imgs["c07_difficulty"] = await _capture()
+		if v2:
+			var l := _lane()
+			check("lane_yields_difficulty", l != null and l.chip.position.y >= dn.position.y + dn.size.y + 8.0 - 0.5, [l.chip.position if l else null, dn.position, dn.size])
+			check("diff_v2_pill", dn.size.y == 36.0 and dn.font == XUiSkin.font("body"), dn.size)
+		# 地图上同一时刻只有一处常驻难度：横幅收起后只剩右上 map_hud 那枚
+		clock.remaining = 0
+		clock.paint()
+		check("diff_one_resident_" + tag, not dn.visible and map.map_hud != null)
+		clear_all.call()
+		await frames(2)
+		# 8、9. 挂机胶囊 关／开（地图）
+		map.hang_overlay.refresh()
+		await frames(20)
+		imgs["c08_hang_off"] = await _capture()
+		if v2:
+			check("hang_word_off", map.hang_overlay.v2_word() == "挂机 关", map.hang_overlay.v2_word())
+		s.hang_up_active = true
+		s.hang_up_origin = Vector2i(10, 10)
+		s.hang_up_count = 760 * 60
+		map.hang_overlay.refresh()
+		await frames(20)
+		imgs["c09_hang_on"] = await _capture()
+		if v2:
+			check("hang_word_on", map.hang_overlay.v2_word() == "挂机中 12:40", map.hang_overlay.v2_word())
+			check("hang_button_fits", map.hang_overlay.button.size.x == map.hang_overlay.skin_width(), [map.hang_overlay.button.size, map.hang_overlay.skin_width()])
+		# 10. 战斗里的挂机胶囊
+		var fb := XBattleScene.new()
+		fb.setup(2, true, false, XDB.map(5))
+		fb.visible = true
+		map.ui.add_child(fb)
+		map.ui.move_child(map.hang_overlay, -1)
+		await frames(40)
+		map.hang_overlay.refresh()
+		await frames(10)
+		imgs["c10_battle_hang"] = await _capture()
+		# 11. 首领战里来一条成就：实机挂法（XBattleScene 在 map.ui 下），提示道让到首领信息区（血弧＋状态胶囊＋弱抗行）下面（T266 核查 P1-1）
+		var boss: XEnemy = fb.logic.enemies[0]
+		boss.boss_difficulty_boss = true
+		for sid in [4, 5]:
+			boss.add_state(sid)
+		fb.boss_hp._meter_flags[boss] = true   # 当它是名单首领，照开战那样建血弧
+		fb.boss_hp.setup(fb.logic.enemies)
+		await frames(4)
+		fb.boss_hp.layout_alpha = 255
+		await frames(20)
+		XAchievementPopup.show_for({"id": 1, "name": "初入西游", "icon": 100})
+		if v2 and _lane() != null:
+			_lane()._battle_miss = XSkinNoticeLane.BATTLE_RETRY   # 不等节流，马上重找
+		lane_step.call()
+		await frames(30)
+		imgs["c12_boss_ach"] = await _capture()
+		if v2:
+			var l := _lane()
+			var zone := fb.boss_info_rect()
+			check("lane_finds_battle_under_ui", l != null and fb.get_parent() == map.ui and l._battle_scene(get_tree()) == fb, [fb.get_parent(), l._battle if l else null])
+			check("lane_yields_boss_info", l != null and zone.has_area() and (fb.boss_panel as XSkinBossStatus).arc_shows_boss()
+				and l.chip.position.y >= zone.end.y + 8.0 - 0.5 and not l.chip.get_global_rect().intersects(zone), [l.chip.position if l else null, zone])
+		clear_all.call()
+		fb.queue_free()
+		s.hang_up_active = false
+		s.hang_up_origin = Vector2i(-1, -1)
+		await frames(4)
+	clock.set_process(true)
+	map.queue_free()
+	await frames(4)
+	if windowed():
+		get_tree().root.content_scale_aspect = old_aspect
+		win.size = old_sz
+		await frames(4)
+	XSkinNoticeLane.NOTICE_V2 = true
+	XSkinNoticeLane.auto_tick = true
+	XSkinNoticeLane.reset()
+	return imgs
+
+
+func _find_template_page(n: Node) -> XSkinTemplatePage:
+	if n is XSkinTemplatePage:
+		return n
+	for c in n.get_children():
+		var f := _find_template_page(c)
+		if f != null:
+			return f
+	return null
+
+
+func _test_notice_lane() -> void:
+	await _lane_logic()
+	var old_imgs := await _lane_scenes(false)
+	var new_imgs := await _lane_scenes(true)
+	for k in new_imgs:
+		await _save_side_by_side(k, old_imgs.get(k), new_imgs[k])
+	var old_w := await _lane_scenes(false, true)
+	var new_w := await _lane_scenes(true, true)
+	for k in new_w:
+		await _save_side_by_side(k, old_w.get(k), new_w[k])

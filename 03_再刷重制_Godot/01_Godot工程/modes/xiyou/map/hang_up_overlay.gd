@@ -183,8 +183,86 @@ func press() -> void:
 		_text.queue_redraw()
 
 
+# ---- T254 卡 C（R14）：写状态，不写键名和横线 ----
+## 「挂机 关」／「挂机中 12:40」；键盘时右边一枚小键帽（键名取 tipWord 冒号后那个），触屏不带（整枚可点）
+static func v2_on() -> bool:
+	return XSkinNoticeLane.on() and XSkin4A.hud_on()
+
+
+func v2_word() -> String:
+	if not XHangUp.current_active():
+		return "挂机 关"
+	return "挂机中 " + short_time(_time)
+
+
+## 「00:12:40」→「12:40」；满一小时「1:02:03」
+static func short_time(t: String) -> String:
+	var p := t.split(":")
+	if p.size() != 3 or not p[0].is_valid_int():
+		return t
+	return ("%d:%s:%s" % [int(p[0]), p[1], p[2]]) if int(p[0]) > 0 else (p[1] + ":" + p[2])
+
+
+static func key_name() -> String:
+	var w := str(XHangUp.params().get("tipWord", ""))
+	var i := maxi(w.rfind(":"), w.rfind("："))
+	var k := w.substr(i + 1).strip_edges() if i >= 0 else ""
+	return k if k != "" else "G"
+
+
+static func show_keycap() -> bool:
+	return not XUiSkin.touch()
+
+
+const V2_KEY_FS := 15
+const V2_KEY_H := 22.0
+
+
+func _v2_key_w() -> float:
+	return maxf(V2_KEY_H, ceilf(XUiSkin.font("num").get_string_size(key_name(), HORIZONTAL_ALIGNMENT_LEFT, -1, V2_KEY_FS).x + 12.0))
+
+
+func _v2_width() -> float:
+	var f := XUiSkin.font("body")
+	var w := 14.0 + 10.0 + 10.0 + f.get_string_size(v2_word(), HORIZONTAL_ALIGNMENT_LEFT, -1, XSkin4A.CAP_FS).x + 14.0
+	if show_keycap():
+		w += _v2_key_w() + 2.0
+	return ceilf(w)
+
+
+func _paint_v2(c: XMVCanvas) -> void:
+	var w := _v2_width()
+	var hot := _press > 0 or button.is_pressed()
+	XSkin4A.draw_capsule(c, Rect2(0, 0, w, SKIN_CAP_H).grow(-0.5), hot)
+	var active := XHangUp.current_active()
+	var dot := Vector2(14.0 + 5.0, SKIN_CAP_H / 2.0)
+	if active:
+		c.draw_circle(dot, 7.0, Color(XSkin4A.AMBER, 0.25))
+	c.draw_circle(dot, 4.0, XSkin4A.AMBER if active else Color(XUiSkin.TEXT_3, 0.8))
+	var f := XUiSkin.font("body")
+	var fs := XSkin4A.CAP_FS
+	var base := roundf(SKIN_CAP_H / 2.0 + fs * 0.36)
+	var word := v2_word()
+	XUiSkin.ds(c, f, Vector2(34.0, base), word, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD if active else XUiSkin.TEXT)
+	if show_keycap():
+		var kw := _v2_key_w()
+		var kr := Rect2(w - 12.0 - kw, (SKIN_CAP_H - V2_KEY_H) / 2.0, kw, V2_KEY_H)
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(XUiSkin.PANEL, 0.9)
+		sb.border_color = Color(XUiSkin.LINE, 0.55)
+		sb.set_border_width_all(1)
+		sb.set_corner_radius_all(5)
+		c.draw_style_box(sb, kr)
+		var nf := XUiSkin.font("num")
+		var kn := key_name()
+		var tw := nf.get_string_size(kn, HORIZONTAL_ALIGNMENT_LEFT, -1, V2_KEY_FS).x
+		XUiSkin.ds(c, nf, Vector2(roundf(kr.position.x + (kw - tw) / 2.0), roundf(kr.position.y + V2_KEY_H / 2.0 + V2_KEY_FS * 0.36)), kn, HORIZONTAL_ALIGNMENT_LEFT, -1, V2_KEY_FS, XUiSkin.TEXT_2)
+
+
 # ---- 新界面 4A ----
 func skin_width() -> float:
+	if v2_on():
+		return _v2_width()
 	var f := XUiSkin.font("body")
 	var word := str(XHangUp.params().get("tipWord", ""))
 	return ceilf(14.0 + 10.0 + 10.0 + f.get_string_size(word, HORIZONTAL_ALIGNMENT_LEFT, -1, XSkin4A.CAP_FS).x + 12.0
@@ -224,6 +302,9 @@ func _layout_skin() -> void:
 
 ## 左上胶囊：琥珀点（挂机中亮）＋ 旧金「开启/关闭挂机:G」＋ 次要灰挂机时长
 func _paint_skin(c: XMVCanvas) -> void:
+	if v2_on():
+		_paint_v2(c)
+		return
 	var w := skin_width()
 	var r := Rect2(0, 0, w, SKIN_CAP_H)
 	var hot := _press > 0 or button.is_pressed()

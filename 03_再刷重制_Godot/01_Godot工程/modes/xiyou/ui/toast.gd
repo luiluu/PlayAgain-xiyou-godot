@@ -34,6 +34,12 @@ static func show_text(message: String, in_menu := false, key := "") -> void:
 		key = classify(message)
 	if key != "" and not in_menu and not XConfig.notice_on(key):
 		return
+	if XSkinNoticeLane.on():   # T254 卡 C（R1）：新皮肤下进提示道（上沿正中、一次一条、排队）
+		var text := plain(message)
+		shown.append(text)
+		XSkinNoticeLane.push({"kind": "toast", "title": text,
+			"color": XUiSkin.GOLD if text.begins_with("已生效") or text.begins_with("已使用") else XUiSkin.TEXT})
+		return
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree == null:
 		return

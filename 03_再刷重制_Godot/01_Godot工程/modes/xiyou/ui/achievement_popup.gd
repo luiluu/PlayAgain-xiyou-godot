@@ -36,6 +36,10 @@ static func show_for(d: Dictionary) -> void:
 	var st := settings()
 	if str(st.get("Use Popup", "ON")) != "ON":
 		return
+	if XSkinNoticeLane.on():   # T254 卡 C（R1）：新皮肤下进提示道，不再在画面中下方叠窗
+		XSkinNoticeLane.push(lane_item(d))
+		XSound.play(str(st.get("Popup Sound", "")), 90, 100)
+		return
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree == null or tree.current_scene == null:
 		return
@@ -74,6 +78,24 @@ static func show_for(d: Dictionary) -> void:
 	_stack.append(pop)
 	_stack.sort_custom(func(a, b): return a.position.y < b.position.y)
 	XSound.play(str(st.get("Popup Sound", "")), 90, 100)
+
+
+## 提示道的一条（T254 卡 C）：图标＋成就名（旧金）＋「获得新成就！」；142／143 换成它们的专用徽章，kyo 专属只画徽章
+static func lane_item(d: Dictionary) -> Dictionary:
+	var id := int(d.get("id", -1))
+	var it := {"kind": "ach", "title": str(d.get("name", "")), "sub": str(settings().get("Popup Message", "")), "icon": int(d.get("icon", 0))}
+	var pl := XAchievementBadge.popup_plan(id, WIDTH, HEIGHT)
+	if not pl.is_empty():
+		it.erase("icon")
+		for op in pl.ops:
+			if str(op.get("op", "")) == "drawImage":
+				it["badge"] = str(op.file)
+				break
+		if not bool(pl.message):
+			it["sub"] = ""
+		if id == XAchievementBadge.KYO_ID:
+			it["title"] = ""
+	return it
 
 
 ## 142／143 的专用弹窗（XAchievementBadge.popup_plan）；其余成就为空
