@@ -136,19 +136,31 @@ func _type_icon(a: XActor, t: int) -> int:
 	return 0
 
 
-## R6：类型球里写一个字（战技→战、魔法→魔、功法→功、其他→他；美术出了分类图标再换，待小A审）
+## R6：类型球里写一个字（战技→战、魔法→魔、功法→功、被动→被、其他→他；呼吸法类→呼、伊莉雅被动→专、光环→环；待小A审）。
+## 映射表里没有的类型名取第一个字；同一个环上撞字时（如同时有「呼吸法」「鬼灭呼吸法」）后来的从名字第 2 字起顺找没用过的字（鬼灭呼吸法→灭）
+const TYPE_GLYPH := {"战技": "战", "魔法": "魔", "功法": "功", "被动": "被", "其他": "他", "呼吸法": "呼", "鬼灭呼吸法": "呼", "伊莉雅被动": "专", "光环": "环"}
+
+
 func _put_glyphs(types: Array) -> void:
 	if not XSkinRingNav.INNER_V2:
 		return
+	var used := []
 	for k in mini(ring.items.size(), types.size()):
-		ring.items[k]["glyph"] = glyph_of(scene.type_name(int(types[k])))
+		var g := glyph_of(scene.type_name(int(types[k])), used)
+		used.append(g)
+		ring.items[k]["glyph"] = g
 	ring.queue_redraw()
 
 
-static func glyph_of(type_name: String) -> String:
-	if type_name == "其他":
+static func glyph_of(type_name: String, used := []) -> String:
+	if type_name == "":
 		return "他"
-	return type_name.substr(0, 1) if type_name != "" else "他"
+	var g := str(TYPE_GLYPH.get(type_name, type_name.substr(0, 1)))
+	if used.has(g):   # 撞字：从第 2 字起找没用过的
+		for i in range(1, type_name.length()):
+			if not used.has(type_name.substr(i, 1)):
+				return type_name.substr(i, 1)
+	return g
 
 
 ## R13：技能名颜色走皮肤的品质色（「优秀」已调柔）；没有品质标记的照旧

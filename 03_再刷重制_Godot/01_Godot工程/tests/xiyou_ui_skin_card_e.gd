@@ -40,6 +40,10 @@ func shot(name: String) -> void:
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	var img := get_viewport().get_texture().get_image()
 	check("screenshot_" + name, img.save_png(out_dir.path_join(name + ".png")) == OK, img.get_size())
+	if name.ends_with("_20x9"):   # P1-1：20:9 必须真是 1000×450，不是 16:9 的复本
+		check("shot_size_" + name, img.get_size() == Vector2i(1000, 450), img.get_size())
+	elif name.ends_with("_16x9"):
+		check("shot_size_" + name, img.get_size() == Vector2i(800, 450), img.get_size())
 
 
 ## 16:9（800×450）拍一张，wide 时再拍 20:9（1000×450）
@@ -48,13 +52,19 @@ func shots(name: String, wide := true) -> void:
 		return
 	var win := get_window()
 	var old := win.size
+	var old_aspect := win.content_scale_aspect
 	win.size = Vector2i(800, 450)
 	await frames(14)
 	await shot(name + "_16x9")
 	if wide:
+		win.unresizable = false
+		win.content_scale_aspect = Window.CONTENT_SCALE_ASPECT_KEEP_HEIGHT
 		win.size = Vector2i(1000, 450)
+		DisplayServer.window_set_size(Vector2i(1000, 450))
+		await get_tree().create_timer(0.6).timeout
 		await frames(12)
 		await shot(name + "_20x9")
+	win.content_scale_aspect = old_aspect
 	win.size = old
 	await frames(4)
 
@@ -153,10 +163,20 @@ func _skill() -> void:
 	page._refresh()
 	await frames(3)
 	check("skill_types_ge3", page.types().size() >= 3, page.types())
+	check("skill_strip_keeps_tp", sk.party.show_tp == true)
 	check("skill_no_currency", sk.currencies is Array and sk.currencies.is_empty() and sk.currency_pairs().is_empty(), sk.currencies)
+	var used := []
 	for k in page.types().size():
 		var nm := page.type_name(int(page.types()[k]))
-		check("skill_glyph_%d" % k, str(sk.ring.items[k].get("glyph", "")) == XSkinSkillPage.glyph_of(nm) and nm != "", [sk.ring.items[k], nm])
+		var g := XSkinSkillPage.glyph_of(nm, used)
+		used.append(g)
+		check("skill_glyph_%d" % k, str(sk.ring.items[k].get("glyph", "")) == g and nm != "", [sk.ring.items[k], nm])
+	check("skill_glyphs_unique", used.size() == used.duplicate().filter(func(x): return used.count(x) == 1).size(), used)
+	# P2-1：专有类型显式映射＋撞字避让
+	check("skill_glyph_special", XSkinSkillPage.glyph_of("鬼灭呼吸法") == "呼" and XSkinSkillPage.glyph_of("伊莉雅被动") == "专"
+		and XSkinSkillPage.glyph_of("光环") == "环" and XSkinSkillPage.glyph_of("呼吸法") == "呼" and XSkinSkillPage.glyph_of("被动") == "被")
+	check("skill_glyph_collide", XSkinSkillPage.glyph_of("鬼灭呼吸法", ["呼"]) == "灭" and XSkinSkillPage.glyph_of("伊莉雅被动", ["专"]) == "莉")
+	check("skill_glyph_unmapped_first_char", XSkinSkillPage.glyph_of("奇术") == "奇")
 	check("skill_glyph_other", XSkinSkillPage.glyph_of("其他") == "他" and XSkinSkillPage.glyph_of("魔法") == "魔" and XSkinSkillPage.glyph_of("功法") == "功")
 	check("skill_center_sprite", sk._use_sprite(page.actor()) and sk._sprite_layer != null and sk._sprite_layer.visible, XSkinMainMenu.sv_frame(page.actor()))
 	for k in page.types().size():
@@ -205,6 +225,7 @@ func _equip() -> void:
 	check("equip_13_silhouettes", dim.size() == 13, dim.map(func(it): return [it.key, it.icon]))
 	check("equip_silhouette_weapon", XSkinEquipPage.silhouette_icon(1) > 0 and XSkinEquipPage.silhouette_icon(3) > 0)
 	check("equip_no_currency", sk.currency_pairs().is_empty())
+	check("equip_strip_no_tp", sk.actor_strip.show_tp == false)
 	await shots("card_e_equip_empty13")
 	XFontScale.set_value("global", 130)
 	sk.sync()
@@ -219,17 +240,20 @@ func _equip() -> void:
 func _strip_tp() -> void:
 	var s := _state()
 	var strip := XSkinPartyStrip.new()
-	check("strip_default_no_tp", strip.show_tp == false)
+	check("strip_default_shows_tp", strip.show_tp == true)   # P2-2：别处（战斗内我方状态详情等）保持显示 TP
 	strip.size = Vector2(400, 80)
 	add_child(strip)
 	strip.set_members([XSkinPartyStrip.from_actor(s.members()[0])])
 	await frames(2)
 	# 主菜单上的队伍条：不显示 TP
-	var menu := XSkinMainMenu.new()
-	add_child(menu)
+	var xm := XMenu.new()
+	add_child(xm)
 	await frames(3)
-	check("menu_party_no_tp", menu.party != null and not menu.party.show_tp)
-	menu.queue_free()
+	var menu = xm.skin
+	check("menu_built", menu != null)
+	check("menu_party_no_tp", menu != null and menu.party != null and not menu.party.show_tp)   # 认祖先 XSkinMainMenu 自动关
+	await shots("card_e_menu_no_tp")
+	xm.queue_free()
 	strip.queue_free()
 	await frames(2)
 

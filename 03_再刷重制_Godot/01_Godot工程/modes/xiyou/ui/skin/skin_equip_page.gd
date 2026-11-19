@@ -176,6 +176,7 @@ func _init(s: XEquipScene) -> void:
 func _ready() -> void:
 	super()
 	actor_strip = XSkinPartyStrip.new()
+	actor_strip.show_tp = false   # R15：装备页不显示 TP
 	actor_strip.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layout.left.add_child(actor_strip)
 	ring_top = Control.new()   # 环自己的球画在 draw 信号之后，「空」字、变暗、环心头像放在上面一层
