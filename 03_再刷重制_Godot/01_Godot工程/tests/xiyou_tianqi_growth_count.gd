@@ -85,6 +85,8 @@ func _run() -> void:
 func _raven(s: XState, set_ok: Callable) -> void:
 	var r := _join(s, XRaven.ACTOR)
 	var N := float(G.actor_row("raven").flat["4"])
+	var r_base := float(G.actor_row("raven").base)  # T258：一份、基础段都读 growth.json，不写死
+	var r_share := float(G.actor_row("raven").share)
 	r.change_level(50)
 	s.actor_advance[XRaven.ACTOR] = 5
 	XRaven.sync(r)
@@ -117,21 +119,21 @@ func _raven(s: XState, set_ok: Callable) -> void:
 	_check("raven_floor_ok", XRaven.growth_gain(s, r, 50.0) == 50.0)
 	# 不戴镰刀照涨
 	_check("raven_no_scythe", not XRaven.artifact_equipped(r))
-	s.raven["soul"] = 200000.0
+	s.raven["soul"] = r_base
 	_fresh(r)
 	var lo := r.param(4)
-	s.raven["soul"] = 560000.0
+	s.raven["soul"] = r_base + 36.0 * r_share
 	_fresh(r)
 	_check("raven_flat_no_scythe", r.param(4) - lo == 24.0 * N, [r.param(4) - lo, N])
 	# P2-2：人族 ×1.03 逐层平加正好 L×N（不差 ±1）
 	var races: Dictionary = XRace.state(s).actors
 	races[str(XRaven.ACTOR)] = {"race": 2, "rank": 7}
-	s.raven["soul"] = 200000.0
+	s.raven["soul"] = r_base
 	_fresh(r)
 	var base := r.param(4)
 	var bad := []
 	for L in range(1, 31):
-		s.raven["soul"] = 200000.0 + G.cumulative(L) * 10000.0
+		s.raven["soul"] = r_base + G.cumulative(L) * r_share
 		_fresh(r)
 		if r.param(4) - base != float(L) * N:
 			bad.append([L, r.param(4) - base])
@@ -145,6 +147,8 @@ func _nanoha(s: XState, set_ok: Callable) -> void:
 	var n := _join(s, XNanoha.ACTOR)
 	var row := G.actor_row("nanoha")
 	var Y := float(row.flat["1"])
+	var n_base := float(row.base)
+	var n_share := float(row.share)
 	var key := str(XNanoha.ACTOR)
 	var set_n := func(v): s.flags[XNanoha.ADAPT_FLAG] = {key: float(v)}
 	var cnt := func() -> float: return float(s.flags[XNanoha.ADAPT_FLAG][key])
@@ -177,7 +181,7 @@ func _nanoha(s: XState, set_ok: Callable) -> void:
 	_check("nanoha_base", cnt.call() == 101.0 and XParamPlus.bonus(n, 1) - mp0 == 30.0)
 	# 跨层自己刷新面板（不手动 mark_dirty）
 	set_ok.call(true)
-	set_n.call(2149)
+	set_n.call(n_base + n_share - 1.0)
 	_fresh(n)
 	var mmp0 := n.mmp
 	XNanoha.adapt(n, 1.0)
@@ -190,7 +194,7 @@ func _nanoha(s: XState, set_ok: Callable) -> void:
 	_check("nanoha_off", cnt.call() == 2101.0 and is_equal_approx(XParamPlus.bonus(n, 1) - mp0, 30.0 * 2000.0 / 2100.0), XParamPlus.bonus(n, 1) - mp0)
 	G.ENABLED = true
 	# 存档读写
-	set_n.call(2000 + 36 * 150)
+	set_n.call(n_base + 36.0 * n_share)
 	_fresh(n)
 	var mmp24 := n.mmp
 	var back := kit.roundtrip()
@@ -204,6 +208,11 @@ func _nanoha(s: XState, set_ok: Callable) -> void:
 func _liuying(s: XState, set_ok: Callable) -> void:
 	var a := _join(s, XLiuying.ACTOR)
 	var sd := a.state_data
+	var lrow := G.actor_row("liuying")  # T258：一份、基础段、每层余烬都读 growth.json
+	var l_base := float(lrow.base)
+	var l_share := float(lrow.share)
+	var l_ember := float(lrow.ember)
+	var l_cap := float(lrow.ember_cap)
 	_check("ly_no_4004", not a.has_base_equip("weapon", XLiuying.WEAPON))
 	set_ok.call(false)
 	sd["_codexLbEmber"] = 2990.0
@@ -219,11 +228,11 @@ func _liuying(s: XState, set_ok: Callable) -> void:
 	sd["_codexLbEmberWins"] = 100.0
 	sd["_codexLbEmber"] = 1000.0
 	_check("ly_ember_low", XLiuying.param_plus(a, 0, 0.0) == 1000.0)
-	sd["_codexLbEmberWins"] = 350.0
+	sd["_codexLbEmberWins"] = l_base + l_share
 	sd["_codexLbEmber"] = 3000.0
-	_check("ly_ember_l1", XLiuying.param_plus(a, 0, 0.0) == 3500.0, XLiuying.param_plus(a, 0, 0.0))
-	sd["_codexLbEmberWins"] = 2100.0
-	_check("ly_ember_l24", XLiuying.param_plus(a, 0, 0.0) == 15000.0 and XLiuying.growth_dmg_pct(a) == 24)
+	_check("ly_ember_l1", XLiuying.param_plus(a, 0, 0.0) == l_cap + l_ember, XLiuying.param_plus(a, 0, 0.0))
+	sd["_codexLbEmberWins"] = l_base + 36.0 * l_share
+	_check("ly_ember_l24", XLiuying.param_plus(a, 0, 0.0) == l_cap + 24.0 * l_ember and XLiuying.growth_dmg_pct(a) == 24)
 	# 伤害：普攻也吃 ×(100＋层)/100
 	var atk := XDB.rec("Skills", 1)
 	var enemy = null
@@ -251,7 +260,7 @@ func _liuying(s: XState, set_ok: Callable) -> void:
 
 func _unrace(s: XState) -> void:
 	var n: XActor = s.actor(XNanoha.ACTOR)
-	s.flags[XNanoha.ADAPT_FLAG] = {str(XNanoha.ACTOR): float(2000 + 36 * 150)}
+	s.flags[XNanoha.ADAPT_FLAG] = {str(XNanoha.ACTOR): float(int(G.actor_row("nanoha").base) + 36 * int(G.actor_row("nanoha").share))}
 	_fresh(n)
 	var races: Dictionary = XRace.state(s).actors
 	races[str(XNanoha.ACTOR)] = {"race": 2, "rank": 7}  # 人族 ×1.03

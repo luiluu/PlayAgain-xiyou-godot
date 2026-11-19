@@ -81,14 +81,19 @@ func _run() -> void:
 	var r_mat := float(rrow.flat["4"])
 	var set_adapt := func(n): s.flags[XNanoha.ADAPT_FLAG] = {str(XNanoha.ACTOR): float(n)}
 	var set_soul := func(n): s.raven["soul"] = float(n)
-	var n24 := 2000 + 36 * 150  # 拐点 24 层
-	var r24 := 200000 + 36 * 10000
+	# T258：「一份」按 growth.json 读（T260 回填后不再写死 150／10000），基础段也读表
+	var n_base := int(nrow.base)
+	var n_share := int(nrow.share)
+	var r_base := int(rrow.base)
+	var r_share := int(rrow.share)
+	var n24 := n_base + 36 * n_share  # 拐点 24 层
+	var r24 := r_base + 36 * r_share
 	# ---- 基础段以内恒 0（本卡不接计数，T220 现数不变）----
-	set_adapt.call(2000)
+	set_adapt.call(n_base)
 	_check("nanoha_base_zero", G.param_flat(nanoha, 0) == 0.0 and G.param_flat(nanoha, 1) == 0.0 and G.layers_of("nanoha", nanoha) == 0)
-	set_adapt.call(2149.5)
+	set_adapt.call(n_base + n_share - 0.5)
 	_check("nanoha_half_short", G.layers_of("nanoha", nanoha) == 0 and is_equal_approx(G.next_need_of("nanoha", nanoha), 0.5), G.next_need_of("nanoha", nanoha))
-	set_adapt.call(2150)
+	set_adapt.call(n_base + n_share)
 	_check("nanoha_first_layer", G.layers_of("nanoha", nanoha) == 1 and G.param_flat(nanoha, 1) == n_mp)
 	set_soul.call(0)
 	_check("raven_zero", G.param_flat(raven, 4) == 0.0)
@@ -102,24 +107,24 @@ func _run() -> void:
 	_check("raven_only_mat", G.param_flat(raven, 4) == 24.0 * r_mat and G.param_flat(raven, 0) == 0.0 and G.param_flat(raven, 2) == 0.0)
 	_check("nanoha_not_mat", G.param_flat(nanoha, 4) == 0.0)
 	# ---- 平加断言①：穿脱带百分比词条的装备 ----
-	var bare_hp := _delta(nanoha, 0, set_adapt, n24, 2000)
-	var bare_mp := _delta(nanoha, 1, set_adapt, n24, 2000)
-	var bare_mat := _delta(raven, 4, set_soul, r24, 200000)
+	var bare_hp := _delta(nanoha, 0, set_adapt, n24, n_base)
+	var bare_mp := _delta(nanoha, 1, set_adapt, n24, n_base)
+	var bare_mat := _delta(raven, 4, set_soul, r24, r_base)
 	_check("flat_bare", bare_hp == 24.0 * n_hp and bare_mp == 24.0 * n_mp and bare_mat == 24.0 * r_mat, [bare_hp, bare_mp, bare_mat])
 	_wear(nanoha, [_x("mhp"), _x("mmp")])
 	_wear(raven, [_x("mat")])
 	var rate_ok := XTianqiAffixBattle.param_rate(nanoha, 1) > 1.0 and XTianqiAffixBattle.param_rate(raven, 4) > 1.0
-	var g_hp := _delta(nanoha, 0, set_adapt, n24, 2000)
-	var g_mp := _delta(nanoha, 1, set_adapt, n24, 2000)
-	var g_mat := _delta(raven, 4, set_soul, r24, 200000)
+	var g_hp := _delta(nanoha, 0, set_adapt, n24, n_base)
+	var g_mp := _delta(nanoha, 1, set_adapt, n24, n_base)
+	var g_mat := _delta(raven, 4, set_soul, r24, r_base)
 	_check("flat_gear", rate_ok and g_hp == 24.0 * n_hp and g_mp == 24.0 * n_mp and g_mat == 24.0 * r_mat, [rate_ok, g_hp, g_mp, g_mat])
 	# ---- 平加断言②：能力强化状态 ----
 	nanoha.buffs[0] = 2
 	nanoha.buffs[1] = 2
 	raven.buffs[4] = 2
-	var b_hp := _delta(nanoha, 0, set_adapt, n24, 2000)
-	var b_mp := _delta(nanoha, 1, set_adapt, n24, 2000)
-	var b_mat := _delta(raven, 4, set_soul, r24, 200000)
+	var b_hp := _delta(nanoha, 0, set_adapt, n24, n_base)
+	var b_mp := _delta(nanoha, 1, set_adapt, n24, n_base)
+	var b_mat := _delta(raven, 4, set_soul, r24, r_base)
 	_check("flat_buff", b_hp == 24.0 * n_hp and b_mp == 24.0 * n_mp and b_mat == 24.0 * r_mat, [b_hp, b_mp, b_mat])
 	nanoha.buffs[0] = 0
 	nanoha.buffs[1] = 0
@@ -128,13 +133,13 @@ func _run() -> void:
 	var races: Dictionary = XRace.state(s).actors
 	for r in [[4, 1], [6, 0], [2, 1]]:
 		races[str(XNanoha.ACTOR)] = {"race": r[0], "rank": 7}
-		var rd := _delta(nanoha, r[1], set_adapt, n24, 2000)
+		var rd := _delta(nanoha, r[1], set_adapt, n24, n_base)
 		_check("flat_race_%d" % r[0], rd == 24.0 * (n_mp if r[1] == 1 else n_hp), [r, rd])
 	races[str(XRaven.ACTOR)] = {"race": 2, "rank": 7}
-	var rm := _delta(raven, 4, set_soul, r24, 200000)
+	var rm := _delta(raven, 4, set_soul, r24, r_base)
 	_check("flat_race_human_mat", rm == 24.0 * r_mat, rm)
 	G.RACE_FLAT = false  # 回退支：种族照旧放大平加
-	var rm_off := _delta(raven, 4, set_soul, r24, 200000)
+	var rm_off := _delta(raven, 4, set_soul, r24, r_base)
 	_check("race_flat_off", rm_off > 24.0 * r_mat, rm_off)
 	G.RACE_FLAT = true
 	races.erase(str(XNanoha.ACTOR))
@@ -142,9 +147,9 @@ func _run() -> void:
 	_strip(nanoha)
 	_strip(raven)
 	# ---- 第 25、26 层（层价表拐点后）----
-	set_adapt.call(2000 + 40 * 150)
+	set_adapt.call(n_base + 40 * n_share)
 	_check("nanoha_l25", G.layers_of("nanoha", nanoha) == 25)
-	set_adapt.call(2000 + 48 * 150 - 1)
+	set_adapt.call(n_base + 48 * n_share - 1)
 	_check("nanoha_l25_edge", G.layers_of("nanoha", nanoha) == 25 and G.next_need_of("nanoha", nanoha) == 1.0)
 	# ---- 存档读写：层数从原有计数现算，不加存档字段 ----
 	set_adapt.call(n24)

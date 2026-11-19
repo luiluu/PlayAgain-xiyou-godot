@@ -20,6 +20,7 @@ extends Node
 ##   --layers=0,12,24,30  直接给层数（不用真去攒）：0 层那一次按老办法挑整套装备和词条（定装），之后每层原样套回，不重挑；
 ##                        渡鸦灌满魂（soul＝表里 base＝20 万再加层数的计数）、奈叶先走满 2000 次基础段再给超出的计数、流萤余烬 3000＋胜场超出的计数。
 ##   --reconfig=24,30     这几层在定装量完以后再「放开重挑」量一次（重配上界），D148 按定装和重配里高的那个判。
+##   --exact／--noisy     浮动关成 0 再乘 (1＋浮动%)（掷满的上限），数每次一样；--layers 缺省开，--noisy 回「取 hits 次里最大」。
 ##   --set-flat=167:4:110,108:1:2000,108:0:700  临时改表里每层平加（只改内存，标定用；定下的数再写进 growth.json）。
 ##   输出 K_LAYER 行：actor、layers、mode(fixed/reconfig)、peak（含烙印）、no_brand（÷烙印乘数）、mat、mhp、mmp。
 
@@ -63,6 +64,10 @@ var brand_pct := -1.0
 var layer_list: Array = []
 var reconfig_list: Array = []
 var set_flat: Array = []
+var noisy := false
+var soul_arg := -1.0  # --soul=N：渡鸦灵魂（缺省：--layers 时灌满 20 万，否则不动）
+var seed_off := 0  # --seed=N：随机流偏移（--noisy 重复量偏差用）
+var exact := false  # --exact：浮动关掉、乘上限（T258；--layers 时缺省开，--noisy 关）
 
 
 func _ready() -> void:
@@ -103,6 +108,14 @@ func _ready() -> void:
 			brand_pct = clampf(float(a.substr(8)), 0.0, 100.0)
 		elif a.begins_with("--ember="):
 			ember = maxf(0.0, float(a.substr(8)))
+		elif a == "--exact":
+			exact = true
+		elif a.begins_with("--seed="):
+			seed_off = int(a.substr(7)) * 1000
+		elif a.begins_with("--soul="):
+			soul_arg = float(a.substr(7))
+		elif a == "--noisy":
+			noisy = true
 		elif a.begins_with("--layers="):
 			layer_list = Array(a.substr(9).split(",")).map(func(x): return int(x))
 		elif a.begins_with("--reconfig="):
@@ -137,6 +150,8 @@ func _run() -> void:
 	XTianqiBase.clear_cache()
 	XTianqiGear.clear_effective_cache()
 	_apply_set_flat()
+	if (not layer_list.is_empty() and not noisy) or exact:
+		exact = true
 	var rules: Dictionary = XTianqiBalance.data().get("combat_rules", {})
 	if k_arg > 0.0:
 		rules["base_damage"] = k_arg
@@ -197,8 +212,8 @@ func _growth(s: XState, a) -> void:
 		for i in nanoha_kills:
 			XNanoha.adapt(a)
 		report["nanoha_kills"] = nanoha_kills
-	elif int(a.actor_id) == 167 and not layer_list.is_empty():  # T258：渡鸦灌满魂（基础段 20 万）
-		s.raven["soul"] = float(XTianqiGrowth.actor_row(XTianqiGrowth.RAVEN).get("base", 200000))
+	elif int(a.actor_id) == 167 and (not layer_list.is_empty() or soul_arg >= 0.0):  # T258：渡鸦灌满魂（基础段 20 万；--soul=N 指定，0＝T220 原口径没灌）
+		s.raven["soul"] = soul_arg if soul_arg >= 0.0 else float(XTianqiGrowth.actor_row(XTianqiGrowth.RAVEN).get("base", 200000))
 	elif XLiuying.own(a):
 		a.state_data["_codexLbEmber"] = ember
 		a.state_data["_codexLbEmberWins"] = 0.0
@@ -241,8 +256,8 @@ static func eff_full(actor_id: int, sid: int) -> float:
 func _state(id: int) -> XState:
 	var s := XState.new_game(XTianqi.legacy_of("zhengdao"), id, [])
 	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": "zhengdao", "lineup": [id]}
-	s.random_master = XRandomStream.hex64(20261117 + id)
-	seed(20261117 + id)
+	s.random_master = XRandomStream.hex64(20261117 + id + seed_off)
+	seed(20261117 + id + seed_off)
 	s.set_variable(20, 36)
 	s.actor_max_level = level
 	XTianqiSkills.MASTERY = true  # 翻开关后熟练度和总开关一起开（稿第七节第 2 条）；开局流程会把它拨回默认值，这里再置一次
@@ -451,8 +466,12 @@ func _measure_layers(id: int, tier: String) -> void:
 		first = false
 		_emit_layer(a, int(n), "fixed", row)
 	for n in reconfig_list:
-		_set_layers(s, a, int(n))
-		var row2 := _measure_in(s, a, tier, true)
+		# 重配上界＝玩家照新属性重新配装：新开一份状态（同样的 0 层底子装备）、先把层数给到 n、再整套重挑词条（K 的老办法）
+		var s2 := _state(id)
+		var a2 := s2.actor(id)
+		_set_layers(s2, a2, int(n))
+		var row2 := _measure_in(s2, a2, tier, true)
+		a = a2
 		_emit_layer(a, int(n), "reconfig", row2)
 
 
@@ -650,6 +669,13 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			if per_skill:
 				print("K_SKILL %d %d skip=not_for_opponent" % [id, int(sid)])
 			continue
+		var vmax := 1.0
+		if exact and sk.get("damage") is Dictionary:
+			# T258：浮动是三角分布（±variance%），「取 20 次里最大」的数噪声约 ±3%，比 ±0.7% 的标定容差还大；
+			# exact＝浮动关成 0、最后乘 (1＋variance%)（浮动掷满的上限），同一份状态每次量都一样
+			sk = sk.duplicate(true)
+			vmax = 1.0 + float(int(sk.damage.get("variance", 0))) / 100.0 * emax(EXACT_N)
+			sk.damage["variance"] = 0
 		var d: Dictionary = sp.get("damage", {})
 		# D195：「一直生效」的减成条件（如 3922 三连击时每段 ×1/3、4848 每段 ×0.6）是拿段数换的，按总伤算时要算进去，
 		# 不然「峰值单段（不含减成）× 段数」会多算 3 倍（T175 v12：9、10、19）。--single 照旧口径不算
@@ -699,7 +725,9 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			# v_full：同一个基数（Σ属性×权重 × 等级缩放）乘「条件全中、封到上限」的系数 full÷w
 			var base_lv := v0 / maxf(1e-9, _coef_now(a, e, d, int(sid)))
 			var v_full := v0 if gojo_pairs else base_lv * full / maxf(1e-9, w)  # 茈：印已按满 3 对摆好，量到的就是条件全中
-			var peak := dealt * v_full / v0
+			var peak := dealt * vmax * v_full / v0
+			if per_skill:
+				print("K_HIT %d %d n=%d dealt=%d v0=%d v_full=%d peak=%d" % [id, int(sid), n, dealt, v0, v_full, peak])
 			if per_skill and n == hits - 1:
 				print("K_SKILL %d %d peak=%d dealt=%d eff=%s" % [id, int(sid), roundf(peak), dealt, eff_full(id, int(sid))])
 			if sk_best.is_empty() or peak > float(sk_best.peak):
@@ -717,6 +745,9 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 ## D195：整次施放（logic.execute，强制暴击、木桩回满），收这一次打在木桩上的每一段（type hit、target＝木桩、shown.hp＞0），
 ## 段数比＝合计÷最大一段；跑 CAST_RUNS 遍取中位（随机加段的角色不取最大）。打不到木桩（全随机目标打到别人）按 1
 func _cast_ratio(s: XState, a, sk: Dictionary) -> Dictionary:
+	if exact and sk.get("damage") is Dictionary:  # T258：段数比也去掉浮动（带浮动时每段掷的点数让比值随层数乱跳 ±3%）
+		sk = sk.duplicate(true)
+		sk.damage["variance"] = 0
 	var runs := []
 	for n in CAST_RUNS:
 		var logic := XBattleLogic.new()
@@ -771,6 +802,19 @@ static func _collect_hits(logs, e, out: Array) -> void:
 					out.append(v)
 					if _debug_cast:
 						print("K_SEG skill=%s v=%d" % [x.get("skill", {}).get("id"), v])
+
+
+## T258：浮动是三角分布（两个 0～amp 的整数随机数相加减 amp），取 n 次里最大的期望＝amp×(1−∫F^n)，F 是它的分布函数。n＝20（T220 以来 hits 的缺省）约 0.725、100 约 0.875。
+## exact 用 n＝EXACT_N 的期望：跟 T220 起「取 20 次里最大」同一把尺，只是去掉抽样噪声
+const EXACT_N := 20
+static func emax(n: int) -> float:
+	var steps := 20000
+	var s := 0.0
+	for i in steps:
+		var x := -1.0 + 2.0 * (float(i) + 0.5) / steps
+		var f := (1.0 + x) * (1.0 + x) / 2.0 if x < 0.0 else 1.0 - (1.0 - x) * (1.0 - x) / 2.0
+		s += pow(f, n) * 2.0 / steps
+	return 1.0 - s
 
 
 ## 木桩物防魔防钉到 DEF：敌人的防御要乘难度、首领、天启篇楼层等倍率（还会在第一下时才挂上开战状态），
