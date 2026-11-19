@@ -488,6 +488,12 @@ class SkillReworkGrowth(unittest.TestCase):
         t['tiers']['growth'] = {}
         self.assertTrue(any('growth' in b for b in chk.skill_rework_rules(t)))
 
+    def test_self_states_on_hit(self):
+        t = self._table()
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'self_states_on_hit' in b])
+        t['skills']['6863']['self_states_on_hit'] = False
+        self.assertTrue(any('self_states_on_hit' in b for b in chk.skill_rework_rules(t)))
+
     def test_battle_end_bool(self):
         t = self._table()
         self.assertFalse([b for b in chk.skill_rework_rules(t) if 'battle_end' in b])

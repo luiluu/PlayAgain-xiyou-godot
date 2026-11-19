@@ -1052,6 +1052,12 @@ static func after_apply(logic, u, skill, t, r := {}) -> void:
 		f.targets.append(t)
 	if not f.is_empty() and is_same(f.u, u) and bool(r.get("critical", false)):
 		f.crit = true  # 这次行动打出过暴击（charge.gain_crit）
+	# T264：公共事件强制放的技能（命运之手 1213 → 6863／6864）不走 end_action，技能行带 self_states_on_hit 的在命中时给自己挂（只天启篇、只带这个标记的行）
+	if cards_on() and u is XActor and skill is Dictionary and u.is_alive():
+		var ssp := spec(int(skill.get("id", 0)))
+		if bool(ssp.get("self_states_on_hit", false)):
+			for sid in ssp.get("self_states", []):
+				u.add_state(int(sid))
 	_kill_grow(logic, u, skill, t)
 	_kill_tp(logic, u, skill, t, f)
 	_on_hit(logic, u, skill, t, f)
