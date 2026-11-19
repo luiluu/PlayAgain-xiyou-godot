@@ -256,6 +256,10 @@ SKILL_RAW = {
 }
 
 
+# T247（D229 乙）：敌人自疗 16 招的整数 %＝原数÷用这招的首领原版生命上限的中位数（680 没有首领，取全部使用者中位 438 夹到 100）
+ENEMY_HEAL_PCT = {341: 21, 482: 15, 631: 14, 680: 100, 906: 1, 921: 1, 1040: 1, 1130: 1, 1301: 1, 1715: 1, 1738: 1, 1988: 1, 2433: 1, 2565: 1, 2663: 1, 3968: 22}
+
+
 def skill_new(sid, f, ty, b):
     if sid in SKILL_RAW:
         return {'mode': 'raw', 'reason': SKILL_RAW[sid]}
@@ -269,7 +273,9 @@ def skill_new(sid, f, ty, b):
     whole = int(const // 1) if const == int(const) else const
     q = int(const / b[key] * 100 + 0.5)
     n = {'pct_of': key, 'pct': max(1, min(100, q)), 'base': whole}
-    if q > 100:
+    if sid in ENEMY_HEAL_PCT:  # T247：敌人自疗 16 招按原版占比（交付单 luiluu_t247）覆盖，不留 over100
+        n['pct'] = ENEMY_HEAL_PCT[sid]
+    elif q > 100:
         n['over100'] = q
     return n
 

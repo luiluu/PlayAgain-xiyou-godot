@@ -57,15 +57,16 @@ func _run() -> void:
 	XTianqiBase.clear_cache()
 	_table()
 	var keep_cap := XTianqiBase.ENEMY_HEAL_CAP
-	_check("cap.default_0", keep_cap == 0, keep_cap)  # 临时 0，等 Kyo D229
+	_check("cap.default_100", keep_cap == 100, keep_cap)  # T247（D229 乙）：改回 100
 	_cap0()
-	XTianqiBase.ENEMY_HEAL_CAP = 100  # 下面按表 100% 的断言临时放开封顶，测完恢复
+	XTianqiBase.ENEMY_HEAL_CAP = 100
 	_on()
 	_off_paths()
 	_real_heal()
 	_split()
 	_cap()
 	_p3_2()
+	_t247()
 	XTianqiBase.ENEMY_HEAL_CAP = keep_cap
 	XTianqiBase.PHASE4 = true
 	XTianqiBase.ABS_SKILL = true
@@ -90,7 +91,7 @@ func _table() -> void:
 			bad.append(e.id)
 	_check("table.struct_int", bad.is_empty(), bad)
 	var e1301 := XTianqiBase.abs_entry("skill_fixed_heal", 1301)
-	_check("table.1301", not e1301.is_empty() and int(e1301.new.pct) == 100 and float(e1301.new.base) == 3000000.0 and str(e1301.new.pct_of) == "mhp", e1301)
+	_check("table.1301", not e1301.is_empty() and int(e1301.new.pct) == 1 and float(e1301.new.base) == 3000000.0 and str(e1301.new.pct_of) == "mhp", e1301)
 
 
 func _on() -> void:
@@ -102,7 +103,7 @@ func _on() -> void:
 	var e: XEnemy = lg.enemies[0]
 	var a: XActor = lg.actors[0]
 	var b: XActor = lg.actors[1]
-	# 验收 3：屏障术 1301 敌人自疗，回量＝对象生命上限 × 表里百分比（100%）
+	# 验收 3：屏障术 1301 敌人自疗，回量＝对象生命上限 × 表里百分比（T247：1301 取 1%）
 	var pct := float(XTianqiBase.abs_entry("skill_fixed_heal", 1301).new.pct)
 	var v1301 := _raw(lg, e, 1301, e)
 	_check("on.1301", v1301 == -floorf(float(e.mhp) * pct / 100.0) and e.mhp > 0.0, [v1301, e.mhp, pct])
@@ -197,7 +198,7 @@ func _p3_2() -> void:
 		lg.end_battle(0)
 
 
-## R1 P1-1：实战（lg.apply → XDamage）屏障术 1301 敌人自疗：回量＝生命上限 × 100%，普通敌、带守层者 k 的都回满
+## R1 P1-1：实战（lg.apply → XDamage）屏障术 1301 敌人自疗：回量＝生命上限 × 表值（T247：1301 取 1%），普通敌、带守层者 k 的都按表回，不再被 enemy_heal 二次缩小
 func _real_heal() -> void:
 	XTianqiBase.PHASE4 = true
 	XTianqiBase.ABS_SKILL = true
@@ -209,7 +210,7 @@ func _real_heal() -> void:
 		var eh := XTianqiNoX6.enemy_heal(XDB.rec("Skills", 1301), e, e)
 		e.hp = 1.0
 		var r: Dictionary = lg.apply(e, XDB.rec("Skills", 1301), e)
-		_check("real.1301_k%s" % str(k), eh < 1.0 and e.hp == e.mhp and e.mhp > 1.0, [eh, e.hp, e.mhp, r.get("hp")])
+		_check("real.1301_k%s" % str(k), eh < 1.0 and e.hp == minf(e.mhp, 1.0 + floorf(e.mhp * 0.01)) and e.mhp > 1.0, [eh, e.hp, e.mhp, r.get("hp")])
 		# 回退：ABS_SKILL 关时照旧 3000000 × enemy_heal（不回满或回满都照原口径），只核开关能关
 		XTianqiBase.ABS_SKILL = false
 		e.hp = 1.0
@@ -249,7 +250,7 @@ func _split() -> void:
 	lg.end_battle(0)
 
 
-## ENEMY_HEAL_CAP：敌人给敌人的固定回复百分比封顶（100＝不封顶；默认临时 0，见 _cap0）；我方回复不受影响
+## ENEMY_HEAL_CAP：敌人给敌人的固定回复百分比封顶（100＝不封顶，T247 起默认 100；0 见 _cap0）；我方回复不受影响
 func _cap() -> void:
 	XTianqiBase.PHASE4 = true
 	XTianqiBase.ABS_SKILL = true
@@ -259,13 +260,16 @@ func _cap() -> void:
 	var b: XActor = lg.actors[1]
 	XTianqiBase.ENEMY_HEAL_CAP = 30
 	var v := _raw(lg, e, 1301, e)
-	_check("cap.enemy", v == -floorf(float(e.mhp) * 30.0 / 100.0), [v, e.mhp])
+	_check("cap.enemy", v == -floorf(float(e.mhp) * 1.0 / 100.0), [v, e.mhp])  # 表值 1% 低于封顶，照表
+	XTianqiBase.ENEMY_HEAL_CAP = 10
+	var p3968 := XTianqiBase.skill_abs_part(XDB.rec("Skills", 3968), e, e)
+	_check("cap.enemy_clamped", p3968 == floorf(float(e.mhp) * 10.0 / 100.0), [p3968, e.mhp])  # 3968 表值 22% 被封到 10%
 	_check("cap.actor_free", XTianqiBase.skill_abs_part(XDB.rec("Skills", 1218), a, b) == floorf(float(b.mhp)), XTianqiBase.skill_abs_part(XDB.rec("Skills", 1218), a, b))
 	XTianqiBase.ENEMY_HEAL_CAP = 100
 	lg.end_battle(0)
 
 
-## ENEMY_HEAL_CAP＝0（临时默认，等 Kyo D229）：敌人自疗的底数这部分回 0；1301 实战不回；3570 只剩魔攻项；我方回复照表
+## ENEMY_HEAL_CAP＝0（回退用）：敌人自疗的底数这部分回 0；1301 实战不回；3570 只剩魔攻项；我方回复照表
 func _cap0() -> void:
 	XTianqiBase.PHASE4 = true
 	XTianqiBase.ABS_SKILL = true
@@ -281,4 +285,31 @@ func _cap0() -> void:
 	lg.apply(e, XDB.rec("Skills", 1301), e)
 	_check("cap0.1301_real", e.hp == 1.0, e.hp)
 	_check("cap0.actor_free", XTianqiBase.skill_abs_part(XDB.rec("Skills", 1218), a, b) == floorf(float(b.mhp)))
+	lg.end_battle(0)
+
+
+## T247（D229 乙）：16 招敌人自疗按原版占比填整数 %，ENEMY_HEAL_CAP＝100：表值、实战回量＝生命上限×表值
+func _t247() -> void:
+	XTianqiBase.PHASE4 = true
+	XTianqiBase.ABS_SKILL = true
+	XTianqiBase.ENEMY_HEAL_CAP = 100
+	var want := {341: 21, 482: 15, 631: 14, 680: 100, 906: 1, 921: 1, 1040: 1, 1130: 1, 1301: 1, 1715: 1, 1738: 1, 1988: 1, 2433: 1, 2565: 1, 2663: 1, 3968: 22}
+	var bad := []
+	for id in want:
+		var e := XTianqiBase.abs_entry("skill_fixed_heal", int(id))
+		if e.is_empty() or int(e.new.pct) != int(want[id]) or str(e.new.pct_of) != "mhp" or e.new.has("over100"):
+			bad.append(id)
+	_check("t247.table16", bad.is_empty(), bad)
+	var lg := _logic(true)
+	var e: XEnemy = lg.enemies[0]
+	for id in [1301, 680, 341]:
+		var pct := float(want[id])
+		var v := _raw(lg, e, id, e)
+		var sk: Dictionary = XDB.rec("Skills", id)
+		var base := float(XTianqiBase.abs_entry("skill_fixed_heal", id).new.base)
+		var tail: float = 0.0  # 三招公式都是纯常数，没有属性项
+		_check("t247.real_%d" % id, v == -floorf(float(e.mhp) * pct / 100.0) + tail and e.mhp > 0.0 and base > 0.0 and not sk.is_empty(), [v, e.mhp, pct])
+	e.hp = 1.0
+	lg.apply(e, XDB.rec("Skills", 1301), e)
+	_check("t247.1301_apply", e.hp == minf(float(e.mhp), 1.0 + floorf(float(e.mhp) * 0.01)), [e.hp, e.mhp])
 	lg.end_battle(0)

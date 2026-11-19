@@ -56,8 +56,8 @@ static var ABS_SHUXING := true
 ## 换成「对象该项上限的整数百分比」（abs_rescale.json）。只在总开关开着、天启篇存档时生效；false＝照原公式（回退）
 static var ABS_SKILL := true
 ## T243 R1：敌人给敌人（含自疗）的技能固定回复，换算后的百分比统一封顶（整数 %，100＝不封顶，表里各行 pct 照旧可改）。
-## 临时 0，等 Kyo D229：0＝敌人自疗的底数这部分不回（跟现状实战几乎不回一致），公式里的属性项照旧（乘 enemy_heal）；Kyo 定了直接改这个数
-static var ENEMY_HEAL_CAP := 0
+## T247（D229 乙）：定为 100＝不封顶；16 招敌人自疗的表值已按原版占比填好（占比＝原数÷用这招的首领原版生命上限的中位数）。0＝敌人自疗的底数不回，可作回退
+static var ENEMY_HEAL_CAP := 100
 const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
 const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",
 	"SkillPass\\d+", "passiveAPLUS", "AgainUseAll", "passiveIRUP", "passiveGRUP", "passiveSPBST\\d", "ConsumeReduce\\w+", "passiveEXTTP", "DepassiveHarmRe\\d+",
