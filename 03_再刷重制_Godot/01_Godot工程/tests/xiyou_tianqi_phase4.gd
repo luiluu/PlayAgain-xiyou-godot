@@ -1,6 +1,6 @@
 extends Node
 ## 【cc·T081】天启篇期四暗装接线（XTianqiBase.PHASE4，基础数值重构 v0.4 第七节第 2 条、第十节 T012-b）：
-## 一、总开关默认关；关着每一行都是「关着」那一套（本体 NAN、K 1、U 1、守层者旧表、治疗照乘、绝对值原数、单段不封、九线爆伤不封、秘籍读旧键、面板没有天启注视）。
+## 一、总开关默认关；关着每一行都是「关着」那一套（本体 NAN、K 1、U 100、守层者旧表、治疗照乘、绝对值原数、单段不封、九线爆伤不封、秘籍读旧键、面板没有天启注视）。
 ## 二、开着、天启篇存档：每一行都和总开关一致（rows_state），本体读标准线×职责×速度档，K＝表里的 base_damage（T082 实机标定 0.2）、进 dealt_parts，面板一行「天启注视　伤害 ×K」。
 ## 三、开着但是西游档：一律走关着那一套。
 ## 四、单段有效系数上限：开着时卡面系数×权重×条件超过档位上限压回上限，关着不封；全部卡在上限以内（数据校验同口径）。
@@ -18,9 +18,9 @@ var results: Array = []
 ## T082 实机标定的 K（balance_table combat_rules.base_damage）；改标定只改这两行
 const K_TABLE := 0.13
 const K_TEXT := "0.13"
-## 首领生命临时折算 U（T162 配队器量数不稳，没写，仍是 1）（balance_table combat_rules.boss_hp_temp_unit）；重量只改这两行
-const U_CRIT := 1.0
-const U_NO_CRIT := 1.0
+## 首领生命临时折算 U（整数百分比，先填 100＝不打折，D222 丙）（balance_table combat_rules.boss_hp_temp_unit）；重量只改这两行
+const U_CRIT := 100
+const U_NO_CRIT := 100
 
 func _ready() -> void:
 	_run.call_deferred()
@@ -40,6 +40,7 @@ func _run() -> void:
 	_off()
 	_on()
 	_xiyou()
+	_shuxing()
 	_hit_cap()
 	_class_rate()
 	_realm()
@@ -99,7 +100,7 @@ func _off() -> void:
 	var cls: Array = a.class_data().params
 	_check("off.base_curve", is_equal_approx(a.param_base_direct(2), float(cls[2][a.level])), [a.param_base_direct(2), cls[2][a.level]])
 	_check("off.k", XTianqiBase.k_for(a) == 1.0 and float(XTianqiCombat.dealt_parts(a, s).get("k", 0.0)) == 1.0)
-	_check("off.u", XTianqiBase.boss_hp_unit(false) == 1.0 and XTianqiBase.boss_hp_unit(true) == 1.0)
+	_check("off.u", XTianqiBase.boss_hp_unit(false) == 100 and XTianqiBase.boss_hp_unit(true) == 100)
 	var old := {1: 2.0}
 	_check("off.guardian_old", is_same(XTianqiBase.guardian_table("hp_base", old), old))
 	_check("off.heal_x5", XTianqiBase.heal_skip_types().is_empty())
@@ -142,7 +143,7 @@ func _on() -> void:
 	var rows := XStatusPage.global_bonuses(a)
 	_check("on.gaze_panel", not rows.is_empty() and rows[0] == ["天启注视", "伤害 ×" + K_TEXT], rows.slice(0, 2))
 	# U、守层者、治疗、九线、秘籍、绝对值、单段上限
-	_check("on.u", is_equal_approx(XTianqiBase.boss_hp_unit(false), U_CRIT) and is_equal_approx(XTianqiBase.boss_hp_unit(true), U_NO_CRIT))  # T162 丙档实机量（表里的数）
+	_check("on.u", XTianqiBase.boss_hp_unit(false) == U_CRIT and XTianqiBase.boss_hp_unit(true) == U_NO_CRIT)  # T162 丙档实机量（表里的数）
 	var old := {1: 2.0}
 	_check("on.guardian_fallback", is_same(XTianqiBase.guardian_table("hp_base", old), old))  # guardian_phase4 由 T012-c 补，缺就退回旧表
 	_check("on.heal_x5_off", XTianqiBase.heal_skip_types() == [3, 4])
@@ -335,6 +336,147 @@ func _xiyou() -> void:
 	XTianqiBase.PHASE4 = false
 
 
+## T228：状态备注 <G_ShuXing> 固定加减换成持有者自身该项的整数百分比（abs_rescale.json state_shuxing；ABS_SHUXING 可单独关）
+func _shuxing() -> void:
+	XTianqiBase.clear_cache()
+	var d := XTianqiBase.abs_data()
+	var rows: Array = d.get("entries", []).filter(func(e): return e is Dictionary and e.get("kind") == "state_shuxing")
+	_check("shuxing.rows", rows.size() == 452, rows.size())
+	# R1 P1-1：计数器状态（<G_ShuXing> 写 ±1 当单位，真加值在 _stateCounter 层数里）标 mode＝raw，不换算
+	var raw_ids: Array = rows.filter(func(e): return str(e.new.get("mode", "")) == "raw").map(func(e): return int(e.id))
+	raw_ids.sort()
+	var want_raw := [1763, 1769, 1772, 1775, 1776] + range(1781, 1787) + range(1792, 1808)
+	_check("shuxing.counter_raw", raw_ids == want_raw, raw_ids)
+	rows = rows.filter(func(e): return str(e.new.get("mode", "")) != "raw")
+	var ints := rows.all(func(e): return (e.new.pct as Array).size() == 8 and (e.new.pct as Array).all(func(x): return float(x) == floorf(float(x))))
+	_check("shuxing.int_pct", ints)  # 附则 E：整数
+	var min1_ok := rows.all(func(e):
+		for k in e.get("min1", []):
+			var i := XTianqiBase.STATS.find(k)
+			if absf(float(e.new.pct[i])) != 1.0 or float(e.orig[i]) == 0.0:
+				return false
+		return true)
+	_check("shuxing.min1", min1_ok)
+	var nz := rows.all(func(e):  # 原数不为 0 的格 pct 也不为 0，同号
+		for i in 8:
+			if (float(e.orig[i]) == 0.0) != (float(e.new.pct[i]) == 0.0) or float(e.orig[i]) * float(e.new.pct[i]) < 0.0:
+				return false
+		return true)
+	_check("shuxing.sign", nz)
+	var ref := XTianqiBase.shuxing_ref()
+	_check("shuxing.ref", ref == [10778.0, 4366.0, 1854.0, 550.0, 1854.0, 533.0, 824.0, 282.0], ref)
+	# 终焉 698：攻击 −1000 → −54%
+	XTianqiBase.PHASE4 = true
+	var s := _state()
+	var a: XActor = s.actor(XIAOYAO)
+	a.change_level(81)
+	a.add_state(698)
+	a.param_mark_dirty()
+	_check("shuxing.on", XTianqiBase.shuxing_on())
+	_check("shuxing.pct", a.param_state(2, 1000.0) == -540.0, a.param_state(2, 1000.0))
+	_check("shuxing.zero_cell", a.param_state(3, 1000.0) == 0.0)
+	_check("shuxing.pre_zero", XTianqiBase.shuxing_value(698, 2, -1000.0, 0.0) == 0.0)
+	_check("shuxing.mismatch", XTianqiBase.shuxing_value(698, 2, -500.0, 1000.0) == -270.0)  # 原数对不上按参考值现算：500÷1854＝27%
+	# R1 P2-1：层数先乘再取整：155×54%×3＝251.1→251（先取单层 83 再乘 3 是 249）
+	_check("shuxing.ceng_then_round", XTianqiBase.shuxing_value(698, 2, -1000.0, 155.0, 3.0) == -251.0, XTianqiBase.shuxing_value(698, 2, -1000.0, 155.0, 3.0))
+	a.state_data["_stateCounter"] = {"698": 3}
+	_check("shuxing.ceng_param_state", a.param_state(2, 155.0) == -251.0, a.param_state(2, 155.0))
+	a.state_data["_stateCounter"] = {}
+	# R1 P1-1：计数器状态照 原数×层数（星煌 1776 物防魔防 +1×5000；穷极 1800 生命 +1×5000），不走兜底、不按 1% 放大
+	a.add_state(1776)
+	a.add_state(1800)
+	a.state_data["_stateCounter"] = {"698": 1, "1776": 5000, "1800": 5000}
+	a.param_mark_dirty()
+	_check("shuxing.counter_1776", a.param_state(3, 1200.0) == 5000.0 and a.param_state(5, 1200.0) == 5000.0, [a.param_state(3, 1200.0), a.param_state(5, 1200.0)])
+	_check("shuxing.counter_1800", a.param_state(0, 40000.0) == 5000.0, a.param_state(0, 40000.0))
+	_check("shuxing.counter_no_warn", not XTianqiBase._warned.has("shuxing:1776") and not XTianqiBase._warned.has("shuxing:1800"))
+	a.remove_state(1776)
+	a.remove_state(1800)
+	a.state_data["_stateCounter"] = {}
+	a.param_mark_dirty()
+	_check("shuxing.unknown_id", XTianqiBase.shuxing_value(999999, 2, -500.0, 1000.0) == -270.0)
+	var p_on := a.param(2)
+	XTianqiBase.ABS_SHUXING = false
+	a.param_mark_dirty()
+	_check("shuxing.switch_off", not XTianqiBase.shuxing_on() and a.param_state(2, 1000.0) == -1000.0)
+	var p_off := a.param(2)
+	_check("shuxing.param_changes", p_on != p_off, [p_on, p_off])
+	XTianqiBase.ABS_SHUXING = true
+	XTianqiBase.PHASE4 = false
+	a.param_mark_dirty()
+	_check("shuxing.phase4_off", not XTianqiBase.shuxing_on() and a.param_state(2, 1000.0) == -1000.0)
+	XTianqiBase.PHASE4 = true
+	var x := _state(false)
+	var b: XActor = x.actor(XIAOYAO)
+	b.add_state(698)
+	b.param_mark_dirty()
+	_check("shuxing.xiyou", not XTianqiBase.shuxing_on() and b.param_state(2, 1000.0) == -1000.0)
+	XTianqiBase.PHASE4 = false
+	_shuxing_nanoha()
+
+
+## T228 R1 P1-1：天启篇存档、期四开，奈叶真放 5694 星煌（挂 1776／1775）和 5691 穹极（预约公共事件挂 1792～1807），
+## 挂上的计数器状态层数是脚本按属性算好的真加值，加的必须是 原数×层数（跟 ABS_SHUXING 关着一样），不能按 1% 放大
+func _shuxing_nanoha() -> void:
+	XTianqiBase.PHASE4 = true
+	XTianqiBase.clear_cache()
+	var s := XTianqi.start_new_game(3, "jiusi", [108])  # 九死起超强者能上场
+	XTianqi.take_pending()
+	s.party.clear()
+	s.battle_slots.clear()
+	XTianqi._joining = true
+	s.add_actor(108)
+	XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var n := s.actor(108)
+	n.change_level_mv(81)
+	for sk in [5691, 5694]:
+		if not n.skill_ids.has(sk):
+			n.learn_skill(sk)
+	var logic := XBattleLogic.new()
+	var rand := XBattleRandom.create("0000000000000108")
+	rand.rule = FixedMidStream.new()
+	rand.rule.domain = "rule"
+	logic.setup(2, s, rand)
+	XBattleCommonEvent.take(logic)
+	n.param_mark_dirty()
+	n.param_refresh()
+	n.recover_all()
+	logic.turn = 1
+	var counter_ids := [1763, 1769, 1772, 1775, 1776] + range(1781, 1787) + range(1792, 1808)
+	for sk in [5694, 5691]:
+		n.mp = n.mmp
+		logic.act(n, XDB.rec("Skills", sk), logic.enemies[0])
+		logic.run_events()
+		n.param_mark_dirty()
+		var counters: Dictionary = n.state_data.get("_stateCounter", {})
+		var held: Array = n.state_ids.filter(func(id): return counter_ids.has(int(id)) and float(counters.get(str(id), 0)) > 1.0)
+		var ok := not held.is_empty()
+		var detail := []
+		for id in held:
+			var raw: Array = XPower.state_params(XDB.rec("States", int(id)))
+			var ceng := float(counters.get(str(id)))
+			for i in 8:
+				if float(raw[i]) != 0.0:
+					var got := XTianqiBase.shuxing_value(int(id), i, float(raw[i]), 1000.0, ceng)
+					if got != float(raw[i]) * ceng:
+						ok = false
+						detail.append([id, i, raw[i], ceng, got])
+		_check("shuxing.nanoha_%d" % sk, ok and XTianqiBase.shuxing_on(), [held, detail])
+		var p_on := range(8).map(func(i): return n.param(i))
+		XTianqiBase.ABS_SHUXING = false
+		n.param_mark_dirty()
+		var p_off := range(8).map(func(i): return n.param(i))
+		XTianqiBase.ABS_SHUXING = true
+		n.param_mark_dirty()
+		# 身上带 <G_ShuXing> 的只有计数器状态时，开关前后八项完全一样
+		var others: Array = n.state_ids.filter(func(id): return not counter_ids.has(int(id)) and (XPower.state_params(XDB.rec("States", int(id))) as Array).any(func(v): return float(v) != 0.0))
+		if others.is_empty():
+			_check("shuxing.nanoha_%d_params" % sk, p_on == p_off, [p_on, p_off])
+	XTianqiBase.PHASE4 = false
+
+
 ## 单段上限：开着压回上限、关着不封
 func _hit_cap() -> void:
 	XTianqiBase.PHASE4 = true
@@ -465,7 +607,7 @@ func _e2e(on: bool) -> void:
 	var res := XDamage.calculate(XDB.rec("Skills", 1), a, XEnemy.new().setup(1, 3, 100.0), {"critical": false, "variance": false})
 	var g = res.breakdown.row.get("gaze")
 	_check(tag + "damage_gaze", (g is Dictionary and is_equal_approx(float(g.k), K_TABLE) and str(g.name) == "天启注视") if on else g == null, g)
-	# （6）骑士 U：表里先填 1，临时改成 crit 2／no_crit 3 看本体、影子血量跟着乘
+	# （6）骑士 U（整数百分比）：表里先填 100＝等于原稿；临时改成 crit 6／no_crit 6 看本体、影子血量是 6%（向零取整）
 	var cr: Dictionary = XTianqiBalance.data().combat_rules
 	var keep_u = cr.get("boss_hp_temp_unit")
 	var line := "plague"
@@ -474,11 +616,13 @@ func _e2e(on: bool) -> void:
 	var hp0 := float(XTianqiHorsemen.stats(line, key).hp)
 	var sh0 := float(XTianqiHorsemen.shadow_stats(line, key).hp)
 	XTianqiBase.PHASE4 = on
-	cr["boss_hp_temp_unit"] = {"crit": 2.0, "no_crit": 3.0}
-	var u := 3.0 if bool(XTianqiHorsemen.knight(line).get("crit_immune", false)) else 2.0
+	var hp100 := float(XTianqiHorsemen.stats(line, key).hp)  # U＝100（表里默认）：血量等于原稿
+	_check(tag + "knight_u100", hp100 == hp0, [hp100, hp0])
+	cr["boss_hp_temp_unit"] = {"crit": 6, "no_crit": 6}
+	var u := 6
 	var hp1 := float(XTianqiHorsemen.stats(line, key).hp)
 	var sh1 := float(XTianqiHorsemen.shadow_stats(line, key).hp)
-	_check(tag + "knight_u", hp1 == (roundf(hp0 * u) if on else hp0) and sh1 == (roundf(sh0 * u) if on else sh0), [hp0, hp1, sh0, sh1, u])
+	_check(tag + "knight_u", hp1 == (float(int(hp0) * u / 100) if on else hp0) and sh1 == (float(int(sh0) * u / 100) if on else sh0), [hp0, hp1, sh0, sh1, u])
 	if keep_u == null:
 		cr.erase("boss_hp_temp_unit")
 	else:

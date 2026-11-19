@@ -95,6 +95,7 @@
   "XTianqiGemPower.full_value": "v",
   "XTianqiWeakAffix.guide_targets": "list",
   "已确认空值安全": {
+    "XGuardianRework.domain_keep": "T229：只在 XGuardianRework.domain_off 为真时由 battle_event_runner._domain_off 调；空壳 domain_off 恒 false（发行里天启篇关着），走不到这里",
     "XTianqiSkills.data": "T209：西游代码里调用方（guyu.gd tq_cap_rate／tq_pct、tianqi_base、tianqi_weak_clear、tianqi_drop）都是 .get 链带默认；谷雨只在天启篇分支 _tq() 读，空表回落稿值 1.0／1.2 和 fallback",
     "XGojo.begin": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",
     "XGojo.end_round": "返回战斗日志数组，调用处 append_array，空数组＝没有日志；非五条悟角色真脚本也返回 []",
