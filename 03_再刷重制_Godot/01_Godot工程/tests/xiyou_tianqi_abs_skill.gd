@@ -293,13 +293,14 @@ func _t247() -> void:
 	XTianqiBase.PHASE4 = true
 	XTianqiBase.ABS_SKILL = true
 	XTianqiBase.ENEMY_HEAL_CAP = 100
-	var want := {341: 21, 482: 15, 631: 14, 680: 1, 906: 1, 921: 1, 1040: 1, 1130: 1, 1301: 1, 1715: 1, 1738: 1, 1988: 1, 2433: 1, 2565: 1, 2663: 1, 3968: 22}
+	var want := {341: 21, 482: 15, 631: 14, 680: 30, 906: 1, 921: 1, 1040: 1, 1130: 1, 1301: 1, 1715: 1, 1738: 1, 1988: 1, 2433: 1, 2565: 1, 2663: 1, 3968: 22}
 	var bad := []
 	for id in want:
 		var e := XTianqiBase.abs_entry("skill_fixed_heal", int(id))
 		if e.is_empty() or int(e.new.pct) != int(want[id]) or str(e.new.pct_of) != "mhp" or e.new.has("over100"):
 			bad.append(id)
 	_check("t247.table16", bad.is_empty(), bad)
+	_t248_cd()
 	var lg := _logic(true)
 	var e: XEnemy = lg.enemies[0]
 	for id in [1301, 680, 341]:
@@ -313,3 +314,25 @@ func _t247() -> void:
 	lg.apply(e, XDB.rec("Skills", 1301), e)
 	_check("t247.1301_apply", e.hp == minf(float(e.mhp), 1.0 + floorf(float(e.mhp) * 0.01)), [e.hp, e.mhp])
 	lg.end_battle(0)
+
+
+## T248（Kyo 11-19）：680 圣光术回生命上限 30%＋3 回合冷却（只天启篇）：放完冷却 3，每回合开始 −1，第 3 个回合开始时清零可再放
+func _t248_cd() -> void:
+	var lg := _logic(true)
+	var e: XEnemy = lg.enemies[0]
+	var sk: Dictionary = XDB.rec("Skills", 680)
+	_check("t248.meta_cd3", str(sk.get("meta", {}).get("Cooldown", "")).strip_edges() == "3", sk.get("meta", {}).get("Cooldown"))
+	e.hp = 1.0
+	_check("t248.heal30", _raw(lg, e, 680, e) == -floorf(float(e.mhp) * 0.30), _raw(lg, e, 680, e))
+	_check("t248.usable_before", e.cooldown_left(680) == 0)
+	e.pay_cooldown(sk)
+	var seq := [e.cooldown_left(680)]
+	for i in 3:
+		e.update_cooldowns()
+		seq.append(e.cooldown_left(680))
+	_check("t248.cd_seq", seq == [3, 2, 1, 0], seq)
+	lg.end_battle(0)
+	var lg2 := _logic(false)
+	var sk2: Dictionary = XDB.rec("Skills", 680)
+	_check("t248.xiyou_no_cd", not sk2.get("meta", {}).has("Cooldown"), sk2.get("meta", {}).get("Cooldown"))
+	lg2.end_battle(0)

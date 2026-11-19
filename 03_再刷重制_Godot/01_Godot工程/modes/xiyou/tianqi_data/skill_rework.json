@@ -108,6 +108,7 @@
   "717": {"actor": 1, "name": "天罡剑阵", "kind": "领袖", "note_remove": ["passiveELUP01"], "note_add": "<passiveELUP01:5%>", "desc": ["效果：物理伤害 +5%"]},
   "102": {"actor": 2, "name": "绿帽术", "kind": "常规", "damage": {"stats": {"mat": 1}, "coef": 2.5}, "mp_pct": 5, "effects": [{"code": 21, "dataId": 7, "value1": 0.1}], "desc": ["效果：愤怒（10%的概率使敌人愤怒）", "伤害：魔法攻击×2.5", "消耗：最大魔法5%"]},
   "161": {"actor": 2, "name": "奥义·大绿帽术", "kind": "常规全体", "damage": {"stats": {"mat": 1}, "coef": 1.2}, "mp_pct": 5, "effects": [{"code": 21, "dataId": 7, "value1": 0.1}], "desc": ["效果：愤怒（10%的概率使敌人愤怒）", "伤害：每个敌人 魔法攻击×1.2", "消耗：最大魔法5%"]},
+  "680": {"name": "圣光术", "kind": "敌人自疗", "cooldown": 3, "header": {"冷却时间": "3回合"}},
   "313": {"actor": 2, "name": "气死回生", "kind": "复活", "heal": {"mhp_pct": 0.3}, "mp_pct": 30, "cooldown": 3, "effects": [{"code": 11, "dataId": 0, "value1": 0, "value2": 0}, {"code": 13, "dataId": 0, "value1": 30}], "header": {"冷却时间": "3回合"}, "desc": ["效果：复活", "回复：生命上限30%、30TP", "消耗：最大魔法30%"]},
   "504": {"actor": 2, "name": "绿光普照", "kind": "爆发", "damage": {"stats": {"mat": 1}, "coef": 5.0}, "mp_pct": 10, "cooldown": 3, "effects": [{"code": 21, "dataId": 7, "value1": 0.3}], "header": {"冷却时间": "3回合"}, "desc": ["效果：愤怒（30%的概率使敌人愤怒）", "伤害：魔法攻击×5.0", "消耗：最大魔法10%"]},
   "2771": {"actor": 2, "name": "领袖:快快上车", "kind": "领袖说明", "desc": ["效果：全队每回合恢复5%的生命、魔法"]},
