@@ -45,6 +45,7 @@ func _run() -> void:
 	XMessageBox.auto = true
 	XGuide.MILESTONE_ENABLED = false
 	XBattleScene.force_auto = true   # 战斗全自动（同 xiyou_floor_run）
+	XShop.auto_close = true          # 商店一开就记进 auto_log 并关掉
 	_data()
 	await _live()
 	XTianqiGuardianGift.ENABLED = true
@@ -83,6 +84,20 @@ func _first_choice(list: Array) -> Dictionary:
 
 # ---------- 一、数据 ----------
 
+const SHOP_OLD := "送礼文化积怨已久，你的到来也许会让现状有所改变吧。我这里有些压箱底的宝贝。给你看看。"
+const SHOP_NEW := "能在这一层堂堂正正胜过我，你的实力倒也配得上这份认可。我这里有些压箱底的宝贝。给你看看。"
+
+
+## 事件所有页的 401 文字
+func _lines(data: Dictionary, id: int) -> Array:
+	var out := []
+	for pg in _ev(data, id).get("pages", []):
+		for c in pg.list:
+			if int(c.code) == 401:
+				out.append(str(c.parameters[0]))
+	return out
+
+
 func _ints(a: Array) -> Array:
 	return a.map(func(v): return int(v) if (v is float or v is int) else v)
 
@@ -98,6 +113,7 @@ func _data() -> void:
 		if JSON.stringify(XDB.map(m)) != JSON.stringify(_raw_map(m)):
 			same.append(m)
 	_check("xiyou_maps_untouched", same.is_empty(), same)
+	_check("xiyou_shop_line_old", _lines(XDB.map(FLOOR_MAP), FLOOR_EV).any(func(t): return t.contains(SHOP_OLD)) and not _lines(XDB.map(FLOOR_MAP), FLOOR_EV).any(func(t): return t.contains(SHOP_NEW)))
 	_check("xiyou_has_gift_choice", (_first_choice(_ev(XDB.map(FLOOR_MAP), FLOOR_EV).pages[0].list).parameters[0] as Array).has("缴纳见面礼"))
 	# 天启篇档
 	Kit.new_game("jiusi")
@@ -173,6 +189,9 @@ func _floor_data(m: int) -> void:
 			break
 	_check("backfill_%d" % m, ok and end > 0 and XTianqiGuardianGift.flag_var(pl.slice(1, end)) == exp[0], pl.slice(0, 6))
 	# 店还在原地（看首胜标记的那个分支照旧）
+	# 开店台词（小A P2-1）：天启篇换新句、名字框前缀留着、旧句不剩
+	var lines := _lines(XDB.map(m), XTianqiGuardianGift.GUARDIANS[m])
+	_check("shop_line_new_%d" % m, lines.any(func(t): return t.begins_with("\\n<") and t.contains(">" + SHOP_NEW)) and not lines.any(func(t): return t.contains(SHOP_OLD)), lines)
 	_check("shop_branch_%d" % m, pl.slice(max(end, 0)).any(func(c): return int(c.code) == 111 and _ints(c.parameters) == [1, exp[0], 0, 1, 0]))
 
 
@@ -260,6 +279,12 @@ func _live() -> void:
 	# 打赢后那页开口：标记已是 1，不补发
 	await _run_event(map, FLOOR_EV, [2])
 	_check("tq_no_double", s.item_count(ORB) == orbs + 3, s.item_count(ORB))
+	# 「向守层者索要礼物」（选项下标 1）：标记已置，开压箱底店（Map064 是 302 物品 1288），台词是新句
+	XShop.auto_log.clear()
+	XMessageBox.transcript.clear()
+	await _run_event(map, FLOOR_EV, [1])
+	_check("tq_ask_opens_shop", XShop.auto_log.size() == 1 and _ints(XShop.auto_log[0].goods[0]).slice(0, 2) == [0, 1288], XShop.auto_log)
+	_check("tq_ask_new_line", XMessageBox.transcript.any(func(t): return str(t).contains(SHOP_NEW)) and not XMessageBox.transcript.any(func(t): return str(t).contains(SHOP_OLD)), XMessageBox.transcript)
 	# 2. 旧天启篇档：已交礼打过（A 开、861＝0）→ 开口补发一次，再开口不重复
 	s.set_variable(FLAG, 0)
 	var before := s.item_count(ORB)

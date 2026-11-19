@@ -11,6 +11,7 @@ extends RefCounted
 ##   之后和新档一样；标记置 1 后不会再补。已交礼还没打的层：礼钱不退，打赢照样给。
 ## 不改 generated 原数据，XDB.map 读图时改缓存里的副本；换档改了天启篇口径时 XTextFix.sync_mode 清地图缓存重读。
 ## 守层者开场的领域（Troops 第 1 回合页看 842）不归这里管（T229）。31～33 层原版没有见面礼，不在名单里。
+## - 第 1 页开店台词「送礼文化积怨已久……」换成小A 定的句子（SHOP_NEW），后半「我这里有些压箱底的宝贝。给你看看。」不动。
 ## 回退开关 ENABLED：false 回到原版（有见面礼）；BACKFILL：false 不给旧档补发。专项 xiyou_tianqi_guardian_gift 两个都设过回退值。
 
 static var ENABLED := true
@@ -19,6 +20,8 @@ static var BACKFILL := true
 const GIFT_CHOICE := "缴纳见面礼"
 const LEAVE_CHOICE := "离开"
 const GIFT_VAR := 842
+const SHOP_OLD := "送礼文化积怨已久，你的到来也许会让现状有所改变吧。"
+const SHOP_NEW := "能在这一层堂堂正正胜过我，你的实力倒也配得上这份认可。"
 ## 地图号 → 守层者事件号（13～30 层）
 const GUARDIANS := {
 	64: 1, 30: 8, 32: 1, 33: 3, 45: 1, 46: 1, 47: 13,
@@ -44,10 +47,21 @@ static func patch_map(map_id: int, data) -> void:
 	var p0: Array = pages[0].get("list", [])
 	_drop_gift_choice(p0)
 	var reward := _force_reward(p0)
+	var pa = _shop_page(pages)
+	if pa == null:
+		return
+	_retext_shop(pa.get("list", []))
 	if BACKFILL and not reward.is_empty():
-		var pa = _shop_page(pages)
-		if pa != null:
-			_add_backfill(pa.get("list", []), reward)
+		_add_backfill(pa.get("list", []), reward)
+
+
+## 开店台词（小A T236 P2-1）：天启篇没有送礼了，原句的前提不在；只换句子本身，名字框前缀「\\n<守层者名>」留着
+static func _retext_shop(list: Array) -> void:
+	for c in list:
+		if int(c.get("code", 0)) == 401 and c.parameters.size() > 0 and str(c.parameters[0]).contains(SHOP_OLD):
+			var p: Array = c.parameters.duplicate()
+			p[0] = str(p[0]).replace(SHOP_OLD, SHOP_NEW)
+			c.parameters = p
 
 
 ## 第 0 页第一个带「缴纳见面礼」的选单：删这一项、删它的分支，后面的分支号往前挪
