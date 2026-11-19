@@ -45,6 +45,8 @@ func _run() -> void:
 	_jingliu_garou()
 	_balance()
 	_readonly()
+	_ce_safety()
+	_module_over_old()
 	_xiyou_untouched()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -214,9 +216,21 @@ func _shield() -> void:
 	_check("shield_points_include_ledger", XSmartAI.shield_points(ally) >= ally.mhp * 0.9, XSmartAI.shield_points(ally))
 	var urgent_after := logic.actors.any(func(t): return t.is_dead() or (t.hp + XSmartAI.shield_points(t)) / maxf(1.0, t.mhp) < 0.25)
 	_check("thick_shield_not_urgent", not urgent_after)
-	var pick := XSmartAI.choose(logic, zl)
-	_check("choose_context_not_urgent", not bool(XSmartAI.new(logic, zl).context.get("urgent", false)) or true)
-	_check("ai_ctx_not_urgent", pick.get("score", 0.0) >= 0.0)
+	# 真决策：云霄（奶妈）看 10% 血队友——无盾时急救分高，账本厚盾时不急救、context.urgent 为假
+	var yxa := _actor(logic, 100)
+	var heal_rec := XDB.rec("Skills", 5567)
+	var ai_h := XSmartAI.new(logic, yxa)
+	var with_shield := ai_h.recovery_utility(ally, heal_rec, false)
+	var ai_on := XSmartAI.new(logic, yxa)
+	ai_on._choose()
+	_check("thick_shield_ctx_not_urgent", not bool(ai_on.context.urgent), ai_on.context.urgent)
+	XShieldLedger.clear(ally)
+	var no_shield := ai_h.recovery_utility(ally, heal_rec, false)
+	var ai_off := XSmartAI.new(logic, yxa)
+	ai_off._choose()
+	_check("no_shield_ctx_urgent", bool(ai_off.context.urgent), ai_off.context.urgent)
+	_check("thick_shield_lowers_heal_score", no_shield > with_shield * 2.0 and no_shield > 0.0, [no_shield, with_shield])
+	XShieldLedger.grant(ally, "T281", ally.mhp * 1.0, 3.0, 0, {"noBonus": true})
 	XSmartAI.o_tianqi_smart_ai = false
 	_check("shield_points_off_native_only", XSmartAI.shield_points(ally) == maxf(0.0, ally.shield))
 	XSmartAI.o_tianqi_smart_ai = true
@@ -298,11 +312,16 @@ func _jingliu_garou() -> void:
 
 ## 141～166 号估伤不再 ×0.01（163 拳一、146 苍龙：存档里能入队的取 163）
 func _balance() -> void:
-	var r := _setup([163, 1, 100])
+	for id in [146, 163]:
+		_balance_actor(id)
+
+
+func _balance_actor(actor_id: int) -> void:
+	var r := _setup([actor_id, 1, 100])
 	var logic: XBattleLogic = r[1]
-	var a := _actor(logic, 163)
+	var a := _actor(logic, actor_id)
 	if a == null:
-		_check("balance_actor_163_joined", false)
+		_check("balance_actor_%d_joined" % actor_id, false)
 		return
 	var tested := 0
 	for sk in a.skills():
@@ -313,13 +332,30 @@ func _balance() -> void:
 		var est := _dmg(logic, a, int(rec.id))
 		if base > 100.0:
 			tested += 1
-			_check("no_balance_%d" % int(rec.id), est >= base * 0.1, [est, base])
-	_check("balance_tested_some", tested > 0, tested)
+			_check("no_balance_%d_%d" % [actor_id, int(rec.id)], est >= base * 0.1, [est, base])
+	# 非 tianqi_skill 模块的技能（146 苍龙 10092～10096 走 canglong 模块）：开关开比关多出 100 倍（原来 ×0.01）
+	for sk in a.skills():
+		var rec2: Dictionary = sk
+		if int(rec2.get("damage", {}).get("type", 0)) not in [1, 2, 5, 6] or str(rec2.damage.get("formulaProgram", {}).get("module", "")) == XTianqiSkills.MODULE:
+			continue
+		var on := _dmg(logic, a, int(rec2.id))
+		XSmartAI.o_tianqi_smart_ai = false
+		var off := _dmg(logic, a, int(rec2.id))
+		XSmartAI.o_tianqi_smart_ai = true
+		if on > 0.0 and off > 0.0:
+			tested += 1
+			_check("balance_ratio_%d_%d" % [actor_id, int(rec2.id)], on / off > 90.0 and on / off < 111.0, [on, off])
+	_check("balance_tested_some_%d" % actor_id, tested > 0, tested)
 
 
 ## 预览零副作用：选招前后 HP／MP／TP／状态／护盾／账本／印记／随机数一致
 func _readonly() -> void:
-	var r := _setup([180, 107, 94], "lianyu")
+	for group in [[180, 107, 94], [168, 172, 167]]:
+		_readonly_group(group)
+
+
+func _readonly_group(group: Array) -> void:
+	var r := _setup(group, "lianyu")
 	var logic: XBattleLogic = r[1]
 	for g in logic.actors:
 		if XGojo.own(g):
@@ -329,23 +365,109 @@ func _readonly() -> void:
 	XShieldLedger.active = true
 	XShieldLedger.grant(logic.actors[1], "T281", 500.0, 3.0, 0, {"noBonus": true})
 	var before := _fingerprint(logic)
+	seed(777)  # 全局 randf 锚点：选招若抽了全局随机，后面这个值就对不上
 	for a in logic.actors:
 		XSmartAI.choose(logic, a)
 		var ai := XSmartAI.new(logic, a)
 		for sk in a.skills():
 			ai.safe_damage(a, logic.enemies[0], sk)
 			ai.shield_estimate(a, logic.actors[1], sk)
-	_check("readonly_fingerprint", before == _fingerprint(logic), [before.size()])
+	var anchor := randf()
+	seed(777)
+	_check("readonly_global_rng_%d" % int(group[0]), is_equal_approx(anchor, randf()), anchor)
+	_check("readonly_fingerprint_%d" % int(group[0]), before == _fingerprint(logic), [before.length()])
 	XShieldLedger.active = false
 
 
-func _fingerprint(logic: XBattleLogic) -> Array:
-	var out := [logic.random.rule.draws, XGojo.cast.size(), XGojo.ai_preview]
-	for b in logic.actors + logic.enemies:
-		out.append([b.hp, b.mp, b.tp, b.state_ids.duplicate(), b.shield, XShieldLedger.amount(b), b.mhp, b.mmp, b.atk, b.def, b.mat, b.mdf, b.agi, b.luk])
+func _battler_print(b: XBattler) -> Dictionary:
+	var params := []
+	for i in range(8):
+		params.append(b.param(i))
+	var out := {"hp": b.hp, "mp": b.mp, "tp": b.tp, "states": b.state_ids.duplicate(), "stateTurns": b.state_turns.duplicate(true),
+		"stateData": b.state_data.duplicate(true), "stateOrigins": b.state_origins.duplicate(true), "buffs": b.buffs.duplicate(),
+		"buffTurns": b.buff_turns.duplicate(), "guarding": b.guarding, "cooldowns": b.cooldowns.duplicate(true),
+		"warmups": b.warmups.duplicate(true), "shield": b.shield, "ledger": XShieldLedger.rows(b), "absorbed": XShieldLedger.absorbed_total.get(b.get_instance_id(), 0.0),
+		"params": params, "xparams": [b.hit, b.eva, b.cri, b.cev, b.mev, b.mrf, b.cnt, b.hrg, b.mrg, b.trg, b.tgr, b.grd, b.rec, b.pha, b.mcr]}
+	if b is XActor:
+		out.skills = (b as XActor).skill_ids.duplicate()
 		if XGojo.own(b):
-			out.append(XGojo.marks(b))
+			out.gojo = XGojo.temp(b).duplicate(true)
 	return out
+
+
+## 全套指纹：双方战斗者全字段＋随机流快照＋变量／开关／物品＋五条悟施放状态
+func _fingerprint(logic: XBattleLogic) -> String:
+	var st := logic.state
+	return JSON.stringify({"actors": logic.actors.map(_battler_print), "enemies": logic.enemies.map(_battler_print), "turn": logic.turn,
+		"random": logic.random.snapshot(), "draws": logic.random.rule.draws, "items": st.items, "variables": st.variables, "switches": st.switches,
+		"cast": XGojo.cast.duplicate(true), "preview": XGojo.ai_preview})
+
+
+## P1-1：公共事件放行收窄到重构表＋白名单入口，递归 117、拦危险指令（345 一掷千金不放行）
+func _ce_safety() -> void:
+	var logic: XBattleLogic = _setup([94, 88, 1])[1]
+	var ai := XSmartAI.new(logic, _actor(logic, 1))
+	var ai2 := XSmartAI.new(logic, _actor(logic, 88))
+	var gold := XDB.rec("Skills", 345)
+	_check("ce_345_exists_not_in_rework", not gold.is_empty() and not XTianqiSkills.has(345))
+	_check("ce_345_blocked", not ai.legal(gold, false))
+	_check("ce_46_dangerous", XSmartAI._ce_dangerous(46, {}))
+	_check("ce_5888_ok", ai2.legal(XDB.rec("Skills", 5888), false))
+	_check("ce_6861_ok", ai.legal(XDB.rec("Skills", 6861), false))
+	var t848 := XDB.rec("Skills", 5848)
+	_check("ce_5848_tq_ok", not t848.is_empty() and XSmartAI.tq_ce_ok(t848, int(t848.damage.type), int(t848.effects.filter(func(e): return int(e.code) == 44)[0].dataId)))
+	# 嵌套 117：找一个调用了子事件、子事件里有危险指令的公共事件
+	var nested := 0
+	for ev in XDB.table("CommonEvents"):
+		if not ev is Dictionary:
+			continue
+		for c in ev.get("list", []):
+			if int(c.code) == 117 and XSmartAI._ce_dangerous(int(c.parameters[0]), {}):
+				nested = int(ev.id)
+				break
+		if nested > 0:
+			break
+	_check("ce_nested_117_found", nested > 0)
+	if nested > 0:
+		_check("ce_nested_117_dangerous", XSmartAI._ce_dangerous(nested, {}), nested)
+	# 重构表里带危险指令的技能（4374 王八拳扣金币）也不放行
+	var fist := XDB.rec("Skills", 4374)
+	if not fist.is_empty() and XTianqiSkills.has(4374):
+		var ce_id := int(fist.effects.filter(func(e): return int(e.code) == 44)[0].dataId)
+		_check("ce_4374_gold_blocked", not XSmartAI.tq_ce_ok(fist, int(fist.damage.type), ce_id))
+
+
+## P1-2：屠苏 176 重构技走天启估伤，不被 XTusu.ai_raw 截成旧西游数万倍；P2-1：米拉／渡鸦不叠旧 boosts；流萤 10622／10623 非 0
+func _module_over_old() -> void:
+	var logic: XBattleLogic = _setup([176, 1, 100])[1]
+	var a := _actor(logic, 176)
+	var done := 0
+	for id in [10312, 10313, 10314, 10315, 10316, 10317, 10318, 10319, 10320, 10321, 10322, 10323, 10324, 10325]:
+		var rec := XDB.rec("Skills", id)
+		if rec.is_empty() or str(rec.get("damage", {}).get("formulaProgram", {}).get("module", "")) != XTianqiSkills.MODULE or int(rec.damage.type) not in [1, 5]:
+			continue
+		var base := XTianqiSkills.formula(a, logic.enemies[0], rec)
+		var est := _dmg(logic, a, id)
+		if base > 0.0:
+			done += 1
+			_check("tusu_%d_same_magnitude" % id, est > 0.0 and est <= base * 40.0, [est, base])
+	_check("tusu_tested_some", done > 0, done)
+	for pair in [[168, 10140], [167, 10122], [179, 10622], [179, 10623]]:
+		var lg: XBattleLogic = _setup([int(pair[0]), 1, 100])[1]
+		var b := _actor(lg, int(pair[0]))
+		var rec := XDB.rec("Skills", int(pair[1]))
+		if str(rec.get("damage", {}).get("formulaProgram", {}).get("module", "")) != XTianqiSkills.MODULE:
+			_check("module_skip_%d" % int(pair[1]), true)  # 这一招没被天启重构成 tianqi_skill 模块，不测叠加
+			continue
+		var t: XBattler = lg.enemies[0]
+		var ai := XSmartAI.new(lg, b)
+		var base := XTianqiSkills.formula(b, t, rec)
+		var est := ai.safe_damage(b, t, rec)
+		var defense: float = t.pdr if int(rec.get("hitType", 0)) == 1 else t.mdr if int(rec.get("hitType", 0)) == 2 else 1.0
+		var el := int(rec.damage.get("elementId", 0))
+		var rate: float = t.element_rate(el) if el > 0 else 1.0
+		var bound: float = base * rate * defense * clampf(XBattleLogic.attack_repeats(b, rec, 1) * ai.seq_hits(b, rec), 1, 32) * 1.31
+		_check("no_old_boosts_%d" % int(pair[1]), est > 0.0 and est <= bound + 0.01, [est, bound, base])
 
 
 ## 西游档（非天启篇存档）：新分支永不进，开关开关结果一致

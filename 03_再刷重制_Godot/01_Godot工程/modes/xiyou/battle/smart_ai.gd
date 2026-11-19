@@ -34,8 +34,9 @@ static var _boss_ids := {}
 static var o_tianqi_smart_ai := true
 ## 纯公共事件入口、本身没有伤害的技能：天启篇放行并按下面的最小估分（命运之手 6861 → 六选一的 6862～6867）
 const TQ_ENTRY_SKILLS := {6861: [6862, 6863, 6864, 6865, 6866, 6867]}
-## 公共事件里出现这些指令（选项、输入数字、选物品）自动战斗会卡住，不放行
-const TQ_CE_BLOCK := [102, 103, 104]
+## 公共事件（含 117 调用的子事件）里出现这些指令自动战斗会卡住、扣钱或离开战斗，不放行：
+## 选项 102、输入数字 103、选物品 104、滚字 105、改金币 125、切图 201、战斗／商店／改名 301～303、撤退 340、菜单／存档／GameOver／标题 351～354
+const TQ_CE_BLOCK := [102, 103, 104, 105, 125, 201, 301, 302, 303, 340, 351, 352, 353, 354]
 ## O-121（优化登记）：异化投影一律读投影估值——目标方向、范围、伤害／治疗／增益全按投影后的技能（逆祷的攻击按治疗友方，
 ## 治疗量照 XAlienBattle.prayer_heal 借治疗技能平分；祸祝按对敌减益与诅咒；恶愿按除自己外的友方，付不起代价记 0 分）。
 ## 原版 Codex_SmartBattleAI 目标方向与范围读投影（action.item()）、估值读原技能（candidate.item），逆祷的攻击近乎 0 分；
@@ -171,12 +172,33 @@ func legal(rec: Dictionary, item: bool) -> bool:
 	return true
 
 
-## 天启篇放行的公共事件技：自己带伤害／治疗的（事件里没有选项输入），或白名单入口技
+## 天启篇放行的公共事件技：只放天启篇重构表里的技能（XTianqiSkills.has）和白名单入口技，且整条公共事件（递归 117）里没有危险指令。
+## 重构表之外的老技能（如 345 一掷千金：扣金币、钱不够弹 101 并全队 3000 致死伤）一律照旧封
 static func tq_ce_ok(rec: Dictionary, dmg_type: int, ce_id: int) -> bool:
-	var ev := XDB.rec("CommonEvents", ce_id)
-	if ev.is_empty() or ev.get("list", []).any(func(c): return int(c.code) in TQ_CE_BLOCK):
+	var id := int(rec.get("id", 0))
+	if not (XTianqiSkills.has(id) or TQ_ENTRY_SKILLS.has(id)):
 		return false
-	return dmg_type in [1, 2, 3, 4, 5, 6] or TQ_ENTRY_SKILLS.has(int(rec.get("id", 0)))
+	if not (dmg_type in [1, 2, 3, 4, 5, 6] or TQ_ENTRY_SKILLS.has(id)):
+		return false
+	return not _ce_dangerous(ce_id, {})
+
+
+static func _ce_dangerous(ce_id: int, seen: Dictionary) -> bool:
+	if seen.has(ce_id):
+		return false
+	seen[ce_id] = true
+	var ev := XDB.rec("CommonEvents", ce_id)
+	if ev.is_empty():
+		return true
+	for c in ev.get("list", []):
+		var code := int(c.code)
+		if code in TQ_CE_BLOCK:
+			return true
+		if code == 117:
+			var ps = c.get("parameters", [])
+			if not ps is Array or ps.is_empty() or _ce_dangerous(int(ps[0]), seen):
+				return true
+	return false
 
 
 static func harmful_state(id: int) -> bool:
@@ -254,13 +276,29 @@ func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	return value * hits
 
 
+## 公式只读预览（正式 choose 暂时把 Math.random 固定为0.5；预览不能抽走实战随机数）；天启篇重构技带五条悟茈预览标记
+func _tq_preview(a: XBattler, t: XBattler, rec: Dictionary) -> float:
+	var dmg: Dictionary = rec.get("damage", {})
+	var preview := rec.duplicate()
+	preview.damage = dmg.duplicate()
+	if dmg.get("formulaGd") is String:
+		preview.damage.formulaGd = dmg.formulaGd.replace("randf()", "0.5")
+	XGojo.ai_preview = tq_on() and _tq_module(rec)  # 五条悟茈：预览期读当前对数（只读）
+	var value := XDamage.eval_formula(preview, a, t, logic.vars())
+	XGojo.ai_preview = false
+	return value
+
+
 func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var dmg: Dictionary = rec.get("damage", {})
 	var type := int(dmg.get("type", 0))
-	var p := profile(a, rec)
+	var tq_rec := tq_on() and _tq_module(rec)  # 天启篇重构技：公式、段数已是重构后的，不叠旧西游的受控估算、档案段数／倍率／穿透、boosts、暴击增量
+	var p := {} if tq_rec else profile(a, rec)
 	var value := 0.0
 	var id := int(rec.get("id", 0))
-	if id >= 10216 and id <= 10219 and _toji_formula_re.search(str(dmg.get("formula", ""))) != null:
+	if tq_rec:
+		value = _tq_preview(a, t, rec)
+	elif id >= 10216 and id <= 10219 and _toji_formula_re.search(str(dmg.get("formula", ""))) != null:
 		value = XToji.ai_damage(a, t, id, int(p.get("extra", 0)))  # 甚尔主技能：受控的估算函数
 	elif (id == XHeartsteel.SKILL or id == XHeartsteel.LEV_SKILL) and _heartsteel_formula_re.search(str(dmg.get("formula", ""))) != null:
 		value = XHeartsteel.ai_damage(a, t, id)  # 巨人吞噬：受控的估算函数
@@ -273,17 +311,9 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	elif XYunshang.ai_raw(logic, a, t, rec) != null:
 		value = float(XYunshang.ai_raw(logic, a, t, rec))  # CodexAIEstimators：云裳公式（防取 0）
 	else:
-		var tq_mod := tq_on() and _tq_module(rec)
-		if not tq_mod and not formula_safe(str(dmg.get("formula", "0"))):
+		if not formula_safe(str(dmg.get("formula", "0"))):
 			return 0.0
-		# 正式 choose 暂时把 Math.random 固定为0.5；预览不能抽走实战随机数。
-		var preview := rec.duplicate()
-		preview.damage = dmg.duplicate()
-		if dmg.get("formulaGd") is String:
-			preview.damage.formulaGd = dmg.formulaGd.replace("randf()", "0.5")
-		XGojo.ai_preview = tq_mod  # 五条悟茈：预览期读当前对数（只读）
-		value = XDamage.eval_formula(preview, a, t, logic.vars())
-		XGojo.ai_preview = false
+		value = _tq_preview(a, t, rec)
 	if type in [3, 4]:
 		value = -value
 	var element := int(dmg.get("elementId", 0))
@@ -293,7 +323,6 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 		defense = t.pdr if int(rec.get("hitType", 0)) == 1 else t.mdr if int(rec.get("hitType", 0)) == 2 else 1.0
 	if float(p.get("pierce", 0.0)) > 0.0 and defense < 1.0:
 		defense += float(p.pierce) * (1.0 - defense)
-	var tq_rec := tq_on() and _tq_module(rec)  # 重构技的段数已写进改写后的 yepEffects；不再叠旧角色的段数包装（流萤 5／8／9、镜流表）
 	var repeats := float(XBattleLogic.attack_repeats(a, rec, 1)) if tq_rec else float(XSmartAIProfiles.repeats(a, rec, XYunshang.repeats(a, rec, XBattleLogic.attack_repeats(a, rec, 1))))  # action.numRepeats：普攻（isAttack，看 attackSkillId）时加追加次数；云裳双针 ×2；黄泉、流萤、渡鸦的段数包装
 	if p.has("hits") and o_profile_hits:
 		repeats = float(p.hits)
@@ -304,7 +333,7 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var mastery := 1.0 + level * (float(m.get_string(1)) if m else 0.10)
 	if tq_on() and XTianqiSkills.mastery_on() and not is_item(rec):
 		mastery = XTianqiSkills.mastery_damage(1.0, int(level))  # 天启篇：每级 +3%、上限 10 级
-	var extra := float(p.get("multiplier", 1.0)) * XSmartAIProfiles.boosts(a, rec)
+	var extra := float(p.get("multiplier", 1.0)) * (1.0 if tq_rec else XSmartAIProfiles.boosts(a, rec))
 	if type == 1 and a is XActor:
 		extra *= maxf(0.0, 1.0 + float(a.passive_cache().get("globalHarmRi", 0.0)))
 	var balance := 0.01 if not tq_on() and a is XActor and int(a.data().get("id", 0)) >= 141 and int(a.data().get("id", 0)) <= 166 and type in [1, 2, 5, 6] else 1.0
@@ -383,7 +412,8 @@ func expected_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	if damage > 0.0:
 		var hit := logic.item_hit(a, rec, t) * (1.0 - logic.item_eva(a, rec, t))
 		var crit := clampf(logic.item_cri(a, rec, t), 0.0, 1.0) if bool(rec.get("damage", {}).get("critical", false)) else 0.0  # 原版 action.itemCri(target)：整条包装链（甚尔、critPush、暴击下限等）
-		v = damage * XSmartAIProfiles.expected_rate(a, rec) * hit * (1.0 + crit * (0.5 + XSmartAIProfiles.crit_bonus(a, rec)))
+		var old := not (tq_on() and _tq_module(rec))  # 天启篇重构技：不叠旧西游米拉／渡鸦的期望倍率和暴击增量
+		v = damage * (XSmartAIProfiles.expected_rate(a, rec) if old else 1.0) * hit * (1.0 + crit * (0.5 + (XSmartAIProfiles.crit_bonus(a, rec) if old else 0.0)))
 	_damage_cache[key] = v
 	return v
 
