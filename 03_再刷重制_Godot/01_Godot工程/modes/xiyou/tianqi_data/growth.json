@@ -26,7 +26,7 @@
       "_note": "渡鸦 167：灵魂（XState.raven.soul）超过 base 的部分成层；没学 need_skill（至尊鸦皇 10136）不成层。flat：每层平加的能力值（键＝能力编号，4 魔法攻击）。N 稿给范围 90～125，T258 标定。",
       "actor": 167,
       "base": 200000,
-      "share": 10000,
+      "share": 4500,
       "need_skill": 10136,
       "flat": {"4": 110}
     },
@@ -34,14 +34,14 @@
       "_note": "奈叶 108：适应次数（存档 flags.codexNanohaAdapt）超过 base 的部分成层（队友击杀半次，计数可以是 x.5）。flat：0 最大生命、1 最大魔法；魔法 Y 稿给范围 1800～2200，生命取 Y 的三分之一取整到百，T258 标定。",
       "actor": 108,
       "base": 2000,
-      "share": 150,
+      "share": 100,
       "flat": {"0": 700, "1": 2000}
     },
     "liuying": {
       "_note": "流萤 179：胜场（_codexLbEmberWins）超过 base 的部分成层。不走平加：每层余烬生命 ember（前 ember_cap 照旧），余烬超过 ember_cap 的部分每满 dmg_step 层伤害 +dmg_pct%（Q3-A：1 层 1%）。由 T257 在 liuying.gd 里接，本表只给数。",
       "actor": 179,
       "base": 300,
-      "share": 50,
+      "share": 55,
       "ember": 500,
       "ember_cap": 3000,
       "dmg_step": 1,
