@@ -77,6 +77,7 @@ var list_win: XBattleList
 ## 异化百相切换仿形的选择窗（开着时）
 var mimic_win: XAlienMimicWindow
 var tianqi_meter: XTianqiMeter
+var tianqi_weak_badges: XTianqiWeakBadges  # 天启篇弱者专属词条的头顶角标（T230）
 var tianqi_sear_bar: XTianqiSearBar
 ## 云裳的选择窗（赠行选人、裁身、七曜元素、收针选人、换锦选状态）
 var yun_win: XYunChoicesWindow
@@ -747,6 +748,10 @@ func _build_ui(vs: Vector2) -> void:
 	tianqi_meter = XTianqiMeter.make(logic, func(): return status_rows)
 	tianqi_meter.position = _origin + TIANQI_METER_POS
 	ui.add_child(tianqi_meter)
+	# 天启篇弱者专属词条：头顶文字角标（蓄雷格数、传球库存…，只写状态不写词条名；模块不在天启篇档时不建）
+	tianqi_weak_badges = XTianqiWeakBadges.make(logic, func(): return sprites)
+	if tianqi_weak_badges != null:
+		fx.add_child(tianqi_weak_badges)
 	# 天启篇烙印的灼痕槽（XTianqiSearBar）：右侧状态栏生命条下面一条细槽；烙印关着、不在天启篇战斗里不画
 	tianqi_sear_bar = XTianqiSearBar.make(logic, func(): return status_rows)
 	tianqi_sear_bar.position = _origin

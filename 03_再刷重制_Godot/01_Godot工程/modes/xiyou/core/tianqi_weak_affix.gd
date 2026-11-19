@@ -26,8 +26,10 @@ extends RefCounted
 ##   开第一条时连同可获得兵器交集表、深渊商人指定、重铸保护一起接。
 ## 七、本人投影（批 1，T018）：表 entries[键].proj 按技能号写换属性、整数倍率、新范围和说明替换；skill_view 给本人复制一份改过的技能，
 ##   formula 按出手者 proj_of 换属性、乘倍率。批 1：w21 玛莎「御风术」、w17 克洛什「精准击中」，默认关。
+## 八、批 2 前四人（T230）：w31 露茜、w23 魔雷老人、w103 波风水门、w3 艾坤的规则在 XTianqiWeakB2（tianqi_weak_b2.gd），start 时 install；
+##   这里另给 main_target（这一根的主目标，guide_targets 记）、cut／dmg_pct（这一根伤害整数百分比，formula 读）、处理对象的 root_skill 钩子。
 ## 具体词条以 register(key, 处理对象) 挂进来：处理对象可有 root_end(logic, frame) -> Array（这一根结算完后出专属派生，派生用 derived_invoke）、
-## turn_begin(logic)、turn_end(logic)、badge(logic, b) -> String。
+## root_skill(logic, frame, skill)（execute 付费后这一根的那一招）、turn_begin(logic)、turn_end(logic)、badge(logic, b) -> String。
 
 ## 开关（O-524）：false＝专属词条在战斗里完全不生效（不引导、不记事件、不派生），装备上的专属只显示灰字
 static var ENABLED := true
@@ -168,12 +170,15 @@ static func _store(logic) -> Dictionary:
 static func start(logic) -> void:
 	if logic.has_meta(META):
 		logic.remove_meta(META)
+	cut = {}
+	XTianqiWeakB2.install()  # 批 2 前四人（T230）的处理对象
 	if _active(logic):
 		_store(logic)
 
 
 ## BattleLogic.end_battle：库存、格数、标签全清（战斗结束、逃跑都走这里）
 static func finish(logic) -> void:
+	cut = {}
 	if logic != null and logic.has_meta(META):
 		logic.remove_meta(META)
 
@@ -230,6 +235,26 @@ static func root_skill(logic, skill) -> void:
 	var f := _frame(logic)
 	if not f.is_empty() and _kind(f) == ROOT:
 		f.skill = _skill_key(skill)
+		for k in _live_keys(logic):
+			var h = _handlers.get(k)
+			if h != null and h.has_method("root_skill"):
+				h.root_skill(logic, f, skill)
+
+
+## 这一根定的主目标（execute 选目标、专属引导之后的第一个；全体技取它排第一的那个）。没有＝null
+static func main_target(logic):
+	var f := _frame(logic)
+	return f.get("main") if not f.is_empty() else null
+
+
+## 这一根伤害的整数百分比（批 2 波风水门第一次飞雷神 −30%）：{user, skill, pct}，root_skill 里由词条设、root_end 清
+static var cut := {}
+
+
+static func dmg_pct(a, skill_id: int) -> int:
+	if cut.is_empty() or not is_same(cut.get("user"), a) or int(cut.get("skill", 0)) != skill_id:
+		return 100
+	return int(cut.get("pct", 100))
 
 
 ## act／_forced_run 末尾：这一根结算完——各条专属按 hits 出派生，然后收根
@@ -240,6 +265,7 @@ static func root_end(logic, _u = null) -> Array:
 	if st.frames.is_empty():
 		return []
 	var f: Dictionary = st.frames.back()
+	cut = {}
 	f.kinds = [DERIVED]  # 派生不能自称主动根
 	var logs := []
 	for k in _live_keys(logic):
@@ -369,6 +395,7 @@ static func turn_begin(logic) -> void:
 	if not st.frames.is_empty():
 		push_warning("天启篇专属词条：上一根没有收尾（%d 层），开新回合时清掉" % st.frames.size())
 		st.frames.clear()
+		cut = {}  # 没收尾那一根的伤害百分比一起清
 	st.turn_used.clear()
 	for k in _live_keys(logic):
 		var h = _handlers.get(k)
@@ -437,6 +464,14 @@ static func legal(logic, b) -> bool:
 
 ## execute 选完目标：可引导技能改打引导者（layers_changed＝四骑士、瘟疫、混子之盾三层改过目标，不再动）
 static func guide_targets(logic, u, skill, list: Array, layers_changed := false, forcing := false) -> Array:
+	var out := _guide_targets(logic, u, skill, list, layers_changed, forcing)
+	var f := _frame(logic)
+	if not f.is_empty() and _kind(f) == ROOT and is_same(u, f.user) and not f.has("main"):
+		f.main = out[0] if not out.is_empty() else null  # 这一根的主目标（批 2：艾坤传球、魔雷老人落雷打它）
+	return out
+
+
+static func _guide_targets(logic, u, skill, list: Array, layers_changed := false, forcing := false) -> Array:
 	if not _active(logic) or forcing or layers_changed or list.size() != 1 or not guidable(skill):
 		return list
 	var f := _frame(logic)
@@ -510,8 +545,8 @@ static func boss_turns(e, state_id: int, n: int) -> int:
 ## 角色或敌人身上的文字角标（蓄雷格数、传球库存、被护者、受邀者……由各条专属给）
 static func badges(logic, b) -> Array:
 	var out := []
-	if not _active(logic):
-		return out
+	if not _active(logic) or not logic.has_meta(META):
+		return out  # 只读：战斗结束（finish 已清本场数据）后胜利镜头、结算期间不重建，角标跟着消失
 	for k in _live_keys(logic):
 		var h = _handlers.get(k)
 		if h != null and h.has_method("badge"):
