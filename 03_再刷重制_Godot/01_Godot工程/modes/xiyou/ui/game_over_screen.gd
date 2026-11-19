@@ -20,7 +20,11 @@ var _fading_out := false
 var _pressed := false
 var _done := false
 var _image_name := ""
-var _skin: Control   # 新界面 2C：开着新皮肤时盖在图上的一层（A 版暗角＋提示；B 版整页换掉）
+## 新界面 2C（T265，XSkin2C 灭印）：建页前由地图填。battle_shot＝全灭那场战斗最后一帧（没有就取建页时的画面）；
+## summary＝全灭 B 版两行（GAMEOVER_SUMMARY 关着为空）
+var battle_shot: Texture2D = null
+var summary: Array = []
+var _skin = null   # XSkin2C.GameOverView；旧画法为 null
 
 
 func _init() -> void:
@@ -47,9 +51,20 @@ func _init() -> void:
 			_tex.texture = load(p)
 			_image_name = "GameOver"
 	add_child(_tex)
-	if XSkin2C.gameover_on():
-		_skin = XSkin2C.gameover_overlay(self)
-		add_child(_skin)
+	_apply()
+
+
+func _ready() -> void:
+	if not XSkin2C.gameover_on():
+		return
+	var shot := battle_shot
+	if shot == null and DisplayServer.get_name() != "headless":
+		var img := get_viewport().get_texture().get_image()
+		if img != null and not img.is_empty():
+			shot = ImageTexture.create_from_image(img)
+	_skin = XSkin2C.gameover_view(self, shot, summary)
+	add_child(_skin)
+	_tex.visible = false   # 字图由新画法画（烧开遮罩、20:9 不拉扁）；_tex 留着给 state() 和旧画法
 	_apply()
 
 
@@ -94,6 +109,16 @@ func step(ok := false) -> void:
 			_done = true
 			finished.emit()
 			queue_free()
+	elif _skin != null:
+		# 新画法：灭印（1.0 秒；简化 0.4 秒淡入；关直接显示）代替 24 帧淡入，中途按确定直接到 NULL 全显；全显后再按才淡出回标题
+		if ok and not _skin.shown():
+			_skin.skip()
+		else:
+			_skin.advance()
+			_skin.tick_after_shown()
+			if ok:
+				_fading_out = true
+		_frame = FADE_FRAMES if _skin.shown() else 0
 	else:
 		_frame = mini(FADE_FRAMES, _frame + 1)
 		if ok and _frame >= FADE_FRAMES:
@@ -104,9 +129,10 @@ func step(ok := false) -> void:
 func _apply() -> void:
 	_tex.modulate.a = float(_frame) / FADE_FRAMES
 	if _skin != null:
-		_skin.modulate.a = _tex.modulate.a
+		_skin.modulate.a = float(_frame) / FADE_FRAMES if _fading_out else 1.0
 
 
 ## 测试用
 func state() -> Dictionary:
-	return {"frame": _frame, "fading_out": _fading_out, "done": _done, "has_image": _tex.texture != null, "image": _image_name}
+	return {"frame": _frame, "fading_out": _fading_out, "done": _done, "has_image": _tex.texture != null, "image": _image_name,
+		"skin": _skin != null, "intro": _skin.frame if _skin != null else -1, "shown": _skin == null or _skin.shown(), "hint": _skin.hint_alpha() if _skin != null else 0.0}

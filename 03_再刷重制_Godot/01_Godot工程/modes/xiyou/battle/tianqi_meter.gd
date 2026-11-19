@@ -157,10 +157,6 @@ func _process(dt: float) -> void:
 
 
 func _draw() -> void:
-	if XSkin2C.meter_on():   # 新界面 2C：样稿的小牌＋细金条
-		XSkin2C.draw_meter(self)
-		_draw_doom_marks()
-		return
 	var font := XUI.font()
 	var y := 0.0
 	for r in rows:
@@ -211,9 +207,6 @@ func _draw_doom_marks() -> void:
 	var blue := XTianqiLook.accent_color("death")
 	for row in doom_mark_rows():
 		var c: Vector2 = row.global_position - global_position + Vector2(-56, 36)
-		if XSkin2C.meter_on():
-			XSkin2C.draw_doom_mark(self, c, pulse)
-			continue
 		draw_circle(c, 15, Color(0, 0, 0, 0.6))
 		draw_circle(c, 12, Color(bone, pulse))
 		draw_arc(c, 12, 0, TAU, 24, Color(blue, pulse), 2.0)

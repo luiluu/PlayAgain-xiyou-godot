@@ -183,7 +183,8 @@
     "XTianqiTrumpet.forget_name": "号卷名字只在 XTianqiTrumpet.on() 为真时拼进文案（西游档恒 false）",
     "XTianqiGemPower.detail_rows": "装备说明卡末尾追加的光耀度行，调用处 panel_view(...) + 它，空数组＝不加行；西游档期四关着真脚本也返回 []",
     "XTianqiGemPower.preview_rows": "镶嵌预览追加行，调用处 append_rows，空数组＝不加行；西游档期四关着真脚本也返回 []",
-    "XTianqiRewards.taunter": "T018：唯一西游调用处 battle_logic.gd targets_for 只比 != null；真脚本在西游档（_fight 为空）也返回 null，空壳 null＝没在嘲讽、行为一致"
+    "XTianqiRewards.taunter": "T018：唯一西游调用处 battle_logic.gd targets_for 只比 != null；真脚本在西游档（_fight 为空）也返回 null，空壳 null＝没在嘲讽、行为一致",
+    "XTianqiRewards.line_name": "T265：只在 XSkin2C.gameover_summary 里、GAMEOVER_SUMMARY 开着且 XTianqiLine.current 不为空时调；发行包里新界面恒关、天启篇线为空，走不到；拿到空串也只是少写一段"
   },
   "_已确认空值安全说明": "T149：被西游代码调用、空壳按类型返回 []／{}／\"\"／null 的成员，逐个核对调用处后登记在此（值是理由）。新加的天启篇函数被西游档调用时，check 会要求来这里登记或写特例。"
 }

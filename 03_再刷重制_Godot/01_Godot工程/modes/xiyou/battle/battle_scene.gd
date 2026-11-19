@@ -748,8 +748,6 @@ func _build_ui(vs: Vector2) -> void:
 	tianqi_meter = XTianqiMeter.make(logic, func(): return status_rows)
 	tianqi_meter.position = _origin + TIANQI_METER_POS
 	ui.add_child(tianqi_meter)
-	if XSkin2C.meter_on():   # 新界面 2C：挪到自动／变速圆钮下面（样稿位置）
-		tianqi_meter.position = XSkin2C.meter_pos(tianqi_meter, _origin)
 	# 天启篇弱者专属词条：头顶文字角标（蓄雷格数、传球库存…，只写状态不写词条名；模块不在天启篇档时不建）
 	tianqi_weak_badges = XTianqiWeakBadges.make(logic, func(): return sprites)
 	if tianqi_weak_badges != null:
@@ -3160,6 +3158,14 @@ func _victory() -> void:
 	var before := {}
 	for a in logic.actors:
 		before[a] = {"exp": a.exp_total, "level": a.level}
+	# 新界面 2C（T265）：结算页要知道是不是首领战（落印全套／半程），天启篇助力位不在出战名单里、也拿满经验，发经验前另拍一份快照
+	var skin_info := {}
+	if XSkin2C.victory_on():
+		var h: XActor = logic.state.helper() if logic.state != null else null
+		if h != null and not logic.actors.has(h):
+			before[h] = {"exp": h.exp_total, "level": h.level}
+			skin_info.helper = h
+		skin_info.boss = logic.enemies.any(func(e): return boss_hp.is_meter(e) or boss_hp.is_extended_enemy(e))
 	var r := logic.rewards()
 	logic.grant(r)
 	XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
@@ -3218,7 +3224,7 @@ func _victory() -> void:
 	if XHangUp.is_active(XState.current):
 		return
 	var screen := XVictoryScreen.new()
-	screen.setup(r, before, logic.actors, logic.auto)
+	screen.setup(r, before, logic.actors, logic.auto, skin_info)
 	ui.add_child(screen)
 	await screen.continued
 	await victory_messages()

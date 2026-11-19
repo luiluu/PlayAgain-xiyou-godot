@@ -94,18 +94,15 @@ func _refresh() -> void:
 	layout_alpha = 255
 	slide = 0
 	digits.clear()
-	if _tex_d == null and not XSkin2C.combo_on():
+	if _tex_d == null:
 		return
-	var w := _tex_d.get_width() / 10.0 if _tex_d != null else 0.0
+	var w := _tex_d.get_width() / 10.0
 	var text := str(absi(hits))
 	for i in range(text.length()):
 		digits.append({"n": int(text[i]), "dx": i * w - text.length() * w, "scale": 2.0, "alpha": 255})
 
 
 func _draw() -> void:
-	if XSkin2C.combo_on():   # 新界面 2C：程序画的淡金大数＋「连击」，不用 Combo_A／Combo_D 图
-		XSkin2C.draw_combo(self)
-		return
 	if _tex_a != null and layout_alpha > 0:
 		draw_texture(_tex_a, HIT_LAYOUT + Vector2(slide, 0), Color(1, 1, 1, layout_alpha / 255.0))
 	if _tex_d == null:

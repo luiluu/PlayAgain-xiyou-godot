@@ -1495,6 +1495,9 @@ var last_battle_game_over := false
 ## 上一场战斗按「逃跑」收场（_escaped：逃跑成功、340 中止）：即使 340 同帧全灭把结果改写成 2，updateBattleEnd 也只 pop 回地图，
 ## 不去结束画面、不复活（GB13）
 var last_battle_escaped := false
+## 新界面 2C 全灭页（T265）：本场敌群号（B 版写「倒在谁面前」）、全灭那场战斗最后一帧（灭印的去色底）。运行时字段，不进存档
+var last_battle_troop := 0
+var last_battle_shot: Texture2D = null
 
 func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encounter := false) -> int:
 	if not random_encounter:
@@ -1512,6 +1515,8 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	if MVPlayer.MV_CLEAR_DEST and player:
 		player.clear_destination()  # Scene_Map.stop 后 isActive 假，遇敌演出第一帧就清目的地
 	XPartySkills.battle_start(XState.current)  # BattleManager.startBattle 包装：装备学技能变了刷共享、成员变了刷羁绊
+	last_battle_troop = troop_id
+	last_battle_shot = null
 	var battle := XBattleScene.new()
 	battle.setup(troop_id, can_escape, can_lose, battle_map(), shot, random_encounter)
 	# 遇敌演出（XBattleTransition）：地图层拉近、第 30 帧放战斗 BGM 并淡出；窗口层（HUD）不缩放，照样在黑幕下
@@ -1538,6 +1543,8 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	var result: int = await battle.finished
 	last_battle_game_over = battle.logic.game_over
 	last_battle_escaped = battle.logic.escaped and not battle.logic.game_over
+	if last_battle_game_over and XSkin2C.gameover_on() and DisplayServer.get_name() != "headless":
+		last_battle_shot = ImageTexture.create_from_image(get_viewport().get_texture().get_image())
 	# BattleManager.replayBgmAndBgs 在战斗收场时就调（胜利是关结算画面的 endVictoryPhase，全灭／逃跑在 process 里），
 	# 早于 Scene_Battle 的淡出：战斗曲（或胜利曲）这时停，地图曲接着放、淡入；没放完的 ME 地图接过来
 	battle.stop_bgm()
@@ -1932,6 +1939,9 @@ func game_over() -> void:
 	_bgm_name = ""
 	play_me(XDB.system().get("gameoverMe", {}))
 	var screen := XGameOverScreen.new()
+	screen.battle_shot = last_battle_shot
+	screen.summary = XSkin2C.gameover_summary(XState.current, last_battle_troop)
+	last_battle_shot = null
 	ui.add_child(screen)
 	await screen.finished
 	me.stop()
