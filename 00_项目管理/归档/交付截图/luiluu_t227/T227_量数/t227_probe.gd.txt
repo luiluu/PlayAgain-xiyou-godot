@@ -1,0 +1,178 @@
+extends "res://tests/virtual_player/baseline_dps.gd"
+## T227 临时探针（不是专项）：守层者状态拆解。基于 baseline_dps 的 --both 量法，加：
+##   --dump        打印每层第一队开战后双方的状态与能力值
+##   --strip=a,b   每次行动前从敌人身上去掉这些状态（含开战事件挂的）
+##   --strip-ours=a,b  每次行动前从我方身上去掉这些状态
+##   --enemy-pass  敌人不出手（只量我方打得动多少）
+##   --team-limit=N 只量前 N 队
+var strip: Array = []
+var strip_ours: Array = []
+var enemy_pass := false
+var dump := false
+var team_limit := 0
+var _dumped := {}
+var var842 := -1   # --var842=1：模拟交了见面礼（原版地图事件交礼后变量 842＝1）
+var survive := false   # --survive：敌人每回合补满、我方不补，量撑几回合团灭（没团灭记 turns）
+var real := false   # --real：不补血、不复活，打到分出胜负或 turns 回合（验收 4：能不能过）
+
+func _ready() -> void:
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--strip="):
+			strip = Array(a.substr(8).split(",")).map(func(x): return int(x))
+		elif a.begins_with("--strip-ours="):
+			strip_ours = Array(a.substr(13).split(",")).map(func(x): return int(x))
+		elif a == "--enemy-pass":
+			enemy_pass = true
+		elif a.begins_with("--var842="):
+			var842 = int(a.substr(9))
+		elif a == "--real":
+			real = true
+		elif a == "--survive":
+			real = true
+			survive = true
+		elif a == "--dump":
+			dump = true
+		elif a.begins_with("--team-limit="):
+			team_limit = int(a.substr(13))
+		elif a.begins_with("--floor-list="):
+			floors = Array(a.substr(13).split(",")).map(func(x): return int(x))
+	super()
+
+func _state(team: Array, f: int) -> XState:
+	var st := super(team, f)
+	if var842 >= 0:
+		st.set_variable(842, var842)
+	return st
+
+func _teams() -> Array:
+	var t := super()
+	return t.slice(0, team_limit) if team_limit > 0 else t
+
+static func _snames(b) -> String:
+	return ",".join(b.state_ids.map(func(id): return "%d:%s" % [int(id), str(XDB.rec("States", int(id)).get("name", "?"))]))
+
+func _strip(logic: XBattleLogic) -> void:
+	for e in logic.enemies:
+		for id in strip:
+			if e.state_ids.has(id):
+				e.remove_state(id)
+	for a in logic.actors:
+		for id in strip_ours:
+			if a.state_ids.has(id):
+				a.remove_state(id)
+
+func _dump(logic: XBattleLogic, tag: String) -> void:
+	if not dump or _dumped.has(str(_cur_floor) + tag):
+		return
+	_dumped[str(_cur_floor) + tag] = true
+	print("DUMP floor=%d %s" % [_cur_floor, tag])
+	for e in logic.enemies:
+		print("  E%d %s alive=%s mhp=%d p=%s scale=%.4f harmRe=%s states=[%s]" % [int(e.enemy_id), str(e.original_name()), str(e.is_alive()), int(e.mhp),
+			str(range(8).map(func(i): return int(e.param(i)))), float(e.output_scale), str(e.passive_cache().get("harmRe", {})), _snames(e)])
+	for a in logic.actors:
+		print("  A%d lv=%d mhp=%d p=%s states=[%s]" % [int(a.actor_id), int(a.level), int(a.mhp), str(range(8).map(func(i): return int(a.param(i)))), _snames(a)])
+
+func _fight_both(s: XState, troop: int) -> Dictionary:
+	var logic := XBattleLogic.new()
+	XState._become_current(s)
+	if troop <= 0:
+		troop = _troop_for(s, _cur_floor)
+	var k := float(atk_table.get(str(_cur_floor), atk_scale))
+	XGuardianRework.measure_atk = k if atk_table.has(str(_cur_floor)) or atk_scale != 1.0 else -1.0
+	logic.setup(troop, s)
+	logic.auto = true
+	_dump(logic, "after_setup")
+	_drain(logic, logic.troop_events())
+	_dump(logic, "after_open_events")
+	var ours := 0.0
+	var theirs := 0.0
+	var hits := []
+	var done := 0
+	var e_acts := 0
+	var a_acts := 0
+	var a_dead_skips := 0
+	var hp_total := _enemy_hp(logic)
+	for r in turns:
+		if survive:
+			for e in logic.enemies:
+				if e.is_alive():
+					e.hp = e.mhp
+		if not real:
+			for e in logic.enemies:
+				if e.is_alive():
+					e.hp = e.mhp
+			for a in logic.actors:
+				if a.hp <= 0:
+					a.remove_state(1)
+				a.hp = a.mhp
+		_strip(logic)
+		logic.start_turn()
+		logic.take_turn_start_logs()
+		var count := 0
+		var turn_first := true
+		while count < 80:
+			var u := logic.next_subject()
+			var pb0 := _party_hp(logic)
+			_drain(logic, logic.troop_events(u if turn_first else null))
+			theirs += maxf(0.0, pb0 - _party_hp(logic))
+			turn_first = false
+			if u == null or logic.is_over():
+				break
+			count += 1
+			_strip(logic)
+			if r == 1:
+				_dump(logic, "turn2")
+			if enemy_pass and not u is XActor:
+				continue
+			var cmd := logic.decide(u)
+			var eb := _enemy_hp(logic)
+			var pb := _party_hp(logic)
+			logic.act(u, cmd[0], cmd[1])
+			if u is XActor:
+				a_acts += 1
+				var d := maxf(0.0, eb - _enemy_hp(logic))
+				ours += d
+				if d > 0.0:
+					hits.append(d)
+			else:
+				e_acts += 1
+				theirs += maxf(0.0, pb - _party_hp(logic))
+			if debug:
+				print("DBG3 t%d %s skill=%s partyLoss=%.0f enemyLoss=%.0f" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-", pb - _party_hp(logic), eb - _enemy_hp(logic)])
+			if logic.is_over():
+				break
+		done += 1
+		if logic.is_won() or logic.aborted:
+			break
+		if logic.is_lost():
+			if real:
+				break
+			continue
+		logic.end_turn()
+	hits.sort()
+	var n := maxf(1.0, float(done))
+	return {"lost": logic.is_lost(), "left": _enemy_hp(logic) / maxf(1.0, hp_total), "dmg": ours / n, "enemyDmg": theirs / n, "enemyRaw": 0.0, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
+		"hits": hits.size(), "aActs": a_acts / n, "eActs": e_acts / n, "partyHp": logic.actors.reduce(func(t, a): return t + float(a.mhp), 0.0),
+		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0)}
+
+func _run_both(list: Array) -> void:
+	var rows := []
+	for f in floors:
+		_cur_floor = f
+		var per := []
+		for team in list:
+			per.append(_fight_both(_state(team, f), 0))
+		var row := {"floor": f, "dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)),
+			"hit": _median(per.map(func(r): return r.hitMedian)), "hits": _median(per.map(func(r): return r.hits)), "aActs": _median(per.map(func(r): return r.aActs)),
+			"eActs": _median(per.map(func(r): return r.eActs)), "partyHp": _median(per.map(func(r): return r.partyHp)), "enemyHp": per[0].enemyHp, "teams": per}
+		rows.append(row)
+		if real:
+			print("REAL floor=%d won=%d/%d lost=%d turnsMedian=%.1f leftMedian=%.3f" % [f, per.filter(func(r): return r.won).size(), per.size(),
+				per.filter(func(r): return r.lost).size(), _median(per.map(func(r): return r.turns)), _median(per.map(func(r): return r.left))])
+		print("T227 floor=%d dmg=%.0f hit=%.0f hits=%.1f aActs=%.1f eActs=%.1f enemyDmg=%.0f partyHp=%.0f enemyHp=%.0f" % [f, row.dmg, row.hit, row.hits, row.aActs, row.eActs, row.enemyDmg, row.partyHp, row.enemyHp])
+	XEnemy.force_roll = -1.0
+	if out_path != "":
+		var fh := FileAccess.open(out_path, FileAccess.WRITE)
+		fh.store_string(JSON.stringify({"strip": strip, "stripOurs": strip_ours, "enemyPass": enemy_pass, "resist": resist, "turns": turns, "teams": list, "rows": rows}, "\t"))
+	print("BASELINE_DONE")
+	get_tree().quit(0)

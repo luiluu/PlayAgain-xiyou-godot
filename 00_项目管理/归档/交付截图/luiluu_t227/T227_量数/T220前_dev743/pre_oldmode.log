@@ -1,0 +1,10 @@
+BASELINE floor=12 level=33 fabao=45 median=1118452 min=956 max=1706667 wiped=0/8 won=5 wonTurns=2.0 enemyHp=1706667
+BASELINE floor=13 level=35 fabao=48 median=857350 min=672 max=1826667 wiped=2/8 won=4 wonTurns=1.5 enemyHp=1826667
+BASELINE floor=14 level=38 fabao=51 median=745780 min=899 max=1960000 wiped=0/8 won=4 wonTurns=1.0 enemyHp=1960000
+BASELINE floor=15 level=40 fabao=54 median=1055996 min=879 max=2106667 wiped=2/8 won=4 wonTurns=1.5 enemyHp=2106667
+BASELINE floor=16 level=43 fabao=57 median=1389144 min=744 max=2266667 wiped=2/8 won=4 wonTurns=1.0 enemyHp=2266667
+BASELINE floor=17 level=45 fabao=60 median=925289 min=379 max=2426667 wiped=1/8 won=4 wonTurns=1.0 enemyHp=2426667
+BASELINE floor=18 level=48 fabao=63 median=891552 min=690 max=2613333 wiped=1/8 won=4 wonTurns=1.0 enemyHp=2613333
+BASELINE floor=19 level=50 fabao=66 median=2800000 min=906 max=2800000 wiped=2/8 won=5 wonTurns=1.0 enemyHp=2800000
+BASELINE floor=20 level=50 fabao=69 median=2905980 min=244 max=3000000 wiped=1/8 won=5 wonTurns=1.0 enemyHp=3000000
+BASELINE_DONE
