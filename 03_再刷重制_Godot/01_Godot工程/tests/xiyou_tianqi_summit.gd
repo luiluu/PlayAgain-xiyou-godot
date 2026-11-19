@@ -244,7 +244,7 @@ func _door36() -> void:
 	await XTianqiSummit.run_door(host, s)
 	_check("final_map", host.moves.map(func(m): return int(m[0])) == [158, 4] and host.names[0] == "36层 天外天", [host.moves, host.names])
 	_check("final_win", XTianqiSummit.top_cleared(s) and bool(XTianqiWarLine.progress(s).cleared) and bool(s.flags.tianqi.reincarnate)
-		and int(s.variable(20)) == 36 and _has(host, "未经姐姐复核"))
+		and int(s.variable(20)) == 36 and _has(host, "彼岸未允"))
 	# 打完：门上说空了，不再进
 	host = FakeHost.new()
 	await XTianqiSummit.run_door(host, s)
