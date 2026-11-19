@@ -824,6 +824,20 @@ class ForcedCopyT255(unittest.TestCase):
             self.assertIn(sid, self.t['skills'])
         self.assertEqual(self.t['skills']['623']['effects_remove'], [[44, 91]])
 
+    def test_b2_copy_eye_cards(self):
+        # T262：西西卡拷贝之眼 15 个复制版进卡（原技能卡系数 ×0.8，并进系数取整数百分比），5888 不再登记待定；T261 遗留三条
+        self.assertNotIn('5888', self.t.get('forced_copy_pending', {}))
+        ids = ('5891', '5894', '5896', '5898', '5900', '5904', '5906', '5908', '5910', '5912', '5913', '5918', '5919', '5924', '5926')
+        for sid in ids:
+            c = self.t['skills'][sid]
+            self.assertEqual(c['actor'], 88, sid)
+            self.assertIn({'op': 'drop_if', 'match': 'includes(588'}, c['seq'], sid)  # 流派被动的额外段全去掉，只留原技能的段数
+            self.assertFalse(any(x.get('if') == 'always' for x in c['damage'].get('conds', [])), sid)  # 无条件倍率已并进系数
+        self.assertEqual(self.t['skills']['5494']['seq'][-1], {'op': 'keep_effects', 'n': 5})  # 瑞普：模式融合拆五段
+        self.assertEqual(self.t['skills']['5494']['damage']['stats'], {'atk': 0.24})
+        self.assertNotIn('妖精之羽', ''.join(self.t['skills']['624']['desc']))  # 623 无条件给羽，624 不再写
+        self.assertIn('pos=APs text=效果', self.t['skills']['5838']['note_remove'])  # 去掉旧行「效果:两段伤害」
+
     def test_copy_in_card_ok(self):
         # 副本进卡就不算缺口（7057 的 2365 强制 7075：把 7075 登成卡、撤掉 effects_remove）
         self.t['skills']['7057']['effects_remove'] = []
