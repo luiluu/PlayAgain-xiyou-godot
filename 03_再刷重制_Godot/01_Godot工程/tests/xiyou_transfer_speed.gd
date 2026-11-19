@@ -1,5 +1,5 @@
 extends Node
-## 【cc·T224·未经审查】传送提速（XMapScene.FAST_TRANSFER，O-待定）：
+## 【cc·T224·未经审查】传送提速（XMapScene.FAST_TRANSFER，O-605）：
 ## - 光柱动画 117 在地图上按 rate 2 播（37 帧→75 帧＝1.25 秒），别的地图动画仍 rate 4；场所移动黑幕 12 帧。
 ## - 计时（真实时间，打印给交付单）：光柱＋淡出＋读图＋淡入，开／关各量一次同一张图；开着要比关着快 1 秒以上。
 ## - 回退：FAST_TRANSFER＝false 回到 rate 4、24 帧。
