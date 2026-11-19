@@ -29,6 +29,8 @@ var max_turns := 12  # 深渊首领打 12 回合还没赢就记没赢（40 回�
 var out_path := ""
 var debug := false
 var k = null
+var dungeon_mode := false
+const DUNGEON_DEPTH := 1  # 副本入口传送目的地往里再走几跳（挡住沿出口漏到世界地图和商店）
 
 
 func _ready() -> void:
@@ -71,6 +73,59 @@ func _pool(cls: String) -> Array:
 			for en in XDB.map(185).get("encounterList", []):
 				if int(en.get("troopId", 0)) > 0:
 					out.append([185, int(en.troopId), maxi(1, int(en.get("weight", 1)))])
+		"dungeon":
+			# T271：副本（王者档）。入口事件（XDungeon.entry_spec）的传送目的地起，沿 201 传送展开（不进入口所在地图、大厅、主塔层图），
+			# 取这些地图上事件里直接指定的战斗（301，参数 0＝直接指定）和遇敌表；每个敌群等概率各打一遍（同深渊）
+			var entry_maps := {}
+			var starts := []
+			for info in XDB.table("MapInfos"):
+				if not info is Dictionary or info.is_empty():
+					continue
+				var mid := int(info.get("id", 0))
+				if mid <= 0 or not FileAccess.file_exists(XDB.BASE + "maps/Map%03d.json" % mid):
+					continue
+				for ev in XDB.map(mid).get("events", []):
+					if not ev is Dictionary:
+						continue
+					for pg in ev.get("pages", []):
+						var sp := XDungeon.entry_spec(pg.get("list", []))
+						if not sp.is_empty():
+							entry_maps[mid] = true
+							for tr in sp.transfers:
+								if not starts.has(int(tr[0])):
+									starts.append(int(tr[0]))
+			var seen_map := {}
+			var queue: Array = starts.map(func(m): return [m, 0])
+			var seen_troop := {}
+			while not queue.is_empty():
+				var qe: Array = queue.pop_front()
+				var mid := int(qe[0])
+				var depth := int(qe[1])
+				if seen_map.has(mid) or entry_maps.has(mid) or mid == 4 or not FileAccess.file_exists(XDB.BASE + "maps/Map%03d.json" % mid):
+					continue
+				var nm := str(XDB.rec("MapInfos", mid).get("name", ""))
+				if nm.contains("层") or nm.begins_with("深渊") or nm.begins_with("方桌大厅"):  # 主塔层图、深渊、大厅是副本的出口，不算副本本体
+					continue
+				seen_map[mid] = true
+				for ev in XDB.map(mid).get("events", []):
+					if not ev is Dictionary:
+						continue
+					for pg in ev.get("pages", []):
+						for c in pg.get("list", []):
+							if int(c.get("code", 0)) == 201 and int(c.parameters[0]) == 0:
+								if depth < DUNGEON_DEPTH:
+									queue.append([int(c.parameters[1]), depth + 1])
+							elif int(c.get("code", 0)) == 301 and int(c.parameters[0]) == 0:
+								var t := int(c.parameters[1])
+								if t > 0 and t != 661 and t != 767 and not seen_troop.has(t):  # 661、767 是各处都放的公共战（守层者类）
+									seen_troop[t] = true
+									out.append([mid, t, 1])
+				for en in XDB.map(mid).get("encounterList", []):
+					var t2 := int(en.get("troopId", 0))
+					if t2 > 0 and not seen_troop.has(t2):
+						seen_troop[t2] = true
+						out.append([mid, t2, 1])
+			print("GSC_DUNGEON_MAPS ", seen_map.keys().map(func(m): return "%d:%s" % [m, XDB.rec("MapInfos", m).get("name", "")]), " entries=", entry_maps.keys())
 		"abyss":
 			for info in XDB.table("MapInfos"):
 				if not info is Dictionary or info.is_empty():
@@ -184,6 +239,8 @@ func _fight(s: XState, map_id: int, troop: int, focal: int) -> Dictionary:
 	XState.current = s
 	s.map_id = map_id
 	_reset_counts(s)
+	s.set_variable(XDungeon.VAR_INSIDE, 1 if dungeon_mode else 0)  # T271：副本类的场在「副本内、王者档」里打（floor_ok 的 king）
+	s.set_variable(XDungeon.VAR_TIER, 4 if dungeon_mode else 0)
 	var G := XTianqiGrowth
 	var soul0 := XRaven.soul(s.actor(RAVEN)) if s.actors.has(RAVEN) else 0.0
 	var ad0 := float(s.flags.get(G.NANOHA_FLAG, {}).get(str(NANOHA), 0.0))
@@ -256,9 +313,9 @@ func _run() -> void:
 			var total := 0
 			for p in pool:
 				total += int(p[2])
-			for i in (pool.size() if c == "abyss" else n_per):  # 深渊每个敌群打一遍
+			for i in (pool.size() if (c == "abyss" or c == "dungeon") else n_per):  # 深渊每个敌群打一遍
 				var pick: Array = pool[0]
-				if c == "abyss":
+				if c == "abyss" or c == "dungeon":
 					pick = pool[i % pool.size()]  # 固定战斗：每个敌群轮流各打一遍
 				else:
 					var r := rng.randi_range(0, total - 1)
@@ -268,6 +325,7 @@ func _run() -> void:
 							pick = p
 							break
 				var t0 := Time.get_ticks_msec()
+				dungeon_mode = (c == "dungeon")
 				var row := _fight(s, int(pick[0]), int(pick[1]), int(focal))
 				row["class"] = c
 				row["ms"] = Time.get_ticks_msec() - t0
