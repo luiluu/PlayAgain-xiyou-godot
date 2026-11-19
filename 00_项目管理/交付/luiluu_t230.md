@@ -51,8 +51,9 @@
 
 - 专项 `xiyou_tianqi_weak_b2`（新）48/48：露茜 10（首放、结清移除、结清量、每人一行、同回合二放刷新、别人上的不结、坏死 ×0.7 只乘一次、满血浪费、开关关、别人戴）；魔雷老人 11（四档满格与百分比、落雷打主目标五段、第 3 根落、落雷根不计格、一回合只落一次＋满格留到下回合、防御不蓄、主目标倒不落格保留、百分比带到落雷、开关关原生照掷、戴着原生几率不掷）；波风水门 11（−30%、第一次标记、本回合顺序不动、下回合各推一格、刻印 2 回合、日志、第二次不扣不推、百分比只第一根、首领 1 回合、每敌每回合一次、开关关）；艾坤 12（没学不入库、截球来入库 3、自己出手不传、队友根传球、同回合不再传、主目标倒不传不扣、33%、补到 3、混子、开关关、换装清库存）；角标 5；西游档 1。
 - 本机相关专项（`--headless --audio-driver Dummy`）：`xiyou_tianqi_weak_b1`、`xiyou_tianqi_weak_affix`、`xiyou_tianqi_skills`、`xiyou_tianqi_skill_debt`、`xiyou_determinism`、`xiyou_counter_guard`、`xiyou_tianqi_qiyin_effects`、`xiyou_tianqi_doom_follow`、`xiyou_tianqi_again_use`、`xiyou_tianqi_rewards`、`xiyou_tianqi_horsemen_battle`、`xiyou_tianqi_balance`、`xiyou_json_cache`、`xiyou_text_batch23`、`xiyou_tianqi_phase4`、`xiyou_tianqi_ledger`、`xiyou_tianqi_ledger_p3`、`xiyou_otb`、`xiyou_tianqi_plague`、`xiyou_ui_skin_battle`、`xiyou_battle_ui` 21/21 全过。⚠ `xiyou_tianqi_skill_debt` 并行时偶发 1 次（`follow_full_matches` 里霸者连环斩随机三段的落点 [0,1,2] 对 [2,0,1]、球来 [6,5,4] 对 [6,5,5]，随机挑敌人的分布），单独重跑通过；累计偶发 1 次。本单改到 `end_action` 但条目全关时只多调一次没有随机的 `_follow_of`，不挪随机流，判断与本单无关。
-- 虚拟玩家（本机，条目默认关，等于回归）：explore（种子 1）14/14、卡死 0、违规 0；短帧 climb（40000 帧，种子 1）：见下方（云端结果一并补）。
-- 云端选测（提交 a0d5ee1b84，457 个场景、16 片）：见下方。
+- 虚拟玩家（本机，条目默认关，等于回归）：explore（种子 1）14/14、卡死 0、违规 0；短帧 climb（40000 帧，种子 1）9/9、卡死 0、违规 0、僵局 0、脚本报错 0（两局日志里 SCRIPT ERROR 0 条）。
+- 云端选测（提交 a0d5ee1b84，基准 f172c3c65，457 个场景、16 片）：全部通过。之后的提交只动交付单、文件头注释和专项里只打印的七印探针（本机专项 48/48）。
+- 工具快速回归：全部通过。
 
 ## 要 Kyo 定
 
@@ -80,4 +81,5 @@
 ## 本分支提交
 
 - 4cad3ab11 WIP：四人规则＋头顶角标；专项 48/48
-- （uid、文件头、七印探针、交付单见后续提交）
+- a0d5ee1b84 WIP：新脚本 uid
+- a20942989 交付单；文件头补第八节；专项加七印序列招击倒探针（只打印）
