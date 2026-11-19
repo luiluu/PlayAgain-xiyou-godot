@@ -42,6 +42,8 @@ var _event_pending := false
 var _cur: Dictionary = {}
 ## 一个物理帧里行动机走几步（1＝原版逐帧）。敌群事件里的强制行动在技能动画关着时快放（XBattleScene.FORCED_FAST，O-568）
 var turbo := 1
+## T225 逐段结算：记录还没算完时（XBattleStream），读到末尾就调 feed.call(self) 再结算一段、把新记录接到 entries 后面；返回 false＝没有更多了
+var feed := Callable()
 
 
 static func create(s: XBattleScene, action: Dictionary, list: Array) -> XSequencePlayer:
@@ -108,14 +110,14 @@ func _step() -> void:
 		_event_pending = false
 		return
 	if phase == "phaseChange":
-		if pos >= entries.size() or entries[pos].type == "seq_end":
+		if not _has(pos) or entries[pos].type == "seq_end":
 			done = true
 			return
 		var e: Dictionary = entries[pos]
 		pos += 1
 		phase = "actionTargetList" if e.get("phase", "") == "target" else "actionList"
 		return
-	while pos < entries.size():
+	while _has(pos):
 		var e: Dictionary = entries[pos]
 		match e.type:
 			"seq_phase", "seq_end":
@@ -134,6 +136,14 @@ func _step() -> void:
 			_:
 				pos += 1
 	phase = "phaseChange"
+
+
+## T225：第 i 条在不在（不在就让 feed 再结算一段）。一条 ACTION EFFECT 的结算记录总是和它同一批到，_results 不用等
+func _has(i: int) -> bool:
+	while i >= entries.size():
+		if not feed.is_valid() or not feed.call(self):
+			return false
+	return true
 
 
 ## 紧跟在指令后面的结算记录（命中、反击、反射、倒下）

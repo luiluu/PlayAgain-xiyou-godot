@@ -24,6 +24,8 @@ var count := 0
 
 ## 当前场景上没有就挂一个
 static func ensure() -> XPrestigeNotice:
+	if XMainThread.defer(XPrestigeNotice.ensure):  # T225 线程保险（XMainThread）：结算线程上调到就转回主线程（至臻装备掉落进背包，P1-1）
+		return null
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree == null or tree.current_scene == null:
 		return null

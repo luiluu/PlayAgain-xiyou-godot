@@ -48,6 +48,8 @@ var _formula_outcome := {}
 var _damage_record := {}
 ## 魔法反射回行动者自己的这次 apply（导入角色平衡照样缩放）
 var _reflecting := false
+## T225 逐段结算：战斗画面开的这次行动（XBattleStream，不开时为空）；根序列每条 ACTION EFFECT 前停下等画面
+var _stream = null
 
 func _rule() -> XRandomStream:
 	if random == null and state != null and troop_id == 0:
@@ -1141,6 +1143,9 @@ func decide(b: XBattler) -> Array:
 ## 执行一位行动者的一次行动，返回记录。skill 为 null（或 {}）表示放弃本次行动（逃跑失败、敌人没有可用行动）。
 func act(u: XBattler, skill, target) -> Array:
 	var logs := []
+	var streaming: bool = _stream != null and _stream.parts.is_empty()  # T225：画面开的这次行动（嵌套的 act 不算）
+	if streaming:
+		_stream.parts.append(logs)
 	XActor.read_reset()  # 只读窗口缓存（O-待定-1）：行动开始时不该有开着的窗口
 	if not STALE_TIMING:
 		for a in actors:
@@ -1186,7 +1191,7 @@ func act(u: XBattler, skill, target) -> Array:
 		if started:
 			XBinding.start_action(u)  # 绑定 startAction 包装：validate、记行动者、回归扣充能
 		XNanoha.begin(self)
-		logs.append_array(execute(u, skill, target))
+		logs.append_array(execute(u, skill, target, false, streaming))
 		XNanoha.end_execute(self)
 		XImportedBalance.set_acting(null)
 	XAlienBattle.idle_window(self, u)  # O-116：敌人能动却没有有效行动，也算蚀术的原有合法行动窗口
@@ -2013,8 +2018,10 @@ func _lotus_all(skill: Dictionary) -> bool:
 	return XStateEffects.FIX_LOTUS_7303 and int(skill.get("id", 0)) == 7303
 
 
-func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false) -> Array:
+func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false, stream_root := false) -> Array:
 	var logs := []
+	if stream_root:
+		_stream.parts.append(logs)  # T225：主行动这一层的记录也登记进前缀
 	# 行动无效（原版没有退回攻击）：敌人走核心 processTurn，isValid 为假整次跳过（不 startAction、不付费）；
 	# 角色在 OTB 下输入完（或不能输入时 makeActions 后）直接 startAction，不看 isValid，照原样执行。参照 attack_query_probe skip 组。
 	if not forcing and not u.is_actor() and not can_use(u, skill):
@@ -2075,7 +2082,11 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false)
 		XBlackFlash.begin(u, skill, list, forcing)  # 黑闪 startAction 包装（宿傩之内）：建施放帧
 		logs.append_array(XSukuna.begin(self, u, skill, list))  # 宿傩 startAction 包装：领域展开、施放帧
 		var lotus_seq := _lotus_hp(skill, list)
-		logs.append_array(XActionSequence.create(self, u, skill, list).run())
+		var seq := XActionSequence.create(self, u, skill, list)
+		if stream_root:
+			seq.stream = _stream  # T225：根序列每条 ACTION EFFECT 前停下，画面演到再算
+			_stream.parts.append(seq.logs)
+		logs.append_array(seq.run())
 		logs.append_array(mark_views(_lotus_strike(u, skill, lotus_seq.keys(), lotus_seq)))
 		return logs
 	var repeats := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, passive_repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1))))))))  # 黄泉 numRepeats 包装；渡鸦冥羽连葬在里层；流萤（新源第 34 个）在云裳外层

@@ -23,6 +23,8 @@ var _last_usec := 0
 
 
 static func ensure(tree: SceneTree) -> XDifficultyNotice:
+	if not XMainThread.require("XDifficultyNotice.ensure"):  # T225：只在地图场景里调
+		return null
 	if not is_instance_valid(instance):
 		instance = XDifficultyNotice.new()
 		instance.name = "XiyouDifficultyNotice"
