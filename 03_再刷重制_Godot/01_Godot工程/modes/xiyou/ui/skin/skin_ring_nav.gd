@@ -14,6 +14,11 @@ extends Control
 signal changed(index: int)
 signal activated(index: int)
 
+## T287 卡 E（R5、R6、R7）：项可带 glyph（球里写的一个字，没有分类图标时用）、icon_dim（图标压到 25% 亮度，空栏位的部位剪影）。
+## false＝回旧画法：glyph、icon_dim 不认（球里照旧画 icon 原图）；各页用到的新画法也都看它（设置分类环、技能类型环、装备空栏位、队伍条不显示 TP）
+static var INNER_V2 := true
+const DIM_ICON := Color(0.25, 0.25, 0.25, 1.0)
+
 ## [{key, name, icon（图标号或 Texture2D）}]
 var items: Array = []
 var index := 0
@@ -732,9 +737,16 @@ func _draw() -> void:
 		draw_circle(p, r, ring_col, false, 2.5 if on else (2.0 if parent_hint else 1.5), true)
 		var icon = items[i].get("icon")
 		var tex: Texture2D = icon if icon is Texture2D else (XUiSkin.icon(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
-		if tex != null and not art:
+		var glyph := str(items[i].get("glyph", "")) if INNER_V2 else ""
+		if glyph != "":
+			var gf := XUiSkin.font("title")
+			var gs := roundi(26.0 * item_scale(i))
+			var gw := gf.get_string_size(glyph, HORIZONTAL_ALIGNMENT_LEFT, -1, gs).x
+			XUiSkin.ds(self, gf, Vector2(p.x - gw / 2.0, p.y + gs * 0.36), glyph, HORIZONTAL_ALIGNMENT_LEFT, -1, gs, XUiSkin.TEXT_HI if on else XUiSkin.TEXT_2)
+		elif tex != null and not art:
 			var s := 40.0 * item_scale(i)
-			draw_texture_rect(tex, Rect2(p - Vector2(s, s) / 2.0, Vector2(s, s)), false)
+			var dim := INNER_V2 and bool(items[i].get("icon_dim", false))
+			draw_texture_rect(tex, Rect2(p - Vector2(s, s) / 2.0, Vector2(s, s)), false, DIM_ICON if dim else Color.WHITE)
 		if layers or hide_labels:   # 环纹第 3、4 层开着：名字挪到 _label_ci，画在球框、小点上面
 			continue
 		var lay := label_layout(i)

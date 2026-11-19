@@ -18,10 +18,22 @@ var title := ""
 var bar: XSkinSelectBar
 ## T024 选中放大（selectable 时）：选中那人的圆头像和名字放大，行高不变
 var sel_scale: XSkinSelScale
+## R15（T287 卡 E）：主菜单、装备页的队伍条不显示 TP（不在战斗里永远是 0），血条蓝条各加宽。默认 true（别处照旧，如战斗里的我方状态详情）；
+## 主菜单的由 _enter_tree 认出祖先是 XSkinMainMenu 自动关（skin_main_menu.gd 不在卡 E 范围），装备页自己设 false。XSkinRingNav.INNER_V2＝false 时一律照旧三条
+var show_tp := true
 const HEAD := 42.0
 const TITLE_H := 44.0
 ## 助力卡上状态图标从右边让出多少（角标约 42 宽，从行右缘 2 起，右边距 12）
 const HELPER_TAG_ROOM := 36.0
+
+
+func _enter_tree() -> void:
+	var n := get_parent()
+	while n != null:
+		if n is XSkinMainMenu:
+			show_tp = false
+			return
+		n = n.get_parent()
 
 
 func _init() -> void:
@@ -167,12 +179,15 @@ func _draw() -> void:
 			sx -= 22
 			if tex != null:
 				draw_texture_rect(tex, Rect2(sx, r.position.y + 6, 22, 22), false)
-		# 三条量条：血、蓝各 1 份，TP 0.6 份
+		# 三条量条：血、蓝各 1 份，TP 0.6 份；R15：不在战斗里只画血、蓝两条（各 1 份、加宽）
 		var y2 := r.position.y + 6 + 24 + 10
 		var avail := right - x
-		var unit := (avail - 16) / 2.6
+		var specs := [["hp", 1.0, XUiSkin.HP, XUiSkin.HP_TEXT], ["mp", 1.0, XUiSkin.MP, XUiSkin.MP_TEXT]]
+		if show_tp or not XSkinRingNav.INNER_V2:
+			specs.append(["tp", 0.6, XUiSkin.TP, XUiSkin.TP_TEXT])
+		var unit := (avail - 8.0 * (specs.size() - 1)) / (2.6 if specs.size() == 3 else 2.0)
 		var bx := x
-		for spec in [["hp", 1.0, XUiSkin.HP, XUiSkin.HP_TEXT], ["mp", 1.0, XUiSkin.MP, XUiSkin.MP_TEXT], ["tp", 0.6, XUiSkin.TP, XUiSkin.TP_TEXT]]:
+		for spec in specs:
 			var w: float = unit * spec[1]
 			var v := float(m.get(spec[0], 0))
 			var mx := float(m.get("m" + spec[0], 0))

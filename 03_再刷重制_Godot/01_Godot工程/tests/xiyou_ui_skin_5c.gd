@@ -174,7 +174,7 @@ func _options_tianqi() -> void:
 			names.append(str(page._list[i][1]))
 	check("opt_ads_hidden", not names.has("wxxonoff") and not names.has("wxlonoff") and not names.has("wxtonoff"), names)
 	check("opt_dead_hidden", not names.has("codexFeedbackPending"), names)
-	check("opt_ring_center_count", sk.ring_center == [str(sk.cats[0].idx.size()), "项"], sk.ring_center)
+	check("opt_ring_center_count", sk.ring_center == ([] if XSkinRingNav.INNER_V2 else [str(sk.cats[0].idx.size()), "项"]), sk.ring_center)   # 卡 E R5：环心换成分类名（_draw_cat_name），开关关回「N 项」
 	check("opt_first_cat_rows", sk.list.items.size() == sk.cats[0].idx.size())
 	# 常规第一项：坐标显示，确定切换
 	var before := XConfig.flag("MapXy")
