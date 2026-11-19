@@ -494,6 +494,21 @@ class SkillReworkGrowth(unittest.TestCase):
         t['skills']['6863']['self_states_on_hit'] = False
         self.assertTrue(any('self_states_on_hit' in b for b in chk.skill_rework_rules(t)))
 
+    def test_fate_t268_fields(self):
+        t = self._table()
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'T268' in b])
+        t['skills']['6867']['cast_pick'] = {'rate': 10.5, 'pick': [{'foe': 18}]}
+        self.assertTrue(any('cast_pick' in b for b in chk.skill_rework_rules(t)))
+        t = self._table()
+        t['skills']['6867']['cast_pick'] = {'rate': 100, 'pick': [{'enemy': 18}]}
+        self.assertTrue(any('cast_pick' in b for b in chk.skill_rework_rules(t)))
+        t = self._table()
+        t['skills']['6875']['seg_elements_of'] = []
+        self.assertTrue(any('seg_elements_of' in b for b in chk.skill_rework_rules(t)))
+        t = self._table()
+        t['skills']['6862']['damage']['conds'][0]['to'] = 3.5
+        self.assertTrue(any('stat_floor' in b for b in chk.skill_rework_rules(t)))
+
     def test_battle_end_bool(self):
         t = self._table()
         self.assertFalse([b for b in chk.skill_rework_rules(t) if 'battle_end' in b])

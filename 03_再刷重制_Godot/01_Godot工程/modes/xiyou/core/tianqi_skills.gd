@@ -811,6 +811,8 @@ static func _cond(c: Dictionary, a, b) -> float:
 				if r >= float(st[0]):
 					m = maxf(m, float(st[1]))
 			return m
+		"stat_floor":  # T268 命运编织者：副属性高于标准线时抬伤害下限（上限不动），这里乘新区间中点÷原中点；浮动在 seg_view 里收窄（见 _floor_lift）
+			return float(_floor_lift(a, c, _cur_skill)[0])
 		"battle_turn":  # 本场已过的回合数×per（拳一无限超越：每回合 +3%，最多 10 回合；offset_with 带着这件开局就算几层）
 			var nt := maxi(0, int(a.get_meta("xtq_turn", 0)) - 1) if a is Object else 0
 			for k in c.get("offset_with", {}):
@@ -912,6 +914,95 @@ static func _cond(c: Dictionary, a, b) -> float:
 		"raven_myth":  # 渡鸦神话形态里
 			ok = XRaven.own(a) and XRaven.is_myth(a)
 	return float(c.get("mult", 1.0)) if ok else 1.0
+
+
+# ---- T268 命运编织者 94：副属性抬下限、终极逐段属性、命运骰子重掷 ----
+
+## 条件 stat_floor {stat 副属性, from, full, to, hits}（稿 94 节：副属性高于标准线时该命运的下限提高，最多到 3.0）。
+## 卡面合计 coef×属性权重和×hits，浮动 variance%，原区间 [合计×(1−浮动), 合计×(1+浮动)]；副属性÷标准线（XTianqiBase.line，按自己等级）
+## 从 from 到 full 线性把下限抬到 to（合计口径，同卡面「合计约3.6」），上限不动。返回 [伤害倍率（新中点÷原中点）, 新浮动%]；没抬时 [1, 原浮动]
+static func _floor_lift(a, c: Dictionary, sid: int) -> Array:
+	var sp := spec(sid)
+	var var0 := int(sp.get("variance", 0))
+	if not (a is XBattler):
+		return [1.0, var0]
+	var d: Dictionary = sp.get("damage", {})
+	var w := 0.0
+	for k in d.get("stats", {}):
+		w += float(d.stats[k])
+	var total := float(d.get("coef", 0.0)) * w * float(c.get("hits", 1))  # 合计按属性均值口径：物攻、魔攻各×60%＝两项平均×1.2，三段 3.6（同稿「平均 3.6」）
+	var lo := total * (1.0 - var0 / 100.0)
+	var hi := total * (1.0 + var0 / 100.0)
+	var st := str(c.get("stat", ""))
+	var lv := float(a.level) if a is XActor else float(rules().get("level_max", 99))
+	var r := float(a.param(STATS.find(st))) / maxf(1.0, XTianqiBase.line(lv, st))
+	var from := float(c.get("from", 1))
+	var t := clampf((r - from) / maxf(0.0001, float(c.get("full", 2)) - from), 0.0, 1.0)
+	var lo2 := lerpf(lo, maxf(lo, float(c.get("to", 0))), t)
+	if total <= 0.0 or lo2 <= lo:
+		return [1.0, var0]
+	return [(lo2 + hi) / (lo + hi), roundi((hi - lo2) / (hi + lo2) * 100.0)]
+
+
+## 行动序列每条 ACTION EFFECT 前问一次：这一招要不要换「这一段」的记录（只天启篇卡开着、角色放的、卡上带 seg_elements_of 或 stat_floor 的招）
+static func seg_on(u, skill: Dictionary) -> bool:
+	if not (u is XActor) or not cards_flag():
+		return false
+	var sid := int(skill.get("id", 0))
+	if not has(sid) or not cards_on():
+		return false
+	var sp := spec(sid)
+	return sp.has("seg_elements_of") or not _floor_cond(sp).is_empty()
+
+
+static func _floor_cond(sp: Dictionary) -> Dictionary:
+	for c in sp.get("damage", {}).get("conds", []):
+		if str(c.get("if", "")) == "stat_floor":
+			return c
+	return {}
+
+
+## 第 seg 段（本段 ACTION EFFECT 是第几条，0 起）的记录视图：seg_elements_of [技能号…] 逐段借那招此刻的属性
+## （XDB.rec 之后，天启篇元素重做转过的也认）；stat_floor 收窄浮动。只浅拷贝记录、damage 另拷，不改原记录
+static func seg_view(u, skill: Dictionary, seg: int) -> Dictionary:
+	var sid := int(skill.get("id", 0))
+	var sp := spec(sid)
+	var dmg: Dictionary = (skill.get("damage", {}) as Dictionary).duplicate()
+	var els: Array = sp.get("seg_elements_of", [])
+	if not els.is_empty():
+		var src := XDB.rec("Skills", int(els[seg % els.size()]))
+		dmg.elementId = int(src.get("damage", {}).get("elementId", dmg.get("elementId", 0)))
+	var fc := _floor_cond(sp)
+	if not fc.is_empty():
+		dmg.variance = int(_floor_lift(u, fc, sid)[1])
+	var out := skill.duplicate()
+	out.damage = dmg
+	return out
+
+
+## 命运骰子：每场第一次抽到「本轮已集过（开关 2261～2266 开着）、又不接连锁（跟上一发不同）」的命运时自动重掷一次（重掷结果为准）。
+## 稿是玩家手选，这里改成自动规则（协调 T268 批 A）；false＝不重掷。只天启篇、只战斗中、只 94 装着骰子
+static var FATE_REROLL := true
+const FATE_VAR := 1281
+const FATE_SWITCH0 := 2260  # 命运 v（1 火…6 混沌）集过的开关是 2260＋v
+const FATE_DICE := ["e4521", "e4520"]  # 稿：半成品与正式并成一件，两件都给重掷
+
+
+## mv_event_core 122（变量 1281 随机赋值）后调；interp 是战斗里的事件游标（有 logic），roll 再掷一次的 Callable
+static func fate_roll(interp, value: float, roll: Callable) -> float:
+	if not FATE_REROLL or not cards_flag():
+		return value
+	var logic = interp.get("logic")
+	if logic == null or not (logic is XBattleLogic) or logic.has_meta("xtq_fate_reroll") or not cards_on(logic.state):
+		return value
+	var a = logic.state.actor(94)
+	if a == null or not logic.actors.has(a) or not FATE_DICE.any(func(k): return owns(a, k)):
+		return value
+	var v := int(value)
+	if v < 1 or v > 6 or not logic.state.switch(FATE_SWITCH0 + v) or int(logic.state.variable(FATE_VAR)) == v:
+		return value
+	logic.set_meta("xtq_fate_reroll", v)  # 每场一次：记在本场的战斗逻辑上，下一场新对象自然清零
+	return float(roll.call())
 
 
 # ---- 熟练度 ----
@@ -1025,6 +1116,14 @@ static func begin_action(logic, u, skill) -> void:
 		return
 	st.kpend = []  # T232 R1：上一次行动没收尾留下的待定击倒不带进来
 	st.act = {"u": u, "skill": skill, "targets": []}
+	var cp: Dictionary = spec(int(skill.get("id", 0))).get("cast_pick", {})
+	if not cp.is_empty() and logic is XBattleLogic and logic._float("tianqi_cast_pick") < float(cp.get("rate", 100)) / 100.0:
+		# T268 技能行 cast_pick {rate 整数百分比, pick [{foe 状态}／{self 状态}…]}：每次施放掷一次、几率中了再从 pick 里随机挑一项，
+		# 命中时挂（after_apply）。命运·雷 10% 麻痹按整招掷一次；命运·混沌五选一（敌方灼烧／麻痹／减速、自己风／地增益）
+		var pk: Array = cp.get("pick", [])
+		if not pk.is_empty():
+			st.act.pick = pk[mini(pk.size() - 1, int(logic._float("tianqi_cast_pick") * pk.size()))]
+			u.set_meta("xtq_cast_pick", [int(skill.get("id", 0)), st.act.pick])  # 最近一次挑中的项（行动帧会被下一个人的 end_action 清掉，专项读这个）
 	var casts: Dictionary = u.get_meta("xtq_casts") if u.has_meta("xtq_casts") else {}
 	casts[int(skill.get("id", 0))] = int(casts.get(int(skill.get("id", 0)), 0)) + 1
 	u.set_meta("xtq_casts", casts)
@@ -1052,12 +1151,27 @@ static func after_apply(logic, u, skill, t, r := {}) -> void:
 		f.targets.append(t)
 	if not f.is_empty() and is_same(f.u, u) and bool(r.get("critical", false)):
 		f.crit = true  # 这次行动打出过暴击（charge.gain_crit）
-	# T264：公共事件强制放的技能（命运之手 1213 → 6863／6864）不走 end_action，技能行带 self_states_on_hit 的在命中时给自己挂（只天启篇、只带这个标记的行）
+	# T264：公共事件强制放的技能（命运之手 1213 → 6863／6864）不走 end_action，技能行带 self_states_on_hit 的在命中时给自己挂（只天启篇、只带这个标记的行）。
+	# T268（T264 核 P2-1）：每次行动只挂一次（三段不再挂三遍）；end_action 跳过带这个标记的行，普通行动放出来也不会再挂第二遍
+	var own := not f.is_empty() and is_same(f.u, u) and skill is Dictionary and int(skill.get("id", 0)) == int(f.skill.get("id", 0))
 	if cards_on() and u is XActor and skill is Dictionary and u.is_alive():
 		var ssp := spec(int(skill.get("id", 0)))
-		if bool(ssp.get("self_states_on_hit", false)):
+		if bool(ssp.get("self_states_on_hit", false)) and not (own and bool(f.get("self_on_hit_done", false))):
+			if own:
+				f.self_on_hit_done = true
 			for sid in ssp.get("self_states", []):
 				u.add_state(int(sid))
+		if own and f.has("pick") and logic is XBattleLogic:  # T268 cast_pick：挑中的那项，敌方的每个打到的目标挂一次、自己的挂一次
+			var pk: Dictionary = f.pick
+			if pk.has("foe") and t is XBattler and not is_same(t, u) and t.is_alive():
+				var pd: Array = f.get("pick_done", [])
+				if not pd.has(t):
+					pd.append(t)
+					f.pick_done = pd
+					logic.sequence_add_state(t, int(pk.foe))
+			if pk.has("self") and not bool(f.get("pick_self_done", false)):
+				f.pick_self_done = true
+				logic.sequence_add_state(u, int(pk.self))
 	_kill_grow(logic, u, skill, t)
 	_kill_tp(logic, u, skill, t, f)
 	_on_hit(logic, u, skill, t, f)
@@ -1700,7 +1814,7 @@ static func end_action(logic, u, skill) -> Array:
 				logic.current_order.push_front(u)  # 技能行 free_action：不占行动，放完马上再动一次（诸葛命星：战斗中切五行）
 		_hp_equalize(logic, u, f.skill)
 		_self_heal(u, f.skill)
-		if u.is_alive():
+		if u.is_alive() and not bool(spec(int(f.skill.get("id", 0))).get("self_states_on_hit", false)):  # T268：带 self_states_on_hit 的已在命中时挂过
 			for sid in spec(int(f.skill.get("id", 0))).get("self_states", []):  # 技能行 self_states：放完给自己挂状态（高松灯碧天独行：之后 2 回合暴击 +20%、承伤 +20%）
 				u.add_state(int(sid))
 		if spec(int(f.skill.get("id", 0))).has("mp_drain"):  # 技能行 mp_drain：放完扣掉当前魔法的这个比例（莉娜炎帝 0.5）
