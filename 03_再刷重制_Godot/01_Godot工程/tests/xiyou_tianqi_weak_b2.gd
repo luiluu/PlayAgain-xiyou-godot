@@ -147,6 +147,33 @@ func _has_text(logs: Array, part: String) -> bool:
 	return _texts(logs).any(func(x): return x.contains(part))
 
 
+## 天启篇通用词条挂身上（同 xiyou_tianqi_affix_battle 的 _wear；空表＝摘掉）
+func _wear_affix(a: XActor, affixes: Array) -> void:
+	a.keep_unequippable = true
+	while a.equips.size() <= 1:
+		a.equips.append(null)
+	a.equips[1] = {"kind": "armor", "name": "测试", "params": [0, 0, 0, 0, 0, 0, 0, 0], "traits": [], "etypeId": 3, "tianqi_affixes": affixes} if not affixes.is_empty() else null
+	a.param_mark_dirty()
+	a.param_refresh()
+
+
+## 露茜结清直接调（不走整套行动）：目标挂她上的 55（3 回合），开新回合、开主动根，settle 后收尾拿日志
+func _lucy_direct(lg: XBattleLogic, lucy: XActor, t: XActor, before := Callable()) -> Dictionary:
+	if not t.state_ids.has(55):
+		t.add_state(55)
+	t.state_turns[55] = 3
+	XTianqiWeakAffix._store(lg).regen_src[t] = lucy
+	_next_turn(lg)
+	var sk := XDB.rec("Skills", 623)
+	XTianqiWeakAffix.root_begin(lg, lucy, sk)
+	if before.is_valid():
+		before.call()
+	var r := {"skill": sk, "removed": []}
+	var ok := XTianqiWeakB2.settle(lg, lucy, t, 55, r)
+	var logs := XTianqiWeakAffix.root_end(lg)
+	return {"ok": ok, "r": r, "logs": logs}
+
+
 # ---- 31 露茜「催花」 ----
 func _lucy() -> void:
 	var lg := _logic([LUCY, 1, 2])
@@ -196,6 +223,46 @@ func _lucy() -> void:
 	ally.hp = ally.mhp
 	logs = _act(lg, lucy, 623)
 	_check("lucy_full_hp_wasted", ally.hp <= ally.mhp and _has_text(logs, "催花"))
+	# R1 P1-1：结清不写这一根的 r.hp／record_hp、不盖结果槽弹字 → 回春不把溢出转盾
+	_wear_affix(lucy, [{"key": "rejuvenate", "tier": 4, "grade": "normal", "extra": {}}])
+	ally.hp = ally.mhp
+	ally.shield = 0.0
+	var sk623 := XDB.rec("Skills", 623)
+	var d := _lucy_direct(lg, lucy, ally, func():
+		XTianqiAffixBattle.begin_action(lg, lucy, sk623)
+		XTianqiAffixBattle.before_apply(lg, lucy, sk623, ally)
+		lg._action_resources = lg._new_lifecycle_resources()  # 当作在这一根的行动里（结果槽里是 10% 即时治疗的弹字）
+		lg._action_resources.result(ally).hpDamage = -123.0)
+	var slot_hp := float(lg._action_resources.result(ally).hpDamage)
+	lg._action_resources = null
+	XTianqiAffixBattle.after_apply(lg, lucy, sk623, ally, d.r)
+	XTianqiAffixBattle.end_action(lg, lucy, sk623)
+	_check("lucy_settle_no_rejuvenate_shield", d.ok and ally.shield == 0.0 and float(d.r.get("hp", 0.0)) == 0.0 and not d.r.has("record_hp") and slot_hp == -123.0, [d.ok, ally.shield, d.r.get("hp"), slot_hp])
+	_check("lucy_settle_full_hp_logs_zero", _texts(d.logs).any(func(x): return x.contains("回复 0）")), _texts(d.logs))
+	_wear_affix(lucy, [])
+	# R1 P1-1：四骑士疫病（受到的治疗 −50%）只减一次，日志报实际回复
+	lg.set_meta(XTianqiHorsemen.META, {"line": "plague", "mode": "body", "knight": lg.enemies[0], "hit_knight": {}, "queue": [], "shield_open": false, "broken_turn": -1, "marks": {ally: {"plague": true}}})
+	ally.hp = 1.0
+	var hp0 := ally.hp
+	d = _lucy_direct(lg, lucy, ally)
+	var full_v := floorf(ally.mhp * XTianqiWeakB2.tick_rate(55) * 3 * ally.rec)
+	var want_pl := floorf(full_v * (1.0 - float(XTianqiHorsemen.knight("plague").plague.heal_down)))
+	lg.remove_meta(XTianqiHorsemen.META)
+	_check("lucy_settle_plague_halved_once", d.ok and want_pl > 0.0 and want_pl < full_v and int(ally.hp - hp0) == int(want_pl) and _texts(d.logs).any(func(x): return x.contains("回复 %d）" % int(want_pl))), [want_pl, full_v, ally.hp - hp0, _texts(d.logs)])
+	# R1 P1-1：只在 gain 里的修正（宿傩裂伤，天启篇 −30%）也算，日志＝实际回复
+	ally.add_state(XSukuna.WOUND)
+	ally.hp = 1.0
+	hp0 = ally.hp
+	d = _lucy_direct(lg, lucy, ally)
+	ally.remove_state(XSukuna.WOUND)
+	var got := int(ally.hp - hp0)
+	_check("lucy_settle_gain_mods_logged", d.ok and got > 0 and got < int(full_v) and _texts(d.logs).any(func(x): return x.contains("回复 %d）" % got)), [got, full_v, _texts(d.logs)])
+	# R1 P3-1：不在主动根里（词条再释放、追加、派生）不结清
+	ally.add_state(55)
+	ally.state_turns[55] = 3
+	XTianqiWeakAffix._store(lg).regen_src[ally] = lucy
+	_next_turn(lg)
+	_check("lucy_settle_root_only", not XTianqiWeakB2.settle(lg, lucy, ally, 55, {"skill": sk623, "removed": []}) and ally.state_ids.has(55))
 	# 开关关：照原生刷新
 	_next_turn(lg)
 	_act(lg, lucy, 623)
@@ -330,7 +397,10 @@ func _minato() -> void:
 	_check("minato_next_order_pushed", moved.size() == foes.size(), [foes.map(func(e): return [nxt_before.find(e), lg.next_order.find(e)])])
 	var st_ok := foes.all(func(e): return e.state_ids.has(10830) and int(e.state_turns.get(10830, 0)) == 2)
 	_check("minato_slow_state", st_ok, foes.map(func(e): return [e.state_ids.has(10830), e.state_turns.get(10830)]))
-	_check("minato_log", _has_text(logs, "黄色闪光"), _texts(logs))
+	_check("minato_log", _has_text(logs, "名敌人下回合行动后推 1 格"), _texts(logs))
+	# R1 P2-3：刻印的类型、右下小字（去掉底号 26 冰冷的残留）
+	var mk := XDB.rec("States", 10830)
+	_check("minato_mark_note", str(mk.get("meta", {}).get("BuffType", "")) == "减益" and str(mk.get("note", "")).contains("被飞雷神刻印标记，身形变慢。") and not str(mk.get("note", "")).contains("好冷") and not str(mk.get("note", "")).contains("冰冷"), mk.get("note"))
 	# ⑥ 同回合第二次：全额、不推
 	var nxt2 := lg.next_order.duplicate()
 	logs = _act(lg, u, 7089)
@@ -356,6 +426,17 @@ func _minato() -> void:
 	e0.boss_difficulty_boss = false
 	# ⑦ 连用：每回合只推 1 格（下回合顺序表每回合重排，这里看「每敌每回合 1 次」的次数）
 	_check("minato_push_once_per_turn", XTianqiWeakAffix.turn_count(lg, e0, "w103_push") == 1)
+	# R1 P2-2：刻印没挂上（目标隐身＝挂不上）就不写回合
+	_next_turn(lg)
+	e0.remove_state(10830)
+	e0.state_turns.erase(10830)
+	XTianqiWeakAffix.root_begin(lg, u, XDB.rec("Skills", 7089))
+	XTianqiWeakAffix.root_skill(lg, XDB.rec("Skills", 7089))
+	XTianqiWeakAffix._frame(lg).hits.append({"user": u, "target": e0, "hp": 1.0})
+	e0.hidden = true
+	XTianqiWeakAffix.root_end(lg)
+	e0.hidden = false
+	_check("minato_resisted_no_turns", not e0.state_ids.has(10830) and not e0.state_turns.has(10830), [e0.state_ids.has(10830), e0.state_turns.get(10830)])
 	# 开关关：不扣、不推
 	_off("w103")
 	_next_turn(lg)
@@ -387,13 +468,16 @@ func _aikun() -> void:
 	_learn(k, [1235, 3514])
 	_next_turn(lg)
 	logs = _act(lg, k, 506, e0)
-	_check("aikun_intercept_stock3", _actions(logs, k, 4370) == 0 and int(XTianqiWeakAffix.stock(lg, k, "w3").get("n", 0)) == 3 and _has_text(logs, "球来入库"), _texts(logs))
+	_check("aikun_intercept_stock3", _actions(logs, k, 4370) == 0 and int(XTianqiWeakAffix.stock(lg, k, "w3").get("n", 0)) == 3 and _has_text(logs, "球来蓄势"), _texts(logs))
 	# ⑥ 艾坤自己出手不传
 	_check("aikun_own_root_no_pass", not _has_text(logs, "传球！"))
 	# ④ 队友出手命中：对主目标打一次传球（球来五段），库存 −1
 	logs = _act(lg, mate, 1, e1)
 	var pass_hits := _hits(logs, k, e1)
-	_check("aikun_pass_on_mate_root", _has_text(logs, "传球！") and _actions(logs, k, 4370) == 1 and pass_hits >= 5 and int(XTianqiWeakAffix.stock(lg, k, "w3").get("n", 0)) == 2, [pass_hits, _texts(logs)])
+	_check("aikun_pass_on_mate_root", _has_text(logs, "艾坤传球！") and _actions(logs, k, 4370) == 1 and pass_hits >= 5 and int(XTianqiWeakAffix.stock(lg, k, "w3").get("n", 0)) == 2, [pass_hits, _texts(logs)])
+	# R1 P1-2：多敌场上传球只打主目标（原序列 action effect: enemies 会打全体）
+	var side := lg.enemies.filter(func(e): return not is_same(e, e1)).map(func(e): return _hits(logs, k, e))
+	_check("aikun_pass_main_only", lg.enemies.size() >= 2 and side.all(func(n): return n == 0), [lg.enemies.size(), side, pass_hits])
 	# ⑤ 同回合第二个队友：不打
 	logs = _act(lg, mate2, 1, e1)
 	_check("aikun_once_per_turn", not _has_text(logs, "传球！") and int(XTianqiWeakAffix.stock(lg, k, "w3").get("n", 0)) == 2)
@@ -402,6 +486,15 @@ func _aikun() -> void:
 	e1.hp = 1.0
 	logs = _act(lg, mate, 1, e1, [e1])
 	_check("aikun_main_dead_no_pass", e1.is_dead() and not _has_text(logs, "传球！") and int(XTianqiWeakAffix.stock(lg, k, "w3").get("n", 0)) == 2, _texts(logs))
+	# R1 P3-2：大灌篮打倒目标（场上另有敌人）：球来过不了检查，不入库
+	_next_turn(lg)
+	XTianqiWeakAffix.stock(lg, k, "w3").n = 0
+	e0.hp = 1.0
+	logs = _act(lg, k, 506, e0, [e0])
+	_check("aikun_slam_kill_no_stock", e0.is_dead() and lg.alive(lg.enemies).size() >= 1 and int(XTianqiWeakAffix.stock(lg, k, "w3").get("n", 0)) == 0 and not _has_text(logs, "球来蓄势"), [e0.is_dead(), _texts(logs)])
+	e0.remove_state(1)
+	e0.hp = e0.mhp
+	XTianqiWeakAffix.stock(lg, k, "w3").n = 2
 	# 传球的伤害是球来 ×33%：formula 比
 	var base := XTianqiSkills.formula(k, e0, XDB.rec("Skills", 4370))
 	XTianqiSkills.follow_scale = 0.33
@@ -422,7 +515,7 @@ func _aikun() -> void:
 		XTianqiWeakAffix._frame(lg).main = e0
 		XTianqiWeakAffix._frame(lg).hits.append({"user": mate, "target": e0, "hp": 1.0})
 		var plogs := XTianqiWeakAffix.root_end(lg)
-		_check("aikun_pass_hunzi_no_mark", _has_text(plogs, "传球！") and not XTianqiHorsemen.fight(lg).hit_knight.has(k), XTianqiHorsemen.fight(lg).hit_knight.keys().map(func(x): return x.display_name()))
+		_check("aikun_pass_hunzi_no_mark", _has_text(plogs, "艾坤传球！") and not XTianqiHorsemen.fight(lg).hit_knight.has(k), XTianqiHorsemen.fight(lg).hit_knight.keys().map(func(x): return x.display_name()))
 	else:
 		_check("aikun_pass_hunzi_no_mark", false, "混子夹具没起来")
 	lg.remove_meta(XTianqiHorsemen.META)
@@ -453,22 +546,35 @@ func _badges_view() -> void:
 	_exclusive(m, "w23")
 	_exclusive(k, "w3")
 	XTianqiWeakAffix.stock(lg, m, "w23").n = 2
-	XTianqiWeakAffix.stock(lg, m, "w23").full = 3
+	XTianqiWeakAffix.stock(lg, k, "w3").n = 2
+	# R1 P2-1：没学天师真言术 5083 不挂
+	if m.skill_ids.has(5083):
+		m.forget_skill(5083)
+	_check("badge_molei_needs_5083", not m.skill_ids.has(5083) and XTianqiWeakAffix.badges(lg, m).is_empty(), XTianqiWeakAffix.badges(lg, m))
+	_learn(m, [5083])
 	XTianqiWeakAffix.stock(lg, k, "w3").n = 2
 	var bm := XTianqiWeakAffix.badges(lg, m)
 	var bk := XTianqiWeakAffix.badges(lg, k)
-	_check("badge_state_only", bm == ["蓄雷 2/3"] and bk == ["球×2"], [bm, bk])
+	_check("badge_state_only", bm == ["蓄雷 2/3"] and bk == ["传球 ×2"], [bm, bk])
 	var view := XTianqiWeakBadges.make(lg, func(): return {})
 	_check("badge_node_built", view != null)
 	if view != null:
 		view.poll()
-		_check("badge_node_reads", view.shown.get(m, "") == "蓄雷 2/3" and view.shown.get(k, "") == "球×2", view.shown.values())
+		_check("badge_node_reads", view.shown.get(m, "") == "蓄雷 2/3" and view.shown.get(k, "") == "传球 ×2", view.shown.values())
 		view.free()
+	# R1 P2-1：几率档位变了（学雷动九天 534 → 50%），满格数实时跟着变
+	_learn(m, [534])
+	_check("badge_molei_full_live", XTianqiWeakAffix.badges(lg, m) == ["蓄雷 2/2"], XTianqiWeakAffix.badges(lg, m))
 	XTianqiWeakAffix.stock(lg, k, "w3").n = 0
 	_check("badge_empty_stock_hidden", XTianqiWeakAffix.badges(lg, k).is_empty())
 	_off("w23")
 	_check("badge_switch_off", XTianqiWeakAffix.badges(lg, m).is_empty())
+	_on("w23")
+	# R1 P2-4：战斗结束（本场数据已清）后角标不显示、不重建本场数据
 	lg.end_battle(0)
+	var after_end := XTianqiWeakAffix.badges(lg, m)
+	_check("badge_hidden_after_end", after_end.is_empty() and not lg.has_meta(XTianqiWeakAffix.META), [after_end, lg.has_meta(XTianqiWeakAffix.META)])
+	_off("w23")
 
 
 # ---- 西游档：条目开着、本人装着也不生效 ----

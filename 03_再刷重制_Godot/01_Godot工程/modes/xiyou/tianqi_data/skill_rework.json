@@ -2441,7 +2441,7 @@
   "970": {"name": "破阵——梦寻秘境", "turns": 1},
   "285": {"name": "寒霜屏障", "note_remove": ["Element Amplify \\d+", "passiveHarmRe\\d+"], "note_add": "<passiveSPBST6:-10%><passiveSPBST7:-10%>", "turns": 1, "auto": 2, "state_note": "受到的伤害 −10%"},
   "10810": {"name": "冰冷", "note_sub": [["(?i)<G_ShuXing>.*?</G_ShuXing>", ""]], "traits": [{"code": 21, "dataId": 6, "value": 0.9}], "turns": 2, "auto": 2, "state_note": "敏捷 −10%"},
-  "10830": {"name": "刻印", "note_sub": [["(?i)<G_ShuXing>.*?</G_ShuXing>", ""]], "traits": [{"code": 21, "dataId": 6, "value": 0.8}], "turns": 2, "auto": 2, "state_note": "敏捷 −20%"},
+  "10830": {"name": "刻印", "note_sub": [["(?i)<G_ShuXing>.*?</G_ShuXing>", ""], ["<BuffType:[^>]*>", "<BuffType:减益>"], ["<RightDownNote:[^>]*>", "<RightDownNote:\"被飞雷神刻印标记，身形变慢。\">"]], "traits": [{"code": 21, "dataId": 6, "value": 0.8}], "turns": 2, "auto": 2, "state_note": "敏捷 −20%"},
   "267": {"name": "猛虎连击", "note_remove": ["Permanent"], "note_add": "<Element Amplify 1: +10%><Element Amplify 2: +10%><Element Amplify 3: +10%><Element Amplify 4: +10%><Element Amplify 5: +10%><Element Amplify 6: +10%><Element Amplify 7: +10%><Element Amplify 8: +10%><Element Amplify 9: +10%>", "traits": [], "state_note": "全属性伤害 +10%"},
   "10811": {"name": "灵光", "note_sub": [["(?i)<G_ShuXing>.*?</G_ShuXing>", ""]], "note_remove": ["Element Amplify \\d+", "passiveHarmRi"], "note_add": "<passiveHarmRi:10>", "traits": [], "turns": 2, "auto": 2, "state_note": "伤害 +10%"},
   "502": {"name": "骨毒", "effects_remove": true, "dot": {"stat": "luk", "per": 0.5, "healing": false, "variance": 0, "element": 6}, "turns": 3, "state_note": "每层回合结束受到施加者幸运×0.5的伤害（最多3层）"},

@@ -98,6 +98,8 @@ static func tick_rate(state_id: int) -> float:
 static func settle(logic, u, t, id: int, r: Dictionary) -> bool:
 	if not wears(logic, u, "w31") or t == null or not t.is_alive():
 		return false
+	if XTianqiWeakAffix.kind(logic) != XTianqiWeakAffix.ROOT:
+		return false  # 只认主动根：词条再释放、原生追加、派生不结清（v0.3 第二节第 2 条）
 	var sp: Dictionary = XTianqiWeakAffix.entry("w31").get("settle", {})
 	var sid := int(sp.get("state", 0))
 	if id != sid or int(r.get("skill", {}).get("id", 0)) != int(sp.get("skill", 0)):
@@ -107,16 +109,33 @@ static func settle(logic, u, t, id: int, r: Dictionary) -> bool:
 	if not XTianqiWeakAffix.take_turn(logic, t, "w31"):
 		return false  # 同回合第二次：照原生刷新
 	var left := int(t.state_turns.get(sid, 0))
-	var v := floorf(t.mhp * tick_rate(sid) * left * t.rec)
-	if v > 0.0:
-		logic._action_resources.gain(t, "hp", v)
-		r.hp = float(r.get("hp", 0.0)) - v
-		r.record_hp = float(r.get("record_hp", 0.0)) + v
+	var healed := heal_once(logic, u, t, floorf(t.mhp * tick_rate(sid) * left * t.rec))
 	logic._state_remove(t, sid)
 	r.removed.append(sid)
 	XTianqiWeakAffix._store(logic).get("regen_src", {}).erase(t)
-	_queue(logic, XTianqiWeakAffix.say("催花：%s的持续回复一次结清（%d 回合，回复 %d）" % [_name(t), left, int(v)]))
+	_queue(logic, XTianqiWeakAffix.say("催花：%s 的持续回复立即结算（剩余 %d 回合，回复 %d）" % [_name(t), left, healed]))
 	return true
+
+
+## 结清的那一次回血（T230 R1 P1-1）：只过一次目标的受治疗修正——rec 已在 v 里，这里再过四骑士疫病减半／证道狂暴（hp_damage 的治疗分支）
+## 和 gain 里的各条（禁疗、荒年者、烙印、宿傩伤口……）；不写 r.hp／record_hp（回春不把溢出转盾、不算溢出治疗），
+## 也不盖掉这一招 10% 即时治疗写在结果槽里的弹字。返回实际回了多少（满血溢出的部分浪费）。
+static func heal_once(logic, u, t, v: float) -> int:
+	v = floorf(-float(XTianqiHorsemen.hp_damage(logic, u, t, -v)))
+	if v <= 0.0:
+		return 0
+	var ctx = logic._operation_resources(t)  # 行动里就是这一根的结果槽（同 gain_hp）
+	var res: Dictionary = ctx.result(t)
+	var keep := {}
+	for k in ["hpDamage", "hpAffected"]:
+		if res.has(k):
+			keep[k] = res[k]
+	var before := float(t.hp)
+	ctx.gain(t, "hp", v)
+	for k in keep:
+		res[k] = keep[k]
+	logic._finish_lifecycle_operation(ctx, t)
+	return maxi(0, int(float(t.hp) - before))
 
 
 class Lucy:
@@ -157,12 +176,12 @@ static func thunder(logic, u, cands: Array, used: bool) -> Dictionary:
 		return out  # 没满；或满了但这回合已落过（保持满格，下回合第一个合格的根落）
 	var t = XTianqiWeakAffix.main_target(logic)
 	if t == null or not t.is_alive() or t.is_actor() == u.is_actor():
-		out.logs.append(XTianqiWeakAffix.say("蓄雷已满，目标倒下，这次不落"))
+		out.logs.append(XTianqiWeakAffix.say("蓄雷已满，目标已倒下，暂不落雷"))
 		return out
 	s.n = 0
 	var pct := roundi(float(row[1]) * 100.0) * full
 	out.fall = [row[0], pct, t, float(row[2])]
-	out.logs.append(XTianqiWeakAffix.say("蓄雷满：天罡五雷落下"))
+	out.logs.append(XTianqiWeakAffix.say("蓄雷已满，天罡五雷落下！"))
 	return out
 
 
@@ -170,18 +189,32 @@ class Molei:
 	func badge(logic, b) -> String:
 		if not XTianqiWeakB2.wears(logic, b, "w23"):
 			return ""
-		var s := XTianqiWeakAffix.stock(logic, b, "w23")
-		return "蓄雷 %d/%d" % [int(s.get("n", 0)), int(s.get("full", XTianqiWeakB2.thunder_full(XTianqiWeakB2.molei_rate(b))))]
+		if not XTianqiWeakB2.molei_can(b):
+			return ""  # 没学天师真言术（5083）：根本蓄不了雷，不挂
+		var full := XTianqiWeakB2.thunder_full(XTianqiWeakB2.molei_rate(b))  # 满格数随此刻的几率档位实时算
+		return "蓄雷 %d/%d" % [mini(int(XTianqiWeakAffix.stock(logic, b, "w23").get("n", 0)), full), full]
 
 
-## 显示用：他此刻五雷的几率（魔雷术那一行，学没学都按表算）
-static func molei_rate(a) -> float:
+## 显示用：魔雷术那一行五雷追加（表里 casts 认的那一行，学没学都给）
+static func molei_row() -> Dictionary:
 	var casts: Array = XTianqiWeakAffix.entry("w23").get("thunder", {}).get("casts", [])
 	for id in [217]:
 		for r in XTianqiSkills.spec(id).get("follow", []):
 			if casts.has(float(r.get("cast", 0))) or casts.has(int(r.get("cast", 0))):
-				return XTianqiSkills._rate(a, r)
-	return 0.3
+				return r
+	return {}
+
+
+## 显示用：他此刻五雷的几率
+static func molei_rate(a) -> float:
+	var r := molei_row()
+	return XTianqiSkills._rate(a, r) if not r.is_empty() else 0.3
+
+
+## 显示用：他有没有资格掷五雷（那一行的 need_skill，天师真言术 5083）
+static func molei_can(a) -> bool:
+	var need := int(molei_row().get("need_skill", 0))
+	return need <= 0 or XTianqiSkills.owns(a, need)
 
 
 # ---- w103 波风水门「黄色闪光」 ----
@@ -217,11 +250,12 @@ class Minato:
 			var turns := XTianqiWeakAffix.boss_turns(t, sid, int(sp.get("turns", 2)))
 			if sid > 0 and turns > 0:
 				logic._state_add(t, sid)
-				t.state_turns[sid] = turns  # 不叠加，重复上只刷新
+				if t.state_ids.has(sid):
+					t.state_turns[sid] = turns  # 不叠加，重复上只刷新；被抵抗、免疫没挂上就不写回合
 			n += 1
 		if n == 0:
 			return []
-		return [XTianqiWeakAffix.say("黄色闪光：%d 名敌人下回合后推一格" % n)]
+		return [XTianqiWeakAffix.say("黄色闪光：%d 名敌人下回合行动后推 1 格" % n)]
 
 
 # ---- w3 艾坤「一坤年之威」 ----
@@ -235,7 +269,18 @@ static func intercept_pass(logic, u, cast: Dictionary) -> Array:
 		return []
 	var s := XTianqiWeakAffix.stock(logic, u, "w3")
 	s.n = int(sp.get("stock", 3))  # 补足到上限，多的作废
-	return [XTianqiWeakAffix.say("球来入库：传球 ×%d" % int(s.n))]
+	return [XTianqiWeakAffix.say("球来蓄势：传球 ×%d" % int(s.n))]
+
+
+## 传球用的那一份球来（T230 R1 P1-2）：原序列 target 段是「action effect: enemies」（打场上全体），拷一份把段参数清掉，只打传进去的主目标；
+## 只改这份拷贝，共享 XDB 记录、关着 w3 时的原生球来不动
+static func pass_cast(a, id: int) -> Dictionary:
+	var cast: Dictionary = XTianqiWeakAffix.skill_view(XDB.rec("Skills", id), a).duplicate(true)
+	if cast.get("yepSeq") is Dictionary:
+		for ph in cast.yepSeq:
+			if cast.yepSeq[ph] is Array:
+				cast.yepSeq[ph] = XTianqiSkills._seq_edit(cast.yepSeq[ph], [{"op": "clear_effect_args"}])
+	return cast
 
 
 class Aikun:
@@ -254,8 +299,8 @@ class Aikun:
 			return []
 		var sp: Dictionary = XTianqiWeakAffix.entry("w3").get("pass", {})
 		s.n = int(s.n) - 1
-		var cast := XTianqiWeakAffix.skill_view(XDB.rec("Skills", int(sp.get("cast", 0))), a)
-		var logs := [XTianqiWeakAffix.say("传球！（剩 %d）" % int(s.n))]
+		var cast := XTianqiWeakB2.pass_cast(a, int(sp.get("cast", 0)))
+		var logs := [XTianqiWeakAffix.say("艾坤传球！（剩 %d）" % int(s.n))]
 		var prev := XTianqiSkills.follow_scale
 		XTianqiSkills.follow_scale = int(sp.get("pct", 100)) / 100.0
 		logs.append_array(XTianqiSkills._cast(logic, a, cast, [t]))
@@ -266,4 +311,4 @@ class Aikun:
 		if not XTianqiWeakB2.wears(logic, b, "w3"):
 			return ""
 		var n := int(XTianqiWeakAffix.stock(logic, b, "w3").get("n", 0))
-		return "球×%d" % n if n > 0 else ""
+		return "传球 ×%d" % n if n > 0 else ""

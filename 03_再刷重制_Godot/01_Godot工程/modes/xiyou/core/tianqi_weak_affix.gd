@@ -395,6 +395,7 @@ static func turn_begin(logic) -> void:
 	if not st.frames.is_empty():
 		push_warning("天启篇专属词条：上一根没有收尾（%d 层），开新回合时清掉" % st.frames.size())
 		st.frames.clear()
+		cut = {}  # 没收尾那一根的伤害百分比一起清
 	st.turn_used.clear()
 	for k in _live_keys(logic):
 		var h = _handlers.get(k)
@@ -544,8 +545,8 @@ static func boss_turns(e, state_id: int, n: int) -> int:
 ## 角色或敌人身上的文字角标（蓄雷格数、传球库存、被护者、受邀者……由各条专属给）
 static func badges(logic, b) -> Array:
 	var out := []
-	if not _active(logic):
-		return out
+	if not _active(logic) or not logic.has_meta(META):
+		return out  # 只读：战斗结束（finish 已清本场数据）后胜利镜头、结算期间不重建，角标跟着消失
 	for k in _live_keys(logic):
 		var h = _handlers.get(k)
 		if h != null and h.has_method("badge"):
