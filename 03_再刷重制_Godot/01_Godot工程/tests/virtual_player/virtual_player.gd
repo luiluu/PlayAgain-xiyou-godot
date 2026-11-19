@@ -1110,6 +1110,10 @@ func _ff_run(map: XMapScene, st: XState, floor: int) -> bool:
 	row["grind_battles"] = int(row.get("grind_battles", 0)) + int(g.battles)
 	var kings := 0
 	var runs := 0
+	if int(g.get("drops", 0)) > 0 and equip_enabled:
+		# 练级掉的装备先穿上再去量副本首领（不然量的是没换装的队伍）
+		for line in Growth.equip_direct(st):
+			_note_growth(str(line))
 	for i in farm_n:
 		var d: Dictionary = await ff.dungeon_once(st, map.map_id, _buy_item)
 		if not bool(d.ok):
@@ -2116,6 +2120,37 @@ func _snapshot(st: XState, floor: int) -> void:
 	if not _snap_done.has(floor):
 		_snap_done[floor] = true
 		_mark("snapshot_%d" % floor)
+		_snapshot_meta(st, floor)
+
+
+## T238：测量档的来路另写到 meta/floor_<层>_<种子>.json（不放进存档本身、也不在 --snapshots 读的目录层级里）：
+## 之前哪些层是放水送上来的（carried＝有放水）、快进刷了多少、出战的人和等级。量守层者三表时用它挑「实打上来的队伍」
+func _snapshot_meta(st: XState, floor: int) -> void:
+	var dir := snapshot_dir.path_join("meta")
+	DirAccess.make_dir_recursive_absolute(dir)
+	var gifted := gifted_floors.filter(func(x): return int(x) < floor)
+	var meta := {"floor": floor, "seed": rng_seed, "difficulty_key": _tq_key, "lineup": lineup,
+		"lineup_weak": lineup.map(func(id): return XTianqiSkills.is_weak(id, true)),
+		"gifted_floors": gifted, "carried": not gifted.is_empty(),
+		"real_floors": range(1, floor).filter(func(x): return not gifted.has(x)),
+		"members": st.battle_members().map(func(a): return {"id": a.actor_id, "level": a.level, "max_level": a.max_level()}),
+		"ff": {"settled": ff.settled, "grind": ff.grind_battles, "dungeon": ff.dungeon_runs, "kings": ff.dungeon_kings} if ff != null else {},
+		"msec": Time.get_ticks_msec() - _t0, "frames": Engine.get_process_frames()}
+	var f := FileAccess.open(dir.path_join("floor_%d_%d.json" % [floor, rng_seed]), FileAccess.WRITE)
+	if f != null:
+		f.store_string(JSON.stringify(meta, " "))
+		f.close()
+	# 总表 meta/floors_<种子>.json：每层一行（层、是否被放水送上来、之前实打过的层、等级），跑一层补一行
+	var all_path := dir.path_join("floors_%d.json" % rng_seed)
+	var rows = JSON.parse_string(FileAccess.get_file_as_string(all_path)) if FileAccess.file_exists(all_path) else []
+	if not rows is Array:
+		rows = []
+	rows = rows.filter(func(x): return x is Dictionary and int(x.get("floor", 0)) != floor)
+	rows.append({"floor": floor, "carried": meta.carried, "gifted_floors": gifted, "levels": meta.members.map(func(m): return int(m.level)), "msec": meta.msec})
+	var g := FileAccess.open(all_path, FileAccess.WRITE)
+	if g != null:
+		g.store_string(JSON.stringify(rows, " "))
+		g.close()
 
 
 ## 这张图上把人送到 dest 的传送点（事件当前页里有「场所移动」到那张图）
