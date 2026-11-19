@@ -7,7 +7,7 @@ extends RefCounted
 ##   setupActions 1＋duration 3；米拉 168 解放 10146 futureActor＋followupSkill 10151。
 ## - safeDamage 的受控估算分支（第 96～172 行）：米拉 10140～10151（CodexMira.damage，按统一伤害的攻防比例折防御）、
 ##   渡鸦 10122～10126（整条公式）、黄泉 10171～10174（CodexYomi.damage）、宿傩 10229～10233（神灶要目标蓄力、神灶：开要准备层）。
-##   镜流 10187～10193、饿狼 10250～10263 两支不在这里（见交付单）。
+##   镜流 10187～10193、饿狼 10250～10263 西游档在下面 raw 里已移植；天启篇重构后它们的公式换成 XTianqiSkills.formula，由 XSmartAI 的模块公式分支估（o_tianqi_smart_ai，T281）。
 ## - 段数：估伤乘的 action.numRepeats 要过角色的包装（黄泉 2／6＋幸运段、流萤天火 5／8 与燃烧 9、渡鸦冥羽连葬加追加次数），见 repeats。
 ## - boosts（第 67～83 行）：米拉 30 级学了 10144 ×7.66、70 级三阶学了 10164 ×2；渡鸦 damageMultiplier、25 级学了 10132 ×1.15、
 ##   60 级五阶学了 10136 ×4.25。

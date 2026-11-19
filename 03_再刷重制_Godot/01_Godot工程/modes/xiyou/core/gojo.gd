@@ -389,6 +389,9 @@ static func domain_shown(logic) -> bool:
 
 # ---- 公式 ----
 
+## 智能 AI（XSmartAI）估伤预览期间为真：茈的 formula 没有 cast 时读当前对数而不是 0（T281）。只读、用完由调用方放回 false
+static var ai_preview := false
+
 ## 茈：表里 gojo_pairs 按对数取满级系数（收 1.8／3.6／6.0，放 3.6／7.2／10.8；T191 tune.D200 取整成 2／4／6、4／7／11），乘魔攻和等级缩放
 static func formula(a, b, item: Dictionary) -> float:
 	var id := int(item.get("id", 0))
@@ -397,6 +400,8 @@ static func formula(a, b, item: Dictionary) -> float:
 	var sp := XTianqiSkills.spec(id)
 	var pairs: Array = sp.get("gojo_pairs", [])
 	var n := int(cast.get("pairs", 0)) if own(a) else MARK_CAP
+	if ai_preview and own(a) and cast.is_empty():
+		n = pairs(a)  # 智能 AI 选招预览（还没开始放，cast 空）：按当前苍、赫印的对数估，只读
 	if pairs.is_empty() or n < 1:
 		return 0.0
 	var coef := float(pairs[mini(n, pairs.size()) - 1]) / maxf(1.0, float(sp.get("gojo_hits", 1)))  # T209：gojo_hits 段（卡上写合计，按段分；seq split_effects 同段数）
