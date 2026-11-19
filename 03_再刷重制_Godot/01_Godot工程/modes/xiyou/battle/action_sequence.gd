@@ -44,6 +44,8 @@ var _break := false
 var _phase := ""
 var _line := -1
 var _group_hit := {}
+## 当前在跑的那一段指令表（T268：算本条 ACTION EFFECT 是第几段）
+var _list: Array = []
 ## 数值序列持有独立结果槽；嵌套时只共享当前战斗的Boss域。
 var _resources: XResourceContext
 ## T225 逐段结算：主行动的根序列才有（XBattleStream），每条 ACTION EFFECT 前停下等画面演到
@@ -96,6 +98,7 @@ func run() -> Array:
 
 
 func _run_list(list: Array) -> void:
+	_list = list
 	for li in list.size():
 		var entry = list[li]
 		_line = li
@@ -272,6 +275,8 @@ func _action_effect(args: Array) -> void:
 	var list := make_targets(str(args[0])) if not args.is_empty() and str(args[0]) != "" else targets
 	if list != targets and repeat_fixed():
 		list = list.filter(func(x): return _group_once(x))
+	# T268 天启篇命运编织者：终极命运逐段换属性、副属性抬下限收窄浮动（XTianqiSkills.seg_view；别的招 seg_on 为假，原记录照用）
+	var sk := XTianqiSkills.seg_view(user, skill, _seg_index()) if XTianqiSkills.seg_on(user, skill) else skill
 	for t0 in list:
 		var t = XTianqiWeakAffix.segment_target(logic, user, skill, t0) if t0 != null else null  # 天启篇弱者专属词条：引导者这一段前不合法回原目标、都不合法跳过
 		if t == null:
@@ -282,7 +287,16 @@ func _action_effect(args: Array) -> void:
 				t = rt
 			if t.is_dead():
 				continue
-		logs.append_array(logic.mark_views(logic._invoke(user, skill, t)))
+		logs.append_array(logic.mark_views(logic._invoke(user, sk, t)))
+
+
+## 本条 ACTION EFFECT 在这一段指令表里是第几条（0 起，条件块里的也算）
+func _seg_index() -> int:
+	var n := 0
+	for i in mini(_line, _list.size()):
+		if str(_list[i][0]).to_upper() == "ACTION EFFECT":
+			n += 1
+	return n
 
 
 ## FIX_ALL_SCOPE_REPEAT：全体技能 target 段里整组写法的 ACTION EFFECT 要去重

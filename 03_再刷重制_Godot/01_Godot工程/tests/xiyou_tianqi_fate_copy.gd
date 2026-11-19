@@ -6,8 +6,11 @@ extends Node
 ## 二、实打：天启篇档 94 一人上场连放命运之手，七种（混沌只在没穿法宝 4521 命运骰子时出，照原版公共事件）各至少出一次；打出的每一下都在卡的范围里；
 ##    （六种：没穿法宝 4521 命运骰子；穿了只抽五种、没有混沌，照原版）卡开关前后（XTianqiBase.PHASE4）各打一场，打印每种命运平均一发的伤害（交付单对比表从这里抄）。
 ##    连锁（R1）：1213 选命运那句随机改定值，连放同一种 8 发，第 1～8 发出手时 SkillPass 依次 +0/+20/+40/+60/+60/+60/+60/+60%；换别的命运后归零。
-## 附带效果（T264）：火灼伤 18、风自己敏捷 +10%（10831）、地自己承伤 −10%（10832）、雷 10% 麻痹 100、冰敏捷 −10%（22），卡面与实打各查；混沌三项敌方效果各 20%。
+## 附带效果（T264）：火灼伤 18、风自己敏捷 +10%（10831）、地自己承伤 −10%（10832）、雷 10% 麻痹 100、冰敏捷 −10%（22），卡面与实打各查；混沌见 T268。
 ## 三、西游档：6875、连锁状态记录不变，6861 照旧调公共事件 1213。
+## T268（引擎补完）：副属性抬下限（stat_floor：区间下限抬到合计 3、上限不动、浮动收窄）；终极 6875 逐段各一属性；6872 命运感知 −10%（天启篇九种属性 0.9、西游档 0.7）；
+##   命运骰子 4521 每场一次自动重掷（第二次不触发、下一场重置、公共事件实跑走到钩子）；雷 10% 麻痹按整招掷（cast_pick）；混沌五选一（每发至多挂一项、五项都出过）；
+##   self_states_on_hit 每次行动只挂一次、end_action 不再挂。
 
 var results: Array = []
 const FATES := [6862, 6863, 6864, 6865, 6866, 6867, 6875]
@@ -156,7 +159,7 @@ func _chain_check() -> void:
 
 ## T264 五种命运附带效果：卡面（effects／self_states）＋实打（定值命运，自己身上状态／敌人身上状态）
 func _side_check() -> void:
-	var want_eff := {6862: [18, 1.0], 6865: [100, 0.1], 6866: [22, 1.0]}
+	var want_eff := {6862: [18, 1.0], 6866: [22, 1.0]}  # 雷 6865 的 10% 麻痹 T268 改成整招掷一次（cast_pick），见 t268.*
 	for sid in want_eff:
 		var rec := XDB.rec("Skills", sid)
 		var hit := false
@@ -173,8 +176,10 @@ func _side_check() -> void:
 	_check("side.state_wind_agi_110", wt.size() == 1 and int(wind.get("minTurns", 0)) == 2, wind.get("traits"))
 	_check("side.state_earth_dmg_90", et.size() == 2 and int(earth.get("minTurns", 0)) == 2, earth.get("traits"))
 	var cx: Array = XDB.rec("Skills", 6867).get("effects", [])
-	var cids := cx.filter(func(e): return int(e.get("code", -1)) == 21 and absf(float(e.get("value1", 0)) - 0.2) < 0.0001).map(func(e): return int(e.dataId))
-	_check("side.6867_chaos_three", 18 in cids and 100 in cids and 22 in cids, cx)
+	var cids := cx.filter(func(e): return int(e.get("code", -1)) == 21 and int(e.get("dataId", -1)) in [18, 100, 22]).map(func(e): return int(e.dataId))
+	_check("side.6867_no_t264_approx", cids.is_empty(), cx)  # T268：去掉 T264 的三项各 20%
+	var th: Array = XDB.rec("Skills", 6865).get("effects", [])
+	_check("side.6865_no_per_hit", th.filter(func(e): return int(e.get("code", -1)) == 21 and int(e.get("dataId", -1)) == 100).is_empty(), th)
 	# 实打：定值命运连放，读自己身上状态（风、地）与敌人身上状态（火、雷、冰各只看出现过一次即可——雷 10%，放 40 发）
 	var seen := {}
 	for v in range(1, 7):
@@ -211,6 +216,192 @@ func _side_check() -> void:
 	# 雷 10% 麻痹：1 回合状态回合末就解除，实打读不到；只查卡面（side.6865_effect），不做实打断言
 	_check("side.fight_ice", seen.has(6866) and seen[6866].foe22, seen.get(6866))
 	print("FATE_SIDE ", seen)
+
+
+class FakeInterp:
+	extends RefCounted
+	var logic
+
+
+## 公共事件 1213 里「变量 1281 = 随机 lo～hi」两句（没骰子 1～6、有骰子 1～5）的随机范围临时改成 lo～hi（仍是随机赋值，走得到骰子钩子）
+func _fate_range(lo: int, hi: int) -> Array:
+	var ce: Dictionary = XDB.rec("CommonEvents", 1213)
+	var keep: Array = (ce.list as Array).duplicate(true)
+	for c in ce.list:
+		var p: Array = c.parameters
+		if int(c.code) == 122 and int(p[0]) <= 1281 and 1281 <= int(p[1]) and int(p[3]) == 2:
+			c.parameters = [p[0], p[1], 0, 2, lo, hi]
+	return keep
+
+
+## T268 命运编织者引擎补完
+func _t268_check() -> void:
+	var SUBS := {6862: "mdf", 6863: "agi", 6864: "def", 6865: "atk", 6866: "mat", 6867: "luk"}
+	# 一、副属性抬下限：标准线以下不抬；2 倍标准线抬满（下限＝合计 3、上限不动）；1.5 倍抬一半
+	var floor_rows := []
+	var floor_ok := true
+	for sid in SUBS:
+		var st: String = SUBS[sid]
+		var lg := _logic(true, false)
+		var a: XActor = lg.state.actor(94)
+		var foe: XBattler = lg.enemies[0]
+		var sp := XTianqiSkills.spec(sid)
+		var c := XTianqiSkills._floor_cond(sp)
+		var rec := XDB.rec("Skills", sid)
+		var var0 := int(rec.damage.variance)
+		var w := 0.0
+		for k in sp.damage.stats:
+			w += float(sp.damage.stats[k])
+		var total := float(sp.damage.coef) * w * 3.0
+		var lo := total * (1.0 - var0 / 100.0)
+		var hi := total * (1.0 + var0 / 100.0)
+		var i := XTianqiSkills.STATS.find(st)
+		var line := XTianqiBase.line(float(a.level), st)
+		var r0 := float(a.param(i)) / line
+		var f0 := XTianqiSkills._floor_lift(a, c, sid)
+		var row := {"sid": sid, "stat": st, "ratio0": snappedf(r0, 0.01), "lift0": f0}
+		var ok0: bool = str(c.get("stat", "")) == st and (r0 > 1.0 or (float(f0[0]) == 1.0 and int(f0[1]) == var0))
+		for target in [1.5, 2.5]:
+			a.add_param(i, ceilf(line * target - float(a.param(i))) + 1.0)
+			a.param_refresh()
+			var f := XTianqiSkills._floor_lift(a, c, sid)
+			var m := float(f[0])
+			var v := int(f[1])
+			var want_lo := lerpf(lo, maxf(lo, 3.0), clampf(float(a.param(i)) / line - 1.0, 0.0, 1.0))
+			var got_lo := total * m * (1.0 - v / 100.0)
+			var got_hi := total * m * (1.0 + v / 100.0)
+			var fm := XTianqiSkills.formula(a, foe, rec) / ((float(sp.damage.stats.get("atk", 0)) * a.atk + float(sp.damage.stats.get("mat", 0)) * a.mat) * float(sp.damage.coef) * XTianqiSkills.level_scale(a))
+			var sv := XTianqiSkills.seg_view(a, rec, 0)
+			var okt := absf(got_lo - want_lo) < 0.06 and absf(got_hi - hi) < 0.06 and absf(fm - m) < 0.01 and int(sv.damage.variance) == v and XTianqiSkills.seg_on(a, rec)
+			row["x%s" % target] = [snappedf(m, 0.001), v, snappedf(got_lo, 0.01), snappedf(got_hi, 0.01), snappedf(fm, 0.001)]
+			ok0 = ok0 and okt
+		floor_ok = floor_ok and ok0
+		floor_rows.append(row)
+	_check("t268.floor_lift", floor_ok, floor_rows)
+	print("T268_FLOOR ", floor_rows)
+	# 二、终极 6875 六段各一属性（六种命运此刻的属性，依次火风地雷冰混沌）
+	var lg2 := _logic(true, false)
+	var a2: XActor = lg2.state.actor(94)
+	for sw in range(2261, 2267):
+		lg2.state.set_switch(sw, true)
+	var ce: Dictionary = XDB.rec("CommonEvents", 1213)
+	var keep := _force_fate(1)
+	var els := []
+	for r in lg2.run_turn({a2: [XDB.rec("Skills", 6861), lg2.enemies[0]]}):
+		if r is Dictionary and r.get("type") == "hit" and r.get("skill") is Dictionary and int(r.skill.get("id", 0)) == 6875 and r.get("target") == lg2.enemies[0]:
+			els.append(int(r.skill.damage.elementId))
+	ce.list = keep
+	var want_els := []
+	for sid in [6862, 6863, 6864, 6865, 6866, 6867]:
+		want_els.append(int(XDB.rec("Skills", sid).damage.elementId))
+	_check("t268.ult_seg_elements", els == want_els and want_els.size() == 6 and not want_els.has(1), [els, want_els])
+	_check("t268.ult_record_untouched", int(XDB.rec("Skills", 6875).damage.elementId) == 1)  # 原记录不改（逐段只换视图）
+	# 三、6872 命运感知：天启篇九种属性承伤 0.9，西游档照原版 0.7
+	var tq_rates := []
+	for e in range(1, 10):
+		tq_rates.append(snappedf(a2.element_rate(e), 0.0001))
+	var og := _logic(false, false)
+	var xy_rates := []
+	for e in range(1, 10):
+		xy_rates.append(snappedf(og.state.actor(94).element_rate(e), 0.0001))
+	_check("t268.6872_tq_90", tq_rates.all(func(x): return absf(x - 0.9) < 0.0001), tq_rates)
+	_check("t268.6872_xy_70", xy_rates.all(func(x): return absf(x - 0.7) < 0.0001), xy_rates)
+	# 四、命运骰子每场一次重掷（钩子单测＋公共事件实跑）
+	var fi := FakeInterp.new()
+	var mk := func(dice: bool, tianqi := true) -> XBattleLogic:
+		var l := _logic(tianqi, dice)
+		l.state.set_switch(2261, true)  # 火已集过
+		l.state.set_variable(1281, 3)  # 上一发是地（火不接连锁）
+		return l
+	fi.logic = mk.call(true)
+	var first := XTianqiSkills.fate_roll(fi, 1.0, func(): return 4)
+	var second := XTianqiSkills.fate_roll(fi, 1.0, func(): return 4)
+	fi.logic = mk.call(true)
+	var next_battle := XTianqiSkills.fate_roll(fi, 1.0, func(): return 4)
+	_check("t268.dice_once_per_battle", first == 4.0 and second == 1.0 and next_battle == 4.0, [first, second, next_battle])
+	fi.logic = mk.call(true)
+	var fresh := XTianqiSkills.fate_roll(fi, 2.0, func(): return 4)  # 风没集过：不重掷
+	fi.logic.state.set_variable(1281, 1)
+	var chain := XTianqiSkills.fate_roll(fi, 1.0, func(): return 4)  # 接上一发火（连锁）：不重掷
+	fi.logic = mk.call(false)
+	var no_dice := XTianqiSkills.fate_roll(fi, 1.0, func(): return 4)
+	fi.logic = mk.call(true, false)
+	var xiyou := XTianqiSkills.fate_roll(fi, 1.0, func(): return 4)
+	XTianqiSkills.FATE_REROLL = false
+	fi.logic = mk.call(true)
+	var off := XTianqiSkills.fate_roll(fi, 1.0, func(): return 4)
+	XTianqiSkills.FATE_REROLL = true
+	_check("t268.dice_rules", fresh == 2.0 and chain == 1.0 and no_dice == 1.0 and xiyou == 1.0 and off == 1.0, [fresh, chain, no_dice, xiyou, off])
+	var lgi: XBattleLogic = mk.call(true)
+	var ai: XActor = lgi.state.actor(94)
+	keep = _fate_range(1, 1)  # 只出火：火已集过、上一发是地 → 钩子触发一次（重掷还是火）
+	var fired := _fight_once(lgi, ai, XDB.rec("Skills", 6861))
+	var meta1 = lgi.get_meta("xtq_fate_reroll") if lgi.has_meta("xtq_fate_reroll") else 0
+	ce.list = keep
+	_check("t268.dice_hook_in_event", meta1 == 1 and fired.has(6862), [meta1, fired])
+	# 五、混沌五选一：每发至多挂一项，五项都出过
+	var lgc := _logic(true, false)
+	var ac: XActor = lgc.state.actor(94)
+	var foe_c: XBattler = lgc.enemies[0]
+	keep = _force_fate(6)
+	var per_cast_ok := true
+	var seen_c := {}
+	var multi := []
+	for i in 60:
+		for id in [18, 100, 22]:
+			if foe_c.is_state_affected(id):
+				foe_c.remove_state(id)
+		for id in [10831, 10832]:
+			if ac.is_state_affected(id):
+				ac.remove_state(id)
+		var got := {}
+		var cast := false
+		for r in lgc.run_turn({ac: [XDB.rec("Skills", 6861), foe_c]}):
+			if r is Dictionary and r.get("type") == "action" and r.get("skill") is Dictionary and int(r.skill.get("id", 0)) == 6867:
+				cast = true
+			if cast and r is Dictionary and r.get("type") == "hit" and r.get("target") == foe_c:
+				for id in [18, 100, 22]:
+					if foe_c.is_state_affected(id):
+						got[id] = true
+		for id in [10831, 10832]:
+			if ac.is_state_affected(id):
+				got[id] = true
+		# 挑中的那项读施放者身上记的最近一次（xtq_cast_pick）；麻痹 1 回合，回合末就解除，身上读不到，按挑中算
+		var lp: Array = ac.get_meta("xtq_cast_pick") if ac.has_meta("xtq_cast_pick") else []
+		var pk: Dictionary = lp[1] if cast and lp.size() == 2 and int(lp[0]) == 6867 else {}
+		if ac.has_meta("xtq_cast_pick"):
+			ac.remove_meta("xtq_cast_pick")
+		var pid := int(pk.values()[0]) if not pk.is_empty() else 0
+		if cast and (got.size() > 1 or pk.is_empty() or (pid != 100 and not got.has(pid))):  # 偶有一回合 94 没出手（同 _chain_check），不算
+			per_cast_ok = false
+			multi.append([got.keys(), pk])
+		if pid > 0:
+			seen_c[pid] = int(seen_c.get(pid, 0)) + 1
+		_heal_foes(lgc)
+		ac.hp = ac.mhp
+		ac.mp = ac.mmp
+	ce.list = keep
+	_check("t268.chaos_one_per_cast", per_cast_ok, multi)
+	_check("t268.chaos_all_five", seen_c.size() == 5, seen_c)
+	print("T268_CHAOS ", seen_c)
+	# 六、雷整招 10%：卡面 cast_pick，实打放 60 发只打印麻痹出现的发数
+	var tp: Dictionary = XTianqiSkills.spec(6865).get("cast_pick", {})
+	_check("t268.thunder_per_cast", int(tp.get("rate", 0)) == 10 and tp.get("pick", []).size() == 1 and int(tp.pick[0].get("foe", 0)) == 100, tp)
+	# 七、self_states_on_hit：同一次行动命中多次只挂一次；end_action 不再挂
+	var lgs := _logic(true, false)
+	var as_: XActor = lgs.state.actor(94)
+	var rec3 := XDB.rec("Skills", 6863)
+	var stf := XTianqiSkills._fstore(lgs)
+	stf.depth = 0
+	stf.act = {"u": as_, "skill": rec3, "targets": []}
+	XTianqiSkills.after_apply(lgs, as_, rec3, lgs.enemies[0], {})
+	var once := as_.is_state_affected(10831)
+	as_.remove_state(10831)
+	XTianqiSkills.after_apply(lgs, as_, rec3, lgs.enemies[0], {})
+	var twice := as_.is_state_affected(10831)
+	XTianqiSkills.end_action(lgs, as_, rec3)
+	var by_end := as_.is_state_affected(10831)
+	_check("t268.self_on_hit_once", once and not twice and not by_end, [once, twice, by_end])
 
 
 ## 放一次命运之手，返回这回合放出的命运号
@@ -352,6 +543,7 @@ func _run() -> void:
 	# 二·连锁：公共事件 1213 选命运的随机数换成定值，连放同一种命运 8 发，读每发出手前身上的 SkillPass
 	_chain_check()
 	_side_check()
+	_t268_check()
 	# 三、西游档对照
 	var og := _logic(false, false)
 	_check("xy.not_active", not XTianqi.active(og.state))
