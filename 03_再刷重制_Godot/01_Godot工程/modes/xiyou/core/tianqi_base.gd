@@ -14,6 +14,7 @@ extends RefCounted
 ## | 守层者三张表 | balance_table.guardian_phase4（T012-c 量；缺就退回旧表并警告一次） | 代码里的旧表 | XGuardianRework |
 ## | 治疗 ×5 | 不乘 | 照乘 | XTianqiNoDiffPassive.confirm_rows（skipTypesAny 放 3、4，不论目标；T214） |
 ## | 绝对值清单 | abs_rescale.json 换算后的数 | 原数 | abs_value（各结算处） |
+## | 状态 <G_ShuXing> 固定加减（T228，ABS_SHUXING 可单独关） | 持有者该项 × abs_rescale.json state_shuxing 的整数 % | 原数 | XBattler.param_state → shuxing_value |
 ## | 首领生命临时折算 U（整数百分比） | combat_rules.boss_hp_temp_unit | 100 | XTianqiHorsemen |
 ## | 单段上限、九线爆伤、秘籍格 | skill_rework.rules.single_hit_cap、damage_ledger.phase4 | 现在的键 | XTianqiSkills.formula、XTianqiLedger.apply_nine_cap |
 ##
@@ -47,6 +48,9 @@ static var TUNE_D198 := true
 static var TUNE_D208 := true
 ## T204＋T209（D209 ABA，Kyo 11-18）：超强者按 Kyo 名次重排的覆盖层（skill_rework.json 的 tune.D209，叠在 D208 之后；可往下调）；false＋XTianqiSkills.reload_table() 照 D208
 static var TUNE_D209 := true
+## T228（协调 11-19 定 A）：状态备注 <G_ShuXing> 写死的八项加减换成「持有者自身该项的整数百分比」（abs_rescale.json 的 state_shuxing 行）。
+## 只在总开关开着时生效；false＝照原数加减（回退）。原版量级的 ±500～±30000 在期四本体（81 级攻击约 3766，原量级主攻中位 1854）上的分量对不上
+static var ABS_SHUXING := true
 const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
 const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",
 	"SkillPass\\d+", "passiveAPLUS", "AgainUseAll", "passiveIRUP", "passiveGRUP", "passiveSPBST\\d", "ConsumeReduce\\w+", "passiveEXTTP", "DepassiveHarmRe\\d+",
@@ -56,6 +60,7 @@ static var _realm_recs := {}
 static var _line: Dictionary = {}
 static var _abs: Dictionary = {}
 static var _abs_index: Dictionary = {}
+static var _shuxing_ref: Array = []
 static var _warned: Dictionary = {}
 
 
@@ -73,6 +78,7 @@ static func clear_cache() -> void:
 	_line = {}
 	_abs = {}
 	_abs_index = {}
+	_shuxing_ref = []
 	_warned = {}
 
 
@@ -342,6 +348,51 @@ static func abs_value(kind: String, id: int, old: float, target, stat := "") -> 
 	return -v if old < 0.0 else v
 
 
+## T228：<G_ShuXing> 换算开着没有（总开关开、ABS_SHUXING 开、天启篇存档）。param_state 每次先问一次，关着整段不碰表
+static func shuxing_on() -> bool:
+	return ABS_SHUXING and on()
+
+
+## T228：一个状态在第 i 项上的 <G_ShuXing> 加减（连层数）。raw＝备注原数（一层）；pre＝持有者这一项在加状态固定值之前的数（(基础＋加值)×比率×强化率）；
+## ceng＝层数（_stateCounter，没有按 1）。返回 pre × pct% × 层数，最后向零取整一次（R1 P2-1：不先取单层再乘层数）。
+## pct 读 abs_rescale.json 的 state_shuxing 行；new.mode＝raw 的计数器状态（R1 P1-1：<G_ShuXing> 写 ±1 当单位，真加值在层数里）照 raw × 层数。
+## 备注被天启篇改写、原数跟表里 orig 对不上（或表里没这行）的，按参考值现算（同生成脚本口径）并警告一次；参考值缺（发行包没有 tianqi_data）就照原数
+## 关着（发行包、西游档、开关关）原样返回 raw（一层）：param_state 关着不调这里，自己乘层数
+static func shuxing_value(state_id: int, i: int, raw: float, pre: float, ceng := 1.0) -> float:
+	if raw == 0.0 or not shuxing_on():
+		return raw
+	if i < 0 or i >= 8:
+		return raw * ceng
+	var pct := 0.0
+	var e := abs_entry("state_shuxing", state_id)
+	if not e.is_empty() and str(e.new.get("mode", "")) == "raw":
+		return raw * ceng
+	var orig = e.get("orig") if not e.is_empty() else null
+	var pa = e.new.get("pct") if not e.is_empty() else null
+	if orig is Array and orig.size() == 8 and pa is Array and pa.size() == 8 and float(orig[i]) == raw:
+		pct = float(pa[i])
+	else:
+		var ref := shuxing_ref()
+		if ref.size() != 8 or float(ref[i]) <= 0.0:
+			return raw * ceng
+		var q := floorf(absf(raw) / float(ref[i]) * 100.0 + 0.5)
+		pct = maxf(1.0, q) * signf(raw)
+		warn_once("shuxing:%d" % state_id, "状态 %d 的 <G_ShuXing> 原数跟 abs_rescale.json 对不上（天启篇改写过？），按参考值现算 %d%%" % [state_id, int(pct)])
+	if pre <= 0.0:
+		return 0.0
+	var x := pre * pct / 100.0 * ceng
+	return signf(x) * floorf(absf(x))
+
+
+## 参考值八格（base.shuxing_ref，按 STATS 顺序）
+static func shuxing_ref() -> Array:
+	if _shuxing_ref.is_empty():
+		var r = abs_data().get("base", {}).get("shuxing_ref", {})
+		if r is Dictionary and not r.is_empty():
+			_shuxing_ref = STATS.map(func(k): return float(r.get(k, 0.0)))
+	return _shuxing_ref
+
+
 # ---- 一致性（稿第七节第 2 条：上表任何一行和总开关不一致就失败）----
 
 ## 每一行现在的状态（开着＝读期四那一套）。专项断言：PHASE4 开、关两种情形下每一行都等于 on()
@@ -357,4 +408,5 @@ static func rows_state() -> Dictionary:
 		"boss_u": o,
 		"phase4_ledger": nine_crit_cap() >= 0.0,
 		"gear": XTianqiGear.applies({"kind": "weapon", "etypeId": 1, "meta": {"req_level": "1", "quality": "1"}}),
+		"shuxing": shuxing_on(),  # T228 R1 P3-2
 	}
