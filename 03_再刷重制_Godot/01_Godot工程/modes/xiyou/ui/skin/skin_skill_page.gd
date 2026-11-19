@@ -11,6 +11,8 @@ var party: XSkinPartyStrip
 var _syncing := false
 var _list_key := []
 var _type_key := []
+var _sprite_layer: Control
+var _sprite_step := 0
 
 
 func _init(s: XSkillScene) -> void:
@@ -21,6 +23,8 @@ func _init(s: XSkillScene) -> void:
 	columns = 2
 	row_height = XUiSkin.ROW_H
 	auto_nav = false
+	if XSkinRingNav.INNER_V2:
+		currencies = []   # R21：这页不花钱，右上不放精魂（同装备页）
 	hint_list = [["确定", "选择"], ["取消", "返回"], ["Q / E", "换人"]]
 
 
@@ -30,6 +34,7 @@ func _ready() -> void:
 	party.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	layout.left.add_child(party)
 	ring.draw.connect(_draw_face)
+	_ensure_sprite_layer()
 	ring.changed.connect(_on_ring_changed)
 	ring.activated.connect(func(_i):
 		if not _syncing and scene.mode == "type":
@@ -89,6 +94,7 @@ func sync() -> void:
 	if tkey != _type_key:
 		_type_key = tkey
 		set_categories(types.map(func(t): return {"key": str(t), "name": sc.type_name(t), "icon": _type_icon(a, t)}), sc.type_index)
+		_put_glyphs(types)
 	elif ring.index != sc.type_index and sc.type_index < ring.items.size():
 		ring.select(sc.type_index)
 	# 列表
@@ -130,8 +136,30 @@ func _type_icon(a: XActor, t: int) -> int:
 	return 0
 
 
+## R6：类型球里写一个字（战技→战、魔法→魔、功法→功、其他→他；美术出了分类图标再换，待小A审）
+func _put_glyphs(types: Array) -> void:
+	if not XSkinRingNav.INNER_V2:
+		return
+	for k in mini(ring.items.size(), types.size()):
+		ring.items[k]["glyph"] = glyph_of(scene.type_name(int(types[k])))
+	ring.queue_redraw()
+
+
+static func glyph_of(type_name: String) -> String:
+	if type_name == "其他":
+		return "他"
+	return type_name.substr(0, 1) if type_name != "" else "他"
+
+
+## R13：技能名颜色走皮肤的品质色（「优秀」已调柔）；没有品质标记的照旧
+static func name_color(sk: Dictionary) -> Color:
+	if XSkinRingNav.INNER_V2 and XQuality.has_quality(sk):
+		return XUiSkin.quality_color(clampi(XQuality.show_grade(sk), 0, 6))
+	return XQuality.list_color(sk)
+
+
 func _row(a: XActor, sk: Dictionary) -> Dictionary:
-	var r := {"text": str(sk.get("name", "")), "icon": int(sk.get("iconIndex", 0)), "color": XQuality.list_color(sk), "disabled": not scene.usable(sk)}
+	var r := {"text": str(sk.get("name", "")), "icon": int(sk.get("iconIndex", 0)), "color": name_color(sk), "disabled": not scene.usable(sk)}
 	var costs := scene._costs(a, sk)
 	if not costs.is_empty():
 		var c: Dictionary = costs[costs.size() - 1] if costs.size() > 1 else costs[0]
@@ -161,7 +189,7 @@ func _sync_card(a: XActor) -> void:
 		sub.append(str(c.text))
 	var soul := XRaven.ledger_help(a, sk)
 	var rows: Array = soul.map(func(t): return {"text": str(t), "color": XUiSkin.TEXT_2}) if not soul.is_empty() else XSkinTemplatePage.help_rows(XHelpCard.content(view, "skill", bool(view.get("skill_copy", false)), 300.0))
-	set_card({"icon": XUiSkin.icon(int(sk.get("iconIndex", 0))), "title": str(sk.get("name", "")), "title_color": XQuality.list_color(sk),
+	set_card({"icon": XUiSkin.icon(int(sk.get("iconIndex", 0))), "title": str(sk.get("name", "")), "title_color": name_color(sk),
 		"subtitle": " · ".join(sub.filter(func(x): return str(x) != "")), "sections": [{"title": "", "rows": rows}]})
 	var scope := int(sk.get("scope", 0))
 	if sc.mode == "actor":
@@ -189,9 +217,60 @@ func _on_ring_changed(i: int) -> void:
 	scene._refresh()
 
 
-## 环心：当前角色圆头像
+## 环心：R6 像素小人（同主菜单，XUiSkin.CENTER_STYLE；没有侧视图时回头像）；回退时旧的圆头像
+func _use_sprite(a: XActor) -> bool:
+	return XSkinRingNav.INNER_V2 and XUiSkin.CENTER_STYLE != XUiSkin.CenterStyle.FACE and XSkinMainMenu.sv_frame(a) != null
+
+
+func _ensure_sprite_layer() -> void:
+	if _sprite_layer != null or ring == null:
+		return
+	_sprite_layer = Control.new()
+	_sprite_layer.name = "SvSprite"
+	_sprite_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_sprite_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite_layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_sprite_layer.draw.connect(_draw_sprite)
+	ring.add_child(_sprite_layer)
+	var t := Timer.new()   # 待机动作每格 0.2 秒，同主菜单；动效「全部」档才动
+	t.wait_time = 0.2
+	t.autostart = true
+	t.timeout.connect(func():
+		if XUiSkin.breathing() and _sprite_layer.visible:
+			_sprite_step += 1
+			_sprite_layer.queue_redraw())
+	_sprite_layer.add_child(t)
+
+
+## 像素小人（摆法同 XSkinMainMenu._draw_sprite：整数倍最多 3 倍、人按不透明范围居中、脚下黑椭圆影＋淡金受光）
+func _draw_sprite() -> void:
+	var a := scene.actor()
+	if not _use_sprite(a):
+		return
+	var fr := XSkinMainMenu.sv_frame(a, _sprite_step if XUiSkin.breathing() else 1)
+	if fr == null:
+		return
+	var used: Rect2 = XSkinMainMenu._sv_info(a, XAppearance.look_key(a)).used
+	var c := ring.center()
+	var rad := ring.radius - ring.orb_radius - 26.0
+	var k := clampi(floori(rad * 2.0 * 0.9 / maxf(used.size.x, used.size.y)), 1, 3)
+	var origin := (c - (used.position + used.size / 2.0) * k).round()
+	var feet := Vector2(c.x, origin.y + used.end.y * k - 6.0)
+	var shadow := PackedVector2Array()
+	for i in 24:
+		shadow.append(feet + Vector2(cos(TAU * i / 24.0) * 48.0, sin(TAU * i / 24.0) * 12.0))
+	_sprite_layer.draw_colored_polygon(shadow, Color(0, 0, 0, 0.55))
+	_sprite_layer.draw_arc(feet, 52.0, 0, TAU, 32, Color(XUiSkin.GOLD, 0.25), 1.5, true)
+	_sprite_layer.draw_texture_rect(fr, Rect2(origin, fr.get_size() * k), false)
+
+
 func _draw_face() -> void:
 	var a := scene.actor()
+	if _sprite_layer != null:
+		_sprite_layer.visible = _use_sprite(a)
+		_sprite_layer.queue_redraw()
+	if _use_sprite(a):
+		return
 	var face := XUiSkin.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0)))
 	if face == null:
 		return

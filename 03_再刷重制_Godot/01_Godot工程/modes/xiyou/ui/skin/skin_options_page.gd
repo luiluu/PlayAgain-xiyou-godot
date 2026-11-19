@@ -20,6 +20,8 @@ const CATS := [
 	["hangup", "挂机与操作", 1001, ["HangUp", "codexAndroidControls"]],
 ]
 const OTHER := ["other", "其他", 688]
+## R5：球里写一个字（待小A审；美术出了分类图标再换）；「其他」统一写「他」，和技能环一致
+const GLYPH := {"general": "常", "battle": "战", "encounter": "敌", "screen": "画", "sound": "声", "hangup": "挂", "other": "他"}
 ## 新皮肤里不列的宣传行
 const HIDDEN_SYMBOLS := ["wxxonoff", "wxlonoff", "wxtonoff"]
 ## 新皮肤里换个说法的名字（原版是英文）
@@ -98,6 +100,7 @@ func _ready() -> void:
 		backdrop.queue_free()
 		backdrop = null
 	ring.changed.connect(_on_ring_changed)
+	ring.draw.connect(_draw_cat_name)
 	ring.activated.connect(func(_i): set_focus("list"))
 	list.index_changed.connect(func(i):
 		if _syncing or cur >= cats.size():
@@ -149,6 +152,27 @@ func _build_cats() -> void:
 		cats.append({"key": OTHER[0], "name": OTHER[1], "icon": OTHER[2], "idx": rest})
 
 
+## R5：给环上的分类球写字（set_categories 只带 key／name／icon，这里补 glyph；icon 清掉，免得旧占位图标压在字下面）
+func _put_glyphs() -> void:
+	if not XSkinRingNav.INNER_V2:
+		return
+	for k in ring.items.size():
+		ring.items[k]["glyph"] = str(GLYPH.get(str(ring.items[k].get("key", "")), "他"))
+	ring.queue_redraw()
+
+
+## R5：环心写当前分类的名字（旧的「N 项」去掉）；名字长（挂机与操作）时缩字不超过环心空地
+func _draw_cat_name() -> void:
+	if not XSkinRingNav.INNER_V2 or cats.is_empty() or cur >= cats.size():
+		return
+	var c := ring.center()
+	var f := XUiSkin.font("title")
+	var room := (ring.radius - ring.orb_radius - 26.0) * 2.0 - 16.0
+	var fit := XSkinList.fit_text(f, str(cats[cur].name), room, 30, XUiSkin.FS_MIN)
+	var w := f.get_string_size(str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1])).x
+	XUiSkin.ds(ring, f, Vector2(c.x - w / 2.0, c.y + int(fit[1]) * 0.36), str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1]), XUiSkin.TEXT)
+
+
 func category_of(i: int) -> int:
 	for k in cats.size():
 		if cats[k].idx.has(i):
@@ -178,9 +202,10 @@ func sync() -> void:
 	if ckey != _cats_key:
 		_cats_key = ckey
 		set_categories(cats.map(func(c): return {"key": c.key, "name": c.name, "icon": c.icon}), cur)
+		_put_glyphs()
 	elif ring.index != cur:
 		ring.select(cur, false)
-	ring_center = [str(cats[cur].idx.size()), "项"]
+	ring_center = [] if XSkinRingNav.INNER_V2 else [str(cats[cur].idx.size()), "项"]   # R5：环心换成这一类的名字（_draw_cat_name）
 	list_title = str(cats[cur].name)
 	var rows := []
 	for i in cats[cur].idx:

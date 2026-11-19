@@ -305,6 +305,32 @@ static func ring_pages(n: int) -> Array:
 	return [pages, per]
 
 
+## R7：空栏位画这个部位的淡色剪影（现有装备图标压到 25% 亮度，先用着；不再写「空」）。
+## 每个栏位类型取装备表里第一件带图标的装备（武器取武器表）；取不到（0）时回旧画法写「空」
+static var _sil_cache := {}
+
+
+static func silhouette_icon(etype: int) -> int:
+	if not _sil_cache.has(etype):
+		var ic := 0
+		for rec in XDB.table("Weapons" if etype == 1 else "Armors"):
+			if rec is Dictionary and int(rec.get("iconIndex", 0)) > 0 and (etype == 1 or int(rec.get("etypeId", 0)) == etype):
+				ic = int(rec.iconIndex)
+				break
+		_sil_cache[etype] = ic
+	return int(_sil_cache[etype])
+
+
+func _slot_item(a: XActor, slot: int, ic: int) -> Dictionary:
+	var it := {"key": slot, "name": scene.slot_name(slot), "icon": ic, "empty": ic == 0, "locked": not XEquipment.can_change(a, slot)}
+	if ic == 0 and XSkinRingNav.INNER_V2:
+		var sil := silhouette_icon(int(a.equip_slots()[slot]))
+		if sil > 0:
+			it.icon = sil
+			it.icon_dim = true
+	return it
+
+
 func _sync_ring(a: XActor) -> void:
 	if branched():
 		_sync_ring_branched(a)
@@ -328,8 +354,8 @@ func _sync_ring(a: XActor) -> void:
 		var slot: int = view[k]
 		var e = a.equips[slot] if slot < a.equips.size() else null
 		var ic := int(e.get("iconIndex", 0)) if e is Dictionary and not e.is_empty() else 0
-		items.append({"key": slot, "name": scene.slot_name(slot), "icon": ic, "empty": ic == 0, "locked": not XEquipment.can_change(a, slot)})
-		icons.append([slot, ic, items[-1].locked])
+		items.append(_slot_item(a, slot, ic))
+		icons.append([slot, ic, items[-1].locked, items[-1].icon])
 	var key := [cheap, icons]
 	if key != _ring_key:
 		_ring_key = key
@@ -359,8 +385,8 @@ func _sync_ring_branched(a: XActor) -> void:
 		var slot: int = view[k]
 		var e = a.equips[slot] if slot < a.equips.size() else null
 		var ic := int(e.get("iconIndex", 0)) if e is Dictionary and not e.is_empty() else 0
-		items.append({"key": slot, "name": scene.slot_name(slot), "icon": ic, "empty": ic == 0, "locked": not XEquipment.can_change(a, slot)})
-		icons.append([slot, ic, items[-1].locked])
+		items.append(_slot_item(a, slot, ic))
+		icons.append([slot, ic, items[-1].locked, items[-1].icon])
 	var key := [cheap, icons]
 	if key != _ring_key:
 		_ring_key = key
@@ -672,7 +698,7 @@ func _draw_ring_extra() -> void:
 		var p := ring.item_pos(i)
 		var on := i == ring.index
 		var r := ring.orb_radius * ring.item_scale(i)
-		if bool(it.get("empty", false)):
+		if bool(it.get("empty", false)) and not bool(it.get("icon_dim", false)):
 			var t := "空"
 			var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
 			XUiSkin.ds(ring_top, body, Vector2(p.x - tw / 2.0, p.y + XUiSkin.FS_AUX * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_3)
