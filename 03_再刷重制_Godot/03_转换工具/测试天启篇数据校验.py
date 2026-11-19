@@ -726,5 +726,37 @@ class AbsGroupsT249(unittest.TestCase):
         self.assertTrue(chk.abs_rescale_rules(self.t))
 
 
+class ForcedCopyT255(unittest.TestCase):
+    """T255：卡里技能效果 44→公共事件→强制放副本，副本没进卡：要 effects_remove、副本进卡或登记 forced_copy_pending。"""
+    def setUp(self):
+        self.t = json.loads((REAL_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+
+    def test_real_passes(self):
+        self.assertEqual(chk.forced_copy_rules(self.t), [])
+
+    def test_unremoved_is_gap(self):
+        self.t['skills']['502']['effects_remove'] = []
+        self.assertTrue(any('502' in b for b in chk.forced_copy_rules(self.t)))
+
+    def test_pending_registers_gap(self):
+        self.t['skills']['502']['effects_remove'] = []
+        self.t['forced_copy_pending']['502'] = '测试'
+        self.assertEqual(chk.forced_copy_rules(self.t), [])
+
+    def test_stale_pending(self):
+        self.t['forced_copy_pending']['7057'] = '已去掉'
+        self.assertTrue(any('7057' in b for b in chk.forced_copy_rules(self.t)))
+
+    def test_pending_needs_reason(self):
+        self.t['forced_copy_pending']['623'] = ' '
+        self.assertTrue(chk.forced_copy_rules(self.t))
+
+    def test_copy_in_card_ok(self):
+        # 副本进卡就不算缺口（7057 的 2365 强制 7075：把 7075 登成卡、撤掉 effects_remove）
+        self.t['skills']['7057']['effects_remove'] = []
+        self.t['skills']['7075'] = {'actor': 98, 'name': '副本'}
+        self.assertFalse(any("技能 7057" in b for b in chk.forced_copy_rules(self.t)))
+
+
 if __name__ == '__main__':
     unittest.main()
