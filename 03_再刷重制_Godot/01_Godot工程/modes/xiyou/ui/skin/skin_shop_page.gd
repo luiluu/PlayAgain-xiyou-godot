@@ -219,8 +219,7 @@ func _sync_list(mode: String) -> void:
 			list.empty_text = T_EMPTY_SELL
 			var markable: bool = XShop.MULTI_SELL and (XShop.CATEGORIES[sc._cat][1] in ["weapon", "armor"] or XShop.ITEM_MULTI and XShop.CATEGORIES[sc._cat][1] in ["item", "consumable"])
 			list.check_column = markable
-			for e in sc._sell_data():
-				rows.append(sell_row(e, markable))
+			rows = _sell_rows(markable)
 			idx = sc._sell_index
 			if XShop.MULTI_SELL and sc.has_marks():
 				_list_right = "已选 %s · 得 %s" % [sc.marked_label(), XSkinTemplatePage._group(sc.marked_gold())]
@@ -240,6 +239,27 @@ func _sync_list(mode: String) -> void:
 
 
 # ---- 行 ----
+
+var _sell_key := []
+var _sell_cache := []
+
+
+## 出售列表的行：每行要判能不能标（XSafeSell.reason，含词条），背包大时一按一卡；背包、标记、门槛没变就用上次的
+func _sell_rows(markable: bool) -> Array:
+	var sc := scene
+	var s := XState.current
+	var key := [sc._cat, markable, s.get_instance_id(), s.gear.size(), s.items.hash(), sc._marks.size(), sc._item_marks.hash(), XSafeSell.threshold(s), s.gold]
+	if key == _sell_key:
+		return _sell_cache
+	XAlienation.begin_batch(s)  # 同 XShop.live_marks：整批查吞器供体表
+	var rows := []
+	for e in sc._sell_data():
+		rows.append(sell_row(e, markable))
+	XAlienation.end_batch()
+	_sell_key = key
+	_sell_cache = rows
+	return rows
+
 
 ## 购买一行：_reason＝买不了的原因（""＝能买）；售完整行变灰，买不起只把价格变橙
 func buy_row(e: Dictionary) -> Dictionary:
@@ -458,9 +478,14 @@ func _sync_card(mode: String) -> void:
 		return
 	card.visible = true
 	var rec: Dictionary = e.rec
-	var d := XSkinItemPage.card_data(rec)
+	var crec := rec
+	if rec.has("etypeId") and not rec.has("itypeId") and not XItemMarks.is_gear(rec):
+		crec = rec.duplicate()   # 购买列表的装备是模板记录（没有 kind）：按装备排牌（自带、词条），不当物品
+		crec["kind"] = "weapon" if rec.has("wtypeId") else "armor"
+		crec["base"] = int(rec.get("id", 0))
+	var d := XSkinItemPage.card_data(crec)
 	d.title = str(d.title).replace(XItemMarks.LOCK, "").replace(XItemMarks.TOP, "").strip_edges()
-	var sub := [str(d.subtitle)] if str(d.subtitle) != "" else []
+	var sub := Array(str(d.subtitle).split(" · ", false))
 	sub = sub.filter(func(x): return not str(x).begins_with("持有"))
 	if pg == 0:
 		sub.append("持有 %d" % owned(rec))
@@ -469,7 +494,7 @@ func _sync_card(mode: String) -> void:
 	else:
 		sub.append("持有 %d" % int(e.get("count", 0)))
 	d.subtitle = " · ".join(sub)
-	if XItemMarks.is_gear(rec) and not rec.has("itypeId"):
+	if rec.has("etypeId") and not rec.has("itypeId"):   # 同旧状态窗：装备才有「换上后」
 		d.sections = (d.sections as Array) + [equip_section(rec)]
 	var buying := pg == 0
 	var in_number := mode == "number"
@@ -496,7 +521,7 @@ func _sync_card(mode: String) -> void:
 		if sellable:
 			_foot_lines.append(["这件卖得" if not stack else "合计", price_text(sell_prices(rec), n2), XUiSkin.GOLD_LIGHT])
 		if XShop.MULTI_SELL and sc.has_marks() and sc._gear_sell_list() and not in_number:
-			_foot_lines.append(["已选 %s，按确定一起卖（会先问一次）" % sc.marked_label(), "", XUiSkin.TEXT_2])
+			_foot_lines.append(["按确定一起卖，会先问一次", "", XUiSkin.TEXT_2])
 			buttons.append({"text": "出售已选 %d 件" % sc.marked_count(), "primary": true})
 		elif in_number and sc._number_mark:
 			buttons.append({"text": "加入已选", "primary": true})
@@ -737,7 +762,7 @@ func _hints(mode: String) -> Array:
 
 func _cur_gear() -> bool:
 	var rec := scene._current_rec()
-	return not rec.is_empty() and not rec.has("itypeId")
+	return not rec.is_empty() and rec.has("etypeId") and not rec.has("itypeId")
 
 
 # ---- 按键：环、页签走新布局；其余（列表上下、翻页、数量、C、Tab、确定、取消）交回 XShop 原来的代码 ----
