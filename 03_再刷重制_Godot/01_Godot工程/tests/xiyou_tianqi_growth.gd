@@ -79,6 +79,9 @@ func _run() -> void:
 	var n_hp := float(nrow.flat["0"])
 	var n_mp := float(nrow.flat["1"])
 	var r_mat := float(rrow.flat["4"])
+	# T258 标定落表的约束（稿 3.1、3.2：N 范围 90～125、Y 范围 1800～2200、奈叶生命＝Y 的三分之一取整到百；数改了要同步重标，不是随便改）
+	_check("calib_raven_n", r_mat >= 90.0 and r_mat <= 125.0, r_mat)
+	_check("calib_nanoha_y", n_mp >= 1800.0 and n_mp <= 2200.0 and n_hp == roundf(n_mp / 3.0 / 100.0) * 100.0, [n_hp, n_mp])
 	var set_adapt := func(n): s.flags[XNanoha.ADAPT_FLAG] = {str(XNanoha.ACTOR): float(n)}
 	var set_soul := func(n): s.raven["soul"] = float(n)
 	# T258：「一份」按 growth.json 读（T260 回填后不再写死 150／10000），基础段也读表
@@ -146,6 +149,13 @@ func _run() -> void:
 	races.erase(str(XRaven.ACTOR))
 	_strip(nanoha)
 	_strip(raven)
+	# ---- 地雷（稿 3.2 第 6 条）：被动「凤霞」（魔法上限一成算进魔攻）现在没实装 ----
+	# 实装了的话它读面板最大魔法，平加挡不住，每点最大魔法在大招里的分量涨三倍多，Y 要重标；这条断言一变红就是提醒
+	nanoha.learn_skill(5687)
+	_fresh(nanoha)
+	_check("fengxia_not_impl", nanoha.skill_ids.has(5687) and _delta(nanoha, 4, set_adapt, n24, n_base) == 0.0, [nanoha.skill_ids.has(5687), _delta(nanoha, 4, set_adapt, n24, n_base)])
+	nanoha.forget_skill(5687)
+	_fresh(nanoha)
 	# ---- 第 25、26 层（层价表拐点后）----
 	set_adapt.call(n_base + 40 * n_share)
 	_check("nanoha_l25", G.layers_of("nanoha", nanoha) == 25)

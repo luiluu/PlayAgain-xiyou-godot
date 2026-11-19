@@ -65,6 +65,8 @@ var layer_list: Array = []
 var reconfig_list: Array = []
 var set_flat: Array = []
 var noisy := false
+var relic := ""  # --relic=famine：多穿一件骑士遗物（不占栏，追加在装备表末尾）、开战后资历叠到 --relic-stacks（缺省 30，满）：量饥荒遗物放大层数那一截（T258 验收 5）
+var relic_stacks := 30
 var soul_arg := -1.0  # --soul=N：渡鸦灵魂（缺省：--layers 时灌满 20 万，否则不动）
 var seed_off := 0  # --seed=N：随机流偏移（--noisy 重复量偏差用）
 var exact := false  # --exact：浮动关掉、乘上限（T258；--layers 时缺省开，--noisy 关）
@@ -114,6 +116,10 @@ func _ready() -> void:
 			seed_off = int(a.substr(7)) * 1000
 		elif a.begins_with("--soul="):
 			soul_arg = float(a.substr(7))
+		elif a.begins_with("--relic="):
+			relic = a.substr(8)
+		elif a.begins_with("--relic-stacks="):
+			relic_stacks = int(a.substr(15))
 		elif a == "--noisy":
 			noisy = true
 		elif a.begins_with("--layers="):
@@ -279,6 +285,10 @@ func _state(id: int) -> XState:
 		a.zhenqi["brand_carved"] = 1
 		a.zhenqi["brand_realm"] = XTianqiBrand.last_realm()
 		a.zhenqi["brand"] = roundi(brand_pct * XTianqiBrand.scale())
+	if relic != "":
+		a.keep_unequippable = true
+		var rit := XTianqiRewards.make_item("relic", relic, 0, false)
+		a.equips.append(rit)
 	var fid := _own_fabao(id)
 	if fid == 0:
 		var mw := main_weights(a)
@@ -502,6 +512,11 @@ func _measure_in(s: XState, a, tier: String, greedy: bool) -> Dictionary:
 	var foes: Array = logic.alive(logic.enemies)
 	if foes.is_empty():
 		return {}
+	if relic != "":
+		for m in logic.actors:  # 开战时 XTianqiRewards.setup 把资历记成 0 层，这里直接叠满
+			if m is XActor and m.has_meta(XTianqiRewards.META):
+				m.get_meta(XTianqiRewards.META).stacks = relic_stacks
+				m.param_mark_dirty()
 	var e = foes[0]
 	e.add_param(0, 1.0e9)
 	e.param_mark_dirty()
