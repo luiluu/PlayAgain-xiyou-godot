@@ -46,6 +46,7 @@ var both := false   # --both：两边每回合都补满（我方倒下的复活�
 var neutral := false   # --neutral：守层者元素抗性一律按 1 量
 var resist := -1.0   # --resist=N：守层者伤害抵抗换成 N（0＝去掉）；-1 照数据
 var duel := false   # --duel：不补血、打到分出胜负或 turns 回合，量真实回合数（去全队 ×6 开关对照，cc/tianqi-no-x6）
+var events := false   # --events（配 --duel）：照游戏跑敌群事件（开场领域、轮回困难、残血页等），量「真打能不能过」（T229）
 var max_quality := 3   # UnifiedQuality：0、1 普通，2 优秀，3 精良，4 史诗
 var skipped_ids: Array = []
 ## T162（Kyo 11-18）：--shape=tb 用配队器（tests/virtual_player/team_builder.gd）的职责模板 A～D 随机队，--teams 是每个模板几队。
@@ -83,6 +84,8 @@ func _ready() -> void:
 			both = true
 		elif a == "--duel":
 			duel = true
+		elif a == "--events":
+			events = true
 		elif a == "--x6=off":
 			XTianqiNoX6.ENABLED = false   # 回到全队 ×6 与原血量（O-470 关）
 		elif a == "--ledger=off":
@@ -277,6 +280,8 @@ func _fight(s: XState, troop: int) -> Dictionary:
 	# 战斗随机流按本层种子给定：天启篇档回合内的随机取运行时主种子（R3 设计，读档可变），不给定同一设置跑两遍也对不上
 	logic.setup(troop, s, XBattleRandom.create(str(s.random_master)) if duel else null)
 	logic.auto = true
+	if events:
+		_drain(logic, logic.troop_events())
 	var total := 0.0
 	var done := 0
 	var hp0 := 0.0
@@ -292,8 +297,14 @@ func _fight(s: XState, troop: int) -> Dictionary:
 		logic.start_turn()
 		logic.take_turn_start_logs()
 		var count := 0
+		var turn_first := true
 		while count < 80:
 			var u := logic.next_subject()
+			if events:
+				_drain(logic, logic.troop_events(u if turn_first else null))
+				turn_first = false
+				if logic.is_over():
+					break
 			if u == null:
 				break
 			count += 1
@@ -501,7 +512,8 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	var n := maxf(1.0, float(done))
 	return {"dmg": ours / n, "enemyDmg": theirs / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
 		"hits": hits.size(), "partyHp": logic.actors.reduce(func(t, a): return t + float(a.mhp), 0.0),
-		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0)}
+		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0),
+		"atkScale": logic.enemies.reduce(func(t, e): return maxf(t, float(e.output_scale)), 0.0)}   # T229：守层者这场实际用的出伤倍率（没给 --atk-table 时是游戏里的表）
 
 
 func _run_both(list: Array) -> void:
@@ -514,7 +526,7 @@ func _run_both(list: Array) -> void:
 			continue
 		for st in states:
 			per.append(_fight_both(st, 0))
-		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": float(atk_table.get(str(f), atk_scale)),
+		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": _median(per.map(func(r): return r.atkScale)),
 			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
 			"hit": _median(per.map(func(r): return r.hitMedian)), "partyHp": _median(per.map(func(r): return r.partyHp)),
 			"enemyHp": per[0].enemyHp, "teams": per}
