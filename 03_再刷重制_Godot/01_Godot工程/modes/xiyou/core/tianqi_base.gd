@@ -52,12 +52,15 @@ static var TUNE_D209 := true
 ## T228（协调 11-19 定 A）：状态备注 <G_ShuXing> 写死的八项加减换成「持有者自身该项的整数百分比」（abs_rescale.json 的 state_shuxing 行）。
 ## 只在总开关开着时生效；false＝照原数加减（回退）。原版量级的 ±500～±30000 在期四本体（81 级攻击约 3766，原量级主攻中位 1854）上的分量对不上
 static var ABS_SHUXING := true
+## T242（D226 甲，Kyo 11-19）：备注数字本来就是作者写的百分比的五个状态（1079 敏捷−25%、1080 敏捷−35%、1086 生命−30%、1664 六项−30%、2719 攻击+200% 其余+30%），
+## 表里标 new.note_pct＝true、pct 直接取原数，按持有者自身该项的百分比生效。false＝这五个照原数当固定数加减（回退，只影响这五个）；总开关、ABS_SHUXING 关着时本开关不起作用
+static var SHUXING_NOTE_PCT := true
 ## T243：技能公式里写死的固定回复底数（skill_fixed_heal，如「200 + a.mat」的 200、屏障术 1301 的 3000000）和固定吸取量（skill_fixed_drain）
 ## 换成「对象该项上限的整数百分比」（abs_rescale.json）。只在总开关开着、天启篇存档时生效；false＝照原公式（回退）
 static var ABS_SKILL := true
 ## T243 R1：敌人给敌人（含自疗）的技能固定回复，换算后的百分比统一封顶（整数 %，100＝不封顶，表里各行 pct 照旧可改）。
-## 临时 0，等 Kyo D229：0＝敌人自疗的底数这部分不回（跟现状实战几乎不回一致），公式里的属性项照旧（乘 enemy_heal）；Kyo 定了直接改这个数
-static var ENEMY_HEAL_CAP := 0
+## T247（D229 乙）：定为 100＝不封顶；16 招敌人自疗的表值已按原版占比填好（占比＝原数÷用这招的首领原版生命上限的中位数）。0＝敌人自疗的底数不回，可作回退
+static var ENEMY_HEAL_CAP := 100
 const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
 const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",
 	"SkillPass\\d+", "passiveAPLUS", "AgainUseAll", "passiveIRUP", "passiveGRUP", "passiveSPBST\\d", "ConsumeReduce\\w+", "passiveEXTTP", "DepassiveHarmRe\\d+",
@@ -424,6 +427,8 @@ static func shuxing_value(state_id: int, i: int, raw: float, pre: float, ceng :=
 	var e := abs_entry("state_shuxing", state_id)
 	if not e.is_empty() and str(e.new.get("mode", "")) == "raw":
 		return raw * ceng
+	if not e.is_empty() and e.new.get("note_pct", false) and not SHUXING_NOTE_PCT:
+		return raw * ceng  # T242 回退：备注百分比的五个状态当固定数
 	var orig = e.get("orig") if not e.is_empty() else null
 	var pa = e.new.get("pct") if not e.is_empty() else null
 	if orig is Array and orig.size() == 8 and pa is Array and pa.size() == 8 and float(orig[i]) == raw:
@@ -437,7 +442,7 @@ static func shuxing_value(state_id: int, i: int, raw: float, pre: float, ceng :=
 		warn_once("shuxing:%d" % state_id, "状态 %d 的 <G_ShuXing> 原数跟 abs_rescale.json 对不上（天启篇改写过？），按参考值现算 %d%%" % [state_id, int(pct)])
 	if pre <= 0.0:
 		return 0.0
-	var x := pre * pct / 100.0 * ceng
+	var x := pre * pct * ceng / 100.0  # T228 复核 P3-3：先乘后除（29×1%×100 不再因 0.29×100 差一点取成 28）
 	return signf(x) * floorf(absf(x))
 
 
