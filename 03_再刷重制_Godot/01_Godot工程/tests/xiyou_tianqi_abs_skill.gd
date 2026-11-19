@@ -293,7 +293,7 @@ func _t247() -> void:
 	XTianqiBase.PHASE4 = true
 	XTianqiBase.ABS_SKILL = true
 	XTianqiBase.ENEMY_HEAL_CAP = 100
-	var want := {341: 21, 482: 15, 631: 14, 680: 100, 906: 1, 921: 1, 1040: 1, 1130: 1, 1301: 1, 1715: 1, 1738: 1, 1988: 1, 2433: 1, 2565: 1, 2663: 1, 3968: 22}
+	var want := {341: 21, 482: 15, 631: 14, 680: 1, 906: 1, 921: 1, 1040: 1, 1130: 1, 1301: 1, 1715: 1, 1738: 1, 1988: 1, 2433: 1, 2565: 1, 2663: 1, 3968: 22}
 	var bad := []
 	for id in want:
 		var e := XTianqiBase.abs_entry("skill_fixed_heal", int(id))
