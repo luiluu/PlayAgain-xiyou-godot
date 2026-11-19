@@ -1021,6 +1021,7 @@ static func begin_action(logic, u, skill) -> void:
 	var st := _fstore(logic)
 	if int(st.depth) > 0:
 		return
+	st.kpend = []  # T232 R1：上一次行动没收尾留下的待定击倒不带进来
 	st.act = {"u": u, "skill": skill, "targets": []}
 	var casts: Dictionary = u.get_meta("xtq_casts") if u.has_meta("xtq_casts") else {}
 	casts[int(skill.get("id", 0))] = int(casts.get(int(skill.get("id", 0)), 0)) + 1
@@ -1158,12 +1159,53 @@ static func after_formula(a, b, item: Dictionary) -> void:
 	t.add_shield(floorf(float(a.mhp) * float(sh.get("pct", 0.0))))
 
 
+# ---- 序列招上的击倒（T232 R1，小A 核 P1-1）----
+## 击杀成长（kill_grow）、击杀回 TP（kill_tp）原来在 after_apply 当场看 t.is_alive()。动作序列招（转换后所有技能都带 yepSeq，
+## 16 张带这两项的卡全在内）打的过程中目标挂 IMMORTAL，0 血不倒、序列收尾才倒，当场永远认不到。
+## 改成：挂 IMMORTAL 被打到 0 血的先记待定（kpend），序列收尾以后（end_action 开头、追加释放 _cast 跑完序列后）按此刻倒没倒再认；
+## 不死、序列里被救回的不算。同七印、词条斩获的 SEQ_KILLS 办法，单独开关（O-待定-3）：false＝回到旧行为（序列招认不到）
+static var SEQ_KILLS := true
+
+
+static func _seq_pend(logic, kind: String, u, skill, t) -> void:
+	if not SEQ_KILLS or not t.immortal or t.hp > 0.0:
+		return
+	var st := _fstore(logic)
+	var pend: Array = st.get("kpend", [])
+	for e in pend:
+		if e[0] == kind and is_same(e[1], u) and is_same(e[3], t):
+			return
+	pend.append([kind, u, skill, t])
+	st.kpend = pend
+
+
+## 认待定击倒：此刻已倒下的照原来当场认的办法再走一遍（kill_tp 认当前行动帧，追加释放里帧已清、跟以前一样不回 TP）
+static func _confirm_kills(logic) -> void:
+	if not logic.has_meta("xtqs"):
+		return
+	var st := _fstore(logic)
+	var pend: Array = st.get("kpend", [])
+	if pend.is_empty():
+		return
+	st.kpend = []
+	for e in pend:
+		if e[3].is_alive():
+			continue
+		if e[0] == "grow":
+			_kill_grow(logic, e[1], e[2], e[3])
+		else:
+			_kill_tp(logic, e[1], e[2], e[3], st.act)
+
+
 ## 技能行 kill_tp {tp, need_skill}：这招打倒敌人时回 TP（孙权气吞万里），每次行动一次
 static func _kill_tp(logic, u, skill, t, f: Dictionary) -> void:
-	if not (u is XActor) or not (skill is Dictionary) or t.is_alive() or t.is_actor() or not cards_on():
+	if not (u is XActor) or not (skill is Dictionary) or t.is_actor() or not cards_on():
 		return
 	var k: Dictionary = spec(int(skill.get("id", 0))).get("kill_tp", {})
 	if k.is_empty() or (k.has("need_skill") and not owns(u, k.need_skill)) or f.is_empty() or f.get("kill_tp_done", false):
+		return
+	if t.is_alive():
+		_seq_pend(logic, "tp", u, skill, t)
 		return
 	f.kill_tp_done = true
 	u.tp = float(u.tp) + float(k.get("tp", 0.0))
@@ -1510,11 +1552,14 @@ static func grow_count(key: String, s = null) -> int:
 
 
 static func _kill_grow(logic, u, skill, t) -> void:
-	if not (u is XActor) or not (skill is Dictionary) or t.is_alive() or t.is_actor() or not cards_on():
+	if not (u is XActor) or not (skill is Dictionary) or t.is_actor() or not cards_on():
 		return
 	var key := str(spec(int(skill.get("id", 0))).get("kill_grow", ""))
 	var g: Dictionary = data().get("actors", {}).get(str(int(u.actor_id)), {}).get("grow", {})
 	if key == "" or str(g.get("key", "")) != key:
+		return
+	if t.is_alive():
+		_seq_pend(logic, "grow", u, skill, t)
 		return
 	var st := _fstore(logic)
 	var seen: Array = st.get("killed", [])
@@ -1595,6 +1640,7 @@ static func _cast(logic, u, cast: Dictionary, targets: Array) -> Array:
 		return logs
 	if XActionSequence.has_sequence(cast):
 		logs.append_array(XActionSequence.create(logic, u, cast, targets).run())  # 同 XBattleLogic.execute 的序列路：段数在序列里
+		_confirm_kills(logic)  # T232 R1：序列跑完、IMMORTAL 已解除，认这一招打倒的
 		return logs
 	for t in targets:
 		for i in range(maxi(1, int(cast.get("repeats", 1)))):
@@ -1611,6 +1657,7 @@ static func end_action(logic, u, skill) -> Array:
 	var logs := []
 	if not logic.has_meta("xtqs"):
 		return logs
+	_confirm_kills(logic)  # T232 R1：主行动的序列已收尾，认待定击倒（行动帧还在，kill_tp 认得到）
 	if u is XActor and u.has_meta("xtq_cnext_on") and int(_fstore(logic).depth) == 0:
 		u.remove_meta("xtq_cnext_on")
 		u.set_meta("xtq_cnext_turn", int(logic.turn))

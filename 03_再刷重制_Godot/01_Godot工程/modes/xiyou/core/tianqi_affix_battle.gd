@@ -22,6 +22,11 @@ extends RefCounted
 ## 开关（O-335）：false＝天启篇词条在战斗里没有任何效果（只显示在装备说明里）
 static var ENABLED := true
 
+## 开关（O-待定-2，T232）：true＝「斩获」在动作序列招（含普攻）上也认击倒：挂 IMMORTAL 被打到 0 血的目标先记待定，
+## end_action（序列已收尾、该倒的已倒）再按 is_dead() 认、回血回魔；false＝回退：只认 after_apply 当场 is_dead() 的（序列招上认不到）。
+## 和七印的 XTianqiQiyinEffects.SEQ_KILLS 同一办法，分开关
+static var SEQ_KILLS := true
+
 const PARAM_KEYS := ["mhp", "mmp", "atk", "def", "mat", "mdf", "agi", "luk"]
 const XPARAM_INDEX := {"hit": 0, "eva": 1, "cri": 2, "hrg": 7, "mrg": 8}
 const DEFAULT_TIER := 4
@@ -496,6 +501,11 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 			f.harvested = true
 			u.hp = minf(u.mhp, u.hp + floorf(u.mhp * float(p.harvest) / 100.0))
 			u.mp = minf(u.mmp, u.mp + floorf(u.mmp * float(p.harvest) / 100.0))
+		elif SEQ_KILLS and p.has("harvest") and mine and not bool(f.harvested) and t.immortal and t.hp <= 0.0 and float(f.before.get(t, 0.0)) > 0.0:
+			var pend: Array = f.get("pending", [])
+			if not pend.has(t):
+				pend.append(t)
+			f.pending = pend  # T232：序列 IMMORTAL 下打到 0 血，end_action 再认
 	if dmg < 0.0 and t is XActor and p.has("rejuvenate") and mine and f.before.has(t):
 		var overflow := -dmg - maxf(0.0, t.hp - float(f.before[t]))
 		var cap := floorf(t.mhp * float(p.rejuvenate) / 100.0)
@@ -512,6 +522,8 @@ static func end_action(logic, u, skill) -> Array:
 	var st := _store(logic)
 	var f: Dictionary = st.act
 	st.act = {}
+	if int(st.depth) == 0 and not f.is_empty() and is_same(f.u, u):
+		_confirm_harvest(f)
 	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not (skill is Dictionary) or skill.is_empty():
 		return logs
 	if u.is_attack(skill) or not u.is_alive():
@@ -530,6 +542,24 @@ static func end_action(logic, u, skill) -> Array:
 			logs.append_array(logic.mark_views([logic.apply(u, skill, t)]))  # 打完当场取画面快照（评审 v0.1 第 8 条）
 	st.depth = int(st.depth) - 1
 	return logs
+
+
+## T232：待定的斩获（序列 IMMORTAL 下打到 0 血的目标）在行动收尾认：有一个真倒下了、出手者还活着就回一次（一次行动只一次）；
+## 不死、序列里被救回的不算。SEQ_KILLS 关着时 pending 恒空
+static func _confirm_harvest(f: Dictionary) -> void:
+	var pend: Array = f.get("pending", [])
+	f.pending = []
+	if bool(f.harvested) or pend.is_empty():
+		return
+	var u = f.u
+	if not u.is_alive() or not pend.any(func(t): return t.is_dead()):
+		return
+	var p: Dictionary = view(u).get("p", {})
+	if not p.has("harvest"):
+		return
+	f.harvested = true
+	u.hp = minf(u.mhp, u.hp + floorf(u.mhp * float(p.harvest) / 100.0))
+	u.mp = minf(u.mmp, u.mp + floorf(u.mmp * float(p.harvest) / 100.0))
 
 
 ## 回合结束：破绽、压制计时

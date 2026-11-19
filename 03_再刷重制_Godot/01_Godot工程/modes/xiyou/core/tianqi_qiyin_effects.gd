@@ -14,6 +14,7 @@ extends RefCounted
 ## 连击段数 repeats；目标死了转段 redirect；扣血入口 hp_damage（替队友挡、免死）；回合开始 start_turn、回合结束 end_turn；
 ## 技能消耗 cost；暴击率 cri；复活 blocks_revive。伤害乘区走 XActorDamageHooks（damage_ops，只做加和乘），最大生命走 XActor.param_rate（param_rate）。
 ## 数值是占位（表头 draft），表里没有的手感参数集中在 TUNE。
+## 击倒（T232，SEQ_KILLS）：动作序列招（转换后几乎所有技能、含普攻）打的过程中目标挂 IMMORTAL，0 血不倒；after_apply 先记待定，end_action 开头 confirm_pending 认。
 
 ## 开关（O-331）：false＝七印装备在战斗里没有任何效果（只是带词条的装备）
 static var ENABLED := true
@@ -33,6 +34,11 @@ const ARTIFACT_ETYPE := 17
 
 ## 开关（O-426）：true＝默印 5 件在战斗技能列表里多出「万籁俱寂」（TUNE.silence_skill_id），放了就 use_silence_all；false＝不给
 static var SILENCE_SKILL := true
+
+## 开关（O-待定-1，T232）：true＝动作序列招（含普攻）挂着 IMMORTAL 打到 0 血的目标先记成待定击倒，行动收尾（end_action，
+## 序列已解除 IMMORTAL、该倒的已倒）再按 is_dead() 认，击倒再动、送行连斩、溢出、击杀叠层在序列招上也触发；
+## false＝回退：只认 after_apply 当场 is_dead() 的（序列招上认不到）
+static var SEQ_KILLS := true
 
 ## 七印书卷：开战揭的规则（只对敌方）。里副本规则由祭坛车道（cc/qiyin-altar）实现，读 enemy_only_rule(logic)。
 ## 免死对这个即死无效：死期（终焉规则）结算时由实现方把它置真、结算完置假。
@@ -500,6 +506,16 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 	if t.is_dead() and not f.killed.has(t):
 		f.killed.append(t)
 		f.overflow = maxf(0.0, float(r.get("state_value", 0.0)) - float(f.get("cur_hp", 0.0)))
+	elif SEQ_KILLS and t.immortal and t.hp <= 0.0 and float(f.get("cur_hp", 0.0)) > 0.0 and not f.killed.has(t):
+		# T232：动作序列挂着 IMMORTAL，这一击打到 0 血也不倒（序列收尾解除时才倒）：先记待定击倒与这一击的溢出，end_action 再认。
+		# 只认「这一击之前还有血」的那一击（同一目标后面的段打在 0 血上不改溢出）；中途被救回再打到 0 的，按最后一次算
+		var pend: Array = f.get("pending", [])
+		pend.erase(t)
+		pend.append(t)
+		f.pending = pend
+		var over: Dictionary = f.get("pending_over", {})
+		over[t] = [maxf(0.0, float(r.get("state_value", 0.0)) - float(f.cur_hp)), int(t.immortal_rescues)]  # 溢出＋记下时的救回次数（R1 P3-1）
+		f.pending_over = over
 
 
 ## 判决：最大生命 × max_hp_pct%（＋当头棒喝按已损生命加），生命高于线 ×（殉真印），以身饲虎这次 ×
@@ -564,6 +580,7 @@ static func end_action(logic, u, skill) -> Array:
 		logs.append_array(take_logs(logic))
 		return logs
 	var un := _unit(logic, u)
+	confirm_pending(f)
 	st.depth = int(st.depth) + 1
 	# 击倒相关
 	if not f.killed.is_empty() and u.is_alive():
@@ -630,6 +647,22 @@ static func end_action(logic, u, skill) -> Array:
 				st.depth = int(st.depth) - 1
 	logs.append_array(take_logs(logic))
 	return logs
+
+
+## T232：待定击倒（序列 IMMORTAL 下打到 0 血的）在行动收尾时认：此刻真倒下的记进 killed（按打倒先后），溢出取最后一个；
+## 不死（打到 0 血不倒）、序列里被救回或复活的不算。SEQ_KILLS 关着时 pending 恒空
+## R1 P3-1：记下待定之后又被救回过（不经 after_apply 的序列 HP＋、复活等，XBattler.immortal_rescues 变了），
+## 之后再被不经 after_apply 的路子弄倒（序列 HP－、收尾 ADD STATE 1）：击倒照算，旧溢出作废记 0；再挨致命一击的照最后一击重记
+static func confirm_pending(f: Dictionary) -> void:
+	var pend: Array = f.get("pending", [])
+	var over: Dictionary = f.get("pending_over", {})
+	for t in pend:
+		if t.is_dead() and not f.killed.has(t):
+			f.killed.append(t)
+			var o = over.get(t, [0.0, 0])
+			f.overflow = float(o[0]) if o is Array and int(o[1]) == int(t.immortal_rescues) else 0.0
+	f.pending = []
+	f.pending_over = {}
 
 
 ## 派生的一击（连斩、横扫、再射、放两次、补刀）：直接 apply，伤害 × scale，不付费、不再触发派生
