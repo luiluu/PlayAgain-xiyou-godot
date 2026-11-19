@@ -11,7 +11,7 @@ extends RefCounted
 ## - 分数：伤害效用（威胁度 ×(11000×伤害/剩余HP ＋ 能击杀 7000 ＋ 4000×伤害/本回合最大伤害)）、治疗/复活/回蓝/TP 急需度、
 ##   增减益与状态收益（长战才计满）、代价倍率（药 0.65；技能按 MP/TP 消耗比例），全体取合计、单体取最佳目标、随机按期望段数。
 ## - 护盾（ShieldSystem）：剩余 HP 与急需度按 HP＋护盾算；对友方的加盾技能按 shieldEstimate 加分（缺口＝生命上限 80%−现有护盾）。
-##   重制版没有 YEP 吸收屏障与来源护盾账本，shieldPoints 只算原生护盾。
+##   重制版没有 YEP 吸收屏障；shieldPoints 只算原生护盾（天启篇档 o_tianqi_smart_ai 开时再加来源护盾账本 XShieldLedger）。
 ## - 角色档案 profile（v0.28 registerProfile，只读）：段数 hits 代替行动序列段数、倍率 multiplier、穿透 pierce（防御率＋穿透×(1−防御率)）、
 ##   单体技能的溅射 splash（其余敌人按期望伤害×溅射算伤害效用）、铺垫 followupSkill／setupActions（付完本技能代价后
 ##   用后续技能打分〔noSetup，不再铺垫〕，取 max(本分, (本分＋后续)÷(铺垫次数＋1)×0.92×(急需时 0.6))）。
@@ -22,11 +22,21 @@ extends RefCounted
 ##   XToji.ai_damage）、云裳。O-131 o_profile_hits 见下；XSmartAIProfiles 另有两个开关。
 ## - 奈叶小魔炮（5692 只开六选一公共事件，自动战斗不能用）：会 5692 且能用时，候选里的 5703～5709 换成六档魔炮（不必学会、各自能用），
 ##   估伤按付费后的 MP 算公式、再 ×max(1, ⌊付前 MP×比例/2000⌋)（伤害后多段，见 XNanoha）。参照 nanoha3_probe ai.*。
-## - 角色的受控估算、boosts、暴击增量（米拉、渡鸦、黄泉、宿傩）：见 XSmartAIProfiles。没移植：镜流 10187～10193、饿狼 10250～10263 的估算分支（估伤仍为 0）。
+## - 角色的受控估算、boosts、暴击增量（米拉、渡鸦、黄泉、宿傩）：见 XSmartAIProfiles。镜流 10187～10193、饿狼 10250～10263 的受控估算西游档已移植（见 XSmartAIProfiles）；天启篇重构后它们的公式改成 XTianqiSkills.formula，走下面 o_tianqi_smart_ai 的模块公式分支。
 ## - 异化行动道具投影（祸祝、恶愿、逆祷，XAlienBattle.project）：见 o_projection。
 
 const MASTERY_NOTE := "<Custom Damage Mastery Formula:\\s*value\\s*\\*\\s*\\(1\\s*\\+\\s*level\\s*\\*\\s*([\\d.]+)\\)\\s*>"
 static var _boss_ids := {}
+## O-待定（T281，优化登记）：天启篇智能 AI 止血。天启篇存档（XTianqiSkills.cards_on）里：① 重构技的模块公式（XTianqiSkills／五条悟 XGojo）参与估伤、估治疗，
+## 原来被 formula_safe 一刀切成 0；② 带公共事件的伤害／治疗技（和白名单入口技命运之手 6861）进候选，原来 legal 全禁；
+## ③ 护盾量算来源护盾账本、重构护盾技（skill_rework shield.pct）估盾；④ 141～166 号不再 ×0.01、熟练度读天启篇的每级 +3%。
+## true＝天启篇走新分支；false＝回到原样。西游档（非天启篇存档）永远不进新分支
+static var o_tianqi_smart_ai := true
+## 纯公共事件入口、本身没有伤害的技能：天启篇放行并按下面的最小估分（命运之手 6861 → 六选一的 6862～6867）
+const TQ_ENTRY_SKILLS := {6861: [6862, 6863, 6864, 6865, 6866, 6867]}
+## 公共事件（含 117 调用的子事件）里出现这些指令自动战斗会卡住、扣钱或离开战斗，不放行：
+## 选项 102、输入数字 103、选物品 104、滚字 105、改金币 125、切图 201、战斗／商店／改名 301～303、撤退 340、菜单／存档／GameOver／标题 351～354
+const TQ_CE_BLOCK := [102, 103, 104, 105, 125, 201, 301, 302, 303, 340, 351, 352, 353, 354]
 ## O-121（优化登记）：异化投影一律读投影估值——目标方向、范围、伤害／治疗／增益全按投影后的技能（逆祷的攻击按治疗友方，
 ## 治疗量照 XAlienBattle.prayer_heal 借治疗技能平分；祸祝按对敌减益与诅咒；恶愿按除自己外的友方，付不起代价记 0 分）。
 ## 原版 Codex_SmartBattleAI 目标方向与范围读投影（action.item()）、估值读原技能（candidate.item），逆祷的攻击近乎 0 分；
@@ -108,6 +118,16 @@ static func num_targets(rec: Dictionary) -> int:
 	return scope_of(rec) - 2 if for_random(rec) else 0
 
 
+## 天启篇档的新分支开没开（开关开＋当前是天启篇存档且角色卡开着）
+static func tq_on() -> bool:
+	return o_tianqi_smart_ai and XTianqiSkills.cards_on()
+
+
+static func _tq_module(rec: Dictionary) -> bool:
+	var program: Dictionary = rec.get("damage", {}).get("formulaProgram", {})
+	return str(program.get("status", "")) == "module" and str(program.get("module", "")) in [XTianqiSkills.MODULE, "gojo"]
+
+
 static func is_boss(e: XBattler) -> bool:
 	if not e is XEnemy:
 		return false
@@ -145,9 +165,40 @@ func legal(rec: Dictionary, item: bool) -> bool:
 	for e in rec.get("effects", []):
 		if int(e.code) == 44:
 			var dmg_type := int(rec.get("damage", {}).get("type", 0))
+			if not item and tq_on() and tq_ce_ok(rec, dmg_type, int(e.dataId)):
+				continue
 			if item or not dmg_type in [1, 2, 5, 6] or not useful_common_event(int(e.dataId)):
 				return false
 	return true
+
+
+## 天启篇放行的公共事件技：只放天启篇重构表里的技能（XTianqiSkills.has）和白名单入口技，且整条公共事件（递归 117）里没有危险指令。
+## 重构表之外的老技能（如 345 一掷千金：扣金币、钱不够弹 101 并全队 3000 致死伤）一律照旧封
+static func tq_ce_ok(rec: Dictionary, dmg_type: int, ce_id: int) -> bool:
+	var id := int(rec.get("id", 0))
+	if not (XTianqiSkills.has(id) or TQ_ENTRY_SKILLS.has(id)):
+		return false
+	if not (dmg_type in [1, 2, 3, 4, 5, 6] or TQ_ENTRY_SKILLS.has(id)):
+		return false
+	return not _ce_dangerous(ce_id, {})
+
+
+static func _ce_dangerous(ce_id: int, seen: Dictionary) -> bool:
+	if seen.has(ce_id):
+		return false
+	seen[ce_id] = true
+	var ev := XDB.rec("CommonEvents", ce_id)
+	if ev.is_empty():
+		return true
+	for c in ev.get("list", []):
+		var code := int(c.code)
+		if code in TQ_CE_BLOCK:
+			return true
+		if code == 117:
+			var ps = c.get("parameters", [])
+			if not ps is Array or ps.is_empty() or _ce_dangerous(int(ps[0]), seen):
+				return true
+	return false
 
 
 static func harmful_state(id: int) -> bool:
@@ -225,13 +276,29 @@ func safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	return value * hits
 
 
+## 公式只读预览（正式 choose 暂时把 Math.random 固定为0.5；预览不能抽走实战随机数）；天启篇重构技带五条悟茈预览标记
+func _tq_preview(a: XBattler, t: XBattler, rec: Dictionary) -> float:
+	var dmg: Dictionary = rec.get("damage", {})
+	var preview := rec.duplicate()
+	preview.damage = dmg.duplicate()
+	if dmg.get("formulaGd") is String:
+		preview.damage.formulaGd = dmg.formulaGd.replace("randf()", "0.5")
+	XGojo.ai_preview = tq_on() and _tq_module(rec)  # 五条悟茈：预览期读当前对数（只读）
+	var value := XDamage.eval_formula(preview, a, t, logic.vars())
+	XGojo.ai_preview = false
+	return value
+
+
 func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var dmg: Dictionary = rec.get("damage", {})
 	var type := int(dmg.get("type", 0))
-	var p := profile(a, rec)
+	var tq_rec := tq_on() and _tq_module(rec)  # 天启篇重构技：公式、段数已是重构后的，不叠旧西游的受控估算、档案段数／倍率／穿透、boosts、暴击增量
+	var p := {} if tq_rec else profile(a, rec)
 	var value := 0.0
 	var id := int(rec.get("id", 0))
-	if id >= 10216 and id <= 10219 and _toji_formula_re.search(str(dmg.get("formula", ""))) != null:
+	if tq_rec:
+		value = _tq_preview(a, t, rec)
+	elif id >= 10216 and id <= 10219 and _toji_formula_re.search(str(dmg.get("formula", ""))) != null:
 		value = XToji.ai_damage(a, t, id, int(p.get("extra", 0)))  # 甚尔主技能：受控的估算函数
 	elif (id == XHeartsteel.SKILL or id == XHeartsteel.LEV_SKILL) and _heartsteel_formula_re.search(str(dmg.get("formula", ""))) != null:
 		value = XHeartsteel.ai_damage(a, t, id)  # 巨人吞噬：受控的估算函数
@@ -246,12 +313,7 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	else:
 		if not formula_safe(str(dmg.get("formula", "0"))):
 			return 0.0
-		# 正式 choose 暂时把 Math.random 固定为0.5；预览不能抽走实战随机数。
-		var preview := rec.duplicate()
-		preview.damage = dmg.duplicate()
-		if dmg.get("formulaGd") is String:
-			preview.damage.formulaGd = dmg.formulaGd.replace("randf()", "0.5")
-		value = XDamage.eval_formula(preview, a, t, logic.vars())
+		value = _tq_preview(a, t, rec)
 	if type in [3, 4]:
 		value = -value
 	var element := int(dmg.get("elementId", 0))
@@ -261,7 +323,7 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 		defense = t.pdr if int(rec.get("hitType", 0)) == 1 else t.mdr if int(rec.get("hitType", 0)) == 2 else 1.0
 	if float(p.get("pierce", 0.0)) > 0.0 and defense < 1.0:
 		defense += float(p.pierce) * (1.0 - defense)
-	var repeats := float(XSmartAIProfiles.repeats(a, rec, XYunshang.repeats(a, rec, XBattleLogic.attack_repeats(a, rec, 1))))  # action.numRepeats：普攻（isAttack，看 attackSkillId）时加追加次数；云裳双针 ×2；黄泉、流萤、渡鸦的段数包装
+	var repeats := float(XBattleLogic.attack_repeats(a, rec, 1)) if tq_rec else float(XSmartAIProfiles.repeats(a, rec, XYunshang.repeats(a, rec, XBattleLogic.attack_repeats(a, rec, 1))))  # action.numRepeats：普攻（isAttack，看 attackSkillId）时加追加次数；云裳双针 ×2；黄泉、流萤、渡鸦的段数包装
 	if p.has("hits") and o_profile_hits:
 		repeats = float(p.hits)
 	else:
@@ -269,10 +331,12 @@ func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var level := maxf(0.0, float(a.skillMasteryLevel(int(rec.id)))) if not is_item(rec) else 0.0
 	var m := RegEx.create_from_string("(?i)" + MASTERY_NOTE).search(str(rec.get("note", "")))
 	var mastery := 1.0 + level * (float(m.get_string(1)) if m else 0.10)
-	var extra := float(p.get("multiplier", 1.0)) * XSmartAIProfiles.boosts(a, rec)
+	if tq_on() and XTianqiSkills.mastery_on() and not is_item(rec):
+		mastery = XTianqiSkills.mastery_damage(1.0, int(level))  # 天启篇：每级 +3%、上限 10 级
+	var extra := float(p.get("multiplier", 1.0)) * (1.0 if tq_rec else XSmartAIProfiles.boosts(a, rec))
 	if type == 1 and a is XActor:
 		extra *= maxf(0.0, 1.0 + float(a.passive_cache().get("globalHarmRi", 0.0)))
-	var balance := 0.01 if a is XActor and int(a.data().get("id", 0)) >= 141 and int(a.data().get("id", 0)) <= 166 and type in [1, 2, 5, 6] else 1.0
+	var balance := 0.01 if not tq_on() and a is XActor and int(a.data().get("id", 0)) >= 141 and int(a.data().get("id", 0)) <= 166 and type in [1, 2, 5, 6] else 1.0
 	var tq := XTianqiNoX6.dealt_scale(a, t) if type in [1, 5] else 1.0  # 天启篇去全队 ×6（O-470）：AI 估伤本来不含 ×6，目标血量缩了它也跟着缩，选目标、选招和原来一样
 	return maxf(0.0, value) * rate * defense * clampf(repeats, 1, 32) * extra * mastery * balance * tq
 
@@ -348,7 +412,8 @@ func expected_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	if damage > 0.0:
 		var hit := logic.item_hit(a, rec, t) * (1.0 - logic.item_eva(a, rec, t))
 		var crit := clampf(logic.item_cri(a, rec, t), 0.0, 1.0) if bool(rec.get("damage", {}).get("critical", false)) else 0.0  # 原版 action.itemCri(target)：整条包装链（甚尔、critPush、暴击下限等）
-		v = damage * XSmartAIProfiles.expected_rate(a, rec) * hit * (1.0 + crit * (0.5 + XSmartAIProfiles.crit_bonus(a, rec)))
+		var old := not (tq_on() and _tq_module(rec))  # 天启篇重构技：不叠旧西游米拉／渡鸦的期望倍率和暴击增量
+		v = damage * (XSmartAIProfiles.expected_rate(a, rec) if old else 1.0) * hit * (1.0 + crit * (0.5 + (XSmartAIProfiles.crit_bonus(a, rec) if old else 0.0)))
 	_damage_cache[key] = v
 	return v
 
@@ -364,6 +429,8 @@ func threat(t: XBattler, foes: Array) -> float:
 
 ## shieldPoints：原生护盾（没有吸收屏障与来源护盾账本）
 static func shield_points(t: XBattler) -> float:
+	if tq_on():
+		return maxf(0.0, t.shield) + XShieldLedger.amount(t)  # 来源护盾账本（谷雨、屠苏、璇等）也是血
 	return maxf(0.0, t.shield)
 
 
@@ -380,7 +447,7 @@ func shield_estimate(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	if m == null and a == t:
 		m = _self_shield_re.search(formula)
 	if m == null:
-		return 0.0
+		return tq_shield(a, t, rec)
 	var stripped := _shield_math_re.sub(_shield_reads_re.sub(m.get_string(1), "1", true), "1", true)
 	if _shield_plain_re.search(stripped) == null:
 		return 0.0
@@ -392,6 +459,27 @@ func shield_estimate(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 		if e.resource == "shield" and e.receiver == ("a" if a == t else "b"):
 			gained += maxf(0.0, float(e.actualDelta))
 	return gained
+
+
+## 天启篇重构护盾技（skill_rework shield {pct, self}）：施放者生命上限 × pct，对自己时也算给自己的
+func tq_shield(a: XBattler, t: XBattler, rec: Dictionary) -> float:
+	if not tq_on() or is_item(rec):
+		return 0.0
+	var sh: Dictionary = XTianqiSkills.spec(int(rec.get("id", 0))).get("shield", {})
+	if sh.is_empty() or (bool(sh.get("self", false)) and a != t):
+		return 0.0
+	return floorf(float(a.mhp) * float(sh.get("pct", 0.0)))
+
+
+## 入口技自己没有伤害：取它登记的各个落点技能对这个目标的期望伤害平均
+func tq_entry_damage(t: XBattler, rec: Dictionary) -> float:
+	var ids: Array = TQ_ENTRY_SKILLS.get(int(rec.get("id", 0)), [])
+	var sum := 0.0
+	for id in ids:
+		var sub := XDB.rec("Skills", int(id))
+		if not sub.is_empty():
+			sum += expected_damage(actor, t, sub)
+	return sum / maxf(1.0, float(ids.size()))
 
 
 func damage_utility(t: XBattler, damage: float, foes: Array, ctx := {}) -> float:
@@ -552,6 +640,10 @@ func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary, dir := {}) ->
 				for o in ctx.foes:
 					if o != t:
 						score += damage_utility(o, expected_damage(actor, o, rec) * splash, ctx.foes, ctx)
+		elif for_opponent(d) and tq_on() and TQ_ENTRY_SKILLS.has(int(rec.get("id", 0))):
+			hit_damage = tq_entry_damage(t, rec)  # 命运之手这类纯公共事件入口：按六选一的平均估（最小可用，卡 2 再统一）
+			hit_score = damage_utility(t, hit_damage, ctx.foes, ctx)
+			score += hit_score
 		elif for_opponent(d) and dmg_type in [2, 6]:
 			score += 4000.0 * minf(t.mp, expected_damage(actor, t, rec)) / maxf(1.0, t.mmp)
 		rows.append({"target": t, "score": score, "hitDamage": hit_damage, "hitScore": hit_score})
