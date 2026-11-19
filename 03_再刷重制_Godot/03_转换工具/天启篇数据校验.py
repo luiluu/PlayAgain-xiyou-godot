@@ -1893,8 +1893,9 @@ def combat_rules_phase4_rules(table: dict) -> list:
         bad.append('combat_rules.boss_hp_temp_unit 要是 {crit, no_crit} 两个数')
     else:
         for kk, v in u.items():
-            if not isinstance(v, (int, float)) or not 0.1 <= float(v) <= 1.0:
-                bad.append('combat_rules.boss_hp_temp_unit.%s 要在 0.1～1（暗装期先填 1，标定后约 0.2～0.3）：%s' % (kk, v))
+            # T241（D222 丙）：U 改整数百分比，先填 100＝不打折，标定后约 20～30
+            if not isinstance(v, int) or isinstance(v, bool) or not 10 <= v <= 100:
+                bad.append('combat_rules.boss_hp_temp_unit.%s 要是 10～100 的整数百分比（先填 100，标定后约 20～30）：%s' % (kk, v))
     return bad
 
 
@@ -1913,6 +1914,16 @@ def abs_rescale_rules(table: dict) -> list:
             bad.append('entries/%d 要有 kind、id、name、orig、new' % i)
             continue
         n = e['new']
+        if e['kind'] == 'state_shuxing':  # T228：持有者自身 8 项的整数百分比；计数器状态 mode＝raw 保留原数
+            if not isinstance(n, dict) or n.get('pct_of') != 'self':
+                bad.append('entries/%d（state_shuxing %s）new.pct_of 要是 self：%s' % (i, e['id'], n))
+            elif n.get('mode') == 'raw':
+                if not n.get('reason'):
+                    bad.append('entries/%d（state_shuxing %s）mode＝raw 要写 reason' % (i, e['id']))
+            elif not (isinstance(n.get('pct'), list) and len(n['pct']) == 8
+                      and all(isinstance(x, int) and not isinstance(x, bool) for x in n['pct'])):
+                bad.append('entries/%d（state_shuxing %s）new.pct 要是 8 个整数：%s' % (i, e['id'], n.get('pct')))
+            continue
         if isinstance(n, dict) and not (0 < float(n.get('pct', 0)) <= 100 and n.get('pct_of') in ('mhp', 'mmp')):
             bad.append('entries/%d（%s %s）换算后要是 mhp／mmp 的 0～100%%：%s' % (i, e['kind'], e['id'], n))
     if not table.get('unscanned'):
