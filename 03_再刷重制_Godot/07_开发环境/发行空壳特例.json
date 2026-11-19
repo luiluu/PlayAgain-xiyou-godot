@@ -56,6 +56,7 @@
   "XTianqiSkills.tier_of": "XTier.tier_of(int(actor_or_id.actor_id) if actor_or_id is Object else int(actor_or_id))",
   "XTianqiSkills.is_super": "tier_of(x, force) == XTier.SUPER",
   "XTianqiSkills.mastery_cap": "10",
+  "XTianqiSkills.seg_view": "skill",
   "XTianqiSkills.mastery_damage": "initial",
   "XTianqiSummit.map_name": "original",
   "XTianqiMerchant.bodies": "[]",
