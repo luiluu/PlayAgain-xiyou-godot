@@ -1,5 +1,5 @@
 extends Node
-## 【cc·T240·未经审查】追加出手打倒的敌人也算行动者的击倒（D223 乙；XTianqiQiyinEffects.FOLLOW_KILLS，O-待定）。
+## 【cc·T240·未经审查】追加出手打倒的敌人也算行动者的击倒（D223 乙；XTianqiQiyinEffects.FOLLOW_KILLS，O-616）。
 ## 三类追加出手：词条再释放（XTianqiAffixBattle.end_action）、技能重构追加释放（XTianqiSkills._cast，序列与非序列两条路）、
 ## 七印派生（_derived：送行连斩等）。打倒的触发：击杀叠层（un.kills）、送行连斩、击倒再动、词条斩获（一次行动只一次）。
 ## 连锁上限：一次行动里追加击倒的结算最多 FOLLOW_KILL_MAX 轮（默认 3）；送行连斩去掉 chain（每轮只斩一刀）、全场 1 血构造连锁，断言停在上限。
