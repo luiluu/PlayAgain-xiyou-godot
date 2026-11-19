@@ -95,6 +95,9 @@ var extras: Array = []
 var _anchor := Rect2()            # place_near 的选中行（附卡避开它）
 ## 品质框样式要一直引用到下一次重画：局部变量释放后皮肤贴图的 RID 失效，什么也画不出来
 var _frame_style: XWindowStyle
+## T288 卡 S：新界面下长说明卡分节画（XSkinCard，SECTIONS 开时）；_obj 是这张卡的条目（show_text 的假物品为空，照旧画）
+var skin_card: XSkinCard
+var _obj := {}
 
 
 # ======================================================================
@@ -1215,6 +1218,7 @@ func show_for(obj, kind := "", with_extras := true) -> void:
 	if obj.has(XAffixAbsorb.KEY):
 		obj = XAffixAbsorb.view(obj)  # Sprite_ItemHelp.setItem 包装：吸取过特效的专武显示效果视图
 	list_costs = _list_costs_scene()
+	_obj = obj
 	rows = content(obj, kind, skill_copy, note_width(obj, card_width) - PAD * 2)
 	quality = _quality(obj)
 	if quality > 0:
@@ -1252,6 +1256,7 @@ func _list_costs_scene() -> bool:
 
 
 func show_text(text: String) -> void:
+	_obj = {}
 	rows = [[text, OTHER_SIZE, "#ffffff", false, 0]]
 	quality = 0
 	robe_card = false
@@ -1260,6 +1265,11 @@ func show_text(text: String) -> void:
 
 
 func _apply(w: float) -> void:
+	if sectioned():
+		_apply_sections(w)
+		return
+	if skin_card != null:
+		skin_card.visible = false
 	var lay := layout(rows, min_font, w)
 	_lines = lay.lines
 	size = Vector2(w, lay.height)
@@ -1477,3 +1487,210 @@ func _paint(c: XMVCanvas) -> void:
 				c.text(g.t, g.x, g.y, g.w * 2.0 if g.lh != 36.0 else g.w + 2, "left", col, g.size, g.lh)
 		if on and bool(l.get("line", false)):
 			c.draw_line(Vector2(PAD + 4.0, l.y + l.h + 1.0), Vector2(size.x - PAD - 4.0, l.y + l.h + 1.0), Color(XUiSkin.LINE, 0.22), 1.0)
+
+
+# ======================================================================
+# T288 卡 S：长说明卡分节（新界面）
+# ======================================================================
+
+## 开关：新界面（XUiSkin.on()）下说明卡按节画——牌头（图标、名字、品质小字、描述）＋带小标题的节（基本信息／伤害怎么算／成长／效果／这一场…），
+## 放不下时牌底渐隐＋「看完整说明」，按 Y 或点一下展开（XSkinCard.fold）。content() 的行、次序、代入的数都不动，只是每行多算一个节标记（section_tags）。
+## false＝回到旧画法（MV 排版换皮肤色）；皮肤关时本来就是旧画法。
+static var SECTIONS := true
+## 节的显示次序（同样稿：基本信息→伤害怎么算→成长→效果；装备 自带→成长→这一场→词条）。行在各自节里保持 content() 给的先后
+const SECTION_ORDER := ["head", "desc", "base", "info", "formula", "growth", "now", "effect", "affix", "price"]
+## 合法的节标记（gap＝分组空行，不画）
+const SECTION_TAGS := ["head", "desc", "info", "base", "formula", "growth", "now", "effect", "affix", "price", "gap"]
+const SECTION_TITLES := {"info": "基本信息", "base": "自带", "formula": "伤害怎么算", "growth": "成长", "now": "这一场", "effect": "效果", "affix": "词条", "price": ""}
+## 节里不再重复的字头（小标题已经说了）：效果节的「效果：」、成长节的「成长：」、伤害怎么算的「伤害：」
+const SECTION_LABELS := {"effect": "^效果[：:]\\s*", "growth": "^成长[：:]\\s*", "formula": "^伤害[：:]\\s*"}
+const _SEC_ESC := "(?i)(?:\\\\|\u001b)(?:[a-z]+\\[\\d*\\]|[{}])"
+
+
+static func _gap_row(r: Array) -> bool:
+	return str(r[0]) == " " and r[1] != null and int(r[1]) <= P43_SIZE.gap
+
+
+## 每行属于哪一节（与 rows 等长，取值见 SECTION_TAGS）。rows 是 content()／detail_rows() 的结果，obj 是那张卡的条目。
+## 认法：v0.43 排版的块（名字＋品质块、白字属性 \rgb、施放信息 #e3eaf3、正文、条件、背景说明 #a9b4c2、价格）；
+## 正文按分组颜色码（XCharacterHelp.SECTION_BY_CODE，genericHelpView 同码）、成长装备的行（XGrowthHelp.section_of）分。
+static func section_tags(rows: Array, obj := {}) -> Array:
+	var kind := kind_of(obj) if not obj.is_empty() else ""
+	var gear := kind == "weapon" or kind == "armor"
+	var growth_gear := gear and XGrowthHelp.target(obj)
+	var esc := RegEx.create_from_string(_SEC_ESC)
+	var code_re := RegEx.create_from_string("(?i)^(?:\\\\|\u001b)c\\[(\\d+)\\]")
+	var gaps := rows.any(func(r): return r is Array and _gap_row(r))
+	var block := 0
+	var out := []
+	for i in rows.size():
+		var r: Array = rows[i]
+		var raw := str(r[0])
+		var t := _js_trim(esc.sub(raw, "", true))
+		var tag := ""
+		if _gap_row(r):
+			tag = "gap"
+			block += 1
+		elif i == 0 or (gaps and block == 0) or _re("^品质[：:]", t):
+			tag = "head"
+		elif not gaps and i == 1 and r[1] != null and int(r[1]) == DESC_SIZE:
+			tag = "desc"   # 旧排法（LAYOUT_V043 关）的描述行
+		elif _re("^(?:购买价格|出售价格|无法出售)", t):
+			tag = "price"
+		elif str(r[2]) == P43_FLAVOR_COLOR:
+			tag = "desc"
+		elif raw.contains("rgb[") or (gear and not gaps and r[1] != null and int(r[1]) <= OTHER_SIZE and _re("^[^：:]+[：:]\\s*-?\\d", t)):
+			tag = "base"
+		elif str(r[2]) == P43_META_COLOR:
+			tag = "info"
+		else:
+			if growth_gear or _re(XGrowthHelp.SECTION_NOW, t):
+				tag = XGrowthHelp.section_of(t)
+			if tag == "":
+				var m := code_re.search(raw)
+				var code := int(m.get_string(1)) if m != null else -1
+				if gear:
+					tag = "info" if _re("^(?:攻击属性|伤害属性)[：:]", t) else "affix"
+				elif XCharacterHelp.SECTION_BY_CODE.has(code):
+					tag = XCharacterHelp.SECTION_BY_CODE[code]
+				elif _re("^(?:基础)?伤害[：:]", t) or _re("^[＋+×]", t):
+					tag = "formula"
+				elif _re("^成长[：:]", t):
+					tag = "growth"
+				else:
+					tag = "effect"
+		out.append(tag)
+	return out
+
+
+## 说明行 → XSkinCard 的牌（title／title_color／icon／subtitle／desc／sections）。
+## 名字行进牌名；品质等抬头行进小字；背景说明进描述；基本信息、自带拆成两列「名 值」格子（cells）；其余各节一行一条。
+static func skin_card_data(rows: Array, obj := {}) -> Dictionary:
+	var tags := section_tags(rows, obj)
+	var esc := RegEx.create_from_string("(?i)(?:\\\\|\u001b)(?:[a-z]+\\[[^\\]]*\\]|[{}.|!><^$])")
+	var col := RegEx.create_from_string("(?i)(?:\\\\|\u001b)col\\[\\d+\\]")
+	var head := []
+	var desc := []
+	var buckets := {}
+	var title := ""
+	for i in rows.size():
+		var tag: String = tags[i]
+		if tag == "gap":
+			continue
+		var conv := XMVText.convert_escapes(str(rows[i][0]))
+		if i == 0:
+			title = _js_trim(esc.sub(conv, "", true))
+			continue
+		var cells := []
+		for part in col.sub(conv, "\u0001", true).split("\u0001"):
+			var c := _js_trim(esc.sub(part, "", true))
+			if c != "":
+				cells.append(c)
+		if cells.is_empty():
+			continue
+		var text := "　　".join(cells)
+		match tag:
+			"head":
+				head.append(text)
+			"desc":
+				for ln in text.split("\n", false):
+					if _js_trim(ln) != "":
+						desc.append(_js_trim(ln))
+			"info", "base":
+				if not buckets.has(tag):
+					buckets[tag] = []
+				for c in cells:
+					for ln in str(c).split("\n", false):
+						buckets[tag].append(_cell(_js_trim(ln)))
+			_:
+				if not buckets.has(tag):
+					buckets[tag] = []
+				for ln in text.split("\n", false):
+					var lt := _js_trim(ln)
+					if lt == "":
+						continue
+					if SECTION_LABELS.has(tag):
+						lt = RegEx.create_from_string(SECTION_LABELS[tag]).sub(lt, "")
+					buckets[tag].append({"text": lt, "color": _section_color(tag, _css(str(rows[i][2]))),
+						"dim": tag == "effect" and _re(XLiuyingHelp.LOCKED_ROW, _js_trim(ln))})
+	var sections := []
+	for tag in SECTION_ORDER:
+		if not buckets.has(tag) or (buckets[tag] as Array).is_empty():
+			continue
+		var sec := {"title": SECTION_TITLES.get(tag, ""), "size": XUiSkin.FS_AUX_MAX, "tag": tag}
+		sec["cells" if tag in ["info", "base"] else "rows"] = buckets[tag]
+		sections.append(sec)
+	var icon_index := int(obj.get("iconIndex", 0)) if not obj.is_empty() else 0
+	return {"title": title, "title_color": XQuality.list_color(obj) if not obj.is_empty() else XUiSkin.TEXT,
+		"icon": XUiSkin.icon(icon_index) if icon_index > 0 else null, "subtitle": " · ".join(head),
+		"desc": "\n".join(desc), "sections": sections}
+
+
+## 「名：值」拆成 [名, 值]（没有冒号整格当名）
+static func _cell(t: String) -> Array:
+	var m := RegEx.create_from_string("^([^：:]{1,12})[：:]\\s*(.*)$").search(t)
+	return [m.get_string(1), m.get_string(2)] if m != null else [t, ""]
+
+
+## 各节的字色：成长 UP 绿；这一场、价格 淡金（正在发生的事、货币）；词条照旧颜色对照表；其余正文
+static func _section_color(tag: String, c: Color) -> Color:
+	match tag:
+		"growth":
+			return XUiSkin.UP
+		"now", "price":
+			return XUiSkin.GOLD_LIGHT
+		"affix":
+			return XUiSkin.legacy_color(c)
+	return XUiSkin.TEXT
+
+
+## 这张卡现在按节画吗（show_text 的假物品没有条目，照旧画）
+func sectioned() -> bool:
+	return SECTIONS and skinned() and not _obj.is_empty()
+
+
+func _in_battle() -> bool:
+	var n := get_parent()
+	while n != null:
+		if n is XBattleScene:
+			return true
+		n = n.get_parent()
+	return false
+
+
+## 卡能占的最高（画布坐标）：战斗里卡底不低于行动顺序条（XSkinBattle.help_card_pos），别处是整个画面上下各留 22
+func _bounds() -> Vector2:
+	var vh := get_viewport_rect().size.y if is_inside_tree() else 720.0
+	if _in_battle():
+		return Vector2(8.0, XSkinOTBBar.POS.y - 12.0)
+	return Vector2(22.0, vh - 22.0)
+
+
+func _apply_sections(w: float) -> void:
+	if skin_card == null:
+		skin_card = XSkinCard.new()
+		skin_card.mouse_filter = Control.MOUSE_FILTER_PASS
+		skin_card.fold = true
+		add_child(skin_card)
+	var d := skin_card_data(rows, _obj)
+	d.merge({"notice": "", "buttons": [], "button_index": -1, "reserve_bottom": 0.0}, true)
+	var bc := Color(XUiSkin.LINE, 0.38)
+	if robe_card:
+		bc = Color(XUiSkin.HP, 0.6)
+	elif quality > 0:
+		bc = Color(XUiSkin.quality_color(clampi(XQuality.grade_of(quality), 0, 6)), 0.58)
+	d["border_color"] = bc
+	var b := _bounds()
+	d["expand_bounds"] = b
+	d["y_pass_on_collapse"] = _in_battle()   # 战斗里 Y：展开 → 再按收起并照旧关掉详情（XSkinBattleList）
+	if not visible:
+		skin_card.set_expanded(false)
+	skin_card.setup(d)
+	var h := minf(skin_card.natural_height(w), b.y - b.x)
+	size = Vector2(w, h)
+	skin_card.position = Vector2.ZERO
+	skin_card.size = size
+	skin_card.visible = true
+	frame.visible = false
+	canvas.visible = false
+	visible = true

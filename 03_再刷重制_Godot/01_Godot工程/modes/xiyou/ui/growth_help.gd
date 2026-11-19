@@ -19,6 +19,19 @@ const HUBRIS_PATTERNS := ["^(?:盛名层数|盛名|扬名|(?:Boss|首领)战|阶
 	"^等级需求：无$", "^基础属性：物攻\\+", "^成长：(普通|盛名层数)",
 	"^效果：(物理伤害忽略|物防穿透|参与击杀|首领|增益刷新|扬名)", "^条件：参与需", "^进度：盛名", "^本场成长：盛名", "^当前增益：扬名"]
 const GOLD := "rgba(255,220,100,1)"
+## T288 分节标记：成长装备说明行属于哪一节（XHelpCard.section_tags 读）。待结算／当前增益 →「这一场」；
+## heart_rows／hubris_rows 与 rewrite 写的成长、进度、伤害、效果、战技、冷却、条件行 →「成长」
+const SECTION_NOW := "^(?:本场成长|当前增益)[：:]"
+const SECTION_GROWTH := "^(?:成长|进度|伤害|效果|战技|冷却|条件)[：:]"
+
+
+## 成长装备的一行（去掉转义码后）属于哪一节：now／growth；认不出返回 ""
+static func section_of(text: String) -> String:
+	if RegEx.create_from_string(SECTION_NOW).search(text) != null:
+		return "now"
+	if RegEx.create_from_string(SECTION_GROWTH).search(text) != null:
+		return "growth"
+	return ""
 
 
 static func target(obj) -> bool:

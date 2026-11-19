@@ -9,6 +9,9 @@ extends RefCounted
 ## 参照 liuying_help_probe（tests/fixtures/liuying_help_oracle.json），专项 xiyou_liuying_help。
 ## 新源行为（v0.28 没有流萤），不设开关。
 
+## T288 分节标记：还没到的阶（「解锁：进阶N阶」）在新界面长说明卡里画暗字（XHelpCard.section_tags 读）
+const LOCKED_ROW := "^解锁[：:]"
+
 
 static func _formula(id: int) -> String:
 	return "伤害：每段[%d＋己·最大生命×%d＋己·物理攻击×%d＋己·敏捷＋施放前护盾×%d]×[1+技能等级×0.1]" % [
