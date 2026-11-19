@@ -14,10 +14,11 @@
 - summit.json（31～36 层重做）：只有 B 组，34～36 层齐全、台词齐全。
 - seg_alien.json（按段异化，四线共用）：只有 B 组，1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
 - qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
-- skill_rework.json（全角色技能重构）：只有 B 组，超强者 17（含五条悟）／强者 52 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1。
+- skill_rework.json（全角色技能重构）：forced_copy_pending（T255 登记：技能号→原因）、forced_copy_unreachable（T261：副本分支天启篇走不到，技能号→原因）；卡里技能的效果 44 调公共事件强制放副本、副本没进卡的，要 effects_remove 或副本进卡或登记；只有 B 组，超强者 17（含五条悟）／强者 52 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1；状态行 battle_end 是布尔（T263）。
 - reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
 - brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。
 - guardian_params.json（守层者能力值重锚，T237／T245）：只有 B 组，ref_enemy 是正整数、stats 八项对 0～7、floors 只有 31～34 层、qiyin 行（可没有）和每层只写 stats 里的项（下划线开头的注释键除外）、取值是正整数百分比（附则 E）。
+- growth.json（渡鸦、奈叶、流萤无限成长，T256）：只有 B 组，全表整数（附则 E）、层价分段从 1 层起连续且份数不降、翻倍倍数 ≥2、拐点在分段里、Q6 判定四项范围、三人行齐全且角色号对、一份是正整数、平加只认能力编号 0～7 且渡鸦只加魔攻、奈叶只加生命魔法、流萤不走平加。
 有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -1097,6 +1098,9 @@ def skill_rework_rules(table: dict) -> list:
                 bad.append('skills/%s 追加几率要在 0～1' % sid)
         if 'desc' in row and not isinstance(row['desc'], list):
             bad.append('skills/%s desc 要是列表' % sid)
+    for sid, row in table.get('states', {}).items():
+        if isinstance(row, dict) and 'battle_end' in row and not isinstance(row['battle_end'], bool):
+            bad.append('states/%s battle_end（战斗结束移除，T263）要是 true／false' % sid)
     return bad
 
 
@@ -1195,6 +1199,72 @@ def _with_tune(rules):
     return run
 
 
+DB_DIR = PROJECT / 'modes' / 'xiyou' / 'generated' / 'db'
+
+
+def _forced_targets(ce: dict, cid: int, seen=None) -> set:
+    """公共事件 cid（含嵌套 117 调用）里强制行动（339）放的技能号。"""
+    seen = seen if seen is not None else set()
+    if cid in seen or cid not in ce:
+        return set()
+    seen.add(cid)
+    out = set()
+    for c in ce[cid]['list']:
+        if c['code'] == 339:
+            out.add(int(c['parameters'][2]))
+        elif c['code'] == 117:
+            out |= _forced_targets(ce, int(c['parameters'][0]), seen)
+    return out
+
+
+def forced_copy_gaps(table: dict, skills: dict, ce: dict) -> dict:
+    """T255：卡里技能有效果 44→公共事件→强制放副本技能，副本不在卡里、又没 effects_remove 去掉 → {技能号: [(公共事件, 副本)]}。"""
+    cards = {**table.get('skills', {}), **table.get('new_skills', {})}
+    gaps = {}
+    for sid, row in cards.items():
+        if not str(sid).isdigit() or int(sid) not in skills:
+            continue
+        removed = {(int(e[0]), int(e[1])) for e in row.get('effects_remove', [])}
+        for e in skills[int(sid)].get('effects', []):
+            if e['code'] != 44 or (44, e['dataId']) in removed:
+                continue
+            for t in sorted(_forced_targets(ce, e['dataId'])):
+                if str(t) not in cards:
+                    gaps.setdefault(str(sid), []).append((e['dataId'], t))
+    return gaps
+
+
+def forced_copy_rules(table: dict, db_dir: Path = None) -> list:
+    """T255：副本技能没进卡的强制追击要么 effects_remove 去掉、要么副本进卡；还没定的登记在 forced_copy_pending（技能号→原因），登记了却已不是缺口的要删。"""
+    db_dir = db_dir or DB_DIR
+    if not (db_dir / 'Skills.json').is_file() or not (db_dir / 'CommonEvents.json').is_file():
+        return []
+    skills = {x['id']: x for x in json.loads((db_dir / 'Skills.json').read_text(encoding='utf-8')) if x}
+    ce = {x['id']: x for x in json.loads((db_dir / 'CommonEvents.json').read_text(encoding='utf-8')) if x}
+    pending = table.get('forced_copy_pending', {})
+    dead = table.get('forced_copy_unreachable', {})
+    bad = []
+    if not isinstance(pending, dict) or not isinstance(dead, dict):
+        return ['forced_copy_pending／forced_copy_unreachable 要是 {技能号: 原因}']
+    gaps = forced_copy_gaps(table, skills, ce)
+    for sid, why in dead.items():  # T261：副本分支在天启篇走不到（缺的前置拿不到），写明原因就放行；变成走得到、或已不是缺口要删
+        if sid not in gaps:
+            bad.append('forced_copy_unreachable.%s 已经不是缺口，删掉登记' % sid)
+        elif not isinstance(why, str) or not why.strip():
+            bad.append('forced_copy_unreachable.%s 要写原因（为什么天启篇走不到）' % sid)
+    for sid, rows in gaps.items():
+        if sid in dead:
+            continue
+        if sid not in pending:
+            bad.append('技能 %s 的效果 44 调公共事件强制放副本 %s，副本没进卡：在卡上加 effects_remove [44, 公共事件号]，或让副本进卡，或先登记 forced_copy_pending' % (sid, sorted({r[1] for r in rows})))
+    for sid, why in pending.items():
+        if sid not in gaps or sid in dead:
+            bad.append('forced_copy_pending.%s 已经不是缺口，删掉登记' % sid)
+        elif not isinstance(why, str) or not why.strip():
+            bad.append('forced_copy_pending.%s 要写原因' % sid)
+    return bad
+
+
 def check_skill_rework(_args) -> bool:
     path = DATA_DIR / 'skill_rework.json'
     if not path.is_file():
@@ -1202,7 +1272,7 @@ def check_skill_rework(_args) -> bool:
         return True
     try:
         table = json.loads(path.read_text(encoding='utf-8'))
-        bad = _with_tune(skill_rework_rules)(table) + coef_integer_rules(table)
+        bad = _with_tune(skill_rework_rules)(table) + coef_integer_rules(table) + forced_copy_rules(table)
     except Exception as e:
         bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
     return _report('skill_rework.json', '规则自检', bad)
@@ -1968,7 +2038,47 @@ def abs_rescale_rules(table: dict) -> list:
             bad.append(tag + '整条换算的 orig 要是原数：%r' % (e['orig'],))
     un = table.get('unscanned')
     if not (isinstance(un, list) and un and all(isinstance(x, str) and x for x in un)):
-        bad.append('unscanned 要列出还没扫的范围（T246 R1：Custom Regenerate Effect 脚本型回复、horsemen.json 没盘，不能清空）')
+        bad.append('unscanned 要列出还没扫的范围（horsemen.json 没盘，不能清空）')
+    elif any('Custom Regenerate' in x for x in un):
+        bad.append('unscanned 不该再列 Custom Regenerate Effect（T249 已盘进 groups.custom_regen）')
+    bad += abs_groups_rules(table.get('groups', {}))
+    return bad
+
+
+# T249：groups 里敌人技能底数、属性门槛、脚本型回复三组定口径，都不接线；口径写在 new（mode、reason）
+THRESHOLD_MODES = ('card', 'card_off', 'raw')
+
+
+def abs_groups_rules(groups: dict) -> list:
+    bad = []
+    raw_ok = lambda n: isinstance(n, dict) and n.get('mode') == 'raw' and isinstance(n.get('reason'), str) and n['reason']
+    g = groups.get('enemy_skill_fixed_base')
+    if not isinstance(g, dict) or not raw_ok(g.get('new')):
+        bad.append('groups.enemy_skill_fixed_base 要有 new {mode: raw, reason}（T249：期四敌人攻击魔攻没换，底数占比不变，不接线）')
+    elif 'new_rule' in g:
+        bad.append('groups.enemy_skill_fixed_base 不该再有 new_rule（T249 已定 raw，没有代码按它换）')
+    elif not all(isinstance(r, list) and len(r) == 4 and isinstance(r[0], int) for r in g.get('rows', [])) or not g.get('rows'):
+        bad.append('groups.enemy_skill_fixed_base.rows 要是 [技能号, 名字, 底数, 占比] 四格')
+    t = groups.get('abs_threshold_in_notes', {})
+    for r in t.get('rows', []) if isinstance(t, dict) else []:
+        n = r.get('new')
+        tag = 'groups.abs_threshold_in_notes/%s ' % r.get('id')
+        if not (isinstance(n, dict) and n.get('mode') in THRESHOLD_MODES and isinstance(n.get('reason'), str) and n['reason']):
+            bad.append(tag + 'new 要是 {mode: card／card_off／raw, reason}：%s' % (n,))
+        elif (n['mode'] == 'card') != bool(r.get('in_card')):
+            bad.append(tag + 'mode＝card 只给 in_card＝true 的行（卡里 drop_if 去掉门槛段），反过来也一样：%s' % (n,))
+    c = groups.get('custom_regen')
+    if not isinstance(c, dict) or not raw_ok(c.get('new')):
+        bad.append('groups.custom_regen 要有 new {mode: raw, reason}（T249：脚本型回复随施法者属性走，不接线）')
+    else:
+        rows = c.get('rows', [])
+        ids = [r.get('id') for r in rows if isinstance(r, dict)]
+        if not rows or len(ids) != len(rows) or len(set(ids)) != len(ids) or not all(isinstance(i, int) for i in ids):
+            bad.append('groups.custom_regen.rows 要是 {id, name, uses} 且 id 不重复')
+        for r in rows:
+            u = r.get('uses') if isinstance(r, dict) else None
+            if not isinstance(u, list) or not all(isinstance(x, str) for x in u):
+                bad.append('groups.custom_regen/%s uses 要是属性名列表' % (r.get('id') if isinstance(r, dict) else r))
     return bad
 
 
@@ -2153,6 +2263,106 @@ def check_guardian_params(_args) -> bool:
     return _run_table('guardian_params.json', guardian_params_rules)
 
 
+# ---- growth.json（渡鸦、奈叶、流萤无限成长，T256） ----
+
+GROWTH_ACTORS = {'raven': 167, 'nanoha': 108, 'liuying': 179}
+
+
+def _growth_ints(node, path, bad):
+    """附则 E：表里的数一律整数（下划线开头的注释键、字符串除外）。"""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if not str(k).startswith('_'):
+                _growth_ints(v, '%s.%s' % (path, k) if path else str(k), bad)
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            _growth_ints(v, '%s[%d]' % (path, i), bad)
+    elif isinstance(node, float):
+        bad.append('%s＝%r 不是整数（附则 E）' % (path, node))
+
+
+def _pos_int(v, allow_zero=False) -> bool:
+    return _is_int(v) and (v >= 0 if allow_zero else v > 0)
+
+
+def growth_rules(table: dict) -> list:
+    bad = []
+    _growth_ints(table, '', bad)
+    price = table.get('price', {})
+    segs = price.get('segments', [])
+    if not isinstance(segs, list) or not segs:
+        bad.append('price.segments 是空的')
+        segs = []
+    nxt, last = 1, 0
+    for i, sg in enumerate(segs):
+        f, t, sh = sg.get('from'), sg.get('to'), sg.get('shares')
+        if not (_pos_int(f) and _pos_int(t) and _pos_int(sh)):
+            bad.append('price.segments[%d] 的 from／to／shares 不是正整数：%r' % (i, sg))
+            continue
+        if f != nxt or t < f:
+            bad.append('price.segments[%d] 不连续：从 %d 层起，应从 %d 层起、到不早于起' % (i, f, nxt))
+        if sh < last:
+            bad.append('price.segments[%d] 每层份数 %d 比上一段 %d 少（层价只升不降）' % (i, sh, last))
+        nxt, last = t + 1, sh
+    if not (_is_int(price.get('grow')) and price.get('grow') >= 2):
+        bad.append('price.grow＝%r 不是 ≥2 的整数' % (price.get('grow'),))
+    if not (_pos_int(price.get('turn')) and price.get('turn') < nxt):
+        bad.append('price.turn＝%r 不在分段写明的层里（1～%d）' % (price.get('turn'), nxt - 1))
+    if not (_is_int(price.get('max_layer')) and price.get('max_layer') >= nxt):
+        bad.append('price.max_layer＝%r 比分段末层还小' % (price.get('max_layer'),))
+    fr = table.get('floor_rule', {})
+    if not _pos_int(fr.get('window'), True):
+        bad.append('floor_rule.window＝%r 不是非负整数' % (fr.get('window'),))
+    if not (_pos_int(fr.get('abyss_cap')) and fr.get('abyss_cap') <= 36):
+        bad.append('floor_rule.abyss_cap＝%r 不在 1～36' % (fr.get('abyss_cap'),))
+    if not (isinstance(fr.get('abyss_prefix'), str) and fr.get('abyss_prefix')):
+        bad.append('floor_rule.abyss_prefix 不是非空字符串')
+    if not (_pos_int(fr.get('king_tier')) and fr.get('king_tier') <= 4):
+        bad.append('floor_rule.king_tier＝%r 不在 1～4（XDungeon.VAR_TIER 的档）' % (fr.get('king_tier'),))
+    acts = table.get('actors', {})
+    for key, aid in GROWTH_ACTORS.items():
+        r = acts.get(key)
+        if not isinstance(r, dict):
+            bad.append('actors 缺 %s' % key)
+            continue
+        if r.get('actor') != aid:
+            bad.append('actors.%s.actor＝%r，应是 %d' % (key, r.get('actor'), aid))
+        if not _pos_int(r.get('base'), True):
+            bad.append('actors.%s.base＝%r 不是非负整数' % (key, r.get('base')))
+        if not _pos_int(r.get('share')):
+            bad.append('actors.%s.share＝%r 不是正整数（一份）' % (key, r.get('share')))
+        flat = r.get('flat', {})
+        if not isinstance(flat, dict):
+            bad.append('actors.%s.flat 不是对象' % key)
+            flat = {}
+        for k, v in flat.items():
+            if str(k) not in ('0', '1', '2', '3', '4', '5', '6', '7'):
+                bad.append('actors.%s.flat 的键 %s 不是能力编号 0～7' % (key, k))
+            if not _pos_int(v):
+                bad.append('actors.%s.flat.%s＝%r 不是正整数' % (key, k, v))
+    rv, nh, ly = acts.get('raven', {}), acts.get('nanoha', {}), acts.get('liuying', {})
+    if isinstance(rv, dict):
+        if not _pos_int(rv.get('need_skill')):
+            bad.append('actors.raven.need_skill 不是正整数（至尊鸦皇 10136）')
+        if set(rv.get('flat', {}).keys()) != {'4'}:
+            bad.append('actors.raven.flat 只该有 4（魔法攻击）：%r' % (rv.get('flat'),))
+    if isinstance(nh, dict) and set(nh.get('flat', {}).keys()) != {'0', '1'}:
+        bad.append('actors.nanoha.flat 只该有 0、1（最大生命、最大魔法）：%r' % (nh.get('flat'),))
+    if isinstance(ly, dict):
+        if ly.get('flat'):
+            bad.append('actors.liuying 不走平加，不该有 flat（稿 3.5 末条）')
+        for k in ('ember', 'ember_cap', 'dmg_step'):
+            if not _pos_int(ly.get(k)):
+                bad.append('actors.liuying.%s＝%r 不是正整数' % (k, ly.get(k)))
+        if not _pos_int(ly.get('dmg_pct'), True):
+            bad.append('actors.liuying.dmg_pct＝%r 不是非负整数' % (ly.get('dmg_pct'),))
+    return bad
+
+
+def check_growth(_args) -> bool:
+    return _run_table('growth.json', growth_rules)
+
+
 def check_brand(_args) -> bool:
     bal = DATA_DIR / 'balance_table.json'
     balance = json.loads(bal.read_text(encoding='utf-8')) if bal.is_file() else None
@@ -2193,6 +2403,7 @@ CHECKS = [
     ('abs_rescale', check_abs_rescale),
     ('brand', check_brand),
     ('guardian_params', check_guardian_params),
+    ('growth', check_growth),
 ]
 
 

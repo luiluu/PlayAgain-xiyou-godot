@@ -1,5 +1,5 @@
 {
- "_note": "T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的整数百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 6910、魔法 2696。接线：药品固定回复 item_fixed_heal（battle_logic._apply_effect）、状态持续伤害 state_dot（ext_dot，常数 T081、公式底数 T246）、状态 <G_ShuXing> state_shuxing（T228）、技能固定回复／吸取 skill_fixed_heal／skill_fixed_drain（T243，见 groups.skill_fixed）。new 是 {mode: raw, reason} 的照原数（groups.abs_rest 写了五类为什么不换）。",
+ "_note": "T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的整数百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 6910、魔法 2696。接线：药品固定回复 item_fixed_heal（battle_logic._apply_effect）、状态持续伤害 state_dot（ext_dot，常数 T081、公式底数 T246）、状态 <G_ShuXing> state_shuxing（T228）、技能固定回复／吸取 skill_fixed_heal／skill_fixed_drain（T243，见 groups.skill_fixed）。new 是 {mode: raw, reason} 的照原数（groups.abs_rest 写了五类为什么不换）。groups 里敌人技能底数、属性门槛、脚本型回复 custom_regen 三组 T249 定口径：都不接线，理由在各组 new.reason。",
  "version": 1,
  "base": {
   "weak_mhp81": 6910,
@@ -14682,8 +14682,7 @@
  ],
  "groups": {
   "enemy_skill_fixed_base": {
-   "_note": "敌人用的、没进技能卡的原版技能，伤害公式的固定底数（如 100＋魔攻×10 里的 100）。列：技能号、名字、固定底数、占弱者 81 级主攻（267）的百分比；公式里「属性×系数」的部分随属性涨，不在这里，只有固定底数在新量级里会变轻。底数换成「标准线攻击的百分之几」（new_rule）。",
-   "new_rule": "固定底数 → 标准线攻击(81级) × 占比%",
+   "_note": "敌人用的、没进技能卡的原版技能，伤害公式的固定底数（如 100＋魔攻×10 里的 100）。列：技能号、名字、固定底数、占弱者 81 级主攻（267）的百分比（只是盘点参考，不读）。T249 盘点：449 行能按用它的敌人自己的能力值算出「底数 ÷ 公式值（b 项记 0）」，中位约 31%、81 行是纯常数（≥90%）；期四敌人攻击、魔攻没换，这个占比期四开关前后一样，所以全组 new＝raw（reason）。",
    "columns": [
     "skill",
     "name",
@@ -17541,7 +17540,11 @@
      199999.0,
      74906.0
     ]
-   ]
+   ],
+   "new": {
+    "mode": "raw",
+    "reason": "期四没换敌人的攻击、魔攻（只重锚 31～34 层守层者和七印里副本、七首之龙的物防魔防），敌人出伤整体靠楼层出伤倍率 XEnemy.output_scale 缩，乘在最终伤害上，固定底数和「属性×系数」一起缩，底数占比跟原版一样；照旧 new_rule 把底数换成「标准线攻击×%」等于只把底数放大约 6 倍（81 级标准线攻击 1640 ÷ 原版弱者主攻 267），反而偏。我方角色都不学这 475 招（查过 Classes）。照原公式，不接线"
+   }
   },
   "other_skill_fixed_base_count": {
    "_note": "没进卡、不是敌人用的原版技能里带固定底数 ≥100 的个数（多是旧角色技能，天启篇看不到或已被卡改写，不逐条列）",
@@ -17790,7 +17793,7 @@
    "_note": "alien_gear.json、rewards.json 没有写死的八项（只有百分比：atk_rate、def_pct、dmg_dealt_pct、heal 等），不用换。净印、遗物的八项：没找到写死数据（遗物是 relic 类物品，走原版装备 params，随装备底子规则）。"
   },
   "abs_threshold_in_notes": {
-   "_note": "原版技能备注里「属性超过某个绝对值」的门槛（user.agi>=1000 这类），换成「标准线的百分之几」；in_card＝true 的卡已改写，不用换。GDScript 里（core、battle）没有这类比较（已 grep）。",
+   "_note": "原版技能备注里「属性超过某个绝对值」的门槛（user.agi>=1000 这类）。T249 逐行定：in_card＝true 的 4 行卡里已 drop_if 去掉门槛段（new.mode＝card）；7063、7075 是双生花追击副本，7057／7074 的卡去掉强制追击的公共事件后走不到（card_off）；10474 走不到（raw）。不接线。GDScript 里（core、battle）没有这类比较（已 grep）。",
    "rows": [
     {
      "table": "Skills",
@@ -17813,7 +17816,11 @@
       "user.agi>=7000",
       "user.agi>=8000",
       "user.agi>=9000"
-     ]
+     ],
+     "new": {
+      "mode": "card",
+      "reason": "技能卡已改写：卡的 seq 用 drop_if 去掉了按属性门槛加段的那几行，伤害按卡算"
+     }
     },
     {
      "table": "Skills",
@@ -17824,7 +17831,11 @@
       "user.hp>=100000",
       "user.hp>=150000",
       "user.hp>=50000"
-     ]
+     ],
+     "new": {
+      "mode": "card",
+      "reason": "技能卡已改写：卡的 seq 用 drop_if 去掉了按属性门槛加段的那几行，伤害按卡算"
+     }
     },
     {
      "table": "Skills",
@@ -17835,7 +17846,11 @@
       "user.hp>=100000",
       "user.hp>=150000",
       "user.hp>=50000"
-     ]
+     ],
+     "new": {
+      "mode": "card_off",
+      "reason": "赤狐 97、金狐 98「双生花」的追击副本（金狐放 7074 时公共事件 2366 强制赤狐放 7063）；T249 起 7074 的卡去掉效果 [44,2366]，对齐技能重构 v0.2「双生花＝同场对方打过的目标 +20%」，期四里走不到"
+     }
     },
     {
      "table": "Skills",
@@ -17846,7 +17861,11 @@
       "user.mmp>=20000",
       "user.mmp>=40000",
       "user.mmp>=60000"
-     ]
+     ],
+     "new": {
+      "mode": "card",
+      "reason": "技能卡已改写：卡的 seq 用 drop_if 去掉了按属性门槛加段的那几行，伤害按卡算"
+     }
     },
     {
      "table": "Skills",
@@ -17857,7 +17876,11 @@
       "user.mmp>=20000",
       "user.mmp>=40000",
       "user.mmp>=60000"
-     ]
+     ],
+     "new": {
+      "mode": "card_off",
+      "reason": "赤狐 97、金狐 98「双生花」的追击副本（赤狐放 7057 时公共事件 2365 强制金狐放 7075）；T249 起 7057 的卡去掉效果 [44,2365]，对齐技能重构 v0.2「双生花＝同场对方打过的目标 +20%」，期四里走不到"
+     }
     },
     {
      "table": "Skills",
@@ -17868,7 +17891,11 @@
       "user.agi>2000",
       "user.agi>4000",
       "user.agi>6000"
-     ]
+     ],
+     "new": {
+      "mode": "card",
+      "reason": "技能卡已改写：卡的 seq 用 drop_if 去掉了按属性门槛加段的那几行，伤害按卡算"
+     }
     },
     {
      "table": "Skills",
@@ -17891,7 +17918,11 @@
       "user.agi>=7000",
       "user.agi>=8000",
       "user.agi>=9000"
-     ]
+     ],
+     "new": {
+      "mode": "raw",
+      "reason": "疾风杀意剑的副本（CodexShuangSourceSkill:1232），没有职业学、没有敌人用、没有事件给（查过 Classes、Enemies、CommonEvents），走不到，照原样"
+     }
     }
    ]
   },
@@ -17903,10 +17934,210 @@
   },
   "abs_rest": {
    "_note": "T246：剩下五类定口径。公式型 state_dot：公式最前面写死的底数 new.base 换成「持有者生命上限 × new.pct%」（向下取整），其余部分照旧（XTianqiBase.dot_program，接在 XExtDot._one；开关 XTianqiBase.ABS_DOT_FORMULA），程序 sha256 跟 new.sha256 对不上的照原式；其余公式随属性／生命走，mode＝raw。state_shield、note_shieldeffect（<ShieldEffect:N> 护盾获得倍率）、note_dbhplsteal（<DBHPLSteal> 吸血倍率）本来就是百分比，note_regen_formula 跟 state_dot 同一个标签重复列出，都是 mode＝raw、不接线。item_fixed_heal、常数 state_dot 的 pct 取整（附则 E）。"
+  },
+  "custom_regen": {
+   "_note": "T249：Custom Regenerate Effect 脚本型回复（原 unscanned 的 25 个状态）逐条拆过脚本。rows：id、name、uses（脚本里 origin.<项> 用到的项）。1385 绝对死亡只清状态、不动生命。全组 new＝raw（reason），不接线。",
+   "new": {
+    "mode": "raw",
+    "reason": "脚本里的伤害／回复全是施法者（origin）属性 × 系数 × 层数（uses 列出用到的项；还有等级、TP、专武等级、变量 320），没有写死的绝对底数，期四随属性走，照原脚本，不接线"
+   },
+   "rows": [
+    {
+     "id": 106,
+     "name": "霸道真气",
+     "uses": [
+      "atk",
+      "level",
+      "mat"
+     ]
+    },
+    {
+     "id": 224,
+     "name": "附骨之疽",
+     "uses": [
+      "mat"
+     ]
+    },
+    {
+     "id": 260,
+     "name": "附骨之疽",
+     "uses": [
+      "mat"
+     ]
+    },
+    {
+     "id": 460,
+     "name": "死亡之眼",
+     "uses": [
+      "atk",
+      "mat"
+     ]
+    },
+    {
+     "id": 475,
+     "name": "吞云",
+     "uses": [
+      "mhp"
+     ]
+    },
+    {
+     "id": 484,
+     "name": "蛇毒",
+     "uses": [
+      "agi",
+      "tp"
+     ]
+    },
+    {
+     "id": 488,
+     "name": "紫毒",
+     "uses": [
+      "agi"
+     ]
+    },
+    {
+     "id": 498,
+     "name": "鬼气",
+     "uses": [
+      "agi",
+      "luk"
+     ]
+    },
+    {
+     "id": 502,
+     "name": "骨毒",
+     "uses": [
+      "agi",
+      "luk",
+      "mhp"
+     ]
+    },
+    {
+     "id": 504,
+     "name": "骨毒2",
+     "uses": [
+      "agi",
+      "luk",
+      "mhp"
+     ]
+    },
+    {
+     "id": 505,
+     "name": "紫毒II",
+     "uses": [
+      "agi"
+     ]
+    },
+    {
+     "id": 506,
+     "name": "紫毒III",
+     "uses": [
+      "agi"
+     ]
+    },
+    {
+     "id": 547,
+     "name": "蛇毒II",
+     "uses": [
+      "agi",
+      "tp"
+     ]
+    },
+    {
+     "id": 548,
+     "name": "动脉出血",
+     "uses": [
+      "atk",
+      "luk"
+     ]
+    },
+    {
+     "id": 550,
+     "name": "混乱剑气",
+     "uses": [
+      "agi",
+      "atk"
+     ]
+    },
+    {
+     "id": 551,
+     "name": "霸伤",
+     "uses": [
+      "atk",
+      "mat"
+     ]
+    },
+    {
+     "id": 566,
+     "name": "吞云II",
+     "uses": [
+      "mhp"
+     ]
+    },
+    {
+     "id": 577,
+     "name": "吞云III",
+     "uses": [
+      "mhp"
+     ]
+    },
+    {
+     "id": 687,
+     "name": "菊花枪",
+     "uses": [
+      "atk",
+      "level",
+      "mat"
+     ]
+    },
+    {
+     "id": 703,
+     "name": "指甲油",
+     "uses": [
+      "atk",
+      "level",
+      "mat"
+     ]
+    },
+    {
+     "id": 732,
+     "name": "毒奶",
+     "uses": [
+      "mat",
+      "mmp"
+     ]
+    },
+    {
+     "id": 831,
+     "name": "紫毒IV",
+     "uses": [
+      "agi"
+     ]
+    },
+    {
+     "id": 894,
+     "name": "雄的怒吼",
+     "uses": [
+      "atk",
+      "mat"
+     ]
+    },
+    {
+     "id": 1006,
+     "name": "破阵——附骨之疽",
+     "uses": [
+      "mat"
+     ]
+    },
+    {
+     "id": 1385,
+     "name": "绝对死亡",
+     "uses": []
+    }
+   ]
   }
  },
  "unscanned": [
-  "Custom Regenerate Effect 脚本型回复（25 个状态）：底数要逐条拆脚本，没拆，只列号：106、224、260、460、475、484、488、498、502、504、505、506、547、548、550、551、566、577、687、703、732、831、894、1006、1385",
   "七首之龙、骑士等 horsemen.json 里的绝对值不在本清单（D78 M5 标）"
  ]
 }

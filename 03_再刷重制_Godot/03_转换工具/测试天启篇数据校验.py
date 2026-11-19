@@ -488,6 +488,12 @@ class SkillReworkGrowth(unittest.TestCase):
         t['tiers']['growth'] = {}
         self.assertTrue(any('growth' in b for b in chk.skill_rework_rules(t)))
 
+    def test_battle_end_bool(self):
+        t = self._table()
+        self.assertFalse([b for b in chk.skill_rework_rules(t) if 'battle_end' in b])
+        t['states']['1485']['battle_end'] = 1
+        self.assertTrue(any('battle_end' in b for b in chk.skill_rework_rules(t)))
+
 
 class BrandRules(unittest.TestCase):
     """brand.json（T073-a）：真表全过；每条规则改坏一处都要报错。"""
@@ -684,6 +690,159 @@ class AbsRescaleT246(unittest.TestCase):
         g['qiyin']['mhp'] = 50
         self.assertTrue(chk.guardian_params_rules(g))
 
+
+class AbsGroupsT249(unittest.TestCase):
+    """T249：敌人技能底数、属性门槛、脚本型回复三组口径（mode、reason）。"""
+    def setUp(self):
+        self.t = json.loads((REAL_DIR / 'abs_rescale.json').read_text(encoding='utf-8'))
+        self.g = self.t['groups']
+
+    def th(self, i):
+        return next(r for r in self.g['abs_threshold_in_notes']['rows'] if r['id'] == i)
+
+    def test_real_passes(self):
+        self.assertEqual(chk.abs_rescale_rules(self.t), [])
+
+    def test_enemy_base_new_rule_back(self):
+        self.g['enemy_skill_fixed_base']['new_rule'] = '固定底数 → 标准线攻击(81级) × 占比%'
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_enemy_base_needs_reason(self):
+        self.g['enemy_skill_fixed_base']['new'] = {'mode': 'raw'}
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_threshold_card_only_in_card(self):
+        self.th(10474)['new'] = {'mode': 'card', 'reason': 'x'}
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_threshold_bad_mode(self):
+        self.th(7063)['new'] = {'mode': 'pct', 'reason': 'x'}
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_regen_must_be_raw(self):
+        self.g['custom_regen']['new'] = {'pct_of': 'mhp', 'pct': 5}
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_regen_back_in_unscanned(self):
+        self.t['unscanned'].append('Custom Regenerate Effect 脚本型回复（25 个状态）')
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+    def test_regen_dup_id(self):
+        self.g['custom_regen']['rows'].append(dict(self.g['custom_regen']['rows'][0]))
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
+
+class Growth(unittest.TestCase):
+    """growth.json（T256）：全整数、层价分段连续、三人行齐全、平加只认对的能力项。"""
+
+    def setUp(self):
+        self.t = json.loads((chk.DATA_DIR / 'growth.json').read_text(encoding='utf-8'))
+
+    def _bad(self, part):
+        return any(part in b for b in chk.growth_rules(self.t))
+
+    def test_real_passes(self):
+        self.assertEqual(chk.growth_rules(self.t), [])
+
+    def test_decimal_fails(self):
+        self.t['actors']['nanoha']['flat']['1'] = 2000.5
+        self.assertTrue(self._bad('附则 E'))
+
+    def test_gap_in_segments(self):
+        self.t['price']['segments'][1]['from'] = 14
+        self.assertTrue(self._bad('不连续'))
+
+    def test_price_down(self):
+        self.t['price']['segments'][2]['shares'] = 1
+        self.assertTrue(self._bad('层价只升不降'))
+
+    def test_missing_actor(self):
+        del self.t['actors']['liuying']
+        self.assertTrue(self._bad('缺 liuying'))
+
+    def test_raven_flat_only_mat(self):
+        self.t['actors']['raven']['flat']['2'] = 100
+        self.assertTrue(self._bad('raven.flat 只该有 4'))
+
+    def test_liuying_no_flat(self):
+        self.t['actors']['liuying']['flat'] = {'0': 500}
+        self.assertTrue(self._bad('不走平加'))
+
+    def test_share_zero(self):
+        self.t['actors']['raven']['share'] = 0
+        self.assertTrue(self._bad('一份'))
+
+    def test_note_keys_ignored(self):
+        self.t['actors']['raven']['_x'] = 1.5
+        self.assertEqual(chk.growth_rules(self.t), [])
+
+class ForcedCopyT255(unittest.TestCase):
+    """T255：卡里技能效果 44→公共事件→强制放副本，副本没进卡：要 effects_remove、副本进卡或登记 forced_copy_pending。"""
+    def setUp(self):
+        self.t = json.loads((REAL_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+
+    def test_real_passes(self):
+        self.assertEqual(chk.forced_copy_rules(self.t), [])
+
+    def test_unremoved_is_gap(self):
+        self.t['skills']['502']['effects_remove'] = []
+        self.assertTrue(any('502' in b for b in chk.forced_copy_rules(self.t)))
+
+    def test_pending_registers_gap(self):
+        self.t['skills']['502']['effects_remove'] = []
+        self.t['forced_copy_pending']['502'] = '测试'
+        self.assertEqual(chk.forced_copy_rules(self.t), [])
+
+    def test_stale_pending(self):
+        self.t['forced_copy_pending']['7057'] = '已去掉'
+        self.assertTrue(any('7057' in b for b in chk.forced_copy_rules(self.t)))
+
+    def test_pending_needs_reason(self):
+        self.t['skills']['502']['effects_remove'] = []
+        self.t['forced_copy_pending']['502'] = ' '
+        self.assertTrue(any('502' in b for b in chk.forced_copy_rules(self.t)))
+
+    def test_unreachable_needs_reason_and_gap(self):
+        # 4507 玛莎风旋术：公共事件 945 只在学了 229 时放 4893，天启篇走不到，登在 forced_copy_unreachable 放行
+        self.assertEqual(chk.forced_copy_rules(self.t), [])
+        self.assertIn('4507', self.t['forced_copy_unreachable'])
+        self.t['forced_copy_unreachable']['4507'] = ' '
+        self.assertTrue(any('4507' in b for b in chk.forced_copy_rules(self.t)))
+        del self.t['forced_copy_unreachable']['4507']
+        self.assertTrue(any('4507' in b for b in chk.forced_copy_rules(self.t)))
+
+    def test_unreachable_stale(self):
+        self.t['forced_copy_unreachable']['502'] = '测试'
+        self.assertTrue(any('502' in b for b in chk.forced_copy_rules(self.t)))
+
+    def test_b1_copies_in_card(self):
+        # T261：B 组一的副本都进卡（或 623 去强制），不再登记待定
+        pend = self.t.get('forced_copy_pending', {})
+        for sid in ('4374', '4380', '4383', '5497', '5848', '5852', '5853', '5928', '5935', '7313', '623'):
+            self.assertNotIn(sid, pend)
+        for sid in ('2836', '2837', '5837', '5838', '5494', '5930', '7314'):
+            self.assertIn(sid, self.t['skills'])
+        self.assertEqual(self.t['skills']['623']['effects_remove'], [[44, 91]])
+
+    def test_copy_in_card_ok(self):
+        # 副本进卡就不算缺口（7057 的 2365 强制 7075：把 7075 登成卡、撤掉 effects_remove）
+        self.t['skills']['7057']['effects_remove'] = []
+        self.t['skills']['7075'] = {'actor': 98, 'name': '副本'}
+        self.assertFalse(any("技能 7057" in b for b in chk.forced_copy_rules(self.t)))
+
+
+class FateCopyT263(unittest.TestCase):
+    """T263：命运编织者 6861→公共事件 1213 的七种命运副本（6862～6867、6875）都在卡里，6861 不再登记待定。"""
+    def setUp(self):
+        self.t = json.loads((REAL_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+
+    def test_not_pending(self):
+        self.assertNotIn('6861', self.t['forced_copy_pending'])
+        self.assertFalse(any('6861' in b for b in chk.forced_copy_rules(self.t)))
+
+    def test_ultimate_card_needed(self):
+        del self.t['skills']['6875']
+        self.assertTrue(any('技能 6861' in b and '6875' in b for b in chk.forced_copy_rules(self.t)))
 
 if __name__ == '__main__':
     unittest.main()

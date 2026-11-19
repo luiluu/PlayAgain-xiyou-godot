@@ -1330,7 +1330,8 @@ func param(i: int) -> float:
 	return v
 
 func _param_now(i: int) -> float:
-	return XHubris.formula_param(self, i, XRaceBattle.param(self, i, XTusu.param(self, i, XXuanBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, XLiuying.param(self, i, XTianqiFamineAlien.actor_param(self, i, XTianqiPlagueAlien.actor_param(self, i, XTianqiRewards.actor_param(self, i, XTianqiHorsemen.actor_param(self, i, param_before_alien(i))))))))))))  # 天启篇饥荒线异化：终焉枯竭者降 MP 上限； 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：天启四骑士（疫病、病弱、识破、破产、碎甲，重制新加，最内层）→专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→流萤（新源 34，在云裳夹值之外）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
+	var before_race := XTusu.param(self, i, XXuanBattle.param(self, i, XGuyu.param(self, i, XAlienBattle.param(self, i, XLiuying.param(self, i, XTianqiFamineAlien.actor_param(self, i, XTianqiPlagueAlien.actor_param(self, i, XTianqiRewards.actor_param(self, i, XTianqiHorsemen.actor_param(self, i, param_before_alien(i))))))))))
+	return XHubris.formula_param(self, i, XTianqiGrowth.unrace(self, i, before_race, XRaceBattle.param(self, i, before_race)))  # 天启篇饥荒线异化：终焉枯竭者降 MP 上限； 狂妄 evalDamageFormula 包装换掉目标的 param（最外层）：公式里物防按穿透打折；按原版安装先后由内到外：天启四骑士（疫病、病弱、识破、破产、碎甲，重制新加，最内层）→专属角色模块（米拉 2、宿傩 18）→小猫剑圣（20）→云裳（31）→流萤（新源 34，在云裳夹值之外）→异化逆骨（33）→谷雨储备（38）→璇共宿（41）→屠苏盾相补底（42）→种族祝福（53）；序号按冻结 v0.28 modules.json 从 1 数
 
 ## 异化包装之内的取值（逆骨的物攻改读物防取这一层，原版 old.call(this, 3)）
 func param_before_alien(i: int) -> float:
@@ -1338,7 +1339,7 @@ func param_before_alien(i: int) -> float:
 	# →云裳（第 31 个，同样从 1 数：云裳自身倍率、战斗内层六衡／万法／御风，最后夹值）。审查第 17 期 P3：原来夹值写在小猫剑圣里面，次序反了
 	# （XCat 只管 178、云裳倍率只管 174，结果一样；战斗内层对别的角色生效时才有差）。
 	var v := XTianqiGear.param(self, i, XCat.param(self, i, XHubris.param(self, i, XHeartsteel.param(self, i, XActorModules.param(self, i, XPercentPills.param(self, i, super.param(i)))))))  # 天启篇坐骑敏捷％在最外（云裳夹值之前）；淬元丹（插件 Codex_PercentPills，在运行时包装之前装）紧贴插件层；心钢（第 15 个）、狂妄（第 17 个）夹在专属模块与小猫剑圣之间（宿傩第 18 个只管 172，次序差只在取整）
-	return final_clamp(i, XYunshang.battle_param(self, i, XYunshang.param(self, i, v)))
+	return final_clamp(i, XYunshang.battle_param(self, i, XYunshang.param(self, i, v)) + XTianqiGrowth.param_flat(self, i))  # 天启篇无限成长平加（T256，稿 3.5）：层数给的实数，不吃以上各层百分比；种族祝福的放大在 _param_now 里由 unrace 退掉
 
 ## O-177：战斗中升级按新上限回满 HP／MP（原版 krz 能力值缓存让它回到升级前的上限）。false＝照原版
 static var FIX_BATTLE_LEVELUP_MAX := true

@@ -6,6 +6,7 @@
   python3 03_转换工具/天启篇期四填表生成.py --写属性换算 [--属性清单]   T228：只换 abs_rescale.json 的 <G_ShuXing> 行；清单打成 markdown
   python3 03_转换工具/天启篇期四填表生成.py --写技能换算     T243：只换 abs_rescale.json 的技能固定回复／吸取两类
   python3 03_转换工具/天启篇期四填表生成.py --写其余换算     T246：只换公式型持续伤害、护盾、note_* 五类，药品／常数持续伤害 pct 取整
+  python3 03_转换工具/天启篇期四填表生成.py --写分组口径     T249：只换 groups 里敌人技能底数、属性门槛两组的口径，加脚本型回复 custom_regen 组，unscanned 去掉已盘的
 """
 import argparse
 import collections
@@ -346,10 +347,67 @@ def dot_formula_new(x, b):
 
 
 def unscanned_list():
-    """T246 R1 P2-1：还没盘的范围。公式型持续伤害 T246 已定口径、从这里去掉；Custom Regenerate Effect 脚本型回复和 horsemen.json 照旧列着（交 T249）。"""
-    ids = [x['id'] for x in jload(DB / 'States.json') if x and '<Custom Regenerate Effect>' in x.get('note', '')]
-    return ['Custom Regenerate Effect 脚本型回复（%d 个状态）：底数要逐条拆脚本，没拆，只列号：%s' % (len(ids), '、'.join(map(str, ids))),
-            '七首之龙、骑士等 horsemen.json 里的绝对值不在本清单（D78 M5 标）']
+    """还没盘的范围。公式型持续伤害 T246 已定口径；Custom Regenerate Effect 脚本型回复 T249 已盘（groups.custom_regen），都从这里去掉；horsemen.json 照旧列着。"""
+    return ['七首之龙、骑士等 horsemen.json 里的绝对值不在本清单（D78 M5 标）']
+
+
+# ---- T249：groups 里敌人技能底数、属性门槛两组定口径，脚本型回复盘点 ----
+ENEMY_BASE_RAW = ('期四没换敌人的攻击、魔攻（只重锚 31～34 层守层者和七印里副本、七首之龙的物防魔防），敌人出伤整体靠楼层出伤倍率 '
+                  'XEnemy.output_scale 缩，乘在最终伤害上，固定底数和「属性×系数」一起缩，底数占比跟原版一样；照旧 new_rule 把底数换成「标准线攻击×%」'
+                  '等于只把底数放大约 6 倍（81 级标准线攻击 1640 ÷ 原版弱者主攻 267），反而偏。我方角色都不学这 475 招（查过 Classes）。照原公式，不接线')
+ENEMY_BASE_NOTE = ('敌人用的、没进技能卡的原版技能，伤害公式的固定底数（如 100＋魔攻×10 里的 100）。列：技能号、名字、固定底数、占弱者 81 级主攻（267）的百分比（只是盘点参考，不读）。'
+                   'T249 盘点：449 行能按用它的敌人自己的能力值算出「底数 ÷ 公式值（b 项记 0）」，中位约 31%、81 行是纯常数（≥90%）；'
+                   '期四敌人攻击、魔攻没换，这个占比期四开关前后一样，所以全组 new＝raw（reason）。')
+THRESHOLD_NEW = {
+    7063: {'mode': 'card_off', 'reason': '赤狐 97、金狐 98「双生花」的追击副本（金狐放 7074 时公共事件 2366 强制赤狐放 7063）；T249 起 7074 的卡去掉效果 [44,2366]，'
+                                         '对齐技能重构 v0.2「双生花＝同场对方打过的目标 +20%」，期四里走不到'},
+    7075: {'mode': 'card_off', 'reason': '赤狐 97、金狐 98「双生花」的追击副本（赤狐放 7057 时公共事件 2365 强制金狐放 7075）；T249 起 7057 的卡去掉效果 [44,2365]，'
+                                         '对齐技能重构 v0.2「双生花＝同场对方打过的目标 +20%」，期四里走不到'},
+    10474: {'mode': 'raw', 'reason': '疾风杀意剑的副本（CodexShuangSourceSkill:1232），没有职业学、没有敌人用、没有事件给（查过 Classes、Enemies、CommonEvents），走不到，照原样'},
+}
+THRESHOLD_CARD = {'mode': 'card', 'reason': '技能卡已改写：卡的 seq 用 drop_if 去掉了按属性门槛加段的那几行，伤害按卡算'}
+THRESHOLD_NOTE = ('原版技能备注里「属性超过某个绝对值」的门槛（user.agi>=1000 这类）。T249 逐行定：in_card＝true 的 4 行卡里已 drop_if 去掉门槛段（new.mode＝card）；'
+                  '7063、7075 是双生花追击副本，7057／7074 的卡去掉强制追击的公共事件后走不到（card_off）；10474 走不到（raw）。不接线。GDScript 里（core、battle）没有这类比较（已 grep）。')
+REGEN_RAW_SCRIPT = ('脚本里的伤害／回复全是施法者（origin）属性 × 系数 × 层数（uses 列出用到的项；还有等级、TP、专武等级、变量 320），没有写死的绝对底数，'
+                    '期四随属性走，照原脚本，不接线')
+REGEN_NOTE = ('T249：Custom Regenerate Effect 脚本型回复（原 unscanned 的 25 个状态）逐条拆过脚本。rows：id、name、uses（脚本里 origin.<项> 用到的项）。'
+              '1385 绝对死亡只清状态、不动生命。全组 new＝raw（reason），不接线。')
+
+
+def regen_rows():
+    rows = []
+    for x in jload(DB / 'States.json'):
+        if not x or '<Custom Regenerate Effect>' not in x.get('note', ''):
+            continue
+        m = re.search(r'<Custom Regenerate Effect>(.*?)</Custom Regenerate Effect>', x['note'], re.S)
+        body = re.sub(r'//[^\n]*', '', m.group(1) if m else '')
+        uses = sorted(set(re.findall(r'\borigin\.(mhp|mmp|atk|def|mat|mdf|agi|luk|hp|mp|tp|level)\b', body)))
+        rows.append({'id': x['id'], 'name': x['name'], 'uses': uses})
+    return rows
+
+
+def t249_groups(groups):
+    """T249：敌人技能底数整组 raw、属性门槛逐行定、加 custom_regen 组。scan_more 与 --写分组口径 共用，两种生成不漂移。"""
+    g = groups['enemy_skill_fixed_base']
+    g.pop('new_rule', None)
+    g['_note'] = ENEMY_BASE_NOTE
+    g['new'] = {'mode': 'raw', 'reason': ENEMY_BASE_RAW}
+    t = groups['abs_threshold_in_notes']
+    t['_note'] = THRESHOLD_NOTE
+    for r in t['rows']:
+        r['new'] = dict(THRESHOLD_CARD) if r.get('in_card') else dict(THRESHOLD_NEW.get(r['id'], {'mode': 'raw', 'reason': '没盘到，照原样'}))
+    groups['custom_regen'] = {'_note': REGEN_NOTE, 'new': {'mode': 'raw', 'reason': REGEN_RAW_SCRIPT}, 'rows': regen_rows()}
+    return groups
+
+
+def write_groups_abs(path):
+    """T249：只换 abs_rescale.json 的 groups（敌人技能底数、属性门槛、custom_regen）、unscanned、_note，entries 不动。"""
+    d = jload(path)
+    t249_groups(d['groups'])
+    d['unscanned'] = unscanned_list()
+    d['_note'] = ABS_NOTE % (d['base']['weak_mhp81'], d['base']['weak_mmp81'])
+    path.write_text(dumps(d), encoding='utf-8')
+    return d
 
 
 def write_rest_abs(path):
@@ -390,7 +448,8 @@ REST_GROUP_NOTE = ('T246：剩下五类定口径。公式型 state_dot：公式�
 ABS_NOTE = ('T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。'
             'pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的整数百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 %.0f、魔法 %.0f。'
             '接线：药品固定回复 item_fixed_heal（battle_logic._apply_effect）、状态持续伤害 state_dot（ext_dot，常数 T081、公式底数 T246）、状态 <G_ShuXing> state_shuxing（T228）、'
-            '技能固定回复／吸取 skill_fixed_heal／skill_fixed_drain（T243，见 groups.skill_fixed）。new 是 {mode: raw, reason} 的照原数（groups.abs_rest 写了五类为什么不换）。')
+            '技能固定回复／吸取 skill_fixed_heal／skill_fixed_drain（T243，见 groups.skill_fixed）。new 是 {mode: raw, reason} 的照原数（groups.abs_rest 写了五类为什么不换）。'
+            'groups 里敌人技能底数、属性门槛、脚本型回复 custom_regen 三组 T249 定口径：都不接线，理由在各组 new.reason。')
 
 
 def scan_more(b, card_skills):
@@ -476,8 +535,8 @@ def scan_more(b, card_skills):
                 m = sorted(set(pat.findall(json.dumps(x, ensure_ascii=False))))
                 if m:
                     th.append({'table': f, 'id': x['id'], 'name': x['name'], 'in_card': f == 'Skills' and str(x['id']) in card_skills, 'conds': m})
-    groups['abs_threshold_in_notes'] = {'_note': '原版技能备注里「属性超过某个绝对值」的门槛（user.agi>=1000 这类），换成「标准线的百分之几」；in_card＝true 的卡已改写，不用换。GDScript 里（core、battle）没有这类比较（已 grep）。', 'rows': th}
-    return entries, groups
+    groups['abs_threshold_in_notes'] = {'_note': THRESHOLD_NOTE, 'rows': th}
+    return entries, t249_groups(groups)
 
 
 def build_abs():
@@ -518,7 +577,7 @@ def build_abs():
         'base': {'weak_mhp81': b['mhp'], 'weak_mmp81': b['mmp'], 'weak_main81': b['main'], 'shuxing_ref': SHUXING_REF},
         'entries': entries,
         'groups': dict(groups, state_shuxing={'_note': SHUXING_GROUP_NOTE}, abs_rest={'_note': REST_GROUP_NOTE}),
-        'unscanned': unscanned_list(),  # T246 R1 P2-1：只去掉已定口径的公式型持续伤害
+        'unscanned': unscanned_list(),  # T246 R1 P2-1、T249：去掉已定口径的公式型持续伤害、已盘的脚本型回复
     }
 
 
@@ -782,7 +841,16 @@ def main():
     ap.add_argument('--属性清单', action='store_true', help='T228：打印 <G_ShuXing> 状态换算清单（markdown，交付单附表）')
     ap.add_argument('--写技能换算', action='store_true', help='T243：只换 abs_rescale.json 里技能固定回复、吸取两类（skill_fixed_heal／skill_fixed_drain）的 new')
     ap.add_argument('--写其余换算', action='store_true', help='T246：只换公式型 state_dot、state_shield、note_* 的 new，药品、常数持续伤害 pct 取整')
+    ap.add_argument('--写分组口径', action='store_true', help='T249：只换 groups 里敌人技能底数、属性门槛两组的口径，加 custom_regen 组，unscanned 去掉已盘的')
     args = ap.parse_args()
+    if args.写分组口径:
+        d = write_groups_abs(DATA / 'abs_rescale.json')
+        g = d['groups']
+        print('enemy_skill_fixed_base %d 行：%s' % (len(g['enemy_skill_fixed_base']['rows']), g['enemy_skill_fixed_base']['new']['mode']))
+        for r in g['abs_threshold_in_notes']['rows']:
+            print('  门槛 %d %s：%s' % (r['id'], r['name'], r['new']['mode']))
+        print('custom_regen %d 行；unscanned %s' % (len(g['custom_regen']['rows']), d['unscanned']))
+        return 0
     if args.写其余换算:
         d = write_rest_abs(DATA / 'abs_rescale.json')
         kinds = ('item_fixed_heal', 'state_dot', 'state_shield', 'note_shieldeffect', 'note_regen_formula', 'note_dbhplsteal')
