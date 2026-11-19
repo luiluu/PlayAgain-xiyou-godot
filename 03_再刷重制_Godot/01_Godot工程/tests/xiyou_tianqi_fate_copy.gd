@@ -384,7 +384,7 @@ func _t268_check() -> void:
 	_check("t268.chaos_one_per_cast", per_cast_ok, multi)
 	_check("t268.chaos_all_five", seen_c.size() == 5, seen_c)
 	print("T268_CHAOS ", seen_c)
-	# 六、雷整招 10%：卡面 cast_pick，实打放 60 发只打印麻痹出现的发数
+	# 六、雷整招 10%：只查卡面 cast_pick（rate 10、只挑麻痹），没有实打放 60 发
 	var tp: Dictionary = XTianqiSkills.spec(6865).get("cast_pick", {})
 	_check("t268.thunder_per_cast", int(tp.get("rate", 0)) == 10 and tp.get("pick", []).size() == 1 and int(tp.pick[0].get("foe", 0)) == 100, tp)
 	# 七、self_states_on_hit：同一次行动命中多次只挂一次；end_action 不再挂
