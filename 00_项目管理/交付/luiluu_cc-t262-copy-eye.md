@@ -98,3 +98,15 @@
 
 - 46989e905 T262 WIP：15 个复制版进卡、5888 去登记、T261 遗留三条
 - 本次：专项 xiyou_tianqi_forced_b2、交付单
+
+## 返修 R1（小A 核退回：P1×1、P2×3、P3×1）
+
+配置：Sonnet＋medium。规矩：公共 v1.6＋附则 E。
+
+- P1-1「每场各 2 次」：天启篇侧无现成次数机制（卡字段只有冷却），在 `battle_logic.gd` 的 `_force_action` 加闸：天启篇里 CE 1614 强放 15 个复制版时，每个复制版每场最多 2 次（`tq_copy_uses`，随战斗对象重置；我取「每个复制版各 2 次」的口径，约 9 行）。西游档不进这条分支，CE 1614/1617/1618 与 generated/db 都没动。测试：`limit.same_battle_each_le_2`、`limit.some_copy_hit_cap`、`limit.counter_recorded`、`limit.next_battle_resets`。
+- P2-1：5913、5919 加 `scope: 2`＋对象「全体敌人」，卡面改全体文案。测试 `r1.5913_all_enemies_card`、`r1.5919_all_enemies_card`。
+- P2-2：5912 补 `hit_type: 0`。测试 `r1.5912_hit_type_0`。
+- P2-3：15 个复制版与 5494 卡面按报告定稿原文替换。测试 `r1.<id>_desc_no_arith`。
+- P3-1：5918 去 2% 愤怒（`effects_remove [[21,7]]`）、属性改雷电 5，照源卡 5163。测试 `r1.5918_no_rage_elem5`。
+- 验证：`xiyou_tianqi_forced_b2` 157/157；天启篇数据校验 0。
+- 文字：卡面照小A 定稿原文，无新增文字。

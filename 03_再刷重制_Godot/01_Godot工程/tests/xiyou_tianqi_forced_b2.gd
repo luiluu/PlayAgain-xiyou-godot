@@ -130,6 +130,13 @@ func _run() -> void:
 		# 流派被动 5880～5882 的条件段全去掉
 		_check("seq.%d_no_588x" % sid, not str(cr.get("yepSeq", {})).contains("includes(588"))
 	_check("tq.5888_keeps_ce1614", _has_effect(XDB.rec("Skills", 5888), 44, 1614))
+	_check("r1.5912_hit_type_0", int(XDB.rec("Skills", 5912).get("hitType", -1)) == 0, XDB.rec("Skills", 5912).get("hitType"))
+	_check("r1.5918_no_rage_elem5", int(XDB.rec("Skills", 5918).get("damage", {}).get("elementId", -1)) == 5 and not _has_effect(XDB.rec("Skills", 5918), 21, 7), XDB.rec("Skills", 5918).get("damage", {}).get("elementId"))
+	for sid2 in [5913, 5919]:
+		_check("r1.%d_all_enemies_card" % sid2, XTianqiSkills.spec(sid2).get("header", {}).get("对象", "") == "全体敌人" and int(XTianqiSkills.spec(sid2).get("scope", 0)) == 2)
+	for sid2 in COPY_IDS + [5494]:
+		var dd := str(XTianqiSkills.spec(sid2).get("desc", []))
+		_check("r1.%d_desc_no_arith" % sid2, not dd.contains("原技能") and not dd.contains("复制版 ×") and not dd.contains("模式融合"), dd)
 	_check("tq.5912_no_ce1155", not _has_effect(XDB.rec("Skills", 5912), 44, 1155))
 	_check("tq.5919_no_ce1186", not _has_effect(XDB.rec("Skills", 5919), 44, 1186))
 	# 系数：原技能卡的 80%（取整数百分比后），不会比原技能还大
@@ -173,6 +180,8 @@ func _run() -> void:
 	# 四、链路：学了拷贝被动后连放雷切 5888，复制版随公共事件 1614 出现（前后两边都出）；每场各 ≤2 次不动
 	var seen_before := {}
 	var seen_after := {}
+	var cnt_before := {}
+	var cnt_after := {}
 	for ph in [true, false]:
 		_table(ph)
 		var lgc := _logic(true, lineup, learn)
@@ -180,6 +189,22 @@ func _run() -> void:
 		for i in range(60):
 			for k in _cast(lgc, 88, 5888).seen:
 				(seen_before if ph else seen_after)[int(k)] = true
+				if COPY_IDS.has(int(k)):
+					(cnt_before if ph else cnt_after)[int(k)] = int((cnt_before if ph else cnt_after).get(int(k), 0)) + 1
+		if not ph:
+			# R1 P1-1：同一场（同一个战斗对象）每个复制版最多 2 次；用掉后第 3 次起放不出来
+			_check("limit.same_battle_each_le_2", not cnt_after.is_empty() and cnt_after.values().all(func(v): return v <= 2), cnt_after)
+			_check("limit.some_copy_hit_cap", cnt_after.values().any(func(v): return v == 2), cnt_after)
+			_check("limit.counter_recorded", lgc.tq_copy_uses.values().all(func(v): return v == 2), lgc.tq_copy_uses)
+			# 下一场（新战斗对象）重置：再放 60 次，又能出现复制版
+			var lg2 := _logic(true, lineup, learn)
+			seed(20261120)
+			var next_seen := {}
+			for i in range(60):
+				for k in _cast(lg2, 88, 5888).seen:
+					if COPY_IDS.has(int(k)):
+						next_seen[int(k)] = true
+			_check("limit.next_battle_resets", not next_seen.is_empty() and lg2.tq_copy_uses.size() == next_seen.size(), [next_seen, lg2.tq_copy_uses])
 	var copies_before := seen_before.keys().filter(func(k): return COPY_IDS.has(int(k)))
 	var copies_after := seen_after.keys().filter(func(k): return COPY_IDS.has(int(k)))
 	_line("chain5888", "副本出现 %s" % [copies_before], "副本出现 %s" % [copies_after])
