@@ -322,7 +322,8 @@ static func shop(shop_page: XShop, st: XState, wanted: Dictionary = {}) -> Dicti
 			out.lines.append("买强化石 %s×%d %s" % [str(e2.rec.get("name", "")), got2, _spent(st, cost2)])
 	shop_page._mode = "command"
 	shop_page._drop_cache()
-	shop_page._refresh()
+	if shop_page.cmd_win != null:   # 直接买（T272）用的是没挂上树的商店页：没有窗口，不重画
+		shop_page._refresh()
 	return out
 
 
