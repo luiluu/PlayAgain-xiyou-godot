@@ -879,5 +879,51 @@ class FateCopyT263(unittest.TestCase):
         del self.t['skills']['6875']
         self.assertTrue(any('技能 6861' in b and '6875' in b for b in chk.forced_copy_rules(self.t)))
 
+class SixDim(unittest.TestCase):
+    """T275：six_dim.json 的规则自检；四种违规（双 SSS、SS 无短板、总分超预算、小数）都能报错。"""
+
+    def setUp(self):
+        self.t = json.loads((REAL_DIR / 'six_dim.json').read_text(encoding='utf-8'))
+        self.base = json.loads((REAL_DIR / 'base_line.json').read_text(encoding='utf-8'))
+        self.hm = json.loads((REAL_DIR / 'horsemen.json').read_text(encoding='utf-8'))
+
+    def bad(self):
+        return chk.six_dim_rules(self.t, self.base, self.hm)
+
+    def test_real_pass(self):
+        self.assertEqual(self.bad(), [])
+
+    def test_double_sss(self):
+        self.t['actors']['45']['output'] = 'SSS'
+        self.assertTrue(any('R1 SSS 至多 1' in b for b in self.bad()))
+
+    def test_ss_no_shortboard(self):
+        self.t['actors']['180'].update(output='A', survive='A', speed='B', wit='SS', resolve='B', support='C')
+        self.assertTrue(any('R2 SS 无明显短板' in b for b in self.bad()))
+
+    def test_over_budget(self):
+        self.t['actors']['60'].update(output='A', survive='A', speed='A', wit='A', resolve='A', support='A')
+        self.assertTrue(any('R4 总分' in b for b in self.bad()))
+
+    def test_decimal(self):
+        self.t['ai_weights']['support_pct']['C'] = 100.5
+        self.assertTrue(any('是小数' in b for b in self.bad()))
+
+    def test_sss_with_s(self):
+        self.t['actors']['45']['output'] = 'S'
+        self.assertTrue(any('R1' in b for b in self.bad()))
+
+    def test_s_cap(self):
+        self.t['actors']['6'].update(output='S', survive='S')
+        self.assertTrue(any('R3' in b for b in self.bad()))
+
+    def test_unknown_actor_and_knight_key(self):
+        self.t['actors']['99999'] = dict(self.t['actors']['6'])
+        self.t['knights']['pest'] = self.t['knights'].pop('plague')
+        b = self.bad()
+        self.assertTrue(any('不在 base_line.json' in x for x in b))
+        self.assertTrue(any('同 horsemen.json' in x for x in b))
+
+
 if __name__ == '__main__':
     unittest.main()
