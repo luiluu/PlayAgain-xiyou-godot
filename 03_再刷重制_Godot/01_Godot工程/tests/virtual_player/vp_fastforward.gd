@@ -15,6 +15,7 @@ extends RefCounted
 const EventCompare := preload("res://tests/xiyou_event_compare.gd")
 const TIER_SWITCHES := [1561, 1660]
 const SAMPLE_TURNS := 40
+const BAG_SOFT := 300
 
 var bot: Node                      # 虚拟玩家（拿它的随机数、日志、往树上挂替身）
 var rng: RandomNumberGenerator
@@ -174,6 +175,8 @@ func grind(st: XState, map_id: int, n: int, until_cap: bool) -> Dictionary:
 			out.stop = "敌群 %d 样本没打赢" % troop
 			break
 		var r := settle(st, troop)
+		if i % 10 == 9:
+			autosell_setup(st)            # 背包涨过 BAG_SOFT 就把同档也开上
 		sold += maxi(0, XHangUpAuto.after_battle_sell(st))   # 同挂机打完一场：按挂机设置里开着的品质自动卖（map_scene 战后那一步）
 		out.battles += 1
 		out.exp += int(r.exp)
@@ -429,7 +432,8 @@ static func autosell_setup(st: XState) -> Array:
 			if g is Dictionary and not g.is_empty() and str(g.get("kind", "")) in ["weapon", "armor"]:
 				low = mini(low, XQuality.grade(g))
 				any = true
-	var want := range(low) if any else []
+	# 背包里没穿的装备超过 BAG_SOFT 件：跟身上最差那档同一品质的也卖（快进一局结算上千场，不卖到 10 层还有一千五百件，每量一次样本都要整份复制存档）
+	var want := range(low + (1 if st.gear.size() > BAG_SOFT else 0)) if any else []
 	for g in 7:
 		var on := XHangUpAuto.grade_state(st, g) != "none"
 		if on != want.has(g):
