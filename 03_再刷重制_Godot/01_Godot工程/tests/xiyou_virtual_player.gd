@@ -176,6 +176,14 @@ func _run() -> void:
 	bot.formation_enabled = not OS.get_cmdline_user_args().has("--vp-no-formation")
 	bot.advance_enabled = not OS.get_cmdline_user_args().has("--vp-no-advance")
 	bot.fragments_enabled = not OS.get_cmdline_user_args().has("--vp-no-fragments")
+	# T238 快进：挂机练级、刷副本首领按游戏的结算函数直接发奖（守层者照样实打）；--vp-weak 开局只要弱者；--vp-difficulty=jianxian 选难度
+	bot.ff_enabled = OS.get_cmdline_user_args().has("--vp-ff")
+	bot.ff_grind_max = int(_arg("--vp-ff-grind", "200"))
+	bot.ff_farm_kings = int(_arg("--vp-ff-kings", "3"))
+	bot.ff_farm_max = int(_arg("--vp-ff-farm", "12"))
+	bot.weak_only = OS.get_cmdline_user_args().has("--vp-weak")
+	bot.want_difficulty = _arg("--vp-difficulty")
+	bot.climb_max_defeats = int(_arg("--vp-max-defeats", "5"))
 	VP_GROWTH.full_score = not OS.get_cmdline_user_args().has("--vp-plain-score")
 	# 期四总开关（T130 起 --vp-phase4 对照用）。T220 翻开关后不带参数＝照默认（开）；--vp-no-phase4 拨回关（连熟练度），对照翻开关前
 	if OS.get_cmdline_user_args().has("--vp-no-phase4"):

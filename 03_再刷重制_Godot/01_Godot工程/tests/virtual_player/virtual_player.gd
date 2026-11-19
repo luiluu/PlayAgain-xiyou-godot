@@ -11,6 +11,7 @@ extends Node
 
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const Growth := preload("res://tests/virtual_player/vp_growth.gd")
+const FastForward := preload("res://tests/virtual_player/vp_fastforward.gd")
 const KEYS := {"accept": KEY_ENTER, "cancel": KEY_ESCAPE, "up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT, "f": KEY_F,
 	"g": KEY_G, "tilde": KEY_QUOTELEFT, "one": KEY_1, "e": KEY_E}
 const DIR_KEY := {2: "down", 4: "left", 6: "right", 8: "up"}
@@ -118,6 +119,14 @@ var lottery_keep := 2000           # 抽奖期望调成零以下后长期抽一�
 var formations := 0                # 整队改了几次
 var fragment_buys := 0             # 换了几次碎片
 var _frag_stamp := -1              # 上次去找绪绪时的积分（没变就不再去）
+var ff_enabled := false            # 快进（T238，--vp-ff）：挂机练级、刷副本首领不开战斗画面，按游戏的结算函数直接发奖（见 vp_fastforward.gd）；守层者照样实打
+var ff: FastForward = null
+var ff_grind_max := 200            # 快进基础量：每层挂机练到等级上限，最多这么多场
+var ff_farm_kings := 3             # 快进基础量：副本首领刷到王者档后再刷这么多次
+var ff_farm_max := 12              # 快进基础量：每层副本首领最多刷这么多次
+var _ff_base_done := {}            # 层 → 基础量刷完了
+var weak_only := false             # 开局阵容只要弱者（--vp-weak，T238「4 弱」）：5 人（4 上场＋助力位）都从本档弱者池按种子抽
+var want_difficulty := ""          # 开局难度（--vp-difficulty=jianxian 等）；空＝第一档没锁的
 var climb_explore_ticks := 400     # 这一层地图上没看到守层者时，最多逛这么多步找路
 var goals: Array = []              # 里程碑名字，全部达到就提前收工；空＝跑满 max_ticks
 var out_dir := ""                  # 给了就在画面切换时截图（无头模式不截）
@@ -722,7 +731,7 @@ func _act_form(obs: Dictionary) -> void:
 			break
 	if want == null:
 		for b in buttons:
-			if str(b.name).begins_with("TianqiDifficulty_"):
+			if str(b.name).begins_with("TianqiDifficulty_") and (want_difficulty == "" or str(b.name) == "TianqiDifficulty_" + want_difficulty):
 				want = b
 				break
 	if want == null:
@@ -737,6 +746,15 @@ func _act_form(obs: Dictionary) -> void:
 		var r := RandomNumberGenerator.new()
 		r.seed = rng_seed
 		lineup = XTianqi.roll_lineup(_tq_key, r)
+		if weak_only:
+			# 只要弱者：本档弱者池按种子打乱取前 5 个（第一个是 1 号位，第 5 个是助力位），合本档规矩才用
+			var weak: Array = XTianqi.pool(_tq_key)[XTier.WEAK].duplicate()
+			XTianqi._shuffle(weak, r)
+			if weak.size() >= 5 and XTianqi.lineup_ok(_tq_key, weak.slice(0, 5)):
+				lineup = weak.slice(0, 5)
+			else:
+				_log("弱者池凑不出合规的 5 人阵容，照种子抽")
+				_mark("weak_lineup_rejected")
 		# 点名的阵容（--vp-lineup，Kyo 11-13「不重抽，未来要测完所有角色」）：合本档规矩才用，不合就照种子抽的
 		if not want_lineup.is_empty():
 			if XTianqi.lineup_ok(_tq_key, want_lineup):
@@ -775,7 +793,8 @@ func _greet_check() -> void:
 				greet_failed.erase(_greet_asked)
 				_mark("greet_paid_%d" % _greet_asked)
 				_note_growth("给第 %d 层守层者交了见面礼" % _greet_asked)
-				_snap_done.erase(_greet_asked)       # 快照重拍一份交过见面礼之后的（变量 842＝1）
+				if int(_floor_row().get("defeats", 0)) == 0:
+					_snap_done.erase(_greet_asked)   # 快照重拍一份交过见面礼之后的（变量 842＝1）；输过以后只重拍重试档，不盖测量档
 				_snap_done.erase("last")
 				_snapshot(XState.current, _greet_asked)
 		elif not greet_failed.has(_greet_asked) and not greet_paid.has(_greet_asked):
@@ -1057,6 +1076,65 @@ func _on_defeat() -> void:
 			int(row.get("grind_battles", 0)), int(row.get("dungeon_kills", 0)), ("（%s）" % str(_farm_block[_floor])) if _farm_block.has(_floor) else "", str(_levels())]
 
 
+## 打过几场（实打＋快进）：大厅里「打过仗回来再做一遍」的那些戳用它
+func _bcount() -> int:
+	return battles.size() + (ff.settled if ff != null else 0)
+
+
+## 快进（T238）：到了守层者那张图，先刷这一层的基础量（挂机练到等级上限、副本首领刷到王者档后再刷几次）；
+## 输给守层者之后照原来的翻倍规则加刷（练级场数、副本首领次数）。做了返回 true（之后回大厅养成、存档，再来挑战）
+func _ff_run(map: XMapScene, st: XState, floor: int) -> bool:
+	if ff == null:
+		ff = FastForward.new(self, _rng)
+	var row := _floor_row()
+	var grind_n := 0
+	var until_cap := false
+	var farm_n := 0
+	var base := not _ff_base_done.has(floor)
+	if base:
+		_ff_base_done[floor] = true
+		grind_n = ff_grind_max
+		until_cap = true
+		farm_n = ff_farm_max if farm_enabled else 0
+	elif _need_grind > 0 or _need_farm > 0:
+		grind_n = _need_grind
+		farm_n = _need_farm if farm_enabled and not _farm_block.has(floor) else 0
+	else:
+		return false
+	_need_grind = 0
+	_need_farm = 0
+	var key := "ff_base" if base else "ff_retry"
+	var g: Dictionary = ff.grind(st, map.map_id, grind_n, until_cap) if grind_n > 0 else {"battles": 0, "stop": ""}
+	row[key + "_grind"] = int(row.get(key + "_grind", 0)) + int(g.battles)
+	_grind_total += int(g.battles)
+	row["grind_battles"] = int(row.get("grind_battles", 0)) + int(g.battles)
+	var kings := 0
+	var runs := 0
+	for i in farm_n:
+		var d: Dictionary = await ff.dungeon_once(st, map.map_id, _buy_item)
+		if not bool(d.ok):
+			# 样本没打赢只是这一轮刷不动（变强后再试）；找不到入口、首领这种才算这一层不再刷
+			if not str(d.why).contains("样本没打赢"):
+				_farm_block[floor] = str(d.why)
+			row["ff_dungeon_stop"] = str(d.why)
+			break
+		runs += 1
+		dungeon_runs += 1
+		dungeon_kills += 1
+		row["dungeon_kills"] = int(row.get("dungeon_kills", 0)) + 1
+		row["dungeon_top_tier"] = maxi(int(row.get("dungeon_top_tier", 0)), int(d.tier))
+		if int(d.tier) == 3:
+			kings += 1
+		if base and kings >= ff_farm_kings:
+			break
+	row[key + "_dungeon"] = int(row.get(key + "_dungeon", 0)) + runs
+	_mark("ff_done")
+	_note_growth("快进%s：练级 %d 场（%s），副本首领 %d 次（王者 %d 次）%s" % ["基础量" if base else "加刷", int(g.battles), str(g.stop), runs, kings,
+		("，副本停：" + str(row.get("ff_dungeon_stop", ""))) if row.has("ff_dungeon_stop") and runs < farm_n else ""])
+	_equip_sig = null                  # 打到了新东西：回大厅把装备重新比一遍
+	return true
+
+
 func _levels() -> Array:
 	var st := XState.current
 	return st.members().map(func(a): return int(a.level)) if st != null else []
@@ -1263,6 +1341,18 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 	# 背包里的装备变了（打到新的）：打开菜单去装备页，把更好的穿上
 	if equip_enabled:
 		var gsig := _gear_sig(st)
+		if gsig != _equip_sig and ff_enabled:
+			# 快进局：直接调装备页背后的换装（XEquipment.change），不逐键点（一次按键换装要几千步）
+			_equip_sig = gsig
+			var ch: Array = Growth.equip_direct(st)
+			equip_passes += 1
+			equip_changes += ch.size()
+			for line in ch:
+				_note_growth(str(line))
+			if not ch.is_empty():
+				_mark("equipped")
+			_equip_sig = _gear_sig(st)
+			gsig = _equip_sig
 		if gsig != _equip_sig:
 			_equip_sig = gsig
 			_equip_job = {"actor": 0, "row": 0, "started": false, "want": -1, "changes": 0, "ticks": 0, "done": false, "tries": 0}
@@ -1271,7 +1361,7 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			await _frames(6)
 			return
 	# 宝珠、种族进阶：每次回大厅（打过仗之后）看一遍，有材料就用掉
-	var gstamp := [int(st.variable(FLOOR_VAR)), battles.size()]
+	var gstamp := [int(st.variable(FLOOR_VAR)), _bcount()]
 	if gstamp != _growth_stamp:
 		_growth_stamp = gstamp
 		var did := []
@@ -1345,7 +1435,7 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 		_frag_stamp = points
 	# 花钱：每次打过仗回大厅逛一轮店
 	if spend_enabled:
-		var sstamp := [int(st.variable(FLOOR_VAR)), battles.size()]
+		var sstamp := [int(st.variable(FLOOR_VAR)), _bcount()]
 		if sstamp != _shop_stamp:
 			_shop_stamp = sstamp
 			_shop_done = {}
@@ -1369,7 +1459,7 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 				return
 			_exchange_floor = int(st.variable(FLOOR_VAR))   # 走不到传送点：这一层不去了
 	# 进门前存档（快捷键 ~）：全灭回标题后从这里接着来
-	var stamp := [int(st.variable(FLOOR_VAR)), battles.size()]
+	var stamp := [int(st.variable(FLOOR_VAR)), _bcount()]
 	if stamp != _save_stamp:
 		_save_stamp = stamp
 		_heal_tries = 0
@@ -1569,6 +1659,9 @@ func _climb_floor(map: XMapScene, st: XState, floor: int) -> void:
 				await _goto_target(map)
 				return
 		await _hotkey_lobby(map)
+		return
+	if ff_enabled and _dg.is_empty() and _find_event(map, _is_guardian) != null and await _ff_run(map, st, floor):
+		await _hotkey_lobby(map)          # 快进完回大厅：治疗、换装、养成、逛店、存档，再来挑战
 		return
 	if _need_farm > 0 and _need_grind <= 0 and await _go_dungeon(map, st, floor):
 		return
@@ -2008,15 +2101,15 @@ func _plan(map: XMapScene) -> void:
 func _snapshot(st: XState, floor: int) -> void:
 	if snapshot_dir == "":
 		return
-	# 第一次挑战前的写在目录里（floor_<层>_<种子>.json）；最近一次挑战前的另写一份到 last/（输了几次、养成过之后的队伍）
-	var stamp := [floor, battles.size()]
+	var stamp := [floor, _bcount()]
 	if _snap_done.get("last") == stamp:
 		return
 	_snap_done["last"] = stamp
 	var text := JSON.stringify(st.to_dict())
-	for dir in ([snapshot_dir] if not _snap_done.has(floor) else []) + [snapshot_dir.path_join("last")]:
+	# T238：测量档（第一次挑战前）写在目录里；之后（输了加刷再来）的写到 retry/，文件名带 _retry，不盖测量档、--snapshots 也不会读到
+	for dir in ([snapshot_dir] if not _snap_done.has(floor) else [snapshot_dir.path_join("retry")]):
 		DirAccess.make_dir_recursive_absolute(dir)
-		var f := FileAccess.open(dir.path_join("floor_%d_%d.json" % [floor, rng_seed]), FileAccess.WRITE)
+		var f := FileAccess.open(dir.path_join(("floor_%d_%d.json" if dir == snapshot_dir else "floor_%d_%d_retry.json") % [floor, rng_seed]), FileAccess.WRITE)
 		if f != null:
 			f.store_string(text)
 			f.close()
@@ -2218,11 +2311,13 @@ func _growth_state(st: XState) -> Dictionary:
 func report() -> Dictionary:
 	var st := XState.current
 	return {
-		"seed": rng_seed, "fixed_random": fixed_random, "lineup": lineup, "debug_floor": debug_floor, "debug_items": debug_items, "ticks": ticks, "frames": Engine.get_process_frames(), "keys": key_count,
+		"seed": rng_seed, "fixed_random": fixed_random, "lineup": lineup, "lineup_weak": lineup.map(func(id): return XTianqiSkills.is_weak(id, true)), "difficulty_key": _tq_key, "debug_floor": debug_floor, "debug_items": debug_items, "ticks": ticks, "frames": Engine.get_process_frames(), "keys": key_count,
 		"aborted": aborted, "settled": settled, "pass_after": pass_after, "gifted_floors": gifted_floors, "mode": mode, "floor": _floor, "floor_log": floor_log, "climb_stop": climb_stop,
 		"defeats": defeats, "grind_battles": _grind_total, "equip_changes": equip_changes, "equip_passes": equip_passes, "levels": _levels(), "msec": Time.get_ticks_msec() - _t0,
 		"dungeon_runs": dungeon_runs, "dungeon_kills": dungeon_kills, "dungeon_defeats": dungeon_defeats, "farm_block": _farm_block, "stalemates": stalemates,
 		"growth": _growth_state(st), "growth_log": growth_log,
+		"ff": {"on": ff_enabled, "settled": ff.settled, "grind": ff.grind_battles, "dungeon": ff.dungeon_runs, "kings": ff.dungeon_kings,
+			"samples": ff.samples, "sample_losses": ff.sample_losses, "msec": ff.msec} if ff != null else {"on": false},
 		"milestones": milestones, "maps": maps_seen, "event_visits": event_visits,
 		"events_tried": event_visits.size(), "battles": battles, "stuck": stuck_log, "violations": violations,
 		"timeline": timeline, "messages": messages_seen, "transcript": transcript,

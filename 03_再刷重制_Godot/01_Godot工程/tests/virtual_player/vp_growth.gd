@@ -626,3 +626,39 @@ static func heads(st: XState) -> int:
 		if int(st.items[id]) > 0 and str(XDB.rec("Items", int(id)).get("name", "")).begins_with("头颅"):
 			n += int(st.items[id])
 	return n
+
+
+## 直接换装（T238 快进局用；同装备页确定换装那一步 XEquipment.change，比较口径同按键换装的 _best_candidate）：
+## 出战的人和助力位逐个栏位看背包里装得进的，涨幅超过 2% 的挑最高那件换上。返回做了什么（每件一行）
+static func equip_direct(st: XState) -> Array:
+	var out := []
+	var who: Array = st.battle_members().duplicate()
+	var helper = st.helper()
+	if helper != null and not who.has(helper):
+		who.append(helper)
+	for a in who:
+		for slot in XTianqiGear.view(a):
+			if not XEquipment.can_change(a, slot):
+				continue
+			var best := {}
+			var best_score := 0.02
+			for kind in ["weapon", "armor"]:
+				for rec in XItemScene.bag_gear(kind):
+					if not XEquipment.fits(a, slot, rec) or XEquipment.dual_blocked(a, slot, rec):
+						continue
+					var t := XEquipment.preview(a, slot, rec)
+					if t == null:
+						continue
+					var score: float = gain_score(a, t)
+					if score > best_score:
+						best_score = score
+						best = rec
+			if best.is_empty():
+				continue
+			var hp_rate: float = a.hp / maxf(1.0, a.mhp)
+			var mp_rate: float = a.mp / maxf(1.0, a.mmp)
+			XEquipment.change(st, a, slot, best)
+			a.hp = maxf(0.0 if a.is_dead() else 1.0, floorf(a.mhp * hp_rate))
+			a.mp = floorf(a.mmp * mp_rate)
+			out.append("%s 换上 %s（涨 %d%%）" % [a.display_name(), str(best.get("name", "")), int(best_score * 100)])
+	return out
