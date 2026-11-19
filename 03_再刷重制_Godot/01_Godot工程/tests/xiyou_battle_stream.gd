@@ -7,7 +7,7 @@ extends Node
 ## - 开招那一帧（指令定下→开始演出）的耗时：TIMING 用例三次取中，多段招开着时不到关着的一半，打印量数。
 ## 用例：拳一（163）认真连续拳打嘤嘤怪×3（中途打死：剩下的段换目标／落空）与 80 苏醒的黝石巨人（单个首领、没有开场事件，打不死，段数打满）；
 ## 各专属模块角色（饿狼、宿傩、渡鸦、黄泉、镜流、甚尔、屠苏、璇、谷雨、云裳、米拉、奈叶、小猫、流萤、至尊宝）用职业里段数最多的招；
-## 天启篇（五条悟、拳一、宿傩）；技能动画开关、战斗速度两档。
+## 天启篇（饿狼、拳一、宿傩；五条悟在夹具里没过试炼、出手被挡，没放进来）；技能动画开关、战斗速度两档。
 ## 夹具：单人出战 99 级（拳一 70 级），加最大生命与敏捷（扛得住首领、先出手），超强者开关打开；规则流按种子（两边同种子）。
 
 class P extends XBattleScene:
@@ -39,23 +39,25 @@ class P extends XBattleScene:
 		if st != null:
 			st.finish()
 			stream_stats = {"gates": st.gates, "mismatches": st.mismatches, "pulls": st.pulls, "max_pull": st.max_pull_usec,
-				"start": st.start_usec, "same": is_same(st.out, logs) and st.out.size() == logs.size()}
+				"start": st.start_usec, "pull_ms": st.pull_usecs.map(func(x): return x / 1000), "same": is_same(st.out, logs) and st.out.size() == logs.size()}
 		for b in logic.actors + logic.enemies:
 			sig.append([b.hp, b.mp, b.tp, b.state_ids.duplicate()])
 		logs_ref = logs
 		done = true
 
 
-## [角色, 技能（0＝职业里 ACTION EFFECT 最多的招）, 敌群, 天启篇, 计时]
-const CASES := [
-	[163, 9939, 2, false, false], [163, 9939, 80, false, true], [163, 9934, 80, false, true], [163, 9938, 80, false, true],
-	[163, 2058, 80, false, true], [163, 1098, 80, false, true], [163, 9926, 80, false, true],
-	[173, 0, 80, false, false], [172, 0, 80, false, false], [167, 0, 80, false, false], [169, 0, 80, false, false],
-	[170, 0, 80, false, false], [171, 0, 80, false, false], [176, 0, 80, false, false], [177, 0, 80, false, false],
-	[175, 0, 80, false, false], [174, 0, 80, false, false], [168, 0, 80, false, false], [108, 0, 80, false, false],
-	[178, 0, 80, false, false], [179, 0, 80, false, false], [36, 0, 80, false, false],
-	[180, 0, 80, true, false], [163, 9939, 2, true, false], [172, 0, 80, true, false],
-]
+## [角色, 技能（0＝职业里 ACTION EFFECT 最多的招）, 敌群, 天启篇, 计时（三次取中）]；按场景分组（单场景控制在几分钟内）
+const GROUPS := {
+	"a": [[163, 9939, 2, false, false], [163, 9939, 80, false, true], [163, 9938, 80, false, true]],
+	"b": [[163, 1098, 80, false, true], [163, 9926, 80, false, true], [163, 9934, 80, false, false], [163, 2058, 80, false, false]],
+	"c": [[173, 0, 80, false, false], [172, 0, 80, false, false], [167, 0, 80, false, false], [169, 0, 80, false, false],
+		[170, 0, 80, false, false], [171, 0, 80, false, false], [176, 0, 80, false, false], [177, 0, 80, false, false]],
+	"d": [[175, 0, 80, false, false], [174, 0, 80, false, false], [168, 0, 80, false, false], [108, 0, 80, false, false],
+		[178, 0, 80, false, false], [179, 0, 80, false, false], [36, 0, 80, false, false]],
+	"e": [[173, 0, 80, true, false], [163, 9939, 2, true, false], [172, 0, 80, true, false], [163, 9939, 80, true, true], [163, 9938, 80, true, true]],
+}
+## 场景（xiyou_battle_stream、_b…_e）里设
+@export var group := "a"
 const RUNS := 3
 
 var results := []
@@ -109,6 +111,9 @@ func _battle(c: Array, skill: int, on: bool, seed: int) -> Dictionary:
 		XTianqi._joining = true
 		s.add_actor(actor_id)
 		XTianqi._joining = false
+		if not s.party.has(actor_id):
+			s.party.append(actor_id)  # 五条悟要过试炼才入队，夹具直接放
+		s._ensure_slots()
 		if not s.battle_slots.has(actor_id):
 			s.set_battle_slot(0, actor_id)
 	else:
@@ -132,7 +137,9 @@ func _battle(c: Array, skill: int, on: bool, seed: int) -> Dictionary:
 	scene.cmd_skill = skill
 	scene.setup(int(c[2]), true, false, {})
 	for e in scene.logic.enemies:
-		e.tp = 0  # 天启篇敌人开场 TP 不走种子（关对关两场也不同），夹具清零
+		e.tp = 0  # 天启篇开场 TP 不走种子（关对关两场也不同），夹具定死
+	for a in scene.logic.actors:
+		a.tp = 100
 	add_child(scene)
 	var t0 := Engine.get_physics_frames()
 	while not scene.done and Engine.get_physics_frames() - t0 < 3000:
@@ -206,9 +213,9 @@ static func _median(a: Array) -> int:
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_battle_stream"
 	XConfig.path_override = XSave.dir().path_join("options.json")
-	var only := OS.get_environment("STREAM_CASE")  # 调试：只跑第几个用例
+	var only := OS.get_environment("STREAM_CASE")  # 调试：只跑本组第几个用例
 	var n := 0
-	for c in CASES:
+	for c in GROUPS[group]:
 		n += 1
 		if only != "" and int(only) != n:
 			continue
@@ -234,14 +241,17 @@ func _run() -> void:
 			check("stream_used_" + tag, on.stats.get("same", false) and int(on.stats.get("mismatches", -1)) == 0, on.stats)
 			check("gates_match_effects_" + tag, int(on.stats.get("gates", -1)) == effect_marks(on.digest), [on.stats, effect_marks(on.digest)])
 		var row := {"actor": c[0], "skill": skill, "troop": c[2], "tianqi": c[3], "anim": anim, "off_ms": _median(off_t) / 1000.0, "on_ms": _median(on_t) / 1000.0,
-			"gates": on.stats.get("gates", -1), "max_pull_ms": int(on.stats.get("max_pull", 0)) / 1000.0, "logs": on.digest.size()}
+			"gates": on.stats.get("gates", -1), "max_pull_ms": int(on.stats.get("max_pull", 0)) / 1000.0, "logs": on.digest.size(), "pulls_ms": on.stats.get("pull_ms", [])}
 		print("STREAM ", JSON.stringify(row))
+		if OS.get_environment("STREAM_DEBUG") == "1":
+			print("DIGEST ", JSON.stringify(on.digest).left(1500))
 		if timing and int(on.stats.get("gates", 0)) >= 8:
-			check("start_cheaper_%d" % skill, _median(on_t) * 2 < _median(off_t), [on_t, off_t])  # 多段招：开招那一帧不到关着的一半
-	# 回退：关着时战斗画面不开 XBattleStream
-	XBattleStream.PER_SEGMENT = false
-	var r: Dictionary = await _battle(CASES[0], 9939, XBattleStream.PER_SEGMENT, 1)
-	check("rollback_no_stream", r.done and r.stats.is_empty(), r.stats)
+			check("start_cheaper_%d%s" % [skill, "_tq" if c[3] else ""], _median(on_t) * 2 < _median(off_t), [on_t, off_t])  # 多段招：开招那一帧不到关着的一半
+	if group == "a":
+		# 回退：关着时战斗画面不开 XBattleStream
+		XBattleStream.PER_SEGMENT = false
+		var r: Dictionary = await _battle(GROUPS.a[0], 9939, XBattleStream.PER_SEGMENT, 1)
+		check("rollback_no_stream", r.done and r.stats.is_empty(), r.stats)
 	XBattleStream.PER_SEGMENT = true
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size(), "results": results}))

@@ -27,6 +27,7 @@ var mismatches := 0
 var start_usec := 0
 var max_pull_usec := 0
 var pulls := 0
+var pull_usecs: Array = []
 var _result: Array = []
 var _thread: Thread
 var _to_logic := Semaphore.new()
@@ -74,7 +75,8 @@ func pull() -> bool:
 	_to_main.wait()
 	_collect()
 	pulls += 1
-	max_pull_usec = maxi(max_pull_usec, Time.get_ticks_usec() - t0)
+	pull_usecs.append(Time.get_ticks_usec() - t0)
+	max_pull_usec = maxi(max_pull_usec, pull_usecs[-1])
 	return true
 
 

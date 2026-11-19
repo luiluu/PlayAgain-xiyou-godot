@@ -2547,15 +2547,16 @@ func _play(logs: Array) -> void:
 			player.turbo = _seq_turbo()
 			if j >= logs.size() and _stream != null and is_same(logs, _stream.out):
 				# T225：序列还没结算完，演到末尾再结算一段，接到 seq_end 为止
-				player.feed = func() -> bool:
+				# 演出器由参数传进来，不在闭包里抓（抓了就成环：场景中途拆掉时演出器和它的协程还活着）
+				player.feed = func(p: XSequencePlayer) -> bool:
 					if not _stream_pull(logs):
 						return false
-					var n := s0 + player.entries.size()
+					var n := s0 + p.entries.size()
 					while n < logs.size():
-						player.entries.append(logs[n])
+						p.entries.append(logs[n])
 						n += 1
 						if str(logs[n - 1].type) == "seq_end":
-							player.feed = Callable()
+							p.feed = Callable()
 							break
 					return true
 			await player.play()
