@@ -54,6 +54,20 @@ static var SEQ_REDIRECT := true
 ## 对它本身的结算（伤害、判决、处决、落星、上疫、挂状态）不归这个开关管，照常算活着：被救回的应当照吃，改了还要挪随机流
 static var DOWN_RULE := true
 
+## 开关（O-待定，T240，D223 乙）：true＝追加出手（七印派生、词条再释放、技能重构追加释放）打倒的敌人也算行动者的击倒：
+## 七印 end_action 开「追加击倒窗口」，这几类出手前后比对还活着的敌人，新倒下的记给行动者；三者都跑完后 followup_settle 按轮结算
+## 击杀叠层、送行连斩、击倒再动（照旧受 per_turn 和回合预算）、词条斩获（一次行动仍只回一次），本轮连斩又打倒的进下一轮。
+## 补刀是队友出手，不记给行动者；大刀阔斧溢出不认追加的击倒。false＝回退：追加打倒的不算（T232 时的样子）
+## R1（小A 核）：只认行动者本人这一击把目标打到 0 血（或当场打倒）、窗口结束时真倒下的（反击被反伤反死、连命同步倒下的不算）；
+## 原样「送行」（chain 为真）自己连下去打倒的不再在结算里重开连斩（不绕过 chain_max、断连后不补斩）；
+## 窗口放在战斗对象的 FU_META 上，不靠七印本场数据：七印 ENABLED 关着时，再释放／追加释放打倒的照样回词条斩获
+static var FOLLOW_KILLS := true
+const FU_META := "xqiyin_fu"
+const FU_LAST_META := "xqiyin_fu_last"
+
+## 一次行动里由追加出手打倒引发的结算最多几轮（每轮不管倒几个算 1 次；防送行连斩自我连锁，项目经理cc 暂定 3，T240）
+static var FOLLOW_KILL_MAX := 3
+
 ## 七印书卷：开战揭的规则（只对敌方）。里副本规则由祭坛车道（cc/qiyin-altar）实现，读 enemy_only_rule(logic)。
 ## 免死对这个即死无效：死期（终焉规则）结算时由实现方把它置真、结算完置假。
 static var doom_kill := false
@@ -389,6 +403,7 @@ static func begin_action(logic, u, skill: Dictionary) -> void:
 	var f := {"u": u, "skill": skill, "hits": 0, "per_target": {}, "planned": 1, "weight": 0, "mp_bonus": 0.0, "idle": false,
 		"judged": {}, "star": false, "killed": [], "targets": [], "sacrifice": false, "double": false, "hit_on_holder": {}}
 	st.act = f
+	fu_clear(logic)  # T240：上次没结算的追加击倒窗口不带进来
 	if not (u is XActor) or not u.is_alive():
 		return
 	var un := _unit(logic, u)
@@ -483,6 +498,7 @@ static func before_apply(logic, u, skill: Dictionary, t) -> void:
 
 ## 每次 apply 之后：段数、疫、判决、落星、击杀记录、补疫穿透、处决、普攻回血、默印 3 件庇护
 static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
+	fu_mark(logic, u, t, r)
 	if not _active(logic) or u == null or t == null:
 		return
 	var st := _store(logic)
@@ -623,6 +639,7 @@ static func end_action(logic, u, skill) -> Array:
 		return logs
 	var un := _unit(logic, u)
 	confirm_pending(f)
+	fu_open(logic, u)  # T240：追加击倒窗口（派生／再释放／追加释放打倒的记这里，followup_settle 结算）
 	st.depth = int(st.depth) + 1
 	# 击倒相关
 	if not f.killed.is_empty() and u.is_alive():
@@ -631,17 +648,7 @@ static func end_action(logic, u, skill) -> Array:
 			var nx = _next_enemy(logic, f.killed[-1])
 			if nx != null:
 				_lose_hp(logic, nx, floorf(float(f.overflow)), st.logs)
-		var chain := _p(logic, u, "kill_chain_slash")
-		if not chain.is_empty():
-			var n := 0
-			var again := true
-			while again and n < int(TUNE.chain_max) and u.is_alive():
-				var nx = _random_enemy(logic)
-				if nx == null or not XTianqiLedger.take_derived(logic, u, "qiyin.kill_chain_slash"):  # 回合预算：派生攻击每回合次数（期三）
-					break
-				n += 1
-				logs.append_array(_derived(logic, u, u.attack_skill(), nx, float(chain.dmg_pct) / 100.0))  # derived:qiyin.kill_chain_slash
-				again = bool(chain.get("chain", false)) and nx.is_dead()
+		logs.append_array(_chain_slash(logic, u))
 	# 攒段横扫
 	if int(un.burst) > 0 and _has(logic, u, "hit_count_burst") and u.is_alive() and XTianqiLedger.take_derived(logic, u, "qiyin.hit_count_burst"):
 		var b := _p(logic, u, "hit_count_burst")
@@ -665,10 +672,8 @@ static func end_action(logic, u, skill) -> Array:
 				logs.append_array(_derived(logic, u, skill, t, 1.0))  # recast:qiyin.double
 	st.depth = int(st.depth) - 1
 	# 击倒后再行动一次（红印 5 件、灰真印、夺和大刀；同名只算一条，每回合 per_turn 次）
-	var ka := _p(logic, u, "kill_extra_action")
-	if not ka.is_empty() and not f.killed.is_empty() and u.is_alive() and int(un.extra_used) < int(ka.per_turn) and XTianqiLedger.take_extra(logic, u, "qiyin.kill_extra_action"):
-		un.extra_used = int(un.extra_used) + 1
-		logic.current_order.push_front(u)  # 追加行动：占回合预算（期三）
+	if not f.killed.is_empty():
+		_kill_extra(logic, u)
 	# 补刀：队友这次行动打到的目标低于线，持有者追一刀
 	for h in logic.actors:
 		if is_same(h, u) or not h.is_alive() or not h.can_move():
@@ -688,6 +693,139 @@ static func end_action(logic, u, skill) -> Array:
 				logs.append_array(_derived(logic, h, h.attack_skill(), t, 1.0))  # derived:qiyin.ally_followup_execute（次数＝装备表 per_turn）
 				st.depth = int(st.depth) - 1
 	logs.append_array(take_logs(logic))
+	return logs
+
+
+## 送行连斩：击倒后对随机敌人补一刀，带 chain 的打倒了再连（最多 TUNE.chain_max 次）
+static func _chain_slash(logic, u) -> Array:
+	var logs := []
+	var chain := _p(logic, u, "kill_chain_slash")
+	if chain.is_empty():
+		return logs
+	var n := 0
+	var again := true
+	var fu := _fu(logic)
+	var chaining := bool(chain.get("chain", false))
+	if not fu.is_empty():
+		fu.chaining = chaining  # R1 P1-2：chain 为真时这里打倒的已在本循环里连过，结算不再拿它们重开连斩
+	while again and n < int(TUNE.chain_max) and u.is_alive():
+		var nx = _random_enemy(logic)
+		if nx == null or not XTianqiLedger.take_derived(logic, u, "qiyin.kill_chain_slash"):  # 回合预算：派生攻击每回合次数（期三）
+			break
+		n += 1
+		logs.append_array(_derived(logic, u, u.attack_skill(), nx, float(chain.dmg_pct) / 100.0))  # derived:qiyin.kill_chain_slash
+		again = chaining and nx.is_dead()
+	if not fu.is_empty():
+		fu.chaining = false
+		fu.chain_runs = int(fu.chain_runs) + 1
+	return logs
+
+
+## 击倒后再行动一次（同名只算一条，每回合 per_turn 次，占回合预算）
+static func _kill_extra(logic, u) -> void:
+	var ka := _p(logic, u, "kill_extra_action")
+	var un := _unit(logic, u)
+	if not ka.is_empty() and u.is_alive() and int(un.extra_used) < int(ka.per_turn) and XTianqiLedger.take_extra(logic, u, "qiyin.kill_extra_action"):
+		un.extra_used = int(un.extra_used) + 1
+		logic.current_order.push_front(u)  # 追加行动：占回合预算（期三）
+
+
+# ---- 追加出手的击倒（T240，D223 乙）----
+
+static func _fu(logic) -> Dictionary:
+	return logic.get_meta(FU_META) if logic != null and logic is Object and logic.has_meta(FU_META) else {}
+
+
+## 开窗口（七印 end_action；七印没开时词条 end_action 开）：同一行动者已开着就不动
+static func fu_open(logic, u) -> void:
+	if not FOLLOW_KILLS or not (u is XActor) or logic == null:
+		return
+	var fu := _fu(logic)
+	if not fu.is_empty() and is_same(fu.u, u):
+		return
+	logic.set_meta(FU_META, _fu_new(u))
+
+
+static func _fu_new(u) -> Dictionary:
+	return {"u": u, "kills": [], "chained": [], "lethal": [], "watch": false, "chaining": false, "chain_runs": 0}
+
+
+static func fu_clear(logic) -> void:
+	if logic != null and logic is Object and logic.has_meta(FU_META):
+		logic.remove_meta(FU_META)
+
+
+## 追加出手前：窗口开着且出手的是这次行动者，返回此刻还活着的敌人，并开始记这次出手的致命一击（fu_mark）；否则空。只读，不取随机数
+static func fu_snap(logic, u) -> Array:
+	var fu := _fu(logic)
+	if fu.is_empty() or not is_same(fu.u, u):
+		return []
+	fu.watch = true
+	return logic.enemies.filter(func(e): return e.is_alive())
+
+
+## 每次 apply 之后（after_apply 开头，七印没开也跑）：窗口在记、出手的是行动者本人、打的是敌人，这一击之后目标倒了或 0 血挂 IMMORTAL，记成致命一击。
+## 反击阶段（敌人出手、反伤打敌人）出手的不是行动者，不记；连命同步倒下的没挨这一击，不记
+static func fu_mark(logic, u, t, r: Dictionary) -> void:
+	var fu := _fu(logic)
+	if fu.is_empty() or not bool(fu.watch) or not is_same(fu.u, u) or not (t is XEnemy):
+		return
+	if bool(r.get("missed", false)) or bool(r.get("evaded", false)):
+		return
+	if (t.is_dead() or (t.immortal and t.hp <= 0.0)) and not fu.lethal.has(t):
+		fu.lethal.append(t)
+
+
+## 追加出手后：fu_snap 时活着、这次出手里挨过行动者的致命一击、现在真倒下的，记给行动者（序列追加招在序列跑完后调，IMMORTAL 已解除）
+static func fu_note(logic, u, before: Array) -> void:
+	var fu := _fu(logic)
+	if fu.is_empty() or not is_same(fu.u, u):
+		return
+	fu.watch = false
+	for e in before:
+		if e.is_dead() and fu.lethal.has(e) and not fu.kills.has(e):
+			fu.kills.append(e)
+			if bool(fu.chaining):
+				fu.chained.append(e)
+	fu.lethal = []
+
+
+## act 收尾（七印 end_action、词条再释放、技能追加释放都跑完之后）：结算追加出手打倒的敌人。
+## 每轮：词条斩获（一次行动一次）；七印开着时再加击杀叠层、送行连斩（这一轮有不是原样「送行」自己连出来的击倒才开）、击倒再动；
+## 这一轮连斩又打倒的进下一轮，最多 FOLLOW_KILL_MAX 轮。
+## 结果记在 FU_LAST_META（rounds 结算了几轮、left 到上限时没结算的击倒数、chain_runs 结算里开了几次连斩），专项读
+static func followup_settle(logic, u, _skill) -> Array:
+	var logs := []
+	var fu := _fu(logic)
+	fu_clear(logic)
+	if fu.is_empty() or not is_same(fu.u, u):
+		return logs
+	var qa := _active(logic)
+	var kills: Array = fu.kills
+	var chained: Array = fu.chained
+	var rounds := 0
+	var runs := 0
+	while not kills.is_empty() and rounds < FOLLOW_KILL_MAX and u.is_alive():
+		rounds += 1
+		var nxt := _fu_new(u)
+		logic.set_meta(FU_META, nxt)
+		XTianqiAffixBattle.followup_harvest(logic, u)
+		if qa:
+			var un := _unit(logic, u)
+			un.kills = int(un.kills) + kills.size()
+			if kills.any(func(e): return not chained.has(e)):
+				var st := _store(logic)
+				st.depth = int(st.depth) + 1
+				logs.append_array(_chain_slash(logic, u))
+				st.depth = int(st.depth) - 1
+				runs += int(nxt.chain_runs)
+			_kill_extra(logic, u)
+		fu_clear(logic)
+		kills = nxt.kills
+		chained = nxt.chained
+	logic.set_meta(FU_LAST_META, {"rounds": rounds, "left": kills.size(), "chain_runs": runs})
+	if qa:
+		logs.append_array(take_logs(logic))
 	return logs
 
 
@@ -715,7 +853,9 @@ static func _derived(logic, u, skill: Dictionary, t, scale: float) -> Array:
 	st.scale = scale
 	st.act = {"u": u, "skill": skill, "hits": 0, "per_target": {}, "planned": 1, "weight": 0, "mp_bonus": 0.0, "idle": false,
 		"judged": {}, "star": true, "killed": [], "targets": [], "sacrifice": false, "double": false, "hit_on_holder": {}, "derived": true}
+	var before := fu_snap(logic, u)  # T240：行动者自己的派生打倒的记进追加击倒窗口（补刀是队友出手，不记）
 	var r: Dictionary = logic.apply(u, skill, t)
+	fu_note(logic, u, before)
 	logic.mark_views([r])  # 这一击打完当场取画面快照（多段打同一目标时逐段的血量，评审 v0.1 第 8 条）
 	st.act = prev_act
 	st.scale = prev

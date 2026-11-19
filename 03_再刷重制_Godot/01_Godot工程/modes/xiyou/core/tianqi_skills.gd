@@ -1633,6 +1633,13 @@ static var FOLLOW_FULL := true
 
 ## 放一次追加（或 then 接的招）：画面一条 action，再按 FOLLOW_FULL 打满或只打一段
 static func _cast(logic, u, cast: Dictionary, targets: Array) -> Array:
+	var before := XTianqiQiyinEffects.fu_snap(logic, u)  # T240：追加释放打倒的记进七印的追加击倒窗口（窗口只在行动者自己的 act 收尾开着）
+	var logs := _cast_run(logic, u, cast, targets)
+	XTianqiQiyinEffects.fu_note(logic, u, before)
+	return logs
+
+
+static func _cast_run(logic, u, cast: Dictionary, targets: Array) -> Array:
 	var logs := [{"type": "action", "user": u, "skill": cast, "views": logic.views()}]
 	if not FOLLOW_FULL:
 		for t in targets:
