@@ -20,13 +20,20 @@ var _sound: AudioStreamPlayer
 var _drops := []
 var _drop_top := 0
 var _hint_text: XMVText
+## 新界面 2C（T265，XSkin2C）：首领战（落印放全套，否则半程）、天启篇助力位（新画法多画第 5 格；旧画法不画）
+var boss := false
+var helper: XActor = null
+var _skin: Control = null
 
 
-func setup(r: Dictionary, before: Dictionary, members: Array, auto_close: bool) -> void:
+## info（新界面 2C 用，可省）：{boss: 本场有首领血条, helper: 不在出战名单里的助力位（快照要在 before 里）}
+func setup(r: Dictionary, before: Dictionary, members: Array, auto_close: bool, info := {}) -> void:
 	rewards = r
 	snapshots = before
 	actors = members
 	automatic = auto_close
+	boss = bool(info.get("boss", false))
+	helper = info.get("helper") as XActor
 
 
 func _ready() -> void:
@@ -45,6 +52,13 @@ func _ready() -> void:
 		rows.append({"actor": a, "rate": 0.0, "display_level": int(snapshots[a].level), "exp": int(snapshots[a].exp), "notified": false,
 			"lv_scale": 0.0, "lv_opacity": 255.0, "lv_fade": 0.0})
 	_drops = grouped_drops(rewards.get("drops", []))
+	var skin := XSkin2C.victory_on()
+	if skin:
+		if helper != null and snapshots.has(helper) and not actors.has(helper):
+			rows.append({"actor": helper, "rate": 0.0, "display_level": int(snapshots[helper].level), "exp": int(snapshots[helper].exp), "notified": false,
+				"lv_scale": 0.0, "lv_opacity": 255.0, "lv_fade": 0.0, "helper": true})
+		if XSkin2C.DROP_SORT_QUALITY:
+			_drops = XSkin2C.sort_by_quality(_drops)
 	var raw := str(XDB.plugin("Olivia_VictorySequenceUI").get("Victory Screen Continue Text", "\\c[27]ESC\\c[0] 或者 \\c[27]点击屏幕\\c[0] 退出界面"))
 	_hint_text = XMVText.new(XMVText.convert_escapes(raw), 6, 0)
 	# Window_BattleVictoryContinue.refresh：宽 = textWidthEx + textPadding×2（字从 textPadding 6 起画）；x = 画面宽 − 侧边 96 − 宽
@@ -56,8 +70,13 @@ func _ready() -> void:
 	hint.painter = func(c): XMVText.paint(c, _hint_text.glyphs)
 	hint.visible = false
 	add_child(hint)
-	modulate.a = 0
-	create_tween().tween_property(self, "modulate:a", 1.0, 32.0 / 60.0)
+	if skin:   # 新界面 2C：落印进场代替 32 帧淡入，旧画布和旧提示窗不用
+		canvas.visible = false
+		_skin = XSkin2C.victory_view(self)
+		add_child(_skin)
+	else:
+		modulate.a = 0
+		create_tween().tween_property(self, "modulate:a", 1.0, 32.0 / 60.0)
 	_update_exp(0)
 
 
@@ -163,7 +182,7 @@ func _process(delta: float) -> void:
 	_update_exp(clampf(_elapsed / 3.0, 0, 1))
 	if _elapsed >= 1.0:
 		_ready_to_close = true
-		hint.visible = true
+		hint.visible = _skin == null
 	if automatic and _elapsed >= 3.4:
 		set_process(false)
 		continued.emit()
@@ -193,8 +212,16 @@ func _update_exp(progress: float) -> void:
 		canvas.queue_redraw()
 
 
+## 滚动上限：旧页一次一行、最多看 11 行；新界面 2C 是详单一屏的行数
+func _drop_scroll_max() -> int:
+	return XSkin2C.detail_scroll_max(self) if _skin != null else maxi(0,_drops.size()-11)
+
+
 func _input(event: InputEvent) -> void:
 	if not visible or WindowFit.is_fullscreen_shortcut(event):
+		return
+	if _skin != null and _skin.handle(event):
+		XKeyMap.handled(self)
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_DOWN,MOUSE_BUTTON_WHEEL_UP]:
 		_drop_top = clampi(_drop_top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, maxi(0,_drops.size()-11))
@@ -209,14 +236,19 @@ func _input(event: InputEvent) -> void:
 	var confirm: bool = event.is_action_pressed("ui_cancel") or event.is_action_pressed("ui_accept") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT)
 	if confirm:
 		XKeyMap.handled(self)
-		if _ready_to_close:
-			# 关掉后结算页还留在画面上（胜利提示的消息窗盖在上面）：set_process 停不掉 _input，
-			# 不停输入的话后面的确定／取消／左键都被这里吞掉，胜利提示关不掉、战斗结束不了（审查 O-190 第 3 项）
-			set_process(false)
-			set_process_input(false)
-			continued.emit()
-		else:
-			_elapsed = 3.0
-			_update_exp(1.0)
-			_ready_to_close = true
-			hint.visible = true
+		_confirm()
+
+
+## 确定／取消／点一下：前 1 秒跳过（经验条走完、新画法跳到定格），之后关页
+func _confirm() -> void:
+	if _ready_to_close:
+		# 关掉后结算页还留在画面上（胜利提示的消息窗盖在上面）：set_process 停不掉 _input，
+		# 不停输入的话后面的确定／取消／左键都被这里吞掉，胜利提示关不掉、战斗结束不了（审查 O-190 第 3 项）
+		set_process(false)
+		set_process_input(false)
+		continued.emit()
+	else:
+		_elapsed = 3.0
+		_update_exp(1.0)
+		_ready_to_close = true
+		hint.visible = _skin == null

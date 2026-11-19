@@ -3158,6 +3158,14 @@ func _victory() -> void:
 	var before := {}
 	for a in logic.actors:
 		before[a] = {"exp": a.exp_total, "level": a.level}
+	# 新界面 2C（T265）：结算页要知道是不是首领战（落印全套／半程），天启篇助力位不在出战名单里、也拿满经验，发经验前另拍一份快照
+	var skin_info := {}
+	if XSkin2C.victory_on():
+		var h: XActor = logic.state.helper() if logic.state != null else null
+		if h != null and not logic.actors.has(h):
+			before[h] = {"exp": h.exp_total, "level": h.level}
+			skin_info.helper = h
+		skin_info.boss = logic.enemies.any(func(e): return boss_hp.is_meter(e) or boss_hp.is_extended_enemy(e))
 	var r := logic.rewards()
 	logic.grant(r)
 	XEnemyBook.on_battle_end(XState.current, book_appeared, logic.enemies)
@@ -3216,7 +3224,7 @@ func _victory() -> void:
 	if XHangUp.is_active(XState.current):
 		return
 	var screen := XVictoryScreen.new()
-	screen.setup(r, before, logic.actors, logic.auto)
+	screen.setup(r, before, logic.actors, logic.auto, skin_info)
 	ui.add_child(screen)
 	await screen.continued
 	await victory_messages()
