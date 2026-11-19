@@ -40,7 +40,7 @@
   "crit_add": 0.5,
   "agi_rate": -0.2,
   "base_damage": 0.13,
-  "boss_hp_temp_unit": {"crit": 1.43, "no_crit": 0.89},
+  "boss_hp_temp_unit": {"crit": 1, "no_crit": 1},
   "phase4_note": "T080 暗装填表、T081 接线（基础数值重构 v0.4 第三节、第七节）：base_damage＝基准系数 K「天启注视」，起点 0.088（D141 丙：九线不让，多出来的全由 K 收；T012-c 实机标定再改；T082 0.2、T163 0.27；T175 按 D195 一次施放总伤害重量，超强者最大 169 黄泉归葬 6 段顶回锚 200 万→0.13）；boss_hp_temp_unit＝首领生命临时折算 U（crit 能暴击的、no_crit 免暴击的），先填 1。只在总开关 XTianqiBase.PHASE4 开着时读（XTianqiBase.k_base、boss_hp_unit），关着 K、U 都按 1。guardian_phase4（守层者三张新表 atk_scale／hp_base／resist）由 T012-c 实机量出来补，没有时开着也退回代码里的旧表。"
  },
  "legacy_passive": {

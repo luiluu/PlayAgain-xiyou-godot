@@ -18,9 +18,9 @@ var results: Array = []
 ## T082 实机标定的 K（balance_table combat_rules.base_damage）；改标定只改这两行
 const K_TABLE := 0.13
 const K_TEXT := "0.13"
-## T162 丙档实机量的首领生命临时折算 U（balance_table combat_rules.boss_hp_temp_unit）；重量只改这两行
-const U_CRIT := 1.43
-const U_NO_CRIT := 0.89
+## 首领生命临时折算 U（T162 配队器量数不稳，没写，仍是 1）（balance_table combat_rules.boss_hp_temp_unit）；重量只改这两行
+const U_CRIT := 1.0
+const U_NO_CRIT := 1.0
 
 func _ready() -> void:
 	_run.call_deferred()
