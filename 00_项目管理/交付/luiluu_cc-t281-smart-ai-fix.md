@@ -8,13 +8,19 @@
 ## 2026-11-20 【cc·T281·未经审查】天启篇智能战斗AI止血：重构技估伤接通、公共事件技解封、护盾账本（dev.待定）
 
 - 依据：私密仓《天启篇_智能战斗AI评估_Neon_v0.1》第零～二节、实现卡草稿 1（Kyo D236「乙」先卡1 再卡2）。
-- 开关 `XSmartAI.o_tianqi_smart_ai`（默认开，O-待定）：天启篇存档（`XTianqiSkills.cards_on`）才进新分支，西游档永不进；关掉回原样。
+- 开关 `XSmartAI.o_tianqi_smart_ai`（默认开，O-待定·天启篇智能AI止血）：天启篇存档（`XTianqiSkills.cards_on`）才进新分支，西游档永不进；关掉回原样。
   1. 估伤：`formulaProgram.module` 为 `tianqi_skill`／`gojo` 的重构技不再被 `formula_safe` 一刀切成 0，走原有 `XDamage.eval_formula` 只读预览；段数用改写后的 `yepEffects`（不再叠黄泉／流萤／镜流的旧段数包装）；熟练度读天启篇每级 +3%／上限 10 级；141～166 号不再 ×0.01。
   2. 公共事件技：自带伤害／治疗类型的技能（含雷切 5888）放行进候选；命运之手 6861 走白名单入口，按落点 6862～6867 的平均期望伤害给最小估分；事件里有选项／输入数字／选物品（102～104）的不放行；其余 68 招纯功能 CE 技仍封。
   3. 护盾：`shield_points` 加 `XShieldLedger.amount`（厚盾队友不再误判濒死急救）；`shield_estimate` 认 `skill_rework.json` 的 `shield.pct`（钟离 5671／5672、立希 5648、云霄 5571）。
   4. 五条悟茈：`XGojo.ai_preview`（只读）开着且没有 `cast` 时按当前苍、赫印对数估，不写状态。
   5. 过时注释已改（smart_ai.gd 头注释、smart_ai_profiles.gd：镜流／饿狼西游档早已移植）。
 - 玩家可见：无文字改动；天启篇自动战斗会放主力技、会开护盾、命运之手与雷切进选招。
+
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | `modes/xiyou/battle/smart_ai.gd` `XSmartAI.o_tianqi_smart_ai`；`core/gojo.gd` `XGojo.ai_preview` | 智能战斗 AI 的估伤只认老西游的受限公式，天启篇重构技的模块公式全估 0；带公共事件的技能（命运之手、雷切、治疗复活类）全被拉黑；护盾只读原生护盾；141～166 号估伤 ×0.01 | 天启篇存档里模块公式参与只读估伤、公共事件伤害／治疗技与命运之手放行、护盾算来源账本并估重构护盾技、去掉 ×0.01、熟练度读天启篇口径；西游档不进新分支 | 天启篇自动战斗原本几乎只平 A（Neon 评估 T274） | `XSmartAI.o_tianqi_smart_ai = false` | cc（T281） | 保留 |
 
 ## 交接板
 
