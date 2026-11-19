@@ -1966,8 +1966,9 @@ def abs_rescale_rules(table: dict) -> list:
                 bad.append(tag + '公式型要有正数 base、64 位 sha256（程序指纹，运行时对不上照原式）、orig 是公式原文：%s' % (n,))
         elif not isinstance(e['orig'], (int, float)) or isinstance(e['orig'], bool):
             bad.append(tag + '整条换算的 orig 要是原数：%r' % (e['orig'],))
-    if not isinstance(table.get('unscanned'), list):
-        bad.append('unscanned 要是列表（还没扫的范围；T246 起五类都定了口径，可以空）')
+    un = table.get('unscanned')
+    if not (isinstance(un, list) and un and all(isinstance(x, str) and x for x in un)):
+        bad.append('unscanned 要列出还没扫的范围（T246 R1：Custom Regenerate Effect 脚本型回复、horsemen.json 没盘，不能清空）')
     return bad
 
 

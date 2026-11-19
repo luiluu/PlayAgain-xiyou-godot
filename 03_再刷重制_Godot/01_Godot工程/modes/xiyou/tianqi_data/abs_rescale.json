@@ -1989,7 +1989,7 @@
    "orig": "a.mat*5",
    "new": {
     "mode": "raw",
-    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：state_dot 55 行 {\"mode\": \"raw\", \"reason\": \"全随施加者属性涨（a.mat×N 等），没有固定底数，不换\"}"
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
    }
   },
   {
@@ -2000,7 +2000,7 @@
    "orig": "10000",
    "new": {
     "mode": "raw",
-    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：state_dot 57 行 {\"pct_of\": \"mhp\", \"pct\": 100, \"over100\": 145}"
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
    }
   },
   {
@@ -2022,7 +2022,7 @@
    "orig": "a.mat*5",
    "new": {
     "mode": "raw",
-    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：state_dot 117 行 {\"mode\": \"raw\", \"reason\": \"全随施加者属性涨（a.mat×N 等），没有固定底数，不换\"}"
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
    }
   },
   {
@@ -2033,7 +2033,7 @@
    "orig": "5000",
    "new": {
     "mode": "raw",
-    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：state_dot 160 行 {\"pct_of\": \"mhp\", \"pct\": 72}"
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
    }
   },
   {
@@ -2044,7 +2044,7 @@
    "orig": "5000",
    "new": {
     "mode": "raw",
-    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：state_dot 168 行 {\"pct_of\": \"mhp\", \"pct\": 72}"
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
    }
   },
   {
@@ -2055,7 +2055,7 @@
    "orig": "a.mat*5",
    "new": {
     "mode": "raw",
-    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：state_dot 185 行 {\"mode\": \"raw\", \"reason\": \"全随施加者属性涨（a.mat×N 等），没有固定底数，不换\"}"
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
    }
   },
   {
@@ -2077,7 +2077,7 @@
    "orig": "a.mat*6",
    "new": {
     "mode": "raw",
-    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：state_dot 619 行 {\"mode\": \"raw\", \"reason\": \"全随施加者属性涨（a.mat×N 等），没有固定底数，不换\"}"
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
    }
   },
   {
@@ -2099,7 +2099,7 @@
    "orig": "a.mat*4",
    "new": {
     "mode": "raw",
-    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：state_dot 645 行 {\"mode\": \"raw\", \"reason\": \"全随施加者属性涨（a.mat×N 等），没有固定底数，不换\"}"
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
    }
   },
   {
@@ -2110,7 +2110,7 @@
    "orig": "a.mat*10",
    "new": {
     "mode": "raw",
-    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：state_dot 837 行 {\"mode\": \"raw\", \"reason\": \"全随施加者属性涨（a.mat×N 等），没有固定底数，不换\"}"
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
    }
   },
   {
@@ -2121,7 +2121,7 @@
    "orig": "a.mat*10",
    "new": {
     "mode": "raw",
-    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：state_dot 902 行 {\"mode\": \"raw\", \"reason\": \"全随施加者属性涨（a.mat×N 等），没有固定底数，不换\"}"
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
    }
   },
   {
@@ -17902,8 +17902,11 @@
    "_note": "T243：技能固定回复 skill_fixed_heal、固定吸取 skill_fixed_drain。期四开着且 XTianqiBase.ABS_SKILL 开着、天启篇存档时，公式里的固定底数 new.base 换成「对象 new.pct_of 上限 × new.pct%」（向下取整），公式其余部分照旧（XTianqiBase.skill_formula，接在 XFormulaExecution.run_item）；orig 是完整原公式，技能公式被改写、对不上 orig 的照原公式并警告一次。mode＝raw 的照原公式（reason）。pct 整数、可直接改表。"
   },
   "abs_rest": {
-   "_note": "T246：剩下五类定口径。公式型 state_dot：公式最前面写死的底数 new.base 换成「持有者生命上限 × new.pct%」（向下取整），其余部分照旧（XTianqiBase.dot_formula，接在 XExtDot._one；开关 XTianqiBase.ABS_DOT_FORMULA），程序 sha256 跟 new.sha256 对不上的照原式；其余公式随属性／生命走，mode＝raw。state_shield、note_shieldeffect（<ShieldEffect:N> 护盾获得倍率）、note_dbhplsteal（<DBHPLSteal> 吸血倍率）本来就是百分比，note_regen_formula 跟 state_dot 同一个标签重复列出，都是 mode＝raw、不接线。item_fixed_heal、常数 state_dot 的 pct 取整（附则 E）。"
+   "_note": "T246：剩下五类定口径。公式型 state_dot：公式最前面写死的底数 new.base 换成「持有者生命上限 × new.pct%」（向下取整），其余部分照旧（XTianqiBase.dot_program，接在 XExtDot._one；开关 XTianqiBase.ABS_DOT_FORMULA），程序 sha256 跟 new.sha256 对不上的照原式；其余公式随属性／生命走，mode＝raw。state_shield、note_shieldeffect（<ShieldEffect:N> 护盾获得倍率）、note_dbhplsteal（<DBHPLSteal> 吸血倍率）本来就是百分比，note_regen_formula 跟 state_dot 同一个标签重复列出，都是 mode＝raw、不接线。item_fixed_heal、常数 state_dot 的 pct 取整（附则 E）。"
   }
  },
- "unscanned": []
+ "unscanned": [
+  "Custom Regenerate Effect 脚本型回复（25 个状态）：底数要逐条拆脚本，没拆，只列号：106、224、260、460、475、484、488、498、502、504、505、506、547、548、550、551、566、577、687、703、732、831、894、1006、1385",
+  "七首之龙、骑士等 horsemen.json 里的绝对值不在本清单（D78 M5 标）"
+ ]
 }

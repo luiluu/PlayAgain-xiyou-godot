@@ -306,7 +306,7 @@ SKILL_GROUP_NOTE = ('T243：技能固定回复 skill_fixed_heal、固定吸取 s
 # ---- T246：abs_rescale.json 剩下五类（公式型 state_dot、state_shield、note_shieldeffect、note_regen_formula、note_dbhplsteal）定口径 ----
 # 公式型持续伤害：公式最前面写死的底数（43 猛击之伤、643 奇怪的治疗、644 奇怪的复活都是 1025）同常数持续伤害（T081）一样换成
 # 「持有者生命上限 × pct%」，pct＝底数÷弱者 81 级生命 6910×100 取整；公式其余部分（a.atk×7、−b.def×2 等）照旧。
-# 运行时按 sha256 认程序（XTianqiBase.dot_formula），天启篇改写过的公式对不上就照原式。其余公式本来随属性或生命走，mode＝raw。
+# 运行时按 sha256 认程序（XTianqiBase.dot_program），天启篇改写过的公式对不上就照原式。其余公式本来随属性或生命走，mode＝raw。
 DOT_BASE_RE = re.compile(r'^\s*(\d+(?:\.\d+)?)\s*[+-]')
 DOT_RAW = {
     2038: 'Custom Regen Formula 取 Apply Effect 写进的 damagedot（来自技能伤害，随属性涨），没有固定底数',
@@ -345,6 +345,13 @@ def dot_formula_new(x, b):
     return f, {'mode': 'raw', 'reason': '全随施加者属性涨（a.mat×N 等），没有固定底数，不换'}
 
 
+def unscanned_list():
+    """T246 R1 P2-1：还没盘的范围。公式型持续伤害 T246 已定口径、从这里去掉；Custom Regenerate Effect 脚本型回复和 horsemen.json 照旧列着（交 T249）。"""
+    ids = [x['id'] for x in jload(DB / 'States.json') if x and '<Custom Regenerate Effect>' in x.get('note', '')]
+    return ['Custom Regenerate Effect 脚本型回复（%d 个状态）：底数要逐条拆脚本，没拆，只列号：%s' % (len(ids), '、'.join(map(str, ids))),
+            '七首之龙、骑士等 horsemen.json 里的绝对值不在本清单（D78 M5 标）']
+
+
 def write_rest_abs(path):
     """T246：只换 abs_rescale.json 里公式型 state_dot、state_shield、note_* 三类的 new（并把 item_fixed_heal、常数 state_dot 的 pct 取整），其余原样。"""
     d = jload(path)
@@ -368,17 +375,16 @@ def write_rest_abs(path):
         elif k == 'note_dbhplsteal':
             e['new'] = {'mode': 'raw', 'reason': DBHPL_RAW}
         elif k == 'note_regen_formula':
-            r = dot_rows.get(e['id'])
-            e['new'] = {'mode': 'raw', 'reason': REGEN_RAW % ('state_dot %d 行 %s' % (e['id'], json.dumps(r['new'], ensure_ascii=False) if r else '（没有）'))}
+            e['new'] = {'mode': 'raw', 'reason': REGEN_RAW % '见 state_dot 同号那一行'}  # R1 P3-1：跟 scan_more 同一句，两种生成不漂移
     d['groups']['abs_rest'] = {'_note': REST_GROUP_NOTE}
-    d['unscanned'] = []
+    d['unscanned'] = unscanned_list()
     d['_note'] = ABS_NOTE % (b['mhp'], b['mmp'])
     path.write_text(dumps(d), encoding='utf-8')
     return d
 
 
 REST_GROUP_NOTE = ('T246：剩下五类定口径。公式型 state_dot：公式最前面写死的底数 new.base 换成「持有者生命上限 × new.pct%」（向下取整），其余部分照旧'
-                   '（XTianqiBase.dot_formula，接在 XExtDot._one；开关 XTianqiBase.ABS_DOT_FORMULA），程序 sha256 跟 new.sha256 对不上的照原式；'
+                   '（XTianqiBase.dot_program，接在 XExtDot._one；开关 XTianqiBase.ABS_DOT_FORMULA），程序 sha256 跟 new.sha256 对不上的照原式；'
                    '其余公式随属性／生命走，mode＝raw。state_shield、note_shieldeffect（<ShieldEffect:N> 护盾获得倍率）、note_dbhplsteal（<DBHPLSteal> 吸血倍率）本来就是百分比，'
                    'note_regen_formula 跟 state_dot 同一个标签重复列出，都是 mode＝raw、不接线。item_fixed_heal、常数 state_dot 的 pct 取整（附则 E）。')
 ABS_NOTE = ('T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。'
@@ -512,7 +518,7 @@ def build_abs():
         'base': {'weak_mhp81': b['mhp'], 'weak_mmp81': b['mmp'], 'weak_main81': b['main'], 'shuxing_ref': SHUXING_REF},
         'entries': entries,
         'groups': dict(groups, state_shuxing={'_note': SHUXING_GROUP_NOTE}, abs_rest={'_note': REST_GROUP_NOTE}),
-        'unscanned': [],  # T246：五类都定了口径
+        'unscanned': unscanned_list(),  # T246 R1 P2-1：只去掉已定口径的公式型持续伤害
     }
 
 

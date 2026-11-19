@@ -675,6 +675,10 @@ class AbsRescaleT246(unittest.TestCase):
         self.row('note_dbhplsteal', 72)['new'] = '待定'
         self.assertTrue(chk.abs_rescale_rules(self.t))
 
+    def test_unscanned_not_empty(self):
+        self.t['unscanned'] = []
+        self.assertTrue(chk.abs_rescale_rules(self.t))
+
     def test_guardian_qiyin_mhp(self):
         g = json.loads((REAL_DIR / 'guardian_params.json').read_text(encoding='utf-8'))
         g['qiyin']['mhp'] = 50

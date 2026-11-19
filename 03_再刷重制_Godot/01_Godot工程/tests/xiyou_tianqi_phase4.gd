@@ -59,11 +59,15 @@ func _run() -> void:
 
 
 ## T246：单独挂一个带 dot 的状态跑一次回合末持续伤害（关波动、元素倍率 1），返回弹字的 hp（伤害正、回复负）；没弹字返回 NAN。挂上后持有者回满（回复类扣到 1）
-func _dot_tick(lg: XBattleLogic, a: XActor, sid: int) -> float:
+func _dot_tick(lg: XBattleLogic, a: XBattler, sid: int, props := {}) -> float:
 	var dot: Dictionary = XDB.rec("States", sid).get("dot", {})
 	var keep = dot.get("variance")
 	dot["variance"] = 0
 	XExtDot.test_hooks = {"element_rate": func(_b, _e): return 1.0}
+	if not props.is_empty():  # T246 R1：改公式读到的施加者／持有者属性（没有施加者记录时 a＝b，同一张表）
+		XExtDot.test_hooks["context"] = func(ctx: Dictionary, _a, _b, _sid: int) -> void:
+			for k in props:
+				ctx[k[0]].properties[k.substr(2)] = float(props[k])
 	a.add_state(sid)
 	a.hp = 1.0 if bool(dot.get("healing", false)) else a.mhp  # 挂上以后再设（开着时挂状态会改生命）
 	var logs := []
@@ -75,6 +79,15 @@ func _dot_tick(lg: XBattleLogic, a: XActor, sid: int) -> float:
 	else:
 		dot["variance"] = keep
 	return float(logs[0].hp) if not logs.is_empty() else NAN
+
+
+## T246 R1：43 猛击之伤「1025 + a.atk*7 - b.def*2」按给定攻防跑一次，对期望 max(0, 底数 + 7×攻 − 2×防)（底数：开着＝⌊持有者生命上限×15%⌋，关着 1025）；
+## 期望 0 时不该有弹字（不翻号回血）
+func _dot43(lg: XBattleLogic, holder: XBattler, on: bool, atk: float, def: float, name: String) -> void:
+	var nb := floorf(float(holder.mhp) * 15.0 / 100.0) if on else 1025.0
+	var want := maxf(0.0, nb + 7.0 * atk - 2.0 * def)
+	var got := _dot_tick(lg, holder, 43, {"a.atk": atk, "b.def": def})
+	_check(name, (is_nan(got) if want == 0.0 else got == want), [got, want, holder.mhp, atk, def])
 
 
 func _weak_ids() -> Array:
@@ -650,11 +663,31 @@ func _e2e(on: bool) -> void:
 	var d643_off := _dot_tick(lg, a, 643)
 	XTianqiBase.ABS_DOT_FORMULA = true
 	_check(tag + "dot643_switch_off", d643_off == 1025.0 + mat * 2.0, [d643_off, mat])
-	var p55: Dictionary = {}  # 55 开着时被天启篇改写（没有 dot），直接问换算函数（raw 行不看程序）
-	var v55 := XTianqiBase.dot_value(55, 1234.0, a, p55)
+	var v55 := XTianqiBase.dot_value(55, 1234.0, a, {})  # 55 开着时被天启篇改写（没有 dot），直接问换算函数
 	_check(tag + "dot55_raw", v55 == 1234.0, v55)
 	var d95 := _dot_tick(lg, a, 95)
 	_check(tag + "dot95_raw", d95 == floorf(float(a.mhp) * 0.03 + 0.5), [d95, a.mhp])
+	# （2c）T246 R1 P1-1：43 带减法，底数先换再算、max 0 照旧。低血持有者（新底数 < 1025）中防：原式为正、新式为负→不扣也不回；
+	# 高血持有者中防：原式为负（原来截成 0 再换底数会凭空扣 新底数−1025）、新式为正→照新式；高血高防：新式也为负→不扣
+	var foe43 := XEnemy.new().setup(1, 3, 100.0)
+	var nb_foe := floorf(float(foe43.mhp) * 15.0 / 100.0)
+	_check(tag + "dot43_low_pre", nb_foe < 1025.0, foe43.mhp)
+	var nb_a := floorf(float(a.mhp) * 15.0 / 100.0)
+	_dot43(lg, foe43, on, 0.0, floorf((nb_foe + 1025.0) / 4.0), tag + "dot43_low_hp_mid_def")
+	_dot43(lg, foe43, on, 10.0, 100000.0, tag + "dot43_low_hp_high_def")
+	if on:
+		_check(tag + "dot43_high_pre", nb_a > 1025.0, a.mhp)
+	_dot43(lg, a, on, 0.0, floorf((nb_a + 1025.0) / 4.0), tag + "dot43_high_hp_mid_def")
+	_dot43(lg, a, on, 10.0, 100000.0, tag + "dot43_high_hp_high_def")
+	_dot43(lg, a, on, 100.0, 50.0, tag + "dot43_high_hp_low_def")
+	# P3-2：程序指纹对不上（天启篇改写过）→ 照原程序、警告一次
+	var p43: Dictionary = XDB.rec("States", 43).get("dot", {}).get("program", {}).duplicate(true)
+	p43.source.sha256 = "bad"
+	XTianqiBase._warned.erase("dot:43")
+	var r43 := XTianqiBase.dot_program(43, p43, a)
+	_check(tag + "dot43_sha_mismatch", is_same(r43, p43) and XTianqiBase._warned.has("dot:43") == on, [is_same(r43, p43), XTianqiBase._warned.has("dot:43")])
+	var good43: Dictionary = XDB.rec("States", 43).get("dot", {}).get("program", {})
+	_check(tag + "dot43_program_copy", is_same(XTianqiBase.dot_program(43, good43, a), good43) != on)
 	# （3）确认阶段：开着回复（3、4）也跳过 ×5——按真实结算比（T214：原来只看表里有没有 3、4，没看出 _active 只对敌人目标跳过）
 	var rows := XTianqiNoDiffPassive.confirm_rows(a, [])
 	var skip_ok := not rows.is_empty()
