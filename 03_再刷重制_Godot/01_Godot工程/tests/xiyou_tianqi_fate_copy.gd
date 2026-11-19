@@ -6,6 +6,7 @@ extends Node
 ## 二、实打：天启篇档 94 一人上场连放命运之手，七种（混沌只在没穿法宝 4521 命运骰子时出，照原版公共事件）各至少出一次；打出的每一下都在卡的范围里；
 ##    （六种：没穿法宝 4521 命运骰子；穿了只抽五种、没有混沌，照原版）卡开关前后（XTianqiBase.PHASE4）各打一场，打印每种命运平均一发的伤害（交付单对比表从这里抄）。
 ##    连锁（R1）：1213 选命运那句随机改定值，连放同一种 8 发，第 1～8 发出手时 SkillPass 依次 +0/+20/+40/+60/+60/+60/+60/+60%；换别的命运后归零。
+## 附带效果（T264）：火灼伤 18、风自己敏捷 +10%（10831）、地自己承伤 −10%（10832）、雷 10% 麻痹 100、冰敏捷 −10%（22），卡面与实打各查；混沌三项敌方效果各 20%。
 ## 三、西游档：6875、连锁状态记录不变，6861 照旧调公共事件 1213。
 
 var results: Array = []
@@ -153,6 +154,65 @@ func _chain_check() -> void:
 	print("FATE_CHAIN ", seen)
 
 
+## T264 五种命运附带效果：卡面（effects／self_states）＋实打（定值命运，自己身上状态／敌人身上状态）
+func _side_check() -> void:
+	var want_eff := {6862: [18, 1.0], 6865: [100, 0.1], 6866: [22, 1.0]}
+	for sid in want_eff:
+		var rec := XDB.rec("Skills", sid)
+		var hit := false
+		for e in rec.get("effects", []):
+			if int(e.get("code", -1)) == 21 and int(e.get("dataId", -1)) == int(want_eff[sid][0]) and absf(float(e.get("value1", 0)) - float(want_eff[sid][1])) < 0.0001:
+				hit = true
+		_check("side.%d_effect" % sid, hit, rec.get("effects"))
+	_check("side.6863_self", (XTianqiSkills.spec(6863).get("self_states", []) as Array).map(func(x): return int(x)) == [10831], XTianqiSkills.spec(6863).get("self_states"))
+	_check("side.6864_self", (XTianqiSkills.spec(6864).get("self_states", []) as Array).map(func(x): return int(x)) == [10832], XTianqiSkills.spec(6864).get("self_states"))
+	var wind := XDB.rec("States", 10831)
+	var earth := XDB.rec("States", 10832)
+	var wt := (wind.get("traits", []) as Array).filter(func(x): return int(x.code) == 21 and int(x.dataId) == 6 and absf(float(x.value) - 1.1) < 0.0001)
+	var et := (earth.get("traits", []) as Array).filter(func(x): return int(x.code) == 23 and absf(float(x.value) - 0.9) < 0.0001)
+	_check("side.state_wind_agi_110", wt.size() == 1 and int(wind.get("minTurns", 0)) == 2, wind.get("traits"))
+	_check("side.state_earth_dmg_90", et.size() == 2 and int(earth.get("minTurns", 0)) == 2, earth.get("traits"))
+	var cx: Array = XDB.rec("Skills", 6867).get("effects", [])
+	var cids := cx.filter(func(e): return int(e.get("code", -1)) == 21 and absf(float(e.get("value1", 0)) - 0.2) < 0.0001).map(func(e): return int(e.dataId))
+	_check("side.6867_chaos_three", 18 in cids and 100 in cids and 22 in cids, cx)
+	# 实打：定值命运连放，读自己身上状态（风、地）与敌人身上状态（火、雷、冰各只看出现过一次即可——雷 10%，放 40 发）
+	var seen := {}
+	for v in range(1, 7):
+		var lg := _logic(true, false)
+		var a: XActor = lg.state.actor(94)
+		var ce: Dictionary = XDB.rec("CommonEvents", 1213)
+		var keep := _force_fate(v)
+		var hand := XDB.rec("Skills", 6861)
+		for i in 40:
+			var fired := []
+			var foe_ids := []
+			for r in lg.run_turn({a: [hand, lg.enemies[0]]}):
+				if r is Dictionary and r.get("type") == "action" and r.get("skill") is Dictionary and FATES.has(int(r.skill.get("id", 0))):
+					fired.append(int(r.skill.id))
+				if r is Dictionary and r.get("type") == "hit" and r.get("target") == lg.enemies[0]:
+					foe_ids.append_array((lg.enemies[0].state_ids as Array).duplicate())  # 每一发打完当场的敌人状态（战斗日志逐条记，结算在回合内）
+			if not fired.is_empty():
+				var sid: int = fired[0]
+				if not seen.has(sid):
+					seen[sid] = {"self10831": false, "self10832": false, "foe18": false, "foe100": false, "foe22": false}
+				var row: Dictionary = seen[sid]
+				row.self10831 = row.self10831 or (a.state_ids as Array).has(10831)
+				row.self10832 = row.self10832 or (a.state_ids as Array).has(10832)
+				row.foe18 = row.foe18 or foe_ids.has(18) or (lg.enemies[0].state_ids as Array).has(18)
+				row.foe100 = row.foe100 or foe_ids.has(100) or (lg.enemies[0].state_ids as Array).has(100)
+				row.foe22 = row.foe22 or foe_ids.has(22) or (lg.enemies[0].state_ids as Array).has(22)
+			_heal_foes(lg)
+			a.hp = a.mhp
+			a.mp = a.mmp
+		ce.list = keep
+	_check("side.fight_fire", seen.has(6862) and seen[6862].foe18, seen.get(6862))
+	_check("side.fight_wind", seen.has(6863) and seen[6863].self10831 and not seen[6863].self10832, seen.get(6863))
+	_check("side.fight_earth", seen.has(6864) and seen[6864].self10832, seen.get(6864))
+	# 雷 10% 麻痹：1 回合状态回合末就解除，实打读不到；只查卡面（side.6865_effect），不做实打断言
+	_check("side.fight_ice", seen.has(6866) and seen[6866].foe22, seen.get(6866))
+	print("FATE_SIDE ", seen)
+
+
 ## 放一次命运之手，返回这回合放出的命运号
 func _fight_once(lg: XBattleLogic, a: XActor, hand: Dictionary) -> Array:
 	var out := []
@@ -291,6 +351,7 @@ func _run() -> void:
 	_check("fight.dice_no_bad", f5.bad.is_empty(), f5.bad)
 	# 二·连锁：公共事件 1213 选命运的随机数换成定值，连放同一种命运 8 发，读每发出手前身上的 SkillPass
 	_chain_check()
+	_side_check()
 	# 三、西游档对照
 	var og := _logic(false, false)
 	_check("xy.not_active", not XTianqi.active(og.state))
