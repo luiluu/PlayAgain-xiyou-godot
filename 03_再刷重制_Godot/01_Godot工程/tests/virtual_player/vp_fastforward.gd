@@ -22,6 +22,7 @@ var rng: RandomNumberGenerator
 var sample_cache := {}             # 缓存键 → 量出来赢没赢
 var sample_detail := {}            # 缓存键 → 那一场的明细
 var last_sample := {}              # 最近一次样本：{troop, won, turns, dealt_pct, dead}
+var early_outs := 0                # 样本提前判负的场数
 var sold := 0                      # 自动出售卖掉的装备件数
 var samples := 0                   # 量了几场（无画面真打）
 var sample_losses := 0
@@ -96,6 +97,10 @@ func sample(st: XState, troop: int) -> bool:
 		_drain(logic, logic.troop_events(null, true))
 		if logic.is_over():
 			break
+		# 提前收场：打满 5 回合起，照已打掉的比例推，40 回合内打不完就判没打赢（高层一场无画面 40 回合要一两分钟，输的样本多半一眼看得出）
+		if r >= 4 and _dealt(logic) * float(SAMPLE_TURNS) / float(r + 1) < 0.9:
+			early_outs += 1
+			break
 	won = logic.is_won() and not logic.is_lost()
 	var hp0 := 0.0
 	var left := 0.0
@@ -113,6 +118,17 @@ func sample(st: XState, troop: int) -> bool:
 	sample_detail[key] = last_sample
 	_note("样本 敌群 %d：%s（%d 回合，打掉 %d%%，我方倒 %d）" % [troop, "赢" if won else "没打赢", int(last_sample.turns), int(last_sample.dealt_pct), int(last_sample.dead)])
 	return won
+
+
+static func _dealt(logic: XBattleLogic) -> float:
+	var hp0 := 0.0
+	var left := 0.0
+	for e in logic.enemies:
+		if e.hidden:
+			continue
+		hp0 += float(e.mhp)
+		left += maxf(0.0, float(e.hp))
+	return 1.0 - left / maxf(1.0, hp0)
 
 
 func _sample_key(st: XState, troop: int) -> String:

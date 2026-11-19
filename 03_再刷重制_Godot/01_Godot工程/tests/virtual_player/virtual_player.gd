@@ -2395,7 +2395,7 @@ func report() -> Dictionary:
 		"defeats": defeats, "grind_battles": _grind_total, "equip_changes": equip_changes, "equip_passes": equip_passes, "upgrade_uses": upgrade_uses, "sample_defeats": sample_defeats, "autosold": ff.sold if ff != null else 0, "levels": _levels(), "msec": Time.get_ticks_msec() - _t0,
 		"dungeon_runs": dungeon_runs, "dungeon_kills": dungeon_kills, "dungeon_defeats": dungeon_defeats, "farm_block": _farm_block, "stalemates": stalemates,
 		"growth": _growth_state(st), "growth_log": growth_log,
-		"ff": {"on": ff_enabled, "settled": ff.settled, "grind": ff.grind_battles, "dungeon": ff.dungeon_runs, "kings": ff.dungeon_kings, "mobs": ff.mobs,
+		"ff": {"on": ff_enabled, "settled": ff.settled, "grind": ff.grind_battles, "dungeon": ff.dungeon_runs, "kings": ff.dungeon_kings, "mobs": ff.mobs, "early_outs": ff.early_outs,
 			"samples": ff.samples, "sample_losses": ff.sample_losses, "msec": ff.msec} if ff != null else {"on": false},
 		"milestones": milestones, "maps": maps_seen, "event_visits": event_visits,
 		"events_tried": event_visits.size(), "battles": battles, "stuck": stuck_log, "violations": violations,
