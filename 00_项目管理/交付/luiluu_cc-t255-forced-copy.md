@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-t255-forced-copy
 
 - 车道／工作者：T255 扫技能卡缺口（cc，Sonnet 5.5＋medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
