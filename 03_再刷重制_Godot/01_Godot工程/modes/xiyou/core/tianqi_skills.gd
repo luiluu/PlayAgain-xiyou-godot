@@ -614,6 +614,8 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 		r.maxTurns = int(sp.turns)
 	if sp.has("auto"):  # 解除时机（0 不自动、1 行动结束、2 回合结束）：原版「整场」的状态改成按回合
 		r.autoRemovalTiming = int(sp.auto)
+	if sp.has("battle_end"):  # 战斗结束是否移除（T263 R1：命运-火5 1485 原版跨战残留，天启篇改成战斗结束移除）
+		r.removeAtBattleEnd = bool(sp.battle_end)
 	if sp.get("dot_remove", false):  # 固定量的持续伤害／回复改成按比例（traits 里的再生率），原来的公式去掉
 		r.erase("dot")
 	if sp.get("effects_remove", false):  # 状态脚本（Custom Apply／Regenerate…）整段去掉，改用下面的 dot（曹操霸道真气）

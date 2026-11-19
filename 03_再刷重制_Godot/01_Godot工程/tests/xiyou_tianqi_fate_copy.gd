@@ -2,9 +2,10 @@ extends Node
 ## 【cc·T263】天启篇：命运编织者 94「命运之手」6861 → 公共事件 1213 → 强制放 6862～6867、6875 的副本进卡（T255 B 组）。
 ## 稿《天启篇_全角色技能重构 v0.2》94 节：六种命运各三段合计 2.0～5.0（平均 3.6，物攻魔攻各半）、混沌 1.0～7.2、
 ## 连锁反应「连续同一种每次 +20%，最多 +60%」、终极命运「全体 6.0（六段）」。公共事件 1213（随机选命运、连锁状态、六种计数开关）原样保留。
-## 一、卡面：七种命运的模块公式系数、浮动、范围；连锁状态 1481～1510 的 SkillPass 换成 0／20／40／60／60%。
-## 二、实打：天启篇档 94 一人上场连放命运之手，七种（混沌要学 4521，照原版公共事件）各至少出一次；打出的每一下都在卡的范围里；
+## 一、卡面：七种命运的模块公式系数、浮动、范围；连锁状态 1481～1510 的 SkillPass 换成增量 20／20／20／0／0%（五级同存相加，R1）、全部战斗结束移除；6875 表头对象改敌方全体。
+## 二、实打：天启篇档 94 一人上场连放命运之手，七种（混沌只在没穿法宝 4521 命运骰子时出，照原版公共事件）各至少出一次；打出的每一下都在卡的范围里；
 ##    （六种：没穿法宝 4521 命运骰子；穿了只抽五种、没有混沌，照原版）卡开关前后（XTianqiBase.PHASE4）各打一场，打印每种命运平均一发的伤害（交付单对比表从这里抄）。
+##    连锁（R1）：1213 选命运那句随机改定值，连放同一种 8 发，第 1～8 发出手时 SkillPass 依次 +0/+20/+40/+60/+60/+60/+60/+60%；换别的命运后归零。
 ## 三、西游档：6875、连锁状态记录不变，6861 照旧调公共事件 1213。
 
 var results: Array = []
@@ -105,6 +106,67 @@ func _fight(lg: XBattleLogic, turns: int) -> Dictionary:
 	return {"casts": casts, "base": (a.atk + a.mat) / 2.0, "bad": bad}
 
 
+## 公共事件 1213 里给变量 1281（这次出哪种命运）赋随机数的指令，临时改成定值 v（1 火…6 混沌）；返回原指令表以便还原
+func _force_fate(v: int) -> Array:
+	var ce: Dictionary = XDB.rec("CommonEvents", 1213)
+	var keep: Array = (ce.list as Array).duplicate(true)
+	for c in ce.list:
+		var p: Array = c.parameters
+		if int(c.code) == 122 and int(p[0]) <= 1281 and 1281 <= int(p[1]) and int(p[3]) == 2:
+			c.parameters = [p[0], p[1], 0, 0, v]
+	return keep
+
+
+func _chain_check() -> void:
+	var lg := _logic(true, false)
+	var a: XActor = lg.state.actor(94)
+	var ce: Dictionary = XDB.rec("CommonEvents", 1213)
+	var keep := _force_fate(1)  # 1＝火 6862
+	var want := [0.0, 0.2, 0.4, 0.6, 0.6, 0.6, 0.6, 0.6]
+	var seen := []
+	var ok := true
+	var hand := XDB.rec("Skills", 6861)
+	for i in want.size():
+		var row: Dictionary = a.passive_cache().skillPass.get(6862, {"rate": 0.0})
+		var before := float(row.rate)
+		var f := _fight_once(lg, a, hand)
+		seen.append([i + 1, before, f, lg.state.variable(1282), (a.state_ids as Array).filter(func(id): return int(id) >= 1481 and int(id) <= 1510)])
+		ok = ok and f == [6862] and absf(before - float(want[i])) < 0.0001
+	_check("chain.same_fate_1_to_8", ok, seen)
+	ce.list = keep
+	keep = _force_fate(2)  # 换一种（2 号分支）：火的连锁清零
+	var other := _fight_once(lg, a, hand)
+	var after := float(a.passive_cache().skillPass.get(6862, {"rate": 0.0}).rate)
+	_check("chain.switch_clears", other.size() == 1 and other[0] != 6862 and after == 0.0, [other, after])
+	ce.list = keep
+	# 再连放火 5 发到 5 级（1485），胜利收口后连锁状态全清（原版 1485 会留到下一场）
+	keep = _force_fate(1)
+	for i in 12:  # 偶有一回合 94 没出手（日志里只有敌人行动），放够 5 发为止
+		if lg.state.variable(1282) >= 5:
+			break
+		_fight_once(lg, a, hand)
+	ce.list = keep
+	var had := (a.state_ids as Array).has(1485)
+	lg.end_battle(0)
+	var left := (a.state_ids as Array).filter(func(id): return int(id) >= 1481 and int(id) <= 1510)
+	_check("chain.battle_end_clears", had and left.is_empty(), [had, left])
+	print("FATE_CHAIN ", seen)
+
+
+## 放一次命运之手，返回这回合放出的命运号
+func _fight_once(lg: XBattleLogic, a: XActor, hand: Dictionary) -> Array:
+	var out := []
+	for r in lg.run_turn({a: [hand, lg.enemies[0]]}):
+		if r is Dictionary and r.get("type") == "action" and r.get("skill") is Dictionary:
+			var sid := int(r.skill.get("id", 0))
+			if FATES.has(sid):
+				out.append(sid)
+	_heal_foes(lg)
+	a.hp = a.mhp  # 不用 recover_all：它会把身上的状态（连锁 1481～1510）一并清掉
+	a.mp = a.mmp
+	return out
+
+
 func _flush(cur: Dictionary, casts: Dictionary) -> void:
 	if cur.is_empty():
 		return
@@ -156,8 +218,10 @@ func _run() -> void:
 	var ru := XDB.rec("Skills", 6875)
 	var vu := XTianqiSkills.formula(a, foe, ru)
 	var base_u := (0.5 * a.atk + 0.5 * a.mat) * XTianqiSkills.level_scale(a)
+	var un := str(ru.get("note", ""))
+	_check("card.6875_header_all", un.contains("对象:敌方全体") and not un.contains("单个敌人"), un.substr(0, 200))
 	_check("card.6875_ult", absf(vu / base_u - 1.0) < 0.01 and int(ru.scope) == 2 and int(ru.damage.variance) == 0, [vu, base_u, ru.scope, ru.damage.variance])
-	var want := {1: 0, 2: 20, 3: 40, 4: 60, 5: 60}
+	var want := {1: 20, 2: 20, 3: 20, 4: 0, 5: 0}  # T263 R1：五级同存、SkillPass 相加，增量 20/20/20/0/0
 	var sp_ok := true
 	var sp_seen := []
 	for k in range(6):
@@ -173,6 +237,10 @@ func _run() -> void:
 				sp_ok = false
 				sp_seen.append([first + lv - 1, tag])
 	_check("card.chain_states", sp_ok, sp_seen)
+	var be_ok := true
+	for i in range(1481, 1511):
+		be_ok = be_ok and bool(XDB.rec("States", i).get("removeAtBattleEnd", false))
+	_check("card.chain_battle_end", be_ok)  # 原版 1485 不随战斗结束移除，天启篇改成移除
 	# 二、实打：卡开着（天启篇现行）
 	var f_on := _fight(lg, 80)
 	_report("卡开", f_on)
@@ -221,6 +289,8 @@ func _run() -> void:
 	var f5 := _fight(lg5, 60)
 	_check("fight.dice_no_chaos", not f5.casts.has(6867) and f5.casts.has(6862) and f5.casts.has(6875), f5.casts.keys())
 	_check("fight.dice_no_bad", f5.bad.is_empty(), f5.bad)
+	# 二·连锁：公共事件 1213 选命运的随机数换成定值，连放同一种命运 8 发，读每发出手前身上的 SkillPass
+	_chain_check()
 	# 三、西游档对照
 	var og := _logic(false, false)
 	_check("xy.not_active", not XTianqi.active(og.state))
