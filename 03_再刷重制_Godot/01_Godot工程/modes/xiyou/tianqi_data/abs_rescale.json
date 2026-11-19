@@ -1,5 +1,5 @@
 {
- "_note": "T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 6910、魔法 2696。T081 起只接了结构化的两类：药品固定回复（battle_logic._apply_effect）、常数状态持续伤害（ext_dot）；T228 接状态 <G_ShuXing>（state_shuxing）；T243 接技能固定回复、固定吸取（skill_fixed_heal／skill_fixed_drain，见 groups.skill_fixed）。其余几类（公式型 state_dot、state_shield、note_*）new 还是文字说明、未接。",
+ "_note": "T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的整数百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 6910、魔法 2696。接线：药品固定回复 item_fixed_heal（battle_logic._apply_effect）、状态持续伤害 state_dot（ext_dot，常数 T081、公式底数 T246）、状态 <G_ShuXing> state_shuxing（T228）、技能固定回复／吸取 skill_fixed_heal／skill_fixed_drain（T243，见 groups.skill_fixed）。new 是 {mode: raw, reason} 的照原数（groups.abs_rest 写了五类为什么不换）。",
  "version": 1,
  "base": {
   "weak_mhp81": 6910,
@@ -25,7 +25,7 @@
    "orig": 500.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 7.2
+    "pct": 7
    }
   },
   {
@@ -36,7 +36,7 @@
    "orig": 200.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 7.4
+    "pct": 7
    }
   },
   {
@@ -47,7 +47,7 @@
    "orig": 500.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 7.2
+    "pct": 7
    }
   },
   {
@@ -58,7 +58,7 @@
    "orig": 200.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 7.4
+    "pct": 7
    }
   },
   {
@@ -69,7 +69,7 @@
    "orig": 250.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 3.6
+    "pct": 4
    }
   },
   {
@@ -80,7 +80,7 @@
    "orig": 100.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 3.7
+    "pct": 4
    }
   },
   {
@@ -91,7 +91,7 @@
    "orig": 600.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 8.7
+    "pct": 9
    }
   },
   {
@@ -102,7 +102,7 @@
    "orig": 250.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 9.3
+    "pct": 9
    }
   },
   {
@@ -113,7 +113,7 @@
    "orig": 1000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 14.5
+    "pct": 14
    }
   },
   {
@@ -124,7 +124,7 @@
    "orig": 400.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 14.8
+    "pct": 15
    }
   },
   {
@@ -135,7 +135,7 @@
    "orig": 1000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 14.5
+    "pct": 14
    }
   },
   {
@@ -146,7 +146,7 @@
    "orig": 400.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 14.8
+    "pct": 15
    }
   },
   {
@@ -157,7 +157,7 @@
    "orig": 1500.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 21.7
+    "pct": 22
    }
   },
   {
@@ -168,7 +168,7 @@
    "orig": 600.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 22.3
+    "pct": 22
    }
   },
   {
@@ -179,7 +179,7 @@
    "orig": 1500.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 21.7
+    "pct": 22
    }
   },
   {
@@ -190,7 +190,7 @@
    "orig": 600.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 22.3
+    "pct": 22
    }
   },
   {
@@ -201,7 +201,7 @@
    "orig": 600.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 8.7
+    "pct": 9
    }
   },
   {
@@ -212,7 +212,7 @@
    "orig": 350.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 13.0
+    "pct": 13
    }
   },
   {
@@ -223,7 +223,7 @@
    "orig": 2750.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 39.8
+    "pct": 40
    }
   },
   {
@@ -234,7 +234,7 @@
    "orig": 1200.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 44.5
+    "pct": 45
    }
   },
   {
@@ -245,7 +245,7 @@
    "orig": 2500.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 36.2
+    "pct": 36
    }
   },
   {
@@ -256,7 +256,7 @@
    "orig": 1200.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 44.5
+    "pct": 45
    }
   },
   {
@@ -267,7 +267,7 @@
    "orig": 4000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 57.9
+    "pct": 58
    }
   },
   {
@@ -278,7 +278,7 @@
    "orig": 1500.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 55.6
+    "pct": 56
    }
   },
   {
@@ -290,7 +290,7 @@
    "new": {
     "pct_of": "mhp",
     "pct": 100,
-    "over100": 112.2
+    "over100": 112
    }
   },
   {
@@ -302,7 +302,7 @@
    "new": {
     "pct_of": "mmp",
     "pct": 100,
-    "over100": 129.8
+    "over100": 130
    }
   },
   {
@@ -314,7 +314,7 @@
    "new": {
     "pct_of": "mhp",
     "pct": 100,
-    "over100": 112.2
+    "over100": 112
    }
   },
   {
@@ -326,7 +326,7 @@
    "new": {
     "pct_of": "mmp",
     "pct": 100,
-    "over100": 129.8
+    "over100": 130
    }
   },
   {
@@ -337,7 +337,7 @@
    "orig": 900.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 13.0
+    "pct": 13
    }
   },
   {
@@ -348,7 +348,7 @@
    "orig": 350.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 13.0
+    "pct": 13
    }
   },
   {
@@ -359,7 +359,7 @@
    "orig": 2850.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 41.2
+    "pct": 41
    }
   },
   {
@@ -370,7 +370,7 @@
    "orig": 1350.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 50.1
+    "pct": 50
    }
   },
   {
@@ -381,7 +381,7 @@
    "orig": 1400.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 20.3
+    "pct": 20
    }
   },
   {
@@ -392,7 +392,7 @@
    "orig": 500.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 18.5
+    "pct": 19
    }
   },
   {
@@ -403,7 +403,7 @@
    "orig": 2000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 28.9
+    "pct": 29
    }
   },
   {
@@ -414,7 +414,7 @@
    "orig": 1000.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 37.1
+    "pct": 37
    }
   },
   {
@@ -426,7 +426,7 @@
    "new": {
     "pct_of": "mmp",
     "pct": 100,
-    "over100": 118.7
+    "over100": 119
    }
   },
   {
@@ -437,7 +437,7 @@
    "orig": 4000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 57.9
+    "pct": 58
    }
   },
   {
@@ -448,7 +448,7 @@
    "orig": 6000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 86.8
+    "pct": 87
    }
   },
   {
@@ -459,7 +459,7 @@
    "orig": 4000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 57.9
+    "pct": 58
    }
   },
   {
@@ -471,7 +471,7 @@
    "new": {
     "pct_of": "mmp",
     "pct": 100,
-    "over100": 129.8
+    "over100": 130
    }
   },
   {
@@ -482,7 +482,7 @@
    "orig": 4000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 57.9
+    "pct": 58
    }
   },
   {
@@ -493,7 +493,7 @@
    "orig": 600.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 8.7
+    "pct": 9
    }
   },
   {
@@ -504,7 +504,7 @@
    "orig": 600.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 22.3
+    "pct": 22
    }
   },
   {
@@ -515,7 +515,7 @@
    "orig": 600.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 8.7
+    "pct": 9
    }
   },
   {
@@ -526,7 +526,7 @@
    "orig": 300.0,
    "new": {
     "pct_of": "mmp",
-    "pct": 11.1
+    "pct": 11
    }
   },
   {
@@ -537,7 +537,7 @@
    "orig": 500.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 7.2
+    "pct": 7
    }
   },
   {
@@ -548,7 +548,7 @@
    "orig": 300.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 4.3
+    "pct": 4
    }
   },
   {
@@ -559,7 +559,7 @@
    "orig": 300.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 4.3
+    "pct": 4
    }
   },
   {
@@ -567,8 +567,13 @@
    "id": 43,
    "name": "猛击之伤",
    "healing": false,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "1025 + a.atk * 7 - b.def * 2",
+   "new": {
+    "pct_of": "mhp",
+    "pct": 15,
+    "base": 1025,
+    "sha256": "d704d4c31376736e89965799e598f9eedca91971a45bfee214af5a3fe3049869"
+   }
   },
   {
    "kind": "state_dot",
@@ -578,7 +583,7 @@
    "orig": 2000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 28.9
+    "pct": 29
    }
   },
   {
@@ -589,7 +594,7 @@
    "orig": 2000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 28.9
+    "pct": 29
    }
   },
   {
@@ -597,8 +602,11 @@
    "id": 55,
    "name": "治愈之歌",
    "healing": true,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "a.mat*5",
+   "new": {
+    "mode": "raw",
+    "reason": "全随施加者属性涨（a.mat×N 等），没有固定底数，不换"
+   }
   },
   {
    "kind": "state_dot",
@@ -609,7 +617,7 @@
    "new": {
     "pct_of": "mhp",
     "pct": 100,
-    "over100": 144.7
+    "over100": 145
    }
   },
   {
@@ -620,7 +628,7 @@
    "orig": 1000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 14.5
+    "pct": 14
    }
   },
   {
@@ -631,7 +639,7 @@
    "orig": 3000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 43.4
+    "pct": 43
    }
   },
   {
@@ -642,7 +650,7 @@
    "orig": 4500.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 65.1
+    "pct": 65
    }
   },
   {
@@ -653,7 +661,7 @@
    "orig": 4000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 57.9
+    "pct": 58
    }
   },
   {
@@ -664,7 +672,7 @@
    "orig": 3500.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 50.7
+    "pct": 51
    }
   },
   {
@@ -675,7 +683,7 @@
    "orig": 4000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 57.9
+    "pct": 58
    }
   },
   {
@@ -686,7 +694,7 @@
    "orig": 5000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 72.4
+    "pct": 72
    }
   },
   {
@@ -694,16 +702,22 @@
    "id": 95,
    "name": "污染者",
    "healing": false,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "b.mhp* 0.03",
+   "new": {
+    "mode": "raw",
+    "reason": "公式按生命算（b.mhp×3%、a.mhp＋…、b.hp×幸运差），随量级涨，不换"
+   }
   },
   {
    "kind": "state_dot",
    "id": 117,
    "name": "回春",
    "healing": true,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "a.mat*5",
+   "new": {
+    "mode": "raw",
+    "reason": "全随施加者属性涨（a.mat×N 等），没有固定底数，不换"
+   }
   },
   {
    "kind": "state_dot",
@@ -713,7 +727,7 @@
    "orig": 3000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 43.4
+    "pct": 43
    }
   },
   {
@@ -724,7 +738,7 @@
    "orig": 350.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 5.1
+    "pct": 5
    }
   },
   {
@@ -735,7 +749,7 @@
    "orig": 5000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 72.4
+    "pct": 72
    }
   },
   {
@@ -746,7 +760,7 @@
    "orig": 3000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 43.4
+    "pct": 43
    }
   },
   {
@@ -757,7 +771,7 @@
    "orig": 5000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 72.4
+    "pct": 72
    }
   },
   {
@@ -768,7 +782,7 @@
    "orig": 3750.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 54.3
+    "pct": 54
    }
   },
   {
@@ -779,7 +793,7 @@
    "orig": 4500.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 65.1
+    "pct": 65
    }
   },
   {
@@ -790,7 +804,7 @@
    "orig": 5000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 72.4
+    "pct": 72
    }
   },
   {
@@ -798,8 +812,11 @@
    "id": 185,
    "name": "宁静之风",
    "healing": true,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "a.mat*5",
+   "new": {
+    "mode": "raw",
+    "reason": "全随施加者属性涨（a.mat×N 等），没有固定底数，不换"
+   }
   },
   {
    "kind": "state_dot",
@@ -810,7 +827,7 @@
    "new": {
     "pct_of": "mhp",
     "pct": 100,
-    "over100": 144.7
+    "over100": 145
    }
   },
   {
@@ -822,7 +839,7 @@
    "new": {
     "pct_of": "mhp",
     "pct": 100,
-    "over100": 115.8
+    "over100": 116
    }
   },
   {
@@ -833,7 +850,7 @@
    "orig": 2000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 28.9
+    "pct": 29
    }
   },
   {
@@ -844,7 +861,7 @@
    "orig": 200.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 2.9
+    "pct": 3
    }
   },
   {
@@ -855,7 +872,7 @@
    "orig": 75.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 1.1
+    "pct": 1
    }
   },
   {
@@ -866,7 +883,7 @@
    "orig": 1000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 14.5
+    "pct": 14
    }
   },
   {
@@ -877,7 +894,7 @@
    "orig": 1000.0,
    "new": {
     "pct_of": "mhp",
-    "pct": 14.5
+    "pct": 14
    }
   },
   {
@@ -885,121 +902,173 @@
    "id": 487,
    "name": "骨毒",
    "healing": false,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "a.mhp + a.luk * 8 + a.agi * 8 - b.def * 2",
+   "new": {
+    "mode": "raw",
+    "reason": "公式按生命算（b.mhp×3%、a.mhp＋…、b.hp×幸运差），随量级涨，不换"
+   }
   },
   {
    "kind": "state_dot",
    "id": 619,
    "name": "桃木宝杖",
    "healing": true,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "a.mat*6",
+   "new": {
+    "mode": "raw",
+    "reason": "全随施加者属性涨（a.mat×N 等），没有固定底数，不换"
+   }
   },
   {
    "kind": "state_dot",
    "id": 643,
    "name": "奇怪的治疗",
    "healing": false,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "1025 + a.mat * 2",
+   "new": {
+    "pct_of": "mhp",
+    "pct": 15,
+    "base": 1025,
+    "sha256": "c2cce9071504d534b2ea68440d40cda7fc70e2c807de67f7ab836250ff224be3"
+   }
   },
   {
    "kind": "state_dot",
    "id": 644,
    "name": "奇怪的复活",
    "healing": false,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "1025 + a.mat * 5",
+   "new": {
+    "pct_of": "mhp",
+    "pct": 15,
+    "base": 1025,
+    "sha256": "de5badac4604f196f387bd1522eacecefe6de23030858d581b8c963a1ef0b817"
+   }
   },
   {
    "kind": "state_dot",
    "id": 645,
    "name": "奇怪的回血",
    "healing": true,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "a.mat*4",
+   "new": {
+    "mode": "raw",
+    "reason": "全随施加者属性涨（a.mat×N 等），没有固定底数，不换"
+   }
   },
   {
    "kind": "state_dot",
    "id": 837,
    "name": "苍穹不灭",
    "healing": true,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "a.mat*10",
+   "new": {
+    "mode": "raw",
+    "reason": "全随施加者属性涨（a.mat×N 等），没有固定底数，不换"
+   }
   },
   {
    "kind": "state_dot",
    "id": 902,
    "name": "仁德",
    "healing": true,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "a.mat*10",
+   "new": {
+    "mode": "raw",
+    "reason": "全随施加者属性涨（a.mat×N 等），没有固定底数，不换"
+   }
   },
   {
    "kind": "state_dot",
    "id": 1386,
    "name": "亲母缠绕",
    "healing": false,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "value = b.hp * ( a.luk - b.luk ) / 100; variance = 0; element = 9;",
+   "new": {
+    "mode": "raw",
+    "reason": "公式按生命算（b.mhp×3%、a.mhp＋…、b.hp×幸运差），随量级涨，不换"
+   }
   },
   {
    "kind": "state_dot",
    "id": 2038,
    "name": "火遁初级燃烧",
    "healing": true,
-   "orig": "公式（读 a／b 属性）",
-   "new": "待 T012-b 逐条看：公式里的固定底数要换成标准线百分比"
+   "orig": "if (a.isActor()) { } else { value = user.damagedot variance = 0; element = 2; }",
+   "new": {
+    "mode": "raw",
+    "reason": "Custom Regen Formula 取 Apply Effect 写进的 damagedot（来自技能伤害，随属性涨），没有固定底数"
+   }
   },
   {
    "kind": "state_shield",
    "id": 1174,
    "name": "永不停止的鼓点·友",
    "orig": "<ShieldEffect:150>",
-   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+   "new": {
+    "mode": "raw",
+    "reason": "<ShieldEffect:N> 是「获得的护盾量 ×(1＋N/100)」的倍率（XBattler.shield_effect_bonus），本来就随护盾量走，不是绝对值，不换"
+   }
   },
   {
    "kind": "state_shield",
    "id": 1177,
    "name": "鼓点共鸣",
    "orig": "<ShieldEffect:75>",
-   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+   "new": {
+    "mode": "raw",
+    "reason": "<ShieldEffect:N> 是「获得的护盾量 ×(1＋N/100)」的倍率（XBattler.shield_effect_bonus），本来就随护盾量走，不是绝对值，不换"
+   }
   },
   {
    "kind": "state_shield",
    "id": 1179,
    "name": "专属节拍器",
    "orig": "<ShieldEffect:200>",
-   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+   "new": {
+    "mode": "raw",
+    "reason": "<ShieldEffect:N> 是「获得的护盾量 ×(1＋N/100)」的倍率（XBattler.shield_effect_bonus），本来就随护盾量走，不是绝对值，不换"
+   }
   },
   {
    "kind": "state_shield",
    "id": 1180,
    "name": "椎名立希进阶",
    "orig": "<ShieldEffect:150>",
-   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+   "new": {
+    "mode": "raw",
+    "reason": "<ShieldEffect:N> 是「获得的护盾量 ×(1＋N/100)」的倍率（XBattler.shield_effect_bonus），本来就随护盾量走，不是绝对值，不换"
+   }
   },
   {
    "kind": "state_shield",
    "id": 1757,
    "name": "石者，八荒韫玉而明",
    "orig": "<ShieldEffect:50>",
-   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+   "new": {
+    "mode": "raw",
+    "reason": "<ShieldEffect:N> 是「获得的护盾量 ×(1＋N/100)」的倍率（XBattler.shield_effect_bonus），本来就随护盾量走，不是绝对值，不换"
+   }
   },
   {
    "kind": "state_shield",
    "id": 1758,
    "name": "圭璋，暝仍不移其晖",
    "orig": "<ShieldEffect:100>",
-   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+   "new": {
+    "mode": "raw",
+    "reason": "<ShieldEffect:N> 是「获得的护盾量 ×(1＋N/100)」的倍率（XBattler.shield_effect_bonus），本来就随护盾量走，不是绝对值，不换"
+   }
   },
   {
    "kind": "state_shield",
    "id": 1760,
    "name": "金玉，礼予天地四方·友",
    "orig": "<ShieldEffect:200>",
-   "new": "待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）"
+   "new": {
+    "mode": "raw",
+    "reason": "<ShieldEffect:N> 是「获得的护盾量 ×(1＋N/100)」的倍率（XBattler.shield_effect_bonus），本来就随护盾量走，不是绝对值，不换"
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1885,7 +1954,10 @@
    "name": "厚土盾剑",
    "table": "Armors",
    "orig": "150",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<ShieldEffect:N> 是「获得的护盾量 ×(1＋N/100)」的倍率（XBattler.shield_effect_bonus），本来就随护盾量走，不是绝对值，不换"
+   }
   },
   {
    "kind": "note_shieldeffect",
@@ -1893,7 +1965,10 @@
    "name": "震岳擂魂",
    "table": "Armors",
    "orig": "50",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<ShieldEffect:N> 是「获得的护盾量 ×(1＋N/100)」的倍率（XBattler.shield_effect_bonus），本来就随护盾量走，不是绝对值，不换"
+   }
   },
   {
    "kind": "note_shieldeffect",
@@ -1901,7 +1976,10 @@
    "name": "贯虹之槊",
    "table": "Armors",
    "orig": "100",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<ShieldEffect:N> 是「获得的护盾量 ×(1＋N/100)」的倍率（XBattler.shield_effect_bonus），本来就随护盾量走，不是绝对值，不换"
+   }
   },
   {
    "kind": "note_regen_formula",
@@ -1909,7 +1987,10 @@
    "name": "治愈之歌",
    "table": "States",
    "orig": "a.mat*5",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
+   }
   },
   {
    "kind": "note_regen_formula",
@@ -1917,7 +1998,10 @@
    "name": "治愈之歌",
    "table": "States",
    "orig": "10000",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -1925,7 +2009,10 @@
    "name": "冰封血脉",
    "table": "States",
    "orig": "60%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "note_regen_formula",
@@ -1933,7 +2020,10 @@
    "name": "回春",
    "table": "States",
    "orig": "a.mat*5",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
+   }
   },
   {
    "kind": "note_regen_formula",
@@ -1941,7 +2031,10 @@
    "name": "生命护盾术",
    "table": "States",
    "orig": "5000",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
+   }
   },
   {
    "kind": "note_regen_formula",
@@ -1949,7 +2042,10 @@
    "name": "食人魔投喂",
    "table": "States",
    "orig": "5000",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
+   }
   },
   {
    "kind": "note_regen_formula",
@@ -1957,7 +2053,10 @@
    "name": "宁静之风",
    "table": "States",
    "orig": "a.mat*5",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -1965,7 +2064,10 @@
    "name": "冰封血脉II",
    "table": "States",
    "orig": "50%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "note_regen_formula",
@@ -1973,7 +2075,10 @@
    "name": "桃木宝杖",
    "table": "States",
    "orig": "a.mat*6",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -1981,7 +2086,10 @@
    "name": "极度冰寒",
    "table": "States",
    "orig": "60%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "note_regen_formula",
@@ -1989,7 +2097,10 @@
    "name": "奇怪的回血",
    "table": "States",
    "orig": "a.mat*4",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
+   }
   },
   {
    "kind": "note_regen_formula",
@@ -1997,7 +2108,10 @@
    "name": "苍穹不灭",
    "table": "States",
    "orig": "a.mat*10",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
+   }
   },
   {
    "kind": "note_regen_formula",
@@ -2005,7 +2119,10 @@
    "name": "仁德",
    "table": "States",
    "orig": "a.mat*10",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %，a.mat×N 随属性涨），这里只是重复列出：见 state_dot 同号那一行"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -2013,7 +2130,10 @@
    "name": "降低敏捷恢复",
    "table": "States",
    "orig": "65%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -2021,7 +2141,10 @@
    "name": "降低敏捷恢复2",
    "table": "States",
    "orig": "40%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -2029,7 +2152,10 @@
    "name": "天地交泰",
    "table": "States",
    "orig": "25%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -2037,7 +2163,10 @@
    "name": "极度负状",
    "table": "States",
    "orig": "60%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -2045,7 +2174,10 @@
    "name": "猪王舒服",
    "table": "States",
    "orig": "70%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -2053,7 +2185,10 @@
    "name": "旋涡冰封",
    "table": "States",
    "orig": "40%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -2061,7 +2196,10 @@
    "name": "急速冷却",
    "table": "States",
    "orig": "80%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -2069,7 +2207,10 @@
    "name": "剑*坏",
    "table": "States",
    "orig": "60%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -2077,7 +2218,10 @@
    "name": "剑*坏",
    "table": "States",
    "orig": "60%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "note_dbhplsteal",
@@ -2085,7 +2229,10 @@
    "name": "无月X",
    "table": "States",
    "orig": "1%",
-   "new": "待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换"
+   "new": {
+    "mode": "raw",
+    "reason": "<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换"
+   }
   },
   {
    "kind": "state_shuxing",
@@ -17753,9 +17900,13 @@
   },
   "skill_fixed": {
    "_note": "T243：技能固定回复 skill_fixed_heal、固定吸取 skill_fixed_drain。期四开着且 XTianqiBase.ABS_SKILL 开着、天启篇存档时，公式里的固定底数 new.base 换成「对象 new.pct_of 上限 × new.pct%」（向下取整），公式其余部分照旧（XTianqiBase.skill_formula，接在 XFormulaExecution.run_item）；orig 是完整原公式，技能公式被改写、对不上 orig 的照原公式并警告一次。mode＝raw 的照原公式（reason）。pct 整数、可直接改表。"
+  },
+  "abs_rest": {
+   "_note": "T246：剩下五类定口径。公式型 state_dot：公式最前面写死的底数 new.base 换成「持有者生命上限 × new.pct%」（向下取整），其余部分照旧（XTianqiBase.dot_program，接在 XExtDot._one；开关 XTianqiBase.ABS_DOT_FORMULA），程序 sha256 跟 new.sha256 对不上的照原式；其余公式随属性／生命走，mode＝raw。state_shield、note_shieldeffect（<ShieldEffect:N> 护盾获得倍率）、note_dbhplsteal（<DBHPLSteal> 吸血倍率）本来就是百分比，note_regen_formula 跟 state_dot 同一个标签重复列出，都是 mode＝raw、不接线。item_fixed_heal、常数 state_dot 的 pct 取整（附则 E）。"
   }
  },
  "unscanned": [
-  "公式型状态持续伤害（41 条里 14 条是读属性的公式）和 Custom Regenerate Effect 脚本型回复（25 个状态）：底数要逐条拆脚本，没拆，只列号；七首之龙、骑士等 horsemen.json 里的绝对值不在本清单（D78 M5 标）"
+  "Custom Regenerate Effect 脚本型回复（25 个状态）：底数要逐条拆脚本，没拆，只列号：106、224、260、460、475、484、488、498、502、504、505、506、547、548、550、551、566、577、687、703、732、831、894、1006、1385",
+  "七首之龙、骑士等 horsemen.json 里的绝对值不在本清单（D78 M5 标）"
  ]
 }

@@ -5,6 +5,7 @@
   python3 03_转换工具/天启篇期四填表生成.py --清单            打印件数表／超上限技能清单（交付单附件用）
   python3 03_转换工具/天启篇期四填表生成.py --写属性换算 [--属性清单]   T228：只换 abs_rescale.json 的 <G_ShuXing> 行；清单打成 markdown
   python3 03_转换工具/天启篇期四填表生成.py --写技能换算     T243：只换 abs_rescale.json 的技能固定回复／吸取两类
+  python3 03_转换工具/天启篇期四填表生成.py --写其余换算     T246：只换公式型持续伤害、护盾、note_* 五类，药品／常数持续伤害 pct 取整
 """
 import argparse
 import collections
@@ -240,10 +241,11 @@ def literal_only(prog):
 
 
 def capped(key, v, b):
-    pct = round(v / b[key] * 100, 1)
-    if pct > 100:
-        return {'pct_of': key, 'pct': 100, 'over100': pct}  # 原数比弱者 81 级本体还大：先封 100%，原折算值留在 over100，T012-b 看要不要保留
-    return {'pct_of': key, 'pct': pct}
+    # T246：pct 四舍五入成整数（附则 E），不足 1 记 1；原数比弱者 81 级本体还大的先封 100%，原折算值（整数）留在 over100
+    q = int(v / b[key] * 100 + 0.5)
+    if q > 100:
+        return {'pct_of': key, 'pct': 100, 'over100': q}
+    return {'pct_of': key, 'pct': max(1, q)}
 
 
 # T243：技能固定回复（skill_fixed_heal）、固定吸取（skill_fixed_drain）的结构化换算。公式最前面（或 v[364] 之后）的固定底数 base
@@ -301,6 +303,96 @@ SKILL_GROUP_NOTE = ('T243：技能固定回复 skill_fixed_heal、固定吸取 s
                     'orig 是完整原公式，技能公式被改写、对不上 orig 的照原公式并警告一次。mode＝raw 的照原公式（reason）。pct 整数、可直接改表。')
 
 
+# ---- T246：abs_rescale.json 剩下五类（公式型 state_dot、state_shield、note_shieldeffect、note_regen_formula、note_dbhplsteal）定口径 ----
+# 公式型持续伤害：公式最前面写死的底数（43 猛击之伤、643 奇怪的治疗、644 奇怪的复活都是 1025）同常数持续伤害（T081）一样换成
+# 「持有者生命上限 × pct%」，pct＝底数÷弱者 81 级生命 6910×100 取整；公式其余部分（a.atk×7、−b.def×2 等）照旧。
+# 运行时按 sha256 认程序（XTianqiBase.dot_program），天启篇改写过的公式对不上就照原式。其余公式本来随属性或生命走，mode＝raw。
+DOT_BASE_RE = re.compile(r'^\s*(\d+(?:\.\d+)?)\s*[+-]')
+DOT_RAW = {
+    2038: 'Custom Regen Formula 取 Apply Effect 写进的 damagedot（来自技能伤害，随属性涨），没有固定底数',
+}
+# 护盾、吸血标签：原版本来就是倍率，不是绝对量
+SHIELD_RAW = '<ShieldEffect:N> 是「获得的护盾量 ×(1＋N/100)」的倍率（XBattler.shield_effect_bonus），本来就随护盾量走，不是绝对值，不换'
+DBHPL_RAW = '<DBHPLSteal: N%> 是「吸血量 × N/100」的倍率（XLifeSteal），本来就是百分比，不换'
+REGEN_RAW = '同一个 <Regen Formula> 标签在 state_dot 那一行处理（常数的已按生命上限 %%，a.mat×N 随属性涨），这里只是重复列出：%s'
+
+
+def dot_formula_text(note):
+    m = re.search(r'<(?:DoT|Regen) Formula:\s*([^<>]*)>', note)
+    if m:
+        return m.group(1).strip()
+    m = re.search(r'<Custom (?:DoT|Regen) Formula>([\s\S]*?)</Custom (?:DoT|Regen) Formula>', note)
+    return ' '.join(m.group(1).split()) if m else ''
+
+
+def dot_formula_new(x, b):
+    """公式型 state_dot 一行的 orig（公式原文）、new。"""
+    d = x['dot']
+    f = dot_formula_text(x.get('note', ''))
+    if x['id'] in DOT_RAW:
+        return f, {'mode': 'raw', 'reason': DOT_RAW[x['id']]}
+    m = DOT_BASE_RE.match(f)
+    if m and not d.get('healing'):
+        const = float(m.group(1))
+        q = int(const / b['mhp'] * 100 + 0.5)
+        n = {'pct_of': 'mhp', 'pct': max(1, min(100, q)), 'base': int(const) if const == int(const) else const,
+             'sha256': d.get('program', {}).get('source', {}).get('sha256', '')}
+        if q > 100:
+            n['over100'] = q
+        return f, n
+    if re.search(r'\b[ab]\.(mhp|hp)\b', f):
+        return f, {'mode': 'raw', 'reason': '公式按生命算（b.mhp×3%、a.mhp＋…、b.hp×幸运差），随量级涨，不换'}
+    return f, {'mode': 'raw', 'reason': '全随施加者属性涨（a.mat×N 等），没有固定底数，不换'}
+
+
+def unscanned_list():
+    """T246 R1 P2-1：还没盘的范围。公式型持续伤害 T246 已定口径、从这里去掉；Custom Regenerate Effect 脚本型回复和 horsemen.json 照旧列着（交 T249）。"""
+    ids = [x['id'] for x in jload(DB / 'States.json') if x and '<Custom Regenerate Effect>' in x.get('note', '')]
+    return ['Custom Regenerate Effect 脚本型回复（%d 个状态）：底数要逐条拆脚本，没拆，只列号：%s' % (len(ids), '、'.join(map(str, ids))),
+            '七首之龙、骑士等 horsemen.json 里的绝对值不在本清单（D78 M5 标）']
+
+
+def write_rest_abs(path):
+    """T246：只换 abs_rescale.json 里公式型 state_dot、state_shield、note_* 三类的 new（并把 item_fixed_heal、常数 state_dot 的 pct 取整），其余原样。"""
+    d = jload(path)
+    b = {'mhp': d['base']['weak_mhp81'], 'mmp': d['base']['weak_mmp81']}
+    states = {x['id']: x for x in jload(DB / 'States.json') if x}
+    dot_rows = {e['id']: e for e in d['entries'] if e['kind'] == 'state_dot'}
+    for e in d['entries']:
+        k = e.get('kind')
+        if k == 'item_fixed_heal':
+            e['new'] = capped(e['new'].get('pct_of', e.get('stat', 'mhp')), float(e['orig']), b)
+        elif k == 'state_dot':
+            x = states[e['id']]
+            v = literal_only(x['dot'].get('program', {}))
+            if v is not None:
+                e['orig'] = v
+                e['new'] = capped('mhp', v, b)
+            else:
+                e['orig'], e['new'] = dot_formula_new(x, b)
+        elif k in ('state_shield', 'note_shieldeffect'):
+            e['new'] = {'mode': 'raw', 'reason': SHIELD_RAW}
+        elif k == 'note_dbhplsteal':
+            e['new'] = {'mode': 'raw', 'reason': DBHPL_RAW}
+        elif k == 'note_regen_formula':
+            e['new'] = {'mode': 'raw', 'reason': REGEN_RAW % '见 state_dot 同号那一行'}  # R1 P3-1：跟 scan_more 同一句，两种生成不漂移
+    d['groups']['abs_rest'] = {'_note': REST_GROUP_NOTE}
+    d['unscanned'] = unscanned_list()
+    d['_note'] = ABS_NOTE % (b['mhp'], b['mmp'])
+    path.write_text(dumps(d), encoding='utf-8')
+    return d
+
+
+REST_GROUP_NOTE = ('T246：剩下五类定口径。公式型 state_dot：公式最前面写死的底数 new.base 换成「持有者生命上限 × new.pct%」（向下取整），其余部分照旧'
+                   '（XTianqiBase.dot_program，接在 XExtDot._one；开关 XTianqiBase.ABS_DOT_FORMULA），程序 sha256 跟 new.sha256 对不上的照原式；'
+                   '其余公式随属性／生命走，mode＝raw。state_shield、note_shieldeffect（<ShieldEffect:N> 护盾获得倍率）、note_dbhplsteal（<DBHPLSteal> 吸血倍率）本来就是百分比，'
+                   'note_regen_formula 跟 state_dot 同一个标签重复列出，都是 mode＝raw、不接线。item_fixed_heal、常数 state_dot 的 pct 取整（附则 E）。')
+ABS_NOTE = ('T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。'
+            'pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的整数百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 %.0f、魔法 %.0f。'
+            '接线：药品固定回复 item_fixed_heal（battle_logic._apply_effect）、状态持续伤害 state_dot（ext_dot，常数 T081、公式底数 T246）、状态 <G_ShuXing> state_shuxing（T228）、'
+            '技能固定回复／吸取 skill_fixed_heal／skill_fixed_drain（T243，见 groups.skill_fixed）。new 是 {mode: raw, reason} 的照原数（groups.abs_rest 写了五类为什么不换）。')
+
+
 def scan_more(b, card_skills):
     """第二批：把 unscanned 六类里能机器扫的扫完。返回 (entries, groups)。"""
     main = b['main']
@@ -354,8 +446,10 @@ def scan_more(b, card_skills):
             for m in re.finditer(r'<(ShieldEffect|Regen Formula|DBHPLSteal)\s*:\s*([^<>]*)>', note):
                 if f == 'States' and m.group(1) == 'ShieldEffect':
                     continue  # 状态护盾上面 state_shield 已列
-                tags.append({'kind': 'note_' + m.group(1).replace(' ', '_').lower(), 'id': x['id'], 'name': x['name'], 'table': f, 'orig': m.group(2),
-                             'new': '待 T012-b：数值改生命上限百分比；公式 a.mat*N 这类按属性的随属性涨，不用换'})
+                kind = 'note_' + m.group(1).replace(' ', '_').lower()
+                tags.append({'kind': kind, 'id': x['id'], 'name': x['name'], 'table': f, 'orig': m.group(2),
+                             'new': {'mode': 'raw', 'reason': SHIELD_RAW if kind == 'note_shieldeffect' else DBHPL_RAW if kind == 'note_dbhplsteal'
+                                     else REGEN_RAW % '见 state_dot 同号那一行'}})
     entries += tags
     # 七印装备八项（qiyin_equip.json 的 params）：D137 已定读标准线，列出被取代的原数
     qe = jload(DATA / 'qiyin_equip.json')
@@ -409,23 +503,22 @@ def build_abs():
                 ent['orig'] = v
                 ent['new'] = capped('mhp', v, b)
             else:
-                ent['orig'] = '公式（读 a／b 属性）'
-                ent['new'] = '待 T012-b 逐条看：公式里的固定底数要换成标准线百分比'
+                ent['orig'], ent['new'] = dot_formula_new(x, b)  # T246
             entries.append(ent)
     for x in jload(DB / 'States.json'):
         if x and re.search(r'<Shield[^>]*>', x.get('note', '')):
             entries.append({'kind': 'state_shield', 'id': x['id'], 'name': x['name'], 'orig': re.search(r'<Shield[^>]*>', x['note']).group(0),
-                            'new': '待 T012-b 看：护盾量改成生命上限的百分之几（卡标准 20%）'})
+                            'new': {'mode': 'raw', 'reason': SHIELD_RAW}})  # T246
     more_entries, groups = scan_more(b, set(jload(DATA / 'skill_rework.json')['skills']))
     entries += more_entries
     entries += build_shuxing()  # T228
     return {
-        '_note': 'T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 %.0f、魔法 %.0f。T081 起只接了结构化的两类：药品固定回复（battle_logic._apply_effect）、常数状态持续伤害（ext_dot），其余几类 new 还是文字说明、未接。' % (b['mhp'], b['mmp']),
+        '_note': ABS_NOTE % (b['mhp'], b['mmp']),
         'version': 1,
         'base': {'weak_mhp81': b['mhp'], 'weak_mmp81': b['mmp'], 'weak_main81': b['main'], 'shuxing_ref': SHUXING_REF},
         'entries': entries,
-        'groups': dict(groups, state_shuxing={'_note': SHUXING_GROUP_NOTE}),
-        'unscanned': ['公式型状态持续伤害（41 条里 %d 条是读属性的公式）和 Custom Regenerate Effect 脚本型回复（25 个状态）：底数要逐条拆脚本，没拆，只列号；七首之龙、骑士等 horsemen.json 里的绝对值不在本清单（D78 M5 标）' % sum(1 for e in entries if e['kind'] == 'state_dot' and not isinstance(e['new'], dict))],
+        'groups': dict(groups, state_shuxing={'_note': SHUXING_GROUP_NOTE}, abs_rest={'_note': REST_GROUP_NOTE}),
+        'unscanned': unscanned_list(),  # T246 R1 P2-1：只去掉已定口径的公式型持续伤害
     }
 
 
@@ -688,7 +781,18 @@ def main():
     ap.add_argument('--写属性换算', action='store_true', help='T228：只换 abs_rescale.json 里 <G_ShuXing> 那几行（state_shuxing）和参考值，别的表不动')
     ap.add_argument('--属性清单', action='store_true', help='T228：打印 <G_ShuXing> 状态换算清单（markdown，交付单附表）')
     ap.add_argument('--写技能换算', action='store_true', help='T243：只换 abs_rescale.json 里技能固定回复、吸取两类（skill_fixed_heal／skill_fixed_drain）的 new')
+    ap.add_argument('--写其余换算', action='store_true', help='T246：只换公式型 state_dot、state_shield、note_* 的 new，药品、常数持续伤害 pct 取整')
     args = ap.parse_args()
+    if args.写其余换算:
+        d = write_rest_abs(DATA / 'abs_rescale.json')
+        kinds = ('item_fixed_heal', 'state_dot', 'state_shield', 'note_shieldeffect', 'note_regen_formula', 'note_dbhplsteal')
+        for k in kinds:
+            rows = [e for e in d['entries'] if e['kind'] == k]
+            print('%s %d 行：换算 %d、照原数 %d' % (k, len(rows), sum(1 for e in rows if 'pct' in e['new']), sum(1 for e in rows if e['new'].get('mode') == 'raw')))
+        for e in d['entries']:
+            if e['kind'] == 'state_dot' and not isinstance(e['orig'], float):
+                print('  dot %d %s｜%s｜%s' % (e['id'], e['name'], e['orig'], e['new']))
+        return 0
     if args.写技能换算:
         d = write_skill_abs(DATA / 'abs_rescale.json')
         rows = [e for e in d['entries'] if e['kind'] in ('skill_fixed_heal', 'skill_fixed_drain')]

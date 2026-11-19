@@ -92,7 +92,7 @@ static func _one(logic: XBattleLogic, rc: XResourceContext, b: XBattler, st: Dic
 			return
 		value = maxf(0.0, float(b.state_data._damagedot))
 	else:
-		var program: Dictionary = d.program
+		var program: Dictionary = XTianqiBase.dot_program(id, d.program, b)  # 天启篇期四（T246）：公式里写死的底数先换成持有者生命上限的百分比，再算（max 0 照旧）
 		var context := XFormulaContext.capture(a, b, logic.vars(), {}, 0, program)
 		if test_hooks.has("context"):
 			test_hooks.context.call(context, a, b, id)
@@ -101,7 +101,7 @@ static func _one(logic: XBattleLogic, rc: XResourceContext, b: XBattler, st: Dic
 			_diag(st, b, "formula_unavailable" if not out.available else "formula_" + str(out.sourceValueKind))
 			return
 		value = float(out.value)
-		value = XTianqiBase.abs_value("state_dot", id, value, b)  # 天启篇期四（总开关关着原样）：常数持续伤害换成持有者生命上限的百分比（abs_rescale.json）
+		value = XTianqiBase.dot_value(id, value, b, program)  # 天启篇期四（总开关关着原样）：常数持续伤害整条换成持有者生命上限的百分比（abs_rescale.json，T081）
 	value = XTianqiTrumpet.dot_value(a, value)  # 天启篇号卷三号：自己上的持续伤害、持续回复 +33%
 	var healing := bool(d.healing)
 	value = value if healing else -value
