@@ -75,6 +75,7 @@ var snapshot_dir := ""             # 给了就在每层第一次去挑战守层�
 var _snap_done := {}
 var pass_after := 0                # 量数用（>0 时）：同一层守层者输满这么多次后不收工，下一次挑战把守层者的血压到 1 放水通过（小结里标出来），好把后面各层的队伍快照也拿到
 var gifted_floors: Array = []      # 放水通过的层
+var resumed_from := ""             # --vp-resume 接着爬的那份存档（文件名；meta 的 msec 从接着爬那一刻算起）
 var fabao_enabled := true          # 出战的人有谁没戴法宝，就去兑换大厅领礼物（法宝积分）、找铁匠买法宝戴上
 var _door_id := 0                  # 大厅塔门的事件号（第一次认出来时记下）
 var _exchange_floor := -1          # 这一层去过兑换大厅了
@@ -2179,7 +2180,7 @@ func _snapshot_meta(st: XState, floor: int) -> void:
 		"real_floors": range(1, floor).filter(func(x): return not gifted.has(x)),
 		"members": st.battle_members().map(func(a): return {"id": a.actor_id, "level": a.level, "max_level": a.max_level()}),
 		"ff": {"settled": ff.settled, "grind": ff.grind_battles, "dungeon": ff.dungeon_runs, "kings": ff.dungeon_kings} if ff != null else {},
-		"msec": Time.get_ticks_msec() - _t0, "frames": Engine.get_process_frames()}
+		"msec": Time.get_ticks_msec() - _t0, "frames": Engine.get_process_frames(), "resumed_from": resumed_from}
 	var f := FileAccess.open(dir.path_join("floor_%d_%d.json" % [floor, rng_seed]), FileAccess.WRITE)
 	if f != null:
 		f.store_string(JSON.stringify(meta, " "))
@@ -2190,7 +2191,7 @@ func _snapshot_meta(st: XState, floor: int) -> void:
 	if not rows is Array:
 		rows = []
 	rows = rows.filter(func(x): return x is Dictionary and int(x.get("floor", 0)) != floor)
-	rows.append({"floor": floor, "carried": meta.carried, "gifted_floors": gifted, "levels": meta.members.map(func(m): return int(m.level)), "msec": meta.msec})
+	rows.append({"floor": floor, "carried": meta.carried, "gifted_floors": gifted, "levels": meta.members.map(func(m): return int(m.level)), "msec": meta.msec, "resumed_from": resumed_from})
 	var g := FileAccess.open(all_path, FileAccess.WRITE)
 	if g != null:
 		g.store_string(JSON.stringify(rows, " "))

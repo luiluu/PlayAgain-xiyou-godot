@@ -15,6 +15,9 @@ var trace := 0
 var smart := -1
 var compare := 0
 var hang := true
+var grind := 0
+var dungeon := 0
+var map_override := 0
 
 
 func _ready() -> void:
@@ -29,6 +32,12 @@ func _ready() -> void:
 			turns = int(a.substr(8))
 		elif a.begins_with("--compare="):
 			compare = int(a.substr(10))
+		elif a.begins_with("--grind="):
+			grind = int(a.substr(8))
+		elif a.begins_with("--dungeon="):
+			dungeon = int(a.substr(10))
+		elif a.begins_with("--map="):
+			map_override = int(a.substr(6))
 		elif a == "--no-hang":
 			hang = false
 		elif a.begins_with("--smart="):
@@ -67,6 +76,10 @@ func _run() -> void:
 				eq.append(str(e.get("name", e.get("id", ""))))
 		print("PROBE 队员 %d %s 等级 %d/%d 生命 %d 物攻 %d 魔攻 %d 防 %d 速 %d 技能 %d 个 装备 %s" % [a.actor_id, a.display_name(), a.level, a.max_level(),
 			int(a.param(0)), int(a.param(2)), int(a.param(4)), int(a.param(3)), int(a.param(6)), a.skills().size() if a.has_method("skills") else -1, ",".join(eq)])
+	if grind > 0 or dungeon > 0:
+		await _time_ff(st)
+		get_tree().quit.call_deferred(0)
+		return
 	if compare > 0:
 		_compare(st)
 		get_tree().quit.call_deferred(0)
@@ -162,6 +175,48 @@ static func _brief(lg: Array) -> String:
 
 
 ## 收益对照：同一份存档、同一敌群，实打赢了再结算 vs 不打直接结算（vp_fastforward.settle 的做法），各 compare 场
+## 计时（T238 第三棒）：照快进局的做法开自动出售，挂机练级 N 场、刷副本首领 M 次，打印分项计时
+func _time_ff(st: XState) -> void:
+	var FF := preload("res://tests/virtual_player/vp_fastforward.gd")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 2
+	var ff = FF.new(self, rng)
+	var m := map_override if map_override > 0 else st.map_id
+	print("PROBE 计时 地图 %d 背包装备 %d 件" % [m, st.gear.size()])
+	FF.autosell_setup(st)
+	var t0 := Time.get_ticks_msec()
+	if grind > 0:
+		var g: Dictionary = ff.grind(st, m, grind, false)
+		print("PROBE 练级 %d 场 %d 毫秒 背包 %d 件 卖掉 %d" % [int(g.battles), Time.get_ticks_msec() - t0, st.gear.size(), ff.sold])
+	var te := Time.get_ticks_msec()
+	var G := preload("res://tests/virtual_player/vp_growth.gd")
+	var lines: Array = G.equip_direct(st)
+	print("PROBE equip_direct %d 毫秒 换了 %d 件 背包 %d 件" % [Time.get_ticks_msec() - te, lines.size(), st.gear.size()])
+	if grind > 0:
+		ff.grind(st, m, grind, false)
+		te = Time.get_ticks_msec()
+		lines = G.equip_direct(st)
+		print("PROBE 再练 %d 场后 equip_direct %d 毫秒 换了 %d 件 背包 %d 件" % [grind, Time.get_ticks_msec() - te, lines.size(), st.gear.size()])
+	var t1 := Time.get_ticks_msec()
+	for i in dungeon:
+		var d: Dictionary = await ff.dungeon_once(st, m, func(s, id, n): s.gain_item(id, n); return true)
+		if not bool(d.ok):
+			print("PROBE 副本没打成 " + str(d.why))
+			break
+	if dungeon > 0:
+		print("PROBE 副本 %d 次 %d 毫秒" % [dungeon, Time.get_ticks_msec() - t1])
+	var t2 := Time.get_ticks_msec()
+	ff.sell_now(st)
+	print("PROBE sell_now %d 毫秒 背包 %d 件" % [Time.get_ticks_msec() - t2, st.gear.size()])
+	var t3 := Time.get_ticks_msec()
+	var d2 := st.to_dict()
+	var t4 := Time.get_ticks_msec()
+	XState.from_dict(d2)
+	print("PROBE to_dict %d 毫秒 from_dict %d 毫秒" % [t4 - t3, Time.get_ticks_msec() - t4])
+	for line in ff.prof_lines():
+		print("PROF " + str(line))
+
+
 func _compare(st: XState) -> void:
 	for troop in troops:
 		var acc := {"real": {"n": 0, "exp": 0.0, "gold": 0.0, "drops": 0.0, "lost": 0, "kinds": {}}, "ff": {"n": 0, "exp": 0.0, "gold": 0.0, "drops": 0.0, "lost": 0, "kinds": {}}}

@@ -648,31 +648,56 @@ static func heads(st: XState) -> int:
 
 ## 直接换装（T238 快进局用；同装备页确定换装那一步 XEquipment.change，比较口径同按键换装的 _best_candidate）：
 ## 出战的人和助力位逐个栏位看背包里装得进的，涨幅超过 2% 的挑最高那件换上。返回做了什么（每件一行）
+## 换装缓存（T238 第三棒）：「人:格」→ {sig, ids}。--vp-no-equip-cache 关掉（每次整包重比）
+static var _equip_seen := {}
+static var equip_cache := true
+
+
+static func _gear_key(rec: Dictionary):
+	return rec.get("instanceId", rec.get("id", 0))
+
+
 static func equip_direct(st: XState) -> Array:
 	var out := []
 	var who: Array = st.battle_members().duplicate()
 	var helper = st.helper()
 	if helper != null and not who.has(helper):
 		who.append(helper)
+	# 背包只取一次（原来每人每格各取两遍，一次 1700 件要筛、排序）
+	var bag: Array = XItemScene.bag_gear("weapon") + XItemScene.bag_gear("armor")
 	for a in who:
 		for slot in XTianqiGear.view(a):
 			if not XEquipment.can_change(a, slot):
 				continue
+			# 比过的不再比（T238 第三棒量到：背包 1700 件时整队比一遍要 301 秒，快进一轮要比两遍）：
+			# 每人每格记「比过哪些件」，这个人等级、这一格身上那件都没变就只比新进背包的；变了整格重比
+			var cur = a.equips[slot] if slot < a.equips.size() else null
+			var sig := "%d|%d|%s" % [a.level, slot, str(_gear_key(cur)) if cur is Dictionary and not cur.is_empty() else "-"]
+			var ck := "%d:%d" % [a.actor_id, slot]
+			var seen: Dictionary = _equip_seen.get(ck, {})
+			if str(seen.get("sig", "")) != sig:
+				seen = {"sig": sig, "ids": {}}
+				_equip_seen[ck] = seen
+			var ids: Dictionary = seen.ids
 			var best := {}
 			var best_score := 0.02
-			for kind in ["weapon", "armor"]:
-				for rec in XItemScene.bag_gear(kind):
-					if not XEquipment.fits(a, slot, rec) or XEquipment.dual_blocked(a, slot, rec):
-						continue
-					var t := XEquipment.preview(a, slot, rec)
-					if t == null:
-						continue
-					var score: float = gain_score(a, t)
-					if score > best_score:
-						best_score = score
-						best = rec
+			for rec in bag:
+				var key = _gear_key(rec)
+				if equip_cache and ids.has(key):
+					continue
+				ids[key] = true
+				if not XEquipment.fits(a, slot, rec) or XEquipment.dual_blocked(a, slot, rec):
+					continue
+				var t := XEquipment.preview(a, slot, rec)
+				if t == null:
+					continue
+				var score: float = gain_score(a, t)
+				if score > best_score:
+					best_score = score
+					best = rec
 			if best.is_empty():
 				continue
+			bag.erase(best)
 			var hp_rate: float = a.hp / maxf(1.0, a.mhp)
 			var mp_rate: float = a.mp / maxf(1.0, a.mmp)
 			XEquipment.change(st, a, slot, best)

@@ -33,6 +33,26 @@ var dungeon_kings := 0             # 其中选到「王者难度」的几次
 var mobs := 0                      # 为了让首领页出来先清掉的挡路小怪事件（照快进结算）
 var log_lines: Array = []
 var msec := 0                      # 快进一共花了多少毫秒（墙钟）
+var prof := {}                     # 分项计时：项 → [毫秒, 次数]（T238 第三棒：先量后改）
+
+
+func _tick(k: String, t0: int) -> int:
+	var now := Time.get_ticks_usec()
+	var row: Array = prof.get(k, [0, 0])
+	row[0] += now - t0
+	row[1] += 1
+	prof[k] = row
+	return now
+
+
+## 分项计时一行一项：项 合计秒 次数 每次毫秒，按合计从大到小
+func prof_lines() -> Array:
+	var keys := prof.keys()
+	keys.sort_custom(func(a, b): return int(prof[a][0]) > int(prof[b][0]))
+	var out := []
+	for k in keys:
+		out.append("%s %.1f 秒 %d 次 每次 %.1f 毫秒" % [k, prof[k][0] / 1e6, prof[k][1], prof[k][0] / 1e3 / maxf(1, prof[k][1])])
+	return out
 
 
 func _init(owner: Node, r: RandomNumberGenerator) -> void:
@@ -50,12 +70,18 @@ func _note(msg: String) -> void:
 
 ## 一场按打赢结算（同 XBattleScene._victory 的 rewards → grant → end_battle(0)）。返回 {exp, gold, drops}
 func settle(st: XState, troop: int) -> Dictionary:
+	var t := Time.get_ticks_usec()
 	var logic := XBattleLogic.new()
 	logic.setup(troop, st)
+	t = _tick("结算.setup", t)
 	var r := logic.rewards()
+	t = _tick("结算.rewards", t)
 	logic.grant(r)
+	t = _tick("结算.grant", t)
 	logic.end_battle(0)
+	t = _tick("结算.end_battle", t)
 	XHangUp.after_battle(st)
+	t = _tick("结算.挂机after_battle", t)
 	settled += 1
 	return {"exp": int(r.exp), "gold": int(r.gold), "drops": (r.drops as Array).size()}
 
@@ -66,7 +92,9 @@ func sample(st: XState, troop: int) -> bool:
 	if sample_cache.has(key):
 		last_sample = sample_detail.get(key, {})
 		return bool(sample_cache[key])
+	var t := Time.get_ticks_usec()
 	var copy := XState.from_dict(st.to_dict())
+	t = _tick("样本.复制存档", t)
 	XState._become_current(copy)
 	for a in copy.members():
 		a.recover_all()
@@ -102,6 +130,7 @@ func sample(st: XState, troop: int) -> bool:
 			early_outs += 1
 			break
 	won = logic.is_won() and not logic.is_lost()
+	t = _tick("样本.打", t)
 	var hp0 := 0.0
 	var left := 0.0
 	for e in logic.enemies:
@@ -191,9 +220,12 @@ func grind(st: XState, map_id: int, n: int, until_cap: bool) -> Dictionary:
 			out.stop = "敌群 %d 样本没打赢" % troop
 			break
 		var r := settle(st, troop)
+		var t := Time.get_ticks_usec()
 		if i % 10 == 9:
 			autosell_setup(st)            # 背包涨过 BAG_SOFT 就把同档也开上
+			t = _tick("练级.autosell_setup", t)
 		sold += maxi(0, XHangUpAuto.after_battle_sell(st))   # 同挂机打完一场：按挂机设置里开着的品质自动卖（map_scene 战后那一步）
+		t = _tick("练级.after_battle_sell", t)
 		out.battles += 1
 		out.exp += int(r.exp)
 		out.gold += int(r.gold)

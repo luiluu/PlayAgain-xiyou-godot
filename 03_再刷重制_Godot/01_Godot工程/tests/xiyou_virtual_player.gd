@@ -188,6 +188,7 @@ func _run() -> void:
 	bot.want_difficulty = _arg("--vp-difficulty")
 	bot.climb_max_defeats = int(_arg("--vp-max-defeats", "5"))
 	VP_GROWTH.full_score = not OS.get_cmdline_user_args().has("--vp-plain-score")
+	VP_GROWTH.equip_cache = not OS.get_cmdline_user_args().has("--vp-no-equip-cache")   # T238 第三棒：换装比过的不再比
 	# 期四总开关（T130 起 --vp-phase4 对照用）。T220 翻开关后不带参数＝照默认（开）；--vp-no-phase4 拨回关（连熟练度），对照翻开关前
 	if OS.get_cmdline_user_args().has("--vp-no-phase4"):
 		XTianqiBase.PHASE4 = false
@@ -220,6 +221,16 @@ func _run() -> void:
 		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(XSave.dir()))
 		var err := DirAccess.copy_absolute(_arg("--vp-resume"), ProjectSettings.globalize_path(XSave.path(1)))
 		_check("resume_save_copied", err == OK, [_arg("--vp-resume"), err])
+		# T238 第三棒：接着爬时把之前放水的层从快照目录的总表 meta/floors_<种子>.json 接过来，测量档的来路才不断
+		var rows_path := bot.snapshot_dir.path_join("meta").path_join("floors_%d.json" % bot.rng_seed)
+		if bot.snapshot_dir != "" and FileAccess.file_exists(rows_path):
+			var rows = JSON.parse_string(FileAccess.get_file_as_string(rows_path))
+			if rows is Array:
+				for row in rows:
+					for x in (row.get("gifted_floors", []) if row is Dictionary else []):
+						if not bot.gifted_floors.has(int(x)):
+							bot.gifted_floors.append(int(x))
+		bot.resumed_from = _arg("--vp-resume").get_file()
 	XConfig._loaded_path = ""
 	XConfig.whisper_mark("rift1")
 	XConfig.whisper_mark("rift2")
