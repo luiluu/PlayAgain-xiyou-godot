@@ -12078,9 +12078,10 @@
      0,
      0,
      0,
-     -3,
+     -25,
      0
-    ]
+    ],
+    "note_pct": true
    }
   },
   {
@@ -12106,9 +12107,10 @@
      0,
      0,
      0,
-     -4,
+     -35,
      0
-    ]
+    ],
+    "note_pct": true
    }
   },
   {
@@ -12128,7 +12130,7 @@
    "new": {
     "pct_of": "self",
     "pct": [
-     -1,
+     -30,
      0,
      0,
      0,
@@ -12136,11 +12138,9 @@
      0,
      0,
      0
-    ]
-   },
-   "min1": [
-    "mhp"
-   ]
+    ],
+    "note_pct": true
+   }
   },
   {
    "kind": "state_shuxing",
@@ -12945,13 +12945,14 @@
     "pct": [
      0,
      0,
-     -2,
-     -5,
-     -2,
-     -6,
-     -4,
-     -11
-    ]
+     -30,
+     -30,
+     -30,
+     -30,
+     -30,
+     -30
+    ],
+    "note_pct": true
    }
   },
   {
@@ -14127,19 +14128,17 @@
    "new": {
     "pct_of": "self",
     "pct": [
-     1,
-     1,
-     11,
-     5,
-     2,
-     6,
-     4,
-     11
-    ]
-   },
-   "min1": [
-    "mhp"
-   ]
+     30,
+     30,
+     200,
+     30,
+     30,
+     30,
+     30,
+     30
+    ],
+    "note_pct": true
+   }
   },
   {
    "kind": "state_shuxing",
@@ -17750,7 +17749,7 @@
    ]
   },
   "state_shuxing": {
-   "_note": "T228：状态备注 <G_ShuXing> 写死的八项加减（kind＝state_shuxing，orig、new.pct 都按 mhp,mmp,atk,def,mat,mdf,agi,luk 八格）。期四开着且 XTianqiBase.ABS_SHUXING 开着时，战斗里每个状态加的是「持有者该项（基础＋加值）×比率×强化率 × pct% × 层数」，向零取整；关着照原数。pct＝原数÷base.shuxing_ref 同项×100 四舍五入成整数，原数不为 0 但取整成 0 的记 ±1（min1 列出是哪几项）。new.mode＝raw 的是计数器状态（<G_ShuXing> 写 ±1 当单位、真加值在层数里，T228 R1），照原数×层数，不换算、不走兜底。pct 可以直接改表；状态备注被天启篇改写、原数跟 orig 对不上时按参考值现算并警告一次。"
+   "_note": "T228：状态备注 <G_ShuXing> 写死的八项加减（kind＝state_shuxing，orig、new.pct 都按 mhp,mmp,atk,def,mat,mdf,agi,luk 八格）。期四开着且 XTianqiBase.ABS_SHUXING 开着时，战斗里每个状态加的是「持有者该项（基础＋加值）×比率×强化率 × pct% × 层数」，向零取整；关着照原数。pct＝原数÷base.shuxing_ref 同项×100 四舍五入成整数，原数不为 0 但取整成 0 的记 ±1（min1 列出是哪几项）。new.note_pct＝true 的（T242，D226 甲）备注数字本来就是百分比，pct 直接取原数，不走参考值；XTianqiBase.SHUXING_NOTE_PCT 关＝这几行照原数当固定数。new.mode＝raw 的是计数器状态（<G_ShuXing> 写 ±1 当单位、真加值在层数里，T228 R1），照原数×层数，不换算、不走兜底。pct 可以直接改表；状态备注被天启篇改写、原数跟 orig 对不上时按参考值现算并警告一次。"
   },
   "skill_fixed": {
    "_note": "T243：技能固定回复 skill_fixed_heal、固定吸取 skill_fixed_drain。期四开着且 XTianqiBase.ABS_SKILL 开着、天启篇存档时，公式里的固定底数 new.base 换成「对象 new.pct_of 上限 × new.pct%」（向下取整），公式其余部分照旧（XTianqiBase.skill_formula，接在 XFormulaExecution.run_item）；orig 是完整原公式，技能公式被改写、对不上 orig 的照原公式并警告一次。mode＝raw 的照原公式（reason）。pct 整数、可直接改表。"

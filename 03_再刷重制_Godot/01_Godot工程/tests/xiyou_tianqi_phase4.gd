@@ -412,7 +412,65 @@ func _shuxing() -> void:
 	b.param_mark_dirty()
 	_check("shuxing.xiyou", not XTianqiBase.shuxing_on() and b.param_state(2, 1000.0) == -1000.0)
 	XTianqiBase.PHASE4 = false
+	_shuxing_note()
 	_shuxing_nanoha()
+
+
+## T242（D226 甲）：1079、1080、1086、1664、2719 备注写的是百分比，按持有者自身该项的百分比生效（new.note_pct）；SHUXING_NOTE_PCT 关＝照原数当固定数
+func _shuxing_note() -> void:
+	XTianqiBase.PHASE4 = true
+	XTianqiBase.ABS_SHUXING = true
+	XTianqiBase.SHUXING_NOTE_PCT = true
+	XTianqiBase.clear_cache()
+	_state()  # 天启篇存档，on() 才为真
+	_check("note.on_switch", XTianqiBase.shuxing_on())
+	var want := {
+		1079: [0, 0, 0, 0, 0, 0, -25, 0], 1080: [0, 0, 0, 0, 0, 0, -35, 0], 1086: [-30, 0, 0, 0, 0, 0, 0, 0],
+		1664: [0, 0, -30, -30, -30, -30, -30, -30], 2719: [30, 30, 200, 30, 30, 30, 30, 30]}
+	var table_ok := true
+	for id in want:
+		var e := XTianqiBase.abs_entry("state_shuxing", int(id))
+		if e.is_empty() or not e.new.get("note_pct", false) or (e.new.pct as Array).map(func(x): return int(x)) != want[id] or (e.orig as Array).map(func(x): return int(x)) != want[id] or e.has("min1"):
+			table_ok = false
+	_check("note.table", table_ok)
+	# 持有者该项 1000：−25% → −250、−35% → −350、生命 −30% → −300、攻击 +200% → +2000、其余 +30% → +300
+	var on_ok := true
+	var got_on := []
+	for id in want:
+		for i in 8:
+			var raw := float(want[id][i])
+			if raw == 0.0:
+				continue
+			var g := XTianqiBase.shuxing_value(int(id), i, raw, 1000.0)
+			got_on.append([id, i, g])
+			if g != raw * 10.0:
+				on_ok = false
+	_check("note.on", on_ok, got_on)
+	_check("note.layers", XTianqiBase.shuxing_value(2719, 2, 200.0, 1000.0, 2.0) == 4000.0)
+	_check("note.pre_zero", XTianqiBase.shuxing_value(1086, 0, -30.0, 0.0) == 0.0)
+	# 回退：只这五个当固定数，别的状态照旧按表
+	XTianqiBase.SHUXING_NOTE_PCT = false
+	var off_ok := true
+	for id in want:
+		for i in 8:
+			var raw := float(want[id][i])
+			if raw != 0.0 and XTianqiBase.shuxing_value(int(id), i, raw, 1000.0, 2.0) != raw * 2.0:
+				off_ok = false
+	_check("note.off_raw", off_ok)
+	_check("note.off_others_unchanged", XTianqiBase.shuxing_value(698, 2, -1000.0, 1000.0) == -540.0, XTianqiBase.shuxing_value(698, 2, -1000.0, 1000.0))
+	XTianqiBase.SHUXING_NOTE_PCT = true
+	# T228 复核 P3-3：先乘后除。表里找一个 pct＝1 的格，29 × 1% × 100 层 ＝ 29（旧写法 0.29×100 差一点取成 28）
+	var one: Array = []
+	for e in XTianqiBase.abs_data().get("entries", []):
+		if e is Dictionary and e.get("kind") == "state_shuxing" and str(e.new.get("mode", "")) != "raw" and not e.new.get("note_pct", false):
+			for i in 8:
+				if int(e.new.pct[i]) == 1 and float(e.orig[i]) > 0.0:
+					one = [int(e.id), i, float(e.orig[i])]
+					break
+		if not one.is_empty():
+			break
+	_check("note.p3_3_mul_then_div", not one.is_empty() and XTianqiBase.shuxing_value(one[0], one[1], one[2], 29.0, 100.0) == 29.0, [one, XTianqiBase.shuxing_value(one[0], one[1], one[2], 29.0, 100.0) if not one.is_empty() else null])
+	XTianqiBase.PHASE4 = false
 
 
 ## T228 R1 P1-1：天启篇存档、期四开，奈叶真放 5694 星煌（挂 1776／1775）和 5691 穹极（预约公共事件挂 1792～1807），
@@ -446,6 +504,8 @@ func _shuxing_nanoha() -> void:
 	logic.turn = 1
 	var counter_ids := [1763, 1769, 1772, 1775, 1776] + range(1781, 1787) + range(1792, 1808)
 	for sk in [5694, 5691]:
+		n.clear_states()  # T228 复核 P3-4：两招之间清状态，后一招不吃前一招留下的状态
+		n.param_mark_dirty()
 		n.mp = n.mmp
 		logic.act(n, XDB.rec("Skills", sk), logic.enemies[0])
 		logic.run_events()

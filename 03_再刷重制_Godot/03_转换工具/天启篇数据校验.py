@@ -1924,6 +1924,8 @@ def abs_rescale_rules(table: dict) -> list:
             elif not (isinstance(n.get('pct'), list) and len(n['pct']) == 8
                       and all(isinstance(x, int) and not isinstance(x, bool) for x in n['pct'])):
                 bad.append('entries/%d（state_shuxing %s）new.pct 要是 8 个整数：%s' % (i, e['id'], n.get('pct')))
+            elif n.get('note_pct') is not None and not (n['note_pct'] is True and n['pct'] == e.get('orig')):
+                bad.append('entries/%d（state_shuxing %s）new.note_pct（T242，备注本来就是百分比）只能是 true，且 pct 要等于 orig：%s' % (i, e['id'], n))
             continue
         if e['kind'] in ('skill_fixed_heal', 'skill_fixed_drain'):  # T243：结构化；固定底数 base 换成对象上限的整数 %（附则 E），没底数的 mode＝raw
             tag = 'entries/%d（%s %s）' % (i, e['kind'], e['id'])
