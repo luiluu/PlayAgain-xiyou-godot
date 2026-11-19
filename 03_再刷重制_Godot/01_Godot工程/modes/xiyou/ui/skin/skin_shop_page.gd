@@ -141,6 +141,8 @@ func sync() -> void:
 		"confirm":
 			set_focus("none")
 	stepper.focused = mode == "number" and stepper.visible
+	if mode != "number":
+		stepper.close_editor()   # 离开数量态：手输框收起，别留着吞数字键和回车（小A核 P2-1）
 	set_hint_list(_hints(mode))
 	_syncing = false
 	_place_tabs()
@@ -519,10 +521,10 @@ func _sync_card(mode: String) -> void:
 			stepper.set_range(1, count, sc._number if in_number else 1)
 		var n2 := stepper.value if stepper.visible else 1
 		if sellable:
-			_foot_lines.append(["这件卖得" if not stack else "合计", price_text(sell_prices(rec), n2), XUiSkin.GOLD_LIGHT])
-		if XShop.MULTI_SELL and sc.has_marks() and sc._gear_sell_list() and not in_number:
-			_foot_lines.append(["按确定一起卖，会先问一次", "", XUiSkin.TEXT_2])
-			buttons.append({"text": "出售已选 %d 件" % sc.marked_count(), "primary": true})
+			_foot_lines.append(["出售可得" if not stack else "合计", price_text(sell_prices(rec), n2), XUiSkin.GOLD_LIGHT])
+		if XShop.MULTI_SELL and sc.has_marks() and (sc._gear_sell_list() or sc._mode == "confirm") and not in_number:
+			_foot_lines.append(["按确定会先弹出确认。", "", XUiSkin.TEXT_2])
+			buttons.append({"text": multi_button_text(), "primary": true})
 		elif in_number and sc._number_mark:
 			buttons.append({"text": "加入已选", "primary": true})
 		elif sellable:
@@ -548,17 +550,17 @@ func _sync_onekey_card() -> void:
 	var row: Dictionary = rows[clampi(sc._onekey, 0, rows.size() - 1)]
 	var g := int(row.grade)
 	if g == XShop.ONEKEY_KIND_ROW:
-		set_card({"title": "出售类别", "subtitle": "现在：" + str(XShop.ONEKEY_KINDS[sc._onekey_kind][0]),
-			"desc": "按确定在「全部」「只卖武器」「只卖护甲」之间换。", "sections": [], "buttons": [{"text": "换一个", "primary": true}]})
+		set_card({"title": "出售类别", "subtitle": "当前：" + str(XShop.ONEKEY_KINDS[sc._onekey_kind][0]),
+			"desc": "按确定在「全部」「只卖武器」「只卖护甲」之间切换。", "sections": [], "buttons": [{"text": "切换类别", "primary": true}]})
 		return
 	if g < 0:
-		set_card({"title": "保留词条", "subtitle": "现在：" + XSafeSell.label(s), "desc": XSafeSell.HELP, "sections": [],
-			"buttons": [{"text": "换一档", "primary": true}]})
+		set_card({"title": "保留词条", "subtitle": "当前：" + XSafeSell.label(s), "desc": XSafeSell.HELP, "sections": [],
+			"buttons": [{"text": "切换门槛", "primary": true}]})
 		return
 	var p := plan_of(g)
 	var sections := []
 	sections.append({"title": "会卖掉", "lines": [{"left": "件数", "right": str((p.sell as Array).size())},
-		{"left": "卖出得", "right": XSkinTemplatePage._group(plan_gold(p)), "right_color": XUiSkin.GOLD_LIGHT}]})
+		{"left": "出售可得", "right": XSkinTemplatePage._group(plan_gold(p)), "right_color": XUiSkin.GOLD_LIGHT}]})
 	var keep: Array = p.keep
 	if not keep.is_empty():
 		var counts := {}
@@ -568,7 +570,7 @@ func _sync_onekey_card() -> void:
 		for why in counts:
 			lines.append({"left": why, "right": str(counts[why])})
 		sections.append({"title": "自动留住 %d 件" % keep.size(), "lines": lines})
-	var desc := "按确定先问一次，光标停在「取消」。" if XSafeSell.ENABLED else ""
+	var desc := "按确定会先弹出确认，光标停在「取消」。" if XSafeSell.ENABLED else ""
 	set_card({"title": str(row.text), "subtitle": "保留词条：" + XSafeSell.label(s) if XSafeSell.ENABLED else "", "desc": desc, "sections": sections,
 		"buttons": [{"text": "卖掉这一档…", "primary": true, "disabled": (p.sell as Array).is_empty()}]})
 
@@ -709,7 +711,9 @@ func confirm_data() -> Dictionary:
 	for i in range(base, rows.size()):
 		buttons.append({"text": str(rows[i][0]), "disabled": not bool(rows[i][1])})
 	if sc._confirm_kind == "multi":
-		return {"title": "出售已选的东西？", "body": str(rows[0][0]), "buttons": buttons, "danger": true}
+		# 正文不借 XShop.multi_rows 的「金币」（西游旧页的字，旧专项按它核）：天启篇货币叫精魂（小A核 P2-3）
+		var body := "已选%s，共得 %s 精魂" % [sc.marked_label(), XSkinTemplatePage._group(sc.marked_gold())]
+		return {"title": "出售已选物品？", "body": body, "buttons": buttons, "danger": true}
 	return {"title": "卖掉这一档？", "body": "%s。%s" % [str(rows[0][0]), str(rows[1][0])], "buttons": buttons, "danger": true}
 
 
@@ -737,27 +741,36 @@ func _hints(mode: String) -> Array:
 		"buy":
 			var h := [["确定", "定数量"]]
 			if _cur_gear():
-				h.append(["←/→", "换人"])
-			h.append(["Q/E", "翻页"])
+				h.append(["← / →", "换人"])
+			h.append(["Q / E", "翻页"])
 			h.append(["取消", "返回"])
 			return h
 		"sell":
 			var h2 := [["确定", "出售已选" if XShop.MULTI_SELL and sc.has_marks() and sc._gear_sell_list() else "出售"]]
 			if sc._gear_sell_list():
 				h2.append(["C", "选 / 不选"])
-			h2.append(["Q/E", "换分类"])
+			h2.append(["Q / E", "换分类"])
 			h2.append(["取消", "返回"])
 			return h2
 		"number":
 			var verb := "加入已选" if sc._number_mark else (T_BUY if sc._number_from == "buy" else T_SELL)
 			if stepper.visible:
-				return [["←/→", "±1"], ["↑/↓", "±10"], ["Q/E", "1 / 最多"], ["确定", verb], ["取消", "返回"]]
+				return [["← / →", "±1"], ["↑ / ↓", "±10"], ["Q / E", "1 / 最多"], ["确定", verb], ["取消", "返回"]]
 			return [["确定", verb], ["取消", "返回"]]
 		"onekey":
 			return [["确定", "选择"], ["取消", "返回"]]
 		"confirm":
-			return [["←/→", "换"], ["确定", "选择"], ["取消", "返回"]]
+			return [["← / →", "切换"], ["确定", "选择"], ["取消", "返回"]]
 	return [["确定", "选择"], ["取消", "返回"]]
+
+
+## 多选主按钮：只有装备写「件」；勾了能叠的物品时按勾了几项写「项」（数量不一定是件数，小A文字审 W-4）
+func multi_button_text() -> String:
+	var sc := scene
+	var ni := sc.live_item_marks().size()
+	if ni == 0:
+		return "出售已选 %d 件" % sc.live_marks().size()
+	return "出售已选 %d 项" % (sc.live_marks().size() + ni)
 
 
 func _cur_gear() -> bool:
@@ -888,6 +901,12 @@ func _set_index(i: int) -> void:
 
 func _on_list_click(i: int) -> void:
 	var sc := scene
+	if sc._mode == "command":
+		# 环上时点列表里正亮着的那一行（第 1 行）：XSkinList 发的是 activated 不是 index_changed，同样进列表（小A核 P2-2）
+		sc._ok()
+		if sc._mode in ["buy", "sell", "onekey"]:
+			_set_index(i)
+		return
 	if sc._mode in ["buy", "sell", "onekey"]:
 		var cur: int = sc._buy_index if sc._mode == "buy" else (sc._sell_index if sc._mode == "sell" else sc._onekey)
 		if i == cur:
@@ -902,7 +921,7 @@ func _on_list_gui(event: InputEvent) -> void:
 		return
 	var p: Vector2 = event.position
 	var row := list.item_at(p)
-	var in_box := row >= 0 and p.x - list.cell_rect(row).position.x < 14.0 + XSkinList.CHECK_W
+	var in_box: bool = row >= 0 and p.x - list.cell_rect(row).position.x < 14.0 + XSkinList.CHECK_W and list.items[row].has("check")   # 不能标的行照常选中（小A核 P3-2）
 	if event.pressed:
 		_check_press = row if in_box else -1
 		if in_box:

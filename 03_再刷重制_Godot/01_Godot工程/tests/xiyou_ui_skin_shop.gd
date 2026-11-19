@@ -117,9 +117,14 @@ func _run() -> void:
 	await _special_shops()
 	await _touch()
 	await _font_and_old()
+	await _review_fixes()
 	XUiSkin.motion_override = -1
 	XFontScale.set_value("global", 100)
 	XState.current = null
+	for pl in XSound._players:   # 系统音还在放会在退出时报「resources still in use」（同 xiyou_ui_skin_5c）
+		if is_instance_valid(pl):
+			pl.stop()
+			pl.stream = null
 	await frames(3)
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
@@ -419,6 +424,7 @@ func _sell() -> void:
 	act(shop, "ui_accept")
 	check("sell.confirm_dialog", shop._mode == "confirm" and pg.dialog != null and pg.dialog.danger and pg.dialog.index == 2 and shop._confirm == 3)
 	check("sell.confirm_buttons", pg.dialog.buttons.map(func(b): return b.text) == ["出售已选", "清空选择", "取消"], pg.dialog.buttons)
+	check("sell.confirm_text_jinghun", pg.dialog.title == "出售已选物品？" and pg.dialog.body.contains("精魂") and not pg.dialog.body.contains("金币"), [pg.dialog.title, pg.dialog.body])
 	await shots("shop_state_multi_confirm")
 	act(shop, "ui_left")
 	act(shop, "ui_left")
@@ -638,3 +644,66 @@ func _font_and_old() -> void:
 	XSkinShopPage.ENABLED = true
 	await frames(2)
 	var _u = s
+
+
+# ---- 小A 核 T283 的 P2 修正 ----
+func _review_fixes() -> void:
+	var s := _state()
+	var it := priced("Items", 1, func(r): return int(r.get("itypeId", 1)) == 1 and int(r.get("price", 0)) < 1000 and bool(r.get("consumable", false)) and not XItemMarks.sell_rewards(r).buy)
+	var shop := open_shop([[0, it[0], 0, 0]])
+	await frames(3)
+	var pg := shop.skin
+	# P2-2：环上点列表里亮着的第 1 行（XSkinList 发 activated）＝进列表
+	check("fix.p2_2_command_row0", shop._mode == "command" and pg.list.index == 0)
+	pg._on_list_click(0)
+	check("fix.p2_2_enter", shop._mode == "buy" and shop._buy_index == 0, shop._mode)
+	# P2-1：数量态开了手输框，离开数量态就收起
+	act(shop, "ui_accept")
+	pg.stepper.open_editor()
+	check("fix.p2_1_editor_open", pg.stepper.editing())
+	act(shop, "ui_cancel")
+	check("fix.p2_1_editor_closed", shop._mode == "buy" and not pg.stepper.editing())
+	shop.queue_free()
+	await frames(2)
+	# P2-4：禁用时停掉按住连加、收起手输框；手输删空回下限
+	var st := XSkinStepper.new()
+	st.sound = false
+	add_child(st)
+	st.size = Vector2(304, XSkinStepper.H)
+	st.set_range(1, 50, 5)
+	st._hold = 2
+	st.open_editor()
+	st.enabled = false
+	check("fix.p2_4_disable_stops", st._hold == -1 and st._press == -1 and not st.editing())
+	st.enabled = true
+	st.open_editor()
+	st._edit.text = "12"
+	st._edit.text_changed.emit("12")
+	st._edit.text = ""
+	st._edit.text_changed.emit("")
+	check("fix.p2_4_empty_to_min", st.value == 1, st.value)
+	st.queue_free()
+	# P2-5：弹窗吃掉右键
+	var host := Control.new()
+	add_child(host)
+	var dlg := XSkinConfirm.open(host, {"title": "x", "buttons": ["确定", "取消"]})
+	var mb := InputEventMouseButton.new()
+	mb.button_index = MOUSE_BUTTON_RIGHT
+	mb.pressed = true
+	dlg._gui_input(mb)
+	check("fix.p2_5_right_click_no_choice", dlg.index == 0)
+	host.queue_free()
+	# W-4：勾了能叠的物品时主按钮写「项」
+	s.gain_item(it[0], 5)
+	shop = open_shop([[0, it[0], 0, 0]])
+	await frames(3)
+	pg = shop.skin
+	shop._item_marks[it[0]] = 3
+	shop._mode = "sell"
+	shop._cat = 1
+	shop._drop_cache()
+	shop._sell_index = maxi(0, shop._sell_data().find_custom(func(x): return int(x.rec.get("id", 0)) == it[0]))
+	shop._refresh()
+	check("fix.w4_items_xiang", pg.card.buttons[0].text == "出售已选 1 项", pg.card.buttons)
+	shop.queue_free()
+	await frames(2)

@@ -5,7 +5,7 @@ extends Control
 ## - danger＝找不回来的操作（卖掉、覆盖、删除、分解…）：橙色 1.5px 边（DOWN），光标默认停在「取消」（最后一枚）；
 ##   普通确认：灰边，光标默认停在第一枚（「确定」）。
 ## - 按钮 2～3 枚：[{text, disabled}]（或直接给字）；约定最后一枚是「取消」。
-## - 按键：左右（上下也认）换钮，确定＝chosen(序号)（禁用的钮蜂鸣、不发），取消＝cancelled。
+## - 按键：左右（上下也认）换钮，确定＝chosen(序号)（禁用的钮也发：页面用 is_disabled(i) 判了自己蜂鸣），取消＝cancelled。
 ##   点钮：点非当前钮＝选中，点当前钮＝确定（同列表）；点弹窗外不算取消（免得误触）。
 ## - 本件不响音：音由页面照原来的逻辑响（商店确认窗的确定／取消音照旧）。
 ## 两种用法：
@@ -104,7 +104,7 @@ func handle_input(event: InputEvent) -> bool:
 	return event.is_pressed()
 
 
-## 按下第 i 枚：禁用的不发（页面自己蜂鸣）
+## 按下第 i 枚：禁用的钮也发 chosen（本件不响音，页面用 is_disabled(i) 判了自己蜂鸣）
 func activate(i: int) -> void:
 	if i < 0 or i >= buttons.size():
 		return
@@ -146,9 +146,11 @@ static func _lines(f: Font, text: String, w: float, fs: int) -> int:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if not (event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT):
+	if not event is InputEventMouseButton:
 		return
-	accept_event()
+	accept_event()   # 模态：右键、滚轮也不穿到底下的页面（小A核 P2-5）
+	if event.button_index != MOUSE_BUTTON_LEFT:
+		return
 	if event.pressed:
 		_press = -1
 		for i in buttons.size():

@@ -44,6 +44,10 @@ var focused := false:
 var enabled := true:
 	set(v):
 		enabled = v
+		if not v:   # 禁用时停掉按住连加、收起手输框（小A核 P2-4）
+			_hold = -1
+			_press = -1
+			close_editor()
 		queue_redraw()
 ## 要不要「最多」钮
 var show_max := true
@@ -257,6 +261,8 @@ func open_editor() -> void:
 				if ch >= "0" and ch <= "9":
 					digits += ch
 			_num_text = ""
+			if digits == "":
+				_set_with_sound(min_value)   # 删空＝回下限（同键盘退格删到空，小A核 P2-4）
 			for ch in digits.left(9):
 				type_digit(int(ch))
 			if _edit.text != _num_text:
