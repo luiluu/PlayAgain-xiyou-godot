@@ -46,15 +46,16 @@ class P extends XBattleScene:
 		done = true
 
 
-## [角色, 技能（0＝职业里 ACTION EFFECT 最多的招）, 敌群, 天启篇, 计时（三次取中）]；按场景分组（单场景控制在几分钟内）
+## [角色, 技能（0＝职业里 ACTION EFFECT 最多的招）, 敌群, 天启篇, 计时（三次取中）, 必须出现的记录类型（可选：collapse＝中途打死、counter＝反击）]；
+## 253 巨型雪猿反击率 15%，劲夫怒拳·乱打（物理多段；拳一的招必中、不被反击）里出反击（反击记录与它那一段同批到）；按场景分组（单场景控制在几分钟内）
 const GROUPS := {
-	"a": [[163, 9939, 2, false, false], [163, 9939, 80, false, true], [163, 9938, 80, false, true]],
+	"a": [[163, 9939, 2, false, false, "collapse"], [163, 9939, 80, false, true], [163, 9938, 80, false, true], [50, 1340, 253, false, false, "counter"]],
 	"b": [[163, 1098, 80, false, true], [163, 9926, 80, false, true], [163, 9934, 80, false, false], [163, 2058, 80, false, false]],
 	"c": [[173, 0, 80, false, false], [172, 0, 80, false, false], [167, 0, 80, false, false], [169, 0, 80, false, false],
 		[170, 0, 80, false, false], [171, 0, 80, false, false], [176, 0, 80, false, false], [177, 0, 80, false, false]],
 	"d": [[175, 0, 80, false, false], [174, 0, 80, false, false], [168, 0, 80, false, false], [108, 0, 80, false, false],
 		[178, 0, 80, false, false], [179, 0, 80, false, false], [36, 0, 80, false, false]],
-	"e": [[173, 0, 80, true, false], [163, 9939, 2, true, false], [172, 0, 80, true, false], [163, 9939, 80, true, true], [163, 9938, 80, true, true]],
+	"e": [[173, 0, 80, true, false], [163, 9939, 2, true, false, "collapse"], [172, 0, 80, true, false], [163, 9939, 80, true, true], [163, 9938, 80, true, true]],
 }
 ## 场景（xiyou_battle_stream、_b…_e）里设
 @export var group := "a"
@@ -239,6 +240,8 @@ func _run() -> void:
 			check("same_state_" + tag, not off.sig.is_empty() and off.sig == on.sig, [off.sig, on.sig])
 			check("same_logs_" + tag, not off.digest.is_empty() and off.digest == on.digest, first_diff(off.digest, on.digest))
 			check("stream_used_" + tag, on.stats.get("same", false) and int(on.stats.get("mismatches", -1)) == 0, on.stats)
+			if c.size() > 5:
+				check("has_%s_%s" % [c[5], tag], on.digest.any(func(row): return row.has(["type", c[5]])), c[5])
 			check("gates_match_effects_" + tag, int(on.stats.get("gates", -1)) == effect_marks(on.digest), [on.stats, effect_marks(on.digest)])
 		var row := {"actor": c[0], "skill": skill, "troop": c[2], "tianqi": c[3], "anim": anim, "off_ms": _median(off_t) / 1000.0, "on_ms": _median(on_t) / 1000.0,
 			"gates": on.stats.get("gates", -1), "max_pull_ms": int(on.stats.get("max_pull", 0)) / 1000.0, "logs": on.digest.size(), "pulls_ms": on.stats.get("pull_ms", [])}
