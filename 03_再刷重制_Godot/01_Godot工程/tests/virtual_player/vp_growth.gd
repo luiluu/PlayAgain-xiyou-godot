@@ -299,6 +299,27 @@ static func shop(shop_page: XShop, st: XState, wanted: Dictionary = {}) -> Dicti
 				var share := n / team.size() + (1 if k < n % team.size() else 0)
 				if share > 0:
 					out.uses.append({"id": int(d[i].gid), "actor": int(team[k].actor_id), "n": share})
+	# 强化石（T238）：身上装备还有空升级槽就买，最多花掉手里金币的三成（书和丹药先买）；买回来由 upgrade_gear 用掉
+	var budget := int(st.gold) * 3 / 10
+	var spent := 0
+	for i in d.size():
+		var e2: Dictionary = d[i]
+		if int(e2.kind) != 0 or not is_upgrade_stone(e2.item) or not shop_page._buy_enabled(e2):
+			continue
+		# 不占升级槽的（庚金这类炼化法宝的材料，Slots: 0）不买：用多少块都不减槽，按槽算的「还能用几块」永远不减，每趟都会再买。掉落捡到的照用
+		if int(XGearUpgrade.rule(e2.item).get("cost", 1)) <= 0:
+			continue
+		var room := upgrade_room(st, e2.item) - st.item_count(int(e2.gid))
+		var price := maxi(1, int(e2.get("price", 1)))
+		var n2 := mini(room, (budget - spent) / price)
+		if n2 <= 0:
+			continue
+		var cost2 := _wallet(st)
+		var got2 := _buy(shop_page, i, n2)
+		if got2 > 0:
+			spent += int(cost2[0]) - int(st.gold)
+			out.bought += got2
+			out.lines.append("买强化石 %s×%d %s" % [str(e2.rec.get("name", "")), got2, _spent(st, cost2)])
 	shop_page._mode = "command"
 	shop_page._drop_cache()
 	shop_page._refresh()
@@ -626,3 +647,118 @@ static func heads(st: XState) -> int:
 		if int(st.items[id]) > 0 and str(XDB.rec("Items", int(id)).get("name", "")).begins_with("头颅"):
 			n += int(st.items[id])
 	return n
+
+
+## 直接换装（T238 快进局用；同装备页确定换装那一步 XEquipment.change，比较口径同按键换装的 _best_candidate）：
+## 出战的人和助力位逐个栏位看背包里装得进的，涨幅超过 2% 的挑最高那件换上。返回做了什么（每件一行）
+## 换装缓存（T238 第三棒）：「人:格」→ {sig, ids}。--vp-no-equip-cache 关掉（每次整包重比）
+static var _equip_seen := {}
+static var equip_cache := true
+
+
+static func _gear_key(rec: Dictionary):
+	return rec.get("instanceId", rec.get("id", 0))
+
+
+static func equip_direct(st: XState) -> Array:
+	var out := []
+	var who: Array = st.battle_members().duplicate()
+	var helper = st.helper()
+	if helper != null and not who.has(helper):
+		who.append(helper)
+	# 背包只取一次（原来每人每格各取两遍，一次 1700 件要筛、排序）
+	var bag: Array = XItemScene.bag_gear("weapon") + XItemScene.bag_gear("armor")
+	for a in who:
+		for slot in XTianqiGear.view(a):
+			if not XEquipment.can_change(a, slot):
+				continue
+			# 比过的不再比（T238 第三棒量到：背包 1700 件时整队比一遍要 301 秒，快进一轮要比两遍）：
+			# 每人每格记「比过哪些件」，这个人等级、这一格身上那件都没变就只比新进背包的；变了整格重比
+			var cur = a.equips[slot] if slot < a.equips.size() else null
+			var sig := "%d|%d|%s" % [a.level, slot, str(_gear_key(cur)) if cur is Dictionary and not cur.is_empty() else "-"]
+			var ck := "%d:%d" % [a.actor_id, slot]
+			var seen: Dictionary = _equip_seen.get(ck, {})
+			if str(seen.get("sig", "")) != sig:
+				seen = {"sig": sig, "ids": {}}
+				_equip_seen[ck] = seen
+			var ids: Dictionary = seen.ids
+			var best := {}
+			var best_score := 0.02
+			for rec in bag:
+				var key = _gear_key(rec)
+				if equip_cache and ids.has(key):
+					continue
+				ids[key] = true
+				if not XEquipment.fits(a, slot, rec) or XEquipment.dual_blocked(a, slot, rec):
+					continue
+				var t := XEquipment.preview(a, slot, rec)
+				if t == null:
+					continue
+				var score: float = gain_score(a, t)
+				if score > best_score:
+					best_score = score
+					best = rec
+			if best.is_empty():
+				continue
+			bag.erase(best)
+			var hp_rate: float = a.hp / maxf(1.0, a.mhp)
+			var mp_rate: float = a.mp / maxf(1.0, a.mmp)
+			XEquipment.change(st, a, slot, best)
+			a.hp = maxf(0.0 if a.is_dead() else 1.0, floorf(a.mhp * hp_rate))
+			a.mp = floorf(a.mmp * mp_rate)
+			out.append("%s 换上 %s（涨 %d%%）" % [a.display_name(), str(best.get("name", "")), int(best_score * 100)])
+	return out
+
+
+# ---------------------------------------------------------------- 强化石（T238，变强途径清单 11）
+
+## 是不是能用在武器／防具升级槽上的强化材料（磨刀石、魔力晶片、护甲片、精华液这类；YEP 升级插槽，规则在物品的 upgrade 里）。
+## 只认全是加数值的（不认会拆槽、改元素这种：它挑不来）
+static func is_upgrade_stone(item: Dictionary) -> bool:
+	var data := XGearUpgrade.rule(item)
+	if data.is_empty() or not data.get("issues", []).is_empty():
+		return false
+	for kind in ["weapon", "armor"]:
+		for eff in data.get(kind, []):
+			if str(eff.get("op", "")) != "param" or float(eff.get("value", 0)) < 0.0:
+				return false
+	return not (data.get("weapon", []).is_empty() and data.get("armor", []).is_empty())
+
+
+## 出战的人身上的武器和防具（助力位也算：它的装备效果照算）
+static func _worn(st: XState) -> Array:
+	var out := []
+	for a in st.battle_members() + ([st.helper()] if st.helper() != null else []):
+		for g in a.equips:
+			if g is Dictionary and not g.is_empty() and str(g.get("kind", "")) in ["weapon", "armor"] and not out.has(g):
+				out.append(g)
+	return out
+
+
+## 这种强化石还能往身上装备里用几块（每件按剩的升级槽÷每块的花费算）
+static func upgrade_room(st: XState, item: Dictionary) -> int:
+	var cost := maxi(1, int(XGearUpgrade.rule(item).get("cost", 1)))
+	var n := 0
+	for g in _worn(st):
+		if XGearUpgrade.reason(g, item, 1) == "":
+			n += int(g.get("upgradeSlots", 6)) / cost
+	return n
+
+
+## 背包里的强化石全用到身上装备的空升级槽里（同物品页「升级」：XGearUpgrade.apply 判条件、扣材料）。返回给报告的文字
+static func upgrade_gear(st: XState) -> Array:
+	var lines := []
+	var used := {}
+	for id in st.items.keys():
+		var item := XDB.rec("Items", int(id))
+		if item.is_empty() or not is_upgrade_stone(item):
+			continue
+		for g in _worn(st):
+			while st.item_count(int(id)) > 0 and XGearUpgrade.reason(g, item, st.item_count(int(id))) == "":
+				if not XGearUpgrade.apply(st, g, int(id)):
+					break
+				var k := "%s→%s" % [str(item.get("name", id)), str(g.get("name", ""))]
+				used[k] = int(used.get(k, 0)) + 1
+	for k in used.keys():
+		lines.append("强化 %s ×%d" % [k, int(used[k])])
+	return lines
