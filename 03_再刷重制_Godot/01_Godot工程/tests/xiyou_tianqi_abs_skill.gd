@@ -56,12 +56,17 @@ func _run() -> void:
 	seed(20261119)
 	XTianqiBase.clear_cache()
 	_table()
+	var keep_cap := XTianqiBase.ENEMY_HEAL_CAP
+	_check("cap.default_0", keep_cap == 0, keep_cap)  # 临时 0，等 Kyo D229
+	_cap0()
+	XTianqiBase.ENEMY_HEAL_CAP = 100  # 下面按表 100% 的断言临时放开封顶，测完恢复
 	_on()
 	_off_paths()
 	_real_heal()
 	_split()
 	_cap()
 	_p3_2()
+	XTianqiBase.ENEMY_HEAL_CAP = keep_cap
 	XTianqiBase.PHASE4 = true
 	XTianqiBase.ABS_SKILL = true
 	var passed := results.filter(func(r): return r.passed).size()
@@ -244,7 +249,7 @@ func _split() -> void:
 	lg.end_battle(0)
 
 
-## ENEMY_HEAL_CAP：敌人给敌人的固定回复百分比封顶（默认 100＝不封顶）；我方回复不受影响
+## ENEMY_HEAL_CAP：敌人给敌人的固定回复百分比封顶（100＝不封顶；默认临时 0，见 _cap0）；我方回复不受影响
 func _cap() -> void:
 	XTianqiBase.PHASE4 = true
 	XTianqiBase.ABS_SKILL = true
@@ -252,10 +257,28 @@ func _cap() -> void:
 	var e: XEnemy = lg.enemies[0]
 	var a: XActor = lg.actors[0]
 	var b: XActor = lg.actors[1]
-	_check("cap.default", XTianqiBase.ENEMY_HEAL_CAP == 100)
 	XTianqiBase.ENEMY_HEAL_CAP = 30
 	var v := _raw(lg, e, 1301, e)
 	_check("cap.enemy", v == -floorf(float(e.mhp) * 30.0 / 100.0), [v, e.mhp])
 	_check("cap.actor_free", XTianqiBase.skill_abs_part(XDB.rec("Skills", 1218), a, b) == floorf(float(b.mhp)), XTianqiBase.skill_abs_part(XDB.rec("Skills", 1218), a, b))
 	XTianqiBase.ENEMY_HEAL_CAP = 100
+	lg.end_battle(0)
+
+
+## ENEMY_HEAL_CAP＝0（临时默认，等 Kyo D229）：敌人自疗的底数这部分回 0；1301 实战不回；3570 只剩魔攻项；我方回复照表
+func _cap0() -> void:
+	XTianqiBase.PHASE4 = true
+	XTianqiBase.ABS_SKILL = true
+	XTianqiBase.ENEMY_HEAL_CAP = 0
+	var lg := _logic(true)
+	var e: XEnemy = lg.enemies[0]
+	var a: XActor = lg.actors[0]
+	var b: XActor = lg.actors[1]
+	_check("cap0.part", XTianqiBase.skill_abs_part(XDB.rec("Skills", 1301), e, e) == 0.0)
+	_check("cap0.1301_formula", _raw(lg, e, 1301, e) == 0.0, _raw(lg, e, 1301, e))
+	_check("cap0.3570_attr_only", _raw(lg, e, 3570, e) == -float(e.mat) * 1000.0, [_raw(lg, e, 3570, e), e.mat])
+	e.hp = 1.0
+	lg.apply(e, XDB.rec("Skills", 1301), e)
+	_check("cap0.1301_real", e.hp == 1.0, e.hp)
+	_check("cap0.actor_free", XTianqiBase.skill_abs_part(XDB.rec("Skills", 1218), a, b) == floorf(float(b.mhp)))
 	lg.end_battle(0)

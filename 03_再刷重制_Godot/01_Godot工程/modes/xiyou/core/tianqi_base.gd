@@ -55,8 +55,9 @@ static var ABS_SHUXING := true
 ## T243：技能公式里写死的固定回复底数（skill_fixed_heal，如「200 + a.mat」的 200、屏障术 1301 的 3000000）和固定吸取量（skill_fixed_drain）
 ## 换成「对象该项上限的整数百分比」（abs_rescale.json）。只在总开关开着、天启篇存档时生效；false＝照原公式（回退）
 static var ABS_SKILL := true
-## T243 R1：敌人给敌人（含自疗）的技能固定回复，换算后的百分比统一封顶（整数 %，默认 100＝不封顶；Kyo 定了直接改这个数，表里各行 pct 照旧可改）
-static var ENEMY_HEAL_CAP := 100
+## T243 R1：敌人给敌人（含自疗）的技能固定回复，换算后的百分比统一封顶（整数 %，100＝不封顶，表里各行 pct 照旧可改）。
+## 临时 0，等 Kyo D229：0＝敌人自疗的底数这部分不回（跟现状实战几乎不回一致），公式里的属性项照旧（乘 enemy_heal）；Kyo 定了直接改这个数
+static var ENEMY_HEAL_CAP := 0
 const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
 const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",
 	"SkillPass\\d+", "passiveAPLUS", "AgainUseAll", "passiveIRUP", "passiveGRUP", "passiveSPBST\\d", "ConsumeReduce\\w+", "passiveEXTTP", "DepassiveHarmRe\\d+",
