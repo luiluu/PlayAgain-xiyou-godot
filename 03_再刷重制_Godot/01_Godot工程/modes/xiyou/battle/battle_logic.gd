@@ -3359,6 +3359,9 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 			var sid := int(eff.dataId)
 			var ids := u.attack_states() if sid == 0 else [sid]
 			for id in ids:
+				if XTianqiWeakB2.settle(self, u, t, id, r):  # 天启篇弱者专属词条批 2 露茜「催花」：旧持续回复一次结清，这一次不拿新的（照常掷一次，不挪随机）
+					_float("add_state")
+					continue
 				# 普攻附加状态（itemEffectAddAttackState）另乘行动者的 attackStatesRate（特性 32 的值＋passiveATKST）；
 				# 指定状态（YEP_BattleEngineCore itemEffectAddNormalState）对必中（hitType 0）的技能／物品不乘状态有效度与幸运差
 				var chance := v1
@@ -3381,6 +3384,7 @@ func _apply_effect(u: XBattler, t: XBattler, eff: Dictionary, r: Dictionary) -> 
 					else:
 						_state_add(t, id)
 						r.added.append(id)
+						XTianqiWeakB2.note_state(self, u, t, id)  # 天启篇弱者专属词条批 2 露茜：记下持续回复是谁上的
 						XTianqiPlagueAlien.on_state_added(self, u, t, id)  # 天启篇瘟疫线异化：疫源让我方减益多几回合
 		22:
 			if _float("remove_state") < v1 and not XTianqiPlagueAlien.purge_blocked(self, u, t, int(eff.dataId)):  # 天启篇瘟疫线异化：疫源让净化可能失败

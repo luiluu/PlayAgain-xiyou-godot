@@ -735,6 +735,9 @@ static func formula(a, b, item: Dictionary) -> float:
 			eff *= m2
 	if hit_cap > 0.0 and eff > hit_cap * cap_hits(d):  # T192：卡上写合计、模块再按段分的（cap_hits），按每段封
 		v *= hit_cap * cap_hits(d) / eff  # 卡面系数×条件全中后超过上限：压回上限（数据校验已按上限拆段，这里只兜底）
+	var wpct := XTianqiWeakAffix.dmg_pct(a, _cur_skill)  # 天启篇弱者专属词条批 2：波风水门第一次飞雷神这一根 −30%（整数百分比）
+	if wpct != 100:
+		v *= wpct / 100.0
 	v = maxf(0.0, v)
 	return -v if kind in [3, 4] else v
 
@@ -1642,11 +1645,25 @@ static func end_action(logic, u, skill) -> Array:
 			u.mp = float(u.mp) * (1.0 - float(spec(int(f.skill.id)).mp_drain))
 	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not u.is_alive() or not cards_on():
 		return logs
-	if int(st.used.get(u, -1)) == int(logic.turn):
+	var cands := _follow_of(u, f.skill)
+	var used := int(st.used.get(u, -1)) == int(logic.turn)
+	# 天启篇弱者专属词条批 2 魔雷老人「蓄雷」：五雷不再掷，按格落（落雷仍是原生追加，占本回合的追加次数）
+	var wb := XTianqiWeakB2.thunder(logic, u, cands, used)
+	logs.append_array(wb.logs)
+	cands = wb.cands
+	if not (wb.fall as Array).is_empty():
+		st.used[u] = int(logic.turn)
+		st.depth = int(st.depth) + 1
+		follow_scale = float(wb.fall[1]) / 100.0 * float(wb.fall[3])
+		logs.append_array(_cast(logic, u, wb.fall[0], [wb.fall[2]]))
+		follow_scale = 1.0
+		st.depth = int(st.depth) - 1
+		return logs
+	if used:
 		return logs
 	var alive: Array = f.targets.filter(func(t): return t.is_alive())
 	var hit := []
-	for c in _follow_of(u, f.skill):
+	for c in cands:
 		if logic._float("tianqi_skill_follow") < float(c[1]):
 			hit = c
 			break
@@ -1665,6 +1682,11 @@ static func end_action(logic, u, skill) -> Array:
 	if targets.is_empty():
 		return logs
 	st.used[u] = int(logic.turn)
+	# 天启篇弱者专属词条批 2 艾坤「一坤年之威」：球来已过全部检查、即将结算——取消，改成传球库存补到 3（复用这一次抽样）
+	var wp := XTianqiWeakB2.intercept_pass(logic, u, cast)
+	if not wp.is_empty():
+		logs.append_array(wp)
+		return logs
 	st.depth = int(st.depth) + 1
 	follow_scale = float(hit[2])
 	logs.append_array(_cast(logic, u, cast, targets))
