@@ -164,6 +164,7 @@
     "XTianqiQiyin.seal_keys": "调用处在天启篇开关守卫内（西游档不进；已逐个看过调用处）",
     "XTianqiQiyinArt.icon_texture": "调用前先过 is_icon(index)，空壳 is_icon 恒 false，走不到",
     "XTianqiQiyinEffects.end_action": "返回追加动作／日志数组，调用处按「空＝没有」处理（append_array 或 is_empty 判断），西游档真脚本也是 []",
+    "XTianqiQiyinEffects.followup_settle": "返回追加动作／日志数组，调用处 append_array 按「空＝没有」处理，西游档真脚本也是 []（T240）",
     "XTianqiQiyinEffects.end_turn": "返回追加动作／日志数组，调用处按「空＝没有」处理（append_array 或 is_empty 判断），西游档真脚本也是 []",
     "XTianqiQiyinRule.decide_enemy": "返回追加动作／日志数组，调用处按「空＝没有」处理（append_array 或 is_empty 判断），西游档真脚本也是 []",
     "XTianqiRandom.battle_source": "返回空串＝没钉住战斗键，gain_gear 照旧路径（真脚本西游档同样返回 \"\"）",

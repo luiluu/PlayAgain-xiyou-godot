@@ -4,6 +4,8 @@ extends Node
 ## 七印派生（_derived：送行连斩等）。打倒的触发：击杀叠层（un.kills）、送行连斩、击倒再动、词条斩获（一次行动只一次）。
 ## 连锁上限：一次行动里追加击倒的结算最多 FOLLOW_KILL_MAX 轮（默认 3）；送行连斩去掉 chain（每轮只斩一刀）、全场 1 血构造连锁，断言停在上限。
 ## 补刀（队友出手）不记给行动者；开关关回到 T232 时的样子；西游档不建数据。
+## R1（小A 核）：原样「送行」（chain 为真）自己连出来的击倒，结算里不再重开连斩（场上留高血目标，断言不白嫖）；
+## 反伤反死、连命同步倒下的不算行动者的追加击倒；七印 ENABLED 关着时再释放打倒照样回斩获；词条 begin_action 清 last。
 ## 行动收尾按 battle_logic.act 的次序手动走（七印 end_action → 词条 end_action → 技能 end_action（只在追加释放场景里用 _cast 代替掷几率）→ followup_settle）。
 
 const ARMOR_ID := 1
@@ -152,9 +154,9 @@ func _begin(lg, u, sk) -> void:
 func _row(lg, u, tag: String) -> Dictionary:
 	var un: Dictionary = XTianqiQiyinEffects._unit(lg, u)
 	var pct := float(XTianqiAffixBattle.view(u).get("p", {}).get("harvest", 0.0))
-	var last: Dictionary = XTianqiQiyinEffects._store(lg).get("fu_last", {})
+	var last: Dictionary = lg.get_meta(XTianqiQiyinEffects.FU_LAST_META) if lg.has_meta(XTianqiQiyinEffects.FU_LAST_META) else {}
 	return {"tag": tag, "kills": int(un.kills), "again": lg.current_order.any(func(x): return is_same(x, u)),
-		"mp": u.mp, "want": floorf(u.mmp * pct / 100.0), "rounds": int(last.get("rounds", -1)), "left": int(last.get("left", -1)),
+		"mp": u.mp, "want": floorf(u.mmp * pct / 100.0), "rounds": int(last.get("rounds", -1)), "left": int(last.get("left", -1)), "chain_runs": int(last.get("chain_runs", -1)),
 		"dead": lg.enemies.filter(func(e): return e.is_dead()).size(), "enemies": lg.enemies.size()}
 
 
@@ -209,7 +211,7 @@ func _follow_cast(on: bool, seq: bool) -> Dictionary:
 	return row
 
 
-## 三、七印派生连锁＋上限：红印 5 件＋送行（chain 去掉：每轮只斩一刀），全场 1 血；
+## 三、七印派生连锁＋上限：红印 5 件＋送行（chain 去掉：每轮只斩一刀，相当于 chain 为假的连斩；原样见 _raw_songxing），全场 1 血；
 ## 主招打倒 1 个 → 主收尾连斩打倒 1 个（记进窗口）→ 每轮结算再连斩 1 个……停在 cap 轮
 func _chain(on: bool, cap: int) -> Dictionary:
 	XTianqiQiyinEffects.FOLLOW_KILLS = on
@@ -290,8 +292,94 @@ func _act_smoke() -> void:
 	var row := _row(lg, u, "act_smoke")
 	var st: Dictionary = XTianqiQiyinEffects._store(lg)
 	table.append(row)
-	_check("act_smoke_settled", int(row.rounds) >= 1 and int(row.rounds) <= 3 and int(row.kills) == int(row.dead) - int(row.left) and (st.get("fu", {}) as Dictionary).is_empty(), row)
+	_check("act_smoke_settled", int(row.rounds) >= 1 and int(row.rounds) <= 3 and int(row.kills) == int(row.dead) - int(row.left) and int(row.chain_runs) == 0 and not lg.has_meta(XTianqiQiyinEffects.FU_META), row)
 	lg.end_battle(0)
+
+
+## 七、原样「送行」（chain 为真）：怨念之魂×8，E0 主招打倒，其余 1 血、只有 hi 那个满血；
+## 连斩在 _chain_slash 里自己连（砍倒 1 血的就接着砍，砍到满血的停），结算轮不再重开连斩（chain_runs 0、结算日志里没有出手），
+## 满血的那个只可能挨主收尾里的一刀
+func _raw_songxing(hi: int) -> Dictionary:
+	var lu := _setup(_gear_set("hong", 5) + [{"kind": "weapon", "seal": "hui", "key": "songxing"}], [_x("harvest")], CHAIN_TROOP)
+	var lg: XBattleLogic = lu[0]
+	var u: XActor = lu[1]
+	var raw: Dictionary = XTianqiQiyinEffects.effects(lg, u).get("kill_chain_slash", {})
+	_prep_all(lg, 1.0)
+	var big: XEnemy = lg.enemies[hi]
+	big.hp = big.mhp
+	var sk := u.attack_skill()
+	_begin(lg, u, sk)
+	lg.apply(u, sk, lg.enemies[0])
+	var l1 := XTianqiQiyinEffects.end_action(lg, u, sk)
+	var big_after_main := big.hp
+	XTianqiAffixBattle.end_action(lg, u, sk)
+	var l2 := XTianqiQiyinEffects.followup_settle(lg, u, sk)
+	var row := _row(lg, u, "raw_songxing_hi%d" % hi)
+	row.raw_chain = bool(raw.get("chain", false))
+	row.slashes_main = l1.filter(func(l): return l is Dictionary and l.get("type") == "action").size()
+	row.slashes_settle = l2.filter(func(l): return l is Dictionary and l.get("type") == "action").size()
+	row.big_alive = big.is_alive()
+	row.big_untouched_by_settle = is_equal_approx(big.hp, big_after_main)
+	lg.end_battle(0)
+	return row
+
+
+## 八、反伤反死、连命同步倒下：窗口里行动者这一击没把目标打到 0 的，之后被别的路子弄倒不算；只有挨了致命一击的那个算
+func _not_mine() -> Dictionary:
+	var lu := _setup(_gear_set("hong", 5), [])
+	var lg: XBattleLogic = lu[0]
+	var u: XActor = lu[1]
+	var sk := u.attack_skill()
+	var e0: XEnemy = lg.enemies[0]
+	var e1: XEnemy = lg.enemies[1]
+	var e2: XEnemy = lg.enemies[2]
+	_begin(lg, u, sk)
+	XTianqiQiyinEffects.end_action(lg, u, sk)
+	XTianqiAffixBattle.end_action(lg, u, sk)
+	var before := XTianqiQiyinEffects.fu_snap(lg, u)
+	e0.hp = e0.mhp
+	lg.apply(u, sk, e0)  # 挨打没死
+	var e0_alive_after_hit := e0.is_alive()
+	lg._die(e0)  # 反击时被反伤反死（出手者不是行动者）
+	e1.hp = 1.0
+	lg.apply(u, sk, e1)  # 致命一击
+	lg._die(e2)  # 连命同步倒下（没挨这一击）
+	XTianqiQiyinEffects.fu_note(lg, u, before)
+	XTianqiQiyinEffects.followup_settle(lg, u, sk)
+	var row := _row(lg, u, "not_mine")
+	row.e0_alive_after_hit = e0_alive_after_hit
+	row.e1_dead = e1.is_dead()
+	lg.end_battle(0)
+	return row
+
+
+## 九、七印 ENABLED 关着：再释放打倒照样回词条斩获（窗口由词条 end_action 开）；词条 begin_action 清上一动的 last
+func _qiyin_off_harvest() -> void:
+	XTianqiQiyinEffects.ENABLED = false
+	var rc := []
+	for i in 17:
+		rc.append(_x("recast", 4, "perfect"))
+	rc.append(_x("harvest"))
+	var lu := _setup(_gear_set("hong", 5), rc)
+	var lg: XBattleLogic = lu[0]
+	var u: XActor = lu[1]
+	var sk := _seq_skill(1)
+	var e: XEnemy = lg.enemies[0]
+	_begin(lg, u, sk)
+	e.hp = e.mhp
+	lg.apply(u, sk, e)
+	e.hp = 1.0
+	XTianqiQiyinEffects.end_action(lg, u, sk)
+	XTianqiAffixBattle.end_action(lg, u, sk)
+	XTianqiQiyinEffects.followup_settle(lg, u, sk)
+	var pct := float(XTianqiAffixBattle.view(u).get("p", {}).get("harvest", 0.0))
+	var want := floorf(u.mmp * pct / 100.0)
+	_check("qiyin_off_no_store", not lg.has_meta("xqiyin"))
+	_check("qiyin_off_recast_harvest", e.is_dead() and want > 0.0 and is_equal_approx(u.mp, want), [e.is_dead(), u.mp, want])
+	XTianqiAffixBattle.begin_action(lg, u, sk)
+	_check("affix_begin_clears_last", (XTianqiAffixBattle._store(lg).get("last", {}) as Dictionary).is_empty())
+	lg.end_battle(0)
+	XTianqiQiyinEffects.ENABLED = true
 
 
 func _run() -> void:
@@ -326,6 +414,21 @@ func _run() -> void:
 	_check("budao_not_actor_kill", bool(b.has_budao) and bool(b.e_dead) and int(b.kills) == 0 and int(b.rounds) == 0, b)
 	_legacy()
 	_act_smoke()
+	var picked_low := false
+	for hi in [7, 3]:
+		var r := _raw_songxing(hi)
+		table.append(r)
+		var chained := int(r.dead) - 1  # 主收尾连斩砍倒的 1 血敌人
+		picked_low = picked_low or chained > 0
+		_check("raw_songxing_chain_true_hi%d" % hi, bool(r.raw_chain), r)
+		_check("raw_songxing_no_resettle_hi%d" % hi, int(r.chain_runs) == 0 and int(r.slashes_settle) == 0 and bool(r.big_untouched_by_settle) and bool(r.big_alive) and int(r.dead) < int(r.enemies), r)
+		# 主收尾里：每砍倒一个 1 血的就接着砍，砍到满血的那一刀停：刀数＝连斩砍倒数＋1。叠层＝倒下数（主招 1＋连斩砍倒的，结算轮照数）
+		_check("raw_songxing_slashes_hi%d" % hi, int(r.slashes_main) == chained + 1 and int(r.kills) == int(r.dead) and int(r.rounds) == (1 if chained > 0 else 0), r)
+	_check("raw_songxing_covers_chained_kill", picked_low)
+	var nm := _not_mine()
+	table.append(nm)
+	_check("not_mine_reflect_linked", bool(nm.e0_alive_after_hit) and bool(nm.e1_dead) and int(nm.dead) == 3 and int(nm.kills) == 1 and int(nm.rounds) == 1, nm)
+	_qiyin_off_harvest()
 	print("FOLLOW_KILL_TABLE ", JSON.stringify(table.map(func(r): return r)))
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:

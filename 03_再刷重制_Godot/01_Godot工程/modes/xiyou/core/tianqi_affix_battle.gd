@@ -452,6 +452,9 @@ static func begin_action(logic, u, skill: Dictionary) -> void:
 		return
 	var f := {"u": u, "skill": skill, "first": false, "harvested": false, "targets": [], "before": {}}
 	st.act = f
+	st.last = {}  # T240 R1：上一动的斩获记录不带进来
+	if not XTianqiQiyinEffects._active(logic):
+		XTianqiQiyinEffects.fu_clear(logic)  # 七印没开时窗口由这里清、开
 	if u is XActor and _is_damage(skill) and _pv(u, "first_strike") > 0.0:
 		var un := _unit(logic, u)
 		if int(un.first_turn) != int(logic.turn):
@@ -525,6 +528,7 @@ static func end_action(logic, u, skill) -> Array:
 	if int(st.depth) == 0 and not f.is_empty() and is_same(f.u, u):
 		_confirm_harvest(f)
 		st.last = {"u": u, "harvested": bool(f.harvested)}  # T240：追加出手打倒的再回斩获时认「这次行动回过没有」
+		XTianqiQiyinEffects.fu_open(logic, u)  # T240 R1：七印开着时它的 end_action 已开过（同一人不重开）；七印 ENABLED 关着时由这里开，再释放／追加释放照样回斩获
 	if int(st.depth) > 0 or f.is_empty() or not is_same(f.u, u) or not (u is XActor) or not (skill is Dictionary) or skill.is_empty():
 		return logs
 	if u.is_attack(skill) or not u.is_alive():
