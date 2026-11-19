@@ -199,7 +199,11 @@ func _place() -> void:
 	var span := Vector2(x, x + chip.size.x)
 	var tree := get_tree()
 	if tree != null:
-		for n in tree.get_nodes_in_group(AVOID_GROUP):
+		var avoid: Array = tree.get_nodes_in_group(AVOID_GROUP)
+		var plate := _map_plate(tree) if not _menu_open(tree) else null
+		if plate != null:
+			avoid.append(plate)
+		for n in avoid:
 			if n is Control and (n as Control).is_visible_in_tree() and (n as Control).modulate.a > 0.01:
 				var r := (n as Control).get_global_rect()
 				if r.position.x < span.y and r.end.x > span.x and r.position.y < y + chip.size.y:
@@ -208,6 +212,33 @@ func _place() -> void:
 		if arc > 0.0:
 			y = maxf(y, arc)
 	chip.position = Vector2(x, y)
+
+
+## 全屏菜单页开着（地图名横幅被盖住，不用让）
+static func _menu_open(tree: SceneTree) -> bool:
+	for n in tree.get_nodes_in_group(XUiSkin.FULLSCREEN_GROUP):
+		if n is CanvasItem and (n as CanvasItem).is_visible_in_tree():
+			return true
+	return false
+
+
+## 地图名横幅（XMapScene 的 MapNamePlate，进图时滑下来停几秒）：按场景缓存，不每帧整树找
+var _plate_scene: Node
+var _plate: WeakRef
+var _plate_miss := 0
+
+
+func _map_plate(tree: SceneTree) -> Control:
+	var cs := tree.current_scene
+	_plate_miss += 1
+	if cs != _plate_scene or ((_plate == null or _plate.get_ref() == null) and _plate_miss >= 30):
+		_plate_scene = cs
+		_plate_miss = 0
+		var found := cs.find_child("MapNamePlate", true, false) if cs != null else null
+		_plate = weakref(found) if found != null else null
+	if _plate == null:
+		return null
+	return _plate.get_ref() as Control
 
 
 ## 首领血弧亮着时它的下沿（同 XDifficultyNoticeCanvas 的让位，+48 让开名字和血量数字）
