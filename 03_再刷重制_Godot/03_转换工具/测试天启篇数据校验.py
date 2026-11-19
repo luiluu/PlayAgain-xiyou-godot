@@ -792,8 +792,31 @@ class ForcedCopyT255(unittest.TestCase):
         self.assertTrue(any('7057' in b for b in chk.forced_copy_rules(self.t)))
 
     def test_pending_needs_reason(self):
-        self.t['forced_copy_pending']['623'] = ' '
-        self.assertTrue(chk.forced_copy_rules(self.t))
+        self.t['skills']['502']['effects_remove'] = []
+        self.t['forced_copy_pending']['502'] = ' '
+        self.assertTrue(any('502' in b for b in chk.forced_copy_rules(self.t)))
+
+    def test_unreachable_needs_reason_and_gap(self):
+        # 4507 玛莎风旋术：公共事件 945 只在学了 229 时放 4893，天启篇走不到，登在 forced_copy_unreachable 放行
+        self.assertEqual(chk.forced_copy_rules(self.t), [])
+        self.assertIn('4507', self.t['forced_copy_unreachable'])
+        self.t['forced_copy_unreachable']['4507'] = ' '
+        self.assertTrue(any('4507' in b for b in chk.forced_copy_rules(self.t)))
+        del self.t['forced_copy_unreachable']['4507']
+        self.assertTrue(any('4507' in b for b in chk.forced_copy_rules(self.t)))
+
+    def test_unreachable_stale(self):
+        self.t['forced_copy_unreachable']['502'] = '测试'
+        self.assertTrue(any('502' in b for b in chk.forced_copy_rules(self.t)))
+
+    def test_b1_copies_in_card(self):
+        # T261：B 组一的副本都进卡（或 623 去强制），不再登记待定
+        pend = self.t.get('forced_copy_pending', {})
+        for sid in ('4374', '4380', '4383', '5497', '5848', '5852', '5853', '5928', '5935', '7313', '623'):
+            self.assertNotIn(sid, pend)
+        for sid in ('2836', '2837', '5837', '5838', '5494', '5930', '7314'):
+            self.assertIn(sid, self.t['skills'])
+        self.assertEqual(self.t['skills']['623']['effects_remove'], [[44, 91]])
 
     def test_copy_in_card_ok(self):
         # 副本进卡就不算缺口（7057 的 2365 强制 7075：把 7075 登成卡、撤掉 effects_remove）
