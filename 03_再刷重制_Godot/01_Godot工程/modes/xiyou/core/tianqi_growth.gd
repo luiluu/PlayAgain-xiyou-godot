@@ -17,7 +17,7 @@ extends RefCounted
 ## 本卡不接三人计数规则（T257）：计数在基础段以内时层数 0，param_flat 恒 0，T220 现数不变。
 ## 地雷（稿 3.2 第 6 条）：奈叶被动「凤霞」（魔法上限一成算进魔攻）现在没实装；它读面板最大魔法，平加挡不住，实装时 Y 要重标。
 ##
-## 回退开关（O-待定）：ENABLED＝false 整个关掉（param_flat 恒 0、layers 恒 0、floor_ok 恒 true，回到 T220）；
+## 回退开关（O-620）：ENABLED＝false 整个关掉（param_flat 恒 0、layers 恒 0、floor_ok 恒 true，回到 T220）；
 ## RACE_FLAT＝false 时种族祝福照旧放大平加（回到落点只在 param_before_alien 里的做法）。
 
 static var ENABLED := true
