@@ -1,0 +1,15 @@
+#!/bin/zsh
+cd "${0:A:h}/../.."
+G=../07_开发环境/godot
+FL=${FL:-12,13,16,19,20,24,28,32}
+run() { local tag=$1; shift; $G --headless --audio-driver Dummy --path . -s res://tests/test_main_loop.gd res://tests/virtual_player/t227_probe.tscn -- --both --resist=0 --turns=8 --floor-list=$FL --out=.sandbox/t227/abl_$tag.json "$@" 2>&1 | grep -E "^T227|SCRIPT ERROR" > .sandbox/t227/abl_$tag.log; }
+run base
+run no_ours_debuff --strip-ours=695,696,698
+run no_boss_buff --strip=686,691
+run no_dmg_cut --strip=1103,1104
+run no_lunhui --strip=1460
+run no_extra_act --strip=44
+run no_domain --strip=686,691,1103,1104,44 --strip-ours=695,696,698
+run no_all --strip=686,691,1103,1104,44,1460 --strip-ours=695,696,698
+run paid842 --var842=1
+echo ALLDONE > .sandbox/t227/abl_done.txt

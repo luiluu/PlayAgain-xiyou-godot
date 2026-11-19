@@ -1,0 +1,18 @@
+REAL floor=12 won=0/8 lost=0 turnsMedian=12.0 leftMedian=1.000
+T227 floor=12 dmg=2195 hit=666 hits=43.5 aActs=4.1 eActs=1.0 enemyDmg=3362 partyHp=256282 enemyHp=1280000
+REAL floor=13 won=0/8 lost=0 turnsMedian=12.0 leftMedian=1.000
+T227 floor=13 dmg=3127 hit=748 hits=47.0 aActs=4.1 eActs=1.0 enemyDmg=1994 partyHp=271234 enemyHp=1370000
+REAL floor=14 won=0/8 lost=0 turnsMedian=12.0 leftMedian=1.000
+T227 floor=14 dmg=2943 hit=786 hits=40.0 aActs=4.1 eActs=1.0 enemyDmg=4797 partyHp=280234 enemyHp=1470000
+REAL floor=15 won=0/8 lost=0 turnsMedian=12.0 leftMedian=1.000
+T227 floor=15 dmg=2412 hit=742 hits=34.0 aActs=4.0 eActs=1.0 enemyDmg=2246 partyHp=436047 enemyHp=1580000
+REAL floor=16 won=0/8 lost=0 turnsMedian=12.0 leftMedian=1.000
+T227 floor=16 dmg=2549 hit=831 hits=34.5 aActs=4.0 eActs=1.0 enemyDmg=4545 partyHp=445140 enemyHp=1700000
+REAL floor=17 won=0/8 lost=0 turnsMedian=12.0 leftMedian=1.000
+T227 floor=17 dmg=1233 hit=582 hits=21.0 aActs=3.8 eActs=1.0 enemyDmg=5345 partyHp=452258 enemyHp=1820000
+REAL floor=18 won=0/8 lost=0 turnsMedian=12.0 leftMedian=1.000
+T227 floor=18 dmg=2690 hit=837 hits=31.0 aActs=3.6 eActs=1.0 enemyDmg=6582 partyHp=461351 enemyHp=1960000
+REAL floor=19 won=0/8 lost=0 turnsMedian=12.0 leftMedian=1.000
+T227 floor=19 dmg=2423 hit=747 hits=34.0 aActs=4.1 eActs=1.0 enemyDmg=2420 partyHp=468469 enemyHp=2100000
+REAL floor=20 won=0/8 lost=0 turnsMedian=12.0 leftMedian=1.500
+T227 floor=20 dmg=594 hit=216 hits=33.0 aActs=4.3 eActs=1.1 enemyDmg=11266 partyHp=471637 enemyHp=2812500
