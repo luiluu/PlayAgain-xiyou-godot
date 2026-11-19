@@ -178,8 +178,20 @@ func _table() -> void:
 	var d := XTianqiWeakAffix.data()
 	var ents: Dictionary = d.get("entries", {})
 	_check("table_two_entries_off", ents.has("w42") and ents.has("w86") and not bool(ents.w42.enabled) and not bool(ents.w86.enabled))
-	_check("table_guidable_attack_only", (d.get("guidable_skills", []) as Array) == [1.0], d.get("guidable_skills"))
+	_check("table_guidable_has_attack", (d.get("guidable_skills", []) as Array).has(1.0), d.get("guidable_skills"))
+	_guidable_audit()
 	_check("table_int_pct", typeof(ents.w42.invite.pct) == TYPE_FLOAT and float(ents.w42.invite.pct) == 50.0 and float(ents.w86.ward.pct) == 50.0 and float(ents.w42.invite.cnt_pct) == 30.0)
+
+
+## T233：敌方单体伤害技签表抽查（5 签、5 不签，每类不签理由各取一个；判据见交付单 luiluu_t233）
+func _guidable_audit() -> void:
+	var list: Array = XTianqiWeakAffix.data().get("guidable_skills", [])
+	_check("guidable_count", list.size() == 234, list.size())
+	for id in [1, 112, 113, 119, 305]:  # 普攻、英勇打击、恶毒咒语、跳斩、屠灭：常规单体
+		_check("guidable_signed_%d" % id, XTianqiWeakAffix.guidable({"id": id, "scope": 1}))
+	for pair in [[182, "吸血"], [1303, "自定义选两个目标"], [948, "公共事件追加"], [2599, "必中放逐"], [75, "按目标血量变化"]]:
+		_check("guidable_unsigned_%d_%s" % [pair[0], pair[1]], not XTianqiWeakAffix.guidable({"id": pair[0], "scope": 1}))
+	_check("guidable_unsigned_group_effect_4101", not XTianqiWeakAffix.guidable({"id": 4101, "scope": 1}))
 
 
 # ---- 42 布兰德瓦登「掷矛邀战」 ----
