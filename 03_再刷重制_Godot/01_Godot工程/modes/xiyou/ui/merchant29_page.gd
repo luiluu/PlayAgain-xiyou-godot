@@ -266,7 +266,7 @@ static func tier_rows(s: XState) -> Array:
 	for tier in XAbyssMerchant.LABELS.size():
 		var cost := int(c.costs[tier])
 		out.append({"text": "%d点　必出1条%s" % [cost, XAbyssMerchant.LABELS[tier]], "tier": tier,
-			"help": "消耗本路线战利品点%d；装备本体和具体特效随机。" % cost,
+			"help": (("消耗本层战利品点%d；" if XAbyssMerchant.LAYER_LEDGER else "消耗本路线战利品点%d；") % cost) + "装备本体和具体特效随机。",
 			"enabled": XAbyssMerchant.balance(s, key) >= cost and int(cur.get("used", 0)) < int(c.get("visitLimit", 0))})
 	return out
 
