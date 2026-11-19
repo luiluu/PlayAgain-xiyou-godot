@@ -1813,6 +1813,8 @@ static func _guard(logic, u) -> Array:
 				break
 		if g.is_empty() or not z.is_alive() or not logic.can_move(z) or not u.is_alive():
 			continue
+		if XTianqiWeakB2.masks_guard(logic, z):
+			continue  # 弱者专属词条批 2B 张三丰「护犊」戴着：原生护短整个关（护犊在敌人这一根收尾时另算）
 		if not hit.any(func(x): return not is_same(x, z)):
 			continue
 		var used: Dictionary = st.get("guard_used", {})
