@@ -11,7 +11,7 @@ extends RefCounted
 ##   之后和新档一样；标记置 1 后不会再补。已交礼还没打的层：礼钱不退，打赢照样给。
 ## 不改 generated 原数据，XDB.map 读图时改缓存里的副本；换档改了天启篇口径时 XTextFix.sync_mode 清地图缓存重读。
 ## 守层者开场的领域（Troops 第 1 回合页看 842）不归这里管（T229）。31～33 层原版没有见面礼，不在名单里。
-## 回退开关 ENABLED（O-待定）：false 回到原版（有见面礼）；BACKFILL：false 不给旧档补发。
+## 回退开关 ENABLED：false 回到原版（有见面礼）；BACKFILL：false 不给旧档补发。专项 xiyou_tianqi_guardian_gift 两个都设过回退值。
 
 static var ENABLED := true
 static var BACKFILL := true
