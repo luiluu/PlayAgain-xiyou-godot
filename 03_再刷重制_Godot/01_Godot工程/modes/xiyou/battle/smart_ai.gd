@@ -27,7 +27,7 @@ extends RefCounted
 
 const MASTERY_NOTE := "<Custom Damage Mastery Formula:\\s*value\\s*\\*\\s*\\(1\\s*\\+\\s*level\\s*\\*\\s*([\\d.]+)\\)\\s*>"
 static var _boss_ids := {}
-## O-6xx（T281，优化登记）：天启篇智能 AI 止血。天启篇存档（XTianqiSkills.cards_on）里：① 重构技的模块公式（XTianqiSkills／五条悟 XGojo）参与估伤、估治疗，
+## O-待定（T281，优化登记）：天启篇智能 AI 止血。天启篇存档（XTianqiSkills.cards_on）里：① 重构技的模块公式（XTianqiSkills／五条悟 XGojo）参与估伤、估治疗，
 ## 原来被 formula_safe 一刀切成 0；② 带公共事件的伤害／治疗技（和白名单入口技命运之手 6861）进候选，原来 legal 全禁；
 ## ③ 护盾量算来源护盾账本、重构护盾技（skill_rework shield.pct）估盾；④ 141～166 号不再 ×0.01、熟练度读天启篇的每级 +3%。
 ## true＝天启篇走新分支；false＝回到原样。西游档（非天启篇存档）永远不进新分支
