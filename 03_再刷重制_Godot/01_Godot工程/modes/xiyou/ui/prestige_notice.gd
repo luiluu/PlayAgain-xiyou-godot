@@ -111,13 +111,13 @@ func _open_window() -> void:
 	win.refresh()
 
 
-## 提示道的一条（T254 卡 C）：第一件的图标＋「至臻现世 · 获得 N 件」＋前两种的名字（多的写「等 k 种」）
+## 提示道的一条（T254 卡 C）：第一件的图标＋「至臻现世 · 获得 N 件」＋前两种的名字（多的接「，另有 k 种」，小A 文字审定稿）
 static func lane_item(rows: Array, n: int) -> Dictionary:
 	var names: Array = []
 	for i in mini(2, rows.size()):
 		var r: Dictionary = rows[i]
 		names.append(str(r.name) + (" × %d" % int(r.count) if int(r.count) > 1 else ""))
-	var sub := "、".join(names) + ("　另有 %d 种" % (rows.size() - 2) if rows.size() > 2 else "")
+	var sub := "、".join(names) + ("，另有 %d 种" % (rows.size() - 2) if rows.size() > 2 else "")
 	return {"kind": "prestige", "title": "至臻现世 · 获得 %d 件" % n, "sub": sub,
 		"icon": int(rows[0].icon) if not rows.is_empty() else 0, "sub_color": XUiSkin.GOLD_LIGHT}
 

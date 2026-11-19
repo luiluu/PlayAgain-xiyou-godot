@@ -656,6 +656,16 @@ func _lane_logic() -> void:
 	XSkinNoticeLane.reset()
 	XToast.show_text("宝箱收获：太虚裂空剑、星渊护腕、天启圣戒、能量药剂 × 2、生命药剂 × 5、金钱 12000、还有一些很长很长的东西放不下了要用省略号收住的一句话再长一点", true)
 	check("lane_toast_wraps_2", int(l.cur.get("_lines", 0)) == 2 and l.chip.size.x <= XUiSkin.CENTER_MAX + 0.1, [l.cur.get("_lines"), l.chip.size])
+	# T266 核查 P3-3：纯中文截断处接回去不夹半角空格
+	var wf := XUiSkin.font("body")
+	var wl := XSkinNoticeLane.wrap("一二三四五六七八九十甲乙丙丁戊己庚辛壬癸子丑寅卯辰巳午未申酉戌亥", wf, 18, 120.0, 2)
+	check("lane_wrap_cjk_no_space", wl.size() == 2 and not str(wl[1]).contains(" "), wl)
+	# T266 核查 P3-3：正在显示的那条快淡出时并进新内容，至少再亮 MERGE_LEFT 秒
+	XSkinNoticeLane.reset()
+	XToast.show_text("锁定完成", true)
+	l.step(1.8)
+	XToast.show_text("锁定完成", true)
+	check("lane_merge_extends", int(l.cur.get("count", 0)) == 2 and l._total(l.cur) - l.t >= XSkinNoticeLane.MERGE_LEFT - 0.001, [l.cur, l.t])
 	# 自动存档、读档
 	XSkinNoticeLane.reset()
 	XAutosaveNotice.saved()
@@ -693,7 +703,7 @@ func _lane_logic() -> void:
 	XTreasureBatch._sync_owner(s)
 	XTreasureBatch.queue = {"w1": {"name": "太虚裂空剑", "icon": 160, "count": 1}, "a1": {"name": "星渊护腕", "icon": 9, "count": 2}, "a2": {"name": "天启圣戒", "icon": 100, "count": 1}}
 	pre.step()
-	check("lane_prestige", _lane_titles() == ["prestige:至臻现世 · 获得 4 件"] and not pre.win.visible and str(l.cur.get("sub", "")).contains("另有 1 种"), [_lane_titles(), l.cur])
+	check("lane_prestige", _lane_titles() == ["prestige:至臻现世 · 获得 4 件"] and not pre.win.visible and str(l.cur.get("sub", "")) == "太虚裂空剑、星渊护腕 × 2，另有 1 种", [_lane_titles(), l.cur])
 	pre.queue_free()
 	XTreasureBatch.queue.clear()
 	# 开关关着：照 4B 各画各的，提示道不收
@@ -826,6 +836,16 @@ func _lane_scenes(v2: bool, wide := false) -> Dictionary:
 		if v2:
 			var l := _lane()
 			check("lane_menu_top", l != null and l.chip.position.y + l.chip.size.y <= float(XUiSkin.TOP) - 8.0, l.chip.position if l else null)
+			# T266 核查 P3-1：同一行页签右边空档放得下就挪进空档，不压页签、不压货币；放不下照旧居中
+			var pg := _find_template_page(sc)
+			if l != null and pg != null and pg.tabs != null:
+				var tr := pg.tabs.get_global_rect()
+				var cl := pg.get_global_rect().position.x + XSkinNoticeLane.currency_left(pg)
+				var fits := cl - tr.end.x - 2.0 * XSkinNoticeLane.MENU_GAP_PAD >= l.chip.size.x
+				var cx := l.chip.position.x
+				check("lane_menu_gap", is_equal_approx(l.chip.position.y, XSkinNoticeLane.Y) and (cx >= tr.end.x + XSkinNoticeLane.MENU_GAP_PAD - 0.5 and cx + l.chip.size.x <= cl - XSkinNoticeLane.MENU_GAP_PAD + 0.5 if fits else is_equal_approx(cx, roundf((get_viewport().get_visible_rect().size.x - l.chip.size.x) / 2.0))), [fits, l.chip.position, l.chip.size, tr, cl])
+			else:
+				check("lane_menu_gap_page_found", false, [sc])
 		sc.queue_free()
 		clear_all.call()
 		await frames(4)
@@ -903,6 +923,29 @@ func _lane_scenes(v2: bool, wide := false) -> Dictionary:
 		map.hang_overlay.refresh()
 		await frames(10)
 		imgs["c10_battle_hang"] = await _capture()
+		# 11. 首领战里来一条成就：实机挂法（XBattleScene 在 map.ui 下），提示道让到首领信息区（血弧＋状态胶囊＋弱抗行）下面（T266 核查 P1-1）
+		var boss: XEnemy = fb.logic.enemies[0]
+		boss.boss_difficulty_boss = true
+		for sid in [4, 5]:
+			boss.add_state(sid)
+		fb.boss_hp._meter_flags[boss] = true   # 当它是名单首领，照开战那样建血弧
+		fb.boss_hp.setup(fb.logic.enemies)
+		await frames(4)
+		fb.boss_hp.layout_alpha = 255
+		await frames(20)
+		XAchievementPopup.show_for({"id": 1, "name": "初入西游", "icon": 100})
+		if v2 and _lane() != null:
+			_lane()._battle_miss = XSkinNoticeLane.BATTLE_RETRY   # 不等节流，马上重找
+		lane_step.call()
+		await frames(30)
+		imgs["c12_boss_ach"] = await _capture()
+		if v2:
+			var l := _lane()
+			var zone := fb.boss_info_rect()
+			check("lane_finds_battle_under_ui", l != null and fb.get_parent() == map.ui and l._battle_scene(get_tree()) == fb, [fb.get_parent(), l._battle if l else null])
+			check("lane_yields_boss_info", l != null and zone.has_area() and (fb.boss_panel as XSkinBossStatus).arc_shows_boss()
+				and l.chip.position.y >= zone.end.y + 8.0 - 0.5 and not l.chip.get_global_rect().intersects(zone), [l.chip.position if l else null, zone])
+		clear_all.call()
 		fb.queue_free()
 		s.hang_up_active = false
 		s.hang_up_origin = Vector2i(-1, -1)
@@ -918,6 +961,16 @@ func _lane_scenes(v2: bool, wide := false) -> Dictionary:
 	XSkinNoticeLane.auto_tick = true
 	XSkinNoticeLane.reset()
 	return imgs
+
+
+func _find_template_page(n: Node) -> XSkinTemplatePage:
+	if n is XSkinTemplatePage:
+		return n
+	for c in n.get_children():
+		var f := _find_template_page(c)
+		if f != null:
+			return f
+	return null
 
 
 func _test_notice_lane() -> void:

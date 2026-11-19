@@ -5,7 +5,7 @@ extends CanvasLayer
 ## - 屏幕上沿正中（y 14～58，和页名同一行高度），一次只出一条，其余排队；每条 2 秒，积压超过 2 条时每条缩到 0.7 秒。
 ## - 同类同名的合并成一条「×N」（战力、技能升级换成最新的那次，不加 ×N）；正在显示的那条也能并进来。
 ## - 样式：深色胶囊（PANEL_LOW 92%＋1px 线）＋图标＋名字（旧金）＋小字（次要灰）。XToast 的长句最多折两行，超出用省略号。
-## - 菜单页开着时照样在上沿，不碰 y 72 的面板顶；地图上 4 秒难度横幅、战斗里的首领血弧亮着时让到它们下面。
+## - 菜单页开着时照样在上沿，不碰 y 72 的面板顶；地图上 4 秒难度横幅、战斗里首领信息区（血弧＋状态胶囊＋弱抗行）亮着时让到它们下面；菜单页同一行页签右边有空档时挪进空档。
 ## - 跟真实时间走（不吃战斗变速），菜单暂停时也走；动效「关」时不淡入淡出。
 ## 地图宝箱拾取浮字（XTreasurePopup）不进这里，留在原地（R4）；4 秒难度横幅也不进（R2）。
 ## 回退开关（O-待定）：NOTICE_V2 = false 时这条道不用，各提示照 4B 的画法各画各的；同一个开关也管卡 C 的 R2、R4、R14 新画法。
@@ -19,6 +19,7 @@ const HOLD := 2.0
 const HOLD_FAST := 0.7
 const BACKLOG := 2          # 排队超过这么多条就提速
 const FADE := 0.12
+const MERGE_LEFT := 1.0   # 正在显示的那条并进新内容后至少还剩这么久
 const MIN_W := 200.0
 const PAD_X := 18.0
 const ICON := 24.0
@@ -82,6 +83,7 @@ func _merge_into(dst: Dictionary, it: Dictionary, showing: bool) -> bool:
 	else:
 		dst["count"] = int(dst.get("count", 1)) + 1
 	if showing and chip != null:
+		t = minf(t, maxf(_total(dst) - MERGE_LEFT, 0.0))   # 正在显示的并进新数后至少再亮 MERGE_LEFT 秒（T266 核查 P3-3）
 		_relayout()
 	return true
 
@@ -199,6 +201,8 @@ func _place() -> void:
 	var span := Vector2(x, x + chip.size.x)
 	var tree := get_tree()
 	if tree != null:
+		x = _menu_gap_x(tree, x)
+		span = Vector2(x, x + chip.size.x)
 		var avoid: Array = tree.get_nodes_in_group(AVOID_GROUP)
 		var plate := _map_plate(tree) if not _menu_open(tree) else null
 		if plate != null:
@@ -208,9 +212,9 @@ func _place() -> void:
 				var r := (n as Control).get_global_rect()
 				if r.position.x < span.y and r.end.x > span.x and r.position.y < y + chip.size.y:
 					y = maxf(y, r.end.y + 8.0)
-		var arc := _boss_arc_bottom(tree)
-		if arc > 0.0:
-			y = maxf(y, arc)
+		var boss := _boss_info_bottom(tree, span)
+		if boss > 0.0:
+			y = maxf(y, boss)
 	chip.position = Vector2(x, y)
 
 
@@ -220,6 +224,40 @@ static func _menu_open(tree: SceneTree) -> bool:
 		if n is CanvasItem and (n as CanvasItem).is_visible_in_tree():
 			return true
 	return false
+
+
+## 菜单页（模板页）开着、居中会盖住页签时：同一行里页签右缘到右上货币左缘的空档放得下就挪进空档（居中于空档），
+## 放不下照旧居中（只盖不可点的页签指示 2 秒）。不往下挪，不碰 y 72 的面板顶（T266 核查 P3-1）。
+const MENU_GAP_PAD := 12.0
+
+
+func _menu_gap_x(tree: SceneTree, x: float) -> float:
+	for n in tree.get_nodes_in_group(XUiSkin.FULLSCREEN_GROUP):
+		var pg := n as XSkinTemplatePage
+		if pg == null or not pg.is_visible_in_tree() or pg.tabs == null or not pg.tabs.is_visible_in_tree():
+			continue
+		var tr := pg.tabs.get_global_rect()
+		if tr.end.x <= x:
+			return x   # 居中本来就不碰页签
+		var left := tr.end.x + MENU_GAP_PAD
+		var right := pg.get_global_rect().position.x + currency_left(pg) - MENU_GAP_PAD
+		if right - left >= chip.size.x:
+			return roundf(left + (right - left - chip.size.x) / 2.0)
+		return x
+	return x
+
+
+## 模板页右上货币最左的 x（页内坐标；同 XSkinTemplatePage._draw_top 的排法）
+static func currency_left(pg: XSkinTemplatePage) -> float:
+	var view := pg.layout.view_size() if pg.layout != null else pg.size
+	var x := view.x - XSkinLayout.margin_for(view.x)
+	var body := XUiSkin.font("body")
+	var num := XUiSkin.font("num")
+	for pair in pg.currency_pairs():
+		x -= num.get_string_size(str(pair[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 26).x
+		x -= body.get_string_size(str(pair[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x + 6.0
+		x -= 18.0
+	return x + 18.0
 
 
 ## 地图名横幅（XMapScene 的 MapNamePlate，进图时滑下来停几秒）：按场景缓存，不每帧整树找
@@ -241,18 +279,55 @@ func _map_plate(tree: SceneTree) -> Control:
 	return _plate.get_ref() as Control
 
 
-## 首领血弧亮着时它的下沿（同 XDifficultyNoticeCanvas 的让位，+48 让开名字和血量数字）
-static func _boss_arc_bottom(tree: SceneTree) -> float:
-	var cs := tree.current_scene
-	if cs == null:
+## 战斗场景：实机 XBattleScene 挂在 XMapScene.ui（CanvasLayer）下，是 current_scene 的孙子（map_scene.gd 开战处 ui.add_child），
+## 只看直接子节点永远找不到（T266 核查 P1-1）。往下找 BATTLE_DEPTH 层，找到就记弱引用；没找到时隔 BATTLE_RETRY 次再找，不每帧整树找。
+const BATTLE_DEPTH := 4
+const BATTLE_RETRY := 10
+var _battle: WeakRef
+var _battle_miss := BATTLE_RETRY
+
+
+func _battle_scene(tree: SceneTree) -> XBattleScene:
+	var b: XBattleScene = _battle.get_ref() as XBattleScene if _battle != null else null
+	if b != null and b.is_inside_tree():
+		return b
+	_battle = null
+	_battle_miss += 1
+	if _battle_miss < BATTLE_RETRY:
+		return null
+	_battle_miss = 0
+	b = find_battle(tree.current_scene, BATTLE_DEPTH)
+	if b != null:
+		_battle = weakref(b)
+	return b
+
+
+static func find_battle(n: Node, depth: int) -> XBattleScene:
+	if n == null:
+		return null
+	if n is XBattleScene:
+		return n
+	if depth <= 0:
+		return null
+	for c in n.get_children():
+		var f := find_battle(c, depth - 1)
+		if f != null:
+			return f
+	return null
+
+
+## 首领信息区（血弧、名字、血量、状态胶囊、天启篇弱抗行；XBattleScene.boss_info_rect）亮着且和提示道左右相交时，它的下沿＋8。
+## 血弧亮着但信息区量不到（旧皮肤状态面板）时保底让到弧下＋48（同 XDifficultyNoticeCanvas）。没有首领信息返回 0。
+func _boss_info_bottom(tree: SceneTree, span: Vector2) -> float:
+	var b := _battle_scene(tree)
+	if b == null or not b.is_visible_in_tree():
 		return 0.0
-	var nodes: Array = [cs]
-	nodes.append_array(cs.get_children())
-	for n in nodes:
-		if n is XBattleScene and n.visible and n.get("boss_hp") is XSkinBossArc:
-			var arc: XSkinBossArc = n.boss_hp
-			if arc != null and arc.visible and arc.battler != null and arc.layout_alpha > 0:
-				return XSkinBossArc.arc_bottom() + 48.0
+	var r: Rect2 = b.boss_info_rect()
+	if r.has_area():
+		return r.end.y + 8.0 if r.position.x < span.y and r.end.x > span.x else 0.0
+	var arc := b.boss_hp as XSkinBossArc
+	if arc != null and arc.is_visible_in_tree() and arc.battler != null and arc.layout_alpha > 0:
+		return b._origin.y + XSkinBossArc.arc_bottom() + 48.0
 	return 0.0
 
 
@@ -288,10 +363,16 @@ static func wrap(s: String, f: Font, fs: int, max_w: float, max_lines: int) -> A
 			var r := tp.get_line_range(i)
 			out.append(p.substr(r.x, r.y - r.x).strip_edges())
 	if out.size() > max_lines:
-		var rest := " ".join(out.slice(max_lines - 1))
+		var rest := ""
+		for seg in out.slice(max_lines - 1):   # 接回去：两边都是中文就直接接，有一边是西文才补空格（T266 核查 P3-3）
+			rest = seg if rest == "" else rest + (" " if _latin_edge(rest, seg) else "") + seg
 		out = out.slice(0, max_lines - 1)
 		out.append(ellipsize(rest, f, fs, max_w) if f.get_string_size(rest, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > max_w else rest)
 	return out
+
+
+static func _latin_edge(a: String, b: String) -> bool:
+	return a.unicode_at(a.length() - 1) < 0x2E80 and b.unicode_at(0) < 0x2E80
 
 
 ## 一条提示的胶囊
