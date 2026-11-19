@@ -1,11 +1,13 @@
 extends Node
-## 【cc·T232·未经审查】七印「击倒」类效果在各类出招上认不认得到击倒（XTianqiQiyinEffects.SEQ_KILLS，O-待定）。
+## 【cc·T232·未经审查】七印「击倒」类效果在各类出招上认不认得到击倒（XTianqiQiyinEffects.SEQ_KILLS，O-待定-1）；
+## 词条「斩获」同病同法（XTianqiAffixBattle.SEQ_KILLS，O-待定-2）。
 ## 背景：动作序列招（含普攻）开头把目标挂 IMMORTAL，打到 0 血也不倒，序列收尾解除时才倒下；
 ## after_apply 当场用 is_dead() 认击倒，序列招上永远认不到 → 击倒再动、送行连斩、溢出、击杀叠层都不触发（T230 另查）。
 ## 修法：after_apply 里「这一击把 IMMORTAL 目标打到 0 血」先记成待定击倒（连同溢出），end_action（序列已收尾、IMMORTAL 已解除）再按 is_dead() 认。
 ## 一、量清：普攻、动作序列单体招、动作序列群体招、单段招、多段招、派生追加（送行连斩）× 开关开／关，击倒再动、击杀计数、溢出、连斩各认没认到，打印 QIYIN_SEQ_KILL_TABLE。
 ## 二、边界：一招打倒多个；不死目标（打到 0 血不倒）不算；序列中途被救回（复活／回血）不算；先打到 0 又救回、再打到 0 算一次；
 ##     派生追加里打倒的不回灌主行动；PER_SEGMENT（XBattleStream 逐段结算）开、关结果相同。
+## 四、斩获：普攻、序列群体招（打倒 2 个只回一次）、非序列单段 × 开关开／关、PER_SEGMENT；序列里被救回不回；两个开关各自单独关。
 ## 三、开关关掉回到旧行为（序列招认不到）；西游档不建七印数据。
 ## 用天启篇开局建的存档（艰险）打敌群 2；装备直接造实例、打标记（夹具同 xiyou_tianqi_qiyin_effects）。
 
@@ -301,12 +303,114 @@ func _legacy() -> void:
 	lg.end_battle(0)
 
 
+## 斩获：穿一件带斩获的防具（同 xiyou_tianqi_affix_battle 的夹具）
+func _wear_harvest(a: XActor) -> void:
+	a.keep_unequippable = true
+	var inst := {"kind": "armor", "name": "测试", "params": [0, 0, 0, 0, 0, 0, 0, 0], "traits": [], "etypeId": 3, "tianqi_affixes": [{"key": "harvest", "tier": 4, "grade": "normal", "extra": {}}]}
+	var slot := 1
+	while a.equips.size() <= slot:
+		a.equips.append(null)
+	a.equips[slot] = inst
+	a.param_mark_dirty()
+	a.param_refresh()
+
+
+func _harvest_probe(kind: String, skill_of: Callable, low_n: int, per_segment: bool) -> Dictionary:
+	var lg := _logic()
+	var u: XActor = lg.actors[0]
+	_wear_harvest(u)
+	XTianqiAffixBattle.start(lg)
+	XTianqiQiyinEffects.start(lg)
+	var sk: Dictionary = skill_of.call(u)
+	var low := []
+	for i in low_n:
+		low.append(lg.enemies[i])
+	_prep(lg, low)
+	u.mp = 0.0
+	var pct := float(XTianqiAffixBattle.view(u).get("p", {}).get("harvest", 0.0))
+	if per_segment:
+		XBattleStream.start(lg, u, sk, low[0]).finish()
+	else:
+		lg.act(u, sk, low[0])
+	var row := {"kind": kind, "seq": XActionSequence.has_sequence(sk), "per_segment": per_segment, "pct": pct,
+		"dead": low.filter(func(x): return x.is_dead()).size(), "mp": u.mp, "want": floorf(u.mmp * pct / 100.0)}
+	lg.end_battle(0)
+	return row
+
+
+func _harvest() -> void:
+	var rows := []
+	var kinds := [["普攻", func(u): return u.attack_skill(), 1], ["序列群体招", func(_u): return _seq_skill(2), 2], ["单段招", func(_u): return _plain(1, 1), 1]]
+	for on in [false, true]:
+		XTianqiAffixBattle.SEQ_KILLS = on
+		for k in kinds:
+			var row := _harvest_probe(k[0], k[1], k[2], false)
+			row.switch = on
+			rows.append(row)
+	XTianqiAffixBattle.SEQ_KILLS = true
+	for k in kinds:
+		var row := _harvest_probe(k[0], k[1], k[2], true)
+		row.switch = true
+		rows.append(row)
+	# 两个开关各自单独关：只关七印的，斩获照认
+	XTianqiQiyinEffects.SEQ_KILLS = false
+	var solo := _harvest_probe("普攻", func(u): return u.attack_skill(), 1, false)
+	solo.switch = true
+	solo.qiyin_off = true
+	rows.append(solo)
+	XTianqiQiyinEffects.SEQ_KILLS = true
+	print("AFFIX_HARVEST_TABLE ", JSON.stringify(rows))
+	for row in rows:
+		var tag := "harvest_%s_%s%s%s" % [row.kind, "on" if row.switch else "off", "_stream" if row.per_segment else "", "_qiyin_off" if row.has("qiyin_off") else ""]
+		var ok_pct := float(row.pct) > 0.0 and float(row.want) > 0.0
+		if row.switch or not row.seq:
+			_check(tag, ok_pct and int(row.dead) >= 1 and is_equal_approx(float(row.mp), float(row.want)), row)  # 打倒多个也只回一次
+		else:
+			_check(tag + "_missed", ok_pct and int(row.dead) >= 1 and is_equal_approx(float(row.mp), 0.0), row)  # 回退：旧行为
+	# 只关斩获的，七印照认
+	XTianqiAffixBattle.SEQ_KILLS = false
+	var q := _probe("普攻", _gear_set("hong", 5), func(u): return u.attack_skill(), 1, false)
+	_check("qiyin_on_when_affix_off", bool(q.again) and int(q.kills) == 1, q)
+	XTianqiAffixBattle.SEQ_KILLS = true
+	# 序列里被救回：不回
+	var lg := _logic()
+	var u: XActor = lg.actors[0]
+	_wear_harvest(u)
+	XTianqiAffixBattle.start(lg)
+	var sk := u.attack_skill()
+	var e: XEnemy = lg.enemies[0]
+	_prep(lg, [])
+	u.mp = 0.0
+	XTianqiAffixBattle.begin_action(lg, u, sk)
+	XTianqiAffixBattle.before_apply(lg, u, sk, e)
+	e.immortal = true
+	e.hp = 0.0
+	XTianqiAffixBattle.after_apply(lg, u, sk, e, {"hp": 30.0})
+	e.immortal = false
+	e.hp = 50.0
+	XTianqiAffixBattle.end_action(lg, u, sk)
+	_check("harvest_rescued_none", is_equal_approx(u.mp, 0.0), u.mp)
+	# 同样时序、收尾真倒下：回一次
+	XTianqiAffixBattle.begin_action(lg, u, sk)
+	XTianqiAffixBattle.before_apply(lg, u, sk, e)
+	e.immortal = true
+	e.hp = 0.0
+	XTianqiAffixBattle.after_apply(lg, u, sk, e, {"hp": 30.0})
+	e.immortal = false
+	lg._die(e)
+	XTianqiAffixBattle.end_action(lg, u, sk)
+	var pct := float(XTianqiAffixBattle.view(u).get("p", {}).get("harvest", 0.0))
+	_check("harvest_confirmed_end", pct > 0.0 and is_equal_approx(u.mp, floorf(u.mmp * pct / 100.0)), [u.mp, u.mmp, pct])
+	lg.end_battle(0)
+
+
 func _run() -> void:
 	XTianqiQiyinEffects.ENABLED = true
 	_measure()
 	_carry_chain()
 	_edges()
 	_legacy()
+	_harvest()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
