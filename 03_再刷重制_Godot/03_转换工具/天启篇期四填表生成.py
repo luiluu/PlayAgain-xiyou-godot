@@ -416,13 +416,33 @@ def shuxing_pct(v, ref):
     return (pct if v > 0 else -pct), low
 
 
+def shuxing_counter_states():
+    """T228 R1（小A 甲核 P1-1）：把 <G_ShuXing> 写成 ±1 当「计数单位」、真加值由状态脚本写进 _stateCounter（层数）的状态。
+    原版 G_StateParam 算的是 1 × 层数＝脚本算好的真加值（奈叶 1763、1769、1772、1775、1776、1781～1786、1792～1807，按自身属性比例），
+    再换成百分比就成了「持有者该项 × 1% × 几千层」。认法：States.json 里写 _stateCounter[编号] = …，或翻译后的 counter_set／counter_init／
+    set_counter_if_empty 指到的状态号。只认带 <G_ShuXing> 的（setStateCounter 改层数的 1069、1310、1341 不带这个标签）。"""
+    text = (DB / 'States.json').read_text(encoding='utf-8')
+    ids = {int(x) for x in re.findall(r'_stateCounter\[(\d+)\]\s*=(?!=)', text)}
+    ids |= {int(x) for x in re.findall(r'"op": ?"(?:counter_set|counter_init)", ?"state": ?(\d+)', text)}
+    ids |= {int(float(x)) for x in re.findall(r'"set_counter_if_empty", ?"args": ?\[\{"op": ?"literal", ?"pos": ?\d+, ?"value": ?([\d.]+)', text)}
+    return ids
+
+
+SHUXING_KEEP_RAW_REASON = '计数器状态：<G_ShuXing> 写 ±1 当单位，真加值是脚本按自身属性算好写进层数（_stateCounter），保留原数'
+
+
 def build_shuxing():
     rows = []
+    counters = shuxing_counter_states()
     for x in jload(DB / 'States.json'):
         if not x:
             continue
         orig, has = shuxing_params(x.get('note', ''))
         if not has:
+            continue
+        if x['id'] in counters:
+            rows.append({'kind': 'state_shuxing', 'id': x['id'], 'name': x['name'], 'orig': orig,
+                         'new': {'pct_of': 'self', 'mode': 'raw', 'reason': SHUXING_KEEP_RAW_REASON}})
             continue
         pct, low = [], []
         for i, k in enumerate(STATS):
@@ -440,6 +460,7 @@ def build_shuxing():
 SHUXING_GROUP_NOTE = ('T228：状态备注 <G_ShuXing> 写死的八项加减（kind＝state_shuxing，orig、new.pct 都按 mhp,mmp,atk,def,mat,mdf,agi,luk 八格）。'
                       '期四开着且 XTianqiBase.ABS_SHUXING 开着时，战斗里每个状态加的是「持有者该项（基础＋加值）×比率×强化率 × pct% × 层数」，向零取整；关着照原数。'
                       'pct＝原数÷base.shuxing_ref 同项×100 四舍五入成整数，原数不为 0 但取整成 0 的记 ±1（min1 列出是哪几项）。'
+                      'new.mode＝raw 的是计数器状态（<G_ShuXing> 写 ±1 当单位、真加值在层数里，T228 R1），照原数×层数，不换算、不走兜底。'
                       'pct 可以直接改表；状态备注被天启篇改写、原数跟 orig 对不上时按参考值现算并警告一次。')
 
 
@@ -581,6 +602,10 @@ def shuxing_table():
     nm = ['生命', '魔法', '攻击', '物防', '魔攻', '魔防', '敏捷', '幸运']
     for e in build_shuxing():
         o = '、'.join('%s%+d' % (nm[i], v) for i, v in enumerate(e['orig']) if v)
+        if e['new'].get('mode') == 'raw':
+            h = '、'.join(t for t in ('我方', '敌方', '守层者') if t in hold.get(e['id'], ())) or '没扫到（脚本／插件挂）'
+            lines.append('| %d | %s | %s | 保留原数（计数器：±1×层数） | %s |' % (e['id'], e['name'].replace('|', '／'), o, h))
+            continue
         n = '、'.join('%s%+d%%%s' % (nm[i], v, '＊' if STATS[i] in e.get('min1', []) else '') for i, v in enumerate(e['new']['pct']) if v)
         h = '、'.join(t for t in ('我方', '敌方', '守层者') if t in hold.get(e['id'], ())) or '没扫到（脚本／插件挂）'
         lines.append('| %d | %s | %s | %s | %s |' % (e['id'], e['name'].replace('|', '／'), o or '（空）', n or '（空）', h))
@@ -603,7 +628,7 @@ def main():
         if args.写属性换算:
             d = write_shuxing(DATA / 'abs_rescale.json')
             rows = [e for e in d['entries'] if e['kind'] == 'state_shuxing']
-            print('已写 abs_rescale.json：state_shuxing %d 行，取整到 ±1 的 %d 行' % (len(rows), sum(1 for e in rows if e.get('min1'))))
+            print('已写 abs_rescale.json：state_shuxing %d 行，取整到 ±1 的 %d 行，计数器保留原数 %d 行' % (len(rows), sum(1 for e in rows if e.get('min1')), sum(1 for e in rows if e['new'].get('mode') == 'raw')))
         if args.属性清单:
             print(shuxing_table())
         return 0

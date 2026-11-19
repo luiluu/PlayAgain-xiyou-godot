@@ -346,28 +346,35 @@ static func shuxing_on() -> bool:
 	return ABS_SHUXING and on()
 
 
-## T228：一个状态在第 i 项上的 <G_ShuXing> 加减（一层）。raw＝备注原数；pre＝持有者这一项在加状态固定值之前的数（(基础＋加值)×比率×强化率）。
-## 返回 pre × pct% 向零取整；pct 读 abs_rescale.json 的 state_shuxing 行。备注被天启篇改写、原数跟表里 orig 对不上的，按参考值现算（同生成脚本口径）并警告一次；
-## 表或参考值缺（发行包没有 tianqi_data）就照原数
-static func shuxing_value(state_id: int, i: int, raw: float, pre: float) -> float:
+## T228：一个状态在第 i 项上的 <G_ShuXing> 加减（连层数）。raw＝备注原数（一层）；pre＝持有者这一项在加状态固定值之前的数（(基础＋加值)×比率×强化率）；
+## ceng＝层数（_stateCounter，没有按 1）。返回 pre × pct% × 层数，最后向零取整一次（R1 P2-1：不先取单层再乘层数）。
+## pct 读 abs_rescale.json 的 state_shuxing 行；new.mode＝raw 的计数器状态（R1 P1-1：<G_ShuXing> 写 ±1 当单位，真加值在层数里）照 raw × 层数。
+## 备注被天启篇改写、原数跟表里 orig 对不上（或表里没这行）的，按参考值现算（同生成脚本口径）并警告一次；参考值缺（发行包没有 tianqi_data）就照原数
+## 关着（发行包、西游档、开关关）原样返回 raw（一层）：param_state 关着不调这里，自己乘层数
+static func shuxing_value(state_id: int, i: int, raw: float, pre: float, ceng := 1.0) -> float:
 	if raw == 0.0 or not shuxing_on():
 		return raw
+	if i < 0 or i >= 8:
+		return raw * ceng
 	var pct := 0.0
 	var e := abs_entry("state_shuxing", state_id)
+	if not e.is_empty() and str(e.new.get("mode", "")) == "raw":
+		return raw * ceng
 	var orig = e.get("orig") if not e.is_empty() else null
-	if orig is Array and orig.size() == 8 and float(orig[i]) == raw:
-		pct = float((e.new.get("pct", []) as Array)[i])
+	var pa = e.new.get("pct") if not e.is_empty() else null
+	if orig is Array and orig.size() == 8 and pa is Array and pa.size() == 8 and float(orig[i]) == raw:
+		pct = float(pa[i])
 	else:
 		var ref := shuxing_ref()
 		if ref.size() != 8 or float(ref[i]) <= 0.0:
-			return raw
+			return raw * ceng
 		var q := floorf(absf(raw) / float(ref[i]) * 100.0 + 0.5)
 		pct = maxf(1.0, q) * signf(raw)
 		warn_once("shuxing:%d" % state_id, "状态 %d 的 <G_ShuXing> 原数跟 abs_rescale.json 对不上（天启篇改写过？），按参考值现算 %d%%" % [state_id, int(pct)])
 	if pre <= 0.0:
 		return 0.0
-	var v := floorf(pre * absf(pct) / 100.0)
-	return -v if pct < 0.0 else v
+	var x := pre * pct / 100.0 * ceng
+	return signf(x) * floorf(absf(x))
 
 
 ## 参考值八格（base.shuxing_ref，按 STATS 顺序）
@@ -394,4 +401,5 @@ static func rows_state() -> Dictionary:
 		"boss_u": o,
 		"phase4_ledger": nine_crit_cap() >= 0.0,
 		"gear": XTianqiGear.applies({"kind": "weapon", "etypeId": 1, "meta": {"req_level": "1", "quality": "1"}}),
+		"shuxing": shuxing_on(),  # T228 R1 P3-2
 	}

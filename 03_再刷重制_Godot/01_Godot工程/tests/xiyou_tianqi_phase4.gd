@@ -342,6 +342,12 @@ func _shuxing() -> void:
 	var d := XTianqiBase.abs_data()
 	var rows: Array = d.get("entries", []).filter(func(e): return e is Dictionary and e.get("kind") == "state_shuxing")
 	_check("shuxing.rows", rows.size() == 452, rows.size())
+	# R1 P1-1：计数器状态（<G_ShuXing> 写 ±1 当单位，真加值在 _stateCounter 层数里）标 mode＝raw，不换算
+	var raw_ids: Array = rows.filter(func(e): return str(e.new.get("mode", "")) == "raw").map(func(e): return int(e.id))
+	raw_ids.sort()
+	var want_raw := [1763, 1769, 1772, 1775, 1776] + range(1781, 1787) + range(1792, 1808)
+	_check("shuxing.counter_raw", raw_ids == want_raw, raw_ids)
+	rows = rows.filter(func(e): return str(e.new.get("mode", "")) != "raw")
 	var ints := rows.all(func(e): return (e.new.pct as Array).size() == 8 and (e.new.pct as Array).all(func(x): return float(x) == floorf(float(x))))
 	_check("shuxing.int_pct", ints)  # 附则 E：整数
 	var min1_ok := rows.all(func(e):
@@ -371,6 +377,23 @@ func _shuxing() -> void:
 	_check("shuxing.zero_cell", a.param_state(3, 1000.0) == 0.0)
 	_check("shuxing.pre_zero", XTianqiBase.shuxing_value(698, 2, -1000.0, 0.0) == 0.0)
 	_check("shuxing.mismatch", XTianqiBase.shuxing_value(698, 2, -500.0, 1000.0) == -270.0)  # 原数对不上按参考值现算：500÷1854＝27%
+	# R1 P2-1：层数先乘再取整：155×54%×3＝251.1→251（先取单层 83 再乘 3 是 249）
+	_check("shuxing.ceng_then_round", XTianqiBase.shuxing_value(698, 2, -1000.0, 155.0, 3.0) == -251.0, XTianqiBase.shuxing_value(698, 2, -1000.0, 155.0, 3.0))
+	a.state_data["_stateCounter"] = {"698": 3}
+	_check("shuxing.ceng_param_state", a.param_state(2, 155.0) == -251.0, a.param_state(2, 155.0))
+	a.state_data["_stateCounter"] = {}
+	# R1 P1-1：计数器状态照 原数×层数（星煌 1776 物防魔防 +1×5000；穷极 1800 生命 +1×5000），不走兜底、不按 1% 放大
+	a.add_state(1776)
+	a.add_state(1800)
+	a.state_data["_stateCounter"] = {"698": 1, "1776": 5000, "1800": 5000}
+	a.param_mark_dirty()
+	_check("shuxing.counter_1776", a.param_state(3, 1200.0) == 5000.0 and a.param_state(5, 1200.0) == 5000.0, [a.param_state(3, 1200.0), a.param_state(5, 1200.0)])
+	_check("shuxing.counter_1800", a.param_state(0, 40000.0) == 5000.0, a.param_state(0, 40000.0))
+	_check("shuxing.counter_no_warn", not XTianqiBase._warned.has("shuxing:1776") and not XTianqiBase._warned.has("shuxing:1800"))
+	a.remove_state(1776)
+	a.remove_state(1800)
+	a.state_data["_stateCounter"] = {}
+	a.param_mark_dirty()
 	_check("shuxing.unknown_id", XTianqiBase.shuxing_value(999999, 2, -500.0, 1000.0) == -270.0)
 	var p_on := a.param(2)
 	XTianqiBase.ABS_SHUXING = false
@@ -388,6 +411,69 @@ func _shuxing() -> void:
 	b.add_state(698)
 	b.param_mark_dirty()
 	_check("shuxing.xiyou", not XTianqiBase.shuxing_on() and b.param_state(2, 1000.0) == -1000.0)
+	XTianqiBase.PHASE4 = false
+	_shuxing_nanoha()
+
+
+## T228 R1 P1-1：天启篇存档、期四开，奈叶真放 5694 星煌（挂 1776／1775）和 5691 穹极（预约公共事件挂 1792～1807），
+## 挂上的计数器状态层数是脚本按属性算好的真加值，加的必须是 原数×层数（跟 ABS_SHUXING 关着一样），不能按 1% 放大
+func _shuxing_nanoha() -> void:
+	XTianqiBase.PHASE4 = true
+	XTianqiBase.clear_cache()
+	var s := XTianqi.start_new_game(3, "jiusi", [108])  # 九死起超强者能上场
+	XTianqi.take_pending()
+	s.party.clear()
+	s.battle_slots.clear()
+	XTianqi._joining = true
+	s.add_actor(108)
+	XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var n := s.actor(108)
+	n.change_level_mv(81)
+	for sk in [5691, 5694]:
+		if not n.skill_ids.has(sk):
+			n.learn_skill(sk)
+	var logic := XBattleLogic.new()
+	var rand := XBattleRandom.create("0000000000000108")
+	rand.rule = FixedMidStream.new()
+	rand.rule.domain = "rule"
+	logic.setup(2, s, rand)
+	XBattleCommonEvent.take(logic)
+	n.param_mark_dirty()
+	n.param_refresh()
+	n.recover_all()
+	logic.turn = 1
+	var counter_ids := [1763, 1769, 1772, 1775, 1776] + range(1781, 1787) + range(1792, 1808)
+	for sk in [5694, 5691]:
+		n.mp = n.mmp
+		logic.act(n, XDB.rec("Skills", sk), logic.enemies[0])
+		logic.run_events()
+		n.param_mark_dirty()
+		var counters: Dictionary = n.state_data.get("_stateCounter", {})
+		var held: Array = n.state_ids.filter(func(id): return counter_ids.has(int(id)) and float(counters.get(str(id), 0)) > 1.0)
+		var ok := not held.is_empty()
+		var detail := []
+		for id in held:
+			var raw: Array = XPower.state_params(XDB.rec("States", int(id)))
+			var ceng := float(counters.get(str(id)))
+			for i in 8:
+				if float(raw[i]) != 0.0:
+					var got := XTianqiBase.shuxing_value(int(id), i, float(raw[i]), 1000.0, ceng)
+					if got != float(raw[i]) * ceng:
+						ok = false
+						detail.append([id, i, raw[i], ceng, got])
+		_check("shuxing.nanoha_%d" % sk, ok and XTianqiBase.shuxing_on(), [held, detail])
+		var p_on := range(8).map(func(i): return n.param(i))
+		XTianqiBase.ABS_SHUXING = false
+		n.param_mark_dirty()
+		var p_off := range(8).map(func(i): return n.param(i))
+		XTianqiBase.ABS_SHUXING = true
+		n.param_mark_dirty()
+		# 身上带 <G_ShuXing> 的只有计数器状态时，开关前后八项完全一样
+		var others: Array = n.state_ids.filter(func(id): return not counter_ids.has(int(id)) and (XPower.state_params(XDB.rec("States", int(id))) as Array).any(func(v): return float(v) != 0.0))
+		if others.is_empty():
+			_check("shuxing.nanoha_%d_params" % sk, p_on == p_off, [p_on, p_off])
 	XTianqiBase.PHASE4 = false
 
 

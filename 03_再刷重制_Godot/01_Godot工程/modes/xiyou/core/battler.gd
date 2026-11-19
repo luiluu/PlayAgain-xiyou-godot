@@ -854,12 +854,13 @@ func param_state(i: int, pre := 0.0) -> float:
 		var raw := float(_state_param_cache[key][i])
 		if raw == 0.0:
 			continue
-		if shux:
-			raw = XTianqiBase.shuxing_value(int(id), i, raw, pre)
 		var ceng := XStateEffects._truthy_number(counters.get(str(id)))
 		if ceng == 0.0:
 			ceng = 1.0
-		v += raw * ceng
+		if shux:
+			v += XTianqiBase.shuxing_value(int(id), i, raw, pre, ceng)  # 层数一起传进去，乘完再取整（T228 R1）
+		else:
+			v += raw * ceng
 	return v
 
 func xparam(i: int) -> float:
