@@ -130,6 +130,9 @@ static func tq_ops(item: Dictionary, a, b) -> Array:
 	var ops := []
 	if own(b) and b.has_base_equip("armor", ARMOR) and turn_now() <= 2:
 		ops.append({"op": "mul", "field": "incomingMultiplier", "value": 0.8})
+	var grow := growth_dmg_pct(a)  # 无限成长（T257）：流萤本人出手的全部伤害（含普通攻击；物品不进 tq_ops），放在 _action 判断之前
+	if grow > 0:
+		ops.append({"op": "mul", "field": "finalMultiplier", "value": float(100 + grow) / 100.0})
 	if not _action(a, item):
 		return ops
 	var id := int(item.get("id", 0))
@@ -146,8 +149,8 @@ static func tq_ops(item: Dictionary, a, b) -> Array:
 	if not _tq_explode and float(_frame.get("single", 0.0)) > 0.0:
 		m *= float(_frame.single)
 	m *= 1.0 + 0.03 * mini(10, mark_count(b))
-	if a.has_base_equip("weapon", WEAPON) and float(a.state_data.get("_codexLbEmber", 0.0)) >= TQ_EMBER_CAP:
-		m *= 1.2
+	if not growth_on() and a.has_base_equip("weapon", WEAPON) and float(a.state_data.get("_codexLbEmber", 0.0)) >= TQ_EMBER_CAP:
+		m *= 1.2  # Q5 甲（Kyo D216）：无限成长开着时去掉「余烬满伤害 +20%」，4004 在天启篇当纪念品
 	ops.append({"op": "mul", "field": "finalMultiplier", "value": m})
 	return ops
 
@@ -257,7 +260,7 @@ static func param_plus(a, i: int, v: float) -> float:
 	if not own(a):
 		return v
 	if i == 0:
-		v += minf(TQ_EMBER_CAP, float(a.state_data.get("_codexLbEmber", 0.0))) if _tq() else float(a.state_data.get("_codexLbEmber", 0.0))
+		v += minf(TQ_EMBER_CAP, float(a.state_data.get("_codexLbEmber", 0.0))) + growth_ember(a) if _tq() else float(a.state_data.get("_codexLbEmber", 0.0))
 	if (i == 2 or i == 6) and a.has_base_equip("weapon", WEAPON) and not _tq():
 		v += 30.0 * maxf(1.0, float(a.level))
 	return v
@@ -280,8 +283,14 @@ static func action_plus_set(a, rates: Array) -> void:
 
 ## BattleManager.gainRewards 之后：出战且戴专武的流萤逐火
 static func gain_rewards(members: Array) -> void:
+	var grow := growth_on()
 	for a in members:
-		if not (own(a) and a.has_base_equip("weapon", WEAPON)):
+		if not own(a):
+			continue
+		if grow:
+			_growth_win(a)
+			continue
+		if not a.has_base_equip("weapon", WEAPON):
 			continue
 		var ember := maxf(0.0, float(a.state_data.get("_codexLbEmber", 0.0)))
 		var wins := maxf(0.0, float(a.state_data["_codexLbEmberWins"])) if a.state_data.get("_codexLbEmberWins") != null else floorf(ember / 10.0)
@@ -290,6 +299,40 @@ static func gain_rewards(members: Array) -> void:
 		if _tq():
 			a.state_data["_codexLbEmber"] = minf(maxf(TQ_EMBER_CAP, ember), float(a.state_data["_codexLbEmber"]))  # 天启篇：封顶 +3000（已超过的不扣）
 		a.param_mark_dirty()
+
+
+# ---- 天启篇无限成长（T257，稿 天启篇_无限成长_v0.4 3.3、第八节卡②第 3 条；Kyo D216 Q3 甲、Q5 甲、Q6 乙）----
+## 只在天启篇（技能卡开着）且 XTianqiGrowth 开着时走；关掉回现状（戴 4004 才记、余烬满 ×1.2）。
+## ①胜场改成出战打赢就记（不看主手 4004）；基础段（表里 base＝300 胜）以内照旧每胜 +10 余烬、封顶 3000；
+##   超出的胜场过 XTianqiGrowth.floor_ok，不过就不记。②有效余烬＝min(3000, 存档余烬)＋500×层数，在 param_plus 现算，不写存档。
+## ③余烬超过 3000 的部分每层伤害 +1%（D＝dmg_pct_of(层数)），乘在 tq_ops 的 _action 判断之前；「余烬满 ×1.2」去掉。
+static func growth_on() -> bool:
+	return _tq() and XTianqiGrowth.on()
+
+
+static func growth_layers(a) -> int:
+	return XTianqiGrowth.layers_of(XTianqiGrowth.LIUYING, a) if own(a) and growth_on() else 0
+
+
+static func growth_ember(a) -> float:
+	return float(XTianqiGrowth.ember_bonus(growth_layers(a)))
+
+
+static func growth_dmg_pct(a) -> int:
+	return XTianqiGrowth.dmg_pct_of(growth_layers(a))
+
+
+static func _growth_win(a) -> void:
+	var ember := maxf(0.0, float(a.state_data.get("_codexLbEmber", 0.0)))
+	var wins := maxf(0.0, float(a.state_data["_codexLbEmberWins"])) if a.state_data.get("_codexLbEmberWins") != null else floorf(ember / 10.0)
+	var base := float(XTianqiGrowth.actor_row(XTianqiGrowth.LIUYING).get("base", 300))
+	if wins < base:
+		a.state_data["_codexLbEmber"] = minf(maxf(TQ_EMBER_CAP, ember), ember + 10.0 * (1.0 if wins < EMBER_FULL else EMBER_FULL / wins))
+	elif not XTianqiGrowth.floor_ok(XState.current, XRaceBattle.active_logic()):
+		a.state_data["_codexLbEmberWins"] = wins  # 旧档估出来的胜场照写一次，这一胜不记
+		return
+	a.state_data["_codexLbEmberWins"] = wins + 1.0
+	a.param_mark_dirty()  # 跨层时余烬生命跟着变
 
 
 # ---- 学忘同步 ----

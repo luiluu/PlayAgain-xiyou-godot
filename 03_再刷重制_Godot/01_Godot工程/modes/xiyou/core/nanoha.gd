@@ -47,11 +47,39 @@ static func adapt(a: XActor, share: float = 1.0) -> void:
 	if not book.has(key):
 		book[key] = maxf(0.0, floorf(XParamPlus.bonus(a, 1) / 30.0))
 	var n := maxf(0.0, float(book[key]))
+	if _growth(s, a):
+		book[key] = n + growth_add(s, a, n, share)
+		s.flags[ADAPT_FLAG] = book
+		a.param_mark_dirty()  # 层数的生命魔法由 XTianqiGrowth.param_flat 现算，改了次数要自己刷新面板
+		return
 	var f := (1.0 if n < 2000.0 else 2000.0 / n) * share
 	a.add_param(0, 10.0 * f)
 	a.add_param(1, 30.0 * f)
 	book[key] = n + share
 	s.flags[ADAPT_FLAG] = book
+
+
+## ---- 天启篇无限成长（T257，稿 天启篇_无限成长_v0.4 3.2、第八节卡②第 1、4 条；Kyo D216 Q6 乙）----
+## 只在天启篇、XTianqiGrowth 开着、是表里那一位（108）时走；关掉回原版逐次公式。
+## - 基础段（表里 base＝2000 次）以内照原版每次 +10 生命、+30 魔法（走 add_param 的旧口子）。
+## - 过了基础段不再调 add_param：层数给的最大生命、最大魔法由 XTianqiGrowth.param_flat 平加（接在 actor.gd，不碰 actor_modules.gd）。
+##   超出的次数过 floor_ok，不过就不记。
+## - 跨 base 的那一下拆开：比如 1999.5 次时亲手打倒一个，前半次照旧补满基础段（+5 生命、+15 魔法），后半次过 floor_ok 才记。
+## 地雷（稿 3.2 第 6 条）：被动「凤霞」（魔法上限一成算进魔攻）现在没实装；它读面板最大魔法，平加挡不住，实装时表里的 Y 要重标。
+static func _growth(s: XState, a: XActor) -> bool:
+	return XTianqiGrowth.on(s) and int(a.actor_id) == int(XTianqiGrowth.actor_row(XTianqiGrowth.NANOHA).get("actor", ACTOR))
+
+
+## 这一次（share 次）实际记进次数多少；基础段内的部分顺手照原版加生命魔法
+static func growth_add(s: XState, a: XActor, n: float, share: float) -> float:
+	var base := float(XTianqiGrowth.actor_row(XTianqiGrowth.NANOHA).get("base", 2000))
+	var free := clampf(base - n, 0.0, share)
+	if free > 0.0:
+		a.add_param(0, 10.0 * free)
+		a.add_param(1, 30.0 * free)
+	if free >= share or XTianqiGrowth.floor_ok(s, XRaceBattle.active_logic()):
+		return share
+	return free
 
 
 ## 本次行动开表（startAction 之后的 execute 之前）

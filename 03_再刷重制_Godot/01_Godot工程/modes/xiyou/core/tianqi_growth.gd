@@ -195,13 +195,23 @@ static func param_flat(a, i: int) -> float:
 
 
 ## 种族祝福包装之后调：before＝进种族包装前的值，after＝种族包装的结果。把种族对平加那一截的放大退掉
+## T257（T256 核查 P2-1）：before 已经过了内层减益（四骑士疫病／病弱／碎甲、饥荒线枯竭、异化缄默等按比例压总数），
+## 这时 before 里的平加只剩 f×(before÷param_before_alien)，按满额 f 退会把种族给别的部分的加成也退掉；改按减益后的比例缩（只缩不放：
+## 饥荒遗物这类内层加成放大的那一截照旧留给种族，见 T256 交付单「发现 2」）。
+## T257（P2-2）：不再按比例倒推（人族 ×1.03 对平加两次取整差 ±1），直接拿去掉平加的数过一遍种族再加回：XRaceBattle.param(a,i,before−f)＋f。
 static func unrace(a, i: int, before: float, after: float) -> float:
 	if after == before or not RACE_FLAT or before <= 0.0:
 		return after
-	var f := minf(param_flat(a, i), before)
+	var f := param_flat(a, i)
 	if f <= 0.0:
 		return after
-	return after - roundf(f * (after / before - 1.0))
+	var inner: float = a.param_before_alien(i)
+	if inner > 0.0 and before < inner:
+		f = roundf(f * before / inner)
+	f = minf(f, before)
+	if f <= 0.0:
+		return after
+	return XRaceBattle.param(a, i, before - f) + f
 
 
 # ---- 哪些战斗算（Q6 乙）----
@@ -237,7 +247,9 @@ static func facts(s: XState, logic = null) -> Dictionary:
 	if logic != null:
 		var qr := XTianqiQiyinRule.fight(logic)
 		f.qiyin = (not qr.is_empty() and not bool(qr.get("enemy_only", false))) or XTianqiQiyinDragonRun.active(logic)
-		f.finale = str(XTianqiHorsemen.fight(logic).get("line", "")) != ""
+		var horse: Dictionary = XTianqiHorsemen.fight(logic)
+		# T257（T256 核查 P3-1）：照 XTianqiBrand.classify，四骑士线的开场生存战（mode＝survival）不算终局战
+		f.finale = str(horse.get("line", "")) != "" and str(horse.get("mode", "")) != "survival"
 		for e in logic.enemies:
 			if str(e.horseman.get("rec", {}).get("_ref", "")) == "hongjun":
 				f.finale = true
