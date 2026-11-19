@@ -1,0 +1,376 @@
+{
+ "_note": "天启篇六维（T275，设定稿 天启篇_角色六维_v0.3定稿，Kyo D234）。刻度 E～SSS＝1～8 分；全表整数（附则 E）。只读数据，战斗中不重算；本表不碰伤害、血防、敏捷。样板 14 份（四骑士＋10 角色），其余走 templates／默认中性。 谷雨（175）样板分待 Kyo 重定（11-19 改口：爆发输出 S、生存至少 S），暂不录，读取回中性。",
+ "version": 1,
+ "dims": [
+  "output",
+  "survive",
+  "speed",
+  "wit",
+  "resolve",
+  "support"
+ ],
+ "dim_names": {
+  "output": "输出",
+  "survive": "生存",
+  "speed": "速度",
+  "wit": "战商",
+  "resolve": "韧性",
+  "support": "辅助"
+ },
+ "scale": {
+  "E": 1,
+  "D": 2,
+  "C": 3,
+  "B": 4,
+  "A": 5,
+  "S": 6,
+  "SS": 7,
+  "SSS": 8
+ },
+ "neutral": {
+  "output": "C",
+  "survive": "C",
+  "speed": "C",
+  "wit": "C",
+  "resolve": "C",
+  "support": "C"
+ },
+ "resist_pct": {
+  "E": -10,
+  "D": -5,
+  "C": 0,
+  "B": 2,
+  "A": 5,
+  "S": 7,
+  "SS": 9,
+  "SSS": 10
+ },
+ "ai_tier": {
+  "E": 1,
+  "D": 2,
+  "C": 3,
+  "B": 3,
+  "A": 4,
+  "S": 4,
+  "SS": 5,
+  "SSS": 5
+ },
+ "ai_tier_names": {
+  "1": "蒙昧",
+  "2": "直觉",
+  "3": "老练",
+  "4": "狡黠",
+  "5": "宗师"
+ },
+ "ai_weights": {
+  "support_pct": {
+   "E": 40,
+   "D": 70,
+   "C": 100,
+   "B": 120,
+   "A": 145,
+   "S": 170,
+   "SS": 200,
+   "SSS": 240
+  },
+  "summon_pct": {
+   "E": 30,
+   "D": 60,
+   "C": 100,
+   "B": 120,
+   "A": 150,
+   "S": 180,
+   "SS": 220,
+   "SSS": 260
+  },
+  "aggro_pct": {
+   "E": 75,
+   "D": 85,
+   "C": 100,
+   "B": 110,
+   "A": 125,
+   "S": 140,
+   "SS": 160,
+   "SSS": 180
+  },
+  "guard_hp_pct": {
+   "E": 55,
+   "D": 55,
+   "C": 35,
+   "B": 35,
+   "A": 20,
+   "S": 20,
+   "SS": 15,
+   "SSS": 15
+  },
+  "guard_score_pct": {
+   "E": 150,
+   "D": 150,
+   "C": 130,
+   "B": 130,
+   "A": 130,
+   "S": 130,
+   "SS": 150,
+   "SSS": 150
+  },
+  "repeat_pct": {
+   "E": 110,
+   "D": 110,
+   "C": 100,
+   "B": 100,
+   "A": 75,
+   "S": 75,
+   "SS": 55,
+   "SSS": 55
+  },
+  "panic_pct": {
+   "E": 20,
+   "D": 10,
+   "C": 0,
+   "B": 0,
+   "A": 0,
+   "S": 0,
+   "SS": 0,
+   "SSS": 0
+  }
+ },
+ "budgets": {
+  "minion": [
+   10,
+   18
+  ],
+  "weak": [
+   13,
+   22
+  ],
+  "strong": [
+   18,
+   25
+  ],
+  "super": [
+   20,
+   26
+  ],
+  "elite": [
+   18,
+   25
+  ],
+  "knight": [
+   20,
+   26
+  ]
+ },
+ "templates": {
+  "beast": {
+   "_name": "野兽／虫类",
+   "class": "minion",
+   "output": "C",
+   "survive": "D",
+   "speed": "C",
+   "wit": "E",
+   "resolve": "D",
+   "support": "E"
+  },
+  "undead": {
+   "_name": "亡灵／傀儡",
+   "class": "minion",
+   "output": "C",
+   "survive": "C",
+   "speed": "D",
+   "wit": "D",
+   "resolve": "C",
+   "support": "E"
+  },
+  "mob": {
+   "_name": "低阶杂兵",
+   "class": "minion",
+   "output": "D",
+   "survive": "D",
+   "speed": "C",
+   "wit": "D",
+   "resolve": "D",
+   "support": "D"
+  },
+  "caster": {
+   "_name": "法师／祭司",
+   "class": "minion",
+   "output": "C",
+   "survive": "D",
+   "speed": "C",
+   "wit": "C",
+   "resolve": "C",
+   "support": "B"
+  },
+  "hunter": {
+   "_name": "刺客／猎手",
+   "class": "minion",
+   "output": "B",
+   "survive": "D",
+   "speed": "B",
+   "wit": "B",
+   "resolve": "C",
+   "support": "E"
+  },
+  "guard": {
+   "_name": "守卫／骑士",
+   "class": "minion",
+   "output": "C",
+   "survive": "B",
+   "speed": "D",
+   "wit": "C",
+   "resolve": "B",
+   "support": "D"
+  },
+  "alien": {
+   "_name": "异化失智体",
+   "class": "minion",
+   "output": "B",
+   "survive": "C",
+   "speed": "C",
+   "wit": "E",
+   "resolve": "E",
+   "support": "E"
+  },
+  "abyss": {
+   "_name": "深渊精英",
+   "class": "elite",
+   "output": "B",
+   "survive": "B",
+   "speed": "C",
+   "wit": "B",
+   "resolve": "B",
+   "support": "C"
+  }
+ },
+ "enemies": {},
+ "knights": {
+  "death": {
+   "class": "knight",
+   "output": "S",
+   "survive": "SS",
+   "speed": "E",
+   "wit": "B",
+   "resolve": "A",
+   "support": "E"
+  },
+  "war": {
+   "class": "knight",
+   "output": "S",
+   "survive": "C",
+   "speed": "SS",
+   "wit": "D",
+   "resolve": "D",
+   "support": "B"
+  },
+  "famine": {
+   "class": "knight",
+   "output": "A",
+   "survive": "C",
+   "speed": "B",
+   "wit": "SS",
+   "resolve": "A",
+   "support": "E"
+  },
+  "plague": {
+   "class": "knight",
+   "output": "D",
+   "survive": "C",
+   "speed": "D",
+   "wit": "S",
+   "resolve": "B",
+   "support": "SS"
+  }
+ },
+ "actors": {
+  "180": {
+   "name": "五条悟",
+   "class": "super",
+   "output": "S",
+   "survive": "A",
+   "speed": "B",
+   "wit": "SS",
+   "resolve": "C",
+   "support": "E"
+  },
+  "107": {
+   "name": "钟离",
+   "class": "super",
+   "output": "D",
+   "survive": "SS",
+   "speed": "E",
+   "wit": "B",
+   "resolve": "S",
+   "support": "B"
+  },
+  "168": {
+   "name": "米拉",
+   "class": "super",
+   "output": "A",
+   "survive": "A",
+   "speed": "B",
+   "wit": "B",
+   "resolve": "B",
+   "support": "C"
+  },
+  "45": {
+   "name": "东方教主",
+   "class": "strong",
+   "output": "A",
+   "survive": "D",
+   "speed": "SSS",
+   "wit": "C",
+   "resolve": "D",
+   "support": "E"
+  },
+  "174": {
+   "name": "云裳",
+   "class": "strong",
+   "output": "D",
+   "survive": "D",
+   "speed": "B",
+   "wit": "A",
+   "resolve": "B",
+   "support": "S"
+  },
+  "71": {
+   "name": "诸葛孔明",
+   "class": "strong",
+   "output": "B",
+   "survive": "D",
+   "speed": "D",
+   "wit": "S",
+   "resolve": "A",
+   "support": "B"
+  },
+  "6": {
+   "name": "吕布",
+   "class": "weak",
+   "output": "A",
+   "survive": "C",
+   "speed": "B",
+   "wit": "D",
+   "resolve": "D",
+   "support": "E"
+  },
+  "31": {
+   "name": "露茜",
+   "class": "weak",
+   "output": "E",
+   "survive": "C",
+   "speed": "C",
+   "wit": "C",
+   "resolve": "B",
+   "support": "A"
+  },
+  "60": {
+   "name": "马宝国",
+   "class": "weak",
+   "output": "D",
+   "survive": "B",
+   "speed": "C",
+   "wit": "E",
+   "resolve": "E",
+   "support": "D"
+  }
+ }
+}

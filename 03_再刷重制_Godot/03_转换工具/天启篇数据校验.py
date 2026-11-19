@@ -19,7 +19,7 @@
 - brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。
 - guardian_params.json（守层者能力值重锚，T237／T245）：只有 B 组，ref_enemy 是正整数、stats 八项对 0～7、floors 只有 31～34 层、qiyin 行（可没有）和每层只写 stats 里的项（下划线开头的注释键除外）、取值是正整数百分比（附则 E）。
 - growth.json（渡鸦、奈叶、流萤无限成长，T256）：只有 B 组，全表整数（附则 E）、层价分段从 1 层起连续且份数不降、翻倍倍数 ≥2、拐点在分段里、Q6 判定四项范围、三人行齐全且角色号对、一份是正整数、平加只认能力编号 0～7 且渡鸦只加魔攻、奈叶只加生命魔法、流萤不走平加。
-有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
+- six_dim.json（天启篇六维，T275）：只有 B 组，八档刻度、全整数（附则 E）、韧性抗控表 −10～+10 随档不降、R1～R4（SSS 唯一极化、SS 必带短板、S 稀有度、分档总分预算）逐份过、普通怪模板 8～10 个、样板角色号在 base_line.json、骑士键同 horsemen.json。\n有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
 import json
@@ -2371,6 +2371,125 @@ def check_brand(_args) -> bool:
     return _run_table('brand.json', lambda t: brand_rules(t, balance))
 
 
+# ---- six_dim.json（天启篇六维，T275；设定稿 天启篇_角色六维_v0.3定稿 第一节 R1～R4） ----
+
+SIX_LETTERS = ['E', 'D', 'C', 'B', 'A', 'S', 'SS', 'SSS']
+SIX_DIMS = ['output', 'survive', 'speed', 'wit', 'resolve', 'support']
+SIX_CLASSES = ['minion', 'weak', 'strong', 'super', 'elite', 'knight']
+SIX_BUDGETS = {'minion': (10, 18), 'weak': (13, 22), 'strong': (18, 25), 'super': (20, 26), 'elite': (18, 25), 'knight': (20, 26)}
+
+
+def six_dim_row_rules(name: str, row: dict, cls: str) -> list:
+    """一份六维（六个字母）过 R1～R4。"""
+    bad = []
+    if cls not in SIX_BUDGETS:
+        return ['%s：class 要是 %s 之一：%r' % (name, SIX_CLASSES, cls)]
+    if sorted(k for k in row if k in SIX_DIMS) != sorted(SIX_DIMS):
+        return ['%s：六维要齐全（%s）' % (name, SIX_DIMS)]
+    sc = {}
+    for k in SIX_DIMS:
+        if row[k] not in SIX_LETTERS:
+            return ['%s：%s 的档位 %r 不在 %s' % (name, k, row[k], SIX_LETTERS)]
+        sc[k] = SIX_LETTERS.index(row[k]) + 1
+    total = sum(sc.values())
+    n_sss = sum(1 for v in sc.values() if v == 8)
+    n_ss = sum(1 for v in sc.values() if v == 7)
+    n_s = sum(1 for v in sc.values() if v == 6)
+    lo, hi = SIX_BUDGETS[cls]
+    if not lo <= total <= hi:
+        bad.append('%s：R4 总分 %d 不在 %s 档预算 %d～%d' % (name, total, cls, lo, hi))
+    if n_sss > 1:
+        bad.append('%s：R1 SSS 至多 1 个，现在 %d 个' % (name, n_sss))
+    if n_sss + n_ss > 1:
+        bad.append('%s：R2 SS 与 SSS 合计至多 1 个，现在 %d 个' % (name, n_sss + n_ss))
+    if n_sss == 1:
+        rest = [v for v in sc.values() if v != 8]
+        if any(v >= 6 for v in rest):
+            bad.append('%s：R1 有 SSS 时其余五维不许 S／SS／SSS' % name)
+        if sum(1 for v in rest if v == 5) > 1:
+            bad.append('%s：R1 有 SSS 时其余五维最多 1 项 A' % name)
+        if sum(1 for v in rest if v <= 3) < 3:
+            bad.append('%s：R1 有 SSS 时其余五维至少 3 项 ≤C' % name)
+        if not any(v <= 2 for v in rest):
+            bad.append('%s：R1 有 SSS 时其余五维至少 1 项 ≤D' % name)
+        if total > 22:
+            bad.append('%s：R1 有 SSS 时总分要 ≤22，现在 %d' % (name, total))
+    elif n_ss == 1:
+        rest = [v for v in sc.values() if v != 7]
+        if sum(1 for v in rest if v == 6) > 1:
+            bad.append('%s：R2 有 SS 时其余五维 S 至多 1 项' % name)
+        two_low = sum(1 for v in rest if v <= 2) >= 2
+        e_plus = any(v == 1 for v in rest) and sum(1 for v in rest if v <= 3) >= 2
+        if not (two_low or e_plus):
+            bad.append('%s：R2 SS 无明显短板（要至少 2 项 ≤D，或 1 项 E 加另 1 项 ≤C）' % name)
+    else:
+        cap = 1 if cls in ('minion', 'weak') else 2
+        if n_s > cap:
+            bad.append('%s：R3 %s 档 S 至多 %d 项，现在 %d 项' % (name, cls, cap, n_s))
+    return bad
+
+
+def _six_ints(node, path, bad):
+    """附则 E：表里不许有小数（下划线开头的注释键除外）。"""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if not str(k).startswith('_'):
+                _six_ints(v, path + '/' + str(k), bad)
+    elif isinstance(node, list):
+        for i, v in enumerate(node):
+            _six_ints(v, '%s[%d]' % (path, i), bad)
+    elif isinstance(node, float):
+        bad.append('%s 是小数 %r（附则 E：全整数）' % (path, node))
+
+
+def six_dim_rules(table: dict, base: dict = None, horsemen: dict = None) -> list:
+    bad = []
+    _six_ints(table, '', bad)
+    if table.get('scale') != {l: i + 1 for i, l in enumerate(SIX_LETTERS)}:
+        bad.append('scale 要正好是 E～SSS＝1～8')
+    if table.get('dims') != SIX_DIMS:
+        bad.append('dims 要是 %s' % SIX_DIMS)
+    for key in ('resist_pct', 'ai_tier'):
+        if list(table.get(key, {})) != SIX_LETTERS:
+            bad.append('%s 要有 E～SSS 八档（按序）' % key)
+    rp = table.get('resist_pct', {})
+    if rp.get('C') != 0 or any(not -10 <= v <= 10 for v in rp.values() if isinstance(v, int)):
+        bad.append('resist_pct：C 要是 0、全在 −10～10')
+    if any(a > b for a, b in zip(list(rp.values()), list(rp.values())[1:])):
+        bad.append('resist_pct 要随档位不降')
+    for k, v in table.get('ai_weights', {}).items():
+        if list(v) != SIX_LETTERS:
+            bad.append('ai_weights/%s 要有 E～SSS 八档（按序）' % k)
+    if {k: list(v) for k, v in table.get('budgets', {}).items()} != {k: list(v) for k, v in SIX_BUDGETS.items()}:
+        bad.append('budgets 要同设定稿 R4：%s' % SIX_BUDGETS)
+    tpl = table.get('templates', {})
+    if not 8 <= len(tpl) <= 10:
+        bad.append('templates 要 8～10 个，现在 %d 个' % len(tpl))
+    for k, v in tpl.items():
+        bad += six_dim_row_rules('templates/%s' % k, v, v.get('class'))
+    for k, v in table.get('knights', {}).items():
+        bad += six_dim_row_rules('knights/%s' % k, v, v.get('class'))
+        if v.get('class') != 'knight':
+            bad.append('knights/%s class 要是 knight' % k)
+    for k, v in table.get('actors', {}).items():
+        bad += six_dim_row_rules('actors/%s' % k, v, v.get('class'))
+        if v.get('class') not in ('weak', 'strong', 'super'):
+            bad.append('actors/%s class 要是 weak／strong／super' % k)
+        if base is not None and k not in base.get('actors', {}):
+            bad.append('actors/%s 不在 base_line.json 的 actors 里' % k)
+    for k, v in table.get('enemies', {}).items():
+        if v.get('template') not in tpl:
+            bad.append('enemies/%s 的 template %r 不在 templates 里' % (k, v.get('template')))
+    if horsemen is not None:
+        if sorted(table.get('knights', {})) != sorted(horsemen.get('knights', {})):
+            bad.append('knights 的键要同 horsemen.json：%s' % sorted(horsemen.get('knights', {})))
+    return bad
+
+
+def check_six_dim(_args) -> bool:
+    return _run_table('six_dim.json', lambda t: six_dim_rules(t, _load_opt('base_line.json'), _load_opt('horsemen.json')))
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -2406,6 +2525,7 @@ CHECKS = [
     ('brand', check_brand),
     ('guardian_params', check_guardian_params),
     ('growth', check_growth),
+    ('six_dim', check_six_dim),
 ]
 
 
