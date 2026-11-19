@@ -125,7 +125,8 @@ var ff_grind_max := 200            # 快进基础量：每层挂机练到等级�
 var ff_farm_kings := 3             # 快进基础量：副本首领刷到王者档后再刷这么多次
 var ff_farm_max := 12              # 快进基础量：每层副本首领最多刷这么多次
 var _ff_base_done := {}            # 层 → 基础量刷完了
-var ff_retry_gate := true          # 快进局：输过守层者以后的重试先过无画面样本闸（--vp-ff-live-retry 关＝每次重试都开画面打）
+var ff_retry_gate := true          # 快进局：挑战守层者先过无画面样本闸，赢了才开画面打（--vp-ff-live-retry 关＝每次都开画面打）
+var autosell_enabled := true       # 快进局：挂机设置里开「战后自动卖出」，卖比身上都差的品质（--vp-no-autosell 关）
 var sample_defeats := 0            # 被样本闸判负的次数（没开画面）
 var upgrade_enabled := true        # 强化石：逛店时买（最多花手里金币三成）、回大厅用到身上装备的空升级槽（T238，--vp-no-upgrade 关）
 var upgrade_uses := 0
@@ -1108,6 +1109,8 @@ func _ff_run(map: XMapScene, st: XState, floor: int) -> bool:
 	_need_grind = 0
 	_need_farm = 0
 	var key := "ff_base" if base else "ff_retry"
+	if autosell_enabled:
+		FastForward.autosell_setup(st)   # 挂机设置：比身上都差的品质战后自动卖（真人挂机的做法，不然背包几千件装备、每一步都变慢）
 	var g: Dictionary = ff.grind(st, map.map_id, grind_n, until_cap) if grind_n > 0 else {"battles": 0, "stop": ""}
 	row[key + "_grind"] = int(row.get(key + "_grind", 0)) + int(g.battles)
 	_grind_total += int(g.battles)
@@ -1136,6 +1139,8 @@ func _ff_run(map: XMapScene, st: XState, floor: int) -> bool:
 		if base and kings >= ff_farm_kings:
 			break
 	row[key + "_dungeon"] = int(row.get(key + "_dungeon", 0)) + runs
+	if autosell_enabled:
+		ff.sell_now(st)
 	_mark("ff_done")
 	_note_growth("快进%s：练级 %d 场（%s），副本首领 %d 次（王者 %d 次）%s" % ["基础量" if base else "加刷", int(g.battles), str(g.stop), runs, kings,
 		("，副本停：" + str(row.get("ff_dungeon_stop", ""))) if row.has("ff_dungeon_stop") and runs < farm_n else ""])
@@ -1687,16 +1692,22 @@ func _climb_floor(map: XMapScene, st: XState, floor: int) -> void:
 	if ff_enabled and _dg.is_empty() and _find_event(map, _is_guardian) != null and await _ff_run(map, st, floor):
 		await _hotkey_lobby(map)          # 快进完回大厅：治疗、换装、养成、逛店、存档，再来挑战
 		return
-	# 快进局的重试闸（T238）：输过以后再挑战，先在无画面战斗逻辑里把守层者打一场（同副本首领的样本闸，40 回合）；
-	# 没打赢就记一次失败、按翻倍规则再快进加刷，不开画面打。打赢了、或已经输到放水那一次，才开画面实打。每层第一次挑战照样开画面实打
-	if ff_enabled and ff_retry_gate and _dg.is_empty() and int(_floor_row().get("defeats", 0)) > 0:
+	# 快进局的守层者闸（T238）：挑战之前先在无画面战斗逻辑里把守层者打一场（同副本首领的样本闸，40 回合）；
+	# 没打赢就记一次失败、按翻倍规则再快进加刷，不开画面打。打赢了、或已经输到放水那一次，才开画面实打。
+	# 开画面打满 40 回合的僵局一场要一两万帧，是快进局最大的耗时（11-19 实测）。测量档照样在第一次挑战前写（闸之前）
+	if ff_enabled and ff_retry_gate and _dg.is_empty() and _need_grind <= 0 and _need_farm <= 0:
 		var gt := _guardian_troop(map)
 		var cap := pass_after if pass_after > 0 else climb_max_defeats
-		if gt > 0 and int(_floor_row().defeats) < cap - (1 if pass_after <= 0 else 0) and not ff.sample(st, gt):
+		if gt > 0:
+			_snapshot(st, floor)
+		if gt > 0 and int(_floor_row().get("defeats", 0)) < cap - (1 if pass_after <= 0 else 0) and not ff.sample(st, gt):
 			var row0 := _floor_row()
 			row0["sample_defeats"] = int(row0.get("sample_defeats", 0)) + 1
+			var fights: Array = row0.get("sample_fights", [])
+			fights.append(ff.last_sample)
+			row0["sample_fights"] = fights
 			sample_defeats += 1
-			_log("快进：守层者（敌群 %d）无画面样本没打赢，记一次失败、再加刷" % gt)
+			_log("快进：守层者（敌群 %d）无画面样本没打赢（%d 回合，打掉 %d%%），记一次失败、再加刷" % [gt, int(ff.last_sample.get("turns", 0)), int(ff.last_sample.get("dealt_pct", 0))])
 			_mark("guardian_sample_loss")
 			_on_defeat()
 			return
@@ -2381,7 +2392,7 @@ func report() -> Dictionary:
 	return {
 		"seed": rng_seed, "fixed_random": fixed_random, "lineup": lineup, "lineup_weak": lineup.map(func(id): return XTianqiSkills.is_weak(id, true)), "difficulty_key": _tq_key, "debug_floor": debug_floor, "debug_items": debug_items, "ticks": ticks, "frames": Engine.get_process_frames(), "keys": key_count,
 		"aborted": aborted, "settled": settled, "pass_after": pass_after, "gifted_floors": gifted_floors, "mode": mode, "floor": _floor, "floor_log": floor_log, "climb_stop": climb_stop,
-		"defeats": defeats, "grind_battles": _grind_total, "equip_changes": equip_changes, "equip_passes": equip_passes, "upgrade_uses": upgrade_uses, "sample_defeats": sample_defeats, "levels": _levels(), "msec": Time.get_ticks_msec() - _t0,
+		"defeats": defeats, "grind_battles": _grind_total, "equip_changes": equip_changes, "equip_passes": equip_passes, "upgrade_uses": upgrade_uses, "sample_defeats": sample_defeats, "autosold": ff.sold if ff != null else 0, "levels": _levels(), "msec": Time.get_ticks_msec() - _t0,
 		"dungeon_runs": dungeon_runs, "dungeon_kills": dungeon_kills, "dungeon_defeats": dungeon_defeats, "farm_block": _farm_block, "stalemates": stalemates,
 		"growth": _growth_state(st), "growth_log": growth_log,
 		"ff": {"on": ff_enabled, "settled": ff.settled, "grind": ff.grind_battles, "dungeon": ff.dungeon_runs, "kings": ff.dungeon_kings, "mobs": ff.mobs,

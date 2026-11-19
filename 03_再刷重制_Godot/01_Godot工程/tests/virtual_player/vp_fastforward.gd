@@ -19,6 +19,9 @@ const SAMPLE_TURNS := 40
 var bot: Node                      # 虚拟玩家（拿它的随机数、日志、往树上挂替身）
 var rng: RandomNumberGenerator
 var sample_cache := {}             # 缓存键 → 量出来赢没赢
+var sample_detail := {}            # 缓存键 → 那一场的明细
+var last_sample := {}              # 最近一次样本：{troop, won, turns, dealt_pct, dead}
+var sold := 0                      # 自动出售卖掉的装备件数
 var samples := 0                   # 量了几场（无画面真打）
 var sample_losses := 0
 var settled := 0                   # 快进结算了几场（练级＋副本首领）
@@ -59,6 +62,7 @@ func settle(st: XState, troop: int) -> Dictionary:
 func sample(st: XState, troop: int) -> bool:
 	var key := _sample_key(st, troop)
 	if sample_cache.has(key):
+		last_sample = sample_detail.get(key, {})
 		return bool(sample_cache[key])
 	var copy := XState.from_dict(st.to_dict())
 	XState._become_current(copy)
@@ -92,13 +96,21 @@ func sample(st: XState, troop: int) -> bool:
 		if logic.is_over():
 			break
 	won = logic.is_won() and not logic.is_lost()
+	var hp0 := 0.0
+	var left := 0.0
+	for e in logic.enemies:
+		hp0 += float(e.mhp)
+		left += maxf(0.0, float(e.hp))
+	last_sample = {"troop": troop, "won": won, "turns": int(logic.turn), "dealt_pct": int(100.0 * (1.0 - left / maxf(1.0, hp0))),
+		"dead": logic.actors.filter(func(a): return a.is_dead()).size()}
 	logic.end_battle(0 if won else 2)
 	XState._become_current(st)
 	samples += 1
 	if not won:
 		sample_losses += 1
 	sample_cache[key] = won
-	_note("样本 敌群 %d：%s" % [troop, "赢" if won else "没打赢"])
+	sample_detail[key] = last_sample
+	_note("样本 敌群 %d：%s（%d 回合，打掉 %d%%，我方倒 %d）" % [troop, "赢" if won else "没打赢", int(last_sample.turns), int(last_sample.dealt_pct), int(last_sample.dead)])
 	return won
 
 
@@ -162,6 +174,7 @@ func grind(st: XState, map_id: int, n: int, until_cap: bool) -> Dictionary:
 			out.stop = "敌群 %d 样本没打赢" % troop
 			break
 		var r := settle(st, troop)
+		sold += maxi(0, XHangUpAuto.after_battle_sell(st))   # 同挂机打完一场：按挂机设置里开着的品质自动卖（map_scene 战后那一步）
 		out.battles += 1
 		out.exp += int(r.exp)
 		out.gold += int(r.gold)
@@ -401,3 +414,33 @@ func dungeon_once(st: XState, floor_map: int, buy_rune: Callable) -> Dictionary:
 	msec += Time.get_ticks_msec() - t0
 	_note("副本首领（敌群 %d，档 %d）：%s 抽奖券 %+d 积分 %+d" % [int(out.troop), int(out.tier), "打倒" if out.ok else out.why, int(out.tickets), int(out.points)])
 	return out
+
+
+
+# ---------------------------------------------------------------- 自动出售（挂机设置）
+
+## 照真人挂机的设置：比出战的人身上武器防具最低的那一档还低的品质，开「战后自动卖出」、每场都卖（同挂机设置页背后的 toggle_grade、SellQuality）。
+## 返回开着卖的七档（0 普通 … 6 神话）
+static func autosell_setup(st: XState) -> Array:
+	var low := 6
+	var any := false
+	for a in st.battle_members():
+		for g in a.equips:
+			if g is Dictionary and not g.is_empty() and str(g.get("kind", "")) in ["weapon", "armor"]:
+				low = mini(low, XQuality.grade(g))
+				any = true
+	var want := range(low) if any else []
+	for g in 7:
+		var on := XHangUpAuto.grade_state(st, g) != "none"
+		if on != want.has(g):
+			XHangUpAuto.toggle_grade(st, g)
+	XHangUpAuto.sell_config(st).SellQuality = 1 if not want.is_empty() else 0
+	return want
+
+
+## 现在就按挂机设置卖一次（副本快进打完、回大厅前）
+func sell_now(st: XState) -> int:
+	XHangUpAuto.better_frequency = 0
+	var n := maxi(0, XHangUpAuto.after_battle_sell(st))
+	sold += n
+	return n
