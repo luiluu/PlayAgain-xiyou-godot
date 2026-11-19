@@ -299,6 +299,24 @@ static func shop(shop_page: XShop, st: XState, wanted: Dictionary = {}) -> Dicti
 				var share := n / team.size() + (1 if k < n % team.size() else 0)
 				if share > 0:
 					out.uses.append({"id": int(d[i].gid), "actor": int(team[k].actor_id), "n": share})
+	# 强化石（T238）：身上装备还有空升级槽就买，最多花掉手里金币的三成（书和丹药先买）；买回来由 upgrade_gear 用掉
+	var budget := int(st.gold) * 3 / 10
+	var spent := 0
+	for i in d.size():
+		var e2: Dictionary = d[i]
+		if int(e2.kind) != 0 or not is_upgrade_stone(e2.item) or not shop_page._buy_enabled(e2):
+			continue
+		var room := upgrade_room(st, e2.item) - st.item_count(int(e2.gid))
+		var price := maxi(1, int(e2.get("price", 1)))
+		var n2 := mini(room, (budget - spent) / price)
+		if n2 <= 0:
+			continue
+		var cost2 := _wallet(st)
+		var got2 := _buy(shop_page, i, n2)
+		if got2 > 0:
+			spent += int(cost2[0]) - int(st.gold)
+			out.bought += got2
+			out.lines.append("买强化石 %s×%d %s" % [str(e2.rec.get("name", "")), got2, _spent(st, cost2)])
 	shop_page._mode = "command"
 	shop_page._drop_cache()
 	shop_page._refresh()
@@ -662,3 +680,57 @@ static func equip_direct(st: XState) -> Array:
 			a.mp = floorf(a.mmp * mp_rate)
 			out.append("%s 换上 %s（涨 %d%%）" % [a.display_name(), str(best.get("name", "")), int(best_score * 100)])
 	return out
+
+
+# ---------------------------------------------------------------- 强化石（T238，变强途径清单 11）
+
+## 是不是能用在武器／防具升级槽上的强化材料（磨刀石、魔力晶片、护甲片、精华液这类；YEP 升级插槽，规则在物品的 upgrade 里）。
+## 只认全是加数值的（不认会拆槽、改元素这种：它挑不来）
+static func is_upgrade_stone(item: Dictionary) -> bool:
+	var data := XGearUpgrade.rule(item)
+	if data.is_empty() or not data.get("issues", []).is_empty():
+		return false
+	for kind in ["weapon", "armor"]:
+		for eff in data.get(kind, []):
+			if str(eff.get("op", "")) != "param" or float(eff.get("value", 0)) < 0.0:
+				return false
+	return not (data.get("weapon", []).is_empty() and data.get("armor", []).is_empty())
+
+
+## 出战的人身上的武器和防具（助力位也算：它的装备效果照算）
+static func _worn(st: XState) -> Array:
+	var out := []
+	for a in st.battle_members() + ([st.helper()] if st.helper() != null else []):
+		for g in a.equips:
+			if g is Dictionary and not g.is_empty() and str(g.get("kind", "")) in ["weapon", "armor"] and not out.has(g):
+				out.append(g)
+	return out
+
+
+## 这种强化石还能往身上装备里用几块（每件按剩的升级槽÷每块的花费算）
+static func upgrade_room(st: XState, item: Dictionary) -> int:
+	var cost := maxi(1, int(XGearUpgrade.rule(item).get("cost", 1)))
+	var n := 0
+	for g in _worn(st):
+		if XGearUpgrade.reason(g, item, 1) == "":
+			n += int(g.get("upgradeSlots", 6)) / cost
+	return n
+
+
+## 背包里的强化石全用到身上装备的空升级槽里（同物品页「升级」：XGearUpgrade.apply 判条件、扣材料）。返回给报告的文字
+static func upgrade_gear(st: XState) -> Array:
+	var lines := []
+	var used := {}
+	for id in st.items.keys():
+		var item := XDB.rec("Items", int(id))
+		if item.is_empty() or not is_upgrade_stone(item):
+			continue
+		for g in _worn(st):
+			while st.item_count(int(id)) > 0 and XGearUpgrade.reason(g, item, st.item_count(int(id))) == "":
+				if not XGearUpgrade.apply(st, g, int(id)):
+					break
+				var k := "%s→%s" % [str(item.get("name", id)), str(g.get("name", ""))]
+				used[k] = int(used.get(k, 0)) + 1
+	for k in used.keys():
+		lines.append("强化 %s ×%d" % [k, int(used[k])])
+	return lines

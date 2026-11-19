@@ -165,12 +165,19 @@ static func _brief(lg: Array) -> String:
 func _compare(st: XState) -> void:
 	for troop in troops:
 		var acc := {"real": {"n": 0, "exp": 0.0, "gold": 0.0, "drops": 0.0, "lost": 0, "kinds": {}}, "ff": {"n": 0, "exp": 0.0, "gold": 0.0, "drops": 0.0, "lost": 0, "kinds": {}}}
+		var pair := {}
+		var same := 0
+		var paired := 0
 		for k in compare:
 			for mode in ["real", "ff"]:
 				var copy := XState.from_dict(st.to_dict())
 				XState._become_current(copy)
 				for a in copy.members():
 					a.recover_all()
+				# 每场换一个战斗键（天启篇按「敌群号|第几次」钉随机）：第 k 场实打和快进用同一个键，场与场之间独立
+				var rng = copy.flags.get("tianqi", {}).get("rng")
+				if rng is Dictionary:
+					rng["battle|%d" % int(troop)] = int(rng.get("battle|%d" % int(troop), 0)) + k
 				copy.hang_up_active = hang
 				if hang and copy.hang_up_origin.x < 0:
 					copy.hang_up_origin = Vector2i(copy.x, copy.y)
@@ -185,6 +192,12 @@ func _compare(st: XState) -> void:
 						logic.end_battle(2)
 						continue
 				var r := logic.rewards()
+				var sig := JSON.stringify((r.drops as Array).map(func(d): return [int(d.get("id", 0)), str(d.get("kind", ""))] if d is Dictionary else d))
+				if mode == "real":
+					pair[k] = sig
+				elif pair.has(k):
+					same += 1 if pair[k] == sig else 0
+					paired += 1
 				var a: Dictionary = acc[mode]
 				a.n += 1
 				a.exp += float(r.exp)
@@ -199,7 +212,7 @@ func _compare(st: XState) -> void:
 			var a: Dictionary = acc[mode]
 			var m := maxf(1.0, float(a.n))
 			line.append("%s 赢 %d 输 %d 经验 %.1f 金钱 %.1f 掉落 %.3f 件 %s" % ["实打" if mode == "real" else "快进", a.n, a.lost, a.exp / m, a.gold / m, a.drops / m, JSON.stringify(a.kinds)])
-		print("COMPARE 敌群 %d：%s" % [int(troop), " ｜ ".join(line)])
+		print("COMPARE 敌群 %d：%s ｜ 同一战斗键掉落完全相同 %d/%d" % [int(troop), " ｜ ".join(line), same, paired])
 	XState._become_current(st)
 
 

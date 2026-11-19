@@ -125,6 +125,8 @@ var ff_grind_max := 200            # 快进基础量：每层挂机练到等级�
 var ff_farm_kings := 3             # 快进基础量：副本首领刷到王者档后再刷这么多次
 var ff_farm_max := 12              # 快进基础量：每层副本首领最多刷这么多次
 var _ff_base_done := {}            # 层 → 基础量刷完了
+var upgrade_enabled := true        # 强化石：逛店时买（最多花手里金币三成）、回大厅用到身上装备的空升级槽（T238，--vp-no-upgrade 关）
+var upgrade_uses := 0
 var weak_only := false             # 开局阵容只要弱者（--vp-weak，T238「4 弱」）：5 人（4 上场＋助力位）都从本档弱者池按种子抽
 var want_difficulty := ""          # 开局难度（--vp-difficulty=jianxian 等）；空＝第一档没锁的
 var climb_explore_ticks := 400     # 这一层地图上没看到守层者时，最多逛这么多步找路
@@ -1364,6 +1366,11 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			await _tap("cancel", 3)
 			await _frames(6)
 			return
+	# 强化石（T238）：背包里有就用到身上装备的空升级槽里（同物品页「升级」背后的 XGearUpgrade.apply）
+	if upgrade_enabled:
+		for line in Growth.upgrade_gear(st):
+			upgrade_uses += 1
+			_note_growth(str(line))
 	# 宝珠、种族进阶：每次回大厅（打过仗之后）看一遍，有材料就用掉
 	var gstamp := [int(st.variable(FLOOR_VAR)), _bcount()]
 	if gstamp != _growth_stamp:
@@ -2348,7 +2355,7 @@ func report() -> Dictionary:
 	return {
 		"seed": rng_seed, "fixed_random": fixed_random, "lineup": lineup, "lineup_weak": lineup.map(func(id): return XTianqiSkills.is_weak(id, true)), "difficulty_key": _tq_key, "debug_floor": debug_floor, "debug_items": debug_items, "ticks": ticks, "frames": Engine.get_process_frames(), "keys": key_count,
 		"aborted": aborted, "settled": settled, "pass_after": pass_after, "gifted_floors": gifted_floors, "mode": mode, "floor": _floor, "floor_log": floor_log, "climb_stop": climb_stop,
-		"defeats": defeats, "grind_battles": _grind_total, "equip_changes": equip_changes, "equip_passes": equip_passes, "levels": _levels(), "msec": Time.get_ticks_msec() - _t0,
+		"defeats": defeats, "grind_battles": _grind_total, "equip_changes": equip_changes, "equip_passes": equip_passes, "upgrade_uses": upgrade_uses, "levels": _levels(), "msec": Time.get_ticks_msec() - _t0,
 		"dungeon_runs": dungeon_runs, "dungeon_kills": dungeon_kills, "dungeon_defeats": dungeon_defeats, "farm_block": _farm_block, "stalemates": stalemates,
 		"growth": _growth_state(st), "growth_log": growth_log,
 		"ff": {"on": ff_enabled, "settled": ff.settled, "grind": ff.grind_battles, "dungeon": ff.dungeon_runs, "kings": ff.dungeon_kings,
