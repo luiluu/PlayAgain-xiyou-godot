@@ -146,7 +146,7 @@ func _choose_and_opening() -> void:
 	await XTianqi.run_line_choice(host, s)
 	_check("chosen_war", XTianqi.line_of(s) == "war" and XTianqiWarLine.allowed(s))
 	_check("card_shown", host.said.any(func(t): return str(t).contains("便不再停歇")), host.said.slice(0, 3))
-	_check("choose_line_said", host.said.any(func(t): return str(t).contains("你帮我验收")))
+	_check("choose_line_said", host.said.any(func(t): return str(t).contains("托付给你")))
 	_check("omen_battle", host.battles.size() == 1 and host.battles[0].troop == 30 and host.battles[0].alien == "omen" and host.battles[0].lose, host.battles)
 	_check("omen_went_tribe", host.moves.size() >= 1 and host.moves[0] == [13, 27, 24, 8], host.moves)
 	_check("omen_lost_home", XTianqiWarLine.stage(s) == 0 and host.moves[-1][0] == 4, [XTianqiWarLine.stage(s), host.moves])
@@ -232,7 +232,7 @@ func _beats() -> void:
 	_check("final_lost", await XTianqiWarLine.run_final(host, s) == 2 and not bool(XTianqiWarLine.progress(s).get("cleared", false)))
 	host.said.clear()
 	_check("final_win", await XTianqiWarLine.run_final(host, s) == 0 and bool(XTianqiWarLine.progress(s).cleared) and bool(s.flags.tianqi.reincarnate)
-		and host.battles[2].mode == "body" and host.said.any(func(t): return str(t).contains("未经姐姐复核")), host.battles)
+		and host.battles[2].mode == "body" and host.said.any(func(t): return str(t).contains("彼岸未允")), host.battles)
 
 
 func _alien_logic(preset: String, troop: int, tough := 20000000.0) -> XBattleLogic:
