@@ -108,6 +108,8 @@ static func harm_re(e: XEnemy, table: Dictionary) -> Dictionary:
 	var v := measure_resist
 	if v < 0.0:
 		var rt := XTianqiBase.guardian_table("resist", RESIST_TABLE)  # 期四总开关开着读新表（T012-c 量；缺就退回旧表）
+		if not rt.has(f):
+			rt = RESIST_TABLE  # T229：新表缺这一层时逐层退回旧表
 		if not RESIST or not rt.has(f) or not _on():
 			return table
 		v = float(rt[f])
@@ -130,7 +132,7 @@ static func atk_scale(e: XEnemy) -> float:
 		return 1.0
 	if ref:
 		return HONGJUN_SCALE if str(rec.get("_ref", "")) == "hongjun" else REF_SCALE
-	return float(XTianqiBase.guardian_table("atk_scale", ATK_SCALE).get(f, 1.0))  # 期四总开关开着读新表（缺就退回旧表）
+	return float(XTianqiBase.guardian_table("atk_scale", ATK_SCALE).get(f, ATK_SCALE.get(f, 1.0)))  # 期四总开关开着读新表（缺就退回旧表；T229 起缺的层逐层退回）
 
 
 ## 守层者认敌人号；楼层里别的敌人认 setup 记下的层（WORLD）
@@ -209,8 +211,8 @@ static func troop_floor(logic) -> int:
 ## 以后用虚拟玩家按去 ×6 后的伤害重量、换表时，把这里的 hp_unit 去掉。
 static func hp_base(f: int) -> float:
 	var t := XTianqiBase.guardian_table("hp_base", HP_BASE)  # 期四总开关开着读新表（T012-c 按新口径实机量，不再乘 hp_unit；缺就退回旧表照旧乘）
-	if not is_same(t, HP_BASE):
-		return float(t.get(f, 0.0))
+	if not is_same(t, HP_BASE) and t.has(f):  # T229：新表缺这一层（如 31～34 层没写）时逐层退回旧表，不按 0 取
+		return float(t[f])
 	return float(HP_BASE[f]) * XTianqiNoX6.hp_unit()
 
 

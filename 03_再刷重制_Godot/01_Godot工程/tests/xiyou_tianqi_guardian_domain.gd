@@ -4,6 +4,8 @@ extends Node
 ## 二、20 层（456）不交礼不挂天道领域 698／686／1104，交了礼不挂伪领域 695／691；残血页（血 ≤20%＋变量 853）不再挂 698，334 回满照旧。
 ## 三、31 层（467）不挂霸者领域 1106／1110／1108，破阵阶段状态 1050 照挂。
 ## 四、西游档 13 层照原版挂 696；domain_off 只认 13～33 层守层者敌群（12 层 110、守护者 125 不算）。
+## 五、三张表（balance_table.guardian_phase4，T229 只写 1～30 层）：1～30 层读新表；31～34 层缺，逐层退回旧表，取值跟写表前一致
+##     （hp_base＝旧 HP_BASE×hp_unit，出伤倍率＝旧 ATK_SCALE，伤害抵抗＝旧 RESIST_TABLE）。
 
 var results: Array = []
 
@@ -27,6 +29,7 @@ func _run() -> void:
 	_f31()
 	_xiyou()
 	_scope()
+	_tables()
 	XGuardianRework.DOMAIN_OFF = was
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -150,3 +153,43 @@ func _scope() -> void:
 		if not XGuardianRework.domain_off(lg):
 			in_scope = false
 	_check("scope", ok and in_scope, [ok, in_scope])
+
+
+func _tables() -> void:
+	_check("tables.phase4_on", XTianqiBase.PHASE4)
+	var g: Dictionary = XTianqiBalance.data().get("guardian_phase4", {})
+	var hp: Dictionary = g.get("hp_base", {})
+	var atk: Dictionary = g.get("atk_scale", {})
+	var res: Dictionary = g.get("resist", {})
+	_check("tables.written_1_30", range(1, 31).all(func(f): return hp.has(str(f)) and atk.has(str(f))) and range(19, 31).all(func(f): return res.has(str(f))), [hp.size(), atk.size(), res.size()])
+	_check("tables.no_31_34", range(31, 35).all(func(f): return not hp.has(str(f)) and not atk.has(str(f)) and not res.has(str(f))))
+	var bad := []
+	for f in range(1, 35):
+		var want := float(hp[str(f)]) if hp.has(str(f)) else float(XGuardianRework.HP_BASE[f]) * XTianqiNoX6.hp_unit()
+		if not is_equal_approx(XGuardianRework.hp_base(f), want):
+			bad.append([f, XGuardianRework.hp_base(f), want])
+	_check("tables.hp_base", bad.is_empty(), bad)
+	var s := _state(true)
+	var bad_atk := []
+	var bad_res := []
+	for f in [13, 20, 30, 31, 32, 33]:
+		var lg := XBattleLogic.new()
+		lg.setup(int(XGuardianRework.TROOPS[f]), s)
+		var e: XEnemy = null
+		for x in lg.enemies:
+			if XGuardianRework.floor_of(x.enemy_id) == f:
+				e = x
+				break
+		if e == null:
+			bad_atk.append([f, "没有守层者"])
+			continue
+		var want_atk := float(atk[str(f)]) if atk.has(str(f)) else float(XGuardianRework.ATK_SCALE[f])
+		if not is_equal_approx(e.output_scale, want_atk):
+			bad_atk.append([f, e.output_scale, want_atk])
+		if f >= 19:
+			var want_res := float(res[str(f)]) if res.has(str(f)) else float(XGuardianRework.RESIST_TABLE[f])
+			var got: Dictionary = XGuardianRework.harm_re(e, {1: 1.0})
+			if not is_equal_approx(float(got.get(1, -1.0)), want_res):
+				bad_res.append([f, got, want_res])
+	_check("tables.atk_scale", bad_atk.is_empty(), bad_atk)
+	_check("tables.resist", bad_res.is_empty(), bad_res)
