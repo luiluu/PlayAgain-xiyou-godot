@@ -112,6 +112,9 @@ func _run() -> void:
 	seed(20261116)
 	XTianqiWeakAffix.reload_table()
 	_table()
+	var bare: Dictionary = XTianqiWeakAffix.data().duplicate(true)
+	bare.guidable_skills = []  # T231 起表里签了 1 号普攻；本专项的「没签过」样例用的就是 1 号，名单清空跑地基断言（要引导的用 test_guidable 注入）
+	XTianqiWeakAffix.reload_table(bare)
 	_guide_cover_reflect()      # 断言 1
 	_multi_segment_fallback()   # 断言 2、3；v0.3.1 一
 	_guide_exclusions()         # 断言 4 的前半、不可引导／三层／混乱／强制
@@ -126,6 +129,7 @@ func _run() -> void:
 	_boss_badges_drop()         # 第 4 条那一句、v0.3.1 四、掉落接口
 	XTianqiWeakAffix.test_entries = {}
 	XTianqiWeakAffix.test_guidable = []
+	XTianqiWeakAffix.reload_table()
 	XTianqiWeakAffix.ENABLED = true
 	XTianqiWeakAffix.COUNTER_NO_HUNZI_MARK = true
 	var passed := results.filter(func(r): return r.passed).size()
@@ -141,7 +145,7 @@ func _table() -> void:
 	_check("table_loads", not d.is_empty() and d.get("entries", null) is Dictionary, d.keys())
 	# 批 1（T018）起表里有了具体词条：一律默认关（v0.3 第二节第 5 条：验收一条开一条），所以开着时战斗结果仍和没有本模块一样
 	_check("table_entries_default_off", (d.entries as Dictionary).values().all(func(e): return not bool(e.get("enabled", false))), (d.entries as Dictionary).keys())
-	_check("table_no_guidable_yet", (d.get("guidable_skills", []) as Array).is_empty())  # 默认一个都不可引导（D68）
+	_check("table_guidable_attack_only", (d.get("guidable_skills", []) as Array) == [1.0])  # T231：只签 1 号普攻（其余另开审查单签；D68）
 	_check("table_drop_rate_placeholder", is_equal_approx(float(XTianqiWeakAffix.rules().get("drop_rate", 0)), 0.3))
 
 

@@ -2631,6 +2631,8 @@ func _invoke(u: XBattler, skill: Dictionary, t: XBattler) -> Array:
 			XRaven.applied(self, u, skill, u, r, true)  # 渡鸦 Game_Action.apply 包装：反射回渡鸦自己时同一个 Game_Action 照样记帧（鸦啄回 MP、黑暗侵蚀、狩猎／回响追加伤害落在渡鸦身上），原版实测 raven_reflect_probe
 		return [{"type": "reflect", "user": u, "target": t}] + rs
 	var cnt := t.cnt if XDamage.is_physical(skill) and t.is_alive() and not _restricted(t) and not sure and not XGarou.no_counter(t) else 0.0  # 饿狼 itemCnt 包装：不被原生反击
+	if cnt > 0.0:
+		cnt = maxf(0.0, cnt - XTianqiWeakB2.counter_cut(self, t))  # 天启篇弱者专属词条批 2B 布兰德瓦登「掷矛邀战」：戴着时扣掉反击 1162 那 30%（别的来源不动）
 	if cnt > 0.0 and XTianqiSkills.counter_rule(t) != null:
 		return XTianqiSkills.invoke_counter(self, u, skill, t, cnt)  # 天启篇技能重构的原生反击（布兰德瓦登）：挨打后半伤凌空斩、同一次敌人行动最多反一次
 	if _float("counter") < cnt:

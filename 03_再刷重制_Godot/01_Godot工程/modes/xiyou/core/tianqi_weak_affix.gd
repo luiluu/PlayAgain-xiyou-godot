@@ -110,7 +110,8 @@ static func guidable(skill) -> bool:
 	if not (skill is Dictionary) or skill.has("tianqi_horseman") or int(skill.get("scope", 0)) != 1:
 		return false
 	var id := int(skill.get("id", 0))
-	return test_guidable.has(id) or data().get("guidable_skills", []).has(id)
+	var list: Array = data().get("guidable_skills", [])
+	return test_guidable.has(id) or list.has(id) or list.has(float(id))  # JSON 读进来是浮点（T231：Array.has 分 int／float）
 
 
 # ---- 装备 ----

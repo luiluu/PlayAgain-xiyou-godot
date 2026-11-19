@@ -13,6 +13,16 @@ extends RefCounted
 ##   下一回合顺序后推 1 格（每敌每回合 1 次）、挂刻印 10830（敏捷 −20%，2 回合，首领按普通减益减半）。
 ## w3 艾坤「一坤年之威」：end_action 里球来已过全部检查时取消、库存补到 3；队友主动根命中敌人后（root_end）对主目标打一次传球
 ##   （球来五段 ×33%），每回合 1 次，主目标已倒不打不扣。传球是专属派生（地基 root_end 时这一根已改 DERIVED：不连锁、打混子不记账）。
+## 【cc·T231·未经审查】批 2B（v0.3.1 第三节 42 整表替换、86；第二节第 2、3 条）：
+## w42 布兰德瓦登「掷矛邀战」：戴着时 battle_logic._invoke 里他的反击率扣掉反击 1162 给的 30%（counter_cut；别的来源不动，剩下的照走
+##   重构版半伤凌空斩，counter_rule 不屏蔽——屏蔽会退回原版「吞掉攻击＋全伤普攻」）。投掷 1159 直接有效命中敌人甲 → 甲「受邀」到本自然回合结束
+##   （只留最近一个；地基 mark_guide，可引导名单本单只签 1 号普攻）；甲带标签期间任何一根直接有效命中他（被引导的、本来就选他的、全体技），
+##   甲这一根全部结算完（root_end）他对甲反击一次半伤凌空斩：不回 TP、继承甲那一根（专属派生）、每自然回合 1 次；他倒下、被控、甲已倒：
+##   不反、不扣次数；反击后认牛马之魂（_arm_next，原本就每回合最多挂 1 次）。
+## w86 张三丰「护犊」：只在重构护短开着（XTianqiSkills.GUARD＋角色卡）时生效；戴着时 _guard 跳过他（masks_guard，原生护短整个关）。
+##   每自然回合开始在场上活着的队友（不含他）里按生命比例最低选被护者，平局取出战栏靠前的；中途倒下不重选。被护者被敌方主动根直接有效命中
+##   （四骑士主动技经 horseman_strike 同样记），敌人这一根全部结算完他对出手者追一次半伤太极拳（只太极拳、去掉太极再释放效果 44、不攒太极之力），
+##   每自然回合 1 次；他倒下、被控、出手者已倒：不追、不扣次数。
 
 static var _installed := false
 
@@ -25,6 +35,8 @@ static func install() -> void:
 	XTianqiWeakAffix.register("w23", Molei.new())
 	XTianqiWeakAffix.register("w103", Minato.new())
 	XTianqiWeakAffix.register("w3", Aikun.new())
+	XTianqiWeakAffix.register("w42", Brand.new())  # 批 2B（T231）
+	XTianqiWeakAffix.register("w86", Zhang.new())
 
 
 ## 这个人此刻是否带着生效的 key
@@ -312,3 +324,128 @@ class Aikun:
 			return ""
 		var n := int(XTianqiWeakAffix.stock(logic, b, "w3").get("n", 0))
 		return "传球 ×%d" % n if n > 0 else ""
+
+
+# ---- 批 2B（T231）：w42 布兰德瓦登「掷矛邀战」 ----
+
+## battle_logic._invoke 算反击率时：戴着 w42 的人扣掉反击 1162 给的那部分（整数百分比 cnt_pct；没学 1162 不扣）。返回要扣的量，0＝不扣
+static func counter_cut(logic, t) -> float:
+	if not wears(logic, t, "w42"):
+		return 0.0
+	var sp: Dictionary = XTianqiWeakAffix.entry("w42").get("invite", {})
+	if not XTianqiSkills.owns(t, int(sp.get("cnt_skill", 0))):
+		return 0.0
+	return int(sp.get("cnt_pct", 0)) / 100.0
+
+
+class Brand:
+	func root_end(logic, f: Dictionary) -> Array:
+		var b = XTianqiWeakB2._holder(logic, "w42")
+		if b == null:
+			return []
+		var sp: Dictionary = XTianqiWeakAffix.entry("w42").get("invite", {})
+		var u = f.get("user")
+		if is_same(u, b):
+			if str(f.get("skill", "")) != str(int(sp.get("throw", 0))):
+				return []
+			var t = null
+			for h in f.get("hits", []):
+				if h.target is XEnemy and h.target.is_alive():
+					t = h.target
+					break
+			if t == null:
+				return []  # 投掷没有有效命中：不邀
+			for foe in XTianqiWeakAffix._store(logic).marks.keys():
+				XTianqiWeakAffix.unmark_guide(logic, foe, b)  # 只留最近一次投掷命中的那一个（协调 11-19 定）
+			XTianqiWeakAffix.mark_guide(logic, t, b, "w42")
+			return [XTianqiWeakAffix.say("%s 受邀，攻击将引向 %s" % [XTianqiWeakB2._name(t), XTianqiWeakB2._name(b)])]
+		if not (u is XEnemy) or not XTianqiWeakAffix.guiders_of(logic, u).has(b) or XTianqiWeakAffix.hits_on(f, b) <= 0:
+			return []
+		if not b.is_alive() or not u.is_alive() or not logic.can_move(b):
+			return []  # 他倒下、被控、甲已倒：不反，不扣次数
+		if not XTianqiWeakAffix.take_turn(logic, b, "w42"):
+			return []
+		var cast: Dictionary = XDB.rec("Skills", int(sp.get("cast", 0))).duplicate(true)
+		var tp := float(b.tp)
+		var c: Array = logic._counter_attack(u, b, cast, int(sp.get("pct", 100)) / 100.0)  # 根收尾时这一根已是 DERIVED，里面的 COUNTER 照记派生
+		b.tp = tp  # 不回 TP（凌空斩平时回的 10 点这里不给）
+		if not c.is_empty():
+			c[0].w42 = true
+		XTianqiSkills._arm_next(logic, b)  # 进阶 4 牛马之魂：认这次专属反击（每回合最多挂 1 次）
+		return [XTianqiWeakAffix.say("邀战反击！")] + c
+
+	func badge(logic, x) -> String:
+		var b = XTianqiWeakB2._holder(logic, "w42")
+		return "受邀" if b != null and x is XEnemy and XTianqiWeakAffix.guiders_of(logic, x).has(b) else ""
+
+
+# ---- 批 2B（T231）：w86 张三丰「护犊」 ----
+
+## 重构护短开着（前置欠账 3）：GUARD 关回原版 2007 时专属不生效
+static func zhang_live(logic) -> bool:
+	return XTianqiSkills.GUARD and XTianqiSkills.cards_on(logic.state if logic != null else null)
+
+
+## XTianqiSkills._guard 逐人判护短前：戴着生效的护犊就跳过原生护短
+static func masks_guard(logic, z) -> bool:
+	return zhang_live(logic) and wears(logic, z, "w86")
+
+
+static func ward_of(logic, z):
+	var w = XTianqiWeakAffix.stock(logic, z, "w86").get("ward")
+	return w if w != null and is_instance_valid(w) else null
+
+
+class Zhang:
+	func turn_begin(logic) -> void:
+		var z = XTianqiWeakB2._holder(logic, "w86")
+		if z == null or not XTianqiWeakB2.zhang_live(logic):
+			return
+		var best = null
+		for a in logic.actors:
+			if is_same(a, z) or not a.is_alive():
+				continue
+			if best == null or a.hp / maxf(1.0, a.mhp) < best.hp / maxf(1.0, best.mhp):
+				best = a  # 生命比例最低；平局留出战栏靠前的
+		var s := XTianqiWeakAffix.stock(logic, z, "w86")
+		s.ward = best
+		s.said = false
+
+	func root_end(logic, f: Dictionary) -> Array:
+		var z = XTianqiWeakB2._holder(logic, "w86")
+		if z == null or not XTianqiWeakB2.zhang_live(logic):
+			return []
+		var s := XTianqiWeakAffix.stock(logic, z, "w86")
+		var logs := []
+		var ward = XTianqiWeakB2.ward_of(logic, z)
+		if ward != null and not bool(s.get("said", true)):
+			s.said = true
+			logs.append(XTianqiWeakAffix.say("护犊：本回合守护 %s" % XTianqiWeakB2._name(ward)))
+		var u = f.get("user")
+		if ward == null or not (u is XEnemy) or XTianqiWeakAffix.hits_on(f, ward) <= 0:
+			return logs
+		if not z.is_alive() or not u.is_alive() or not logic.can_move(z):
+			return logs  # 他倒下、被控、出手者已倒：不追，不扣次数
+		if not XTianqiWeakAffix.take_turn(logic, z, "w86"):
+			return logs
+		var sp: Dictionary = XTianqiWeakAffix.entry("w86").get("ward", {})
+		var cast: Dictionary = XDB.rec("Skills", int(sp.get("cast", 0))).duplicate(true)
+		cast.effects = (cast.get("effects", []) as Array).filter(func(e): return int(e.get("code", 0)) != 44)  # 不带太极再释放、不攒太极之力（同原生护短）
+		var gs := XTianqiSkills._fstore(logic)
+		gs.depth = int(gs.get("depth", 0)) + 1
+		var prev := XTianqiSkills.follow_scale
+		XTianqiSkills.follow_scale = int(sp.get("pct", 100)) / 100.0
+		var part: Array = XTianqiSkills._cast(logic, z, cast, [u])  # 打满段数；根收尾时已是 DERIVED：不连锁、打混子不记账
+		XTianqiSkills.follow_scale = prev
+		gs.depth = int(gs.depth) - 1
+		if not part.is_empty():
+			part[0].w86 = true
+		logs.append(XTianqiWeakAffix.say("护犊：%s 追击 %s" % [XTianqiWeakB2._name(z), XTianqiWeakB2._name(u)]))
+		logs.append_array(part)
+		return logs
+
+	func badge(logic, x) -> String:
+		var z = XTianqiWeakB2._holder(logic, "w86")
+		if z == null or not XTianqiWeakB2.zhang_live(logic):
+			return ""
+		return "受护" if is_same(XTianqiWeakB2.ward_of(logic, z), x) else ""
