@@ -226,6 +226,8 @@ func _run() -> void:
 			bg.queue_free()
 			await _frames(2)
 		XHelpCard.SECTIONS = true
+	if _want("10"):
+		await _skill_page()
 	if _want("09") or only.begins_with("09"):
 		await _battle()
 	XUiSkin.FORCE = false
@@ -269,4 +271,38 @@ func _battle() -> void:
 		b.queue_free()
 		XEnemy.force_roll = -1.0
 		await _frames(5)
+	XHelpCard.SECTIONS = true
+
+
+## 技能页（真页面 XSkillScene 新皮肤）：让当前角色学会渡鸦 10122、流萤 10622、普通 3760，逐个选中右牌；SECTIONS 关／开
+func _skill_page() -> void:
+	var s := XState.current
+	var a: XActor = s.actor(int(s.party[0]))
+	for id in [10122, 10622, 3760]:
+		a.learn_skill(id)
+	for on in [false, true]:
+		XHelpCard.SECTIONS = on
+		var page := XSkillScene.new()
+		add_child(page)
+		await _frames(5)
+		for id in [10122, 10622, 3760]:
+			for ti in page.types().size():
+				page.type_index = ti
+				var es := page.entries()
+				var k := es.map(func(e): return int(e.get("id", 0))).find(id)
+				if k >= 0:
+					page.mode = "list"
+					page.index = k
+					page._refresh()
+					break
+			await _frames(5)
+			await _shot("10_skillpage_%d_%s" % [id, "new" if on else "old"])
+			if on and id == 10622 and page.skin != null:
+				await _key_y()
+				await _frames(5)
+				print("  skill page Y expanded=", page.skin.card.expanded)
+				await _shot("10_skillpage_10622_expanded")
+				await _key_y()
+		page.queue_free()
+		await _frames(3)
 	XHelpCard.SECTIONS = true
