@@ -1,5 +1,5 @@
 {
- "_note": "T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 6910、魔法 2696。T081 起只接了结构化的两类：药品固定回复（battle_logic._apply_effect）、常数状态持续伤害（ext_dot），其余几类 new 还是文字说明、未接。",
+ "_note": "T080：绝对值换比例清单（基础数值重构 v0.3 第七节第 4 条）。原数据一个字不动；总开关 XTianqiBase.PHASE4（T012-b）开着时结算处读这张表、关着读原数。pct＝换算后占对应项（pct_of：mhp 生命上限、mmp 魔法上限）的百分比，按「原数 ÷ 原版弱者 81 级本体中位」折：生命 6910、魔法 2696。T081 起只接了结构化的两类：药品固定回复（battle_logic._apply_effect）、常数状态持续伤害（ext_dot）；T228 接状态 <G_ShuXing>（state_shuxing）；T243 接技能固定回复、固定吸取（skill_fixed_heal／skill_fixed_drain，见 groups.skill_fixed）。其余几类（公式型 state_dot、state_shield、note_*）new 还是文字说明、未接。",
  "version": 1,
  "base": {
   "weak_mhp81": 6910,
@@ -1007,7 +1007,11 @@
    "name": "治愈",
    "enemy": false,
    "orig": "200 + a.mat",
-   "new": "固定底数 200 换成对象生命上限的 2.9%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 3,
+    "base": 200
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1015,7 +1019,11 @@
    "name": "圣光术",
    "enemy": false,
    "orig": "750 + a.mat * 4.5",
-   "new": "固定底数 750 换成对象生命上限的 10.9%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 11,
+    "base": 750
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1023,7 +1031,11 @@
    "name": "次级治疗术",
    "enemy": true,
    "orig": "1550 + a.mat * 2",
-   "new": "固定底数 1550 换成对象生命上限的 22.4%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 22,
+    "base": 1550
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1031,7 +1043,11 @@
    "name": "治疗术",
    "enemy": false,
    "orig": "550 + a.mat * 3",
-   "new": "固定底数 550 换成对象生命上限的 8.0%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 8,
+    "base": 550
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1039,7 +1055,11 @@
    "name": "痛饮",
    "enemy": false,
    "orig": "1500",
-   "new": "固定底数 1500 换成对象生命上限的 21.7%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mmp",
+    "pct": 56,
+    "base": 1500
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1047,7 +1067,11 @@
    "name": "魔力愈合",
    "enemy": true,
    "orig": "5500 + a.mat * 3",
-   "new": "固定底数 5500 换成对象生命上限的 79.6%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 80,
+    "base": 5500
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1055,7 +1079,12 @@
    "name": "生命复苏",
    "enemy": true,
    "orig": "10000",
-   "new": "固定底数 10000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 10000,
+    "over100": 145
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1063,7 +1092,11 @@
    "name": "治疗波",
    "enemy": true,
    "orig": "3000",
-   "new": "固定底数 3000 换成对象生命上限的 43.4%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 43,
+    "base": 3000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1071,7 +1104,11 @@
    "name": "PUA",
    "enemy": true,
    "orig": "1550 + a.mat * 2",
-   "new": "固定底数 1550 换成对象生命上限的 22.4%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 22,
+    "base": 1550
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1079,7 +1116,12 @@
    "name": "先祖之力",
    "enemy": true,
    "orig": "30000 + a.mat * 5",
-   "new": "固定底数 30000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 30000,
+    "over100": 434
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1087,7 +1129,11 @@
    "name": "先祖之魂",
    "enemy": false,
    "orig": "1000",
-   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14,
+    "base": 1000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1095,7 +1141,11 @@
    "name": "PUA",
    "enemy": true,
    "orig": "550 + a.mat * 2",
-   "new": "固定底数 550 换成对象生命上限的 8.0%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 8,
+    "base": 550
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1103,7 +1153,12 @@
    "name": "治愈之歌",
    "enemy": true,
    "orig": "40000",
-   "new": "固定底数 40000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 40000,
+    "over100": 579
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1111,7 +1166,11 @@
    "name": "光辉映照",
    "enemy": false,
    "orig": "1000 + a.mat * 3",
-   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14,
+    "base": 1000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1119,7 +1178,12 @@
    "name": "圣光术",
    "enemy": true,
    "orig": "70000",
-   "new": "固定底数 70000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 70000,
+    "over100": 1013
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1127,7 +1191,11 @@
    "name": "风语者祝福",
    "enemy": false,
    "orig": "1000 + a.mat * 6",
-   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14,
+    "base": 1000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1135,7 +1203,12 @@
    "name": "治愈之歌",
    "enemy": true,
    "orig": "100000",
-   "new": "固定底数 100000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 100000,
+    "over100": 1447
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1143,7 +1216,12 @@
    "name": "屏障术",
    "enemy": true,
    "orig": "200000",
-   "new": "固定底数 200000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 200000,
+    "over100": 2894
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1151,7 +1229,12 @@
    "name": "屏障术",
    "enemy": true,
    "orig": "1000000",
-   "new": "固定底数 1e+06 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 1000000,
+    "over100": 14472
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1159,7 +1242,12 @@
    "name": "不灭轮回",
    "enemy": true,
    "orig": "100000",
-   "new": "固定底数 100000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 100000,
+    "over100": 1447
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1167,7 +1255,12 @@
    "name": "不灭轮回",
    "enemy": false,
    "orig": "100000",
-   "new": "固定底数 100000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 100000,
+    "over100": 1447
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1175,7 +1268,12 @@
    "name": "屏障术",
    "enemy": true,
    "orig": "3000000",
-   "new": "固定底数 3e+06 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 3000000,
+    "over100": 43415
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1183,7 +1281,11 @@
    "name": "PUA",
    "enemy": true,
    "orig": "2550 + a.mat * 2",
-   "new": "固定底数 2550 换成对象生命上限的 36.9%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 37,
+    "base": 2550
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1191,7 +1293,11 @@
    "name": "鞭策",
    "enemy": true,
    "orig": "2550 + a.mat * 2",
-   "new": "固定底数 2550 换成对象生命上限的 36.9%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 37,
+    "base": 2550
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1199,7 +1305,11 @@
    "name": "治疗祷告",
    "enemy": false,
    "orig": "550 + a.mat * 20",
-   "new": "固定底数 550 换成对象生命上限的 8.0%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 8,
+    "base": 550
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1207,7 +1317,11 @@
    "name": "治疗之涌",
    "enemy": false,
    "orig": "550 + a.mat * 20",
-   "new": "固定底数 550 换成对象生命上限的 8.0%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 8,
+    "base": 550
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1215,7 +1329,12 @@
    "name": "嗜血",
    "enemy": true,
    "orig": "100000",
-   "new": "固定底数 100000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 100000,
+    "over100": 1447
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1223,7 +1342,12 @@
    "name": "饱餐一顿",
    "enemy": true,
    "orig": "1000000",
-   "new": "固定底数 1e+06 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 1000000,
+    "over100": 14472
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1231,7 +1355,12 @@
    "name": "食人魔愈合术",
    "enemy": true,
    "orig": "5000000",
-   "new": "固定底数 5e+06 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 5000000,
+    "over100": 72359
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1239,7 +1368,11 @@
    "name": "推气过宫",
    "enemy": false,
    "orig": "750 + a.mat * 2.5",
-   "new": "固定底数 750 换成对象生命上限的 10.9%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 11,
+    "base": 750
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1247,7 +1380,11 @@
    "name": "慈航普渡",
    "enemy": false,
    "orig": "1000 + a.mat * 3.5",
-   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14,
+    "base": 1000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1255,7 +1392,12 @@
    "name": "舔舐伤口",
    "enemy": true,
    "orig": "10000000",
-   "new": "固定底数 1e+07 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 10000000,
+    "over100": 144718
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1263,7 +1405,11 @@
    "name": "四海平生",
    "enemy": false,
    "orig": "1000 + a.mat * 500",
-   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14,
+    "base": 1000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1271,7 +1417,12 @@
    "name": "净化",
    "enemy": true,
    "orig": "20000000",
-   "new": "固定底数 2e+07 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 20000000,
+    "over100": 289436
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1279,7 +1430,11 @@
    "name": "复苏之歌",
    "enemy": false,
    "orig": "1000",
-   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14,
+    "base": 1000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1287,7 +1442,11 @@
    "name": "治愈之歌",
    "enemy": false,
    "orig": "650 + a.mat * 3",
-   "new": "固定底数 650 换成对象生命上限的 9.4%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 9,
+    "base": 650
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1295,7 +1454,12 @@
    "name": "舔舐伤口",
    "enemy": true,
    "orig": "50000000",
-   "new": "固定底数 5e+07 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 50000000,
+    "over100": 723589
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1303,7 +1467,11 @@
    "name": "神圣祷言",
    "enemy": false,
    "orig": "700 + a.mat * 4",
-   "new": "固定底数 700 换成对象生命上限的 10.1%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 10,
+    "base": 700
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1311,7 +1479,11 @@
    "name": "救赎",
    "enemy": false,
    "orig": "1000",
-   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14,
+    "base": 1000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1319,7 +1491,11 @@
    "name": "清心咒",
    "enemy": true,
    "orig": "450 + a.mat * 1000",
-   "new": "固定底数 450 换成对象生命上限的 6.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 7,
+    "base": 450
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1327,7 +1503,11 @@
    "name": "小马乱撞",
    "enemy": false,
    "orig": "1000",
-   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14,
+    "base": 1000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1335,7 +1515,12 @@
    "name": "圣光术",
    "enemy": true,
    "orig": "v[364] + 70000",
-   "new": "公式读对象生命或属性，T012-b 逐条看"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 70000,
+    "over100": 1013
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1343,7 +1528,11 @@
    "name": "悦耳",
    "enemy": false,
    "orig": "800 + a.mat * 2",
-   "new": "固定底数 800 换成对象生命上限的 11.6%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 12,
+    "base": 800
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1351,7 +1540,11 @@
    "name": "屌丝的治疗术",
    "enemy": false,
    "orig": "1550 + a.mat * 2",
-   "new": "固定底数 1550 换成对象生命上限的 22.4%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 22,
+    "base": 1550
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1359,7 +1552,11 @@
    "name": "说唱",
    "enemy": false,
    "orig": "500",
-   "new": "固定底数 500 换成对象生命上限的 7.2%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 7,
+    "base": 500
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1367,7 +1564,11 @@
    "name": "龙马复活术",
    "enemy": false,
    "orig": "1000",
-   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14,
+    "base": 1000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1375,7 +1576,11 @@
    "name": "PUA*终极大师版[抽奖版]",
    "enemy": false,
    "orig": "5000+a.mat*5",
-   "new": "固定底数 5000 换成对象生命上限的 72.4%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 72,
+    "base": 5000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1383,7 +1588,11 @@
    "name": "龙舞天下[抽奖版]",
    "enemy": false,
    "orig": "550 + a.mat * 2",
-   "new": "固定底数 550 换成对象生命上限的 8.0%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 8,
+    "base": 550
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1391,7 +1600,11 @@
    "name": "月光之舞",
    "enemy": false,
    "orig": "3000+a.mat*60",
-   "new": "固定底数 3000 换成对象生命上限的 43.4%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 43,
+    "base": 3000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1399,7 +1612,11 @@
    "name": "生生不息[群体复活]",
    "enemy": false,
    "orig": "1000",
-   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14,
+    "base": 1000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1407,7 +1624,11 @@
    "name": "《百草回春经》上篇",
    "enemy": false,
    "orig": "1000+a.mat*10",
-   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14,
+    "base": 1000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1415,7 +1636,12 @@
    "name": "《百草回春经》下篇",
    "enemy": false,
    "orig": "30000+a.mat*50",
-   "new": "固定底数 30000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 30000,
+    "over100": 434
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1423,7 +1649,11 @@
    "name": "《轮回转生决》",
    "enemy": false,
    "orig": "1000",
-   "new": "固定底数 1000 换成对象生命上限的 14.5%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 14,
+    "base": 1000
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1431,7 +1661,12 @@
    "name": "万古青天一株莲",
    "enemy": false,
    "orig": "30000+a.mat*300",
-   "new": "固定底数 30000 换成对象生命上限的 100%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 100,
+    "base": 30000,
+    "over100": 434
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1439,7 +1674,10 @@
    "name": "普度众生",
    "enemy": false,
    "orig": "b.mhp * 0.5",
-   "new": "公式读对象生命或属性，T012-b 逐条看"
+   "new": {
+    "mode": "raw",
+    "reason": "公式本来就按生命／魔法算，随量级涨，不换"
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1447,7 +1685,10 @@
    "name": "圣光普照",
    "enemy": false,
    "orig": "b.mhp * 0.5",
-   "new": "公式读对象生命或属性，T012-b 逐条看"
+   "new": {
+    "mode": "raw",
+    "reason": "公式本来就按生命／魔法算，随量级涨，不换"
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1455,7 +1696,10 @@
    "name": "神爱世人",
    "enemy": false,
    "orig": "b.mhp",
-   "new": "公式读对象生命或属性，T012-b 逐条看"
+   "new": {
+    "mode": "raw",
+    "reason": "公式本来就按生命／魔法算，随量级涨，不换"
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1463,7 +1707,10 @@
    "name": "玄心真术",
    "enemy": false,
    "orig": "a.mmp",
-   "new": "公式读对象生命或属性，T012-b 逐条看"
+   "new": {
+    "mode": "raw",
+    "reason": "公式本来就按生命／魔法算，随量级涨，不换"
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1471,7 +1718,10 @@
    "name": "轮回模式·平衡伤害",
    "enemy": true,
    "orig": "1",
-   "new": "固定底数 1 换成对象生命上限的 0.0%（原数÷弱者 81 级生命）"
+   "new": {
+    "mode": "raw",
+    "reason": "底数 1 是平衡伤害的记号（轮回模式），不是回复量"
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1479,7 +1729,10 @@
    "name": "泽苍生",
    "enemy": false,
    "orig": "0",
-   "new": "公式读对象生命或属性，T012-b 逐条看"
+   "new": {
+    "mode": "raw",
+    "reason": "没有固定底数（全随属性涨或恒 0），不换"
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1487,7 +1740,10 @@
    "name": "外壳静血装",
    "enemy": true,
    "orig": "a.hp*0.2",
-   "new": "公式读对象生命或属性，T012-b 逐条看"
+   "new": {
+    "mode": "raw",
+    "reason": "公式本来就按生命／魔法算，随量级涨，不换"
+   }
   },
   {
    "kind": "skill_fixed_heal",
@@ -1495,7 +1751,11 @@
    "name": "麒麟天护",
    "enemy": true,
    "orig": "2000+a.mat+(30*a.skillMasteryLevel(10549)+a.luk*3)",
-   "new": "固定底数 2000 换成对象生命上限的 28.9%（原数÷弱者 81 级生命）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 29,
+    "base": 2000
+   }
   },
   {
    "kind": "skill_fixed_drain",
@@ -1503,7 +1763,12 @@
    "name": "吞魔术",
    "enemy": true,
    "orig": "10000",
-   "new": "吸取量 10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+   "new": {
+    "pct_of": "mmp",
+    "pct": 100,
+    "base": 10000,
+    "over100": 371
+   }
   },
   {
    "kind": "skill_fixed_drain",
@@ -1511,7 +1776,12 @@
    "name": "抽干",
    "enemy": true,
    "orig": "10000",
-   "new": "吸取量 10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+   "new": {
+    "pct_of": "mmp",
+    "pct": 100,
+    "base": 10000,
+    "over100": 371
+   }
   },
   {
    "kind": "skill_fixed_drain",
@@ -1519,7 +1789,12 @@
    "name": "魔力吸取",
    "enemy": false,
    "orig": "10000",
-   "new": "吸取量 10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+   "new": {
+    "pct_of": "mmp",
+    "pct": 100,
+    "base": 10000,
+    "over100": 371
+   }
   },
   {
    "kind": "skill_fixed_drain",
@@ -1527,7 +1802,12 @@
    "name": "抽干",
    "enemy": true,
    "orig": "10000",
-   "new": "吸取量 10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+   "new": {
+    "pct_of": "mmp",
+    "pct": 100,
+    "base": 10000,
+    "over100": 371
+   }
   },
   {
    "kind": "skill_fixed_drain",
@@ -1535,7 +1815,12 @@
    "name": "抽干",
    "enemy": false,
    "orig": "10000",
-   "new": "吸取量 10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+   "new": {
+    "pct_of": "mmp",
+    "pct": 100,
+    "base": 10000,
+    "over100": 371
+   }
   },
   {
    "kind": "skill_fixed_drain",
@@ -1543,7 +1828,10 @@
    "name": "扭曲之触",
    "enemy": true,
    "orig": "a.mat * 15 - (0 * 4)",
-   "new": "吸取量 a.mat * 15 - (0 * 4)：换成对象生命／魔法上限的百分比（T012-b 定）"
+   "new": {
+    "mode": "raw",
+    "reason": "没有固定底数（全随属性涨或恒 0），不换"
+   }
   },
   {
    "kind": "skill_fixed_drain",
@@ -1551,7 +1839,11 @@
    "name": "折磨",
    "enemy": true,
    "orig": "5000",
-   "new": "吸取量 5000：换成对象生命／魔法上限的百分比（T012-b 定）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 72,
+    "base": 5000
+   }
   },
   {
    "kind": "skill_fixed_drain",
@@ -1559,7 +1851,11 @@
    "name": "折磨",
    "enemy": true,
    "orig": "2000",
-   "new": "吸取量 2000：换成对象生命／魔法上限的百分比（T012-b 定）"
+   "new": {
+    "pct_of": "mhp",
+    "pct": 29,
+    "base": 2000
+   }
   },
   {
    "kind": "skill_fixed_drain",
@@ -1567,7 +1863,12 @@
    "name": "抽干",
    "enemy": true,
    "orig": "10000",
-   "new": "吸取量 10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+   "new": {
+    "pct_of": "mmp",
+    "pct": 100,
+    "base": 10000,
+    "over100": 371
+   }
   },
   {
    "kind": "skill_fixed_drain",
@@ -1575,7 +1876,11 @@
    "name": "抽干",
    "enemy": true,
    "orig": "v[364] +1750 + a.mat * 9 - (0 * 2)",
-   "new": "吸取量 v[364] +1750 + a.mat：换成对象生命／魔法上限的百分比（T012-b 定）"
+   "new": {
+    "pct_of": "mmp",
+    "pct": 65,
+    "base": 1750
+   }
   },
   {
    "kind": "skill_fixed_drain",
@@ -1583,7 +1888,12 @@
    "name": "魔力吸取",
    "enemy": true,
    "orig": "v[364] +10000",
-   "new": "吸取量 v[364] +10000：换成对象生命／魔法上限的百分比（T012-b 定）"
+   "new": {
+    "pct_of": "mmp",
+    "pct": 100,
+    "base": 10000,
+    "over100": 371
+   }
   },
   {
    "kind": "note_shieldeffect",
@@ -17457,6 +17767,9 @@
   },
   "state_shuxing": {
    "_note": "T228：状态备注 <G_ShuXing> 写死的八项加减（kind＝state_shuxing，orig、new.pct 都按 mhp,mmp,atk,def,mat,mdf,agi,luk 八格）。期四开着且 XTianqiBase.ABS_SHUXING 开着时，战斗里每个状态加的是「持有者该项（基础＋加值）×比率×强化率 × pct% × 层数」，向零取整；关着照原数。pct＝原数÷base.shuxing_ref 同项×100 四舍五入成整数，原数不为 0 但取整成 0 的记 ±1（min1 列出是哪几项）。new.mode＝raw 的是计数器状态（<G_ShuXing> 写 ±1 当单位、真加值在层数里，T228 R1），照原数×层数，不换算、不走兜底。pct 可以直接改表；状态备注被天启篇改写、原数跟 orig 对不上时按参考值现算并警告一次。"
+  },
+  "skill_fixed": {
+   "_note": "T243：技能固定回复 skill_fixed_heal、固定吸取 skill_fixed_drain。期四开着且 XTianqiBase.ABS_SKILL 开着、天启篇存档时，公式里的固定底数 new.base 换成「对象 new.pct_of 上限 × new.pct%」（向下取整），公式其余部分照旧（XTianqiBase.skill_formula，接在 XFormulaExecution.run_item）；orig 是完整原公式，技能公式被改写、对不上 orig 的照原公式并警告一次。mode＝raw 的照原公式（reason）。pct 整数、可直接改表。"
   }
  },
  "unscanned": [

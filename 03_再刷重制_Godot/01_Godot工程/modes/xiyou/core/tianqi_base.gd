@@ -15,6 +15,7 @@ extends RefCounted
 ## | 治疗 ×5 | 不乘 | 照乘 | XTianqiNoDiffPassive.confirm_rows（skipTypesAny 放 3、4，不论目标；T214） |
 ## | 绝对值清单 | abs_rescale.json 换算后的数 | 原数 | abs_value（各结算处） |
 ## | 状态 <G_ShuXing> 固定加减（T228，ABS_SHUXING 可单独关） | 持有者该项 × abs_rescale.json state_shuxing 的整数 % | 原数 | XBattler.param_state → shuxing_value |
+## | 技能固定回复、固定吸取的底数（T243，ABS_SKILL 可单独关） | 对象生命／魔法上限 × abs_rescale.json skill_fixed_heal／skill_fixed_drain 的整数 %（只换底数，a.mat×N 等照旧） | 原公式 | XFormulaExecution.run_item → skill_formula |
 ## | 首领生命临时折算 U（整数百分比） | combat_rules.boss_hp_temp_unit | 100 | XTianqiHorsemen |
 ## | 单段上限、九线爆伤、秘籍格 | skill_rework.rules.single_hit_cap、damage_ledger.phase4 | 现在的键 | XTianqiSkills.formula、XTianqiLedger.apply_nine_cap |
 ##
@@ -51,6 +52,9 @@ static var TUNE_D209 := true
 ## T228（协调 11-19 定 A）：状态备注 <G_ShuXing> 写死的八项加减换成「持有者自身该项的整数百分比」（abs_rescale.json 的 state_shuxing 行）。
 ## 只在总开关开着时生效；false＝照原数加减（回退）。原版量级的 ±500～±30000 在期四本体（81 级攻击约 3766，原量级主攻中位 1854）上的分量对不上
 static var ABS_SHUXING := true
+## T243：技能公式里写死的固定回复底数（skill_fixed_heal，如「200 + a.mat」的 200、屏障术 1301 的 3000000）和固定吸取量（skill_fixed_drain）
+## 换成「对象该项上限的整数百分比」（abs_rescale.json）。只在总开关开着、天启篇存档时生效；false＝照原公式（回退）
+static var ABS_SKILL := true
 const REALM_IDS := [5707, 5714, 5777, 5778, 8083, 9976, 9982, 10018]
 const REALM_NOTE_REMOVE := ["passivePBST\\d", "passiveXPBST\\d", "passiveELUP\\d+", "passiveEWPN\\d+", "passiveHarmRi", "passiveCrHarmRi", "passiveHarmRe\\d+",
 	"SkillPass\\d+", "passiveAPLUS", "AgainUseAll", "passiveIRUP", "passiveGRUP", "passiveSPBST\\d", "ConsumeReduce\\w+", "passiveEXTTP", "DepassiveHarmRe\\d+",
@@ -346,6 +350,32 @@ static func abs_value(kind: String, id: int, old: float, target, stat := "") -> 
 	var cap := float(target.mmp) if str(n.get("pct_of", "mhp")) == "mmp" else float(target.mhp)
 	var v := floorf(cap * float(n.get("pct", 0.0)) / 100.0)
 	return -v if old < 0.0 else v
+
+
+## T243：技能公式算完（XFormulaExecution.run_item，带正负：回复为负）以后，把表里那一行的固定底数 new.base 换成 ⌊对象 new.pct_of 上限 × new.pct%⌋，
+## 公式其余部分（a.mat×N、v[364] 等）照旧：|值| − base + 新底数，不低于 0，正负照伤害类型（3、4 回复为负）。
+## 只认技能（有 stypeId；物品同号不算）；mode＝raw 的行、表里没有的技能照原值。公式被改写、跟表里 orig 对不上（天启篇技能卡等）的照原值并警告一次。
+## b：公式里的 b（回复＝被治疗的人，吸取＝被吸的人）
+static func skill_formula(item: Dictionary, b, value: float) -> float:
+	if not ABS_SKILL or b == null or is_nan(value) or not on():
+		return value
+	if not item.has("stypeId"):
+		return value
+	var id := int(item.get("id", 0))
+	var e := abs_entry("skill_fixed_heal", id)
+	if e.is_empty():
+		e = abs_entry("skill_fixed_drain", id)
+	if e.is_empty() or str(e.new.get("mode", "")) == "raw" or not e.new.has("base"):
+		return value
+	var dmg: Dictionary = item.get("damage", {})
+	var f = dmg.get("formulaGd", dmg.get("formula", ""))
+	if str(f) != str(e.get("orig", "")):
+		warn_once("skill:%d" % id, "技能 %d 的公式跟 abs_rescale.json 对不上（天启篇改写过？），照原公式" % id)
+		return value
+	var cap := float(b.mmp) if str(e.new.get("pct_of", "mhp")) == "mmp" else float(b.mhp)
+	var nb := floorf(cap * float(e.new.get("pct", 0)) / 100.0)
+	var mag := maxf(0.0, absf(value) - float(e.new.base) + nb)
+	return -mag if int(dmg.get("type", 0)) in [3, 4] else mag
 
 
 ## T228：<G_ShuXing> 换算开着没有（总开关开、ABS_SHUXING 开、天启篇存档）。param_state 每次先问一次，关着整段不碰表
