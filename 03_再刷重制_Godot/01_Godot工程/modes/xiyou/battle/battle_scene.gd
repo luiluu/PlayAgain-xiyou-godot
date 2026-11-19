@@ -3123,7 +3123,8 @@ func _custom_popup(b: XBattler, text: String, format: int) -> void:
 ## 并锁住胜利时的物品发放（结算画面照样列出）。所以开着时，逃跑前打倒的敌人的掉落也会留下（同原版）。
 func _enemy_collapsed(e: XEnemy) -> void:
 	if _stream != null and not _stream.done:
-		_stream_collapsed.append(e)  # T225：还在逐段结算，掉落要等行动结束（resolve_collapses）才定
+		if not _stream_collapsed.has(e):  # P3-1：倒下→复活→再倒下只弹一次
+			_stream_collapsed.append(e)  # T225：还在逐段结算，掉落要等行动结束（resolve_collapses）才定
 		return
 	var drops := logic.drop_snapshot(e)
 	if drops.is_empty() or not XConfig.flag("MOG_TrPopUpBattle_Key"):

@@ -12,6 +12,10 @@ extends RefCounted
 
 ## false＝回退：开招那一帧一次算完全部段数（T225 之前）
 static var PER_SEGMENT := true
+## 专项用：模拟交接线程启动失败（P2-1 回退）
+static var simulate_start_fail := false
+## 启动失败退回同步的次数（专项核对用）
+static var start_failures := 0
 
 var logic
 ## 画面已拿到的记录（最终 act 返回值的前缀，只追加）
@@ -43,8 +47,17 @@ static func start(l, u, skill, target) -> XBattleStream:
 	l._stream = s
 	var t0 := Time.get_ticks_usec()
 	s._thread = Thread.new()
-	s._thread.start(s._run)
-	s._to_main.wait()
+	var err := ERR_CANT_CREATE if simulate_start_fail else s._thread.start(s._run)
+	if err != OK:
+		# P2-1：线程起不来（系统线程数到顶等）：退回同步，整次行动当场算完（同 PER_SEGMENT 关），不等信号量、不死锁
+		s._thread = null
+		start_failures += 1
+		push_warning("XBattleStream：交接线程启动失败（%s），这次行动一次算完" % error_string(err))
+		var r = l.act(u, skill, target)
+		s._result = r if r is Array else []
+		s.done = true
+	else:
+		s._to_main.wait()
 	s._collect()
 	s.start_usec = Time.get_ticks_usec() - t0
 	return s

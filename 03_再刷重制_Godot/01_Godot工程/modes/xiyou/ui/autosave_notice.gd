@@ -31,6 +31,8 @@ var message := MSG_SAVE
 
 ## 当前场景上没有就挂一个
 static func ensure() -> XAutosaveNotice:
+	if XMainThread.defer(XAutosaveNotice.ensure):  # T225 线程保险（XMainThread）：结算线程上调到就转回主线程
+		return null
 	var tree := Engine.get_main_loop() as SceneTree
 	if tree == null or tree.current_scene == null:
 		return null
@@ -44,6 +46,8 @@ static func ensure() -> XAutosaveNotice:
 
 ## Scene_Map.performAutosave 存好之后
 static func saved() -> void:
+	if XMainThread.defer(XAutosaveNotice.saved):  # T225 线程保险（XMainThread）：结算线程上调到就转回主线程
+		return
 	loading = false  # saveGameWithoutRescue 清 _autosaveLoading
 	if not ENABLED:
 		return

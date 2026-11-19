@@ -31,8 +31,7 @@ static func settings() -> Dictionary:
 
 ## AchievementPopupManager.onNotify
 static func show_for(d: Dictionary) -> void:
-	if OS.get_thread_caller_id() != OS.get_main_thread_id():
-		XAchievementPopup.show_for.call_deferred(d)  # T225：战斗逐段结算在交接线程上跑（掉落进背包触发成就），弹窗挪回主线程再建节点
+	if XMainThread.defer(XAchievementPopup.show_for.bind(d)):  # T225 线程保险（XMainThread）：结算线程上调到就转回主线程（掉落进背包触发成就）
 		return
 	var st := settings()
 	if str(st.get("Use Popup", "ON")) != "ON":

@@ -28,8 +28,7 @@ var stack: VBoxContainer
 
 ## 显示一条提示（挂在场景树根上，跨场景保留，与原版网页层一样）
 static func show_text(message: String, in_menu := false, key := "") -> void:
-	if OS.get_thread_caller_id() != OS.get_main_thread_id():
-		XToast.show_text.call_deferred(message, in_menu, key)  # T225：战斗逐段结算在交接线程上跑，提示挪回主线程再建节点
+	if XMainThread.defer(XToast.show_text.bind(message, in_menu, key)):  # T225 线程保险（XMainThread）：结算线程上调到就转回主线程
 		return
 	if key == "":
 		key = classify(message)

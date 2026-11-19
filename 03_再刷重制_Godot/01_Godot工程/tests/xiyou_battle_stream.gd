@@ -56,7 +56,10 @@ const GROUPS := {
 	"d": [[175, 0, 80, false, false], [174, 0, 80, false, false], [168, 0, 80, false, false], [108, 0, 80, false, false],
 		[178, 0, 80, false, false], [179, 0, 80, false, false], [36, 0, 80, false, false]],
 	"e": [[173, 0, 80, true, false], [163, 9939, 2, true, false], [172, 0, 80, true, false], [163, 9939, 80, true, true], [163, 9938, 80, true, true]],
+	"f": [],  # R1 返修：线程保险（至臻掉落在结算线程上入包）、线程启动失败回退、倒下去重，见 _run_f
 }
+## 至臻铠甲（XTreasureBatch 认的至臻装备）
+const PRESTIGE_ARMOR := 3623
 ## 场景（xiyou_battle_stream、_b…_e）里设
 @export var group := "a"
 const RUNS := 3
@@ -102,7 +105,7 @@ static func pick_skill(actor_id: int) -> int:
 	return best
 
 
-func _battle(c: Array, skill: int, on: bool, seed: int) -> Dictionary:
+func _battle(c: Array, skill: int, on: bool, seed: int, prep := Callable()) -> Dictionary:
 	XBattleStream.PER_SEGMENT = on
 	var actor_id: int = c[0]
 	var s: XState
@@ -141,6 +144,8 @@ func _battle(c: Array, skill: int, on: bool, seed: int) -> Dictionary:
 		e.tp = 0  # 天启篇开场 TP 不走种子（关对关两场也不同），夹具定死
 	for a in scene.logic.actors:
 		a.tp = 100
+	if prep.is_valid():
+		prep.call(scene)
 	add_child(scene)
 	var t0 := Engine.get_physics_frames()
 	while not scene.done and Engine.get_physics_frames() - t0 < 3000:
@@ -211,9 +216,98 @@ static func _median(a: Array) -> int:
 	return int(b[b.size() / 2]) if not b.is_empty() else -1
 
 
+## 引擎报错计数（Logger）：线程保险的用例要求整场 0 条 ERROR
+class ErrLog extends Logger:
+	var errors: Array = []
+	var mutex := Mutex.new()
+	func _log_error(function: String, file: String, line: int, code: String, rationale: String, _editor_notify: bool, error_type: int, _script_backtraces: Array) -> void:
+		if error_type == Logger.ERROR_TYPE_WARNING:
+			return
+		mutex.lock()
+		errors.append("%s:%d %s %s %s" % [file, line, function, code, rationale])
+		mutex.unlock()
+	func _log_message(_message: String, _error: bool) -> void:
+		pass
+
+
+func _orphans() -> int:
+	return int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
+
+
+func _run_f() -> void:
+	var log := ErrLog.new()
+	OS.add_logger(log)
+	XConfig.set_flag("CombatSkillAnimation", false)
+	XConfig.set_battle_speed(4)
+	XConfig.set_flag("MOG_TrPopUpBattle_Key", true)  # 掉落动画开：倒下的敌人在行动收尾 resolve_collapses 里当场入包（结算线程上）
+	# 1. 单测：结算线程上入包至臻装备（核查复现的那条链 gain_gear → note_gain → XPrestigeNotice.ensure），转回主线程挂树、没有孤儿节点
+	var old := get_tree().current_scene.get_node_or_null("XPrestigeNotice")
+	if old != null:
+		old.free()
+	var s := XState.new_game(3, 1, [])
+	XState.current = s
+	var o0 := _orphans()
+	var d0 := XMainThread.deferred
+	var th := Thread.new()
+	th.start(func(): s.gain_gear("armor", PRESTIGE_ARMOR, 1))
+	th.wait_to_finish()
+	check("prestige_thread_no_node_yet", get_tree().current_scene.get_node_or_null("XPrestigeNotice") == null)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var node := get_tree().current_scene.get_node_or_null("XPrestigeNotice") as XPrestigeNotice
+	check("prestige_thread_deferred", XMainThread.deferred > d0, [XMainThread.deferred, d0])
+	check("prestige_thread_in_tree", node != null and node.count >= 1, node.count if node else null)
+	check("prestige_thread_no_orphans", _orphans() <= o0, [o0, _orphans()])
+	check("prestige_thread_no_errors", log.errors.is_empty(), log.errors)
+	if node != null:
+		node.free()
+	# 2. 实战：逐段结算开着，拳一认真连续拳打嘤嘤怪×3（中途打死），倒下的敌人掉至臻铠甲
+	log.errors.clear()
+	d0 = XMainThread.deferred
+	var v0 := XMainThread.violations
+	var prep := func(sc):
+		for e in sc.logic.enemies:
+			sc.logic._treasure[sc.logic.stable_id(e)] = [{"kind": 3, "id": PRESTIGE_ARMOR}]  # 掉落表定死：每个倒下的都掉一件
+	var r: Dictionary = await _battle(GROUPS.a[0], 9939, true, 20261119, prep)
+	node = get_tree().current_scene.get_node_or_null("XPrestigeNotice") as XPrestigeNotice
+	check("prestige_battle_ran", r.done and int(r.stats.get("gates", 0)) > 1 and r.digest.any(func(row): return row.has(["type", "collapse"])), r.stats)
+	check("prestige_battle_deferred", XMainThread.deferred > d0, [XMainThread.deferred, d0])
+	check("prestige_battle_popup", node != null and node.count >= 1, node.count if node else null)
+	check("prestige_battle_no_violation", XMainThread.violations == v0, XMainThread.violations)
+	check("prestige_battle_no_errors", log.errors.is_empty(), log.errors.slice(0, 5))
+	if node != null:
+		node.free()
+	XConfig.set_flag("MOG_TrPopUpBattle_Key", false)
+	# 3. P2-1：交接线程启动失败 → 同步一次算完，结果与关着相同、不死锁
+	var off: Dictionary = await _battle(GROUPS.a[1], 9939, false, 20261120)
+	var f0 := XBattleStream.start_failures
+	XBattleStream.simulate_start_fail = true
+	var on: Dictionary = await _battle(GROUPS.a[1], 9939, true, 20261120)
+	XBattleStream.simulate_start_fail = false
+	check("start_fail_fallback_used", XBattleStream.start_failures == f0 + 1, [f0, XBattleStream.start_failures])
+	check("start_fail_ran", on.done and int(on.stats.get("gates", -1)) == 0 and int(on.stats.get("mismatches", -1)) == 0 and on.stats.get("same", false), on.stats)
+	check("start_fail_same_state", not off.sig.is_empty() and off.sig == on.sig, [off.sig, on.sig])
+	check("start_fail_same_logs", not off.digest.is_empty() and off.digest == on.digest, first_diff(off.digest, on.digest))
+	# 4. P3-1：结算没跑完时同一敌人倒下→复活→再倒下，只记一次（行动收尾只弹一次掉落）
+	var sc := P.new()
+	sc.setup(2, true, false, {})
+	var fake := XBattleStream.new()
+	sc._stream = fake
+	var e0: XEnemy = sc.logic.enemies[0]
+	sc._enemy_collapsed(e0)
+	sc._enemy_collapsed(e0)
+	check("collapse_dedupe", sc._stream_collapsed.size() == 1, sc._stream_collapsed.size())
+	sc._stream = null
+	sc._stream_collapsed.clear()
+	sc.free()
+	OS.remove_logger(log)
+
+
 func _run() -> void:
 	XSave.dir_override = "user://test_xiyou_battle_stream"
 	XConfig.path_override = XSave.dir().path_join("options.json")
+	if group == "f":
+		await _run_f()
 	var only := OS.get_environment("STREAM_CASE")  # 调试：只跑本组第几个用例
 	var n := 0
 	for c in GROUPS[group]:
