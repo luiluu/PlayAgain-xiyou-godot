@@ -26,6 +26,7 @@ func _run() -> void:
 	_aikun()
 	_badges_view()
 	_xiyou_save()
+	_qiyin_seq_probe()
 	XTianqiWeakAffix.test_entries.clear()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -482,3 +483,24 @@ func _xiyou_save() -> void:
 	_check("xiyou_save_off", XTianqiWeakAffix.active_keys(lg, k).is_empty() and XTianqiWeakBadges.make(lg, func(): return {}) == null)
 	lg.state.flags["tianqi"] = tq
 	lg.end_battle(0)
+
+
+# ---- 另查（派单附带，不算断言）：七印击倒类在动作序列招上认不认得到击倒 ----
+## 魔雷老人群体魔雷术 327（动作序列招）、普攻 1（非序列）各打一个 1 血敌人，看七印行动帧 killed 记没记、目标此刻死没死。只打印 QIYIN_SEQ_KILL
+func _qiyin_seq_probe() -> void:
+	var rows := []
+	for id in [327, 1]:
+		var lg := _logic([MOLEI, 1, 2])
+		var m: XActor = lg.state.actor(MOLEI)
+		_learn(m, [327])
+		_fresh_mp(m)
+		XTianqiQiyinEffects._store(lg)  # 七印模块当作开着（只要本场数据在）
+		var e0: XEnemy = lg.enemies[0]
+		e0.hp = 1.0
+		var sk := XDB.rec("Skills", id)
+		var seq := XActionSequence.has_sequence(sk)
+		lg.execute(m, sk, e0)
+		var act: Dictionary = XTianqiQiyinEffects._store(lg).get("act", {})
+		rows.append({"skill": id, "seq": seq, "dead_after_execute": e0.is_dead(), "immortal": e0.immortal, "killed_noted": (act.get("killed", []) as Array).has(e0), "frame_hits": act.get("hits", -1)})
+		lg.end_battle(0)
+	print("QIYIN_SEQ_KILL ", JSON.stringify(rows))

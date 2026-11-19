@@ -26,8 +26,10 @@ extends RefCounted
 ##   开第一条时连同可获得兵器交集表、深渊商人指定、重铸保护一起接。
 ## 七、本人投影（批 1，T018）：表 entries[键].proj 按技能号写换属性、整数倍率、新范围和说明替换；skill_view 给本人复制一份改过的技能，
 ##   formula 按出手者 proj_of 换属性、乘倍率。批 1：w21 玛莎「御风术」、w17 克洛什「精准击中」，默认关。
+## 八、批 2 前四人（T230）：w31 露茜、w23 魔雷老人、w103 波风水门、w3 艾坤的规则在 XTianqiWeakB2（tianqi_weak_b2.gd），start 时 install；
+##   这里另给 main_target（这一根的主目标，guide_targets 记）、cut／dmg_pct（这一根伤害整数百分比，formula 读）、处理对象的 root_skill 钩子。
 ## 具体词条以 register(key, 处理对象) 挂进来：处理对象可有 root_end(logic, frame) -> Array（这一根结算完后出专属派生，派生用 derived_invoke）、
-## turn_begin(logic)、turn_end(logic)、badge(logic, b) -> String。
+## root_skill(logic, frame, skill)（execute 付费后这一根的那一招）、turn_begin(logic)、turn_end(logic)、badge(logic, b) -> String。
 
 ## 开关（O-524）：false＝专属词条在战斗里完全不生效（不引导、不记事件、不派生），装备上的专属只显示灰字
 static var ENABLED := true
