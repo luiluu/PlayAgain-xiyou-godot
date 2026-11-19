@@ -28,6 +28,9 @@ var rows_source: Callable
 var rows: Array = []
 ## 被挂死期的角色（测试读）
 var doomed: Array = []
+## 新界面 2C 卡 B 印盘要的额外读数（XSkinSealDial 读；rows／doomed 字段不改）：
+## {"death_slots": 上场人数＋被挂去了助力位的人, "famine": [消耗倍率, 回复倍率]}
+var dial := {}
 var _t := 0.0
 var _flash := {}          # 线 → 剩余闪烁秒数（火花满、病灶爆发）
 var _last := {}           # 线 → 上次的值（看火花归零、病灶过线）
@@ -87,6 +90,7 @@ func _any_alien_alive(f: Dictionary) -> bool:
 func refresh() -> void:
 	rows = []
 	doomed = []
+	dial = {}
 	if not XTianqiLook.METER:
 		queue_redraw()
 		return
@@ -111,6 +115,7 @@ func refresh() -> void:
 				var cost := float(_call(cls, "cost_mult", [logic], 1.0))
 				var heal := float(_call(cls, "heal_mult", [logic], 1.0))
 				r.text = "消耗 ×%s　回复 ×%s" % [_num(cost), _num(heal)]
+				dial["famine"] = [cost, heal]
 				r.value = -1
 			"death":
 				for a in f.get("doom", {}):
@@ -118,6 +123,9 @@ func refresh() -> void:
 						doomed.append(a)
 				if not _any_alien_alive(f) and doomed.is_empty():
 					continue
+				# T267：死期环上一人一颗——颗数＝上场人数＋换去了助力位的被挂者（doomed 已收，按人数补）
+				var on_field: Array = logic.actors if "actors" in logic else []
+				dial["death_slots"] = on_field.size() + doomed.filter(func(a): return not on_field.has(a)).size()
 				var names := PackedStringArray(doomed.map(func(a): return a.display_name()))
 				r.text = "、".join(names) + "　回合结束时死" if not names.is_empty() else "暂无"
 				r.value = -1
@@ -127,6 +135,8 @@ func refresh() -> void:
 				var d = _call(cls, "data", [], {})
 				r.value = int(f.get("layers", 0))
 				r.full = int(d.get("focus", {}).get("full", 12)) if d is Dictionary else 12
+				if XSkin2C.meter_on():   # T267：终焉时实际满值是 full_end（8），新画法取模块自己的判断；旧画法照旧读常态
+					r.full = int(_call(cls, "_focus_full", [logic], r.full))
 				r.text = "%d／%d" % [r.value, r.full]
 				if bool(f.get("burst", false)) and not bool(_last.get(key + ":burst", false)):
 					_flash[key] = 0.6
@@ -143,6 +153,11 @@ static func _num(v: float) -> String:
 	return s.trim_suffix(".")
 
 
+## 这条线还在闪（火花满、病灶爆发）几秒，印盘读
+func flash_left(key: String) -> float:
+	return float(_flash.get(key, 0.0))
+
+
 func _process(dt: float) -> void:
 	for k in _flash.keys():
 		_flash[k] = float(_flash[k]) - dt
@@ -157,6 +172,9 @@ func _process(dt: float) -> void:
 
 
 func _draw() -> void:
+	if XSkin2C.meter_on():   # T267：新画法由印盘（XSkinSealDial）画，这里只画死期小钟
+		_draw_doom_marks()
+		return
 	var font := XUI.font()
 	var y := 0.0
 	for r in rows:
@@ -205,6 +223,9 @@ func _draw_doom_marks() -> void:
 	var pulse := 0.65 + 0.35 * sin(Time.get_ticks_msec() / 160.0)
 	var bone := XTianqiLook.main_color("death")
 	var blue := XTianqiLook.accent_color("death")
+	if XSkin2C.meter_on():
+		_draw_doom_bells(bone, blue)
+		return
 	for row in doom_mark_rows():
 		var c: Vector2 = row.global_position - global_position + Vector2(-56, 36)
 		draw_circle(c, 15, Color(0, 0, 0, 0.6))
@@ -212,3 +233,19 @@ func _draw_doom_marks() -> void:
 		draw_arc(c, 12, 0, TAU, 24, Color(blue, pulse), 2.0)
 		draw_line(c, c + Vector2(0, -8), Color(blue.darkened(0.3), pulse), 2.0)
 		draw_line(c, c + Vector2(6, 2), Color(blue.darkened(0.3), pulse), 2.0)
+
+
+## T267 新画法：小钟（直径 22，骨白底、冷蓝圈、黑描边）压在新队伍栏那一行头像的左下角，跟着行走，2.4 秒呼吸一次；
+## 队伍栏单关新皮肤（行不是 XSkinSideStatus）时回旧位置
+func _draw_doom_bells(bone: Color, blue: Color) -> void:
+	var breath := 1.0
+	if XUiSkin.motion() == XUiSkin.Motion.FULL:
+		breath = 0.72 + 0.28 * (0.5 + 0.5 * cos(Time.get_ticks_msec() / 1000.0 * TAU / XUiSkin.TARGET_PULSE))
+	for row in doom_mark_rows():
+		var off := Vector2(18, 44) if row is XSkinSideStatus else Vector2(-56, 36)
+		var c: Vector2 = row.global_position - global_position + off
+		draw_circle(c, 12.5, Color(0, 0, 0, 0.85))
+		draw_circle(c, 11.0, Color(bone, breath))
+		draw_arc(c, 10.0, 0, TAU, 24, Color(blue, breath), 1.6, true)
+		draw_line(c, c + Vector2(0, -6), Color(blue.darkened(0.35), breath), 1.6)
+		draw_line(c, c + Vector2(4.5, 1.5), Color(blue.darkened(0.35), breath), 1.6)

@@ -42,6 +42,9 @@ class DropIcon:
 	var tex: Texture2D
 	var int_y := 0.0     # 排序键
 
+	var grade := -1      # T267：品质档（-1 没有品质）；只画法用
+	var land_ms := -1    # T267：第一次落地的时刻（只画法用，不进弹跳逻辑）
+
 	func _draw() -> void:
 		if tex == null or g.alpha <= 0:
 			return
@@ -49,8 +52,15 @@ class DropIcon:
 		var h := XDropPopup.ICON * float(g.sy)
 		if w == 0.0 or h <= 0.0:
 			return
+		var a: float = g.alpha / 255.0
+		if XSkin2C.drops_on():
+			XDropPopup.draw_skin_under(self, a)
+			for o in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(0, 1)]:   # 1px 黑描边（阴影式）
+				draw_texture_rect(tex, Rect2(g.x - w / 2.0 + o.x, g.y - h + o.y, w, h), false, Color(0, 0, 0, 0.85 * a))
 		# 锚点 (0.5, 1)；横向缩放变负时左右翻转
-		draw_texture_rect(tex, Rect2(g.x - w / 2.0, g.y - h, w, h), false, Color(1, 1, 1, g.alpha / 255.0))
+		draw_texture_rect(tex, Rect2(g.x - w / 2.0, g.y - h, w, h), false, Color(1, 1, 1, a))
+		if XSkin2C.drops_on() and XDropPopup.white_flash(self):
+			draw_texture_rect(tex, Rect2(g.x - w / 2.0, g.y - h, w, h), false, Color(4, 4, 4, a))
 
 
 ## 图标上的 dh 动画：MVAnimation 由 XDropPopup.step 逐帧推进（不自己跑 _physics_process），位置取图标上一帧的坐标
@@ -92,6 +102,7 @@ func setup(target: Node2D, sprite_h: float, items: Array) -> void:
 		var node := DropIcon.new()
 		node.g = g
 		node.tex = XUI.icon_texture(int(item.get("iconIndex", 0)))
+		node.grade = XQuality.show_grade(item) if XQuality.has_quality(item) else -1
 		g.node = node
 		add_child(node)
 		var meta: Dictionary = item.get("meta", {})
@@ -202,3 +213,87 @@ func _fade(g: Dictionary) -> void:
 	g.alpha = maxi(0, g.alpha - 15)
 	g.sx -= 0.05
 	g.sy += 0.15
+
+
+## ======== T267 新界面 2C 卡 B（T254 1.6）：掉落图标的影子、小七印环、光柱、爆光 ========
+## 轨迹、随机数、等待和淡出一帧不改；只在画图标时多画几样（落地时刻记在图标节点上，不进 g）。
+## 普通到精良只有影子；史诗以上落地时脚下一只压扁的小七印环（亮几颗看品质：史诗 1、传说 2、不朽 3、神话 4）；
+## 传说以上再加一道品质色光柱＋落地那一下爆一团光（半径 75，0.25 秒，只一次）、图标闪白一帧。简化、关：不画光柱和爆光，小环不发光。
+
+const SHADOW := Vector2(13, 3.5)
+const SEAL := Vector2(30, 11)
+const PILLAR_H := 96.0
+const BURST_R := 75.0
+const BURST_T := 0.25
+
+
+static func _landed(n: DropIcon) -> bool:
+	if n.land_ms < 0 and float(n.g.y) == -float(n.g.intY):
+		n.land_ms = Time.get_ticks_msec()
+	return n.land_ms >= 0
+
+
+static func _since(n: DropIcon) -> float:
+	return (Time.get_ticks_msec() - n.land_ms) / 1000.0 if n.land_ms >= 0 else -1.0
+
+
+static func _ellipse(ci: CanvasItem, c: Vector2, r: Vector2, col: Color, filled: bool, width := 1.0) -> void:
+	var pts := PackedVector2Array()
+	for i in 33:
+		var t := TAU * i / 32.0
+		pts.append(c + Vector2(cos(t) * r.x, sin(t) * r.y))
+	if filled:
+		ci.draw_colored_polygon(pts.slice(0, 32), col)
+	else:
+		ci.draw_polyline(pts, col, width, true)
+
+
+## 落地那一帧闪白（传说以上，全部档才有）
+static func white_flash(n: DropIcon) -> bool:
+	return n.grade >= 4 and XUiSkin.motion() == XUiSkin.Motion.FULL and _landed(n) and _since(n) < 1.0 / 30.0
+
+
+static func draw_skin_under(n: DropIcon, a: float) -> void:
+	if not _landed(n):
+		return
+	var g := n.g
+	var ground := Vector2(float(g.x), -float(g.intY))
+	_ellipse(n, ground, SHADOW, Color(0, 0, 0, 0.42 * a), true)
+	if n.grade < 3:
+		return
+	var qc := XUiSkin.quality_color(n.grade)
+	var full_m := XUiSkin.motion() == XUiSkin.Motion.FULL
+	# 小七印环 60×22：外圈 1.4px 品质色＋一成品质色的底、内圈 0.8px、圈上七个节点（亮 grade−2 颗）
+	_ellipse(n, ground, SEAL, Color(qc, 0.10 * a), true)
+	_ellipse(n, ground, SEAL, Color(qc, 0.95 * a), false, 1.4)
+	_ellipse(n, ground, SEAL * 0.62, Color(qc, 0.7 * a), false, 0.8)
+	var lit := n.grade - 2
+	for i in 7:
+		var t := -PI / 2.0 + TAU * i / 7.0
+		var p := ground + Vector2(cos(t) * SEAL.x, sin(t) * SEAL.y)
+		if i < lit:
+			if full_m:
+				XSkin2C._glow(n, p, 7.0, Color(qc, 0.8 * a))
+			n.draw_circle(p, 2.2, Color(qc.lightened(0.35), a))
+		else:
+			n.draw_circle(p, 1.8, Color(0.12, 0.12, 0.14, a))
+			n.draw_arc(p, 1.8, 0, TAU, 10, Color(qc, 0.6 * a), 0.8, true)
+	if n.grade < 4 or not full_m:
+		return
+	# 光柱：实芯宽 6、高 96，下实上虚，1.5px 深色描边＋2px 白芯
+	var top := ground - Vector2(0, PILLAR_H)
+	var dark := Color(0.06, 0.04, 0.03, 0.8 * a)
+	n.draw_polygon(PackedVector2Array([top + Vector2(-4.5, 0), top + Vector2(4.5, 0), ground + Vector2(4.5, 0), ground + Vector2(-4.5, 0)]),
+		PackedColorArray([Color(dark, 0), Color(dark, 0), dark, dark]))
+	n.draw_polygon(PackedVector2Array([top + Vector2(-3, 0), top + Vector2(3, 0), ground + Vector2(3, 0), ground + Vector2(-3, 0)]),
+		PackedColorArray([Color(qc, 0), Color(qc, 0), Color(qc, a), Color(qc, a)]))
+	n.draw_polygon(PackedVector2Array([top + Vector2(-1, 24), top + Vector2(1, 24), ground + Vector2(1, 0), ground + Vector2(-1, 0)]),
+		PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 0), Color(1, 1, 1, 0.9 * a), Color(1, 1, 1, 0.9 * a)]))
+	# 爆光（落地那一下，只一次）
+	var k := _since(n) / BURST_T
+	if k >= 0.0 and k < 1.0:
+		XSkin2C._glow(n, ground + Vector2(0, -16), BURST_R * (0.5 + 0.5 * k), Color(qc.lightened(0.2), 0.85 * (1.0 - k) * a))
+		for i in 12:
+			var t := TAU * i / 12.0
+			var d := Vector2(cos(t), sin(t))
+			n.draw_line(ground + Vector2(0, -16) + d * BURST_R * 0.25 * k, ground + Vector2(0, -16) + d * BURST_R * k, Color(qc.lightened(0.4), 0.7 * (1.0 - k) * a), 2.0, true)

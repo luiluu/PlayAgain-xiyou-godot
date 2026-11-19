@@ -489,13 +489,16 @@ func _draw() -> void:
 	var nm := _name_text
 	var nw := title.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 27).x
 	var shadow := Color(0.03, 0.02, 0.02, 0.92 * al) if INK_TEXT else Color(0, 0, 0, 0.75 * al)
-	if INK_TEXT:
+	if XSkin2C.names_on():   # T267（T254 R3，原卡 D）：名字白、垫状态胶囊同款深底（上下内边距 4），难度色只给名字前一枚小菱形
+		_draw_name_v2(title, nm, nw, al)
+	elif INK_TEXT:
 		draw_ink_mist(self, CENTER.x, NAME_Y + 17.0, nw * 0.5 + 34.0, 24.0, 0.52 * al)
 	elif XSkin4A.text_on():  # 新界面 4A（A5）：首领名垫深色胶囊底
 		_last_backing_draws += 1
 		XSkin4A.draw_text_backing(self, CENTER.x - nw / 2.0, NAME_Y + 27, nw, 27, al)
-	draw_string_outline(title, Vector2(CENTER.x - nw / 2.0, NAME_Y + 27), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, 5 if INK_TEXT else 4, shadow)
-	XUiSkin.ds(self, title, Vector2(CENTER.x - nw / 2.0, NAME_Y + 27), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, Color(name_color(), al))
+	if not XSkin2C.names_on():
+		draw_string_outline(title, Vector2(CENTER.x - nw / 2.0, NAME_Y + 27), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, 5 if INK_TEXT else 4, shadow)
+		XUiSkin.ds(self, title, Vector2(CENTER.x - nw / 2.0, NAME_Y + 27), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, Color(name_color(), al))
 	if digits.is_empty():   # 插件参数关了血量数字
 		return
 	var cur := "".join(PackedStringArray(digits))
@@ -513,3 +516,33 @@ func _draw() -> void:
 	draw_string_outline(num, Vector2(x0 + cw, NUM_Y + 30), mx, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 4 if INK_TEXT else 3, shadow)
 	XUiSkin.ds(self, num, Vector2(x0 + cw, NUM_Y + 30), mx, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(XUiSkin.GOLD, al))
 
+
+## T267 首领名新画法：胶囊（状态胶囊同款 XSkin4A.TEXT_CAP 深底）上下内边距 4、字 TEXT_HI，名字前一枚难度色小菱形；
+## 胶囊范围记在 last_name_rect（测试核它不压到下面 34px 处的血量数字）
+var last_name_rect := Rect2()
+
+
+func _draw_name_v2(font: Font, nm: String, nw: float, al: float) -> void:
+	var fs := 27
+	var dia := 12.0
+	var w := dia + 8.0 + nw
+	var x0 := CENTER.x - w / 2.0
+	var asc := font.get_ascent(fs)
+	var desc := font.get_descent(fs)
+	var base := NAME_Y + 27.0
+	var r := Rect2(x0 - 14.0, base - asc - 4.0, w + 28.0, asc + desc + 8.0)
+	last_name_rect = r
+	if XSkin4A.text_on():   # 胶囊底跟 4A 深色底板同一个开关（TEXT_V2 关掉时不垫）
+		if not INK_TEXT:   # 计数只算顶替旧名字底板的那一次（墨雾档旧画法本来不垫底，v07 专项按此数）
+			_last_backing_draws += 1
+			XSkin4A.backing_count += 1
+		var sb := StyleBoxFlat.new()
+		sb.bg_color = Color(XSkin4A.TEXT_CAP, XSkin4A.TEXT_CAP.a * al)
+		sb.set_corner_radius_all(int(r.size.y / 2.0))
+		sb.anti_aliasing = true
+		draw_style_box(sb, r)
+	var dc := Vector2(x0 + dia / 2.0, base - (asc - desc) / 2.0)
+	var dcol := name_color()
+	XSkin2C._diamond(self, dc, dia / 2.0 + 1.0, Color(0, 0, 0, 0.8 * al))
+	XSkin2C._diamond(self, dc, dia / 2.0, Color(dcol, al))
+	XUiSkin.ds(self, font, Vector2(x0 + dia + 8.0, base), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(XUiSkin.TEXT_HI, al))

@@ -314,7 +314,7 @@ func _meter() -> void:
 	# 死期、病灶：按 meta 读（模块不在也能显示）
 	var a: XActor = lg.actors[0]
 	lg.set_meta("xdeath_alien", {"units": {lg.enemies[0]: {}}, "doom": {a: true}})
-	lg.set_meta("xplague_alien", {"units": {lg.enemies[0]: {}}, "layers": 9})
+	lg.set_meta("xplague_alien", {"units": {lg.enemies[0]: {"idx": 1}}, "layers": 9})   # T267：病灶上限新画法取 _focus_full（读 idx 判终焉），夹具补 idx
 	m.refresh()
 	var keys := m.rows.map(func(r): return str(r.key))
 	_check("meter_order", keys == ["war", "death", "plague"], keys)
