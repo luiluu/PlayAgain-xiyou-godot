@@ -1,6 +1,6 @@
 class_name XBattleStream
 extends RefCounted
-## T225 多段技能逐段结算（O-待定）：画面演到哪一段才结算哪一段，开招那一帧不再一次算完全部段数。
+## T225 多段技能逐段结算（O-609）：画面演到哪一段才结算哪一段，开招那一帧不再一次算完全部段数。
 ##
 ## 做法：行动的结算（XBattleLogic.act）照旧是同一份同步代码、同一个先后顺序，只是放到一条交接线程上跑，
 ## 根序列（主行动 execute 里的 XActionSequence）每条 ACTION EFFECT 之前停下（gate），等画面要下一段时（pull）再往下算。
