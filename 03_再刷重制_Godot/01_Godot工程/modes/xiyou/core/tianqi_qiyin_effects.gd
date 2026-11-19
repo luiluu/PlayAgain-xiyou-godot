@@ -541,6 +541,7 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 	if not jp.is_empty() and not f.judged.has(t) and t.is_alive():
 		f.judged[t] = true
 		_lose_hp(logic, t, floorf(XTianqiNoX6.scale_direct(u, t, judgment_value(logic, u, f))), st.logs)  # 去全队 ×6：按我方能力算的绝对值直接扣血跟敌人血量缩 1/6（O-470）
+		fu_mark(logic, u, t, r)  # T243（T240 复核 P3-2）：判决这一下打倒的也是行动者的致命一击，补记（开头的 fu_mark 在扣血之前）
 	# 落星（震流派）：每次行动掷一次
 	var star := _p(logic, u, "star_fall")
 	if not star.is_empty() and not bool(f.star) and hp_dmg > 0.0 and not u.is_attack(skill):
@@ -555,6 +556,7 @@ static func after_apply(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 	var ex := _p(logic, u, "execute_normal")
 	if not ex.is_empty() and t.is_alive() and not XBossStatus.is_boss(t) and t.hp < t.mhp * float(ex.below_pct) / 100.0:
 		_lose_hp(logic, t, t.hp, st.logs)
+		fu_mark(logic, u, t, r)  # T243（T240 复核 P3-2）：灰镰处决同上，补记致命一击
 	# 无字：普攻后给生命最低的队友回这次伤害的一成
 	var heal := _p(logic, u, "normal_attack_heal_lowest")
 	if not heal.is_empty() and u.is_attack(skill) and hp_dmg > 0.0:

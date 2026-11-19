@@ -4,6 +4,7 @@
   python3 03_转换工具/天启篇期四填表生成.py [--设计仓库 ~/Documents/xiyou-design-docs] [--写表]      不加 --写表只打印
   python3 03_转换工具/天启篇期四填表生成.py --清单            打印件数表／超上限技能清单（交付单附件用）
   python3 03_转换工具/天启篇期四填表生成.py --写属性换算 [--属性清单]   T228：只换 abs_rescale.json 的 <G_ShuXing> 行；清单打成 markdown
+  python3 03_转换工具/天启篇期四填表生成.py --写技能换算     T243：只换 abs_rescale.json 的技能固定回复／吸取两类
 """
 import argparse
 import collections
@@ -245,6 +246,55 @@ def capped(key, v, b):
     return {'pct_of': key, 'pct': pct}
 
 
+# T243：技能固定回复（skill_fixed_heal）、固定吸取（skill_fixed_drain）的结构化换算。公式最前面（或 v[364] 之后）的固定底数 base
+# 换成「对象（b）pct_of 那一项上限 × pct%」，公式其余部分（a.mat×N 等）照旧；pct＝底数÷弱者 81 级本体中位（生命 6910、魔法 2696）×100，
+# 四舍五入成整数（附则 E），夹在 1～100，超过 100 的原折算值留在 over100。回复类型 3／7 和吸取 5 按生命，4／8 和 6 按魔法。
+# 没有固定底数、或公式本来就按生命／魔法比例算的，mode＝raw 照原公式（reason 写为什么）。
+SKILL_BASE_RE = re.compile(r'^(?:v\[\d+\]\s*\+\s*)?\(*\s*(\d+(?:\.\d+)?)\s*(?:\+|$)')
+SKILL_RAW = {
+    8111: '底数 1 是平衡伤害的记号（轮回模式），不是回复量',
+}
+
+
+def skill_new(sid, f, ty, b):
+    if sid in SKILL_RAW:
+        return {'mode': 'raw', 'reason': SKILL_RAW[sid]}
+    m = SKILL_BASE_RE.match(f.strip())
+    const = float(m.group(1)) if m else 0.0
+    if const <= 0:
+        if re.search(r'\b[ab]\.(mhp|mmp|hp|mp)\b', f):
+            return {'mode': 'raw', 'reason': '公式本来就按生命／魔法算，随量级涨，不换'}
+        return {'mode': 'raw', 'reason': '没有固定底数（全随属性涨或恒 0），不换'}
+    key = 'mmp' if ty in (4, 6, 8) else 'mhp'
+    whole = int(const // 1) if const == int(const) else const
+    q = int(const / b[key] * 100 + 0.5)
+    n = {'pct_of': key, 'pct': max(1, min(100, q)), 'base': whole}
+    if q > 100:
+        n['over100'] = q
+    return n
+
+
+def write_skill_abs(path):
+    """T243：只换 abs_rescale.json 里 skill_fixed_heal／skill_fixed_drain 的 new（orig 改成完整公式），其余原样。"""
+    d = jload(path)
+    b = {'mhp': d['base']['weak_mhp81'], 'mmp': d['base']['weak_mmp81']}
+    skills = {x['id']: x for x in jload(DB / 'Skills.json') if x}
+    for e in d['entries']:
+        if e.get('kind') in ('skill_fixed_heal', 'skill_fixed_drain'):
+            dm = skills[e['id']].get('damage') or {}
+            f = dm.get('formulaGd') or dm.get('formula') or ''
+            e['orig'] = f
+            e['new'] = skill_new(e['id'], f, dm.get('type', 0), b)
+    d['groups']['skill_fixed'] = {'_note': SKILL_GROUP_NOTE}
+    path.write_text(dumps(d), encoding='utf-8')
+    return d
+
+
+SKILL_GROUP_NOTE = ('T243：技能固定回复 skill_fixed_heal、固定吸取 skill_fixed_drain。期四开着且 XTianqiBase.ABS_SKILL 开着、天启篇存档时，'
+                    '公式里的固定底数 new.base 换成「对象 new.pct_of 上限 × new.pct%」（向下取整），公式其余部分照旧（XTianqiBase.skill_formula，接在 XFormulaExecution.run_item）；'
+                    'orig 是完整原公式，技能公式被改写、对不上 orig 的照原公式并警告一次。mode＝raw 的照原公式（reason）。pct 整数、可直接改表。')
+
+
 def scan_more(b, card_skills):
     """第二批：把 unscanned 六类里能机器扫的扫完。返回 (entries, groups)。"""
     main = b['main']
@@ -268,11 +318,11 @@ def scan_more(b, card_skills):
         const = float(m.group(1)) if m else (float(f) if re.fullmatch(r'\d+(\.\d+)?', f.strip()) else None)
         enemy = x['id'] in enemy_skills
         if ty in (3, 4, 7, 8):
-            heal_rows.append({'kind': 'skill_fixed_heal', 'id': x['id'], 'name': x['name'], 'enemy': enemy, 'orig': f[:60],
-                              'new': ('固定底数 %g 换成对象生命上限的 %s%%（原数÷弱者 81 级生命）' % (const, round(min(100, const / b['mhp'] * 100), 1))) if const else '公式读对象生命或属性，T012-b 逐条看'})
+            heal_rows.append({'kind': 'skill_fixed_heal', 'id': x['id'], 'name': x['name'], 'enemy': enemy, 'orig': f,
+                              'new': skill_new(x['id'], f, ty, b)})
         elif ty in (5, 6):
-            drain_rows.append({'kind': 'skill_fixed_drain', 'id': x['id'], 'name': x['name'], 'enemy': enemy, 'orig': f[:60],
-                               'new': '吸取量 %s：换成对象生命／魔法上限的百分比（T012-b 定）' % (f[:20])})
+            drain_rows.append({'kind': 'skill_fixed_drain', 'id': x['id'], 'name': x['name'], 'enemy': enemy, 'orig': f,
+                               'new': skill_new(x['id'], f, ty, b)})
         elif const is not None and const >= 100:
             if enemy:
                 dmg_enemy.append([x['id'], x['name'], const, round(const / main * 100, 1)])
@@ -623,7 +673,15 @@ def main():
     ap.add_argument('--清单', action='store_true')
     ap.add_argument('--写属性换算', action='store_true', help='T228：只换 abs_rescale.json 里 <G_ShuXing> 那几行（state_shuxing）和参考值，别的表不动')
     ap.add_argument('--属性清单', action='store_true', help='T228：打印 <G_ShuXing> 状态换算清单（markdown，交付单附表）')
+    ap.add_argument('--写技能换算', action='store_true', help='T243：只换 abs_rescale.json 里技能固定回复、吸取两类（skill_fixed_heal／skill_fixed_drain）的 new')
     args = ap.parse_args()
+    if args.写技能换算:
+        d = write_skill_abs(DATA / 'abs_rescale.json')
+        rows = [e for e in d['entries'] if e['kind'] in ('skill_fixed_heal', 'skill_fixed_drain')]
+        print('已写 abs_rescale.json：技能固定回复／吸取 %d 行，换算 %d 行，照原公式 %d 行' % (len(rows), sum(1 for e in rows if 'pct' in e['new']), sum(1 for e in rows if e['new'].get('mode') == 'raw')))
+        for e in rows:
+            print('  %s %d %s｜%s｜%s' % (e['kind'][11:], e['id'], e['name'], e['orig'], e['new']))
+        return 0
     if args.写属性换算 or args.属性清单:
         if args.写属性换算:
             d = write_shuxing(DATA / 'abs_rescale.json')

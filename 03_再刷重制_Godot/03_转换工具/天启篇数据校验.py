@@ -1925,6 +1925,20 @@ def abs_rescale_rules(table: dict) -> list:
                       and all(isinstance(x, int) and not isinstance(x, bool) for x in n['pct'])):
                 bad.append('entries/%d（state_shuxing %s）new.pct 要是 8 个整数：%s' % (i, e['id'], n.get('pct')))
             continue
+        if e['kind'] in ('skill_fixed_heal', 'skill_fixed_drain'):  # T243：结构化；固定底数 base 换成对象上限的整数 %（附则 E），没底数的 mode＝raw
+            tag = 'entries/%d（%s %s）' % (i, e['kind'], e['id'])
+            isint = lambda x: isinstance(x, int) and not isinstance(x, bool)
+            if not isinstance(n, dict):
+                bad.append(tag + 'new 要是结构化的 {pct_of, pct, base} 或 {mode: raw, reason}：%s' % (n,))
+            elif n.get('mode') == 'raw':
+                if not n.get('reason'):
+                    bad.append(tag + 'mode＝raw 要写 reason')
+            elif not (isint(n.get('pct')) and 1 <= n['pct'] <= 100 and n.get('pct_of') in ('mhp', 'mmp')
+                      and isinstance(n.get('base'), (int, float)) and not isinstance(n.get('base'), bool) and n['base'] > 0
+                      and ('over100' not in n or (isint(n['over100']) and n['over100'] > 100))
+                      and isinstance(e['orig'], str) and e['orig']):
+                bad.append(tag + 'new 要是 pct_of mhp／mmp、pct 1～100 的整数、base 正数、over100（有的话）大于 100 的整数，orig 是完整原公式：%s' % (n,))
+            continue
         if isinstance(n, dict) and not (0 < float(n.get('pct', 0)) <= 100 and n.get('pct_of') in ('mhp', 'mmp')):
             bad.append('entries/%d（%s %s）换算后要是 mhp／mmp 的 0～100%%：%s' % (i, e['kind'], e['id'], n))
     if not table.get('unscanned'):
