@@ -458,12 +458,16 @@ GUARDIAN_TROOPS = {4, 5, 8, 22, 28, 39, 52, 53, 67, 69, 109, 110, 111, 118, 138,
 
 
 def shuxing_holders():
-    """每个状态挂在谁身上（静态扫，尽量全）：返回 {状态号: set(标签)}。标签：我方、敌方、守层者，再加来源说明。"""
+    """每个状态挂在谁身上（静态扫，尽量全，不保证）：返回 {状态号: set(标签)}，标签是 我方、敌方、守层者。
+    认的挂法：技能／物品「附加状态」效果（按使用者和范围）；备注 <Passive State: …>、<…PushState编号: …>（PushState、StartPushState、
+    StartWTPushState、StartAEPushState、RecPushState）；敌群、公共事件的「更改角色状态」「更改敌人状态」（守层者敌群另记）；
+    状态脚本里的 add_state(编号)（跟着挂它的那个状态走）。技能归属：敌人行动表里有、我方各处都没有的算敌人技能，其余算我方。"""
     skills = {x['id']: x for x in jload(DB / 'Skills.json') if x}
     items = {x['id']: x for x in jload(DB / 'Items.json') if x}
     enemies = {x['id']: x for x in jload(DB / 'Enemies.json') if x}
     troops = {x['id']: x for x in jload(DB / 'Troops.json') if x}
     ces = {x['id']: x for x in jload(DB / 'CommonEvents.json') if x}
+    states = {x['id']: x for x in jload(DB / 'States.json') if x}
     guardian_enemies = set()
     for t in GUARDIAN_TROOPS:
         for m in troops.get(t, {}).get('members', []):
@@ -472,58 +476,70 @@ def shuxing_holders():
     for e in enemies.values():
         for a in e.get('actions', []):
             enemy_skill_users[a.get('skillId')].add(e['id'])
-    actor_skills = set()
+    actor_skills = {int(k) for k in jload(DATA / 'skill_rework.json')['skills']}
     for c in jload(DB / 'Classes.json'):
         if c:
             actor_skills |= {l['skillId'] for l in c.get('learnings', [])}
-    actor_skills |= {int(k) for k in jload(DATA / 'skill_rework.json')['skills']}
-    out = collections.defaultdict(set)
-    sid_re = re.compile(r'(?i)<(?:passive state|passive states)\s*:\s*([\d,\s\-]+)>')
+    for f in ('Items', 'Weapons', 'Armors', 'Actors', 'Classes'):
+        for x in jload(DB / (f + '.json')):
+            if x:
+                actor_skills |= {ef['dataId'] for ef in x.get('effects', []) if ef.get('code') == 43}
+                actor_skills |= {t['dataId'] for t in x.get('traits', []) if t.get('code') == 43}
 
-    def add_ids(text, tag):
-        for m in sid_re.finditer(text):
+    def skill_side(sid):
+        users = enemy_skill_users.get(sid, set())
+        sides = set()
+        if users:
+            sides.add('守层者' if users <= guardian_enemies else '敌方')
+            if users & guardian_enemies and users - guardian_enemies:
+                sides |= {'守层者', '敌方'}
+        if sid in actor_skills or not users:
+            sides.add('我方')
+        return sides
+    out = collections.defaultdict(set)
+    passive_re = re.compile(r'(?i)<passive states?\s*:\s*([\d,\s\-]+)>')
+    push_re = re.compile(r'(?:Start|StartWT|StartAE|Rec)?PushState(\d+)\s*:')
+
+    def note_ids(text):
+        ids = set()
+        for m in passive_re.finditer(text):
             for part in m.group(1).split(','):
                 part = part.strip()
                 if '-' in part:
                     a, b = part.split('-')
-                    for i in range(int(a), int(b) + 1):
-                        out[i].add(tag)
+                    ids |= set(range(int(a), int(b) + 1))
                 elif part.isdigit():
-                    out[int(part)].add(tag)
-    # 技能、物品的「附加状态」效果：按使用者和范围判挂到哪边
+                    ids.add(int(part))
+        ids |= {int(m.group(1)) for m in push_re.finditer(text)}
+        return ids
+    opp = {'我方': {'敌方'}, '敌方': {'我方'}, '守层者': {'我方'}}
     for tab, recs in (('技能', skills), ('物品', items)):
         for x in recs.values():
+            sides = skill_side(x['id']) if tab == '技能' else {'我方'}
+            sc = x.get('scope', 0)
+            to_opp = 1 <= sc <= 6
             for ef in x.get('effects', []):
-                if ef.get('code') != 21 or not ef.get('dataId'):
-                    continue
-                sc = x.get('scope', 0)
-                to_opp = 1 <= sc <= 6
-                users = enemy_skill_users.get(x['id'], set()) if tab == '技能' else set()
-                if users:
-                    if to_opp:
-                        out[ef['dataId']].add('我方')
-                    else:
-                        out[ef['dataId']].add('守层者' if users & guardian_enemies else '敌方')
-                        if users - guardian_enemies:
-                            out[ef['dataId']].add('敌方')
-                if tab == '物品' or x['id'] in actor_skills:
-                    out[ef['dataId']].add('敌方' if to_opp else '我方')
-    # 被动状态：角色、职业、装备、技能备注里写的是我方；敌人备注里写的是敌方（守层者另记）
-    for f in ('Actors', 'Classes', 'Weapons', 'Armors', 'Skills'):
+                if ef.get('code') == 21 and ef.get('dataId'):
+                    for sd in sides:
+                        out[ef['dataId']] |= opp[sd] if to_opp else {sd}
+            if tab == '技能':   # 技能备注里的被动／推状态：挂在会这个技能的那一方身上（多是被动技能）
+                for i in note_ids(x.get('note', '')):
+                    out[i] |= sides
+    for f in ('Actors', 'Classes', 'Weapons', 'Armors'):
         for x in jload(DB / (f + '.json')):
             if x:
-                add_ids(x.get('note', ''), '我方')
+                for i in note_ids(x.get('note', '')):
+                    out[i].add('我方')
     for e in enemies.values():
-        add_ids(e.get('note', ''), '守层者' if e['id'] in guardian_enemies else '敌方')
-        for st in [t for t in e.get('traits', []) if t.get('code') == 14]:
-            pass
+        for i in note_ids(e.get('note', '')):
+            out[i].add('守层者' if e['id'] in guardian_enemies else '敌方')
 
-    def scan_list(lst, actor_tag, enemy_tag, ce_tag):
+    def scan_list(lst, enemy_tag):
         called = []
         for c in lst:
             code, p = c.get('code'), c.get('parameters', [])
             if code == 313 and len(p) > 3 and p[2] == 0:
-                out[p[3]].add(actor_tag)
+                out[p[3]].add('我方')
             elif code == 333 and len(p) > 2 and p[1] == 0:
                 out[p[2]].add(enemy_tag)
             elif code == 117 and p:
@@ -531,20 +547,30 @@ def shuxing_holders():
         return called
     seen_ce = set()
 
-    def walk_ce(cid, actor_tag, enemy_tag):
-        key = (cid, enemy_tag)
-        if key in seen_ce or cid not in ces:
+    def walk_ce(cid, enemy_tag):
+        if (cid, enemy_tag) in seen_ce or cid not in ces:
             return
-        seen_ce.add(key)
-        for c2 in scan_list(ces[cid].get('list', []), actor_tag, enemy_tag, None):
-            walk_ce(c2, actor_tag, enemy_tag)
+        seen_ce.add((cid, enemy_tag))
+        for c2 in scan_list(ces[cid].get('list', []), enemy_tag):
+            walk_ce(c2, enemy_tag)
     for t in troops.values():
         etag = '守层者' if t['id'] in GUARDIAN_TROOPS else '敌方'
         for pg in t.get('pages', []):
-            for cid in scan_list(pg.get('list', []), '我方', etag, None):
-                walk_ce(cid, '我方', etag)
+            for cid in scan_list(pg.get('list', []), etag):
+                walk_ce(cid, etag)
     for cid in list(ces):
-        walk_ce(cid, '我方', '敌方')
+        walk_ce(cid, '敌方')
+    # 状态里再挂状态：跟着母状态走，到不动点
+    add_re = re.compile(r'"name": "add_state", "args": \[\{"op": "literal", "pos": \d+, "value": (\d+)')
+    child = {sid: {int(v) for v in add_re.findall(json.dumps(x, ensure_ascii=False))} | note_ids(x.get('note', '')) for sid, x in states.items()}
+    changed = True
+    while changed:
+        changed = False
+        for sid, kids in child.items():
+            for k in kids:
+                if k != sid and not out[sid] <= out[k]:
+                    out[k] |= out[sid]
+                    changed = True
     return out
 
 

@@ -1,0 +1,7 @@
+extends "res://tests/virtual_player/t227_probe.gd"
+## T228 临时探针：在 T227 探针上加 --shuxing=off（XTianqiBase.ABS_SHUXING＝false）
+func _ready() -> void:
+	for a in OS.get_cmdline_user_args():
+		if a == "--shuxing=off":
+			XTianqiBase.ABS_SHUXING = false
+	super()

@@ -1,0 +1,33 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+WARNING: XTianqiBase: 总开关开着，但 balance_table.guardian_phase4.atk_scale 还没有（T012-c 实机量），退回旧表
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] warn_once (res://modes/xiyou/core/tianqi_base.gd:104)
+         [1] guardian_table (res://modes/xiyou/core/tianqi_base.gd:246)
+         [2] atk_scale (res://modes/xiyou/core/guardian_rework.gd:101)
+         [3] refresh_passive (res://modes/xiyou/core/enemy.gd:378)
+         [4] setup (res://modes/xiyou/core/enemy.gd:136)
+         [5] setup (res://modes/xiyou/battle/battle_logic.gd:196)
+         [6] _fight_both (res://tests/virtual_player/t227_probe.gd:82)
+         [7] _run_both (res://tests/virtual_player/t227_probe.gd:164)
+         [8] _run (res://tests/virtual_player/baseline_dps.gd:385)
+WARNING: XTianqiBase: 总开关开着，但 balance_table.guardian_phase4.hp_base 还没有（T012-c 实机量），退回旧表
+     at: push_warning (core/variant/variant_utility.cpp:1033)
+     GDScript backtrace (most recent call first):
+         [0] warn_once (res://modes/xiyou/core/tianqi_base.gd:104)
+         [1] guardian_table (res://modes/xiyou/core/tianqi_base.gd:246)
+         [2] hp_base (res://modes/xiyou/core/guardian_rework.gd:179)
+         [3] setup (res://modes/xiyou/core/guardian_rework.gd:213)
+         [4] setup (res://modes/xiyou/battle/battle_logic.gd:218)
+         [5] _fight_both (res://tests/virtual_player/t227_probe.gd:82)
+         [6] _run_both (res://tests/virtual_player/t227_probe.gd:164)
+         [7] _run (res://tests/virtual_player/baseline_dps.gd:385)
+T227 floor=1 dmg=1435 hit=364 hits=32.0 aActs=4.0 eActs=1.0 enemyDmg=191 partyHp=62344 enemyHp=777334
+T227 floor=6 dmg=2202 hit=551 hits=32.0 aActs=4.0 eActs=1.0 enemyDmg=2580 partyHp=190672 enemyHp=1109333
+T227 floor=12 dmg=2215 hit=596 hits=29.0 aActs=4.1 eActs=1.0 enemyDmg=4498 partyHp=256282 enemyHp=1706667
+T227 floor=13 dmg=2335 hit=522 hits=31.0 aActs=4.1 eActs=1.0 enemyDmg=10297 partyHp=271234 enemyHp=2283333
+T227 floor=20 dmg=1110 hit=426 hits=22.0 aActs=4.2 eActs=1.0 enemyDmg=4480 partyHp=471637 enemyHp=3750000
+T227 floor=28 dmg=360 hit=303 hits=9.5 aActs=4.0 eActs=1.0 enemyDmg=18484 partyHp=526578 enemyHp=6633333
+BASELINE_DONE
+EXIT=0
