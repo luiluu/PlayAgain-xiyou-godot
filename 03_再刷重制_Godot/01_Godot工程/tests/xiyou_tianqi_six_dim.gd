@@ -8,11 +8,11 @@ var results: Array = []
 
 const SIX := {
 	"knights": {"death": "S SS E B A E", "war": "S C SS D D B", "famine": "A C B SS A E", "plague": "D C D S B SS"},
-	"actors": {180: "S C E SS D B", 107: "A C D A SS A", 168: "SS C A A D C", 45: "D E S C E B", 174: "D D E A A A",
-		71: "E E B SS C B", 6: "D B C E E B", 31: "E S B B A A", 60: "B S B E E B", 175: "S C E A S A"},
+	"actors": {180: "S C B SS C B", 107: "A C D B SS A", 168: "SS D A A C C", 45: "D E S D E B", 174: "D D A A A A",
+		71: "E C B SS C B", 6: "D A D E E B", 31: "E A B B A S", 60: "B A B E E B", 175: "S A D A S A"},
 }
-const TOTALS := {"death": 24, "war": 24, "famine": 25, "plague": 24, 180: 23, 107: 27, 168: 25, 45: 17, 174: 20, 71: 20, 6: 15, 31: 25, 60: 20, 175: 26}
-const RESIST := {"death": 5, "war": -5, "famine": 5, "plague": 2, 180: -5, 107: 9, 168: -5, 45: -10, 174: 5, 71: 0, 6: -10, 31: 5, 60: -10, 175: 7}
+const TOTALS := {"death": 24, "war": 24, "famine": 25, "plague": 24, 180: 27, 107: 26, 168: 25, 45: 16, 174: 24, 71: 22, 6: 15, 31: 25, 60: 19, 175: 29}
+const RESIST := {"death": 5, "war": -5, "famine": 5, "plague": 2, 180: 0, 107: 9, 168: 0, 45: -10, 174: 5, 71: 0, 6: -10, 31: 5, 60: -10, 175: 7}
 
 
 func _ready() -> void:

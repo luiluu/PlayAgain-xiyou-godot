@@ -9,7 +9,8 @@
 
 数据来源（六维打分_实测数据.json，同目录）：
   输出  ＝ k_calibrate 含烙印整次施放峰值（K_ROW.peak）
-  生存／速度 ＝ k_calibrate --stats 的标准养成面板（K_STAT：81 级、进阶满、同一套装备）
+  生存  ＝ k_calibrate --survive 实测挨打（K_SURV：标准敌人固定攻击、自动战斗带保命技、撑过的回合数）；面板（K_STAT）只兜底
+  速度  ＝ k_calibrate --stats 的标准养成敏捷（K_STAT）×（追加行动几率＋技能描述里的再动／拉条／先制／敏捷加成）
   辅助  ＝ 职责底分＋技能描述里的友方词（skill_rework.json）
   战商／韧性 ＝ 手标分（下面 WIT／RESV，依据原作人设，不是实测；T280 起交小A 人审）
 
@@ -18,7 +19,8 @@
   $=G --tier=all --exact > calib.log                    # 输出（K_ROW）；约 35 分钟
   $=G --stats --tier=all > stats.log                    # 面板（K_STAT）；约 1 分钟
   $=G --tier=all --exact --add-rework --soul=200000 --actors=<calib.log 里 K_SKIP 的号,167> > miss.log   # 补量没量到的、渡鸦灌满魂
-  python3 .../六维打分.py --ingest --calib calib.log miss.log --stats stats.log --write
+  for s in 0 1 2; do $=G --survive --tier=all --seed=$s --surv-atk=8000 | sed "s/^K_SURV /K_SURV seed=$s /"; done > surv.log   # 生存（K_SURV）；每个种子约 10 分钟
+  python3 .../六维打分.py --ingest --calib calib.log miss.log --stats stats.log --surv surv.log --write
 """
 import argparse
 import collections
@@ -41,6 +43,8 @@ S = {l: i + 1 for i, l in enumerate(LET)}
 DIMS = ['output', 'survive', 'speed', 'wit', 'resolve', 'support']
 DN = {'output': '输出', 'survive': '生存', 'speed': '速度', 'wit': '战商', 'resolve': '韧性', 'support': '辅助'}
 CN = {'super': '超强者', 'strong': '强者', 'weak': '弱者'}
+ATK_SURV = 8000
+D239 = {'2', '22', '1', '162'}   # 绿司机、维利、狗逍遥、诛仙：补量后输出超出 Kyo 定的区间，D239 待定（协调 11-20）
 BUDGET = {'super': (20, 26), 'strong': (18, 25), 'weak': (13, 22)}
 # 全库名额（千分位累计）：SS 前 3.2%、S 累计 10.3%、A 25%、B 50%、C 75%、D 92.3%、其余 E（D／E 合计后 25%）。156 人时 SS5 S11 A23 B39 C39 D27 E12
 CUM = [('SS', 32), ('S', 103), ('A', 250), ('B', 500), ('C', 750), ('D', 923), ('E', 1000)]
@@ -53,7 +57,12 @@ RESV = {'钟离': 95, '张三丰': 85, '镜流': 80, '三笠': 75, '伊莉雅': 
 SURV = {'shield': r'护盾|代命|替.*承', 'cut': r'承受伤害 ?[−-]|受到.*伤害 ?[−-]|减伤|伤害减免|免疫.*伤害|无敌|免疫死亡|不会死亡|锁血|生命.*不会低于|无下限|不死|免死|濒死',
         'heal': r'回复.*生命|恢复.*生命|回血|吸血|生命偷取|汲取.*生命|治疗自己|自愈|复活自己|再生', 'evade': r'闪避|回避|格挡|反击|反伤|无视.*攻击|免疫.*攻击'}
 SURV_NEG = r'消耗.*生命|扣除.*生命|自身受到.*伤害|自己.*眩晕|自晕|失去.*生命|生命.*降低'
-SPD = {'first': r'先制|先手|优先行动|立即行动', 'bar': r'行动条|拉条|加速|速度提升'}
+# 速度机制词（技能描述）：概率再动、提前行动／拉条、先制、敏捷加成；measured 追加行动几率（action_plus_set）取两者较大值，不叠加
+SPD_AGAIN = r'(\d+)%[^。；/，]{0,12}再动|再动[^。；/，]{0,12}?(\d+)%'
+SPD_AGAIN_PLAIN = r'再动|额外行动|追加行动|行动次数 ?\+'
+SPD_PULL = r'提前行动|拉条|行动条|先行动'
+SPD_FIRST = r'先制|先手|先攻|优先行动'
+SPD_BUFF = r'敏捷 ?\+(\d+)%'
 SUP = {'heal': r'治疗|回复.*(全队|队友|友方|生命)|复活', 'shield': r'给全队|全队每人|友方.*护盾|队友.*护盾|替.*承|代命|援护',
        'buff': r'全队.*\+|友方.*\+|队友.*\+|光环|驱散|净化|增益', 'sum': r'召唤|援军|小弟'}
 WIT_KW = {'weak': r'弱点|破绽|克制|斩杀|低于.*%.*生命|处决|补刀|读取|看破|预判|算', 'debuff': r'驱散|减益|破甲|碎甲|降低.*(攻击|防御)|−\d+%'}
@@ -80,11 +89,18 @@ def role_tables():
     return base, tier, txt
 
 
+def spd_text(t):
+    pcts = [int(a or b) for a, b in re.findall(SPD_AGAIN, t)]
+    again = min(100, max(pcts)) if pcts else (30 if re.search(SPD_AGAIN_PLAIN, t) else 0)   # 没写几率的再动按 30%
+    buf = [int(x) for x in re.findall(SPD_BUFF, t)]
+    return {'again': again, 'pull': 30 if re.search(SPD_PULL, t) else 0, 'first': 10 if re.search(SPD_FIRST, t) else 0, 'buff': min(20, max(buf) // 2) if buf else 0}
+
+
 def feats(aid, txt):
     rows = txt.get(aid, [])
     t = ' '.join(r[2] + ' ' + r[1] for r in rows)
     cnt = lambda tab: {c: len(re.findall(p, t)) for c, p in tab.items()}
-    f = {'surv': cnt(SURV), 'spd': cnt(SPD), 'sup': cnt(SUP), 'wit': cnt(WIT_KW), 'res': len(re.findall(RES_KW, t)),
+    f = {'surv': cnt(SURV), 'spd': spd_text(t), 'sup': cnt(SUP), 'wit': cnt(WIT_KW), 'res': len(re.findall(RES_KW, t)),
          'surv_neg': len(re.findall(SURV_NEG, t)), 'kinds': collections.Counter(r[0] for r in rows)}
     for k, v in HANDF.get(aid, {}).items():
         f[k] = {**f[k], **v}
@@ -92,8 +108,15 @@ def feats(aid, txt):
 
 
 # ---- 整理探针日志 ----
-def ingest(calib, stats, first=()):
+def ingest(calib, stats, first=(), surv=()):
     rows, skip, st, pf = {}, set(), {}, {}
+    sv = collections.defaultdict(list)
+    for fn in surv:   # K_SURV seed=N {json}：每个种子一行
+        for l in open(fn, errors='ignore'):
+            m = re.match(r'K_SURV seed=\d+ (\{.*\})', l)
+            if m:
+                r = json.loads(m.group(1))
+                sv[str(r['actor'])].append(r)
     for fn in first:   # 第一次量（没带 --add-rework）的峰值，只用来在报告里说「补技能后变了谁」
         for l in open(fn, errors='ignore'):
             if l.startswith('K_ROW '):
@@ -125,6 +148,9 @@ def ingest(calib, stats, first=()):
             e['stat'] = st[i]
         if i in acts:
             e['state_resist_n'] = len({t['dataId'] for t in acts[i].get('traits', []) if t['code'] == 14})
+        if i in sv:
+            rs = sv[i]
+            e['surv'] = {'n': len(rs), 'taken': statistics.median(r['taken'] for r in rs), 'rounds': statistics.median(r['rounds'] for r in rs), 'died': sum(1 for r in rs if r['died']), 'healed': statistics.median(r['healed'] for r in rs), 'atk': rs[0]['atk']}
         if i in skip:
             e['no_damage_row'] = True
         if i in pf and i in rows and pf[i] != rows[i]['peak']:
@@ -138,6 +164,7 @@ def raw_scores(base, tier, txt, meas):
     ids = sorted(base, key=int)
     notes = {}
     out = {i: {} for i in ids}
+    panel = {}
     # 输出：实测峰值；没量到的：辅助职责＝无伤害技能记 0，其余按同档实测中位数
     peak = {i: meas[i]['peak'] for i in ids if 'peak' in meas.get(i, {})}
     med = {t: statistics.median([peak[i] for i in peak if tier[i] == t]) for t in CN}
@@ -161,14 +188,19 @@ def raw_scores(base, tier, txt, meas):
     for i in ids:
         f = feats(i, txt)
         s = stat_of(i)
-        # 生存＝有效生命 × 机制：mhp×(防御＋魔防)/2÷(物理／魔法承伤率均值)÷(1−闪避＋魔闪均值，封 50%)，再 +15%×机制类别（封顶 2 类）−10%（自损词 ≥2）
+        # 生存＝实测（回合数优先）：标准敌人（攻击固定，每回合物理＋魔法各打一下）面前，角色自动战斗带着自己的护盾／回复／减伤／复活技能打到死（最多 60 回合），
+        # 取 3 个种子「死前总承伤」的中位数（含被治疗又掉掉的血，护盾撑住的回合会让它变大）；没有实测的用面板兜底：有效生命÷同职责面板中位×同职责实测中位
         sp, xp = s['sparam'], s['xparam']
         dur = s['mhp'] * (s['def'] + s['mdf']) / 2.0 / ((sp[6] + sp[7]) / 2.0) / (1.0 - min(0.5, (xp[1] + xp[4]) / 2.0))
-        mech = min(2, sum(1 for v in f['surv'].values() if v > 0))
-        out[i]['survive'] = dur * (100 + 15 * mech - (10 if f['surv_neg'] >= 2 else 0)) / 100.0
-        # 速度＝敏捷×(100＋100×追加行动几率合计＋3×先制／拉条词类别数)÷100
-        tags = sum(1 for v in f['spd'].values() if v > 0)
-        out[i]['speed'] = s['agi'] * (100 + round(100 * s['action_plus']) + 3 * tags) / 100.0
+        panel[i] = dur
+        sv = meas.get(i, {}).get('surv')
+        if sv:
+            out[i]['survive'] = float(sv['rounds']) * 1e9 + float(sv['taken'])   # 先比撑过的回合数，同回合再比死前总承伤
+        else:
+            out[i]['survive'] = None
+        # 速度＝敏捷×(100＋再动＋拉条＋先制＋敏捷加成)÷100：再动＝max(面板追加行动几率×100, 技能描述里的「N%再动」，没写几率按 30)，拉条／提前行动 +30，先制 +10，敏捷 +x% 取 x/2（封 20）
+        sx = f['spd']
+        out[i]['speed'] = s['agi'] * (100 + max(round(100 * s['action_plus']), sx['again']) + sx['pull'] + sx['first'] + sx['buff']) / 100.0
         # 辅助：职责底分＋友方技能类别（封顶 2），同分看治疗类技能种类数
         kb = f['kinds']
         healk = sum(kb.get(k, 0) for k in ('全体治疗', '治疗', '单体治疗', '复活', '复活全体', '全体增益', '护盾', '光环', '支援', '追加全体治疗'))
@@ -178,18 +210,33 @@ def raw_scores(base, tier, txt, meas):
         nm = base[i]['name']
         out[i]['wit'] = WIT.get(nm, 50) * 10 + min(9, f['wit']['weak'] * 2 + f['wit']['debuff'])
         out[i]['resolve'] = RESV.get(nm, 50) * 10 + min(9, f['res'] * 3) + meas.get(i, {}).get('state_resist_n', 0) * 3
+    # 生存没有实测的：按面板有效生命在同职责里的比例，换算到同职责实测中位数
+    for i in ids:
+        if out[i]['survive'] is None:
+            same = [j for j in ids if base[j]['role'] == base[i]['role'] and out[j]['survive'] is not None]
+            if same:
+                out[i]['survive'] = statistics.median(out[j]['survive'] for j in same) * panel[i] / statistics.median(panel[j] for j in same)
+            else:
+                out[i]['survive'] = 0.0
+            notes[i] = (notes[i] + '；' if i in notes else '') + '生存：无实测，面板兜底'
     return ids, out, notes
 
 
-def quota_letters(order):
-    """order＝从强到弱的名单；按 CUM 配档。"""
+def quota_letters(order, vals):
+    """order＝从强到弱的名单，vals＝对应分值；按 CUM 配档。分值相同的人（并列）取并列组的平均名次定档，所以并列的人同档（这时实际人数会偏离名额）。"""
     n = len(order)
     res, k = {}, 0
-    for L, c in CUM:
-        end = round(n * c / 1000)
-        for i in order[k:end]:
+    while k < n:
+        j = k
+        while j + 1 < n and vals[order[j + 1]] == vals[order[k]]:
+            j += 1
+        pos = (k + j) / 2.0 + 0.5      # 并列组的平均名次（1 起）
+        for L, c in CUM:
+            if pos <= n * c / 1000.0:
+                break
+        for i in order[k:j + 1]:
             res[i] = L
-        k = end
+        k = j + 1
     return res
 
 
@@ -200,10 +247,10 @@ def assign(ids, raw, tier, mode):
         if mode == 'A':   # 各档位内部自己排名
             for t in CN:
                 sub = [i for i in rank[d] if tier[i] == t]
-                for i, L in quota_letters(sub).items():
+                for i, L in quota_letters(sub, {i: raw[i][d] for i in sub}).items():
                     let[i][d] = L
         else:
-            for i, L in quota_letters(rank[d]).items():
+            for i, L in quota_letters(rank[d], {i: raw[i][d] for i in ids}).items():
                 let[i][d] = L
     if mode == 'B':       # 全库一把尺，再按档位基础分：超强者每维 +1 档（封到 S）、弱者每维 −1 档（封到 E）
         for i in ids:
@@ -294,7 +341,7 @@ def tier_stats(ids, let, tier):
 
 
 # ---- 报告 ----
-def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev):
+def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev, txt0):
     A = {i: {d: res[mode_w][0][i][d] for d in DIMS} for i in ids}
     let, rank, changes, sss = res[mode_w]
     L = []
@@ -309,10 +356,22 @@ def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev):
     w('1. **总分在全库一把尺（口径 C）下没分档**：超强者均值 %.1f、强者 %.1f、弱者 %.1f（中位 %s／%s／%s）。只有输出一维真跟档位挂钩，其余五维名额一压差不多。R4 预算下弱者超 %d 份、强者超 %d 份、超强者超 %d 份，R4 按 Kyo 令只报告不拦。**三种分档方式各算了一版，见第 6 节，不预设。**' % (stc['super']['mean'], stc['strong']['mean'], stc['weak']['mean'], stc['super']['med'], stc['strong']['med'], stc['weak']['med'], stc['weak']['over'], stc['strong']['over'], stc['super']['over']))
     w('2. **谷雨（175）按实测算出来是：%s，总分 %d**（口径 C）。输出 %s；生存排第 %d（S 的线是第 16 名）、辅助排第 %d。没硬套 Kyo 的「生存至少 S」，对不上的在第 4 节标出。她在 `skill_rework.json` 里没有重构技能条目，机制标签是按 ActorNote 手补的。' % (' '.join('%s %s' % (DN[d], g[d]) for d in DIMS), total(g), g['output'], rk('survive', '175'), rk('support', '175')))
     nmeas = sum(1 for i in ids if 'peak' in meas.get(i, {}))
-    w('3. **这一版实测补强**：输出 %d/156 人有实测（上一版 136，补量 20 人里 %d 人量到，其余按同档中位数代入、表里标 ※）；生存、速度换成 `k_calibrate --stats` 的标准养成面板（%d 人有面板）加机制分，不再只靠关键词。战商、韧性仍是手标分，**可信度低，等小A 人审**；辅助仍是职责＋关键词，可信度中低。\n' % (nmeas, 20 - sum(1 for i in ids if notes.get(i, '').startswith('输出') and 'no_damage_row' in meas.get(i, {})), sum(1 for i in ids if 'stat' in meas.get(i, {}))))
+    nsv = sum(1 for i in ids if 'surv' in meas.get(i, {}))
+    w('3. **这一版实测补强**：输出 %d/156 人有实测（补量 20 人里 14 人量到，其余按同档中位数代入、表里标 ※）；**生存＝每人在标准敌人面前自动战斗挨打的回合数（%d 人有实测，3 种子中位数）**；速度＝标准养成敏捷×（追加行动几率＋技能描述里的再动／拉条／先制／敏捷加成），并列的人同档。战商、韧性仍是手标分，**可信度低，等小A 人审**；辅助仍是职责＋关键词，可信度中低。\n   **生存实测的局限**：单人对一个敌人，只能反映「自己救自己」；钟离这类「全队护盾」「嘲讽替队友扛」的设计价值在队伍里才显出来，这里测不到（他的自盾撑得住约 11 回合，同条件下 60 级弱者坦克马宝国撑 35 回合），要不要手改，请 Kyo 看。' % (nmeas, nsv))
     gaps = [(k, d, old_sample[k][d], let[k][d]) for k in old_sample for d in ('survive', 'speed') if abs(S[old_sample[k][d]] - S[let[k][d]]) >= 3]
     if gaps:
-        w('4. **生存、速度换实测后，和设定稿样板差 3 档以上的**（口径 C，旧→新）：' + '；'.join('%s %s %s→%s' % (base[k]['name'], DN[d], a, b) for k, d, a, b in gaps) + '。生存的实测面板只算生命、防御、承伤率、闪避，**护盾类保命（如钟离的玉璋护盾）按血量比例给的盾没折算进去**，这几处如果设计上就该高，要靠机制分或手改补，请 Kyo 看。\n')
+        w('4. **和设定稿样板差 3 档以上的**（口径 C，旧→新）：' + '；'.join('%s %s %s→%s' % (base[k]['name'], DN[d], a, b) for k, d, a, b in gaps) + '。这些是设定稿手标分和实测对不上的地方，是否按设计手改，请 Kyo 看。\n')
+    if prev:
+        w('5. **和第二版（面板公式）比，谁变了、为什么**（口径 C）：')
+        for d in ('survive', 'speed'):
+            ch = [(i, prev[i][d], let[i][d]) for i in ids if prev[i][d] != let[i][d]]
+            up = sum(1 for i, a, b in ch if S[b] > S[a])
+            w('   - %s：%d 人变了档位（升 %d、降 %d）。' % (DN[d], len(ch), up, len(ch) - up))
+        for k in ('107', '175', '180', '174', '45'):
+            sv = meas[k].get('surv', {})
+            sx = feats(k, txt0)['spd']
+            w('   - %s：生存 %s→%s（撑 %s 回合、死前总承伤 %.0f 万、被治疗 %.0f 万）；速度 %s→%s（agi %d、面板追加行动 %.2f、描述里再动 %d／拉条 %d／先制 %d／敏捷加成 %d）。' % (base[k]['name'], prev[k]['survive'], let[k]['survive'], sv.get('rounds', '—'), sv.get('taken', 0) / 1e4, sv.get('healed', 0) / 1e4, prev[k]['speed'], let[k]['speed'], meas[k]['stat']['agi'], meas[k]['stat']['action_plus'], sx['again'], sx['pull'], sx['first'], sx['buff']))
+        w('   - 为什么：第二版生存只看面板（生命、防御、承伤率），护盾、自回、代命、复活放出来的效果没算进去；这一版让每个人在标准敌人面前真放技能挨打，这些都进了「撑多久」。速度第二版 94 个人 agi 都是 3030 并列、靠 id 排先后（五条悟、云裳因此掉到 E 是假象）：这一版并列的人同档、并补上技能描述里的概率再动（五条悟六眼 10%）、提前行动（云裳牵衣行）、先制、敏捷加成。\n')
     w('## 1. 口径与名额\n')
     w('- 范围：`base_line.json` 全部 156 人（含 146 苍龙破晓、152 徐凤年等不一定会进卡池的）。档位按 `skill_rework.json` tiers：超强者 17、强者 52、其余 87 为弱者。')
     w('- 名额（口径 C，全库一把尺）：SS 前 3.2%%、S 累计 10.3%%、A 累计 25%%、B 累计 50%%、C 累计 75%%、D 累计 92.3%%、其余 E；156 人时 SS5／S11／A23／B39／C39／D27／E12；SSS 每维只看第 1 名。')
@@ -328,8 +387,8 @@ def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev):
     w('所有量都在同一套标准养成下取：81 级、进阶满、每栏挑主属性最高的一件神话装备、本人专属法宝 99 级、技能熟练度拿满（`k_calibrate` 的 `_state`）。')
     w('| 维度 | 公式 | 可信度 |\n|---|---|---|')
     w('| 输出 | `k_calibrate --tier=all --exact` 含烙印整次施放峰值（T271 口径）。没量到的：纯辅助记 0；其余按同档实测中位数代入（※）。渡鸦用 `--soul=200000` 灌满魂量。 | 高（※ 除外） |')
-    w('| 生存 | **有效生命 × 机制**：`mhp × (物防＋魔防)/2 ÷ (物理承伤率＋魔法承伤率)/2 ÷ (1 − min(50%, (闪避＋魔闪)/2))`（全部取标准养成面板，承伤率＝sparam 6、7，闪避＝xparam 1、4），再 ×(100＋15×机制类别数−10×自损)/100；机制类别＝护盾·代命／减伤·免死／自回·吸血／闪避·反击四类里有几类（封顶 2），自损词 ≥2 次再 −10。 | 中：面板实测，机制类别是技能描述关键词 |')
-    w('| 速度 | **敏捷 × 行动次数**：`agi × (100 ＋ 100×追加行动几率合计 ＋ 3×先制／拉条词类别数)/100`；agi 和追加行动几率（`action_plus_set` 合计，含被动、词条、模块）都取标准养成面板。 | 中高 |')
+    w('| 生存 | **实测挨打**：标准敌人（攻击固定 %d，每回合物理＋魔法各打一下，伤害走游戏自己的防御／魔防／承伤率／档位承伤／护盾／减伤／复活结算）面前，角色**自动战斗**带着自己的护盾、回复、减伤、复活类技能正常放（魔法、TP 照耗），打到倒下（最多 60 回合）；取 3 个种子「撑过的回合数」的中位数排名，同回合再比死前总承伤。角色自动战斗之外加一条「保命技先放」：技能表里不带伤害、类别是护盾／治疗／复活或描述含自盾／减伤／免死／回血的技能，能用就放（护盾减伤类每回合，回复类血量不到 90%% 才放），因为游戏自带自动战斗的默认选招不一定放它们。面板（生命、防御）只给没实测的人兜底。 | 高（自动战斗选招是游戏自己的 AI） |' % ATK_SURV)
+    w('| 速度 | **敏捷 × 行动次数**：`agi × (100 ＋ 再动 ＋ 拉条 ＋ 先制 ＋ 敏捷加成)/100`：再动＝max(面板追加行动几率合计×100，技能描述里「N%再动」，没写几率的再动按 30)；技能描述里有「提前行动／拉条」+30、「先制／先手」+10、「敏捷 +x%」取 x/2（封 20）。agi 和追加行动几率取标准养成面板（模块里的条件再动，如五条悟六眼 10%，面板读不到，由描述补）。 | 中高 |')
     w('| 辅助 | 职责底分（辅助5／坦克3／均衡2／输出1）＋友方技能类别（治疗·复活／护盾·代命／增益·光环·驱散／召唤，封顶 2）；同分看治疗类技能种类数＋词条数。**这一版没动。** | 中低 |')
     w('| 战商 | **手标分**（依据原作人设，缺省 50），＋弱点／控制／减益词小项。**没动，等小A 人审。** | 低 |')
     w('| 韧性 | **手标分**＋抗控词＋原版状态免疫特性数。**没动，等小A 人审。** | 低 |')
@@ -343,7 +402,8 @@ def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev):
     s175 = meas['175']['stat']
     w('')
     w('- 输出 %s：实测含烙印 %.1f 万，全库第 %d。' % (g['output'], raw['175']['output'] / 1e4, rk('output', '175')))
-    w('- 生存 %s（排第 %d）：标准养成面板 生命 %d、物防 %d、魔防 %d，机制标签是手补的护盾＋自回两类（技能表里没有她的条目）。是否到 S 看「代命」算不算自保机制，**是设计判断，不是排名能算出来的**，请 Kyo 定。' % (g['survive'], rk('survive', '175'), s175['mhp'], s175['def'], s175['mdf']))
+    sv175 = meas['175'].get('surv', {})
+    w('- 生存 %s（排第 %d）：标准敌人面前撑 %s 回合、死前总承伤 %.0f 万、期间被治疗 %.0f 万（3 种子中位数）；面板 生命 %d、物防 %d、魔防 %d。到不到 S 还看「代命」这类机制在自动战斗里放不放得出来，**是设计判断，不是排名能算出来的**，请 Kyo 定。' % (g['survive'], rk('survive', '175'), sv175.get('rounds'), sv175.get('taken', 0) / 1e4, sv175.get('healed', 0) / 1e4, s175['mhp'], s175['def'], s175['mdf']))
     w('- 辅助 %s（排第 %d）：设定稿给 SSS，名额口径下 SSS／SS 全库只有 0／3 个，她的治疗／储备／花期词条没被扫到，手补了治疗 3、护盾 2、增益 2 仍排在辅助职责角色之后。' % (g['support'], rk('support', '175')))
     w('- 速度 %s：agi %d，追加行动 %.2f。\n' % (g['speed'], s175['agi'], s175['action_plus']))
     w('## 5. 与 T275 十三份样板对照（旧→新，口径 C）\n')
@@ -392,6 +452,8 @@ def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev):
         for k in sorted([i for i in ids if tier[i] == t], key=lambda i: (-total(let[i]), int(i))):
             r = let[k]
             nt = notes.get(k, '')
+            if k in D239:
+                nt = (nt + '；' if nt else '') + '输出：补量后超区间，D239 待 Kyo 定，档位可能变'
             mark = '※' if nt and '按 0' not in nt else ''
             w('| %s | %s | %s | %s%s | %s | %s | %s | %s | %s | %d | %s |' % (CN[t], k, base[k]['name'], r['output'], mark, r['survive'], r['speed'], r['wit'], r['resolve'], r['support'], total(r), nt))
     w('')
@@ -410,10 +472,11 @@ def main():
     ap.add_argument('--ingest', action='store_true')
     ap.add_argument('--calib', nargs='*', default=[])
     ap.add_argument('--stats', nargs='*', default=[])
+    ap.add_argument('--surv', nargs='*', default=[], help='生存实测日志（K_SURV）')
     ap.add_argument('--first', nargs='*', default=[], help='第一次量（不带 --add-rework）的日志，只用来对比')
     a = ap.parse_args()
     if a.ingest:
-        ingest(a.calib, a.stats, a.first)
+        ingest(a.calib, a.stats, a.first, a.surv)
     base, tier, txt = role_tables()
     meas = load(MEAS)['actors']
     ids, raw, notes = raw_scores(base, tier, txt, meas)
@@ -439,10 +502,10 @@ def main():
     let = res[a.mode][0]
     tab['actors'] = {i: {'name': base[i]['name'], 'class': tier[i], **{d: let[i][d] for d in DIMS}} for i in ids}
     tab['_note'] = ('天启篇六维（T275 表结构；T280 全员按实测重算，设定稿 天启篇_角色六维_v0.3定稿，Kyo D234）。刻度 E～SSS＝1～8 分；全表整数（附则 E）。只读数据，战斗中不重算；本表不碰伤害、血防、敏捷。'
-                    ' actors 含 156 人（T280 草稿，待 Kyo 过目，当前写的是分档口径 %s）：输出＝k_calibrate 实测名次；生存＝标准养成面板有效生命×机制；速度＝敏捷×行动次数；辅助＝职责＋机制词；'
+                    ' actors 含 156 人（T280 草稿，待 Kyo 过目，当前写的是分档口径 %s）：输出＝k_calibrate 实测名次；生存＝标准敌人面前自动战斗实测挨打；速度＝敏捷×行动次数（再动／拉条／先制）；辅助＝职责＋机制词；'
                     '战商／韧性＝手标分名次（依据原作人设，非实测，待人审）；按全库名额配档再按 R1～R3 降档。打分脚本 07_开发环境/六维打分.py，报告 07_开发环境/六维全员重算报告.md。') % a.mode
     jp.write_text(json.dumps(tab, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
-    REPORT.write_text(report(ids, base, tier, raw, meas, notes, res, a.mode, old, prev), encoding='utf-8')
+    REPORT.write_text(report(ids, base, tier, raw, meas, notes, res, a.mode, old, prev, txt), encoding='utf-8')
     print('已写', jp.relative_to(REPO), '和', REPORT.relative_to(REPO))
 
 

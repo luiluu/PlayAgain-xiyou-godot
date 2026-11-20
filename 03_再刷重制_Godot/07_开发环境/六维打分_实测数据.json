@@ -43,6 +43,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 327932,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 934479.0
   },
   "2": {
@@ -87,6 +95,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6657293,
+    "rounds": 56,
+    "died": 2,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 374969.0
   },
   "3": {
@@ -130,7 +146,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5576528,
+    "rounds": 48,
+    "died": 2,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "4": {
    "peak": 1149695.0,
@@ -173,7 +197,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6140401,
+    "rounds": 52,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "5": {
    "peak": 422850.0,
@@ -217,6 +249,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6894987,
+    "rounds": 59,
+    "died": 2,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 290192.0
   },
   "6": {
@@ -260,7 +300,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4038544,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "7": {
    "peak": 669270.0,
@@ -303,7 +351,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 7141860,
+    "rounds": 57,
+    "died": 2,
+    "healed": 447819,
+    "atk": 8000.0
+   }
   },
   "8": {
    "peak": 392615.0,
@@ -347,6 +403,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6151221,
+    "rounds": 52,
+    "died": 3,
+    "healed": 133639,
+    "atk": 8000.0
+   },
    "peak_first": 173838.0
   },
   "9": {
@@ -390,7 +454,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5683050,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "10": {
    "peak": 396438.0,
@@ -433,7 +505,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4872675,
+    "rounds": 43,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "11": {
    "peak": 347400.0,
@@ -477,6 +557,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5732625,
+    "rounds": 50,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 242444.0
   },
   "12": {
@@ -520,7 +608,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 7144034,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "13": {
    "peak": 127556.0,
@@ -563,7 +659,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 1793187,
+    "rounds": 22,
+    "died": 3,
+    "healed": 895629,
+    "atk": 8000.0
+   }
   },
   "14": {
    "peak": 354146.0,
@@ -606,7 +710,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 3199496,
+    "rounds": 28,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "15": {
    "peak": 555560.0,
@@ -649,7 +761,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 7015650,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "16": {
    "peak": 3884.0,
@@ -692,7 +812,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6383308,
+    "rounds": 60,
+    "died": 0,
+    "healed": 1007029,
+    "atk": 8000.0
+   }
   },
   "17": {
    "peak": 37008.0,
@@ -735,7 +863,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5987011,
+    "rounds": 54,
+    "died": 2,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "18": {
    "peak": 350946.0,
@@ -778,7 +914,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 2625224,
+    "rounds": 24,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "19": {
    "peak": 625756.0,
@@ -821,7 +965,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6102359,
+    "rounds": 52,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "20": {
    "peak": 410718.0,
@@ -864,7 +1016,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4770399,
+    "rounds": 42,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "21": {
    "peak": 141258.0,
@@ -908,6 +1068,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6241592,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 91820.0
   },
   "22": {
@@ -952,6 +1120,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5864586,
+    "rounds": 54,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 299772.0
   },
   "23": {
@@ -995,7 +1171,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5883101,
+    "rounds": 50,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "24": {
    "peak": 219132.0,
@@ -1039,6 +1223,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5671685,
+    "rounds": 52,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 190751.0
   },
   "25": {
@@ -1082,7 +1274,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6304154,
+    "rounds": 54,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "26": {
    "peak": 580806.0,
@@ -1125,7 +1325,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5813766,
+    "rounds": 53,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "27": {
    "peak": 689090.0,
@@ -1168,7 +1376,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6255705,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "28": {
    "peak": 1109400.0,
@@ -1211,7 +1427,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 3317086,
+    "rounds": 28,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "29": {
    "peak": 406218.0,
@@ -1254,7 +1478,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6678456,
+    "rounds": 60,
+    "died": 0,
+    "healed": 179562,
+    "atk": 8000.0
+   }
   },
   "30": {
    "peak": 347651.0,
@@ -1297,7 +1529,15 @@
      0.1
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 3690586,
+    "rounds": 33,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "31": {
    "peak": 76136.0,
@@ -1340,7 +1580,15 @@
      0.0
     ]
    },
-   "state_resist_n": 2
+   "state_resist_n": 2,
+   "surv": {
+    "n": 3,
+    "taken": 6785206,
+    "rounds": 60,
+    "died": 0,
+    "healed": 279733,
+    "atk": 8000.0
+   }
   },
   "32": {
    "peak": 790974.0,
@@ -1384,6 +1632,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5995711,
+    "rounds": 52,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 514134.0
   },
   "33": {
@@ -1427,7 +1683,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6948430,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "34": {
    "peak": 492108.0,
@@ -1470,7 +1734,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6942284,
+    "rounds": 60,
+    "died": 0,
+    "healed": 152806,
+    "atk": 8000.0
+   }
   },
   "35": {
    "peak": 755484.0,
@@ -1513,7 +1785,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5084186,
+    "rounds": 47,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "36": {
    "peak": 564504.0,
@@ -1556,7 +1836,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5325794,
+    "rounds": 47,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "37": {
    "peak": 502602.0,
@@ -1599,7 +1887,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6066613,
+    "rounds": 53,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "38": {
    "peak": 716256.0,
@@ -1642,7 +1938,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 321588,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "39": {
    "peak": 592590.0,
@@ -1685,7 +1989,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6364538,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "40": {
    "peak": 15248.0,
@@ -1728,7 +2040,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4631662,
+    "rounds": 60,
+    "died": 0,
+    "healed": 826344,
+    "atk": 8000.0
+   }
   },
   "41": {
    "peak": 413673.0,
@@ -1771,7 +2091,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6811846,
+    "rounds": 58,
+    "died": 2,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "42": {
    "peak": 378792.0,
@@ -1814,7 +2142,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6374160,
+    "rounds": 55,
+    "died": 2,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "43": {
    "peak": 328622.0,
@@ -1858,6 +2194,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5502710,
+    "rounds": 48,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 489268.0
   },
   "44": {
@@ -1901,7 +2245,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6599026,
+    "rounds": 60,
+    "died": 0,
+    "healed": 1244064,
+    "atk": 8000.0
+   }
   },
   "45": {
    "peak": 140192.0,
@@ -1945,6 +2297,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 325325,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 75708.0
   },
   "46": {
@@ -1988,7 +2348,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6127298,
+    "rounds": 52,
+    "died": 2,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "47": {
    "peak": 126331.0,
@@ -2032,6 +2400,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 318021,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 109487.0
   },
   "48": {
@@ -2075,7 +2451,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6173591,
+    "rounds": 53,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "49": {
    "peak": 257160.0,
@@ -2118,7 +2502,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4498457,
+    "rounds": 40,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "50": {
    "peak": 769062.0,
@@ -2161,7 +2553,15 @@
      0.2
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 330296,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "51": {
    "peak": 203094.0,
@@ -2204,7 +2604,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6899094,
+    "rounds": 60,
+    "died": 1,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "52": {
    "peak": 541737.0,
@@ -2247,7 +2655,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6489784,
+    "rounds": 60,
+    "died": 1,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "53": {
    "peak": 729174.0,
@@ -2290,7 +2706,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5956371,
+    "rounds": 52,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "54": {
    "peak": 312910.0,
@@ -2333,7 +2757,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4641213,
+    "rounds": 41,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "55": {
    "peak": 173843.0,
@@ -2376,7 +2808,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6756048,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "56": {
    "peak": 90429.0,
@@ -2419,7 +2859,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 7179570,
+    "rounds": 60,
+    "died": 0,
+    "healed": 1607729,
+    "atk": 8000.0
+   }
   },
   "57": {
    "peak": 356532.0,
@@ -2462,7 +2910,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4976622,
+    "rounds": 45,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "58": {
    "peak": 213125.0,
@@ -2505,7 +2961,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4159514,
+    "rounds": 37,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "59": {
    "peak": 365196.0,
@@ -2548,7 +3012,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 330296,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "60": {
    "peak": 557451.0,
@@ -2591,7 +3063,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4016347,
+    "rounds": 60,
+    "died": 1,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "61": {
    "peak": 572562.0,
@@ -2634,7 +3114,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 3240538,
+    "rounds": 28,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "62": {
    "peak": 522577.0,
@@ -2677,7 +3165,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6005962,
+    "rounds": 52,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "63": {
    "peak": 242096.0,
@@ -2720,7 +3216,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5008974,
+    "rounds": 44,
+    "died": 3,
+    "healed": 325793,
+    "atk": 8000.0
+   }
   },
   "64": {
    "peak": 247560.0,
@@ -2764,6 +3268,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 3746462,
+    "rounds": 33,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 319785.0
   },
   "65": {
@@ -2807,7 +3319,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4945307,
+    "rounds": 43,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "66": {
    "peak": 528567.0,
@@ -2850,7 +3370,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6224100,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "67": {
    "peak": 449264.0,
@@ -2893,7 +3421,15 @@
      0.1
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4617890,
+    "rounds": 41,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "68": {
    "peak": 223248.0,
@@ -2936,7 +3472,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4511326,
+    "rounds": 40,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "69": {
    "peak": 235116.0,
@@ -2979,7 +3523,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 7103786,
+    "rounds": 60,
+    "died": 0,
+    "healed": 2133974,
+    "atk": 8000.0
+   }
   },
   "70": {
    "peak": 891507.0,
@@ -3022,7 +3574,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 330289,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "71": {
    "peak": 91991.0,
@@ -3065,7 +3625,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 415311,
+    "rounds": 7,
+    "died": 3,
+    "healed": 48947,
+    "atk": 8000.0
+   }
   },
   "72": {
    "peak": 368718.0,
@@ -3108,7 +3676,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5668270,
+    "rounds": 60,
+    "died": 0,
+    "healed": 456843,
+    "atk": 8000.0
+   }
   },
   "73": {
    "peak": 693525.0,
@@ -3151,7 +3727,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6958880,
+    "rounds": 59,
+    "died": 2,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "74": {
    "peak": 568185.0,
@@ -3194,7 +3778,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6973770,
+    "rounds": 60,
+    "died": 0,
+    "healed": 1387621,
+    "atk": 8000.0
+   }
   },
   "75": {
    "peak": 524484.0,
@@ -3238,6 +3830,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6728450,
+    "rounds": 60,
+    "died": 1,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 454552.0
   },
   "76": {
@@ -3281,7 +3881,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5994618,
+    "rounds": 51,
+    "died": 2,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "77": {
    "peak": 240259.0,
@@ -3324,7 +3932,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5913492,
+    "rounds": 50,
+    "died": 3,
+    "healed": 655233,
+    "atk": 8000.0
+   }
   },
   "78": {
    "peak": 635768.0,
@@ -3367,7 +3983,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6216188,
+    "rounds": 54,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "79": {
    "peak": 596695.0,
@@ -3410,7 +4034,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 3312175,
+    "rounds": 29,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "80": {
    "peak": 670773.0,
@@ -3453,7 +4085,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4442656,
+    "rounds": 41,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "81": {
    "peak": 40789.0,
@@ -3496,7 +4136,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6983628,
+    "rounds": 59,
+    "died": 2,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "82": {
    "peak": 98949.0,
@@ -3539,7 +4187,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 350584,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "83": {
    "peak": 684828.0,
@@ -3582,7 +4238,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 5071740,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "84": {
    "peak": 181833.0,
@@ -3625,7 +4289,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 486116,
+    "rounds": 7,
+    "died": 3,
+    "healed": 114004,
+    "atk": 8000.0
+   }
   },
   "85": {
    "peak": 454565.0,
@@ -3669,6 +4341,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 239532,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 413101.0
   },
   "86": {
@@ -3712,7 +4392,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6362382,
+    "rounds": 60,
+    "died": 0,
+    "healed": 521141,
+    "atk": 8000.0
+   }
   },
   "87": {
    "peak": 467346.0,
@@ -3755,7 +4443,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4637136,
+    "rounds": 41,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "88": {
    "peak": 672924.0,
@@ -3799,6 +4495,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 106744,
+    "rounds": 3,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 627003.0
   },
   "89": {
@@ -3842,7 +4546,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4903632,
+    "rounds": 46,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "90": {
    "peak": 983320.0,
@@ -3885,7 +4597,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6509885,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "91": {
    "peak": 670936.0,
@@ -3928,7 +4648,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6940772,
+    "rounds": 60,
+    "died": 1,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "92": {
    "peak": 757436.0,
@@ -3971,7 +4699,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 344247,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "93": {
    "stat": {
@@ -4011,6 +4747,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 335245,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "no_damage_row": true
   },
   "94": {
@@ -4054,7 +4798,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6481383,
+    "rounds": 52,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "95": {
    "peak": 2559550.0,
@@ -4097,7 +4849,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 343382,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "96": {
    "peak": 103160.0,
@@ -4140,7 +4900,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 559870,
+    "rounds": 5,
+    "died": 3,
+    "healed": 78585,
+    "atk": 8000.0
+   }
   },
   "97": {
    "peak": 1015136.0,
@@ -4183,7 +4951,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6433892,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "98": {
    "peak": 118681.0,
@@ -4226,7 +5002,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6591204,
+    "rounds": 57,
+    "died": 3,
+    "healed": 187520,
+    "atk": 8000.0
+   }
   },
   "99": {
    "peak": 17586.0,
@@ -4269,7 +5053,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 344511,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "100": {
    "peak": 64284.0,
@@ -4312,7 +5104,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 1227268,
+    "rounds": 17,
+    "died": 3,
+    "healed": 813809,
+    "atk": 8000.0
+   }
   },
   "101": {
    "peak": 646222.0,
@@ -4355,7 +5155,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 347592,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "102": {
    "peak": 617024.0,
@@ -4398,7 +5206,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 510661,
+    "rounds": 8,
+    "died": 3,
+    "healed": 113558,
+    "atk": 8000.0
+   }
   },
   "103": {
    "peak": 302272.0,
@@ -4441,7 +5257,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 3622064,
+    "rounds": 32,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "104": {
    "peak": 883475.0,
@@ -4484,7 +5308,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 331741,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "105": {
    "peak": 713960.0,
@@ -4527,7 +5359,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 6772364,
+    "rounds": 60,
+    "died": 0,
+    "healed": 2183,
+    "atk": 8000.0
+   }
   },
   "106": {
    "peak": 577440.0,
@@ -4570,7 +5410,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 336420,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "107": {
    "peak": 2108496.0,
@@ -4613,7 +5461,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 338177,
+    "rounds": 11,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "108": {
    "peak": 2835792.0,
@@ -4656,7 +5512,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 282547,
+    "rounds": 18,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "109": {
    "peak": 773540.0,
@@ -4699,7 +5563,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 362005,
+    "rounds": 6,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "115": {
    "peak": 1048382.0,
@@ -4742,7 +5614,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 385102,
+    "rounds": 3,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "117": {
    "stat": {
@@ -4782,6 +5662,14 @@
     ]
    },
    "state_resist_n": 6,
+   "surv": {
+    "n": 3,
+    "taken": 679499,
+    "rounds": 7,
+    "died": 3,
+    "healed": 291707,
+    "atk": 8000.0
+   },
    "no_damage_row": true
   },
   "118": {
@@ -4825,7 +5713,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 548982,
+    "rounds": 8,
+    "died": 3,
+    "healed": 182589,
+    "atk": 8000.0
+   }
   },
   "119": {
    "peak": 179333.0,
@@ -4868,7 +5764,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 421719,
+    "rounds": 6,
+    "died": 3,
+    "healed": 49979,
+    "atk": 8000.0
+   }
   },
   "120": {
    "peak": 1183214.0,
@@ -4911,7 +5815,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 389070,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "122": {
    "peak": 2308294.0,
@@ -4954,7 +5866,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 473537,
+    "rounds": 9,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "123": {
    "peak": 1577564.0,
@@ -4997,7 +5917,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 565783,
+    "rounds": 7,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "124": {
    "peak": 2524056.0,
@@ -5040,7 +5968,15 @@
      0.0
     ]
    },
-   "state_resist_n": 9
+   "state_resist_n": 9,
+   "surv": {
+    "n": 3,
+    "taken": 793630,
+    "rounds": 11,
+    "died": 3,
+    "healed": 108762,
+    "atk": 8000.0
+   }
   },
   "127": {
    "peak": 101699.0,
@@ -5083,7 +6019,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 546854,
+    "rounds": 5,
+    "died": 3,
+    "healed": 159062,
+    "atk": 8000.0
+   }
   },
   "128": {
    "peak": 483888.0,
@@ -5126,7 +6070,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 360034,
+    "rounds": 6,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "129": {
    "peak": 752454.0,
@@ -5169,7 +6121,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 477567,
+    "rounds": 7,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "130": {
    "peak": 273742.0,
@@ -5212,7 +6172,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 545456,
+    "rounds": 6,
+    "died": 3,
+    "healed": 84440,
+    "atk": 8000.0
+   }
   },
   "131": {
    "peak": 321798.0,
@@ -5255,7 +6223,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 359894,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "141": {
    "state_resist_n": 0,
@@ -5302,7 +6278,15 @@
      0.25
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 119770,
+    "rounds": 60,
+    "died": 0,
+    "healed": 392903,
+    "atk": 8000.0
+   }
   },
   "146": {
    "stat": {
@@ -5342,6 +6326,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 0,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "no_damage_row": true
   },
   "147": {
@@ -5385,7 +6377,15 @@
      0.0
     ]
    },
-   "state_resist_n": 2
+   "state_resist_n": 2,
+   "surv": {
+    "n": 3,
+    "taken": 330576,
+    "rounds": 8,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "148": {
    "peak": 478713.0,
@@ -5428,7 +6428,15 @@
      0.0
     ]
    },
-   "state_resist_n": 1
+   "state_resist_n": 1,
+   "surv": {
+    "n": 3,
+    "taken": 333618,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "149": {
    "peak": 966789.0,
@@ -5471,7 +6479,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 393347,
+    "rounds": 6,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "150": {
    "peak": 752100.0,
@@ -5514,7 +6530,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 309539,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "151": {
    "peak": 837827.0,
@@ -5557,7 +6581,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 309539,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "152": {
    "stat": {
@@ -5597,6 +6629,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 35223,
+    "rounds": 60,
+    "died": 1,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "no_damage_row": true
   },
   "153": {
@@ -5640,7 +6680,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 407551,
+    "rounds": 6,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "154": {
    "peak": 885610.0,
@@ -5683,7 +6731,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 298927,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "155": {
    "peak": 471703.0,
@@ -5726,7 +6782,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 309539,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "156": {
    "peak": 442586.0,
@@ -5769,7 +6833,15 @@
      0.0
     ]
    },
-   "state_resist_n": 11
+   "state_resist_n": 11,
+   "surv": {
+    "n": 3,
+    "taken": 6925630,
+    "rounds": 60,
+    "died": 0,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "158": {
    "peak": 547128.0,
@@ -5812,7 +6884,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 309686,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "159": {
    "peak": 1136386.0,
@@ -5855,7 +6935,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 691674,
+    "rounds": 7,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "161": {
    "state_resist_n": 0,
@@ -5902,7 +6990,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 351925,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "163": {
    "peak": 3467308.0,
@@ -5945,7 +7041,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 321697,
+    "rounds": 7,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "164": {
    "peak": 431264.0,
@@ -5988,7 +7092,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 318981,
+    "rounds": 9,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "165": {
    "peak": 581856.0,
@@ -6031,7 +7143,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 329117,
+    "rounds": 6,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "167": {
    "peak": 3019230.0,
@@ -6075,6 +7195,14 @@
     ]
    },
    "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 348476,
+    "rounds": 6,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   },
    "peak_first": 2770435.0
   },
   "168": {
@@ -6118,7 +7246,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 301940,
+    "rounds": 6,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "169": {
    "peak": 2247122.0,
@@ -6161,7 +7297,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 323895,
+    "rounds": 6,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "170": {
    "peak": 1358728.0,
@@ -6204,7 +7348,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 392751,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "171": {
    "peak": 2425277.0,
@@ -6247,7 +7399,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 335777,
+    "rounds": 7,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "172": {
    "peak": 2998774.0,
@@ -6290,7 +7450,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 324886,
+    "rounds": 6,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "173": {
    "peak": 3011469.0,
@@ -6333,7 +7501,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 322599,
+    "rounds": 6,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "174": {
    "peak": 104102.0,
@@ -6376,7 +7552,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 358456,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "175": {
    "peak": 2684253.0,
@@ -6419,7 +7603,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 4344872,
+    "rounds": 60,
+    "died": 0,
+    "healed": 6497613,
+    "atk": 8000.0
+   }
   },
   "176": {
    "peak": 2452257.0,
@@ -6462,7 +7654,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 329715,
+    "rounds": 7,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "177": {
    "peak": 2366584.0,
@@ -6505,7 +7705,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 1686724,
+    "rounds": 21,
+    "died": 3,
+    "healed": 1311658,
+    "atk": 8000.0
+   }
   },
   "178": {
    "peak": 844661.0,
@@ -6548,7 +7756,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 332624,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
+    "atk": 8000.0
+   }
   },
   "179": {
    "peak": 2102513.0,
@@ -6591,7 +7807,15 @@
      0.0
     ]
    },
-   "state_resist_n": 0
+   "state_resist_n": 0,
+   "surv": {
+    "n": 3,
+    "taken": 1488668,
+    "rounds": 60,
+    "died": 0,
+    "healed": 3161307,
+    "atk": 8000.0
+   }
   },
   "180": {
    "peak": 2868248.0,
@@ -6633,6 +7857,14 @@
      0.0,
      0.0
     ]
+   },
+   "surv": {
+    "n": 3,
+    "taken": 534850,
+    "rounds": 11,
+    "died": 3,
+    "healed": 168425,
+    "atk": 8000.0
    }
   }
  }

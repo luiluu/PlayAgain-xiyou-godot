@@ -53,6 +53,10 @@ var bare := false  # --bare：不补甲档五样（回到 v3 口径，对照用�
 var trumpet_n := 2  # 号卷：七卷里打单体加伤害的只有二号血海（目标生命低于 33% +50%）；条件全中＝木桩生命压到 30%
 var report := {}
 static var add_rework := false  # --add-rework（T280）：技能表里有伤害的技能不在 skill_ids 里（五行／形态切换类，如 71 诸葛孔明）时也补进要量的名单
+var surv_mode := false  # --survive（T280）：标准敌人每回合物理＋魔法各打一下（固定攻击），角色自动战斗带自己的护盾／回复／减伤／复活技能，记撑过的回合数
+var surv_atk := 15000.0  # --surv-atk=N：标准敌人攻击（技能 3／1 的伤害＝攻击×4）
+const SURV_TURNS := 60
+var surv_pure_auto := false  # --surv-pure-auto：生存实测只用游戏自带自动战斗选招（默认再加「保命技先放」规则，见 _protect_cmd）
 var stats_mode := false  # --stats（T280）：不量伤害，只按同一套标准养成（81 级、进阶满、同一套装备）打印每人面板，给六维生存／速度排名用
 ## T204＋T209：停用中但要进量表的超强者（152 徐凤年）
 const PROBE_ENABLE := [152]
@@ -139,6 +143,12 @@ func _ready() -> void:
 			_debug_cast = true
 		elif a == "--add-rework":
 			add_rework = true
+		elif a == "--survive":
+			surv_mode = true
+		elif a == "--surv-pure-auto":
+			surv_pure_auto = true
+		elif a.begins_with("--surv-atk="):
+			surv_atk = float(a.substr(11))
 		elif a == "--stats":
 			stats_mode = true
 		elif a == "--per-skill":
@@ -187,6 +197,9 @@ func _run() -> void:
 			if XImportedBalance.is_disabled_actor(int(id)) and int(id) != XGojo.ACTOR:  # 五条悟的 hidden 看「当前存档」，_state 之前可能还不是天启篇档
 				print("K_SKIP %d disabled" % int(id))
 				continue
+			if surv_mode:
+				_emit_surv(int(id), tier)
+				continue
 			if stats_mode:
 				_emit_stat(int(id), tier)
 				continue
@@ -219,6 +232,106 @@ func _run() -> void:
 		else:
 			f.store_string(JSON.stringify(report, " "))
 	get_tree().quit.call_deferred(0)
+
+
+## T280：生存实测（K_SURV 行）。单人对木桩敌人，敌人每回合固定打两下——物理（技能 3，hitType 1）和魔法（技能 1，hitType 2），伤害基数＝敌人攻击×4，
+## 防御、魔防、承伤率、档位承伤、护盾、减伤状态、复活全走游戏自己的结算；角色自动战斗（带自己的护盾／回复／减伤／复活技能正常放，魔法、TP 照耗）。
+## 记：撑过的回合数（倒下那一回合算撑到上一回合；撑满 SURV_TURNS 记满）、死时（或打满时）的总承伤、期间总回复量
+func _emit_surv(id: int, tier: String) -> void:
+	var s := _state(id)
+	var a := s.actor(id)
+	var logic := XBattleLogic.new()
+	logic.setup(_troop(s), s, XBattleRandom.create(str(s.random_master)))
+	logic.auto = true
+	var foes: Array = logic.alive(logic.enemies)
+	if foes.is_empty():
+		return
+	for m in logic.actors:
+		if m is XActor and int(m.actor_id) == id:
+			a = m  # 开战后站场的是 logic.actors 里的（不一定是 s.actor 同一个对象）
+	var e = foes[0]
+	e.add_param(0, 1.0e9)
+	e.add_param(2, surv_atk - e.param(2))
+	e.param_mark_dirty()
+	var sk_p: Dictionary = XDB.rec("Skills", 3)
+	var sk_m: Dictionary = XDB.rec("Skills", 1)
+	var taken := 0.0
+	var healed := 0.0
+	var rounds := 0
+	var prot := 0
+	var died := false
+	for r in SURV_TURNS:
+		logic.start_turn()
+		logic.take_turn_start_logs()
+		var guard := 0
+		while guard < 60:
+			guard += 1
+			var u := logic.next_subject()
+			if u == null or logic.is_over():
+				break
+			var hp0 := float(a.hp)
+			if u is XEnemy:
+				var lg := logic.act(u, sk_p, null)
+				if debug and r < 2:
+					for q in lg:
+						if q is Dictionary:
+							var qq: Dictionary = q.duplicate()
+							qq.erase("skill")
+							print("K_DEBUG surv log %s" % str(qq).left(300))
+				var hp1 := float(a.hp)
+				if not a.is_dead() and not logic.is_over():
+					logic.act(u, sk_m, null)
+				var hp2 := float(a.hp)
+				taken += maxf(0.0, hp0 - hp2)
+				if debug and r < 3:
+					print("K_DEBUG surv r=%d hp %s -> %s -> %s ; actors0=%s same=%s mhp=%s" % [r, hp0, hp1, hp2, logic.actors[0].hp, logic.actors[0] == a, a.mhp])
+			else:
+				var cmd := [] if surv_pure_auto else _protect_cmd(logic, u)
+				if cmd.is_empty():
+					cmd = logic.decide(u)
+				else:
+					prot += 1
+				logic.act(u, cmd[0], cmd[1])
+				e.recover_all()  # 木桩每下之后回满，角色打不死它、战斗不会提前结束
+				var d := float(a.hp) - hp0
+				if d > 0.0:
+					healed += d
+			if logic.is_over():
+				break
+		if logic.is_lost() or a.is_dead():
+			died = true
+			break
+		logic.end_turn()
+		rounds = r + 1
+	var row := {"actor": id, "tier": tier, "rounds": rounds, "died": died, "taken": roundi(taken), "healed": roundi(healed), "hp_left": roundi(a.hp), "mhp": roundi(a.mhp), "atk": surv_atk, "protect_casts": prot}
+	print("K_SURV %s" % JSON.stringify(row))
+	logic.end_battle(0)
+
+
+## T280：保命技先放——自动战斗的默认选招可能一直不放护盾、回复、减伤，生存实测按「玩家会放自己的保命技」补一条：
+## 技能表（skill_rework）里不带伤害、类别是护盾／治疗／复活，或描述含自盾／减伤／免死／回血的技能，能用就放（护盾、减伤类每回合都可放，回复类血量不到 90% 才放），否则交回自动战斗。
+const PROT_KINDS := ["护盾", "治疗", "单体治疗", "全体治疗", "复活", "复活全体", "光环", "全体增益", "支援"]
+func _protect_cmd(logic, u) -> Array:
+	if not (u is XActor):
+		return []
+	var rx := RegEx.create_from_string("护盾|承受伤害 ?[−-]|受到.*伤害 ?[−-]|减伤|免疫死亡|无敌|回复.*生命|恢复.*生命")
+	for sid in u.skill_ids:
+		var spec: Dictionary = XTianqiSkills.spec(int(sid))
+		if spec.is_empty() or spec.has("damage") or str(spec.get("kind", "")) == "被动":
+			continue
+		var kind := str(spec.get("kind", ""))
+		var text := " ".join((spec.get("desc", []) as Array).map(func(x): return str(x)))
+		var heal_like := text.contains("回复") or text.contains("恢复") or kind.contains("治疗")
+		if not (PROT_KINDS.has(kind) or rx.search(text) != null):
+			continue
+		if heal_like and not text.contains("护盾") and not text.contains("承受伤害") and u.hp_rate() >= 0.9:
+			continue
+		if kind.contains("复活") and logic.actors.filter(func(m): return m.is_dead()).is_empty():
+			continue
+		var rec: Dictionary = XDB.rec("Skills", int(sid))
+		if not rec.is_empty() and logic.can_use(u, rec):
+			return [rec, null]
+	return []
 
 
 ## T280：标准养成下的面板（K_STAT 行）：生命魔法、六项属性、追加行动几率、攻击次数加成、sparam／xparam 全表（伤害率、闪避等）
