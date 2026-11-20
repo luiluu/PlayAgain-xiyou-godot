@@ -85,6 +85,9 @@ var ff_shop_once := true           # 快进局同一层的店只整轮逛一次�
 var resumed_from := ""             # --vp-resume 接着爬的那份存档（文件名；meta 的 msec 从接着爬那一刻算起）
 var fabao_enabled := true          # 出战的人有谁没戴法宝，就去兑换大厅领礼物（法宝积分）、找铁匠买法宝戴上
 var _door_id := 0                  # 大厅塔门的事件号（第一次认出来时记下）
+## T313：连着去塔门、层数和战斗场数都没变的次数。36 层打完（35、36 层的线还没做时是占位战）塔门只回一句话，原来会一直兜圈到时间用完
+var _door_idle := [[], 0]
+const DOOR_IDLE_MAX := 30
 var _exchange_floor := -1          # 这一层去过兑换大厅了
 var _exchange_ticks := 0
 var _gift_tries := {}
@@ -1617,6 +1620,12 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 		# 过了 20 层塔门换了一页：不再问「进入该层」，调查就直接送进去。认之前记下的那扇门
 		e = _find_event(map, func(x): return x.event_id == _door_id)
 	if e != null and _aim(map, e, "enter"):
+		var sig := [int(st.variable(FLOOR_VAR)), _bcount()]
+		_door_idle = [sig, int(_door_idle[1]) + 1] if sig == _door_idle[0] else [sig, 1]
+		if int(_door_idle[1]) > DOOR_IDLE_MAX:
+			climb_stop = "塔门连着 %d 次只回对话、不开打（层数变量 %d；塔顶或下一层还没做）" % [DOOR_IDLE_MAX, int(sig[0])]
+			_log(climb_stop)
+			return
 		await _goto_target(map)
 		return
 	# 门走不到或认不出：退回随便逛

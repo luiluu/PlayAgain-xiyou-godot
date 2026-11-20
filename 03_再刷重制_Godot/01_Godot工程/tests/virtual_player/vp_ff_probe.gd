@@ -21,6 +21,9 @@ var dungeon := 0
 var map_override := 0
 var hp1 := false                   # T298：开战把敌人的血压到 1（量放水那一场到底怎么输的，同虚拟玩家 --vp-pass-after）
 var skip_phase := false            # T313：同虚拟玩家放水，跳过守层者残血页、解掉免死（VPBot.pass_clamp）
+var elements := false              # T313：列出每人伤害技的元素（31～33 层破阵：一阶段物理免疫、二阶段只吃物理）
+var drop_states: Array = []        # T313：每次行动前把敌人身上这些状态解掉（对照：--drop-state=1048 看破阵二阶段元素免疫是不是打不动的原因）
+var hongjun := false               # T313：开打前照 34 层做法 XTianqiSummit.prepare_hongjun（鸿钧借 469 这场）
 var hp1_hold := false              # T313：每次有人行动前都把敌人的血压到 1（同虚拟玩家放水 _act_battle 每步都压），并打印收场原因
 
 
@@ -44,6 +47,12 @@ func _ready() -> void:
 			map_override = int(a.substr(6))
 		elif a == "--hp1":
 			hp1 = true
+		elif a.begins_with("--drop-state="):
+			drop_states = Array(a.substr(13).split(",")).map(func(x): return int(x))
+		elif a == "--hongjun":
+			hongjun = true
+		elif a == "--elements":
+			elements = true
 		elif a == "--skip-phase":
 			skip_phase = true
 		elif a == "--hp1-hold":
@@ -101,6 +110,8 @@ func _run() -> void:
 			XState._become_current(copy)
 			for a in copy.members():
 				a.recover_all()
+			if hongjun:
+				XTianqiSummit.prepare_hongjun(copy)
 			var logic := XBattleLogic.new()
 			logic.setup(int(troop), copy)
 			logic.auto = true
@@ -123,6 +134,21 @@ func _run() -> void:
 				for a in logic.actors:
 					w.append("%s:%s" % [a.display_name(), ",".join(a.skills().map(func(sk): return "%s(%d)" % [str(sk.get("name", "")), int(sk.get("id", 0))]))])
 				print("PROBE 技能 " + " / ".join(w))
+				if elements:
+					for a in logic.actors:
+						var phys := []
+						var other := []
+						for sk in a.skills():
+							if int(sk.get("damage", {}).get("type", 0)) not in [1, 5]:
+								continue
+							var el: Array = XDamage.action_elements(sk, a)
+							var tag := "%s(%d)%s" % [str(sk.get("name", "")), int(sk.get("id", 0)), str(el)]
+							if el.has(1):
+								phys.append(tag)
+							else:
+								other.append(tag)
+						var atk: Array = XDamage.action_elements(XDB.rec("Skills", 1), a)
+						print("PROBE 元素 %s 普攻%s 带物理 %d 个：%s ｜ 不带物理 %d 个：%s" % [a.display_name(), str(atk), phys.size(), ", ".join(phys), other.size(), ", ".join(other)])
 			var r := 0
 			while r < turns and not logic.is_over():
 				r += 1
@@ -139,6 +165,10 @@ func _run() -> void:
 					count += 1
 					if hp1_hold:
 						VPBot.pass_clamp(logic, skip_phase)
+					for e in logic.enemies:
+						for sid in drop_states:
+							if e.state_ids.has(sid):
+								e.remove_state(sid)
 					var cmd := logic.decide(u)
 					var lg := logic.act(u, cmd[0], cmd[1])
 					if r <= trace:
