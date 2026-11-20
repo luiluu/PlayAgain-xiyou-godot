@@ -532,6 +532,7 @@ func _test_item_notice_and_help_card() -> void:
 func _run_hangup_main(skinned: bool) -> Image:
 	XUiSkin.ENABLED = skinned
 	_state(true)
+	XHangUpOptionsScene.SKIN_M = false   # T304 卡 M：新皮肤下挂机页改由 card_m 管；这里核的是 M 开关关时的旧窗口中文字
 	var page := XHangUpOptionsScene.new()
 	add_child(page)
 	await frames(4)
@@ -545,12 +546,14 @@ func _run_hangup_main(skinned: bool) -> Image:
 	var img := await _capture()
 	page.queue_free()
 	await frames(2)
+	XHangUpOptionsScene.SKIN_M = true
 	return img
 
 
 func _run_hangup_sub(skinned: bool) -> Image:
 	XUiSkin.ENABLED = skinned
 	_state(true)
+	XHangUpOptionsScene.SKIN_M = false   # T304 卡 M：同上
 	var med := XHangUpSubPage.new().setup("medication")
 	add_child(med)
 	await frames(2)
@@ -568,6 +571,7 @@ func _run_hangup_sub(skinned: bool) -> Image:
 	var img := await _capture()
 	sub.queue_free()
 	await frames(2)
+	XHangUpOptionsScene.SKIN_M = true
 	return img
 
 

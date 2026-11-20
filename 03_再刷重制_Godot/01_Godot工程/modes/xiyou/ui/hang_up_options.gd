@@ -99,6 +99,7 @@ func _ready() -> void:
 		for w in [title_win, range_win] + item_wins:
 			w.hide()
 		skin = XSkinSubPage.attach(self)
+		process_priority = 1   # 在 XSkinSubPage.sync 之后再摆预览、对右牌的底部预留
 		_preview = Control.new()
 		_preview.name = "RangePreview"
 		_preview.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -358,14 +359,13 @@ func _on(sym: String) -> bool:
 func skin_card(i: int) -> Dictionary:
 	var sym: String = SYMS[i]
 	var w: Array = words(sym)
-	var d := {"title": w[0], "desc": w[1], "reserve_bottom": 0.0}
+	var d := {"title": w[0], "desc": w[1]}
 	if sym in SUBPAGES:
 		d["subtitle"] = "子页"
 		d["sections"] = [{"title": "操作", "text": "确定进入设置。"}]
 	elif sym == "range":
 		d["subtitle"] = "现在 %d 格" % int(settings().range)
 		d["sections"] = [{"title": "操作", "text": "确定或 → 加一格，← 减一格（1～%d 循环）。按 Y 或点预览看整张图。" % max_range()}]
-		d["reserve_bottom"] = preview_height()
 	else:
 		var on := _on(sym)
 		d["subtitle"] = "开" if on else "关"
@@ -391,7 +391,7 @@ func _skin_input(event: InputEvent) -> bool:
 		if event.is_action_pressed("ui_cancel") or XSkinCard._is_y(event) or event.is_action_pressed("ui_accept"):
 			show_big(false)
 			return true
-		return event is InputEventKey or event is InputEventJoypadButton   # 大图开着时别的键不穿到列表
+		return not event is InputEventMouse   # 大图开着时别的键不穿到列表
 	if SYMS[index] == "range" and XSkinCard._is_y(event):
 		show_big(true)
 		return true
@@ -414,6 +414,11 @@ func _process(_delta: float) -> void:
 		return
 	var show_prev: bool = SYMS[index] == "range" and skin.card.visible
 	_preview.visible = show_prev
+	# 右牌给预览让出底部（模板页换牌时 _place_targets 会把它写回 0，所以本页排在子节点之后、每帧对一次）
+	var want := preview_height() if show_prev else 0.0
+	if not is_equal_approx(skin.card.reserve_bottom, want):
+		skin.card.reserve_bottom = want
+		skin.card.queue_redraw()
 	if not show_prev:
 		return
 	var c := skin.card
@@ -526,4 +531,8 @@ func _draw_big() -> void:
 	_big.draw_circle(inner.position + (Vector2(player_tile) + Vector2(0.5, 0.5)) * TILE * k, maxf(TILE * k.x * 0.22, 2.5), Color.WHITE)
 	var body := XUiSkin.font("body")
 	var cap := "挂机范围 %d 格" % int(settings().range)
-	XUiSkin.ds(_big, body, Vector2(r.position.x, r.position.y - 10.0), cap, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
+	var fs := XUiSkin.FS_AUX_MAX
+	var cw := body.get_string_size(cap, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var pill := Rect2(inner.position + Vector2(10, 10), Vector2(cw + 24.0, fs + 14.0))
+	_big.draw_rect(pill, Color(0, 0, 0, 0.72))   # 地图上的字垫深色底（底下可能是雪地）
+	XUiSkin.ds(_big, body, Vector2(pill.position.x + 12.0, pill.position.y + 7.0 + fs * 0.86), cap, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD)
