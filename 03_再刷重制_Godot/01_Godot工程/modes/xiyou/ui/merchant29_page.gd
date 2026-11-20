@@ -18,6 +18,8 @@ extends Control
 ## 详情字号沿用说明卡的 O-007（XHelpCard.MIN_FONT，设 0＝原版 10／12 号）。
 ## 专武·特效吸取（openAbsorb，mode＝"absorb"）：技能页用 10455 打开，见下方「专武·特效吸取」与 XAffixAbsorb。
 ## 还没移植：路线预览（openPreview），见交付单 cc_bajie-newsrc4.md。
+## T306 卡 N 新界面（天启篇，XUiSkin.on() 且 XSkinWarehousePage.ENABLED 时）：每一层 choose 交给 XSkinMerchantPage（层级菜单页）：选项进列表、标题进页名＋面包屑、
+## 装备详情进右牌、翻页条挪到右牌底；每层的 rows／回调／文字一行不变，旧窗在新界面开着时不画。新皮肤关着时下面各行不变。
 signal closed
 
 const LEFT_W := 550.0          # Math.floor(Graphics.boxWidth × 0.43)
@@ -77,6 +79,8 @@ var _ok: Callable
 var _back: Callable
 ## M.mode：merchant（商人）／absorb（专武·特效吸取）
 var mode := "merchant"
+## T306 新界面（关着时为 null）
+var tree: XSkinMerchantPage
 
 
 func _ready() -> void:
@@ -102,6 +106,11 @@ func _ready() -> void:
 	list.chosen.connect(func(i): if i >= 0 and i < rows.size(): _ok.call(rows[i]))
 	list.cancelled.connect(func(): _back.call())
 	list.turn.connect(turn)
+	if XUiSkin.on() and XSkinWarehousePage.ENABLED:
+		tree = XSkinMerchantPage.new(self)
+		add_child(tree)
+		for n in [header, detail, nav, list]:   # 旧窗不画（逻辑仍用 rows／_ok／_back）
+			n.visible = false
 	if mode == "absorb":
 		absorb_home()
 	else:
@@ -109,11 +118,14 @@ func _ready() -> void:
 
 
 ## Scene_Merchant29.list29：换标题与行，光标回第一项，刷新详情
-func choose(list_rows: Array, ok: Callable, back: Callable, info := []) -> void:
+func choose(list_rows: Array, ok: Callable, back: Callable, info := [], crumb_parts := []) -> void:
 	title_lines = info
 	rows = list_rows
 	_ok = ok
 	_back = back
+	if tree != null:
+		tree.open_layer(list_rows, ok, back, info, crumb(crumb_parts))
+		return
 	header.refresh()
 	list.entries = rows
 	list.rows = XListPager.rows_for(LIST_ROWS, rows.size())   # T050：超一页少放一行给翻页件
@@ -134,7 +146,18 @@ func update_help() -> void:
 		set_text(str(r.get("help", DEFAULT_HELP)))
 
 
+## T306 新界面的面包屑：根（深渊商人 · 路线名／特效吸取）＋这一层的几段
+func crumb(parts: Array) -> Array:
+	var root := "特效吸取"
+	if mode != "absorb":
+		root = "%s · %s" % [XSkinMerchantPage.T_PAGE_MERCHANT, str(XAbyssMerchant.route(int(XState.current.map_id)).get("name", ""))]
+	return [root] + parts
+
+
 func set_text(t: String) -> void:
+	if tree != null:
+		tree.show_error(t)
+		return
 	if detail_key == "text:" + t:
 		return
 	detail_key = "text:" + t
@@ -259,11 +282,14 @@ func preview() -> void:
 	var s := XState.current
 	var r := XAbyssMerchant.route(int(s.map_id))
 	choose(pool_rows(int(s.map_id)), _pool_pick, home,
-		["%s　完整装备池（%d件）" % [str(r.get("name", "")), (r.get("pool", []) as Array).size()], "先选分组时，该分组内每件基础装备等概率。"])
+		["%s　完整装备池（%d件）" % [str(r.get("name", "")), (r.get("pool", []) as Array).size()], "先选分组时，该分组内每件基础装备等概率。"], ["完整装备池"])
 
 
 ## equipmentDetail29：详情显示这件装备并翻到下一页
 func _pool_pick(r: Dictionary) -> void:
+	if tree != null:
+		tree.turn(1)
+		return
 	set_equipment(r.item)
 	turn(1)
 
@@ -275,7 +301,7 @@ static func tier_rows(s: XState) -> Array:
 	var out := []
 	for tier in XAbyssMerchant.LABELS.size():
 		var cost := int(c.costs[tier])
-		out.append({"text": "%d点　必出1条%s" % [cost, XAbyssMerchant.LABELS[tier]], "tier": tier,
+		out.append({"text": "%d点　必出1条%s" % [cost, XAbyssMerchant.LABELS[tier]], "tier": tier, "cost": cost,
 			"help": (("消耗本层战利品点%d；" if XAbyssMerchant.LAYER_LEDGER else "消耗本路线战利品点%d；") % cost) + "装备本体和具体特效随机。",
 			"enabled": XAbyssMerchant.balance(s, key) >= cost and int(cur.get("used", 0)) < int(c.get("visitLimit", 0))})
 	return out
@@ -285,10 +311,10 @@ func tiers(g: String) -> void:
 	var s := XState.current
 	if XTianqiMerchant.on(s):  # 天启篇：两档货架（寻宝、珍藏）
 		choose(tianqi_rows(s, g), _tianqi_pick.bind(g), home,
-			["%s　%s" % [g, str(XAbyssMerchant.route(int(s.map_id)).get("name", ""))], "寻宝必出1条特效词条；珍藏先指定1条传说词条。"])
+			["%s　%s" % [g, str(XAbyssMerchant.route(int(s.map_id)).get("name", ""))], "寻宝必出1条特效词条；珍藏先指定1条传说词条。"], ["抽取" + g])
 		return
 	choose(tier_rows(s), _tier_pick.bind(g), home,
-		["%s抽奖　%s" % [g, str(XAbyssMerchant.route(int(s.map_id)).get("name", ""))], "同一分组内基础装备等概率，必出本档指定类别1条。"])
+		["%s抽奖　%s" % [g, str(XAbyssMerchant.route(int(s.map_id)).get("name", ""))], "同一分组内基础装备等概率，必出本档指定类别1条。"], ["抽取" + g])
 
 
 ## 抽到：提示并刷新本页；出错（choose29 的 catch）：提示错误文字，详情也显示它
@@ -315,10 +341,10 @@ static func tianqi_rows(s: XState, g: String) -> Array:
 	var co := XTianqiMerchant.shelf("collection")
 	var t_ok := not XTianqiMerchant.bodies(s, g, "treasure").is_empty()
 	var c_ok := not XTianqiMerchant.collection_choices(s, g).is_empty()
-	return [{"text": "%d点　%s：必出1条特效词条" % [int(tr.cost), str(tr.name)], "shelf": "treasure",
+	return [{"text": "%d点　%s：必出1条特效词条" % [int(tr.cost), str(tr.name)], "shelf": "treasure", "cost": int(tr.cost),
 			"help": (("消耗本层战利品点%d；" if XAbyssMerchant.LAYER_LEDGER else "消耗本路线战利品点%d；") % int(tr.cost)) + "装备本体和特效词条随机。" if t_ok else "本路线这一组没有能出特效词条的装备。",
 			"enabled": t_ok and _can_pay(s, int(tr.cost))},
-		{"text": "%d点起　%s：指定1条传说词条" % [int(co.cost), str(co.name)], "shelf": "collection",
+		{"text": "%d点起　%s：指定1条传说词条" % [int(co.cost), str(co.name)], "shelf": "collection", "cost": int(co.cost),
 			"help": "先选要哪一条传说词条；稀有词条%d点。本体只出三阶以上的不朽、神话装备。" % int(co.rare_cost) if c_ok else "本路线这一组没有三阶以上的不朽、神话装备，珍藏不可用。",
 			"enabled": c_ok}]
 
@@ -333,9 +359,9 @@ func _tianqi_pick(r: Dictionary, g: String) -> void:
 func _collection(g: String) -> void:
 	var s := XState.current
 	var rows := XTianqiMerchant.collection_choices(s, g).map(func(c):
-		return {"text": "%d点　%s%s" % [int(c.cost), str(c.name), "（稀有）" if c.rare else ""], "affix": str(c.key),
+		return {"text": "%d点　%s%s" % [int(c.cost), str(c.name), "（稀有）" if c.rare else ""], "affix": str(c.key), "cost": int(c.cost),
 			"help": XTianqiAffixText.detail(str(c.key), 4, "normal"), "enabled": _can_pay(s, int(c.cost))})
-	choose(rows, func(r): _tianqi_draw("collection", g, str(r.affix)), tiers.bind(g), ["%s珍藏　指定传说词条" % g, "成色随机，不保底「极」；其余词条照常随机抽取。"])
+	choose(rows, func(r): _tianqi_draw("collection", g, str(r.affix)), tiers.bind(g), ["%s珍藏　指定传说词条" % g, "成色随机，不保底「极」；其余词条照常随机抽取。"], ["抽取" + g, "珍藏"])
 
 
 func _tianqi_draw(shelf_key: String, g: String, affix: String) -> void:
@@ -362,7 +388,7 @@ static func absorb_rows(s: XState) -> Array:
 
 func absorb_home() -> void:
 	choose(absorb_rows(XState.current), func(r): absorb_slots(r.item), _close,
-		["专武·特效吸取", "按所属角色等级开放：1级一条，35级两条，60级三条。"])
+		["专武·特效吸取", "按所属角色等级开放：1级一条，35级两条，60级三条。"], [])
 
 
 static func slot_rows(s: XState, target: Dictionary) -> Array:
@@ -379,20 +405,20 @@ static func slot_rows(s: XState, target: Dictionary) -> Array:
 
 func absorb_slots(target: Dictionary) -> void:
 	choose(slot_rows(XState.current, target), func(r): absorb_materials(target, int(r.slot)), absorb_home,
-		["选择吸取槽位", "替换只影响所选槽位。"])
+		["选择吸取槽位", "替换只影响所选槽位。"], ["选择槽位"])
 
 
 func absorb_materials(target: Dictionary, slot: int) -> void:
 	var rows := XAffixAbsorb.materials(XState.current, target).map(func(i): return {"text": str(i.get("name", "")), "item": i})
 	choose(rows, func(r): absorb_affixes(target, r.item, slot), absorb_slots.bind(target),
-		["选择要消耗的材料装备", "已装备、锁定装备不会消耗。"])
+		["选择要消耗的材料装备", "已装备、锁定装备不会消耗。"], ["选择槽位", "选择材料"])
 
 
 func absorb_affixes(target: Dictionary, material: Dictionary, slot: int) -> void:
 	var rows := XAffixAbsorb.extra_affixes(material).map(func(d):
 		var t := XAffixAbsorb.label(d)
 		return {"text": t, "help": t, "d": d})
-	choose(rows, func(r): absorb_confirm(target, material, r.d, slot), absorb_materials.bind(target, slot), ["选择一条额外特效"])
+	choose(rows, func(r): absorb_confirm(target, material, r.d, slot), absorb_materials.bind(target, slot), ["选择一条额外特效"], ["选择槽位", "选择材料", "选择特效"])
 
 
 func absorb_confirm(target: Dictionary, material: Dictionary, d: Dictionary, slot: int) -> void:
@@ -401,7 +427,7 @@ func absorb_confirm(target: Dictionary, material: Dictionary, d: Dictionary, slo
 	var t := XAffixAbsorb.label(d)
 	choose([{"text": "确认消耗并吸取", "help": t, "go": "ok"}, {"text": "取消", "go": "cancel"}],
 		_confirm_pick.bind(target, material, d, slot), absorb_affixes.bind(target, material, slot),
-		["确认消耗 " + str(material.get("name", "")), ("原槽位特效会被替换。" if replace else "吸取至空槽位。") + "当前最多保留%d条。" % XAffixAbsorb.capacity(target, XState.current)])
+		["确认消耗 " + str(material.get("name", "")), ("原槽位特效会被替换。" if replace else "吸取至空槽位。") + "当前最多保留%d条。" % XAffixAbsorb.capacity(target, XState.current)], ["选择槽位", "选择材料", "选择特效", "确认"])
 
 
 func _confirm_pick(r: Dictionary, target: Dictionary, material: Dictionary, d: Dictionary, slot: int) -> void:
