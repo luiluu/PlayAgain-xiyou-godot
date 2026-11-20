@@ -203,6 +203,8 @@ var _tier_cap := {}                # 层 → 最高敢选第几档（在某一�
 var _zq_trials := {}               # 层 → 打过几次瓶颈之战
 var _zq_visit := 0                 # 这一次闭关里打了几次瓶颈之战
 var _zq_before = null
+var _brand_page_carve := true      # 闭关里点开某人的页是为了刻印（_brand_needs 的 carve）
+var brand_outputs_only := false   # T121（烙印第十一节第 3 步）：只给职责＝输出的人刻印，坦克、辅助不刻（--vp-carve-outputs）
 var brand_enabled := true          # 烙印开着时：出战的人去闭关「进行刻印」，烙印到本段极限就「挑战心魔」立入下一段（T298）
 var brand_carves := 0              # 刻印了几个人
 var brand_stands := 0              # 立境（加深到下一段）成功了几次
@@ -1229,8 +1231,17 @@ func _levels() -> Array:
 func _floor_row() -> Dictionary:
 	if floor_log.is_empty() or int(floor_log[-1].floor) != _floor:
 		floor_log.append({"floor": _floor, "tick": ticks, "frames": Engine.get_process_frames(),
-			"msec": Time.get_ticks_msec() - _t0, "defeats": 0, "grind_battles": 0, "levels": _levels()})
+			"msec": Time.get_ticks_msec() - _t0, "defeats": 0, "grind_battles": 0, "levels": _levels(), "brand": _brand_row()})
 	return floor_log[-1]
+
+
+## 到新一层时每个人的烙印（T121 第十一节第 3 步「记每段末每个人的烙印和段」）：[id, 职责, 刻没刻, 第几段, 烙印%]；烙印关着为空
+func _brand_row() -> Array:
+	var st := XState.current
+	if st == null or not XTianqiBrand.on(st):
+		return []
+	return st.members().map(func(a): return [int(a.actor_id), str(XTianqiBase.line_data().get("actors", {}).get(str(a.actor_id), {}).get("role", "")),
+		XTianqiBrand.carved(a), XTianqiBrand.realm(a), snappedf(XTianqiBrand.pct(a), 0.01)])
 
 
 ## 事件当前页的指令里有没有某个选项字样（102 的选项文字）
@@ -2110,6 +2121,8 @@ func _brand_needs(st: XState) -> Array:
 	var trials_ok := int(_zq_trials.get(_floor, 0)) < zhenqi_max_trials
 	for a in st.battle_members():
 		var carve := not XTianqiBrand.carved(a)
+		if carve and brand_outputs_only and str(XTianqiBase.line_data().get("actors", {}).get(str(a.actor_id), {}).get("role", "")) != "输出":
+			carve = false
 		var stand := trials_ok and XTianqiBrand.can_stand(a)
 		if carve or stand:
 			out.append({"name": a.display_name(), "carve": carve, "stand": stand})
@@ -2129,10 +2142,11 @@ func _brand_choice(choices: Array, find: Callable) -> int:
 		for n in needs:
 			for i in choices.size():
 				if str(choices[i]).begins_with(str(n.name) + " "):
+					_brand_page_carve = bool(n.carve)
 					return i
 		return leave
-	var i: int = find.call("进行刻印")     # 某人的页
-	if i >= 0:
+	var i: int = find.call("进行刻印")     # 某人的页（T121：只刻输出时，点开这一页是为了打心魔的不刻）
+	if i >= 0 and (_brand_page_carve or not brand_outputs_only):
 		return i
 	if _zq_visit < 1 and int(_zq_trials.get(_floor, 0)) < zhenqi_max_trials:
 		i = find.call("挑战心魔")
