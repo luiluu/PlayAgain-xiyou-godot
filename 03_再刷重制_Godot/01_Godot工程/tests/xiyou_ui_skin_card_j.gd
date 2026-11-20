@@ -4,7 +4,7 @@ extends Node
 ## - 存读档：T254 3.2 对应表逐行（列表行、右牌各项、三枚按钮能不能点）；确定＝默认那枚、← / → 换、X＝删除走统一确认弹窗（橙边、停在「取消」）；
 ##   读取灰边停在「读取」；覆盖橙边；空格直接存；存档写盘结果与旧页逐字节一致（同一份状态、同一秒，旧页存一格、新页存另一格，比文件字节）。
 ## - 整队：3.3 对应表（出战位五格、名单每人、右牌）；进页就在出战位；确定选人、首行「空出这一格」、X 还原、取消完成（全空时拦住）。
-## - 角色仓库：3.4 对应表（页签人数、名单行、右牌「存进仓库后」）；Q／E 换页签、确定存取、只剩一人提示、取消离开。
+## - 角色仓库：3.4 对应表（页签人数、名单行、右牌「存入后」「取出后」）；Q／E 换页签、确定存取、存取末尾一行后光标夹回、只剩一人提示、取消离开。
 ## 带 -- --out=<目录> 且有窗口时截图：每页 800×450＋1000×450（断言真尺寸）、各状态、字体 130%、旧画法对照。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
@@ -245,9 +245,9 @@ func _save_page() -> void:
 	check("save.delete_done", not XSave.exists(2) and p._phase == "list" and sk.list.items[1].right == "空")
 	key(p, KEY_X)
 	check("save.x_on_empty_buzz", p._phase == "list" and sk.dialog == null)
-	# ← / → 换按钮；换行回默认
+	# ← / → 只在能点的按钮间换（小A核 P2-2）：空格三枚都灰，不动
 	act(p, "ui_right")
-	check("save.right_moves_button", p.act == 1 and sk.card.button_index == 1)
+	check("save.right_skips_all_disabled", p.act == 0 and sk.card.button_index == 0)
 	act(p, "ui_down")
 	check("save.row_change_resets_default", p.act == 0)
 	# 读取成功
@@ -255,6 +255,22 @@ func _save_page() -> void:
 	p.loaded.connect(func(): loaded[0] = true)
 	p.index = 4
 	p._refresh()
+	# 读档模式有档的格：→ 跳过灰掉的「保存」直接到「删除」，← 回「读取」
+	act(p, "ui_right")
+	check("save.right_skips_disabled_save", p.act == 2 and sk.card.button_index == 2)
+	act(p, "ui_left")
+	check("save.left_back_to_load", p.act == 0)
+	# 点灰掉的「保存」：蜂鸣、焦点框回「读取」（小A核 P3-1 同类）
+	var bpos := sk.card.button_rect(1).get_center()
+	var cev := InputEventMouseButton.new()
+	cev.button_index = MOUSE_BUTTON_LEFT
+	cev.pressed = true
+	cev.position = bpos
+	XSound.system_log.clear()
+	sk.card.gui_input.emit(cev)
+	sk.card._gui_input(cev)
+	await frames(2)
+	check("save.click_disabled_buzz_focus_back", XSound.system_log.has(3) and sk.card.button_index == 0 and p._phase == "list", [XSound.system_log, sk.card.button_index])
 	act(p, "ui_accept")
 	act(p, "ui_accept")
 	check("save.load_done", loaded[0] and XSave.current_slot == 5)
@@ -278,7 +294,22 @@ func _save_page() -> void:
 		await shots("save_seal_failed_notice")
 		act(fp, "ui_accept")
 		check("save.seal_failed_notice_back", fp._phase == "list" and fp.skin.dialog == null)
+		# 校验失败格删除：实际改名留着（XSave.remove → quarantine），弹窗不写「无法找回」（小A核 P2-1）
+		key(fp, KEY_X)
+		check("save.seal_failed_delete_text", fp._phase == "confirm" and str(fp.skin.dialog.body).contains("改名保留") and not str(fp.skin.dialog.body).contains("无法找回"), fp.skin.dialog.body if fp.skin.dialog != null else null)
+		act(fp, "ui_cancel")
 	fp.queue_free()
+	await frames(2)
+	if XSave.exists(8):   # 存档模式覆盖校验失败格：同样写改名保留
+		var fs := open_save("save")
+		await frames(2)
+		fs.index = 7
+		fs.act = 1
+		fs._refresh()
+		act(fs, "ui_accept")
+		check("save.seal_failed_overwrite_text", fs._phase == "confirm" and str(fs.skin.dialog.body).contains("改名保留") and not str(fs.skin.dialog.body).contains("无法找回"), fs.skin.dialog.body if fs.skin.dialog != null else null)
+		act(fs, "ui_cancel")
+		fs.queue_free()
 	await frames(2)
 	# 存档模式：默认「保存」，空格直接存，有档橙边覆盖确认
 	_state()
@@ -302,7 +333,7 @@ func _save_page() -> void:
 	act(sp, "ui_left")
 	check("save.save_mode_left_to_load", sp.act == 0 and not ss.card.buttons[0].disabled)
 	act(sp, "ui_accept")
-	check("save.save_mode_load_danger", sp._phase == "confirm" and ss.dialog.danger and ss.dialog.index == 1 and sp.confirm_index == 1 and str(ss.dialog.body).contains("没存的进度会丢掉"), [sp._phase, ss.dialog.body if ss.dialog != null else null])
+	check("save.save_mode_load_danger", sp._phase == "confirm" and ss.dialog.danger and ss.dialog.index == 1 and sp.confirm_index == 1 and str(ss.dialog.body).contains("当前未保存的进度会丢失，无法找回。") and str(ss.dialog.body).begins_with("读取后将回到文件 7"), [sp._phase, ss.dialog.body if ss.dialog != null else null])
 	await shots("save_save_mode_load_confirm")
 	act(sp, "ui_accept")
 	check("save.save_mode_load_default_cancel", sp._phase == "list" and not loaded2[0])
@@ -451,11 +482,34 @@ func _party_page() -> void:
 	p._refresh()
 	var bench_id := int(p.list_data()[bench])
 	var was := int(s.battle_slots[1])
-	check("party.outcome_sentence", sk.outcome() == "%s进第 2 格，%s回到待命。" % [s.actor(bench_id).display_name(), s.actor(was).display_name()], sk.outcome())
+	check("party.outcome_sentence", sk.outcome() == "%s放入第 2 格，%s回到待命。" % [s.actor(bench_id).display_name(), s.actor(was).display_name()], sk.outcome())
 	check("party.button_text", sk.card.buttons[0].text == "放进第 2 格")
 	await shots("party_pick")
 	act(p, "ui_accept")
 	check("party.placed", int(s.battle_slots[1]) == bench_id and p.mode == "slot", s.battle_slots)
+	# 名单首末循环、Q／E 翻页（小A核 P1-1）：只在新页画的行里走（旧名单末尾那行「离队」不许落上去）
+	act(p, "ui_accept")
+	var n_rows := p.list_data().size() - 1
+	p.list_index = 0
+	p._refresh()
+	act(p, "ui_up")
+	check("party.up_wraps_to_last_actor", p.list_index == n_rows - 1 and sk.list.index == n_rows - 1 and int(p.list_data()[p.list_index]) > 0
+		and sk.card.buttons[0].text.begins_with("放进"), [p.list_index, n_rows, sk.card.buttons[0].text])
+	act(p, "ui_down")
+	check("party.down_wraps_to_first", p.list_index == 0 and sk.list.index == 0)
+	var vis := sk.list.visible_rows()
+	key(p, KEY_E)
+	check("party.e_pages_down", n_rows > vis and p.list_index == sk.list.index and p.list_index >= sk.list.top_row and sk.list.top_row > 0 and p.list_index < n_rows, [p.list_index, sk.list.top_row, vis, n_rows])
+	key(p, KEY_Q)
+	check("party.q_pages_up", sk.list.top_row == 0 and p.list_index < vis, [p.list_index, sk.list.top_row])
+	p.list_index = n_rows - 1
+	p._refresh()
+	key(p, KEY_E)
+	check("party.e_at_end_stays_on_actor", p.list_index == n_rows - 1)
+	var last_id := int(p.list_data()[n_rows - 1])
+	var cur_slot := int(s.battle_slots[p.slot_index])
+	act(p, "ui_accept")
+	check("party.last_row_places_actor", int(s.battle_slots[p.slot_index]) == last_id or (cur_slot > 0 and s.battle_slots.has(last_id)), [s.battle_slots, last_id])
 	# 首行「空出这一格」
 	act(p, "ui_accept")
 	p.list_index = 0
@@ -540,7 +594,7 @@ func _warehouse_page() -> void:
 		ok_rows = ok_rows and sk.list.items[k].text == a.display_name() and sk.list.items[k].right == "Lv %d" % a.level and int(sk.list.items[k]._hp) == a.hp
 	check("wh.rows_party", ok_rows)
 	var cd := sk.card_data()
-	check("wh.card_deposit", cd.title == s.actor(s.party[0]).display_name() and cd.buttons[0].text == "存入" and str(cd.sections).contains("存进仓库后") and str(cd.sections).contains("队伍至少留一个人"), cd)
+	check("wh.card_deposit", cd.title == s.actor(s.party[0]).display_name() and cd.buttons[0].text == "存入" and str(cd.sections).contains("存入后") and str(cd.sections).contains("队伍最少保留一位角色"), cd)
 	await shots("warehouse")
 	# 确定＝存入，光标不动
 	var first := s.party[0]
@@ -548,23 +602,44 @@ func _warehouse_page() -> void:
 	check("wh.deposit", not s.party.has(first) and s.saved_actors.has(first) and p.index == 0 and sk.inner_tabs.tabs[1] == "仓库 3")
 	# E 换到仓库
 	key(p, KEY_E)
-	check("wh.e_to_store", p.cmd == 1 and sk.list.items.size() == 3 and sk.card_data().buttons[0].text == "取出" and str(sk.card_data().sections).contains("取出来后"))
+	check("wh.e_to_store", p.cmd == 1 and sk.list.items.size() == 3 and sk.card_data().buttons[0].text == "取出" and str(sk.card_data().sections).contains("取出后"))
 	await shots("warehouse_store")
 	act(p, "ui_accept")
 	check("wh.withdraw", s.party.has(XActorWarehouse.list(s, true).back()) and sk.list.items.size() == 2)
-	# 空仓库
+	# 取走末尾一行（小A核 P1-2）：光标夹回剩下的最后一行，右牌、左块还在，再点那一行能接着取
+	act(p, "ui_down")
+	check("wh.on_last_row", p.index == 1)
+	var keep_first := int(p.data[0])
 	act(p, "ui_accept")
-	act(p, "ui_accept")
-	check("wh.store_empty", sk.list.items.is_empty() and not sk.card.visible)
+	check("wh.withdraw_last_clamps", p.index == 0 and sk.list.index == 0 and sk.card.visible and sk.current_id() == keep_first
+		and sk.card.title == s.actor(keep_first).display_name(), [p.index, sk.card.visible])
+	sk._on_list_click(0)
+	check("wh.click_clamped_row_withdraws", sk.list.items.is_empty() and not sk.card.visible and s.party.has(keep_first))
 	act(p, "ui_accept")
 	check("wh.empty_accept_stays", p.mode == "list")
 	await shots("warehouse_empty")
-	# 只剩 1 人：存不进去
+	# 队伍页签存走末尾一行：光标夹回新的最后一行（小A核 P1-2）
 	key(p, KEY_Q)
+	var last_i := p.data.size() - 1
+	p._select(last_i)
+	var last_actor := int(p.data[last_i])
+	act(p, "ui_accept")
+	check("wh.deposit_last_clamps", s.saved_actors.has(last_actor) and p.index == p.data.size() - 1 and sk.card.visible and sk.current_id() == int(p.data[p.index]), [p.index, p.data.size()])
+	# 只剩 1 人：存不进去
 	while s.party.size() > 1:
 		XActorWarehouse.deposit(s, 0)
 	p._reload()
-	check("wh.last_card", sk.card_data()._disabled and str(sk.card_data().sections).contains("存不进去"))
+	check("wh.last_card", sk.card_data()._disabled and str(sk.card_data().sections).contains("无法存入"))
+	# 点灰掉的「存入」：蜂鸣、焦点框不留在灰按钮上（小A核 P3-1）
+	var wev := InputEventMouseButton.new()
+	wev.button_index = MOUSE_BUTTON_LEFT
+	wev.pressed = true
+	wev.position = sk.card.button_rect(0).get_center()
+	XSound.system_log.clear()
+	sk.card.gui_input.emit(wev)
+	sk.card._gui_input(wev)
+	await frames(2)
+	check("wh.click_disabled_buzz_no_focus", XSound.system_log.has(3) and sk.card.button_index == -1, [XSound.system_log, sk.card.button_index])
 	act(p, "ui_accept")
 	check("wh.last_kept", s.party.size() == 1)
 	act(p, "ui_cancel")

@@ -23,7 +23,7 @@ const T_LEADER := "领队"
 const T_HELPER := "助力"
 const T_NO_SUPER := "没开挑战"
 const T_CANT := "放不进这格"
-const T_FINISH_BLOCK := "出战栏至少要有一个活着的人才能离开。"
+const T_FINISH_BLOCK := "出战栏至少保留一位存活角色，才能离开。"
 const SLOT_H := 156.0
 const ROW_H := 52
 const BAR_W := 150.0
@@ -133,6 +133,7 @@ func sync() -> void:
 func _sync_list() -> void:
 	var sc := scene
 	var data := sc.list_data()
+	sc.list_index = clampi(sc.list_index, 0, roster_size() - 1)   # 旧名单末尾那行「离队」新页不画：光标不许落上去（小A核 P1-1）
 	var rows := []
 	for k in data.size() - 1:
 		rows.append(roster_row_for(int(data[k])))
@@ -265,7 +266,7 @@ func outcome() -> String:
 		return "按确定给第 %d 格选人；Q / E 和旁边换位。" % (n + 1)
 	var id := int(sc.list_data()[sc.list_index])
 	if id <= 0:
-		return "%s离开第 %d 格，回到待命。" % [_name(cur), n + 1] if cur > 0 else "第 %d 格本来就空着。" % (n + 1)
+		return "%s离开第 %d 格，回到待命。" % [_name(cur), n + 1] if cur > 0 else "第 %d 格原本就是空的。" % (n + 1)
 	if not XItemMarks.can_deploy(s, id, n):
 		return "超强者没开挑战，不能出战。" if not XTianqi.active(s) else "%s放不进第 %d 格（超强者上限或助力位规则）。" % [_name(id), n + 1]
 	var at := sc.slots().find(id)
@@ -273,7 +274,7 @@ func outcome() -> String:
 		return "%s已经在第 %d 格。" % [_name(id), n + 1]
 	if at >= 0:
 		return "%s换到第 %d 格，%s换到第 %d 格。" % [_name(id), n + 1, _name(cur), at + 1] if cur > 0 else "%s从第 %d 格挪到第 %d 格。" % [_name(id), at + 1, n + 1]
-	return "%s进第 %d 格，%s回到待命。" % [_name(id), n + 1, _name(cur)] if cur > 0 else "%s进第 %d 格。" % [_name(id), n + 1]
+	return "%s放入第 %d 格，%s回到待命。" % [_name(id), n + 1, _name(cur)] if cur > 0 else "%s放入第 %d 格。" % [_name(id), n + 1]
 
 
 static func _name(id: int) -> String:
@@ -451,7 +452,7 @@ static func draw_walker(ci: CanvasItem, cname: String, index: int, foot: Vector2
 
 func _hints() -> Array:
 	if scene.mode == "list":
-		return [["确定", "放进这格"], ["Q / E", "翻页"], ["取消", "回出战位"]]
+		return [["确定", "放进这格"], ["Q / E", "翻页"], ["取消", "回到出战位"]]
 	return [["确定", "选人"], ["← / →", "换格"], ["Q / E", "和旁边换位"], ["X", "还原"], ["取消", "完成"]]
 
 
@@ -459,6 +460,8 @@ func _hints() -> Array:
 
 func input(event: InputEvent) -> bool:
 	var sc := scene
+	if sc.mode == "list":
+		return _list_input(event)
 	if sc.mode == "slot":
 		if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_X:
 			revert()
@@ -466,6 +469,46 @@ func input(event: InputEvent) -> bool:
 		if event.is_action_pressed("ui_cancel"):
 			finish()
 			return true
+	return false
+
+
+## 新名单的行数（旧 list_data 去掉末尾那行「离队」）
+func roster_size() -> int:
+	return scene.list_data().size() - 1
+
+
+## 选人时的上下、翻页由新页自己管（小A核 P1-1）：旧页按 [0]+队伍+[0] 循环、按 14 行翻页，新页只画前 n 行、一屏 6 行
+func _list_input(event: InputEvent) -> bool:
+	var sc := scene
+	var key := event as InputEventKey
+	var pressed := key != null and key.pressed
+	var n := roster_size()
+	var d := 0
+	if event.is_action_pressed("ui_down", true) or (pressed and key.physical_keycode == KEY_S):
+		d = 1
+	elif event.is_action_pressed("ui_up", true) or (pressed and key.physical_keycode == KEY_W):
+		d = -1
+	if d != 0:
+		var before := sc.list_index
+		sc.list_index = XMenu._move(sc.list_index, d, n, not event.is_echo())
+		if sc.list_index != before:
+			XSound.system(0)
+		sc._refresh()
+		return true
+	var pg := XMenu.page_dir(event)
+	if pg == 0 and pressed and key.echo and key.physical_keycode in [KEY_Q, KEY_E]:
+		return true   # 按住 Q／E 的连发：不翻（同按一下翻一页），也别漏给旧页按 14 行翻
+	if pg == 0 and (event.is_action_pressed("ui_page_up", true) or event.is_action_pressed("ui_page_down", true)):
+		return true
+	if pg != 0:
+		var before2 := sc.list_index
+		list.select(clampi(sc.list_index, 0, n - 1), false)
+		list.page(pg)
+		sc.list_index = clampi(list.index, 0, n - 1)
+		if sc.list_index != before2:
+			XSound.system(0)
+		sc._refresh()
+		return true
 	return false
 
 

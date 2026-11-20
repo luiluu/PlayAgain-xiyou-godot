@@ -58,6 +58,7 @@ func _ready() -> void:
 	list.index_changed.connect(_on_list_index)
 	list.activated.connect(_on_list_click)
 	card_button.connect(_on_card_button)
+	card.gui_input.connect(_on_card_gui)
 	body = Control.new()
 	body.name = "SaveBody"
 	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -187,7 +188,7 @@ func card_info() -> Dictionary:
 	var d = sc.data(slot_no)
 	if d == null:
 		return {"empty": true, "title": sc.plugin("Empty Game Text", T_EMPTY),
-			"subtitle": "按确定把现在的进度存到这里。" if sc.mode == "save" else "这一格还没有存档。"}
+			"subtitle": "按确定将当前进度存到这一格。" if sc.mode == "save" else "这一格还没有存档。"}
 	var out := {"title": location(d), "recent": slot_no == _recent,
 		"subtitle": "%s · %s" % [str(XDB.system().get("gameTitle", "")), file_name(slot_no)]}
 	var party := []
@@ -259,13 +260,15 @@ func confirm_data() -> Dictionary:
 	match str(XSaveScene.ACTIONS[sc.act][1]):
 		"load":
 			if sc.mode == "save":   # 游戏里（存档模式）读档：现在没存的进度会丢，找不回来——同覆盖、删除：橙边、光标停「取消」（协调 T292 返修）
-				return {"title": "读取这份存档？", "body": "回到%s的进度。现在没存的进度会丢掉，找不回来。" % what, "buttons": ["读取", "取消"], "danger": true}
-			return {"title": "读取这份存档？", "body": "回到%s的进度。" % what, "buttons": ["读取", "取消"]}
+				return {"title": "读取这份存档？", "body": "读取后将回到%s。当前未保存的进度会丢失，无法找回。" % what, "buttons": ["读取", "取消"], "danger": true}
+			return {"title": "读取这份存档？", "body": "从%s继续游戏。" % what, "buttons": ["读取", "取消"]}
 		"save":
 			if sc.seal_failed(sc.slot()):   # 校验失败的旧文件写盘时会改名留着（XSaveSeal.quarantine_if_failed），不是找不回来
-				return {"title": "覆盖这份存档？", "body": "%s会存成现在的进度；原来那份校验失败的文件会改名留着。" % what, "buttons": ["覆盖", "取消"], "danger": true}
-			return {"title": "覆盖这份存档？", "body": "%s会被现在的进度换掉，换掉就找不回来。" % what, "buttons": ["覆盖", "取消"], "danger": true}
-	return {"title": "删除这份存档？", "body": "%s会被删掉，删掉就找不回来。" % what, "buttons": ["删除", "取消"], "danger": true}
+				return {"title": "覆盖这份存档？", "body": "将当前进度存入%s；原校验失败的文件会改名保留。" % what, "buttons": ["覆盖", "取消"], "danger": true}
+			return {"title": "覆盖这份存档？", "body": "用当前进度覆盖%s。原存档会消失，无法找回。" % what, "buttons": ["覆盖", "取消"], "danger": true}
+	if sc.seal_failed(sc.slot()):   # 校验失败的档删除时同样改名留着（XSave.remove → XSaveSeal.quarantine_if_failed），不是找不回来（小A核 P2-1）
+		return {"title": "删除这份存档？", "body": "清空%s这一格；原校验失败的文件会改名保留。" % what, "buttons": ["删除", "取消"], "danger": true}
+	return {"title": "删除这份存档？", "body": "删除%s。删除后无法找回。" % what, "buttons": ["删除", "取消"], "danger": true}
 
 
 func _on_dialog_index(i: int) -> void:
@@ -319,9 +322,11 @@ func input(event: InputEvent) -> bool:
 	elif event.is_action_pressed("ui_right", true):
 		d = 1
 	if d != 0:
-		sc.act = posmod(sc.act + d, XSaveScene.ACTIONS.size())
-		XSound.system(0)
-		sc._refresh()
+		var nxt := next_enabled(sc.act, d)   # 只在能点的按钮间换；没有别的能点就不动（小A核 P2-2）
+		if nxt != sc.act:
+			sc.act = nxt
+			XSound.system(0)
+			sc._refresh()
 		return true
 	if XMenu.page_dir(event) != 0:
 		var before := sc.index
@@ -340,6 +345,16 @@ func input(event: InputEvent) -> bool:
 			sc._refresh()
 		return true
 	return false
+
+
+## 从 cur 往 d 方向找下一枚能点的按钮（转一圈回到 cur 就不动）
+func next_enabled(cur: int, d: int) -> int:
+	var n := XSaveScene.ACTIONS.size()
+	for k in range(1, n):
+		var i := posmod(cur + d * k, n)
+		if scene.action_enabled(i):
+			return i
+	return cur
 
 
 ## 默认那枚：读档在「读取」、存档在「保存」
@@ -385,6 +400,22 @@ func _on_card_button(i: int) -> void:
 	if scene._phase != "list":
 		return
 	press_action(i)
+
+
+## 点到灰掉的按钮：蜂鸣（同旧页操作窗点不能用的格），焦点框回到当前那枚（小A核 P3-1 同类）
+func _on_card_gui(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return
+	for i in card.buttons.size():
+		if card.button_rect(i).has_point(event.position) and bool(card.buttons[i].get("disabled", false)):
+			XSound.system(3)
+			_restore_card_focus.call_deferred()
+			return
+
+
+func _restore_card_focus() -> void:
+	card.button_index = scene.act if scene._phase == "list" else -1
+	card.queue_redraw()
 
 
 func _on_gui(event: InputEvent) -> void:

@@ -16,7 +16,7 @@ static var ENABLED := true
 const T_TITLE := "角色仓库"
 const T_TABS := ["队伍", "仓库"]
 const T_EMPTY_STORE := "仓库是空的"
-const T_MIN_ONE := "队伍至少留一个人"
+const T_MIN_ONE := XActorWarehouse.LAST_ACTOR_TEXT   # 「队伍最少保留一位角色」，同旧页提示（小A文字审）
 const T_OFF := "停用"
 
 var scene: XActorWarehouseScene
@@ -50,6 +50,7 @@ func _ready() -> void:
 	list.activated.connect(_on_list_click)
 	list.draw.connect(func(): XSkinPartyPage.draw_bars(list))
 	card_button.connect(func(_i): scene.ok())
+	card.gui_input.connect(_on_card_gui)
 	inner_tabs = XSkinInnerTabs.new()
 	inner_tabs.changed.connect(_on_tab)
 	list_panel.add_child(inner_tabs)
@@ -93,6 +94,8 @@ func sync() -> void:
 		rows.append(row_for(int(id)))
 	var key := [sc.cmd, rows.map(func(r): return [r.text, r.get("tags", []), r.get("right", ""), r.get("_hp", 0), r.get("_mp", 0)])]
 	var idx := clampi(sc.index, 0, maxi(rows.size() - 1, 0))
+	if not rows.is_empty() and sc.index != idx:
+		sc.index = idx   # 存／取走末尾一行后旧页光标停在空行（O-091）；新页没有空行，夹回最后一行（小A核 P1-2）
 	if key != _list_key:
 		_list_key = key
 		set_items(rows, idx)
@@ -131,23 +134,21 @@ func card_data() -> Dictionary:
 	var head := ""
 	var verb := "存入" if sc.deposit_mode() else "取出"
 	var disabled := false
+	head = verb + "后"   # 「存入后」「取出后」，同按钮（小A文字审）
 	if not XActorWarehouse.enabled(id):
-		head = verb + "后"
-		rows.append({"text": "这个角色停用了，不能存取。", "color": XUiSkin.DOWN})
+		rows.append({"text": "该角色已停用，无法存取。", "color": XUiSkin.DOWN})
 		disabled = true
 	elif sc.deposit_mode():
-		head = "存进仓库后"
 		if s.party.size() <= 1:
-			rows.append({"text": "队伍只剩这一个人，存不进去。", "color": XUiSkin.DOWN})
+			rows.append({"text": "队伍只剩最后一人，无法存入。", "color": XUiSkin.DOWN})
 			disabled = true
 		else:
-			rows.append({"text": "离开队伍；等级、技能、装备都留着，随时能取出来。", "color": XUiSkin.TEXT})
+			rows.append({"text": "暂离队伍；等级、技能、装备都会保留，随时可取出。", "color": XUiSkin.TEXT})
 			if s.battle_slots.has(id):
-				rows.append({"text": "现在在出战栏里：存进去后出战栏按队伍前 5 人重新排。", "color": XUiSkin.TEXT})
+				rows.append({"text": "当前在出战栏中：存入后将按队伍前 5 人重排出战位。", "color": XUiSkin.TEXT})
 		rows.append({"text": T_MIN_ONE, "color": XUiSkin.TEXT_2})
 	else:
-		head = "取出来后"
-		rows.append({"text": "回到队伍最后，不进出战栏；要出战去整队里放。", "color": XUiSkin.TEXT})
+		rows.append({"text": "回到队伍末尾，暂不出战；需出战请到「整队」编入。", "color": XUiSkin.TEXT})
 	return {"icon": null, "title": a.display_name(), "subtitle": "Lv %s%s" % [XMenu._group(a.level), " · " + cls if cls != "" else ""],
 		"sections": [{"title": "", "lines": lines}, {"title": head, "rows": rows}],
 		"buttons": [{"text": verb, "primary": true, "disabled": disabled}], "_disabled": disabled}
@@ -202,6 +203,22 @@ func _on_list_click(i: int) -> void:
 		return
 	if i == scene.index:
 		scene.ok()
+
+
+## 点到灰掉的主按钮：蜂鸣（同按确定），焦点框不留在灰按钮上（小A核 P3-1；XSkinCard 点禁用钮也会挪焦点，这里事后还原）
+func _on_card_gui(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return
+	for i in card.buttons.size():
+		if card.button_rect(i).has_point(event.position) and bool(card.buttons[i].get("disabled", false)):
+			XSound.system(3)
+			_clear_card_focus.call_deferred()
+			return
+
+
+func _clear_card_focus() -> void:
+	card.button_index = -1
+	card.queue_redraw()
 
 
 func _on_gui(event: InputEvent) -> void:
