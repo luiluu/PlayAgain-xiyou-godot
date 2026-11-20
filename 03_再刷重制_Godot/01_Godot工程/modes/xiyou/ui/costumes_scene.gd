@@ -113,7 +113,7 @@ func skin_rows() -> Array:
 func skin_card(i: int) -> Dictionary:
 	var t := row_texts(actors[i])
 	var on: bool = t[2] == "启用"
-	return {"title": t[0], "subtitle": t[2], "desc": "学会的换装卡：%s" % t[1],
+	return {"title": t[0], "subtitle": t[2], "desc": "还没有学会换装卡。" if t[1] == NO_CARD else "学会的换装卡：%s" % t[1],
 		"sections": [XSkinSubPage.choices_section(["启用", "关闭"], 0 if on else 1, -1),
 			{"title": "说明", "text": "%s%s" % [NOTES[0], NOTES[1]]},
 			{"title": "操作", "text": "确定切换启用／关闭。"}]}
@@ -143,7 +143,7 @@ func select(i: int) -> void:
 
 ## Window_CodexCostumes（Window_Command）不接管 pageup／pagedown：照 cursorPagedown／cursorPageup 整页翻（ui11）
 func page(d: int) -> void:
-	var r := XMenu.page(top, index, actors.size(), list_rows(), d)
+	var r := XMenu.page(top, index, actors.size(), skin.list.visible_rows() if skin != null and skin.list.visible_rows() > 0 else list_rows(), d)   # 新页每屏行数不是旧窗 13 行
 	top = r[0]
 	if r[1] != index:
 		index = r[1]

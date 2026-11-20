@@ -210,7 +210,7 @@ func skin_card(i: int) -> Dictionary:
 		var lim := _limits(key)
 		if not lim.is_empty():
 			d["desc"] = "范围 %d%%～%d%%。" % [int(lim[0]), int(lim[1])]
-			how = "左右键每次 ∓%d%%；确定 ＋%d%%，到顶回最小。" % [XTouchControls.STEP, XTouchControls.STEP]
+			how = "左右键每次增减 %d%%；确定 +%d%%，到顶回最小。" % [XTouchControls.STEP, XTouchControls.STEP]
 	secs.append({"title": "操作", "text": how})
 	d["sections"] = secs
 	return d
@@ -339,7 +339,7 @@ func _start_layout_skin(p: XTouchControls) -> void:
 
 ## 恢复默认：统一确认弹窗（橙边、停在「取消」）
 func _ask_reset() -> void:
-	_dlg = XSkinConfirm.open(skin, {"title": "恢复默认？", "body": "按键大小、透明度、位置、显示都会换回默认，不能撤回。", "buttons": ["恢复", "取消"], "danger": true})
+	_dlg = XSkinConfirm.open(skin, {"title": "恢复默认？", "body": "按键显示开关、大小、透明度和位置都会换回默认，不能撤回。", "buttons": ["恢复", "取消"], "danger": true})
 	_dlg.chosen.connect(func(i):
 		var d := _dlg
 		_dlg = null
@@ -362,6 +362,8 @@ func cancel() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if _layout_busy:
+		return   # 拖动态：右击等不能关子页（会把拖动态和按钮栏留在场上）
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	match event.button_index:
@@ -383,7 +385,12 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not visible or _layout_busy:
+	if _layout_busy:   # 拖动态：Esc／返回键结束拖动（桌面没有触屏按钮栏也能退出）
+		if event.is_action_pressed("ui_cancel") and pad() != null and pad().layout_editing:
+			XKeyMap.handled(self)
+			pad().finish_layout()
+		return
+	if not visible:
 		return
 	if _dlg != null and is_instance_valid(_dlg):
 		if _dlg.handle_input(event):

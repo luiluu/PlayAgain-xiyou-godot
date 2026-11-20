@@ -331,6 +331,22 @@ func _costumes() -> void:
 	for r in p2.skin_rows():
 		none_ok = none_ok or r.sub == XCostumesScene.NO_CARD
 	check("cos_no_card_text", none_ok or p2.actors.is_empty())
+	for k in p2.skin_rows().size():
+		if p2.skin_rows()[k].sub == XCostumesScene.NO_CARD:
+			check("cos_no_card_desc", p2.skin_card(k).desc == "还没有学会换装卡。", p2.skin_card(k).desc)
+	# 翻页按新页每屏行数（不是旧窗 13 行）：25 个角色
+	var many := []
+	for k in 25:
+		many.append(p2.actors[k % p2.actors.size()])
+	p2.actors = many
+	p2.index = 0
+	await frames(3)
+	var vr: int = p2.skin.list.visible_rows()
+	check("cos_page_rows_new", vr > 0 and vr < XCostumesScene.ROWS, vr)
+	p2.page(1)
+	check("cos_page_by_new_rows", p2.index == vr, [p2.index, vr])
+	p2.page(1)
+	check("cos_page_no_skip", p2.index == vr * 2, [p2.index, vr])
 	await shots("L_角色换装_无卡", false)
 	# 空列表
 	s2.party.clear()
@@ -474,6 +490,21 @@ func _touch() -> void:
 	var idx_before := page.index
 	_key(page, "ui_down")
 	check("tc_layout_keys_blocked", page.index == idx_before)
+	# 拖动态右击不能关子页、不能留下拖动态
+	var closed_flag := [false]
+	page.closed.connect(func(): closed_flag[0] = true)
+	var rc := InputEventMouseButton.new()
+	rc.button_index = MOUSE_BUTTON_RIGHT
+	rc.pressed = true
+	page._gui_input(rc)
+	check("tc_layout_rightclick_blocked", not closed_flag[0] and pad.layout_editing and page._layout_busy)
+	# Esc 结束拖动态（桌面也能退）
+	_key(page, "ui_cancel")
+	await frames(3)
+	check("tc_layout_esc_finishes", not pad.layout_editing and not page._layout_busy and sk.visible and not closed_flag[0], [pad.layout_editing, page._layout_busy])
+	page.index = ki.find("position")
+	_key(page, "ui_accept")
+	await frames(3)
 	await shots("L_手机按键_拖动态", false)
 	pad.finish_layout()
 	await frames(3)
