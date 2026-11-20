@@ -211,6 +211,16 @@ static func xparam_cap_pct(e, i: int) -> int:
 	return -1
 
 
+## 免暴击标记（T285 r3）：敌人身上 set_meta(META_CRIT_IMMUNE, true) 就免暴击。和死亡骑士 crit_immune、七印魔塔 no_crit 一样
+## 在 battle_logic.item_cri 最前面拦，不经暴击闪避，所以不受底子封顶（ENEMY_XPARAM_CAP）、减法（SUBTRACTIVE_CEV）影响。
+## 用暴击闪避特性（如 +1000%）做免暴击在天启篇不再成立：那是底子，会按层段封顶（D237 丙）。现在只有木桩标尺（c_tier）挂它。
+const META_CRIT_IMMUNE := "t285_crit_immune"
+
+
+static func crit_immune(dt) -> bool:
+	return dt != null and dt.has_meta(META_CRIT_IMMUNE) and bool(dt.get_meta(META_CRIT_IMMUNE))
+
+
 ## 天启篇敌人 xparam 1～4（cap_on 时 XEnemy.xparam 调）。base_pct：底子夹完上限后再乘的整数百分比（甚尔五感 50，平时 100）
 static func enemy_xparam(e, i: int, base_pct := 100) -> float:
 	var parts: Array = e.xparam_parts(i)

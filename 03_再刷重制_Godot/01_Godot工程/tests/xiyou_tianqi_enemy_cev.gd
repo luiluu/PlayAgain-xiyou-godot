@@ -50,6 +50,7 @@ func _run() -> void:
 	_low_floors()
 	_zero_impact()
 	_transform()
+	_immune()
 	XTianqiCombat.ENEMY_XPARAM_CAP = was[0]
 	XTianqiCombat.SUBTRACTIVE_CEV = was[1]
 	XTianqiAffixBattle.SUPPRESS_CEV = was[2]
@@ -341,4 +342,46 @@ func _transform() -> void:
 	_add(g, 268)
 	XTianqiCombat.ENEMY_XPARAM_CAP = false
 	_check("p31.neg_rate", _near(XTianqiCombat.crit_after_cev(-0.2, null, sk, g), 0.0), g.cev)
+	XTianqiCombat.ENEMY_XPARAM_CAP = true
+
+
+## T285 r3：真免暴击在封顶开着时仍是 0（死亡骑士 crit_immune、免暴击标记 META_CRIT_IMMUNE）；
+## 反向：暴击闪避特性（如银鳞盾 +1000%）是底子，开封顶会被夹到层段上限、不再免暴；关封顶才回到「暴不出来」。七印魔塔 no_crit 见 xiyou_tianqi_qiyin_altar。
+func _immune() -> void:
+	var sk := _crit_skill()
+	# 死亡骑士（实机准备流程，天启篇存档、封顶开）
+	var s := _state(true, "jianxian")
+	XTianqiHorsemen.prepare("death", s)
+	var lg := XBattleLogic.new()
+	lg.setup(0, s)
+	var kn: XEnemy = lg.enemies[0]
+	var a: XActor = lg.actors[0]
+	_check("im.cap_on", XTianqiCombat.cap_on() and XTianqiCombat.xparam_cap_pct(kn, 3) >= 0, XTianqiCombat.xparam_cap_pct(kn, 3))
+	_check("im.knight", XTianqiHorsemen.crit_immune(kn))
+	_check("im.knight_zero", is_zero_approx(lg.item_cri(a, sk, kn)), lg.item_cri(a, sk, kn))
+	_add(kn, 1596)  # 挂降暴闪也不破免暴
+	_check("im.knight_zero_debuff", is_zero_approx(lg.item_cri(a, sk, kn)))
+	lg.end_battle(0)
+	# 免暴击标记：34 层鸿钧（底子 700% → 封顶 40%）
+	var r := _guardian(34)
+	var logic: XBattleLogic = r[0]
+	var e: XEnemy = r[1]
+	var u: XActor = logic.actors[0]
+	var cri0 := logic.item_cri(u, sk, e)
+	_check("im.plain_crits", cri0 > 0.0, [cri0, u.cri, e.cev])
+	e.set_meta(XTianqiCombat.META_CRIT_IMMUNE, true)
+	_check("im.mark_zero", is_zero_approx(logic.item_cri(u, sk, e)))
+	XTianqiCombat.ENEMY_XPARAM_CAP = false
+	XTianqiCombat.SUBTRACTIVE_CEV = false
+	_check("im.mark_zero_switches_off", is_zero_approx(logic.item_cri(u, sk, e)))
+	XTianqiCombat.ENEMY_XPARAM_CAP = true
+	XTianqiCombat.SUBTRACTIVE_CEV = true
+	e.remove_meta(XTianqiCombat.META_CRIT_IMMUNE)
+	_check("im.mark_removed", _near(logic.item_cri(u, sk, e), cri0))
+	# 反向：+1000% 暴击闪避状态（银鳞盾 626）是底子，封顶开着夹到 40%，不再免暴
+	_add(e, 626)
+	_check("im.trait_capped", _near(e.cev, 0.40), e.cev)
+	_check("im.trait_not_immune", _near(logic.item_cri(u, sk, e), cri0), [logic.item_cri(u, sk, e), cri0])
+	XTianqiCombat.ENEMY_XPARAM_CAP = false
+	_check("im.trait_immune_cap_off", is_zero_approx(logic.item_cri(u, sk, e)), e.cev)
 	XTianqiCombat.ENEMY_XPARAM_CAP = true

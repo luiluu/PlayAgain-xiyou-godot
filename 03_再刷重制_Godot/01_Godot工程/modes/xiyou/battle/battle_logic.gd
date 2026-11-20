@@ -2791,6 +2791,8 @@ func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 		return 0.0
 	if XTianqiQiyinRule.no_crit(self, u):  # 七印祭坛魔塔：没有暴击（七印书卷只让敌人不暴击）
 		return 0.0
+	if XTianqiCombat.crit_immune(dt):  # 免暴击标记（T285 r3）：不经暴击闪避，天启篇暴闪封顶吃不掉
+		return 0.0
 	if XGuyu.sure(skill):  # 谷雨 itemCri 包装：绽放、终结、治疗不暴击
 		return 0.0
 	# dsPassiveSkill itemCri：(攻击方暴击率＋被动 critPush)×(1－目标暴击回避)；v0.62.12 installCritFloor：攻击方这一项 ≤0 时按 0 算
