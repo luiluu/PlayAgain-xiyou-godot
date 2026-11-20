@@ -558,6 +558,22 @@ func _advance_garou() -> void:
 	page._refresh()
 	var c2 := page.skin_card()
 	check("garou_ready_no_gold", not bool(c2.buttons[0].disabled) and not any_has(card_texts(c2), "还差："), card_texts(c2))
+	# T311：reason 通过、表里条件（等级／物品）不够时，新页照原版也挡（原版 reason 后仍走 Star_ActorAdvanced 查表）。表是临时改的，测完还原
+	var grow: Dictionary = {}
+	for r in XAdvance.rows():
+		if int(r.actor) == XGarou.ACTOR and int(r.num) == 0:
+			grow = r
+	var saved_level = grow.level
+	var saved_items = grow.items
+	grow.level = 99
+	grow.items = [[1, 1]]
+	page._refresh()
+	var c3 := page.skin_card()
+	check("garou_table_blocks", XGarou.reason(s, a) == "" and bool(c3.buttons[0].disabled) and any_has(card_texts(c3), "还差："), card_texts(c3))
+	grow.level = saved_level
+	grow.items = saved_items
+	page._refresh()
+	check("garou_table_restored", not bool(page.skin_card().buttons[0].disabled), card_texts(page.skin_card()))
 	page.ok()
 	page.ok()
 	await frames()

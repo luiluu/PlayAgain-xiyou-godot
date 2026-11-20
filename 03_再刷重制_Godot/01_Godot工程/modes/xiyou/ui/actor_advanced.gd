@@ -724,12 +724,8 @@ func _skin_sync() -> void:
 
 
 ## 主按钮的字：只缺五条悟试炼（且这页开得了试炼）时「挑战试炼」，否则「进阶」
-## 缺什么：一般角色＝XAdvance.missing；饿狼只看 XGarou.reason（等级、累计突破、四臂进星空的神之触媒）——饿狼进阶走 XGarou.advance，
-## 不扣表里的金钱、物品，而天启篇金钱重构给每行套了进阶金钱（XTianqiMoney.advance_gold），missing 会误报「精魂不足」挡住进阶（小A核 T307 P2-2）
+## 缺什么：一律 XAdvance.missing（饿狼它内部先查 XGarou.reason、再查表，照原版 onBottomConfirmOk；T311 收掉了原先的饿狼绕法）
 static func lack_of(s: XState, a: XActor) -> Array:
-	if a != null and XGarou.own(a):
-		var why := XGarou.reason(s, a)
-		return [why] if why != "" else []
 	return XAdvance.missing(s, a)
 
 

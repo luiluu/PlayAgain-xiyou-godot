@@ -30,5 +30,5 @@ func _run() -> void:
 		var boss := FastForward.find_boss(int(ent[0]), ent[1])
 		var pg := FastForward.page_of(int(ent[0]), ent[1])
 		var spec := XDungeon.entry_spec(pg.get("list", []))
-		print("SCAN 层%d 图%d：入口 图%d 事件%d；首领 %s；当前页是入口 %s 页%d" % [fl, m, int(ent[0]), int(ent[1].id), str(boss.slice(0, 1) + boss.slice(2) if not boss.is_empty() else "找不到"), str(not spec.is_empty()), int(pg.get("_i", -1))])
+		print("SCAN 层%d 图%d：入口 图%d 事件%d；首领 %s；当前页是入口 %s 页%d" % [fl, m, int(ent[0]), int(ent[1].id), str(boss.slice(0, 1) + boss.slice(2) if not boss.is_empty() else "找不到"), str(not spec.is_empty()), FastForward.page_index_of(int(ent[0]), ent[1])])
 	get_tree().quit.call_deferred(0)

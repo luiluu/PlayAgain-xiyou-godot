@@ -81,7 +81,7 @@ static func row(s: XState, actor_id: int):
 	var n := rank(s, actor_id)
 	for r in rows():
 		if int(r.actor) == actor_id and int(r.num) == n:
-			var tq := XTianqiMoney.advance_gold(s, n) if not XTianqiGojoTrial.own_gold(actor_id) else -1  # 天启篇金钱重构：四阶 10 万／30 万／60 万／100 万（五条悟两阶照自己的表，XTianqiGojoTrial）
+			var tq := XTianqiMoney.advance_gold(s, n) if not XTianqiGojoTrial.own_gold(actor_id) and actor_id != XGarou.ACTOR else -1  # 天启篇金钱重构：四阶 10 万／30 万／60 万／100 万（五条悟两阶照自己的表，XTianqiGojoTrial；饿狼进阶走 XGarou 不扣表里金钱，不套，T308）
 			if tq >= 0 and tq != int(r.gold):
 				var out: Dictionary = r.duplicate()
 				out.gold = tq
@@ -102,6 +102,8 @@ static func missing(s: XState, a: XActor) -> Array:
 		var why := XGarou.reason(s, a)
 		if why != "":
 			return [why]
+		# reason 通过后不 return，继续查下面表里的等级／金钱／物品：照原版。原版饿狼包装（installNativeGarouRuntime.js:278-286）reason 通过后
+		# 仍 return bottom.apply，走 Star_ActorAdvanced.js:2973 的表条件，没有行也会「进阶条件未达成」（T311 对原版核过）。别在这里收口。
 	var r = row(s, a.actor_id)
 	if r == null:
 		return ["已满"]

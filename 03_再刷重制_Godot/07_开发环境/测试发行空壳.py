@@ -196,6 +196,29 @@ class T(unittest.TestCase):
         hand = (K.HAND / 'XRiftAlien.gd').read_text(encoding='utf-8')
         self.assertIn(K.STUB_TAG_LINE, hand)
 
+    def test_map_element_id_stub_passes_element_through(self):
+        # T310：真脚本首句 `if deck_on(s) and e == 1: return 0`，规则 2 照抄成恒 return 0，发行包招式属性号全被抹成 0。
+        # 特例 "e" 原样返回；去掉特例时空壳必须变回恒 0（反向验证，证明这条测试真能抓到）
+        import json
+        import tempfile
+        rel = Path('modes/xiyou/core/tianqi_elements.gd')
+        real = self._over  # setUp 把 OVERRIDES 换成了空文件，这里要用真特例
+        K.OVERRIDES = real
+        stubs, _, _ = K.build_all()
+        self.assertRegex(stubs[rel], r'func map_element_id\(e: int, s = null\) -> int:\n\treturn e\n')
+        over = json.loads(real.read_text(encoding='utf-8'))
+        self.assertEqual(over.get('XTianqiElements.map_element_id'), 'e')
+        with tempfile.TemporaryDirectory() as td:
+            over.pop('XTianqiElements.map_element_id')
+            alt = Path(td) / 'over.json'
+            alt.write_text(json.dumps(over, ensure_ascii=False), encoding='utf-8')
+            K.OVERRIDES = alt
+            try:
+                bad, _, _ = K.build_all()
+            finally:
+                K.OVERRIDES = real
+        self.assertRegex(bad[rel], r'func map_element_id\(e: int, s = null\) -> int:\n\treturn 0\n')
+
     def test_numeric_default_zero_rejected_in_make_tree_for_build_and_patch(self):
         # 构造一个返回 1.0 的天启篇倍率函数、无早退无特例，西游代码会调用它
         (self.root / 'modes/xiyou/core/tianqi_foo.gd').write_text(

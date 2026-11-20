@@ -13,7 +13,7 @@ extends Node
 ## - 法宝：本人专属，没有就破攻／尊魔（同甲档），等级＝第 36 层的法宝上限 min(99, 9＋3×层)。
 ## - 等级 81（第 36 层的等级上限）；不进阶、不喂熟练度、不带号卷／秘籍／黑印（31 层起才出现的东西，「按层数自然拿到的」这一版取没有）。
 ## - 酒：天平酒喝上（XTianqiMoney 的 scale 记录，--no-wine 不喝）；助力位空；烙印：职责＝输出的刻印、立到逆命、生效 75%（--brand=N），坦克、辅助不签（T220 后烙印开关默认开）。
-## - 木桩：物防魔防 8200（K 脚本的 _pin_def）、元素中性、不免暴击；另备免暴击木桩（给 U 的第二个数，给它加暴击回避特性）；生命每回合补满、我方每回合回满；
+## - 木桩：物防魔防 8200（K 脚本的 _pin_def）、元素中性、不免暴击；另备免暴击木桩（给 U 的第二个数，挂 XTianqiCombat.META_CRIT_IMMUNE，同死亡骑士在 item_cri 最前面拦；T285 r3 起不再加暴击回避特性——那会被天启篇暴闪底子封顶夹掉）；生命每回合补满、我方每回合回满；
 ##   木桩的攻击压到 1，只量我方每次行动让木桩掉的血。--foes=1,3：单敌、多敌（缺省各量一次，多敌＝3 个木桩）。
 
 const K := preload("res://tests/virtual_player/k_calibrate.gd")
@@ -22,7 +22,7 @@ const DIFFICULTY := "jianxian"
 const FLOOR := 36
 const LEVEL := 81
 const DEFAULT_GEAR_FILE := "res://tests/virtual_player/c_tier_gear.json"
-const NO_CRIT_TRAIT := {"code": 22, "dataId": 3, "value": 10.0}  # 暴击回避 +1000%：(暴击率)×(1－回避) ≤ 0
+const NO_CRIT_TRAIT := {"code": 22, "dataId": 3, "value": 10.0}  # 旧做法（暴击回避 +1000%），T285 r3 起不用；留着给专项查「敌人数据没被改」
 
 var teams_n := 4
 var templates: Array = ["A", "B", "C", "D"]
@@ -321,16 +321,12 @@ func _fight(s: XState, foes: int, crit_immune: bool) -> Dictionary:
 	logic.setup(dummy_troop(foes), s, null)
 	logic.auto = true
 	var dummies: Array = logic.alive(logic.enemies).slice(0, foes)
-	var datas := []
 	for e in dummies:
 		e.add_param(0, 1.0e9)
 		e.add_param(2, 1.0 - float(e.param(2)))  # 攻击压到 1，不打死我方
 		e.add_param(4, 1.0 - float(e.param(4)))
 		if crit_immune:
-			var d = e.data()
-			if d is Dictionary:
-				(d["traits"] as Array).append(NO_CRIT_TRAIT)
-				datas.append(d)
+			e.set_meta(XTianqiCombat.META_CRIT_IMMUNE, true)  # 免暴击：同死亡骑士，不经暴击闪避（T285 r3）
 		e.param_mark_dirty()
 	var per_turn := []
 	var hits := []
@@ -360,8 +356,6 @@ func _fight(s: XState, foes: int, crit_immune: bool) -> Dictionary:
 		if not logic.is_over():
 			logic.end_turn()
 		per_turn.append(turn_dmg)
-	for d in datas:
-		(d["traits"] as Array).erase(NO_CRIT_TRAIT)
 	logic.end_battle(0)
 	return {"per_turn": per_turn, "hits": hits}
 

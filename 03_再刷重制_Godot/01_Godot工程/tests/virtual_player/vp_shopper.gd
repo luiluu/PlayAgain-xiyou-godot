@@ -57,6 +57,7 @@ class ShopHost:
 		var shop := XShop.new()
 		shop.setup(goods, purchase_only, stock_group)
 		var r: Dictionary = Growth.shop(shop, st, Growth.advance_needs(st) if advance else {})
+		shop._exit_tree()   # T298：没挂上树直接 free 不走 _exit_tree，免费期间改的 XBabyAllActors.free_open 会留着
 		shop.free()
 		XShopStock.close_policy()
 		shops += 1
@@ -98,6 +99,10 @@ func run(map: XMapScene, st: XState, advance: bool, skip: Callable) -> Dictionar
 ## 顺手领一次性的礼物页（给法宝积分那种：变量 213 加数）。兑换大厅（132）用它，免得为买法宝、魂灯、头颅换血脉走一趟传送。
 func run_map(map_id: int, st: XState, advance: bool) -> Dictionary:
 	var t0 := Time.get_ticks_msec()
+	# T298（T272 核查 P2-1）：库存、来源记账都认存档里的当前地图；人没在那张图上时临时切过去，买完还原
+	# （否则兑换大厅的不朽法宝店漏 4001，来源记成「商店 4」）
+	var keep_map := st.map_id
+	st.map_id = map_id
 	var out := {"lines": [], "uses": [], "bought": 0, "gifts": 0}
 	for ev in XDB.map(map_id).get("events", []):
 		if not ev is Dictionary:
@@ -124,6 +129,7 @@ func run_map(map_id: int, st: XState, advance: bool) -> Dictionary:
 		out.lines.append_array(host.res.lines)
 		out.uses.append_array(host.res.uses)
 		host.free()
+	st.map_id = keep_map
 	bought += int(out.bought)
 	msec += Time.get_ticks_msec() - t0
 	return out

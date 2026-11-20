@@ -1772,6 +1772,7 @@ func enemy_transform(index: int, enemy_id: int) -> Array:
 	var before := _enemy_reading(e)
 	var old_name := e.original_name()
 	e.boss_difficulty_boss = XEnemy.boss_id(enemy_id)
+	XTianqiCombat.keep_floor(e)  # T285 r2（P2-3）：守层者残血变身后暴击闪避仍按原层段（非楼层地图进战也不掉回第一档）
 	e.enemy_id = enemy_id
 	if e.original_name() != old_name:
 		e.letter = ""
@@ -2790,6 +2791,8 @@ func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 		return 0.0
 	if XTianqiQiyinRule.no_crit(self, u):  # 七印祭坛魔塔：没有暴击（七印书卷只让敌人不暴击）
 		return 0.0
+	if XTianqiCombat.crit_immune(dt):  # 免暴击标记（T285 r3）：不经暴击闪避，天启篇暴闪封顶吃不掉
+		return 0.0
 	if XGuyu.sure(skill):  # 谷雨 itemCri 包装：绽放、终结、治疗不暴击
 		return 0.0
 	# dsPassiveSkill itemCri：(攻击方暴击率＋被动 critPush)×(1－目标暴击回避)；v0.62.12 installCritFloor：攻击方这一项 ≤0 时按 0 算
@@ -2797,7 +2800,7 @@ func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 	# 米拉／渡鸦数值池 itemCri 包装（在甚尔里面）：渡鸦的非归属动作读面板暴击不带魂海加成
 	var cri := XNumberBoost.item_cri(skill, u, dt, func():
 		var rate := u.cri + ((u as XActor).crit_push(skill) if u is XActor else 0.0)
-		return maxf(rate, 0.0) * (1.0 - dt.cev * XToji.cev_rate(u, skill)) if bool(skill.damage.critical) else 0.0)  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34
+		return XTianqiCombat.crit_after_cev(rate, u, skill, dt) if bool(skill.damage.critical) else 0.0)  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34；天启篇减法、甚尔底子减半（T285）
 	if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
 		cri = 1.0
 	cri = XYunshang.cri(u, skill, cri)  # 云裳 itemCri 包装：戴织神天梭 +3

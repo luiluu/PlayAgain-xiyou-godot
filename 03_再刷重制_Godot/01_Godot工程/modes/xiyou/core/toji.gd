@@ -80,6 +80,9 @@ const DEATH := 1
 
 ## O-138（优化登记）：学暴君／repair 时清弱化。false＝照原版（removeDebuff 不存在，抛错后弱化留着）
 static var CLEAR_DEBUFFS := true
+## T285（D237 丙）开关：true＝天启篇五感读到的目标暴击闪避改成「底子减半（balance_table combat_rules.enemy_xparam_cap.toji_cev_pct，整数 50），
+## 再扣队友的降暴击闪避」（XEnemy.cev_for_toji，要 XTianqiCombat.ENEMY_XPARAM_CAP 开着）；false＝照原版整份 ×0.34。西游存档不走这里
+static var TIANQI_CEV_HALF := true
 const POSITIVE_BUFF_TYPES := ["祝福", "变身", "魔法", "合剂", "食物", "愤怒", "共鸣"]
 static var _negative_re := RegEx.create_from_string("中毒|毒|灼|诅咒|封印|眩晕|麻痹|虚弱|减速|沉默|睡眠|冻结|流血|失效")
 static var _buff_type_re := RegEx.create_from_string("<BuffType:([^>]+)>")
