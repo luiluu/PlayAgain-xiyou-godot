@@ -296,6 +296,15 @@ func _draw() -> void:
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	var dim := not enabled
+	var pol := XUiSkin.polish_on()
+	if pol:
+		var cradle := StyleBoxFlat.new()
+		cradle.bg_color = Color(0.05, 0.042, 0.04, 0.58)
+		cradle.border_color = Color(XUiSkin.GOLD, 0.48) if (focused and enabled) else Color(XUiSkin.line_c(), 0.24)
+		cradle.set_border_width_all(1)
+		cradle.set_corner_radius_all(int((H + 6.0) / 2.0))
+		cradle.anti_aliasing = true
+		cradle.draw(ci, Rect2(Vector2(-4, (size.y - H) / 2.0 - 3), Vector2(size.x + 8, H + 6)))
 	if focused and enabled:
 		var all := Rect2(Vector2(-6, (size.y - H) / 2.0 - 4), Vector2(size.x + 12, H + 8))
 		XUiSkin.draw_select(ci, all, XUiSkin.breath_alpha(), 0.55)
@@ -306,8 +315,8 @@ func _draw() -> void:
 		var sb := StyleBoxFlat.new()
 		sb.set_corner_radius_all(int(H / 2.0))
 		sb.anti_aliasing = true
-		sb.bg_color = Color(0, 0, 0, 0.35) if _press != i else Color(XUiSkin.SEL_FILL, 0.5)
-		sb.border_color = Color(XUiSkin.LINE, 0.25 if dim else 0.6)
+		sb.bg_color = (Color(0.11, 0.095, 0.09, 0.72) if pol else Color(0, 0, 0, 0.35)) if _press != i else Color(XUiSkin.SEL_FILL, 0.5)
+		sb.border_color = Color(XUiSkin.line_c(), 0.25 if dim else 0.55) if pol else Color(XUiSkin.LINE, 0.25 if dim else 0.6)
 		sb.set_border_width_all(1)
 		sb.draw(ci, r)
 		var t := str(BUTTONS[i][0])

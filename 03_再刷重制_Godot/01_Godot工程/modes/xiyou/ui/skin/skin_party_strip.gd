@@ -139,12 +139,12 @@ func _draw() -> void:
 		var r := row_rect(i)
 		var sk := sel_scale.k(i)
 		if i > 0:
-			draw_line(Vector2(r.position.x + 10, r.position.y), Vector2(r.end.x - 10, r.position.y), Color(XUiSkin.LINE, 0.14), 1.0)
+			XUiSkin.draw_divider(self, r.position.x + 10, r.end.x - 10, r.position.y)
 		if bool(m.get("helper", false)):
 			_draw_helper_frame(ci, r, head)
 			if bool(m.get("placeholder", false)):
 				var hc0 := Vector2(r.position.x + 14 + HEAD / 2.0, r.position.y + r.size.y / 2.0)
-				draw_circle(hc0, HEAD / 2.0, Color(XUiSkin.LINE, 0.4), false, 1.5, true)
+				draw_circle(hc0, HEAD / 2.0, Color(XUiSkin.line_c(), 0.4), false, 1.5, true)
 				XUiSkin.ds(self, body, Vector2(hc0.x - 6, hc0.y + 8), "+", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, XUiSkin.TEXT_3)
 				XUiSkin.ds(self, body, Vector2(r.position.x + 14 + HEAD + 12, hc0.y + 18 * 0.36), str(m.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, XUiSkin.TEXT_2)
 				continue
@@ -152,11 +152,11 @@ func _draw() -> void:
 		r = Rect2(r.position.x, r.position.y + floorf((r.size.y - XUiSkin.MEMBER_H) / 2.0), r.size.x, XUiSkin.MEMBER_H)
 		var hc := Vector2(r.position.x + 14 + HEAD / 2.0, r.position.y + r.size.y / 2.0)
 		var hr := HEAD / 2.0 * sk
-		draw_circle(hc, hr, XUiSkin.ORB_LOW)
+		draw_circle(hc, hr, XUiSkin.orb_low_c())
 		var face: Texture2D = m.get("face")
 		if face != null:
 			XSkinPartyStrip.draw_round_texture(self, face, hc, hr - 2.0)
-		draw_circle(hc, hr, Color(XUiSkin.LINE, 0.65), false, 1.5, true)
+		draw_circle(hc, hr, Color(XUiSkin.line_c(), 0.65), false, 1.5, true)
 		XTianqiSkinShow.draw_look(self, str(m.get("look", "")), hc, hr)
 		var x := r.position.x + 14 + HEAD + 12
 		var right := r.end.x - 12
@@ -195,9 +195,8 @@ func _draw() -> void:
 			var tw := maxf(num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x, 26)
 			var bw := w - tw - 4
 			var track := Rect2(bx, y2 + 2 - XUiSkin.bar_h(spec[0]), bw, XUiSkin.bar_h(spec[0]))
-			_pill(ci, track, Color(1, 1, 1, 0.12))
-			if mx > 0 and v > 0:
-				_pill(ci, Rect2(track.position, Vector2(track.size.x * clampf(v / mx, 0, 1), track.size.y)), spec[2])
+			var ratio := clampf(v / mx, 0.0, 1.0) if mx > 0.0 and v > 0.0 else 0.0
+			XUiSkin.draw_gauge(ci, track, ratio, spec[2])
 			XUiSkin.ds(self, num, Vector2(bx + w - num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x, y2 + 6), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, spec[3])
 			bx += w + 8
 
@@ -239,15 +238,6 @@ func _draw_helper_frame(ci: RID, r: Rect2, head: Font) -> void:
 	tb.corner_radius_top_right = XUiSkin.ROW_RADIUS
 	tb.draw(ci, tr)
 	XUiSkin.ds(self, head, Vector2(tr.position.x + 7, tr.position.y + 15), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, XUiSkin.BG)
-
-
-func _pill(ci: RID, r: Rect2, c: Color) -> void:
-	if r.size.x <= 0.0:
-		return
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = c
-	sb.set_corner_radius_all(3)
-	sb.draw(ci, r)
 
 
 ## 圆形裁切画图（头像）：圆多边形＋UV；AtlasTexture 换算到整张图的 UV

@@ -189,6 +189,7 @@ func _draw_roster_panel() -> void:
 		return
 	var body := XUiSkin.font("body")
 	XUiSkin.ds(roster_panel, body, Vector2(XUiSkin.PAD + 8, XUiSkin.PAD + 20), roster_title, HORIZONTAL_ALIGNMENT_LEFT, roster_panel.size.x - 48, 20, XUiSkin.GOLD)
+	XUiSkin.draw_title_accent(roster_panel, XUiSkin.PAD + 8, XUiSkin.PAD + 25.5, minf(roster_panel.size.x - 48.0, 64.0))
 
 
 # ---- 右牌底「展开」条 ----
@@ -227,7 +228,7 @@ func _draw_strip() -> void:
 	var body := XUiSkin.font("body")
 	var fs := XUiSkin.fs(XUiSkin.FS_AUX)
 	var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	strip.draw_line(Vector2(card.pad, 1), Vector2(strip.size.x - card.pad, 1), Color(XUiSkin.LINE, 0.5), 1.0)
+	XUiSkin.draw_divider(strip, card.pad, strip.size.x - card.pad, 1.0, false, 1.0, 0.5)
 	XUiSkin.ds(strip, body, Vector2((strip.size.x - tw) / 2.0, strip.size.y / 2.0 + fs * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
 
 
@@ -324,6 +325,9 @@ static func draw_battler(ci: CanvasItem, battler: String, pattern: int, foot: Ve
 static func draw_seal(ci: CanvasItem, c: Vector2, r: float) -> void:
 	var squash := Transform2D(0.0, Vector2(1.0, 0.32), 0.0, c)
 	ci.draw_set_transform_matrix(squash)
+	if XUiSkin.polish_on():
+		ci.draw_arc(Vector2.ZERO, r + 4.0, 0, TAU, 64, Color(XUiSkin.GOLD, 0.14), 4.0, true)
+		ci.draw_circle(Vector2.ZERO, r * 0.68, Color(XUiSkin.GOLD, 0.08))
 	ci.draw_circle(Vector2.ZERO, r, Color(XUiSkin.GOLD, 0.10))
 	ci.draw_arc(Vector2.ZERO, r, 0, TAU, 64, Color(XUiSkin.GOLD, 0.55), 2.0, true)
 	ci.draw_arc(Vector2.ZERO, r * 0.72, 0, TAU, 64, Color(XUiSkin.GOLD, 0.35), 1.5, true)

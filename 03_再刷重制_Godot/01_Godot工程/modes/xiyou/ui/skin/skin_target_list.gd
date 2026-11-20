@@ -117,7 +117,7 @@ func _draw() -> void:
 	var num := XUiSkin.font("num")
 	if title != "":
 		XUiSkin.ds(self, body, Vector2(0, XUiSkin.FS_AUX_MAX + 4), title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
-		draw_line(Vector2(0, TITLE_H - 4), Vector2(size.x, TITLE_H - 4), Color(XUiSkin.LINE, 0.14), 1.0)
+		XUiSkin.draw_divider(self, 0.0, size.x, TITLE_H - 4)
 	sel_scale.sel(index if selectable and not all and index >= 0 else null)
 	for i in rows.size():
 		var m: Dictionary = rows[i]
@@ -128,11 +128,11 @@ func _draw() -> void:
 		var a := 0.45 if bool(m.get("dim", false)) else 1.0
 		var hc := Vector2(r.position.x + 10 + HEAD / 2.0, r.position.y + r.size.y / 2.0)
 		var hr := HEAD / 2.0 * sk
-		draw_circle(hc, hr, XUiSkin.ORB_LOW)
+		draw_circle(hc, hr, XUiSkin.orb_low_c())
 		var face = m.get("face")
 		if face is Texture2D:
 			XSkinPartyStrip.draw_round_texture(self, face, hc, hr - 1.5)
-		draw_circle(hc, hr, Color(XUiSkin.LINE, 0.65 * a), false, 1.2, true)
+		draw_circle(hc, hr, Color(XUiSkin.line_c(), 0.65 * a), false, 1.2, true)
 		var x := r.position.x + 10 + HEAD + 10
 		var base := r.position.y + r.size.y / 2.0
 		var right_w := 56.0
@@ -149,9 +149,8 @@ func _draw() -> void:
 		var vw := num.get_string_size(vt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
 		var bar_w := maxf(r.end.x - 10 - right_w - 8 - vw - 8 - x, 24.0)
 		var track := Rect2(x, base - 2.5, bar_w, 5)
-		_pill(ci, track, Color(1, 1, 1, 0.12))
-		if mx > 0 and cur > 0:
-			_pill(ci, Rect2(track.position, Vector2(track.size.x * clampf(cur / mx, 0, 1), 5)), Color(col, a))
+		var ratio := clampf(cur / mx, 0.0, 1.0) if mx > 0.0 and cur > 0.0 else 0.0
+		XUiSkin.draw_gauge(ci, track, ratio, col, a)
 		XUiSkin.ds(self, num, Vector2(x + bar_w + 8, base + 16 * 0.36), vt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(txt_col, a))
 		var rt := str(m.get("right", ""))
 		if rt != "":
@@ -159,12 +158,3 @@ func _draw() -> void:
 			var f := num if rt.begins_with("+") else body
 			var rw := f.get_string_size(rt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			XUiSkin.ds(self, f, Vector2(r.end.x - 10 - rw, base + fs * 0.36), rt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, m.get("right_color", XUiSkin.TEXT_3))
-
-
-func _pill(ci: RID, r: Rect2, c: Color) -> void:
-	if r.size.x <= 0.0:
-		return
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = c
-	sb.set_corner_radius_all(3)
-	sb.draw(ci, r)

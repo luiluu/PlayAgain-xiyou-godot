@@ -218,8 +218,8 @@ func _draw() -> void:
 		var cr := detail_rect()
 		var sb := StyleBoxFlat.new()
 		sb.set_corner_radius_all(13)
-		sb.bg_color = Color(XUiSkin.SEL_FILL, 0.28) if XSkinBattle.help_open else Color(XUiSkin.BG, 0.6)
-		sb.border_color = XUiSkin.SEL_LINE if XSkinBattle.help_open else Color(XUiSkin.LINE, 0.5)
+		sb.bg_color = Color(XUiSkin.SEL_FILL, 0.28) if XSkinBattle.help_open else Color(XUiSkin.bg_c(), 0.6)
+		sb.border_color = XUiSkin.SEL_LINE if XSkinBattle.help_open else Color(XUiSkin.line_c(), 0.5)
 		sb.set_border_width_all(1)
 		sb.draw(get_canvas_item(), cr)
 		var tw := body.get_string_size("详情", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
@@ -238,13 +238,12 @@ func _draw() -> void:
 	if entries.size() > rows:
 		var bw := 6.0 if XUiSkin.TOUCH_V2 else 2.0   # 收口批：滚动条手指找得到
 		var track := Rect2(size.x - bw - 3.0, HEAD_H + 4, bw, rows * ROW_H - 8)
-		draw_rect(track, Color(XUiSkin.LINE, 0.18))
 		var h := maxf(16.0, track.size.y * rows / entries.size())
 		var y := track.position.y + (track.size.y - h) * top / maxf(1.0, entries.size() - rows)
-		draw_rect(Rect2(track.position.x, y, track.size.x, h), Color(XUiSkin.LINE, 0.7))
+		XUiSkin.draw_scrollbar(self, track, y, h, Color(XUiSkin.LINE, 0.18), Color(XUiSkin.LINE, 0.7))
 	# 说明栏
 	var fy := HEAD_H + rows * ROW_H + 4.0
-	draw_line(Vector2(16, fy), Vector2(size.x - 16, fy), Color(XUiSkin.LINE, 0.3), 1.0)
+	XUiSkin.draw_divider(self, 16.0, size.x - 16.0, fy, false, 1.0, 0.3)
 	var ft := foot_text()
 	var dl := desc_line()
 	var en := index >= 0 and index < entries.size() and bool(entries[index].get("enabled", true))
@@ -255,12 +254,14 @@ func _draw() -> void:
 				XUiSkin.TEXT_2 if en else XUiSkin.DOWN)
 	elif ft != "":
 		draw_multiline_string(body, Vector2(16, fy + 21), ft, HORIZONTAL_ALIGNMENT_LEFT, size.x - 32, 15, 2,
-			XUiSkin.TEXT_2 if en else XUiSkin.DOWN)
+			XUiSkin.text2_c() if en else XUiSkin.down_c())
 
 
 func _draw_row(i: int, body: Font, num: Font) -> void:
 	var e: Dictionary = entries[i]
 	var r := row_local(i)
+	if XUiSkin.polish_on() and i != index and (i % 2) == 1:
+		draw_rect(r.grow_individual(-2.0, -1.0, -2.0, -1.0), Color(0.95, 0.90, 0.82, 0.026))
 	var en := bool(e.get("enabled", true))
 	var a := 1.0 if en else 0.5
 	var cy := r.position.y + r.size.y / 2.0

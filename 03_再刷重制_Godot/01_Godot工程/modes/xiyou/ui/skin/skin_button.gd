@@ -7,12 +7,12 @@ extends RefCounted
 
 static func style(kind := "") -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(XUiSkin.PANEL, 0.92)
-	sb.border_color = Color(XUiSkin.LINE, 0.42)
+	sb.bg_color = Color(XUiSkin.panel_c(), 0.92)
+	sb.border_color = Color(XUiSkin.line_c(), 0.42)
 	if kind == "primary":
 		sb.border_color = Color(XUiSkin.GOLD, 0.7)
 	elif kind == "danger":
-		sb.border_color = Color(XUiSkin.DOWN, 0.7)
+		sb.border_color = Color(XUiSkin.down_c(), 0.7)
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(XUiSkin.ROW_RADIUS)
 	sb.content_margin_left = XUiSkin.PAD

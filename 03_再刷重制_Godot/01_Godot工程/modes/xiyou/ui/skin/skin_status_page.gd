@@ -130,11 +130,11 @@ func _draw_actor() -> void:
 	var w := sz.x - pad * 2
 	# 头像
 	var fc := Vector2(sz.x / 2.0, pad + 60)
-	actor_panel.draw_circle(fc, 62, XUiSkin.ORB_LOW)
+	actor_panel.draw_circle(fc, 62, XUiSkin.orb_low_c())
 	var face := XUiSkin.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0)))
 	if face != null:
 		XSkinPartyStrip.draw_round_texture(actor_panel, face, fc, 58)
-	actor_panel.draw_circle(fc, 60, Color(XUiSkin.LINE, 0.55), false, 1.5, true)
+	actor_panel.draw_circle(fc, 60, Color(XUiSkin.line_c(), 0.55), false, 1.5, true)
 	var y := pad + 130.0
 	var name := a.display_name()
 	var fit := XSkinList.fit_text(head, name, w, XUiSkin.FS_CARD, 18)
@@ -189,21 +189,10 @@ func _draw_actor() -> void:
 		var vw := num.get_string_size(vt, HORIZONTAL_ALIGNMENT_LEFT, -1, 19).x
 		XUiSkin.ds(actor_panel, num, Vector2(pad + w - vw, y + 17), vt, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, b[4])
 		var track := Rect2(pad, y + 26, w, 6)
-		_pill(ci, track, Color(1, 1, 1, 0.12))
 		var mx := float(b[2])
 		var rate := clampf(float(b[1]) / mx, 0.0, 1.0) if mx > 0 else 0.0
-		if rate > 0:
-			_pill(ci, Rect2(track.position, Vector2(track.size.x * rate, track.size.y)), b[3])
+		XUiSkin.draw_gauge(ci, track, rate, b[3])
 		y += 46
-
-
-static func _pill(ci: RID, r: Rect2, c: Color) -> void:
-	if r.size.x <= 0.0:
-		return
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = c
-	sb.set_corner_radius_all(3)
-	sb.draw(ci, r)
 
 
 # ---- 画：右边页 ----
@@ -226,7 +215,7 @@ func _draw_page_frame() -> void:
 		XUiSkin.ds(page_panel, body, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + int(fit[1]) * 0.36), fit[0],
 			HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], XUiSkin.TEXT if i == scene.page else XUiSkin.TEXT_2)
 	var ly := XUiSkin.PAD + TAB_H + 8
-	page_panel.draw_line(Vector2(XUiSkin.PAD_LG, ly), Vector2(sz.x - XUiSkin.PAD_LG, ly), Color(XUiSkin.LINE, 0.14), 1.0)
+	XUiSkin.draw_divider(page_panel, XUiSkin.PAD_LG, sz.x - XUiSkin.PAD_LG, ly, true, 0.85 if XUiSkin.polish_on() else 1.0)
 
 
 ## 旧页的字色换成新皮肤的：系统蓝→次要字，白→正文；其余（元素、抗性档位、品质、警告红）照旧
@@ -306,9 +295,8 @@ func _draw_page_body() -> void:
 	if total > vis:
 		var sw := 8.0 if XUiSkin.TOUCH_V2 else 4.0   # 收口批：滚动条手指找得到
 		var track := Rect2(sz.x - sw, 0, sw, vis * ROW)
-		page_body.draw_rect(track, Color(1, 1, 1, 0.06))
 		var h := maxf(track.size.y * vis / float(total), 16.0)
-		page_body.draw_rect(Rect2(track.position.x, (track.size.y - h) * top / float(maxi(total - vis, 1)), sw, h), Color(XUiSkin.LINE, 0.55))
+		XUiSkin.draw_scrollbar(page_body, track, (track.size.y - h) * top / float(maxi(total - vis, 1)), h)
 
 
 # ---- 点击 ----

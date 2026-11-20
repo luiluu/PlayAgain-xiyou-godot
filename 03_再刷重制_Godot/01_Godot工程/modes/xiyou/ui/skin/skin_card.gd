@@ -239,9 +239,16 @@ func _draw() -> void:
 	if expanded:
 		return   # 展开时由 _sheet 画整张
 	var ci := get_canvas_item()
+	var pol := XUiSkin.polish_on()
 	XUiSkin.shadow_style().draw(ci, Rect2(Vector2.ZERO, size))
 	XUiSkin.panel_style().draw(ci, Rect2(Vector2.ZERO, size))
 	_draw_border(ci, Rect2(Vector2.ZERO, size))
+	if pol and size.x >= 260.0 and size.y >= 240.0:
+		var seal := XSkinArt.part("seven_seal_128x128")
+		if seal != null:
+			var bottom_y := content_bottom()
+			var sr := Rect2(Vector2(size.x - 108.0 - pad * 0.5, maxf(pad, bottom_y - 104.0)).round(), Vector2(108.0, 108.0))
+			draw_texture_rect(seal, sr, false, Color(0.95, 0.84, 0.62, 0.055))
 	var bottom := content_bottom()
 	_overflow = false
 	if fold:
@@ -263,8 +270,8 @@ func _draw() -> void:
 		if bool(b.get("primary", false)) and not bool(b.get("disabled", false)):
 			XUiSkin.primary_button_style(sb, i == button_index)
 		else:
-			sb.bg_color = Color(0, 0, 0, 0)
-			sb.border_color = Color(XUiSkin.LINE, 0.55)
+			sb.bg_color = Color(0.06, 0.05, 0.048, 0.38) if pol else Color(0, 0, 0, 0)
+			sb.border_color = Color(XUiSkin.line_c(), 0.52) if pol else Color(XUiSkin.LINE, 0.55)
 			sb.set_border_width_all(1)
 		sb.draw(ci, r)
 		if i == button_index:
@@ -295,8 +302,9 @@ func _draw_sheet() -> void:
 	var s := _sheet
 	var r := Rect2(Vector2.ZERO, s.size)
 	var ci := s.get_canvas_item()
+	var pol := XUiSkin.polish_on()
 	XUiSkin.panel_style().draw(ci, r)
-	s.draw_rect(r, Color(XUiSkin.PANEL_LOW, 0.55))   # 压在下面的列表上，面板要不透明些
+	s.draw_rect(r, Color(XUiSkin.panel_low_c(), 0.62 if pol else 0.55))   # 压在下面的列表上，面板要不透明些
 	_draw_border(ci, r)
 	var bottom := s.size.y - pad - STRIP_H
 	_top_cut = pad
@@ -308,12 +316,15 @@ func _draw_sheet() -> void:
 	_fade_y = INF
 	_max_scroll = maxf(0.0, end + scroll - bottom)
 	scroll = clampf(scroll, 0.0, _max_scroll)
-	if _max_scroll > 0.0:   # 右边一条细滚动条
+	if _max_scroll > 0.0:   # 右边一条细滚动条（美化态拓宽至 6px 圆角暖金）
 		var track := bottom - pad
 		var th := maxf(24.0, track * track / (track + _max_scroll))
 		var ty := pad + (track - th) * (scroll / _max_scroll)
-		s.draw_rect(Rect2(s.size.x - 6.0, ty, 3.0, th), Color(XUiSkin.LINE, 0.45))
-	s.draw_line(Vector2(pad, bottom + 6.0), Vector2(s.size.x - pad, bottom + 6.0), Color(XUiSkin.LINE, 0.14), 1.0)
+		if pol:
+			XUiSkin.draw_scrollbar(s, Rect2(s.size.x - 10.0, pad, 6.0, track), ty, th)
+		else:
+			s.draw_rect(Rect2(s.size.x - 6.0, ty, 3.0, th), Color(XUiSkin.LINE, 0.45))
+	XUiSkin.draw_divider(s, pad, s.size.x - pad, bottom + 6.0, false, 1.0)
 	_draw_strip(s, Rect2(0, bottom + 6.0, s.size.x, s.size.y - pad * 0.5 - bottom - 6.0), _strip_text(true))
 
 
@@ -351,6 +362,7 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 	var body := XUiSkin.font("body")
 	var head := XUiSkin.font("title")
 	var num := XUiSkin.font("num")
+	var pol := XUiSkin.polish_on()
 	var x := x0
 	if icon != null:
 		if not dry and _vis(y, 48.0) > 0.0:
@@ -378,11 +390,13 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 		if y + nh <= bottom:
 			if not dry and _vis(y, nh) > 0.0:
 				var nsb := StyleBoxFlat.new()
-				nsb.bg_color = Color(XUiSkin.GOLD, 0.14)
+				nsb.bg_color = Color(0.14, 0.105, 0.068, 0.72) if pol else Color(XUiSkin.GOLD, 0.14)
 				nsb.border_color = Color(XUiSkin.GOLD, 0.55)
 				nsb.set_border_width_all(1)
 				nsb.set_corner_radius_all(XUiSkin.ROW_RADIUS)
 				nsb.draw(t.get_canvas_item(), Rect2(x0, y, w, nh))
+				if pol:
+					t.draw_rect(Rect2(x0 + 1.0, y + 4.0, 2.5, maxf(4.0, nh - 8.0)), Color(XUiSkin.GOLD, 0.85))
 				for li in npara.get_line_count():
 					var r := npara.get_line_range(li)
 					XUiSkin.ds(t, body, Vector2(x0 + 10.0, y + 5.0 + float(li) * nlh + XUiSkin.FS_AUX * 0.96), notice.substr(r.x, r.y - r.x), HORIZONTAL_ALIGNMENT_LEFT, w - 20.0, XUiSkin.FS_AUX, XUiSkin.GOLD_LIGHT)
@@ -400,11 +414,15 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 		y += 6
 		var va := _vis(y, SECTION_H)
 		if not dry and va > 0.0:
-			t.draw_line(Vector2(x0, y), Vector2(x0 + w, y), Color(XUiSkin.LINE, 0.14 * va), 1.0)
+			XUiSkin.draw_divider(t, x0, x0 + w, y, false, va)
 		y += 4
 		if str(sec.get("title", "")) != "":
 			if not dry and va > 0.0:
-				XUiSkin.ds(t, body, Vector2(x0, y + XUiSkin.FS_AUX_MAX * 1.1), str(sec.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX_MAX, _fa(XUiSkin.GOLD, va))
+				var sx := x0
+				if pol:
+					t.draw_rect(Rect2(x0, y + XUiSkin.FS_AUX_MAX * 1.1 - 12.0, 2.0, 12.0), _fa(Color(XUiSkin.GOLD, 0.88), va))
+					sx += 7.0
+				XUiSkin.ds(t, body, Vector2(sx, y + XUiSkin.FS_AUX_MAX * 1.1), str(sec.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, w - (sx - x0), XUiSkin.FS_AUX_MAX, _fa(XUiSkin.GOLD, va))
 			y += SECTION_H - 10
 		for row in sec.get("rows", []):
 			var col: Color = XUiSkin.TEXT_3 if bool(row.get("dim", false)) else row.get("color", XUiSkin.TEXT_2)
@@ -486,10 +504,11 @@ func _cells(t: Control, f: Font, cells: Array, y: float, x0: float, w: float, fs
 
 
 ## spans（可选）：[[字, 颜色], …] 拼起来＝text，逐段上色（装备「自带」属性分色，T095）
-## lh：行距（<0＝字号×1.5，同旧）；展开滚动、渐隐按 _vis
+## lh：行距（<0＝字号×1.5，同旧；美化态 100% 字号下略舒展至 1.56，130% 保持 1.5 防溢出）；展开滚动、渐隐按 _vis
 func _paragraph(t: Control, f: Font, text: String, y: float, x0: float, w: float, fs: int, col: Color, bottom: float, spans := [], dry := false, lh := -1.0) -> float:
 	if lh < 0.0:
-		lh = roundf(fs * 1.5)
+		var mult := 1.56 if XUiSkin.polish_on() and XUiSkin.font_mult() <= 1.05 else 1.5
+		lh = roundf(fs * mult)
 	var para := TextParagraph.new()
 	para.width = w
 	para.add_string(text, f, fs)

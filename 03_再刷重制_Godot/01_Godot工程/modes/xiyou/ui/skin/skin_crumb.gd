@@ -41,7 +41,7 @@ static func draw_parts(ci: CanvasItem, pos: Vector2, arr: Array, max_w := -1.0) 
 	for i in shown.size():
 		if i > 0:
 			var sep := " %s " % SEP
-			XUiSkin.ds(ci, f, Vector2(x, pos.y), sep, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_3)
+			XUiSkin.ds(ci, f, Vector2(x, pos.y), sep, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(XUiSkin.GOLD, 0.65) if XUiSkin.polish_on() else XUiSkin.TEXT_3)
 			x += f.get_string_size(sep, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var t := str(shown[i])
 		XUiSkin.ds(ci, f, Vector2(x, pos.y), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD if i == shown.size() - 1 else XUiSkin.TEXT_2)

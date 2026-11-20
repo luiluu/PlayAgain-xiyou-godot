@@ -383,7 +383,11 @@ func _draw_list_panel() -> void:
 	var s := list_panel.size
 	if list_title != "":
 		XUiSkin.ds(list_panel, body, Vector2(XUiSkin.PAD + 8, XUiSkin.PAD + 20), list_title, HORIZONTAL_ALIGNMENT_LEFT, s.x - 48, 20, XUiSkin.GOLD)
+		XUiSkin.draw_title_accent(list_panel, XUiSkin.PAD + 8, XUiSkin.PAD + 25.5, minf(s.x - 48.0, 64.0))
 	var ft := footer_text() if list == null or list.visible else ""
+	var has_foot := ft != "" or (pager != null and pager.visible)
+	if has_foot and XUiSkin.polish_on() and (list == null or list.visible):
+		XUiSkin.draw_divider(list_panel, XUiSkin.PAD + 8, s.x - XUiSkin.PAD - 8, s.y - FOOTER_H + 2.0, false, 0.65)
 	if ft != "" and not (pager != null and pager.visible and footer == ""):   # 自动页码由翻页件画
 		var fw := body.get_string_size(ft, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
 		if pager != null and pager.visible:   # 自定义页脚遇上翻页件：靠左画、不超过翻页件左缘（T049 小A核 P3）

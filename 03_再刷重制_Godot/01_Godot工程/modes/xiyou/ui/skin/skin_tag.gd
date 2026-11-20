@@ -41,12 +41,18 @@ static func height() -> float:
 static func draw(ci: CanvasItem, pos: Vector2, text: String, color := Color(0, 0, 0, 0)) -> float:
 	if text == "":
 		return 0.0
-	var c := color if color.a > 0.0 else color_for(text)
+	var raw_c := color if color.a > 0.0 else color_for(text)
+	var pol := XUiSkin.polish_on()
+	var c := XUiSkin.paint_color(raw_c) if pol else raw_c
 	var fs := XUiSkin.fs(FS)
 	var w := width(text)
 	var h := height()
 	var sb := StyleBoxFlat.new()
-	sb.draw_center = false
+	if pol:
+		sb.draw_center = true
+		sb.bg_color = Color(0.05, 0.04, 0.04, 0.68).lerp(Color(c.r, c.g, c.b, 0.68), 0.14)
+	else:
+		sb.draw_center = false
 	sb.border_color = Color(c, 0.85)
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(int(h / 2.0))
@@ -74,12 +80,20 @@ static func row_width(tags: Array) -> float:
 	return w
 
 
-## 空列表：rect 正中一句
+## 空列表：rect 正中一句（美化态叠加淡七芒暗印与渐隐短线）
 static func draw_empty(ci: CanvasItem, rect: Rect2, text: String) -> void:
 	if text == "":
 		return
 	var f := XUiSkin.font("body")
 	var fs := XUiSkin.fs(EMPTY_FS)
 	var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	XUiSkin.ds(ci, f, Vector2(rect.position.x + (rect.size.x - tw) / 2.0, rect.position.y + rect.size.y / 2.0 + fs * 0.36), text,
+	var cx := rect.position.x + rect.size.x * 0.5
+	var cy := rect.position.y + rect.size.y * 0.5
+	if XUiSkin.polish_on():
+		var seal := XSkinArt.part("seven_seal_128x128")
+		if seal != null and rect.size.x >= 96.0 and rect.size.y >= 96.0:
+			var sr := Rect2(Vector2(cx - 38.0, cy - 42.0).round(), Vector2(76.0, 76.0))
+			ci.draw_texture_rect(seal, sr, false, Color(0.95, 0.84, 0.62, 0.085))
+		XUiSkin.draw_divider(ci, cx - 64.0, cx + 64.0, cy + fs * 0.88, true, 0.65)
+	XUiSkin.ds(ci, f, Vector2(rect.position.x + (rect.size.x - tw) / 2.0, cy + fs * 0.36), text,
 		HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_3)

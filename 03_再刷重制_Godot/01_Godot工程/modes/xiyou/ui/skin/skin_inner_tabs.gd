@@ -84,6 +84,8 @@ func _gui_input(event: InputEvent) -> void:
 func _draw() -> void:
 	var f := XUiSkin.font("body")
 	var fs := XUiSkin.fs(FS)
+	var pol := XUiSkin.polish_on()
+	var ci := get_canvas_item()
 	var x := 0.0
 	var base := size.y / 2.0 + fs * 0.36 - 2.0
 	for i in tabs.size():
@@ -92,7 +94,16 @@ func _draw() -> void:
 		if x + w > size.x + 0.5:
 			break
 		var cur := i == index
+		if pol:
+			var pad_x := 8.0
+			var tr := Rect2(maxf(0.0, x - pad_x), 2.0, w + pad_x * 2.0, size.y - 5.0)
+			var tsb := StyleBoxFlat.new()
+			tsb.bg_color = Color(XUiSkin.GOLD, 0.10) if cur else Color(0.05, 0.042, 0.04, 0.28)
+			tsb.set_corner_radius_all(5)
+			tsb.draw(ci, tr)
 		XUiSkin.ds(self, f, Vector2(x, base), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_HI if cur else XUiSkin.TEXT_2)
 		if cur:
+			if pol:
+				draw_rect(Rect2(x - 2.0, size.y - LINE_W - 2.0, w + 4.0, LINE_W + 2.0), Color(XUiSkin.GOLD, 0.22))
 			draw_rect(Rect2(x, size.y - LINE_W - 1.0, w, LINE_W), XUiSkin.GOLD)
 		x += w + GAP
