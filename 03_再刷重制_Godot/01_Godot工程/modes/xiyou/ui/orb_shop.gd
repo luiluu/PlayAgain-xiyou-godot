@@ -26,6 +26,7 @@ func _ready() -> void:
 	add_child(choice)
 	if XUiSkin.on() and XSkinMenuTreePage.ENABLED:
 		tree = XSkinMenuTreePage.new("宝珠坊")
+		tree.group_key = "workshop"   # 从主菜单「工坊」进：画页签条（T254 3.0，同卡 J；小A核 P2-4）
 		add_child(tree)
 	home()
 

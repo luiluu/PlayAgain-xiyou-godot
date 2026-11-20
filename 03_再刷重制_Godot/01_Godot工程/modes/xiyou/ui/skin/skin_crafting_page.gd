@@ -35,7 +35,7 @@ func _init(s: XCraftingScene) -> void:
 	scene = s
 	name = "SkinCraftingPage"
 	title = "制作"
-	group_key = ""
+	group_key = "workshop"   # 从主菜单「工坊」进：画页签条（T254 3.0，同卡 J；小A核 P2-4）
 	columns = 1
 	row_height = XUiSkin.ROW_H
 	right_w = 352.0
@@ -245,11 +245,15 @@ func recipe_card(r: Dictionary) -> Dictionary:
 	if forge:
 		desc = XGrowthForge.help_text(int(r.id), sc.forge_shown(), false, false)
 	desc = _plain(desc)
+	var picking := sc.mode == "pick"
+	if picking:
+		desc = ""   # 选原件时：选的是哪件列表上已亮着，「品质、词条…保留」锻造后第一行也有；省下高度给「锻造后」（小A核 P2-3）
 	var secs := []
 	var cat := XCrafting.category_id(r)
 	var lv_ok := int(r.level) <= XCrafting.highest_level(s)
 	var cl_ok := XCrafting.has_craft_level(s, r)
-	secs.append({"title": "要求", "lines": [
+	if not (picking and lv_ok and cl_ok):   # 选原件时已满足的「要求」省掉（能进选原件就是都满足了）
+		secs.append({"title": "要求", "lines": [
 		{"left": "角色等级 %d" % int(r.level), "right": "✓" if lv_ok else "✗", "right_color": XUiSkin.UP if lv_ok else XUiSkin.DOWN},
 		{"left": "%s等级 %d" % [XCrafting.CATEGORIES[cat] if cat >= 0 else "", int(r.craftLevel)], "right": "✓" if cl_ok else "✗", "right_color": XUiSkin.UP if cl_ok else XUiSkin.DOWN}]})
 	var mats := []

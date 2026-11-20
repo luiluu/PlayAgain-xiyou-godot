@@ -29,6 +29,8 @@ func _ready() -> void:
 	add_child(choice)
 	if XUiSkin.on() and XSkinMenuTreePage.ENABLED:
 		tree = XSkinMenuTreePage.new("种族祝福")
+		# 从主菜单「角色」进才画页签条；进阶石（rank>0）、地图上的种族向导不是从主菜单进，不画（T254 3.0；小A核 P2-4）
+		tree.group_key = "actor" if get_parent() is XMenu and rank <= 0 else ""
 		tree.left_draw = _draw_left
 		add_child(tree)
 	XRace.migrate(s())
@@ -155,7 +157,7 @@ func defaults() -> void:
 
 func _default_confirm(row: Dictionary) -> void:
 	choose([{"label": "确定开局默认"}, {"label": "返回"}], _default_answer.bind(int(row.race)), close,
-		XRace.effects(int(row.race), 1) + ["新招募角色默认继承该族，可逐人调整"], crumb(["开局默认"]).merged({"confirm": {"title": "开局默认选%s族？" % XRace.race_name(int(row.race))}}))
+		XRace.effects(int(row.race), 1) + ["新招募角色默认继承该族，可逐人调整"], crumb(["开局默认"]).merged({"confirm": {"title": "将开局默认设为%s族？" % XRace.race_name(int(row.race))}}))
 
 
 func _default_answer(answer: Dictionary, r: int) -> void:

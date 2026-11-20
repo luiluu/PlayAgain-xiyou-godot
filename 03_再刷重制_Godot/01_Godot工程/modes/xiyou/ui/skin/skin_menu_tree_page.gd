@@ -63,7 +63,8 @@ func _ready() -> void:
 	list_panel.add_child(crumb_node)
 	list.index_changed.connect(_on_list_index)
 	list.activated.connect(_on_list_click)
-	card_button.connect(func(_i): cancel())
+	card_button.connect(_on_card_button)
+	card.fold = true   # 长说明（大字号）放不下时牌底「Y 看完整说明」展开，不硬裁（小A核 P2-2；本页不占 Y 键）
 	layout.left.draw.connect(_draw_left)
 	gui_input.connect(_on_gui)
 	mouse_filter = Control.MOUSE_FILTER_PASS
@@ -92,7 +93,7 @@ func _place_crumb() -> void:
 
 ## rows：[{label, enabled, …}]；ok(row)、cancel()；lines：说明几行（不折行）；
 ## o：{crumb: [...], result: bool, confirm: {title, danger}, row_view: Callable(row)->Dictionary, card_for: Callable(row)->Dictionary,
-##     list_title: String, hints: Array}
+##     list_title: String, hints: Array, card_button: Callable(index, row)（右牌按钮；不给＝「知道了」那种，按了＝取消）}
 func open(list_rows: Array, ok_cb: Callable, cancel_cb: Callable, lines := [], o := {}) -> void:
 	rows = list_rows
 	info = lines
@@ -191,7 +192,7 @@ func row_item(r: Dictionary) -> Dictionary:
 	if rv is Callable and (rv as Callable).is_valid():
 		it = (rv as Callable).call(r)
 	if it.is_empty():
-		it = split_row(str(r.get("label", "")))
+		it = split_row(str(r.get("label", r.get("text", ""))))   # 天衣铺这类行用 text 的也认（小A核 P3-1）
 	if r.get("enabled", true) == false:
 		it.disabled = true
 	if not it.has("icon"):
@@ -323,6 +324,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		handled = false
 	if handled:
 		XKeyMap.handled(self)
+
+
+## 右牌按钮：页面在 opts.card_button 给了回调就交给它（index, 当前行）；没给才当「知道了」＝取消（小A核 P2-1）
+func _on_card_button(i: int) -> void:
+	var cb = _shown_opts.get("card_button", null)
+	if cb is Callable and (cb as Callable).is_valid():
+		(cb as Callable).call(i, current_row())
+		return
+	cancel()
 
 
 func _on_list_index(i: int) -> void:

@@ -262,6 +262,7 @@ func _orb() -> void:
 	var t := shop.tree
 	check("orb_home", not t.ring.visible and t.crumb == ["宝珠坊"] and t.list_title == "宝珠坊" and t.rows.size() == shop.log[0].rows.size()
 		and t.left_lines == ["未鉴定 13 枚", "宝珠残片 40"] and t.currency_pairs()[0][1] == "40" and t.left_icon > 0, [t.crumb, t.left_lines, t.currency_pairs()])
+	check("orb_tabs_workshop", t.group_key == "workshop" and t.tabs != null and t.card.fold, [t.group_key])   # 小A核 P2-4、P2-2
 	check("orb_home_info_unwrapped", t.info.size() == 4 and t.card.title == "宝珠坊" and t.hint_list[-1] == ["取消", "离开"], [t.info, t.hint_list])
 	await shots("orb_home")
 	# 鉴定菜单 → 鉴定详情：面包屑逐层、行尾数量
@@ -454,7 +455,30 @@ func _race() -> void:
 	await frames()
 	t = menu.tree
 	check("race_defaults", t.crumb == ["种族祝福", "开局默认"] and t.card.sections[0].title == "第1阶加成", t.crumb)
+	check("race_no_tabs_outside_menu", t.group_key == "" and t.tabs == null)   # 不是从主菜单进（测试直接建）：不画页签条
+	# 小A核 P3-1：只有 text 的行也认；P2-1：右牌按钮可交给页面回调，不给才当取消
+	check("tree_row_text", t.row_item({"text": "天衣 ×2"}).text == "天衣" and t.row_item({"text": "天衣 ×2"}).right == "×2")
+	var got := []
+	var keep_rows := t.rows
+	t.open([{"label": "甲"}, {"label": "乙"}], func(_r): pass, func(): got.append("cancel"), ["牌名", "说明"], {"crumb": ["种族祝福", "测"], "card_for": func(_r): return {"title": "X", "buttons": [{"text": "做", "primary": true}]},
+		"card_button": func(i, row): got.append([i, row.label])})
+	t.card.button_pressed.emit(0)
+	check("tree_card_button_callback", got == [[0, "甲"]], got)
+	t.open(keep_rows, func(_r): pass, func(): got.append("cancel"), ["牌名"], {"crumb": ["种族祝福", "测"], "result": true})
+	t.card.button_pressed.emit(0)
+	check("tree_card_button_default_cancel", got.back() == "cancel", got)
 	await shots("race_defaults")
+	for case in [[0, "actor"], [2, ""]]:   # 挂在主菜单下：rank 0 画「角色」页签条，进阶石（rank>0）不画
+		var mm := XMenu.new()
+		add_child(mm)
+		await frames()
+		var rm := XRaceMenu.new()
+		rm.rank = case[0]
+		mm.add_child(rm)
+		await frames()
+		check("race_tabs_rank%d" % case[0], rm.tree.group_key == case[1] and (rm.tree.tabs != null) == (case[1] != ""), rm.tree.group_key)
+		mm.queue_free()
+		await frames()
 	menu.queue_free()
 	rt.free()
 	await frames()
@@ -473,6 +497,7 @@ func _craft() -> void:
 	await frames()
 	var sk := page.skin
 	# 对应表：类别窗 → 环 4 球；类别等级窗 → 环下一条；金币窗 → 右上
+	check("craft_tabs_workshop", sk.group_key == "workshop" and sk.tabs != null)   # 小A核 P2-4
 	check("craft_ring", sk.ring.visible and sk.ring.items.map(func(i): return i.name) == XCrafting.CATEGORIES and sk.focus == "ring", sk.ring.items)
 	var lp := XSkinCraftingPage.level_parts(s, 0)
 	check("craft_level_bar", lp[0] == "%s等级 %d" % [XCrafting.CATEGORIES[0], XCrafting.craft_level(s, 0)]
@@ -615,6 +640,20 @@ func _forge(s: XState) -> void:
 	check("forge_pick", page.mode == "pick" and sk.crumb_node.visible and sk.crumb_node.parts == XSkinCraftingPage.PICK_CRUMB
 		and sk.list.items.size() == page.picks.size() and str(sk.list.items[0].sub) == XGrowthForge.source_row(s, id, page.picks[0]), [page.mode, sk.list.items])
 	await shots("craft_forge_pick")
+	# 小A核 P2-3：选原件时右牌「锻造后」五行在 100%／130% 字号下都不被裁（省掉已满足的「要求」和重复的说明）
+	var fit := []
+	for pct in [100, 130]:
+		XFontScale.set_value("global", pct)
+		page._refresh()
+		await frames()
+		var fsec: Array = sk.card.sections.filter(func(x): return x.title == "锻造后")
+		fit.append([pct, sk.card.natural_height(sk.card.size.x) <= sk.card.size.y + 0.5, fsec.size() == 1 and (fsec[0].rows as Array).size() == 5,
+			not ("要求" in sk.card.sections.map(func(x): return x.title)) and sk.card.desc == ""])
+		if pct == 130:
+			await shots("craft_forge_pick_font130")
+	XFontScale.set_value("global", 100)
+	page._refresh()
+	check("forge_pick_fits", fit.all(func(x): return x[1] and x[2] and x[3]), fit)
 	key(page, KEY_Y)
 	await frames()
 	check("forge_y_source", page.source_shown and sk.card.title.contains(str(page.picks[0].get("name", "")).left(2)) and sk.hint_list[1][1] == "返回升级预览", [sk.card.title])
