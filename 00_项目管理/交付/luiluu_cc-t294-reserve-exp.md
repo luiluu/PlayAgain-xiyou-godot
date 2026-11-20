@@ -34,7 +34,7 @@
 
 1. 如上表。
 2. 右牌文字见下「文字」节；取出一句随 `optExtraExp` 实际值（专项 `wh.exp_note_opt_on／off` 改 System 值核）。
-3. 截图在本车道本机目录（未入仓）：`warehouse_16x9.png`、`warehouse_store_16x9.png`（800×450）、`warehouse_20x9.png`、`warehouse_store_20x9.png`（1000×450）、`warehouse_font130_16x9／20x9.png`（130% 字号）；专项 `screenshot_*`、尺寸断言全过。三张看过：存入页、取出页、130% 都不溢出、不遮按钮。
+3. 截图已入仓：`00_项目管理/归档/交付截图/luiluu_cc-t294-reserve-exp/`（取出页 800×450／1000×450 字号 100%，存入页 800×450／1000×450 字号 130%）；专项 `screenshot_size_*` 断言真尺寸、`screenshot_*` 全过。三张看过：存入页、取出页、130% 都不溢出、不遮按钮。
 4. 开关关：未动旧页；`wh.gate.rollback_old` 仍过。
 
 ## 文字（待小A 审）
