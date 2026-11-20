@@ -1,4 +1,5 @@
 extends Node
+const VPBot := preload("res://tests/virtual_player/virtual_player.gd")
 ## 【cc·T238】快进探针（不进检查.sh）：读虚拟玩家某层的存档，打印队伍（人、等级、装备、生命／物攻／魔攻），
 ## 对指定敌群用无画面自动战斗真打 N 场（同 vp_fastforward.sample），每场写敌人开打血、剩的血、打掉几成、我方倒几人、回合数。
 ## godot --headless --audio-driver Dummy --path 01_Godot工程 -s res://tests/test_main_loop.gd res://tests/virtual_player/vp_ff_probe.tscn -- \
@@ -19,6 +20,8 @@ var grind := 0
 var dungeon := 0
 var map_override := 0
 var hp1 := false                   # T298：开战把敌人的血压到 1（量放水那一场到底怎么输的，同虚拟玩家 --vp-pass-after）
+var skip_phase := false            # T313：同虚拟玩家放水，跳过守层者残血页、解掉免死（VPBot.pass_clamp）
+var hp1_hold := false              # T313：每次有人行动前都把敌人的血压到 1（同虚拟玩家放水 _act_battle 每步都压），并打印收场原因
 
 
 func _ready() -> void:
@@ -41,6 +44,11 @@ func _ready() -> void:
 			map_override = int(a.substr(6))
 		elif a == "--hp1":
 			hp1 = true
+		elif a == "--skip-phase":
+			skip_phase = true
+		elif a == "--hp1-hold":
+			hp1 = true
+			hp1_hold = true
 		elif a == "--no-hang":
 			hang = false
 		elif a.begins_with("--smart="):
@@ -101,13 +109,16 @@ func _run() -> void:
 			for e in logic.enemies:
 				hp0 += e.mhp if "mhp" in e else e.param(0)
 				names.append("%s(%d)" % [e.display_name(), int(e.param(0))])
+			if skip_phase:
+				print("PROBE 记成已跑过的敌群页 %s" % str(VPBot.pass_clamp(logic, true)))
 			_drain(logic, logic.troop_events())
 			if hp1:
 				for e in logic.enemies:
 					e.hp = 1.0
 			if k == 0:
 				for e in logic.enemies:
-					print("PROBE 敌人 %s 防 %d 魔防 %d 回血率 %s 状态 %s" % [e.display_name(), int(e.param(3)), int(e.param(5)), str(e.xparam(7)), str(e.state_ids)])
+					print("PROBE 敌人 %s 防 %d 魔防 %d 回血率 %s 状态 %s 物攻 %d 魔攻 %d 血 %d/%d" % [e.display_name(), int(e.param(3)), int(e.param(5)), str(e.xparam(7)), str(e.state_ids),
+						int(e.param(2)), int(e.param(4)), int(e.hp), int(e.mhp)])
 				var w := []
 				for a in logic.actors:
 					w.append("%s:%s" % [a.display_name(), ",".join(a.skills().map(func(sk): return "%s(%d)" % [str(sk.get("name", "")), int(sk.get("id", 0))]))])
@@ -126,6 +137,8 @@ func _run() -> void:
 					if u == null or logic.is_over():
 						break
 					count += 1
+					if hp1_hold:
+						VPBot.pass_clamp(logic, skip_phase)
 					var cmd := logic.decide(u)
 					var lg := logic.act(u, cmd[0], cmd[1])
 					if r <= trace:
@@ -151,6 +164,12 @@ func _run() -> void:
 			print("PROBE 敌群 %d 第 %d 场：%s 回合 %d 敌血 %d→%d 打掉 %d%% 我方倒 %d/%d 敌人 %s" % [int(troop), k + 1,
 				"赢" if logic.is_won() else ("输" if logic.is_lost() else "僵"), r, int(hp0), int(left), int(100.0 * (1.0 - left / maxf(1.0, hp0))),
 				dead, logic.actors.size(), ",".join(names)])
+			if hp1_hold or trace > 0:
+				var es := []
+				for e in logic.enemies:
+					es.append("%s(敌人号 %d) 血 %d/%d 物攻 %d 魔攻 %d 防 %d 魔防 %d 死 %s 状态 %s" % [e.display_name(), int(e.enemy_id), int(e.hp), int(e.mhp),
+						int(e.param(2)), int(e.param(4)), int(e.param(3)), int(e.param(5)), str(e.is_dead()), str(e.state_ids)])
+				print("PROBE 收场 won %s lost %s game_over %s aborted %s 敌人 %s" % [str(logic.is_won()), str(logic.is_lost()), str(logic.game_over), str(logic.aborted), " / ".join(es)])
 			logic.end_battle(2)
 	get_tree().quit.call_deferred(0)
 
