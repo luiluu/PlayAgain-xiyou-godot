@@ -10,6 +10,10 @@ extends Node
 ## 三、守层者变身（XGuardianRework.TRANSFORM_ANCHOR）：30 层玉皇大帝→入魔 538、31 层女娲／32 层伏羲→天道·魔神 929、33 层鸿蒙老祖→天道·混沌至高 930，
 ##     变身后八项能力值＝变身前、出伤倍率（output_scale）仍是本层的；开关关掉＝改前（31 层魔神物攻是女娲 2.36 倍、出伤倍率掉回 1）。
 ##     西游档变身照原数据，开关开关一样。
+## 四、【T322】守层者变身后继承守层者身份（XGuardianRework.TRANSFORM_IDENTITY）：30～33 层带满 3 层成长强化变身，变身前后八项能力值不跳；
+##     growth_on、元素牌组（source guardian、本层）、is_boss_enemy、一刀切抗性折算都照本层守层者；楼层小怪（只记 META_FLOOR）变身不记身份；
+##     开关关＝T317（成长 +25%/层 → 能力值跳 +28.7%、929／930 走 dungeon_boss 牌组、538 空牌组且不算首领、抗性不折）；西游档不记。
+##     破阵分类（XDamage.item_mode skills_only）：道具 392 不借同号技能的 magical，正式结算（不传）照原版。
 
 var results: Array = []
 const PHYS := 12
@@ -46,6 +50,11 @@ func _run() -> void:
 	_transform()
 	_transform_off()
 	_transform_xiyou()
+	_identity()
+	_identity_off()
+	_identity_minion()
+	_identity_xiyou()
+	_item_mode_items()
 	XTianqiElements.POZHEN_BY_TYPE = was
 	XTianqiElements.POZHEN_OFF = was_off
 	XGuardianRework.TRANSFORM_ANCHOR = was_t
@@ -227,3 +236,101 @@ func _transform_xiyou() -> void:
 	XGuardianRework.TRANSFORM_ANCHOR = true
 	XRiftAlien.ALIGN_LOBBY = align
 	_check("tf_xy.same", on.after == off.after and float(on.after[2]) > float(on.before[2]), [on.after, off.after])
+
+
+# ---- T322：变身后继承守层者身份 ----
+const TF_PAIRS := [[466, 538, 30], [467, 929, 31], [468, 929, 32], [469, 930, 33]]
+
+
+## 先给守层者八项各上满 3 层强化（成长招就是这么加的），再变身；返回变身前后能力值与身份判定
+func _tf_grown(troop: int, to: int, tianqi := true) -> Dictionary:
+	var logic := _logic(troop, tianqi)
+	var e: XEnemy = logic.enemies[0]
+	for i in range(8):
+		for k in range(3):
+			logic.sequence_buff(e, i, true, true, 5)
+	e.param_mark_dirty()
+	e.param_refresh()
+	var before := _params(e)
+	var buffs_before: Array = e.buffs.duplicate()
+	var res_before := XGuardianRework.resistance(e, 0.5)
+	logic.enemy_transform(0, to)
+	e.param_mark_dirty()
+	e.param_refresh()
+	var prof := XTianqiElements.enemy_profile(e, logic)
+	return {"before": before, "after": _params(e), "buffs": buffs_before, "buffs_after": e.buffs.duplicate(), "id": e.enemy_id,
+		"tf_floor": XGuardianRework.transform_floor(e), "gfloor": XGuardianRework.guardian_floor(e), "growth": XGuardianRework.growth_on(e),
+		"source": str(prof.get("source", "")), "pfloor": int(prof.get("floor", 0)), "weak": prof.get("weak", []),
+		"boss": XTianqiElements.is_boss_enemy(e), "res_before": res_before, "res_after": XGuardianRework.resistance(e, 0.5)}
+
+
+func _same8(a: Array, b: Array) -> bool:
+	for i in range(8):
+		if absf(float(a[i]) - float(b[i])) > maxf(1.0, absf(float(b[i])) * 1e-9):
+			return false
+	return true
+
+
+func _identity() -> void:
+	XGuardianRework.TRANSFORM_ANCHOR = true
+	XGuardianRework.TRANSFORM_IDENTITY = true
+	_check("tfid.default_on", XGuardianRework.TRANSFORM_IDENTITY)
+	for row in TF_PAIRS:
+		var f := int(row[2])
+		var r := _tf_grown(int(row[0]), int(row[1]))
+		var tag := "tfid.%d" % f
+		print("T322 变身（3 层强化）%d→%d 前 %s 后 %s 强化 %s 牌组 %s/%d 首领 %s 抗性 %s→%s" % [row[0], row[1], r.before, r.after, r.buffs,
+			r.source, r.pfloor, r.boss, r.res_before, r.res_after])
+		_check(tag + ".buffs3", r.buffs.slice(0, 8).all(func(v): return int(v) == 3) and r.buffs_after == r.buffs, [r.buffs, r.buffs_after])
+		_check(tag + ".params_same", _same8(r.after, r.before), [r.before, r.after])
+		_check(tag + ".floor", r.tf_floor == f and r.gfloor == f, [r.tf_floor, r.gfloor])
+		_check(tag + ".growth", r.growth)
+		_check(tag + ".deck", r.source == "guardian" and r.pfloor == f and not (r.weak as Array).is_empty(), [r.source, r.pfloor, r.weak])
+		_check(tag + ".boss", r.boss)
+		_check(tag + ".resist", r.res_after == r.res_before and r.res_before > 0.5, [r.res_before, r.res_after])
+
+
+## 开关关＝T317：成长按原版 +25%/层，能力值跳 ×1.75/1.36；929／930 走 dungeon_boss 牌组，538 空牌组且不算首领，抗性不折
+func _identity_off() -> void:
+	XGuardianRework.TRANSFORM_IDENTITY = false
+	for row in TF_PAIRS:
+		var f := int(row[2])
+		var r := _tf_grown(int(row[0]), int(row[1]))
+		var tag := "tfid_off.%d" % f
+		print("T322 回退 %d→%d 前 %s 后 %s 牌组 %s 首领 %s 抗性 %s" % [row[0], row[1], r.before, r.after, r.source, r.boss, r.res_after])
+		var k := float(r.after[2]) / float(r.before[2])
+		_check(tag + ".atk_jump", absf(k - 1.75 / 1.36) < 0.01, k)
+		_check(tag + ".growth_lost", not r.growth and r.tf_floor == 0)
+		_check(tag + ".deck_lost", r.source != "guardian", r.source)
+		_check(tag + ".resist_lost", r.res_after == 0.5, r.res_after)
+		if int(row[1]) == 538:
+			_check(tag + ".boss_lost_538", not r.boss)
+	XGuardianRework.TRANSFORM_IDENTITY = true
+
+
+## 楼层小怪（只记 META_FLOOR、不是守层者）变身：不记守层者身份，成长、牌组、首领、抗性照新敌人号
+func _identity_minion() -> void:
+	var logic := _logic(1)
+	var e: XEnemy = logic.enemies[0]
+	e.set_meta(XGuardianRework.META_FLOOR, 31)
+	_check("tfid_minion.not_guardian", XGuardianRework.guardian_floor(e) == 0)
+	logic.enemy_transform(0, 538)
+	_check("tfid_minion.no_identity", XGuardianRework.transform_floor(e) == 0 and not e.has_meta(XGuardianRework.META_TRANSFORM)
+		and not XGuardianRework.growth_on(e) and XGuardianRework.guardian_floor(e) == 0, e.get_meta_list())
+	_check("tfid_minion.resist", XGuardianRework.resistance(e, 0.5) == 0.5)
+
+
+func _identity_xiyou() -> void:
+	var align := XRiftAlien.ALIGN_LOBBY
+	XRiftAlien.ALIGN_LOBBY = false
+	var r := _tf_grown(467, 929, false)
+	XRiftAlien.ALIGN_LOBBY = align
+	_check("tfid_xy.none", r.tf_floor == 0 and not r.growth and r.source == "", [r.tf_floor, r.growth, r.source])
+
+
+## P3-2：破阵分类先判是不是技能；道具 392（与带 mode=magical 的技能同号、命中类型非魔法）分类按命中类型，正式结算照原版借同号
+func _item_mode_items() -> void:
+	var it: Dictionary = XDB.rec("Items", 392)
+	_check("mode.item_formal_as_original", XDamage.item_mode(it) == "magical", XDamage.item_mode(it))
+	_check("mode.item_class_by_hit", XDamage.item_mode(it, true) == "physical", XDamage.item_mode(it, true))
+	_check("mode.skill_class_same", XDamage.item_mode(XDB.rec("Skills", MAG), true) == "magical" and XDamage.item_mode(XDB.rec("Skills", MIXED), true) == "mixed")

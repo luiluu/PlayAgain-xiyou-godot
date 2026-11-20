@@ -39,7 +39,11 @@ static func is_magical(item: Dictionary) -> bool:
 
 ## 伤害类型（伤害计算的「物理／魔法／混合」）：CodexDamageElements 技能表写了 mode 认它，没写按命中类型（魔法攻击＝magical，其余 physical）。
 ## 正式结算 _calculate 起算的 mode 就是它（模块钩子之后还可能被改写）；破阵 1047／1048 天启篇按它判物理类（XTianqiElements.pozhen_class）
-static func item_mode(item: Dictionary) -> String:
+## skills_only（T322，T317 核查 P3-2）：先判是不是技能（有 stypeId），道具不查技能表（威德舍利 392、冰红茶 2892／2893 与带 mode 的技能同号）。
+## 正式结算不传：原版 installDamageElementRuntime defaultFrame 取 spec 也不判是不是技能，照原版。
+static func item_mode(item: Dictionary, skills_only := false) -> String:
+	if skills_only and not item.has("stypeId"):
+		return "magical" if is_magical(item) else "physical"
 	var spec: Dictionary = elements_data().skills.get(str(int(item.get("id", 0))), {})
 	return str(spec.get("mode", "magical" if is_magical(item) else "physical"))
 
