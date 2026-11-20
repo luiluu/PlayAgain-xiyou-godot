@@ -11,6 +11,7 @@
 - `XAlienBattle.push_formula／pop_formula`：公式帧只改得了栈顶那一帧的行动者、目标的 param 读法，而且只对带逆骨（物攻／物防）、空壳（生命上限）、饕餮（MP 上限）词条的角色才改。现在每帧记一个「改得了」标记（行动者或目标带这三种之一；影子克隆按 actor_id 认本体，本体冻结的词条、克隆身上装备的标记都看），进出时只要进出前后的栈顶帧都改不了，就不作废；任一改得了照旧当场作废。缄默不看公式帧，不算。
 - `XHubris.push_formula／pop_formula`（狂妄穿透帧）同理：进出前后都不打折（没穿狂妄或不是物理公式）就不作废。
 - 开关 `XAlienBattle.FRAME_TOUCH_LAZY`（默认开），两处共用；关＝每次进出都作废（同原来）。
+- `XEquipment.release_dual_exclusive`（旧档两把专武只留一把）：卸第二把时原来也没换代，外层开着只读窗口时（旧档双专武走 change、装备页窗口里预览第二把专武）后面的被动、能力值读旧缓存；卸下当场补 `read_touch`（Neon 核查 P2-1）。
 - `XEquipment.change`：先换装备、后 `release_unequippable` 读特性，中间原来没换代；在只读窗口里调会读到旧特性表（T293 核查带来，正式流程现在没有在窗口里调的）。赋值后补一句 `XActor.read_touch()`，窗口外调用时只多一次换代计数，结果不变。
 - 结果不变：同种子整场（西游档无词条／逆骨／空壳／饕餮、天启篇 4v5）开关开／关逐位一致；`XIYOU_READ_VERIFY=1`（窗口命中都重算比对）无不一致。
 - 玩家可见：无（只提速）。
@@ -38,7 +39,7 @@
 
 ## 验证（验收 1、2、3、5、6）
 
-- 新专项 `xiyou_alien_formula_window` 61/61（`XIYOU_READ_VERIFY=1`，本机约 30 秒）：
+- 新专项 `xiyou_alien_formula_window` 初交 61/61、返修后 72/72（`XIYOU_READ_VERIFY=1`，本机约 30 秒）：
   1. 作废时机：无词条时 calculate、eval_formula、敌打我进出都不换代，窗口里先读的物攻记忆留着且等于即时重算；逆骨／空壳／饕餮各一档：行动者带、目标带都换代，旁人（8 号打敌人）不换代；嵌套（外层改得了、里层改不了）进、出里层都换代；开关关掉每次换代。
   2. 读数：逆骨目标在物理帧里物防读 0、弹出读回；逆骨行动者用逆骨技能时物攻读物防，里层换成别人打敌人时读回原物攻、弹出里层又读物防，每步都等于即时重算。
   3. 影子克隆按本体认（含克隆身上卸掉异化武器）；缄默不算；狂妄：穿着打物理换代（单进帧也换代）、没穿／魔法不换代、开关关掉换代，穿透帧里目标（角色，进窗口记忆）物防打折且等于即时重算。
@@ -55,11 +56,18 @@
 - `工具回归.py` 全部通过；`语法检查.py` 1102 个 .gd 0 问题；`回退开关覆盖.py` 没有本单的新缺口（专项里有字面量 `XAlienBattle.FRAME_TOUCH_LAZY = false`）。
 - 合并请带 `--oracle`（改了公式帧、装备更换的作废时机）。
 
+## 核查返修（小A Neon 甲档，P1×0）
+
+- P2-1 已改：`release_dual_exclusive` 每卸一把专武当场 `read_touch`；新用例 `dex_*`：刘备（13）旧档 2005＋2006 在外层窗口里 `release_unequippable`，卸下第二把后特性表、物攻等于即时重算且与卸前不同，READ_VERIFY 无不一致。反向验证（去掉这句）咬住。
+- P2-2 已补跑：本机 `XIYOU_READ_VERIFY=1` 23/23 过（并行 2、走共用槽，约 19 分钟）：xiyou_smart_ai_e～p（12 段）、xiyou_yunshang_wraps、xiyou_garou_battle、xiyou_mira_battle、xiyou_raven_battle、xiyou_jingliu、xiyou_race_battle、xiyou_panels、xiyou_tianqi_plague、xiyou_tianqi_death、xiyou_tianqi_rewards、xiyou_tianqi_qiyin_dragon_run（xiyou_smart_ai_profile 小A 已补跑过）。连同前一批 41 个，带 READ_VERIFY 的共 64 个。
+- P3-1 已补：`chg_rel_*`：刘备主手双持专武 2005、副手普通武器，主手换成不带双持的普通武器后副手那把被卸进背包；窗口里做与窗口外做，装备、背包、特性表、物攻逐项相同，READ_VERIFY 无不一致。整场对照加「穿狂妄」一场：角色 1 穿 7902、每回合放非纯公式的物理技 10140（走 run_item，压狂妄穿透帧），开关开／关 5 回合逐位一致；反向验证（狂妄 push 不作废）咬住。
+- 新专项现为 72/72（`XIYOU_READ_VERIFY=1`）。
+
 ## 改了哪些核心文件（请核查方重点看）
 
 - `modes/xiyou/core/alien_battle.gd`：`push_formula`／`pop_formula` 的作废条件、新 `_frame_reads`／`_top_reads`、开关 `FRAME_TOUCH_LAZY`；帧多了一个 `reads` 字段（别处只读 item／subject／target／formula／physical，不受影响）。
 - `modes/xiyou/core/hubris.gd`：`push_formula`／`pop_formula` 的作废条件。
-- `modes/xiyou/core/equipment.gd`：`change` 赋值后补 `read_touch`。
+- `modes/xiyou/core/equipment.gd`：`change` 赋值后、`release_dual_exclusive` 每卸一把后补 `read_touch`。
 - `modes/xiyou/core/battler.gd`：只改 `ATTACK_ID_MEMO` 上方注释里的换代来源。
 - 前提（请核）：公式帧只经 `XAlienBattle.param`（逆骨 param 2／3、`hollow_param` param 0、`glutton_param` param 1）和 `XHubris.formula_param`（param 3）影响读数；我在全工程搜了 `_formula_frames`、`_frame_target` 的读处，只有这几处。以后谁加了读公式帧的包装，要把条件补进 `_frame_reads`，否则窗口里会读到旧值（`XIYOU_READ_VERIFY=1` 能抓到）。
 
@@ -90,4 +98,6 @@
 - 25fbb220b WIP: T296 公式帧只在改得了读法时作废只读窗口（FRAME_TOUCH_LAZY）＋XEquipment.change 换装当场换代；专项 xiyou_alien_formula_window
 - d4faae212 WIP: T296 dmg_hook_lazy 补 P3-1（词条跳过支、封技支、五条悟 10634、命运骰整场）＋FRAME_TOUCH_LAZY 性能行
 - 3ef5e35ac WIP: T296 新专项 uid
-- （本提交）T296：交付单
+- 9ecd4011c T296：交付单
+- 81ac2b753 T296 返修（Neon P2-1、P3-1）：release_dual_exclusive 卸专武当场换代；专项补窗口内旧档双专武、换装连卸、穿狂妄整场
+- （本提交）T296：交付单补返修与 READ_VERIFY 补跑
