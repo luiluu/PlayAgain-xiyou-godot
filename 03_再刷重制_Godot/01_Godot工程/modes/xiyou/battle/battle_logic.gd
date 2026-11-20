@@ -844,6 +844,8 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null, confus
 				out.append(_random_target(alive(friends)))
 		XYunshang.set_primary(a, out)
 		return out
+	if not confusable:
+		XTianqiEnemyAI.note_decision(self, null, [])  # 天启篇六维（T277 r1 P3-1）：强制行动等不是 decide 来的这一下，不套六维点名
 	var tusu_list = XTusu.targets(self, a, skill, chosen)  # 屠苏 makeTargets 包装：自己的和鸣、锁定给持武者，金汤滤掉形态中的本体
 	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, (XConfusion.targets(self, a, skill) if confusable and XConfusion.confused(a) else _targets_for(a, skill, chosen)) if tusu_list == null else tusu_list, chosen))  # 云裳云丝展幅、千军入袖收袖 makeTargets 包装在异化之内
 	list = XBinding.filter_targets(self, a, skill, list)  # 绑定 makeTargets 包装：敌方对敌技能滤掉形态中的本体
@@ -3910,6 +3912,7 @@ func _phase(name: String) -> void:
 ## Custom Victory／Escape／Defeat Effect 只对我方（含后备），在原 endBattle 之前；胜利时 processVictory 已先 removeBattleStates。
 func end_battle(result := -1) -> void:
 	tianqi_restore()  # T086-a：收口开头再还原一次（打输、逃跑、事件中止、回标题都经过这里；结算前已还原过的是空的）
+	XTianqiEnemyAI.note_decision(self, null, [])  # 天启篇六维（T277 r1 P3-1）：不在静态变量里留上一场的敌人
 	XActor.batch_reset()
 	XTianqiBrand.end(self)  # 天启篇烙印：这一场结束，一条命、虚不受补不再拦
 	var weak_award := XWeakChallenge.before_end(self, result)  # 弱者挑战 endBattle 包装（原 endBattle 之前判定，之后发）

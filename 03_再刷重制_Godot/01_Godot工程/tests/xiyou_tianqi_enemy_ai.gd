@@ -324,6 +324,10 @@ func _weights() -> void:
 	_set_enemy(e, _six("C", "C", "C", "A"))
 	var wa := _w(lg, e, [AOE, DMG_N])
 	_check("w4_aoe_waste_x50", wa == [150, 300], wa)
+	var rnd: Dictionary = XDB.rec("Skills", AOE).duplicate(true)
+	rnd.scope = 4  # 随机 2 下：单敌时全段集中，不算群攻浪费（r1 P2-1）
+	var wr := _w(lg, e, [rnd, DMG_N])
+	_check("w4_random_not_waste", XBattleEval.for_random(rnd) and wr == [300, 300], wr)
 	for i in range(1, foes.size()):
 		foes[i].remove_state(1)
 		foes[i].recover_all()
@@ -361,8 +365,24 @@ func _weights() -> void:
 		_set_enemy(e, _six("C", "C", "C", "C", "C", "E"))
 		var lone := _w(lg, e, [HEAL])
 		mate.recover_all()
-		_check("w_support", full == [300] and hurt == [720] and lone == [120], [full, hurt, lone])
-	# 生存：防御招。E 残血 55% 以下 ×150；C 50% 不怂、30% ×130；A 满血也 ×130
+		mate.recover_all()
+		var lone_full := _w(lg, e, [HEAL])
+		_check("w_support", full == [30] and hurt == [720] and lone == [120] and lone_full == [30], [full, hurt, lone, lone_full])
+		# 召唤：有空位（队里有倒下的）才按辅助乘，满员 ×10（r1 P1-2）
+		var summon := {"id": 990002, "name": "召唤援军", "scope": 11, "damage": {"type": 0, "elementId": 0, "formula": "0"}, "effects": [], "mpCost": 0, "tpCost": 0, "note": "", "meta": {}}
+		_set_enemy(e, _six("C", "C", "C", "C", "C", "E"))
+		var s_full_e := _w(lg, e, [summon])
+		mate.hp = 0.0
+		mate.add_state(1)
+		var s_slot_e := _w(lg, e, [summon])
+		_set_enemy(e, _six("C", "C", "C", "C", "C", "SSS"))
+		var s_slot_s := _w(lg, e, [summon])
+		mate.remove_state(1)
+		mate.recover_all()
+		var s_full_s := _w(lg, e, [summon])
+		_check("w_summon", XTianqiEnemyAI.is_summon(summon) and s_full_e == [30] and s_slot_e == [90] and s_slot_s == [780] and s_full_s == [30],
+			[s_full_e, s_slot_e, s_slot_s, s_full_s])
+	# 生存（r1 P1-1）：防御／自保只在低于自己的血线才乘——E 55% 以下 ×150、C 35% 以下 ×130、A 20%、SS 15%；满血不乘
 	var g := XBattleLogic.GUARD_SKILL
 	e.hp = e.mhp * 0.5
 	_set_enemy(e, _six("C", "E"))
@@ -374,7 +394,37 @@ func _weights() -> void:
 	e.recover_all()
 	_set_enemy(e, _six("C", "A"))
 	var ga := _w(lg, e, [g])
-	_check("w_guard", ge == [450] and gc == [300] and gc3 == [390] and ga == [390], [ge, gc, gc3, ga])
+	e.hp = e.mhp * 0.25
+	var ga25 := _w(lg, e, [g])
+	e.hp = e.mhp * 0.15
+	var ga15 := _w(lg, e, [g])
+	_set_enemy(e, _six("C", "SS"))
+	e.hp = e.mhp * 0.18
+	var gs18 := _w(lg, e, [g])
+	e.hp = e.mhp * 0.1
+	var gs10 := _w(lg, e, [g])
+	e.recover_all()
+	_check("w_guard", ge == [450] and gc == [300] and gc3 == [390] and ga == [300] and ga25 == [300] and ga15 == [390] and gs18 == [300] and gs10 == [450],
+		[ge, gc, gc3, ga, ga25, ga15, gs18, gs10])
+	# 嘲讽／叠防：生存 A 起满血也乘，C 满血不乘
+	var taunt := {"id": 990003, "name": "测试挑衅", "scope": 11, "damage": {"type": 0, "elementId": 0, "formula": "0"},
+		"effects": [{"code": 21, "dataId": TAUNT_ST, "value1": 1.0, "value2": 0.0}], "mpCost": 0, "tpCost": 0, "note": "", "meta": {}}
+	_set_enemy(e, _six("C", "A"))
+	var ta := _w(lg, e, [taunt])
+	_set_enemy(e, _six("C", "SS"))
+	var tss := _w(lg, e, [taunt])
+	_set_enemy(e, _six("C", "C"))
+	var tc := _w(lg, e, [taunt])
+	_check("w_stall", XTianqiEnemyAI.is_stall(taunt) and ta == [390] and tss == [450] and tc == [300], [ta, tss, tc])
+	# 满血不空奶自己：自奶满血 ×10、低血按生存乘
+	var self_heal := {"id": 990004, "name": "测试自愈", "scope": 11, "damage": {"type": 3, "elementId": 0, "formula": "100"}, "effects": [],
+		"mpCost": 0, "tpCost": 0, "note": "", "meta": {}}
+	_set_enemy(e, _six("C", "A"))
+	var sh_full := _w(lg, e, [self_heal])
+	e.hp = e.mhp * 0.1
+	var sh_low := _w(lg, e, [self_heal])
+	e.recover_all()
+	_check("w_self_heal", sh_full == [30] and sh_low == [390], [sh_full, sh_low])
 	# 速度：上一招复读。E ×110、SS ×55；池里只有一招不算；SS 抢节奏（控制）×145
 	e.set_meta(XTianqiEnemyAI.META_LAST, DMG_N)
 	_set_enemy(e, _six("C", "C", "E"))
@@ -436,6 +486,11 @@ func _targets() -> void:
 	var tg := foes.map(func(b): return float(b.tgr))
 	_check("t2_taunt_kept", TAUNT_ST > 0 and tg[0] >= 2.0 and XTianqiEnemyAI.target_weights(lg, e, foes, tg, atk) == tg, [TAUNT_ST, tg])
 	foes[0].remove_state(TAUNT_ST)
+	# 天生／装备的高受击率（没挂嘲讽状态）不当嘲讽：照样盯最低血（r1 P2-2）
+	var hi := base.duplicate()
+	hi[0] = 10.0
+	var w2h := XTianqiEnemyAI.target_weights(lg, e, foes, hi, atk)
+	_check("t2_high_tgr_not_taunt", not XTianqiEnemyAI.taunting(foes[0]) and w2h != hi and w2h[2] > hi[2], [w2h, hi])
 	foes[2].recover_all()
 	# 3 档：免疫目标 ×10
 	_set_enemy(e, _six())
@@ -484,7 +539,7 @@ func _targets() -> void:
 		var hit := 0
 		for i in 100:
 			var d := lg.decide(e)
-			var tl := lg.targets_for(e, d[0], d[1])
+			var tl := lg.targets_for(e, d[0], d[1], true)
 			if not tl.is_empty() and tl[0] == foes[3]:
 				hit += 1
 		foes[3].recover_all()
@@ -494,7 +549,7 @@ func _targets() -> void:
 		var hit_off := 0
 		for i in 100:
 			var d := lg.decide(e)
-			var tl := lg.targets_for(e, d[0], d[1])
+			var tl := lg.targets_for(e, d[0], d[1], true)
 			if not tl.is_empty() and tl[0] == foes[3]:
 				hit_off += 1
 		foes[3].recover_all()
@@ -518,7 +573,8 @@ func _panic() -> void:
 		var want = [XBattleLogic.GUARD_SKILL, int(e.attack_skill().id), -1][k]
 		_check("p_kind_%d" % k, p.size() == 2 and (int(p[0].id) if p[0] is Dictionary else -1) == want and p[1] == null, p)
 		var logs := XTianqiEnemyAI.take_logs(e)
-		_check("p_text_%d" % k, logs.size() == 1 and str(logs[0].text) == XTianqiEnemyAI.panic_text(e) and XTianqiEnemyAI.take_logs(e).is_empty(), logs)
+		_check("p_text_%d" % k, logs.size() == 1 and str(logs[0].text) == XTianqiEnemyAI.panic_text(e, k) and str(logs[0].text).begins_with(e.display_name() + "阵脚大乱，")
+			and bool(logs[0].get("tianqi_fit", false)) and XTianqiEnemyAI.take_logs(e).is_empty(), logs)
 	cs.ints["six_dim_panic"] = 20  # E＝20%：掷到 20 不慌
 	_check("p_E_20pct_edge", XTianqiEnemyAI.panic(lg, e).is_empty())
 	# D：<20% 才掷、10%
@@ -704,7 +760,7 @@ func _no_numbers() -> void:
 		var row := []
 		for x in lg.actors:
 			var d := lg.auto_battle_action(x)
-			row.append([int(d[0].id) if d[0] is Dictionary else -1, lg.actors.find(d[1]) if d[1] != null else lg.enemies.find(d[1])])
+			row.append([int(d[0].id) if d[0] is Dictionary else -1, lg.actors.find(d[1]) if d[1] is XActor else lg.enemies.find(d[1])])
 		picks.append(row)
 	XTianqiEnemyAI.ENABLED = true
 	_check("auto_battle_same", picks[0] == picks[1], picks)

@@ -23,6 +23,8 @@ static var ENABLED := true
 const IMMUNE_PCT := 10
 const WEAK_PCT := 130
 const WASTED_CONTROL_PCT := 10
+## 不需要的支援／召唤／自奶（满血空奶、满员空召）×10%（r1 P1-2：不管辅助几档都压低，不再留 100% 原权）
+const IDLE_PCT := 10
 ## 战商 4 档起（狡黠）：能斩杀 ×140%；只剩 1 个敌人还交群体伤害招（有单体伤害招可选时）×50%
 const KILL_PCT := 140
 const AOE_WASTE_PCT := 50
@@ -153,16 +155,37 @@ static func _taunt_state(id: int) -> bool:
 	return false
 
 
-## 自保／嘲讽／拖回合：防御、只对自己的回复增益、给自己加嘲讽
-static func is_guard(rec: Dictionary) -> bool:
-	if int(rec.get("id", 0)) == XBattleLogic.GUARD_SKILL and not XBattleEval.is_item(rec):
-		return true
-	if XBattleEval.for_user(rec):
-		return true
+## 嘲讽／叠防／拖回合（生存 A 起平时就乘，低于血线也乘）：给己方挂嘲讽，或给自己加防御／魔防增益
+static func is_stall(rec: Dictionary) -> bool:
+	if XBattleEval.for_opponent(rec):
+		return false
 	for e in rec.get("effects", []):
-		if int(e.code) == 21 and int(e.dataId) > 1 and _taunt_state(int(e.dataId)) and not XBattleEval.for_opponent(rec):
+		var c := int(e.code)
+		if (c == 21 and int(e.dataId) > 1 and _taunt_state(int(e.dataId))) or (c == 31 and int(e.dataId) in [3, 5] and XBattleEval.for_user(rec)):
 			return true
 	return false
+
+
+## 低血自保（只在低于血线时乘，r1 P1-1）：防御，以及只对自己的其它招（自奶、自增益）；嘲讽／叠防另算 is_stall
+static func is_self_save(rec: Dictionary) -> bool:
+	if int(rec.get("id", 0)) == XBattleLogic.GUARD_SKILL and not XBattleEval.is_item(rec):
+		return true
+	return XBattleEval.for_user(rec) and not is_stall(rec)
+
+
+## 挂着嘲讽状态（受击率特性 > 1 的状态）
+static func taunting(b) -> bool:
+	return b.state_ids.any(func(id): return _taunt_state(int(id)))
+
+
+## 自保／嘲讽总称（分类测试用）
+static func is_guard(rec: Dictionary) -> bool:
+	return is_self_save(rec) or is_stall(rec)
+
+
+## 只对自己回血（满血时空奶）
+static func _self_heal(rec: Dictionary) -> bool:
+	return XBattleEval.for_user(rec) and (_dmg_type(rec) == 3 or rec.get("effects", []).any(func(x): return int(x.code) == 11))
 
 
 ## 抢节奏：控制、增益、减速（降敏捷）
@@ -241,7 +264,7 @@ static func action_weights(logic, e: XEnemy, list: Array, zero: int, t: int, giv
 	var distinct := {}
 	for rec in recs:
 		distinct[int(rec.get("id", 0))] = true
-	var has_single_damage := recs.any(func(rec): return is_damage(rec) and not XBattleEval.for_all(rec) and not XBattleEval.for_random(rec))
+	var has_single_damage := recs.any(func(rec): return is_damage(rec) and not XBattleEval.for_all(rec))
 	var low := e.hp_rate() * 100.0 < float(w.guard_hp_pct)
 	var tough := XTianqiSixDim.score(XTianqiSixDim.letter(six, "survive")) >= 5  # A 起平时就爱嘲讽／套盾
 	var speed := XTianqiSixDim.letter(six, "speed")
@@ -258,12 +281,17 @@ static func action_weights(logic, e: XEnemy, list: Array, zero: int, t: int, giv
 		var v := (int(list[i].rating) - zero) * 100
 		if is_damage(rec):
 			v = _pct(v, int(w.aggro_pct))
-		if is_support(rec) and _support_needed(logic, e, rec):
-			v = _pct(v, int(w.support_pct))
-		if is_summon(rec) and logic.enemies.any(func(m): return m.is_dead()):
-			v = _pct(v, int(w.summon_pct))
-		if is_guard(rec) and (low or tough):
+		if is_support(rec):
+			v = _pct(v, int(w.support_pct) if _support_needed(logic, e, rec) else IDLE_PCT)
+		if is_summon(rec):
+			v = _pct(v, int(w.summon_pct) if logic.enemies.any(func(m): return m.is_dead()) else IDLE_PCT)
+		if is_stall(rec) and (low or tough):
 			v = _pct(v, int(w.guard_score_pct))
+		elif is_self_save(rec):
+			if _self_heal(rec) and e.hp >= e.mhp:
+				v = _pct(v, IDLE_PCT)  # 满血不空奶自己
+			elif low:
+				v = _pct(v, int(w.guard_score_pct))  # 低于自己的血线才缩（A／S 20%、SS／SSS 15%）
 		if int(rec.get("id", 0)) == last and distinct.size() > 1:
 			v = _pct(v, int(w.repeat_pct))
 		if TEMPO_PCT.has(speed) and is_tempo(rec):
@@ -283,7 +311,7 @@ static func action_weights(logic, e: XEnemy, list: Array, zero: int, t: int, giv
 		if t >= 4 and not foes.is_empty() and is_damage(rec):
 			if foes.any(func(f): return _killable(ev, e, f, rec)):
 				v = _pct(v, KILL_PCT)
-			if foes.size() == 1 and (XBattleEval.for_all(rec) or XBattleEval.for_random(rec)) and has_single_damage:
+			if foes.size() == 1 and XBattleEval.for_all(rec) and has_single_damage:  # 随机 n 下（scope 3～6）单敌时全段集中，不算浪费（r1 P2-1）
 				v = _pct(v, AOE_WASTE_PCT)
 		if t >= 5 and main_guarded:
 			if is_burst(e, rec):
@@ -308,21 +336,28 @@ static func _support_needed(logic, e: XEnemy, rec: Dictionary) -> bool:
 	if XBattleEval.for_dead_friend(rec):
 		return mates.any(func(m): return m.is_dead())
 	var live := mates.filter(func(m): return m.is_alive() and m != e) if not XBattleEval.for_all(rec) else mates.filter(func(m): return m.is_alive())
-	if _dmg_type(rec) in [3, 4] or rec.get("effects", []).any(func(x): return int(x.code) in [11, 12]):
-		if live.any(func(m): return m.hp < m.mhp):
-			return true
-	for x in rec.get("effects", []):
+	var fx: Array = rec.get("effects", [])
+	if (_dmg_type(rec) == 3 or fx.any(func(x): return int(x.code) == 11)) and live.any(func(m): return m.hp < m.mhp):
+		return true
+	if (_dmg_type(rec) == 4 or fx.any(func(x): return int(x.code) == 12)) and live.any(func(m): return m.mp < m.mmp):
+		return true
+	for x in fx:
 		var c := int(x.code)
-		if c == 21 and int(x.dataId) > 1 and live.any(func(m): return not m.is_state_affected(int(x.dataId))):
+		var id := int(x.dataId)
+		if c == 21 and id > 1 and live.any(func(m): return not m.is_state_affected(id)):
 			return true
-		if c == 31 and live.any(func(m): return int(m.buffs[int(x.dataId)]) < 2):
+		if c == 31 and id >= 0 and id < 8 and live.any(func(m): return int(m.buffs[id]) < 2):
 			return true
-		if (c == 22 or c == 34) and live.any(func(m): return m.state_ids.any(func(id): return XBattleEval.harmful_state(int(id)))):
+		if c == 34 and id >= 0 and id < 8 and live.any(func(m): return int(m.buffs[id]) < 0):
+			return true
+		if c == 22 and id > 1 and XBattleEval.harmful_state(id) and live.any(func(m): return m.is_state_affected(id)):
 			return true
 	return false
 
 
 static func _killable(ev: XBattleEval, e: XEnemy, f: XBattler, rec: Dictionary) -> bool:
+	if not _dmg_type(rec) in [1, 5]:
+		return false  # MP 伤害不算斩杀（r1 P3-3）
 	var dmg := ev.expected_damage(e, f, rec, ev._raw(f, rec), ev.hits_of(rec))
 	return dmg > 0.0 and dmg >= f.hp + XBattleEval.shield_points(f, true)
 
@@ -345,7 +380,7 @@ static func target_weights(logic, user, list: Array, base: Array, skill: Diction
 	var t := tier(logic, user)
 	if t <= 1 or list.size() < 2:
 		return base
-	var taunted := list.any(func(b): return float(b.tgr) >= 2.0)  # 有人在嘲讽：照受击率打嘲讽的（2 档）／只按免疫筛（3 档起）
+	var taunted := list.any(func(b): return taunting(b))  # 有人挂着嘲讽状态：照受击率打嘲讽的（2 档）／只按免疫筛（3 档起）。天生、装备的高受击率不算（r1 P2-2），只在 base 里照常加权
 	var out := base.duplicate()
 	if t == 2:
 		if taunted:
@@ -451,7 +486,7 @@ static func panic(logic, e) -> Array:
 	var row := row_of(logic, e)
 	if row.is_empty() or not str(row.get("class", "minion")) in ["minion", "elite"]:
 		return []
-	if XBattleEval.is_boss(e) or e.boss_difficulty_boss or XTianqiHorsemen.is_add(logic, e) or XTianqiHorsemen.is_knight(logic, e):
+	if XBattleEval.is_boss(e) or XEnemy.boss_id(int(e.enemy_id)) or e.boss_difficulty_boss or XTianqiHorsemen.is_add(logic, e) or XTianqiHorsemen.is_knight(logic, e):
 		return []
 	var six := XTianqiSixDim.of_battler(e, logic)
 	var res := XTianqiSixDim.letter(six, "resolve")
@@ -464,7 +499,7 @@ static func panic(logic, e) -> Array:
 	if logic._int(0, 99, "six_dim_panic") >= chance:
 		return []
 	var kind: int = logic._int(0, 2, "six_dim_panic_kind")
-	e.set_meta(META_PANIC, panic_text(e))
+	e.set_meta(META_PANIC, panic_text(e, kind))
 	match kind:
 		0:
 			return [XDB.rec("Skills", XBattleLogic.GUARD_SKILL), null]  # 原地防御退缩
@@ -473,9 +508,12 @@ static func panic(logic, e) -> Array:
 	return [null, null]  # 发抖空过
 
 
-## 慌乱战报（玩家可见文字草稿，待小A 审）
-static func panic_text(e) -> String:
-	return "%s阵脚大乱！" % e.display_name()
+## 慌乱战报（小A r1 文字审定稿：按三种表现分句）
+const PANIC_TEXT := ["%s阵脚大乱，慌忙缩身防守！", "%s阵脚大乱，胡乱挥出一击！", "%s阵脚大乱，呆在原地没敢出手！"]
+
+
+static func panic_text(e, kind: int) -> String:
+	return PANIC_TEXT[clampi(kind, 0, 2)] % e.display_name()
 
 
 ## BattleLogic.act 开头取：这一位刚慌乱就出一条战报
@@ -484,4 +522,4 @@ static func take_logs(u) -> Array:
 		return []
 	var text := str(u.get_meta(META_PANIC))
 	u.remove_meta(META_PANIC)
-	return [{"type": "battle_text", "text": text}]
+	return [{"type": "battle_text", "text": text, "tianqi_fit": true}]  # tianqi_fit：战斗画面停 FIT_TEXT_FRAMES 帧再往下（r1 P1-3，同烙印发作）

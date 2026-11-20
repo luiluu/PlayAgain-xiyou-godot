@@ -8,22 +8,24 @@
 ## 2026-11-20 【cc·T277·未经审查】天启篇敌方六维 AI：战商 5 档选招／选目标、辅助／输出／生存／速度倾向、低韧性慌乱、四骑士自由点名（dev.待定）
 
 - 新增 `modes/xiyou/battle/tianqi_enemy_ai.gd`（`XTianqiEnemyAI`，开关 `ENABLED`，默认开）：只认六维表里真录了的敌人（`six_dim.json` 的 `enemies` 有这一号，或骑士键 `knights` 有这条线；协调 11-20 Q1＝A）。没录的、战商 1 档（蒙昧）、西游档、`XTianqiSixDim.ENABLED`／本开关关着，一律走原版 `enemy_action`，一个数都不多取。估值用 T282 的 `XBattleEval`（只读、不取随机数），六维只读 `XTianqiSixDim`，两者都没改。
-- 选招（`battle_logic.decide` 的普通敌人分支）：候选、rating 带与原版相同；每招底分 (rating−zero)×100，再乘整数百分比：输出→伤害招、辅助→友方支援招（只在队友受伤／缺这项增益／有人倒下时乘，不空奶）与召唤招（有空位时）、生存→防御／自保／嘲讽招（血线以下，A 起平时也乘）、速度→复读上一招（E／D 偏爱、A 起降权）与抢节奏招（A 起，表里没这列，模块常量）；战商 3 档起：全体免疫或吸收 ×10%、打得到弱点 ×130%、纯控制白交（都挂着或硬免控）×10%；4 档起：能斩杀 ×140%、只剩一个敌人还交群体伤害招 ×50%；5 档：我方主力护盾 ≥ 剩余血 50% 时高耗爆发 ×35%、减益／抢节奏／驱散 ×130%。仍只掷一次 `enemy_action`。
-- 选目标（`_random_target` 加可选参数 skill）：只对六维 AI 刚决定的这一位、这一招改各目标权重（脚本首领、七印寂静、混乱、烙印等别的来源不改），仍只掷一次 `target`。2 档：一半照受击率、一半盯最低血（有人嘲讽照原样）；3 档：对这招免疫的目标 ×10%、弱点 ×130%；4 档：能斩杀 ×600%、治疗／复活点 ×150%、再乘威胁度；5 档：治疗点与主力输出 ×200%、厚盾铁壁 ×50%；4 档起有人嘲讽时只按免疫筛。
+- 选招（`battle_logic.decide` 的普通敌人分支）：候选、rating 带与原版相同；每招底分 (rating−zero)×100，再乘整数百分比：输出→伤害招、辅助→友方支援招（队友受伤／缺这项增益／有人倒下时按辅助档乘，用不上时一律 ×10%，不空奶）与召唤招（有空位按辅助档乘，满员 ×10%）、生存→防御和只对自己的招只在低于自己的血线（E／D 55%、C／B 35%、A／S 20%、SS／SSS 15%）时乘，自奶满血 ×10%；嘲讽／给自己叠防御在血线以下乘，生存 A 起平时也乘、速度→复读上一招（E／D 偏爱、A 起降权）与抢节奏招（A 起，表里没这列，模块常量）；战商 3 档起：全体免疫或吸收 ×10%、打得到弱点 ×130%、纯控制白交（都挂着或硬免控）×10%；4 档起：能斩杀 ×140%、只剩一个敌人还交全体伤害招（scope 2）×50%（随机 n 下不算，单敌时全段集中）；5 档：我方主力护盾 ≥ 剩余血 50% 时高耗爆发 ×35%、减益／抢节奏／驱散 ×130%。仍只掷一次 `enemy_action`。
+- 选目标（`_random_target` 加可选参数 skill）：只对六维 AI 刚决定的这一位、这一招改各目标权重（脚本首领、七印寂静、混乱、烙印等别的来源不改），仍只掷一次 `target`。2 档：一半照受击率、一半盯最低血（有人挂着嘲讽状态照原样；天生或装备的高受击率不算嘲讽，只在原权重里照常体现）；3 档：对这招免疫的目标 ×10%、弱点 ×130%；4 档：能斩杀 ×600%、治疗／复活点 ×150%、再乘威胁度；5 档：治疗点与主力输出 ×200%、厚盾铁壁 ×50%；4 档起有人挂嘲讽状态时只按免疫筛。斩杀只认 HP 伤害招。
 - 四骑士（协调 11-20 Q2＝B）：`tianqi_horsemen.gd` 的 `_pick_target` 加参数 u（出手的骑士），没给 chosen 的自由点名按骑士战商加权（2 档盯最低血、3 档避厚盾、4 档残血 <30% 与治疗点、5 档主力），仍只掷一次 `horseman_target`；脚本锁死的 chosen 原样；援军不是骑士、没录，原样。技能序列（回合表、阶段、计量）一点不动。
 - 低韧性慌乱：只录表的 class minion／elite、非首领（`is_boss`、`boss_difficulty_boss`）、非骑士和援军；能行动、韧性 E 残血 <25%（或本回合刚有敌人倒下，借 `XRaven.any_death`）／D <20% 时掷 `six_dim_panic`（几率读表 panic_pct：E 20、D 10），慌了再掷一次三选一：防御退缩、普攻乱打（目标照原版受击率）、发抖空过；`act` 开头出一条战报。没资格不取数。
 - `core/enemy.gd`：`boss_control_state` 的控制标签正则预编译成静态变量（T276 核查 P2-1），全库状态判定逐个不变。
-- 新专项 `tests/xiyou_tianqi_enemy_ai`（94 条）。六维档全在测试里自设（T280 正重算，不写死角色档）。
-- 玩家可见：天启篇里录了六维的敌人会按「战商」挑招挑人（会避开打不动的属性、补刀残血、盯治疗），「辅助」高的爱奶队友，「生存」高的爱嘲讽套盾，「速度」高的少复读；四骑士自由点名按各自战商挑人，出招顺序不变；韧性低的小怪残血时可能阵脚大乱。原版西游存档无变化。（草稿，待小A 审）
+- 新专项 `tests/xiyou_tianqi_enemy_ai`（99 条）、`tests/xiyou_tianqi_enemy_ai_scene`（16 条，真战斗画面看慌乱战报停留）。六维档全在测试里自设（T280 正重算，不写死角色档）。
+- 玩家可见：天启篇接入敌方六维行为：天启四骑士在非指定目标的出手时会按各自「战商」挑选目标（既定出招顺序不变）；后续录入六维的敌人也会依「战商」选招与挑人（避开免疫属性、优先补刀残血与压制治疗），并按「输出、生存、速度、辅助」呈现抢攻、保命嘲讽、减少连用同招、支援队友等打法倾向，低韧性普通小怪残血或同伴倒下时还可能阵脚大乱。原版西游存档不受影响。（小A r1 文字审定稿）
 
 ## 文字（待小A 审）
 
-- 慌乱战报：「`<敌人名>`阵脚大乱！」（`XTianqiEnemyAI.panic_text`，`battle/tianqi_enemy_ai.gd`）
+- 慌乱战报（小A r1 定稿，按三种表现分句；`XTianqiEnemyAI.PANIC_TEXT`）：「%s阵脚大乱，慌忙缩身防守！」／「%s阵脚大乱，胡乱挥出一击！」／「%s阵脚大乱，呆在原地没敢出手！」；带 tianqi_fit，战斗画面停 36 帧
 - 上面「玩家可见」一条
 
 ## 验证
 
-- 专项 `xiyou_tianqi_enemy_ai` 94/94（门控 9、选招权重 15、实战选招 4、选目标 11、慌乱 26、四骑士 4 条线本体＋影子 29、五条悟试炼 1、不改数值与我方自动战斗 2、正则 1 等）。
+- r1 返修（小A 甲档核 P1×3 P2×2 P3×5 全修）：专项 `xiyou_tianqi_enemy_ai` 99/99（新增 w4_random_not_waste、w_summon、w_stall、w_self_heal、t2_high_tgr_not_taunt，改 w_guard、w_support、p_text_*、auto_battle_same 目标下标）；`xiyou_tianqi_enemy_ai_scene` 16/16（无头与带窗口 --audio-driver Dummy 各跑一遍：三种表现战报都停 ≥34 帧，去掉 tianqi_fit 的对照组 ≤1 帧）。P3-1：`targets_for` 非 confusable（强制行动等）时、`end_battle` 时清 `_decided_user`。P3-4 用的是 `XEnemy.boss_id`（库里没有 is_boss_id，备注「BOSS级怪物」由它认）。
+- r1 本机选测 19 个全过：xiyou_tianqi_enemy_ai、xiyou_tianqi_enemy_ai_scene、xiyou_tianqi_horsemen*（2）、xiyou_tianqi_war、xiyou_tianqi_famine*（2）、xiyou_tianqi_plague、xiyou_tianqi_death、xiyou_determinism、xiyou_confusion、xiyou_target_eval、xiyou_tianqi_six_dim_resist、xiyou_tianqi_smart_ai_eval、xiyou_gojo_trials、xiyou_battle_log、xiyou_tianqi_brand、xiyou_tianqi_skills、xiyou_binding。r1 没重跑云端整轮。
+- r0：专项 `xiyou_tianqi_enemy_ai` 94/94（门控 9、选招权重 15、实战选招 4、选目标 11、慌乱 26、四骑士 4 条线本体＋影子 29、五条悟试炼 1、不改数值与我方自动战斗 2、正则 1 等）。
   - 卡 3 验收 1：选招逐档（`w3_*`、`w4_*`、`w5_*`、`real_tier1_half`／`real_tier3_avoids_immune`）、选目标逐档（`t2_*`～`t5_*`、`t_e2e_kill_target`）。
   - 验收 2：输出／辅助／生存／速度（`w_aggro`、`w_support`、`w_guard`、`w_repeat`、`w_tempo`）；敌人 mhp／攻防魔敏、估伤、state_rate 开关两边一致（`numbers_same`）。
   - 验收 3：E／D 残血才掷、边界几率、三种表现、战报只出一次、同伴倒下只算 E、C 起／首领类／霸体首领 0 触发且不取数、同种子 40 回合战报序列一致（`p_*`）。
