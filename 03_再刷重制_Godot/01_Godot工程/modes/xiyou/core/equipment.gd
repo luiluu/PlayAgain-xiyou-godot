@@ -115,6 +115,7 @@ static func change(s: XState, a: XActor, slot: int, item) -> bool:
 	if old is Dictionary and not old.is_empty():
 		s.gear.append(old)
 	a.equips[slot] = item
+	XActor.read_touch()  # 只读窗口（O-348）：换了装备当场作废，后面 release_unequippable 才读得到新特性表（T296，原来在窗口里调会读旧表）
 	a.refresh_passive()
 	for removed in a.release_unequippable():
 		s.gear.append(removed)

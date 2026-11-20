@@ -575,15 +575,54 @@ static func _same(x, y) -> bool:
 	return is_same(x, y) or (x is XActor and y is XActor and x.actor_id == y.actor_id)
 
 
+## FRAME_TOUCH_LAZY（O-待定，T296 战斗提速）：公式帧进出原来每次都 read_touch，把只读窗口（O-348）整窗作废；
+## 每次 XDamage.calculate 进出各压一帧，外面包的窗口（智能选招 O-392、rawValue 窗口）因此每段伤害都从冷重算技能表、能力值、被动。
+## 公式帧只改得了栈顶那一帧的行动者、目标的 param 读法，而且只对带逆骨（物攻／物防，param 2／3）、空壳（生命上限 0）、
+## 饕餮（MP 上限 1）词条的角色才改（见 param、hollow_param、glutton_param；敌人 has 恒否）。所以帧进出时只要进出前后的
+## 栈顶帧都「改不了读法」（双方都没这三种词条），窗口里记的值就仍然对，不作废；任一帧改得了读法就照旧当场作废。
+## 缄默（silence_param）不看公式帧。false＝回退（每次进出都作废，同原来）。XIYOU_READ_VERIFY=1 时窗口命中照旧重算比对。
+static var FRAME_TOUCH_LAZY := true
+const _FRAME_AFFIXES := ["inversebone", "hollow", "glutton"]
+
+
+## 这一帧在栈顶时会不会改某个角色的能力值读法（param 0／1／2／3）：行动者或目标带逆骨、空壳、饕餮之一。
+## 帧对「同一角色」的判定按 actor_id（_same：影子克隆与本体算一人），而本体读开战冻结的词条（locked）、克隆读身上装备的标记
+## （for_actor 的退路），两边都看：同号的冻结词条、帧里这个对象身上装备的标记、for_actor 本身，任一是这三种就算改得了。
+static func _frame_reads(a, b) -> bool:
+	for x in [a, b]:
+		if not x is XActor:
+			continue
+		if _FRAME_AFFIXES.has(str(XAlienation.for_actor(x).get("affix", ""))):
+			return true
+		for e in x.equip_list():
+			if _FRAME_AFFIXES.has(str(XAlienation.mark(e).get("affix", ""))):
+				return true
+		var logic = active_logic()
+		if logic != null and logic.has_meta("xalien"):
+			var party: Dictionary = _store(logic).party
+			for p in party:
+				if p is XActor and p.actor_id == x.actor_id and party[p] is Dictionary and _FRAME_AFFIXES.has(str(party[p].get("affix", ""))):
+					return true
+	return false
+
+
+static func _top_reads() -> bool:
+	return not _formula_frames.is_empty() and bool(_formula_frames[_formula_frames.size() - 1].reads)
+
+
 static func push_formula(item: Dictionary, a, b, formula: bool) -> void:
-	XActor.read_touch()  # 只读窗口缓存（O-348）：公式帧进出会改能力值读法，当场作废
-	_formula_frames.append({"item": item, "subject": a, "target": b, "formula": formula,
+	var reads := true if not FRAME_TOUCH_LAZY else _frame_reads(a, b)
+	if reads or _top_reads():
+		XActor.read_touch()  # 只读窗口缓存（O-348）：公式帧进出会改能力值读法，当场作废（FRAME_TOUCH_LAZY：只在真改得了时）
+	_formula_frames.append({"item": item, "subject": a, "target": b, "formula": formula, "reads": reads,
 		"physical": formula and (XDamage.is_physical(item) or _in_template("inversebone", int(item.get("id", 0))))})
 
 
 static func pop_formula() -> void:
-	XActor.read_touch()  # 只读窗口缓存（O-348）：公式帧进出会改能力值读法，当场作废
+	var reads := _top_reads()
 	_formula_frames.pop_back()
+	if reads or _top_reads() or not FRAME_TOUCH_LAZY:
+		XActor.read_touch()  # 只读窗口缓存（O-348）：公式帧进出会改能力值读法，当场作废（FRAME_TOUCH_LAZY：只在真改得了时）
 
 
 ## Game_Actor.param 包装（逆骨）：帧内的目标是物理（或逆骨技能）时物防读 0；行动者用逆骨技能时物攻改读物防。
