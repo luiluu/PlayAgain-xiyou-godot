@@ -281,6 +281,15 @@ func _niliu() -> void:
 	_check("nl.no_sear", alive.map(func(x): return XTianqiBrand.sear_of(lg, x)) == sear0, sear0)
 	var pct := 100 + mini(washed * 5, 20)
 	_check("nl.surge_dmg", XTianqiXinmoTraits.hp_damage(lg, e, a, 1000.0, sk) == floorf(1000.0 * pct / 100.0), XTianqiXinmoTraits.hp_damage(lg, e, a, 1000.0, sk))
+	# 封顶：每人加到 10% 时 3 人以上也只到 max_surge_pct（拷一份参数改，不动表缓存）
+	var c := XTianqiXinmoTraits.fight(lg)
+	var p0: Dictionary = c.p
+	c.p = p0.duplicate()
+	c.p["per_washed_dmg_pct"] = 10
+	_full(lg)
+	XTianqiXinmoTraits.end_turn(lg)
+	_check("nl.surge_cap", washed >= 2 and int(c.surge) == 20, [washed, c.surge])
+	c.p = p0
 	# 不致死：1 点血的人不在 60% 以上；高血端扣 8% 现血永远扣不到 0
 	_full(lg)
 	XTianqiXinmoTraits.end_turn(lg)
