@@ -6,6 +6,8 @@ extends Node
 ## 四、五条悟茈预览读当前对数；镜流、饿狼重构招估伤非 0；141～166 号不再 ×0.01。
 ## 五、预览零副作用：HP／MP／TP／状态／护盾／账本／印记／随机数选前选后一致。
 ## 六、西游档（非天启篇存档）永不进新分支，结果同关开关。
+## T282：卡 1 手抄乘区的数值断言（141～166 号 ×100、不叠旧 boosts 的上界）在 o_tianqi_preview_damage 关时跑（＝退回卡 1 的回退路径）；
+## 统一预览开着的断言在 xiyou_tianqi_smart_ai_eval。
 const BIG_HP := 1e12
 var results := []
 
@@ -312,8 +314,11 @@ func _jingliu_garou() -> void:
 
 ## 141～166 号估伤不再 ×0.01（163 拳一、146 苍龙：存档里能入队的取 163）
 func _balance() -> void:
+	var keep := XSmartAI.o_tianqi_preview_damage
+	XSmartAI.o_tianqi_preview_damage = false  # 卡 1 手抄乘区（T282 回退路径）
 	for id in [146, 163]:
 		_balance_actor(id)
+	XSmartAI.o_tianqi_preview_damage = keep
 
 
 func _balance_actor(actor_id: int) -> void:
@@ -452,6 +457,8 @@ func _module_over_old() -> void:
 			done += 1
 			_check("tusu_%d_same_magnitude" % id, est > 0.0 and est <= base * 40.0, [est, base])
 	_check("tusu_tested_some", done > 0, done)
+	var keep := XSmartAI.o_tianqi_preview_damage
+	XSmartAI.o_tianqi_preview_damage = false  # 下面的上界照卡 1 手抄乘区算（T282 回退路径）
 	for pair in [[168, 10140], [167, 10122], [179, 10622], [179, 10623]]:
 		var lg: XBattleLogic = _setup([int(pair[0]), 1, 100])[1]
 		var b := _actor(lg, int(pair[0]))
@@ -466,8 +473,13 @@ func _module_over_old() -> void:
 		var defense: float = t.pdr if int(rec.get("hitType", 0)) == 1 else t.mdr if int(rec.get("hitType", 0)) == 2 else 1.0
 		var el := int(rec.damage.get("elementId", 0))
 		var rate: float = t.element_rate(el) if el > 0 else 1.0
-		var bound: float = base * rate * defense * clampf(XBattleLogic.attack_repeats(b, rec, 1) * ai.seq_hits(b, rec), 1, 32) * 1.31
+		# T281 核查 P2-4：上界补乘去 ×6 的 dealt_scale（我方打敌人 1/6）；熟练度 1.31（10 级 +30%）
+		var bound: float = base * rate * defense * clampf(XBattleLogic.attack_repeats(b, rec, 1) * ai.seq_hits(b, rec), 1, 32) * 1.31 * XTianqiNoX6.dealt_scale(b, t)
 		_check("no_old_boosts_%d" % int(pair[1]), est > 0.0 and est <= bound + 0.01, [est, bound, base])
+		# 补测 expected_damage：不叠米拉／渡鸦的期望倍率与暴击增量 → 至多 ×(1＋0.5)（暴击率夹到 1），命中只会往下压
+		var exp_d := ai.expected_damage(b, t, rec)
+		_check("no_old_boosts_expected_%d" % int(pair[1]), exp_d > 0.0 and exp_d <= est * 1.5 + 0.01, [exp_d, est])
+	XSmartAI.o_tianqi_preview_damage = keep
 
 
 ## 西游档（非天启篇存档）：新分支永不进，开关开关结果一致

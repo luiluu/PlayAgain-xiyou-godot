@@ -701,6 +701,13 @@ static func level_scale(a) -> float:
 
 ## 模块公式（XFormulaExecution 分派）：伤害为正，回复为负
 static func formula(a, b, item: Dictionary) -> float:
+	var prev := _cur_skill  # 求完复原（T281 核查 P3-2）：AI 选招试算几百招，不能把「正在算的技能号」留给后面的条件判断
+	var v := _formula(a, b, item)
+	_cur_skill = prev
+	return v
+
+
+static func _formula(a, b, item: Dictionary) -> float:
 	var sp := spec(int(item.get("id", 0)))
 	var kind := int(item.get("damage", {}).get("type", 1))
 	if sp.has("heal"):
@@ -1467,7 +1474,11 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 	var id := int(item.get("id", 0))
 	if has(id):
 		var p: Dictionary = spec(id).get("pierce", {})
-		if not p.is_empty() and (not p.has("need") or owns(a, p.need)) and (not p.has("when") or _when(p.when, a, b)):
+		var prev := _cur_skill  # _when→_cond 读「正在算的技能号」：formula 算完已复原（T282），这里自己设、判完复原（T282 核查 P3-3）
+		_cur_skill = id
+		var on := not p.is_empty() and (not p.has("need") or owns(a, p.need)) and (not p.has("when") or _when(p.when, a, b))
+		_cur_skill = prev
+		if on:
 			var keep := 1.0 - float(p.get("rate", 0.0))
 			ops.append({"op": "mul", "field": "physicalDefenseRate", "value": keep})
 			ops.append({"op": "mul", "field": "magicalDefenseRate", "value": keep})
@@ -1494,8 +1505,11 @@ static func item_cri(u, skill: Dictionary, t, cri: float) -> float:
 		return cri
 	var probe := c.duplicate()
 	probe.mult = 2.0
+	var prev := _cur_skill
 	_cur_skill = int(skill.id)
-	return 1.0 if _cond(probe, u, t) > 1.0 else cri
+	var sure := _cond(probe, u, t) > 1.0
+	_cur_skill = prev  # 同 formula：判完复原（T282）
+	return 1.0 if sure else cri
 
 
 ## 技能行 hp_free_with 技能号：学了它这招不扣生命（晴明两仪四象②尸鬼尽封）
