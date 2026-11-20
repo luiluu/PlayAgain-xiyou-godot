@@ -16,6 +16,8 @@ const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XSkillScene", "XEquipScen
 
 var out_dir := ""
 var compare := ""
+## T299 卡 K：制作、宝珠坊、种族祝福（单列一行，免得和别的卡同时改 PAGES 那一行撞车）
+const PAGES_K := ["XCraftingScene", "XOrbShop", "XRaceMenu"]
 
 
 func _ready() -> void:
@@ -44,7 +46,7 @@ func _run() -> void:
 				sk.set("ENABLED", false)
 				print("skin ENABLED=", sk.get("ENABLED"))
 			_tianqi_goods(s)   # ui-skin-3a：七印装备、号卷进背包（物品、装备页带上它们；新皮肤关着时牌照旧）
-		for cls in PAGES:
+		for cls in PAGES + PAGES_K:
 			var page: Node = _make(cls)
 			if page == null:
 				print("SKIP ", cls)
