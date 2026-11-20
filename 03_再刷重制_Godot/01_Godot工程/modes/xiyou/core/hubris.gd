@@ -110,14 +110,18 @@ static func _pierce(item: Dictionary, a) -> float:
 	return 0.27 if is_ataraxia(g) else 0.18
 
 ## evalDamageFormula 包装：公式求值期间目标物防 ×(1−穿透)
+## 只读窗口（O-348）：帧进出前后都不打折（没穿狂妄或不是物理公式）时读法不变，不作废（XAlienBattle.FRAME_TOUCH_LAZY，T296）
 static func push_formula(item: Dictionary, a, b) -> void:
-	XActor.read_touch()  # 只读窗口缓存（O-348）：公式帧进出会改能力值读法，当场作废
+	var was := _frame_target != null
 	var rate := _pierce(item, a)
 	_frame_target = b if rate > 0.0 else null
 	_frame_rate = rate
+	if was or _frame_target != null or not XAlienBattle.FRAME_TOUCH_LAZY:
+		XActor.read_touch()  # 只读窗口缓存（O-348）：公式帧进出会改能力值读法，当场作废
 
 static func pop_formula() -> void:
-	XActor.read_touch()  # 只读窗口缓存（O-348）：公式帧进出会改能力值读法，当场作废
+	if _frame_target != null or not XAlienBattle.FRAME_TOUCH_LAZY:
+		XActor.read_touch()  # 只读窗口缓存（O-348）：公式帧进出会改能力值读法，当场作废
 	_frame_target = null
 	_frame_rate = 0.0
 
