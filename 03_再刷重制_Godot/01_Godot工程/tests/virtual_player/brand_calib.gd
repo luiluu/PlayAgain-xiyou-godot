@@ -25,6 +25,8 @@ var other_brand := 7.0
 var ripe_mode := false
 var reps := 4
 var xcap := []
+var gear_cache := ""
+const GEAR_FLOORS := [10, 20, 25, 30, 31, 32, 33]   # 装备按这一组层掷（和第一轮 s45_raw 同一组，换层数不改装备）
 var strip_ids := []
 
 
@@ -48,6 +50,8 @@ func _ready() -> void:
 			xcap = Array(a.substr(7).split(",")).map(func(x): return int(x))
 		elif a.begins_with("--strip-guardian="):
 			strip_ids = Array(a.substr(17).split(",")).map(func(x): return int(x))
+		elif a.begins_with("--gear-cache="):
+			gear_cache = a.substr(13)
 		elif a == "--pozhen-type":
 			XTianqiElements.POZHEN_BY_TYPE = true
 	super._ready()
@@ -209,6 +213,7 @@ func _run() -> void:
 	XTianqiBrand.ENABLED = true
 	_apply_knobs()
 	var list := _teams()
+	_load_gears(list)
 	var rows := []
 	for f in floors:
 		var per := []
@@ -257,3 +262,27 @@ func _run() -> void:
 			"ripe": ripe_mode, "reps": reps, "teams": list, "turns": turns, "seed": seed, "rows": rows}, "\t"))
 	print("BRAND_DONE")
 	get_tree().quit(0)
+
+
+## 装备缓存（--gear-cache=<json>）：有就读，没有就按 GEAR_FLOORS 掷完写下。键：队伍键 → 层 → actor_id → 栏位表
+func _load_gears(list: Array) -> void:
+	if gear_cache != "" and FileAccess.file_exists(gear_cache):
+		var d = JSON.parse_string(FileAccess.get_file_as_string(gear_cache))
+		if d is Dictionary:
+			for key in d:
+				var per := {}
+				for f in d[key]:
+					per[int(f)] = d[key][f]
+				_gears[key] = per
+	var keep := floors
+	floors = GEAR_FLOORS.duplicate()
+	var added := false
+	for team in list:
+		var key := ",".join(team.map(func(x): return str(x)))
+		if not _gears.has(key):
+			_shape_state(team, int(floors[0]))
+			added = true
+	floors = keep
+	if added and gear_cache != "":
+		var fh := FileAccess.open(gear_cache, FileAccess.WRITE)
+		fh.store_string(JSON.stringify(_gears))
