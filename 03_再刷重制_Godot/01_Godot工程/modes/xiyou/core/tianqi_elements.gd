@@ -18,6 +18,11 @@ static var WEAK_EXPOSURE := true
 static var HIGHER_EFFECTS := true
 static var SKILL_SHIFTS := true
 static var PHYSICAL_DUAL_KEEP_NEUTRAL := false
+## T317：破阵 1047「物理免疫」／1048「元素免疫」原版查「行动元素里有没有物理（元素 1）」；DECK 把物理转成无属性后再没有招带元素 1，
+## 1048 挡掉一切、1047 什么都不挡（31～34 层守层者过 30% 血后全免疫）。开着时天启篇里这类「元素 1」检查改认伤害类型
+## （XDamage.item_mode：physical＝物理类，带上元素 1 的本意）：1047 挡物理类、1048 挡非物理类；混合（mixed）两边都放行。
+## 只在 DECK 生效时改（DECK 关着元素 1 还在，照原版查元素）；西游档不变。回退：`XTianqiElements.POZHEN_BY_TYPE = false`
+static var POZHEN_BY_TYPE := true
 
 const PATH := "res://modes/xiyou/tianqi_data/elements_table.json"
 const BASE_ELEMENTS := [2, 3, 4, 5, 6, 7, 8, 9, 14, 15]
@@ -589,6 +594,14 @@ static func map_element_id(e: int, s = null) -> int:
 	if deck_on(s) and e == 1:
 		return 0
 	return e
+
+
+## T317：React 里「元素 element 在不在行动元素里」的查询，天启篇改认伤害类型时返回 "physical"／"magical"／"mixed"；
+## 不改（不是元素 1、开关关、不在 DECK 下）返回 ""，调用方照原版查元素
+static func pozhen_class(item: Dictionary, element: int, s = null) -> String:
+	if element != 1 or not POZHEN_BY_TYPE or not deck_on(s):
+		return ""
+	return XDamage.item_mode(item)
 
 
 static func map_elements(es: Array, s = null) -> Array:
