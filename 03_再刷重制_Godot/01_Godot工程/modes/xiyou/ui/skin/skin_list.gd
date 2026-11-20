@@ -256,6 +256,15 @@ func _draw_check(pos: Vector2, on: bool, dis: bool) -> void:
 	sb.draw(get_canvas_item(), Rect2(pos.x, pos.y - 7.0, 14.0, 14.0))
 
 
+## T254 3.0「用不了的行」：字 TEXT_3，被选中时提到 #c9cbd0（T300 小A核 P2-3）。DIS_SEL_ON＝false 回到选中也是 TEXT_3
+static var DIS_SEL_ON := true
+const DIS_SEL := Color("c9cbd0")
+
+
+func dis_color(i: int) -> Color:
+	return DIS_SEL if DIS_SEL_ON and i == index and active else XUiSkin.TEXT_3
+
+
 ## 滚动条宽：触屏版 8（手指找得到），旧 4
 func scroll_w() -> float:
 	return 8.0 if XUiSkin.TOUCH_V2 else SCROLL_W
@@ -368,13 +377,13 @@ func _draw() -> void:
 			var r2 := str(it.right2)
 			var r2w := body.get_string_size(r2, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size - 3).x
 			XUiSkin.ds(self, body, Vector2(end_x - r2w, base + (right_size - 3) * 0.36), r2, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size - 3,
-				XUiSkin.TEXT_3 if dis else it.get("right2_color", XUiSkin.TEXT_2))
+				dis_color(i) if dis else it.get("right2_color", XUiSkin.TEXT_2))
 			end_x -= right2_w
 		if right != "":
 			right_w = num.get_string_size(right, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size).x
 			var rc: Color = it.get("right_color", XUiSkin.TEXT)
 			XUiSkin.ds(self, num, Vector2(end_x - right_w, base + right_size * 0.36), right, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size,
-				XUiSkin.TEXT_3 if dis else rc)
+				dis_color(i) if dis else rc)
 		var max_w := end_x - right_w - (10.0 if right_w > 0 else 0.0) - x
 		var col: Color = it.get("color", XUiSkin.TEXT)
 		if i == index and active:
@@ -384,7 +393,7 @@ func _draw() -> void:
 		var fit := fit_text(body, str(it.get("text", "")), max_w - tags_w, XSkinSelScale.fs(font_size, sk, sel_font_cap()), min_font_size)
 		var text: String = fit[0]
 		var fs: int = fit[1]
-		XUiSkin.ds(self, body, Vector2(x, base + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_3 if dis else col)
+		XUiSkin.ds(self, body, Vector2(x, base + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, dis_color(i) if dis else col)
 		var after := 0.0   # 小标占掉的宽（sub 接在小标后面）
 		if not tags.is_empty():
 			var tx := x + body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + XSkinTag.GAP * 2.0
@@ -392,7 +401,7 @@ func _draw() -> void:
 				var p := XSkinTag.parse(t)
 				if str(p[0]) == "":
 					continue
-				var tw2 := XSkinTag.draw(self, Vector2(tx, base), str(p[0]), XUiSkin.TEXT_3 if dis else p[1])
+				var tw2 := XSkinTag.draw(self, Vector2(tx, base), str(p[0]), dis_color(i) if dis else p[1])
 				tx += tw2 + XSkinTag.GAP
 				after += tw2 + XSkinTag.GAP
 			after += XSkinTag.GAP

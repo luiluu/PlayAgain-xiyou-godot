@@ -571,7 +571,7 @@ func _hosting() -> void:
 	# 挂机、测试模式子页：开关新皮肤前后一致（都还套 1280×720 外框、新皮肤不接管）
 	var snap := func() -> Array:
 		var out := []
-		for mk in [func(): return XHangUpOptionsScene.new(), func(): return XTestModeScene.new()]:
+		for mk in [func(): return XTestModeScene.new()]:   # T304 卡 M：挂机改自带新皮肤，由 xiyou_ui_skin_card_m 硬断言；这里只核测试模式
 			var p: Control = mk.call()
 			opt._open_page(p)
 			await frames(3)
@@ -585,7 +585,7 @@ func _hosting() -> void:
 	var off_snap: Array = await snap.call()
 	XSkinSubPage.ENABLED = true
 	check("host_hangup_testmode_same", JSON.stringify(on_snap) == JSON.stringify(off_snap), [on_snap, off_snap])
-	check("host_hangup_testmode_host", on_snap[0][0] == "SkinSubPageHost" and on_snap[2][0] == "SkinSubPageHost", on_snap)
+	check("host_hangup_testmode_host", on_snap[0][0] == "SkinSubPageHost", on_snap)
 	opt.queue_free()
 	await frames(2)
 
