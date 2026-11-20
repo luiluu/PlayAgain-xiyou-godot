@@ -165,7 +165,7 @@ static func deploy_block_tag(s: XState, _id: int) -> String:
 static func roster_row(a: XActor, enabled := true, block_tag := "") -> Dictionary:
 	var s := XState.current
 	var tags := []
-	var at := s.battle_slots.find(a.id)
+	var at := s.battle_slots.find(a.actor_id)
 	if at >= 0:
 		if at == XTianqi.HELPER_SLOT and XTianqi.active(s):
 			tags.append(T_HELPER)
@@ -388,8 +388,14 @@ func _draw_slots() -> void:
 		if info.empty:
 			_dashed(r.grow(-1), Color(XUiSkin.LINE, 0.6))
 		else:
-			XUiSkin.panel_style().draw(ci, r)
-		if sel:
+			XUiSkin.draw_panel(ci, r)
+			var edge := StyleBoxFlat.new()
+			edge.draw_center = false
+			edge.set_corner_radius_all(XUiSkin.RADIUS)
+			edge.border_color = Color(XUiSkin.LINE, 0.35)
+			edge.set_border_width_all(1)
+			edge.draw(ci, r)
+		if sel:   # 选中的格子红框红底（选人时这格还亮着、减淡）
 			XUiSkin.draw_select(ci, r, XUiSkin.breath_alpha() if scene.mode == "slot" else 0.6, 1.0 if scene.mode == "slot" else 0.55)
 		XUiSkin.ds(slot_row, f, Vector2(r.position.x + 12, r.position.y + 10 + XUiSkin.FS_AUX), str(info.label), HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 		var tag := ""

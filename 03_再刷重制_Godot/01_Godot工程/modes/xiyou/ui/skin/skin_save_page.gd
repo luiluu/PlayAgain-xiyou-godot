@@ -66,6 +66,8 @@ func _ready() -> void:
 	card.add_child(body)
 	gui_input.connect(_on_gui)
 	mouse_filter = Control.MOUSE_FILTER_PASS
+	if scene.use_skin == true:
+		XSkinLayout.request_wide(self, true)   # 标题进来还没有存档，XUiSkin.on() 恒假：照开局页放宽这道门（横屏铺满）
 	_recent = _most_recent()
 
 
@@ -230,6 +232,7 @@ func _sync_dialog() -> void:
 		if dialog != null:
 			dialog.queue_free()
 			dialog = null
+			sc.act = default_act()   # 弹窗关了（做完或取消）：按钮焦点回默认那枚
 		return
 	if dialog == null:
 		dialog = XSkinConfirm.new()
@@ -237,6 +240,8 @@ func _sync_dialog() -> void:
 		dialog.index_changed.connect(_on_dialog_index)
 		dialog.cancelled.connect(func(): scene.cancel())
 		add_child(dialog)
+		if sc._phase == "confirm" and bool(confirm_data().get("danger", false)):
+			sc.confirm_index = 1   # 覆盖、删除：光标停在「取消」（旧确认窗停在「是」；T254 统一确认弹窗）
 	var d := confirm_data()
 	d.index = 0 if sc._phase == "notice" else sc.confirm_index
 	dialog.setup(d)
@@ -341,11 +346,13 @@ func default_act() -> int:
 ## 按下第 i 枚（同旧页：列表确定 → 操作窗停在第 i 格 → 确定）；不能点的蜂鸣、留在列表
 func press_action(i: int) -> void:
 	var sc := scene
+	var before := sc.act
 	sc.act = i
 	sc._phase = "action"
 	sc.ok()
 	if sc._phase == "action":
 		sc._phase = "list"
+		sc.act = before   # 不能点（蜂鸣）：按钮焦点留在原来那枚
 	sc._refresh()
 
 
