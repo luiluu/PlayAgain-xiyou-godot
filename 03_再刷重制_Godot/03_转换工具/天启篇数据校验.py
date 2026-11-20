@@ -2611,7 +2611,7 @@ XINMO_FIXED = {'debuff_params', 'steal_interval'}
 XINMO_TEXT_ARGS = {('tougu', 'stack'): 3, ('tougu', 'shed'): 2, ('niliu', 'wash'): 2,
                    ('daoxing', 'steal'): 3, ('daoxing', 'fallback'): 2, ('daoxing', 'break'): 3,
                    ('yingjie', 'charge'): 4, ('yingjie', 'shed'): 1, ('yingjie', 'skill'): 1,
-                   ('tongduo', 'stack'): 2, ('tongduo', 'suppress'): 1, ('tongduo', 'suppress_only'): 1}
+                   ('tongduo', 'stack'): 2, ('tongduo', 'suppress'): 3, ('tongduo', 'suppress_only'): 2}  # T323：消去层数、压制回合改占位
 ## 开战播报带占位的段（同堕报队伍平均烙印与增伤）；别的段 open 不许有占位
 XINMO_OPEN_ARGS = {'tongduo': 2}
 ## D174：玩家可见文字不用「境」「锚」、西游词「灵台」，不用 brand.json 的异化级名

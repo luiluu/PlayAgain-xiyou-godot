@@ -41,6 +41,7 @@ func _run() -> void:
 	_tongduo()
 	_saves()
 	_wiring_a2()
+	_td_log_order()
 	XTianqiXinmoTraits.force_roll = -1.0
 	XTianqiXinmoTraits.force_param = -1
 	XEnemy.force_roll = -1.0
@@ -608,14 +609,14 @@ func _yingjie() -> void:
 	var mag := _magic_aoe()
 	_check("yj.found_magic_aoe", not mag.is_empty())
 	# 映照：挑战者非发作伤害招；队友、防御、发作不记
-	XTianqiXinmoTraits.act_begin(lg, mate, mag)
+	_act(lg, mate, mag)
 	_check("yj.mate_not_mirrored", c.mirror.is_empty())
-	XTianqiXinmoTraits.act_begin(lg, ch, XDB.rec("Skills", 2))
+	_act(lg, ch, XDB.rec("Skills", 2))
 	_check("yj.guard_not_mirrored", c.mirror.is_empty())
-	XTianqiXinmoTraits.act_begin(lg, ch, mag)
+	_act(lg, ch, mag)
 	var m: Dictionary = c.mirror
 	_check("yj.mirror_magic_aoe", str(m.get("name", "")) == str(mag.name) and int(m.hit_type) == 2 and bool(m.is_aoe) and bool(m.is_heavy) and int(m.element_id) == int(mag.damage.elementId), m)
-	XTianqiXinmoTraits.act_begin(lg, ch, XTianqiBrand._cmd("misfire"))
+	_act(lg, ch, XTianqiBrand._cmd("misfire"))
 	_check("yj.fit_not_mirrored", str(c.mirror.name) == str(mag.name))
 	# 合成技能
 	var sk := XTianqiXinmoTraits.ying_skill(c, 3)
@@ -645,7 +646,7 @@ func _yingjie() -> void:
 	for a in lg.actors:
 		a.shield = 0.0
 	XTianqiBrand.act_begin(lg)
-	XTianqiXinmoTraits.act_begin(lg, e, single)
+	_act(lg, e, single)
 	var elogs := lg.execute(e, single, mate)
 	var hits := elogs.filter(func(l): return str(l.get("type", "")) == "hit" and is_same(l.get("target"), mate))
 	_check("yj.single_one_segment", hits.size() == 1, hits.size())
@@ -653,23 +654,23 @@ func _yingjie() -> void:
 	e.remove_state(st34)
 	# 护栏按行动累计：同一行动两下加起来不超过 60%
 	_full(lg)
-	XTianqiXinmoTraits.act_begin(lg, e, single)
+	_act(lg, e, single)
 	var d1 := XTianqiXinmoTraits.hp_damage(lg, e, mate, mate.mhp, single)
 	var d2 := XTianqiXinmoTraits.hp_damage(lg, e, mate, mate.mhp, single)
 	_check("yj.cap_per_action", d1 == floorf(mate.mhp * 60 / 100.0) and d2 == 0.0, [d1, d2, mate.mhp])
 	# 分档（小数值不碰护栏）
 	var tiers := []
 	for n in 4:
-		XTianqiXinmoTraits.act_begin(lg, e, single)
+		_act(lg, e, single)
 		tiers.append(XTianqiXinmoTraits.hp_damage(lg, e, mate, 100.0, XTianqiXinmoTraits.ying_skill(c, n)))
 	_check("yj.single_tiers", tiers == [105.0, 120.0, 135.0, 150.0], tiers)
 	c.mirror = {"name": str(mag.name), "hit_type": 2, "element_id": 0, "is_aoe": true, "is_heavy": true, "user": ch.display_name()}
 	tiers = []
 	for n in 4:
-		XTianqiXinmoTraits.act_begin(lg, e, single)
+		_act(lg, e, single)
 		tiers.append(XTianqiXinmoTraits.hp_damage(lg, e, mate, 100.0, XTianqiXinmoTraits.ying_skill(c, n)))
 	_check("yj.aoe_tiers", tiers == [71.0, 81.0, 91.0, 100.0], tiers)
-	XTianqiXinmoTraits.act_begin(lg, e, single)
+	_act(lg, e, single)
 	_check("yj.aoe_cap_50", XTianqiXinmoTraits.hp_damage(lg, e, mate, mate.mhp * 10.0, XTianqiXinmoTraits.ying_skill(c, 3)) == floorf(mate.mhp * 50 / 100.0))
 	_check("yj.normal_attack_100", XTianqiXinmoTraits.hp_damage(lg, e, mate, 1000.0, atk) == 1000.0)
 	# 额外印纹：主动招、影势 ≥2、掉了血才加；普攻底、1 层、没掉血不加
@@ -677,53 +678,60 @@ func _yingjie() -> void:
 	var heavy1 := XTianqiXinmoTraits.ying_skill(c, 1)
 	_full(lg)
 	var s0 := XTianqiBrand.sear_of(lg, mate)
-	XTianqiXinmoTraits.act_begin(lg, e, heavy3)
+	_act(lg, e, heavy3)
 	XTianqiXinmoTraits.after_hp(lg, e, mate, 100.0, mate.hp + 100.0, heavy3)
 	_check("yj.sear_aoe_8", XTianqiBrand.sear_of(lg, mate) - s0 == 8 or XTianqiBrand.fills_of(lg, mate) > 0, [s0, XTianqiBrand.sear_of(lg, mate)])
 	s0 = XTianqiBrand.sear_of(lg, mate)
 	XTianqiXinmoTraits.after_hp(lg, e, mate, 100.0, mate.hp + 100.0, heavy3)
 	_check("yj.sear_once_per_action", XTianqiBrand.sear_of(lg, mate) == s0)
-	XTianqiXinmoTraits.act_begin(lg, e, heavy1)
+	_act(lg, e, heavy1)
 	XTianqiXinmoTraits.after_hp(lg, e, mate, 100.0, mate.hp + 100.0, heavy1)
 	_check("yj.sear_low_stacks_none", XTianqiBrand.sear_of(lg, mate) == s0)
-	XTianqiXinmoTraits.act_begin(lg, e, heavy3)
+	_act(lg, e, heavy3)
 	XTianqiXinmoTraits.after_hp(lg, e, mate, 100.0, mate.hp, heavy3)
 	_check("yj.sear_shield_none", XTianqiBrand.sear_of(lg, mate) == s0)
 	c.mirror = {"name": "普通攻击", "hit_type": 1, "element_id": 0, "is_aoe": false, "is_heavy": false, "user": ch.display_name()}
 	var light3 := XTianqiXinmoTraits.ying_skill(c, 3)
-	XTianqiXinmoTraits.act_begin(lg, e, light3)
+	_act(lg, e, light3)
 	XTianqiXinmoTraits.after_hp(lg, e, mate, 100.0, mate.hp + 100.0, light3)
 	_check("yj.sear_attack_none", XTianqiBrand.sear_of(lg, mate) == s0)
 	# 循环：第 2 回合蓄势（3 层、明牌），蓄势回合挑战者改打普攻覆盖原大招（控招诱影），挑战者削 2、队友削 1
 	c.mirror = {}
-	XTianqiXinmoTraits.act_begin(lg, ch, mag)
+	_act(lg, ch, mag)
 	lg.turn = 1
 	_check("yj.t1_no_charge", XTianqiXinmoTraits.start_turn(lg).is_empty() and int(c.ying) == 0)
 	lg.turn = 2
 	var logs := XTianqiXinmoTraits.start_turn(lg)
 	_check("yj.t2_charge_3", int(c.ying) == 3 and int(c.charge_turn) == 2, [c.ying, c.charge_turn])
 	_check("yj.charge_log", _texts(logs).any(func(x): return x.contains(str(mag.name)) and x.contains("影·") and x.contains(ch.display_name())), _texts(logs))
-	XTianqiXinmoTraits.act_begin(lg, ch, ch.attack_skill())
+	_act(lg, ch, ch.attack_skill())
 	_check("yj.lure_overwrites", not bool(c.mirror.is_heavy) and not bool(c.mirror.is_aoe), c.mirror)
 	XTianqiXinmoTraits.after_hp(lg, ch, e, 100.0, e.hp + 100.0, atk)
 	_check("yj.challenger_shed_2", int(c.ying) == 1, c.ying)
 	XTianqiXinmoTraits.after_hp(lg, ch, e, 100.0, e.hp + 100.0, atk)
 	_check("yj.shed_once_per_action", int(c.ying) == 1)
-	XTianqiXinmoTraits.act_begin(lg, mate, atk)
+	_act(lg, mate, atk)
 	XTianqiXinmoTraits.after_hp(lg, mate, e, 100.0, e.hp + 100.0, atk)
 	_check("yj.ally_shed_1", int(c.ying) == 0, c.ying)
 	_check("yj.shed_log", _texts(XTianqiXinmoTraits.take_logs(lg)).any(func(x): return x.contains("迎击奏效") and x.contains("降至 0 层")))
 	c.ying = 3
-	XTianqiXinmoTraits.act_begin(lg, ch, XTianqiBrand._cmd("misfire"))
+	_act(lg, ch, XTianqiBrand._cmd("misfire"))
 	XTianqiXinmoTraits.after_hp(lg, ch, e, 100.0, e.hp + 100.0, atk)
 	_check("yj.fit_no_shed", int(c.ying) == 3)
 	# 第 3 回合：心魔头一次行动换成【影·普通攻击】，带当时的影势，用掉；第二次照常
 	lg.turn = 3
-	XTianqiXinmoTraits.act_begin(lg, mate, atk)
+	_act(lg, mate, atk)
 	XTianqiXinmoTraits.after_hp(lg, mate, e, 100.0, e.hp + 100.0, atk)
 	_check("yj.no_shed_outside_charge", int(c.ying) == 3)
+	# T323（T319 P2-1）：重演回合挑战者先手出大招，不覆写这一轮要重演的普攻（控招诱影、明牌不被破坏），只进下一轮候选
+	_act(lg, ch, mag)
+	_check("yj.preempt_keeps_mirror", not bool(c.mirror.is_heavy) and str(c.mirror.name) == str(ch.attack_skill().name), c.mirror)
+	_check("yj.preempt_next", str(c.mirror_next.get("name", "")) == str(mag.name), c.mirror_next)
 	var dec := XTianqiXinmoTraits.decide(lg, e)
 	_check("yj.replay", dec.size() == 2 and str(dec[0].get("name", "")) == "影·" + str(ch.attack_skill().name) and int(dec[0].get("_ying_stacks", -1)) == 3 and dec[1] == null, dec)
+	_check("yj.promote_after_cast", str(c.mirror.name) == str(mag.name) and c.mirror_next.is_empty(), [c.mirror, c.mirror_next])
+	_act(lg, ch, ch.attack_skill())
+	_check("yj.after_cast_direct", str(c.mirror.name) == str(ch.attack_skill().name) and c.mirror_next.is_empty(), [c.mirror, c.mirror_next])
 	_check("yj.replay_once", XTianqiXinmoTraits.decide(lg, e).is_empty() and int(c.ying) == 0)
 	_check("yj.not_actor", XTianqiXinmoTraits.decide(lg, mate).is_empty())
 	# 被控没出手：重演回合末影势消散
@@ -731,14 +739,39 @@ func _yingjie() -> void:
 	XTianqiXinmoTraits.start_turn(lg)
 	_check("yj.t5_charge", int(c.ying) == 3 and int(c.charge_turn) == 5)
 	lg.turn = 6
+	_act(lg, ch, mag)
+	_check("yj.t6_preempt_keeps", str(c.mirror.name) == str(ch.attack_skill().name) and str(c.mirror_next.get("name", "")) == str(mag.name), [c.mirror, c.mirror_next])
 	XTianqiXinmoTraits.end_turn(lg)
 	_check("yj.fade_after_replay_turn", int(c.ying) == 0)
+	_check("yj.promote_at_turn_end", str(c.mirror.name) == str(mag.name) and c.mirror_next.is_empty(), [c.mirror, c.mirror_next])
 	# 兜底：挑战者没出过伤害招
 	c.mirror = {}
 	lg.turn = 8
 	XTianqiXinmoTraits.start_turn(lg)
 	_check("yj.fallback_mirror", not c.mirror.is_empty() and str(c.mirror.user) == ch.display_name(), c.mirror)
+	# T323（T319 P2-2）：真走 BattleLogic.act——能动时记招，被控跳过行动时不记没打出的招
+	lg.turn = 30
+	c.mirror = {}
+	e.hp = e.mhp
+	lg.act(ch, ch.attack_skill(), e)
+	_check("yj.act_mirrors", str(c.mirror.get("name", "")) == str(ch.attack_skill().name), c.mirror)
+	c.mirror = {}
+	var stun := _stun_state()
+	_check("yj.found_stun", stun > 0)
+	ch.add_state(stun)
+	_check("yj.stunned", not lg.can_move(ch))
+	e.hp = e.mhp
+	var slogs := lg.act(ch, mag, e)
+	_check("yj.stun_skipped", slogs.any(func(l): return str(l.get("type", "")) == "skip"))
+	_check("yj.stun_not_mirrored", c.mirror.is_empty(), c.mirror)
+	ch.remove_state(stun)
 	lg.end_battle()
+
+
+## act_begin＋mirror_note（BattleLogic.act 判完能不能行动后、_forced_run 开头都记招；T323）
+func _act(lg: XBattleLogic, u, sk) -> void:
+	XTianqiXinmoTraits.act_begin(lg, u, sk)
+	XTianqiXinmoTraits.mirror_note(lg, u, sk)
 
 
 func _setb_all(lg: XBattleLogic, vals: Array) -> void:
@@ -843,7 +876,7 @@ func _tongduo() -> void:
 	XTianqiXinmoTraits.act_begin(lg, ch, sk)
 	XTianqiXinmoTraits.after_hp(lg, ch, e, 100.0, e.hp + 100.0, sk)
 	_check("td.suppress_shed", int(c.fall) == 2 and XTianqiXinmoTraits.suppressed(lg), [c.fall, c.suppress_to])
-	_check("td.suppress_log", _texts(XTianqiXinmoTraits.take_logs(lg)).any(func(x): return x.contains("守住本心") and x.contains("消去 1 层")))
+	_check("td.suppress_log", _texts(XTianqiXinmoTraits.take_logs(lg)).any(func(x): return x.contains("守住本心") and x.contains("消去 1 层") and x.contains("（2 回合）")))
 	_check("td.suppress_dealt", XTianqiXinmoTraits.hp_damage(lg, e, mate, 1000.0, sk) == 1220.0, XTianqiXinmoTraits.hp_damage(lg, e, mate, 1000.0, sk))
 	_check("td.suppress_taken_100", XTianqiXinmoTraits.hp_damage(lg, mate, e, 1000.0, sk) == 1000.0)
 	lg.turn = 7
@@ -853,7 +886,7 @@ func _tongduo() -> void:
 	c.fall = 0
 	XTianqiXinmoTraits.act_begin(lg, ch, sk)
 	XTianqiXinmoTraits.after_hp(lg, ch, e, 100.0, e.hp + 100.0, sk)
-	_check("td.suppress_only_log", _texts(XTianqiXinmoTraits.take_logs(lg)).any(func(x): return x.contains("压制了心魔的【同堕】共鸣")))
+	_check("td.suppress_only_log", _texts(XTianqiXinmoTraits.take_logs(lg)).any(func(x): return x.contains("压制了心魔的【同堕】（2 回合）")))
 	# 倒计时
 	c.fall = 2
 	c.fall_turns = 2
@@ -920,6 +953,32 @@ func _saves() -> void:
 			_check(name, t.is_alive() and t.hp >= 1.0 and t.hp <= floorf(t.mhp * 0.2), [t.hp, t.mhp, t.is_alive()])
 			lg.end_battle()
 	XZhenqi.pending_trial = {}
+
+
+## T323（T319 P3-2）：真走 BattleLogic.act，心魔打满我方印纹——「印纹发亮」排在「借势【同堕】」前
+func _td_log_order() -> void:
+	var lg := _xinmo(6)
+	lg.turn = 1
+	var e: XEnemy = lg.enemies[0]
+	var mate := _not_challenger(lg)
+	var c := XTianqiXinmoTraits.fight(lg)
+	c.gain_turn = -99
+	_full(lg)
+	mate.shield = 0.0
+	var bc := XTianqiBrand.fight(lg)
+	if not bc.has("sear"):
+		bc["sear"] = {}
+	bc.sear[mate] = XTianqiBrand.sear_cap(mate) - 1
+	var texts := _texts(lg.act(e, XDB.rec("Skills", 1), mate))
+	var lit := -1
+	var join := -1
+	for i in texts.size():
+		if lit < 0 and texts[i].contains("发亮"):
+			lit = i
+		if join < 0 and texts[i].contains("借势【同堕】"):
+			join = i
+	_check("td.log_order", lit >= 0 and join > lit, texts)
+	lg.end_battle()
 
 
 ## 真打：4～6 段几回合不报错；影劫第 3 回合真出【影·…】、只一段
