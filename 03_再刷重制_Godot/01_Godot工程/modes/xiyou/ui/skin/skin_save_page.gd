@@ -260,6 +260,8 @@ func confirm_data() -> Dictionary:
 		"load":
 			return {"title": "读取这份存档？", "body": "回到%s的进度，现在没存的进度不会留下。" % what, "buttons": ["读取", "取消"]}
 		"save":
+			if sc.seal_failed(sc.slot()):   # 校验失败的旧文件写盘时会改名留着（XSaveSeal.quarantine_if_failed），不是找不回来
+				return {"title": "覆盖这份存档？", "body": "%s会存成现在的进度；原来那份校验失败的文件会改名留着。" % what, "buttons": ["覆盖", "取消"], "danger": true}
 			return {"title": "覆盖这份存档？", "body": "%s会被现在的进度换掉，换掉就找不回来。" % what, "buttons": ["覆盖", "取消"], "danger": true}
 	return {"title": "删除这份存档？", "body": "%s会被删掉，删掉就找不回来。" % what, "buttons": ["删除", "取消"], "danger": true}
 

@@ -260,6 +260,26 @@ func _save_page() -> void:
 	check("save.load_done", loaded[0] and XSave.current_slot == 5)
 	p.queue_free()
 	await frames(2)
+	# 存档校验失败的一格：行尾、右牌写「存档校验失败」，读取弹只有「知道了」的提示，确定回列表
+	_state()
+	XSave.save(8)
+	var fw := FileAccess.open(XSave.path(8), FileAccess.WRITE)
+	fw.store_string("坏掉的存档")
+	fw.close()
+	var fp := open_save("load")
+	await frames(2)
+	if check("save.seal_failed_made", fp.seal_failed(8), XSave.path(8)):
+		fp.index = 7
+		fp.act = 0
+		fp._refresh()
+		check("save.seal_failed_row_card", fp.skin.list.items[7].right == XSaveSeal.FAIL_TEXT and fp.skin.card_info().get("failed", false))
+		act(fp, "ui_accept")
+		check("save.seal_failed_notice", fp._phase == "notice" and fp.skin.dialog != null and fp.skin.dialog.buttons.size() == 1 and fp.skin.dialog.buttons[0].text == "知道了")
+		await shots("save_seal_failed_notice")
+		act(fp, "ui_accept")
+		check("save.seal_failed_notice_back", fp._phase == "list" and fp.skin.dialog == null)
+	fp.queue_free()
+	await frames(2)
 	# 存档模式：默认「保存」，空格直接存，有档橙边覆盖确认
 	_state()
 	var sp := open_save("save")

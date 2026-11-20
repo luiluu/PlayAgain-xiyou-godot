@@ -545,7 +545,9 @@ func _load_back(lineup: Array) -> void:
 	if not _check("deploy.open", page != null):
 		return
 	await _frames(STEP)
-	await _key(KEY_ENTER)  # 整队 → 出战栏第 0 格
+	var old_page := page.skin == null
+	if old_page:
+		await _key(KEY_ENTER)  # 整队 → 出战栏第 0 格（T292 新界面没有指令窗，进页就在第 0 格）
 	await _key(KEY_RIGHT)  # 第 1 格（上场格）
 	await _key(KEY_ENTER)  # → 名单
 	await _list_to(page, b)
@@ -582,8 +584,9 @@ func _load_back(lineup: Array) -> void:
 	_check("deploy.helper_no_super", not XItemMarks._super_in(s, int(s.battle_slots[XTianqi.HELPER_SLOT])), s.battle_slots)
 	var fighters := s.battle_slots.slice(0, XTianqi.FIGHTERS).filter(func(id): return XItemMarks._super_in(s, int(id)))
 	_check("deploy.cap_holds", fighters.size() <= XTianqi.super_cap(s), s.battle_slots)
-	await _key(KEY_ESCAPE)  # 出战栏 → 指令
-	await _key(KEY_ESCAPE)  # 指令取消＝完成，回主菜单
+	await _key(KEY_ESCAPE)  # 出战栏 → 指令（T292 新界面：出战栏上取消＝完成，回主菜单）
+	if old_page:
+		await _key(KEY_ESCAPE)  # 指令取消＝完成，回主菜单
 	await _frames(STEP)
 	await _key(KEY_ESCAPE)  # 关主菜单
 	_check("deploy.closed", await _wait(func(): return _map_idle(XTianqi.HALL_MAP), 300))
