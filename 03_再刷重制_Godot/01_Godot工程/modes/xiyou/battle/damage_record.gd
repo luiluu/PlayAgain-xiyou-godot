@@ -167,12 +167,15 @@ const CONFIG_KEY := "codexRecordCollapsed"
 
 
 static func _ui_path() -> String:
-	return XConfig.path().get_base_dir().path_join(UI_FILE)
+	var base := XConfig.path()
+	if base == "":   # T291（T273 核查 P3-3）：没有设置文件路径（截图模式等）时不拼相对路径
+		return ""
+	return base.get_base_dir().path_join(UI_FILE)
 
 
 static func _load_collapsed() -> bool:
 	var cf := ConfigFile.new()
-	if FileAccess.file_exists(_ui_path()) and cf.load(_ui_path()) == OK:
+	if _ui_path() != "" and FileAccess.file_exists(_ui_path()) and cf.load(_ui_path()) == OK:
 		XConfig.set_flag(CONFIG_KEY, bool(cf.get_value("record", "collapsed", false)))
 		DirAccess.remove_absolute(_ui_path())
 	return XConfig.flag(CONFIG_KEY)

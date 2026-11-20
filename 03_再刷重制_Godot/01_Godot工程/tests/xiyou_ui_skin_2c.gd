@@ -1323,6 +1323,16 @@ func _u_prep_full() -> void:
 	_u_seed(hi + [0])
 
 
+## T291：同平时一场，但场上的掉落图标已经淡出（alpha 0、纵向放大、节点还在）——真实战斗等待期满时的样子
+func _u_prep_faded() -> void:
+	_u_prep_full()
+	for p in bb.field.get_children():
+		if p is XDropPopup:
+			for g in p.icons:
+				g.alpha = 0
+				g.sy = 2.5
+
+
 ## 没有印盘：没线、没连击（伤害统计照常）
 func _u_prep_bare() -> void:
 	_clear_lines()
@@ -1357,6 +1367,8 @@ func _u_flow(opts := {}) -> Dictionary:
 	var skip_at := float(opts.get("skip_at", -1.0))
 	var end_t := float(opts.get("until", 2.25))
 	Engine.time_scale = ts
+	if bool(opts.get("auto", false)):
+		bb.logic.auto = true   # 自动战斗：XVictoryScreen.automatic
 	var t0 := Time.get_ticks_usec()
 	bb._victory()
 	o.record_null = bb.record == null
@@ -1382,6 +1394,7 @@ func _u_flow(opts := {}) -> Dictionary:
 					screen = c
 			if screen != null:
 				o.t_screen = now
+				o.automatic = screen.automatic
 				o.boss = screen.boss
 				o.drop_grades = screen._drops.map(func(x): return XSkin2C.drop_grade(x))
 				o.fliers = ho.fliers.size() if ho != null and is_instance_valid(ho) else -1
@@ -1397,6 +1410,8 @@ func _u_flow(opts := {}) -> Dictionary:
 			ho_peak = maxi(ho_peak, int(ho.last.get("fliers", 0)))
 		elif bool(o.ho) and not o.has("t_ho_gone"):
 			o.t_ho_gone = now
+		if now > 0.62 and not o.has("field_ui_hidden"):   # T291 发现②：0.5 秒隐藏那一批之后，敌人名字／血条／首领胶囊也没了
+			o.field_ui_hidden = bb.gauges.values().all(func(g): return not g.box.visible) and not bb.boss_panel.visible
 		if screen != null and not o.has("t_close") and screen._ready_to_close:
 			o.t_close = now
 		if skip_at >= 0.0 and screen != null and not o.has("t_skip") and now - float(o.t_screen) >= skip_at:
@@ -1415,6 +1430,8 @@ func _u_flow(opts := {}) -> Dictionary:
 			continue
 		await get_tree().process_frame
 	Engine.time_scale = 1.0
+	if screen != null and is_instance_valid(screen):
+		o.field_ui_at_screen = bb.gauges.values().all(func(g): return not g.box.visible) and not bb.boss_panel.visible
 	o.ho_alive_end = ho != null and is_instance_valid(ho)
 	o.flier_peak = ho_peak
 	o.screen = screen
@@ -1453,6 +1470,20 @@ func _u_rules() -> void:
 		var vals := [float(old.get(k, -1.0)), float(off.get(k, -1.0)), float(on.get(k, -1.0))]
 		_check("u_same_total_" + k, vals.min() > 0.0 and vals.max() - vals.min() < 0.05, vals)
 	_check("u_wait_is_original", absf(float(on.get("t_screen", 0.0)) - 1.0) < 0.05, on.get("t_screen"))
+	# T291 发现②：结算页出来时敌人名字／血条／首领状态胶囊不再压在上面（新旧皮肤都要；开关关回旧样子）
+	_check("u_field_ui_cleared_new", on.get("field_ui_hidden", false) and on.get("field_ui_at_screen", false), [on.get("field_ui_hidden"), on.get("field_ui_at_screen")])
+	_check("u_field_ui_cleared_old", old.get("field_ui_hidden", false) and old.get("field_ui_at_screen", false), [old.get("field_ui_hidden"), old.get("field_ui_at_screen")])
+	XSkin2C.RESULT_CLEAR = false
+	var keep := await _u_flow({"until": 1.5})
+	XSkin2C.RESULT_CLEAR = true
+	_check("u_field_ui_switch_off_keeps", not keep.get("field_ui_hidden", true), [keep.get("field_ui_hidden"), keep.get("field_ui_at_screen")])
+	# T291 发现①：掉落图标已淡出（等待期满的真实样子）也飞；快照开关关＝回到建结算页才扫，淡出的飞不了
+	var faded := await _u_flow({"prep": _u_prep_faded, "until": 1.5})
+	_check("u_faded_drops_still_fly", int(faded.get("fliers", -1)) == 2 and int(faded.get("flier_targets", -1)) == 2, [faded.get("fliers"), faded.get("flier_targets")])
+	XSkin2C.HANDOFF_DROP_SNAP = false
+	var faded_off := await _u_flow({"prep": _u_prep_faded, "until": 1.5})
+	XSkin2C.HANDOFF_DROP_SNAP = true
+	_check("u_faded_drops_snap_switch_off", int(faded_off.get("fliers", -1)) == 0, faded_off.get("fliers"))
 	# 小怪战
 	var minor := await _u_flow({"troop": U_MINOR, "until": 1.7})
 	_check("u_minor_flag", minor.get("ho", false) and not minor.get("boss", true), minor.get("boss"))
@@ -1469,6 +1500,9 @@ func _u_rules() -> void:
 		var sm := await _u_flow({"until": 1.4})
 		_check("u_motion%d_no_fly" % m, sm.get("ho", false) and int(sm.get("flier_peak", -1)) == 0 and not sm.get("ho_alive_end", true) and float(sm.get("t_ho_gone", 9.0)) <= float(sm.get("t_screen", 0.0)) + 0.2, [sm.get("flier_peak"), sm.get("t_ho_gone"), sm.get("t_screen")])
 	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	# T291（T273 核查 P3-1）：自动战斗（v.automatic）走同一支「不飞、0.12 秒淡出」，动效开着也一样
+	var au := await _u_flow({"auto": true, "until": 1.4})
+	_check("u_auto_no_fly", au.get("automatic", false) and au.get("ho", false) and int(au.get("flier_peak", -1)) == 0 and int(au.get("fliers", -1)) == 0 and not au.get("ho_alive_end", true) and float(au.get("t_ho_gone", 9.0)) <= float(au.get("t_screen", 0.0)) + 0.2, [au.get("automatic"), au.get("flier_peak"), au.get("t_ho_gone"), au.get("t_screen")])
 	# 挂机中：不弹结算页，等待期满衔接层直接释放
 	var hg := await _u_flow({"hang": true, "until": 1.25})
 	_check("u_hangup_released", hg.get("ho", false) and hg.get("screen") == null and not hg.get("ho_alive_end", true) and float(hg.get("t_ho_gone", 9.0)) <= 1.1, [hg.get("t_ho_gone"), hg.get("screen")])
@@ -1505,6 +1539,15 @@ func _u_leftovers() -> void:
 	cf.save(XDamageRecord._ui_path())
 	_check("p34_migrate_old_file", XDamageRecord._load_collapsed() and not FileAccess.file_exists(XDamageRecord._ui_path()) and XConfig.flag(XDamageRecord.CONFIG_KEY))
 	XDamageRecord.save_collapsed(false)
+	# T291（T273 核查 P3-3）：设置文件路径是空串（截图模式或只设了存档目录）时 _ui_path 返回空串，不拼相对路径，读取也不炸
+	var keep_po := XConfig.path_override
+	XConfig.path_override = ""
+	var keep_dir := XSave.dir_override
+	XSave.dir_override = "user://test_xiyou_ui_skin_2c"
+	_check("p33b_ui_path_empty_guard", XConfig.path() == "" and XDamageRecord._ui_path() == "", [XConfig.path(), XDamageRecord._ui_path()])
+	XDamageRecord._load_collapsed()
+	XSave.dir_override = keep_dir
+	XConfig.path_override = keep_po
 	# P3-2：小怪名的菱形让整组宽 +16，状态图标按整组宽摆
 	XUiSkin.FORCE = true
 	_check("p32_icon_width_new", XSkin2C.enemy_name_width(100.0) == 116.0)
@@ -1531,11 +1574,38 @@ func _u_leftovers() -> void:
 		var rr: Rect2 = arc.last_name_rect
 		_check("p31_name_pill_clear_of_hp", rr.has_area() and rr.end.y <= arc.last_num_top - XSkinBossArc.NAME_NUM_GAP + 0.01, [rr, arc.last_num_top])
 		XSkin2C.NAMES = false
-		arc.last_name_rect = Rect2()
-		arc.queue_redraw()
+		arc.queue_redraw()   # T291（T273 核查 P3-4）：不手动清 last_name_rect，靠 _draw 开头自己清
 		await _frames(2)
 		_check("p31_names_off_old", not arc.last_name_rect.has_area())
 		XSkin2C.NAMES = true
+	# T291（T273 核查 P3-2）：全灭印盘按稿 0.12 秒淡出（动效关直接隐藏；开关关不管）
+	for m in [[XUiSkin.Motion.FULL, "full"], [XUiSkin.Motion.OFF, "off"]]:
+		XUiSkin.motion_override = m[0]
+		await _open_b(true, U_BOSS)
+		_no_windows()
+		_war(5)
+		await _frames(30)
+		var dl := _dial()
+		bb._fade_seal_dial_on_defeat()
+		if m[0] == XUiSkin.Motion.OFF:
+			_check("p32b_defeat_dial_hidden_motion_off", not dl.visible, dl.visible)
+		else:
+			_check("p32b_defeat_dial_fading", dl.modulate.a > 0.0 or dl.visible, dl.modulate.a)
+			await get_tree().create_timer(XSkin2C.HO_OUT + 0.15).timeout
+			_check("p32b_defeat_dial_faded_out", dl.modulate.a == 0.0, dl.modulate.a)
+		_u_close()
+		await _frames(2)
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	await _open_b(true, U_BOSS)
+	_no_windows()
+	_war(5)
+	await _frames(30)
+	XSkin2C.DEFEAT_FADE = false
+	var dl2 := _dial()
+	bb._fade_seal_dial_on_defeat()
+	await get_tree().create_timer(XSkin2C.HO_OUT + 0.15).timeout
+	XSkin2C.DEFEAT_FADE = true
+	_check("p32b_defeat_fade_switch_off", dl2.modulate.a > 0.9 and dl2.visible, dl2.modulate.a)
 	_u_close()
 	await _frames(2)
 

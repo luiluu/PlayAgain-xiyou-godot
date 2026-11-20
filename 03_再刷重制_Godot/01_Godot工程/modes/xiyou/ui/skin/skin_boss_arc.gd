@@ -430,6 +430,7 @@ func _draw_race_glyph(c: Vector2, s: float, race_id: int, al: float) -> void:
 
 
 func _draw() -> void:
+	last_name_rect = Rect2()   # T291（T273 核查 P3-4）：每帧先清，动态关 NAMES 时不留上次矩形
 	if battler == null or layout_alpha <= 0:
 		return
 	_last_ink_text = INK_TEXT
