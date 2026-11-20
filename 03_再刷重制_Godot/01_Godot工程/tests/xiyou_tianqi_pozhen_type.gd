@@ -38,6 +38,8 @@ func _run() -> void:
 	var was := XTianqiElements.POZHEN_BY_TYPE
 	var was_off := XTianqiElements.POZHEN_OFF
 	var was_t := XGuardianRework.TRANSFORM_ANCHOR
+	var was_id := XGuardianRework.TRANSFORM_IDENTITY
+	_check("tfid.default_on", XGuardianRework.TRANSFORM_IDENTITY)  # T323（T322 P3-1）：先断言默认值，再由各段改
 	_check("default_off_on", XTianqiElements.POZHEN_OFF)
 	_check("default_type_off", not XTianqiElements.POZHEN_BY_TYPE)
 	_check("transform.default_on", XGuardianRework.TRANSFORM_ANCHOR)
@@ -58,6 +60,7 @@ func _run() -> void:
 	XTianqiElements.POZHEN_BY_TYPE = was
 	XTianqiElements.POZHEN_OFF = was_off
 	XGuardianRework.TRANSFORM_ANCHOR = was_t
+	XGuardianRework.TRANSFORM_IDENTITY = was_id
 	XEnemy.force_roll = -1.0
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -258,10 +261,13 @@ func _tf_grown(troop: int, to: int, tianqi := true) -> Dictionary:
 	e.param_mark_dirty()
 	e.param_refresh()
 	var prof := XTianqiElements.enemy_profile(e, logic)
-	return {"before": before, "after": _params(e), "buffs": buffs_before, "buffs_after": e.buffs.duplicate(), "id": e.enemy_id,
+	var out := {"flag": e.boss_difficulty_boss, "before": before, "after": _params(e), "buffs": buffs_before, "buffs_after": e.buffs.duplicate(), "id": e.enemy_id,
 		"tf_floor": XGuardianRework.transform_floor(e), "gfloor": XGuardianRework.guardian_floor(e), "growth": XGuardianRework.growth_on(e),
 		"source": str(prof.get("source", "")), "pfloor": int(prof.get("floor", 0)), "weak": prof.get("weak", []),
 		"boss": XTianqiElements.is_boss_enemy(e), "res_before": res_before, "res_after": XGuardianRework.resistance(e, 0.5)}
+	logic.sequence_buff(e, 2, true, true, 5)  # T323（T322 P3-1）：变身后再上第 4 层强化（各项判定都取完了再上）
+	out["buffs_4th"] = e.buffs.duplicate()
+	return out
 
 
 func _same8(a: Array, b: Array) -> bool:
@@ -274,7 +280,6 @@ func _same8(a: Array, b: Array) -> bool:
 func _identity() -> void:
 	XGuardianRework.TRANSFORM_ANCHOR = true
 	XGuardianRework.TRANSFORM_IDENTITY = true
-	_check("tfid.default_on", XGuardianRework.TRANSFORM_IDENTITY)
 	for row in TF_PAIRS:
 		var f := int(row[2])
 		var r := _tf_grown(int(row[0]), int(row[1]))
@@ -287,6 +292,8 @@ func _identity() -> void:
 		_check(tag + ".growth", r.growth)
 		_check(tag + ".deck", r.source == "guardian" and r.pfloor == f and not (r.weak as Array).is_empty(), [r.source, r.pfloor, r.weak])
 		_check(tag + ".boss", r.boss)
+		_check(tag + ".boss_flag", r.flag, r.id)  # T323（T322 P2-1）：538 不在首领表，变身后 boss_difficulty_boss 也要保底为真（首领规则、减益减半、击晕豁免、状态栏都读它）
+		_check(tag + ".buff_cap3", int(r.buffs_4th[2]) == 3, r.buffs_4th)
 		_check(tag + ".resist", r.res_after == r.res_before and r.res_before > 0.5, [r.res_before, r.res_after])
 
 
@@ -304,7 +311,7 @@ func _identity_off() -> void:
 		_check(tag + ".deck_lost", r.source != "guardian", r.source)
 		_check(tag + ".resist_lost", r.res_after == 0.5, r.res_after)
 		if int(row[1]) == 538:
-			_check(tag + ".boss_lost_538", not r.boss)
+			_check(tag + ".boss_lost_538", not r.boss and not r.flag, [r.boss, r.flag])
 	XGuardianRework.TRANSFORM_IDENTITY = true
 
 
@@ -324,8 +331,10 @@ func _identity_xiyou() -> void:
 	var align := XRiftAlien.ALIGN_LOBBY
 	XRiftAlien.ALIGN_LOBBY = false
 	var r := _tf_grown(467, 929, false)
+	var r538 := _tf_grown(466, 538, false)
 	XRiftAlien.ALIGN_LOBBY = align
 	_check("tfid_xy.none", r.tf_floor == 0 and not r.growth and r.source == "", [r.tf_floor, r.growth, r.source])
+	_check("tfid_xy.538_not_boss", r538.tf_floor == 0 and not r538.flag, [r538.tf_floor, r538.flag])  # T323：西游档 538 照原版不是首领
 
 
 ## P3-2：破阵分类先判是不是技能；道具 392（与带 mode=magical 的技能同号、命中类型非魔法）分类按命中类型，正式结算照原版借同号
