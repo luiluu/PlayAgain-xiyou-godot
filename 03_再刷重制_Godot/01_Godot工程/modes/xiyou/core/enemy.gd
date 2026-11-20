@@ -285,7 +285,30 @@ func warehouse_rate() -> float:
 	return 1.0
 
 func xparam(i: int) -> float:
+	if i >= 1 and i <= 4 and XTianqiCombat.cap_on() and XTianqiCombat.xparam_cap_pct(self, i) >= 0:  # T285（D237 丙）：天启篇这一项有上限时：去仓库 ×2、底子封顶、不低于 0；上限 -1 的项照原路（r2 P1-1）
+		return XTianqiCombat.enemy_xparam(self, i)
 	return XTianqiAffixBattle.enemy_xparam(self, i, super.xparam(i) * warehouse_rate())  # 天启篇词条「压制」
+
+## T285：特性 22 第 i 项拆成 [底子, 我方减益]：底子＝敌人数据特性＋状态里的正值；减益＝状态里的负值（≤0）
+func xparam_parts(i: int) -> Array:
+	var base := 0.0
+	var neg := 0.0
+	for t in data().get("traits", []):
+		if int(t.code) == TRAIT_XPARAM and int(t.dataId) == i:
+			base += float(t.value)
+	for o in states() + floor_states():
+		for t in o.get("traits", []):
+			if int(t.code) == TRAIT_XPARAM and int(t.dataId) == i:
+				var v := float(t.value)
+				if v > 0.0:
+					base += v
+				else:
+					neg += v
+	return [base, neg]
+
+## T285：甚尔五感读到的暴击闪避：夹完上限的底子乘 pct%（整数，默认 50），再扣我方减益与压制，不低于 0
+func cev_for_toji(pct: int) -> float:
+	return XTianqiCombat.enemy_xparam(self, 3, pct)
 
 func sparam(i: int) -> float:
 	return super.sparam(i) * warehouse_rate()
