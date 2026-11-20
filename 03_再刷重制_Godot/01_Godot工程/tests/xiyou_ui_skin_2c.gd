@@ -14,7 +14,7 @@ var _done := []
 var b: XBattleScene
 var lg: XBattleLogic
 var _helper: XActor
-var only := ""        # -- --only=a／b：只跑卡 A 或卡 B（开发时用；检查脚本不带参数，两张都跑）
+var only := ""        # -- --only=a／b／u：只跑卡 A、卡 B 或卡 U（开发时用；检查脚本不带参数，三张都跑）
 
 
 func _ready() -> void:
@@ -85,9 +85,13 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0
 	if _shooting():
 		DirAccess.make_dir_recursive_absolute(out_dir)
-	if only == "b":
+	if only == "b" or only == "u":
 		_done = ["victory", "gameover"]
-		await _card_b()
+		if only == "b":
+			await _card_b()
+		else:
+			_done.append("card_b")
+			await _card_u()
 		_finish()
 		return
 	_unit()
@@ -115,6 +119,7 @@ func _run() -> void:
 	await _frames(3)
 	if only != "a":
 		await _card_b()
+		await _card_u()
 	_finish()
 
 
@@ -551,7 +556,7 @@ func _mixed_drops(n: int) -> Array:
 
 
 func _finish() -> void:
-	_check("all_parts_reached_end", _done == ["victory", "gameover"] + ([] if only == "a" else ["card_b"]), _done)
+	_check("all_parts_reached_end", _done == ["victory", "gameover"] + ([] if only == "a" else ["card_b"]) + ([] if only in ["a", "b"] else ["card_u"]), _done)
 	XUiSkin.FORCE = false
 	XUiSkin.motion_override = -1
 	XEnemy.force_roll = -1.0
@@ -570,7 +575,7 @@ var blg: XBattleLogic
 
 
 ## 开一场真战斗当底（新皮肤／旧皮肤），伤害统计、掉落动画两个设置打开；troop 4 是小怪战
-func _open_b(new_skin: bool, troop := 4, members := [8, 9, 10], prep := Callable()) -> bool:
+func _open_b(new_skin: bool, troop := 4, members := [8, 9, 10], prep := Callable(), map := {}) -> bool:
 	if bb != null and is_instance_valid(bb):
 		bb.bgm.stop()
 		bb.queue_free()
@@ -589,7 +594,7 @@ func _open_b(new_skin: bool, troop := 4, members := [8, 9, 10], prep := Callable
 	if prep.is_valid():
 		prep.call(s)
 	bb = XBattleScene.new()
-	bb.setup(troop, true, false, {})
+	bb.setup(troop, true, false, map)
 	add_child(bb)
 	var ok := await _until(func(): return bb.cmd_win != null and bb.cmd_win.active)
 	blg = bb.logic
@@ -1238,3 +1243,326 @@ func _list_for(a: XActor, n: int) -> void:
 
 func _finish_b() -> void:
 	pass
+
+
+## ======== 卡 U（T273，照 T254「卡 U」）：战斗→结算的衔接；附 T267 核查遗留（P2-1 雪地整屏、P3-1～4） ========
+## 跑真的 BattleScene._victory()（troop 430 首领战、troop 4 小怪战），从最后一击起逐帧看：衔接层建没建、快照在 _end_record 之前、
+## 0.5 秒 ui 隐藏后衔接层仍在原位、进场时飞、跳过无残留、挂机释放；开关关／旧皮肤时 record 当帧置空、总时长三种一样。
+
+const U_SNOW := {"specifyBattleback": true, "battleback1Name": "IceCave", "battleback2Name": "Snowfield"}   # 地面冰原（battlebacks1 没有 Snowfield）、远景雪原
+const U_BOSS := 430
+const U_MINOR := 2      # 三只普通怪，没有首领血条
+var _u_pool := []
+
+
+func _card_u() -> void:
+	_b_switches(true)
+	XSkin2C.HANDOFF = true
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	XUiSkin.FORCE = true
+	_check("u_switch_default", XSkin2C.HANDOFF and XSkin2C.handoff_on())
+	XUiSkin.FORCE = false
+	_check("u_xiyou_off", not XSkin2C.handoff_on())
+	await _u_leftovers()
+	await _u_rules()
+	if _shooting():
+		for sz in [[Vector2i(1280, 720), ""], [Vector2i(1600, 720), "_20x9"]]:
+			_b_suffix = str(sz[1])
+			get_window().size = sz[0]
+			await _frames(4)
+			await _u_shots()
+		_b_suffix = ""
+		get_window().size = Vector2i(1280, 720)
+		await _frames(4)
+	_u_close()
+	await _frames(2)
+	XSkin2C.HANDOFF = true
+	XUiSkin.motion_override = -1
+	_done.append("card_u")
+
+
+func _u_close() -> void:
+	Engine.time_scale = 1.0
+	if bb != null and is_instance_valid(bb):
+		bb.bgm.stop()
+		bb.queue_free()
+		bb = null
+
+
+## 第一个敌人掉这几档各一件（其余敌人不掉），场上同时放出这几件的掉落图标；返回掉落
+func _u_seed(grades: Array) -> Array:
+	if _u_pool.is_empty():
+		_u_pool = _mixed_drops(80)
+	var ds := []
+	for g in grades:
+		for d in _u_pool:
+			if XSkin2C.drop_grade(d) == g:
+				ds.append(d)
+				break
+	for e in blg.enemies:
+		blg._treasure[blg.stable_id(e)] = ds.duplicate(true) if e == blg.enemies[0] else []
+	if not ds.is_empty():
+		var p := _drop_at(blg.enemies[0], grades)
+		# 掉落图标落地后约 1 秒就淡出，等 1.0 秒等待期满多半已释放（照稿：已释放的不飞）。这里让图标一直留着，好核、好拍「飞进大圆章」
+		for g in p.icons:
+			g.wait = 100000
+	return ds
+
+
+## 平时的一场：战争线火花 7／10、23 连击、伤害统计四人、场上两件史诗以上（池里最高的两档）＋一件普通
+func _u_prep_full() -> void:
+	_war(7)
+	_combo(23)
+	bb.record.values = [123500.0, 45700.0, 9876.0, 3210.0, 0.0]
+	if _u_pool.is_empty():
+		_u_pool = _mixed_drops(80)
+	var hi := []
+	for g in [6, 5, 4, 3]:
+		if hi.size() < 2 and _u_pool.any(func(d): return XSkin2C.drop_grade(d) == g):
+			hi.append(g)
+	_u_seed(hi + [0])
+
+
+## 没有印盘：没线、没连击（伤害统计照常）
+func _u_prep_bare() -> void:
+	_clear_lines()
+	bb.record.values = [123500.0, 45700.0, 9876.0, 3210.0, 0.0]
+	_u_seed([5, 0])
+
+
+## 跑一次 _victory()。opts：new（新皮肤，默认 true）、troop、prep、map、hang（挂机中）、skip_at（结算进场后几秒按确定）、
+## until（看到第几秒）、shots（每 0.1 秒拍一张的名字；空＝不拍）、shot_from（从第几秒起拍）、time_scale（拍图时放慢，默认 0.25）
+func _u_flow(opts := {}) -> Dictionary:
+	var o := {"lit": -1, "lead": Vector2.INF, "dial_pos": Vector2.INF}
+	if not await _open_b(bool(opts.get("new", true)), int(opts.get("troop", U_BOSS)), [8, 9, 10], Callable(), opts.get("map", {})):
+		o.open_failed = true
+		return o
+	_no_windows()
+	var prep: Callable = opts.get("prep", _u_prep_full)
+	prep.call()
+	await _frames(int(opts.get("settle", 70)))
+	var d := _dial()
+	if d != null and d.last.has("lit"):
+		o.lit = int(d.last.lit)
+		o.dial_pos = d.global_position
+	var r := bb.record
+	if r != null and r.last.has("lead_dot"):
+		o.lead = r.get_global_transform_with_canvas() * Vector2(r.last.lead_dot)
+	if bool(opts.get("hang", false)):
+		XState.current.hang_up_active = true
+		XState.current.hang_up_origin = Vector2i(1, 1)
+	var shots := str(opts.get("shots", ""))
+	var ts := float(opts.get("time_scale", 0.25 if shots != "" else 1.0))
+	var from := float(opts.get("shot_from", 0.0))
+	var skip_at := float(opts.get("skip_at", -1.0))
+	var end_t := float(opts.get("until", 2.25))
+	Engine.time_scale = ts
+	var t0 := Time.get_ticks_usec()
+	bb._victory()
+	o.record_null = bb.record == null
+	var ho = bb.get_node_or_null("Skin2CHandoff")
+	o.ho = ho != null
+	if ho != null:
+		o.ho_lit = int(ho.info.get("lit", -1))
+		o.ho_lead = ho.lead_pos
+		o.dial_moved = d != null and d.get_parent() == ho
+		o.record_in_ho = ho.record != null and ho.record == r
+		o.camera_excl = not bb._camera.get("base", {}).has(ho) and bb._camera.get("base", {}).has(bb.field)
+	var screen: XVictoryScreen = null
+	var k := 0
+	var hide_checked := false
+	var ho_peak := 0
+	while true:
+		var now := (Time.get_ticks_usec() - t0) / 1e6 * ts
+		if now >= end_t:
+			break
+		if screen == null:
+			for c in bb.ui.get_children():
+				if c is XVictoryScreen:
+					screen = c
+			if screen != null:
+				o.t_screen = now
+				o.boss = screen.boss
+				o.drop_grades = screen._drops.map(func(x): return XSkin2C.drop_grade(x))
+				o.fliers = ho.fliers.size() if ho != null and is_instance_valid(ho) else -1
+				o.flier_targets = screen._skin.big_targets().size() if screen._skin != null else -1
+		if ho != null and is_instance_valid(ho):
+			if not hide_checked and now > 0.62 and screen == null:
+				hide_checked = true
+				o.ui_all_hidden = not bb.tianqi_meter.visible and not bb.message.visible   # 0.5 秒 ui 那批照旧隐藏了（计量条、消息窗）
+				o.ho_visible = ho.is_visible_in_tree() and d != null and d.is_visible_in_tree()
+				o.dial_pos_after = d.global_position if d != null else Vector2.INF
+				o.tags_faded = d != null and d.tag_alpha == 0.0
+				o.record_gone = ho.record == null
+			ho_peak = maxi(ho_peak, int(ho.last.get("fliers", 0)))
+		elif bool(o.ho) and not o.has("t_ho_gone"):
+			o.t_ho_gone = now
+		if screen != null and not o.has("t_close") and screen._ready_to_close:
+			o.t_close = now
+		if skip_at >= 0.0 and screen != null and not o.has("t_skip") and now - float(o.t_screen) >= skip_at:
+			screen._confirm()
+			o.t_skip = now
+		if shots != "" and now >= from + k * 0.1:
+			await RenderingServer.frame_post_draw
+			var img := get_viewport().get_texture().get_image()
+			var w := 1000 if img.get_width() > 1300 else 800
+			img.resize(w, 450, Image.INTERPOLATE_LANCZOS)
+			if k == 0:
+				_check("u_shot_size_" + shots + _b_suffix, img.get_size() == Vector2i(w, 450) and (w == 1000) == (_b_suffix == "_20x9"), img.get_size())
+			var nm := "U_%s%s_%02d_%.1fs" % [shots, _b_suffix, k, from + k * 0.1]
+			_check("shot_" + nm, img.save_jpg(out_dir.path_join(nm + ".jpg"), 0.78) == OK)
+			k += 1
+			continue
+		await get_tree().process_frame
+	Engine.time_scale = 1.0
+	o.ho_alive_end = ho != null and is_instance_valid(ho)
+	o.flier_peak = ho_peak
+	o.screen = screen
+	if screen != null and is_instance_valid(screen) and not o.has("t_skip"):
+		if not screen._ready_to_close:
+			await _until(func(): return screen._ready_to_close, 240)
+		screen._confirm()   # 关页，_victory 走完
+	await _frames(2)
+	if bool(opts.get("hang", false)) and XState.current != null:
+		XState.current.hang_up_active = false
+	return o
+
+
+func _u_rules() -> void:
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	# 旧皮肤：一行不变（record 当帧置空、没有衔接层）
+	var old := await _u_flow({"new": false, "until": 2.15})
+	_check("u_old_record_null_same_frame", old.get("record_null", false) and not old.get("ho", true), old)
+	# 新皮肤、开关关：照原版移除
+	XSkin2C.HANDOFF = false
+	var off := await _u_flow({"until": 2.15})
+	XSkin2C.HANDOFF = true
+	_check("u_off_no_layer", off.get("record_null", false) and not off.get("ho", true), off)
+	# 新皮肤、开关开：首领战
+	var on := await _u_flow({"until": 2.15})
+	_check("u_on_layer_built", on.get("ho", false) and on.get("dial_moved", false) and on.get("camera_excl", false), on)
+	_check("u_record_null_same_frame", on.get("record_null", false) and on.get("record_in_ho", false), on)
+	_check("u_snapshot_before_end_record", int(on.get("ho_lit", -2)) == int(on.lit) and int(on.lit) == 7 and (on.get("ho_lead", Vector2.INF) as Vector2).distance_to(on.lead) < 0.5, [on.get("ho_lit"), on.lit, on.get("ho_lead"), on.lead])
+	_check("u_after_ui_hide_still_there", on.get("ui_all_hidden", false) and on.get("ho_visible", false) and (on.get("dial_pos_after", Vector2.INF) as Vector2).distance_to(on.dial_pos) < 0.5, on)
+	_check("u_wait_tags_record_faded", on.get("tags_faded", false) and on.get("record_gone", false), on)
+	_check("u_boss_flag", on.get("boss", false), on.get("boss"))
+	_check("u_fliers_for_big_medals", int(on.get("fliers", -1)) == 2 and int(on.get("flier_targets", -1)) == 2 and int(on.get("flier_peak", 0)) >= 2, [on.get("fliers"), on.get("flier_targets"), on.get("flier_peak")])
+	_check("u_layer_freed_after_intro", not on.get("ho_alive_end", true) and float(on.get("t_ho_gone", 9.0)) <= float(on.get("t_screen", 0.0)) + 0.95, [on.get("t_ho_gone"), on.get("t_screen")])
+	# 总时长不变：从最后一击到建结算页、到可以关，三种一样（容差两帧）
+	for k in ["t_screen", "t_close"]:
+		var vals := [float(old.get(k, -1.0)), float(off.get(k, -1.0)), float(on.get(k, -1.0))]
+		_check("u_same_total_" + k, vals.min() > 0.0 and vals.max() - vals.min() < 0.05, vals)
+	_check("u_wait_is_original", absf(float(on.get("t_screen", 0.0)) - 1.0) < 0.05, on.get("t_screen"))
+	# 小怪战
+	var minor := await _u_flow({"troop": U_MINOR, "until": 1.7})
+	_check("u_minor_flag", minor.get("ho", false) and not minor.get("boss", true), minor.get("boss"))
+	_check("u_minor_layer_freed", not minor.get("ho_alive_end", true) and float(minor.get("t_ho_gone", 9.0)) <= float(minor.get("t_screen", 0.0)) + 0.5, [minor.get("t_ho_gone"), minor.get("t_screen")])
+	# 没有印盘：不建衔接层
+	var bare := await _u_flow({"prep": _u_prep_bare, "until": 1.2})
+	_check("u_no_dial_no_layer", not bare.get("ho", true) and bare.get("record_null", false), bare)
+	# 跳过：飞着的东西直接消失
+	var sk := await _u_flow({"skip_at": 0.6, "until": 1.75})
+	_check("u_skip_no_leftover", sk.has("t_skip") and not sk.get("ho_alive_end", true) and float(sk.get("t_ho_gone", 9.0)) - float(sk.get("t_skip", 0.0)) < 0.05, [sk.get("t_skip"), sk.get("t_ho_gone")])
+	# 自动战斗、简化、关：不飞，0.12 秒淡出
+	for m in [XUiSkin.Motion.SIMPLE, XUiSkin.Motion.OFF]:
+		XUiSkin.motion_override = m
+		var sm := await _u_flow({"until": 1.4})
+		_check("u_motion%d_no_fly" % m, sm.get("ho", false) and int(sm.get("flier_peak", -1)) == 0 and not sm.get("ho_alive_end", true) and float(sm.get("t_ho_gone", 9.0)) <= float(sm.get("t_screen", 0.0)) + 0.2, [sm.get("flier_peak"), sm.get("t_ho_gone"), sm.get("t_screen")])
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	# 挂机中：不弹结算页，等待期满衔接层直接释放
+	var hg := await _u_flow({"hang": true, "until": 1.25})
+	_check("u_hangup_released", hg.get("ho", false) and hg.get("screen") == null and not hg.get("ho_alive_end", true) and float(hg.get("t_ho_gone", 9.0)) <= 1.1, [hg.get("t_ho_gone"), hg.get("screen")])
+	_u_close()
+
+
+## ---- T267 核查遗留 P3-1～4 ----
+func _u_leftovers() -> void:
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	# P3-3：火花上限 >14 弧形条，满的那一下（计量已归零）整圈全亮
+	await _open_b(true, U_MINOR)
+	_no_windows()
+	var d := _dial()
+	blg.set_meta("xwar_alien", {"units": {blg.enemies[0]: {"tier": "omen"}}, "sparks": 0})
+	bb.tianqi_meter.refresh()
+	await _frames(3)
+	d.freeze()   # 冻结住再改 rows（不让 0.1 秒刷新盖回去）；上限改 16 走弧形条，计量 0（满的那一下已归零）
+	d.frozen.rows[0].full = 16
+	d.frozen.rows[0].value = 0
+	d.queue_redraw()
+	await _frames(2)
+	_check("p33_arc_bar_empty_idle", int(d.last.get("diamonds", 0)) == -1 and float(d.last.get("arc_bar", -1.0)) == 0.0, d.last)
+	d.frozen.flash["war"] = 0.4   # 满的那一下（还剩 0.4 秒）
+	d.queue_redraw()
+	await _frames(2)
+	_check("p33_arc_bar_full_when_flash", float(d.last.get("arc_bar", -1.0)) == 1.0, d.last)
+	# P3-4：伤害统计收／展进 XConfig（默认展开；T267 旧文件读到迁一次再删）
+	_check("p34_default_expanded", XConfig.DEFAULTS.has(XDamageRecord.CONFIG_KEY) and XConfig.DEFAULTS[XDamageRecord.CONFIG_KEY] == false)
+	XDamageRecord.save_collapsed(true)
+	_check("p34_saved_in_config", XConfig.flag(XDamageRecord.CONFIG_KEY) and XDamageRecord._load_collapsed())
+	XDamageRecord.save_collapsed(false)
+	var cf := ConfigFile.new()
+	cf.set_value("record", "collapsed", true)
+	cf.save(XDamageRecord._ui_path())
+	_check("p34_migrate_old_file", XDamageRecord._load_collapsed() and not FileAccess.file_exists(XDamageRecord._ui_path()) and XConfig.flag(XDamageRecord.CONFIG_KEY))
+	XDamageRecord.save_collapsed(false)
+	# P3-2：小怪名的菱形让整组宽 +16，状态图标按整组宽摆
+	XUiSkin.FORCE = true
+	_check("p32_icon_width_new", XSkin2C.enemy_name_width(100.0) == 116.0)
+	XSkin2C.NAMES = false
+	_check("p32_icon_width_names_off", XSkin2C.enemy_name_width(100.0) == 100.0)
+	XSkin2C.NAMES = true
+	XUiSkin.FORCE = false
+	_check("p32_icon_width_old_skin", XSkin2C.enemy_name_width(100.0) == 100.0)
+	XUiSkin.FORCE = true
+	# 名字右缘（菱形＋名字整组居中于 320）不进图标左缘（icon_center − 16）
+	var nw := 100.0
+	var name_right := 320.0 + (XSkin2C.ENEMY_NAME_LEAD + nw) / 2.0
+	_check("p32_icon_clear_of_name", XEnemyStateIcon.icon_center(XSkin2C.enemy_name_width(nw)).x - 16.0 >= name_right, [XEnemyStateIcon.icon_center(XSkin2C.enemy_name_width(nw)).x - 16.0, name_right])
+	# P3-1：首领名胶囊不碰血量数字顶缘（NAMES 开）；NAMES 关回旧画法不记胶囊
+	await _open_b(true, U_BOSS)
+	_no_windows()
+	await _frames(30)
+	var arc = bb.boss_hp
+	_check("p31_boss_arc", arc is XSkinBossArc, str(arc))
+	if arc is XSkinBossArc:
+		arc.last_name_rect = Rect2()
+		arc.queue_redraw()
+		await _frames(2)
+		var rr: Rect2 = arc.last_name_rect
+		_check("p31_name_pill_clear_of_hp", rr.has_area() and rr.end.y <= arc.last_num_top - XSkinBossArc.NAME_NUM_GAP + 0.01, [rr, arc.last_num_top])
+		XSkin2C.NAMES = false
+		arc.last_name_rect = Rect2()
+		arc.queue_redraw()
+		await _frames(2)
+		_check("p31_names_off_old", not arc.last_name_rect.has_area())
+		XSkin2C.NAMES = true
+	_u_close()
+	await _frames(2)
+
+
+## ---- 拍图（窗口模式） ----
+func _u_shots() -> void:
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	# P2-1：雪地亮底整屏（火花、连击、伤害统计、掉落同屏），左旧右新
+	await _open_b(true, U_MINOR, [8, 9, 10], Callable(), U_SNOW)
+	_no_windows()
+	_war(8)
+	_combo(37)
+	bb.record.values = [123500.0, 45700.0, 9876.0, 3210.0, 0.0]
+	_drop_at(blg.enemies[-1], [4, 3, 0])
+	await _frames(70)
+	await _ab("1_整屏_亮底_雪地")
+	_u_close()
+	await _frames(2)
+	# 卡 U：首领战、小怪战、没有印盘，从最后一击起每 0.1 秒一张（首领 0～2.0 秒 21 张、小怪 0～1.5 秒 16 张）
+	await _u_flow({"shots": "首领战", "until": 2.05, "map": U_SNOW})
+	await _u_flow({"troop": U_MINOR, "shots": "小怪战", "until": 1.55, "map": U_SNOW})
+	await _u_flow({"prep": _u_prep_bare, "shots": "没有印盘", "until": 2.05, "map": U_SNOW})
+	# 跳过（进场 0.2 秒按确定，拍按前、按后）、简化、关、挂机中：各拍等待期末到进场
+	await _u_flow({"skip_at": 0.2, "shots": "跳过", "shot_from": 1.1, "until": 1.45, "map": U_SNOW})
+	for m in [[XUiSkin.Motion.SIMPLE, "简化"], [XUiSkin.Motion.OFF, "关"]]:
+		XUiSkin.motion_override = m[0]
+		await _u_flow({"shots": "动效" + str(m[1]), "shot_from": 0.9, "until": 1.55, "map": U_SNOW})
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
+	await _u_flow({"hang": true, "shots": "挂机中", "shot_from": 0.8, "until": 1.35, "map": U_SNOW})
+	_u_close()

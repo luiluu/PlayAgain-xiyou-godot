@@ -16,6 +16,9 @@ extends RefCounted
 ##   DROPS       掉落图标描边、影子、史诗以上小七印环、传说以上光柱（关＝旧图标）
 ##   EDGE_FLASH  火花满的那一下屏幕四边闪一次本线主色
 ##   NAMES       首领名、小怪名（原卡 D／R3）：字一律白、难度色挪到名字前的小菱形（关＝旧难度色字）
+## 卡 U（T273，照 T254「卡 U」）：战斗→结算的衔接，回退开关：
+##   HANDOFF     最后一击时印盘、伤害统计第一名那颗菱形冻结在原位（不跟胜利镜头），结算进场时印盘放大成大七印环、
+##               连击数字和那颗菱形化成金光飞去点亮两颗印、场上史诗以上掉落飞进底下大圆章（关＝浮层照原版当帧移除、结算原样进场）
 
 static var ENABLED := true
 static var VICTORY := true
@@ -28,6 +31,7 @@ static var RECORD := true
 static var DROPS := true
 static var EDGE_FLASH := true
 static var NAMES := true
+static var HANDOFF := true
 
 
 static func meter_on() -> bool:
@@ -687,6 +691,21 @@ class VictoryView extends Control:
 			order.append(e)
 		return order
 
+	## 卡 U 衔接：每枚大章的屏幕中心和它到位的时刻（同 _pop／_flash_state 的算法），场上掉落飞到这里
+	func big_targets() -> Array:
+		var out := []
+		if v._drops.is_empty():
+			return out
+		var x0 := view.x / 2.0 - float(_row.width) / 2.0
+		var order := _drop_times()
+		var n := order.size()
+		for e in _row.big:
+			var arrive := 0.32
+			if boss:
+				arrive = 0.50 + (0.28 * maxi(order.find(e), 0) / maxf(n - 1, 1)) + 0.12
+			out.append({"drop": e[0], "pos": Vector2(x0 + float(e[1]), XSkin2C.DROP_ROW_Y + XSkin2C.BIG_D / 2.0), "arrive": arrive})
+		return out
+
 	func _pop(i: int, n: int) -> float:
 		if motion != XUiSkin.Motion.FULL:
 			return p(0.0, 0.0)
@@ -1301,10 +1320,19 @@ class GameOverView extends Control:
 
 ## ---- 卡 B 原卡 D（T254 R3）：小怪头顶名字 ----
 
-## 名字一律 TEXT，前面一枚小菱形带难度色（半血以下橙／红，同旧字色的变化）；照旧垫深色胶囊（XSkin4A）
+## 名字一律 TEXT，前面一枚小菱形带难度色（半血以下橙／红，同旧字色的变化）；照旧垫深色胶囊（XSkin4A）。
+## 菱形让整组比名字宽 ENEMY_NAME_LEAD；名字右边的状态图标按整组宽摆（T273，T267 核查 P3-2：原来按名字宽摆，左压名字 6px）
+const ENEMY_NAME_LEAD := 16.0
+
+
+## 名字右边状态图标摆位用的宽：新画法＝菱形＋名字，旧画法＝名字
+static func enemy_name_width(name_w: float) -> float:
+	return name_w + (ENEMY_NAME_LEAD if names_on() else 0.0)
+
+
 static func enemy_name(c: XMVCanvas, nm: String, diff_color: Color, alpha: float) -> void:
 	var nw := c.text_width(nm, 18)
-	var w := 10.0 + 6.0 + nw
+	var w := ENEMY_NAME_LEAD + nw
 	var x0 := 320.0 - w / 2.0
 	if XSkin4A.text_on():
 		XSkin4A.draw_text_backing(c, x0, 26.0, w, 18, alpha)
@@ -1312,3 +1340,286 @@ static func enemy_name(c: XMVCanvas, nm: String, diff_color: Color, alpha: float
 	_diamond(c, dc, 6.0, Color(0, 0, 0, 0.8 * alpha))
 	_diamond(c, dc, 5.0, Color(diff_color, alpha))
 	c.text(nm, x0 + 16.0, 0, nw + 4.0, "left", XUiSkin.TEXT, 18, 36, alpha)
+
+
+## ---- 卡 U（T273，照 T254「卡 U」）：战斗→结算的衔接 ----
+## 等待期（原版 1.0 秒）：印盘、伤害统计第一名那颗菱形冻结在原位，挂在战斗场景下（不在 ui 里，0.5 秒隐藏 ui 时还在；
+## 也不进胜利镜头），小签和伤害统计的暗带、字 0.12 秒淡出。进场（落印 1.0 秒／半程 0.5 秒）：印盘移到正中放大成大七印环、
+## 计量点并成七颗印；连击数字、第一名菱形化成一点金光飞去点亮大环上的两颗印；场上史诗以上掉落飞进底下自己的大圆章。
+## 不加时长：等待期、进场都是原来的；奖励、经验条、1 秒后可关、3.4 秒自动关一行不动。
+
+const HO_WAIT_FADE := 0.12
+const HO_OUT := 0.12          # 自动战斗、动效简化／关：不飞，0.12 秒淡出
+const HO_SEAL_COMBO := 3      # 连击数字点亮第几颗印（从正上方偏半格起顺时针，0 起）
+const HO_SEAL_LEAD := 4       # 第一名菱形点亮第几颗
+
+
+static func handoff_on() -> bool:
+	return HANDOFF and victory_on()
+
+
+## 胜利那一刻（_victory 开头，_end_record、end_battle 之前）拍快照：印盘这一帧画的东西、第一名菱形的屏幕坐标，再冻结印盘。
+## 没有印盘（没线也没连击，印盘这一帧什么也没画）或开关关：返回 null，结算照落印原样进场
+static func handoff_make(dial: XSkinSealDial, rec: XDamageRecord) -> Handoff:
+	if not handoff_on() or dial == null or not is_instance_valid(dial) or not dial.is_visible_in_tree() or not dial.last.has("diamonds"):
+		return null
+	var h := Handoff.new()
+	h.info = dial.last.duplicate(true)
+	h.dial = dial
+	h.ring_c = dial.get_global_transform_with_canvas() * XSkinSealDial.C
+	h.line = dial.line
+	if rec != null and is_instance_valid(rec) and rec.visible and rec.last.has("lead_dot"):
+		h.lead_pos = rec.get_global_transform_with_canvas() * Vector2(rec.last.lead_dot)
+		h.lead_color = rec._lead_color()
+		h.lead_glow = rec._main_color()
+	dial.freeze()
+	return h
+
+
+## 大七印环上第 k 颗印的角度（同落印 _paint_back）
+static func seal_angle(k: int) -> float:
+	return deg_to_rad(-90.0 + k * 360.0 / 7.0 + 360.0 / 14.0)
+
+
+class Handoff extends Control:
+	var info := {}                 # 印盘冻结那一帧画了什么（XSkinSealDial.last）
+	var dial: XSkinSealDial
+	var record: Control            # 伤害统计（只为淡出它的暗带和字；战斗场景那边当帧就置空了）
+	var ring_c := Vector2.ZERO     # 印盘环心（屏幕坐标）
+	var line := ""
+	var lead_pos := Vector2.INF    # 第一名那颗菱形（屏幕坐标）；没有为 INF
+	var lead_color := Color.WHITE
+	var lead_glow := Color.WHITE
+	var v: XVictoryScreen
+	var fly := false
+	var fliers := []               # [{tex, from, to, t0, t1, col}]
+	var _drop_src := []            # 建结算页那一刻场上还在的史诗以上掉落：[{item, pos, tex, used}]
+	var _wait := 0.0
+	var _out := -1.0
+	var motion := 0
+	var view := Vector2(1280, 720)
+	var last := {}                 # 测试读
+
+	func _ready() -> void:
+		name = "Skin2CHandoff"
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		motion = XUiSkin.motion()
+		view = get_viewport_rect().size
+		if dial != null and is_instance_valid(dial):
+			dial.reparent(self)   # 从 ui 挪出来：保留屏幕位置；ui 0.5 秒隐藏时它还在
+
+	## 伤害统计：战斗场景当帧置空（record = null）后交到这里，只淡出、不再更新
+	func take_record(r: Control) -> void:
+		if r == null or not is_instance_valid(r):
+			return
+		record = r
+		r.set_process(false)
+		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		r.reparent(self)
+		_set_fade(1.0 if motion != XUiSkin.Motion.OFF else 0.0)
+
+	## 建结算页那一刻：记下场上还没淡出的史诗以上掉落（镜头已推近，取这一刻的屏幕坐标）；已释放的不飞
+	func collect_drops(field: Node) -> void:
+		_drop_src = []
+		if field == null or not is_instance_valid(field):
+			return
+		for p in field.get_children():
+			if not p is XDropPopup:
+				continue
+			for g in p.icons:
+				var n = g.get("node")
+				if n == null or not is_instance_valid(n) or not n.is_visible_in_tree() or float(g.alpha) <= 0.0 or int(n.grade) < 3:
+					continue
+				var hh := XDropPopup.ICON * absf(float(g.sy))
+				var pos: Vector2 = n.get_global_transform_with_canvas() * Vector2(float(g.x), float(g.y) - hh / 2.0)
+				_drop_src.append({"item": g.item, "pos": pos, "tex": n.tex, "used": false})
+
+	## 结算页进场开始（XVictoryScreen._ready 建好新画法后调）：自动战斗、动效简化／关不飞，淡出
+	func start(screen: XVictoryScreen, page: Control) -> void:
+		v = screen
+		_set_fade(0.0)
+		fly = motion == XUiSkin.Motion.FULL and not v.automatic
+		if not fly or page == null or not page.has_method("big_targets"):
+			return
+		var t0 := 0.50 if v.boss else 0.20
+		var cap := 0.90 if v.boss else 0.45
+		for tg in page.big_targets():
+			var rec := XSkin2C.drop_rec(tg.drop)
+			for src in _drop_src:
+				if bool(src.used) or not (is_same(src.item, rec) or src.item == rec):
+					continue
+				src.used = true
+				# 镜头推近后掉落常在画面外：起点夹回画面内（离边 32），从画面边上飞进来；画面外的起飞前不画
+				var from: Vector2 = (src.pos as Vector2).clamp(Vector2(32, 32), view - Vector2(32, 32))
+				fliers.append({"tex": src.tex, "from": from, "on_screen": from.is_equal_approx(src.pos), "to": tg.pos, "t0": t0, "t1": clampf(float(tg.arrive), t0 + 0.15, cap),
+					"col": XSkin2C.drop_color(tg.drop)})
+				break
+
+	func _morph() -> Vector2:
+		return Vector2(0.10, 0.30) if v != null and v.boss else Vector2(0.10, 0.25)
+
+	func _flight() -> Vector2:
+		return Vector2(0.12, 0.30) if v != null and v.boss else Vector2(0.12, 0.25)
+
+	func end_time() -> float:
+		var e := _morph().y + 0.08
+		for f in fliers:
+			e = maxf(e, float(f.t1))
+		return e
+
+	func _set_fade(a: float) -> void:
+		if dial != null and is_instance_valid(dial) and not is_equal_approx(dial.tag_alpha, a):
+			dial.tag_alpha = a
+			dial.queue_redraw()
+		if record != null and is_instance_valid(record):
+			if a <= 0.0:
+				record.queue_free()
+				record = null
+			else:
+				record.modulate.a = a
+
+	func _process(dt: float) -> void:
+		if v == null or not is_instance_valid(v):
+			if v != null:   # 结算页没了（战斗结束）
+				queue_free()
+				return
+			_wait += dt
+			_set_fade(0.0 if motion == XUiSkin.Motion.OFF else 1.0 - XSkin2C.seg(_wait, 0.0, HO_WAIT_FADE))
+			queue_redraw()
+			return
+		var t := v._elapsed
+		if not fly:
+			if _out < 0.0:
+				_out = t
+			var a := 1.0 - XSkin2C.seg(t - _out, 0.0, HO_OUT)
+			modulate.a = a
+			if a <= 0.0 or t >= 1.0:
+				queue_free()
+			return
+		if t >= end_time():   # 走完，或按了跳过（_elapsed 直接到 3.0）：飞着的东西直接消失
+			queue_free()
+			return
+		queue_redraw()
+
+	func _seal_pos(k: int, ox: float) -> Vector2:
+		var a := XSkin2C.seal_angle(k)
+		return XSkin2C.RING_C + Vector2(ox, 0) + Vector2(cos(a), sin(a)) * XSkin2C.RING_R
+
+	func _draw() -> void:
+		last = {"phase": "wait" if v == null else "entry", "fliers": 0}
+		var t := v._elapsed if v != null else -1.0
+		var ox := (view.x - 1280.0) / 2.0
+		var m := _morph()
+		var morphing := v != null and fly and t >= m.x
+		if dial != null and is_instance_valid(dial):
+			dial.visible = not morphing
+		last.dial = not morphing
+		if morphing:
+			_draw_morph(t, m, ox)
+		_draw_lead(t, ox)
+		for f in fliers:
+			_draw_flier(f, t)
+
+	## 第一名那颗菱形：冻结在原位；进场 0.12 起缩成一点金光飞去点亮第 HO_SEAL_LEAD 颗印
+	func _draw_lead(t: float, ox: float) -> void:
+		if lead_pos == Vector2.INF:
+			return
+		var fl := _flight()
+		var q := XSkin2C.seg(t, fl.x, fl.y) if v != null and fly else 0.0
+		if q >= 1.0:
+			return
+		if q <= 0.0:
+			XSkin2C._glow(self, lead_pos, 12.0, Color(lead_glow, 0.6))
+			XSkin2C._diamond(self, lead_pos, 4.0, lead_color)
+			last.lead = lead_pos
+			return
+		var p := lead_pos.lerp(_seal_pos(XSkin2C.HO_SEAL_LEAD, ox), XSkin2C.ease_out(q)) + Vector2(0, -40.0 * sin(PI * q))
+		_spark(p, q)
+		last.lead = p
+
+	## 一点金光（飞的时候）
+	func _spark(p: Vector2, q: float) -> void:
+		XSkin2C._glow(self, p, 16.0, Color(XUiSkin.GOLD_LIGHT, 0.8))
+		draw_circle(p, lerpf(3.5, 2.5, q), Color(1, 0.97, 0.86))
+		last.fliers = int(last.fliers) + 1
+
+	func _draw_morph(t: float, m: Vector2, ox: float) -> void:
+		var k := XSkin2C.ease_out(XSkin2C.seg(t, m.x, m.y))
+		var ra := 1.0 - XSkin2C.seg(t, m.y, m.y + 0.08)
+		if ra <= 0.0:
+			return
+		var big_c := XSkin2C.RING_C + Vector2(ox, 0)
+		var c := ring_c.lerp(big_c, k)
+		var r := lerpf(XSkinSealDial.DISC_R, XSkin2C.RING_R, k)
+		var key := str(info.get("ring_key", ""))
+		last.morph = {"c": c, "r": r, "k": k}
+		draw_circle(c, r, Color(XUiSkin.PANEL, 0.92 * pow(1.0 - k, 2.0) * ra))
+		draw_arc(c, r, 0, TAU, 128, Color(XUiSkin.GOLD, ra), 1.5, true)
+		var n := int(info.get("diamonds", 0))
+		var lit := int(info.get("lit", 0))
+		if n < 0:   # 弧形条：亮的那段跟着放大、渐隐
+			var ak := float(info.get("arc_bar", 0.0))
+			if ak > 0.0:
+				draw_arc(c, r, -PI / 2.0, -PI / 2.0 + TAU * ak, 96, Color(XSkin2C.line_bright(key) if key != "" else XUiSkin.GOLD_LIGHT, (1.0 - k) * ra), 4.0, true)
+			n = 0
+		var bright := XSkin2C.line_bright(key) if key != "" else XUiSkin.GOLD_LIGHT
+		if key == "death":
+			bright = XTianqiLook.main_color("death")
+		var pts := n if n > 0 else int(info.get("circles", 0))
+		for i in pts:
+			var a0 := -PI / 2.0 + TAU * i / pts
+			var a := lerp_angle(a0, XSkin2C.seal_angle(i * 7 / pts), k)
+			var p := c + Vector2(cos(a), sin(a)) * r
+			var half := lerpf(6.0 if key == "death" else 4.5, 9.9, k)
+			var on := n > 0 and i < lit
+			XSkin2C._diamond(self, p, half + 1.0, Color(0, 0, 0, 0.8 * ra))
+			if on:   # 亮的计量点并进印：颜色从本线亮色走到印的金
+				var col := bright.lerp(XUiSkin.GOLD_LIGHT, k)
+				XSkin2C._glow(self, p, (half + 8.0) * 1.6, Color(col, 0.55 * ra))
+				XSkin2C._diamond(self, p, half, Color(col, ra))
+			else:
+				XSkin2C._diamond(self, p, half, Color(0.2, 0.2, 0.22, ra))
+				XSkin2C._diamond_line(self, p, half, Color(XUiSkin.LINE, 0.9 * ra), 1.0)
+		# 环心：连击数字缩成一点金光飞去点亮一颗印；蜡封跟着盘面一起化掉
+		var center := str(info.get("center", ""))
+		if center == "combo":
+			var fl := _flight()
+			var q := XSkin2C.seg(t, fl.x, fl.y)
+			if q < 0.35:
+				var sc := 1.0 - q / 0.35
+				var s := str(int(info.get("combo", 0)))
+				var fs := int(info.get("combo_fs", 50))
+				var f := XSkinSealDial.num_font()
+				var w := f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+				var tier := int(info.get("tier", 1))
+				var col: Color = XUiSkin.TEXT_HI
+				if tier >= 2:
+					col = XUiSkin.GOLD_LIGHT if tier <= 3 or line == "" else XSkin2C.line_bright(line)
+				var cc := c + Vector2(0, -6)
+				draw_set_transform(cc, 0.0, Vector2(sc, sc))
+				var pos := Vector2(-w / 2.0, (f.get_ascent(fs) - f.get_descent(fs)) / 2.0)
+				draw_string_outline(f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 8, Color(0, 0, 0, 0.9))
+				XUiSkin.ds(self, f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+				draw_set_transform(Vector2.ZERO)
+				XSkin2C._glow(self, cc, 30.0 * (1.0 - sc) + 6.0, Color(XUiSkin.GOLD_LIGHT, 0.7 * (1.0 - sc)))
+				last.combo_shown = true
+			elif q < 1.0:
+				var qq := (q - 0.35) / 0.65
+				var p := (c + Vector2(0, -6)).lerp(_seal_pos(XSkin2C.HO_SEAL_COMBO, ox), XSkin2C.ease_out(qq)) + Vector2(0, -30.0 * sin(PI * qq))
+				_spark(p, qq)
+		elif center == "wax" and k < 1.0:
+			XSkinSealDial.draw_line_wax(self, c, 68.0 * (1.0 - k), line if line != "" else key, (1.0 - k) * ra)
+
+	## 场上的史诗以上掉落：建结算页时在哪就从哪起飞，飞进底下自己的大圆章（到位那一刻就是那枚章弹出、爆光的时刻）
+	func _draw_flier(f: Dictionary, t: float) -> void:
+		var q := XSkin2C.seg(t, float(f.t0), float(f.t1))
+		if q >= 1.0 or (q <= 0.0 and not bool(f.on_screen)):
+			return
+		var e := q * q * (3.0 - 2.0 * q)
+		var p: Vector2 = (f.from as Vector2).lerp(f.to, e) + Vector2(0, -80.0 * sin(PI * q))
+		var sz := lerpf(32.0, 48.0, e)
+		XSkin2C._glow(self, p, sz * 0.9, Color(f.col, 0.55))
+		if f.tex != null:
+			draw_texture_rect(f.tex, Rect2(p - Vector2(sz, sz) / 2.0, Vector2(sz, sz)), false)
+		last.fliers = int(last.fliers) + 1

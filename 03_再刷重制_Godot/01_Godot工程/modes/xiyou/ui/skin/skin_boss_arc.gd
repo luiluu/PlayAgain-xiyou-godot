@@ -520,6 +520,9 @@ func _draw() -> void:
 ## T267 首领名新画法：胶囊（状态胶囊同款 XSkin4A.TEXT_CAP 深底）上下内边距 4、字 TEXT_HI，名字前一枚难度色小菱形；
 ## 胶囊范围记在 last_name_rect（测试核它不压到下面 34px 处的血量数字）
 var last_name_rect := Rect2()
+## T273（T267 核查 P3-1）：血量数字字身的上缘（34 号数字字的 ascent 算）；胶囊下沿要留 NAME_NUM_GAP 不碰它，碰到就整个名字往上抬
+var last_num_top := 0.0
+const NAME_NUM_GAP := 2.0
 
 
 func _draw_name_v2(font: Font, nm: String, nw: float, al: float) -> void:
@@ -531,6 +534,10 @@ func _draw_name_v2(font: Font, nm: String, nw: float, al: float) -> void:
 	var desc := font.get_descent(fs)
 	var base := NAME_Y + 27.0
 	var r := Rect2(x0 - 14.0, base - asc - 4.0, w + 28.0, asc + desc + 8.0)
+	last_num_top = NUM_Y + 30.0 - XUiSkin.font("num").get_ascent(34)
+	var lift := maxf(0.0, r.end.y - (last_num_top - NAME_NUM_GAP))
+	r.position.y -= lift
+	base -= lift
 	last_name_rect = r
 	if XSkin4A.text_on():   # 胶囊底跟 4A 深色底板同一个开关（TEXT_V2 关掉时不垫）
 		if not INK_TEXT:   # 计数只算顶替旧名字底板的那一次（墨雾档旧画法本来不垫底，v07 专项按此数）
