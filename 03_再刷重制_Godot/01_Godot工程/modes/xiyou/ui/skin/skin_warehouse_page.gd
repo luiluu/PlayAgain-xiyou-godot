@@ -308,13 +308,13 @@ func _draw_space() -> void:
 	var full := used >= XWarehouse.max_capacity(s)
 	var body := XUiSkin.font("body")
 	var fs := XUiSkin.fs(XUiSkin.FS_AUX)
-	var y := lb.y - 52.0
+	var y := lb.y - 96.0   # 抬高一截，免得压到左下角的背景花饰
 	var t := space_line()
 	var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	XUiSkin.ds(layout.left, body, Vector2((lb.x - tw) / 2.0, y), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.DOWN if full else XUiSkin.TEXT_2)
 	var bw := minf(lb.x - 32.0, 240.0)
 	var bx := (lb.x - bw) / 2.0
-	layout.left.draw_rect(Rect2(bx, y + 14.0, bw, BAR_H), Color(1, 1, 1, 0.10))
+	layout.left.draw_rect(Rect2(bx, y + 14.0, bw, BAR_H), Color(1, 1, 1, 0.22))
 	var fw := bw * clampf(float(used) / float(mx), 0.0, 1.0)
 	if fw > 0.0:
 		layout.left.draw_rect(Rect2(bx, y + 14.0, fw, BAR_H), XUiSkin.DOWN if full else XUiSkin.GOLD)
