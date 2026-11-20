@@ -595,6 +595,7 @@ func _warehouse_page() -> void:
 	check("wh.rows_party", ok_rows)
 	var cd := sk.card_data()
 	check("wh.card_deposit", cd.title == s.actor(s.party[0]).display_name() and cd.buttons[0].text == "存入" and str(cd.sections).contains("存入后") and str(cd.sections).contains("队伍最少保留一位角色"), cd)
+	check("wh.exp_note_deposit", str(cd.sections).contains(XSkinActorWarehousePage.T_EXP_DEPOSIT), cd)
 	await shots("warehouse")
 	# 确定＝存入，光标不动
 	var first := s.party[0]
@@ -603,6 +604,15 @@ func _warehouse_page() -> void:
 	# E 换到仓库
 	key(p, KEY_E)
 	check("wh.e_to_store", p.cmd == 1 and sk.list.items.size() == 3 and sk.card_data().buttons[0].text == "取出" and str(sk.card_data().sections).contains("取出后"))
+	check("wh.exp_note_withdraw", str(sk.card_data().sections).contains(XSkinActorWarehousePage.exp_note_withdraw(s)), sk.card_data())
+	# 说明随 optExtraExp 实际值变：开＝照样拿满，关＝拿不到（改 System 数据后复原）
+	var sysd := XDB.system()
+	var old_opt = sysd.get("optExtraExp", false)
+	sysd["optExtraExp"] = true
+	check("wh.exp_note_opt_on", XSkinActorWarehousePage.exp_note_withdraw(s) == XSkinActorWarehousePage.T_EXP_WITHDRAW_ON)
+	sysd["optExtraExp"] = false
+	check("wh.exp_note_opt_off", XSkinActorWarehousePage.exp_note_withdraw(s).contains("不会获得"))
+	sysd["optExtraExp"] = old_opt
 	await shots("warehouse_store")
 	act(p, "ui_accept")
 	check("wh.withdraw", s.party.has(XActorWarehouse.list(s, true).back()) and sk.list.items.size() == 2)
