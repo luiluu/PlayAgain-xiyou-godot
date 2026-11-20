@@ -76,6 +76,8 @@ var snapshot_dir := ""             # 给了就在每层第一次去挑战守层�
 var _snap_done := {}
 var pass_after := 0                # 量数用（>0 时）：同一层守层者输满这么多次后不收工，下一次挑战把守层者的血压到 1 放水通过（小结里标出来），好把后面各层的队伍快照也拿到
 var gifted_floors: Array = []      # 放水通过的层
+## T313：放水时跳过守层者的残血页、解掉免死（见 pass_clamp）。--vp-pass-keep-phase 关掉（照旧只压血）
+var pass_skip_phase := true
 var ff_inline_retry := true        # 快进局守层者样本输了就地加刷、连着量，赢了或到放水才回大厅；--vp-ff-lobby-retry 关
 var direct_shop := true            # 快进局逛店改直接买入（不走路、不开商店画面；T272）；--vp-walk-shop 回走路逛店
 var shopper = null
@@ -83,6 +85,9 @@ var ff_shop_once := true           # 快进局同一层的店只整轮逛一次�
 var resumed_from := ""             # --vp-resume 接着爬的那份存档（文件名；meta 的 msec 从接着爬那一刻算起）
 var fabao_enabled := true          # 出战的人有谁没戴法宝，就去兑换大厅领礼物（法宝积分）、找铁匠买法宝戴上
 var _door_id := 0                  # 大厅塔门的事件号（第一次认出来时记下）
+## T313：连着去塔门、层数和战斗场数都没变的次数。36 层打完（35、36 层的线还没做时是占位战）塔门只回一句话，原来会一直兜圈到时间用完
+var _door_idle := [[], 0]
+const DOOR_IDLE_MAX := 30
 var _exchange_floor := -1          # 这一层去过兑换大厅了
 var _exchange_ticks := 0
 var _gift_tries := {}
@@ -939,6 +944,28 @@ func _act_transfer(obs: Dictionary) -> void:
 
 # ---------------------------------------------------------------- 战斗
 
+## 放水的一步（T313 抽出来，虚拟玩家和 vp_ff_probe --hp1-hold 共用）：活着的敌人血压到 1。
+## skip_phase 时另做两件（31～33 层守层者要这样才过得去）：
+## - 敌群里带「敌人血量」条件的页记成本场已跑过：≤30% 回满、≤10% 变身天道·魔神并回满（魔神沿用女娲的重锚倍率，物攻魔攻 56 万，一招全体团灭），血一压到 1 就会触发；
+## - 解掉敌人身上的状态：第 1 回合页给的「破阵——一阶段免死」要到 ≤30% 那页才解，跳过那页就永远打不死。
+## 返回这次新记成已跑过的页号
+static func pass_clamp(logic, skip_phase: bool) -> Array:
+	var out := []
+	if skip_phase:
+		var pages: Array = XDB.rec("Troops", int(logic.troop_id)).get("pages", [])
+		for i in pages.size():
+			if bool(pages[i].get("conditions", {}).get("enemyValid", false)) and not logic._event_flags.has(i):
+				logic._event_flags[i] = true
+				out.append(i)
+	for e in logic.enemies:
+		if e.is_alive():
+			if skip_phase and not e.state_ids.is_empty():
+				e.clear_states()
+			if float(e.hp) > 1.0:
+				e.hp = 1.0
+	return out
+
+
 ## 手动打：指令窗第一项（攻击）→ 目标确定，一路按确定。
 ## 逛图模式：手动步数用完时看敌人血量，掉了一半以上就开自动战斗打完（报告记 assist）；几乎没掉（打不动的对手）就像玩家一样去选「逃跑」。
 ## 爬塔模式：先手动按 climb_manual_actions 步，再用鼠标点战斗左上的「自动」按钮（玩家也能点），交给游戏自己的自动战斗。
@@ -954,9 +981,7 @@ func _act_battle(obs: Dictionary) -> void:
 		_floor_row()["enter_fights"] = int(_floor_row().get("enter_fights", 0)) + 1
 	if pass_after > 0 and _battle != null and _dg.is_empty() and _intent in ["challenge", "enter"] \
 			and (int(_floor_row().get("defeats", 0)) >= pass_after or int(_floor_row().get("enter_fights", 0)) > pass_after + 1):
-		for e in b.logic.enemies:
-			if float(e.hp) > 1.0:
-				e.hp = 1.0
+		pass_clamp(b.logic, pass_skip_phase)
 		if not gifted_floors.has(_floor):
 			gifted_floors.append(_floor)
 			_mark("gifted_%d" % _floor)
@@ -1595,6 +1620,12 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 		# 过了 20 层塔门换了一页：不再问「进入该层」，调查就直接送进去。认之前记下的那扇门
 		e = _find_event(map, func(x): return x.event_id == _door_id)
 	if e != null and _aim(map, e, "enter"):
+		var sig := [int(st.variable(FLOOR_VAR)), _bcount()]
+		_door_idle = [sig, int(_door_idle[1]) + 1] if sig == _door_idle[0] else [sig, 1]
+		if int(_door_idle[1]) > DOOR_IDLE_MAX:
+			climb_stop = "塔门连着 %d 次只回对话、不开打（层数变量 %d；塔顶或下一层还没做）" % [DOOR_IDLE_MAX, int(sig[0])]
+			_log(climb_stop)
+			return
 		await _goto_target(map)
 		return
 	# 门走不到或认不出：退回随便逛
