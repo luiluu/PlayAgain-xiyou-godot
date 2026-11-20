@@ -20,6 +20,7 @@
   "XTianqi.super_cap": "-1",
   "XTianqi.helper_super_ok": "true",
   "XTianqiAffixBattle.cost": "c",
+  "XTianqiElements.map_element_id": "e",
   "XTianqiAffixBattle.drop_mult": "1.0",
   "XTianqiAffixBattle.param_rate": "1.0",
   "XTianqiAlienGear.affix_view": "XAlienation.affix(key).duplicate()",
