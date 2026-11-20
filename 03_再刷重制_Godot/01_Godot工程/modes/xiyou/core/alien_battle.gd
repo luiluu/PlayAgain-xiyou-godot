@@ -575,7 +575,7 @@ static func _same(x, y) -> bool:
 	return is_same(x, y) or (x is XActor and y is XActor and x.actor_id == y.actor_id)
 
 
-## FRAME_TOUCH_LAZY（O-待定，T296 战斗提速）：公式帧进出原来每次都 read_touch，把只读窗口（O-348）整窗作废；
+## FRAME_TOUCH_LAZY（O-626，T296 战斗提速）：公式帧进出原来每次都 read_touch，把只读窗口（O-348）整窗作废；
 ## 每次 XDamage.calculate 进出各压一帧，外面包的窗口（智能选招 O-392、rawValue 窗口）因此每段伤害都从冷重算技能表、能力值、被动。
 ## 公式帧只改得了栈顶那一帧的行动者、目标的 param 读法，而且只对带逆骨（物攻／物防，param 2／3）、空壳（生命上限 0）、
 ## 饕餮（MP 上限 1）词条的角色才改（见 param、hollow_param、glutton_param；敌人 has 恒否）。所以帧进出时只要进出前后的
