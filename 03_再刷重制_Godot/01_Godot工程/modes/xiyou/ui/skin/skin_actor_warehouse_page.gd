@@ -18,6 +18,12 @@ const T_TABS := ["队伍", "仓库"]
 const T_EMPTY_STORE := "仓库是空的"
 const T_MIN_ONE := XActorWarehouse.LAST_ACTOR_TEXT   # 「队伍最少保留一位角色」，同旧页提示（小A文字审）
 const T_OFF := "停用"
+## 替补经验（T294）：战斗经验只发队伍里的人（battle_logic.gd 发奖励段：state.members()），仓库角色不拿；
+## 队伍里出战位（天启篇含助力位）拿满，其余后备按 System「后备成员获得经验」optExtraExp（开＝拿满、关＝0）
+const T_EXP_DEPOSIT := "存入后不再获得战斗经验。"
+const T_EXP_WITHDRAW_ON := "取出后在后备，战斗经验照样拿满。"
+const T_EXP_WITHDRAW_OFF := "取出后在后备，拿不到战斗经验；编入出战位才拿。"
+const T_EXP_WITHDRAW_OFF_HELPER := "取出后在后备，拿不到战斗经验；编入出战位或助力位才拿。"
 
 var scene: XActorWarehouseScene
 var inner_tabs: XSkinInnerTabs
@@ -146,12 +152,21 @@ func card_data() -> Dictionary:
 			rows.append({"text": "暂离队伍；等级、技能、装备都会保留，随时可取出。", "color": XUiSkin.TEXT})
 			if s.battle_slots.has(id):
 				rows.append({"text": "当前在出战栏中：存入后将按队伍前 5 人重排出战位。", "color": XUiSkin.TEXT})
+		rows.append({"text": T_EXP_DEPOSIT, "color": XUiSkin.TEXT})
 		rows.append({"text": T_MIN_ONE, "color": XUiSkin.TEXT_2})
 	else:
 		rows.append({"text": "回到队伍末尾，暂不出战；需出战请到「整队」编入。", "color": XUiSkin.TEXT})
+		rows.append({"text": exp_note_withdraw(s), "color": XUiSkin.TEXT})
 	return {"icon": null, "title": a.display_name(), "subtitle": "Lv %s%s" % [XMenu._group(a.level), " · " + cls if cls != "" else ""],
 		"sections": [{"title": "", "lines": lines}, {"title": head, "rows": rows}],
 		"buttons": [{"text": verb, "primary": true, "disabled": disabled}], "_disabled": disabled}
+
+
+## 取出后的战斗经验说明：随 optExtraExp 的实际值（battle_logic.gd 的 bench_rate 同一取法）
+static func exp_note_withdraw(s: XState) -> String:
+	if bool(XDB.system().get("optExtraExp", false)):
+		return T_EXP_WITHDRAW_ON
+	return T_EXP_WITHDRAW_OFF_HELPER if XTianqi.active(s) else T_EXP_WITHDRAW_OFF
 
 
 func _sync_card() -> void:
