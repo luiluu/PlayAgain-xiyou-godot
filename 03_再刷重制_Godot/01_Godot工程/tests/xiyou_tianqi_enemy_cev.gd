@@ -104,6 +104,7 @@ func _table() -> void:
 	var t := XTianqiCombat.xparam_cap_table()
 	_check("table.loaded", not t.is_empty() and (t.get("cev_tiers", []) as Array).size() == 3, t.keys())
 	var ints := true
+	_check("table.eva_cri_mev_off", [int(t.get("eva", 0)), int(t.get("cri", 0)), int(t.get("mev", 0))] == [-1, -1, -1])
 	for k in ["eva", "cri", "mev", "toji_cev_pct"]:
 		ints = ints and t.get(k) is float and float(t[k]) == floorf(float(t[k]))  # JSON 读进来是 float，值是整数
 	for r in t.get("cev_tiers", []):
@@ -124,10 +125,14 @@ func _floors() -> void:
 		if e == null:
 			continue
 		var raw: float = float(e.xparam_parts(3)[0]) * e.warehouse_rate()
-		print("T285 f%d raw_cev=%s cev=%s eva=%s cri=%s mev=%s" % [f, raw, e.cev, e.eva, e.cri, e.mev])
+		var raws := []
+		for i in [1, 2, 4]:
+			raws.append(float(e.xparam_parts(i)[0]) * e.warehouse_rate())
+		print("T285 f%d raw_cev=%s cev=%s eva=%s cri=%s mev=%s raw_eva_cri_mev=%s" % [f, raw, e.cev, e.eva, e.cri, e.mev, raws])
 		_check("f%d.raw_above_cap" % f, raw >= float(want[f]), raw)
 		_check("f%d.cev" % f, _near(e.cev, want[f]), e.cev)
-		_check("f%d.caps" % f, e.eva <= 0.30 + 0.0001 and e.mev <= 0.30 + 0.0001 and e.cri <= 0.50 + 0.0001, [e.eva, e.mev, e.cri])
+		# eva／cri／mev 表里先 -1（不封顶，待 Kyo 定）：等于底子×仓库倍率（无减益时）
+		_check("f%d.no_cap_eva_cri_mev" % f, _near(e.eva, raws[0]) and _near(e.cri, raws[1]) and _near(e.mev, raws[2]), [e.eva, e.cri, e.mev, raws])
 		_check("f%d.crit100" % f, _near(XTianqiCombat.crit_after_cev(1.0, null, sk, e), 1.0 - float(want[f])))
 		_check("f%d.crit130" % f, _near(minf(XTianqiCombat.crit_after_cev(1.3, null, sk, e), 1.0), minf(1.3 - float(want[f]), 1.0) if f != 34 else 0.9))
 		# 整条 itemCri：面板暴击＋critPush − CEV（20 层起没有别的暴击包装时）
