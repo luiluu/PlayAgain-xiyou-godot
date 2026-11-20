@@ -113,6 +113,10 @@
      "scenes": ["xiyou_status_power_panel.tscn"],
      "说明": "rules4（dev.304）改 state_effects 的 effect_program，战力预演 XPower→clone_battler 崩，只有云端 xiyou_status_power_panel 抓到；该场景只引用 XPower，文件名／class_name 引用选不到（rules5 已把它点名进 battle 组，这里按文件再兜一层，探针类改动也带上）"}
   ],
+  "contentEscapes": [
+    {"pattern": "set_input_as_handled|XKeyMap\\.handled", "suffixes": [".gd"], "scenes": ["xiyou_input_handled.tscn"],
+     "说明": "T301：xiyou_input_handled 全源码扫描「不许直调 set_input_as_handled」。T288 skin_card.gd 新增 4 处直调，文件名／class_name 引用选不到、目录规则也不含它，首轮云端才挂。按改动内容触发（新增行含 set_input_as_handled 或 XKeyMap.handled），不挑目录：ui/skin、modes/xiyou/ui、map、core 等以后新增的界面目录也自动覆盖"}
+  ],
   "sample": {
     "说明": "选测抽样（用户 2026-11-02 同意，tools43）：选测（不是整轮）选到下面各族时，族内按名字排序、每 chunk 段一组只留 1 段，留哪段按 HEAD 沿第一父的合并提交数取余轮换（主线连续 4 次合并轮完一组，审查 26 P3-2 改）；改了测试本身（exemptGroups）选上的段照跑并算作该组代表。全量（不加 --affected、选测结论整轮）照跑全套。enabled 设 false（或环境变量 XIYOU_SAMPLE=0）回到选到几段跑几段。依据见 00_项目管理/交付/cc_nezha-tools43.md。",
     "enabled": true,

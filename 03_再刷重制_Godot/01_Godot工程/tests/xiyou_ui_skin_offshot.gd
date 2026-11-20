@@ -20,6 +20,8 @@ var compare := ""
 const PAGES_K := ["XCraftingScene", "XOrbShop", "XRaceMenu"]
 ## T306 卡 N：仓库、星级仓库、深渊商人（单列一行，同卡 K 先例）
 const PAGES_N := ["XWarehouseScene", "XStarWarehouseScene", "XMerchant29Page"]
+## T304 卡 M：挂机设置、自动卖出子页（同上单列一行）
+const PAGES_M := ["XHangUpOptionsScene", "XHangUpSubPage"]
 
 
 func _ready() -> void:
@@ -48,7 +50,7 @@ func _run() -> void:
 				sk.set("ENABLED", false)
 				print("skin ENABLED=", sk.get("ENABLED"))
 			_tianqi_goods(s)   # ui-skin-3a：七印装备、号卷进背包（物品、装备页带上它们；新皮肤关着时牌照旧）
-		for cls in PAGES + PAGES_K + PAGES_N:
+		for cls in PAGES + PAGES_K + PAGES_M + PAGES_N:
 			var page: Node = _make(cls)
 			if page == null:
 				print("SKIP ", cls)
@@ -65,6 +67,8 @@ func _run() -> void:
 			elif cls == "XTianqiLineCards":
 				page.set("lines", XTianqi.LINES)
 				page.set("playable", [true, true, false, true])
+			elif cls == "XHangUpSubPage":   # T304：自动卖出页（不用出战成员、不会一打开就退回）
+				page.call("setup", "sell")
 			elif cls == "XShop":   # T283：武器、物品各一件
 				page.call("setup", [[1, 1, 0, 0], [0, 1, 0, 0]], false, "")
 			ReleaseEntry.simulate_release = sim_release

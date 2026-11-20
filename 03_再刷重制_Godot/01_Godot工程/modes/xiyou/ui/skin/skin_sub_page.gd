@@ -18,6 +18,8 @@ extends XSkinTemplatePage
 
 ## 总开关（卡 L 的一个开关）：false＝六个设置子页都回旧画法
 static var ENABLED := true
+## T304（T300 小A核 P3-4）：简化档也不淡入淡出、直接到位；false＝回到只有「关」档直接到位（T304 小A核 P2-2）
+static var SIMPLE_NO_FADE := true
 
 var scene: Control
 var crumb: Array = []
@@ -241,11 +243,11 @@ static func on_color(on: bool) -> Color:
 
 # ---- 淡出／淡入（手机按键拖动态）----
 
-## 整页淡出（0.12 秒；动效关＝立刻）。淡完隐藏，不挡拖动
+## 整页淡出（0.12 秒；简化、关＝立刻，T254 3.0 简化档去掉淡入，T300 小A核 P3-4）。淡完隐藏，不挡拖动
 func fade_out() -> void:
 	if _fade != null:
 		_fade.kill()
-	if XUiSkin.motion() == XUiSkin.Motion.OFF or not is_inside_tree():
+	if _instant() or not is_inside_tree():
 		modulate.a = 0.0
 		hide()
 		return
@@ -258,8 +260,14 @@ func fade_in() -> void:
 	if _fade != null:
 		_fade.kill()
 	show()
-	if XUiSkin.motion() == XUiSkin.Motion.OFF or not is_inside_tree():
+	if _instant() or not is_inside_tree():
 		modulate.a = 1.0
 		return
 	_fade = create_tween()
 	_fade.tween_property(self, "modulate:a", 1.0, 0.12)
+
+
+## 淡入淡出直接到位：关档；SIMPLE_NO_FADE 时简化档也是
+static func _instant() -> bool:
+	var m := XUiSkin.motion()
+	return m == XUiSkin.Motion.OFF or (SIMPLE_NO_FADE and m == XUiSkin.Motion.SIMPLE)
