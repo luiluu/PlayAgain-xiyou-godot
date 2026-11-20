@@ -96,7 +96,7 @@ func _place_extra() -> void:
 	var n := floori((cs.y - LIST_TOP - shift - FOOTER_H) / float(row_height))
 	list.size = Vector2(cs.x - lx - 8.0, n * row_height)
 	var lb := layout.left.size
-	level_bar.position = Vector2(XUiSkin.PAD, ring.position.y + ring.size.y + 4.0)
+	level_bar.position = Vector2(XUiSkin.PAD, ring.position.y + ring.size.y + 4.0 + maxf(0.0, XUiSkin.fs(XUiSkin.FS_AUX_MAX) - XUiSkin.FS_AUX_MAX))   # 字体调大时环下球名也变高，往下让
 	level_bar.size = Vector2(lb.x - XUiSkin.PAD * 2, 56.0)
 	_place_foot()
 
@@ -328,10 +328,11 @@ func _draw_level() -> void:
 	var num := XUiSkin.font("num")
 	var w := level_bar.size.x
 	var fs := XUiSkin.fs(XUiSkin.FS_AUX_MAX)
-	XUiSkin.ds(level_bar, body, Vector2(0, fs), str(parts[0]), HORIZONTAL_ALIGNMENT_LEFT, w * 0.6, fs, XUiSkin.TEXT)
 	var f := body if maxed else num
 	var rfs := XUiSkin.fs(XUiSkin.FS_AUX)
 	var rw := f.get_string_size(str(parts[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, rfs).x
+	var fit := XSkinList.fit_text(body, str(parts[0]), maxf(w - rw - 12.0, 40.0), fs, 15)   # 字体调大时先缩字，不压右边的经验数
+	XUiSkin.ds(level_bar, body, Vector2(0, fs), str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1]), XUiSkin.TEXT)
 	XUiSkin.ds(level_bar, f, Vector2(w - rw, fs), str(parts[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, XUiSkin.GOLD_LIGHT if maxed else XUiSkin.TEXT_2)
 	var y := fs + 10.0
 	level_bar.draw_rect(Rect2(0, y, w, BAR_H), Color(XUiSkin.LINE, 0.18))

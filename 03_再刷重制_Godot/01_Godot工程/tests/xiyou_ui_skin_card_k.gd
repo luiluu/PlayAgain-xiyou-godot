@@ -43,6 +43,8 @@ func windowed() -> bool:
 func shot(name: String, sz := Vector2i(800, 450)) -> void:
 	if not windowed():
 		return
+	XSkinNoticeLane.reset()   # 前面几步留下的提示（暂存宝珠、成就）不进截图
+	_clear_popups(get_tree().root)
 	var win := get_window()
 	var old := win.size
 	win.size = sz
@@ -54,6 +56,14 @@ func shot(name: String, sz := Vector2i(800, 450)) -> void:
 	check("screenshot_" + name, img.save_png(out_dir.path_join(name + ".png")) == OK)
 	win.size = old
 	await frames(4)
+
+
+func _clear_popups(n: Node) -> void:
+	for c in n.get_children():
+		if c is XToast or c is XAchievementPopup:
+			c.queue_free()
+		else:
+			_clear_popups(c)
 
 
 func shots(name: String) -> void:
@@ -162,7 +172,7 @@ func tree_mismatch(tree: XSkinMenuTreePage, own_card := false) -> String:
 			return "行 %s ≠ %s" % [tree.list.items[i], tree.rows[i].label]
 		if bool(tree.list.items[i].get("disabled", false)) != (tree.rows[i].get("enabled", true) == false):
 			return "可选 %d" % i
-	if tree.crumb_node.parts != tree.crumb.map(func(p): return str(p)) or tree.crumb.is_empty():
+	if tree.crumb_node.parts != (tree.crumb.map(func(p): return str(p)) if tree.crumb.size() > 1 else []) or tree.crumb.is_empty():
 		return "面包屑"
 	if not own_card and not tree.info.is_empty():
 		if tree.card.title != str(tree.info[0]):
@@ -656,20 +666,20 @@ func _font_and_old() -> void:
 	await frames()
 	page.ok()
 	check("old_craft", page.skin == null)
-	await shots("craft_old")
+	await shot("craft_old_16x9")   # 旧页不铺横屏（没有 request_wide），只拍 16:9
 	page.queue_free()
 	_tianqi(so)
 	shop = XOrbShop.new()
 	add_child(shop)
 	await frames()
 	check("old_orb", shop.tree == null and shop.choice.visible)
-	await shots("orb_old")
+	await shot("orb_old_16x9")
 	shop.queue_free()
 	_tianqi(sr)
 	menu = XRaceMenu.new()
 	add_child(menu)
 	await frames()
-	await shots("race_old")
+	await shot("race_old_16x9")
 	menu.queue_free()
 	XSkinMenuTreePage.ENABLED = true
 	ct.free()

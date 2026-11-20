@@ -165,7 +165,7 @@ func sync() -> void:
 	if layout == null:
 		return
 	_syncing = true
-	crumb_node.set_parts(crumb)
+	crumb_node.set_parts(crumb if crumb.size() > 1 else [])   # 第 0 层只有页名：标题已写，面包屑不重复
 	list_title = str(_shown_opts.get("list_title", crumb.back() if not crumb.is_empty() else title))
 	if dialog == null:
 		var view: Array = []
