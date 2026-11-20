@@ -12,13 +12,14 @@ extends Node
 const ENTRY := "res://modes/xiyou/entry.tscn"
 const Growth := preload("res://tests/virtual_player/vp_growth.gd")
 const FastForward := preload("res://tests/virtual_player/vp_fastforward.gd")
+const Shopper := preload("res://tests/virtual_player/vp_shopper.gd")
 const KEYS := {"accept": KEY_ENTER, "cancel": KEY_ESCAPE, "up": KEY_UP, "down": KEY_DOWN, "left": KEY_LEFT, "right": KEY_RIGHT, "f": KEY_F,
 	"g": KEY_G, "tilde": KEY_QUOTELEFT, "one": KEY_1, "e": KEY_E}
 const DIR_KEY := {2: "down", 4: "left", 6: "right", 8: "up"}
 const INTENT_WORDS := {"enter": ["进入该层", "进入"], "challenge": ["挑战"], "heal": ["治愈"],
 	"dungeon": ["挑战副本"], "reset": ["重置副本"], "flee": ["逃离"], "boss": ["挑战"], "lottery": ["自定义单抽"]}
 const TIER_NAMES := ["普通难度", "冒险难度", "勇士难度", "王者难度"]
-const TIER_SWITCHES := [1561, 1660] # 副本各档的开关：入口门和首领都按它分页（见 XDungeon 文件头）
+const TIER_SWITCHES := [1561, 1676] # 副本各档的开关（26～29 层用 1661～1676，T272 补）：入口门和首领都按它分页（见 XDungeon 文件头）
 const LOBBY := 4                   # 方桌大厅
 const EXCHANGE := 132               # 兑换大厅（大厅有传送点过去）：节日礼物送法宝积分，铁匠卖法宝
 const FABAO_POINTS := 213          # 法宝积分
@@ -76,6 +77,8 @@ var _snap_done := {}
 var pass_after := 0                # 量数用（>0 时）：同一层守层者输满这么多次后不收工，下一次挑战把守层者的血压到 1 放水通过（小结里标出来），好把后面各层的队伍快照也拿到
 var gifted_floors: Array = []      # 放水通过的层
 var ff_inline_retry := true        # 快进局守层者样本输了就地加刷、连着量，赢了或到放水才回大厅；--vp-ff-lobby-retry 关
+var direct_shop := true            # 快进局逛店改直接买入（不走路、不开商店画面；T272）；--vp-walk-shop 回走路逛店
+var shopper = null
 var ff_shop_once := true           # 快进局同一层的店只整轮逛一次（钱翻倍再逛）；--vp-ff-shop-every 关
 var resumed_from := ""             # --vp-resume 接着爬的那份存档（文件名；meta 的 msec 从接着爬那一刻算起）
 var fabao_enabled := true          # 出战的人有谁没戴法宝，就去兑换大厅领礼物（法宝积分）、找铁匠买法宝戴上
@@ -1092,7 +1095,7 @@ func _sample_loss(gt: int) -> void:
 	fights.append(ff.last_sample)
 	row0["sample_fights"] = fights
 	sample_defeats += 1
-	_log("快进：守层者（敌群 %d）无画面样本没打赢（%d 回合，打掉 %d%%），记一次失败、再加刷" % [gt, int(ff.last_sample.get("turns", 0)), int(ff.last_sample.get("dealt_pct", 0))])
+	_log("快进：守层者（敌群 %d）无画面样本没打赢（%d 回合，打掉 %d%%，单回合最多 %d%%，回血 %s），记一次失败、再加刷" % [gt, int(ff.last_sample.get("turns", 0)), int(ff.last_sample.get("dealt_pct", 0)), int(ff.last_sample.get("peak_pct", 0)), str(ff.last_sample.get("regen", 0))])
 	_mark("guardian_sample_loss")
 	_on_defeat()
 
@@ -1512,7 +1515,20 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			_shop_exh = {}
 			_shop_tries = {}
 			_shop_bought = {}
-		e = _next_shop(map, st)
+		if ff_enabled and direct_shop and not _shop_done.has(-1):
+			# 直接买入（T272）：整轮店在一帧里办完，不走 800 来步
+			_shop_done[-1] = true
+			if shopper == null:
+				shopper = Shopper.new()
+			var sres: Dictionary = await shopper.run(map, st, advance_enabled, Callable())
+			for line in sres.lines:
+				_note_growth(str(line))
+			_use_queue.append_array(sres.uses)
+			spend_buys += int(sres.bought)
+			if int(sres.bought) > 0:
+				_mark("shop_bought")
+			return
+		e = null if (ff_enabled and direct_shop) else _next_shop(map, st)
 		if e != null:
 			_shop_event = e.event_id
 			if _arrived(map.player):
@@ -1520,8 +1536,22 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 				_shop_last = ""
 			await _goto_target(map)
 			return
-		# 法宝：出战的人有谁没戴，每层去一趟兑换大厅
-		if _exchange_floor != int(st.variable(FLOOR_VAR)) and ((fabao_enabled and Growth.lacks_fabao(st)) or _want_lamps(st) or _want_blood(st)):
+		# 法宝：出战的人有谁没戴，每层去一趟兑换大厅（快进局直接买：不传送、不走路，T272）
+		if ff_enabled and direct_shop and _exchange_floor != int(st.variable(FLOOR_VAR)) and ((fabao_enabled and Growth.lacks_fabao(st)) or _want_lamps(st) or _want_blood(st)):
+			_exchange_floor = int(st.variable(FLOOR_VAR))
+			if shopper == null:
+				shopper = Shopper.new()
+			var xres: Dictionary = await shopper.run_map(EXCHANGE, st, advance_enabled)
+			for line in xres.lines:
+				_note_growth(str(line))
+			_use_queue.append_array(xres.uses)
+			spend_buys += int(xres.bought)
+			_heads_seen = Growth.heads(st)
+			_growth_stamp = null
+			_equip_sig = null
+			_mark("exchange_direct")
+			return
+		if not (ff_enabled and direct_shop) and _exchange_floor != int(st.variable(FLOOR_VAR)) and ((fabao_enabled and Growth.lacks_fabao(st)) or _want_lamps(st) or _want_blood(st)):
 			e = _transfer_event(map, EXCHANGE)
 			if e != null and _aim(map, e, "exchange"):
 				await _goto_target(map)
@@ -1715,7 +1745,19 @@ func _climb_floor(map: XMapScene, st: XState, floor: int) -> void:
 		if guard_shop_enabled and spend_enabled and not _gshop_done.has(map.map_id):
 			var gs := _find_event(map, func(x): return _has_choice(x, "向守层者索要礼物"))
 			var gkey: int = map.map_id * 1000 + (gs.event_id if gs != null else 0)
-			if gs == null or _shop_done.has(gkey) or int(_shop_visits.get(gkey, 0)) >= 8 or not _aim(map, gs, "shop"):
+			if gs != null and ff_enabled and direct_shop:
+				# 快进局直接买（T272）：不回头走到守层者跟前
+				if shopper == null:
+					shopper = Shopper.new()
+				var gres: Dictionary = await shopper.run(map, st, advance_enabled, func(x): return x != gs)
+				for line in gres.lines:
+					_note_growth(str(line))
+				_use_queue.append_array(gres.uses)
+				spend_buys += int(gres.bought)
+				_gshop_done[map.map_id] = true
+				guard_shops += 1
+				_growth_stamp = null
+			elif gs == null or _shop_done.has(gkey) or int(_shop_visits.get(gkey, 0)) >= 8 or not _aim(map, gs, "shop"):
 				_gshop_done[map.map_id] = true
 				if gs != null:
 					guard_shops += 1
@@ -2423,6 +2465,8 @@ func _growth_state(st: XState) -> Dictionary:
 	return {
 		"zhenqi": st.members().map(func(a): return int(XZhenqi.data(a).qi)),
 		"realms": st.members().map(func(a): return str(XZhenqi.state_of(st, a).name)),
+		"brand_on": XTianqiBrand.on(st),   # 天启篇烙印开着：真气不再涨（XZhenqi.on_victory），改涨烙印（T272 查清「真气没走起来」）
+		"brand_pct": st.members().map(func(a): return snappedf(XTianqiBrand.pct(a), 0.01)) if XTianqiBrand.on(st) else [],
 		"tickets": st.item_count(XDungeon.TICKET), "points": int(st.variable(XCasinoBatch.VAR_POINTS)),
 		"boss_mastery": st.boss_mastery.duplicate(), "gold": int(st.gold),
 		"lottery_draws": lottery_draws, "materials": Growth.materials(st),
@@ -2440,7 +2484,7 @@ func report() -> Dictionary:
 		"defeats": defeats, "grind_battles": _grind_total, "equip_changes": equip_changes, "equip_passes": equip_passes, "upgrade_uses": upgrade_uses, "sample_defeats": sample_defeats, "autosold": ff.sold if ff != null else 0, "levels": _levels(), "msec": Time.get_ticks_msec() - _t0,
 		"dungeon_runs": dungeon_runs, "dungeon_kills": dungeon_kills, "dungeon_defeats": dungeon_defeats, "farm_block": _farm_block, "stalemates": stalemates,
 		"growth": _growth_state(st), "growth_log": growth_log,
-		"ff": {"on": ff_enabled, "settled": ff.settled, "grind": ff.grind_battles, "dungeon": ff.dungeon_runs, "kings": ff.dungeon_kings, "mobs": ff.mobs, "early_outs": ff.early_outs,
+		"ff": {"on": ff_enabled, "settled": ff.settled, "grind": ff.grind_battles, "dungeon": ff.dungeon_runs, "kings": ff.dungeon_kings, "mobs": ff.mobs, "early_outs": ff.early_outs, "forced_resets": ff.forced_resets,
 			"samples": ff.samples, "sample_losses": ff.sample_losses, "msec": ff.msec, "prof": ff.prof_lines()} if ff != null else {"on": false},
 		"milestones": milestones, "maps": maps_seen, "event_visits": event_visits,
 		"events_tried": event_visits.size(), "battles": battles, "stuck": stuck_log, "violations": violations,
