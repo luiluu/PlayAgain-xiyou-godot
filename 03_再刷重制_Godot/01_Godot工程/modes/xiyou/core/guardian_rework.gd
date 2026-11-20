@@ -447,7 +447,7 @@ static func rescale_params(logic) -> void:
 ##   出伤 atk_scale 取本层那一档 × XINMO_ATK_PCT%；伤害抵抗 harm_re、一刀切抗性 resistance、31～33 层双防 rescale_params 都按本层。
 ## - 敌群事件：901 第 3 回合强制 6104 与随机 6101～6104、770 第 1 回合霸者领域（CE1397／6068）、6055、放逐 6057、每 3 回合 6051～6053／6056
 ##   全部不跑（xinmo_troop 去掉敌群页，XDB.rec 调）。不带守层者领域、不带异化计量（大厅不在楼层上，按段异化本来就不认）。
-## - 各境特点：xinmo_realm_hook（空实现，T316 设计定了再填）。
+## - 各境特点：xinmo_traits(logic, s)（空实现，xinmo_setup 末尾调；T316 设计定了再填）。
 ## 只管天启篇存档。回退：`XGuardianRework.XINMO = false`（心魔照原版记录、敌群事件照跑，与 T315 之前一致）。
 static var XINMO := true
 const XINMO_TROOPS := [901, 770]
@@ -550,12 +550,10 @@ static func xinmo_setup(logic, s: XState) -> void:
 	if gid <= 0 or f <= 0:
 		return
 	var g := XDB.rec("Enemies", gid)
-	var realm := int(trial.get("target", 0))
 	for e in logic.enemies:
 		if e.hidden or not e.horseman.is_empty():
 			continue
 		var rec := xinmo_rec(e.data(), g, f)
-		xinmo_realm_hook(rec, realm, f)
 		e.horseman = {"rec": rec, "knight": false}  # 借骑士战的合成记录口子：XEnemy.data() 读它；难度倍率、幻化（zq_ref＝参照守层者原能力值）照旧
 		e.boss_difficulty_boss = XEnemy.boss_id(gid)
 		e.set_meta(META_XINMO, f)
@@ -569,8 +567,11 @@ static func xinmo_setup(logic, s: XState) -> void:
 	for e in logic.enemies:
 		if xinmo_floor(e) > 0 and float(e.mhp) > 0.0:
 			_scale_hp(e, xinmo_hp(f, gid, s) / float(e.mhp))
+	xinmo_traits(logic, s)
 
 
-## 各境心魔的特点（T316 设计定了再填）：rec 是这一场心魔的合成记录（可改特性、行动表），realm 是要立的境（烙印第几境），f 是对齐的层
-static func xinmo_realm_hook(_rec: Dictionary, _realm: int, _f: int) -> void:
+## 各境心魔的特点（T316 设计定了再填；签名照 T316 v0.1 第五节 5.1 的 XTianqiXinmoTraits.setup(logic, s)）：
+## 对齐、重标血量之后调。要立哪一境、谁打读 XZhenqi.battle.trial 的 target（1～6）、actorId；brand 为真才是烙印心魔。
+## 行动表里至少留一条能出手的招（xinmo_rec 滤空时补「攻击」1），给【劫落】等挑底招用。
+static func xinmo_traits(_logic, _s: XState) -> void:
 	pass

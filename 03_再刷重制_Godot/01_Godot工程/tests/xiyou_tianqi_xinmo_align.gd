@@ -35,7 +35,7 @@ func _run() -> void:
 	_floor_map()
 	_rollback()
 	_xiyou()
-	XGuardianRework.xinmo_realm_hook({}, 1, 10)  # 钩子在（空实现）
+	XGuardianRework.xinmo_traits(null, null)  # 各境特点钩子在（空实现）
 	XGuardianRework.XINMO = was
 	XEnemy.force_roll = -1.0
 	var passed := results.filter(func(r): return r.passed).size()
@@ -132,6 +132,10 @@ func _f10() -> void:
 	_check("f10.no_evasion_regen", not _xparam_pos(e, [1, 4, 7]) and e.xparam(1) <= 0.0 and e.xparam(4) <= 0.0 and e.xparam(7) <= 0.0, [e.xparam(1), e.xparam(4), e.xparam(7)])
 	_check("f10.no_harm_re", (e.passive_cache().harmRe as Dictionary).values().all(func(v): return float(v) < 1.0e6), e.passive_cache().harmRe)
 	_check("f10.boss_like_guardian", g != null and e.boss_difficulty_boss == g.boss_difficulty_boss, [e.boss_difficulty_boss, g.boss_difficulty_boss if g else null])
+	var lgg := XBattleLogic.new()
+	lgg.setup(int(XGuardianRework.TROOPS[10]), _state(10))
+	var gg: XEnemy = lgg.enemies.filter(func(x): return XGuardianRework.floor_of(x.enemy_id) == 10)[0]
+	_check("f10.sear_tier_eq_guardian", XTianqiBrand.enemy_tier(lg, e) == XTianqiBrand.enemy_tier(lgg, gg) and XTianqiBrand.sear_per_hit(lg, e) == XTianqiBrand.sear_per_hit(lgg, gg), [XTianqiBrand.enemy_tier(lg, e), XTianqiBrand.enemy_tier(lgg, gg), XTianqiBrand.sear_per_hit(lg, e)])
 	_check("f10.pages_off", (XDB.rec("Troops", 901).get("pages", []) as Array).is_empty())
 	var mhp0 := float(e.mhp)
 	_turns(lg, 3)
