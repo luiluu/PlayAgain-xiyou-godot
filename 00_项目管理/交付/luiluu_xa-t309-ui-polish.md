@@ -1,7 +1,7 @@
 # 交付：luiluu/xa-t309-ui-polish
 
 - 车道／工作者：小A（Neon high，P9）
-- 状态：进行中（WIP：现状排查与共用件美化方案草稿完成；按公共规矩 v1.6 第 3 条上下文压缩停手线保存现场，待卡 N/O 推上 `github/main` 后由新 Neon 会话接续实装）
+- 状态：进行中（WIP #2：已合并 `github/main 8fc4a87c6` 含卡 N/O 并跑完 `--补齐`，已实装核心共用件 14 个文件且 `语法检查.py` 通过 1119/1119 0 问题；按公共规矩 v1.6 第 3 条上下文压缩停手线保存现场，待下一任 Neon 接续剩余 15 处小件接线、拍 ≥8 页并排对照图与全项验收）
 - 关联任务：T309 新界面整体美化（Neon 主笔＋实装）
 - 红线守则（已确认不动）：D18 七印环方向、D25 菜单 7 组、D26 横屏铺满、D29 红乙（黑底／红选中／旧金）、D43 标题画面定稿、D50 R2 无框烟色面板（不给烟底加硬方框）、D231 宋体。
 
@@ -9,8 +9,8 @@
 
 ### 2026-11-20 【小A·未经审查】T309 新界面整体美化（dev.待定）
 
-- 状态：草稿（尚未实装代码，待下一任接手补齐提交与验收结果）
-- 玩家可见：待实装后按最终改动填写（预计为新界面整体暖炭金调和谐化、分割线与量条质感打磨、弹窗平滑渐变、列表与详情卡长看舒适度优化；单一总开关 `XUiSkin.POLISH_V1` 可逐像素回退）
+- 状态：进行中（已实装总开关 `XUiSkin.POLISH_V1` 与 14 个核心共用件，剩余 15 个次级／战斗共用件、对照图与验收测试待下一任补齐）
+- 玩家可见：待全部实装与验收后按最终改动定稿（预计为新界面整体暖炭金调和谐化、分割线与量条质感打磨、弹窗平滑渐变、列表与详情卡长看舒适度优化；单一总开关 `XUiSkin.POLISH_V1` 可逐像素回退）
 
 ## 现状排查：美化舒适 18 条逐条核对
 
@@ -100,8 +100,11 @@ static func polish_on() -> bool:
 5. `xiyou_ui_skin_close.gd:136-143`：`FS_LIST/FS_AUX/FS_MIN/FS_PAGE` 各档字号精确值
 6. `xiyou_ui_skin_close.gd:156,164,174,307`：`XSkinKeyHints.H`、`TOUCH_H` 及底部贴边边界
 7. `xiyou_ui_skin_card_m.gd:685,695`：`XSkinList.dis_color(1) == Color("c9cbd0")`、`XSkinCard.line_h() == 30.0`
-8. `xiyou_ui_skin_shop.gd:210,287`、`xiyou_ui_skin_card_l.gd:234,323`：比较颜色均引用符号（`XUiSkin.GOLD`/`XUiSkin.DOWN`/`XUiSkin.UP`/`XUiSkin.TEXT_2`），因此将暖色替换放在绘制层 helper（而非粗暴改常量值）既保测试全绿，又保总开关 `POLISH_V1 = false` 逐像素回退。
-9. **纹理引用防白块（卡 M 教训）**：任何新建 `GradientTexture2D`／`ImageTexture`（如 `XSkinConfirm` 渐变底）必须保存在 `static var` 缓存字典中持强引用，绝不作为临时局部变量传入 `RenderingServer` 后释放。
+8. `xiyou_ui_skin_shop.gd:210,287`、`xiyou_ui_skin_card_l.gd:234,323`、`xiyou_ui_skin_card_o.gd:670,751`、`xiyou_ui_skin_1c.gd:366`：比较颜色均引用符号（`XUiSkin.GOLD`/`XUiSkin.DOWN`/`XUiSkin.UP`/`XUiSkin.TEXT_2`/`XUiSkin.QUALITY[1]`），因此通过 `XUiSkin.paint_color()` 挂在 `XUiSkin.ds()` 绘制层做暖色映射（不改常量值），既保全部旧测试全绿，又保总开关 `POLISH_V1 = false` 逐像素回退。
+9. `xiyou_ui_skin.gd:159`：断言 `XUiSkin.on() == false` 时 `breath_alpha(0.0) == 0.75` 且 `breath_alpha(1.6) == 1.0` —— 通过 `polish_on()`（`POLISH_V1 and on()`）门控即可完全兼容。
+10. `xiyou_ui_skin_card_k.gd:650`：断言 130% 放大字号下 `sk.card.natural_height(...) <= sk.card.size.y + 0.5` —— 已在 `skin_card.gd` 中让段落舒适行距（`1.56`）仅在 `font_mult() <= 1.05` 时启用，放大字号保持 `1.5` 不溢出。
+11. `xiyou_ui_art_phase01.gd:152`：断言 `SMOKE_ALPHA == 0.85` 且 `SMOKE_ALPHA_SHORT == 0.88` —— 常量值严禁修改。
+12. **纹理引用防白块（卡 M 教训）**：任何新建 `GradientTexture2D`／`ImageTexture`（如 `XSkinConfirm` 渐变底 `_polish_dlg_tex`）必须保存在 `static var` 缓存中持强引用，绝不作为临时局部变量传入 `RenderingServer` 后释放。
 
 ## 新美术素材需求（只列需求，不画像素）
 
@@ -111,33 +114,66 @@ static func polish_on() -> bool:
 
 ## 玩家可见文字
 
-- 当前草稿阶段：无新增或修改玩家可见文字。
-- 实装阶段若新增任何玩家可见文字（原则上 T309 纯视觉美化不新增文案），须在此节逐条列出并由小A（本车道自带文字审）标注审定结论。
+- 当前实装进度（WIP #2）：**无新增或修改任何玩家可见文字**（纯视觉渲染层美化）。
+- 后续收尾如无新增文案，交接时标「不涉及」；若有任何新增玩家可见文字，须在此节逐条列出并由小A 标注文字审结论。
 
-## 下一任 Neon 接手实装清单
+## 已完成实装与下一任 Neon 接手清单
 
-1. **同步卡 N/O**：`git fetch github && git merge github/main`（只合 `github/main`），必要时重跑 `zsh 03_再刷重制_Godot/07_开发环境/新建工作树.sh --补齐 <工作树>`，检查 `skin_roster_page.gd` 及 N/O 新增件并补齐上表 P11。
-2. **按 P1～P11 实装**：全部改动挂在 `XUiSkin.POLISH_V1` 下（`false` 时与美化前逐像素一致）。
-3. **拍 ≥8 页同状态前后对照图（800×450，左现在｜右美化后，拼成 1600×450）**：
+### 已完成（WIP #2，语法检查 `1119 个 .gd，0 个问题`）
+- 已合并 `github/main`（`8fc4a87c6`，含卡 N/O `dev.797/798`）→ 合并提交 `e2aa5dd8f`，并跑通 `新建工作树.sh --补齐`（`outputs: 3601`、`godot --import` 完成）。
+- 已实装 14 个核心共用件（均位于 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/`，全挂 `XUiSkin.polish_on()` 总开关，`POLISH_V1 = false` 逐像素回退）：
+  1. `ui_skin.gd`：`POLISH_V1` 总开关、暖炭色板常量与语义 getter（`bg_c`/`panel_c`/`panel_low_c`/`line_c`/`text2_c`/`orb_hi_c`/`orb_low_c`/`down_c`/`mythic_c`）、`paint_color()` 接进 `ds()`、`draw_divider()`、`draw_title_accent()`、`draw_gauge()`、`draw_scrollbar()`、`breath_alpha()` 放缓、`theme()` 滚动条、`panel_style()`/`panel_texture()` 独立缓存键 `"panel_polish"`（**仅剩 `_add_embers()` 粒子降速待补**）。
+  2. `skin_art.gd`：`_add_scrims`、`_vgrad`、`bg_text_2`、`bg_string`、`draw_smoke`（暖炭调制＋无框顶部居中 65% 旧金丝线，严守 D50 R2 与 `SMOKE_ALPHA` 常量）。
+  3. `skin_confirm.gd`：`static var _polish_dlg_tex`（96×96 平滑暖炭圆角九宫渐变强引用缓存）、柔和投影、顶部金丝、双层边框、标题下 `draw_divider` 与暖炭按钮底。
+  4. `skin_card.gd`：淡七芒暗印、暖色内嵌提示块＋左金条、6px 圆角暖金滚动条、`draw_divider`、节头 `2×12` 旧金竖标、常规字号 `1.56` 行距（放大字号保 `1.5`）、暖炭次按钮底。
+  5. `skin_list.gd`：单列暖炭微斑马纹（跳过选中项）、`draw_scrollbar`、暖锡复选框边。
+  6. `skin_template_page.gd`：`list_title` 下 `draw_title_accent`、页脚上方 `draw_divider`。
+  7. `skin_roster_page.gd`（卡 O 新共用件）：`roster_title` 下 `draw_title_accent`、展开条 `draw_divider`、`draw_seal()` 外／内柔光。
+  8. `skin_tag.gd`：标签深炭半透底防红／烟透色、空态淡七芒暗印＋旧金分割线。
+  9. `skin_inner_tabs.gd`：轻暖炭背囊＋当前页签底部柔金光条。
+  10. `skin_crumb.gd`：面包屑分隔符 `›` 改柔旧金。
+  11. `skin_stepper.gd`：暖炭胶囊外底＋暖锡／金边框。
+  12. `skin_key_hints.gd`：键盘按键名轻暖炭键帽底＋顶高光（不动 `H`/`TOUCH_H`/`total_width()`）。
+  13. `skin_back_button.gd`：`‹` 背后轻暖炭微晕圆盘＋淡金圈。
+  14. `skin_button.gd`：`style()` 切用 `panel_c()`/`line_c()`/`down_c()`。
+
+### 下一任 Neon 直接续做（无需重排查）
+1. **补齐剩余 15 处次级／战斗共用件（均在 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/` 下，全挂 `XUiSkin.polish_on()`）**：
+   - `ui_skin.gd`：`_add_embers()`（约 1015 行）在 `polish_on()` 下粒子初速改 `48..82`、透明度乘 `0.78`。
+   - `skin_ring_nav.gd`：`sty()` 用 `orb_low_c()`/`orb_hi_c()`，`ring_line_color()` 与圆环线（约 652 行）用 `line_c()`。
+   - `skin_warehouse_page.gd`（卡 N/O）：`_draw_space()` 容量条改调 `XUiSkin.draw_gauge(..., legacy_flat=true)`。
+   - `skin_sub_page.gd`：`_draw_bars()` 改调 `XUiSkin.draw_gauge(..., legacy_flat=true)`。
+   - `skin_party_strip.gd`：line 142 `draw_divider`，line 157 `orb_low_c()`/`line_c()`，lines 198-200 `draw_gauge`。
+   - `skin_gear_detail.gd`：line 217 `draw_divider(..., true, 0.85)`，line 245 暖色对比行带，lines 272-277 `draw_scrollbar`。
+   - `skin_target_list.gd`：line 120 `draw_divider`，lines 130/134 `orb_low_c()`/`line_c()`，lines 152-154 `draw_gauge`。
+   - `skin_party_page.gd`：lines 224-227 & 343-345 `draw_gauge(..., legacy_flat=true)`，line 350 `draw_divider(..., true, 0.85)`，line 395 `line_c()`。
+   - `skin_status_page.gd`：lines 192-196 `draw_gauge`，line 229 `draw_divider(..., true, 0.85)`。
+   - `skin_battle_list.gd`：lines 241-244 `draw_scrollbar`，line 247 `draw_divider(..., legacy_alpha=0.3)`。
+   - `skin_arc_gauge.gd`：line 83 在 `polish_on()` 下加深暖炭凹槽与淡暖锡描边。
+   - `skin_side_status.gd`：line 78 `line_c()`，lines 95-97 回合数深炭胶囊＋12→13px，lines 127-129 `draw_gauge`。
+   - `skin_otb_bar.gd`：lines 136-144 `bg_c()`/`line_c()`＋12→13px，line 179 敌方暗圆盘微暖化（`Color("231729")`）＋`orb_low_c()`。
+   - `skin_boss_status.gd`：lines 214/258 暖炭微带，line 247 属性行下限 9→11px，line 286 `draw_divider`。
+   - `skin_battle_2c.gd`：lines 918/1020 经验条内凹底槽，lines 989-992 暖金滚动条，line 1315 战败提示暖炭胶囊。
+2. **拍 ≥8 页同状态前后对照图（800×450 原尺寸，左现在｜右美化后，拼成 1600×450）**：
    - 存放目录：`00_项目管理/归档/交付截图/luiluu_xa-t309-ui-polish/对照/`
-   - 建议覆盖 10 页：`01_主菜单`、`02_装备`、`03_物品`、`04_商店`、`05_整队`、`06_制作与确认弹窗`、`07_宝珠坊或种族祝福`、`08_设置与挂机子页`、`09_战斗指令与浮层`、`10_战斗结算`（若含卡 N/O 页面一并选入）。
+   - 建议覆盖 10 页：`01_主菜单`、`02_装备`、`03_物品`、`04_商店`、`05_整队`、`06_制作与确认弹窗`、`07_宝珠坊或种族祝福`、`08_设置与挂机子页`、`09_战斗指令与浮层`、`10_战斗结算`（可按卡 N/O 加入仓库或名册页）。
    - 所有 Godot 命令必带 `--audio-driver Dummy`，前台逐一运行，不用 `并行测试.py`、不后台、不设定时器、不用子代理。
-   - 同时跑自动化像素核验：确认 `POLISH_V1=false` 与美化前 0 像素差异、`POLISH_V1=true` 暖度 `R-B > 0` 且无纯黑裁切／溢出。
-4. **全项验收**：
-   - 前台逐个跑（均加 `--audio-driver Dummy`）：`xiyou_ui_skin_card_e`、`xiyou_ui_skin_shop`（卡 I）、`xiyou_ui_skin_card_j/k/l/m/n/o`、`xiyou_ui_skin_2c`、`xiyou_ui_skin_5c`、`xiyou_ui_skin_offshot`、`xiyou_ui_skin_close`、`xiyou_ui_skin_menu`、`xiyou_ui_skin_hud` 及新建的 `xiyou_ui_skin_polish`。
+   - 同时做像素核验：确认 `POLISH_V1=false` 与美化前 0 像素差异、`POLISH_V1=true` 暖度 `R-B > 0` 且无纯黑白块／溢出。
+3. **全项验收**：
+   - 前台逐个跑（均加 `--audio-driver Dummy`）：`xiyou_ui_skin_card_e`、`xiyou_ui_skin_shop`（卡 I）、`xiyou_ui_skin_card_j/k/l/m/n/o`、`xiyou_ui_skin_2c`、`xiyou_ui_skin_5c`、`xiyou_ui_skin_offshot`、`xiyou_ui_skin_close`、`xiyou_ui_skin_menu`、`xiyou_ui_skin_hud`、`xiyou_ui_skin`、`xiyou_ui_art_phase01` 及新建的 `xiyou_ui_skin_polish`。
    - 跑 `python3 03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py` 通过。
    - 跑 `python3 03_再刷重制_Godot/07_开发环境/语法检查.py` 为 0。
-   - 更新本交付单状态为 `可合并`（注：美术定稿需 Kyo 点头，回执「要 Kyo 定」写明，发完 `worker_done` 即停手不自合 `main`），提交后跑 `python3 03_再刷重制_Godot/07_开发环境/交付自检.py` 到退出码 0。
+   - 更新本交付单状态为 `可合并`（美术定稿需 Kyo 点头，回执「要 Kyo 定」写明，发完 `worker_done` 即停手不自合 `main`），提交后跑 `python3 03_再刷重制_Godot/07_开发环境/交付自检.py` 到退出码 0。
 
 ## 交接板
 
-- 下一步：待卡 N/O 推上 `github/main` 后，由新 Neon 会话接续 `luiluu/xa-t309-ui-polish` 分支合并 `github/main` 并按本交付单 P1～P11 实装、出 ≥8 页并排对照图与全项验收。
-- 用户试玩说明：暂未实装代码（WIP 方案草稿）。
+- 下一步：下一任 Neon 在 `luiluu/xa-t309-ui-polish` 上直接续做剩余 15 处次级／战斗共用件、拍 ≥8 页 1600×450 前后并排对照图并跑完卡 E～O＋2c/5c/offshot/皮肤关闭对照/语法检查/交付自检。
+- 用户试玩说明：核心共用件（14 个文件）已上线总开关 `XUiSkin.POLISH_V1`，待剩余 15 处次级件与对照图完成后交 Kyo 审阅。
 - 需要用户决定：实装完成后，≥8 页前后对照图待 Kyo 目视定稿后再决定合入 `main`。
 
 ## 进度账
 
-- 本轮为 WIP 调研与方案草稿，暂不改动进度账。
+- 本轮为 WIP #2 中段实装，暂不改动进度账。
 
 ## 可优化（流程／工具／效率）
 
@@ -145,4 +181,6 @@ static func polish_on() -> bool:
 
 ## 本分支提交
 
-- 待本 WIP 提交后由下一任补全完整提交列表。
+- `9d0b3c0cb`：WIP: T309 新界面美化现状排查、定量基线与共用件方案草稿
+- `e2aa5dd8f`：Merge remote-tracking branch `github/main` into `luiluu/xa-t309-ui-polish`（合入 `8fc4a87c6` 含卡 N/O）
+- 本轮 WIP #2 提交待补（14 个核心共用件实装＋交付单进度更新）

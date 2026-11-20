@@ -192,11 +192,12 @@ static func right_edge(view: Vector2) -> float:
 func _draw() -> void:
 	var f := XUiSkin.font("body")
 	var ci := get_canvas_item()
+	var pol := XUiSkin.polish_on()
 	if touch_mode():
 		for i in hints.size():
 			var r := chip_rect(i)
 			var cb := StyleBoxFlat.new()
-			cb.bg_color = Color(XUiSkin.BG, 0.85) if i != _press else Color(XUiSkin.SEL2_FILL_R, 0.9)
+			cb.bg_color = Color(XUiSkin.bg_c(), 0.88 if pol else 0.85) if i != _press else Color(XUiSkin.SEL2_FILL_R, 0.9)
 			cb.border_color = Color(XUiSkin.GOLD, 0.6)
 			cb.set_border_width_all(1)
 			cb.set_corner_radius_all(int(TOUCH_H / 2.0))
@@ -210,13 +211,18 @@ func _draw() -> void:
 		var kw := f.get_string_size(str(h[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + 20
 		var sb := StyleBoxFlat.new()
 		sb.draw_center = false
-		sb.border_color = XSkinArt.bg_text_2()
+		sb.border_color = Color(XUiSkin.line_c(), 0.72) if pol else XSkinArt.bg_text_2()
 		sb.set_border_width_all(1)
 		sb.set_corner_radius_all(11)
-		if XSkinArt.read_on():   # 可读性：键帽垫深底
+		if pol:
+			sb.draw_center = true
+			sb.bg_color = Color(0.08, 0.068, 0.064, 0.78)
+		elif XSkinArt.read_on():   # 可读性：键帽垫深底
 			sb.draw_center = true
 			sb.bg_color = Color(0, 0, 0, 0.55)
 		sb.draw(ci, Rect2(x, 0, kw, H))
+		if pol:
+			draw_line(Vector2(x + 9.0, 1.5), Vector2(x + kw - 9.0, 1.5), Color(1.0, 0.94, 0.84, 0.14), 1.0)
 		XSkinArt.bg_string(self, f, Vector2(x + 10, H / 2.0 + font_size * 0.36), str(h[0]), font_size, XUiSkin.TEXT)
 		x += kw + 6
 		XSkinArt.bg_string(self, f, Vector2(x, H / 2.0 + font_size * 0.36), str(h[1]), font_size, XSkinArt.bg_text_2())

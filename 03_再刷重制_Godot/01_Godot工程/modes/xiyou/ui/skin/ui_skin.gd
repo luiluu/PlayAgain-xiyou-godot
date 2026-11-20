@@ -33,6 +33,185 @@ static var TOUCH_RING_FIXED := false
 static var COMFORT_V2 := true
 ## WARM_BG（D44，只出对比图，默认 false＝冷黑）：底、面板、线换暖炭黑（小A审 美化 1）
 static var WARM_BG := false
+## T309 新界面整体美化总开关（默认 true；false 时逐像素回退至美化前；不改动 WARM_BG 等既有开关的默认常量）
+static var POLISH_V1 := true
+const POLISH_BG := Color("090808")
+const POLISH_PANEL := Color("1e1b1b")
+const POLISH_PANEL_LOW := Color("131112")
+const POLISH_LINE := Color("b5ab9c")
+const POLISH_TEXT_2 := Color("bab4aa")
+const POLISH_ORB_HI := Color("38322f")
+const POLISH_ORB_LOW := Color("161312")
+const POLISH_DOWN := Color("e88252")
+const POLISH_MYTHIC := Color("ff5c84")
+const POLISH_MYTHIC_RAW := Color("ff483c")
+const POLISH_BREATH_TIME := 2.4
+const POLISH_BREATH_MIN := 0.82
+
+
+static func polish_on() -> bool:
+	return POLISH_V1 and on()
+
+
+static func bg_c() -> Color:
+	return POLISH_BG if polish_on() else BG
+
+
+static func panel_c() -> Color:
+	return POLISH_PANEL if polish_on() else PANEL
+
+
+static func panel_low_c() -> Color:
+	return POLISH_PANEL_LOW if polish_on() else PANEL_LOW
+
+
+static func line_c() -> Color:
+	return POLISH_LINE if polish_on() else LINE
+
+
+static func text2_c() -> Color:
+	return POLISH_TEXT_2 if polish_on() else TEXT_2
+
+
+static func orb_hi_c() -> Color:
+	return POLISH_ORB_HI if polish_on() else ORB_HI
+
+
+static func orb_low_c() -> Color:
+	return POLISH_ORB_LOW if polish_on() else ORB_LOW
+
+
+static func down_c() -> Color:
+	return POLISH_DOWN if polish_on() else DOWN
+
+
+static func mythic_c() -> Color:
+	return POLISH_MYTHIC if polish_on() else POLISH_MYTHIC_RAW
+
+
+## 绘制层语义色温映射：不改动既有常量值（保旧测试断言与 POLISH_V1=false 逐像素回退），绘制时统一柔化冷灰/下降橙/神话红
+static func paint_color(c: Color) -> Color:
+	if not polish_on():
+		return c
+	if is_equal_approx(c.r, TEXT_2.r) and is_equal_approx(c.g, TEXT_2.g) and is_equal_approx(c.b, TEXT_2.b):
+		return Color(POLISH_TEXT_2, c.a)
+	if is_equal_approx(c.r, DOWN.r) and is_equal_approx(c.g, DOWN.g) and is_equal_approx(c.b, DOWN.b):
+		return Color(POLISH_DOWN, c.a)
+	if is_equal_approx(c.r, POLISH_MYTHIC_RAW.r) and is_equal_approx(c.g, POLISH_MYTHIC_RAW.g) and is_equal_approx(c.b, POLISH_MYTHIC_RAW.b):
+		return Color(POLISH_MYTHIC, c.a)
+	return c
+
+
+## 共用渐隐分割线（P3）：两端渐隐暖锡／旧金细线，主分隔（gold=true）中点点缀微菱形；POLISH_V1=false 回退为原 1px 平灰线
+static func draw_divider(ci: CanvasItem, x0: float, x1: float, y: float, gold := false, alpha := 1.0, legacy_alpha := 0.14) -> void:
+	if x1 <= x0 + 2.0 or alpha <= 0.0:
+		return
+	if not polish_on():
+		ci.draw_line(Vector2(x0, y), Vector2(x1, y), Color(LINE, legacy_alpha * alpha), 1.0)
+		return
+	var base := GOLD if gold else POLISH_LINE
+	var mid_a := (0.38 if gold else 0.26) * alpha
+	var side_a := (0.22 if gold else 0.17) * alpha
+	var xs := [x0, lerpf(x0, x1, 0.18), lerpf(x0, x1, 0.50), lerpf(x0, x1, 0.82), x1]
+	var als := [0.0, side_a, mid_a, side_a, 0.0]
+	for i in 4:
+		var c0 := Color(base, als[i])
+		var c1 := Color(base, als[i + 1])
+		ci.draw_polygon(
+			PackedVector2Array([Vector2(xs[i], y - 0.5), Vector2(xs[i + 1], y - 0.5), Vector2(xs[i + 1], y + 0.5), Vector2(xs[i], y + 0.5)]),
+			PackedColorArray([c0, c1, c1, c0]))
+	if gold and (x1 - x0) >= 64.0:
+		var mx := (x0 + x1) * 0.5
+		ci.draw_colored_polygon(
+			PackedVector2Array([Vector2(mx, y - 2.5), Vector2(mx + 3.0, y), Vector2(mx, y + 2.5), Vector2(mx - 3.0, y)]),
+			Color(GOLD, 0.62 * alpha))
+
+
+## 面板小标题下渐隐微金短线（P3）；POLISH_V1=false 不绘制
+static func draw_title_accent(ci: CanvasItem, x: float, y: float, w := 56.0, alpha := 1.0) -> void:
+	if not polish_on() or w <= 8.0 or alpha <= 0.0:
+		return
+	ci.draw_colored_polygon(
+		PackedVector2Array([Vector2(x + 2.0, y - 2.0), Vector2(x + 4.5, y), Vector2(x + 2.0, y + 2.0), Vector2(x - 0.5, y)]),
+		Color(GOLD, 0.65 * alpha))
+	var x0 := x + 7.0
+	var xm := x0 + w * 0.58
+	var x1 := x0 + w
+	var c0 := Color(GOLD, 0.45 * alpha)
+	var cm := Color(GOLD, 0.22 * alpha)
+	var c1 := Color(GOLD, 0.0)
+	ci.draw_polygon(PackedVector2Array([Vector2(x0, y - 0.5), Vector2(xm, y - 0.5), Vector2(xm, y + 0.5), Vector2(x0, y + 0.5)]),
+		PackedColorArray([c0, cm, cm, c0]))
+	ci.draw_polygon(PackedVector2Array([Vector2(xm, y - 0.5), Vector2(x1, y - 0.5), Vector2(x1, y + 0.5), Vector2(xm, y + 0.5)]),
+		PackedColorArray([cm, c1, c1, cm]))
+
+
+## 共用量条槽（P5）：深炭内凹底槽＋1px 淡暖锡内框＋填充顶缘柔和亮线；POLISH_V1=false 回退为原浅灰条槽
+static func draw_gauge(ci: RID, rect: Rect2, ratio: float, fill_col: Color, alpha := 1.0, legacy_bg := Color(1, 1, 1, 0.12), round_r := 3, legacy_flat := false) -> void:
+	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return
+	var r := clampf(ratio, 0.0, 1.0)
+	if not polish_on():
+		if legacy_flat:
+			RenderingServer.canvas_item_add_rect(ci, rect, legacy_bg)
+			var lfw := rect.size.x * r
+			if lfw > 0.0:
+				RenderingServer.canvas_item_add_rect(ci, Rect2(rect.position, Vector2(lfw, rect.size.y)), Color(fill_col, fill_col.a * alpha))
+			return
+		var lbg := StyleBoxFlat.new()
+		lbg.bg_color = legacy_bg
+		lbg.set_corner_radius_all(round_r)
+		lbg.draw(ci, rect)
+		var lfw2 := rect.size.x * r
+		if lfw2 > 0.0:
+			var lfg := StyleBoxFlat.new()
+			lfg.bg_color = Color(fill_col, fill_col.a * alpha)
+			lfg.set_corner_radius_all(round_r)
+			lfg.draw(ci, Rect2(rect.position, Vector2(lfw2, rect.size.y)))
+		return
+	var cr := mini(round_r, maxi(1, int(rect.size.y * 0.5)))
+	var bg := StyleBoxFlat.new()
+	bg.bg_color = Color(0.032, 0.025, 0.024, 0.72 * alpha)
+	bg.border_color = Color(0.76, 0.70, 0.62, 0.20 * alpha)
+	bg.set_border_width_all(1)
+	bg.set_corner_radius_all(cr)
+	bg.draw(ci, rect)
+	var fw := rect.size.x * r
+	if fw > 0.5:
+		var fc := paint_color(fill_col)
+		var fg_rect := Rect2(rect.position, Vector2(fw, rect.size.y))
+		var fg := StyleBoxFlat.new()
+		fg.bg_color = Color(fc, fc.a * alpha)
+		fg.set_corner_radius_all(cr)
+		fg.draw(ci, fg_rect)
+		if rect.size.y >= 4.0 and fw >= 3.0:
+			var hi_x := rect.position.x + minf(1.0, fw * 0.25)
+			var hi_w := maxf(1.0, fw - minf(2.0, fw * 0.5))
+			RenderingServer.canvas_item_add_rect(ci, Rect2(hi_x, rect.position.y + 0.5, hi_w, 1.0), Color(1.0, 0.96, 0.90, 0.26 * alpha * fc.a))
+
+
+## 共用圆角暖金滚动条（P6）；POLISH_V1=false 回退为原直角灰条
+static func draw_scrollbar(ci: CanvasItem, track: Rect2, thumb_y: float, thumb_h: float, legacy_track := Color(1, 1, 1, 0.06), legacy_thumb := Color(0, 0, 0, 0)) -> void:
+	if track.size.x <= 0.0 or track.size.y <= 0.0:
+		return
+	var lt := legacy_thumb if legacy_thumb.a > 0.0 else Color(LINE, 0.55)
+	if not polish_on():
+		if legacy_track.a > 0.0:
+			ci.draw_rect(track, legacy_track)
+		ci.draw_rect(Rect2(track.position.x, thumb_y, track.size.x, thumb_h), lt)
+		return
+	var rid := ci.get_canvas_item()
+	var rad := maxi(2, int(track.size.x * 0.5))
+	var tsb := StyleBoxFlat.new()
+	tsb.bg_color = Color(0.04, 0.033, 0.032, 0.52)
+	tsb.border_color = Color(0.76, 0.70, 0.62, 0.14)
+	tsb.set_border_width_all(1)
+	tsb.set_corner_radius_all(rad)
+	tsb.draw(rid, track)
+	var gsb := StyleBoxFlat.new()
+	gsb.bg_color = Color(0.78, 0.69, 0.54, 0.68)
+	gsb.set_corner_radius_all(rad)
+	gsb.draw(rid, Rect2(track.position.x + 0.5, thumb_y, maxf(2.0, track.size.x - 1.0), maxf(8.0, thumb_h)))
 ## D45／D48（Kyo：环心「会动的像素小人」和「角色头像」都要；11-15 定 A）：SPRITE＝方案 A 环心像素小人、头像留在右栏队伍卡（默认）；
 ## FACE＝原来的大圆头像（回退：`XUiSkin.CENTER_STYLE = 0`）；SPRITE_BADGE＝方案 B 环心小人＋右下叠一枚小圆头像（没选，留着）
 enum CenterStyle { FACE, SPRITE, SPRITE_BADGE }
@@ -364,16 +543,18 @@ static func now() -> float:
 	return (_clock_ms if _clock_ms >= 0 else Time.get_ticks_msec()) / 1000.0
 
 
-## 左侧光标的呼吸透明度：0.75→1 走 1.6 秒、再回来（缓入缓出，同样稿 ease-in-out alternate）；不呼吸时恒 1
+## 左侧光标的呼吸透明度：0.75→1 走 1.6 秒、再回来（缓入缓出，同样稿 ease-in-out alternate；美化态放缓至 2.4 秒、下限 0.82）；不呼吸时恒 1
 static func breath_alpha(t := -1.0) -> float:
 	if not breathing():
 		return 1.0
 	if t < 0.0:
 		t = now()
-	var phase := fmod(t, BREATH_TIME * 2.0) / BREATH_TIME   # 0..2
+	var bt := POLISH_BREATH_TIME if polish_on() else BREATH_TIME
+	var bmin := POLISH_BREATH_MIN if polish_on() else BREATH_MIN
+	var phase := fmod(t, bt * 2.0) / bt   # 0..2
 	var x := phase if phase <= 1.0 else 2.0 - phase
 	var eased := 0.5 - 0.5 * cos(PI * x)
-	return lerpf(BREATH_MIN, 1.0, eased)
+	return lerpf(bmin, 1.0, eased)
 
 
 ## 品质色（0 普通 … 6 神话）
@@ -444,9 +625,10 @@ static func outline_color(a := 1.0) -> Color:
 
 ## 新皮肤画字的唯一入口（替代 draw_string）：FONT_V00300 开着先描 1px 黑 0.45 边再写字；关着＝原样 draw_string。
 static func ds(ci: CanvasItem, font: Font, pos: Vector2, text: String, align: int = HORIZONTAL_ALIGNMENT_LEFT, width: float = -1.0, fs: int = 16, color: Color = Color.WHITE, just: int = 3) -> void:
-	if FONT_V00300 and color.a > 0.0:
-		ci.draw_string_outline(font, pos, text, align, width, fs, T100_OUTLINE_PX, outline_color(color.a))
-	ci.draw_string(font, pos, text, align, width, fs, color, just)
+	var col := paint_color(color)
+	if FONT_V00300 and col.a > 0.0:
+		ci.draw_string_outline(font, pos, text, align, width, fs, T100_OUTLINE_PX, outline_color(col.a))
+	ci.draw_string(font, pos, text, align, width, fs, col, just)
 
 
 static func has_font(kind: String) -> bool:
@@ -456,6 +638,7 @@ static func has_font(kind: String) -> bool:
 ## ---- 主题（新组件用；旧页面照旧用 XUI.theme，框和光标在画时换）----
 static func theme() -> Theme:
 	var t := Theme.new()
+	var pol := polish_on()
 	t.default_font = font("body")
 	t.default_font_size = FS_LIST
 	for type in ["Label", "Button", "RichTextLabel", "LineEdit"]:
@@ -480,15 +663,15 @@ static func theme() -> Theme:
 	t.set_color("font_disabled_color", "Button", TEXT_3)
 	t.set_font_size("font_size", "Button", FS_LIST)
 	var grab := StyleBoxFlat.new()
-	grab.bg_color = Color(LINE, 0.45)
-	grab.set_corner_radius_all(2)
+	grab.bg_color = Color(0.78, 0.69, 0.54, 0.65) if pol else Color(LINE, 0.45)
+	grab.set_corner_radius_all(3 if pol else 2)
 	grab.content_margin_left = 2
 	grab.content_margin_right = 2
 	for s in ["grabber", "grabber_highlight", "grabber_pressed"]:
 		t.set_stylebox(s, "VScrollBar", grab)
 	var track := StyleBoxFlat.new()
-	track.bg_color = Color(1, 1, 1, 0.06)
-	track.set_corner_radius_all(2)
+	track.bg_color = Color(0.04, 0.033, 0.032, 0.52) if pol else Color(1, 1, 1, 0.06)
+	track.set_corner_radius_all(3 if pol else 2)
 	t.set_stylebox("scroll", "VScrollBar", track)
 	return t
 
@@ -497,7 +680,8 @@ static func theme() -> Theme:
 static func panel_style() -> StyleBox:
 	if XSkinArt.panel_on():   # 第一期正式美术（D50）：R2 无框烟色九宫格
 		return XSkinArt.smoke_style()
-	if not _styles.has("panel"):
+	var key := "panel_polish" if polish_on() else "panel"
+	if not _styles.has(key):
 		var s := StyleBoxTexture.new()
 		s.texture = panel_texture()
 		s.texture_margin_left = 24
@@ -508,8 +692,8 @@ static func panel_style() -> StyleBox:
 		s.content_margin_right = PAD
 		s.content_margin_top = PAD
 		s.content_margin_bottom = PAD
-		_styles["panel"] = s
-	return _styles["panel"]
+		_styles[key] = s
+	return _styles[key]
 
 
 ## 面板的投影（0 8 22 rgba(0,0,0,.5)）
@@ -539,14 +723,17 @@ static func select_style() -> StyleBox:
 
 ## 面板贴图：96×96，竖向渐变 #18191c→#0e0e10、圆角 14、1px 细线（线色 42%）；九宫格角 24
 static func panel_texture() -> Texture2D:
-	if _tex.has("panel"):
-		return _tex["panel"]
+	var key := "panel_polish" if polish_on() else "panel"
+	if _tex.has(key):
+		return _tex[key]
 	var n := 96
 	var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
 	var r := float(RADIUS)
-	var line := Color(LINE, 0.42)
+	var line := Color(line_c(), 0.42)
+	var p_hi := panel_c()
+	var p_lo := panel_low_c()
 	for y in range(n):
-		var fill := PANEL.lerp(PANEL_LOW, clampf((y - 4.0) / (n - 8.0), 0.0, 1.0))
+		var fill := p_hi.lerp(p_lo, clampf((y - 4.0) / (n - 8.0), 0.0, 1.0))
 		for x in range(n):
 			var d := _round_rect_dist(Vector2(x + 0.5, y + 0.5), Vector2(n, n), r)   # 到圆角矩形边的有向距离（里面为负）
 			if d > 0.5:
@@ -558,7 +745,7 @@ static func panel_texture() -> Texture2D:
 			c.a = clampf(0.5 - d, 0.0, 1.0)
 			img.set_pixel(x, y, c)
 	var t := ImageTexture.create_from_image(img)
-	_tex["panel"] = t
+	_tex[key] = t
 	return t
 
 

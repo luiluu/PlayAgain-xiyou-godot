@@ -175,36 +175,96 @@ func _gui_input(event: InputEvent) -> void:
 
 # ---- 画 ----
 
+static var _polish_dlg_tex: Texture2D
+
+
+## 平滑暖炭竖向渐变圆角九宫格贴图（静态强引用缓存，防 RenderingServer 释放白块）
+static func _dialog_panel_tex() -> Texture2D:
+	if _polish_dlg_tex != null:
+		return _polish_dlg_tex
+	var n := 96
+	var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+	var r := float(XUiSkin.RADIUS)
+	var top_c := Color("241f1e")
+	var low_c := Color("121010")
+	for y in range(n):
+		var t := clampf((y - 2.0) / float(n - 4), 0.0, 1.0)
+		var fill := top_c.lerp(low_c, t * t * (3.0 - 2.0 * t))
+		for x in range(n):
+			var d := XUiSkin._round_rect_dist(Vector2(x + 0.5, y + 0.5), Vector2(n, n), r)
+			if d > 0.5:
+				img.set_pixel(x, y, Color(0, 0, 0, 0))
+				continue
+			var c := fill
+			c.a = clampf(0.5 - d, 0.0, 1.0)
+			img.set_pixel(x, y, c)
+	_polish_dlg_tex = ImageTexture.create_from_image(img)
+	return _polish_dlg_tex
+
+
 func _draw() -> void:
 	var ci := get_canvas_item()
-	draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, DIM))
+	var pol := XUiSkin.polish_on()
+	draw_rect(Rect2(Vector2.ZERO, size), Color(0.03, 0.024, 0.024, DIM) if pol else Color(0, 0, 0, DIM))
 	var p := panel_rect()
-	XUiSkin.shadow_style().draw(ci, p)
-	var sb := StyleBoxFlat.new()
-	sb.set_corner_radius_all(XUiSkin.RADIUS)
-	sb.anti_aliasing = true
-	sb.bg_color = DLG_LOW
-	sb.draw(ci, p)
-	# 上亮下暗：上半再叠一层渐亮（StyleBoxFlat 没有渐变）
-	var g := StyleBoxFlat.new()
-	g.set_corner_radius_all(XUiSkin.RADIUS)
-	g.corner_radius_bottom_left = 0
-	g.corner_radius_bottom_right = 0
-	g.bg_color = Color(DLG_TOP, 0.85)
-	g.draw(ci, Rect2(p.position, Vector2(p.size.x, p.size.y * 0.45)))
-	var edge := StyleBoxFlat.new()
-	edge.draw_center = false
-	edge.set_corner_radius_all(XUiSkin.RADIUS)
-	edge.anti_aliasing = true
-	edge.border_color = Color(XUiSkin.DOWN, 0.8) if danger else Color(XUiSkin.LINE, 0.55)
-	edge.set_border_width_all(2 if danger else 1)   # 1.5px：整数线宽里取 2、略压透明度
-	edge.draw(ci, p)
+	if pol:
+		var sh := StyleBoxFlat.new()
+		sh.draw_center = false
+		sh.shadow_color = Color(0, 0, 0, 0.62)
+		sh.shadow_size = 18
+		sh.shadow_offset = Vector2(0, 10)
+		sh.set_corner_radius_all(XUiSkin.RADIUS)
+		sh.draw(ci, p)
+		RenderingServer.canvas_item_add_nine_patch(ci, p, Rect2(0, 0, 96, 96), _dialog_panel_tex().get_rid(), Vector2(24, 24), Vector2(24, 24),
+			RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color.WHITE)
+		# 顶部中央渐隐旧金高光丝线
+		var lw := p.size.x * 0.72
+		var lx0 := p.position.x + (p.size.x - lw) * 0.5
+		XUiSkin.draw_divider(self, lx0, lx0 + lw, p.position.y + 2.0, true, 0.85)
+		var outer := StyleBoxFlat.new()
+		outer.draw_center = false
+		outer.set_corner_radius_all(XUiSkin.RADIUS + 1)
+		outer.anti_aliasing = true
+		outer.border_color = Color(0, 0, 0, 0.55)
+		outer.set_border_width_all(1)
+		outer.draw(ci, p.grow(1.0))
+		var edge := StyleBoxFlat.new()
+		edge.draw_center = false
+		edge.set_corner_radius_all(XUiSkin.RADIUS)
+		edge.anti_aliasing = true
+		edge.border_color = Color(XUiSkin.down_c(), 0.85) if danger else Color(XUiSkin.GOLD, 0.48)
+		edge.set_border_width_all(2 if danger else 1)
+		edge.draw(ci, p)
+	else:
+		XUiSkin.shadow_style().draw(ci, p)
+		var sb := StyleBoxFlat.new()
+		sb.set_corner_radius_all(XUiSkin.RADIUS)
+		sb.anti_aliasing = true
+		sb.bg_color = DLG_LOW
+		sb.draw(ci, p)
+		# 上亮下暗：上半再叠一层渐亮（StyleBoxFlat 没有渐变）
+		var g := StyleBoxFlat.new()
+		g.set_corner_radius_all(XUiSkin.RADIUS)
+		g.corner_radius_bottom_left = 0
+		g.corner_radius_bottom_right = 0
+		g.bg_color = Color(DLG_TOP, 0.85)
+		g.draw(ci, Rect2(p.position, Vector2(p.size.x, p.size.y * 0.45)))
+		var edge := StyleBoxFlat.new()
+		edge.draw_center = false
+		edge.set_corner_radius_all(XUiSkin.RADIUS)
+		edge.anti_aliasing = true
+		edge.border_color = Color(XUiSkin.DOWN, 0.8) if danger else Color(XUiSkin.LINE, 0.55)
+		edge.set_border_width_all(2 if danger else 1)   # 1.5px：整数线宽里取 2、略压透明度
+		edge.draw(ci, p)
 	var head := XUiSkin.font("title")
 	var f := XUiSkin.font("body")
 	var inner := p.size.x - PAD * 2
 	var y := p.position.y + PAD
 	var tfs := XUiSkin.fs(TITLE_FS)
-	y = _para(head, title, Vector2(p.position.x + PAD, y), inner, tfs, roundf(tfs * 1.3), XUiSkin.TEXT)
+	var title_col := (XUiSkin.down_c() if danger else XUiSkin.GOLD_LIGHT) if pol else XUiSkin.TEXT
+	y = _para(head, title, Vector2(p.position.x + PAD, y), inner, tfs, roundf(tfs * 1.3), title_col)
+	if pol and body != "":
+		XUiSkin.draw_divider(self, p.position.x + PAD, p.end.x - PAD, y + 5.0, not danger, 0.8)
 	if body != "":
 		y += 10.0
 		var bfs := XUiSkin.fs(BODY_FS)
@@ -219,8 +279,8 @@ func _draw() -> void:
 		if i == index and not dis:
 			XUiSkin.primary_button_style(bs, true)
 		else:
-			bs.bg_color = Color(0, 0, 0, 0.25 if _press != i else 0.5)
-			bs.border_color = Color(XUiSkin.LINE, 0.55)
+			bs.bg_color = Color(0.08, 0.068, 0.066, 0.55 if _press != i else 0.78) if pol else Color(0, 0, 0, 0.25 if _press != i else 0.5)
+			bs.border_color = Color(XUiSkin.line_c(), 0.52) if pol else Color(XUiSkin.LINE, 0.55)
 			bs.set_border_width_all(1)
 		bs.draw(ci, r)
 		if i == index:

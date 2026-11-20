@@ -139,24 +139,25 @@ static func add_backdrop(root: Control) -> TextureRect:
 
 ## 可读性压暗层（READ）：整体压暗＋顶栏、底栏渐隐黑＋左块环区径向暗角；都不收鼠标
 static func _add_scrims(root: Control) -> void:
+	var base := Color(0.034, 0.026, 0.024, 1.0) if XUiSkin.polish_on() else Color(0, 0, 0, 1.0)
 	var dim := ColorRect.new()
 	dim.name = "ReadDim"
-	dim.color = Color(0, 0, 0, READ_DIM)
+	dim.color = Color(base.r, base.g, base.b, READ_DIM)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.add_child(dim)
-	var top := _vgrad("ReadTop", READ_TOP_A, 0.0)
+	var top := _vgrad("ReadTop", READ_TOP_A, 0.0, base)
 	top.anchor_bottom = 0.0
 	top.offset_bottom = READ_TOP_H
 	root.add_child(top)
-	var bot := _vgrad("ReadBottom", 0.0, READ_BOTTOM_A)
+	var bot := _vgrad("ReadBottom", 0.0, READ_BOTTOM_A, base)
 	bot.anchor_top = 1.0
 	bot.offset_top = -READ_BOTTOM_H
 	root.add_child(bot)
 	# 环区：左块中心（16:9 约 x=232、y=380）一团椭圆暗角，宽 640、高 600，贴左边跟着安全边距走
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 0.55, 1.0])
-	g.colors = PackedColorArray([Color(0, 0, 0, READ_RING_A), Color(0, 0, 0, READ_RING_A * 0.6), Color(0, 0, 0, 0)])
+	g.colors = PackedColorArray([Color(base.r, base.g, base.b, READ_RING_A), Color(base.r, base.g, base.b, READ_RING_A * 0.6), Color(base.r, base.g, base.b, 0)])
 	var rad := GradientTexture2D.new()
 	rad.gradient = g
 	rad.width = 128
@@ -181,10 +182,10 @@ static func _add_scrims(root: Control) -> void:
 	root.add_child(ring)
 
 
-static func _vgrad(n: String, a_top: float, a_bottom: float) -> TextureRect:
+static func _vgrad(n: String, a_top: float, a_bottom: float, base := Color(0, 0, 0, 1)) -> TextureRect:
 	var g := Gradient.new()
 	g.offsets = PackedFloat32Array([0.0, 1.0])
-	g.colors = PackedColorArray([Color(0, 0, 0, a_top), Color(0, 0, 0, a_bottom)])
+	g.colors = PackedColorArray([Color(base.r, base.g, base.b, a_top), Color(base.r, base.g, base.b, a_bottom)])
 	var gt := GradientTexture2D.new()
 	gt.gradient = g
 	gt.width = 4
@@ -208,17 +209,18 @@ static func read_on() -> bool:
 
 ## 直接放在背景上的次要字的颜色
 static func bg_text_2() -> Color:
-	return READ_TEXT_2 if read_on() else XUiSkin.TEXT_2
+	return READ_TEXT_2 if read_on() else XUiSkin.text2_c()
 
 
 ## 直接放在背景上的字：READ 时先描 3px 深色边再写
 static func bg_string(ci: CanvasItem, font: Font, pos: Vector2, text: String, fs: int, color: Color, width := -1.0) -> void:
+	var col := XUiSkin.paint_color(color)
 	if read_on():
 		ci.draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, width, fs, READ_OUTLINE, READ_OUTLINE_C)
 	if read_on():   # 已描过 READ 的粗边，不再叠 FONT_V00300 的 1px
-		ci.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, width, fs, color)
+		ci.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, width, fs, col)
 	else:
-		XUiSkin.ds(ci, font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, width, fs, color)
+		XUiSkin.ds(ci, font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, width, fs, col)
 
 
 ## ---- 组件 ----
@@ -271,13 +273,31 @@ static func draw_smoke(ci: RID, rect: Rect2, a := 1.0, force_short := false) -> 
 	var mx := minf(m, rect.size.x / 2.0)
 	var my := minf(m, rect.size.y / 2.0)
 	var k := SMOKE_ALPHA_SHORT if short else SMOKE_ALPHA
+	var pol := XUiSkin.polish_on()
+	# D50 R2 严守无框烟底：美化态下仅微暖色调调制，不加硬方框
+	var smoke_mod := Color(1.16, 1.04, 0.88, a * k) if pol else Color(1, 1, 1, a * k)
 	RenderingServer.canvas_item_add_nine_patch(ci, rect, src, tex.get_rid(), Vector2(mx, my), Vector2(mx, my),
-		RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color(1, 1, 1, a * k))
+		RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, smoke_mod)
 	if not short and rect.size.x > 160.0 and rect.size.y > 120.0:
 		var inner := Rect2(rect.position.round() + Vector2(m, m), (rect.size - Vector2(m, m) * 2.0).round())
 		var g := grain_texture(Vector2i(inner.size))
 		if g != null:
-			RenderingServer.canvas_item_add_texture_rect(ci, inner, g.get_rid(), false, Color(1, 1, 1, a * GRAIN_ALPHA))
+			var gmod := Color(1.14, 1.04, 0.90, a * GRAIN_ALPHA) if pol else Color(1, 1, 1, a * GRAIN_ALPHA)
+			RenderingServer.canvas_item_add_texture_rect(ci, inner, g.get_rid(), false, gmod)
+		if pol and rect.size.x > 180.0:
+			# 大面板顶部中央 65% 宽度渐隐微金丝线（无外框，强化阅读层级）
+			var lw := rect.size.x * 0.65
+			var x0 := rect.position.x + (rect.size.x - lw) * 0.5
+			var x1 := x0 + lw
+			var y := rect.position.y + 7.0
+			var xs := [x0, lerpf(x0, x1, 0.22), lerpf(x0, x1, 0.50), lerpf(x0, x1, 0.78), x1]
+			var als := [0.0, 0.14 * a, 0.24 * a, 0.14 * a, 0.0]
+			for i in 4:
+				var c0 := Color(XUiSkin.GOLD, als[i])
+				var c1 := Color(XUiSkin.GOLD, als[i + 1])
+				RenderingServer.canvas_item_add_polygon(ci,
+					PackedVector2Array([Vector2(xs[i], y), Vector2(xs[i + 1], y), Vector2(xs[i + 1], y + 1.0), Vector2(xs[i], y + 1.0)]),
+					PackedColorArray([c0, c1, c1, c0]))
 
 
 ## 颗粒底纹铺成 size 大的整图（按 32 取整、缓存）
