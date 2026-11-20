@@ -41,7 +41,19 @@
   "agi_rate": -0.2,
   "base_damage": 0.13,
   "boss_hp_temp_unit": {"crit": 100, "no_crit": 100},
-  "phase4_note": "T080 暗装填表、T081 接线（基础数值重构 v0.4 第三节、第七节）：base_damage＝基准系数 K「天启注视」，起点 0.088（D141 丙：九线不让，多出来的全由 K 收；T012-c 实机标定再改；T082 0.2、T163 0.27；T175 按 D195 一次施放总伤害重量，超强者最大 169 黄泉归葬 6 段顶回锚 200 万→0.13）；boss_hp_temp_unit＝首领生命临时折算 U，整数百分比（血量×U÷100 向零取整，100＝不打折；crit 能暴击的、no_crit 免暴击的），先填 100，M5 实机标定骑士血量后删（D222 丙）。只在总开关 XTianqiBase.PHASE4 开着时读（XTianqiBase.k_base、boss_hp_unit），关着 K 按 1、U 按 100。guardian_phase4（守层者三张新表 atk_scale／hp_base／resist）由 T012-c 实机量出来补，没有时开着也退回代码里的旧表。"
+  "phase4_note": "T080 暗装填表、T081 接线（基础数值重构 v0.4 第三节、第七节）：base_damage＝基准系数 K「天启注视」，起点 0.088（D141 丙：九线不让，多出来的全由 K 收；T012-c 实机标定再改；T082 0.2、T163 0.27；T175 按 D195 一次施放总伤害重量，超强者最大 169 黄泉归葬 6 段顶回锚 200 万→0.13）；boss_hp_temp_unit＝首领生命临时折算 U，整数百分比（血量×U÷100 向零取整，100＝不打折；crit 能暴击的、no_crit 免暴击的），先填 100，M5 实机标定骑士血量后删（D222 丙）。只在总开关 XTianqiBase.PHASE4 开着时读（XTianqiBase.k_base、boss_hp_unit），关着 K 按 1、U 按 100。guardian_phase4（守层者三张新表 atk_scale／hp_base／resist）由 T012-c 实机量出来补，没有时开着也退回代码里的旧表。",
+  "enemy_xparam_cap": {
+   "_note": "T285（D237 丙，首领暴击闪避评估 v0.2 第二节丙、第五节；Kyo 11-20「237 减暴闪要根据难度来升高」）：天启篇敌人闪避 eva、暴击 cri、暴击闪避（cev_tiers）、魔法闪避 mev 的底子上限，整数百分比，-1＝不封顶。底子＝敌人数据特性＋自身正值状态（照旧乘仓库倍率）夹到上限；我方减益（负值状态）不再 ×2，加在夹完的底子上，再扣词条压制，最后不低于 0。cev_tiers：所在层 ≤ max_floor 的第一行，cap 按难度键取（寻常一行＝评估稿 20／30／40，高难度每升一档先按 +5 填推荐值，待 Kyo 定）；层数 0（骑士、七印里副本、七首之龙）按第一行，超过最后一行按最后一行。toji_cev_pct：甚尔五感读到的底子乘这个整数百分比（50＝减半）再扣队友的降暴击闪避。开关 XTianqiCombat.ENEMY_XPARAM_CAP、SUBTRACTIVE_CEV，XTianqiAffixBattle.SUPPRESS_CEV，XToji.TIANQI_CEV_HALF。",
+   "eva": 30,
+   "cri": 50,
+   "mev": 30,
+   "cev_tiers": [
+    {"max_floor": 24, "cap": {"xunchang": 20, "jianxian": 25, "jiusi": 30, "lianyu": 35, "zhengdao": 40}},
+    {"max_floor": 30, "cap": {"xunchang": 30, "jianxian": 35, "jiusi": 40, "lianyu": 45, "zhengdao": 50}},
+    {"max_floor": 34, "cap": {"xunchang": 40, "jianxian": 45, "jiusi": 50, "lianyu": 55, "zhengdao": 60}}
+   ],
+   "toji_cev_pct": 50
+  }
  },
  "legacy_passive": {
   "_note": "天启篇开局不发难度被动（Kyo 11-08；XTianqiNoDiffPassive，O-421）。原来借原版「普通」全员学普通难度 5548、难度适应 5980、天道诅咒 6168，净效果改读这一节，强度不变：settle＝攻击方确认阶段照原状态（state 号定位次序）逐个 ceil 乘，cond positive 只乘正伤害、nonzero 连治疗一起乘，合计正伤害 ×1.5×5×0.8＝×6、治疗 ×5，和因果丝线等别的确认乘区照旧连乘；agi_rate＝战斗中敏捷能力倍率加算（原状态特性 21 ×0.8）；crit_add＝暴击率（原 passiveXPBST2 50%）。掉率、金钱 +10% 天启篇本来不算（drop_table／金钱表 ignore_skills），走 difficulties 的 scaling.reward。",

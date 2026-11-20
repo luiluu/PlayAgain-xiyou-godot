@@ -2797,7 +2797,7 @@ func item_cri(u: XBattler, skill: Dictionary, dt: XBattler) -> float:
 	# 米拉／渡鸦数值池 itemCri 包装（在甚尔里面）：渡鸦的非归属动作读面板暴击不带魂海加成
 	var cri := XNumberBoost.item_cri(skill, u, dt, func():
 		var rate := u.cri + ((u as XActor).crit_push(skill) if u is XActor else 0.0)
-		return maxf(rate, 0.0) * (1.0 - dt.cev * XToji.cev_rate(u, skill)) if bool(skill.damage.critical) else 0.0)  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34
+		return XTianqiCombat.crit_after_cev(rate, u, skill, dt) if bool(skill.damage.critical) else 0.0)  # 甚尔 itemCri 包装：五感时目标暴击闪避 ×0.34；天启篇减法、甚尔底子减半（T285）
 	if XCat.weak_segment(u):  # 哈基米必中剑段且学了至圣喵心：itemCri 1
 		cri = 1.0
 	cri = XYunshang.cri(u, skill, cri)  # 云裳 itemCri 包装：戴织神天梭 +3

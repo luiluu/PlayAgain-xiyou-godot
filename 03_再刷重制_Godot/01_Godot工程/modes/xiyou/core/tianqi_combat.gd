@@ -129,3 +129,96 @@ static func damage_mult(a, b) -> float:
 	if not on(s):
 		return 1.0
 	return float(dealt_parts(a, s).mult) * float(taken_parts(b, s).mult) * XTianqiHorsemen.taken_mult(b)  # 天启四骑士：混子减伤、嘲讽削伤
+
+
+# ---- 敌人暴击闪避（T285，D237 丙：首领暴击闪避评估 v0.2 第二节丙、第五节草稿卡） ----
+## 开关：true＝天启篇敌人闪避、暴击、暴击闪避、魔法闪避（xparam 1～4）拆成「底子」和「我方减益」两块：
+## 底子（数据特性＋敌人身上的正值状态特性）照旧乘仓库倍率，再按 balance_table 的 combat_rules.enemy_xparam_cap 夹上限
+## （暴击闪避按层段×难度查表）；我方减益（敌人身上的负值状态特性）不再跟着 ×2，加在夹完的底子上；再扣词条「压制」；最后不低于 0。
+## false＝照旧：底子＋减益一起乘仓库倍率，不封顶、不夹 0。西游存档不走这里。
+static var ENEMY_XPARAM_CAP := true
+## 开关：true＝天启篇里我方打敌人的暴击率改成减法（面板暴击＋critPush − 有效暴击闪避，夹 0～1，对齐指引「暴击率还要减去敌人的暴击闪避」）；
+## false＝退回原版乘法 暴击×(1−暴击闪避)。只管目标是敌人的；敌人打我方、我方打我方照旧乘法。
+static var SUBTRACTIVE_CEV := true
+
+
+static func cap_on() -> bool:
+	return ENEMY_XPARAM_CAP and on()
+
+
+## combat_rules.enemy_xparam_cap 整张表（读不到为空）
+static func xparam_cap_table() -> Dictionary:
+	var t = XTianqiBalance.data().get("combat_rules", {})
+	var c = t.get("enemy_xparam_cap", {}) if t is Dictionary else {}
+	return c if c is Dictionary else {}
+
+
+## 敌人所在层：守层者按敌群定层（鸿钧 34）；骑士、援军、七印里副本、七首之龙 0；别的敌人取楼层缩放时记下的层，再不行取当前地图的层
+static func enemy_floor(e) -> int:
+	var f := XGuardianRework.params_floor(e)
+	if f > 0 or not e.horseman.is_empty():
+		return f
+	f = int(e.get_meta(XGuardianRework.META_FLOOR, 0))
+	if f > 0:
+		return f
+	var s := XState.current
+	return XDungeon.map_floor(s.map_id) if s != null else 0
+
+
+## 第 i 项底子上限（整数百分比，-1＝不封顶）。暴击闪避：cev_tiers 第一行 max_floor ≥ 所在层的那行，按本档难度取；
+## 层数 0（骑士、七印、七首之龙等）按第一行；超过最后一行按最后一行
+static func xparam_cap_pct(e, i: int) -> int:
+	var t := xparam_cap_table()
+	match i:
+		1:
+			return int(t.get("eva", -1))
+		2:
+			return int(t.get("cri", -1))
+		4:
+			return int(t.get("mev", -1))
+		3:
+			var tiers: Array = t.get("cev_tiers", [])
+			if tiers.is_empty():
+				return -1
+			var f := enemy_floor(e)
+			var row: Dictionary = tiers[tiers.size() - 1]
+			for r in tiers:
+				if f <= int(r.get("max_floor", 0)):
+					row = r
+					break
+			var caps = row.get("cap", -1)
+			if caps is Dictionary:
+				var s := XState.current
+				var key := str(s.flags.tianqi.get("difficulty", "")) if s != null else ""
+				return int(caps.get(key, caps.values().min() if not caps.is_empty() else -1))
+			return int(caps)
+	return -1
+
+
+## 天启篇敌人 xparam 1～4（cap_on 时 XEnemy.xparam 调）。base_pct：底子夹完上限后再乘的整数百分比（甚尔五感 50，平时 100）
+static func enemy_xparam(e, i: int, base_pct := 100) -> float:
+	var parts: Array = e.xparam_parts(i)
+	var base: float = float(parts[0]) * e.warehouse_rate()
+	var cap := xparam_cap_pct(e, i)
+	if cap >= 0:
+		base = minf(base, float(cap) / 100.0)
+	if base_pct != 100:
+		base = base * float(base_pct) / 100.0
+	var v := XTianqiAffixBattle.enemy_xparam(e, i, base + float(parts[1]))  # 天启篇词条「压制」
+	return maxf(0.0, v)
+
+
+## itemCri 里「暴击率 × 目标暴击闪避」那一步（battle_logic.item_cri 调）。rate：攻击方暴击＋critPush。
+## 不是天启篇存档（或两个开关都关）时照原版：max(rate,0)×(1−暴击闪避×甚尔系数)
+static func crit_after_cev(rate: float, u, skill: Dictionary, dt) -> float:
+	var k := XToji.cev_rate(u, skill)
+	if not (ENEMY_XPARAM_CAP or SUBTRACTIVE_CEV) or not on():
+		return maxf(rate, 0.0) * (1.0 - dt.cev * k)
+	var cev: float
+	if k < 1.0 and XToji.TIANQI_CEV_HALF and dt is XEnemy and cap_on():
+		cev = (dt as XEnemy).cev_for_toji(int(xparam_cap_table().get("toji_cev_pct", 50)))  # 甚尔五感：底子减半，再扣队友的降暴击闪避
+	else:
+		cev = dt.cev * k
+	if SUBTRACTIVE_CEV and dt is XEnemy:
+		return maxf(rate - cev, 0.0)
+	return maxf(rate, 0.0) * (1.0 - cev)

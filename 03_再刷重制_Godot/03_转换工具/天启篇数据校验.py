@@ -1992,6 +1992,53 @@ def check_combat_rules_phase4(_args) -> bool:
     return _run_table('balance_table.json', combat_rules_phase4_rules)
 
 
+def _int_pct(v, lo=-1, hi=100) -> bool:
+    return isinstance(v, int) and not isinstance(v, bool) and lo <= v <= hi
+
+
+def enemy_xparam_cap_rules(table: dict) -> list:
+    """T285（D237 丙）：combat_rules.enemy_xparam_cap 全是整数百分比（-1＝不封顶），cev_tiers 的 max_floor 递增、cap 按难度键齐全且随难度不降"""
+    bad = []
+    c = table.get('combat_rules', {}).get('enemy_xparam_cap')
+    if c is None:
+        return bad  # 没有这张表＝不封顶（代码按 -1）
+    if not isinstance(c, dict):
+        return ['combat_rules.enemy_xparam_cap 要是一张表']
+    for k in ('eva', 'cri', 'mev'):
+        if not _int_pct(c.get(k)):
+            bad.append('enemy_xparam_cap.%s 要是 -1～100 的整数：%s' % (k, c.get(k)))
+    if not _int_pct(c.get('toji_cev_pct'), 0, 100):
+        bad.append('enemy_xparam_cap.toji_cev_pct 要是 0～100 的整数：%s' % c.get('toji_cev_pct'))
+    keys = [str(d.get('key')) for d in table.get('difficulties', [])]
+    tiers = c.get('cev_tiers')
+    if not isinstance(tiers, list) or not tiers:
+        bad.append('enemy_xparam_cap.cev_tiers 要是非空列表')
+        return bad
+    last = 0
+    for n, r in enumerate(tiers):
+        mf = r.get('max_floor') if isinstance(r, dict) else None
+        if not isinstance(mf, int) or isinstance(mf, bool) or mf <= last:
+            bad.append('cev_tiers[%d].max_floor 要是递增的正整数：%s' % (n, mf))
+        else:
+            last = mf
+        cap = r.get('cap') if isinstance(r, dict) else None
+        if isinstance(cap, dict):
+            if list(cap) != keys:
+                bad.append('cev_tiers[%d].cap 的键要和 difficulties 同序：%s' % (n, list(cap)))
+            vals = list(cap.values())
+            if not all(_int_pct(v) for v in vals):
+                bad.append('cev_tiers[%d].cap 要全是 -1～100 的整数：%s' % (n, vals))
+            elif vals != sorted(vals):
+                bad.append('cev_tiers[%d].cap 要随难度不降：%s' % (n, vals))
+        elif not _int_pct(cap):
+            bad.append('cev_tiers[%d].cap 要是整数或按难度键的整数表：%s' % (n, cap))
+    return bad
+
+
+def check_enemy_xparam_cap(_args) -> bool:
+    return _run_table('balance_table.json', enemy_xparam_cap_rules)
+
+
 def check_single_hit_cap(_args) -> bool:
     return _run_table('skill_rework.json', _with_tune(single_hit_cap_rules))
 
@@ -2536,6 +2583,7 @@ CHECKS = [
     ('gear_base', check_gear_base),
     ('ledger_phase4', check_ledger_phase4),
     ('combat_rules_phase4', check_combat_rules_phase4),
+    ('enemy_xparam_cap', check_enemy_xparam_cap),
     ('single_hit_cap', check_single_hit_cap),
     ('abs_rescale', check_abs_rescale),
     ('brand', check_brand),

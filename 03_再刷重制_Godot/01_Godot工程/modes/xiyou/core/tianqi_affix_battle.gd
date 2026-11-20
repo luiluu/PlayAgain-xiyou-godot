@@ -331,9 +331,13 @@ static func action_plus_set(a, rates: Array) -> void:
 		rates.append(r / 100.0)
 
 
-## 压制：敌人暴击率、闪避率减百分点（不低于 0）
+## T285（D237 丙）开关：true＝压制也减敌人暴击闪避（xparam 3）；false＝只减暴击率、闪避率
+static var SUPPRESS_CEV := true
+
+
+## 压制：敌人暴击率、闪避率（SUPPRESS_CEV 开着时连暴击闪避）减百分点（不低于 0）
 static func enemy_xparam(e, i: int, value: float) -> float:
-	if not ENABLED or not (i == 1 or i == 2):
+	if not ENABLED or not (i == 1 or i == 2 or (SUPPRESS_CEV and i == 3)):
 		return value
 	var logic = _logic()
 	if not _active(logic) or not _store(logic).units.has(e):
