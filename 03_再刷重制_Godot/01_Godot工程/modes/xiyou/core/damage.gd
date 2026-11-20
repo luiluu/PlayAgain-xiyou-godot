@@ -37,6 +37,12 @@ static func is_physical(item: Dictionary) -> bool:
 static func is_magical(item: Dictionary) -> bool:
 	return int(item.get("hitType", 0)) == 2
 
+## 伤害类型（伤害计算的「物理／魔法／混合」）：CodexDamageElements 技能表写了 mode 认它，没写按命中类型（魔法攻击＝magical，其余 physical）。
+## 正式结算 _calculate 起算的 mode 就是它（模块钩子之后还可能被改写）；破阵 1047／1048 天启篇按它判物理类（XTianqiElements.pozhen_class）
+static func item_mode(item: Dictionary) -> String:
+	var spec: Dictionary = elements_data().skills.get(str(int(item.get("id", 0))), {})
+	return str(spec.get("mode", "magical" if is_magical(item) else "physical"))
+
 
 # ---- 元素 ----
 static func affinity(b: XBattler) -> Array:
@@ -210,7 +216,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var vars: Array = options.get("vars", [])
 	var spec: Dictionary = elements_data().skills.get(str(int(item.id)), {})
 	var cache: Dictionary = a.passive_cache()
-	var mode := str(spec.get("mode", "magical" if is_magical(item) else "physical"))
+	var mode := item_mode(item)
 	var kind := str(options.get("kind", spec.get("kind", "normal")))
 	var skill_pass: Dictionary = cache.get("skillPass", {}).get(int(item.id), {})
 	var final_add := float(cache.get("globalHarmRi", 0.0))

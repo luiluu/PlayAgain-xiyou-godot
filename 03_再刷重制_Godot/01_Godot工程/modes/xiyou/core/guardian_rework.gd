@@ -34,6 +34,13 @@ static var RESIST := true
 static var PARAMS := true
 ## T245：七印里副本的敌人、七首之龙（按鸿蒙老祖重标的）双防按 guardian_params.json 的 qiyin 行重锚；false＝照鸿蒙老祖原数据
 static var PARAMS_QIYIN := true
+## T317：守层者残血变身（30 层玉皇大帝→入魔 538，31／32 层→天道·魔神 929，33 层→天道·混沌至高 930）后：
+## - 新敌人号不在守层者表里，出伤倍率（atk_scale）、伤害抵抗（harm_re）原来掉回「不是守层者」（出伤 ×1，31 层魔神一招团灭），
+##   现在记下变身前的层（META_FLOOR），照本层守层者算；
+## - 八项能力值倍率按新记录重算：每项乘「变身前原数据 ÷ 新记录原数据」，变身后能力值＝变身前（本层重锚后的数，含难度、血量重标），
+##   不再拿女娲那份重锚倍率去乘魔神的原数据（物攻魔攻 2.36 倍、血 3.3 倍）。技能、行动表照新记录。
+## 只管天启篇存档、楼层守层者（鸿钧借鸿蒙老祖的合成记录、骑士、七印不走这里）。回退：`XGuardianRework.TRANSFORM_ANCHOR = false`
+static var TRANSFORM_ANCHOR := true
 const PARAMS_PATH := "res://modes/xiyou/tianqi_data/guardian_params.json"
 static var _params_data := {}
 
@@ -433,6 +440,39 @@ static func rescale_params(logic) -> void:
 			e._rates[i] = float(e._rates[i]) * want / float(p[i])
 		if changed:
 			e.param_mark_dirty()
+
+
+## T317：BattleLogic.enemy_transform 换敌人号之前调，记下本层与变身前的原数据（不含难度倍率）；不管的返回空
+static func transform_before(e: XEnemy) -> Dictionary:
+	if not TRANSFORM_ANCHOR or not _on() or e == null or not e.horseman.is_empty():
+		return {}
+	var f := _floor(e)
+	if f <= 0:
+		return {}
+	var raw := []
+	for i in range(8):
+		raw.append(e.param_base_unscaled(i))
+	return {"floor": f, "raw": raw}
+
+
+## T317：换完敌人号（refresh_passive 之前）调：新号不是守层者时记本层；八项倍率乘「变身前原数据 ÷ 新原数据」
+static func transform_after(e: XEnemy, before: Dictionary) -> void:
+	if before.is_empty() or e == null:
+		return
+	if floor_of(e.enemy_id) <= 0:
+		e.set_meta(META_FLOOR, int(before.floor))
+	var raw: Array = before.raw
+	var changed := false
+	for i in range(8):
+		var now := e.param_base_unscaled(i)
+		if now <= 0.0 or float(raw[i]) <= 0.0 or now == float(raw[i]):
+			continue
+		if not changed:
+			e._rates = e._rates.duplicate()
+			changed = true
+		e._rates[i] = float(e._rates[i]) * float(raw[i]) / now
+	if changed:
+		e.param_mark_dirty()
 
 
 # ---- 心魔对齐同层守层者（T315，D244 甲；Kyo 11-20「甲，不同境界的心魔也要有自己的特点」）----
