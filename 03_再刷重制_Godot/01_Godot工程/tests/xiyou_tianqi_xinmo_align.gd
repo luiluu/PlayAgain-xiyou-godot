@@ -1,5 +1,6 @@
 extends Node
 ## 【cc·T315】天启篇心魔对齐同层守层者（XGuardianRework.XINMO，D244 甲；Kyo 11-20「甲，不同境界的心魔也要有自己的特点」）：
+## 〇、r2：只认闭关开的心魔试炼（25 层 Map147 的 770、公共事件 1600 的 901 照旧）；暴击闪避也清；回血招不借；幻化 zq_ref 清掉。
 ## 一、通关 10 层，2 号打心魔（敌群 901）：记录借第 10 层守层者（_ref xinmo、_xinmo_floor 10），名字照心魔；血量、双防、出伤倍率、
 ##     暴击闪避跟同队打第 10 层守层者那只一样；行动表＝守层者的滤掉成长／领域／放逐／高额吸血，没有心魔原招 4118～4121、4239、3823；
 ##     特性里没有正的闪避、魔闪、每回合回血；敌群页去掉，打 3 回合也不强制 6104（生命上限不涨）。
@@ -32,7 +33,9 @@ func _run() -> void:
 	_resist()
 	_f31()
 	_skip()
+	_heal()
 	_floor_map()
+	_non_trial()
 	_rollback()
 	_xiyou()
 	XGuardianRework.xinmo_traits(null, null)  # 各境特点钩子在（空实现）
@@ -114,9 +117,13 @@ func _xparam_pos(e: XEnemy, ids: Array) -> bool:
 
 
 func _f10() -> void:
+	# 先开守层者对照，再开心魔：开战会换掉 XZhenqi.battle（游戏里同一时间只有一场）
+	var g := _guardian(10)
+	var lgg := XBattleLogic.new()
+	lgg.setup(int(XGuardianRework.TROOPS[10]), _state(10))
+	var gg: XEnemy = lgg.enemies.filter(func(x): return XGuardianRework.floor_of(x.enemy_id) == 10)[0]
 	var lg := _xinmo(10)
 	var e: XEnemy = lg.enemies[0]
-	var g := _guardian(10)
 	_check("f10.troop", int(lg.troop_id) == 901 and XGuardianRework.xinmo_on(lg), lg.troop_id)
 	_check("f10.rec", XGuardianRework.xinmo_floor(e) == 10 and str(e.data().get("name", "")) == "心魔" and int(e.data().get("_xinmo_guardian", 0)) == 72, [XGuardianRework.xinmo_floor(e), e.data().get("name"), e.data().get("_xinmo_guardian")])
 	_check("f10.hp_eq_guardian", g != null and is_equal_approx(float(e.mhp), float(g.mhp)), [e.mhp, g.mhp if g else -1])
@@ -124,17 +131,15 @@ func _f10() -> void:
 	_check("f10.def_eq", g != null and int(e.param(3)) == int(g.param(3)) and int(e.param(5)) == int(g.param(5)), [e.param(3), e.param(5), g.param(3) if g else -1])
 	_check("f10.atk_eq", g != null and int(e.param(2)) == int(g.param(2)) and int(e.param(4)) == int(g.param(4)), [e.param(2), g.param(2) if g else -1])
 	_check("f10.output_eq", g != null and is_equal_approx(e.output_scale, g.output_scale) and is_equal_approx(e.output_scale, float(XTianqiBase.guardian_table("atk_scale", XGuardianRework.ATK_SCALE).get(10, XGuardianRework.ATK_SCALE[10]))), [e.output_scale, g.output_scale if g else -1])
-	_check("f10.cev_eq", g != null and is_equal_approx(e.xparam(3), g.xparam(3)), [e.xparam(3), g.xparam(3) if g else -1])
+	_check("f10.no_cev", not _xparam_pos(e, [3]) and e.xparam(3) <= 0.0 and g != null and g.xparam(3) > 0.0, [e.xparam(3), g.xparam(3) if g else -1])
+	_check("f10.zq_ref_cleared", e.zq_ref.is_empty() and e.zq_trial_loot, e.zq_ref)
 	var ids := _ids(e)
 	var want := _ids(g).filter(func(id): return not XGuardianRework.XINMO_SKIP_SKILLS.has(id) and not XGuardianRework.DOMAIN_SKILLS.has(id)) if g else []
 	_check("f10.actions_from_guardian", ids == want and not ids.is_empty(), [ids, want])
 	_check("f10.no_xinmo_skills", not ids.any(func(id): return [3823, 4118, 4119, 4120, 4121, 4239].has(id)), ids)
-	_check("f10.no_evasion_regen", not _xparam_pos(e, [1, 4, 7]) and e.xparam(1) <= 0.0 and e.xparam(4) <= 0.0 and e.xparam(7) <= 0.0, [e.xparam(1), e.xparam(4), e.xparam(7)])
+	_check("f10.no_evasion_regen", not _xparam_pos(e, [1, 3, 4, 7]) and e.xparam(1) <= 0.0 and e.xparam(4) <= 0.0 and e.xparam(7) <= 0.0, [e.xparam(1), e.xparam(4), e.xparam(7)])
 	_check("f10.no_harm_re", (e.passive_cache().harmRe as Dictionary).values().all(func(v): return float(v) < 1.0e6), e.passive_cache().harmRe)
 	_check("f10.boss_like_guardian", g != null and e.boss_difficulty_boss == g.boss_difficulty_boss, [e.boss_difficulty_boss, g.boss_difficulty_boss if g else null])
-	var lgg := XBattleLogic.new()
-	lgg.setup(int(XGuardianRework.TROOPS[10]), _state(10))
-	var gg: XEnemy = lgg.enemies.filter(func(x): return XGuardianRework.floor_of(x.enemy_id) == 10)[0]
 	_check("f10.sear_tier_eq_guardian", XTianqiBrand.enemy_tier(lg, e) == XTianqiBrand.enemy_tier(lgg, gg) and XTianqiBrand.sear_per_hit(lg, e) == XTianqiBrand.sear_per_hit(lgg, gg), [XTianqiBrand.enemy_tier(lg, e), XTianqiBrand.enemy_tier(lgg, gg), XTianqiBrand.sear_per_hit(lg, e)])
 	_check("f10.pages_off", (XDB.rec("Troops", 901).get("pages", []) as Array).is_empty())
 	var mhp0 := float(e.mhp)
@@ -187,6 +192,35 @@ func _skip() -> void:
 	var rec := XGuardianRework.xinmo_rec(XDB.rec("Enemies", 927), g, 10)
 	var rids: Array = rec.actions.map(func(a): return int(a.skillId))
 	_check("rec.skip_growth_domain", rids == [1], rids)
+
+
+## 回血招不借：17 层妖精公主的 906 治愈之歌（回 40%）、5 层幽灵公主的 135 次级治疗术
+func _heal() -> void:
+	for f in [17, 5, 13, 26]:
+		var ids := _ids(_xinmo(f).enemies[0])
+		var heals := ids.filter(func(id): return XGuardianRework._heal_skill(XDB.rec("Skills", id)))
+		_check("f%d.no_heal_skill" % f, heals.is_empty() and not ids.is_empty(), [ids, heals])
+	_check("f17.no_906", not _ids(_xinmo(17).enemies[0]).has(906))
+	_check("f5.no_135", not _ids(_xinmo(5).enemies[0]).has(135))
+
+
+## 不是闭关开的 901／770（25 层上行天 Map147 打完嫦娥开 770、公共事件 1600 开 901）：照旧按楼层缩放、敌群页照跑
+func _non_trial() -> void:
+	var s := _state(25)
+	s.map_id = 147
+	XZhenqi.pending_trial = {}
+	var lg := XBattleLogic.new()
+	lg.setup(770, s)
+	var e: XEnemy = lg.enemies[0]
+	_check("nontrial.map147_floor25", XDungeon.map_floor(147) == 25, XDungeon.map_floor(147))
+	_check("nontrial.770_not_xinmo", not XGuardianRework.xinmo_on(lg) and e.horseman.is_empty() and XGuardianRework.xinmo_floor(e) == 0)
+	_check("nontrial.770_world", int(e.get_meta(XGuardianRework.META_FLOOR, 0)) == 25 and float(e.mhp) < 1.0e8, [e.get_meta(XGuardianRework.META_FLOOR, 0), e.mhp])
+	_check("nontrial.770_pages", (XDB.rec("Troops", 770).get("pages", []) as Array).size() == 2)
+	var s2 := _state(10)
+	XZhenqi.pending_trial = {}
+	var lg2 := XBattleLogic.new()
+	lg2.setup(901, s2)
+	_check("nontrial.901_pages", not XGuardianRework.xinmo_on(lg2) and lg2.enemies[0].horseman.is_empty() and (XDB.rec("Troops", 901).get("pages", []) as Array).size() == 1)
 
 
 ## 楼层地图上开心魔（XGuardianRework.setup 早于幻化，心魔战在那里跳过，不按楼层小怪缩、不挂楼层标记）

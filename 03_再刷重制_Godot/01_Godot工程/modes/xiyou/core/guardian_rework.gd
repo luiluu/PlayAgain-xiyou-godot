@@ -440,9 +440,9 @@ static func rescale_params(logic) -> void:
 ## - 记录：借 XEnemy.horseman 的合成记录口子（同鸿钧）。名字、外观、备注、经验金钱照心魔；能力值、特性、行动表换成参照守层者的
 ##   （XDB.rec，天启篇数据层改写过的照用），记录里 _ref＝"xinmo"、_xinmo_floor＝层。首领身份（霸体、首领属性）跟参照守层者。
 ## - 招式：借参照守层者的行动表（atk_scale 那张表就是按这些招反推的，借招才不会倒挂，T314 评审 P1-1），滤掉成长招、领域招、
-##   放逐（XINMO_SKIP_SKILLS）和吸血 ≥ XINMO_LIFESTEAL_MAX% 的招；滤完没有能出手的招时补一个「攻击」。
-## - 特性：借参照守层者的，去掉闪避、魔法闪避、每回合回血的正值（XINMO_DROP_XPARAM，D244 甲「清掉双闪、回血」）；
-##   暴击闪避跟守层者一样吃 T285 按层封顶（XTianqiCombat.enemy_floor 经 params_floor 认心魔的层）。
+##   放逐（XINMO_SKIP_SKILLS）、吸血 ≥ XINMO_LIFESTEAL_MAX% 的招和回血招（_heal_skill）；滤完没有能出手的招时补一个「攻击」。
+## - 只认闭关开的心魔试炼（xinmo_trial）：25 层上行天打完嫦娥开的 770、公共事件 1600 开的 901 不算，照旧按楼层缩放、敌群页照跑。
+## - 特性：借参照守层者的，去掉闪避、暴击闪避、魔法闪避、每回合回血的正值（XINMO_DROP_XPARAM，D244 甲「清掉双闪、暴闪、回血」）。
 ## - 血量：本层守层者重算后的血量（hp_base × 本档回合 × 守层者占本层那场原血量的份额）× XINMO_HP_PCT%；
 ##   出伤 atk_scale 取本层那一档 × XINMO_ATK_PCT%；伤害抵抗 harm_re、一刀切抗性 resistance、31～33 层双防 rescale_params 都按本层。
 ## - 敌群事件：901 第 3 回合强制 6104 与随机 6101～6104、770 第 1 回合霸者领域（CE1397／6068）、6055、放逐 6057、每 3 回合 6051～6053／6056
@@ -458,16 +458,22 @@ const XINMO_ATK_PCT := 100
 const XINMO_SKIP_SKILLS := [4239, 6101, 6102, 6103, 6104, 6106, 6056, 6051, 6052, 6053, 6055, 6057, 2599]
 ## 吸血达到这个百分比的招不借（原版守层者、心魔的 5000%～15000% 吸血）
 const XINMO_LIFESTEAL_MAX := 1000
-## 特性 22（附加能力值）里去掉正值的项：1 闪避、4 魔法闪避、7 每回合回血
-static var XINMO_DROP_XPARAM := [1, 4, 7]   # 探针 --keep-xparam 置空＝照守层者留着（对照用）
+## 特性 22（附加能力值）里去掉正值的项：1 闪避、3 暴击闪避、4 魔法闪避、7 每回合回血（D244 甲「清掉双闪、暴闪、回血」）
+static var XINMO_DROP_XPARAM := [1, 3, 4, 7]   # 探针 --keep-xparam 置空＝照守层者留着（对照用）
 const META_XINMO := "xgr_xinmo"
 static var _xinmo_troops := {}
 static var _ls_re := RegEx.create_from_string("(?i)<HP Life Steal:\\s*([\\d.]+)%?>")
 
 
-## 这一场是不是要对齐的心魔战（天启篇存档、开关开、敌群 901／770）
+## 这一场是不是要对齐的心魔战（天启篇存档、开关开、敌群 901／770、是闭关开的心魔试炼）
 static func xinmo_on(logic) -> bool:
-	return XINMO and logic != null and XINMO_TROOPS.has(int(logic.troop_id)) and XTianqi.active(logic.state)
+	return XINMO and logic != null and xinmo_trial(int(logic.troop_id)) and XTianqi.active(logic.state)
+
+
+## 现在这场是不是闭关开的心魔试炼（XZhenqi.battle_setup 记下的 trial 非空、敌群号对得上）。
+## 901／770 也被别处直接开（25 层上行天 Map147 EV001 打完嫦娥开 770、公共事件 1600 张三丰突破开 901），那些不经 pending_trial，不算，照旧走楼层缩放、敌群页照跑（T315 r2 P1-1）
+static func xinmo_trial(troop_id: int) -> bool:
+	return XINMO_TROOPS.has(troop_id) and not (XZhenqi.battle.get("trial", {}) as Dictionary).is_empty() and int(XZhenqi.battle.get("troopId", 0)) == troop_id
 
 
 ## 心魔对齐到的层（不是对齐过的心魔为 0）
@@ -484,9 +490,10 @@ static func guardian_floor(e) -> int:
 	return f if f > 0 else floor_of((e as XEnemy).enemy_id) if e is XEnemy else 0
 
 
-## XDB.rec("Troops", 901／770) 调：天启篇存档、开关开着时去掉敌群页（心魔原版的成长、霸者领域、放逐都不跑）
+## XDB.rec("Troops", 901／770) 调：天启篇存档、开关开着、正在打闭关心魔试炼时去掉敌群页（心魔原版的成长、霸者领域、放逐都不跑）。
+## XZhenqi.battle_setup 在 BattleLogic.setup 读敌群之前、整场有效，战斗结束清空。
 static func xinmo_troop(id: int, base: Dictionary) -> Dictionary:
-	if not XINMO or base.is_empty() or not _on():
+	if not XINMO or base.is_empty() or not _on() or not xinmo_trial(id):
 		return base
 	var hit = _xinmo_troops.get(id)
 	if hit is Array and is_same(hit[0], base):
@@ -512,9 +519,12 @@ static func xinmo_rec(shell: Dictionary, g: Dictionary, f: int) -> Dictionary:
 		var id := int(a.get("skillId", 0))
 		if XINMO_SKIP_SKILLS.has(id) or DOMAIN_SKILLS.has(id):
 			continue
-		var m := _ls_re.search(str(XDB.rec("Skills", id).get("note", "")))
+		var sk := XDB.rec("Skills", id)
+		var m := _ls_re.search(str(sk.get("note", "")))
 		if m != null and float(m.get_string(1)) >= XINMO_LIFESTEAL_MAX:
 			continue
+		if _heal_skill(sk):
+			continue  # 回血招（17 层治愈之歌回 40%、次级治疗术、魔力愈合、圣光术、清心咒等；D244 甲「清掉回血」，T315 r2 P1-3）
 		acts.append(a.duplicate())
 	if not acts.any(func(a): return not _passive_skill(int(a.get("skillId", 0)))):
 		acts.append({"skillId": 1, "rating": 5, "conditionType": 0, "conditionParam1": 0, "conditionParam2": 0})
@@ -525,10 +535,19 @@ static func xinmo_rec(shell: Dictionary, g: Dictionary, f: int) -> Dictionary:
 	return rec
 
 
-## 行动表里的被动技能（伤害抵抗等，备注带 passive 标签、不打人）
+## 行动表里的被动技能（伤害抵抗等，备注带 passive 标签、不打人；17～19 层「大地／暗黑／火焰吸收」那种没有范围或死后才满足的占位也算）
 static func _passive_skill(id: int) -> bool:
 	var sk := XDB.rec("Skills", id)
-	return str(sk.get("note", "")).contains("<passive") and int(sk.get("damage", {}).get("type", 0)) == 0
+	if int(sk.get("damage", {}).get("type", 0)) != 0:
+		return false
+	return str(sk.get("note", "")).contains("<passive") or int(sk.get("scope", 0)) == 0
+
+
+## 回血招：伤害类型 3（HP 回复）或带回复生命效果（code 11）
+static func _heal_skill(sk: Dictionary) -> bool:
+	if int(sk.get("damage", {}).get("type", 0)) == 3:
+		return true
+	return sk.get("effects", []).any(func(ef): return int(ef.get("code", 0)) == 11 and (float(ef.get("value1", 0)) > 0.0 or float(ef.get("value2", 0)) > 0.0))
 
 
 ## 心魔第 f 层的目标血量：本层守层者重算后的血量 × XINMO_HP_PCT%（守层者占本层那场原血量的份额）
@@ -554,20 +573,19 @@ static func xinmo_setup(logic, s: XState) -> void:
 		if e.hidden or not e.horseman.is_empty():
 			continue
 		var rec := xinmo_rec(e.data(), g, f)
-		e.horseman = {"rec": rec, "knight": false}  # 借骑士战的合成记录口子：XEnemy.data() 读它；难度倍率、幻化（zq_ref＝参照守层者原能力值）照旧
+		e.horseman = {"rec": rec, "knight": false}  # 借骑士战的合成记录口子：XEnemy.data() 读它；难度倍率照旧
+		e.zq_ref = {}  # 能力值以合成记录为准（幻化的 zq_ref 会盖掉 data().params、倍数 ≠1 时偷乘攻击；T315 r2 P2-2）。zq_trial_loot 照留（不掉落）
 		e.boss_difficulty_boss = XEnemy.boss_id(gid)
 		e.set_meta(META_XINMO, f)
 		e.refresh_passive()
 		e.param_mark_dirty()
 	rescale_params(logic)  # 31～33 层：双防按 guardian_params.json 重锚（心魔战里只有心魔）
-	if not HP:
-		for e in logic.enemies:
-			e.recover_all()
-		return
 	for e in logic.enemies:
-		if xinmo_floor(e) > 0 and float(e.mhp) > 0.0:
+		if not HP:
+			e.recover_all()
+		elif xinmo_floor(e) > 0 and float(e.mhp) > 0.0:
 			_scale_hp(e, xinmo_hp(f, gid, s) / float(e.mhp))
-	xinmo_traits(logic, s)
+	xinmo_traits(logic, s)  # HP 开关关着也调（T315 r2 P2-1）
 
 
 ## 各境心魔的特点（T316 设计定了再填；签名照 T316 v0.1 第五节 5.1 的 XTianqiXinmoTraits.setup(logic, s)）：
