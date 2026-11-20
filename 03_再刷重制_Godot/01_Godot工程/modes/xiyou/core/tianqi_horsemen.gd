@@ -1027,7 +1027,7 @@ static func perform(logic, u, skill: Dictionary, chosen) -> Array:
 	var kind := str(skill.tianqi_horseman)
 	match kind:
 		"add_attack":
-			var t = _pick_target(logic, chosen)
+			var t = _pick_target(logic, chosen, u)
 			if t != null:
 				var mult := 1.0 + (float(knight("war").add_fire_up) if int(f.get("layer", 0)) >= 6 else 0.0)
 				logs.append(_strike(logic, u, t, skill, float(u.atk) * float(skill.coef) * mult, false))
@@ -1046,10 +1046,10 @@ static func perform(logic, u, skill: Dictionary, chosen) -> Array:
 			f.unique = int(f.unique) + 1
 			logs.append_array(_follow_up(logic, f, u))
 		"holy_sword":
-			var t = _pick_target(logic, chosen)
+			var t = _pick_target(logic, chosen, u)
 			for _n in range(int(skill.hits)):
 				if t == null or not t.is_alive():
-					t = _pick_target(logic, null)
+					t = _pick_target(logic, null, u)
 				if t == null:
 					break
 				logs.append(_strike(logic, u, t, skill, float(u.atk) * float(skill.coef), false))
@@ -1070,11 +1070,11 @@ static func perform(logic, u, skill: Dictionary, chosen) -> Array:
 		"defy_cry":
 			for a in _alive_actors(logic):
 				_defiance(logic, f, a, int(knight("plague").shadow_cry.per_add))
-			var t = _pick_target(logic, chosen)
+			var t = _pick_target(logic, chosen, u)
 			if t != null:
 				logs.append(_strike(logic, u, t, skill, float(u.atk) * (1.0 - float(knight("plague").self_atk_down)) * float(skill.coef), false))
 		"bash":
-			var t = _pick_target(logic, chosen)
+			var t = _pick_target(logic, chosen, u)
 			if t != null:
 				logs.append(_strike(logic, u, t, skill, float(u.atk) * (1.0 - float(knight("plague").self_atk_down)) * float(skill.coef), false))
 		"minion_brick":
@@ -1110,7 +1110,7 @@ static func perform(logic, u, skill: Dictionary, chosen) -> Array:
 
 ## 勇者：每放一次独有技能追加一次普攻
 static func _follow_up(logic, f: Dictionary, u) -> Array:
-	var t = _pick_target(logic, null)
+	var t = _pick_target(logic, null, u)
 	if t == null:
 		return []
 	return [_strike(logic, u, t, _skill("follow", "追加普攻", 1, 1, float(knight("death").follow_coef), false),
@@ -1169,10 +1169,10 @@ static func _war_perform(logic, f: Dictionary, u, skill: Dictionary, chosen) -> 
 			for t in _alive_actors(logic):
 				_mark(f, t).burn = int(k.wave.turns)
 		"crackle":
-			var t = _pick_target(logic, chosen)
+			var t = _pick_target(logic, chosen, u)
 			for _n in range(int(skill.hits)):
 				if t == null or not t.is_alive():
-					t = _pick_target(logic, null)
+					t = _pick_target(logic, null, u)
 				if t == null:
 					break
 				var rnd: int = logic._int(1, int(k.crackle.rand_hits), "horseman_crackle")
@@ -1213,7 +1213,7 @@ static func _famine_perform(logic, f: Dictionary, u, skill: Dictionary, chosen) 
 	if int(skill.scope) == 2:
 		targets = _alive_actors(logic)
 	else:
-		var t = _pick_target(logic, chosen)
+		var t = _pick_target(logic, chosen, u)
 		if t != null:
 			targets = [t]
 	if kind == "bankrupt" and not targets.is_empty():
@@ -1254,13 +1254,26 @@ static func _seniority(logic, f: Dictionary, n: int) -> void:
 	_check_phase(logic, f)
 
 
-static func _pick_target(logic, chosen):
+## u：出手的骑士。没给 chosen（自由点名）时按骑士战商加权（天启篇六维 T277，协调 11-20 Q2＝B），仍只掷一次 horseman_target；
+## 脚本锁死的 chosen 原样；没录、1 档、开关关＝原版均匀
+static func _pick_target(logic, chosen, u = null):
 	if chosen != null and chosen is XBattler and chosen.is_alive() and logic.actors.has(chosen):
 		return chosen
 	var live := _alive_actors(logic)
 	if live.is_empty():
 		return null
-	return live[logic._int(0, live.size() - 1, "horseman_target")]
+	var w := XTianqiEnemyAI.knight_target_weights(logic, u, live)
+	if w.is_empty():
+		return live[logic._int(0, live.size() - 1, "horseman_target")]
+	var total := 0
+	for x in w:
+		total += int(x)
+	var r: int = logic._int(0, total - 1, "horseman_target")
+	for i in live.size():
+		r -= int(w[i])
+		if r < 0:
+			return live[i]
+	return live[-1]
 
 
 ## 骑士打我方一段：攻×系数×攻÷(攻＋防)×我方档位承伤，过护盾

@@ -881,14 +881,14 @@ func _targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null) -> Ar
 		1:
 			if chosen and chosen.is_alive() and foes.has(chosen):
 				return [chosen]
-			return [_random_target(alive(foes), a)] if not alive(foes).is_empty() else []
+			return [_random_target(alive(foes), a, skill)] if not alive(foes).is_empty() else []
 		2:
 			return alive(foes)
 		3, 4, 5, 6:
 			var out := []
 			for i in range(scope - 2):
 				if not alive(foes).is_empty():
-					out.append(_random_target(alive(foes), a))
+					out.append(_random_target(alive(foes), a, skill))
 			return out
 		7:
 			if chosen and chosen.is_alive() and friends.has(chosen):
@@ -999,12 +999,16 @@ func _v8_shuffle(source: Array) -> Array:
 
 ## MV：按目标的 tgr（受击率）加权随机
 ## user：选目标的行动者（敌人挑我方时天启篇烙印改权重：外人项、出头鸟；不给＝原样）
-func _random_target(list: Array, user: XBattler = null) -> XBattler:
+## skill：这次行动的招（天启篇六维 T277：六维 AI 决定的这一招按战商改各目标权重，仍只掷一次）
+func _random_target(list: Array, user: XBattler = null, skill: Dictionary = {}) -> XBattler:
 	var w := []
-	var total := 0.0
 	for b in list:
 		w.append(b.tgr * (XTianqiBrand.aggro_mult(self, user, b) if user != null else 1.0))
-		total += w[-1]
+	if user != null and not skill.is_empty():
+		w = XTianqiEnemyAI.target_weights(self, user, list, w, skill)
+	var total := 0.0
+	for x in w:
+		total += x
 	var r := _float("target") * total
 	for i in list.size():
 		r -= w[i]
@@ -1288,6 +1292,7 @@ func next_subject() -> XBattler:
 ## 行动者当场决定的行动：敌人按 AI，角色在自动战斗时按自动规则，否则普通攻击。返回 [技能, 目标]。
 func decide(b: XBattler) -> Array:
 	if b is XEnemy:
+		XTianqiEnemyAI.note_decision(self, null, [])  # 天启篇六维（T277）：先清上一次登记，脚本／寂静等别的来源不改点名
 		var trial := XTianqiGojoTrial.decide(self, b)  # 天启篇五条悟专属试炼：影子按回合表出招
 		if not trial.is_empty():
 			return trial
@@ -1303,8 +1308,13 @@ func decide(b: XBattler) -> Array:
 		var cat := XCat.dragon_action(self, b)  # 小猫试炼巨龙 makeActions 包装：按回合轮换出招，不掷随机数
 		if not cat.is_empty():
 			return XConfusion.prepare_enemy(b, cat)  # Game_Action.prepare：混乱类状态（restriction 1～3）的敌人行动换成普通攻击，行动选择的随机数照取
-		var sk := enemy_action(b)
-		return XConfusion.prepare_enemy(b, [null if sk.is_empty() else sk, null])  # 没有行动：同逃跑失败的放弃（processTurn 没有 currentAction 就 endAction）
+		var fright := XTianqiEnemyAI.panic(self, b)  # 天启篇六维（T277）：韧性 E／D 的录表小怪残血慌乱（没资格不取数）
+		if not fright.is_empty():
+			return XConfusion.prepare_enemy(b, fright)
+		var sk := XTianqiEnemyAI.enemy_action(self, b)  # 天启篇六维（T277）：录表敌人按战商等改选招权重，同样只掷一次；没录／开关关＝原版 enemy_action
+		var dec := XConfusion.prepare_enemy(b, [null if sk.is_empty() else sk, null])
+		XTianqiEnemyAI.note_decision(self, b, dec)  # 这一招接下来的随机点名按战商改权重（仍只掷一次 target）
+		return dec  # 没有行动：同逃跑失败的放弃（processTurn 没有 currentAction 就 endAction）
 	var fit := brand_forced(b)  # 天启篇烙印发作：不听指挥（同 BattleScene._command 最顶上那一问；没有发作不取数）
 	if not fit.is_empty():
 		return fit
@@ -1331,6 +1341,7 @@ func act(u: XBattler, skill, target) -> Array:
 	var before := _movable_snapshot()
 	if is_over() or u.is_dead():
 		return logs
+	logs.append_array(XTianqiEnemyAI.take_logs(u))  # 天启篇六维（T277）：低韧性慌乱战报
 	XTianqiBrand.act_begin(self)  # 天启篇烙印灼痕：开一次新的行动（一次行动对同一个人最多涨一次）
 	if XTianqiBrand.is_fit_command(skill):  # 天启篇烙印发作：哑火换成普攻敌人；发呆、断片、抽自己、六亲不认按放弃行动走（那一下在 perform 里结算）
 		var fx := XTianqiBrand.perform(self, u, skill, target)
