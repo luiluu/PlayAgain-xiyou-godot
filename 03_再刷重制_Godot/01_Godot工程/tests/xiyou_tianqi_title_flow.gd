@@ -190,7 +190,19 @@ func _load_back(tag: String, slot: int, key: String, dao: String, touch: bool) -
 	_check(tag + "_load_page", page != null and page.slot() == slot, page.slot() if page != null else null)
 	if page == null:
 		return
-	if touch:
+	if page.skin != null:
+		# T292 新界面：确定＝右牌默认那枚「读取」→ 统一确认弹窗停在「读取」→ 确定；触屏点右牌「读取」、再点弹窗「读取」
+		if touch:
+			var card: XSkinCard = page.skin.card
+			await _tap_at(card.global_position + card.button_rect(0).get_center())
+			var dlg: XSkinConfirm = page.skin.dialog
+			_check(tag + "_skin_confirm", dlg != null)
+			if dlg != null:
+				await _tap_at(dlg.global_position + dlg.button_rect(0).get_center())
+		else:
+			for i in 2:
+				await _key(KEY_ENTER)
+	elif touch:
 		var lw: XMVWindow = page.list_win
 		var row: int = page.index - page.top
 		await _tap_at(lw.global_position + Vector2(XMVWindow.PADDING + 40, XMVWindow.PADDING + XSaveScene.LH * (row + 0.5)))

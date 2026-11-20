@@ -12,7 +12,7 @@ extends Node
 ##   比：godot --headless --path <工程> res://tests/xiyou_ui_skin_offshot.tscn -- --compare=<目录甲>,<目录乙>
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const SKIN := "res://modes/xiyou/ui/skin/ui_skin.gd"
-const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XSkillScene", "XEquipScene", "XOptionsScene", "XGearSearch", "XGraphicsOptionsScene", "XNoticeOptionsScene", "XPingbiScene", "XGameEndPanel", "XTianqiTitle", "XTianqiLineCards", "XAlienWorkshop", "XShop"]
+const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XSkillScene", "XEquipScene", "XOptionsScene", "XGearSearch", "XGraphicsOptionsScene", "XNoticeOptionsScene", "XPingbiScene", "XGameEndPanel", "XTianqiTitle", "XTianqiLineCards", "XAlienWorkshop", "XShop", "XSaveScene", "XPartyScene", "XActorWarehouseScene"]
 
 var out_dir := ""
 var compare := ""
