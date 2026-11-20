@@ -9,7 +9,7 @@
 
 - 依据：T282 交付单性能一节（三个天启伤害钩子各约 0.6 ms）。本单先量再改，量出来慢处不在钩子自己，见下面「量出来的」。
 - `XTianqiQiyinEffects`／`XTianqiAffixBattle`／`XTianqiTrumpet` 的 `damage_ops`：是不是普攻（`is_attack`）只在用得到时才问——七印只有穿了「范围技增伤／技能增伤／封技普攻增伤」三条之一才问，词条只有带「技能伤害」才问，号卷只有学了一号才问；用不到时那几项本来就是 0，乘区一样。三个开关各自 `LAZY_ATTACK`（默认开）。
-- `XBattler.attack_skill_id`：角色在只读窗口（O-348）里同一代只查一次（记进 `XActor._read_memo`，键 `ra0／ra1` 带小猫剑圣空手标记）；换代即丢（加减状态、换装刷新被动、学技能、HP／MP／TP 写入、公式帧进出都换代）。甚尔形态、宿傩、屠苏武具态这些角色自己的包装在 `XActor.attack_skill_id` 里、不进记忆，照旧每次现算；窗口外、敌人照旧即时查。开关 `XBattler.ATTACK_ID_MEMO`（默认开）；`XIYOU_READ_VERIFY=1` 时每次命中重算比对。
+- `XBattler.attack_skill_id`：角色在只读窗口（O-348）里同一代只查一次（记进 `XActor._read_memo`，键 `ra0／ra1` 带小猫剑圣空手标记）；换代即丢。换代来源照实：加减状态、clear_states、param_mark_dirty、学／忘技能、HP／MP／TP 写入、公式帧进出；换装走 `XEquipment.preview`（read_touch）、`XEquipment.change`（末尾写 hp／mp）、`init_equips`／`release_unequippable`（卸了东西时）／`release_to_party`。`refresh_passive` 本身不换代；直接改 `equips[]` 又不走这些路径的不换代（和已有的技能表、特性表窗口记忆同一前提）。甚尔形态、宿傩、屠苏武具态这些角色自己的包装在 `XActor.attack_skill_id` 里、不进记忆，照旧每次现算；窗口外、敌人照旧即时查。开关 `XBattler.ATTACK_ID_MEMO`（默认开）；`XIYOU_READ_VERIFY=1` 时每次命中重算比对。
 - 结果不变：新专项开关全开／全关，钩子输出逐项相同，天启篇与西游档整场同种子逐位相同。
 - 玩家可见：无（只提速）。
 
@@ -65,9 +65,9 @@
 
 ## 验证（验收 3、5）
 
-- 新专项 `xiyou_tianqi_dmg_hook_lazy` 26/26（本机约 25～50 秒）：
+- 新专项 `xiyou_tianqi_dmg_hook_lazy` 30/30（返修后，`XIYOU_READ_VERIFY=1`）（本机约 25～50 秒）：
   1. 每一印（全套＋真印武器）× 带词条（终伤、技能伤、元素伤、背水、先声、减伤、磐石、猎首）× 号卷一二四五六号，4 角色 × 5 敌人 × 各伤害／治疗技＋普攻、敌打我，窗口里／窗口外，开关全开／全关的三个钩子输出逐项相同（浮点按 17 位有效数字比）；七印跟普攻有关的那一支（need_kind 为真）有覆盖。
-  2. 普攻号记忆：替换普攻武器 1109→1004、状态 66→562、五条悟角色备注；窗口里第二次命中记忆且等于即时查；窗口没关时加状态、去状态、换武器刷新被动都当场换代读到新值；开关关掉不记。
+  2. 普攻号记忆：替换普攻武器 1109→1004、状态 66→562、五条悟角色备注；窗口里第二次命中记忆且等于即时查；窗口没关时加状态、去状态当场换代读到新值；换武器先热一次记忆（1004），再走正式 `XEquipment.preview`：本体记忆作废、预览克隆读到新值（Neon 核查 P2-1 返修，原来裸改 equips[0]＋refresh_passive 是假过）；开关关掉不记。
   3. 整场同种子：天启篇 4v5（穿七印＋词条＋号卷、一人拿替换普攻武器、第 2 回合给一人挂替换普攻状态，敌人血量照常、真打 5 回合）和西游档（替换普攻武器＋第 2 回合挂状态，4 回合），开关全开与全关的每回合日志、HP／MP／TP／状态／护盾、随机流快照逐位相同；全开再跑一次也相同。这几回合是真实自动行动（多段技、七印印记／疫、号卷、词条照常结算），但**没有逐一确认每种机制在这 5 回合里都触发了**；命运骰没有专门布置（只比了随机流快照）。逐项覆盖靠第 1 条钩子逐项比对和云端选测里各机制自己的专项。
   4. 性能 PERF 行（上表），钩子合计开着不比关着慢（粗上限）。
 - 本机 `XIYOU_READ_VERIFY=1`（记忆每次命中都重算比对，不一致当场崩）：xiyou_tianqi_dmg_hook_lazy、xiyou_replace_attack_motion、xiyou_shana_zhuanwu_attack、xiyou_gojo、xiyou_tianqi_smart_ai、xiyou_smart_ai、xiyou_tianqi_qiyin_effects、xiyou_tianqi_affix_battle、xiyou_tianqi_trumpet、xiyou_toji_battle、xiyou_tusu_battle 11/11 过。
@@ -78,8 +78,14 @@
 
 ## 改了哪些核心文件（请核查方重点看）
 
-- `modes/xiyou/core/battler.gd`：`attack_skill_id` 拆成外壳（窗口记忆）＋`_attack_skill_id_now`（原逻辑逐字不变）；新开关 `ATTACK_ID_MEMO`。依赖的前提和已有的 `skills()`／`all_traits` 窗口记忆相同：窗口里改装备、状态都走会换代的路径。
+- `modes/xiyou/core/battler.gd`：`attack_skill_id` 拆成外壳（窗口记忆）＋`_attack_skill_id_now`（原逻辑逐字不变）；新开关 `ATTACK_ID_MEMO`。依赖的前提和已有的 `skills()`／`all_traits` 窗口记忆相同：窗口里改装备、状态要走会换代的路径（来源见变更记录草稿）。
 - 三个钩子文件只动 `damage_ops` 里 `is_attack` 的取法和顶上的开关。
+
+## 核查返修（Neon 核 P1×0）
+
+- P2-1 已改：`memo_equip_change_gen` 原来前面 b 增删状态已清了全局记忆、裸改 equips[0]＋refresh_passive 本身不换代，是假过；改成先热 `a.attack_skill_id()`（断言记忆里有 1004），再走 `XEquipment.preview`，断言本体记忆被作废、预览克隆读到新值。没用 `XEquipment.change`：它在窗口里调会让**已有的**特性表记忆读到旧值（先换装备、后 `release_unequippable` 读特性，中间没换代），`XIYOU_READ_VERIFY=1` 当场崩在 all_traits，与本单无关，记成下面的建议。
+- P2-2 已改：`battler.gd` 注释与本单草稿不再说「刷新被动换代」，照实列换代来源。
+- P3：Neon 的 P3 原文没随返修派单转来，未逐条写入；待协调转原文后补（不改代码）。
 
 ## 交接板
 
@@ -96,6 +102,7 @@
 - 已做：普攻号窗口记忆、三个钩子 is_attack 用到才问（回退见优化登记）。
 - 建议（收益最大，战斗核心车道，Opus＋medium）：`XAlienBattle.push_formula／pop_formula` 每次 calculate 进出都 `read_touch` 整窗作废，改成只在这一帧真会改能力值读法时（逆骨类：`_formula_frames` 里 physical／逆骨技能、或双方有逆骨词条）才作废。实测外面包窗口的 calculate 3.5 → 1.3 ms、4v5 自动选招 70 → 53 ms；真出手每段伤害也受益（同一行动多段时）。要配 `XIYOU_READ_VERIFY=1` 整轮。
 - 建议：`XBattler._replace_attack_raw` 按整串备注做键，长备注每次算哈希；窗口外（敌人、UI）照样慢。可改成按记录（表名＋id）键或预扫一次。归同一车道。
+- 建议（P3 级，战斗核心／装备车道）：`XEquipment.change` 先 `equips[slot]=item` 再 `release_unequippable()` 读特性，中间没 read_touch；在只读窗口里调（现在正式流程没有）会读到旧特性表。可在赋值后补一句 `XActor.read_touch()`。
 - 建议：`XDamage._race_factors` 一次约 150～175 µs、`XModuleRegistry.dispatch` 每个钩子帧深拷贝三次（约 250～300 µs），等 T282 合并后可在 damage.gd／module_registry.gd 里各省一截。
 - 建议：T282 交付单「各钩子 0.6 ms」的量法是每次冷窗口，会把技能表冷算记到第一个读者头上；以后量钩子单项请在同一个窗口里量，或明说冷／热。
 

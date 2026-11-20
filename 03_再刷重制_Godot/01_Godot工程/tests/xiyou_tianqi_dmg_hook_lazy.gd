@@ -226,10 +226,20 @@ func _memo() -> void:
 	_check("memo_state_add_gen", b.attack_skill_id() == 562, b.attack_skill_id())
 	b.remove_state(66)
 	_check("memo_state_remove_gen", b.attack_skill_id() == b._attack_skill_id_now() and b.attack_skill_id() != 562, b.attack_skill_id())
-	# 换武器：换完照正式流程刷新被动（换代）
-	a.equips[0] = XGear.template("weapon", 1)
-	a.refresh_passive()
-	_check("memo_equip_change_gen", a.attack_skill_id() == a._attack_skill_id_now() and a.attack_skill_id() != 1004, [a.attack_skill_id(), a._attack_skill_id_now()])
+	# 换武器：先热一次（记忆里是 1004），再走正式 XEquipment.preview（read_touch 换代）：本体的记忆作废、预览克隆读到新值
+	# （XEquipment.change 不能在窗口里调：它先换装备、后读特性，中间没换代，原有的特性表窗口记忆会读到旧值，见交付单）
+	_check("memo_equip_warm", a.attack_skill_id() == 1004 and a._read_memo().has(key), a.attack_skill_id())
+	var plain := {}
+	for wid in range(1, 400):  # 找一把这名角色正式能穿、不换普攻的武器
+		var w := XGear.template("weapon", wid)
+		if not w.is_empty() and XEquipment.fits(a, 0, w) and XBattler.replace_attack_of(w) == 0:
+			plain = w
+			break
+	_check("memo_equip_found_weapon", not plain.is_empty())
+	var pv := XEquipment.preview(a, 0, plain)
+	_check("memo_equip_preview_gen", not a._read_memo().has(key), a._read_memo().keys())
+	_check("memo_equip_preview_new", pv.attack_skill_id() == pv._attack_skill_id_now() and pv.attack_skill_id() != 1004, [pv.attack_skill_id(), pv._attack_skill_id_now()])
+	_check("memo_equip_self_after", a.attack_skill_id() == 1004 and a._attack_skill_id_now() == 1004, a.attack_skill_id())
 	XActor.read_end()
 	# 开关关掉不记
 	XBattler.ATTACK_ID_MEMO = false
