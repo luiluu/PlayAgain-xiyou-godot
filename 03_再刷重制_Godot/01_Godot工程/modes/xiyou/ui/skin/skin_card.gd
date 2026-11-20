@@ -168,18 +168,18 @@ func _input(event: InputEvent) -> void:
 	if _is_y(event):   # Y 只管展开／收回这张牌，不放行给页面（战斗里不再顺带关详情，小A核 P2-1）
 		set_expanded(not expanded)
 		XSound.system(0)
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 		return
 	if not expanded:
 		return
 	if event.is_action_pressed("ui_accept"):   # 展开时确定键不落到下面的列表（防误放技能、误用物品）
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 	elif event.is_action_pressed("ui_cancel"):
 		set_expanded(false)
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 	elif event.is_action_pressed("ui_up", true) or event.is_action_pressed("ui_down", true):
 		scroll_by(-SCROLL_STEP if event.is_action("ui_up") else SCROLL_STEP)
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 ## 处理按钮的方向键／确定（页面焦点在牌上时转进来）
