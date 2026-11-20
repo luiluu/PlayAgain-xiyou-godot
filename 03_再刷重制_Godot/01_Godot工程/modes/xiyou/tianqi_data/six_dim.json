@@ -1,5 +1,5 @@
 {
- "_note": "天启篇六维（T275，设定稿 天启篇_角色六维_v0.3定稿，Kyo D234）。刻度 E～SSS＝1～8 分；全表整数（附则 E）。只读数据，战斗中不重算；本表不碰伤害、血防、敏捷。样板 14 份（四骑士＋10 角色），其余走 templates／默认中性。 谷雨（175）样板分待 Kyo 重定（11-19 改口：爆发输出 S、生存至少 S），暂不录，读取回中性。",
+ "_note": "天启篇六维（T275，设定稿 天启篇_角色六维_v0.3定稿，Kyo D234）。刻度 E～SSS＝1～8 分；全表整数（附则 E）。只读数据，战斗中不重算；本表不碰伤害、血防、敏捷。样板 14 份（四骑士＋10 角色），敌人 T303 起录 13～33 层＋七印里副本 116 只（enemies：template 加可选 class 与覆盖档），没录的走默认中性、照原版 AI。 谷雨（175）样板分待 Kyo 重定（11-19 改口：爆发输出 S、生存至少 S），暂不录，读取回中性。",
  "version": 1,
  "dims": [
   "output",
@@ -242,7 +242,869 @@
    "support": "C"
   }
  },
- "enemies": {},
+ "enemies": {
+  "8": {
+   "template": "guard",
+   "class": "super",
+   "output": "B",
+   "survive": "B",
+   "speed": "C",
+   "wit": "B",
+   "resolve": "B",
+   "support": "C"
+  },
+  "9": {
+   "template": "mob"
+  },
+  "10": {
+   "template": "mob",
+   "output": "C",
+   "wit": "E"
+  },
+  "11": {
+   "template": "caster",
+   "class": "weak"
+  },
+  "30": {
+   "template": "mob"
+  },
+  "31": {
+   "template": "mob"
+  },
+  "34": {
+   "template": "caster",
+   "class": "strong",
+   "output": "B",
+   "survive": "C",
+   "speed": "C",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "35": {
+   "template": "caster",
+   "class": "strong",
+   "output": "B",
+   "survive": "C",
+   "speed": "C",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "40": {
+   "template": "hunter",
+   "class": "super",
+   "output": "A",
+   "survive": "B",
+   "speed": "A",
+   "wit": "B",
+   "resolve": "B",
+   "support": "C"
+  },
+  "54": {
+   "template": "hunter",
+   "class": "super",
+   "output": "A",
+   "survive": "B",
+   "speed": "B",
+   "wit": "B",
+   "resolve": "B",
+   "support": "C"
+  },
+  "107": {
+   "template": "beast"
+  },
+  "108": {
+   "template": "beast",
+   "output": "B",
+   "wit": "E"
+  },
+  "109": {
+   "template": "hunter",
+   "class": "weak"
+  },
+  "110": {
+   "template": "alien",
+   "output": "S",
+   "survive": "A",
+   "wit": "D",
+   "resolve": "D",
+   "class": "strong"
+  },
+  "111": {
+   "template": "hunter",
+   "output": "S",
+   "survive": "B",
+   "speed": "A",
+   "wit": "B",
+   "resolve": "C",
+   "support": "E",
+   "class": "super"
+  },
+  "114": {
+   "template": "guard",
+   "output": "B",
+   "survive": "A",
+   "speed": "C",
+   "wit": "B",
+   "resolve": "B",
+   "support": "A",
+   "class": "strong"
+  },
+  "115": {
+   "template": "caster"
+  },
+  "116": {
+   "template": "caster",
+   "output": "B",
+   "wit": "D"
+  },
+  "117": {
+   "template": "caster",
+   "class": "weak",
+   "output": "B",
+   "survive": "D",
+   "speed": "B",
+   "wit": "B",
+   "resolve": "C",
+   "support": "E"
+  },
+  "118": {
+   "template": "caster",
+   "output": "A",
+   "survive": "C",
+   "speed": "C",
+   "wit": "B",
+   "resolve": "D",
+   "support": "B",
+   "class": "strong"
+  },
+  "119": {
+   "template": "caster",
+   "output": "S",
+   "survive": "C",
+   "speed": "B",
+   "wit": "B",
+   "resolve": "D",
+   "support": "C",
+   "class": "super"
+  },
+  "120": {
+   "template": "hunter",
+   "output": "A",
+   "survive": "B",
+   "speed": "S",
+   "wit": "A",
+   "resolve": "C",
+   "support": "E",
+   "class": "elite"
+  },
+  "121": {
+   "template": "guard",
+   "output": "A",
+   "survive": "A",
+   "speed": "D",
+   "wit": "D",
+   "resolve": "A",
+   "support": "E",
+   "class": "strong"
+  },
+  "122": {
+   "template": "undead"
+  },
+  "123": {
+   "template": "undead",
+   "output": "B",
+   "wit": "E"
+  },
+  "124": {
+   "template": "hunter",
+   "class": "weak"
+  },
+  "125": {
+   "template": "undead",
+   "output": "A",
+   "survive": "A",
+   "speed": "E",
+   "wit": "D",
+   "resolve": "B",
+   "support": "E",
+   "class": "strong"
+  },
+  "126": {
+   "template": "undead",
+   "output": "S",
+   "survive": "B",
+   "speed": "C",
+   "wit": "D",
+   "resolve": "C",
+   "support": "D",
+   "class": "super"
+  },
+  "127": {
+   "template": "undead"
+  },
+  "128": {
+   "template": "caster",
+   "output": "C",
+   "survive": "B",
+   "speed": "D",
+   "wit": "A",
+   "resolve": "A",
+   "support": "A",
+   "class": "strong"
+  },
+  "129": {
+   "template": "guard",
+   "output": "A",
+   "survive": "B",
+   "speed": "B",
+   "wit": "B",
+   "resolve": "B",
+   "support": "D",
+   "class": "strong"
+  },
+  "138": {
+   "template": "caster"
+  },
+  "139": {
+   "template": "caster",
+   "output": "B",
+   "wit": "D"
+  },
+  "140": {
+   "template": "hunter",
+   "class": "weak"
+  },
+  "141": {
+   "template": "caster",
+   "output": "B",
+   "survive": "C",
+   "speed": "C",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A",
+   "class": "strong"
+  },
+  "142": {
+   "template": "guard",
+   "class": "super",
+   "output": "A",
+   "survive": "S",
+   "speed": "D",
+   "wit": "B",
+   "resolve": "A",
+   "support": "C"
+  },
+  "176": {
+   "template": "undead"
+  },
+  "177": {
+   "template": "undead",
+   "output": "B",
+   "wit": "E"
+  },
+  "178": {
+   "template": "undead",
+   "class": "weak"
+  },
+  "179": {
+   "template": "caster",
+   "class": "strong",
+   "output": "B",
+   "survive": "C",
+   "speed": "C",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "180": {
+   "template": "caster",
+   "class": "super",
+   "output": "A",
+   "survive": "C",
+   "speed": "B",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "181": {
+   "template": "caster",
+   "class": "strong",
+   "output": "B",
+   "survive": "C",
+   "speed": "C",
+   "wit": "A",
+   "resolve": "A",
+   "support": "A"
+  },
+  "187": {
+   "template": "undead"
+  },
+  "188": {
+   "template": "undead",
+   "output": "B",
+   "wit": "E"
+  },
+  "189": {
+   "template": "undead",
+   "class": "weak"
+  },
+  "190": {
+   "template": "abyss",
+   "class": "strong"
+  },
+  "191": {
+   "template": "abyss",
+   "class": "super"
+  },
+  "192": {
+   "template": "abyss",
+   "class": "strong",
+   "output": "A",
+   "survive": "B",
+   "speed": "C",
+   "wit": "B",
+   "resolve": "B",
+   "support": "C"
+  },
+  "193": {
+   "template": "abyss",
+   "class": "elite"
+  },
+  "196": {
+   "template": "hunter"
+  },
+  "197": {
+   "template": "hunter",
+   "output": "A",
+   "wit": "C"
+  },
+  "198": {
+   "template": "guard",
+   "class": "weak"
+  },
+  "199": {
+   "template": "guard",
+   "class": "strong",
+   "output": "B",
+   "survive": "A",
+   "speed": "D",
+   "wit": "C",
+   "resolve": "A",
+   "support": "C"
+  },
+  "200": {
+   "template": "hunter",
+   "class": "super",
+   "output": "S",
+   "survive": "B",
+   "speed": "A",
+   "wit": "B",
+   "resolve": "C",
+   "support": "E"
+  },
+  "202": {
+   "template": "hunter",
+   "class": "strong",
+   "output": "A",
+   "survive": "A",
+   "speed": "D",
+   "wit": "B",
+   "resolve": "B",
+   "support": "C"
+  },
+  "233": {
+   "template": "guard",
+   "class": "elite",
+   "output": "A",
+   "survive": "S",
+   "speed": "E",
+   "wit": "C",
+   "resolve": "A",
+   "support": "D"
+  },
+  "234": {
+   "template": "caster",
+   "class": "super",
+   "output": "A",
+   "survive": "C",
+   "speed": "B",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "237": {
+   "template": "guard",
+   "class": "super",
+   "output": "A",
+   "survive": "S",
+   "speed": "D",
+   "wit": "B",
+   "resolve": "A",
+   "support": "C"
+  },
+  "268": {
+   "template": "beast",
+   "class": "strong",
+   "output": "B",
+   "survive": "A",
+   "speed": "D",
+   "wit": "C",
+   "resolve": "B",
+   "support": "D"
+  },
+  "269": {
+   "template": "beast",
+   "class": "super",
+   "output": "S",
+   "survive": "B",
+   "speed": "B",
+   "wit": "D",
+   "resolve": "C",
+   "support": "D"
+  },
+  "276": {
+   "template": "beast"
+  },
+  "277": {
+   "template": "beast",
+   "output": "B",
+   "wit": "E"
+  },
+  "278": {
+   "template": "guard",
+   "class": "weak"
+  },
+  "279": {
+   "template": "beast",
+   "output": "B",
+   "survive": "A",
+   "speed": "D",
+   "wit": "C",
+   "resolve": "B",
+   "support": "D",
+   "class": "strong"
+  },
+  "280": {
+   "template": "caster",
+   "output": "A",
+   "survive": "S",
+   "speed": "D",
+   "wit": "B",
+   "resolve": "B",
+   "support": "C",
+   "class": "super"
+  },
+  "330": {
+   "template": "beast",
+   "class": "elite",
+   "output": "S",
+   "survive": "B",
+   "speed": "B",
+   "wit": "C",
+   "resolve": "B",
+   "support": "D"
+  },
+  "335": {
+   "template": "guard",
+   "class": "super",
+   "output": "A",
+   "survive": "S",
+   "speed": "D",
+   "wit": "B",
+   "resolve": "A",
+   "support": "C"
+  },
+  "336": {
+   "template": "beast",
+   "class": "super",
+   "output": "S",
+   "survive": "B",
+   "speed": "B",
+   "wit": "D",
+   "resolve": "C",
+   "support": "D"
+  },
+  "523": {
+   "template": "undead",
+   "class": "super",
+   "output": "S",
+   "survive": "B",
+   "speed": "C",
+   "wit": "D",
+   "resolve": "C",
+   "support": "D"
+  },
+  "524": {
+   "template": "undead",
+   "class": "super",
+   "output": "S",
+   "survive": "B",
+   "speed": "C",
+   "wit": "D",
+   "resolve": "C",
+   "support": "D"
+  },
+  "525": {
+   "template": "undead",
+   "class": "super",
+   "output": "S",
+   "survive": "B",
+   "speed": "C",
+   "wit": "D",
+   "resolve": "C",
+   "support": "D"
+  },
+  "526": {
+   "template": "undead",
+   "class": "super",
+   "output": "S",
+   "survive": "B",
+   "speed": "C",
+   "wit": "D",
+   "resolve": "C",
+   "support": "D"
+  },
+  "527": {
+   "template": "undead",
+   "class": "super",
+   "output": "S",
+   "survive": "B",
+   "speed": "C",
+   "wit": "D",
+   "resolve": "C",
+   "support": "D"
+  },
+  "528": {
+   "template": "caster",
+   "class": "super",
+   "output": "A",
+   "survive": "C",
+   "speed": "B",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "529": {
+   "template": "hunter",
+   "class": "super",
+   "output": "S",
+   "survive": "B",
+   "speed": "A",
+   "wit": "B",
+   "resolve": "C",
+   "support": "E"
+  },
+  "530": {
+   "template": "hunter",
+   "class": "super",
+   "output": "A",
+   "survive": "C",
+   "speed": "A",
+   "wit": "B",
+   "resolve": "C",
+   "support": "E"
+  },
+  "531": {
+   "template": "caster",
+   "class": "super",
+   "output": "A",
+   "survive": "C",
+   "speed": "B",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "532": {
+   "template": "guard",
+   "class": "super",
+   "output": "A",
+   "survive": "S",
+   "speed": "D",
+   "wit": "B",
+   "resolve": "A",
+   "support": "C"
+  },
+  "533": {
+   "template": "caster",
+   "class": "super",
+   "output": "A",
+   "survive": "C",
+   "speed": "B",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "534": {
+   "template": "guard",
+   "class": "super",
+   "output": "A",
+   "survive": "S",
+   "speed": "D",
+   "wit": "B",
+   "resolve": "A",
+   "support": "C"
+  },
+  "535": {
+   "template": "caster",
+   "class": "super",
+   "output": "A",
+   "survive": "C",
+   "speed": "B",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "536": {
+   "template": "guard",
+   "class": "super",
+   "output": "A",
+   "survive": "S",
+   "speed": "D",
+   "wit": "B",
+   "resolve": "A",
+   "support": "C"
+  },
+  "537": {
+   "template": "guard",
+   "class": "super",
+   "output": "A",
+   "survive": "S",
+   "speed": "D",
+   "wit": "B",
+   "resolve": "A",
+   "support": "C"
+  },
+  "542": {
+   "template": "mob"
+  },
+  "543": {
+   "template": "caster",
+   "output": "B",
+   "wit": "D"
+  },
+  "544": {
+   "template": "caster",
+   "class": "strong",
+   "output": "B",
+   "survive": "C",
+   "speed": "C",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "545": {
+   "template": "guard",
+   "class": "super",
+   "output": "A",
+   "survive": "S",
+   "speed": "D",
+   "wit": "B",
+   "resolve": "A",
+   "support": "C"
+  },
+  "547": {
+   "template": "guard"
+  },
+  "548": {
+   "template": "guard",
+   "output": "B",
+   "wit": "D"
+  },
+  "549": {
+   "template": "caster",
+   "class": "strong",
+   "output": "B",
+   "survive": "C",
+   "speed": "C",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "550": {
+   "template": "guard",
+   "class": "super",
+   "output": "A",
+   "survive": "S",
+   "speed": "D",
+   "wit": "B",
+   "resolve": "A",
+   "support": "C"
+  },
+  "552": {
+   "template": "undead"
+  },
+  "553": {
+   "template": "undead",
+   "output": "B",
+   "wit": "E"
+  },
+  "554": {
+   "template": "undead",
+   "class": "strong",
+   "output": "A",
+   "survive": "A",
+   "speed": "D",
+   "wit": "D",
+   "resolve": "B",
+   "support": "E"
+  },
+  "555": {
+   "template": "undead",
+   "class": "super",
+   "output": "S",
+   "survive": "B",
+   "speed": "C",
+   "wit": "D",
+   "resolve": "C",
+   "support": "D"
+  },
+  "556": {
+   "template": "abyss",
+   "class": "elite"
+  },
+  "558": {
+   "template": "beast"
+  },
+  "559": {
+   "template": "beast",
+   "output": "B",
+   "wit": "E"
+  },
+  "560": {
+   "template": "caster",
+   "class": "strong",
+   "output": "B",
+   "survive": "C",
+   "speed": "C",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "561": {
+   "template": "caster",
+   "class": "super",
+   "output": "A",
+   "survive": "C",
+   "speed": "B",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "563": {
+   "template": "beast"
+  },
+  "564": {
+   "template": "beast",
+   "output": "B",
+   "wit": "E"
+  },
+  "565": {
+   "template": "beast",
+   "class": "strong",
+   "output": "B",
+   "survive": "A",
+   "speed": "D",
+   "wit": "C",
+   "resolve": "B",
+   "support": "D"
+  },
+  "566": {
+   "template": "beast",
+   "class": "super",
+   "output": "S",
+   "survive": "B",
+   "speed": "B",
+   "wit": "D",
+   "resolve": "C",
+   "support": "D"
+  },
+  "568": {
+   "template": "undead"
+  },
+  "569": {
+   "template": "caster",
+   "output": "B",
+   "wit": "D"
+  },
+  "570": {
+   "template": "guard",
+   "class": "strong",
+   "output": "B",
+   "survive": "A",
+   "speed": "D",
+   "wit": "C",
+   "resolve": "A",
+   "support": "C"
+  },
+  "571": {
+   "template": "caster",
+   "class": "super",
+   "output": "A",
+   "survive": "C",
+   "speed": "B",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "573": {
+   "template": "caster"
+  },
+  "574": {
+   "template": "caster",
+   "output": "B",
+   "wit": "D"
+  },
+  "575": {
+   "template": "caster",
+   "class": "strong",
+   "output": "B",
+   "survive": "C",
+   "speed": "C",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "576": {
+   "template": "caster",
+   "class": "super",
+   "output": "A",
+   "survive": "C",
+   "speed": "B",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "578": {
+   "template": "caster"
+  },
+  "579": {
+   "template": "caster",
+   "output": "B",
+   "wit": "D"
+  },
+  "580": {
+   "template": "caster",
+   "class": "strong",
+   "output": "B",
+   "survive": "C",
+   "speed": "C",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  },
+  "581": {
+   "template": "caster",
+   "class": "super",
+   "output": "A",
+   "survive": "C",
+   "speed": "B",
+   "wit": "A",
+   "resolve": "C",
+   "support": "A"
+  }
+ },
  "knights": {
   "death": {
    "class": "knight",
