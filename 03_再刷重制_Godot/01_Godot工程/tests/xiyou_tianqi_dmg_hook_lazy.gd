@@ -429,24 +429,38 @@ func _battle_fate(turns: int) -> String:
 			e.add_param(0, 999999999)
 		e.recover_all()
 	var out := []
+	var hand := XDB.rec("Skills", 6861)
 	for t in turns:
 		if logic.is_over():
 			break
-		out.append([_plain(logic.run_turn({})), _fp(logic)])
+		a.mp = a.mmp  # 每回合补满 MP，好连放命运之手（两边开关同样做，逐位比较不受影响）
+		var logs := logic.run_turn({a: [hand, logic.enemies[0]]})  # 94 每回合放命运之手（同 xiyou_tianqi_fate_copy），其余自动
+		for r in logs:
+			if r is Dictionary and r.get("type") == "action" and r.get("skill") is Dictionary and int(r.skill.get("id", 0)) in [6862, 6863, 6864, 6865, 6866, 6867, 6875]:
+				_fate_casts += 1
+		out.append([_plain(logs), _fp(logic)])
 	out.append(["over", logic.is_over(), logic.turn, s.variable(1281), logic.has_meta("xtq_fate_reroll")])
+	_fate_rerolled = logic.has_meta("xtq_fate_reroll")
 	logic.end_battle(0)
 	return JSON.stringify(out)
 
 
+var _fate_casts := 0
+var _fate_rerolled := false
+
+
 func _whole_battle_fate() -> void:
 	_switches(true)
+	_fate_casts = 0
 	var on1 := _battle_fate(6)
+	var casts := _fate_casts
+	var rerolled := _fate_rerolled
 	_switches(false)
 	var off := _battle_fate(6)
 	_switches(true)
-	_check("fate_battle_cast", on1.contains("6861") or on1.contains("命运"), on1.length())
+	_check("fate_battle_cast_rerolled", casts >= 1 and rerolled, [casts, rerolled])  # 放过命运之手、且命运骰子重掷那一支走到了
 	_check("fate_battle_on_eq_off", on1 == off, [on1.sha256_text(), off.sha256_text(), _diff_at(on1, off)])
-	print("T296 fate battle fingerprint: %s (%d B)" % [on1.sha256_text().left(12), on1.length()])
+	print("T296 fate battle fingerprint: %s (%d B) casts=%d rerolled=%s" % [on1.sha256_text().left(12), on1.length(), casts, str(rerolled)])
 
 
 # ---- 四、性能（打印） ----
