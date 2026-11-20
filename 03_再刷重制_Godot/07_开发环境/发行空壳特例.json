@@ -57,6 +57,7 @@
   "XTianqiSkills.is_super": "tier_of(x, force) == XTier.SUPER",
   "XTianqiSkills.mastery_cap": "10",
   "XTianqiSkills.seg_view": "skill",
+  "XTianqiEnemyAI.enemy_action": "logic.enemy_action(e)",
   "XTianqiSkills.mastery_damage": "initial",
   "XTianqiSummit.map_name": "original",
   "XTianqiMerchant.bodies": "[]",
