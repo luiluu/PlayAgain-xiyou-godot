@@ -459,7 +459,7 @@ const XINMO_SKIP_SKILLS := [4239, 6101, 6102, 6103, 6104, 6106, 6056, 6051, 6052
 ## 吸血达到这个百分比的招不借（原版守层者、心魔的 5000%～15000% 吸血）
 const XINMO_LIFESTEAL_MAX := 1000
 ## 特性 22（附加能力值）里去掉正值的项：1 闪避、4 魔法闪避、7 每回合回血
-const XINMO_DROP_XPARAM := [1, 4, 7]
+static var XINMO_DROP_XPARAM := [1, 4, 7]   # 探针 --keep-xparam 置空＝照守层者留着（对照用）
 const META_XINMO := "xgr_xinmo"
 static var _xinmo_troops := {}
 static var _ls_re := RegEx.create_from_string("(?i)<HP Life Steal:\\s*([\\d.]+)%?>")

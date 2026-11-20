@@ -6,6 +6,7 @@ extends Node
 ## 存档照天启篇开局置 DCultyL（敌人特性 22 等 ×2，同 T314）。
 ## 「通关 C 层」：等级、装备、法宝取 C＋1 层，变量 20＝C＋1（XZhenqi.progress_floor＝C，心魔参照第 C 层守层者）。
 ## 每队两场：心魔（打心魔的是队里第一个输出职责的人，1 号走 770）、同层守层者（第 C 层那场）；都照游戏跑敌群事件，自动战斗打到分出胜负，最多 turns 回合。
+## --keep-xparam：心魔不去守层者的闪避、魔闪、每回合回血（XGuardianRework.XINMO_DROP_XPARAM 置空），量胜率差是不是这几项带来的。
 ## 心魔「立住」＝赢且打心魔的人活着（XZhenqi.on_victory 同口径）。--xinmo=off：关 XGuardianRework.XINMO（心魔照原版，对照用）。
 ## 输出每行：XINMO passed=C team=[…] who=立境人 xinmo=won/stand/turns guardian=won/turns，末尾汇总 XINMO_SUMMARY。
 
@@ -39,6 +40,8 @@ func _ready() -> void:
 			battles = int(a.substr(10))
 		elif a == "--xinmo=off":
 			XGuardianRework.XINMO = false
+		elif a == "--keep-xparam":
+			XGuardianRework.XINMO_DROP_XPARAM = []   # 心魔照守层者留着闪避、魔闪、每回合回血（对照：差距是不是这几项）
 		elif a == "--no-guardian":
 			guardian = false
 		elif a.begins_with("--out="):
@@ -144,7 +147,7 @@ func _run() -> void:
 				str(xm.won), str(xm.stand), int(xm.turns), str(xm.hp), str(xm.def), str(xm.atkScale), str(xm.eva), str(xm.hrg), str(xm.harmRe), int(xm.enemyLeft), str(xm.skills),
 				("won:%s/t%d hp=%s def=%s atk=%s" % [str(gd.won), int(gd.turns), str(gd.hp), str(gd.def), str(gd.atkScale)]) if not gd.is_empty() else "-"])
 	XEnemy.force_roll = -1.0
-	print("XINMO_SUMMARY xinmo_on=%s won=%d/%d stand=%d/%d guardian_won=%d/%d" % [str(XGuardianRework.XINMO), int(sum.xinmo), int(sum.n), int(sum.stand), int(sum.n), int(sum.guardian), int(sum.n)])
+	print("XINMO_SUMMARY drop_xparam=%s xinmo_on=%s won=%d/%d stand=%d/%d guardian_won=%d/%d" % [str(XGuardianRework.XINMO_DROP_XPARAM), str(XGuardianRework.XINMO), int(sum.xinmo), int(sum.n), int(sum.stand), int(sum.n), int(sum.guardian), int(sum.n)])
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
 		fh.store_string(JSON.stringify({"xinmo": XGuardianRework.XINMO, "seed": seed_v, "teams": list, "turns": turns, "rows": rows, "summary": sum}, "\t"))
