@@ -1279,6 +1279,7 @@ func start_turn() -> void:
 	turn_start_logs.append_array(XRiftAlien.start_turn(self))  # 漩涡阶段异化：报丧钟
 	turn_start_logs.append_array(XTianqiQiyinRule.start_turn(self))  # 七印祭坛：献祭、星坠、寂静
 	turn_start_logs.append_array(XTianqiQiyinDragonRun.start_turn(self))  # 七首之龙：星坠等扣过后断首揭印、缓期到点倒下
+	turn_start_logs.append_array(XTianqiXinmoTraits.start_turn(self))  # 天启篇心魔特点（T319）：盗形双数回合剥增益、影劫蓄势、同堕重算队伍烙印
 
 
 ## 取出下一位行动者；本回合结束时返回 null。
@@ -1301,6 +1302,9 @@ func decide(b: XBattler) -> Array:
 		var horse := XTianqiHorsemen.decide(self, b)  # 天启四骑士：骑士按阶段和计量出招，援军普攻，小怪不出手
 		if not horse.is_empty():
 			return horse
+		var ying := XTianqiXinmoTraits.decide(self, b)  # 天启篇心魔特点【影劫】（T319）：重演回合心魔头一次行动换成【影·原招】（目标照常选）
+		if not ying.is_empty():
+			return ying
 		var hush := XTianqiQiyinRule.decide_enemy(self, b)  # 七印祭坛寂静：双数回合敌人只普攻
 		if not hush.is_empty():
 			return hush
@@ -1345,7 +1349,7 @@ func act(u: XBattler, skill, target) -> Array:
 		return logs
 	logs.append_array(XTianqiEnemyAI.take_logs(u))  # 天启篇六维（T277）：低韧性慌乱战报
 	XTianqiBrand.act_begin(self)  # 天启篇烙印灼痕：开一次新的行动（一次行动对同一个人最多涨一次）
-	XTianqiXinmoTraits.act_begin(self)  # 天启篇心魔特点（T318）：一次行动对同一个人最多判一次
+	XTianqiXinmoTraits.act_begin(self, u, skill)  # 天启篇心魔特点（T318／T319）：一次行动对同一个人最多判一次；发作替换之前记是不是发作行动、影劫映照挑战者的招
 	if XTianqiBrand.is_fit_command(skill):  # 天启篇烙印发作：哑火换成普攻敌人；发呆、断片、抽自己、六亲不认按放弃行动走（那一下在 perform 里结算）
 		var fx := XTianqiBrand.perform(self, u, skill, target)
 		logs.append_array(fx.logs)
@@ -1904,7 +1908,7 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 		_cleared[u] = true
 	var before := _movable_snapshot()
 	XTianqiBrand.act_begin(self)  # 天启篇烙印灼痕：强制行动也算一次行动
-	XTianqiXinmoTraits.act_begin(self)  # 天启篇心魔特点（T318）：强制行动也算一次行动
+	XTianqiXinmoTraits.act_begin(self, u, skill)  # 天启篇心魔特点（T318／T319）：强制行动也算一次行动
 	skill = XTianqiWeakAffix.skill_view(skill, u)  # 天启篇弱者专属词条批 1：本人投影（范围）
 	XTianqiWeakAffix.root_begin(self, u, skill)  # 天启篇弱者专属词条：强制行动也是一根（不重置每回合次数）
 	XNanoha.begin(self)
