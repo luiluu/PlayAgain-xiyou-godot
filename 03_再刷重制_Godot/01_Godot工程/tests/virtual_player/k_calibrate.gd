@@ -52,6 +52,8 @@ var no_fabao := false
 var bare := false  # --bare：不补甲档五样（回到 v3 口径，对照用）
 var trumpet_n := 2  # 号卷：七卷里打单体加伤害的只有二号血海（目标生命低于 33% +50%）；条件全中＝木桩生命压到 30%
 var report := {}
+static var add_rework := false  # --add-rework（T280）：技能表里有伤害的技能不在 skill_ids 里（五行／形态切换类，如 71 诸葛孔明）时也补进要量的名单
+var stats_mode := false  # --stats（T280）：不量伤害，只按同一套标准养成（81 级、进阶满、同一套装备）打印每人面板，给六维生存／速度排名用
 ## T204＋T209：停用中但要进量表的超强者（152 徐凤年）
 const PROBE_ENABLE := [152]
 ## T209（协调 11-18）：成长型角色按标定点的成长量量，不是 0 也不是无穷——108 奈叶适应击杀次数（--nanoha-kills=N，缺省 2000＝软上限起点）、
@@ -135,6 +137,10 @@ func _ready() -> void:
 			single = true
 		elif a == "--debug-cast":
 			_debug_cast = true
+		elif a == "--add-rework":
+			add_rework = true
+		elif a == "--stats":
+			stats_mode = true
 		elif a == "--per-skill":
 			per_skill = true
 		elif a == "--debug":
@@ -181,6 +187,9 @@ func _run() -> void:
 			if XImportedBalance.is_disabled_actor(int(id)) and int(id) != XGojo.ACTOR:  # 五条悟的 hidden 看「当前存档」，_state 之前可能还不是天启篇档
 				print("K_SKIP %d disabled" % int(id))
 				continue
+			if stats_mode:
+				_emit_stat(int(id), tier)
+				continue
 			if not layer_list.is_empty():
 				_measure_layers(int(id), tier)
 				continue
@@ -210,6 +219,24 @@ func _run() -> void:
 		else:
 			f.store_string(JSON.stringify(report, " "))
 	get_tree().quit.call_deferred(0)
+
+
+## T280：标准养成下的面板（K_STAT 行）：生命魔法、六项属性、追加行动几率、攻击次数加成、sparam／xparam 全表（伤害率、闪避等）
+func _emit_stat(id: int, tier: String) -> void:
+	var s := _state(id)
+	var a := s.actor(id)
+	var ap := 0.0
+	for r in a.action_plus_set():
+		ap += float(r)
+	var sp := []
+	var xp := []
+	for i in 10:
+		sp.append(snappedf(a.sparam(i), 0.0001))
+		xp.append(snappedf(a.xparam(i), 0.0001))
+	var row := {"actor": id, "tier": tier, "mhp": roundi(a.mhp), "mmp": roundi(a.mmp), "atk": roundi(a.param(2)), "def": roundi(a.param(3)), "mat": roundi(a.param(4)),
+		"mdf": roundi(a.param(5)), "agi": roundi(a.param(6)), "luk": roundi(a.param(7)), "action_plus": snappedf(ap, 0.0001), "attack_times": snappedf(a.attack_times_add(), 0.0001),
+		"sparam": sp, "xparam": xp}
+	print("K_STAT %s" % JSON.stringify(row))
 
 
 ## T209：成长型角色的标定点成长量（见 nanoha_kills、ember）
@@ -641,6 +668,11 @@ func _measure_guyu(s: XState, a, logic, e) -> Dictionary:
 ## 卡面写「屠苏属性」——是屠苏的输出，单人木桩上没有持武者，直接让屠苏打，T163）
 static func _scan_ids(a) -> Array:
 	var ids: Array = a.skill_ids.duplicate()
+	if add_rework:
+		for k in XTianqiSkills.data().get("skills", {}):
+			var rec: Dictionary = XTianqiSkills.data().skills[k]
+			if int(rec.get("actor", -1)) == int(a.actor_id) and rec.has("damage") and not ids.has(int(k)):
+				ids.append(int(k))
 	if XTusu.is_tusu(a):
 		for w in XTusu.ARM_OF:
 			for k in XTusu.ARM_OF[w]:

@@ -894,6 +894,7 @@ class SixDim(unittest.TestCase):
         self.assertEqual(self.bad(), [])
 
     def test_double_sss(self):
+        self.t['actors']['45'].update(output='E', survive='D', speed='SSS', wit='C', resolve='D', support='E')  # 不靠真表里 45 恰好是 SSS
         self.t['actors']['45']['output'] = 'SSS'
         self.assertTrue(any('R1 SSS 至多 1' in b for b in self.bad()))
 
@@ -922,6 +923,7 @@ class SixDim(unittest.TestCase):
         self.assertTrue(any('是小数' in b for b in self.bad()))
 
     def test_sss_with_s(self):
+        self.t['actors']['45'].update(output='E', survive='D', speed='SSS', wit='C', resolve='D', support='E')  # 不靠真表里 45 恰好是 SSS
         self.t['actors']['45']['output'] = 'S'
         self.assertTrue(any('R1' in b for b in self.bad()))
 
