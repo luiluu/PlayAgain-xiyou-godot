@@ -79,6 +79,57 @@ const DOMAIN_SKILLS := [6068, 6069, 6070, 6071]
 const DOMAIN_FLOORS := [13, 33]
 
 
+## 守层者成长招削弱＋改名（T302 第二步，Kyo 11-20「240不关。但是削弱和改名」）：6104（13～30 层随机）、6106（30 层必放）、6056（31～33 层必放）。
+## 只管天启篇存档。改前：每层 +25%、封顶 4 层（×2）、回血 35／40%，8 回合有效血量约 ×1.75、第 12 回合起全属性 ×2。
+## 改后（推荐档）：技能记录里回血 6104 10%、6106／6056 12%（growth_rec）；守层者（13～33 层，DOMAIN_FLOORS）自己的正向强化每层 +12%（XEnemy.param_buff_rate）、
+## 最多 3 层（XEnemy.buff_limit），封顶 ×1.36，不再有「第 12 回合 ×2」。别的敌人用这三招时只吃到回血和改名，每层加成与封顶不变。
+## 更轻一档（备选，交付单给 Kyo 选）：GROWTH_LAYER_PCT 8、GROWTH_CAP 2、GROWTH_HEAL 6104 5%／6106／6056 6%。
+## 回退：`XGuardianRework.GROWTH_NERF = false`（名字、说明、回血、每层加成、封顶全部回原版）。
+static var GROWTH_NERF := true
+const GROWTH_SKILLS := [6104, 6106, 6056]
+const GROWTH_LAYER_PCT := 12
+const GROWTH_CAP := 3
+const GROWTH_HEAL := {6104: 10, 6106: 12, 6056: 12}
+## 名字与说明（待小A 审）
+const GROWTH_TEXT := {
+	6104: {"name": "伤痕淬体", "desc": ["效果：自身最大生命 +1 层（每层 +12%，最多 3 层）", "治疗：自身最大生命的 10%"]},
+	6106: {"name": "裂隙共鸣", "desc": ["效果：自身最大生命与六项能力各 +1 层（每层 +12%，最多 3 层）", "治疗：自身最大生命的 12%"]},
+	6056: {"name": "终焉蓄势", "desc": ["效果：自身最大生命与六项能力各 +1 层（每层 +12%，最多 3 层）", "治疗：自身最大生命的 12%"]},
+}
+static var _growth_recs := {}
+
+
+## 成长招改写后的技能记录（XDB.rec 调）：天启篇存档且开关开着才改，其余原样返回
+static func growth_rec(id: int, base: Dictionary) -> Dictionary:
+	if not GROWTH_NERF or not GROWTH_SKILLS.has(id) or base.is_empty() or not _on():
+		return base
+	var hit = _growth_recs.get(id)
+	if hit is Array and is_same(hit[0], base):
+		return hit[1]
+	var r: Dictionary = base.duplicate(true)
+	var tx: Dictionary = GROWTH_TEXT[id]
+	r.name = str(tx.name)
+	r.description = "战技\n" + "\n".join(tx.desc)
+	for e in r.get("effects", []):
+		if int(e.get("code", 0)) == 11:
+			e["value1"] = float(GROWTH_HEAL[id]) / 100.0
+	var note := RegEx.create_from_string("<pos=APs text=\\\\c\\[1\\][^>]*>").sub(str(r.get("note", "")), "", true)
+	for line in tx.desc:
+		note += "\n<pos=APs text=\\c[1]%s size=18 color=rgba(255,255,255,1) line=false align=0>" % str(line)
+	r.note = note
+	r.meta = XTianqiSkills.parse_meta(note)
+	_growth_recs[id] = [base, r]
+	return r
+
+
+## 这个敌人吃不吃成长削弱：天启篇存档、开关开、本人是 13～33 层守层者
+static func growth_on(e) -> bool:
+	if not GROWTH_NERF or not e is XEnemy or not _on():
+		return false
+	var f := floor_of((e as XEnemy).enemy_id)
+	return f >= DOMAIN_FLOORS[0] and f <= DOMAIN_FLOORS[1]
+
+
 ## 这场战斗的守层者领域关着没有（天启篇存档、13～33 层守层者敌群）
 static func domain_off(logic) -> bool:
 	if not DOMAIN_OFF or logic == null or not XTianqi.active(logic.state):

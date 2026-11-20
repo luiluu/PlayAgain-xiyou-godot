@@ -182,6 +182,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		out = XTianqiBase.realm_rec(id, out)  # 天启篇期四：原版通用境界被动数值全拦（REALM_OFF）
 	if name == "Skills" and XTianqiSkills.has(id):
 		out = XTianqiSkills.rec(id, out)  # 天启篇全角色技能重构：天启篇存档换成改写后的记录
+	if name == "Skills" and XGuardianRework.GROWTH_SKILLS.has(id):
+		out = XGuardianRework.growth_rec(id, out)  # 守层者成长招削弱＋改名（T302，天启篇存档）
 	if name == "States" and XTianqiSkills.has_state(id):
 		out = XTianqiSkills.rec_state(id, out)
 	if XTianqiElements.touches(name, id):
