@@ -58,11 +58,14 @@ func boss_attribute_rate() -> float:
 func boss_output_rate() -> float:
 	return boss_attribute_rate() if boss_difficulty_boss and boss_hyper_armor else 1.0
 
+## 控制标签正则预编译（T276 核查 P2-1：state_rate 热路径上每次现编；T277 补）
+static var _control_tag_re := RegEx.create_from_string("(?i)<BuffType:\\s*(?:沉默|封印|眩晕|睡眠|麻痹|混乱|魅惑|恐惧|冰冻)\\s*>")
+
 static func boss_control_state(id: int) -> bool:
 	var st := XDB.rec("States", id)
 	if st.is_empty() or id in [1, BOSS_ARMOR_STATE]:
 		return false
-	return int(st.get("restriction", 0)) > 0 or RegEx.create_from_string("(?i)<BuffType:\\s*(?:沉默|封印|眩晕|睡眠|麻痹|混乱|魅惑|恐惧|冰冻)\\s*>").search(str(st.get("note", ""))) != null or st.get("traits", []).any(func(t): return int(t.code) in [42, 44])
+	return int(st.get("restriction", 0)) > 0 or _control_tag_re.search(str(st.get("note", ""))) != null or st.get("traits", []).any(func(t): return int(t.code) in [42, 44])
 
 func sync_boss_armor(active: bool, random: XRandomStream = null) -> void:
 	boss_hyper_armor = boss_difficulty_boss and active
