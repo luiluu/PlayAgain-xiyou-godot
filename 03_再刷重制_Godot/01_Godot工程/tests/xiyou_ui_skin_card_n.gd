@@ -146,6 +146,7 @@ func _wh_state(tianqi := true, cap := 200) -> XState:
 	s.gain_gear("weapon", 9, 1)
 	s.gain_gear("weapon", 52, 1)
 	s.gain_gear("weapon", 3, 1)
+	s.gain_gear("weapon", 4, 1)
 	s.gain_gear("armor", 2, 1)
 	XWarehouse.create(s, "<仓库:%d>" % cap)
 	XWarehouse.open(s, "<仓库>")
@@ -267,7 +268,7 @@ func _warehouse() -> void:
 	act(p, "ui_down")
 	check("wh.down_two_cols_step2", p.index == mini(2, wc.size() - 1) and sk.list.index == p.index, p.index)
 	act(p, "ui_right")
-	check("wh.right_two_cols", p.index == mini(2, wc.size() - 1) + (1 if wc.size() > 3 else 0) or wc.size() <= 3, p.index)
+	check("wh.right_two_cols", wc.size() >= 4 and p.index == 3, [p.index, wc.size()])
 	await shots("warehouse_two_col")
 	sk.layout.view_override = Vector2.ZERO
 	sk.relayout()
@@ -394,6 +395,15 @@ func _star() -> void:
 	var cd := sk.card_data()
 	check("sw.card_equip", cd.title == XQuality.list_name(gear[0]) and cd.buttons[0].text == "存放" and not str(cd.subtitle).contains("持有"), cd)
 	await shots("star")
+	# 无环且背包没有装备：进页焦点在列表（不残留在环上），提示不写「进入列表」
+	var bag_keep := XState.current.gear.duplicate()
+	XState.current.gear.clear()
+	var he := _star_open(true)
+	await frames(3)
+	check("sw.hidden.empty_focus_list", he.skin.focus == "list" and he.mode == "list" and he.data.is_empty() and not str(he.skin._hints()).contains("进入列表") and he.skin.list.empty_text == "背包里没有可存放的装备", [he.skin.focus, he.skin._hints()])
+	he.queue_free()
+	await frames(2)
+	XState.current.gear.assign(bag_keep)
 	# 存放一件：只响确定音，不蜂鸣不响装备音，光标不动
 	XSound.system_log.clear()
 	var n0 := gear.size()
@@ -543,6 +553,28 @@ func _merchant() -> void:
 	var cs := tr.card_data(tr.rows[0])
 	check("mc.tier.short_gray_button", cs.buttons[0].disabled and cs.buttons[0].text == XSkinMerchantPage.T_SHORT_POINTS and str(cs.sections).contains("还差 4 点"), cs)
 	await shots("merchant_tier_short")
+	# 灰行行尾写原因（T254 3.18）：点数不够／次数已用完／（首页池空）不可选；灰按钮点一下蜂鸣、焦点不留
+	check("mc.row_reason_short", tr.list.items[0].get("right", "") == "点数不够" and tr.list.items[0].get("disabled", false), tr.list.items)
+	var wev := _click(tr.card.button_rect(0).get_center())
+	XSound.system_log.clear()
+	tr._on_card_gui(wev)
+	await frames(2)
+	check("mc.click_disabled_buzz", XSound.system_log.has(3) and tr.card.button_index == -1, [XSound.system_log, tr.card.button_index])
+	var run_used: int = int(XAbyssMerchant.run(s).used)
+	XAbyssMerchant.ledger(s).balances[key0] = 100
+	XAbyssMerchant.run(s).used = int(XAbyssMerchant.config().get("visitLimit", 0))
+	page.tiers("武器")
+	check("mc.row_reason_times", tr.list.items[0].get("right", "") == "次数已用完" and tr.card_data(tr.rows[0]).buttons[0].text == "次数已用完", tr.list.items)
+	XAbyssMerchant.run(s).used = run_used
+	# 珍藏行：按钮文字与可否进入跟列表行一致（不写「抽取」）
+	XAbyssMerchant.ledger(s).balances[key0] = 100
+	page.tiers("武器")
+	var crow: Dictionary = tr.rows[1]
+	var cc := tr.card_data(crow)
+	check("mc.collection_button_matches_row", cc.buttons[0].disabled == (crow.get("enabled", true) == false) and cc.buttons[0].text != "抽取" and cc.buttons[0].text == ("不可选" if crow.get("enabled", true) == false else "选词条"), cc.buttons)
+	check("mc.collection_row_reason", crow.get("enabled", true) != false or tr.list.items[1].get("right", "") == "不可选", tr.list.items[1])
+	XAbyssMerchant.ledger(s).balances[key0] = cost0 - 4
+	page.tiers("武器")
 	# 灰行确定：蜂鸣、不扣点
 	tr.index = 0
 	XSound.system_log.clear()

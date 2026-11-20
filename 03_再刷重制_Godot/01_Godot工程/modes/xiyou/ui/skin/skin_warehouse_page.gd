@@ -23,7 +23,6 @@ const T_FULL := "仓库满了"
 const T_DEPOSIT := "存入"
 const T_WITHDRAW := "取出"
 ## 环上四个球的图标（同物品页的分类图标）
-const ICONS := ["item", "weapon", "armor", "keyItem"]
 const BAR_H := 8.0
 ## 两列的最小视口宽（16:9 为 1280，20:9 为 1600；中间一档也只排一列）
 const WIDE_VIEW_W := 1500.0

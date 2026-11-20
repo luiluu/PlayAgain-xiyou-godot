@@ -14,10 +14,12 @@ extends XSkinTemplatePage
 const T_TITLE := "星级仓库"
 const T_SAVE := "存放"
 const T_TAKE := "取出"
-const T_EMPTY_SAVE := "背包里没有可存放的"
+const T_EMPTY_SAVE := "背包里没有可存放的装备"
 const T_EMPTY_TAKE := "仓库里没有东西"
 const T_CATS := ["装备", "宠物"]
 const CAT_ICONS := [160, 116]
+## 无环时左块的箱子图标（物品袋 116，同交付单）
+const LEFT_ICON := 116
 
 var scene: XStarWarehouseScene
 var _syncing := false
@@ -231,8 +233,9 @@ func _draw_left_visual() -> void:
 	if show_ring:
 		return
 	var lb := layout.left.size
-	var tex := XUiSkin.icon(CAT_ICONS[0])
+	var tex := XUiSkin.icon(LEFT_ICON)
 	var c := Vector2(lb.x / 2.0, lb.y / 2.0 - 40.0)
+	layout.left.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	if tex != null:
 		layout.left.draw_texture_rect(tex, Rect2(c - Vector2(48, 48), Vector2(96, 96)), false)
 	var f := XUiSkin.font("title")

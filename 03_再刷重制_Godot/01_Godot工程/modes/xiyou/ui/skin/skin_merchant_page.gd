@@ -23,7 +23,8 @@ const T_NEXT := "下一页 ›"
 const T_DETAIL := "详情"
 const T_DRAW := "抽取"
 const T_SHORT_POINTS := "点数不够"
-const T_SHORT_TIMES := "次数用完"
+const T_SHORT_TIMES := "次数已用完"
+const T_PICK := "选词条"
 const T_UNAVAILABLE := "不可选"
 const T_ERROR := "出错了"
 const PAGER_H := 36.0
@@ -60,6 +61,7 @@ func _ready() -> void:
 	pager_bar.gui_input.connect(_on_pager_gui)
 	card.add_child(pager_bar)
 	card.gui_input.connect(_on_card_wheel)
+	card.gui_input.connect(_on_card_gui)
 
 
 # ---- 换一层：scene.choose 交过来 ----
@@ -70,7 +72,7 @@ func open_layer(list_rows: Array, ok_cb: Callable, cancel_cb: Callable, info_lin
 	list_right = str(info_lines[1]) if info_lines.size() > 1 else ""
 	_refresh_currency()
 	open(list_rows, ok_cb, cancel_cb, info_lines, {
-		"crumb": crumb_parts, "card_for": _card_for, "card_button": _on_button, "list_title": str(crumb_parts.back()),
+		"crumb": crumb_parts, "card_for": _card_for, "card_button": _on_button, "row_view": _row_view, "list_title": str(crumb_parts.back()),
 	})
 	list.right2_w = 0.0
 
@@ -187,6 +189,10 @@ static func pack_pages(secs: Array, budget: float, text_w: float) -> Array:
 func _add_draw_button(d: Dictionary, r: Dictionary) -> void:
 	if not r.has("cost"):
 		return
+	if str(r.get("shelf", "")) == "collection":   # 珍藏：按确定是进下一层选词条，能不能进只看列表行的 enabled（同行为），不写「抽取」「还差」
+		var off: bool = r.get("enabled", true) == false
+		d.buttons = [{"text": T_UNAVAILABLE if off else T_PICK, "primary": true, "disabled": off}]
+		return
 	var s := XState.current
 	var cur := XMerchant29Page._run_of()
 	var bal := XAbyssMerchant.balance(s, str(cur.get("identity", {}).get("key", "")))
@@ -204,6 +210,48 @@ func _add_draw_button(d: Dictionary, r: Dictionary) -> void:
 
 func _on_button(_i: int, _row: Dictionary) -> void:
 	ok()
+
+
+## 灰掉的行为什么灰：抽取行写「点数不够」「次数已用完」「不可选」，首页抽取行（池空）写「不可选」；别的灰行（槽位等）原文已写原因，不加
+func disabled_reason(r: Dictionary) -> String:
+	if r.get("enabled", true) != false or not (r.has("cost") or r.has("go")):
+		return ""
+	if r.has("cost"):
+		var cur := XMerchant29Page._run_of()
+		var bal := XAbyssMerchant.balance(XState.current, str(cur.get("identity", {}).get("key", "")))
+		if int(r.cost) > bal and str(r.get("shelf", "")) != "collection":
+			return T_SHORT_POINTS
+		if int(cur.get("used", 0)) >= int(XAbyssMerchant.config().get("visitLimit", 0)) and str(r.get("shelf", "")) != "collection":
+			return T_SHORT_TIMES
+	return T_UNAVAILABLE
+
+
+## 行怎么摆：灰行行尾写原因（T254 3.18），其余走通用 split_row
+func _row_view(r: Dictionary) -> Dictionary:
+	var why := disabled_reason(r)
+	if why == "":
+		return {}
+	var it := XSkinMenuTreePage.split_row(str(r.get("text", r.get("label", ""))))
+	if not it.has("right"):
+		it["right"] = why
+		it["right_color"] = XUiSkin.DOWN
+	return it
+
+
+## 点到灰掉的主按钮：蜂鸣、焦点框不留在灰按钮上（同仓库页）
+func _on_card_gui(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return
+	for i in card.buttons.size():
+		if card.button_rect(i).has_point(event.position) and bool(card.buttons[i].get("disabled", false)):
+			XSound.system(3)
+			_clear_card_focus.call_deferred()
+			return
+
+
+func _clear_card_focus() -> void:
+	card.button_index = -1
+	card.queue_redraw()
 
 
 # ---- 翻详情 ----
@@ -295,7 +343,7 @@ func _draw_list_right() -> void:
 	if list_right == "":
 		return
 	var body := XUiSkin.font("body")
-	var fs := XUiSkin.FS_AUX
+	var fs := XUiSkin.fs(XUiSkin.FS_AUX)
 	var maxw := list_panel.size.x * 0.6
 	var fit := XSkinList.fit_text(body, list_right, maxw, fs, 15)
 	var tw := body.get_string_size(str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1])).x

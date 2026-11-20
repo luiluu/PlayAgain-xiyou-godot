@@ -65,11 +65,11 @@ func _ready() -> void:
 	if XUiSkin.on() and XSkinWarehousePage.ENABLED:
 		skin = XSkinStarWarehousePage.new(self)
 		add_child(skin)
+		if not skin.show_ring:   # 只剩装备一类：没有分类这一层，进页就在列表上（先改 mode 再 _reload，同步时焦点才落在列表）
+			mode = "list"
 	_reload()
-	if skin != null and not skin.show_ring:   # 只剩装备一类：没有分类这一层，进页就在列表上
-		mode = "list"
-		if not data.is_empty():
-			_select(0)
+	if mode == "list" and not data.is_empty():
+		_select(0)
 
 
 func _symbol() -> String:
