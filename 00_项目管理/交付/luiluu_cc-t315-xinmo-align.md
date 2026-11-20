@@ -61,7 +61,7 @@
 
 - 新专项 `xiyou_tianqi_xinmo_align` 41/41。反向验证 11 项（不调 xinmo_setup、不去敌群页、setup 不跳过心魔、不滤双闪回血、不滤成长放逐、出伤不认心魔、抵抗不认心魔、双防不认心魔、血量不按守层者、首领身份不跟、西游档也改）全咬住（前两轮有 2 项没咬住，补了楼层地图开心魔、18 层滤招、合成记录滤招三段后咬住）。
 - 本机：`xiyou_tianqi_brand` 234、`xiyou_tianqi_enemy_cev` 122、`xiyou_tianqi_guardian_domain`、`_gift`、`_growth`、`_params`、`xiyou_tianqi_no_x6`、`xiyou_tianqi_summit`、`xiyou_zhenqi` 201、`xiyou_zhenqi_break` 87、`xiyou_zhenqi_daofa` 70，12 个场景全过。
-- 云端：`选测.py main --list` 因新探针没对照退成整轮，提交 eb1e1e4fd 推云端整轮 742 个场景（结果见回执；之后的两个提交只改钩子名、专项、探针开关，行为不变）。
+- 云端：`选测.py main --list` 因新探针没对照退成整轮，提交 eb1e1e4fd 云端整轮 742 个场景 16 片全过（run 44756377437）；之后的提交只改钩子名（空实现）、专项、探针开关、交付单，游戏行为不变，改后的专项与相关 12 个场景本机重跑全过。
 - `语法检查.py` 过；`发行空壳.py check` 过（guardian_rework 不出空壳）。
 - 待交叉核查重点：`modes/xiyou/battle/battle_logic.gd`（一行）、`modes/xiyou/core/xdb.gd`（一处 Troops 改写）、`modes/xiyou/core/guardian_rework.gd`（甲档战斗核心）。
 
@@ -84,4 +84,6 @@
 
 - eb1e1e4fd 心魔对齐同层守层者＋专项＋探针
 - 4113b7441 钩子照 T316 契约、专项补印纹档／滤招／楼层地图
-- （本交付单所在提交）探针 `--keep-xparam`、交付单
+- b2309732e 探针 `--keep-xparam`、交付单
+- 94fd105e9 补 .uid
+- （本提交）交付单补云端结果
