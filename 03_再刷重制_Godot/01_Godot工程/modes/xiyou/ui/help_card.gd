@@ -1693,4 +1693,5 @@ func _apply_sections(w: float) -> void:
 	skin_card.visible = true
 	frame.visible = false
 	canvas.visible = false
+	canvas.clean_text = true   # 同旧皮肤路径（_paint 开皮肤时设上）：新界面下画布一律清字
 	visible = true
