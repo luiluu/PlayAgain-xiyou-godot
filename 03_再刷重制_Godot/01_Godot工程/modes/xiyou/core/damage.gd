@@ -415,8 +415,10 @@ static func preview_detail(item: Dictionary, a: XBattler, b: XBattler, options :
 	var res := calculate(item, a, b, o)
 	var v := float(res.get("value", 0.0))
 	var bd: Dictionary = res.get("breakdown", {})
-	if res.has("breakdown"):
+	if bool(res.get("available", true)) and not bd.is_empty():  # 模块派发失败（_module_failure：value NAN、breakdown 空）不进 finish（T282 核查 P2-2）
 		v = finish(res, item, a, b, false, {"variables": o.get("vars", [])})
+	if not is_finite(v):
+		v = 0.0
 	XTianqiLedger.GUARD = guard
 	return {"value": v, "criticalIf": float(bd.get("criticalIf", 1.0)), "tianqiKind": str(bd.get("row", {}).get("tianqiKind", ""))}
 

@@ -226,7 +226,7 @@ func hit_value(a: XBattler, t: XBattler, rec: Dictionary, raw: float) -> float:
 func expected_damage(a: XBattler, t: XBattler, rec: Dictionary, raw: float, hits := 1.0) -> float:
 	var d := hit_detail(a, t, rec, maxf(0.0, raw))
 	var normal := float(d.value)
-	if normal <= 0.0:
+	if not is_finite(normal) or normal <= 0.0:
 		return 0.0
 	var p := clampf(logic.item_cri(a, rec, t), 0.0, 1.0) if bool(rec.get("damage", {}).get("critical", false)) else 0.0
 	var hit := logic.item_hit(a, rec, t) * (1.0 - logic.item_eva(a, rec, t))
@@ -240,8 +240,10 @@ func heal_value(a: XBattler, t: XBattler, rec: Dictionary, raw: float) -> float:
 
 ## 这招对这个目标的元素判定（天启篇元素牌组）：weak／resist／immune／higher_*／neutral 等；不看元素时 neutral
 func element_kind(t: XBattler, rec: Dictionary) -> String:
-	if not bool(opts.check_weakness) or not t is XEnemy or not XTianqiElements.deck_on():
+	if not bool(opts.check_weakness):
 		return "neutral"
+	if not t is XEnemy or not XTianqiElements.deck_on():
+		return _rate_kind(t, rec)  # 我方（敌方 AI 看我方）或没开元素牌组：按属性有效度（T282 核查 P2-1）
 	var best := "neutral"
 	var best_rate := -INF
 	for raw_e in XDamage.action_elements(rec, user):
@@ -253,6 +255,17 @@ func element_kind(t: XBattler, rec: Dictionary) -> String:
 			best_rate = float(info.rate)
 			best = str(info.kind)
 	return best
+
+
+## 属性有效度口径：取这招各属性里对目标最有利的一个；0＝immune，<1＝resist，>1＝weak，<0 记 absorb
+func _rate_kind(t: XBattler, rec: Dictionary) -> String:
+	var best := -INF
+	for raw_e in XDamage.action_elements(rec, user):
+		if int(raw_e) > 0:
+			best = maxf(best, t.element_rate(int(raw_e)))
+	if best == -INF or is_equal_approx(best, 1.0):
+		return "neutral"
+	return "absorb" if best < 0.0 else "immune" if best == 0.0 else "resist" if best < 1.0 else "weak"
 
 
 # ---- 打分零件（数值同 XSmartAI 原版移植，敌我共用）----
@@ -283,7 +296,7 @@ func damage_utility(t: XBattler, damage: float, damage_scale := 0.0, ledger := t
 func recovery_score(t: XBattler, heal_hp: float, heal_mp: float, tp_gain: float, ledger := true) -> float:
 	var mx := maxf(1.0, t.mhp)
 	var missing := maxf(0.0, mx - t.hp)
-	var rate := minf(1.0, (t.hp + shield_points(t, ledger)) / mx)
+	var rate := minf(1.0, (t.hp + (shield_points(t, ledger) if bool(opts.check_shield) else 0.0)) / mx)  # check_shield 同 damage_utility（P3-2）
 	var score := 0.0
 	var effective := minf(missing, heal_hp)
 	if missing / mx >= 0.18 or rate < 0.4:
@@ -399,8 +412,8 @@ func score_skill(rec: Dictionary, ctx := {}) -> Dictionary:
 			elif t.is_alive():
 				score += recovery_score(t, hp, mp, tp)
 		score += benefit(t, rec, long_fight, opp, fri)
-		if fri:
-			score *= ally_w
+		if fri and not for_user(rec) and t != user:
+			score *= ally_w  # 配合只折给队友的；自保（scope 11、自己）不折（T282 核查 P2-1）
 		rows.append({"target": t, "score": score, "hitDamage": hit_damage})
 	var best: Dictionary = rows[0]
 	var total := 0.0

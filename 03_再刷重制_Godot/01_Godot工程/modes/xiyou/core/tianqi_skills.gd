@@ -1474,7 +1474,11 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 	var id := int(item.get("id", 0))
 	if has(id):
 		var p: Dictionary = spec(id).get("pierce", {})
-		if not p.is_empty() and (not p.has("need") or owns(a, p.need)) and (not p.has("when") or _when(p.when, a, b)):
+		var prev := _cur_skill  # _when→_cond 读「正在算的技能号」：formula 算完已复原（T282），这里自己设、判完复原（T282 核查 P3-3）
+		_cur_skill = id
+		var on := not p.is_empty() and (not p.has("need") or owns(a, p.need)) and (not p.has("when") or _when(p.when, a, b))
+		_cur_skill = prev
+		if on:
 			var keep := 1.0 - float(p.get("rate", 0.0))
 			ops.append({"op": "mul", "field": "physicalDefenseRate", "value": keep})
 			ops.append({"op": "mul", "field": "magicalDefenseRate", "value": keep})

@@ -38,7 +38,9 @@ func _run() -> void:
 	seed(20261120)
 	XTianqiSkills.reload_table()
 	XGojo.unlock_override = 1
-	_check("default_preview_on", XSmartAI.o_tianqi_preview_damage)
+	_check("default_preview_off", not XSmartAI.o_tianqi_preview_damage)  # 协调 11-20：性能未达标，默认关合入
+	XSmartAI.o_tianqi_preview_damage = true  # 本专项测的是开着的统一预览；关的回退路径另测
+	_multi_hit()
 	_preview_values()
 	_elements()
 	_brand_break()
@@ -373,3 +375,55 @@ func _xiyou_untouched() -> void:
 	var s := XState.new_game(int(XDB.plugin("Vitsuno_Difficulty").get("Init Difficulty ID", 2)), 1, [8])
 	XState.current = s
 	_check("xiyou_not_previewed", not XSmartAI.preview_on() and not XSmartAI.previewed(XDB.rec("Skills", 4749)))
+
+
+
+## P1-1（T282 核查 r1）：模块钩子按实战段数折了单段的重构技，预览要乘回实战段数。
+## 预览估伤（不暴击、×段数）跟同一场 logic.execute 真打一次（HalfStream 随机取中点）每个目标掉的血同量级；
+## 真打比普攻高出一成以上的，预览也要排在普攻前面（普攻同样真打一次对照；甚尔的普攻就是游云 10216，跳过）
+func _multi_hit() -> void:
+	var cases := [[179, 10622, []], [179, 10623, []], [171, 10216, []], [174, 10270, [10277]], [174, 10274, [10277]], [169, 10174, []], [170, 10192, []]]
+	for c in cases:
+		var tag := "%d_%d" % [int(c[0]), int(c[1])]
+		var main := _real_and_preview(c, int(c[1]))
+		if main.is_empty():
+			_check("multi_joined_" + tag, false)
+			continue
+		var atk := _real_and_preview(c, -1)
+		print("MULTI %s hits=%.0f preview=%.1f real=%.1f | attack %d preview=%.1f real=%.1f" % [tag, main.hits, main.preview, main.real, atk.id, atk.preview, atk.real])
+		_check("multi_hits_gt1_" + tag, float(main.hits) > 1.0, main.hits)
+		_check("multi_same_magnitude_" + tag, main.real > 0.0 and main.preview / main.real > 0.4 and main.preview / main.real < 2.5, main)
+		if int(atk.id) != int(c[1]) and main.real > atk.real * 1.1:
+			_check("multi_order_vs_attack_" + tag, main.preview > atk.preview, [main, atk])
+
+
+## 新开一场：学好、备好资源，算预览（skill_id −1＝普攻），再真打一次量每个目标掉的血
+func _real_and_preview(c: Array, skill_id: int) -> Dictionary:
+	var logic: XBattleLogic = _setup([int(c[0]), 1, 100])[1]
+	var a := _actor(logic, int(c[0]))
+	if a == null:
+		return {}
+	for id in c[2]:
+		a.learn_skill(int(id))
+	a.learn_skill(int(c[1]))
+	if int(c[0]) == 169:
+		XYomiJingliu.set_dream(a, 9)
+	if int(c[0]) == 170:
+		XYomiJingliu._moon[a.get_instance_id()] = 3
+	a.mp = a.mmp
+	a.tp = a.max_tp()
+	var rec := a.attack_skill() if skill_id < 0 else XDB.rec("Skills", skill_id)
+	var t: XBattler = logic.enemies[0]
+	var ai := XSmartAI.new(logic, a)
+	var out := {"id": int(rec.id), "hits": ai.tq_hits(a, rec), "preview": ai.safe_damage(a, t, rec)}
+	var before := logic.enemies.map(func(e): return e.hp)
+	logic.execute(a, rec, t)
+	var lost := 0.0
+	var n := 0
+	for i in logic.enemies.size():
+		var d: float = float(before[i]) - logic.enemies[i].hp
+		if d > 0.0:
+			lost += d
+			n += 1
+	out.real = lost / maxf(1.0, n)
+	return out

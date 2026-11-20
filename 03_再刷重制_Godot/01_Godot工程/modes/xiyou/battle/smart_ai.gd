@@ -39,8 +39,11 @@ static var o_tianqi_smart_ai := true
 ## （属性有效度 × pdr/mdr × 熟练度 × 全局增伤 × 档案倍率 × 去 ×6），改走正式结算同一条链 XDamage.calculate(preview)＋finish(不执行)
 ## （XBattleEval.hit_value）：元素牌组弱点／耐性／免疫／高阶、伤害加成总账五池与九线封顶、统一防御率、天启档位、烙印破防 ×1.3、
 ## 弱者词条、七印器印、防御减半一次对齐；暴击按真实暴击倍率求期望。公式本身的值仍由下面 _parts 的受控估算给（角色档案的 raw）。
-## true＝走统一预览；false＝退回卡 1（T281）的手抄乘区。西游档永远不进
-static var o_tianqi_preview_damage := true
+## true＝走统一预览；false＝退回卡 1（T281）的手抄乘区。西游档永远不进。
+## 默认关（协调 11-20，T282 核查 r1）：4v5 一次选招预览约 180ms／最慢 350ms（卡 1 约 80ms），主线程同步卡顿；
+## 等 XDamage.calculate 提速到 4v5 预览均值 ≤80ms、最慢 ≤150ms（本机 M1 Pro，专项 xiyou_tianqi_smart_ai_eval 的 PERF 行）再翻开。
+## 底座 XBattleEval 不看这个开关，敌方 AI（T277）照样用统一预览
+static var o_tianqi_preview_damage := false
 ## 纯公共事件入口、本身没有伤害的技能：天启篇放行并按下面的最小估分（命运之手 6861 → 六选一的 6862～6867）
 const TQ_ENTRY_SKILLS := {6861: [6862, 6863, 6864, 6865, 6866, 6867]}
 ## 公共事件（含 117 调用的子事件）里出现这些指令自动战斗会卡住、扣钱或离开战斗，不放行：
@@ -318,7 +321,30 @@ func _parts(a: XBattler, t: XBattler, rec: Dictionary) -> Dictionary:
 		repeats = float(p.hits)
 	else:
 		repeats *= float(p.hits) if p.has("hits") else seq_hits(a, rec)
+	if tq_rec and previewed(rec):
+		repeats = tq_hits(a, rec)  # 统一预览：模块钩子按实战段数折了单段（流萤 1/5、1/9，游云 ×0.2，双针 ×0.555），段数要对齐实战（T282 核查 P1-1）
 	return {"raw": value, "profile": p, "tq_rec": tq_rec, "repeats": clampf(repeats, 1, 32)}
+
+
+## 天启篇重构技的实战段数（只读）：照 XBattleLogic.execute 的包装次序——普攻追加次数 → 渡鸦冥羽 → 黄泉／镜流 → 云裳双针 ×2 → 流萤
+## → 七印战流派 +段，再 × 行动序列 ACTION EFFECT 条数（seq_hits）；甚尔游云收成单目标、按 XToji 记的段数（5＋追加＋觉醒）。
+## 不调会写状态的 begin_action（XYomiJingliu／XLiuying／XTianqiQiyinEffects.repeats 都记行动帧）；被动再释放（AgainUse）是概率，不算
+func tq_hits(a: XBattler, rec: Dictionary) -> float:
+	var id := int(rec.get("id", 0))
+	var tp := XToji.ai_profile(a, rec)
+	if tp.has("hits") and XToji.MAIN.find(id) == 0:
+		return float(tp.hits)
+	var n := XRaven.repeats(a, rec, XBattleLogic.attack_repeats(a, rec, 1))
+	if XYomiJingliu._j_action(a, rec):
+		n = int(XYomiJingliu.J_REPEATS[id])
+	elif XYomiJingliu._yomi_action(a, rec):
+		n = XYomiJingliu.repeats(a, id)
+	n = XYunshang.repeats(a, rec, n)
+	if XLiuying._action(a, rec):
+		n = 5 + (1 if XLiuying.learned(a, XLiuying.XING_HE) else 0) if id == XLiuying.TIANHUO else 9  # 同 XLiuying.repeats 天启篇一支
+	if XTianqiQiyinEffects._active(logic) and a is XActor and XTianqiQiyinEffects._is_damage(rec) and int(logic.get_meta("xqiyin").get("depth", 0)) == 0:
+		n += int(XTianqiQiyinEffects._p(logic, a, "extra_hits").get("value", 0))  # 同 XTianqiQiyinEffects.repeats，但不记 act.planned
+	return float(maxi(1, n)) * seq_hits(a, rec)
 
 
 func _safe_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
@@ -470,7 +496,7 @@ func shield_estimate(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 	var stripped := _shield_math_re.sub(_shield_reads_re.sub(m.get_string(1), "1", true), "1", true)
 	if _shield_plain_re.search(stripped) == null:
 		return 0.0
-	var out := XFormulaExecution.run_item(rec, a, t, logic.vars(), {}, false)
+	var out := XFormulaExecution.run_item(rec, a, t, eval_core().vars(), {}, false)
 	if not out.get("available", false):
 		return 0.0
 	var gained := 0.0
