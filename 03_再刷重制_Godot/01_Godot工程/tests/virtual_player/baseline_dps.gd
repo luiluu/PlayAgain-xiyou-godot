@@ -42,6 +42,7 @@ var atk_table := {}   # --atk-table=<json>：{"层": 攻击倍率}，--both 时�
 var _cur_floor := 0
 var line := "war"   # --line=：35、36 层（天启篇影子、骑士本体）按哪条线
 var snapshots := ""   # --snapshots=<目录>：虚拟玩家每层挑战守层者前的存档（floor_<层>*.json，XState.to_dict()），用它的真实队伍量（Kyo 11-13 定 C）
+var raw_mode := true   # T239：--both 每次我方出手前补满敌人、按日志原始伤害量（--no-raw 回到每回合开头补满、按掉血量）
 var both := false   # --both：两边每回合都补满（我方倒下的复活），同时量我方每回合打多少、守层者每回合打多少、我方每次出手打多少
 var neutral := false   # --neutral：守层者元素抗性一律按 1 量
 var resist := -1.0   # --resist=N：守层者伤害抵抗换成 N（0＝去掉）；-1 照数据
@@ -81,6 +82,8 @@ func _ready() -> void:
 			line = a.substr(7)
 		elif a.begins_with("--snapshots="):
 			snapshots = a.substr(12)   # 缺省按 --both 量；配 --duel 时真打（T239）
+		elif a == "--no-raw":
+			raw_mode = false
 		elif a == "--duel":
 			duel = true
 		elif a == "--events":
@@ -466,6 +469,8 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	var ours := 0.0
 	var theirs := 0.0
 	var raw := 0.0   # 守层者打出的伤害（扣血前、不截断；含反击）
+	var raw_ours := 0.0
+	var per_turn := []   # 每回合我方原始伤害（看破阵免疫回合打 0 的有几回合）
 	var hits := []
 	var done := 0
 	for r in turns:
@@ -480,6 +485,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 		logic.take_turn_start_logs()
 		var count := 0
 		var turn_first := true
+		var turn_raw := 0.0
 		while count < 80:
 			var u := logic.next_subject()
 			var pb0 := _party_hp(logic)
@@ -493,12 +499,20 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 			var eb := _enemy_hp(logic)
 			var pb := _party_hp(logic)
 			var db: float = logic.enemies.reduce(func(t, e): return t + float(e.dealt), 0.0)
-			logic.act(u, cmd[0], cmd[1])
+			if u is XActor and raw_mode:
+				for e in logic.enemies:   # T239：每次我方出手前补满，一下打不满就不会被剩余血量截断
+					if e.is_alive():
+						e.hp = e.mhp
+				eb = _enemy_hp(logic)
+			var logs = logic.act(u, cmd[0], cmd[1])
 			if u is XActor:
 				var d := maxf(0.0, eb - _enemy_hp(logic))
 				ours += d
-				if d > 0.0:
-					hits.append(d)
+				var rd := _raw_hits(logs)   # T239：日志里的原始伤害（hpDamage 扣血前、不截断）：一下打掉全部血量（马氏双节棍等）时也量得出真伤害
+				raw_ours += rd
+				turn_raw += rd
+				if rd > 0.0:
+					hits.append(rd)
 			raw += float(logic.enemies.reduce(func(t, e): return t + float(e.dealt), 0.0)) - db
 			if not u is XActor:
 				theirs += maxf(0.0, pb - _party_hp(logic))
@@ -507,6 +521,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 			if logic.is_over():
 				break
 		done += 1
+		per_turn.append(turn_raw)
 		if logic.is_won() or logic.aborted:
 			break
 		if logic.is_lost():
@@ -514,10 +529,21 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 		logic.end_turn()
 	hits.sort()
 	var n := maxf(1.0, float(done))
-	return {"dmg": ours / n, "enemyDmg": theirs / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
+	return {"dmg": ours / n, "dmgRaw": raw_ours / n, "perTurn": per_turn, "enemyDmg": theirs / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
 		"hits": hits.size(), "partyHp": logic.actors.reduce(func(t, a): return t + float(a.mhp), 0.0),
 		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0),
 		"atkScale": _out_scale(logic)}   # T229：守层者这场实际用的出伤倍率（没给 --atk-table 时是游戏里的表）
+
+
+## 一次行动日志里我方打到敌人身上的原始伤害合计（type hit、目标是敌人、hp＞0）
+static func _raw_hits(logs) -> float:
+	var t := 0.0
+	if not logs is Array:
+		return t
+	for l in logs:
+		if l is Dictionary and str(l.get("type", "")) == "hit" and l.get("target") is XEnemy and not bool(l.get("missed", false)) and not bool(l.get("evaded", false)):
+			t += maxf(0.0, float(l.get("hp", 0.0)))
+	return t
 
 
 ## 守层者这场实际用的出伤倍率：先取守层者成员（guardian_floor＞0，含心魔、变身后；鸿钧等按鸿蒙老祖重标的认 _ref）的 output_scale 最大值，
@@ -543,12 +569,12 @@ func _run_both(list: Array) -> void:
 		for st in states:
 			per.append(_fight_both(st, 0))
 		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": _median(per.map(func(r): return r.atkScale)),
-			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
+			"dmg": _median(per.map(func(r): return r.dmg)), "dmgRaw": _median(per.map(func(r): return r.dmgRaw)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
 			"hit": _median(per.map(func(r): return r.hitMedian)), "partyHp": _median(per.map(func(r): return r.partyHp)),
 			"enemyHp": per[0].enemyHp, "teams": per}
 		rows.append(row)
 		row["line"] = line if f >= 35 else ""
-		print("BOTH line=%s floor=%d raw=%.0f dmg=%.0f enemyDmg=%.0f hit=%.0f partyHp=%.0f enemyHp=%.0f" % [row.line, f, row.enemyRaw, row.dmg, row.enemyDmg, row.hit, row.partyHp, row.enemyHp])
+		print("BOTH line=%s floor=%d raw=%.0f dmgRaw=%.0f dmg=%.0f enemyDmg=%.0f hit=%.0f partyHp=%.0f enemyHp=%.0f" % [row.line, f, row.enemyRaw, row.dmgRaw, row.dmg, row.enemyDmg, row.hit, row.partyHp, row.enemyHp])
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
