@@ -18,6 +18,9 @@ extends RefCounted
 
 ## 开关（O-331）：false＝七印装备在战斗里没有任何效果（只是带词条的装备）
 static var ENABLED := true
+## O-待定（T293 战斗提速）：damage_ops 只在穿了跟普攻／技能有关的效果（范围技、技能伤、封技普攻）时才问 is_attack（一次约 70～100 µs）；
+## 没有这三条时它们各自的增伤是 0，乘区一样。false＝回退（每次都问）
+static var LAZY_ATTACK := true
 
 ## 表里没有的参数（占位，数字避开 4）
 const TUNE := {
@@ -897,7 +900,9 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 	if a is XActor and b is XEnemy:
 		var f: Dictionary = st.act if not st.act.is_empty() and is_same(st.act.u, a) else {}
 		derived_scale = float(st.scale)
-		var attack: bool = a.is_attack(item)
+		# LAZY_ATTACK：是不是普攻只影响三条（范围技、技能伤、封技普攻），三条都没有时它们的值都是 0，不去问 is_attack（只读，结果不变）
+		var need_kind := not LAZY_ATTACK or _has(logic, a, "aoe_skill_dmg_pct") or _has(logic, a, "skill_dmg_pct") or _has(logic, a, "silenced_normal_attack_dmg_pct")
+		var attack: bool = a.is_attack(item) if need_kind else false
 		var skillish := not attack or _has(logic, a, "normal_attack_as_skill")
 		var es := _elements(item, a)
 		var elemental := es.any(func(e): return int(e) > 1)
