@@ -290,7 +290,7 @@
    "speed": "E",
    "wit": "D",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "2": {
    "name": "绿司机",
@@ -310,7 +310,7 @@
    "speed": "B",
    "wit": "D",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "4": {
    "name": "窃格瓦拉·周",
@@ -320,7 +320,7 @@
    "speed": "B",
    "wit": "E",
    "resolve": "C",
-   "support": "C"
+   "support": "E"
   },
   "5": {
    "name": "小痔",
@@ -330,7 +330,7 @@
    "speed": "D",
    "wit": "D",
    "resolve": "E",
-   "support": "C"
+   "support": "E"
   },
   "6": {
    "name": "吕布",
@@ -340,7 +340,7 @@
    "speed": "D",
    "wit": "D",
    "resolve": "E",
-   "support": "C"
+   "support": "E"
   },
   "7": {
    "name": "茉蕾",
@@ -400,7 +400,7 @@
    "speed": "D",
    "wit": "C",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "13": {
    "name": "刘备",
@@ -408,7 +408,7 @@
    "output": "D",
    "survive": "SS",
    "speed": "C",
-   "wit": "A",
+   "wit": "B",
    "resolve": "A",
    "support": "S"
   },
@@ -420,7 +420,7 @@
    "speed": "D",
    "wit": "C",
    "resolve": "S",
-   "support": "D"
+   "support": "C"
   },
   "15": {
    "name": "张飞",
@@ -430,7 +430,7 @@
    "speed": "B",
    "wit": "E",
    "resolve": "E",
-   "support": "D"
+   "support": "C"
   },
   "16": {
    "name": "克莱德",
@@ -450,7 +450,7 @@
    "speed": "C",
    "wit": "B",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "18": {
    "name": "雪清寒",
@@ -490,7 +490,7 @@
    "speed": "A",
    "wit": "E",
    "resolve": "E",
-   "support": "D"
+   "support": "C"
   },
   "22": {
    "name": "维利",
@@ -500,7 +500,7 @@
    "speed": "D",
    "wit": "D",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "23": {
    "name": "魔雷老人",
@@ -510,7 +510,7 @@
    "speed": "D",
    "wit": "C",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "24": {
    "name": "克比",
@@ -520,7 +520,7 @@
    "speed": "C",
    "wit": "D",
    "resolve": "E",
-   "support": "D"
+   "support": "C"
   },
   "25": {
    "name": "雷加尔",
@@ -540,7 +540,7 @@
    "speed": "A",
    "wit": "C",
    "resolve": "C",
-   "support": "C"
+   "support": "E"
   },
   "27": {
    "name": "齐格鲁德",
@@ -560,7 +560,7 @@
    "speed": "D",
    "wit": "D",
    "resolve": "B",
-   "support": "D"
+   "support": "C"
   },
   "29": {
    "name": "金蝉子",
@@ -600,7 +600,7 @@
    "speed": "B",
    "wit": "C",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "33": {
    "name": "晴明",
@@ -640,7 +640,7 @@
    "speed": "B",
    "wit": "B",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "37": {
    "name": "天蓬元帅",
@@ -690,7 +690,7 @@
    "speed": "B",
    "wit": "D",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "42": {
    "name": "布兰德瓦登",
@@ -698,7 +698,7 @@
    "output": "C",
    "survive": "B",
    "speed": "B",
-   "wit": "B",
+   "wit": "C",
    "resolve": "B",
    "support": "B"
   },
@@ -710,7 +710,7 @@
    "speed": "B",
    "wit": "C",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "44": {
    "name": "碧池",
@@ -730,7 +730,7 @@
    "speed": "S",
    "wit": "D",
    "resolve": "E",
-   "support": "C"
+   "support": "E"
   },
   "46": {
    "name": "克莉丝汀",
@@ -750,7 +750,7 @@
    "speed": "B",
    "wit": "B",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "48": {
    "name": "莉娜",
@@ -760,7 +760,7 @@
    "speed": "C",
    "wit": "D",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "49": {
    "name": "疾风丸",
@@ -770,7 +770,7 @@
    "speed": "B",
    "wit": "D",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "50": {
    "name": "劲夫",
@@ -780,7 +780,7 @@
    "speed": "D",
    "wit": "E",
    "resolve": "B",
-   "support": "C"
+   "support": "E"
   },
   "51": {
    "name": "法海",
@@ -800,7 +800,7 @@
    "speed": "A",
    "wit": "B",
    "resolve": "B",
-   "support": "D"
+   "support": "C"
   },
   "53": {
    "name": "艾瑞塔",
@@ -810,7 +810,7 @@
    "speed": "D",
    "wit": "D",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "54": {
    "name": "迪昂",
@@ -850,7 +850,7 @@
    "speed": "D",
    "wit": "C",
    "resolve": "B",
-   "support": "D"
+   "support": "C"
   },
   "58": {
    "name": "小青",
@@ -860,7 +860,7 @@
    "speed": "A",
    "wit": "C",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "59": {
    "name": "大羿",
@@ -870,7 +870,7 @@
    "speed": "C",
    "wit": "A",
    "resolve": "B",
-   "support": "D"
+   "support": "C"
   },
   "60": {
    "name": "马宝国",
@@ -880,7 +880,7 @@
    "speed": "B",
    "wit": "E",
    "resolve": "E",
-   "support": "B"
+   "support": "E"
   },
   "61": {
    "name": "町甄",
@@ -889,7 +889,7 @@
    "survive": "E",
    "speed": "D",
    "wit": "A",
-   "resolve": "A",
+   "resolve": "B",
    "support": "B"
   },
   "62": {
@@ -900,7 +900,7 @@
    "speed": "D",
    "wit": "D",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "63": {
    "name": "拉尔",
@@ -920,7 +920,7 @@
    "speed": "D",
    "wit": "B",
    "resolve": "B",
-   "support": "D"
+   "support": "C"
   },
   "65": {
    "name": "孙权",
@@ -940,7 +940,7 @@
    "speed": "D",
    "wit": "E",
    "resolve": "E",
-   "support": "D"
+   "support": "C"
   },
   "67": {
    "name": "科妮莉亚",
@@ -960,7 +960,7 @@
    "speed": "B",
    "wit": "D",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "69": {
    "name": "花木兰",
@@ -980,7 +980,7 @@
    "speed": "D",
    "wit": "C",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "71": {
    "name": "诸葛孔明",
@@ -989,8 +989,8 @@
    "survive": "A",
    "speed": "B",
    "wit": "SS",
-   "resolve": "S",
-   "support": "D"
+   "resolve": "A",
+   "support": "C"
   },
   "72": {
    "name": "阿语",
@@ -998,7 +998,7 @@
    "output": "C",
    "survive": "D",
    "speed": "A",
-   "wit": "SS",
+   "wit": "A",
    "resolve": "B",
    "support": "S"
   },
@@ -1010,7 +1010,7 @@
    "speed": "D",
    "wit": "C",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "74": {
    "name": "陈",
@@ -1070,7 +1070,7 @@
    "speed": "D",
    "wit": "B",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "80": {
    "name": "白起",
@@ -1080,7 +1080,7 @@
    "speed": "A",
    "wit": "A",
    "resolve": "S",
-   "support": "D"
+   "support": "C"
   },
   "81": {
    "name": "申公豹",
@@ -1100,7 +1100,7 @@
    "speed": "A",
    "wit": "A",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "83": {
    "name": "荒天弟",
@@ -1129,7 +1129,7 @@
    "survive": "D",
    "speed": "D",
    "wit": "S",
-   "resolve": "A",
+   "resolve": "B",
    "support": "B"
   },
   "86": {
@@ -1150,7 +1150,7 @@
    "speed": "C",
    "wit": "B",
    "resolve": "A",
-   "support": "D"
+   "support": "C"
   },
   "88": {
    "name": "西西卡",
@@ -1160,7 +1160,7 @@
    "speed": "D",
    "wit": "E",
    "resolve": "E",
-   "support": "C"
+   "support": "E"
   },
   "89": {
    "name": "虎姐",
@@ -1180,7 +1180,7 @@
    "speed": "B",
    "wit": "B",
    "resolve": "B",
-   "support": "D"
+   "support": "C"
   },
   "91": {
    "name": "宇智波·鼬",
@@ -1200,7 +1200,7 @@
    "speed": "D",
    "wit": "B",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "93": {
    "name": "炭治郎",
@@ -1209,8 +1209,8 @@
    "survive": "C",
    "speed": "D",
    "wit": "B",
-   "resolve": "A",
-   "support": "D"
+   "resolve": "S",
+   "support": "C"
   },
   "94": {
    "name": "命运编织者",
@@ -1220,7 +1220,7 @@
    "speed": "B",
    "wit": "SS",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "95": {
    "name": "三笠",
@@ -1230,7 +1230,7 @@
    "speed": "A",
    "wit": "B",
    "resolve": "S",
-   "support": "D"
+   "support": "C"
   },
   "96": {
    "name": "朵莉亚",
@@ -1290,7 +1290,7 @@
    "speed": "A",
    "wit": "D",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "102": {
    "name": "碧霄",
@@ -1310,17 +1310,17 @@
    "speed": "B",
    "wit": "S",
    "resolve": "A",
-   "support": "D"
+   "support": "C"
   },
   "104": {
    "name": "天虎令",
    "class": "strong",
    "output": "A",
    "survive": "D",
-   "speed": "A",
+   "speed": "B",
    "wit": "C",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "105": {
    "name": "唐三",
@@ -1340,7 +1340,7 @@
    "speed": "C",
    "wit": "B",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "107": {
    "name": "钟离",
@@ -1348,7 +1348,7 @@
    "output": "A",
    "survive": "S",
    "speed": "D",
-   "wit": "B",
+   "wit": "A",
    "resolve": "S",
    "support": "A"
   },
@@ -1430,7 +1430,7 @@
    "speed": "S",
    "wit": "B",
    "resolve": "S",
-   "support": "D"
+   "support": "C"
   },
   "123": {
    "name": "南宫恨·武道",
@@ -1447,7 +1447,7 @@
    "class": "strong",
    "output": "S",
    "survive": "A",
-   "speed": "A",
+   "speed": "B",
    "wit": "B",
    "resolve": "S",
    "support": "B"
@@ -1459,7 +1459,7 @@
    "survive": "B",
    "speed": "E",
    "wit": "B",
-   "resolve": "A",
+   "resolve": "B",
    "support": "S"
   },
   "128": {
@@ -1479,7 +1479,7 @@
    "survive": "A",
    "speed": "D",
    "wit": "D",
-   "resolve": "A",
+   "resolve": "B",
    "support": "B"
   },
   "130": {
@@ -1499,7 +1499,7 @@
    "survive": "B",
    "speed": "D",
    "wit": "C",
-   "resolve": "A",
+   "resolve": "B",
    "support": "A"
   },
   "141": {
@@ -1540,7 +1540,7 @@
    "speed": "A",
    "wit": "C",
    "resolve": "A",
-   "support": "D"
+   "support": "C"
   },
   "148": {
    "name": "黑崎一护",
@@ -1550,7 +1550,7 @@
    "speed": "B",
    "wit": "C",
    "resolve": "S",
-   "support": "D"
+   "support": "C"
   },
   "149": {
    "name": "祈求者",
@@ -1570,7 +1570,7 @@
    "speed": "SS",
    "wit": "B",
    "resolve": "B",
-   "support": "D"
+   "support": "C"
   },
   "151": {
    "name": "亚斯娜",
@@ -1580,7 +1580,7 @@
    "speed": "SS",
    "wit": "C",
    "resolve": "B",
-   "support": "D"
+   "support": "C"
   },
   "152": {
    "name": "徐凤年",
@@ -1610,7 +1610,7 @@
    "speed": "S",
    "wit": "C",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "155": {
    "name": "病娇",
@@ -1620,7 +1620,7 @@
    "speed": "SS",
    "wit": "C",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "156": {
    "name": "嫦娥",
@@ -1640,7 +1640,7 @@
    "speed": "S",
    "wit": "B",
    "resolve": "D",
-   "support": "D"
+   "support": "C"
   },
   "159": {
    "name": "五河琴里",
@@ -1670,7 +1670,7 @@
    "speed": "B",
    "wit": "C",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "163": {
    "name": "拳一",
@@ -1679,8 +1679,8 @@
    "survive": "A",
    "speed": "D",
    "wit": "D",
-   "resolve": "S",
-   "support": "D"
+   "resolve": "A",
+   "support": "C"
   },
   "164": {
    "name": "贝吉特",
@@ -1690,7 +1690,7 @@
    "speed": "D",
    "wit": "E",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "165": {
    "name": "李逍遥",
@@ -1700,7 +1700,7 @@
    "speed": "B",
    "wit": "C",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "167": {
    "name": "渡鸦",
@@ -1710,7 +1710,7 @@
    "speed": "D",
    "wit": "A",
    "resolve": "B",
-   "support": "D"
+   "support": "C"
   },
   "168": {
    "name": "米拉",
@@ -1730,7 +1730,7 @@
    "speed": "A",
    "wit": "A",
    "resolve": "A",
-   "support": "D"
+   "support": "C"
   },
   "170": {
    "name": "镜流",
@@ -1750,17 +1750,17 @@
    "speed": "B",
    "wit": "S",
    "resolve": "A",
-   "support": "D"
+   "support": "C"
   },
   "172": {
    "name": "宿傩",
    "class": "super",
-   "output": "SS",
+   "output": "S",
    "survive": "B",
    "speed": "D",
    "wit": "A",
-   "resolve": "S",
-   "support": "D"
+   "resolve": "SS",
+   "support": "C"
   },
   "173": {
    "name": "饿狼",
@@ -1770,7 +1770,7 @@
    "speed": "B",
    "wit": "C",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "174": {
    "name": "云裳",
@@ -1820,16 +1820,16 @@
    "speed": "S",
    "wit": "E",
    "resolve": "E",
-   "support": "D"
+   "support": "C"
   },
   "179": {
    "name": "流萤",
    "class": "super",
    "output": "A",
    "survive": "S",
-   "speed": "S",
+   "speed": "A",
    "wit": "B",
-   "resolve": "A",
+   "resolve": "S",
    "support": "E"
   },
   "180": {
