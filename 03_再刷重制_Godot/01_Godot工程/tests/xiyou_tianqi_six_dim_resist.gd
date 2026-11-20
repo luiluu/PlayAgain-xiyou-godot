@@ -121,17 +121,16 @@ func _edge(lg: XBattleLogic, u: XBattler, t: XBattler, id: int, v1: float) -> Ar
 
 
 func _pick_states() -> void:
-	var harmful_names := ["中毒", "流血", "防御下降", "降防", "灼伤"]
+	var want := ["中毒", "出血", "削弱防御", "灼伤I", "敏捷降低（残废）"]  # 中毒、流血、降防、灼伤、减速：都不是控制
 	for st in XDB.table("States"):
 		if not st is Dictionary or st.is_empty():
 			continue
 		var id := int(st.get("id", 0))
-		if id <= 1:
-			continue
-		if CTL == 0 and XEnemy.boss_control_state(id) and int(st.get("restriction", 0)) > 0:
-			CTL = id
 		var nm := str(st.get("name", ""))
-		if not XEnemy.boss_control_state(id) and NONCTL.size() < 6 and harmful_names.any(func(n): return nm.contains(n)):
+		if CTL == 0 and nm == "眩晕" and XEnemy.boss_control_state(id):
+			CTL = id
+		if want.has(nm) and not XEnemy.boss_control_state(id):
+			want.erase(nm)
 			NONCTL.append(id)
 	NONCTL.append(1)  # 死亡
 
@@ -141,7 +140,7 @@ func _run() -> void:
 	seed(20261120)
 	XTianqiSixDim.ENABLED = true
 	_pick_states()
-	_check("picked_states", CTL > 0 and NONCTL.size() >= 3, [CTL, NONCTL])
+	_check("picked_states", CTL > 0 and NONCTL.size() == 6, [CTL, NONCTL])
 	var lg := _logic()
 	_saved = XTianqiSixDim.data().duplicate(true)
 	_actor_side(lg)
