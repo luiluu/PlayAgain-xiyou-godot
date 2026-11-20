@@ -80,8 +80,7 @@ func _ready() -> void:
 		elif a.begins_with("--line="):
 			line = a.substr(7)
 		elif a.begins_with("--snapshots="):
-			snapshots = a.substr(12)
-			both = true
+			snapshots = a.substr(12)   # 缺省按 --both 量；配 --duel 时真打（T239）
 		elif a == "--duel":
 			duel = true
 		elif a == "--events":
@@ -308,7 +307,7 @@ func _fight(s: XState, troop: int) -> Dictionary:
 			if u == null:
 				break
 			count += 1
-			var cmd := logic.decide(u)
+			var cmd := [null, null] if events and logic.take_cleared(u) else logic.decide(u)   # T239（T229 核 P3-1）：首位被强制行动清掉的那格放弃，同战斗画面
 			var hp_before := _enemy_hp(logic)
 			var logs = logic.act(u, cmd[0], cmd[1])
 			if u is XActor:
@@ -321,12 +320,14 @@ func _fight(s: XState, troop: int) -> Dictionary:
 					str(logic.enemies.map(func(e): return int(e.hp))), JSON.stringify(logs).left(300)])
 		if not logic.is_over():
 			logic.end_turn()
+			if events:
+				_drain(logic, logic.troop_events(null, true))   # T239（T229 核 P3-1）：回合末的敌群事件页（残血变身、阶段页等），同战斗画面
 		total += turn_dmg
 		done += 1
 		if logic.is_over():
 			break
 	var alive := logic.actors.filter(func(a): return a.hp > 0).size()
-	return {"trace": trace, "dmg": total / maxf(1.0, float(done)), "turns": done, "alive": alive, "won": logic.is_won(), "lost": logic.is_lost(),
+	return {"trace": trace, "atkScale": _out_scale(logic), "dmg": total / maxf(1.0, float(done)), "turns": done, "alive": alive, "won": logic.is_won(), "lost": logic.is_lost(),
 		"aborted": logic.aborted, "enemyHp": hp0, "enemyAtk": logic.enemies.map(func(e): return int(e.param(2))), "enemyDef": logic.enemies.map(func(e): return [int(e.param(3)), int(e.param(5))]),
 		"partyAtk": logic.actors.map(func(a): return [int(a.param(2)), int(a.param(4))]),
 		"party": logic.actors.map(func(a): return int(a.actor_id)), "members": s.battle_members().map(func(a): return int(a.actor_id)), "partyHp": logic.actors.map(func(a): return int(a.mhp))}
@@ -392,8 +393,11 @@ func _run() -> void:
 	if atk_search:
 		_search(list)
 		return
-	if both:
+	if both or (snapshots != "" and not duel):
 		_run_both(list)
+		return
+	if snapshots != "":
+		_run_duel_snapshots()
 		return
 	for f in floors:
 		var per := []
@@ -513,7 +517,19 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	return {"dmg": ours / n, "enemyDmg": theirs / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
 		"hits": hits.size(), "partyHp": logic.actors.reduce(func(t, a): return t + float(a.mhp), 0.0),
 		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0),
-		"atkScale": logic.enemies.reduce(func(t, e): return maxf(t, float(e.output_scale)), 0.0)}   # T229：守层者这场实际用的出伤倍率（没给 --atk-table 时是游戏里的表）
+		"atkScale": _out_scale(logic)}   # T229：守层者这场实际用的出伤倍率（没给 --atk-table 时是游戏里的表）
+
+
+## 守层者这场实际用的出伤倍率：先取守层者成员（guardian_floor＞0，含心魔、变身后；鸿钧等按鸿蒙老祖重标的认 _ref）的 output_scale 最大值，
+## 没有守层者成员才取全场最大。T239（T229 核 P2-1）：原来取全场最大，5 层同场狼母（不是守层者，倍率 1）顶掉幽灵公主（0.00884），偏大百倍。
+static func _out_scale(logic: XBattleLogic) -> float:
+	var g := 0.0
+	var any := 0.0
+	for e in logic.enemies:
+		any = maxf(any, float(e.output_scale))
+		if XGuardianRework.guardian_floor(e) > 0 or str(e.horseman.get("rec", {}).get("_ref", "")) != "":
+			g = maxf(g, float(e.output_scale))
+	return g if g > 0.0 else any
 
 
 func _run_both(list: Array) -> void:
@@ -559,6 +575,10 @@ func _snapshot_states(f: int) -> Array:
 		for a in st.battle_members():
 			a.recover_all()
 		out.append(st)
+	if out.is_empty() and f == 34:   # T239：虚拟玩家到 34 层前没留档（33 层打完就是 34），借 33 层的档量鸿钧，结果单独列
+		out = _snapshot_states(33)
+		for st in out:
+			st.set_variable(20, f)
 	return out
 
 
@@ -570,3 +590,32 @@ static func _drain(logic: XBattleLogic, logs: Array) -> void:
 		guard += 1
 		var last: Dictionary = logs[-1] if not logs.is_empty() and logs[-1] is Dictionary else {}
 		logs = logic.resume_event(int(last.get("token", 0)), 0)
+
+
+
+## --snapshots 配 --duel（T239）：拿虚拟玩家每层存档真打守层者（不补血，打到分出胜负或 turns 回合），量真实回合数、是否打赢
+func _run_duel_snapshots() -> void:
+	var rows := []
+	for f in floors:
+		_cur_floor = f
+		var states := _snapshot_states(f)
+		if states.is_empty() or not GUARDIAN.has(f):
+			continue
+		var per := []
+		for st in states:
+			XState._become_current(st)
+			var r := _fight(st, int(GUARDIAN[f]))
+			r.erase("trace")
+			per.append(r)
+		var row := {"floor": f, "troop": GUARDIAN[f], "won": per.filter(func(r): return bool(r.won)).size(), "teams": per.size(),
+			"turns": _median(per.map(func(r): return float(r.turns))), "dmg": _median(per.map(func(r): return float(r.dmg))),
+			"enemyHp": _median(per.map(func(r): return float(r.enemyHp))), "atkScale": _median(per.map(func(r): return float(r.atkScale))), "per": per}
+		rows.append(row)
+		print("DUEL floor=%d won=%d/%d turns=%.1f dmg=%.0f enemyHp=%.0f alive=%s atk=%s" % [f, int(row.won), per.size(), float(row.turns), float(row.dmg), float(row.enemyHp),
+			str(per.map(func(r): return int(r.alive))), str(row.atkScale)])
+	XEnemy.force_roll = -1.0
+	if out_path != "":
+		var fh := FileAccess.open(out_path, FileAccess.WRITE)
+		fh.store_string(JSON.stringify({"mode": "duel-snapshots", "events": events, "turns": turns, "rows": rows}, "\t"))
+	print("BASELINE_DONE")
+	get_tree().quit(0)
