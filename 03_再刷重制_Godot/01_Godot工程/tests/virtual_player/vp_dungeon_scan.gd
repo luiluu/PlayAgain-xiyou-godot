@@ -18,6 +18,7 @@ func _run() -> void:
 			var parsed = JSON.parse_string(FileAccess.get_file_as_string(a.substr(7)))
 			if parsed is Dictionary:
 				XState._become_current(XState.from_dict(parsed))
+				print("SCAN 副本变量 5=%d 6=%d 21=%d 450=%d VAR_SEALED=%d" % [int(XState.current.variable(5)), int(XState.current.variable(6)), int(XState.current.variable(21)), int(XState.current.variable(450)), int(XState.current.variable(XDungeon.VAR_SEALED))])
 				print("SCAN 烙印开着 %s；真气 %s" % [str(XTianqiBrand.on(XState.current)), str(XState.current.members().map(func(a): return int(XZhenqi.data(a).qi)))])
 	for item in maps:
 		var m := int(str(item).get_slice(":", 0))

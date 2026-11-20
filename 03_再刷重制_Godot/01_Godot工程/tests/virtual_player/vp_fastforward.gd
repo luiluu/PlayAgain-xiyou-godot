@@ -30,6 +30,7 @@ var settled := 0                   # 快进结算了几场（练级＋副本首�
 var grind_battles := 0
 var dungeon_runs := 0
 var dungeon_kings := 0             # 其中选到「王者难度」的几次
+var forced_resets := 0             # 重置不认、手动清变量后再挑战的次数（T272）
 var mobs := 0                      # 为了让首领页出来先清掉的挡路小怪事件（照快进结算）
 var log_lines: Array = []
 var msec := 0                      # 快进一共花了多少毫秒（墙钟）
@@ -419,6 +420,17 @@ func dungeon_once(st: XState, floor_map: int, buy_rune: Callable) -> Dictionary:
 		await _run_page(host, int(ent[0]), ent[1])
 		host.want = "挑战副本"
 		await _run_page(host, int(ent[0]), ent[1])
+	if not XDungeon.inside(st) and str(host.trace).contains("请重置副本"):
+		# 重置也不认（T272：上一层最后一次副本首领后变量 5＝1、6＝35 没清，下一层入口要 6 到 36 才让重置，两头都卡死）：
+		# 照重置那一页本来要做的收拾（变量 5、6、118、119 清零，开关 101～105 开），再挑战一次
+		st.set_variable(XDungeon.VAR_SEALED, 0)
+		for v in [6, 118, 119]:
+			st.set_variable(v, 0)
+		for sw in [101, 102, 103, 104, 105]:
+			st.set_switch(sw, true)
+		host.want = "挑战副本"
+		await _run_page(host, int(ent[0]), ent[1])
+		forced_resets += 1
 	if not XDungeon.inside(st):
 		out.why = "入口没进去（%s）" % str(host.trace.slice(-3))
 	else:
