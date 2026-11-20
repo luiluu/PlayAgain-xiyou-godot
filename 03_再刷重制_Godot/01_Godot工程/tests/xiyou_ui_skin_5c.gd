@@ -352,7 +352,11 @@ func _sub_pages() -> void:
 		page.ok()
 		await frames(3)
 		var host := page.get_node_or_null("SkinSubPageHost")
-		check("sub_%s_open" % sym, page._page != null and host != null and not sk.visible and page._page.get_parent() == host, sym)
+		var self_hosted: bool = page._page != null and page._page.has_method("skin_self_hosted") and page._page.skin_self_hosted()   # T300 卡 L：自带新皮肤的子页直接加在设置页上、不套外框（挂机等仍套）
+		if self_hosted:
+			check("sub_%s_open" % sym, host == null and not sk.visible and page._page.get_parent() == page, sym)
+		else:
+			check("sub_%s_open" % sym, page._page != null and host != null and not sk.visible and page._page.get_parent() == host, sym)
 		if host != null:
 			check("sub_%s_host_centered" % sym, is_equal_approx(host.position.x, maxf(roundf((get_viewport().get_visible_rect().size.x - 1280.0) / 2.0), 0.0)))
 		var backdrop_visible := false

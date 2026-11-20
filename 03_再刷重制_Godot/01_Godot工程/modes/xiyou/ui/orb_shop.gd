@@ -4,10 +4,15 @@ extends Control
 ## identifyDetail／buyMenu／dismantleMenu／dismantleDetail／guide／setGuide／returnsMenu／resultPage），每页一个 XChoiceWindow。
 ## 行文逐字照搬（参照 orb_shop_probe.cjs 的 pages，测试 tests/xiyou_orb_shop_ui）；说明按 48 个半角宽换行（全角算 2）。
 ## 规则在 XOrbs。打开时先领神秘珠暂存箱与暂存宝珠（领到暂存宝珠时提示）。
+## T299 卡 K：天启篇新界面（XUiSkin.on() 且 XSkinMenuTreePage.ENABLED）时换成版型四层级菜单页（XSkinMenuTreePage）：不画环，首页即第 0 层菜单，
+## 每进一层面包屑多一段；说明几行进右牌、选项进列表、结果页右牌旧金＋「知道了」、三种「确认…／取消」页走统一确认弹窗（分解是橙边、停在「取消」）。
+## 每页的 {info, rows}（log）和回调一行不变；关着时 tree 为 null，旧页一行不变。
 
 signal closed
 
 var choice: XChoiceWindow
+## T299 新界面（版型四）；关着时为 null
+var tree: XSkinMenuTreePage
 ## 测试用：每次打开的页 {info, rows}
 var log: Array = []
 
@@ -19,6 +24,10 @@ func _ready() -> void:
 	XUI.menu_background(self)
 	choice = XChoiceWindow.new()
 	add_child(choice)
+	if XUiSkin.on() and XSkinMenuTreePage.ENABLED:
+		tree = XSkinMenuTreePage.new("宝珠坊")
+		tree.group_key = "workshop"   # 从主菜单「工坊」进：画页签条（T254 3.0，同卡 J；小A核 P2-4）
+		add_child(tree)
 	home()
 
 
@@ -50,11 +59,31 @@ static func tier_text(to: int) -> String:
 	return "顶" if to == 99 else str(to)
 
 
-## choose：说明按 48 个半角宽换行后交给选择窗
-func choose(rows: Array, ok: Callable, cancel: Callable, lines := []) -> void:
+## choose：说明按 48 个半角宽换行后交给选择窗。o：新界面的摆法（XSkinMenuTreePage.open：crumb、result、confirm）
+func choose(rows: Array, ok: Callable, cancel: Callable, lines := [], o := {}) -> void:
 	var wrapped := wrap_info(lines)
 	log.append({"info": wrapped, "rows": rows.map(func(r): return {"label": str(r.label), "enabled": r.get("enabled", true) != false})})
+	if tree != null:
+		_sync_left()
+		tree.open(rows, ok, cancel, lines, o)   # 右牌按牌宽自动折行，不用 48 半角宽的折法
+		return
 	choice.open(rows, ok, cancel, wrapped)
+
+
+## 新界面面包屑：宝珠坊 › …
+static func crumb(parts := []) -> Dictionary:
+	return {"crumb": ["宝珠坊"] + parts}
+
+
+## 新界面左块（宝珠纹章＋首页那行小字）、右上货币（宝珠残片）
+func _sync_left() -> void:
+	var sealed := 0
+	for b in cfg().bands:
+		sealed += count(int(b.itemId))
+	var bands: Array = cfg().bands
+	tree.left_icon = int(XDB.rec("Items", int(bands[0].itemId)).get("iconIndex", 0)) if not bands.is_empty() else 0
+	tree.left_lines = ["未鉴定 %d 枚" % sealed, "宝珠残片 %d" % count(int(cfg().fragment))]
+	tree.currencies = [[name_of(int(cfg().fragment)), XSkinTemplatePage._group(count(int(cfg().fragment)))]]
 
 
 static func wrap_info(lines: Array) -> Array:
@@ -116,9 +145,9 @@ func inventory() -> Array:
 	return ids
 
 
-func result_page(result: Dictionary, back: Callable) -> void:
+func result_page(result: Dictionary, back: Callable, path := []) -> void:
 	if not result.ok:
-		choose([{"label": "返回"}], func(_r): back.call(), func(): back.call(), ["操作未完成", result.reason])
+		choose([{"label": "返回"}], func(_r): back.call(), func(): back.call(), ["操作未完成", result.reason], crumb(path + ["操作未完成"]).merged({"result": true}))
 		return
 	var title := "鉴定完成：%d枚神秘珠" % int(result.quantity) if result.kind == "identify" else ("兑换完成" if result.kind == "buy" else "分解完成")
 	var rows: Array = result.outputs.map(func(x): return {"id": int(x.id), "label": name_of(int(x.id)) + " ×" + str(int(x.quantity))})
@@ -129,8 +158,9 @@ func result_page(result: Dictionary, back: Callable) -> void:
 			return
 		var lines := [name_of(int(row.id))]
 		lines.append_array(desc(int(row.id)) if not XOrbs.spec(int(row.id)).is_empty() else ["可在原有核心宝珠商店兑换使用"])
-		choose([{"label": "返回结果"}], func(_r): result_page(result, back), func(): result_page(result, back), lines),
-		back, [title])
+		choose([{"label": "返回结果"}], func(_r): result_page(result, back, path), func(): result_page(result, back, path), lines,
+			crumb(path + [title.get_slice("：", 0), name_of(int(row.id))])),
+		back, [title], crumb(path + [title.get_slice("：", 0)]).merged({"result": true}))
 
 
 func identify_menu() -> void:
@@ -145,7 +175,7 @@ func identify_menu() -> void:
 			home()
 		else:
 			identify_detail(int(row.id)),
-		home, ["鉴定神秘珠", "副本首领每场胜利" + pct(float(cfg().dropRate)) + "掉落；一半鉴定为原作宝珠，一半为新宝珠（楼层决定阶位）"])
+		home, ["鉴定神秘珠", "副本首领每场胜利" + pct(float(cfg().dropRate)) + "掉落；一半鉴定为原作宝珠，一半为新宝珠（楼层决定阶位）"], crumb(["鉴定神秘珠"]))
 
 
 func identify_detail(id: int) -> void:
@@ -165,17 +195,17 @@ func identify_detail(id: int) -> void:
 			return
 		var check := XOrbs.quote_identify(s(), id, int(row.quantity))
 		if not check.ok:
-			result_page(check, identify_menu)
+			result_page(check, identify_menu, ["鉴定神秘珠", name_of(id)])
 			return
 		var lines := [name_of(id), "消耗神秘珠，随机获得等量宝珠；不另收鉴定费用"]
 		lines.append_array(XOrbs.probabilities(id))
 		choose([{"label": "确认鉴定 %d 枚" % int(row.quantity), "confirm": true}, {"label": "取消"}], func(r):
 			if r.get("confirm", false):
-				result_page(XOrbs.identify(s(), id, int(row.quantity)), identify_menu)
+				result_page(XOrbs.identify(s(), id, int(row.quantity)), identify_menu, ["鉴定神秘珠", name_of(id)])
 			else:
 				identify_detail(id),
-			func(): identify_detail(id), lines),
-		identify_menu, info)
+			func(): identify_detail(id), lines, crumb(["鉴定神秘珠", name_of(id)]).merged({"confirm": {}})),
+		identify_menu, info, crumb(["鉴定神秘珠", name_of(id)]))
 
 
 ## JS 数字转字符串（整数不带小数点）
@@ -199,12 +229,12 @@ func buy_menu() -> void:
 			return
 		choose([{"label": "确认兑换 %d 枚" % int(row.quantity), "confirm": true}, {"label": "取消"}], func(r):
 			if r.get("confirm", false):
-				result_page(XOrbs.buy_pearl(s(), int(row.quantity)), buy_menu)
+				result_page(XOrbs.buy_pearl(s(), int(row.quantity)), buy_menu, ["残片换神秘珠"])
 			else:
 				buy_menu(),
-			buy_menu, [name_of(int(b.itemId)), "消耗 %d 宝珠残片" % (int(row.quantity) * p)]),
+			buy_menu, [name_of(int(b.itemId)), "消耗 %d 宝珠残片" % (int(row.quantity) * p)], crumb(["残片换神秘珠"]).merged({"confirm": {}})),
 		home, ["残片换神秘珠", "按当前进度（" + where + "）：" + (name_of(int(b.itemId)) if not b.is_empty() else "—") + " 每枚 %d 残片" % p,
-			"持有 %d 残片；残片来自副本首领奖励与分解宝珠" % have])
+			"持有 %d 残片；残片来自副本首领奖励与分解宝珠" % have], crumb(["残片换神秘珠"]))
 
 
 func dismantle_menu() -> void:
@@ -216,7 +246,7 @@ func dismantle_menu() -> void:
 			home()
 		else:
 			dismantle_detail(int(row.id)),
-		home, ["分解宝珠", "只处理背包宝珠；镶嵌中的宝珠请先卸下"])
+		home, ["分解宝珠", "只处理背包宝珠；镶嵌中的宝珠请先卸下"], crumb(["分解宝珠"]))
 
 
 func dismantle_detail(id: int) -> void:
@@ -233,11 +263,12 @@ func dismantle_detail(id: int) -> void:
 			return
 		choose([{"label": "确认分解 %d 颗" % int(row.quantity), "confirm": true}, {"label": "取消"}], func(r):
 			if r.get("confirm", false):
-				result_page(XOrbs.dismantle(s(), id, int(row.quantity)), dismantle_menu)
+				result_page(XOrbs.dismantle(s(), id, int(row.quantity)), dismantle_menu, ["分解宝珠", name_of(id)])
 			else:
 				dismantle_detail(id),
-			func(): dismantle_detail(id), [name_of(id), "分解后宝珠消失，获得 %d 宝珠残片" % (n * int(row.quantity))]),
-		dismantle_menu, info)
+			func(): dismantle_detail(id), [name_of(id), "分解后宝珠消失，获得 %d 宝珠残片" % (n * int(row.quantity))],
+			crumb(["分解宝珠", name_of(id)]).merged({"confirm": {"danger": true}})),
+		dismantle_menu, info, crumb(["分解宝珠", name_of(id)]))
 
 
 func guide() -> void:
@@ -248,8 +279,9 @@ func guide() -> void:
 		lines.append_array(XOrbs.probabilities(int(row.id)))
 		lines.append_array(["新宝珠16类等概率；另有%s%%鉴定为原作宝珠（%s档 %d种）" % [_num(XOrbs.legacy_share()), XOrbs.LEGACY_TIER_NAME.get(str(b.get("legacy", "")), ""), XOrbs.legacy_pool(b).size()],
 			"原作宝珠：1～12层弱档，13～18层中档，19层起强档"])
-		choose([{"label": "返回分布表"}], func(_r): guide(), guide, lines),
-		home, ["神秘珠掉落与鉴定", "副本首领胜利后每场独立" + pct(float(cfg().dropRate)) + "，最多1枚", "不受掉率、熟练度或洪荒诅咒倍率影响", "高层封印保留到鉴定时；未鉴定不能镶嵌"])
+		choose([{"label": "返回分布表"}], func(_r): guide(), guide, lines, crumb(["楼层与品质分布", name_of(int(row.id))])),
+		home, ["神秘珠掉落与鉴定", "副本首领胜利后每场独立" + pct(float(cfg().dropRate)) + "，最多1枚", "不受掉率、熟练度或洪荒诅咒倍率影响", "高层封印保留到鉴定时；未鉴定不能镶嵌"],
+		crumb(["楼层与品质分布"]))
 
 
 func set_guide() -> void:
@@ -274,12 +306,13 @@ func set_guide() -> void:
 						hit = x
 						break
 				lines.append(m.display_name() + "：" + ("%d件 %s，全部伤害×%.2f" % [int(hit.pieces), cfg().tiers[int(hit.rank) - 1], 1.0 + float(hit.general) / 100.0] if not hit.is_empty() else "未生效"))
-			choose([{"label": "返回套装列表"}], func(_r): set_guide(), set_guide, lines),
+			choose([{"label": "返回套装列表"}], func(_r): set_guide(), set_guide, lines, crumb(["套装图谱", str(st.name), "当前配装"])),
 			set_guide, ["宝珠套装：" + str(st.name), "组件：" + "／".join(st.families.map(func(f): return str(fams[int(f)].name))),
 				"全身装备（武器＋防具）集齐任意2种／全部3种组件触发，按最低阶位", "数值依次对应凝砂／蕴灵／通玄／化境／归真",
 				"2件：全部伤害 ×(1＋" + "／".join(g.two.map(func(v): return _num(float(v)))) + "%)",
-				"3件：全部伤害 ×(1＋" + "／".join(g.three.map(func(v): return _num(float(v)))) + "%)", "多个套装只取最高一套", "普通加成照常生效"]),
-		home, ["套装图谱", "全部伤害加成，镶嵌后实时生效"])
+				"3件：全部伤害 ×(1＋" + "／".join(g.three.map(func(v): return _num(float(v)))) + "%)", "多个套装只取最高一套", "普通加成照常生效"],
+			crumb(["套装图谱", str(st.name)])),
+		home, ["套装图谱", "全部伤害加成，镶嵌后实时生效"], crumb(["套装图谱"]))
 
 
 func returns_menu() -> void:
@@ -305,8 +338,9 @@ func returns_menu() -> void:
 				var n := XOrbs.claim_return(s(), str(row.token))
 				notify("已领取 %d 颗" % n if n else "背包仍满，宝珠继续保留")
 			returns_menu(),
-			returns_menu, [name_of(id) if id > 0 else "待领取宝珠", "暂存 %d 颗；可入背包 %d 颗" % [int(box.get(row.token, 0)), room]]),
-		home, ["暂存宝珠", status, "腾出对应宝珠的背包空间后，再次领取；暂存记录随存档保存"])
+			returns_menu, [name_of(id) if id > 0 else "待领取宝珠", "暂存 %d 颗；可入背包 %d 颗" % [int(box.get(row.token, 0)), room]],
+			crumb(["暂存宝珠", name_of(id) if id > 0 else "待领取宝珠"])),
+		home, ["暂存宝珠", status, "腾出对应宝珠的背包空间后，再次领取；暂存记录随存档保存"], crumb(["暂存宝珠"]))
 
 
 func home() -> void:
@@ -323,7 +357,7 @@ func home() -> void:
 	for b in cfg().bands:
 		sealed += count(int(b.itemId))
 	choose(rows, _home_pick, close, ["宝珠坊", "未鉴定 %d 枚　宝珠残片 %d" % [sealed, count(int(cfg().fragment))],
-			"武器、副手、神武为武器孔（0～3），其余防具孔（0～2）", "玄甲、长生、藏气、流风镶防具孔；全身同类只算最高3颗"])
+			"武器、副手、神武为武器孔（0～3），其余防具孔（0～2）", "玄甲、长生、藏气、流风镶防具孔；全身同类只算最高3颗"], crumb())
 
 
 func _home_pick(row: Dictionary) -> void:

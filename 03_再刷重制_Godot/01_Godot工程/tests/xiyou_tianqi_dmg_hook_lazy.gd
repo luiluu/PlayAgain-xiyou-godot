@@ -8,6 +8,9 @@ extends Node
 ## 三、整场同种子逐位一致：天启篇（穿七印＋词条＋号卷、替换普攻武器、中途挂替换普攻状态）与西游档各跑几回合，
 ##    开关全开与全关的每回合日志、HP／MP／TP、状态、随机流逐位相同；全开重跑一次也相同。
 ## 四、性能（只打印，交付单抄）：窗口里三个钩子、capture 单次，4v5 一次智能选招，开关开／关各量一次。
+## 五（T296 补 T293 核查 P3-1）：词条钩子不带「技能伤害」时不问 is_attack 那一支、七印封技普攻（失魄封技＋默印真印）那一支开关前后一致；
+##    五条悟普攻号显式是 10634；命运编织者 94 穿命运骰子（4521）的天启篇整场开关全开／全关逐位一致。
+##    性能另量 XAlienBattle.FRAME_TOUCH_LAZY（T296：公式帧进出只在改得了读法时作废只读窗口）开／关的 calculate 与 4v5 选招。
 const BIG_HP := 1e12
 var results := []
 
@@ -28,6 +31,8 @@ func _run() -> void:
 	_hooks_same()
 	_memo()
 	_whole_battle()
+	_skip_and_silenced()
+	_whole_battle_fate()
 	_perf()
 	_switches(true)
 	var passed := results.filter(func(r): return r.passed).size()
@@ -54,7 +59,7 @@ func _switches(on: bool) -> void:
 # ---- 夹具 ----
 
 ## 天启篇存档 4 人（学全部重构技），可选穿七印＋词条、学号卷；返回 XBattleLogic
-func _setup(group: Array, troop := 394, seals := [], learn := [], big_hp := true, rand_seed := "0000000000000293") -> XBattleLogic:
+func _setup(group: Array, troop := 394, seals := [], learn := [], big_hp := true, rand_seed := "0000000000000293", no_skill_dmg := false) -> XBattleLogic:
 	var s := XTianqi.start_new_game(3, "lianyu", group.slice(0, 3))
 	XTianqi.take_pending()
 	for id in group:
@@ -75,7 +80,7 @@ func _setup(group: Array, troop := 394, seals := [], learn := [], big_hp := true
 	for i in group.size():
 		var a: XActor = s.actor(group[i])
 		if i < seals.size() and str(seals[i]) != "":
-			_wear(a, i, str(seals[i]))
+			_wear(a, i, str(seals[i]), no_skill_dmg)
 		for n in learn:
 			if (int(n) + i) % 2 == 0 or learn.size() == 1:
 				var id := int(XTianqiTrumpet.scroll(int(n)).skill)
@@ -106,18 +111,20 @@ const AFFIXES := [{"key": "final_damage", "grade": "perfect", "extra": {}}, {"ke
 
 
 ## 七印全套 5 件＋武器（各带两三条词条）
-func _wear(a: XActor, i: int, seal: String) -> void:
+## no_skill_dmg：所有词条都不带「技能伤害」（词条钩子 LAZY_ATTACK 不问 is_attack 那一支，T296 补 P3-1）
+func _wear(a: XActor, i: int, seal: String, no_skill_dmg := false) -> void:
 	a.keep_unequippable = true
 	var parts := ["head", "body", "hands", "waist", "legs"]
 	var st: XState = XState.current
+	var pool: Array = AFFIXES.filter(func(x): return str(x.key) != "skill_damage") if no_skill_dmg else AFFIXES
 	var w := XGear.create("weapon", 1, st)
 	XTianqiQiyinEffects.mark(w, {"kind": "weapon", "seal": seal, "wtype": "sword", "true_seal": true})
-	w.qiyin["affixes"] = [AFFIXES[i % AFFIXES.size()], AFFIXES[(i + 1) % AFFIXES.size()], AFFIXES[1]]
+	w.qiyin["affixes"] = [pool[i % pool.size()], pool[(i + 1) % pool.size()], pool[1]]
 	a.equips[0] = w
 	for k in 5:
 		var inst := XGear.create("armor", 1, st)
 		XTianqiQiyinEffects.mark(inst, {"kind": "set", "seal": seal, "part": parts[k], "true_seal": false})
-		inst.qiyin["affixes"] = [AFFIXES[(i + k + 2) % AFFIXES.size()]]
+		inst.qiyin["affixes"] = [pool[(i + k + 2) % pool.size()]]
 		if k + 1 < a.equips.size():
 			a.equips[k + 1] = inst
 		else:
@@ -262,6 +269,7 @@ func _memo() -> void:
 		var v2 := g.attack_skill_id()
 		XActor.read_end()
 		_check("memo_gojo", v1 == v2 and v1 == g.attack_skill_id(), [v1, v2, g.attack_skill_id()])
+		_check("memo_gojo_10634", v1 == 10634 and g._attack_skill_id_now() == 10634, [v1, g._attack_skill_id_now()])  # 角色备注 <Replace Attack: 10634>
 	else:
 		_check("memo_gojo_in_party", false, lg.actors.map(func(x): return x.actor_id))
 	XGojo.unlock_override = -1
@@ -348,6 +356,113 @@ func _diff_at(x: String, y: String) -> String:
 	return "len %d vs %d" % [x.length(), y.length()]
 
 
+# ---- 五、T296 补 T293 核查 P3-1 ----
+
+## 词条钩子「没有技能伤害词条就不问 is_attack」那一支、七印「封技时普攻增伤」那一支：开关全开／全关逐项相同
+func _skip_and_silenced() -> void:
+	var logic := _setup([1, 100, 131, 107], 394, ["mo", "mo", "mo", "mo"], [1, 2, 4], true, "0000000000000293", true)
+	var no_sd := true
+	for a in logic.actors:
+		for e in a.equip_list():
+			if e is Dictionary and e.has("qiyin"):
+				for x in e.qiyin.get("affixes", []):
+					if str(x.key) == "skill_damage":
+						no_sd = false
+	_check("p31_affix_no_skill_damage", no_sd)
+	var got := {}
+	for on in [true, false]:
+		_switches(on)
+		got[on] = [_hook_ops(logic, true), _hook_ops(logic, false)]
+	_switches(true)
+	_check("p31_affix_skip_same", got[true][0] == got[false][0] and got[true][1] == got[false][1], [got[true][0].sha256_text(), got[false][0].sha256_text()])
+	# 封技：失魄（状态 64，封技能类型 1、2）挂上后，默印真印的「封技普攻增伤」进普攻的七印钩子
+	var a: XActor = logic.actors[0]
+	var e: XEnemy = logic.enemies[0]
+	var atk := a.attack_skill()
+	var before := JSON.stringify(_plain(XTianqiQiyinEffects.damage_ops(atk, a, e)))
+	a.add_state(64)
+	_check("p31_sealed_trait", not a.traits_set(XBattler.TRAIT_STYPE_SEAL).is_empty(), a.state_ids)
+	_check("p31_silenced_code", XTianqiQiyinEffects._has(logic, a, "silenced_normal_attack_dmg_pct"))
+	var row := {}
+	for on in [true, false]:
+		_switches(on)
+		row[on] = [JSON.stringify(_plain(XTianqiQiyinEffects.damage_ops(atk, a, e))), _hook_ops(logic, true), _hook_ops(logic, false)]
+	_switches(true)
+	_check("p31_silenced_branch_hit", row[true][0] != before, [before.left(200), row[true][0].left(200)])
+	_check("p31_silenced_same", row[true] == row[false], [row[true][0].left(200), row[false][0].left(200)])
+	a.remove_state(64)
+	logic.end_battle(0)
+
+
+## 命运编织者 94 穿命运骰子（4521，FATE_REROLL 那一支）：天启篇整场开关全开／全关逐位一致，且这几回合里真放过命运之手
+func _battle_fate(turns: int) -> String:
+	seed(20261120)
+	var lineup := [94, 1, 100]
+	var s := XTianqi.start_new_game(3, "jianxian", lineup)
+	XTianqi.take_pending()
+	for id in lineup:
+		XTianqi._joining = true
+		s.add_actor(int(id))
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	s.random_master = XRandomStream.hex64(20261119)
+	for id in lineup:
+		s.actor(id).change_level(60)
+	var a: XActor = s.actor(94)
+	a.change_level(99)
+	a.learn_skill(6861)
+	var slots := a.equip_slots()
+	for i in slots.size():
+		if int(slots[i]) == 13:
+			a.equips[i] = XActor.make_equip("armor", 4521)
+			break
+	a.refresh_passive()
+	for x in lineup:
+		s.actor(x).recover_all()
+	s.set_switch(2261, true)  # 火已集过：抽到火就重掷（同 xiyou_tianqi_fate_copy 四）
+	s.set_variable(1281, 3)
+	var logic := XBattleLogic.new()
+	logic.setup(2, s, XBattleRandom.create("00000000000002a5"))
+	for e in logic.enemies:
+		if e.mhp < 900000000:
+			e.add_param(0, 999999999)
+		e.recover_all()
+	var out := []
+	var hand := XDB.rec("Skills", 6861)
+	for t in turns:
+		if logic.is_over():
+			break
+		a.mp = a.mmp  # 每回合补满 MP，好连放命运之手（两边开关同样做，逐位比较不受影响）
+		var logs := logic.run_turn({a: [hand, logic.enemies[0]]})  # 94 每回合放命运之手（同 xiyou_tianqi_fate_copy），其余自动
+		for r in logs:
+			if r is Dictionary and r.get("type") == "action" and r.get("skill") is Dictionary and int(r.skill.get("id", 0)) in [6862, 6863, 6864, 6865, 6866, 6867, 6875]:
+				_fate_casts += 1
+		out.append([_plain(logs), _fp(logic)])
+	out.append(["over", logic.is_over(), logic.turn, s.variable(1281), logic.has_meta("xtq_fate_reroll")])
+	_fate_rerolled = logic.has_meta("xtq_fate_reroll")
+	logic.end_battle(0)
+	return JSON.stringify(out)
+
+
+var _fate_casts := 0
+var _fate_rerolled := false
+
+
+func _whole_battle_fate() -> void:
+	_switches(true)
+	_fate_casts = 0
+	var on1 := _battle_fate(6)
+	var casts := _fate_casts
+	var rerolled := _fate_rerolled
+	_switches(false)
+	var off := _battle_fate(6)
+	_switches(true)
+	_check("fate_battle_cast_rerolled", casts >= 1 and rerolled, [casts, rerolled])  # 放过命运之手、且命运骰子重掷那一支走到了
+	_check("fate_battle_on_eq_off", on1 == off, [on1.sha256_text(), off.sha256_text(), _diff_at(on1, off)])
+	print("T296 fate battle fingerprint: %s (%d B) casts=%d rerolled=%s" % [on1.sha256_text().left(12), on1.length(), casts, str(rerolled)])
+
+
 # ---- 四、性能（打印） ----
 
 func _us(f: Callable, n: int) -> float:
@@ -392,6 +507,31 @@ func _perf() -> void:
 		print("PERF T293 switches=%s qiyin=%.1fus affix=%.1fus trumpet=%.1fus capture=%.1fus calc(同窗口)=%.1fus calc(每次新窗口)=%.1fus choose4v5 avg=%.1fms max=%.1fms" % [
 			"on" if on else "off", q, f, t, cap, calc, cold, tot / 12000.0, mx / 1000.0])
 	_switches(true)
+	# T296：公式帧进出只在改得了读法时作废只读窗口（XAlienBattle.FRAME_TOUCH_LAZY），T293 开关全开时开／关各量一次
+	var frow := {}
+	for lazy in [false, true]:
+		XAlienBattle.FRAME_TOUCH_LAZY = lazy
+		XActor.read_begin()
+		var calc := _us(func(): XDamage.calculate(sk, a, b, {"vars": V, "rawValue": 1000.0}), 50)
+		var ev := _us(func(): XDamage.eval_formula(sk, a, b, V), 50)
+		XActor.read_end()
+		var cold := _us(func(): XDamage.calculate(sk, a, b, {"vars": V, "rawValue": 1000.0}), 50)
+		XSmartAI.choose(logic, a)
+		var tot := 0
+		var mx := 0
+		for r in 3:
+			for act in logic.actors:
+				var t0 := Time.get_ticks_usec()
+				XSmartAI.choose(logic, act)
+				var dt := Time.get_ticks_usec() - t0
+				tot += dt
+				mx = maxi(mx, dt)
+		frow[lazy] = {"calc_warm": calc, "eval_warm": ev, "calc_cold": cold, "choose_avg_ms": tot / 12000.0, "choose_max_ms": mx / 1000.0}
+		print("PERF T296 frame_lazy=%s calc(同窗口)=%.1fus eval_formula(同窗口)=%.1fus calc(每次新窗口)=%.1fus choose4v5 avg=%.1fms max=%.1fms" % [
+			"on" if lazy else "off", calc, ev, cold, tot / 12000.0, mx / 1000.0])
+	XAlienBattle.FRAME_TOUCH_LAZY = true
+	# 粗上限：开着时同窗口 calculate 不比关着慢（实测快一半以上，这里只防退化）
+	_check("perf_frame_lazy_not_slower", frow[true].calc_warm <= frow[false].calc_warm * 1.2, frow)
 	# 粗上限防退化：开着时三个钩子合计不比关着慢
 	_check("perf_hooks_not_slower", row[true].qiyin + row[true].affix + row[true].trumpet <= (row[false].qiyin + row[false].affix + row[false].trumpet) * 1.2, row)
 	logic.end_battle(0)

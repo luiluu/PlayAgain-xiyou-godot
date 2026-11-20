@@ -1069,6 +1069,35 @@ class HookLineTests(Fixture):
             for pat in esc['scenes']:
                 self.assertTrue(list(tests.glob(pat)), '漏网回归集的场景没有对应测试：' + pat)
 
+    def test_content_escapes_trigger_on_added_lines_any_dir(self):
+        """T301：新增行含 set_input_as_handled／XKeyMap.handled 的 .gd，不论目录都带上 xiyou_input_handled（T288 skin_card 漏网例）。"""
+        table = json.loads((HERE / '选测对照.json').read_text())
+        ce = table['contentEscapes']
+        self.assertTrue(any('xiyou_input_handled.tscn' in c['scenes'] for c in ce))
+        table['contentEscapes'] = [dict(ce[0], scenes=['xiyou_shop.tscn'])]
+        path = self.root / 'ce.json'
+        path.write_text(json.dumps(table))
+        self.put(CORE / 'lonely.gd', 'class_name XLonely\n# 无关改动\n')
+        self.assertNotIn('xiyou_shop.tscn', sel.select(self.root, self.base, table=path)['scenes'])
+        self.put(CORE / 'lonely.gd', 'class_name XLonely\nfunc f():\n\tget_viewport().set_input_as_handled()\n')
+        s = sel.select(self.root, self.base, table=path)
+        self.assertIn('xiyou_shop.tscn', s['scenes'])
+        self.assertTrue(any(r[1].startswith('contentEscapes') for r in s['reasons']))
+        self.put(CORE / 'lonely.gd', 'class_name XLonely\nfunc f():\n\tXKeyMap.handled(self)\n')
+        self.assertIn('xiyou_shop.tscn', sel.select(self.root, self.base, table=path)['scenes'])
+        self.put(CORE / 'lonely.gd', 'class_name XLonely\n')
+        self.put(CORE / 'newpage.gd', 'extends Node\nfunc f():\n\tXKeyMap.handled(self)\n')  # 新文件（未跟踪）也算
+        self.assertIn('xiyou_shop.tscn', sel.select(self.root, self.base, table=path)['scenes'])
+
+    def test_content_escapes_table_validated(self):
+        table = json.loads((HERE / '选测对照.json').read_text())
+        for bad in ([{'pattern': '', 'scenes': ['a']}], [{'pattern': 'x', 'scenes': []}], [{'pattern': '(', 'scenes': ['a']}]):
+            table['contentEscapes'] = bad
+            path = self.root / 'ceb.json'
+            path.write_text(json.dumps(table))
+            with self.assertRaises((ValueError, re.error)):
+                sel.load_table(path)
+
     def test_real_escape_state_effects_selects_status_power_panel(self):
         """rules4 漏网例：改 state_effects.gd 或其探针，必带 xiyou_status_power_panel（按文件，不靠 battle 组点名）。"""
         esc = json.loads((HERE / '选测对照.json').read_text())['escapes']

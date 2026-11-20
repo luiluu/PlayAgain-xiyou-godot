@@ -39,6 +39,23 @@ var title_win: XMVWindow
 var range_win: XMVWindow
 var item_wins: Array = []
 var _page: XHangUpSubPage
+## T304 卡 M：新界面开着时的版型三（XSkinSubPage）；关着为 null，旧页一行不变
+var skin: XSkinSubPage
+var _preview: Control
+var _big: Control
+var _black: ColorRect
+
+## 卡 M 的开关：false＝挂机设置及四个子页回旧画法（天启篇存档里也回旧窗口）
+static var SKIN_M := true
+## 右牌范围预览：取以玩家为中心的 15×9 格（T254 3.8）
+const PREV_COLS := 15
+const PREV_ROWS := 9
+const PREV_HEAD := 30.0
+const BIG_SIZE := Vector2(854, 480)
+
+
+static func skin_wanted() -> bool:
+	return SKIN_M and XSkinSubPage.wanted()
 
 
 ## HuList.createAllList 的窗口位置
@@ -62,7 +79,11 @@ func _ready() -> void:
 	black.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	black.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(black)
-	if map_shot:
+	_black = black
+	if skin_wanted():
+		black.hide()   # 新版型用设置页的底图，不再垫模糊截图（T254 3.8）
+		XUI.menu_background(self)
+	elif map_shot:
 		add_child(XUI.blurred_background(map_shot))
 	title_win = XMVWindow.make(self, TITLE_RECT, 255, _paint_title)
 	title_win.padding = PAD
@@ -74,6 +95,33 @@ func _ready() -> void:
 	range_win = XMVWindow.make(self, RANGE_RECT, 255, _paint_range)
 	range_win.padding = PAD
 	range_win.canvas.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	if skin_wanted():
+		for w in [title_win, range_win] + item_wins:
+			w.hide()
+		skin = XSkinSubPage.attach(self)
+		process_priority = 1   # 在 XSkinSubPage.sync 之后再摆预览、对右牌的底部预留
+		_preview = Control.new()
+		_preview.name = "RangePreview"
+		_preview.mouse_filter = Control.MOUSE_FILTER_STOP
+		_preview.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		_preview.draw.connect(_draw_preview)
+		_preview.gui_input.connect(func(e):
+			if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+				show_big(true)
+				_preview.accept_event())
+		skin.card.add_child(_preview)
+		_big = Control.new()
+		_big.name = "RangeBig"
+		_big.mouse_filter = Control.MOUSE_FILTER_STOP
+		_big.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		_big.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		_big.draw.connect(_draw_big)
+		_big.gui_input.connect(func(e):
+			if e is InputEventMouseButton and e.pressed:
+				show_big(false)
+				_big.accept_event())
+		_big.visible = false
+		add_child(_big)
 
 
 func settings() -> Dictionary:
@@ -146,6 +194,8 @@ func _paint_range(c: XMVCanvas) -> void:
 func _refresh() -> void:
 	for w in [title_win, range_win] + item_wins:
 		w.refresh()
+	if _preview != null:
+		_preview.queue_redraw()
 
 
 # ---- 操作 ----
@@ -202,6 +252,7 @@ func cancel() -> void:
 
 func _open_subpage(kind: String) -> void:
 	_page = XHangUpSubPage.new().setup(kind)
+	_page.page_name = words(SYMS[index])[0]
 	for node in get_children():
 		if node is CanvasItem:
 			node.hide()
@@ -213,10 +264,17 @@ func _open_subpage(kind: String) -> void:
 		for node in get_children():
 			if node is CanvasItem and node != page:
 				node.show()
+		if skin != null:   # 新版型：旧窗口、大图照旧藏着
+			for w in [title_win, range_win] + item_wins:
+				w.hide()
+			_big.visible = false
+			_black.hide()
 		_refresh())
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:
+		return   # 新版型的点击由列表自己接（XSkinSubPage）
 	if _page or not (event is InputEventMouseButton and event.pressed):
 		return
 	if event.button_index == MOUSE_BUTTON_RIGHT:
@@ -238,6 +296,9 @@ func _gui_input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _page:
 		return
+	if skin != null and _skin_input(event):
+		XKeyMap.handled(self)
+		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
 		cancel()
@@ -253,3 +314,225 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("ui_left", true):
 		XKeyMap.handled(self)
 		left()
+
+
+
+# ---- T304 卡 M：新版型（XSkinSubPage 向这里要行和牌）----
+
+func skin_self_hosted() -> bool:
+	return skin_wanted()
+
+
+func skin_name() -> String:
+	return "挂机设置"
+
+
+func skin_cat() -> String:
+	return "hangup"
+
+
+## 一列 13 行，顺序照旧；范围写数字，开关写「开」「关」，四个子页写「设置 ›」
+func skin_rows() -> Array:
+	var out := []
+	for i in SYMS.size():
+		var sym: String = SYMS[i]
+		var r := {"text": words(sym)[0]}
+		if sym in SUBPAGES:
+			r["right"] = "设置 ›"
+			r["right_color"] = XUiSkin.TEXT_2
+		elif sym == "range":
+			r["right"] = str(int(settings().range))
+			r["right_color"] = XUiSkin.GOLD_LIGHT
+		else:
+			var on := _on(sym)
+			r["right"] = "开" if on else "关"
+			r["right_color"] = XSkinSubPage.on_color(on)
+		out.append(r)
+	return out
+
+
+func _on(sym: String) -> bool:
+	return true if settings().get(sym) else false
+
+
+## 右牌：名字、现在的值、说明（旧顶上说明窗那一句）、可选、操作；「挂机范围」那一行底下多一块范围预览
+func skin_card(i: int) -> Dictionary:
+	var sym: String = SYMS[i]
+	var w: Array = words(sym)
+	var d := {"title": w[0], "desc": w[1]}
+	if sym in SUBPAGES:
+		d["subtitle"] = "进入设置"
+		d["sections"] = [{"title": "操作", "text": "确定进入设置。"}]
+	elif sym == "range":
+		d["subtitle"] = "现在 %d 格" % int(settings().range)
+		d["sections"] = [{"title": "操作", "text": "确定或 → 加一格，← 减一格（1～%d 循环）。按 Y 或点预览看整张图。" % max_range()}]
+	else:
+		var on := _on(sym)
+		d["subtitle"] = "开" if on else "关"
+		d["sections"] = [XSkinSubPage.choices_section(["开", "关"], 0 if on else 1),
+			{"title": "操作", "text": "确定或左右切换。"}]
+	return d
+
+
+func skin_hints() -> Array:
+	if _big != null and _big.visible:
+		return [["取消", "收起"]]
+	var sym: String = SYMS[index]
+	if sym in SUBPAGES:
+		return [["确定", "进入"], ["取消", "返回"]]
+	if sym == "range":
+		return [["确定", "加一格"], ["左右", "调整"], ["Y", "看大图"], ["取消", "返回"]]
+	return [["确定", "切换"], ["左右", "开／关"], ["取消", "返回"]]
+
+
+## 新版型多出来的键：大图开着时只认取消／Y（收起）；选中「挂机范围」时 Y 展开大图
+func _skin_input(event: InputEvent) -> bool:
+	if _big.visible:
+		if event.is_action_pressed("ui_cancel") or XSkinCard._is_y(event) or event.is_action_pressed("ui_accept"):
+			show_big(false)
+			return true
+		return not event is InputEventMouse   # 大图开着时别的键不穿到列表
+	if SYMS[index] == "range" and XSkinCard._is_y(event):
+		show_big(true)
+		return true
+	return false
+
+
+func show_big(on: bool) -> void:
+	if _big == null or _big.visible == on:
+		return
+	_big.visible = on
+	if on:
+		XSound.system(0)
+		_big.queue_redraw()
+	else:
+		XSound.system(2)
+
+
+func _process(_delta: float) -> void:
+	if _preview == null:
+		return
+	var show_prev: bool = SYMS[index] == "range" and skin.card.visible
+	_preview.visible = show_prev
+	# 右牌给预览让出底部（模板页换牌时 _place_targets 会把它写回 0，所以本页排在子节点之后、每帧对一次）
+	var want := preview_height() if show_prev else 0.0
+	if not is_equal_approx(skin.card.reserve_bottom, want):
+		skin.card.reserve_bottom = want
+		skin.card.queue_redraw()
+	if not show_prev:
+		return
+	var c := skin.card
+	var w := c.size.x - c.pad * 2.0
+	var r := Rect2(c.pad, c.size.y - c.pad - preview_height() + 8.0, w, preview_height() - 8.0)
+	if _preview.position != r.position or _preview.size != r.size:
+		_preview.position = r.position
+		_preview.size = r.size
+		_preview.queue_redraw()
+
+
+## 预览块（含「范围预览」小标题）的高：右牌内宽按 15×9 方格铺满
+func preview_height() -> float:
+	if skin == null:
+		return 0.0
+	var w := skin.card.size.x - skin.card.pad * 2.0
+	return PREV_HEAD + w / PREV_COLS * PREV_ROWS + 8.0
+
+
+## 截图上一格多大（截图按打开菜单时的画面 1280×720 截，格子 48）
+func _shot_tile() -> Vector2:
+	if map_shot == null:
+		return Vector2(TILE, TILE)
+	return Vector2(TILE, TILE) * map_shot.get_size() / Vector2(1280, 720)
+
+
+## 预览框（相对 _preview）
+func preview_box() -> Rect2:
+	return Rect2(0, PREV_HEAD, _preview.size.x, _preview.size.y - PREV_HEAD)
+
+
+func _draw_preview() -> void:
+	var body := XUiSkin.font("body")
+	XUiSkin.ds(_preview, body, Vector2(0, XUiSkin.FS_AUX_MAX * 1.1), "范围预览", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
+	var box := preview_box()
+	var t := box.size.x / PREV_COLS
+	var org := Vector2(player_tile) - Vector2(floorf(PREV_COLS / 2.0), floorf(PREV_ROWS / 2.0))   # 窗口左上角是哪一格
+	_preview.draw_rect(box, Color.BLACK)
+	if map_shot != null:
+		# 只取截图里落在窗口内的那一块（画面边上的格子外面留黑）
+		var st := _shot_tile()
+		var src := Rect2(org * st, Vector2(PREV_COLS, PREV_ROWS) * st).intersection(Rect2(Vector2.ZERO, map_shot.get_size()))
+		if src.size.x > 0 and src.size.y > 0:
+			var dst := Rect2(box.position + (src.position / st - org) * t, src.size / st * t)
+			_preview.draw_texture_rect_region(map_shot, dst, src)
+	_preview.draw_rect(box, Color(0, 0, 0, 0.45))
+	var cells := {}
+	for c in lattice():
+		cells[c] = true
+	var beyond := [false, false, false, false]   # 左右上下有超出窗口的范围格
+	for c in cells:
+		var g: Vector2 = Vector2(c) - org
+		if g.x < 0:
+			beyond[0] = true
+		elif g.x >= PREV_COLS:
+			beyond[1] = true
+		if g.y < 0:
+			beyond[2] = true
+		elif g.y >= PREV_ROWS:
+			beyond[3] = true
+		if g.x < 0 or g.y < 0 or g.x >= PREV_COLS or g.y >= PREV_ROWS:
+			continue
+		var r := Rect2(box.position + g * t, Vector2(t, t)).grow(-1.0)
+		_preview.draw_rect(r, Color(XUiSkin.GOLD, 0.22))
+		_preview.draw_rect(r, Color(XUiSkin.GOLD, 0.9), false, 1.0)
+	var pc := box.position + (Vector2(player_tile) - org + Vector2(0.5, 0.5)) * t
+	_preview.draw_circle(pc, maxf(t * 0.22, 2.5), Color.WHITE)
+	_draw_beyond(_preview, box, beyond)
+	_preview.draw_rect(box, Color(XUiSkin.LINE, 0.3), false, 1.0)
+
+
+## 范围超出窗口的那一边画一道「›」（朝外）
+func _draw_beyond(ci: CanvasItem, box: Rect2, beyond: Array) -> void:
+	var a := 7.0
+	var col := XUiSkin.GOLD_LIGHT
+	var mid := box.get_center()
+	if beyond[0]:
+		ci.draw_polyline([Vector2(box.position.x + 4 + a, mid.y - a), Vector2(box.position.x + 4, mid.y), Vector2(box.position.x + 4 + a, mid.y + a)], col, 2.0)
+	if beyond[1]:
+		ci.draw_polyline([Vector2(box.end.x - 4 - a, mid.y - a), Vector2(box.end.x - 4, mid.y), Vector2(box.end.x - 4 - a, mid.y + a)], col, 2.0)
+	if beyond[2]:
+		ci.draw_polyline([Vector2(mid.x - a, box.position.y + 4 + a), Vector2(mid.x, box.position.y + 4), Vector2(mid.x + a, box.position.y + 4 + a)], col, 2.0)
+	if beyond[3]:
+		ci.draw_polyline([Vector2(mid.x - a, box.end.y - 4 - a), Vector2(mid.x, box.end.y - 4), Vector2(mid.x + a, box.end.y - 4 - a)], col, 2.0)
+
+
+## 大图的框（同旧版 854×480，画面比它小时等比缩）
+func big_rect() -> Rect2:
+	var vs := size
+	var k := minf(1.0, minf((vs.x - 32.0) / BIG_SIZE.x, (vs.y - 32.0) / BIG_SIZE.y))
+	var sz := BIG_SIZE * k
+	return Rect2((vs - sz) / 2.0, sz)
+
+
+## 大图：整屏压暗 66%，居中一张整幅地图（同旧版 854×480），范围格同预览的画法
+func _draw_big() -> void:
+	_big.draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, 0.66))
+	var r := big_rect()
+	var ci := _big.get_canvas_item()
+	XUiSkin.panel_style().draw(ci, r)
+	var inner := r.grow(-10.0)
+	var k := inner.size / Vector2(1280, 720)
+	if map_shot != null:
+		_big.draw_texture_rect(map_shot, inner, false)
+	_big.draw_rect(inner, Color(0, 0, 0, 0.45))
+	for c in lattice():
+		var cr := Rect2(inner.position + Vector2(c) * TILE * k, Vector2(TILE, TILE) * k).grow(-1.0)
+		_big.draw_rect(cr, Color(XUiSkin.GOLD, 0.22))
+		_big.draw_rect(cr, Color(XUiSkin.GOLD, 0.9), false, 1.0)
+	_big.draw_circle(inner.position + (Vector2(player_tile) + Vector2(0.5, 0.5)) * TILE * k, maxf(TILE * k.x * 0.22, 2.5), Color.WHITE)
+	var body := XUiSkin.font("body")
+	var cap := "挂机范围 %d 格" % int(settings().range)
+	var fs := XUiSkin.FS_AUX_MAX
+	var cw := body.get_string_size(cap, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var pill := Rect2(inner.position + Vector2(10, 10), Vector2(cw + 24.0, fs + 14.0))
+	_big.draw_rect(pill, Color(0, 0, 0, 0.72))   # 地图上的字垫深色底（底下可能是雪地）
+	XUiSkin.ds(_big, body, Vector2(pill.position.x + 12.0, pill.position.y + 7.0 + fs * 0.86), cap, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD)

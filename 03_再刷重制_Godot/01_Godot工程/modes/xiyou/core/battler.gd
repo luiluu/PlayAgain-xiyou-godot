@@ -980,7 +980,7 @@ func attack_times_add() -> float:
 ## 原版把找到的号缓存到下次 refresh（只在忘记技能而没 refresh 时与即时查不同，正式流程碰不到），这里每次即时查。
 ## ATTACK_ID_MEMO（O-625，T293 战斗提速）：角色在只读窗口（O-348）里同一代只查一次——逐个状态／装备／技能的备注按整串查表，
 ## 一次约 70～100 µs，一段伤害里天启篇钩子要问三四次 is_attack。记在 XActor._read_memo，换代即丢。换代来源（refresh_passive 本身不换代）：
-## 加减状态（state_touch）、clear_states、param_mark_dirty、学／忘技能、HP／MP／TP 写入、公式帧进出（XAlienBattle.push／pop_formula）；
+## 加减状态（state_touch）、clear_states、param_mark_dirty、学／忘技能、HP／MP／TP 写入、公式帧进出（XAlienBattle.push／pop_formula，FRAME_TOUCH_LAZY 时只在帧改得了能力值读法时）、XEquipment.change（换装当场）；
 ## 换装走 XEquipment.preview（read_touch）、XEquipment.change（末尾写 hp／mp）、init_equips／release_unequippable（卸了东西时）／release_to_party。
 ## 直接改 equips[] 又不走这些路径的不换代（与 skills()／特性表的窗口记忆同一前提）。键带 _cat_bare（小猫剑圣空手时装备表、技能表不同）；角色自己的包装（甚尔形态、宿傩、屠苏武具态）在 XActor 里、
 ## 不进记忆，照旧每次现算。窗口外、敌人照旧每次即时查。false＝回退（每次即时查）。XIYOU_READ_VERIFY=1 时每次命中都重算比对。

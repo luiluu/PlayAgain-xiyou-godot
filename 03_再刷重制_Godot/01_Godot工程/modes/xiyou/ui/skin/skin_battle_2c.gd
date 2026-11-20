@@ -32,6 +32,11 @@ static var DROPS := true
 static var EDGE_FLASH := true
 static var NAMES := true
 static var HANDOFF := true
+## T291：HANDOFF_DROP_SNAP 关＝回到建结算页那刻才扫场上掉落（已淡出的飞不了）；
+## RESULT_CLEAR 关＝结算页出来时敌人名字／血条／首领状态胶囊照旧留着；DEFEAT_FADE 关＝全灭时印盘不淡出
+static var HANDOFF_DROP_SNAP := true
+static var RESULT_CLEAR := true
+static var DEFEAT_FADE := true
 
 
 static func meter_on() -> bool:
@@ -1393,6 +1398,8 @@ class Handoff extends Control:
 	var v: XVictoryScreen
 	var fly := false
 	var fliers := []               # [{tex, from, to, t0, t1, col}]
+	var _snap := []                # T291：最后一击当帧拍的史诗以上掉落 [{item, local（field 坐标）, tex}]
+	var _snapped := false
 	var _drop_src := []            # 建结算页那一刻场上还在的史诗以上掉落：[{item, pos, tex, used}]
 	var _wait := 0.0
 	var _out := -1.0
@@ -1419,10 +1426,35 @@ class Handoff extends Control:
 		r.reparent(self)
 		_set_fade(1.0 if motion != XUiSkin.Motion.OFF else 0.0)
 
-	## 建结算页那一刻：记下场上还没淡出的史诗以上掉落（镜头已推近，取这一刻的屏幕坐标）；已释放的不飞
+	## T291：最后一击当帧（_victory 开头）把场上所有史诗以上掉落拍下来，位置记成 field 坐标（等待期里镜头推近，取用时再换算）。
+	## 掉落图标落地约 1 秒就淡出，等 1.0 秒等待期满时 alpha 已为 0（节点还在），原来这时才扫就全被筛掉
+	func snapshot_drops(field: Node) -> void:
+		_snap = []
+		_snapped = false
+		if not XSkin2C.HANDOFF_DROP_SNAP or not field is CanvasItem or not is_instance_valid(field):
+			return
+		_snapped = true
+		var inv: Transform2D = (field as CanvasItem).get_global_transform_with_canvas().affine_inverse()
+		for p in field.get_children():
+			if not p is XDropPopup:
+				continue
+			for g in p.icons:
+				var n = g.get("node")
+				if n == null or not is_instance_valid(n) or int(n.grade) < 3:
+					continue
+				var sy := absf(float(g.sy)) if float(g.alpha) > 0.0 else 1.0   # 淡出时纵向缩放一路变大，取原大小
+				var pos: Vector2 = n.get_global_transform_with_canvas() * Vector2(float(g.x), float(g.y) - XDropPopup.ICON * sy / 2.0)
+				_snap.append({"item": g.item, "local": inv * pos, "tex": n.tex})
+
+	## 建结算页那一刻：取最后一击拍下的史诗以上掉落（镜头已推近，按 field 现在的位置换成屏幕坐标）；没拍过（开关关）才回到扫场上还没淡出的
 	func collect_drops(field: Node) -> void:
 		_drop_src = []
 		if field == null or not is_instance_valid(field):
+			return
+		if _snapped:
+			var xf: Transform2D = (field as CanvasItem).get_global_transform_with_canvas()
+			for s in _snap:
+				_drop_src.append({"item": s.item, "pos": xf * (s.local as Vector2), "tex": s.tex, "used": false})
 			return
 		for p in field.get_children():
 			if not p is XDropPopup:

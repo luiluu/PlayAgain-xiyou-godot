@@ -112,6 +112,10 @@ def load_table(path=TABLE):
     for i, esc in enumerate(table.get('escapes') or [], 1):
         if not (isinstance(esc.get('files'), list) and esc['files'] and isinstance(esc.get('scenes'), list) and esc['scenes']):
             raise ValueError('escapes 第 %d 条须有非空的 files 和 scenes 列表' % i)
+    for i, ce in enumerate(table.get('contentEscapes') or [], 1):
+        if not (isinstance(ce.get('pattern'), str) and ce['pattern'] and isinstance(ce.get('scenes'), list) and ce['scenes']):
+            raise ValueError('contentEscapes 第 %d 条须有非空的 pattern 字符串和 scenes 列表' % i)
+        re.compile(ce['pattern'])
     sections = table.get('sliceSections') or {}
     bad = {g for g in (sections.get('keys') or {}).values() if g not in groups}
     if bad:
@@ -224,6 +228,19 @@ def only_lines(root, base, path, pattern, head=None):
     diff = git(root, 'diff', '-U0', base, *([head] if head else []), '--', path).splitlines()
     lines = [l[1:] for l in diff if l[:1] in '+-' and not l.startswith(('+++', '---'))]
     return bool(lines) and all(re.search(pattern, l) for l in lines)
+
+
+def added_lines(root, base, path, head=None):
+    """该文件新增的行（untracked 新文件＝整份）；文件已删返回 []。"""
+    diff = git(root, 'diff', '-U0', base, *([head] if head else []), '--', path).splitlines()
+    if diff:
+        return [l[1:] for l in diff if l.startswith('+') and not l.startswith('+++')]
+    if head or not (Path(root) / path).is_file():
+        return []
+    try:
+        return (Path(root) / path).read_text(errors='replace').splitlines()
+    except OSError:
+        return []
 
 
 def load_hooks(path=TABLE):
@@ -567,6 +584,7 @@ def select(root, base, table=TABLE, head=None, sample=True):
     pinned = set()  # 改了测试本身选上的场景：抽样时照跑
     sample_cfg = load_sample(table) if sample else None
     escapes = json.loads(Path(table).read_text()).get('escapes') or []
+    content_escapes = json.loads(Path(table).read_text()).get('contentEscapes') or []
 
     narrow = sections.get('narrowFloorsByMap') or {}
     hooks = load_hooks(table)
@@ -680,6 +698,14 @@ def select(root, base, table=TABLE, head=None, sample=True):
             scenes.update(picked)
             pinned.update(picked)
             reasons.append((hit[0], 'escapes（漏网回归集）', esc.get('说明', ''), sorted(picked), False))
+    for ce in content_escapes:  # 内容触发（T301）：新增行里出现 pattern（如 set_input_as_handled）就带上这些场景，与目录无关
+        suf = tuple(ce.get('suffixes') or ['.gd'])
+        hit = [f for f in files if f.endswith(suf) and any(re.search(ce['pattern'], l) for l in added_lines(root, base, f, head))]
+        if hit:
+            picked = {s for pat in ce['scenes'] for s in tests.glob(pat)}
+            scenes.update(picked)
+            pinned.update(picked)
+            reasons.append((hit[0], 'contentEscapes（改动内容触发）', ce.get('说明', ''), sorted(picked), False))
     if not full and tests.scenes and scenes >= set(tests.scenes):
         full = True  # 选中了全部场景：按整轮跑，才能沿用上轮通过结果
         reasons.append(('（全部场景）', '选中了全部 %d 个场景，按整轮跑' % len(tests.scenes), '', [], True))
