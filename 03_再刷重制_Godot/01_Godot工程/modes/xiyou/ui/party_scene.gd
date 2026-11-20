@@ -13,6 +13,8 @@ extends Control
 ##   「完成」或在指令窗取消返回主菜单（完成在出战栏全空/全员阵亡时灰显，确定蜂鸣）；返回前 XPartySkills.finish 刷新技能共享／羁绊／领袖。
 ## - 超强者（installBossDifficultyRuntime）：没开挑战开关时名单里名字半透明、确定蜂鸣；开页先清出战栏里的超强者并提示（XItemMarks.deploy_start）。
 ## - 领袖旗标（Star_LeadActor 的 drawActor 包装）：首位是领袖角色时出战栏首格右上角画 LeaderFlag。
+## T292 新界面（天启篇，XUiSkin.on() 且 XSkinPartyPage.ENABLED 时）：同一套状态，换成上排出战位＋名单＋右牌（XSkinPartyPage）；
+## 没有指令窗，进页就在出战位上（mode＝slot、cmd＝整队）。新皮肤关着时下面一行不变。
 
 signal closed
 
@@ -36,6 +38,7 @@ var slot_index := -1
 var list_index := 1
 var list_top := 0
 var _former: Array = []
+var skin: XSkinPartyPage
 
 
 func _ready() -> void:
@@ -51,6 +54,12 @@ func _ready() -> void:
 	list_win = XMVWindow.make(self, LIST_RECT, XUI.MENU_WINDOW_OPACITY, _paint_list)
 	for w in [cmd_win, slot_win, list_win]:
 		w.canvas.blink = true
+	if XUiSkin.on() and XSkinPartyPage.ENABLED:
+		mode = "slot"   # 新页不要指令窗：进页光标就在出战位上，确定＝整队（cmd 0）
+		cmd_index = 0
+		slot_index = 0
+		skin = XSkinPartyPage.new(self)
+		add_child(skin)
 	_refresh()
 
 
@@ -72,6 +81,8 @@ func _refresh() -> void:
 	list_win.down_arrow = list_top + _rows() < list_data().size()
 	for w in [cmd_win, slot_win, list_win]:
 		w.refresh()
+	if skin != null:
+		skin.sync()
 
 
 ## isCancelEnabled：出战栏有人且有活着的队员
@@ -297,6 +308,8 @@ func _move(d: int, wrap: bool) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinPartyPage）
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	match event.button_index:
@@ -342,6 +355,9 @@ func _pick(i: int, n: int, field: String) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	var key := event as InputEventKey
 	var pressed := key != null and key.pressed
 	if event.is_action_pressed("ui_cancel"):
