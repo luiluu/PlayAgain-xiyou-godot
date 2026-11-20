@@ -40,7 +40,7 @@ const PANIC_HP_PCT := {"E": 25, "D": 20}
 ## 目标权重（整数百分比）
 const T_IMMUNE_PCT := 10
 const T_WEAK_PCT := 130
-const T_KILL_PCT := 400
+const T_KILL_PCT := 600
 const T_HEALER_PCT := 150
 const T_CORE_PCT := 200
 const T_WALL_PCT := 50
@@ -226,15 +226,17 @@ static func enemy_action(logic, e: XEnemy) -> Dictionary:
 	return rec
 
 
-## 每个候选的整数权重（原版 rating−zero 先 ×100，再逐条乘整数百分比）；测试也直接调
-static func action_weights(logic, e: XEnemy, list: Array, zero: int, t: int) -> Array:
+## 每个候选的整数权重（原版 rating−zero 先 ×100，再逐条乘整数百分比）；测试也直接调（given：测试给的技能记录，与 list 一一对应）
+static func action_weights(logic, e: XEnemy, list: Array, zero: int, t: int, given: Array = []) -> Array:
 	var six := XTianqiSixDim.of_battler(e, logic)
 	var w := XTianqiSixDim.ai_weights_of(six)
 	var ev := XBattleEval.create_for(logic, e, {"check_weakness": t >= 3, "check_kill": t >= 4})
 	var foes: Array = logic.alive(logic.actors)
-	var recs := []
-	for act in list:
-		recs.append(XDB.rec("Skills", int(act.skillId)))
+	var recs := given
+	if recs.size() != list.size():
+		recs = []
+		for act in list:
+			recs.append(XDB.rec("Skills", int(act.skillId)))
 	var last := int(e.get_meta(META_LAST, -1))
 	var distinct := {}
 	for rec in recs:
