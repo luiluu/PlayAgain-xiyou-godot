@@ -403,12 +403,19 @@ const LINK_STYLES := {
 
 ## 样式表取值（style 没给就用 DEFAULT_STYLE）
 func sty(key: String):
-	return style.get(key, DEFAULT_STYLE[key])
+	if style.has(key):
+		return style[key]
+	if XUiSkin.polish_on():
+		if key == "orb_low":
+			return XUiSkin.orb_low_c()
+		if key == "orb_hi":
+			return Color(XUiSkin.orb_hi_c(), 0.85)
+	return DEFAULT_STYLE[key]
 
 
 func ring_line_color() -> Color:
 	var c: Color = sty("ring_line")
-	return Color(XUiSkin.LINE, float(sty("ring_line_a"))) if c.a < 0.0 else c
+	return Color(XUiSkin.line_c(), float(sty("ring_line_a"))) if c.a < 0.0 else c
 
 
 ## 第 i 项现在的放大倍数：选中项过渡到 SEL_SCALE，其余回 1（动效关时直接到）
@@ -649,7 +656,7 @@ func _draw() -> void:
 	_draw_band()
 	var c := center()
 	var R := radius
-	var line := XUiSkin.LINE
+	var line := XUiSkin.line_c()
 	_draw_body(c, R, line, intro_alpha())
 	if not fade_from.is_empty() and intro_t < 1.0:   # 旧环淡出（脱下／微亮态进出）
 		var keep := [style, style_art, motion, ring_draws]

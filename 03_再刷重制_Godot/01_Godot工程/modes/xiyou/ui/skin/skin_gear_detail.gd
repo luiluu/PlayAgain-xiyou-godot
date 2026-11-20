@@ -214,7 +214,7 @@ func _draw() -> void:
 		XUiSkin.ds(self, font, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + tfs * 0.36), t,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, tfs, XUiSkin.TEXT if i == tab else XUiSkin.TEXT_2)
 	var ly := pad + HEAD_H + TAB_H + 3
-	draw_line(Vector2(pad, ly), Vector2(size.x - pad, ly), Color(XUiSkin.LINE, 0.14), 1.0)
+	XUiSkin.draw_divider(self, pad, size.x - pad, ly, true, 0.85 if XUiSkin.polish_on() else 1.0)
 
 
 func _para(text: String, w: float, fs: int) -> TextParagraph:
@@ -240,9 +240,10 @@ func _draw_body() -> void:
 	var w := maxf(body.size.x - 12.0, 10.0)
 	var y := -scroll
 	if tab == 1:
+		var stripe := Color(0.95, 0.90, 0.82, 0.045) if XUiSkin.polish_on() else Color(1, 1, 1, 0.04)
 		for r in _cmp:
 			if y + ROW_H >= 0 and y <= body.size.y:
-				body.draw_rect(Rect2(0, y + 2, w, ROW_H - 4), Color(1, 1, 1, 0.04))
+				body.draw_rect(Rect2(0, y + 2, w, ROW_H - 4), stripe)
 				var base := y + ROW_H / 2.0
 				XUiSkin.ds(body, font, Vector2(12, base + 17 * 0.36), str(r[0]), HORIZONTAL_ALIGNMENT_LEFT, w * 0.4, 17, XUiSkin.TEXT_2)
 				var before: int = r[1]
@@ -272,6 +273,5 @@ func _draw_body() -> void:
 	if max_scroll() > 0.0:
 		var sw := 8.0 if XUiSkin.TOUCH_V2 else 4.0   # 收口批：滚动条手指找得到
 		var track := Rect2(body.size.x - sw, 0, sw, body.size.y)
-		body.draw_rect(track, Color(1, 1, 1, 0.06))
 		var h := maxf(track.size.y * body.size.y / maxf(_content_h, 1.0), 16.0)
-		body.draw_rect(Rect2(track.position.x, (track.size.y - h) * scroll / max_scroll(), sw, h), Color(XUiSkin.LINE, 0.55))
+		XUiSkin.draw_scrollbar(body, track, (track.size.y - h) * scroll / max_scroll(), h)

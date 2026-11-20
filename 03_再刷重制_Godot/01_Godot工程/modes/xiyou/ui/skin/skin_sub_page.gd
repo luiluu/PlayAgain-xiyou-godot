@@ -215,8 +215,8 @@ func _draw_bars() -> void:
 		var r := list.cell_rect(i)
 		var x := r.end.x - 14.0 - BAR_W
 		var y := r.position.y + (r.size.y - BAR_H) / 2.0
-		_bar_layer.draw_rect(Rect2(x, y, BAR_W, BAR_H), Color(XUiSkin.TEXT_3, 0.45))
-		_bar_layer.draw_rect(Rect2(x, y, BAR_W * clampf(float(_bars[i]), 0.0, 1.0), BAR_H), XUiSkin.GOLD)
+		XUiSkin.draw_gauge(_bar_layer.get_canvas_item(), Rect2(x, y, BAR_W, BAR_H),
+			float(_bars[i]), XUiSkin.GOLD, 1.0, Color(XUiSkin.TEXT_3, 0.45), 3, true)
 
 
 # ---- 子页常用的牌内容 ----

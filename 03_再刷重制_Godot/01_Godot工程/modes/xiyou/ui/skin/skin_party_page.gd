@@ -221,10 +221,8 @@ static func _bar(ci: CanvasItem, num: Font, r: Rect2, cur: float, mx: float, col
 	var tw := num.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	XUiSkin.ds(ci, num, Vector2(r.position.x + r.size.x - tw, r.position.y + 2), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(tcol, dim))
 	var by := r.position.y + 8
-	ci.draw_rect(Rect2(r.position.x, by, r.size.x, 5), Color(1, 1, 1, 0.10 * dim))
-	var fw := r.size.x * clampf(cur / maxf(mx, 1.0), 0.0, 1.0)
-	if fw > 0:
-		ci.draw_rect(Rect2(r.position.x, by, fw, 5), Color(col, dim))
+	XUiSkin.draw_gauge(ci.get_canvas_item(), Rect2(r.position.x, by, r.size.x, 5),
+		cur / maxf(mx, 1.0), col, dim, Color(1, 1, 1, 0.10 * dim), 2, true)
 
 
 func _draw_bars() -> void:
@@ -340,14 +338,13 @@ func _draw_body() -> void:
 			var t := "%s / %s" % [XMenu._group(int(info[k[1]])), XMenu._group(int(info[k[2]]))]
 			var tw := num.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
 			XUiSkin.ds(body, num, Vector2(w - pad - tw, y + XUiSkin.FS_AUX), t, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, k[4])
-			body.draw_rect(Rect2(pad, y + XUiSkin.FS_AUX + 8, w - pad * 2, 6), Color(1, 1, 1, 0.10))
-			var fw := (w - pad * 2) * clampf(float(info[k[1]]) / maxf(float(info[k[2]]), 1.0), 0.0, 1.0)
-			body.draw_rect(Rect2(pad, y + XUiSkin.FS_AUX + 8, fw, 6), k[3])
+			XUiSkin.draw_gauge(body.get_canvas_item(), Rect2(pad, y + XUiSkin.FS_AUX + 8, w - pad * 2, 6),
+				float(info[k[1]]) / maxf(float(info[k[2]]), 1.0), k[3], 1.0, Color(1, 1, 1, 0.10), 3, true)
 			y += XUiSkin.FS_AUX + 26
 	y += 6
 	if y + 40 > bottom:
 		return
-	body.draw_line(Vector2(pad, y), Vector2(w - pad, y), Color(XUiSkin.LINE, 0.14), 1.0)
+	XUiSkin.draw_divider(body, pad, w - pad, y, true, 0.85 if XUiSkin.polish_on() else 1.0)
 	XUiSkin.ds(body, f, Vector2(pad, y + 8 + XUiSkin.FS_AUX_MAX), "换上后", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
 	y += 16 + XUiSkin.FS_AUX_MAX + 6
 	var para := TextParagraph.new()
@@ -387,13 +384,13 @@ func _draw_slots() -> void:
 		var info := slot_info(i)
 		var sel: bool = i == scene.slot_index
 		if info.empty:
-			_dashed(r.grow(-1), Color(XUiSkin.LINE, 0.6))
+			_dashed(r.grow(-1), Color(XUiSkin.line_c(), 0.6))
 		else:
 			XUiSkin.draw_panel(ci, r)
 			var edge := StyleBoxFlat.new()
 			edge.draw_center = false
 			edge.set_corner_radius_all(XUiSkin.RADIUS)
-			edge.border_color = Color(XUiSkin.LINE, 0.35)
+			edge.border_color = Color(XUiSkin.line_c(), 0.35)
 			edge.set_border_width_all(1)
 			edge.draw(ci, r)
 		if sel:   # 选中的格子红框红底（选人时这格还亮着、减淡）

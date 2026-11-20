@@ -1,16 +1,16 @@
 # 交付：luiluu/xa-t309-ui-polish
 
 - 车道／工作者：小A（Neon high，P9）
-- 状态：可合并（阶段交付：14 个核心共用件已全项测稳、10 页 1600×450 前后对照图已出；待 Kyo 看图定方向后再派剩余 15 处次级／战斗共用件，定方向前暂不合入 main）
-- 关联任务：T309 新界面整体美化（第三段：先测、先出对照图给 Kyo 定方向）
+- 状态：可合并（阶段交付：第四段菜单侧 1～9 已实装并全项验绿，累计已完 14 处核心共用件＋9 处菜单侧次级共用件，已产 18 页 1600×450 前后对照图 01～18；剩余战斗侧 6 处 10～15 待下一段完成并过核查后再合入 main）
+- 关联任务：T309 新界面整体美化（第四段：剩余 15 处之一，菜单侧 1～9；按 Kyo 11-20 15:34「243 甲」认可的暖炭金方向推进）
 - 红线守则（已确认不动）：D18 七印环方向、D25 菜单 7 组、D26 横屏铺满、D29 红乙（黑底／红选中／旧金）、D43 标题画面定稿、D50 R2 无框烟色面板（不给烟底加硬方框）、D231 宋体。
 
 ## 变更记录草稿
 
-### 2026-11-20 【小A·未经审查】T309 新界面整体美化·核心共用件验证与对照图（dev.待定）
+### 2026-11-20 【小A·未经审查】T309 新界面整体美化·第四段菜单侧 1～9 实装与对照图（dev.待定）
 
-- 状态：阶段完成（14 个核心共用件全部挂载 `XUiSkin.POLISH_V1` 总开关并通过卡 E～O＋2c/5c/offshot/close/skin/phase01 全项验证与双模式逐像素回退对照；已产 10 页 1600×450 原尺寸前后对照图供 Kyo 定方向，剩余 15 处次级／战斗共用件待点头后再派）
-- 玩家可见：天启篇新界面核心共用件升级为暖炭金调体系（消除冷蓝灰与旧金／骨白／朱红的色温割裂），无框烟底微暖调制＋大面板顶缘渐隐旧金丝线，确认弹窗去除 45% 硬切分改为平滑暖炭渐变＋双层边框＋标题金丝分隔，列表微斑马纹与圆角暖金滚动条、详情卡淡七芒暗印与暖色内嵌提示块、标签防透色暗底与空态暗纹、面包屑／步进器／键帽／页签统一收口，左光标呼吸放缓至 2.4s；关闭单一总开关 `XUiSkin.POLISH_V1` 或关闭新皮肤开关均可逐像素回退。未新增或修改任何玩家可见文字。
+- 状态：阶段完成（合并 `github/main` `525969a7a`；完成剩余 15 处中的菜单侧 1～9 共 9 个文件，全部挂 `XUiSkin.POLISH_V1` 总开关并通过卡 E～O、2c/5c/offshot/menu/1b/1c/skin/close/phase01 共 17 项专项、语法检查 1122/1122、皮肤关闭对照 60/60 SAME 及 8 页 `POLISH_V1=false` 逐像素回退 8/8 SAME；补产 8 页 1600×450 前后对照图 `11_`～`18_`；剩余战斗侧 6 处 10～15 待下一段完成并过核查后再合入 `main`）
+- 玩家可见：按 Kyo 认可的暖炭金方向补齐菜单侧剩余 9 处细节：菜单漂浮火星降速减淡以减少余光分神、左环导航球底与圆环线转暖炭金、仓库容量条与设置子页进度条换深炭内凹槽、主菜单右栏队伍紧凑条／目标列表／整队页／角色状态页统一深炭内凹量条与渐隐分割线及暖锡圆框、装备展开详情与对比页接入渐隐金丝分隔线／暖色对比行带／暖金圆角滚动条；关闭单一总开关 `XUiSkin.POLISH_V1` 或关闭新皮肤开关均可逐像素回退。未新增或修改任何玩家可见文字。
 
 ## 现状排查：美化舒适 18 条逐条核对
 
@@ -114,13 +114,13 @@ static func polish_on() -> bool:
 
 ## 玩家可见文字
 
-- 不涉及：本分支 14 个核心共用件改动全为纯视觉渲染层美化，**无新增或修改任何玩家可见文字**。
+- 不涉及：本分支累计 22 个皮肤文件改动（前段 14 个核心共用件＋本段 9 处菜单侧改动，其中 `ui_skin.gd` 重合）全为纯视觉渲染层美化，**无新增或修改任何玩家可见文字**。
 
 ## 已实装的核心共用件（14 个文件）
 
-- 已合并 `github/main`（`8fc4a87c6`，含卡 N/O `dev.797/798`）→ 合并提交 `e2aa5dd8f`，并跑通 `新建工作树.sh --补齐`（`outputs: 3601`、`godot --import` 完成）。
+- 第三段已合并 `github/main`（`8fc4a87c6`，含卡 N/O `dev.797/798`）→ 合并提交 `e2aa5dd8f`，并跑通 `新建工作树.sh --补齐`（`outputs: 3601`、`godot --import` 完成）。
 - 已实装 14 个核心共用件（均位于 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/`，全挂 `XUiSkin.polish_on()` 总开关，`POLISH_V1 = false` 逐像素回退）：
-  1. `ui_skin.gd`：`POLISH_V1` 总开关、暖炭色板常量与语义 getter（`bg_c`/`panel_c`/`panel_low_c`/`line_c`/`text2_c`/`orb_hi_c`/`orb_low_c`/`down_c`/`mythic_c`）、`paint_color()` 接进 `ds()`、`draw_divider()`、`draw_title_accent()`、`draw_gauge()`、`draw_scrollbar()`、`breath_alpha()` 放缓、`theme()` 滚动条、`panel_style()`/`panel_texture()` 独立缓存键 `"panel_polish"`（`_add_embers()` 粒子降速列于「剩余 15 处」）。
+  1. `ui_skin.gd`：`POLISH_V1` 总开关、暖炭色板常量与语义 getter（`bg_c`/`panel_c`/`panel_low_c`/`line_c`/`text2_c`/`orb_hi_c`/`orb_low_c`/`down_c`/`mythic_c`）、`paint_color()` 接进 `ds()`、`draw_divider()`、`draw_title_accent()`、`draw_gauge()`、`draw_scrollbar()`、`breath_alpha()` 放缓、`theme()` 滚动条、`panel_style()`/`panel_texture()` 独立缓存键 `"panel_polish"`。
   2. `skin_art.gd`：`_add_scrims`、`_vgrad`、`bg_text_2`、`bg_string`、`draw_smoke`（暖炭调制＋无框顶部居中 65% 旧金丝线，严守 D50 R2 与 `SMOKE_ALPHA` 常量）。
   3. `skin_confirm.gd`：`static var _polish_dlg_tex`（96×96 平滑暖炭圆角九宫渐变强引用缓存）、柔和投影、顶部金丝、双层边框、标题下 `draw_divider` 与暖炭按钮底。
   4. `skin_card.gd`：淡七芒暗印、暖色内嵌提示块＋左金条、6px 圆角暖金滚动条、`draw_divider`、节头 `2×12` 旧金竖标、常规字号 `1.56` 行距（放大字号保 `1.5`）、暖炭次按钮底。
@@ -135,34 +135,54 @@ static func polish_on() -> bool:
   13. `skin_back_button.gd`：`‹` 背后轻暖炭微晕圆盘＋淡金圈。
   14. `skin_button.gd`：`style()` 切用 `panel_c()`/`line_c()`/`down_c()`。
 
+## 已实装的第四段：菜单侧 1～9（9 个文件）
+
+- 先合并 `github/main`（`525969a7a`）→ 合并提交 `fc74ece01`（0 冲突）。
+- 逐条实装剩余 15 处中的菜单侧 1～9（均位于 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/`，全部挂在 `XUiSkin.polish_on()` 下，`POLISH_V1 = false` 时经实机逐像素验证与基线 `525969a7a` 0 差异）：
+  1. `ui_skin.gd`：`_add_embers()` 在 `polish_on()` 下将粒子初速由 `110..180` 降为 `48..82`，并将透明度乘 `0.78`。
+  2. `skin_ring_nav.gd`：`sty()` 在 `polish_on()` 下对默认 `"orb_low"`／`"orb_hi"` 返回 `XUiSkin.orb_low_c()` 与 `Color(XUiSkin.orb_hi_c(), 0.85)`（保留外部显式覆盖）；`ring_line_color()` 与 `_draw()` 圆环线切用 `XUiSkin.line_c()`。
+  3. `skin_warehouse_page.gd`：`_draw_space()` 容量条改调 `XUiSkin.draw_gauge(..., 1.0, Color(1, 1, 1, 0.22), 3, true)`。
+  4. `skin_sub_page.gd`：`_draw_bars()` 设置子页进度条改调 `XUiSkin.draw_gauge(..., 1.0, Color(XUiSkin.TEXT_3, 0.45), 3, true)`。
+  5. `skin_party_strip.gd`：`_draw()` 接入 `XUiSkin.draw_divider`、头像底／空位圈／头像边切用 `orb_low_c()` 与 `line_c()`、HP/MP/TP 槽改调 `XUiSkin.draw_gauge`（移除未再使用的私有 `_pill()`）。
+  6. `skin_gear_detail.gd`：`_draw()` 标题下接入 `draw_divider(..., true, 0.85 if XUiSkin.polish_on() else 1.0)`；`_draw_body()` 对比行带改暖色 `Color(0.95, 0.90, 0.82, 0.045)`，右侧滚动条改调 `XUiSkin.draw_scrollbar()`。
+  7. `skin_target_list.gd`：`_draw()` 接入 `XUiSkin.draw_divider`、头像底／框切用 `orb_low_c()` 与 `line_c()`、HP/MP/TP 槽改调 `XUiSkin.draw_gauge`（移除未再使用的私有 `_pill()`）。
+  8. `skin_party_page.gd`：`_bar()` 与 `_draw_body()` 角色血蓝条改调 `XUiSkin.draw_gauge(..., legacy_flat=true)`，`_draw_body()` 分隔线接入 `draw_divider(..., true, 0.85 if XUiSkin.polish_on() else 1.0)`，`_draw_slots()` 空位虚线框与在位槽边线切用 `XUiSkin.line_c()`。
+  9. `skin_status_page.gd`：`_draw_actor()` 头像圆底／描边切用 `orb_low_c()` 与 `line_c()`、HP/MP/TP/EXP 槽改调 `XUiSkin.draw_gauge`（移除未再使用的私有 `_pill()`）；`_draw_page_frame()` 分隔线接入 `draw_divider(..., true, 0.85 if XUiSkin.polish_on() else 1.0)`；`_draw_page_body()` 右栏滚动条改调 `XUiSkin.draw_scrollbar()`。
+
 ## 已测
 
-以下测试均在前台逐个单独运行（凡起 Godot 均带 `--audio-driver Dummy`，未用 `并行测试.py`），在提交 `8851baed3` 上全部一次全绿、无需改动代码：
+以下测试均在第四段菜单侧 1～9 改动完成后，于前台逐个单独运行（凡起 Godot 均带 `--audio-driver Dummy`，未用 `并行测试.py`），全部一次全绿：
 
 | 检查／测试项 | 结果 | 备注 |
 | --- | --- | --- |
-| `03_再刷重制_Godot/07_开发环境/语法检查.py` | 1119/1119，0 问题（退出码 0） | 解析检查通过 |
-| `tests/xiyou_ui_skin_card_e.tscn` | 44/44 | 卡 E 环心／主菜单 |
-| `tests/xiyou_ui_skin_shop.tscn` | 123/123 | 卡 I 商店与通用小件（无 `card_i` 场景，卡 I 专项即 `shop`） |
+| `03_再刷重制_Godot/07_开发环境/语法检查.py` | 1122/1122，0 问题（退出码 0） | 解析检查通过 |
+| `tests/xiyou_ui_skin_card_e.tscn` | 44/44 | 卡 E 环心／主菜单／左环导航 |
+| `tests/xiyou_ui_skin_shop.tscn` | 123/123 | 卡 I 商店与通用小件 |
 | `tests/xiyou_ui_skin_card_j.tscn` | 114/114 | 卡 J 存读档／整队／角色仓库 |
 | `tests/xiyou_ui_skin_card_k.tscn` | 97/97 | 卡 K 制作／宝珠坊／种族祝福 |
-| `tests/xiyou_ui_skin_card_l.tscn` | 222/222 | 卡 L 设置子页 |
+| `tests/xiyou_ui_skin_card_l.tscn` | 222/222 | 卡 L 设置子页与进度条 |
 | `tests/xiyou_ui_skin_card_m.tscn` | 150/150 | 卡 M 挂机设置与子页 |
-| `tests/xiyou_ui_skin_card_n.tscn` | 99/99 | 卡 N 仓库／星级仓库／深渊商人 |
-| `tests/xiyou_ui_skin_card_o.tscn` | 124/124 | 卡 O 名册页／进阶／修炼／遗忘 |
+| `tests/xiyou_ui_skin_card_n.tscn` | 99/99 | 卡 N 仓库容量条／星级仓库／深渊商人 |
+| `tests/xiyou_ui_skin_card_o.tscn` | 126/126 | 卡 O 名册页／进阶／修炼／遗忘（合并 `525969a7a` 后为 126 项） |
 | `tests/xiyou_ui_skin_2c.tscn` | 181/181 | 战斗结算与浮层 |
 | `tests/xiyou_ui_skin_5c.tscn` | 88/88 | 设置子页／返回标题 |
 | `tests/xiyou_ui_skin_offshot.tscn` | 57/57 | 无头构建与场景烟测 |
-| `tests/xiyou_ui_skin_close.tscn`（附带不变量回归） | 71/71 | 保护 `WARM_BG`/`TEXT`/`bar_h`/`KeyHints` 常量不变量 |
-| `tests/xiyou_ui_skin.tscn`（附带不变量回归） | 111/111 | 保护 `breath_alpha` 等基础皮肤不变量 |
-| `tests/xiyou_ui_art_phase01.tscn`（附带不变量回归） | 214/214 | 保护 `SMOKE_ALPHA` 与 phase01 美术不变量 |
-| `03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py --base 8fc4a87c6` | 60/60 SAME（退出码 0） | `XUiSkin.ENABLED=false` 与基线 `8fc4a87c6` 逐像素一致（0 差异） |
-| `POLISH_V1=false` 逐像素回退对照（10 页 800×450 实机图 vs 基线 `8fc4a87c6`） | 10/10 SAME（退出码 0） | 天启篇新皮肤开启且 `XUiSkin.POLISH_V1=false` 时与基线 `8fc4a87c6` 逐像素 0 差异 |
+| `tests/xiyou_ui_skin_menu.tscn` | 99/99 | 本段涉及：主菜单右栏队伍条／环导航 |
+| `tests/xiyou_ui_skin_1b.tscn` | 85/85 | 本段涉及：装备页与展开全屏详情／对比 |
+| `tests/xiyou_ui_skin_1c.tscn` | 81/81 | 本段涉及：物品／技能目标列表与角色状态页 |
+| `tests/xiyou_ui_skin_close.tscn`（不变量回归） | 71/71 | 保护 `WARM_BG`/`TEXT`/`bar_h`/`KeyHints` 常量不变量 |
+| `tests/xiyou_ui_skin.tscn`（不变量回归） | 111/111 | 保护 `breath_alpha` 等基础皮肤不变量 |
+| `tests/xiyou_ui_art_phase01.tscn`（不变量回归） | 214/214 | 保护 `SMOKE_ALPHA` 与 phase01 美术不变量 |
+| `03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py --base 525969a7a` | 60/60 SAME（退出码 0） | `XUiSkin.ENABLED=false` 与基线 `525969a7a` 逐像素一致（0 差异） |
+| `POLISH_V1=false` 第四段 8 页逐像素回退对照（vs `525969a7a`） | 8/8 SAME（退出码 0） | 天启篇新皮肤开启且 `XUiSkin.POLISH_V1=false` 时与基线 `525969a7a` 0 像素差异 |
+| `_add_embers()` 双状态实机核验（Godot 无头探针） | PASS | 开：`48.0..82.0`, `a=0.3861`；关：`110.0..180.0`, `a=0.4950` |
 
 ## 对照图清单
 
 存放目录：`00_项目管理/归档/交付截图/luiluu_xa-t309-ui-polish/对照/`
-规格：全部为同页同状态 `800×450` 原尺寸无缩放并排拼接（`1600×450`），**左＝现在（`POLISH_V1=false`，已验与基线 `8fc4a87c6` 0 像素差异）｜右＝美化后（`POLISH_V1=true`）**。
+规格：全部为同页同状态 `800×450` 原尺寸无缩放并排拼接（`1600×450`），**左＝现在（`POLISH_V1=false`，均已验与对应合并基线 0 像素差异）｜右＝美化后（`POLISH_V1=true`）**。
+
+### 第三段核心共用件对照图（01～10，基线 `8fc4a87c6`）
 
 | 文件名 | 尺寸 | 重点受益共用件 | 差异像素占比 | 均亮 L（前→后） | 中灰冷暖 R-B（前→后） | 纯白块核验（L>250，前/后） |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -177,21 +197,25 @@ static func polish_on() -> bool:
 | `09_制作与步进器.png` | 1600×450 | `skin_crumb` 旧金分隔、`skin_stepper` 暖炭胶囊聚焦态、`skin_list`、`skin_card` | 96.8% | 22.3→25.3 | -1.02→+2.08 | 276/276（无异常） |
 | `10_确认弹窗.png` | 1600×450 | `skin_confirm` 平滑暖炭九宫渐变（去 45% 硬切分）＋顶金丝＋双层边框＋标题金线 | 99.0% | 10.4→14.8 | +2.06→+7.93 | 0/0（无白块） |
 
-定量结论：全部 10 页中灰 `R-B` 均由冷蓝灰（`-1.02`～`-2.34`）转为暖炭金调（`+0.57`～`+2.08`，确认弹窗 `+7.93`），均亮柔和抬升 `2.2`～`4.4` 级，且纯白像素数前后完全一致，零纹理白块／渲染异常。
+### 第四段菜单侧 1～9 补拍对照图（11～18，基线 `525969a7a`）
 
-## 剩余 15 处
+| 文件名 | 尺寸 | 对应条号与重点改动 | 差异像素占比 | 均亮 L（前→后） | 中灰冷暖 R-B（前→后） | 纯白块核验（L>250，前/后） |
+| --- | --- | --- | --- | --- | --- | --- |
+| `11_主菜单_环与队伍条.png` | 1600×450 | 条 1/2/5：`skin_ring_nav` 暖炭球底与圆环线、`skin_party_strip` 队伍紧凑条内凹槽与渐隐分隔线 | 95.8% | 23.9→26.3 | -2.36→+0.81 | 313/313（无异常） |
+| `12_仓库_容量条与环.png` | 1600×450 | 条 2/3：`skin_warehouse_page` 深炭内凹容量条、`skin_ring_nav` 暖环 | 98.1% | 21.1→23.8 | -2.34→+1.14 | 15/15（无异常） |
+| `13_设置子页_进度条.png` | 1600×450 | 条 4：`skin_sub_page` 设置子页深炭内凹进度条（含焦点高光） | 98.0% | 24.2→27.1 | -1.75→+1.74 | 2/2（无异常） |
+| `14_装备展开详情.png` | 1600×450 | 条 6：`skin_gear_detail` 全屏展开详情渐隐金丝分隔线＋暖金圆角滚动条 | 96.8% | 28.2→31.0 | -2.21→+1.44 | 663/663（无异常） |
+| `15_装备展开对比.png` | 1600×450 | 条 6：`skin_gear_detail` 装备对比暖色交替行带与金丝分隔线 | 96.9% | 23.8→26.1 | -2.19→+1.77 | 661/661（无异常） |
+| `16_物品目标列表.png` | 1600×450 | 条 7：`skin_target_list` 物品／技能「给谁用」目标列表暖头像圈、渐隐分隔与内凹量条 | 97.1% | 26.2→29.1 | -1.79→+1.55 | 191/191（无异常） |
+| `17_整队_条槽与位框.png` | 1600×450 | 条 8：`skin_party_page` 整队页内凹血蓝条、金丝分隔线、暖锡在位／空位框 | 95.8% | 25.4→28.4 | -1.04→+2.45 | 604/604（无异常） |
+| `18_角色状态页.png` | 1600×450 | 条 9：`skin_status_page` 角色状态页暖头像圈、四条内凹量槽、金丝分隔线与暖金滚动条 | 97.8% | 27.2→29.3 | -2.49→+1.47 | 1100/1100（无异常） |
 
-以下 15 处次级／战斗共用件（均位于 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/`，均将挂在 `XUiSkin.polish_on()` 下）按本阶段范围暂不动，待 Kyo 看完上述 10 页对照图点头方向后再派单接线：
+定量结论：全部 18 页中灰 `R-B` 均由冷蓝灰（`-1.02`～`-2.49`）转为暖炭金调（`+0.57`～`+2.45`，确认弹窗 `+7.93`），均亮柔和抬升 `2.1`～`4.4` 级，纯白像素数前后完全一致，且所有对照图左侧 `POLISH_V1=false` 均已逐像素校验与对应 `github/main` 基线 0 差异，零纹理白块／渲染异常。
 
-1. `ui_skin.gd`：`_add_embers()`（约 1015 行）在 `polish_on()` 下粒子初速改 `48..82`、透明度乘 `0.78`。
-2. `skin_ring_nav.gd`：`sty()` 用 `orb_low_c()`/`orb_hi_c()`，`ring_line_color()` 与圆环线（约 652 行）用 `line_c()`。
-3. `skin_warehouse_page.gd`（卡 N/O）：`_draw_space()` 容量条改调 `XUiSkin.draw_gauge(..., legacy_flat=true)`。
-4. `skin_sub_page.gd`：`_draw_bars()` 改调 `XUiSkin.draw_gauge(..., legacy_flat=true)`。
-5. `skin_party_strip.gd`：line 142 `draw_divider`，line 157 `orb_low_c()`/`line_c()`，lines 198-200 `draw_gauge`。
-6. `skin_gear_detail.gd`：line 217 `draw_divider(..., true, 0.85)`，line 245 暖色对比行带，lines 272-277 `draw_scrollbar`。
-7. `skin_target_list.gd`：line 120 `draw_divider`，lines 130/134 `orb_low_c()`/`line_c()`，lines 152-154 `draw_gauge`。
-8. `skin_party_page.gd`：lines 224-227 & 343-345 `draw_gauge(..., legacy_flat=true)`，line 350 `draw_divider(..., true, 0.85)`，line 395 `line_c()`。
-9. `skin_status_page.gd`：lines 192-196 `draw_gauge`，line 229 `draw_divider(..., true, 0.85)`。
+## 剩余 6 处（战斗侧，原 10～15）
+
+原「剩余 15 处」中菜单侧 1～9 已于第四段全部实装并验收；以下剩余 6 处战斗侧共用件（均位于 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/`，均挂在 `XUiSkin.polish_on()` 下）留待下一段（第五段）实装并补战斗侧对照图（编号 `19_` 起），再经跨家核查后统一合入 `main`：
+
 10. `skin_battle_list.gd`：lines 241-244 `draw_scrollbar`，line 247 `draw_divider(..., legacy_alpha=0.3)`。
 11. `skin_arc_gauge.gd`：line 83 在 `polish_on()` 下加深暖炭凹槽与淡暖锡描边。
 12. `skin_side_status.gd`：line 78 `line_c()`，lines 95-97 回合数深炭胶囊＋12→13px，lines 127-129 `draw_gauge`。
@@ -201,13 +225,13 @@ static func polish_on() -> bool:
 
 ## 交接板
 
-- 下一步：由协调将 `00_项目管理/归档/交付截图/luiluu_xa-t309-ui-polish/对照/` 下 10 页 `1600×450` 前后对照图呈给 Kyo 看方向；Kyo 点头后再派「剩余 15 处」次级／战斗共用件接线与收尾，**定方向前不合入 `main`**。
-- 用户试玩说明：当前 `luiluu/xa-t309-ui-polish` 分支已包含 14 个核心共用件美化，总开关 `XUiSkin.POLISH_V1` 默认开启；关闭后逐像素回退至 `8fc4a87c6`。
-- 需要用户决定：请 Kyo 目视审阅 `00_项目管理/归档/交付截图/luiluu_xa-t309-ui-polish/对照/` 下 10 页原尺寸前后对照图，拍板暖炭金调色温、烟底顶金丝、确认弹窗平滑渐变、列表斑马纹／滚动条／键帽／七芒暗印等整体方向是否认可或需微调，再决定是否按同方向推进剩余 15 处次级／战斗共用件及合入 `main`。
+- 下一步：继续在 `luiluu/xa-t309-ui-polish` 派第五段完成剩余 6 处战斗侧共用件（原 10～15）并补战斗侧 `1600×450` 对照图（编号 `19_` 起），全量验收后交核查再统一合入 `main`；本段不合 `main`。
+- 用户试玩说明：当前 `luiluu/xa-t309-ui-polish` 分支已包含 14 个核心共用件＋菜单侧 1～9 共 22 个皮肤文件的暖炭金美化，`XUiSkin.POLISH_V1` 默认开启；关闭后逐像素回退至 `525969a7a`。
+- 需要用户决定：无（Kyo 已于 11-20 15:34「243 甲」拍板认可暖炭金方向）。
 
 ## 进度账
 
-- 本阶段为 Kyo 看图定方向前置验证与出图，暂不改动进度账；待定方向并收尾合 `main` 时更新。
+- 本段为 T309 分段实装（菜单侧 1～9），待战斗侧 10～15 完成后统一收尾合入 `main` 时更新进度账。
 
 ## 可优化（流程／工具／效率）
 
@@ -218,4 +242,6 @@ static func polish_on() -> bool:
 - `9d0b3c0cb`：WIP: T309 新界面美化现状排查、定量基线与共用件方案草稿
 - `e2aa5dd8f`：Merge remote-tracking branch `github/main` into `luiluu/xa-t309-ui-polish`（合入 `8fc4a87c6` 含卡 N/O）
 - `8851baed3`：WIP: T309 新界面美化核心共用件实装（14 文件语法 0，余 15 处小件＋对照图与验收）
-- 本轮交付提交（10 页 1600×450 前后对照图＋交付单补全「已测」「对照图清单」「剩余 15 处」）
+- `b4adce50f`：T309 第三段阶段交付（10 页 1600×450 前后对照图 01～10＋交付单补全）
+- `fc74ece01`：Merge remote-tracking branch `github/main` into `luiluu/xa-t309-ui-polish`（合入 `525969a7a`）
+- 本轮第四段交付提交（菜单侧 1～9 共 9 个皮肤文件实装＋17 项专项与双模式逐像素对照验绿＋8 页 1600×450 对照图 11～18＋交付单更新）
