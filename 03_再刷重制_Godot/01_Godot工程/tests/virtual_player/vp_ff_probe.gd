@@ -18,6 +18,7 @@ var hang := true
 var grind := 0
 var dungeon := 0
 var map_override := 0
+var hp1 := false                   # T298：开战把敌人的血压到 1（量放水那一场到底怎么输的，同虚拟玩家 --vp-pass-after）
 
 
 func _ready() -> void:
@@ -38,6 +39,8 @@ func _ready() -> void:
 			dungeon = int(a.substr(10))
 		elif a.begins_with("--map="):
 			map_override = int(a.substr(6))
+		elif a == "--hp1":
+			hp1 = true
 		elif a == "--no-hang":
 			hang = false
 		elif a.begins_with("--smart="):
@@ -99,6 +102,9 @@ func _run() -> void:
 				hp0 += e.mhp if "mhp" in e else e.param(0)
 				names.append("%s(%d)" % [e.display_name(), int(e.param(0))])
 			_drain(logic, logic.troop_events())
+			if hp1:
+				for e in logic.enemies:
+					e.hp = 1.0
 			if k == 0:
 				for e in logic.enemies:
 					print("PROBE 敌人 %s 防 %d 魔防 %d 回血率 %s 状态 %s" % [e.display_name(), int(e.param(3)), int(e.param(5)), str(e.xparam(7)), str(e.state_ids)])
