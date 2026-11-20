@@ -81,7 +81,7 @@ static func row(s: XState, actor_id: int):
 	var n := rank(s, actor_id)
 	for r in rows():
 		if int(r.actor) == actor_id and int(r.num) == n:
-			var tq := XTianqiMoney.advance_gold(s, n) if not XTianqiGojoTrial.own_gold(actor_id) else -1  # 天启篇金钱重构：四阶 10 万／30 万／60 万／100 万（五条悟两阶照自己的表，XTianqiGojoTrial）
+			var tq := XTianqiMoney.advance_gold(s, n) if not XTianqiGojoTrial.own_gold(actor_id) and actor_id != XGarou.ACTOR else -1  # 天启篇金钱重构：四阶 10 万／30 万／60 万／100 万（五条悟两阶照自己的表，XTianqiGojoTrial；饿狼进阶走 XGarou 不扣表里金钱，不套，T308）
 			if tq >= 0 and tq != int(r.gold):
 				var out: Dictionary = r.duplicate()
 				out.gold = tq
