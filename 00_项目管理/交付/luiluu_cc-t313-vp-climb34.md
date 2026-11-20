@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-t313-vp-climb34
 
 - 车道／工作者：T313 虚拟玩家爬到 34 层实测（cc，Opus＋medium，P8）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -39,9 +39,10 @@
 
 - 语法检查：`python3 07_开发环境/语法检查.py` 通过（1122 个 .gd，0 问题）
 - explore（默认参数）：14/14 通过
-- 短帧 climb（种子 1 弱阵容，`--vp-ff --vp-frames=120000`）：待写
-- 塔门兜圈收工（从 36 层存档接着爬）：待写
-- 没跑：选测（只改 tests/virtual_player 与 xiyou_virtual_player 的开关，不在选测名单）
+- 短帧 climb（种子 1 弱阵容，`--vp-ff --vp-frames=120000`）：5/6，零卡死（`stuck` 空）、零违规（`violations` 空，没有负血负钱）、零脚本报错，存档正常（`saved`）；挂的 1 项是 `climb_not_blocked`（1 层 5 败），同 T298 基线，是数值卡期的已知状态
+- 塔门兜圈收工（从 36 层存档 `--vp-resume`，`--vp-floors=37`）：读档正常（`load_pressed`，36 层、81 级），1299 步以「塔门连着 30 次只回对话」收工，9/12（挂的 3 项都是「没到 37 层」，预期）
+- r1 长跑（31→36 层）、r2：零脚本报错
+- 选测：`选测.py main --list` 列出 `xiyou_virtual_player.tscn`（即上面的 explore，14/14）；`vp_ff_probe.gd` 不进检查.sh，选测判「整轮」只因为它，没跑整轮
 
 ## 本分支提交
 
