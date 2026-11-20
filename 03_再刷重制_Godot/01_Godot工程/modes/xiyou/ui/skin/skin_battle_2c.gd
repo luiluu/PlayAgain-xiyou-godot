@@ -1450,7 +1450,9 @@ class Handoff extends Control:
 				if bool(src.used) or not (is_same(src.item, rec) or src.item == rec):
 					continue
 				src.used = true
-				fliers.append({"tex": src.tex, "from": src.pos, "to": tg.pos, "t0": t0, "t1": clampf(float(tg.arrive), t0 + 0.15, cap),
+				# 镜头推近后掉落常在画面外：起点夹回画面内（离边 32），从画面边上飞进来；画面外的起飞前不画
+				var from: Vector2 = (src.pos as Vector2).clamp(Vector2(32, 32), view - Vector2(32, 32))
+				fliers.append({"tex": src.tex, "from": from, "on_screen": from.is_equal_approx(src.pos), "to": tg.pos, "t0": t0, "t1": clampf(float(tg.arrive), t0 + 0.15, cap),
 					"col": XSkin2C.drop_color(tg.drop)})
 				break
 
@@ -1612,7 +1614,7 @@ class Handoff extends Control:
 	## 场上的史诗以上掉落：建结算页时在哪就从哪起飞，飞进底下自己的大圆章（到位那一刻就是那枚章弹出、爆光的时刻）
 	func _draw_flier(f: Dictionary, t: float) -> void:
 		var q := XSkin2C.seg(t, float(f.t0), float(f.t1))
-		if q >= 1.0:
+		if q >= 1.0 or (q <= 0.0 and not bool(f.on_screen)):
 			return
 		var e := q * q * (3.0 - 2.0 * q)
 		var p: Vector2 = (f.from as Vector2).lerp(f.to, e) + Vector2(0, -80.0 * sin(PI * q))

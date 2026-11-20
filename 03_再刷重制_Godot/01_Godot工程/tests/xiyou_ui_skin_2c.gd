@@ -1249,7 +1249,7 @@ func _finish_b() -> void:
 ## 跑真的 BattleScene._victory()（troop 430 首领战、troop 4 小怪战），从最后一击起逐帧看：衔接层建没建、快照在 _end_record 之前、
 ## 0.5 秒 ui 隐藏后衔接层仍在原位、进场时飞、跳过无残留、挂机释放；开关关／旧皮肤时 record 当帧置空、总时长三种一样。
 
-const U_SNOW := {"specifyBattleback": true, "battleback1Name": "Snowfield", "battleback2Name": "Snowfield"}
+const U_SNOW := {"specifyBattleback": true, "battleback1Name": "IceCave", "battleback2Name": "Snowfield"}   # 地面冰原（battlebacks1 没有 Snowfield）、远景雪原
 const U_BOSS := 430
 const U_MINOR := 2      # 三只普通怪，没有首领血条
 var _u_pool := []
@@ -1302,7 +1302,10 @@ func _u_seed(grades: Array) -> Array:
 	for e in blg.enemies:
 		blg._treasure[blg.stable_id(e)] = ds.duplicate(true) if e == blg.enemies[0] else []
 	if not ds.is_empty():
-		_drop_at(blg.enemies[0], grades)
+		var p := _drop_at(blg.enemies[0], grades)
+		# 掉落图标落地后约 1 秒就淡出，等 1.0 秒等待期满多半已释放（照稿：已释放的不飞）。这里让图标一直留着，好核、好拍「飞进大圆章」
+		for g in p.icons:
+			g.wait = 100000
 	return ds
 
 
