@@ -75,7 +75,7 @@ ev.threat(t)；ev.targets(rec)；XBattleEval.is_boss(e)；XBattleEval.shield_poi
 - 新专项 `xiyou_tianqi_smart_ai_eval` 50/50：预览开估伤／估治疗／五条悟茈非 0、选主力技；开关关回卡 1（非 0、值不同）、总开关关回 0；元素（敌群 853 的 945 号：弱 8、7，耐 6、4，免疫 15）：弱点 > 无属性 ×1.2 以上、耐性 < 无属性、免疫估 0，AI 打分同序；低战商（check_weakness 关）弱点和无属性一样大；烙印破防 ×1.3；零副作用三组（每组 4 人 vs 5 敌，我方 choose＋敌方 score_skill 全招）：指纹（双方全字段含 meta、随机流快照与抽数、变量开关物品、五条悟印记与施放、烙印这一场记录）、全局 randf、总账 violations 条数、GUARD 复原、`_cur_skill` 复原全一致；敌方 score_skill 有分、目标都是我方角色；西游档不进预览。
 - `xiyou_tianqi_smart_ai`（卡 1 专项）95/95：卡 1 手抄乘区的数值断言（141～166 号 ×100、不叠旧 boosts 上界）改在预览关时跑（＝验收 2 回退路径）；P2-4：上界补乘 `XTianqiNoX6.dealt_scale`、补 `expected_damage` 上界断言（4 条）。
 - 选测（选测.py main --list 178 个场景，含 xiyou_smart_ai 全 16 片、xiyou_smart_ai_profile、xiyou_determinism、xiyou_rules 各片）：云端选测 05b5620eb，结果见下一行。
-- 云端选测：（待填）
+- 云端选测：✓ 通过，提交 05b5620eb，178 个场景、15 片、最长一片 10.5 分钟（GitHub Actions「云端选测」）。之后的两个提交只动交付单、专项里一行打印和 .gd.uid。
 - 虚拟玩家 explore（`--vp-mode=explore --vp-seed=1`）：TEST_RESULT 14/14，报错 0。
 - 短帧 climb（`--vp-mode=climb --vp-ff --vp-difficulty=jianxian --vp-frames=40000 --vp-seed=2 --vp-pass-after=3`）：到第 5 层（通过 4 层）、TEST_RESULT 9/9、stuck 空、violations 空、ERROR 0（只有既有的 XTianqiBase 守层表 warn_once 警告）。虚拟玩家是手动打，不走自动战斗。
 - 语法检查.py：1092 个 .gd 0 问题。
@@ -111,3 +111,5 @@ ev.threat(t)；ev.targets(rec)；XBattleEval.is_boss(e)；XBattleEval.shield_poi
 ## 本分支提交
 
 - 05b5620eb T282：天启篇智能AI统一预览估伤（XDamage.preview_hit／preview_detail）＋敌我共用估值底座 XBattleEval、开关 o_tianqi_preview_damage
+- 5bbd29263 T282：交付单、元素专项打印抽到的敌人牌组
+- 659474790 T282：专项 .gd.uid
