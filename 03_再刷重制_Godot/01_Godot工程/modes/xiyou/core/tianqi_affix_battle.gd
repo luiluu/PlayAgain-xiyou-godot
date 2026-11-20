@@ -21,6 +21,8 @@ extends RefCounted
 
 ## 开关（O-335）：false＝天启篇词条在战斗里没有任何效果（只显示在装备说明里）
 static var ENABLED := true
+## O-625（T293 战斗提速）：damage_ops 先看有没有「技能伤害」词条，有才问 is_attack（一次约 70～100 µs）；结果不变。false＝回退（先问 is_attack）
+static var LAZY_ATTACK := true
 
 ## 开关（O-611，T232）：true＝「斩获」在动作序列招（含普攻）上也认击倒：挂 IMMORTAL 被打到 0 血的目标先记待定，
 ## end_action（序列已收尾、该倒的已倒）再按 is_dead() 认、回血回魔；false＝回退：只认 after_apply 当场 is_dead() 的（序列招上认不到）。
@@ -382,7 +384,7 @@ static func _damage_ops(item: Dictionary, a, b) -> Array:
 			ops.append({"op": "add", "field": "finalAdd", "value": fin / 100.0})
 		if float(v.d.crit_add) != 0.0:
 			ops.append({"op": "add", "field": "criticalAdd", "value": float(v.d.crit_add) / 100.0})
-		if not a.is_attack(item) and float(p.get("skill_damage", 0.0)) != 0.0:
+		if (float(p.get("skill_damage", 0.0)) != 0.0 and not a.is_attack(item)) if LAZY_ATTACK else (not a.is_attack(item) and float(p.get("skill_damage", 0.0)) != 0.0):
 			ops.append({"op": "add", "field": "normalAdd" if XTianqiLedger.pool_on("POOL_AFFIX_SKILL") else "skillMultiplier", "value": float(p.skill_damage) / 100.0})  # 伤害加成总账期二：词条技能伤进①
 		for k in p:
 			if str(k).begins_with("element_damage:"):

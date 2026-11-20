@@ -45,6 +45,12 @@ static func rows() -> Array:
 var index := 0
 var head_win: XMVWindow
 var list_win: XMVWindow
+## T300 卡 L：新界面开着时的设置子页版型（XSkinSubPage）；关着为 null，旧页一行不变
+var skin: XSkinSubPage
+## 调整位置的拖动态（新版型下页面不 hide，只淡出，这里记着免得键盘穿到底下）
+var _layout_busy := false
+## 恢复默认的统一确认弹窗（新版型）
+var _dlg: XSkinConfirm
 
 
 func _ready() -> void:
@@ -55,6 +61,11 @@ func _ready() -> void:
 	head_win = XMVWindow.make(self, HEAD_RECT, XUI.MENU_WINDOW_OPACITY, _paint_head)
 	list_win = XMVWindow.make(self, LIST_RECT, XUI.MENU_WINDOW_OPACITY, _paint_list)
 	list_win.canvas.blink = true
+	if XSkinSubPage.wanted():
+		head_win.hide()
+		list_win.hide()
+		skin = XSkinSubPage.attach(self)
+		skin.remove_from_group(XUiSkin.FULLSCREEN_GROUP)   # 收口批：按键设置页要看着键调位置，虚拟键不收
 
 
 static func pad() -> XTouchControls:
@@ -98,6 +109,121 @@ func _paint_list(c: XMVCanvas) -> void:
 			c.cursor(Rect2(0, y, c.size.x, LH))
 		c.text(rows()[i][0], 6, y, NAME_W)
 		c.text(status_text(i), 6 + w - STATUS_W, y, STATUS_W, "right")
+
+
+# ---- T300 新版型（XSkinSubPage 向这里要行和牌）----
+
+func skin_self_hosted() -> bool:
+	return XSkinSubPage.wanted()
+
+
+func skin_name() -> String:
+	return TITLE
+
+
+func skin_cat() -> String:
+	return "hangup"
+
+
+func _key_at(i: int) -> String:
+	return str(rows()[i][1])
+
+
+## 大小、透明度这类百分比行：[最小, 最大]；其余 []
+func _limits(key: String) -> Array:
+	return XTouchControls.LIMITS[key] if XTouchControls.LIMITS.has(key) else []
+
+
+func _is_off(key: String) -> bool:
+	var p := pad()
+	return p != null and p.ghost() and MODERN_ONLY.has(key)
+
+
+func skin_rows() -> Array:
+	var out := []
+	for i in rows().size():
+		var key := _key_at(i)
+		var t := status_text(i)
+		var d := {"text": rows()[i][0], "right": t, "right_color": XUiSkin.GOLD_LIGHT}
+		if _is_off(key):
+			d["disabled"] = true   # 对当前布局没用的行变灰，值仍是「—」
+		elif key == "position":
+			d["right"] = "调整 ›"
+		elif key == "reset":
+			d["right"] = ""
+		out.append(d)
+	return out
+
+
+func skin_bars() -> Array:
+	var p := pad()
+	var out := []
+	for i in rows().size():
+		var key := _key_at(i)
+		var lim := _limits(key)
+		if p == null or lim.is_empty() or _is_off(key):
+			out.append(-1.0)
+		else:
+			out.append(float(int(p.settings[key]) - int(lim[0])) / float(maxi(int(lim[1]) - int(lim[0]), 1)))
+	return out
+
+
+func skin_card(i: int) -> Dictionary:
+	var key := _key_at(i)
+	var p := pad()
+	var d := {"title": rows()[i][0], "subtitle": status_text(i), "desc": "", "sections": [], "buttons": []}
+	if p == null:
+		return d
+	var secs := []
+	var how := "左右键调整，确定循环切换。"
+	if _is_off(key):
+		d["desc"] = "只对「改版按键」有用。现在用的是原版虚拟按钮，这一行不能改。"
+		d["subtitle"] = "—"
+		how = "先把「操作布局」换成「改版按键」。"
+	elif key == "visible":
+		d["desc"] = "屏幕上的虚拟按键显示或隐藏（即右上的「隐藏按键」）。"
+		secs.append(XSkinSubPage.choices_section(["开", "关"], 1 if p.hidden else 0, 0))
+		how = "左右键或确定切换。"
+	elif key == "stick_page":
+		d["desc"] = "用摇杆拖动来翻页。"
+		secs.append(XSkinSubPage.choices_section(["开", "关"], 0 if p.stick_page_on() else 1, 0))
+		how = "左右键或确定切换。"
+	elif key == "position":
+		d["desc"] = "进入后页面收起，直接拖动三组按键；点「完成」或按返回键回到这里。"
+		d["buttons"] = [{"text": "调整位置", "primary": true}]
+		how = "确定进入。"
+	elif key == "reset":
+		d["desc"] = "把按键大小、透明度、位置、显示全部换回默认。"
+		d["buttons"] = [{"text": "恢复默认", "primary": true}]
+		how = "确定后会再问一次。"
+	elif CHOICES.has(key):
+		var labels: Array = CHOICES[key].map(func(c): return c[1])
+		var cur := 0
+		for j in CHOICES[key].size():
+			if CHOICES[key][j][0] == str(p.settings.get(key, "")):
+				cur = j
+		secs.append(XSkinSubPage.choices_section(labels, cur, 0))
+	elif FLAG_TEXT.has(key):
+		var on := bool(p.settings.get(key, false))
+		secs.append(XSkinSubPage.choices_section(FLAG_TEXT[key], 1 if on else 0, -1))
+	else:
+		var lim := _limits(key)
+		if not lim.is_empty():
+			d["desc"] = "范围 %d%%～%d%%。" % [int(lim[0]), int(lim[1])]
+			how = "左右键每次增减 %d%%；确定 +%d%%，到顶回最小。" % [XTouchControls.STEP, XTouchControls.STEP]
+	secs.append({"title": "操作", "text": how})
+	d["sections"] = secs
+	return d
+
+
+func skin_button(_i: int) -> void:
+	ok()
+
+
+func skin_hints() -> Array:
+	if _layout_busy:
+		return [["取消", "完成"]]
+	return [["确定", "切换"], ["左右", "调整"], ["取消", "返回"]]
 
 
 func select(i: int) -> void:
@@ -158,6 +284,9 @@ func ok() -> void:
 			p.set_flag(key, not bool(p.settings.get(key, false)))
 		"reset":
 			XSound.system(1)
+			if skin != null:
+				_ask_reset()
+				return
 			p.reset_defaults()
 		_:
 			XSound.system(1)
@@ -180,11 +309,51 @@ func _cycle(p: XTouchControls, key: String, d: int) -> void:
 ## 调位置时整页收起，完成后回来。
 func start_layout() -> void:
 	var p := pad()
+	if skin != null:
+		_start_layout_skin(p)
+		return
 	visible = false
 	p.layout_finished.connect(func():
 		visible = true
 		list_win.refresh(), CONNECT_ONE_SHOT)
 	p.start_layout()
+
+
+## 新版型：整页淡出，只留一枚「完成」胶囊在上沿正中（用 XTouchControls 自带的那条按钮栏，挪到上沿正中），完成后淡入
+func _start_layout_skin(p: XTouchControls) -> void:
+	_layout_busy = true
+	skin.fade_out()
+	var bar: Control = p._layout_bar if "_layout_bar" in p else null
+	var old_pos := Vector2.ZERO
+	if bar != null:
+		old_pos = bar.position
+		bar.position = Vector2(roundf((get_viewport_rect().size.x - bar.size.x) / 2.0), 8.0)
+	p.layout_finished.connect(func():
+		_layout_busy = false
+		if bar != null and is_instance_valid(bar):
+			bar.position = old_pos
+		if is_instance_valid(skin):
+			skin.fade_in(), CONNECT_ONE_SHOT)
+	p.start_layout()
+
+
+## 恢复默认：统一确认弹窗（橙边、停在「取消」）
+func _ask_reset() -> void:
+	_dlg = XSkinConfirm.open(skin, {"title": "恢复默认？", "body": "按键显示开关、大小、透明度和位置都会换回默认，不能撤回。", "buttons": ["恢复", "取消"], "danger": true})
+	_dlg.chosen.connect(func(i):
+		var d := _dlg
+		_dlg = null
+		d.close()
+		if i == 0:
+			XSound.system(1)
+			pad().reset_defaults()
+		else:
+			XSound.system(2))
+	_dlg.cancelled.connect(func():
+		var d := _dlg
+		_dlg = null
+		d.close()
+		XSound.system(2))
 
 
 func cancel() -> void:
@@ -193,12 +362,16 @@ func cancel() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if _layout_busy:
+		return   # 拖动态：右击等不能关子页（会把拖动态和按钮栏留在场上）
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	match event.button_index:
 		MOUSE_BUTTON_RIGHT:
 			cancel()
 		MOUSE_BUTTON_LEFT:
+			if skin != null:
+				return   # 新版型的点击由列表自己接（XSkinSubPage）
 			var p: Vector2 = event.position - LIST_RECT.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 			if not LIST_RECT.has_point(event.position) or p.y < 0:
 				return
@@ -212,7 +385,16 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if _layout_busy:   # 拖动态：Esc／返回键结束拖动（桌面没有触屏按钮栏也能退出）
+		if event.is_action_pressed("ui_cancel") and pad() != null and pad().layout_editing:
+			XKeyMap.handled(self)
+			pad().finish_layout()
+		return
 	if not visible:
+		return
+	if _dlg != null and is_instance_valid(_dlg):
+		if _dlg.handle_input(event):
+			XKeyMap.handled(self)
 		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)

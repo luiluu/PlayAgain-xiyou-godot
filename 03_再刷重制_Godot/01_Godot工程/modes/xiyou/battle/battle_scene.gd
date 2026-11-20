@@ -583,7 +583,7 @@ func _paint_enemy(c: XMVCanvas, e: XEnemy) -> void:
 				var nw := c.text_width(e.display_name(), 18)
 				XSkin4A.draw_text_backing(c, 320.0 - nw / 2.0, 26.0, nw, 18, name_alpha)
 			c.text(e.display_name(), 0, 0, 640, "center", color, 18, 36, name_alpha)
-		XEnemyStateIcon.paint(c, g.icons, c.text_width(e.display_name(), XEnemyStateIcon.NAME_SIZE), name_alpha)  # 名字右边的状态图标（ui12）
+		XEnemyStateIcon.paint(c, g.icons, XSkin2C.enemy_name_width(c.text_width(e.display_name(), XEnemyStateIcon.NAME_SIZE)), name_alpha)  # 名字右边的状态图标（ui12）；T273：新画法按菱形＋名字的整组宽摆
 	if not XBossHpBar.small_gauge_visible(e):  # YEP_X_VisualHpGauge：<HIDE HP GAUGE> 的敌人血条一直不出现（选中也不出）
 		return
 	if XSkinEnemyHp.on() and not (boss_hp != null and boss_hp.is_meter(e)):  # T126 新界面小怪血条（糖果粉细条，一直显示；首领有顶上血弧不画）
@@ -1161,6 +1161,7 @@ func _escape_success() -> void:
 ## 自动翻页）；快速战斗跳过失败信息（XdRs_HangUp，见 XHangUp）。rules-battle-pixel2 对照 v0.62.12 截图 bp2_defeat_f30 改：
 ## 重制原来在战斗日志行显示「全军覆没……」1.2 秒，原版是底部整宽消息窗（与逃跑同一个窗）。
 func _defeat() -> void:
+	_fade_seal_dial_on_defeat()
 	boss_hp.ended()
 	otb.hide_bar()
 	_close_windows()
@@ -1168,6 +1169,16 @@ func _defeat() -> void:
 	_defeat_me()
 	if not XHangUp.fast_fighting(XState.current):
 		await _defeat_message()
+
+
+## T291（T273 核查 P3-2）：全灭不走衔接层，印盘按 T254 稿 0.12 秒淡出（动效关直接隐藏），不留在战斗截图里。DEFEAT_FADE 关＝不管
+func _fade_seal_dial_on_defeat() -> void:
+	if not XSkin2C.DEFEAT_FADE or not XSkin2C.handoff_on() or seal_dial == null or not is_instance_valid(seal_dial):
+		return
+	if XUiSkin.motion() == XUiSkin.Motion.OFF:
+		seal_dial.hide()
+		return
+	seal_dial.create_tween().tween_property(seal_dial, "modulate:a", 0.0, XSkin2C.HO_OUT)
 
 
 ## BattleManager.processDefeat：displayDefeatMessage 只是把文字排进消息窗，紧接着 playDefeatMe（Defeat2），所以 ME 和
@@ -3179,6 +3190,14 @@ func _end_record() -> void:
 
 ## 胜利：先发放一次奖励，再放大胜利镜头，最后显示 Olivia 的结算布局。
 func _victory() -> void:
+	# 新界面 2C 卡 U（T273）：最后一击这一帧先拍印盘、伤害统计第一名菱形的快照（在 _end_record、end_battle 之前），冻结在衔接层里；
+	# 衔接层挂在战斗场景下、不进胜利镜头。伤害统计照旧当帧置空，节点交给衔接层只淡出。开关关、旧皮肤、没有印盘时为 null，一行不变
+	var handoff := XSkin2C.handoff_make(seal_dial, record)
+	if handoff != null:
+		add_child(handoff)
+		handoff.take_record(record)
+		handoff.snapshot_drops(field)   # T291：当帧把场上史诗以上掉落（含已淡出的）拍进快照，等待期里镜头推近后再换算位置
+		record = null
 	_tianqi_restore_view()  # T086-a：调结算之前先还原出战栏＋在场名单，图和状态行换回发作之前的人
 	boss_hp.ended()
 	_close_windows()
@@ -3242,22 +3261,41 @@ func _victory() -> void:
 			_camera.to = focus.to
 			_camera.scale = focus.scale
 		for visual in get_children():
-			if visual != ui and visual != low_ui and visual != record and (visual is Control or visual is Node2D):
+			if visual != ui and visual != low_ui and visual != record and visual != handoff and (visual is Control or visual is Node2D):
 				_camera.base[visual] = visual.position
 	await get_tree().create_timer(float(params.get("Victory Screen Hide Window Delay", 500)) / 1000).timeout
 	for node in ui.get_children():
 		if node is CanvasItem:
 			node.hide()
 	low_ui.hide()
+	_hide_field_ui_for_result()
 	await get_tree().create_timer(maxf(0, float(params.get("Victory Screen Display Delay", 1000)) / 1000 - float(params.get("Victory Screen Hide Window Delay", 500)) / 1000)).timeout
 	# 挂机中：Window_BattleVictoryActorSub 一建出就把 _victoryPhase 设回 false，结算画面不出现、直接回地图
 	if XHangUp.is_active(XState.current):
+		if handoff != null and is_instance_valid(handoff):
+			handoff.queue_free()   # 卡 U：挂机不弹结算，衔接层等待期满直接释放
 		return
+	if handoff != null and is_instance_valid(handoff):
+		handoff.collect_drops(field)   # 卡 U：场上还在的史诗以上掉落（镜头已推近，取这一刻的屏幕坐标）
+		skin_info.handoff = handoff
 	var screen := XVictoryScreen.new()
 	screen.setup(r, before, logic.actors, logic.auto, skin_info)
 	ui.add_child(screen)
 	await screen.continued
 	await victory_messages()
+
+
+## T291（T273 发现②）：结算页出来时，画在 field 上的敌人名字／血条／状态图标（z 5）和首领状态胶囊（自己每帧把 visible 设回来）
+## 不再压在结算页上。同 ui 那批一起在 0.5 秒隐藏；RESULT_CLEAR 关＝照旧留着。新旧皮肤都一样
+func _hide_field_ui_for_result() -> void:
+	if not XSkin2C.RESULT_CLEAR:
+		return
+	for e in gauges:
+		if is_instance_valid(gauges[e].box):
+			gauges[e].box.hide()
+	if boss_panel != null and is_instance_valid(boss_panel):
+		boss_panel.hide()
+		boss_panel.process_mode = Node.PROCESS_MODE_DISABLED   # 不让它的 _process 又把自己显示回来
 
 
 ## 胜利后要提示的文字（饿狼「获得神之触媒」等，logic.victory_texts）。优化 O-190（ui11）：原版在结算画面期间塞进

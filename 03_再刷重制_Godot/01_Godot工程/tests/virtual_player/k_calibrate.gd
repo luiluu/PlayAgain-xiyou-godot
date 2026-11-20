@@ -52,7 +52,7 @@ var no_fabao := false
 var bare := false  # --bare：不补甲档五样（回到 v3 口径，对照用）
 var trumpet_n := 2  # 号卷：七卷里打单体加伤害的只有二号血海（目标生命低于 33% +50%）；条件全中＝木桩生命压到 30%
 var report := {}
-static var add_rework := false  # --add-rework（T280）：技能表里有伤害的技能不在 skill_ids 里（五行／形态切换类，如 71 诸葛孔明）时也补进要量的名单
+static var add_rework := true  # T295 起默认开；--no-rework 回旧口径（只量 skill_ids）。T280 --add-rework（仍认，无效果）：技能表里有伤害的技能不在 skill_ids 里（五行／形态切换类，如 71 诸葛孔明）时也补进要量的名单
 var surv_mode := false  # --survive（T280）：标准敌人每回合物理＋魔法各打一下（固定攻击），角色自动战斗带自己的护盾／回复／减伤／复活技能，记撑过的回合数
 var surv_atk := 15000.0  # --surv-atk=N：标准敌人攻击（技能 3／1 的伤害＝攻击×4）
 const SURV_TURNS := 60
@@ -149,6 +149,8 @@ func _ready() -> void:
 			surv_pure_auto = true
 		elif a.begins_with("--surv-atk="):
 			surv_atk = float(a.substr(11))
+		elif a == "--no-rework":
+			add_rework = false
 		elif a == "--stats":
 			stats_mode = true
 		elif a == "--per-skill":

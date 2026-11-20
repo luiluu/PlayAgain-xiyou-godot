@@ -14,6 +14,8 @@ extends Control
 ##   右列 存档容量（O-042：实际文件大小，见 file_size）。空格只画整块暗底与居中的「空」（系统色）。
 ## - 确认 (居中，宽＝说明宽＋40，高 136)：说明 (6,0)，「是／否」两行居中；读取总要确认，保存在这格已有档时确认，删除确认。
 ## 保存次数取存档的 saveCount（XState.save_count，XSave.save 写盘前加 1；旧档没有这一项按 0）。
+## T292 新界面（天启篇，XUiSkin.on() 且 XSkinSavePage.ENABLED 时）：同一套状态，换成左列表＋右大牌画（XSkinSavePage）；
+## 标题「旧的回忆」还没有当前存档，由 entry.gd 传 use_skin（天启篇新标题传真、重制版旧标题传假）。新皮肤关着时下面一行不变。
 
 signal closed
 signal loaded
@@ -47,6 +49,9 @@ var confirm_background: Control
 var _cache := {}                    # 格 → 读出的存档字典（无效为 null）
 var _failed := {}                   # 格 → 存档校验失败（XSaveSeal：被改过或坏了；原文件留着）
 var dark_rects: Array = []          # 信息窗最近一次画的暗底（测试核对用）
+## T292：null＝按 XUiSkin.on() 定（地图、菜单里打开）；标题「旧的回忆」由打开它的地方传 true／false
+var use_skin = null
+var skin: XSkinSavePage
 
 
 func _ready() -> void:
@@ -74,7 +79,20 @@ func _ready() -> void:
 	index = first_index()
 	top = clampi(index - 2, 0, maxi(0, XSave.SLOTS - page_rows()))
 	help_text = str(XDB.plugin("YEP_SaveCore").get("Select Help", "请选择一个文件插槽。"))
+	if skin_wanted():
+		act = 0 if mode == "load" else 1   # 新页列表上就亮着默认那枚按钮
+		skin = XSkinSavePage.new(self, get_parent() is XMenu)
+		add_child(skin)
 	_refresh()
+
+
+## T292：建不建新页（回退开关 XSkinSavePage.ENABLED；标题进来看 use_skin，其余看 XUiSkin.on()）
+func skin_wanted() -> bool:
+	if not XSkinSavePage.ENABLED:
+		return false
+	if use_skin != null:
+		return bool(use_skin)
+	return XUiSkin.on()
 
 
 func plugin(key: String, def := "") -> String:
@@ -147,6 +165,8 @@ func _refresh() -> void:
 	list_win.down_arrow = top + page_rows() < XSave.SLOTS
 	for w in [help_win, list_win, action_win, info_win, confirm_win]:
 		w.refresh()
+	if skin != null:
+		skin.sync()   # 新界面：旧窗口都藏起来，按状态重画新页
 
 
 func _paint_help(c: XMVCanvas) -> void:
@@ -340,6 +360,9 @@ func _paint_confirm(c: XMVCanvas) -> void:
 
 # ---- 操作 ----
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	var handled := true
 	if event.is_action_pressed("ui_cancel"):
 		cancel()
@@ -362,6 +385,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinSavePage）
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	if event.button_index == MOUSE_BUTTON_RIGHT:

@@ -561,6 +561,7 @@ func _choose_save() -> void:
 	var page := XSaveScene.new()
 	page.name = "LoadPage"
 	page.mode = "load"
+	page.use_skin = XTianqiTitle.available() and XTianqiTitle.skin_on()   # T292：天启篇新标题进来用新界面，重制版旧标题保持旧界面（O-467）
 	_layer.add_child(page)
 	page.loaded.connect(func(): get_tree().change_scene_to_file(MAP_SCENE))
 	page.closed.connect(_title)

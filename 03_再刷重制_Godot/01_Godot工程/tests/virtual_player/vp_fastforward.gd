@@ -13,7 +13,7 @@ extends RefCounted
 ##   领奖那一页（宝箱 CE849～851 等、按变量 94 的档、传回楼层、重置副本）。和实打差的只有路上的小怪（不打、不发它们的掉落）。
 
 const EventCompare := preload("res://tests/xiyou_event_compare.gd")
-const TIER_SWITCHES := [1561, 1660]
+const TIER_SWITCHES := [1561, 1676]   # 26～29 层的副本用 1661～1676（T272 补：原来只到 1660，26 层起找不到首领）
 const SAMPLE_TURNS := 40
 const BAG_SOFT := 300
 
@@ -30,6 +30,7 @@ var settled := 0                   # 快进结算了几场（练级＋副本首�
 var grind_battles := 0
 var dungeon_runs := 0
 var dungeon_kings := 0             # 其中选到「王者难度」的几次
+var forced_resets := 0             # 重置不认、手动清变量后再挑战的次数（T272）
 var mobs := 0                      # 为了让首领页出来先清掉的挡路小怪事件（照快进结算）
 var log_lines: Array = []
 var msec := 0                      # 快进一共花了多少毫秒（墙钟）
@@ -99,6 +100,7 @@ func sample(st: XState, troop: int) -> bool:
 	for a in copy.members():
 		a.recover_all()
 	var won := false
+	var peak := 0.0                    # 单回合最多打掉几成（回血之前量）
 	var logic := XBattleLogic.new()
 	logic.setup(troop, copy)
 	logic.auto = true
@@ -121,6 +123,7 @@ func sample(st: XState, troop: int) -> bool:
 				break
 		if logic.is_over():
 			break
+		peak = maxf(peak, _dealt(logic))   # 回合末回血之前打掉的比例（守层者每回合回血，回合末再量就是 0；T272 查「5 回合打掉 0%」）
 		logic.end_turn()
 		_drain(logic, logic.troop_events(null, true))
 		if logic.is_over():
@@ -137,7 +140,8 @@ func sample(st: XState, troop: int) -> bool:
 		hp0 += float(e.mhp)
 		left += maxf(0.0, float(e.hp))
 	last_sample = {"troop": troop, "won": won, "turns": int(logic.turn), "dealt_pct": int(100.0 * (1.0 - left / maxf(1.0, hp0))),
-		"dead": logic.actors.filter(func(a): return a.is_dead()).size()}
+		"dead": logic.actors.filter(func(a): return a.is_dead()).size(), "peak_pct": int(100.0 * peak),
+		"regen": snappedf(float(logic.enemies[0].xparam(7)) if not logic.enemies.is_empty() else 0.0, 0.01)}
 	logic.end_battle(0 if won else 2)
 	XState._become_current(st)
 	samples += 1
@@ -145,7 +149,7 @@ func sample(st: XState, troop: int) -> bool:
 		sample_losses += 1
 	sample_cache[key] = won
 	sample_detail[key] = last_sample
-	_note("样本 敌群 %d：%s（%d 回合，打掉 %d%%，我方倒 %d）" % [troop, "赢" if won else "没打赢", int(last_sample.turns), int(last_sample.dealt_pct), int(last_sample.dead)])
+	_note("样本 敌群 %d：%s（%d 回合，打掉 %d%%，单回合最多 %d%%，敌人每回合回血 %s，我方倒 %d）" % [troop, "赢" if won else "没打赢", int(last_sample.turns), int(last_sample.dealt_pct), int(last_sample.peak_pct), str(last_sample.regen), int(last_sample.dead)])
 	return won
 
 
@@ -416,6 +420,17 @@ func dungeon_once(st: XState, floor_map: int, buy_rune: Callable) -> Dictionary:
 		await _run_page(host, int(ent[0]), ent[1])
 		host.want = "挑战副本"
 		await _run_page(host, int(ent[0]), ent[1])
+	if not XDungeon.inside(st) and str(host.trace).contains("请重置副本"):
+		# 重置也不认（T272：上一层最后一次副本首领后变量 5＝1、6＝35 没清，下一层入口要 6 到 36 才让重置，两头都卡死）：
+		# 照重置那一页本来要做的收拾（变量 5、6、118、119 清零，开关 101～105 开），再挑战一次
+		st.set_variable(XDungeon.VAR_SEALED, 0)
+		for v in [6, 118, 119]:
+			st.set_variable(v, 0)
+		for sw in [101, 102, 103, 104, 105]:
+			st.set_switch(sw, true)
+		host.want = "挑战副本"
+		await _run_page(host, int(ent[0]), ent[1])
+		forced_resets += 1
 	if not XDungeon.inside(st):
 		out.why = "入口没进去（%s）" % str(host.trace.slice(-3))
 	else:

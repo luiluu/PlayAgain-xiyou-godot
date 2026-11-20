@@ -32,6 +32,9 @@ var _tier := 0
 var _tier_at := -9.0
 ## 测试读：上一帧画了什么
 var last := {}
+## T273 卡 U：胜利那一刻冻结（freeze 拍快照；之后不读计量、连击，画面停在那一帧）；tag_alpha＝小签淡出
+var frozen := {}
+var tag_alpha := 1.0
 
 static var _num_font: Font = null
 static var _badges := {}
@@ -88,9 +91,58 @@ static func badge(key: String) -> Texture2D:
 	return _badges[key]
 
 
+## ---- 冻结（T273 卡 U：战斗→结算衔接） ----
+
+## 胜利那一刻拍快照：计量各线、死期、连击都抄一份，之后照这份画；时间也停（光环、四边一闪、升档那一下不再放）
+func freeze() -> void:
+	var rows := _rows().duplicate(true)
+	var fl := {}
+	for r in rows:
+		fl[str(r.key)] = _flash(str(r.key))
+	var cs := combo_shown()
+	frozen = {"rows": rows, "doomed": _doomed().duplicate(), "dial": _dial_info().duplicate(true), "flash": fl,
+		"combo": {"shown": cs, "hits": combo.shown_hits if cs else 0, "hold": combo.hold_frac() if cs else 0.0,
+			"alpha": combo.num_alpha() if cs else 0.0}}
+	_halo_at = -9.0
+	_edge_at = -9.0
+	_tier_at = -9.0
+	set_process(false)
+	queue_redraw()
+
+
+func _doomed() -> Array:
+	if not frozen.is_empty():
+		return frozen.doomed
+	return meter.doomed if meter != null and is_instance_valid(meter) else []
+
+
+func _dial_info() -> Dictionary:
+	if not frozen.is_empty():
+		return frozen.dial
+	return meter.dial if meter != null and is_instance_valid(meter) else {}
+
+
+func _c_hits() -> int:
+	return int(frozen.combo.hits) if not frozen.is_empty() else combo.shown_hits
+
+
+func _c_alpha() -> float:
+	return float(frozen.combo.alpha) if not frozen.is_empty() else combo.num_alpha()
+
+
+func _c_hold() -> float:
+	return float(frozen.combo.hold) if not frozen.is_empty() else combo.hold_frac()
+
+
+func _c_scale() -> float:
+	return 1.0 if not frozen.is_empty() else combo.num_scale()   # 冻结时砸那一下已经放完
+
+
 ## ---- 读数据 ----
 
 func _rows() -> Array:
+	if not frozen.is_empty():
+		return frozen.rows
 	if meter == null or not is_instance_valid(meter) or not XSkin2C.meter_on():
 		return []
 	return meter.rows
@@ -118,6 +170,8 @@ func tag_rows() -> Array:
 
 
 func combo_shown() -> bool:
+	if not frozen.is_empty():
+		return bool(frozen.combo.shown)
 	if combo == null or not is_instance_valid(combo) or not XSkin2C.combo_on():
 		return false
 	if combo.shown_hits <= 0 or combo.num_alpha() <= 0.0:
@@ -134,12 +188,14 @@ func diamonds(r: Dictionary) -> Vector2i:
 			var full := int(r.full)
 			return Vector2i(-1 if full > MAX_DIAMONDS else full, clampi(int(r.value), 0, maxi(full, 0)))
 		"death":
-			var n := int(meter.dial.get("death_slots", 0)) if meter != null else 0
-			return Vector2i(n, mini(meter.doomed.size() if meter != null else 0, n))
+			var n := int(_dial_info().get("death_slots", 0))
+			return Vector2i(n, mini(_doomed().size(), n))
 	return Vector2i(0, 0)
 
 
 func _flash(key: String) -> float:
+	if not frozen.is_empty():
+		return float(frozen.flash.get(key, 0.0))
 	return meter.flash_left(key) if meter != null and is_instance_valid(meter) else 0.0
 
 
@@ -156,7 +212,7 @@ func _draw() -> void:
 		if not cs:
 			_tier = 0
 			return
-		ring_a = combo.num_alpha()   # 素环跟着连击淡出
+		ring_a = _c_alpha()   # 素环跟着连击淡出
 	var key := str(rr.get("key", ""))
 	var main := XTianqiLook.main_color(key, XUiSkin.GOLD) if key != "" else XUiSkin.GOLD
 	var bright := XSkin2C.line_bright(key) if key != "" else XUiSkin.GOLD_LIGHT
@@ -170,7 +226,7 @@ func _draw() -> void:
 			_edge_at = _now
 	var flk := clampf(fl / 0.6, 0.0, 1.0)
 	# 连击档
-	var tier := XComboCounter.tier(combo.shown_hits) if cs else 0
+	var tier := XComboCounter.tier(_c_hits()) if cs else 0
 	if cs and tier > _tier and _tier > 0:
 		_tier_at = _now
 	_tier = tier if cs else 0
@@ -223,9 +279,9 @@ func _draw() -> void:
 		draw_arc(C, lerpf(DISC_R, 116.0, hk), 0, TAU, 72, Color(main, 0.75 * (1.0 - hk)), 3.0 * (1.0 - hk) + 1.0, true)
 	# 外圈金弧：连击还剩多久
 	if cs:
-		var hf := combo.hold_frac()
+		var hf := _c_hold()
 		if hf > 0.0:
-			draw_arc(C, ARC_R, -PI / 2.0, -PI / 2.0 + TAU * hf, 64, Color(XUiSkin.GOLD_LIGHT, combo.num_alpha()), 4.0, true)
+			draw_arc(C, ARC_R, -PI / 2.0, -PI / 2.0 + TAU * hf, 64, Color(XUiSkin.GOLD_LIGHT, _c_alpha()), 4.0, true)
 		if tier_k < 1.0:
 			draw_arc(C, DISC_R + 3.0, 0, TAU, 72, Color(XUiSkin.GOLD_LIGHT, 0.8 * (1.0 - tier_k)), 6.0 * (1.0 - tier_k) + 1.0, true)
 	# 环心：连击数字或本线蜡封
@@ -237,8 +293,8 @@ func _draw() -> void:
 			sc = 1.0 + 0.18 * sin(flk * PI)
 		draw_line_wax(self, C, 68.0 * sc, line if line != "" else key, ring_a, fl > 0.0)
 		last.center = "wax"
-	# 小签
-	if not rr.is_empty():
+	# 小签（冻结后由衔接层淡出）
+	if not rr.is_empty() and tag_alpha > 0.0:
 		_draw_tags(full_m)
 	# 四边一闪（火花满的那一下，0.3 秒，只一次）
 	var ek := (_now - _edge_at) / HALO
@@ -290,6 +346,8 @@ func _draw_diamonds(key: String, d: Vector2i, main: Color, bright: Color, flashi
 func _draw_arc_bar(r: Dictionary, main: Color, bright: Color, flashing: bool, a: float) -> void:
 	draw_arc(C, DISC_R, 0, TAU, 72, Color(0.2, 0.2, 0.22, a), 4.0, true)
 	var k := clampf(float(r.value) / maxf(float(r.full), 1.0), 0.0, 1.0)
+	if flashing:
+		k = 1.0   # T273（T267 核查 P3-3）：满的那一下计量已归零，整圈照菱形版一样全换白金色，不是整圈暗着
 	if k > 0.0:
 		var col := Color("fff4d6") if flashing else (bright if int(r.value) >= int(r.full) - 3 else main)
 		draw_arc(C, DISC_R, -PI / 2.0, -PI / 2.0 + TAU * k, 72, Color(col, a), 4.0, true)
@@ -306,7 +364,7 @@ func _draw_seven(a: float) -> void:
 
 
 func _draw_combo(tier: int, tier_k: float, line_hi: Color, line_main: Color, motion: int) -> void:
-	var n := combo.shown_hits
+	var n := _c_hits()
 	var s := str(n)
 	var fs := 50 if s.length() <= 2 else (40 if s.length() == 3 else 34)
 	var col := XUiSkin.TEXT_HI
@@ -315,10 +373,10 @@ func _draw_combo(tier: int, tier_k: float, line_hi: Color, line_main: Color, mot
 		4: col = line_hi
 	var sc := 1.0
 	if motion == XUiSkin.Motion.FULL:
-		sc = combo.num_scale()
+		sc = _c_scale()
 		if tier_k < 1.0:
 			sc = maxf(sc, lerpf(1.45, 1.0, tier_k))
-	var a := combo.num_alpha()
+	var a := _c_alpha()
 	if tier >= 3:
 		XSkin2C._glow(self, C + Vector2(0, -6), 40.0, Color(XUiSkin.GOLD_LIGHT if tier == 3 else line_main, 0.45 * a))
 	var f := num_font()
@@ -399,7 +457,7 @@ func _draw_tag(r: Dictionary, at: Vector2, on_ring: bool) -> String:
 					bar = clampf(float(r.value) / maxf(float(r.full), 1.0), 0.0, 1.0)
 				segs = [[str(int(r.value)), f17, XUiSkin.TEXT], [" / %d" % int(r.full), f15, XUiSkin.TEXT_2]]
 		"death":
-			var names := PackedStringArray(meter.doomed.map(func(a): return a.display_name()))
+			var names := PackedStringArray(_doomed().map(func(a): return a.display_name()))
 			if names.is_empty():
 				segs = [["暂无", f15, XUiSkin.TEXT_3]]
 			elif names.size() > 2:
@@ -407,7 +465,7 @@ func _draw_tag(r: Dictionary, at: Vector2, on_ring: bool) -> String:
 			else:
 				segs = [["、".join(names) + "　回合结束时死", f15, XUiSkin.DOWN]]
 		"famine":
-			var m: Array = meter.dial.get("famine", [1.0, 1.0])
+			var m: Array = _dial_info().get("famine", [1.0, 1.0])
 			segs = [["消耗", f15, XUiSkin.TEXT_2], [" ×" + _num(float(m[0])) + "　", f17, _mult_color(float(m[0]), true)],
 				["回复", f15, XUiSkin.TEXT_2], [" ×" + _num(float(m[1])), f17, _mult_color(float(m[1]), false)]]
 	var f := XUiSkin.font("body")
@@ -418,25 +476,26 @@ func _draw_tag(r: Dictionary, at: Vector2, on_ring: bool) -> String:
 		w += XSkin2C._tw(str(sg[0]), int(sg[1]))
 	w += 12.0
 	var rect := Rect2(at, Vector2(w, TAG_H))
+	var ta := tag_alpha
 	var fill := Color(XUiSkin.PANEL_LOW, 0.88)
 	if fl > 0.0:
 		fill = fill.lerp(Color(main.darkened(0.2), 0.95), flk)
-	XSkin2C._pill(self, rect, fill, Color(main, 0.55))
-	draw_line_wax(self, at + Vector2(4.0 + 12.0, TAG_H / 2.0), 24.0, key, 1.0)   # 签头是这枚签自己那条线的蜡封
+	XSkin2C._pill(self, rect, Color(fill, fill.a * ta), Color(main, 0.55 * ta))
+	draw_line_wax(self, at + Vector2(4.0 + 12.0, TAG_H / 2.0), 24.0, key, ta)   # 签头是这枚签自己那条线的蜡封
 	var x := at.x + 4.0 + 24.0 + 6.0
 	var tc := main if fl <= 0.0 else XUiSkin.TEXT_HI
-	XSkin2C._text(self, x, at.y + (TAG_H - f15 * 1.25) / 2.0, label, f15, tc)
+	XSkin2C._text(self, x, at.y + (TAG_H - f15 * 1.25) / 2.0, label, f15, Color(tc, ta))
 	x += XSkin2C._tw(label, f15) + 8.0
 	if bar >= 0.0:
 		var br := Rect2(x, at.y + TAG_H / 2.0 - 2.0, 56.0, 4.0)
-		draw_rect(br, Color(0.18, 0.18, 0.2))
-		draw_rect(Rect2(br.position, Vector2(56.0 * bar, 4.0)), main)
+		draw_rect(br, Color(0.18, 0.18, 0.2, ta))
+		draw_rect(Rect2(br.position, Vector2(56.0 * bar, 4.0)), Color(main, ta))
 		x += 56.0 + 8.0
 	var out := label
 	for sg in segs:
 		var fs := int(sg[1])
 		var col: Color = sg[2]
-		XSkin2C._text(self, x, at.y + (TAG_H - fs * 1.25) / 2.0, str(sg[0]), fs, col)
+		XSkin2C._text(self, x, at.y + (TAG_H - fs * 1.25) / 2.0, str(sg[0]), fs, Color(col, col.a * ta))
 		x += XSkin2C._tw(str(sg[0]), fs)
 		out += str(sg[0])
 	return out

@@ -978,7 +978,30 @@ func attack_times_add() -> float:
 
 ## YEP_WeaponUnleash attackSkillId：按 replace_attack_objects() 的顺序找第一个 <Replace Attack: x>，都没有是技能 1。
 ## 原版把找到的号缓存到下次 refresh（只在忘记技能而没 refresh 时与即时查不同，正式流程碰不到），这里每次即时查。
+## ATTACK_ID_MEMO（O-625，T293 战斗提速）：角色在只读窗口（O-348）里同一代只查一次——逐个状态／装备／技能的备注按整串查表，
+## 一次约 70～100 µs，一段伤害里天启篇钩子要问三四次 is_attack。记在 XActor._read_memo，换代即丢。换代来源（refresh_passive 本身不换代）：
+## 加减状态（state_touch）、clear_states、param_mark_dirty、学／忘技能、HP／MP／TP 写入、公式帧进出（XAlienBattle.push／pop_formula）；
+## 换装走 XEquipment.preview（read_touch）、XEquipment.change（末尾写 hp／mp）、init_equips／release_unequippable（卸了东西时）／release_to_party。
+## 直接改 equips[] 又不走这些路径的不换代（与 skills()／特性表的窗口记忆同一前提）。键带 _cat_bare（小猫剑圣空手时装备表、技能表不同）；角色自己的包装（甚尔形态、宿傩、屠苏武具态）在 XActor 里、
+## 不进记忆，照旧每次现算。窗口外、敌人照旧每次即时查。false＝回退（每次即时查）。XIYOU_READ_VERIFY=1 时每次命中都重算比对。
+static var ATTACK_ID_MEMO := true
+
 func attack_skill_id() -> int:
+	if ATTACK_ID_MEMO and XActor.READ_MEMO and XActor._read_depth > 0 and self is XActor:
+		var m: Dictionary = (self as XActor)._read_memo()
+		var key := "ra1" if (self as XActor)._cat_bare else "ra0"
+		if m.has(key):
+			if XActor.READ_VERIFY:
+				(self as XActor)._read_verify("attack_skill_id", m[key], _attack_skill_id_now())
+			return int(m[key])
+		var gen := XActor._read_gen
+		var fresh := _attack_skill_id_now()
+		if gen == XActor._read_gen:  # 算的过程里有写入就不记
+			m[key] = fresh
+		return fresh
+	return _attack_skill_id_now()
+
+func _attack_skill_id_now() -> int:
 	for o in replace_attack_objects():
 		var id := replace_attack_of(o)
 		if id > 0:

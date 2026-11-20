@@ -163,12 +163,19 @@ func _put_glyphs() -> void:
 
 ## R5：环心写当前分类的名字（旧的「N 项」去掉）；名字长（挂机与操作）时缩字不超过环心空地
 func _draw_cat_name() -> void:
-	if not XSkinRingNav.INNER_V2 or cats.is_empty() or cur >= cats.size():
+	if cats.is_empty() or cur >= cats.size():
+		return
+	draw_cat_name(ring, str(cats[cur].name))
+
+
+## T300：设置子页（XSkinSubPage）的环也要写同样的环心名字，抽成静态
+static func draw_cat_name(ring: XSkinRingNav, cat_name: String) -> void:
+	if not XSkinRingNav.INNER_V2 or cat_name == "":
 		return
 	var c := ring.center()
 	var f := XUiSkin.font("title")
 	var room := (ring.radius - ring.orb_radius - 26.0) * 2.0 - 16.0
-	var fit := XSkinList.fit_text(f, str(cats[cur].name), room, 30, XUiSkin.FS_MIN)
+	var fit := XSkinList.fit_text(f, cat_name, room, 30, XUiSkin.FS_MIN)
 	var w := f.get_string_size(str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1])).x
 	XUiSkin.ds(ring, f, Vector2(c.x - w / 2.0, c.y + int(fit[1]) * 0.36), str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1]), XUiSkin.TEXT)
 

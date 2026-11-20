@@ -28,6 +28,9 @@ extends RefCounted
 ## 所属角色照原版 characterHelpActor 按 id 段落到 owner()（装备号都 ≤10139，即渡鸦；原版在装备页等界面取窗口的角色，重制一律按 id）。
 
 const VIEW_COLOR := "rgba(235,240,247,1)"
+## T288 分节标记：第 4 步分组上色用的颜色码 → 新界面长说明卡的节（XHelpCard.section_tags 读；genericHelpView 用同一套码）。
+## 2 专属（抬头）、0 基本信息、5 公式（伤害怎么算）、3 成长、1 其余效果
+const SECTION_BY_CODE := {2: "head", 0: "info", 5: "formula", 3: "growth", 1: "effect"}
 ## DYN2_IDS：currentHelpText 在消耗行之后直接返回，改由 dyn2 按前缀换行
 const DYN2_GAPS := [10168, 10169, 10197, 10198, 10199, 10227, 10228]
 ## characterHelpCopies 里与现行备注一致的只有 10168（其余备注都改过，副本不生效）

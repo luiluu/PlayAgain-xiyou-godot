@@ -25,6 +25,8 @@ extends RefCounted
 ## 开关（O-413）：ENABLED＝false 整个关（天启篇里回到原版十本洪荒权能书：名字效果照旧、掉落跟原版只认洪荒开关，天启篇实际不掉）。
 
 static var ENABLED := true
+## O-625（T293 战斗提速）：damage_ops 只在学了一号时才问 is_attack（一次约 70～100 µs，只有一号分范围技／单体技）；结果不变。false＝回退（每次都问）
+static var LAZY_ATTACK := true
 
 const PATH := "res://modes/xiyou/tianqi_data/trumpet.json"
 const DEATH_STATE := 1
@@ -446,9 +448,10 @@ static func damage_ops(item: Dictionary, a, b) -> Array:
 		return ops
 	if a is XActor and not (b is XActor):
 		var fin := 0.0
-		var skill: bool = not a.is_attack(item)
 		var scope: int = int(item.get("scope", 0))
-		if skill and _has_now(logic, a, 1):
+		var one := _has_now(logic, a, 1)
+		var skill: bool = (one and not a.is_attack(item)) if LAZY_ATTACK else not a.is_attack(item)  # LAZY_ATTACK：没学一号不问 is_attack
+		if skill and one:
 			if AOE_SCOPES.has(scope):
 				fin += _p(1, "aoe")
 			elif SINGLE_SCOPES.has(scope):

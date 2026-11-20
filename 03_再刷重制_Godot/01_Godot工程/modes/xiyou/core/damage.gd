@@ -392,7 +392,35 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var out_value := XPower.js_round(settled)  # JS Math.round：负数的 .5 往大取整（roundf 会远离零）
 	if settled > 0.0 and out_value == 0.0:
 		out_value = 1.0
-	return {"value": out_value, "settled": settled, "critical": critical, "moduleTrace": report.trace, "breakdown": {"base": raw, "basis": basis, "weights": weights, "row": best, "candidates": cands}}
+	return {"value": out_value, "settled": settled, "critical": critical, "moduleTrace": report.trace, "breakdown": {"base": raw, "basis": basis, "weights": weights, "row": best, "candidates": cands,
+		"criticalIf": maxf(1.0, critical_base + float(frame.criticalAdd))}}  # T282：暴击时的倍率（这次没暴击也给），智能 AI 求暴击期望用，不参与结算
+
+
+## 只读预览一段（T282，智能 AI 的统一估伤入口 XBattleEval.hit_value）：calculate(preview) → finish(不执行)，跟正式 _damage_value 同一条乘区链，
+## 但不浮动、不传 random（混沌元素取第一档、不掷骰）、不挂状态、不记账。伤害加成总账守卫在这一段里静音（选招试算几百招不是真出手，
+## 不该把来源违规记进 violations、也不该 push_error；真出手照常查）。返回结算值：正＝伤害，负＝回复／吸收。
+## options 同 calculate（rawValue、vars、tianqi_logic、battleRound、critical、elements…），preview／variance 由这里定
+static func preview_hit(item: Dictionary, a: XBattler, b: XBattler, options := {}) -> float:
+	return float(preview_detail(item, a, b, options).value)
+
+
+## 同 preview_hit，另给暴击倍率 criticalIf（暴击时 calculate 乘的那一项；伤害技没有 breakdown 时 1）和元素判定 tianqiKind
+static func preview_detail(item: Dictionary, a: XBattler, b: XBattler, options := {}) -> Dictionary:
+	var o := options.duplicate()
+	o.preview = true
+	o.variance = false
+	o.erase("random")
+	var guard := XTianqiLedger.GUARD
+	XTianqiLedger.GUARD = false
+	var res := calculate(item, a, b, o)
+	var v := float(res.get("value", 0.0))
+	var bd: Dictionary = res.get("breakdown", {})
+	if bool(res.get("available", true)) and not bd.is_empty():  # 模块派发失败（_module_failure：value NAN、breakdown 空）不进 finish（T282 核查 P2-2）
+		v = finish(res, item, a, b, false, {"variables": o.get("vars", [])})
+	if not is_finite(v):
+		v = 0.0
+	XTianqiLedger.GUARD = guard
+	return {"value": v, "criticalIf": float(bd.get("criticalIf", 1.0)), "tianqiKind": str(bd.get("row", {}).get("tianqiKind", ""))}
 
 
 ## 正式 executeDamage 的顺序：攻击方 Confirm → 固定减伤（onPreDamageStateEffects 的包装）→ 目标 React。

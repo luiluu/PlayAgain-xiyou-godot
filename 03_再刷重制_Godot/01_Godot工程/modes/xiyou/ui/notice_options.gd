@@ -25,6 +25,8 @@ const NOTE := "点选切换开／关。关闭后不再自动弹出；菜单里�
 var index := 0
 var head_win: XMVWindow
 var list_win: XMVWindow
+## T300 卡 L：新界面开着时的设置子页版型（XSkinSubPage）；关着为 null，旧页一行不变
+var skin: XSkinSubPage
 
 
 func _ready() -> void:
@@ -35,6 +37,10 @@ func _ready() -> void:
 	head_win = XMVWindow.make(self, HEAD_RECT, XUI.MENU_WINDOW_OPACITY, _paint_head)
 	list_win = XMVWindow.make(self, LIST_RECT, XUI.MENU_WINDOW_OPACITY, _paint_list)
 	list_win.canvas.blink = true
+	if XSkinSubPage.wanted():
+		head_win.hide()
+		list_win.hide()
+		skin = XSkinSubPage.attach(self)
 
 
 static func rows() -> Array:
@@ -57,6 +63,40 @@ func _paint_list(c: XMVCanvas) -> void:
 		c.text(row[1], 6, y, NAME_W)
 		c.text(row[2], 6 + NAME_W, y, w - NAME_W - STATUS_W, "left", XUI.SYSTEM, HINT_SIZE)
 		c.text("开" if on else "关", 6 + w - STATUS_W, y, STATUS_W, "right", ON_COLOR if on else OFF_COLOR)
+
+
+# ---- T300 新版型（XSkinSubPage 向这里要行和牌）----
+
+func skin_self_hosted() -> bool:
+	return XSkinSubPage.wanted()
+
+
+func skin_name() -> String:
+	return TITLE
+
+
+func skin_cat() -> String:
+	return "general"
+
+
+func skin_rows() -> Array:
+	var out := []
+	for r in rows():
+		var on := XConfig.notice_on(r[0])
+		out.append({"text": r[1], "right": "开" if on else "关", "right_color": XSkinSubPage.on_color(on)})
+	return out
+
+
+func skin_card(i: int) -> Dictionary:
+	var r: Array = rows()[i]
+	var on := XConfig.notice_on(r[0])
+	return {"title": r[1], "subtitle": "开" if on else "关", "desc": r[2],
+		"sections": [XSkinSubPage.choices_section(["开", "关"], 0 if on else 1, 0),
+			{"title": "操作", "text": NOTE}]}
+
+
+func skin_hints() -> Array:
+	return [["确定", "切换"], ["左右", "关／开"], ["取消", "返回"]]
 
 
 func _refresh() -> void:
@@ -100,6 +140,8 @@ func _gui_input(event: InputEvent) -> void:
 		MOUSE_BUTTON_RIGHT:
 			cancel()
 		MOUSE_BUTTON_LEFT:
+			if skin != null:
+				return   # 新版型的点击由列表自己接（XSkinSubPage）
 			var p: Vector2 = event.position - LIST_RECT.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 			if not LIST_RECT.has_point(event.position) or p.y < 0:
 				return

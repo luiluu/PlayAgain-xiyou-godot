@@ -10,6 +10,8 @@ extends Control
 ## - 操作：指令确定 → 名单选第 1 行；名单确定（确定音）即存入／取出，光标不动（存掉最后一行后停在空行）、名单不退；
 ##   停用角色蜂鸣；只剩 1 人时存入提示「队伍最少保留一位角色」（原版 alert）；空行确定蜂鸣（O-091）。
 ##   名单取消 → 去掉光标、回指令窗；指令窗取消关闭。
+## T292 新界面（天启篇，XUiSkin.on() 且 XSkinActorWarehousePage.ENABLED 时）：同一套状态，指令窗换成页内页签（XSkinActorWarehousePage）；
+## 进页就在名单上（mode＝list），取消直接离开。新皮肤关着时下面一行不变。
 
 signal closed
 
@@ -30,6 +32,7 @@ var data: Array[int] = []
 var title_win: XMVWindow
 var cmd_win: XMVWindow
 var list_win: XMVWindow
+var skin: XSkinActorWarehousePage
 
 
 func _ready() -> void:
@@ -44,6 +47,10 @@ func _ready() -> void:
 	list_win = XMVWindow.make(self, LIST_RECT, op, _paint_list)
 	for w in [cmd_win, list_win]:
 		w.canvas.blink = true
+	if XUiSkin.on() and XSkinActorWarehousePage.ENABLED:
+		mode = "list"   # 新页没有指令窗：进页就在「队伍」页签的名单上
+		skin = XSkinActorWarehousePage.new(self)
+		add_child(skin)
 	_reload()
 
 
@@ -65,6 +72,8 @@ func _refresh() -> void:
 	list_win.down_arrow = top + rows() < data.size()
 	for w in [title_win, cmd_win, list_win]:
 		w.refresh()
+	if skin != null:
+		skin.sync()
 
 
 # ---- 绘制 ----
@@ -167,6 +176,8 @@ func page(d: int) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinActorWarehousePage）
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
@@ -196,6 +207,9 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
 		cancel()

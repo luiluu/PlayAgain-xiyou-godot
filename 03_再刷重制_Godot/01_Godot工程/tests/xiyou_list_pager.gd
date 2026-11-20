@@ -537,7 +537,9 @@ func _pages50() -> void:
 		cs.top = 0
 		cs._refresh()
 		await frames(2)
-		if skin_on:
+		if skin_on and cs.skin != null:   # T300 卡 L：新界面开着时换装页改由 XSkinSubPage 托管，旧窗与旧翻页件藏起；新页翻页由 xiyou_ui_skin_card_l 的 _costumes 管
+			check("costumes_skin_sub_page_hosted", not cs.list_win.visible and not cs.head_win.visible, [cs.list_win.visible, cs.head_win.visible])
+		elif skin_on:
 			await _page_checks("costumes", cs.list_pager, cs.list_rows(), XCostumesScene.ROWS, pad + cs.list_rows() * lh, func(): return cs.top, cs.actors.size())
 		else:
 			check("costumes_skin_off_unchanged", cs.list_pager == null and cs.list_rows() == XCostumesScene.ROWS, cs.list_rows())
