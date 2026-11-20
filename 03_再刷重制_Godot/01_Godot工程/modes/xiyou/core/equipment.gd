@@ -63,6 +63,7 @@ static func release_dual_exclusive(a: XActor) -> Array:
 			continue
 		removed.append(a.equips[i])
 		a.equips[i] = null
+		XActor.read_touch()  # 只读窗口（O-348）：卸了一把专武当场作废，外层窗口里后面的被动、能力值读到新装备（T296 Neon P2-1）
 	return removed
 
 static func clone(a: XActor) -> XActor:
