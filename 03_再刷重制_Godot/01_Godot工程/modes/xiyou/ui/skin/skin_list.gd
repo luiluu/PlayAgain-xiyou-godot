@@ -250,7 +250,7 @@ func _draw_check(pos: Vector2, on: bool, dis: bool) -> void:
 		return
 	var sb := StyleBoxFlat.new()
 	sb.draw_center = false
-	sb.border_color = Color(XUiSkin.TEXT_2 if not dis else XUiSkin.TEXT_3, 0.8)
+	sb.border_color = Color(XUiSkin.text2_c() if not dis else XUiSkin.TEXT_3, 0.8)
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(2)
 	sb.draw(get_canvas_item(), Rect2(pos.x, pos.y - 7.0, 14.0, 14.0))
@@ -339,6 +339,7 @@ func _relayout(instant := false) -> void:
 func _draw() -> void:
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
+	var pol := XUiSkin.polish_on()
 	if items.is_empty():
 		if empty_center:
 			XSkinTag.draw_empty(self, Rect2(0, 0, size.x, size.y), empty_text)
@@ -351,6 +352,8 @@ func _draw() -> void:
 	for i in range(first, last):
 		var it: Dictionary = items[i]
 		var r := cell_rect(i)
+		if pol and not (i == index and active) and (floori(i / float(columns)) % 2) == 1:
+			draw_rect(r.grow_individual(-2.0, -1.0, -2.0, -1.0), Color(0.95, 0.90, 0.82, 0.026))
 		var x := r.position.x + 14.0
 		var base := r.position.y + r.size.y / 2.0
 		var dis := bool(it.get("disabled", false))
@@ -413,7 +416,6 @@ func _draw() -> void:
 				XUiSkin.ds(self, body, Vector2(sx, base + sub_size * 0.36), sub, HORIZONTAL_ALIGNMENT_LEFT, x + max_w - sx, sub_size, XUiSkin.TEXT_2)
 	if scrollable():
 		var track := Rect2(size.x - scroll_w(), 0, scroll_w(), visible_rows() * row_height)
-		draw_rect(track, Color(1, 1, 1, 0.06))
 		var h := maxf(track.size.y * visible_rows() / float(rows_total()), 16.0)
 		var y := (track.size.y - h) * top_row / float(maxi(rows_total() - visible_rows(), 1))
-		draw_rect(Rect2(track.position.x, y, scroll_w(), h), Color(XUiSkin.LINE, 0.55))
+		XUiSkin.draw_scrollbar(self, track, y, h, Color(1, 1, 1, 0.06), Color(XUiSkin.LINE, 0.55))

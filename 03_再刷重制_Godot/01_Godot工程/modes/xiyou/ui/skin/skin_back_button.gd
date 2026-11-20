@@ -56,4 +56,7 @@ func _draw() -> void:
 	var c := Color(XUiSkin.SEL_LINE) if _down else Color(XUiSkin.GOLD, 0.9)
 	var cx := W / 2.0
 	var cy := H / 2.0 + 2.0
+	if XUiSkin.polish_on():
+		draw_circle(Vector2(cx, cy), 16.0, Color(0.07, 0.058, 0.056, 0.78 if _down else 0.56))
+		draw_arc(Vector2(cx, cy), 16.0, 0, TAU, 32, Color(XUiSkin.SEL_LINE, 0.85) if _down else Color(XUiSkin.GOLD, 0.38), 1.2, true)
 	draw_polyline(PackedVector2Array([Vector2(cx + 6, cy - 12), Vector2(cx - 6, cy), Vector2(cx + 6, cy + 12)]), c, 3.0, true)

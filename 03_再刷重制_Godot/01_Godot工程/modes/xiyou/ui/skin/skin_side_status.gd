@@ -71,12 +71,12 @@ func _paint_now(c: XMVCanvas) -> void:
 	var alpha := 0.5 if dead else 1.0
 	# 头像
 	var hc := Vector2(12 + HEAD / 2.0, ROW_H / 2.0)
-	c.draw_circle(hc, HEAD / 2.0, XUiSkin.ORB_LOW)
+	c.draw_circle(hc, HEAD / 2.0, XUiSkin.orb_low_c())
 	if face_tex != null:
 		XSkinPartyStrip.draw_round_texture(c, face_tex, hc, HEAD / 2.0 - 2.0)
 	if dead:
 		c.draw_circle(hc, HEAD / 2.0 - 2.0, Color(0, 0, 0, 0.55))
-	c.draw_circle(hc, HEAD / 2.0, Color(XUiSkin.LINE, 0.65), false, 1.5, true)
+	c.draw_circle(hc, HEAD / 2.0, Color(XUiSkin.line_c(), 0.65), false, 1.5, true)
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	var x := 12 + HEAD + 10
@@ -84,6 +84,7 @@ func _paint_now(c: XMVCanvas) -> void:
 	# 右上状态图标（cell_rows：原状态格的筛选、排序、层数）
 	var rows := _rows()
 	var sx := right
+	var pol := XUiSkin.polish_on()
 	for k in range(mini(rows.size(), MAX_ICONS)):
 		var row: Dictionary = rows[k]
 		var tex := XUiSkin.icon(int(row.icon))
@@ -92,9 +93,23 @@ func _paint_now(c: XMVCanvas) -> void:
 			c.draw_texture_rect(tex, Rect2(sx, 5, 22, 22), false, Color(1, 1, 1, alpha))
 		if int(row.get("stack", 1)) > 1:
 			var st := str(row.stack)
-			var sw := num.get_string_size(st, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
-			c.draw_string_outline(num, Vector2(sx + 22 - sw, 5 + 22), st, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3, Color(0, 0, 0, 0.85))
-			XUiSkin.ds(c, num, Vector2(sx + 22 - sw, 5 + 22), st, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, XUiSkin.TEXT)
+			if pol:
+				var sfs := 13
+				var sw := num.get_string_size(st, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs).x
+				var pw := maxf(sw + 6.0, 13.0)
+				var ph := 13.0
+				var pr := Rect2(sx + 22.0 - pw + 1.0, 5.0 + 22.0 - ph + 1.0, pw, ph)
+				var psb := StyleBoxFlat.new()
+				psb.bg_color = Color(0.05, 0.04, 0.04, 0.86 * alpha)
+				psb.border_color = Color(XUiSkin.POLISH_LINE, 0.35 * alpha)
+				psb.set_border_width_all(1)
+				psb.set_corner_radius_all(4)
+				psb.draw(ci, pr)
+				XUiSkin.ds(c, num, Vector2(pr.position.x + (pw - sw) * 0.5, pr.end.y - 2.0), st, HORIZONTAL_ALIGNMENT_LEFT, -1, sfs, Color(XUiSkin.TEXT_HI, alpha))
+			else:
+				var sw := num.get_string_size(st, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+				c.draw_string_outline(num, Vector2(sx + 22 - sw, 5 + 22), st, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, 3, Color(0, 0, 0, 0.85))
+				XUiSkin.ds(c, num, Vector2(sx + 22 - sw, 5 + 22), st, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, XUiSkin.TEXT)
 	if rows.size() > MAX_ICONS:
 		sx -= 4
 	# 名字＋Lv 行
@@ -124,9 +139,8 @@ func _paint_now(c: XMVCanvas) -> void:
 		var tw := maxf(num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x, 24)
 		var bw := maxf(w - tw - 4, 6)
 		var track := Rect2(bx, y2 + 2 - XUiSkin.bar_h(spec[0]), bw, XUiSkin.bar_h(spec[0]))
-		_pill(ci, track, Color(1, 1, 1, 0.12))
-		if mx > 0 and cur > 0:
-			_pill(ci, Rect2(track.position, Vector2(track.size.x * clampf(cur / mx, 0, 1), track.size.y)), Color(spec[2], alpha))
+		var ratio := clampf(cur / mx, 0.0, 1.0) if mx > 0.0 and cur > 0.0 else 0.0
+		XUiSkin.draw_gauge(ci, track, ratio, spec[2], alpha)
 		if spec[0] == "hp":
 			_shield_seg(ci, track, v)
 		XUiSkin.ds(c, num, Vector2(bx + w - num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x, y2 + 6), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(spec[3], alpha))
@@ -231,9 +245,9 @@ class Back extends Control:
 			for i in range(1, count):
 				var y := head + PAD_Y + i * XSkinSideStatus.ROW_H
 				if y < size.y - 1.0:
-					draw_line(Vector2(10, y), Vector2(size.x - 10, y), Color(XUiSkin.LINE, 0.14 * sep_alpha), 1.0)
+					XUiSkin.draw_divider(self, 10.0, size.x - 10.0, y, false, sep_alpha, 0.14)
 			if head > 0.0:
-				draw_line(Vector2(10, head), Vector2(size.x - 10, head), Color(XUiSkin.LINE, 0.14), 1.0)
+				XUiSkin.draw_divider(self, 10.0, size.x - 10.0, head, true, 1.0, 0.14)
 			return
 		var w := size.x
 		var h := size.y
@@ -262,7 +276,7 @@ class Back extends Control:
 				continue
 			draw_polyline_colors(
 				PackedVector2Array([Vector2(10, y), Vector2(w - 10, y)]),
-				PackedColorArray([Color(XUiSkin.LINE, 0.16 * sep_alpha), Color(XUiSkin.LINE, 0.06 * sep_alpha)]),
+				PackedColorArray([Color(XUiSkin.line_c(), 0.16 * sep_alpha), Color(XUiSkin.line_c(), 0.06 * sep_alpha)]),
 				1.0, true)
 		if head > 0.0:   # 栏头下一道旧金细线（同上下沿的轻烟细边）
 			draw_polyline_colors(

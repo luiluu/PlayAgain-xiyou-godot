@@ -18,6 +18,14 @@ static var WEAK_EXPOSURE := true
 static var HIGHER_EFFECTS := true
 static var SKILL_SHIFTS := true
 static var PHYSICAL_DUAL_KEEP_NEUTRAL := false
+## T317：破阵 1047「物理免疫」／1048「元素免疫」原版查「行动元素里有没有物理（元素 1）」；DECK 把物理转成无属性后再没有招带元素 1，
+## 1048 挡掉一切、1047 什么都不挡（31～34 层守层者过 30% 血后全免疫）。只在 DECK 生效时改（DECK 关着元素 1 还在，照原版查元素）；西游档不变。
+## - POZHEN_OFF（默认开，协调 11-20 定 B）：天启篇里 1047／1048 都不挡（守层者少这个阶段机制）。回退：`XTianqiElements.POZHEN_OFF = false`（＝改前，1048 挡一切）
+## - POZHEN_BY_TYPE（乙，默认关）：改认伤害类型（XDamage.item_mode：physical＝物理类，元素 1 的本意）：1047 挡物理类、1048 挡魔法类，混合两边放行；
+##   开着时优先于 POZHEN_OFF。没开的原因：守层者回血率 1.0（原数据 0.5 × 仓库 2）每回合末回满，T313 存档队每回合只打掉 17～30%，
+##   一阶段只靠魔法类、二阶段只靠物理类都一回合打不穿（31～34 层 0/3）。等 T012-c 标定回血率与血量后再评估开不开
+static var POZHEN_OFF := true
+static var POZHEN_BY_TYPE := false
 
 const PATH := "res://modes/xiyou/tianqi_data/elements_table.json"
 const BASE_ELEMENTS := [2, 3, 4, 5, 6, 7, 8, 9, 14, 15]
@@ -589,6 +597,15 @@ static func map_element_id(e: int, s = null) -> int:
 	if deck_on(s) and e == 1:
 		return 0
 	return e
+
+
+## T317：React 里「元素 element 在不在行动元素里」的查询，天启篇按 POZHEN_BY_TYPE／POZHEN_OFF 改判时返回 "physical"／"magical"／"mixed"；
+## 不改（不是元素 1、开关关、不在 DECK 下）返回 ""，调用方照原版查元素
+## （POZHEN_OFF 时返回 "mixed"＝两边都放行）
+static func pozhen_class(item: Dictionary, element: int, s = null) -> String:
+	if element != 1 or not (POZHEN_BY_TYPE or POZHEN_OFF) or not deck_on(s):
+		return ""
+	return XDamage.item_mode(item) if POZHEN_BY_TYPE else "mixed"
 
 
 static func map_elements(es: Array, s = null) -> Array:

@@ -882,7 +882,14 @@ static func _query_value(effect: Dictionary, ctx: Dictionary, execute: bool) -> 
 		return value
 	if effect.query == "element_contains":
 		var user: XBattler = ctx.user if execute else XFormulaContext.clone_battler(ctx.user)
-		if user != null and _query_elements(ctx, user).has(int(effect.element)) == bool(effect.present):
+		if user == null:
+			return value
+		# T317：天启篇里元素 1（物理）已转无属性，破阵 1047／1048 默认都不挡（POZHEN_OFF），或改认伤害类型（POZHEN_BY_TYPE）；混合类两边都放行
+		var by_type := XTianqiElements.pozhen_class(ctx.get("item", {}), int(effect.element))
+		if by_type == "mixed":
+			return value
+		var has: bool = by_type == "physical" if by_type != "" else _query_elements(ctx, user).has(int(effect.element))
+		if has == bool(effect.present):
 			return 0.0
 	elif effect.query == "party_alive":
 		var party: Array = ctx.get("party_members", [])

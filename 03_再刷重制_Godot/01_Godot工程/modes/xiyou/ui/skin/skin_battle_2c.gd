@@ -575,7 +575,8 @@ class VictoryView extends Control:
 		var ctr := view / 2.0
 		var rx := view.x * 0.6
 		var ry := view.y * 0.7
-		c.draw_rect(Rect2(Vector2.ZERO, view), Color(0.02, 0.02, 0.024, 0.5 * a))
+		var dim_col := Color(0.032, 0.024, 0.023, 0.5 * a) if XUiSkin.polish_on() else Color(0.02, 0.02, 0.024, 0.5 * a)
+		c.draw_rect(Rect2(Vector2.ZERO, view), dim_col)
 		var n := 10
 		for i in n:
 			var k := float(i + 1) / n
@@ -747,10 +748,11 @@ class VictoryView extends Control:
 		if v._drops.is_empty():
 			return
 		var a := p(0.45, 0.55) if boss else p(0.18, 0.25)
-		# 底下一层暗渐变：y 500 → 600 到黑 88%
+		# 底层暗渐变：y 500 → 600 到黑 88%
+		var base := Color(0.032, 0.024, 0.023, 1.0) if XUiSkin.polish_on() else Color(0.02, 0.02, 0.024, 1.0)
 		c.draw_polygon(PackedVector2Array([Vector2(0, 500), Vector2(view.x, 500), Vector2(view.x, 600), Vector2(0, 600)]),
-			PackedColorArray([Color(0.02, 0.02, 0.024, 0), Color(0.02, 0.02, 0.024, 0), Color(0.02, 0.02, 0.024, 0.88), Color(0.02, 0.02, 0.024, 0.88)]))
-		c.draw_rect(Rect2(0, 600, view.x, view.y - 600), Color(0.02, 0.02, 0.024, 0.88))
+			PackedColorArray([Color(base, 0), Color(base, 0), Color(base, 0.88), Color(base, 0.88)]))
+		c.draw_rect(Rect2(0, 600, view.x, view.y - 600), Color(base, 0.88))
 		if a <= 0.0:
 			return
 		var title := "获得物品"
@@ -769,18 +771,19 @@ class VictoryView extends Control:
 		for e in _row.big:
 			_big_medal(c, e[0], Vector2(x0 + float(e[1]), XSkin2C.DROP_ROW_Y + XSkin2C.BIG_D / 2.0), float(times.get(e, 1.0)), fx)
 		if float(_row.sep) >= 0.0:
-			c.draw_rect(Rect2(x0 + float(_row.sep), XSkin2C.DROP_ROW_Y + 4.0, 1, 64), Color(XUiSkin.TEXT_2, 0.3 * a))
+			c.draw_rect(Rect2(x0 + float(_row.sep), XSkin2C.DROP_ROW_Y + 4.0, 1, 64), Color(XUiSkin.text2_c(), 0.3 * a))
 		for e in _row.small:
 			_small_medal(c, e[0], Vector2(x0 + float(e[1]), XSkin2C.DROP_ROW_Y + 12.0 + XSkin2C.SMALL_D / 2.0), float(times.get(e, 1.0)))
 		if int(_row.more) > 0:
 			var mw := XSkin2C.more_w(int(_row.more))
 			var r := Rect2(x0 + float(_row.more_x), XSkin2C.DROP_ROW_Y + 22.0, mw, 26.0)
-			XSkin2C._pill(c, r, Color(XUiSkin.BG, 0.85 * a), Color(XUiSkin.LINE, 0.8 * a))
+			XSkin2C._pill(c, r, Color(XUiSkin.bg_c(), 0.85 * a), Color(XUiSkin.line_c(), 0.8 * a))
 			XSkin2C._text(c, r.position.x, r.position.y + (26.0 - cf * 1.25) / 2.0, XSkin2C.more_text(int(_row.more)), cf, Color(XUiSkin.TEXT, a), HORIZONTAL_ALIGNMENT_CENTER, r.size.x)
 
 	func _medal_bg(c: Control, ctr: Vector2, r: float, a: float) -> void:
-		c.draw_circle(ctr, r, Color("121315", a))
-		c.draw_circle(ctr + Vector2(-0.15, -0.2) * r, r * 0.62, Color("2c2d32", 0.7 * a))
+		var pol := XUiSkin.polish_on()
+		c.draw_circle(ctr, r, Color(XUiSkin.orb_low_c(), a))
+		c.draw_circle(ctr + Vector2(-0.15, -0.2) * r, r * 0.62, Color("332d2a" if pol else "2c2d32", 0.7 * a))
 
 	func _big_medal(c: Control, d: Dictionary, ctr: Vector2, k: float, fx: Dictionary) -> void:
 		if k <= 0.0:
@@ -915,7 +918,11 @@ class VictoryView extends Control:
 		XSkin2C._text(c, x + 14.0, 406.0 - 4.0, lv, fs, Color(XUiSkin.TEXT_2, a), HORIZONTAL_ALIGNMENT_RIGHT, w - 28.0)
 		var maxed := int(row.display_level) >= a2.max_level()
 		var bar := Rect2(x + 14.0, 436.0, w - 28.0, 8.0)
-		XSkin2C._pill(c, bar, Color(1, 1, 1, 0.14 * a))
+		var pol := XUiSkin.polish_on()
+		if pol:
+			XSkin2C._pill(c, bar, Color(0.032, 0.025, 0.024, 0.76 * a), Color(0.76, 0.70, 0.62, 0.24 * a))
+		else:
+			XSkin2C._pill(c, bar, Color(1, 1, 1, 0.14 * a))
 		var rate := 1.0 if maxed else clampf(float(row.rate), 0.0, 1.0)
 		if rate > 0.0:
 			var fw := maxf(8.0, bar.size.x * rate)
@@ -925,6 +932,8 @@ class VictoryView extends Control:
 				PackedColorArray([Color("b8914d", fa * a), Color(XUiSkin.GOLD_LIGHT, fa * a), Color(XUiSkin.GOLD_LIGHT, fa * a), Color("b8914d", fa * a)]))
 			c.draw_circle(r.position + Vector2(4, 4), 4.0, Color("b8914d", fa * a))
 			c.draw_circle(Vector2(r.end.x - 4, r.position.y + 4), 4.0, Color(XUiSkin.GOLD_LIGHT, fa * a))
+			if pol and fw >= 6.0:
+				c.draw_rect(Rect2(r.position.x + 3.0, r.position.y + 0.5, fw - 6.0, 1.0), Color(1.0, 0.97, 0.90, 0.28 * fa * a))
 		if maxed:
 			XSkin2C._text(c, x + 14.0, 448.0, "已满级", XUiSkin.fs(15), Color(XUiSkin.TEXT_3, a), HORIZONTAL_ALIGNMENT_RIGHT if tag_below else HORIZONTAL_ALIGNMENT_CENTER, w - 28.0)
 		if row.notified:
@@ -968,6 +977,8 @@ class VictoryView extends Control:
 			_detail_actor(c, row, Rect2(x, y, w, XSkin2C.DETAIL_ROW))
 			y += XSkin2C.DETAIL_ROW
 		y += 12.0
+		if XUiSkin.polish_on():
+			XUiSkin.draw_divider(c, x, x + w, y - 6.0, true, 0.75)
 		XSkin2C._text(c, x, y, "获得物品", XUiSkin.fs(17), XUiSkin.GOLD)
 		XSkin2C._text(c, x + XSkin2C._tw("获得物品", XUiSkin.fs(17)) + 10.0, y + 2.0, "%d 样" % v._drops.size(), XUiSkin.fs(15), XUiSkin.TEXT_2)
 		y += 32.0
@@ -986,10 +997,13 @@ class VictoryView extends Control:
 			_detail_drop(c, v._drops[i], r)
 		if total > n:
 			var track := Rect2(pr.end.x - 24.0 + 6.0, y, 6.0, n * XSkin2C.DETAIL_DROP_ROW)
-			XSkin2C._pill(c, track, Color(1, 1, 1, 0.08))
 			var hh := maxf(24.0, track.size.y * n / total)
 			var ty := track.position.y + (track.size.y - hh) * (float(top) / maxf(XSkin2C.detail_scroll_max(v), 1))
-			XSkin2C._pill(c, Rect2(track.position.x, ty, 6.0, hh), Color(XUiSkin.GOLD, 0.7))
+			if XUiSkin.polish_on():
+				XUiSkin.draw_scrollbar(c, track, ty, hh)
+			else:
+				XSkin2C._pill(c, track, Color(1, 1, 1, 0.08))
+				XSkin2C._pill(c, Rect2(track.position.x, ty, 6.0, hh), Color(XUiSkin.GOLD, 0.7))
 
 	func _detail_actor(c: Control, row: Dictionary, r: Rect2) -> void:
 		var a: XActor = row.actor
@@ -999,7 +1013,7 @@ class VictoryView extends Control:
 		var fc := r.position + Vector2(16, r.size.y / 2.0)
 		if face != null:
 			XSkinPartyStrip.draw_round_texture(c, face, fc, 16.0)
-		c.draw_arc(fc, 16.0, 0, TAU, 32, Color(XUiSkin.LINE, 0.6), 1.0, true)
+		c.draw_arc(fc, 16.0, 0, TAU, 32, Color(XUiSkin.line_c(), 0.6), 1.0, true)
 		var fs := XUiSkin.fs(19)
 		var ty := r.position.y + (r.size.y - fs * 1.25) / 2.0
 		var nx := r.position.x + 44.0
@@ -1017,10 +1031,15 @@ class VictoryView extends Control:
 		var bx := r.position.x + 400.0
 		var bw := 100.0
 		var maxed := int(row.display_level) >= a.max_level()
-		XSkin2C._pill(c, Rect2(bx, r.position.y + r.size.y / 2.0 - 4.0, bw, 8.0), Color(1, 1, 1, 0.14))
+		var bar_r := Rect2(bx, r.position.y + r.size.y / 2.0 - 4.0, bw, 8.0)
 		var rate := 1.0 if maxed else clampf(float(row.rate), 0.0, 1.0)
-		if rate > 0.0:
-			XSkin2C._pill(c, Rect2(bx, r.position.y + r.size.y / 2.0 - 4.0, maxf(8.0, bw * rate), 8.0), Color(XUiSkin.GOLD_LIGHT, 0.45 if maxed else 0.9))
+		if XUiSkin.polish_on():
+			var fill_r := maxf(8.0 / bw, rate) if rate > 0.0 else 0.0
+			XUiSkin.draw_gauge(c.get_canvas_item(), bar_r, fill_r, Color(XUiSkin.GOLD_LIGHT, 0.45 if maxed else 0.9), 1.0, Color(1, 1, 1, 0.14), 4)
+		else:
+			XSkin2C._pill(c, bar_r, Color(1, 1, 1, 0.14))
+			if rate > 0.0:
+				XSkin2C._pill(c, Rect2(bx, r.position.y + r.size.y / 2.0 - 4.0, maxf(8.0, bw * rate), 8.0), Color(XUiSkin.GOLD_LIGHT, 0.45 if maxed else 0.9))
 		var nf := XUiSkin.fs(15)
 		var right := r.end.x
 		if maxed:
@@ -1269,8 +1288,9 @@ class GameOverView extends Control:
 			# 0.3 起从最后一颗逆时针一颗颗灭（每颗 0.06）
 			var off := 0.3 + (6 - k) * 0.06
 			var lit := 1.0 - XSkin2C.seg(s, off, off + 0.06)
-			XSkin2C._diamond(c, sc, 11.3, Color("1c1c20", a))
-			XSkin2C._diamond_line(c, sc, 11.3, Color(XUiSkin.TEXT_2, 0.3 * a))
+			var pol := XUiSkin.polish_on()
+			XSkin2C._diamond(c, sc, 11.3, Color("201b1b" if pol else "1c1c20", a))
+			XSkin2C._diamond_line(c, sc, 11.3, Color(XUiSkin.text2_c(), 0.3 * a))
 			if lit > 0.0:
 				XSkin2C._glow(c, sc, 26.0, Color(XUiSkin.GOLD_LIGHT, 0.8 * lit * a))
 				XSkin2C._diamond(c, sc, 11.3, Color(XUiSkin.GOLD_LIGHT, lit * a))
@@ -1312,13 +1332,20 @@ class GameOverView extends Control:
 		var w := kw + 8.0 + XSkin2C._tw(desc, fs) + 28.0
 		var h := 32.0
 		var r := Rect2(cx - w / 2.0, view.y - 56.0 - h, w, h)
-		XSkin2C._pill(c, r, Color(0.02, 0.02, 0.024, 0.6 * a), Color(XUiSkin.LINE, 0.6 * a))
+		var pol := XUiSkin.polish_on()
+		if pol:
+			XSkin2C._pill(c, r, Color(0.055, 0.044, 0.042, 0.78 * a), Color(XUiSkin.GOLD, 0.48 * a))
+		else:
+			XSkin2C._pill(c, r, Color(0.02, 0.02, 0.024, 0.6 * a), Color(XUiSkin.LINE, 0.6 * a))
 		var ty := r.position.y + (h - fs * 1.25) / 2.0
 		var x := r.position.x + 14.0
 		if touch:
 			XSkin2C._text(c, x, ty, key, fs, Color(XUiSkin.TEXT_2, a))
 		else:
-			XSkin2C._pill(c, Rect2(x - 4.0, r.position.y + 6.0, kw, h - 12.0), Color(0, 0, 0, 0), Color(XUiSkin.TEXT_2, 0.8 * a))
+			if pol:
+				XSkin2C._pill(c, Rect2(x - 4.0, r.position.y + 6.0, kw, h - 12.0), Color(0.14, 0.11, 0.10, 0.85 * a), Color(XUiSkin.POLISH_LINE, 0.65 * a))
+			else:
+				XSkin2C._pill(c, Rect2(x - 4.0, r.position.y + 6.0, kw, h - 12.0), Color(0, 0, 0, 0), Color(XUiSkin.TEXT_2, 0.8 * a))
 			XSkin2C._text(c, x + 4.0, ty, key, fs, Color(XUiSkin.TEXT, a))
 		XSkin2C._text(c, x + kw + 8.0, ty, desc, fs, Color(XUiSkin.TEXT, a))
 
@@ -1586,7 +1613,7 @@ class Handoff extends Control:
 		var r := lerpf(XSkinSealDial.DISC_R, XSkin2C.RING_R, k)
 		var key := str(info.get("ring_key", ""))
 		last.morph = {"c": c, "r": r, "k": k}
-		draw_circle(c, r, Color(XUiSkin.PANEL, 0.92 * pow(1.0 - k, 2.0) * ra))
+		draw_circle(c, r, Color(XUiSkin.panel_c(), 0.92 * pow(1.0 - k, 2.0) * ra))
 		draw_arc(c, r, 0, TAU, 128, Color(XUiSkin.GOLD, ra), 1.5, true)
 		var n := int(info.get("diamonds", 0))
 		var lit := int(info.get("lit", 0))
@@ -1599,6 +1626,7 @@ class Handoff extends Control:
 		if key == "death":
 			bright = XTianqiLook.main_color("death")
 		var pts := n if n > 0 else int(info.get("circles", 0))
+		var unlit_fill := Color(0.22, 0.19, 0.18, ra) if XUiSkin.polish_on() else Color(0.2, 0.2, 0.22, ra)
 		for i in pts:
 			var a0 := -PI / 2.0 + TAU * i / pts
 			var a := lerp_angle(a0, XSkin2C.seal_angle(i * 7 / pts), k)
@@ -1611,8 +1639,8 @@ class Handoff extends Control:
 				XSkin2C._glow(self, p, (half + 8.0) * 1.6, Color(col, 0.55 * ra))
 				XSkin2C._diamond(self, p, half, Color(col, ra))
 			else:
-				XSkin2C._diamond(self, p, half, Color(0.2, 0.2, 0.22, ra))
-				XSkin2C._diamond_line(self, p, half, Color(XUiSkin.LINE, 0.9 * ra), 1.0)
+				XSkin2C._diamond(self, p, half, unlit_fill)
+				XSkin2C._diamond_line(self, p, half, Color(XUiSkin.line_c(), 0.9 * ra), 1.0)
 		# 环心：连击数字缩成一点金光飞去点亮一颗印；蜡封跟着盘面一起化掉
 		var center := str(info.get("center", ""))
 		if center == "combo":

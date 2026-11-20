@@ -123,9 +123,9 @@ static func _txt(c: CanvasItem, f: Font, text: String, x: float, y: float, w: fl
 	XUiSkin.ds(c, f, Vector2(dx, y + lh / 2.0 + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 
 
-static func _capsule(ci: RID, r: Rect2, edge: Color, fill := Color(XUiSkin.BG, 0.88)) -> void:
+static func _capsule(ci: RID, r: Rect2, edge: Color, fill := Color(0, 0, 0, -1)) -> void:
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = fill
+	sb.bg_color = fill if fill.a >= 0.0 else Color(XUiSkin.bg_c(), 0.88)
 	sb.border_color = edge
 	sb.set_border_width_all(1)
 	sb.set_corner_radius_all(int(r.size.y / 2.0))
@@ -147,7 +147,7 @@ func _paint_bar(c: XMVCanvas) -> void:
 				_txt(c, XUiSkin.font("title"), str(cap.text), r.position.x, 0, r.size.x, "center", name_ink(str(cap.text)), 18, ROW_H)
 			"state":
 				var bad := bool(cap.bad)
-				_capsule(ci, r, XUiSkin.DOWN if bad else Color(XUiSkin.LINE, 0.5))
+				_capsule(ci, r, XUiSkin.down_c() if bad else Color(XUiSkin.line_c(), 0.5))
 				var tx := x + 14.0
 				if int(cap.icon) > 0:
 					var tex := XUiSkin.icon(int(cap.icon))
@@ -156,10 +156,10 @@ func _paint_bar(c: XMVCanvas) -> void:
 					tx = x + 36.0
 				_txt(c, f, str(cap.text), tx, 0, r.end.x - tx, "left", XUiSkin.DOWN if bad else XUiSkin.TEXT, CAP_FS, ROW_H)
 			"more":
-				_capsule(ci, r, Color(XUiSkin.LINE, 0.5))
+				_capsule(ci, r, Color(XUiSkin.line_c(), 0.5))
 				_txt(c, f, str(cap.text), r.position.x, 0, r.size.x, "center", XUiSkin.TEXT_2, CAP_FS, ROW_H)
 			"detail":
-				_capsule(ci, r, XUiSkin.GOLD, Color(XUiSkin.BG.lerp(XUiSkin.GOLD, 0.16), 0.92))
+				_capsule(ci, r, XUiSkin.GOLD, Color(XUiSkin.bg_c().lerp(XUiSkin.GOLD, 0.16), 0.92))
 				_txt(c, f, str(cap.text), r.position.x, 0, r.size.x, "center", XUiSkin.GOLD, CAP_FS, ROW_H)
 		x += float(cap.w) + CAP_GAP
 	var prof := _tq_profile()
@@ -205,14 +205,15 @@ func _paint_detail(c: XMVCanvas) -> void:
 		var tip := "当前没有异常状态" if filter == "Debuff" else ("当前没有增益状态" if filter == "Buff" else "当前没有状态")
 		_txt(c, f, tip, 16, BODY_Y + 28.0, w - 32.0, "center", XUiSkin.TEXT_3, 16, 28)
 	var start := page * page_size()
+	var card_bg := Color(0.95, 0.90, 0.82, 0.048) if XUiSkin.polish_on() else Color(1, 1, 1, 0.04)
 	for i in page_size():
 		if start + i >= list.size():
 			break
 		var row: Dictionary = list[start + i]
 		var y := BODY_Y + i * CARD_HEIGHT
 		var col := XUiSkin.DOWN if row.kind == "Debuff" else XUiSkin.UP
-		_round(c, Rect2(12, y, w - 24.0, CARD_HEIGHT - 6.0), Color(1, 1, 1, 0.04), XUiSkin.ROW_RADIUS)
-		c.draw_rect(Rect2(12, y + 8.0, 2, CARD_HEIGHT - 22.0), col)
+		_round(c, Rect2(12, y, w - 24.0, CARD_HEIGHT - 6.0), card_bg, XUiSkin.ROW_RADIUS)
+		c.draw_rect(Rect2(12, y + 8.0, 2, CARD_HEIGHT - 22.0), XUiSkin.paint_color(col))
 		if row.icon != 0:
 			var tex := XUiSkin.icon(int(row.icon))
 			if tex != null:
@@ -244,7 +245,8 @@ func _attr_line(c: XMVCanvas, x: float, y: float, width: float, height: float) -
 	var total := 0.0
 	for p in parts:
 		total += f.get_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
-	var fs := 14 if total <= width else maxi(int(roundf(14.0 * width / total)), 9)
+	var min_fs := 11 if XUiSkin.polish_on() else 9
+	var fs := 14 if total <= width else maxi(int(roundf(14.0 * width / total)), min_fs)
 	for p in parts:
 		var pw := f.get_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		_txt(c, f, p[0], x, y, pw + 1.0, "left", p[1], fs, height)
@@ -255,7 +257,8 @@ func _paint_selected(c: XMVCanvas, row: Dictionary) -> void:
 	var w := DETAIL_W
 	var f := XUiSkin.font("body")
 	var col := XUiSkin.DOWN if row.kind == "Debuff" else XUiSkin.UP
-	_round(c, Rect2(12, BODY_Y, w - 24.0, 58), Color(1, 1, 1, 0.06), XUiSkin.ROW_RADIUS)
+	var hdr_bg := Color(0.95, 0.90, 0.82, 0.065) if XUiSkin.polish_on() else Color(1, 1, 1, 0.06)
+	_round(c, Rect2(12, BODY_Y, w - 24.0, 58), hdr_bg, XUiSkin.ROW_RADIUS)
 	if row.icon != 0:
 		var tex := XUiSkin.icon(int(row.icon))
 		if tex != null:
@@ -283,7 +286,10 @@ func _footer(c: XMVCanvas, at: int, pages: int, middle: String) -> void:
 	var w := DETAIL_W
 	var f := XUiSkin.font("body")
 	var y := DETAIL_H - FOOTER_HEIGHT
-	c.draw_rect(Rect2(13, y, w - 26.0, 1), Color(XUiSkin.LINE, 0.3))
+	if XUiSkin.polish_on():
+		XUiSkin.draw_divider(c, 13.0, w - 13.0, y + 0.5, true, 0.85)
+	else:
+		c.draw_rect(Rect2(13, y, w - 26.0, 1), Color(XUiSkin.LINE, 0.3))
 	_txt(c, f, "‹ 上一页", 15, y + 3.0, 82, "left", XUiSkin.GOLD if at > 0 else XUiSkin.TEXT_3, 14, 28)
 	_txt(c, f, ("%s  " % middle if middle != "" else "") + "%d / %d" % [at + 1, pages], 98, y + 3.0, w - 196.0, "center", XUiSkin.TEXT_2, 14, 28)
 	_txt(c, f, "下一页 ›", w - 97.0, y + 3.0, 82, "right", XUiSkin.GOLD if at < pages - 1 else XUiSkin.TEXT_3, 14, 28)
