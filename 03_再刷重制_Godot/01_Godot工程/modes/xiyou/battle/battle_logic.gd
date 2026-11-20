@@ -3515,7 +3515,7 @@ static func _luk_rate(u: XBattler, t: XBattler) -> float:
 func state_rate(b: XBattler, id: int) -> float:
 	if XAlienBattle.forced_state(b, id):
 		return 1.0  # 异化疫囊、囚厄 stateRate 包装
-	return b.traits_pi(XBattler.TRAIT_STATE_RATE, id) * XTianqiAffixBattle.state_rate(b, id)  # 天启篇词条「异常抵抗」
+	return b.traits_pi(XBattler.TRAIT_STATE_RATE, id) * XTianqiAffixBattle.state_rate(b, id) * XTianqiSixDim.control_state_rate(b, id, self)  # 天启篇词条「异常抵抗」；六维韧性控制抗性（T276，只管控制状态，乘算）
 
 
 func _die(b: XBattler) -> void:

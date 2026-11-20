@@ -2,7 +2,7 @@ class_name XTianqiSixDim
 extends RefCounted
 ## 【cc·六维卡1·未经审查】天启篇角色／敌人六维只读查询（T275；设定稿 天启篇_角色六维_v0.3定稿，Kyo D234）。
 ## 六维＝输出、生存、速度、战商、韧性、辅助；刻度 E～SSS＝1～8 分。数据 tianqi_data/six_dim.json，全整数（附则 E）。
-## 本模块只读表，不碰伤害、血防、敏捷，不接战斗（接线是后续卡 2～5）。只认天启篇存档（XTianqi.active），西游档或 ENABLED＝false
+## 本模块只读表，不碰伤害、血防、敏捷；战斗只接了卡 2 的 control_state_rate（T276，乘进 battle_logic.state_rate），卡 3～5 另接。只认天启篇存档（XTianqi.active），西游档或 ENABLED＝false
 ## 全部返回中性值（六维全 C、韧性抗控 0、战商 3 档、各权重 100）。没录的角色／敌人也回中性。
 ## 查找：角色按 actor_id；敌人先查 enemies[enemy_id]（可带 template 继承模板），没有回中性；骑士按 horsemen 键（death／war／famine／plague）。
 
@@ -113,6 +113,18 @@ static func resist_pct_of(six: Dictionary) -> int:
 
 static func control_resist_pct(b, logic = null) -> int:
 	return resist_pct_of(of_battler(b, logic)) if active() else 0
+
+
+## 卡 2（T276）：韧性控制抗性乘进 battle_logic.state_rate（敌我共用）。只管控制状态（XEnemy.boss_control_state：
+## 不含死亡、霸体；中毒、流血、降攻防等一律 1.0）；乘算，0 乘多少还是 0，不破任何免控。
+## 返回 (100 − 控制抗性) ／ 100：E＝110／100 … C＝1.0 … SSS＝90／100。不生效（西游档、开关关）、韧性 C 或非控制都回 1.0。
+static func control_state_rate(b, id: int, logic = null) -> float:
+	if b == null or not active():
+		return 1.0
+	var pct := control_resist_pct(b, logic)
+	if pct == 0 or not XEnemy.boss_control_state(id):
+		return 1.0
+	return float(100 - pct) / 100.0
 
 
 ## 战商 AI 档 1～5；不生效或没录回 3（中性）
