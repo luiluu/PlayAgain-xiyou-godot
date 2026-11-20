@@ -225,6 +225,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XEnemyBook.bind_battle(s, enemies)
 	_garou_boss = XGarou.boss_battle(enemies)  # 开战时的敌群成员（含隐藏）有没有 Boss 血条
 	XZhenqi.troop_setup(enemies.filter(func(e): return not e.hidden), s.difficulty, elite_roll, _rule())  # 瓶颈之战：幻化为参照守层者之力（Game_Troop.setup）
+	XGuardianRework.xinmo_setup(self, s)  # 天启篇心魔（T315）：幻化之后换成参照守层者的合成记录，按层重标血量、双防（守层者重算在上面，早于幻化，心魔战在那里跳过）
 	for i in range(actors.size()):
 		_ids[actors[i]] = "actor:%d:%d" % [i, actors[i].actor_id]
 	# 包含隐藏 slot；335 出现和 336 变身都不改变本场成员身份。
