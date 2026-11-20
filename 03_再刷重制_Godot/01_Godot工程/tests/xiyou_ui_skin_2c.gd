@@ -1626,6 +1626,7 @@ func _u_shots() -> void:
 	await _frames(2)
 	# 卡 U：首领战、小怪战、没有印盘，从最后一击起每 0.1 秒一张（首领 0～2.0 秒 21 张、小怪 0～1.5 秒 16 张）
 	await _u_flow({"shots": "首领战", "until": 2.05, "map": U_SNOW})
+	await _u_flow({"prep": _u_prep_faded, "shots": "首领战掉落已淡出", "until": 2.05, "map": U_SNOW})   # T291：真实时序（图标已淡出）下掉落照样飞进大圆章
 	await _u_flow({"troop": U_MINOR, "shots": "小怪战", "until": 1.55, "map": U_SNOW})
 	await _u_flow({"prep": _u_prep_bare, "shots": "没有印盘", "until": 2.05, "map": U_SNOW})
 	# 跳过（进场 0.2 秒按确定，拍按前、按后）、简化、关、挂机中：各拍等待期末到进场
