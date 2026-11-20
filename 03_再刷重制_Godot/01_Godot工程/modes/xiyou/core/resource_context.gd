@@ -162,6 +162,7 @@ func _gain(b: XBattler, resource: String, amount: float) -> Dictionary:
 	amount = XRiftAlien.gain(b, resource, amount)  # 漩涡阶段异化（西游）：荒年者在场时我方受到的回复打折
 	if resource == "hp":
 		amount = XTianqiBrand.heal(b, amount)  # 天启篇烙印虚不受补：各线削减之后再乘 0.5
+		amount = XTianqiXinmoTraits.heal(b, amount)  # 天启篇心魔特点【逆流】（T318）：高血减半（不和虚不受补叠乘）、低血提高
 	if XAlienBattle.route_gain(self, b, resource, amount):
 		return {}  # 异化绝缘拒收外来恢复、舍身的生命恢复转给队友（gainHp／gainMp 包装）
 	if resource == "hp" and XAlienBattle.route_life_gain(self, b, amount):

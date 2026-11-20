@@ -516,6 +516,35 @@ class SkillReworkGrowth(unittest.TestCase):
         self.assertTrue(any('battle_end' in b for b in chk.skill_rework_rules(t)))
 
 
+class XinmoTraitsRules(unittest.TestCase):
+    """xinmo_traits.json（T318）：真表全过；改坏一处都要报错。"""
+
+    def _t(self):
+        return json.loads((REAL_DIR / 'xinmo_traits.json').read_text(encoding='utf-8'))
+
+    def test_real_ok(self):
+        self.assertEqual(chk.xinmo_traits_rules(self._t()), [])
+
+    def test_mutations(self):
+        def flt(t): t['traits']['1']['params']['bonus_dmg_pct'] = 112.5
+        def out_rng(t): t['traits']['3']['params']['high_hp_heal_pct'] = 30
+        def miss_seg(t): del t['traits']['6']
+        def miss_key(t): del t['traits']['2']['params']['max_stacks']
+        def bad_key(t): t['traits']['3']['key'] = 'jiliu'
+        def tier(t): t['traits']['5']['params']['single_tier_pcts'] = [105, 120, 135]
+        def tier_down(t): t['traits']['5']['params']['aoe_tier_pcts'] = [155, 140, 125, 110]
+        def pid(t): t['traits']['1']['params']['debuff_params'] = [0, 2]
+        def fmt(t): t['traits']['3']['texts']['wash'] = '【逆流】倒卷！%d 名'
+        def word(t): t['traits']['6']['open'] = t['traits']['6']['open'] + '守住灵台'
+        def no_desc(t): t['traits']['4']['desc'] = ''
+        def rng_float(t): t['traits']['2']['ranges']['turns'] = [2, 3.5]
+        for fn in (flt, out_rng, miss_seg, miss_key, bad_key, tier, tier_down, pid, fmt, word, no_desc, rng_float):
+            with self.subTest(fn.__name__):
+                t = self._t()
+                fn(t)
+                self.assertTrue(chk.xinmo_traits_rules(t), fn.__name__)
+
+
 class BrandRules(unittest.TestCase):
     """brand.json（T073-a）：真表全过；每条规则改坏一处都要报错。"""
 

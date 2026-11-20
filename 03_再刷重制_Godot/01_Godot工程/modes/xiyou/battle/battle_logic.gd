@@ -287,6 +287,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	turn_start_logs.append_array(XTianqiDeathAlien.take_logs(self))
 	turn_start_logs.append_array(XRiftAlien.take_logs(self))  # 漩涡阶段异化：开场报哪只异化、丧钟倒数
 	turn_start_logs.append_array(XTianqiQiyinRule.take_logs(self))  # 七印祭坛：开场报本印规则
+	turn_start_logs.append_array(XTianqiXinmoTraits.take_logs(self))  # 天启篇心魔特点（T318）：开场报本段特点
 	random.phase = ""  # 布阵结束：之后（先手偷袭、回合内）取 rule
 
 func _new_lifecycle_resources() -> XResourceContext:
@@ -1344,6 +1345,7 @@ func act(u: XBattler, skill, target) -> Array:
 		return logs
 	logs.append_array(XTianqiEnemyAI.take_logs(u))  # 天启篇六维（T277）：低韧性慌乱战报
 	XTianqiBrand.act_begin(self)  # 天启篇烙印灼痕：开一次新的行动（一次行动对同一个人最多涨一次）
+	XTianqiXinmoTraits.act_begin(self)  # 天启篇心魔特点（T318）：一次行动对同一个人最多判一次
 	if XTianqiBrand.is_fit_command(skill):  # 天启篇烙印发作：哑火换成普攻敌人；发呆、断片、抽自己、六亲不认按放弃行动走（那一下在 perform 里结算）
 		var fx := XTianqiBrand.perform(self, u, skill, target)
 		logs.append_array(fx.logs)
@@ -1462,6 +1464,7 @@ func act(u: XBattler, skill, target) -> Array:
 	if started and skill is Dictionary:  # 被晕等跳过行动时 skill 已置空
 		logs.append_array(mark_views(XTianqiRewards.after_action(self, u, skill)))  # 天启篇奖励：钥匙串追加普攻、雷火弹
 	logs.append_array(XTianqiWeakAffix.root_end(self, u))  # 天启篇弱者专属词条：这一根全部结算完，各条专属出派生（反击、追击），收根
+	logs.append_array(XTianqiXinmoTraits.take_logs(self))  # 天启篇心魔特点（T318）：骨裂叠层／震散
 	logs.append_array(XTianqiBrand.take_logs(self))  # 天启篇烙印灼痕：满了的那一行、当场开始的发作
 	_sync_orders(before, true)
 	resolve_collapses()
@@ -1517,6 +1520,7 @@ func end_turn() -> Array:
 	logs.append_array(XTianqiPlagueAlien.end_turn(self))  # 天启篇瘟疫线异化：中毒扣血、传染、减益回合
 	logs.append_array(XTianqiDeathAlien.end_turn(self))  # 天启篇死亡线异化：死期带走、丧钟倒数
 	logs.append_array(XRiftAlien.end_turn(self))  # 漩涡阶段异化：毒腺中毒扣血、丧钟倒数
+	logs.append_array(XTianqiXinmoTraits.end_turn(self))  # 天启篇心魔特点（T318）：骨裂倒计时、逆流冲刷
 	_sync_orders(before, false)
 	resolve_collapses()
 	return logs
@@ -1900,6 +1904,7 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 		_cleared[u] = true
 	var before := _movable_snapshot()
 	XTianqiBrand.act_begin(self)  # 天启篇烙印灼痕：强制行动也算一次行动
+	XTianqiXinmoTraits.act_begin(self)  # 天启篇心魔特点（T318）：强制行动也算一次行动
 	skill = XTianqiWeakAffix.skill_view(skill, u)  # 天启篇弱者专属词条批 1：本人投影（范围）
 	XTianqiWeakAffix.root_begin(self, u, skill)  # 天启篇弱者专属词条：强制行动也是一根（不重置每回合次数）
 	XNanoha.begin(self)
@@ -1931,6 +1936,7 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	XNanoha.finish(self, u)
 	logs.append_array(mark_views(XGuyu.after_action(self, u, skill)))  # 谷雨 endAction 包装 afterAction：强制行动也触发花期绽放（同 act，在奈叶之后）
 	logs.append_array(XTianqiWeakAffix.root_end(self, u))  # 天启篇弱者专属词条：强制行动这一根收尾
+	logs.append_array(XTianqiXinmoTraits.take_logs(self))  # 天启篇心魔特点（T318）：骨裂叠层／震散
 	logs.append_array(XTianqiBrand.take_logs(self))  # 天启篇烙印灼痕：满了的那一行、当场开始的发作
 	_sync_orders(before, true)
 	return logs
@@ -3186,6 +3192,7 @@ static func _boss_output_value(u: XBattler, t: XBattler, value: float) -> float:
 ## 击穿后减半 → 吸取取 min(目标 HP) → 扣血；正伤害 onDamage 按扣量充 TP；吸取再给行动者回血。返回实际扣量。
 func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item := {}) -> float:
 	value = XTusu.book_heal(value)  # 止戈环 executeHpDamage 包装（最外层）：开刃·书的护持治疗 ×hemingRate
+	value = XTianqiXinmoTraits.hp_damage(self, u, t, value, item)  # 天启篇心魔特点（T318）：心魔打我方的整数倍率（在下面各保命之前）
 	value = XTianqiQiyinEffects.hp_damage(self, u, t, value)  # 天启篇七印装备：殉印 3 件替挡一半、灰印 5 件免死
 	value = XTianqiAlienAffix.hp_damage(self, u, t, value)  # 天启篇新异化词条「临终」：致命一击留一口气
 	value = XTianqiTrumpet.hp_damage(self, u, t, value)  # 天启篇号卷四号：每场一次致命伤留 1 点
@@ -3196,6 +3203,7 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 	XTusu.hp_after(u, t, value, item, tusu_cuoshi)  # 锻痕、挫势减伤标记的消费与新挂
 	XXuanBattle.hp_after(u, t, value, item)  # 璇 60 级列星：归宿、星幕的消费
 	XTianqiBrand.sear_hit(self, u, t, hubris_before)  # 天启篇烙印灼痕：敌人打中我方、生命确实掉了才涨（开关关着不取数）
+	XTianqiXinmoTraits.after_hp(self, u, t, value, hubris_before, item)  # 天启篇心魔特点（T318）：沾尘挂弱化、透骨叠／消骨裂
 	return out
 
 
@@ -3624,6 +3632,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		dt = 0.0
 	if dh > 0.0 and not XAlienBattle.routes_regen(b):
 		dh = XTianqiBrand.heal(b, dh)  # 天启篇烙印虚不受补（各线之后乘；走 gainHp 改道的在 _gain 里乘）
+		dh = XTianqiXinmoTraits.heal(b, dh)  # 天启篇心魔特点【逆流】（T318）：高血减半（虚不受补减过的不再减）、低血提高
 	var alien_hp := b.hp
 	if dh < 0.0 and XBinding.blocks_hp_loss(b):
 		dh = 0.0  # 璇附身期间 Game_Actor.gainHp 包装直接返回：持续伤害不扣、不吸护盾、不弹字（审查第 34 期 P2-1）
@@ -3952,6 +3961,7 @@ func end_battle(result := -1) -> void:
 	XFestRing.finish(self)  # 冠军戒指「一穿四」：层数清零
 	XTianqiElements.finish(self)  # 天启篇元素重做：清本场数据
 	XTianqiSkills.finish(self)  # 天启篇技能重构：清牛马之魂反击后加成等本场标记
+	XTianqiXinmoTraits.end(self)  # 天启篇心魔特点（T318）：清本场状态
 	XZhenqi.on_battle_end()  # 瓶颈之战输了／逃了：未能突破（胜利已在 grant 结算）
 	XYomiJingliu.end_battle()  # 黄泉 endBattle 包装：残梦清零
 	XLiuying.end_battle(self)  # 流萤 endBattle 包装：去掉形态、免疫、免死，清本场字段
