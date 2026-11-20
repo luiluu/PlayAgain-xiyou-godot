@@ -1,11 +1,12 @@
 extends Node
 ## 【cc·T317】31～34 层守层者二阶段全免疫：
-## 一、破阵 1047「物理免疫」／1048「元素免疫」（React：行动元素里有没有元素 1）天启篇改认伤害类型（XTianqiElements.POZHEN_BY_TYPE）：
+## 〇、默认（协调 11-20 定 B，XTianqiElements.POZHEN_OFF 开、POZHEN_BY_TYPE 关）：天启篇里 1047／1048 什么都不挡。
+## 一、破阵 1047「物理免疫」／1048「元素免疫」（React：行动元素里有没有元素 1）开乙（POZHEN_BY_TYPE）时改认伤害类型：
 ##     1048 只放行物理类（XDamage.item_mode＝physical：攻击 12、十字军打击 109），挡魔法类（火焰 9）；1047 反过来；混合类（狂风箭矢 444）两边都放行。
-##     开关关掉＝改前：天启篇 1048 什么都挡（物理已转无属性）、1047 什么都不挡。
-##     西游档照原版认元素 1：1048 只放行带元素 1 的攻击 12，十字军打击（光）、火焰、狂风箭矢（风）都挡；开关开关一样。
+##     两个开关都关＝改前：天启篇 1048 什么都挡（物理已转无属性）、1047 什么都不挡。
+##     西游档照原版认元素 1：1048 只放行带元素 1 的攻击 12，十字军打击（光）、火焰、狂风箭矢（风）都挡；开关怎么开都一样。
 ## 二、自动战斗估伤：底座 XBattleEval.hit_detail（preview 走同一条 React）与我方卡 1（XSmartAI.expected_damage，o_tianqi_react_zero）
-##     1048 下火焰估 0、攻击估正数；o_tianqi_react_zero 关掉＝改前，火焰照估正数。
+##     开乙时 1048 下火焰估 0、攻击估正数；o_tianqi_react_zero 关掉＝改前，火焰照估正数；默认（B）火焰估正数。
 ## 三、守层者变身（XGuardianRework.TRANSFORM_ANCHOR）：30 层玉皇大帝→入魔 538、31 层女娲／32 层伏羲→天道·魔神 929、33 层鸿蒙老祖→天道·混沌至高 930，
 ##     变身后八项能力值＝变身前、出伤倍率（output_scale）仍是本层的；开关关掉＝改前（31 层魔神物攻是女娲 2.36 倍、出伤倍率掉回 1）。
 ##     西游档变身照原数据，开关开关一样。
@@ -31,10 +32,13 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0  # 守层者不按神话
 	seed(20261120)
 	var was := XTianqiElements.POZHEN_BY_TYPE
+	var was_off := XTianqiElements.POZHEN_OFF
 	var was_t := XGuardianRework.TRANSFORM_ANCHOR
-	_check("default_on", XTianqiElements.POZHEN_BY_TYPE)
+	_check("default_off_on", XTianqiElements.POZHEN_OFF)
+	_check("default_type_off", not XTianqiElements.POZHEN_BY_TYPE)
 	_check("transform.default_on", XGuardianRework.TRANSFORM_ANCHOR)
 	_modes()
+	_tianqi_default()
 	_tianqi_on()
 	_tianqi_off()
 	_xiyou()
@@ -43,6 +47,7 @@ func _run() -> void:
 	_transform_off()
 	_transform_xiyou()
 	XTianqiElements.POZHEN_BY_TYPE = was
+	XTianqiElements.POZHEN_OFF = was_off
 	XGuardianRework.TRANSFORM_ANCHOR = was_t
 	XEnemy.force_roll = -1.0
 	var passed := results.filter(func(r): return r.passed).size()
@@ -102,32 +107,42 @@ func _expect(tag: String, logic: XBattleLogic, state: int, want: Dictionary) -> 
 		_check("%s.%d.%d" % [tag, state, int(skill)], v == float(want[skill]), v)
 
 
+func _tianqi_default() -> void:
+	var logic := _logic(467)
+	_expect("tq_b", logic, 1048, {PHYS: 1000, PHYS_LIGHT: 1000, MAG: 1000, MIXED: 1000})
+	_expect("tq_b", logic, 1047, {PHYS: 1000, PHYS_LIGHT: 1000, MAG: 1000, MIXED: 1000})
+
+
 func _tianqi_on() -> void:
 	XTianqiElements.POZHEN_BY_TYPE = true
 	var logic := _logic(467)
 	_check("tq.deck_on", XTianqiElements.deck_on())
 	_expect("tq", logic, 1048, {PHYS: 1000, PHYS_LIGHT: 1000, MAG: 0, MIXED: 1000})
 	_expect("tq", logic, 1047, {PHYS: 0, PHYS_LIGHT: 0, MAG: 1000, MIXED: 1000})
+	XTianqiElements.POZHEN_BY_TYPE = false
 
 
 func _tianqi_off() -> void:
 	XTianqiElements.POZHEN_BY_TYPE = false
+	XTianqiElements.POZHEN_OFF = false
 	var logic := _logic(467)
 	_expect("tq_off", logic, 1048, {PHYS: 0, PHYS_LIGHT: 0, MAG: 0, MIXED: 0})
 	_expect("tq_off", logic, 1047, {PHYS: 1000, PHYS_LIGHT: 1000, MAG: 1000, MIXED: 1000})
-	XTianqiElements.POZHEN_BY_TYPE = true
+	XTianqiElements.POZHEN_OFF = true
 
 
 func _xiyou() -> void:
 	var align := XRiftAlien.ALIGN_LOBBY
 	XRiftAlien.ALIGN_LOBBY = false
-	for on in [true, false]:
-		XTianqiElements.POZHEN_BY_TYPE = on
+	for combo in [[false, true], [true, true], [false, false]]:
+		XTianqiElements.POZHEN_BY_TYPE = combo[0]
+		XTianqiElements.POZHEN_OFF = combo[1]
 		var logic := _logic(467, false)
-		var tag := "xy_on" if on else "xy_off"
+		var tag := "xy_%s_%s" % combo
 		_expect(tag, logic, 1048, {PHYS: 1000, PHYS_LIGHT: 0, MAG: 0, MIXED: 0})
 		_expect(tag, logic, 1047, {PHYS: 0, PHYS_LIGHT: 1000, MAG: 1000, MIXED: 1000})
-	XTianqiElements.POZHEN_BY_TYPE = true
+	XTianqiElements.POZHEN_BY_TYPE = false
+	XTianqiElements.POZHEN_OFF = true
 	XRiftAlien.ALIGN_LOBBY = align
 
 
@@ -155,6 +170,9 @@ func _ai() -> void:
 	var mag_off := XSmartAI.new(logic, actor).expected_damage(actor, e, XDB.rec("Skills", MAG))
 	XSmartAI.o_tianqi_react_zero = true
 	_check("smart_off.mag_positive", mag_off > 0.0, mag_off)
+	XTianqiElements.POZHEN_BY_TYPE = false
+	var mag_b := XSmartAI.new(logic, actor).expected_damage(actor, e, XDB.rec("Skills", MAG))
+	_check("smart_b.mag_positive", mag_b > 0.0, mag_b)
 	XSmartAI.o_tianqi_preview_damage = pv
 
 
