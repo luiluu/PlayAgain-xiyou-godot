@@ -304,14 +304,14 @@ static func gain_rewards(members: Array) -> void:
 # ---- 天启篇无限成长（T257，稿 天启篇_无限成长_v0.4 3.3、第八节卡②第 3 条；Kyo D216 Q3 甲、Q5 甲、Q6 乙）----
 ## 只在天启篇（技能卡开着）且 XTianqiGrowth 开着时走；关掉回现状（戴 4004 才记、余烬满 ×1.2）。
 ## ①胜场改成出战打赢就记（不看主手 4004）；基础段（表里 base＝300 胜）以内照旧每胜 +10 余烬、封顶 3000；
-##   超出的胜场过 XTianqiGrowth.floor_ok，不过就不记。②有效余烬＝min(3000, 存档余烬)＋500×层数，在 param_plus 现算，不写存档。
+##   超出的胜场过 XTianqiGrowth.floor_ok，不过就不记。②有效余烬＝min(3000, 存档余烬)＋500×层数（T286：小数层，取整），在 param_plus 现算，不写存档。
 ## ③余烬超过 3000 的部分每层伤害 +1%（D＝dmg_pct_of(层数)），乘在 tq_ops 的 _action 判断之前；「余烬满 ×1.2」去掉。
 static func growth_on() -> bool:
 	return _tq() and XTianqiGrowth.on()
 
 
-static func growth_layers(a) -> int:
-	return XTianqiGrowth.layers_of(XTianqiGrowth.LIUYING, a) if own(a) and growth_on() else 0
+static func growth_layers(a) -> float:  # T286：连续的小数层
+	return XTianqiGrowth.layers_of(XTianqiGrowth.LIUYING, a) if own(a) and growth_on() else 0.0
 
 
 static func growth_ember(a) -> float:
@@ -332,7 +332,7 @@ static func _growth_win(a) -> void:
 		a.state_data["_codexLbEmberWins"] = wins  # 旧档估出来的胜场照写一次，这一胜不记
 		return
 	a.state_data["_codexLbEmberWins"] = wins + 1.0
-	a.param_mark_dirty()  # 跨层时余烬生命跟着变
+	a.param_mark_dirty()  # 胜场一变余烬生命跟着变（T286 连续层）
 
 
 # ---- 学忘同步 ----

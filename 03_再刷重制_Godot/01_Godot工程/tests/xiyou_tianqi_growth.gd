@@ -1,6 +1,6 @@
 extends Node
 ## 天启篇无限成长底座专项（T256，XTianqiGrowth，表 tianqi_data/growth.json；稿 天启篇_无限成长_v0.4 第二节、3.5 节、第八节卡①③）。
-## 层价表边界（12/13、24/25/26）与 next_need；平加两条断言（穿脱带百分比词条的装备、有无能力强化状态，层数带来的面板增量
+## 层价表边界（12/13、24/25/26）与连续小数层（T286 D247：层价表曲线上按份数插值，整层点不变、拐点不变、越往后越慢）；平加两条断言（穿脱带百分比词条的装备、有无能力强化状态，层数带来的面板增量
 ## 都等于表里的数×层数；另加种族祝福不放大）；计数在基础段以内 param_flat 恒 0；floor_ok（v0.2 卡③那几条＋深渊层号 0）；
 ## 开关关掉回原数、西游档零变化；存档读写后层数照算。
 
@@ -79,9 +79,11 @@ func _run() -> void:
 	var n_hp := float(nrow.flat["0"])
 	var n_mp := float(nrow.flat["1"])
 	var r_mat := float(rrow.flat["4"])
-	# T258 标定落表的约束（稿 3.1、3.2：N 范围 90～125、Y 范围 1800～2200、奈叶生命＝Y 的三分之一取整到百；数改了要同步重标，不是随便改）
-	_check("calib_raven_n", r_mat >= 90.0 and r_mat <= 125.0, r_mat)
-	_check("calib_nanoha_y", n_mp >= 1800.0 and n_mp <= 2200.0 and n_hp == roundf(n_mp / 3.0 / 100.0) * 100.0, [n_hp, n_mp])
+	# 标定落表的约束（T286 按 D233 Q1 新值放宽：T271 新基准不折算 T220 尺，N＝39、Y＝1400／500；稿的 N 90～125、Y 1800～2200 是旧尺范围。
+	# 范围收在新旧两把尺之间，奈叶生命＝Y 的三分之一取整到百；数改了要同步重标，不是随便改）
+	_check("calib_raven_n", r_mat >= 30.0 and r_mat <= 125.0, r_mat)
+	_check("calib_nanoha_y", n_mp >= 1200.0 and n_mp <= 2200.0 and n_hp == roundf(n_mp / 3.0 / 100.0) * 100.0, [n_hp, n_mp])
+	_check("calib_d233", int(r_mat) == 39 and int(n_mp) == 1400 and int(n_hp) == 500 and not bool(d.get("draft", true)), [r_mat, n_mp, n_hp, d.get("draft")])
 	var set_adapt := func(n): s.flags[XNanoha.ADAPT_FLAG] = {str(XNanoha.ACTOR): float(n)}
 	var set_soul := func(n): s.raven["soul"] = float(n)
 	# T258：「一份」按 growth.json 读（T260 回填后不再写死 150／10000），基础段也读表
@@ -94,8 +96,9 @@ func _run() -> void:
 	# ---- 基础段以内恒 0（本卡不接计数，T220 现数不变）----
 	set_adapt.call(n_base)
 	_check("nanoha_base_zero", G.param_flat(nanoha, 0) == 0.0 and G.param_flat(nanoha, 1) == 0.0 and G.layers_of("nanoha", nanoha) == 0)
-	set_adapt.call(n_base + n_share - 0.5)
-	_check("nanoha_half_short", G.layers_of("nanoha", nanoha) == 0 and is_equal_approx(G.next_need_of("nanoha", nanoha), 0.5), G.next_need_of("nanoha", nanoha))
+	set_adapt.call(n_base + n_share - 0.5)  # T286：差半次到第 1 层时已是 0.99 层，平加＝Y×小数层取整
+	var half_l := (float(n_share) - 0.5) / float(n_share)
+	_check("nanoha_half_short", is_equal_approx(G.layers_of("nanoha", nanoha), half_l) and G.param_flat(nanoha, 1) == float(roundi(n_mp * half_l)) and G.param_flat(nanoha, 0) == float(roundi(n_hp * half_l)), [G.layers_of("nanoha", nanoha), G.param_flat(nanoha, 1)])
 	set_adapt.call(n_base + n_share)
 	_check("nanoha_first_layer", G.layers_of("nanoha", nanoha) == 1 and G.param_flat(nanoha, 1) == n_mp)
 	set_soul.call(0)
@@ -159,8 +162,9 @@ func _run() -> void:
 	# ---- 第 25、26 层（层价表拐点后）----
 	set_adapt.call(n_base + 40 * n_share)
 	_check("nanoha_l25", G.layers_of("nanoha", nanoha) == 25)
-	set_adapt.call(n_base + 48 * n_share - 1)
-	_check("nanoha_l25_edge", G.layers_of("nanoha", nanoha) == 25 and G.next_need_of("nanoha", nanoha) == 1.0)
+	set_adapt.call(n_base + 48 * n_share - 1)  # 第 26 层差 1 次：25＋(8 份−1 次)/8 份
+	var e25 := 25.0 + (8.0 * n_share - 1.0) / (8.0 * n_share)
+	_check("nanoha_l25_edge", is_equal_approx(G.layers_of("nanoha", nanoha), e25) and G.param_flat(nanoha, 1) == float(roundi(n_mp * e25)), [G.layers_of("nanoha", nanoha), e25])
 	# ---- 存档读写：层数从原有计数现算，不加存档字段 ----
 	set_adapt.call(n24)
 	_fresh(nanoha)
@@ -227,18 +231,34 @@ func _price() -> void:
 		if G.cumulative(n) != float(cum[n]):
 			bad.append([n, G.cumulative(n)])
 	_check("cumulative", bad.is_empty(), bad)
-	# 份数直接当计数（base 0、share 1）：12/13、24/25/26 的边界
-	var lay := {0: 0, 1: 1, 12: 12, 13: 12, 14: 13, 35: 23, 36: 24, 39: 24, 40: 25, 47: 25, 48: 26, 63: 26, 64: 27}
+	# 份数直接当计数（base 0、share 1）：T286 连续小数层。整层点（12、24 拐点、25、26、27）与旧整数层一致，层内按份数线性插值
+	var lay := {0: 0.0, 0.5: 0.5, 1: 1.0, 12: 12.0, 13: 12.5, 14: 13.0, 35: 23.5, 36: 24.0, 39: 24.75, 40: 25.0, 44: 25.5, 47: 25.875, 48: 26.0, 56: 26.5, 64: 27.0}
 	bad = []
 	for c in lay:
-		if G.layers(float(c), 0.0, 1.0) != int(lay[c]):
+		if not is_equal_approx(G.layers(float(c), 0.0, 1.0), float(lay[c])):
 			bad.append([c, G.layers(float(c), 0.0, 1.0)])
-	_check("layers_edges", bad.is_empty(), bad)
+	_check("layers_continuous", bad.is_empty(), bad)
+	_check("layers_turn_exact", G.layers(36.0, 0.0, 1.0) == 24.0 and G.layers(2000.0 + 36.0 * 73.0, 2000.0, 73.0) == 24.0 and G.layers(200000.0 + 36.0 * 4500.0, 200000.0, 4500.0) == 24.0)
+	# 越往后越慢：同样多一份，层数增量不增（拐点前 1、拐点后 0.25、再往后更小），且单调不降
+	var mono := true
+	var prev := -1.0
+	var prev_step := 2.0
+	for k in range(0, 300):
+		var x := float(k) * 0.5
+		var l := G.layers(x, 0.0, 1.0)
+		if l < prev - 1e-9:
+			mono = false
+		if k > 0 and l - prev > prev_step + 1e-9:
+			mono = false
+		if k > 0:
+			prev_step = l - prev
+		prev = l
+	_check("layers_monotone_slowing", mono)
 	# 渡鸦的一份 1 万、基础 20 万
-	_check("layers_raven", G.layers(200000.0, 200000.0, 10000.0) == 0 and G.layers(209999.0, 200000.0, 10000.0) == 0 and G.layers(210000.0, 200000.0, 10000.0) == 1 and G.layers(560000.0, 200000.0, 10000.0) == 24 and G.layers(150000.0, 200000.0, 10000.0) == 0)
-	_check("next_need", G.next_need(200000.0, 200000.0, 10000.0) == 10000.0 and G.next_need(0.0, 200000.0, 10000.0) == 210000.0 and G.next_need(560000.0, 200000.0, 10000.0) == 40000.0 and G.next_need(205000.0, 200000.0, 10000.0) == 5000.0)
+	_check("layers_raven", G.layers(200000.0, 200000.0, 10000.0) == 0.0 and is_equal_approx(G.layers(205000.0, 200000.0, 10000.0), 0.5) and G.layers(210000.0, 200000.0, 10000.0) == 1.0 and G.layers(560000.0, 200000.0, 10000.0) == 24.0 and G.layers(150000.0, 200000.0, 10000.0) == 0.0)
 	_check("huge_count_finite", G.layers(1e15, 0.0, 1.0) > 30 and G.layers(1e15, 0.0, 1.0) < 80, G.layers(1e15, 0.0, 1.0))
-	_check("liuying_helpers", G.ember_bonus(24) == 12000 and G.dmg_pct_of(24) == 24 and G.dmg_pct_of(0) == 0 and G.ember_bonus(-1) == 0)
+	# 流萤：余烬＝500×小数层取整；伤害％向下取整（满一层才 +1%）
+	_check("liuying_helpers", G.ember_bonus(24) == 12000 and G.dmg_pct_of(24) == 24 and G.dmg_pct_of(0) == 0 and G.ember_bonus(-1) == 0 and G.ember_bonus(0.5) == 250 and G.ember_bonus(24.75) == 12375 and G.dmg_pct_of(24.99) == 24 and G.dmg_pct_of(0.99) == 0 and G.dmg_pct_of(25.0) == 25, [G.ember_bonus(24.75), G.dmg_pct_of(24.99)])
 
 
 func _floor_facts() -> void:
