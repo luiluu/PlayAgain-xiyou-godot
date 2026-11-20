@@ -20,6 +20,12 @@ extends Control
 ## - 状态窗（drawAllContents 包装）：还有下一阶时，第 12 行起用 18 号字写「背包天衣×N（确认时选择）」「已装备的天衣须先卸下」。
 ## 天启篇五条悟专属试炼（XTianqiGojoTrial，设计 v0.3）：进阶需求下多一行「试炼：怀玉（未通过／已通过）」；底部确定时缺的只有试炼，
 ## 确认窗写「挑战试炼「怀玉」」，选「是」记下请求、关掉本页（地图上 mv_script 接着开战）。云裳天衣铺里打开的本页不开试炼（allow_trial）。
+## 【cc·T307 卡 O·未经审查】天启篇新界面（XUiSkin.on() 且 XSkinRosterPage.ENABLED）：版型二名单页（XSkinRosterPage），状态机一行不改，旧窗藏起：
+## - 左名单＝旧名单（头像、名字、Lv、行尾「进阶 1 / 3」，到顶「已到顶」灰字）；中块＝旧状态窗（法阵上的侧视战斗图照旧每 12 帧换格、名字、Lv、职业、
+##   「进阶 ◆◇◇ 1 / 3」、现在的能力八项、进阶后学会）；右牌＝进阶需求清单（✓／✗、持有 / 需要、一直写着「还差：…」）＋主按钮「进阶」（旧底部窗：
+##   名单确定后焦点落到这枚按钮＝旧 mode bottom）；确认窗换统一确认弹窗；金钱窗进右上货币。
+## - 云裳：「要求」里一行「天衣 n / N」，两行小字进右牌；按进阶后中间换成天衣列表逐件选（面包屑「进阶 › 选天衣」，旧 XYunChoicesWindow 不开）。
+## - 五条悟：「要求」里试炼一行带 ✓／✗；只缺试炼时主按钮写「挑战试炼」。
 
 signal closed
 
@@ -57,6 +63,10 @@ var bottom_win: XMVWindow
 var confirm_win: XMVWindow
 var confirm_back: Control
 var confirm_background: Control
+var skin: XSkinRosterPage       # T307 新界面（关着为 null）
+var yun_rows: Array = []        # 新界面选天衣：旧选择窗的行（第 0 行是「选择进阶所需天衣 n/N」）
+var _yun_chosen: Array = []
+var _yun_crumb: XSkinCrumb
 
 
 func _ready() -> void:
@@ -91,6 +101,8 @@ func _ready() -> void:
 	status_win.add_child(sprite)
 	members = XState.current.members()
 	XTianqiGojoTrial.request(0)
+	if XUiSkin.on() and XSkinRosterPage.ENABLED:
+		_skin_build()
 	_select(0)
 
 
@@ -112,6 +124,8 @@ func _refresh() -> void:
 	list_win.down_arrow = top + rows() < members.size()
 	for w in [list_win, status_win, gold_win, bottom_win, confirm_win]:
 		w.refresh()
+	if skin != null:
+		_skin_sync()
 
 
 ## Window_ActorAdvancedStatus.setupWhenCheck → drawAllContents：换图并定在第 1 格，缩放复位后由 update 重算
@@ -140,6 +154,8 @@ func _set_frame(pattern: int) -> void:
 
 ## Window_ActorAdvancedStatus.update（每帧）：每 12 帧按 0,1,2,1 换格；格宽大于内容宽一半才缩小
 func _physics_process(_delta: float) -> void:
+	if skin != null and sprite_count % SPRITE_TICK == 0:
+		skin.center_view.queue_redraw()
 	if sprite.texture == null:
 		return
 	if sprite_count % SPRITE_TICK == 0:
@@ -406,6 +422,12 @@ func _yun_pick(a: XActor, chosen: Array) -> void:
 			rows.append({"text": XYunshangOrders.robe_label(s, e), "item": e})
 	_yun_close_win()
 	mode = "yun"
+	if skin != null:   # T307：不开旧选择窗，中间列表换成天衣（同一份行）
+		yun_rows = rows
+		_yun_chosen = chosen
+		_refresh()
+		skin.list.select(0, false)
+		return
 	_refresh()
 	yun_win = XYunChoicesWindow.for_rows(self, rows)
 	var w := yun_win
@@ -484,6 +506,11 @@ func _move(d: int, wrap: bool) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:   # 新界面的点击由各组件自己接；右键＝取消
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+			accept_event()
+			_skin_cancel()
+		return
 	if not (event is InputEventMouseButton and event.pressed) or mode == "yun":
 		return
 	var p: Vector2 = event.position
@@ -524,6 +551,9 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and _skin_input(event):
+		XKeyMap.handled(self)
+		return
 	if mode == "yun":
 		return
 	if event.is_action_pressed("ui_cancel"):
@@ -538,3 +568,331 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif mode == "list" and XMenu.page_dir(event) != 0:
 		XKeyMap.handled(self)
 		page(XMenu.page_dir(event))
+
+
+# ---- T307 卡 O：天启篇新界面（版型二名单页）----
+## 玩家可见新字（待小A 审）
+const T_TITLE := "进阶"
+const T_TOP := "已到顶"
+const T_NOW := "现在的能力"
+const T_LEARN := "进阶后学会"
+const T_REQ := "要求"
+const T_LACK := "还差："
+const T_TRIAL_BTN := "挑战试炼"
+const T_CRUMB_YUN := "选天衣"
+const T_COST := "消耗："
+const T_NONE := "无"
+
+
+func _skin_build() -> void:
+	skin = XSkinRosterPage.new()
+	skin.title = T_TITLE
+	add_child(skin)
+	skin.center_draw = _skin_center
+	skin.show_center_list(false)
+	skin.roster_changed.connect(func(i):
+		if i == index:
+			return
+		if mode == "bottom":   # 旧底部窗开着时换人＝先回名单
+			bottom = -1
+			mode = "list"
+		if mode == "list":
+			XSound.system(0)
+			_select(i))
+	skin.roster_activated.connect(func(i):
+		if i == index and mode in ["list", "bottom"]:
+			ok())
+	skin.card_button.connect(func(_i): _skin_card_ok())
+	skin.list.index_changed.connect(func(_i): if mode == "yun": skin.queue_redraw())
+	skin.list.activated.connect(func(i): if mode == "yun": _skin_yun_choose(i))
+	_yun_crumb = XSkinCrumb.new()
+	_yun_crumb.visible = false
+	skin.list_panel.add_child(_yun_crumb)
+
+
+## 主按钮：名单上点＝先到底部（旧确定）再按；底部上点＝按
+func _skin_card_ok() -> void:
+	if mode == "list":
+		var a := current_actor()
+		if a == null or XAdvance.row(XState.current, a.actor_id) == null:
+			XSound.system(3)
+			return
+		ok()
+	if mode == "bottom":
+		ok()
+
+
+func _skin_cancel() -> void:
+	if mode == "yun":
+		_skin_yun_cancel()
+		return
+	cancel()
+
+
+func _skin_yun_choose(i: int) -> void:
+	var r := i + 1   # 第 0 行是「选择进阶所需天衣 n/N」，列表里不放
+	if r <= 0 or r >= yun_rows.size():
+		return
+	XSound.system(1)
+	_yun_pick(current_actor(), _yun_chosen + [yun_rows[r].item])
+
+
+func _skin_yun_cancel() -> void:
+	XSound.system(2)
+	yun_rows = []
+	_yun_chosen = []
+	yun_selection = null
+	mode = "list"
+	_refresh()
+
+
+## 新界面先吃的按键：弹窗、Y；选天衣时上下、确定、取消；底部时上下不动（同旧）
+func _skin_input(event: InputEvent) -> bool:
+	if skin.input(event):
+		return true
+	if mode == "yun":
+		if event.is_action_pressed("ui_cancel"):
+			_skin_yun_cancel()
+		elif event.is_action_pressed("ui_accept"):
+			_skin_yun_choose(skin.list.index)
+		elif skin.list.handle_input(event):
+			XSound.system(0)
+		return true
+	return false
+
+
+func _skin_sync() -> void:
+	for w in [list_win, status_win, gold_win, bottom_win, confirm_win]:
+		w.visible = false
+	confirm_back.visible = false
+	var s := XState.current
+	var rows := []
+	for m: XActor in members:
+		var r = XAdvance.row(s, m.actor_id)
+		if r == null:
+			rows.append(XSkinRosterPage.roster_row(m, T_TOP, XUiSkin.TEXT_3))
+		else:
+			rows.append(XSkinRosterPage.roster_row(m, "进阶 %d / %d" % [XAdvance.rank(s, m.actor_id), XAdvance.max_text(s, m.actor_id)], XUiSkin.GOLD_LIGHT))
+	skin.set_roster(rows, index)
+	var yun := mode == "yun"
+	skin.show_center_list(yun)
+	_yun_crumb.visible = yun
+	if yun:
+		_yun_crumb.set_parts([T_TITLE, T_CRUMB_YUN])
+		_yun_crumb.position = Vector2(XUiSkin.PAD + 8, XSkinTemplatePage.LIST_TOP - 6.0)
+		_yun_crumb.size = Vector2(skin.list_panel.size.x - XUiSkin.PAD * 2 - 8, XSkinCrumb.H)
+		skin.list_title = str(yun_rows[0].text) if not yun_rows.is_empty() else ""
+		var items := []
+		for k in range(1, yun_rows.size()):
+			var it: Dictionary = yun_rows[k].item
+			items.append({"text": str(yun_rows[k].text), "icon": int(it.get("iconIndex", XDB.rec("Armors", int(it.get("base", 0))).get("iconIndex", 0)))})
+		var keep := clampi(skin.list.index, 0, maxi(items.size() - 1, 0))
+		skin.set_items(items, keep)
+		var shift := XSkinCrumb.H + 4.0
+		skin.list.position.y = XSkinTemplatePage.LIST_TOP + shift
+		skin.list.size.y = floorf((skin.list_panel.size.y - XSkinTemplatePage.LIST_TOP - shift - XSkinTemplatePage.FOOTER_H) / skin.list.row_height) * skin.list.row_height
+	else:
+		skin.list_title = ""
+		skin.relayout()
+	var f := "roster"
+	if mode == "bottom":
+		f = "card"
+	elif yun:
+		f = "list"
+	skin.set_focus(f)
+	skin.set_card(skin_card())
+	if mode == "bottom":
+		skin.card.button_index = 0
+		skin.card.queue_redraw()
+	if mode == "confirm":
+		var fresh := skin.dialog == null
+		var dlg := skin.ask({"title": confirm_text, "body": skin_confirm_body(), "buttons": ["确定", "取消"], "index": confirm_index})
+		if fresh:
+			dlg.chosen.connect(func(i):
+				confirm_index = i
+				ok())
+			dlg.index_changed.connect(func(i):
+				if i != confirm_index:
+					confirm_index = i
+					XSound.system(0))
+			dlg.cancelled.connect(cancel)
+	else:
+		skin.close_dialog()
+	var h := [["确定", "进阶"], ["取消", "离开"]]
+	match mode:
+		"bottom":
+			h = [["确定", skin_button_text()], ["取消", "返回"]]
+		"yun":
+			h = [["确定", "选这件"], ["取消", "返回"]]
+		"confirm":
+			h = [["← / →", "切换"], ["确定", "选择"], ["取消", "返回"]]
+	skin.set_hint_list(h)
+	skin.center_view.queue_redraw()
+	skin.layout.left.queue_redraw()
+
+
+## 主按钮的字：只缺五条悟试炼（且这页开得了试炼）时「挑战试炼」，否则「进阶」
+func skin_button_text() -> String:
+	var a := current_actor()
+	if a == null:
+		return "进阶"
+	var s := XState.current
+	var lack := XAdvance.missing(s, a)
+	if allow_trial and not lack.is_empty() and XTianqiGojoTrial.challengeable(s, a, lack) > 0:
+		return T_TRIAL_BTN
+	return "进阶"
+
+
+## 确认弹窗的正文：这次会扣掉的东西（旧确认窗只写「是否进阶」）
+func skin_confirm_body() -> String:
+	var a := current_actor()
+	if a == null or trial_tier > 0:
+		return ""
+	if XYunshang.own(a):
+		return ""
+	var r = XAdvance.row(XState.current, a.actor_id)
+	if r == null:
+		return ""
+	var parts := []
+	for p in r.items:
+		parts.append("%s ×%d" % [str(XDB.rec("Items", int(p[0])).get("name", "")), int(p[1])])
+	if int(r.gold) > 0:
+		parts.append("%s %s" % [str(XDB.system().get("currencyUnit", "")), XMenu._group(int(r.gold))])
+	return T_COST + "、".join(parts) if not parts.is_empty() else ""
+
+
+## 右牌（测试按 T254 3.10 对应表逐行核）：要求清单＋还差＋主按钮；已满只写「已达最大进阶次数」
+func skin_card() -> Dictionary:
+	var a := current_actor()
+	if a == null:
+		return {"title": "", "sections": [], "buttons": []}
+	var s := XState.current
+	var cls := str(XDB.rec("Classes", a.class_id).get("name", ""))
+	var d := {"title": a.display_name(), "subtitle": "Lv %s%s" % [XMenu._group(a.level), " · " + cls if cls != "" else ""], "sections": [], "buttons": []}
+	var r = XAdvance.row(s, a.actor_id)
+	if r == null:
+		d.sections = [{"title": "", "rows": [{"text": "已达最大进阶次数", "color": XUiSkin.TEXT_2}]}]
+		d.buttons = [{"text": "进阶", "primary": true, "disabled": true}]
+		return d
+	var lines := []
+	var yun := XYunshang.own(a)
+	var unit := str(XDB.system().get("currencyUnit", ""))
+	if not yun:
+		for p in r.items:
+			var have := s.item_count(int(p[0]))
+			lines.append(_req_line(str(XDB.rec("Items", int(p[0])).get("name", "")), have, int(p[1])))
+	lines.append(_req_line("等级", a.level, int(r.level), "Lv %d / %d" % [a.level, int(r.level)]))
+	if not yun:
+		lines.append(_req_line(unit, s.gold, int(r.gold), "%s / %s" % [XMenu._group(s.gold), XMenu._group(int(r.gold))]))
+	if XTianqiGojoTrial.applies(s, a):
+		var tier := XAdvance.rank(s, a.actor_id) + 1
+		var ok_t := XTianqiGojoTrial.has_passed(s, tier)
+		lines.append({"left": "%s 试炼：%s（%s）" % ["✓" if ok_t else "✗", XTianqiGojoTrial.trial_name(tier), "已通过" if ok_t else "未通过"], "right": "", "color": XUiSkin.UP if ok_t else XUiSkin.DOWN})
+	var secs := [{"title": T_REQ, "lines": lines}]
+	var lack: Array = []
+	if yun:
+		if XYunshang.stage(a) < XYunshangOrders.ADVANCE.size():
+			var need := XYunshangOrders.needed(a)
+			var own := XYunshangOrders.owned(s).size()
+			lines.append(_req_line("天衣", own, need))
+			secs.append({"title": "", "rows": [{"text": "背包天衣×%d（确认时选择）" % need, "color": XUiSkin.TEXT_2}, {"text": "已装备的天衣须先卸下", "color": XUiSkin.TEXT_2}]})
+		var why := XYunshangOrders.requirements(s, a)
+		if why != "":
+			lack = [why]
+	else:
+		lack = XAdvance.missing(s, a)
+	var btn := skin_button_text()
+	var can := lack.is_empty() or btn == T_TRIAL_BTN
+	if not lack.is_empty():
+		secs.append({"title": "", "rows": [{"text": T_LACK + "、".join(lack.map(func(x): return str(x))), "color": XUiSkin.DOWN}]})
+	d.sections = secs
+	d.buttons = [{"text": btn, "primary": true, "disabled": not can}]
+	return d
+
+
+func _req_line(name: String, have: int, need: int, right := "") -> Dictionary:
+	var ok_ := have >= need
+	return {"left": ("✓ " if ok_ else "✗ ") + name, "right": right if right != "" else "%s / %s" % [XMenu._group(have), XMenu._group(need)],
+		"color": XUiSkin.UP if ok_ else XUiSkin.DOWN, "right_color": XUiSkin.GOLD_LIGHT if ok_ else XUiSkin.DOWN}
+
+
+## 中块画的东西（测试按 T254 3.10 对应表核旧状态窗每一项）：名字、等级、职业、进阶次数／最大进阶次数、八项能力、进阶后学会的技能号
+func skin_center_data() -> Dictionary:
+	var a := shown_actor
+	if a == null:
+		return {}
+	var s := XState.current
+	var r = XAdvance.row(s, a.actor_id)
+	var params := []
+	for k in 8:
+		params.append(roundi(a.param(k)))
+	return {"name": a.display_name(), "level": a.level, "class": str(XDB.rec("Classes", a.class_id).get("name", "")), "battler": str(a.data().get("battlerName", "")),
+		"rank": XAdvance.rank(s, a.actor_id), "max": XAdvance.max_text(s, a.actor_id), "params": params, "learn": (r.learn as Array).map(func(x): return int(x)) if r != null else null}
+
+
+## 中块：法阵上的侧视战斗图（旧状态窗同一张图、0,1,2,1 每 12 帧）、名字、Lv、职业、进阶次数、八项能力、进阶后学会
+func _skin_center(c: Control) -> void:
+	var a := shown_actor
+	if a == null:
+		return
+	var cd := skin_center_data()
+	var w := c.size.x
+	var body := XUiSkin.font("body")
+	var head := XUiSkin.font("title")
+	var cx := w / 2.0
+	XSkinRosterPage.draw_seal(c, Vector2(cx, 150), 92.0)
+	var pat: int = PATTERNS[floori(sprite_count / float(SPRITE_TICK)) % 4]
+	XSkinRosterPage.draw_battler(c, str(cd.battler), pat, Vector2(cx, 158), 132.0)
+	var fs_n := XUiSkin.fs(XUiSkin.FS_CARD)
+	var fit := XSkinList.fit_text(head, str(cd.name), w - 48, fs_n, 18)
+	var tw := head.get_string_size(str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1])).x
+	XUiSkin.ds(c, head, Vector2(cx - tw / 2.0, 206), str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1]), XUiSkin.TEXT)
+	var fs_a := XUiSkin.fs(XUiSkin.FS_AUX)
+	var cls := str(cd["class"])
+	var sub := "Lv %s%s" % [XMenu._group(int(cd.level)), "　" + cls if cls != "" else ""]
+	tw = body.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_a).x
+	XUiSkin.ds(c, body, Vector2(cx - tw / 2.0, 206 + fs_a * 1.7), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_a, XUiSkin.TEXT_2)
+	var rank := int(cd.rank)
+	var mx := int(cd.max)
+	var pips := ""
+	if mx <= 10:
+		for k in mx:
+			pips += "◆" if k < rank else "◇"
+	var adv := "进阶 %s%s / %d" % [pips + " " if pips != "" else "", rank, mx]
+	var fs_l := XUiSkin.fs(19)
+	tw = body.get_string_size(adv, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_l).x
+	XUiSkin.ds(c, body, Vector2(cx - tw / 2.0, 206 + fs_a * 1.7 + fs_l * 1.5), adv, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_l, XUiSkin.GOLD_LIGHT)
+	var y := 206 + fs_a * 1.7 + fs_l * 1.5 + 24.0
+	var x0 := XUiSkin.PAD_LG
+	var iw := w - x0 * 2
+	XUiSkin.ds(c, body, Vector2(x0, y + 18), T_NOW, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.fs(17), XUiSkin.GOLD)
+	y += 30.0
+	var lh := roundf(fs_a * 1.75)
+	for k in 8:
+		var col := k % 2
+		var row := k / 2
+		var px := x0 + col * (iw / 2.0 + 8.0)
+		var py := y + row * lh + fs_a
+		XUiSkin.ds(c, body, Vector2(px, py), ATTR[k], HORIZONTAL_ALIGNMENT_LEFT, -1, fs_a, XUiSkin.TEXT_2)
+		var v := XMenu._group(int(cd.params[k]))
+		var vw := body.get_string_size(v, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_a).x
+		XUiSkin.ds(c, body, Vector2(px + iw / 2.0 - 16.0 - vw, py), v, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_a, XUiSkin.TEXT)
+	y += 4 * lh + 14.0
+	if cd.learn == null:
+		return
+	XUiSkin.ds(c, body, Vector2(x0, y + 18), T_LEARN, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.fs(17), XUiSkin.GOLD)
+	y += 30.0
+	if (cd.learn as Array).is_empty():
+		XUiSkin.ds(c, body, Vector2(x0, y + fs_a), T_NONE, HORIZONTAL_ALIGNMENT_LEFT, -1, fs_a, XUiSkin.TEXT_3)
+		return
+	var slh := maxf(30.0, fs_a * 1.8)
+	for id in cd.learn:
+		if y + slh > c.size.y - 8.0:
+			break
+		var sk := XDB.rec("Skills", int(id))
+		var ic := XUiSkin.icon(int(sk.get("iconIndex", 0)))
+		if ic != null:
+			c.draw_texture_rect(ic, Rect2(x0, y + (slh - 24.0) / 2.0, 24, 24), false)
+		var nm := XSkinList.fit_text(body, str(sk.get("name", "")), iw - 32, fs_a, 15)
+		XUiSkin.ds(c, body, Vector2(x0 + 32, y + slh / 2.0 + int(nm[1]) * 0.36), str(nm[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(nm[1]), XSkinSkillPage.name_color(sk))
+		y += slh
