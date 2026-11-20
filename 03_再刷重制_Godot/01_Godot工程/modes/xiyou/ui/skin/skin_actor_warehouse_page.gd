@@ -20,10 +20,10 @@ const T_MIN_ONE := XActorWarehouse.LAST_ACTOR_TEXT   # 「队伍最少保留一�
 const T_OFF := "停用"
 ## 替补经验（T294）：战斗经验只发队伍里的人（battle_logic.gd 发奖励段：state.members()），仓库角色不拿；
 ## 队伍里出战位（天启篇含助力位）拿满，其余后备按 System「后备成员获得经验」optExtraExp（开＝拿满、关＝0）
-const T_EXP_DEPOSIT := "存入后不再获得战斗经验。"
-const T_EXP_WITHDRAW_ON := "取出后在后备，战斗经验照样拿满。"
-const T_EXP_WITHDRAW_OFF := "取出后在后备，拿不到战斗经验；编入出战位才拿。"
-const T_EXP_WITHDRAW_OFF_HELPER := "取出后在后备，拿不到战斗经验；编入出战位或助力位才拿。"
+const T_EXP_DEPOSIT := "在仓库中不会获得战斗经验。"
+const T_EXP_WITHDRAW_ON := "未出战也可获得全额战斗经验。"
+const T_EXP_WITHDRAW_OFF := "未出战不会获得战斗经验；编入出战位才能获得。"
+const T_EXP_WITHDRAW_OFF_HELPER := "未出战不会获得战斗经验；编入出战位或助力位才能获得。"
 
 var scene: XActorWarehouseScene
 var inner_tabs: XSkinInnerTabs

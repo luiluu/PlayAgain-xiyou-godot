@@ -611,7 +611,7 @@ func _warehouse_page() -> void:
 	sysd["optExtraExp"] = true
 	check("wh.exp_note_opt_on", XSkinActorWarehousePage.exp_note_withdraw(s) == XSkinActorWarehousePage.T_EXP_WITHDRAW_ON)
 	sysd["optExtraExp"] = false
-	check("wh.exp_note_opt_off", XSkinActorWarehousePage.exp_note_withdraw(s).contains("拿不到"))
+	check("wh.exp_note_opt_off", XSkinActorWarehousePage.exp_note_withdraw(s).contains("不会获得"))
 	sysd["optExtraExp"] = old_opt
 	await shots("warehouse_store")
 	act(p, "ui_accept")
