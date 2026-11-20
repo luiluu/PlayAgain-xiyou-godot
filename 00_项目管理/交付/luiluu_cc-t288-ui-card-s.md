@@ -30,8 +30,22 @@
 
 - 喂说明卡的行：`var d := XHelpCard.skin_card_data(XHelpCard.content(obj, kind, false, 宽) 或 detail_rows(obj, 宽), obj)`，得 `{title, title_color, icon, subtitle, desc, sections}`；页面自己有小字就覆盖 `d.subtitle`，再 `card.fold = true; card.setup(d)`（或 set_card 把 desc、sections 带上）。
 - 节的格式：`{title, tag, size, rows: [{text, color, dim}]}` 或 `{title, tag, size, cells: [[名, 值], …]}`；tag 是 `XHelpCard.SECTION_ORDER` 里的名字；只要标记不要排法用 `XHelpCard.section_tags(rows, obj)`。
-- XSkinCard 新接口：`fold`、`expand_bounds`（画布坐标上下沿，默认 TOP／BOTTOM）、`y_pass_on_collapse`、`border_color`、`natural_height(宽)`、`can_expand()`、`set_expanded()`、`expanded_rect()`、`strip_rect()`、`scroll_by()`、信号 `expanded_changed`。Y 在 `_input` 里收（只在 fold 且放不下或已展开时）；页面别的地方也用 Y 的（如装备页）开 fold 前要先看冲突。
+- XSkinCard 新接口：`fold`、`expand_bounds`（画布坐标上下沿，默认 TOP／BOTTOM）、`expand_wide`（false＝展开不加宽，战斗详情用）、`border_color`、`natural_height(宽)`、`can_expand()`、`set_expanded()`、`expanded_rect()`、`strip_rect()`、`scroll_by()`、信号 `expanded_changed`。Y 在 `_input` 里收（只在 fold 且放不下或已展开时；Y 一律不放行给页面），展开时确定键也收下不落到列表；fold 由真切假时展开自动清掉；页面别的地方也用 Y 的（如装备页）开 fold 前要先看冲突。
 - 物品页、装备页（`skin_item_page`／`skin_gear_detail` 的 `help_sections`）本卡没动，仍是 CORE_V2 的「自带／词条／套装／说明」。
+
+## 小A 核查返修（P2×3）
+
+- P2-1：见上「浮动卡战斗里」；`skin_card.gd` 加 `expand_wide`、`_input` 里 Y 一律收下、展开时收下 `ui_accept`；`help_card.gd` 战斗里设 `expand_wide=false`，去掉 `y_pass_on_collapse`。提示字「Y 收起 ▴」不改。
+- P2-2：`XSkinCard.setup` 里 fold 为假时清 `_overflow`、展开的牌收掉（`_sheet` 藏起），Y／取消回到页面。
+- P2-3：专项节标记覆盖改成全库：技能 7008、武器 1123、防具 2305、物品 2363（共 12799 条）0 错，整个专项 25 秒，不用分段。
+- 新断言：fold.accept_swallowed、fold.y_not_passed、fold.accept_passes_when_collapsed、fold_off.clears_expanded、battle.no_widen（专项 35/35）；拿掉对应修法逐条反向验证过，都会挂。
+
+## 给卡 H／P 的 P3（小A 核出，本卡没改）
+
+- P3-1：`help_card.gd` `skin_card_data` 的 `title_color` 用 `XQuality.list_color`，没走 `XUiSkin.quality_color`；页面接时按页面自己的名字色覆盖（技能页 T287 已用 name_color）。
+- P3-2：`skin_card.gd` `_draw_sheet` 的底部渐淡用上一帧的 `_max_scroll`，刚展开第一帧可能判错是否在底（视觉小瑕疵）。
+- P3-3：`help_card.gd` 纯治疗／护盾技能的公式行也落进「伤害怎么算」节（标题字面不准，可考虑按行首「基础治疗／基础护盾」改叫「怎么算」，要小A 定字）。
+- P3-4：`skin_card.gd` 牌头小字（subtitle）超宽直接截断，没换行也没省略号。
 
 ## 没做／偏离
 
@@ -40,7 +54,7 @@
 - 「还没到」注明：只有流萤「解锁：进阶N阶」这类行画暗字（TEXT_3），没加「还没到」字样（currentHelpText 已把没到阶的分支去掉，留下的只有流萤这一种）。
 - 节的次序按稿（基本信息→伤害怎么算→成长→效果；装备 自带→成长→这一场→词条），行在各节里保持原先后；原 v0.43 排版里「效果」在「成长」前，稿里反过来，按稿。
 - 「右下胶囊也能点」：没单独画胶囊，牌底整条可点。
-- 浮动卡战斗里：Y 第一次展开、再按 Y 收起并照旧关掉「详情」（战斗的 Y 本来是开关详情，`y_pass_on_collapse`）。
+- 浮动卡战斗里（小A核 P2-1 返修）：展开只在详情卡自己那一栏往上下长、不加宽（`expand_wide=false`，卡已是最高时就是在原处滚动），不盖住战技列表和角色；Y 只做展开／收成小卡，不再顺带关「详情」；展开时确定键被牌收下，防误放技能。副作用：说明卡放不下时，键盘 Y 关不了「详情」（点「详情」胶囊照旧关；放得下的卡 Y 照旧开关详情）。另：520 宽的卡（如天火轰击）在战斗里本来就被 place_near 放到列表右边、压住列表右侧消耗列和队伍栏一角——这是旧摆法（新旧画法一样），本卡没动，留给战斗界面卡看。
 - 截图里技能页、独立牌那几张是非天启篇存档的技能行（天启篇技能重构会改写部分专属技能的行，比如渡鸦 10122 天启篇下没有成长行）；战斗那张是天启篇存档。
 - 与 T287（卡 E）在 `skin_skill_page.gd` `_sync_card` 相邻行：本卡只改 rows 行与 set_card 第二行（desc／sections），`title_color` 那行没碰；合并时保留 T287 的 `name_color`。
   交付时 T287 只在本机 main（74af966bc，dev.782）、还没到 github/main，照协调只合了 github/main；交付自检对本机 main 试合并报这一处冲突（只有一块）。解法：取本卡的 help／rows／split／sd／card.fold 几行，set_card 第一行用 T287 的 `"title_color": name_color(sk),`，第二行用本卡的（带 `"desc"` 和 `sd.sections if split else …`）。

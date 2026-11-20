@@ -1,10 +1,11 @@
 extends Node
 ## 【cc·天启篇·未经审查】T288 卡 S 长说明卡分节专项：
-## - 节标记覆盖全部行：技能（专属 10122～10299、普通 1～400、流萤 10622／10623 各阶）、成长装备（参照全部例，带「这一场」）、武器、防具、物品抽样，
+## - 节标记覆盖全部行：全库技能、武器、防具、物品（约 1.28 万条，小A核 P2-3）、流萤 10622／10623 各阶、成长装备（参照全部例，带「这一场」），
 ##   XHelpCard.section_tags 与行等长、每个标记都在 SECTION_TAGS 里（没有落空的行）；content() 不因分节变（同一张卡开关前后行相同）；
 ## - skin_card_data 不丢行：每条非空、非名字行的字都进了牌（抬头小字／描述／格子／节里的行）；
 ## - 分节样子：渡鸦 10122 有 基本信息→伤害怎么算→成长→效果；普通技能没有成长节；成长装备有「这一场」（本场成长）；流萤 0 阶「解锁」行画暗字；
 ## - XSkinCard：fold 关时 Y 不展开（同旧）；fold 开且放不下时 Y 展开、再 Y 收回、取消收回；点牌底一条展开；展开后能滚到底；换牌自动收起；
+##   展开时 Y、确定键被牌收下（不落到列表）；fold 由真切假时展开清掉；expand_wide 关（战斗详情）只往上下长、不加宽（小A核 P2-1、P2-2）；
 ## - 回退：SECTIONS 关时浮动说明卡照旧画（不建详情牌）、技能页右牌照旧一节无标题（行＝help_rows）；皮肤关时不分节。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 var results: Array = []
@@ -32,6 +33,17 @@ func _key_y() -> InputEventKey:
 	e.physical_keycode = KEY_Y
 	e.pressed = true
 	return e
+
+
+## 记下落到 _unhandled_input 的确定键与 Y（页面、战斗列表就在这一层收键）
+class Spy extends Node:
+	var accepts := 0
+	var ys := 0
+	func _unhandled_input(e: InputEvent) -> void:
+		if e.is_action_pressed("ui_accept"):
+			accepts += 1
+		if e is InputEventKey and (e as InputEventKey).pressed and (e as InputEventKey).keycode == KEY_Y:
+			ys += 1
 
 
 func _texts(rows: Array) -> Array:
@@ -105,20 +117,26 @@ func _run() -> void:
 
 
 func _coverage(s: XState) -> void:
-	var n := 0
-	var bad := 0
-	var ids := range(1, 401) + range(10122, 10300)
-	for id in ids:
-		var sk := XDB.rec("Skills", id)
-		if sk.is_empty() or str(sk.get("name", "")) == "":
-			continue
-		n += 1
-		var before := _texts(XHelpCard.content(sk, "skill"))
-		if not _cover("skill.%d" % id, sk, XHelpCard.content(sk, "skill", false, 300.0)):
-			bad += 1
-		if _texts(XHelpCard.content(sk, "skill")) != before:
-			check("content_stable.%d" % id, false)
-	check("cover.skills", bad == 0 and n > 200, [n, bad])
+	# 全库（小A核 P2-3）：技能、武器、防具、物品每一条有名字的都跑；技能另看 content() 开关前后不变
+	var counts := {}
+	var bad := []
+	for table in ["Skills", "Weapons", "Armors", "Items"]:
+		var kind: String = {"Skills": "skill", "Weapons": "weapon", "Armors": "armor", "Items": "item"}[table]
+		var arr = XDB.table(table)
+		var n := 0
+		for id in range(1, arr.size() if arr is Array else 0):
+			var rec := XDB.rec(table, id)
+			if rec.is_empty() or str(rec.get("name", "")) == "":
+				continue
+			n += 1
+			var rows := XHelpCard.content(rec, kind, false, 300.0) if kind == "skill" else XHelpCard.content(rec, kind)
+			if not _cover("%s.%d" % [kind, id], rec, rows):
+				bad.append("%s.%d" % [kind, id])
+			if kind == "skill" and _texts(XHelpCard.content(rec, "skill", false, 300.0)) != _texts(rows):
+				bad.append("stable.%d" % id)
+		counts[table] = n
+	print("cover counts ", counts)
+	check("cover.all_tables", bad.is_empty() and counts.get("Skills", 0) > 1000 and counts.get("Weapons", 0) > 100 and counts.get("Armors", 0) > 100 and counts.get("Items", 0) > 100, [counts, bad.slice(0, 20)])
 	for r in range(0, 5):
 		s.actor_advance[XLiuying.ACTOR] = r
 		for id in [10622, 10623]:
@@ -135,16 +153,6 @@ func _coverage(s: XState) -> void:
 		XHubris._ledger.clear()
 		gn += 1
 	check("cover.growth_cases", gn > 0, gn)
-	var gear_n := 0
-	for table in ["Weapons", "Armors", "Items"]:
-		var kind: String = {"Weapons": "weapon", "Armors": "armor", "Items": "item"}[table]
-		for id in range(1, 300, 7):
-			var rec := XDB.rec(table, id)
-			if rec.is_empty() or str(rec.get("name", "")) == "":
-				continue
-			gear_n += 1
-			_cover("%s.%d" % [kind, id], rec, XHelpCard.content(rec, kind))
-	check("cover.gear_items", gear_n > 30, gear_n)
 
 
 func _sec(d: Dictionary, tag: String) -> Dictionary:
@@ -226,8 +234,23 @@ func _card_input() -> void:
 	check("fold.y_expand", c.expanded)
 	var r := c.expanded_rect()
 	check("fold.rect_2x_left", is_equal_approx(r.size.x, 784.0) and is_equal_approx(r.end.x, 392.0) and is_equal_approx(r.position.y + c.position.y, XUiSkin.TOP), r)
-	c._input(_key_y())
+	# 页面（_unhandled_input）收不到：展开时的确定键、收回用的 Y
+	var spy := Spy.new()
+	add_child(spy)
+	var acc := InputEventAction.new()
+	acc.action = "ui_accept"
+	acc.pressed = true
+	get_viewport().push_input(acc)
+	await frames(1)
+	check("fold.accept_swallowed", c.expanded and spy.accepts == 0, [c.expanded, spy.accepts])
+	get_viewport().push_input(_key_y())
+	await frames(1)
 	check("fold.y_collapse", not c.expanded)
+	check("fold.y_not_passed", spy.ys == 0, spy.ys)
+	get_viewport().push_input(acc)
+	await frames(1)
+	check("fold.accept_passes_when_collapsed", spy.accepts == 1, spy.accepts)
+	spy.queue_free()
 	var mb := InputEventMouseButton.new()
 	mb.button_index = MOUSE_BUTTON_LEFT
 	mb.pressed = true
@@ -239,6 +262,19 @@ func _card_input() -> void:
 	cancel.pressed = true
 	c._input(cancel)
 	check("fold.cancel_collapse", not c.expanded)
+	# fold 由真切假（技能页切到渡鸦账本）：展开的牌清掉，Y 不再被牌收
+	c.set_expanded(true)
+	c.fold = false
+	c.setup({"sections": [{"title": "", "rows": [{"text": "账本", "color": XUiSkin.TEXT_2}]}]})
+	check("fold_off.clears_expanded", not c.expanded and (c._sheet == null or not c._sheet.visible) and not c.can_expand())
+	c.fold = true
+	c.setup(d)
+	await frames(2)
+	# 战斗详情：只往上下长，宽度不变、右沿不动
+	c.expand_wide = false
+	var rn := c.expanded_rect()
+	check("battle.no_widen", is_equal_approx(rn.size.x, 392.0) and is_equal_approx(rn.position.x, 0.0), rn)
+	c.expand_wide = true
 	# 130% 字：展开后还放不下，能滚到底
 	XFontScale.set_value("global", 130)
 	var lb2 := XDB.rec("Skills", 10623)

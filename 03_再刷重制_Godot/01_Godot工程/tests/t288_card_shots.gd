@@ -238,6 +238,10 @@ func _run() -> void:
 func _battle() -> void:
 	var s := XState.current
 	s.flags["tianqi"] = {"rules": 1}
+	if only == "09big":   # 两个队员都学流萤天火轰击（长卡），列表里往上一格绕到它
+		for m in s.party:
+			s.actor(int(m)).learn_skill(10622)
+		XFontScale.set_value("global", 130)
 	for on in [only != "09old"]:   # 一次只开一场（同一进程连开两场，第二场指令窗收不到键）：--only=09old／--only=09new
 		XHelpCard.SECTIONS = on
 		seed(20261013)
@@ -263,11 +267,26 @@ func _battle() -> void:
 					Input.parse_input_event(e)
 					await _frames(4)
 				await _frames(20)
+			if only == "09big":
+				for down in [true, false]:
+					var e2 := InputEventAction.new()
+					e2.action = "ui_up"
+					e2.pressed = down
+					Input.parse_input_event(e2)
+					await _frames(4)
 			await _frames(30)
 			print("  list_win=", b.list_win != null, " help visible=", b.help_card != null and b.help_card.visible)
 			XSkinBattle.help_open = true
 			await _frames(10)
 			await _shot("09_battle_%s" % ("new" if on else "old"))
+			if on and b.help_card != null and b.help_card.skin_card != null:
+				var sc: XSkinCard = b.help_card.skin_card
+				print("  battle card overflow=", sc.can_expand())
+				if sc.can_expand():
+					await _key_y()
+					await _frames(5)
+					print("  battle Y expanded=", sc.expanded, " help still open=", XSkinBattle.help_open, " rect=", sc.expanded_rect())
+					await _shot("09_battle_new_expanded")
 		b.queue_free()
 		XEnemy.force_roll = -1.0
 		await _frames(5)

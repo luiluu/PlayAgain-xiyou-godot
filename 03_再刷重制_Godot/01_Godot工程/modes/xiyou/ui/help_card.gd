@@ -1682,7 +1682,7 @@ func _apply_sections(w: float) -> void:
 	d["border_color"] = bc
 	var b := _bounds()
 	d["expand_bounds"] = b
-	d["y_pass_on_collapse"] = _in_battle()   # 战斗里 Y：展开 → 再按收起并照旧关掉详情（XSkinBattleList）
+	d["expand_wide"] = not _in_battle()   # 战斗里只往上下长、不加宽，不盖住战技列表和角色（小A核 P2-1）
 	if not visible:
 		skin_card.set_expanded(false)
 	skin_card.setup(d)

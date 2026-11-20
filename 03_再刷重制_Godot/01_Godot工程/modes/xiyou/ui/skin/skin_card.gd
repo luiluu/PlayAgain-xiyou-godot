@@ -39,8 +39,8 @@ var border_color := Color(0, 0, 0, 0)
 var fold := false
 ## 展开后牌的上下沿（画布坐标）
 var expand_bounds := Vector2(XUiSkin.TOP, XUiSkin.BOTTOM)
-## 收起时按 Y 展开要用掉这次按键；展开时按 Y 收起是否放行给页面（战斗里放行：Y 再按一次就照旧收起整张详情）
-var y_pass_on_collapse := false
+## 展开时向左展开成 2 倍宽；false＝宽度不变、只往上下长（战斗详情卡：不盖住战技列表和角色，小A核 P2-1）
+var expand_wide := true
 var expanded := false
 var scroll := 0.0
 const FADE_H := 56.0
@@ -66,7 +66,11 @@ func _init() -> void:
 func setup(d: Dictionary) -> XSkinCard:
 	for k in d:
 		set(k, d[k])
-	if fold:
+	if not fold:   # fold 由真切假（如技能页切到渡鸦账本说明）：展开的牌收掉，Y／取消回到页面（小A核 P2-2）
+		_overflow = false
+		if expanded:
+			set_expanded(false)
+	else:
 		var key := str([title, subtitle, desc, sections])
 		if key != _content_key:   # 换了一张牌：收起、回到顶
 			_content_key = key
@@ -136,7 +140,7 @@ func set_expanded(on: bool) -> void:
 func expanded_rect() -> Rect2:
 	var g := get_global_rect().position if is_inside_tree() else position
 	var vw := get_viewport_rect().size.x if is_inside_tree() else 1280.0
-	var w2 := minf(size.x * 2.0, vw - 32.0)
+	var w2 := minf(size.x * (2.0 if expand_wide else 1.0), vw - 32.0)
 	var x := clampf(g.x + size.x - w2, 16.0, maxf(16.0, vw - 16.0 - w2))
 	return Rect2(Vector2(x, expand_bounds.x) - g, Vector2(w2, maxf(0.0, expand_bounds.y - expand_bounds.x)))
 
@@ -161,16 +165,16 @@ static func _is_y(event: InputEvent) -> bool:
 func _input(event: InputEvent) -> void:
 	if not fold or not is_visible_in_tree() or not (expanded or _overflow):
 		return
-	if _is_y(event):
-		var was := expanded
+	if _is_y(event):   # Y 只管展开／收回这张牌，不放行给页面（战斗里不再顺带关详情，小A核 P2-1）
 		set_expanded(not expanded)
 		XSound.system(0)
-		if not (was and y_pass_on_collapse):
-			get_viewport().set_input_as_handled()
+		get_viewport().set_input_as_handled()
 		return
 	if not expanded:
 		return
-	if event.is_action_pressed("ui_cancel"):
+	if event.is_action_pressed("ui_accept"):   # 展开时确定键不落到下面的列表（防误放技能、误用物品）
+		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("ui_cancel"):
 		set_expanded(false)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_up", true) or event.is_action_pressed("ui_down", true):
