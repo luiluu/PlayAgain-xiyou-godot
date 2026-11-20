@@ -192,6 +192,8 @@ func _run() -> void:
 	_restore()
 	_gojo()
 	_restore()
+	_xuan_auto()
+	_restore()
 	_no_numbers()
 	_restore()
 	_control_regex()
@@ -737,6 +739,73 @@ func _gojo() -> void:
 
 
 # 七、不改数值；我方自动战斗不变
+# P2-3（小A 复核 r2）：队伍带绑定、开自律的璇时，XXuanBattle.start_action 在 execute 前先 targets_for 预检一次；
+# 六维点名登记不能被它清掉（原来清在 targets_for 非 confusable 处）。改到 act 末尾和 _forced_run 开头清。
+func _xuan_auto() -> void:
+	var w := _ids()
+	var lineup := [w[0], w[1], w[2], XXuanBattle.XUAN]
+	var s := XTianqi.start_new_game(3, "lianyu", lineup)  # 炼狱：可带一名超强者（璇）
+	XTianqi.take_pending()
+	for id in lineup:
+		XTianqi._joining = true
+		s.add_actor(int(id))
+		XTianqi._joining = false
+	s.map_id = 4
+	XState.current = s
+	var free_slot := s.battle_slots.find(0)
+	if free_slot >= 0 and not s.battle_slots.has(XXuanBattle.XUAN):
+		s.battle_slots[free_slot] = XXuanBattle.XUAN
+	var xa: XActor = s.actor(XXuanBattle.XUAN)
+	xa.change_level(60)
+	s.actor_advance[XXuanBattle.XUAN] = 3
+	XTusuXuan.sync_marks(s, xa)
+	XXuanChart.set_control(s, xa, "auto")
+	for id in lineup:
+		s.actor(id).add_param(0, 1e9)
+		s.actor(id).refresh_passive()
+		s.actor(id).recover_all()
+	var lg := XBattleLogic.new()
+	lg.setup(2, s)
+	var x = XXuanBattle.xuan()
+	var host = lg.actors.filter(func(b): return b != x)[0] if x != null else null
+	var bound: bool = x != null and XBinding.bind(x, host)
+	_check("xuan_setup", x != null and bound and XXuanBattle.auto_enabled() and XBinding.is_bound(x), [x != null, bound, XXuanBattle.auto_enabled()])
+	var e: XEnemy = lg.enemies[0]
+	_set_enemy(e, _six("C", "C", "C", "A"))  # 战商 A＝4 档：能斩杀的 ×600
+	var free := lg.alive(lg.actors).filter(func(b): return b != x and b != host)
+	var prey: XActor = free[0] if not free.is_empty() else null
+	var count := func(on: bool) -> int:
+		XTianqiEnemyAI.ENABLED = on
+		_seed(lg, "00000000000000f3")
+		var n := 0
+		for i in 60:
+			for b in lg.actors:
+				b.recover_all()
+			prey.hp = 1.0
+			var d := lg.decide(e)
+			var held := is_same(XTianqiEnemyAI._decided_user, e) if on else true
+			for l in lg.act(e, d[0], d[1]):
+				if l is Dictionary and str(l.get("type", "")) == "hit" and is_same(l.get("user"), e) and is_same(l.get("target"), prey):
+					n += 1
+					break
+			if on and not held:
+				n -= 1000
+		XTianqiEnemyAI.ENABLED = true
+		return n
+	_with_actions(e, [_act(DMG_N, 5)], func():
+		var on_hits: int = count.call(true)
+		var off_hits: int = count.call(false)
+		_check("xuan_auto_keeps_weights", prey != null and on_hits > off_hits + 15 and on_hits > 30, [on_hits, off_hits])
+		_check("xuan_cleared_after_act", XTianqiEnemyAI._decided_user == null))
+	# 强制行动开头清登记
+	XTianqiEnemyAI.note_decision(lg, e, [XDB.rec("Skills", DMG_N), null])
+	lg._forced_run(e, XDB.rec("Skills", DMG_N), null, null)
+	_check("forced_run_clears", XTianqiEnemyAI._decided_user == null)
+	for b in lg.actors:
+		b.recover_all()
+	lg.end_battle()
+
+
 func _no_numbers() -> void:
 	var lg := _logic()
 	var e: XEnemy = lg.enemies[0]

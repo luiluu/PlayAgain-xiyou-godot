@@ -844,8 +844,6 @@ func targets_for(a: XBattler, skill: Dictionary, chosen: XBattler = null, confus
 				out.append(_random_target(alive(friends)))
 		XYunshang.set_primary(a, out)
 		return out
-	if not confusable:
-		XTianqiEnemyAI.note_decision(self, null, [])  # 天启篇六维（T277 r1 P3-1）：强制行动等不是 decide 来的这一下，不套六维点名
 	var tusu_list = XTusu.targets(self, a, skill, chosen)  # 屠苏 makeTargets 包装：自己的和鸣、锁定给持武者，金汤滤掉形态中的本体
 	var list := XAlienBattle.filter_targets(a, skill, XYunshang.targets(self, a, skill, (XConfusion.targets(self, a, skill) if confusable and XConfusion.confused(a) else _targets_for(a, skill, chosen)) if tusu_list == null else tusu_list, chosen))  # 云裳云丝展幅、千军入袖收袖 makeTargets 包装在异化之内
 	list = XBinding.filter_targets(self, a, skill, list)  # 绑定 makeTargets 包装：敌方对敌技能滤掉形态中的本体
@@ -1467,6 +1465,7 @@ func act(u: XBattler, skill, target) -> Array:
 	_sync_orders(before, true)
 	resolve_collapses()
 	logs.append_array(XTianqiBrand.after_act(self, u))  # T086-a 发作真换人／自动换回：行动收尾全部跑完、人还活着才和助力位对调
+	XTianqiEnemyAI.note_decision(self, null, [])  # 天启篇六维（T277 P2-3）：这一次行动的六维点名到此为止（不放在 targets_for：璇自律预检会提前清掉）
 	return logs
 
 
@@ -1894,6 +1893,7 @@ func _take_pending_force() -> Array:
 ## 强制行动的一次结算（339，以及脚本里的 BattleManager.forceAction，见 pending_force）
 func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject: XBattler) -> Array:
 	var logs := []
+	XTianqiEnemyAI.note_decision(self, null, [])  # 天启篇六维（T277 P2-3）：强制行动不是 decide 来的，不套六维点名
 	if u == first_subject:
 		_cleared[u] = true
 	var before := _movable_snapshot()
