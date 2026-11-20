@@ -22,6 +22,8 @@ const SEP := 48.0            # 本回合与下回合之间多留的缝（放「�
 const SEP_TEXT := "下回合"
 const ENEMY_DARK := Color("1a1226")
 const ENEMY_LIGHT := Color("4a3566")
+const POLISH_ENEMY_DARK := Color("231729")
+const POLISH_ENEMY_LIGHT := Color("563c68")
 const ENEMY_NAME := Color("d9c8f5")
 
 var step_px := STEP_MAX
@@ -122,18 +124,24 @@ func _draw_smoke_rail() -> void:
 func _draw_sep() -> void:
 	if sep_x < 0.0:
 		return
+	var pol := XUiSkin.polish_on()
 	var f := XUiSkin.font("body")
 	var col_w := 18.0
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(XUiSkin.BG, 0.82)
+	sb.bg_color = Color(XUiSkin.bg_c(), 0.82)
 	sb.set_corner_radius_all(6)
+	if pol:
+		sb.border_color = Color(XUiSkin.POLISH_LINE, 0.28)
+		sb.set_border_width_all(1)
 	sb.draw(sep_node.get_canvas_item(), Rect2(sep_x + 2.0 - col_w / 2.0, LH - 22.0, col_w, 44.0))
-	sep_node.draw_line(Vector2(sep_x - 8.0, LH - 20.0), Vector2(sep_x - 8.0, LH + 20.0), Color(XUiSkin.LINE, 0.5), 1.0)
-	var fs := 12
+	sep_node.draw_line(Vector2(sep_x - 8.0, LH - 20.0), Vector2(sep_x - 8.0, LH + 20.0), Color(XUiSkin.line_c(), 0.5), 1.0)
+	var fs := 13 if pol else 12
+	var y0 := LH - 20.0 + fs - (1.5 if pol else 0.0)
+	var step_y := (fs + 1) if pol else (fs + 2)
 	for i in SEP_TEXT.length():
 		var ch := SEP_TEXT[i]
 		var w := f.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		XUiSkin.ds(sep_node, f, Vector2(sep_x + 2.0 - w / 2.0, LH - 20.0 + fs + i * (fs + 2)), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
+		XUiSkin.ds(sep_node, f, Vector2(sep_x + 2.0 - w / 2.0, y0 + i * step_y), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
 
 
 func _icon(b: XBattler) -> Icon:
@@ -177,8 +185,11 @@ func _paint_icon(node: Icon) -> void:
 		if node.big:
 			node.draw_circle(Vector2.ZERO, r + 7.0, Color(XUiSkin.SEL_FILL, 0.22))
 			node.draw_circle(Vector2.ZERO, r + 3.5, Color(XUiSkin.SEL_FILL, 0.30))
-		node.draw_circle(Vector2.ZERO, r, ENEMY_DARK if enemy else XUiSkin.ORB_LOW)
-		node.draw_circle(Vector2(-0.15, -0.2) * r, r * 0.6, Color(ENEMY_LIGHT if enemy else XUiSkin.ORB_HI, 0.75))
+		var pol := XUiSkin.polish_on()
+		var dark := (POLISH_ENEMY_DARK if pol else ENEMY_DARK) if enemy else XUiSkin.orb_low_c()
+		var light := (POLISH_ENEMY_LIGHT if pol else ENEMY_LIGHT) if enemy else XUiSkin.orb_hi_c()
+		node.draw_circle(Vector2.ZERO, r, dark)
+		node.draw_circle(Vector2(-0.15, -0.2) * r, r * 0.6, Color(light, 0.75))
 	var nm := name_of(node)
 	if nm != "":
 		var f := XUiSkin.font("body")
@@ -252,7 +263,7 @@ class Disk extends Node2D:
 				if icon.face.flip_h:
 					dst = Rect2(dst.position + Vector2(sz.x, 0), Vector2(-sz.x, sz.y))
 				draw_texture_rect_region(tex, dst, reg, Color(1, 1, 1, alpha))
-		var ring := Color(XUiSkin.LINE, 0.6)
+		var ring := Color(XUiSkin.line_c(), 0.6)
 		var w := 1.5
 		if icon.has_meta("preview"):
 			ring = Color(XUiSkin.TEXT, 0.8)

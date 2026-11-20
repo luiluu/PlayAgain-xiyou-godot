@@ -80,7 +80,13 @@ func _draw() -> void:
 	var a1 := deg_to_rad(start_deg + sweep_deg)
 	var col := color_of(kind)
 	var pts := maxi(int(sweep_deg / 3.0), 8)
-	draw_arc(c, r, a0, a1, pts, Color(1, 1, 1, 0.10), thickness, true)
+	var pol := XUiSkin.polish_on()
+	if pol:
+		var rim := Color(XUiSkin.GOLD, 0.28) if kind == "boss" else Color(0.76, 0.70, 0.62, 0.24)
+		draw_arc(c, r, a0, a1, pts, rim, thickness + 2.0, true)
+		draw_arc(c, r, a0, a1, pts, Color(0.032, 0.025, 0.024, 0.76), thickness, true)
+	else:
+		draw_arc(c, r, a0, a1, pts, Color(1, 1, 1, 0.10), thickness, true)
 	if _trail > shown:
 		draw_arc(c, r, a0 + (a1 - a0) * shown, a0 + (a1 - a0) * _trail, pts, Color(1, 1, 1, 0.55), thickness, true)
 	if shown > 0.0:
@@ -89,3 +95,5 @@ func _draw() -> void:
 			draw_arc(c, r, a0, af, pts, Color(col, 0.18), thickness + 14.0, true)
 			draw_arc(c, r, a0, af, pts, Color(col, 0.35), thickness + 6.0, true)
 		draw_arc(c, r, a0, af, pts, col, thickness, true)
+		if pol and thickness >= 4.0:
+			draw_arc(c, r + thickness * 0.22, a0, af, pts, Color(1.0, 0.96, 0.90, 0.24), maxf(1.0, thickness * 0.18), true)
