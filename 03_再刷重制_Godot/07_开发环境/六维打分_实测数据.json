@@ -54,10 +54,10 @@
    "peak_first": 934479.0
   },
   "2": {
-   "peak": 2115116.0,
+   "peak": 3010534.0,
    "skill": 4759,
    "segs": 8,
-   "mhp": 846930.0,
+   "mhp": 423465.0,
    "stat": {
     "mhp": 423465,
     "mmp": 51694,
@@ -97,7 +97,7 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 370254,
+    "taken": 368217,
     "rounds": 5,
     "died": 3,
     "healed": 0,
@@ -1079,10 +1079,10 @@
    "peak_first": 91820.0
   },
   "22": {
-   "peak": 2075346.0,
+   "peak": 3022344.0,
    "skill": 3776,
    "segs": 9,
-   "mhp": 791004.0,
+   "mhp": 395502.0,
    "stat": {
     "mhp": 395502,
     "mmp": 41000,
@@ -1122,7 +1122,7 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 332713,
+    "taken": 330824,
     "rounds": 5,
     "died": 3,
     "healed": 0,

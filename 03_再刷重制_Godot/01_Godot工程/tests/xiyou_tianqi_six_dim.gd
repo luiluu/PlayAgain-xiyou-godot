@@ -8,10 +8,10 @@ var results: Array = []
 
 const SIX := {
 	"knights": {"death": "S SS E B A E", "war": "S C SS D D B", "famine": "A C B SS A E", "plague": "D C D S B SS"},
-	"actors": {180: "S A B SS C E", 107: "A S D A S A", 168: "S B A A C B", 45: "D D S D E E", 174: "D B S A B A",
-		71: "E A B SS A C", 6: "C A D D E E", 31: "E S B C C SS", 60: "B E B E E E", 175: "A S D B B S"},
+	"actors": {180: "S A B SS C E", 107: "A S C A S A", 168: "S A A A C B", 45: "D D S D E E", 174: "D B S A B A",
+		71: "E A B SS A C", 6: "D B C D E E", 31: "E A B C C SS", 60: "C E C E E E", 175: "A S C B B S"},
 }
-const TOTALS := {"death": 24, "war": 24, "famine": 25, "plague": 24, 180: 26, 107: 29, 168: 27, 45: 14, 174: 26, 71: 25, 6: 14, 31: 24, 60: 12, 175: 27}
+const TOTALS := {"death": 24, "war": 24, "famine": 25, "plague": 24, 180: 26, 107: 30, 168: 28, 45: 14, 174: 26, 71: 25, 6: 13, 31: 23, 60: 10, 175: 28}
 const RESIST := {"death": 5, "war": -5, "famine": 5, "plague": 2, 180: 0, 107: 7, 168: 0, 45: -10, 174: 2, 71: 5, 6: -10, 31: 0, 60: -10, 175: 2}
 
 
