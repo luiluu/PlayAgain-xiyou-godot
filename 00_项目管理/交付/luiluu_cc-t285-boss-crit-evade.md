@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-t285-boss-crit-evade
 
 - 车道／工作者：T285＋T290 天启篇首领暴击闪避按 D237 丙＋降暴闪三处文案对齐（cc，Opus＋medium）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -75,7 +75,7 @@
 
 - 专项 `xiyou_tianqi_enemy_cev` 62/62；本机另跑 `xiyou_tianqi_balance` 88/88、`xiyou_tianqi_affix_battle` 86/86、`xiyou_toji` 75/75、`xiyou_toji_battle` 1327/1327、`xiyou_tianqi_horsemen` 96/96、`xiyou_tianqi_horsemen_battle` 142/142、`xiyou_tianqi_qiyin_altar` 172/172（死亡骑士免暴、七印魔塔无暴击不变）。
 - `天启篇数据校验.py` 退出码 0；`语法检查.py` 过；`工具回归.py` 全过。
-- 选测（`选测.py main --list` 474 个场景，含 `xiyou_determinism`、`xiyou_rules*`、`xiyou_tianqi_horsemen*`、`xiyou_tianqi_qiyin_altar`、`xiyou_toji*`、`xiyou_tianqi_affix_battle`）：云端（待写）
+- 选测（`选测.py main --list` 474 个场景，含 `xiyou_determinism`、`xiyou_rules*`、`xiyou_tianqi_horsemen*`、`xiyou_tianqi_qiyin_altar`、`xiyou_toji*`、`xiyou_tianqi_affix_battle`）：云端选测 f4c40c75e 474 个场景 16 片全过（GitHub Actions run 44706464100）；本机未跑全量。
 - 合并时请带 `--oracle`（改了 `battle_logic.item_cri`、`XEnemy.xparam`；西游路径代码上不变，专项核了开关前后一样）。
 - 待交叉核查重点文件：`battle/battle_logic.gd`、`core/enemy.gd`（甲档战斗核心）。
 
