@@ -95,8 +95,9 @@ func _draw() -> void:
 			break
 		var cur := i == index
 		if pol:
-			var pad_x := 8.0
-			var tr := Rect2(maxf(0.0, x - pad_x), 2.0, w + pad_x * 2.0, size.y - 5.0)
+			# 两侧留白对称：首尾页签贴着控件边时左右一起收窄，不画出控件
+			var pad_x := clampf(minf(x, size.x - x - w), 0.0, 8.0)
+			var tr := Rect2(x - pad_x, 2.0, w + pad_x * 2.0, size.y - 5.0)
 			var tsb := StyleBoxFlat.new()
 			tsb.bg_color = Color(XUiSkin.GOLD, 0.10) if cur else Color(0.05, 0.042, 0.04, 0.28)
 			tsb.set_corner_radius_all(5)

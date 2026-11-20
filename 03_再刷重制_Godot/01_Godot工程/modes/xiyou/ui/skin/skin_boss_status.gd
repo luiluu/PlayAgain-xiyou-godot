@@ -247,6 +247,9 @@ func _attr_line(c: XMVCanvas, x: float, y: float, width: float, height: float) -
 		total += f.get_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 	var min_fs := 11 if XUiSkin.polish_on() else 9
 	var fs := 14 if total <= width else maxi(int(roundf(14.0 * width / total)), min_fs)
+	if fs <= min_fs and min_fs > 9 and total * fs / 14.0 > width:
+		# 属性很多时 11 号也放不下，继续回落到 9 号，免得压到右边的关闭×
+		fs = maxi(int(floorf(14.0 * width / total)), 9)
 	for p in parts:
 		var pw := f.get_string_size(p[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		_txt(c, f, p[0], x, y, pw + 1.0, "left", p[1], fs, height)

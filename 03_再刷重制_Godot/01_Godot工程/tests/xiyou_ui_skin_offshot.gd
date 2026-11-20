@@ -7,6 +7,9 @@ extends Node
 ## tq_off 背包里另放七印装备和号卷（ui-skin-3a 加，#82）。七印祭坛关着时照旧是地图上的对话框选单（同一句 ask），不在这里拍，专项 xiyou_ui_skin_3a 验。两种情形：
 ##   xiyou      西游存档、开关全默认（重制版玩家现在的样子）；
 ##   tq_off     天启篇存档、XUiSkin.ENABLED = false（新皮肤关掉回退）。main 上没有 XUiSkin，两种都是旧界面。
+##   tq_on      天启篇存档、新皮肤开、XUiSkin.POLISH_V1 = false（T321 加：美化总开关关态守护）。它与 main 不同（新皮肤开着），
+##              要对「美化前、新皮肤已开」的提交比：皮肤关闭对照.py --base 525969a7a（T309 合并前）；对 main 比这一档必然 DIFF，不看。
+##              钉住 XUiSkin._clock_ms；环心小人（XSkinMainMenu 的 SvSprite）与战斗者（XBattlerSprite）藏起来（动画帧／呼吸与载入快慢有关）；不拍战斗。
 ## 去掉不确定因素：菜单粒子隐藏、MV 光标不闪烁、每页等固定帧数。
 ##   拍：godot --path <工程> res://tests/xiyou_ui_skin_offshot.tscn -- --out=<目录>
 ##   比：godot --headless --path <工程> res://tests/xiyou_ui_skin_offshot.tscn -- --compare=<目录甲>,<目录乙>
@@ -44,7 +47,17 @@ func _run() -> void:
 	XState.current = s
 	var shots := 0
 	var built := 0
-	for scenario in ["xiyou", "tq_off"]:
+	for scenario in ["xiyou", "tq_on", "tq_off"]:
+		if scenario == "tq_on":
+			s.flags["tianqi"] = {"rules": 1}
+			if ResourceLoader.exists(SKIN):
+				var sk_on: Script = load(SKIN)
+				sk_on.set("ENABLED", true)
+				if _has_static(sk_on, "POLISH_V1"):   # 美化前的基线提交没有这个开关（新皮肤开着就是它的样子）
+					sk_on.set("POLISH_V1", false)
+				if _has_static(sk_on, "_clock_ms"):
+					sk_on.set("_clock_ms", 0)
+				print("tq_on ENABLED=", sk_on.get("ENABLED"), " POLISH_V1=", sk_on.get("POLISH_V1"))
 		if scenario == "tq_off":
 			s.flags["tianqi"] = {"rules": 1}
 			if ResourceLoader.exists(SKIN):
@@ -190,6 +203,10 @@ func _tianqi_goods(s: XState) -> void:
 		s.gain_item(int(sc.item), 1)
 
 
+func _has_static(sk: Script, prop: String) -> bool:
+	return sk.get(prop) != null   # 静态变量读不到（基线提交没有它）就是 null
+
+
 func _make(cls: String) -> Node:
 	for g in ProjectSettings.get_global_class_list():
 		if g["class"] == cls:
@@ -199,6 +216,13 @@ func _make(cls: String) -> Node:
 
 ## 粒子藏起来、光标不闪
 func _freeze(n: Node) -> void:
+	if n.name == "SvSprite" or n is XBattlerSprite:   # 环心小人、战斗者：动画帧与载入快慢有关（tq_on 守护用；其它档同样藏，两边一致）
+		(n as CanvasItem).visible = false
+	if "_spin" in n:   # 环导航的呼吸／旋转按真实帧间隔累计（tq_on 新皮肤开着才有）：相位归零并停掉，两次拍才对得上
+		n.set("_spin", 0.0)
+		n.set_process(false)
+		if n is CanvasItem:
+			(n as CanvasItem).queue_redraw()
 	if n is CPUParticles2D or n is GPUParticles2D:
 		(n as CanvasItem).visible = false
 	if n is XMVCanvas:
