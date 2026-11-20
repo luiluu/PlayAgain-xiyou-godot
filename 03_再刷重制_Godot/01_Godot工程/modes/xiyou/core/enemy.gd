@@ -285,7 +285,7 @@ func warehouse_rate() -> float:
 	return 1.0
 
 func xparam(i: int) -> float:
-	if i >= 1 and i <= 4 and XTianqiCombat.cap_on():  # T285（D237 丙）：天启篇底子封顶、我方减益不再 ×2、不低于 0
+	if i >= 1 and i <= 4 and XTianqiCombat.cap_on() and XTianqiCombat.xparam_cap_pct(self, i) >= 0:  # T285（D237 丙）：天启篇这一项有上限时：去仓库 ×2、底子封顶、不低于 0；上限 -1 的项照原路（r2 P1-1）
 		return XTianqiCombat.enemy_xparam(self, i)
 	return XTianqiAffixBattle.enemy_xparam(self, i, super.xparam(i) * warehouse_rate())  # 天启篇词条「压制」
 

@@ -10,6 +10,12 @@ extends Node
 ##     SUPPRESS_CEV 关＝压制不减暴击闪避；TIANQI_CEV_HALF 关＝甚尔整份 ×0.34。
 ## 七、西游档：开关开着关着 XEnemy.xparam 与暴击计算一样。
 ## 八、T290：紫金法咒 188 天启篇 3 回合、回合末解除（auto 2）。
+## r2（小A 核 r1）：
+## 九、存档照开局置 DCultyL1～8（天启篇＝本档借的原版难度，现为 3），仓库倍率真为 2：底子、减益都不 ×2（P1-2、P1-3）；
+##     8／10／15 层守层者原底子 5／10／15% 照原值，16 层艰险 20%；8～19 层寻常、证道都等于 min(原底子, 上限)。
+## 十、eva／cri／mev 上限 -1 时零影响（P1-1）：1 层守层者负闪避照旧 ×2（−40%），20／34 层挂紫金法咒时闪避、魔法闪避开关前后一样。
+## 十一、守层者残血变身（30 层玉皇大帝 → 538）在非楼层地图仍按 30 层段（P2-3）。
+## 十二、封顶关、减法开：攻击方暴击 ≤0 时不因负暴击闪避倒推（P3-1）。
 
 var results: Array = []
 
@@ -41,6 +47,9 @@ func _run() -> void:
 	_switches()
 	_xiyou()
 	_state188()
+	_low_floors()
+	_zero_impact()
+	_transform()
 	XTianqiCombat.ENEMY_XPARAM_CAP = was[0]
 	XTianqiCombat.SUBTRACTIVE_CEV = was[1]
 	XTianqiAffixBattle.SUPPRESS_CEV = was[2]
@@ -66,6 +75,10 @@ func _state(tianqi := true, diff := "xunchang") -> XState:
 			XTianqi._joining = false
 	else:
 		s = XState.new_game(3, 1, [8, 9, 10])
+	# 开局事件置的难度怪物属性（Map001 EV1 与选难度分支，XTianqi.opening_commands）：take_pending 丢了指令，这里照写（r2 P1-3）
+	var legacy := XTianqi.legacy_of(diff) if tianqi else 3
+	for i in range(1, 9):
+		s.flags["DCultyL%d" % i] = i == legacy
 	s.map_id = 4
 	XState.current = s
 	return s
@@ -124,14 +137,15 @@ func _floors() -> void:
 		_check("f%d.found" % f, e != null)
 		if e == null:
 			continue
-		var raw: float = float(e.xparam_parts(3)[0]) * e.warehouse_rate()
+		_check("f%d.warehouse2" % f, e.warehouse_rate() == 2.0, e.warehouse_rate())
+		var raw: float = float(e.xparam_parts(3)[0])  # 数据库原底子（不含 ×2）
 		var raws := []
 		for i in [1, 2, 4]:
-			raws.append(float(e.xparam_parts(i)[0]) * e.warehouse_rate())
-		print("T285 f%d raw_cev=%s cev=%s eva=%s cri=%s mev=%s raw_eva_cri_mev=%s" % [f, raw, e.cev, e.eva, e.cri, e.mev, raws])
+			raws.append(float(e.xparam_parts(i)[0]) * e.warehouse_rate())  # eva／cri／mev 照原路，含 ×2
+		print("T285 f%d raw_cev=%s cev=%s eva=%s cri=%s mev=%s eva_cri_mev_x2=%s" % [f, raw, e.cev, e.eva, e.cri, e.mev, raws])
 		_check("f%d.raw_above_cap" % f, raw >= float(want[f]), raw)
 		_check("f%d.cev" % f, _near(e.cev, want[f]), e.cev)
-		# eva／cri／mev 表里先 -1（不封顶，待 Kyo 定）：等于底子×仓库倍率（无减益时）
+		# eva／cri／mev 表里先 -1（不封顶，待 Kyo 定）：照原路＝底子×仓库倍率（无减益时）
 		_check("f%d.no_cap_eva_cri_mev" % f, _near(e.eva, raws[0]) and _near(e.cri, raws[1]) and _near(e.mev, raws[2]), [e.eva, e.cri, e.mev, raws])
 		_check("f%d.crit100" % f, _near(XTianqiCombat.crit_after_cev(1.0, null, sk, e), 1.0 - float(want[f])))
 		_check("f%d.crit130" % f, _near(minf(XTianqiCombat.crit_after_cev(1.3, null, sk, e), 1.0), minf(1.3 - float(want[f]), 1.0) if f != 34 else 0.9))
@@ -226,9 +240,9 @@ func _switches() -> void:
 	XTianqiCombat.SUBTRACTIVE_CEV = true
 	_add(e, 1596)
 	XTianqiCombat.ENEMY_XPARAM_CAP = false
-	var old: float = (float(e.xparam_parts(3)[0]) + float(e.xparam_parts(3)[1])) * e.warehouse_rate()
-	_check("cap_off.old_formula", _near(e.cev, old), [e.cev, old])
-	_check("cap_off.debuff_x2", e.warehouse_rate() == 1.0 or not _near(e.cev, float(e.xparam_parts(3)[0]) * e.warehouse_rate() - 0.1))
+	_check("cap_off.warehouse2", e.warehouse_rate() == 2.0, e.warehouse_rate())
+	var base: float = e.xparam_parts(3)[0]
+	_check("cap_off.debuff_x2", _near(e.cev, (base - 0.1) * 2.0), [e.cev, base])  # 回退：底子、减益一起 ×2
 	XTianqiCombat.ENEMY_XPARAM_CAP = true
 	_check("cap_on.debuff_x1", _near(e.cev, 0.30), e.cev)
 
@@ -247,6 +261,7 @@ func _xiyou() -> void:
 	var off := [e.xparam(1), e.xparam(2), e.xparam(3), e.xparam(4), XTianqiCombat.crit_after_cev(1.0, null, sk, e)]
 	XTianqiCombat.ENEMY_XPARAM_CAP = true
 	XTianqiCombat.SUBTRACTIVE_CEV = true
+	_check("xiyou.warehouse2", e.warehouse_rate() == 2.0, e.warehouse_rate())
 	_check("xiyou.same", on == off, [on, off])
 	_check("xiyou.mult", _near(float(on[4]), maxf(1.0, 0.0) * (1.0 - e.cev)))
 
@@ -258,3 +273,72 @@ func _state188() -> void:
 	print("T285 state188 ", [tq.get("minTurns"), tq.get("autoRemovalTiming")])
 	_check("s188.turns", int(tq.get("minTurns", 0)) == 3 and int(tq.get("maxTurns", 0)) == 3, [tq.get("minTurns"), tq.get("maxTurns")])
 	_check("s188.auto", int(tq.get("autoRemovalTiming", 0)) == 2, tq.get("autoRemovalTiming"))
+
+
+## r2 P1-2：8～19 层守层者底子不 ×2，等于 min(原底子, 上限)；打印给交付单列表
+func _low_floors() -> void:
+	var cap24 := {"xunchang": 0.20, "jianxian": 0.25, "jiusi": 0.30, "lianyu": 0.35, "zhengdao": 0.40}
+	for f in range(8, 20):
+		for diff in ["xunchang", "zhengdao"]:
+			var e: XEnemy = _guardian(f, true, diff)[1]
+			if e == null:
+				_check("low.f%d.%s.found" % [f, diff], false)
+				continue
+			var raw: float = e.xparam_parts(3)[0]
+			var want := minf(raw, float(cap24[diff]))
+			if diff == "xunchang":
+				print("T285 low f%d enemy=%d raw_cev=%s cev=%s" % [f, e.enemy_id, raw, e.cev])
+			_check("low.f%d.%s" % [f, diff], _near(e.cev, want), [e.cev, raw, want])
+	var spot := {8: 0.05, 10: 0.10, 15: 0.15}
+	for f in spot:
+		var e: XEnemy = _guardian(f)[1]
+		_check("low.f%d.raw" % f, e != null and e.warehouse_rate() == 2.0 and _near(e.cev, spot[f]), e.cev if e != null else null)
+	var e16: XEnemy = _guardian(16, true, "jianxian")[1]
+	_check("low.f16.jianxian", e16 != null and _near(e16.cev, 0.20), e16.cev if e16 != null else null)
+
+
+## r2 P1-1：上限 -1 的项（eva／cri／mev）零影响
+func _zero_impact() -> void:
+	var e: XEnemy = _guardian(1)[1]
+	_check("zero.f1.found", e != null)
+	if e != null:
+		var on := e.eva
+		XTianqiCombat.ENEMY_XPARAM_CAP = false
+		var off := e.eva
+		XTianqiCombat.ENEMY_XPARAM_CAP = true
+		print("T285 f1 eva on=%s off=%s" % [on, off])
+		_check("zero.f1.eva_neg", on == off and on < 0.0 and _near(on, float(e.xparam_parts(1)[0]) * 2.0), [on, off])
+	for f in [20, 34]:
+		var g: XEnemy = _guardian(f)[1]
+		if g == null:
+			_check("zero.f%d.found" % f, false)
+			continue
+		_add(g, 188)
+		var on2 := [g.xparam(1), g.xparam(2), g.xparam(4)]
+		XTianqiCombat.ENEMY_XPARAM_CAP = false
+		var off2 := [g.xparam(1), g.xparam(2), g.xparam(4)]
+		XTianqiCombat.ENEMY_XPARAM_CAP = true
+		_check("zero.f%d.zijin_eva_mev" % f, on2 == off2, [on2, off2])
+		_check("zero.f%d.zijin_x2" % f, _near(float(on2[0]), (float(g.xparam_parts(1)[0]) - 0.1) * 2.0), on2)
+
+
+## r2 P2-3：守层者残血变身后在非楼层地图仍按原层段；P3-1 负暴击不倒推
+func _transform() -> void:
+	var r := _guardian(30)
+	var e: XEnemy = r[1]
+	_check("tf.map_not_floor", XDungeon.map_floor(XState.current.map_id) == 0, XState.current.map_id)
+	if e == null:
+		_check("tf.found", false)
+		return
+	r[0].enemy_transform(r[0].enemies.find(e), 538)
+	_check("tf.id", e.enemy_id == 538, e.enemy_id)
+	_check("tf.raw_above", float(e.xparam_parts(3)[0]) >= 0.30, e.xparam_parts(3))
+	_check("tf.keep_30", _near(e.cev, 0.30), e.cev)
+	e.remove_meta(XTianqiCombat.META_KEEP_FLOOR)
+	_check("tf.without_keep_20", _near(e.cev, 0.20), e.cev)  # 反证：不记层就掉回第一档
+	var sk := _crit_skill()
+	var g: XEnemy = _guardian(1)[1]
+	_add(g, 268)
+	XTianqiCombat.ENEMY_XPARAM_CAP = false
+	_check("p31.neg_rate", _near(XTianqiCombat.crit_after_cev(-0.2, null, sk, g), 0.0), g.cev)
+	XTianqiCombat.ENEMY_XPARAM_CAP = true

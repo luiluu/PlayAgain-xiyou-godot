@@ -1772,6 +1772,7 @@ func enemy_transform(index: int, enemy_id: int) -> Array:
 	var before := _enemy_reading(e)
 	var old_name := e.original_name()
 	e.boss_difficulty_boss = XEnemy.boss_id(enemy_id)
+	XTianqiCombat.keep_floor(e)  # T285 r2（P2-3）：守层者残血变身后暴击闪避仍按原层段（非楼层地图进战也不掉回第一档）
 	e.enemy_id = enemy_id
 	if e.original_name() != old_name:
 		e.letter = ""
