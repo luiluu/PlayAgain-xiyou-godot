@@ -8,6 +8,7 @@ extends XSkinTemplatePage
 ##   - 中块要列表就 set_items（模板页那一套）；要自画就 center_draw = func(ctrl: Control)，再 show_center_list(false)；
 ##   - 左块不要名单（技能遗忘）：show_roster = false（_ready 前设），left_draw = func(ctrl: Control) 自画；
 ##   - 右牌底「展开 ▾」条：strip_text 非空就显示，整条可点，Y 键同样切换，发 strip_toggled(open)；
+##   - 中间列表要面包屑（进阶 › 选天衣）：set_crumb(["进阶", "选天衣"])，列表整体下移一行；set_crumb([]) 收起；
 ##   - 统一确认弹窗：ask({title, body, buttons, danger, index}) → XSkinConfirm（chosen／index_changed／cancelled 由页面接），close_dialog() 收掉；
 ##   - 按键：页面在自己的 _unhandled_input 里先调 input(event)，返回 true 就算用掉（Y 键、弹窗开着时的全部按键）。
 ## 画像素小人、战斗图的静态函数（walker_tex／draw_walker／draw_battler）把载入的纹理留在 _tex_keep 里，免得画完就被释放成白块（T304 卡 M 踩过）。
@@ -37,6 +38,7 @@ var strip: Control
 var strip_text := ""
 var strip_open := false
 var dialog: XSkinConfirm
+var crumb: XSkinCrumb
 var _syncing_roster := false
 
 
@@ -93,6 +95,9 @@ func _ready() -> void:
 			strip.accept_event()
 			toggle_strip())
 	card.add_child(strip)
+	crumb = XSkinCrumb.new()
+	crumb.visible = false
+	list_panel.add_child(crumb)
 	relayout()
 	set_focus(focus)
 
@@ -108,13 +113,40 @@ func relayout() -> void:
 	roster.size = Vector2(lb.x - roster.position.x - 8.0, n * roster.row_height)
 	center_view.position = Vector2.ZERO
 	center_view.size = layout.center.size
+	if crumb.visible:   # 面包屑在列表标题下一行，列表整体下移（同 XSkinMenuTreePage._place_crumb）
+		var cs := layout.center.size
+		crumb.position = Vector2(XUiSkin.PAD + 8, LIST_TOP - 6.0)
+		crumb.size = Vector2(cs.x - XUiSkin.PAD * 2 - 8, XSkinCrumb.H)
+		var shift := XSkinCrumb.H + 4.0
+		list.position.y = LIST_TOP + shift
+		list.size.y = floorf((cs.y - LIST_TOP - shift - FOOTER_H) / float(row_height)) * row_height
 	_place_targets()
+
+
+func set_crumb(parts: Array) -> void:
+	var on := not parts.is_empty()
+	if on == crumb.visible and parts == crumb.parts:
+		return
+	crumb.visible = on
+	crumb.set_parts(parts)
+	relayout()
 
 
 func set_focus(f: String) -> void:
 	super(f)
 	if roster != null:
 		roster.active = f == "roster"
+		_mark_current()
+
+
+## 名单不是焦点时（焦点在中间列表、右牌）选中条不画：这一行的名字改旧金，看得出说的是谁
+func _mark_current() -> void:
+	for i in roster.items.size():
+		var it: Dictionary = roster.items[i]
+		if not it.has("_base_color"):
+			it["_base_color"] = it.get("color", XUiSkin.TEXT)
+		it["color"] = XUiSkin.GOLD if i == roster.index and not roster.active else it["_base_color"]
+	roster.queue_redraw()
 
 
 # ---- 名单 ----
@@ -134,6 +166,7 @@ func set_roster(rows: Array, index: int) -> void:
 	if not rows.is_empty() and roster.index != index:
 		roster.select(clampi(index, 0, rows.size() - 1), false)
 	_syncing_roster = false
+	_mark_current()
 	roster_panel.queue_redraw()
 
 

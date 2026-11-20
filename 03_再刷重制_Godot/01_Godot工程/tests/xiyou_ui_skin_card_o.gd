@@ -347,8 +347,10 @@ static func ints(a) -> Array:
 	return Array(a).map(func(v): return int(v))
 
 
-func _advance_gojo() -> void:
-	const GOJO := 180
+const GOJO := 180
+
+
+func _gojo_state() -> XState:
 	var w := XTianqiSkills.ids(XTier.WEAK, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not XActorModules.IDS.has(id))
 	var lineup := [w[0], w[1], w[2]]
 	var s := XTianqi.start_new_game(3, "lianyu", lineup)
@@ -364,6 +366,25 @@ func _advance_gojo() -> void:
 		s.party.append(GOJO)
 	a.change_level(25)
 	s.gold = 120000
+	return s
+
+
+## 130%：五条悟学四招（两列），小人和法阵上收，学会的四招都画得下
+func _gojo_font130() -> void:
+	var s := _gojo_state()
+	var page := XActorAdvancedScene.new()
+	add_child(page)
+	await frames()
+	page._select(page.members.find(s.actor(GOJO)))
+	await frames()
+	await shots("adv_gojo_font130")
+	page.queue_free()
+	await frames()
+
+
+func _advance_gojo() -> void:
+	var s := _gojo_state()
+	var a: XActor = s.actor(GOJO)
 	if not check("gojo_skin_on", XUiSkin.on(), XState.current.flags.get("tianqi")):
 		return
 	var page := XActorAdvancedScene.new()
@@ -436,14 +457,15 @@ func _advance_yunshang() -> void:
 		await frames()
 		if skin_on:
 			var ct := card_texts(page.skin_card())
-			check("yun_req_robes", ct.has("✓ 天衣") and ct.has("4 / 3") and ct.has("背包天衣×3（确认时选择）") and ct.has("已装备的天衣须先卸下"), ct)
+			var shard := str(XDB.rec("Items", XYunshangOrders.SHARD).get("name", ""))
+			check("yun_req_robes", ct.has("✓ 天衣") and ct.has("4 / 3") and ct.has("✓ " + shard) and ct.has("60 / 50") and ct.has("Lv 35 / 35") and ct.has("背包天衣×3（确认时选择）") and ct.has("已装备的天衣须先卸下"), ct)
 		page.ok()
 		page.ok()
 		await frames()
 		check("yun_pick_mode_%s" % skin_on, page.mode == "yun")
 		if skin_on:
 			check("yun_center_list", page.yun_win == null and page.skin.list.visible and page.skin.list.items.size() == 4 and page.skin.list_title == "选择进阶所需天衣 0/3"
-				and page._yun_crumb.visible and page._yun_crumb.parts == ["进阶", "选天衣"], [page.skin.list.items.size(), page.skin.list_title])
+				and page.skin.crumb.visible and page.skin.crumb.parts == ["进阶", "选天衣"] and page.skin.list.position.y > XSkinTemplatePage.LIST_TOP, [page.skin.list.items.size(), page.skin.list_title])
 			var labels: Array = page.skin.list.items.map(func(x): return x.text)
 			check("yun_labels_same", labels == page.yun_rows.slice(1).map(func(r): return r.text), labels)
 			await shots("adv_yun_pick")
@@ -480,7 +502,7 @@ func _advance_yunshang() -> void:
 	act(p2, "ui_accept")
 	act(p2, "ui_cancel")
 	await frames()
-	check("yun_cancel", p2.mode == "list" and p2.yun_selection == null and p2._yun_chosen.is_empty() and not p2.skin.list.visible)
+	check("yun_cancel", p2.mode == "list" and p2.yun_selection == null and p2._yun_chosen.is_empty() and not p2.skin.list.visible and not p2.skin.crumb.visible)
 	p2.queue_free()
 	await frames()
 
@@ -507,10 +529,10 @@ func _training() -> void:
 		var e: Dictionary = listed[i]
 		var lv := XTraining.level(s, a.actor_id, int(e.id))
 		var ln := str(lines[i])
-		row_ok = row_ok and ln.begins_with(str(it.text)) and ln.contains("%d/%d" % [lv, int(e.max)]) and str(it.right2) == "第 %d 级" % lv
-		if lv < int(e.max) and not str(it.right).begins_with("本层"):
-			row_ok = row_ok and ln.contains(str(it.right))
-	check("tr_rows_from_lines", row_ok, [sk.list.items.map(func(x): return [x.text, x.right2, x.get("right", "")]), lines])
+		row_ok = row_ok and ln.begins_with(str(it.text)) and ln.contains("%d/%d" % [lv, int(e.max)]) and str(it.right) == "第 %d 级" % lv
+		if lv < int(e.max) and not str(it.right2).begins_with("本层"):
+			row_ok = row_ok and ln.contains(str(it.right2))
+	check("tr_rows_from_lines", row_ok, [sk.list.items.map(func(x): return [x.text, x.right, x.get("right2", "")]), lines])
 	check("tr_eight_folded", not any_has(card_texts(page.skin_card()), "八项能力"))
 	await shots("tr_roster")
 	# 目录确定直接进列表（没有底部「修炼」窗）
@@ -553,16 +575,16 @@ func _training() -> void:
 	s.set_variable(20, 1)
 	page._refresh()
 	await frames()
-	check("tr_not_open_row", str(sk.list.items[2].right) == "本层开到 0 级" and sk.list.items[2].right_color == XUiSkin.DOWN, sk.list.items[2])
+	check("tr_not_open_row", str(sk.list.items[2].right2) == "本层开到 0 级" and sk.list.items[2].right2_color == XUiSkin.DOWN, sk.list.items[2])
 	s.set_variable(20, 99)
 	# 修满了：变灰写「修满了」
-	for k in 20:
-		XTraining.confirm(s, a.actor_id, int(listed[0].id))
+	s.gold = 99999999
+	XTianqiMoney.money(s).training[str(int(listed[0].id))] = int(listed[0].max)   # 第 10 级要 1.2 亿，钱上限给不起：直接写满级
 	page._refresh()
 	await frames()
 	var it0: Dictionary = sk.list.items[0]
 	var full0 := XTraining.level(s, a.actor_id, int(listed[0].id)) >= int(listed[0].max)
-	check("tr_full_row", not full0 or (str(it0.right) == "修满了" and bool(it0.get("disabled", false))), it0)
+	check("tr_full_row", full0 and (str(it0.right2) == "修满了" and bool(it0.get("disabled", false))), it0)
 	if full0:
 		page.skin_row = 0
 		page._refresh()
@@ -589,8 +611,8 @@ func _training() -> void:
 	var ok2 := p2.skin.list.items.size() == lines2.size()
 	for i in lines2.size():
 		var it: Dictionary = p2.skin.list.items[i]
-		ok2 = ok2 and str(lines2[i]).begins_with(str(it.text)) and (str(it.get("right", "")) == "修满了" or str(lines2[i]).contains(str(it.right)))
-	check("tr_classic_rows", ok2, [p2.skin.list.items.map(func(x): return [x.text, x.get("right", "")]), lines2])
+		ok2 = ok2 and str(lines2[i]).begins_with(str(it.text)) and (str(it.get("right2", "")) == "修满了" or str(lines2[i]).contains(str(it.right2)))
+	check("tr_classic_rows", ok2, [p2.skin.list.items.map(func(x): return [x.text, x.get("right2", "")]), lines2])
 	var pv2 := XTrainingScene.preview(s2, a2, XTraining.listed()[0])
 	var e0: Dictionary = XTraining.listed()[0]
 	s2.training[str(a2.actor_id)] = {str(int(e0.id)): 1}   # 西游表首项一级 5 亿，钱给不起：直接写等级核预览
@@ -673,6 +695,7 @@ func _font_and_old() -> void:
 	add_child(page)
 	await frames()
 	await shots("adv_font130")
+	await _gojo_font130()
 	page.queue_free()
 	var t := XTrainingScene.new()
 	add_child(t)

@@ -387,7 +387,7 @@ func _skin_build() -> void:
 	skin = XSkinRosterPage.new()
 	skin.title = T_TITLE
 	add_child(skin)
-	skin.list.right2_w = 96.0
+	skin.list.right2_w = 128.0
 	skin.roster_changed.connect(func(i):
 		if mode == "list":   # 列表上点名单＝回目录换人
 			skin_row = maxi(row, 0)
@@ -434,22 +434,22 @@ func skin_item() -> int:
 	return row if mode == "list" and row >= 0 else skin_row
 
 
-## 一行修炼项（测试按 T254 3.11 对应表核：数与 XTraining.line 同一份）：{text, sub 每级 +N, right2 第 N 级, right 下一级费用／修满了}
+## 一行修炼项（测试按 T254 3.11 对应表核：数与 XTraining.line 同一份）：{text, sub 每级 +N, right 第 N 级, right2 行尾下一级费用／修满了}
 static func skin_row_of(s: XState, actor_id: int, e: Dictionary) -> Dictionary:
 	var lv := XTraining.level(s, actor_id, int(e.id))
 	var mx := int(e.max)
-	var it := {"text": str(e.name), "sub": T_PER % per_level(s, e), "right2": T_LV % lv, "right2_color": XUiSkin.TEXT_2}
+	var it := {"text": str(e.name), "sub": T_PER % per_level(s, e), "right": T_LV % lv, "right_color": XUiSkin.TEXT_2}
 	if lv >= mx:
-		it.right = T_FULL
+		it.right2 = T_FULL
 		it.disabled = true
 		return it
 	var cost := next_cost(s, actor_id, e)
 	if cost < 0:   # 天启篇：本层没开到下一级
-		it.right = "本层开到 %d 级" % XTianqiMoney.training_open(s)
-		it.right_color = XUiSkin.DOWN
+		it.right2 = "本层开到 %d 级" % XTianqiMoney.training_open(s)
+		it.right2_color = XUiSkin.DOWN
 		return it
-	it.right = XTraining._wan(cost) + "万"
-	it.right_color = XUiSkin.GOLD_LIGHT if s.gold >= cost else XUiSkin.DOWN
+	it.right2 = XTraining._wan(cost) + "万"
+	it.right2_color = XUiSkin.GOLD_LIGHT if s.gold >= cost else XUiSkin.DOWN
 	return it
 
 
