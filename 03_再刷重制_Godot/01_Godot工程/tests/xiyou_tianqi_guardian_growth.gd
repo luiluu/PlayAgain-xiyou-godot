@@ -105,7 +105,7 @@ func _cards() -> void:
 	var names := []
 	for id in XGuardianRework.GROWTH_SKILLS:
 		names.append(str(XDB.rec("Skills", id).get("name", "")))
-	_check("cards.names_on", names == ["伤痕淬体", "裂隙共鸣", "终焉蓄势"], names)
+	_check("cards.names_on", names == ["伤痕淬体", "裂隙共鸣", "灾厄淬炼"], names)
 	_check("cards.heal_on", is_equal_approx(_heal(6104), 0.10) and is_equal_approx(_heal(6106), 0.12) and is_equal_approx(_heal(6056), 0.12), [_heal(6104), _heal(6106), _heal(6056)])
 	_check("cards.desc_on", str(XDB.rec("Skills", 6106).get("note", "")).contains("每层 +12%，最多 3 层") and not str(XDB.rec("Skills", 6106).get("note", "")).contains("30%+"))
 	XGuardianRework.GROWTH_NERF = false
