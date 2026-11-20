@@ -1,0 +1,176 @@
+{
+	"_note": "天启篇心魔特点（T316 设计 v0.3，Kyo 11-20「245按推荐」；本表 T318 建）：按 XZhenqi.battle.trial.target（1～6）每场挂一条。params 全整数（附则 E）；ranges 是稿第四节的标定允许范围（数组项写单个整数＝各档 ±该值）；desc 战前提示一句话，open 开战播报，texts 触发播报。已实装的见 XTianqiXinmoTraits.DONE（a1：沾尘、透骨、逆流；盗形、影劫、同堕待 T316-a2）。",
+	"traits": {
+		"1": {
+			"key": "zhanchen",
+			"name": "沾尘",
+			"desc": "心魔命中后有机会令目标染上弱化；身上减益达到 2 项时，受到心魔的伤害提高 12%。",
+			"open": "心魔特点【沾尘】：命中后有机会令目标染上弱化；身上减益达到 2 项时，受心魔伤害提高 12%。",
+			"params": {
+				"chance_pct": 45,
+				"debuff_turns": 2,
+				"debuff_params": [2, 4, 5],
+				"need_debuffs": 2,
+				"bonus_dmg_pct": 112
+			},
+			"ranges": {
+				"chance_pct": [35, 60],
+				"debuff_turns": [2, 3],
+				"need_debuffs": [2, 3],
+				"bonus_dmg_pct": [108, 120]
+			}
+		},
+		"2": {
+			"key": "tougu",
+			"name": "透骨",
+			"desc": "心魔打掉生命会叠加「骨裂」，每层令受心魔伤害提高 8%（最多 3 层，持续 2 回合）；防御或护盾完全挡下可不叠层并消去 1 层。",
+			"open": "心魔特点【透骨】：打掉生命会叠加「骨裂」（每层受心魔伤害 +8%，最多 3 层）；防御或护盾完全挡下可消去 1 层。",
+			"params": {
+				"per_stack_pct": 8,
+				"max_stacks": 3,
+				"turns": 2,
+				"block_shed": 1
+			},
+			"ranges": {
+				"per_stack_pct": [6, 10],
+				"max_stacks": [2, 4],
+				"turns": [2, 3],
+				"block_shed": [1, 2]
+			},
+			"texts": {
+				"stack": "%s 染上「骨裂」（%d/%d 层）！",
+				"shed": "%s 稳住架势，震散了 1 层「骨裂」！"
+			}
+		},
+		"3": {
+			"key": "niliu",
+			"name": "逆流",
+			"desc": "生命高于一半时受治疗减半（已有虚不受补的不再减）；每回合末，生命高于六成的人会被冲刷掉一些生命和魔法（不致死），心魔借此变强。生命在一半及以下时不受冲刷，受治疗还会提高。",
+			"open": "心魔特点【逆流】：半血以上受治疗减半；回合末冲刷六成血以上成员并借势增伤；半血及以下免受冲刷且受治疗 +15%。",
+			"params": {
+				"heal_split_pct": 50,
+				"high_hp_heal_pct": 50,
+				"low_hp_heal_pct": 115,
+				"wash_hp_pct": 60,
+				"hp_loss_pct": 8,
+				"mp_loss_pct": 6,
+				"per_washed_dmg_pct": 5,
+				"max_surge_pct": 20
+			},
+			"ranges": {
+				"heal_split_pct": [45, 55],
+				"high_hp_heal_pct": [45, 65],
+				"low_hp_heal_pct": [110, 125],
+				"wash_hp_pct": [50, 65],
+				"hp_loss_pct": [5, 10],
+				"mp_loss_pct": [4, 8],
+				"per_washed_dmg_pct": [3, 7],
+				"max_surge_pct": [12, 24]
+			},
+			"texts": {
+				"wash": "【逆流】倒卷！%d 名高血成员遭冲刷，心魔下回合伤害 +%d%%！"
+			}
+		},
+		"4": {
+			"key": "daoxing",
+			"name": "盗形",
+			"desc": "双数回合开始时，心魔会剥走我方身上的临时增益，化作「盗形」：伤害提高、受伤降低。挑战者本人命中它可以震碎「盗形」，它身上带减益时震碎更多。",
+			"open": "心魔特点【盗形】：双数回合剥走我方临时增益化为「盗形」（攻增伤减）；挑战者命中可震碎，心魔带减益时多震 1 层。",
+			"params": {
+				"steal_interval": 2,
+				"max_steal_count": 2,
+				"stacks_per_steal": 2,
+				"fallback_stacks": 1,
+				"max_stacks": 4,
+				"turns": 2,
+				"per_stack_dealt_pct": 6,
+				"per_stack_taken_reduce_pct": 5,
+				"break_normal": 1,
+				"break_when_debuffed": 2
+			},
+			"ranges": {
+				"max_steal_count": [1, 3],
+				"stacks_per_steal": [1, 2],
+				"fallback_stacks": [1, 2],
+				"max_stacks": [3, 5],
+				"turns": [2, 3],
+				"per_stack_dealt_pct": [4, 8],
+				"per_stack_taken_reduce_pct": [3, 6],
+				"break_normal": [1, 2],
+				"break_when_debuffed": [2, 3]
+			}
+		},
+		"5": {
+			"key": "yingjie",
+			"name": "影劫",
+			"desc": "第 2 回合起每 3 回合映照挑战者最近用过的攻击招式并蓄起 3 层「影势」，下回合扭曲反施【影·原招】；影势未削弱时威力更重，若是主动招式还会加快印纹发亮。蓄势回合迎击可削势，挑战者本人出手削 2 层。",
+			"open": "心魔特点【影劫】：第 2 回合起每 3 回合映照挑战者招式蓄势，下回合以【影·原招】反施；蓄势回合迎击可削势，挑战者出手削 2 层。",
+			"params": {
+				"first_warn_turn": 2,
+				"cycle_turns": 3,
+				"max_stacks": 3,
+				"ally_shed": 1,
+				"challenger_shed": 2,
+				"single_tier_pcts": [105, 120, 135, 150],
+				"single_hp_cap_pcts": [45, 50, 55, 60],
+				"aoe_scale_pct": 65,
+				"aoe_tier_pcts": [110, 125, 140, 155],
+				"aoe_hp_cap_pcts": [32, 38, 44, 50],
+				"sear_min_stacks": 2,
+				"sear_single_add": 10,
+				"sear_aoe_add": 8
+			},
+			"ranges": {
+				"first_warn_turn": [2, 3],
+				"cycle_turns": [3, 4],
+				"max_stacks": [2, 4],
+				"ally_shed": [1, 1],
+				"challenger_shed": [1, 2],
+				"single_tier_pcts": 15,
+				"single_hp_cap_pcts": 10,
+				"aoe_scale_pct": [55, 75],
+				"aoe_tier_pcts": 15,
+				"aoe_hp_cap_pcts": 8,
+				"sear_min_stacks": [1, 3],
+				"sear_single_add": [6, 14],
+				"sear_aoe_add": [4, 12]
+			}
+		},
+		"6": {
+			"key": "tongduo",
+			"name": "同堕",
+			"desc": "心魔映出我方队伍的烙印，队伍烙印越深它越强；双数回合被它打掉生命，印纹涨得更快；有人印纹发亮或发作时，它还会叠「堕势」。挑战者清醒时命中它，可消去 1 层「堕势」并削弱它 2 回合。",
+			"open": "心魔特点【同堕】：映出我方队伍的平均烙印（%d%%，伤害 +%d%%）；双数回合加速印纹，有人印纹发亮或发作时它会更强。挑战者清醒时命中它，可削弱它 2 回合。",
+			"params": {
+				"brand_scale_pct": 20,
+				"resonance_cap_pct": 20,
+				"even_turn_sear_add": 8,
+				"max_stacks": 3,
+				"stack_turns": 2,
+				"max_gain_per_turn": 2,
+				"per_stack_dealt_pct": 6,
+				"per_stack_taken_reduce_pct": 5,
+				"total_dealt_cap_pct": 135,
+				"suppress_shed": 1,
+				"suppress_rounds": 2
+			},
+			"ranges": {
+				"brand_scale_pct": [15, 25],
+				"resonance_cap_pct": [15, 25],
+				"even_turn_sear_add": [5, 12],
+				"max_stacks": [2, 4],
+				"stack_turns": [2, 3],
+				"max_gain_per_turn": [1, 2],
+				"per_stack_dealt_pct": [4, 8],
+				"per_stack_taken_reduce_pct": [3, 7],
+				"total_dealt_cap_pct": [125, 145],
+				"suppress_shed": [1, 2],
+				"suppress_rounds": [1, 2]
+			},
+			"texts": {
+				"suppress": "%s 守住本心迎面一击，消去 1 层「堕势」并压制心魔共鸣（2 回合）！",
+				"suppress_only": "%s 守住本心迎面一击，压制了心魔的【同堕】共鸣（2 回合）！"
+			}
+		}
+	}
+}

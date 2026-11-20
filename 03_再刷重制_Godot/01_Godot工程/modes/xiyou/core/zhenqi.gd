@@ -1009,8 +1009,11 @@ static func _brand_trial(s: XState, a: XActor) -> Dictionary:
 	if troop == 0:
 		troop = int(TRIAL_TROOP["心魔"])
 	pending_trial = {"actorId": a.actor_id, "target": i, "ref": ref, "kind": "心魔", "troopId": troop, "brand": true}
-	return {"lines": ["\\C[6]心魔\\C[0]幻化为第%d层守层者之力。" % ref.floor, "%s必须坚持到战斗结束，烙印才能加深至「%s」。" % [a.display_name(), XTianqiBrand.stage_name(i)]],
-		"options": [], "battle": troop, "next": {"page": "trial_end"}}
+	var lines := ["\\C[6]心魔\\C[0]幻化为第%d层守层者之力。" % ref.floor, "%s必须坚持到战斗结束，烙印才能加深至「%s」。" % [a.display_name(), XTianqiBrand.stage_name(i)]]
+	var tl := XTianqiXinmoTraits.trial_line(s, i)  # 天启篇心魔特点（T318）：本段心魔的特点与一句话说明
+	if tl != "":
+		lines.append(tl)
+	return {"lines": lines, "options": [], "battle": troop, "next": {"page": "trial_end"}}
 
 
 static func _pick_flow(s: XState, a: XActor) -> Dictionary:
