@@ -478,6 +478,9 @@ static func preview(s: XState, a: XActor, e: Dictionary) -> Array:
 	var now := int(a.param(p))
 	var lv := XTraining.level(s, a.actor_id, int(e.id))
 	if e.get("tianqi", false):
+		# 小A核 P3：只读——money 节原来没有就临时建、读完连节一起删（不在存档里留下空节）
+		var tq = s.flags.get("tianqi", null)
+		var had_sec: bool = tq is Dictionary and (tq as Dictionary).has("money")
 		var m := XTianqiMoney.money(s)
 		var had := m.has("training")
 		if not had:
@@ -493,6 +496,8 @@ static func preview(s: XState, a: XActor, e: Dictionary) -> Array:
 			t[key] = old
 		if not had:
 			m.erase("training")
+		if not had_sec and tq is Dictionary:
+			(tq as Dictionary).erase("money")
 		return [now, after]
 	var ak := str(a.actor_id)
 	var had_a := s.training.has(ak)
@@ -521,7 +526,7 @@ func skin_card() -> Dictionary:
 	var e: Dictionary = listed[i]
 	var lv := XTraining.level(s, a.actor_id, int(e.id))
 	var pname: String = XTraining.PARAM_NAMES[int(e.param)]
-	var d := {"title": str(e.name), "subtitle": "%s · %d / %d" % [a.display_name(), lv, int(e.max)], "sections": [], "buttons": []}
+	var d := {"title": str(e.name), "subtitle": "%s · 修炼 %d / %d 级" % [a.display_name(), lv, int(e.max)], "sections": [], "buttons": []}
 	var secs := []
 	var pv := preview(s, a, e)
 	var cost := next_cost(s, a.actor_id, e)
@@ -532,17 +537,17 @@ func skin_card() -> Dictionary:
 	else:
 		var dv := int(pv[1]) - int(pv[0])
 		var lines := [{"left": pname, "right": "%s → %s %s%d" % [XMenu._group(int(pv[0])), XMenu._group(int(pv[1])), "▲" if dv >= 0 else "▼", absi(dv)], "color": XUiSkin.TEXT, "right_color": XUiSkin.UP if dv > 0 else XUiSkin.TEXT_2},
-			{"left": T_COST, "right": XTraining._wan(cost) + "万", "color": XUiSkin.TEXT_2, "right_color": XUiSkin.GOLD_LIGHT if s.gold >= cost else XUiSkin.DOWN}]
+			{"left": T_COST, "right": XTraining._wan(cost) + "万 " + str(XDB.system().get("currencyUnit", "")), "color": XUiSkin.TEXT_2, "right_color": XUiSkin.GOLD_LIGHT if s.gold >= cost else XUiSkin.DOWN}]
 		secs.append({"title": T_CHANGE, "lines": lines})
 		if e.get("tianqi", false):
-			secs.append({"title": "", "rows": [{"text": "全队%s+%s" % [pname, per_level(s, e)], "color": XUiSkin.TEXT_2}]})
+			secs.append({"title": "", "rows": [{"text": "全队%s +%s" % [pname, per_level(s, e)], "color": XUiSkin.TEXT_2}]})
 	if skin_open:
 		var cells := []
 		for k in 8:
 			cells.append([ATTR[k], XMenu._group(int(a.param(k)))])
 		secs.append({"title": T_ALL, "cells": cells})
 	d.sections = secs
-	d.buttons = [{"text": "修炼", "primary": true, "disabled": lv >= int(e.max)}]
+	d.buttons = [{"text": "修炼", "primary": true, "disabled": lv >= int(e.max) or cost < 0 or s.gold < cost}]   # 层数没开、精魂不够也置灰（同进阶页；按确定照旧出原提示）
 	return d
 
 

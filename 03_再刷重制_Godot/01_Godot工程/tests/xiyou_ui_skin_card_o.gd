@@ -109,6 +109,9 @@ func _run() -> void:
 	await _advance()
 	await _advance_gojo()
 	await _advance_yunshang()
+	await _yun_many_pager()
+	await _advance_garou()
+	await _strip_with_targets()
 	await _training()
 	await _forget()
 	await _font_and_old()
@@ -482,7 +485,7 @@ func _advance_yunshang() -> void:
 				await frames()
 		check("yun_confirm_%s" % skin_on, page.mode == "confirm" and page.confirm_text == "消耗3件天衣，确认进阶", [page.mode, page.confirm_text])
 		if skin_on:
-			check("yun_dialog", page.skin.dialog != null and page.skin.dialog.title == "消耗3件天衣，确认进阶")
+			check("yun_dialog", page.skin.dialog != null and page.skin.dialog.title == "消耗 3 件天衣，确认进阶", page.skin.dialog.title if page.skin.dialog else null)
 		page.ok()
 		await frames()
 		finals.append([XYunshang.stage(a), s.item_count(2530), XYunshangOrders.owned(s).map(func(e): return int(e.base)), XToast.shown.duplicate()])
@@ -504,6 +507,92 @@ func _advance_yunshang() -> void:
 	await frames()
 	check("yun_cancel", p2.mode == "list" and p2.yun_selection == null and p2._yun_chosen.is_empty() and not p2.skin.list.visible and not p2.skin.crumb.visible)
 	p2.queue_free()
+	await frames()
+
+
+## 小A核 P2-1：云裳带 ≥12 件天衣进选天衣（列表超一页、翻页件出来）再取消回自画页：翻页件、页脚都藏着，不叠在立绘上
+func _yun_many_pager() -> void:
+	var s := _cloud(35)
+	for k in 12:
+		s.gain_gear("armor", XYunshang.ROBE_FIRST + (k % 4), 1)
+	var page := XActorAdvancedScene.new()
+	add_child(page)
+	await frames()
+	page._select(page.members.find(s.actor(XYunshang.ACTOR)))
+	page.ok()
+	page.ok()
+	await frames(3)
+	var sk := page.skin
+	check("yun_many_pager_on", page.mode == "yun" and sk.list.scrollable() and sk.pager.visible, [sk.list.items.size(), sk.pager.visible])
+	act(page, "ui_cancel")
+	await frames(4)
+	check("yun_many_pager_hidden_after_cancel", page.mode == "list" and not sk.list.visible and not sk.pager.visible, [sk.pager.visible, sk.list.visible])
+	await shots("adv_yun_cancel_back")
+	page.queue_free()
+	await frames()
+
+
+## 小A核 P2-2：饿狼（173）照 XGarou.reason 列等级、累计突破、四臂进星空的神之触媒；不列金钱、不误报精魂不足
+func _advance_garou() -> void:
+	var s := _adv_state()
+	XTianqi._joining = true
+	s.add_actor(XGarou.ACTOR)
+	XTianqi._joining = false
+	if not s.party.has(XGarou.ACTOR):
+		s.party.append(XGarou.ACTOR)
+	var a: XActor = s.actor(XGarou.ACTOR)
+	a.change_level(20)
+	s.gold = 0
+	s.garou["breakthroughs"] = 10
+	var page := XActorAdvancedScene.new()
+	add_child(page)
+	await frames()
+	page._select(page.members.find(a))
+	await frames()
+	var ct := card_texts(page.skin_card())
+	var unit := str(XDB.system().get("currencyUnit", ""))
+	check("garou_lines", ct.has("✓ 等级") and ct.has("Lv 20 / 20") and ct.has("✗ 累计突破") and ct.has("10 / 33") and not ct.has("✗ " + unit) and not ct.has("✓ " + unit), ct)
+	check("garou_lack_reason", ct.has("还差：" + XGarou.reason(s, a)) and bool(page.skin_card().buttons[0].disabled), ct)
+	await shots("adv_garou_lacking")
+	s.garou["breakthroughs"] = 33
+	page._refresh()
+	var c2 := page.skin_card()
+	check("garou_ready_no_gold", not bool(c2.buttons[0].disabled) and not any_has(card_texts(c2), "还差："), card_texts(c2))
+	page.ok()
+	page.ok()
+	await frames()
+	check("garou_confirm", page.mode == "confirm" and page.skin.dialog != null and page.skin.dialog.body == "", [page.mode, XToast.shown])
+	page.ok()
+	await frames()
+	check("garou_advanced", XAdvance.rank(s, XGarou.ACTOR) == 1 and s.gold == 0, XAdvance.rank(s, XGarou.ACTOR))
+	# 四臂（5）进星空：神之触媒 ×1，确认正文写它
+	s.actor_advance[XGarou.ACTOR] = 5
+	a.change_level(60)
+	s.garou["breakthroughs"] = 333
+	s.gain_item(XGarou.CATALYST, 1)
+	page._refresh()
+	var cat := str(XDB.rec("Items", XGarou.CATALYST).get("name", ""))
+	check("garou_catalyst_line", card_texts(page.skin_card()).has("✓ " + cat), card_texts(page.skin_card()))
+	check("garou_catalyst_body", page.skin_confirm_body() == "消耗：%s ×1" % cat, page.skin_confirm_body())
+	page.queue_free()
+	await frames()
+
+
+## 小A核 P2-3：右牌「给谁用」目标列表和展开条同开不重叠（目标列表在条上面）
+func _strip_with_targets() -> void:
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	_tianqi(s)
+	var page := XTrainingScene.new()
+	add_child(page)
+	await frames()
+	var sk := page.skin
+	sk.show_targets([{"name": "甲", "hp": 1, "mhp": 1}, {"name": "乙", "hp": 1, "mhp": 1}])
+	sk.set_strip("展开八项", false)
+	await frames()
+	var tr := Rect2(sk.targets.position, sk.targets.size)
+	var st := Rect2(sk.strip.position, sk.strip.size)
+	check("strip_targets_no_overlap", sk.targets.visible and sk.strip.visible and tr.end.y <= st.position.y + 0.5 and not tr.intersects(st), [tr, st])
+	page.queue_free()
 	await frames()
 
 
@@ -546,6 +635,9 @@ func _training() -> void:
 	var e1: Dictionary = listed[1]
 	var pv := XTrainingScene.preview(s, a, e1)
 	var ct := card_texts(page.skin_card())
+	var tq_before := JSON.stringify(s.flags.tianqi)
+	XTrainingScene.preview(s, a, e1)
+	check("tr_preview_readonly", JSON.stringify(s.flags.tianqi) == tq_before)
 	check("tr_change_line", pv.size() == 2 and ct.has("%s → %s ▲%d" % [XMenu._group(pv[0]), XMenu._group(pv[1]), pv[1] - pv[0]]), [pv, ct])
 	await shots("tr_list")
 	var gold0 := s.gold
@@ -576,6 +668,10 @@ func _training() -> void:
 	page._refresh()
 	await frames()
 	check("tr_not_open_row", str(sk.list.items[2].right2) == "本层开到 0 级" and sk.list.items[2].right2_color == XUiSkin.DOWN, sk.list.items[2])
+	var keep_row := page.skin_row
+	page.skin_row = 2
+	check("tr_not_open_button_gray", bool(page.skin_card().buttons[0].disabled))
+	page.skin_row = keep_row
 	s.set_variable(20, 99)
 	# 修满了：变灰写「修满了」
 	s.gold = 99999999

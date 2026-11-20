@@ -206,8 +206,8 @@ const T_RECALL := "记回来"
 const T_EMPTY := "没有可以遗忘的技能"
 const T_DESC := "说明"
 const T_AFTER := "遗忘了会怎样"
-const T_AFTER_KEPT := "遗忘后不能再使用这个技能，它带来的被动效果也会一起失去；随时可以回这里记回来。"
-const T_AFTER_GONE := "已经遗忘：现在用不了。记回来就能重新使用。"
+const T_AFTER_KEPT := "遗忘后不能再使用这个技能，如果它带有被动效果也会暂时失效；随时可以再来记回来。"
+const T_AFTER_GONE := "已经遗忘，现在用不了，如果它带有被动效果也已失效；点「记回来」就能恢复。"
 
 var _skin_syncing := false
 

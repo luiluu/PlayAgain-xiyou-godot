@@ -337,7 +337,7 @@ func ok() -> void:
 			# onBottomConfirmOk
 			XSound.system(1)
 			var s := XState.current
-			var lack := XAdvance.missing(s, current_actor())
+			var lack := lack_of(s, current_actor())
 			bottom = -1
 			trial_tier = XTianqiGojoTrial.challengeable(s, current_actor(), lack) if allow_trial else 0
 			if lack.is_empty() or trial_tier > 0:
@@ -695,7 +695,10 @@ func _skin_sync() -> void:
 		skin.card.queue_redraw()
 	if mode == "confirm":
 		var fresh := skin.dialog == null
-		var dlg := skin.ask({"title": confirm_text, "body": skin_confirm_body(), "buttons": ["确定", "取消"], "index": confirm_index})
+		var title := confirm_text
+		if yun_selection != null:   # 新页弹窗标题按小A文字审加空格；旧确认窗字照旧（参照用例比它）
+			title = "消耗 %d 件天衣，确认进阶" % (yun_selection.items as Array).size()
+		var dlg := skin.ask({"title": title, "body": skin_confirm_body(), "buttons": ["确定", "取消"], "index": confirm_index})
 		if fresh:
 			dlg.chosen.connect(func(i):
 				confirm_index = i
@@ -721,12 +724,21 @@ func _skin_sync() -> void:
 
 
 ## 主按钮的字：只缺五条悟试炼（且这页开得了试炼）时「挑战试炼」，否则「进阶」
+## 缺什么：一般角色＝XAdvance.missing；饿狼只看 XGarou.reason（等级、累计突破、四臂进星空的神之触媒）——饿狼进阶走 XGarou.advance，
+## 不扣表里的金钱、物品，而天启篇金钱重构给每行套了进阶金钱（XTianqiMoney.advance_gold），missing 会误报「精魂不足」挡住进阶（小A核 T307 P2-2）
+static func lack_of(s: XState, a: XActor) -> Array:
+	if a != null and XGarou.own(a):
+		var why := XGarou.reason(s, a)
+		return [why] if why != "" else []
+	return XAdvance.missing(s, a)
+
+
 func skin_button_text() -> String:
 	var a := current_actor()
 	if a == null:
 		return "进阶"
 	var s := XState.current
-	var lack := XAdvance.missing(s, a)
+	var lack := lack_of(s, a)
 	if allow_trial and not lack.is_empty() and XTianqiGojoTrial.challengeable(s, a, lack) > 0:
 		return T_TRIAL_BTN
 	return "进阶"
@@ -739,6 +751,8 @@ func skin_confirm_body() -> String:
 		return ""
 	if XYunshang.own(a):
 		return ""
+	if XGarou.own(a):   # 饿狼只有四臂进星空扣神之触媒 ×1
+		return T_COST + "%s ×1" % str(XDB.rec("Items", XGarou.CATALYST).get("name", "")) if XGarou.stage(a) == 5 else ""
 	var r = XAdvance.row(XState.current, a.actor_id)
 	if r == null:
 		return ""
@@ -765,8 +779,17 @@ func skin_card() -> Dictionary:
 		return d
 	var lines := []
 	var yun := XYunshang.own(a)
+	var garou := XGarou.own(a)
 	var unit := str(XDB.system().get("currencyUnit", ""))
-	if yun:   # 云裳不走进阶表那一行（不扣物品、金钱）：照 XYunshangOrders.requirements 列等级、人道意志碎片、天衣
+	if garou:   # 饿狼照 XGarou.reason 列等级、累计突破、（四臂进星空）神之触媒；不列金钱（不扣）
+		var st := XGarou.stage(a)
+		if st < 6:
+			var nx: Dictionary = XGarou.STAGES[st + 1]
+			lines.append(_req_line("等级", a.level, int(nx.level), "Lv %d / %d" % [a.level, int(nx.level)]))
+			lines.append(_req_line("累计突破", floori(XGarou._raw_breakthroughs()), int(nx.breakthroughs)))
+			if st == 5:
+				lines.append(_req_line(str(XDB.rec("Items", XGarou.CATALYST).get("name", "")), s.item_count(XGarou.CATALYST), 1))
+	elif yun:   # 云裳不走进阶表那一行（不扣物品、金钱）：照 XYunshangOrders.requirements 列等级、人道意志碎片、天衣
 		if XYunshang.stage(a) < XYunshangOrders.ADVANCE.size():
 			var req: Dictionary = XYunshangOrders.ADVANCE[XYunshang.stage(a)]
 			lines.append(_req_line("等级", a.level, int(req.level), "Lv %d / %d" % [a.level, int(req.level)]))
@@ -793,7 +816,7 @@ func skin_card() -> Dictionary:
 		if why != "":
 			lack = [why]
 	else:
-		lack = XAdvance.missing(s, a)
+		lack = lack_of(s, a)
 	var btn := skin_button_text()
 	var can := lack.is_empty() or btn == T_TRIAL_BTN
 	if not lack.is_empty():

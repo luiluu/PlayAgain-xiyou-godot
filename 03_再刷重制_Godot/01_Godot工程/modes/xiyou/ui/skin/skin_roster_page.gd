@@ -19,6 +19,8 @@ static var ENABLED := true
 signal roster_changed(index: int)
 signal roster_activated(index: int)
 signal strip_toggled(open: bool)
+## 点到灰掉的右牌按钮（已蜂鸣）
+signal disabled_tapped(index: int)
 
 const ROSTER_W := 360.0
 const CARD_W := 336.0
@@ -95,6 +97,7 @@ func _ready() -> void:
 			strip.accept_event()
 			toggle_strip())
 	card.add_child(strip)
+	card.gui_input.connect(_on_card_gui)
 	crumb = XSkinCrumb.new()
 	crumb.visible = false
 	list_panel.add_child(crumb)
@@ -175,7 +178,7 @@ var _roster_key := []
 
 func show_center_list(on: bool) -> void:
 	list.visible = on
-	pager.visible = on and pager.visible
+	pager.visible = on and pager.visible   # 列表藏着时模板页 _process 不再把翻页件显示回来（小A核 P2-1）
 	center_view.visible = not on
 	center_view.queue_redraw()
 	list_panel.queue_redraw()
@@ -214,6 +217,8 @@ func _place_targets() -> void:
 	var bottom := card.size.y - card.pad - (XSkinCard.BUTTON_H + XUiSkin.GRID if not card.buttons.is_empty() else 0.0)
 	strip.position = Vector2(0, bottom - h)
 	strip.size = Vector2(card.size.x, h)
+	if targets != null and targets.visible and h > 0.0:   # 小A核 P2-3：目标列表摆在展开条上面（super 按没加条的高度摆过，这里补上）
+		targets.position.y = bottom - h - targets.size.y
 
 
 func _draw_strip() -> void:
@@ -224,6 +229,21 @@ func _draw_strip() -> void:
 	var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	strip.draw_line(Vector2(card.pad, 1), Vector2(strip.size.x - card.pad, 1), Color(XUiSkin.LINE, 0.5), 1.0)
 	XUiSkin.ds(strip, body, Vector2((strip.size.x - tw) / 2.0, strip.size.y / 2.0 + fs * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_2)
+
+
+## 点到灰掉的主按钮：蜂鸣（XSkinCard 对禁用钮不发信号），焦点不留在灰钮上（同 T292 角色仓库）
+func _on_card_gui(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return
+	for i in card.buttons.size():
+		if card.button_rect(i).has_point(event.position) and bool(card.buttons[i].get("disabled", false)):
+			XSound.system(3)
+			disabled_tapped.emit(i)
+			(func():
+				if focus != "card":
+					card.button_index = -1
+					card.queue_redraw()).call_deferred()
+			return
 
 
 # ---- 统一确认弹窗 ----
