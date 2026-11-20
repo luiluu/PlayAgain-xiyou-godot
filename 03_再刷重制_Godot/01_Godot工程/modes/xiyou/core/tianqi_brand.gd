@@ -1237,6 +1237,49 @@ static func panel(s: XState, a) -> Dictionary:
 		"text": "烙印 %s%%%s" % [_pct_text(v), "+" if plus else ""]}
 
 
+## 状态界面修行页（第 4 页「修行」、第 5 页「修行·详细」，XGuide.panel_rows／detail_rows 在天启篇调；T121，卡验收第 4 条）。
+## 玩家可见文字（待小A 审）：只说段名（守一～逆命）、百分比、怎么加深，不用「境」「锚」作总称（T140、D174）。关着、西游档返回空。
+const TEXT_ROW := "烙印：\\C[6]「%s」\\C[0] %s%%%s　伤害 \\C[3]+%s%%\\C[0]"
+const TEXT_HOW_END := "烙印已到尽头，不再加深"
+const TEXT_HOW_STAND := "\\C[17]已到「%s」的极限：到「闭关」打赢心魔才能继续加深\\C[0]"
+const TEXT_HOW_SEALED := "\\C[17]未刻印最多加深至「%s」（%s%%）：到「闭关」刻印后才能继续加深\\C[0]"
+const TEXT_HOW_CARVED := "加深：首领战获胜时加深，首通守层者加深最多；「%s」最多到 %s%%"
+const TEXT_HOW_UNCARVED := "加深：首领战挨打时加深（未刻印），最多加深至「%s」（%s%%）"
+const TEXT_COSTS := "代价：%s"
+
+
+## 一行「烙印：「段名」 百分比（+）　伤害 +X%」＋一行加深条件；detail 另加一行已有的常驻代价
+static func status_rows(s, a) -> Array:
+	if not on(s) or not a is XActor:
+		return []
+	var r := realm(a)
+	var v := value(a)
+	var plus := can_stand(a)
+	var bonus := roundi((mult(a, s) - 1.0) * 100.0 + 0.000001)  # 浮点 7.4999… 也进到 8
+	var out := [TEXT_ROW % [stage_name(r), _pct_text(v), "+" if plus else "", str(bonus)]]
+	var cap_i := int(data().get("gain", {}).get("uncarved_max_realm", 2))
+	if r >= last_realm() and v >= node(a):
+		out.append(TEXT_HOW_END)
+	elif plus:
+		out.append(TEXT_HOW_STAND % stage_name(r))
+	elif at_node(a) and blocked_uncarved(a):
+		out.append(TEXT_HOW_SEALED % [stage_name(cap_i), _pct_text(node_of(cap_i))])
+	elif carved(a):
+		out.append(TEXT_HOW_CARVED % [stage_name(r), _pct_text(node(a))])
+	else:
+		out.append(TEXT_HOW_UNCARVED % [stage_name(cap_i), _pct_text(node_of(cap_i))])
+	return out
+
+
+## 已有的常驻代价名（烙印超过那一条的节点才算，同 has_cost）；没有返回空
+static func cost_names(a, s = null) -> Array:
+	var out := []
+	for row in data().get("costs", {}).get("list", []):
+		if has_cost(a, str(row.get("key", "")), s):
+			out.append(str(row.get("name", "")))
+	return out
+
+
 ## 文字条（闭关菜单里画一根 20 格的条：■亮段 ▒暗段 ×封住 □空，节点位置一根 |，高亮时 ‖）
 static func bar_text(s: XState, a) -> String:
 	var p := panel(s, a)

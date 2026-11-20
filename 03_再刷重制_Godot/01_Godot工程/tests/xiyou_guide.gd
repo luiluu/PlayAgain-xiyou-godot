@@ -432,7 +432,10 @@ func _tianqi_advice_and_status() -> void:
 	check("tq_status_no_jing", not all_st.replace("秘境", "").contains("境"), all_st)
 	check("tq_panel_rows_keep", pr.contains("九死·第20层") and pr.contains("挑战评估：") and pr.contains("结算伤害：") and pr.contains("必备属性：") and pr.contains("建议：1. ") and pr.contains("详细数据：见「修行·详细」页"), pr)
 	var det := XGuide.detail_rows(tq, a)
-	check("tq_detail_starts_diff", not det.is_empty() and det[0].type == "head" and str(det[0].text).begins_with("难度对照　九死·第20层"), det.slice(0, 3))
+	# T121：烙印开着时第 5 页先是「烙印」段，再是难度对照
+	var diff_head := det.filter(func(x): return x.type == "head" and str(x.text).begins_with("难度对照　九死·第20层"))
+	var brand_first: bool = (str(det[0].text) == "烙印") if XTianqiBrand.on(tq) else str(det[0].text).begins_with("难度对照")
+	check("tq_detail_starts_diff", not det.is_empty() and det[0].type == "head" and brand_first and diff_head.size() == 1, det.slice(0, 3))
 	check("tq_maxbook_sources", maxbook_sug.contains("从装备、词条与种族祝福补充爆伤") and maxbook_sug.contains("从装备、词条、秘境被动书与种族祝福提升攻击") and maxbook_sug.contains("从装备与结算类被动补充伤害"), maxbook_sug)
 	check("tq_ok_sources", ok_sug.contains("抽奖券、神秘珠与专属掉落") and ok_tips.contains("装备、词条、结算类被动"), [ok_sug, ok_tips])
 	check("tq_strip_empty", _same(XGuide.strip_text(tq, a), ["", false]), XGuide.strip_text(tq, a))
