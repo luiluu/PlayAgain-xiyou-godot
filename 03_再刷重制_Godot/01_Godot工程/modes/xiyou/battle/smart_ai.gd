@@ -35,7 +35,7 @@ static var _cooldown_re := RegEx.create_from_string("(?i)<Cooldown:\\s*(\\d+)>")
 ## ③ 护盾量算来源护盾账本、重构护盾技（skill_rework shield.pct）估盾；④ 141～166 号不再 ×0.01、熟练度读天启篇的每级 +3%。
 ## true＝天启篇走新分支；false＝回到原样。西游档（非天启篇存档）永远不进新分支
 static var o_tianqi_smart_ai := true
-## O-待定（T282，优化登记）：天启篇统一预览估伤。o_tianqi_smart_ai 开着的天启篇存档里，伤害／回复的估算不再用手抄的乘区
+## O-624（T282，优化登记）：天启篇统一预览估伤。o_tianqi_smart_ai 开着的天启篇存档里，伤害／回复的估算不再用手抄的乘区
 ## （属性有效度 × pdr/mdr × 熟练度 × 全局增伤 × 档案倍率 × 去 ×6），改走正式结算同一条链 XDamage.calculate(preview)＋finish(不执行)
 ## （XBattleEval.hit_value）：元素牌组弱点／耐性／免疫／高阶、伤害加成总账五池与九线封顶、统一防御率、天启档位、烙印破防 ×1.3、
 ## 弱者词条、七印器印、防御减半一次对齐；暴击按真实暴击倍率求期望。公式本身的值仍由下面 _parts 的受控估算给（角色档案的 raw）。
