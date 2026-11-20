@@ -2498,6 +2498,11 @@ def six_dim_rules(table: dict, base: dict = None, horsemen: dict = None) -> list
             bad.append('enemies/%s 的 template %r 不在 templates 里' % (k, v.get('template')))
             continue
         # 合并模板后过 R1～R4；class 行内优先，没写取模板的（T303）
+        for key in v:
+            if key not in ('template', 'class') and key not in SIX_DIMS and not str(key).startswith('_'):
+                bad.append('enemies/%s 有不认识的键 %r（只许 template／class／六维／下划线注释）' % (k, key))
+        if v.get('class') == 'knight':
+            bad.append('enemies/%s class 不许是 knight（骑士只在 knights 段）' % k)
         merged = dict(tpl[v['template']])
         merged.update(v)
         bad += six_dim_row_rules('enemies/%s' % k, merged, merged.get('class'))

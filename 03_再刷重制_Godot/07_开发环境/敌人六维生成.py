@@ -20,12 +20,6 @@ SAMPLE = {
  "107": {
   "template": "beast"
  },
- "108": {
-  "template": "beast",
-  "output": "B",
-  "wit": "D",
-  "class": "weak"
- },
  "109": {
   "template": "hunter",
   "class": "weak"
@@ -50,12 +44,6 @@ SAMPLE = {
  },
  "276": {
   "template": "beast"
- },
- "277": {
-  "template": "beast",
-  "output": "B",
-  "wit": "D",
-  "class": "weak"
  },
  "278": {
   "template": "guard",
@@ -94,20 +82,15 @@ SAMPLE = {
  "115": {
   "template": "caster"
  },
- "116": {
-  "template": "caster",
-  "wit": "B",
-  "class": "weak"
- },
  "117": {
   "template": "caster",
+  "class": "weak",
   "output": "B",
   "survive": "D",
   "speed": "B",
-  "wit": "C",
+  "wit": "B",
   "resolve": "C",
-  "support": "E",
-  "class": "weak"
+  "support": "E"
  },
  "118": {
   "template": "caster",
@@ -152,11 +135,6 @@ SAMPLE = {
  "122": {
   "template": "undead"
  },
- "123": {
-  "template": "undead",
-  "output": "B",
-  "class": "weak"
- },
  "124": {
   "template": "hunter",
   "class": "weak"
@@ -197,11 +175,6 @@ SAMPLE = {
  "138": {
   "template": "caster"
  },
- "139": {
-  "template": "caster",
-  "wit": "B",
-  "class": "weak"
- },
  "140": {
   "template": "hunter",
   "class": "weak"
@@ -218,13 +191,13 @@ SAMPLE = {
  },
  "142": {
   "template": "guard",
+  "class": "super",
   "output": "A",
   "survive": "S",
-  "speed": "E",
-  "wit": "C",
+  "speed": "D",
+  "wit": "B",
   "resolve": "A",
-  "support": "D",
-  "class": "elite"
+  "support": "C"
  },
  "129": {
   "template": "guard",
@@ -266,7 +239,7 @@ KEY=[('试验品','alien'),('弗莱','hunter'),('波巴','guard'),('训狼','bea
  ('灵魂','undead'),('妖精','caster'),('枯骨','undead'),('守护雕像','undead'),('腐蚀者','abyss'),('邪炎骨魔','abyss'),('巴弗灭','abyss'),
  ('龙人士兵','guard'),('龙人队长','guard'),('龙人禁卫','guard'),('禁卫军','guard'),('龙人','hunter'),('斯卡勒','hunter'),
  ('吉吉战士','mob'),('吉吉大法丝儿','guard'),('吉吉','caster'),('蟹将军','guard'),('龟儿','caster'),('龟父','guard'),
- ('机械哨兵','undead'),('机械侦察兵','undead'),('机械队长','undead'),('机甲','guard'),('暗灭泰坦','abyss'),
+ ('机械哨兵','undead'),('机械侦察兵','undead'),('机械队长','undead'),('机甲','undead'),('暗灭泰坦','abyss'),
  ('暮灵','beast'),('南琴','beast'),('觅岚','caster'),('夜云','caster'),('熊','beast'),('古树守护者','undead'),('古树法师','caster'),('古树骑士','guard'),('古树祭祀','caster'),
  ('奔波','caster'),('波奔','caster'),('霸波奔','caster'),('霸奔波','caster'),('狐仙','caster'),
  ('猪','beast'),('哥布林巫师','caster'),('哥布林','mob'),('诺彼修','caster'),('拉赫克','caster'),('恶魔训犬','beast'),('巨牙','beast'),('霍格尔','guard'),('阿涅特','caster'),
@@ -288,8 +261,8 @@ def rec(i,floor):
     row={'template':t}
     sk=' '.join(S[a['skillId']]['name'] for a in e['actions'] if a['skillId'] in S)
     if t=='abyss':
-        if cls in('minion','weak','strong','super'): pass
-        row['class']='elite'; why[i]='深渊精英模板，%s→elite 档照模板'%tg
+        row['class']=cls  # 档位只按前缀标签定，abyss 模板只给六维默认值（r1 P1-1）
+        why[i]='%s→%s 档；用深渊精英模板的六维'%(tg,cls)
     elif cls=='minion':
         base_total=sum(L.index(TP[t][d])+1 for d in v.SIX_DIMS) if False else None
         tot=sum(v.SIX_LETTERS.index(TP[t][d])+1 for d in v.SIX_DIMS)
@@ -297,8 +270,9 @@ def rec(i,floor):
         if tg=='罕见':
             # 头目：输出 +1、战商 -1（有冲劲没脑子），保持 minion 预算
             o=v.SIX_LETTERS.index(TP[t]['output']); row['output']=v.SIX_LETTERS[o+1]
-            row['class']='minion' if tot+1<=18 else 'weak'
-            why[i]='罕见头目·%s：输出＋1 档，头目更凶'%TP[t]['_name']
+            w=v.SIX_LETTERS.index(TP[t]['wit']); row['wit']=v.SIX_LETTERS[max(w-1,0)]  # r1 P1-2：战商 −1，总分不增（已是 E 则不降）
+            assert tot+1-(1 if w>0 else 0)<=18, i
+            why[i]='罕见→模板；输出＋1、战商−1（头目更凶更莽，规则取值）'
     elif cls=='weak':
         row['class']='weak'
         o=v.SIX_LETTERS.index(TP[t]['output'])
@@ -337,9 +311,9 @@ gstyle={ # 楼层: (模板, 六字母, 理由)
  18:('abyss','ABCBBC','深渊骑士：输出压过生存的深渊精英，战技魔法兼备'),
  19:('hunter','AADBBC','炎龙队长：龙息爆发加爪击，输出生存都高，速度偏慢'),
  20:('bruiser','SBCDCD','石日天：蛮力型，高输出，战商偏低'),
- 21:('caster','ACBACA','六道魔君：魔法系，战商高'),
+ 21:('bruiser','SBCDCD',''),
  22:('bruiser','SBCDCD','三眼娃：近战输出型'),
- 23:('hunter','SBABCE','哪托：高速突击'),
+ 23:('bruiser','SBCDCD',''),
  24:('bruiser','SBCDCD','黑熊精：蛮力、不爱动脑'),
  25:('caster','ACBACA','嫦娥：法术加治疗系'),
  26:('hunter','SBABCE','金角：偷袭型术士'),
@@ -367,17 +341,17 @@ def gu(f,i):
     else:
         t,code,_=gstyle[f]
         row={'template':t if t!='bruiser' else 'undead','class':'super'}; row.update(v6(code))
-    rows[str(i)]=row; why[i]='守层者 %d 层·%s'%(f,gstyle[f][2])
+    rows[str(i)]=row; why[i]='守层者 %d 层 → %s 档；%s 模板，六维 %s'%(f,row['class'],row['template'],code)
 for f,i in ids.items(): gu(f,i)
 # 26 层银角 530、29 层等多只；银角
-rows['530']={'template':'hunter','class':'super'}; rows['530'].update(v6('ACABCE')); why[530]='守层者 26 层·银角：金角的搭档，速度偏快、输出稍低'
-rows['529']={'template':'hunter','class':'super'}; rows['529'].update(v6('SBABCE')); why[529]='守层者 26 层·金角：偷袭型，高输出高速度'
+rows['530']={'template':'hunter','class':'super'}; rows['530'].update(v6('ACABCE')); why[530]='守层者 26 层 → super 档；hunter 模板，六维 ACABCE'
+rows['529']={'template':'hunter','class':'super'}; rows['529'].update(v6('SBABCE')); why[529]='守层者 26 层 → super 档；hunter 模板，六维 SBABCE'
 # 低层守层者在里副本当首领
 for i,(t,code,r) in {54:('hunter','ABBBBC','里疫土之主（范海辛）：猎手型首领'),40:('hunter','ABABBC','里战酋（魔剑·菲利）：战场剑士'),8:('guard','BBCBBC','里监考官（训练官）：监考守卫')}.items():
-    rows[str(i)]={'template':t,'class':'super'}; rows[str(i)].update(v6(code)); why[i]=r
+    rows[str(i)]={'template':t,'class':'super'}; rows[str(i)].update(v6(code)); why[i]='里副本守层者当首领 → super 档；%s 模板，六维 %s'%(t,code)
 # 335/336/234/237 首领 super 已由 rec 处理(首领→super)
 sm=SAMPLE
-for k,r in sm.items(): rows[k]=r; why[int(k)]=why.get(int(k),'')+'（13～16 层样板，已报协调）'
+for k,r in sm.items(): rows[k]=r; why[int(k)]='13～16 层样板覆盖（已报协调，待 Kyo 定口径）'
 # 去掉 class==模板且无覆盖的行里多余 class，保持 minion
 out={}
 for k,r in rows.items():
@@ -388,9 +362,26 @@ for k,r in out.items():
     m=dict(TP[r['template']]); m.update(r)
     bad+=v.six_dim_row_rules('enemies/%s %s'%(k,E[int(k)]['name']),m,m['class'])
 
-REASONS = {int(k): v for k, v in {"108": "训狼头目：输出＋1、战商−1（有冲劲没脑子）", "109": "训狼者：驯兽人，猎手模板，战商 B 会挑目标", "110": "试验品：失控实验体，高输出高生存但头脑简单、心志不稳", "111": "弗莱：杀伐之刃，速度快、输出高的刀手首领", "277": "钳嘴龟头目：同训狼头目", "278": "外交官：守卫模板，不改", "279": "希达：老龟，高生存高韧性、出手慢", "280": "希顿：魔晶龟，奥术吸收，高生存的法系首领", "114": "瑟伦：圣光系，眩光控制加自疗，战商 B 会挑目标", "116": "癫舞头目：法师模板，战商＋1", "117": "神明之焰：元素体，高输出高速度、辅助弱", "118": "狂信者：狂信→韧性 D，输出高", "119": "受赐者：输出 S，狂信→韧性 D", "120": "哈耳庇厄：鹰踏高速、战商 A，Boss 档", "121": "克力之爷：莽拳老兵，高输出高韧性、头脑简单、不帮人", "123": "饥饿丧尸：输出＋1", "124": "盗尸魔精：抽干影杀，猎手模板", "125": "缝合巨人：高输出高生存、极慢、笨", "126": "发火：疯鬼，输出 S、战商 D", "128": "金池长老：佛门术士，战商韧性辅助都高、输出低", "139": "成年人鱼：战商＋1", "140": "深海龙人：飞爪影杀，猎手模板", "141": "卡琳：人鱼公主，战商辅助高", "142": "亚特兰蒂斯守护者：守卫 Boss，高生存高韧性、极慢", "129": "海王子：均衡水系，各项偏上"}.items()}
-
 GUARD_IDS = {13: 114, 14: 121, 15: 128, 16: 129, 17: 181, 18: 192, 19: 202, 20: 523, 21: 524, 22: 525, 23: 526, 24: 527, 25: 528, 26: 529, 27: 531, 28: 532, 29: 533, 30: 534, 31: 535, 32: 536, 33: 537}
+
+
+def skill_facts(i):
+    """从技能库实读：名字(物/魔/固/治)；物＝公式含 a.atk、魔＝a.mat、固＝固定伤害、治＝回复类；伤害抵抗等被动不列。"""
+    out_ = []
+    for ac in E[i]['actions']:
+        sk = S.get(ac['skillId'])
+        if not sk or sk['damage']['type'] == 0:
+            continue
+        f = sk['damage']['formula']
+        kind = '魔' if 'a.mat' in f else '物' if 'a.atk' in f else '固'
+        if sk['damage']['type'] in (3, 4):
+            kind = '治'
+        out_.append('%s(%s)' % (sk['name'], kind))
+    return '、'.join(out_) or '无伤害技能'
+
+
+def reason(i):
+    return '%s。技能：%s' % (why[i], skill_facts(i))
 
 
 def table_md():
@@ -413,7 +404,7 @@ def table_md():
             r = out[str(i)]
             m = dict(TP[r['template']])
             m.update(r)
-            lines.append('| %d | %s | %s | %s | %s | %s |' % (i, E[i]['name'], r['template'], m['class'], ''.join(m[x] for x in D), REASONS.get(i) or why[i].replace('（13～16 层样板，已报协调）', '')))
+            lines.append('| %d | %s | %s | %s | %s | %s |' % (i, E[i]['name'], r['template'], m['class'], ''.join(m[x] for x in D), reason(i)))
     return '\n'.join(lines) + '\n'
 
 

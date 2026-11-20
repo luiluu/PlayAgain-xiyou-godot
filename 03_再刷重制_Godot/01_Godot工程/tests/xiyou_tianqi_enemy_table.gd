@@ -3,6 +3,7 @@ extends Node
 ## 一、覆盖：13～27 层各图遇敌敌群里的每只敌人、守层者敌群（XGuardianRework.TROOPS 13～33）里的每只、七印各印的敌群与首领都在表里。
 ## 二、读取：of_enemy 的六维等于「模板合并覆盖」；战商档（ai_tier）、韧性抗性读得出；野兽模板战商 E＝1 档。
 ## 三、档位（class）与前缀标签对应：稀有以上都单独覆盖六维、守层者 20～33 为 super。
+## 三之二（r1 P1-1／P1-2）：遇敌按前缀标签定档（普通／罕见 minion、十分罕见 weak、稀有 strong、前所未见 super、亘古未有 elite，不看模板）；同一张图里档位越高总分不低于下一档（防倒挂）。
 ## 四、没录的（1 层嘤嘤怪）仍回中性、tier 走原版。
 var results: Array = []
 
@@ -96,6 +97,36 @@ func _run() -> void:
 			if str(rows.get(str(e), {}).get("class", "")) != "super":
 				guard_bad.append("%d 层 %d" % [f, e])
 	_check("守层者 20～33 层都是 super", guard_bad.is_empty(), guard_bad)
+	# 三之二：标签定档、同图不倒挂
+	var want_cls := {"普通": "minion", "罕见": "minion", "十分罕见": "weak", "稀有": "strong", "前所未见": "super", "亘古未有": "elite"}
+	var order := ["普通", "罕见", "十分罕见", "稀有", "前所未见"]
+	var tag_bad := []
+	var inv_bad := []
+	for m in LADDER_MAPS:
+		var map2 = XDB.load_json("maps/Map%03d.json" % m)
+		var lo := {}
+		var hi := {}
+		for enc in map2.get("encounterList", []):
+			for e in _troop_enemies(int(enc.troopId)):
+				var nm := str(XDB.rec("Enemies", e).get("name", ""))
+				var tg := "普通"
+				if nm.begins_with("【"):
+					tg = nm.substr(1, nm.find("】") - 1)
+				if not want_cls.has(tg):
+					continue
+				var rr: Dictionary = rows[str(e)]
+				var cl := str(rr.get("class", tpl[rr.template].get("class", "minion")))
+				if cl != want_cls[tg]:
+					tag_bad.append("%d %s class=%s 应为 %s" % [e, nm, cl, want_cls[tg]])
+				var tot := XTianqiSixDim.total(XTianqiSixDim.of_enemy(e))
+				lo[tg] = tot if not lo.has(tg) else mini(int(lo[tg]), tot)
+				hi[tg] = tot if not hi.has(tg) else maxi(int(hi[tg]), tot)
+		var present := order.filter(func(t): return lo.has(t))
+		for i in range(1, present.size()):
+			if int(lo[present[i]]) < int(hi[present[i - 1]]):
+				inv_bad.append("Map%d %s 最高 %d > %s 最低 %d" % [m, present[i - 1], hi[present[i - 1]], present[i], lo[present[i]]])
+	_check("档位：遇敌按前缀标签定档（不看模板）", tag_bad.is_empty(), tag_bad)
+	_check("同一张图档位越高总分不低于下一档（不倒挂）", inv_bad.is_empty(), inv_bad)
 	var beast = XTianqiSixDim.of_enemy(107)
 	_check("铠甲训狼（野兽模板）战商 E＝1 档", XTianqiSixDim.letter(beast, "wit") == "E" and XTianqiSixDim.ai_tier_of(beast) == 1, beast)
 	# 四、没录的

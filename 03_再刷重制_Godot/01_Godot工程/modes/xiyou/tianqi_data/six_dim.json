@@ -258,7 +258,8 @@
   },
   "10": {
    "template": "mob",
-   "output": "C"
+   "output": "C",
+   "wit": "E"
   },
   "11": {
    "template": "caster",
@@ -316,8 +317,7 @@
   "108": {
    "template": "beast",
    "output": "B",
-   "wit": "D",
-   "class": "weak"
+   "wit": "E"
   },
   "109": {
    "template": "hunter",
@@ -356,18 +356,18 @@
   },
   "116": {
    "template": "caster",
-   "wit": "B",
-   "class": "weak"
+   "output": "B",
+   "wit": "D"
   },
   "117": {
    "template": "caster",
+   "class": "weak",
    "output": "B",
    "survive": "D",
    "speed": "B",
-   "wit": "C",
+   "wit": "B",
    "resolve": "C",
-   "support": "E",
-   "class": "weak"
+   "support": "E"
   },
   "118": {
    "template": "caster",
@@ -415,7 +415,7 @@
   "123": {
    "template": "undead",
    "output": "B",
-   "class": "weak"
+   "wit": "E"
   },
   "124": {
    "template": "hunter",
@@ -469,8 +469,8 @@
   },
   "139": {
    "template": "caster",
-   "wit": "B",
-   "class": "weak"
+   "output": "B",
+   "wit": "D"
   },
   "140": {
    "template": "hunter",
@@ -488,20 +488,21 @@
   },
   "142": {
    "template": "guard",
+   "class": "super",
    "output": "A",
    "survive": "S",
-   "speed": "E",
-   "wit": "C",
+   "speed": "D",
+   "wit": "B",
    "resolve": "A",
-   "support": "D",
-   "class": "elite"
+   "support": "C"
   },
   "176": {
    "template": "undead"
   },
   "177": {
    "template": "undead",
-   "output": "B"
+   "output": "B",
+   "wit": "E"
   },
   "178": {
    "template": "undead",
@@ -542,7 +543,8 @@
   },
   "188": {
    "template": "undead",
-   "output": "B"
+   "output": "B",
+   "wit": "E"
   },
   "189": {
    "template": "undead",
@@ -550,11 +552,11 @@
   },
   "190": {
    "template": "abyss",
-   "class": "elite"
+   "class": "strong"
   },
   "191": {
    "template": "abyss",
-   "class": "elite"
+   "class": "super"
   },
   "192": {
    "template": "abyss",
@@ -576,7 +578,7 @@
   "197": {
    "template": "hunter",
    "output": "A",
-   "class": "weak"
+   "wit": "C"
   },
   "198": {
    "template": "guard",
@@ -668,8 +670,7 @@
   "277": {
    "template": "beast",
    "output": "B",
-   "wit": "D",
-   "class": "weak"
+   "wit": "E"
   },
   "278": {
    "template": "guard",
@@ -736,14 +737,14 @@
    "support": "D"
   },
   "524": {
-   "template": "caster",
+   "template": "undead",
    "class": "super",
-   "output": "A",
-   "survive": "C",
-   "speed": "B",
-   "wit": "A",
+   "output": "S",
+   "survive": "B",
+   "speed": "C",
+   "wit": "D",
    "resolve": "C",
-   "support": "A"
+   "support": "D"
   },
   "525": {
    "template": "undead",
@@ -756,14 +757,14 @@
    "support": "D"
   },
   "526": {
-   "template": "hunter",
+   "template": "undead",
    "class": "super",
    "output": "S",
    "survive": "B",
-   "speed": "A",
-   "wit": "B",
+   "speed": "C",
+   "wit": "D",
    "resolve": "C",
-   "support": "E"
+   "support": "D"
   },
   "527": {
    "template": "undead",
@@ -881,7 +882,7 @@
   "543": {
    "template": "caster",
    "output": "B",
-   "class": "weak"
+   "wit": "D"
   },
   "544": {
    "template": "caster",
@@ -909,7 +910,7 @@
   "548": {
    "template": "guard",
    "output": "B",
-   "class": "weak"
+   "wit": "D"
   },
   "549": {
    "template": "caster",
@@ -936,7 +937,8 @@
   },
   "553": {
    "template": "undead",
-   "output": "B"
+   "output": "B",
+   "wit": "E"
   },
   "554": {
    "template": "undead",
@@ -949,14 +951,14 @@
    "support": "E"
   },
   "555": {
-   "template": "guard",
+   "template": "undead",
    "class": "super",
-   "output": "A",
-   "survive": "S",
-   "speed": "D",
-   "wit": "B",
-   "resolve": "A",
-   "support": "C"
+   "output": "S",
+   "survive": "B",
+   "speed": "C",
+   "wit": "D",
+   "resolve": "C",
+   "support": "D"
   },
   "556": {
    "template": "abyss",
@@ -967,7 +969,8 @@
   },
   "559": {
    "template": "beast",
-   "output": "B"
+   "output": "B",
+   "wit": "E"
   },
   "560": {
    "template": "caster",
@@ -994,7 +997,8 @@
   },
   "564": {
    "template": "beast",
-   "output": "B"
+   "output": "B",
+   "wit": "E"
   },
   "565": {
    "template": "beast",
@@ -1022,7 +1026,7 @@
   "569": {
    "template": "caster",
    "output": "B",
-   "class": "weak"
+   "wit": "D"
   },
   "570": {
    "template": "guard",
@@ -1050,7 +1054,7 @@
   "574": {
    "template": "caster",
    "output": "B",
-   "class": "weak"
+   "wit": "D"
   },
   "575": {
    "template": "caster",
@@ -1078,7 +1082,7 @@
   "579": {
    "template": "caster",
    "output": "B",
-   "class": "weak"
+   "wit": "D"
   },
   "580": {
    "template": "caster",
