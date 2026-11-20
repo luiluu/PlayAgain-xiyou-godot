@@ -11,6 +11,8 @@ extends Control
 ## - 操作：选项确定 → 分类（选第 1 类）；分类阶段列表跟着显示该类（无光标），确定进列表（有东西选第 1 项）；
 ##   列表确定即存入／取出一件（装备音效，不行蜂鸣），光标不动（取空了也停在原格）；取消逐级退回，选项取消关闭。
 ##   储存时仓库满了列表不可确定（蜂鸣）。
+## T306 卡 N 新界面（天启篇，XUiSkin.on() 且 XSkinWarehousePage.ENABLED 时）：同一套状态，选项窗换成页内页签、分类窗换成左环、列表一列／两列（XSkinWarehousePage）；
+## 进页就在分类环上（mode＝category、category＝0，没有「选项」那一层）；Q／E 换存／取；环上取消直接离开。新皮肤关着时下面一行不变。
 
 signal closed
 
@@ -39,6 +41,7 @@ var cat_win: XMVWindow
 var list_win: XMVWindow
 var info_win: XMVWindow
 var list_pager: XListPager   # T050 翻页件（新界面关着时为 null）
+var skin: XSkinWarehousePage  # T306 新界面（关着时为 null）
 
 
 func _ready() -> void:
@@ -57,6 +60,11 @@ func _ready() -> void:
 		w.canvas.blink = true
 	list_pager = XListPager.attach(list_win, _pager_step)
 	XWarehouse.last_option = 0
+	if XUiSkin.on() and XSkinWarehousePage.ENABLED:
+		mode = "category"   # 新页没有选项窗：进页就在分类环（第 1 类）上，存取方向＝页签（默认取出，同旧页）
+		category = 0
+		skin = XSkinWarehousePage.new(self)
+		add_child(skin)
 	_reload()
 
 
@@ -169,6 +177,39 @@ func list_rows() -> int:
 	return XListPager.rows_for(ROWS, ceili(data.size() / 2.0))
 
 
+## 列表一行几格：旧页固定两列；新页 16:9 一列、20:9 两列（T306）
+func cols() -> int:
+	return skin.cols() if skin != null else 2
+
+
+## T306 新页签：切存／取（option 0 取出、1 储存）；换列表、回到顶端，光标在列表时落第 1 项，响光标音
+func switch_option(o: int) -> void:
+	if o == option:
+		return
+	option = o
+	XWarehouse.last_option = o
+	XSound.system(0)
+	top = 0
+	index = -1
+	_reload()
+	if mode == "list":
+		if data.is_empty():
+			index = -1
+		else:
+			_select(0)
+
+
+## T306 环上换类（新页用）；响光标音，列表回顶
+func set_category(i: int) -> void:
+	if i == category or i < 0 or i > 3:
+		return
+	category = i
+	XSound.system(0)
+	index = -1
+	top = 0
+	_reload()
+
+
 func _pager_step(d: int) -> void:
 	if data.is_empty():
 		return
@@ -193,6 +234,8 @@ func _refresh() -> void:
 		list_win.down_arrow = list_win.down_arrow and not list_pager.visible
 	for w in [title_win, option_win, cat_win, list_win, info_win]:
 		w.refresh()
+	if skin != null:
+		skin.sync()
 
 
 # ---- 操作 ----
@@ -213,6 +256,7 @@ func ok() -> void:
 		"category":
 			XSound.system(1)
 			mode = "list"
+			top = 0
 			if not data.is_empty():
 				_select(0)
 			_refresh()
@@ -246,6 +290,9 @@ func cancel() -> void:
 			index = -1
 			top = 0
 		"category":
+			if skin != null:   # 新页没有选项窗：环上取消直接离开
+				closed.emit()
+				return
 			mode = "option"
 			category = -1
 			_reload()
@@ -272,6 +319,8 @@ func _move(dx: int, dy: int, wrap: bool) -> void:
 					XSound.system(0)
 					_refresh()
 		"category":
+			if skin != null and dx == 0:
+				dx = dy   # 新页的分类是竖排的环：↑↓ 也换类
 			if dx != 0:
 				var i := XMenu._move(category, dx, 4, wrap)
 				if i != category:
@@ -286,20 +335,25 @@ func _move(dx: int, dy: int, wrap: bool) -> void:
 			if n == 0:
 				return
 			var i := index
+			var c := cols()
+			if c == 1:   # 新页 16:9 一列：左右不动，上下逐行
+				dx = 0
 			if dx > 0 and index < n - 1:
 				i = index + 1
 			elif dx < 0 and index > 0:
 				i = index - 1
-			elif dy > 0 and index < n - 2:
-				i = index + 2
-			elif dy < 0 and index >= 2:
-				i = index - 2
+			elif dy > 0 and index < n - c:
+				i = index + c
+			elif dy < 0 and index >= c:
+				i = index - c
 			if i != index:
 				XSound.system(0)
 				_select(i)
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinWarehousePage）
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
@@ -343,6 +397,9 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
 		cancel()

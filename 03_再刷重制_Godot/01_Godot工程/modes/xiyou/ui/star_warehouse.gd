@@ -16,6 +16,8 @@ extends Control
 ##   卡的位置每次 setItem 都在上一次的位置上再做一遍修正（x<900 右移 52、y<220 下移 32…），从左上角 (0,0) 起一路漂移
 ##   （ui-pixel4 对照：存入前 (52,32)，存一件后 (104,64)）。重制照别的列表贴着选中格放（O-008）。
 ##   回退：STAR_HELP_DRIFT = true 照原版漂移（按重制 _update_help 的调用次数累加，与原版 updateHelp 次数大体一致）。
+## T306 卡 N 新界面（天启篇，XUiSkin.on() 且 XSkinWarehousePage.ENABLED 时）：同一套状态，分类窗换成左环、列表一列／两列、说明卡并进右牌（XSkinStarWarehousePage）；
+## 宠物隐藏时只剩装备一类：不画环、进页直接在列表上，取消直接离开。新皮肤关着时下面一行不变。
 
 signal closed
 
@@ -38,6 +40,7 @@ var data: Array = []
 var cat_win: XMVWindow
 var list_win: XMVWindow
 var list_pager: XListPager   # T050 翻页件（新界面关着时为 null）
+var skin: XSkinStarWarehousePage   # T306 新界面（关着时为 null）
 var help_card: XHelpCard
 var _drift := Vector2.ZERO
 
@@ -59,7 +62,14 @@ func _ready() -> void:
 	help_card.show_for({})
 	XStarWarehouse.ensure_loaded()
 	XStarWarehouse.resolve_pending()   # 别的局取出、没存档的退回仓库（O-222·仓库取出事务）
+	if XUiSkin.on() and XSkinWarehousePage.ENABLED:
+		skin = XSkinStarWarehousePage.new(self)
+		add_child(skin)
+		if not skin.show_ring:   # 只剩装备一类：没有分类这一层，进页就在列表上（先改 mode 再 _reload，同步时焦点才落在列表）
+			mode = "list"
 	_reload()
+	if mode == "list" and not data.is_empty():
+		_select(0)
 
 
 func _symbol() -> String:
@@ -159,10 +169,15 @@ func _refresh() -> void:
 	for w in [cat_win, list_win]:
 		w.refresh()
 	_update_help()
+	if skin != null:
+		skin.sync()
 
 
 ## updateHelp：列表有光标且选中装备时出说明卡，贴着选中格
 func _update_help() -> void:
+	if skin != null:   # 新页：说明并进右牌，不画浮动说明卡
+		help_card.show_for({})
+		return
 	if mode != "list" or _symbol() != "equip" or index < 0 or index >= data.size():
 		help_card.show_for({})
 		return
@@ -228,6 +243,10 @@ func cancel() -> void:
 	XSound.system(2)
 	match mode:
 		"list":
+			if skin != null and not skin.show_ring:   # 新页只剩装备一类：没有分类这一层，直接离开
+				help_card.show_for({})
+				closed.emit()
+				return
 			mode = "category"
 			index = -1
 			_refresh()
@@ -254,27 +273,39 @@ func _set_category(i: int) -> void:
 func _move(dx: int, dy: int, wrap: bool) -> void:
 	match mode:
 		"category":
-			# Window_HorzCommand：左右（按住不回绕），上下不动
+			# Window_HorzCommand：左右（按住不回绕），上下不动（新页的环是竖排：↑↓ 也换类）
+			if skin != null and dx == 0:
+				dx = dy
 			if dx != 0:
 				_set_category(XMenu._move(category, dx, 2, wrap))
 		"list":
 			# Window_Selectable（两列）：右／左逐格可跨行，首尾不回绕；上／下跳一行（±2），到边不动
 			var n := data.size()
 			var i := index
+			var c := cols()
+			if c == 1:   # 新页 16:9 一列：左右不动，上下逐行
+				dx = 0
 			if dx > 0 and index < n - 1:
 				i = index + 1
 			elif dx < 0 and index > 0:
 				i = index - 1
-			elif dy > 0 and index < n - 2:
-				i = index + 2
-			elif dy < 0 and index >= 2:
-				i = index - 2
+			elif dy > 0 and index < n - c:
+				i = index + c
+			elif dy < 0 and index >= c:
+				i = index - c
 			if i != index:
 				XSound.system(0)
 				_select(i)
 
 
+## 列表一行几格：旧页固定两列；新页 16:9 一列、20:9 两列（T306）
+func cols() -> int:
+	return skin.cols() if skin != null else 2
+
+
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinStarWarehousePage）
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
@@ -305,6 +336,9 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
 		cancel()
