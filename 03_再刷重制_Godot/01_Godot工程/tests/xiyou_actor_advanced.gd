@@ -192,6 +192,7 @@ func _run() -> void:
 	await _optimized()
 	_rows()
 	_rules()
+	_garou_gold()
 	_save()
 	await _interpreter()
 	for pl in XSound._players:
@@ -327,6 +328,22 @@ func _rules() -> void:
 			and fr.learn.all(func(id): return a.skill_ids.has(int(id))) and XAdvance.rank(s, a.actor_id) == int(fr.num) + 1, a.skill_ids)
 	s.actor_advance[1] = 4
 	check("no_row_at_max", XAdvance.row(s, 1) == null and XAdvance.max_text(s, 1) == 4 and not XAdvance.advance(s, s.actor(1)) and XAdvance.missing(s, s.actor(1)) == ["已满"])
+
+
+## T308：天启篇存档里饿狼（173）的进阶行不套天启篇进阶金钱（走 XGarou，不扣表里金钱）；别的角色照套
+func _garou_gold() -> void:
+	var s := _setup()
+	s.flags["tianqi"] = {"rules": 1}
+	var raw := {}
+	for r in XAdvance.rows():
+		if int(r.actor) == XGarou.ACTOR and int(r.num) == 0:
+			raw = r
+			break
+	var gr = XAdvance.row(s, XGarou.ACTOR)
+	check("garou_row_not_tianqi_gold", not raw.is_empty() and gr != null and int(gr.gold) == int(raw.gold), [raw.get("gold"), gr.gold if gr != null else null])
+	var other = XAdvance.row(s, 1)
+	var tq := XTianqiMoney.advance_gold(s, 0)
+	check("other_row_tianqi_gold", XTianqiMoney.on(s) and other != null and tq >= 0 and int(other.gold) == tq, [tq, other.gold if other != null else null])
 
 
 ## 进阶次数随局内存档；旧档没有为 0；坏值丢掉
