@@ -5,7 +5,8 @@ extends RefCounted
 ## 按 XZhenqi.battle.trial.target（1～6：不染、铸骨、砥柱、真形、迎劫、逆命）挂唯一一条本段特点，不叠前场的。
 ## 底盘（血量、双防、出伤倍率、招式池）照 T315 跟同层守层者，本模块只在上面加特点；不碰选目标、不加闪避／回血／吸血／护盾／即死。
 ## 已实装（DONE）：1 沾尘、2 透骨、3 逆流（T318）；4 盗形、5 影劫、6 同堕（T319）。
-## 挂点（BattleLogic）：setup 开场报特点（take_logs）、act／_forced_run 开头 act_begin（一次行动对同一人最多判一次、记是不是发作行动、影劫记挑战者的招）、
+## 挂点（BattleLogic）：setup 开场报特点（take_logs）、act／_forced_run 开头 act_begin（一次行动对同一人最多判一次、记是不是发作行动）、
+## act 判完能不能行动之后／_forced_run 开头 mirror_note（影劫记挑战者的招；被控跳过的不记，T323）、
 ## start_turn 末尾（盗形双数回合剥增益、影劫蓄势、同堕重算队伍烙印）、decide 敌人分支（影劫重演回合换成【影·原招】）、
 ## execute_hp_damage 开头 hp_damage（book_heal 之后、七印殉印／灰印、临终、号卷四号这些保命之前）、末尾 after_hp、
 ## 生命回复 heal（各线与虚不受补之后；ResourceContext._gain 同）、end_turn 回合末、end_battle 收尾 end；
@@ -125,7 +126,7 @@ static func setup(logic, s) -> void:
 		"challenger": int(trial.get("actorId", 0)), "seen": {}, "fracture": {}, "surge": 0, "queue": [],
 		"act_u": null, "act_fit": false, "act_hit": false, "dealt": {},
 		"stacks": 0, "turns": 0,  # 盗形
-		"mirror": {}, "ying": 0, "charge_turn": -99, "cast_turn": -99,  # 影劫
+		"mirror": {}, "mirror_next": {}, "ying": 0, "charge_turn": -99, "cast_turn": -99,  # 影劫（mirror 本轮要演的；mirror_next 重演回合心魔出招前挑战者新出的招，T323）
 		"avg": 0, "res": 0, "fall": 0, "fall_turns": 0, "gain_turn": -99, "gained": 0, "suppress_to": -99}  # 同堕
 	var open := str(r.get("open", ""))
 	if key == "tongduo":
@@ -157,7 +158,7 @@ static func end(logic) -> void:
 # ---- 行动 ----
 
 ## act／_forced_run 开头（紧邻 XTianqiBrand.act_begin，在发作替换之前）：开一次新的行动，同一行动对同一人最多判一次；
-## 记这次是谁、是不是发作行动（发作的不算「清醒出手」）；影劫：挑战者非发作的伤害招记进映照
+## 记这次是谁、是不是发作行动（发作的不算「清醒出手」）
 static func act_begin(logic, u = null, skill = null) -> void:
 	var c := fight(logic)
 	if c.is_empty():
@@ -167,8 +168,15 @@ static func act_begin(logic, u = null, skill = null) -> void:
 	c.act_u = u
 	c.act_fit = XTianqiBrand.is_fit_command(skill)
 	c.act_hit = false
-	if str(c.key) == "yingjie" and not c.act_fit:
-		_mirror_note(c, u, skill)
+
+
+## 影劫：挑战者非发作的伤害招记进映照。act 里在判完能不能行动之后调（被晕、被控跳过的招没打出来，不记；T323 ← T319 核查 P2-2），
+## _forced_run 紧跟 act_begin 调（强制行动不看能不能动）。发作行动在 act_begin 已记 act_fit，这里不记
+static func mirror_note(logic, u, skill) -> void:
+	var c := fight(logic)
+	if c.is_empty() or str(c.key) != "yingjie" or bool(c.act_fit):
+		return
+	_mirror_note(logic, c, u, skill)
 
 
 static func _p(c: Dictionary, k: String) -> int:
@@ -461,15 +469,34 @@ static func _mirror_of(u, sk: Dictionary) -> Dictionary:
 		"is_heavy": int(sk.get("id", 1)) != 1 and not u.is_attack(sk), "user": u.display_name()}
 
 
-## 挑战者本人非发作的生命伤害／吸取招（不算物品、防御）：记进映照（蓄势回合里再出手就以最新的为准＝控招诱影）
-static func _mirror_note(c: Dictionary, u, skill) -> void:
+## 挑战者本人非发作的生命伤害／吸取招（不算物品、防御）：记进映照（蓄势回合里再出手就以最新的为准＝控招诱影）。
+## 重演回合心魔还没出【影·原招】时（挑战者先手），新招只进 mirror_next，不覆写这一轮蓄势回合定下、要重演的 mirror；
+## 心魔出过招或回合末再转正，留给下一轮（T323 ← T319 核查 P2-1）
+static func _mirror_note(logic, c: Dictionary, u, skill) -> void:
 	if not u is XActor or int(u.actor_id) != int(c.challenger) or not skill is Dictionary or skill.is_empty():
 		return
 	if XBattleLogic.is_item(skill) or int(skill.get("id", 0)) == XBattleLogic.GUARD_SKILL:
 		return
 	if not [1, 5].has(int(skill.get("damage", {}).get("type", 0))):
 		return
-	c.mirror = _mirror_of(u, skill)
+	var m := _mirror_of(u, skill)
+	if _replay_pending(logic, c):
+		c.mirror_next = m
+	else:
+		c.mirror = m
+
+
+## 重演回合（蓄势回合的下一回合）、心魔还没出【影·原招】
+static func _replay_pending(logic, c: Dictionary) -> bool:
+	var turn := int(logic.turn)
+	return int(c.charge_turn) == turn - 1 and int(c.cast_turn) != turn and not c.mirror.is_empty()
+
+
+## 候选转正：重演回合挑战者先手出的招，心魔出完【影·原招】（或回合末）后成为下一轮的映照
+static func _mirror_promote(c: Dictionary) -> void:
+	if not c.mirror_next.is_empty():
+		c.mirror = c.mirror_next
+		c.mirror_next = {}
 
 
 static func _challenger(logic, c: Dictionary):
@@ -517,7 +544,9 @@ static func decide(logic, b) -> Array:
 	c.cast_turn = turn
 	var stacks := int(c.ying)
 	c.ying = 0  # 影势这一下用掉
-	return XConfusion.prepare_enemy(b, [ying_skill(c, stacks), null])
+	var sk := ying_skill(c, stacks)  # 先按这一轮定下的 mirror 合成，再转正候选
+	_mirror_promote(c)
+	return XConfusion.prepare_enemy(b, [sk, null])
 
 
 ## 【影·原招】：心魔普攻 1 号复制一份（保留编好的公式，出伤是心魔自己的底子），借原招的名字、物魔必中、元素、单群；
@@ -577,11 +606,16 @@ static func _resonance(logic, c: Dictionary) -> void:
 ## 挑战者本人清醒命中：消堕势、逆命镇压本回合与下回合（可刷新）
 static func _tongduo_suppress(logic, c: Dictionary, u) -> void:
 	var had := int(c.fall) > 0
-	c.fall = maxi(int(c.fall) - _p(c, "suppress_shed"), 0)
+	var shed := mini(_p(c, "suppress_shed"), int(c.fall))
+	c.fall = int(c.fall) - shed
 	if int(c.fall) <= 0:
 		c.fall_turns = 0
 	c.suppress_to = int(logic.turn) + _p(c, "suppress_rounds") - 1
-	c.queue.append({"type": "battle_text", "text": str(c.texts.get("suppress" if had else "suppress_only", "")) % u.display_name()})
+	var rounds := _p(c, "suppress_rounds")
+	if had:  # T323（T319 P3-1）：消去层数、压制回合读实际数，不写死在文案里
+		c.queue.append({"type": "battle_text", "text": str(c.texts.get("suppress", "")) % [u.display_name(), shed, rounds]})
+	else:
+		c.queue.append({"type": "battle_text", "text": str(c.texts.get("suppress_only", "")) % [u.display_name(), rounds]})
 
 
 ## XTianqiBrand 通知：印纹满槽（kind "sear"）或自发发作（kind "fit"，_start_fit 里 source 不是 sear 才发，满槽当场引发的发作不重复数）。
@@ -631,6 +665,7 @@ static func end_turn(logic) -> Array:
 		"yingjie":
 			if int(logic.turn) == int(c.charge_turn) + 1:
 				c.ying = 0  # 重演回合过了（心魔被控没出手也一样）：影势消散，不囤
+				_mirror_promote(c)  # 心魔没出手：挑战者先手出的候选也在回合末转正
 		"tongduo":
 			if int(c.fall) > 0:
 				c.fall_turns = int(c.fall_turns) - 1

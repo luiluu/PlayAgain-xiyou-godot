@@ -1349,7 +1349,7 @@ func act(u: XBattler, skill, target) -> Array:
 		return logs
 	logs.append_array(XTianqiEnemyAI.take_logs(u))  # 天启篇六维（T277）：低韧性慌乱战报
 	XTianqiBrand.act_begin(self)  # 天启篇烙印灼痕：开一次新的行动（一次行动对同一个人最多涨一次）
-	XTianqiXinmoTraits.act_begin(self, u, skill)  # 天启篇心魔特点（T318／T319）：一次行动对同一个人最多判一次；发作替换之前记是不是发作行动、影劫映照挑战者的招
+	XTianqiXinmoTraits.act_begin(self, u, skill)  # 天启篇心魔特点（T318／T319）：一次行动对同一个人最多判一次；发作替换之前记是不是发作行动
 	if XTianqiBrand.is_fit_command(skill):  # 天启篇烙印发作：哑火换成普攻敌人；发呆、断片、抽自己、六亲不认按放弃行动走（那一下在 perform 里结算）
 		var fx := XTianqiBrand.perform(self, u, skill, target)
 		logs.append_array(fx.logs)
@@ -1369,6 +1369,8 @@ func act(u: XBattler, skill, target) -> Array:
 	if overloaded:
 		skipped = true
 		logs.append(XGojo.overload_text(u))
+	if not skipped:
+		XTianqiXinmoTraits.mirror_note(self, u, skill)  # 天启篇心魔特点【影劫】（T323）：判完能不能行动再记挑战者的招，被控跳过的不记
 	if skipped:
 		# 敌人走 YEP processTurn，不 startAction、不减行动结束的回合；角色走 OTB startOTBInput，没有行动也走 endAction、减回合，专属模块的收尾都不做事（参照 stunned_turn）
 		started = u.is_actor()
@@ -1468,8 +1470,8 @@ func act(u: XBattler, skill, target) -> Array:
 	if started and skill is Dictionary:  # 被晕等跳过行动时 skill 已置空
 		logs.append_array(mark_views(XTianqiRewards.after_action(self, u, skill)))  # 天启篇奖励：钥匙串追加普攻、雷火弹
 	logs.append_array(XTianqiWeakAffix.root_end(self, u))  # 天启篇弱者专属词条：这一根全部结算完，各条专属出派生（反击、追击），收根
-	logs.append_array(XTianqiXinmoTraits.take_logs(self))  # 天启篇心魔特点（T318）：骨裂叠层／震散
 	logs.append_array(XTianqiBrand.take_logs(self))  # 天启篇烙印灼痕：满了的那一行、当场开始的发作
+	logs.append_array(XTianqiXinmoTraits.take_logs(self))  # 天启篇心魔特点（T318）：骨裂叠层／震散；排在烙印之后，「印纹发亮」先于「借势同堕」（T323）
 	_sync_orders(before, true)
 	resolve_collapses()
 	logs.append_array(XTianqiBrand.after_act(self, u))  # T086-a 发作真换人／自动换回：行动收尾全部跑完、人还活着才和助力位对调
@@ -1785,6 +1787,8 @@ func enemy_transform(index: int, enemy_id: int) -> Array:
 	var anchor := XGuardianRework.transform_before(e)  # T317：天启篇守层者变身按本层出伤、能力值不跳（变身前原数据 ÷ 新记录）
 	e.enemy_id = enemy_id
 	XGuardianRework.transform_after(e, anchor)
+	if not e.boss_difficulty_boss and XGuardianRework.transform_floor(e) > 0:
+		e.boss_difficulty_boss = true  # T323（T322 核查 P2-1）：天启篇守层者变身成不在首领表的号（30 层→538）仍按首领（首领规则、减益减半、击晕豁免、首领状态栏）；西游档、开关关时 transform_floor 为 0，照原版
 	if e.original_name() != old_name:
 		e.letter = ""
 		_letters.erase(e)
@@ -1911,6 +1915,7 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	var before := _movable_snapshot()
 	XTianqiBrand.act_begin(self)  # 天启篇烙印灼痕：强制行动也算一次行动
 	XTianqiXinmoTraits.act_begin(self, u, skill)  # 天启篇心魔特点（T318／T319）：强制行动也算一次行动
+	XTianqiXinmoTraits.mirror_note(self, u, skill)  # 影劫（T323）：强制行动不看能不能动，照记
 	skill = XTianqiWeakAffix.skill_view(skill, u)  # 天启篇弱者专属词条批 1：本人投影（范围）
 	XTianqiWeakAffix.root_begin(self, u, skill)  # 天启篇弱者专属词条：强制行动也是一根（不重置每回合次数）
 	XNanoha.begin(self)
@@ -1942,8 +1947,8 @@ func _forced_run(u: XBattler, skill: Dictionary, target: XBattler, first_subject
 	XNanoha.finish(self, u)
 	logs.append_array(mark_views(XGuyu.after_action(self, u, skill)))  # 谷雨 endAction 包装 afterAction：强制行动也触发花期绽放（同 act，在奈叶之后）
 	logs.append_array(XTianqiWeakAffix.root_end(self, u))  # 天启篇弱者专属词条：强制行动这一根收尾
-	logs.append_array(XTianqiXinmoTraits.take_logs(self))  # 天启篇心魔特点（T318）：骨裂叠层／震散
 	logs.append_array(XTianqiBrand.take_logs(self))  # 天启篇烙印灼痕：满了的那一行、当场开始的发作
+	logs.append_array(XTianqiXinmoTraits.take_logs(self))  # 天启篇心魔特点（T318）：骨裂叠层／震散；排在烙印之后，「印纹发亮」先于「借势同堕」（T323）
 	_sync_orders(before, true)
 	return logs
 
