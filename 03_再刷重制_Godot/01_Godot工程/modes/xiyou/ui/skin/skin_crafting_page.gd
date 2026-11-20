@@ -308,27 +308,35 @@ func _place_foot() -> void:
 
 # ---- 环下一条：类别等级＋经验条 ----
 
+## 环下一条的三样：[左「打造等级 5」, 右「340 / 900」或「已满级」, 条的比例]
+static func level_parts(s: XState, cat: int) -> Array:
+	var lv := XCrafting.craft_level(s, cat)
+	if lv >= XCrafting.MAX_LEVEL:
+		return [level_text(s, cat), "已满级", 1.0]
+	var e := XCrafting.craft_exp(s, cat)
+	var nx := XCrafting.exp_next(s, cat)
+	return [level_text(s, cat), "%s / %s" % [XSkinTemplatePage._group(e), XSkinTemplatePage._group(nx)], clampf(float(e) / maxf(1.0, float(nx)), 0.0, 1.0)]
+
+
 func _draw_level() -> void:
 	var s := XState.current
 	if s == null:
 		return
-	var cat := scene.cat_index
-	var lv := XCrafting.craft_level(s, cat)
+	var parts := level_parts(s, scene.cat_index)
+	var maxed := str(parts[1]) == "已满级"
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	var w := level_bar.size.x
 	var fs := XUiSkin.fs(XUiSkin.FS_AUX_MAX)
-	XUiSkin.ds(level_bar, body, Vector2(0, fs), level_text(s, cat), HORIZONTAL_ALIGNMENT_LEFT, w * 0.6, fs, XUiSkin.TEXT)
-	var right := "已满级" if lv >= XCrafting.MAX_LEVEL else "%s / %s" % [XSkinTemplatePage._group(XCrafting.craft_exp(s, cat)), XSkinTemplatePage._group(XCrafting.exp_next(s, cat))]
-	var f := body if lv >= XCrafting.MAX_LEVEL else num
+	XUiSkin.ds(level_bar, body, Vector2(0, fs), str(parts[0]), HORIZONTAL_ALIGNMENT_LEFT, w * 0.6, fs, XUiSkin.TEXT)
+	var f := body if maxed else num
 	var rfs := XUiSkin.fs(XUiSkin.FS_AUX)
-	var rw := f.get_string_size(right, HORIZONTAL_ALIGNMENT_LEFT, -1, rfs).x
-	XUiSkin.ds(level_bar, f, Vector2(w - rw, fs), right, HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, XUiSkin.GOLD_LIGHT if lv >= XCrafting.MAX_LEVEL else XUiSkin.TEXT_2)
+	var rw := f.get_string_size(str(parts[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, rfs).x
+	XUiSkin.ds(level_bar, f, Vector2(w - rw, fs), str(parts[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, XUiSkin.GOLD_LIGHT if maxed else XUiSkin.TEXT_2)
 	var y := fs + 10.0
 	level_bar.draw_rect(Rect2(0, y, w, BAR_H), Color(XUiSkin.LINE, 0.18))
-	var ratio := 1.0 if lv >= XCrafting.MAX_LEVEL else clampf(float(XCrafting.craft_exp(s, cat)) / maxf(1.0, XCrafting.exp_next(s, cat)), 0.0, 1.0)
-	if ratio > 0.0:
-		level_bar.draw_rect(Rect2(0, y, w * ratio, BAR_H), XUiSkin.GOLD)
+	if float(parts[2]) > 0.0:
+		level_bar.draw_rect(Rect2(0, y, w * float(parts[2]), BAR_H), XUiSkin.GOLD)
 
 
 # ---- 提示道 ----
