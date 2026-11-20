@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-t285-boss-crit-evade
 
 - 车道／工作者：T285＋T290 天启篇首领暴击闪避按 D237 丙＋降暴闪三处文案对齐（cc，Opus＋medium）
-- 状态：可合并（r2：小A 核 r1 退回 P1×3、P2×3、P3×1 已改，见「r2 返修」）
+- 状态：可合并（r3：总装合批卡在 c_tier 免暴木桩，见「r3 返修」；r2：小A 核 r1 退回 P1×3、P2×3、P3×1 已改，见「r2 返修」）
 
 ## 变更记录草稿
 
@@ -16,6 +16,7 @@
   - 词条「压制」（`XTianqiAffixBattle.enemy_xparam`）也减暴击闪避。
   - 甚尔五感（主技能、武器库、反弹）：目标暴击闪避底子 ×50%（`toji_cev_pct`，整数）再扣队友的降暴击闪避（`XEnemy.cev_for_toji`），取代整份 ×0.34。
   - 死亡骑士 `crit_immune`、七印魔塔 `no_crit` 仍在 `item_cri` 最前面拦截，没动。
+  - 免暴击标记（r3）：`XTianqiCombat.crit_immune(dt)`（敌人挂 meta `XTianqiCombat.META_CRIT_IMMUNE`）也在 `item_cri` 最前面拦，不经暴击闪避、不受封顶影响。现在只有 c_tier 木桩标尺挂它。
 - 实测（专项，寻常，存档照开局置 DCultyL3、仓库倍率 2）：20／30／34 层守层者暴击闪避数据原值 90%／80%／700%（实机含 ×2 为 180%／160%／1400%）→ 20%／30%／40%；艰险 25%／35%／45%。8～19 层守层者原值低于上限的照原值（不再 ×2），见下「8～19 层与七印」。面板 100%：裸打 80／70／60%；34 层挂灵狐 −10%／荒芜 −30%／克拉辛 −50%／压制 25 → 70／90／100／85%；20、30 层挂荒芜 → 100%；1 层守层者（底子 0）挂克拉辛，面板 70% 仍 70%（原来会倒推）；甚尔单独打 34 层 80%，队友挂灵狐＋紫金法咒后 100%。乘法回退：34 层 100%→60%、130%→78%。均与评估稿第三节表一致。
 - 草稿卡「共同前置③」的敌人闪避／魔法闪避 30%、暴击 50% 封顶：代码已接（同一条路），表里先填 -1 不生效（协调定 B，见「要 Kyo 定」）。
 - 开关（各自可回退）：`XTianqiCombat.ENEMY_XPARAM_CAP`（去 ×2、底子封顶、夹 0）、`XTianqiCombat.SUBTRACTIVE_CEV`（关＝退回乘法，「丙-乘法备选」）、`XTianqiAffixBattle.SUPPRESS_CEV`、`XToji.TIANQI_CEV_HALF`（关＝照旧 ×0.34）；表里单项填 -1 不封顶。西游存档不走这些路，开关开关结果一样（专项核）。
@@ -101,6 +102,8 @@
 
 ## 验证
 
+- r3：本机前台 `xiyou_tianqi_enemy_cev` 117/117、`xiyou_tianqi_c_tier` 35/35（`fight.no_crit_dummy_lower` 过）、`xiyou_tianqi_horsemen` 96/96、`xiyou_tianqi_horsemen_battle` 142/142、`xiyou_tianqi_qiyin_altar` 172/172、`xiyou_tianqi_qiyin_endgame` 62/62；反向验证 4 项（去掉 item_cri 标记拦截、标记恒假、去掉死亡骑士免暴、木桩不挂标记）全咬住；`语法检查.py` 过；`发行空壳.py check` 过；云端选测 d75071614 基准 a4cd05d15 644 个场景 16 片全过（run 44726366747；`xiyou_tianqi_followup_kill` 并行偶发、单跑过，与本单无关）。
+
 - r2：专项 `xiyou_tianqi_enemy_cev` 106/106；反向验证 4 项（去掉 -1 走原路、底子恢复 ×2、去掉变身记层、负暴击仍减）全咬住；云端选测 260a62195 472 个场景（基准 r1 交付 5e801653d，含 `xiyou_determinism`、`xiyou_rules*` 等战斗核心）16 片全过（run 44711932527）；本机 `xiyou_tianqi_affix_text` 38/38、`xiyou_tianqi_affix_table` 47/47、`xiyou_tianqi_skills` 245/245；数据校验 0、语法检查、工具回归过。
 - r1：专项 62/62；本机另跑 `xiyou_tianqi_balance` 88/88、`xiyou_tianqi_affix_battle` 86/86、`xiyou_toji` 75/75、`xiyou_toji_battle` 1327/1327、`xiyou_tianqi_horsemen` 96/96、`xiyou_tianqi_horsemen_battle` 142/142、`xiyou_tianqi_qiyin_altar` 172/172（死亡骑士免暴、七印魔塔无暴击不变）。
 - `天启篇数据校验.py` 退出码 0；`语法检查.py` 过；`工具回归.py` 全过。
@@ -131,6 +134,23 @@
 - P2-3：`battle_logic.enemy_transform` 换身份前调 `XTianqiCombat.keep_floor` 记原层（自己的 meta `t285_floor`）；专项：地图 4（非楼层）30 层玉皇大帝变 538 后仍 30%，去掉记层则掉回 20%。
 - P3-1：没照建议写 `maxf(maxf(rate,0)−cev,0)`——那样 rate=−0.2、cev=−1.0 会得 1.0，反而更「负负得正」；改成攻击方这一项 ≤0 直接 0（同乘法 0×任何数），专项断言 −0.2 打负暴击闪避＝0。
 - P2-4 云裳不做（T312）。
+
+## r3 返修（总装合批卡住，11-20）
+
+- 起因：云端 `xiyou_tianqi_c_tier` 的 `fight.no_crit_dummy_lower` 挂。`tests/virtual_player/c_tier.gd` 的免暴击木桩靠往敌人**数据**里加 +1000% 暴击闪避特性，T285 把数据特性算底子按层段封顶（36 层艰险 45%），木桩不再免暴。
+- 天启篇真免暴击清单（都不经暴击闪避，封顶开着仍免暴）：
+  | 哪个 | 怎么实现 | 位置 | 封顶下 |
+  |---|---|---|---|
+  | 死亡骑士（勇者暴击免疫） | `horsemen.json` 骑士 `crit_immune: true` → `XTianqiHorsemen.crit_immune(dt)` | `tianqi_data/horsemen.json:33`、`core/tianqi_horsemen.gd:1398`、`battle/battle_logic.gd:2790` | 免（专项 `im.knight_zero*`，挂降暴闪也 0） |
+  | 七印祭坛魔塔（灰印，含七首之龙灰印段）、七印书卷 | 战斗规则 `magic_tower` → `XTianqiQiyinRule.no_crit(logic, u)`，按攻击方判 | `core/tianqi_qiyin_rule.gd:344`、`battle/battle_logic.gd:2792` | 免（`xiyou_tianqi_qiyin_altar` `tower_no_crit`／`scroll_tower` 172/172，`xiyou_tianqi_qiyin_endgame` 62/62，封顶默认开） |
+  | 免暴击标记（r3 新加） | 敌人挂 meta `XTianqiCombat.META_CRIT_IMMUNE` → `XTianqiCombat.crit_immune(dt)` | `core/tianqi_combat.gd`（`crit_immune`）、`battle/battle_logic.gd:2794` | 免（专项 `im.mark_zero*`，两开关全关也 0） |
+- 数据库里没有「免暴击」备注标签；高暴闪的是原版敌人数据（88 个 ≥100%，如鸿钧 700%）和正值状态（13 个，如银鳞盾 626 +1000%、虚闪难击 1285 +300%）。这些按评估稿 v0.2 第五节就是「底子＝数据特性＋正增益」，正是 D237 要封顶的对象，不算免暴设计规则，照封。
+- 改法（取「免暴走独立判定」，不取「封顶只夹数据库原值」）：评估稿和 D237 写死底子＝数据特性＋正值状态都要封，「只夹数据库原值」与之冲突；而且木桩加的恰好是数据特性，那样也救不了它。独立标记和死亡骑士同一处、同一口径，木桩量出来的就是「像死亡骑士那样免暴」的数，正是 U 的第二个数要的。
+- c_tier：免暴木桩改成 `e.set_meta(XTianqiCombat.META_CRIT_IMMUNE, true)`，不再改敌人数据（`NO_CRIT_TRAIT` 常量留着，只给专项查「敌人数据没被改」）。
+- 专项 `xiyou_tianqi_enemy_cev` 加 `_immune`（11 项，共 117）：死亡骑士（实机准备流程、封顶开）暴击率 0、挂灵狐也 0；34 层鸿钧挂标记 0、两开关关也 0、撤标记回原值；反向：挂银鳞盾（+1000%）封顶开时暴闪夹到 40%、暴击率不变（不免暴），关封顶才变 0。
+- 新增 XTianqiCombat 公共函数：`crit_immune(dt) -> bool`（西游 `battle_logic.item_cri` 直调），常量 `META_CRIT_IMMUNE`（只有测试用）。发行空壳按返回类型给 `false`＝发行包里没有免暴击标记，和真脚本在西游存档上一样（没人挂标记），**不用加特例**；`发行空壳.py check` 过（79 个脚本、736 个函数都有）。
+- 已 cherry-pick 总装的空壳修 c696c2d8e（`发行空壳特例.json` 三条：`crit_after_cev`／`xparam_cap_pct`／`enemy_xparam`）。
+- 已 merge github/main 0865f4570。
 
 ## 本分支提交
 
