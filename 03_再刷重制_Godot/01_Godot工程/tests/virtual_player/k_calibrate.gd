@@ -303,7 +303,7 @@ func _emit_surv(id: int, tier: String) -> void:
 			break
 		logic.end_turn()
 		rounds = r + 1
-	var row := {"actor": id, "tier": tier, "rounds": rounds, "died": died, "taken": roundi(taken), "healed": roundi(healed), "hp_left": roundi(a.hp), "mhp": roundi(a.mhp), "atk": surv_atk, "protect_casts": prot}
+	var row := {"actor": id, "tier": tier, "rounds": rounds, "died": died, "taken": roundi(taken), "healed": roundi(healed), "hp_left": roundi(a.hp), "mhp": roundi(a.mhp), "atk": surv_atk, "protect_casts": prot, "secrets": a.get_meta("k_secrets", [])}
 	print("K_SURV %s" % JSON.stringify(row))
 	logic.end_battle(0)
 
@@ -1098,8 +1098,15 @@ func _qiyin(a: XActor) -> void:
 static var _secret_ids: Array = []
 func _secrets(a: XActor) -> void:
 	if _secret_ids.is_empty():
+		# T280（人审 P1-1）：天启篇号卷「retired」的三本权能书（命运指引、生命之火、阴阳合一·阳）不掉，不能学给角色——
+		# 不剔的话秘籍格多的弱者会拿 0 分的 7242 生命之火当填充（生命 +100%、每回合回 15%），生存实测全被弱者占满
+		var retired_names := []
+		for it in XTianqiTrumpet.data().get("retired", {}).get("items", []):
+			var nm := str(XDB.rec("Items", int(it)).get("name", "")).replace("权能书：", "")
+			retired_names.append("权能·" + nm)
 		for sk in XDB.table("Skills"):
 			if sk is Dictionary and int(sk.get("id", 0)) > 0 and str(sk.get("name", "")) != "" \
+					and not retired_names.has(str(sk.get("name", ""))) \
 					and XTianqiLedger.is_secret_skill(int(sk.id), int(sk.get("stypeId", 0))):
 				_secret_ids.append(int(sk.id))
 	var had := a.skill_ids.duplicate()

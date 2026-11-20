@@ -1,5 +1,5 @@
 {
- "_note": "天启篇六维（T275 表结构；T280 全员按实测重算，设定稿 天启篇_角色六维_v0.3定稿，Kyo D234）。刻度 E～SSS＝1～8 分；全表整数（附则 E）。只读数据，战斗中不重算；本表不碰伤害、血防、敏捷。 actors 含 156 人（T280 草稿，待 Kyo 过目，当前写的是分档口径 C）：输出＝k_calibrate 实测名次；生存＝标准敌人面前自动战斗实测挨打；速度＝敏捷×行动次数（再动／拉条／先制）；辅助＝职责＋机制词；战商／韧性＝手标分名次（依据原作人设，非实测，待人审）；按全库名额配档再按 R1～R3 降档。打分脚本 07_开发环境/六维打分.py，报告 07_开发环境/六维全员重算报告.md。",
+ "_note": "天启篇六维（T275 表结构；T280 全员按实测重算，设定稿 天启篇_角色六维_v0.3定稿，Kyo D234）。刻度 E～SSS＝1～8 分；全表整数（附则 E）。只读数据，战斗中不重算；本表不碰伤害、血防、敏捷。 actors 含 156 人（T280 草稿，待 Kyo 过目，当前写的是分档口径 C）：输出＝k_calibrate 实测名次；生存＝标准敌人面前自动战斗实测挨打；速度＝敏捷×行动次数（再动／拉条／先制）；辅助＝职责＋机制词；战商／韧性＝按角色号逐人手标分名次（依据原作人设／技能，非实测）；按全库名额配档再按 R1～R3 降档；停用角色（146、152、161、141）不占名额、暂记 C；D239 待 Kyo 定：绿司机(2)、维利(22)、狗逍遥(1)、诛仙(162) 补量后输出超区间，输出档可能变。打分脚本 07_开发环境/六维打分.py，报告 07_开发环境/六维全员重算报告.md。",
  "version": 1,
  "dims": [
   "output",
@@ -286,10 +286,10 @@
    "name": "狗逍遥",
    "class": "strong",
    "output": "S",
-   "survive": "E",
+   "survive": "D",
    "speed": "E",
-   "wit": "E",
-   "resolve": "E",
+   "wit": "D",
+   "resolve": "D",
    "support": "D"
   },
   "2": {
@@ -298,8 +298,8 @@
    "output": "A",
    "survive": "B",
    "speed": "D",
-   "wit": "D",
-   "resolve": "A",
+   "wit": "C",
+   "resolve": "B",
    "support": "A"
   },
   "3": {
@@ -308,69 +308,69 @@
    "output": "C",
    "survive": "B",
    "speed": "B",
-   "wit": "E",
-   "resolve": "E",
+   "wit": "D",
+   "resolve": "D",
    "support": "D"
   },
   "4": {
    "name": "窃格瓦拉·周",
    "class": "weak",
    "output": "A",
-   "survive": "B",
+   "survive": "C",
    "speed": "B",
-   "wit": "A",
+   "wit": "E",
    "resolve": "C",
-   "support": "B"
+   "support": "C"
   },
   "5": {
    "name": "小痔",
    "class": "weak",
    "output": "C",
-   "survive": "A",
+   "survive": "C",
    "speed": "D",
-   "wit": "E",
+   "wit": "D",
    "resolve": "E",
-   "support": "B"
+   "support": "C"
   },
   "6": {
    "name": "吕布",
    "class": "weak",
-   "output": "D",
+   "output": "C",
    "survive": "A",
    "speed": "D",
-   "wit": "E",
+   "wit": "D",
    "resolve": "E",
-   "support": "B"
+   "support": "C"
   },
   "7": {
    "name": "茉蕾",
    "class": "weak",
    "output": "B",
-   "survive": "B",
+   "survive": "A",
    "speed": "D",
-   "wit": "D",
-   "resolve": "C",
-   "support": "S"
+   "wit": "A",
+   "resolve": "B",
+   "support": "A"
   },
   "8": {
    "name": "修",
    "class": "weak",
    "output": "C",
-   "survive": "B",
+   "survive": "A",
    "speed": "D",
-   "wit": "E",
+   "wit": "C",
    "resolve": "A",
-   "support": "B"
+   "support": "A"
   },
   "9": {
    "name": "罗琳",
    "class": "weak",
    "output": "C",
-   "survive": "A",
+   "survive": "D",
    "speed": "C",
    "wit": "B",
-   "resolve": "A",
-   "support": "C"
+   "resolve": "B",
+   "support": "B"
   },
   "10": {
    "name": "美娜",
@@ -378,38 +378,38 @@
    "output": "C",
    "survive": "B",
    "speed": "A",
-   "wit": "C",
+   "wit": "A",
    "resolve": "C",
-   "support": "C"
+   "support": "B"
   },
   "11": {
    "name": "里德",
    "class": "weak",
    "output": "C",
-   "survive": "B",
+   "survive": "C",
    "speed": "B",
    "wit": "C",
    "resolve": "C",
-   "support": "C"
+   "support": "B"
   },
   "12": {
    "name": "斯盖",
    "class": "weak",
    "output": "C",
-   "survive": "SS",
+   "survive": "A",
    "speed": "D",
-   "wit": "D",
-   "resolve": "C",
+   "wit": "C",
+   "resolve": "D",
    "support": "D"
   },
   "13": {
    "name": "刘备",
    "class": "strong",
    "output": "D",
-   "survive": "C",
+   "survive": "SS",
    "speed": "C",
    "wit": "A",
-   "resolve": "S",
+   "resolve": "A",
    "support": "S"
   },
   "14": {
@@ -418,7 +418,7 @@
    "output": "C",
    "survive": "C",
    "speed": "D",
-   "wit": "B",
+   "wit": "C",
    "resolve": "S",
    "support": "D"
   },
@@ -426,29 +426,29 @@
    "name": "张飞",
    "class": "weak",
    "output": "B",
-   "survive": "SS",
+   "survive": "B",
    "speed": "B",
    "wit": "E",
    "resolve": "E",
-   "support": "C"
+   "support": "D"
   },
   "16": {
    "name": "克莱德",
    "class": "weak",
    "output": "E",
-   "survive": "A",
+   "survive": "S",
    "speed": "C",
    "wit": "D",
-   "resolve": "E",
+   "resolve": "D",
    "support": "A"
   },
   "17": {
    "name": "克洛什",
    "class": "weak",
    "output": "E",
-   "survive": "B",
+   "survive": "D",
    "speed": "C",
-   "wit": "D",
+   "wit": "B",
    "resolve": "C",
    "support": "D"
   },
@@ -456,49 +456,49 @@
    "name": "雪清寒",
    "class": "weak",
    "output": "C",
-   "survive": "C",
-   "speed": "S",
+   "survive": "E",
+   "speed": "A",
    "wit": "B",
-   "resolve": "C",
-   "support": "C"
+   "resolve": "B",
+   "support": "B"
   },
   "19": {
    "name": "安东尼",
    "class": "weak",
    "output": "B",
-   "survive": "B",
+   "survive": "C",
    "speed": "D",
-   "wit": "B",
+   "wit": "A",
    "resolve": "C",
-   "support": "C"
+   "support": "B"
   },
   "20": {
    "name": "伯伦希尔",
    "class": "weak",
    "output": "C",
-   "survive": "B",
+   "survive": "D",
    "speed": "D",
    "wit": "C",
-   "resolve": "C",
+   "resolve": "B",
    "support": "B"
   },
   "21": {
    "name": "玛莎",
    "class": "weak",
    "output": "D",
-   "survive": "A",
-   "speed": "B",
-   "wit": "D",
-   "resolve": "C",
+   "survive": "C",
+   "speed": "A",
+   "wit": "E",
+   "resolve": "E",
    "support": "D"
   },
   "22": {
    "name": "维利",
    "class": "weak",
    "output": "A",
-   "survive": "B",
+   "survive": "C",
    "speed": "D",
-   "wit": "C",
+   "wit": "D",
    "resolve": "C",
    "support": "D"
   },
@@ -506,9 +506,9 @@
    "name": "魔雷老人",
    "class": "weak",
    "output": "C",
-   "survive": "B",
+   "survive": "C",
    "speed": "D",
-   "wit": "A",
+   "wit": "C",
    "resolve": "C",
    "support": "D"
   },
@@ -516,9 +516,9 @@
    "name": "克比",
    "class": "weak",
    "output": "D",
-   "survive": "B",
+   "survive": "C",
    "speed": "C",
-   "wit": "B",
+   "wit": "D",
    "resolve": "E",
    "support": "D"
   },
@@ -528,7 +528,7 @@
    "output": "D",
    "survive": "B",
    "speed": "B",
-   "wit": "A",
+   "wit": "C",
    "resolve": "C",
    "support": "A"
   },
@@ -536,19 +536,19 @@
    "name": "曼德斯",
    "class": "weak",
    "output": "B",
-   "survive": "B",
+   "survive": "E",
    "speed": "A",
-   "wit": "D",
+   "wit": "C",
    "resolve": "C",
-   "support": "B"
+   "support": "C"
   },
   "27": {
    "name": "齐格鲁德",
    "class": "weak",
    "output": "B",
-   "survive": "A",
+   "survive": "C",
    "speed": "D",
-   "wit": "B",
+   "wit": "C",
    "resolve": "S",
    "support": "B"
   },
@@ -559,7 +559,7 @@
    "survive": "C",
    "speed": "D",
    "wit": "D",
-   "resolve": "C",
+   "resolve": "B",
    "support": "D"
   },
   "29": {
@@ -568,8 +568,8 @@
    "output": "C",
    "survive": "S",
    "speed": "B",
-   "wit": "D",
-   "resolve": "C",
+   "wit": "A",
+   "resolve": "A",
    "support": "A"
   },
   "30": {
@@ -577,8 +577,8 @@
    "class": "weak",
    "output": "C",
    "survive": "C",
-   "speed": "B",
-   "wit": "C",
+   "speed": "A",
+   "wit": "A",
    "resolve": "C",
    "support": "B"
   },
@@ -586,11 +586,11 @@
    "name": "露茜",
    "class": "weak",
    "output": "E",
-   "survive": "A",
+   "survive": "S",
    "speed": "B",
-   "wit": "B",
-   "resolve": "A",
-   "support": "S"
+   "wit": "C",
+   "resolve": "C",
+   "support": "SS"
   },
   "32": {
    "name": "涅斐莉",
@@ -598,7 +598,7 @@
    "output": "B",
    "survive": "B",
    "speed": "B",
-   "wit": "B",
+   "wit": "C",
    "resolve": "C",
    "support": "D"
   },
@@ -606,38 +606,38 @@
    "name": "晴明",
    "class": "weak",
    "output": "C",
-   "survive": "S",
+   "survive": "B",
    "speed": "B",
-   "wit": "SS",
-   "resolve": "C",
+   "wit": "S",
+   "resolve": "A",
    "support": "A"
   },
   "34": {
    "name": "签弟",
    "class": "weak",
    "output": "C",
-   "survive": "S",
+   "survive": "A",
    "speed": "D",
    "wit": "B",
-   "resolve": "C",
-   "support": "A"
+   "resolve": "B",
+   "support": "S"
   },
   "35": {
    "name": "摇光",
    "class": "weak",
    "output": "B",
-   "survive": "B",
+   "survive": "D",
    "speed": "D",
    "wit": "D",
    "resolve": "C",
-   "support": "D"
+   "support": "B"
   },
   "36": {
    "name": "至尊宝",
    "class": "weak",
    "output": "B",
-   "survive": "B",
-   "speed": "A",
+   "survive": "D",
+   "speed": "B",
    "wit": "B",
    "resolve": "C",
    "support": "D"
@@ -648,15 +648,15 @@
    "output": "C",
    "survive": "B",
    "speed": "B",
-   "wit": "D",
-   "resolve": "C",
-   "support": "C"
+   "wit": "B",
+   "resolve": "B",
+   "support": "B"
   },
   "38": {
    "name": "曹操",
    "class": "strong",
    "output": "B",
-   "survive": "E",
+   "survive": "D",
    "speed": "B",
    "wit": "S",
    "resolve": "A",
@@ -666,11 +666,11 @@
    "name": "沙和尚",
    "class": "weak",
    "output": "B",
-   "survive": "A",
+   "survive": "E",
    "speed": "D",
-   "wit": "B",
+   "wit": "C",
    "resolve": "A",
-   "support": "A"
+   "support": "B"
   },
   "40": {
    "name": "小白龙",
@@ -678,7 +678,7 @@
    "output": "E",
    "survive": "A",
    "speed": "A",
-   "wit": "B",
+   "wit": "C",
    "resolve": "C",
    "support": "S"
   },
@@ -686,10 +686,10 @@
    "name": "波加尼",
    "class": "weak",
    "output": "C",
-   "survive": "B",
+   "survive": "C",
    "speed": "B",
    "wit": "D",
-   "resolve": "C",
+   "resolve": "D",
    "support": "D"
   },
   "42": {
@@ -699,38 +699,38 @@
    "survive": "B",
    "speed": "B",
    "wit": "B",
-   "resolve": "C",
-   "support": "C"
+   "resolve": "B",
+   "support": "B"
   },
   "43": {
    "name": "露丝",
    "class": "weak",
    "output": "C",
-   "survive": "B",
+   "survive": "C",
    "speed": "B",
    "wit": "C",
-   "resolve": "C",
+   "resolve": "D",
    "support": "D"
   },
   "44": {
    "name": "碧池",
    "class": "weak",
    "output": "E",
-   "survive": "A",
+   "survive": "S",
    "speed": "C",
    "wit": "B",
-   "resolve": "A",
-   "support": "S"
+   "resolve": "C",
+   "support": "A"
   },
   "45": {
    "name": "东方教主",
    "class": "strong",
    "output": "D",
-   "survive": "E",
+   "survive": "D",
    "speed": "S",
    "wit": "D",
    "resolve": "E",
-   "support": "B"
+   "support": "C"
   },
   "46": {
    "name": "克莉丝汀",
@@ -738,17 +738,17 @@
    "output": "C",
    "survive": "B",
    "speed": "D",
-   "wit": "B",
-   "resolve": "C",
+   "wit": "S",
+   "resolve": "B",
    "support": "B"
   },
   "47": {
    "name": "酒剑仙",
    "class": "strong",
    "output": "D",
-   "survive": "E",
+   "survive": "D",
    "speed": "B",
-   "wit": "D",
+   "wit": "B",
    "resolve": "C",
    "support": "D"
   },
@@ -756,10 +756,10 @@
    "name": "莉娜",
    "class": "weak",
    "output": "B",
-   "survive": "B",
+   "survive": "C",
    "speed": "C",
    "wit": "D",
-   "resolve": "A",
+   "resolve": "D",
    "support": "D"
   },
   "49": {
@@ -769,7 +769,7 @@
    "survive": "C",
    "speed": "B",
    "wit": "D",
-   "resolve": "C",
+   "resolve": "D",
    "support": "D"
   },
   "50": {
@@ -778,28 +778,28 @@
    "output": "B",
    "survive": "D",
    "speed": "D",
-   "wit": "C",
-   "resolve": "C",
-   "support": "B"
+   "wit": "E",
+   "resolve": "B",
+   "support": "C"
   },
   "51": {
    "name": "法海",
    "class": "weak",
    "output": "D",
-   "survive": "S",
+   "survive": "C",
    "speed": "D",
    "wit": "A",
-   "resolve": "C",
-   "support": "C"
+   "resolve": "A",
+   "support": "B"
   },
   "52": {
    "name": "孙悟空",
    "class": "weak",
    "output": "B",
-   "survive": "A",
+   "survive": "C",
    "speed": "A",
-   "wit": "A",
-   "resolve": "C",
+   "wit": "B",
+   "resolve": "B",
    "support": "D"
   },
   "53": {
@@ -808,25 +808,25 @@
    "output": "B",
    "survive": "B",
    "speed": "D",
-   "wit": "B",
-   "resolve": "C",
+   "wit": "D",
+   "resolve": "D",
    "support": "D"
   },
   "54": {
    "name": "迪昂",
    "class": "weak",
    "output": "C",
-   "survive": "B",
+   "survive": "D",
    "speed": "B",
    "wit": "D",
-   "resolve": "C",
-   "support": "C"
+   "resolve": "B",
+   "support": "B"
   },
   "55": {
    "name": "橙",
    "class": "weak",
    "output": "D",
-   "survive": "S",
+   "survive": "B",
    "speed": "D",
    "wit": "B",
    "resolve": "C",
@@ -836,30 +836,30 @@
    "name": "瑞普",
    "class": "weak",
    "output": "E",
-   "survive": "SS",
+   "survive": "A",
    "speed": "C",
    "wit": "C",
    "resolve": "C",
-   "support": "S"
+   "support": "SS"
   },
   "57": {
    "name": "龙马",
    "class": "weak",
    "output": "C",
-   "survive": "B",
+   "survive": "D",
    "speed": "D",
-   "wit": "D",
-   "resolve": "C",
+   "wit": "C",
+   "resolve": "B",
    "support": "D"
   },
   "58": {
    "name": "小青",
    "class": "weak",
    "output": "D",
-   "survive": "C",
+   "survive": "D",
    "speed": "A",
-   "wit": "D",
-   "resolve": "C",
+   "wit": "C",
+   "resolve": "D",
    "support": "D"
   },
   "59": {
@@ -869,14 +869,14 @@
    "survive": "D",
    "speed": "C",
    "wit": "A",
-   "resolve": "C",
+   "resolve": "B",
    "support": "D"
   },
   "60": {
    "name": "马宝国",
    "class": "weak",
    "output": "B",
-   "survive": "A",
+   "survive": "E",
    "speed": "B",
    "wit": "E",
    "resolve": "E",
@@ -886,9 +886,9 @@
    "name": "町甄",
    "class": "weak",
    "output": "B",
-   "survive": "C",
+   "survive": "E",
    "speed": "D",
-   "wit": "S",
+   "wit": "A",
    "resolve": "A",
    "support": "B"
   },
@@ -896,9 +896,9 @@
    "name": "布兰博",
    "class": "weak",
    "output": "C",
-   "survive": "B",
+   "survive": "C",
    "speed": "D",
-   "wit": "B",
+   "wit": "D",
    "resolve": "C",
    "support": "D"
   },
@@ -906,47 +906,47 @@
    "name": "拉尔",
    "class": "weak",
    "output": "D",
-   "survive": "B",
+   "survive": "A",
    "speed": "D",
    "wit": "C",
-   "resolve": "C",
-   "support": "S"
+   "resolve": "D",
+   "support": "A"
   },
   "64": {
    "name": "杰诺",
    "class": "weak",
    "output": "D",
-   "survive": "C",
+   "survive": "D",
    "speed": "D",
    "wit": "B",
-   "resolve": "C",
-   "support": "C"
+   "resolve": "B",
+   "support": "D"
   },
   "65": {
    "name": "孙权",
    "class": "weak",
    "output": "D",
-   "survive": "B",
+   "survive": "C",
    "speed": "D",
    "wit": "A",
-   "resolve": "A",
+   "resolve": "B",
    "support": "B"
   },
   "66": {
    "name": "娜莎",
    "class": "weak",
    "output": "B",
-   "survive": "A",
+   "survive": "C",
    "speed": "D",
-   "wit": "D",
-   "resolve": "C",
+   "wit": "E",
+   "resolve": "E",
    "support": "D"
   },
   "67": {
    "name": "科妮莉亚",
    "class": "weak",
    "output": "C",
-   "survive": "B",
+   "survive": "C",
    "speed": "D",
    "wit": "C",
    "resolve": "C",
@@ -956,20 +956,20 @@
    "name": "尤妮娅",
    "class": "weak",
    "output": "D",
-   "survive": "C",
+   "survive": "D",
    "speed": "B",
    "wit": "D",
-   "resolve": "C",
+   "resolve": "D",
    "support": "D"
   },
   "69": {
    "name": "花木兰",
    "class": "weak",
    "output": "D",
-   "survive": "SS",
+   "survive": "B",
    "speed": "D",
-   "wit": "C",
-   "resolve": "C",
+   "wit": "B",
+   "resolve": "A",
    "support": "B"
   },
   "70": {
@@ -978,7 +978,7 @@
    "output": "A",
    "survive": "D",
    "speed": "D",
-   "wit": "B",
+   "wit": "C",
    "resolve": "C",
    "support": "D"
   },
@@ -986,97 +986,97 @@
    "name": "诸葛孔明",
    "class": "strong",
    "output": "E",
-   "survive": "C",
+   "survive": "A",
    "speed": "B",
    "wit": "SS",
-   "resolve": "C",
-   "support": "B"
+   "resolve": "S",
+   "support": "D"
   },
   "72": {
    "name": "阿语",
    "class": "weak",
    "output": "C",
-   "survive": "A",
+   "survive": "D",
    "speed": "A",
-   "wit": "B",
-   "resolve": "A",
+   "wit": "SS",
+   "resolve": "B",
    "support": "S"
   },
   "73": {
    "name": "塞西莉",
    "class": "weak",
    "output": "B",
-   "survive": "A",
+   "survive": "C",
    "speed": "D",
-   "wit": "B",
-   "resolve": "C",
-   "support": "C"
+   "wit": "C",
+   "resolve": "D",
+   "support": "D"
   },
   "74": {
    "name": "陈",
    "class": "weak",
    "output": "B",
-   "survive": "S",
+   "survive": "B",
    "speed": "B",
-   "wit": "B",
-   "resolve": "C",
+   "wit": "C",
+   "resolve": "B",
    "support": "A"
   },
   "75": {
    "name": "智甚",
    "class": "weak",
    "output": "C",
-   "survive": "S",
+   "survive": "C",
    "speed": "B",
    "wit": "B",
-   "resolve": "C",
+   "resolve": "B",
    "support": "B"
   },
   "76": {
    "name": "白晶晶",
    "class": "weak",
    "output": "C",
-   "survive": "B",
+   "survive": "C",
    "speed": "A",
-   "wit": "D",
-   "resolve": "C",
-   "support": "C"
+   "wit": "B",
+   "resolve": "D",
+   "support": "B"
   },
   "77": {
    "name": "玉兔精",
    "class": "weak",
    "output": "D",
-   "survive": "B",
+   "survive": "A",
    "speed": "C",
-   "wit": "D",
-   "resolve": "A",
+   "wit": "E",
+   "resolve": "E",
    "support": "A"
   },
   "78": {
    "name": "十三娘",
    "class": "weak",
    "output": "B",
-   "survive": "B",
+   "survive": "C",
    "speed": "D",
    "wit": "B",
-   "resolve": "C",
+   "resolve": "D",
    "support": "B"
   },
   "79": {
    "name": "裴钱",
    "class": "weak",
    "output": "B",
-   "survive": "C",
+   "survive": "D",
    "speed": "D",
-   "wit": "D",
-   "resolve": "C",
+   "wit": "B",
+   "resolve": "D",
    "support": "D"
   },
   "80": {
    "name": "白起",
    "class": "weak",
    "output": "B",
-   "survive": "B",
+   "survive": "D",
    "speed": "A",
    "wit": "A",
    "resolve": "S",
@@ -1086,19 +1086,19 @@
    "name": "申公豹",
    "class": "weak",
    "output": "E",
-   "survive": "A",
+   "survive": "B",
    "speed": "A",
-   "wit": "A",
-   "resolve": "C",
-   "support": "S"
+   "wit": "S",
+   "resolve": "D",
+   "support": "A"
   },
   "82": {
    "name": "玉面狐狸",
    "class": "strong",
    "output": "E",
-   "survive": "D",
+   "survive": "C",
    "speed": "A",
-   "wit": "B",
+   "wit": "A",
    "resolve": "C",
    "support": "D"
   },
@@ -1106,7 +1106,7 @@
    "name": "荒天弟",
    "class": "weak",
    "output": "B",
-   "survive": "A",
+   "survive": "B",
    "speed": "A",
    "wit": "A",
    "resolve": "S",
@@ -1116,7 +1116,7 @@
    "name": "小毒",
    "class": "strong",
    "output": "D",
-   "survive": "C",
+   "survive": "B",
    "speed": "B",
    "wit": "C",
    "resolve": "C",
@@ -1126,17 +1126,17 @@
    "name": "爱莉",
    "class": "strong",
    "output": "C",
-   "survive": "E",
+   "survive": "D",
    "speed": "D",
    "wit": "S",
-   "resolve": "C",
+   "resolve": "A",
    "support": "B"
   },
   "86": {
    "name": "张三丰",
    "class": "weak",
    "output": "D",
-   "survive": "A",
+   "survive": "C",
    "speed": "D",
    "wit": "S",
    "resolve": "SS",
@@ -1146,10 +1146,10 @@
    "name": "张无忌",
    "class": "weak",
    "output": "C",
-   "survive": "B",
+   "survive": "C",
    "speed": "C",
-   "wit": "D",
-   "resolve": "C",
+   "wit": "B",
+   "resolve": "A",
    "support": "D"
   },
   "88": {
@@ -1159,16 +1159,16 @@
    "survive": "E",
    "speed": "D",
    "wit": "E",
-   "resolve": "C",
+   "resolve": "E",
    "support": "C"
   },
   "89": {
    "name": "虎姐",
    "class": "weak",
    "output": "D",
-   "survive": "B",
+   "survive": "E",
    "speed": "S",
-   "wit": "B",
+   "wit": "D",
    "resolve": "C",
    "support": "A"
   },
@@ -1176,47 +1176,47 @@
    "name": "艾琳",
    "class": "weak",
    "output": "A",
-   "survive": "A",
+   "survive": "C",
    "speed": "B",
    "wit": "B",
-   "resolve": "C",
-   "support": "C"
+   "resolve": "B",
+   "support": "D"
   },
   "91": {
    "name": "宇智波·鼬",
    "class": "weak",
    "output": "B",
-   "survive": "A",
+   "survive": "B",
    "speed": "B",
-   "wit": "S",
-   "resolve": "A",
-   "support": "C"
+   "wit": "A",
+   "resolve": "S",
+   "support": "B"
   },
   "92": {
    "name": "八重樱",
    "class": "strong",
    "output": "B",
-   "survive": "D",
+   "survive": "C",
    "speed": "D",
-   "wit": "D",
-   "resolve": "C",
+   "wit": "B",
+   "resolve": "D",
    "support": "D"
   },
   "93": {
    "name": "炭治郎",
    "class": "strong",
    "output": "B",
-   "survive": "D",
+   "survive": "C",
    "speed": "D",
    "wit": "B",
-   "resolve": "C",
+   "resolve": "A",
    "support": "D"
   },
   "94": {
    "name": "命运编织者",
    "class": "weak",
    "output": "D",
-   "survive": "B",
+   "survive": "E",
    "speed": "B",
    "wit": "SS",
    "resolve": "C",
@@ -1226,19 +1226,19 @@
    "name": "三笠",
    "class": "super",
    "output": "S",
-   "survive": "D",
+   "survive": "C",
    "speed": "A",
    "wit": "B",
    "resolve": "S",
-   "support": "C"
+   "support": "D"
   },
   "96": {
    "name": "朵莉亚",
    "class": "strong",
    "output": "D",
-   "survive": "D",
+   "survive": "B",
    "speed": "C",
-   "wit": "B",
+   "wit": "C",
    "resolve": "C",
    "support": "S"
   },
@@ -1246,70 +1246,70 @@
    "name": "赤狐",
    "class": "weak",
    "output": "A",
-   "survive": "A",
-   "speed": "S",
+   "survive": "E",
+   "speed": "SS",
    "wit": "D",
-   "resolve": "C",
+   "resolve": "D",
    "support": "B"
   },
   "98": {
    "name": "金狐",
    "class": "weak",
    "output": "D",
-   "survive": "B",
+   "survive": "A",
    "speed": "S",
    "wit": "D",
-   "resolve": "C",
-   "support": "A"
+   "resolve": "D",
+   "support": "B"
   },
   "99": {
    "name": "小明",
    "class": "strong",
    "output": "E",
-   "survive": "D",
+   "survive": "C",
    "speed": "D",
    "wit": "D",
    "resolve": "C",
-   "support": "C"
+   "support": "B"
   },
   "100": {
    "name": "云霄",
    "class": "strong",
    "output": "E",
-   "survive": "C",
+   "survive": "S",
    "speed": "D",
-   "wit": "B",
-   "resolve": "A",
-   "support": "SS"
+   "wit": "A",
+   "resolve": "B",
+   "support": "A"
   },
   "101": {
    "name": "琼霄",
    "class": "strong",
    "output": "B",
-   "survive": "D",
+   "survive": "C",
    "speed": "A",
    "wit": "D",
-   "resolve": "E",
+   "resolve": "D",
    "support": "D"
   },
   "102": {
    "name": "碧霄",
    "class": "strong",
    "output": "B",
-   "survive": "C",
+   "survive": "A",
    "speed": "D",
-   "wit": "B",
-   "resolve": "E",
+   "wit": "D",
+   "resolve": "A",
    "support": "A"
   },
   "103": {
    "name": "波风水门",
    "class": "weak",
    "output": "C",
-   "survive": "C",
+   "survive": "E",
    "speed": "B",
-   "wit": "A",
-   "resolve": "S",
+   "wit": "S",
+   "resolve": "A",
    "support": "D"
   },
   "104": {
@@ -1318,59 +1318,59 @@
    "output": "A",
    "survive": "D",
    "speed": "A",
-   "wit": "A",
+   "wit": "C",
    "resolve": "C",
-   "support": "C"
+   "support": "D"
   },
   "105": {
    "name": "唐三",
    "class": "weak",
    "output": "B",
-   "survive": "S",
+   "survive": "E",
    "speed": "C",
    "wit": "A",
-   "resolve": "C",
+   "resolve": "S",
    "support": "A"
   },
   "106": {
    "name": "甘雨",
    "class": "strong",
    "output": "B",
-   "survive": "D",
+   "survive": "C",
    "speed": "C",
    "wit": "B",
-   "resolve": "A",
-   "support": "C"
+   "resolve": "C",
+   "support": "D"
   },
   "107": {
    "name": "钟离",
    "class": "super",
    "output": "A",
-   "survive": "C",
+   "survive": "S",
    "speed": "D",
    "wit": "B",
-   "resolve": "SS",
+   "resolve": "S",
    "support": "A"
   },
   "108": {
    "name": "奈叶",
    "class": "super",
    "output": "S",
-   "survive": "C",
-   "speed": "A",
+   "survive": "S",
+   "speed": "C",
    "wit": "B",
-   "resolve": "C",
+   "resolve": "A",
    "support": "B"
   },
   "109": {
    "name": "牢大",
    "class": "strong",
    "output": "B",
-   "survive": "C",
+   "survive": "B",
    "speed": "B",
    "wit": "E",
    "resolve": "E",
-   "support": "C"
+   "support": "E"
   },
   "115": {
    "name": "蕾姆",
@@ -1378,37 +1378,37 @@
    "output": "A",
    "survive": "E",
    "speed": "D",
-   "wit": "B",
-   "resolve": "C",
+   "wit": "D",
+   "resolve": "A",
    "support": "B"
   },
   "117": {
    "name": "绯红蔷薇",
    "class": "strong",
    "output": "E",
-   "survive": "C",
-   "speed": "B",
+   "survive": "A",
+   "speed": "A",
    "wit": "B",
    "resolve": "A",
-   "support": "SS"
+   "support": "S"
   },
   "118": {
    "name": "高松灯",
    "class": "strong",
    "output": "A",
-   "survive": "C",
+   "survive": "A",
    "speed": "C",
-   "wit": "C",
-   "resolve": "C",
+   "wit": "D",
+   "resolve": "D",
    "support": "B"
   },
   "119": {
    "name": "千早爱音",
    "class": "strong",
    "output": "D",
-   "survive": "C",
+   "survive": "B",
    "speed": "C",
-   "wit": "B",
+   "wit": "C",
    "resolve": "C",
    "support": "A"
   },
@@ -1416,7 +1416,7 @@
    "name": "希格雯",
    "class": "strong",
    "output": "A",
-   "survive": "D",
+   "survive": "B",
    "speed": "D",
    "wit": "B",
    "resolve": "C",
@@ -1426,29 +1426,29 @@
    "name": "南宫恨·狂刀",
    "class": "super",
    "output": "A",
-   "survive": "C",
+   "survive": "A",
    "speed": "S",
    "wit": "B",
-   "resolve": "C",
-   "support": "C"
+   "resolve": "S",
+   "support": "D"
   },
   "123": {
    "name": "南宫恨·武道",
    "class": "strong",
    "output": "A",
-   "survive": "C",
+   "survive": "A",
    "speed": "A",
    "wit": "B",
-   "resolve": "A",
+   "resolve": "B",
    "support": "B"
   },
   "124": {
    "name": "伊莉雅",
    "class": "strong",
    "output": "S",
-   "survive": "C",
+   "survive": "A",
    "speed": "A",
-   "wit": "A",
+   "wit": "B",
    "resolve": "S",
    "support": "B"
   },
@@ -1456,50 +1456,50 @@
    "name": "小铃兰",
    "class": "strong",
    "output": "D",
-   "survive": "D",
+   "survive": "B",
    "speed": "E",
    "wit": "B",
-   "resolve": "C",
+   "resolve": "A",
    "support": "S"
   },
   "128": {
    "name": "张楚岚",
    "class": "strong",
    "output": "C",
-   "survive": "D",
+   "survive": "B",
    "speed": "B",
-   "wit": "A",
-   "resolve": "A",
+   "wit": "S",
+   "resolve": "B",
    "support": "B"
   },
   "129": {
    "name": "要乐奈",
    "class": "strong",
    "output": "B",
-   "survive": "C",
+   "survive": "A",
    "speed": "D",
-   "wit": "B",
-   "resolve": "C",
+   "wit": "D",
+   "resolve": "A",
    "support": "B"
   },
   "130": {
    "name": "长崎爽世",
    "class": "strong",
    "output": "D",
-   "survive": "C",
+   "survive": "A",
    "speed": "C",
-   "wit": "D",
-   "resolve": "A",
+   "wit": "B",
+   "resolve": "C",
    "support": "SS"
   },
   "131": {
    "name": "椎名立希",
    "class": "strong",
    "output": "C",
-   "survive": "D",
+   "survive": "B",
    "speed": "D",
-   "wit": "B",
-   "resolve": "C",
+   "wit": "C",
+   "resolve": "A",
    "support": "A"
   },
   "141": {
@@ -1507,38 +1507,38 @@
    "class": "weak",
    "output": "C",
    "survive": "C",
-   "speed": "D",
-   "wit": "D",
+   "speed": "C",
+   "wit": "C",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "142": {
    "name": "天海麒麟星",
    "class": "strong",
    "output": "A",
-   "survive": "A",
+   "survive": "S",
    "speed": "B",
-   "wit": "B",
-   "resolve": "A",
+   "wit": "A",
+   "resolve": "B",
    "support": "A"
   },
   "146": {
    "name": "苍龙破晓",
    "class": "strong",
-   "output": "B",
-   "survive": "A",
-   "speed": "D",
-   "wit": "D",
+   "output": "C",
+   "survive": "C",
+   "speed": "C",
+   "wit": "C",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "147": {
    "name": "天剑 非天",
    "class": "strong",
    "output": "B",
-   "survive": "C",
+   "survive": "A",
    "speed": "A",
-   "wit": "D",
+   "wit": "C",
    "resolve": "A",
    "support": "D"
   },
@@ -1546,110 +1546,110 @@
    "name": "黑崎一护",
    "class": "strong",
    "output": "C",
-   "survive": "D",
+   "survive": "C",
    "speed": "B",
-   "wit": "E",
-   "resolve": "A",
+   "wit": "C",
+   "resolve": "S",
    "support": "D"
   },
   "149": {
    "name": "祈求者",
    "class": "strong",
    "output": "A",
-   "survive": "C",
+   "survive": "B",
    "speed": "A",
-   "wit": "S",
-   "resolve": "A",
+   "wit": "A",
+   "resolve": "C",
    "support": "B"
   },
   "150": {
    "name": "桐人",
    "class": "strong",
    "output": "B",
-   "survive": "E",
+   "survive": "D",
    "speed": "SS",
    "wit": "B",
-   "resolve": "A",
+   "resolve": "B",
    "support": "D"
   },
   "151": {
    "name": "亚斯娜",
    "class": "strong",
    "output": "B",
-   "survive": "E",
+   "survive": "D",
    "speed": "SS",
-   "wit": "D",
-   "resolve": "A",
+   "wit": "C",
+   "resolve": "B",
    "support": "D"
   },
   "152": {
    "name": "徐凤年",
    "class": "super",
-   "output": "S",
-   "survive": "A",
-   "speed": "SS",
-   "wit": "D",
+   "output": "C",
+   "survive": "C",
+   "speed": "C",
+   "wit": "C",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "153": {
    "name": "惠惠",
    "class": "strong",
    "output": "S",
-   "survive": "C",
+   "survive": "B",
    "speed": "D",
    "wit": "E",
    "resolve": "E",
-   "support": "D"
+   "support": "E"
   },
   "154": {
    "name": "夏娜",
    "class": "strong",
    "output": "A",
-   "survive": "E",
+   "survive": "D",
    "speed": "S",
    "wit": "C",
-   "resolve": "C",
+   "resolve": "D",
    "support": "D"
   },
   "155": {
    "name": "病娇",
    "class": "strong",
    "output": "C",
-   "survive": "E",
+   "survive": "D",
    "speed": "SS",
-   "wit": "D",
-   "resolve": "C",
+   "wit": "C",
+   "resolve": "D",
    "support": "D"
   },
   "156": {
    "name": "嫦娥",
    "class": "weak",
    "output": "C",
-   "survive": "S",
+   "survive": "C",
    "speed": "SS",
-   "wit": "D",
-   "resolve": "A",
-   "support": "C"
+   "wit": "B",
+   "resolve": "B",
+   "support": "B"
   },
   "158": {
    "name": "炮姐",
    "class": "strong",
    "output": "B",
-   "survive": "E",
+   "survive": "D",
    "speed": "S",
    "wit": "B",
-   "resolve": "C",
+   "resolve": "D",
    "support": "D"
   },
   "159": {
    "name": "五河琴里",
    "class": "strong",
    "output": "A",
-   "survive": "C",
+   "survive": "A",
    "speed": "S",
-   "wit": "D",
-   "resolve": "A",
+   "wit": "C",
+   "resolve": "C",
    "support": "B"
   },
   "161": {
@@ -1657,48 +1657,48 @@
    "class": "weak",
    "output": "C",
    "survive": "C",
-   "speed": "D",
-   "wit": "D",
+   "speed": "C",
+   "wit": "C",
    "resolve": "C",
-   "support": "D"
+   "support": "C"
   },
   "162": {
    "name": "诛仙",
    "class": "strong",
    "output": "A",
-   "survive": "D",
+   "survive": "C",
    "speed": "B",
-   "wit": "B",
+   "wit": "C",
    "resolve": "C",
    "support": "D"
   },
   "163": {
    "name": "拳一",
    "class": "super",
-   "output": "SSS",
-   "survive": "C",
+   "output": "SS",
+   "survive": "A",
    "speed": "D",
-   "wit": "C",
-   "resolve": "C",
-   "support": "C"
+   "wit": "D",
+   "resolve": "S",
+   "support": "D"
   },
   "164": {
    "name": "贝吉特",
    "class": "strong",
    "output": "C",
-   "survive": "C",
+   "survive": "A",
    "speed": "D",
-   "wit": "C",
+   "wit": "E",
    "resolve": "C",
-   "support": "C"
+   "support": "D"
   },
   "165": {
    "name": "李逍遥",
    "class": "strong",
    "output": "B",
-   "survive": "D",
+   "survive": "B",
    "speed": "B",
-   "wit": "D",
+   "wit": "C",
    "resolve": "C",
    "support": "D"
   },
@@ -1706,27 +1706,27 @@
    "name": "渡鸦",
    "class": "super",
    "output": "SS",
-   "survive": "D",
+   "survive": "B",
    "speed": "D",
    "wit": "A",
-   "resolve": "A",
+   "resolve": "B",
    "support": "D"
   },
   "168": {
    "name": "米拉",
    "class": "super",
-   "output": "SS",
-   "survive": "D",
+   "output": "S",
+   "survive": "B",
    "speed": "A",
    "wit": "A",
    "resolve": "C",
-   "support": "C"
+   "support": "B"
   },
   "169": {
    "name": "黄泉",
    "class": "super",
    "output": "A",
-   "survive": "D",
+   "survive": "B",
    "speed": "A",
    "wit": "A",
    "resolve": "A",
@@ -1736,17 +1736,17 @@
    "name": "镜流",
    "class": "strong",
    "output": "A",
-   "survive": "D",
+   "survive": "B",
    "speed": "D",
    "wit": "A",
-   "resolve": "SS",
-   "support": "C"
+   "resolve": "S",
+   "support": "B"
   },
   "171": {
    "name": "伏黑甚尔",
    "class": "super",
    "output": "S",
-   "survive": "C",
+   "survive": "A",
    "speed": "B",
    "wit": "S",
    "resolve": "A",
@@ -1755,20 +1755,20 @@
   "172": {
    "name": "宿傩",
    "class": "super",
-   "output": "S",
-   "survive": "D",
+   "output": "SS",
+   "survive": "B",
    "speed": "D",
-   "wit": "S",
-   "resolve": "A",
+   "wit": "A",
+   "resolve": "S",
    "support": "D"
   },
   "173": {
    "name": "饿狼",
    "class": "super",
    "output": "SS",
-   "survive": "D",
+   "survive": "B",
    "speed": "B",
-   "wit": "B",
+   "wit": "C",
    "resolve": "C",
    "support": "D"
   },
@@ -1776,29 +1776,29 @@
    "name": "云裳",
    "class": "strong",
    "output": "D",
-   "survive": "D",
-   "speed": "A",
+   "survive": "B",
+   "speed": "S",
    "wit": "A",
-   "resolve": "A",
+   "resolve": "B",
    "support": "A"
   },
   "175": {
    "name": "谷雨",
    "class": "super",
-   "output": "S",
-   "survive": "A",
+   "output": "A",
+   "survive": "S",
    "speed": "D",
-   "wit": "A",
-   "resolve": "S",
-   "support": "A"
+   "wit": "B",
+   "resolve": "B",
+   "support": "S"
   },
   "176": {
    "name": "屠苏",
    "class": "super",
    "output": "S",
-   "survive": "C",
+   "survive": "A",
    "speed": "D",
-   "wit": "A",
+   "wit": "B",
    "resolve": "A",
    "support": "A"
   },
@@ -1806,41 +1806,41 @@
    "name": "璇",
    "class": "super",
    "output": "S",
-   "survive": "C",
+   "survive": "S",
    "speed": "D",
    "wit": "A",
-   "resolve": "C",
+   "resolve": "B",
    "support": "A"
   },
   "178": {
    "name": "哈基米",
    "class": "strong",
    "output": "A",
-   "survive": "D",
+   "survive": "C",
    "speed": "S",
-   "wit": "D",
-   "resolve": "C",
+   "wit": "E",
+   "resolve": "E",
    "support": "D"
   },
   "179": {
    "name": "流萤",
    "class": "super",
    "output": "A",
-   "survive": "A",
+   "survive": "S",
    "speed": "S",
-   "wit": "A",
-   "resolve": "S",
-   "support": "B"
+   "wit": "B",
+   "resolve": "A",
+   "support": "E"
   },
   "180": {
    "name": "五条悟",
    "class": "super",
    "output": "S",
-   "survive": "C",
+   "survive": "A",
    "speed": "B",
    "wit": "SS",
    "resolve": "C",
-   "support": "B"
+   "support": "E"
   }
  }
 }

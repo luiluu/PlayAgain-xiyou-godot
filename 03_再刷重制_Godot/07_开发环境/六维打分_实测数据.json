@@ -97,9 +97,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6657293,
-    "rounds": 56,
-    "died": 2,
+    "taken": 370254,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    },
@@ -149,9 +149,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5576528,
-    "rounds": 48,
-    "died": 2,
+    "taken": 357936,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -200,8 +200,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6140401,
-    "rounds": 52,
+    "taken": 352387,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -251,9 +251,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6894987,
-    "rounds": 59,
-    "died": 2,
+    "taken": 352697,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    },
@@ -303,9 +303,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4038544,
-    "rounds": 60,
-    "died": 0,
+    "taken": 391812,
+    "rounds": 7,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -354,10 +354,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 7141860,
-    "rounds": 57,
-    "died": 2,
-    "healed": 447819,
+    "taken": 533785,
+    "rounds": 6,
+    "died": 3,
+    "healed": 169837,
     "atk": 8000.0
    }
   },
@@ -405,10 +405,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6151221,
-    "rounds": 52,
+    "taken": 493525,
+    "rounds": 6,
     "died": 3,
-    "healed": 133639,
+    "healed": 129574,
     "atk": 8000.0
    },
    "peak_first": 173838.0
@@ -457,9 +457,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5683050,
-    "rounds": 60,
-    "died": 0,
+    "taken": 331019,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -508,8 +508,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4872675,
-    "rounds": 43,
+    "taken": 345037,
+    "rounds": 6,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -559,8 +559,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5732625,
-    "rounds": 50,
+    "taken": 351225,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -611,9 +611,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 7144034,
-    "rounds": 60,
-    "died": 0,
+    "taken": 486803,
+    "rounds": 6,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -713,8 +713,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 3199496,
-    "rounds": 28,
+    "taken": 345164,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -764,9 +764,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 7015650,
-    "rounds": 60,
-    "died": 0,
+    "taken": 388657,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -815,10 +815,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6383308,
-    "rounds": 60,
-    "died": 0,
-    "healed": 1007029,
+    "taken": 1386175,
+    "rounds": 15,
+    "died": 3,
+    "healed": 1046474,
     "atk": 8000.0
    }
   },
@@ -866,9 +866,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5987011,
-    "rounds": 54,
-    "died": 2,
+    "taken": 332393,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -917,8 +917,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 2625224,
-    "rounds": 24,
+    "taken": 300551,
+    "rounds": 4,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -968,8 +968,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6102359,
-    "rounds": 52,
+    "taken": 352697,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1019,8 +1019,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4770399,
-    "rounds": 42,
+    "taken": 332394,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1070,9 +1070,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6241592,
-    "rounds": 60,
-    "died": 0,
+    "taken": 352697,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    },
@@ -1122,8 +1122,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5864586,
-    "rounds": 54,
+    "taken": 332713,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1174,8 +1174,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5883101,
-    "rounds": 50,
+    "taken": 352697,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1225,8 +1225,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5671685,
-    "rounds": 52,
+    "taken": 333268,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1277,8 +1277,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6304154,
-    "rounds": 54,
+    "taken": 356373,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1328,8 +1328,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5813766,
-    "rounds": 53,
+    "taken": 323773,
+    "rounds": 4,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1379,9 +1379,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6255705,
-    "rounds": 60,
-    "died": 0,
+    "taken": 348998,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -1430,8 +1430,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 3317086,
-    "rounds": 28,
+    "taken": 336277,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1481,10 +1481,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6678456,
-    "rounds": 60,
-    "died": 0,
-    "healed": 179562,
+    "taken": 772394,
+    "rounds": 9,
+    "died": 3,
+    "healed": 397734,
     "atk": 8000.0
    }
   },
@@ -1532,8 +1532,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 3690586,
-    "rounds": 33,
+    "taken": 340537,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1583,10 +1583,10 @@
    "state_resist_n": 2,
    "surv": {
     "n": 3,
-    "taken": 6785206,
-    "rounds": 60,
-    "died": 0,
-    "healed": 279733,
+    "taken": 1009050,
+    "rounds": 11,
+    "died": 3,
+    "healed": 465006,
     "atk": 8000.0
    }
   },
@@ -1634,8 +1634,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5995711,
-    "rounds": 52,
+    "taken": 353628,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1686,9 +1686,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6948430,
-    "rounds": 60,
-    "died": 0,
+    "taken": 356452,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -1737,10 +1737,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6942284,
-    "rounds": 60,
-    "died": 0,
-    "healed": 152806,
+    "taken": 500053,
+    "rounds": 6,
+    "died": 3,
+    "healed": 125393,
     "atk": 8000.0
    }
   },
@@ -1788,8 +1788,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5084186,
-    "rounds": 47,
+    "taken": 332393,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1839,8 +1839,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5325794,
-    "rounds": 47,
+    "taken": 329825,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1890,8 +1890,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6066613,
-    "rounds": 53,
+    "taken": 366266,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -1992,9 +1992,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6364538,
-    "rounds": 60,
-    "died": 0,
+    "taken": 368154,
+    "rounds": 3,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -2043,10 +2043,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4631662,
-    "rounds": 60,
-    "died": 0,
-    "healed": 826344,
+    "taken": 1548816,
+    "rounds": 15,
+    "died": 3,
+    "healed": 1164017,
     "atk": 8000.0
    }
   },
@@ -2094,9 +2094,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6811846,
-    "rounds": 58,
-    "died": 2,
+    "taken": 352672,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -2145,9 +2145,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6374160,
-    "rounds": 55,
-    "died": 2,
+    "taken": 356373,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -2196,8 +2196,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5502710,
-    "rounds": 48,
+    "taken": 343296,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -2248,10 +2248,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6599026,
-    "rounds": 60,
-    "died": 0,
-    "healed": 1244064,
+    "taken": 1509246,
+    "rounds": 16,
+    "died": 3,
+    "healed": 996797,
     "atk": 8000.0
    }
   },
@@ -2351,9 +2351,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6127298,
-    "rounds": 52,
-    "died": 2,
+    "taken": 356452,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -2454,8 +2454,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6173591,
-    "rounds": 53,
+    "taken": 352697,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -2505,8 +2505,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4498457,
-    "rounds": 40,
+    "taken": 345164,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -2607,9 +2607,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6899094,
-    "rounds": 60,
-    "died": 1,
+    "taken": 352697,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -2658,9 +2658,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6489784,
-    "rounds": 60,
-    "died": 1,
+    "taken": 352624,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -2709,8 +2709,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5956371,
-    "rounds": 52,
+    "taken": 352706,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -2760,8 +2760,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4641213,
-    "rounds": 41,
+    "taken": 332003,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -2811,9 +2811,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6756048,
-    "rounds": 60,
-    "died": 0,
+    "taken": 397460,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -2862,10 +2862,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 7179570,
-    "rounds": 60,
-    "died": 0,
-    "healed": 1607729,
+    "taken": 697525,
+    "rounds": 6,
+    "died": 3,
+    "healed": 217482,
     "atk": 8000.0
    }
   },
@@ -2913,8 +2913,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4976622,
-    "rounds": 45,
+    "taken": 332388,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -2964,8 +2964,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4159514,
-    "rounds": 37,
+    "taken": 332294,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -3066,9 +3066,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4016347,
-    "rounds": 60,
-    "died": 1,
+    "taken": 268620,
+    "rounds": 4,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -3117,8 +3117,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 3240538,
-    "rounds": 28,
+    "taken": 287681,
+    "rounds": 4,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -3168,8 +3168,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6005962,
-    "rounds": 52,
+    "taken": 352697,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -3219,10 +3219,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5008974,
-    "rounds": 44,
+    "taken": 498208,
+    "rounds": 6,
     "died": 3,
-    "healed": 325793,
+    "healed": 147201,
     "atk": 8000.0
    }
   },
@@ -3270,8 +3270,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 3746462,
-    "rounds": 33,
+    "taken": 332394,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -3322,8 +3322,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4945307,
-    "rounds": 43,
+    "taken": 349066,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -3373,9 +3373,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6224100,
-    "rounds": 60,
-    "died": 0,
+    "taken": 352697,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -3424,8 +3424,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4617890,
-    "rounds": 41,
+    "taken": 335763,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -3475,8 +3475,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4511326,
-    "rounds": 40,
+    "taken": 332394,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -3526,10 +3526,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 7103786,
-    "rounds": 60,
-    "died": 0,
-    "healed": 2133974,
+    "taken": 390975,
+    "rounds": 5,
+    "died": 3,
+    "healed": 49849,
     "atk": 8000.0
    }
   },
@@ -3679,10 +3679,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5668270,
-    "rounds": 60,
-    "died": 0,
-    "healed": 456843,
+    "taken": 513296,
+    "rounds": 4,
+    "died": 3,
+    "healed": 145246,
     "atk": 8000.0
    }
   },
@@ -3730,9 +3730,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6958880,
-    "rounds": 59,
-    "died": 2,
+    "taken": 352697,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -3781,10 +3781,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6973770,
-    "rounds": 60,
-    "died": 0,
-    "healed": 1387621,
+    "taken": 363747,
+    "rounds": 5,
+    "died": 3,
+    "healed": 0,
     "atk": 8000.0
    }
   },
@@ -3832,9 +3832,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6728450,
-    "rounds": 60,
-    "died": 1,
+    "taken": 351375,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    },
@@ -3884,9 +3884,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5994618,
-    "rounds": 51,
-    "died": 2,
+    "taken": 352624,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -3935,10 +3935,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5913492,
-    "rounds": 50,
+    "taken": 729780,
+    "rounds": 8,
     "died": 3,
-    "healed": 655233,
+    "healed": 355120,
     "atk": 8000.0
    }
   },
@@ -3986,8 +3986,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6216188,
-    "rounds": 54,
+    "taken": 352697,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -4037,8 +4037,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 3312175,
-    "rounds": 29,
+    "taken": 332394,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -4088,8 +4088,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4442656,
-    "rounds": 41,
+    "taken": 318834,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -4139,9 +4139,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6983628,
-    "rounds": 59,
-    "died": 2,
+    "taken": 356373,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -4241,9 +4241,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 5071740,
-    "rounds": 60,
-    "died": 0,
+    "taken": 373360,
+    "rounds": 6,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -4292,10 +4292,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 486116,
-    "rounds": 7,
+    "taken": 426396,
+    "rounds": 6,
     "died": 3,
-    "healed": 114004,
+    "healed": 60442,
     "atk": 8000.0
    }
   },
@@ -4395,10 +4395,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6362382,
-    "rounds": 60,
-    "died": 0,
-    "healed": 521141,
+    "taken": 350592,
+    "rounds": 5,
+    "died": 3,
+    "healed": 9522,
     "atk": 8000.0
    }
   },
@@ -4446,8 +4446,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4637136,
-    "rounds": 41,
+    "taken": 335283,
+    "rounds": 5,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -4497,8 +4497,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 106744,
-    "rounds": 3,
+    "taken": 22270,
+    "rounds": 2,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -4549,8 +4549,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 4903632,
-    "rounds": 46,
+    "taken": 337048,
+    "rounds": 3,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -4600,9 +4600,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6509885,
-    "rounds": 60,
-    "died": 0,
+    "taken": 340973,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -4651,9 +4651,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6940772,
-    "rounds": 60,
-    "died": 1,
+    "taken": 363160,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -4801,8 +4801,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6481383,
-    "rounds": 52,
+    "taken": 391846,
+    "rounds": 3,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -4954,9 +4954,9 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6433892,
-    "rounds": 60,
-    "died": 0,
+    "taken": 329893,
+    "rounds": 3,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -5005,10 +5005,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6591204,
-    "rounds": 57,
+    "taken": 611276,
+    "rounds": 7,
     "died": 3,
-    "healed": 187520,
+    "healed": 258479,
     "atk": 8000.0
    }
   },
@@ -5260,8 +5260,8 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 3622064,
-    "rounds": 32,
+    "taken": 323873,
+    "rounds": 4,
     "died": 3,
     "healed": 0,
     "atk": 8000.0
@@ -5362,10 +5362,10 @@
    "state_resist_n": 0,
    "surv": {
     "n": 3,
-    "taken": 6772364,
-    "rounds": 60,
-    "died": 0,
-    "healed": 2183,
+    "taken": 384371,
+    "rounds": 3,
+    "died": 3,
+    "healed": 0,
     "atk": 8000.0
    }
   },
@@ -6235,7 +6235,8 @@
   },
   "141": {
    "state_resist_n": 0,
-   "no_damage_row": true
+   "no_damage_row": true,
+   "disabled": true
   },
   "142": {
    "peak": 1552431.0,
@@ -6326,15 +6327,8 @@
     ]
    },
    "state_resist_n": 0,
-   "surv": {
-    "n": 3,
-    "taken": 0,
-    "rounds": 60,
-    "died": 0,
-    "healed": 0,
-    "atk": 8000.0
-   },
-   "no_damage_row": true
+   "no_damage_row": true,
+   "disabled": true
   },
   "147": {
    "peak": 830542.0,
@@ -6629,15 +6623,8 @@
     ]
    },
    "state_resist_n": 0,
-   "surv": {
-    "n": 3,
-    "taken": 35223,
-    "rounds": 60,
-    "died": 1,
-    "healed": 0,
-    "atk": 8000.0
-   },
-   "no_damage_row": true
+   "no_damage_row": true,
+   "disabled": true
   },
   "153": {
    "peak": 2359710.0,
@@ -6836,9 +6823,9 @@
    "state_resist_n": 11,
    "surv": {
     "n": 3,
-    "taken": 6925630,
-    "rounds": 60,
-    "died": 0,
+    "taken": 338730,
+    "rounds": 5,
+    "died": 3,
     "healed": 0,
     "atk": 8000.0
    }
@@ -6947,7 +6934,8 @@
   },
   "161": {
    "state_resist_n": 0,
-   "no_damage_row": true
+   "no_damage_row": true,
+   "disabled": true
   },
   "162": {
    "peak": 2195036.0,
