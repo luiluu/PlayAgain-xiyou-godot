@@ -128,7 +128,7 @@ const RESTORE := 0.15
 const HIDE_FADE := 0.12
 const SWAP := 0.2
 const SWEEP := 0.3
-const UI_FILE := "damage_record_ui.cfg"
+const UI_FILE := "damage_record_ui.cfg"   # T267 时的旧文件，只迁移用（见 _load_collapsed）
 
 var skin := false
 var origin := Vector2.ZERO           # 战斗画面原点（屏幕坐标）
@@ -162,20 +162,24 @@ func _ready() -> void:
 	_old_rect.position = position
 
 
+## T273（T267 核查 P3-4）：收／展并进设置 XConfig（CONFIG_KEY，默认展开）；T267 时记在 damage_record_ui.cfg，读到旧文件迁一次再删
+const CONFIG_KEY := "codexRecordCollapsed"
+
+
 static func _ui_path() -> String:
 	return XConfig.path().get_base_dir().path_join(UI_FILE)
 
 
 static func _load_collapsed() -> bool:
 	var cf := ConfigFile.new()
-	return cf.load(_ui_path()) == OK and bool(cf.get_value("record", "collapsed", false))
+	if FileAccess.file_exists(_ui_path()) and cf.load(_ui_path()) == OK:
+		XConfig.set_flag(CONFIG_KEY, bool(cf.get_value("record", "collapsed", false)))
+		DirAccess.remove_absolute(_ui_path())
+	return XConfig.flag(CONFIG_KEY)
 
 
 static func save_collapsed(on: bool) -> void:
-	var cf := ConfigFile.new()
-	cf.load(_ui_path())
-	cf.set_value("record", "collapsed", on)
-	cf.save(_ui_path())
+	XConfig.set_flag(CONFIG_KEY, on)
 
 
 ## 谁占格：在场的人 ∪ 有伤害的栏位（没上过场的 0 伤助力位不占格，换下场的人有伤害照样留格）；按伤害高低、并列按栏位
@@ -444,6 +448,7 @@ func _draw_cell(i: int, p: Vector2, lead: bool, t: float, a: float) -> void:
 	if lead:
 		XSkin2C._glow(self, dc, 12.0, Color(_main_color(), 0.6 * a))
 		XSkin2C._diamond(self, dc, 4.0, Color(lc, a))
+		last.lead_dot = dc   # T273 卡 U：第一名那颗菱形（本节点坐标），胜利那一刻衔接层要拍它
 	else:
 		XSkin2C._diamond_line(self, dc, 4.0, Color(XUiSkin.TEXT_2, a), 1.0)
 	var x := p.x + 18.0
@@ -487,6 +492,7 @@ func _draw_line_mode(a: float, t: float) -> void:
 		var dc := Vector2(x + 4.0, h / 2.0 - 1.0)
 		XSkin2C._glow(self, dc, 12.0, Color(_main_color(), 0.6 * a))
 		XSkin2C._diamond(self, dc, 4.0, Color(_lead_color(), a))
+		last.lead_dot = dc
 		x += 18.0
 		XSkin2C._text(self, x, top, XSkin2C.fit(actor.display_name() if actor else "", f15, _name_w()), f15, Color(_lead_color(), a))
 		x += minf(_name_w(), XSkin2C._tw(actor.display_name() if actor else "", f15)) + 6.0

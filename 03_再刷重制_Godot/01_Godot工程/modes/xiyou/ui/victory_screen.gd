@@ -24,9 +24,11 @@ var _hint_text: XMVText
 var boss := false
 var helper: XActor = null
 var _skin: Control = null
+## 卡 U（T273）：战斗→结算的衔接层（XSkin2C.Handoff；战斗场景建，挂在战斗场景下），进场时交给它按结算页的时间走
+var handoff: XSkin2C.Handoff = null
 
 
-## info（新界面 2C 用，可省）：{boss: 本场有首领血条, helper: 不在出战名单里的助力位（快照要在 before 里）}
+## info（新界面 2C 用，可省）：{boss: 本场有首领血条, helper: 不在出战名单里的助力位（快照要在 before 里）, handoff: 卡 U 衔接层}
 func setup(r: Dictionary, before: Dictionary, members: Array, auto_close: bool, info := {}) -> void:
 	rewards = r
 	snapshots = before
@@ -34,6 +36,7 @@ func setup(r: Dictionary, before: Dictionary, members: Array, auto_close: bool, 
 	automatic = auto_close
 	boss = bool(info.get("boss", false))
 	helper = info.get("helper") as XActor
+	handoff = info.get("handoff") as XSkin2C.Handoff
 
 
 func _ready() -> void:
@@ -74,6 +77,8 @@ func _ready() -> void:
 		canvas.visible = false
 		_skin = XSkin2C.victory_view(self)
 		add_child(_skin)
+		if handoff != null and is_instance_valid(handoff):
+			handoff.start(self, _skin)
 	else:
 		modulate.a = 0
 		create_tween().tween_property(self, "modulate:a", 1.0, 32.0 / 60.0)
