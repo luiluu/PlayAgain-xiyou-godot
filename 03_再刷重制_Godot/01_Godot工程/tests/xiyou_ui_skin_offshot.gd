@@ -12,10 +12,12 @@ extends Node
 ##   比：godot --headless --path <工程> res://tests/xiyou_ui_skin_offshot.tscn -- --compare=<目录甲>,<目录乙>
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const SKIN := "res://modes/xiyou/ui/skin/ui_skin.gd"
-const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XSkillScene", "XEquipScene", "XOptionsScene", "XGearSearch", "XGraphicsOptionsScene", "XNoticeOptionsScene", "XPingbiScene", "XGameEndPanel", "XTianqiTitle", "XTianqiLineCards", "XAlienWorkshop", "XShop", "XCraftingScene", "XOrbShop", "XRaceMenu"]
+const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XSkillScene", "XEquipScene", "XOptionsScene", "XGearSearch", "XGraphicsOptionsScene", "XNoticeOptionsScene", "XPingbiScene", "XGameEndPanel", "XTianqiTitle", "XTianqiLineCards", "XAlienWorkshop", "XShop"]
 
 var out_dir := ""
 var compare := ""
+## T299 卡 K：制作、宝珠坊、种族祝福（单列一行，免得和别的卡同时改 PAGES 那一行撞车）
+const PAGES_K := ["XCraftingScene", "XOrbShop", "XRaceMenu"]
 
 
 func _ready() -> void:
@@ -44,7 +46,7 @@ func _run() -> void:
 				sk.set("ENABLED", false)
 				print("skin ENABLED=", sk.get("ENABLED"))
 			_tianqi_goods(s)   # ui-skin-3a：七印装备、号卷进背包（物品、装备页带上它们；新皮肤关着时牌照旧）
-		for cls in PAGES:
+		for cls in PAGES + PAGES_K:
 			var page: Node = _make(cls)
 			if page == null:
 				print("SKIP ", cls)
