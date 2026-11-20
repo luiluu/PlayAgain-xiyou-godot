@@ -850,7 +850,10 @@ func _set_variables(p: Array) -> void:
 	match int(p[3]):
 		0: value = float(p[4])
 		1: value = state().variable(int(p[4]))
-		2: value = _variable_random(int(p[4]), int(p[5]))
+		2:
+			value = _variable_random(int(p[4]), int(p[5]))
+			if int(p[0]) == XTianqiSkills.FATE_VAR:  # T268 天启篇命运骰子：每场一次重掷（先判变量号，别的赋值不多调函数）
+				value = XTianqiSkills.fate_roll(self, value, func(): return _variable_random(int(p[4]), int(p[5])))
 		3:
 			var gd = _game_data(int(p[4]), int(p[5]), int(p[6]))
 			if gd == null:

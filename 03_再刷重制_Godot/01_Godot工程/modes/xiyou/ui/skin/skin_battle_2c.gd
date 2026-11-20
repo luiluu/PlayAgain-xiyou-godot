@@ -9,13 +9,52 @@ extends RefCounted
 ##   GAMEOVER           全灭灭印＋提示（关＝旧页）
 ##   DROP_SORT_QUALITY  结算掉落按品质高的在前（只改显示；关＝旧序：物品／武器／防具各按编号）
 ##   GAMEOVER_SUMMARY   全灭 B 版「本局去到哪」两行（问题 2C-1，Kyo 没点头，默认关）
-## 战斗里的四个浮层（印盘、伤害统计、连击、掉落图标）归卡 B，不在这里。
+## 卡 B（T267，照 T254 1.3～1.6，Kyo D232）：战斗里的浮层，各自一个回退开关，关了回旧画法：
+##   METER       本线计量画成印盘（XSkinSealDial；关＝旧计量条）
+##   COMBO       连击坐进印盘环心（关＝旧「N 击中」图片数字；METER 开时接在环下 y 276）
+##   RECORD      伤害统计脚线以下矮带（关＝旧右下面板）
+##   DROPS       掉落图标描边、影子、史诗以上小七印环、传说以上光柱（关＝旧图标）
+##   EDGE_FLASH  火花满的那一下屏幕四边闪一次本线主色
+##   NAMES       首领名、小怪名（原卡 D／R3）：字一律白、难度色挪到名字前的小菱形（关＝旧难度色字）
 
 static var ENABLED := true
 static var VICTORY := true
 static var GAMEOVER := true
 static var DROP_SORT_QUALITY := true
 static var GAMEOVER_SUMMARY := false
+static var METER := true
+static var COMBO := true
+static var RECORD := true
+static var DROPS := true
+static var EDGE_FLASH := true
+static var NAMES := true
+
+
+static func meter_on() -> bool:
+	return METER and on()
+
+
+static func combo_on() -> bool:
+	return COMBO and on()
+
+
+static func record_on() -> bool:
+	return RECORD and on()
+
+
+static func drops_on() -> bool:
+	return DROPS and on()
+
+
+static func names_on() -> bool:
+	return NAMES and on()
+
+
+## 本线两色里更亮的那个（战争是点缀黄；死亡、饥荒、瘟疫是主色）
+static func line_bright(key: String) -> Color:
+	var m := XTianqiLook.main_color(key)
+	var a := XTianqiLook.accent_color(key)
+	return a if a.get_luminance() > m.get_luminance() else m
 
 ## 进场时长（秒）：首领战全套、小怪战半程（D231）；简化档只留淡入（＋首领战盖蜡）
 const BOSS_INTRO := 1.0
@@ -665,7 +704,12 @@ class VictoryView extends Control:
 		var g := XSkin2C.drop_grade(top[0])
 		if not boss and g < 4:
 			return out
-		var arrive := 0.90 if boss else 0.32
+		var arrive := 0.32
+		if boss:   # T265 核查 P3：跟着这枚大章自己的落地时刻（只 1 件时 0.62，不是写死的 0.90）
+			var order := _drop_times()
+			var i := order.find(top)
+			var n := order.size()
+			arrive = 0.50 + (0.28 * maxi(i, 0) / maxf(n - 1, 1)) + 0.12
 		var q := XSkin2C.seg(t(), arrive, arrive + 0.35)
 		if q <= 0.0 or q >= 1.0:
 			return out
@@ -1030,7 +1074,8 @@ static func gameover_summary(s: XState, troop_id: int) -> Array:
 		parts.append(diff)
 	var line := XTianqiLine.current(s)
 	if line != "":
-		parts.append(XTianqiRewards.line_name(line))
+		var ln := XTianqiRewards.line_name(line)
+		parts.append(ln if ln.ends_with("线") else ln + "线")   # T265 核查 P3：「战争」→「战争线」
 	if parts.is_empty():
 		return []
 	var who := ""
@@ -1252,3 +1297,18 @@ class GameOverView extends Control:
 			XSkin2C._pill(c, Rect2(x - 4.0, r.position.y + 6.0, kw, h - 12.0), Color(0, 0, 0, 0), Color(XUiSkin.TEXT_2, 0.8 * a))
 			XSkin2C._text(c, x + 4.0, ty, key, fs, Color(XUiSkin.TEXT, a))
 		XSkin2C._text(c, x + kw + 8.0, ty, desc, fs, Color(XUiSkin.TEXT, a))
+
+
+## ---- 卡 B 原卡 D（T254 R3）：小怪头顶名字 ----
+
+## 名字一律 TEXT，前面一枚小菱形带难度色（半血以下橙／红，同旧字色的变化）；照旧垫深色胶囊（XSkin4A）
+static func enemy_name(c: XMVCanvas, nm: String, diff_color: Color, alpha: float) -> void:
+	var nw := c.text_width(nm, 18)
+	var w := 10.0 + 6.0 + nw
+	var x0 := 320.0 - w / 2.0
+	if XSkin4A.text_on():
+		XSkin4A.draw_text_backing(c, x0, 26.0, w, 18, alpha)
+	var dc := Vector2(x0 + 5.0, 19.5)
+	_diamond(c, dc, 6.0, Color(0, 0, 0, 0.8 * alpha))
+	_diamond(c, dc, 5.0, Color(diff_color, alpha))
+	c.text(nm, x0 + 16.0, 0, nw + 4.0, "left", XUiSkin.TEXT, 18, 36, alpha)

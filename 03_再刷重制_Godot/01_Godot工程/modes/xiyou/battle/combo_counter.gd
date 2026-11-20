@@ -25,6 +25,40 @@ var layout_alpha := 0      # combo_sprite_a.opacity
 var digits: Array = []     # [{n, dx, scale, alpha}]
 var _tex_a: Texture2D
 var _tex_d: Texture2D
+## T267 新界面 2C 卡 B：XSkin2C.combo_on() 时这里只计数、不画，数字交给印盘（XSkinSealDial）画在环心；
+## 印盘开着、连击走旧画法时整组往下挪到环下面（y 276）；under_dial 由印盘建好时设
+var under_dial := false
+const UNDER_DIAL_SHIFT := 152.0
+
+
+## 连击四档（纯好看）：0 没有、1 为 1～9、2 为 10～29、3 为 30～49、4 为 50 以上
+static func tier(h: int) -> int:
+	if h <= 0:
+		return 0
+	if h < 10:
+		return 1
+	if h < 30:
+		return 2
+	return 3 if h < 50 else 4
+
+
+## 印盘读：连击还剩多久（0～1，停 90 帧）
+func hold_frac() -> float:
+	return clampf(float(timer) / HOLD_FRAMES, 0.0, 1.0)
+
+
+## 印盘读：数字现在的缩放（每次击中从 2 倍缩回 1 倍）与不透明度（断了每帧 −10）
+func num_scale() -> float:
+	return pop
+
+
+func num_alpha() -> float:
+	return layout_alpha / 255.0
+
+
+## 印盘读：正在显示的数（断了淡出时 hits 已清零，数字还要接着淡完）
+var shown_hits := 0
+var pop := 1.0             # 同 digits[].scale，不靠数字图也有
 
 
 func _ready() -> void:
@@ -68,6 +102,8 @@ func step() -> void:
 	if timer <= 0 and layout_alpha > 0:
 		layout_alpha = maxi(0, layout_alpha - 10)
 		slide += 1
+	if pop > 1.0:
+		pop = maxf(1.0, pop - 0.1)
 	for g in digits:
 		if g.scale > 1.0:
 			g.scale -= 0.1
@@ -93,6 +129,8 @@ func _refresh() -> void:
 	timer = HOLD_FRAMES
 	layout_alpha = 255
 	slide = 0
+	shown_hits = hits
+	pop = 2.0
 	digits.clear()
 	if _tex_d == null:
 		return
@@ -103,6 +141,10 @@ func _refresh() -> void:
 
 
 func _draw() -> void:
+	if XSkin2C.combo_on():
+		return
+	if under_dial and XSkin2C.meter_on():
+		draw_set_transform(Vector2(0, UNDER_DIAL_SHIFT))
 	if _tex_a != null and layout_alpha > 0:
 		draw_texture(_tex_a, HIT_LAYOUT + Vector2(slide, 0), Color(1, 1, 1, layout_alpha / 255.0))
 	if _tex_d == null:

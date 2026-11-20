@@ -1544,7 +1544,8 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	last_battle_game_over = battle.logic.game_over
 	last_battle_escaped = battle.logic.escaped and not battle.logic.game_over
 	if last_battle_game_over and XSkin2C.gameover_on() and DisplayServer.get_name() != "headless":
-		last_battle_shot = ImageTexture.create_from_image(get_viewport().get_texture().get_image())
+		var img := get_viewport().get_texture().get_image()
+		last_battle_shot = ImageTexture.create_from_image(img) if img != null and not img.is_empty() else null   # T265 核查 P3：取帧失败不建空贴图
 	# BattleManager.replayBgmAndBgs 在战斗收场时就调（胜利是关结算画面的 endVictoryPhase，全灭／逃跑在 process 里），
 	# 早于 Scene_Battle 的淡出：战斗曲（或胜利曲）这时停，地图曲接着放、淡入；没放完的 ME 地图接过来
 	battle.stop_bgm()
