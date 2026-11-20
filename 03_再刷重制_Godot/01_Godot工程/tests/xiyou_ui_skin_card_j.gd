@@ -228,7 +228,7 @@ func _save_page() -> void:
 	act(p, "ui_down")
 	check("save.down_to_2", p.index == 1 and p.act == 0)
 	act(p, "ui_accept")
-	check("save.load_confirm", p._phase == "confirm" and sk.dialog != null and not sk.dialog.danger and sk.dialog.index == 0 and sk.dialog.buttons[0].text == "读取", [p._phase])
+	check("save.load_confirm", p._phase == "confirm" and sk.dialog != null and not sk.dialog.danger and sk.dialog.index == 0 and sk.dialog.buttons[0].text == "读取" and not str(sk.dialog.body).contains("没存"), [p._phase])
 	await shots("save_load_confirm")
 	act(p, "ui_cancel")
 	check("save.load_confirm_cancel", p._phase == "list" and sk.dialog == null and XSave.exists(2))
@@ -296,6 +296,16 @@ func _save_page() -> void:
 	await shots("save_overwrite_confirm")
 	ss.dialog.chosen.emit(0)
 	check("save.overwrite_done", sp._phase == "list" and XSave.exists(7))
+	# 游戏里（存档模式）读档：没存的进度会丢——橙边、光标停「取消」，确定＝取消、什么都不读
+	var loaded2 := [false]
+	sp.loaded.connect(func(): loaded2[0] = true)
+	act(sp, "ui_left")
+	check("save.save_mode_left_to_load", sp.act == 0 and not ss.card.buttons[0].disabled)
+	act(sp, "ui_accept")
+	check("save.save_mode_load_danger", sp._phase == "confirm" and ss.dialog.danger and ss.dialog.index == 1 and sp.confirm_index == 1 and str(ss.dialog.body).contains("没存的进度会丢掉"), [sp._phase, ss.dialog.body if ss.dialog != null else null])
+	await shots("save_save_mode_load_confirm")
+	act(sp, "ui_accept")
+	check("save.save_mode_load_default_cancel", sp._phase == "list" and not loaded2[0])
 	# 触屏：点右牌「删除」→ 弹窗；点弹窗「取消」
 	ss._on_card_button(2)
 	check("save.touch_delete_button", sp._phase == "confirm" and ss.dialog.danger)

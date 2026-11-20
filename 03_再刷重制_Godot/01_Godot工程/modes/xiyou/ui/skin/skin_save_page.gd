@@ -12,7 +12,7 @@ extends XSkinTemplatePage
 ## - 信息窗 → 右牌：大标题＝地点（最近存的那格加「最近存的」小标）、小字＝游戏名＋文件号；「队伍」一排 5 个头像圆 76＋名字＋Lv；
 ##   「这一档」两列六项（保存次数、游戏时间、精魂、变量 20、变量 206、存档容量，名字照旧取系统里的叫法）；天启篇再加一行「天启之路」。
 ## - 空格 → 右牌正中「空」＋一行小字；校验失败 → 正中「存档校验失败」＋原来那句说明。
-## - 确认窗 → 统一确认弹窗 XSkinConfirm：读取灰边、停在「读取」；覆盖、删除橙边、停在「取消」，后果一句写清是哪一档；
+## - 确认窗 → 统一确认弹窗 XSkinConfirm：标题进来读档灰边、停在「读取」；游戏里（存档模式）读档、覆盖、删除橙边、停在「取消」，后果一句写清是哪一档；
 ##   校验失败读不了的提示 → 同一个弹窗只有一枚「知道了」。
 ## 新皮肤关着、ENABLED＝false、或标题传 use_skin＝false 时 XSaveScene 不建这一页，旧页一行不变。
 
@@ -258,7 +258,9 @@ func confirm_data() -> Dictionary:
 		what += "（%s · %s）" % [location(d), XSaveScene.playtime(float(d.playSeconds))]
 	match str(XSaveScene.ACTIONS[sc.act][1]):
 		"load":
-			return {"title": "读取这份存档？", "body": "回到%s的进度，现在没存的进度不会留下。" % what, "buttons": ["读取", "取消"]}
+			if sc.mode == "save":   # 游戏里（存档模式）读档：现在没存的进度会丢，找不回来——同覆盖、删除：橙边、光标停「取消」（协调 T292 返修）
+				return {"title": "读取这份存档？", "body": "回到%s的进度。现在没存的进度会丢掉，找不回来。" % what, "buttons": ["读取", "取消"], "danger": true}
+			return {"title": "读取这份存档？", "body": "回到%s的进度。" % what, "buttons": ["读取", "取消"]}
 		"save":
 			if sc.seal_failed(sc.slot()):   # 校验失败的旧文件写盘时会改名留着（XSaveSeal.quarantine_if_failed），不是找不回来
 				return {"title": "覆盖这份存档？", "body": "%s会存成现在的进度；原来那份校验失败的文件会改名留着。" % what, "buttons": ["覆盖", "取消"], "danger": true}
