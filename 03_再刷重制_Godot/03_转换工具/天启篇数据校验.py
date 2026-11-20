@@ -19,7 +19,7 @@
 - brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。
 - guardian_params.json（守层者能力值重锚，T237／T245）：只有 B 组，ref_enemy 是正整数、stats 八项对 0～7、floors 只有 31～34 层、qiyin 行（可没有）和每层只写 stats 里的项（下划线开头的注释键除外）、取值是正整数百分比（附则 E）。
 - growth.json（渡鸦、奈叶、流萤无限成长，T256）：只有 B 组，全表整数（附则 E）、层价分段从 1 层起连续且份数不降、翻倍倍数 ≥2、拐点在分段里、Q6 判定四项范围、三人行齐全且角色号对、一份是正整数、平加只认能力编号 0～7 且渡鸦只加魔攻、奈叶只加生命魔法、流萤不走平加。
-- six_dim.json（天启篇六维，T275）：只有 B 组，八档刻度、全整数（附则 E）、韧性抗控表 −10～+10 随档不降、R1～R4（SSS 唯一极化、SS 必带短板、S 稀有度、分档总分预算）逐份过、普通怪模板 8～10 个、样板角色号在 base_line.json、骑士键同 horsemen.json。\n有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
+- six_dim.json（天启篇六维，T275）：只有 B 组，八档刻度、全整数（附则 E）、韧性抗控表 −10～+10 随档不降、R1～R3（SSS 唯一极化、SS 其余五维至少 2 项 ≤C、S 稀有度）逐份过，R4 分档总分只报告不拦（T280）、普通怪模板 8～10 个、样板角色号在 base_line.json、骑士键同 horsemen.json。\n有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
 import json
@@ -2411,9 +2411,7 @@ def six_dim_row_rules(name: str, row: dict, cls: str) -> list:
     n_sss = sum(1 for v in sc.values() if v == 8)
     n_ss = sum(1 for v in sc.values() if v == 7)
     n_s = sum(1 for v in sc.values() if v == 6)
-    lo, hi = SIX_BUDGETS[cls]
-    if not lo <= total <= hi:
-        bad.append('%s：R4 总分 %d 不在 %s 档预算 %d～%d' % (name, total, cls, lo, hi))
+    # R4 分档总分：T280 起只报告不拦（见 six_dim_r4_report），Kyo 11-19 说超强者／强者／弱者总分给得不合理，等他看完分布再定预算
     if n_sss > 1:
         bad.append('%s：R1 SSS 至多 1 个，现在 %d 个' % (name, n_sss))
     if n_sss + n_ss > 1:
@@ -2434,10 +2432,9 @@ def six_dim_row_rules(name: str, row: dict, cls: str) -> list:
         rest = [v for v in sc.values() if v != 7]
         if sum(1 for v in rest if v == 6) > 1:
             bad.append('%s：R2 有 SS 时其余五维 S 至多 1 项' % name)
-        two_low = sum(1 for v in rest if v <= 2) >= 2
-        e_plus = any(v == 1 for v in rest) and sum(1 for v in rest if v <= 3) >= 2
-        if not (two_low or e_plus):
-            bad.append('%s：R2 SS 无明显短板（要至少 2 项 ≤D，或 1 项 E 加另 1 项 ≤C）' % name)
+        # T280（Kyo 11-19「SS 的代价有点高：至少两个 C 及以下就行，不用 D」）：其余五维至少 2 项 ≤C
+        if sum(1 for v in rest if v <= 3) < 2:
+            bad.append('%s：R2 SS 无明显短板（其余五维要至少 2 项 ≤C）' % name)
     else:
         cap = 1 if cls in ('minion', 'weak') else 2
         if n_s > cap:
@@ -2502,8 +2499,37 @@ def six_dim_rules(table: dict, base: dict = None, horsemen: dict = None) -> list
     return bad
 
 
+def six_dim_r4_report(table: dict) -> list:
+    """R4 分档总分（只报告不拦，T280）：每档人数、总分最小／中位／最大／均值、超出预算的人数。"""
+    groups = {}
+    for part, key_cls in (('templates', None), ('knights', None), ('actors', None)):
+        for k, v in table.get(part, {}).items():
+            cls = v.get('class')
+            if cls in SIX_BUDGETS and all(d in v and v[d] in SIX_LETTERS for d in SIX_DIMS):
+                groups.setdefault(cls, []).append((part + '/' + k, sum(SIX_LETTERS.index(v[d]) + 1 for d in SIX_DIMS)))
+    lines = []
+    for cls in SIX_CLASSES:
+        rows = groups.get(cls)
+        if not rows:
+            continue
+        tot = sorted(x[1] for x in rows)
+        lo, hi = SIX_BUDGETS[cls]
+        out = [n for n, s in rows if not lo <= s <= hi]
+        mid = tot[len(tot) // 2] if len(tot) % 2 else (tot[len(tot) // 2 - 1] + tot[len(tot) // 2]) // 2
+        lines.append('R4 报告 %s：%d 份，总分 %d～%d（中位 %d，均值 %d），预算 %d～%d，超出预算 %d 份'
+                     % (cls, len(rows), tot[0], tot[-1], mid, sum(tot) // len(tot), lo, hi, len(out)))
+    return lines
+
+
 def check_six_dim(_args) -> bool:
-    return _run_table('six_dim.json', lambda t: six_dim_rules(t, _load_opt('base_line.json'), _load_opt('horsemen.json')))
+    ok = _run_table('six_dim.json', lambda t: six_dim_rules(t, _load_opt('base_line.json'), _load_opt('horsemen.json')))
+    if (DATA_DIR / 'six_dim.json').is_file():
+        try:
+            for line in six_dim_r4_report(json.loads((DATA_DIR / 'six_dim.json').read_text(encoding='utf-8'))):
+                print('  ' + line)
+        except Exception as e:  # 报告读不出来不拦，只提示
+            print('  R4 报告读不出来：%s: %s' % (type(e).__name__, e))
+    return ok
 
 
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。

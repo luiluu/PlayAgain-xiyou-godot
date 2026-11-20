@@ -1,6 +1,6 @@
 extends Node
 ## 天启篇六维只读模块（XTianqiSixDim，T275）专项：
-## 一、13 份样板读取准确（谷雨 175 待 Kyo 重定分，先不录、断言跳过）（字母、总分、韧性抗控、战商档）。
+## 一、14 份读取准确（四骑士＋10 角色，含谷雨 175；T280 起角色六维是全员实测重算值）（字母、总分、韧性抗控、战商档）；全员表 156 人都在且字母合法。
 ## 二、没录的角色／敌人回中性；敌人模板继承与单只覆盖。
 ## 三、西游档、ENABLED＝false 全返回中性；权重表读取。
 
@@ -8,11 +8,11 @@ var results: Array = []
 
 const SIX := {
 	"knights": {"death": "S SS E B A E", "war": "S C SS D D B", "famine": "A C B SS A E", "plague": "D C D S B SS"},
-	"actors": {180: "S A B SS C E", 107: "D SS E B S B", 168: "A A B B B C", 45: "A D SSS C D E",
-		174: "D D B A B S", 71: "B D D S A B", 6: "A C B D D E", 31: "E C C C B A", 60: "D B C E E D"},
+	"actors": {180: "S B C SS D B", 107: "A S D A S A", 168: "SS A C A D C", 45: "E E SSS C E B", 174: "D C B A A A",
+		71: "B E A SS C B", 6: "D B C E E B", 31: "E B A B A S", 60: "B S C E E B", 175: "S A E A S A"},
 }
-const TOTALS := {"death": 24, "war": 24, "famine": 25, "plague": 24, 180: 26, 107: 24, 168: 25, 45: 21, 174: 23, 71: 23, 6: 17, 31: 19, 60: 13}
-const RESIST := {"death": 5, "war": -5, "famine": 5, "plague": 2, 180: 0, 107: 7, 168: 2, 45: -5, 174: 2, 71: 5, 6: -5, 31: 2, 60: -10}
+const TOTALS := {"death": 24, "war": 24, "famine": 25, "plague": 24, 180: 26, 107: 29, 168: 25, 45: 18, 174: 24, 71: 24, 6: 15, 31: 25, 60: 19, 175: 28}
+const RESIST := {"death": 5, "war": -5, "famine": 5, "plague": 2, 180: -5, 107: 7, 168: -5, 45: -10, 174: 5, 71: 0, 6: -10, 31: 5, 60: -10, 175: 7}
 
 
 func _ready() -> void:
@@ -51,6 +51,14 @@ func _run() -> void:
 		_check("actor_%d" % id, _expect(six, SIX.actors[id]), six)
 		_check("actor_total_%d" % id, XTianqiSixDim.total(six) == TOTALS[id], XTianqiSixDim.total(six))
 		_check("actor_resist_%d" % id, XTianqiSixDim.resist_pct_of(six) == RESIST[id], XTianqiSixDim.resist_pct_of(six))
+	# T280：全员表 156 人都在、六维字母合法、谷雨已录（不再回中性）
+	var rows: Dictionary = XTianqiSixDim.data().get("actors", {})
+	var all_ok := rows.size() == 156
+	for k in rows:
+		for d in XTianqiSixDim.DIMS:
+			all_ok = all_ok and XTianqiSixDim.LETTERS.has(rows[k].get(d, ""))
+	_check("all_actors_valid", all_ok, rows.size())
+	_check("guyu_recorded", XTianqiSixDim.of_actor(175) != XTianqiSixDim.neutral())
 	var gojo := XTianqiSixDim.of_actor(180)
 	_check("tier_gojo_5", XTianqiSixDim.ai_tier_of(gojo) == 5)
 	_check("tier_plague_4", XTianqiSixDim.ai_tier_of(XTianqiSixDim.of_knight("plague")) == 4)

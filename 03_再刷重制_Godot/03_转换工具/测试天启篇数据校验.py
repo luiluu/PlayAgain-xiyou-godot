@@ -880,7 +880,7 @@ class FateCopyT263(unittest.TestCase):
         self.assertTrue(any('技能 6861' in b and '6875' in b for b in chk.forced_copy_rules(self.t)))
 
 class SixDim(unittest.TestCase):
-    """T275：six_dim.json 的规则自检；四种违规（双 SSS、SS 无短板、总分超预算、小数）都能报错。"""
+    """T275：six_dim.json 的规则自检；三种违规（双 SSS、SS 无短板、小数）都能报错；R4 总分只报告（T280）。"""
 
     def setUp(self):
         self.t = json.loads((REAL_DIR / 'six_dim.json').read_text(encoding='utf-8'))
@@ -901,9 +901,21 @@ class SixDim(unittest.TestCase):
         self.t['actors']['180'].update(output='A', survive='A', speed='B', wit='SS', resolve='B', support='C')
         self.assertTrue(any('R2 SS 无明显短板' in b for b in self.bad()))
 
-    def test_over_budget(self):
+    def test_over_budget_report_only(self):
+        # T280：R4 分档总分只报告不拦——总分爆表不进 bad，只在报告里多一份「超出预算」
+        before = [l for l in chk.six_dim_r4_report(self.t) if 'weak' in l][0]
         self.t['actors']['60'].update(output='A', survive='A', speed='A', wit='A', resolve='A', support='A')
-        self.assertTrue(any('R4 总分' in b for b in self.bad()))
+        self.assertFalse(any('R4' in b for b in self.bad()))
+        after = [l for l in chk.six_dim_r4_report(self.t) if 'weak' in l][0]
+        self.assertNotEqual(before, after)
+        self.assertIn('R4 报告 weak', after)
+
+    def test_ss_two_c_cost(self):
+        # Kyo 11-19：SS 其余五维至少 2 项 ≤C 就行（不用 D）
+        self.t['actors']['180'].update(output='S', survive='B', speed='C', wit='SS', resolve='C', support='B')
+        self.assertFalse(any('R2' in b for b in self.bad()))
+        self.t['actors']['180'].update(speed='B')
+        self.assertTrue(any('R2 SS 无明显短板' in b for b in self.bad()))
 
     def test_decimal(self):
         self.t['ai_weights']['support_pct']['C'] = 100.5
