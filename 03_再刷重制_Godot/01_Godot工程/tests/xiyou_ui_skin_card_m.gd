@@ -144,6 +144,7 @@ func _run() -> void:
 	await _hosting()
 	await _rollback()
 	await _shared()
+	await _warehouse_walker()
 	XUiSkin.motion_override = -1
 	XState.current = null
 	for pl in XSound._players:
@@ -338,6 +339,7 @@ func _counts_order() -> void:
 	_key(p, "ui_right")
 	await frames(3)
 	await shots("M_技能次数_常态")
+	await _walker_check("counts", p.skin.layout.left, p.actor)
 	# Q／E 换人
 	_keycode(p, KEY_E)
 	await frames(3)
@@ -404,7 +406,7 @@ func _medication() -> void:
 	var rows: Array = p.skin_rows()
 	# 旧吃药页的「Hp恢复开关」「Mp恢复开关」两行（进入各自的药页）＝新页两枚页签
 	check("med_switch_rows_are_tabs", omed.size() == 4 and omed[0][0] == "Hp恢复开关" and omed[1][0] == "Mp恢复开关"
-		and XHangUpSubPage.TAB_NAMES == ["回生命的", "回魔法的"] and p.tab == 0, omed)
+		and XHangUpSubPage.TAB_NAMES == ["生命药", "魔法药"] and p.tab == 0, omed)
 	check("med_rate_row", rows[0].text == omed[2][0] and rows[0].right == str(omed[2][1]) + "%", [rows[0], omed[2]])
 	check("med_hp_rows_count", rows.size() == ohp.size() + 1, [rows.size(), ohp.size()])
 	for i in ohp.size():
@@ -457,6 +459,16 @@ func _medication() -> void:
 	e2.select(1)
 	await frames(3)
 	check("med_empty_selected_gray_hi", e2.skin.list.dis_color(1) == XSkinList.DIS_SEL)
+	# 键盘也能停到灰行，按确定蜂鸣、什么都不改（T304 小A核 P3-2）
+	e2.select(0)
+	_key(e2, "ui_down")
+	await frames(2)
+	check("med_empty_key_reach", e2.index == 1, e2.index)
+	var hv0 := int(XHangUpAuto.recovery(s).HpV)
+	XSound.system_log.clear()
+	_key(e2, "ui_accept")
+	await frames(2)
+	check("med_empty_buzzer", XSound.system_log == [3] and int(XHangUpAuto.recovery(s).HpV) == hv0, XSound.system_log)
 	await shots("M_自动吃药_没药", false)
 	e2.queue_free()
 	await frames(2)
@@ -596,6 +608,69 @@ func _rollback() -> void:
 	await frames(2)
 
 
+# ---- 像素小人不是实心白块（T304 小A核 P1-1：draw_walker 局部 load() 一返回纹理就被释放）----
+
+## 无头：纹理被 XSkinPartyPage 留着；有窗口：取左块小人那 144×144（设计坐标）的像素，不是单色、不是全白
+func _walker_check(tag: String, left: Control, a: XActor) -> void:
+	var cn := str(a.data().get("characterName", ""))
+	var path := XDB.img_path("characters", cn)
+	check("walker_cached_" + tag, path != "" and XSkinPartyPage._walker_cache.has(path) and ResourceLoader.has_cached(path), path)
+	if not windowed():
+		return
+	var win := get_window()
+	var old := win.size
+	win.size = Vector2i(800, 450)
+	await frames(10)
+	left.queue_redraw()
+	await frames(2)
+	await RenderingServer.frame_post_draw
+	var img := get_viewport().get_texture().get_image()
+	var k := Vector2(img.get_size()) / get_viewport().get_visible_rect().size
+	var lb := left.size
+	var foot := left.get_global_rect().position + Vector2(lb.x / 2.0, lb.y / 2.0 + 40.0)
+	var r := Rect2(foot - Vector2(72, 144), Vector2(144, 144))
+	var colors := {}
+	var white := 0
+	var total := 0
+	for y in range(int(r.position.y * k.y), int(r.end.y * k.y), 2):
+		for x in range(int(r.position.x * k.x), int(r.end.x * k.x), 2):
+			if x < 0 or y < 0 or x >= img.get_width() or y >= img.get_height():
+				continue
+			var c := img.get_pixel(x, y)
+			colors[c.to_html(false)] = true
+			total += 1
+			if c.r > 0.98 and c.g > 0.98 and c.b > 0.98:
+				white += 1
+	check("walker_not_solid_" + tag, total > 0 and colors.size() >= 4 and white * 2 < total, [colors.size(), white, total])
+	win.size = old
+	await frames(4)
+
+
+## 卡 J 角色仓库「仓库」页签左块（同一个 draw_walker，main 上是白块）
+func _warehouse_walker() -> void:
+	var s := _state()
+	var store: Array[int] = []
+	for r in XDB.table("Actors"):
+		if store.size() >= 2:
+			break
+		if r is Dictionary and str(r.get("name", "")) != "" and r.has("classId") and int(r.id) > 1 and not s.party.has(int(r.id)) and XActorWarehouse.enabled(int(r.id)):
+			s.actor(int(r.id))
+			store.append(int(r.id))
+	s.saved_actors.assign(store)
+	var p := XActorWarehouseScene.new()
+	add_child(p)
+	await frames(3)
+	if not check("wh_built", p.skin != null and not store.is_empty()):
+		p.queue_free()
+		return
+	_keycode(p, KEY_E)
+	await frames(3)
+	check("wh_store_tab", p.cmd == 1, p.cmd)
+	await _walker_check("warehouse_store", p.skin.layout.left, s.actor(p.skin.current_id()))
+	p.queue_free()
+	await frames(2)
+
+
 # ---- 共用件三处 ----
 func _shared() -> void:
 	_state()
@@ -632,7 +707,9 @@ func _shared() -> void:
 	XFontScale.set_value("global", 100)
 	var h100 := card.natural_height(312)
 	check("shared_choices_grow_130", h130 > h100, [h100, h130])
-	check("shared_ascii", XSkinCard._ascii("12%") and not XSkinCard._ascii("现在"))
+	# 只有带汉字的右标签走正文字；数字和装备「换上后」（→▲▼）、制作「要求」（✓✗）照旧窄体数字字（T304 小A核 P2-1）
+	check("shared_cjk", XSkinCard._has_cjk("现在") and XSkinCard._has_cjk("现在·默认") and not XSkinCard._has_cjk("12%")
+		and not XSkinCard._has_cjk("120 → 135 ▲15") and not XSkinCard._has_cjk("▼3") and not XSkinCard._has_cjk("✓") and not XSkinCard._has_cjk("3/5 ✗"))
 	card.queue_free()
 	# skin_sub_page：简化档淡出／淡入立刻到位（不再 0.12 秒）
 	var p := await _sub("sell")
@@ -641,6 +718,14 @@ func _shared() -> void:
 	check("shared_simple_fade_out_instant", not p.skin.visible and is_equal_approx(p.skin.modulate.a, 0.0) and p.skin._fade == null)
 	p.skin.fade_in()
 	check("shared_simple_fade_in_instant", p.skin.visible and is_equal_approx(p.skin.modulate.a, 1.0))
+	# 独立回退开关：SIMPLE_NO_FADE＝false 时简化档照旧 0.12 秒淡出（T304 小A核 P2-2）
+	XSkinSubPage.SIMPLE_NO_FADE = false
+	p.skin.fade_out()
+	check("shared_simple_fade_switch_off", p.skin._fade != null and p.skin.visible)
+	await get_tree().create_timer(0.25).timeout
+	p.skin.fade_in()
+	await get_tree().create_timer(0.25).timeout
+	XSkinSubPage.SIMPLE_NO_FADE = true
 	XUiSkin.motion_override = XUiSkin.Motion.FULL
 	p.skin.fade_out()
 	check("shared_full_fade_tween", p.skin._fade != null and p.skin.visible)

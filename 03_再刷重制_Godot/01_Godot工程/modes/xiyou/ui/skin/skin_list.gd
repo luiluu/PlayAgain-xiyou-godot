@@ -377,7 +377,7 @@ func _draw() -> void:
 			var r2 := str(it.right2)
 			var r2w := body.get_string_size(r2, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size - 3).x
 			XUiSkin.ds(self, body, Vector2(end_x - r2w, base + (right_size - 3) * 0.36), r2, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size - 3,
-				XUiSkin.TEXT_3 if dis else it.get("right2_color", XUiSkin.TEXT_2))
+				dis_color(i) if dis else it.get("right2_color", XUiSkin.TEXT_2))
 			end_x -= right2_w
 		if right != "":
 			right_w = num.get_string_size(right, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size).x
@@ -401,7 +401,7 @@ func _draw() -> void:
 				var p := XSkinTag.parse(t)
 				if str(p[0]) == "":
 					continue
-				var tw2 := XSkinTag.draw(self, Vector2(tx, base), str(p[0]), XUiSkin.TEXT_3 if dis else p[1])
+				var tw2 := XSkinTag.draw(self, Vector2(tx, base), str(p[0]), dis_color(i) if dis else p[1])
 				tx += tw2 + XSkinTag.GAP
 				after += tw2 + XSkinTag.GAP
 			after += XSkinTag.GAP

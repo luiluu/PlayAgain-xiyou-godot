@@ -40,7 +40,7 @@ var switch_actor := false
 var tab := 0
 var _left: Control
 var _tabs: Control
-const TAB_NAMES := ["回生命的", "回魔法的"]
+const TAB_NAMES := ["生命药", "魔法药"]
 
 
 func _safe() -> bool:
@@ -204,6 +204,9 @@ func select(i: int) -> void:
 
 func ok() -> void:
 	var s := _s()
+	if kind == "med_tabs" and _potions.is_empty() and index == 1:
+		XSound.system(3)   # 没药那一行（灰行）：按确定给蜂鸣（T304 小A核 P3-2）
+		return
 	if index < 0 or index >= rows().size():
 		return
 	match kind:
@@ -318,7 +321,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		ok()
 	elif event.is_action_pressed("ui_down", true) or event.is_action_pressed("ui_up", true):
 		XKeyMap.handled(self)
-		var n := rows().size()
+		var n := skin_rows().size() if skin != null else rows().size()   # 新版型：没药的灰行也能用键盘停上去（按确定蜂鸣）
 		if n > 0:
 			select(XMenu._move(index, 1 if event.is_action_pressed("ui_down", true) else -1, n, not event.is_echo()))
 	elif event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true):
@@ -413,7 +416,7 @@ func skin_card(i: int) -> Dictionary:
 			d.sections = [{"title": "操作", "text": "这个技能在挂机出招顺序里排几次，0 次＝不用。→ 加一次、← 减一次（0～20 循环），确定也是加一次。Q／E 换人。"}]
 		"order":
 			d.title = str(_order.skills[i].skill.name)
-			d.subtitle = "%s　第 %s 个出" % [actor.display_name(), str(_order.order[i])]
+			d.subtitle = "%s　第 %s 个出手" % [actor.display_name(), str(_order.order[i])]
 			d.desc = str(_order.skills[i].skill.get("description", ""))
 			d.sections = [{"title": "操作", "text": "挂机时按序号从小到大轮流出招。确定或 → 把这一项提前一位。Q／E 换人。"}]
 		"med_tabs":
@@ -422,19 +425,19 @@ func skin_card(i: int) -> Dictionary:
 				d.sections = [{"title": "操作", "text": "确定 +10%，到 100% 后回到 10%。Q／E 换页签。"}]
 			elif _potions.is_empty():
 				d.subtitle = ""
-				d.desc = "背包里没有能%s的药，买到后这里会列出来。" % ("回魔法" if tab == 1 else "回生命")
+				d.desc = "背包里没有能%s的药，获得后会显示在这里。" % ("回魔法" if tab == 1 else "回生命")
 				d.sections = [{"title": "操作", "text": "Q／E 换页签。"}]
 			else:
 				var it := XDB.rec("Items", int(_potions[i - 1].id))
 				d.desc = str(it.get("description", ""))
 				var on := XHangUpAuto.potion_on(s, tab == 1, int(_potions[i - 1].id))
-				d.sections = [{"title": "", "text": "剩余 %d 个。开着的药会被自动吃。" % int(_potions[i - 1].num)},
+				d.sections = [{"title": "", "text": "剩余 %d 个，开启的药会自动使用。" % int(_potions[i - 1].num)},
 					XSkinSubPage.choices_section(["开", "关"], 0 if on else 1),
 					{"title": "操作", "text": "确定切换。Q／E 换页签。"}]
 		"sell":
 			var last := _safe() and i == rs.size() - 1
 			if i == 0:
-				d.desc = "每打这么多场，挂机自动卖一次装备；0 为不卖出。"
+				d.desc = "每自动战斗指定场数后卖一次装备；0 为不卖出。"
 				d.sections = [{"title": "操作", "text": "确定 +1，到 11 后回到 0。"}]
 			elif last:
 				d.desc = "词条品质达到这一档的装备整件保留，不卖。"

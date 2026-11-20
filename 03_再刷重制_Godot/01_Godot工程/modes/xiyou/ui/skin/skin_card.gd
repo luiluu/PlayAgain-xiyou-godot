@@ -424,8 +424,8 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 				XUiSkin.ds(t, body, Vector2(x0, base + lfs * 0.36), str(ln.get("left", "")), HORIZONTAL_ALIGNMENT_LEFT, w * 0.6, lfs, ln.get("color", XUiSkin.TEXT_2))
 				var rt := str(ln.get("right", ""))
 				if rt != "":
-					# 右标签：纯数字走窄体数字字；带汉字（「现在」「默认」）走正文字、同左边字号（T300 小A核 P2-4）
-					var rf: Font = body if LINES_V2 and not _ascii(rt) else num
+					# 右标签：带汉字（「现在」「默认」）走正文字、同左边字号（T300 小A核 P2-4）；数字和符号（→▲▼✓✗）照旧窄体数字字（T304 小A核 P2-1）
+					var rf: Font = body if LINES_V2 and _has_cjk(rt) else num
 					var rfs := lfs if rf == body and LINES_V2 else nfs
 					var rw := rf.get_string_size(rt, HORIZONTAL_ALIGNMENT_LEFT, -1, rfs).x
 					XUiSkin.ds(t, rf, Vector2(x0 + w - rw, base + rfs * 0.36), rt, HORIZONTAL_ALIGNMENT_LEFT, -1, rfs, ln.get("right_color", XUiSkin.TEXT))
@@ -443,11 +443,12 @@ static func line_h() -> float:
 	return maxf(LINE_H, roundf(XUiSkin.fs(21) * 1.25)) if LINES_V2 else LINE_H
 
 
-static func _ascii(t: String) -> bool:
+static func _has_cjk(t: String) -> bool:
 	for k in t.length():
-		if t.unicode_at(k) > 127:
-			return false
-	return true
+		var c := t.unicode_at(k)
+		if (c >= 0x4e00 and c <= 0x9fff) or (c >= 0x3400 and c <= 0x4dbf) or (c >= 0xf900 and c <= 0xfaff):
+			return true
+	return false
 
 
 ## 两列「名 值」格子：名次要字、值正文，两格一行；一格比半宽还宽就独占一行（再长自动换行）

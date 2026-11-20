@@ -429,12 +429,22 @@ func _dashed(r: Rect2, c: Color) -> void:
 		slot_row.draw_dashed_line(pts[k], pts[k + 1], c, 1.0, 6.0)
 
 
-## 行走图朝下中间一帧（像素小人）：底边中点在 foot，整数倍放大到不超过 max_h 高（最近邻）
-static func draw_walker(ci: CanvasItem, cname: String, index: int, foot: Vector2, max_h: float) -> void:
+## 画过的行走图留着引用（T304 小A核 P1-1）：局部 load() 一返回纹理就被释放，画出来是实心白块（同 XMVCanvas._cache）
+static var _walker_cache := {}
+
+
+static func walker_texture(cname: String) -> Texture2D:
 	var p := XDB.img_path("characters", cname) if cname != "" else ""
 	if p == "":
-		return
-	var tex := load(p) as Texture2D
+		return null
+	if not _walker_cache.has(p):
+		_walker_cache[p] = load(p) as Texture2D
+	return _walker_cache[p]
+
+
+## 行走图朝下中间一帧（像素小人）：底边中点在 foot，整数倍放大到不超过 max_h 高（最近邻）
+static func draw_walker(ci: CanvasItem, cname: String, index: int, foot: Vector2, max_h: float) -> void:
+	var tex := walker_texture(cname)
 	if tex == null:
 		return
 	var big := cname.begins_with("$") or cname.begins_with("!$")

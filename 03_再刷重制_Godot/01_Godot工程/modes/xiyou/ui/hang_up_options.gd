@@ -361,7 +361,7 @@ func skin_card(i: int) -> Dictionary:
 	var w: Array = words(sym)
 	var d := {"title": w[0], "desc": w[1]}
 	if sym in SUBPAGES:
-		d["subtitle"] = "子页"
+		d["subtitle"] = "进入设置"
 		d["sections"] = [{"title": "操作", "text": "确定进入设置。"}]
 	elif sym == "range":
 		d["subtitle"] = "现在 %d 格" % int(settings().range)
