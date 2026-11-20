@@ -22,6 +22,9 @@ extends Control
 ##   选原件时按 Shift 看原件词条：详情窗位置另开一张说明卡（字号压到 14 以下，O-007 最小字号照常），藏起详情窗；再按 Shift、取消、
 ##   选定都收起，移光标时跟着换（原版 _codexShowSourceHelp，sourceHelp 在 picker.updateHelp 里重画）；帮助窗提示换成「返回升级预览」。
 
+## T299 卡 K：天启篇新界面（XUiSkin.on() 且 XSkinMenuTreePage.ENABLED）时同一套状态换成模板页布局画（XSkinCraftingPage）：
+## 不再弹数量窗（数量条常驻右牌底）、做完走提示道不停在弹窗态；关着时 skin 为 null，旧页一行不变。
+
 signal closed
 
 const HELP_RECT := Rect2(0, 0, 1280, 100)
@@ -80,6 +83,8 @@ const PICK_H := 72.0
 const PICK_ROWS := 6                 # floor(448 / 72)
 var source_card: XHelpCard           # 锻造选原件时 Shift 看的原件说明卡
 var source_shown := false
+## T299 新界面；关着时为 null
+var skin: XSkinCraftingPage
 
 
 func _ready() -> void:
@@ -111,6 +116,9 @@ func _ready() -> void:
 	source_card = XHelpCard.new()
 	source_card.visible = false
 	add_child(source_card)
+	if XUiSkin.on() and XSkinMenuTreePage.ENABLED:
+		skin = XSkinCraftingPage.new(self)
+		add_child(skin)
 	_reset_list()
 	_refresh()
 
@@ -360,6 +368,9 @@ func _refresh() -> void:
 		list_pager.set_state(top, list_rows(), list.size() if mode != "pick" else 0)
 		list_win.down_arrow = list_win.down_arrow and not list_pager.visible
 	_sync_source()
+	if skin != null:
+		skin.sync()   # 新界面：旧窗口、按钮、原件说明卡都藏起来，不再画
+		return
 	for w in [help_win, cat_win, list_win, detail_win, confirm_win, gold_win, gauge_win, popup_win]:
 		w.refresh()
 	_buttons.queue_redraw()
@@ -496,6 +507,13 @@ func craft() -> void:
 		popup_win.position.x = (1280 - w) / 2.0
 	amount = mini(1, XCrafting.amount_craftable(s, r))
 	_reset_list()
+	if skin != null:
+		# 新界面：结果走提示道（成功金色；全失败写「制作失败」），直接回列表（同弹窗确定）
+		XSkinCraftingPage.notify(popup_text if not item.is_empty() else XSkinCraftingPage.T_FAIL, not item.is_empty())
+		buttons_visible = false
+		mode = "list"
+		_refresh()
+		return
 	mode = "popup"
 	popup_win.open()
 	_refresh()
@@ -652,6 +670,8 @@ func _side(d: int) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:
+		return   # 新界面：点击由 XSkinCraftingPage 的各件接
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and _button_down >= 0 and not event.pressed:
 		var i := _button_down
 		_button_down = -1
@@ -711,6 +731,9 @@ func toggle_source() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SHIFT and mode == "pick":
 		XKeyMap.handled(self)
 		toggle_source()
