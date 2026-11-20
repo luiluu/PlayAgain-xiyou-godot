@@ -631,6 +631,8 @@ static func _start_fit(logic, c: Dictionary, a, source: String, forced_kind := "
 	c.fit_last[a] = last
 	c.fit_starts[turn] = _starts(c, turn) + 1
 	c.fit_log.append({"turn": turn, "actor": int(a.actor_id), "kind": kind, "source": source})
+	if source != "sear":
+		XTianqiXinmoTraits.on_brand_resonance(logic, a, "fit")  # 天启篇心魔特点【同堕】（T319）：自发发作叠堕势（满槽当场引发的在 sear_add 那里已数过）
 	return logs
 
 
@@ -1110,6 +1112,7 @@ static func sear_add(logic, a, amount: int) -> int:
 	var id := int(a.actor_id)
 	c.fills[id] = int(c.fills.get(id, 0)) + 1
 	c.sear_logs.append({"type": "battle_text", "text": TEXT_SEAR_FULL % [a.display_name(), sear_name()]})
+	XTianqiXinmoTraits.on_brand_resonance(logic, a, "sear")  # 天启篇心魔特点【同堕】（T319）：印纹发亮叠堕势
 	if a.is_alive():
 		if logic.current_order.has(a):
 			c.sear_logs.append_array(trigger(logic, a, "sear")[1])

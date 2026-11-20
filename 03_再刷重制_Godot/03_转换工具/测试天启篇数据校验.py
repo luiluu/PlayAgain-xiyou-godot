@@ -538,7 +538,13 @@ class XinmoTraitsRules(unittest.TestCase):
         def word(t): t['traits']['6']['open'] = t['traits']['6']['open'] + '守住灵台'
         def no_desc(t): t['traits']['4']['desc'] = ''
         def rng_float(t): t['traits']['2']['ranges']['turns'] = [2, 3.5]
-        for fn in (flt, out_rng, miss_seg, miss_key, bad_key, tier, tier_down, pid, fmt, word, no_desc, rng_float):
+        def shed_fmt(t): t['traits']['2']['texts']['shed'] = '%s 稳住架势，震散了 1 层「骨裂」！'  # T319：层数改占位
+        def steal_fmt(t): t['traits']['4']['texts']['steal'] = '心魔发动【盗形】，剥走 %s！'
+        def charge_fmt(t): t['traits']['5']['texts']['charge'] = '心魔蓄起 %d 层「影势」！'
+        def open_fmt(t): t['traits']['6']['open'] = '心魔特点【同堕】：均深 %d%%。'
+        def open_extra(t): t['traits']['1']['open'] = t['traits']['1']['open'] + '%d'
+        for fn in (flt, out_rng, miss_seg, miss_key, bad_key, tier, tier_down, pid, fmt, word, no_desc, rng_float,
+                   shed_fmt, steal_fmt, charge_fmt, open_fmt, open_extra):
             with self.subTest(fn.__name__):
                 t = self._t()
                 fn(t)

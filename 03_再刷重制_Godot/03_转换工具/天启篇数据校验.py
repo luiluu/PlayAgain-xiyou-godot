@@ -2608,8 +2608,12 @@ XINMO_KEYS = {
 ## 没有标定范围的固定项
 XINMO_FIXED = {'debuff_params', 'steal_interval'}
 ## 触发播报的占位个数（游戏里 % 格式化，个数不对会报错）
-XINMO_TEXT_ARGS = {('tougu', 'stack'): 3, ('tougu', 'shed'): 1, ('niliu', 'wash'): 2,
-                   ('tongduo', 'suppress'): 1, ('tongduo', 'suppress_only'): 1}
+XINMO_TEXT_ARGS = {('tougu', 'stack'): 3, ('tougu', 'shed'): 2, ('niliu', 'wash'): 2,
+                   ('daoxing', 'steal'): 3, ('daoxing', 'fallback'): 2, ('daoxing', 'break'): 3,
+                   ('yingjie', 'charge'): 4, ('yingjie', 'shed'): 1, ('yingjie', 'skill'): 1,
+                   ('tongduo', 'stack'): 2, ('tongduo', 'suppress'): 1, ('tongduo', 'suppress_only'): 1}
+## 开战播报带占位的段（同堕报队伍平均烙印与增伤）；别的段 open 不许有占位
+XINMO_OPEN_ARGS = {'tongduo': 2}
 ## D174：玩家可见文字不用「境」「锚」、西游词「灵台」，不用 brand.json 的异化级名
 XINMO_BANNED = ['境', '锚', '灵台', '侵染', '蚀骨', '化形', '终焉']
 
@@ -2658,6 +2662,8 @@ def xinmo_traits_rules(table: dict) -> list:
                 bad.append('%s.params.%s 要是整数：%r' % (w, k, v))
             elif not (isinstance(r, list) and len(r) == 2 and all(_is_int(x) for x in r) and r[0] <= v <= r[1]):
                 bad.append('%s.params.%s＝%r 不在标定范围 %r' % (w, k, v, r))
+        if _fmt_args(str(row.get('open', ''))) != XINMO_OPEN_ARGS.get(key, 0):
+            bad.append('%s.open 要有 %d 个占位：%r' % (w, XINMO_OPEN_ARGS.get(key, 0), row.get('open')))
         texts = row.get('texts', {})
         for tk, n in XINMO_TEXT_ARGS.items():
             if tk[0] == key and _fmt_args(str(texts.get(tk[1], ''))) != n:
