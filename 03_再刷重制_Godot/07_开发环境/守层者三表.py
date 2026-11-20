@@ -6,7 +6,7 @@
   python3 守层者三表.py selftest                                                    自检（临时目录，不碰真表）
 输入：`baseline_dps.tscn -- --both --out=<json> [--atk-table=…]` 的输出（rows：floor、atkScale、dmg、enemyDmg、hit、partyHp）。多个文件按层合并，后面的盖前面的。
 换算（口径同 XGuardianRework 头注释，法宝与积分重构 v0.3）：
-- hp_base[层]   ＝ 基准队每回合打出的伤害 dmg（取 3 位有效数字的整数）。34 层鸿钧没有守层者敌群，输入里有 34 层行才填，缺就不写（游戏里缺项按 0 取，不该缺：写表前报告列出）。
+- hp_base[层]   ＝ 基准队每回合打出的伤害（有 dmgRaw 用 dmgRaw：日志原始伤害、每次出手前补满，T239；没有用 dmg；取 3 位有效数字的整数）。34 层鸿钧没有守层者敌群，输入里有 34 层行才填，缺就不写（游戏里缺项按 0 取，不该缺：写表前报告列出）。
 - atk_scale[层] ＝ 当前倍率 × (partyHp ÷ 6.4) ÷ enemyDmg（守层者每回合打掉基准队合计生命的 1/6.4，不治疗约 8 回合团灭）；1～4 层原版几乎不打人，不放大（取 1）；
                   系数按 3 位有效数字保留（它是敌人出伤的内部倍率，不是玩家看的系数，不受附则 E 整数约束）。
 - resist[层]    ＝ 19～33 层，单下伤害中位数 hit 的 30%（整数，取 3 位有效数字）。
@@ -43,8 +43,9 @@ def build(rows: list) -> dict:
         r = by.get(f)
         if r is None:
             continue
-        if float(r.get('dmg', 0)) > 0:
-            hp[str(f)] = int(sig3(float(r['dmg'])))
+        d = float(r.get('dmgRaw', r.get('dmg', 0)))   # T239：有日志原始伤害（不被剩余血量截断）就用它
+        if d > 0:
+            hp[str(f)] = int(sig3(d))
         if f <= 4:
             atk[str(f)] = 1
         elif f <= 33 and float(r.get('enemyDmg', 0)) > 0 and float(r.get('partyHp', 0)) > 0:
@@ -121,6 +122,7 @@ def selftest() -> int:
             {'floor': 20, 'dmg': 2251234, 'atkScale': 0.074, 'enemyDmg': 2000.0, 'partyHp': 64000.0, 'hit': 16000.0}]
     t = build(rows)
     assert t['hp_base'] == {'2': 626000, '20': 2250000}, t
+    assert build([{'floor': 3, 'dmg': 5, 'dmgRaw': 123456}])['hp_base'] == {'3': 123000}
     assert t['atk_scale']['2'] == 1 and t['atk_scale']['20'] == sig3(0.074 * 10000 / 2000), t
     assert t['resist'] == {'20': 4800}, t
     assert build([]) == {}
