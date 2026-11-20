@@ -2589,6 +2589,90 @@ def check_six_dim(_args) -> bool:
     return ok
 
 
+# ---- xinmo_traits.json（天启篇心魔特点，T316 设计 v0.3 第四节，T318 建） ----
+
+XINMO_KEYS = {
+    '1': ('zhanchen', ['chance_pct', 'debuff_turns', 'debuff_params', 'need_debuffs', 'bonus_dmg_pct']),
+    '2': ('tougu', ['per_stack_pct', 'max_stacks', 'turns', 'block_shed']),
+    '3': ('niliu', ['heal_split_pct', 'high_hp_heal_pct', 'low_hp_heal_pct', 'wash_hp_pct', 'hp_loss_pct', 'mp_loss_pct',
+                    'per_washed_dmg_pct', 'max_surge_pct']),
+    '4': ('daoxing', ['steal_interval', 'max_steal_count', 'stacks_per_steal', 'fallback_stacks', 'max_stacks', 'turns',
+                      'per_stack_dealt_pct', 'per_stack_taken_reduce_pct', 'break_normal', 'break_when_debuffed']),
+    '5': ('yingjie', ['first_warn_turn', 'cycle_turns', 'max_stacks', 'ally_shed', 'challenger_shed', 'single_tier_pcts',
+                      'single_hp_cap_pcts', 'aoe_scale_pct', 'aoe_tier_pcts', 'aoe_hp_cap_pcts', 'sear_min_stacks',
+                      'sear_single_add', 'sear_aoe_add']),
+    '6': ('tongduo', ['brand_scale_pct', 'resonance_cap_pct', 'even_turn_sear_add', 'max_stacks', 'stack_turns',
+                      'max_gain_per_turn', 'per_stack_dealt_pct', 'per_stack_taken_reduce_pct', 'total_dealt_cap_pct',
+                      'suppress_shed', 'suppress_rounds']),
+}
+## 没有标定范围的固定项
+XINMO_FIXED = {'debuff_params', 'steal_interval'}
+## 触发播报的占位个数（游戏里 % 格式化，个数不对会报错）
+XINMO_TEXT_ARGS = {('tougu', 'stack'): 3, ('tougu', 'shed'): 1, ('niliu', 'wash'): 2,
+                   ('tongduo', 'suppress'): 1, ('tongduo', 'suppress_only'): 1}
+## D174：玩家可见文字不用「境」「锚」、西游词「灵台」，不用 brand.json 的异化级名
+XINMO_BANNED = ['境', '锚', '灵台', '侵染', '蚀骨', '化形', '终焉']
+
+
+def _fmt_args(text: str) -> int:
+    return len(re.findall(r'%[sd]', text.replace('%%', '')))
+
+
+def xinmo_traits_rules(table: dict) -> list:
+    bad = []
+    _growth_ints(table, '', bad)
+    tr = table.get('traits')
+    if not isinstance(tr, dict) or sorted(tr) != sorted(XINMO_KEYS):
+        return bad + ['traits 要正好有段位 1～6：%r' % (sorted(tr) if isinstance(tr, dict) else tr)]
+    for seg, (key, need) in XINMO_KEYS.items():
+        row = tr[seg]
+        w = 'traits.%s' % seg
+        if row.get('key') != key:
+            bad.append('%s.key 应为 %s：%r' % (w, key, row.get('key')))
+        for f in ('name', 'desc', 'open'):
+            if not isinstance(row.get(f), str) or not row.get(f).strip():
+                bad.append('%s.%s 要有文字' % (w, f))
+        p, rg = row.get('params', {}), row.get('ranges', {})
+        if sorted(p) != sorted(need):
+            bad.append('%s.params 键不对：缺 %s 多 %s' % (w, sorted(set(need) - set(p)), sorted(set(p) - set(need))))
+        want_rg = set(need) - XINMO_FIXED
+        if set(rg) != want_rg:
+            bad.append('%s.ranges 键不对：缺 %s 多 %s' % (w, sorted(want_rg - set(rg)), sorted(set(rg) - want_rg)))
+        for k in need:
+            v = p.get(k)
+            if k == 'debuff_params':
+                if not (isinstance(v, list) and v and all(_is_int(x) and 2 <= x <= 7 for x in v)):
+                    bad.append('%s.params.debuff_params 要是 2～7 的能力值号：%r' % (w, v))
+                continue
+            if k in XINMO_FIXED:
+                if not _is_int(v) or v <= 0:
+                    bad.append('%s.params.%s 要是正整数：%r' % (w, k, v))
+                continue
+            r = rg.get(k)
+            if isinstance(v, list):
+                if len(v) != 4 or not all(_is_int(x) and x > 0 for x in v) or v != sorted(v):
+                    bad.append('%s.params.%s 要是 0～3 层四档递增正整数：%r' % (w, k, v))
+                if not (_is_int(r) and r >= 0):
+                    bad.append('%s.ranges.%s 要是各档 ± 的整数：%r' % (w, k, r))
+            elif not _is_int(v):
+                bad.append('%s.params.%s 要是整数：%r' % (w, k, v))
+            elif not (isinstance(r, list) and len(r) == 2 and all(_is_int(x) for x in r) and r[0] <= v <= r[1]):
+                bad.append('%s.params.%s＝%r 不在标定范围 %r' % (w, k, v, r))
+        texts = row.get('texts', {})
+        for tk, n in XINMO_TEXT_ARGS.items():
+            if tk[0] == key and _fmt_args(str(texts.get(tk[1], ''))) != n:
+                bad.append('%s.texts.%s 要有 %d 个占位：%r' % (w, tk[1], n, texts.get(tk[1])))
+        shown = [row.get('name', ''), row.get('desc', ''), row.get('open', '')] + [str(x) for x in texts.values()]
+        for word in XINMO_BANNED:
+            if any(word in str(x) for x in shown):
+                bad.append('%s 玩家可见文字用了「%s」（D174）' % (w, word))
+    return bad
+
+
+def check_xinmo_traits(_args) -> bool:
+    return _run_table('xinmo_traits.json', xinmo_traits_rules)
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -2626,6 +2710,7 @@ CHECKS = [
     ('guardian_params', check_guardian_params),
     ('growth', check_growth),
     ('six_dim', check_six_dim),
+    ('xinmo_traits', check_xinmo_traits),
 ]
 
 
