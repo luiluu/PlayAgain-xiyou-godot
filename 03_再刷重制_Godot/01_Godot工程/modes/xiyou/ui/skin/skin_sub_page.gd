@@ -241,11 +241,11 @@ static func on_color(on: bool) -> Color:
 
 # ---- 淡出／淡入（手机按键拖动态）----
 
-## 整页淡出（0.12 秒；动效关＝立刻）。淡完隐藏，不挡拖动
+## 整页淡出（0.12 秒；简化、关＝立刻，T254 3.0 简化档去掉淡入，T300 小A核 P3-4）。淡完隐藏，不挡拖动
 func fade_out() -> void:
 	if _fade != null:
 		_fade.kill()
-	if XUiSkin.motion() == XUiSkin.Motion.OFF or not is_inside_tree():
+	if XUiSkin.motion() != XUiSkin.Motion.FULL or not is_inside_tree():
 		modulate.a = 0.0
 		hide()
 		return
@@ -258,7 +258,7 @@ func fade_in() -> void:
 	if _fade != null:
 		_fade.kill()
 	show()
-	if XUiSkin.motion() == XUiSkin.Motion.OFF or not is_inside_tree():
+	if XUiSkin.motion() != XUiSkin.Motion.FULL or not is_inside_tree():
 		modulate.a = 1.0
 		return
 	_fade = create_tween()
