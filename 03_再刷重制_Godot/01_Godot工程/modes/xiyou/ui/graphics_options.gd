@@ -20,6 +20,7 @@ const HINT_SIZE := 20
 const ON_COLOR := Color("a9dfb7")
 const OFF_COLOR := Color("c0c0c0")
 const TITLE := "画质设置"
+const NOTE_SKIN := "改了立刻生效并保存。确定换到下一档，左右各走一档。"
 const NOTE := "改了立刻生效并保存。灰色是默认档。"
 ## [键, 名字, 说明]
 const ROWS := [["crisp", "像素柔边", "战斗图放大后像素均匀、不发硬；文字不变"],
@@ -39,6 +40,8 @@ var index := 0
 var head_win: XMVWindow
 var list_win: XMVWindow
 var _rows: Array = []
+## T300 卡 L：新界面开着时的设置子页版型（XSkinSubPage）；关着为 null，旧页一行不变
+var skin: XSkinSubPage
 
 
 func _ready() -> void:
@@ -50,6 +53,10 @@ func _ready() -> void:
 	head_win = XMVWindow.make(self, HEAD_RECT, XUI.MENU_WINDOW_OPACITY, _paint_head)
 	list_win = XMVWindow.make(self, list_rect(), XUI.MENU_WINDOW_OPACITY, _paint_list)
 	list_win.canvas.blink = true
+	if XSkinSubPage.wanted():
+		head_win.hide()
+		list_win.hide()
+		skin = XSkinSubPage.attach(self)
 
 
 ## 本平台列出的行（窗口大小只在桌面；像素柔边的回退开关关掉时不列）
@@ -126,6 +133,60 @@ func _paint_list(c: XMVCanvas) -> void:
 		c.text(status_text(i), 6 + w - STATUS_W, y, STATUS_W, "right", OFF_COLOR if _is_default(i) else ON_COLOR)
 
 
+# ---- T300 新版型（XSkinSubPage 向这里要行和牌）----
+
+func skin_self_hosted() -> bool:
+	return XSkinSubPage.wanted()
+
+
+func skin_name() -> String:
+	return TITLE
+
+
+func skin_cat() -> String:
+	return "screen"
+
+
+func skin_rows() -> Array:
+	var out := []
+	for i in _rows.size():
+		out.append({"text": _rows[i][1], "right": status_text(i),
+			"right_color": XUiSkin.TEXT_2 if _is_default(i) else XUiSkin.GOLD_LIGHT})
+	return out
+
+
+## 某一档的字（右牌「可选」用）：整数倍缩放不写「N 倍」（那是现在的实际倍数，行尾才有）
+static func choice_text(key: String, v) -> String:
+	match key:
+		"font", "toast":
+			return "%d%%" % int(v)
+		"fps":
+			return "跟随屏幕" if int(v) == 0 else "%d 帧" % int(v)
+		"window":
+			return str(WINDOW_NAMES.get(v, v))
+	return "开" if v else "关"
+
+
+func skin_card(i: int) -> Dictionary:
+	var key: String = _rows[i][0]
+	var list := choices(key)
+	var labels := list.map(func(v): return choice_text(key, v))
+	var def_idx := 0 if not FONT_ROWS.has(key) else list.find(XFontScale.DEFAULTS[FONT_ROWS[key]])
+	if not FONT_ROWS.has(key):
+		def_idx = list.find(XGraphics.DEFAULTS[key])
+	return {"title": _rows[i][1], "subtitle": status_text(i), "desc": _rows[i][2],
+		"sections": [XSkinSubPage.choices_section(labels, _current_of(key), def_idx),
+			{"title": "操作", "text": NOTE_SKIN}]}
+
+
+func _current_of(key: String) -> int:
+	return maxi(0, choices(key).find(value(key)))
+
+
+func skin_hints() -> Array:
+	return [["确定", "换下一档"], ["左右", "各走一档"], ["取消", "返回"]]
+
+
 func _refresh() -> void:
 	list_win.refresh()
 
@@ -185,6 +246,8 @@ func _gui_input(event: InputEvent) -> void:
 		MOUSE_BUTTON_RIGHT:
 			cancel()
 		MOUSE_BUTTON_LEFT:
+			if skin != null:
+				return   # 新版型的点击由列表自己接（XSkinSubPage）
 			var rect := list_rect()
 			var p: Vector2 = event.position - rect.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 			if not rect.has_point(event.position) or p.y < 0:

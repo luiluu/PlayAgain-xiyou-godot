@@ -29,6 +29,8 @@ var actors: Array = []
 var head_win: XMVWindow
 var list_win: XMVWindow
 var list_pager: XListPager   # T050 翻页件（新界面关着时为 null）
+## T300 卡 L：新界面开着时的设置子页版型（XSkinSubPage）；关着为 null，旧页一行不变
+var skin: XSkinSubPage
 
 
 func _ready() -> void:
@@ -41,6 +43,10 @@ func _ready() -> void:
 	list_win = XMVWindow.make(self, LIST_RECT, XUI.MENU_WINDOW_OPACITY, _paint_list)
 	list_win.canvas.blink = true
 	list_pager = XListPager.attach(list_win, page)
+	if XSkinSubPage.wanted():
+		head_win.hide()
+		list_win.hide()
+		skin = XSkinSubPage.attach(self)
 	_refresh()
 
 
@@ -73,6 +79,48 @@ func _paint_list(c: XMVCanvas) -> void:
 ## T050：天启篇新界面开着且角色超一页时少放一行，给翻页件腾地方（见 XListPager.rows_for）
 func list_rows() -> int:
 	return XListPager.rows_for(ROWS, actors.size())
+
+
+# ---- T300 新版型（XSkinSubPage 向这里要行和牌）----
+
+func skin_self_hosted() -> bool:
+	return XSkinSubPage.wanted()
+
+
+func skin_name() -> String:
+	return "角色换装"
+
+
+func skin_cat() -> String:
+	return "general"
+
+
+func skin_empty() -> String:
+	return "还没有可以换装的角色"
+
+
+## 行：头像、名字、小字是换装卡名（放不下省略号，完整的在右牌里折行写全）、行尾启用（绿）／关闭
+func skin_rows() -> Array:
+	var out := []
+	for a in actors:
+		var t := row_texts(a)
+		var d: Dictionary = a.data()
+		out.append({"text": t[0], "sub": t[1], "right": t[2], "icon": XUiSkin.face(str(d.get("faceName", "")), int(d.get("faceIndex", 0))),
+			"right_color": XUiSkin.UP if t[2] == "启用" else XUiSkin.TEXT_2})
+	return out
+
+
+func skin_card(i: int) -> Dictionary:
+	var t := row_texts(actors[i])
+	var on: bool = t[2] == "启用"
+	return {"title": t[0], "subtitle": t[2], "desc": "学会的换装卡：%s" % t[1],
+		"sections": [XSkinSubPage.choices_section(["启用", "关闭"], 0 if on else 1, -1),
+			{"title": "说明", "text": "%s%s" % [NOTES[0], NOTES[1]]},
+			{"title": "操作", "text": "确定切换启用／关闭。"}]}
+
+
+func skin_hints() -> Array:
+	return [["确定", "启用／关闭"], ["Q / E", "翻页"], ["取消", "返回"]]
 
 
 func _refresh() -> void:
@@ -125,10 +173,14 @@ func _gui_input(event: InputEvent) -> void:
 		MOUSE_BUTTON_RIGHT:
 			cancel()
 		MOUSE_BUTTON_WHEEL_DOWN, MOUSE_BUTTON_WHEEL_UP:
+			if skin != null:
+				return   # 新版型的滚动由列表自己接（XSkinSubPage）
 			var d := 1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1
 			top = clampi(top + d, 0, maxi(0, actors.size() - list_rows()))
 			_refresh()
 		MOUSE_BUTTON_LEFT:
+			if skin != null:
+				return   # 新版型的点击由列表自己接（XSkinSubPage）
 			var p: Vector2 = event.position - LIST_RECT.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 			if not LIST_RECT.has_point(event.position) or p.y < 0 or p.y >= list_rows() * LH:
 				return

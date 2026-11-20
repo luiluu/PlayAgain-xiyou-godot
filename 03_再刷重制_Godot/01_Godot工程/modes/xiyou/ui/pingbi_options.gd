@@ -14,6 +14,8 @@ const LH := 36.0
 
 var index := 0
 var win: XMVWindow
+## T300 卡 L：新界面开着时的设置子页版型（XSkinSubPage）；关着为 null，旧页一行不变
+var skin: XSkinSubPage
 
 
 func _ready() -> void:
@@ -23,6 +25,9 @@ func _ready() -> void:
 	XUI.menu_background(self)
 	win = XMVWindow.make(self, rect(), XUI.MENU_WINDOW_OPACITY, _paint)
 	win.canvas.blink = true
+	if XSkinSubPage.wanted():
+		win.hide()
+		skin = XSkinSubPage.attach(self)
 
 
 func rows() -> Array:
@@ -42,6 +47,55 @@ func _paint(c: XMVCanvas) -> void:
 		if i == index:
 			c.cursor(Rect2(0, y, c.size.x, LH))
 		c.text(list[i][1], 6, y, c.size.x - 12)
+
+
+# ---- T300 新版型（XSkinSubPage 向这里要行和牌）----
+
+const STATE_TEXT := {"none": "关", "all": "开", "partial": "部分"}
+const TITLE := "屏蔽掉落"
+const PARTIAL_NOTE := "「部分」：这一档里有的品质屏蔽、有的没屏蔽。确定一次：全关变全开，否则全关。"
+
+
+func skin_self_hosted() -> bool:
+	return XSkinSubPage.wanted()
+
+
+func skin_name() -> String:
+	return TITLE
+
+
+func skin_cat() -> String:
+	return "general"
+
+
+func _grade(i: int) -> int:
+	return int(rows()[i][0])
+
+
+func _state(i: int) -> String:
+	return str(XPingbi.state(XState.current, _grade(i)))
+
+
+func skin_rows() -> Array:
+	var out := []
+	for i in rows().size():
+		var st := _state(i)
+		out.append({"text": "屏蔽 %s 装备" % XQuality.config().names[_grade(i)], "right": STATE_TEXT.get(st, ""),
+			"right_color": XUiSkin.TEXT_2 if st == "none" else XUiSkin.GOLD_LIGHT})
+	return out
+
+
+func skin_card(i: int) -> Dictionary:
+	var st := _state(i)
+	return {"title": "屏蔽 %s 装备" % XQuality.config().names[_grade(i)], "subtitle": STATE_TEXT.get(st, ""),
+		"desc": "开着时，这一档的武器与防具不再掉落。",
+		"sections": [XSkinSubPage.choices_section(["关", "开", "部分"], ["none", "all", "partial"].find(st), 0),
+			{"title": "「部分」是什么", "text": PARTIAL_NOTE},
+			{"title": "操作", "text": "确定整档切换，左右键没有作用。"}]}
+
+
+func skin_hints() -> Array:
+	return [["确定", "整档切换"], ["取消", "返回"]]
 
 
 func select(i: int) -> void:
@@ -70,6 +124,8 @@ func _gui_input(event: InputEvent) -> void:
 		MOUSE_BUTTON_RIGHT:
 			cancel()
 		MOUSE_BUTTON_LEFT:
+			if skin != null:
+				return   # 新版型的点击由列表自己接（XSkinSubPage）
 			var r := rect()
 			var p: Vector2 = event.position - r.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 			if not r.has_point(event.position) or p.y < 0:
