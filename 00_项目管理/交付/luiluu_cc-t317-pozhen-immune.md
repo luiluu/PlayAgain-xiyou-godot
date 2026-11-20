@@ -74,4 +74,5 @@ T313 分支的 `vp_ff_probe`（带 `--hongjun`、收场输赢）临时放进本�
 - a520f6d69 交付单草稿
 - e7eec744d 按协调定 B：破阵默认不挡，乙留开关默认关
 - 2ba2b3066 合 github/main
-- （下一提交）T285 专项反证跟上变身记层；交付单定稿
+- a0045c13e T285 专项反证跟上变身记层；交付单定稿
+- （合并提交）合本地 main 47c8ff5d1（含 T315 心魔对齐，dev.806，还没推 GitHub）：`guardian_rework.gd` 文件尾两边各加一段，两段都留；派单写「只合 github/main」，这里偏离是为了总装合并不卡冲突（交付自检报的）。合后本机 `xiyou_tianqi_pozhen_type`、`xiyou_tianqi_xinmo_align`、`xiyou_tianqi_enemy_cev`、`xiyou_tianqi_guardian_params`、`xiyou_tianqi_guardian_domain`、`xiyou_tianqi_enemy_ai_scene`、`xiyou_transform_params` 7 个全过；云端没重跑。
