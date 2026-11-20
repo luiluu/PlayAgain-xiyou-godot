@@ -145,6 +145,7 @@ func _run() -> void:
 	bot.out_dir = _arg("--vp-out")
 	bot.snapshot_dir = _arg("--vp-snapshot-dir")
 	bot.pass_after = int(_arg("--vp-pass-after", "0"))
+	bot.pass_skip_phase = not OS.get_cmdline_user_args().has("--vp-pass-keep-phase")
 	if bot.out_dir != "":
 		DirAccess.make_dir_recursive_absolute(bot.out_dir)
 	bot.verbose = OS.get_cmdline_user_args().has("--vp-verbose")
