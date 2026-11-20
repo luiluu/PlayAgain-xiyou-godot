@@ -43,6 +43,7 @@
 - 浮动卡战斗里：Y 第一次展开、再按 Y 收起并照旧关掉「详情」（战斗的 Y 本来是开关详情，`y_pass_on_collapse`）。
 - 截图里技能页、独立牌那几张是非天启篇存档的技能行（天启篇技能重构会改写部分专属技能的行，比如渡鸦 10122 天启篇下没有成长行）；战斗那张是天启篇存档。
 - 与 T287（卡 E）在 `skin_skill_page.gd` `_sync_card` 相邻行：本卡只改 rows 行与 set_card 第二行（desc／sections），`title_color` 那行没碰；合并时保留 T287 的 `name_color`。
+  交付时 T287 只在本机 main（74af966bc，dev.782）、还没到 github/main，照协调只合了 github/main；交付自检对本机 main 试合并报这一处冲突（只有一块）。解法：取本卡的 help／rows／split／sd／card.fold 几行，set_card 第一行用 T287 的 `"title_color": name_color(sk),`，第二行用本卡的（带 `"desc"` 和 `sd.sections if split else …`）。
 
 ## 验证
 
