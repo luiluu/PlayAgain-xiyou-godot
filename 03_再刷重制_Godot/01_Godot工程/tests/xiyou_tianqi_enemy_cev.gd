@@ -237,6 +237,19 @@ func _switches() -> void:
 	XTianqiCombat.SUBTRACTIVE_CEV = false
 	_check("mult.crit100", _near(XTianqiCombat.crit_after_cev(1.0, null, sk, e), 0.60))
 	_check("mult.crit130", _near(XTianqiCombat.crit_after_cev(1.3, null, sk, e), 0.78))
+	# T312 云裳派生暴击底子：开关关＝改前乘法；开＝减法、攻击方 ≤0 为 0
+	var ys := _Src.new()
+	ys.cri = 1.0
+	_check("ys.mult100", _near(XYunshang.derived_base_cri(ys, sk, e), 0.60))
+	ys.cri = 1.3
+	_check("ys.mult130", _near(XYunshang.derived_base_cri(ys, sk, e), 0.78))
+	XTianqiCombat.SUBTRACTIVE_CEV = true
+	ys.cri = 1.0
+	_check("ys.sub100", _near(XYunshang.derived_base_cri(ys, sk, e), XTianqiCombat.crit_after_cev(1.0, null, sk, e)))
+	ys.cri = 0.3
+	_check("ys.sub_floor0", _near(XYunshang.derived_base_cri(ys, sk, e), maxf(0.3 - e.cev, 0.0)), e.cev)
+	ys.cri = -0.2
+	_check("ys.sub_neg0", _near(XYunshang.derived_base_cri(ys, sk, e), 0.0))
 	XTianqiCombat.SUBTRACTIVE_CEV = true
 	_add(e, 1596)
 	XTianqiCombat.ENEMY_XPARAM_CAP = false
@@ -342,3 +355,7 @@ func _transform() -> void:
 	XTianqiCombat.ENEMY_XPARAM_CAP = false
 	_check("p31.neg_rate", _near(XTianqiCombat.crit_after_cev(-0.2, null, sk, g), 0.0), g.cev)
 	XTianqiCombat.ENEMY_XPARAM_CAP = true
+
+
+class _Src:
+	var cri := 0.0

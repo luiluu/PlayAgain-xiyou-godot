@@ -996,6 +996,15 @@ static func burst(logic, t, all: bool) -> Array:
 	return logs
 
 
+## 派生伤害的暴击底子：天启篇减法开关开着且目标是敌人，走 XTianqiCombat.crit_after_cev（减法、攻击方 ≤0 按 0，T312 对齐 D237）；其余照旧 暴击率×(1−暴闪)
+static func derived_base_cri(src, skill: Dictionary, t) -> float:
+	if not bool(skill.get("damage", {}).get("critical", false)):
+		return 0.0
+	if XTianqiCombat.SUBTRACTIVE_CEV and XTianqiCombat.on() and t is XEnemy:
+		return XTianqiCombat.crit_after_cev(src.cri, src, skill, t)
+	return src.cri * (1.0 - t.cev)
+
+
 ## derived：派生伤害（不是主动行动：不判命中、不触发云裳的双针／展幅、不种针）；暴击照 itemCri 掷，伤害走伤害计算后直接扣血
 static func derived(logic, src, t, skill_id: int, o: Dictionary) -> Array:
 	if src == null or t == null or t.is_dead():
@@ -1008,7 +1017,7 @@ static func derived(logic, src, t, skill_id: int, o: Dictionary) -> Array:
 	if o.has("mastery"):
 		derived_frame["mastery_skill"] = skill_id
 	frame = {}
-	var base_cri: float = src.cri * (1.0 - t.cev) if bool(skill.get("damage", {}).get("critical", false)) else 0.0
+	var base_cri: float = derived_base_cri(src, skill, t)
 	var critical: bool = logic._float("yunshang_derived_critical") < clampf(cri(src, skill, base_cri), 0.0, 1.0)
 	var value := 0.0
 	if o.has("damage"):
