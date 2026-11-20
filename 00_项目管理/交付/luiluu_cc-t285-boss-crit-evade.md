@@ -101,7 +101,7 @@
 
 ## 验证
 
-- r2：专项 `xiyou_tianqi_enemy_cev` 106/106；反向验证 4 项（去掉 -1 走原路、底子恢复 ×2、去掉变身记层、负暴击仍减）全咬住；云端选测见下。
+- r2：专项 `xiyou_tianqi_enemy_cev` 106/106；反向验证 4 项（去掉 -1 走原路、底子恢复 ×2、去掉变身记层、负暴击仍减）全咬住；云端选测 260a62195 472 个场景（基准 r1 交付 5e801653d，含 `xiyou_determinism`、`xiyou_rules*` 等战斗核心）16 片全过（run 44711932527）；本机 `xiyou_tianqi_affix_text` 38/38、`xiyou_tianqi_affix_table` 47/47、`xiyou_tianqi_skills` 245/245；数据校验 0、语法检查、工具回归过。
 - r1：专项 62/62；本机另跑 `xiyou_tianqi_balance` 88/88、`xiyou_tianqi_affix_battle` 86/86、`xiyou_toji` 75/75、`xiyou_toji_battle` 1327/1327、`xiyou_tianqi_horsemen` 96/96、`xiyou_tianqi_horsemen_battle` 142/142、`xiyou_tianqi_qiyin_altar` 172/172（死亡骑士免暴、七印魔塔无暴击不变）。
 - `天启篇数据校验.py` 退出码 0；`语法检查.py` 过；`工具回归.py` 全过。
 - 选测（`选测.py main --list` 474 个场景，含 `xiyou_determinism`、`xiyou_rules*`、`xiyou_tianqi_horsemen*`、`xiyou_tianqi_qiyin_altar`、`xiyou_toji*`、`xiyou_tianqi_affix_battle`）：云端选测 f4c40c75e 474 个场景 16 片全过（GitHub Actions run 44706464100）；本机未跑全量。
