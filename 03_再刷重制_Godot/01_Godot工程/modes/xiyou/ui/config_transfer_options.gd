@@ -36,6 +36,8 @@ var message := ""
 var pending := {}
 ## 这一页里导入／撤回改了界面风格（设置页据此关回地图）
 var skin_changed := false
+## T300 卡 L：新界面开着时的设置子页版型（XSkinSubPage）；关着为 null，旧页一行不变
+var skin: XSkinSubPage
 
 
 func _ready() -> void:
@@ -46,6 +48,10 @@ func _ready() -> void:
 	head_win = XMVWindow.make(self, HEAD_RECT, XUI.MENU_WINDOW_OPACITY, _paint_head)
 	list_win = XMVWindow.make(self, LIST_RECT, XUI.MENU_WINDOW_OPACITY, _paint_list)
 	list_win.canvas.blink = true
+	if XSkinSubPage.wanted():
+		head_win.hide()
+		list_win.hide()
+		skin = XSkinSubPage.attach(self)
 
 
 static func rows() -> Array:
@@ -91,6 +97,57 @@ func _paint_list(c: XMVCanvas) -> void:
 		var alpha := 1.0 if enabled(i) else XUI.DIM.a
 		c.text(list[i][1], 6, y, NAME_W, "left", XUI.TEXT, XUI.FONT_SIZE, LH, alpha)
 		c.text(list[i][2], 6 + NAME_W, y, w - NAME_W, "left", XUI.SYSTEM, HINT_SIZE, LH, alpha)
+
+
+# ---- T300 新版型（XSkinSubPage 向这里要行和牌）----
+
+func skin_self_hosted() -> bool:
+	return XSkinSubPage.wanted()
+
+
+func skin_name() -> String:
+	return TITLE
+
+
+func skin_cat() -> String:
+	return "other"
+
+
+## 五行；撤回没有备份时变灰、行尾写「没有可撤回的」；等确认的那一行行尾写「待确认」
+func skin_rows() -> Array:
+	var out := []
+	for i in rows().size():
+		var d := {"text": rows()[i][1]}
+		if not enabled(i):
+			d["disabled"] = true
+			d["right"] = "没有可撤回的"
+		elif _confirming(row_key(i)):
+			d["right"] = "待确认"
+			d["right_color"] = XUiSkin.GOLD_LIGHT
+		out.append(d)
+	return out
+
+
+func skin_card(i: int) -> Dictionary:
+	var secs := [{"title": "说明", "text": NOTE}]
+	if message != "":
+		secs.push_front({"title": "结果", "text": message})   # 校验结果、导出／导入结果都写在右牌里
+	var buttons := []
+	if _confirming(row_key(i)):
+		buttons.append({"text": "导入这 %d 项" % (pending["preview"]["values"] as Dictionary).size(), "primary": true})
+	return {"title": rows()[i][1], "subtitle": "" if enabled(i) else "没有可撤回的", "desc": rows()[i][2],
+		"sections": secs, "buttons": buttons}
+
+
+func skin_button(_i: int) -> void:
+	if not pending.is_empty() and _confirming(row_key(index)):
+		_do_import()
+
+
+func skin_hints() -> Array:
+	if not pending.is_empty():
+		return [["确定", "导入"], ["取消", "不导入"]]
+	return [["确定", "执行"], ["取消", "返回"]]
 
 
 func _refresh() -> void:
@@ -209,6 +266,8 @@ func _gui_input(event: InputEvent) -> void:
 		MOUSE_BUTTON_RIGHT:
 			cancel()
 		MOUSE_BUTTON_LEFT:
+			if skin != null:
+				return   # 新版型的点击由列表自己接（XSkinSubPage）
 			var p: Vector2 = event.position - LIST_RECT.position - Vector2(XMVWindow.PADDING, XMVWindow.PADDING)
 			if not LIST_RECT.has_point(event.position) or p.y < 0:
 				return

@@ -558,6 +558,20 @@ func _open_page_skin(page: Control) -> void:
 		page.add_to_group(XUiSkin.FULLSCREEN_GROUP)
 	_page = page
 	skin.hide()
+	if page.has_method("skin_self_hosted") and page.skin_self_hosted():   # T300 卡 L：子页自带新皮肤（XSkinSubPage），整屏铺满，不套 1280×720 外框、不藏底
+		add_child(page)
+		for n in page.get_children():
+			if n.name == "SkinBackdrop":
+				n.hide()
+		page.closed.connect(func():
+			page.queue_free()
+			_page = null
+			skin.show()
+			if not KEEP_INDEX_AFTER_PAGE:
+				index = 0
+				top = 0
+			_refresh())
+		return
 	var host := Control.new()
 	host.name = "SkinSubPageHost"
 	host.mouse_filter = Control.MOUSE_FILTER_IGNORE
