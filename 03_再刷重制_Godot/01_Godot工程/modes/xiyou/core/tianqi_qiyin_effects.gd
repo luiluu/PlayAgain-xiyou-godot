@@ -18,7 +18,7 @@ extends RefCounted
 
 ## 开关（O-331）：false＝七印装备在战斗里没有任何效果（只是带词条的装备）
 static var ENABLED := true
-## O-待定（T293 战斗提速）：damage_ops 只在穿了跟普攻／技能有关的效果（范围技、技能伤、封技普攻）时才问 is_attack（一次约 70～100 µs）；
+## O-625（T293 战斗提速）：damage_ops 只在穿了跟普攻／技能有关的效果（范围技、技能伤、封技普攻）时才问 is_attack（一次约 70～100 µs）；
 ## 没有这三条时它们各自的增伤是 0，乘区一样。false＝回退（每次都问）
 static var LAZY_ATTACK := true
 

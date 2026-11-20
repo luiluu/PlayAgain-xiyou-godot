@@ -978,7 +978,7 @@ func attack_times_add() -> float:
 
 ## YEP_WeaponUnleash attackSkillId：按 replace_attack_objects() 的顺序找第一个 <Replace Attack: x>，都没有是技能 1。
 ## 原版把找到的号缓存到下次 refresh（只在忘记技能而没 refresh 时与即时查不同，正式流程碰不到），这里每次即时查。
-## ATTACK_ID_MEMO（O-待定，T293 战斗提速）：角色在只读窗口（O-348）里同一代只查一次——逐个状态／装备／技能的备注按整串查表，
+## ATTACK_ID_MEMO（O-625，T293 战斗提速）：角色在只读窗口（O-348）里同一代只查一次——逐个状态／装备／技能的备注按整串查表，
 ## 一次约 70～100 µs，一段伤害里天启篇钩子要问三四次 is_attack。记在 XActor._read_memo，换代即丢。换代来源（refresh_passive 本身不换代）：
 ## 加减状态（state_touch）、clear_states、param_mark_dirty、学／忘技能、HP／MP／TP 写入、公式帧进出（XAlienBattle.push／pop_formula）；
 ## 换装走 XEquipment.preview（read_touch）、XEquipment.change（末尾写 hp／mp）、init_equips／release_unequippable（卸了东西时）／release_to_party。

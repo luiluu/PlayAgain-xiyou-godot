@@ -21,7 +21,7 @@ extends RefCounted
 
 ## 开关（O-335）：false＝天启篇词条在战斗里没有任何效果（只显示在装备说明里）
 static var ENABLED := true
-## O-待定（T293 战斗提速）：damage_ops 先看有没有「技能伤害」词条，有才问 is_attack（一次约 70～100 µs）；结果不变。false＝回退（先问 is_attack）
+## O-625（T293 战斗提速）：damage_ops 先看有没有「技能伤害」词条，有才问 is_attack（一次约 70～100 µs）；结果不变。false＝回退（先问 is_attack）
 static var LAZY_ATTACK := true
 
 ## 开关（O-611，T232）：true＝「斩获」在动作序列招（含普攻）上也认击倒：挂 IMMORTAL 被打到 0 血的目标先记待定，

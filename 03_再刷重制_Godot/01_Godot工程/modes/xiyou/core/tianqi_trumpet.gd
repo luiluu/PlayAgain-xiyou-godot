@@ -25,7 +25,7 @@ extends RefCounted
 ## 开关（O-413）：ENABLED＝false 整个关（天启篇里回到原版十本洪荒权能书：名字效果照旧、掉落跟原版只认洪荒开关，天启篇实际不掉）。
 
 static var ENABLED := true
-## O-待定（T293 战斗提速）：damage_ops 只在学了一号时才问 is_attack（一次约 70～100 µs，只有一号分范围技／单体技）；结果不变。false＝回退（每次都问）
+## O-625（T293 战斗提速）：damage_ops 只在学了一号时才问 is_attack（一次约 70～100 µs，只有一号分范围技／单体技）；结果不变。false＝回退（每次都问）
 static var LAZY_ATTACK := true
 
 const PATH := "res://modes/xiyou/tianqi_data/trumpet.json"
