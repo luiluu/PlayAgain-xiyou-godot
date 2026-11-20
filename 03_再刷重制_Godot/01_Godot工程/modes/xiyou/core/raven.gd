@@ -126,7 +126,7 @@ static func on_enemy_death(e) -> void:
 		return
 	e.set_meta("raven_soul_counted", true)
 	s.raven["soul"] = soul(a) + growth_gain(s, a, soul_gain(e))
-	a.param_mark_dirty()  # 天启篇无限成长：灵魂跨层时魔攻平加跟着变（XTianqiGrowth.param_flat 现算）
+	a.param_mark_dirty()  # 天启篇无限成长：灵魂一变魔攻平加跟着变（T286 连续层）（XTianqiGrowth.param_flat 现算）
 	award_seal(s, a)
 	if has(a, RESIDUE):
 		_add_residue(a)

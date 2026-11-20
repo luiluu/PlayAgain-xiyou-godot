@@ -3,8 +3,10 @@ extends RefCounted
 ## 【cc·T256·未经审查】天启篇渡鸦、奈叶、流萤无限成长的底座（私密设计仓库 重制设定/天启篇_无限成长_v0.4.md 第二节、3.5 节、
 ## 第八节卡①；Kyo 11-19「216全推荐」：Q1 甲、Q6 乙）。数据表 tianqi_data/growth.json（全整数，标定只改表）。只认天启篇存档。
 ##
-## - 层价表（三人共用）：第 1～12 层每层 1 份、13～24 层 2 份、25 层 4 份、26 层起每层翻倍；layers(计数, 基础段, 一份) 算成了几层，
-##   next_need 算离下一层还差多少计数。三人的计数都是原有的（渡鸦灵魂、奈叶适应次数、流萤胜场），不加存档字段。
+## - 层价表（三人共用）：第 1～12 层每层 1 份、13～24 层 2 份、25 层 4 份、26 层起每层翻倍；layers(计数, 基础段, 一份) 算成了几层。
+##   T286（Kyo D247「去掉层数」）：层数改成连续的小数层——在层价表这条曲线上按份数线性插值（第 k 层内每多一份走 1/price(k) 层），
+##   拐点（24 层＝累计 36 份）、越往后越慢的形状都不变，只是去掉台阶；属性＝每层平加×小数层，取整到整数（roundi）。玩家界面不再说「第几层」。
+##   三人的计数都是原有的（渡鸦灵魂、奈叶适应次数、流萤胜场），不加存档字段；小数层不进存档，读属性时现算。
 ## - floor_ok(s, logic)：Q6 乙「哪些战斗算成长」，三人共用。只管超出基础段的累加（基础段不判，由调用方决定）。
 ##   floor_ok_facts 是同一判定的纯数据版（测试直接喂字典）。
 ## - param_flat(a, i)：3.5 节的平加。渡鸦魔法攻击、奈叶最大生命和最大魔法，层数给多少面板就多多少：接在 XActor.param_before_alien
@@ -96,29 +98,29 @@ static func cumulative(n: int) -> float:
 	return t
 
 
-## 计数 count 超过基础段 base 的部分、每份 share，成了几层
-static func layers(count: float, base: float, share: float) -> int:
+## 计数 count 超过基础段 base 的部分、每份 share，成了几层（T286：连续的小数层）。
+## 份数 x＝超出÷一份；累计到第 n 层要 cumulative(n) 份，x 落在第 n＋1 层里时层数＝n＋(x−cumulative(n))÷price(n＋1)。
+## 正好落在整层上（含 k_calibrate 灌的计数）时返回整数值，免得 23.999… 取整差 1。
+static func layers(count: float, base: float, share: float) -> float:
 	if not ENABLED or share <= 0.0:
-		return 0
+		return 0.0
 	var excess := count - base
 	if excess <= 0.0:
-		return 0
+		return 0.0
+	var x := excess / share
 	var cap := int(data().get("price", {}).get("max_layer", 200))
 	var t := 0.0
 	var n := 0
 	while n < cap:
 		var p := price(n + 1)
-		if p <= 0.0 or t + p > excess / share + 1e-9:
+		if p <= 0.0:
 			break
+		if t + p > x + 1e-9:
+			var lay := float(n) + (x - t) / p
+			return roundf(lay) if absf(lay - roundf(lay)) < 1e-9 else lay
 		t += p
 		n += 1
-	return n
-
-
-## 离下一层还差多少计数（还没过基础段时连基础段剩下的一起算）
-static func next_need(count: float, base: float, share: float) -> float:
-	var n := layers(count, base, share)
-	return maxf(0.0, base + cumulative(n + 1) * share - count)
+	return float(n)
 
 
 # ---- 三人的计数与层数（按表里的键）----
@@ -142,33 +144,26 @@ static func count_of(key: String, a) -> float:
 	return 0.0
 
 
-## 某人现在成了几层（不在天启篇、开关关着、表里没有这人都是 0）
-static func layers_of(key: String, a) -> int:
+## 某人现在成了几层（小数层；不在天启篇、开关关着、表里没有这人都是 0）
+static func layers_of(key: String, a) -> float:
 	if not on():
-		return 0
+		return 0.0
 	var r := actor_row(key)
 	if r.is_empty() or not a is XActor or int(a.actor_id) != int(r.get("actor", 0)):
-		return 0
+		return 0.0
 	return layers(count_of(key, a), float(r.get("base", 0)), float(r.get("share", 0)))
 
 
-static func next_need_of(key: String, a) -> float:
-	var r := actor_row(key)
-	if r.is_empty():
-		return 0.0
-	return next_need(count_of(key, a), float(r.get("base", 0)), float(r.get("share", 0)))
+## 流萤：层数给的余烬生命（不含前 ember_cap）＝每层 ember × 小数层，取整（roundi）
+static func ember_bonus(n: float) -> int:
+	return roundi(maxf(0.0, n) * float(actor_row(LIUYING).get("ember", 0)))
 
 
-## 流萤：层数给的余烬生命（不含前 ember_cap）
-static func ember_bonus(n: int) -> int:
-	return maxi(0, n) * int(actor_row(LIUYING).get("ember", 0))
-
-
-## 流萤：层数给的伤害百分数（每满 dmg_step 层 +dmg_pct）
-static func dmg_pct_of(n: int) -> int:
+## 流萤：层数给的伤害百分数＝小数层 × dmg_pct ÷ dmg_step，向下取整（附则 E：整数％；即余烬每满 500 点＋1%，没满不给）
+static func dmg_pct_of(n: float) -> int:
 	var r := actor_row(LIUYING)
 	var step := maxi(1, int(r.get("dmg_step", 1)))
-	return (maxi(0, n) / step) * int(r.get("dmg_pct", 0))
+	return floori(maxf(0.0, n) * float(r.get("dmg_pct", 0)) / float(step) + 1e-9)
 
 
 # ---- 状态行（T259：私密设计仓 天启篇_无限成长_v0.4 第八节 Carbon 定稿原文，数值全从表里现读）----
@@ -191,6 +186,7 @@ static func _fmt_num(v: float) -> String:
 
 
 ## 三人状态行（空串＝未达起点、缺前置技能、或未在天启篇无限成长里）
+## T286（D247）：不再说「第几层」，改成「计数 → 加了多少」；括号里一句提示越往后越慢。文字待小A 审。
 static func status_line(key: String, a) -> String:
 	if not on():
 		return ""
@@ -208,23 +204,13 @@ static func status_line(key: String, a) -> String:
 	if share <= 0.0 or cnt < base:
 		return ""
 	var n := layers(cnt, base, share)
-	var y := next_need(cnt, base, share)
 	match key:
 		RAVEN:
-			var per_mat := roundi(flat_per_layer(RAVEN, 4))
-			if n >= 1:
-				return "冥冠·第%d层：魔法攻击＋%s（下层还需 %s 灵魂）" % [n, _fmt_int(per_mat * n), _fmt_int(roundi(y))]
-			return "冥冠（未成层）：下层还需 %s 灵魂（每层魔法攻击＋%s）" % [_fmt_int(roundi(y)), _fmt_int(per_mat)]
+			return "冥冠：灵魂 %s → 魔法攻击＋%s（越往后涨得越慢）" % [_fmt_int(floori(cnt)), _fmt_int(flat_amount(RAVEN, 4, n))]
 		NANOHA:
-			var per_hp := roundi(flat_per_layer(NANOHA, 0))
-			var per_mp := roundi(flat_per_layer(NANOHA, 1))
-			if n >= 1:
-				return "超限适应·第%d层：最大生命＋%s、最大魔法＋%s（下层还需 %s 次适应）" % [n, _fmt_int(per_hp * n), _fmt_int(per_mp * n), _fmt_num(y)]
-			return "超限适应（未成层）：下层还需 %s 次适应（每层最大生命＋%s、最大魔法＋%s）" % [_fmt_num(y), _fmt_int(per_hp), _fmt_int(per_mp)]
+			return "超限适应：适应 %s 次 → 最大生命＋%s、最大魔法＋%s（越往后涨得越慢）" % [_fmt_num(cnt), _fmt_int(flat_amount(NANOHA, 0, n)), _fmt_int(flat_amount(NANOHA, 1, n))]
 		LIUYING:
-			if n >= 1:
-				return "不熄之火·第%d层：余烬生命＋%s、伤害＋%d%%（下层还需 %s 胜场）" % [n, _fmt_int(ember_bonus(n)), dmg_pct_of(n), _fmt_int(roundi(y))]
-			return "不熄之火（未成层）：下层还需 %s 胜场（每层余烬生命＋%s、伤害＋%d%%）" % [_fmt_int(roundi(y)), _fmt_int(int(r.get("ember", 0))), dmg_pct_of(1)]
+			return "不熄之火：胜场 %s → 余烬生命＋%s、伤害＋%d%%（越往后涨得越慢）" % [_fmt_int(floori(cnt)), _fmt_int(ember_bonus(n)), dmg_pct_of(n)]
 	return ""
 
 
@@ -252,6 +238,11 @@ static func flat_per_layer(key: String, i: int) -> float:
 	return float(f.get(str(i), 0)) if f is Dictionary else 0.0
 
 
+## 小数层 n 给的平加：每层平加 × n，取整（roundi，T286）
+static func flat_amount(key: String, i: int, n: float) -> int:
+	return roundi(flat_per_layer(key, i) * maxf(0.0, n))
+
+
 ## XActor.param_before_alien 夹值之前加这一项。不是渡鸦、奈叶，或不是表里的能力项，直接 0
 static func param_flat(a, i: int) -> float:
 	if not ENABLED or not a is XActor:
@@ -261,10 +252,9 @@ static func param_flat(a, i: int) -> float:
 	var key = _by_actor.get(int(a.actor_id))
 	if key == null:
 		return 0.0
-	var per := flat_per_layer(key, i)
-	if per == 0.0:
+	if flat_per_layer(key, i) == 0.0:
 		return 0.0
-	return per * layers_of(key, a)
+	return float(flat_amount(key, i, layers_of(key, a)))
 
 
 ## 种族祝福包装之后调：before＝进种族包装前的值，after＝种族包装的结果。把种族对平加那一截的放大退掉
