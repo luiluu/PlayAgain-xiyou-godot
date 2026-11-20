@@ -163,6 +163,7 @@ func _run() -> void:
 	for pair in _arg("--vp-debug-items").split(",", false):
 		bot.debug_items[int(pair.get_slice(":", 0))] = int(pair.get_slice(":", 1))
 	bot.zhenqi_enabled = not OS.get_cmdline_user_args().has("--vp-no-zhenqi")
+	bot.brand_enabled = not OS.get_cmdline_user_args().has("--vp-no-carve")
 	bot.orbs_enabled = not OS.get_cmdline_user_args().has("--vp-no-orbs")
 	bot.race_enabled = not OS.get_cmdline_user_args().has("--vp-no-race")
 	bot.lottery_enabled = not OS.get_cmdline_user_args().has("--vp-no-lottery")

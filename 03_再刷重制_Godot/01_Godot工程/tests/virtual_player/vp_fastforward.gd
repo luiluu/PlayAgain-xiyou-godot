@@ -289,14 +289,41 @@ class FFHost:
 
 
 ## 地图上某个事件的当前页（照 MVEvent._find_page，不建节点）
-static func page_of(map_id: int, ev: Dictionary) -> Dictionary:
+static func page_index_of(map_id: int, ev: Dictionary) -> int:
 	var e := MVEvent.new()
 	e.map_id = map_id
 	e.event_id = int(ev.id)
 	e.data = ev
 	var i := e._find_page()
 	e.free()
+	return i
+
+
+static func page_of(map_id: int, ev: Dictionary) -> Dictionary:
+	var i := page_index_of(map_id, ev)
 	return ev.pages[i] if i >= 0 else {}
+
+
+## 入口页里「重置副本」那一支要做的收拾（T298）：返回 {vars: {变量号: 值}, switches: {开关号: 开着吗}}。
+## 只收「设为固定值」的变量（122，操作 0＝设置、操作数＝常量）和开关（121，参数 2：0 开、1 关），不碰 5／6／21／450（这几个由调用处另管）。
+static func reset_effects(list: Array) -> Dictionary:
+	var out := {"vars": {}, "switches": {}}
+	var on := false
+	for c in list:
+		var code := int(c.code)
+		if code == 402:
+			on = str(c.parameters[1]).contains("重置副本")
+			continue
+		if not on:
+			continue
+		var p: Array = c.parameters
+		if code == 121:
+			for sw in range(int(p[0]), int(p[1]) + 1):
+				out.switches[sw] = int(p[2]) == 0
+		elif code == 122 and int(p[3]) == 0 and int(p[2]) == 0 and not int(p[0]) in [5, 6, 21, 450]:
+			for v in range(int(p[0]), int(p[1]) + 1):
+				out.vars[v] = int(p[4])
+	return out
 
 
 ## 楼层的副本入口：这张图或隔一道门的图上的入口事件 [地图号, 事件]；没有返回 []
@@ -422,12 +449,15 @@ func dungeon_once(st: XState, floor_map: int, buy_rune: Callable) -> Dictionary:
 		await _run_page(host, int(ent[0]), ent[1])
 	if not XDungeon.inside(st) and str(host.trace).contains("请重置副本"):
 		# 重置也不认（T272：上一层最后一次副本首领后变量 5＝1、6＝35 没清，下一层入口要 6 到 36 才让重置，两头都卡死）：
-		# 照重置那一页本来要做的收拾（变量 5、6、118、119 清零，开关 101～105 开），再挑战一次
+		# 照这个入口自己的「重置副本」那一支做收拾（T298：每个副本清的变量和关的开关不同——普通副本 118／119＋开关 101～105，
+		# 26 层 356＋136～138，27 层 359＋149～153；重置是把这些开关「关」掉、不是打开），再挑战一次
 		st.set_variable(XDungeon.VAR_SEALED, 0)
-		for v in [6, 118, 119]:
-			st.set_variable(v, 0)
-		for sw in [101, 102, 103, 104, 105]:
-			st.set_switch(sw, true)
+		st.set_variable(XDungeon.VAR_ID, 0)
+		var fx := reset_effects(page_of(int(ent[0]), ent[1]).get("list", []))
+		for v in fx.vars:
+			st.set_variable(int(v), int(fx.vars[v]))
+		for sw in fx.switches:
+			st.set_switch(int(sw), bool(fx.switches[sw]))
 		host.want = "挑战副本"
 		await _run_page(host, int(ent[0]), ent[1])
 		forced_resets += 1
