@@ -26,7 +26,7 @@ var ripe_mode := false
 var reps := 4
 var xcap := []
 var gear_cache := ""
-const GEAR_FLOORS := [10, 20, 25, 30, 31, 32, 33]   # 装备按这一组层掷（和第一轮 s45_raw 同一组，换层数不改装备）
+var gear_floors: Array = [10, 20, 25, 30, 31, 32, 33]   # 装备按这一组层掷（缺省和第一轮 s45_raw 同一组，换层数不改装备）；--gear-floors= 换一组（要换缓存文件）
 var strip_ids := []
 
 
@@ -50,6 +50,8 @@ func _ready() -> void:
 			xcap = Array(a.substr(7).split(",")).map(func(x): return int(x))
 		elif a.begins_with("--strip-guardian="):
 			strip_ids = Array(a.substr(17).split(",")).map(func(x): return int(x))
+		elif a.begins_with("--gear-floors="):
+			gear_floors = Array(a.substr(14).split(",")).map(func(x): return int(x))
 		elif a.begins_with("--gear-cache="):
 			gear_cache = a.substr(13)
 		elif a == "--pozhen-type":
@@ -264,7 +266,7 @@ func _run() -> void:
 	get_tree().quit(0)
 
 
-## 装备缓存（--gear-cache=<json>）：有就读，没有就按 GEAR_FLOORS 掷完写下。键：队伍键 → 层 → actor_id → 栏位表
+## 装备缓存（--gear-cache=<json>）：有就读，没有就按 gear_floors 掷完写下。键：队伍键 → 层 → actor_id → 栏位表
 func _load_gears(list: Array) -> void:
 	if gear_cache != "" and FileAccess.file_exists(gear_cache):
 		var d = JSON.parse_string(FileAccess.get_file_as_string(gear_cache))
@@ -275,7 +277,7 @@ func _load_gears(list: Array) -> void:
 					per[int(f)] = d[key][f]
 				_gears[key] = per
 	var keep := floors
-	floors = GEAR_FLOORS.duplicate()
+	floors = gear_floors.duplicate()
 	var added := false
 	for team in list:
 		var key := ",".join(team.map(func(x): return str(x)))
