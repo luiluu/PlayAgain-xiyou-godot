@@ -93,6 +93,7 @@ if XUiSkin.on() and <你的卡的开关>:
 - 修炼场右牌「这次修炼」的练完值是临时把等级加 1 读能力值再还原（不在战斗里，能力值不走缓存）；会不会被别的被动缓存挡住没有全量查，专项里天启篇和西游表各核了一次＝真练完的值。
 - 技能遗忘不进 `xiyou_ui_skin_offshot`（要先 setup 角色），旧页由新专项 `gates`、`old_fg` 核。
 - 旧画法对照只拍 16:9（旧页不铺横屏）。
+- **合并冲突（协调定 B）**：已 merge github/main（cdd47586c）无冲突；交付自检对本机 main（2ad519a18，含未推送的卡 M T304 合并）报唯一冲突在 `tests/xiyou_ui_skin_offshot.gd` 循环行。解法：两边都留，写成 `for cls in PAGES + PAGES_K + PAGES_M + PAGES_O:`（`PAGES_M`、`PAGES_O` 两个常量都留；卡 M 的 `XHangUpSubPage` setup 分支照留）。
 - 「遗忘了会怎样」那句「被动效果也会一起失去」：依据是遗忘后调了 `refresh_passive()`，我没有逐个技能核被动真的消失，待小A 审字时一起看要不要改说法。
 
 ## 交接板
@@ -113,4 +114,6 @@ if XUiSkin.on() and <你的卡的开关>:
 
 - d116c68d9 WIP：XSkinRosterPage＋三页新界面、新专项
 - e18f0e6fe WIP：面包屑进通用件、云裳要求照真实条件、130% 中块上收、修炼行尾放费用、offshot 加 PAGES_O
-- （本提交）交付单、交付截图
+- b34a18198 交付单、交付截图
+- 合并 github/main（cdd47586c）
+- （本提交）交付单补冲突解法
