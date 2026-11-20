@@ -195,7 +195,7 @@ func _battle() -> void:
 	lg2.grant({"exp": 50, "gold": 0, "drops": []})
 	var gained := range(3).map(func(i): return s.actor(ids[i]).exp_total - before[i])
 	var bench := 50 if bool(XDB.system().get("optExtraExp", false)) else 0
-	_check("helper_full_exp", gained[0] > 0 and gained[1] == gained[0] and (gained[2] > 0) == (bench > 0), [ids, gained])
+	_check("helper_full_exp", gained[0] > 0 and gained[1] * 100 <= gained[0] * 115 and gained[0] * 100 <= gained[1] * 115 and (gained[2] > 0) == (bench > 0), [ids, gained])  # T280 D239：绿司机、维利升强者后弱者名单头几位换人，各人 exr 不同（55／50），上场与助力位「一样多」改成差 15% 内
 	scene.bgm.stop()
 	scene.se.stop()
 	scene.queue_free()

@@ -1,6 +1,6 @@
 extends Node
 ## 天启篇全角色技能重构（XTianqiSkills）第一期专项：
-## 一、档位名单：超强者 16 人（轮回者·里德、五条悟另算）、强者 52 人、不开放的不进候选池；三笠跟锻炼和进阶、饿狼跟形态升档；名单按天启篇、原版档照 XTier。
+## 一、档位名单：超强者 16 人（轮回者·里德、五条悟另算）、强者 54 人（D239 起含绿司机、维利）、不开放的不进候选池；三笠跟锻炼和进阶、饿狼跟形态升档；名单按天启篇、原版档照 XTier。
 ## 二、技能记录：天启篇存档里 XDB.rec 换成改写后的副本（TP、MP 比例、冷却、效果、被动标签、说明），原版档原样。
 ## 三、伤害：属性×满级系数×等级缩放（1 级一半）×条件（敏捷低于目标、愤怒中的敌人）；复活回生命上限比例；走 XFormulaExecution 结果一致。
 ## 四、熟练度：每级 +3%、上限 10 级，公式里的熟练度读 0。
@@ -111,7 +111,7 @@ func _tiers() -> void:
 	XGojo.unlock_override = 1
 	_check("tier_super_gojo_unlocked", XTianqiSkills.ids(XTier.SUPER, true).size() == 17 and XTianqiSkills.ids(XTier.SUPER, true).has(XGojo.ACTOR))
 	XGojo.unlock_override = 0
-	_check("tier_strong_52", strong.size() == 52 and strong.has(96) and strong.has(XIAOYAO) and not strong.has(8), strong.size())
+	_check("tier_strong_54", strong.size() == 54 and strong.has(96) and strong.has(XIAOYAO) and strong.has(2) and strong.has(22) and not strong.has(8), strong.size())  # T280 D239：绿司机（2）、维利（22）由弱者升强者，52→54
 	_check("tier_demoted_weak", XTianqiSkills.tier_of(8, true) == XTier.WEAK and XTianqiSkills.tier_of(141, true) == XTier.WEAK and XTianqiSkills.tier_of(11, true) == XTier.WEAK)
 	_check("tier_hidden", XTianqiSkills.tier_of(110, true) == "" and not XTianqiSkills.ids(XTier.STRONG, true).has(110) and not XTianqiSkills.ids(XTier.WEAK, true).has(110))
 	var p := XTianqi.pool("lianyu")
@@ -129,7 +129,7 @@ func _tiers() -> void:
 		s.actor_advance[GAROU] = r
 		g.append(XTianqiSkills.battle_tier(GAROU, s))
 	_check("garou_forms", g == [XTier.WEAK, XTier.WEAK, XTier.STRONG, XTier.STRONG, XTier.SUPER, XTier.SUPER], g)
-	_check("battle_tier_plain", XTianqiSkills.battle_tier(XIAOYAO, s) == XTier.STRONG and XTianqiSkills.battle_tier(LVSIJI, s) == XTier.WEAK)
+	_check("battle_tier_plain", XTianqiSkills.battle_tier(XIAOYAO, s) == XTier.STRONG and XTianqiSkills.battle_tier(LVSIJI, s) == XTier.STRONG)  # D239：绿司机已升强者
 	var a: XActor = s.actor(XIAOYAO)
 	_check("combat_reads_list", is_equal_approx(float(XTianqiCombat.dealt_parts(a, s).get("tier", 0.0)), 1.5))
 
