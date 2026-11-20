@@ -457,6 +457,8 @@ func expected_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 		_damage_cache[key] = v
 		return v
 	var damage := safe_damage(a, t, rec)
+	if damage > 0.0 and react_zero(a, t, rec):
+		damage = 0.0
 	if damage > 0.0:
 		var hit := logic.item_hit(a, rec, t) * (1.0 - logic.item_eva(a, rec, t))
 		var crit := clampf(logic.item_cri(a, rec, t), 0.0, 1.0) if bool(rec.get("damage", {}).get("critical", false)) else 0.0  # 原版 action.itemCri(target)：整条包装链（甚尔、critPush、暴击下限等）
@@ -464,6 +466,18 @@ func expected_damage(a: XBattler, t: XBattler, rec: Dictionary) -> float:
 		v = damage * (XSmartAIProfiles.expected_rate(a, rec) if old else 1.0) * hit * (1.0 + crit * (0.5 + (XSmartAIProfiles.crit_bonus(a, rec) if old else 0.0)))
 	_damage_cache[key] = v
 	return v
+
+
+## T317：天启篇卡 1 手抄乘区不看目标身上的 React；目标挂着「这类伤害记 0」（破阵 1047／1048 按伤害类型挡、元素护盾）时这一招估 0，
+## 不然二阶段破阵下自动战斗一直放被挡的招。只判「整下挡掉」（React 试算 1000 点得 0），其余 React 倍率照旧不进卡 1；
+## 统一预览（previewed）本来就走正式链含 React，不经这里。西游档不进。回退：`XSmartAI.o_tianqi_react_zero = false`
+static var o_tianqi_react_zero := true
+func react_zero(a: XBattler, t: XBattler, rec: Dictionary) -> bool:
+	if not o_tianqi_react_zero or not tq_on() or not int(rec.get("damage", {}).get("type", 0)) in [1, 5]:
+		return false
+	if t.effect_states("react", false).is_empty():
+		return false
+	return XDamage.apply_state_effects(1000.0, rec, a, t, [], "react", false) <= 0.0
 
 
 # ---- 打分 ----

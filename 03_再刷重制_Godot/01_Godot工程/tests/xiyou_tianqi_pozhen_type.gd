@@ -4,7 +4,8 @@ extends Node
 ##     1048 只放行物理类（XDamage.item_mode＝physical：攻击 12、十字军打击 109），挡魔法类（火焰 9）；1047 反过来；混合类（狂风箭矢 444）两边都放行。
 ##     开关关掉＝改前：天启篇 1048 什么都挡（物理已转无属性）、1047 什么都不挡。
 ##     西游档照原版认元素 1：1048 只放行带元素 1 的攻击 12，十字军打击（光）、火焰、狂风箭矢（风）都挡；开关开关一样。
-## 二、自动战斗估伤（XBattleEval.hit_detail，preview 走同一条 React）：1048 下火焰估 0、攻击估正数。
+## 二、自动战斗估伤：底座 XBattleEval.hit_detail（preview 走同一条 React）与我方卡 1（XSmartAI.expected_damage，o_tianqi_react_zero）
+##     1048 下火焰估 0、攻击估正数；o_tianqi_react_zero 关掉＝改前，火焰照估正数。
 ## 三、守层者变身（XGuardianRework.TRANSFORM_ANCHOR）：30 层玉皇大帝→入魔 538、31 层女娲／32 层伏羲→天道·魔神 929、33 层鸿蒙老祖→天道·混沌至高 930，
 ##     变身后八项能力值＝变身前、出伤倍率（output_scale）仍是本层的；开关关掉＝改前（31 层魔神物攻是女娲 2.36 倍、出伤倍率掉回 1）。
 ##     西游档变身照原数据，开关开关一样。
@@ -135,12 +136,26 @@ func _ai() -> void:
 	var logic := _logic(467)
 	var e: XEnemy = logic.enemies[0]
 	e.add_state(1048)
+	logic._refresh_battler(e)
 	var a: XBattler = logic.actors[0]
 	var ev := XBattleEval.create_for(logic, a)
 	var mag := float(ev.hit_detail(a, e, XDB.rec("Skills", MAG), 1000.0).value)
 	var phys := float(ev.hit_detail(a, e, XDB.rec("Skills", PHYS), 1000.0).value)
 	_check("ai.mag_zero", mag == 0.0, mag)
 	_check("ai.phys_positive", phys > 0.0, phys)
+	# 我方自动战斗默认走卡 1（统一预览 O-624 默认关）：React 整下挡掉的招估 0（XSmartAI.o_tianqi_react_zero）
+	var pv := XSmartAI.o_tianqi_preview_damage
+	XSmartAI.o_tianqi_preview_damage = false
+	var actor: XActor = logic.actors[0]
+	var mag1 := XSmartAI.new(logic, actor).expected_damage(actor, e, XDB.rec("Skills", MAG))
+	var phys1 := XSmartAI.new(logic, actor).expected_damage(actor, e, XDB.rec("Skills", PHYS))
+	_check("smart.mag_zero", mag1 == 0.0, mag1)
+	_check("smart.phys_positive", phys1 > 0.0, phys1)
+	XSmartAI.o_tianqi_react_zero = false
+	var mag_off := XSmartAI.new(logic, actor).expected_damage(actor, e, XDB.rec("Skills", MAG))
+	XSmartAI.o_tianqi_react_zero = true
+	_check("smart_off.mag_positive", mag_off > 0.0, mag_off)
+	XSmartAI.o_tianqi_preview_damage = pv
 
 
 func _params(e: XEnemy) -> Array:
