@@ -5,6 +5,9 @@ extends "res://tests/virtual_player/baseline_dps.gd"
 ##   godot --headless --audio-driver Dummy --path 01_Godot工程 -s res://tests/test_main_loop.gd res://tests/virtual_player/brand_calib.tscn -- \
 ##     --floors=30,31,32,33 [--shape=3s1w] [--teams=8] [--reps=4] [--turns=30] [--difficulty=jianxian|zhengdao] \
 ##     [--carve=all|none] [--carved-brand=<% 或 line>] [--other-brand=7] [--ripe] [--out=<json>]
+##     [--xcap=30,50,30]（D242：敌人闪避、暴击、魔法闪避底子上限，改 balance_table 那三格；缺省照表 -1）
+##     [--strip-guardian=1,3,4,7]（T315：守层者敌群里的敌人去掉这几项正值 xparam 特性＝闪避、暴击闪避、魔法闪避、每回合回血，同心魔对齐）
+##     [--pozhen-type]（T317：XTianqiElements.POZHEN_BY_TYPE 打开＝破阵认伤害类型）
 ##
 ## 口径：
 ## - 输出职责（team_rank 的 role＝输出）：--carve=all 刻印、烙印 --carved-brand（line＝按层线 layer_line 取这一层的值，缺省 line）；
@@ -21,6 +24,8 @@ var carved_brand := "line"
 var other_brand := 7.0
 var ripe_mode := false
 var reps := 4
+var xcap := []
+var strip_ids := []
 
 
 func _ready() -> void:
@@ -39,7 +44,34 @@ func _ready() -> void:
 			ripe_mode = true
 		elif a.begins_with("--reps="):
 			reps = int(a.substr(7))
+		elif a.begins_with("--xcap="):
+			xcap = Array(a.substr(7).split(",")).map(func(x): return int(x))
+		elif a.begins_with("--strip-guardian="):
+			strip_ids = Array(a.substr(17).split(",")).map(func(x): return int(x))
+		elif a == "--pozhen-type":
+			XTianqiElements.POZHEN_BY_TYPE = true
 	super._ready()
+
+
+## 探针进程内改：balance_table 的 eva／cri／mev 上限；守层者敌群成员的正值 xparam 特性
+func _apply_knobs() -> void:
+	if xcap.size() == 3:
+		var c: Dictionary = XTianqiBalance.data().get("combat_rules", {}).get("enemy_xparam_cap", {})
+		c["eva"] = xcap[0]
+		c["cri"] = xcap[1]
+		c["mev"] = xcap[2]
+	if strip_ids.is_empty():
+		return
+	var seen := {}
+	for f in floors:
+		for m in XDB.rec("Troops", int(GUARDIAN[f])).get("members", []):
+			var id := int(m.get("enemyId", 0))
+			if id <= 0 or seen.has(id):
+				continue
+			seen[id] = true
+			var rec := XDB.rec("Enemies", id)
+			rec["traits"] = rec.get("traits", []).filter(func(tr): return not (int(tr.get("code", 0)) == XBattler.TRAIT_XPARAM and strip_ids.has(int(tr.get("dataId", -1))) and float(tr.get("value", 0)) > 0.0))
+	print("BRAND_KNOBS xcap=%s strip=%s enemies=%s pozhen_type=%s" % [str(xcap), str(strip_ids), str(seen.keys()), str(XTianqiElements.POZHEN_BY_TYPE)])
 
 
 static func role_of(id: int) -> String:
@@ -175,6 +207,7 @@ static func _avg(a: Array) -> float:
 func _run() -> void:
 	XEnemy.force_roll = 100.0   # 守层者不按神话
 	XTianqiBrand.ENABLED = true
+	_apply_knobs()
 	var list := _teams()
 	var rows := []
 	for f in floors:
@@ -220,7 +253,7 @@ func _run() -> void:
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
-		fh.store_string(JSON.stringify({"difficulty": difficulty, "carve": carve_mode, "carved_brand": carved_brand, "other_brand": other_brand,
+		fh.store_string(JSON.stringify({"xcap": xcap, "strip": strip_ids, "pozhen_type": XTianqiElements.POZHEN_BY_TYPE, "difficulty": difficulty, "carve": carve_mode, "carved_brand": carved_brand, "other_brand": other_brand,
 			"ripe": ripe_mode, "reps": reps, "teams": list, "turns": turns, "seed": seed, "rows": rows}, "\t"))
 	print("BRAND_DONE")
 	get_tree().quit(0)
