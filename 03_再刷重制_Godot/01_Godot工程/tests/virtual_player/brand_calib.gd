@@ -149,10 +149,15 @@ func _calib_fight(s: XState, troop: int) -> Dictionary:
 	_drain(logic, logic.troop_events())
 	var downs := 0
 	var done := 0
+	var dealt := 0.0   # 我方每次行动让敌方掉的血（不算敌人回血抵扣）
+	var foe_heal := 0.0   # 敌方生命在我方行动以外的时候涨了多少（回合首末的回血、敌人自己的回复招）
+	var mhp0 := logic.enemies.map(func(e): return float(e.mhp))
 	for r in turns:
 		var al := _alive_set(logic)
+		var eh := _enemy_hp(logic)
 		logic.start_turn()
 		logic.take_turn_start_logs()
+		foe_heal += maxf(0.0, _enemy_hp(logic) - eh)
 		downs += _downs(al, _alive_set(logic))
 		var count := 0
 		var turn_first := true
@@ -167,13 +172,20 @@ func _calib_fight(s: XState, troop: int) -> Dictionary:
 			count += 1
 			var cmd := logic.decide(u)
 			al = _alive_set(logic)
+			eh = _enemy_hp(logic)
 			logic.act(u, cmd[0], cmd[1])
+			if u is XActor:
+				dealt += maxf(0.0, eh - _enemy_hp(logic))
+			else:
+				foe_heal += maxf(0.0, _enemy_hp(logic) - eh)
 			downs += _downs(al, _alive_set(logic))
 			if logic.is_over():
 				break
 		if not logic.is_over():
 			al = _alive_set(logic)
+			eh = _enemy_hp(logic)
 			logic.end_turn()
+			foe_heal += maxf(0.0, _enemy_hp(logic) - eh)
 			downs += _downs(al, _alive_set(logic))
 		done += 1
 		if logic.is_over():
@@ -198,6 +210,10 @@ func _calib_fight(s: XState, troop: int) -> Dictionary:
 	return {"turns": done, "won": logic.is_won(), "lost": logic.is_lost(), "downs": downs, "fits": fits, "kinds": kinds, "harm": harm,
 		"roles": roles, "ripe": bool(c.get("ripe", false)), "kind": str(c.get("kind", "")), "key": str(c.get("key", "")),
 		"fills": c.get("fills", {}).duplicate(),
+		"dealt_per_turn": dealt / maxf(1.0, done), "foe_heal_per_turn": foe_heal / maxf(1.0, done), "foe_mhp": mhp0,
+		"foe_hp_left": logic.enemies.map(func(e): return [int(e.enemy_id), float(e.hp) / maxf(1.0, float(e.mhp))]),
+		"foe_xparam": logic.enemies.map(func(e): return [int(e.enemy_id), snappedf(e.xparam(0), 0.001), snappedf(e.xparam(1), 0.001), snappedf(e.xparam(4), 0.001), snappedf(e.xparam(7), 0.001)]),
+		"party_mhp": logic.actors.map(func(a): return int(a.mhp)),
 		"brand": logic.actors.map(func(a): return [int(a.actor_id), role_of(int(a.actor_id)), XTianqiBrand.carved(a), XTianqiBrand.pct(a)])}
 
 
@@ -245,6 +261,9 @@ func _run() -> void:
 			row["self_" + role] = _avg(self_pp)
 			row["sear_" + role] = _avg(sear_pp)
 			row["n_" + role] = self_pp.size()
+		row["dealt_per_turn_avg"] = _avg(per.map(func(r): return r.dealt_per_turn))
+		row["foe_heal_per_turn_avg"] = _avg(per.map(func(r): return r.foe_heal_per_turn))
+		row["foe_mhp"] = per[0].foe_mhp if n else []
 		row["team_self_avg"] = _avg(per.map(func(r): return int(r.fits.get("输出", {}).get("self", 0)) + int(r.fits.get("坦克", {}).get("self", 0)) + int(r.fits.get("辅助", {}).get("self", 0))))
 		var kinds := {}
 		for r in per:
@@ -253,10 +272,10 @@ func _run() -> void:
 		row["kinds"] = kinds
 		row["fights"] = per
 		rows.append(row)
-		print("BRAND_ROW floor=%d diff=%s carve=%s ripe=%s n=%d won=%d turnsWon=%.2f turnsAll=%.2f downs=%.2f selfOut=%.3f searOut=%.3f selfTank=%.3f searTank=%.3f selfSup=%.3f searSup=%.3f teamSelf=%.3f harmFights=%d kind=%s ripeFlag=%s kinds=%s" % [
+		print("BRAND_ROW floor=%d diff=%s carve=%s ripe=%s n=%d won=%d turnsWon=%.2f turnsAll=%.2f downs=%.2f selfOut=%.3f searOut=%.3f selfTank=%.3f searTank=%.3f selfSup=%.3f searSup=%.3f teamSelf=%.3f harmFights=%d dealt/t=%.0f foeHeal/t=%.0f foeMhp=%s kind=%s ripeFlag=%s kinds=%s" % [
 			f, difficulty, carve_mode, str(ripe_mode), n, won.size(), float(row.turns_won_avg), float(row.turns_all_avg), float(row.downs_avg),
 			float(row.get("self_输出", 0)), float(row.get("sear_输出", 0)), float(row.get("self_坦克", 0)), float(row.get("sear_坦克", 0)),
-			float(row.get("self_辅助", 0)), float(row.get("sear_辅助", 0)), float(row.team_self_avg), int(row.harm_fights), str(row.boss_kind), str(row.ripe_flag), JSON.stringify(kinds)])
+			float(row.get("self_辅助", 0)), float(row.get("sear_辅助", 0)), float(row.team_self_avg), int(row.harm_fights), float(row.dealt_per_turn_avg), float(row.foe_heal_per_turn_avg), str(row.foe_mhp), str(row.boss_kind), str(row.ripe_flag), JSON.stringify(kinds)])
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
