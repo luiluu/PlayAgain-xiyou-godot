@@ -20,6 +20,7 @@
   "XTianqi.super_cap": "-1",
   "XTianqi.helper_super_ok": "true",
   "XTianqiAffixBattle.cost": "c",
+  "XTianqiElements.map_element_id": "e",
   "XTianqiAffixBattle.drop_mult": "1.0",
   "XTianqiAffixBattle.param_rate": "1.0",
   "XTianqiAlienGear.affix_view": "XAlienation.affix(key).duplicate()",
@@ -103,6 +104,7 @@
   "XTianqiGemPower.full_value": "v",
   "XTianqiWeakAffix.guide_targets": "list",
   "已确认空值安全": {
+    "XTianqiMoney.money": "T307：只在 training_scene.preview 的 e.tianqi 分支里调（天启篇修炼项，发行里天启篇关着列不出这些项）；即便走到，空表上临时建删 training，不写存档、能力值不变",
     "XTianqiQiyinEffects._p": "T282：smart_ai.gd 估段数时 ._p(logic, a, \"extra_hits\").get(\"value\", 0)，空表得 0；西游档 effects 本就为空，真脚本同样返回 {}",
     "XGuardianRework.domain_keep": "T229：只在 XGuardianRework.domain_off 为真时由 battle_event_runner._domain_off 调；空壳 domain_off 恒 false（发行里天启篇关着），走不到这里",
     "XTianqiSkills.data": "T209：西游代码里调用方（guyu.gd tq_cap_rate／tq_pct、tianqi_base、tianqi_weak_clear、tianqi_drop）都是 .get 链带默认；谷雨只在天启篇分支 _tq() 读，空表回落稿值 1.0／1.2 和 fallback",

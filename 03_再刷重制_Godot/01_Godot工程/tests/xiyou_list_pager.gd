@@ -418,6 +418,7 @@ func _pages50() -> void:
 	XState.current = s
 	var pad := XMVWindow.PADDING
 	var lh := 36.0
+	XSkinWarehousePage.ENABLED = false   # T306 卡 N：仓库、星级仓库、深渊商人在新界面开着时换成新页（旧窗藏起）；这里查的是旧窗上的 T050 翻页件，新页的翻页见 xiyou_ui_skin_card_n
 	for skin_on in [true, false]:
 		XUiSkin.FORCE = skin_on
 		var tg := "skin_on" if skin_on else "skin_off"
@@ -633,6 +634,7 @@ func _pages50() -> void:
 			check("drops_skin_off_unchanged", eb.drop_pager == null and eb.drop_rows_visible() == 19, eb.drop_rows_visible())
 		eb.queue_free()
 		await frames(2)
+	XSkinWarehousePage.ENABLED = true
 	XUiSkin.FORCE = true
 	await _item_category_key()
 

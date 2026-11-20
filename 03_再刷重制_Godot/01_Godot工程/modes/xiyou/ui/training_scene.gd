@@ -12,6 +12,10 @@ extends Control
 ## 流程：目录确定 → 底部「修炼」→ 修炼项确定（XTraining.confirm，提示照原版 $.toaster）；修炼项取消回底部，底部取消回目录，目录取消关闭。
 ## 优化 O-082（ALIGN_COST，可回退）：原版用空格补齐「下一级费用」，中文字宽不同，各行对不齐（参照截图里差 3～20 像素）；
 ## 这里把「下一级费用…」画在同一列（各行左半段最宽者之后），文字不变。设 false 恢复原版的空格排法。
+## 【cc·T307 卡 O·未经审查】天启篇新界面（XUiSkin.on() 且 XSkinRosterPage.ENABLED）：版型二名单页（XSkinRosterPage），旧窗藏起：
+## - 左名单＝队员目录；中间列表＝修炼项（名字、小字「每级 +N」、「第 N 级」、行尾下一级费用；修满的变灰写「修满了」，数取自 XTraining 同一份表）；
+## - 右牌：这次修炼会变的那一项「89 → 92 ▲3」、下一级费用、主按钮「修炼」；八项全表收起（T254 5AB-5 推荐默认），Y 或点牌底「展开八项 ▾」展开；
+## - 目录确定直接进列表（少一层底部「修炼」窗：mode 从 index 直接到 list），列表确定就修，取消回目录；精魂窗进右上货币；提示照旧走 XToast。
 
 signal closed
 
@@ -53,6 +57,9 @@ var list_win: XMVWindow
 var _status_ops: Array = []
 var _sprite_tex: Texture2D
 var _frame := 0
+var skin: XSkinRosterPage      # T307 新界面（关着为 null）
+var skin_row := 0              # 新界面：目录上时右牌说的是哪一项（进列表时光标落这里）
+var skin_open := false         # 右牌八项展开着
 
 
 func _ready() -> void:
@@ -72,6 +79,8 @@ func _ready() -> void:
 	index_pager = XListPager.attach(index_win, page)
 	if index_pager != null:   # 精魂窗（GOLD_RECT）盖在目录窗底部 64px，翻页件摆在它上面
 		index_pager.position.y = GOLD_RECT.position.y - XListPager.DEFAULT_SIZE.y - 2.0
+	if XUiSkin.on() and XSkinRosterPage.ENABLED:
+		_skin_build()
 	_select_actor()
 
 
@@ -237,6 +246,8 @@ func _refresh() -> void:
 		index_win.down_arrow = index_win.down_arrow and not index_pager.visible
 	for w in [index_win, status_win, gold_win, bottom_win, list_win]:
 		w.refresh()
+	if skin != null:
+		_skin_sync()
 
 
 func select(i: int) -> void:
@@ -254,6 +265,11 @@ func ok() -> void:
 			if members().is_empty():
 				return
 			XSound.system(1)  # onRangeOk → startBottomConfirmWindow
+			if skin != null:   # T307：新界面没有底部「修炼」窗，目录确定直接进修炼项列表
+				mode = "list"
+				row = clampi(skin_row, 0, maxi(XTraining.listed().size() - 1, 0))
+				_refresh()
+				return
 			mode = "bottom"
 			cmd = 0
 		"bottom":
@@ -285,6 +301,12 @@ func cancel() -> void:
 			mode = "index"  # onBottomConfirmCancel
 			cmd = -1
 		"list":
+			if skin != null:   # T307：取消直接回目录，右牌仍说这一项
+				skin_row = maxi(row, 0)
+				mode = "index"
+				row = -1
+				_refresh()
+				return
 			mode = "bottom"  # onConfirmCancel
 			row = -1
 			cmd = 0
@@ -305,6 +327,11 @@ func _move(d: int, wrap: bool) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:   # 新界面的点击由各组件自己接；右键＝取消
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+			accept_event()
+			cancel()
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		cancel()
 	elif mode == "index" and XMenu.wheel_dir(event) != 0 and INDEX_RECT.has_point(event.position):
@@ -325,6 +352,9 @@ func page(d: int) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
 		cancel()
@@ -337,3 +367,211 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif mode == "index" and XMenu.page_dir(event) != 0:
 		XKeyMap.handled(self)
 		page(XMenu.page_dir(event))
+
+
+# ---- T307 卡 O：天启篇新界面（版型二名单页）----
+## 玩家可见新字（待小A 审）
+const T_TITLE := "修炼场"
+const T_LIST := "修炼项"
+const T_FULL := "修满了"
+const T_PER := "每级 +%s"
+const T_LV := "第 %d 级"
+const T_CHANGE := "这次修炼"
+const T_COST := "下一级费用"
+const T_ALL := "八项能力"
+const T_OPEN := "展开八项"
+const T_CLOSE := "收起八项"
+
+
+func _skin_build() -> void:
+	skin = XSkinRosterPage.new()
+	skin.title = T_TITLE
+	add_child(skin)
+	skin.list.right2_w = 128.0
+	skin.roster_changed.connect(func(i):
+		if mode == "list":   # 列表上点名单＝回目录换人
+			skin_row = maxi(row, 0)
+			mode = "index"
+			row = -1
+		select(i)
+		_refresh())
+	skin.roster_activated.connect(func(i):
+		if i == index and mode == "index":
+			ok())
+	skin.list.index_changed.connect(func(i):
+		if _skin_syncing:
+			return
+		if mode == "index":   # 目录上点修炼项＝进列表选这一项
+			mode = "list"
+		if i != row:
+			XSound.system(0)
+			row = i
+		_refresh())
+	skin.list.activated.connect(func(i):
+		if mode == "list" and i == row:
+			ok())
+	skin.card_button.connect(func(_i): _skin_train())
+	skin.strip_toggled.connect(func(on):
+		skin_open = on
+		_refresh())
+
+
+var _skin_syncing := false
+
+
+## 主按钮「修炼」（触屏）：练右牌上那一项
+func _skin_train() -> void:
+	if mode == "index":
+		if members().is_empty():
+			return
+		mode = "list"
+		row = clampi(skin_row, 0, maxi(XTraining.listed().size() - 1, 0))
+	ok()
+
+
+## 右牌说的是哪一项
+func skin_item() -> int:
+	return row if mode == "list" and row >= 0 else skin_row
+
+
+## 一行修炼项（测试按 T254 3.11 对应表核：数与 XTraining.line 同一份）：{text, sub 每级 +N, right 第 N 级, right2 行尾下一级费用／修满了}
+static func skin_row_of(s: XState, actor_id: int, e: Dictionary) -> Dictionary:
+	var lv := XTraining.level(s, actor_id, int(e.id))
+	var mx := int(e.max)
+	var it := {"text": str(e.name), "sub": T_PER % per_level(s, e), "right": T_LV % lv, "right_color": XUiSkin.TEXT_2}
+	if lv >= mx:
+		it.right2 = T_FULL
+		it.disabled = true
+		return it
+	var cost := next_cost(s, actor_id, e)
+	if cost < 0:   # 天启篇：本层没开到下一级
+		it.right2 = "本层开到 %d 级" % XTianqiMoney.training_open(s)
+		it.right2_color = XUiSkin.DOWN
+		return it
+	it.right2 = XTraining._wan(cost) + "万"
+	it.right2_color = XUiSkin.GOLD_LIGHT if s.gold >= cost else XUiSkin.DOWN
+	return it
+
+
+## 每级加多少：旧表「增加X N」的 N；天启篇「全队X+N%」的 N%
+static func per_level(s: XState, e: Dictionary) -> String:
+	if e.get("tianqi", false):
+		return "%d%%" % roundi(float(XTianqiMoney.data().get("training", {}).get("pct_per_level", 0.01)) * 100.0)
+	return str(int(e.value))
+
+
+## 下一级费用；满了或本层没开到返回 -1
+static func next_cost(s: XState, actor_id: int, e: Dictionary) -> int:
+	var lv := XTraining.level(s, actor_id, int(e.id))
+	if lv >= int(e.max):
+		return -1
+	if e.get("tianqi", false):
+		return XTianqiMoney.training_price(s, lv + 1) if lv < XTianqiMoney.training_open(s) else -1
+	return int(e.gold)
+
+
+## 这次修炼会变的那一项：[现在, 练完]（临时把等级加 1 读能力值再还原；不在战斗里，能力值不走缓存）。满了／没开到返回 []
+static func preview(s: XState, a: XActor, e: Dictionary) -> Array:
+	if a == null or next_cost(s, a.actor_id, e) < 0:
+		return []
+	var p := int(e.param)
+	var now := int(a.param(p))
+	var lv := XTraining.level(s, a.actor_id, int(e.id))
+	if e.get("tianqi", false):
+		# 小A核 P3：只读——money 节原来没有就临时建、读完连节一起删（不在存档里留下空节）
+		var tq = s.flags.get("tianqi", null)
+		var had_sec: bool = tq is Dictionary and (tq as Dictionary).has("money")
+		var m := XTianqiMoney.money(s)
+		var had := m.has("training")
+		if not had:
+			m["training"] = {}
+		var t: Dictionary = m.training
+		var key := str(int(e.id))
+		var old = t.get(key, null)
+		t[key] = lv + 1
+		var after := int(a.param(p))
+		if old == null:
+			t.erase(key)
+		else:
+			t[key] = old
+		if not had:
+			m.erase("training")
+		if not had_sec and tq is Dictionary:
+			(tq as Dictionary).erase("money")
+		return [now, after]
+	var ak := str(a.actor_id)
+	var had_a := s.training.has(ak)
+	var mine: Dictionary = s.training.get(ak, {})
+	var k2 := str(int(e.id))
+	var old2 = mine.get(k2, null)
+	mine[k2] = lv + 1
+	s.training[ak] = mine
+	var after2 := int(a.param(p))
+	if old2 == null:
+		mine.erase(k2)
+	else:
+		mine[k2] = old2
+	if not had_a:
+		s.training.erase(ak)
+	return [now, after2]
+
+
+func skin_card() -> Dictionary:
+	var a := current()
+	var s := XState.current
+	var listed := XTraining.listed()
+	var i := clampi(skin_item(), 0, maxi(listed.size() - 1, 0))
+	if a == null or listed.is_empty():
+		return {"title": "", "sections": [], "buttons": []}
+	var e: Dictionary = listed[i]
+	var lv := XTraining.level(s, a.actor_id, int(e.id))
+	var pname: String = XTraining.PARAM_NAMES[int(e.param)]
+	var d := {"title": str(e.name), "subtitle": "%s · 修炼 %d / %d 级" % [a.display_name(), lv, int(e.max)], "sections": [], "buttons": []}
+	var secs := []
+	var pv := preview(s, a, e)
+	var cost := next_cost(s, a.actor_id, e)
+	if lv >= int(e.max):
+		secs.append({"title": T_CHANGE, "rows": [{"text": T_FULL, "color": XUiSkin.TEXT_3}]})
+	elif cost < 0:
+		secs.append({"title": T_CHANGE, "rows": [{"text": "本层只开放到 %d 级（每 %d 层开 1 级）" % [XTianqiMoney.training_open(s), int(XTianqiMoney.data().get("training", {}).get("floors_per_level", 3))], "color": XUiSkin.DOWN}]})
+	else:
+		var dv := int(pv[1]) - int(pv[0])
+		var lines := [{"left": pname, "right": "%s → %s %s%d" % [XMenu._group(int(pv[0])), XMenu._group(int(pv[1])), "▲" if dv >= 0 else "▼", absi(dv)], "color": XUiSkin.TEXT, "right_color": XUiSkin.UP if dv > 0 else XUiSkin.TEXT_2},
+			{"left": T_COST, "right": XTraining._wan(cost) + "万 " + str(XDB.system().get("currencyUnit", "")), "color": XUiSkin.TEXT_2, "right_color": XUiSkin.GOLD_LIGHT if s.gold >= cost else XUiSkin.DOWN}]
+		secs.append({"title": T_CHANGE, "lines": lines})
+		if e.get("tianqi", false):
+			secs.append({"title": "", "rows": [{"text": "全队%s +%s" % [pname, per_level(s, e)], "color": XUiSkin.TEXT_2}]})
+	if skin_open:
+		var cells := []
+		for k in 8:
+			cells.append([ATTR[k], XMenu._group(int(a.param(k)))])
+		secs.append({"title": T_ALL, "cells": cells})
+	d.sections = secs
+	d.buttons = [{"text": "修炼", "primary": true, "disabled": lv >= int(e.max) or cost < 0 or s.gold < cost}]   # 层数没开、精魂不够也置灰（同进阶页；按确定照旧出原提示）
+	return d
+
+
+func _skin_sync() -> void:
+	_skin_syncing = true
+	for w in [index_win, status_win, gold_win, bottom_win, list_win]:
+		w.visible = false
+	var s := XState.current
+	var rows := []
+	for m: XActor in members():
+		rows.append(XSkinRosterPage.roster_row(m))
+	skin.set_roster(rows, index)
+	var a := current()
+	skin.list_title = T_LIST
+	var items := []
+	if a != null:
+		for e in XTraining.listed():
+			items.append(skin_row_of(s, a.actor_id, e))
+	skin.set_items(items, clampi(skin_item(), 0, maxi(items.size() - 1, 0)))
+	skin.set_focus("list" if mode == "list" else "roster")
+	skin.set_card(skin_card())
+	skin.set_strip(T_CLOSE if skin_open else T_OPEN, skin_open)
+	if mode == "list":
+		skin.set_hint_list([["确定", "修炼"], ["Y", T_CLOSE if skin_open else T_OPEN], ["取消", "返回"]])
+	else:
+		skin.set_hint_list([["确定", "选修炼项"], ["Y", T_CLOSE if skin_open else T_OPEN], ["取消", "离开"]])
+	_skin_syncing = false

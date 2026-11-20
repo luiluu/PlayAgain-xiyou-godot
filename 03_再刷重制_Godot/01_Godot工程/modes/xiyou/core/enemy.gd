@@ -319,6 +319,18 @@ func param_now(i: int) -> float:
 	v += param_state(i, v)
 	return roundf(clampf(v, param_min(i), param_max(i)))
 
+## 守层者成长招削弱（XGuardianRework.GROWTH_NERF）：正向强化每层 +12%、最多 3 层；负向、别的敌人照原版
+func param_buff_rate(i: int) -> float:
+	if buffs[i] > 0 and XGuardianRework.growth_on(self):
+		return buffs[i] * XGuardianRework.GROWTH_LAYER_PCT / 100.0 + 1.0
+	return super.param_buff_rate(i)
+
+func buff_limit(pid: int, positive: bool) -> int:
+	var v := super.buff_limit(pid, positive)
+	if positive and XGuardianRework.growth_on(self):
+		return mini(v, XGuardianRework.GROWTH_CAP)
+	return v
+
 func trait_objects() -> Array:
 	var out := [data()]
 	out.append_array(states())

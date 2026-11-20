@@ -13,6 +13,10 @@ extends Control
 ##   列表空时原版读 GetSkills[0] 抛错；这里不动作。
 ## - 其余同 Window_Command：换行光标音、按下时首尾回绕、按住不回绕；Q／E（PageUp／PageDown）翻页、滚轮只滚窗口
 ##   （XMenu.LIST_PAGING）；取消音后关闭；点别的行先选中、点已选中的行＝确定；右键取消。
+## 【cc·T307 卡 O·未经审查】天启篇新界面（XUiSkin.on() 且 XSkinRosterPage.ENABLED）：版型一不画环（借 XSkinRosterPage，左块不放名单），旧窗藏起：
+## - 左块：这个角色的像素小人（3 倍）＋名字；中间列表：图标、名字（品质色）、小字类型、行尾「记着」（TEXT_2）／「已遗忘」（橙）；
+## - 右牌：技能说明＋一句「遗忘了会怎样」（草稿，待小A 审），主按钮跟着写「遗忘」／「记回来」；
+## - 确定翻转、不退出、按住连续翻；Q／E 翻页、滚轮、取消关闭，全部照旧（旧状态 index／top／rows 不变，新页只按它重画）。
 signal closed
 
 const TYPES := [1, 2, 5]
@@ -28,6 +32,7 @@ var index := 0
 var top := 0
 var win: XMVWindow
 var pager: XListPager   # T050 翻页件（新界面关着或技能不超一页时为 null）
+var skin: XSkinRosterPage   # T307 新界面（关着为 null）
 
 
 static func listed_skills(a: XActor) -> Array:
@@ -62,6 +67,8 @@ func _ready() -> void:
 	win = XMVWindow.make(self, window_rect(rows.size()), XUI.MENU_WINDOW_OPACITY, _paint)
 	win.canvas.blink = true
 	pager = XListPager.attach(win, page) if pager_on(rows.size()) else null
+	if XUiSkin.on() and XSkinRosterPage.ENABLED:
+		_skin_build()
 	_refresh()
 
 
@@ -76,6 +83,8 @@ func _refresh() -> void:
 		pager.set_state(top, page_rows(), rows.size())
 		win.down_arrow = win.down_arrow and not pager.visible
 	win.refresh()
+	if skin != null:
+		_skin_sync()
 
 
 func _paint(c: XMVCanvas) -> void:
@@ -136,6 +145,9 @@ static func toggle(a: XActor, r: Dictionary) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	var handled := true
 	if event.is_action_pressed("ui_cancel"):
 		cancel()
@@ -157,6 +169,10 @@ func _gui_input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	accept_event()
+	if skin != null:   # 新界面的点击、滚轮由列表自己接；右键＝取消
+		if event.button_index == MOUSE_BUTTON_RIGHT:
+			cancel()
+		return
 	var wd := XMenu.wheel_dir(event)
 	if wd != 0:
 		top = XMenu.wheel(top, rows.size(), page_rows(), wd)
@@ -178,3 +194,107 @@ func _gui_input(event: InputEvent) -> void:
 					index = i
 					XSound.system(0)
 					_refresh()
+
+
+# ---- T307 卡 O：天启篇新界面（版型一、不画环）----
+## 玩家可见新字（待小A 审）
+const T_TITLE := "技能遗忘"
+const T_KEPT := "记着"
+const T_GONE := "已遗忘"
+const T_FORGET := "遗忘"
+const T_RECALL := "记回来"
+const T_EMPTY := "没有可以遗忘的技能"
+const T_DESC := "说明"
+const T_AFTER := "遗忘了会怎样"
+const T_AFTER_KEPT := "遗忘后不能再使用这个技能，如果它带有被动效果也会暂时失效；随时可以再来记回来。"
+const T_AFTER_GONE := "已经遗忘，现在用不了，如果它带有被动效果也已失效；点「记回来」就能恢复。"
+
+var _skin_syncing := false
+
+
+func _skin_build() -> void:
+	skin = XSkinRosterPage.new()
+	skin.title = T_TITLE
+	skin.show_roster = false
+	skin.currencies = []
+	skin.focus = "list"
+	add_child(skin)
+	skin.left_draw = _skin_left
+	skin.list.empty_text = T_EMPTY
+	skin.list.right2_w = 0.0
+	skin.list.index_changed.connect(func(i):
+		if _skin_syncing:
+			return
+		if i != index:
+			index = i
+			XSound.system(0)
+			top = XMenu._scroll_to(index, top, page_rows())
+			_refresh())
+	skin.list.activated.connect(func(i):
+		if i == index:
+			ok())
+	skin.card_button.connect(func(_i): ok())
+
+
+static func type_name(sk: Dictionary) -> String:
+	var types: Array = XDB.system().get("skillTypes", [])
+	var t := int(sk.get("stypeId", 0))
+	return str(types[t]) if t >= 0 and t < types.size() else ""
+
+
+## 一行（测试按 T254 3.12 对应表核）
+static func skin_row(r: Dictionary) -> Dictionary:
+	var sk := XDB.rec("Skills", int(r.id))
+	return {"text": str(sk.get("name", "")), "icon": int(sk.get("iconIndex", 0)), "color": XSkinSkillPage.name_color(sk), "sub": type_name(sk),
+		"right": T_KEPT if r.kept else T_GONE, "right_color": XUiSkin.TEXT_2 if r.kept else XUiSkin.DOWN}
+
+
+func skin_card() -> Dictionary:
+	if index < 0 or index >= rows.size():
+		return {"title": "", "sections": [], "buttons": []}
+	var r: Dictionary = rows[index]
+	var sk := XDB.rec("Skills", int(r.id))
+	XHelpCard.scene_actor = actor
+	var view := XGrowthHelp.skill_view(sk, actor)
+	var help := XHelpCard.content(view, "skill", bool(view.get("skill_copy", false)), 300.0)
+	var secs := []
+	var desc := XSkinTemplatePage.help_rows(help)
+	if not desc.is_empty():
+		secs.append({"title": T_DESC, "rows": desc})
+	secs.append({"title": T_AFTER, "rows": [{"text": T_AFTER_KEPT if r.kept else T_AFTER_GONE, "color": XUiSkin.TEXT if r.kept else XUiSkin.DOWN}]})
+	return {"icon": XUiSkin.icon(int(sk.get("iconIndex", 0))), "title": str(sk.get("name", "")), "title_color": XSkinSkillPage.name_color(sk),
+		"subtitle": type_name(sk) + ("　" + T_GONE if not r.kept else ""), "sections": secs,
+		"buttons": [{"text": T_FORGET if r.kept else T_RECALL, "primary": true}]}
+
+
+func _skin_sync() -> void:
+	_skin_syncing = true
+	win.visible = false
+	skin.list_title = actor.display_name() if actor != null else ""
+	skin.set_items(rows.map(func(r): return skin_row(r)), clampi(index, 0, maxi(rows.size() - 1, 0)))
+	skin.card.visible = not rows.is_empty()   # 空列表右牌不画（T254 3.0「空列表」）
+	skin.card.fold = true
+	skin.set_card(skin_card())
+	skin.set_hint_list([["确定", T_FORGET + " / " + T_RECALL], ["Q / E", "翻页"], ["取消", "离开"]])
+	skin.layout.left.queue_redraw()
+	_skin_syncing = false
+
+
+## 左块：这个角色的像素小人（3 倍）＋名字
+func _skin_left(c: Control) -> void:
+	if actor == null:
+		return
+	var lb := c.size
+	var foot := Vector2(lb.x / 2.0, lb.y / 2.0 + 30.0)
+	XSkinRosterPage.draw_seal(c, foot + Vector2(0, -4), 84.0)
+	XSkinRosterPage.draw_walker(c, str(actor.data().get("characterName", "")), int(actor.data().get("characterIndex", 0)), foot, 3.0)
+	var f := XUiSkin.font("title")
+	var fs := XUiSkin.fs(XUiSkin.FS_CARD)
+	var fit := XSkinList.fit_text(f, actor.display_name(), lb.x - 16, fs, 18)
+	var tw := f.get_string_size(str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1])).x
+	XUiSkin.ds(c, f, Vector2((lb.x - tw) / 2.0, foot.y + 48), str(fit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1]), XUiSkin.TEXT)
+	var lv := "Lv %s" % XMenu._group(actor.level)
+	var body := XUiSkin.font("body")
+	var fa := XUiSkin.fs(XUiSkin.FS_AUX)
+	tw = body.get_string_size(lv, HORIZONTAL_ALIGNMENT_LEFT, -1, fa).x
+	XUiSkin.ds(c, body, Vector2((lb.x - tw) / 2.0, foot.y + 48 + fa * 1.8), lv, HORIZONTAL_ALIGNMENT_LEFT, -1, fa, XUiSkin.TEXT_2)
