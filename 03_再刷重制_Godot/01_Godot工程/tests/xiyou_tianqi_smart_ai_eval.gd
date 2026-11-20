@@ -190,6 +190,7 @@ func _elements() -> void:
 			if weak_e <= 0 or neutral_e <= 0:
 				continue
 			found = true
+			print("ELEM troop=%d enemy=%d weak=%s resist=%s immune=%s" % [troop, int(t.data().get("id", 0)), str(prof.weak), str(prof.resist), str(prof.immune)])
 			var w := _with_element(rec, weak_e)
 			var n := _with_element(rec, neutral_e)
 			var dw := XSmartAI.new(logic, hero).safe_damage(hero, t, w)
