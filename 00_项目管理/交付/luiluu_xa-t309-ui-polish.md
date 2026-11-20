@@ -1,16 +1,16 @@
 # 交付：luiluu/xa-t309-ui-polish
 
-- 车道／工作者：小A（Neon high，P9）
-- 状态：可合并（阶段交付：第四段菜单侧 1～9 已实装并全项验绿，累计已完 14 处核心共用件＋9 处菜单侧次级共用件，已产 18 页 1600×450 前后对照图 01～18；剩余战斗侧 6 处 10～15 待下一段完成并过核查后再合入 main）
-- 关联任务：T309 新界面整体美化（第四段：剩余 15 处之一，菜单侧 1～9；按 Kyo 11-20 15:34「243 甲」认可的暖炭金方向推进）
+- 车道／工作者：小A（Hydrogen medium，P7 收尾；前四／五段由 Neon high P9 实装）
+- 状态：可合并（15 处全数完成：14 处核心共用件＋第四段菜单侧 1～9［提交 `640b7e367`］＋第五段战斗侧 10～15［提交 `356c71155`］；共 28 个皮肤文件，产出 25 页 1600×450 前后对照图 01～25，专项全绿、语法 1122/1122、皮肤关闭对照 60/60 SAME）
+- 关联任务：T309 新界面整体美化（全部 15 处已完成：菜单侧 1～9 提交 `640b7e367`、战斗侧 10～15 提交 `356c71155`；按 Kyo 11-20 15:34「243 甲」认可的暖炭金方向推进）
 - 红线守则（已确认不动）：D18 七印环方向、D25 菜单 7 组、D26 横屏铺满、D29 红乙（黑底／红选中／旧金）、D43 标题画面定稿、D50 R2 无框烟色面板（不给烟底加硬方框）、D231 宋体。
 
 ## 变更记录草稿
 
-### 2026-11-20 【小A·未经审查】T309 新界面整体美化·第四段菜单侧 1～9 实装与对照图（dev.待定）
+### 2026-11-20 【小A·未经审查】T309 新界面整体美化（核心共用件＋菜单侧 1～9＋战斗侧 10～15 全量完成）（dev.待定）
 
-- 状态：阶段完成（合并 `github/main` `525969a7a`；完成剩余 15 处中的菜单侧 1～9 共 9 个文件，全部挂 `XUiSkin.POLISH_V1` 总开关并通过卡 E～O、2c/5c/offshot/menu/1b/1c/skin/close/phase01 共 17 项专项、语法检查 1122/1122、皮肤关闭对照 60/60 SAME 及 8 页 `POLISH_V1=false` 逐像素回退 8/8 SAME；补产 8 页 1600×450 前后对照图 `11_`～`18_`；剩余战斗侧 6 处 10～15 待下一段完成并过核查后再合入 `main`）
-- 玩家可见：按 Kyo 认可的暖炭金方向补齐菜单侧剩余 9 处细节：菜单漂浮火星降速减淡以减少余光分神、左环导航球底与圆环线转暖炭金、仓库容量条与设置子页进度条换深炭内凹槽、主菜单右栏队伍紧凑条／目标列表／整队页／角色状态页统一深炭内凹量条与渐隐分割线及暖锡圆框、装备展开详情与对比页接入渐隐金丝分隔线／暖色对比行带／暖金圆角滚动条；关闭单一总开关 `XUiSkin.POLISH_V1` 或关闭新皮肤开关均可逐像素回退。未新增或修改任何玩家可见文字。
+- 状态：已完成（合并 `github/main` `525969a7a`；完成 14 个核心共用件及剩余 15 处全量美化：第四段菜单侧 1～9 提交 `640b7e367`、第五段战斗侧 10～15 提交 `356c71155`，共 28 个皮肤文件；全部挂在 `XUiSkin.POLISH_V1` 总开关下［默认开］，关闭逐像素回退；通过战斗与菜单全套专项、`语法检查.py` 1122/1122 及 `皮肤关闭对照.py --base 525969a7a` 60/60 SAME；产出 25 页 1600×450 前后对照图 `01_`～`25_`）
+- 玩家可见：按 Kyo 认可的暖炭金方向完成新界面整体美化：核心面板／弹窗／列表／详情卡／标签／面包屑／步进器／按键提示统一暖炭黑底与旧金暖锡层次、渐隐金丝分隔线与圆角暖金滚动条；菜单侧（1～9）补齐火星降速、左环导航暖球底与圆环线、仓库／设置／队伍条／目标列表／整队／角色状态页深炭内凹量条槽与暖色对比行带；战斗侧（10～15）补齐战斗列表暖斑马纹与分隔线、弧形血蓝深炭凹槽与高光弧、侧栏状态暖炭回合胶囊（12→13px）与量条槽、OTB 暖炭底与下回合胶囊、首领详情卡暖带与 11px 下限属性行、结算／战败界面暖炭体验条／滚动条／灭印底格。关闭单一总开关 `XUiSkin.POLISH_V1` 或关闭新皮肤开关均可逐像素回退。未新增或修改任何玩家可见文字。
 
 ## 现状排查：美化舒适 18 条逐条核对
 
@@ -114,7 +114,7 @@ static func polish_on() -> bool:
 
 ## 玩家可见文字
 
-- 不涉及：本分支累计 22 个皮肤文件改动（前段 14 个核心共用件＋本段 9 处菜单侧改动，其中 `ui_skin.gd` 重合）全为纯视觉渲染层美化，**无新增或修改任何玩家可见文字**。
+- 不涉及：本分支累计 28 个皮肤文件改动（第三段 14 个核心共用件＋第四段菜单侧 9 个文件［提交 `640b7e367`，其中 `ui_skin.gd` 重合］＋第五段战斗侧 6 个文件［提交 `356c71155`］）全为纯视觉渲染层美化，**无新增或修改任何玩家可见文字**。
 
 ## 已实装的核心共用件（14 个文件）
 
@@ -135,7 +135,7 @@ static func polish_on() -> bool:
   13. `skin_back_button.gd`：`‹` 背后轻暖炭微晕圆盘＋淡金圈。
   14. `skin_button.gd`：`style()` 切用 `panel_c()`/`line_c()`/`down_c()`。
 
-## 已实装的第四段：菜单侧 1～9（9 个文件）
+## 已实装的第四段：菜单侧 1～9（9 个文件，提交 `640b7e367`）
 
 - 先合并 `github/main`（`525969a7a`）→ 合并提交 `fc74ece01`（0 冲突）。
 - 逐条实装剩余 15 处中的菜单侧 1～9（均位于 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/`，全部挂在 `XUiSkin.polish_on()` 下，`POLISH_V1 = false` 时经实机逐像素验证与基线 `525969a7a` 0 差异）：
@@ -149,7 +149,34 @@ static func polish_on() -> bool:
   8. `skin_party_page.gd`：`_bar()` 与 `_draw_body()` 角色血蓝条改调 `XUiSkin.draw_gauge(..., legacy_flat=true)`，`_draw_body()` 分隔线接入 `draw_divider(..., true, 0.85 if XUiSkin.polish_on() else 1.0)`，`_draw_slots()` 空位虚线框与在位槽边线切用 `XUiSkin.line_c()`。
   9. `skin_status_page.gd`：`_draw_actor()` 头像圆底／描边切用 `orb_low_c()` 与 `line_c()`、HP/MP/TP/EXP 槽改调 `XUiSkin.draw_gauge`（移除未再使用的私有 `_pill()`）；`_draw_page_frame()` 分隔线接入 `draw_divider(..., true, 0.85 if XUiSkin.polish_on() else 1.0)`；`_draw_page_body()` 右栏滚动条改调 `XUiSkin.draw_scrollbar()`。
 
+## 已实装的第五段：战斗侧 10～15（6 个文件，提交 `356c71155`）
+
+- 逐条实装剩余 15 处中的战斗侧 10～15（均位于 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/`，全部挂在 `XUiSkin.polish_on()` 下，`POLISH_V1 = false` 时逐像素回退）：
+  10. `skin_battle_list.gd`：`_draw()` 按钮与边框切用 `bg_c()`／`line_c()`、滚动条改调 `XUiSkin.draw_scrollbar()`、说明栏分隔线改调 `XUiSkin.draw_divider(..., legacy_alpha=0.3)`、说明文字切用 `text2_c()`／`down_c()`；`_draw_row()` 奇数非选中行叠加极微暖带 `Color(0.95, 0.90, 0.82, 0.026)`。
+  11. `skin_arc_gauge.gd`：`_draw()` 在 `polish_on()` 下改用深暖炭内凹槽 `Color(0.032, 0.025, 0.024, 0.76)`＋淡暖锡／首领金描边，填充弧在 `thickness >= 4.0` 时加弧顶柔和亮线。
+  12. `skin_side_status.gd`：`_paint_now()` 头像圆底与外环切用 `orb_low_c()`／`line_c()`；状态回合数在 `polish_on()` 下加深炭半透胶囊底＋暖锡细边且字号由 `12→13px`；HP/MP/TP 槽改调 `XUiSkin.draw_gauge()`；`Back._draw()` 分隔线接 `XUiSkin.draw_divider()` 与 `line_c()`。
+  13. `skin_otb_bar.gd`：`_draw_sep()` 下回合分隔胶囊切用 `bg_c()`／`line_c()` 并加暖锡细边，竖排字号 `12→13px`；`_paint_icon()` 与 `Disk` 敌方暗圆盘微暖化（`POLISH_ENEMY_DARK #231729`／`POLISH_ENEMY_LIGHT #563c68`），我方球底切用 `orb_low_c()`／`orb_hi_c()`／`line_c()`。
+  14. `skin_boss_status.gd`：`_capsule()`／`_paint_bar()` 顶部胶囊背景与描边切用 `bg_c()`／`line_c()`／`down_c()`；`_paint_detail()` 与 `_paint_selected()` 卡片底改暖色微带（`Color(0.95, 0.90, 0.82, 0.048/0.065)`）并用 `paint_color()`；`_attr_line()` 属性行缩字下限由 `9→11px`；`_footer()` 分页线改调 `XUiSkin.draw_divider(..., true, 0.85)`。
+  15. `skin_battle_2c.gd`：`VictoryView` 暗屏与底层渐变微暖化、掉落分隔与奖章圆底切用 `text2_c()`／`bg_c()`／`line_c()`／`orb_low_c()`、主画面经验条改深炭内凹槽＋顶高光、详单接入 `draw_divider`／`draw_scrollbar`／`draw_gauge`；`GameOverView` 灭印底格微暖化与战败按键提示改深暖炭胶囊＋暖炭键帽；`Handoff` 盘面与未亮印记切用 `panel_c()`／`line_c()` 与暖炭底。
+
 ## 已测
+
+### 第五段战斗侧 10～15 全量验收（提交 `356c71155`，上一任于前台逐项实跑）
+
+| 检查／测试项 | 结果 | 备注 |
+| --- | --- | --- |
+| `03_再刷重制_Godot/07_开发环境/语法检查.py` | 1122/1122，0 问题（退出码 0） | 全工程 GDScript 解析检查通过 |
+| `tests/xiyou_ui_skin_battle.tscn` | 67/67 | 战斗列表／指令界面专项 |
+| `tests/xiyou_ui_skin_battle_v07.tscn` | 57/57 | `battle_v07` 战斗 v0.7 皮肤专项 |
+| `tests/xiyou_ui_skin_hud.tscn` | 112/112 | `hud` 战斗 HUD 专项 |
+| `tests/xiyou_ui_skin_2c.tscn` | 181/181 | `2c` 战斗结算与浮层 |
+| `tests/xiyou_ui_skin_p1fix.tscn` | 1/1 | `p1fix` 回归专项 |
+| `tests/xiyou_ui_skin_4a.tscn` | 57/57 | `4a` 地图与战斗 HUD 专项 |
+| `tests/xiyou_ui_skin_4b.tscn` | 123/123 | `4b` 首领状态／OTB／弧形血蓝专项 |
+| `tests/xiyou_ui_skin_card_e.tscn`／`shop.tscn`／`card_j.tscn`／`card_k.tscn`／`card_l.tscn`／`card_m.tscn`／`card_n.tscn`／`card_o.tscn`、`5c.tscn`、`offshot.tscn`、`close.tscn` | 全过 | 卡 E～O、设置返回、无头构建烟测及关闭不变量回归全部通过 |
+| `03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py --base 525969a7a` | 60/60 SAME（退出码 0） | `XUiSkin.ENABLED=false` 与基线 `525969a7a` 逐像素零差异 |
+
+### 第四段菜单侧 1～9 专项验收（提交 `640b7e367`）
 
 以下测试均在第四段菜单侧 1～9 改动完成后，于前台逐个单独运行（凡起 Godot 均带 `--audio-driver Dummy`，未用 `并行测试.py`），全部一次全绿：
 
@@ -210,28 +237,65 @@ static func polish_on() -> bool:
 | `17_整队_条槽与位框.png` | 1600×450 | 条 8：`skin_party_page` 整队页内凹血蓝条、金丝分隔线、暖锡在位／空位框 | 95.8% | 25.4→28.4 | -1.04→+2.45 | 604/604（无异常） |
 | `18_角色状态页.png` | 1600×450 | 条 9：`skin_status_page` 角色状态页暖头像圈、四条内凹量槽、金丝分隔线与暖金滚动条 | 97.8% | 27.2→29.3 | -2.49→+1.47 | 1100/1100（无异常） |
 
-定量结论：全部 18 页中灰 `R-B` 均由冷蓝灰（`-1.02`～`-2.49`）转为暖炭金调（`+0.57`～`+2.45`，确认弹窗 `+7.93`），均亮柔和抬升 `2.1`～`4.4` 级，纯白像素数前后完全一致，且所有对照图左侧 `POLISH_V1=false` 均已逐像素校验与对应 `github/main` 基线 0 差异，零纹理白块／渲染异常。
+### 第五段战斗侧 10～15 补拍对照图（19～25，基线 `525969a7a`）
 
-## 剩余 6 处（战斗侧，原 10～15）
+| 文件名 | 尺寸 | 对应条号与重点改动 | 差异像素占比 | 均亮 L（前→后） | 中灰冷暖 R-B（前→后） | 纯白块核验（L>250，前/后） |
+| --- | --- | --- | --- | --- | --- | --- |
+| `19_战斗中_技能列表与HUD.png` | 1600×450 | 条 10/12/13：`skin_battle_list` 暖斑马纹与渐隐分隔线/滚动条、`skin_side_status` 内凹槽与回合胶囊、`skin_otb_bar` 暖炭底与 13px 下回合胶囊 | 19.4% | 42.1→42.4 | +29.45→+30.15 | 1164/1165（注：OTB 进场动画未静） |
+| `20_首领战_血弧与状态胶囊.png` | 1600×450 | 条 11/14：`skin_arc_gauge` 暖炭弧槽与高光弧、`skin_boss_status` 顶部状态胶囊暖炭底与描边 | 6.8% | 44.8→44.8 | +34.10→+34.18 | 1277/1265（无异常） |
+| `21_首领战_状态详情框.png` | 1600×450 | 条 14：`skin_boss_status` 详情框暖色卡片带、属性行下限 11px、底部分页 `draw_divider` | 24.1% | 42.5→42.8 | +26.87→+28.08 | 1115/1117（无异常） |
+| `22_胜利结算_主画面.png` | 1600×450 | 条 15：`skin_battle_2c` 胜利暗屏暖调、经验条暖炭凹槽与顶高光、奖章暖底 | 89.3% | 27.6→28.3 | +16.66→+17.78 | 1094/1094（无异常） |
+| `23_胜利结算_详单.png` | 1600×450 | 条 15：`skin_battle_2c` 结算详单渐隐金丝分隔线、物品暖金滚动条、角色经验内凹槽 | 97.8% | 20.9→21.6 | +6.52→+9.44 | 114/114（无异常） |
+| `24_全灭_灭印.png` | 1600×450 | 条 15：`skin_battle_2c` 全灭七印暖炭底菱格、战败按键提示暖炭胶囊与键帽 | 0.9% | 5.8→5.8 | -18.56→-18.28 | 0/0（无白块） |
+| `25_弧形血蓝与首领血弧.png` | 1600×450 | 条 11：`skin_arc_gauge` 角色弧形血蓝与首领血弧深炭底槽、暖锡描边与弧顶高光 | 98.2% | 17.3→19.2 | -1.07→+3.28 | 192/194（注：开关关时预览半透底有微差） |
 
-原「剩余 15 处」中菜单侧 1～9 已于第四段全部实装并验收；以下剩余 6 处战斗侧共用件（均位于 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/`，均挂在 `XUiSkin.polish_on()` 下）留待下一段（第五段）实装并补战斗侧对照图（编号 `19_` 起），再经跨家核查后统一合入 `main`：
+定量结论：第三、四段菜单侧 01～18 中灰 `R-B` 均由冷蓝灰（`-1.02`～`-2.49`）转为暖炭金调（`+0.57`～`+2.45`，确认弹窗 `+7.93`），均亮柔和抬升 `2.1`～`4.4` 级；第五段战斗侧 19～25 保留实机战场景观基础上，界面暖化（`25_` 中灰 `R-B` 由 `-1.07` 转为 `+3.28`，`23_` 由 `+6.52` 提至 `+9.44`），纯白像素数无异常飙升，全套 25 页零纹理白块／渲染异常。其中 19 号图 OTB 进场动画未静、25 号图开关关时预览半透底有微差（见下文「合并须知」）。
 
-10. `skin_battle_list.gd`：lines 241-244 `draw_scrollbar`，line 247 `draw_divider(..., legacy_alpha=0.3)`。
-11. `skin_arc_gauge.gd`：line 83 在 `polish_on()` 下加深暖炭凹槽与淡暖锡描边。
-12. `skin_side_status.gd`：line 78 `line_c()`，lines 95-97 回合数深炭胶囊＋12→13px，lines 127-129 `draw_gauge`。
-13. `skin_otb_bar.gd`：lines 136-144 `bg_c()`/`line_c()`＋12→13px，line 179 敌方暗圆盘微暖化（`Color("231729")`）＋`orb_low_c()`。
-14. `skin_boss_status.gd`：lines 214/258 暖炭微带，line 247 属性行下限 9→11px，line 286 `draw_divider`。
-15. `skin_battle_2c.gd`：lines 918/1020 经验条内凹底槽，lines 989-992 暖金滚动条，line 1315 战败提示暖炭胶囊。
+## 全部 15 处完成核对（1～15 全已做）
+
+全部 15 处次级共用件已分两段全部实装并挂在 `XUiSkin.polish_on()` 下（均位于 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/`）：
+
+- **第四段菜单侧 1～9（已做，提交 `640b7e367`）**：
+  1. **已做**：`ui_skin.gd`（`_add_embers()` 火星降速减淡 `48..82` / `0.78`）。
+  2. **已做**：`skin_ring_nav.gd`（左环导航暖球底与圆环线切 `orb_low_c()`／`orb_hi_c()`／`line_c()`）。
+  3. **已做**：`skin_warehouse_page.gd`（仓库容量条改 `draw_gauge(..., 3, true)`）。
+  4. **已做**：`skin_sub_page.gd`（设置子页进度条改 `draw_gauge(..., 3, true)`）。
+  5. **已做**：`skin_party_strip.gd`（主菜单右栏队伍条接 `draw_divider`／`draw_gauge`／暖头像圈）。
+  6. **已做**：`skin_gear_detail.gd`（装备展开详情与对比页接 `draw_divider`／暖对比行带／`draw_scrollbar()`）。
+  7. **已做**：`skin_target_list.gd`（目标列表接 `draw_divider`／`draw_gauge`／暖头像框）。
+  8. **已做**：`skin_party_page.gd`（整队页接 `draw_gauge`／`draw_divider`／`line_c()` 槽框）。
+  9. **已做**：`skin_status_page.gd`（角色状态页接 `draw_gauge`／`draw_divider`／`draw_scrollbar()`／暖头像圈）。
+- **第五段战斗侧 10～15（已做，提交 `356c71155`）**：
+  10. **已做**：`skin_battle_list.gd`（圆角暖金滚动条 `draw_scrollbar`、说明栏渐隐分隔线 `draw_divider(..., legacy_alpha=0.3)`、奇数行微暖带、`bg_c()`／`line_c()`／`text2_c()`／`down_c()`）。
+  11. **已做**：`skin_arc_gauge.gd`（深暖炭内凹弧槽＋淡暖锡／首领金描边＋弧顶柔和亮线）。
+  12. **已做**：`skin_side_status.gd`（头像圆底 `orb_low_c()`／`line_c()`、状态回合数深炭胶囊＋`12→13px`、量条槽 `draw_gauge`、分隔线 `draw_divider`）。
+  13. **已做**：`skin_otb_bar.gd`（下回合胶囊 `bg_c()`／`line_c()`＋`12→13px`、敌方暗圆盘 `POLISH_ENEMY_DARK`/`POLISH_ENEMY_LIGHT`、我方 `orb_low_c()`／`orb_hi_c()`／`line_c()`）。
+  14. **已做**：`skin_boss_status.gd`（顶部状态胶囊 `bg_c()`／`line_c()`／`down_c()`、详情卡暖色微带与 `paint_color()`、属性行下限 `9→11px`、底部分页 `draw_divider`）。
+  15. **已做**：`skin_battle_2c.gd`（胜利结算暗屏微暖化与体验条内凹槽／详单金丝分隔线与滚动条／奖章暖底、全灭七印暖炭底格与战败提示暖炭胶囊键帽、过渡盘面 `panel_c()`／`line_c()`）。
+
+## 合并须知
+
+- **总开关与逐像素回退**：总开关 `XUiSkin.POLISH_V1`（位于 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/skin/ui_skin.gd`）默认为 `true`（`XUiSkin.polish_on()` 返回 `POLISH_V1 and on()`）。将其改为 `false`，或关闭新皮肤开关（`XUiSkin.ENABLED = false`）／切至非天启档，均可逐像素回退至美化前效果；已验证 `皮肤关闭对照.py --base 525969a7a` 输出 `60/60 SAME`（退出码 0）。
+- **合并后要跑的专项列表**：
+  - 语法检查：`python3 03_再刷重制_Godot/07_开发环境/语法检查.py`
+  - 皮肤关闭对照：`python3 03_再刷重制_Godot/07_开发环境/皮肤关闭对照.py`
+  - Godot 皮肤与界面专项（均带 `--audio-driver Dummy`）：
+    - 战斗侧：`tests/xiyou_ui_skin_battle.tscn`、`tests/xiyou_ui_skin_battle_v07.tscn`、`tests/xiyou_ui_skin_hud.tscn`、`tests/xiyou_ui_skin_2c.tscn`、`tests/xiyou_ui_skin_p1fix.tscn`、`tests/xiyou_ui_skin_4a.tscn`、`tests/xiyou_ui_skin_4b.tscn`
+    - 菜单与共用件：`tests/xiyou_ui_skin_card_e.tscn`、`tests/xiyou_ui_skin_shop.tscn`、`tests/xiyou_ui_skin_card_j.tscn`、`tests/xiyou_ui_skin_card_k.tscn`、`tests/xiyou_ui_skin_card_l.tscn`、`tests/xiyou_ui_skin_card_m.tscn`、`tests/xiyou_ui_skin_card_n.tscn`、`tests/xiyou_ui_skin_card_o.tscn`、`tests/xiyou_ui_skin_menu.tscn`、`tests/xiyou_ui_skin_1b.tscn`、`tests/xiyou_ui_skin_1c.tscn`、`tests/xiyou_ui_skin_5c.tscn`
+    - 回归与烟测：`tests/xiyou_ui_skin.tscn`、`tests/xiyou_ui_skin_close.tscn`、`tests/xiyou_ui_art_phase01.tscn`、`tests/xiyou_ui_skin_offshot.tscn`
+- **对照图开关关闭时微差说明**：
+  - `19_战斗中_技能列表与HUD.png`：拍摄瞬间 OTB 进场动画尚未完全静止，故开关关闭时左图与基线存在动画帧时序微差，非代码回退异常。
+  - `25_弧形血蓝与首领血弧.png`：该预览页半透底在开关关闭（`POLISH_V1=false`）时存在合成微差；正式皮肤关闭逐像素对照已通过 `皮肤关闭对照.py --base 525969a7a` 验证 `60/60 SAME`。
 
 ## 交接板
 
-- 下一步：继续在 `luiluu/xa-t309-ui-polish` 派第五段完成剩余 6 处战斗侧共用件（原 10～15）并补战斗侧 `1600×450` 对照图（编号 `19_` 起），全量验收后交核查再统一合入 `main`；本段不合 `main`。
-- 用户试玩说明：当前 `luiluu/xa-t309-ui-polish` 分支已包含 14 个核心共用件＋菜单侧 1～9 共 22 个皮肤文件的暖炭金美化，`XUiSkin.POLISH_V1` 默认开启；关闭后逐像素回退至 `525969a7a`。
+- 下一步：T309 全部 15 处（菜单侧 1～9 提交 `640b7e367`＋战斗侧 10～15 提交 `356c71155`）及 25 页对照图已全部完成并验绿，提交跨家核查后合入 `main`。
+- 用户试玩说明：当前 `luiluu/xa-t309-ui-polish` 分支已包含全部 28 个皮肤文件的暖炭金美化，`XUiSkin.POLISH_V1` 默认开启；关闭总开关或关闭皮肤开关均可逐像素回退至 `525969a7a`。
 - 需要用户决定：无（Kyo 已于 11-20 15:34「243 甲」拍板认可暖炭金方向）。
 
 ## 进度账
 
-- 本段为 T309 分段实装（菜单侧 1～9），待战斗侧 10～15 完成后统一收尾合入 `main` 时更新进度账。
+- T309 新界面整体美化（14 核心共用件＋15 处次级共用件全量实装、25 页前后对照图与全套专项验绿）已完成，待合并 `main` 时更新进度账（`dev.待定`）。
 
 ## 可优化（流程／工具／效率）
 
@@ -244,4 +308,6 @@ static func polish_on() -> bool:
 - `8851baed3`：WIP: T309 新界面美化核心共用件实装（14 文件语法 0，余 15 处小件＋对照图与验收）
 - `b4adce50f`：T309 第三段阶段交付（10 页 1600×450 前后对照图 01～10＋交付单补全）
 - `fc74ece01`：Merge remote-tracking branch `github/main` into `luiluu/xa-t309-ui-polish`（合入 `525969a7a`）
-- 本轮第四段交付提交（菜单侧 1～9 共 9 个皮肤文件实装＋17 项专项与双模式逐像素对照验绿＋8 页 1600×450 对照图 11～18＋交付单更新）
+- `640b7e367`：T309 新界面美化第四段：菜单侧 1～9 实装、全项验绿与对照图 11～18
+- `356c71155`：WIP: T309 美化第五段战斗侧 10～15 实装、测试与对照图 19～25
+- 本轮收尾提交：更新交付单 `luiluu_xa-t309-ui-polish.md`（15 处全标已做、补齐 19～25 对照图与第五段测试、新增合并须知并通过 `交付自检.py`）
