@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-t317-pozhen-immune
 
 - 车道／工作者：T317 31～34 层守层者二阶段全免疫（cc，Opus＋medium，P8）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -43,10 +43,35 @@
 
 - 建议：`battle_logic.enemy_transform` 原来不标能力值脏，变身后能力值要等下一次加减状态才换（krz 缓存，回退分支的读数就是这样）；本单开着时已标脏。原版变身是否同样延迟没查（归战斗核心核查）。
 
+## 31～34 层探针（验收 3）
+
+T313 分支的 `vp_ff_probe`（带 `--hongjun`、收场输赢）临时放进本树跑、没提交；存档 T313 r1 `floor_31/32/33_2.json`（种子 2、艰险、四人 75 级），34 层用 33 层存档 `--hongjun`；不带 `--drop-state`，每格 3 场 10 回合。
+
+| 层 | 改前（T313） | 乙（认伤害类型＋AI 认挡） | B（本单默认） |
+| --- | --- | --- | --- |
+| 31 女娲 467 | 0/3 | 0/3（2 僵 1 团灭） | 3/3，第 1～2 回合 |
+| 32 伏羲 468 | 0/3 | 0/3（1 僵 2 团灭） | 2/3；输的一场伏羲第 1 回合团灭我方 |
+| 33 鸿蒙老祖 469 | 0/3 | 0/3（僵） | 3/3，第 1～2 回合 |
+| 34 鸿钧 469 | 0/3 | 0/3（僵） | 3/3，第 2 回合 |
+
+- B 下都在 ≤10% 变身页之前打死，**变身那一段没在探针里走到**，只由专项核（变身前后能力值、出伤倍率）。
+- 乙的 trace（31 层，5 回合）：AI 改挑物理类后每回合打掉 17～30%（如 7362134 → 6123908、→ 5227686），回合末回满。
+
 ## 验证
 
-- 待写
+- 专项 `xiyou_tianqi_pozhen_type` 77/77（本机前台，`--audio-driver Dummy`）。
+- 反向验证 8 项全咬住：乙判定恒不生效、混合不放行、不限 DECK（西游档也改）、B 默认失效、变身不记层、变身不重算倍率、变身钩子不调、AI 不认整下挡掉。
+- `语法检查.py` 过。
+- 选测：`选测.py` 判整轮（battle_logic／damage／state_effects 战斗核心）。云端选测 2ba2b3066（基准 f00b8e747）352 个场景 16 片：挂 1 个 `xiyou_tianqi_enemy_cev`（run 44765841053），`xiyou_tianqi_enemy_ai_scene` 并行偶发、单跑过。
+- `xiyou_tianqi_enemy_cev` 挂的是 T285 的反证 `tf.without_keep_20`：本单变身时也记 `XGuardianRework.META_FLOOR`，`XTianqiCombat.enemy_floor` 去掉 T285 层记号后回退读到它，仍是 30 层（行为对，反证不成立）。改测试：反证两个记号都去掉，另加 `tf.gr_floor_30`。本机 `xiyou_tianqi_enemy_cev` 123/123、`xiyou_tianqi_enemy_ai_scene` 16/16；**改完没重跑云端**（只改了这一个测试文件）。
+- 合并时：改了 `damage.gd`（只抽出 `item_mode`，起算 mode 不变）、`state_effects.gd`（只动 element_contains 查询，西游档走原路）、`battle_logic.gd`（变身前后两个钩子，西游档直接返回）；不碰原版移植的数值链，**不需要 `--oracle`**（我判断；总装要稳就加跑）。
+- 待交叉核查的核心文件：`battle_logic.gd`、`damage.gd`、`state_effects.gd`、`smart_ai.gd`、`guardian_rework.gd`、`tianqi_elements.gd`。
 
 ## 本分支提交
 
-- 待写
+- c728c5334 破阵认伤害类型、守层者变身按本层重锚；新专项
+- 3beba2cad 自动战斗卡 1 估伤认 React 整下挡掉
+- a520f6d69 交付单草稿
+- e7eec744d 按协调定 B：破阵默认不挡，乙留开关默认关
+- 2ba2b3066 合 github/main
+- （下一提交）T285 专项反证跟上变身记层；交付单定稿

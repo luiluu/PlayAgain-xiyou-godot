@@ -348,7 +348,9 @@ func _transform() -> void:
 	_check("tf.id", e.enemy_id == 538, e.enemy_id)
 	_check("tf.raw_above", float(e.xparam_parts(3)[0]) >= 0.30, e.xparam_parts(3))
 	_check("tf.keep_30", _near(e.cev, 0.30), e.cev)
+	_check("tf.gr_floor_30", int(e.get_meta(XGuardianRework.META_FLOOR, 0)) == 30, e.get_meta(XGuardianRework.META_FLOOR, 0))  # T317：变身也记守层者层（出伤、伤害抵抗）
 	e.remove_meta(XTianqiCombat.META_KEEP_FLOOR)
+	e.remove_meta(XGuardianRework.META_FLOOR)  # T317 起 enemy_floor 回退会读到它，反证要两个都去掉
 	_check("tf.without_keep_20", _near(e.cev, 0.20), e.cev)  # 反证：不记层就掉回第一档
 	var sk := _crit_skill()
 	var g: XEnemy = _guardian(1)[1]
