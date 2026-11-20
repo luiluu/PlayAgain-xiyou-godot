@@ -383,7 +383,7 @@ func _draw_list_panel() -> void:
 	var s := list_panel.size
 	if list_title != "":
 		XUiSkin.ds(list_panel, body, Vector2(XUiSkin.PAD + 8, XUiSkin.PAD + 20), list_title, HORIZONTAL_ALIGNMENT_LEFT, s.x - 48, 20, XUiSkin.GOLD)
-	var ft := footer_text()
+	var ft := footer_text() if list == null or list.visible else ""
 	if ft != "" and not (pager != null and pager.visible and footer == ""):   # 自动页码由翻页件画
 		var fw := body.get_string_size(ft, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
 		if pager != null and pager.visible:   # 自定义页脚遇上翻页件：靠左画、不超过翻页件左缘（T049 小A核 P3）
@@ -398,7 +398,10 @@ func _process(_delta: float) -> void:
 		_last_top = list.top_row
 		list_panel.queue_redraw()
 	if pager != null and list != null:
-		pager.set_state(list.top_row, list.visible_rows(), list.rows_total())
+		if list.visible:
+			pager.set_state(list.top_row, list.visible_rows(), list.rows_total())
+		else:
+			pager.visible = false   # 列表藏起（中块换成自画，T307 名单页）时页脚也藏（小A核 P2-1）
 		if pager.visible != _pager_was:
 			_pager_was = pager.visible
 			list_panel.queue_redraw()
