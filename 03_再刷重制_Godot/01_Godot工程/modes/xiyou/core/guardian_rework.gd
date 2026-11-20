@@ -20,6 +20,9 @@ extends RefCounted
 ##   那一项换成表里 qiyin 行「30 层玉皇大帝原数据 × 整数%」（跟出伤、血量一样认 33 层一档），elite／boss／龙的 rate 照旧乘在上面。
 ## 回退：`XGuardianRework.ATK = false`；`XGuardianRework.HP = false`；`XGuardianRework.WORLD = false`（只改守层者）；`XGuardianRework.RESIST = false`；
 ## `XGuardianRework.PARAMS = false`（31～34 层守层者能力值照原数据）；`XGuardianRework.PARAMS_QIYIN = false`（七印里副本、七首之龙双防照鸿蒙老祖原数据）。
+## 后来加的各节自己的开关写在各节注释里：DOMAIN_OFF（T229 领域）、GROWTH_NERF（T302 成长招）、TRANSFORM_ANCHOR／TRANSFORM_IDENTITY（T317／T322 残血变身）、
+## XINMO（T315 心魔对齐）。「守层者的层」统一问 guardian_floor（敌人号 → 对齐过的心魔 → 变身前是守层者的），
+## 楼层里别的敌人另记 META_FLOOR，只给出伤、伤害抵抗用（_floor），不算守层者。
 ## 量数接口（tests/virtual_player/baseline_dps.tscn）：measure_resist、measure_neutral。
 
 static var ATK := true
@@ -36,11 +39,18 @@ static var PARAMS := true
 static var PARAMS_QIYIN := true
 ## T317：守层者残血变身（30 层玉皇大帝→入魔 538，31／32 层→天道·魔神 929，33 层→天道·混沌至高 930）后：
 ## - 新敌人号不在守层者表里，出伤倍率（atk_scale）、伤害抵抗（harm_re）原来掉回「不是守层者」（出伤 ×1，31 层魔神一招团灭），
-##   现在记下变身前的层（META_FLOOR），照本层守层者算；
+##   现在记下变身前的层（_floor 认的 META_FLOOR），出伤、伤害抵抗照本层守层者算；
 ## - 八项能力值倍率按新记录重算：每项乘「变身前原数据 ÷ 新记录原数据」，变身后能力值＝变身前（本层重锚后的数，含难度、血量重标），
 ##   不再拿女娲那份重锚倍率去乘魔神的原数据（物攻魔攻 2.36 倍、血 3.3 倍）。技能、行动表照新记录。
 ## 只管天启篇存档、楼层守层者（鸿钧借鸿蒙老祖的合成记录、骑士、七印不走这里）。回退：`XGuardianRework.TRANSFORM_ANCHOR = false`
 static var TRANSFORM_ANCHOR := true
+## T322（T317 核查 P2-1／P2-2）：变身前是守层者（guardian_floor > 0）的，变身后另记守层者身份（META_TRANSFORM），guardian_floor 认它：
+## 成长招削弱（growth_on，每层 +12%、最多 3 层）、元素牌组（XTianqiElements 按本层守层者那副，不走新号的 dungeon_boss 或空牌组）、
+## 首领判定（XTianqiElements.is_boss_enemy）、一刀切抗性折算（resistance）都照本层守层者。不改读 META_FLOOR：那个楼层小怪也记（_world），
+## 读它会把同场小怪也当成守层者。变身前不是守层者（楼层小怪变身）的不记。随 TRANSFORM_ANCHOR 一起只管天启篇存档。
+## 回退：`XGuardianRework.TRANSFORM_IDENTITY = false`（变身后成长、牌组、首领、抗性照新敌人号，与 T317 一致）。
+static var TRANSFORM_IDENTITY := true
+const META_TRANSFORM := "xgr_tf_guardian"
 const PARAMS_PATH := "res://modes/xiyou/tianqi_data/guardian_params.json"
 static var _params_data := {}
 
@@ -134,6 +144,8 @@ static func growth_on(e) -> bool:
 	if not GROWTH_NERF or not e is XEnemy or not _on():
 		return false
 	var f := floor_of((e as XEnemy).enemy_id)
+	if f <= 0:
+		f = transform_floor(e)  # T322：变身后照本层守层者（心魔不算：它的成长招已滤掉，别的强化照原版）
 	return f >= DOMAIN_FLOORS[0] and f <= DOMAIN_FLOORS[1]
 
 
@@ -452,7 +464,7 @@ static func transform_before(e: XEnemy) -> Dictionary:
 	var raw := []
 	for i in range(8):
 		raw.append(e.param_base_unscaled(i))
-	return {"floor": f, "raw": raw}
+	return {"floor": f, "raw": raw, "guardian": guardian_floor(e)}
 
 
 ## T317：换完敌人号（refresh_passive 之前）调：新号不是守层者时记本层；八项倍率乘「变身前原数据 ÷ 新原数据」
@@ -461,6 +473,10 @@ static func transform_after(e: XEnemy, before: Dictionary) -> void:
 		return
 	if floor_of(e.enemy_id) <= 0:
 		e.set_meta(META_FLOOR, int(before.floor))
+		if int(before.get("guardian", 0)) > 0:
+			e.set_meta(META_TRANSFORM, int(before.guardian))  # T322：变身前是守层者才记身份
+	elif e.has_meta(META_TRANSFORM):
+		e.remove_meta(META_TRANSFORM)  # 变回守层者号：认敌人号
 	var raw: Array = before.raw
 	var changed := false
 	for i in range(8):
@@ -524,10 +540,21 @@ static func xinmo_floor(e) -> int:
 	return int(rec.get("_xinmo_floor", 0)) if str(rec.get("_ref", "")) == "xinmo" else 0
 
 
-## 守层者的层：守层者认敌人号，对齐过的心魔认它的层，别的 0
+## 守层者的层：守层者认敌人号，对齐过的心魔认它的层，守层者变身后认变身前的层（T322），别的 0
 static func guardian_floor(e) -> int:
+	if not e is XEnemy:
+		return 0
 	var f := xinmo_floor(e)
-	return f if f > 0 else floor_of((e as XEnemy).enemy_id) if e is XEnemy else 0
+	if f <= 0:
+		f = floor_of((e as XEnemy).enemy_id)
+	return f if f > 0 else transform_floor(e)
+
+
+## T322：守层者残血变身后记下的本层（没变过身、开关关、不是天启篇存档为 0）
+static func transform_floor(e) -> int:
+	if not TRANSFORM_IDENTITY or not e is XEnemy or not (e as XEnemy).has_meta(META_TRANSFORM) or not _on():
+		return 0
+	return int((e as XEnemy).get_meta(META_TRANSFORM, 0))
 
 
 ## XDB.rec("Troops", 901／770) 调：天启篇存档、开关开着、正在打闭关心魔试炼时去掉敌群页（心魔原版的成长、霸者领域、放逐都不跑）。

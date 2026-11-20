@@ -545,8 +545,10 @@ static func enemy_profile(e, logic = null, s = null) -> Dictionary:
 		kd["source"] = "knight"
 		kd["phase"] = phase
 		return kd
-	# 4) 1~33 层守层者
+	# 4) 1~33 层守层者（T322：残血变身后照本层守层者那副，XGuardianRework.transform_floor）
 	var gfloor := XGuardianRework.floor_of(enemy.enemy_id)
+	if gfloor <= 0:
+		gfloor = XGuardianRework.transform_floor(enemy)
 	if gfloor >= 1 and gfloor <= 33:
 		var fd2 := floor_deck(s, gfloor)
 		return {"weak": fd2.weak.duplicate(), "resist": fd2.resist.duplicate(), "immune": fd2.immune.duplicate(), "source": "guardian", "floor": gfloor, "phase": 0}
@@ -577,7 +579,7 @@ static func is_boss_enemy(e) -> bool:
 		return true
 	if str(rec_dict.get("_ref", "")) == "hongjun" or bool(rec_dict.get("_qiyin_boss", false)):
 		return true
-	return XEnemy.boss_id(en.enemy_id) or XGuardianRework.floor_of(en.enemy_id) > 0
+	return XEnemy.boss_id(en.enemy_id) or XGuardianRework.floor_of(en.enemy_id) > 0 or XGuardianRework.transform_floor(en) > 0  # T322：守层者变身后（入魔 538 不在 boss 表）仍算首领
 
 
 static func _active_floor(logic, s: XState) -> int:
@@ -605,7 +607,7 @@ static func map_element_id(e: int, s = null) -> int:
 static func pozhen_class(item: Dictionary, element: int, s = null) -> String:
 	if element != 1 or not (POZHEN_BY_TYPE or POZHEN_OFF) or not deck_on(s):
 		return ""
-	return XDamage.item_mode(item) if POZHEN_BY_TYPE else "mixed"
+	return XDamage.item_mode(item, true) if POZHEN_BY_TYPE else "mixed"  # T322（T317 核查 P3-2）：道具不借同号技能的 mode
 
 
 static func map_elements(es: Array, s = null) -> Array:
