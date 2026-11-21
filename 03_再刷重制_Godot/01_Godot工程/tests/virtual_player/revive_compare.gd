@@ -5,6 +5,7 @@ extends Node
 ##   只改出手    存档原队、虚拟玩家复活决策开（原队没人会复活技能时背包带 3 个复活道具，同逛店新规矩）
 ##   只改配队    换上一名会复活的辅助（team_builder 口径）、原自动战斗
 ##   改后        换上会复活的辅助＋复活决策开
+##   开场倒一人·原出手／·改后：同「只改配队／改后」的队，开打就让攻击最高、不会复活的那人倒下（倒下不计入「倒下」次数），看复活有没有真放出来
 ## 换人：先用队伍里坐冷板凳的、会复活的辅助，没有才从本档候选里挑（等级同队、装备从被换下的人身上卸下后按游戏的「最强装备」重配）；
 ## 换下的是上场 4 人里换完仍合法、物攻魔攻较高项最低的那个。
 ## godot --headless --audio-driver Dummy --path 01_Godot工程 -s res://tests/test_main_loop.gd res://tests/virtual_player/revive_compare.tscn -- \
@@ -68,12 +69,14 @@ func _run() -> void:
 			var rid := int(VPLogic.revive_items_all()[0])
 			with_items.items[rid] = maxi(int(with_items.items.get(rid, 0)), 3)
 		XState._become_current(base)
-		for arm in [["改前", base, false], ["只改出手", with_items, true], ["只改配队", swapped, false], ["改后", swapped, true]]:
+		# 开场倒一人（核查 P1-1：自然打下来带奶妈的队没人倒，复活技能一次没触发）：换人后的队，开打就让攻击最高、不会复活的那人倒下，原自动战斗对复活层
+		for arm in [["改前", base, false], ["只改出手", with_items, true], ["只改配队", swapped, false], ["改后", swapped, true],
+				["开场倒一人·原出手", swapped, false, true], ["开场倒一人·改后", swapped, true, true]]:
 			if arm[1] == swapped and swap.is_empty():
 				continue
 			var agg := {"floor": floor, "arm": arm[0], "team": (arm[1] as XState).battle_members().map(func(a): return a.actor_id), "fights": []}
 			for k in n:
-				var r := _fight(arm[1], troop, bool(arm[2]), k)
+				var r := _fight(arm[1], troop, bool(arm[2]), k, arm.size() > 3)
 				agg.fights.append(r)
 				print("CMP   层 %d %s 第 %d 场：%s %d 回合 技能复活 %d 道具复活 %d 被救起 %s 倒下 %s 收场倒 %d" % [floor, arm[0], k + 1, "赢" if r.won else "输", r.turns, r.casts, r.items, JSON.stringify(r.raised), JSON.stringify(r.falls), r.dead_end])
 			rows.append(_sum(agg))
@@ -150,7 +153,7 @@ static func _power(a: XActor) -> float:
 	return maxf(float(a.param(2)), float(a.param(4)))
 
 
-func _fight(st: XState, troop: int, revive: bool, k: int) -> Dictionary:
+func _fight(st: XState, troop: int, revive: bool, k: int, knock := false) -> Dictionary:
 	var copy := XState.from_dict(st.to_dict())
 	XState._become_current(copy)
 	for a in copy.members():
@@ -160,6 +163,13 @@ func _fight(st: XState, troop: int, revive: bool, k: int) -> Dictionary:
 	logic.setup(troop, copy, XBattleRandom.create("%016x" % (0x7328_0000 + k)))
 	logic.auto = true
 	FF._drain(logic, logic.troop_events())
+	if knock:
+		var pick = null
+		for a in logic.actors:
+			if a.is_alive() and VPLogic.free_revive_skills(a).is_empty() and (pick == null or _power(a) > _power(pick)):
+				pick = a
+		if pick != null:
+			pick.add_state(1)
 	var falls := {}
 	var raised := {}
 	var was := {}
