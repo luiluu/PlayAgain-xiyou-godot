@@ -217,9 +217,10 @@ func _state(team: Array, gear: Dictionary) -> XState:
 
 
 ## 建一队的档：第 floor 层、等级 level、本人专属法宝（没有就破攻／尊魔）fabao_level 级、输出职责刻印烙印 brand_pct%、天平酒
-static func build_state(team: Array, gear: Dictionary, floor_no: int, level: int, fabao_level: int, seed_val: int, brand: float, drink: bool) -> XState:
-	var s := XState.new_game(XTianqi.legacy_of(DIFFICULTY), int(team[0]), team.slice(1))
-	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": DIFFICULTY, "lineup": team.duplicate()}
+static func build_state(team: Array, gear: Dictionary, floor_no: int, level: int, fabao_level: int, seed_val: int, brand: float, drink: bool, difficulty := DIFFICULTY) -> XState:
+	# T347：difficulty 参数化（缺省艰险，旧调用不变）；证道队含超强者，艰险档 super_cap=0 会把超强者踢出 battle_members
+	var s := XState.new_game(XTianqi.legacy_of(difficulty), int(team[0]), team.slice(1))
+	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": difficulty, "lineup": team.duplicate()}
 	s.random_master = XRandomStream.hex64(seed_val + int(team[0]) + floor_no)
 	s.orb_seed = seed_val * 1000 + int(team[0]) + floor_no
 	seed(seed_val * 1000 + int(team[0]) + floor_no)
@@ -256,11 +257,11 @@ static func build_state(team: Array, gear: Dictionary, floor_no: int, level: int
 
 ## 每层的中位装备（T162 守层者三表，同丙档口径）：每掷一套就是一次从第 1 层打到第 f 层的累计（逐层掷、每层按当层等级的队伍挑能穿的），
 ## 每层把 sets 套按得分取中位那一套。返回 {层: {actor_id: [{slot, kind, id}]}}。level_of：层→等级（baseline_dps.level_cap）
-static func floor_gears(team: Array, floors: Array, sets: int, battles_per_floor: int, seed_val: int, level_of: Callable) -> Dictionary:
+static func floor_gears(team: Array, floors: Array, sets: int, battles_per_floor: int, seed_val: int, level_of: Callable, difficulty := DIFFICULTY) -> Dictionary:
 	var states := {}
 	for f in floors:
 		var lv := int(level_of.call(f))
-		states[f] = build_state(team, {}, f, lv, 0, seed_val, 0.0, false)
+		states[f] = build_state(team, {}, f, lv, 0, seed_val, 0.0, false, difficulty)
 	var top := int(floors.max())
 	var scores := {}
 	var assigned := {}
@@ -280,10 +281,14 @@ static func floor_gears(team: Array, floors: Array, sets: int, battles_per_floor
 				assigned[f].append(asg)
 	var out := {}
 	for f in floors:
-		var chosen: Dictionary = assigned[f][median_index(scores[f])]
+		var mi := median_index(scores[f])
+		assert(mi >= 0 and mi < assigned[f].size(), "floor_gears：第 %d 层没有掷出任何一套（sets=%d）" % [f, sets])
+		var chosen: Dictionary = assigned[f][mi] if mi >= 0 and mi < assigned[f].size() else {}
 		var g := {}
 		for id in team:
-			g[int(id)] = chosen[int(id)]
+			# 队员被踢出 battle_members（难度上限放不下）时 chosen 没有他：断言报出来，不再越界
+			assert(chosen.has(int(id)), "floor_gears：第 %d 层队员 %d 不在 battle_members（难度 %s 放不下？）" % [f, int(id), difficulty])
+			g[int(id)] = chosen.get(int(id), [])
 		out[f] = g
 	return out
 
