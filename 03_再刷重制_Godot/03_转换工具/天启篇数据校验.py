@@ -2484,9 +2484,6 @@ def six_dim_row_rules(name: str, row: dict, cls: str) -> list:
             bad.append('%s：R2 SS 无明显短板（其余五维要至少 2 项 ≤C）' % name)
     else:
         cap = 1 if cls in ('minion', 'weak') else 2
-        # T278：Kyo 11-19 定谷雨（175）输出 S、生存至少 S，辅助降档待定——辅助没降前她有 3 项 S，暂豁免 R3；Kyo 定了辅助就删这条
-        if name.endswith('actors/175') and n_s == 3 and row.get('output') == 'S' and row.get('survive') == 'S':
-            cap = 3
         if n_s > cap:
             bad.append('%s：R3 %s 档 S 至多 %d 项，现在 %d 项' % (name, cls, cap, n_s))
     return bad
