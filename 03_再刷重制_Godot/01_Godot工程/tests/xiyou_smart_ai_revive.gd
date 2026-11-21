@@ -1,5 +1,6 @@
 extends Node
-## T331 自动战斗放复活技（XSmartAI.o_revive_ce）专项：
+## T331 自动战斗放复活技（XSmartAI.o_revive_ce，默认关）、同回合同目标只救一次（o_revive_once，默认开）专项：
+## 〇、默认值：西游档不放公共事件复活技；只救一次照样生效；
 ## 一、七个带公共事件的复活技（4549、622、825、3760、4829、5727、5782）认得出是复活、公共事件（含 117、339 那招的）里没有危险指令，能放时进候选；
 ##    7852 阳遁*回生不灭（公共事件有选项）不放；
 ## 二、有队友倒下：会复活的人选复活技、目标是倒下的那个；没人倒下：不选；MP 不够：不选；开关关：照原版不选；
@@ -43,13 +44,16 @@ func _run() -> void:
 	XConfig._loaded_path = ""
 	XConfig.ensure_loaded()
 	XConfig.set_smart_ai(true)
+	_defaults()
+	XSmartAI.o_revive_ce = true  # 下面各节测开着的行为（各节里关开关的断言照旧）
 	_data()
 	_choose_cases()
 	_plan()
 	_untouched()
 	_whole_turn()
 	_tianqi()
-	XSmartAI.o_revive_ce = true
+	XSmartAI.o_revive_ce = false
+	XSmartAI.o_revive_once = true
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -86,6 +90,35 @@ func _actor(logic: XBattleLogic, id: int) -> XActor:
 		if int(a.actor_id) == id:
 			return a
 	return null
+
+
+## 默认值（协调 11-21：Kyo 没定之前西游档照原版不放）：o_revive_ce 关、o_revive_once 开。
+## 默认下西游档不选公共事件复活技（自带的不带公共事件的复活术照放）；同回合同目标只救一次照样生效（真放之后记下）
+func _defaults() -> void:
+	_check("default.ce_off", not XSmartAI.o_revive_ce)
+	_check("default.once_on", XSmartAI.o_revive_once)
+	var logic := _setup()
+	var healer := _actor(logic, 16)
+	healer.learn_skill(4549)
+	var down := _actor(logic, 9)
+	down.add_state(1)
+	_check("default.xiyou_legal_off", not XSmartAI.new(logic, healer).legal(XDB.rec("Skills", 4549), false))
+	var p := _pick(logic, healer)
+	_check("default.xiyou_no_ce_revive", not p.id in [4549, 622, 825, 3760, 4829, 5727, 5782], p)
+	# 修 8 号自带奇怪的复活术 3924（不带公共事件，原版就会放）：默认照放，放了就记，同回合 10 号不再拿复活秘药救同一个人
+	var b := _actor(logic, 8)
+	var c := _actor(logic, 10)
+	logic.state.items[183] = 1
+	var ctrl := logic.auto_battle_action(c)
+	_check("default.item_control", XSmartAI.is_item(ctrl[0]) and int(ctrl[0].id) == 183 and ctrl[1] == down, [ctrl[0].get("id"), ctrl[1]])
+	var plain := logic.auto_battle_action(b)
+	_check("default.plain_revive_picked", int(plain[0].id) == 3924 and plain[1] == down, [plain[0].get("id"), plain[1]])
+	logic.act(b, plain[0], plain[1])
+	_check("default.plain_revived", down.is_alive())
+	down.add_state(1)
+	_check("default.once_recorded", XSmartAI.revive_planned(logic, down))
+	var after := logic.auto_battle_action(c)
+	_check("default.once_blocks_item", not (XSmartAI.revives(after[0]) and after[1] == down), [after[0].get("id"), after[1]])
 
 
 func _data() -> void:
@@ -278,7 +311,17 @@ func _plan() -> void:
 	d9.add_state(1)
 	d10.add_state(1)
 	_check("plan.all_marks_both", XSmartAI.revive_planned(logic, d9) and XSmartAI.revive_planned(logic, d10))
-	# 开关关：放了也不记
+	# o_revive_once 关：放了也不记（回原版）
+	logic = _setup()
+	a = _actor(logic, 16)
+	down = _actor(logic, 9)
+	down.add_state(1)
+	XSmartAI.o_revive_once = false
+	logic.act(a, s622, down)
+	down.add_state(1)
+	_check("plan.once_off_not_planned", not XSmartAI.revive_planned(logic, down))
+	XSmartAI.o_revive_once = true
+	# o_revive_ce 关：照样记（两种档都保留）
 	logic = _setup()
 	a = _actor(logic, 16)
 	down = _actor(logic, 9)
@@ -286,7 +329,7 @@ func _plan() -> void:
 	XSmartAI.o_revive_ce = false
 	logic.act(a, s622, down)
 	down.add_state(1)
-	_check("plan.off_not_planned", not XSmartAI.revive_planned(logic, down))
+	_check("plan.ce_off_still_planned", XSmartAI.revive_planned(logic, down))
 	XSmartAI.o_revive_ce = true
 
 
