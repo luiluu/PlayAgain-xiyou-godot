@@ -313,13 +313,24 @@ func cev_for_toji(pct: int) -> float:
 func sparam(i: int) -> float:
 	return super.sparam(i) * warehouse_rate()
 
-## T332（D249 乙）：回合末 HP 再生用的 [hrg, rec]。天启篇（XTianqiCombat.regen_unscaled）且合计 hrg<0 时两处都不乘仓库倍率；
-## 否则照原版 [xparam(7), sparam(2)]（各乘一次仓库倍率，DCL3 时负再生叠成 ×4）
-func regen_rates() -> Array:
-	var h := self.hrg
-	if h < 0.0 and XTianqiCombat.regen_unscaled():
-		return [super.xparam(7), super.sparam(2)]
-	return [h, self.rec]
+## T332（D249 乙，r1 返修）：回合末 HP 再生用的 [hrg, rec, 天启篇拆算]。drop＝不算的负再生（异化逆祷挡掉的那部分，原值 ≤0）。
+## 天启篇（XTianqiCombat.regen_unscaled）且再生特性里有负值时：照 T285 xparam_parts 把特性 22-7 拆成正值 pos 与负值 neg，
+## 正再生照原版吃两次仓库倍率（pos × w × w，原版 hrg、rec 各 ×w），负再生不吃（neg − drop，×1），rec 取不乘倍率的原值：
+## floor(mhp × (pos×w² ＋ neg − drop) × rec原值)。别的情况（西游档、开关关、没有负再生）逐字照原版 [hrg − drop, rec]。
+func regen_rates(drop := 0.0) -> Array:
+	if XTianqiCombat.regen_unscaled():
+		var pos := 0.0
+		var neg := 0.0
+		for t in traits_with_id(TRAIT_XPARAM, 7):
+			var v := float(t.value)
+			if v < 0.0:
+				neg += v
+			else:
+				pos += v
+		if neg < 0.0:
+			var w := warehouse_rate()
+			return [pos * w * w + (neg - drop), super.sparam(2), true]
+	return [self.hrg - drop if drop != 0.0 else self.hrg, self.rec, false]
 
 func param_now(i: int) -> float:
 	var v := param_base_unscaled(i) + param_plus(i)

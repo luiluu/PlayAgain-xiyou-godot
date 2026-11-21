@@ -8,6 +8,8 @@ extends Node
 ## 四、T332（D249 乙，Kyo 11-21「天启篇不吃难度倍率」）：天启篇敌人回合末 HP 再生合计为负时 hrg、rec 都不乘仓库倍率（XEnemy.regen_rates，
 ##     开关 XTianqiCombat.DOT_NO_WAREHOUSE），灼伤 V 每回合 −5%；面板读的 hrg／rec 照旧 ×2；开关关掉回到 −20%；西游档照原版 −20%。
 ##     正再生（合计 ≥0）照旧乘倍率。
+## 五、T332 r1 返修（小A 核 P1-1／P2-1）：天启篇把再生特性拆成正 pos、负 neg，正的照旧 ×w²、负的 ×1、rec 取原值：
+##     10／11 层自带正再生的守层者挂灼伤 V、11 层挂中毒（−10%）跨 0 都连续；逆祷挡掉的负再生（drop）在拆开后扣，残留正再生照旧 ×w²。
 
 var results: Array = []
 
@@ -30,6 +32,10 @@ func _run() -> void:
 	_case("tq_off", true)
 	XTianqiCombat.DOT_NO_WAREHOUSE = true
 	_case("xiyou", false)
+	_mixed("tq.f10.burn", true, 10, 21)
+	_mixed("tq.f11.burn", true, 11, 21)
+	_mixed("tq.f11.poison", true, 11, 4)
+	_mixed("xiyou.f11.poison", false, 11, 4)
 	XEnemy.force_roll = -1.0
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -115,3 +121,47 @@ func _case(tag: String, tianqi: bool) -> void:
 	for i in (25 if unscaled else 5):
 		logic._regenerate(e, [])
 	_check("%s.floor_at_1" % tag, e.hp == 1.0 and e.is_alive(), e.hp)
+
+
+## r1：自带正再生的守层者挂负再生状态 sid：天启篇 floor(mhp × (pos×w² ＋ neg) × rec原值)，西游档照原版 floor(mhp × hrg × rec)
+func _mixed(tag: String, tianqi: bool, floor_no: int, sid: int) -> void:
+	var s := _state(tianqi)
+	var logic := XBattleLogic.new()
+	logic.setup(int(XGuardianRework.TROOPS.get(floor_no, 469)), s)
+	var e: XEnemy = null
+	for x in logic.enemies:
+		if XGuardianRework.params_floor(x) == floor_no or (not tianqi and e == null):
+			e = x
+			break
+	_check("%s.found" % tag, e != null)
+	if e == null:
+		return
+	var w := e.warehouse_rate()
+	var pos_raw := e.hrg / w  # 挂状态前：守层者自带的再生（原值）
+	var rec_raw := e.rec / w
+	if tianqi:
+		_check("%s.pos_regen" % tag, pos_raw > 0.0, pos_raw)
+	var before := e.regen_rates()
+	_check("%s.no_neg_unchanged" % tag, before[0] == e.hrg and before[1] == e.rec and not before[2], before)
+	var neg := float(XDB.rec("States", sid).traits.filter(func(t): return int(t.code) == 22 and int(t.dataId) == 7)[0].value)
+	e.state_ids.append(sid)
+	XActor.state_touch(sid)
+	e.param_mark_dirty()
+	var mhp := e.mhp
+	e.hp = floorf(mhp / 2.0)
+	var hp0 := e.hp
+	logic._regenerate(e, [])
+	var got := e.hp - hp0
+	var want: float
+	if tianqi:
+		want = floorf(mhp * (pos_raw * w * w + neg) * rec_raw)
+	else:
+		want = floorf(mhp * e.hrg * e.rec)
+	want = clampf(want, -(hp0 - 1.0), mhp - hp0)
+	print("T332r1 %s mhp=%s w=%s pos=%s neg=%s got=%s want=%s" % [tag, mhp, w, pos_raw, neg, got, want])
+	_check("%s.tick" % tag, is_equal_approx(got, want), [got, want])
+	if tianqi:
+		_check("%s.pos_kept_x4" % tag, got > floorf(mhp * (pos_raw + neg) * rec_raw), got)  # 正再生没被砍成 ×1
+		# 逆祷：挡掉全部负再生后只剩正再生 ×w²（P2-1，单元层面给 drop）
+		var rr := e.regen_rates(neg)
+		_check("%s.prayer_drop" % tag, rr[2] and is_equal_approx(float(rr[0]), pos_raw * w * w) and is_equal_approx(float(rr[1]), rec_raw), rr)
