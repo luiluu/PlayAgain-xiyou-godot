@@ -212,6 +212,8 @@ func ok() -> void:
 			XSound.system(1)
 			if XChangeClothes.apply(XState.current, e):
 				XToast.show_text(XChangeClothes.DONE_TEXT, true)
+				if skin != null:
+					skin.sync()   # 「穿着」小标跟着换
 			else:
 				XToast.show_text(XChangeClothes.LOCKED_TEXT, true)
 

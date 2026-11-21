@@ -72,6 +72,26 @@ func _ready() -> void:
 	relayout()
 
 
+## 环心大字：数字位数多时（「18 / 263」）缩字到环内放得下（模板固定 44 号，三位数会压到球上）
+func _draw_ring_center() -> void:
+	if ring_center.is_empty():
+		return
+	var c := ring.center()
+	var num := XUiSkin.font("num")
+	var body := XUiSkin.font("body")
+	var big := str(ring_center[0])
+	var fs := 44
+	var maxw := (ring_radius - orb_radius) * 2.0 - 36.0
+	while fs > 20 and num.get_string_size(big, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > maxw:
+		fs -= 2
+	var bw := num.get_string_size(big, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	XUiSkin.ds(ring, num, Vector2(c.x - bw / 2.0, c.y + 8.0 - (44 - fs) * 0.1), big, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT)
+	if ring_center.size() > 1:
+		var small := str(ring_center[1])
+		var sw := body.get_string_size(small, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
+		XUiSkin.ds(ring, body, Vector2(c.x - sw / 2.0, c.y + 34.0), small, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+
+
 # ---- 数据 ----
 
 ## 一行（测试按对应表核）：未得不露名字和条件
@@ -150,6 +170,8 @@ func sync() -> void:
 	var cat_key := cats.map(func(c): return c.name)
 	if ring.items.map(func(c): return c.name) != cat_key:
 		set_categories(cats, sc.type_index)
+		for k in cats.size():   # set_categories 只带 key／name／icon，球里的字这里补（同设置页 R5）
+			ring.items[k]["glyph"] = str(cats[k].glyph)
 	elif ring.index != sc.type_index:
 		ring.select(sc.type_index, false)
 	var n: Array = XAchievement.count(XState.current)
@@ -255,10 +277,10 @@ func _draw_rows() -> void:
 		if sel:
 			c1 = XUiSkin.sel_text(c1) if owned else Color("c9cbd0")
 		var cy := r.position.y + r.size.y / 2.0
-		var fs1 := XUiSkin.fs(XUiSkin.FS_LIST)
+		var fs1 := list.font_size
 		var fit1 := XSkinList.fit_text(body, str(it._name), end_x - rw - x, fs1, 16)
 		XUiSkin.ds(list, body, Vector2(x, cy - 6.0), str(fit1[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit1[1]), c1)
-		var fs2 := XUiSkin.fs(XUiSkin.FS_AUX)
+		var fs2 := list.sub_size
 		var fit2 := XSkinList.fit_text(body, str(it._cond), end_x - x, fs2, 15)
 		XUiSkin.ds(list, body, Vector2(x, cy + 6.0 + int(fit2[1]) * 0.86), str(fit2[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit2[1]), XUiSkin.TEXT_2 if owned else XUiSkin.TEXT_3)
 		if not owned and it.get("icon") == null:
@@ -270,7 +292,7 @@ func _draw_list_right() -> void:
 	if list_right == "":
 		return
 	var body := XUiSkin.font("body")
-	var fs := XUiSkin.fs(XUiSkin.FS_AUX)
+	var fs := XUiSkin.FS_AUX
 	var tw := body.get_string_size(list_right, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	XUiSkin.ds(list_panel, body, Vector2(list_panel.size.x - XUiSkin.PAD - 8 - tw, XUiSkin.PAD + 20), list_right, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD_LIGHT)
 

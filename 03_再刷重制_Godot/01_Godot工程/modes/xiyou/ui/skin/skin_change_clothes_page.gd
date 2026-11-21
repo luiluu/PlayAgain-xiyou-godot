@@ -76,6 +76,26 @@ func _ready() -> void:
 	relayout()
 
 
+## 环心大字：数字位数多时（「18 / 263」）缩字到环内放得下（模板固定 44 号，三位数会压到球上）
+func _draw_ring_center() -> void:
+	if ring_center.is_empty():
+		return
+	var c := ring.center()
+	var num := XUiSkin.font("num")
+	var body := XUiSkin.font("body")
+	var big := str(ring_center[0])
+	var fs := 44
+	var maxw := (ring_radius - orb_radius) * 2.0 - 36.0
+	while fs > 20 and num.get_string_size(big, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > maxw:
+		fs -= 2
+	var bw := num.get_string_size(big, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	XUiSkin.ds(ring, num, Vector2(c.x - bw / 2.0, c.y + 8.0 - (44 - fs) * 0.1), big, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT)
+	if ring_center.size() > 1:
+		var small := str(ring_center[1])
+		var sw := body.get_string_size(small, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
+		XUiSkin.ds(ring, body, Vector2(c.x - sw / 2.0, c.y + 34.0), small, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+
+
 # ---- 数据 ----
 
 ## 名单当前预览的条目：选了行用那一行，还在选档时预览这一档第一项
@@ -173,6 +193,8 @@ func sync() -> void:
 		cats.append({"key": str(t), "name": str(t), "icon": 0, "glyph": str(t).left(1)})
 	if ring.items.size() != cats.size():
 		set_categories(cats, maxi(sc.category, 0))
+		for k in cats.size():   # set_categories 只带 key／name／icon，球里的字这里补（同设置页 R5）
+			ring.items[k]["glyph"] = str(cats[k].glyph)
 	elif ring.index != maxi(sc.category, 0):
 		ring.select(maxi(sc.category, 0), false)
 	var tot := totals()
@@ -230,15 +252,15 @@ func _place_targets() -> void:
 
 func input(event: InputEvent) -> bool:
 	var sc := scene
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_X:
+		sc.restore_now()   # X 键本来也映成取消：先认 X，再认取消（同整队、存读档页）
+		return true
 	if event.is_action_pressed("ui_cancel"):
 		if sc.mode == "list":
 			sc.cancel()          # 回分类（旧：Rancancel）
 		else:
 			sc.mode = "bottom"   # 新页没有指令窗这一层：分类上取消直接离开
 			sc.cancel()
-		return true
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_X:
-		sc.restore_now()
 		return true
 	if sc.mode == "list" and not sc.data.is_empty():
 		if XMenu.page_dir(event) != 0:
@@ -327,7 +349,7 @@ func _draw_list_right() -> void:
 	if list_right == "":
 		return
 	var body := XUiSkin.font("body")
-	var fs := XUiSkin.fs(XUiSkin.FS_AUX)
+	var fs := XUiSkin.FS_AUX
 	var tw := body.get_string_size(list_right, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	XUiSkin.ds(list_panel, body, Vector2(list_panel.size.x - XUiSkin.PAD - 8 - tw, XUiSkin.PAD + 20), list_right, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD_LIGHT)
 
