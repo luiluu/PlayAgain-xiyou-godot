@@ -1,7 +1,7 @@
 # 交付：luiluu/cc-t121-brand-calib
 
 - 车道／工作者：T121（T073-e 烙印翻开关和标定）／cc（Opus＋medium，P8）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -111,6 +111,17 @@
 
 原始记录：`00_项目管理/归档/交付截图/luiluu_cc-t121-brand-calib/T121_量数/`：`chain1.rows.log`、`chain2.rows.log`（每组每层一行 BRAND_ROW）、各组 `*.json.gz`（每场明细：队伍、烙印、发作、花样、敌方 xparam、剩血）、`s9_stress.rows.log`。注意 chain1 里的 `t315_all`、`t315_d242_all` 两组**作废**（探针在建档前改记录，建档重载数据表，没生效；和不改逐位相同），以 chain2 的 `t315b_*` 为准。
 
+### 第 5 步低层（5／8／10／12 层，层线烙印 10～25%）
+
+| 层 | 艰险全刻 | 艰险全不刻 | 证道全刻 | 证道全不刻 |
+|---|---|---|---|---|
+| 5 | 6/16（22.5） | 6/16（22.2） | 5/14（20.2） | 5/14（20.2） |
+| 8 | 6/16（12.5） | 6/16（14.0） | 6/14（10.3） | 6/14（10.3） |
+| 10 | 6/16（11.8） | 6/16（11.7） | 6/14（9.5） | 6/14（9.7） |
+| 12 | 6/16（11.7） | 5/16（11.8） | 6/14（17.8） | 6/14（13.8） |
+
+低层烙印小（≤25%，加成 ≤12%），胜场被队伍定死，刻不刻看不出差；倒下人次都不到 2。证道 14 场：配队器有一队（95,43,105,130）证道下掷不出装备，跳过。过线「全刻快 10%～25%」**判不了**，等 T239 换样本。原始记录 `s5_low_*.json.gz`、`s5_zdlow_*.rows.log／.json.gz`。
+
 ### 其他发现（不归本卡，请协调另派）
 
 - 日志反复出现 `ERROR: 伤害加成总账：天启篇出现没登记的乘区 state_confirm_pool.confirm#1666（pooled，技能 5746）——登记进 tianqi_data/damage_ledger.json 或归池`。
@@ -131,6 +142,13 @@
 
 - 已做：`brand_calib --gear-cache` 装备缓存（同一组层的中位装备掷一次，后面几组对照直接读；一组 8 队约省 25 分钟）。
 
+## 验证
+
+- 专项（合并 github/main 后）：xiyou_tianqi_brand、xiyou_guide、xiyou_nanoha、xiyou_affix_rate、xiyou_zhenqi、xiyou_status_page、xiyou_virtual_player 7/7 过；语法检查过；工具回归过。
+- 第 9 步压力：`xiyou_tianqi_brand -- --t119-stress=1000` 246/246。
+- 没跑：xiyou_event_compare*（tianqi_brand 只加了状态页取数函数、战斗与事件路径没动；选测按 guide.gd 判整轮，留总装）。
+- 虚拟玩家 DoD：explore 专项过；climb（第 3 步长跑）卡死 0、负血负钱 0、脚本报错 0、存档读写正常，停在 28 层塔门（见「其他发现」）。
+
 ## 本分支提交
 
-- 见 git log
+- 见 git log（d45b828f4 修行页烙印行；brand_calib 探针几次提交；虚拟玩家 --vp-carve-outputs；交付单与量数）
