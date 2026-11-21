@@ -363,6 +363,16 @@ func _draw_seven(a: float) -> void:
 		draw_arc(p, 3.5, 0, TAU, 12, Color(XUiSkin.GOLD, 0.45 * a), 1.0, true)
 
 
+## 连击大数字（环心与结算飞光共用）：D1c 开着时逐位定宽居中（1／7 不晃，宋体 Heavy 不等宽），pos＝旧画法的左起落笔点（x＝-整串宽/2），
+## 这里只取它的基线 y、以 x＝0 为中心；DETAIL_V1＝false 回旧画法（整串居中＋8px 描边＋ds）。描边 8px 同旧。
+static func draw_combo_digits(ci: CanvasItem, f: Font, pos: Vector2, s: String, fs: int, fill: Color, outline: Color) -> void:
+	if XUiSkin.detail_on():
+		XUiSkin.draw_mono_digits(ci, f, 0.0, pos.y, s, fs, fill, HORIZONTAL_ALIGNMENT_CENTER, 8, outline)
+		return
+	ci.draw_string_outline(f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 8, outline)
+	XUiSkin.ds(ci, f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, fill)
+
+
 func _draw_combo(tier: int, tier_k: float, line_hi: Color, line_main: Color, motion: int) -> void:
 	var n := _c_hits()
 	var s := str(n)
@@ -384,8 +394,7 @@ func _draw_combo(tier: int, tier_k: float, line_hi: Color, line_main: Color, mot
 	var base := C.y - 6.0 + (f.get_ascent(fs) - f.get_descent(fs)) / 2.0
 	draw_set_transform(C + Vector2(0, -6), 0.0, Vector2(sc, sc))
 	var pos := Vector2(-w / 2.0, base - (C.y - 6.0))
-	draw_string_outline(f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 8, Color(0, 0, 0, 0.9 * a))
-	XUiSkin.ds(self, f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(col, a))
+	draw_combo_digits(self, f, pos, s, fs, Color(col, a), Color(0, 0, 0, 0.9 * a))
 	draw_set_transform(Vector2.ZERO)
 	XSkin2C._text(self, C.x - 40.0, C.y + 22.0, "连击", XUiSkin.fs(15), Color(XUiSkin.TEXT_2, a), HORIZONTAL_ALIGNMENT_CENTER, 80.0)
 	last.center = "combo"

@@ -1151,10 +1151,16 @@ static func _make_tabular(base: Font) -> FontVariation:
 	return fv
 
 
+## 常规数字右对齐的落笔点（不画，测试用）：右缘 right_x 取整像素（防亚像素抖动）
+static func num_right_pos(f: Font, right_x: float, baseline_y: float, text: String, fs: int) -> Vector2:
+	var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	return Vector2(roundf(right_x - tw), roundf(baseline_y))
+
+
 ## 常规数字右对齐：右缘 right_x 取整像素（防亚像素抖动），描边同 ds；返回字宽
 static func draw_num_right(ci: CanvasItem, f: Font, right_x: float, baseline_y: float, text: String, fs: int, color: Color) -> float:
 	var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	ds(ci, f, Vector2(roundf(right_x - tw), roundf(baseline_y)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
+	ds(ci, f, num_right_pos(f, right_x, baseline_y, text, fs), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
 	return tw
 
 
@@ -1197,6 +1203,18 @@ static func mono_digits_width(f: Font, text: String, fs: int) -> float:
 ## align 按 anchor_x 左／中／右；outline_px＝-1 跟 ds 一样（FONT_V00300 时 1px 黑 0.45），0 不描边。返回总宽。
 static func draw_mono_digits(ci: CanvasItem, f: Font, anchor_x: float, baseline_y: float, text: String, fs: int, color: Color,
 		align := HORIZONTAL_ALIGNMENT_CENTER, outline_px := -1, outline_col := Color(0, 0, 0, 0.85)) -> float:
+	var col := paint_color(color)
+	var plan := mono_digit_plan(f, anchor_x, baseline_y, text, fs, align)
+	var ol := mono_outline(col, outline_px, outline_col)
+	for sl in plan.glyphs:
+		if int(ol.px) > 0 and col.a > 0.0:
+			ci.draw_string_outline(f, sl[1], str(sl[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, int(ol.px), ol.col)
+		ci.draw_string(f, sl[1], str(sl[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	return plan.total
+
+
+## draw_mono_digits 的落笔计划（不画，测试用）：{total: 总宽, glyphs: [[字, 落笔点（已取整）], …]}
+static func mono_digit_plan(f: Font, anchor_x: float, baseline_y: float, text: String, fs: int, align := HORIZONTAL_ALIGNMENT_CENTER) -> Dictionary:
 	var slots := mono_digit_slots(f, text, fs)
 	var total := 0.0
 	for sl in slots:
@@ -1206,15 +1224,17 @@ static func draw_mono_digits(ci: CanvasItem, f: Font, anchor_x: float, baseline_
 		x0 -= total * 0.5
 	elif align == HORIZONTAL_ALIGNMENT_RIGHT:
 		x0 -= total
-	var col := paint_color(color)
-	var opx := outline_size() if outline_px < 0 else outline_px
-	var ocol := outline_color(col.a) if outline_px < 0 else outline_col
+	var glyphs := []
 	for sl in slots:
-		var pos := Vector2(roundf(x0 + float(sl[1])), roundf(baseline_y))
-		if opx > 0 and col.a > 0.0:
-			ci.draw_string_outline(f, pos, str(sl[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, opx, ocol)
-		ci.draw_string(f, pos, str(sl[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
-	return total
+		glyphs.append([str(sl[0]), Vector2(roundf(x0 + float(sl[1])), roundf(baseline_y))])
+	return {"total": total, "glyphs": glyphs}
+
+
+## draw_mono_digits 的描边分支（不画，测试用）：outline_px＝-1 跟 ds 一样（outline_size()／outline_color()），否则用传入的
+static func mono_outline(col: Color, outline_px: int, outline_col: Color) -> Dictionary:
+	if outline_px < 0:
+		return {"px": outline_size(), "col": outline_color(col.a)}
+	return {"px": outline_px, "col": outline_col}
 
 
 ## ---- 规范 2：双环聚焦与输入模式 ----
