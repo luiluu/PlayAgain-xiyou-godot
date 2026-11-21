@@ -154,9 +154,9 @@ static func layers_of(key: String, a) -> float:
 	return layers(count_of(key, a), float(r.get("base", 0)), float(r.get("share", 0)))
 
 
-## 流萤：层数给的余烬生命（不含前 ember_cap）＝每层 ember × 小数层，取整（roundi）
+## 流萤：层数给的余烬生命（不含前 ember_cap）＝每层 ember × 小数层，向下取整（floori，与 dmg_pct_of 同口径）
 static func ember_bonus(n: float) -> int:
-	return roundi(maxf(0.0, n) * float(actor_row(LIUYING).get("ember", 0)))
+	return floori(maxf(0.0, n) * float(actor_row(LIUYING).get("ember", 0)) + 1e-9)
 
 
 ## 流萤：层数给的伤害百分数＝小数层 × dmg_pct ÷ dmg_step，向下取整（附则 E：整数％；即余烬每满 500 点＋1%，没满不给）
@@ -206,11 +206,11 @@ static func status_line(key: String, a) -> String:
 	var n := layers(cnt, base, share)
 	match key:
 		RAVEN:
-			return "冥冠：灵魂 %s → 魔法攻击＋%s（越往后涨得越慢）" % [_fmt_int(floori(cnt)), _fmt_int(flat_amount(RAVEN, 4, n))]
+			return "冥冠：灵魂 %s → 魔法攻击 +%s（超20万起算，越往后涨得越慢）" % [_fmt_int(floori(cnt)), _fmt_int(flat_amount(RAVEN, 4, n))]
 		NANOHA:
-			return "超限适应：适应 %s 次 → 最大生命＋%s、最大魔法＋%s（越往后涨得越慢）" % [_fmt_num(cnt), _fmt_int(flat_amount(NANOHA, 0, n)), _fmt_int(flat_amount(NANOHA, 1, n))]
+			return "超限适应：适应 %s 次 → 额外最大生命 +%s、最大魔法 +%s（越往后涨得越慢）" % [_fmt_num(cnt), _fmt_int(flat_amount(NANOHA, 0, n)), _fmt_int(flat_amount(NANOHA, 1, n))]
 		LIUYING:
-			return "不熄之火：胜场 %s → 余烬生命＋%s、伤害＋%d%%（越往后涨得越慢）" % [_fmt_int(floori(cnt)), _fmt_int(ember_bonus(n)), dmg_pct_of(n)]
+			return "不熄之火：胜场 %s → 额外余烬生命 +%s、伤害 +%d%%（越往后涨得越慢）" % [_fmt_int(floori(cnt)), _fmt_int(ember_bonus(n)), dmg_pct_of(n)]
 	return ""
 
 

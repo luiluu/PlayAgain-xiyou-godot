@@ -259,6 +259,7 @@ func _price() -> void:
 	_check("huge_count_finite", G.layers(1e15, 0.0, 1.0) > 30 and G.layers(1e15, 0.0, 1.0) < 80, G.layers(1e15, 0.0, 1.0))
 	# 流萤：余烬＝500×小数层取整；伤害％向下取整（满一层才 +1%）
 	_check("liuying_helpers", G.ember_bonus(24) == 12000 and G.dmg_pct_of(24) == 24 and G.dmg_pct_of(0) == 0 and G.ember_bonus(-1) == 0 and G.ember_bonus(0.5) == 250 and G.ember_bonus(24.75) == 12375 and G.dmg_pct_of(24.99) == 24 and G.dmg_pct_of(0.99) == 0 and G.dmg_pct_of(25.0) == 25, [G.ember_bonus(24.75), G.dmg_pct_of(24.99)])
+	_check("liuying_ember_28_30", G.ember_bonus(28) == 14000 and G.ember_bonus(29) == 14500 and G.ember_bonus(30) == 15000 and G.ember_bonus(28) / 500 == G.dmg_pct_of(28) and G.ember_bonus(30) / 500 == G.dmg_pct_of(30) and G.ember_bonus(27.999999999) == 13999, [G.ember_bonus(28), G.ember_bonus(29), G.ember_bonus(30)])
 
 
 func _floor_facts() -> void:
