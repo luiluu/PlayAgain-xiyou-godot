@@ -278,7 +278,7 @@ func _drag_input(event: InputEvent) -> void:
 
 
 ## T339 D3：统一走 XSkinDrag（死区触屏 8／鼠标 5、起拖扣死区），列表 1:1 像素跟手；按下 0ms 给那一行预按轻底，滑过死区立即撤销；
-## 松手没拖过才算一次点。惯性与回弹挂 XSkinDrag.INERTIA_ENABLED（默认关）。
+## 松手没拖过才算一次点。惯性与回弹挂 XSkinDrag.INERTIA_ENABLED（默认开）。
 func _drag_input_px(event: InputEvent) -> void:
 	if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
 		var mb := event as InputEventMouseButton
