@@ -2,7 +2,7 @@ class_name XSmartAI
 extends RefCounted
 ## Codex_SmartBattleAI（设置「智能战斗AI（自动战斗）」，默认开）：自动战斗时按收益/代价给每个可用技能与药品打分，选最高分。
 ## 照正式 v0.18 源码移植通用部分（choose → chooseScored → scoreCandidate），对照探针 mv_oracle/smart_ai_probe.cjs。
-## - 候选：已会的技能（scope>0、无 <Hide in Battle>、能用；带公共事件效果的只有附在伤害技能上的「纯能力成长」事件可用）＋普通攻击，
+## - 候选：已会的技能（scope>0、无 <Hide in Battle>、能用；带公共事件效果的只有附在伤害技能上的「纯能力成长」事件可用；O-待定 另放复活技，见 o_revive_ce）＋普通攻击，
 ##   再加持有的消耗品里含效果 11/12/22/34 的。
 ## - 伤害估算 safeDamage：只算受限的算式（a/b 的能力值、hpRate、状态、熟练度、变量、Math 函数之外的写法一律 0），
 ##   × 属性有效度 × pdr/mdr × 段数（YEP 行动序列里 ACTION EFFECT 条数，转换器预算为 yepEffects；攻击另加追加次数）
