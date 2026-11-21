@@ -28,6 +28,7 @@ func _run() -> void:
 	_pile_and_assign(teams[0])
 	_dummy()
 	_state_and_fight(teams[0])
+	_zhengdao_team()
 	XTianqiBase.PHASE4 = false
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -172,3 +173,21 @@ func _state_and_fight(team: Array) -> void:
 	_check("fight.no_crit_trait_removed", not leftover)
 	c.free()
 	c2.free()
+
+
+## T347：证道配队（含超强者 95 三笠）。改前 build_state 写死艰险（super_cap=0）把 95 踢出 battle_members，floor_gears 在 chosen[95] 越界返回空。
+func _zhengdao_team() -> void:
+	var team := [95, 43, 105, 130]
+	var ids := func(s: XState) -> Array: return s.battle_members().map(func(x): return int(x.actor_id))
+	var old: XState = C.build_state(team, {}, 3, 10, 0, 1, 0.0, false)
+	_check("zhengdao.jianxian_kicks_super", not (ids.call(old) as Array).has(95), ids.call(old))
+	var nw: XState = C.build_state(team, {}, 3, 10, 0, 1, 0.0, false, "zhengdao")
+	_check("zhengdao.state_keeps_team", (ids.call(nw) as Array) == team, ids.call(nw))
+	_check("zhengdao.flag_difficulty", str(nw.flags["tianqi"]["difficulty"]) == "zhengdao")
+	var g: Dictionary = C.floor_gears(team, [3], 3, 1, 20261121, func(_f): return 10, "zhengdao")
+	_check("zhengdao.floor_gears_has_floor", g.has(3), g.keys())
+	var all_have := g.has(3)
+	if all_have:
+		for id in team:
+			all_have = all_have and (g[3] as Dictionary).has(int(id)) and not (g[3][int(id)] as Array).is_empty()
+	_check("zhengdao.every_member_rolled_gear", all_have)
