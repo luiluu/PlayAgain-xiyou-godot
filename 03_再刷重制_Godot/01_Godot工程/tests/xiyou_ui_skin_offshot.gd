@@ -29,6 +29,8 @@ const PAGES_N := ["XWarehouseScene", "XStarWarehouseScene", "XMerchant29Page"]
 const PAGES_M := ["XHangUpOptionsScene", "XHangUpSubPage"]
 ## T307 卡 O：进阶、修炼场（技能遗忘要先 setup 角色，_make 建不了，由 xiyou_ui_skin_card_o 的开关段核旧页）
 const PAGES_O := ["XActorAdvancedScene", "XTrainingScene"]
+## T364 卡 P：人物、怪物、镶嵌图鉴（同上单列一行）
+const PAGES_P := ["XActorBook", "XEnemyBookPage", "XInlayBook"]
 
 
 func _ready() -> void:
@@ -71,7 +73,7 @@ func _run() -> void:
 				sk.set("ENABLED", false)
 				print("skin ENABLED=", sk.get("ENABLED"))
 			_tianqi_goods(s)   # ui-skin-3a：七印装备、号卷进背包（物品、装备页带上它们；新皮肤关着时牌照旧）
-		for cls in PAGES + PAGES_K + PAGES_M + PAGES_N + PAGES_O:
+		for cls in PAGES + PAGES_K + PAGES_M + PAGES_N + PAGES_O + PAGES_P:
 			var page: Node = _make(cls)
 			if page == null:
 				print("SKIP ", cls)
