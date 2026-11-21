@@ -54,6 +54,24 @@ static func role_of(id: int) -> String:
 	return "输出" if r == "均衡" and BALANCED_AS_OUTPUT else r
 
 
+## 【T343】换人时从场上挑被换下的顺序（先试的在前）：有实测出伤（{id: 伤害}）按出伤从低到高，出伤第一排最后；
+## 没有实测就按定位：非输出位先，输出位后（同类按 id 定序）。换下的不会是本队出伤第一（有实测时）
+static func swap_out_order(field: Array, dmg: Dictionary) -> Array:
+	var out := field.duplicate()
+	var measured := not dmg.is_empty() and field.any(func(x): return float(dmg.get(int(x), 0.0)) > 0.0)
+	if measured:
+		out.sort_custom(func(x, y):
+			var dx := float(dmg.get(int(x), 0.0))
+			var dy := float(dmg.get(int(y), 0.0))
+			return dx < dy if dx != dy else int(x) < int(y))
+	else:
+		out.sort_custom(func(x, y):
+			var ox := 1 if role_of(int(x)) == "输出" else 0
+			var oy := 1 if role_of(int(y)) == "输出" else 0
+			return ox < oy if ox != oy else int(x) < int(y))
+	return out
+
+
 static func raw_role(id: int) -> String:
 	return str(XTianqiBase.line_data().get("actors", {}).get(str(id), {}).get("role", ""))
 

@@ -28,6 +28,7 @@ func _run() -> void:
 	_revive_team()
 	_revive_decision()
 	_smart_ai_revive_states()
+	_swap_out_by_damage()
 	var rep := TB.report("jianxian")
 	print("TB_REPORT ", JSON.stringify(rep))
 	print("TB_STRONGEST ", JSON.stringify(TB.strongest_all("jianxian")))
@@ -210,3 +211,24 @@ func _smart_ai_revive_states() -> void:
 			(tq if flag else xy)[sid] = ok
 	print("T328_SMART_AI_REVIVE 天启篇 ", tq, " 西游档 ", xy)
 	_check("smart_ai.tianqi_allows_ce_revives", tq.values().all(func(v): return v), tq)
+
+
+## 【T343】换人挑被换下的：有实测出伤按出伤从低到高、出伤第一排最后；没实测按定位（非输出位先）
+func _swap_out_by_damage() -> void:
+	var field := [11, 22, 33, 44]
+	var dmg := {11: 900.0, 22: 5000.0, 33: 100.0, 44: 700.0}
+	var order: Array = TB.swap_out_order(field, dmg)
+	_check("swap_out.measured_lowest_first", order == [33, 44, 11, 22], order)
+	_check("swap_out.never_top_damage_first", int(order[0]) != 22 and int(order[-1]) == 22, order)
+	# 带了没出伤的人（0）：他排最前；全是 0 或空＝没实测，退回按定位，结果只含原来那几个人且稳定
+	var none: Array = TB.swap_out_order(field, {})
+	_check("swap_out.fallback_same_members", none.size() == 4 and none.all(func(x): return field.has(x)), none)
+	var roles: Array = none.map(func(x): return TB.role_of(int(x)))
+	var seen_out := false
+	var ok := true
+	for r in roles:
+		if r == "输出":
+			seen_out = true
+		elif seen_out:
+			ok = false
+	_check("swap_out.fallback_non_output_first", ok, roles)
