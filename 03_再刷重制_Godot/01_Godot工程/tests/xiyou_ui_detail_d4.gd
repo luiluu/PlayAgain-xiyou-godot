@@ -9,6 +9,7 @@ extends Node
 ##   拍：godot --audio-driver Dummy --path <工程> res://tests/xiyou_ui_detail_d4.tscn -- --out=<目录>
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const DT := 0.002
+const FX := 0.28   # 淡入 0.12＋淡出 0.16，另加在可读停留外面
 
 var results: Array = []
 var out_dir := ""
@@ -120,28 +121,28 @@ func _stepped() -> void:
 	XSkinNoticeLane.reset()
 	_push("已存档")
 	var l := XSkinNoticeLane.existing()
-	check("step_3", _near(_run_out(l), XSkinNoticeLane.calc_duration("已存档")), XSkinNoticeLane.calc_duration("已存档"))
+	check("step_3", _near(_run_out(l), XSkinNoticeLane.calc_duration("已存档") + FX), XSkinNoticeLane.calc_duration("已存档"))
 	XSkinNoticeLane.reset()
 	_push(t20)
-	check("step_20", _near(_run_out(l), XSkinNoticeLane.calc_duration(t20)))
+	check("step_20", _near(_run_out(l), XSkinNoticeLane.calc_duration(t20) + FX))
 	XSkinNoticeLane.reset()
 	_push("存档失败，请通过存档菜单重试。", {"warn": true})
-	check("step_warn_flag", _near(_run_out(l), 3.246))
+	check("step_warn_flag", _near(_run_out(l), 3.246 + FX))
 	XSkinNoticeLane.reset()
 	_push("存档失败，请通过存档菜单重试。", {"color": XUiSkin.SEL_LINE})
-	check("step_warn_color", _near(_run_out(l), 3.246))
+	check("step_warn_color", _near(_run_out(l), 3.246 + FX))
 	# 积压 3 条（cur＋后面排 3 条）
 	XSkinNoticeLane.reset()
 	for i in 4:
 		_push(t20 + str(i))
 	var el3 := _run_out(l)
-	check("step_backlog3", XSkinNoticeLane.queue.size() == 2 and _near(el3, XSkinNoticeLane.calc_duration(t20 + "0", false, 3)), [el3, XSkinNoticeLane.queue.size()])
+	check("step_backlog3", XSkinNoticeLane.queue.size() == 2 and _near(el3, XSkinNoticeLane.calc_duration(t20 + "0", false, 3) + FX), [el3, XSkinNoticeLane.queue.size()])
 	# 积压 6 条
 	XSkinNoticeLane.reset()
 	for i in 7:
 		_push(t20 + str(i))
 	var el6 := _run_out(l)
-	check("step_backlog6", _near(el6, XSkinNoticeLane.calc_duration(t20 + "0", false, 6)), el6)
+	check("step_backlog6", _near(el6, XSkinNoticeLane.calc_duration(t20 + "0", false, 6) + FX), el6)
 	XSkinNoticeLane.reset()
 
 
@@ -149,8 +150,12 @@ func _merge() -> void:
 	XSkinNoticeLane.reset()
 	_push("已存档")
 	var l := XSkinNoticeLane.existing()
-	l.step(1.7)   # 总长 1.855，快淡出前并进同名条
+	l.step(1.9)   # 总长 2.135，快淡出前并进同名条
 	var total := l._total(l.cur)
+	check("fade_extra_outside", _near(total, XSkinNoticeLane.calc_duration("已存档") + FX, 0.0001), total)
+	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	check("fade_extra_motion_off", XSkinNoticeLane.fade_extra() == 0.0)
+	XUiSkin.motion_override = XUiSkin.Motion.FULL
 	_push("已存档")
 	check("merge_left_1_2", int(l.cur.get("count", 0)) == 2 and l._total(l.cur) - l.t >= 1.2 - 0.001, [l.cur, l.t, total])
 	XSkinNoticeLane.reset()
@@ -245,16 +250,16 @@ const SAMPLES := [
 
 func _write_table() -> void:
 	var lines := ["# T340 D4 提示停留时长：新旧对比", "",
-		"旧：提示道单行 2.0 s、折两行 2.8 s；积压 >2 条一律 0.7 s；XToast 兜底写死 3.0 s。新：clamp(1.6+0.085N, 1.8, 5.5)，警示 ×1.2 封顶 6.0；积压 2～4 条 ×0.65、≥5 条 ×0.5，保底 1.2 s。",
-		"", "| 文案 | 场景 | 等效字数 N | 旧（提示道，积压时 0.7 s） | 新（常规） | 新（警示） | 新·积压3条 | 新·积压6条 |", "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |"]
+		"可读停留＝calc_duration（不含淡入 0.12／淡出 0.16，淡变另加在外面）。旧：提示道单行 2.0 s、折两行 2.8 s（旧值含淡变）；积压 >2 条一律 0.7 s；XToast 兜底写死 3.0 s。新：clamp(1.6+0.085N, 1.8, 5.5)，警示 ×1.2 封顶 6.0；积压 2～4 条 ×0.65、≥5 条 ×0.5，保底 1.2 s。",
+		"", "| 文案 | 场景 | 等效字数 N | 旧（提示道，积压时 0.7 s） | 新·可读（常规） | 新·可读（警示） | 新·积压3条 | 新·积压6条 | 新·屏显总长（可读＋淡变 0.28） |", "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |"]
 	var wf := XUiSkin.font("body")
 	for s in SAMPLES:
 		var txt: String = s[0]
 		var rows := XSkinNoticeLane.wrap(txt, wf, 18, float(XUiSkin.CENTER_MAX) - 80.0, 2).size()
 		var old := 2.0 if rows < 2 else 2.8
 		var nw := XSkinNoticeLane.calc_duration(txt, bool(s[1]))
-		lines.append("| %s | %s | %s | %.2f s | %.2f s | %.2f s | %.2f s | %.2f s |" % [txt.left(24) + ("…" if txt.length() > 24 else ""), s[2], str(XSkinNoticeLane.effective_chars(txt)),
-			old, XSkinNoticeLane.calc_duration(txt), XSkinNoticeLane.calc_duration(txt, true), XSkinNoticeLane.calc_duration(txt, bool(s[1]), 3), XSkinNoticeLane.calc_duration(txt, bool(s[1]), 6)])
+		lines.append("| %s | %s | %s | %.2f s | %.2f s | %.2f s | %.2f s | %.2f s | %.2f s |" % [txt.left(24) + ("…" if txt.length() > 24 else ""), s[2], str(XSkinNoticeLane.effective_chars(txt)),
+			old, XSkinNoticeLane.calc_duration(txt), XSkinNoticeLane.calc_duration(txt, true), XSkinNoticeLane.calc_duration(txt, bool(s[1]), 3), XSkinNoticeLane.calc_duration(txt, bool(s[1]), 6), XSkinNoticeLane.calc_duration(txt, bool(s[1])) + FX])
 	lines.append("")
 	var f := FileAccess.open(out_dir.path_join("duration_table.md"), FileAccess.WRITE)
 	f.store_string("\n".join(lines))
@@ -299,3 +304,38 @@ func _shots() -> void:
 	await _shot("notice_menu_long")
 	XSkinNoticeLane.reset()
 	page.queue_free()
+	await frames(2)
+	await _shots_battle(l, shorts, long)
+
+
+## 战斗顶栏：不起整场战斗，只建一个 XBattleScene 挂在场景下（同 4b 的挂法），首领血弧＋状态胶囊亮着，提示道让到它下面
+func _shots_battle(l: XSkinNoticeLane, shorts: String, long: String) -> void:
+	var fb := XBattleScene.new()
+	fb.setup(2, true, false, XDB.map(5))
+	fb.visible = true
+	add_child(fb)
+	await frames(30)
+	var boss: XEnemy = fb.logic.enemies[0]
+	boss.boss_difficulty_boss = true
+	for sid in [4, 5]:
+		boss.add_state(sid)
+	fb.boss_hp._meter_flags[boss] = true
+	fb.boss_hp.setup(fb.logic.enemies)
+	await frames(4)
+	fb.boss_hp.layout_alpha = 255
+	await frames(20)
+	l._battle_miss = XSkinNoticeLane.BATTLE_RETRY
+	XSkinNoticeLane.reset()
+	_push(shorts, {"icon": 907})
+	l.step(0.5)
+	await _shot("notice_battle_short")
+	var zone := fb.boss_info_rect()
+	check("battle_short_under_boss", zone.has_area() and not l.chip.get_global_rect().intersects(zone), [l.chip.get_global_rect(), zone])
+	XSkinNoticeLane.reset()
+	_push(long)
+	l.step(0.5)
+	await _shot("notice_battle_long")
+	check("battle_long_under_boss", not l.chip.get_global_rect().intersects(zone), [l.chip.get_global_rect(), zone])
+	check("battle_chip_passthrough", l.chip.mouse_filter == Control.MOUSE_FILTER_IGNORE)
+	XSkinNoticeLane.reset()
+	fb.queue_free()

@@ -218,10 +218,16 @@ func _process(_delta: float) -> void:
 ## 这一条该停多久：积压超过 BACKLOG 条时提速；折了两行的多给 0.8 秒
 func _total(it: Dictionary) -> float:
 	if XUiSkin.detail_on():   # T340 D4：按字数
-		return calc_duration(str(it.get("title", "")) + str(it.get("sub", "")), is_warn(it), queue.size())
+		# calc_duration＝完整可读停留；淡入淡出另加在外面（动效「关」时不加）
+		return calc_duration(str(it.get("title", "")) + str(it.get("sub", "")), is_warn(it), queue.size()) + fade_extra()
 	if queue.size() > BACKLOG:
 		return HOLD_FAST
 	return HOLD + (0.8 if int(it.get("_lines", 1)) > 1 else 0.0)
+
+
+## 淡入＋淡出的时间（Motion.OFF 为 0）
+static func fade_extra() -> float:
+	return (FADE + D4_FADE_OUT) if XUiSkin.motion() != XUiSkin.Motion.OFF else 0.0
 
 
 ## 菜单态胶囊收鼠标（悬停暂停、轻点跳过）；战斗等其它场合照旧穿透
