@@ -387,13 +387,18 @@ func _skill_list(b: XBattleScene) -> void:
 	await _frames(1)
 	_check("ring_flash_on_select", ring._flash_i == i and ring._flash_t < XSkinBattleRing.FLASH_TIME)
 	await _frames(20)
+	# 列表在按下那一帧就开始展开（LIST_IN 0.17 秒、TRANS_BACK 会冲过 1）；整窗 20x9 渲染慢，_press 的 4 帧可能已超过 0.17 秒，
+	# 所以改成：按下后立刻量开窗用了多久，没超时才要求仍在展开中（<1），超时只看轴；轴在右边中点始终要对
+	var t0 := Time.get_ticks_msec()
 	await _press("ui_accept")
 	await _until(func(): return b.list_win != null, 60)
+	var waited := (Time.get_ticks_msec() - t0) / 1000.0
 	var lw := b.list_win as XSkinBattleSkillList
 	_check("list_opened", lw != null)
 	if lw == null:
 		return
-	_check("list_grows_from_right", lw.scale.x < 1.0 and lw.pivot_offset == Vector2(lw.size.x, lw.size.y / 2.0), [lw.scale, lw.pivot_offset])
+	var grows := lw.scale.x < 1.0 or waited >= XSkinBattleMotion.LIST_IN
+	_check("list_grows_from_right", grows and lw.pivot_offset == Vector2(lw.size.x, lw.size.y / 2.0), [lw.scale, lw.pivot_offset, waited])
 	_check("ring_fading", ring.vis < 1.0 and ring.vis > 0.0 or ring.vis == 0.0, ring.vis)
 	await _shot("v07_skill_opening", 1)
 	await _secs(0.4)
