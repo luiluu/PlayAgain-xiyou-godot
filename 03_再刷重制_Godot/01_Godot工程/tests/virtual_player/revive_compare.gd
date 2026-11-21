@@ -61,7 +61,7 @@ func _run() -> void:
 			base.items[id] = int(base.items.get(id, 0)) + int(give_items[id])
 		var swapped := XState.from_dict(base.to_dict())
 		XState._become_current(swapped)
-		var swap := _swap_in_reviver(swapped)
+		var swap := _swap_in_reviver(swapped, troop)
 		print("CMP 层 %d 敌群 %d 原队 %s 换人 %s" % [floor, troop, str(base.battle_members().map(func(a): return a.actor_id)), JSON.stringify(swap)])
 		# 只改出手：原队没人会复活技能时，照逛店新规矩（vp_growth.REVIVE_ITEM_KEEP）背包带上复活道具
 		var with_items := XState.from_dict(base.to_dict())
@@ -111,7 +111,7 @@ func _sum(agg: Dictionary) -> Dictionary:
 
 
 ## 换上一名会复活的辅助；返回 {out, in, from}，配不出来返回 {}
-func _swap_in_reviver(st: XState) -> Dictionary:
+func _swap_in_reviver(st: XState, troop := 0) -> Dictionary:
 	var field: Array = st.battle_members().map(func(a): return int(a.actor_id))
 	if st.battle_members().any(func(a): return not VPLogic.free_revive_skills(a).is_empty()):
 		return {"note": "原队已有会复活的"}
@@ -126,8 +126,9 @@ func _swap_in_reviver(st: XState) -> Dictionary:
 	others.sort_custom(func(x, y): return TB.bulk(int(x)) > TB.bulk(int(y)))
 	for id in others:
 		pool.append([int(id), "候选池"])
-	var outs := field.duplicate()
-	outs.sort_custom(func(x, y): return _power(st.actor(int(x))) < _power(st.actor(int(y))))
+	# T343：按实测出伤从低到高挑被换下的（主力输出不动）；测不出伤害就退回按定位（非输出位先）
+	var dmg := _measure_dmg(st, troop)
+	var outs := TB.swap_out_order(field, dmg)
 	for p in pool:
 		for o in outs:
 			var team := field.duplicate()
@@ -144,9 +145,56 @@ func _swap_in_reviver(st: XState) -> Dictionary:
 			st.rearrange_actors()
 			XEquipment.optimize(st, st.actor(int(p[0])))
 			var got := st.actor(int(p[0]))
-			return {"out": int(o), "in": int(p[0]), "from": p[1], "level": int(got.level),
+			var top := -1   # 本队实测出伤第一（没测到＝-1）
+			for id in dmg:
+				if top == -1 or float(dmg[id]) > float(dmg[top]):
+					top = int(id)
+			assert(top == -1 or top != int(o) or dmg.size() < 2, "被换下的是本队出伤第一")
+			return {"top_dmg": top, "dmg": dmg, "out": int(o), "in": int(p[0]), "from": p[1], "level": int(got.level),
 				"skills": VPLogic.free_revive_skills(got).map(func(s): return "%d %s" % [int(s.id), str(s.get("name", ""))])}
 	return {}
+
+
+## T343：原队不带复活打 4 回合（同 _fight 的回合循环、固定种子、不收场），按行动者累计敌方掉血＝实测出伤 {actor_id: 伤害}；troop 为 0 返回 {}
+func _measure_dmg(st: XState, troop: int) -> Dictionary:
+	if troop <= 0:
+		return {}
+	var copy := XState.from_dict(st.to_dict())
+	XState._become_current(copy)
+	for a in copy.members():
+		a.recover_all()
+	VPLogic.REVIVE = false
+	var logic = VPLogic.new()
+	logic.setup(troop, copy, XBattleRandom.create("%016x" % 0x7343_0000))
+	logic.auto = true
+	FF._drain(logic, logic.troop_events())
+	var dmg := {}
+	for r in 4:
+		for e in logic.enemies:   # 每回合敌人补满血，一回合掉的血都算这回合行动者的（同 baseline_dps 口径）
+			if e.is_alive():
+				e.hp = e.mhp
+		logic.start_turn()
+		logic.take_turn_start_logs()
+		var count := 0
+		while count < 120:
+			var u = logic.next_subject()
+			if u == null or logic.is_over():
+				break
+			count += 1
+			var cmd: Array = logic.decide(u)
+			var before := Baseline._enemy_hp(logic)
+			logic.act(u, cmd[0], cmd[1])
+			if u is XActor:
+				dmg[int(u.actor_id)] = float(dmg.get(int(u.actor_id), 0.0)) + maxf(0.0, before - Baseline._enemy_hp(logic))
+			if logic.is_over():
+				break
+		if logic.is_over():
+			break
+		logic.end_turn()
+	logic.end_battle(0)
+	VPLogic.REVIVE = true
+	XState._become_current(st)
+	return dmg
 
 
 static func _power(a: XActor) -> float:
