@@ -20,7 +20,7 @@ extends Node
 ##   --layers=0,12,24,30  直接给层数（不用真去攒）：0 层那一次按老办法挑整套装备和词条（定装），之后每层原样套回，不重挑；
 ##                        渡鸦灌满魂（soul＝表里 base＝20 万再加层数的计数）、奈叶先走满 2000 次基础段再给超出的计数、流萤余烬 3000＋胜场超出的计数。
 ##   --reconfig=24,30     这几层在定装量完以后再「放开重挑」量一次（重配上界），D148 按定装和重配里高的那个判。
-##   --exact／--noisy     浮动关成 0 再乘 (1＋浮动%)（掷满的上限），数每次一样；--layers 缺省开，--noisy 回「取 hits 次里最大」。
+##   --exact／--noisy     浮动关成 0 再乘 (1＋浮动%)（掷满的上限），数每次一样；T222 起缺省一律开，--noisy 回「取 hits 次里最大」。
 ##   --set-flat=167:4:110,108:1:2000,108:0:700  临时改表里每层平加（只改内存，标定用；定下的数再写进 growth.json）。
 ##   输出 K_LAYER 行：actor、layers、mode(fixed/reconfig)、peak（含烙印）、no_brand（÷烙印乘数）、mat、mhp、mmp。
 
@@ -75,7 +75,7 @@ var relic := ""  # --relic=famine：多穿一件骑士遗物（不占栏，追�
 var relic_stacks := 30
 var soul_arg := -1.0  # --soul=N：渡鸦灵魂（缺省：--layers 时灌满 20 万，否则不动）
 var seed_off := 0  # --seed=N：随机流偏移（--noisy 重复量偏差用）
-var exact := false  # --exact：浮动关掉、乘上限（T258；--layers 时缺省开，--noisy 关）
+var exact := false  # --exact：浮动关掉、乘上限（T258；T222 起缺省开，--noisy 关）
 
 
 func _ready() -> void:
@@ -174,7 +174,7 @@ func _run() -> void:
 	XTianqiBase.clear_cache()
 	XTianqiGear.clear_effective_cache()
 	_apply_set_flat()
-	if (not layer_list.is_empty() and not noisy) or exact:
+	if not noisy:  # T222：缺省一律确定值口径（浮动关掉、乘「取 20 次最大」的期望）；--noisy 才回抽样取最大
 		exact = true
 	var rules: Dictionary = XTianqiBalance.data().get("combat_rules", {})
 	if k_arg > 0.0:
