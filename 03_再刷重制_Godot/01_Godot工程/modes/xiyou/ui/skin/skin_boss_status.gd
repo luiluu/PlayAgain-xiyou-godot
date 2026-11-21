@@ -210,7 +210,7 @@ func _paint_detail(c: XMVCanvas) -> void:
 		var tip := "当前没有异常状态" if filter == "Debuff" else ("当前没有增益状态" if filter == "Buff" else "当前没有状态")
 		_txt(c, f, tip, 16, BODY_Y + 28.0, w - 32.0, "center", XUiSkin.TEXT_3, 16, 28)
 	var start := page * page_size()
-	var card_bg := Color(0.95, 0.90, 0.82, 0.048) if XUiSkin.polish_on() else Color(1, 1, 1, 0.04)
+	var card_bg := XUiSkin.surface_overlay("s2") if XUiSkin.detail_on() else (Color(0.95, 0.90, 0.82, 0.048) if XUiSkin.polish_on() else Color(1, 1, 1, 0.04))   # T349 D1b：子卡底 S2
 	for i in page_size():
 		if start + i >= list.size():
 			break
@@ -281,7 +281,7 @@ func _paint_selected(c: XMVCanvas, row: Dictionary) -> void:
 	var w := DETAIL_W
 	var f := XUiSkin.font("body")
 	var col := XUiSkin.DOWN if row.kind == "Debuff" else XUiSkin.UP
-	var hdr_bg := Color(0.95, 0.90, 0.82, 0.065) if XUiSkin.polish_on() else Color(1, 1, 1, 0.06)
+	var hdr_bg := XUiSkin.surface_overlay("s2") if XUiSkin.detail_on() else (Color(0.95, 0.90, 0.82, 0.065) if XUiSkin.polish_on() else Color(1, 1, 1, 0.06))   # T349 D1b：子卡底 S2
 	_round(c, Rect2(12, BODY_Y, w - 24.0, 58), hdr_bg, XUiSkin.ROW_RADIUS)
 	if row.icon != 0:
 		var tex := XUiSkin.icon(int(row.icon))

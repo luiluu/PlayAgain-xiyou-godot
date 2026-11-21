@@ -132,8 +132,14 @@ func panel_rect() -> Rect2:
 func button_rect(i: int) -> Rect2:
 	var p := panel_rect()
 	var n := maxi(buttons.size(), 1)
-	var bw := (p.size.x - PAD * 2 - XUiSkin.GRID * (n - 1)) / n
-	return Rect2(p.position.x + PAD + i * (bw + XUiSkin.GRID), p.end.y - PAD - BTN_H, bw, BTN_H)
+	var gap := btn_gap()
+	var bw := (p.size.x - PAD * 2 - gap * (n - 1)) / n
+	return Rect2(p.position.x + PAD + i * (bw + gap), p.end.y - PAD - BTN_H, bw, BTN_H)
+
+
+## T349 D1b：横排钮距 12px（双环各外扩 4px 后仍留 4px 净缝）；DETAIL_V1 关回 GRID
+static func btn_gap() -> float:
+	return float(XUiSkin.FOCUS_BTN_GAP) if XUiSkin.detail_on() else float(XUiSkin.GRID)
 
 
 static func _lines(f: Font, text: String, w: float, fs: int) -> int:
@@ -173,6 +179,31 @@ func _gui_input(event: InputEvent) -> void:
 # ---- 画 ----
 
 static var _polish_dlg_tex: Texture2D
+static var _s3_tex: Texture2D
+
+
+## T349 D1b：S3 浮层底（暖 #36302e→#25201f，94%）圆角九宫格；确认弹窗和详情牌展开面共用
+static func s3_panel_tex() -> Texture2D:
+	if _s3_tex != null:
+		return _s3_tex
+	var n := 96
+	var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+	var g := XUiSkin.surface_grad(XUiSkin.Surface.S3)
+	var top_c: Color = g[0]
+	var low_c: Color = g[1]
+	for y in range(n):
+		var t := clampf((y - 2.0) / float(n - 4), 0.0, 1.0)
+		var fill := top_c.lerp(low_c, t * t * (3.0 - 2.0 * t))
+		for x in range(n):
+			var d := XUiSkin._round_rect_dist(Vector2(x + 0.5, y + 0.5), Vector2(n, n), float(XUiSkin.RADIUS))
+			if d > 0.5:
+				img.set_pixel(x, y, Color(0, 0, 0, 0))
+				continue
+			var c := fill
+			c.a = fill.a * clampf(0.5 - d, 0.0, 1.0)
+			img.set_pixel(x, y, c)
+	_s3_tex = ImageTexture.create_from_image(img)
+	return _s3_tex
 
 
 ## 平滑暖炭竖向渐变圆角九宫格贴图（静态强引用缓存，防 RenderingServer 释放白块）
@@ -212,7 +243,8 @@ func _draw() -> void:
 		sh.shadow_offset = Vector2(0, 10)
 		sh.set_corner_radius_all(XUiSkin.RADIUS)
 		sh.draw(ci, p)
-		RenderingServer.canvas_item_add_nine_patch(ci, p, Rect2(0, 0, 96, 96), _dialog_panel_tex().get_rid(), Vector2(24, 24), Vector2(24, 24),
+		var base_tex := s3_panel_tex() if XUiSkin.detail_on() else _dialog_panel_tex()   # T349 D1b：弹窗底 S3
+		RenderingServer.canvas_item_add_nine_patch(ci, p, Rect2(0, 0, 96, 96), base_tex.get_rid(), Vector2(24, 24), Vector2(24, 24),
 			RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color.WHITE)
 		# 顶部中央渐隐旧金高光丝线
 		var lw := p.size.x * 0.72
@@ -282,9 +314,14 @@ func _draw() -> void:
 		var pressed := _press == i and not dis
 		bs.bg_color = XSkinButton.press_color(bs.bg_color, pressed)
 		r = XSkinButton.press_rect(r, pressed)
+		if i == index and XUiSkin.detail_on():
+			bs.shadow_size = 0   # T349 D1b：焦点由双环表达，不再垫红晕
 		bs.draw(ci, r)
 		if i == index:
-			XUiSkin.draw_select(ci, r.grow(3), XUiSkin.breath_alpha())
+			if not XUiSkin.detail_on():
+				XUiSkin.draw_select(ci, r.grow(3), XUiSkin.breath_alpha())
+			elif XUiSkin.show_focus_ring():
+				XUiSkin.draw_focus_ring(ci, r, int(BTN_H / 2.0))
 		var t := str(b.get("text", ""))
 		var fs := XUiSkin.FS_LIST
 		var fit := XSkinList.fit_text(f, t, r.size.x - 16.0, fs, 15)
