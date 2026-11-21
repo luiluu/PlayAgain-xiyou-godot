@@ -20,11 +20,16 @@ var max_button: Button
 var status: Label
 var cancel_button: Button
 var ok_button: Button
+var skin: XSkinCasinoDialog   # T365 新界面（天启篇，XUiSkin.on() 且 XSkinCasinoDialog.ENABLED 时）：换成统一弹窗画法，下面这些旧控件不建
 
 
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	if XUiSkin.on() and XSkinCasinoDialog.ENABLED:
+		skin = XSkinCasinoDialog.new(self)
+		add_child(skin)
+		return
 	var shade := ColorRect.new()
 	shade.color = Color(0, 0, 0, 0.66)
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -153,6 +158,8 @@ static func number(text: String) -> int:
 
 
 func refresh_limit() -> int:
+	if skin != null:
+		return skin.refresh_limit()
 	var s := XState.current
 	var n := XCasinoBatch.maximum(s, session.mode)
 	max_button.disabled = n < 1
@@ -162,12 +169,18 @@ func refresh_limit() -> int:
 
 
 func preview() -> void:
+	if skin != null:
+		skin.preview()
+		return
 	var n := number(input.text)
 	var cost := int(session.rules.cost)
 	status.text = "共 %d 抽，消耗 %d 张券；积分门槛 %d。" % [n * cost, n * cost, int(session.rules.threshold)] if n > 0 else ""
 
 
 func confirm() -> void:
+	if skin != null:
+		skin.confirm()
+		return
 	var n := refresh_limit()
 	var value := number(input.text)
 	if value < 1 or value > n:
@@ -177,6 +190,9 @@ func confirm() -> void:
 
 
 func press_max() -> void:
+	if skin != null:
+		skin.press_max()
+		return
 	if session.state != "quantity":
 		return
 	var n := refresh_limit()
@@ -190,6 +206,9 @@ func press_max() -> void:
 
 
 func drawing_started() -> void:
+	if skin != null:
+		skin.drawing_started()
+		return
 	input.editable = false
 	max_button.disabled = true
 	ok_button.visible = false
@@ -197,11 +216,17 @@ func drawing_started() -> void:
 
 
 func stopping() -> void:
+	if skin != null:
+		skin.stopping()
+		return
 	cancel_button.disabled = true
 	cancel_button.text = "正在完成当前" + ("20连抽" if session.mode == "twenty" else "一抽")
 
 
 func set_status(text: String) -> void:
+	if skin != null:
+		skin.set_status(text)
+		return
 	status.text = text
 
 
@@ -209,10 +234,16 @@ func set_status(text: String) -> void:
 func _input(event: InputEvent) -> void:
 	if XKeyMap.popup_cancel(event, self):
 		XKeyMap.handled(self)
-		if not cancel_button.disabled:
+		if skin != null:
+			if skin.can_cancel():
+				XCasinoBatch.cancel()
+		elif not cancel_button.disabled:
 			XCasinoBatch.cancel()
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.handle_input(event):
+		XKeyMap.handled(self)
+		return
 	if event is InputEventKey or event is InputEventAction:
 		XKeyMap.handled(self)

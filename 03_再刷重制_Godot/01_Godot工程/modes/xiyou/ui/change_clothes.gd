@@ -39,6 +39,7 @@ var cat_win: XMVWindow
 var list_win: XMVWindow
 var status_win: XMVWindow
 var bottom_win: XMVWindow
+var skin: XSkinChangeClothesPage   # T365 新界面（天启篇，XUiSkin.on() 且 XSkinChangeClothesPage.ENABLED 时）；旧窗口藏起来、同一套状态
 
 
 func _ready() -> void:
@@ -65,6 +66,12 @@ func _ready() -> void:
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.visible = false
 	status_win.add_child(sprite)
+	if XUiSkin.on() and XSkinChangeClothesPage.ENABLED:
+		skin = XSkinChangeClothesPage.new(self)
+		add_child(skin)
+		mode = "category"   # 新页没有底部指令那一层：进页就在分类环上（普通档）
+		bottom = -1
+		category = 0
 	_load_list(0)
 
 
@@ -87,6 +94,8 @@ func _refresh() -> void:
 	list_win.down_arrow = top + rows() < data.size()
 	for w in [cat_win, list_win, status_win, bottom_win]:
 		w.refresh()
+	if skin != null:
+		skin.sync()
 
 
 ## Window_ChangeClothesStatus.setupWhenCheck → drawAllContents：按名单当前项重画
@@ -187,10 +196,7 @@ func ok() -> void:
 				mode = "category"
 				_select_category(0)
 			else:
-				# onHYOk
-				XChangeClothes.restore(XState.current)
-				XToast.show_text(XChangeClothes.RESTORE_TEXT, true)
-				_refresh()
+				restore_now()
 		"category":
 			# onRangeOk：名单换到当前档、选第 1 行、状态重画
 			XSound.system(1)
@@ -208,6 +214,14 @@ func ok() -> void:
 				XToast.show_text(XChangeClothes.DONE_TEXT, true)
 			else:
 				XToast.show_text(XChangeClothes.LOCKED_TEXT, true)
+
+
+## onHYOk：清替换形象、提示「还原完成」（新页的「还原形象」钮和 X 键也走这里）
+func restore_now() -> void:
+	XSound.system(1)
+	XChangeClothes.restore(XState.current)
+	XToast.show_text(XChangeClothes.RESTORE_TEXT, true)
+	_refresh()
 
 
 func cancel() -> void:
@@ -286,6 +300,8 @@ func page(d: int) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinChangeClothesPage）
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
@@ -329,6 +345,9 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
 		cancel()
