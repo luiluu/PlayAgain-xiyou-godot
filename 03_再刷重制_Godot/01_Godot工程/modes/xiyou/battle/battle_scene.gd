@@ -864,9 +864,17 @@ func _log_action(skill: Dictionary) -> void:
 	log_canvas.queue_redraw()
 
 
+## T357（F-02）：首领信息区亮着时，日志／横幅整体让到它下面 12px，不盖血量数字；false 回到原位
+static var LOG_BELOW_BOSS := true
+
 func _paint_log(c: XMVCanvas) -> void:
+	var dy := 0.0
+	if LOG_BELOW_BOSS and not _log_lines.is_empty():
+		var info := boss_info_rect()
+		if info.has_area():
+			dy = maxf(0.0, info.end.y + 12.0 - (log_canvas.position.y + 14.0))
 	for i in range(_log_lines.size()):
-		var y := 14.0 + i * 36.0
+		var y := 14.0 + dy + i * 36.0
 		c.draw_rect(Rect2(0, y, 1280, 36), Color(0, 0, 0, 64.0 / 255.0))
 		var t := XMVText.new(XMVText.convert_escapes(str(_log_lines[i].text)), 0, 0)
 		var w := t.run()

@@ -179,6 +179,23 @@ func _target_list(pct: int) -> void:
 		{"name": "丁", "kind": "tp", "cur": 7, "max": 100}])
 	await frames(2)
 	check("target_%d_bars_drawn" % pct, tl.last_bars.size() == 4, tl.last_bars)
+	for w in [300.0, 360.0, 420.0, 520.0, 700.0]:   # T357 F-01：任何宽度量条右缘不压数字栏
+		tl.size = Vector2(w, 400)
+		tl.queue_redraw()
+		await frames(2)
+		var num := XUiSkin.font("num")
+		var vw := XSkinTargetList.value_col_w(num, 16, tl.rows) if XUiSkin.detail_on() else 0.0
+		var vl: float = w - 10 - 56.0 - 8 - vw
+		var ok := true
+		for lb in tl.last_bars:
+			ok = ok and float(lb[1]) <= vl - 8.0 + 0.5
+		check("target_%d_bar_clear_of_numbers_w%d" % [pct, int(w)], ok, [w, vl, tl.last_bars])
+		if out_dir != "" and pct == 100 and DisplayServer.get_name() != "headless" and (w == 300.0 or w == 420.0):   # T357 F-01 截图：窄（16:9 物品页）／宽（20:9）
+			RenderingServer.force_draw(false)
+			get_viewport().get_texture().get_image().save_png(out_dir.path_join("t357_target_list_w%d.png" % int(w)))
+	tl.size = Vector2(520, 400)
+	tl.queue_redraw()
+	await frames(2)
 	check("target_%d_right_edge_same" % pct, _spread(tl.last_bars, 1) == 0.0, tl.last_bars)
 	tl.queue_free()
 
