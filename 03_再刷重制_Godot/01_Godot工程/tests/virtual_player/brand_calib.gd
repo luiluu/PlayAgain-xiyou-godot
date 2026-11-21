@@ -6,7 +6,8 @@ extends "res://tests/virtual_player/baseline_dps.gd"
 ##     --floors=30,31,32,33 [--shape=3s1w] [--teams=8] [--reps=4] [--turns=30] [--difficulty=jianxian|zhengdao] \
 ##     [--carve=all|none] [--carved-brand=<% 或 line>] [--other-brand=7] [--ripe] [--out=<json>]
 ##     [--xcap=30,50,30]（D242：敌人闪避、暴击、魔法闪避底子上限，改 balance_table 那三格；缺省照表 -1）
-##     [--strip-guardian=1,3,4,7]（T315：守层者敌群里的敌人去掉这几项正值 xparam 特性＝闪避、暴击闪避、魔法闪避、每回合回血，同心魔对齐）
+##     [--strip-guardian=1,3,4,7|none]（T348 起游戏默认就清守层者（含变身 538／929／930）这四项正值＝XGuardianRework.STRIP；
+##      这里改 STRIP_XPARAM 拆开量，如 =3 只清暴闪、=7 只清回血；none＝关开关、照原数据。缺省照游戏默认）
 ##     [--pozhen-type]（T317：XTianqiElements.POZHEN_BY_TYPE 打开＝破阵认伤害类型）
 ##
 ## 口径：
@@ -50,7 +51,7 @@ func _ready() -> void:
 		elif a.begins_with("--xcap="):
 			xcap = Array(a.substr(7).split(",")).map(func(x): return int(x))
 		elif a.begins_with("--strip-guardian="):
-			strip_ids = Array(a.substr(17).split(",")).map(func(x): return int(x))
+			strip_ids = [-1] if a.substr(17) == "none" else Array(a.substr(17).split(",")).map(func(x): return int(x))
 		elif a.begins_with("--gear-floors="):
 			gear_floors = Array(a.substr(14).split(",")).map(func(x): return int(x))
 		elif a.begins_with("--gear-cache="):
@@ -67,20 +68,19 @@ func _apply_knobs() -> void:
 		c["eva"] = xcap[0]
 		c["cri"] = xcap[1]
 		c["mev"] = xcap[2]
-	if strip_ids.is_empty():
-		return
+	if not strip_ids.is_empty():
+		XGuardianRework.STRIP = strip_ids != [-1]  # T348：改游戏里的开关（数据层钩子，建档重载数据表也照认；含变身二阶段）
+		if XGuardianRework.STRIP:
+			XGuardianRework.STRIP_XPARAM = strip_ids.duplicate()
 	var seen := {}
 	for f in floors:
 		for m in XDB.rec("Troops", int(GUARDIAN[f])).get("members", []):
 			var id := int(m.get("enemyId", 0))
-			if id <= 0 or seen.has(id):
-				continue
-			seen[id] = true
-			var rec := XDB.rec("Enemies", id)
-			rec["traits"] = rec.get("traits", []).filter(func(tr): return not (int(tr.get("code", 0)) == XBattler.TRAIT_XPARAM and strip_ids.has(int(tr.get("dataId", -1))) and float(tr.get("value", 0)) > 0.0))
+			if id > 0 and XGuardianRework.strip_touches(id):
+				seen[id] = true
 	if not _knobs_printed:
 		_knobs_printed = true
-		print("BRAND_KNOBS xcap=%s strip=%s enemies=%s pozhen_type=%s" % [str(xcap), str(strip_ids), str(seen.keys()), str(XTianqiElements.POZHEN_BY_TYPE)])
+		print("BRAND_KNOBS xcap=%s strip=%s strip_on=%s enemies=%s pozhen_type=%s" % [str(xcap), str(XGuardianRework.STRIP_XPARAM), str(XGuardianRework.STRIP), str(seen.keys()), str(XTianqiElements.POZHEN_BY_TYPE)])
 
 
 static func role_of(id: int) -> String:
@@ -287,7 +287,7 @@ func _run() -> void:
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
-		fh.store_string(JSON.stringify({"xcap": xcap, "strip": strip_ids, "pozhen_type": XTianqiElements.POZHEN_BY_TYPE, "difficulty": difficulty, "carve": carve_mode, "carved_brand": carved_brand, "other_brand": other_brand,
+		fh.store_string(JSON.stringify({"xcap": xcap, "strip": XGuardianRework.STRIP_XPARAM if XGuardianRework.STRIP else [], "pozhen_type": XTianqiElements.POZHEN_BY_TYPE, "difficulty": difficulty, "carve": carve_mode, "carved_brand": carved_brand, "other_brand": other_brand,
 			"ripe": ripe_mode, "reps": reps, "teams": list, "turns": turns, "seed": seed, "rows": rows}, "\t"))
 	print("BRAND_DONE")
 	get_tree().quit(0)
