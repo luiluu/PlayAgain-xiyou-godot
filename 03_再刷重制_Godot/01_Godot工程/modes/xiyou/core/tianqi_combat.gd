@@ -147,6 +147,17 @@ static func cap_on() -> bool:
 	return ENEMY_XPARAM_CAP and on()
 
 
+## 开关（T332，D249 乙）：true＝天启篇敌人回合末 HP 再生合计为负（灼伤等百分比掉血）时，hrg 与恢复效果率 rec 都不乘仓库倍率
+## （天启篇开局 DCultyL3 的 ×2；原版两处各乘一次，floor(mhp×hrg×rec) 叠成 ×4，灼伤 V −5% 变 −20%，T327）。
+## 只改 BattleLogic._regenerate 的负再生这一路：正再生、pdr／mdr、恢复效果对治疗的倍率、面板读的 hrg／rec 都照旧。
+## false＝照原版 ×4。西游存档不走这里。
+static var DOT_NO_WAREHOUSE := true
+
+
+static func regen_unscaled() -> bool:
+	return DOT_NO_WAREHOUSE and on()
+
+
 ## combat_rules.enemy_xparam_cap 整张表（读不到为空）
 static func xparam_cap_table() -> Dictionary:
 	var t = XTianqiBalance.data().get("combat_rules", {})

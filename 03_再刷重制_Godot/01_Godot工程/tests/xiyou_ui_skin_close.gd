@@ -187,7 +187,8 @@ func _touch() -> void:
 	check("list_press_no_select", l.index == 0)
 	l._gui_input(_mm(Vector2(100, 200 - 46 * 3)))
 	l._gui_input(_mb(Vector2(100, 200 - 46 * 3), false))
-	check("list_drag_scrolls", l.top_row == 3 and l.index == 0, [l.top_row, l.index])
+	# T339 D3：像素跟手（扣死区 8px）：手指 138px → 滚动 130px＝第 2 行再往下 38px，不再整行跳
+	check("list_drag_scrolls", l.top_row == 2 and is_equal_approx(l.scroll_px, 46.0 * 3 - 8.0) and l.index == 0, [l.top_row, l.scroll_px, l.index])
 	l._gui_input(_mb(Vector2(100, 70), true))
 	l._gui_input(_mb(Vector2(100, 70), false))
 	check("list_tap_selects", l.index == 3 * l.columns + 1, l.index)
@@ -325,7 +326,7 @@ func _repair() -> void:
 	# P2-2：拖动小件；状态页、战技列表接了
 	var d := XSkinDrag.new()
 	d.press(Vector2(0, 100), 36.0)
-	check("r_drag_slop", is_nan(d.motion(Vector2(0, 95))) and d.motion(Vector2(0, 40)) == 96.0 and not d.release())
+	check("r_drag_slop", is_nan(d.motion(Vector2(0, 95))) and d.motion(Vector2(0, 40)) == 88.0 and not d.release())   # T339 D3：触屏死区 8 并扣除（60−8＝52）
 	d.press(Vector2(0, 100), 0.0)
 	check("r_drag_tap", d.release())
 	var bl := XSkinBattleSkillList.create_list(Control.new(), range(20).map(func(i): return {"text": "技能 %d" % i, "enabled": true}), "技能")

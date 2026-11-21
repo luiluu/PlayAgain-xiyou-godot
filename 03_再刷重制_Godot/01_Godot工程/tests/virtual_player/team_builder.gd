@@ -19,6 +19,11 @@ extends RefCounted
 ##   - 坦克、辅助：没有现成的可量排序。暂按「同档里 81 级生命×(物防＋魔防)」从高到低（承伤厚度），辅助同样；这条是我定的权宜口径，
 ##     辅助的「治疗／增益能力」没有数能排——交付单已写明，等有排序再换（RANK_SUPPORT 可替换）。
 ## 缺人或缺职责：report() 列出；random_teams／strongest 配不出来时返回空数组，不静默补。
+## 【cc·T328】辅助位带复活（Kyo 11-21「阵容尽量选择带复活的奶妈」）：REVIVE_FIRST 开着时，有辅助位的模板先保一名会复活技能的辅助
+##   （同档、合法的里面，最强队挑承伤最厚的那个，随机队从会复活的辅助里抽），其余辅助位照旧；本档没有会复活的辅助就照旧配、
+##   report 写「靠复活道具」。只保一名：第二个辅助位不强塞复活，免得挤掉别的辅助（出手时也只由一人复活，见 vp_battle_logic）。
+##   「会复活」＝81 级（天启篇档）会的技能里有目标为倒下队友、解除战斗不能或回生命的（vp_battle_logic.revives，从数据判，不看名字），
+##   且不靠特殊道具（<Item n Cost>）；revive_skill_names(id, 等级) 可按别的等级判（换人时用存档当前等级）。
 
 const TEMPLATES := {
 	"A": {"输出": 2, "坦克": 1, "辅助": 1},
@@ -33,6 +38,10 @@ const LEVEL := 81
 static var _rank := {}
 static var _bulk := {}
 static var _playable := {}
+static var _revive := {}
+
+## 【cc·T328】辅助位先保一名会复活的（关掉＝T162 原配法）
+static var REVIVE_FIRST := true
 
 
 ## 「均衡」职责并入输出池（协调 11-18 定，待 Kyo 定「均衡算哪个职责」）：BALANCED_AS_OUTPUT 关掉就回到「均衡不入队」
@@ -43,6 +52,24 @@ static var BALANCED_AS_OUTPUT := true
 static func role_of(id: int) -> String:
 	var r := raw_role(id)
 	return "输出" if r == "均衡" and BALANCED_AS_OUTPUT else r
+
+
+## 【T343】换人时从场上挑被换下的顺序（先试的在前）：有实测出伤（{id: 伤害}）按出伤从低到高，出伤第一排最后；
+## 没有实测就按定位：非输出位先，输出位后（同类按 id 定序）。换下的不会是本队出伤第一（有实测时）
+static func swap_out_order(field: Array, dmg: Dictionary) -> Array:
+	var out := field.duplicate()
+	var measured := not dmg.is_empty() and field.any(func(x): return float(dmg.get(int(x), 0.0)) > 0.0)
+	if measured:
+		out.sort_custom(func(x, y):
+			var dx := float(dmg.get(int(x), 0.0))
+			var dy := float(dmg.get(int(y), 0.0))
+			return dx < dy if dx != dy else int(x) < int(y))
+	else:
+		out.sort_custom(func(x, y):
+			var ox := 1 if role_of(int(x)) == "输出" else 0
+			var oy := 1 if role_of(int(y)) == "输出" else 0
+			return ox < oy if ox != oy else int(x) < int(y))
+	return out
 
 
 static func raw_role(id: int) -> String:
@@ -133,7 +160,14 @@ static func random_teams(template: String, n: int, seed_val: int, difficulty: St
 		for r in ROLE_ORDER:
 			var bag: Array = (cand[r] as Array).duplicate()
 			for _i in int(want.get(r, 0)):
-				team.append(bag.pop_at(rng.randi_range(0, bag.size() - 1)))
+				var pick_from := bag
+				if REVIVE_FIRST and r == "辅助" and _i == 0:   # T328：第一个辅助位从会复活的里抽（没有就照旧）
+					var rv := bag.filter(func(x): return can_revive(int(x)))
+					if not rv.is_empty():
+						pick_from = rv
+				var got = pick_from[rng.randi_range(0, pick_from.size() - 1)]
+				bag.erase(got)
+				team.append(got)
 		if not legal(team, difficulty):
 			continue
 		var sorted_key := team.duplicate()
@@ -164,6 +198,51 @@ static func bulk(id: int) -> float:
 	return float(_bulk[id])
 
 
+## 某级（默认 81）会、而且不靠特殊道具就能放的复活技能名（「id 名字」）；空＝不会复活。
+## 在天启篇档里判（flags.tianqi.rules＝1，技能重构卡照天启篇走；T328 核查 P1-3：不设的话测的是西游档）。
+## 靠特殊道具的（<Item n Cost>，如玉兔精 3760 沉鱼萝雁要萝卜 1722）不算，单列在 revive_item_bound（T328 核查 P2-1）
+static func revive_skill_names(id: int, level := LEVEL) -> Array:
+	return _revive_info(id, level).free
+
+
+static func revive_item_bound(id: int, level := LEVEL) -> Array:
+	return _revive_info(id, level).bound
+
+
+static func _revive_info(id: int, level: int) -> Dictionary:
+	var key := "%d:%d" % [id, level]
+	if not _revive.has(key):
+		var prev := XState.current
+		var t := XState.new_game(XTianqi.legacy_of("jianxian"), id, [])
+		t.flags["tianqi"] = {"rules": 1, "difficulty": "jianxian"}
+		XState._become_current(t)
+		var a := t.actor(id)
+		t.actor_max_level = maxi(LEVEL, level)
+		a.change_level_mv(level)
+		var VPL = load("res://tests/virtual_player/vp_battle_logic.gd")
+		var names := func(list: Array) -> Array: return list.map(func(s): return "%d %s" % [int(s.id), str(s.get("name", ""))])
+		var free: Array = VPL.free_revive_skills(a)
+		_revive[key] = {"free": names.call(free), "bound": names.call(VPL.revive_skills(a).filter(func(s): return not free.has(s)))}
+		if prev != null:
+			XState._become_current(prev)
+		else:
+			XState.current = null
+	return _revive[key]
+
+
+static func can_revive(id: int, level := LEVEL) -> bool:
+	return not revive_skill_names(id, level).is_empty()
+
+
+## 队里会复活的人（报告用）：[{id, role, skills}]
+static func revivers_in(team: Array) -> Array:
+	var out := []
+	for id in team:
+		if can_revive(int(id)):
+			out.append({"id": int(id), "role": role_of(int(id)), "skills": revive_skill_names(int(id))})
+	return out
+
+
 ## 排序键：越大越强。输出看量数峰值，坦克、辅助看承伤厚度
 static func rank_score(id: int, role: String) -> float:
 	if role == "输出":
@@ -184,6 +263,9 @@ static func strongest(template: String, difficulty: String) -> Array:
 		list.sort_custom(func(x, y): return rank_score(int(x), role) > rank_score(int(y), role))
 		if list.size() < int(want.get(role, 0)):
 			return []
+		if REVIVE_FIRST and role == "辅助":   # T328：会复活的辅助整体排前（贪心挑第一个辅助位时先试它们）；第二个辅助位起再按承伤排，见下
+			var rv := list.filter(func(x): return can_revive(int(x)))
+			ranked["辅助复活"] = rv
 		ranked[role] = list
 	# 贪心：按「职责顺序、每职责从强到弱」依次挑；放得下（挑完之后弱者数仍有办法 ≥ 下限、超强者 ≤ 上限）才要
 	var team := []
@@ -195,7 +277,10 @@ static func strongest(template: String, difficulty: String) -> Array:
 		var role: String = slots[i]
 		var left := slots.size() - team.size() - 1  # 这一位之后还剩几个位置
 		var picked := -1
-		for id in ranked[role]:
+		var order: Array = ranked[role]
+		if role == "辅助" and ranked.has("辅助复活") and not team.any(func(x): return can_revive(int(x))):
+			order = (ranked["辅助复活"] as Array) + order   # 队里还没有会复活的：先试会复活的辅助
+		for id in order:
 			if team.has(int(id)):
 				continue
 			var weak_now := team.filter(func(x): return XTianqiSkills.is_weak(int(x), true)).size() + (1 if XTianqiSkills.is_weak(int(id), true) else 0)
@@ -256,4 +341,20 @@ static func report(difficulty: String) -> Dictionary:
 		notes.append("职责表里没有这些角色（候选池里有）：%s" % str(unrole))
 	if not no_peak.is_empty():
 		notes.append("这些输出没有甲档量数，最强队排序排最后：%s" % str(no_peak))
-	return {"counts": counts, "balanced": balanced, "short": short, "no_peak": no_peak, "unrole": unrole, "notes": notes}
+	# T328：会复活的名单（全职责都列，辅助位只用辅助里的），各模板最强队里谁带复活
+	var revivers := {}
+	var item_bound := {}   # 复活技要特殊道具（不算会复活）
+	for role in ROLE_ORDER:
+		for id in cand[role]:
+			if can_revive(int(id)):
+				revivers[str(id)] = {"role": role, "skills": revive_skill_names(int(id))}
+			elif not revive_item_bound(int(id)).is_empty():
+				item_bound[str(id)] = {"role": role, "skills": revive_item_bound(int(id))}
+	var team_revive := {}
+	for t in TEMPLATES:
+		var team := strongest(t, difficulty)
+		team_revive[t] = revivers_in(team)
+		if not team.is_empty() and team_revive[t].is_empty():
+			notes.append("%s 最强队没有会复活的人（%s），靠复活道具" % [t, "模板没有辅助位" if not TEMPLATES[t].has("辅助") else "本档辅助里没有会复活的"])
+	return {"counts": counts, "balanced": balanced, "short": short, "no_peak": no_peak, "unrole": unrole, "notes": notes,
+		"revivers": revivers, "revive_item_bound": item_bound, "team_revive": team_revive}

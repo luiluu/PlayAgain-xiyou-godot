@@ -986,12 +986,21 @@ func _wiring_a2() -> void:
 	for target in [4, 5, 6]:
 		var lg := _xinmo(target)
 		_full(lg)
-		var logs := _turns(lg, 3)
+		# T341：每回合前回满血再打。只开头回满的话，心魔单回合伤害有波动，偶发在第 2 回合把我方打全灭，
+		# 第 3 回合的【影·…】就没机会出，wire.t5_replay_cast 取到 0（实测本机约 15% 概率）
+		var logs := []
+		for _t in 3:
+			for a in lg.actors:
+				a.recover_all()
+			logs.append_array(_turns(lg, 1))
+			if lg.is_over():
+				break
 		_check("wire.t%d_runs" % target, lg.turn >= 2 and not XTianqiXinmoTraits.fight(lg).is_empty(), lg.turn)
 		if target == 4:
 			_check("wire.t4_turn2_steal", _texts(logs).any(func(x): return x.contains("【盗形】")), _texts(logs))
 		if target == 5:
 			var acts := logs.filter(func(l): return str(l.get("type", "")) == "action" and str(l.get("skill", {}).get("name", "")).begins_with("影·"))
-			_check("wire.t5_replay_cast", acts.size() == 1, acts.size())
+			var cc := XTianqiXinmoTraits.fight(lg)
+			_check("wire.t5_replay_cast", acts.size() == 1, [acts.size(), lg.turn, cc.charge_turn, cc.cast_turn, lg.is_over()])
 			_check("wire.t5_charge_log", _texts(logs).any(func(x): return x.contains("蓄起 3 层「影势」")), _texts(logs))
 		lg.end_battle()

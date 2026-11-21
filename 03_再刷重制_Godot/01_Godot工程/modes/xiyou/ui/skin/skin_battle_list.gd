@@ -159,14 +159,25 @@ func _paint(_c: XMVCanvas) -> void:
 ## 收口批（TOUCH_V2，小A核 P2-2）：按下不立刻选中／确定，上下拖过 SLOP 按行滚；松手没拖过才照旧当一次点（同 XBattleList）
 var _drag := XSkinDrag.new()
 var _press_event: InputEventMouseButton
+## T339 D3：按下 0ms 反馈——按着的行画预按轻底、按着的「详情」胶囊微缩压暗；松手或拖起来就清
+var _press_row := -1
+var _press_chip := false
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if (_press_row >= 0 or _press_chip) and event is InputEventMouseButton and not (event as InputEventMouseButton).pressed \
+			and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		_press_row = -1
+		_press_chip = false
+		queue_redraw()
 	if active and is_visible_in_tree() and XSkinBattle.HELP_COLLAPSE:   # T096：详情（键盘 Y、手柄 Y、点「详情」）
 		var hit_chip := event is InputEventMouseButton and (event as InputEventMouseButton).pressed \
 			and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT and detail_rect().has_point((event as InputEventMouseButton).position - position)
 		var key := event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo and (event as InputEventKey).keycode == KEY_Y
 		var pad := event is InputEventJoypadButton and (event as InputEventJoypadButton).pressed and (event as InputEventJoypadButton).button_index == JOY_BUTTON_Y
+		if hit_chip and XUiSkin.detail_on():
+			_press_chip = true
+			queue_redraw()
 		if hit_chip or key or pad:
 			toggle_detail()
 			XKeyMap.handled(self)
@@ -180,6 +191,9 @@ func _unhandled_input(event: InputEvent) -> void:
 					return
 				_press_event = mb.duplicate() as InputEventMouseButton
 				_drag.press(mb.position, float(top) * ROW_H)
+				if XUiSkin.detail_on():
+					_press_row = _hit(mb.position)
+					queue_redraw()
 				XKeyMap.handled(self)
 				return
 			if _drag.active():
@@ -190,8 +204,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				_press_event = null
 				return
 		elif event is InputEventMouseMotion and _drag.active():
-			var to := _drag.motion((event as InputEventMouseMotion).position)
+			var to := _drag.motion((event as InputEventMouseMotion).position, XSkinDrag.is_touch_event(event))
 			if not is_nan(to):
+				if _press_row >= 0:
+					_press_row = -1   # 拖起来了：预按立刻撤销
+					queue_redraw()
 				var want := clampi(roundi(to / ROW_H), 0, maxi(entries.size() - rows, 0))
 				if want != top:
 					_scroll(want - top)
@@ -215,12 +232,13 @@ func _draw() -> void:
 	# 标题＋右上
 	XUiSkin.ds(self, title_font, Vector2(16, 28), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, XUiSkin.GOLD)
 	if XSkinBattle.HELP_COLLAPSE:   # T096「详情」胶囊：展开时红乙选中色
-		var cr := detail_rect()
+		var cr := XSkinButton.press_rect(detail_rect(), _press_chip)
 		var sb := StyleBoxFlat.new()
 		sb.set_corner_radius_all(13)
 		sb.bg_color = Color(XUiSkin.SEL_FILL, 0.28) if XSkinBattle.help_open else Color(XUiSkin.bg_c(), 0.6)
 		sb.border_color = XUiSkin.SEL_LINE if XSkinBattle.help_open else Color(XUiSkin.line_c(), 0.5)
 		sb.set_border_width_all(1)
+		sb.bg_color = XSkinButton.press_color(sb.bg_color, _press_chip)
 		sb.draw(get_canvas_item(), cr)
 		var tw := body.get_string_size("详情", HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
 		XUiSkin.ds(self, body, Vector2(cr.position.x + (cr.size.x - tw) / 2.0, cr.position.y + 18), "详情", HORIZONTAL_ALIGNMENT_LEFT, -1, 14,
@@ -260,6 +278,8 @@ func _draw() -> void:
 func _draw_row(i: int, body: Font, num: Font) -> void:
 	var e: Dictionary = entries[i]
 	var r := row_local(i)
+	if i == _press_row and XUiSkin.detail_on():
+		draw_rect(r.grow_individual(-2.0, -1.0, -2.0, -1.0), Color(XUiSkin.SEL_FILL.darkened(0.35), XSkinList.PRE_PRESS_ALPHA))
 	if XUiSkin.polish_on() and i != index and (i % 2) == 1:
 		draw_rect(r.grow_individual(-2.0, -1.0, -2.0, -1.0), Color(0.95, 0.90, 0.82, 0.026))
 	var en := bool(e.get("enabled", true))

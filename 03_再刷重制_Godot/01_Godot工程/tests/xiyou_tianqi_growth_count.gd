@@ -185,7 +185,8 @@ func _nanoha(s: XState, set_ok: Callable) -> void:
 	_fresh(n)
 	var mmp0 := n.mmp
 	XNanoha.adapt(n, 1.0)
-	_check("nanoha_dirty", G.layers_of("nanoha", n) == 1 and n.mmp - mmp0 == Y, [n.mmp - mmp0, Y])
+	var dirty_want := Y - float(roundi(Y * (n_share - 1.0) / n_share))  # T286：连续层，差一次时已有 Y×(一份−1)/一份 取整
+	_check("nanoha_dirty", G.layers_of("nanoha", n) == 1.0 and n.mmp - mmp0 == dirty_want and dirty_want > 0.0, [n.mmp - mmp0, dirty_want])
 	# 开关关掉回原版逐次公式
 	G.ENABLED = false
 	set_n.call(2100)
@@ -311,7 +312,11 @@ func _text(s: XState) -> void:
 	var l_ember := int(l_row.ember)
 	var l_dmg1 := G.dmg_pct_of(1)
 
-	# 1) 渡鸦状态行：没学 10136 或未到起点空；到起点未成层；24 层；接入 ledger_help
+	# T286（D247）：状态行不再说「第几层」，改「计数 → 加了多少」；括号提示越往后越慢
+	var slow := "（越往后涨得越慢）"
+	var slow_r := "（超20万起算，越往后涨得越慢）"
+	var no_layer := func(t: String) -> bool: return not t.contains("层")
+	# 1) 渡鸦状态行：没学 10136 或未到起点空；到起点＋0；半份；拐点；接入 ledger_help
 	r.forget_skill(10136)
 	s.raven["soul"] = r_base
 	_check("txt_raven_no10136", G.status_line(G.RAVEN, r) == "" and XRaven.ledger_help(r, XDB.rec("Skills", 10137)).size() == 2)
@@ -320,52 +325,66 @@ func _text(s: XState) -> void:
 	_check("txt_raven_below", G.status_line(G.RAVEN, r) == "")
 	s.raven["soul"] = r_base
 	var r0 := G.status_line(G.RAVEN, r)
-	var r0_want := "冥冠（未成层）：下层还需 %s 灵魂（每层魔法攻击＋%s）" % [G._fmt_int(roundi(r_share)), G._fmt_int(r_mat)]
-	_check("txt_raven_unformed", r0 == r0_want and not r0.contains("第0层"), [r0, r0_want])
+	var r0_want := "冥冠：灵魂 %s → 魔法攻击 +0%s" % [G._fmt_int(roundi(r_base)), slow_r]
+	_check("txt_raven_start", r0 == r0_want and no_layer.call(r0), [r0, r0_want])
+	s.raven["soul"] = r_base + r_share / 2.0
+	var rh := G.status_line(G.RAVEN, r)
+	var rh_want := "冥冠：灵魂 %s → 魔法攻击 +%s%s" % [G._fmt_int(floori(r_base + r_share / 2.0)), G._fmt_int(roundi(r_mat * 0.5)), slow_r]
+	_check("txt_raven_half", rh == rh_want, [rh, rh_want])
 	s.raven["soul"] = r_base + G.cumulative(24) * r_share
 	var r24 := G.status_line(G.RAVEN, r)
-	var r24_want := "冥冠·第24层：魔法攻击＋%s（下层还需 %s 灵魂）" % [G._fmt_int(24 * r_mat), G._fmt_int(roundi(G.price(25) * r_share))]
+	var r24_want := "冥冠：灵魂 %s → 魔法攻击 +%s%s" % [G._fmt_int(roundi(r_base + G.cumulative(24) * r_share)), G._fmt_int(24 * r_mat), slow_r]
 	var lh := XRaven.ledger_help(r, XDB.rec("Skills", 10137))
-	_check("txt_raven_l24", r24 == r24_want and lh.size() == 3 and lh[2] == r24, [r24, r24_want, lh])
+	_check("txt_raven_l24", r24 == r24_want and no_layer.call(r24) and lh.size() == 3 and lh[2] == r24, [r24, r24_want, lh])
 
-	# 2) 奈叶状态行：未到起点空；未成层整/小数；24 层；接入 5683 说明卡且图鉴 skill_copy=true 不带实时行
+	# 2) 奈叶状态行：未到起点空；起点＋0；带半次的小数；拐点；接入 5683 说明卡且图鉴 skill_copy=true 不带实时行
 	var set_n := func(v): s.flags[XNanoha.ADAPT_FLAG] = {str(XNanoha.ACTOR): float(v)}
 	XHelpCard.scene_actor = n
 	set_n.call(n_base - 0.5)
 	_check("txt_nanoha_below", G.status_line(G.NANOHA, n) == "" and not _card_text(XHelpCard.content(XDB.rec("Skills", 5683), "skill", false, 300.0)).contains("超限适应"))
 	set_n.call(n_base)
 	var n0 := G.status_line(G.NANOHA, n)
-	var n0_want := "超限适应（未成层）：下层还需 %s 次适应（每层最大生命＋%s、最大魔法＋%s）" % [G._fmt_num(n_share), G._fmt_int(n_hp), G._fmt_int(n_mp)]
-	_check("txt_nanoha_unformed", n0 == n0_want and not n0.contains("第0层"), [n0, n0_want])
-	set_n.call(n_base + n_share + G.price(2) * n_share - 12.5)
-	var n1_half := G.status_line(G.NANOHA, n)
-	_check("txt_nanoha_half", n1_half == "超限适应·第1层：最大生命＋%s、最大魔法＋%s（下层还需 12.5 次适应）" % [G._fmt_int(n_hp), G._fmt_int(n_mp)], n1_half)
+	var n0_want := "超限适应：适应 %s 次 → 额外最大生命 +0、最大魔法 +0%s" % [G._fmt_num(n_base), slow]
+	_check("txt_nanoha_start", n0 == n0_want and no_layer.call(n0), [n0, n0_want])
+	set_n.call(n_base + 12.5)
+	var nh := G.status_line(G.NANOHA, n)
+	var nh_l := 12.5 / n_share
+	var nh_want := "超限适应：适应 %s 次 → 额外最大生命 +%s、最大魔法 +%s%s" % [G._fmt_num(n_base + 12.5), G._fmt_int(roundi(n_hp * nh_l)), G._fmt_int(roundi(n_mp * nh_l)), slow]
+	_check("txt_nanoha_half", nh == nh_want and nh.contains(".5 次"), [nh, nh_want])
 	set_n.call(n_base + G.cumulative(24) * n_share)
 	var n24 := G.status_line(G.NANOHA, n)
-	var n24_want := "超限适应·第24层：最大生命＋%s、最大魔法＋%s（下层还需 %s 次适应）" % [G._fmt_int(24 * n_hp), G._fmt_int(24 * n_mp), G._fmt_num(G.price(25) * n_share)]
+	var n24_want := "超限适应：适应 %s 次 → 额外最大生命 +%s、最大魔法 +%s%s" % [G._fmt_num(n_base + G.cumulative(24) * n_share), G._fmt_int(24 * n_hp), G._fmt_int(24 * n_mp), slow]
 	var card_n := _card_text(XHelpCard.content(XDB.rec("Skills", 5683), "skill", false, 300.0))
 	var book_n := _card_text(XHelpCard.content(XDB.rec("Skills", 5683), "skill", true, 300.0))
-	_check("txt_nanoha_l24", n24 == n24_want and card_n.contains(n24) and not book_n.contains("超限适应"), [n24, n24_want])
+	_check("txt_nanoha_l24", n24 == n24_want and no_layer.call(n24) and card_n.contains(n24) and not book_n.contains("超限适应"), [n24, n24_want])
 
-	# 3) 流萤状态行：未到起点空；未成层；第 1 层 X 不含前 3000；24 层；接入 10624 说明卡且 skill_copy=true 不带实时行
+	# 3) 流萤状态行：未到起点空；起点＋0；一份＝余烬＋ember、伤害 +1%（不含前 3000）；层内小数伤害向下取整；拐点；接入 10624 说明卡
 	var sd := a.state_data
 	XHelpCard.scene_actor = a
 	sd["_codexLbEmberWins"] = l_base - 1.0
 	_check("txt_ly_below", G.status_line(G.LIUYING, a) == "" and not _card_text(XHelpCard.content(XDB.rec("Skills", 10624), "skill", false, 300.0)).contains("不熄之火"))
 	sd["_codexLbEmberWins"] = l_base
 	var l0 := G.status_line(G.LIUYING, a)
-	var l0_want := "不熄之火（未成层）：下层还需 %s 胜场（每层余烬生命＋%s、伤害＋%d%%）" % [G._fmt_int(roundi(l_share)), G._fmt_int(l_ember), l_dmg1]
-	_check("txt_ly_unformed", l0 == l0_want and not l0.contains("第0层"), [l0, l0_want])
+	var l0_want := "不熄之火：胜场 %s → 额外余烬生命 +0、伤害 +0%%%s" % [G._fmt_int(roundi(l_base)), slow]
+	_check("txt_ly_start", l0 == l0_want and no_layer.call(l0), [l0, l0_want])
 	sd["_codexLbEmberWins"] = l_base + l_share
 	var l1 := G.status_line(G.LIUYING, a)
-	var l1_want := "不熄之火·第1层：余烬生命＋%s、伤害＋%d%%（下层还需 %s 胜场）" % [G._fmt_int(l_ember), l_dmg1, G._fmt_int(roundi(G.price(2) * l_share))]
+	var l1_want := "不熄之火：胜场 %s → 额外余烬生命 +%s、伤害 +%d%%%s" % [G._fmt_int(roundi(l_base + l_share)), G._fmt_int(l_ember), l_dmg1, slow]
 	_check("txt_ly_l1_no3000", l1 == l1_want, [l1, l1_want])
+	sd["_codexLbEmberWins"] = l_base + l_share + 27.0
+	var lm := G.status_line(G.LIUYING, a)
+	var lm_l := 1.0 + 27.0 / (G.price(2) * l_share)
+	var lm_want := "不熄之火：胜场 %s → 额外余烬生命 +%s、伤害 +%d%%%s" % [G._fmt_int(roundi(l_base + l_share + 27.0)), G._fmt_int(floori(l_ember * lm_l + 1e-9)), l_dmg1, slow]
+	_check("txt_ly_mid_floor", lm == lm_want, [lm, lm_want])
 	sd["_codexLbEmberWins"] = l_base + G.cumulative(24) * l_share
 	var l24 := G.status_line(G.LIUYING, a)
-	var l24_want := "不熄之火·第24层：余烬生命＋%s、伤害＋%d%%（下层还需 %s 胜场）" % [G._fmt_int(24 * l_ember), G.dmg_pct_of(24), G._fmt_int(roundi(G.price(25) * l_share))]
+	var l24_want := "不熄之火：胜场 %s → 额外余烬生命 +%s、伤害 +%d%%%s" % [G._fmt_int(roundi(l_base + G.cumulative(24) * l_share)), G._fmt_int(24 * l_ember), G.dmg_pct_of(24), slow]
 	var card_l := _card_text(XHelpCard.content(XDB.rec("Skills", 10624), "skill", false, 300.0))
 	var book_l := _card_text(XHelpCard.content(XDB.rec("Skills", 10624), "skill", true, 300.0))
-	_check("txt_ly_l24", l24 == l24_want and card_l.contains(l24) and not book_l.contains("不熄之火"), [l24, l24_want])
+	_check("txt_ly_l24", l24 == l24_want and no_layer.call(l24) and card_l.contains(l24) and not book_l.contains("不熄之火"), [l24, l24_want])
+	# 卡面说明（skill_rework desc）也不再说「成层／每层」成长
+	var c10136_desc := _card_text(XHelpCard.content(XDB.rec("Skills", 10136), "skill", true, 300.0))
+	_check("txt_desc_no_layers", not book_n.contains("成层") and not book_l.contains("成层") and not c10136_desc.contains("成层") and book_n.contains("越往后涨得越慢") and c10136_desc.contains("越往后涨得越慢"), [book_n, book_l, c10136_desc])
 
 	# 4) 卡面内容（天启篇）：10136、5683、10624、weapon:4004
 	var c10136 := _card_text(XHelpCard.content(XDB.rec("Skills", 10136), "skill", true, 300.0))

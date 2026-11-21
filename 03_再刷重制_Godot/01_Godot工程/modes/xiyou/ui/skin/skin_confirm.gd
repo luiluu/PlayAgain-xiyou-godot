@@ -139,10 +139,7 @@ func button_rect(i: int) -> Rect2:
 static func _lines(f: Font, text: String, w: float, fs: int) -> int:
 	if text == "":
 		return 0
-	var para := TextParagraph.new()
-	para.width = w
-	para.add_string(text, f, fs)
-	return maxi(1, para.get_line_count())
+	return maxi(1, XSkinText.wrap_ranges(text, f, fs, w).size())
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -282,6 +279,9 @@ func _draw() -> void:
 			bs.bg_color = Color(0.08, 0.068, 0.066, 0.55 if _press != i else 0.78) if pol else Color(0, 0, 0, 0.25 if _press != i else 0.5)
 			bs.border_color = Color(XUiSkin.line_c(), 0.52) if pol else Color(XUiSkin.LINE, 0.55)
 			bs.set_border_width_all(1)
+		var pressed := _press == i and not dis
+		bs.bg_color = XSkinButton.press_color(bs.bg_color, pressed)
+		r = XSkinButton.press_rect(r, pressed)
 		bs.draw(ci, r)
 		if i == index:
 			XUiSkin.draw_select(ci, r.grow(3), XUiSkin.breath_alpha())
@@ -296,12 +296,8 @@ func _draw() -> void:
 func _para(f: Font, text: String, at: Vector2, w: float, fs: int, lh: float, col: Color) -> float:
 	if text == "":
 		return at.y
-	var para := TextParagraph.new()
-	para.width = w
-	para.add_string(text, f, fs)
 	var y := at.y
-	for li in para.get_line_count():
-		var rg := para.get_line_range(li)
-		XUiSkin.ds(self, f, Vector2(at.x, y + fs * 1.0), text.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, w, fs, col)
+	for rg in XSkinText.wrap_ranges(text, f, fs, w):
+		XUiSkin.ds(self, f, Vector2(at.x, y + fs * 1.0), text.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)   # -1：挂出的行尾标点不裁
 		y += lh
 	return y

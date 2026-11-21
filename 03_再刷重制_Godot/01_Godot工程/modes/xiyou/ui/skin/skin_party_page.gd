@@ -347,14 +347,10 @@ func _draw_body() -> void:
 	XUiSkin.draw_divider(body, pad, w - pad, y, true, 0.85 if XUiSkin.polish_on() else 1.0)
 	XUiSkin.ds(body, f, Vector2(pad, y + 8 + XUiSkin.FS_AUX_MAX), "换上后", HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
 	y += 16 + XUiSkin.FS_AUX_MAX + 6
-	var para := TextParagraph.new()
-	para.width = w - pad * 2
 	var ofs := XUiSkin.FS_AUX_MAX
-	para.add_string(str(info.outcome), f, ofs)
-	for li in para.get_line_count():
+	for rg in XSkinText.wrap_ranges(str(info.outcome), f, ofs, w - pad * 2):   # T338 D2：避头尾＋防孤字
 		if y + ofs * 1.5 > bottom:
 			break
-		var rg := para.get_line_range(li)
 		XUiSkin.ds(body, f, Vector2(pad, y + ofs), str(info.outcome).substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, -1, ofs, XUiSkin.TEXT)
 		y += ofs * 1.5
 

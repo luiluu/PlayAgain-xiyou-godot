@@ -2404,6 +2404,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false,
 		for t in _guided_targets(u, skill, chosen, forcing):
 			for i in range(maxi(1, times)):
 				list.append(t)
+		XSmartAI.note_revive(self, u, skill, list)  # O-628（T331）：真出手才记这回合救的是谁（同回合同一个倒下的人只派一次）
 		XAlienBattle.set_heal_targets(skill, list.size())  # 逆祷治疗按目标数（含重复）分摊
 		XRaceBattle.begin(self, u, skill, list, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 		XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
@@ -2422,6 +2423,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false,
 	var repeats := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, passive_repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1))))))))
 	repeats = XTianqiQiyinEffects.repeats(self, u, skill, repeats)  # 天启篇战流派攻击次数 +1。黄泉 numRepeats 包装；渡鸦冥羽连葬在里层；流萤（新源第 34 个）在云裳外层
 	var targets := _guided_targets(u, skill, chosen, forcing)
+	XSmartAI.note_revive(self, u, skill, targets)  # O-628（T331）：同上
 	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 	XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
@@ -3600,11 +3602,13 @@ func _tick_states(b: XBattler, timing: int) -> void:
 
 func _regenerate(b: XBattler, logs: Array) -> void:
 	# krz regenerateHp：floor(mhp × hrg × rec)，含目标的恢复效果率（MP 再生不含）
-	var dh := floorf(b.mhp * b.hrg * b.rec)
-	# 异化逆祷 regenerateHp 包装：敌人身上来源是逆祷者的负再生不算（hrg 扣掉它们再算）
+	# T332（D249 乙）：天启篇敌人负再生不乘仓库倍率、正再生照旧（XEnemy.regen_rates，开关 XTianqiCombat.DOT_NO_WAREHOUSE）
+	# 异化逆祷 regenerateHp 包装：敌人身上来源是逆祷者的负再生不算（hrg 扣掉它们再算）；天启篇拆算时在正负拆开后扣（r1 P2-1）
 	var prayer_block := XAlienBattle.prayer_regen_block(b)
-	if prayer_block != 0.0:
-		dh = floorf(b.mhp * (b.hrg - prayer_block) * b.rec)
+	var rr: Array = b.regen_rates(prayer_block) if b is XEnemy else [b.hrg - prayer_block if prayer_block != 0.0 else b.hrg, b.rec, false]
+	var b_rec: float = rr[1]
+	var tq_split: bool = rr[2]
+	var dh := floorf(b.mhp * float(rr[0]) * b_rec)
 	# 导入角色平衡：导入角色附加的状态里负的 HP 再生率（持续伤害）那部分 ×0.01（向下取整），其余照常；
 	# 两个值都按原顺序先乘 rec 再 floor，之后才拆出导入部分缩放（installImportedBalanceRuntime.js:496／506）
 	var imported := []  # 导入角色附加的状态（来源倍率不为 1）
@@ -3616,6 +3620,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		# 原版把这些状态的负 hrg 特性换成 0，再按特性对象原顺序重新求和（不能用 hrg 减去它们：浮点会差，floor 后差 1）
 		var states := b.states()
 		var hrg := 0.0
+		var dot_neg := 0.0  # 天启篇拆算时：导入状态里的负再生（原值）
 		var altered := false
 		for o in b.trait_objects():
 			var dot_state: bool = imported.has(int(o.get("id", -1))) and states.any(func(x): return is_same(x, o))
@@ -3624,10 +3629,13 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 					continue
 				if dot_state and float(tr.value) < 0.0:
 					altered = true
+					dot_neg += float(tr.value)
 				else:
 					hrg += float(tr.value)
 		if altered:
-			var other := floorf(b.mhp * hrg * b.rec)
+			if tq_split:  # T332：天启篇拆算的 hrg 里去掉导入状态的负再生（它们本来就 ×1）
+				hrg = float(rr[0]) - dot_neg
+			var other := floorf(b.mhp * hrg * b_rec)
 			dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
 	var dm := floorf(b.mmp * b.mrg)
 	var dt := 100.0 * b.trg

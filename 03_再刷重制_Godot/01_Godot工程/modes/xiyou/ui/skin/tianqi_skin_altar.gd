@@ -645,11 +645,7 @@ func _draw_rules() -> void:
 	y += 12
 	XUiSkin.ds(rules, body, Vector2(x, y + 18), "%s · %s" % [str(r.seal), str(r.place)], HORIZONTAL_ALIGNMENT_LEFT, w - pad * 2, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
 	y += 30
-	var para := TextParagraph.new()
-	para.width = w - pad * 2
 	var rt := "规则「%s」：%s" % [str(r.rule_name), str(r.rule_text)]
-	para.add_string(rt, body, 16)
-	for li in para.get_line_count():
-		var rg := para.get_line_range(li)
+	for rg in XSkinText.wrap_ranges(rt, body, 16, w - pad * 2):   # T338 D2：避头尾＋防孤字
 		XUiSkin.ds(rules, body, Vector2(x, y + 17), rt.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, XUiSkin.TEXT_2)
 		y += 24

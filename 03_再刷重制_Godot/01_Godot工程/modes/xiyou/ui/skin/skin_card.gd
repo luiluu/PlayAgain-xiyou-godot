@@ -55,6 +55,7 @@ var _top_cut := -INF
 var _cut_y := INF
 var _fade_y := INF
 var _drag := XSkinDrag.new()
+var _press := -1   # T339 D3：按着的按钮（按下 0ms 微缩压暗，松手清）
 
 
 func _init() -> void:
@@ -199,10 +200,14 @@ func handle_input(event: InputEvent) -> bool:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT and _press >= 0:
+		_press = -1
+		queue_redraw()
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		for i in buttons.size():
 			if button_rect(i).has_point(event.position):
 				button_index = i
+				_press = i if not bool(buttons[i].get("disabled", false)) else -1
 				queue_redraw()
 				if not bool(buttons[i].get("disabled", false)):
 					button_pressed.emit(i)
@@ -229,7 +234,7 @@ func _sheet_input(event: InputEvent) -> void:
 				XSound.system(0)
 			_sheet.accept_event()
 	elif event is InputEventMouseMotion and _drag.active():
-		var to := _drag.motion((event as InputEventMouseMotion).position)
+		var to := _drag.motion((event as InputEventMouseMotion).position, XSkinDrag.is_touch_event(event))
 		if not is_nan(to):
 			scroll_by(to - scroll)
 		_sheet.accept_event()
@@ -273,6 +278,8 @@ func _draw() -> void:
 			sb.bg_color = Color(0.06, 0.05, 0.048, 0.38) if pol else Color(0, 0, 0, 0)
 			sb.border_color = Color(XUiSkin.line_c(), 0.52) if pol else Color(XUiSkin.LINE, 0.55)
 			sb.set_border_width_all(1)
+		sb.bg_color = XSkinButton.press_color(sb.bg_color, _press == i)
+		r = XSkinButton.press_rect(r, _press == i)
 		sb.draw(ci, r)
 		if i == button_index:
 			XUiSkin.draw_select(ci, r.grow(3), XUiSkin.breath_alpha())
@@ -366,7 +373,7 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 	var x := x0
 	if icon != null:
 		if not dry and _vis(y, 48.0) > 0.0:
-			t.draw_texture_rect(icon, Rect2(x, y, 48, 48), false)
+			t.draw_texture_rect(icon, XUiSkin.inline_icon_rect(x, y + 24.0, 48.0, title_size) if XUiSkin.detail_on() else Rect2(x, y, 48, 48), false)
 		x += 48 + 12
 	if title != "":
 		if not dry and _vis(y, 48.0) > 0.0:
@@ -381,11 +388,9 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 		y += XUiSkin.FS_AUX_MAX + 6
 	if notice != "":
 		y += 6
-		var npara := TextParagraph.new()
-		npara.width = w - 20.0
-		npara.add_string(notice, body, XUiSkin.FS_AUX)
+		var nranges := XSkinText.wrap_ranges(notice, body, XUiSkin.FS_AUX, w - 20.0)   # T338 D2：避头尾＋防孤字
 		var nlh := roundf(XUiSkin.FS_AUX * 1.45)
-		var ncnt := maxi(1, npara.get_line_count())
+		var ncnt := maxi(1, nranges.size())
 		var nh := float(ncnt) * nlh + 10.0
 		if y + nh <= bottom:
 			if not dry and _vis(y, nh) > 0.0:
@@ -397,9 +402,9 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 				nsb.draw(t.get_canvas_item(), Rect2(x0, y, w, nh))
 				if pol:
 					t.draw_rect(Rect2(x0 + 1.0, y + 4.0, 2.5, maxf(4.0, nh - 8.0)), Color(XUiSkin.GOLD, 0.85))
-				for li in npara.get_line_count():
-					var r := npara.get_line_range(li)
-					XUiSkin.ds(t, body, Vector2(x0 + 10.0, y + 5.0 + float(li) * nlh + XUiSkin.FS_AUX * 0.96), notice.substr(r.x, r.y - r.x), HORIZONTAL_ALIGNMENT_LEFT, w - 20.0, XUiSkin.FS_AUX, XUiSkin.GOLD_LIGHT)
+				for li in nranges.size():
+					var r := nranges[li]
+					XUiSkin.ds(t, body, Vector2(x0 + 10.0, y + 5.0 + float(li) * nlh + XUiSkin.FS_AUX * 0.96), notice.substr(r.x, r.y - r.x), HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.GOLD_LIGHT)   # -1：XSkinText 允许行尾挂出标点，不能按 w 裁
 			y += nh + 4
 	if desc != "":
 		y += 8
@@ -509,18 +514,16 @@ func _paragraph(t: Control, f: Font, text: String, y: float, x0: float, w: float
 	if lh < 0.0:
 		var mult := 1.56 if XUiSkin.polish_on() and XUiSkin.font_mult() <= 1.05 else 1.5
 		lh = roundf(fs * mult)
-	var para := TextParagraph.new()
-	para.width = w
-	para.add_string(text, f, fs)
+	var ranges := XSkinText.wrap_ranges(text, f, fs, w)   # T338 D2：避头尾＋防孤字（返回字符区间，spans 分色照用）
 	var off := (lh - roundf(fs * 1.5)) / 2.0
-	for li in para.get_line_count():
+	for li in ranges.size():
 		if y + lh > bottom:
 			break
 		var a := _vis(y, lh)
 		if not dry and a > 0.0:
-			var line_text_range := para.get_line_range(li)
+			var line_text_range := ranges[li]
 			if spans.is_empty():
-				XUiSkin.ds(t, f, Vector2(x0, y + off + fs * 1.1), text.substr(line_text_range.x, line_text_range.y - line_text_range.x), HORIZONTAL_ALIGNMENT_LEFT, w, fs, _fa(col, a))
+				XUiSkin.ds(t, f, Vector2(x0, y + off + fs * 1.1), text.substr(line_text_range.x, line_text_range.y - line_text_range.x), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _fa(col, a))
 			else:
 				_span_line(t, f, spans, line_text_range.x, line_text_range.y, Vector2(x0, y + off + fs * 1.1), fs, a)
 		y += lh

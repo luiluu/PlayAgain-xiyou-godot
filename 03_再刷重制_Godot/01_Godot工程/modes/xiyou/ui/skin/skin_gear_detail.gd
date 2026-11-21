@@ -26,6 +26,8 @@ var _key := []
 var _rows: Array = []        # [{text, color}]（装备详情、插槽）
 var _cmp: Array = []         # [[名, 当前, 换上后（-1＝不写）]]
 var body: Control
+## D1c 测试用：最近一次 _draw_body 每行 [行号, 当前值右缘, 箭头中, 新值右缘, 差值右缘]（四列锚点每行都记（没箭头的行只画当前值））
+var last_cols: Array = []
 var _content_h := 0.0
 ## T024 选中放大：当前页签的字放大（页签宽不变，放不下先缩字）
 var tab_scale: XSkinSelScale
@@ -170,7 +172,7 @@ func _drag_input(event: InputEvent) -> bool:
 			accept_event()
 		return was_drag
 	if event is InputEventMouseMotion:
-		var to := _drag.motion(event.position)
+		var to := _drag.motion(event.position, XSkinDrag.is_touch_event(event))
 		if not is_nan(to):
 			scroll_by(clampf(to, 0.0, max_scroll()) - scroll)
 			accept_event()
@@ -194,7 +196,7 @@ func _draw() -> void:
 		var d := XSkinItemPage.card_data(item)
 		var tex: Texture2D = d.get("icon")
 		if tex != null:
-			draw_texture_rect(tex, Rect2(x, pad, 48, 48), false)
+			draw_texture_rect(tex, XUiSkin.inline_icon_rect(x, pad + 24.0, 48.0, XUiSkin.FS_CARD) if XUiSkin.detail_on() else Rect2(x, pad, 48, 48), false)
 			x += 60
 		var fit := XSkinList.fit_text(head, str(d.title), size.x - pad - x, XUiSkin.FS_CARD, 20)
 		XUiSkin.ds(self, head, Vector2(x, pad + 26), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], d.title_color)
@@ -217,11 +219,9 @@ func _draw() -> void:
 	XUiSkin.draw_divider(self, pad, size.x - pad, ly, true, 0.85 if XUiSkin.polish_on() else 1.0)
 
 
-func _para(text: String, w: float, fs: int) -> TextParagraph:
-	var p := TextParagraph.new()
-	p.width = w
-	p.add_string(text, XUiSkin.font("body"), fs)
-	return p
+## T338 D2：走 XSkinText（避头尾＋防孤字），返回 [起, 止) 字符区间
+func _para(text: String, w: float, fs: int) -> Array[Vector2i]:
+	return XSkinText.wrap_ranges(text, XUiSkin.font("body"), fs, w)
 
 
 func _measure() -> float:
@@ -230,8 +230,37 @@ func _measure() -> float:
 		return _cmp.size() * ROW_H
 	var h := 0.0
 	for r in _rows:
-		h += _para(str(r.text), w, XUiSkin.FS_AUX_MAX).get_line_count() * roundf(XUiSkin.FS_AUX_MAX * 1.6)
+		h += _para(str(r.text), w, XUiSkin.FS_AUX_MAX).size() * roundf(XUiSkin.FS_AUX_MAX * 1.6)
 	return h
+
+
+## D1c：属性对比四列锚点（测试和 _draw 共用）。从右往左：差值右缘＝w-12，新值右缘，箭头居中，当前值右缘（列间 12）；
+## 列宽按八行里最宽的串（逐位定宽）定，同一字号下每行同列同 X。放不下属性名区（左 40%）时字号从 21 逐级缩到 14。
+## 不在比较态（没选候选）时只有当前值一列，右缘＝w-12（同旧版）。返回 {fs, cur_r, arrow_c, new_r, delta_r}
+static func cmp_cols(num: Font, w: float, cmp: Array, comparing: bool) -> Dictionary:
+	var gap := 12.0
+	var fs := 21
+	while true:
+		var cw := 0.0
+		var nw := 0.0
+		var dw := 0.0
+		for r in cmp:
+			var b: int = r[1]
+			var a: int = r[2]
+			cw = maxf(cw, XUiSkin.mono_digits_width(num, XMenu._group(b), fs))
+			if comparing and a >= 0:
+				nw = maxf(nw, XUiSkin.mono_digits_width(num, XMenu._group(a), fs))
+				dw = maxf(dw, maxf(XUiSkin.mono_digits_width(num, "▲" + XMenu._group(absi(a - b)), fs), XUiSkin.mono_digits_width(num, "▼" + XMenu._group(absi(a - b)), fs)))
+		var aw := num.get_string_size("→", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 6.0
+		var out := {"fs": fs, "delta_r": w - 12.0, "new_r": 0.0, "arrow_c": 0.0, "cur_r": w - 12.0}
+		if comparing:
+			out.new_r = out.delta_r - dw - gap
+			out.arrow_c = out.new_r - nw - gap - aw / 2.0
+			out.cur_r = out.new_r - nw - gap - aw - gap
+		if fs <= 14 or out.cur_r - cw >= 12.0 + w * 0.4 + 8.0:
+			return out
+		fs -= 1
+	return {}
 
 
 func _draw_body() -> void:
@@ -239,7 +268,9 @@ func _draw_body() -> void:
 	var num := XUiSkin.font("num")
 	var w := maxf(body.size.x - 12.0, 10.0)
 	var y := -scroll
+	last_cols = []
 	if tab == 1:
+		var cols := cmp_cols(num, w, _cmp, compare) if XUiSkin.detail_on() else {}
 		var stripe := Color(0.95, 0.90, 0.82, 0.045) if XUiSkin.polish_on() else Color(1, 1, 1, 0.04)
 		for r in _cmp:
 			if y + ROW_H >= 0 and y <= body.size.y:
@@ -248,14 +279,29 @@ func _draw_body() -> void:
 				XUiSkin.ds(body, font, Vector2(12, base + 17 * 0.36), str(r[0]), HORIZONTAL_ALIGNMENT_LEFT, w * 0.4, 17, XUiSkin.TEXT_2)
 				var before: int = r[1]
 				var after: int = r[2]
-				var t := XMenu._group(before)
-				var col := XUiSkin.TEXT
-				if compare and after >= 0 and after != before:
-					var d := after - before
-					t += " → %s %s%s" % [XMenu._group(after), "▲" if d > 0 else "▼", XMenu._group(absi(d))]
-					col = XUiSkin.UP if d > 0 else XUiSkin.DOWN
-				var tw := num.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21).x
-				XUiSkin.ds(body, num, Vector2(w - 12 - tw, base + 21 * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, col)
+				var done := false
+				if XUiSkin.detail_on():   # D1c：四列固定锚点（当前值右｜箭头中｜新值右｜差值右），不拼整串
+					var cfs: int = cols.fs
+					var by := base + cfs * 0.36
+					last_cols.append([last_cols.size(), cols.cur_r, cols.arrow_c, cols.new_r, cols.delta_r])
+					XUiSkin.draw_num_right(body, num, cols.cur_r, by, XMenu._group(before), cfs, XUiSkin.TEXT)
+					if compare and after >= 0 and after != before:
+						var d := after - before
+						var col2 := XUiSkin.UP if d > 0 else XUiSkin.DOWN
+						var aw := num.get_string_size("→", HORIZONTAL_ALIGNMENT_LEFT, -1, cfs).x
+						XUiSkin.ds(body, num, Vector2(roundf(cols.arrow_c - aw / 2.0), roundf(by)), "→", HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, col2)
+						XUiSkin.draw_num_right(body, num, cols.new_r, by, XMenu._group(after), cfs, col2)
+						XUiSkin.draw_num_right(body, num, cols.delta_r, by, "%s%s" % ["▲" if d > 0 else "▼", XMenu._group(absi(d))], cfs, col2)
+					done = true
+				if not done:
+					var t := XMenu._group(before)
+					var col := XUiSkin.TEXT
+					if compare and after >= 0 and after != before:
+						var d := after - before
+						t += " → %s %s%s" % [XMenu._group(after), "▲" if d > 0 else "▼", XMenu._group(absi(d))]
+						col = XUiSkin.UP if d > 0 else XUiSkin.DOWN
+					var tw := num.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21).x
+					XUiSkin.ds(body, num, Vector2(w - 12 - tw, base + 21 * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, col)
 			y += ROW_H
 	else:
 		var fs := XUiSkin.FS_AUX_MAX
@@ -263,9 +309,9 @@ func _draw_body() -> void:
 		for r in _rows:
 			var text := str(r.text)
 			var p := _para(text, w, fs)
-			for li in p.get_line_count():
+			for li in p.size():
 				if y + lh >= 0 and y <= body.size.y:
-					var rg := p.get_line_range(li)
+					var rg := p[li]
 					XUiSkin.ds(body, font, Vector2(0, y + fs * 1.15), text.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, r.get("color", XUiSkin.TEXT_2))
 				y += lh
 		if _rows.is_empty():

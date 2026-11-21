@@ -56,6 +56,24 @@ var bar: XSkinSelectBar
 ## T024 选中放大：选中行的图标、名字放大（行高、选中条不变，名字仍按本行余宽缩字／省略，不压右列和邻行）
 var sel_scale: XSkinSelScale
 const SCROLL_W := 4.0
+## T339 D3：像素级跟手。scroll_px＝top_row 整行起点＋_sub（手指拖到的行内零头，松手后留着，下一次按键／滚轮整行对齐）；
+## 方向键／滚轮／翻页仍按整行跳并把零头清掉。DETAIL_V1 关时永远为 0＝旧的整行跳
+var _sub := 0.0
+var scroll_px: float:
+	get: return top_row * row_height + _sub
+	set(v): _set_scroll_px(v)
+## 拖拽时按下的那一行（预按轻底，滑过死区立即撤销）；-1＝没有
+var pre_press := -1
+var _xd := XSkinDrag.new()
+var _touch_drag := true
+var _bar_hi := false
+var _bar_hi_gen := 0
+const BAR_ALPHA_HI := 0.92
+const BAR_ALPHA_LO := 0.68
+const BAR_HI_HOLD := 0.6
+const PRE_PRESS_ALPHA := 0.35
+## 左右各留的不裁剪边（D51 外置小箭头在行左 -22 处）
+const CLIP_SIDE := 26.0
 
 
 func _init() -> void:
@@ -73,6 +91,7 @@ func set_items(arr: Array, keep_index := false) -> void:
 	if not keep_index:
 		index = 0
 		top_row = 0
+		_sub = 0.0
 	index = clampi(index, 0, maxi(items.size() - 1, 0))
 	_ensure_visible()
 	_relayout(true)
@@ -100,7 +119,7 @@ func cell_rect(i: int) -> Rect2:
 	var cw := (content_width() - g * (columns - 1)) / columns
 	var row := floori(i / float(columns)) - top_row
 	var col := i % columns
-	return Rect2(col * (cw + g), row * row_height, cw, row_height)
+	return Rect2(col * (cw + g), row * row_height - _sub, cw, row_height)
 
 
 ## 列间距：第一期正式美术的外置箭头（左探 22）要落在列缝里，不进左列（小A核 P2-1）：至少 26
@@ -113,7 +132,9 @@ func item_at(p: Vector2) -> int:
 		return -1
 	var cw := (content_width() - gap() * (columns - 1)) / columns
 	var col := clampi(floori(p.x / (cw + gap())), 0, columns - 1)
-	var i := (floori(p.y / row_height) + top_row) * columns + col
+	var i := (floori((p.y + _sub) / row_height) + top_row) * columns + col
+	if i < 0:
+		return -1
 	return i if i < items.size() else -1
 
 
@@ -136,6 +157,7 @@ func select(i: int, animate := true) -> void:
 func move(dx: int, dy: int) -> bool:
 	if items.is_empty():
 		return false
+	_snap_rows()   # 方向键按整行跳：手指拖出来的行内零头先对齐到最近的整行
 	var n := items.size()
 	var i := index
 	if dy != 0:
@@ -155,6 +177,16 @@ func move(dx: int, dy: int) -> bool:
 		return false
 	select(i)
 	return true
+
+
+## 把拖出来的行内零头对齐到最近的整行（scroll_px＝top_row*row_height）
+func _snap_rows() -> void:
+	if _sub == 0.0:
+		return
+	var maxrow := maxi(rows_total() - visible_rows(), 0)
+	top_row = clampi(top_row + (1 if _sub >= row_height / 2.0 else 0), 0, maxrow)
+	_sub = 0.0
+	_relayout(true)
 
 
 func handle_input(event: InputEvent) -> bool:
@@ -218,6 +250,9 @@ var _dragging := false
 
 
 func _drag_input(event: InputEvent) -> void:
+	if XUiSkin.detail_on():
+		_drag_input_px(event)
+		return
 	if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
 		var mb := event as InputEventMouseButton
 		accept_event()
@@ -242,8 +277,93 @@ func _drag_input(event: InputEvent) -> void:
 			accept_event()
 
 
+## T339 D3：统一走 XSkinDrag（死区触屏 8／鼠标 5、起拖扣死区），列表 1:1 像素跟手；按下 0ms 给那一行预按轻底，滑过死区立即撤销；
+## 松手没拖过才算一次点。惯性与回弹挂 XSkinDrag.INERTIA_ENABLED（默认关）。
+func _drag_input_px(event: InputEvent) -> void:
+	if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+		var mb := event as InputEventMouseButton
+		accept_event()
+		if mb.pressed:
+			_xd.press(mb.position, scroll_px)
+			_touch_drag = XSkinDrag.is_touch_event(mb)
+			pre_press = item_at(mb.position)
+			queue_redraw()
+			return
+		var from := _xd.from
+		var was := _xd.dragging
+		var tap := _xd.release()
+		pre_press = -1
+		if was:
+			_bar_hi_release()
+			if _xd.begin_inertia(scroll_px):
+				set_process(true)
+		queue_redraw()
+		if tap and from != Vector2.INF:
+			_tap(mb.position)
+		return
+	if event is InputEventMouseMotion and _xd.active():
+		if not scrollable():
+			return
+		var to := _xd.motion((event as InputEventMouseMotion).position, _touch_drag)
+		if not is_nan(to):
+			if pre_press >= 0:
+				pre_press = -1   # 拖起来了：预按立刻撤销
+			_bar_hi = true
+			_bar_hi_gen += 1
+			_set_scroll_px(to)
+			accept_event()
+
+
+func _process(delta: float) -> void:
+	if not _xd.inertia_active():
+		set_process(false)
+		return
+	_set_scroll_px(_xd.tick_inertia(delta, 0.0, max_scroll_px()), true)
+	if not _xd.inertia_active():
+		set_process(false)
+
+
+func max_scroll_px() -> float:
+	return maxf(rows_total() - visible_rows(), 0) * row_height
+
+
+## 把滚动位置设到 v 像素。over＝允许在两端越出（惯性回弹时），否则截断到 [0, max_scroll_px]
+func _set_scroll_px(v: float, over := false) -> void:
+	var mx := max_scroll_px()
+	if not over:
+		v = clampf(v, 0.0, mx)
+	var maxrow := maxi(rows_total() - visible_rows(), 0)
+	var r := clampi(floori(v / row_height), 0, maxrow)
+	var sub := v - r * row_height
+	if r == top_row and is_equal_approx(sub, _sub):
+		return
+	top_row = r
+	_sub = sub
+	_relayout(true)
+
+
+## 松手后滚动条高亮再保持 BAR_HI_HOLD 秒才回常态
+func _bar_hi_release() -> void:
+	_bar_hi_gen += 1
+	var gen := _bar_hi_gen
+	if not is_inside_tree():
+		_bar_hi = false
+		return
+	get_tree().create_timer(BAR_HI_HOLD).timeout.connect(func() -> void:
+		if is_instance_valid(self) and gen == _bar_hi_gen:
+			_bar_hi = false
+			queue_redraw())
+
+
+## 滚动条拇指现在该多亮：拖拽中 0.92，松手 0.6s 后回 0.68
+func scroll_alpha() -> float:
+	return BAR_ALPHA_HI if _bar_hi else BAR_ALPHA_LO
+
+
 ## T283 多选方框（行键 check）：14×14 圆角框，标上是金色 ✓（不画框）；pos＝左缘、竖直中线
 func _draw_check(pos: Vector2, on: bool, dis: bool) -> void:
+	if XUiSkin.detail_on():   # T338 D2：勾选框也接行内图标下移量
+		pos.y += roundf(float(font_size) * XUiSkin.ICON_DY_K)
 	if on:
 		var c := XUiSkin.GOLD if not dis else XUiSkin.TEXT_3
 		draw_polyline(PackedVector2Array([pos + Vector2(1, 0), pos + Vector2(6, 5), pos + Vector2(15, -6)]), c, 2.5, true)
@@ -308,21 +428,28 @@ func page(d: int, move_index := true) -> bool:
 
 func scroll_to(row: int) -> void:
 	var r := clampi(row, 0, maxi(rows_total() - visible_rows(), 0))
-	if r == top_row:
+	if r == top_row and _sub == 0.0:
 		return
 	top_row = r
+	_sub = 0.0
 	_relayout(true)
 
 
 func _ensure_visible() -> bool:
 	var row := floori(index / float(columns))
 	var old := top_row
+	var was_sub := _sub != 0.0
+	if was_sub:
+		var y := (row - top_row) * row_height - _sub
+		if y >= 0.0 and y + row_height <= visible_rows() * row_height + 0.5:
+			return false   # 拖出来的半行位置上这一行已完整可见：点选不动画面
+	_sub = 0.0   # 要滚了：把拖出来的行内零头对齐成整行
 	if row < top_row:
 		top_row = row
 	elif row >= top_row + visible_rows():
 		top_row = row - visible_rows() + 1
 	top_row = clampi(top_row, 0, maxi(rows_total() - visible_rows(), 0))
-	return old != top_row
+	return old != top_row or was_sub
 
 
 func _relayout(instant := false) -> void:
@@ -331,8 +458,11 @@ func _relayout(instant := false) -> void:
 	bar.visible = active and not items.is_empty()
 	if not items.is_empty():
 		var r := cell_rect(index)
-		bar.visible = active and r.position.y >= 0 and r.end.y <= visible_rows() * row_height + 0.5
-		bar.move_to(r, instant)
+		if _sub != 0.0:   # 像素跟手：选中条跟着行半截滑进滑出（上下由列表的纵向裁剪切掉）
+			bar.visible = active and r.end.y > 0.0 and r.position.y < visible_rows() * row_height
+		else:
+			bar.visible = active and r.position.y >= 0 and r.end.y <= visible_rows() * row_height + 0.5
+		bar.move_to(r, instant or _sub != 0.0)
 	queue_redraw()
 
 
@@ -347,8 +477,11 @@ func _draw() -> void:
 		XUiSkin.ds(self, body, Vector2(XUiSkin.PAD, row_height / 2.0 + font_size * 0.35), empty_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, XUiSkin.TEXT_3)
 		return
 	var first := top_row * columns
-	var last := mini(items.size(), (top_row + visible_rows()) * columns)
+	var last := mini(items.size(), (top_row + visible_rows() + (1 if _sub != 0.0 else 0)) * columns)
+	_apply_clip()
 	sel_scale.sel(index if active else null)
+	if pre_press >= 0 and pre_press >= first and pre_press < last and not (pre_press == index and active):
+		draw_rect(cell_rect(pre_press).grow_individual(-2.0, -1.0, -2.0, -1.0), Color(XUiSkin.SEL_FILL.darkened(0.35), PRE_PRESS_ALPHA))
 	for i in range(first, last):
 		var it: Dictionary = items[i]
 		var r := cell_rect(i)
@@ -365,7 +498,10 @@ func _draw() -> void:
 		var icon = it.get("icon")
 		var tex: Texture2D = icon if icon is Texture2D else (XUiSkin.icon(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
 		if tex != null:
-			var ir := XSkinSelScale.grow(Rect2(x, base - icon_size / 2.0, icon_size, icon_size), sk)
+			var ir0 := Rect2(x, base - icon_size / 2.0, icon_size, icon_size)
+			if XUiSkin.detail_on():   # T338 D2：统一图标出口（取整＋ICON_DY_K）
+				ir0 = XUiSkin.inline_icon_rect(x, base, icon_size, font_size)
+			var ir := XSkinSelScale.grow(ir0, sk)
 			draw_texture_rect(tex, ir, false, Color(1, 1, 1, 0.45 if dis else 1.0))
 			var badge = it.get("badge")
 			if badge is Texture2D:
@@ -418,4 +554,27 @@ func _draw() -> void:
 		var track := Rect2(size.x - scroll_w(), 0, scroll_w(), visible_rows() * row_height)
 		var h := maxf(track.size.y * visible_rows() / float(rows_total()), 16.0)
 		var y := (track.size.y - h) * top_row / float(maxi(rows_total() - visible_rows(), 1))
+		if _sub != 0.0 or _bar_hi:
+			y = (track.size.y - h) * clampf(scroll_px / maxf(max_scroll_px(), 1.0), 0.0, 1.0)
 		XUiSkin.draw_scrollbar(self, track, y, h, Color(1, 1, 1, 0.06), Color(XUiSkin.LINE, 0.55))
+		if _bar_hi and pol:   # 拖拽中高亮：在常态 0.68 的拇指上再叠一层，合成 0.92
+			var gsb := StyleBoxFlat.new()
+			gsb.bg_color = Color(0.78, 0.69, 0.54, 1.0 - (1.0 - BAR_ALPHA_HI) / (1.0 - BAR_ALPHA_LO))
+			gsb.set_corner_radius_all(maxi(2, int(track.size.x * 0.5)))
+			gsb.draw(get_canvas_item(), Rect2(track.position.x + 0.5, y, maxf(2.0, track.size.x - 1.0), maxf(8.0, h)))
+
+
+## 像素跟手时只裁上下、不裁左右：D51 外置小箭头在行左 -22，整控件 clip_contents 会把它裁掉，
+## 所以只在行有半截位移时给画布项开剪裁，并把自定义矩形左右各放宽 CLIP_SIDE。静止（零头为 0）时关掉，和旧画法逐像素相同
+func _apply_clip() -> void:
+	var ci := get_canvas_item()
+	var on := _sub != 0.0 and XUiSkin.detail_on()
+	RenderingServer.canvas_item_set_clip(ci, on)
+	if on:
+		RenderingServer.canvas_item_set_custom_rect(ci, true, clip_rect())
+	else:
+		RenderingServer.canvas_item_set_custom_rect(ci, false)
+
+
+func clip_rect() -> Rect2:
+	return Rect2(-CLIP_SIDE, 0.0, size.x + CLIP_SIDE * 2.0, visible_rows() * row_height)

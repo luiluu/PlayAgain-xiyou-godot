@@ -51,6 +51,7 @@ static func apply(b: Button, kind := "", font_size := -1) -> Button:
 	for st in ["pressed", "hover_pressed"]:
 		b.add_theme_stylebox_override(st, press if XUiSkin.SELECT_V2 else sel)
 	wire_press(b, sel, press)
+	wire_press_feedback(b)
 	b.add_theme_font_override("font", XUiSkin.font("body"))
 	var fs := font_size if font_size > 0 else clampi(b.get_theme_font_size("font_size"), XUiSkin.FS_AUX, XUiSkin.FS_LIST)
 	b.add_theme_font_size_override("font_size", fs)
@@ -96,19 +97,19 @@ static func focus_scale_target(focused: bool) -> float:
 	return BUTTON_PEAK if focused and XSkinSelScale.ENABLED else 1.0
 
 
-static func _scale_to(b: Control, k: float) -> void:
+static func _scale_to(b: Control, k: float, dur := -1.0, raw := false) -> void:
 	if not is_instance_valid(b):
 		return
 	if b.has_meta("skin_focus_tween"):
 		var old = b.get_meta("skin_focus_tween")
 		if old is Tween and (old as Tween).is_valid():
 			(old as Tween).kill()
-	k = k if XSkinSelScale.ENABLED else 1.0
+	k = k if (XSkinSelScale.ENABLED or raw) else 1.0
 	if XUiSkin.motion() == XUiSkin.Motion.OFF or not b.is_inside_tree():
 		b.scale = Vector2.ONE * k
 		return
 	var tw := b.create_tween()
-	tw.tween_property(b, "scale", Vector2.ONE * k, XUiSkin.SEL_TIME).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tw.tween_property(b, "scale", Vector2.ONE * k, XUiSkin.SEL_TIME if dur < 0.0 else dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	b.set_meta("skin_focus_tween", tw)
 
 
@@ -120,3 +121,52 @@ static func wire_press(b: Button, focus_style: StyleBox, press_style: StyleBox) 
 	b.set_meta("skin_press_wired", true)
 	b.button_down.connect(func(): b.add_theme_stylebox_override("focus", press_style))
 	b.button_up.connect(func(): b.add_theme_stylebox_override("focus", focus_style))
+
+
+## T339 D3（界面细节规范 5.2）：按下 0ms 反馈。按下帧立刻开始以中心微缩到 PRESS_SCALE（0.05s TRANS_QUAD EASE_OUT），松手 0.10s 回到焦点倍率
+## （1.05 或 1.0）；底色压暗走各控件自己的按下样式（PRESS_DARKEN＝22% 给自绘控件用）。「全部／简化」档有缩放；「关」档不缩放，只靠按下样式的下沉 1px。
+## 回退：XUiSkin.DETAIL_V1 = false 不接。
+const PRESS_SCALE := 0.97
+const PRESS_DARKEN := 0.22
+const PRESS_IN := 0.05
+const PRESS_OUT := 0.10
+
+
+## 目标缩放倍率（测试看）：按住时 PRESS_SCALE
+static func press_scale_target(pressed: bool, focused: bool) -> float:
+	if pressed and XUiSkin.motion() != XUiSkin.Motion.OFF:
+		return PRESS_SCALE
+	return focus_scale_target(focused)
+
+
+static func wire_press_feedback(b: Control) -> void:
+	if b.has_meta("skin_press_fb_wired") or not (b is BaseButton):
+		return
+	b.set_meta("skin_press_fb_wired", true)
+	b.pivot_offset = b.size / 2.0
+	var bb := b as BaseButton
+	bb.button_down.connect(func() -> void:
+		if XUiSkin.detail_on():
+			b.set_meta("skin_press_k", press_scale_target(true, b.has_focus()))
+			_scale_to(b, press_scale_target(true, b.has_focus()), PRESS_IN, true))
+	bb.button_up.connect(func() -> void:
+		if XUiSkin.detail_on():
+			b.set_meta("skin_press_k", press_scale_target(false, b.has_focus()))
+			_scale_to(b, press_scale_target(false, b.has_focus()), PRESS_OUT, true))
+
+
+## 自绘控件（确认弹窗钮、详情牌钮、数量条钮…）的按下态：矩形以中心缩到 PRESS_SCALE（「关」档不缩，只下沉 1px）
+static func press_rect(r: Rect2, pressed: bool) -> Rect2:
+	if not pressed or not XUiSkin.detail_on():
+		return r
+	if XUiSkin.motion() == XUiSkin.Motion.OFF:
+		return Rect2(r.position + Vector2(0.0, 1.0), r.size)
+	var sz := r.size * PRESS_SCALE
+	return Rect2(r.get_center() - sz / 2.0, sz)
+
+
+## 自绘控件按下态的底色：压暗 22%（保留透明度）
+static func press_color(c: Color, pressed: bool) -> Color:
+	if not pressed or not XUiSkin.detail_on():
+		return c
+	return c.darkened(PRESS_DARKEN)
