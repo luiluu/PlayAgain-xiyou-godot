@@ -65,7 +65,7 @@ func _setup(logic: XBattleLogic = null) -> XBattleLogic:
 	XState.current = s
 	if logic == null:
 		logic = XBattleLogic.new()
-	logic.setup(2, s)
+	logic.setup(2, s, XBattleRandom.create("0000000000000331"))  # 固定本场随机流：整回合用例敌人出手、点名可复现（云端曾偶发一次）
 	logic.turn = 1
 	for a in logic.actors:
 		a.change_level(99)
@@ -354,7 +354,7 @@ func _whole_turn() -> void:
 	revives = logic.acts.filter(func(x): return x.id in [4549, 622])
 	var tgts := revives.map(func(x): return x.target)
 	_check("two_down.two_revivers", revives.size() == 2 and tgts[0] != tgts[1], revives.map(func(x): return [x.id, x.target.actor_id if x.target is XActor else -1]))
-	_check("two_down.both_alive", _actor(logic, 9).is_alive() and _actor(logic, 10).is_alive())
+	_check("two_down.both_revived", revives.size() == 2 and revives.all(func(x): return x.alive_after), revives.map(func(x): return x.alive_after))  # 看施放当下（回合后面敌人可能再打倒）
 	_check("two_down.force_once", logic.forced.count(4552) == revives.filter(func(x): return x.id == 4549).size(), logic.forced)
 
 
