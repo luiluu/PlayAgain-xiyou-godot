@@ -4,14 +4,14 @@ extends RefCounted
 ## 按下 press(位置, 当前滚动值)；移动 motion(位置, 是触屏) 过了死区才算拖，返回「按下时的滚动值＋拖过的像素」该滚到哪（没在拖返回 NAN）；
 ## 松手 release() 返回这次算不算一次点（没拖过）。
 ## T339 D3（界面细节规范 5.1）：死区触屏 8／鼠标 5 并扣除（起拖首帧从 0 平滑开始，不再突跳 8～10px）；跨过死区的同一帧就进拖动，没有任何长按延迟；
-## 可选增强（INERTIA_ENABLED，默认关，Kyo 试手感后再定）：松手按最后 80ms 的平均速度轻惯性滑行，超界最多拉出 24px 再 0.16s 缓出回弹。
+## 惯性（INERTIA_ENABLED，默认开，Kyo 11-22 定；Motion.OFF 不惯性）：松手按最后 80ms 的平均速度轻惯性滑行，超界最多拉出 24px 再 0.16s 缓出回弹。
 ## 回退：XUiSkin.DETAIL_V1 = false → 死区回 SLOP（10）、不扣除，也没有惯性。
 
 const SLOP := 10.0   # 旧死区（DETAIL_V1 关时用）
 const SLOP_TOUCH := 8.0
 const SLOP_MOUSE := 5.0
-## 可选增强开关：惯性与橡皮筋回弹，默认关
-static var INERTIA_ENABLED := false
+## 惯性与橡皮筋回弹开关，默认开（Kyo 11-22 定「开」）
+static var INERTIA_ENABLED := true
 const INERTIA_DECEL := 2200.0
 const INERTIA_MAX_T := 0.35
 const INERTIA_MIN_V := 60.0

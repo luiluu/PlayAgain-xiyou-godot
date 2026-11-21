@@ -1,7 +1,7 @@
 extends Node
 ## 【cc·T339·未经审查】界面细节 D3 手感升级（私密仓 重制设定/界面细节规范_v0.1.md 第五节卡 D3）：
 ## 1. XSkinDrag：触屏 7px 不起拖、9px 起拖首帧位移 1px；鼠标 4px 不起拖、6px 起拖首帧位移 1px；DETAIL_V1 关回旧死区 10／不扣除；
-##    INERTIA_ENABLED 关＝松手即停、开且非 Motion.OFF＝惯性不越界（最多越出 24px 再回弹落回边界）；
+##    INERTIA_ENABLED 默认开；关＝松手即停、开且非 Motion.OFF＝惯性不越界（最多越出 24px 再回弹落回边界）；
 ## 2. XSkinList：像素跟手（半行位置）、按下 0ms 预按、拖起来撤销、点一下才 activated、滚动条拖拽高亮 0.92／松手 0.6s 后 0.68、DETAIL_V1 关逐行跳；
 ## 3. 按钮：XSkinButton.apply 的按钮 button_down 即刻缩到 0.97、button_up 回焦点倍率；自绘件（确认弹窗、详情牌、数量条）按下 0ms 微缩压暗；
 ## 4. T336 核查 P2-1／P3-2：输入监听节点保持根下末位、合成键盘事件（meta）不记成键盘。
@@ -62,7 +62,7 @@ func _run() -> void:
 	XUiSkin.input_mode = -1
 	XUiSkin.touch_override = -1
 	XUiSkin.DETAIL_V1 = true
-	XSkinDrag.INERTIA_ENABLED = false
+	XSkinDrag.INERTIA_ENABLED = true
 	await frames(3)
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
@@ -102,7 +102,7 @@ func _drag_unit() -> void:
 	check("drag_is_touch_device_touch", XSkinDrag.is_touch_event(mouse_ev))
 	XUiSkin.touch_override = 0
 	check("slop_values", XSkinDrag.SLOP_TOUCH == 8.0 and XSkinDrag.SLOP_MOUSE == 5.0 and XSkinDrag.slop_for(true) == 8.0 and XSkinDrag.slop_for(false) == 5.0)
-	check("inertia_default_off", XSkinDrag.INERTIA_ENABLED == false)
+	check("inertia_default_on", XSkinDrag.INERTIA_ENABLED == true)
 	for c in [["touch", true, 7.0, 9.0], ["mouse", false, 4.0, 6.0]]:
 		var d := XSkinDrag.new()
 		d.press(Vector2(100, 300), 50.0)
@@ -193,7 +193,7 @@ func _inertia_unit() -> void:
 	check("rubber_pulled_out", seen_over)
 	check("rubber_settles_in_bounds", v >= 0.0 and v <= 6.0 and is_equal_approx(v, 6.0), v)
 	check("rubber_back_0_16s", t <= XSkinDrag.INERTIA_MAX_T + XSkinDrag.RUBBER_BACK_T + 0.05, t)
-	XSkinDrag.INERTIA_ENABLED = false
+	XSkinDrag.INERTIA_ENABLED = true
 
 
 # ---- 单测 3：XSkinList ----
@@ -312,7 +312,7 @@ func _list_unit() -> void:
 	check("list_inertia_rubber_within_24", worst <= XSkinDrag.RUBBER_MAX + 0.01, worst)
 	await get_tree().create_timer(0.7).timeout
 	check("list_inertia_settles_in_bounds", g.scroll_px >= 0.0 and g.scroll_px <= g.max_scroll_px() + 0.01 and not g._xd.inertia_active(), g.scroll_px)
-	XSkinDrag.INERTIA_ENABLED = false
+	XSkinDrag.INERTIA_ENABLED = true
 	# 剪裁：半行时开剪裁、左右留 26、只裁上下；静止时关
 	var c := _make_list()
 	check("list_clip_off_at_rest", c._sub == 0.0 and c.clip_rect().position.x == -XSkinList.CLIP_SIDE and c.clip_rect().size.x == c.size.x + XSkinList.CLIP_SIDE * 2.0)
