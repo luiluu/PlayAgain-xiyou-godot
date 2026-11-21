@@ -12,6 +12,7 @@ extends RefCounted
 ##   首领那一页（开战 → 本模块的 settle 判胜 → 档位开关、肝帝积分、CE1439 抽奖券与熟练度、神秘珠、种族补给）、
 ##   领奖那一页（宝箱 CE849～851 等、按变量 94 的档、传回楼层、重置副本）。和实打差的只有路上的小怪（不打、不发它们的掉落）。
 
+const VPLogic := preload("res://tests/virtual_player/vp_battle_logic.gd")
 const EventCompare := preload("res://tests/xiyou_event_compare.gd")
 const TIER_SWITCHES := [1561, 1676]   # 26～29 层的副本用 1661～1676（T272 补：原来只到 1660，26 层起找不到首领）
 const SAMPLE_TURNS := 40
@@ -101,7 +102,7 @@ func sample(st: XState, troop: int) -> bool:
 		a.recover_all()
 	var won := false
 	var peak := 0.0                    # 单回合最多打掉几成（回血之前量）
-	var logic := XBattleLogic.new()
+	var logic: XBattleLogic = VPLogic.new()   # T328：虚拟玩家的出手层（有人倒下先复活，VPLogic.REVIVE 关掉＝原自动战斗）
 	logic.setup(troop, copy)
 	logic.auto = true
 	_drain(logic, logic.troop_events())

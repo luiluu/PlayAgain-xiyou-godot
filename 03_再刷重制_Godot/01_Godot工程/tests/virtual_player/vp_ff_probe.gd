@@ -1,5 +1,6 @@
 extends Node
 const VPBot := preload("res://tests/virtual_player/virtual_player.gd")
+const VPLogic := preload("res://tests/virtual_player/vp_battle_logic.gd")
 ## 【cc·T238】快进探针（不进检查.sh）：读虚拟玩家某层的存档，打印队伍（人、等级、装备、生命／物攻／魔攻），
 ## 对指定敌群用无画面自动战斗真打 N 场（同 vp_fastforward.sample），每场写敌人开打血、剩的血、打掉几成、我方倒几人、回合数。
 ## godot --headless --audio-driver Dummy --path 01_Godot工程 -s res://tests/test_main_loop.gd res://tests/virtual_player/vp_ff_probe.tscn -- \
@@ -112,7 +113,7 @@ func _run() -> void:
 				a.recover_all()
 			if hongjun:
 				XTianqiSummit.prepare_hongjun(copy)
-			var logic := XBattleLogic.new()
+			var logic: XBattleLogic = VPLogic.new()   # T328：虚拟玩家出手层（复活），同 vp_fastforward.sample
 			logic.setup(int(troop), copy)
 			logic.auto = true
 			var hp0 := 0.0
@@ -291,7 +292,7 @@ func _compare(st: XState) -> void:
 				copy.hang_up_active = hang
 				if hang and copy.hang_up_origin.x < 0:
 					copy.hang_up_origin = Vector2i(copy.x, copy.y)
-				var logic := XBattleLogic.new()
+				var logic: XBattleLogic = VPLogic.new()   # T328：同上（实打、快进对照两边一致）
 				logic.setup(int(troop), copy)
 				logic.auto = true
 				if mode == "real":
