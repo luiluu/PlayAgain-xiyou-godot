@@ -302,14 +302,18 @@ func _draw() -> void:
 	if pol:
 		var cradle := StyleBoxFlat.new()
 		cradle.bg_color = Color(0.05, 0.042, 0.04, 0.58)
-		cradle.border_color = Color(XUiSkin.GOLD, 0.48) if (focused and enabled) else Color(XUiSkin.line_c(), 0.24)
+		cradle.border_color = Color(XUiSkin.GOLD, 0.48) if (focused and enabled and not (XUiSkin.detail_on() and not XUiSkin.show_focus_ring())) else Color(XUiSkin.line_c(), 0.24)   # T349 D1b：触屏／鼠标态不留金边
 		cradle.set_border_width_all(1)
 		cradle.set_corner_radius_all(int((H + 6.0) / 2.0))
 		cradle.anti_aliasing = true
 		cradle.draw(ci, Rect2(Vector2(-4, (size.y - H) / 2.0 - 3), Vector2(size.x + 8, H + 6)))
 	if focused and enabled:
-		var all := Rect2(Vector2(-6, (size.y - H) / 2.0 - 4), Vector2(size.x + 12, H + 8))
-		XUiSkin.draw_select(ci, all, XUiSkin.breath_alpha(), 0.55)
+		if XUiSkin.detail_on():   # T349 D1b：整条聚焦＝围着底托画双环（手柄／键盘才画，鼠标触屏不留）
+			if XUiSkin.show_focus_ring():
+				XUiSkin.draw_focus_ring(ci, Rect2(Vector2(-4, (size.y - H) / 2.0 - 3), Vector2(size.x + 8, H + 6)), int((H + 6.0) / 2.0))
+		else:
+			var all := Rect2(Vector2(-6, (size.y - H) / 2.0 - 4), Vector2(size.x + 12, H + 8))
+			XUiSkin.draw_select(ci, all, XUiSkin.breath_alpha(), 0.55)
 	for i in BUTTONS.size():
 		if i == 4 and not show_max:
 			continue
@@ -318,6 +322,8 @@ func _draw() -> void:
 		sb.set_corner_radius_all(int(H / 2.0))
 		sb.anti_aliasing = true
 		sb.bg_color = (Color(0.11, 0.095, 0.09, 0.72) if pol else Color(0, 0, 0, 0.35)) if _press != i else Color(XUiSkin.SEL_FILL, 0.5)
+		if XUiSkin.detail_on() and pol and _press != i:
+			sb.bg_color = Color(XUiSkin.surface_c(XUiSkin.Surface.S2), 0.9)   # T349 D1b：钮底 S2
 		sb.border_color = Color(XUiSkin.line_c(), 0.25 if dim else 0.55) if pol else Color(XUiSkin.LINE, 0.25 if dim else 0.6)
 		sb.set_border_width_all(1)
 		sb.bg_color = XSkinButton.press_color(sb.bg_color, _press == i)
