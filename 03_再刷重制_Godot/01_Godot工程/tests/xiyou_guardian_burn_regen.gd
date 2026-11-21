@@ -1,0 +1,104 @@
+extends Node
+## 【cc·T327】1 层守层者挂灼伤 V（State 21，HP 再生率 −5%）每回合末掉约 20% 最大生命的来源（复现专项，不改数）：
+## 一、来源：Star_Warehouse 的难度怪物属性把仓库倍率（天启篇开局借原版难度 3：DCultyL3，DCL3＝×2）同时乘在 Game_Enemy.xparam
+##     （XEnemy.xparam → hrg）和 Game_Enemy.sparam（XEnemy.sparam → rec）上；krz_state_re regenerateHp 是
+##     floor(mhp × hrg × rec)，于是 −5% × 2 × 2 ＝ −20%。原版 Star_Warehouse.js「难度怪物属性改变」两处也都乘，属原版行为。
+## 二、regenerateHp 的 maxSlipDamage 把持续伤害夹到 hp−1：只靠灼伤打不死，5 回合到 1 血，之后任何一下都死（T239「8 回合赢」的来路）。
+## 三、西游档存档同置 DCultyL3 时一模一样（不是天启篇引入的）。
+
+var results: Array = []
+
+
+func _ready() -> void:
+	_run.call_deferred()
+
+
+func _check(name: String, ok: bool, detail = null) -> void:
+	results.append({"name": name, "passed": ok, "detail": detail})
+
+
+func _run() -> void:
+	XMessageBox.auto = true
+	MVInterpreter.fixed_random = 0.5
+	XEnemy.force_roll = 100.0  # 守层者不按神话
+	seed(20261121)
+	_case("tq", true)
+	_case("xiyou", false)
+	XEnemy.force_roll = -1.0
+	var passed := results.filter(func(r): return r.passed).size()
+	for r in results:
+		if not r.passed:
+			print("FAIL ", r.name, " ", r.detail)
+	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
+	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+func _state(tianqi: bool) -> XState:
+	var lineup := [1, 2, 8, 9, 10]
+	var s: XState
+	if tianqi:
+		s = XTianqi.start_new_game(3, "xunchang", lineup)
+		XTianqi.take_pending()
+		for id in lineup:
+			XTianqi._joining = true
+			s.add_actor(int(id))
+			XTianqi._joining = false
+	else:
+		s = XState.new_game(3, 1, [8, 9, 10])
+	var legacy := XTianqi.legacy_of("xunchang") if tianqi else 3  # 天启篇寻常借的原版难度 3；西游档同置 DCultyL3（DCL3＝2，L4 是 2.5）
+	for i in range(1, 9):
+		s.flags["DCultyL%d" % i] = i == legacy
+	s.map_id = 4
+	XState.current = s
+	return s
+
+
+func _case(tag: String, tianqi: bool) -> void:
+	var s := _state(tianqi)
+	var logic := XBattleLogic.new()
+	logic.setup(int(XGuardianRework.TROOPS.get(1, 469)), s)
+	var e: XEnemy = null
+	for x in logic.enemies:
+		if not tianqi or XGuardianRework.params_floor(x) > 0:
+			e = x
+			break
+	_check("%s.found" % tag, e != null)
+	if e == null:
+		return
+	var w := e.warehouse_rate()
+	_check("%s.warehouse2" % tag, w == 2.0, w)
+	var hrg0 := e.hrg
+	var rec0 := e.rec
+	e.state_ids.append(21)
+	XActor.state_touch(21)
+	e.param_mark_dirty()
+	var hrg1 := e.hrg
+	var rec1 := e.rec
+	print("T327 %s mhp=%s hrg %s→%s rec %s→%s" % [tag, e.mhp, hrg0, hrg1, rec0, rec1])
+	# 关掉存档的难度怪物属性（DCultyL 全假＝不乘）读一遍原值
+	var saved := {}
+	for i in range(1, 9):
+		saved[i] = s.flags.get("DCultyL%d" % i, false)
+		s.flags["DCultyL%d" % i] = false
+	e.param_mark_dirty()
+	var hrg_raw := e.hrg
+	var rec_raw := e.rec
+	for i in saved:
+		s.flags["DCultyL%d" % i] = saved[i]
+	e.param_mark_dirty()
+	print("T327 %s raw hrg=%s rec=%s" % [tag, hrg_raw, rec_raw])
+	# 灼伤 V 的 −0.05 在 xparam 里被乘 ×2；rec 本身也被 sparam ×2
+	_check("%s.hrg_x2" % tag, is_equal_approx(hrg1, hrg_raw * w) and is_equal_approx(hrg1 - hrg0, -0.05 * w), [hrg_raw, hrg0, hrg1])
+	_check("%s.rec_x2" % tag, is_equal_approx(rec1, rec_raw * w) and is_equal_approx(rec1, rec0), [rec_raw, rec1])
+	var mhp := e.mhp
+	e.hp = mhp
+	logic._regenerate(e, [])
+	var lost := mhp - e.hp
+	var want := -floorf(mhp * hrg1 * rec1)
+	_check("%s.tick_eq_formula" % tag, is_equal_approx(lost, want), [lost, want])
+	if is_zero_approx(hrg0):  # 守层者自身没有再生时：一回合正好 20%（＝原版 5% × 仓库倍率²）
+		_check("%s.tick_20pct" % tag, is_equal_approx(lost, -floorf(mhp * -0.05 * w * w)), [lost, mhp])
+	# 夹到 hp−1：再 5 回合也只到 1 血，不会自己死
+	for i in 5:
+		logic._regenerate(e, [])
+	_check("%s.floor_at_1" % tag, e.hp == 1.0 and e.is_alive(), e.hp)
