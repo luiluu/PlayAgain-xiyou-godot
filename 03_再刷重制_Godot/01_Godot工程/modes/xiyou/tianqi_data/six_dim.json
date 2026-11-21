@@ -2649,12 +2649,13 @@
   "175": {
    "name": "谷雨",
    "class": "super",
-   "output": "A",
+   "output": "S",
    "survive": "S",
    "speed": "C",
    "wit": "B",
    "resolve": "B",
-   "support": "S"
+   "support": "S",
+   "_note": "手改理由：Kyo 11-19 定谷雨输出 S、生存至少 S（辅助降档待定）"
   },
   "176": {
    "name": "屠苏",

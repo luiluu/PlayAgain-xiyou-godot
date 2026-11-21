@@ -47,6 +47,8 @@ const PREVIEW_ACTORS := [167, 168, 169, 170, 172, 173, 174, 179]  # v0.6x 加 17
 ## installNativeRavenRuntime 的 [等级, 进阶] 解锁表里要进阶的技能：新建的渡鸦（进阶 0）没有学会
 const RAVEN_ADVANCE_GATED := [10123, 10124, 10125, 10126, 10127, 10133, 10136, 10139, 10170]
 const ATTR_INK := Color("c1c9d5")
+const RADAR_H := 200.0   # T278：雷达在「其他」列上方占的高；半径 RADAR_R，紧凑标签左右各 ~46
+const RADAR_R := 66.0
 ## 优化 O-084：返回目录时整张说明卡隐藏；false 照原版只藏卡本体、把 4 层品质边框留在状态页上（矩形 [535,-2,747,卡高+20]）
 static var HIDE_HELP_ON_RETURN := true
 ## 状态窗立绘平滑：原版 144 名原生侧视图 bitmap.smooth=true、画在半像素 (93.2,71.69) 上，线性取样略糊；167 以后有档的 smooth=false。
@@ -362,8 +364,19 @@ static func status_ops(id: int, measure: Callable) -> Array:
 		ops.append(_t("被动", c2 * 2.0 / 3.0, y, BOX_W, XUI.SYSTEM))
 		ops.append(_t("其他", c2 * 4.0 / 3.0, y, BOX_W, XUI.SYSTEM))
 	var offsets := [0.0, c2 * 2.0 / 3.0, c2 * 4.0 / 3.0 - tw.call(" ")]
+	# T278 六维：天启篇才有。普通排版画雷达在「其他」列上方（168／174 个角色没有其他技能，有的往下让开）；
+	# 渡鸦（167、173）与光环独立栏四列占满，放不下雷达，改成抬头行右侧一行字
+	var six_on := XTianqiSixDim.active()
+	var radar_on := six_on and not raven and not aura_book
+	if six_on:
+		var six := XTianqiSixDim.of_actor(id)
+		if radar_on:
+			var rx: float = offsets[2]
+			ops.append(["radar", six, rx + (CONTENT_W - rx) / 2.0, initial_y + RADAR_H / 2.0, RADAR_R])
+		else:
+			ops.append(_t(six_line(six), c2 + 14.0, LH * 3, CONTENT_W - c2 - 14.0, XUI.TEXT, 18))
 	for col in (0 if aura_book else 3):
-		var ry := initial_y
+		var ry := initial_y + (RADAR_H if radar_on and col == 2 else 0.0)
 		for s in skills:
 			var t := int(s.stypeId)
 			if (col == 0 and t >= 1 and t <= 3) or (col == 1 and t == 4) or (col == 2 and t == 5):
@@ -444,6 +457,14 @@ static func _aura_columns(ops: Array, skills: Array, y: float, initial_y: float)
 	return initial_y + (mini(max_rows, longest) + 1) * row_h
 
 
+## 六维一行字（渡鸦、光环栏没有地方放雷达时用）：「六维 输出 S　生存 A　…」
+static func six_line(six: Dictionary) -> String:
+	var parts := []
+	for d in XSkinSixDimRadar.DIMS:
+		parts.append("%s %s" % [XSkinSixDimRadar.DIM_NAMES[d], XTianqiSixDim.letter(six, d)])
+	return "六维 " + " ".join(parts)
+
+
 ## 技能详情抬头（Window_ActorBookSkillHeader.refresh，内容宽 509）
 static func header_ops(id: int) -> Array:
 	var w := HEADER_RECT.size.x - XMVWindow.PADDING * 2
@@ -477,6 +498,9 @@ static func paint_ops(c: XMVCanvas, ops: Array) -> void:
 	for o in ops:
 		if o[0] == "i":
 			c.icon(int(o[1]), o[2], o[3])
+		elif o[0] == "radar":  # ["radar", 六维, 中心 x, 中心 y, 半径]：T278，天启篇人物图鉴六维雷达（旧窗口字与色）
+			XSkinSixDimRadar.paint(c, Vector2(o[2], o[3]), float(o[4]), o[1], {"compact": true, "font": XUI.font(), "text": XUI.TEXT,
+				"dim": XUI.SYSTEM, "fs": 18})
 		else:
 			c.text(o[1], o[2], o[3], o[4], o[6], o[8], o[7], o[5])
 

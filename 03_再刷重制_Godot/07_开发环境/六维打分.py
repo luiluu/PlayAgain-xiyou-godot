@@ -47,8 +47,9 @@ ATK_SURV = 8000
 MODES = ['A', 'B', 'B2', 'B6', 'C']
 D239 = {'2', '22', '1', '162'}   # 绿司机、维利、狗逍遥、诛仙：Kyo D239「升档」——已升强者（1、162 在天启篇名单里本来就是强者；2、22 这次在 skill_rework.json tiers 里由弱者升强者），数值不动
 # Kyo D238 Q2：虎姐（89）、沙和尚（39）生存手改到 B（团队坦克，单人挨打测不到嘲讽／全队盾价值），其余照实测
-HAND_OVERRIDE = {'89': {'survive': 'B'}, '39': {'survive': 'B'}}
-HAND_REASON = '手改理由：团队坦克'
+# Kyo 11-19（T278 派单）：谷雨（175）输出改 S、生存至少 S（实测已是 S）；辅助降档待定，先不动
+HAND_OVERRIDE = {'89': {'survive': 'B'}, '39': {'survive': 'B'}, '175': {'output': 'S'}}
+HAND_REASONS = {'89': '手改理由：团队坦克', '39': '手改理由：团队坦克', '175': '手改理由：Kyo 11-19 定谷雨输出 S、生存至少 S（辅助降档待定）'}
 BUDGET = {'super': (20, 26), 'strong': (18, 25), 'weak': (13, 22)}
 # 全库名额（千分位累计）：SS 前 3.2%、S 累计 10.3%、A 25%、B 50%、C 75%、D 92.3%、其余 E（D／E 合计后 25%）。156 人时 SS5 S11 A23 B39 C39 D27 E12
 CUM = [('SS', 32), ('S', 103), ('A', 250), ('B', 500), ('C', 750), ('D', 923), ('E', 1000)]
@@ -525,7 +526,7 @@ def report(ids, base, tier, raw, meas, notes, res, mode_w, old_sample, prev, txt
             if k in D239:
                 nt = (nt + '；' if nt else '') + 'D239 已升强者，数值不动'
             if k in HAND_OVERRIDE:
-                nt = (nt + '；' if nt else '') + HAND_REASON
+                nt = (nt + '；' if nt else '') + HAND_REASONS[k]
             mark = '※' if nt and '按 0' not in nt else ''
             w('| %s | %s | %s | %s%s | %s | %s | %s | %s | %s | %d | %s |' % (CN[t], k, base[k]['name'], r['output'], mark, r['survive'], r['speed'], r['wit'], r['resolve'], r['support'], total(r), nt))
     w('')
@@ -573,7 +574,7 @@ def main():
         old = {}
     old = {k: {d: v[d] for d in DIMS} for k, v in old.items()}
     let = res[a.mode][0]
-    tab['actors'] = {i: {'name': base[i]['name'], 'class': tier[i], **{d: let[i][d] for d in DIMS}, **({'_note': HAND_REASON} if i in HAND_OVERRIDE else {})} for i in ids}
+    tab['actors'] = {i: {'name': base[i]['name'], 'class': tier[i], **{d: let[i][d] for d in DIMS}, **({'_note': HAND_REASONS[i]} if i in HAND_OVERRIDE else {})} for i in ids}
     tab['_note'] = ('天启篇六维（T275 表结构；T280 全员按实测重算，设定稿 天启篇_角色六维_v0.3定稿，Kyo D234）。刻度 E～SSS＝1～8 分；全表整数（附则 E）。只读数据，战斗中不重算；本表不碰伤害、血防、敏捷。'
                     ' actors 含 156 人（T280 终表，Kyo D238／D239 定稿，分档口径 %s）：输出＝k_calibrate 实测名次；生存＝标准敌人面前自动战斗实测挨打；速度＝敏捷×行动次数（再动／拉条／先制）；辅助＝职责＋机制词；'
                     '战商／韧性＝按角色号逐人手标分名次（依据原作人设／技能，非实测）；按全库名额配档再按 R1～R3 降档；停用角色（146、152、161、141）不占名额、暂记 C；虎姐(89)、沙和尚(39) 生存手改到 B（手改理由：团队坦克）；没有速度机制且敏捷并列的人速度记 C；D239：狗逍遥(1)、绿司机(2)、维利(22)、诛仙(162) 已升强者、数值不动。打分脚本 07_开发环境/六维打分.py，报告 07_开发环境/六维全员重算报告.md。') % a.mode
