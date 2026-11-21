@@ -107,6 +107,7 @@
   "XTianqiGemPower.full_value": "v",
   "XTianqiWeakAffix.guide_targets": "list",
   "已确认空值安全": {
+    "XTianqiBrand.cost_names": "T121：只在 guide.detail_rows 的天启篇分支（_tianqi_status_on 为真）且 XTianqiBrand.status_rows 非空时调；发行里天启篇关着、status_rows 空壳返回 []，走不到；即便走到，空表只显示「无」",
     "XTianqiSixDim.of_actor": "T278：actor_book 与 skin_status_page 都先判 XTianqiSixDim.active()，空壳恒 false 走不到；真脚本在西游档本身也返回 neutral()，只读不写存档",
     "XTianqiSixDim.data": "T279：只在 XBossStatus.six_summary 里读 ai_tier_names，该函数开头先判 XTianqiSixDim.active()，空壳恒 false 提前返回 {}，走不到；真脚本西游档 active 也为 false",
     "XTianqiSixDim.of_battler": "T279：只在 XBossStatus.six_summary（active() 守卫之后）调；空壳走不到，西游档真脚本同样走不到",
