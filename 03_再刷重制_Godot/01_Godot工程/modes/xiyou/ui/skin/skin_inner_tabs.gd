@@ -24,11 +24,15 @@ var index := 0
 var sound := false
 ## T359 D255：页签条的焦点态。Q／E 换页（或点页签）＝页签条拿到焦点，当前页签外画淡金双环（键盘／手柄态才画）；
 ## 之后按了别的键（上下左右、确定、取消等）就放掉。DETAIL_V1 关＝不画。页面不用管，条自己听输入
+## 页签拿焦点时要一起降静默的列表（可空）；页面自己的静默条件（数量态等）另算，别把它冲掉
+var linked_list: XSkinList
 var focused := false:
 	set(v):
 		if focused == v:
 			return
 		focused = v
+		if linked_list != null and is_instance_valid(linked_list):
+			linked_list.quiet = v   # 页签亮焦点时同屏的列表选中行降静默
 		queue_redraw()
 
 
@@ -40,6 +44,8 @@ func _init() -> void:
 
 func _input(event: InputEvent) -> void:
 	if not is_visible_in_tree() or not XUiSkin.detail_on():
+		if focused:
+			focused = false
 		return
 	if not (event is InputEventKey or event is InputEventJoypadButton) or not event.is_pressed():
 		return
@@ -94,7 +100,6 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		for i in tabs.size():
 			if tab_rect(i).has_point(event.position):
-				focused = true
 				select(i)
 				accept_event()
 				return
@@ -139,3 +144,8 @@ func ring_rect() -> Rect2:
 	var x := r.position.x + GAP / 2.0
 	var pad_x := clampf(minf(x, size.x - x - w), 0.0, 8.0)
 	return Rect2(x - pad_x, 2.0, w + pad_x * 2.0, size.y - 5.0)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and not is_visible_in_tree():
+		focused = false

@@ -108,7 +108,7 @@ func _focus_logic() -> void:
 	tabs._input(_key(KEY_Q))
 	XUiSkin.DETAIL_V1 = false
 	tabs._input(_key(KEY_DOWN))
-	check("tabs_off_ignores_input", tabs.focused)   # 关＝不处理（留着也不画，见窗口段）
+	check("tabs_off_releases_focus", not tabs.focused)   # 关＝放掉、不画
 	XUiSkin.DETAIL_V1 = true
 	var rr := tabs.ring_rect()
 	check("tabs_ring_rect_inside_height", rr.position.y >= 0.0 and rr.end.y <= tabs.size.y and rr.size.x > 20.0, rr)
@@ -127,13 +127,43 @@ func _focus_logic() -> void:
 	up.pressed = false
 	back._input(up)
 	check("back_release_on_cancel_up", not back.focused)
+	# 按下取消后页面隐藏、隐藏后才松手：不得卡亮；隐藏本身也清位
+	back.focused = false
+	back._input(ev)
+	check("back_focus_before_hide", back.focused)
+	back.visible = false
+	check("back_hide_clears_focus", not back.focused)
+	back.visible = true
+	back.focused = true
+	back.visible = false
+	back._input(up)
+	check("back_release_while_hidden_clear", not back.focused)
 	back.queue_free()
+	var tb := XSkinInnerTabs.new()
+	tb.size = Vector2(300, XSkinInnerTabs.H)
+	add_child(tb)
+	tb.set_tabs(["甲", "乙"], 0)
+	var ll := XSkinList.new()
+	add_child(ll)
+	tb.linked_list = ll
+	tb._input(_key(KEY_E))
+	check("tabs_focus_quiets_linked_list", tb.focused and ll.quiet)
+	tb.visible = false
+	check("tabs_hide_clears_and_unquiets", not tb.focused and not ll.quiet)
+	tb.queue_free()
+	ll.queue_free()
 
 
 # ---- 5 面包屑与开关色 ----
 func _crumb_and_values() -> void:
-	check("crumb_dy_4", XSkinSubPage.crumb_dy() == 4.0)
-	check("crumb_clear_of_accent", XUiSkin.PAD + 40 + XSkinSubPage.crumb_dy() - XUiSkin.fs(XSkinCrumb.FS) * 0.75 - (XUiSkin.PAD + 25.5) >= 7.0)
+	for pct in [100, 130]:
+		XFontScale.set_value("global", pct)
+		var gap := XUiSkin.PAD + 40 + XSkinSubPage.crumb_dy() - 0.95 * XUiSkin.fs(XSkinCrumb.FS) - (XUiSkin.PAD + 25.5)
+		check("crumb_gap_ge8_at_%d" % pct, gap >= 8.0, gap)
+	XFontScale.set_value("global", 130)
+	var dy130 := XSkinSubPage.crumb_dy()
+	XFontScale.set_value("global", 100)
+	check("crumb_dy_grows_with_font", dy130 > XSkinSubPage.crumb_dy(), dy130)
 	XUiSkin.DETAIL_V1 = false
 	check("crumb_dy_off_0", XSkinSubPage.crumb_dy() == 0.0)
 	check("value_color_off_fallback", XSkinSubPage.value_color("开", XUiSkin.TEXT) == XUiSkin.TEXT)

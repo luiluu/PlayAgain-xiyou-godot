@@ -63,6 +63,7 @@ func _ready() -> void:
 	card.gui_input.connect(_on_card_gui)
 	inner_tabs = XSkinInnerTabs.new()
 	inner_tabs.changed.connect(_on_tab)
+	inner_tabs.linked_list = list
 	list_panel.add_child(inner_tabs)
 	layout.left.draw.connect(_draw_space)
 	gui_input.connect(_on_gui)

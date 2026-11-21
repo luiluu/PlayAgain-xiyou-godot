@@ -119,7 +119,10 @@ func relayout() -> void:
 
 ## T359 F-03：标题下的淡金短线在 PAD+25.5，面包屑字头原先离它不到 4px（S-SPC-2）；整行（面包屑＋列表）下移 4px，字头离线 ≥8px。DETAIL_V1 关＝0
 static func crumb_dy() -> float:
-	return 4.0 if XUiSkin.detail_on() else 0.0
+	if not XUiSkin.detail_on():
+		return 0.0
+	# 字头（基线上 0.95 倍字号，含描边）离金线（PAD+25.5）≥ 8px；字号跟设置缩放（130% 时更大）
+	return maxf(8.0, ceilf(XUiSkin.PAD + 25.5 + 8.0 + 0.95 * XUiSkin.fs(XSkinCrumb.FS) - (XUiSkin.PAD + 40)))
 
 
 func _draw_list_panel() -> void:

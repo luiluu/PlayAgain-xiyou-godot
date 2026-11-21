@@ -81,7 +81,7 @@ func skin_rows() -> Array:
 	for i in rows().size():
 		var st := _state(i)
 		out.append({"text": "屏蔽 %s 装备" % XQuality.config().names[_grade(i)], "right": STATE_TEXT.get(st, ""),
-			"right_color": XUiSkin.TEXT_2 if st == "none" else XUiSkin.GOLD_LIGHT})
+			"right_color": XSkinSubPage.on_color(false) if st == "none" else XUiSkin.GOLD_LIGHT})
 	return out
 
 

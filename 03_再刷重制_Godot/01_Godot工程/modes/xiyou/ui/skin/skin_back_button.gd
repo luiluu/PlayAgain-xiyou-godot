@@ -40,13 +40,19 @@ func _init() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if not is_visible_in_tree() or not XUiSkin.detail_on():
+	if not (event is InputEventKey or event is InputEventJoypadButton):
 		return
-	if event is InputEventKey or event is InputEventJoypadButton:
-		if event.is_action_pressed("ui_cancel") and not (event is InputEventKey and event.echo):
-			focused = true
-		elif event.is_action_released("ui_cancel"):
-			focused = false
+	if event.is_action_released("ui_cancel"):   # 松手无条件放掉（页面可能已在按下时隐藏）
+		focused = false
+	elif focused and not is_visible_in_tree():
+		focused = false
+	elif is_visible_in_tree() and XUiSkin.detail_on() and event.is_action_pressed("ui_cancel") and not (event is InputEventKey and event.echo):
+		focused = true
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and not is_visible_in_tree():
+		focused = false
 
 
 func _gui_input(event: InputEvent) -> void:

@@ -74,6 +74,7 @@ func _ready() -> void:
 	inner_tabs = XSkinInnerTabs.new()
 	inner_tabs.set_tabs(XShop.CATEGORIES.map(func(c): return c[0]), scene._cat)
 	inner_tabs.changed.connect(_on_tab)
+	inner_tabs.linked_list = list
 	list_panel.add_child(inner_tabs)
 	list_panel.draw.connect(_draw_list_right)
 	foot = Control.new()
@@ -141,7 +142,7 @@ func sync() -> void:
 		"confirm":
 			set_focus("none")
 	stepper.focused = mode == "number" and stepper.visible
-	list.quiet = mode == "number"   # T359 D256：焦点在数量条／右牌钮时列表选中行降静默，同屏只一个强焦点
+	list.quiet = mode == "number" or (inner_tabs != null and inner_tabs.focused)   # T359 D256：焦点在数量条／右牌钮时列表选中行降静默，同屏只一个强焦点
 	if mode != "number":
 		stepper.close_editor()   # 离开数量态：手输框收起，别留着吞数字键和回车（小A核 P2-1）
 	set_hint_list(_hints(mode))
