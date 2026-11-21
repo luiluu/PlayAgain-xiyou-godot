@@ -17,6 +17,9 @@ const SCREEN := Vector2(1280, 720)
 const MBACK_GROUP := "xiyou_mback"
 
 static var _stack: Array = []
+## T361（F-13）回退开关：新皮肤（提示道）开着时旧弹窗彻底不画——弹出时新皮肤还没开（进天启篇存档之前、标题上触发的成就）
+## 留下的旧弹窗，新皮肤一开就转进提示道并移除；提示道里的成就名和「获得新成就」去掉末尾叹号（规范 6.2）。false＝回到只在弹出那一刻分流
+static var LANE_TAKEOVER := true
 
 var item := {}
 var win: XMVWindow
@@ -83,7 +86,7 @@ static func show_for(d: Dictionary) -> void:
 ## 提示道的一条（T254 卡 C）：图标＋成就名（旧金）＋「获得新成就！」；142／143 换成它们的专用徽章，kyo 专属只画徽章
 static func lane_item(d: Dictionary) -> Dictionary:
 	var id := int(d.get("id", -1))
-	var it := {"kind": "ach", "title": str(d.get("name", "")), "sub": str(settings().get("Popup Message", "")), "icon": int(d.get("icon", 0))}
+	var it := {"kind": "ach", "title": _calm(str(d.get("name", ""))), "sub": _calm(str(settings().get("Popup Message", ""))), "icon": int(d.get("icon", 0))}
 	var pl := XAchievementBadge.popup_plan(id, WIDTH, HEIGHT)
 	if not pl.is_empty():
 		it.erase("icon")
@@ -96,6 +99,29 @@ static func lane_item(d: Dictionary) -> Dictionary:
 		if id == XAchievementBadge.KYO_ID:
 			it["title"] = ""
 	return it
+
+
+## 提示道去末尾叹号（规范 6.2）：「1W预约量达成！」→「1W预约量达成」
+static func _calm(t: String) -> String:
+	if not LANE_TAKEOVER:
+		return t
+	while t.ends_with("！") or t.ends_with("!"):
+		t = t.left(t.length() - 1)
+	return t
+
+
+## 新皮肤开着时把还挂着的旧弹窗转进提示道（每条只转一次），返回转了几条
+static func takeover_stack() -> int:
+	if not LANE_TAKEOVER or not XSkinNoticeLane.on():
+		return 0
+	var n := 0
+	for p in _stack.duplicate():
+		if is_instance_valid(p) and not p.is_queued_for_deletion():
+			XSkinNoticeLane.push(lane_item(p.item))
+			p.queue_free()
+			n += 1
+	_stack.clear()
+	return n
 
 
 ## 142／143 的专用弹窗（XAchievementBadge.popup_plan）；其余成就为空
@@ -175,6 +201,9 @@ static func _in_circ(n: float) -> float:
 
 
 func _physics_process(_delta: float) -> void:
+	if LANE_TAKEOVER and XSkinNoticeLane.on():   # T361（F-13）：新皮肤开了，旧弹窗不再画
+		takeover_stack()
+		return
 	frame += 1
 	if frame <= IN_FRAMES:
 		_apply(_out_circ(frame / float(IN_FRAMES)))

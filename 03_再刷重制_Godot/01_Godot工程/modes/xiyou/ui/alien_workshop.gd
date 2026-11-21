@@ -77,6 +77,10 @@ var skin_tab := 0
 var _skin_tab_name := ""
 var _skin_hints: XSkinKeyHints
 const SKIN_LIST_W := 360.0
+## T361（F-08）回退开关：新界面工坊去网页味——底部操作栏分主次（一个实心主按钮、其余次按钮、分解／取核靠右隔开）、
+## 页签统一成一套（字＋当前页旧金下划线，不再一个红乙选中条带红箭头、其余描边框）、右上多余的「返回」框换成页名前的「‹」、
+## 左下说明按 XSkinText 折行防孤字；false＝回到 ui-skin-3b 的排法
+static var LAYOUT_V2 := true
 const SKIN_TAB_H := 36.0
 
 
@@ -1212,6 +1216,13 @@ func _render_skin(nodes: Array) -> void:
 	head.add_theme_constant_override("separation", XUiSkin.PANEL_GAP)
 	head.position = Vector2(m, 16)
 	head.size = Vector2(vs.x - m * 2.0, 44)
+	if LAYOUT_V2:   # 页名前「‹」返回（点＝取消），代替右上的「返回」框
+		var back := XSkinBackButton.attach(page)
+		if back != null:
+			var hx := XSkinBackButton.place(back, m)
+			back.position.y = 14
+			head.position.x = hx
+			head.size.x = vs.x - m - hx
 	page.add_child(head)
 	if heading != null:
 		var t := _skin_label(str(heading.children[0].get("text", "")), SIZES.h1, XUiSkin.GOLD, true)
@@ -1232,6 +1243,8 @@ func _render_skin(nodes: Array) -> void:
 				head.add_child(c)
 	if heading != null:
 		for k in heading.children.slice(1):
+			if LAYOUT_V2 and str(k.get("tag", "")) == "button" and str(k.get("text", "")) == "返回":
+				continue
 			var c := _make(k)
 			if c != null:
 				c.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -1256,7 +1269,7 @@ func _render_skin(nodes: Array) -> void:
 	if skin_tabs.size() > 1:
 		var strip := HBoxContainer.new()
 		strip.name = "SkinTabs"
-		strip.add_theme_constant_override("separation", 8)
+		strip.add_theme_constant_override("separation", XUiSkin.PAD_LG if LAYOUT_V2 else 8)
 		strip.position = Vector2(m, top)
 		strip.size = Vector2(vs.x - m * 2.0, SKIN_TAB_H)
 		page.add_child(strip)
@@ -1272,6 +1285,9 @@ func _render_skin(nodes: Array) -> void:
 				var tab_btn := tb
 				strip.sort_children.connect(func(): tab_btn.scale = Vector2.ONE * XSkinButton.focus_scale_target(true))
 				tb.scale = Vector2.ONE * XSkinButton.focus_scale_target(true)
+			if LAYOUT_V2:
+				_skin_tab_style(tb, i == skin_tab)
+			elif i == skin_tab:
 				tb.add_theme_stylebox_override("normal", XSkinButton.select())
 				tb.add_theme_color_override("font_color", XUiSkin.TEXT)
 			else:
@@ -1382,6 +1398,11 @@ func _skin_body(page: Control, body: Dictionary, note, r: Rect2) -> Control:
 	if note != null:
 		var nl := _skin_label(str(note.text), BODY_SIZE, NOTE, false)
 		nl.label_settings.font_size = XUiSkin.FS_AUX
+		if LAYOUT_V2:   # 防孤字（规范 7）：按 XSkinText 先折好行，不交给 Label 自己折
+			var ps := XUiSkin.panel_style()
+			var w := SKIN_LIST_W - ps.get_content_margin(SIDE_LEFT) - ps.get_content_margin(SIDE_RIGHT) - 2.0
+			nl.text = "\n".join(XSkinText.wrap_lines(str(note.text), nl.label_settings.font, nl.label_settings.font_size, w))
+			nl.autowrap_mode = TextServer.AUTOWRAP_OFF
 		lv.add_child(nl)
 	var dp := _skin_panel()
 	dp.name = "SkinDetail"
@@ -1408,18 +1429,97 @@ func _skin_body(page: Control, body: Dictionary, note, r: Rect2) -> Control:
 		line.custom_minimum_size.y = 1
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		dv.add_child(line)
-		var bar := HFlowContainer.new()
-		bar.name = "SkinActions"
-		bar.add_theme_constant_override("h_separation", 8)
-		bar.add_theme_constant_override("v_separation", 8)
-		for k in actions.children:
-			var c := _make(k)
-			if c != null:
-				bar.add_child(c)
-		dv.add_child(bar)
+		if LAYOUT_V2:
+			dv.add_child(_skin_action_bar(actions))
+		else:
+			var bar := HFlowContainer.new()
+			bar.name = "SkinActions"
+			bar.add_theme_constant_override("h_separation", 8)
+			bar.add_theme_constant_override("v_separation", 8)
+			for k in actions.children:
+				var c := _make(k)
+				if c != null:
+					bar.add_child(c)
+			dv.add_child(bar)
 	if confirming or confirming_core or cfg_open:   # 确认框、配置在详情最下面：滚到底
 		_skin_scroll_bottom.call_deferred(dsc)
 	return lp
+
+
+## 页签（LAYOUT_V2）：一律字＋下划线（同 XSkinInnerTabs 的口径）：当前页最亮字＋2px 旧金下划线，其余次要字、无框
+func _skin_tab_style(tb: Button, current: bool) -> void:
+	var sb := StyleBoxFlat.new()
+	sb.draw_center = false
+	sb.border_color = Color(XUiSkin.GOLD, 0.95) if current else Color(0, 0, 0, 0)
+	sb.border_width_bottom = int(XSkinInnerTabs.LINE_W)
+	sb.content_margin_left = 4
+	sb.content_margin_right = 4
+	sb.content_margin_top = 4
+	sb.content_margin_bottom = 6
+	var hover := sb.duplicate() as StyleBoxFlat
+	if not current:
+		hover.border_color = Color(XUiSkin.GOLD, 0.35)
+	for st in ["normal", "disabled", "focus"]:
+		tb.add_theme_stylebox_override(st, sb)
+	for st in ["hover", "pressed", "hover_pressed"]:
+		tb.add_theme_stylebox_override(st, hover)
+	var col := XUiSkin.TEXT_HI if current else XUiSkin.TEXT_2
+	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
+		tb.add_theme_color_override(k, col)
+
+
+## 操作栏（LAYOUT_V2，规范 8 U-18：至多 1 主 1 次）：左边第一个能点的主操作做实心主按钮，其余普通操作一律次按钮（细线）；
+## 分解、取核这类找不回来的操作挪到右端、和左边隔开。按钮还是同一批（文字、信号、可否点不变）
+func _skin_action_bar(actions: Dictionary) -> Control:
+	var bar := HBoxContainer.new()
+	bar.name = "SkinActions"
+	bar.add_theme_constant_override("separation", XUiSkin.GRID)
+	var left := HBoxContainer.new()
+	left.add_theme_constant_override("separation", XUiSkin.GRID)
+	var right := HBoxContainer.new()
+	right.add_theme_constant_override("separation", XUiSkin.GRID)
+	var danger_re := RegEx.create_from_string(DANGER_RE)
+	var primary_re := RegEx.create_from_string(PRIMARY_RE)
+	var primary: Button = null
+	var plain: Array = []
+	for k in actions.children:
+		var c := _make(k)
+		if c == null:
+			continue
+		if c is Button and danger_re.search((c as Button).text) != null:
+			right.add_child(c)
+			continue
+		if c is Button and primary == null and not (c as Button).disabled and primary_re.search((c as Button).text) != null:
+			primary = c
+		else:
+			plain.append(c)
+	if primary != null:
+		var ps := XSkinButton.style("primary")
+		ps.bg_color = Color(XUiSkin.BTN_IDLE_FILL, 0.98)
+		ps.border_color = Color(XUiSkin.GOLD, 0.85)
+		primary.add_theme_stylebox_override("normal", ps)
+		primary.add_theme_color_override("font_color", XUiSkin.GOLD_LIGHT)
+		left.add_child(primary)
+	for c in plain:
+		if c is Button:   # 次按钮：多出来的主操作降成普通细线
+			(c as Button).add_theme_stylebox_override("normal", XSkinButton.style(""))
+			if (c as Button).disabled:
+				(c as Button).add_theme_stylebox_override("disabled", XSkinButton.style(""))
+		left.add_child(c)
+	bar.add_child(left)
+	var gap := Control.new()
+	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.add_child(gap)
+	if right.get_child_count() > 0:
+		var sep := ColorRect.new()   # 危险操作前一道竖线，和左边隔开
+		sep.color = Color(XUiSkin.LINE, 0.25)
+		sep.custom_minimum_size = Vector2(1, 24)
+		sep.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		bar.add_child(sep)
+		bar.add_child(right)
+	return bar
 
 
 func _skin_scroll_bottom(sc: ScrollContainer) -> void:

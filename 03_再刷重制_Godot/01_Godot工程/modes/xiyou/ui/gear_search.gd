@@ -21,6 +21,10 @@ const NOTE_TEXT := "按当前属性、法宝等级和已识别战斗词条估算
 
 static var filter := {}
 static var selected_key := ""
+## T361（F-06）回退开关：新皮肤下检索页走模板页版式（页名＋搜索条＋「筛选」面板＋按键提示）；false＝回到 XWebPanel 换皮版
+static var SKIN_PAGE_V2 := true
+## 新皮肤版式：筛选面板开着没有（重建页面时保留）
+static var filters_open := false
 
 var source: Array = []            # [{item, owner, key}]
 var _results: Array = []
@@ -32,6 +36,10 @@ var _detail_box: VBoxContainer
 var _detail_scroll: ScrollContainer
 var _fields: Control
 var _sort_select: OptionButton
+var _filter_panel: Panel
+var _filter_btn: Button
+var _hints: XSkinKeyHints
+var _sort_note: Label
 
 
 static func reset_session() -> void:
@@ -238,9 +246,16 @@ func _draw() -> void:
 	draw_frame()
 
 
+static func skin_v2() -> bool:
+	return SKIN_PAGE_V2 and XUiSkin.on()
+
+
 func _render_gear() -> void:
 	for c in get_children():
 		c.queue_free()
+	if skin_v2():
+		_render_gear_skin()
+		return
 	var head := _fixed(_label("装备词条检索", 23, TEXT, true), 36.8)
 	head.position = Vector2(CONTENT_X, 36)
 	add_child(head)
@@ -316,6 +331,203 @@ func _render_gear() -> void:
 	queue_redraw()
 	_render_results()
 	_search.grab_focus.call_deferred()
+
+
+# ---- 新皮肤版式（T361 F-06：去网页味）----
+## 版式（1280 坐标，面板 8..1272）：
+##   页名「装备检索」34 号（左上）；分隔线下一行：搜索条（1px 线、聚焦 1px 旧金）＋右侧「筛选」钮（有条件时写「筛选 · N」）；
+##   下一行左「符合 a / b 件」、右当前排序；其下列表 43%＋详情；底行左按键提示、右主按钮「按此筛选」。
+##   分类／部位／品质／位置／指定词条／排序六个下拉收进「筛选」面板（盖在列表上，三列两行＋「清空条件」），取消先关面板。
+const SK_TOP := 120.0
+const SK_ROW_H := 40.0
+const SK_FILTER_W := 136.0
+
+func _render_gear_skin() -> void:
+	var head := Label.new()
+	head.text = "装备检索"
+	head.add_theme_font_override("font", XUiSkin.font("title"))
+	head.add_theme_font_size_override("font_size", XUiSkin.FS_PAGE)
+	head.add_theme_color_override("font_color", XUiSkin.TEXT)
+	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	head.position = Vector2(CONTENT_X, 40)
+	add_child(head)
+	# 搜索条：1px 线，聚焦换 1px 旧金（不用 2px 朱红粗框）
+	_search = LineEdit.new()
+	_search.placeholder_text = "输入装备名或词条，空格隔开可同时找，如：暴击 掉宝"
+	_search.text = str(filter.query)
+	_search.add_theme_font_override("font", _font())
+	_search.add_theme_font_size_override("font_size", XUiSkin.FS_AUX_MAX)
+	_search.add_theme_color_override("font_color", XUiSkin.TEXT)
+	_search.add_theme_color_override("font_placeholder_color", XUiSkin.TEXT_3)
+	_search.add_theme_color_override("caret_color", XUiSkin.GOLD)
+	var sn := _sk_box(Color(0, 0, 0, 0.35), Color(XUiSkin.LINE, 0.35), Vector2(14, 6))
+	var sfo := _sk_box(Color(0, 0, 0, 0.35), Color(XUiSkin.GOLD, 0.7), Vector2(14, 6))
+	_search.add_theme_stylebox_override("normal", sn)
+	_search.add_theme_stylebox_override("focus", sfo)
+	_search.position = Vector2(CONTENT_X, SK_TOP)
+	_search.size = Vector2(CONTENT_W - SK_FILTER_W - XUiSkin.GRID * 2, SK_ROW_H)
+	_search.text_changed.connect(_on_field.bind("query"))
+	add_child(_search)
+	_filter_btn = _button(_filter_label(), _toggle_filters)
+	_filter_btn.size = Vector2(SK_FILTER_W, SK_ROW_H)
+	_filter_btn.position = Vector2(CONTENT_X + CONTENT_W - SK_FILTER_W, SK_TOP)
+	add_child(_filter_btn)
+	_count = _fixed(_label("", 14, MUTED), 24.0)
+	_count.position = Vector2(CONTENT_X, SK_TOP + SK_ROW_H + XUiSkin.GRID)
+	add_child(_count)
+	var sort_l := _fixed(_label(_sort_text(), 14, MUTED), 24.0)
+	_sort_note = sort_l
+	sort_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	sort_l.size.x = 400
+	sort_l.position = Vector2(CONTENT_X + CONTENT_W - 400, SK_TOP + SK_ROW_H + XUiSkin.GRID)
+	add_child(sort_l)
+	# 结果与详情
+	var body_y := SK_TOP + SK_ROW_H + XUiSkin.GRID * 5
+	var footer_y := PANEL.end.y - BORDER - PAD.y - SK_ROW_H
+	var body_h := footer_y - XUiSkin.GRID * 2 - body_y
+	var list_w := floorf(CONTENT_W * 0.43)
+	_list_scroll = _panel_scroll(Rect2(CONTENT_X, body_y, list_w, body_h), 4)
+	_list_box = _list_scroll.get_child(0)
+	_list_box.add_theme_constant_override("separation", 4)
+	_detail_scroll = _panel_scroll(Rect2(CONTENT_X + list_w + XUiSkin.PANEL_GAP, body_y, CONTENT_W - list_w - XUiSkin.PANEL_GAP, body_h), XUiSkin.PAD)
+	_detail_box = _detail_scroll.get_child(0)
+	_detail_box.add_theme_constant_override("separation", 0)
+	# 底行：左按键提示、右主按钮
+	_hints = XSkinKeyHints.new()
+	add_child(_hints)
+	_hints.set_hints([["确定", "选择"], ["取消", "返回"]])
+	_hints.position = Vector2(CONTENT_X, footer_y + (SK_ROW_H - _hints.height()) / 2.0)
+	var apply_b := _button("按此筛选", apply_filter)
+	apply_b.add_theme_stylebox_override("normal", _sk_box(Color(XUiSkin.BTN_IDLE_FILL, 0.95), Color(XUiSkin.GOLD, 0.6), Vector2(20, 6)))
+	apply_b.add_theme_color_override("font_color", XUiSkin.GOLD_LIGHT)
+	apply_b.size = Vector2(maxf(168.0, apply_b.get_combined_minimum_size().x), SK_ROW_H)
+	apply_b.position = Vector2(CONTENT_X + CONTENT_W - apply_b.size.x, footer_y)
+	add_child(apply_b)
+	# 筛选面板（盖在列表与详情上）
+	_filter_panel = Panel.new()
+	var fp := StyleBoxFlat.new()   # 盖在列表上：实心暖炭底（规范 8 U-03 ≥ 94%），1px 旧金细线
+	fp.bg_color = Color(XSkinConfirm.DLG_LOW, 0.97)
+	fp.border_color = Color(XUiSkin.GOLD, 0.4)
+	fp.set_border_width_all(1)
+	fp.set_corner_radius_all(XUiSkin.RADIUS)
+	fp.anti_aliasing = true
+	fp.shadow_color = Color(0, 0, 0, 0.55)
+	fp.shadow_size = 14
+	fp.shadow_offset = Vector2(0, 6)
+	_filter_panel.add_theme_stylebox_override("panel", fp)
+	_filter_panel.position = Vector2(CONTENT_X, body_y)
+	_filter_panel.size = Vector2(CONTENT_W, 3 * 56.0 + XUiSkin.PAD_LG * 2 - XUiSkin.GRID * 2)
+	_filter_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(_filter_panel)
+	var fields := []
+	fields.append(_select("分类", [["", "全部分类"]] + XGearQuery.CATEGORIES.map(func(c): return [c, c]), str(filter.category), _on_field.bind("category")))
+	fields.append(_select("部位", type_options(source), str(filter.type), _on_field.bind("type")))
+	fields.append(_select("品质", quality_options(), str(filter.quality), _on_field.bind("quality")))
+	fields.append(_select("位置", XGearQuery.SCOPES, str(filter.scope), _on_field.bind("scope")))
+	fields.append(_select("指定词条", term_options(source), str(filter.term), _on_term))
+	var sort_field := _select("排序", sort_options(source, filter), str(filter.sort), _on_sort)
+	_sort_select = sort_field.get_child(1)
+	fields.append(sort_field)
+	var col_w := floorf((CONTENT_W - XUiSkin.PAD_LG * 2 - XUiSkin.PAD_LG * 2) / 3.0)
+	for i in fields.size():
+		var f: Control = fields[i]
+		var lab: Label = f.get_child(0)
+		var opt: OptionButton = f.get_child(1)
+		lab.size.x = 80
+		lab.position = Vector2(0, (SK_ROW_H - lab.size.y) / 2.0)
+		opt.position = Vector2(80, 0)
+		opt.size = Vector2(col_w - 80, SK_ROW_H)
+		f.size = Vector2(col_w, SK_ROW_H)
+		f.position = Vector2(XUiSkin.PAD_LG + (i % 3) * (col_w + XUiSkin.PAD_LG), XUiSkin.PAD_LG + floori(i / 3.0) * 56.0)
+		_filter_panel.add_child(f)
+	var reset_b := _button("清空条件", _on_reset)
+	reset_b.size = Vector2(maxf(120.0, reset_b.get_combined_minimum_size().x), SK_ROW_H)
+	reset_b.position = Vector2(_filter_panel.size.x - XUiSkin.PAD_LG - reset_b.size.x, XUiSkin.PAD_LG + 2 * 56.0)
+	_filter_panel.add_child(reset_b)
+	_filter_panel.visible = filters_open
+	queue_redraw()
+	_render_results()
+	_search.grab_focus.call_deferred()
+
+
+static func _sk_box(bg: Color, edge: Color, pad: Vector2) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = bg
+	s.border_color = edge
+	s.set_border_width_all(1)
+	s.set_corner_radius_all(XUiSkin.ROW_RADIUS)
+	s.content_margin_left = pad.x
+	s.content_margin_right = pad.x
+	s.content_margin_top = pad.y
+	s.content_margin_bottom = pad.y
+	return s
+
+
+## 开着几个条件（搜索词不算，排序不算）
+static func active_conditions(f: Dictionary) -> int:
+	var dv := XGearQuery.default_view()
+	var n := 0
+	for k in ["category", "type", "quality", "scope", "term"]:
+		if str(f.get(k, "")) != str(dv.get(k, "")):
+			n += 1
+	return n
+
+
+func _filter_label() -> String:
+	if filters_open:
+		return "收起筛选"
+	var n := active_conditions(filter)
+	return "筛选 · %d" % n if n > 0 else "筛选"
+
+
+func _sort_text() -> String:
+	if _sort_select == null:
+		for o in sort_options(source, filter):
+			if str(o[0]) == str(filter.sort):
+				return "排序：" + str(o[1]).replace("\n", " ")
+		return ""
+	var i := _sort_select.selected
+	return "排序：" + _sort_select.get_item_text(i) if i >= 0 else ""
+
+
+func _toggle_filters() -> void:
+	filters_open = not filters_open
+	if _filter_panel != null:
+		_filter_panel.visible = filters_open
+	if _filter_btn != null and is_instance_valid(_filter_btn):
+		_filter_btn.text = _filter_label()
+
+
+func _refresh_skin_bar() -> void:
+	if _filter_btn != null and is_instance_valid(_filter_btn):
+		_filter_btn.text = _filter_label()
+	if _sort_note != null and is_instance_valid(_sort_note):
+		_sort_note.text = _sort_text()
+
+
+## 新皮肤：筛选面板开着时取消先关面板
+func _input(event: InputEvent) -> void:
+	if skin_v2() and filters_open and _filter_panel != null and _filter_panel.visible and XKeyMap.popup_cancel(event, self):
+		XKeyMap.handled(self)
+		_toggle_filters()
+		return
+	super._input(event)
+
+
+## 新皮肤的词条卡：不要左竖条，暖炭浅底＋1px 细线
+static func skin_card(text: String, small: String) -> Control:
+	var m := MarginContainer.new()
+	m.add_theme_constant_override("margin_bottom", XUiSkin.GRID)
+	var p := PanelContainer.new()
+	p.add_theme_stylebox_override("panel", _sk_box(Color(1, 1, 1, 0.03), Color(XUiSkin.LINE, 0.18), Vector2(14, 10)))
+	var v := VBoxContainer.new()
+	v.add_theme_constant_override("separation", 0)
+	v.add_child(_para(text, 18, TEXT, 28.8))
+	if small != "":
+		v.add_child(_para(small, 13, MUTED, 20.8))
+	p.add_child(v)
+	m.add_child(p)
+	return m
 
 
 ## 一行控件纵向居中（行高取最高者），返回行底
@@ -399,7 +611,9 @@ func _on_term(v: String) -> void:
 
 func _render_results() -> void:
 	_results = results(source, filter)
-	_count.text = "找到 %d / %d 件装备" % [_results.size(), source.size()]
+	_count.text = ("符合 %d / %d 件" if skin_v2() else "找到 %d / %d 件装备") % [_results.size(), source.size()]
+	if skin_v2():
+		_refresh_skin_bar()
 	if not _results.any(func(r): return r.key == selected_key):
 		selected_key = _results[0].key if not _results.is_empty() else ""
 	for c in _list_box.get_children():
@@ -407,7 +621,7 @@ func _render_results() -> void:
 	for c in _detail_box.get_children():
 		c.queue_free()
 	if _results.is_empty():
-		_list_box.add_child(_empty("没有匹配装备。清空部分条件后重试。"))
+		_list_box.add_child(_empty("没有符合的装备，放宽条件再找找。" if skin_v2() else "没有匹配装备。清空部分条件后重试。"))
 	for r in _results:
 		_list_box.add_child(_row(r))
 	var cur: Array = _results.filter(func(x): return x.key == selected_key)
@@ -467,6 +681,8 @@ func _block(b: Dictionary) -> Control:
 		"pills":
 			return pills(b.pills)
 		"effect":
+			if skin_v2():
+				return skin_card(str(b.text), str(b.small))
 			return card([[b.text, 18, TEXT, 28.8], [b.small, 12, MUTED, 19.2]])
 		_:
 			return _empty(b.text)
