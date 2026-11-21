@@ -1,0 +1,2 @@
+T119_STRESS {"bad":0,"battles":1250,"fits":{"raw":275,"ripe":117},"kinds":{"blackout":46,"break_guard":96,"daze":81,"hit_ally":48,"hit_self":39,"misfire":82},"sources":{"self":392},"turns":5731}
+TEST_RESULT={"passed":246,"total":246}

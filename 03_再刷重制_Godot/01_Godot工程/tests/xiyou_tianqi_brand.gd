@@ -96,7 +96,9 @@ func _run() -> void:
 	_t120_settle()
 	_t120_real()
 	_t120_text()
+	_t121_status()
 	XTianqiBrand.ENABLED = false
+	_t121_status_off()
 	_t118_off()
 	_t119_off()
 	_t120_off()
@@ -1566,3 +1568,54 @@ func _t120_off() -> void:
 		and XTianqiBrand.sear_rows(lg).is_empty() and bar.rows.is_empty())
 	bar.free()
 	lg.end_battle()
+
+
+# ---- T121：状态界面修行页的烙印行（XTianqiBrand.status_rows ← XGuide.panel_rows／detail_rows）----
+func _t121_status() -> void:
+	var s := _state()
+	XState._become_current(s)
+	var a: XActor = s.actor(s.party[0])
+	_setb(a, 1500, 1, true)
+	var r := XTianqiBrand.status_rows(s, a)
+	_check("t121.row_carved", r.size() == 2 and str(r[0]).contains("「不染」") and str(r[0]).contains(" 15%") and str(r[0]).contains("伤害 \\C[3]+8%") and str(r[1]).contains("首领战获胜可加深") and str(r[1]).contains("「不染」上限 25%"), r)
+	_setb(a, 2500, 1, true)
+	r = XTianqiBrand.status_rows(s, a)
+	_check("t121.row_stand", str(r[0]).contains("25%+") and str(r[1]).contains("已达「不染」上限") and str(r[1]).contains("心魔"), r)
+	_setb(a, 4000, 2, false)
+	r = XTianqiBrand.status_rows(s, a)
+	_check("t121.row_sealed", not str(r[0]).contains("+\\C") and not str(r[0]).contains("40%+") and str(r[1]).contains("未刻印止步于「铸骨」（40%）") and str(r[1]).contains("刻印后"), r)
+	_setb(a, 1200, 1, false)
+	r = XTianqiBrand.status_rows(s, a)
+	_check("t121.row_uncarved", str(r[1]).contains("仅在首领战受击时积累") and str(r[1]).contains("「铸骨」（40%）"), r)
+	_setb(a, 10000, 6, true)
+	r = XTianqiBrand.status_rows(s, a)
+	_check("t121.row_end", str(r[0]).contains("「逆命」") and str(r[0]).contains(" 100%") and str(r[0]).contains("+50%") and str(r[1]) == XTianqiBrand.TEXT_HOW_END, r)
+	_check("t121.costs_all", XTianqiBrand.cost_names(a, s) == ["出头鸟", "皮薄", "虚不受补", "不合群", "烧命", "一条命"], XTianqiBrand.cost_names(a, s))
+	_setb(a, 8000, 5, true)
+	_check("t121.costs_revive_once", XTianqiBrand.cost_names(a, s) == ["出头鸟", "皮薄", "虚不受补", "不合群", "烧命", XTianqiBrand.TEXT_REVIVE_ONCE], XTianqiBrand.cost_names(a, s))
+	_setb(a, 7000, 4, true)
+	_check("t121.costs_revive_once_edge", not XTianqiBrand.cost_names(a, s).has(XTianqiBrand.TEXT_REVIVE_ONCE), XTianqiBrand.cost_names(a, s))
+	_setb(a, 1000, 0, true)
+	_check("t121.costs_none_at_node", XTianqiBrand.cost_names(a, s).is_empty(), XTianqiBrand.cost_names(a, s))
+	# 接进修行页：第 4 页两行、第 5 页「烙印」段在难度对照前；不出「境」「锚」「真气」
+	_setb(a, 4500, 3, true)
+	var pr := "\n".join(XGuide.panel_rows(s, a).map(func(x): return str(x.get("text", ""))))
+	var det := XGuide.detail_rows(s, a)
+	var dr := "\n".join(det.map(func(x): return str(x.get("text", ""))))
+	_check("t121.page4", pr.contains("烙印：") and pr.contains("「砥柱」") and pr.contains("45%") and pr.contains("加深："), pr)
+	_check("t121.page5", str(det[0].text) == "烙印" and dr.contains("代价：出头鸟、皮薄、虚不受补") and dr.find("烙印") < dr.find("难度对照"), dr)
+	var all := pr + "\n" + dr
+	_check("t121.no_jing_anchor", not all.replace("秘境", "").contains("境") and not all.contains("锚") and not all.contains("真气"), all)
+
+
+func _t121_status_off() -> void:
+	var s := _state()
+	XState._become_current(s)
+	var a: XActor = s.actor(s.party[0])
+	_setb(a, 4500, 3, true)
+	var det := XGuide.detail_rows(s, a)
+	var pr := "\n".join(XGuide.panel_rows(s, a).map(func(x): return str(x.get("text", ""))))
+	_check("t121.off_empty", XTianqiBrand.status_rows(s, a).is_empty() and not pr.contains("烙印") and str(det[0].text).begins_with("难度对照"), [pr, det[0]])
+	var sx := _state(false)
+	var ax: XActor = sx.actor(sx.party[0]) if not sx.party.is_empty() else null
+	_check("t121.xiyou_empty", ax == null or XTianqiBrand.status_rows(sx, ax).is_empty(), null)

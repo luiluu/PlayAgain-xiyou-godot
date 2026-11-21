@@ -1,0 +1,9 @@
+BRAND_SKIP floor=5 team=95,43,105,130（这一队这一层掷不出装备，跳过）
+BRAND_ROW floor=5 diff=zhengdao carve=all ripe=false n=14 won=5 turnsWon=20.20 turnsAll=26.50 downs=0.14 selfOut=0.000 searOut=1.786 selfTank=0.000 searTank=1.125 selfSup=0.000 searSup=1.667 teamSelf=0.000 harmFights=0 dealt/t=3053 foeHeal/t=18855 foeMhp=[1431398.0, 506102.0] kind=boss ripeFlag=false kinds={"daze":94}
+BRAND_SKIP floor=8 team=95,43,105,130（这一队这一层掷不出装备，跳过）
+BRAND_ROW floor=8 diff=zhengdao carve=all ripe=false n=14 won=6 turnsWon=10.33 turnsAll=20.21 downs=0.86 selfOut=0.000 searOut=0.571 selfTank=0.000 searTank=0.750 selfSup=0.000 searSup=0.298 teamSelf=0.000 harmFights=0 dealt/t=3073 foeHeal/t=0 foeMhp=[2397500.0] kind=boss ripeFlag=false kinds={"daze":29}
+BRAND_SKIP floor=10 team=95,43,105,130（这一队这一层掷不出装备，跳过）
+BRAND_ROW floor=10 diff=zhengdao carve=all ripe=false n=14 won=6 turnsWon=9.50 turnsAll=17.71 downs=1.79 selfOut=0.357 searOut=0.714 selfTank=0.000 searTank=1.125 selfSup=0.000 searSup=0.738 teamSelf=0.500 harmFights=0 dealt/t=4679 foeHeal/t=3008 foeMhp=[2775000.0] kind=boss ripeFlag=false kinds={"daze":53}
+BRAND_SKIP floor=12 team=95,43,105,130（这一队这一层掷不出装备，跳过）
+BRAND_ROW floor=12 diff=zhengdao carve=all ripe=false n=14 won=6 turnsWon=17.83 turnsAll=24.57 downs=0.57 selfOut=0.179 searOut=2.321 selfTank=0.000 searTank=2.250 selfSup=0.000 searSup=2.440 teamSelf=0.214 harmFights=0 dealt/t=6437 foeHeal/t=4530 foeMhp=[3200000.0] kind=boss ripeFlag=false kinds={"daze":149}
+BRAND_DONE
