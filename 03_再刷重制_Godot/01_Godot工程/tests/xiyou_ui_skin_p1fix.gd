@@ -61,6 +61,7 @@ func _run() -> void:
 	if windowed():
 		for size in [Vector2i(1280, 720), Vector2i(1600, 720)]:
 			get_window().size = size
+			XSkinLayout._apply_wide(get_tree().root)   # 程序改窗口大小不发 size_changed（只有真实拖动才发），手动补一次
 			await frames(6)
 			var tag := "16x9" if size.x == 1280 else "20x9"
 			await _pair("p1_select_board_" + tag, _board)
@@ -96,7 +97,12 @@ func _pair(name: String, build: Callable) -> void:
 		save(img, name + ("_v2" if v2 else "_v07"))
 		node.queue_free()
 		await frames(2)
-	check("differs_" + name, imgs[0].get_data() != imgs[1].get_data())   # 前后图必须不一样（小A核 P3-1）
+	# 第一期正式美术（D51，界面细节规范 v0.2）开着时，列表选中条画渐隐暗红底＋小箭头（XSkinArt.draw_select），不再看 SELECT_V2：
+	# 菜单／装备页前后两张本来就一样；陈列板里按钮三态等仍走 SELECT_V2，继续要求不一样。
+	if XSkinArt.select_on() and not name.contains("board"):
+		check("art_select_" + name, XSkinArt.select_on())
+	else:
+		check("differs_" + name, imgs[0].get_data() != imgs[1].get_data())   # 前后图必须不一样（小A核 P3-1）
 	if name.ends_with("20x9"):
 		check("wide_" + name, absf(float(imgs[0].get_width()) / imgs[0].get_height() - 20.0 / 9.0) < 0.02, imgs[0].get_size())
 	save_compare(imgs[0], imgs[1], name + "_compare")
