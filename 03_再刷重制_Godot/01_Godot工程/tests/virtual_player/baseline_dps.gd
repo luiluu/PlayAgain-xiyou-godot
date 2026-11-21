@@ -303,7 +303,8 @@ func _fight(s: XState, troop: int) -> Dictionary:
 	var logic: XBattleLogic = VPLogic.new() if _use_vp() else XBattleLogic.new()
 	if s.has_meta("t239_rng"):
 		seed(int(s.get_meta("t239_rng")))   # T239 第 6 轮：全局随机（VPLogic 选招等）也按这支队的种子定住
-	XGuardianRework.measure_atk = atk_scale if atk_scale != 1.0 else -1.0   # 守层者有不少固定伤害技能（如 771 固定 15000），只调能力值没用，整体乘出伤
+	var k_tab := float(atk_table.get(str(_cur_floor), atk_scale))   # T239 第 6 轮：--duel 也认 --atk-table（A 口径对照：只换出伤倍率、不设集火）
+	XGuardianRework.measure_atk = k_tab if atk_table.has(str(_cur_floor)) or atk_scale != 1.0 else -1.0   # 守层者有不少固定伤害技能（如 771 固定 15000），只调能力值没用，整体乘出伤
 	# 战斗随机流按本层种子给定：天启篇档回合内的随机取运行时主种子（R3 设计，读档可变），不给定同一设置跑两遍也对不上
 	logic.setup(troop, s, XBattleRandom.create(str(s.random_master)) if duel else null)
 	logic.auto = true

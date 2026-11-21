@@ -121,25 +121,41 @@ def floor_stats(r: dict, turns: int, share: float, mode: str = 'add') -> dict:
             'rec': _med([sum(float(t.get(k, 0)) for k in ('heal', 'steal', 'regen', 'shield')) for t in ts]), 'n': len(ts)}
 
 
-def focus_pick(r: dict) -> int:
-    """各队 bySkill 里单体招（scope 1、3，类型 1、5）一次出手 useRatio 的中位，取最高那招；没有返回 0。"""
+FOCUS_CAP = 0.5   # 集火那招的期望出伤最多占每回合总预算的一半（「每回合一下」；那招一回合用好几次时压它的倍率）
+
+
+def _need(t: dict, turns: int) -> float:
+    return sum(float(t.get(k, 0)) for k in ('heal', 'steal', 'regen', 'shield')) + float(t.get('partyHp', 0)) / turns
+
+
+def focus_pick(r: dict, turns: int = 8, share: float = 0.40) -> tuple:
+    """单体招（scope 1、3，类型 1、5）按一次出手 useRatio 各队中位从高到低，取第一个「定到 share 后期望出伤 ≤ 预算 FOCUS_CAP」的；
+    都超就取超得最少的、把倍率压到正好 FOCUS_CAP。返回 (技能号, useRatio 中位, 压倍率的系数≤1)；没有单体招 (0, 0, 1)。"""
+    ts = normal_teams(r)
     per = {}
-    for t in normal_teams(r):
+    for t in ts:
         for sk, v in (t.get('bySkill') or {}).items():
             if int(v.get('scope', 0)) in (1, 3) and int(v.get('type', 0)) in (1, 5) and float(v.get('useRatio', 0)) > 0:
                 per.setdefault(int(sk), []).append(float(v['useRatio']))
-    if not per:
-        return 0
-    return max(per, key=lambda k: (_med(per[k]), len(per[k])))
+    best = None
+    for sk in sorted(per, key=lambda k: (-_med(per[k]), -len(per[k]))):
+        ur = _med(per[sk])
+        fr = _med([float((t.get('bySkill') or {}).get(str(sk), {}).get('dmg', 0)) * share / ur / _need(t, turns) for t in ts if float(t.get('partyHp', 0)) > 0])
+        if fr <= FOCUS_CAP:
+            return sk, ur, 1.0
+        if best is None or fr < best[2]:
+            best = (sk, ur, fr)
+    if best is None:
+        return 0, 0.0, 1.0
+    return best[0], best[1], FOCUS_CAP / best[2]
 
 
 def focus_stats(r: dict, turns: int, share: float) -> dict:
-    """C 口径：返回 {skill, scale, atk, short}；skill 0＝本层没有单体招。"""
+    """C 口径：返回 {skill, scale, atk, short, hitRatio（集火那下实际定到的比例）}；skill 0＝本层没有单体招。"""
     ts = normal_teams(r)
-    sk = focus_pick(r)
-    ur = _med([float((t.get('bySkill') or {}).get(str(sk), {}).get('useRatio', 0)) for t in ts if str(sk) in (t.get('bySkill') or {})]) if sk else 0.0
+    sk, ur, cut = focus_pick(r, turns, share)
     k0 = _med([float(t.get('atkScale', 1.0)) for t in ts])
-    kf = k0 * share / ur if ur > 0 else 0.0
+    kf = k0 * share / ur * cut if ur > 0 else 0.0
     atk, short = [], 0
     for t in ts:
         ed = float(t.get('enemyDmg', 0))
@@ -155,7 +171,7 @@ def focus_stats(r: dict, turns: int, share: float) -> dict:
             atk.append(k0 * 0.1)
         else:
             atk.append(float(t.get('atkScale', k0)) * rest_need / rest_have)
-    return {'skill': sk, 'useRatio': ur, 'scale': kf, 'atk': _med(atk), 'short': short, 'k0': k0}
+    return {'skill': sk, 'useRatio': ur, 'scale': kf, 'atk': _med(atk), 'short': short, 'k0': k0, 'hitRatio': share * cut if sk else 0.0}
 
 
 def build6(rows: list, turns: int = 8, share: float = 0.40, mode: str = 'c') -> dict:
@@ -243,9 +259,9 @@ def cmd_build(args) -> int:
             fo = [floor_stats(by[f], args.turns, x, 'add')['sus'] for x in (0.35, 0.40, 0.45, 0.50)]
             mx = floor_stats(by[f], args.turns, 0.40, 'max')
             cs = [focus_stats(by[f], args.turns, x) for x in (0.35, 0.40, 0.45, 0.50)]
-            print('%d | %d | %.0f | %s | %.0f | %.3g | %s | %.3g | %.0f | C 招 %d 单次占比 %.3g 集火倍率/其余倍率 %s 不够队数 %d' % (
+            print('%d | %d | %.0f | %s | %.0f | %.3g | %s | %.3g | %.0f | C 招 %d 单次占比 %.3g 集火倍率/其余倍率 %s 定到单下 %.2f 不够队数 %d' % (
                 f, s['n'], s['dmg'], tables.get('hp_base', {}).get(str(f)), s['rec'], s['sus'], '/'.join('%.3g' % x for x in fo),
-                max(mx['sus'], mx['focus']), s['atkHit'], cs[1]['skill'], cs[1]['useRatio'], ' '.join('%.3g/%.3g' % (c['scale'], c['atk']) for c in cs), cs[1]['short']), file=sys.stderr)
+                max(mx['sus'], mx['focus']), s['atkHit'], cs[1]['skill'], cs[1]['useRatio'], ' '.join('%.3g/%.3g' % (c['scale'], c['atk']) for c in cs), cs[1]['hitRatio'], cs[1]['short']), file=sys.stderr)
     if not tables:
         print('没有数（输入里没有可用的层），不写。')
         return 0
@@ -293,12 +309,16 @@ def selftest() -> int:
     t6 = build6(rows6, 8, 0.40, 'max')
     assert t6['atk_scale']['5'] == 4.0, t6   # 取大：集火 0.4/0.1＝4 ＞ 续航 (50＋100)/100＝1.5；奶妈队不进
     assert build6(rows6, 8, 0.40, 'add')['atk_scale']['5'] == 2.3   # 加法：(50＋100＋0.4×800/4)/100
-    # C：F＝单体招 7（每次打掉 10%），集火倍率 0.4/0.1＝4；F 每回合 20 → 新 80；其余 80 要摊 (150−80)＝70 → 0.875
+    # C：F＝单体招 7（每次打掉 10%），集火倍率 0.4/0.1＝4；F 每回合 15 → 新 60（占预算 150 的 0.4 ≤ 0.5）；其余 85 要摊 90 → 1.06
     for r in rows6:
         for t in r['teams']:
-            t['bySkill'] = {'7': {'scope': 1, 'type': 1, 'useRatio': 0.1, 'dmg': 20.0}, '8': {'scope': 8, 'type': 1, 'useRatio': 0.5, 'dmg': 80.0}}
+            t['bySkill'] = {'7': {'scope': 1, 'type': 1, 'useRatio': 0.1, 'dmg': 15.0}, '8': {'scope': 8, 'type': 1, 'useRatio': 0.5, 'dmg': 85.0}}
     tc = build6(rows6, 8, 0.40)
-    assert tc['focus']['5'] == {'skill': 7, 'scale': 4.0} and tc['atk_scale']['5'] == 0.875, tc
+    assert tc['focus']['5'] == {'skill': 7, 'scale': 4.0} and tc['atk_scale']['5'] == 1.06, tc
+    for r in rows6:   # F 每回合 20 → 新 80 占 0.53 超一半：压到 0.5，集火倍率 4×0.5/0.533＝3.75
+        for t in r['teams']:
+            t['bySkill']['7']['dmg'] = 20.0
+    assert build6(rows6, 8, 0.40)['focus']['5'] == {'skill': 7, 'scale': 3.75}
     assert t6['resist'] == {'20': 600}, t6   # 普攻单下中位 2000×0.3
     assert int(t6['hp_base']['6']) >= int(t6['hp_base']['5']) and int(t6['hp_base']['20']) >= int(t6['hp_base']['6']), t6   # 平滑后不降
     assert build6(rows6, 8, 0.10, 'max')['atk_scale']['5'] == 1.5
