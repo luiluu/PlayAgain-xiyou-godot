@@ -108,6 +108,7 @@ func _run() -> void:
 	await _skill_list(b)
 	await _popup(b, boss)
 	await _turn_cue(b)
+	await _banner_t357(b)
 	await _motion_off(b)
 	b.bgm.stop()
 	_finish()
@@ -488,3 +489,25 @@ func _finish() -> void:
 			print("FAIL ", r.name, " ", JSON.stringify(r.detail))
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
+
+
+## T357（F-02）：首领行动横幅让到首领信息区下 12px，不盖血量数字；开关关掉回原位
+func _banner_t357(b: XBattleScene) -> void:
+	b._banner("摆烂中……")
+	await _frames(3)
+	var info := b.boss_info_rect()
+	var top := b.log_canvas.position.y + 14.0 + _banner_dy(b)
+	_check("banner_below_boss_info", info.has_area() and top >= info.end.y + 11.9, [top, info])
+	await _shot("t357_boss_banner")
+	XBattleScene.LOG_BELOW_BOSS = false
+	var top_off := b.log_canvas.position.y + 14.0 + _banner_dy(b)
+	_check("banner_switch_off_original", is_equal_approx(top_off, b.log_canvas.position.y + 14.0), top_off)
+	XBattleScene.LOG_BELOW_BOSS = true
+	b._banner("")
+
+
+func _banner_dy(b: XBattleScene) -> float:
+	if not XBattleScene.LOG_BELOW_BOSS:
+		return 0.0
+	var info := b.boss_info_rect()
+	return maxf(0.0, info.end.y + 12.0 - (b.log_canvas.position.y + 14.0)) if info.has_area() else 0.0

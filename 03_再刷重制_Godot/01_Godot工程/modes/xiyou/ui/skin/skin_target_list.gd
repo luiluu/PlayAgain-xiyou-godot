@@ -139,10 +139,6 @@ func _draw() -> void:
 		var x := r.position.x + 10 + HEAD + 10
 		var base := r.position.y + r.size.y / 2.0
 		var right_w := 56.0
-		var name_w := 72.0
-		var nf := XSkinList.fit_text(body, str(m.get("name", "")), name_w, XSkinSelScale.fs(17, sk), 14)   # 长名字先缩字再加省略号
-		XUiSkin.ds(self, body, Vector2(x, base + int(nf[1]) * 0.36), nf[0], HORIZONTAL_ALIGNMENT_LEFT, -1, nf[1], Color(XUiSkin.TEXT, a))
-		x += name_w + 6
 		var kind := str(m.get("kind", "hp"))
 		var col: Color = XUiSkin.HP if kind == "hp" else (XUiSkin.MP if kind == "mp" else XUiSkin.TP)
 		var txt_col: Color = XUiSkin.HP_TEXT if kind == "hp" else (XUiSkin.MP_TEXT if kind == "mp" else XUiSkin.TP_TEXT)
@@ -153,10 +149,16 @@ func _draw() -> void:
 		var vr := r.end.x - 10 - right_w - 8   # 数值右缘
 		if XUiSkin.detail_on():   # D1c：数值栏定宽（整列按最大位数），量条右缘齐平，数值右对齐
 			vw = value_col_w(num, 16, rows)
-		var bar_w := maxf(r.end.x - 10 - right_w - 8 - vw - 8 - x, 24.0)
+		# T357（F-01）：名字栏默认 72，剩余给量条不足 40 时缩名字栏（最小 40），数字栏永远不让
+		var name_w := clampf(72.0 - (40.0 - (r.end.x - 10 - right_w - 8 - vw - 8 - (x + 72.0 + 6.0))), 40.0, 72.0)
+		var nf := XSkinList.fit_text(body, str(m.get("name", "")), name_w, XSkinSelScale.fs(17, sk), 14)   # 长名字先缩字再加省略号
+		XUiSkin.ds(self, body, Vector2(x, base + int(nf[1]) * 0.36), nf[0], HORIZONTAL_ALIGNMENT_LEFT, -1, nf[1], Color(XUiSkin.TEXT, a))
+		x += name_w + 6
+		var bar_w := maxf(r.end.x - 10 - right_w - 8 - vw - 8 - x, 0.0)
 		var track := Rect2(x, base - 2.5, bar_w, 5)
 		var ratio := clampf(cur / mx, 0.0, 1.0) if mx > 0.0 and cur > 0.0 else 0.0
-		XUiSkin.draw_gauge(ci, track, ratio, col, a)
+		if bar_w >= 4.0:
+			XUiSkin.draw_gauge(ci, track, ratio, col, a)
 		last_bars.append([i, track.end.x])
 		if XUiSkin.detail_on():
 			XUiSkin.draw_num_right(self, num, vr, base + 16 * 0.36, vt, 16, Color(txt_col, a))
