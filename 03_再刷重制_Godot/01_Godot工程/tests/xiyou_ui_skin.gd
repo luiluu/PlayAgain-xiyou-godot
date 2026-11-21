@@ -455,7 +455,10 @@ func _fonts() -> void:
 	XUiSkin._fonts.clear()
 	var ok := true
 	for k in ["title", "body", "num"]:
-		ok = ok and XUiSkin.has_font(k) and XUiSkin.font(k) is FontFile and XUiSkin.font(k) != GameFont.current()
+		var fk := XUiSkin.font(k)
+		if k == "num" and XUiSkin.DETAIL_V1 and fk is FontVariation:   # T336 D1a：数字字包一层 tnum（规范 1.1），底下仍是裁过的 FontFile
+			fk = (fk as FontVariation).base_font
+		ok = ok and XUiSkin.has_font(k) and fk is FontFile and fk != GameFont.current()
 	check("fonts_load", ok)
 	var body := XUiSkin.font("body") as FontFile
 	var title := XUiSkin.font("title") as FontFile
