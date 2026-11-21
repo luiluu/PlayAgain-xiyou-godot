@@ -23,9 +23,10 @@ static func style(kind := "") -> StyleBoxFlat:
 
 
 ## 红乙选中条，内边距和平时那一档一样（换状态时字不跳）；state 见 XUiSkin.SelState（按下态的字跟着下沉 1px）
-static func select(like: StyleBox = null, state := XUiSkin.SelState.FOCUS) -> StyleBox:
+static func select(like: StyleBox = null, state := XUiSkin.SelState.FOCUS, ring := false) -> StyleBox:
 	var sel := XSkinSelectStyle.new()
 	sel.state = state
+	sel.ring = ring
 	var src: StyleBox = like if like != null else style()
 	for side in [SIDE_LEFT, SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM]:
 		sel.set_content_margin(side, src.get_content_margin(side))
@@ -44,10 +45,11 @@ static func apply(b: Button, kind := "", font_size := -1) -> Button:
 	var normal := style(kind)
 	for st in ["normal", "disabled"]:
 		b.add_theme_stylebox_override(st, normal)
-	var sel := select(normal)
+	var ring := XUiSkin.detail_on()   # T349 D1b：焦点改淡金双环、悬停只抬 S4
+	var sel := select(normal, XUiSkin.SelState.FOCUS, ring)
 	var press := select(normal, XUiSkin.SelState.PRESSED)
 	b.add_theme_stylebox_override("focus", sel)
-	b.add_theme_stylebox_override("hover", select(normal, XUiSkin.SelState.HOVER) if XUiSkin.SELECT_V2 else sel)
+	b.add_theme_stylebox_override("hover", select(normal, XUiSkin.SelState.HOVER, ring) if XUiSkin.SELECT_V2 else sel)
 	for st in ["pressed", "hover_pressed"]:
 		b.add_theme_stylebox_override(st, press if XUiSkin.SELECT_V2 else sel)
 	wire_press(b, sel, press)

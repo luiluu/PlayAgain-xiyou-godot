@@ -91,8 +91,9 @@ func button_rect(i: int) -> Rect2:
 	var n := buttons.size()
 	if n == 0:
 		return Rect2()
-	var w := (size.x - pad * 2 - XUiSkin.GRID * (n - 1)) / n
-	return Rect2(pad + i * (w + XUiSkin.GRID), size.y - pad - BUTTON_H, w, BUTTON_H)
+	var gap := XSkinConfirm.btn_gap()   # T349 D1b：钮距 12px
+	var w := (size.x - pad * 2 - gap * (n - 1)) / n
+	return Rect2(pad + i * (w + gap), size.y - pad - BUTTON_H, w, BUTTON_H)
 
 
 ## 牌宽 width 时内容（不裁）要多高：牌头＋各节＋上下内边距＋按钮
@@ -280,9 +281,14 @@ func _draw() -> void:
 			sb.set_border_width_all(1)
 		sb.bg_color = XSkinButton.press_color(sb.bg_color, _press == i)
 		r = XSkinButton.press_rect(r, _press == i)
+		if i == button_index and XUiSkin.detail_on():
+			sb.shadow_size = 0   # T349 D1b：焦点由双环表达，不再垫红晕
 		sb.draw(ci, r)
 		if i == button_index:
-			XUiSkin.draw_select(ci, r.grow(3), XUiSkin.breath_alpha())
+			if not XUiSkin.detail_on():
+				XUiSkin.draw_select(ci, r.grow(3), XUiSkin.breath_alpha())
+			elif XUiSkin.show_focus_ring():
+				XUiSkin.draw_focus_ring(ci, r, int(BUTTON_H / 2))   # T349 D1b
 		var t := str(b.get("text", ""))
 		var bfs := XSkinSelScale.fs(XUiSkin.FS_LIST, sel_scale.k(i), floori(r.size.y * 0.66))
 		var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x
@@ -311,7 +317,11 @@ func _draw_sheet() -> void:
 	var ci := s.get_canvas_item()
 	var pol := XUiSkin.polish_on()
 	XUiSkin.panel_style().draw(ci, r)
-	s.draw_rect(r, Color(XUiSkin.panel_low_c(), 0.62 if pol else 0.55))   # 压在下面的列表上，面板要不透明些
+	if XUiSkin.detail_on():   # T349 D1b：展开面是浮层，底用 S3
+		RenderingServer.canvas_item_add_nine_patch(ci, r, Rect2(0, 0, 96, 96), XSkinConfirm.s3_panel_tex().get_rid(), Vector2(24, 24), Vector2(24, 24),
+			RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color.WHITE)
+	else:
+		s.draw_rect(r, Color(XUiSkin.panel_low_c(), 0.62 if pol else 0.55))   # 压在下面的列表上，面板要不透明些
 	_draw_border(ci, r)
 	var bottom := s.size.y - pad - STRIP_H
 	_top_cut = pad

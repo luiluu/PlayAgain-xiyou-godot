@@ -486,7 +486,7 @@ func _draw() -> void:
 		var it: Dictionary = items[i]
 		var r := cell_rect(i)
 		if pol and not (i == index and active) and (floori(i / float(columns)) % 2) == 1:
-			draw_rect(r.grow_individual(-2.0, -1.0, -2.0, -1.0), Color(0.95, 0.90, 0.82, 0.026))
+			draw_rect(r.grow_individual(-2.0, -1.0, -2.0, -1.0), XUiSkin.zebra_c() if XUiSkin.detail_on() else Color(0.95, 0.90, 0.82, 0.026))   # T349 D1b：S2z 0.08
 		var x := r.position.x + 14.0
 		var base := r.position.y + r.size.y / 2.0
 		var dis := bool(it.get("disabled", false))

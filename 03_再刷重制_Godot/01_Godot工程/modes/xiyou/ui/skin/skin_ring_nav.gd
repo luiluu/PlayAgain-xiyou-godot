@@ -288,8 +288,18 @@ func _draw_layers() -> void:
 		var pts := PackedVector2Array()
 		for k in 65:
 			pts.append(p + Vector2.from_angle(TAU * k / 64.0) * r)
-		var col := Color(XUiSkin.GOLD, 1.0) if has_art(index) else Color(XUiSkin.SEL_LINE, 1.0)
-		RenderingServer.canvas_item_add_polyline(_orb_ci, pts, PackedColorArray([col]), 2.5, true)
+		if XUiSkin.detail_on() and XUiSkin.show_focus_ring():   # T349 D1b：手柄／键盘态＝内黑外淡金双环（鼠标触屏仍是原选中描边）
+			var rp := PackedVector2Array()
+			var rp2 := PackedVector2Array()
+			for k in 65:
+				var dir := Vector2.from_angle(TAU * k / 64.0)
+				rp.append(p + dir * (r + 1.0))
+				rp2.append(p + dir * (r + 3.0))
+			RenderingServer.canvas_item_add_polyline(_orb_ci, rp, PackedColorArray([Color(XUiSkin.FOCUS_IN, XUiSkin.FOCUS_IN_ALPHA)]), 2.0, true)
+			RenderingServer.canvas_item_add_polyline(_orb_ci, rp2, PackedColorArray([Color(XUiSkin.GOLD_LIGHT, XUiSkin.breath_alpha())]), 2.0, true)
+		else:
+			var col := Color(XUiSkin.GOLD, 1.0) if has_art(index) else Color(XUiSkin.SEL_LINE, 1.0)
+			RenderingServer.canvas_item_add_polyline(_orb_ci, pts, PackedColorArray([col]), 2.5, true)
 	var body := XUiSkin.font("body")
 	var rd := XSkinArt.read_on()
 	for i in (0 if hide_labels else items.size()):

@@ -6,7 +6,20 @@ extends StyleBox
 
 var alpha := 1.0
 var state := XUiSkin.SelState.FOCUS
+## T349 D1b：框形控件（XSkinButton）用的双环模式。FOCUS＝淡金双环（只在键盘／手柄态画）；HOVER＝只抬到 S4 底；PRESSED 照旧压暗选中条
+var ring := false
 
 
 func _draw(ci: RID, rect: Rect2) -> void:
+	if ring and XUiSkin.detail_on():
+		if state == XUiSkin.SelState.FOCUS:
+			if XUiSkin.show_focus_ring():
+				XUiSkin.draw_focus_ring(ci, rect, XUiSkin.ROW_RADIUS, false, alpha)
+			return
+		if state == XUiSkin.SelState.HOVER:
+			var sb := StyleBoxFlat.new()
+			sb.bg_color = XUiSkin.surface_overlay("s4")
+			sb.set_corner_radius_all(XUiSkin.ROW_RADIUS)
+			sb.draw(ci, rect)
+			return
 	XUiSkin.draw_select(ci, rect, XUiSkin.breath_alpha(), alpha, state)
