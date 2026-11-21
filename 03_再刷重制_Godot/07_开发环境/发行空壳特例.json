@@ -107,6 +107,8 @@
   "XTianqiGemPower.full_value": "v",
   "XTianqiWeakAffix.guide_targets": "list",
   "已确认空值安全": {
+    "XTianqiSixDim.of_actor": "T278：actor_book 与 skin_status_page 都先判 XTianqiSixDim.active()，空壳恒 false 走不到；真脚本在西游档本身也返回 neutral()，只读不写存档",
+    "XTianqiSixDim.letter": "T278：只在 actor_book.six_line（six_on 守卫内）与天启篇敌人 AI（tianqi_enemy_ai 本身换空壳）里调；空串只影响一行显示文字，西游档走不到",
     "XTianqiMoney.money": "T307：只在 training_scene.preview 的 e.tianqi 分支里调（天启篇修炼项，发行里天启篇关着列不出这些项）；即便走到，空表上临时建删 training，不写存档、能力值不变",
     "XTianqiQiyinEffects._p": "T282：smart_ai.gd 估段数时 ._p(logic, a, \"extra_hits\").get(\"value\", 0)，空表得 0；西游档 effects 本就为空，真脚本同样返回 {}",
     "XGuardianRework.domain_keep": "T229：只在 XGuardianRework.domain_off 为真时由 battle_event_runner._domain_off 调；空壳 domain_off 恒 false（发行里天启篇关着），走不到这里",
