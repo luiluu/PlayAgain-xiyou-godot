@@ -26,6 +26,8 @@ var _key := []
 var _rows: Array = []        # [{text, color}]（装备详情、插槽）
 var _cmp: Array = []         # [[名, 当前, 换上后（-1＝不写）]]
 var body: Control
+## D1c 测试用：最近一次 _draw_body 每行 [行号, 当前值右缘, 箭头中, 新值右缘, 差值右缘]（没画箭头的行只有行号和当前值右缘）
+var last_cols: Array = []
 var _content_h := 0.0
 ## T024 选中放大：当前页签的字放大（页签宽不变，放不下先缩字）
 var tab_scale: XSkinSelScale
@@ -234,11 +236,41 @@ func _measure() -> float:
 	return h
 
 
+## D1c：属性对比四列锚点（测试和 _draw 共用）。从右往左：差值右缘＝w-12，新值右缘，箭头居中，当前值右缘（列间 12）；
+## 列宽按八行里最宽的串（逐位定宽）定，同一字号下每行同列同 X。放不下属性名区（左 40%）时字号从 21 逐级缩到 14。
+## 不在比较态（没选候选）时只有当前值一列，右缘＝w-12（同旧版）。返回 {fs, cur_r, arrow_c, new_r, delta_r}
+static func cmp_cols(num: Font, w: float, cmp: Array, comparing: bool) -> Dictionary:
+	var gap := 12.0
+	var fs := 21
+	while true:
+		var cw := 0.0
+		var nw := 0.0
+		var dw := 0.0
+		for r in cmp:
+			var b: int = r[1]
+			var a: int = r[2]
+			cw = maxf(cw, XUiSkin.mono_digits_width(num, XMenu._group(b), fs))
+			if comparing and a >= 0:
+				nw = maxf(nw, XUiSkin.mono_digits_width(num, XMenu._group(a), fs))
+				dw = maxf(dw, XUiSkin.mono_digits_width(num, "▲" + XMenu._group(absi(a - b)), fs))
+		var aw := num.get_string_size("→", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 6.0
+		var out := {"fs": fs, "delta_r": w - 12.0, "new_r": 0.0, "arrow_c": 0.0, "cur_r": w - 12.0}
+		if comparing:
+			out.new_r = out.delta_r - dw - gap
+			out.arrow_c = out.new_r - nw - gap - aw / 2.0
+			out.cur_r = out.new_r - nw - gap - aw - gap
+		if fs <= 14 or out.cur_r - cw >= 12.0 + w * 0.4 + 8.0:
+			return out
+		fs -= 1
+	return {}
+
+
 func _draw_body() -> void:
 	var font := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	var w := maxf(body.size.x - 12.0, 10.0)
 	var y := -scroll
+	last_cols = []
 	if tab == 1:
 		var stripe := Color(0.95, 0.90, 0.82, 0.045) if XUiSkin.polish_on() else Color(1, 1, 1, 0.04)
 		for r in _cmp:
@@ -248,14 +280,30 @@ func _draw_body() -> void:
 				XUiSkin.ds(body, font, Vector2(12, base + 17 * 0.36), str(r[0]), HORIZONTAL_ALIGNMENT_LEFT, w * 0.4, 17, XUiSkin.TEXT_2)
 				var before: int = r[1]
 				var after: int = r[2]
-				var t := XMenu._group(before)
-				var col := XUiSkin.TEXT
-				if compare and after >= 0 and after != before:
-					var d := after - before
-					t += " → %s %s%s" % [XMenu._group(after), "▲" if d > 0 else "▼", XMenu._group(absi(d))]
-					col = XUiSkin.UP if d > 0 else XUiSkin.DOWN
-				var tw := num.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21).x
-				XUiSkin.ds(body, num, Vector2(w - 12 - tw, base + 21 * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, col)
+				var done := false
+				if XUiSkin.detail_on():   # D1c：四列固定锚点（当前值右｜箭头中｜新值右｜差值右），不拼整串
+					var cols := cmp_cols(num, w, _cmp, compare)
+					var cfs: int = cols.fs
+					var by := base + cfs * 0.36
+					last_cols.append([last_cols.size(), cols.cur_r, cols.arrow_c, cols.new_r, cols.delta_r])
+					XUiSkin.draw_num_right(body, num, cols.cur_r, by, XMenu._group(before), cfs, XUiSkin.TEXT)
+					if compare and after >= 0 and after != before:
+						var d := after - before
+						var col2 := XUiSkin.UP if d > 0 else XUiSkin.DOWN
+						var aw := num.get_string_size("→", HORIZONTAL_ALIGNMENT_LEFT, -1, cfs).x
+						XUiSkin.ds(body, num, Vector2(roundf(cols.arrow_c - aw / 2.0), roundf(by)), "→", HORIZONTAL_ALIGNMENT_LEFT, -1, cfs, col2)
+						XUiSkin.draw_num_right(body, num, cols.new_r, by, XMenu._group(after), cfs, col2)
+						XUiSkin.draw_num_right(body, num, cols.delta_r, by, "%s%s" % ["▲" if d > 0 else "▼", XMenu._group(absi(d))], cfs, col2)
+					done = true
+				if not done:
+					var t := XMenu._group(before)
+					var col := XUiSkin.TEXT
+					if compare and after >= 0 and after != before:
+						var d := after - before
+						t += " → %s %s%s" % [XMenu._group(after), "▲" if d > 0 else "▼", XMenu._group(absi(d))]
+						col = XUiSkin.UP if d > 0 else XUiSkin.DOWN
+					var tw := num.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21).x
+					XUiSkin.ds(body, num, Vector2(w - 12 - tw, base + 21 * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, col)
 			y += ROW_H
 	else:
 		var fs := XUiSkin.FS_AUX_MAX

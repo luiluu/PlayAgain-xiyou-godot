@@ -21,7 +21,13 @@ var sel_scale: XSkinSelScale
 ## R15（T287 卡 E）：主菜单、装备页的队伍条不显示 TP（不在战斗里永远是 0），血条蓝条各加宽。默认 true（别处照旧，如战斗里的我方状态详情）；
 ## 主菜单的由 _enter_tree 认出祖先是 XSkinMainMenu 自动关（skin_main_menu.gd 不在卡 E 范围），装备页自己设 false。XSkinRingNav.INNER_V2＝false 时一律照旧三条
 var show_tp := true
+## D1c 测试用：最近一次 _draw 每条量条的 [成员号, 键, 量条右缘 x]
+var last_bars: Array = []
 const HEAD := 42.0
+## D1c：数值字号基准（跟字号设置缩放）、血／蓝默认预留 5 位、TP 默认 3 位（队里有更大的数就按更大的位数）
+const NUM_FS := 17
+const HP_DIGITS := 5
+const TP_DIGITS := 3
 const TITLE_H := 44.0
 ## 助力卡上状态图标从右边让出多少（角标约 42 宽，从行右缘 2 起，右边距 12）
 const HELPER_TAG_ROOM := 36.0
@@ -134,6 +140,7 @@ func _draw() -> void:
 	if title != "":
 		XUiSkin.ds(self, head, Vector2(16, 10 + 21 * 0.9), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 21, XUiSkin.GOLD)
 	sel_scale.sel(index if selectable and index >= 0 else null)
+	last_bars = []
 	for i in members.size():
 		var m: Dictionary = members[i]
 		var r := row_rect(i)
@@ -192,6 +199,16 @@ func _draw() -> void:
 			var v := float(m.get(spec[0], 0))
 			var mx := float(m.get("m" + spec[0], 0))
 			var txt := str(int(v))
+			if XUiSkin.detail_on():   # D1c：按当前字号预留定宽数字栏，量条右缘整队齐平，数值右对齐在块右缘
+				var nfs := XUiSkin.fs(NUM_FS)
+				var col_w := value_col_w(num, nfs, spec[0], members)
+				var tk := Rect2(bx, y2 + 2 - XUiSkin.bar_h(spec[0]), maxf(w - col_w - 4, 8.0), XUiSkin.bar_h(spec[0]))
+				var rt := clampf(v / mx, 0.0, 1.0) if mx > 0.0 and v > 0.0 else 0.0
+				XUiSkin.draw_gauge(ci, tk, rt, spec[2])
+				last_bars.append([i, spec[0], tk.end.x])
+				XUiSkin.draw_num_right(self, num, bx + w, y2 + 6, txt, nfs, spec[3])
+				bx += w + 8
+				continue
 			var tw := maxf(num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x, 26)
 			var bw := w - tw - 4
 			var track := Rect2(bx, y2 + 2 - XUiSkin.bar_h(spec[0]), bw, XUiSkin.bar_h(spec[0]))
@@ -199,6 +216,14 @@ func _draw() -> void:
 			XUiSkin.draw_gauge(ci, track, ratio, spec[2])
 			XUiSkin.ds(self, num, Vector2(bx + w - num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x, y2 + 6), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, spec[3])
 			bx += w + 8
+
+
+## D1c：数值栏宽＝逐位定宽的格宽 × 位数（血蓝至少 5 位、TP 至少 3 位；队里最大值位数更多就取更多）。同一队、同一字号下每人每条同宽，量条右缘因此对齐
+static func value_col_w(num: Font, fs: int, key: String, mems: Array) -> float:
+	var digits := TP_DIGITS if key == "tp" else HP_DIGITS
+	for m in mems:
+		digits = maxi(digits, str(int(m.get("m" + key, 0))).length())
+	return XUiSkin.mono_digit_cell(num, fs) * digits
 
 
 ## 「助力」角标的矩形（行矩形 r 里，右上角）

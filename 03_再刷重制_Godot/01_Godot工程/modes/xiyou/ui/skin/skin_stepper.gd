@@ -327,10 +327,25 @@ func _draw() -> void:
 			HORIZONTAL_ALIGNMENT_LEFT, -1, int(fit[1]), XUiSkin.TEXT_3 if dim else XUiSkin.TEXT)
 	var nr := number_rect()
 	var vt := XSkinStepper.group(value)
+	if XUiSkin.detail_on():   # D1c：数量按最大值位宽定居中基准框、框内右对齐（逐位定宽），位数变化个位不跳
+		var spec := number_spec(num, nr, value, max_value)
+		XUiSkin.draw_mono_digits(self, num, spec.right, nr.position.y + nr.size.y / 2.0 + int(spec.fs) * 0.36, vt, int(spec.fs),
+			XUiSkin.TEXT_3 if dim else XUiSkin.GOLD_LIGHT, HORIZONTAL_ALIGNMENT_RIGHT)
+		return
 	var nfit := XSkinList.fit_text(num, vt, nr.size.x, XUiSkin.fs(NUM_FS), 15)
 	var vw := num.get_string_size(str(nfit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(nfit[1])).x
 	XUiSkin.ds(self, num, Vector2(nr.position.x + (nr.size.x - vw) / 2.0, nr.position.y + nr.size.y / 2.0 + int(nfit[1]) * 0.36), str(nfit[0]),
 		HORIZONTAL_ALIGNMENT_LEFT, -1, int(nfit[1]), XUiSkin.TEXT_3 if dim else XUiSkin.GOLD_LIGHT)
+
+
+## D1c：数字基准框（测试和 _draw 共用）：字号按「最大值」的千分位串在数字区里放得下定（所有值同一字号，缩字不跳），
+## 框宽＝最大值串的逐位定宽总宽，框在数字区里居中，数字右缘＝框右缘。返回 {fs, box_w, right}
+static func number_spec(num: Font, nr: Rect2, v: int, max_v: int) -> Dictionary:
+	var widest := group(maxi(maxi(max_v, v), 1))
+	var fit := XSkinList.fit_text(num, widest, nr.size.x, XUiSkin.fs(NUM_FS), 15)
+	var fs := int(fit[1])
+	var bw := XUiSkin.mono_digits_width(num, widest, fs)
+	return {"fs": fs, "box_w": bw, "right": nr.position.x + (nr.size.x + bw) / 2.0}
 
 
 ## 千分位（同 XSkinTemplatePage._group）
