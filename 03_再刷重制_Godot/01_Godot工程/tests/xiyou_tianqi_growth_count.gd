@@ -104,6 +104,7 @@ func _raven(s: XState, set_ok: Callable) -> void:
 	XRaven.sync(r)
 	_check("raven_off_noclamp", XRaven.soul(r) == 180000.0)
 	G.ENABLED = true
+	_raven_load(s, r)
 	s.raven["soul"] = 150000.0
 	r.change_level(60)
 	XRaven.sync(r)
@@ -141,6 +142,50 @@ func _raven(s: XState, set_ok: Callable) -> void:
 	races.erase(str(XRaven.ACTOR))
 	s.raven["soul"] = 0.0
 	_fresh(r)
+	_raven_load_learned(s)
+
+
+## T269：读档（XTianqiSave.after_load）就压回，不等下一次 sync。旧档＝存档文件里没学 10136 却超 15 万；新档＝没超的
+func _raven_load(s: XState, r: XActor) -> void:
+	s.raven["soul"] = 120000.0
+	var b := kit.roundtrip()
+	_check("raven_load_new", b != null and XRaven.soul(b.actor(XRaven.ACTOR)) == 120000.0, XRaven.soul(b.actor(XRaven.ACTOR)) if b != null else null)
+	XState.current = s
+	kit.save()
+	kit.edit_raw(func(d): d.codexRaven.soul = 180000.0)
+	b = kit.reload()
+	var br: XActor = b.actor(XRaven.ACTOR) if b != null else null
+	_check("raven_load_old_clamp", br != null and not XRaven.has(br, 10136) and XRaven.soul(br) == 150000.0, XRaven.soul(br) if br != null else null)
+	G.ENABLED = false
+	b = kit.reload()
+	_check("raven_load_off_noclamp", b != null and XRaven.soul(b.actor(XRaven.ACTOR)) == 180000.0)
+	G.ENABLED = true
+	XState.current = s
+	s.raven["soul"] = 150000.0
+	_fresh(r)
+
+
+## T269：已学 10136 的读档不动（20 万以上也不动）；西游档读档零变化
+func _raven_load_learned(s: XState) -> void:
+	var r: XActor = s.actor(XRaven.ACTOR)
+	s.raven["soul"] = 230000.0
+	var b := kit.roundtrip()
+	var br: XActor = b.actor(XRaven.ACTOR) if b != null else null
+	_check("raven_load_learned", br != null and XRaven.has(br, 10136) and XRaven.soul(br) == 230000.0, XRaven.soul(br) if br != null else null)
+	XState.current = s
+	s.raven["soul"] = 0.0
+	_fresh(r)
+	var xiyou := XState.new_game(2, 1, [8, 9, 10])
+	XState.current = xiyou
+	var xr := _join(xiyou, XRaven.ACTOR)
+	xr.change_level(50)
+	xiyou.actor_advance[XRaven.ACTOR] = 5
+	XRaven.sync(xr)
+	xiyou.raven["soul"] = 180000.0
+	var xb := kit.roundtrip()
+	var xbr: XActor = xb.actor(XRaven.ACTOR) if xb != null else null
+	_check("raven_load_xiyou", xbr != null and not XTianqi.active(xb) and not XRaven.has(xbr, 10136) and XRaven.soul(xbr) == 180000.0, XRaven.soul(xbr) if xbr != null else null)
+	XState.current = s
 
 
 func _nanoha(s: XState, set_ok: Callable) -> void:

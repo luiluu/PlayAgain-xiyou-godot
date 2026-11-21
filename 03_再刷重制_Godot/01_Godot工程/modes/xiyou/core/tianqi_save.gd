@@ -176,10 +176,18 @@ static func versions(s: XState) -> Dictionary:
 	return out
 
 
-## 唯一的读档后入口（XState.from_dict 末尾）。幂等。先分区迁移，再随机门面补老件随机身份（后者不受 ENABLED 影响，只认 XTianqi.SEED_FROM_SAVE）
+## 唯一的读档后入口（XState.from_dict 末尾）。幂等。先分区迁移，再随机门面补老件随机身份（后者不受 ENABLED 影响，只认 XTianqi.SEED_FROM_SAVE），
+## 最后渡鸦灵魂压回（T269：没学 10136 的旧档超 15 万的读档即压回，不等下一次 sync；只认 XTianqiGrowth.on，西游档不动）
 static func after_load(s: XState) -> void:
 	_migrate(s)
 	XTianqiRandom.after_load(s)
+	_raven_clamp(s)
+
+
+## growth_clamp 读写的是 XState.current（from_dict 在 _become_current 之后才调这里），不是当前档就不动
+static func _raven_clamp(s: XState) -> void:
+	if s != null and s == XState.current and s.actors.has(XRaven.ACTOR):
+		XRaven.growth_clamp(s.actors[XRaven.ACTOR])
 
 
 static func _migrate(s: XState) -> void:
