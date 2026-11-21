@@ -288,8 +288,18 @@ func _draw_layers() -> void:
 		var pts := PackedVector2Array()
 		for k in 65:
 			pts.append(p + Vector2.from_angle(TAU * k / 64.0) * r)
-		var col := Color(XUiSkin.GOLD, 1.0) if has_art(index) else Color(XUiSkin.SEL_LINE, 1.0)
-		RenderingServer.canvas_item_add_polyline(_orb_ci, pts, PackedColorArray([col]), 2.5, true)
+		if XUiSkin.detail_on() and XUiSkin.show_focus_ring():   # T349 D1b：手柄／键盘态＝内黑外淡金双环（鼠标触屏仍是原选中描边）
+			var rp := PackedVector2Array()
+			var rp2 := PackedVector2Array()
+			for k in 65:
+				var dir := Vector2.from_angle(TAU * k / 64.0)
+				rp.append(p + dir * (r + 1.0))
+				rp2.append(p + dir * (r + 3.0))
+			RenderingServer.canvas_item_add_polyline(_orb_ci, rp, PackedColorArray([Color(XUiSkin.FOCUS_IN, XUiSkin.FOCUS_IN_ALPHA)]), 2.0, true)
+			RenderingServer.canvas_item_add_polyline(_orb_ci, rp2, PackedColorArray([Color(XUiSkin.GOLD_LIGHT, XUiSkin.breath_alpha())]), 2.0, true)
+		else:
+			var col := Color(XUiSkin.GOLD, 1.0) if has_art(index) else Color(XUiSkin.SEL_LINE, 1.0)
+			RenderingServer.canvas_item_add_polyline(_orb_ci, pts, PackedColorArray([col]), 2.5, true)
 	var body := XUiSkin.font("body")
 	var rd := XSkinArt.read_on()
 	for i in (0 if hide_labels else items.size()):
@@ -724,12 +734,13 @@ func _draw() -> void:
 	# 球
 	var body := XUiSkin.font("body")
 	var layers := ring_layers()
+	var dring := XUiSkin.detail_on() and XUiSkin.show_focus_ring()   # T349 D1b：手柄／键盘态选中球＝双环，不叠红晕红圈
 	for i in items.size():
 		var p := item_pos(i)
 		var on := i == index
 		var r := orb_radius * item_scale(i)
 		var art := has_art(i)
-		if on:
+		if on and not (dring and not art):
 			var g := XUiSkin.glow_texture()
 			# u4 选中贴图自带朱红底：外晕减成淡旧金，不叠第二层红
 			draw_texture_rect(g, Rect2(p - Vector2(r + 24, r + 24), Vector2(r + 24, r + 24) * 2), false,
@@ -738,10 +749,14 @@ func _draw() -> void:
 		draw_circle(p, r, sty("orb_low"))
 		draw_circle(p + Vector2(-r * 0.15, -r * 0.2), r * 0.72, sty("orb_hi"))
 		var ring_col := (Color(XUiSkin.GOLD, 1.0) if art else Color(XUiSkin.SEL_LINE, 1.0)) if on else Color(line, float(sty("orb_line_a")))
+		if on and dring:
+			ring_col = Color(line, float(sty("orb_line_a")))
 		var parent_hint := not on and hot_roots.has(i)   # 选中副栏时它的父栏：描边转亮金（不红，红只给选中）
 		if parent_hint:
 			ring_col = Color(XUiSkin.GOLD, 0.95)
-		draw_circle(p, r, ring_col, false, 2.5 if on else (2.0 if parent_hint else 1.5), true)
+		draw_circle(p, r, ring_col, false, 2.5 if (on and not dring) else (2.0 if parent_hint else 1.5), true)
+		if on and dring and not layers:   # 没有环纹第 3 层（非装备页）时，双环就在这里画；开着时由 _draw_layers 补画在框和点之上
+			XUiSkin.draw_focus_circle(self, p, r)
 		var icon = items[i].get("icon")
 		var tex: Texture2D = icon if icon is Texture2D else (XUiSkin.icon(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
 		var glyph := str(items[i].get("glyph", "")) if INNER_V2 else ""
