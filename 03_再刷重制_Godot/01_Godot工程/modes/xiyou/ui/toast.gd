@@ -93,7 +93,7 @@ static func metrics() -> Array:
 	return [roundi(FONT_SIZE * k), roundi(LINE_HEIGHT * k), WIDTH * minf(k, MAX_WIDEN)]
 
 
-## 旧皮肤／NOTICE_V2 关时的兜底停留（含淡入淡出）：T340 D4 按字数；DETAIL_V1 关回写死 3.0
+## 旧皮肤／NOTICE_V2 关时的兜底停留：T340 D4 按字数；DETAIL_V1 关回写死 3.0
 static func hold_for(text: String) -> float:
 	return XSkinNoticeLane.calc_duration(text) if XUiSkin.DETAIL_V1 else TIMEOUT
 

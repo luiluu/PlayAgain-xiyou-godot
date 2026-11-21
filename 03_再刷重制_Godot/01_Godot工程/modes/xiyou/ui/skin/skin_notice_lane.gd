@@ -92,7 +92,7 @@ static func is_warn(it: Dictionary) -> bool:
 	return false
 
 
-## 一条提示该停多久（含淡入淡出）。backlog＝排在后面的条数：≤1 不变，2～4 ×0.65，≥5 ×0.50，加速后保底 1.2 秒
+## 一条提示该停多久。backlog＝排在后面的条数：≤1 不变，2～4 ×0.65，≥5 ×0.50，加速后保底 1.2 秒
 static func calc_duration(text: String, warn := false, backlog := 0) -> float:
 	var d := clampf(D4_BASE + D4_PER_CHAR * effective_chars(text), D4_MIN, D4_MAX)
 	if warn:
@@ -130,7 +130,7 @@ static func push(item: Dictionary) -> void:
 func _merge_into(dst: Dictionary, it: Dictionary, showing: bool) -> bool:
 	if dst.is_empty() or str(dst.get("key", "")) != str(it.key):
 		return false
-	if showing and t >= _total(dst) - FADE:
+	if showing and t >= _total(dst) - (D4_FADE_OUT if XUiSkin.detail_on() else FADE):
 		return false   # 正在淡出的不再并，另起一条
 	if bool(it.get("replace", false)):
 		for k in ["title", "sub", "icon", "badge"]:

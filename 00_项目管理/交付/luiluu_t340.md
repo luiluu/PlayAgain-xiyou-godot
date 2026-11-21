@@ -34,7 +34,7 @@
 - 战斗顶栏图已补：测试里单建一个 `XBattleScene`（不起整场战斗），首领血弧＋状态胶囊亮着，提示道让到其下，`notice_battle_short/long.png`，并有不相交与穿透断言。
 - 「T336 核查转来的条目」：本机 `核查/` 下没有 T336 文件，没有可对的条目。
 - 悬停／轻点用鼠标事件，触屏靠 Godot 的触屏模拟鼠标；没用真触屏／手柄测。
-- 没跑云端选测；本机跑过 `xiyou_ui_detail_d4`（38/38）、`xiyou_ui_skin_4b`（123/123）、`xiyou_ui_detail_d3`（93/93）、`xiyou_ui_skin_d1a`（53/53）。
+- 本机跑过 `xiyou_ui_detail_d4`（带窗口 43/43，无头 40/40，战斗顶栏三项只在带窗口时跑）、`xiyou_ui_skin_4b`（123/123）、`xiyou_ui_detail_d3`（93/93）、`xiyou_ui_skin_d1a`（53/53）；云端选测 41 个场景 2 片通过。
 
 ## 玩家可见文字（待小A 审）
 
