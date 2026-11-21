@@ -96,6 +96,9 @@ static func materials(st: XState) -> Dictionary:
 
 # ---------------------------------------------------------------- 花钱（Kyo 2026-11-13：按法宝与积分重构后的规则）
 
+const VPLogic := preload("res://tests/virtual_player/vp_battle_logic.gd")
+## T328：上场没人会复活技能时，逛店把复活道具凑到几个（0＝不买）
+static var REVIVE_ITEM_KEEP := 3
 const W8 := [1.0, 0.3, 1.5, 1.0, 1.5, 1.0, 0.5, 0.2]   # 八项能力的权重（和换装比较用的同一组）
 static var _exp_pill_cache := {}
 
@@ -224,6 +227,20 @@ static func shop(shop_page: XShop, st: XState, wanted: Dictionary = {}) -> Dicti
 		if got > 0:
 			out.bought += got
 			out.lines.append("买 %s×%d %s" % [str(e0.rec.get("name", "")), got, _spent(st, cost0)])
+	# T328：上场的人没有会复活技能的，买复活道具备着（背包凑到 REVIVE_ITEM_KEEP 个，最多花手里金币一成）；出手时由 vp_battle_logic 用
+	if REVIVE_ITEM_KEEP > 0 and not st.battle_members().any(func(a): return not VPLogic.revive_skills(a).is_empty()):
+		for i in d.size():
+			var er: Dictionary = d[i]
+			if int(er.kind) != 0 or not VPLogic.revives(er.item) or not shop_page._buy_enabled(er):
+				continue
+			var nr := mini(REVIVE_ITEM_KEEP - st.item_count(int(er.gid)), int(st.gold) / 10 / maxi(1, int(er.get("price", 1))))
+			if nr <= 0:
+				continue
+			var costr := _wallet(st)
+			var gotr := _buy(shop_page, i, nr)
+			if gotr > 0:
+				out.bought += gotr
+				out.lines.append("买复活道具 %s×%d %s" % [str(er.rec.get("name", "")), gotr, _spent(st, costr)])
 	# 种族祝福进阶石（13 层起打赢的守层者卖，七族通用）：出战的人和助力位里谁正好差这一阶，就按人数买
 	var stone_need := stone_needs(st)
 	for i in d.size():
