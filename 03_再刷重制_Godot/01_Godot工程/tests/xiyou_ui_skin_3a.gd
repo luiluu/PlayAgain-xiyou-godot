@@ -39,6 +39,8 @@ var out_dir := ""
 
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
+		if arg == "--detail-off":   # T360 截图对照：DETAIL_V1 关
+			XUiSkin.DETAIL_V1 = false
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
 	_run.call_deferred()
