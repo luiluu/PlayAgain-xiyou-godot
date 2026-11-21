@@ -174,6 +174,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		out = XTianqiSect.item_rec(id, out)  # 天启篇教派连带内容（包丙）：老钱／小钱的账本
 	if name == "Troops" and XTianqiSect.has_troop(XState.current, id):
 		out = XTianqiSect.troop_rec(id, out)  # 天启篇教派连带内容（包丙）：讨债战敌群 747／766
+	if name == "Enemies" and XGuardianRework.strip_touches(id):
+		out = XGuardianRework.strip_rec(id, out)  # 天启篇守层者（含变身二阶段）清正值双闪、暴闪、每回合回血（T348）
 	if name == "Troops" and XGuardianRework.XINMO_TROOPS.has(id):
 		out = XGuardianRework.xinmo_troop(id, out)  # 天启篇心魔对齐守层者（T315）：去掉心魔敌群的原版事件页
 	if (name == "Skills" or name == "Items") and XTianqiTrumpet.touches(name, id):

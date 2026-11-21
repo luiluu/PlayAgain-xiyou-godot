@@ -131,7 +131,7 @@ func _f10() -> void:
 	_check("f10.def_eq", g != null and int(e.param(3)) == int(g.param(3)) and int(e.param(5)) == int(g.param(5)), [e.param(3), e.param(5), g.param(3) if g else -1])
 	_check("f10.atk_eq", g != null and int(e.param(2)) == int(g.param(2)) and int(e.param(4)) == int(g.param(4)), [e.param(2), g.param(2) if g else -1])
 	_check("f10.output_eq", g != null and is_equal_approx(e.output_scale, g.output_scale) and is_equal_approx(e.output_scale, float(XTianqiBase.guardian_table("atk_scale", XGuardianRework.ATK_SCALE).get(10, XGuardianRework.ATK_SCALE[10]))), [e.output_scale, g.output_scale if g else -1])
-	_check("f10.no_cev", not _xparam_pos(e, [3]) and e.xparam(3) <= 0.0 and g != null and g.xparam(3) > 0.0, [e.xparam(3), g.xparam(3) if g else -1])
+	_check("f10.no_cev", not _xparam_pos(e, [3]) and e.xparam(3) <= 0.0 and g != null and float((XDB.table("Enemies")[72] as Dictionary).get("traits", []).filter(func(t): return int(t.code) == 22 and int(t.dataId) == 3).reduce(func(a, t): return a + float(t.value), 0.0)) > 0.0, [e.xparam(3), g.xparam(3) if g else -1])  # 原数据 10 层守层者有暴闪；T348 起守层者自己也清（XGuardianRework.STRIP），不再断言 g.xparam(3) > 0
 	_check("f10.zq_ref_cleared", e.zq_ref.is_empty() and e.zq_trial_loot, e.zq_ref)
 	var ids := _ids(e)
 	var want := _ids(g).filter(func(id): return not XGuardianRework.XINMO_SKIP_SKILLS.has(id) and not XGuardianRework.DOMAIN_SKILLS.has(id)) if g else []

@@ -37,6 +37,8 @@ func _run() -> void:
 	MVInterpreter.fixed_random = 0.5
 	XEnemy.force_roll = 100.0  # 守层者不按神话
 	seed(20261120)
+	var was_strip := XGuardianRework.STRIP
+	XGuardianRework.STRIP = false  # T348 起天启篇守层者默认清掉正值双闪暴闪回血；本专项量的是机制本身，借守层者原数据的正值（别的敌人照吃这套）
 	var was := [XTianqiCombat.ENEMY_XPARAM_CAP, XTianqiCombat.SUBTRACTIVE_CEV, XTianqiAffixBattle.SUPPRESS_CEV, XToji.TIANQI_CEV_HALF]
 	_check("switches.default_on", was == [true, true, true, true], was)
 	_table()
@@ -61,6 +63,7 @@ func _run() -> void:
 		if not r.passed:
 			print("FAIL ", r.name, " ", r.detail)
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
+	XGuardianRework.STRIP = was_strip
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
 
 
