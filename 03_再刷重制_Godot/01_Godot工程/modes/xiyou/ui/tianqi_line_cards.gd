@@ -413,7 +413,8 @@ class _Card extends Control:
 		var main := XTianqiLook.main_color(key)
 		var r := Rect2(Vector2.ZERO, size)
 		var ci := get_canvas_item()
-		if selected:
+		var ring := XUiSkin.detail_on()   # T359 D253：选中卡改内黑外淡金双环（不再朱红描边＋绯红外晕＋朱红光标条）；DETAIL_V1 关回旧画法
+		if selected and not ring:
 			var halo := StyleBoxFlat.new()
 			halo.draw_center = false
 			halo.shadow_color = Color(XUiSkin.SEL_FILL, 0.30 + 0.15 * pulse)
@@ -427,7 +428,10 @@ class _Card extends Control:
 		draw_line(Vector2(16, DIVIDER_Y), Vector2(size.x - 16, DIVIDER_Y), Color(main, 0.4), 1.0)
 		if relic_label != null:
 			draw_line(Vector2(16, RELIC_LINE_Y), Vector2(size.x - 16, RELIC_LINE_Y), Color(XUiSkin.LINE, 0.25), 1.0)
-		if selected:
+		if selected and ring:
+			# 选中是「当前这张卡」的记号，鼠标、触屏也要看见，所以不受 show_focus_ring 管；环收在卡内（外淡金贴卡边），不怕被父节点裁掉
+			XUiSkin.draw_focus_ring(ci, r.grow(-float(XUiSkin.FOCUS_EXPAND)), maxi(XUiSkin.RADIUS - XUiSkin.FOCUS_EXPAND, 0))
+		elif selected:
 			var edge := StyleBoxFlat.new()
 			edge.draw_center = false
 			edge.border_color = Color(XUiSkin.SEL_LINE, 0.55 + 0.35 * pulse)

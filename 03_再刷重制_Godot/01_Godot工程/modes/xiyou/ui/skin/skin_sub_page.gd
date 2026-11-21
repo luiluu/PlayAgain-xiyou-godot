@@ -56,6 +56,7 @@ func _init(s: Control) -> void:
 	row_height = XUiSkin.ROW_H
 	auto_nav = false
 	hint_list = [["确定", "切换"], ["左右", "调整"], ["取消", "返回"]]
+	currencies = [] if XUiSkin.detail_on() else null   # T359 F-14：设置页右上不挂无关的「精魂」（S-TPL-1）；DETAIL_V1 关＝默认精魂
 
 
 func _ready() -> void:
@@ -111,15 +112,20 @@ func relayout() -> void:
 	if layout == null or list == null:
 		return
 	var cs := layout.center.size
-	var top := LIST_TOP + 8.0
+	var top := LIST_TOP + 8.0 + crumb_dy()
 	list.position.y = top
 	list.size.y = floorf((cs.y - top - FOOTER_H) / float(row_height)) * row_height
+
+
+## T359 F-03：标题下的淡金短线在 PAD+25.5，面包屑字头原先离它不到 4px（S-SPC-2）；整行（面包屑＋列表）下移 4px，字头离线 ≥8px。DETAIL_V1 关＝0
+static func crumb_dy() -> float:
+	return 4.0 if XUiSkin.detail_on() else 0.0
 
 
 func _draw_list_panel() -> void:
 	super()
 	if not crumb.is_empty():
-		XSkinCrumb.draw_parts(list_panel, Vector2(XUiSkin.PAD + 8, XUiSkin.PAD + 40), crumb, list_panel.size.x - 48.0)
+		XSkinCrumb.draw_parts(list_panel, Vector2(XUiSkin.PAD + 8, XUiSkin.PAD + 40 + crumb_dy()), crumb, list_panel.size.x - 48.0)
 
 
 ## 环：有设置主页就照它（同样的类、同样高亮），没有（单开）就用全部分类、按 skin_cat 高亮
@@ -236,9 +242,22 @@ static func choices_section(labels: Array, cur: int, default_idx := -1) -> Dicti
 	return {"title": "可选", "lines": lines}
 
 
-## 「开／关」的行尾色：开＝GOLD_LIGHT，关＝TEXT_2
+## 「开／关」的行尾色：开＝GOLD_LIGHT（淡金），关＝灰。T359 F-14：关由 TEXT_2 改 TEXT_3，三张设置页统一（DETAIL_V1 关＝TEXT_2）
 static func on_color(on: bool) -> Color:
-	return XUiSkin.GOLD_LIGHT if on else XUiSkin.TEXT_2
+	if on:
+		return XUiSkin.GOLD_LIGHT
+	return XUiSkin.TEXT_3 if XUiSkin.detail_on() else XUiSkin.TEXT_2
+
+
+## 设置行尾值的统一配色（T359 F-14）：「开…」淡金、「关」灰；其余（档位、数值、「设置 ›」）用 fallback。DETAIL_V1 关＝一律 fallback
+static func value_color(text: String, fallback: Color) -> Color:
+	if not XUiSkin.detail_on():
+		return fallback
+	if text.begins_with("开"):
+		return XUiSkin.GOLD_LIGHT
+	if text == "关":
+		return XUiSkin.TEXT_3
+	return fallback
 
 
 # ---- 淡出／淡入（手机按键拖动态）----

@@ -144,7 +144,7 @@ func skin_rows() -> Array:
 	for i in rows().size():
 		var key := _key_at(i)
 		var t := status_text(i)
-		var d := {"text": rows()[i][0], "right": t, "right_color": XUiSkin.GOLD_LIGHT}
+		var d := {"text": rows()[i][0], "right": t, "right_color": XSkinSubPage.value_color(t, XUiSkin.GOLD_LIGHT)}   # T359 F-14
 		if _is_off(key):
 			d["disabled"] = true   # 对当前布局没用的行变灰，值仍是「—」
 		elif key == "position":

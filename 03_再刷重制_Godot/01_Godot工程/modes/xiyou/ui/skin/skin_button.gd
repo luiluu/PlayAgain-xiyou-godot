@@ -5,6 +5,11 @@ extends RefCounted
 ## 标题页角落按钮、选线「再想想」、异化工坊的按钮共用。不改按钮的文字、大小和信号，只换外观。
 
 
+## T359 D251：通用按钮圆角 9（DETAIL_V1 关＝回列表行 6）
+static func radius() -> int:
+	return XUiSkin.BTN_RADIUS if XUiSkin.detail_on() else XUiSkin.ROW_RADIUS
+
+
 static func style(kind := "") -> StyleBoxFlat:
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(XUiSkin.panel_c(), 0.92)
@@ -14,7 +19,7 @@ static func style(kind := "") -> StyleBoxFlat:
 	elif kind == "danger":
 		sb.border_color = Color(XUiSkin.down_c(), 0.7)
 	sb.set_border_width_all(1)
-	sb.set_corner_radius_all(XUiSkin.ROW_RADIUS)
+	sb.set_corner_radius_all(radius())
 	sb.content_margin_left = XUiSkin.PAD
 	sb.content_margin_right = XUiSkin.PAD
 	sb.content_margin_top = 6

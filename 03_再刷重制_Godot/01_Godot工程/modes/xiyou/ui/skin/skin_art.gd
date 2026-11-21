@@ -355,6 +355,16 @@ static func nearest(src: Image, size: Vector2i) -> Image:
 	return img
 
 
+## 水平镜像的缩放图（T359 D254 对称选中条：负宽矩形在 RenderingServer 里不翻，所以直接翻图）
+static func flipped(name: String, size: Vector2i) -> Texture2D:
+	var key := "flip#%s#%dx%d" % [name, size.x, size.y]
+	if not _scaled.has(key):
+		var img := scaled(name, size).get_image()
+		img.flip_x()
+		_cache_scaled(key, ImageTexture.create_from_image(img))
+	return _scaled[key]
+
+
 static func _cache_scaled(key: String, t: Texture2D) -> void:
 	if _scaled.size() >= 96:   # 滑动途中尺寸会变：缓存满了整个清掉重来
 		_scaled.clear()
@@ -376,7 +386,8 @@ static func arrow_rect(rect: Rect2, k := -1) -> Rect2:
 
 ## 选中条（D51）：渐隐暗红底铺满行＋左外小箭头。state 同 XUiSkin.SelState（悬停减淡、不画箭头；按下压暗、下沉 1px）。
 ## wash：行用 selection_wash，页签用 tab_selected_wash
-static func draw_select(ci: RID, rect: Rect2, alpha := 1.0, state := 0, wash := "selection_wash_128x24") -> void:
+## symmetric（T359 D254）：居中菜单（标题页）用，暗红底中间浓、左右对称渐隐，箭头左右各一（右边镜像）；false＝左浓右淡（列表）
+static func draw_select(ci: RID, rect: Rect2, alpha := 1.0, state := 0, wash := "selection_wash_128x24", symmetric := false) -> void:
 	var r := rect
 	var a := alpha * (HOVER_ALPHA if state == XUiSkin.SelState.HOVER else 1.0)
 	var mod := Color(1, 1, 1, a)
@@ -384,13 +395,25 @@ static func draw_select(ci: RID, rect: Rect2, alpha := 1.0, state := 0, wash := 
 		r.position.y += 1.0
 		mod = Color(1.0 - PRESS_DARK, 1.0 - PRESS_DARK, 1.0 - PRESS_DARK, a)
 	r = Rect2(r.position.round(), r.size.round())
-	var w := scaled(wash, Vector2i(wash_w(r.size.x), int(r.size.y)))
-	RenderingServer.canvas_item_add_texture_rect(ci, r, w.get_rid(), false, mod)
+	if symmetric:
+		var hw := roundf(r.size.x / 2.0)
+		var hs := scaled(wash, Vector2i(wash_w(hw), int(r.size.y)))
+		var cx := r.position.x + hw
+		# 右半＝原图（中线浓、向右淡）；左半＝水平镜像（负宽）：中线浓、向左淡
+		RenderingServer.canvas_item_add_texture_rect(ci, Rect2(cx, r.position.y, r.end.x - cx, r.size.y), hs.get_rid(), false, mod)
+		var hl := flipped(wash, Vector2i(wash_w(hw), int(r.size.y)))
+		RenderingServer.canvas_item_add_texture_rect(ci, Rect2(r.position.x, r.position.y, cx - r.position.x, r.size.y), hl.get_rid(), false, mod)
+	else:
+		var w := scaled(wash, Vector2i(wash_w(r.size.x), int(r.size.y)))
+		RenderingServer.canvas_item_add_texture_rect(ci, r, w.get_rid(), false, mod)
 	if state == XUiSkin.SelState.HOVER:
 		return
 	var ar_r := arrow_rect(r)
 	var ar := scaled("selection_arrow_7x9", Vector2i(ar_r.size))
 	RenderingServer.canvas_item_add_texture_rect(ci, ar_r, ar.get_rid(), false, Color(1, 1, 1, alpha))
+	if symmetric:   # 右外镜像箭头
+		var mr := Rect2(Vector2(r.end.x + ARROW_GAP, ar_r.position.y), ar_r.size)
+		RenderingServer.canvas_item_add_texture_rect(ci, mr, flipped("selection_arrow_7x9", Vector2i(ar_r.size)).get_rid(), false, Color(1, 1, 1, alpha))
 
 
 ## 横幅预放大的宽：按 4 取整（滑动途中不每帧新建贴图），画时只差 0～2px 的拉伸

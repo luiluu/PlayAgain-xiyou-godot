@@ -49,6 +49,13 @@ var active := true:
 	set(v):
 		active = v
 		_relayout(true)
+## T359 D256：列表仍亮着选中行、但焦点在右侧控件：选中条降静默（暗红减淡、不画箭头），同屏只留一个强焦点
+var quiet := false:
+	set(v):
+		quiet = v
+		if bar != null:
+			bar.quiet = v
+		queue_redraw()
 var items: Array = []
 var index := 0
 var top_row := 0

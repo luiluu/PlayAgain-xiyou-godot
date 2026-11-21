@@ -141,6 +141,7 @@ func sync() -> void:
 		"confirm":
 			set_focus("none")
 	stepper.focused = mode == "number" and stepper.visible
+	list.quiet = mode == "number"   # T359 D256：焦点在数量条／右牌钮时列表选中行降静默，同屏只一个强焦点
 	if mode != "number":
 		stepper.close_editor()   # 离开数量态：手输框收起，别留着吞数字键和回车（小A核 P2-1）
 	set_hint_list(_hints(mode))

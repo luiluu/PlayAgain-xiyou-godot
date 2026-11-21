@@ -6,6 +6,14 @@ extends Control
 const W := 36.0
 const H := 48.0
 var _down := false
+## T359 D255：返回钮的焦点态。它不抢页面焦点（不进 Tab 顺序、不吞方向键）；键盘／手柄按下取消键的那一刻亮淡金双环（＝「这一下就是它」的反馈，松手即放），
+## 页面也可以直接写 focused 把它设成焦点。鼠标／触屏不画环（show_focus_ring）。DETAIL_V1 关＝不画
+var focused := false:
+	set(v):
+		if focused == v:
+			return
+		focused = v
+		queue_redraw()
 
 
 ## 加到整页上（TOUCH_V2 关时不加，返回 null）；页面画页名前调 place() 摆好并拿到页名的 x
@@ -29,6 +37,16 @@ func _init() -> void:
 	name = "SkinBack"
 	size = Vector2(W, H)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+
+
+func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree() or not XUiSkin.detail_on():
+		return
+	if event is InputEventKey or event is InputEventJoypadButton:
+		if event.is_action_pressed("ui_cancel") and not (event is InputEventKey and event.echo):
+			focused = true
+		elif event.is_action_released("ui_cancel"):
+			focused = false
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -60,3 +78,5 @@ func _draw() -> void:
 		draw_circle(Vector2(cx, cy), 16.0, Color(0.07, 0.058, 0.056, 0.78 if _down else 0.56))
 		draw_arc(Vector2(cx, cy), 16.0, 0, TAU, 32, Color(XUiSkin.SEL_LINE, 0.85) if _down else Color(XUiSkin.GOLD, 0.38), 1.2, true)
 	draw_polyline(PackedVector2Array([Vector2(cx + 6, cy - 12), Vector2(cx - 6, cy), Vector2(cx + 6, cy + 12)]), c, 3.0, true)
+	if focused and XUiSkin.detail_on() and XUiSkin.show_focus_ring():
+		XUiSkin.draw_focus_circle(self, Vector2(cx, cy), 16.0)
