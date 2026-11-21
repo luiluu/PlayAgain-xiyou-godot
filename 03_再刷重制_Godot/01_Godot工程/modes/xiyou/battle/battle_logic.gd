@@ -1069,6 +1069,8 @@ func auto_battle_action(a: XActor) -> Array:
 		return guyu
 	var r := XTusu.auto(self, a, XXuanBattle.auto_action(self, a, _auto_battle_action(a)))  # 璇 makeAutoBattleActions 包装（屠苏之内）：附身自律时防御，本体救人、寄星；屠苏 makeAutoBattleActions 包装：屠苏自己按规则易武／支援／化武，持武者比武装技能
 	XYunshang.auto_battle(self, a)  # 云裳 makeAutoBattleActions 包装（原选择之后）：免费赠行、放行、六衡裁身、收袖
+	if r.size() >= 2:
+		XSmartAI.note_revive(self, a, r[0], r[1])  # O-待定（T331）：同一回合同一个倒下的人只安排一次复活
 	return r
 
 
