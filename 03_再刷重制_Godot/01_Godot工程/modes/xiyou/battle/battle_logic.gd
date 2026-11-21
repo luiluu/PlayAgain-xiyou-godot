@@ -1069,8 +1069,6 @@ func auto_battle_action(a: XActor) -> Array:
 		return guyu
 	var r := XTusu.auto(self, a, XXuanBattle.auto_action(self, a, _auto_battle_action(a)))  # 璇 makeAutoBattleActions 包装（屠苏之内）：附身自律时防御，本体救人、寄星；屠苏 makeAutoBattleActions 包装：屠苏自己按规则易武／支援／化武，持武者比武装技能
 	XYunshang.auto_battle(self, a)  # 云裳 makeAutoBattleActions 包装（原选择之后）：免费赠行、放行、六衡裁身、收袖
-	if r.size() >= 2:
-		XSmartAI.note_revive(self, a, r[0], r[1])  # O-待定（T331）：同一回合同一个倒下的人只安排一次复活
 	return r
 
 
@@ -2406,6 +2404,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false,
 		for t in _guided_targets(u, skill, chosen, forcing):
 			for i in range(maxi(1, times)):
 				list.append(t)
+		XSmartAI.note_revive(self, u, skill, list)  # O-待定（T331）：真出手才记这回合救的是谁（同回合同一个倒下的人只派一次）
 		XAlienBattle.set_heal_targets(skill, list.size())  # 逆祷治疗按目标数（含重复）分摊
 		XRaceBattle.begin(self, u, skill, list, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 		XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
@@ -2424,6 +2423,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false,
 	var repeats := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, passive_repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1))))))))
 	repeats = XTianqiQiyinEffects.repeats(self, u, skill, repeats)  # 天启篇战流派攻击次数 +1。黄泉 numRepeats 包装；渡鸦冥羽连葬在里层；流萤（新源第 34 个）在云裳外层
 	var targets := _guided_targets(u, skill, chosen, forcing)
+	XSmartAI.note_revive(self, u, skill, targets)  # O-待定（T331）：同上
 	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 	XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
