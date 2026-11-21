@@ -23,6 +23,9 @@ var elite_hue := 0.0              # 0~1，画面偏色用
 static var force_roll := -1.0
 ## 出伤倍率：对我方的 HP 伤害／吸取最后乘它（XDamage.finish）。默认 1；守层者按楼层重算攻击、基准伤害工具量攻击时设
 var output_scale := 1.0
+## T239 第 6 轮（D248 C）：守层者的集火招（技能号）和它单独的出伤倍率；0＝没有，那招也照 output_scale（XGuardianRework.focus）
+var focus_skill := 0
+var focus_scale := 1.0
 ## 量数用：这个敌人打出的 HP 伤害累计（XDamage.finish 记，扣血前的值）
 var dealt := 0.0
 
@@ -433,6 +436,9 @@ func refresh_passive() -> void:
 			c.harmRe[int(m[0])] = c.harmRe.get(int(m[0]), 0.0) + float(m[1])
 	c.harmRe = XGuardianRework.harm_re(self, c.harmRe)  # 守层者重算（O-402）：按层换伤害抵抗
 	output_scale = XGuardianRework.atk_scale(self)  # 守层者重算：按层的出伤倍率（鸿钧、七印里副本、七首之龙换记录后重刷时也跟着改）
+	var fz := XGuardianRework.focus(self)  # T239（D248 C）：集火招单独倍率
+	focus_skill = int(fz.get("skill", 0))
+	focus_scale = float(fz.get("scale", output_scale))
 	_passive_cache = c
 	_passive_sig = _passive_signature()
 
@@ -452,3 +458,8 @@ func passive_cache() -> Dictionary:
 
 static func _standalone_random() -> XRandomStream:
 	return XRandomStream.create(XRandomStream.hex64(XState._fresh_seed()), "standalone_enemy")
+
+
+## 这一招对我方 HP 伤害／吸取最后乘的倍率：集火招乘 focus_scale，其余乘 output_scale（XDamage.finish）
+func skill_scale(item: Dictionary) -> float:
+	return focus_scale if focus_skill > 0 and int(item.get("id", 0)) == focus_skill else output_scale

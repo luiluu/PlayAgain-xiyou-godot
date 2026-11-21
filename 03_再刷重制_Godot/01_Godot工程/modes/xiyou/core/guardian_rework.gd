@@ -219,6 +219,27 @@ static func atk_scale(e: XEnemy) -> float:
 	return float(XTianqiBase.guardian_table("atk_scale", ATK_SCALE).get(f, ATK_SCALE.get(f, 1.0)))  # 期四总开关开着读新表（缺就退回旧表；T229 起缺的层逐层退回）
 
 
+## T239 第 6 轮（D248 C，协调 11-21）：集火招。守层者每回合总出伤照 atk_scale 的续航口径（实测治疗＋合计生命÷目标回合），其中挑一招单体攻击
+## （balance_table.guardian_phase4.focus[层] ＝ {"skill": 技能号, "scale": 倍率}）单独乘 scale，让它一下打掉目标约 40% 最大生命；其余招照 atk_scale。
+## 只认守层者本身（敌人号或变身前是守层者的；心魔、鸿钧、七印里副本、骑士、同层小怪都不认）。量数（measure_atk ≥ 0）时不用，好按统一倍率量。
+## 回退：`XGuardianRework.FOCUS = false`（集火招也照 atk_scale）。
+static var FOCUS := true
+
+
+static func focus(e: XEnemy) -> Dictionary:
+	if not FOCUS or not ATK or measure_atk >= 0.0 or not e.horseman.is_empty() or xinmo_floor(e) > 0 or not _on() or not XTianqiBase.on():
+		return {}
+	var f := guardian_floor(e)
+	if f <= 0:
+		return {}
+	var g = XTianqiBalance.data().get("guardian_phase4", {})
+	var t = g.get("focus", {}) if g is Dictionary else {}
+	var row = t.get(str(f), {}) if t is Dictionary else {}
+	if not row is Dictionary or int(row.get("skill", 0)) <= 0 or float(row.get("scale", 0.0)) <= 0.0:
+		return {}
+	return {"skill": int(row.skill), "scale": float(row.scale)}
+
+
 ## 守层者认敌人号；对齐过的心魔认它的层（T315）；楼层里别的敌人认 setup 记下的层（WORLD）
 static func _floor(e: XEnemy) -> int:
 	var f := guardian_floor(e)

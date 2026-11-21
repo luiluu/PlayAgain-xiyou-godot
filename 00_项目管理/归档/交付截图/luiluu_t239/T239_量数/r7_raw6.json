@@ -1,0 +1,1902 @@
+{
+	"mode": "both",
+	"resist": -1.0,
+	"rows": [
+		{
+			"atkScale": 1.0,
+			"dmg": 4082.25,
+			"dmgRaw": 4082.25,
+			"enemyDmg": 458.125,
+			"enemyDot": 2055.125,
+			"enemyHp": 777334.0,
+			"enemyRaw": 178.125,
+			"fabao": 12,
+			"floor": 1,
+			"hit": 339.0,
+			"level": 10,
+			"line": "",
+			"partyHp": 33634.0,
+			"teams": [
+				{
+					"atkScale": 1.0,
+					"dmg": 4082.25,
+					"dmgRaw": 4082.25,
+					"enemyDmg": 458.125,
+					"enemyDot": 2055.125,
+					"enemyHp": 777334.0,
+					"enemyRaw": 178.125,
+					"hitMedian": 339.0,
+					"hits": 32,
+					"members": [
+						7,
+						63,
+						12,
+						88
+					],
+					"partyHp": 33634.0,
+					"perTurn": [
+						4313.0,
+						4313.0,
+						3657.0,
+						4063.0,
+						4176.0,
+						4176.0,
+						3901.0,
+						4059.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 1.0,
+			"dmg": 14574.0,
+			"dmgRaw": 14574.0,
+			"enemyDmg": 1597.0,
+			"enemyDot": 0.0,
+			"enemyHp": 834666.0,
+			"enemyRaw": 715.0,
+			"fabao": 15,
+			"floor": 2,
+			"hit": 1739.5,
+			"level": 10,
+			"line": "",
+			"partyHp": 108151.0,
+			"teams": [
+				{
+					"atkScale": 1.0,
+					"dmg": 14574.0,
+					"dmgRaw": 14574.0,
+					"enemyDmg": 1597.0,
+					"enemyDot": 0.0,
+					"enemyHp": 834666.0,
+					"enemyRaw": 715.0,
+					"hitMedian": 1739.5,
+					"hits": 32,
+					"members": [
+						7,
+						63,
+						12,
+						26
+					],
+					"partyHp": 108151.0,
+					"perTurn": [
+						15702.0,
+						14901.0,
+						12626.0,
+						13265.0,
+						14901.0,
+						14909.0,
+						16287.0,
+						14001.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 1.0,
+			"dmg": 21487.375,
+			"dmgRaw": 21487.375,
+			"enemyDmg": 898.125,
+			"enemyDot": 0.0,
+			"enemyHp": 896000.0,
+			"enemyRaw": 303.125,
+			"fabao": 18,
+			"floor": 3,
+			"hit": 3106.5,
+			"level": 10,
+			"line": "",
+			"partyHp": 114700.0,
+			"teams": [
+				{
+					"atkScale": 1.0,
+					"dmg": 21487.375,
+					"dmgRaw": 21487.375,
+					"enemyDmg": 898.125,
+					"enemyDot": 0.0,
+					"enemyHp": 896000.0,
+					"enemyRaw": 303.125,
+					"hitMedian": 3106.5,
+					"hits": 32,
+					"members": [
+						7,
+						63,
+						12,
+						26
+					],
+					"partyHp": 114700.0,
+					"perTurn": [
+						21645.0,
+						22209.0,
+						19385.0,
+						20286.0,
+						23304.0,
+						19299.0,
+						22654.0,
+						23117.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 1.0,
+			"dmg": 44259.125,
+			"dmgRaw": 44259.125,
+			"enemyDmg": 547.625,
+			"enemyDot": 0.0,
+			"enemyHp": 962666.0,
+			"enemyRaw": 547.625,
+			"fabao": 21,
+			"floor": 4,
+			"hit": 6324.0,
+			"level": 10,
+			"line": "",
+			"partyHp": 116718.0,
+			"teams": [
+				{
+					"atkScale": 1.0,
+					"dmg": 44259.125,
+					"dmgRaw": 44259.125,
+					"enemyDmg": 547.625,
+					"enemyDot": 0.0,
+					"enemyHp": 962666.0,
+					"enemyRaw": 547.625,
+					"hitMedian": 6324.0,
+					"hits": 32,
+					"members": [
+						7,
+						63,
+						12,
+						26
+					],
+					"partyHp": 116718.0,
+					"perTurn": [
+						44281.0,
+						48533.0,
+						41486.0,
+						39058.0,
+						47083.0,
+						41486.0,
+						41193.0,
+						50953.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.00884,
+			"dmg": 28737.625,
+			"dmgRaw": 28737.625,
+			"enemyDmg": 2757.0,
+			"enemyDot": 0.0,
+			"enemyHp": 1033332.0,
+			"enemyRaw": 1173.0,
+			"fabao": 24,
+			"floor": 5,
+			"hit": 3721.5,
+			"level": 15,
+			"line": "",
+			"partyHp": 139458.0,
+			"teams": [
+				{
+					"atkScale": 0.00884,
+					"dmg": 28737.625,
+					"dmgRaw": 28737.625,
+					"enemyDmg": 2757.0,
+					"enemyDot": 0.0,
+					"enemyHp": 1033332.0,
+					"enemyRaw": 1173.0,
+					"hitMedian": 3721.5,
+					"hits": 32,
+					"members": [
+						7,
+						63,
+						12,
+						26
+					],
+					"partyHp": 139458.0,
+					"perTurn": [
+						27299.0,
+						29584.0,
+						30622.0,
+						25067.0,
+						29980.0,
+						28801.0,
+						26280.0,
+						32268.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 3.07,
+			"dmg": 60401.625,
+			"dmgRaw": 60401.625,
+			"enemyDmg": 12226.625,
+			"enemyDot": 54.5,
+			"enemyHp": 1109334.0,
+			"enemyRaw": 4625.375,
+			"fabao": 27,
+			"floor": 6,
+			"hit": 5987.5,
+			"level": 20,
+			"line": "",
+			"partyHp": 204805.0,
+			"teams": [
+				{
+					"atkScale": 3.07,
+					"dmg": 60401.625,
+					"dmgRaw": 60401.625,
+					"enemyDmg": 12226.625,
+					"enemyDot": 54.5,
+					"enemyHp": 1109334.0,
+					"enemyRaw": 4625.375,
+					"hitMedian": 5987.5,
+					"hits": 30,
+					"members": [
+						7,
+						16,
+						12,
+						26
+					],
+					"partyHp": 204805.0,
+					"perTurn": [
+						41075.0,
+						43719.0,
+						55273.0,
+						57136.0,
+						52674.0,
+						78955.0,
+						70800.0,
+						83581.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "候选池",
+						"in": 16,
+						"level": 20,
+						"out": 63
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 1.29,
+			"dmg": 84224.125,
+			"dmgRaw": 84224.125,
+			"enemyDmg": 10310.125,
+			"enemyDot": 0.0,
+			"enemyHp": 1190666.0,
+			"enemyRaw": 3814.0,
+			"fabao": 30,
+			"floor": 7,
+			"hit": 5510.0,
+			"level": 20,
+			"line": "",
+			"partyHp": 226610.0,
+			"teams": [
+				{
+					"atkScale": 1.29,
+					"dmg": 84224.125,
+					"dmgRaw": 84224.125,
+					"enemyDmg": 10310.125,
+					"enemyDot": 0.0,
+					"enemyHp": 1190666.0,
+					"enemyRaw": 3814.0,
+					"hitMedian": 5510.0,
+					"hits": 30,
+					"members": [
+						7,
+						63,
+						16,
+						26
+					],
+					"partyHp": 226610.0,
+					"perTurn": [
+						53451.0,
+						15713.0,
+						154381.0,
+						185050.0,
+						56208.0,
+						63104.0,
+						66191.0,
+						79695.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "候选池",
+						"in": 16,
+						"level": 20,
+						"out": 12
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 1.9,
+			"dmg": 132518.375,
+			"dmgRaw": 132518.375,
+			"enemyDmg": 10553.875,
+			"enemyDot": 0.0,
+			"enemyHp": 1278666.0,
+			"enemyRaw": 5475.875,
+			"fabao": 33,
+			"floor": 8,
+			"hit": 10245.0,
+			"level": 25,
+			"line": "",
+			"partyHp": 334749.0,
+			"teams": [
+				{
+					"atkScale": 1.9,
+					"dmg": 132518.375,
+					"dmgRaw": 132518.375,
+					"enemyDmg": 10553.875,
+					"enemyDot": 0.0,
+					"enemyHp": 1278666.0,
+					"enemyRaw": 5475.875,
+					"hitMedian": 10245.0,
+					"hits": 29,
+					"members": [
+						7,
+						130,
+						12,
+						26
+					],
+					"partyHp": 334749.0,
+					"perTurn": [
+						96202.0,
+						95591.0,
+						120485.0,
+						118108.0,
+						150098.0,
+						149255.0,
+						153442.0,
+						176966.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "候选池",
+						"in": 130,
+						"level": 25,
+						"out": 63
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.589,
+			"dmg": 186953.875,
+			"dmgRaw": 186953.875,
+			"enemyDmg": 11503.5,
+			"enemyDot": 7651.25,
+			"enemyHp": 1373334.0,
+			"enemyRaw": 5965.125,
+			"fabao": 36,
+			"floor": 9,
+			"hit": 4628.0,
+			"level": 25,
+			"line": "",
+			"partyHp": 355170.0,
+			"teams": [
+				{
+					"atkScale": 0.589,
+					"dmg": 186953.875,
+					"dmgRaw": 186953.875,
+					"enemyDmg": 11503.5,
+					"enemyDot": 7651.25,
+					"enemyHp": 1373334.0,
+					"enemyRaw": 5965.125,
+					"hitMedian": 4628.0,
+					"hits": 27,
+					"members": [
+						7,
+						130,
+						12,
+						26
+					],
+					"partyHp": 355170.0,
+					"perTurn": [
+						120883.0,
+						167014.0,
+						174111.0,
+						179629.0,
+						196009.0,
+						197079.0,
+						224805.0,
+						236101.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "候选池",
+						"in": 130,
+						"level": 25,
+						"out": 63
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 1.09,
+			"dmg": 186771.25,
+			"dmgRaw": 186771.25,
+			"enemyDmg": 15104.25,
+			"enemyDot": 6138.875,
+			"enemyHp": 1480000.0,
+			"enemyRaw": 4865.75,
+			"fabao": 39,
+			"floor": 10,
+			"hit": 7879.0,
+			"level": 30,
+			"line": "",
+			"partyHp": 402806.0,
+			"teams": [
+				{
+					"atkScale": 1.09,
+					"dmg": 186771.25,
+					"dmgRaw": 186771.25,
+					"enemyDmg": 15104.25,
+					"enemyDot": 6138.875,
+					"enemyHp": 1480000.0,
+					"enemyRaw": 4865.75,
+					"hitMedian": 7879.0,
+					"hits": 29,
+					"members": [
+						7,
+						130,
+						12,
+						26
+					],
+					"partyHp": 402806.0,
+					"perTurn": [
+						31587.0,
+						190231.0,
+						219110.0,
+						239028.0,
+						243841.0,
+						33547.0,
+						243212.0,
+						293614.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "候选池",
+						"in": 130,
+						"level": 30,
+						"out": 63
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.952,
+			"dmg": 553484.125,
+			"dmgRaw": 553484.125,
+			"enemyDmg": 13103.0,
+			"enemyDot": 15838.0,
+			"enemyHp": 1586666.0,
+			"enemyRaw": 4140.875,
+			"fabao": 42,
+			"floor": 11,
+			"hit": 8557.0,
+			"level": 30,
+			"line": "",
+			"partyHp": 459460.0,
+			"teams": [
+				{
+					"atkScale": 0.952,
+					"dmg": 553484.125,
+					"dmgRaw": 553484.125,
+					"enemyDmg": 13103.0,
+					"enemyDot": 15838.0,
+					"enemyHp": 1586666.0,
+					"enemyRaw": 4140.875,
+					"hitMedian": 8557.0,
+					"hits": 30,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 459460.0,
+					"perTurn": [
+						493896.0,
+						491585.0,
+						506592.0,
+						508350.0,
+						608594.0,
+						574807.0,
+						577084.0,
+						666965.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 30,
+						"out": 12
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.511,
+			"dmg": 53039.5,
+			"dmgRaw": 53039.5,
+			"enemyDmg": 22209.625,
+			"enemyDot": 18330.375,
+			"enemyHp": 1706666.0,
+			"enemyRaw": 7527.375,
+			"fabao": 45,
+			"floor": 12,
+			"hit": 16083.5,
+			"level": 33,
+			"line": "",
+			"partyHp": 523505.0,
+			"teams": [
+				{
+					"atkScale": 0.511,
+					"dmg": 53039.5,
+					"dmgRaw": 53039.5,
+					"enemyDmg": 22209.625,
+					"enemyDot": 18330.375,
+					"enemyHp": 1706666.0,
+					"enemyRaw": 7527.375,
+					"hitMedian": 16083.5,
+					"hits": 22,
+					"members": [
+						81,
+						63,
+						12,
+						26
+					],
+					"partyHp": 523505.0,
+					"perTurn": [
+						49120.0,
+						49120.0,
+						54026.0,
+						57112.0,
+						47897.0,
+						57055.0,
+						28693.0,
+						81293.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 33,
+						"out": 7
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.946,
+			"dmg": 407445.875,
+			"dmgRaw": 407445.875,
+			"enemyDmg": 17471.0,
+			"enemyDot": 0.0,
+			"enemyHp": 2045866.0,
+			"enemyRaw": 5793.625,
+			"fabao": 48,
+			"floor": 13,
+			"hit": 24306.0,
+			"level": 35,
+			"line": "",
+			"partyHp": 555140.0,
+			"teams": [
+				{
+					"atkScale": 0.946,
+					"dmg": 407445.875,
+					"dmgRaw": 407445.875,
+					"enemyDmg": 17471.0,
+					"enemyDot": 0.0,
+					"enemyHp": 2045866.0,
+					"enemyRaw": 5793.625,
+					"hitMedian": 24306.0,
+					"hits": 24,
+					"members": [
+						7,
+						81,
+						12,
+						26
+					],
+					"partyHp": 555140.0,
+					"perTurn": [
+						335894.0,
+						396002.0,
+						376621.0,
+						435967.0,
+						214347.0,
+						456276.0,
+						531397.0,
+						513063.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 35,
+						"out": 63
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0151,
+			"dmg": 34467.875,
+			"dmgRaw": 34467.875,
+			"enemyDmg": 8623.5,
+			"enemyDot": 20465.375,
+			"enemyHp": 2195200.0,
+			"enemyRaw": 3621.25,
+			"fabao": 51,
+			"floor": 14,
+			"hit": 12815.0,
+			"level": 38,
+			"line": "",
+			"partyHp": 624346.0,
+			"teams": [
+				{
+					"atkScale": 0.0151,
+					"dmg": 34467.875,
+					"dmgRaw": 34467.875,
+					"enemyDmg": 8623.5,
+					"enemyDot": 20465.375,
+					"enemyHp": 2195200.0,
+					"enemyRaw": 3621.25,
+					"hitMedian": 12815.0,
+					"hits": 22,
+					"members": [
+						81,
+						63,
+						12,
+						26
+					],
+					"partyHp": 624346.0,
+					"perTurn": [
+						34442.0,
+						34154.0,
+						21392.0,
+						45210.0,
+						48979.0,
+						8825.0,
+						22375.0,
+						60366.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 38,
+						"out": 7
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.284,
+			"dmg": 63271.0,
+			"dmgRaw": 63271.0,
+			"enemyDmg": 27645.125,
+			"enemyDot": 15595.75,
+			"enemyHp": 2359466.0,
+			"enemyRaw": 10960.125,
+			"fabao": 54,
+			"floor": 15,
+			"hit": 17514.0,
+			"level": 40,
+			"line": "",
+			"partyHp": 656487.0,
+			"teams": [
+				{
+					"atkScale": 0.284,
+					"dmg": 63271.0,
+					"dmgRaw": 63271.0,
+					"enemyDmg": 27645.125,
+					"enemyDot": 15595.75,
+					"enemyHp": 2359466.0,
+					"enemyRaw": 10960.125,
+					"hitMedian": 17514.0,
+					"hits": 25,
+					"members": [
+						81,
+						63,
+						12,
+						26
+					],
+					"partyHp": 656487.0,
+					"perTurn": [
+						60872.0,
+						27760.0,
+						84668.0,
+						42335.0,
+						74530.0,
+						53122.0,
+						67754.0,
+						95127.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 40,
+						"out": 7
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.439,
+			"dmg": 54446.0,
+			"dmgRaw": 54446.0,
+			"enemyDmg": 20296.5,
+			"enemyDot": 0.0,
+			"enemyHp": 2810666.0,
+			"enemyRaw": 10868.875,
+			"fabao": 57,
+			"floor": 16,
+			"hit": 14050.0,
+			"level": 43,
+			"line": "",
+			"partyHp": 690776.0,
+			"teams": [
+				{
+					"atkScale": 0.439,
+					"dmg": 54446.0,
+					"dmgRaw": 54446.0,
+					"enemyDmg": 20296.5,
+					"enemyDot": 0.0,
+					"enemyHp": 2810666.0,
+					"enemyRaw": 10868.875,
+					"hitMedian": 14050.0,
+					"hits": 20,
+					"members": [
+						81,
+						63,
+						12,
+						26
+					],
+					"partyHp": 690776.0,
+					"perTurn": [
+						94016.0,
+						98800.0,
+						8797.0,
+						9027.0,
+						19940.0,
+						115400.0,
+						0.0,
+						89588.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 43,
+						"out": 7
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.115,
+			"dmg": 867964.25,
+			"dmgRaw": 1432299.375,
+			"enemyDmg": 28557.75,
+			"enemyDot": 0.0,
+			"enemyHp": 2426666.0,
+			"enemyRaw": 19531.5,
+			"fabao": 60,
+			"floor": 17,
+			"hit": 69140.0,
+			"level": 45,
+			"line": "",
+			"partyHp": 772675.0,
+			"teams": [
+				{
+					"atkScale": 0.115,
+					"dmg": 867964.25,
+					"dmgRaw": 1432299.375,
+					"enemyDmg": 28557.75,
+					"enemyDot": 0.0,
+					"enemyHp": 2426666.0,
+					"enemyRaw": 19531.5,
+					"hitMedian": 69140.0,
+					"hits": 8,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 772675.0,
+					"perTurn": [
+						4645817.0,
+						4790042.0,
+						64856.0,
+						1842741.0,
+						0.0,
+						0.0,
+						114939.0,
+						0.0
+					],
+					"reviveTurns": 2,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 45,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.634,
+			"dmg": 2011797.25,
+			"dmgRaw": 3736545.75,
+			"enemyDmg": 16234.375,
+			"enemyDot": 0.0,
+			"enemyHp": 2613334.0,
+			"enemyRaw": 6551.125,
+			"fabao": 63,
+			"floor": 18,
+			"hit": 54206.0,
+			"level": 48,
+			"line": "",
+			"partyHp": 810334.0,
+			"teams": [
+				{
+					"atkScale": 0.634,
+					"dmg": 2011797.25,
+					"dmgRaw": 3736545.75,
+					"enemyDmg": 16234.375,
+					"enemyDot": 0.0,
+					"enemyHp": 2613334.0,
+					"enemyRaw": 6551.125,
+					"hitMedian": 54206.0,
+					"hits": 17,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 810334.0,
+					"perTurn": [
+						5001802.0,
+						4609941.0,
+						3625.0,
+						5090228.0,
+						4658114.0,
+						5799255.0,
+						147909.0,
+						4581492.0
+					],
+					"reviveTurns": 6,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 48,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.33,
+			"dmg": 2184316.5,
+			"dmgRaw": 2628978.375,
+			"enemyDmg": 22090.25,
+			"enemyDot": 4286.625,
+			"enemyHp": 2800000.0,
+			"enemyRaw": 9366.375,
+			"fabao": 66,
+			"floor": 19,
+			"hit": 65365.0,
+			"level": 50,
+			"line": "",
+			"partyHp": 825155.0,
+			"teams": [
+				{
+					"atkScale": 0.33,
+					"dmg": 2184316.5,
+					"dmgRaw": 2628978.375,
+					"enemyDmg": 22090.25,
+					"enemyDot": 4286.625,
+					"enemyHp": 2800000.0,
+					"enemyRaw": 9366.375,
+					"hitMedian": 65365.0,
+					"hits": 23,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 825155.0,
+					"perTurn": [
+						2777636.0,
+						2961825.0,
+						31539.0,
+						3279713.0,
+						3917612.0,
+						36708.0,
+						4266671.0,
+						3760123.0
+					],
+					"reviveTurns": 5,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 50,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.074,
+			"dmg": 203918.375,
+			"dmgRaw": 203918.375,
+			"enemyDmg": 32135.5,
+			"enemyDot": 0.0,
+			"enemyHp": 3000000.0,
+			"enemyRaw": 16244.875,
+			"fabao": 69,
+			"floor": 20,
+			"hit": 58888.0,
+			"level": 50,
+			"line": "",
+			"partyHp": 910150.0,
+			"teams": [
+				{
+					"atkScale": 0.074,
+					"dmg": 203918.375,
+					"dmgRaw": 203918.375,
+					"enemyDmg": 32135.5,
+					"enemyDot": 0.0,
+					"enemyHp": 3000000.0,
+					"enemyRaw": 16244.875,
+					"hitMedian": 58888.0,
+					"hits": 28,
+					"members": [
+						81,
+						63,
+						128,
+						26
+					],
+					"partyHp": 910150.0,
+					"perTurn": [
+						203405.0,
+						179238.0,
+						191344.0,
+						229853.0,
+						249006.0,
+						149513.0,
+						142337.0,
+						286651.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 50,
+						"out": 7
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0303,
+			"dmg": 3540972.125,
+			"dmgRaw": 3611953.75,
+			"enemyDmg": 35808.5,
+			"enemyDot": 0.0,
+			"enemyHp": 4001066.0,
+			"enemyRaw": 29597.125,
+			"fabao": 72,
+			"floor": 21,
+			"hit": 85141.0,
+			"level": 55,
+			"line": "",
+			"partyHp": 1089701.0,
+			"teams": [
+				{
+					"atkScale": 0.0303,
+					"dmg": 3540972.125,
+					"dmgRaw": 3611953.75,
+					"enemyDmg": 35808.5,
+					"enemyDot": 0.0,
+					"enemyHp": 4001066.0,
+					"enemyRaw": 29597.125,
+					"hitMedian": 85141.0,
+					"hits": 31,
+					"members": [
+						7,
+						81,
+						128,
+						26
+					],
+					"partyHp": 1089701.0,
+					"perTurn": [
+						2874436.0,
+						2993726.0,
+						3138087.0,
+						3278894.0,
+						3625692.0,
+						4040822.0,
+						4423571.0,
+						4520402.0
+					],
+					"reviveTurns": 2,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 55,
+						"out": 63
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0585,
+			"dmg": 3196211.125,
+			"dmgRaw": 3409021.5,
+			"enemyDmg": 51900.0,
+			"enemyDot": 646006.875,
+			"enemyHp": 3466666.0,
+			"enemyRaw": 18444.25,
+			"fabao": 75,
+			"floor": 22,
+			"hit": 95156.0,
+			"level": 55,
+			"line": "",
+			"partyHp": 1085282.0,
+			"teams": [
+				{
+					"atkScale": 0.0585,
+					"dmg": 3196211.125,
+					"dmgRaw": 3409021.5,
+					"enemyDmg": 51900.0,
+					"enemyDot": 646006.875,
+					"enemyHp": 3466666.0,
+					"enemyRaw": 18444.25,
+					"hitMedian": 95156.0,
+					"hits": 27,
+					"members": [
+						7,
+						81,
+						128,
+						26
+					],
+					"partyHp": 1085282.0,
+					"perTurn": [
+						2740361.0,
+						2567768.0,
+						3008819.0,
+						3439747.0,
+						2784135.0,
+						4062086.0,
+						4198737.0,
+						4470519.0
+					],
+					"reviveTurns": 3,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 55,
+						"out": 63
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0903,
+			"dmg": 2978123.0,
+			"dmgRaw": 3046425.125,
+			"enemyDmg": 89957.0,
+			"enemyDot": 0.0,
+			"enemyHp": 3720000.0,
+			"enemyRaw": 32872.0,
+			"fabao": 78,
+			"floor": 23,
+			"hit": 72171.0,
+			"level": 60,
+			"line": "",
+			"partyHp": 1162416.0,
+			"teams": [
+				{
+					"atkScale": 0.0903,
+					"dmg": 2978123.0,
+					"dmgRaw": 3046425.125,
+					"enemyDmg": 89957.0,
+					"enemyDot": 0.0,
+					"enemyHp": 3720000.0,
+					"enemyRaw": 32872.0,
+					"hitMedian": 72171.0,
+					"hits": 25,
+					"members": [
+						7,
+						81,
+						128,
+						26
+					],
+					"partyHp": 1162416.0,
+					"perTurn": [
+						2539265.0,
+						2584476.0,
+						3244279.0,
+						3813584.0,
+						3845839.0,
+						93766.0,
+						3807492.0,
+						4442700.0
+					],
+					"reviveTurns": 3,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 60,
+						"out": 63
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0243,
+			"dmg": 1904957.25,
+			"dmgRaw": 1904957.25,
+			"enemyDmg": 21260.0,
+			"enemyDot": 0.0,
+			"enemyHp": 3600000.0,
+			"enemyRaw": 8205.625,
+			"fabao": 81,
+			"floor": 24,
+			"hit": 141887.0,
+			"level": 60,
+			"line": "",
+			"partyHp": 1182033.0,
+			"teams": [
+				{
+					"atkScale": 0.0243,
+					"dmg": 1904957.25,
+					"dmgRaw": 1904957.25,
+					"enemyDmg": 21260.0,
+					"enemyDot": 0.0,
+					"enemyHp": 3600000.0,
+					"enemyRaw": 8205.625,
+					"hitMedian": 141887.0,
+					"hits": 27,
+					"members": [
+						7,
+						81,
+						128,
+						26
+					],
+					"partyHp": 1182033.0,
+					"perTurn": [
+						2057280.0,
+						1567986.0,
+						1688660.0,
+						2148138.0,
+						2022753.0,
+						2506162.0,
+						3081843.0,
+						166836.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 60,
+						"out": 63
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0164,
+			"dmg": 3748609.375,
+			"dmgRaw": 41059334.25,
+			"enemyDmg": 24155.875,
+			"enemyDot": 0.0,
+			"enemyHp": 3864000.0,
+			"enemyRaw": 18770.5,
+			"fabao": 84,
+			"floor": 25,
+			"hit": 136174.5,
+			"level": 65,
+			"line": "",
+			"partyHp": 1342643.0,
+			"teams": [
+				{
+					"atkScale": 0.0164,
+					"dmg": 3748609.375,
+					"dmgRaw": 41059334.25,
+					"enemyDmg": 24155.875,
+					"enemyDot": 0.0,
+					"enemyHp": 3864000.0,
+					"enemyRaw": 18770.5,
+					"hitMedian": 136174.5,
+					"hits": 26,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 1342643.0,
+					"perTurn": [
+						38250129.0,
+						37314378.0,
+						42058735.0,
+						49879576.0,
+						46097661.0,
+						65707338.0,
+						169532.0,
+						48997325.0
+					],
+					"reviveTurns": 7,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 65,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.00149,
+			"dmg": 3984718.125,
+			"dmgRaw": 38140889.625,
+			"enemyDmg": 19356.375,
+			"enemyDot": 0.0,
+			"enemyHp": 4152000.0,
+			"enemyRaw": 12915.0,
+			"fabao": 87,
+			"floor": 26,
+			"hit": 80777.0,
+			"level": 65,
+			"line": "",
+			"partyHp": 1346580.0,
+			"teams": [
+				{
+					"atkScale": 0.00149,
+					"dmg": 3984718.125,
+					"dmgRaw": 38140889.625,
+					"enemyDmg": 19356.375,
+					"enemyDot": 0.0,
+					"enemyHp": 4152000.0,
+					"enemyRaw": 12915.0,
+					"hitMedian": 80777.0,
+					"hits": 25,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 1346580.0,
+					"perTurn": [
+						46177584.0,
+						23968874.0,
+						50801228.0,
+						53313834.0,
+						57826458.0,
+						37138980.0,
+						35811247.0,
+						88912.0
+					],
+					"reviveTurns": 7,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 65,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0107,
+			"dmg": 3991268.25,
+			"dmgRaw": 31648861.625,
+			"enemyDmg": 25550.25,
+			"enemyDot": 0.0,
+			"enemyHp": 5520480.0,
+			"enemyRaw": 22045.75,
+			"fabao": 90,
+			"floor": 27,
+			"hit": 112444.5,
+			"level": 65,
+			"line": "",
+			"partyHp": 1373091.0,
+			"teams": [
+				{
+					"atkScale": 0.0107,
+					"dmg": 3991268.25,
+					"dmgRaw": 31648861.625,
+					"enemyDmg": 25550.25,
+					"enemyDot": 0.0,
+					"enemyHp": 5520480.0,
+					"enemyRaw": 22045.75,
+					"hitMedian": 112444.5,
+					"hits": 24,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 1373091.0,
+					"perTurn": [
+						33191695.0,
+						32936127.0,
+						39638261.0,
+						13067674.0,
+						56812083.0,
+						379744.0,
+						10466.0,
+						77154843.0
+					],
+					"reviveTurns": 6,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 70,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.00191,
+			"dmg": 4440061.375,
+			"dmgRaw": 12348878.375,
+			"enemyDmg": 12620.75,
+			"enemyDot": 0.0,
+			"enemyHp": 4776000.0,
+			"enemyRaw": 9006.375,
+			"fabao": 93,
+			"floor": 28,
+			"hit": 80382.0,
+			"level": 65,
+			"line": "",
+			"partyHp": 1388966.0,
+			"teams": [
+				{
+					"atkScale": 0.00191,
+					"dmg": 4440061.375,
+					"dmgRaw": 12348878.375,
+					"enemyDmg": 12620.75,
+					"enemyDot": 0.0,
+					"enemyHp": 4776000.0,
+					"enemyRaw": 9006.375,
+					"hitMedian": 80382.0,
+					"hits": 26,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 1388966.0,
+					"perTurn": [
+						11480797.0,
+						11088734.0,
+						13182904.0,
+						13337139.0,
+						14260391.0,
+						16807369.0,
+						18422145.0,
+						211548.0
+					],
+					"reviveTurns": 7,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 70,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.00521,
+			"dmg": 4787200.125,
+			"dmgRaw": 38600572.625,
+			"enemyDmg": 40013.0,
+			"enemyDot": 0.0,
+			"enemyHp": 5136000.0,
+			"enemyRaw": 29497.5,
+			"fabao": 96,
+			"floor": 29,
+			"hit": 138788.5,
+			"level": 75,
+			"line": "",
+			"partyHp": 1402916.0,
+			"teams": [
+				{
+					"atkScale": 0.00521,
+					"dmg": 4787200.125,
+					"dmgRaw": 38600572.625,
+					"enemyDmg": 40013.0,
+					"enemyDot": 0.0,
+					"enemyHp": 5136000.0,
+					"enemyRaw": 29497.5,
+					"hitMedian": 138788.5,
+					"hits": 20,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 1402916.0,
+					"perTurn": [
+						34633797.0,
+						34867273.0,
+						45628112.0,
+						37865983.0,
+						47444781.0,
+						45426022.0,
+						180107.0,
+						62758506.0
+					],
+					"reviveTurns": 7,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 70,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.00417,
+			"dmg": 4699964.0,
+			"dmgRaw": 53652573.875,
+			"enemyDmg": 95855.75,
+			"enemyDot": 0.0,
+			"enemyHp": 7588800.0,
+			"enemyRaw": 55738.5,
+			"fabao": 99,
+			"floor": 30,
+			"hit": 450562.0,
+			"level": 75,
+			"line": "",
+			"partyHp": 1361022.0,
+			"teams": [
+				{
+					"atkScale": 0.00417,
+					"dmg": 4699964.0,
+					"dmgRaw": 53652573.875,
+					"enemyDmg": 95855.75,
+					"enemyDot": 0.0,
+					"enemyHp": 7588800.0,
+					"enemyRaw": 55738.5,
+					"hitMedian": 450562.0,
+					"hits": 11,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 1361022.0,
+					"perTurn": [
+						46233.0,
+						238375.0,
+						160755128.0,
+						24953493.0,
+						275121.0,
+						102516918.0,
+						108764866.0,
+						31670457.0
+					],
+					"reviveTurns": 5,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 75,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.00121,
+			"dmg": 4216612.25,
+			"dmgRaw": 34662231.125,
+			"enemyDmg": 61472.75,
+			"enemyDot": 0.0,
+			"enemyHp": 6928294.0,
+			"enemyRaw": 19406.625,
+			"fabao": 99,
+			"floor": 31,
+			"hit": 422589.5,
+			"level": 80,
+			"line": "",
+			"partyHp": 1361022.0,
+			"teams": [
+				{
+					"atkScale": 0.00121,
+					"dmg": 4216612.25,
+					"dmgRaw": 34662231.125,
+					"enemyDmg": 61472.75,
+					"enemyDot": 0.0,
+					"enemyHp": 6928294.0,
+					"enemyRaw": 19406.625,
+					"hitMedian": 422589.5,
+					"hits": 12,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 1361022.0,
+					"perTurn": [
+						183403.0,
+						705479.0,
+						24457909.0,
+						27226191.0,
+						29544410.0,
+						94426195.0,
+						0.0,
+						100754262.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 75,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.000161,
+			"dmg": 6999277.25,
+			"dmgRaw": 79780082.5,
+			"enemyDmg": 64746.5,
+			"enemyDot": 0.0,
+			"enemyHp": 9130134.0,
+			"enemyRaw": 37876.75,
+			"fabao": 99,
+			"floor": 32,
+			"hit": 82350153.5,
+			"level": 80,
+			"line": "",
+			"partyHp": 1361022.0,
+			"teams": [
+				{
+					"atkScale": 0.000161,
+					"dmg": 6999277.25,
+					"dmgRaw": 79780082.5,
+					"enemyDmg": 64746.5,
+					"enemyDot": 0.0,
+					"enemyHp": 9130134.0,
+					"enemyRaw": 37876.75,
+					"hitMedian": 82350153.5,
+					"hits": 10,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 1361022.0,
+					"perTurn": [
+						75881780.0,
+						80862137.0,
+						89179329.0,
+						83883251.0,
+						47005.0,
+						106113364.0,
+						99469300.0,
+						102804494.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 75,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0000256,
+			"dmg": 5478988.0,
+			"dmgRaw": 20920915.5,
+			"enemyDmg": 154866.0,
+			"enemyDot": 429.625,
+			"enemyHp": 9801974.0,
+			"enemyRaw": 90856.25,
+			"fabao": 99,
+			"floor": 33,
+			"hit": 32097216.0,
+			"level": 80,
+			"line": "",
+			"partyHp": 1361022.0,
+			"teams": [
+				{
+					"atkScale": 0.0000256,
+					"dmg": 5478988.0,
+					"dmgRaw": 20920915.5,
+					"enemyDmg": 154866.0,
+					"enemyDot": 429.625,
+					"enemyHp": 9801974.0,
+					"enemyRaw": 90856.25,
+					"hitMedian": 32097216.0,
+					"hits": 6,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 1361022.0,
+					"perTurn": [
+						0.0,
+						0.0,
+						26371794.0,
+						32434520.0,
+						31759912.0,
+						33005369.0,
+						0.0,
+						43795729.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 75,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0000109,
+			"dmg": 7701896.375,
+			"dmgRaw": 30691209.0,
+			"enemyDmg": 133636.75,
+			"enemyDot": 0.0,
+			"enemyHp": 9596774.0,
+			"enemyRaw": 89789.875,
+			"fabao": 99,
+			"floor": 34,
+			"hit": 33444191.0,
+			"level": 80,
+			"line": "",
+			"partyHp": 1361022.0,
+			"teams": [
+				{
+					"atkScale": 0.0000109,
+					"dmg": 7701896.375,
+					"dmgRaw": 30691209.0,
+					"enemyDmg": 133636.75,
+					"enemyDot": 0.0,
+					"enemyHp": 9596774.0,
+					"enemyRaw": 89789.875,
+					"hitMedian": 33444191.0,
+					"hits": 8,
+					"members": [
+						7,
+						63,
+						81,
+						26
+					],
+					"partyHp": 1361022.0,
+					"perTurn": [
+						22630367.0,
+						27380878.0,
+						25915474.0,
+						0.0,
+						39507504.0,
+						44441087.0,
+						42207225.0,
+						43447137.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 75,
+						"out": 128
+					},
+					"turns": 8,
+					"won": false
+				}
+			]
+		}
+	],
+	"teams": [
+		[
+			63,
+			67,
+			80,
+			89
+		],
+		[
+			27,
+			25,
+			9,
+			21
+		],
+		[
+			62,
+			55,
+			6,
+			29
+		],
+		[
+			98,
+			43,
+			89,
+			12
+		],
+		[
+			24,
+			83,
+			62,
+			3
+		],
+		[
+			64,
+			86,
+			10,
+			77
+		],
+		[
+			53,
+			18,
+			86,
+			16
+		],
+		[
+			88,
+			32,
+			41,
+			25
+		]
+	],
+	"turns": 8
+}

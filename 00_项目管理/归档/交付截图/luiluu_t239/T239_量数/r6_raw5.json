@@ -1,0 +1,1451 @@
+{
+	"mode": "both",
+	"resist": -1.0,
+	"rows": [
+		{
+			"atkScale": 1.0,
+			"dmg": 729.75,
+			"dmgRaw": 729.75,
+			"enemyDmg": 398.625,
+			"enemyHp": 777334.0,
+			"enemyRaw": 139.625,
+			"fabao": 12,
+			"floor": 1,
+			"hit": 142.0,
+			"level": 10,
+			"line": "",
+			"partyHp": 38732.0,
+			"teams": [
+				{
+					"atkScale": 1.0,
+					"dmg": 729.75,
+					"dmgRaw": 729.75,
+					"enemyDmg": 398.625,
+					"enemyHp": 777334.0,
+					"enemyRaw": 139.625,
+					"hitMedian": 142.0,
+					"hits": 29,
+					"partyHp": 38732.0,
+					"perTurn": [
+						273.0,
+						807.0,
+						1152.0,
+						359.0,
+						878.0,
+						845.0,
+						729.0,
+						795.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 1.0,
+			"dmg": 2788.875,
+			"dmgRaw": 2788.875,
+			"enemyDmg": 1132.5,
+			"enemyHp": 834666.0,
+			"enemyRaw": 460.5,
+			"fabao": 15,
+			"floor": 2,
+			"hit": 418.0,
+			"level": 10,
+			"line": "",
+			"partyHp": 105626.0,
+			"teams": [
+				{
+					"atkScale": 1.0,
+					"dmg": 2788.875,
+					"dmgRaw": 2788.875,
+					"enemyDmg": 1132.5,
+					"enemyHp": 834666.0,
+					"enemyRaw": 460.5,
+					"hitMedian": 418.0,
+					"hits": 29,
+					"partyHp": 105626.0,
+					"perTurn": [
+						3163.0,
+						3171.0,
+						2694.0,
+						1702.0,
+						2882.0,
+						2183.0,
+						3255.0,
+						3261.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 1.0,
+			"dmg": 10466.5,
+			"dmgRaw": 10466.5,
+			"enemyDmg": 790.5,
+			"enemyHp": 896000.0,
+			"enemyRaw": 255.0,
+			"fabao": 18,
+			"floor": 3,
+			"hit": 1952.0,
+			"level": 10,
+			"line": "",
+			"partyHp": 138480.0,
+			"teams": [
+				{
+					"atkScale": 1.0,
+					"dmg": 10466.5,
+					"dmgRaw": 10466.5,
+					"enemyDmg": 790.5,
+					"enemyHp": 896000.0,
+					"enemyRaw": 255.0,
+					"hitMedian": 1952.0,
+					"hits": 29,
+					"partyHp": 138480.0,
+					"perTurn": [
+						7783.0,
+						7369.0,
+						11624.0,
+						11171.0,
+						13586.0,
+						6881.0,
+						11440.0,
+						13878.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 1.0,
+			"dmg": 23538.5,
+			"dmgRaw": 23538.5,
+			"enemyDmg": 392.125,
+			"enemyHp": 962666.0,
+			"enemyRaw": 392.125,
+			"fabao": 21,
+			"floor": 4,
+			"hit": 4250.0,
+			"level": 10,
+			"line": "",
+			"partyHp": 142518.0,
+			"teams": [
+				{
+					"atkScale": 1.0,
+					"dmg": 23538.5,
+					"dmgRaw": 23538.5,
+					"enemyDmg": 392.125,
+					"enemyHp": 962666.0,
+					"enemyRaw": 392.125,
+					"hitMedian": 4250.0,
+					"hits": 29,
+					"partyHp": 142518.0,
+					"perTurn": [
+						16067.0,
+						27566.0,
+						26140.0,
+						23140.0,
+						26225.0,
+						16278.0,
+						25265.0,
+						27627.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.00884,
+			"dmg": 8024.25,
+			"dmgRaw": 8024.25,
+			"enemyDmg": 2310.25,
+			"enemyHp": 1033332.0,
+			"enemyRaw": 877.75,
+			"fabao": 24,
+			"floor": 5,
+			"hit": 2552.0,
+			"level": 15,
+			"line": "",
+			"partyHp": 165354.0,
+			"teams": [
+				{
+					"atkScale": 0.00884,
+					"dmg": 8024.25,
+					"dmgRaw": 8024.25,
+					"enemyDmg": 2310.25,
+					"enemyHp": 1033332.0,
+					"enemyRaw": 877.75,
+					"hitMedian": 2552.0,
+					"hits": 28,
+					"partyHp": 165354.0,
+					"perTurn": [
+						7662.0,
+						9876.0,
+						6395.0,
+						8298.0,
+						8913.0,
+						7281.0,
+						6420.0,
+						9349.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 3.07,
+			"dmg": 11632.625,
+			"dmgRaw": 11632.625,
+			"enemyDmg": 7647.625,
+			"enemyHp": 1109334.0,
+			"enemyRaw": 2518.125,
+			"fabao": 27,
+			"floor": 6,
+			"hit": 1603.0,
+			"level": 20,
+			"line": "",
+			"partyHp": 247697.0,
+			"teams": [
+				{
+					"atkScale": 3.07,
+					"dmg": 11632.625,
+					"dmgRaw": 11632.625,
+					"enemyDmg": 7647.625,
+					"enemyHp": 1109334.0,
+					"enemyRaw": 2518.125,
+					"hitMedian": 1603.0,
+					"hits": 29,
+					"partyHp": 247697.0,
+					"perTurn": [
+						9731.0,
+						6251.0,
+						15205.0,
+						8111.0,
+						18185.0,
+						11283.0,
+						4070.0,
+						20225.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 1.29,
+			"dmg": 11717.625,
+			"dmgRaw": 11717.625,
+			"enemyDmg": 8602.125,
+			"enemyHp": 1190666.0,
+			"enemyRaw": 2526.75,
+			"fabao": 30,
+			"floor": 7,
+			"hit": 2386.0,
+			"level": 20,
+			"line": "",
+			"partyHp": 304127.0,
+			"teams": [
+				{
+					"atkScale": 1.29,
+					"dmg": 11717.625,
+					"dmgRaw": 11717.625,
+					"enemyDmg": 8602.125,
+					"enemyHp": 1190666.0,
+					"enemyRaw": 2526.75,
+					"hitMedian": 2386.0,
+					"hits": 27,
+					"partyHp": 304127.0,
+					"perTurn": [
+						4016.0,
+						16425.0,
+						7265.0,
+						12175.0,
+						20373.0,
+						20006.0,
+						9774.0,
+						3707.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 1.9,
+			"dmg": 95662.875,
+			"dmgRaw": 95662.875,
+			"enemyDmg": 8239.625,
+			"enemyHp": 1278666.0,
+			"enemyRaw": 3206.375,
+			"fabao": 33,
+			"floor": 8,
+			"hit": 10530.0,
+			"level": 25,
+			"line": "",
+			"partyHp": 418543.0,
+			"teams": [
+				{
+					"atkScale": 1.9,
+					"dmg": 95662.875,
+					"dmgRaw": 95662.875,
+					"enemyDmg": 8239.625,
+					"enemyHp": 1278666.0,
+					"enemyRaw": 3206.375,
+					"hitMedian": 10530.0,
+					"hits": 29,
+					"partyHp": 418543.0,
+					"perTurn": [
+						30073.0,
+						102097.0,
+						99802.0,
+						45632.0,
+						130055.0,
+						137540.0,
+						48933.0,
+						171171.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.589,
+			"dmg": 76356.375,
+			"dmgRaw": 76356.375,
+			"enemyDmg": 9045.875,
+			"enemyHp": 1373334.0,
+			"enemyRaw": 4123.75,
+			"fabao": 36,
+			"floor": 9,
+			"hit": 2899.0,
+			"level": 25,
+			"line": "",
+			"partyHp": 422217.0,
+			"teams": [
+				{
+					"atkScale": 0.589,
+					"dmg": 76356.375,
+					"dmgRaw": 76356.375,
+					"enemyDmg": 9045.875,
+					"enemyHp": 1373334.0,
+					"enemyRaw": 4123.75,
+					"hitMedian": 2899.0,
+					"hits": 27,
+					"partyHp": 422217.0,
+					"perTurn": [
+						24794.0,
+						97992.0,
+						100071.0,
+						33831.0,
+						124705.0,
+						33974.0,
+						36780.0,
+						158704.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 1.09,
+			"dmg": 357748.75,
+			"dmgRaw": 357748.75,
+			"enemyDmg": 14253.5,
+			"enemyHp": 1480000.0,
+			"enemyRaw": 4577.0,
+			"fabao": 39,
+			"floor": 10,
+			"hit": 12925.0,
+			"level": 30,
+			"line": "",
+			"partyHp": 468841.0,
+			"teams": [
+				{
+					"atkScale": 1.09,
+					"dmg": 357748.75,
+					"dmgRaw": 357748.75,
+					"enemyDmg": 14253.5,
+					"enemyHp": 1480000.0,
+					"enemyRaw": 4577.0,
+					"hitMedian": 12925.0,
+					"hits": 27,
+					"partyHp": 468841.0,
+					"perTurn": [
+						22840.0,
+						390127.0,
+						404403.0,
+						427760.0,
+						503226.0,
+						57715.0,
+						489899.0,
+						566020.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.952,
+			"dmg": 286877.625,
+			"dmgRaw": 286877.625,
+			"enemyDmg": 15255.75,
+			"enemyHp": 1586666.0,
+			"enemyRaw": 5876.5,
+			"fabao": 42,
+			"floor": 11,
+			"hit": 36159.0,
+			"level": 30,
+			"line": "",
+			"partyHp": 581629.0,
+			"teams": [
+				{
+					"atkScale": 0.952,
+					"dmg": 286877.625,
+					"dmgRaw": 286877.625,
+					"enemyDmg": 15255.75,
+					"enemyHp": 1586666.0,
+					"enemyRaw": 5876.5,
+					"hitMedian": 36159.0,
+					"hits": 29,
+					"partyHp": 581629.0,
+					"perTurn": [
+						208022.0,
+						280467.0,
+						289267.0,
+						52252.0,
+						327915.0,
+						338151.0,
+						323245.0,
+						475702.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.511,
+			"dmg": 327990.875,
+			"dmgRaw": 327990.875,
+			"enemyDmg": 13006.0,
+			"enemyHp": 1706666.0,
+			"enemyRaw": 2882.75,
+			"fabao": 45,
+			"floor": 12,
+			"hit": 41834.0,
+			"level": 33,
+			"line": "",
+			"partyHp": 662594.0,
+			"teams": [
+				{
+					"atkScale": 0.511,
+					"dmg": 327990.875,
+					"dmgRaw": 327990.875,
+					"enemyDmg": 13006.0,
+					"enemyHp": 1706666.0,
+					"enemyRaw": 2882.75,
+					"hitMedian": 41834.0,
+					"hits": 25,
+					"partyHp": 662594.0,
+					"perTurn": [
+						291095.0,
+						360629.0,
+						373815.0,
+						66073.0,
+						338854.0,
+						127583.0,
+						527990.0,
+						537888.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.946,
+			"dmg": 76355.25,
+			"dmgRaw": 76355.25,
+			"enemyDmg": 15510.0,
+			"enemyHp": 1826666.0,
+			"enemyRaw": 3943.375,
+			"fabao": 48,
+			"floor": 13,
+			"hit": 6942.0,
+			"level": 35,
+			"line": "",
+			"partyHp": 735856.0,
+			"teams": [
+				{
+					"atkScale": 0.946,
+					"dmg": 76355.25,
+					"dmgRaw": 76355.25,
+					"enemyDmg": 15510.0,
+					"enemyHp": 1826666.0,
+					"enemyRaw": 3943.375,
+					"hitMedian": 6942.0,
+					"hits": 26,
+					"partyHp": 735856.0,
+					"perTurn": [
+						33538.0,
+						97573.0,
+						25733.0,
+						40059.0,
+						127842.0,
+						120078.0,
+						8629.0,
+						157390.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0151,
+			"dmg": 99308.0,
+			"dmgRaw": 99308.0,
+			"enemyDmg": 10970.625,
+			"enemyHp": 2195200.0,
+			"enemyRaw": 6737.5,
+			"fabao": 51,
+			"floor": 14,
+			"hit": 8598.0,
+			"level": 38,
+			"line": "",
+			"partyHp": 790180.0,
+			"teams": [
+				{
+					"atkScale": 0.0151,
+					"dmg": 99308.0,
+					"dmgRaw": 99308.0,
+					"enemyDmg": 10970.625,
+					"enemyHp": 2195200.0,
+					"enemyRaw": 6737.5,
+					"hitMedian": 8598.0,
+					"hits": 23,
+					"partyHp": 790180.0,
+					"perTurn": [
+						124665.0,
+						125019.0,
+						47882.0,
+						103808.0,
+						159106.0,
+						9400.0,
+						8598.0,
+						215986.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.284,
+			"dmg": 34009.0,
+			"dmgRaw": 34009.0,
+			"enemyDmg": 14901.875,
+			"enemyHp": 2106666.0,
+			"enemyRaw": 5327.5,
+			"fabao": 54,
+			"floor": 15,
+			"hit": 7445.5,
+			"level": 40,
+			"line": "",
+			"partyHp": 822228.0,
+			"teams": [
+				{
+					"atkScale": 0.284,
+					"dmg": 34009.0,
+					"dmgRaw": 34009.0,
+					"enemyDmg": 14901.875,
+					"enemyHp": 2106666.0,
+					"enemyRaw": 5327.5,
+					"hitMedian": 7445.5,
+					"hits": 24,
+					"partyHp": 822228.0,
+					"perTurn": [
+						33719.0,
+						44129.0,
+						16328.0,
+						31363.0,
+						40201.0,
+						9470.0,
+						39127.0,
+						57735.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.439,
+			"dmg": 87123.75,
+			"dmgRaw": 87123.75,
+			"enemyDmg": 17860.0,
+			"enemyHp": 2266666.0,
+			"enemyRaw": 6321.25,
+			"fabao": 57,
+			"floor": 16,
+			"hit": 29424.0,
+			"level": 43,
+			"line": "",
+			"partyHp": 884092.0,
+			"teams": [
+				{
+					"atkScale": 0.439,
+					"dmg": 87123.75,
+					"dmgRaw": 87123.75,
+					"enemyDmg": 17860.0,
+					"enemyHp": 2266666.0,
+					"enemyRaw": 6321.25,
+					"hitMedian": 29424.0,
+					"hits": 23,
+					"partyHp": 884092.0,
+					"perTurn": [
+						96556.0,
+						101593.0,
+						102674.0,
+						141676.0,
+						102927.0,
+						18734.0,
+						11184.0,
+						121646.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.115,
+			"dmg": 913952.75,
+			"dmgRaw": 913952.75,
+			"enemyDmg": 8702.375,
+			"enemyHp": 2717866.0,
+			"enemyRaw": 6578.25,
+			"fabao": 60,
+			"floor": 17,
+			"hit": 210271.5,
+			"level": 45,
+			"line": "",
+			"partyHp": 928125.0,
+			"teams": [
+				{
+					"atkScale": 0.115,
+					"dmg": 913952.75,
+					"dmgRaw": 913952.75,
+					"enemyDmg": 8702.375,
+					"enemyHp": 2717866.0,
+					"enemyRaw": 6578.25,
+					"hitMedian": 210271.5,
+					"hits": 16,
+					"partyHp": 928125.0,
+					"perTurn": [
+						798869.0,
+						1832438.0,
+						947538.0,
+						1028779.0,
+						350497.0,
+						1262763.0,
+						1090738.0,
+						0.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.634,
+			"dmg": 534440.875,
+			"dmgRaw": 534440.875,
+			"enemyDmg": 14385.75,
+			"enemyHp": 2926934.0,
+			"enemyRaw": 6128.625,
+			"fabao": 63,
+			"floor": 18,
+			"hit": 104114.0,
+			"level": 48,
+			"line": "",
+			"partyHp": 928574.0,
+			"teams": [
+				{
+					"atkScale": 0.634,
+					"dmg": 534440.875,
+					"dmgRaw": 534440.875,
+					"enemyDmg": 14385.75,
+					"enemyHp": 2926934.0,
+					"enemyRaw": 6128.625,
+					"hitMedian": 104114.0,
+					"hits": 17,
+					"partyHp": 928574.0,
+					"perTurn": [
+						104114.0,
+						104114.0,
+						163310.0,
+						885076.0,
+						1070433.0,
+						87625.0,
+						1256311.0,
+						604544.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.33,
+			"dmg": 879982.625,
+			"dmgRaw": 879982.625,
+			"enemyDmg": 35270.0,
+			"enemyHp": 2800000.0,
+			"enemyRaw": 11396.875,
+			"fabao": 66,
+			"floor": 19,
+			"hit": 124788.5,
+			"level": 50,
+			"line": "",
+			"partyHp": 1033600.0,
+			"teams": [
+				{
+					"atkScale": 0.33,
+					"dmg": 879982.625,
+					"dmgRaw": 879982.625,
+					"enemyDmg": 35270.0,
+					"enemyHp": 2800000.0,
+					"enemyRaw": 11396.875,
+					"hitMedian": 124788.5,
+					"hits": 22,
+					"partyHp": 1033600.0,
+					"perTurn": [
+						759845.0,
+						980898.0,
+						81580.0,
+						867247.0,
+						460162.0,
+						1028977.0,
+						1180881.0,
+						1680271.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.074,
+			"dmg": 2068159.5,
+			"dmgRaw": 2135871.75,
+			"enemyDmg": 9212.375,
+			"enemyHp": 3000000.0,
+			"enemyRaw": 5671.5,
+			"fabao": 69,
+			"floor": 20,
+			"hit": 108930.0,
+			"level": 50,
+			"line": "",
+			"partyHp": 1151917.0,
+			"teams": [
+				{
+					"atkScale": 0.074,
+					"dmg": 2068159.5,
+					"dmgRaw": 2135871.75,
+					"enemyDmg": 9212.375,
+					"enemyHp": 3000000.0,
+					"enemyRaw": 5671.5,
+					"hitMedian": 108930.0,
+					"hits": 24,
+					"partyHp": 1151917.0,
+					"perTurn": [
+						1940690.0,
+						2721004.0,
+						139469.0,
+						2671710.0,
+						2692555.0,
+						3054879.0,
+						228880.0,
+						3637787.0
+					],
+					"reviveTurns": 1,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0303,
+			"dmg": 1998816.5,
+			"dmgRaw": 1998816.5,
+			"enemyDmg": 15065.5,
+			"enemyHp": 3226666.0,
+			"enemyRaw": 11805.5,
+			"fabao": 72,
+			"floor": 21,
+			"hit": 140638.5,
+			"level": 55,
+			"line": "",
+			"partyHp": 1307954.0,
+			"teams": [
+				{
+					"atkScale": 0.0303,
+					"dmg": 1998816.5,
+					"dmgRaw": 1998816.5,
+					"enemyDmg": 15065.5,
+					"enemyHp": 3226666.0,
+					"enemyRaw": 11805.5,
+					"hitMedian": 140638.5,
+					"hits": 28,
+					"partyHp": 1307954.0,
+					"perTurn": [
+						1687500.0,
+						2028499.0,
+						2285015.0,
+						186407.0,
+						2864201.0,
+						333196.0,
+						3098884.0,
+						3506830.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0585,
+			"dmg": 2604502.5,
+			"dmgRaw": 2629466.75,
+			"enemyDmg": 582884.0,
+			"enemyHp": 3466666.0,
+			"enemyRaw": 18177.75,
+			"fabao": 75,
+			"floor": 22,
+			"hit": 186361.5,
+			"level": 55,
+			"line": "",
+			"partyHp": 1315609.0,
+			"teams": [
+				{
+					"atkScale": 0.0585,
+					"dmg": 2604502.5,
+					"dmgRaw": 2629466.75,
+					"enemyDmg": 582884.0,
+					"enemyHp": 3466666.0,
+					"enemyRaw": 18177.75,
+					"hitMedian": 186361.5,
+					"hits": 24,
+					"partyHp": 1315609.0,
+					"perTurn": [
+						2061844.0,
+						2638828.0,
+						252649.0,
+						2318183.0,
+						2519103.0,
+						3329156.0,
+						3028663.0,
+						4887308.0
+					],
+					"reviveTurns": 1,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0903,
+			"dmg": 2640773.0,
+			"dmgRaw": 2640773.0,
+			"enemyDmg": 34251.25,
+			"enemyHp": 4612800.0,
+			"enemyRaw": 17706.5,
+			"fabao": 78,
+			"floor": 23,
+			"hit": 518192.0,
+			"level": 60,
+			"line": "",
+			"partyHp": 1448823.0,
+			"teams": [
+				{
+					"atkScale": 0.0903,
+					"dmg": 2640773.0,
+					"dmgRaw": 2640773.0,
+					"enemyDmg": 34251.25,
+					"enemyHp": 4612800.0,
+					"enemyRaw": 17706.5,
+					"hitMedian": 518192.0,
+					"hits": 24,
+					"partyHp": 1448823.0,
+					"perTurn": [
+						2205415.0,
+						1880646.0,
+						2338567.0,
+						3752584.0,
+						2910836.0,
+						2615198.0,
+						4161289.0,
+						1261649.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0243,
+			"dmg": 2446725.25,
+			"dmgRaw": 2446725.25,
+			"enemyDmg": 20605.375,
+			"enemyHp": 4480000.0,
+			"enemyRaw": 9243.625,
+			"fabao": 81,
+			"floor": 24,
+			"hit": 290352.0,
+			"level": 60,
+			"line": "",
+			"partyHp": 1510932.0,
+			"teams": [
+				{
+					"atkScale": 0.0243,
+					"dmg": 2446725.25,
+					"dmgRaw": 2446725.25,
+					"enemyDmg": 20605.375,
+					"enemyHp": 4480000.0,
+					"enemyRaw": 9243.625,
+					"hitMedian": 290352.0,
+					"hits": 22,
+					"partyHp": 1510932.0,
+					"perTurn": [
+						2135553.0,
+						1837455.0,
+						2208861.0,
+						3062921.0,
+						2999503.0,
+						2575148.0,
+						707592.0,
+						4046769.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0164,
+			"dmg": 885578.625,
+			"dmgRaw": 885578.625,
+			"enemyDmg": 36126.125,
+			"enemyHp": 4808534.0,
+			"enemyRaw": 25796.5,
+			"fabao": 84,
+			"floor": 25,
+			"hit": 383145.0,
+			"level": 65,
+			"line": "",
+			"partyHp": 1617401.0,
+			"teams": [
+				{
+					"atkScale": 0.0164,
+					"dmg": 885578.625,
+					"dmgRaw": 885578.625,
+					"enemyDmg": 36126.125,
+					"enemyHp": 4808534.0,
+					"enemyRaw": 25796.5,
+					"hitMedian": 383145.0,
+					"hits": 16,
+					"partyHp": 1617401.0,
+					"perTurn": [
+						352832.0,
+						1086798.0,
+						882371.0,
+						413458.0,
+						1550275.0,
+						369258.0,
+						545125.0,
+						1884512.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.00149,
+			"dmg": 2852690.125,
+			"dmgRaw": 6050939.0,
+			"enemyDmg": 11668.875,
+			"enemyHp": 5166934.0,
+			"enemyRaw": 8861.125,
+			"fabao": 87,
+			"floor": 26,
+			"hit": 1234402.0,
+			"level": 65,
+			"line": "",
+			"partyHp": 1555340.0,
+			"teams": [
+				{
+					"atkScale": 0.00149,
+					"dmg": 2852690.125,
+					"dmgRaw": 6050939.0,
+					"enemyDmg": 11668.875,
+					"enemyHp": 5166934.0,
+					"enemyRaw": 8861.125,
+					"hitMedian": 1234402.0,
+					"hits": 21,
+					"partyHp": 1555340.0,
+					"perTurn": [
+						7267461.0,
+						6584519.0,
+						5553448.0,
+						65133.0,
+						9312627.0,
+						7707901.0,
+						10682021.0,
+						1234402.0
+					],
+					"reviveTurns": 6,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0107,
+			"dmg": 2852974.25,
+			"dmgRaw": 2852974.25,
+			"enemyDmg": 45109.5,
+			"enemyHp": 5540266.0,
+			"enemyRaw": 28201.5,
+			"fabao": 90,
+			"floor": 27,
+			"hit": 1094182.0,
+			"level": 65,
+			"line": "",
+			"partyHp": 1651188.0,
+			"teams": [
+				{
+					"atkScale": 0.0107,
+					"dmg": 2852974.25,
+					"dmgRaw": 2852974.25,
+					"enemyDmg": 45109.5,
+					"enemyHp": 5540266.0,
+					"enemyRaw": 28201.5,
+					"hitMedian": 1094182.0,
+					"hits": 23,
+					"partyHp": 1651188.0,
+					"perTurn": [
+						2499271.0,
+						2611895.0,
+						1973954.0,
+						3801172.0,
+						2020378.0,
+						3578181.0,
+						3489551.0,
+						2849392.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.00191,
+			"dmg": 6810140.75,
+			"dmgRaw": 6870285.375,
+			"enemyDmg": 59816.125,
+			"enemyHp": 5943466.0,
+			"enemyRaw": 43715.0,
+			"fabao": 93,
+			"floor": 28,
+			"hit": 1956295.0,
+			"level": 65,
+			"line": "",
+			"partyHp": 1780315.0,
+			"teams": [
+				{
+					"atkScale": 0.00191,
+					"dmg": 6810140.75,
+					"dmgRaw": 6870285.375,
+					"enemyDmg": 59816.125,
+					"enemyHp": 5943466.0,
+					"enemyRaw": 43715.0,
+					"hitMedian": 1956295.0,
+					"hits": 24,
+					"partyHp": 1780315.0,
+					"perTurn": [
+						6779468.0,
+						7143991.0,
+						2933111.0,
+						4442133.0,
+						9946376.0,
+						9574071.0,
+						6763520.0,
+						7379613.0
+					],
+					"reviveTurns": 2,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.00521,
+			"dmg": 6126220.125,
+			"dmgRaw": 9188111.125,
+			"enemyDmg": 79420.75,
+			"enemyHp": 5706666.0,
+			"enemyRaw": 45692.875,
+			"fabao": 96,
+			"floor": 29,
+			"hit": 1201802.0,
+			"level": 75,
+			"line": "",
+			"partyHp": 1784629.0,
+			"teams": [
+				{
+					"atkScale": 0.00521,
+					"dmg": 6126220.125,
+					"dmgRaw": 9188111.125,
+					"enemyDmg": 79420.75,
+					"enemyHp": 5706666.0,
+					"enemyRaw": 45692.875,
+					"hitMedian": 1201802.0,
+					"hits": 18,
+					"partyHp": 1784629.0,
+					"perTurn": [
+						6473834.0,
+						8827718.0,
+						9741574.0,
+						8853699.0,
+						11263962.0,
+						613709.0,
+						12212938.0,
+						15517455.0
+					],
+					"reviveTurns": 7,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.00417,
+			"dmg": 10030974.75,
+			"dmgRaw": 12965061.0,
+			"enemyDmg": 42423.125,
+			"enemyHp": 8323200.0,
+			"enemyRaw": 23614.625,
+			"fabao": 99,
+			"floor": 30,
+			"hit": 2570445.5,
+			"level": 75,
+			"line": "",
+			"partyHp": 1824055.0,
+			"teams": [
+				{
+					"atkScale": 0.00417,
+					"dmg": 10030974.75,
+					"dmgRaw": 12965061.0,
+					"enemyDmg": 42423.125,
+					"enemyHp": 8323200.0,
+					"enemyRaw": 23614.625,
+					"hitMedian": 2570445.5,
+					"hits": 22,
+					"partyHp": 1824055.0,
+					"perTurn": [
+						11136479.0,
+						13375609.0,
+						15340305.0,
+						13581625.0,
+						13145539.0,
+						18005365.0,
+						4186611.0,
+						14948955.0
+					],
+					"reviveTurns": 7,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.00121,
+			"dmg": 5032380.75,
+			"dmgRaw": 5032380.75,
+			"enemyDmg": 327671.375,
+			"enemyHp": 8492746.0,
+			"enemyRaw": 132642.0,
+			"fabao": 99,
+			"floor": 31,
+			"hit": 2006314.0,
+			"level": 80,
+			"line": "",
+			"partyHp": 1837813.0,
+			"teams": [
+				{
+					"atkScale": 0.00121,
+					"dmg": 5032380.75,
+					"dmgRaw": 5032380.75,
+					"enemyDmg": 327671.375,
+					"enemyHp": 8492746.0,
+					"enemyRaw": 132642.0,
+					"hitMedian": 2006314.0,
+					"hits": 20,
+					"partyHp": 1837813.0,
+					"perTurn": [
+						3170190.0,
+						5948651.0,
+						6761333.0,
+						3473369.0,
+						6231657.0,
+						2696039.0,
+						4511980.0,
+						7465827.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.000161,
+			"dmg": 2249164.625,
+			"dmgRaw": 2249164.625,
+			"enemyDmg": 246996.375,
+			"enemyHp": 8324534.0,
+			"enemyRaw": 144378.625,
+			"fabao": 99,
+			"floor": 32,
+			"hit": 831434.0,
+			"level": 80,
+			"line": "",
+			"partyHp": 1837813.0,
+			"teams": [
+				{
+					"atkScale": 0.000161,
+					"dmg": 2249164.625,
+					"dmgRaw": 2249164.625,
+					"enemyDmg": 246996.375,
+					"enemyHp": 8324534.0,
+					"enemyRaw": 144378.625,
+					"hitMedian": 831434.0,
+					"hits": 18,
+					"partyHp": 1837813.0,
+					"perTurn": [
+						1417506.0,
+						2365194.0,
+						2905667.0,
+						907335.0,
+						3302861.0,
+						1889439.0,
+						1030291.0,
+						4175024.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0000256,
+			"dmg": 3186613.875,
+			"dmgRaw": 3186613.875,
+			"enemyDmg": 130499.875,
+			"enemyHp": 9801974.0,
+			"enemyRaw": 79295.875,
+			"fabao": 99,
+			"floor": 33,
+			"hit": 1053189.0,
+			"level": 80,
+			"line": "",
+			"partyHp": 1837813.0,
+			"teams": [
+				{
+					"atkScale": 0.0000256,
+					"dmg": 3186613.875,
+					"dmgRaw": 3186613.875,
+					"enemyDmg": 130499.875,
+					"enemyHp": 9801974.0,
+					"enemyRaw": 79295.875,
+					"hitMedian": 1053189.0,
+					"hits": 19,
+					"partyHp": 1837813.0,
+					"perTurn": [
+						778023.0,
+						2441962.0,
+						3212852.0,
+						1460316.0,
+						2337348.0,
+						4434318.0,
+						5659506.0,
+						5168586.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		},
+		{
+			"atkScale": 0.0000109,
+			"dmg": 2966433.375,
+			"dmgRaw": 2966433.375,
+			"enemyDmg": 202032.0,
+			"enemyHp": 9596774.0,
+			"enemyRaw": 129454.625,
+			"fabao": 99,
+			"floor": 34,
+			"hit": 1020254.5,
+			"level": 80,
+			"line": "",
+			"partyHp": 1837813.0,
+			"teams": [
+				{
+					"atkScale": 0.0000109,
+					"dmg": 2966433.375,
+					"dmgRaw": 2966433.375,
+					"enemyDmg": 202032.0,
+					"enemyHp": 9596774.0,
+					"enemyRaw": 129454.625,
+					"hitMedian": 1020254.5,
+					"hits": 20,
+					"partyHp": 1837813.0,
+					"perTurn": [
+						2737372.0,
+						3728816.0,
+						2190806.0,
+						861069.0,
+						4694923.0,
+						2747465.0,
+						3633539.0,
+						3137477.0
+					],
+					"reviveTurns": 0,
+					"revivedSilent": [],
+					"turns": 8,
+					"won": false
+				}
+			]
+		}
+	],
+	"teams": [
+		[
+			63,
+			67,
+			80,
+			89
+		],
+		[
+			27,
+			25,
+			9,
+			21
+		],
+		[
+			62,
+			55,
+			6,
+			29
+		],
+		[
+			98,
+			43,
+			89,
+			12
+		],
+		[
+			24,
+			83,
+			62,
+			3
+		],
+		[
+			64,
+			86,
+			10,
+			77
+		],
+		[
+			53,
+			18,
+			86,
+			16
+		],
+		[
+			88,
+			32,
+			41,
+			25
+		]
+	],
+	"turns": 8
+}

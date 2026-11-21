@@ -4,7 +4,7 @@ extends Node
 ## 二、20 层（456）不交礼不挂天道领域 698／686／1104，交了礼不挂伪领域 695／691；残血页（血 ≤20%＋变量 853）不再挂 698，334 回满照旧。
 ## 三、31 层（467）不挂霸者领域 1106／1110／1108，破阵阶段状态 1050 照挂。
 ## 四、西游档 13 层照原版挂 696；domain_off 只认 13～33 层守层者敌群（12 层 110、守护者 125 不算）。
-## 五、三张表缺层逐层退回（T229，给 T239 写表用）：balance_table 现在没有 guardian_phase4，守层者照旧读老表；
+## 五、三张表缺层逐层退回（T229，给 T239 写表用）：balance_table 写了 guardian_phase4（T239 第 6 轮），这一节先拿掉它测老表与缺层退回、测完放回；
 ##     临时塞一张只有 1～30 层的表：1～30 层读新表，31～34 层逐层退回旧表、取值跟没表时一致
 ##     （hp_base＝旧 HP_BASE×hp_unit，出伤倍率＝旧 ATK_SCALE，伤害抵抗＝旧 RESIST_TABLE），不再按 0／1 取。
 
@@ -160,7 +160,10 @@ func _scope() -> void:
 func _tables() -> void:
 	_check("tables.phase4_on", XTianqiBase.PHASE4)
 	var bal: Dictionary = XTianqiBalance.data()
-	_check("tables.not_written", not bal.has("guardian_phase4"))
+	# T239 第 6 轮起 balance_table 写了 guardian_phase4：先认写了（34 层血量齐全），再拿掉它测老表与缺层退回，测完放回
+	var real = bal.get("guardian_phase4")
+	_check("tables.written", real is Dictionary and range(1, 35).all(func(f): return real.get("hp_base", {}).has(str(f))))
+	bal.erase("guardian_phase4")
 	var old_hp := []
 	for f in range(1, 35):
 		old_hp.append(XGuardianRework.hp_base(f))
@@ -203,5 +206,7 @@ func _tables() -> void:
 			if not is_equal_approx(float(got.get(1, -1.0)), want_res):
 				bad_res.append([f, got, want_res])
 	bal.erase("guardian_phase4")
+	if real is Dictionary:
+		bal["guardian_phase4"] = real
 	_check("tables.atk_scale_fallback", bad_atk.is_empty(), bad_atk)
 	_check("tables.resist_fallback", bad_res.is_empty(), bad_res)
