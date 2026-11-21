@@ -110,7 +110,7 @@ func sync() -> void:
 	_recent = _most_recent()
 	set_focus("none" if sc._phase in ["confirm", "notice"] else "list")   # 先换焦点（set_focus 会清掉牌上的按钮焦点），再画牌
 	list.active = true
-	list.quiet = sc._phase == "list"   # T359 D256：右牌按钮亮着（淡金双环）时左列选中行降静默，同屏只一个强焦点
+	list.quiet = false   # T359：Kyo 11-22 定存档页例外，左列选中行保持强色亮红（其余页照 D256 静默）
 	_sync_list()
 	_sync_card()
 	_sync_dialog()
