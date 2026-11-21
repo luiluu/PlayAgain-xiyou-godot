@@ -272,6 +272,8 @@ func _draw_body() -> void:
 	if tab == 1:
 		var cols := cmp_cols(num, w, _cmp, compare) if XUiSkin.detail_on() else {}
 		var stripe := Color(0.95, 0.90, 0.82, 0.045) if XUiSkin.polish_on() else Color(1, 1, 1, 0.04)
+		if XUiSkin.detail_on():   # T349 D1b：斑马纹升 S2z（0.08）
+			stripe = XUiSkin.zebra_c()
 		for r in _cmp:
 			if y + ROW_H >= 0 and y <= body.size.y:
 				body.draw_rect(Rect2(0, y + 2, w, ROW_H - 4), stripe)
