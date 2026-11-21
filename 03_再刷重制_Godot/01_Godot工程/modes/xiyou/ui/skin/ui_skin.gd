@@ -594,6 +594,16 @@ static func snap(v: float) -> int:
 static func font(kind := "body") -> Font:
 	if FONT_V00300:   # T100：标题／正文／数字都用玩家版那一款（GameFont），三种 kind 同一字体，选中、换级都不会换字
 		return GameFont.current()
+	var f := _font_file(kind)
+	# T336 D1a（界面细节规范 1.1）：三字体模式下数字字包一层 FontVariation 开 tnum／lnum（Barlow 0–9 统一 457/1000）；DETAIL_V1=false 照旧原字
+	if kind == "num" and DETAIL_V1 and f != GameFont.current():
+		if not _fonts.has("num_tabular"):
+			_fonts["num_tabular"] = _make_tabular(f)
+		return _fonts["num_tabular"]
+	return f
+
+
+static func _font_file(kind: String) -> Font:
 	if _fonts.has(kind):
 		return _fonts[kind]
 	var f: Font = null
@@ -1116,3 +1126,293 @@ static func visible_groups(groups: Array = GROUPS, s: XState = null) -> Array:
 static func direct_item(group: Dictionary, s: XState = null) -> String:
 	var items := visible_items(group, s)
 	return str(items[0].key) if items.size() == 1 else ""
+
+
+## ======================================================================
+## ---- 界面细节 D1a（T336，私密仓 重制设定/界面细节规范_v0.1.md 第三节规范 1～4、第五节卡 D1a）----
+## 只是底层：定宽数字、双环聚焦、输入模式、表面色阶、文字基线与行内图标出口。本卡不接任何现有页面（D1b／D1c／D2／D3／D4 才接），
+## 所以开关开关现有页面都一个像素不变；唯一已生效的是三字体模式（FONT_V00300=false）下 font("num") 开 tnum（规范 1.1）。
+## 回退：DETAIL_V1 = false（font("num") 回原字；后续卡接线时一律先问 detail_on()，关着走改造前画法）。
+static var DETAIL_V1 := true
+
+
+static func detail_on() -> bool:
+	return DETAIL_V1 and on()
+
+
+## ---- 规范 1：数字等宽 ----
+
+## 包一层 FontVariation 开 OpenType tnum（等宽数字）＋lnum（等高数字）；字体没有这两个特性时等于原字
+static func _make_tabular(base: Font) -> FontVariation:
+	var fv := FontVariation.new()
+	fv.base_font = base
+	var ts := TextServerManager.get_primary_interface()
+	fv.opentype_features = {ts.name_to_tag("tnum"): 1, ts.name_to_tag("lnum"): 1}
+	return fv
+
+
+## 常规数字右对齐：右缘 right_x 取整像素（防亚像素抖动），描边同 ds；返回字宽
+static func draw_num_right(ci: CanvasItem, f: Font, right_x: float, baseline_y: float, text: String, fs: int, color: Color) -> float:
+	var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	ds(ci, f, Vector2(roundf(right_x - tw), roundf(baseline_y)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
+	return tw
+
+
+static var _digit_cell := {}
+
+
+## 逐位定宽的格宽：0–9 十个字宽取最大（T329 r2 P3-6：只取 0 和 9 会漏掉更宽的数字），按字体＋字号缓存
+static func mono_digit_cell(f: Font, fs: int) -> float:
+	var key := "%d#%d" % [f.get_instance_id(), fs]
+	if not _digit_cell.has(key):
+		var w := 0.0
+		for d in 10:
+			w = maxf(w, f.get_string_size(str(d), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x)
+		_digit_cell[key] = w
+	return _digit_cell[key]
+
+
+## 逐位定宽的排位（不画，测试和量宽用）：[[字, 相对起点的 x（已在格内居中）, 字宽, 格宽], …]；数字占一格、别的字按自身宽
+static func mono_digit_slots(f: Font, text: String, fs: int) -> Array:
+	var cell := mono_digit_cell(f, fs)
+	var out := []
+	var x := 0.0
+	for i in text.length():
+		var ch := text.substr(i, 1)
+		var gw := f.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var sw := cell if (ch >= "0" and ch <= "9") else gw
+		out.append([ch, x + (sw - gw) * 0.5, gw, sw])
+		x += sw
+	return out
+
+
+static func mono_digits_width(f: Font, text: String, fs: int) -> float:
+	var w := 0.0
+	for sl in mono_digit_slots(f, text, fs):
+		w += float(sl[3])
+	return w
+
+
+## D231 宋体 Heavy 这类数字不等宽、又没有 tnum 的字（连击大数字、胜利大字）：逐位定宽画，1 和 7 在自己的格里居中，跳数不左右晃。
+## align 按 anchor_x 左／中／右；outline_px＝-1 跟 ds 一样（FONT_V00300 时 1px 黑 0.45），0 不描边。返回总宽。
+static func draw_mono_digits(ci: CanvasItem, f: Font, anchor_x: float, baseline_y: float, text: String, fs: int, color: Color,
+		align := HORIZONTAL_ALIGNMENT_CENTER, outline_px := -1, outline_col := Color(0, 0, 0, 0.85)) -> float:
+	var slots := mono_digit_slots(f, text, fs)
+	var total := 0.0
+	for sl in slots:
+		total += float(sl[3])
+	var x0 := anchor_x
+	if align == HORIZONTAL_ALIGNMENT_CENTER:
+		x0 -= total * 0.5
+	elif align == HORIZONTAL_ALIGNMENT_RIGHT:
+		x0 -= total
+	var col := paint_color(color)
+	var opx := outline_size() if outline_px < 0 else outline_px
+	var ocol := outline_color(col.a) if outline_px < 0 else outline_col
+	for sl in slots:
+		var pos := Vector2(roundf(x0 + float(sl[1])), roundf(baseline_y))
+		if opx > 0 and col.a > 0.0:
+			ci.draw_string_outline(f, pos, str(sl[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, opx, ocol)
+		ci.draw_string(f, pos, str(sl[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	return total
+
+
+## ---- 规范 2：双环聚焦与输入模式 ----
+
+## 双环：内黑 #090808 2px 贴控件外缘（0～2px）＋外淡金 #f2d08a 2px（2～4px），总外扩 4px；金底控件外环换骨白。
+## 紧凑控件（高 < 32）也是内环 2px、总外扩 4px（T329 r2 P3-7：原稿「1.5px 取整 2px」写死成 2），只把内环透明度降到 0.90、外晕收到 3px。
+const FOCUS_IN := Color("090808")
+const FOCUS_RING_W := 2
+const FOCUS_EXPAND := 4
+const FOCUS_COMPACT_H := 32.0
+const FOCUS_IN_ALPHA := 0.95
+const FOCUS_IN_ALPHA_COMPACT := 0.90
+## 横排按钮间距：双环各外扩 4px 后仍留 4px 净缝（规范 2.2）；紧凑控件至少 10
+const FOCUS_BTN_GAP := 12
+const FOCUS_BTN_GAP_COMPACT := 10
+
+enum InputMode { KEYBOARD, GAMEPAD, MOUSE, TOUCH }
+## -1＝还没收到输入（按设备：触屏 TOUCH，否则 KEYBOARD）；测试可直接写
+static var input_mode := -1
+const JOY_AXIS_DEADZONE := 0.35
+const MOUSE_MOVE_MIN := 4.0
+
+
+static func current_input_mode() -> int:
+	if input_mode >= 0:
+		return input_mode
+	return InputMode.TOUCH if touch() else InputMode.KEYBOARD
+
+
+## 记一次输入（全局监听节点每个事件都调；只读不吞）。触屏模拟出的鼠标事件（device＝DEVICE_ID_EMULATION）算触屏，
+## 同 battle_scene.gd／mv_player.gd 的判据。
+static func note_input(event: InputEvent) -> void:
+	if event is InputEventKey:
+		if event.pressed:
+			input_mode = InputMode.KEYBOARD
+	elif event is InputEventJoypadButton:
+		if event.pressed:
+			input_mode = InputMode.GAMEPAD
+	elif event is InputEventJoypadMotion:
+		if absf(event.axis_value) > JOY_AXIS_DEADZONE:
+			input_mode = InputMode.GAMEPAD
+	elif event is InputEventScreenTouch or event is InputEventScreenDrag:
+		input_mode = InputMode.TOUCH
+	elif event is InputEventMouse:
+		if event.device == InputEvent.DEVICE_ID_EMULATION:
+			input_mode = InputMode.TOUCH
+		elif event is InputEventMouseButton:
+			if event.pressed:
+				input_mode = InputMode.MOUSE
+		elif event is InputEventMouseMotion:
+			if (event as InputEventMouseMotion).relative.length() > MOUSE_MOVE_MIN:
+				input_mode = InputMode.MOUSE
+
+
+## 聚焦双环该不该画：键盘、手柄常显；鼠标、触屏不画（悬停只抬底色、点完不留环）。「选中」（当前行、当前页签）不归这里管，照常画。
+static func show_focus_ring() -> bool:
+	_ensure_input_tracker()
+	var m := current_input_mode()
+	return m == InputMode.KEYBOARD or m == InputMode.GAMEPAD
+
+
+## 全局输入监听：第一次问 show_focus_ring() 时挂到根节点下（延后一帧挂，免得在绘制里改树）；只看不吞
+class _InputTracker extends Node:
+	func _init() -> void:
+		name = "XUiSkinInputTracker"
+		process_mode = Node.PROCESS_MODE_ALWAYS
+
+	func _input(event: InputEvent) -> void:
+		XUiSkin.note_input(event)
+
+
+static var _tracker: Node
+
+
+static func _ensure_input_tracker() -> void:
+	if is_instance_valid(_tracker):
+		return
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null or tree.root == null:
+		return
+	_tracker = _InputTracker.new()
+	tree.root.add_child.call_deferred(_tracker)
+
+
+## 框形／胶囊控件的双环聚焦（规范 2.2、2.4）。ci 是 RID（同 draw_select）；corner_r 是控件本身的圆角，环按同心外扩。
+## 「全部」动效档外环随 breath_alpha 慢呼吸并加外软晕；简化／关档外环恒亮、无晕。
+static func draw_focus_ring(ci: RID, rect: Rect2, corner_r := ROW_RADIUS, gold_bg := false, alpha := 1.0) -> void:
+	if rect.size.x <= 0.0 or rect.size.y <= 0.0 or alpha <= 0.0:
+		return
+	var compact := rect.size.y < FOCUS_COMPACT_H
+	var ba := breath_alpha() * alpha
+	var outer_col := Color(TEXT_HI if gold_bg else GOLD_LIGHT, ba)
+	var half := FOCUS_RING_W
+	var r_in := clampi(corner_r + half, 0, int((rect.size.y + half * 2) * 0.5))
+	var r_out := clampi(corner_r + FOCUS_EXPAND, 0, int((rect.size.y + FOCUS_EXPAND * 2) * 0.5))
+	if breathing():
+		var halo := _flat("focus_halo")
+		halo.draw_center = false
+		halo.set_border_width_all(0)
+		halo.shadow_color = Color(outer_col.r, outer_col.g, outer_col.b, (0.22 if compact else 0.28) * ba)
+		halo.shadow_size = 3 if compact else 4
+		halo.shadow_offset = Vector2.ZERO
+		halo.set_corner_radius_all(r_out)
+		halo.draw(ci, rect.grow(float(FOCUS_EXPAND)))
+	var inner := _flat("focus_in")
+	inner.draw_center = false
+	inner.shadow_size = 0
+	inner.anti_aliasing = true
+	inner.border_color = Color(FOCUS_IN, (FOCUS_IN_ALPHA_COMPACT if compact else FOCUS_IN_ALPHA) * alpha)
+	inner.set_border_width_all(FOCUS_RING_W)
+	inner.set_corner_radius_all(r_in)
+	inner.draw(ci, rect.grow(float(half)))
+	var outer := _flat("focus_out")
+	outer.draw_center = false
+	outer.shadow_size = 0
+	outer.anti_aliasing = true
+	outer.border_color = outer_col
+	outer.set_border_width_all(FOCUS_RING_W)
+	outer.set_corner_radius_all(r_out)
+	outer.draw(ci, rect.grow(float(FOCUS_EXPAND)))
+
+
+## 圆形控件（环节点、头像钮）的双环：内黑贴圆外 0～2px、外淡金 2～4px
+static func draw_focus_circle(ci: CanvasItem, center: Vector2, radius: float, gold_bg := false, alpha := 1.0) -> void:
+	if radius <= 0.0 or alpha <= 0.0:
+		return
+	var ba := breath_alpha() * alpha
+	ci.draw_arc(center, radius + 1.0, 0.0, TAU, 64, Color(FOCUS_IN, FOCUS_IN_ALPHA * alpha), 2.0, true)
+	ci.draw_arc(center, radius + 3.0, 0.0, TAU, 64, Color(TEXT_HI if gold_bg else GOLD_LIGHT, ba), 2.0, true)
+
+
+## ---- 规范 3：表面色阶（6%～10% 明度阶跃；POLISH_V1 暖炭黑，关着冷黑）----
+enum Surface { SUNKEN = -1, S0 = 0, S1 = 1, S2 = 2, S3 = 3, S4 = 4 }
+const SURFACE_WARM := {-1: Color("0b0909d1"), 0: Color("090808"), 1: Color("1b1818"), 2: Color("2e2928"), 3: Color("36302e"), 4: Color("413a38")}
+const SURFACE_COLD := {-1: Color("070709d1"), 0: Color("050506"), 1: Color("18191c"), 2: Color("26282e"), 3: Color("2e3038"), 4: Color("383b44")}
+## 有竖向渐变的两级：[上, 下]（S1 程序兜底面板、S3 浮层）
+const SURFACE_GRAD_WARM := {1: [Color("201c1c"), Color("151313")], 3: [Color("36302e"), Color("25201f")]}
+const SURFACE_GRAD_COLD := {1: [Color("18191c"), Color("0e0e10")], 3: [Color("2e3038"), Color("1d1f24")]}
+const S3_ALPHA := 0.94
+const SURFACE_TINT := Color("f0e6d8")
+## 叠在烟底上用的透明层（规范 3.2 最右列）
+const SURFACE_OVERLAY := {"s2": 0.09, "zebra": 0.08, "s4": 0.09}
+const SURFACE_PRESS_DARK := 0.22
+
+
+## 实心表面色；level 用 Surface（-1 凹槽 … 4 悬停）
+static func surface_c(level: int) -> Color:
+	var t: Dictionary = SURFACE_WARM if polish_on() else SURFACE_COLD
+	return t.get(clampi(level, -1, 4), t[1])
+
+
+## 渐变表面 [上, 下]；没有渐变的级上下同色。S3 带 94% 不透明
+static func surface_grad(level: int) -> Array:
+	var t: Dictionary = SURFACE_GRAD_WARM if polish_on() else SURFACE_GRAD_COLD
+	var pair: Array = t.get(level, [surface_c(level), surface_c(level)])
+	if level == Surface.S3:
+		return [Color(pair[0], S3_ALPHA), Color(pair[1], S3_ALPHA)]
+	return pair
+
+
+## 叠在烟底上的透明层：tier＝"s2"／"zebra"／"s4"；"sunken"＝凹槽暗底
+static func surface_overlay(tier: String) -> Color:
+	if tier == "sunken":
+		return sunken_c()
+	return Color(SURFACE_TINT, float(SURFACE_OVERLAY.get(tier, 0.09)))
+
+
+## 列表／对比表斑马纹（S2z：0.08，较 S1 +6.4%，替换原 0.026）
+static func zebra_c() -> Color:
+	return surface_overlay("zebra")
+
+
+## 量条底槽、滚动条轨、输入框凹底
+static func sunken_c() -> Color:
+	return Color(0.03, 0.025, 0.024, 0.78)
+
+
+## 按下态：所属层压暗 22%
+static func pressed_c(c: Color) -> Color:
+	return c.darkened(SURFACE_PRESS_DARK)
+
+
+## ---- 规范 4：文字基线与行内图标 ----
+## 文字墨迹中心对行中线：基线＝行中线＋0.36·字号（现有 62 处照旧手写，不替换；新控件调这里）
+const TEXT_CY_K := 0.36
+## 行内图标相对行中线的下移系数：卡 D2 实量前 0
+const ICON_DY_K := 0.0
+
+
+static func text_baseline_y(row_cy: float, fs: int) -> float:
+	return roundf(row_cy + float(fs) * TEXT_CY_K)
+
+
+static func inline_icon_rect(x: float, row_cy: float, icon_px: float, fs: int) -> Rect2:
+	var dy := roundf(float(fs) * ICON_DY_K)
+	return Rect2(roundf(x), roundf(row_cy - icon_px * 0.5 + dy), icon_px, icon_px)
+
+
+## 图标与文字的水平间距（规范 4.1 表末列）
+static func inline_icon_gap(fs: int) -> int:
+	return maxi(6, roundi(fs * 0.35))
