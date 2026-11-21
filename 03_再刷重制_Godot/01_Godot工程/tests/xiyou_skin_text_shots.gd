@@ -13,12 +13,14 @@ var out_dir := ""
 const DESC_A := ["每当持有者发动攻击时，有一定几率触发「饮血」", "攻击时有一定几率触发「饮血」", "每当持有者发动攻击，有较高几率触发「饮血」效果", "每次攻击命中目标时，都有几率触发「饮血」", "发动攻击时，有较高几率触发「饮血」"]
 const DESC_B := ["额外造成相当于攻击力的伤害", "额外造成相当于攻击力 120% 的伤害", "额外造成相当于攻击力一半的伤害", "额外造成一次伤害"]
 const DESC_C := ["，并为自己回复少量生命", "，并回复生命，同时获得护盾", "，并为全队回复少量生命值", "，同时回复自身生命"]
-const DESC_TAIL := "，持续三回合。若目标处于异常状态，则效果翻倍，冷却时间缩短 20%，最多叠加 5 层。"
+const DESC_EX := ["", "，且无视部分防御", "，并有 8% 几率再次触发", "，同时使目标陷入「流血」", "，并提升自身暴击率", "，伤害提升 5%", "，伤害提升 12%", "，伤害提升 18%", "，伤害提升 25%", "，伤害提升 30%", "，伤害提升 45%", "，攻击力 +15%，暴击 +8%", "，攻击力 +120%", "，生命上限 +4,567"]
+const DESC_TAILS := ["，持续三回合。若目标处于异常状态，则效果翻倍，冷却时间缩短 20%，最多叠加 5 层。", "，持续三回合；目标处于异常状态时效果翻倍，冷却缩短 20%，最多叠加 5 层，不可驱散。", "，持续 3 回合。该效果可与「暴击」叠加，触发后冷却 2 回合，每场最多 5 次。"]
 const ROWS := [
 	{"text": "自带：暴击率 +15%，暴击伤害 +40%，穿透 8%，吸血 3.5%。", "spans": [["自带：", Color("f2d08a")], ["暴击率 +15%，暴击伤害 +40%，", Color("98e598")], ["穿透 8%，吸血 3.5%。", Color("84aaff")]]},
 	{"text": "词条：攻击时有 18% 几率造成 120% 暴击，冷却 2 回合，每场最多触发 5 次。"},
 ]
 const BOSS_A := ["被施加的目标每回合损失当前生命", "该状态使目标每回合损失当前生命，并陷入灼烧", "目标每回合都会损失一部分当前生命", "被施加的目标每回合损失 5% 当前生命，持续 3 回合"]
+const BOSS_EX := ["", "，每层额外 +3%", "，并降低其防御", "，且无法被净化", "，并附带「虚弱」", "，持续 4 回合"]
 const BOSS_B := ["，若目标同时处于「灼烧」", "；若目标同时处于「灼烧」状态", "，目标若同时处于「灼烧」"]
 const BOSS_TAIL := "，则伤害提升 +120%，并使其行动条延后 20%；层数上限 5 层，不可驱散。"
 
@@ -62,6 +64,7 @@ func _run() -> void:
 			await _card_shot(pct, false)
 			await _card_shot(pct, true)
 			await _boss_shot(pct)
+			await _hang_check(pct)
 	else:
 		check("needs_window", true)
 	XUiSkin.FORCE = false
@@ -91,11 +94,11 @@ func _col(x: float, caption: String) -> Control:
 	return col
 
 
-func _card(after: bool, expand: bool, col: Control, desc: String) -> XSkinCard:
+func _card(after: bool, expand: bool, col: Control, desc: String, card_w: float) -> XSkinCard:
 	XUiSkin.DETAIL_V1 = after
 	var card := XSkinCard.new()
 	card.position = Vector2(60 if not expand else 270, 60)
-	card.size = Vector2(500, 560) if expand else Vector2(500, 420)
+	card.size = Vector2(card_w, 560) if expand else Vector2(card_w, 420)
 	col.add_child(card)
 	card.setup({"title": "饮血长刀", "title_color": XUiSkin.quality_color(4), "subtitle": "武器 · 传说", "fold": true,
 		"desc": desc, "notice": "仅限天启篇使用，装备后不可交易。",
@@ -105,13 +108,26 @@ func _card(after: bool, expand: bool, col: Control, desc: String) -> XSkinCard:
 
 func _card_shot(pct: int, expand: bool) -> void:
 	var fs := XUiSkin.FS_AUX_MAX
-	var w := (1000.0 if expand else 500.0) - XUiSkin.PAD_LG * 2.0
+	var card_w := 500.0
 	var cands := []
 	for a in DESC_A:
 		for b in DESC_B:
 			for c in DESC_C:
-				cands.append(a + "，" + b + c + DESC_TAIL)
-	var desc := _pick(cands, fs, w)
+				for tl in DESC_TAILS:
+					for ex in DESC_EX:
+						cands.append(a + "，" + b + c + ex + tl)
+	var desc := ""
+	var best := -1
+	for cw in range(480, 561, 4):   # 牌宽也扫一扫：展开态正文宽＝2×牌宽，总能挑到旧折行有毛病的一组
+		var ww := (cw * 2.0 if expand else float(cw)) - XUiSkin.PAD_LG * 2.0
+		var got := _pick(cands, fs, ww, false)
+		if int(got[1]) > best:
+			best = int(got[1])
+			desc = got[0]
+			card_w = float(cw)
+		if best >= 2:
+			break
+	check("card_shot_has_legacy_defect_%s_%d" % ["expanded" if expand else "folded", pct], best > 0, [best, card_w])
 	var imgs := []
 	for after in [false, true]:
 		XUiSkin.DETAIL_V1 = after
@@ -121,7 +137,7 @@ func _card_shot(pct: int, expand: bool) -> void:
 		col.size = Vector2(SHOT)
 		(col.get_child(0) as ColorRect).size = Vector2(SHOT)
 		root.add_child(col)
-		var card := _card(after, expand, col, desc)
+		var card := _card(after, expand, col, desc, card_w)
 		add_child(root)
 		await frames(3)
 		if expand:
@@ -142,7 +158,7 @@ func _card_shot(pct: int, expand: bool) -> void:
 
 
 ## 候选句里：旧折行毛病分最高、新折行零毛病的一句（行首标点 2 分，末行孤字／英文数字腰斩各 1 分）
-func _pick(cands: Array, fs: int, w: float) -> String:
+func _pick(cands: Array, fs: int, w: float, warn := true) -> Array:
 	var f := XUiSkin.font("body")
 	var best := ""
 	var best_score := -1
@@ -154,7 +170,9 @@ func _pick(cands: Array, fs: int, w: float) -> String:
 		if _score(t, cur) == 0 and _score(t, old) > best_score:
 			best = t
 			best_score = _score(t, old)
-	return best if best != "" else str(cands[0])
+	if warn:
+		check("pick_has_legacy_defect_%d_%s" % [int(w), str(best_score)], best_score > 0, [w, fs])
+	return [best if best != "" else str(cands[0]), best_score]
 
 
 func _score(t: String, rs: Array) -> int:
@@ -186,8 +204,9 @@ func _boss_shot(pct: int) -> void:
 	var bc := []
 	for a in BOSS_A:
 		for b in BOSS_B:
-			bc.append(a + b + BOSS_TAIL)
-	var boss_desc := _pick(bc, 16, XSkinBossStatus.DETAIL_W - 44.0)
+			for ex in BOSS_EX:
+				bc.append(a + ex + b + BOSS_TAIL)
+	var boss_desc: String = _pick(bc, 16, XSkinBossStatus.DETAIL_W - 44.0)[0]
 	var row := {"id": "1", "name": "烈焰灼烧", "icon": 100, "kind": "Debuff", "stack": "3 层", "turns": "4回合", "description": boss_desc}
 	var imgs := []
 	for after in [false, true]:
@@ -223,3 +242,48 @@ func _boss_shot(pct: int) -> void:
 		if str(ln) != "" and NO_START.contains(str(ln)[0]):
 			bad = true
 	check("boss_desc_no_head_punct_%d" % pct, not bad)
+
+
+## 挂出的行尾标点不能被画法裁掉：找一句在折叠牌正文宽度下有「挂出」行的话，真画出来，看 w 右边 0.35 字号里有墨迹
+func _hang_check(pct: int) -> void:
+	XUiSkin.DETAIL_V1 = true
+	var f := XUiSkin.font("body")
+	var fs := XUiSkin.FS_AUX_MAX
+	var w := 500.0 - XUiSkin.PAD_LG * 2.0
+	var text := ""
+	var hang_w := 0.0
+	var gw := f.get_string_size("。", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	for a in range(4, 40):
+		for b in range(0, 9):
+			if text != "":
+				break
+			var t := "魔".repeat(a) + "5".repeat(b) + "。"
+			var rs := XSkinText.wrap_ranges(t, f, fs, w)
+			var lw := f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			if rs.size() == 1 and lw > w + 1.0:
+				text = t
+				hang_w = lw
+	if not check("hang_sample_found_%d" % pct, text != ""):
+		return
+	var root := Control.new()
+	root.size = Vector2(SHOT)
+	var bg := ColorRect.new()
+	bg.color = Color("090808")
+	bg.size = Vector2(SHOT)
+	root.add_child(bg)
+	var card := XSkinCard.new()
+	card.position = Vector2(60, 60)
+	card.size = Vector2(500, 420)
+	root.add_child(card)
+	card.setup({"title": "测试", "desc": text})
+	add_child(root)
+	var img := await _grab()
+	var x0 := int(card.position.x + card.pad)
+	var ink := 0
+	for y in range(100, 480):
+		for x in range(x0 + int(hang_w - gw) + 1, x0 + int(hang_w - gw * 0.4)):
+			if img.get_pixel(x, y).get_luminance() > 0.25:
+				ink += 1
+	check("card_hang_punct_not_clipped_%d" % pct, ink > 0, [ink, w, hang_w])
+	root.queue_free()
+	await frames(2)

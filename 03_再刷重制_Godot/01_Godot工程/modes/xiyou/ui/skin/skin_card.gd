@@ -397,7 +397,7 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 					t.draw_rect(Rect2(x0 + 1.0, y + 4.0, 2.5, maxf(4.0, nh - 8.0)), Color(XUiSkin.GOLD, 0.85))
 				for li in nranges.size():
 					var r := nranges[li]
-					XUiSkin.ds(t, body, Vector2(x0 + 10.0, y + 5.0 + float(li) * nlh + XUiSkin.FS_AUX * 0.96), notice.substr(r.x, r.y - r.x), HORIZONTAL_ALIGNMENT_LEFT, w - 20.0, XUiSkin.FS_AUX, XUiSkin.GOLD_LIGHT)
+					XUiSkin.ds(t, body, Vector2(x0 + 10.0, y + 5.0 + float(li) * nlh + XUiSkin.FS_AUX * 0.96), notice.substr(r.x, r.y - r.x), HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.GOLD_LIGHT)   # -1：XSkinText 允许行尾挂出标点，不能按 w 裁
 			y += nh + 4
 	if desc != "":
 		y += 8
@@ -516,7 +516,7 @@ func _paragraph(t: Control, f: Font, text: String, y: float, x0: float, w: float
 		if not dry and a > 0.0:
 			var line_text_range := ranges[li]
 			if spans.is_empty():
-				XUiSkin.ds(t, f, Vector2(x0, y + off + fs * 1.1), text.substr(line_text_range.x, line_text_range.y - line_text_range.x), HORIZONTAL_ALIGNMENT_LEFT, w, fs, _fa(col, a))
+				XUiSkin.ds(t, f, Vector2(x0, y + off + fs * 1.1), text.substr(line_text_range.x, line_text_range.y - line_text_range.x), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _fa(col, a))
 			else:
 				_span_line(t, f, spans, line_text_range.x, line_text_range.y, Vector2(x0, y + off + fs * 1.1), fs, a)
 		y += lh

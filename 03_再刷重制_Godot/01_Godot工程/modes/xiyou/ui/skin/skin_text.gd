@@ -7,7 +7,6 @@ extends RefCounted
 
 const NO_START := "，。、！？；：）》】」』”’·…—～％%.,!?;:)]}"
 const NO_END := "（《【「『“‘([{#"
-const BREAK_FLAGS := TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_GRAPHEME_BOUND | TextServer.BREAK_ADAPTIVE
 ## 行尾允许挂出的标点宽度（× 字号）
 const HANG_K := 0.35
 ## 防孤字回拉后，倒数第二行至少还要剩多宽（× 行宽），宁可留孤字也不造半行空洞
@@ -53,6 +52,10 @@ static func _legacy_ranges(text: String, font: Font, fs: int, max_w: float) -> A
 static func _width(seg: String, a: int, b: int, font: Font, fs: int) -> float:
 	var s := seg.substr(a, b - a).rstrip(" \t　")
 	return font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+
+
+static func _is_sp(c: String) -> bool:
+	return c == " " or c == "\t" or c == "\u3000"
 
 
 static func _is_alnum(c: String) -> bool:
@@ -126,7 +129,7 @@ static func _wrap_segment(seg: String, base: int, font: Font, fs: int, max_w: fl
 
 ## 一个切点是否合规：行首不是避头字（含空格）、行尾不是避尾字、不在英文数字串中间
 static func _cut_ok(seg: String, at: int) -> bool:
-	return not NO_START.contains(seg[at]) and seg[at] != " " and not NO_END.contains(seg[at - 1]) and not _in_token(seg, at)
+	return not NO_START.contains(seg[at]) and not _is_sp(seg[at]) and not NO_END.contains(seg[at - 1]) and not _in_token(seg, at)
 
 
 ## 这一行（从 start 起）该在哪一位截断：塞得下的最远处→行首标点挂出→退到合规切点
@@ -144,11 +147,11 @@ static func _fit_end(seg: String, start: int, font: Font, fs: int, max_w: float)
 			hi = mid - 1
 	var fit := lo
 	var e := fit
-	while e < n and seg[e] == " ":
+	while e < n and _is_sp(seg[e]):
 		e += 1
 	while e < n and NO_START.contains(seg[e]) and _width(seg, start, e + 1, font, fs) <= max_w + HANG_K * fs:
 		e += 1
-		while e < n and seg[e] == " ":
+		while e < n and _is_sp(seg[e]):
 			e += 1
 	if e >= n:
 		return n
@@ -177,7 +180,7 @@ static func _fix_widow(seg: String, cuts: Array[int], font: Font, fs: int, max_w
 	var prev_start := 0 if last == 0 else cuts[last - 1]
 	# 要拉的最小语义单元：1 个字，或整串英文／数字；紧挨避尾标点就连它一起
 	var p := s
-	while p > prev_start + 1 and seg[p - 1] == " ":
+	while p > prev_start + 1 and _is_sp(seg[p - 1]):
 		p -= 1
 	var u := _token_start(seg, p - 1) if _in_token(seg, p - 1) else p - 1
 	while u > prev_start and (NO_START.contains(seg[u]) or NO_END.contains(seg[u - 1])):

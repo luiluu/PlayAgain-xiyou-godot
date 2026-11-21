@@ -193,8 +193,8 @@ func _scene_capsule(pct: int) -> void:
 	var cy := cap.position.y + 20.0
 	var ix := int(cap.position.x + 4.0 + 7.0)
 	var ref := img.get_pixel(ix + 24 + 2, int(cy))
-	var row := _measure(img, "capsule", pct, fs, cy, Rect2i(ix, int(cap.position.y) + 5, 24, 30),
-		Rect2i(ix + 29, int(cap.position.y) + 5, int(fs * SAMPLE.length() * 1.1), 30), ref)
+	var row := _measure(img, "capsule", pct, fs, cy, Rect2i(ix, int(cap.position.y) + 8, 24, 24),
+		Rect2i(ix + 29, int(cap.position.y) + 8, int(fs * SAMPLE.length() * 1.1), 24), ref)
 	_overlay(img, "capsule_%d" % pct, Rect2i(40, 50, 260, 60), [row], 40, 50)
 	root.queue_free()
 	await frames(2)

@@ -295,6 +295,6 @@ func _para(f: Font, text: String, at: Vector2, w: float, fs: int, lh: float, col
 		return at.y
 	var y := at.y
 	for rg in XSkinText.wrap_ranges(text, f, fs, w):
-		XUiSkin.ds(self, f, Vector2(at.x, y + fs * 1.0), text.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, w, fs, col)
+		XUiSkin.ds(self, f, Vector2(at.x, y + fs * 1.0), text.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)   # -1：挂出的行尾标点不裁
 		y += lh
 	return y
