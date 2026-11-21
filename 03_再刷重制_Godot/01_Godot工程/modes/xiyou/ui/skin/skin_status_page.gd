@@ -129,13 +129,15 @@ func _draw_actor() -> void:
 	var num := XUiSkin.font("num")
 	var w := sz.x - pad * 2
 	# 头像
-	var fc := Vector2(sz.x / 2.0, pad + 60)
-	actor_panel.draw_circle(fc, 62, XUiSkin.orb_low_c())
+	var six_on := XTianqiSixDim.active()   # T278：天启篇要给六维雷达腾地方，头像缩小、量条排紧
+	var ar := 44.0 if six_on else 62.0
+	var fc := Vector2(sz.x / 2.0, pad + ar - 2.0)
+	actor_panel.draw_circle(fc, ar, XUiSkin.orb_low_c())
 	var face := XUiSkin.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0)))
 	if face != null:
-		XSkinPartyStrip.draw_round_texture(actor_panel, face, fc, 58)
-	actor_panel.draw_circle(fc, 60, Color(XUiSkin.line_c(), 0.55), false, 1.5, true)
-	var y := pad + 130.0
+		XSkinPartyStrip.draw_round_texture(actor_panel, face, fc, ar - 4.0)
+	actor_panel.draw_circle(fc, ar - 2.0, Color(XUiSkin.line_c(), 0.55), false, 1.5, true)
+	var y := pad + ar * 2.0 + 6.0
 	var name := a.display_name()
 	var fit := XSkinList.fit_text(head, name, w, XUiSkin.FS_CARD, 18)
 	var nw := head.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
@@ -181,8 +183,9 @@ func _draw_actor() -> void:
 		[t.call(7, "TP"), a.tp, a.max_tp(), XUiSkin.TP, XUiSkin.TP_TEXT, "%s / %s" % [XMenu._group(int(a.tp)), XMenu._group(int(a.max_tp()))]],
 		[next if next != "" else t.call(9, "EXP"), exp_rate, 1.0, XUiSkin.GOLD, XUiSkin.GOLD_LIGHT, "-------" if max_lv else XMenu._group(int(need))],
 	]
+	var bp := 40.0 if six_on else 46.0
 	for b in bars:
-		if y + 46 > sz.y - pad:
+		if y + bp > sz.y - pad:
 			break
 		XUiSkin.ds(actor_panel, body, Vector2(pad, y + 16), str(b[0]), HORIZONTAL_ALIGNMENT_LEFT, w * 0.5, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 		var vt := str(b[5])
@@ -192,7 +195,27 @@ func _draw_actor() -> void:
 		var mx := float(b[2])
 		var rate := clampf(float(b[1]) / mx, 0.0, 1.0) if mx > 0 else 0.0
 		XUiSkin.draw_gauge(ci, track, rate, b[3])
-		y += 46
+		y += bp
+	_draw_six_dim(a, y, sz, pad)
+
+
+## T278 六维雷达（天启篇；西游档与总开关关着不画）：量条下方，放不下标准规格就用紧凑规格，再放不下就不画；韧性控制抗性一行小字压底
+func _draw_six_dim(a: XActor, y: float, sz: Vector2, pad: float) -> void:
+	if not XTianqiSixDim.active():
+		return
+	var six := XTianqiSixDim.of_actor(a.actor_id)
+	var room := sz.y - pad - y - 22.0   # 底下留一行抗性小字
+	var compact := room < 190.0
+	var m := XSkinSixDimRadar.margin(compact)
+	var r := minf(sz.x / 2.0 - pad - m.x + 14.0, room / 2.0 - m.y)
+	if r < 36.0:
+		return
+	var c := Vector2(sz.x / 2.0, y + room / 2.0)
+	XSkinSixDimRadar.paint(actor_panel, c, r, six, {"compact": compact})
+	var f := XUiSkin.font("body")
+	var t := "韧性·" + XSkinSixDimRadar.resist_text(XTianqiSixDim.resist_pct_of(six))   # 小A 文字审：写成「韧性·控制抗性 +7%」
+	var tw := f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
+	XUiSkin.ds(actor_panel, f, Vector2((sz.x - tw) / 2.0, sz.y - pad - 2), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
 
 
 # ---- 画：右边页 ----
