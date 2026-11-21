@@ -1659,8 +1659,7 @@ class Handoff extends Control:
 				var cc := c + Vector2(0, -6)
 				draw_set_transform(cc, 0.0, Vector2(sc, sc))
 				var pos := Vector2(-w / 2.0, (f.get_ascent(fs) - f.get_descent(fs)) / 2.0)
-				draw_string_outline(f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 8, Color(0, 0, 0, 0.9))
-				XUiSkin.ds(self, f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+				XSkinSealDial.draw_combo_digits(self, f, pos, s, fs, col, Color(0, 0, 0, 0.9))
 				draw_set_transform(Vector2.ZERO)
 				XSkin2C._glow(self, cc, 30.0 * (1.0 - sc) + 6.0, Color(XUiSkin.GOLD_LIGHT, 0.7 * (1.0 - sc)))
 				last.combo_shown = true

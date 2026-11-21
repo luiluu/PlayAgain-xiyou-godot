@@ -26,7 +26,7 @@ var _key := []
 var _rows: Array = []        # [{text, color}]（装备详情、插槽）
 var _cmp: Array = []         # [[名, 当前, 换上后（-1＝不写）]]
 var body: Control
-## D1c 测试用：最近一次 _draw_body 每行 [行号, 当前值右缘, 箭头中, 新值右缘, 差值右缘]（没画箭头的行只有行号和当前值右缘）
+## D1c 测试用：最近一次 _draw_body 每行 [行号, 当前值右缘, 箭头中, 新值右缘, 差值右缘]（四列锚点每行都记（没箭头的行只画当前值））
 var last_cols: Array = []
 var _content_h := 0.0
 ## T024 选中放大：当前页签的字放大（页签宽不变，放不下先缩字）
@@ -252,7 +252,7 @@ static func cmp_cols(num: Font, w: float, cmp: Array, comparing: bool) -> Dictio
 			cw = maxf(cw, XUiSkin.mono_digits_width(num, XMenu._group(b), fs))
 			if comparing and a >= 0:
 				nw = maxf(nw, XUiSkin.mono_digits_width(num, XMenu._group(a), fs))
-				dw = maxf(dw, XUiSkin.mono_digits_width(num, "▲" + XMenu._group(absi(a - b)), fs))
+				dw = maxf(dw, maxf(XUiSkin.mono_digits_width(num, "▲" + XMenu._group(absi(a - b)), fs), XUiSkin.mono_digits_width(num, "▼" + XMenu._group(absi(a - b)), fs)))
 		var aw := num.get_string_size("→", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + 6.0
 		var out := {"fs": fs, "delta_r": w - 12.0, "new_r": 0.0, "arrow_c": 0.0, "cur_r": w - 12.0}
 		if comparing:
@@ -272,6 +272,7 @@ func _draw_body() -> void:
 	var y := -scroll
 	last_cols = []
 	if tab == 1:
+		var cols := cmp_cols(num, w, _cmp, compare) if XUiSkin.detail_on() else {}
 		var stripe := Color(0.95, 0.90, 0.82, 0.045) if XUiSkin.polish_on() else Color(1, 1, 1, 0.04)
 		for r in _cmp:
 			if y + ROW_H >= 0 and y <= body.size.y:
@@ -282,7 +283,6 @@ func _draw_body() -> void:
 				var after: int = r[2]
 				var done := false
 				if XUiSkin.detail_on():   # D1c：四列固定锚点（当前值右｜箭头中｜新值右｜差值右），不拼整串
-					var cols := cmp_cols(num, w, _cmp, compare)
 					var cfs: int = cols.fs
 					var by := base + cfs * 0.36
 					last_cols.append([last_cols.size(), cols.cur_r, cols.arrow_c, cols.new_r, cols.delta_r])

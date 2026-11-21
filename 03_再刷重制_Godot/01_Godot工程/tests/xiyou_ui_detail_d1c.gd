@@ -46,6 +46,7 @@ func _run() -> void:
 	XUiSkin.motion_override = XUiSkin.Motion.OFF
 	XUiSkin._clock_ms = 100000
 	XUiSkin.DETAIL_V1 = true
+	await _party_narrow()
 	for pct in [100, 130]:
 		XFontScale.set_value("global", pct)
 		await _party_strip(pct)
@@ -53,6 +54,7 @@ func _run() -> void:
 		await _stepper(pct)
 		await _gear_cmp(pct)
 	XFontScale.set_value("global", 100)
+	await _combo_digits()
 	await _helpers_p31()
 	await _rollback()
 	if windowed():
@@ -122,6 +124,47 @@ func _party_strip(pct: int) -> void:
 	check("party_%d_col_tp_3_digits" % pct, is_equal_approx(XSkinPartyStrip.value_col_w(num, 17, "tp", _team()), XUiSkin.mono_digit_cell(num, 17) * 3.0))
 	var big := [{"mhp": 1234567}]
 	check("party_%d_col_grows" % pct, is_equal_approx(XSkinPartyStrip.value_col_w(num, 17, "hp", big), XUiSkin.mono_digit_cell(num, 17) * 7.0))
+
+
+# ---- r1 P2-1：窄栏（XSkinPartyStatusPanel 的 300px 左栏，含 TP）＋ 130% 字号 ----
+func _party_narrow() -> void:
+	for pct in [100, 130, 150]:
+		XFontScale.set_value("global", pct)
+		var ps := XSkinPartyStrip.new()
+		ps.show_tp = true
+		ps.size = Vector2(300, 4 + 4 * 60 + 8)
+		add_child(ps)
+		var team := _team()
+		team[2]["tp"] = 100
+		team[2]["mtp"] = 100
+		ps.set_members(team)
+		await frames(2)
+		var bars := ps.last_bars
+		check("narrow_%d_drawn" % pct, bars.size() == 12, bars.size())
+		var ok_gap := true
+		var ok_edge := true
+		var fss := {}
+		for key in ["hp", "mp", "tp"]:
+			var xs := bars.filter(func(b): return b[1] == key)
+			ok_edge = ok_edge and _spread(xs, 2) == 0.0
+		for b in bars:
+			fss[b[4]] = true
+			ok_gap = ok_gap and float(b[3]) >= float(b[2])   # 数值左缘不压量条（字距让整串比格宽略宽 ≤2px，仍在 4px 间距内）
+		check("narrow_%d_no_overlap" % pct, ok_gap, bars)
+		check("narrow_%d_right_edge_same" % pct, ok_edge, bars)
+		check("narrow_%d_one_font_size" % pct, fss.size() == 1, fss)
+		# 量条保底宽：右缘减块左缘（用 hp 条：第一块左缘＝x，宽＝右缘−起点）——用 fit_fs 直接验字号回缩后栏宽放得下
+		var num := XUiSkin.font("num")
+		var avail := 300.0 - 8.0 - (4.0 + XSkinPartyStrip.HEAD + 12.0 + 14.0) - 12.0
+		var unit := (avail - 16.0) / 2.6
+		var nfs: int = int(fss.keys()[0]) if fss.size() == 1 else 0
+		check("narrow_%d_tp_col_fits" % pct, XSkinPartyStrip.value_col_w(num, nfs, "tp", team) + 4.0 + XSkinPartyStrip.MIN_BAR <= unit * 0.6 + 0.5 or nfs == XSkinPartyStrip.MIN_NUM_FS, [nfs, unit])
+		ps.queue_free()
+	XFontScale.set_value("global", 130)
+	var fs130 := XSkinPartyStrip.fit_fs(XUiSkin.font("num"), "hp", 75.38, _team(), XUiSkin.fs(17))
+	check("narrow_fit_shrinks_at_130", fs130 < XUiSkin.fs(17) and fs130 >= XSkinPartyStrip.MIN_NUM_FS, fs130)
+	XFontScale.set_value("global", 100)
+	check("narrow_fit_keeps_at_100_wide", XSkinPartyStrip.fit_fs(XUiSkin.font("num"), "hp", 120.0, _team(), 17) == 17)
 
 
 # ---- 目标列表 ----
@@ -203,6 +246,39 @@ func _gear_cmp(pct: int) -> void:
 	var solo := XSkinGearDetail.cmp_cols(XUiSkin.font("num"), 700.0, _cmp_rows(), false)
 	check("gear_%d_solo_right" % pct, solo.cur_r == 688.0, solo)
 	g.queue_free()
+
+
+# ---- r1 P1-1：连击大数字（XSkinSealDial／XSkinBattle2C 共用 draw_combo_digits）逐位定宽 ----
+class ComboProbe extends Control:
+	var s := "111"
+	var fs := 50
+	func _draw() -> void:
+		var f := XSkinSealDial.num_font()
+		XSkinSealDial.draw_combo_digits(self, f, Vector2(-100, 60), s, fs, Color.WHITE, Color(0, 0, 0, 0.9))
+
+
+func _combo_digits() -> void:
+	var f := XSkinSealDial.num_font()
+	for fs in [50, 40, 34]:
+		var w1 := XUiSkin.mono_digits_width(f, "111", fs)
+		var w7 := XUiSkin.mono_digits_width(f, "777", fs)
+		var w8 := XUiSkin.mono_digits_width(f, "888", fs)
+		check("combo_%d_widths_equal" % fs, is_equal_approx(w1, w7) and is_equal_approx(w7, w8), [w1, w7, w8])
+		# 每个字落在格内居中：同一位上 1 与 8 的字心相同
+		var p1 := XUiSkin.mono_digit_plan(f, 0.0, 0.0, "111", fs)
+		var p8 := XUiSkin.mono_digit_plan(f, 0.0, 0.0, "888", fs)
+		var c1: float = p1.glyphs[1][1].x + f.get_string_size("1", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x / 2.0
+		var c8: float = p8.glyphs[1][1].x + f.get_string_size("8", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x / 2.0
+		check("combo_%d_glyph_centered" % fs, absf(c1 - c8) <= 1.0, [c1, c8])
+	for on in [true, false]:
+		XUiSkin.DETAIL_V1 = on
+		var pr := ComboProbe.new()
+		pr.size = Vector2(300, 120)
+		add_child(pr)
+		await frames(2)
+		check("combo_draw_ok_%s" % on, pr.is_inside_tree())
+		pr.queue_free()
+	XUiSkin.DETAIL_V1 = true
 
 
 # ---- T336 核查 P3-1：实调 draw_mono_digits／draw_num_right 的落笔坐标与描边分支 ----
@@ -322,6 +398,26 @@ func _rollback() -> void:
 	await frames(2)
 	check("rollback_party_old_path", ps.last_bars.is_empty(), ps.last_bars)
 	ps.queue_free()
+	var tl := XSkinTargetList.new()
+	tl.size = Vector2(520, 300)
+	add_child(tl)
+	tl.set_rows([{"name": "甲", "kind": "hp", "cur": 88, "max": 99}, {"name": "乙", "kind": "hp", "cur": 12345, "max": 99999}])
+	var st := XSkinStepper.new()
+	st.size = Vector2(420, XSkinStepper.H)
+	st.sound = false
+	add_child(st)
+	st.set_range(1, 999, 1)
+	await frames(3)
+	check("rollback_target_old_drifts", tl.last_bars.size() == 2 and _spread(tl.last_bars, 1) != 0.0, tl.last_bars)   # 旧画法量条右缘随位数漂
+	check("rollback_stepper_old_path", st.last_num == "legacy", st.last_num)
+	XUiSkin.DETAIL_V1 = true
+	tl.queue_redraw()
+	st.queue_redraw()
+	await frames(3)
+	check("rollback_target_on_aligned", _spread(tl.last_bars, 1) == 0.0, tl.last_bars)
+	check("rollback_stepper_on_path", st.last_num == "mono", st.last_num)
+	tl.queue_free()
+	st.queue_free()
 	XUiSkin.DETAIL_V1 = true
 
 
@@ -352,6 +448,43 @@ func _shots() -> void:
 		root.queue_free()
 		await frames(2)
 	XFontScale.set_value("global", 100)
+	# r1：300px 窄栏（状态页）＋130%
+	XFontScale.set_value("global", 130)
+	var rn := _stage()
+	var pn := XSkinPartyStrip.new()
+	pn.show_tp = true
+	pn.position = Vector2(40, 60)
+	pn.size = Vector2(300, 4 + 4 * 60 + 8)
+	rn.add_child(pn)
+	var tn := _team()
+	tn[2]["tp"] = 100
+	pn.set_members(tn)
+	_caption(rn, "窄栏 300px＋130%：数字回缩，量条不被压没、数值不压量条", Vector2(40, 18))
+	await frames(3)
+	await _grab("party_narrow_130")
+	rn.queue_free()
+	await frames(2)
+	XFontScale.set_value("global", 100)
+	# r1：连击大数字 111／777／888（环心字体，50／40／34 号）
+	var rc := _stage()
+	_caption(rc, "连击数 111／777／888：每位定宽居中，三组宽度相同", Vector2(40, 18))
+	var f := XSkinSealDial.num_font()
+	var row := 0
+	for fs in [50, 40, 34]:
+		var col := 0
+		for t in ["111", "777", "888"]:
+			var pr := ComboProbe.new()
+			pr.s = t
+			pr.fs = fs
+			pr.position = Vector2(140 + col * 300, 40 + row * 150)
+			pr.size = Vector2(300, 130)
+			rc.add_child(pr)
+			col += 1
+		row += 1
+	await frames(3)
+	await _grab("combo_digits")
+	rc.queue_free()
+	await frames(2)
 	# 属性对比
 	var r2 := _stage()
 	var g := XSkinGearDetail.new()

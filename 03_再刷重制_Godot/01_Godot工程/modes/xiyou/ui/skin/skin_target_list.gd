@@ -175,6 +175,6 @@ static func value_col_w(num: Font, fs: int, rs: Array) -> float:
 	var dc := 1
 	var dm := 1
 	for m in rs:
-		dc = maxi(dc, str(int(m.get("cur", 0))).length())
+		dc = maxi(dc, maxi(str(int(m.get("cur", 0))).length(), 1))
 		dm = maxi(dm, str(int(m.get("max", 0))).length())
 	return XUiSkin.mono_digit_cell(num, fs) * (dc + dm) + num.get_string_size("/", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x

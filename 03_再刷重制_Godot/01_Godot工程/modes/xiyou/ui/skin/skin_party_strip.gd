@@ -21,13 +21,16 @@ var sel_scale: XSkinSelScale
 ## R15（T287 卡 E）：主菜单、装备页的队伍条不显示 TP（不在战斗里永远是 0），血条蓝条各加宽。默认 true（别处照旧，如战斗里的我方状态详情）；
 ## 主菜单的由 _enter_tree 认出祖先是 XSkinMainMenu 自动关（skin_main_menu.gd 不在卡 E 范围），装备页自己设 false。XSkinRingNav.INNER_V2＝false 时一律照旧三条
 var show_tp := true
-## D1c 测试用：最近一次 _draw 每条量条的 [成员号, 键, 量条右缘 x]
+## D1c 测试用：最近一次 _draw 每条量条的 [成员号, 键, 量条右缘 x, 数值左缘 x, 数值字号]（旧画法不记）
 var last_bars: Array = []
 const HEAD := 42.0
 ## D1c：数值字号基准（跟字号设置缩放）、血／蓝默认预留 5 位、TP 默认 3 位（队里有更大的数就按更大的位数）
 const NUM_FS := 17
 const HP_DIGITS := 5
 const TP_DIGITS := 3
+## D1c r1：量条保底宽、数字字号回缩下限（窄栏：数字让量条，不让量条被压到没）
+const MIN_BAR := 16.0
+const MIN_NUM_FS := 11
 const TITLE_H := 44.0
 ## 助力卡上状态图标从右边让出多少（角标约 42 宽，从行右缘 2 起，右边距 12）
 const HELPER_TAG_ROOM := 36.0
@@ -194,18 +197,21 @@ func _draw() -> void:
 			specs.append(["tp", 0.6, XUiSkin.TP, XUiSkin.TP_TEXT])
 		var unit := (avail - 8.0 * (specs.size() - 1)) / (2.6 if specs.size() == 3 else 2.0)
 		var bx := x
+		var nfs := XUiSkin.fs(NUM_FS)
+		if XUiSkin.detail_on():   # D1c r1：窄栏（如 300px 状态页）里数字字号回缩，保住量条保底宽；一行三块用同一字号
+			for spec in specs:
+				nfs = mini(nfs, fit_fs(num, spec[0], unit * spec[1], members, XUiSkin.fs(NUM_FS)))
 		for spec in specs:
 			var w: float = unit * spec[1]
 			var v := float(m.get(spec[0], 0))
 			var mx := float(m.get("m" + spec[0], 0))
 			var txt := str(int(v))
 			if XUiSkin.detail_on():   # D1c：按当前字号预留定宽数字栏，量条右缘整队齐平，数值右对齐在块右缘
-				var nfs := XUiSkin.fs(NUM_FS)
 				var col_w := value_col_w(num, nfs, spec[0], members)
-				var tk := Rect2(bx, y2 + 2 - XUiSkin.bar_h(spec[0]), maxf(w - col_w - 4, 8.0), XUiSkin.bar_h(spec[0]))
+				var tk := Rect2(bx, y2 + 2 - XUiSkin.bar_h(spec[0]), maxf(w - col_w - 4, MIN_BAR), XUiSkin.bar_h(spec[0]))
 				var rt := clampf(v / mx, 0.0, 1.0) if mx > 0.0 and v > 0.0 else 0.0
 				XUiSkin.draw_gauge(ci, tk, rt, spec[2])
-				last_bars.append([i, spec[0], tk.end.x])
+				last_bars.append([i, spec[0], tk.end.x, bx + w - num.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, nfs).x, nfs])
 				XUiSkin.draw_num_right(self, num, bx + w, y2 + 6, txt, nfs, spec[3])
 				bx += w + 8
 				continue
@@ -222,8 +228,16 @@ func _draw() -> void:
 static func value_col_w(num: Font, fs: int, key: String, mems: Array) -> float:
 	var digits := TP_DIGITS if key == "tp" else HP_DIGITS
 	for m in mems:
-		digits = maxi(digits, str(int(m.get("m" + key, 0))).length())
+		digits = maxi(digits, maxi(str(int(m.get("m" + key, 0))).length(), str(int(m.get(key, 0))).length()))
 	return XUiSkin.mono_digit_cell(num, fs) * digits
+
+
+## D1c r1：块宽 w 里数值栏＋4 间距＋量条保底宽放不下时，数字字号从 start 逐级缩到 MIN_NUM_FS（缩到底仍放不下则量条取保底、数字不再缩）
+static func fit_fs(num: Font, key: String, w: float, mems: Array, start: int) -> int:
+	var fs := start
+	while fs > MIN_NUM_FS and value_col_w(num, fs, key, mems) + 4.0 + MIN_BAR > w:
+		fs -= 1
+	return fs
 
 
 ## 「助力」角标的矩形（行矩形 r 里，右上角）

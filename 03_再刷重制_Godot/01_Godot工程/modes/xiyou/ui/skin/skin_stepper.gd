@@ -57,6 +57,8 @@ var _hold := -1          # 按住的钮号
 var _hold_t := 0.0
 var _press := -1         # 按下反馈
 var _edit: LineEdit
+## D1c 测试用：最近一次 _draw 数字走哪条路（"mono"＝定宽基准框、"legacy"＝旧整串居中）
+var last_num := ""
 
 
 func _init() -> void:
@@ -328,10 +330,12 @@ func _draw() -> void:
 	var nr := number_rect()
 	var vt := XSkinStepper.group(value)
 	if XUiSkin.detail_on():   # D1c：数量按最大值位宽定居中基准框、框内右对齐（逐位定宽），位数变化个位不跳
+		last_num = "mono"
 		var spec := number_spec(num, nr, value, max_value)
 		XUiSkin.draw_mono_digits(self, num, spec.right, nr.position.y + nr.size.y / 2.0 + int(spec.fs) * 0.36, vt, int(spec.fs),
 			XUiSkin.TEXT_3 if dim else XUiSkin.GOLD_LIGHT, HORIZONTAL_ALIGNMENT_RIGHT)
 		return
+	last_num = "legacy"
 	var nfit := XSkinList.fit_text(num, vt, nr.size.x, XUiSkin.fs(NUM_FS), 15)
 	var vw := num.get_string_size(str(nfit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(nfit[1])).x
 	XUiSkin.ds(self, num, Vector2(nr.position.x + (nr.size.x - vw) / 2.0, nr.position.y + nr.size.y / 2.0 + int(nfit[1]) * 0.36), str(nfit[0]),
