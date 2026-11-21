@@ -512,7 +512,11 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 				var d := maxf(0.0, eb - _enemy_hp(logic))
 				ours += d
 				if raw_mode:
-					var rd := _raw_hits(logs)   # T239：日志里的原始伤害（hpDamage 扣血前、不截断，含附加段）：一下打掉全部血量（马氏双节棍等）时也量得出真伤害
+					# T239：出手前已补满，没打穿时掉血量 d 就是真伤害（含状态效果脚本里直接 gainHp 的附伤，这类日志里没有，25 层劫运神镖）；
+					# 一下打穿全部血量（马氏双节棍等）时 d 被截断，日志原始伤害 rd（hpDamage 扣血前、不截断，含附加段）更大。两者取大
+					var rd := maxf(d, _raw_hits(logs))
+					if debug and d > _raw_hits(logs) + 1.0:
+						print("DBGRAW t%d %s skill=%s d=%.0f logRaw=%.0f" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-", d, _raw_hits(logs)])
 					raw_ours += rd
 					turn_raw += rd
 					if rd > 0.0:
@@ -524,10 +528,10 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 			raw += float(logic.enemies.reduce(func(t, e): return t + float(e.dealt), 0.0)) - db
 			if not u is XActor:
 				theirs += maxf(0.0, pb - _party_hp(logic))
-			if raw_mode:
-				_revive_enemies(logic)   # T239（核 P1-1）：谁的行动（含反击、事件）打死了敌人都当场复活补满，不让一下秒杀提前收场
 			if debug:
 				print("DBG2 t%d %s skill=%s partyLoss=%.0f enemyLoss=%.0f" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-", pb - _party_hp(logic), eb - _enemy_hp(logic)])
+			if raw_mode:
+				_revive_enemies(logic)   # T239（核 P1-1）：谁的行动（含反击、事件）打死了敌人都当场复活补满，不让一下秒杀提前收场
 			if logic.is_over():
 				break
 		done += 1
