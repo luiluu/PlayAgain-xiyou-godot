@@ -500,7 +500,7 @@ static func paint_ops(c: XMVCanvas, ops: Array) -> void:
 			c.icon(int(o[1]), o[2], o[3])
 		elif o[0] == "radar":  # ["radar", 六维, 中心 x, 中心 y, 半径]：T278，天启篇人物图鉴六维雷达（旧窗口字与色）
 			XSkinSixDimRadar.paint(c, Vector2(o[2], o[3]), float(o[4]), o[1], {"compact": true, "font": XUI.font(), "text": XUI.TEXT,
-				"dim": XUI.SYSTEM, "fs": 18})
+				"dim": XUI.SYSTEM, "fs": o[5] if o.size() > 5 else 18})
 		else:
 			c.text(o[1], o[2], o[3], o[4], o[6], o[8], o[7], o[5])
 

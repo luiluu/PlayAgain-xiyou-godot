@@ -13,6 +13,16 @@ const PARAM_IDS := {"mhp": 0, "mmp": 1, "atk": 2, "def": 3, "mat": 4, "mdf": 5, 
 const ICON_BUFF_START := 32  # Game_BattlerBase.ICON_BUFF_START
 const ICON_DEBUFF_START := 48
 
+## 【T279】战商档一句话提示（玩家可见草稿，待小A 审）；档名在 six_dim.json 的 ai_tier_names
+const TIER_HINTS := {
+	1: "不懂算计，出招多半凭运气",
+	2: "凭直觉出手，偶尔抓得住机会",
+	3: "懂得留招和补刀，不容易被牵着走",
+	4: "专挑弱点下手，还会护住残血的同伴",
+	5: "技能、目标都算得极精，几乎不留破绽",
+}
+const IMMUNE_LINE := "免疫停手控制"
+
 static var _re := {}
 
 
@@ -24,7 +34,37 @@ static func _regex(pattern: String) -> RegEx:
 
 ## isBoss：Game_Enemy.setup／transform 记的 _codexBossDifficultyBoss，活着且已现身
 static func is_boss(e) -> bool:
-	return e is XEnemy and e.boss_difficulty_boss and not e.hidden and not e.is_dead()
+	if not e is XEnemy or e.hidden or e.is_dead():
+		return false
+	# T279：四骑士本体（setup_horseman 不记首领难度，原来没有详情面板）在六维开着时也算首领，才能展开详情看「六维」页签；六维关着与原来一样
+	return e.boss_difficulty_boss or (not e.horseman.is_empty() and bool(e.horseman.get("knight", false)) and XTianqiSixDim.active())
+
+
+## 【T279】六维只读摘要（怪物图鉴、战斗内首领详情「六维」页签共用）：不生效（西游档、开关关）回 {}；
+## 否则 {six, tier, tier_name, tier_line「战商 4 档·狡黠」, wit_hint, resist_pct, resist_line, immune, control_line}。
+## immune＝首领硬免控（四骑士、霸体首领）；control_line 免控时写「免疫停手控制」，否则「控制抗性 +x%」。不含任何战力。
+static func six_summary(b, logic = null) -> Dictionary:
+	if b == null or not XTianqiSixDim.active():
+		return {}
+	var six := XTianqiSixDim.of_battler(b, logic)
+	var tier := XTianqiSixDim.ai_tier_of(six)
+	var names: Dictionary = XTianqiSixDim.data().get("ai_tier_names", {})
+	var tname := str(names.get(str(tier), ""))
+	var pct := XTianqiSixDim.resist_pct_of(six)
+	var immune := hard_immune(b)
+	var resist_line := XSkinSixDimRadar.resist_text(pct)
+	return {"six": six, "tier": tier, "tier_name": tname, "tier_line": "战商 %d 档·%s" % [tier, tname] if tname != "" else "战商 %d 档" % tier,
+		"wit_hint": str(TIER_HINTS.get(tier, "")), "resist_pct": pct, "resist_line": resist_line, "immune": immune,
+		"control_line": IMMUNE_LINE if immune else resist_line}
+
+
+## 首领硬免控：四骑士本体（XTianqiHorsemen.blocks_state 的前提）与霸体首领；只读判断，不碰结算
+static func hard_immune(b) -> bool:
+	if not b is XEnemy:
+		return false
+	if not b.horseman.is_empty() and bool(b.horseman.get("knight", false)):
+		return true
+	return b.boss_difficulty_boss and b.boss_hyper_armor
 
 
 ## clean：去掉 \c[4] 这类转义和 <标签>

@@ -50,6 +50,12 @@ const NO_WIDTH := 4294967295.0
 ## 回退开关 BATTLE_SHOW_UNREGISTERED = false：照原版写「？？？」（O-353）。
 static var BATTLE_SHOW_UNREGISTERED := true
 
+## 【T279】天启篇六维：已登记敌人在状态窗左栏右半放紧凑雷达＋两行简注，立绘改靠左缩小让位；未登记（？？？）不画
+const SIX_CENTER := Vector2(306.0, 112.0)   # 内容坐标（状态窗内容区原点）
+const SIX_R := 48.0
+const SIX_SPRITE_CENTER_X := 104.0
+const SIX_SPRITE_MAX_W := 200.0
+
 ## 战斗内：只列本场敌人、不写序号、没登记也画（isAllEnemies 为假）
 var in_battle := false
 
@@ -270,6 +276,12 @@ static func status_ops(e: XEnemy, all := true) -> Array:
 				for a in range(0, ceili(line.length() / 15.0) + 1):
 					ops.append(_t(line.substr(a * 15, 15) if a * 15 < line.length() else "", x, y, COLW))
 					y += LH
+	# T279 六维：天启篇、已登记才画（hide 时＝战斗内未登记，沿用「？？？」不剧透）
+	var sm := XBossStatus.six_summary(e)
+	if not sm.is_empty() and not hide:
+		ops.append(["radar", sm.six, SIX_CENTER.x, SIX_CENTER.y, SIX_R, 14])
+		ops.append(_t(str(sm.tier_line), 214.0, 186.0, 190.0, XUI.TEXT, "left", 18))
+		ops.append(_t(str(sm.resist_line), 214.0, 212.0, 190.0, XUI.SYSTEM, "left", 18))
 	# 左栏：属性、技能
 	y = LH * 7 + 6.0
 	_element_row(ops, e, y, true, hide)
@@ -357,6 +369,9 @@ func _paint_status(c: XMVCanvas) -> void:
 		var scale := 1.0
 		if src.size.x > CW / 2.0:
 			scale = CW / src.size.x / 2.0
+		if _status_ops.any(func(o): return o[0] == "radar"):   # T279：给六维雷达让位，立绘靠左、最宽 200
+			center.x = SIX_SPRITE_CENTER_X
+			scale = minf(scale, SIX_SPRITE_MAX_W / src.size.x)
 		var sz := src.size * scale
 		c.draw_texture_rect_region(_sprite_tex, Rect2(center - sz / 2.0, sz), src)
 	XActorBook.paint_ops(c, _status_ops)

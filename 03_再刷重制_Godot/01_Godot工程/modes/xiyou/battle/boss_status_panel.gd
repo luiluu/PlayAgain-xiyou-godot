@@ -112,6 +112,19 @@ func page_size() -> int:
 	return maxi(1, floori((DETAIL_H - BODY_Y - FOOTER_HEIGHT) / CARD_HEIGHT))
 
 
+## 【T279】天启篇才有的第四个页签「六维」：详情页签行 异常／增益／全部／六维。西游档与关开关时只有前三个，行为同改前
+func six_tab_on() -> bool:
+	return battler != null and XTianqiSixDim.active()
+
+
+func tab_keys() -> Array:
+	return ["Debuff", "Buff", "All", "Six"] if six_tab_on() else ["Debuff", "Buff", "All"]
+
+
+func six_summary() -> Dictionary:
+	return XBossStatus.six_summary(battler, logic_source.call() if logic_source.is_valid() else null)
+
+
 func rows() -> Array:
 	return XBossStatus.entries(battler).filter(func(r): return filter == "All" or r.kind == filter)
 
@@ -172,6 +185,8 @@ func refresh(force := false) -> void:
 	page = clampi(page, 0, pages - 1)
 	if selected != null and not list.any(func(r): return str(r.id) == str(selected)):
 		selected = null
+	if filter == "Six" and not six_tab_on():
+		filter = "Debuff"
 	var prof := _tq_profile()
 	var tip := XTianqiElements.profile_tooltip(prof)
 	if bar != null:
@@ -227,7 +242,8 @@ func click_detail(p: Vector2) -> void:
 		_layout()
 		return
 	if y >= 43.0 and y < 73.0:
-		filter = ["Debuff", "Buff", "All"][clampi(floori((x - 12.0) / ((w - 24.0) / 3.0)), 0, 2)]
+		var keys := tab_keys()
+		filter = keys[clampi(floori((x - 12.0) / ((w - 24.0) / keys.size())), 0, keys.size() - 1)]
 		selected = null
 		page = 0
 		refresh(true)
@@ -384,13 +400,18 @@ func _paint_detail(c: XMVCanvas) -> void:
 	_attributes(c, w - 231.0, 7.0, 178.0, 28.0)
 	c.text("×", w - 42.0, 7, 27, "center", BLUE, 17, 28)
 	var tabs := [["Debuff", "异常 %d" % bad, BAD], ["Buff", "增益 %d" % good, GOOD], ["All", "全部 %d" % all.size(), BLUE]]
-	var tw := (w - 24.0) / 3.0
-	for i in 3:
+	if six_tab_on():
+		tabs.append(["Six", "六维", BLUE])
+	var tw := (w - 24.0) / tabs.size()
+	for i in tabs.size():
 		var x := 12.0 + i * tw
 		var on: bool = filter == tabs[i][0]
 		if on:
 			_round(c, Rect2(x, 43, tw - 4.0, 28), Color(160 / 255.0, 230 / 255.0, 235 / 255.0, 0.25), 5)
 		c.text(tabs[i][1], x, 43, tw - 4.0, "center", tabs[i][2] if on else MUTED, 14, 28)
+	if filter == "Six" and six_tab_on():
+		_paint_six(c)
+		return
 	var list := rows()
 	var picked = null
 	for r in list:
@@ -418,6 +439,26 @@ func _paint_detail(c: XMVCanvas) -> void:
 		c.text(fit(c, _meta(row), 110.0, 12), w - 125.0, y + 2.0, 109, "right", color, 12, 22)
 		c.text(fit(c, str(row.description).replace("\n", " "), w - 48.0, 14), 24, y + 29.0, w - 48.0, "left", MUTED, 14, 25)
 	_footer(c, page, maxi(1, ceili(list.size() / float(page_size()))), "")
+
+
+## 【T279】「六维」页签：左边雷达（六角名＋档位），右边战商档名与一句话、控制抗性或「免疫停手控制」。不画战力
+const SIX_CENTER := Vector2(150, 222)
+const SIX_R := 78.0
+const SIX_TEXT_X := 272.0
+
+
+func _paint_six(c: XMVCanvas) -> void:
+	var sm := six_summary()
+	if sm.is_empty():
+		return
+	XSkinSixDimRadar.paint(c, SIX_CENTER, SIX_R, sm.six, {"font": XUI.font(), "text": INK, "dim": MUTED, "fs": 14})
+	var tw := DETAIL_W - SIX_TEXT_X - 14.0
+	c.text(str(sm.tier_line), SIX_TEXT_X, BODY_Y + 8.0, tw, "left", BLUE, 17, 26)
+	var y := BODY_Y + 40.0
+	for ln in wrap_text(c, str(sm.wit_hint), tw, 14):
+		c.text(ln, SIX_TEXT_X, y, tw, "left", MUTED, 14, 22)
+		y += 22.0
+	c.text(str(sm.control_line), SIX_TEXT_X, y + 12.0, tw, "left", GOOD if sm.immune else INK, 15, 24)
 
 
 ## CodexElements.drawAttributes：「敌人属性：」＋元素名，总宽超出时字号按比例缩
