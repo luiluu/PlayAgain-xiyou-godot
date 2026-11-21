@@ -29,6 +29,53 @@ const READY := "ready"          # 已下载登记好，等重启
 const FAILED := "failed"
 const ROLLED := "rolled"        # 已手动退回，等重启
 
+## T361（F-07）回退开关：更新页、更新说明页的框改用 XUiSkin 暖炭底＋1px 旧金细线（同统一确认弹窗 XSkinConfirm），
+## 内边距走 8 的网格；false＝回到深紫蓝底＋2px 亮金硬框、22px 上下边距
+static var FRAME_V2 := true
+
+
+## 更新页／更新说明页共用的框（更新说明页旧样式也借它）
+static func frame_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	if FRAME_V2:
+		style.bg_color = Color(XSkinConfirm.DLG_LOW, 0.98)
+		style.border_color = Color(XUiSkin.GOLD, 0.48)
+		style.set_border_width_all(1)
+		style.set_corner_radius_all(XUiSkin.RADIUS)
+		style.anti_aliasing = true
+		style.shadow_color = Color(0, 0, 0, 0.62)
+		style.shadow_size = 18
+		style.shadow_offset = Vector2(0, 8)
+		style.content_margin_left = XUiSkin.PAD_LG + XUiSkin.GRID
+		style.content_margin_right = XUiSkin.PAD_LG + XUiSkin.GRID
+		style.content_margin_top = XUiSkin.PAD_LG
+		style.content_margin_bottom = XUiSkin.PAD_LG
+		return style
+	style.bg_color = Color(0.06, 0.05, 0.1, 0.96)
+	style.border_color = Color(0.86, 0.72, 0.38, 0.9)
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(10)
+	style.shadow_color = Color(0, 0, 0, 0.6)
+	style.shadow_size = 18
+	style.content_margin_left = 32
+	style.content_margin_right = 32
+	style.content_margin_top = 22
+	style.content_margin_bottom = 22
+	return style
+
+
+static func dim_color(a: float) -> Color:
+	return Color(0.03, 0.024, 0.024, a) if FRAME_V2 else Color(0, 0, 0, a)
+
+
+static func title_color() -> Color:
+	return XUiSkin.GOLD_LIGHT if FRAME_V2 else Color(1.0, 0.86, 0.5)
+
+
+static func line_color() -> Color:
+	return Color(XUiSkin.LINE, 0.35) if FRAME_V2 else Color(0.86, 0.72, 0.38, 0.5)
+
+
 var client: XUpdateClient
 var state := "checking"
 var _title: Label
@@ -182,7 +229,7 @@ func _ready() -> void:
 	theme = XUI.theme()
 	var dim := ColorRect.new()
 	dim.name = "Dim"
-	dim.color = Color(0, 0, 0, 0.95 if forced else 0.72)  # 强制更新：标题整个盖住
+	dim.color = dim_color(0.95 if forced else 0.72)  # 强制更新：标题整个盖住
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dim)
@@ -193,29 +240,18 @@ func _ready() -> void:
 	_panel = PanelContainer.new()
 	_panel.name = "Panel"
 	_panel.mouse_filter = Control.MOUSE_FILTER_STOP  # 点框里不算点外面
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.06, 0.05, 0.1, 0.96)
-	style.border_color = Color(0.86, 0.72, 0.38, 0.9)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(10)
-	style.shadow_color = Color(0, 0, 0, 0.6)
-	style.shadow_size = 18
-	style.content_margin_left = 32
-	style.content_margin_right = 32
-	style.content_margin_top = 22
-	style.content_margin_bottom = 22
-	_panel.add_theme_stylebox_override("panel", style)
+	_panel.add_theme_stylebox_override("panel", frame_style())
 	center.add_child(_panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	_panel.add_child(box)
-	_title = XUI.label("", 32, Color(1.0, 0.86, 0.5))
+	_title = XUI.label("", 32, title_color())
 	_title.name = "Title"
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(_title)
 	var line := ColorRect.new()
-	line.color = Color(0.86, 0.72, 0.38, 0.5)
-	line.custom_minimum_size = Vector2(0, 2)
+	line.color = line_color()
+	line.custom_minimum_size = Vector2(0, 1 if FRAME_V2 else 2)
 	box.add_child(line)
 	_scroll = ScrollContainer.new()
 	_scroll.name = "Scroll"

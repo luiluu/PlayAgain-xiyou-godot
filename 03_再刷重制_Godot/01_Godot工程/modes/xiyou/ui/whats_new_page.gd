@@ -80,7 +80,7 @@ func _ready() -> void:
 	var t := texts(record)
 	var dim := ColorRect.new()
 	dim.name = "Dim"
-	dim.color = Color(0, 0, 0, 0.72)
+	dim.color = Color(0, 0, 0, 0.72) if skin else XUpdatePage.dim_color(0.72)
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dim)
@@ -96,15 +96,15 @@ func _ready() -> void:
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	_panel.add_child(box)
-	var title := _label(t["title"], XUiSkin.FS_PAGE if skin else 32, XUiSkin.GOLD if skin else Color(1.0, 0.86, 0.5))
+	var title := _label(t["title"], XUiSkin.FS_PAGE if skin else 32, XUiSkin.GOLD if skin else XUpdatePage.title_color())
 	title.name = "Title"
 	if skin:
 		title.add_theme_font_override("font", XUiSkin.font("title"))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(title)
 	var line := ColorRect.new()
-	line.color = Color(XUiSkin.LINE, 0.35) if skin else Color(0.86, 0.72, 0.38, 0.5)
-	line.custom_minimum_size = Vector2(0, 1 if skin else 2)
+	line.color = Color(XUiSkin.LINE, 0.35) if skin else XUpdatePage.line_color()
+	line.custom_minimum_size = Vector2(0, 1 if skin or XUpdatePage.FRAME_V2 else 2)  # T361 P2-2：同 update_page 1px
 	box.add_child(line)
 	_scroll = ScrollContainer.new()
 	_scroll.name = "Scroll"
@@ -149,18 +149,7 @@ func _panel_style() -> StyleBox:
 		s.content_margin_top = XUiSkin.PAD_LG
 		s.content_margin_bottom = XUiSkin.PAD_LG
 		return s
-	var style := StyleBoxFlat.new()  # 同 XUpdatePage 的框
-	style.bg_color = Color(0.06, 0.05, 0.1, 0.96)
-	style.border_color = Color(0.86, 0.72, 0.38, 0.9)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(10)
-	style.shadow_color = Color(0, 0, 0, 0.6)
-	style.shadow_size = 18
-	style.content_margin_left = 32
-	style.content_margin_right = 32
-	style.content_margin_top = 22
-	style.content_margin_bottom = 22
-	return style
+	return XUpdatePage.frame_style()  # 同 XUpdatePage 的框（T361 F-07：暖炭底＋1px 旧金细线）
 
 
 func _make_button(text: String) -> Button:
