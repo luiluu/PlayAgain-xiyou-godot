@@ -469,6 +469,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	_drain(logic, logic.troop_events())   # 开战的敌群事件（守层者开场强制技能：天道屠灭、大道领域、轮回困难等）
 	var ours := 0.0
 	var theirs := 0.0
+	var dot := 0.0   # T239（核 P2-3）：回合末结算（持续伤害、按最大生命百分比的毒伤等，不吃出伤倍率）打我方的，单列不进 enemyDmg
 	var raw := 0.0   # 守层者打出的伤害（扣血前、不截断；含反击）
 	var raw_ours := 0.0
 	var per_turn := []   # 每回合我方原始伤害（看破阵免疫回合打 0 的有几回合）
@@ -561,13 +562,15 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 		var snap_end := _enemy_snap(logic) if raw_mode else {}
 		var pb_end := _party_hp(logic)
 		logic.end_turn()
+		dot += maxf(0.0, pb_end - _party_hp(logic))
+		var pb_ev := _party_hp(logic)
 		_drain(logic, logic.troop_events(null, true))   # T239（核 P3-2）：回合末的敌群事件页，同战斗画面与 _fight
-		theirs += maxf(0.0, pb_end - _party_hp(logic))   # T239 r2（核 P3-4）：回合末持续伤害之外，回合末敌群页打我方的也算守层者的（先跑事件再复活）
+		theirs += maxf(0.0, pb_ev - _party_hp(logic))   # T239 r2（核 P3-4）：回合末敌群页打我方的算守层者的（先跑事件再复活）；回合末持续伤害不算（P2-3）
 		if raw_mode:
 			_revive_enemies(logic, snap_end, revived)   # 回合末持续伤害、事件打死的也复活
 	hits.sort()
 	var n := maxf(1.0, float(done))
-	var out := {"dmg": ours / n, "perTurn": per_turn, "enemyDmg": theirs / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
+	var out := {"dmg": ours / n, "perTurn": per_turn, "enemyDmg": theirs / n, "enemyDot": dot / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
 		"hits": hits.size(), "partyHp": logic.actors.reduce(func(t, a): return t + float(a.mhp), 0.0),
 		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0),
 		"atkScale": _out_scale(logic)}   # T229：守层者这场实际用的出伤倍率（没给 --atk-table 时是游戏里的表）
@@ -611,6 +614,7 @@ static func _revive_enemies(logic: XBattleLogic, snap := {}, revived := {}) -> v
 				e.effect_lists.clear()
 				e.effect_snapshot_valid = false
 				e.param_mark_dirty()
+				e.param_refresh()   # T239（核 P3-5）：还原增减益后重算能力值
 				for key in ["cur", "next"]:
 					var order: Array = logic.current_order if key == "cur" else logic.next_order
 					var old: Array = snap.get(key, [])
@@ -668,7 +672,7 @@ func _run_both(list: Array) -> void:
 		for st in states:
 			per.append(_fight_both(st, 0))
 		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": _median(per.map(func(r): return r.atkScale)),
-			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
+			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyDot": _median(per.map(func(r): return float(r.get("enemyDot", 0.0)))), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
 			"hit": _median(per.map(func(r): return r.hitMedian)), "partyHp": _median(per.map(func(r): return r.partyHp)),
 			"enemyHp": per[0].enemyHp, "teams": per}
 		if raw_mode:
