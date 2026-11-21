@@ -93,6 +93,11 @@ static func metrics() -> Array:
 	return [roundi(FONT_SIZE * k), roundi(LINE_HEIGHT * k), WIDTH * minf(k, MAX_WIDEN)]
 
 
+## 旧皮肤／NOTICE_V2 关时的兜底停留（含淡入淡出）：T340 D4 按字数；DETAIL_V1 关回写死 3.0
+static func hold_for(text: String) -> float:
+	return XSkinNoticeLane.calc_duration(text) if XUiSkin.DETAIL_V1 else TIMEOUT
+
+
 func _add(message: String) -> void:
 	var on := XUiSkin.on()
 	var text := plain(message)
@@ -185,7 +190,8 @@ func _add(message: String) -> void:
 	fit.call_deferred()
 	var tw := slot.create_tween()
 	tw.tween_property(slot, "modulate:a", 1.0, FADE)
-	tw.tween_interval(TIMEOUT - FADE)
+	var hold := hold_for(text)
+	tw.tween_interval(hold - FADE)
 	tw.tween_callback(func(): box.minimum_size_changed.disconnect(fit))
 	tw.tween_property(slot, "modulate:a", 0.0, FADE)
 	tw.parallel().tween_property(slot, "custom_minimum_size:y", 0.0, FADE)

@@ -29,6 +29,21 @@ const LINE_H := 22.0
 ## 让位：这个组里亮着的东西（4 秒难度横幅）和首领血弧，提示道放到它们下面
 const AVOID_GROUP := "skin_notice_avoid"
 
+## T340 D4（界面细节规范 6）：按字数定时、分级积压、菜单态悬停暂停／轻点跳过。回退：XUiSkin.DETAIL_V1 = false 回上面的 HOLD／HOLD_FAST 老算法
+const D4_BASE := 1.6
+const D4_PER_CHAR := 0.085
+const D4_MIN := 1.8
+const D4_MAX := 5.5
+const D4_WARN_MUL := 1.2
+const D4_WARN_MAX := 6.0
+const D4_FLOOR := 1.2          # 积压加速后的可读底线
+const D4_MERGE_LEFT := 1.2
+const D4_BACKLOG_MID := 0.65   # 排队 2～4 条
+const D4_BACKLOG_HIGH := 0.50  # 排队 ≥5 条
+const D4_HOVER_LEAVE := 0.8    # 鼠标移开后至少再留
+const D4_FADE_OUT := 0.16
+const D4_PUNCT := "，。！？；：、（）《》【】「」·…—.,!?;:()[]\"'"
+
 ## 排队的条（没显示的）；出现过的条（测试核对用）
 static var queue: Array = []
 static var history: Array = []
@@ -37,6 +52,9 @@ static var auto_tick := true
 
 var cur := {}
 var t := 0.0
+## T340 D4：鼠标停在胶囊上（只有菜单态胶囊才收鼠标）；轻点跳过时的淡出长度
+var hover := false
+var _skip_fade := 0.0
 var chip: Chip
 var _last_usec := 0
 
@@ -44,6 +62,46 @@ var _last_usec := 0
 ## 新皮肤开着、开关没关
 static func on() -> bool:
 	return NOTICE_V2 and XUiSkin.on()
+
+
+## 等效阅读字数：空白和标点不计；≥0x2E80 的字每个 1.0；其余可见字符（字母、数字、×、± 等）每 2 个计 1.0（向上取整）
+static func effective_chars(text: String) -> float:
+	var cjk := 0
+	var other := 0
+	for i in text.length():
+		var u := text.unicode_at(i)
+		var ch := text.substr(i, 1)
+		if ch.strip_edges() == "" or u <= 0x20 or D4_PUNCT.contains(ch):
+			continue
+		if u >= 0x2E80:
+			cjk += 1
+		else:
+			other += 1
+	return float(cjk) + ceilf(other * 0.5)
+
+
+## 警示：显式 "warn" 键优先；没传按 color 兜底（橙或红）
+static func is_warn(it: Dictionary) -> bool:
+	if it.has("warn"):
+		return bool(it["warn"])
+	var c = it.get("color", null)
+	if c is Color:
+		for w in [XUiSkin.DOWN, XUiSkin.POLISH_DOWN, XUiSkin.SEL_LINE, XUiSkin.SEL_FILL]:
+			if (c as Color).is_equal_approx(w):
+				return true
+	return false
+
+
+## 一条提示该停多久（含淡入淡出）。backlog＝排在后面的条数：≤1 不变，2～4 ×0.65，≥5 ×0.50，加速后保底 1.2 秒
+static func calc_duration(text: String, warn := false, backlog := 0) -> float:
+	var d := clampf(D4_BASE + D4_PER_CHAR * effective_chars(text), D4_MIN, D4_MAX)
+	if warn:
+		d = minf(d * D4_WARN_MUL, D4_WARN_MAX)
+	if backlog >= 5:
+		d = maxf(d * D4_BACKLOG_HIGH, D4_FLOOR)
+	elif backlog >= 2:
+		d = maxf(d * D4_BACKLOG_MID, D4_FLOOR)
+	return d
 
 
 ## 放一条进提示道。item：kind（ach／save／power／prestige／skill／toast）、title、sub、icon（图标号）、badge（成就徽章图名）
@@ -83,7 +141,7 @@ func _merge_into(dst: Dictionary, it: Dictionary, showing: bool) -> bool:
 	else:
 		dst["count"] = int(dst.get("count", 1)) + 1
 	if showing and chip != null:
-		t = minf(t, maxf(_total(dst) - MERGE_LEFT, 0.0))   # 正在显示的并进新数后至少再亮 MERGE_LEFT 秒（T266 核查 P3-3）
+		t = minf(t, maxf(_total(dst) - (D4_MERGE_LEFT if XUiSkin.detail_on() else MERGE_LEFT), 0.0))   # 正在显示的并进新数后至少再亮 MERGE_LEFT 秒（T266 核查 P3-3）
 		_relayout()
 	return true
 
@@ -137,6 +195,11 @@ func _init() -> void:
 	chip = Chip.new()
 	chip.lane = self
 	chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	chip.mouse_entered.connect(func(): set_hover(true))
+	chip.mouse_exited.connect(func(): set_hover(false))
+	chip.gui_input.connect(func(e: InputEvent):
+		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+			skip())
 	chip.visible = false
 	add_child(chip)
 	_last_usec = Time.get_ticks_usec()
@@ -154,9 +217,37 @@ func _process(_delta: float) -> void:
 
 ## 这一条该停多久：积压超过 BACKLOG 条时提速；折了两行的多给 0.8 秒
 func _total(it: Dictionary) -> float:
+	if XUiSkin.detail_on():   # T340 D4：按字数
+		return calc_duration(str(it.get("title", "")) + str(it.get("sub", "")), is_warn(it), queue.size())
 	if queue.size() > BACKLOG:
 		return HOLD_FAST
 	return HOLD + (0.8 if int(it.get("_lines", 1)) > 1 else 0.0)
+
+
+## 菜单态胶囊收鼠标（悬停暂停、轻点跳过）；战斗等其它场合照旧穿透
+func _sync_mouse() -> void:
+	var want := XUiSkin.detail_on() and not cur.is_empty() and _menu_open(get_tree()) if get_tree() != null else false
+	chip.mouse_filter = Control.MOUSE_FILTER_STOP if want else Control.MOUSE_FILTER_IGNORE
+	if not want:
+		hover = false
+
+
+## 鼠标进出胶囊（菜单态）：移开后至少再留 0.8 秒
+func set_hover(on_: bool) -> void:
+	if on_ == hover:
+		return
+	hover = on_
+	if not on_ and not cur.is_empty():
+		t = minf(t, maxf(_total(cur) - D4_HOVER_LEAVE, 0.0))
+
+
+## 轻点胶囊：立即用 0.12 秒淡出
+func skip() -> void:
+	if cur.is_empty() or not XUiSkin.detail_on():
+		return
+	hover = false
+	_skip_fade = FADE
+	t = maxf(t, _total(cur) - FADE)
 
 
 ## 走 dt 秒
@@ -167,10 +258,13 @@ func step(dt: float) -> void:
 			return
 		cur = queue.pop_front()
 		t = 0.0
+		hover = false
+		_skip_fade = 0.0
 		_relayout()
 		chip.visible = true
 	else:
-		t += dt
+		if not (hover and XUiSkin.detail_on()):   # T340 D4：菜单态鼠标停在胶囊上＝暂停倒计时
+			t += dt
 	var total := _total(cur)
 	if t >= total:
 		cur = {}
@@ -178,7 +272,11 @@ func step(dt: float) -> void:
 		step(0.0)
 		return
 	var fade := FADE if XUiSkin.motion() != XUiSkin.Motion.OFF else 0.0
-	chip.modulate.a = clampf(minf(t / fade, (total - t) / fade), 0.0, 1.0) if fade > 0.0 else 1.0
+	var fade_out := fade
+	if fade > 0.0 and XUiSkin.detail_on():
+		fade_out = _skip_fade if _skip_fade > 0.0 else D4_FADE_OUT
+	chip.modulate.a = clampf(minf(t / fade, (total - t) / fade_out), 0.0, 1.0) if fade > 0.0 else 1.0
+	_sync_mouse()
 	_place()
 
 
@@ -466,6 +564,9 @@ class Chip extends Control:
 		var r := Rect2(Vector2.ZERO, size)
 		var sb := StyleBoxFlat.new()
 		sb.bg_color = Color(XUiSkin.PANEL_LOW, 0.92)
+		if XUiSkin.detail_on():   # T340 D4：S3 浮层底（渐变取中）
+			var g := XUiSkin.surface_grad(XUiSkin.Surface.S3)
+			sb.bg_color = (g[0] as Color).lerp(g[1], 0.5)
 		sb.border_color = Color(XUiSkin.LINE, 0.45)
 		sb.set_border_width_all(1)
 		sb.set_corner_radius_all(int(minf(size.y / 2.0, 22.0)))
