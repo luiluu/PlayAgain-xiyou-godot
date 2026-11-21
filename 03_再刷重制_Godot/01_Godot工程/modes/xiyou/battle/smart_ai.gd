@@ -2,7 +2,7 @@ class_name XSmartAI
 extends RefCounted
 ## Codex_SmartBattleAI（设置「智能战斗AI（自动战斗）」，默认开）：自动战斗时按收益/代价给每个可用技能与药品打分，选最高分。
 ## 照正式 v0.18 源码移植通用部分（choose → chooseScored → scoreCandidate），对照探针 mv_oracle/smart_ai_probe.cjs。
-## - 候选：已会的技能（scope>0、无 <Hide in Battle>、能用；带公共事件效果的只有附在伤害技能上的「纯能力成长」事件可用；O-待定-2 可另放复活技，见 o_revive_ce，默认关）＋普通攻击，
+## - 候选：已会的技能（scope>0、无 <Hide in Battle>、能用；带公共事件效果的只有附在伤害技能上的「纯能力成长」事件可用；O-627 可另放复活技，见 o_revive_ce，默认关）＋普通攻击，
 ##   再加持有的消耗品里含效果 11/12/22/34 的。
 ## - 伤害估算 safeDamage：只算受限的算式（a/b 的能力值、hpRate、状态、熟练度、变量、Math 函数之外的写法一律 0），
 ##   × 属性有效度 × pdr/mdr × 段数（YEP 行动序列里 ACTION EFFECT 条数，转换器预算为 yepEffects；攻击另加追加次数）
@@ -58,11 +58,11 @@ static var o_projection := true
 ## O-131（优化登记）：档案给了段数 hits 时，原版仍再乘 action.numRepeats（普攻带追加次数），甚尔游云「5＋追加」段又乘了
 ## 一次（1＋追加），追加次数大于 0 时估伤翻倍（实战甚尔把目标收成一个，只打 hits 段）。true＝hits 就是总段数；false＝照原版相乘
 static var o_profile_hits := true
-## O-待定-2（T331，优化登记）：自动战斗会放带公共事件的复活技。默认关（协调 11-21：Kyo 还没定西游档放不放，推荐不放；定了要放再翻开）。原版 legalCandidate 一律不放带公共事件的非伤害技，
+## O-627（T331，优化登记）：自动战斗会放带公共事件的复活技。默认关（协调 11-21：Kyo 还没定西游档放不放，推荐不放；定了要放再翻开）。原版 legalCandidate 一律不放带公共事件的非伤害技，
 ## 次级复活术 4549、复苏之歌 622、生命赞歌 825、沉鱼萝雁 3760、妙语生花 4829、圣光救赎·圣 5782 这类在自动战斗里从来用不上。
 ## 现在：目标是倒下的队友（范围 9／10）、会复活（效果 22 解除战斗不能，或伤害类型生命回复）、公共事件（含 117 子事件）里没有 TQ_CE_BLOCK
 ## 危险指令的技能放进候选（开时西游档、天启篇都生效；天启篇不靠它，O-623 tq_ce_ok 本来就放）；只在有队友倒下时有分（recovery_utility），MP／冷却不够照旧 can_use 挡掉。
-## O-待定-1 o_revive_once（默认开，两种档都生效，不看 o_revive_ce）：同一回合同一个倒下的人只安排一次复活（note_revive／revive_planned，技能和道具都算），不全队去救同一个人：
+## O-628 o_revive_once（默认开，两种档都生效，不看 o_revive_ce）：同一回合同一个倒下的人只安排一次复活（note_revive／revive_planned，技能和道具都算），不全队去救同一个人：
 ## 在 XBattleLogic.execute 真出手（没被控跳过、没被禁用／封印／打倒）、算出实际目标之后才记，只记实际目标里倒下的我方
 ## （混乱打偏、挂机表单体复活只救一个时，别的倒下的人照样有人救；T331 核查 r1 P1-1／P2-1）。
 ## 复活技的公共事件检查比天启篇放行更严（REVIVE_CE_BLOCK，并递归 339 强制行动那招自己的公共事件；P3-1）。
