@@ -6,6 +6,8 @@ extends Node
 ## 存档照天启篇开局置 DCultyL（敌人特性 22 等 ×2，同 T314）。
 ## 「通关 C 层」：等级、装备、法宝取 C＋1 层，变量 20＝C＋1（XZhenqi.progress_floor＝C，心魔参照第 C 层守层者）。
 ## 每队两场：心魔（打心魔的是队里第一个输出职责的人，1 号走 770）、同层守层者（第 C 层那场）；都照游戏跑敌群事件，自动战斗打到分出胜负，最多 turns 回合。
+## --traits=on|off：开关 XTianqiXinmoTraits.ENABLED（T320 r2；默认开。off＝T315 只对齐、无特点，对照用）。每场另报：特点挂上没有（key）、播报命中条数（hits=开战/触发文字 key:次数，沾尘无触发文字，用我方减益人次/回合 debuff 代替）、
+##   fills（我方印纹满槽次数合计）、to（40 回合没打完＝超时，不算赢也不算输）。
 ## --keep-xparam：心魔不去守层者的闪避、魔闪、每回合回血（XGuardianRework.XINMO_DROP_XPARAM 置空），量胜率差是不是这几项带来的。
 ## 心魔「立住」＝赢且打心魔的人活着（XZhenqi.on_victory 同口径）。--xinmo=off：关 XGuardianRework.XINMO（心魔照原版，对照用）。
 ## 输出每行：XINMO passed=C team=[…] who=立境人 xinmo=won/stand/turns guardian=won/turns，末尾汇总 XINMO_SUMMARY。
@@ -38,6 +40,10 @@ func _ready() -> void:
 			sets = int(a.substr(7))
 		elif a.begins_with("--battles="):
 			battles = int(a.substr(10))
+		elif a == "--traits=off":
+			XTianqiXinmoTraits.ENABLED = false
+		elif a == "--traits=on":
+			XTianqiXinmoTraits.ENABLED = true
 		elif a == "--xinmo=off":
 			XGuardianRework.XINMO = false
 		elif a == "--keep-xparam":
@@ -86,11 +92,14 @@ func _fight(s: XState, troop: int, who: XActor = null) -> Dictionary:
 		"eva": foe.map(func(e): return snappedf(e.xparam(1), 0.01)), "hrg": foe.map(func(e): return snappedf(e.xparam(7), 0.01)),
 		"harmRe": foe.map(func(e): return (e.passive_cache().harmRe as Dictionary).values().reduce(func(m, v): return maxf(m, float(v)), 0.0)),
 		"skills": foe.map(func(e): return e.data().get("actions", []).map(func(x): return int(x.skillId)))}
+	var hits := {}
+	var key0 := XTianqiXinmoTraits.key_of(logic)
+	var debuff_sum := 0
 	BD._drain(logic, logic.troop_events())
 	var done := 0
 	for r in turns:
 		logic.start_turn()
-		logic.take_turn_start_logs()
+		_count(hits, logic.take_turn_start_logs(), key0)
 		var count := 0
 		var first := true
 		while count < 80:
@@ -101,24 +110,78 @@ func _fight(s: XState, troop: int, who: XActor = null) -> Dictionary:
 				break
 			count += 1
 			var cmd := logic.decide(u)
-			logic.act(u, cmd[0], cmd[1])
+			_count(hits, logic.act(u, cmd[0], cmd[1]), key0)
 			if logic.is_over():
 				break
 		done += 1
 		if logic.is_over():
 			break
-		logic.end_turn()
+		for a in logic.actors:
+			if a is XActor and a.is_alive():
+				debuff_sum += XTianqiXinmoTraits.debuff_count(a)
+		_count(hits, logic.end_turn(), key0)
+	var fl := 0
+	for a in logic.actors:
+		fl += XTianqiBrand.fills_of(logic, a)
+	info["fills"] = fl
+	info["key"] = key0
+	info["hits"] = hits
+	info["debuff"] = debuff_sum
 	var left := 0.0
 	for e in logic.enemies:
 		left += maxf(0.0, float(e.hp)) if e.is_alive() else 0.0
 	info["won"] = logic.is_won()
 	info["lost"] = logic.is_lost()
+	info["to"] = not logic.is_over()
 	info["turns"] = done
 	info["enemyLeft"] = int(left)
 	info["stand"] = logic.is_won() and who != null and who.hp > 0
 	XZhenqi.battle = {}
 	XZhenqi.pending_trial = {}
 	return info
+
+
+## 把战报里的特点文字按 xinmo_traits.json 的 open／texts 归类计数（text 里 %s／%d 当通配）；没匹配的不数
+func _count(hits: Dictionary, logs: Array, key: String) -> void:
+	if key == "":
+		return
+	var row := XTianqiXinmoTraits.row(_target_of(key))
+	var pats := {"open": _rx(str(row.get("open", "")))}
+	for k in row.get("texts", {}):
+		pats[k] = _rx(str(row.texts[k]))
+	for l in logs:
+		if not (l is Dictionary) or str(l.get("type", "")) != "battle_text":
+			continue
+		var t := str(l.get("text", ""))
+		for k in pats:
+			if (pats[k] as RegEx).search(t) != null:
+				hits[k] = int(hits.get(k, 0)) + 1
+				break
+
+
+## 格式串（%s／%d／%%）→ 正则：字面部分逐字转义
+static func _rx(fmt: String) -> RegEx:
+	var out := "^"
+	var i := 0
+	while i < fmt.length():
+		var ch := fmt[i]
+		if ch == "%" and i + 1 < fmt.length():
+			var n := fmt[i + 1]
+			out += "%" if n == "%" else ".*"
+			i += 2
+			continue
+		out += "\\" + ch if ch in "\\.^$*+?()[]{}|" else ch
+		i += 1
+	var r := RegEx.new()
+	r.compile(out)
+	return r
+
+
+func _target_of(key: String) -> int:
+	for t in range(1, 7):
+		if XTianqiXinmoTraits.trait_key(t) == key:
+			return t
+	return 0
 
 
 func _run() -> void:
@@ -143,8 +206,8 @@ func _run() -> void:
 			sum.xinmo += 1 if bool(xm.won) else 0
 			sum.stand += 1 if bool(xm.stand) else 0
 			sum.guardian += 1 if bool(gd.get("won", false)) else 0
-			print("XINMO passed=%d team=%s who=%d troop=%d xinmo=won:%s/stand:%s/t%d hp=%s def=%s atk=%s eva=%s hrg=%s harmRe=%s left=%d skills=%s | guardian=%s" % [int(c), str(team), who.actor_id, troop,
-				str(xm.won), str(xm.stand), int(xm.turns), str(xm.hp), str(xm.def), str(xm.atkScale), str(xm.eva), str(xm.hrg), str(xm.harmRe), int(xm.enemyLeft), str(xm.skills),
+			print("XINMO passed=%d team=%s who=%d troop=%d xinmo=won:%s/stand:%s/to:%s/t%d key=%s fills=%d debuff=%d hits=%s hp=%s def=%s atk=%s eva=%s hrg=%s harmRe=%s left=%d skills=%s | guardian=%s" % [int(c), str(team), who.actor_id, troop,
+				str(xm.won), str(xm.stand), str(xm.to), int(xm.turns), str(xm.key), int(xm.fills), int(xm.debuff), JSON.stringify(xm.hits), str(xm.hp), str(xm.def), str(xm.atkScale), str(xm.eva), str(xm.hrg), str(xm.harmRe), int(xm.enemyLeft), str(xm.skills),
 				("won:%s/t%d hp=%s def=%s atk=%s" % [str(gd.won), int(gd.turns), str(gd.hp), str(gd.def), str(gd.atkScale)]) if not gd.is_empty() else "-"])
 	XEnemy.force_roll = -1.0
 	print("XINMO_SUMMARY drop_xparam=%s xinmo_on=%s won=%d/%d stand=%d/%d guardian_won=%d/%d" % [str(XGuardianRework.XINMO_DROP_XPARAM), str(XGuardianRework.XINMO), int(sum.xinmo), int(sum.n), int(sum.stand), int(sum.n), int(sum.guardian), int(sum.n)])
