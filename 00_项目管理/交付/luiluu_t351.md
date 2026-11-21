@@ -1,7 +1,7 @@
 # 交付：luiluu/t351
 
 - 车道／工作者：小o（co），sol＋medium，P6 确定性像素修补
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -17,7 +17,9 @@
 - 复现：`python repair.py before.png ../gpt_mira-feet/T122/before.png OUT.png`；验证：`python repair.py --validate before.png OUT.png`（Pillow）。
 - 窗口 Godot `xiyou_mira_art`：30/30，通过；音频 Dummy；battle_new.png 为真实战斗截图。
 - 4倍纯绿底前后对比 comparison_4x.png。
-- 云端选测及检查：待本轮运行结果。
+- 工具回归：23项全部通过（112秒）；复现 PNG 与目标逐字节一致。
+- 云端选测及检查：本轮运行 44891052073，最终结果见交付回执。
+- PR：https://github.com/luiluu/PlayAgain-xiyou-godot/pull/34 。
 
 ## 交接板
 
