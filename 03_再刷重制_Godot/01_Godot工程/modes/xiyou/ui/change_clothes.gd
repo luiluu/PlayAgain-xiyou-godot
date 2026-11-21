@@ -189,8 +189,8 @@ func _paint_bottom(c: XMVCanvas) -> void:
 func ok() -> void:
 	match mode:
 		"bottom":
-			XSound.system(1)
 			if bottom == 0:
+				XSound.system(1)
 				# onGHOk
 				bottom = -1
 				mode = "category"

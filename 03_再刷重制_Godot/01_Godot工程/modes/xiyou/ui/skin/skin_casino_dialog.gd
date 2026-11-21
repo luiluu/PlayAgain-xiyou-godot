@@ -22,7 +22,7 @@ const T_CANCEL := "取消"
 const T_START := "开始抽取"
 const T_STOP := "停止后续抽取"
 const PANEL_W := 520.0
-const REGION_H := 152.0      # 中间区高（两行 52＋数量选择 44＋状态行＋进度条）
+const REGION_H := 152.0      # 100% 字体时的中间区高；实际按字号算（region_h）
 const ROW_FS := 17
 
 var dlg: XCasinoDialog
@@ -58,17 +58,40 @@ func can_cancel() -> bool:
 
 # ---- 摆位：确认弹窗往下多加一块中间区 ----
 
+## 字号放大（130% 字体）时行距、数量选择、状态行、进度条一起往下让，不写死坐标
+func _fs() -> int:
+	return XUiSkin.fs(ROW_FS)
+
+
+func _line_h() -> float:
+	return maxf(28.0, roundf(_fs() * 1.65))
+
+
+## 数量选择的上沿（相对中间区）：两行字之后留 10px，给底托上伸 3px＋焦点双环外扩 4px
+func stepper_y() -> float:
+	return 2.0 + _line_h() + roundf(_fs() * 1.2) + 10.0
+
+
+## 状态行上沿（相对中间区）
+func status_y() -> float:
+	return stepper_y() + XSkinStepper.H + 12.0
+
+
+func region_h() -> float:
+	return maxf(REGION_H, status_y() + roundf(_fs() * 1.3) + 8.0 + 8.0 + 2.0)
+
+
 func panel_rect() -> Rect2:
 	var p := super()
-	var h := p.size.y + REGION_H
+	var h := p.size.y + region_h()
 	return Rect2(p.position.x, (size.y - h) / 2.0, p.size.x, h)
 
 
 ## 中间区的框（相对整屏）
 func region_rect() -> Rect2:
 	var p := panel_rect()
-	var body_end := p.end.y - PAD - BTN_H - 24.0 - REGION_H
-	return Rect2(p.position.x + PAD, body_end + 12.0, p.size.x - PAD * 2.0, REGION_H)
+	var body_end := p.end.y - PAD - BTN_H - 24.0 - region_h()
+	return Rect2(p.position.x + PAD, body_end + 12.0, p.size.x - PAD * 2.0, region_h())
 
 
 func _notification(what: int) -> void:
@@ -80,7 +103,7 @@ func place_stepper() -> void:
 	if stepper == null:
 		return
 	var r := region_rect()
-	stepper.position = Vector2(r.position.x, r.position.y + 60.0)
+	stepper.position = Vector2(r.position.x, r.position.y + stepper_y())
 	stepper.size = Vector2(r.size.x, XSkinStepper.H)
 
 
@@ -186,6 +209,9 @@ func handle_input(event: InputEvent) -> bool:
 			return true
 		if stepper.handle_input(event):
 			return true
+	elif phase == "drawing" and event.is_action_pressed("ui_accept"):
+		XCasinoBatch.cancel()   # 进行态唯一的红钮：确定＝停止后续抽取
+		return true
 	return event.is_pressed()
 
 
@@ -193,13 +219,22 @@ func _gui_input(event: InputEvent) -> void:
 	if not event is InputEventMouseButton:
 		return
 	accept_event()   # 模态：点到面板外也不穿到底下
-	if event.button_index != MOUSE_BUTTON_LEFT or event.pressed:
+	if event.button_index != MOUSE_BUTTON_LEFT:
 		return
+	var hit := -1
 	for i in buttons.size():
 		if button_rect(i).has_point(event.position) and not is_disabled(i):
-			select(i)
-			activate(i)   # 弹窗上点一下就算（不像列表要点两下）
-			return
+			hit = i
+	if event.pressed:
+		_press = hit   # 按下即压暗（基类 _draw 认 _press）
+		queue_redraw()
+		return
+	var was := _press
+	_press = -1
+	queue_redraw()
+	if hit >= 0 and hit == was:   # 框外按住拖入按钮松手不算
+		select(hit)
+		activate(hit)   # 弹窗上点一下就算（不像列表要点两下）
 
 
 # ---- 画：确认弹窗的壳之外，中间区的两行、状态行、进度条 ----
@@ -210,8 +245,8 @@ func _draw() -> void:
 	var r := region_rect()
 	var fs := XUiSkin.fs(ROW_FS)
 	_row(f, r.position.x, r.position.y + 2.0, fs, stock_text())
-	_row(f, r.position.x, r.position.y + 30.0, fs, max_text())
-	var sy := r.position.y + 60.0 + XSkinStepper.H + 12.0
+	_row(f, r.position.x, r.position.y + 2.0 + _line_h(), fs, max_text())
+	var sy := r.position.y + status_y()
 	var col := XUiSkin.TEXT_2
 	if status_text != "":
 		col = XUiSkin.DOWN if status_bad else (XUiSkin.UP if phase == "quantity" else XUiSkin.TEXT)

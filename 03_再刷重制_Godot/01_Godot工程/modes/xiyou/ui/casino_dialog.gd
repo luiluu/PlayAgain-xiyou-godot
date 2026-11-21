@@ -232,6 +232,8 @@ func set_status(text: String) -> void:
 
 ## 取消：Esc、虚拟取消键、返回键、手柄 B；数字框里打的小键盘 0 等归数字框（XKeyMap.popup_cancel）
 func _input(event: InputEvent) -> void:
+	if skin != null and skin.phase == "quantity" and event is InputEventKey and (event as InputEventKey).keycode == KEY_KP_0:
+		return   # 新数量框没有 LineEdit：小键盘 0 是在输数字（10、20、100），不是取消
 	if XKeyMap.popup_cancel(event, self):
 		XKeyMap.handled(self)
 		if skin != null:

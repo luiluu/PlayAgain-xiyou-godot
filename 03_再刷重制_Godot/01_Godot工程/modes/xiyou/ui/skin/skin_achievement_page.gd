@@ -7,9 +7,9 @@ extends XSkinTemplatePage
 ## - 类型窗 8 类 → 环上 8 个球（球 52，球里写类名第一个字）。
 ## - 计数窗「已得/总数」→ 环心「37 / 120 已获得」；这一类的「4 / 7」写在列表标题右边小字。
 ## - 列表每项 108 高三行 → 行高 64 两行式：图标、名字、条件，行尾「◆ 已获得」金色；奖励、完成时间进右牌。
-## - 未得只写「未获得」→ 行变灰：「还没拿到」＋小字「拿到后才显示名字和条件」（草稿）；名字、条件不露。
+## - 未得只写「未获得」→ 行变灰：「尚未达成」＋小字「达成后显示名称与条件」（草稿）；名字、条件不露。
 ## - 列表里确定无反应、取消回类型、类型上取消关闭 → 照旧（scene.ok／cancel）。
-## 右牌：一枚金蜡（同结算那枚 XSkin2C.draw_wax）上压着成就图标，名字，「类别 · 日期 拿到」，「怎么拿」，「特殊奖励」。
+## 右牌：一枚金蜡（同结算那枚 XSkin2C.draw_wax）上压着成就图标，名字，「类别 · YYYY-MM-DD 达成」，「达成条件」，「特殊奖励」。
 ## 新皮肤关着、或 ENABLED＝false 时 XAchievementScene 不建这一页，旧页一行不变。
 
 ## T365 回退开关：false＝天启篇新皮肤下成就簿也回旧页
@@ -18,11 +18,11 @@ static var ENABLED := true
 const T_TITLE := "成就簿"
 const T_HAVE := "已获得"
 const T_ROW_RIGHT := "◆ 已获得"
-const T_LOCKED := "还没拿到"
-const T_LOCKED_SUB := "拿到后才显示名字和条件"
-const T_HOW := "怎么拿"
+const T_LOCKED := "尚未达成"
+const T_LOCKED_SUB := "达成后显示名称与条件"
+const T_HOW := "达成条件"
 const T_REWARD := "特殊奖励"
-const T_GOT := "拿到"
+const T_GOT := "达成"
 const ROW_H := 64
 const WAX := 52.0
 const ICON := 32.0
@@ -57,6 +57,7 @@ func _ready() -> void:
 	list.icon_size = 40
 	list.index_changed.connect(_on_list_index)
 	list.activated.connect(_on_list_click)
+	list.gui_input.connect(_list_gui)
 	list.draw.connect(_draw_rows)
 	ring.changed.connect(_on_ring_changed)
 	ring.activated.connect(func(_i): if not _syncing and scene.mode == "type": scene.ok())
@@ -129,6 +130,16 @@ func current_id() -> int:
 	return int(sc.list[i])
 
 
+## 「2026年11月22日 …」「2026-11-22 …」统一成 YYYY-MM-DD
+static func _short_date(t: String) -> String:
+	var d := t.split(" ")[0]
+	var m := RegEx.create_from_string("^(\\d+)年(\\d+)月(\\d+)日")
+	var r := m.search(d)
+	if r != null:
+		return "%04d-%02d-%02d" % [int(r.get_string(1)), int(r.get_string(2)), int(r.get_string(3))]
+	return d
+
+
 ## 右牌内容（测试按对应表核）
 func card_data() -> Dictionary:
 	var id := current_id()
@@ -139,7 +150,7 @@ func card_data() -> Dictionary:
 		return {"icon": blank(), "title": T_LOCKED, "title_color": XUiSkin.TEXT_3, "subtitle": str(d.type),
 			"sections": [{"title": "", "rows": [{"text": T_LOCKED_SUB, "color": XUiSkin.TEXT_3}]}], "buttons": []}
 	var t := XAchievement.global_time(id)
-	var sub := str(d.type) + (" · %s %s" % [t.split(" ")[0], T_GOT] if t != "" else "")
+	var sub := str(d.type) + (" · %s %s" % [_short_date(t), T_GOT] if t != "" else "")
 	var sections := [{"title": T_HOW, "rows": [{"text": str(d.trigger), "color": XUiSkin.TEXT}]}]
 	if str(d.evalText) != "":
 		sections.append({"title": T_REWARD, "rows": [{"text": str(d.evalText), "color": XUiSkin.GOLD_LIGHT}]})
@@ -246,7 +257,34 @@ func _on_list_index(i: int) -> void:
 
 
 func _on_list_click(_i: int) -> void:
-	pass   # 列表里确定无反应（旧页照旧）
+	if scene.mode == "type":
+		scene.ok()   # 分类态点中当前（第 0）行：_tap 不发 index_changed，只发 activated，这里进列表；列表里确定仍无反应（旧页照旧）
+
+
+## 未得的第 0 行 disabled，_tap 连 activated 都不发：分类态里在这里补一次「进列表」
+var _press_pos := Vector2.INF
+
+
+func _list_gui(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton) or (event as InputEventMouseButton).button_index != MOUSE_BUTTON_LEFT:
+		return
+	var mb := event as InputEventMouseButton
+	if mb.pressed:
+		_press_pos = mb.position
+	if XUiSkin.TOUCH_V2:   # 触屏按下只记位置、松手没拖过才算点
+		if mb.pressed:
+			return
+		var from := _press_pos
+		_press_pos = Vector2.INF
+		if from == Vector2.INF or from.distance_to(mb.position) > 10.0:
+			return
+	elif not mb.pressed:
+		return
+	if _syncing or scene.mode != "type":
+		return
+	var i := list.item_at(mb.position)
+	if i >= 0 and i == list.index and bool(list.items[i].get("disabled", false)):
+		scene.ok()
 
 
 func _on_gui(event: InputEvent) -> void:
@@ -261,7 +299,7 @@ func _draw_rows() -> void:
 	var body := XUiSkin.font("body")
 	var num := XUiSkin.font("num")
 	var first := list.top_row
-	var last := mini(list.items.size(), list.top_row + list.visible_rows())
+	var last := mini(list.items.size(), list.top_row + list.visible_rows() + (1 if list._sub != 0.0 else 0))
 	for i in range(first, last):
 		var it: Dictionary = list.items[i]
 		var r := list.cell_rect(i)

@@ -7,7 +7,7 @@ extends XSkinTemplatePage
 ## - 底部指令「更换／还原当前形象」→ 右牌两枚按钮：主「换上」、次「还原形象」（X 键）。旧页进页先停在这两项上，新页没有这一层：进页就在分类环上。
 ## - 分类 8 档 → 环上 8 个球（球 52，球里写档名第一个字），环心「N / M 已解锁」（整个衣橱）；这一档的「n / m」写在列表标题右边小字。
 ## - 名单（已解锁＝行走图上半＋名字；未解锁「？？？」）→ 两列：小人缩略＋名字；未解锁「？？？」变灰；正穿着的加「穿着」小标。
-## - 状态窗（形象展示：行走图正面放大 2 倍、每 20 帧换一格；获得途径；状态:已解锁／未解锁）→ 右牌：名字、「档位 · 已解锁／未解锁」、「怎么拿到」一节；
+## - 状态窗（形象展示：行走图正面放大 2 倍、每 20 帧换一格；获得途径；状态:已解锁／未解锁）→ 右牌：名字、「档位 · 已解锁／未解锁」、「获取方式」一节；
 ##   小人 3 倍（脚下一圈淡金光、每 20 帧换一格）放在牌的下半、按钮上方（通用牌件不能在牌头留位）；未解锁不画小人。
 ## - 提示「替换完成」「还原完成」「未解锁」→ 仍走 XToast（提示道）。
 ## 新皮肤关着、或 ENABLED＝false 时 XChangeClothesScene 不建这一页，旧页一行不变。
@@ -21,7 +21,7 @@ const T_LOCKED_STATE := "未解锁"
 const T_WEAR := "换上"
 const T_RESTORE := "还原形象"
 const T_WORN := "穿着"
-const T_HOW := "怎么拿到"
+const T_HOW := "获取方式"
 const T_UNKNOWN := "？？？"
 const FIG_H := 168.0        # 小人区高（3 倍 48＝144＋脚下光）
 const FIG_SCALE := 3.0
@@ -61,6 +61,7 @@ func _ready() -> void:
 	list.icon_size = 40
 	list.empty_text = "这一档没有形象"
 	list.index_changed.connect(_on_list_index)
+	list.gui_input.connect(_list_gui)
 	ring.changed.connect(_on_ring_changed)
 	ring.activated.connect(func(_i): if not _syncing and scene.mode == "category": scene.ok())
 	list_panel.draw.connect(_draw_list_right)
@@ -190,7 +191,7 @@ func sync() -> void:
 		w.visible = false
 	var cats := []
 	for t in XChangeClothes.CATEGORIES:
-		cats.append({"key": str(t), "name": str(t), "icon": 0, "glyph": str(t).left(1)})
+		cats.append({"key": str(t), "name": str(t), "icon": 0, "glyph": "朽" if str(t) == "不朽" else str(t).left(1)})
 	if ring.items.size() != cats.size():
 		set_categories(cats, maxi(sc.category, 0))
 		for k in cats.size():   # set_categories 只带 key／name／icon，球里的字这里补（同设置页 R5）
@@ -318,6 +319,39 @@ func _on_list_index(i: int) -> void:
 		scene.ok()
 	XSound.system(0)
 	scene._select(i)
+
+
+## 点中当前行：_tap 不发 index_changed，只发 activated。分类态＝进列表，列表态＝换上（同旧页点两次）
+func _on_list_activated(_i: int) -> void:
+	if _syncing:
+		return
+	scene.ok()
+
+
+## 未解锁的第 0 行 disabled，_tap 连 activated 都不发：分类态里补一次「进列表」
+var _press_pos := Vector2.INF
+
+
+func _list_gui(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton) or (event as InputEventMouseButton).button_index != MOUSE_BUTTON_LEFT:
+		return
+	var mb := event as InputEventMouseButton
+	if mb.pressed:
+		_press_pos = mb.position
+	if XUiSkin.TOUCH_V2:   # 触屏按下只记位置、松手没拖过才算点
+		if mb.pressed:
+			return
+		var from := _press_pos
+		_press_pos = Vector2.INF
+		if from == Vector2.INF or from.distance_to(mb.position) > 10.0:
+			return
+	elif not mb.pressed:
+		return
+	if _syncing or scene.mode != "category":
+		return
+	var i := list.item_at(mb.position)
+	if i >= 0 and i == list.index and bool(list.items[i].get("disabled", false)):
+		scene.ok()
 
 
 func _on_card_button(i: int) -> void:

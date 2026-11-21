@@ -46,6 +46,7 @@ func windowed() -> bool:
 func shot(name: String, sz := Vector2i(800, 450)) -> void:
 	if not windowed():
 		return
+	_clear_toasts()
 	var win := get_window()
 	var old := win.size
 	win.size = sz
@@ -57,6 +58,27 @@ func shot(name: String, sz := Vector2i(800, 450)) -> void:
 	check("screenshot_" + name, img.save_png(out_dir.path_join(name + ".png")) == OK)
 	win.size = old
 	await frames(4)
+
+
+## 前面用例留下的提示别带进截图
+func _clear_toasts() -> void:
+	XSkinNoticeLane.reset()   # 新皮肤下提示走提示道
+	var layer := get_tree().root.get_node_or_null("XToast")
+	if layer != null and layer.get("stack") != null:
+		for c in (layer.stack as Node).get_children():
+			c.queue_free()
+
+
+## 真鼠标点击：左键按下＋松手（走控件自己的 _gui_input，不绕过 XSkinList._tap）
+func click(c: Control, pos: Vector2) -> void:
+	for pr in [true, false]:
+		var e := InputEventMouseButton.new()
+		e.button_index = MOUSE_BUTTON_LEFT
+		e.pressed = pr
+		e.position = pos
+		e.global_position = c.get_global_transform() * pos
+		c.gui_input.emit(e)   # 引擎先发信号、再调 _gui_input
+		c._gui_input(e)
 
 
 func shots(name: String) -> void:
@@ -179,12 +201,12 @@ func _achievement() -> void:
 		if XAchievement.global_has(int(r._id)):
 			check("ach.row_owned_%d" % int(r._id), r._name == str(d.name) and r._cond == str(d.trigger) and r.right == "◆ 已获得" and r.right_color == XUiSkin.GOLD and not r.disabled, r)
 		else:
-			check("ach.row_locked_%d" % int(r._id), r._name == "还没拿到" and r._cond == "拿到后才显示名字和条件" and r.disabled and not r.has("right") and not str(r).contains(str(d.name)), r)
+			check("ach.row_locked_%d" % int(r._id), r._name == "尚未达成" and r._cond == "达成后显示名称与条件" and r.disabled and not r.has("right") and not str(r).contains(str(d.name)), r)
 	# 右牌：已得
 	var cd := sk.card_data()
 	var d0 := XAchievement.def(int(ids[0]))
-	var date: String = XAchievement.time_override.split(" ")[0]
-	check("ach.card_owned", cd.title == str(d0.name) and cd.subtitle == "%s · %s 拿到" % [d0.type, date] and str(cd.sections).contains(str(d0.trigger)) and str(cd.sections).contains("怎么拿"), cd)
+	var date := "2026-11-22"   # time_override 是「2026年11月22日 …」，右牌副标题改短日期
+	check("ach.card_owned", cd.title == str(d0.name) and cd.subtitle == "%s · %s 达成" % [d0.type, date] and str(cd.sections).contains(str(d0.trigger)) and str(cd.sections).contains("达成条件"), cd)
 	var with_reward := ids.filter(func(i): return XAchievement.global_has(int(i)) and str(XAchievement.def(int(i)).evalText) != "")
 	if not with_reward.is_empty():
 		p.index = ids.find(with_reward[0])
@@ -207,7 +229,7 @@ func _achievement() -> void:
 	p.mode = "list"
 	p._refresh()
 	var cl := sk.card_data()
-	check("ach.card_locked", cl.title == "还没拿到" and not str(cl).contains(str(XAchievement.def(int(ids[locked_i])).name)) and not str(cl).contains(str(XAchievement.def(int(ids[locked_i])).trigger)), cl)
+	check("ach.card_locked", cl.title == "尚未达成" and not str(cl).contains(str(XAchievement.def(int(ids[locked_i])).name)) and not str(cl).contains(str(XAchievement.def(int(ids[locked_i])).trigger)), cl)
 	p.index = -1
 	p.mode = "type"
 	p._refresh()
@@ -224,6 +246,21 @@ func _achievement() -> void:
 	check("ach.page_e_moves", sk.list.index >= 1 and p.index == sk.list.index, [p.index, sk.list.index])
 	act(p, "ui_cancel")
 	check("ach.cancel_back_to_type", p.mode == "type" and p.index == -1 and sk.focus == "ring" and closed[0] == 0)
+	# P1-1：分类态里真点击列表第 0 行（已得／未得都要进列表）。新开页：list.index 本来就是 0，_tap 不发 index_changed
+	for want_locked in [false, true]:
+		var k0 := str(ids[0])
+		var had0 = XConfig.achievements().get(k0)
+		if want_locked:
+			XConfig.achievements().erase(k0)
+		var q := XAchievementScene.new()
+		add_child(q)
+		await frames(3)
+		check("ach.row0_state_%s" % want_locked, q.mode == "type" and q.skin.list.index == 0 and bool(q.skin.list.items[0].disabled) == want_locked, [q.mode, q.skin.list.index])
+		click(q.skin.list, q.skin.list.cell_rect(0).get_center())
+		check("ach.click_row0_enters_list_%s" % ("locked" if want_locked else "owned"), q.mode == "list" and q.index == 0, [q.mode, q.index])
+		q.queue_free()
+		await frames(2)
+		XConfig.achievements()[k0] = had0
 	# 换类：下键在类型上换类，环、列表标题、列表跟着变
 	act(p, "ui_down")
 	check("ach.type_down", p.type_index == 1 and sk.ring.index == 1 and sk.list_title == str(types[1]), [p.type_index, sk.ring.index])
@@ -302,7 +339,7 @@ func _clothes() -> void:
 	# 分类 8 档 → 环上 8 个球；环心「N / M 已解锁」
 	check("cl.ring_8", sk.ring.items.size() == 8 and sk.ring.items.map(func(c): return c.name) == Array(XChangeClothes.CATEGORIES), sk.ring.items.size())
 	check("cl.ring_orb_52", is_equal_approx(sk.ring.orb_radius * 2.0, 52.0))
-	check("cl.ring_glyphs", sk.ring.items.all(func(c): return str(c.get("glyph", "")) == str(c.name).left(1)), sk.ring.items)
+	check("cl.ring_glyphs", sk.ring.items.all(func(c): return str(c.get("glyph", "")) == ("朽" if str(c.name) == "不朽" else str(c.name).left(1))), sk.ring.items)
 	var tot := XSkinChangeClothesPage.totals()
 	var have := 0
 	var all := 0
@@ -329,9 +366,20 @@ func _clothes() -> void:
 	var e0: Dictionary = p.data[0]
 	var how := XChangeClothes.source_text(e0).trim_prefix("获得途径：")
 	check("cl.card_fields", cd.subtitle == "%s · %s" % [XChangeClothes.CATEGORIES[0], "已解锁" if XChangeClothes.unlocked(int(e0.id)) else "未解锁"]
-		and str(cd.sections).contains("怎么拿到") and str(cd.sections).contains(how) and cd.buttons.size() == 2 and cd.buttons[0].text == "换上" and cd.buttons[1].text == "还原形象", cd)
+		and str(cd.sections).contains("获取方式") and str(cd.sections).contains(how) and cd.buttons.size() == 2 and cd.buttons[0].text == "换上" and cd.buttons[1].text == "还原形象", cd)
 	check("cl.wear_grey_in_category", cd.buttons[0].disabled)
 	await shots("clothes")
+	# P1-1：分类态真点击列表第 0 行进列表；列表态再点当前项换上
+	click(sk.list, sk.list.cell_rect(0).get_center())
+	check("cl.click_row0_enters_list", p.mode == "list" and p.index == 0 and sk.focus == "list", [p.mode, p.index])
+	if XChangeClothes.unlocked(int(p.data[0].id)):
+		click(sk.list, sk.list.cell_rect(0).get_center())
+		check("cl.click_current_wears", XSkinChangeClothesPage.is_worn(s, p.data[0]), s.player_costume)
+		key(p, KEY_X)
+	else:
+		check("cl.click_current_wears", false, "第 0 项没解锁")
+	act(p, "ui_cancel")
+	check("cl.back_to_category_after_click", p.mode == "category", p.mode)
 	# 确定进列表、再确定换上（走旧 apply）
 	act(p, "ui_accept")
 	check("cl.ok_enters_list", p.mode == "list" and p.index == 0 and sk.focus == "list")
@@ -376,6 +424,32 @@ func _clothes() -> void:
 		var cl := sk.card_data()
 		check("cl.card_locked", cl.title == "？？？" and cl.buttons[0].disabled and cl.subtitle.ends_with("未解锁") and float(cl.reserve_bottom) == 0.0, cl)
 		await shots("clothes_locked")
+	else:
+		# 本档全解锁了：换一档找未解锁项（不再静默跳过）
+		act(p, "ui_cancel")
+		var other := -1
+		for k in 8:
+			for e in XChangeClothes.list(k):
+				if not XChangeClothes.unlocked(int(e.id)):
+					other = k
+					break
+			if other >= 0:
+				break
+		check("cl.has_locked_somewhere", other >= 0)
+		if other >= 0:
+			p._select_category(other)
+			act(p, "ui_accept")
+			for k in p.data.size():
+				if not XChangeClothes.unlocked(int(p.data[k].id)):
+					locked_k = k
+					break
+			p._select(locked_k)
+			var cl2 := sk.card_data()
+			check("cl.card_locked", cl2.title == "？？？" and cl2.buttons[0].disabled and cl2.subtitle.ends_with("未解锁") and float(cl2.reserve_bottom) == 0.0, cl2)
+			await shots("clothes_locked")
+			act(p, "ui_cancel")
+		p._select_category(0)
+		act(p, "ui_accept")
 	# X 还原
 	key(p, KEY_X)
 	check("cl.x_restores", s.player_costume.is_empty() and not (sk.list.items[first_open].get("tags", []) as Array).has("穿着"), [s.player_costume, p.mode, p.data.size()])
@@ -553,7 +627,74 @@ func _casino() -> void:
 	check("cs.type_digits", dlg.skin.stepper.value == 12, dlg.skin.stepper.value)
 	key(dlg, KEY_9)
 	check("cs.type_clamps", dlg.skin.stepper.value == 30, dlg.skin.stepper.value)
+	# P1-3：小键盘 0 是输数字，不关窗（输 1、0＝10）
 	_casino_close()
+	await frames(2)
+	dlg = _casino_open("single", 30)
+	await frames(2)
+	key(dlg, KEY_KP_1)
+	var kp := InputEventKey.new()
+	kp.keycode = KEY_KP_0
+	kp.physical_keycode = KEY_KP_0
+	kp.pressed = true
+	dlg._input(kp)
+	dlg._unhandled_input(kp)
+	check("cs.kp0_not_cancel", not XCasinoBatch.session.is_empty() and dlg.skin.stepper.value == 10, [XCasinoBatch.session.keys(), dlg.skin.stepper.value])
+	_casino_close()
+	await frames(2)
+	# P1-3：进行态红钮按确定＝停止后续抽取
+	dlg = _casino_open("single", 10)
+	await frames(2)
+	dlg.skin.confirm()
+	check("cs.drawing_for_accept", dlg.skin.phase == "drawing")
+	act(dlg, "ui_accept")
+	check("cs.drawing_accept_stops", XCasinoBatch.session.stop and dlg.skin.phase == "stopping", [XCasinoBatch.session.get("stop"), dlg.skin.phase])
+	_casino_close()
+	await frames(2)
+	# P2-2：按下压暗；框外按住拖入按钮松手不触发
+	dlg = _casino_open("single", 10)
+	await frames(2)
+	var kk: XSkinCasinoDialog = dlg.skin
+	var br := kk.button_rect(0)
+	var oe := InputEventMouseButton.new()
+	oe.button_index = MOUSE_BUTTON_LEFT
+	oe.pressed = true
+	oe.position = Vector2(2, 2)
+	kk._gui_input(oe)
+	oe = oe.duplicate()
+	oe.pressed = false
+	oe.position = br.get_center()
+	kk._gui_input(oe)
+	check("cs.drag_in_no_trigger", not XCasinoBatch.session.is_empty() and kk._press == -1)
+	oe = oe.duplicate()
+	oe.pressed = true
+	kk._gui_input(oe)
+	check("cs.press_feedback", kk._press == 0, kk._press)
+	oe = oe.duplicate()
+	oe.pressed = false
+	kk._gui_input(oe)
+	check("cs.click_cancel_btn", XCasinoBatch.session.is_empty())
+	await frames(2)
+	# P1-2：130% 字体下各行不重叠（行距、数量选择、状态行、进度条按字号排）
+	XFontScale.set_value("global", 130)
+	dlg = _casino_open("single", 37)
+	await frames(3)
+	kk = dlg.skin
+	var rg := kk.region_rect()
+	var fs := XUiSkin.fs(XSkinCasinoDialog.ROW_FS)
+	var st_top := rg.position.y + kk.stepper_y() - 3.0 - 4.0   # 底托上伸 3＋双环外扩 4
+	var row2_bottom := rg.position.y + 2.0 + kk._line_h() + fs * 1.15
+	check("cs.font130_rows_no_overlap", fs >= 22 and st_top >= row2_bottom, [fs, st_top, row2_bottom])
+	var st_bottom := rg.position.y + kk.stepper_y() + XSkinStepper.H + 4.0
+	var status_top := rg.position.y + kk.status_y()
+	check("cs.font130_status_below_stepper", status_top >= st_bottom, [status_top, st_bottom])
+	check("cs.font130_status_above_bar", rg.end.y - 10.0 >= status_top + fs * 1.2, [rg.end.y, status_top])
+	check("cs.font130_region_inside_panel", rg.end.y <= kk.panel_rect().end.y and rg.position.y >= kk.panel_rect().position.y)
+	kk.stepper.to_max()
+	kk.drawing_started()
+	check("cs.font130_drawing_bar_gap", rg.end.y - 10.0 >= rg.position.y + kk.status_y() + fs * 1.2)
+	_casino_close()
+	XFontScale.set_value("global", 100)
 	await frames(2)
 
 
