@@ -148,6 +148,54 @@ class SyntheticTests(unittest.TestCase):
 
 
 @unittest.skipUnless(HAVE, '需要 Pillow')
+class Spec128Tests(unittest.TestCase):
+    def setUp(self):
+        self.sc = load()
+        self.cfg = self.sc.load_cfg(HERE / '精灵自检阈值.json')
+
+    def idle(self, bottom=128, height=100):
+        from PIL import ImageDraw
+        im = Image.new('RGBA', (384, 128))
+        for k in range(3):
+            ImageDraw.Draw(im).rectangle((k * 128 + 54, bottom-height, k * 128 + 73, bottom-1), fill='white')
+        return im
+
+    def test_128_baseline_is_inclusive_row_127(self):
+        for bottom in (127, 128):
+            rep = self.sc.Report()
+            self.sc.check_idle(rep, self.cfg, 'biped', self.idle(bottom))
+            self.assertEqual('idle_baseline' in fails(self.sc, rep), bottom != 128)
+            self.assertNotIn('native_size', fails(self.sc, rep))
+            self.assertTrue(next(i['ok'] for i in rep.items if i['id'] == 'native_height'))
+
+    def test_short_128_warns(self):
+        rep = self.sc.Report()
+        self.sc.check_idle(rep, self.cfg, 'biped', self.idle(height=50))
+        self.assertIn('native_height', {i['id'] for i in rep.warns})
+
+    def test_128_walk_recognized(self):
+        im = Image.new('RGBA', (384, 512))
+        for r in range(4):
+            im.paste(self.idle(), (0, r * 128))
+        rep = self.sc.Report()
+        self.sc.check_walk(rep, self.cfg, 'biped', im, '128')
+        self.assertNotIn('native_size', fails(self.sc, rep))
+        self.assertTrue(next(i['ok'] for i in rep.items if i['id'] == 'native_height'))
+
+    def test_legacy_config_unchanged(self):
+        self.assertIs(self.sc.sheet_cfg(self.cfg, Image.new('RGBA', (192, 64)), 'idle'), self.cfg)
+        self.assertIs(self.sc.sheet_cfg(self.cfg, Image.new('RGBA', (144, 192)), 'walk'), self.cfg)
+
+    def test_128_montage_contains_new_frames(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp) / 'montage.png'
+            self.sc.montage(out, '128', None, self.idle(), None, None, self.sc.Report(), 1)
+            im = Image.open(out)
+            self.assertIn((255, 255, 255), [c for _, c in im.getcolors(im.width * im.height)])
+
+
+@unittest.skipUnless(HAVE, '需要 Pillow')
 class ReferenceTests(unittest.TestCase):
     """现有参照图必须通过（退出 0）；遗留参照图是抗锯齿的，故 --skip binary_alpha。"""
 
