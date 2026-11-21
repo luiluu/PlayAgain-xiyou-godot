@@ -42,7 +42,8 @@ var atk_table := {}   # --atk-table=<json>：{"层": 攻击倍率}，--both 时�
 var _cur_floor := 0
 var line := "war"   # --line=：35、36 层（天启篇影子、骑士本体）按哪条线
 var snapshots := ""   # --snapshots=<目录>：虚拟玩家每层挑战守层者前的存档（floor_<层>*.json，XState.to_dict()），用它的真实队伍量（Kyo 11-13 定 C）
-var raw_mode := true   # T239：--both 每次我方出手前补满敌人、按日志原始伤害量（--no-raw 回到每回合开头补满、按掉血量）
+var raw_mode := true   # T239：--both 每次我方出手前补满敌人、按日志原始伤害量；敌人被打死当场复活补满、不提前收场，量满 turns 回合（T239 核 P1-1）
+                      # （--no-raw 完整回到旧量法：每回合开头补满、按掉血量、打死就收场、输出不写 dmgRaw）
 var both := false   # --both：两边每回合都补满（我方倒下的复活），同时量我方每回合打多少、守层者每回合打多少、我方每次出手打多少
 var neutral := false   # --neutral：守层者元素抗性一律按 1 量
 var resist := -1.0   # --resist=N：守层者伤害抵抗换成 N（0＝去掉）；-1 照数据
@@ -492,10 +493,12 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 			_drain(logic, logic.troop_events(u if turn_first else null))
 			theirs += maxf(0.0, pb0 - _party_hp(logic))   # 敌群事件里的伤害（强制技能）算守层者的
 			turn_first = false
+			if raw_mode:
+				_revive_enemies(logic)
 			if u == null or logic.is_over():
 				break
 			count += 1
-			var cmd := logic.decide(u)
+			var cmd := [null, null] if logic.take_cleared(u) else logic.decide(u)   # T239（核 P3-2）：首位被强制行动清掉的那格放弃，同战斗画面
 			var eb := _enemy_hp(logic)
 			var pb := _party_hp(logic)
 			var db: float = logic.enemies.reduce(func(t, e): return t + float(e.dealt), 0.0)
@@ -508,14 +511,21 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 			if u is XActor:
 				var d := maxf(0.0, eb - _enemy_hp(logic))
 				ours += d
-				var rd := _raw_hits(logs)   # T239：日志里的原始伤害（hpDamage 扣血前、不截断）：一下打掉全部血量（马氏双节棍等）时也量得出真伤害
-				raw_ours += rd
-				turn_raw += rd
-				if rd > 0.0:
-					hits.append(rd)
+				if raw_mode:
+					var rd := _raw_hits(logs)   # T239：日志里的原始伤害（hpDamage 扣血前、不截断，含附加段）：一下打掉全部血量（马氏双节棍等）时也量得出真伤害
+					raw_ours += rd
+					turn_raw += rd
+					if rd > 0.0:
+						hits.append(rd)
+				else:
+					turn_raw += d
+					if d > 0.0:
+						hits.append(d)   # --no-raw：旧量法，单下伤害按掉血量
 			raw += float(logic.enemies.reduce(func(t, e): return t + float(e.dealt), 0.0)) - db
 			if not u is XActor:
 				theirs += maxf(0.0, pb - _party_hp(logic))
+			if raw_mode:
+				_revive_enemies(logic)   # T239（核 P1-1）：谁的行动（含反击、事件）打死了敌人都当场复活补满，不让一下秒杀提前收场
 			if debug:
 				print("DBG2 t%d %s skill=%s partyLoss=%.0f enemyLoss=%.0f" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-", pb - _party_hp(logic), eb - _enemy_hp(logic)])
 			if logic.is_over():
@@ -523,16 +533,32 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 		done += 1
 		per_turn.append(turn_raw)
 		if logic.is_won() or logic.aborted:
-			break
+			break   # raw 模式敌人已复活、到这里只剩中止；--no-raw 照旧打死就收场
 		if logic.is_lost():
 			continue   # 一回合内团灭：下回合开头复活补满接着量
 		logic.end_turn()
+		if raw_mode:
+			_revive_enemies(logic)   # 回合末持续伤害打死的也复活
+		_drain(logic, logic.troop_events(null, true))   # T239（核 P3-2）：回合末的敌群事件页，同战斗画面与 _fight
 	hits.sort()
 	var n := maxf(1.0, float(done))
-	return {"dmg": ours / n, "dmgRaw": raw_ours / n, "perTurn": per_turn, "enemyDmg": theirs / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
+	var out := {"dmg": ours / n, "perTurn": per_turn, "enemyDmg": theirs / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
 		"hits": hits.size(), "partyHp": logic.actors.reduce(func(t, a): return t + float(a.mhp), 0.0),
 		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0),
 		"atkScale": _out_scale(logic)}   # T229：守层者这场实际用的出伤倍率（没给 --atk-table 时是游戏里的表）
+	if raw_mode:
+		out["dmgRaw"] = raw_ours / n   # --no-raw 不写，三表脚本退回 dmg（T239 核 P2-2）
+	return out
+
+
+## raw 模式：死了的敌人（不含没登场的隐藏成员）去掉战斗不能、全员补满血
+static func _revive_enemies(logic: XBattleLogic) -> void:
+	for e in logic.enemies:
+		if e.hidden:
+			continue
+		if e.is_dead():
+			e.remove_state(1)
+		e.hp = e.mhp
 
 
 ## 一次行动日志里我方打到敌人身上的原始伤害合计（type hit、目标是敌人、hp＞0）
@@ -542,7 +568,16 @@ static func _raw_hits(logs) -> float:
 		return t
 	for l in logs:
 		if l is Dictionary and str(l.get("type", "")) == "hit" and l.get("target") is XEnemy and not bool(l.get("missed", false)) and not bool(l.get("evaded", false)):
-			t += maxf(0.0, float(l.get("hp", 0.0)))
+			var main := maxf(0.0, float(l.get("hp", 0.0)))
+			# T239（核 P2-1）：附加段不在 hp 里。r.extra 记轮回困难附伤、空间侵蚀、奈叶多段等；奈叶超出显示的尾段只记进 record_hp，
+			# 两边取大（同一段两处都记的不重复算）
+			var ex := 0.0
+			var extra = l.get("extra", [])
+			if extra is Array:
+				for v in extra:
+					if v is float or v is int:
+						ex += maxf(0.0, float(v))
+			t += main + maxf(ex, float(l.get("record_hp", 0.0)) - floorf(main))
 	return t
 
 
@@ -569,12 +604,14 @@ func _run_both(list: Array) -> void:
 		for st in states:
 			per.append(_fight_both(st, 0))
 		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": _median(per.map(func(r): return r.atkScale)),
-			"dmg": _median(per.map(func(r): return r.dmg)), "dmgRaw": _median(per.map(func(r): return r.dmgRaw)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
+			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
 			"hit": _median(per.map(func(r): return r.hitMedian)), "partyHp": _median(per.map(func(r): return r.partyHp)),
 			"enemyHp": per[0].enemyHp, "teams": per}
+		if raw_mode:
+			row["dmgRaw"] = _median(per.map(func(r): return r.dmgRaw))
 		rows.append(row)
 		row["line"] = line if f >= 35 else ""
-		print("BOTH line=%s floor=%d raw=%.0f dmgRaw=%.0f dmg=%.0f enemyDmg=%.0f hit=%.0f partyHp=%.0f enemyHp=%.0f" % [row.line, f, row.enemyRaw, row.dmgRaw, row.dmg, row.enemyDmg, row.hit, row.partyHp, row.enemyHp])
+		print("BOTH line=%s floor=%d raw=%.0f dmgRaw=%.0f dmg=%.0f enemyDmg=%.0f hit=%.0f partyHp=%.0f enemyHp=%.0f" % [row.line, f, row.enemyRaw, float(row.get("dmgRaw", -1.0)), row.dmg, row.enemyDmg, row.hit, row.partyHp, row.enemyHp])
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
@@ -625,15 +662,15 @@ func _run_duel_snapshots() -> void:
 	for f in floors:
 		_cur_floor = f
 		var states := _snapshot_states(f)
-		if states.is_empty() or not GUARDIAN.has(f):
+		if states.is_empty() or f > 34:
 			continue
 		var per := []
 		for st in states:
 			XState._become_current(st)
-			var r := _fight(st, int(GUARDIAN[f]))
+			var r := _fight(st, _troop_for(st, f))   # T239（核 P3-1）：34 层借 33 层档真打鸿钧
 			r.erase("trace")
 			per.append(r)
-		var row := {"floor": f, "troop": GUARDIAN[f], "won": per.filter(func(r): return bool(r.won)).size(), "teams": per.size(),
+		var row := {"floor": f, "troop": GUARDIAN.get(f, 0), "won": per.filter(func(r): return bool(r.won)).size(), "teams": per.size(),
 			"turns": _median(per.map(func(r): return float(r.turns))), "dmg": _median(per.map(func(r): return float(r.dmg))),
 			"enemyHp": _median(per.map(func(r): return float(r.enemyHp))), "atkScale": _median(per.map(func(r): return float(r.atkScale))), "per": per}
 		rows.append(row)

@@ -43,7 +43,8 @@ def build(rows: list) -> dict:
         r = by.get(f)
         if r is None:
             continue
-        d = float(r.get('dmgRaw', r.get('dmg', 0)))   # T239：有日志原始伤害（不被剩余血量截断）就用它
+        raw = float(r.get('dmgRaw') or 0)   # T239：有日志原始伤害（不被剩余血量截断）且＞0 就用它；--no-raw 的输出没有 dmgRaw，退回 dmg（核 P2-2）
+        d = raw if raw > 0 else float(r.get('dmg', 0))
         if d > 0:
             hp[str(f)] = int(sig3(d))
         if f <= 4:
@@ -123,6 +124,8 @@ def selftest() -> int:
     t = build(rows)
     assert t['hp_base'] == {'2': 626000, '20': 2250000}, t
     assert build([{'floor': 3, 'dmg': 5, 'dmgRaw': 123456}])['hp_base'] == {'3': 123000}
+    assert build([{'floor': 3, 'dmg': 7000, 'dmgRaw': 0}])['hp_base'] == {'3': 7000}   # dmgRaw 为 0 退回 dmg
+    assert build([{'floor': 3, 'dmg': 7000, 'dmgRaw': None}])['hp_base'] == {'3': 7000}
     assert t['atk_scale']['2'] == 1 and t['atk_scale']['20'] == sig3(0.074 * 10000 / 2000), t
     assert t['resist'] == {'20': 4800}, t
     assert build([]) == {}
