@@ -26,6 +26,7 @@ var ripe_mode := false
 var reps := 4
 var xcap := []
 var gear_cache := ""
+var _knobs_printed := false
 var gear_floors: Array = [10, 20, 25, 30, 31, 32, 33]   # 装备按这一组层掷（缺省和第一轮 s45_raw 同一组，换层数不改装备）；--gear-floors= 换一组（要换缓存文件）
 var strip_ids := []
 
@@ -77,7 +78,9 @@ func _apply_knobs() -> void:
 			seen[id] = true
 			var rec := XDB.rec("Enemies", id)
 			rec["traits"] = rec.get("traits", []).filter(func(tr): return not (int(tr.get("code", 0)) == XBattler.TRAIT_XPARAM and strip_ids.has(int(tr.get("dataId", -1))) and float(tr.get("value", 0)) > 0.0))
-	print("BRAND_KNOBS xcap=%s strip=%s enemies=%s pozhen_type=%s" % [str(xcap), str(strip_ids), str(seen.keys()), str(XTianqiElements.POZHEN_BY_TYPE)])
+	if not _knobs_printed:
+		_knobs_printed = true
+		print("BRAND_KNOBS xcap=%s strip=%s enemies=%s pozhen_type=%s" % [str(xcap), str(strip_ids), str(seen.keys()), str(XTianqiElements.POZHEN_BY_TYPE)])
 
 
 static func role_of(id: int) -> String:
@@ -127,6 +130,7 @@ func _calib_state(team: Array, f: int, rep: int) -> XState:
 	if ripe_mode:
 		XTianqiBrand._firsts_rw(s)["guardian:%d" % f] = 1
 	XState.current = s
+	_apply_knobs()  # 建档（new_game）会重载数据表，改敌人记录／上限要在建档之后、每场再改一次
 	return s
 
 
