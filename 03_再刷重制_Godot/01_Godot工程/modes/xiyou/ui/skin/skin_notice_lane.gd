@@ -475,6 +475,8 @@ class Chip extends Control:
 		sb.anti_aliasing = true
 		draw_style_box(sb, r)
 		var iy := roundf((size.y - ICON) / 2.0)
+		if XUiSkin.detail_on():   # T338 D2：统一图标出口（ICON_DY_K 联动）
+			iy = XUiSkin.inline_icon_rect(PAD_X, size.y / 2.0, ICON, title_fs()).position.y
 		if badge_tex != null:
 			draw_texture_rect(badge_tex, Rect2(PAD_X - 2.0, iy - 4.0, ICON + 8.0, ICON + 8.0), false)
 		elif icon_tex != null:

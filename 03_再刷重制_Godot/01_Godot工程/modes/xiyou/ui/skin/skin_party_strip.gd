@@ -178,7 +178,7 @@ func _draw() -> void:
 			var tex := XUiSkin.icon(int(states[k]))
 			sx -= 22
 			if tex != null:
-				draw_texture_rect(tex, Rect2(sx, r.position.y + 6, 22, 22), false)
+				draw_texture_rect(tex, XUiSkin.inline_icon_rect(sx, r.position.y + 17.0, 22.0, XUiSkin.FS_AUX) if XUiSkin.detail_on() else Rect2(sx, r.position.y + 6, 22, 22), false)   # T338 D2：去 y+6 写死
 		# 三条量条：血、蓝各 1 份，TP 0.6 份；R15：不在战斗里只画血、蓝两条（各 1 份、加宽）
 		var y2 := r.position.y + 6 + 24 + 10
 		var avail := right - x

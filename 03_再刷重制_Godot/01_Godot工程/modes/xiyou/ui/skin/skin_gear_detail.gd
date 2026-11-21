@@ -194,7 +194,7 @@ func _draw() -> void:
 		var d := XSkinItemPage.card_data(item)
 		var tex: Texture2D = d.get("icon")
 		if tex != null:
-			draw_texture_rect(tex, Rect2(x, pad, 48, 48), false)
+			draw_texture_rect(tex, XUiSkin.inline_icon_rect(x, pad + 24.0, 48.0, XUiSkin.FS_CARD) if XUiSkin.detail_on() else Rect2(x, pad, 48, 48), false)
 			x += 60
 		var fit := XSkinList.fit_text(head, str(d.title), size.x - pad - x, XUiSkin.FS_CARD, 20)
 		XUiSkin.ds(self, head, Vector2(x, pad + 26), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], d.title_color)

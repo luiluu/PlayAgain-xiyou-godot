@@ -366,7 +366,7 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 	var x := x0
 	if icon != null:
 		if not dry and _vis(y, 48.0) > 0.0:
-			t.draw_texture_rect(icon, Rect2(x, y, 48, 48), false)
+			t.draw_texture_rect(icon, XUiSkin.inline_icon_rect(x, y + 24.0, 48.0, title_size) if XUiSkin.detail_on() else Rect2(x, y, 48, 48), false)
 		x += 48 + 12
 	if title != "":
 		if not dry and _vis(y, 48.0) > 0.0:
