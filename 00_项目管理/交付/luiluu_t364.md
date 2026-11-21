@@ -14,7 +14,7 @@
 - 战斗里按 Shift 的「怪物信息」：同一版式的弹层（压暗战场 66%，不画页签条、不画背景图），目录只有本场活着的敌人、不写序号，确定不做事、取消回原窗口；没登记的照写数值（O-353 开关关时写「？？？」照旧）。4A 铺满时旧页被收在 16:9 中间，新弹层自己铺回整屏。
 - 镶嵌图鉴（`ui/inlay_book.gd`）：类型窗换成目录上方两枚页内页签「武器／防具」（Q／E），进页就在武器目录上，目录上取消直接离开（没有类型窗这一层，旧页新加 `switch_type`）；右大牌＝名字、「能镶在：…」、「镶好后的属性」四列八项（0 变灰，天启篇照旧按光耀 100% 换算）、「镶好后的效果」（`\c[n]` 过旧颜色对照表）、「镶嵌顺序（从左到右）」一排宝珠带序号、中间「›」；天启篇光耀说明一行在牌底。
 - 回退：`XSkinBookPage.ENABLED = false`（一个开关管三本），旧页一行不变；西游存档、`XUiSkin.ENABLED = false` 本来就是旧页。
-- 测试：新专项 `tests/xiyou_ui_skin_card_p`（无头 94 项、带窗口 160 项含 33 张截图的真尺寸断言）：门控三种（开关关／皮肤关／西游档）都是旧窗；三本对应表逐行（旧页 `status_ops` 画的每一段字在新页数据里都取得到：人物 1/8/9/10/167/168/174/179、怪物前 40 只里已登记的 27 只、镶嵌武器、防具两类全部配方；备注按旧分段拼回整段、元素图标一个不少、技能一个不少）；目录行＝旧目录；11 行；上下、Q／E、左右翻页；详情行＝旧技能列表（类型、未解锁）、掉落行＝旧掉落；权重＝行动表 rating；战斗弹层；镶嵌页签切换、空页签；取消层级。`tests/xiyou_list_pager` 的旧窗翻页段（FORCE 开着时本来会换成新页）加一行关开关、段末开回，同卡 N 先例；`tests/xiyou_ui_skin_offshot` 新列 `PAGES_P` 一行，皮肤关闭对照从此覆盖三本。
+- 测试：新专项 `tests/xiyou_ui_skin_card_p`（无头 94 项、带窗口 160 项含 33 张截图的真尺寸断言）：门控三种（开关关／皮肤关／西游档）都是旧窗；三本对应表逐行（旧页 `status_ops` 画的每一段字在新页数据里都取得到：人物 1/8/9/10/167/168/174/179、怪物前 40 只里已登记的 27 只、镶嵌武器、防具两类全部配方；备注按旧分段拼回整段、元素图标一个不少、技能一个不少）；目录行＝旧目录；11 行；上下、Q／E、左右翻页；详情行＝旧技能列表（类型、未解锁）、掉落行＝旧掉落；权重＝行动表 rating；战斗弹层；镶嵌页签切换、空页签；取消层级。`tests/xiyou_list_pager` 的旧窗翻页段（FORCE 开着时本来会换成新页）加一行关开关、段末开回，同卡 N 先例；`tests/xiyou_ui_sel_scale` 的「图鉴页真画一次」段（拿旧怪物图鉴的 MV 画布验光标行登记）同样关开关、段末开回（续做时云端选测查出，本机 90/90）；`tests/xiyou_ui_skin_offshot` 新列 `PAGES_P` 一行，皮肤关闭对照从此覆盖三本。
 - 玩家可见：天启篇里人物图鉴、怪物图鉴、镶嵌图鉴（和战斗里的怪物信息）换成新界面：左目录＋右边一张大牌；人物带头像、法阵小人、三列技能，技能详情右边是可展开的长说明卡；怪物的招式后面照旧写权重；镶嵌用武器／防具页签切换，宝珠按顺序排一排。
 
 ## 验证
@@ -23,7 +23,7 @@
 - 旧专项（皮肤关时一条不变）：本机单跑 xiyou_actor_book 28/28、xiyou_enemy_book 96/96、xiyou_inlay_book 19/19、xiyou_actor_book_review 6/6、xiyou_actor_book_compare 1/1（工具场景跳过）、xiyou_tianqi_six_dim_book_boss 66/66、xiyou_tianqi_gem_power 59/59、xiyou_list_pager 首跑 148/151（旧窗翻页段被新页换掉，见上）、改后 151/151。
 - 皮肤关闭对照：`python3 07_开发环境/皮肤关闭对照.py`（默认基线＝与 github/main 的 merge-base）xiyou、tq_off 两档 66 张全 SAME（含新加的 XActorBook、XEnemyBookPage、XInlayBook 各两张）；tq_on 一档 17 张 DIFF 是新皮肤开着的守护档，对 main 比本来就不同（脚本头注明「这一档不看」），三本在 tq_on 就是新页。
 - `语法检查.py` 0 问题；`发行空壳.py check` 通过（80 个脚本，767 个函数；警告里列的 9 个函数是旧有的，不是本卡）。
-- 云端选测：见回执（`云端选测.py run`＋`gh run watch` 前台等完）。
+- 云端选测：首跑（f7f184534）31 场景挂 1 个 `xiyou_ui_sel_scale`（enemy_book_cursor_row_marked，新页开着旧窗不画），改测试后重跑见回执（`云端选测.py run`＋`gh run watch` 前台等完）。
 - 截图：[luiluu_t364](../归档/交付截图/luiluu_t364)（新页每张 16:9 800×450＋20:9 1000×450；旧画法对照只有 16:9）：
   - 人物：常态 `actor_book`、「？？？」槽 `actor_book_unknown`、技能详情 `actor_book_skills`、渡鸦技能多（内部滚）`actor_book_raven_long`、流萤天火轰击长说明收起 `actor_book_skill_long`／Y 展开 `actor_book_skill_expand_16x9`、字体 130% `actor_book_font130`、旧画法 `actor_old_compare_16x9`。
   - 怪物：常态 `enemy_book`、没登记 `enemy_book_unregistered`、掉落 `enemy_book_drops`、战斗里的怪物信息 `enemy_battle_info`、字体 130% `enemy_book_font130`、旧画法 `enemy_old_compare_16x9`。
