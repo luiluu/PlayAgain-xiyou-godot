@@ -56,7 +56,7 @@ var skipped_ids: Array = []
 ## 本人法宝、输出职责烙印 75%、天平酒——和丙档、U 同口径；缺省 4w＝原来的弱者 4 人白装基准队。
 const CT := preload("res://tests/virtual_player/c_tier.gd")
 ## T239（T328 合入后）：--revive-team 给存档队伍换上一名会复活的辅助（规则同 revive_compare：冷板凳上已会复活的辅助先，没有再从候选池按队伍等级挑；
-## 换下换完仍合法、攻击最低的那个，装备卸下后按游戏「最强装备」重配），并用虚拟玩家出手层（VPLogic：有人倒下先复活）打
+## 换下换完仍合法、本层实测出伤最低的那个〔第 5 轮改：先用原队在本层按 --both 量各人出伤；出伤第一的不换，有断言〕，装备卸下后按游戏「最强装备」重配），并用虚拟玩家出手层（VPLogic：有人倒下先复活）打
 const VPLogic := preload("res://tests/virtual_player/vp_battle_logic.gd")
 var revive_team := false
 var shape := "4w"
@@ -480,6 +480,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	var raw_ours := 0.0
 	var per_turn := []   # 每回合我方原始伤害（看破阵免疫回合打 0 的有几回合）
 	var hits := []
+	var by_actor := {}   # T239 第 5 轮：每人出伤合计（actor_id → 原始伤害，--no-raw 时按掉血量），--revive-team 换人按它挑
 	var done := 0
 	var revived := {}   # T239 r2：本回合被复活过的守层者 → 下一回合出手次数（断言：复活后下一回合必须出手）
 	var silent := []   # 复活后下一回合一次没出手的 [回合, 敌人]
@@ -532,6 +533,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 			if u is XActor:
 				var d := maxf(0.0, eb - _enemy_hp(logic))
 				ours += d
+				by_actor[int(u.actor_id)] = float(by_actor.get(int(u.actor_id), 0.0)) + (maxf(d, _raw_hits(logs)) if raw_mode else d)
 				if raw_mode:
 					# T239：出手前已补满，没打穿时掉血量 d 就是真伤害（含状态效果脚本里直接 gainHp 的附伤，这类日志里没有，25 层劫运神镖）；
 					# 一下打穿全部血量（马氏双节棍等）时 d 被截断，日志原始伤害 rd（hpDamage 扣血前、不截断，含附加段）更大。两者取大
@@ -577,7 +579,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	hits.sort()
 	var n := maxf(1.0, float(done))
 	var out := {"dmg": ours / n, "perTurn": per_turn, "enemyDmg": theirs / n, "enemyDot": dot / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
-		"hits": hits.size(), "partyHp": logic.actors.reduce(func(t, a): return t + float(a.mhp), 0.0),
+		"hits": hits.size(), "byActor": by_actor, "partyHp": logic.actors.reduce(func(t, a): return t + float(a.mhp), 0.0),
 		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0),
 		"atkScale": _out_scale(logic)}   # T229：守层者这场实际用的出伤倍率（没给 --atk-table 时是游戏里的表）
 	if raw_mode:
@@ -714,7 +716,24 @@ func _snapshot_states(f: int) -> Array:
 		st.set_variable(20, f)
 		if revive_team:
 			XState._become_current(st)
-			st.set_meta("t239_swap", _swap_in_reviver(st))
+			# T239 第 5 轮：先用原队在本层量一遍各人出伤（同 --both 量法、存档副本上打），换下的按实测出伤最低挑，主力不动
+			var probe := XState.from_dict(st.to_dict())
+			for a in probe.battle_members():
+				a.recover_all()
+			var dmg_by: Dictionary = _fight_both(probe, 0).byActor
+			XState._become_current(st)
+			var sw := _swap_in_reviver(st, dmg_by)
+			if sw.has("out"):
+				var top := -1
+				for id in dmg_by:
+					if top < 0 or float(dmg_by[id]) > float(dmg_by[top]):
+						top = int(id)
+				sw["top"] = top
+				sw["outDmg"] = float(dmg_by.get(sw.out, 0.0))
+				sw["dmgBy"] = dmg_by
+				if int(sw.out) == top:
+					push_error("T239 断言：%d 层被换下的 %d 是本队出伤第一" % [f, int(sw.out)])
+			st.set_meta("t239_swap", sw)
 		for a in st.battle_members():
 			a.recover_all()
 		out.append(st)
@@ -727,7 +746,7 @@ func _snapshot_states(f: int) -> Array:
 
 
 ## --revive-team：换上一名会复活的辅助（照抄 revive_compare._swap_in_reviver，T328）；返回 {out, in, from, level}，原队已有会复活的返回 note，配不出来返回 {}
-func _swap_in_reviver(st: XState) -> Dictionary:
+func _swap_in_reviver(st: XState, dmg_by := {}) -> Dictionary:
 	var TB = CT.TB
 	var field: Array = st.battle_members().map(func(a): return int(a.actor_id))
 	for a in st.battle_members():
@@ -744,7 +763,11 @@ func _swap_in_reviver(st: XState) -> Dictionary:
 	for id in others:
 		pool.append([int(id), "候选池"])
 	var outs := field.duplicate()
-	outs.sort_custom(func(x, y): return _power(st.actor(int(x))) < _power(st.actor(int(y))))
+	if dmg_by.is_empty():
+		outs.sort_custom(func(x, y): return _power(st.actor(int(x))) < _power(st.actor(int(y))))
+	else:   # T239 第 5 轮：按本层实测出伤从低到高；出伤第一的不换（不在候选里）
+		outs.sort_custom(func(x, y): return float(dmg_by.get(int(x), 0.0)) < float(dmg_by.get(int(y), 0.0)))
+		outs.pop_back()
 	for pk in pool:
 		for o in outs:
 			var team := field.duplicate()
