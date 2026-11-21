@@ -67,7 +67,7 @@ func _run() -> void:
 		var b := XActorBook.new()
 		add_child(b)
 		await _frames(3)
-		for id in IDS:
+		for id in IDS + [167, 127]:
 			b.select(XActorBook.index_ids().find(id))
 			await _frames(5)
 			await _shot("book_%d" % id)

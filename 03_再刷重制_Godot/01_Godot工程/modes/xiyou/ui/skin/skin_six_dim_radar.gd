@@ -16,12 +16,12 @@ const DIMS := ["output", "survive", "speed", "wit", "resolve", "support"]
 const DIM_NAMES := {"output": "输出", "survive": "生存", "speed": "速度", "wit": "战商", "resolve": "韧性", "support": "辅助"}
 ## 一句话说明（定稿 1.1 的玩家可见草稿；待小A 审）
 const DIM_HINTS := {
-	"output": "打人有多疼，只看杀伤与爆发烈度",
-	"survive": "有多难被打死：血防、护盾、回血、保命机制",
-	"speed": "出手快不快、多不多动、节奏灵不灵活",
-	"wit": "战斗头脑好不好使：抓弱点、留大招、补刀",
-	"resolve": "扛控制、逆风与残血时稳不稳",
-	"support": "顾不顾队友：治疗、护盾、增益、援护",
+	"output": "杀伤与爆发能力（不区分物理与魔法）",
+	"survive": "抗击打与保命能力（生命、防御、护盾与回复）",
+	"speed": "出手快慢、再动频率与行动节奏",
+	"wit": "临战谋略与判断（仅敌方影响出招与选目标）",
+	"resolve": "心志稳度与抗控能力（影响控制抗性）",
+	"support": "团队支援能力（治疗、护盾、增益与援护）",
 }
 const LETTERS := ["E", "D", "C", "B", "A", "S", "SS", "SSS"]
 const RINGS := [2, 4, 6, 8]  # 网底画的档分（D、B、S、SSS）
@@ -85,14 +85,14 @@ static func score(letter: String) -> int:
 
 ## 「控制抗性 +7%」；C 档「控制抗性 0%」
 static func resist_text(pct: int) -> String:
-	return "控制抗性 %s%d%%" % ["+" if pct > 0 else "", pct]
+	return "控制抗性 %s%d%%" % ["+" if pct > 0 else ("−" if pct < 0 else ""), absi(pct)]
 
 
-## 悬停说明：六行「名 档　一句话」
+## 悬停说明：六行「名 档：一句话」
 static func tip_text(s: Dictionary) -> String:
 	var lines := []
 	for d in DIMS:
-		lines.append("%s %s　%s" % [DIM_NAMES[d], str(s.get(d, "C")), DIM_HINTS[d]])
+		lines.append("%s %s：%s" % [DIM_NAMES[d], str(s.get(d, "C")), DIM_HINTS[d]])
 	return "\n".join(lines)
 
 

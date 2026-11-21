@@ -213,7 +213,7 @@ func _draw_six_dim(a: XActor, y: float, sz: Vector2, pad: float) -> void:
 	var c := Vector2(sz.x / 2.0, y + room / 2.0)
 	XSkinSixDimRadar.paint(actor_panel, c, r, six, {"compact": compact})
 	var f := XUiSkin.font("body")
-	var t := XSkinSixDimRadar.resist_text(XTianqiSixDim.resist_pct_of(six))
+	var t := "韧性·" + XSkinSixDimRadar.resist_text(XTianqiSixDim.resist_pct_of(six))   # 小A 文字审：写成「韧性·控制抗性 +7%」
 	var tw := f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
 	XUiSkin.ds(actor_panel, f, Vector2((sz.x - tw) / 2.0, sz.y - pad - 2), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
 

@@ -374,7 +374,7 @@ static func status_ops(id: int, measure: Callable) -> Array:
 			var rx: float = offsets[2]
 			ops.append(["radar", six, rx + (CONTENT_W - rx) / 2.0, initial_y + RADAR_H / 2.0, RADAR_R])
 		else:
-			ops.append(_t(six_line(six), c2 + 14.0, LH * 3, CONTENT_W - c2 - 14.0, XUI.TEXT, 18))
+			ops.append(_t(six_line(six), 400.0, LH * 3, CONTENT_W - 400.0, XUI.TEXT, 18))   # 进阶次数一行到 x≈340 止，从 400 起 18 号放得下不压字
 	for col in (0 if aura_book else 3):
 		var ry := initial_y + (RADAR_H if radar_on and col == 2 else 0.0)
 		for s in skills:
@@ -457,12 +457,12 @@ static func _aura_columns(ops: Array, skills: Array, y: float, initial_y: float)
 	return initial_y + (mini(max_rows, longest) + 1) * row_h
 
 
-## 六维一行字（渡鸦、光环栏没有地方放雷达时用）：「六维 输出 S　生存 A　…」
+## 六维一行字（渡鸦、光环栏没有地方放雷达时用）：「六维：输出 S·生存 A·…」
 static func six_line(six: Dictionary) -> String:
 	var parts := []
 	for d in XSkinSixDimRadar.DIMS:
 		parts.append("%s %s" % [XSkinSixDimRadar.DIM_NAMES[d], XTianqiSixDim.letter(six, d)])
-	return "六维 " + " ".join(parts)
+	return "六维：" + "·".join(parts)
 
 
 ## 技能详情抬头（Window_ActorBookSkillHeader.refresh，内容宽 509）

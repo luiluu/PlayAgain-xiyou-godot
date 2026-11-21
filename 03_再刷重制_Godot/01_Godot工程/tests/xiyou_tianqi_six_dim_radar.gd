@@ -62,7 +62,7 @@ func _run() -> void:
 	_tianqi(true)
 	_check("resist_text_zhongli", R.resist_text(XTianqiSixDim.resist_pct_of(XTianqiSixDim.of_actor(107))) == "控制抗性 +7%")
 	_check("resist_text_gojo", R.resist_text(XTianqiSixDim.resist_pct_of(XTianqiSixDim.of_actor(180))) == "控制抗性 0%")
-	_check("resist_text_mabaoguo", R.resist_text(XTianqiSixDim.resist_pct_of(XTianqiSixDim.of_actor(60))) == "控制抗性 -10%")
+	_check("resist_text_mabaoguo", R.resist_text(XTianqiSixDim.resist_pct_of(XTianqiSixDim.of_actor(60))) == "控制抗性 −10%")
 	var names_ok := true
 	for d in R.DIMS:
 		names_ok = names_ok and R.DIM_NAMES.has(d) and R.DIM_HINTS.has(d) and not str(R.DIM_HINTS[d]).contains("战力")
@@ -78,9 +78,9 @@ func _run() -> void:
 				radar_ids.append(o[1] == XTianqiSixDim.of_actor(id))
 	_check("book_radar_data_matches", radar_ids.size() == 10 and not radar_ids.has(false))
 	var raven := XActorBook.status_ops(167, func(s, size): return XActorBook.js_width(s, size))
-	_check("book_raven_line", not _has_op(raven, "radar") and _all_text(raven).contains("六维 输出"))
+	_check("book_raven_line", not _has_op(raven, "radar") and _all_text(raven).contains("六维：输出"))
 	var aura := XActorBook.status_ops(127, func(s, size): return XActorBook.js_width(s, size))
-	_check("book_aura_line", not _has_op(aura, "radar") and _all_text(aura).contains("六维 输出"))
+	_check("book_aura_line", not _has_op(aura, "radar") and _all_text(aura).contains("六维：输出"))
 	# 「其他」列有技能的 45：技能往下让到雷达下面，不压雷达
 	var o45 := XActorBook.status_ops(45, func(s, size): return XActorBook.js_width(s, size))
 	var radar_bottom := 0.0
