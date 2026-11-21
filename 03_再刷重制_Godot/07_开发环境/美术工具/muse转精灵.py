@@ -501,7 +501,7 @@ def write_html(out, rep):
                     f'视频缩放 {a["video_scale"]}，首帧人高比 <span class="{"r" if a["red"] else ""}">{a["frame0_height_ratio"]}</span> {vr}</p>')
         rows.append(f'<img src="{e(name)}_x4.png"> <img src="{e(name)}.gif"><br><img src="{e(name)}_源帧.png" width=540>')
         rows.append('<table><tr><th>帧</th><th>时刻</th><th>序</th><th>人高比</th><th>色板平均偏差</th><th>色板外占比</th>'
-                    '<th>外接框 x0,y0,x1,y1</th><th>出格被裁（源像素）</th><th>脚底离基线</th><th>删孤点</th><th>标红</th></tr>')
+                    '<th>外接框 x0,y0,x1,y1</th><th>出格深度（格内像素，≥1 标红）</th><th>脚底离基线</th><th>删孤点</th><th>标红</th></tr>')
         for r in a['frames_out']:
             red = set(r.get('red', []))
 
