@@ -36,6 +36,24 @@ def run(fn, *a):
     return ok, buf.getvalue()
 
 
+class GuardianPhase4Rules(unittest.TestCase):
+    def test_ok_and_absent(self):
+        self.assertEqual(chk.guardian_phase4_rules(None), [])
+        g = {'hp_base': {'1': 866, '34': 5960000}, 'atk_scale': {'5': 0.2}, 'resist': {'19': 29800}, 'focus': {'20': {'skill': 3560, 'scale': 1.5}}}
+        self.assertEqual(chk.guardian_phase4_rules(g), [])
+
+    def test_bad_focus(self):
+        self.assertTrue(chk.guardian_phase4_rules({'focus': {'3': {'skill': 1, 'scale': 1.0}}}))
+        self.assertTrue(chk.guardian_phase4_rules({'focus': {'20': {'skill': 0, 'scale': 1.0}}}))
+        self.assertTrue(chk.guardian_phase4_rules({'focus': {'20': {'skill': 9, 'scale': -1}}}))
+        self.assertTrue(chk.guardian_phase4_rules({'focus': {'20': {'skill': 9}}}))
+
+    def test_bad_tables(self):
+        self.assertTrue(chk.guardian_phase4_rules({'hp_base': {'35': 1}}))
+        self.assertTrue(chk.guardian_phase4_rules({'atk_scale': {'5': 0}}))
+        self.assertTrue(chk.guardian_phase4_rules({'oops': {}}))
+
+
 class RealTables(unittest.TestCase):
     def test_real_tables_pass(self):
         buf = io.StringIO()

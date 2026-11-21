@@ -515,6 +515,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	var heal_try := 0.0
 	var focus := []
 	var atk_hits := []
+	var by_skill := {}   # T239 第 6 轮（D248 C）：守层者成员每招 {dmg 打我方掉血合计, uses 次数, ratios 每下占目标最大生命比例, scope}，挑集火招、摊预算用
 	for r in turns:
 		for e in logic.enemies:
 			if e.is_alive():
@@ -594,6 +595,15 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 			raw += float(logic.enemies.reduce(func(t, e): return t + float(e.dealt), 0.0)) - db
 			if not u is XActor:
 				theirs += maxf(0.0, pb - _party_hp(logic))
+				if cmd[0] is Dictionary and _is_guardian(u):
+					var sk := str(int(cmd[0].get("id", 0)))
+					var rec: Dictionary = by_skill.get(sk, {"dmg": 0.0, "uses": 0, "ratios": [], "scope": int(cmd[0].get("scope", 0)), "type": int(cmd[0].get("damage", {}).get("type", 0))})
+					rec.dmg = float(rec.dmg) + maxf(0.0, pb - _party_hp(logic))
+					rec.uses = int(rec.uses) + 1
+					for l in (logs if logs is Array else []):
+						if l is Dictionary and str(l.get("type", "")) == "hit" and l.get("target") is XActor and float(l.get("hp", 0.0)) > 0.0 and not bool(l.get("missed", false)) and not bool(l.get("evaded", false)):
+							rec.ratios.append(float(l.hp) / maxf(1.0, float(l.target.mhp)))
+					by_skill[sk] = rec
 			if debug:
 				print("DBG2 t%d %s skill=%s partyLoss=%.0f enemyLoss=%.0f" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-", pb - _party_hp(logic), eb - _enemy_hp(logic)])
 			if raw_mode:
@@ -629,6 +639,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0),
 		"heal": heal / n, "steal": steal / n, "regen": regen / n, "shield": shield / n, "healTry": heal_try / n,
 		"focus": _median(focus) if not focus.is_empty() else 0.0, "focusHits": focus.size(),
+		"bySkill": _skill_summary(by_skill, n),
 		"atkHit": _median(atk_hits) if not atk_hits.is_empty() else 0.0, "atkHits": atk_hits.size(),
 		"mhp": logic.actors.map(func(a): return int(a.mhp)), "team": str(s.get_meta("t239_team", "")), "rng": int(s.get_meta("t239_rng", 0)),
 		"atkScale": _out_scale(logic)}   # T229：守层者这场实际用的出伤倍率（没给 --atk-table 时是游戏里的表）
@@ -636,6 +647,22 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 		out["dmgRaw"] = raw_ours / n   # --no-raw 不写，三表脚本退回 dmg（T239 核 P2-2）
 		out["revivedSilent"] = silent   # 应为空：复活后下一回合没出手的守层者
 		out["reviveTurns"] = revive_turns + (1 if not revived.is_empty() else 0)
+	return out
+
+
+static func _is_guardian(e) -> bool:
+	return e is XEnemy and (XGuardianRework.guardian_floor(e) > 0 or str(e.horseman.get("rec", {}).get("_ref", "")) != "")
+
+
+## 每招按回合平均：dmg 每回合打我方、uses 每回合用几次、ratio 每下占目标最大生命中位、hits 命中条数
+static func _skill_summary(by_skill: Dictionary, n: float) -> Dictionary:
+	var out := {}
+	for k in by_skill:
+		var r: Dictionary = by_skill[k]
+		var rs: Array = r.ratios
+		out[k] = {"dmg": float(r.dmg) / n, "uses": float(r.uses) / n, "ratio": _median(rs) if not rs.is_empty() else 0.0, "ratioMax": rs.max() if not rs.is_empty() else 0.0,
+			"hits": rs.size(), "scope": int(r.scope), "type": int(r.type),
+			"useRatio": rs.reduce(func(t, x): return t + float(x), 0.0) / maxf(1.0, float(r.uses))}   # 一次出手合计打掉目标最大生命的比例（单体招＝打一人）
 	return out
 
 

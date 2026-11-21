@@ -446,8 +446,10 @@ static func finish(res: Dictionary, item: Dictionary, a: XBattler, b: XBattler, 
 		ctx.after_confirm.call()
 	var out := apply_state_effects(mitigated, item, a, b, [], "react", execute, bool(res.get("critical", false)), ctx)
 	# 敌人出伤倍率（XEnemy.output_scale；守层者按楼层重算攻击用，默认 1 不动）：只乘对我方的 HP 伤害／吸取
-	if a is XEnemy and a.output_scale != 1.0 and out > 0.0 and int(item.damage.type) in [1, 5]:
-		out = roundf(out * a.output_scale)
+	if a is XEnemy and out > 0.0 and int(item.damage.type) in [1, 5]:
+		var k: float = a.skill_scale(item)  # T239（D248 C）：守层者集火招单独倍率，其余同 output_scale
+		if k != 1.0:
+			out = roundf(out * k)
 	if a is XEnemy and b is XEnemy and out > 0.0 and int(item.damage.type) in [1, 5] and XTianqiNoX6.heal_scale(b) != 1.0:
 		out = maxf(1.0, roundf(out * XTianqiNoX6.heal_scale(b)))  # 去全队 ×6：敌人打敌人（混乱、魔法反射）不带 ×6，敌人血量缩了也跟着缩（O-470）
 	if execute and a is XEnemy and out > 0.0 and int(item.damage.type) in [1, 5]:
