@@ -605,10 +605,10 @@ func _merchant() -> void:
 	for pg in tr._pages:
 		for sec in pg:
 			for r in sec.rows:
-				seen[str(r.text)] = true
+				seen[str(r.text).replace(":", "：")] = true   # T360 D250：属性行冒号统一成全角
 	var all_in := true
 	for r in want:
-		all_in = all_in and seen.has(str(r.text))
+		all_in = all_in and seen.has(str(r.text).replace(":", "："))
 	check("mc.pool.all_old_detail_rows_reachable", all_in and not want.is_empty(), [want.size(), seen.size()])
 	check("mc.pool.page_text", tr.page_text() == "详情 %d / %d" % [tr.detail_page + 1, tr.detail_pages])
 	check("mc.pool.pager_visible_iff_multi", tr.pager_bar.visible == (tr.detail_pages > 1))
