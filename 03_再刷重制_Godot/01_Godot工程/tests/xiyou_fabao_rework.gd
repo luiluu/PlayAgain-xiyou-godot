@@ -291,7 +291,17 @@ func pills() -> void:
 
 
 ## 守层者重算（O-402）：天启篇存档里按层的出伤倍率、伤害抵抗；原版档、关开关照旧
+## T239 第 6 轮起 balance_table 写了 guardian_phase4：这一节测的是代码里的老表常量（ATK_SCALE／RESIST_TABLE／HP_BASE），先拿掉新表、测完放回
 func guardian() -> void:
+	var bal: Dictionary = XTianqiBalance.data()
+	var real = bal.get("guardian_phase4")
+	bal.erase("guardian_phase4")
+	_guardian_old_tables()
+	if real != null:
+		bal["guardian_phase4"] = real
+
+
+func _guardian_old_tables() -> void:
 	var s := _blank()
 	check("guardian.elem", is_equal_approx(XGuardianRework.elem_factor(20), 0.5) and is_equal_approx(XGuardianRework.elem_factor(33), 0.05) and XGuardianRework.elem_factor(5) == 1.0,
 		[XGuardianRework.elem_factor(20), XGuardianRework.elem_factor(33), XGuardianRework.elem_factor(5)])
