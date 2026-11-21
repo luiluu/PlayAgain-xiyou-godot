@@ -106,7 +106,7 @@ func _init(h: Control, k: String, battle := false) -> void:
 	in_battle = battle
 	name = "SkinBookPage"
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	mouse_filter = Control.MOUSE_FILTER_PASS   # 空白处右键＝取消（_on_gui），左键照样往下传
 
 
 ## 旧页 _ready 里问：这一页要不要建
