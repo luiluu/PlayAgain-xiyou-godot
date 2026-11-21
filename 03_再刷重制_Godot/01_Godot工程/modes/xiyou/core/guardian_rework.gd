@@ -21,7 +21,7 @@ extends RefCounted
 ## 回退：`XGuardianRework.ATK = false`；`XGuardianRework.HP = false`；`XGuardianRework.WORLD = false`（只改守层者）；`XGuardianRework.RESIST = false`；
 ## `XGuardianRework.PARAMS = false`（31～34 层守层者能力值照原数据）；`XGuardianRework.PARAMS_QIYIN = false`（七印里副本、七首之龙双防照鸿蒙老祖原数据）。
 ## 后来加的各节自己的开关写在各节注释里：DOMAIN_OFF（T229 领域）、GROWTH_NERF（T302 成长招）、TRANSFORM_ANCHOR／TRANSFORM_IDENTITY（T317／T322 残血变身）、
-## XINMO（T315 心魔对齐）。「守层者的层」统一问 guardian_floor（敌人号 → 对齐过的心魔 → 变身前是守层者的），
+## XINMO（T315 心魔对齐）、STRIP（T348 守层者清正值双闪暴闪回血，见文末）。「守层者的层」统一问 guardian_floor（敌人号 → 对齐过的心魔 → 变身前是守层者的），
 ## 楼层里别的敌人另记 META_FLOOR，只给出伤、伤害抵抗用（_floor），不算守层者。
 ## 量数接口（tests/virtual_player/baseline_dps.tscn）：measure_resist、measure_neutral。
 
@@ -659,3 +659,55 @@ static func xinmo_setup(logic, s: XState) -> void:
 ## 行动表里至少留一条能出手的招（xinmo_rec 滤空时补「攻击」1），给【影劫】等挑底招用。
 static func xinmo_traits(logic, s: XState) -> void:
 	XTianqiXinmoTraits.setup(logic, s)
+
+
+# ---- T348 守层者清正值双闪、暴闪、每回合回血（Kyo 11-22 待办 10「清掉，再量三表」；照 T315 心魔的清法）----
+## 天启篇存档里 1～33 层守层者（敌人名带「守层者」、在 TROOPS 那场里的），加 30～33 层残血变身的二阶段（入魔 538、天道·魔神 929、
+## 天道·混沌至高 930），敌人记录（XDB.rec）的特性里去掉 STRIP_XPARAM 这几项的正值：闪避 1、暴击闪避 3、魔法闪避 4、每回合回血 7。
+## 负值与别的 xparam 不动；状态、难度、词条给的照旧。34 层鸿钧借鸿蒙老祖 537 的记录（XTianqiSummit.setup 读 XDB.rec），跟着清。
+## 心魔借的就是清过的守层者记录，xinmo_rec 再滤一遍不冲突。西游档原样返回。
+## 回退：`XGuardianRework.STRIP = false`。量数：STRIP_XPARAM 改成 [3]（只清暴闪）／[7]（只清回血）等（brand_calib --strip-only=）。
+static var STRIP := true
+static var STRIP_XPARAM := [1, 3, 4, 7]
+const STRIP_TRANSFORM := [538, 929, 930]
+static var _strip_ids := {}
+static var _strip_recs := {}
+
+
+## 这个敌人号要不要清（只看号，不看存档；XDB.rec 调，读原表不走 XDB.rec 以免递归）
+static func strip_touches(id: int) -> bool:
+	if not STRIP:
+		return false
+	if _strip_ids.is_empty():
+		var t = XDB.table("Enemies")
+		for f in TROOPS:
+			for m in XDB.rec("Troops", int(TROOPS[f])).get("members", []):
+				var eid := int(m.get("enemyId", 0))
+				if t is Array and eid > 0 and eid < t.size() and t[eid] is Dictionary and str(t[eid].get("name", "")).contains("守层者"):
+					_strip_ids[eid] = int(f)
+		for eid in STRIP_TRANSFORM:
+			_strip_ids[int(eid)] = -1
+	return _strip_ids.has(id)
+
+
+## 清过的敌人记录（XDB.rec 调）：天启篇存档且开关开着才清，其余原样返回
+static func strip_rec(id: int, base: Dictionary) -> Dictionary:
+	if not STRIP or base.is_empty() or not _on():
+		return base
+	var key := str(STRIP_XPARAM)
+	var hit = _strip_recs.get(id)
+	if hit is Array and is_same(hit[0], base) and str(hit[2]) == key:
+		return hit[1]
+	var traits := []
+	var dropped := false
+	for t in base.get("traits", []):
+		if int(t.get("code", 0)) == XBattler.TRAIT_XPARAM and STRIP_XPARAM.has(int(t.get("dataId", -1))) and float(t.get("value", 0)) > 0.0:
+			dropped = true
+			continue
+		traits.append(t)
+	var r := base
+	if dropped:
+		r = base.duplicate()
+		r["traits"] = traits
+	_strip_recs[id] = [base, r, key]
+	return r
