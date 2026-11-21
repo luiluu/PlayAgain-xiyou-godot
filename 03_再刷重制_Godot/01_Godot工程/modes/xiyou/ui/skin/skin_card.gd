@@ -55,6 +55,7 @@ var _top_cut := -INF
 var _cut_y := INF
 var _fade_y := INF
 var _drag := XSkinDrag.new()
+var _press := -1   # T339 D3：按着的按钮（按下 0ms 微缩压暗，松手清）
 
 
 func _init() -> void:
@@ -199,10 +200,14 @@ func handle_input(event: InputEvent) -> bool:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT and _press >= 0:
+		_press = -1
+		queue_redraw()
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		for i in buttons.size():
 			if button_rect(i).has_point(event.position):
 				button_index = i
+				_press = i if not bool(buttons[i].get("disabled", false)) else -1
 				queue_redraw()
 				if not bool(buttons[i].get("disabled", false)):
 					button_pressed.emit(i)
@@ -229,7 +234,7 @@ func _sheet_input(event: InputEvent) -> void:
 				XSound.system(0)
 			_sheet.accept_event()
 	elif event is InputEventMouseMotion and _drag.active():
-		var to := _drag.motion((event as InputEventMouseMotion).position)
+		var to := _drag.motion((event as InputEventMouseMotion).position, XSkinDrag.is_touch_event(event))
 		if not is_nan(to):
 			scroll_by(to - scroll)
 		_sheet.accept_event()
@@ -273,6 +278,8 @@ func _draw() -> void:
 			sb.bg_color = Color(0.06, 0.05, 0.048, 0.38) if pol else Color(0, 0, 0, 0)
 			sb.border_color = Color(XUiSkin.line_c(), 0.52) if pol else Color(XUiSkin.LINE, 0.55)
 			sb.set_border_width_all(1)
+		sb.bg_color = XSkinButton.press_color(sb.bg_color, _press == i)
+		r = XSkinButton.press_rect(r, _press == i)
 		sb.draw(ci, r)
 		if i == button_index:
 			XUiSkin.draw_select(ci, r.grow(3), XUiSkin.breath_alpha())

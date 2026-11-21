@@ -318,6 +318,8 @@ func _draw() -> void:
 		sb.bg_color = (Color(0.11, 0.095, 0.09, 0.72) if pol else Color(0, 0, 0, 0.35)) if _press != i else Color(XUiSkin.SEL_FILL, 0.5)
 		sb.border_color = Color(XUiSkin.line_c(), 0.25 if dim else 0.55) if pol else Color(XUiSkin.LINE, 0.25 if dim else 0.6)
 		sb.set_border_width_all(1)
+		sb.bg_color = XSkinButton.press_color(sb.bg_color, _press == i)
+		r = XSkinButton.press_rect(r, _press == i)
 		sb.draw(ci, r)
 		var t := str(BUTTONS[i][0])
 		var fs := XUiSkin.FS_AUX_MAX if i != 4 else XUiSkin.fs(16)

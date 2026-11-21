@@ -130,6 +130,7 @@ static func fire(key: String, half := 0) -> bool:
 			e.physical_keycode = int(ev[0])
 			e.keycode = int(ev[0])
 			e.pressed = pressed
+			e.set_meta(XUiSkin.SYNTH_META, true)   # T339 P3-2：点底部提示胶囊合成的键，不算「用了键盘」
 			Input.parse_input_event(e)
 	return true
 

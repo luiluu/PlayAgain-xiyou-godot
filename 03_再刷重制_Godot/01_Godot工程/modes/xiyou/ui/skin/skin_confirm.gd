@@ -282,6 +282,9 @@ func _draw() -> void:
 			bs.bg_color = Color(0.08, 0.068, 0.066, 0.55 if _press != i else 0.78) if pol else Color(0, 0, 0, 0.25 if _press != i else 0.5)
 			bs.border_color = Color(XUiSkin.line_c(), 0.52) if pol else Color(XUiSkin.LINE, 0.55)
 			bs.set_border_width_all(1)
+		var pressed := _press == i and not dis
+		bs.bg_color = XSkinButton.press_color(bs.bg_color, pressed)
+		r = XSkinButton.press_rect(r, pressed)
 		bs.draw(ci, r)
 		if i == index:
 			XUiSkin.draw_select(ci, r.grow(3), XUiSkin.breath_alpha())
