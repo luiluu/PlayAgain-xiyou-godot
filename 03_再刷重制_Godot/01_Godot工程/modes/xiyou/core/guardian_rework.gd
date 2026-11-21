@@ -666,7 +666,7 @@ static func xinmo_traits(logic, s: XState) -> void:
 ## 天道·混沌至高 930），敌人记录（XDB.rec）的特性里去掉 STRIP_XPARAM 这几项的正值：闪避 1、暴击闪避 3、魔法闪避 4、每回合回血 7。
 ## 负值与别的 xparam 不动；状态、难度、词条给的照旧。34 层鸿钧借鸿蒙老祖 537 的记录（XTianqiSummit.setup 读 XDB.rec），跟着清。
 ## 心魔借的就是清过的守层者记录，xinmo_rec 再滤一遍不冲突。西游档原样返回。
-## 回退：`XGuardianRework.STRIP = false`。量数：STRIP_XPARAM 改成 [3]（只清暴闪）／[7]（只清回血）等（brand_calib --strip-only=）。
+## 回退：`XGuardianRework.STRIP = false`。量数：STRIP_XPARAM 改成 [3]（只清暴闪）／[7]（只清回血）等（brand_calib --strip-guardian=）。
 static var STRIP := true
 static var STRIP_XPARAM := [1, 3, 4, 7]
 const STRIP_TRANSFORM := [538, 929, 930]
