@@ -1241,10 +1241,10 @@ static func panel(s: XState, a) -> Dictionary:
 ## 玩家可见文字（待小A 审）：只说段名（守一～逆命）、百分比、怎么加深，不用「境」「锚」作总称（T140、D174）。关着、西游档返回空。
 const TEXT_ROW := "烙印：\\C[6]「%s」\\C[0] %s%%%s　伤害 \\C[3]+%s%%\\C[0]"
 const TEXT_HOW_END := "烙印已到尽头，不再加深"
-const TEXT_HOW_STAND := "\\C[17]已到「%s」的极限：到「闭关」打赢心魔才能继续加深\\C[0]"
-const TEXT_HOW_SEALED := "\\C[17]未刻印最多加深至「%s」（%s%%）：到「闭关」刻印后才能继续加深\\C[0]"
-const TEXT_HOW_CARVED := "加深：首领战获胜时加深，首通守层者加深最多；「%s」最多到 %s%%"
-const TEXT_HOW_UNCARVED := "加深：首领战挨打时加深（未刻印），最多加深至「%s」（%s%%）"
+const TEXT_HOW_STAND := "\\C[17]已达「%s」上限：击败心魔后方可继续加深（大厅「闭关」）\\C[0]"
+const TEXT_HOW_SEALED := "\\C[17]未刻印止步于「%s」（%s%%）：刻印后方可继续加深（大厅「闭关」）\\C[0]"
+const TEXT_HOW_CARVED := "加深：首领战获胜可加深（首通守层者最多）；「%s」上限 %s%%"
+const TEXT_HOW_UNCARVED := "加深：未刻印，仅在首领战受击时积累；上限「%s」（%s%%）"
 const TEXT_COSTS := "代价：%s"
 
 
@@ -1271,12 +1271,17 @@ static func status_rows(s, a) -> Array:
 	return out
 
 
-## 已有的常驻代价名（烙印超过那一条的节点才算，同 has_cost）；没有返回空
+## 已有的常驻代价名（烙印超过那一条的节点才算，同 has_cost）；没有返回空。
+## 一条命带前一档（blocks_revive）：超过 revive_once_over、还没到「一条命」那一行时，列 TEXT_REVIVE_ONCE（T121 核查 P3-2）
+const TEXT_REVIVE_ONCE := "每场限复活 1 次"
 static func cost_names(a, s = null) -> Array:
 	var out := []
 	for row in data().get("costs", {}).get("list", []):
-		if has_cost(a, str(row.get("key", "")), s):
+		var key := str(row.get("key", ""))
+		if has_cost(a, key, s):
 			out.append(str(row.get("name", "")))
+		elif key == "one_life" and a is XActor and on(s) and value(a) > roundi(float(data().get("costs", {}).get("one_life", {}).get("revive_once_over", 70)) * scale()):
+			out.append(TEXT_REVIVE_ONCE)
 	return out
 
 
