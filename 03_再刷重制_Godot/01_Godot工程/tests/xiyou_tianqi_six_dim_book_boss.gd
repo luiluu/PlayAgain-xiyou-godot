@@ -3,7 +3,8 @@ extends Node
 ## 一、XBossStatus.six_summary：四骑士免控（「免疫停手控制」）、普通怪给控制抗性、关开关／西游档回 {}、无战力字。
 ## 二、怪物图鉴 status_ops：天启篇已登记画 radar＋简注；未登记整窗空；战斗内未登记「？？？」不画；西游档与关开关无 radar。
 ## 三、首领详情：骑士在六维开着时算首领、有第四个页签、点它切到「六维」、点拦截仍在；关开关时骑士不是首领、仍 3 个页签、点 (450,58) 仍是「全部」。
-## 四、真战斗画面里画「六维」页（旧面板与新界面两种）不报错。
+## 四、真战斗画面里画「六维」页（新界面）、直接建旧面板 XBossStatusPanel 画「六维」页都不报错。
+## 五、r1：四骑士的 XBossStatus.is_boss（战斗结算用）不随六维开关变；is_panel_boss（面板用）才随开关。
 
 var results: Array = []
 
@@ -119,8 +120,12 @@ func _run() -> void:
 		var panel: XBossStatusPanel = sc.boss_panel
 		var kn = XTianqiHorsemen.fight(sc.logic).knight
 		var sum := XBossStatus.six_summary(kn, sc.logic)
-		_check("knight_is_boss_%s" % line, XBossStatus.is_boss(kn) and panel.visible and panel.battler == kn)
-		_check("knight_immune_%s" % line, sum.immune and sum.control_line == "免疫停手控制", sum)
+		_check("knight_is_panel_boss_%s" % line, XBossStatus.is_panel_boss(kn) and panel.visible and panel.battler == kn)
+		var was := XBossStatus.is_boss(kn)
+		XTianqiSixDim.ENABLED = false
+		_check("knight_is_boss_unchanged_by_switch_%s" % line, XBossStatus.is_boss(kn) == was and not was and not XBossStatus.is_panel_boss(kn))
+		XTianqiSixDim.ENABLED = true
+		_check("knight_immune_%s" % line, sum.immune and sum.control_line == "免疫控制状态", sum)
 		_check("knight_six_%s" % line, sum.six == XTianqiSixDim.of_knight(line))
 		_check("tabs_four_%s" % line, panel.six_tab_on() and panel.tab_keys().size() == 4)
 		panel.click_bar()
@@ -137,13 +142,33 @@ func _run() -> void:
 		_check("six_page_draws_%s" % line, panel.filter == "Six" and panel.detail.visible)
 		sc.queue_free()
 		await _frames(4)
+	# 旧面板（XUiSkin.FORCE＝false、直接 new XBossStatusPanel）：六维页签能画、传了 line／gold、点击切页签
+	var sc_old := _knight_battle("war")
+	await _frames(40)
+	var old_panel := XBossStatusPanel.new()
+	old_panel.enemies_source = func(): return sc_old.logic.enemies
+	old_panel.logic_source = func(): return sc_old.logic
+	sc_old.add_child(old_panel)
+	await _frames(10)
+	_check("old_panel_visible_four_tabs", old_panel.visible and old_panel.tab_keys().size() == 4 and not (old_panel is XSkinBossStatus))
+	old_panel.click_bar()
+	old_panel.click_detail(Vector2(450, 58))
+	await _frames(4)
+	_check("old_panel_six_page", old_panel.filter == "Six" and old_panel.detail.visible)
+	var stamp_before := old_panel._stamp
+	XTianqiSixDim.ENABLED = false
+	old_panel.refresh(false)
+	_check("old_panel_stamp_tracks_six_switch", old_panel._stamp != stamp_before and old_panel.filter == "Debuff", old_panel.filter)
+	XTianqiSixDim.ENABLED = true
+	sc_old.queue_free()
+	await _frames(4)
 	# 关开关：骑士不算首领、3 个页签不变
 	XTianqiSixDim.ENABLED = false
 	var sc2 := _knight_battle("death")
 	await _frames(40)
 	var p2: XBossStatusPanel = sc2.boss_panel
 	var kn2 = XTianqiHorsemen.fight(sc2.logic).knight
-	_check("off_knight_not_boss", not XBossStatus.is_boss(kn2) and not p2.visible)
+	_check("off_knight_not_boss", not XBossStatus.is_boss(kn2) and not XBossStatus.is_panel_boss(kn2) and not p2.visible)
 	_check("off_three_tabs", p2.tab_keys().size() == 3 and not p2.six_tab_on())
 	sc2.queue_free()
 	await _frames(4)

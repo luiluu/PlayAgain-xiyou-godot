@@ -84,7 +84,7 @@ func _canvas(s: Vector2, painter: Callable, input: Callable) -> XMVCanvas:
 
 
 func bosses() -> Array:
-	return enemies_source.call().filter(XBossStatus.is_boss) if enemies_source.is_valid() else []
+	return enemies_source.call().filter(XBossStatus.is_panel_boss) if enemies_source.is_valid() else []
 
 
 ## locateBoss
@@ -191,7 +191,7 @@ func refresh(force := false) -> void:
 	var tip := XTianqiElements.profile_tooltip(prof)
 	if bar != null:
 		bar.tooltip_text = tip
-	var stamp := JSON.stringify([XBossStatus.clean(battler.display_name()) if battler else "", power_total(), XBossStatus.entries(battler), page, filter, open, selected, description_page, tip])
+	var stamp := JSON.stringify([XBossStatus.clean(battler.display_name()) if battler else "", power_total(), XBossStatus.entries(battler), page, filter, open, selected, description_page, tip, six_tab_on(), battler.enemy_id if battler is XEnemy else 0])
 	if not force and stamp == _stamp:
 		return
 	_stamp = stamp
@@ -451,7 +451,7 @@ func _paint_six(c: XMVCanvas) -> void:
 	var sm := six_summary()
 	if sm.is_empty():
 		return
-	XSkinSixDimRadar.paint(c, SIX_CENTER, SIX_R, sm.six, {"font": XUI.font(), "text": INK, "dim": MUTED, "fs": 14})
+	XSkinSixDimRadar.paint(c, SIX_CENTER, SIX_R, sm.six, {"font": XUI.font(), "text": INK, "dim": MUTED, "line": EDGE, "gold": BLUE, "fs": 14})
 	var tw := DETAIL_W - SIX_TEXT_X - 14.0
 	c.text(str(sm.tier_line), SIX_TEXT_X, BODY_Y + 8.0, tw, "left", BLUE, 17, 26)
 	var y := BODY_Y + 40.0

@@ -55,6 +55,7 @@ const SIX_CENTER := Vector2(306.0, 112.0)   # 内容坐标（状态窗内容区�
 const SIX_R := 48.0
 const SIX_SPRITE_CENTER_X := 104.0
 const SIX_SPRITE_MAX_W := 200.0
+const SIX_SPRITE_MAX_H := 200.0   # 高瘦立绘兜底，别压到下面的「弱化属性」（y 258）
 
 ## 战斗内：只列本场敌人、不写序号、没登记也画（isAllEnemies 为假）
 var in_battle := false
@@ -371,7 +372,7 @@ func _paint_status(c: XMVCanvas) -> void:
 			scale = CW / src.size.x / 2.0
 		if _status_ops.any(func(o): return o[0] == "radar"):   # T279：给六维雷达让位，立绘靠左、最宽 200
 			center.x = SIX_SPRITE_CENTER_X
-			scale = minf(scale, SIX_SPRITE_MAX_W / src.size.x)
+			scale = minf(scale, minf(SIX_SPRITE_MAX_W / src.size.x, SIX_SPRITE_MAX_H / src.size.y))
 		var sz := src.size * scale
 		c.draw_texture_rect_region(_sprite_tex, Rect2(center - sz / 2.0, sz), src)
 	XActorBook.paint_ops(c, _status_ops)

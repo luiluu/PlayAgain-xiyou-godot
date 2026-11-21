@@ -15,13 +15,13 @@ const ICON_DEBUFF_START := 48
 
 ## 【T279】战商档一句话提示（玩家可见草稿，待小A 审）；档名在 six_dim.json 的 ai_tier_names
 const TIER_HINTS := {
-	1: "不懂算计，出招多半凭运气",
-	2: "凭直觉出手，偶尔抓得住机会",
-	3: "懂得留招和补刀，不容易被牵着走",
-	4: "专挑弱点下手，还会护住残血的同伴",
-	5: "技能、目标都算得极精，几乎不留破绽",
+	1: "全无章法，按本能随机出招",
+	2: "选目标时有一半几率盯紧血量最低的",
+	3: "会避开免疫与重复控制，优先打弱点",
+	4: "专盯弱点与可斩杀目标，优先点治疗者",
+	5: "遇厚盾与护持会留大招，先铺垫再爆发",
 }
-const IMMUNE_LINE := "免疫停手控制"
+const IMMUNE_LINE := "免疫控制状态"
 
 static var _re := {}
 
@@ -34,10 +34,15 @@ static func _regex(pattern: String) -> RegEx:
 
 ## isBoss：Game_Enemy.setup／transform 记的 _codexBossDifficultyBoss，活着且已现身
 static func is_boss(e) -> bool:
-	if not e is XEnemy or e.hidden or e.is_dead():
-		return false
-	# T279：四骑士本体（setup_horseman 不记首领难度，原来没有详情面板）在六维开着时也算首领，才能展开详情看「六维」页签；六维关着与原来一样
-	return e.boss_difficulty_boss or (not e.horseman.is_empty() and bool(e.horseman.get("knight", false)) and XTianqiSixDim.active())
+	return e is XEnemy and e.boss_difficulty_boss and not e.hidden and not e.is_dead()
+
+
+## 【T279】详情面板用的「首领」：is_boss 之外，六维开着时把四骑士本体也算进来（骑士 setup_horseman 不记首领难度，原来没有详情面板）。
+## 只给 XBossStatusPanel.bosses() 用；战斗结算（灰镰处决、首领低血增伤、五条悟信息过载）仍认 is_boss，不受六维开关影响
+static func is_panel_boss(e) -> bool:
+	if is_boss(e):
+		return true
+	return e is XEnemy and not e.hidden and not e.is_dead() and not e.horseman.is_empty() and bool(e.horseman.get("knight", false)) and XTianqiSixDim.active()
 
 
 ## 【T279】六维只读摘要（怪物图鉴、战斗内首领详情「六维」页签共用）：不生效（西游档、开关关）回 {}；
