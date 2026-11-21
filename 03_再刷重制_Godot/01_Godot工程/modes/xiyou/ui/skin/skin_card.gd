@@ -366,7 +366,7 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 	var x := x0
 	if icon != null:
 		if not dry and _vis(y, 48.0) > 0.0:
-			t.draw_texture_rect(icon, Rect2(x, y, 48, 48), false)
+			t.draw_texture_rect(icon, XUiSkin.inline_icon_rect(x, y + 24.0, 48.0, title_size) if XUiSkin.detail_on() else Rect2(x, y, 48, 48), false)
 		x += 48 + 12
 	if title != "":
 		if not dry and _vis(y, 48.0) > 0.0:
@@ -381,11 +381,9 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 		y += XUiSkin.FS_AUX_MAX + 6
 	if notice != "":
 		y += 6
-		var npara := TextParagraph.new()
-		npara.width = w - 20.0
-		npara.add_string(notice, body, XUiSkin.FS_AUX)
+		var nranges := XSkinText.wrap_ranges(notice, body, XUiSkin.FS_AUX, w - 20.0)   # T338 D2：避头尾＋防孤字
 		var nlh := roundf(XUiSkin.FS_AUX * 1.45)
-		var ncnt := maxi(1, npara.get_line_count())
+		var ncnt := maxi(1, nranges.size())
 		var nh := float(ncnt) * nlh + 10.0
 		if y + nh <= bottom:
 			if not dry and _vis(y, nh) > 0.0:
@@ -397,9 +395,9 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 				nsb.draw(t.get_canvas_item(), Rect2(x0, y, w, nh))
 				if pol:
 					t.draw_rect(Rect2(x0 + 1.0, y + 4.0, 2.5, maxf(4.0, nh - 8.0)), Color(XUiSkin.GOLD, 0.85))
-				for li in npara.get_line_count():
-					var r := npara.get_line_range(li)
-					XUiSkin.ds(t, body, Vector2(x0 + 10.0, y + 5.0 + float(li) * nlh + XUiSkin.FS_AUX * 0.96), notice.substr(r.x, r.y - r.x), HORIZONTAL_ALIGNMENT_LEFT, w - 20.0, XUiSkin.FS_AUX, XUiSkin.GOLD_LIGHT)
+				for li in nranges.size():
+					var r := nranges[li]
+					XUiSkin.ds(t, body, Vector2(x0 + 10.0, y + 5.0 + float(li) * nlh + XUiSkin.FS_AUX * 0.96), notice.substr(r.x, r.y - r.x), HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.GOLD_LIGHT)   # -1：XSkinText 允许行尾挂出标点，不能按 w 裁
 			y += nh + 4
 	if desc != "":
 		y += 8
@@ -509,18 +507,16 @@ func _paragraph(t: Control, f: Font, text: String, y: float, x0: float, w: float
 	if lh < 0.0:
 		var mult := 1.56 if XUiSkin.polish_on() and XUiSkin.font_mult() <= 1.05 else 1.5
 		lh = roundf(fs * mult)
-	var para := TextParagraph.new()
-	para.width = w
-	para.add_string(text, f, fs)
+	var ranges := XSkinText.wrap_ranges(text, f, fs, w)   # T338 D2：避头尾＋防孤字（返回字符区间，spans 分色照用）
 	var off := (lh - roundf(fs * 1.5)) / 2.0
-	for li in para.get_line_count():
+	for li in ranges.size():
 		if y + lh > bottom:
 			break
 		var a := _vis(y, lh)
 		if not dry and a > 0.0:
-			var line_text_range := para.get_line_range(li)
+			var line_text_range := ranges[li]
 			if spans.is_empty():
-				XUiSkin.ds(t, f, Vector2(x0, y + off + fs * 1.1), text.substr(line_text_range.x, line_text_range.y - line_text_range.x), HORIZONTAL_ALIGNMENT_LEFT, w, fs, _fa(col, a))
+				XUiSkin.ds(t, f, Vector2(x0, y + off + fs * 1.1), text.substr(line_text_range.x, line_text_range.y - line_text_range.x), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _fa(col, a))
 			else:
 				_span_line(t, f, spans, line_text_range.x, line_text_range.y, Vector2(x0, y + off + fs * 1.1), fs, a)
 		y += lh

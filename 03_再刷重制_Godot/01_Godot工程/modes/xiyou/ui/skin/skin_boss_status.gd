@@ -152,7 +152,7 @@ func _paint_bar(c: XMVCanvas) -> void:
 				if int(cap.icon) > 0:
 					var tex := XUiSkin.icon(int(cap.icon))
 					if tex != null:
-						c.draw_texture_rect(tex, Rect2(x + 7.0, 8.0, 24.0, 24.0), false)
+						c.draw_texture_rect(tex, XUiSkin.inline_icon_rect(x + 7.0, 20.0, 24.0, CAP_FS) if XUiSkin.detail_on() else Rect2(x + 7.0, 8.0, 24.0, 24.0), false)
 					tx = x + 36.0
 				_txt(c, f, str(cap.text), tx, 0, r.end.x - tx, "left", XUiSkin.DOWN if bad else XUiSkin.TEXT, CAP_FS, ROW_H)
 			"more":
@@ -222,7 +222,7 @@ func _paint_detail(c: XMVCanvas) -> void:
 		if row.icon != 0:
 			var tex := XUiSkin.icon(int(row.icon))
 			if tex != null:
-				c.draw_texture_rect(tex, Rect2(22, y + 9.0, 27, 27), false)
+				c.draw_texture_rect(tex, XUiSkin.inline_icon_rect(22.0, y + 22.5, 27.0, 17) if XUiSkin.detail_on() else Rect2(22, y + 9.0, 27, 27), false)
 		var x := 58.0 if row.icon != 0 else 24.0
 		_txt(c, f, XSkinOTBBar.fit(f, str(row.name), w - x - 122.0, 17), x, y + 2.0, w - x - 122.0, "left", XUiSkin.TEXT, 17, 26)
 		_txt(c, f, XSkinOTBBar.fit(f, spaced(_meta(row)), 110.0, 14), w - 125.0, y + 2.0, 109, "right", col, 14, 26)
@@ -286,7 +286,7 @@ func _paint_selected(c: XMVCanvas, row: Dictionary) -> void:
 	if row.icon != 0:
 		var tex := XUiSkin.icon(int(row.icon))
 		if tex != null:
-			c.draw_texture_rect(tex, Rect2(22, BODY_Y + 12.0, 30, 30), false)
+			c.draw_texture_rect(tex, XUiSkin.inline_icon_rect(22.0, BODY_Y + 27.0, 30.0, 19) if XUiSkin.detail_on() else Rect2(22, BODY_Y + 12.0, 30, 30), false)
 	var x := 63.0 if row.icon != 0 else 23.0
 	var tf := XUiSkin.font("title")
 	var names := wrap_lines(tf, str(row.name), w - x - 20.0, 19)
@@ -319,7 +319,10 @@ func _footer(c: XMVCanvas, at: int, pages: int, middle: String) -> void:
 	_txt(c, f, "下一页 ›", w - 97.0, y + 3.0, 82, "right", XUiSkin.GOLD if at < pages - 1 else XUiSkin.TEXT_3, 14, 28)
 
 
+## T338 D2：走 XSkinText（避头尾＋防孤字＋英文数字不腰斩）；DETAIL_V1 关＝旧的逐字硬切
 static func wrap_lines(f: Font, text: String, width: float, fs: int) -> Array:
+	if XUiSkin.detail_on():
+		return XSkinText.wrap_lines(text, f, fs, width)
 	var lines := []
 	var line := ""
 	for ch in text:

@@ -196,7 +196,7 @@ func _draw() -> void:
 		var d := XSkinItemPage.card_data(item)
 		var tex: Texture2D = d.get("icon")
 		if tex != null:
-			draw_texture_rect(tex, Rect2(x, pad, 48, 48), false)
+			draw_texture_rect(tex, XUiSkin.inline_icon_rect(x, pad + 24.0, 48.0, XUiSkin.FS_CARD) if XUiSkin.detail_on() else Rect2(x, pad, 48, 48), false)
 			x += 60
 		var fit := XSkinList.fit_text(head, str(d.title), size.x - pad - x, XUiSkin.FS_CARD, 20)
 		XUiSkin.ds(self, head, Vector2(x, pad + 26), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], d.title_color)
@@ -219,11 +219,9 @@ func _draw() -> void:
 	XUiSkin.draw_divider(self, pad, size.x - pad, ly, true, 0.85 if XUiSkin.polish_on() else 1.0)
 
 
-func _para(text: String, w: float, fs: int) -> TextParagraph:
-	var p := TextParagraph.new()
-	p.width = w
-	p.add_string(text, XUiSkin.font("body"), fs)
-	return p
+## T338 D2：走 XSkinText（避头尾＋防孤字），返回 [起, 止) 字符区间
+func _para(text: String, w: float, fs: int) -> Array[Vector2i]:
+	return XSkinText.wrap_ranges(text, XUiSkin.font("body"), fs, w)
 
 
 func _measure() -> float:
@@ -232,7 +230,7 @@ func _measure() -> float:
 		return _cmp.size() * ROW_H
 	var h := 0.0
 	for r in _rows:
-		h += _para(str(r.text), w, XUiSkin.FS_AUX_MAX).get_line_count() * roundf(XUiSkin.FS_AUX_MAX * 1.6)
+		h += _para(str(r.text), w, XUiSkin.FS_AUX_MAX).size() * roundf(XUiSkin.FS_AUX_MAX * 1.6)
 	return h
 
 
@@ -311,9 +309,9 @@ func _draw_body() -> void:
 		for r in _rows:
 			var text := str(r.text)
 			var p := _para(text, w, fs)
-			for li in p.get_line_count():
+			for li in p.size():
 				if y + lh >= 0 and y <= body.size.y:
-					var rg := p.get_line_range(li)
+					var rg := p[li]
 					XUiSkin.ds(body, font, Vector2(0, y + fs * 1.15), text.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, r.get("color", XUiSkin.TEXT_2))
 				y += lh
 		if _rows.is_empty():

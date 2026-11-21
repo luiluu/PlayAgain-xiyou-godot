@@ -244,6 +244,8 @@ func _drag_input(event: InputEvent) -> void:
 
 ## T283 多选方框（行键 check）：14×14 圆角框，标上是金色 ✓（不画框）；pos＝左缘、竖直中线
 func _draw_check(pos: Vector2, on: bool, dis: bool) -> void:
+	if XUiSkin.detail_on():   # T338 D2：勾选框也接行内图标下移量
+		pos.y += roundf(float(font_size) * XUiSkin.ICON_DY_K)
 	if on:
 		var c := XUiSkin.GOLD if not dis else XUiSkin.TEXT_3
 		draw_polyline(PackedVector2Array([pos + Vector2(1, 0), pos + Vector2(6, 5), pos + Vector2(15, -6)]), c, 2.5, true)
@@ -365,7 +367,10 @@ func _draw() -> void:
 		var icon = it.get("icon")
 		var tex: Texture2D = icon if icon is Texture2D else (XUiSkin.icon(int(icon)) if (icon is int or icon is float) and int(icon) > 0 else null)
 		if tex != null:
-			var ir := XSkinSelScale.grow(Rect2(x, base - icon_size / 2.0, icon_size, icon_size), sk)
+			var ir0 := Rect2(x, base - icon_size / 2.0, icon_size, icon_size)
+			if XUiSkin.detail_on():   # T338 D2：统一图标出口（取整＋ICON_DY_K）
+				ir0 = XUiSkin.inline_icon_rect(x, base, icon_size, font_size)
+			var ir := XSkinSelScale.grow(ir0, sk)
 			draw_texture_rect(tex, ir, false, Color(1, 1, 1, 0.45 if dis else 1.0))
 			var badge = it.get("badge")
 			if badge is Texture2D:

@@ -355,6 +355,10 @@ static func wrap(s: String, f: Font, fs: int, max_w: float, max_lines: int) -> A
 		var p := para.strip_edges()
 		if p == "":
 			continue
+		if XUiSkin.detail_on():   # T338 D2：避头尾＋防孤字
+			for r in XSkinText.wrap_ranges(p, f, fs, max_w):
+				out.append(p.substr(r.x, r.y - r.x).strip_edges())
+			continue
 		var tp := TextParagraph.new()
 		tp.add_string(p, f, fs)
 		tp.width = max_w
@@ -471,6 +475,8 @@ class Chip extends Control:
 		sb.anti_aliasing = true
 		draw_style_box(sb, r)
 		var iy := roundf((size.y - ICON) / 2.0)
+		if XUiSkin.detail_on():   # T338 D2：统一图标出口（ICON_DY_K 联动）
+			iy = XUiSkin.inline_icon_rect(PAD_X, size.y / 2.0, ICON, title_fs()).position.y
 		if badge_tex != null:
 			draw_texture_rect(badge_tex, Rect2(PAD_X - 2.0, iy - 4.0, ICON + 8.0, ICON + 8.0), false)
 		elif icon_tex != null:
