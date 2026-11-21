@@ -355,6 +355,10 @@ static func wrap(s: String, f: Font, fs: int, max_w: float, max_lines: int) -> A
 		var p := para.strip_edges()
 		if p == "":
 			continue
+		if XUiSkin.detail_on():   # T338 D2：避头尾＋防孤字
+			for r in XSkinText.wrap_ranges(p, f, fs, max_w):
+				out.append(p.substr(r.x, r.y - r.x).strip_edges())
+			continue
 		var tp := TextParagraph.new()
 		tp.add_string(p, f, fs)
 		tp.width = max_w

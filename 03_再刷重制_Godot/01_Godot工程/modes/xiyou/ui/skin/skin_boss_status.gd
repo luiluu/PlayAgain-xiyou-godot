@@ -298,7 +298,10 @@ func _footer(c: XMVCanvas, at: int, pages: int, middle: String) -> void:
 	_txt(c, f, "下一页 ›", w - 97.0, y + 3.0, 82, "right", XUiSkin.GOLD if at < pages - 1 else XUiSkin.TEXT_3, 14, 28)
 
 
+## T338 D2：走 XSkinText（避头尾＋防孤字＋英文数字不腰斩）；DETAIL_V1 关＝旧的逐字硬切
 static func wrap_lines(f: Font, text: String, width: float, fs: int) -> Array:
+	if XUiSkin.detail_on():
+		return XSkinText.wrap_lines(text, f, fs, width)
 	var lines := []
 	var line := ""
 	for ch in text:
