@@ -58,6 +58,20 @@ func _run() -> void:
 	var gojo := {"output": "S", "survive": "A", "speed": "B", "wit": "SS", "resolve": "C", "support": "E"}
 	var gp := R.points(c, 80.0, gojo)
 	_check("gojo_shape", is_equal_approx(gp[3].distance_to(c), 70.0) and is_equal_approx(gp[5].distance_to(c), 10.0))
+	# 节点用法：直接赋值也更新悬停说明、compact 传给 paint
+	var node := XSkinSixDimRadar.new()
+	add_child(node)
+	node.six = gojo
+	_check("node_assign_updates_tooltip", node.tooltip_text == R.tip_text(gojo) and node.tooltip_text.begins_with("输出 S：杀伤与爆发能力"), node.tooltip_text)
+	node.compact = true
+	_check("node_compact_passed", node.paint_opts().get("compact") == true)
+	node.compact = false
+	_check("node_noncompact_passed", node.paint_opts().get("compact") == false)
+	node.opts = {"fs": 16}
+	_check("node_opts_kept", node.paint_opts().get("fs") == 16)
+	node.set_six({}, 0)
+	_check("node_empty_six_tooltip_neutral", node.tooltip_text.contains("输出 C："))
+	node.queue_free()
 	# 二、文字
 	_tianqi(true)
 	_check("resist_text_zhongli", R.resist_text(XTianqiSixDim.resist_pct_of(XTianqiSixDim.of_actor(107))) == "控制抗性 +7%")

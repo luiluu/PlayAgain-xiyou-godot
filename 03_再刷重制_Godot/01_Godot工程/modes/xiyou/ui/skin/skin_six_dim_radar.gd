@@ -26,21 +26,32 @@ const DIM_HINTS := {
 const LETTERS := ["E", "D", "C", "B", "A", "S", "SS", "SSS"]
 const RINGS := [2, 4, 6, 8]  # 网底画的档分（D、B、S、SSS）
 
-@export var six: Dictionary = {}
+@export var six: Dictionary = {}:
+	set(v):
+		six = v
+		tooltip_text = tip_text(v if not v.is_empty() else _neutral())
+		queue_redraw()
 @export var compact := false:
 	set(v):
 		compact = v
 		queue_redraw()
-@export var show_resist := false  ## 控件内顺带在下方画一行「控制抗性 +x%」（只给节点用法；静态 paint 不画）
-var resist_pct := 0
-var opts: Dictionary = {}
+@export var show_resist := false:  ## 控件内顺带在下方画一行「控制抗性 +x%」（只给节点用法；静态 paint 不画）
+	set(v):
+		show_resist = v
+		queue_redraw()
+var resist_pct := 0:
+	set(v):
+		resist_pct = v
+		queue_redraw()
+var opts: Dictionary = {}:
+	set(v):
+		opts = v
+		queue_redraw()
 
 
 func set_six(s: Dictionary, resist := 0) -> void:
 	six = s
 	resist_pct = resist
-	tooltip_text = tip_text(s)
-	queue_redraw()
 
 
 func _init() -> void:
@@ -55,7 +66,7 @@ func _draw() -> void:
 	var r := minf(size.x / 2.0 - m.x, (size.y - extra) / 2.0 - m.y)
 	if r < 10.0:
 		return
-	var o := opts.duplicate()
+	var o := paint_opts()
 	var c := Vector2(size.x / 2.0, (size.y - extra) / 2.0)
 	paint(self, c, r, s, o)
 	if show_resist:
@@ -64,6 +75,13 @@ func _draw() -> void:
 		var fs := 15
 		var tw := f.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		XUiSkin.ds(self, f, Vector2((size.x - tw) / 2.0, size.y - 6), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, o.get("dim", XUiSkin.TEXT_2))
+
+
+## 节点用法交给 paint 的 opts：调用方给的 opts 加上本节点的 compact
+func paint_opts() -> Dictionary:
+	var o := opts.duplicate()
+	o["compact"] = compact
+	return o
 
 
 ## 标签占的边距（横、纵），算半径用
@@ -155,7 +173,7 @@ static func paint(ci: CanvasItem, center: Vector2, r: float, s: Dictionary, o :=
 			XUiSkin.ds(ci, font, Vector2(x, y), name_s + " ", HORIZONTAL_ALIGNMENT_LEFT, -1, fs, dim)
 			XUiSkin.ds(ci, font, Vector2(x + nw, y), letter, HORIZONTAL_ALIGNMENT_LEFT, -1, fs + 2, lc)
 		else:
-			# 两行：名字（小、次要色）在内侧、档位（大）在外侧；上顶点档位在上，下顶点档位在下，左右顶点两行贴边
+			# 两行：上行名字（小、次要色）、下行档位（大），整块按顶点方向外推（上顶点块在顶点之上，下顶点块在顶点之下，左右顶点块贴边）
 			var name_s2: String = DIM_NAMES[d]
 			var nw2 := font.get_string_size(name_s2, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			var big := fs + 6
