@@ -152,7 +152,7 @@ static func growth_gain(s: XState, a, gain: float) -> float:
 	return free
 
 
-## 没学 10136 时把超过 15 万的灵魂压回（sync 开头、学技能之前调；旧档读进来下一次 sync 就压回）
+## 没学 10136 时把超过 15 万的灵魂压回（sync 开头、学技能之前调；旧档读档即压回：XTianqiSave.after_load 调这里，T269）
 static func growth_clamp(a) -> void:
 	var s := XState.current
 	if not XTianqiGrowth.on(s) or has(a, int(XTianqiGrowth.actor_row(XTianqiGrowth.RAVEN).get("need_skill", 10136))):

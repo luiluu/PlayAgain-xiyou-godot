@@ -186,6 +186,7 @@ func _raven_load_learned(s: XState) -> void:
 	var xbr: XActor = xb.actor(XRaven.ACTOR) if xb != null else null
 	_check("raven_load_xiyou", xbr != null and not XTianqi.active(xb) and not XRaven.has(xbr, 10136) and XRaven.soul(xbr) == 180000.0, XRaven.soul(xbr) if xbr != null else null)
 	XState.current = s
+	XTextFix.sync_mode()
 
 
 func _nanoha(s: XState, set_ok: Callable) -> void:
