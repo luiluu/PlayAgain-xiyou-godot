@@ -6,7 +6,14 @@ extends StyleBox
 
 var alpha := 1.0
 var state := XUiSkin.SelState.FOCUS
+## T349 D1b：框形控件（XSkinButton）用的双环模式。FOCUS＝淡金双环（只在键盘／手柄态画）；PRESSED 照旧压暗选中条（悬停不走这个类，见 XSkinButton.hover_style）
+var ring := false
 
 
 func _draw(ci: RID, rect: Rect2) -> void:
+	if ring and XUiSkin.detail_on():
+		if state == XUiSkin.SelState.FOCUS:
+			if XUiSkin.show_focus_ring():
+				XUiSkin.draw_focus_ring(ci, rect, XUiSkin.ROW_RADIUS, false, alpha)
+			return
 	XUiSkin.draw_select(ci, rect, XUiSkin.breath_alpha(), alpha, state)
