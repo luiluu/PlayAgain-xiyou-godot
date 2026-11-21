@@ -454,6 +454,7 @@ static var _clock_ms := -1   # 测试钉住时间（-1＝用真实时间）
 
 ## 新皮肤现在开没开（每次画都问，切换存档后下一帧就跟上）
 static func on() -> bool:
+	_ensure_input_tracker()   # T339 P2-1：早点挂上，首次问聚焦环之前的输入也记得到（挂过之后只是一句 is_instance_valid）
 	if not ENABLED:
 		return false
 	if FORCE:
@@ -1252,6 +1253,8 @@ const FOCUS_BTN_GAP := 12
 const FOCUS_BTN_GAP_COMPACT := 10
 
 enum InputMode { KEYBOARD, GAMEPAD, MOUSE, TOUCH }
+## 合成输入的标记：触屏虚拟按键、底部按键提示胶囊发出的假键盘事件带它，note_input 跳过
+const SYNTH_META := "skin_synth_input"
 ## -1＝还没收到输入（按设备：触屏 TOUCH，否则 KEYBOARD）；测试可直接写
 static var input_mode := -1
 const JOY_AXIS_DEADZONE := 0.35
@@ -1267,6 +1270,8 @@ static func current_input_mode() -> int:
 ## 记一次输入（全局监听节点每个事件都调；只读不吞）。触屏模拟出的鼠标事件（device＝DEVICE_ID_EMULATION）算触屏，
 ## 同 battle_scene.gd／mv_player.gd 的判据。
 static func note_input(event: InputEvent) -> void:
+	if event.has_meta(SYNTH_META):
+		return   # T339 P3-2：触屏虚拟按键合成的键盘事件不算「用了键盘」（模式由触屏那几下定）
 	if event is InputEventKey:
 		if event.pressed:
 			input_mode = InputMode.KEYBOARD
@@ -1317,6 +1322,18 @@ static func _ensure_input_tracker() -> void:
 		return
 	_tracker = _InputTracker.new()
 	tree.root.add_child.call_deferred(_tracker)
+	# T339 P2-1：_input 是「树里排在后面的先收」，切场景后新场景挂在根上、排到监听节点后面，页面 handled 的事件就漏记了。
+	# 根下有新增／调序时把监听节点挪回末位（延后一帧做，免得在信号里改树）
+	if not tree.root.child_order_changed.is_connected(_keep_tracker_last):
+		tree.root.child_order_changed.connect(_keep_tracker_last)
+
+
+static func _keep_tracker_last() -> void:
+	if not is_instance_valid(_tracker) or not _tracker.is_inside_tree():
+		return
+	var root := _tracker.get_parent()
+	if root != null and root.get_child(root.get_child_count() - 1) != _tracker:
+		root.move_child.call_deferred(_tracker, -1)
 
 
 ## 框形／胶囊控件的双环聚焦（规范 2.2、2.4）。ci 是 RID（同 draw_select）；corner_r 是控件本身的圆角，环按同心外扩。
