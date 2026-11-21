@@ -27,6 +27,7 @@ func _run() -> void:
 	_rules()
 	_revive_team()
 	_revive_decision()
+	_smart_ai_revive_states()
 	var rep := TB.report("jianxian")
 	print("TB_REPORT ", JSON.stringify(rep))
 	print("TB_STRONGEST ", JSON.stringify(TB.strongest_all("jianxian")))
@@ -98,6 +99,9 @@ func _revive_team() -> void:
 	var rv: Array = (cand["辅助"] as Array).filter(func(x): return TB.can_revive(int(x)))
 	_check("revive.detects_from_data", TB.can_revive(16) and TB.revive_skill_names(16).any(func(x): return str(x).begins_with("4549")) and not TB.can_revive(3), [TB.revive_skill_names(16), TB.revive_skill_names(3)])
 	_check("revive.jianxian_has_reviver_supports", rv.size() >= 2, rv)
+	# 核查 P2-1：玉兔精沉鱼萝雁要萝卜 1722，不算会复活；P1-1：绯红蔷薇 30 级还没学复活（35 级学圣光救赎）
+	_check("revive.item_bound_not_counted", not TB.can_revive(77) and not TB.revive_item_bound(77).is_empty(), [TB.revive_skill_names(77), TB.revive_item_bound(77)])
+	_check("revive.by_level", TB.can_revive(117) and not TB.can_revive(117, 30) and TB.can_revive(117, 35), [TB.revive_skill_names(117, 30), TB.revive_skill_names(117, 35)])
 	var ok := true
 	var rand_ok := true
 	for tpl in TB.TEMPLATES:
@@ -122,6 +126,7 @@ func _revive_team() -> void:
 ## T328：出手层（克莱德 16 会次级复活术；艾坤 3 倒下；涅斐莉 32 不会复活）
 func _revive_decision() -> void:
 	var s := XState.new_game(XTianqi.legacy_of("jianxian"), 16, [3, 32])
+	s.flags["tianqi"] = {"rules": 1, "difficulty": "jianxian"}   # 核查 P1-3：天启篇档（不设＝西游档规则）
 	XState._become_current(s)
 	s.actor_max_level = 81
 	for id in [16, 3, 32]:
@@ -156,9 +161,52 @@ func _revive_decision() -> void:
 	l.turn += 1
 	var c32c: Array = l.decide(by[32])
 	_check("decision.item_when_no_reviver", c32c[0] is Dictionary and int(c32c[0].get("id", 0)) == 183 and c32c[1] == victim, [c32c[0].get("id") if c32c[0] is Dictionary else null])
+	# 4b. 会复活的人被控住（不能动）：不算「还轮得到的复活者」，别人可以用道具（核查 P2-2）
+	l._planned_turn = -1
+	l._item_turn = -1
+	l.turn += 1
+	l.current_order.append(by[16])
+	by[16].add_state(29)   # 29 眩晕（限制 4）
+	var stunned: bool = not VPLogic.can_act(by[16])
+	var c32d: Array = l.decide(by[32])
+	_check("decision.stunned_reviver_not_waited", stunned and c32d[0] is Dictionary and int(c32d[0].get("id", 0)) == 183, [stunned, c32d[0].get("id") if c32d[0] is Dictionary else null])
+	var casts_before: int = l.revive_casts
+	l.decide(by[16])
+	_check("decision.stunned_no_count", l.revive_casts == casts_before)
 	# 5. 开关关掉：会复活的人交回原自动战斗（这里只看不走复活层的计数）
 	VPLogic.REVIVE = false
 	var before: int = l.revive_casts
 	l.decide(by[16])
 	VPLogic.REVIVE = true
 	_check("decision.switch_off_no_vp_revive", l.revive_casts == before)
+
+
+## 核查 P1-3：带公共事件的 6 个复活技，玩家的智能 AI 放不放——天启篇档放（重构卡去掉了公共事件或 tq_ce_ok 放行），西游档不放（原版 legalCandidate 只放伤害类公共事件技）
+func _smart_ai_revive_states() -> void:
+	var ids := {4549: 16, 622: 31, 825: 31, 4829: 81, 5782: 117}
+	var tq := {}
+	var xy := {}
+	for flag in [true, false]:
+		for sid in ids:
+			var aid: int = ids[sid]
+			var s := XState.new_game(XTianqi.legacy_of("jianxian"), aid, [3])
+			if flag:
+				s.flags["tianqi"] = {"rules": 1, "difficulty": "jianxian"}
+			XState._become_current(s)
+			s.actor_max_level = 81
+			s.actor(aid).change_level_mv(81)
+			s.actor(aid).recover_all()
+			var l := XBattleLogic.new()
+			l.setup(4, s, XBattleRandom.create("0000000000007329"))
+			var me: XActor = null
+			for b in l.actors:
+				if int(b.actor_id) == aid:
+					me = b
+			var rec := {}
+			for sk in me.skills():
+				if int(sk.id) == sid:
+					rec = sk
+			var ok := not rec.is_empty() and XSmartAI.new(l, me).legal(rec, false)
+			(tq if flag else xy)[sid] = ok
+	print("T328_SMART_AI_REVIVE 天启篇 ", tq, " 西游档 ", xy)
+	_check("smart_ai.tianqi_allows_ce_revives", tq.values().all(func(v): return v), tq)

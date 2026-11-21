@@ -1,6 +1,7 @@
 extends XBattleLogic
 ## 【cc·T328】虚拟玩家的出手层（Kyo 11-21「你让虚拟玩家聪明一点……懂怎么复活倒下的队友」）。
-## 只给虚拟玩家无画面打的战斗用（vp_fastforward 的样本闸、vp_ff_probe、revive_compare）：在游戏自己的自动战斗
+## 只给虚拟玩家无画面打的战斗用（vp_fastforward 的样本闸、vp_ff_probe、revive_compare）。没接的：开画面那一场（战斗画面自建逻辑）、
+## baseline_dps（避让 T239）、c_tier／zhengdao_scenarios／growth_scene_probe／k_calibrate 等量数探针（照旧原自动战斗，量数口径不变）：在游戏自己的自动战斗
 ## （谷雨／璇／屠苏包装 → 挂机技能表 → 智能 AI）前面插一问「有队友倒下了，我该不该去复活」，答「不该」就原样交给游戏。
 ## 游戏本体、玩家能用的智能 AI（battle/smart_ai*.gd）一行不改；判合法只读调用 XSmartAI.legal。
 ##   const VPLogic := preload("res://tests/virtual_player/vp_battle_logic.gd")
@@ -39,16 +40,27 @@ static func revive_skills(a: XActor) -> Array:
 	return a.skills().filter(func(s): return revives(s))
 
 
-## 全部复活道具（消耗品、战斗能用）
+## 全部复活道具（消耗品、战斗能用：occasion 0／1）。不收非消耗品（787 无尽回魂秘药这类）：同 XSmartAI 候选只收 consumable 的口径，
+## 逛店（vp_growth）也只认这份名单，两边一致；137 回魂秘药 occasion 2（只能菜单用）不收
 static var _items_cache: Array = []
+static var _items_loaded := false
 static func revive_items_all() -> Array:
-	if _items_cache.is_empty():
+	if not _items_loaded:
+		_items_loaded = true
 		for it in XDB.table("Items"):
 			if it is Dictionary and not it.is_empty() and bool(it.get("consumable", false)) and int(it.get("occasion", 0)) in [0, 1] and revives(it):
 				_items_cache.append(int(it.id))
-		if _items_cache.is_empty():
-			_items_cache = [-1]
 	return _items_cache
+
+
+## 会复活且不靠特殊道具（<Item n Cost> 的复活技，如玉兔精沉鱼萝雁要萝卜 1722）的复活技能：配队算「会复活」只认这些
+static func free_revive_skills(a: XActor) -> Array:
+	return revive_skills(a).filter(func(s): return XBattleLogic.skill_item_costs(s).is_empty())
+
+
+## 能不能出手（不能动、混乱类状态的都不算：混乱时行动会被换掉）
+static func can_act(b: XBattler) -> bool:
+	return b != null and b.can_move() and not XConfusion.confused(b)
 
 
 func auto_battle_action(a: XActor) -> Array:
@@ -88,10 +100,10 @@ func revive_action(a: XActor) -> Array:
 		_planned_turn = turn
 		_planned = {}
 	var dead := actors.filter(func(t): return t.is_dead() and not _planned.has(t))
-	if dead.is_empty():
+	if dead.is_empty() or not can_act(a):
 		return []
 	var ai := XSmartAI.new(self, a)
-	var skill := _best(ai, revive_skills(a), false)
+	var skill := _best(ai, revive_skills(a), false, dead.size())
 	if not skill.is_empty():
 		var t = _target(skill, dead)
 		revive_casts += 1
@@ -101,7 +113,7 @@ func revive_action(a: XActor) -> Array:
 	var items := []
 	for id in revive_items_all():
 		items.append(XDB.rec("Items", id))
-	var item := _best(ai, items, true)
+	var item := _best(ai, items, true, dead.size())
 	if item.is_empty():
 		return []
 	_item_turn = turn
@@ -122,14 +134,14 @@ static func legal_revive(ai: XSmartAI, rec: Dictionary, item: bool) -> bool:
 	return true
 
 
-## 能放的复活招里挑一个：全体复活优先（倒了两个以上时），否则第一个能放的
-func _best(ai: XSmartAI, list: Array, item: bool) -> Dictionary:
+## 能放的复活招里挑一个：还没安排复活的倒下的人 ≥2 时全体复活优先，否则单体优先（倒 1 个不浪费全体复活的长冷却）
+func _best(ai: XSmartAI, list: Array, item: bool, dead_n: int) -> Dictionary:
 	var ok := list.filter(func(s): return legal_revive(ai, s, item))
 	if ok.is_empty():
 		return {}
-	var dead_n := actors.filter(func(t): return t.is_dead()).size()
+	var want_all := dead_n >= 2
 	for s in ok:
-		if XBattleEval.for_all(s) and dead_n >= 2:
+		if XBattleEval.for_all(s) == want_all:
 			return s
 	return ok[0]
 
@@ -156,7 +168,7 @@ func _target(rec: Dictionary, dead: Array):
 ## 这一回合还轮得到（在本回合剩下的顺序里）、会复活且现在能放的活着的队友
 func _skill_reviver_waiting(me: XActor) -> bool:
 	for b in current_order:
-		if b == me or not (b is XActor) or b.is_dead():
+		if b == me or not (b is XActor) or not can_act(b):
 			continue
 		var ai := XSmartAI.new(self, b)
 		if revive_skills(b).any(func(s): return legal_revive(ai, s, false)):

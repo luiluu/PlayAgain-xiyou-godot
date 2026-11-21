@@ -228,10 +228,11 @@ static func shop(shop_page: XShop, st: XState, wanted: Dictionary = {}) -> Dicti
 			out.bought += got
 			out.lines.append("买 %s×%d %s" % [str(e0.rec.get("name", "")), got, _spent(st, cost0)])
 	# T328：上场的人没有会复活技能的，买复活道具备着（背包凑到 REVIVE_ITEM_KEEP 个，最多花手里金币一成）；出手时由 vp_battle_logic 用
-	if REVIVE_ITEM_KEEP > 0 and not st.battle_members().any(func(a): return not VPLogic.revive_skills(a).is_empty()):
+	if REVIVE_ITEM_KEEP > 0 and not st.battle_members().any(func(a): return not VPLogic.free_revive_skills(a).is_empty()):
 		for i in d.size():
 			var er: Dictionary = d[i]
-			if int(er.kind) != 0 or not VPLogic.revives(er.item) or not shop_page._buy_enabled(er):
+			# 只买战斗层会用的那几种（消耗品、战斗能用；137 回魂秘药只能菜单用、787 无尽回魂秘药不是消耗品都不买），标价 0（别的货币）的不买
+			if int(er.kind) != 0 or not VPLogic.revive_items_all().has(int(er.gid)) or int(er.get("price", 0)) <= 0 or not shop_page._buy_enabled(er):
 				continue
 			var nr := mini(REVIVE_ITEM_KEEP - st.item_count(int(er.gid)), int(st.gold) / 10 / maxi(1, int(er.get("price", 1))))
 			if nr <= 0:

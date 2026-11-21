@@ -64,7 +64,7 @@ func _run() -> void:
 		print("CMP 层 %d 敌群 %d 原队 %s 换人 %s" % [floor, troop, str(base.battle_members().map(func(a): return a.actor_id)), JSON.stringify(swap)])
 		# 只改出手：原队没人会复活技能时，照逛店新规矩（vp_growth.REVIVE_ITEM_KEEP）背包带上复活道具
 		var with_items := XState.from_dict(base.to_dict())
-		if not with_items.battle_members().any(func(a): return TB.can_revive(int(a.actor_id))):
+		if not with_items.battle_members().any(func(a): return not VPLogic.free_revive_skills(a).is_empty()):   # 按存档里的真实等级判（核查 P1-1）
 			var rid := int(VPLogic.revive_items_all()[0])
 			with_items.items[rid] = maxi(int(with_items.items.get(rid, 0)), 3)
 		XState._become_current(base)
@@ -110,13 +110,16 @@ func _sum(agg: Dictionary) -> Dictionary:
 ## 换上一名会复活的辅助；返回 {out, in, from}，配不出来返回 {}
 func _swap_in_reviver(st: XState) -> Dictionary:
 	var field: Array = st.battle_members().map(func(a): return int(a.actor_id))
-	if field.any(func(x): return TB.can_revive(int(x))):
+	if st.battle_members().any(func(a): return not VPLogic.free_revive_skills(a).is_empty()):
 		return {"note": "原队已有会复活的"}
+	# 换上来的人按队伍等级判会不会复活（核查 P1-1：30 级绯红蔷薇还没学圣光救赎，35 级才学）
+	var lv0 := int(st.battle_members()[0].level) if not st.battle_members().is_empty() else TB.LEVEL
 	var pool := []
-	for id in st.party:   # 冷板凳上的先（虚拟玩家手里本来就有）
-		if not field.has(int(id)) and int(id) != int(st.battle_slots[XTianqi.HELPER_SLOT]) and TB.role_of(int(id)) == "辅助" and TB.can_revive(int(id)):
+	for id in st.party:   # 冷板凳上的先（虚拟玩家手里本来就有）：看它自己现在的等级
+		if not field.has(int(id)) and int(id) != int(st.battle_slots[XTianqi.HELPER_SLOT]) and TB.role_of(int(id)) == "辅助" \
+				and not VPLogic.free_revive_skills(st.actor(int(id))).is_empty():
 			pool.append([int(id), "冷板凳"])
-	var others := (TB.candidates(difficulty)["辅助"] as Array).filter(func(x): return TB.can_revive(int(x)) and not st.party.has(int(x)))
+	var others := (TB.candidates(difficulty)["辅助"] as Array).filter(func(x): return TB.can_revive(int(x), lv0) and not st.party.has(int(x)))
 	others.sort_custom(func(x, y): return TB.bulk(int(x)) > TB.bulk(int(y)))
 	for id in others:
 		pool.append([int(id), "候选池"])
@@ -137,7 +140,9 @@ func _swap_in_reviver(st: XState) -> Dictionary:
 			st.set_battle_slot(st.battle_slots.find(int(o)), int(p[0]))
 			st.rearrange_actors()
 			XEquipment.optimize(st, st.actor(int(p[0])))
-			return {"out": int(o), "in": int(p[0]), "from": p[1], "level": int(st.actor(int(p[0])).level), "skills": TB.revive_skill_names(int(p[0]))}
+			var got := st.actor(int(p[0]))
+			return {"out": int(o), "in": int(p[0]), "from": p[1], "level": int(got.level),
+				"skills": VPLogic.free_revive_skills(got).map(func(s): return "%d %s" % [int(s.id), str(s.get("name", ""))])}
 	return {}
 
 
