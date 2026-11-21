@@ -5,8 +5,8 @@
 用法见 00_设计/角色精灵美术规范.md「交样前必跑精灵自检」。
 
 输入格式（与 T141 一致）：
-  --walk  行走图集：3 列×4 行，每格 48×48，行序 下/左/右/上（$X_Walk.png 同款）
-  --idle  待机条：3 列×1 行，每格 64×64，左向，战斗常态
+  --walk  行走图集：3 列×4 行，每格 48×48（旧）或 128×128，行序 下/左/右/上（$X_Walk.png 同款）
+  --idle  待机条：3 列×1 行，每格 64×64（旧）或 128×128，左向，战斗常态
   --ref-battle / --ref-walk  原版战斗图（9×6）/ 行走图，用来出对照拼图和高度比
   --profile  biped（人形）或 quadruped（四足半人马）
 自检只量能量化的东西；通过不等于美术通过，美术仍要人眼和核查方审。
@@ -219,10 +219,32 @@ def severity(cfg, cid):
     return cfg['severity'].get(cid, 'fail')
 
 
+def sheet_cfg(cfg, im, kind):
+    """旧规格原样返回；按实际图集尺寸选 128 基线，不缩放或改图。"""
+    override = cfg.get('spec_128', {})
+    if im.size == tuple(override.get(f'{kind}_sheet_size', ())):
+        return {**cfg, **override}
+    return cfg
+
+
+def check_native_height(rep, cfg, masks, tag):
+    if 'native_height' not in cfg:
+        return
+    heights = sorted(bbox_of(m)[3] - bbox_of(m)[1] for m in masks if m)
+    if not heights:
+        return
+    measured = heights[len(heights) // 2]
+    target = cfg['native_height']
+    lo, hi = cfg['height_ratio']
+    rep.add('native_height', severity(cfg, 'height_ratio'), lo <= measured / target <= hi,
+            f'{tag} 可见高度中位数 {measured}px，目标约 {target}px（沿用高度比范围 {lo}～{hi}）')
+
+
 def check_walk(rep, cfg, prof, walk_im, name):
+    cfg = sheet_cfg(cfg, walk_im, 'walk')
     ok_size = walk_im.size == tuple(cfg['walk_sheet_size'])
     rep.add('native_size', severity(cfg, 'native_size'), ok_size,
-            f'行走图集尺寸 {walk_im.size}，应为 {tuple(cfg["walk_sheet_size"])}（3×4 格，每格 48×48）')
+            f'行走图集尺寸 {walk_im.size}，应为 {tuple(cfg["walk_sheet_size"])}（3×4 格）')
     if not ok_size:
         return None
     grid = split_grid(walk_im, 3, 4)
@@ -279,13 +301,15 @@ def check_walk(rep, cfg, prof, walk_im, name):
             hs = holes(m, cw, ch, cfg['hole_min_size'], cfg['hole_max_size'])
             rep.add('hole', severity(cfg, 'hole'), not hs,
                     f'{tag}#{k} 体内透明孔洞 {len(hs)} 处（≥{cfg["hole_min_size"]}px，原版本身最大 4px），位置 {[h[0] for h in hs[:4]]}')
+    check_native_height(rep, cfg, [m for row in masks for m in row], '行走')
     return masks
 
 
 def check_idle(rep, cfg, prof, idle_im):
+    cfg = sheet_cfg(cfg, idle_im, 'idle')
     ok_size = idle_im.size == tuple(cfg['idle_sheet_size'])
     rep.add('native_size', severity(cfg, 'native_size'), ok_size,
-            f'待机条尺寸 {idle_im.size}，应为 {tuple(cfg["idle_sheet_size"])}（3 帧，每帧 64×64）')
+            f'待机条尺寸 {idle_im.size}，应为 {tuple(cfg["idle_sheet_size"])}（3 帧）')
     if not ok_size:
         return
     fr = split_grid(idle_im, 3, 1)[0]
@@ -313,6 +337,7 @@ def check_idle(rep, cfg, prof, idle_im):
         rep.add('isolated_px', severity(cfg, 'isolated_px'), not iso, f'待机#{k} 孤立小块 {len(iso)} 处 {iso[:4]}')
         hs = holes(m, *fr[0].size, cfg['hole_min_size'], cfg['hole_max_size'])
         rep.add('hole', severity(cfg, 'hole'), not hs, f'待机#{k} 体内透明孔洞 {len(hs)} 处 {[h[0] for h in hs[:4]]}')
+    check_native_height(rep, cfg, ms, '待机')
     return ms
 
 
@@ -338,12 +363,13 @@ def montage(path, name, walk_im, idle_im, ref_battle, ref_walk, rep, scale):
         font = ImageFont.truetype('/System/Library/Fonts/Supplemental/Arial Unicode.ttf', 12)
     except Exception:
         font = ImageFont.load_default()
-    walk = split_grid(walk_im, 3, 4) if walk_im and walk_im.size == (144, 192) else None
-    idle = split_grid(idle_im, 3, 1)[0] if idle_im and idle_im.size == (192, 64) else None
+    walk = split_grid(walk_im, 3, 4) if walk_im and walk_im.size in ((144, 192), (384, 512)) else None
+    idle = split_grid(idle_im, 3, 1)[0] if idle_im and idle_im.size in ((192, 64), (384, 128)) else None
     rows = [(('orig battle (wait) f0', ref_battle[0] if ref_battle else None), ('new idle f0..2', idle))]
     for i, d in enumerate(DIRS):
         rows.append(((f'ref walk {d} f0', ref_walk[i][0] if ref_walk else None), (f'new walk {d} f0..2', walk[i] if walk else None)))
-    cell_h = 70 * scale + lab
+    frame_h = max([f.height for (_, f), (_, fr) in rows for f in ([f] if f else []) + (fr or [])] + [70])
+    cell_h = max(70, frame_h + 6) * scale + lab
     lw = max([f.width * scale for (_, f), _ in rows if f] + [48 * scale]) + pad * 2
     rcols = max([sum(f.width for f in fr) + 4 * len(fr) + sum(f.width * scale + 4 for f in fr) + 12 for _, (_, fr) in rows if fr] + [1])
     canvas = Image.new('RGB', (lw + rcols + pad, len(rows) * cell_h + lab + pad), (34, 39, 53))
@@ -412,7 +438,9 @@ def run(args):
         check_idle(rep, cfg, args.profile, idle_im)
     rw = ref_walk_frames(args.ref_walk, args.ref_walk_index) if args.ref_walk else None
     rb = ref_battle_frames(args.ref_battle, args.ref_battle_motion) if args.ref_battle else None
-    check_height(rep, cfg, masks, rw)
+    # 128 已按约 100px 量绝对人高；不拿原版 48 格直接比像素高度。
+    if not walk_im or 'native_height' not in sheet_cfg(cfg, walk_im, 'walk'):
+        check_height(rep, cfg, masks, rw)
     if args.out:
         out = Path(args.out)
         out.mkdir(parents=True, exist_ok=True)
