@@ -55,6 +55,10 @@ var skipped_ids: Array = []
 ## T162（协调 11-18）：--shape=3s1w（3 强＋1 弱）／2s2w（2 强＋2 弱，艰险合法最大强者数）：队伍按层等级、按掉落表掷 sets 套取中位的装备（c_tier.floor_gears）、
 ## 本人法宝、输出职责烙印 75%、天平酒——和丙档、U 同口径；缺省 4w＝原来的弱者 4 人白装基准队。
 const CT := preload("res://tests/virtual_player/c_tier.gd")
+## T239（T328 合入后）：--revive-team 给存档队伍换上一名会复活的辅助（规则同 revive_compare：冷板凳上已会复活的辅助先，没有再从候选池按队伍等级挑；
+## 换下换完仍合法、攻击最低的那个，装备卸下后按游戏「最强装备」重配），并用虚拟玩家出手层（VPLogic：有人倒下先复活）打
+const VPLogic := preload("res://tests/virtual_player/vp_battle_logic.gd")
+var revive_team := false
 var shape := "4w"
 var templates: Array = ["A", "B", "C", "D"]   # --shape=tb 时的职责模板
 var sets := 20
@@ -83,6 +87,8 @@ func _ready() -> void:
 			line = a.substr(7)
 		elif a.begins_with("--snapshots="):
 			snapshots = a.substr(12)   # 缺省按 --both 量；配 --duel 时真打（T239）
+		elif a == "--revive-team":
+			revive_team = true
 		elif a == "--no-raw":
 			raw_mode = false
 		elif a == "--duel":
@@ -278,7 +284,7 @@ static func _enemy_hp(logic: XBattleLogic) -> float:
 
 
 func _fight(s: XState, troop: int) -> Dictionary:
-	var logic := XBattleLogic.new()
+	var logic: XBattleLogic = VPLogic.new() if revive_team else XBattleLogic.new()
 	XGuardianRework.measure_atk = atk_scale if atk_scale != 1.0 else -1.0   # 守层者有不少固定伤害技能（如 771 固定 15000），只调能力值没用，整体乘出伤
 	# 战斗随机流按本层种子给定：天启篇档回合内的随机取运行时主种子（R3 设计，读档可变），不给定同一设置跑两遍也对不上
 	logic.setup(troop, s, XBattleRandom.create(str(s.random_master)) if duel else null)
@@ -458,7 +464,7 @@ func _troop_for(s: XState, f: int) -> int:
 
 
 func _fight_both(s: XState, troop: int) -> Dictionary:
-	var logic := XBattleLogic.new()
+	var logic: XBattleLogic = VPLogic.new() if revive_team else XBattleLogic.new()
 	XState._become_current(s)
 	if troop <= 0:
 		troop = _troop_for(s, _cur_floor)
@@ -670,7 +676,10 @@ func _run_both(list: Array) -> void:
 		if states.is_empty():
 			continue
 		for st in states:
-			per.append(_fight_both(st, 0))
+			var fr := _fight_both(st, 0)
+			fr["swap"] = st.get_meta("t239_swap", {})
+			fr["members"] = st.battle_members().map(func(a): return int(a.actor_id))
+			per.append(fr)
 		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": _median(per.map(func(r): return r.atkScale)),
 			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyDot": _median(per.map(func(r): return float(r.get("enemyDot", 0.0)))), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
 			"hit": _median(per.map(func(r): return r.hitMedian)), "partyHp": _median(per.map(func(r): return r.partyHp)),
@@ -703,6 +712,9 @@ func _snapshot_states(f: int) -> Array:
 			continue
 		var st := XState.from_dict(parsed)
 		st.set_variable(20, f)
+		if revive_team:
+			XState._become_current(st)
+			st.set_meta("t239_swap", _swap_in_reviver(st))
 		for a in st.battle_members():
 			a.recover_all()
 		out.append(st)
@@ -712,6 +724,47 @@ func _snapshot_states(f: int) -> Array:
 			st.set_variable(20, f)
 	return out
 
+
+
+## --revive-team：换上一名会复活的辅助（照抄 revive_compare._swap_in_reviver，T328）；返回 {out, in, from, level}，原队已有会复活的返回 note，配不出来返回 {}
+func _swap_in_reviver(st: XState) -> Dictionary:
+	var TB = CT.TB
+	var field: Array = st.battle_members().map(func(a): return int(a.actor_id))
+	for a in st.battle_members():
+		if not VPLogic.free_revive_skills(a).is_empty():
+			return {"note": "原队已有会复活的", "who": int(a.actor_id)}
+	var lv0 := int(st.battle_members()[0].level) if not st.battle_members().is_empty() else int(TB.LEVEL)
+	var pool := []
+	for id in st.party:
+		if not field.has(int(id)) and int(id) != int(st.battle_slots[XTianqi.HELPER_SLOT]) and TB.role_of(int(id)) == "辅助" \
+				and not VPLogic.free_revive_skills(st.actor(int(id))).is_empty():
+			pool.append([int(id), "冷板凳"])
+	var others: Array = (TB.candidates(difficulty)["辅助"] as Array).filter(func(x): return TB.can_revive(int(x), lv0) and not st.party.has(int(x)))
+	others.sort_custom(func(x, y): return TB.bulk(int(x)) > TB.bulk(int(y)))
+	for id in others:
+		pool.append([int(id), "候选池"])
+	var outs := field.duplicate()
+	outs.sort_custom(func(x, y): return _power(st.actor(int(x))) < _power(st.actor(int(y))))
+	for pk in pool:
+		for o in outs:
+			var team := field.duplicate()
+			team[team.find(o)] = pk[0]
+			if not TB.legal(team, difficulty):
+				continue
+			var lv := int(st.actor(int(o)).level)
+			if not st.party.has(int(pk[0])):
+				st.party.append(int(pk[0]))
+				st.actor(int(pk[0])).change_level_mv(lv)
+			XEquipment.clear(st, st.actor(int(o)))
+			st.set_battle_slot(st.battle_slots.find(int(o)), int(pk[0]))
+			st.rearrange_actors()
+			XEquipment.optimize(st, st.actor(int(pk[0])))
+			return {"out": int(o), "in": int(pk[0]), "from": pk[1], "level": int(st.actor(int(pk[0])).level)}
+	return {}
+
+
+static func _power(a: XActor) -> float:
+	return maxf(float(a.param(2)), float(a.param(4)))
 
 
 ## 敌群事件停在文字上就一路按确定续上
@@ -739,6 +792,7 @@ func _run_duel_snapshots() -> void:
 			tid = _troop_for(st, f)
 			var r := _fight(st, tid)   # T239（核 P3-1）：34 层借 33 层档真打鸿钧
 			r.erase("trace")
+			r["swap"] = st.get_meta("t239_swap", {})
 			per.append(r)
 		var row := {"floor": f, "troop": tid, "won": per.filter(func(r): return bool(r.won)).size(), "teams": per.size(),
 			"turns": _median(per.map(func(r): return float(r.turns))), "dmg": _median(per.map(func(r): return float(r.dmg))),
