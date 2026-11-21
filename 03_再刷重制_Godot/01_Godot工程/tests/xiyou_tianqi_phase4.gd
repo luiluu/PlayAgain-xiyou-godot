@@ -177,7 +177,13 @@ func _on() -> void:
 	# U、守层者、治疗、九线、秘籍、绝对值、单段上限
 	_check("on.u", XTianqiBase.boss_hp_unit(false) == U_CRIT and XTianqiBase.boss_hp_unit(true) == U_NO_CRIT)  # T162 丙档实机量（表里的数）
 	var old := {1: 2.0}
-	_check("on.guardian_fallback", is_same(XTianqiBase.guardian_table("hp_base", old), old))  # guardian_phase4 由 T012-c 补，缺就退回旧表
+	var bal4: Dictionary = XTianqiBalance.data()
+	var phase4 = bal4.get("guardian_phase4")   # T239 第 6 轮写了表：读得到新表；拿掉后退回旧表
+	_check("on.guardian_written", phase4 is Dictionary and XTianqiBase.guardian_table("hp_base", old).has(34) and not is_same(XTianqiBase.guardian_table("hp_base", old), old))
+	bal4.erase("guardian_phase4")
+	_check("on.guardian_fallback", is_same(XTianqiBase.guardian_table("hp_base", old), old))  # 缺就退回旧表
+	if phase4 != null:
+		bal4["guardian_phase4"] = phase4
 	_check("on.heal_x5_off", XTianqiBase.heal_skip_types() == [3, 4])
 	_check("on.nine_crit", is_equal_approx(XTianqiBase.nine_crit_cap(), 0.3))
 	_check("on.secret", is_equal_approx(XTianqiBase.secret_slot(0.123), 0.08))

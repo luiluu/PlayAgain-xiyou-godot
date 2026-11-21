@@ -920,6 +920,10 @@ func _lane_scenes(v2: bool, wide := false) -> Dictionary:
 			check("hang_word_on", map.hang_overlay.v2_word() == "挂机中 12:40", map.hang_overlay.v2_word())
 			check("hang_button_fits", map.hang_overlay.button.size.x == map.hang_overlay.skin_width(), [map.hang_overlay.button.size, map.hang_overlay.skin_width()])
 		# 10. 战斗里的挂机胶囊
+		# T239 第 6 轮写了守层者三表后 1 层敌群血量很低、自动战斗几帧就打完，首领信息区来不及量：这一段照老表（拿掉 guardian_phase4，用完放回）
+		var bal4: Dictionary = XTianqiBalance.data()
+		var phase4 = bal4.get("guardian_phase4")
+		bal4.erase("guardian_phase4")
 		var fb := XBattleScene.new()
 		fb.setup(2, true, false, XDB.map(5))
 		fb.visible = true
@@ -953,6 +957,8 @@ func _lane_scenes(v2: bool, wide := false) -> Dictionary:
 				and l.chip.position.y >= zone.end.y + 8.0 - 0.5 and not l.chip.get_global_rect().intersects(zone), [l.chip.position if l else null, zone])
 		clear_all.call()
 		fb.queue_free()
+		if phase4 != null:
+			bal4["guardian_phase4"] = phase4
 		s.hang_up_active = false
 		s.hang_up_origin = Vector2i(-1, -1)
 		await frames(4)

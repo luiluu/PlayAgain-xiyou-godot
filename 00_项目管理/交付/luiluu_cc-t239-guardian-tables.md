@@ -10,6 +10,7 @@
 - 依据：D225 丙A、D227 丙、D248（Kyo 11-21 定甲′，协调 11-21 定 C）。先 merge main（e97128892，T347／T348，自动合并无冲突）。
 - `modes/xiyou/tianqi_data/balance_table.json`：写入 `guardian_phase4`（hp_base 1～34、atk_scale 1～33、resist 19～33、focus 5～33 中 26 层）。守层者从此读新表（总开关原本开着，之前缺表退回老表）。
 - 集火招（游戏本体，新机制）：`XGuardianRework.focus`＋`XEnemy.focus_skill／focus_scale／skill_scale`，`XDamage.finish` 对我方 HP 伤害按 `skill_scale` 乘（集火招乘 focus.scale、其余照 output_scale，没设集火时与原来逐字节同效）。只认守层者本身（心魔、鸿钧、七印里副本、骑士、同层小怪不认），量数（measure_atk ≥ 0）时不用。回退：`XGuardianRework.FOCUS = false`。专项 `tests/xiyou_tianqi_guardian_focus`（8 项）。
+- 专项跟着改（写表后这几处测的是老表常量／缺表退回，先拿掉新表、测完放回）：`xiyou_fabao_rework` guardian 节、`xiyou_tianqi_guardian_domain` 表节、`xiyou_tianqi_phase4`（加 guardian_written）、`xiyou_ui_skin_4b` 第 10～11 段（1 层敌群血量太低、自动战斗几帧打完，首领信息区来不及量）。
 - `03_转换工具/天启篇数据校验.py`：新增 guardian_phase4 校验（层号范围、正数、focus 形状），测试 3 条。
 - `tests/virtual_player/baseline_dps.gd`：`--lineups=N`（存档原队＋随机抽 N−1 支合法阵容，助力位不动、装备按「最强装备」重配）、`--rng-seeds=a,b`（战斗随机流与全局随机按种子定住）、`--add-healer`（原队换上会复活的辅助，标「奶妈队」）；`--both` 另记我方每回合治疗 heal／吸血 steal／回合末回复 regen／护盾 shield（分开）、治疗原值 healTry、守层者单下占目标最大生命 focus、守层者每招 bySkill（每回合伤害、次数、一次出手占比 useRatio、范围）、我方普攻单下 atkHit；`--duel` 也认 `--atk-table`。
 - `07_开发环境/守层者三表.py build --v6`：第 6 轮口径（默认 C；`--focus-mode add|max` 作对照）、`--share`、`--turns`；selftest 加 C／加法／取大／封顶各条。
@@ -68,6 +69,7 @@
 1. 第 6 轮表已写入。19 层全灭、17～22 层强队 2～3 回合秒杀：接受先合，还是再迭代一轮（新表下重量治疗、血量改用原队与随机队分开取，约 5 小时）。
 2. 没有单体伤害招的层（12、15、25）要不要改某招范围成单体来做集火（动技能数据）。
 3. 集火招期望出伤封顶预算一半（我加的）是否认可。
+4. **低层血量大降**：1～9 层新血量每回合 2240～1.84 万，老表（×hp_unit 后）约 9.7 万～17 万；同层小怪（WORLD）跟着缩，1～9 层普通敌群会很软。量数如此（存档队 1～9 层就这么强），但手感变化大，请 Kyo 知悉；要保底可给 1～9 层设下限。
 
 ## 可优化（流程／工具／效率）
 
