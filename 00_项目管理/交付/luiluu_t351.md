@@ -18,7 +18,10 @@
 - 窗口 Godot `xiyou_mira_art`：30/30，通过；音频 Dummy；battle_new.png 为真实战斗截图。
 - 4倍纯绿底前后对比 comparison_4x.png。
 - 工具回归：23项全部通过（112秒）；复现 PNG 与目标逐字节一致。
-- 云端选测及检查：本轮运行 44891052073，最终结果见交付回执。
+- 检查.sh --affected main --cloud：退出码0；云端 [44891052073](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/44891052073) 成功，素材提交 fc509714b。
+- 云端场景：xiyou_actor_book 28/28、xiyou_actor_looks 35/35、xiyou_actor_sv_compare 1/1（工具场景跳过真实对比）、xiyou_mira_art 30/30、xiyou_mira_dragon_art 31/31、xiyou_mira_lift 57/57。
+- 交付自检：退出码0，可以交付；独立核查待安排。
+- 出图额度：未调用出图服务，剩余／总数接口不可见。
 - PR：https://github.com/luiluu/PlayAgain-xiyou-godot/pull/34 。
 
 ## 交接板
