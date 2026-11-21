@@ -186,13 +186,18 @@ func _paint_detail(c: XMVCanvas) -> void:
 	_attr_line(c, w - 231.0, 7.0, 178.0, 28.0)
 	_txt(c, f, "×", w - 42.0, 6, 27, "center", XUiSkin.TEXT_2, 22, 30)
 	var tabs := [["Debuff", "异常 %d" % bad, XUiSkin.DOWN], ["Buff", "增益 %d" % good, XUiSkin.UP], ["All", "全部 %d" % all.size(), XUiSkin.GOLD]]
-	var tw := (w - 24.0) / 3.0
-	for i in 3:
+	if six_tab_on():
+		tabs.append(["Six", "六维", XUiSkin.GOLD])
+	var tw := (w - 24.0) / tabs.size()
+	for i in tabs.size():
 		var x := 12.0 + i * tw
 		var on: bool = filter == tabs[i][0]
 		if on:
 			XUiSkin.draw_select(ci, Rect2(x, 43, tw - 4.0, 28))
 		_txt(c, f, tabs[i][1], x, 43, tw - 4.0, "center", tabs[i][2] if on else XUiSkin.TEXT_2, 15, 28)
+	if filter == "Six" and six_tab_on():
+		_paint_six(c)
+		return
 	var list := rows()
 	var picked = null
 	for r in list:
@@ -223,6 +228,22 @@ func _paint_detail(c: XMVCanvas) -> void:
 		_txt(c, f, XSkinOTBBar.fit(f, spaced(_meta(row)), 110.0, 14), w - 125.0, y + 2.0, 109, "right", col, 14, 26)
 		_txt(c, f, XSkinOTBBar.fit(f, str(row.description).replace("\n", " "), w - 48.0, 14), 24, y + 29.0, w - 48.0, "left", XUiSkin.TEXT_2, 14, 25)
 	_footer(c, page, maxi(1, ceili(list.size() / float(page_size()))), "")
+
+
+## 【T279】「六维」页签（新界面）：左雷达、右战商档名＋一句话＋控制抗性／「免疫停手控制」。不画战力
+func _paint_six(c: XMVCanvas) -> void:
+	var sm := six_summary()
+	if sm.is_empty():
+		return
+	var f := XUiSkin.font("body")
+	XSkinSixDimRadar.paint(c, SIX_CENTER, SIX_R, sm.six, {"fs": 14})
+	var tw := DETAIL_W - SIX_TEXT_X - 14.0
+	_txt(c, XUiSkin.font("title"), str(sm.tier_line), SIX_TEXT_X, BODY_Y + 8.0, tw, "left", XUiSkin.GOLD, 18, 26)
+	var y := BODY_Y + 40.0
+	for ln in wrap_lines(f, str(sm.wit_hint), tw, 15):
+		_txt(c, f, ln, SIX_TEXT_X, y, tw, "left", XUiSkin.TEXT_2, 15, 22)
+		y += 22.0
+	_txt(c, f, str(sm.control_line), SIX_TEXT_X, y + 12.0, tw, "left", XUiSkin.UP if sm.immune else XUiSkin.TEXT, 16, 24)
 
 
 ## 标题右边的元素行：天启篇元素牌组照旧（XTianqiElements）；其余是「敌人属性：」＋元素名（同 XBossStatusPanel._attributes 取数，换皮肤字）
