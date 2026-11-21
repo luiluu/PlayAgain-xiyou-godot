@@ -24,11 +24,11 @@
 ## 交接板
 
 - 下一步：小A 文字审（上面一整节）；总装合并后按 `发行空壳.py check`（已过）。
-- 需要用户决定：无（四骑士算首领见异议，默认接受，可回退）。
+- 需要用户决定：无（四骑士算首领、骑士战多「详情 ▾」胶囊，Kyo 已同意保留）。
 
 ## 异议／偏离
 
-- 四骑士原本不出首领详情面板（不是 `boss_difficulty_boss`），定稿卡 5 默认它有。我只在六维开着时让它算首领；副作用：骑士战里顶部多出「详情 ▾」胶囊，能看异常／增益页。若 Kyo 不想骑士战有这个胶囊，回退＝`is_boss` 去掉骑士那一行，六维页签就进不了骑士。
+- （Kyo 已同意保留：36 层骑士战正需要看规则。）四骑士原本不出首领详情面板（不是 `boss_difficulty_boss`），定稿卡 5 默认它有。我只在六维开着时让它算首领；副作用：骑士战里顶部多出「详情 ▾」胶囊，能看异常／增益页。若 Kyo 不想骑士战有这个胶囊，回退＝`is_boss` 去掉骑士那一行，六维页签就进不了骑士。
 - 图鉴里没有四骑士条目（见验收 1）。
 - 定稿把雷达放「立绘右侧」：图鉴立绘本来居中，我把它改靠左缩小腾位。
 
@@ -43,7 +43,10 @@
 ## 验证
 
 - 新专项 `xiyou_tianqi_six_dim_book_boss`（59 项：摘要、图鉴 ops、四骑士首领详情页签与点击、关开关、西游档）59/59；回归 `xiyou_enemy_book` 96/96、`xiyou_tianqi_six_dim_radar` 33/33、`xiyou_tianqi_six_dim` 69/69、`xiyou_actor_book` 28/28（本机 headless 直跑）。
-- `xiyou_boss_status`：`power_enemy_shape` 一项失败（XPowerEnemy.enemy 因战力总开关关而返回 {}，随后报 effectiveHp 脚本错）。该项只测战力，战力先藏提交（5549faf15）后就是关的，我没碰 power_enemy；没在干净基线上对照（新建 worktree 缺 generated 跑不起来），所以是「看起来与本单无关」，不是已证实。其余检查项该专项都没报失败，但脚本错后专项提前退出，后面的检查没跑完——总装云端选测请重点看这个专项。
+- `xiyou_boss_status`：**原有失败，与本单无关**（已在干净基线对照）。本地 main（`0321f67a2`）另检出到临时目录（复制本机 `.godot` 与 generated），同一专项前台跑，输出与本分支逐行相同：
+  - 输出（两边一样）：`FAIL power_enemy_shape {}`；`SCRIPT ERROR: Invalid access to property or key 'effectiveHp' on a base object of type 'Dictionary'.` 位置 `tests/xiyou_boss_status.gd:197`（`check("power_ehp_formula", ... pw.effectiveHp ...)`）。
+  - 原因：战力先藏（5549faf15）后 `XPower.enabled()` 为假，`XPowerEnemy.enemy` 返回 `{}`，第 193 行 `power_enemy_shape` 先失败，第 197 行再对空字典取 `effectiveHp` 报脚本错，协程中断，专项不再往下跑也不打印 TEST_RESULT（headless 进程挂着不退出，我手动结束）。这一行之后的检查两边都没跑到。
+  - 没有 origin 远端（远端叫 github，没取），对照用的是本地 main。
 - `发行空壳.py check` 过（登记 `XTianqiSixDim.data`／`of_battler` 已确认空值安全）；`语法检查.py` 过（1136 个 .gd 0 问题）。
 
 ## 本分支提交
