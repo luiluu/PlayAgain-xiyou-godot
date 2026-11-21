@@ -3600,11 +3600,15 @@ func _tick_states(b: XBattler, timing: int) -> void:
 
 func _regenerate(b: XBattler, logs: Array) -> void:
 	# krz regenerateHp：floor(mhp × hrg × rec)，含目标的恢复效果率（MP 再生不含）
-	var dh := floorf(b.mhp * b.hrg * b.rec)
+	# T332（D249 乙）：天启篇敌人负再生 hrg、rec 不乘仓库倍率（XEnemy.regen_rates，开关 XTianqiCombat.DOT_NO_WAREHOUSE）
+	var rr: Array = b.regen_rates() if b is XEnemy else [b.hrg, b.rec]
+	var b_hrg: float = rr[0]
+	var b_rec: float = rr[1]
+	var dh := floorf(b.mhp * b_hrg * b_rec)
 	# 异化逆祷 regenerateHp 包装：敌人身上来源是逆祷者的负再生不算（hrg 扣掉它们再算）
 	var prayer_block := XAlienBattle.prayer_regen_block(b)
 	if prayer_block != 0.0:
-		dh = floorf(b.mhp * (b.hrg - prayer_block) * b.rec)
+		dh = floorf(b.mhp * (b_hrg - prayer_block) * b_rec)
 	# 导入角色平衡：导入角色附加的状态里负的 HP 再生率（持续伤害）那部分 ×0.01（向下取整），其余照常；
 	# 两个值都按原顺序先乘 rec 再 floor，之后才拆出导入部分缩放（installImportedBalanceRuntime.js:496／506）
 	var imported := []  # 导入角色附加的状态（来源倍率不为 1）
@@ -3627,7 +3631,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 				else:
 					hrg += float(tr.value)
 		if altered:
-			var other := floorf(b.mhp * hrg * b.rec)
+			var other := floorf(b.mhp * hrg * b_rec)
 			dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
 	var dm := floorf(b.mmp * b.mrg)
 	var dt := 100.0 * b.trg

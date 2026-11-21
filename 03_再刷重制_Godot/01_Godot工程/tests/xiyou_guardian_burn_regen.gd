@@ -5,6 +5,9 @@ extends Node
 ##     floor(mhp × hrg × rec)，于是 −5% × 2 × 2 ＝ −20%。原版 Star_Warehouse.js「难度怪物属性改变」两处也都乘，属原版行为。
 ## 二、regenerateHp 的 maxSlipDamage 把持续伤害夹到 hp−1：只靠灼伤打不死，5 回合到 1 血，之后任何一下都死（T239「8 回合赢」的来路）。
 ## 三、西游档存档同置 DCultyL3 时一模一样（不是天启篇引入的）。
+## 四、T332（D249 乙，Kyo 11-21「天启篇不吃难度倍率」）：天启篇敌人回合末 HP 再生合计为负时 hrg、rec 都不乘仓库倍率（XEnemy.regen_rates，
+##     开关 XTianqiCombat.DOT_NO_WAREHOUSE），灼伤 V 每回合 −5%；面板读的 hrg／rec 照旧 ×2；开关关掉回到 −20%；西游档照原版 −20%。
+##     正再生（合计 ≥0）照旧乘倍率。
 
 var results: Array = []
 
@@ -23,6 +26,9 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0  # 守层者不按神话
 	seed(20261121)
 	_case("tq", true)
+	XTianqiCombat.DOT_NO_WAREHOUSE = false  # 回退支：天启篇也照原版 ×4
+	_case("tq_off", true)
+	XTianqiCombat.DOT_NO_WAREHOUSE = true
 	_case("xiyou", false)
 	XEnemy.force_roll = -1.0
 	var passed := results.filter(func(r): return r.passed).size()
@@ -69,6 +75,9 @@ func _case(tag: String, tianqi: bool) -> void:
 	_check("%s.warehouse2" % tag, w == 2.0, w)
 	var hrg0 := e.hrg
 	var rec0 := e.rec
+	if hrg0 >= 0.0:  # 合计不为负（没灼伤时）：regen_rates 照旧乘倍率
+		var rr0 := e.regen_rates()
+		_check("%s.nonneg_scaled" % tag, is_equal_approx(rr0[0], hrg0) and is_equal_approx(rr0[1], rec0), rr0)
 	e.state_ids.append(21)
 	XActor.state_touch(21)
 	e.param_mark_dirty()
@@ -94,11 +103,15 @@ func _case(tag: String, tianqi: bool) -> void:
 	e.hp = mhp
 	logic._regenerate(e, [])
 	var lost := mhp - e.hp
-	var want := -floorf(mhp * hrg1 * rec1)
+	var unscaled := tianqi and XTianqiCombat.DOT_NO_WAREHOUSE  # T332：天启篇负再生不吃仓库倍率
+	var want := -floorf(mhp * hrg_raw * rec_raw) if unscaled else -floorf(mhp * hrg1 * rec1)
 	_check("%s.tick_eq_formula" % tag, is_equal_approx(lost, want), [lost, want])
-	if is_zero_approx(hrg0):  # 守层者自身没有再生时：一回合正好 20%（＝原版 5% × 仓库倍率²）
-		_check("%s.tick_20pct" % tag, is_equal_approx(lost, -floorf(mhp * -0.05 * w * w)), [lost, mhp])
-	# 夹到 hp−1：再 5 回合也只到 1 血，不会自己死
-	for i in 5:
+	var rr := e.regen_rates()
+	_check("%s.regen_rates" % tag, is_equal_approx(rr[0], hrg_raw if unscaled else hrg1) and is_equal_approx(rr[1], rec_raw if unscaled else rec1), rr)
+	if is_zero_approx(hrg0):  # 守层者自身没有再生时：天启篇一回合正好 5%（T332）；西游档与开关关掉 20%（＝原版 5% × 仓库倍率²）
+		var k := 1.0 if unscaled else w * w
+		_check("%s.tick_%dpct" % [tag, int(5 * k)], is_equal_approx(lost, -floorf(mhp * -0.05 * k)), [lost, mhp])
+	# 夹到 hp−1：再 5 回合（天启篇 −5% 时再 25 回合）也只到 1 血，不会自己死
+	for i in (25 if unscaled else 5):
 		logic._regenerate(e, [])
 	_check("%s.floor_at_1" % tag, e.hp == 1.0 and e.is_alive(), e.hp)

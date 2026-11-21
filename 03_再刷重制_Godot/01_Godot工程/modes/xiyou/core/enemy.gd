@@ -313,6 +313,14 @@ func cev_for_toji(pct: int) -> float:
 func sparam(i: int) -> float:
 	return super.sparam(i) * warehouse_rate()
 
+## T332（D249 乙）：回合末 HP 再生用的 [hrg, rec]。天启篇（XTianqiCombat.regen_unscaled）且合计 hrg<0 时两处都不乘仓库倍率；
+## 否则照原版 [xparam(7), sparam(2)]（各乘一次仓库倍率，DCL3 时负再生叠成 ×4）
+func regen_rates() -> Array:
+	var h := self.hrg
+	if h < 0.0 and XTianqiCombat.regen_unscaled():
+		return [super.xparam(7), super.sparam(2)]
+	return [h, self.rec]
+
 func param_now(i: int) -> float:
 	var v := param_base_unscaled(i) + param_plus(i)
 	v *= (param_rate(i) * float(_rates[i])) * param_buff_rate(i)
