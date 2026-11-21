@@ -350,7 +350,7 @@ func _bar_hi_release() -> void:
 		_bar_hi = false
 		return
 	get_tree().create_timer(BAR_HI_HOLD).timeout.connect(func() -> void:
-		if gen == _bar_hi_gen:
+		if is_instance_valid(self) and gen == _bar_hi_gen:
 			_bar_hi = false
 			queue_redraw())
 

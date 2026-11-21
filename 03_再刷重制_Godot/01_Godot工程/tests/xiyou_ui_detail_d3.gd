@@ -266,7 +266,7 @@ func _list_unit() -> void:
 	l._gui_input(_mb(Vector2(40, 100), false, true))
 	check("list_tap_current_activates", acted == [target], acted)
 	# 选中后点的行已完整可见，不动画面（_sub 不被清）
-	check("list_tap_keeps_pixel_pos", l.scroll_px == px_before or l._sub != 0.0 or true)
+	check("list_tap_keeps_pixel_pos", is_equal_approx(l.scroll_px, px_before), [l.scroll_px, px_before])
 	# 键盘：整行对齐，清零头
 	l.move(0, 1)
 	check("list_key_snaps_rows", l._sub == 0.0 and is_equal_approx(l.scroll_px, l.top_row * 46.0), l.scroll_px)
@@ -543,7 +543,7 @@ func _shot_buttons() -> void:
 	back.color = Color("090808")
 	back.size = Vector2(SHOT)
 	add_child(back)
-	var names := ["常态", "悬停（S4 抬升）", "按下（0.97＋压暗 22%）"]
+	var names := ["常态", "悬停（现 HOVER，S4 待 D1b）", "按下（0.97＋压暗 22%）"]
 	var btns: Array = []
 	for k in 3:
 		var b := Button.new()
