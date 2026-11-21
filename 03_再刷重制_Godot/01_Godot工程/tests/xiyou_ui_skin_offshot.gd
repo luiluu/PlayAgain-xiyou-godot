@@ -19,6 +19,8 @@ const PAGES := ["XMenu", "XStatusPage", "XItemScene", "XSkillScene", "XEquipScen
 
 var out_dir := ""
 var compare := ""
+## T305：--mask-version=宽,高 比对时忽略右下角版本号区域（XVersionLabel 随开发编号变，基线与本分支编号不同必然差几个像素）；不传＝整图比
+var mask := Vector2i.ZERO
 ## T299 卡 K：制作、宝珠坊、种族祝福（单列一行，免得和别的卡同时改 PAGES 那一行撞车）
 const PAGES_K := ["XCraftingScene", "XOrbShop", "XRaceMenu"]
 ## T306 卡 N：仓库、星级仓库、深渊商人（单列一行，同卡 K 先例）
@@ -35,6 +37,10 @@ func _ready() -> void:
 			out_dir = arg.substr(6)
 		elif arg.begins_with("--compare="):
 			compare = arg.substr(10)
+		elif arg.begins_with("--mask-version="):
+			var wh := arg.substr(15).split(",")
+			if wh.size() == 2:
+				mask = Vector2i(int(wh[0]), int(wh[1]))
 	_run.call_deferred()
 
 
@@ -254,9 +260,13 @@ func _compare() -> void:
 				var da := ia.get_data()
 				var db := ib.get_data()
 				for i in range(0, da.size(), 4):
+					if mask != Vector2i.ZERO and (i / 4) % ia.get_width() >= ia.get_width() - mask.x and (i / 4) / ia.get_width() >= ia.get_height() - mask.y:
+						continue
 					if da[i] != db[i] or da[i + 1] != db[i + 1] or da[i + 2] != db[i + 2]:
 						diff += 1
-		print(("SAME " if same else "DIFF ") + f + ("" if same else " 不同像素=%d" % diff))
+				if mask != Vector2i.ZERO and diff == 0:
+					same = true   # 只差版本号区域
+		print(("SAME " if same else "DIFF ") + f + (("" if diff < 0 else " （忽略版本号区域）") if same else " 不同像素=%d" % diff))
 		results.append(same)
 	var passed := results.filter(func(x): return x).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))

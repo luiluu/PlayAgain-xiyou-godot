@@ -2,13 +2,14 @@
 """新界面开关关掉时与 main 逐像素一致（ui-skin-p0 验收；核查也可重跑）。
 
 做法：
- 1. 在临时目录 git clone --shared 本库、只检出 Godot 工程（sparse），切到 --base（默认 main）；
+ 1. 在临时目录 git clone --shared 本库、只检出 Godot 工程（sparse），切到 --base（默认＝当前分支与 github/main 的 merge-base，T305：github/main 前进后本分支没跟上也不会整批 DIFF；要比最新 main 显式写 --base github/main）；
  2. generated 软链到本工作树的（转换产物不入库，两边一样），.godot 导入缓存用 cp -c 克隆（APFS 写时复制，不占空间、免重导）；
  3. 把本分支的 tests/xiyou_ui_skin_offshot.gd/.tscn 拷进去（脚本不引用新类，main 上能跑）；
  4. main 克隆和本工作树各开窗口跑一次截图（主菜单、状态、物品、装备、设置 × 西游存档默认／天启篇存档关新皮肤；战斗指令窗、战技列表、选目标 × 西游存档，2A 加；我方状态详情，2B 加）；
  5. 用同一个脚本的 --compare 逐像素比，全部 SAME 退出 0。
+右下角版本号（XVersionLabel，随开发编号变）区域默认不计入差异（SAME 行注明「忽略版本号区域」）；--no-mask-version 整图比。
 
-  python3 皮肤关闭对照.py [--base main] [--out 目录] [--keep]
+  python3 皮肤关闭对照.py [--base 提交] [--no-mask-version] [--out 目录] [--keep]
 要窗口（会弹出 Godot 窗口几十秒）；只读本库，临时克隆用完删（--keep 留着）。
 """
 import argparse
@@ -48,6 +49,19 @@ def missing_classes(project: Path) -> list:
     return sorted(declared - known)
 
 
+MASK_VERSION = '160,28'   # 右下角版本号区域（宽,高 像素）：XVersionLabel 字号 14、边距 10×6，最长 v0.01.08 约 80 宽
+
+
+def default_base() -> str:
+    """HEAD 与 github/main 的 merge-base；没有 github/main 时退回 main，再没有就 HEAD。"""
+    for ref in ('github/main', 'main'):
+        r = subprocess.run(['git', '-C', str(ROOT), 'merge-base', 'HEAD', ref], capture_output=True, text=True)
+        if r.returncode == 0 and r.stdout.strip():
+            print(f'默认基线：HEAD 与 {ref} 的 merge-base', flush=True)
+            return r.stdout.strip()
+    return 'HEAD'
+
+
 def shoot(project: Path, out: Path):
     out.mkdir(parents=True, exist_ok=True)
     r = subprocess.run([str(GODOT), '--audio-driver', 'Dummy', '--path', str(project), f'res://{TEST}.tscn', '--', f'--out={out}'],
@@ -59,10 +73,13 @@ def shoot(project: Path, out: Path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--base', default='main')
+    ap.add_argument('--base', default=None, help='基线提交；默认取 HEAD 与 github/main 的 merge-base（没有 github/main 退回 main）')
+    ap.add_argument('--no-mask-version', action='store_true', help='整图比，不忽略右下角版本号区域')
     ap.add_argument('--out', default=str(ROOT / '03_再刷重制_Godot/04_验证/本地结果/ui_skin_p0/关闭对照'))
     ap.add_argument('--keep', action='store_true')
     a = ap.parse_args()
+    if not a.base:
+        a.base = default_base()
     out = Path(a.out).resolve()  # Godot 以工程目录为当前目录，相对路径会写到别处（1A 踩到：两边都 0 张）
     if out.exists():
         shutil.rmtree(out)
@@ -93,7 +110,7 @@ def main():
             print(f'✗ 截图对不上：基线 {got_a}，本分支 {got_b}')
             return 1
         r = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), f'res://{TEST}.tscn', '--',
-                            f'--compare={out / "base"},{out / "branch"}'], capture_output=True, text=True, timeout=300)
+                            f'--compare={out / "base"},{out / "branch"}'] + ([] if a.no_mask_version else [f'--mask-version={MASK_VERSION}']), capture_output=True, text=True, timeout=300)
         lines = [x for x in r.stdout.splitlines() if x.startswith(('SAME', 'DIFF', 'TEST_RESULT'))]
         print('\n'.join(lines))
         print('✓ 开关关掉与基线逐像素一致' if r.returncode == 0 else '✗ 有不同')
