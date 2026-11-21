@@ -101,12 +101,12 @@ static func help_card_shown() -> bool:
 	return not (on() and HELP_COLLAPSE) or help_open
 
 
-## 不能用的原因（只在用不了时调）：照 XBattleLogic.can_use 的先后，认得出的写具体原因，其余写「现在不能用」
+## 不能用的原因（只在用不了时调）：照 XBattleLogic.can_use 的先后，认得出的写具体原因，其余写「当前条件不满足」（T360 F-16：不再复读「现在不能用」）
 static func reason(logic: XBattleLogic, a: XActor, e: Dictionary, items: bool) -> String:
 	if a == null or logic == null:
-		return "现在不能用"
+		return "当前条件不满足"
 	if items:
-		return "现在不能用"
+		return "这件物品用完了"
 	var id := int(e.get("id", 0))
 	var wu := ceili(float(a.warmups.get(id, 0)))
 	if wu > 0:
@@ -115,7 +115,7 @@ static func reason(logic: XBattleLogic, a: XActor, e: Dictionary, items: bool) -
 	if cd > 0:
 		return "冷却 %d 回合" % cd
 	if XTianqiQiyinEffects.silenced(logic, a) and not a.is_attack(e) and id != XBattleLogic.GUARD_SKILL:
-		return "沉默中"
+		return "沉默中，只能普攻、防御、用物品"
 	if int(e.get("stypeId", 0)) > 0 and a.traits_set(XBattler.TRAIT_STYPE_SEAL).has(int(e.stypeId)):
 		return "被封印"
 	if a.traits_set(XBattler.TRAIT_SKILL_SEAL).has(id):
@@ -130,7 +130,11 @@ static func reason(logic: XBattleLogic, a: XActor, e: Dictionary, items: bool) -
 	var mp = XAlienBattle.glutton_mp(a)
 	if (a.mp if mp == null else float(mp)) < float(c.mp):
 		return "MP 不够"
-	return "现在不能用"
+	if not XTianqiQiyinRule.can_use(logic, a, e):   # T360 F-16：七印祭坛的限制写出来
+		return "七印规则限制，本回合只能普攻、防御、用物品"
+	if not XBattleLogic.wtype_ok(a, e):
+		return "当前武器不能用这个技能"
+	return "当前条件不满足"
 
 
 ## 右侧消耗：TP／MP／生命写成「TP 5」（窄体数字、按资源上色）；物品数量、物品费用、自定义费用、元素徽记照原行的字和图标

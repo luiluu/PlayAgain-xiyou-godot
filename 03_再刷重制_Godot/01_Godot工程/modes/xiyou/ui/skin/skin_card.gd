@@ -394,7 +394,8 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 	if subtitle != "":
 		y += 4
 		if not dry and _vis(y, XUiSkin.FS_AUX_MAX) > 0.0:
-			XUiSkin.ds(t, body, Vector2(x0, y + XUiSkin.FS_AUX_MAX * 0.86), subtitle, HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+			var sfit := XSkinList.fit_text(body, subtitle, w, XUiSkin.FS_AUX, XUiSkin.FS_AUX)   # T360 F-10：超长加省略号，不被右缘硬截断
+			XUiSkin.ds(t, body, Vector2(x0, y + XUiSkin.FS_AUX_MAX * 0.86), str(sfit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 		y += XUiSkin.FS_AUX_MAX + 6
 	if notice != "":
 		y += 6

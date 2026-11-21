@@ -1444,8 +1444,16 @@ func _draw_frame() -> void:
 	if skinned():
 		var ci := frame.get_canvas_item()
 		var r := Rect2(Vector2(4, 4), frame.size - Vector2(8, 8))
-		XUiSkin.shadow_style().draw(ci, r)
-		XUiSkin.draw_panel(ci, r)
+		# T360 F-11：说明卡浮层底＝S3 暖炭（94%），不再用烟底／亮边的玻璃高光
+		var sh := StyleBoxFlat.new()
+		sh.draw_center = false
+		sh.shadow_color = Color(0, 0, 0, 0.55)
+		sh.shadow_size = 12
+		sh.shadow_offset = Vector2(0, 8)
+		sh.set_corner_radius_all(XUiSkin.RADIUS)
+		sh.draw(ci, r)
+		RenderingServer.canvas_item_add_nine_patch(ci, r, Rect2(0, 0, 96, 96), XSkinConfirm.s3_panel_tex().get_rid(), Vector2(24, 24), Vector2(24, 24),
+			RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color.WHITE)
 		var sb := StyleBoxFlat.new()
 		sb.draw_center = false
 		if robe_card:

@@ -983,7 +983,9 @@ class VictoryView extends Control:
 
 	func _paint_detail(c: Control) -> void:
 		var pr := _detail_rect()
-		XUiSkin.draw_panel(c.get_canvas_item(), pr)
+		# T360 F-12：详单底＝S3 暖炭 94% 不透明（原烟底半透，底层大字、金印、红印会透出）
+		RenderingServer.canvas_item_add_nine_patch(c.get_canvas_item(), pr, Rect2(0, 0, 96, 96), XSkinConfirm.s3_panel_tex().get_rid(), Vector2(24, 24), Vector2(24, 24),
+			RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color.WHITE)
 		var x := pr.position.x + 24.0
 		var w := pr.size.x - 48.0
 		var y := pr.position.y + 16.0

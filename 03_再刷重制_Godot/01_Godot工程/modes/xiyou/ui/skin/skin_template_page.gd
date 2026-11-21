@@ -482,20 +482,21 @@ static func drop_help_row(t: String) -> bool:
 	return RegEx.create_from_string("^(?:品质|武器种类|防具种类|装备类型|类别)\\s*[：:]|^(?:购买价格|出售价格|无法出售)").search(t) != null
 
 
-## 装备「自带」属性分色（T095，Kyo 11-16「生命值绿色、魔法值蓝色等等」）：每条「名：数」整段按属性上色，暗底可读；
+## 装备「自带」属性分色（T095，Kyo 11-16「生命值绿色、魔法值蓝色等等」；T360 D250 收口）：
+## 属性名保持次要色（行本色），只给数值着色；颜色降饱和、「攻击」「暴击」避开警示橙（DOWN）和选中／神话红；冒号统一成全角「：」。
 ## 颜色只是辅助，字照旧写着属性名（色弱也不靠颜色分）。false＝回到整行一色
 static var STAT_COLORS_ON := true
-## [名里含的词, 颜色]，按顺序认第一个（「魔法攻击」要排在「攻击」前）
+## [名里含的词, 数值颜色]，按顺序认第一个（「魔法攻击」要排在「攻击」前）
 const STAT_COLORS := [
-	["魔法攻击", Color("c79bff")], ["魔攻", Color("c79bff")],
-	["魔法防御", Color("62d2cf")], ["魔防", Color("62d2cf")],
-	["生命", Color("7fd67a")], ["HP", Color("7fd67a")],
-	["魔法", Color("63a4ff")], ["法力", Color("63a4ff")], ["MP", Color("63a4ff")],
-	["攻击", Color("ff9b5e")],
-	["防御", Color("a9bdd6")],
-	["敏捷", Color("f1dc6a")],
-	["幸运", Color("ff8fc6")],
-	["暴击", Color("ff6b6b")],
+	["魔法攻击", Color("a893c9")], ["魔攻", Color("a893c9")],
+	["魔法防御", Color("6fb0ae")], ["魔防", Color("6fb0ae")],
+	["生命", Color("86b883")], ["HP", Color("86b883")],
+	["魔法", Color("7f9fd0")], ["法力", Color("7f9fd0")], ["MP", Color("7f9fd0")],
+	["攻击", Color("c79a82")],
+	["防御", Color("9fb0c4")],
+	["敏捷", Color("cdbd7c")],
+	["幸运", Color("c796ae")],
+	["暴击", Color("bf8a8f")],
 ]
 
 
@@ -507,7 +508,15 @@ static func stat_color(name: String):
 	return null
 
 
-## 给一行「自带」加 spans：[[字, 颜色], …]（拼起来就是原文；空白照原色）。认不出任何属性就原样返回
+## 把一段「名：数」「名:数」「名+数」拆成 [名, 分隔, 数]；拆不出返回空数组
+static func _split_stat(chunk: String) -> Array:
+	var m := RegEx.create_from_string("^([^：:+\\-\\d]+)([：:])?(.*)$").search(chunk)
+	if m == null or m.get_string(3) == "":
+		return []
+	return [m.get_string(1), m.get_string(2), m.get_string(3)]
+
+
+## 给一行「自带」加 spans：[[字, 颜色], …]；名字和空白照行本色，只有数值着色，冒号统一为「：」。认不出任何属性就原样返回
 static func with_stat_spans(r: Dictionary) -> Dictionary:
 	var t := str(r.get("text", ""))
 	var base: Color = r.get("color", XUiSkin.TEXT_2)
@@ -515,22 +524,36 @@ static func with_stat_spans(r: Dictionary) -> Dictionary:
 	var hit := false
 	var re := RegEx.create_from_string("[\\s　]+")
 	var pos := 0
+	var chunks := []
 	for m in re.search_all(t):
-		var chunk := t.substr(pos, m.get_start() - pos)
-		if chunk != "":
-			var c = stat_color(chunk.split("：")[0].split(":")[0])
-			hit = hit or c != null
-			spans.append([chunk, c if c != null else base])
-		spans.append([m.get_string(), base])
+		chunks.append([t.substr(pos, m.get_start() - pos), false])
+		chunks.append([m.get_string(), true])
 		pos = m.get_end()
-	var tail := t.substr(pos)
-	if tail != "":
-		var c2 = stat_color(tail.split("：")[0].split(":")[0])
-		hit = hit or c2 != null
-		spans.append([tail, c2 if c2 != null else base])
+	chunks.append([t.substr(pos), false])
+	for ch in chunks:
+		var chunk := str(ch[0])
+		if chunk == "":
+			continue
+		if bool(ch[1]):
+			spans.append([chunk, base])
+			continue
+		var parts := _split_stat(chunk)
+		var c = stat_color(chunk.split("：")[0].split(":")[0])
+		if parts.is_empty() or c == null:
+			spans.append([chunk, base])
+			continue
+		hit = true
+		spans.append([str(parts[0]), base])
+		if str(parts[1]) != "":
+			spans.append(["：", base])
+		spans.append([str(parts[2]), c])
 	if not hit:
 		return r
 	var out := r.duplicate()
+	var txt := ""
+	for sp in spans:
+		txt += str(sp[0])
+	out["text"] = txt
 	out["spans"] = spans
 	return out
 

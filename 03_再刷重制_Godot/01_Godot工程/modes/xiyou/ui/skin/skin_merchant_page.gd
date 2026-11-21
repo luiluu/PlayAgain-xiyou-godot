@@ -337,7 +337,7 @@ func _on_card_wheel(event: InputEvent) -> void:
 			turn(-1)
 
 
-# ---- 画：列表标题右边小字（旧标题第二行）；左块一枚暗紫色蜡＋默认帮助句 ----
+# ---- 画：列表标题右边小字（旧标题第二行）；左块只有默认帮助句（T360 F-15 去紫球） ----
 
 func _draw_list_right() -> void:
 	if list_right == "":
@@ -353,11 +353,7 @@ func _draw_list_right() -> void:
 func _left_wax(ctrl: Control, _row: Dictionary) -> void:
 	var lb := ctrl.size
 	var c := Vector2(lb.x / 2.0, lb.y / 2.0 - 40.0)
-	ctrl.draw_circle(c + Vector2(0, 6), 52.0, Color(0, 0, 0, 0.35))
-	ctrl.draw_circle(c, 50.0, Color("#3b2457"))
-	ctrl.draw_circle(c, 40.0, Color("#4a2d6b"))
-	ctrl.draw_arc(c, 40.0, 0, TAU, 48, Color("#6d4a94"), 2.0, true)
-	ctrl.draw_arc(c + Vector2(-6, -6), 28.0, PI * 1.05, PI * 1.55, 16, Color(1, 1, 1, 0.16), 3.0, true)
+	# T360 F-15：去掉纯紫色占位圆球，左栏只留默认帮助句
 	var body := XUiSkin.font("body")
 	var fs := XUiSkin.fs(XUiSkin.FS_AUX)
 	var fit := XSkinList.fit_text(body, T_DEFAULT_HELP, lb.x - 16.0, fs, 15)
