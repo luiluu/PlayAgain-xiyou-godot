@@ -312,6 +312,9 @@ static func panel_rows(s: XState, a: XActor) -> Array:
 			rows.append(_line("\\C[17]待选突破奖励：%d项（菜单「真气」）\\C[0]" % int(st.pending)))
 		if ctx.comp > 1.0001:
 			rows.append(_line("天道加持：伤害 %s（本层自动获得）" % dmg_pct(ctx.comp)))
+	else:
+		for t in XTianqiBrand.status_rows(s, a):  # 天启篇烙印行（T121；T145 已藏真气行；烙印关着为空）
+			rows.append(_line(t))
 	var low: bool = c.now.settle < 0.5
 	rows.append(_line(("\\C[2]" if low else "") + "结算伤害：" + dmg_pct(c.now.settle) + ("" if c.now.settle >= 1 else "（本层难度削弱）") + ("\\C[0]" if low else "")))
 	var req := PackedStringArray()
@@ -345,6 +348,15 @@ static func detail_rows(s: XState, a: XActor) -> Array:
 		rows.append(_line("道法：" + ("、".join(df) if not df.is_empty() else "未领悟")))
 		rows.append(_line("来源：守层者（每层一次）、副本首领、神兵试炼、溢出再动（每场最多10次）"))
 		rows.append({"type": "blank"})
+	else:
+		var br := XTianqiBrand.status_rows(s, a)  # 天启篇烙印段（T121；烙印关着为空，整段不显示）
+		if not br.is_empty():
+			rows.append(_head("烙印"))
+			for t in br:
+				rows.append(_line(t))
+			var cn := XTianqiBrand.cost_names(a, s)
+			rows.append(_line(XTianqiBrand.TEXT_COSTS % ("、".join(cn) if not cn.is_empty() else "无")))
+			rows.append({"type": "blank"})
 	var c := compare(a)
 	var ctx := context(s)
 	rows.append(_head("难度对照　%s·第%d层" % [ctx.route.name, ctx.floor]))

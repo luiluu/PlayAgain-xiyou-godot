@@ -603,6 +603,7 @@ func _lane_titles() -> Array:
 
 func _lane_logic() -> void:
 	XUiSkin.ENABLED = true
+	XUiSkin.DETAIL_V1 = false   # T340 D4：本段断言老时长（2 秒、0.7 秒、MERGE_LEFT 1.0）＝DETAIL_V1 关时的回退行为；新算法在 xiyou_ui_detail_d4
 	XSkinNoticeLane.NOTICE_V2 = true
 	var s := _state(true)
 	XSkinNoticeLane.auto_tick = false
@@ -727,6 +728,7 @@ func _lane_logic() -> void:
 	XUiSkin.touch_override = 0
 	check("hang_keycap_keyboard_only", not touch_cap and XHangUpOverlay.show_keycap())
 	XUiSkin.touch_override = -1
+	XUiSkin.DETAIL_V1 = true
 	XSkinNoticeLane.reset()
 	XSkinNoticeLane.auto_tick = true
 	var t := get_tree().root.get_node_or_null("XToast")

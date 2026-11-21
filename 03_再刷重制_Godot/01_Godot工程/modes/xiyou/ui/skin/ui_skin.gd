@@ -454,6 +454,7 @@ static var _clock_ms := -1   # 测试钉住时间（-1＝用真实时间）
 
 ## 新皮肤现在开没开（每次画都问，切换存档后下一帧就跟上）
 static func on() -> bool:
+	_ensure_input_tracker()   # T339 P2-1：早点挂上，首次问聚焦环之前的输入也记得到（挂过之后只是一句 is_instance_valid）
 	if not ENABLED:
 		return false
 	if FORCE:
@@ -1151,10 +1152,16 @@ static func _make_tabular(base: Font) -> FontVariation:
 	return fv
 
 
+## 常规数字右对齐的落笔点（不画，测试用）：右缘 right_x 取整像素（防亚像素抖动）
+static func num_right_pos(f: Font, right_x: float, baseline_y: float, text: String, fs: int) -> Vector2:
+	var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	return Vector2(roundf(right_x - tw), roundf(baseline_y))
+
+
 ## 常规数字右对齐：右缘 right_x 取整像素（防亚像素抖动），描边同 ds；返回字宽
 static func draw_num_right(ci: CanvasItem, f: Font, right_x: float, baseline_y: float, text: String, fs: int, color: Color) -> float:
 	var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-	ds(ci, f, Vector2(roundf(right_x - tw), roundf(baseline_y)), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
+	ds(ci, f, num_right_pos(f, right_x, baseline_y, text, fs), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, color)
 	return tw
 
 
@@ -1197,6 +1204,18 @@ static func mono_digits_width(f: Font, text: String, fs: int) -> float:
 ## align 按 anchor_x 左／中／右；outline_px＝-1 跟 ds 一样（FONT_V00300 时 1px 黑 0.45），0 不描边。返回总宽。
 static func draw_mono_digits(ci: CanvasItem, f: Font, anchor_x: float, baseline_y: float, text: String, fs: int, color: Color,
 		align := HORIZONTAL_ALIGNMENT_CENTER, outline_px := -1, outline_col := Color(0, 0, 0, 0.85)) -> float:
+	var col := paint_color(color)
+	var plan := mono_digit_plan(f, anchor_x, baseline_y, text, fs, align)
+	var ol := mono_outline(col, outline_px, outline_col)
+	for sl in plan.glyphs:
+		if int(ol.px) > 0 and col.a > 0.0:
+			ci.draw_string_outline(f, sl[1], str(sl[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, int(ol.px), ol.col)
+		ci.draw_string(f, sl[1], str(sl[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+	return plan.total
+
+
+## draw_mono_digits 的落笔计划（不画，测试用）：{total: 总宽, glyphs: [[字, 落笔点（已取整）], …]}
+static func mono_digit_plan(f: Font, anchor_x: float, baseline_y: float, text: String, fs: int, align := HORIZONTAL_ALIGNMENT_CENTER) -> Dictionary:
 	var slots := mono_digit_slots(f, text, fs)
 	var total := 0.0
 	for sl in slots:
@@ -1206,15 +1225,17 @@ static func draw_mono_digits(ci: CanvasItem, f: Font, anchor_x: float, baseline_
 		x0 -= total * 0.5
 	elif align == HORIZONTAL_ALIGNMENT_RIGHT:
 		x0 -= total
-	var col := paint_color(color)
-	var opx := outline_size() if outline_px < 0 else outline_px
-	var ocol := outline_color(col.a) if outline_px < 0 else outline_col
+	var glyphs := []
 	for sl in slots:
-		var pos := Vector2(roundf(x0 + float(sl[1])), roundf(baseline_y))
-		if opx > 0 and col.a > 0.0:
-			ci.draw_string_outline(f, pos, str(sl[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, opx, ocol)
-		ci.draw_string(f, pos, str(sl[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
-	return total
+		glyphs.append([str(sl[0]), Vector2(roundf(x0 + float(sl[1])), roundf(baseline_y))])
+	return {"total": total, "glyphs": glyphs}
+
+
+## draw_mono_digits 的描边分支（不画，测试用）：outline_px＝-1 跟 ds 一样（outline_size()／outline_color()），否则用传入的
+static func mono_outline(col: Color, outline_px: int, outline_col: Color) -> Dictionary:
+	if outline_px < 0:
+		return {"px": outline_size(), "col": outline_color(col.a)}
+	return {"px": outline_px, "col": outline_col}
 
 
 ## ---- 规范 2：双环聚焦与输入模式 ----
@@ -1232,6 +1253,8 @@ const FOCUS_BTN_GAP := 12
 const FOCUS_BTN_GAP_COMPACT := 10
 
 enum InputMode { KEYBOARD, GAMEPAD, MOUSE, TOUCH }
+## 合成输入的标记：触屏虚拟按键、底部按键提示胶囊发出的假键盘事件带它，note_input 跳过
+const SYNTH_META := "skin_synth_input"
 ## -1＝还没收到输入（按设备：触屏 TOUCH，否则 KEYBOARD）；测试可直接写
 static var input_mode := -1
 const JOY_AXIS_DEADZONE := 0.35
@@ -1247,6 +1270,8 @@ static func current_input_mode() -> int:
 ## 记一次输入（全局监听节点每个事件都调；只读不吞）。触屏模拟出的鼠标事件（device＝DEVICE_ID_EMULATION）算触屏，
 ## 同 battle_scene.gd／mv_player.gd 的判据。
 static func note_input(event: InputEvent) -> void:
+	if event.has_meta(SYNTH_META):
+		return   # T339 P3-2：触屏虚拟按键合成的键盘事件不算「用了键盘」（模式由触屏那几下定）
 	if event is InputEventKey:
 		if event.pressed:
 			input_mode = InputMode.KEYBOARD
@@ -1297,6 +1322,18 @@ static func _ensure_input_tracker() -> void:
 		return
 	_tracker = _InputTracker.new()
 	tree.root.add_child.call_deferred(_tracker)
+	# T339 P2-1：_input 是「树里排在后面的先收」，切场景后新场景挂在根上、排到监听节点后面，页面 handled 的事件就漏记了。
+	# 根下有新增／调序时把监听节点挪回末位（延后一帧做，免得在信号里改树）
+	if not tree.root.child_order_changed.is_connected(_keep_tracker_last):
+		tree.root.child_order_changed.connect(_keep_tracker_last)
+
+
+static func _keep_tracker_last() -> void:
+	if not is_instance_valid(_tracker) or not _tracker.is_inside_tree():
+		return
+	var root := _tracker.get_parent()
+	if root != null and root.get_child(root.get_child_count() - 1) != _tracker:
+		root.move_child.call_deferred(_tracker, -1)
 
 
 ## 框形／胶囊控件的双环聚焦（规范 2.2、2.4）。ci 是 RID（同 draw_select）；corner_r 是控件本身的圆角，环按同心外扩。

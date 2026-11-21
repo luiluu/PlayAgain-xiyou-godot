@@ -76,6 +76,7 @@ func _state(tianqi := true) -> XState:
 	if tianqi:
 		s = XTianqi.start_new_game(3, "jianxian", lineup)
 		XTianqi.take_pending()
+		XTianqiElements.ensure_deck(s, 20261120)  # T345：新局元素牌组由随机宝珠种子建，31 层女娲对火的抗性随机（0／0.67／1.0）→ 火焰估伤偶发 0；钉死种子
 		for id in lineup:
 			XTianqi._joining = true
 			s.add_actor(int(id))
@@ -168,6 +169,7 @@ func _ai() -> void:
 	var ev := XBattleEval.create_for(logic, a)
 	var mag := float(ev.hit_detail(a, e, XDB.rec("Skills", MAG), 1000.0).value)
 	var phys := float(ev.hit_detail(a, e, XDB.rec("Skills", PHYS), 1000.0).value)
+	_check("ai.fire_not_immune", e.element_rate(int(XDB.rec("Skills", MAG).damage.get("elementId", 0))) > 0.0)  # T345 守卫：牌组种子钉住后火不是免疫
 	_check("ai.mag_zero", mag == 0.0, mag)
 	_check("ai.phys_positive", phys > 0.0, phys)
 	# 我方自动战斗默认走卡 1（统一预览 O-624 默认关）：React 整下挡掉的招估 0（XSmartAI.o_tianqi_react_zero）

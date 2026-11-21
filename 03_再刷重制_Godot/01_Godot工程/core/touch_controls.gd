@@ -478,6 +478,7 @@ func _send_key(key: Key, pressed: bool) -> void:
 	e.keycode = key
 	e.physical_keycode = key
 	e.pressed = pressed
+	e.set_meta("skin_synth_input", true)   # T339 P3-2：虚拟键合成的键盘事件，XUiSkin.note_input 不算键盘
 	Input.parse_input_event(e)
 
 
@@ -560,6 +561,7 @@ func _send_echo(code: Key) -> void:
 	e.pressed = true
 	e.echo = true
 	e.set_meta(REPEAT_META, true)
+	e.set_meta("skin_synth_input", true)   # T339 P3-2
 	Input.parse_input_event(e)
 
 

@@ -2404,6 +2404,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false,
 		for t in _guided_targets(u, skill, chosen, forcing):
 			for i in range(maxi(1, times)):
 				list.append(t)
+		XSmartAI.note_revive(self, u, skill, list)  # O-628（T331）：真出手才记这回合救的是谁（同回合同一个倒下的人只派一次）
 		XAlienBattle.set_heal_targets(skill, list.size())  # 逆祷治疗按目标数（含重复）分摊
 		XRaceBattle.begin(self, u, skill, list, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 		XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）
@@ -2422,6 +2423,7 @@ func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false,
 	var repeats := XLiuying.repeats(u, skill, XYunshang.repeats(u, skill, XYomiJingliu.begin_action(u, skill, XRaven.repeats(u, skill, passive_repeats(u, skill, attack_repeats(u, skill, int(skill.get("repeats", 1))))))))
 	repeats = XTianqiQiyinEffects.repeats(self, u, skill, repeats)  # 天启篇战流派攻击次数 +1。黄泉 numRepeats 包装；渡鸦冥羽连葬在里层；流萤（新源第 34 个）在云裳外层
 	var targets := _guided_targets(u, skill, chosen, forcing)
+	XSmartAI.note_revive(self, u, skill, targets)  # O-628（T331）：同上
 	XAlienBattle.set_heal_targets(skill, targets.size() * maxi(1, repeats))  # 逆祷治疗按目标数（含重复）分摊
 	XRaceBattle.begin(self, u, skill, targets, logs)  # 种族祝福行动根（startAction＋makeTargets 包装），endAction 时 finish
 	XAlienBattle.begin(self, u, skill)  # 异化行动根（startAction 包装）

@@ -356,7 +356,7 @@ func _drag_input(event: InputEvent) -> bool:
 			page_panel.accept_event()
 		return was_drag
 	if event is InputEventMouseMotion:
-		var to := _drag.motion(event.position)
+		var to := _drag.motion(event.position, XSkinDrag.is_touch_event(event))
 		if not is_nan(to):
 			var want := roundi(to / XStatusPage.LH)
 			if want != int(scene.tops[scene.page]):

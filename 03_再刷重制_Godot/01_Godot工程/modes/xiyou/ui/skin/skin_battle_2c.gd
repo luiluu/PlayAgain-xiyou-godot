@@ -362,7 +362,9 @@ class VictoryView extends Control:
 	var _bg: Texture2D
 	var _row: Dictionary
 	var _sv := {}         # actor → {tex, src, scale} 或 {face}
-	var _drag := {}       # 详单里按下：{y, top, moved}
+	var _drag := {}       # 详单里按下：{y, top, moved}（DETAIL_V1 关时用）
+	var _xd := XSkinDrag.new()   # T339 D3：详单拖动统一走 XSkinDrag（死区触屏 8／鼠标 5、扣死区）
+	var _xd_touch := true
 	var _hint_key := ""
 	var _off := Vector2.ZERO   # 背层这一帧的震动偏移（缩放、旋转画完回到它）
 
@@ -486,6 +488,11 @@ class VictoryView extends Control:
 			v._drop_top = clampi(v._drop_top + (1 if event.button_index == MOUSE_BUTTON_WHEEL_DOWN else -1), 0, mx)
 			return true
 		if event is InputEventMouseMotion:
+			if XUiSkin.detail_on() and _xd.active():
+				var to := _xd.motion(event.position, _xd_touch)
+				if not is_nan(to):
+					v._drop_top = clampi(roundi(to / XSkin2C.DETAIL_DROP_ROW), 0, mx)
+				return true
 			if not _drag.is_empty():
 				var dy: float = event.position.y - float(_drag.y)
 				if absf(dy) > XSkin2C.DRAG_SLOP:
@@ -505,11 +512,19 @@ class VictoryView extends Control:
 					v._confirm()
 				return true
 			if _detail_rect().has_point(pt):
-				_drag = {"y": pt.y, "top": v._drop_top, "moved": false}
+				if XUiSkin.detail_on():
+					_xd.press(pt, float(v._drop_top) * XSkin2C.DETAIL_DROP_ROW)
+					_xd_touch = XSkinDrag.is_touch_event(event)
+				else:
+					_drag = {"y": pt.y, "top": v._drop_top, "moved": false}
 			else:
 				open_detail(false)
 			return true
 		# 松手：没拖动才算点了一下（＝继续）
+		if _xd.active():
+			if _xd.release():
+				v._confirm()
+			return true
 		var was := _drag
 		_drag = {}
 		if not was.is_empty() and not bool(was.moved):
@@ -519,6 +534,7 @@ class VictoryView extends Control:
 	func open_detail(on: bool) -> void:
 		detail = on
 		_drag = {}
+		_xd.release()
 		if on:
 			v._drop_top = 0
 		_refresh_hints()
@@ -1659,8 +1675,7 @@ class Handoff extends Control:
 				var cc := c + Vector2(0, -6)
 				draw_set_transform(cc, 0.0, Vector2(sc, sc))
 				var pos := Vector2(-w / 2.0, (f.get_ascent(fs) - f.get_descent(fs)) / 2.0)
-				draw_string_outline(f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 8, Color(0, 0, 0, 0.9))
-				XUiSkin.ds(self, f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+				XSkinSealDial.draw_combo_digits(self, f, pos, s, fs, col, Color(0, 0, 0, 0.9))
 				draw_set_transform(Vector2.ZERO)
 				XSkin2C._glow(self, cc, 30.0 * (1.0 - sc) + 6.0, Color(XUiSkin.GOLD_LIGHT, 0.7 * (1.0 - sc)))
 				last.combo_shown = true

@@ -2,7 +2,7 @@ class_name XSmartAI
 extends RefCounted
 ## Codex_SmartBattleAI（设置「智能战斗AI（自动战斗）」，默认开）：自动战斗时按收益/代价给每个可用技能与药品打分，选最高分。
 ## 照正式 v0.18 源码移植通用部分（choose → chooseScored → scoreCandidate），对照探针 mv_oracle/smart_ai_probe.cjs。
-## - 候选：已会的技能（scope>0、无 <Hide in Battle>、能用；带公共事件效果的只有附在伤害技能上的「纯能力成长」事件可用）＋普通攻击，
+## - 候选：已会的技能（scope>0、无 <Hide in Battle>、能用；带公共事件效果的只有附在伤害技能上的「纯能力成长」事件可用；O-627 可另放复活技，见 o_revive_ce，默认关）＋普通攻击，
 ##   再加持有的消耗品里含效果 11/12/22/34 的。
 ## - 伤害估算 safeDamage：只算受限的算式（a/b 的能力值、hpRate、状态、熟练度、变量、Math 函数之外的写法一律 0），
 ##   × 属性有效度 × pdr/mdr × 段数（YEP 行动序列里 ACTION EFFECT 条数，转换器预算为 yepEffects；攻击另加追加次数）
@@ -58,6 +58,18 @@ static var o_projection := true
 ## O-131（优化登记）：档案给了段数 hits 时，原版仍再乘 action.numRepeats（普攻带追加次数），甚尔游云「5＋追加」段又乘了
 ## 一次（1＋追加），追加次数大于 0 时估伤翻倍（实战甚尔把目标收成一个，只打 hits 段）。true＝hits 就是总段数；false＝照原版相乘
 static var o_profile_hits := true
+## O-627（T331，优化登记）：自动战斗会放带公共事件的复活技。默认关（协调 11-21：Kyo 还没定西游档放不放，推荐不放；定了要放再翻开）。原版 legalCandidate 一律不放带公共事件的非伤害技，
+## 次级复活术 4549、复苏之歌 622、生命赞歌 825、沉鱼萝雁 3760、妙语生花 4829、圣光救赎·圣 5782 这类在自动战斗里从来用不上。
+## 现在：目标是倒下的队友（范围 9／10）、会复活（效果 22 解除战斗不能，或伤害类型生命回复）、公共事件（含 117 子事件）里没有 TQ_CE_BLOCK
+## 危险指令的技能放进候选（开时西游档、天启篇都生效；天启篇不靠它，O-623 tq_ce_ok 本来就放）；只在有队友倒下时有分（recovery_utility），MP／冷却不够照旧 can_use 挡掉。
+## O-628 o_revive_once（默认开，两种档都生效，不看 o_revive_ce）：同一回合同一个倒下的人只安排一次复活（note_revive／revive_planned，技能和道具都算），不全队去救同一个人：
+## 在 XBattleLogic.execute 真出手（没被控跳过、没被禁用／封印／打倒）、算出实际目标之后才记，只记实际目标里倒下的我方
+## （混乱打偏、挂机表单体复活只救一个时，别的倒下的人照样有人救；T331 核查 r1 P1-1／P2-1）。
+## 复活技的公共事件检查比天启篇放行更严（REVIVE_CE_BLOCK，并递归 339 强制行动那招自己的公共事件；P3-1）。
+## o_revive_ce：true＝放公共事件复活技；false＝照原版不进候选（默认）。o_revive_once：false＝照原版不记复活安排、谁都可以去救同一个人
+static var o_revive_ce := false
+static var o_revive_once := true
+static var _revive_plan := {"logic": 0, "turn": -1, "targets": {}}
 static var _toji_formula_re := RegEx.create_from_string("^CodexToji\\.damage\\(a,b,1021[6-9],this\\)$")
 static var _heartsteel_formula_re := RegEx.create_from_string("^CodexHeartsteel\\.damage\\(a,b,this\\)$")
 
@@ -174,6 +186,8 @@ func legal(rec: Dictionary, item: bool) -> bool:
 			var dmg_type := int(rec.get("damage", {}).get("type", 0))
 			if not item and tq_on() and tq_ce_ok(rec, dmg_type, int(e.dataId)):
 				continue
+			if not item and o_revive_ce and revives(rec) and not _ce_dangerous(int(e.dataId), {}, true):
+				continue
 			if item or not dmg_type in [1, 2, 5, 6] or not useful_common_event(int(e.dataId)):
 				return false
 	return true
@@ -190,7 +204,38 @@ static func tq_ce_ok(rec: Dictionary, dmg_type: int, ce_id: int) -> bool:
 	return not _ce_dangerous(ce_id, {})
 
 
-static func _ce_dangerous(ce_id: int, seen: Dictionary) -> bool:
+## 复活技能／道具：目标是倒下的队友（范围 9／10），且解除战斗不能（效果 22 状态 1）或伤害类型是生命回复（同 recovery_utility 给 60000 的口径）
+static func revives(rec: Dictionary) -> bool:
+	if rec.is_empty() or not for_dead_friend(rec):
+		return false
+	return int(rec.get("damage", {}).get("type", 0)) == 3 \
+		or rec.get("effects", []).any(func(e): return int(e.code) == 22 and int(e.dataId) == 1)
+
+
+## 本回合已安排过复活的倒下队友（o_revive_once 关时恒假）
+static func revive_planned(l: XBattleLogic, t: XBattler) -> bool:
+	if not o_revive_once or int(_revive_plan.logic) != l.get_instance_id() or int(_revive_plan.turn) != l.turn:
+		return false
+	return (_revive_plan.targets as Dictionary).has(t.get_instance_id())
+
+
+## 复活技能／道具真出手时（XBattleLogic.execute 算出实际目标之后）记下目标里倒下的我方；o_revive_once 关时不记
+static func note_revive(l: XBattleLogic, a: XBattler, rec, targets: Array) -> void:
+	if not o_revive_once or not a is XActor or not rec is Dictionary or not revives(rec):
+		return
+	if int(_revive_plan.logic) != l.get_instance_id() or int(_revive_plan.turn) != l.turn:
+		_revive_plan = {"logic": l.get_instance_id(), "turn": l.turn, "targets": {}}
+	for t in targets:
+		if t is XActor and t.is_dead():
+			_revive_plan.targets[t.get_instance_id()] = true
+
+
+## 复活技放行时另加拦的指令（天启篇 tq_ce_ok 不用这份）：文字 101、增减物品／武器／防具／队员 126～129、学技能 318
+const REVIVE_CE_BLOCK := [101, 126, 127, 128, 129, 318]
+
+
+## strict（复活技用）：另拦 REVIVE_CE_BLOCK，并递归 339 强制行动那招的公共事件（效果 44）
+static func _ce_dangerous(ce_id: int, seen: Dictionary, strict := false) -> bool:
 	if seen.has(ce_id):
 		return false
 	seen[ce_id] = true
@@ -199,12 +244,19 @@ static func _ce_dangerous(ce_id: int, seen: Dictionary) -> bool:
 		return true
 	for c in ev.get("list", []):
 		var code := int(c.code)
-		if code in TQ_CE_BLOCK:
+		if code in TQ_CE_BLOCK or (strict and code in REVIVE_CE_BLOCK):
 			return true
 		if code == 117:
 			var ps = c.get("parameters", [])
-			if not ps is Array or ps.is_empty() or _ce_dangerous(int(ps[0]), seen):
+			if not ps is Array or ps.is_empty() or _ce_dangerous(int(ps[0]), seen, strict):
 				return true
+		if strict and code == 339:
+			var fp = c.get("parameters", [])
+			if not fp is Array or fp.size() < 3:
+				return true
+			for fe in XDB.rec("Skills", int(fp[2])).get("effects", []):
+				if int(fe.code) == 44 and _ce_dangerous(int(fe.dataId), seen, true):
+					return true
 	return false
 
 
@@ -623,7 +675,7 @@ func valued(rec: Dictionary, item: bool) -> Dictionary:
 func score_candidate(rec: Dictionary, item: bool, ctx: Dictionary, dir := {}) -> Dictionary:
 	var d: Dictionary = rec if dir.is_empty() else dir
 	var targets: Array = ctx.foes if for_opponent(d) else [actor] if for_user(d) else \
-		ctx.friends.filter(func(t): return t.is_dead() if for_dead_friend(d) else t.is_alive())
+		ctx.friends.filter(func(t): return (t.is_dead() and not revive_planned(logic, t)) if for_dead_friend(d) else t.is_alive())
 	targets = XAlienBattle.filter_targets(actor, rec, targets)  # 恶愿：除自己外
 	var p := profile(actor, rec)
 	if p.has("targetAllowed"):

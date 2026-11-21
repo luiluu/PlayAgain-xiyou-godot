@@ -96,6 +96,7 @@
   "XTianqiTrumpet.cost": "c",
   "XTianqiLedger.hook_bonus": "0.0",
   "XTianqiLedger.nine_attack_times": "0.0",
+  "XTianqiLedger.live_confirm_rows": "rows",
   "XTianqiLedger.live_confirm_add": "{\"add\": 0.0, \"nine\": 0.0}",
   "XTianqiBase.param_base": "NAN",
   "XTianqiBrand.realm": "0",
@@ -107,7 +108,10 @@
   "XTianqiGemPower.full_value": "v",
   "XTianqiWeakAffix.guide_targets": "list",
   "已确认空值安全": {
+    "XTianqiBrand.cost_names": "T121：只在 guide.detail_rows 的天启篇分支（_tianqi_status_on 为真）且 XTianqiBrand.status_rows 非空时调；发行里天启篇关着、status_rows 空壳返回 []，走不到；即便走到，空表只显示「无」",
     "XTianqiSixDim.of_actor": "T278：actor_book 与 skin_status_page 都先判 XTianqiSixDim.active()，空壳恒 false 走不到；真脚本在西游档本身也返回 neutral()，只读不写存档",
+    "XTianqiSixDim.data": "T279：只在 XBossStatus.six_summary 里读 ai_tier_names，该函数开头先判 XTianqiSixDim.active()，空壳恒 false 提前返回 {}，走不到；真脚本西游档 active 也为 false",
+    "XTianqiSixDim.of_battler": "T279：只在 XBossStatus.six_summary（active() 守卫之后）调；空壳走不到，西游档真脚本同样走不到",
     "XTianqiSixDim.letter": "T278：只在 actor_book.six_line（six_on 守卫内）与天启篇敌人 AI（tianqi_enemy_ai 本身换空壳）里调；空串只影响一行显示文字，西游档走不到",
     "XTianqiMoney.money": "T307：只在 training_scene.preview 的 e.tianqi 分支里调（天启篇修炼项，发行里天启篇关着列不出这些项）；即便走到，空表上临时建删 training，不写存档、能力值不变",
     "XTianqiQiyinEffects._p": "T282：smart_ai.gd 估段数时 ._p(logic, a, \"extra_hits\").get(\"value\", 0)，空表得 0；西游档 effects 本就为空，真脚本同样返回 {}",

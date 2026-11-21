@@ -152,7 +152,7 @@ func _paint_bar(c: XMVCanvas) -> void:
 				if int(cap.icon) > 0:
 					var tex := XUiSkin.icon(int(cap.icon))
 					if tex != null:
-						c.draw_texture_rect(tex, Rect2(x + 7.0, 8.0, 24.0, 24.0), false)
+						c.draw_texture_rect(tex, XUiSkin.inline_icon_rect(x + 7.0, 20.0, 24.0, CAP_FS) if XUiSkin.detail_on() else Rect2(x + 7.0, 8.0, 24.0, 24.0), false)
 					tx = x + 36.0
 				_txt(c, f, str(cap.text), tx, 0, r.end.x - tx, "left", XUiSkin.DOWN if bad else XUiSkin.TEXT, CAP_FS, ROW_H)
 			"more":
@@ -186,13 +186,18 @@ func _paint_detail(c: XMVCanvas) -> void:
 	_attr_line(c, w - 231.0, 7.0, 178.0, 28.0)
 	_txt(c, f, "×", w - 42.0, 6, 27, "center", XUiSkin.TEXT_2, 22, 30)
 	var tabs := [["Debuff", "异常 %d" % bad, XUiSkin.DOWN], ["Buff", "增益 %d" % good, XUiSkin.UP], ["All", "全部 %d" % all.size(), XUiSkin.GOLD]]
-	var tw := (w - 24.0) / 3.0
-	for i in 3:
+	if six_tab_on():
+		tabs.append(["Six", "六维", XUiSkin.GOLD])
+	var tw := (w - 24.0) / tabs.size()
+	for i in tabs.size():
 		var x := 12.0 + i * tw
 		var on: bool = filter == tabs[i][0]
 		if on:
 			XUiSkin.draw_select(ci, Rect2(x, 43, tw - 4.0, 28))
 		_txt(c, f, tabs[i][1], x, 43, tw - 4.0, "center", tabs[i][2] if on else XUiSkin.TEXT_2, 15, 28)
+	if filter == "Six" and six_tab_on():
+		_paint_six(c)
+		return
 	var list := rows()
 	var picked = null
 	for r in list:
@@ -217,12 +222,28 @@ func _paint_detail(c: XMVCanvas) -> void:
 		if row.icon != 0:
 			var tex := XUiSkin.icon(int(row.icon))
 			if tex != null:
-				c.draw_texture_rect(tex, Rect2(22, y + 9.0, 27, 27), false)
+				c.draw_texture_rect(tex, XUiSkin.inline_icon_rect(22.0, y + 22.5, 27.0, 17) if XUiSkin.detail_on() else Rect2(22, y + 9.0, 27, 27), false)
 		var x := 58.0 if row.icon != 0 else 24.0
 		_txt(c, f, XSkinOTBBar.fit(f, str(row.name), w - x - 122.0, 17), x, y + 2.0, w - x - 122.0, "left", XUiSkin.TEXT, 17, 26)
 		_txt(c, f, XSkinOTBBar.fit(f, spaced(_meta(row)), 110.0, 14), w - 125.0, y + 2.0, 109, "right", col, 14, 26)
 		_txt(c, f, XSkinOTBBar.fit(f, str(row.description).replace("\n", " "), w - 48.0, 14), 24, y + 29.0, w - 48.0, "left", XUiSkin.TEXT_2, 14, 25)
 	_footer(c, page, maxi(1, ceili(list.size() / float(page_size()))), "")
+
+
+## 【T279】「六维」页签（新界面）：左雷达、右战商档名＋一句话＋控制抗性／「免疫停手控制」。不画战力
+func _paint_six(c: XMVCanvas) -> void:
+	var sm := six_summary()
+	if sm.is_empty():
+		return
+	var f := XUiSkin.font("body")
+	XSkinSixDimRadar.paint(c, SIX_CENTER, SIX_R, sm.six, {"fs": 14})
+	var tw := DETAIL_W - SIX_TEXT_X - 14.0
+	_txt(c, XUiSkin.font("title"), str(sm.tier_line), SIX_TEXT_X, BODY_Y + 8.0, tw, "left", XUiSkin.GOLD, 18, 26)
+	var y := BODY_Y + 40.0
+	for ln in wrap_lines(f, str(sm.wit_hint), tw, 15):
+		_txt(c, f, ln, SIX_TEXT_X, y, tw, "left", XUiSkin.TEXT_2, 15, 22)
+		y += 22.0
+	_txt(c, f, str(sm.control_line), SIX_TEXT_X, y + 12.0, tw, "left", XUiSkin.UP if sm.immune else XUiSkin.TEXT, 16, 24)
 
 
 ## 标题右边的元素行：天启篇元素牌组照旧（XTianqiElements）；其余是「敌人属性：」＋元素名（同 XBossStatusPanel._attributes 取数，换皮肤字）
@@ -265,7 +286,7 @@ func _paint_selected(c: XMVCanvas, row: Dictionary) -> void:
 	if row.icon != 0:
 		var tex := XUiSkin.icon(int(row.icon))
 		if tex != null:
-			c.draw_texture_rect(tex, Rect2(22, BODY_Y + 12.0, 30, 30), false)
+			c.draw_texture_rect(tex, XUiSkin.inline_icon_rect(22.0, BODY_Y + 27.0, 30.0, 19) if XUiSkin.detail_on() else Rect2(22, BODY_Y + 12.0, 30, 30), false)
 	var x := 63.0 if row.icon != 0 else 23.0
 	var tf := XUiSkin.font("title")
 	var names := wrap_lines(tf, str(row.name), w - x - 20.0, 19)
@@ -298,7 +319,10 @@ func _footer(c: XMVCanvas, at: int, pages: int, middle: String) -> void:
 	_txt(c, f, "下一页 ›", w - 97.0, y + 3.0, 82, "right", XUiSkin.GOLD if at < pages - 1 else XUiSkin.TEXT_3, 14, 28)
 
 
+## T338 D2：走 XSkinText（避头尾＋防孤字＋英文数字不腰斩）；DETAIL_V1 关＝旧的逐字硬切
 static func wrap_lines(f: Font, text: String, width: float, fs: int) -> Array:
+	if XUiSkin.detail_on():
+		return XSkinText.wrap_lines(text, f, fs, width)
 	var lines := []
 	var line := ""
 	for ch in text:

@@ -22,6 +22,8 @@ var all := false:
 		all = v
 		_place_bar(true)
 var bar: XSkinSelectBar
+## D1c 测试用：最近一次 _draw 每行 [行号, 量条右缘 x]
+var last_bars: Array = []
 ## T024 选中放大（单人可选时；全体对象整队都选中，不放大）：选中那人的圆头像和名字放大
 var sel_scale: XSkinSelScale
 const ROW_H := 44.0
@@ -119,6 +121,7 @@ func _draw() -> void:
 		XUiSkin.ds(self, body, Vector2(0, XUiSkin.FS_AUX_MAX + 4), title, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
 		XUiSkin.draw_divider(self, 0.0, size.x, TITLE_H - 4)
 	sel_scale.sel(index if selectable and not all and index >= 0 else null)
+	last_bars = []
 	for i in rows.size():
 		var m: Dictionary = rows[i]
 		var r := row_rect(i)
@@ -147,14 +150,31 @@ func _draw() -> void:
 		var mx := float(m.get("max", 0))
 		var vt := "%d/%d" % [int(cur), int(mx)]
 		var vw := num.get_string_size(vt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+		var vr := r.end.x - 10 - right_w - 8   # 数值右缘
+		if XUiSkin.detail_on():   # D1c：数值栏定宽（整列按最大位数），量条右缘齐平，数值右对齐
+			vw = value_col_w(num, 16, rows)
 		var bar_w := maxf(r.end.x - 10 - right_w - 8 - vw - 8 - x, 24.0)
 		var track := Rect2(x, base - 2.5, bar_w, 5)
 		var ratio := clampf(cur / mx, 0.0, 1.0) if mx > 0.0 and cur > 0.0 else 0.0
 		XUiSkin.draw_gauge(ci, track, ratio, col, a)
-		XUiSkin.ds(self, num, Vector2(x + bar_w + 8, base + 16 * 0.36), vt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(txt_col, a))
+		last_bars.append([i, track.end.x])
+		if XUiSkin.detail_on():
+			XUiSkin.draw_num_right(self, num, vr, base + 16 * 0.36, vt, 16, Color(txt_col, a))
+		else:
+			XUiSkin.ds(self, num, Vector2(x + bar_w + 8, base + 16 * 0.36), vt, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(txt_col, a))
 		var rt := str(m.get("right", ""))
 		if rt != "":
 			var fs := 20 if rt.begins_with("+") else XUiSkin.FS_AUX
 			var f := num if rt.begins_with("+") else body
 			var rw := f.get_string_size(rt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 			XUiSkin.ds(self, f, Vector2(r.end.x - 10 - rw, base + fs * 0.36), rt, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, m.get("right_color", XUiSkin.TEXT_3))
+
+
+## D1c：「当前/最大」数值栏宽＝整列最大位数的逐位定宽格宽（数字格＋斜杠），每行同宽
+static func value_col_w(num: Font, fs: int, rs: Array) -> float:
+	var dc := 1
+	var dm := 1
+	for m in rs:
+		dc = maxi(dc, maxi(str(int(m.get("cur", 0))).length(), 1))
+		dm = maxi(dm, str(int(m.get("max", 0))).length())
+	return XUiSkin.mono_digit_cell(num, fs) * (dc + dm) + num.get_string_size("/", HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x

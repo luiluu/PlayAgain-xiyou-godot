@@ -196,8 +196,8 @@ func _teams() -> Array:
 func _shape_state(team: Array, f: int) -> XState:
 	var key := ",".join(team.map(func(x): return str(x)))
 	if not _gears.has(key):
-		_gears[key] = CT.floor_gears(team, floors, sets, battles, seed, func(x): return level_cap(int(x)))
-	var s := CT.build_state(team, _gears[key][f], f, level_cap(f), fabao_cap(f), seed, brand_pct, true)
+		_gears[key] = CT.floor_gears(team, floors, sets, battles, seed, func(x): return level_cap(int(x)), difficulty)
+	var s := CT.build_state(team, _gears[key][f], f, level_cap(f), fabao_cap(f), seed, brand_pct, true, difficulty)
 	s.set_variable(20, f)
 	return s
 
