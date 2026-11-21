@@ -313,15 +313,26 @@ static func live_pool_effects(a) -> Array:
 	var out := []
 	if not a is XActor or not pool_on("POOL_LIVE"):
 		return out
-	var tab := live_table()
 	for st in a.states():
-		var sid := int(st.get("id", 0))
-		if sid <= 0 or not tab.has(sid) or not switch_on(str(tab[sid].get("switch", ""))):
+		var row := _live_row(st)
+		if row.is_empty():
 			continue
-		for e in _live_source_effects(st, tab[sid]):
-			if _live_effect(e, tab[sid]):
-				out.append([sid, tab[sid], e])
+		for e in _live_source_effects(st, row):
+			if _live_effect(e, row):
+				out.append([int(st.get("id", 0)), row, e])
 	return out
+
+
+## 这个状态在 pool 表里、开关开着、身上这条确实有要认的效果：返回表里那一行，否则 {}
+static func _live_row(st) -> Dictionary:
+	if not st is Dictionary:
+		return {}
+	var sid := int(st.get("id", 0))
+	var tab := live_table()
+	if sid <= 0 or not tab.has(sid) or not switch_on(str(tab[sid].get("switch", ""))):
+		return {}
+	var row: Dictionary = tab[sid]
+	return row if _live_source_effects(st, row).any(func(e): return _live_effect(e, row)) else {}
 
 
 ## T200：表里带 as 的状态（且身上这条确实有确认阶段效果）认 as；其余认状态自己的 effects
@@ -375,10 +386,22 @@ static func _probe_k(a, b, sid: int, e: Dictionary, item: Dictionary, critical: 
 
 
 ## XStateEffects.run("confirm")：表内状态那一步换成带 skipTypes 的副本（对敌人的伤害不乘；pool 的已进③，stop 的就没了）
+## T346：认这次要跑的 rows（行动内确认阶段列表，XBattler.effect_states），不认实时 states()——列表一次行动只建一次，
+##   1666 这类打完一下就自删的，第 2 段起身上没了、列表里还在：原来认不出就不换写，原版程序照跑（1666 另扣一次血＝二次扣血，
+##   守卫报 confirm#1666）；现在照样换写（打敌人不乘、不另扣），③ 仍按实时身上的算（live_confirm_add），所以只吃第一下。
+##   回退：LIVE_ROWS_SNAPSHOT = false（照原来认实时身上的）。
+static var LIVE_ROWS_SNAPSHOT := true
+
 static func live_confirm_rows(holder, rows: Array) -> Array:
 	var ids := {}
-	for trip in live_pool_effects(holder):
-		ids[int(trip[0])] = trip[1]
+	if not LIVE_ROWS_SNAPSHOT:
+		for trip in live_pool_effects(holder):
+			ids[int(trip[0])] = trip[1]
+	elif holder is XActor and pool_on("POOL_LIVE"):
+		for st in rows:
+			var r := _live_row(st)
+			if not r.is_empty():
+				ids[int(st.get("id", 0))] = r
 	if ids.is_empty():
 		return rows
 	var out := []

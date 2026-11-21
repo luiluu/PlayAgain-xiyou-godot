@@ -85,7 +85,7 @@ func _action(logic: XBattleLogic, u: XActor, e: XBattler, skill: Dictionary, hal
 func _runtime() -> void:
 	var s := _state()
 	var logic := XBattleLogic.new()
-	logic.setup(70, s)  # 木桩Ⅰ：血多，多段打不死
+	logic.setup(746, s)  # 单个血多的敌人（5e17 量级，掉血量算得准、多段打不死）
 	var u: XActor = logic.actors[0]
 	var e: XBattler = logic.enemies[0]
 	var skill: Dictionary = XDB.rec("Skills", 5746).duplicate(true)
@@ -114,11 +114,20 @@ func _runtime() -> void:
 	_check("tq_no_second_deduct", absf(extra) <= float(hb[0]) * 0.01, [extra, base.loss, hs.loss, hb, hh])
 	_check("tq_no_unregistered_1666", int(hs.flags) == 0, [hs.flags])
 
+	# 回退：LIVE_ROWS_SNAPSHOT 关＝照改前认实时身上的，第 2 段起又另扣、守卫又报
+	XTianqiLedger.LIVE_ROWS_SNAPSHOT = false
+	var hr := _action(logic, u, e, skill, true)
+	XTianqiLedger.LIVE_ROWS_SNAPSHOT = true
+	var extra_r := float(hr.loss) - float(base.loss)
+	for i in mini(hb.size(), (hr.hits as Array).size()):
+		extra_r -= float(hr.hits[i]) - float(hb[i])
+	_check("tq_rollback_old", extra_r > float(hb[0]) * 0.5 and int(hr.flags) > 0, [extra_r, hr])
+
 	# 二、西游档（POOL_LIVE 关）照原版：不归池，不改（缓存怎么跑就怎么跑，这里只记录、跟改前一致）
 	XTianqiLedger.POOL_LIVE = false
 	var bx := _action(logic, u, e, skill, false)
 	var hx := _action(logic, u, e, skill, true)
-	print("XIYOU_HALFSTEP ", JSON.stringify({"base": bx.loss, "halfstep": hx.loss, "hits": hx.hits, "per": float(bx.loss) / maxf(1.0, float((bx.hits as Array).size()))}))
-	results.append({"name": "xiyou_record", "passed": true, "detail": null})
+	# 西游档照原版：缓存里的 1666 每段都另扣一次（KRZ 行动内列表原样），整次正好 2 倍；本单不动
+	_check("xiyou_unchanged", float(bx.loss) > 0.0 and absf(float(hx.loss) / float(bx.loss) - 2.0) <= 0.01 and not bool(hx.held), [bx, hx])
 	XTianqiLedger.POOL_LIVE = false
 	u.remove_state(1666)
