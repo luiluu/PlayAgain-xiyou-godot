@@ -59,6 +59,12 @@ const CT := preload("res://tests/virtual_player/c_tier.gd")
 ## 换下换完仍合法、本层实测出伤最低的那个〔第 5 轮改：先用原队在本层按 --both 量各人出伤；出伤第一的不换，有断言〕，装备卸下后按游戏「最强装备」重配），并用虚拟玩家出手层（VPLogic：有人倒下先复活）打
 const VPLogic := preload("res://tests/virtual_player/vp_battle_logic.gd")
 var revive_team := false
+## T239 第 6 轮（D248 甲′）：--lineups=N 每份存档除原队外再随机抽 N-1 支合法上场 4 人（助力位不动，装备卸下按「最强装备」重配）；
+## --rng-seeds=a,b 每支队按这几个战斗随机种子各打一遍；--add-healer 另加一支「奶妈队」（原队按 --revive-team 规则换上会复活的辅助，单列不进表）。
+## 这三个任一开着，出手一律用 VPLogic（同虚拟玩家：有人倒下先复活）。
+var lineups := 1
+var rng_seeds: Array = []
+var add_healer := false
 var shape := "4w"
 var templates: Array = ["A", "B", "C", "D"]   # --shape=tb 时的职责模板
 var sets := 20
@@ -89,6 +95,12 @@ func _ready() -> void:
 			snapshots = a.substr(12)   # 缺省按 --both 量；配 --duel 时真打（T239）
 		elif a == "--revive-team":
 			revive_team = true
+		elif a.begins_with("--lineups="):
+			lineups = int(a.substr(10))
+		elif a.begins_with("--rng-seeds="):
+			rng_seeds = Array(a.substr(12).split(",")).map(func(x): return int(x))
+		elif a == "--add-healer":
+			add_healer = true
 		elif a == "--no-raw":
 			raw_mode = false
 		elif a == "--duel":
@@ -283,8 +295,14 @@ static func _enemy_hp(logic: XBattleLogic) -> float:
 	return t
 
 
+func _use_vp() -> bool:
+	return revive_team or lineups > 1 or add_healer or not rng_seeds.is_empty()
+
+
 func _fight(s: XState, troop: int) -> Dictionary:
-	var logic: XBattleLogic = VPLogic.new() if revive_team else XBattleLogic.new()
+	var logic: XBattleLogic = VPLogic.new() if _use_vp() else XBattleLogic.new()
+	if s.has_meta("t239_rng"):
+		seed(int(s.get_meta("t239_rng")))   # T239 第 6 轮：全局随机（VPLogic 选招等）也按这支队的种子定住
 	XGuardianRework.measure_atk = atk_scale if atk_scale != 1.0 else -1.0   # 守层者有不少固定伤害技能（如 771 固定 15000），只调能力值没用，整体乘出伤
 	# 战斗随机流按本层种子给定：天启篇档回合内的随机取运行时主种子（R3 设计，读档可变），不给定同一设置跑两遍也对不上
 	logic.setup(troop, s, XBattleRandom.create(str(s.random_master)) if duel else null)
@@ -464,13 +482,15 @@ func _troop_for(s: XState, f: int) -> int:
 
 
 func _fight_both(s: XState, troop: int) -> Dictionary:
-	var logic: XBattleLogic = VPLogic.new() if revive_team else XBattleLogic.new()
+	var logic: XBattleLogic = VPLogic.new() if _use_vp() else XBattleLogic.new()
 	XState._become_current(s)
 	if troop <= 0:
 		troop = _troop_for(s, _cur_floor)
 	var k := float(atk_table.get(str(_cur_floor), atk_scale))
 	XGuardianRework.measure_atk = k if atk_table.has(str(_cur_floor)) or atk_scale != 1.0 else -1.0   # 没给就照游戏里的表
-	logic.setup(troop, s)
+	if s.has_meta("t239_rng"):
+		seed(int(s.get_meta("t239_rng")))
+	logic.setup(troop, s, XBattleRandom.create(str(s.random_master)) if s.has_meta("t239_rng") else null)   # T239 第 6 轮：按种子定住战斗随机流
 	logic.auto = true
 	_drain(logic, logic.troop_events())   # 开战的敌群事件（守层者开场强制技能：天道屠灭、大道领域、轮回困难等）
 	var ours := 0.0
@@ -485,6 +505,16 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	var revived := {}   # T239 r2：本回合被复活过的守层者 → 下一回合出手次数（断言：复活后下一回合必须出手）
 	var silent := []   # 复活后下一回合一次没出手的 [回合, 敌人]
 	var revive_turns := 0   # 有敌人被复活过的回合数
+	# T239 第 6 轮（D248 甲′）：我方每回合回复，分开记。heal＝我方出手让队友（含自己，非攻击行动）回的血；steal＝攻击行动里出手者自己回的血（吸血、吸取）；
+	# regen＝回合末结算回的血（再生等，也算治疗）；shield＝我方出手给我方加的护盾（原生护盾＋护盾账本）。都按实际回上的量（每回合开头补满，回满就截住）；
+	# healTry＝治疗类命中记录的原值（不截断，看「奶得动多少」）。focus＝守层者每下打中我方一人占其最大生命的比例（集火口径）；atkHits＝我方普攻单下（每个目标一条）
+	var heal := 0.0
+	var steal := 0.0
+	var regen := 0.0
+	var shield := 0.0
+	var heal_try := 0.0
+	var focus := []
+	var atk_hits := []
 	for r in turns:
 		for e in logic.enemies:
 			if e.is_alive():
@@ -529,7 +559,20 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 						e.hp = e.mhp
 				eb = _enemy_hp(logic)
 			var snap_act := _enemy_snap(logic) if raw_mode else {}
+			var hp_m := _hp_map(logic)
+			var sh_m := _shield_map(logic)
 			var logs = logic.act(u, cmd[0], cmd[1])
+			_tally_hits(u, cmd[0], logs, focus, atk_hits)
+			if u is XActor:
+				var g := _gains(logic, hp_m, sh_m)
+				var offensive := _raw_hits(logs) > 0.0 or eb - _enemy_hp(logic) > 0.0
+				for a in g.hp:
+					if offensive and is_same(a, u):
+						steal += float(g.hp[a])
+					else:
+						heal += float(g.hp[a])
+				shield += float(g.shield)
+				heal_try += _heal_try(logs)
 			if u is XActor:
 				var d := maxf(0.0, eb - _enemy_hp(logic))
 				ours += d
@@ -569,8 +612,11 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 			continue   # 一回合内团灭：下回合开头复活补满接着量
 		var snap_end := _enemy_snap(logic) if raw_mode else {}
 		var pb_end := _party_hp(logic)
+		var hp_end := _hp_map(logic)
 		logic.end_turn()
 		dot += maxf(0.0, pb_end - _party_hp(logic))
+		for a in _gains(logic, hp_end, _shield_map(logic)).hp.values():
+			regen += float(a)
 		var pb_ev := _party_hp(logic)
 		_drain(logic, logic.troop_events(null, true))   # T239（核 P3-2）：回合末的敌群事件页，同战斗画面与 _fight
 		theirs += maxf(0.0, pb_ev - _party_hp(logic))   # T239 r2（核 P3-4）：回合末敌群页打我方的算守层者的（先跑事件再复活）；回合末持续伤害不算（P2-3）
@@ -581,12 +627,68 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	var out := {"dmg": ours / n, "perTurn": per_turn, "enemyDmg": theirs / n, "enemyDot": dot / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
 		"hits": hits.size(), "byActor": by_actor, "partyHp": logic.actors.reduce(func(t, a): return t + float(a.mhp), 0.0),
 		"enemyHp": logic.enemies.reduce(func(t, e): return t + float(e.mhp), 0.0),
+		"heal": heal / n, "steal": steal / n, "regen": regen / n, "shield": shield / n, "healTry": heal_try / n,
+		"focus": _median(focus) if not focus.is_empty() else 0.0, "focusHits": focus.size(),
+		"atkHit": _median(atk_hits) if not atk_hits.is_empty() else 0.0, "atkHits": atk_hits.size(),
+		"mhp": logic.actors.map(func(a): return int(a.mhp)), "team": str(s.get_meta("t239_team", "")), "rng": int(s.get_meta("t239_rng", 0)),
 		"atkScale": _out_scale(logic)}   # T229：守层者这场实际用的出伤倍率（没给 --atk-table 时是游戏里的表）
 	if raw_mode:
 		out["dmgRaw"] = raw_ours / n   # --no-raw 不写，三表脚本退回 dmg（T239 核 P2-2）
 		out["revivedSilent"] = silent   # 应为空：复活后下一回合没出手的守层者
 		out["reviveTurns"] = revive_turns + (1 if not revived.is_empty() else 0)
 	return out
+
+
+static func _hp_map(logic: XBattleLogic) -> Dictionary:
+	var m := {}
+	for a in logic.actors:
+		m[a] = float(a.hp)
+	return m
+
+
+static func _shield_map(logic: XBattleLogic) -> Dictionary:
+	var m := {}
+	for a in logic.actors:
+		m[a] = float(a.shield) + XShieldLedger.total(a)
+	return m
+
+
+## 一步前后我方各人回了多少血（只算涨的）、护盾合计涨了多少
+static func _gains(logic: XBattleLogic, hp_m: Dictionary, sh_m: Dictionary) -> Dictionary:
+	var hp := {}
+	var sh := 0.0
+	for a in logic.actors:
+		var g := float(a.hp) - float(hp_m.get(a, a.hp))
+		if g > 0.0:
+			hp[a] = g
+		sh += maxf(0.0, float(a.shield) + XShieldLedger.total(a) - float(sh_m.get(a, 0.0)))
+	return {"hp": hp, "shield": sh}
+
+
+## 治疗类命中记录（目标是我方、hp＜0）的原值合计
+static func _heal_try(logs) -> float:
+	var t := 0.0
+	if logs is Array:
+		for l in logs:
+			if l is Dictionary and str(l.get("type", "")) == "hit" and l.get("target") is XActor and float(l.get("hp", 0.0)) < 0.0:
+				t += -float(l.hp)
+	return t
+
+
+## 守层者出手：每下打中我方一人的伤害占其最大生命的比例（集火口径）；我方普攻：每个敌人一条单下伤害（主段＋附加段）
+static func _tally_hits(u, skill, logs, focus: Array, atk_hits: Array) -> void:
+	if not logs is Array or u == null:
+		return
+	var normal: bool = u is XActor and skill is Dictionary and int(skill.get("id", 0)) == int(u.attack_skill_id())
+	for l in logs:
+		if not (l is Dictionary and str(l.get("type", "")) == "hit") or bool(l.get("missed", false)) or bool(l.get("evaded", false)):
+			continue
+		var tgt = l.get("target")
+		var v := float(l.get("hp", 0.0))
+		if not u is XActor and tgt is XActor and v > 0.0 and float(tgt.mhp) > 0.0:
+			focus.append(v / float(tgt.mhp))
+		elif normal and tgt is XEnemy and v > 0.0:
+			atk_hits.append(_raw_hits([l]))
 
 
 ## raw 模式复活用的快照（每个可能打死敌人的步骤之前拍）：活着的敌人的状态、状态回合、增减益，和本回合／下回合行动队列
@@ -683,6 +785,8 @@ func _run_both(list: Array) -> void:
 			fr["members"] = st.battle_members().map(func(a): return int(a.actor_id))
 			per.append(fr)
 		var row := {"floor": f, "level": level_cap(f), "fabao": fabao_cap(f), "atkScale": _median(per.map(func(r): return r.atkScale)),
+			"heal": _median(per.map(func(r): return r.heal)), "steal": _median(per.map(func(r): return r.steal)), "regen": _median(per.map(func(r): return r.regen)),
+			"shield": _median(per.map(func(r): return r.shield)), "focus": _median(per.map(func(r): return r.focus)), "atkHit": _median(per.map(func(r): return r.atkHit)),
 			"dmg": _median(per.map(func(r): return r.dmg)), "enemyDmg": _median(per.map(func(r): return r.enemyDmg)), "enemyDot": _median(per.map(func(r): return float(r.get("enemyDot", 0.0)))), "enemyRaw": _median(per.map(func(r): return r.enemyRaw)),
 			"hit": _median(per.map(func(r): return r.hitMedian)), "partyHp": _median(per.map(func(r): return r.partyHp)),
 			"enemyHp": per[0].enemyHp, "teams": per}
@@ -701,7 +805,7 @@ func _run_both(list: Array) -> void:
 
 
 ## 这一层的快照（同一层可有多个种子）：floor_<层>.json、floor_<层>_<种子>.json
-func _snapshot_states(f: int) -> Array:
+func _snapshot_bases(f: int) -> Array:
 	var out := []
 	var d := DirAccess.open(snapshots)
 	if d == null:
@@ -738,11 +842,98 @@ func _snapshot_states(f: int) -> Array:
 			a.recover_all()
 		out.append(st)
 	if out.is_empty() and f == 34:   # T239：虚拟玩家到 34 层前没留档（33 层打完就是 34），借 33 层的档量鸿钧，结果单独列
-		out = _snapshot_states(33)
+		out = _snapshot_bases(33)
 		for st in out:
 			st.set_variable(20, f)
 	return out
 
+
+
+## T239 第 6 轮：每份存档展开成多支队（原队＋随机抽的合法阵容＋奶妈队）×战斗随机种子；三个开关都没开就照旧只有存档原队
+func _snapshot_states(f: int) -> Array:
+	var bases := _snapshot_bases(f)
+	if lineups <= 1 and not add_healer and rng_seeds.is_empty():
+		return bases
+	var out := []
+	for bi in bases.size():
+		var st: XState = bases[bi]
+		var helper_id := int(st.battle_slots[XTianqi.HELPER_SLOT])
+		var orig: Array = st.battle_members().map(func(a): return int(a.actor_id))
+		var variants := [_tagged(_clone(st), "原队")]
+		var seen := {_team_key(orig): true}
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 7919 * f + bi
+		var guard := 0
+		while variants.size() < lineups and guard < 300:
+			guard += 1
+			var bag: Array = st.party.filter(func(id): return int(id) != helper_id)
+			var pick := []
+			for i in 4:
+				if bag.is_empty():
+					break
+				pick.append(int(bag.pop_at(rng.randi_range(0, bag.size() - 1))))
+			if pick.size() != 4 or seen.has(_team_key(pick)) or not CT.TB.legal(pick, difficulty):
+				continue
+			seen[_team_key(pick)] = true
+			variants.append(_tagged(_relineup(_clone(st), pick, helper_id), "随机%d" % (variants.size())))
+		if add_healer:
+			var h := _clone(st)
+			XState._become_current(h)
+			var probe := _clone(h)
+			for a in probe.battle_members():
+				a.recover_all()
+			var dmg_by: Dictionary = _fight_both(probe, 0).byActor
+			XState._become_current(h)
+			var sw := _swap_in_reviver(h, dmg_by)
+			h.set_meta("t239_swap", sw)
+			if sw.has("out") or sw.has("note"):
+				for a in h.battle_members():
+					a.recover_all()
+				variants.append(_tagged(h, "奶妈队"))
+		for v in variants:
+			if rng_seeds.is_empty():
+				out.append(v)
+				continue
+			for rs in rng_seeds:
+				var c := _clone(v)
+				c.set_meta("t239_team", v.get_meta("t239_team"))
+				c.set_meta("t239_swap", v.get_meta("t239_swap", {}))
+				c.set_meta("t239_rng", int(rs) * 100000 + f)
+				c.random_master = XRandomStream.hex64(int(rs) * 100000 + f)
+				out.append(c)
+	return out
+
+
+static func _team_key(team: Array) -> String:
+	var t := team.duplicate()
+	t.sort()
+	return ",".join(t.map(func(x): return str(x)))
+
+
+static func _clone(st: XState) -> XState:
+	var c := XState.from_dict(st.to_dict())
+	c.set_variable(20, st.variable(20))
+	return c
+
+
+static func _tagged(st: XState, label: String) -> XState:
+	st.set_meta("t239_team", label)
+	for a in st.battle_members():
+		a.recover_all()
+	return st
+
+
+## 换上场 4 人：全队（助力位除外）卸下装备，新 4 人依次按游戏「最强装备」重配
+static func _relineup(st: XState, pick: Array, helper_id: int) -> XState:
+	for id in st.party:
+		if int(id) != helper_id:
+			XEquipment.clear(st, st.actor(int(id)))
+	for i in 4:
+		st.set_battle_slot(i, int(pick[i]))
+	st.rearrange_actors()
+	for id in pick:
+		XEquipment.optimize(st, st.actor(int(id)))
+	return st
 
 
 ## --revive-team：换上一名会复活的辅助（照抄 revive_compare._swap_in_reviver，T328）；返回 {out, in, from, level}，原队已有会复活的返回 note，配不出来返回 {}
@@ -816,6 +1007,8 @@ func _run_duel_snapshots() -> void:
 			var r := _fight(st, tid)   # T239（核 P3-1）：34 层借 33 层档真打鸿钧
 			r.erase("trace")
 			r["swap"] = st.get_meta("t239_swap", {})
+			r["team"] = str(st.get_meta("t239_team", ""))
+			r["rng"] = int(st.get_meta("t239_rng", 0))
 			per.append(r)
 		var row := {"floor": f, "troop": tid, "won": per.filter(func(r): return bool(r.won)).size(), "teams": per.size(),
 			"turns": _median(per.map(func(r): return float(r.turns))), "dmg": _median(per.map(func(r): return float(r.dmg))),

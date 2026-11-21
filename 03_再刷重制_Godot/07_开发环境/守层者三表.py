@@ -10,6 +10,12 @@
 - atk_scale[层] ＝ 当前倍率 × (partyHp ÷ 6.4) ÷ enemyDmg（守层者每回合打掉基准队合计生命的 1/6.4，不治疗约 8 回合团灭）；1～4 层原版几乎不打人，不放大（取 1）；
                   系数按 3 位有效数字保留（它是敌人出伤的内部倍率，不是玩家看的系数，不受附则 E 整数约束）。
 - resist[层]    ＝ 19～33 层，单下伤害中位数 hit 的 30%（整数，取 3 位有效数字）。
+第 6 轮口径（--v6，D248 Kyo 11-21 定甲′；输入要带 teams 明细，即 baseline_dps --lineups／--rng-seeds／--add-healer 的输出）：
+- 只用普通阵容（team 不是「奶妈队」）；每层先取各队中位。
+- hp_base   ＝ 各层 dmgRaw 中位的平滑线：对数下 5 层滑动平均，再取逐层累计最大（不降），去单队噪声。
+- atk_scale ＝ max(续航口径, 集火口径)，5～33 层；1～4 层取 1。续航＝当前倍率 ×（我方每回合 治疗＋吸血＋回合末回复＋护盾 ＋ 合计生命÷目标回合）÷ 守层者每回合打我方；
+              集火＝当前倍率 × share ÷ 守层者单下打中一人占其最大生命的比例（中位），share 默认 0.40（--share）。
+- resist    ＝ 19～33 层，我方普攻单下伤害中位（atkHit，每个目标一条）的 30%。
 空表（rows 为空）：什么都不写，退出码 0，打印「没有数」。写入时只动 balance_table.json 里 guardian_phase4 这一键（文本层面替换，其余字节不动）。"""
 import argparse
 import json
@@ -63,6 +69,72 @@ def build(rows: list) -> dict:
     return out
 
 
+def _med(xs):
+    xs = sorted(x for x in xs if x is not None)
+    if not xs:
+        return 0.0
+    n = len(xs)
+    return (xs[(n - 1) // 2] + xs[n // 2]) / 2.0
+
+
+def normal_teams(r: dict) -> list:
+    teams = r.get('teams') or [r]
+    return [t for t in teams if t.get('team') != '奶妈队']
+
+
+def smooth(per_floor: dict, window: int = 5) -> dict:
+    fs = sorted(f for f, v in per_floor.items() if v > 0)
+    logs = {f: math.log(per_floor[f]) for f in fs}
+    out, top = {}, 0.0
+    for i, f in enumerate(fs):
+        lo, hi = max(0, i - window // 2), min(len(fs), i + window // 2 + 1)
+        v = math.exp(sum(logs[g] for g in fs[lo:hi]) / (hi - lo))
+        top = max(top, v)
+        out[f] = top
+    return out
+
+
+def floor_stats(r: dict, turns: int, share: float) -> dict:
+    ts = normal_teams(r)
+    def dmg(t):
+        raw = float(t.get('dmgRaw') or 0)
+        return raw if raw > 0 else float(t.get('dmg', 0))
+    sus, foc = [], []
+    for t in ts:
+        ed = float(t.get('enemyDmg', 0))
+        k0 = float(t.get('atkScale', 1.0))
+        rec = sum(float(t.get(k, 0)) for k in ('heal', 'steal', 'regen', 'shield'))
+        if ed > 0 and float(t.get('partyHp', 0)) > 0:
+            sus.append(k0 * (rec + float(t['partyHp']) / turns) / ed)
+        if float(t.get('focus', 0)) > 0:
+            foc.append(k0 * share / float(t['focus']))
+    return {'dmg': _med([dmg(t) for t in ts]), 'sus': _med(sus), 'focus': _med(foc), 'atkHit': _med([float(t.get('atkHit', 0)) for t in ts if float(t.get('atkHit', 0)) > 0]),
+            'rec': _med([sum(float(t.get(k, 0)) for k in ('heal', 'steal', 'regen', 'shield')) for t in ts]), 'n': len(ts)}
+
+
+def build6(rows: list, turns: int = 8, share: float = 0.40) -> dict:
+    by = {int(r['floor']): r for r in rows}
+    st = {f: floor_stats(by[f], turns, share) for f in FLOORS if f in by}
+    hp, atk, resist = {}, {}, {}
+    for f, v in smooth({f: s['dmg'] for f, s in st.items()}).items():
+        hp[str(f)] = int(sig3(v))
+    for f, s in st.items():
+        if f <= 4:
+            atk[str(f)] = 1
+        elif f <= 33 and max(s['sus'], s['focus']) > 0:
+            atk[str(f)] = sig3(max(s['sus'], s['focus']))
+        if f in RESIST_FLOORS and s['atkHit'] > 0:
+            resist[str(f)] = int(sig3(s['atkHit'] * RESIST_SHARE))
+    out = {}
+    if hp:
+        out['hp_base'] = hp
+    if atk:
+        out['atk_scale'] = atk
+    if resist:
+        out['resist'] = resist
+    return out
+
+
 def render(tables: dict) -> str:
     lines = []
     for name, t in tables.items():
@@ -102,7 +174,15 @@ def load_rows(paths: list) -> list:
 
 
 def cmd_build(args) -> int:
-    tables = build(load_rows(args.inputs))
+    rows = load_rows(args.inputs)
+    tables = build6(rows, args.turns, args.share) if args.v6 else build(rows)
+    if args.v6 and rows:
+        by = {int(r['floor']): r for r in rows}
+        print('层 | 队数 | 每回合伤害中位 | 平滑 | 我方回复/回合 | 续航倍率 | 集火 0.35/0.40/0.45/0.50 | 普攻单下中位', file=sys.stderr)
+        for f in sorted(by):
+            s = floor_stats(by[f], args.turns, args.share)
+            fo = [floor_stats(by[f], args.turns, x)['focus'] for x in (0.35, 0.40, 0.45, 0.50)]
+            print('%d | %d | %.0f | %s | %.0f | %.3g | %s | %.0f' % (f, s['n'], s['dmg'], tables.get('hp_base', {}).get(str(f)), s['rec'], s['sus'], '/'.join('%.3g' % x for x in fo), s['atkHit']), file=sys.stderr)
     if not tables:
         print('没有数（输入里没有可用的层），不写。')
         return 0
@@ -142,6 +222,16 @@ def selftest() -> int:
     r1 = apply(real, t)
     assert json.loads(r1)[KEY]['resist'] == {'20': 4800}
     assert apply(r1, t2).count('"%s"' % KEY) == 1
+    # 第 6 轮口径
+    rows6 = [{'floor': f, 'teams': [
+        {'team': '原队', 'dmgRaw': 1000.0 * f, 'atkScale': 1.0, 'enemyDmg': 100.0, 'partyHp': 800.0, 'heal': 50.0, 'steal': 0, 'regen': 0, 'shield': 0, 'focus': 0.1, 'atkHit': 1000.0},
+        {'team': '随机1', 'dmgRaw': 3000.0 * f, 'atkScale': 1.0, 'enemyDmg': 100.0, 'partyHp': 800.0, 'heal': 50.0, 'focus': 0.1, 'atkHit': 3000.0},
+        {'team': '奶妈队', 'dmgRaw': 1e9, 'atkScale': 1.0, 'enemyDmg': 1.0, 'partyHp': 1e9, 'heal': 1e9, 'focus': 1e-9, 'atkHit': 1e9}]} for f in (5, 6, 20)]
+    t6 = build6(rows6, 8, 0.40)
+    assert t6['atk_scale']['5'] == 4.0, t6   # 集火 0.4/0.1＝4 ＞ 续航 (50＋100)/100＝1.5；奶妈队不进
+    assert t6['resist'] == {'20': 600}, t6   # 普攻单下中位 2000×0.3
+    assert int(t6['hp_base']['6']) >= int(t6['hp_base']['5']) and int(t6['hp_base']['20']) >= int(t6['hp_base']['6']), t6   # 平滑后不降
+    assert build6(rows6, 8, 0.10)['atk_scale']['5'] == 1.5
     print('selftest 通过')
     return 0
 
@@ -152,6 +242,9 @@ def main(argv=None) -> int:
     b = sub.add_parser('build')
     b.add_argument('--in', dest='inputs', action='append', required=True)
     b.add_argument('--write', action='store_true')
+    b.add_argument('--v6', action='store_true', help='第 6 轮口径（D248 甲′）')
+    b.add_argument('--turns', type=int, default=8, help='目标回合（艰险 8）')
+    b.add_argument('--share', type=float, default=0.40, help='集火：单下打中一人占其最大生命的比例')
     sub.add_parser('selftest')
     args = ap.parse_args(argv)
     return cmd_build(args) if args.cmd == 'build' else selftest()
