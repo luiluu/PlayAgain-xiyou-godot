@@ -474,6 +474,9 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	var per_turn := []   # 每回合我方原始伤害（看破阵免疫回合打 0 的有几回合）
 	var hits := []
 	var done := 0
+	var revived := {}   # T239 r2：本回合被复活过的守层者 → 下一回合出手次数（断言：复活后下一回合必须出手）
+	var silent := []   # 复活后下一回合一次没出手的 [回合, 敌人]
+	var revive_turns := 0   # 有敌人被复活过的回合数
 	for r in turns:
 		for e in logic.enemies:
 			if e.is_alive():
@@ -481,7 +484,14 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 		for a in logic.actors:
 			if a.hp <= 0:
 				a.remove_state(1)
+				if raw_mode and not logic.next_order.has(a):
+					logic.next_order.append(a)   # T239 r2（核 P1-1 附）：倒下时被清出下回合队列，复活后补回（排末位），不缺席
 			a.hp = a.mhp
+		var watch := revived
+		if not watch.is_empty():
+			revive_turns += 1
+		revived = {}
+		var acted := {}
 		logic.start_turn()
 		logic.take_turn_start_logs()
 		var count := 0
@@ -489,12 +499,15 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 		var turn_raw := 0.0
 		while count < 80:
 			var u := logic.next_subject()
+			if u != null:
+				acted[u] = true
 			var pb0 := _party_hp(logic)
+			var snap := _enemy_snap(logic) if raw_mode else {}
 			_drain(logic, logic.troop_events(u if turn_first else null))
 			theirs += maxf(0.0, pb0 - _party_hp(logic))   # 敌群事件里的伤害（强制技能）算守层者的
 			turn_first = false
 			if raw_mode:
-				_revive_enemies(logic)
+				_revive_enemies(logic, snap, revived)
 			if u == null or logic.is_over():
 				break
 			count += 1
@@ -507,6 +520,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 					if e.is_alive():
 						e.hp = e.mhp
 				eb = _enemy_hp(logic)
+			var snap_act := _enemy_snap(logic) if raw_mode else {}
 			var logs = logic.act(u, cmd[0], cmd[1])
 			if u is XActor:
 				var d := maxf(0.0, eb - _enemy_hp(logic))
@@ -531,19 +545,26 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 			if debug:
 				print("DBG2 t%d %s skill=%s partyLoss=%.0f enemyLoss=%.0f" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-", pb - _party_hp(logic), eb - _enemy_hp(logic)])
 			if raw_mode:
-				_revive_enemies(logic)   # T239（核 P1-1）：谁的行动（含反击、事件）打死了敌人都当场复活补满，不让一下秒杀提前收场
+				_revive_enemies(logic, snap_act, revived)   # T239（核 P1-1）：谁的行动（含反击、事件）打死了敌人都当场复活补满，不让一下秒杀提前收场
 			if logic.is_over():
 				break
 		done += 1
 		per_turn.append(turn_raw)
+		for e in watch:
+			if not acted.has(e):
+				silent.append([r, logic.stable_id(e)])
+				push_error("T239 断言：%s 上回合被复活，第 %d 回合一次没出手" % [logic.stable_id(e), r])
 		if logic.is_won() or logic.aborted:
 			break   # raw 模式敌人已复活、到这里只剩中止；--no-raw 照旧打死就收场
 		if logic.is_lost():
 			continue   # 一回合内团灭：下回合开头复活补满接着量
+		var snap_end := _enemy_snap(logic) if raw_mode else {}
+		var pb_end := _party_hp(logic)
 		logic.end_turn()
-		if raw_mode:
-			_revive_enemies(logic)   # 回合末持续伤害打死的也复活
 		_drain(logic, logic.troop_events(null, true))   # T239（核 P3-2）：回合末的敌群事件页，同战斗画面与 _fight
+		theirs += maxf(0.0, pb_end - _party_hp(logic))   # T239 r2（核 P3-4）：回合末持续伤害之外，回合末敌群页打我方的也算守层者的（先跑事件再复活）
+		if raw_mode:
+			_revive_enemies(logic, snap_end, revived)   # 回合末持续伤害、事件打死的也复活
 	hits.sort()
 	var n := maxf(1.0, float(done))
 	var out := {"dmg": ours / n, "perTurn": per_turn, "enemyDmg": theirs / n, "enemyRaw": raw / n, "turns": done, "won": logic.is_won(), "hitMedian": _median(hits) if not hits.is_empty() else 0.0,
@@ -552,16 +573,55 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 		"atkScale": _out_scale(logic)}   # T229：守层者这场实际用的出伤倍率（没给 --atk-table 时是游戏里的表）
 	if raw_mode:
 		out["dmgRaw"] = raw_ours / n   # --no-raw 不写，三表脚本退回 dmg（T239 核 P2-2）
+		out["revivedSilent"] = silent   # 应为空：复活后下一回合没出手的守层者
+		out["reviveTurns"] = revive_turns + (1 if not revived.is_empty() else 0)
 	return out
 
 
-## raw 模式：死了的敌人（不含没登场的隐藏成员）去掉战斗不能、全员补满血
-static func _revive_enemies(logic: XBattleLogic) -> void:
+## raw 模式复活用的快照（每个可能打死敌人的步骤之前拍）：活着的敌人的状态、状态回合、增减益，和本回合／下回合行动队列
+static func _enemy_snap(logic: XBattleLogic) -> Dictionary:
+	var per := {}
+	for e in logic.enemies:
+		if e.hidden or not e.is_alive():
+			continue
+		per[e] = {"ids": e.state_ids.duplicate(), "turns": e.state_turns.duplicate(true), "floors": e.state_floors.duplicate(true),
+			"origins": e.state_origins.duplicate(true), "data": e.state_data.duplicate(true), "buffs": e.buffs.duplicate(), "buff_turns": e.buff_turns.duplicate()}
+	return {"per": per, "cur": logic.current_order.duplicate(), "next": logic.next_order.duplicate()}
+
+
+## raw 模式：死了的敌人（不含没登场的隐藏成员）复活、全员补满血。T239 r2（核 P1-1）：死亡会清掉非永久状态与增减益（Game_BattlerBase.die），
+## 又被 _clear_unable 清出本回合、下回合行动队列——按快照还原这三样，不然复活的守层者之后几回合不出手、开场领域增益也没了。
+## 队列按快照里的位置插回（不重掷行动次数、不动随机流）；没有快照的（快照时已死）只复活补满。
+static func _revive_enemies(logic: XBattleLogic, snap := {}, revived := {}) -> void:
+	var per: Dictionary = snap.get("per", {})
 	for e in logic.enemies:
 		if e.hidden:
 			continue
 		if e.is_dead():
 			e.remove_state(1)
+			if per.has(e):
+				var k: Dictionary = per[e]
+				e.state_ids.assign(k.ids)
+				e.state_turns = k.turns.duplicate(true)
+				e.state_floors = k.floors.duplicate(true)
+				e.state_origins = k.origins.duplicate(true)
+				e.state_data = k.data.duplicate(true)
+				e.buffs.assign(k.buffs)
+				e.buff_turns.assign(k.buff_turns)
+				e.effect_lists.clear()
+				e.effect_snapshot_valid = false
+				e.param_mark_dirty()
+				for key in ["cur", "next"]:
+					var order: Array = logic.current_order if key == "cur" else logic.next_order
+					var old: Array = snap.get(key, [])
+					var missing := old.count(e) - order.count(e)
+					var i := 0
+					while missing > 0 and i < old.size():
+						if is_same(old[i], e):
+							order.insert(mini(i, order.size()), e)
+							missing -= 1
+						i += 1
+			revived[e] = true
 		e.hp = e.mhp
 
 
@@ -669,12 +729,14 @@ func _run_duel_snapshots() -> void:
 		if states.is_empty() or f > 34:
 			continue
 		var per := []
+		var tid := 0
 		for st in states:
 			XState._become_current(st)
-			var r := _fight(st, _troop_for(st, f))   # T239（核 P3-1）：34 层借 33 层档真打鸿钧
+			tid = _troop_for(st, f)
+			var r := _fight(st, tid)   # T239（核 P3-1）：34 层借 33 层档真打鸿钧
 			r.erase("trace")
 			per.append(r)
-		var row := {"floor": f, "troop": GUARDIAN.get(f, 0), "won": per.filter(func(r): return bool(r.won)).size(), "teams": per.size(),
+		var row := {"floor": f, "troop": tid, "won": per.filter(func(r): return bool(r.won)).size(), "teams": per.size(),
 			"turns": _median(per.map(func(r): return float(r.turns))), "dmg": _median(per.map(func(r): return float(r.dmg))),
 			"enemyHp": _median(per.map(func(r): return float(r.enemyHp))), "atkScale": _median(per.map(func(r): return float(r.atkScale))), "per": per}
 		rows.append(row)
