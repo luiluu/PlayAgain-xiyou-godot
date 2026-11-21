@@ -125,6 +125,15 @@ func _run() -> void:
 			await _shot("workshop_" + tag)
 			ws.queue_free()
 			await _frames(3)
+			XFontScale.set_value("global", 130)   # 130% 全局字号：操作栏不撑出屏幕右缘
+			ws = XAlienWorkshop.new()
+			ws.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+			add_child(ws)
+			await _frames(10)
+			await _shot("workshop_130_" + tag)
+			ws.queue_free()
+			XFontScale.set_value("global", 100)
+			await _frames(3)
 		if _want("map"):
 			_tq_state()
 			var map := XMapScene.new()
@@ -153,8 +162,7 @@ func _run() -> void:
 			for op in [255, 128]:
 				map._map_name_tween.kill()
 				plate.position.y = 48.0
-				plate.modulate.a = op / 255.0
-				plate.queue_redraw()
+				map._plate_alpha(op / 255.0, plate)   # 走淡入同一条路（新版底先到满、字后出）
 				dn.clock.remaining = 120 if op == 255 else 21   # 21×6＝126：淡出一半
 				dn.clock.paint()
 				dn.refresh()

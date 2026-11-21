@@ -104,7 +104,7 @@ func _ready() -> void:
 	box.add_child(title)
 	var line := ColorRect.new()
 	line.color = Color(XUiSkin.LINE, 0.35) if skin else XUpdatePage.line_color()
-	line.custom_minimum_size = Vector2(0, 1 if skin else 2)
+	line.custom_minimum_size = Vector2(0, 1 if skin or XUpdatePage.FRAME_V2 else 2)  # T361 P2-2：同 update_page 1px
 	box.add_child(line)
 	_scroll = ScrollContainer.new()
 	_scroll.name = "Scroll"

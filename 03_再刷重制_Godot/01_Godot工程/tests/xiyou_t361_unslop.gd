@@ -216,6 +216,26 @@ func _workshop() -> void:
 	check("ws_note_no_widow", not notes.is_empty() and last.strip_edges().length() > 2, last)
 	ws.queue_free()
 	await frames(2)
+	# P1-2：130% 全局字号（U-07 硬门禁档）、触屏宽钮时操作栏不把详情面板撑出 1280 右缘
+	for touch in [false, true]:
+		XFontScale.set_value("global", 130)
+		XUiSkin.touch_override = 1 if touch else 0
+		ws = XAlienWorkshop.new()
+		ws.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(ws)
+		await frames(4)
+		var dp: Control = _all(ws, func(c): return c.name == "SkinDetail").front()
+		var ab: Control = _all(ws, func(c): return c.name == "SkinActions").front()
+		var vw := ws.size.x
+		var ab_end := ab.global_position.x + ab.size.x
+		var btn_end := 0.0
+		for b in _all(ab, func(c): return c is Button):
+			btn_end = maxf(btn_end, (b as Control).global_position.x + (b as Control).size.x)
+		check("ws_130_fits_%s" % ("touch" if touch else "desk"), dp.position.x + dp.size.x <= vw + 0.5 and ab_end <= vw and btn_end <= dp.global_position.x + dp.size.x, [dp.position, dp.size, ab_end, btn_end, vw])
+		ws.queue_free()
+		XFontScale.set_value("global", 100)
+		XUiSkin.touch_override = -1
+		await frames(2)
 	XAlienWorkshop.LAYOUT_V2 = false
 	ws = XAlienWorkshop.new()
 	ws.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -264,6 +284,22 @@ func _map_fade() -> void:
 	dn.clock.opacity = 255
 	dn.refresh()
 	check("diff_full", is_equal_approx(dn.modulate.a, 1.0) and is_equal_approx(dn._text_a, 1.0))
+	# P1-1：地名横幅淡入同口径——进度不到一半只升底；字开始出时底已满（字对比在纯白上 ≥ 4.5:1）
+	map._show_map_name("雪原的小镇")
+	var plate: XMVCanvas = map.hud.find_child("MapNamePlate", true, false)
+	map._map_name_tween.kill()
+	map._plate_alpha(0.4, plate)
+	var ta_lo := clampf(map._map_name_fade * 2.0 - 1.0, 0.0, 1.0) / maxf(plate.modulate.a, 0.001)
+	check("map_name_fade_text_later", plate.modulate.a > 0.7 and ta_lo == 0.0, [plate.modulate.a, ta_lo])
+	var bad := []
+	for v in [0.45, 0.51, 0.55, 0.6, 0.65, 0.8, 1.0]:
+		map._plate_alpha(v, plate)
+		var ta := clampf(map._map_name_fade * 2.0 - 1.0, 0.0, 1.0) / maxf(plate.modulate.a, 0.001)
+		if ta > 0.0 and not is_equal_approx(plate.modulate.a, 1.0):
+			bad.append([v, plate.modulate.a, ta])   # 字出了、底还没满
+	var worst := contrast(XUiSkin.TEXT, Color(0.04, 0.04, 0.05, 0.95))
+	check("map_name_text_only_on_full_backdrop", bad.is_empty() and worst >= 4.5, [bad, worst])
+	map._plate_alpha(1.0, plate)
 	map.queue_free()
 	await frames(2)
 

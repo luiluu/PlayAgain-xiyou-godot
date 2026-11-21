@@ -118,6 +118,7 @@ static func takeover_stack() -> int:
 	for p in _stack.duplicate():
 		if is_instance_valid(p) and not p.is_queued_for_deletion():
 			XSkinNoticeLane.push(lane_item(p.item))
+			p.visible = false   # T361 P3-1：同一帧先藏，不等 queue_free 到帧尾
 			p.queue_free()
 			n += 1
 	_stack.clear()

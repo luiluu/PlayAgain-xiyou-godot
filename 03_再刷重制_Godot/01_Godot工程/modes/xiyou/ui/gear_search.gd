@@ -45,6 +45,13 @@ var _sort_note: Label
 static func reset_session() -> void:
 	filter = XGearQuery.default_view()
 	selected_key = ""
+	filters_open = false
+
+
+## T361 P2-1：关页（按此筛选、取消）时收起筛选面板，下次打开默认收起；页内重建（重置、点词条）照旧保留展开态
+func close() -> void:
+	filters_open = false
+	super.close()
 
 
 # ---- 工具条（物品页、装备页右上角） ----
@@ -350,6 +357,10 @@ func _render_gear_skin() -> void:
 	head.add_theme_color_override("font_color", XUiSkin.TEXT)
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	head.position = Vector2(CONTENT_X, 40)
+	var back := XSkinBackButton.attach(self)   # T361 P2-3：页名前「‹」返回（点＝取消），同异化工坊等模板页
+	if back != null:
+		head.position.x = XSkinBackButton.place(back, CONTENT_X)
+		back.position.y = 38
 	add_child(head)
 	# 搜索条：1px 线，聚焦换 1px 旧金（不用 2px 朱红粗框）
 	_search = LineEdit.new()

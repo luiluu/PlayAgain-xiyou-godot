@@ -1474,8 +1474,13 @@ func _skin_action_bar(actions: Dictionary) -> Control:
 	var bar := HBoxContainer.new()
 	bar.name = "SkinActions"
 	bar.add_theme_constant_override("separation", XUiSkin.GRID)
-	var left := HBoxContainer.new()
-	left.add_theme_constant_override("separation", XUiSkin.GRID)
+	# T361 P1-2：左组用可折行的 HFlowContainer 并占满剩余宽（最小宽＝最宽的一个按钮）：130% 全局字号、触屏宽钮时
+	# 左组自己折成两行，不再把详情面板撑出 1280 屏幕右缘；危险组照旧在右端、竖线隔开
+	var left := HFlowContainer.new()
+	left.name = "SkinActionsMain"
+	left.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left.add_theme_constant_override("h_separation", XUiSkin.GRID)
+	left.add_theme_constant_override("v_separation", XUiSkin.GRID)
 	var right := HBoxContainer.new()
 	right.add_theme_constant_override("separation", XUiSkin.GRID)
 	var danger_re := RegEx.create_from_string(DANGER_RE)
@@ -1507,17 +1512,15 @@ func _skin_action_bar(actions: Dictionary) -> Control:
 				(c as Button).add_theme_stylebox_override("disabled", XSkinButton.style(""))
 		left.add_child(c)
 	bar.add_child(left)
-	var gap := Control.new()
-	gap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	bar.add_child(gap)
 	if right.get_child_count() > 0:
 		var sep := ColorRect.new()   # 危险操作前一道竖线，和左边隔开
 		sep.color = Color(XUiSkin.LINE, 0.25)
 		sep.custom_minimum_size = Vector2(1, 24)
 		sep.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		bar.add_child(sep)
+		right.add_child(sep)
+		right.move_child(sep, 0)   # 竖线放进右组里，左组折两行时竖线仍跟右组的钮对中
+		right.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		bar.add_child(right)
 	return bar
 

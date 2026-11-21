@@ -314,6 +314,7 @@ func _build_hud() -> void:
 var map_name_text := ""
 ## T361（F-09）回退开关：新皮肤地名横幅底提到 0.95、字晚于底淡入、淡入淡出缩到 0.3 秒（滑动仍 1 秒）；false＝回到底 0.84、整块 1 秒淡
 static var MAP_NAME_BACKDROP_V2 := true
+var _map_name_fade := 1.0  # T361 P1-1：地名横幅淡入进度（底先到满、字后出）
 
 ## 正式版改过的 Window_MapName.refresh：暗底从 640−80×1.5 起、宽＝字宽＋160（左半由透明渐到 0.6 黑、右半渐回透明），
 ## 文字以 640 为中心
@@ -331,8 +332,9 @@ func _paint_map_name(c: XMVCanvas) -> void:
 		var bx := cx - bw / 2.0
 		# T361（F-09）：底 0.84→0.95（纯白雪地上字对比 ≥ 4.5:1）；淡入淡出时字比底晚出（相对透明度 clamp(2m−1)/m）
 		var dark := Color(0.04, 0.04, 0.05, 0.95 if MAP_NAME_BACKDROP_V2 else 0.84)
+		# 与 difficulty_notice 同口径：淡入进度 v 前半段只升底（modulate＝min(1, 2v)），v≥0.5 底已满后字才出
 		var m := c.modulate.a
-		var ta := (clampf(m * 2.0 - 1.0, 0.0, 1.0) / m if m > 0.0 else 0.0) if MAP_NAME_BACKDROP_V2 else 1.0
+		var ta := (clampf(_map_name_fade * 2.0 - 1.0, 0.0, 1.0) / maxf(m, 0.001) if m > 0.0 else 0.0) if MAP_NAME_BACKDROP_V2 else 1.0
 		var clear := Color(0.04, 0.04, 0.05, 0.0)
 		var wing := 56.0
 		c.gradient(Rect2(bx - wing, 0.0, wing, bh), clear, dark)
@@ -385,6 +387,7 @@ func _show_map_name(text: String) -> void:
 		return
 	plate.position.y = 18
 	plate.modulate.a = 0.0
+	_map_name_fade = 0.0
 	_map_name_tween = plate.create_tween()
 	var t := _map_name_tween
 	var fast := MAP_NAME_BACKDROP_V2 and XUiSkin.on()
@@ -402,7 +405,8 @@ func _show_map_name(text: String) -> void:
 
 
 func _plate_alpha(v: float, plate: CanvasItem) -> void:
-	plate.modulate.a = v
+	_map_name_fade = v
+	plate.modulate.a = minf(1.0, v * 2.0) if MAP_NAME_BACKDROP_V2 and XUiSkin.on() else v
 	plate.queue_redraw()
 
 
