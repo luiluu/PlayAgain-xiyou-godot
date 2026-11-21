@@ -36,6 +36,14 @@ static func select(like: StyleBox = null, state := XUiSkin.SelState.FOCUS, ring 
 	return sel
 
 
+## T349 D1b 返修（小A核 P1-2）：悬停＝真 S4 实心底（#413a38）＋保留原边框与圆角；触屏不抬（规范 5.2）。Godot 里 hover 会整个替换 normal，所以要拷一份 normal 改底色
+static func hover_style(normal: StyleBoxFlat) -> StyleBoxFlat:
+	var h := normal.duplicate() as StyleBoxFlat
+	if not XUiSkin.touch():
+		h.bg_color = XUiSkin.surface_c(XUiSkin.Surface.S4)
+	return h
+
+
 ## 文字颜色：危险橙、其余正文白
 static func text_color(kind := "") -> Color:
 	return XUiSkin.DOWN if kind == "danger" else XUiSkin.TEXT
@@ -49,7 +57,7 @@ static func apply(b: Button, kind := "", font_size := -1) -> Button:
 	var sel := select(normal, XUiSkin.SelState.FOCUS, ring)
 	var press := select(normal, XUiSkin.SelState.PRESSED)
 	b.add_theme_stylebox_override("focus", sel)
-	b.add_theme_stylebox_override("hover", select(normal, XUiSkin.SelState.HOVER, ring) if XUiSkin.SELECT_V2 else sel)
+	b.add_theme_stylebox_override("hover", hover_style(normal) if ring else (select(normal, XUiSkin.SelState.HOVER) if XUiSkin.SELECT_V2 else sel))
 	for st in ["pressed", "hover_pressed"]:
 		b.add_theme_stylebox_override(st, press if XUiSkin.SELECT_V2 else sel)
 	wire_press(b, sel, press)

@@ -12,10 +12,11 @@
   - `skin_confirm.gd`：弹窗钮（去掉叠画的 `draw_select(r.grow(3))`、焦点钮不再垫红晕＝去红叠红）、钮距 8→12px（`btn_gap()`）、弹窗底改 S3（`s3_panel_tex()`，暖 `#36302e→#25201f` 94%）。
   - `skin_card.gd`：详情牌底部按钮同上；展开面底改 S3。
   - `skin_stepper.gd`：整条聚焦＝围着底托画双环；钮底 S2。
-  - `skin_button.gd`＋`skin_select_style.gd`：`XSkinButton.apply` 的 focus 样式换成双环模式（`XSkinSelectStyle.ring`），hover 只抬 S4 底，pressed 照旧。
-  - `skin_ring_nav.gd`：选中球手柄／键盘态画内黑外淡金双环，鼠标／触屏仍是原选中描边。
+  - `skin_button.gd`＋`skin_select_style.gd`：`XSkinButton.apply` 的 focus 样式换成双环模式（`XSkinSelectStyle.ring`）；hover 改成 `normal` 的拷贝＋真 S4 实心底（`#413a38`），保留原边框圆角，触屏不抬；pressed 照旧。
+  - `skin_ring_nav.gd`：选中球手柄／键盘态画内黑外淡金双环，所有页都画（非装备页在 `_draw` 里画、装备页在 `_draw_layers` 补画），且不再叠红晕和 2.5px 红圈；鼠标／触屏仍是原选中描边。
 - 色阶：`skin_list.gd` 斑马纹 0.026→S2z 0.08；`skin_gear_detail.gd` 对比表斑马纹同；`skin_boss_status.gd` 子卡底、详情头底升 S2（0.09）。
-- 测试：新增 `xiyou_ui_detail_d1b`（30 项，10 项无头＋20 项带窗口取像素：手柄态焦点钮上缘外 1px 内黑、3px 淡金；两钮缝中无金；触屏／鼠标态不留环；关＝无淡金环；钮距 12／8；弹窗与展开面 S3；斑马纹开比关亮）。`xiyou_ui_skin_d1a` 删掉原来的「现有页面逐像素相同」和 Q1 样稿窗口段（接线后前提不再成立，由 d1b 接手）。选测 33 个相关 UI 场景本机全过。
+- r1 返修（小A核退回）：P1-1 选中球双环非装备页画不到＋红晕红圈未去；P1-2 悬停只画 9% 透明无边框；P2-1 补测试、图 3 套烟底；P3-1 数量条底托触屏态不留金边（`skin_stepper.gd`）。P3-1 里手写魔数底色（数量条底托、详情牌次钮）没改。
+- 测试：新增 `xiyou_ui_detail_d1b`（r1 后 45 项：返修补了选中球双环 plain／layers×手柄／触屏／关、悬停真画取像素、对比表斑马纹实绘；原 30 项为 10 项无头＋20 项带窗口取像素：手柄态焦点钮上缘外 1px 内黑、3px 淡金；两钮缝中无金；触屏／鼠标态不留环；关＝无淡金环；钮距 12／8；弹窗与展开面 S3；斑马纹开比关亮）。`xiyou_ui_skin_d1a` 删掉原来的「现有页面逐像素相同」和 Q1 样稿窗口段（接线后前提不再成立，由 d1b 接手）。选测 33 个相关 UI 场景本机全过。
 - 玩家可见：用手柄／键盘时，按钮、确认弹窗钮、数量条、选中球外圈变成淡金双环，不再红叠红；弹窗两钮间距更宽；列表斑马纹更清楚。鼠标／触屏点完后不留环。
 
 ## 交接板
@@ -35,8 +36,8 @@
 ## 我不同意的地方 / 没做
 
 - `skin_inner_tabs.gd`、`skin_back_button.gd` 没接双环：页内页签是 Q／E 切页、没有焦点态（当前页是「选中」不是「聚焦」，规范 2.1 说选中不归双环管），返回钮只是个记号、不可聚焦，硬加会在没焦点时亮环。要不要给它们设焦点态，请 Kyo／规范作者定。
+- `XSkinBossStatus` 的 S2 子卡底是 XMVCanvas 内画，没有实绘像素断言（只有代码改动）。
 - 没做 `DETAIL_V1=false` 对旧画法的逐像素对照（没有改前基线图，只做了开关关＝无淡金环、仍走旧选中条、钮距回 8 的断言）。
-- `skin_ring_nav.gd` 的双环没有单独测试，只靠手写代码和 `xiyou_tianqi_ring_style` 等现有场景不回归，没有看真画面。
 - 战斗指令环（`skin_battle_2c.gd` 等）本卡没动，卡上文件清单里没有。
 
 ## 本分支提交

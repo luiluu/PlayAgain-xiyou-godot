@@ -89,15 +89,31 @@ func _button_styles() -> void:
 	var b := Button.new()
 	XSkinButton.apply(b, "primary")
 	var foc := b.get_theme_stylebox("focus") as XSkinSelectStyle
-	var hov := b.get_theme_stylebox("hover") as XSkinSelectStyle
+	var norm := b.get_theme_stylebox("normal") as StyleBoxFlat
+	var hov := b.get_theme_stylebox("hover") as StyleBoxFlat
 	check("button_focus_ring_mode", foc != null and foc.ring and foc.state == XUiSkin.SelState.FOCUS)
-	check("button_hover_ring_mode", hov != null and hov.ring and hov.state == XUiSkin.SelState.HOVER)
+	XUiSkin.touch_override = 0
+	b.free()
+	b = Button.new()
+	XSkinButton.apply(b, "primary")
+	norm = b.get_theme_stylebox("normal") as StyleBoxFlat
+	hov = b.get_theme_stylebox("hover") as StyleBoxFlat
+	check("button_hover_real_s4", hov != null and hov.bg_color == XUiSkin.surface_c(XUiSkin.Surface.S4) and hov.bg_color.a >= 0.99, hov.bg_color.to_html() if hov else "null")
+	check("button_hover_keeps_border", hov.border_color == norm.border_color and hov.get_border_width(SIDE_LEFT) == norm.get_border_width(SIDE_LEFT)
+		and hov.corner_radius_top_left == norm.corner_radius_top_left, [hov.border_color, norm.border_color])
+	b.free()
+	XUiSkin.touch_override = 1
+	b = Button.new()
+	XSkinButton.apply(b, "primary")
+	var hov_t := b.get_theme_stylebox("hover") as StyleBoxFlat
+	check("button_hover_touch_no_lift", hov_t.bg_color == (b.get_theme_stylebox("normal") as StyleBoxFlat).bg_color)
+	b.free()
+	XUiSkin.touch_override = -1
 	XUiSkin.DETAIL_V1 = false
 	var b2 := Button.new()
 	XSkinButton.apply(b2, "primary")
-	check("button_off_old_style", not (b2.get_theme_stylebox("focus") as XSkinSelectStyle).ring)
+	check("button_off_old_style", not (b2.get_theme_stylebox("focus") as XSkinSelectStyle).ring and b2.get_theme_stylebox("hover") is XSkinSelectStyle)
 	XUiSkin.DETAIL_V1 = true
-	b.free()
 	b2.free()
 
 
@@ -148,6 +164,9 @@ func _pixels() -> void:
 	await _confirm_pixels()
 	await _card_stepper_pixels()
 	await _bright_list_pixels()
+	await _ring_nav_pixels()
+	await _hover_pixels()
+	await _gear_zebra_pixels()
 
 
 func _confirm_dlg(root: Control) -> XSkinConfirm:
@@ -266,6 +285,11 @@ func _card_stepper_pixels() -> void:
 
 
 func _bright_list(root: Control) -> Array:
+	var smoke := Panel.new()   # 返修（小A核 P2-1）：列表放进烟底面板，实测 S2z 在烟底颗粒上的可读性
+	smoke.add_theme_stylebox_override("panel", XUiSkin.panel_style())
+	smoke.position = Vector2(16, 24)
+	smoke.size = Vector2(608, 390)
+	root.add_child(smoke)
 	var lst := XSkinList.new()
 	lst.position = Vector2(30, 40)
 	lst.size = Vector2(580, 360)
@@ -334,3 +358,98 @@ func _save_pair(name: String, left: Image, right: Image) -> void:
 	out.blit_rect(left, Rect2i(0, 0, 640, SHOT.y), Vector2i(0, 0))
 	out.blit_rect(right, Rect2i(0, 0, 640, SHOT.y), Vector2i(640, 0))
 	check("saved_" + name, out.save_png(out_dir.path_join(name)) == OK)
+
+
+func _is_red(c: Color) -> bool:
+	return c.r > 0.6 and c.g < 0.5 and c.b < 0.45 and c.r > c.g + 0.3
+
+
+## 返修（小A核 P1-1）：选中球双环在所有页都画（非装备页没有环纹第 3 层）；手柄态无红晕红圈；触屏回原红描边；关＝无金环
+func _ring_nav_pixels() -> void:
+	for variant in ["plain", "layers"]:
+		for case in ["pad", "touch", "off"]:
+			XUiSkin.DETAIL_V1 = case != "off"
+			XUiSkin.input_mode = XUiSkin.InputMode.TOUCH if case == "touch" else XUiSkin.InputMode.GAMEPAD
+			var root := _stage(640.0)
+			var rn := XSkinRingNav.new()
+			rn.size = Vector2(640, 600)
+			rn.items = [{"name": "甲"}, {"name": "乙"}, {"name": "丙"}]
+			if variant == "layers":
+				rn.orb_frames = {1: {"outline": Color("d9925c"), "outline_w": 2.0}}
+			root.add_child(rn)
+			rn.index = 0
+			var img := await _grab()
+			var p := rn.item_pos(0)
+			var r := rn.orb_radius * rn.item_scale(0)
+			var gold := false
+			var red := false
+			var g0 := _gpos(rn, p)
+			for dy in range(int(r) - 1, int(r) + 9):   # 球上方一条竖线（离开球体后）
+				var c := img.get_pixelv(Vector2i(g0.x, g0.y - dy))
+				gold = gold or _is_gold(c)
+				red = red or _is_red(c)
+			var tag := "ringnav_%s_%s" % [variant, case]
+			if case == "pad":
+				check(tag + "_gold", gold)
+				check(tag + "_no_red", not red)
+			elif case == "touch":
+				check(tag + "_no_gold", not gold)
+				check(tag + "_old_red", red)
+			else:
+				check(tag + "_no_gold", not gold)
+			root.queue_free()
+			await frames(2)
+	XUiSkin.DETAIL_V1 = true
+
+
+## 返修（小A核 P1-2）：悬停底＝真 S4 实心＋保留边框（把 hover 样式真画出来取像素）
+func _hover_pixels() -> void:
+	XUiSkin.touch_override = 0
+	var root := _stage(640.0)
+	var b := Button.new()
+	XSkinButton.apply(b, "primary")
+	var hov := b.get_theme_stylebox("hover") as StyleBoxFlat
+	var pn := Panel.new()
+	pn.position = Vector2(100, 100)
+	pn.size = Vector2(200, 60)
+	pn.add_theme_stylebox_override("panel", hov)
+	root.add_child(pn)
+	var img := await _grab()
+	var mid := img.get_pixelv(Vector2i(200, 130))
+	var edge := img.get_pixelv(Vector2i(200, 100))
+	var s4 := XUiSkin.surface_c(XUiSkin.Surface.S4)
+	check("hover_px_center_s4", absf(mid.r - s4.r) < 0.03 and absf(mid.g - s4.g) < 0.03, [mid.to_html(), s4.to_html()])
+	check("hover_px_border_kept", absf(edge.r - mid.r) + absf(edge.g - mid.g) > 0.05, [edge.to_html(), mid.to_html()])
+	b.free()
+	root.queue_free()
+	XUiSkin.touch_override = -1
+	await frames(2)
+
+
+## 返修（小A核 P2-1）：详情对比表斑马纹实绘（S2z 0.08）；开比关亮、开时≈ 底＋0.08×f0e6d8。Boss 状态页的 S2 子卡是 XMVCanvas 内画，这里没有实绘断言（见交付单）
+func _gear_zebra_pixels() -> void:
+	var px := {}
+	for on in [false, true]:
+		XUiSkin.DETAIL_V1 = on
+		var root := _stage(700.0)
+		var g := XSkinGearDetail.new()
+		g.size = Vector2(700, 520)
+		root.add_child(g)
+		g.tab = 1
+		g.compare = true
+		g._cmp = [["最大生命", 12345, 13456], ["最大魔力", 2345, 2345], ["攻击", 345, 99]]
+		g._place()
+		g._content_h = g._measure()
+		await frames(3)
+		var img := await _grab()
+		# 第 0 行斑马条空白处（行左上内侧 4px，字在 x=12 以后但上边 2px 内没有字）
+		var gp := g.body.get_global_transform() * Vector2(w_edge(), 2 + 3)
+		px[on] = img.get_pixelv(Vector2i(int(gp.x), int(gp.y)))
+		root.queue_free()
+		await frames(2)
+	check("gear_zebra_s2z_real", (px[true] as Color).g > (px[false] as Color).g + 0.015 and absf((px[true] as Color).g - (0.035 + 0.08 * 0.9)) < 0.05, [px[false].to_html(), px[true].to_html()])
+	XUiSkin.DETAIL_V1 = true
+
+
+func w_edge() -> float:
+	return 300.0

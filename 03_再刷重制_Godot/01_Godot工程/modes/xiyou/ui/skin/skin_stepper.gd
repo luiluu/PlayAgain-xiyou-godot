@@ -302,7 +302,7 @@ func _draw() -> void:
 	if pol:
 		var cradle := StyleBoxFlat.new()
 		cradle.bg_color = Color(0.05, 0.042, 0.04, 0.58)
-		cradle.border_color = Color(XUiSkin.GOLD, 0.48) if (focused and enabled) else Color(XUiSkin.line_c(), 0.24)
+		cradle.border_color = Color(XUiSkin.GOLD, 0.48) if (focused and enabled and not (XUiSkin.detail_on() and not XUiSkin.show_focus_ring())) else Color(XUiSkin.line_c(), 0.24)   # T349 D1b：触屏／鼠标态不留金边
 		cradle.set_border_width_all(1)
 		cradle.set_corner_radius_all(int((H + 6.0) / 2.0))
 		cradle.anti_aliasing = true
