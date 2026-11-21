@@ -240,6 +240,10 @@ func _run() -> void:
 	for f in floors:
 		var per := []
 		for team in list:
+			var gk := ",".join(team.map(func(x): return str(x)))
+			if not _gears.has(gk) or not _gears[gk].has(int(f)):
+				print("BRAND_SKIP floor=%d team=%s（这一队这一层掷不出装备，跳过）" % [f, gk])
+				continue
 			for rep in reps:
 				var s := _calib_state(team, f, rep)
 				var r := _calib_fight(s, int(GUARDIAN[f]))
