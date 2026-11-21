@@ -1,0 +1,190 @@
+[
+	{
+		"arm": "改前",
+		"casts": 0.0,
+		"falls": 0.0,
+		"fights": [
+			{
+				"casts": 0,
+				"dead_end": 0,
+				"falls": {},
+				"items": 0,
+				"raised": {},
+				"turns": 1,
+				"won": true
+			},
+			{
+				"casts": 0,
+				"dead_end": 0,
+				"falls": {},
+				"items": 0,
+				"raised": {},
+				"turns": 1,
+				"won": true
+			},
+			{
+				"casts": 0,
+				"dead_end": 0,
+				"falls": {},
+				"items": 0,
+				"raised": {},
+				"turns": 8,
+				"won": true
+			}
+		],
+		"floor": 30,
+		"items": 0.0,
+		"n": 3,
+		"raised": 0.0,
+		"team": [
+			3,
+			32,
+			115,
+			45
+		],
+		"turns": 3.33333333333333,
+		"who": "{}",
+		"wins": 3
+	},
+	{
+		"arm": "只改出手",
+		"casts": 0.0,
+		"falls": 0.0,
+		"fights": [
+			{
+				"casts": 0,
+				"dead_end": 0,
+				"falls": {},
+				"items": 0,
+				"raised": {},
+				"turns": 1,
+				"won": true
+			},
+			{
+				"casts": 0,
+				"dead_end": 0,
+				"falls": {},
+				"items": 0,
+				"raised": {},
+				"turns": 1,
+				"won": true
+			},
+			{
+				"casts": 0,
+				"dead_end": 0,
+				"falls": {},
+				"items": 0,
+				"raised": {},
+				"turns": 8,
+				"won": true
+			}
+		],
+		"floor": 30,
+		"items": 0.0,
+		"n": 3,
+		"raised": 0.0,
+		"team": [
+			3,
+			32,
+			115,
+			45
+		],
+		"turns": 3.33333333333333,
+		"who": "{}",
+		"wins": 3
+	},
+	{
+		"arm": "只改配队",
+		"casts": 0.0,
+		"falls": 0.0,
+		"fights": [
+			{
+				"casts": 0,
+				"dead_end": 0,
+				"falls": {},
+				"items": 0,
+				"raised": {},
+				"turns": 1,
+				"won": true
+			},
+			{
+				"casts": 0,
+				"dead_end": 0,
+				"falls": {},
+				"items": 0,
+				"raised": {},
+				"turns": 3,
+				"won": true
+			},
+			{
+				"casts": 0,
+				"dead_end": 0,
+				"falls": {},
+				"items": 0,
+				"raised": {},
+				"turns": 5,
+				"won": true
+			}
+		],
+		"floor": 30,
+		"items": 0.0,
+		"n": 3,
+		"raised": 0.0,
+		"team": [
+			3,
+			32,
+			115,
+			81
+		],
+		"turns": 3.0,
+		"who": "{}",
+		"wins": 3
+	},
+	{
+		"arm": "改后",
+		"casts": 0.0,
+		"falls": 0.0,
+		"fights": [
+			{
+				"casts": 0,
+				"dead_end": 0,
+				"falls": {},
+				"items": 0,
+				"raised": {},
+				"turns": 1,
+				"won": true
+			},
+			{
+				"casts": 0,
+				"dead_end": 0,
+				"falls": {},
+				"items": 0,
+				"raised": {},
+				"turns": 3,
+				"won": true
+			},
+			{
+				"casts": 0,
+				"dead_end": 0,
+				"falls": {},
+				"items": 0,
+				"raised": {},
+				"turns": 5,
+				"won": true
+			}
+		],
+		"floor": 30,
+		"items": 0.0,
+		"n": 3,
+		"raised": 0.0,
+		"team": [
+			3,
+			32,
+			115,
+			81
+		],
+		"turns": 3.0,
+		"who": "{}",
+		"wins": 3
+	}
+]
