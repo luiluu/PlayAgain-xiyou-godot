@@ -215,6 +215,21 @@ def drop_islands(rgba, max_size):
     return rgba, removed
 
 
+def crop_check(fg, scale, src_axis, src_foot, cfg):
+    """缩放前量前景超出采样框多深（按上下左右分开，单位＝格内像素）。
+
+    缩小后的格子永远在 0..cell-1 内，被裁掉的脚、手、尾巴在输出里看不出来（脚被向下裁时 bottom 仍是 127），
+    所以必须在源图上量。正常站在基线上的脚底行在框内（框下沿＝脚底行+1），不会报。
+    返回 {方向: 深度}，只列有出格的方向；深度 ≥1 格内像素才标红（不到 1 像素是视频抖动级别，只记录）。
+    """
+    (x0, y0, x1, y1), _ = _box(src_axis, src_foot, scale, cfg)
+    ys, xs = np.nonzero(fg)
+    if len(ys) == 0:
+        return {}
+    depth = {'左': x0 - xs.min(), '右': xs.max() + 1 - x1, '上': y0 - ys.min(), '下': ys.max() + 1 - y1}
+    return {k: round(float(v * scale), 2) for k, v in depth.items() if v > 0}
+
+
 def to_sprite(rgb_u8, fg, scale, src_axis, src_foot, pal, cfg):
     """返回 (RGBA, 源像素到色板的距离, 删掉的孤点数, 色板)。
 
@@ -281,11 +296,11 @@ def flag(v, lo=None, hi=None):
     return (lo is not None and v < lo) or (hi is not None and v > hi)
 
 
-def frame_report(rgba, dist, removed, ref_h, cfg, th):
+def frame_report(rgba, dist, removed, ref_h, cfg, th, cropped=None):
     a = rgba[..., 3] > 0
     ext = extent(a)
     cell = cfg['cell']
-    r = {'island_removed': removed}
+    r = {'island_removed': removed, 'crop_depth': cropped or {}}
     if ext is None:
         r.update(empty=True, red=['空帧'])
         return r
@@ -302,7 +317,9 @@ def frame_report(rgba, dist, removed, ref_h, cfg, th):
         red.append('色板平均偏差')
     if r['palette_far_ratio'] > th['palette_far_ratio']:
         red.append('色板外颜色')
-    if ext['left'] == 0 or ext['right'] == cell - 1 or ext['top'] == 0:
+    if any(v >= 1 for v in (cropped or {}).values()):
+        red.append('出格被裁')
+    elif ext['left'] == 0 or ext['right'] == cell - 1 or ext['top'] == 0:
         red.append('贴格边')
     if ext['bottom'] > cfg['baseline']:
         red.append('脚底低于基线')
@@ -427,7 +444,7 @@ def run(args):
         sprites = []
         for k, i in enumerate(idx):
             sp, dist, removed, _ = to_sprite(frames[i], masks[i], s_video, ax, foot, pal, cfg)
-            r = frame_report(sp, dist, removed, ref_h_cell, cfg, th)
+            r = frame_report(sp, dist, removed, ref_h_cell, cfg, th, crop_check(masks[i], s_video, ax, foot, cfg))
             r.update(frame=int(i), time=round(i / fps, 3), role=['起势', '发力', '收势'][k])
             frs.append(r)
             sprites.append(sp)
@@ -484,7 +501,7 @@ def write_html(out, rep):
                     f'视频缩放 {a["video_scale"]}，首帧人高比 <span class="{"r" if a["red"] else ""}">{a["frame0_height_ratio"]}</span> {vr}</p>')
         rows.append(f'<img src="{e(name)}_x4.png"> <img src="{e(name)}.gif"><br><img src="{e(name)}_源帧.png" width=540>')
         rows.append('<table><tr><th>帧</th><th>时刻</th><th>序</th><th>人高比</th><th>色板平均偏差</th><th>色板外占比</th>'
-                    '<th>外接框 x0,y0,x1,y1</th><th>脚底离基线</th><th>删孤点</th><th>标红</th></tr>')
+                    '<th>外接框 x0,y0,x1,y1</th><th>出格被裁（源像素）</th><th>脚底离基线</th><th>删孤点</th><th>标红</th></tr>')
         for r in a['frames_out']:
             red = set(r.get('red', []))
 
@@ -493,6 +510,7 @@ def write_html(out, rep):
             rows.append('<tr>' + f'<td>{r["frame"]}</td><td>{r["time"]}s</td><td>{r["role"]}</td>' +
                         c('人高比', r.get('height_ratio')) + c('色板平均偏差', r.get('palette_mean_dist')) +
                         c('色板外颜色', r.get('palette_far_ratio')) + c('贴格边', r.get('bbox')) +
+                        c('出格被裁', '、'.join(f'{k}{v}' for k, v in r.get('crop_depth', {}).items()) or '—') +
                         c('脚底低于基线' if '脚底低于基线' in red else '脚离基线', r.get('baseline_gap')) + f'<td>{r["island_removed"]}</td>' +
                         f'<td class=r>{e("、".join(r.get("red", [])))}</td></tr>')
         rows.append('</table>')
@@ -547,6 +565,8 @@ def selftest():
     _write_mp4(tmp / 'shift.mp4', [_figure(dx=60, dy=-30, arm=a) for a in arms])
     _write_mp4(tmp / 'zoom.mp4', [_figure(k=1.15, arm=a) for a in arms])
     _write_mp4(tmp / 'blue.mp4', [_figure(body=(40, 90, 230), arm=a) for a in arms])
+    # 首帧站姿正常、后面整个人下移 30px（如镜头下坠）：脚被裁出格底，输出里 bottom 仍是 127
+    _write_mp4(tmp / 'drop.mp4', [_figure(arm=a, dy=30 if i >= 4 else 0) for i, a in enumerate(arms)])
     fails = []
 
     def check(cond, msg):
@@ -556,12 +576,13 @@ def selftest():
     out = tmp / 'out'
     main(['--ref', str(tmp / 'ref.png'), '--out', str(out),
           '--clip', f'swing={tmp / "base.mp4"}', '--clip', f'thrust={tmp / "shift.mp4"}@0.125,0.167,0.292',
-          '--clip', f'skill={tmp / "zoom.mp4"}', '--clip', f'spell={tmp / "blue.mp4"}', '--min-island', '0'])
+          '--clip', f'skill={tmp / "zoom.mp4"}', '--clip', f'spell={tmp / "blue.mp4"}', '--clip', f'evade={tmp / "drop.mp4"}@0.25,0.292,0.333',
+          '--min-island', '0'])
     rep = json.loads((out / 'report.json').read_text())
     atlas = Image.open(out / '图集_SV_128.png')
     check(atlas.size == (1152, 768), f'图集 1152×768（实际 {atlas.size}）')
     check(set(np.unique(np.asarray(atlas)[..., 3])) <= {0, 255}, '二值透明')
-    check(len(rep['missing']) == 14 and 'wait' in rep['missing'], f'缺 14 个动作（实际 {len(rep["missing"])}）')
+    check(len(rep['missing']) == 13 and 'wait' in rep['missing'], f'缺 13 个动作（实际 {len(rep["missing"])}）')
     ref = np.asarray(Image.open(out / '定妆图_128.png'))[..., 3] > 0
     e = extent(ref)
     check(e['height'] == 100 and e['bottom'] == 127, f'定妆图人高 100、脚底 127（实际 {e["height"]}、{e["bottom"]}）')
@@ -579,6 +600,10 @@ def selftest():
     check(abs(sk['video_scale'] - sw['video_scale']) < 1e-9, '缩放只按定妆图算一次（各视频相同）')
     sp = rep['actions']['spell']['frames_out']
     check(all('色板外颜色' in f['red'] for f in sp), f'换色的视频色板标红（{[f["palette_far_ratio"] for f in sp]}）')
+    ev = rep['actions']['evade']['frames_out']
+    check(all('出格被裁' in f['red'] and f['crop_depth'].get('下', 0) >= 1 for f in ev),
+          f'下移裁脚的帧标红（{[f["crop_depth"] for f in ev]}）')
+    check(all('出格被裁' not in f['red'] for f in sw['frames_out']), '正常站在 127 行的帧不报出格')
     print(f'自测 {"通过" if not fails else "失败 " + str(len(fails)) + " 项"}；临时目录 {tmp}')
     return 1 if fails else 0
 
