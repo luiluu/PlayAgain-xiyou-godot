@@ -55,6 +55,7 @@ func _mul(ops: Array) -> Array:
 
 
 func _run() -> void:
+	XTianqi.JOIN_GIFTS = false  # T398：夹具要不带入队赠品的光身角色（赠品装备另有专项 xiyou_tianqi_join_gifts）
 	kit = Kit.new("xiyou_tianqi_growth_count")
 	G.reload_table()
 	var s := Kit.new_game()

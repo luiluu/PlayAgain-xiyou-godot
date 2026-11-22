@@ -41,6 +41,7 @@ func _check(name: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
+	XTianqi.JOIN_GIFTS = false  # T398：夹具要不带入队赠品的光身角色（赠品装备另有专项 xiyou_tianqi_join_gifts）
 	XMessageBox.auto = true
 	seed(20261117)
 	XTianqiSkills.reload_table()
