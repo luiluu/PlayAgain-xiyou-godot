@@ -96,7 +96,7 @@ func _apply_knobs() -> void:
 				seen[id] = true
 	if not _knobs_printed:
 		_knobs_printed = true
-		print("BRAND_KNOBS xcap=%s strip=%s strip_on=%s enemies=%s pozhen_type=%s brand_set=%s" % [str(xcap), str(XGuardianRework.STRIP_XPARAM), str(XGuardianRework.STRIP), str(seen.keys()), str(XTianqiElements.POZHEN_BY_TYPE), JSON.stringify(brand_set)])
+		print("BRAND_KNOBS xcap=%s strip=%s strip_on=%s enemies=%s（变身二阶段 538／929／930 由 STRIP 一并清，不列） pozhen_type=%s brand_set=%s" % [str(xcap), str(XGuardianRework.STRIP_XPARAM), str(XGuardianRework.STRIP), str(seen.keys()), str(XTianqiElements.POZHEN_BY_TYPE), JSON.stringify(brand_set)])
 
 
 ## T390（T121 核 P2-2）：职责口径同配队器（均衡按 BALANCED_AS_OUTPUT 并入输出），不再自己读 line_data
@@ -107,9 +107,14 @@ static func role_of(id: int) -> String:
 ## T390（T121 核 P2-4 截断偏差）：打第 f 层守层者之前的层线烙印＝首通 1～f−1 层每层给的数之和（first_clear.segments），
 ## 不再取「≤f 的最近节点」（26～29 层原来都按 70 算、实际 73～82；30 层原来 85、打之前其实 82）。到节点就打心魔，所以不按节点截断
 static func line_before(f: int) -> float:
-	var segs: Array = XTianqiBrand.data().get("gain", {}).get("first_clear", {}).get("segments", [])
+	var fc: Dictionary = XTianqiBrand.data().get("gain", {}).get("first_clear", {})
+	var segs: Array = fc.get("segments", [])
+	var fls: Dictionary = fc.get("floors", {})   # T390 核 P3-1：35、36 层单列的数（同 s3_s10_formula.py 的 first_amount）
 	var t := 0.0
 	for k in range(1, f):
+		if fls.has(str(k)):
+			t += float(fls[str(k)])
+			continue
 		for sg in segs:
 			if k >= int(sg.get("from", 0)) and k <= int(sg.get("to", 0)):
 				t += float(sg.get("each", 0))
