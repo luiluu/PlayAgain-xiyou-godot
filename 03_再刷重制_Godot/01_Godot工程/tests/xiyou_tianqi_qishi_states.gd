@@ -8,17 +8,20 @@ const Kit := preload("res://tests/lib/tq_save_kit.gd")
 ## 四、西游档 1:1 原貌；天启篇里 XTextFix.DICT 关掉也回原貌。
 const STATES := {264: "启示·放逐", 686: "启示·祝福", 691: "启示·眷顾", 692: "启示·无情", 693: "启示·泯灭", 694: "启示·压制",
 	695: "启示·屠戮", 696: "启示·灭绝", 698: "启示·终焉", 1101: "启示·封魔", 1102: "启示·封技", 1103: "启示·不灭",
-	1104: "启示·永恒", 2420: "启示·道争（神魔战纹）", 995: "破阵——启示诅咒", 996: "破阵——胜天半子", 997: "破阵——胜天半子*伪"}
+	1104: "启示·永恒", 2420: "启示·道争（神魔战纹）", 995: "破阵——启示诅咒", 996: "破阵——胜天半子", 997: "破阵——胜天半子·伪"}
 const SKILLS := {3778: "启示·终焉", 3789: "启示·祝福", 3794: "启示·眷顾", 3795: "启示·灭绝", 3813: "启示·无情", 3814: "启示·泯灭",
 	3815: "启示·压制", 3816: "启示·屠戮", 6107: "启示·放逐", 6102: "启示·封魔", 6103: "启示·封技",
 	# T198（D202 补漏）：同族技能名
-	6070: "启示领域", 6071: "启示领域*伪", 6101: "启示·屠灭", 6104: "启示·成长", 6105: "启示·回归", 6106: "启示·茁壮",
+	6070: "启示领域", 6071: "启示领域·伪", 6101: "启示·屠灭", 6104: "启示·成长", 6105: "启示·回归", 6106: "启示·茁壮",
 	2570: "启示·裁决", 2572: "启示·裁决"}
 ## T198：这些技能名的后半截（去掉旧前缀后）必须与原名后半截一致
 const T198_OLD := {6070: ["天道", "启示"], 6071: ["天道", "启示"], 6101: ["天道*", "启示·"], 6104: ["天道*", "启示·"],
 	6105: ["天道*", "启示·"], 6106: ["天道*", "启示·"], 2570: ["天道*", "启示·"], 2572: ["天道*", "启示·"]}
 ## 备注（字段 note）里天启篇该换的字面：旧 → 新
-const NOTE_SWAPS := [["<RightDownNote:\"天道诅咒\">", "<RightDownNote:\"启示诅咒\">"], ["所有天道状态有效度", "所有启示状态有效度"],
+const NOTE_SWAPS := [["效果:你使用劫运神镖杀死天道眷顾者(能释放天道状态)后，能劫取它们的气运，60%的几率获取一颗“天运果·运势”，20%的几率获取一颗“天运果·魔能”，20%的几率获取一颗“天运果·攻伐”", "效果：使用劫运神镖击杀启示眷属（可施放「启示」状态）后，可劫取其气运，以 60% 概率获得 1 颗「天运果·运势」、20% 概率获得「天运果·魔能」、20% 概率获得「天运果·攻伐」"],
+	["效果:当阿语使用仪式:神光或仪式:恶魇杀死强大存在(能释放天道状态)时，仪式之血数量+1", "效果：阿语使用「仪式·神光」或「仪式·恶魇」击杀强大存在（可施放「启示」状态）时，仪式之血 +1"],
+	["所有天道状态有效度*60%", "所有「启示」状态有效度 ×60%"], ["所有天道状态有效度*80%", "所有「启示」状态有效度 ×80%"],
+	["<RightDownNote:\"天道诅咒\">", "<RightDownNote:\"启示诅咒\">"], ["所有天道状态有效度", "所有启示状态有效度"],
 	["<RightDownNote:\"挣脱天道的枷锁\">", "<RightDownNote:\"挣脱启示的枷锁\">"], ["能释放天道状态", "能释放启示状态"],
 	["天道·封魔", "启示·封魔"], ["天道·封技", "启示·封技"]]
 const NOTE_STATES := [995, 996, 997, 1001, 1002, 1003, 2442]
@@ -128,8 +131,8 @@ func _run() -> void:
 			bad.append([id, _t("States", id).note])
 	_check("tq_state_notes", bad.is_empty(), bad)
 	_check("tq_995_rdn", str(_t("States", 995).note).contains("<RightDownNote:\"启示诅咒\">"))
-	_check("tq_996_note", str(_t("States", 996).note).contains("所有启示状态有效度*60%") and str(_t("States", 996).note).contains("<RightDownNote:\"胜天半子\">"))
-	_check("tq_997_note", str(_t("States", 997).note).contains("所有启示状态有效度*60%") and str(_t("States", 997).note).contains("<RightDownNote:\"胜天半子……吗？\">"))
+	_check("tq_996_note", str(_t("States", 996).note).contains("所有「启示」状态有效度 ×60%") and str(_t("States", 996).note).contains("<RightDownNote:\"胜天半子\">"))
+	_check("tq_997_note", str(_t("States", 997).note).contains("所有「启示」状态有效度 ×60%") and str(_t("States", 997).note).contains("<RightDownNote:\"胜天半子……吗？\">"))
 	_check("tq_1001_rdn", str(_t("States", 1001).note).contains("挣脱启示的枷锁") and str(_t("States", 2442).note).contains("挣脱启示的枷锁"))
 	# 三、技能说明
 	bad = []
@@ -138,16 +141,16 @@ func _run() -> void:
 		if str(_t("Skills", id).note) != want or want == str(plain[["Skills", id]].note):
 			bad.append([id, _t("Skills", id).note])
 	_check("tq_skill_notes", bad.is_empty(), bad)
-	_check("tq_6176_desc", str(_t("Skills", 6176).description).contains("启示……又如何？") and not str(_t("Skills", 6176).description).contains("天道"), _t("Skills", 6176).description)
+	_check("tq_6176_desc", str(_t("Skills", 6176).description).contains("即便是启示……又如何？") and not str(_t("Skills", 6176).description).contains("天道"), _t("Skills", 6176).description)
 	_check("tq_6162_desc", str(_t("Skills", 6162).description) == "被动\n劫取启示之运，加持己身", _t("Skills", 6162).description)
 	# T198：后半截不动
 	bad = []
 	for id in T198_OLD:
 		var pf: Array = T198_OLD[id]
-		if str(raw_skills[id].name).trim_prefix(pf[0]) != str(_t("Skills", id).name).trim_prefix(pf[1]):
+		if str(raw_skills[id].name).trim_prefix(pf[0]).replace("*伪", "·伪") != str(_t("Skills", id).name).trim_prefix(pf[1]):
 			bad.append(id)
 	_check("tq_t198_suffix_kept", bad.is_empty(), bad)
-	_check("tq_6162_paren", str(_t("Skills", 6162).note).contains("启示眷属(能释放启示状态)"))
+	_check("tq_6162_paren", str(_t("Skills", 6162).note).contains("启示眷属（可施放「启示」状态）"))
 	# 天启篇重构卡面（skill_rework.json desc）
 	var c68 := str(XDB.rec("Skills", 5568).note)
 	var c80 := str(XDB.rec("Skills", 5580).note)
