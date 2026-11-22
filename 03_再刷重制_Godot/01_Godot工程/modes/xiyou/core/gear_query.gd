@@ -172,11 +172,8 @@ static func matches(item: Dictionary, f: Dictionary) -> bool:
 	if str(f.type) != "" and type_key(item) != str(f.type):
 		return false
 	var q := str(f.quality)
-	if q.begins_with("L") and q.substr(1).is_valid_int():
-		if r.quality != int(q.substr(1)):
-			return false
-	elif q != "" and XQuality.grade_of(r.quality) != int(q):
-		return false
+	if q != "" and not Array(q.split(",", false)).any(func(one: String): return _quality_hit(r.quality, one)):
+		return false   # T368 卡 G：品质可多选（逗号分隔、逐个 OR）；单个值同原来
 	if str(f.category) != "" and not r.categories.has(str(f.category)):
 		return false
 	if str(f.term) != "" and not r.rows.any(func(row): return row.key == str(f.term)):
@@ -185,6 +182,13 @@ static func matches(item: Dictionary, f: Dictionary) -> bool:
 		if not str(r.search).contains(w):
 			return false
 	return true
+
+
+## 一个品质条件：七档号，或 L＋旧档号
+static func _quality_hit(rq: int, q: String) -> bool:
+	if q.begins_with("L") and q.substr(1).is_valid_int():
+		return rq == int(q.substr(1))
+	return XQuality.grade_of(rq) == int(q)
 
 
 static func metric(item: Dictionary, f: Dictionary) -> float:

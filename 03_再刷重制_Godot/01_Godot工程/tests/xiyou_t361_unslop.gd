@@ -93,6 +93,7 @@ func _gear_search() -> void:
 	s.gain_gear("weapon", 5, 1)
 	s.gain_gear("armor", 2, 1)
 	check("gear_skin_on", XUiSkin.on())
+	XGearSearch.SKIN_PAGE_R9 = false   # T368：这一段量的是 T361 版式，R9 新页另有专项 xiyou_t368_gear_r9
 	XGearSearch.reset_session()
 	XGearSearch.filters_open = false
 	var host := Control.new()
@@ -142,6 +143,7 @@ func _gear_search() -> void:
 	var t2 := _all(gs, func(c): return c is Button).map(func(b): return (b as Button).text)
 	check("gear_rollback_close_box", t2.has("关闭 · Esc") and gs._filter_panel == null, t2)
 	XGearSearch.SKIN_PAGE_V2 = true
+	XGearSearch.SKIN_PAGE_R9 = true
 	host.queue_free()
 	XGearSearch.reset_session()
 	await frames(2)
