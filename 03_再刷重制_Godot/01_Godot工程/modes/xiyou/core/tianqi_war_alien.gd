@@ -381,7 +381,7 @@ static func battle_rules(logic) -> Array:
 					o["priority"] = 10
 				text = XTianqiBattleRules.tier_tail("每次受击叠 1 层「战意」，满 %d 层立刻再动。" % best[1], idx, "再动时清除减益。", "再动伤害 ×2。")
 			"commander":
-				o["counter"] = "全怪 +%s" % XTianqiBattleRules.pct(float(ki.buff[idx]))
+				o["counter"] = "敌方 +%s" % XTianqiBattleRules.pct(float(ki.buff[idx]))
 				text = XTianqiBattleRules.tier_tail("在场时敌方全体属性 +%s，每回合额外行动 %d 次。" % [XTianqiBattleRules.pct(float(ki.buff[idx])), int(ki.extra[idx])],
 					idx, "倒下时敌方全体再动。", "随存活敌人数追加再动。")
 			"berserk":

@@ -763,7 +763,13 @@ func _build_ui(vs: Vector2) -> void:
 	rule_strip = XSkinRuleStrip.make(logic, side, _origin)
 	if rule_strip != null:
 		rule_strip.arc_source = func(): return boss_hp is XSkinBossArc and is_instance_valid(boss_hp) and boss_hp.visible
-		rule_strip.blocker_source = func(): return Rect2(list_win.global_position, list_win.size) if list_win != null and is_instance_valid(list_win) and list_win.visible else Rect2()
+		rule_strip.blocker_source = func():
+			if list_win != null and is_instance_valid(list_win) and list_win.visible:
+				return Rect2(list_win.global_position, list_win.size)
+			return Rect2(help_card.global_position, help_card.size) if help_card != null and is_instance_valid(help_card) and help_card.visible else Rect2()
+		# 战斗图鉴、角色状态页、首领详情开着：不切规则条、开着的详卡收起（小A T386 核 P1-1、P2-2）
+		rule_strip.input_blocked = func(): return (book_page != null and is_instance_valid(book_page)) or (status_panel != null and is_instance_valid(status_panel)) \
+			or (boss_panel != null and is_instance_valid(boss_panel) and bool(boss_panel.get("open")))
 		ui.add_child(rule_strip)
 	# 天启篇弱者专属词条：头顶文字角标（蓄雷格数、传球库存…，只写状态不写词条名；模块不在天启篇档时不建）
 	tianqi_weak_badges = XTianqiWeakBadges.make(logic, func(): return sprites)

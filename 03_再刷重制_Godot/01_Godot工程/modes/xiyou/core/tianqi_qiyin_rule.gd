@@ -450,7 +450,7 @@ static func battle_rules(logic) -> Array:
 					o["tone"] = "warn"
 		"star_fall":
 			var every := maxi(1, int(param("star_fall").get("every_turns", 3)))
-			var rem := (every - t % every) % every
+			var rem := (every - t % every) % every if t > 0 else every  # 开战第 0 回合：第一次在第 every 回合
 			o["countdown"] = rem
 			o["counter"] = "本回合已落" if rem == 0 else XTianqiBattleRules.countdown_text(rem)
 			if rem <= 1:

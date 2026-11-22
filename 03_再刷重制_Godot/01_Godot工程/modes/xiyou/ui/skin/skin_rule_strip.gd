@@ -32,6 +32,10 @@ var origin := Vector2.ZERO
 var arc_source: Callable
 ## 技能／物品列表等手头操作窗口的矩形（屏幕坐标；没打开为空）：与详卡相交时详卡自动收起
 var blocker_source: Callable
+## 上层页（战斗图鉴、角色状态页、首领详情）开着时返回 true：规则条不吃 R／LB，开着的详卡顺手收起（小A T386 核 P1-1、P2-2）
+var input_blocked: Callable
+## 战场层级（小A T386 核 P1-1）：压过敌人血条／名字 5、行动标记 6、伤害飘字 7、行动顺序条 8；让于说明卡 10、首领详情 11、结算卡 20
+const Z := 9
 
 var rules: Array = []
 var source := ""
@@ -66,6 +70,7 @@ static func make(lg, toggle_box: Control, org: Vector2) -> XSkinRuleStrip:
 
 func _ready() -> void:
 	name = "RuleStrip"
+	z_index = Z
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_catcher = Control.new()
@@ -108,6 +113,8 @@ func _process(dt: float) -> void:
 	if _poll >= POLL:
 		_poll = 0.0
 		refresh()
+	if open and _blocked():
+		set_open(false)
 	if open and blocker_source.is_valid():
 		var br = blocker_source.call()
 		if br is Rect2 and br.has_area() and br.intersects(drawer_rect()):
@@ -164,8 +171,12 @@ func set_open(v: bool) -> void:
 
 
 ## battle_scene._unhandled_input 最前面调：R／手柄 LB 开关，详卡开着时 Esc／B 收起、↑↓ 内滚（内容放不下时）。收了返回 true
+func _blocked() -> bool:
+	return input_blocked.is_valid() and bool(input_blocked.call())
+
+
 func try_toggle_input(event: InputEvent) -> bool:
-	if not is_visible_in_tree() or rules.is_empty():
+	if not is_visible_in_tree() or rules.is_empty() or _blocked():
 		return false
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_R:
 		toggle()
@@ -371,12 +382,16 @@ func plan() -> Dictionary:
 	var placed := 0
 	var stop := false
 	for i in rules.size():
-		var w := _chip_w(rules[i], fs)
 		var remain_after := rules.size() - i - 1
 		while true:
 			var reserve := (gap + plus_w) if (row == 1 and remain_after > 0) else 0.0
+			var compact := false
+			var w := _chip_w(rules[i], fs)
+			if cx + w + reserve > _right_limit(row):
+				compact = true
+				w = _chip_w(rules[i], fs, true)
 			if cx + w + reserve <= _right_limit(row):
-				out.chips.append({"i": i, "id": str(rules[i].id), "rect": Rect2(cx, y1 if row == 0 else y2, w, rh)})
+				out.chips.append({"i": i, "id": str(rules[i].id), "rect": Rect2(cx, y1 if row == 0 else y2, w, rh), "compact": compact})
 				placed += 1
 				cx += w + gap
 				break
@@ -413,7 +428,7 @@ func _draw() -> void:
 	else:
 		_draw_head(p.head, fs)
 		for c in p.chips:
-			_draw_chip(rules[int(c.i)], c.rect, fs)
+			_draw_chip(rules[int(c.i)], c.rect, fs, bool(c.get("compact", false)))
 		if int(p.overflow) > 0:
 			var pr: Rect2 = p.plus
 			_pill(pr, Color(XUiSkin.panel_low_c(), 0.92), Color(XUiSkin.line_c(), 0.45))
@@ -485,21 +500,35 @@ func _draw_arrow(c: Vector2, up: bool) -> void:
 	draw_colored_polygon(pts, XUiSkin.GOLD)
 
 
-func _chip_w(r: Dictionary, fs: int) -> float:
+## 窄签（16:9 有血弧时上行放不下才用）：「N 回合后」折成「N 回合」（T387 定稿留的口子），左右内边距各收 3
+func _chip_counter(r: Dictionary, compact: bool) -> String:
+	var c := str(r.counter)
+	if compact and c.ends_with(" 回合后"):
+		c = c.trim_suffix("后")
+	return c
+
+
+func _chip_pad(compact: bool) -> float:
+	return 9.0 if compact else 12.0
+
+
+func _chip_w(r: Dictionary, fs: int, compact := false) -> float:
 	var font := XUiSkin.font("body")
 	var nf := XUiSkin.font("num")
 	var name := XSkinNoticeLane.ellipsize(str(r.name), font, fs, CHIP_NAME_MAX)
-	var w := 12.0 + _tw(name, fs) + 12.0
+	var pad := _chip_pad(compact)
+	var w := pad + _tw(name, fs) + pad
 	if int(r.icon) > 0 and XUiSkin.icon(int(r.icon)) != null:
-		w += 24.0
-	if str(r.counter) != "":
-		w += 6.0 + nf.get_string_size(str(r.counter), HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		w += 22.0 if compact else 24.0
+	var c := _chip_counter(r, compact)
+	if c != "":
+		w += (4.0 if compact else 6.0) + nf.get_string_size(c, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 	return w
 
 
 func _head_w(fs: int) -> float:
 	var key := _key_label()
-	return 10.0 + 10.0 + _tw("规则", fs) + 6.0 + (_tw(key, _fs(12)) + 16.0 if key != "" else 0.0) + 12.0 + 6.0
+	return 8.0 + 9.0 + _tw("规则", fs) + 5.0 + (_tw(key, _fs(12)) + 16.0 if key != "" else 0.0) + 12.0 + 4.0
 
 
 func _draw_head(head: Rect2, fs: int) -> void:
@@ -510,15 +539,15 @@ func _draw_head(head: Rect2, fs: int) -> void:
 		hborder = XUiSkin.GOLD_LIGHT
 	_pill(head, hfill, hborder)
 	var cy := head.get_center().y
-	var hx := head.position.x + 11.0
+	var hx := head.position.x + 9.0
 	draw_colored_polygon(PackedVector2Array([Vector2(hx, cy - 4), Vector2(hx + 4, cy), Vector2(hx, cy + 4), Vector2(hx - 4, cy)]), XUiSkin.GOLD)
-	hx += 10.0
+	hx += 9.0
 	XUiSkin.ds(self, XUiSkin.font("body"), Vector2(hx, XUiSkin.text_baseline_y(cy, fs)), "规则", HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD_LIGHT)
-	hx += _tw("规则", fs) + 6.0
+	hx += _tw("规则", fs) + 5.0
 	_draw_key_and_arrow(hx, cy, _key_label())
 
 
-func _draw_chip(r: Dictionary, rect: Rect2, fs: int) -> void:
+func _draw_chip(r: Dictionary, rect: Rect2, fs: int, compact := false) -> void:
 	var font := XUiSkin.font("body")
 	var nf := XUiSkin.font("num")
 	var tone := tone_color(r)
@@ -534,18 +563,19 @@ func _draw_chip(r: Dictionary, rect: Rect2, fs: int) -> void:
 	_pill(rect, fill, border)
 	var cy := rect.position.y + rect.size.y / 2.0
 	# 左侧 3px 语义竖棱
-	draw_rect(Rect2(rect.position.x + 5.0, cy - rect.size.y * 0.28, 3.0, rect.size.y * 0.56), tone)
-	var cx := rect.position.x + 12.0
+	draw_rect(Rect2(rect.position.x + (4.0 if compact else 5.0), cy - rect.size.y * 0.28, 3.0, rect.size.y * 0.56), tone)
+	var cx := rect.position.x + _chip_pad(compact)
 	var icon: Texture2D = XUiSkin.icon(int(r.icon)) if int(r.icon) > 0 else null
 	if icon != null:
 		draw_texture_rect(icon, Rect2(cx, cy - 10.0, 20.0, 20.0), false)
-		cx += 24.0
+		cx += 22.0 if compact else 24.0
 	var base := XUiSkin.text_baseline_y(cy, fs)
 	var name := XSkinNoticeLane.ellipsize(str(r.name), font, fs, CHIP_NAME_MAX)
 	XUiSkin.ds(self, font, Vector2(cx, base), name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_HI)
-	cx += _tw(name, fs) + 6.0
-	if str(r.counter) != "":
-		XUiSkin.ds(self, nf, Vector2(cx, base), str(r.counter), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _counter_color(r))
+	cx += _tw(name, fs) + (4.0 if compact else 6.0)
+	var c := _chip_counter(r, compact)
+	if c != "":
+		XUiSkin.ds(self, nf, Vector2(cx, base), c, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, _counter_color(r))
 
 
 # ---- 详卡 ----
@@ -591,9 +621,7 @@ func _layout_items(w: float) -> Array:
 	for r in rules:
 		var h := 8.0 + _fs(17) * 1.5
 		var sum_lines: Array = XSkinText.wrap_lines(str(r.summary), font, _fs(15), tw)
-		if sum_lines.size() > 3:
-			sum_lines = sum_lines.slice(0, 3)
-			sum_lines[2] = XSkinNoticeLane.ellipsize(str(sum_lines[2]) + "……", font, _fs(15), tw)
+		# 不截断：说明全文折行，放不下交给详卡内滚（小A T386 核 P1-2）
 		h += sum_lines.size() * _fs(15) * 1.5
 		var ex_lines: Array = []
 		if str(r.detail_extra) != "":

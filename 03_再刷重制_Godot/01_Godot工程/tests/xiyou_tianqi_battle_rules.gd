@@ -263,6 +263,17 @@ func _aliens() -> void:
 	_check("death_knell_log_match", _any(texts, "丧钟还剩 %d 回合" % n) and str(ids["alien:death:knell"].counter) == XTianqiBattleRules.countdown_text(n)
 		and str(ids["alien:death:knell"].badge) == "终焉", [texts, ids["alien:death:knell"].counter])
 	dl.end_battle(2)
+	# 替身次数用尽：条目移除
+	var db := _alien_fight("death", ["double"], "huaxing")
+	for e in XTianqiDeathAlien.fight(db).units:
+		XTianqiDeathAlien.fight(db).units[e]["used"] = 99
+	_check("double_used_up_removed", not _by_id(_collect_pure(db)).has("alien:death:double"))
+	db.end_battle(2)
+	# 终焉传染者：句子不出「全部 个」
+	var ct := _alien_fight("plague", ["contagion"], "zhongyan")
+	var cs := str(_by_id(_collect_pure(ct))["alien:plague:contagion"].summary)
+	_check("contagion_finale_text", cs.begins_with("每回合末将身上全部减益传染给队友。"), cs)
+	ct.end_battle(2)
 	# 战争·交锋：第 3 回合起伤害 +10%
 	var wl := _alien_fight("war", ["berserk"])
 	_check("war_clash_before", str(_by_id(_collect_pure(wl))["alien:war:clash"].counter) == "第 3 回合起")
@@ -416,6 +427,9 @@ func _layout() -> void:
 				bad.append(["plus", p.plus])
 			if p.head.end.y > org.y + 142.0 or p.head.position.y < org.y + 50.0:
 				bad.append(["head", p.head])
+			var row1: Array = p.chips.filter(func(ch): return ch.rect.position.y < org.y + 98.0)
+			_check("row1_not_empty_" + tag, big or not row1.is_empty(), [p.chips.map(func(ch): return [ch.id, ch.rect])])
+			_check("z_index_" + tag, st.z_index > XBattleScene.POPUP_Z and st.z_index < 10, st.z_index)
 			_check("layout_knight_" + tag, ok and bad.is_empty() and int(p.overflow) + p.chips.size() == st.rules.size(), [bad, p.chips.size(), p.overflow, st.rules.size()])
 			# 详卡：下沿 ≤ 618、贴左
 			st.set_open(true)
@@ -423,6 +437,23 @@ func _layout() -> void:
 			var dr := st.drawer_rect()
 			_check("drawer_" + tag, dr.end.y <= org.y + 618.0 + 0.5 and is_equal_approx(dr.position.x, c[2]) and is_equal_approx(dr.position.y, org.y + 142.0)
 				and is_equal_approx(dr.size.x, 420.0 if big else 368.0), dr)
+			# 不截断：每条说明的折行拼回去等于原文（小A T386 核 P1-2）
+			var items: Array = st._layout_items(dr.size.x)
+			var full := true
+			for k in st.rules.size():
+				if "".join(items[k].sum) != str(st.rules[k].summary).replace("\n", ""):
+					full = false
+			_check("no_truncate_" + tag, full)
+			# 上层页开着：不吃 R、详卡收起
+			var blocked := [true]
+			st.input_blocked = func(): return blocked[0]
+			var ev := InputEventKey.new()
+			ev.keycode = KEY_R
+			ev.pressed = true
+			_check("blocked_no_toggle_" + tag, not st.try_toggle_input(ev))
+			st._process(0.0)
+			_check("blocked_closes_" + tag, not st.open)
+			blocked[0] = false
 			st.set_open(false)
 			_drop(st)
 			lg.end_battle(2)

@@ -550,7 +550,7 @@ static func end(logic) -> void:
 
 
 # ---- 战中「本场规则」条（T386 / K1b）：只读出口，零逻辑修改、零随机数；玩家可见文字照小A 文字审定稿（T387） ----
-# 毒腺一句偏离定稿：代码里命中必中毒、poison 是每回合扣最大生命的比例（不是概率），按实际机制写，待小A 复审。
+# 毒腺一句偏离 T387 定稿：代码里命中必中毒、poison 是每回合扣最大生命的比例（不是概率），按实际机制写（小A T386 核查复审通过）。
 
 static func battle_rules(logic) -> Array:
 	if not active(logic):
@@ -579,8 +579,9 @@ static func battle_rules(logic) -> Array:
 		match str(kind):
 			"gland":
 				var p := XTianqiBattleRules.pct(float(ki.poison[idx]))
-				o["counter"] = "%s 毒" % p
+				o["counter"] = "中毒 %s" % p
 				if idx >= 3:
+					o["counter"] = "中毒禁疗"
 					o["tone"] = "warn"
 				text = XTianqiBattleRules.tier_tail("攻击使目标「中毒」，每回合失去最大生命 %s。" % p, idx, "最高叠至 %d 层。" % int(ki.get("stack_max", 3)), "「中毒」期间无法受到治疗。")
 			"chaos":
@@ -594,10 +595,10 @@ static func battle_rules(logic) -> Array:
 			"contagion":
 				var n := int(ki.copies[idx])
 				o["counter"] = "回合末传 %d 个" % n if n < 99 else "回合末全传"
-				text = XTianqiBattleRules.tier_tail("每回合末将身上 %s个减益传染给队友。" % ("%d " % n if n < 99 else "全部 "), idx, "传染后持续 +1 回合。", "每回合传染 2 次。")
+				text = XTianqiBattleRules.tier_tail("每回合末将身上%s减益传染给队友。" % (" %d 个" % n if n < 99 else "全部"), idx, "传染后持续 +1 回合。", "每回合传染 2 次。")
 			"source":
 				var ext := int(ki.extend[idx])
-				o["counter"] = "延 +%d 回合" % ext
+				o["counter"] = "延长 %d 回合" % ext
 				if idx >= 3:
 					o["tone"] = "warn"
 				text = XTianqiBattleRules.tier_tail("延长我方减益 %d 回合，并使净化有概率失败。" % ext, idx, "净化成功时反染给队友。", "减益免疫失效。")

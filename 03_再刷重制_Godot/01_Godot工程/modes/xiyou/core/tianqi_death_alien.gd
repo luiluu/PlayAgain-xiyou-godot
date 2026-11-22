@@ -596,13 +596,25 @@ static func battle_rules(logic) -> Array:
 				for a in f.lock:
 					if is_instance_valid(a) and turn < int(f.lock[a]):
 						locked.append(a.display_name())
+				var skills := PackedStringArray()
+				for pair in _alive_of(logic, "reaper"):
+					for sid in f.absorbed.get(pair[0], []):
+						var nm := str(XDB.rec("Skills", int(sid)).get("name", ""))
+						if nm != "" and not skills.has(nm):
+							skills.append(nm)
+				var ex := PackedStringArray()
 				if not locked.is_empty():
-					o["detail_extra"] = "已锁复活：%s" % "、".join(locked)
+					ex.append("已锁复活：%s" % "、".join(locked))
+				if not skills.is_empty():
+					ex.append("已吸收：%s" % "、".join(skills))
+				o["detail_extra"] = " · ".join(ex)
 				text = XTianqiBattleRules.tier_tail("吸收倒下单位以强化自身属性。", idx, "被收走者本场无法复活。")
 			"double":
 				var left := 0
 				for pair in _alive_of(logic, "double"):
 					left += maxi(0, int(ki.times[int(pair[1].idx)]) - int(pair[1].get("used", 0)))
+				if left <= 0:
+					continue  # 次数用尽自动移除（设计稿表 B2）
 				o["counter"] = "剩 %d 次" % left
 				o["tone"] = "warn"
 				text = XTianqiBattleRules.tier_tail("遭受致命伤时，由生命比例 ≤ %s 的我方代死（剩 %d 次）。" % [XTianqiBattleRules.pct(float(ki.below[idx])), left], idx, "", "代死者本场无法复活。")

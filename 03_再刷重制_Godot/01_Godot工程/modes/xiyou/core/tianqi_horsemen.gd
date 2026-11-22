@@ -1509,8 +1509,9 @@ static func _flush_params(logic) -> void:
 # ---- 战中「本场规则」条（T386 / K1b）：只读出口，零逻辑修改、零随机数；玩家可见文字照小A 文字审定稿（T387） ----
 
 const WAR_FORMULAS := ["", "连珠爆竹", "碎甲弹片", "莉co特调", "引信已燃", "满天星火", "炮火连天"]
-## 配方每层的一句效果（K1b 新写，不在 T387 定稿表里，待小A 审）
-const WAR_FORMULA_BRIEF := ["", "多段爆竹轰击", "弹片削减我方最大生命", "暴击提升", "伤害提升", "火力全开", "每次行动额外 +3 火花"]
+## 配方每层的一句效果（小A T386 核查报告文字复审定稿）
+const WAR_FORMULA_BRIEF := ["", "多段爆竹轰击", "雷火弹附加碎甲，削减我方最大生命", "雷火弹伤害与暴击提升", "「漫天烟火」伤害提升", "「漫天烟火」段数翻倍",
+	"每次行动火花 +3，援军伤害提升"]
 
 
 static func battle_rules(logic) -> Array:
@@ -1577,7 +1578,7 @@ static func battle_rules(logic) -> Array:
 					if e.is_alive():
 						n += 1
 				o = base.duplicate()
-				o.merge({"counter": "在场 %d 只" % n, "priority": 30}, true)
+				o.merge({"counter": "在场 %d 名" % n, "priority": 30}, true)
 				out.append(XTianqiBattleRules.entry("horsemen:famine:devour", "horsemen", "结党",
 					"行动前吞噬 1 名小怪 50% 生命，本次伤害 +33%；若吞噬致死，将再召唤 1 名并叠 1 层「资历」。", o))
 		"plague":
@@ -1628,7 +1629,7 @@ static func _death_rules(logic, f: Dictionary, mode: String, turn: int, zd: bool
 	out.append(XTianqiBattleRules.entry("horsemen:death:doom", "horsemen", "死期", dtext + "，回合末必死且本场无法复活（换至助力位仍生效）。", o))
 	# 神圣剑
 	var every := int(k.holy_sword.every)
-	var srem := (every - turn % every) % every
+	var srem := (every - turn % every) % every if turn > 0 else every  # 开战第 0 回合：第一次在第 every 回合
 	o = base.duplicate()
 	var hits := maxi(1, int(f.get("unique", 0)))
 	o.merge({"countdown": srem, "counter": "%s · %d 段" % [XTianqiBattleRules.countdown_text(srem), hits], "tone": "warn" if srem <= 1 else "line", "priority": 10 if srem <= 1 else 20}, true)
@@ -1724,7 +1725,7 @@ static func _plague_rules(logic, f: Dictionary, mode: String, turn: int, base: D
 		var acc := float(f.get("shield_acc", 0.0))
 		o.merge({"counter": "%d%%" % roundi(100.0 * acc / maxf(1.0, need)), "value": acc, "max_value": need}, true)
 		if int(f.phase) >= 3:
-			o["badge"] = "P3"
+			o["badge"] = "第 3 阶段"
 		text = "全体嘲讽中，只能攻击混子；累计造成其最大生命 %s 伤害可碎盾，下回合解除嘲讽。" % _pct_text(rate)
 	else:
 		o["counter"] = "嘲讽中"
