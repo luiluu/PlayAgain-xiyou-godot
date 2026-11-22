@@ -1318,7 +1318,7 @@ func decide(b: XBattler) -> Array:
 		if not fright.is_empty():
 			return XConfusion.prepare_enemy(b, fright)
 		var sk := XTianqiEnemyAI.enemy_action(self, b)  # 天启篇六维（T277）：录表敌人按战商等改选招权重，同样只掷一次；没录／开关关＝原版 enemy_action
-		var dec := XConfusion.prepare_enemy(b, [null if sk.is_empty() else sk, null])
+		var dec := XGuardianRework.single_action(b, XConfusion.prepare_enemy(b, [null if sk.is_empty() else sk, null]))  # T363：12、15、25 层守层者集火招改打一人
 		XTianqiEnemyAI.note_decision(self, b, dec)  # 这一招接下来的随机点名按战商改权重（仍只掷一次 target）
 		return dec  # 没有行动：同逃跑失败的放弃（processTurn 没有 currentAction 就 endAction）
 	var fit := brand_forced(b)  # 天启篇烙印发作：不听指挥（同 BattleScene._command 最顶上那一问；没有发作不取数）

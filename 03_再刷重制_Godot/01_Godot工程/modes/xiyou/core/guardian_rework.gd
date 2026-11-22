@@ -223,7 +223,10 @@ static func atk_scale(e: XEnemy) -> float:
 ## （balance_table.guardian_phase4.focus[层] ＝ {"skill": 技能号, "scale": 倍率}）单独乘 scale，让它一下打掉目标约 40% 最大生命；其余招照 atk_scale。
 ## 只认守层者本身（敌人号或变身前是守层者的；心魔、鸿钧、七印里副本、骑士、同层小怪都不认）。量数（measure_atk ≥ 0）时不用，好按统一倍率量。
 ## 回退：`XGuardianRework.FOCUS = false`（集火招也照 atk_scale）。
+## T363（Kyo 11-21 事项17 问2）：没有单体伤害招的层（12、15、25）表里写 "single": 1，那招在这名守层者手里改成只打一人（scope 1），
+## 技能数据本身不动（别的敌人、角色用同一招照旧）；见 single_action。回退：`XGuardianRework.FOCUS_SINGLE = false`（照原范围）。
 static var FOCUS := true
+static var FOCUS_SINGLE := true
 
 
 static func focus(e: XEnemy) -> Dictionary:
@@ -237,7 +240,20 @@ static func focus(e: XEnemy) -> Dictionary:
 	var row = t.get(str(f), {}) if t is Dictionary else {}
 	if not row is Dictionary or int(row.get("skill", 0)) <= 0 or float(row.get("scale", 0.0)) <= 0.0:
 		return {}
-	return {"skill": int(row.skill), "scale": float(row.scale)}
+	return {"skill": int(row.skill), "scale": float(row.scale), "single": FOCUS_SINGLE and int(row.get("single", 0)) == 1}
+
+
+## T363：BattleLogic.decide 敌人选好招之后调。这名守层者的集火招标了 single 时，把这一次行动的技能换成只打一人的副本
+## （scope 2～6 → 1，目标照单体随机点名）；别的情况原样返回。
+static func single_action(e, dec: Array) -> Array:
+	if not e is XEnemy or not e.focus_single or e.focus_skill <= 0 or dec.is_empty() or not dec[0] is Dictionary:
+		return dec
+	var sk: Dictionary = dec[0]
+	if int(sk.get("id", 0)) != e.focus_skill or not int(sk.get("scope", 0)) in [2, 3, 4, 5, 6]:
+		return dec
+	var one := sk.duplicate()
+	one["scope"] = 1
+	return [one, dec[1] if dec.size() > 1 else null]
 
 
 ## 守层者认敌人号；对齐过的心魔认它的层（T315）；楼层里别的敌人认 setup 记下的层（WORLD）

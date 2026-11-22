@@ -47,6 +47,9 @@ class GuardianPhase4Rules(unittest.TestCase):
         self.assertTrue(chk.guardian_phase4_rules({'focus': {'20': {'skill': 0, 'scale': 1.0}}}))
         self.assertTrue(chk.guardian_phase4_rules({'focus': {'20': {'skill': 9, 'scale': -1}}}))
         self.assertTrue(chk.guardian_phase4_rules({'focus': {'20': {'skill': 9}}}))
+        self.assertEqual(chk.guardian_phase4_rules({'focus': {'12': {'skill': 661, 'scale': 1.5, 'single': 1}}}), [])   # T363
+        self.assertTrue(chk.guardian_phase4_rules({'focus': {'12': {'skill': 661, 'scale': 1.5, 'single': 2}}}))
+        self.assertTrue(chk.guardian_phase4_rules({'focus': {'12': {'skill': 661, 'scale': 1.5, 'single': True}}}))
 
     def test_bad_tables(self):
         self.assertTrue(chk.guardian_phase4_rules({'hp_base': {'35': 1}}))

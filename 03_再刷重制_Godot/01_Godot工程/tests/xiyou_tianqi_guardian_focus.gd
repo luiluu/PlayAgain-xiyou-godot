@@ -5,8 +5,10 @@ extends Node
 ## 二、实算：同一招对同一角色的预览伤害，集火招 ÷ 不是集火招（把 focus 指到别的招）＝ focus_scale ÷ atk_scale。
 ## 三、同场不是守层者的敌人、量数（measure_atk ≥ 0）时不认集火。
 ## 四、回退：FOCUS=false 时 focus_skill 为 0、那招照 atk_scale。五、表里没有 focus：照旧。
+## 六、T363：focus 带 single＝1 时那招在守层者手里改打一人（XGuardianRework.single_action），技能数据、别的招、别的敌人不动；FOCUS_SINGLE=false 回退。
 
 const TROOP := 456   # 20 层守层者那场
+const TROOP12 := 110   # 12 层守层者那场（T363 single）
 var results: Array = []
 
 
@@ -66,6 +68,36 @@ func _run() -> void:
 	var go := _guardian(off)
 	_check("rollback", go.focus_skill == 0 and is_equal_approx(go.skill_scale({"id": sk}), 0.1), [go.focus_skill, go.skill_scale({"id": sk})])
 	XGuardianRework.FOCUS = true
+	# 六、T363：表里 single＝1 时，那招在守层者手里改打一人（技能数据不动）；别的招、别的敌人、回退都不改
+	var sl := XBattleLogic.new()
+	sl.setup(TROOP12, _state(11))   # 12 层守层者（奥术波动 661 是 3 随机）
+	var gs := _guardian(sl, 12)
+	var multi := _multi_skill(gs) if gs != null else 0
+	_check("has_multi_skill", multi > 0, multi)
+	if multi <= 0:
+		_finish(had, old, was_focus)
+		return
+	data["guardian_phase4"] = {"atk_scale": {"12": 0.1}, "focus": {"12": {"skill": multi, "scale": 2.0, "single": 1}}}
+	sl = XBattleLogic.new()
+	sl.setup(TROOP12, _state(11))
+	gs = _guardian(sl, 12)
+	var mrec: Dictionary = XDB.rec("Skills", multi)
+	var dec := XGuardianRework.single_action(gs, [mrec, null])
+	_check("single_scope", gs.focus_single and int(dec[0].scope) == 1 and int(mrec.scope) != 1 and int(XDB.rec("Skills", multi).scope) == int(mrec.scope), [gs.focus_single, dec[0].get("scope"), mrec.get("scope")])
+	_check("single_targets", sl.targets_for(gs, dec[0]).size() == 1 and is_equal_approx(gs.skill_scale(dec[0]), 2.0))
+	var other12 := _other_skill(gs, multi)
+	var plain := XGuardianRework.single_action(gs, [XDB.rec("Skills", other12), null])
+	_check("single_other_skill_kept", other12 > 0 and int(plain[0].get("scope", -1)) == int(XDB.rec("Skills", other12).get("scope", -2)))
+	for e in sl.enemies:
+		if not is_same(e, gs) and XGuardianRework.guardian_floor(e) <= 0:
+			_check("single_non_guardian", XGuardianRework.single_action(e, [mrec, null])[0] == mrec)
+			break
+	XGuardianRework.FOCUS_SINGLE = false
+	var so := XBattleLogic.new()
+	so.setup(TROOP12, _state(11))
+	var gso := _guardian(so, 12)
+	_check("single_rollback", not gso.focus_single and int(XGuardianRework.single_action(gso, [mrec, null])[0].scope) == int(mrec.scope) and gso.focus_skill == multi)
+	XGuardianRework.FOCUS_SINGLE = true
 	# 五、表里没有 focus
 	data["guardian_phase4"] = {"atk_scale": {"20": 0.1}}
 	var nf := XBattleLogic.new()
@@ -80,6 +112,7 @@ func _finish(had: bool, old, was_focus: bool) -> void:
 	else:
 		XTianqiBalance.data().erase("guardian_phase4")
 	XGuardianRework.FOCUS = was_focus
+	XGuardianRework.FOCUS_SINGLE = true
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -102,9 +135,9 @@ func _state(passed_floor: int) -> XState:
 	return s
 
 
-func _guardian(logic: XBattleLogic) -> XEnemy:
+func _guardian(logic: XBattleLogic, f := 20) -> XEnemy:
 	for e in logic.enemies:
-		if XGuardianRework.guardian_floor(e) == 20:
+		if XGuardianRework.guardian_floor(e) == f:
 			return e
 	return null
 
@@ -114,6 +147,15 @@ func _single_skill(e: XEnemy) -> int:
 	for act in XDB.rec("Enemies", e.enemy_id).get("actions", []):
 		var sk: Dictionary = XDB.rec("Skills", int(act.skillId))
 		if int(sk.get("scope", 0)) == 1 and int(sk.get("damage", {}).get("type", 0)) == 1:
+			return int(act.skillId)
+	return 0
+
+
+## 守层者行动表里第一招多体伤害招（scope 2～6、类型 1）
+func _multi_skill(e: XEnemy) -> int:
+	for act in XDB.rec("Enemies", e.enemy_id).get("actions", []):
+		var sk: Dictionary = XDB.rec("Skills", int(act.skillId))
+		if int(sk.get("scope", 0)) in [2, 3, 4, 5, 6] and int(sk.get("damage", {}).get("type", 0)) == 1:
 			return int(act.skillId)
 	return 0
 

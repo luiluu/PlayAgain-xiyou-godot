@@ -23,6 +23,19 @@
               ＋ share×单人平均最大生命）÷ 守层者每回合打我方；share 默认 0.40（--share），即每回合另加一下打掉一人 40% 的集火。
               --focus-mode max：取「续航口径（不含集火项）」与「当前倍率 × share ÷ 守层者单下占一人最大生命比例中位」两者大的。
 - resist    ＝ 19～33 层，我方普攻单下伤害中位（atkHit，每个目标一条）的 30%。
+T363 迭代（Kyo 11-21 事项17「全按推荐」）：
+- hp_base 默认 --hp-mode top：每层单独取普通阵容各队 dmgRaw 的 90 分位（强队）×（目标回合−2）÷目标回合，即强队约（目标回合−2）回合打死；
+              不再跨层平滑、不再逐层累计最大（7、19 层就是被邻层抬高血量才全灭）。--hp-mode smooth 回到第 6 轮做法。
+- 多个 --in 同一层的 teams 合在一起（两条存档链一起构表；原来后一个文件整层盖掉前一个，T239 核 P2-4）。
+- 集火招封顶：期望出伤占预算的比例只在放过这招的队里取中位（没放的队按 0 计会把中位拉低、绕过一半封顶，T239 核 P2-5）。
+- 守层者每回合打我方优先取 enemyDmgBase（集火招按表里倍率多打的折回统一倍率，量数照新表打时用）。
+- 12、15、25 层（SINGLE）没有单体伤害招：指定一招在守层者手里改打一人（表里 "single": 1，游戏 XGuardianRework.single_action）；
+              量数里那招已是单体（scope 1）就照实测；还是多体（老量数）就按一次出手的目标数 n（全体＝队伍人数、随机 k 个＝k）把每回合打我方、一次占比都 ÷n 估单体。
+- 真打校准（--duel-calib <真打 json>…，T363 第 2 步）：量数的 dmgRaw 是每下前补满、不算守层者回血闪避与同场异化（19 层号令官），
+              真打实际掉血可能只有它的一半，也可能更多。按真打（baseline_dps --duel 的输出，表是当时写进去的那份）重定 hp_base：
+              每队实效每回合伤害＝输了的队取真打每回合掉血、赢了的队取 当时血量÷赢的回合数；hp_base＝各层普通阵容实效的 90 分位 ×（目标回合−2）÷目标回合；
+              只校至少 CALIB_MIN（8）场的层（1～5 层每层 4 队，照量数）。可给多遍真打（不同表下）一起校。
+              atk_scale、focus、resist 仍按量数。
 空表（rows 为空）：什么都不写，退出码 0，打印「没有数」。写入时只动 balance_table.json 里 guardian_phase4 这一键（文本层面替换，其余字节不动）。"""
 import argparse
 import json
@@ -39,6 +52,9 @@ FLOORS = range(1, 35)
 RESIST_FLOORS = range(19, 34)
 PARTY_HP_DIV = 6.4
 RESIST_SHARE = 0.3
+HP_QUANTILE = 0.9   # T363：hp_base 取各队 dmgRaw 的这个分位（强队）
+CALIB_MIN = 8   # T363：真打校准只校普通阵容至少这么多队（场次）的层；1～5 层每层 4 队，90 分位就是最强那队，校了只会一轮轮往上翻，照量数
+SINGLE = {12: 661, 15: 827, 25: 3563}   # T363（Kyo 11-21 事项17 问2）：奥术波动（3 随机）、如来神掌（2 随机）、仙宫寒气（3 随机）改打一人
 
 
 def sig3(x: float) -> float:
@@ -84,6 +100,34 @@ def _med(xs):
     return (xs[(n - 1) // 2] + xs[n // 2]) / 2.0
 
 
+def _quant(xs, p):
+    xs = sorted(x for x in xs if x is not None)
+    if not xs:
+        return 0.0
+    k = (len(xs) - 1) * p
+    lo, hi = math.floor(k), math.ceil(k)
+    return xs[lo] + (xs[hi] - xs[lo]) * (k - lo)
+
+
+def _ed(t: dict) -> float:
+    """守层者每回合打我方：有 enemyDmgBase（T363，集火招折回统一倍率）用它"""
+    v = t.get('enemyDmgBase')
+    return float(v) if v is not None else float(t.get('enemyDmg', 0))
+
+
+def _skills(t: dict, f: int) -> dict:
+    """这队守层者每招（T363：SINGLE 层的指定招还是多体时按单体估：每回合打我方、一次出手占比都 ÷ 目标数，scope 记 1）"""
+    out = dict(t.get('bySkill') or {})
+    sk = SINGLE.get(f)
+    if sk and str(sk) in out:
+        v = dict(out[str(sk)])
+        n = {2: len(t.get('mhp') or [0, 0, 0, 0]), 3: 1, 4: 2, 5: 3, 6: 4}.get(int(v.get('scope', 0)), 0)
+        if n > 0 and float(v.get('useRatio', 0)) > 0:   # 一次出手打 n 个目标（随机可重复、带连击照算）→ 改打一人约 1/n
+            v.update({'dmg': float(v.get('dmg', 0)) / n, 'useRatio': float(v['useRatio']) / n, 'scope': 1, 'est': True})
+        out[str(sk)] = v
+    return out
+
+
 def normal_teams(r: dict) -> list:
     teams = r.get('teams') or [r]
     return [t for t in teams if t.get('team') != '奶妈队']
@@ -108,7 +152,7 @@ def floor_stats(r: dict, turns: int, share: float, mode: str = 'add') -> dict:
         return raw if raw > 0 else float(t.get('dmg', 0))
     sus, foc = [], []
     for t in ts:
-        ed = float(t.get('enemyDmg', 0))
+        ed = _ed(t)
         k0 = float(t.get('atkScale', 1.0))
         rec = sum(float(t.get(k, 0)) for k in ('heal', 'steal', 'regen', 'shield'))
         php = float(t.get('partyHp', 0))
@@ -117,7 +161,7 @@ def floor_stats(r: dict, turns: int, share: float, mode: str = 'add') -> dict:
             sus.append(k0 * (rec + php / turns + (share * php / nm if mode == 'add' else 0.0)) / ed)
         if mode == 'max' and float(t.get('focus', 0)) > 0:
             foc.append(k0 * share / float(t['focus']))
-    return {'dmg': _med([dmg(t) for t in ts]), 'sus': _med(sus), 'focus': _med(foc), 'atkHit': _med([float(t.get('atkHit', 0)) for t in ts if float(t.get('atkHit', 0)) > 0]),
+    return {'dmg': _med([dmg(t) for t in ts]), 'top': _quant([dmg(t) for t in ts], HP_QUANTILE), 'sus': _med(sus), 'focus': _med(foc), 'atkHit': _med([float(t.get('atkHit', 0)) for t in ts if float(t.get('atkHit', 0)) > 0]),
             'rec': _med([sum(float(t.get(k, 0)) for k in ('heal', 'steal', 'regen', 'shield')) for t in ts]), 'n': len(ts)}
 
 
@@ -130,17 +174,22 @@ def _need(t: dict, turns: int) -> float:
 
 def focus_pick(r: dict, turns: int = 8, share: float = 0.40) -> tuple:
     """单体招（scope 1、3，类型 1、5）按一次出手 useRatio 各队中位从高到低，取第一个「定到 share 后期望出伤 ≤ 预算 FOCUS_CAP」的；
-    都超就取超得最少的、把倍率压到正好 FOCUS_CAP。返回 (技能号, useRatio 中位, 压倍率的系数≤1)；没有单体招 (0, 0, 1)。"""
+    都超就取超得最少的、把倍率压到正好 FOCUS_CAP。返回 (技能号, useRatio 中位, 压倍率的系数≤1)；没有单体招 (0, 0, 1)。
+    期望出伤占比只在放过这招的队里取中位（T363，核 P2-5）；SINGLE 层只认指定那招。"""
     ts = normal_teams(r)
+    f = int(r.get('floor', 0))
     per = {}
     for t in ts:
-        for sk, v in (t.get('bySkill') or {}).items():
+        for sk, v in _skills(t, f).items():
+            if f in SINGLE and int(sk) != SINGLE[f]:
+                continue
             if int(v.get('scope', 0)) in (1, 3) and int(v.get('type', 0)) in (1, 5) and float(v.get('useRatio', 0)) > 0:
                 per.setdefault(int(sk), []).append(float(v['useRatio']))
     best = None
     for sk in sorted(per, key=lambda k: (-_med(per[k]), -len(per[k]))):
         ur = _med(per[sk])
-        fr = _med([float((t.get('bySkill') or {}).get(str(sk), {}).get('dmg', 0)) * share / ur / _need(t, turns) for t in ts if float(t.get('partyHp', 0)) > 0])
+        fr = _med([float(_skills(t, f).get(str(sk), {}).get('dmg', 0)) * share / ur / _need(t, turns) for t in ts
+                   if float(t.get('partyHp', 0)) > 0 and float(_skills(t, f).get(str(sk), {}).get('dmg', 0)) > 0])
         if fr <= FOCUS_CAP:
             return sk, ur, 1.0
         if best is None or fr < best[2]:
@@ -157,13 +206,14 @@ def focus_stats(r: dict, turns: int, share: float) -> dict:
     k0 = _med([float(t.get('atkScale', 1.0)) for t in ts])
     kf = k0 * share / ur * cut if ur > 0 else 0.0
     atk, short = [], 0
+    f = int(r.get('floor', 0))
     for t in ts:
-        ed = float(t.get('enemyDmg', 0))
+        ed = _ed(t)
         php = float(t.get('partyHp', 0))
         if ed <= 0 or php <= 0:
             continue
         d = sum(float(t.get(k, 0)) for k in ('heal', 'steal', 'regen', 'shield')) + php / turns
-        ef = float((t.get('bySkill') or {}).get(str(sk), {}).get('dmg', 0)) if sk else 0.0
+        ef = float(_skills(t, f).get(str(sk), {}).get('dmg', 0)) if sk else 0.0
         rest_need = d - (ef * kf / k0 if kf > 0 else 0.0)
         rest_have = ed - ef
         if rest_have <= 0 or rest_need <= 0:
@@ -174,10 +224,24 @@ def focus_stats(r: dict, turns: int, share: float) -> dict:
     return {'skill': sk, 'useRatio': ur, 'scale': kf, 'atk': _med(atk), 'short': short, 'k0': k0, 'hitRatio': share * cut if sk else 0.0}
 
 
-def build6(rows: list, turns: int = 8, share: float = 0.40, mode: str = 'c') -> dict:
-    by = {int(r['floor']): r for r in rows}
+def merge_rows(rows: list) -> dict:
+    """按层合并（T363，核 P2-4）：同一层多行（多个 --in）的 teams 接在一起，没有 teams 的行本身算一队；其余字段取第一行"""
+    by = {}
+    for r in rows:
+        f = int(r['floor'])
+        ts = list(r.get('teams') or [r])
+        if f in by:
+            by[f]['teams'] = by[f]['teams'] + ts
+        else:
+            by[f] = dict(r, teams=ts)
+    return by
+
+
+def build6(rows: list, turns: int = 8, share: float = 0.40, mode: str = 'c', hp_mode: str = 'top') -> dict:
+    by = merge_rows(rows)
+    rows = list(by.values())
     if mode == 'c':
-        out = build6(rows, turns, 0.0, 'add')
+        out = build6(rows, turns, 0.0, 'add', hp_mode)
         foc = {}
         for f in FLOORS:
             if 5 <= f <= 33 and f in by:
@@ -186,13 +250,20 @@ def build6(rows: list, turns: int = 8, share: float = 0.40, mode: str = 'c') -> 
                     out.setdefault('atk_scale', {})[str(f)] = sig3(fs['atk'])
                 if fs['skill'] > 0 and fs['scale'] > 0:
                     foc[str(f)] = {'skill': fs['skill'], 'scale': sig3(fs['scale'])}
+                    if SINGLE.get(f) == fs['skill']:
+                        foc[str(f)]['single'] = 1
         if foc:
             out['focus'] = foc
         return out
     st = {f: floor_stats(by[f], turns, share, mode) for f in FLOORS if f in by}
     hp, atk, resist = {}, {}, {}
-    for f, v in smooth({f: s['dmg'] for f, s in st.items()}).items():
-        hp[str(f)] = int(sig3(v))
+    if hp_mode == 'smooth':
+        for f, v in smooth({f: s['dmg'] for f, s in st.items()}).items():
+            hp[str(f)] = int(sig3(v))
+    else:   # T363：每层单独取强队（90 分位），强队约（目标回合−2）回合打死
+        for f, s in st.items():
+            if s['top'] > 0:
+                hp[str(f)] = int(sig3(s['top'] * (turns - 2) / turns))
     for f, s in st.items():
         if f <= 4:
             atk[str(f)] = 1
@@ -208,6 +279,22 @@ def build6(rows: list, turns: int = 8, share: float = 0.40, mode: str = 'c') -> 
     if resist:
         out['resist'] = resist
     return out
+
+
+def duel_calib(paths: list, turns: int = 8) -> dict:
+    """T363：按真打重定 hp_base（见头注释）。返回 {层: 每回合血量}"""
+    eff, keys = {}, {}
+    for i, p in enumerate(paths):
+        for r in json.loads(Path(p).read_text(encoding='utf-8')).get('rows', []):
+            f = int(r['floor'])
+            for t in r.get('per', []):
+                if t.get('team') == '奶妈队' or int(t.get('turns', 0)) <= 0:
+                    continue
+                keys.setdefault(f, set()).add((str(t.get('team')), int(t.get('rng', 0)), tuple(t.get('members') or []), json.dumps(t.get('partyHp'))))
+                e = float(t.get('enemyHp', r.get('enemyHp', 0))) / int(t['turns']) if t.get('won') else float(t.get('dmg', 0))
+                if e > 0:
+                    eff.setdefault(f, []).append(e)
+    return {f: int(sig3(_quant(v, HP_QUANTILE) * (turns - 2) / turns)) for f, v in eff.items() if len(keys.get(f, ())) >= CALIB_MIN}   # 按不同的队（阵容×种子）数，多遍真打同一队不重复算
 
 
 def render(tables: dict) -> str:
@@ -250,9 +337,9 @@ def load_rows(paths: list) -> list:
 
 def cmd_build(args) -> int:
     rows = load_rows(args.inputs)
-    tables = build6(rows, args.turns, args.share, args.focus_mode) if args.v6 else build(rows)
+    tables = build6(rows, args.turns, args.share, args.focus_mode, args.hp_mode) if args.v6 else build(rows)
     if args.v6 and rows:
-        by = {int(r['floor']): r for r in rows}
+        by = merge_rows(rows)
         print('层 | 队数 | 每回合伤害中位 | 平滑 | 我方回复/回合 | 不含集火 | 加法 0.35/0.40/0.45/0.50 | 取大 0.40 | 普攻单下中位', file=sys.stderr)
         for f in sorted(by):
             s = floor_stats(by[f], args.turns, 0.0, 'add')
@@ -262,6 +349,11 @@ def cmd_build(args) -> int:
             print('%d | %d | %.0f | %s | %.0f | %.3g | %s | %.3g | %.0f | C 招 %d 单次占比 %.3g 集火倍率/其余倍率 %s 定到单下 %.2f 不够队数 %d' % (
                 f, s['n'], s['dmg'], tables.get('hp_base', {}).get(str(f)), s['rec'], s['sus'], '/'.join('%.3g' % x for x in fo),
                 max(mx['sus'], mx['focus']), s['atkHit'], cs[1]['skill'], cs[1]['useRatio'], ' '.join('%.3g/%.3g' % (c['scale'], c['atk']) for c in cs), cs[1]['hitRatio'], cs[1]['short']), file=sys.stderr)
+    if args.v6 and args.duel_calib and tables:
+        cal = duel_calib(args.duel_calib, args.turns)
+        for f, v in sorted(cal.items()):
+            print('真打校准 %d 层 hp_base %s → %d' % (f, tables.get('hp_base', {}).get(str(f)), v), file=sys.stderr)
+            tables.setdefault('hp_base', {})[str(f)] = v
     if not tables:
         print('没有数（输入里没有可用的层），不写。')
         return 0
@@ -322,6 +414,44 @@ def selftest() -> int:
     assert t6['resist'] == {'20': 600}, t6   # 普攻单下中位 2000×0.3
     assert int(t6['hp_base']['6']) >= int(t6['hp_base']['5']) and int(t6['hp_base']['20']) >= int(t6['hp_base']['6']), t6   # 平滑后不降
     assert build6(rows6, 8, 0.10, 'max')['atk_scale']['5'] == 1.5
+    assert build6(rows6, 8, 0.40, 'add', 'smooth')['hp_base']['5'] > 0
+    # T363 hp top：每层各队 dmgRaw 90 分位 ×(8−2)/8；两队 5000、15000 → 14000×0.75＝10500
+    assert build6(rows6, 8, 0.40)['hp_base']['5'] == 10500, build6(rows6, 8, 0.40)['hp_base']
+    # T363 P2-4：同一层分在两个 --in 里，teams 合并而不是后者盖前者
+    a = [{'floor': 9, 'teams': [dict(rows6[0]['teams'][0], dmgRaw=1000.0)]}]
+    b = [{'floor': 9, 'teams': [dict(rows6[0]['teams'][0], dmgRaw=9000.0)]}]
+    m = merge_rows(a + b)
+    assert len(m[9]['teams']) == 2 and build6(a + b, 8, 0.40)['hp_base']['9'] == int(sig3((1000 + 0.9 * 8000) * 0.75)), m
+    # T363 P2-5：没放集火招的队不按 0 计。三队里只一队放了，期望出伤占预算 0.8（定到 0.4/0.1 后 20→80，预算 100）→ 压到 0.5
+    t0 = {'team': '原队', 'atkScale': 1.0, 'enemyDmg': 100.0, 'partyHp': 800.0, 'heal': 0.0}
+    tz = [dict(t0, bySkill={'7': {'scope': 1, 'type': 1, 'useRatio': 0.1, 'dmg': 20.0}, '8': {'scope': 2, 'type': 1, 'useRatio': 0.5, 'dmg': 80.0}}),
+          dict(t0, team='随机1', bySkill={'8': {'scope': 2, 'type': 1, 'useRatio': 0.5, 'dmg': 100.0}}),
+          dict(t0, team='随机2', bySkill={'8': {'scope': 2, 'type': 1, 'useRatio': 0.5, 'dmg': 100.0}})]
+    sk, ur, cut = focus_pick({'floor': 10, 'teams': tz})
+    assert sk == 7 and abs(cut - 0.5 / 0.8) < 1e-9, (sk, ur, cut)
+    # T363 SINGLE：12 层只认 661；老量数里还是 3 随机（scope 5，一次合计 0.3、一下 0.1）→ 按单体估，表里带 single
+    t12 = dict(t0, bySkill={'661': {'scope': 5, 'type': 1, 'useRatio': 0.3, 'ratio': 0.02, 'dmg': 30.0}, '9': {'scope': 1, 'type': 1, 'useRatio': 0.5, 'dmg': 70.0}})
+    tb = build6([{'floor': 12, 'teams': [t12]}], 8, 0.40)
+    assert tb['focus']['12'] == {'skill': 661, 'scale': 4.0, 'single': 1}, tb   # 单体估 dmg 10、占比 0.1 → 40 ≤ 预算 100 的一半
+    # 量数里已是单体（scope 1）照实测；enemyDmgBase 优先
+    t12b = dict(t0, enemyDmg=500.0, enemyDmgBase=100.0, bySkill={'661': {'scope': 1, 'type': 1, 'useRatio': 0.1, 'ratio': 0.1, 'dmg': 10.0}, '9': {'scope': 1, 'type': 1, 'useRatio': 0.5, 'dmg': 90.0}})
+    tb2 = build6([{'floor': 12, 'teams': [t12b]}], 8, 0.40)
+    assert tb2['focus']['12']['skill'] == 661 and tb2['atk_scale']['12'] == sig3(60 / 90), tb2   # 其余预算 100−40＝60 摊给其余 90
+    # T363 真打校准：输的队取每回合掉血，赢的队取 血量÷回合；奶妈队不算
+    import os
+    fd, tmp = tempfile.mkstemp(suffix='.json')
+    os.close(fd)
+    Path(tmp).write_text(json.dumps({'rows': [{'floor': 19, 'enemyHp': 800.0, 'per': [
+        {'team': '原队', 'won': False, 'turns': 9, 'dmg': 50.0}, {'team': '随机1', 'won': True, 'turns': 4, 'dmg': 999.0},
+        {'team': '奶妈队', 'won': True, 'turns': 1, 'dmg': 1e9}]}]}), encoding='utf-8')
+    assert duel_calib([tmp] * 4) == {}   # 同 2 队打 4 遍，不到 CALIB_MIN 队
+    import copy
+    d = json.loads(Path(tmp).read_text(encoding='utf-8'))
+    base = d['rows'][0]['per'][:2]
+    d['rows'][0]['per'] = [dict(copy.deepcopy(x), rng=k) for k in range(4) for x in base]
+    Path(tmp).write_text(json.dumps(d), encoding='utf-8')
+    assert duel_calib([tmp]) == {19: 150}, duel_calib([tmp])   # 8 队：4 队 50、4 队 800÷4＝200 → 90 分位 200 × 0.75
+    os.unlink(tmp)
     print('selftest 通过')
     return 0
 
@@ -336,6 +466,8 @@ def main(argv=None) -> int:
     b.add_argument('--turns', type=int, default=8, help='目标回合（艰险 8）')
     b.add_argument('--share', type=float, default=0.40, help='集火：单下打中一人占其最大生命的比例')
     b.add_argument('--focus-mode', choices=['c', 'add', 'max'], default='c')
+    b.add_argument('--duel-calib', action='append', default=[], help='T363：按真打 json 重定 hp_base（可多个）')
+    b.add_argument('--hp-mode', choices=['top', 'smooth'], default='top', help='T363 top＝每层强队 90 分位×(回合−2)÷回合；smooth＝第 6 轮平滑')
     sub.add_parser('selftest')
     args = ap.parse_args(argv)
     return cmd_build(args) if args.cmd == 'build' else selftest()

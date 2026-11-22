@@ -26,6 +26,7 @@ var output_scale := 1.0
 ## T239 第 6 轮（D248 C）：守层者的集火招（技能号）和它单独的出伤倍率；0＝没有，那招也照 output_scale（XGuardianRework.focus）
 var focus_skill := 0
 var focus_scale := 1.0
+var focus_single := false   # T363：集火招在这名守层者手里只打一人（XGuardianRework.single_action）
 ## 量数用：这个敌人打出的 HP 伤害累计（XDamage.finish 记，扣血前的值）
 var dealt := 0.0
 
@@ -439,6 +440,7 @@ func refresh_passive() -> void:
 	var fz := XGuardianRework.focus(self)  # T239（D248 C）：集火招单独倍率
 	focus_skill = int(fz.get("skill", 0))
 	focus_scale = float(fz.get("scale", output_scale))
+	focus_single = bool(fz.get("single", false))
 	_passive_cache = c
 	_passive_sig = _passive_signature()
 

@@ -99,6 +99,12 @@ func _ready() -> void:
 			lineups = int(a.substr(10))
 		elif a.begins_with("--rng-seeds="):
 			rng_seeds = Array(a.substr(12).split(",")).map(func(x): return int(x))
+		elif a.begins_with("--seg-alien="):
+			var v := a.substr(12)   # T363：off＝按段异化不出（XTianqiSegAlien.ENABLED=false）；种类名（berserk 等）＝抽中的换成这一种
+			if v == "off":
+				XTianqiSegAlien.ENABLED = false
+			else:
+				XTianqiSegAlien.FORCE_KIND = v
 		elif a == "--add-healer":
 			add_healer = true
 		elif a == "--no-raw":
@@ -356,7 +362,7 @@ func _fight(s: XState, troop: int) -> Dictionary:
 		if logic.is_over():
 			break
 	var alive := logic.actors.filter(func(a): return a.hp > 0).size()
-	return {"trace": trace, "atkScale": _out_scale(logic), "dmg": total / maxf(1.0, float(done)), "turns": done, "alive": alive, "won": logic.is_won(), "lost": logic.is_lost(),
+	return {"trace": trace, "atkScale": _out_scale(logic), "alien": _alien_desc(logic), "dmg": total / maxf(1.0, float(done)), "turns": done, "alive": alive, "won": logic.is_won(), "lost": logic.is_lost(),
 		"aborted": logic.aborted, "enemyHp": hp0, "enemyAtk": logic.enemies.map(func(e): return int(e.param(2))), "enemyDef": logic.enemies.map(func(e): return [int(e.param(3)), int(e.param(5))]),
 		"partyAtk": logic.actors.map(func(a): return [int(a.param(2)), int(a.param(4))]),
 		"party": logic.actors.map(func(a): return int(a.actor_id)), "members": s.battle_members().map(func(a): return int(a.actor_id)), "partyHp": logic.actors.map(func(a): return int(a.mhp))}
@@ -516,6 +522,7 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 	var heal_try := 0.0
 	var focus := []
 	var atk_hits := []
+	var focus_excess := 0.0   # T363：集火招按表里倍率比统一倍率多打的（enemyDmgBase＝enemyDmg 扣掉它）
 	var by_skill := {}   # T239 第 6 轮（D248 C）：守层者成员每招 {dmg 打我方掉血合计, uses 次数, ratios 每下占目标最大生命比例, scope}，挑集火招、摊预算用
 	for r in turns:
 		for e in logic.enemies:
@@ -598,12 +605,22 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 				theirs += maxf(0.0, pb - _party_hp(logic))
 				if cmd[0] is Dictionary and _is_guardian(u):
 					var sk := str(int(cmd[0].get("id", 0)))
-					var rec: Dictionary = by_skill.get(sk, {"dmg": 0.0, "uses": 0, "ratios": [], "scope": int(cmd[0].get("scope", 0)), "type": int(cmd[0].get("damage", {}).get("type", 0))})
-					rec.dmg = float(rec.dmg) + maxf(0.0, pb - _party_hp(logic))
-					rec.uses = int(rec.uses) + 1
+					var rec: Dictionary = by_skill.get(sk, {"dmg": 0.0, "dmgAct": 0.0, "uses": 0, "ratios": [], "scope": int(cmd[0].get("scope", 0)), "type": int(cmd[0].get("damage", {}).get("type", 0)), "scale": 1.0})
+					# T363（T239 核 P2-5）：只记 XDamage.finish 那条路打我方 HP 的（命中记录 hp＞0），不再把这一步里别的扣血（反伤、状态即时伤害、事件）算进这招，
+					# 再按实际掉血封顶（过量伤害不算）。集火招在表里另有倍率时（量数不给 --atk-table、照游戏表打），按 skill_scale÷output_scale 折回统一倍率口径，
+					# 三表工具拿它和别的招同一口径算；实际打的记 dmgAct
+					var fin := 0.0
+					var ks := float(u.skill_scale(cmd[0])) / maxf(1e-12, float(u.output_scale)) if u is XEnemy and float(u.output_scale) > 0.0 else 1.0
 					for l in (logs if logs is Array else []):
 						if l is Dictionary and str(l.get("type", "")) == "hit" and l.get("target") is XActor and float(l.get("hp", 0.0)) > 0.0 and not bool(l.get("missed", false)) and not bool(l.get("evaded", false)):
-							rec.ratios.append(float(l.hp) / maxf(1.0, float(l.target.mhp)))
+							fin += float(l.hp)
+							rec.ratios.append(float(l.hp) / maxf(1.0, float(l.target.mhp)) / ks)
+					fin = minf(fin, maxf(0.0, pb - _party_hp(logic)))
+					rec.dmg = float(rec.dmg) + fin / ks
+					rec.dmgAct = float(rec.dmgAct) + fin
+					rec.scale = ks
+					focus_excess += fin - fin / ks
+					rec.uses = int(rec.uses) + 1
 					by_skill[sk] = rec
 			if debug:
 				print("DBG2 t%d %s skill=%s partyLoss=%.0f enemyLoss=%.0f" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-", pb - _party_hp(logic), eb - _enemy_hp(logic)])
@@ -643,11 +660,21 @@ func _fight_both(s: XState, troop: int) -> Dictionary:
 		"bySkill": _skill_summary(by_skill, n),
 		"atkHit": _median(atk_hits) if not atk_hits.is_empty() else 0.0, "atkHits": atk_hits.size(),
 		"mhp": logic.actors.map(func(a): return int(a.mhp)), "team": str(s.get_meta("t239_team", "")), "rng": int(s.get_meta("t239_rng", 0)),
+		"enemyDmgBase": (theirs - focus_excess) / n, "alien": _alien_desc(logic),
 		"atkScale": _out_scale(logic)}   # T229：守层者这场实际用的出伤倍率（没给 --atk-table 时是游戏里的表）
 	if raw_mode:
 		out["dmgRaw"] = raw_ours / n   # --no-raw 不写，三表脚本退回 dmg（T239 核 P2-2）
 		out["revivedSilent"] = silent   # 应为空：复活后下一回合没出手的守层者
 		out["reviveTurns"] = revive_turns + (1 if not revived.is_empty() else 0)
+	return out
+
+
+## T363：这一场按段异化／本线预设异化出了什么（战争线：["敌人号:级:种类"]），看 34 层终焉战狂有没有上
+static func _alien_desc(logic) -> Array:
+	var out := []
+	for e in XTianqiWarAlien.fight(logic).get("units", {}):
+		var u: Dictionary = XTianqiWarAlien.fight(logic).units[e]
+		out.append("%d:%s:%s" % [int(e.enemy_id), str(u.get("tier", "")), str(u.get("kind", ""))])
 	return out
 
 
@@ -661,7 +688,7 @@ static func _skill_summary(by_skill: Dictionary, n: float) -> Dictionary:
 	for k in by_skill:
 		var r: Dictionary = by_skill[k]
 		var rs: Array = r.ratios
-		out[k] = {"dmg": float(r.dmg) / n, "uses": float(r.uses) / n, "ratio": _median(rs) if not rs.is_empty() else 0.0, "ratioMax": rs.max() if not rs.is_empty() else 0.0,
+		out[k] = {"dmg": float(r.dmg) / n, "dmgAct": float(r.get("dmgAct", r.dmg)) / n, "scale": float(r.get("scale", 1.0)), "uses": float(r.uses) / n, "ratio": _median(rs) if not rs.is_empty() else 0.0, "ratioMax": rs.max() if not rs.is_empty() else 0.0,
 			"hits": rs.size(), "scope": int(r.scope), "type": int(r.type),
 			"useRatio": rs.reduce(func(t, x): return t + float(x), 0.0) / maxf(1.0, float(r.uses))}   # 一次出手合计打掉目标最大生命的比例（单体招＝打一人）
 	return out
