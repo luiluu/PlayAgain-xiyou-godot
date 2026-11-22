@@ -23,6 +23,9 @@ static var filter := {}
 static var selected_key := ""
 ## T361（F-06）回退开关：新皮肤下检索页走模板页版式（页名＋搜索条＋「筛选」面板＋按键提示）；false＝回到 XWebPanel 换皮版
 static var SKIN_PAGE_V2 := true
+## T368 卡 G（T254 R9，O-632）回退开关：新皮肤下检索页改成「筛选小块」模板页（XSkinGearSearch：左筛选小块、中通用列表、右详情牌，搜词条点了才弹键盘）；
+## false＝回到上面 T361 的版式（SKIN_PAGE_V2 照旧管它和网页换皮版）
+static var SKIN_PAGE_R9 := true
 ## 新皮肤版式：筛选面板开着没有（重建页面时保留）
 static var filters_open := false
 
@@ -40,6 +43,8 @@ var _filter_panel: Panel
 var _filter_btn: Button
 var _hints: XSkinKeyHints
 var _sort_note: Label
+## R9 新页（XSkinGearSearch）
+var page: XSkinGearSearch
 
 
 static func reset_session() -> void:
@@ -245,19 +250,32 @@ static func open(parent: Control, src: Array) -> XGearSearch:
 func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	skin_center()
+	if not skin_r9():   # R9 新页自己按横屏锚点铺满（XSkinLayout），不整块挪
+		skin_center()
 	_render_gear()
 
 
 func _draw() -> void:
-	draw_frame()
+	if not skin_r9():
+		draw_frame()
 
 
 static func skin_v2() -> bool:
-	return SKIN_PAGE_V2 and XUiSkin.on()
+	return SKIN_PAGE_V2 and XUiSkin.on() and not SKIN_PAGE_R9
+
+
+static func skin_r9() -> bool:
+	return SKIN_PAGE_R9 and XUiSkin.on()
 
 
 func _render_gear() -> void:
+	if skin_r9():
+		if page == null or not is_instance_valid(page):
+			page = XSkinGearSearch.new()
+			page.host = self
+			add_child(page)
+		_render_results()
+		return
 	for c in get_children():
 		c.queue_free()
 	if skin_v2():
@@ -517,7 +535,28 @@ func _refresh_skin_bar() -> void:
 
 
 ## 新皮肤：筛选面板开着时取消先关面板
+## R9：取消先收输入框、挑选框、牌，再关页；方向键、确定、X 交给新页（输入框开着时只认取消）
+## R1 返修（小A核 P1-1）：X 也绑在 ui_cancel 上（XKeyMap.EXTRA），没在输入时 X 先于取消判成「搜词条」；
+## P1-2：输入时取消只走 XKeyMap.popup_cancel（输入框聚焦时放行能打字的 x／k／小键盘 0）；
+## P2-1：输入时点到输入框外面先收起输入框（点击照常落到被点的小块／列表上）。
 func _input(event: InputEvent) -> void:
+	if skin_r9() and page != null and is_instance_valid(page):
+		if page.typing() and page.tap_outside_edit(event):
+			page.close_search()
+		var key := event as InputEventKey
+		if not page.typing() and key != null and key.pressed and not key.echo \
+				and (key.physical_keycode if key.physical_keycode != 0 else key.keycode) == KEY_X:
+			XKeyMap.handled(self)
+			page.open_search()
+			return
+		if XKeyMap.popup_cancel(event, self):
+			XKeyMap.handled(self)
+			if not page.cancel_step():
+				close()
+			return
+		if page.handle_key(event):
+			XKeyMap.handled(self)
+		return
 	if skin_v2() and filters_open and _filter_panel != null and _filter_panel.visible and XKeyMap.popup_cancel(event, self):
 		XKeyMap.handled(self)
 		_toggle_filters()
@@ -622,6 +661,12 @@ func _on_term(v: String) -> void:
 
 func _render_results() -> void:
 	_results = results(source, filter)
+	if skin_r9():
+		if not _results.any(func(r): return r.key == selected_key):
+			selected_key = _results[0].key if not _results.is_empty() else ""
+		if page != null and is_instance_valid(page) and page.is_inside_tree():
+			page.refresh_results()
+		return
 	_count.text = ("符合 %d / %d 件" if skin_v2() else "找到 %d / %d 件装备") % [_results.size(), source.size()]
 	if skin_v2():
 		_refresh_skin_bar()
