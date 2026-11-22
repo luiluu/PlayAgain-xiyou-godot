@@ -1,0 +1,29 @@
+{
+ "sha": "61c5dcdefd8d53cc1e008b98bedfe88f0f59dcbc",
+ "branch": "ci/luiluu/t365",
+ "mode": "affected",
+ "base": "20788c22886025e83a9712f2b88049e3ca06b096",
+ "passed": true,
+ "scenes": 8,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 409.6,
+ "testSeconds": 813,
+ "generatedRef": "refs/ci/generated/luiluu/t365",
+ "generatedCommit": "e277f9a366be42256454a18b99257026cc291d5f",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/44964480579",
+ "sceneNames": [
+  "xiyou_casino_batch.tscn",
+  "xiyou_change_clothes.tscn",
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_ui_input.tscn",
+  "xiyou_ui_skin_card_q.tscn"
+ ],
+ "time": "2026-11-22T00:09:37+00:00"
+}
