@@ -24,9 +24,11 @@
 
 - `发行空壳.py check`：81 个脚本，775 个函数都有；`测试发行空壳.py` 27/27；`发行内容审计.py --tree`（make_tree 克隆）0。
 
+- 替换后能编译（补验）：make_tree 克隆里对 alien_workshop、boss_status、options_scene、skin_six_dim_radar 四个脚本无头 Godot（--audio-driver Dummy）load()＋reload()，4/4 OK、无 SCRIPT ERROR；`发行空壳.py smoke` 跑 xiyou_battle＋xiyou_battle_ui 通过。云端选测 0 场景，免。
+
 ## 没做／偏离
 
-- 「战商」在 skin_six_dim_radar.gd 的 `DIM_NAMES` 常量里，克隆里变空串；只在天启篇六维引用，发行不会走到。我没起 Godot 加载验证该脚本（该文件改动仅字面量内容）。
+- 「战商」在 skin_six_dim_radar.gd 的 `DIM_NAMES` 常量里，克隆里变空串；只在天启篇六维引用，发行不会走到。已补加载验证，见下。
 
 ## 优化登记草稿
 
