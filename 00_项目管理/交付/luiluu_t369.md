@@ -51,6 +51,14 @@
 - 橙色小字沿用原句：「上次的更新 %s 没能用上（%s），已退回。」「当前版本已被撤回，重启后回到%s。」。
 - 退回：「退回安装包自带版本」「再点一次确认退回」沿用。
 
+## 截图（真尺寸 PNG）
+
+`00_项目管理/归档/交付截图/T369_更新页/`：`new_*`＝新样式、`old_*`＝旧样式对照。
+- 九种状态（16:9，1280×720）：`new_1_checking`、`new_2_latest`、`new_3_patch`、`new_4_downloading`、`new_5_ready`、`new_6_failed`、`new_7_bad`、`new_8_full`、`new_9_rolled`；另 `new_notice`（橙色小字）、`new_patch_with_rollback`、`new_rollback_armed`。
+- 强制更新（16:9）：`new_forced_patch`、`new_forced_failed`、`new_forced_full`。
+- 20:9（1600×720）：`new_patch_20x9`、`new_forced_patch_20x9`。字体 130%：`new_patch_font130`。
+- 其余九种状态的 20:9 没拍（弹窗居中不变宽，同 16:9 版式）。
+
 ## 交接板
 
 - 下一步：无
