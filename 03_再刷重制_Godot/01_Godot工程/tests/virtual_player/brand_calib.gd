@@ -9,6 +9,9 @@ extends "res://tests/virtual_player/baseline_dps.gd"
 ##     [--strip-guardian=1,3,4,7|none]（T348 起游戏默认就清守层者（含变身 538／929／930）这四项正值＝XGuardianRework.STRIP；
 ##      这里改 STRIP_XPARAM 拆开量，如 =3 只清暴闪、=7 只清回血；none＝关开关、照原数据。缺省照游戏默认）
 ##     [--pozhen-type]（T317：XTianqiElements.POZHEN_BY_TYPE 打开＝破阵认伤害类型）
+##     [--brand-set=sear.per_hit.终焉=12;sear.cap.base=70]（T390：进程内改 brand.json 的整数项量候选值，不写文件；键用点分路径、分号隔开）
+##     [--snapshots=<存档目录> --lineups=4 --rng-seeds=1,2]（T390：改用虚拟玩家每层存档链，同 T363 真打口径，不用配队器丙档队；
+##      上场 4 人按职责改写烙印，出手走虚拟玩家层 VPLogic。--carved-brand=line 取首通 1～f−1 层之和，node＝旧口径「≤f 最近节点」）
 ##
 ## 口径：
 ## - 输出职责（team_rank 的 role＝输出）：--carve=all 刻印、烙印 --carved-brand（line＝按层线 layer_line 取这一层的值，缺省 line）；
@@ -30,6 +33,7 @@ var gear_cache := ""
 var _knobs_printed := false
 var gear_floors: Array = [10, 20, 25, 30, 31, 32, 33]   # 装备按这一组层掷（缺省和第一轮 s45_raw 同一组，换层数不改装备）；--gear-floors= 换一组（要换缓存文件）
 var strip_ids := []
+var brand_set := {}   # T390 --brand-set：{"sear.per_hit.终焉": 12, ...}
 
 
 func _ready() -> void:
@@ -56,6 +60,9 @@ func _ready() -> void:
 			gear_floors = Array(a.substr(14).split(",")).map(func(x): return int(x))
 		elif a.begins_with("--gear-cache="):
 			gear_cache = a.substr(13)
+		elif a.begins_with("--brand-set="):
+			for kv in a.substr(12).split(";", false):
+				brand_set[kv.get_slice("=", 0)] = int(kv.get_slice("=", 1))
 		elif a == "--pozhen-type":
 			XTianqiElements.POZHEN_BY_TYPE = true
 	super._ready()
@@ -72,6 +79,15 @@ func _apply_knobs() -> void:
 		XGuardianRework.STRIP = strip_ids != [-1]  # T348：改游戏里的开关（数据层钩子，建档重载数据表也照认；含变身二阶段）
 		if XGuardianRework.STRIP:
 			XGuardianRework.STRIP_XPARAM = strip_ids.duplicate()
+	for path in brand_set:   # T390：每次都改（建档可能清缓存重读 brand.json）
+		var keys: PackedStringArray = str(path).split(".")
+		var node = XTianqiBrand.data()
+		for i in keys.size() - 1:
+			node = node.get(keys[i], {})
+		if node is Dictionary and node.has(keys[keys.size() - 1]):
+			node[keys[keys.size() - 1]] = brand_set[path]
+		else:
+			push_error("brand_calib --brand-set 找不到 " + str(path))
 	var seen := {}
 	for f in floors:
 		for m in XDB.rec("Troops", int(GUARDIAN[f])).get("members", []):
@@ -80,7 +96,7 @@ func _apply_knobs() -> void:
 				seen[id] = true
 	if not _knobs_printed:
 		_knobs_printed = true
-		print("BRAND_KNOBS xcap=%s strip=%s strip_on=%s enemies=%s pozhen_type=%s" % [str(xcap), str(XGuardianRework.STRIP_XPARAM), str(XGuardianRework.STRIP), str(seen.keys()), str(XTianqiElements.POZHEN_BY_TYPE)])
+		print("BRAND_KNOBS xcap=%s strip=%s strip_on=%s enemies=%s pozhen_type=%s brand_set=%s" % [str(xcap), str(XGuardianRework.STRIP_XPARAM), str(XGuardianRework.STRIP), str(seen.keys()), str(XTianqiElements.POZHEN_BY_TYPE), JSON.stringify(brand_set)])
 
 
 ## T390（T121 核 P2-2）：职责口径同配队器（均衡按 BALANCED_AS_OUTPUT 并入输出），不再自己读 line_data
@@ -378,7 +394,7 @@ func _run() -> void:
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
-		fh.store_string(JSON.stringify({"snapshots": snapshots, "lineups": lineups, "rng_seeds": rng_seeds, "xcap": xcap, "strip": XGuardianRework.STRIP_XPARAM if XGuardianRework.STRIP else [], "pozhen_type": XTianqiElements.POZHEN_BY_TYPE, "difficulty": difficulty, "carve": carve_mode, "carved_brand": carved_brand, "other_brand": other_brand,
+		fh.store_string(JSON.stringify({"brand_set": brand_set, "snapshots": snapshots, "lineups": lineups, "rng_seeds": rng_seeds, "xcap": xcap, "strip": XGuardianRework.STRIP_XPARAM if XGuardianRework.STRIP else [], "pozhen_type": XTianqiElements.POZHEN_BY_TYPE, "difficulty": difficulty, "carve": carve_mode, "carved_brand": carved_brand, "other_brand": other_brand,
 			"ripe": ripe_mode, "reps": reps, "teams": list, "turns": turns, "seed": seed, "rows": rows}, "\t"))
 	print("BRAND_DONE")
 	get_tree().quit(0)
