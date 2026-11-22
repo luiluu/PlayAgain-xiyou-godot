@@ -31,7 +31,7 @@
 
 ## 验证
 
-- R1 返修后：新专项无头 106/106、带窗口 176/176（35 张截图）；xiyou_ui_sel_scale 90/90、xiyou_list_pager 151/151、xiyou_actor_book 28/28、xiyou_enemy_book 96/96、xiyou_inlay_book 19/19；云端选测见回执。
+- R1 返修后：新专项无头 106/106、带窗口 176/176（35 张截图）；xiyou_ui_sel_scale 90/90、xiyou_list_pager 151/151、xiyou_actor_book 28/28、xiyou_enemy_book 96/96、xiyou_inlay_book 19/19；云端选测 8816f4a67（基准 0e32213cd）7 个场景全过（run 44966719876，gh run watch 前台等完）。
 
 - 新专项 `xiyou_ui_skin_card_p`：无头 94/94；带窗口 160/160（截图 33 张）。
 - 旧专项（皮肤关时一条不变）：本机单跑 xiyou_actor_book 28/28、xiyou_enemy_book 96/96、xiyou_inlay_book 19/19、xiyou_actor_book_review 6/6、xiyou_actor_book_compare 1/1（工具场景跳过）、xiyou_tianqi_six_dim_book_boss 66/66、xiyou_tianqi_gem_power 59/59、xiyou_list_pager 首跑 148/151（旧窗翻页段被新页换掉，见上）、改后 151/151。
