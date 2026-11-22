@@ -326,6 +326,11 @@ func _draw_page_body() -> void:
 					f2 = int(XSkinList.fit_text(body, s, w, fs, XUiSkin.FS_MIN)[1])
 				var tw := body.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, f2).x
 				if align != HORIZONTAL_ALIGNMENT_LEFT and tw > w:
+					# T373：居中／右对齐放不下先缩字（容许比列宽多 15%，到 FS_MIN），再不行才往两边让；否则「其他加成」的「伤害 ×0.13」会压到左边的名字上
+					while f2 > XUiSkin.FS_MIN and tw > w * 1.15:
+						f2 -= 1
+						tw = body.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, f2).x
+				if align != HORIZONTAL_ALIGNMENT_LEFT and tw > w:
 					# 放不下时右对齐／居中的往左让（不压到别的列，宁可超出列宽也不截字）
 					x -= (tw - w) if align == HORIZONTAL_ALIGNMENT_RIGHT else (tw - w) / 2.0
 					w = tw

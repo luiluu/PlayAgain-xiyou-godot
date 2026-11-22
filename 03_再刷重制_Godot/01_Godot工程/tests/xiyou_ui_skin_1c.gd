@@ -381,6 +381,11 @@ func _status_page() -> void:
 	XFontScale.set_value("global", 130)
 	sk.sync()
 	await shots("ui_skin_1c_status_p0_f130")
+	# T373：130% 字号下第 2 页「加成与抗性」右列也要拍
+	page._unhandled_input(_key("ui_right"))
+	sk.sync()
+	await shots("ui_skin_1c_status_p1_f130")
+	page.set_page(0)
 	XFontScale.set_value("global", 100)
 	sk.sync()
 	page._unhandled_input(_key("ui_right"))
