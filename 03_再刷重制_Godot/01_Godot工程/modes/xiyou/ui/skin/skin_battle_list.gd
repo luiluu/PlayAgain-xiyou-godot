@@ -313,6 +313,8 @@ func _draw_row(i: int, body: Font, num: Font) -> void:
 	# 用不了的原因（橙、小字）
 	var reason := str(e.get("reason", "")) if not en else ""
 	if reason != "":
+		if XUiSkin.detail_on():
+			reason = "不可用"   # T360 F-16：行尾只标「不可用」，真实原因写在说明栏底行（foot_text）；关着照旧写原因
 		var rw := body.get_string_size(reason, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
 		XUiSkin.ds(self, body, Vector2(x - rw, cy + 5), reason, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, Color(XUiSkin.DOWN, 0.9))
 		x -= rw + 10

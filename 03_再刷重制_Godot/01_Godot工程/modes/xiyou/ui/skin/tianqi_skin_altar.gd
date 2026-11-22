@@ -624,13 +624,18 @@ func _draw_rules() -> void:
 	if not rules_open:
 		return
 	var v := view()
-	rules.draw_rect(Rect2(Vector2.ZERO, v), Color(0, 0, 0, 0.6))
+	var dn := XUiSkin.detail_on()
+	rules.draw_rect(Rect2(Vector2.ZERO, v), Color(0, 0, 0, 0.74 if dn else 0.6))   # T360 F-12：遮罩≥72%（关着照旧 60%）
 	var w := 640.0
 	var h := 420.0
 	var box := Rect2(roundf((v.x - w) / 2.0), roundf((v.y - h) / 2.0) - 8, w, h)
 	var ci := rules.get_canvas_item()
 	XUiSkin.shadow_style().draw(ci, box)
-	XUiSkin.panel_style().draw(ci, box)
+	if dn:
+		RenderingServer.canvas_item_add_nine_patch(ci, box, Rect2(0, 0, 96, 96), XSkinConfirm.s3_panel_tex().get_rid(), Vector2(24, 24), Vector2(24, 24),
+			RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color.WHITE)   # T360 F-12：弹窗底 S3 94% 不透明
+	else:
+		XUiSkin.panel_style().draw(ci, box)
 	var head := XUiSkin.font("title")
 	var body := XUiSkin.font("body")
 	var pad := float(XUiSkin.PAD_LG)

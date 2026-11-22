@@ -200,7 +200,11 @@ func _draw() -> void:
 			x += 60
 		var fit := XSkinList.fit_text(head, str(d.title), size.x - pad - x, XUiSkin.FS_CARD, 20)
 		XUiSkin.ds(self, head, Vector2(x, pad + 26), fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1], d.title_color)
-		XUiSkin.ds(self, font, Vector2(x, pad + 50), str(d.subtitle), HORIZONTAL_ALIGNMENT_LEFT, size.x - pad - x, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+		if XUiSkin.detail_on():   # T360 核报告 P3-1：副标题超长加省略号（同 XSkinCard 牌头）
+			var sfit := XSkinList.fit_text(font, str(d.subtitle), size.x - pad - x, XUiSkin.FS_AUX, XUiSkin.FS_AUX)
+			XUiSkin.ds(self, font, Vector2(x, pad + 50), str(sfit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+		else:
+			XUiSkin.ds(self, font, Vector2(x, pad + 50), str(d.subtitle), HORIZONTAL_ALIGNMENT_LEFT, size.x - pad - x, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 	tab_scale.sel(tab)
 	for i in TABS.size():
 		var r := tab_rect(i)

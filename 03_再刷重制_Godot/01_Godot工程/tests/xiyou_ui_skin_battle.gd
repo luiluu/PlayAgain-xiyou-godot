@@ -14,6 +14,8 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
+		if arg == "--detail-off":   # T360 截图对照：DETAIL_V1 关
+			XUiSkin.DETAIL_V1 = false
 		if arg == "--wide":
 			wide = true
 		if arg == "--tablet":
@@ -289,6 +291,8 @@ func _reasons(b: XBattleScene, a: XActor, cold: Dictionary) -> void:
 	one.z_index = 0
 	await _shot("t371_gauge_over_list_old")
 	one.z_index = XSkinBattleSkillList.GAUGE_Z
+	one.position = Vector2(300, 260)   # T360 F-16 截图：不能用的行＋说明栏写原因
+	await _shot("t360_reason_foot")
 	_check("reason_foot_only_reason", one.foot_text() == "TP 不够", one.foot_text())
 	one.queue_free()
 	await _frames(1)
