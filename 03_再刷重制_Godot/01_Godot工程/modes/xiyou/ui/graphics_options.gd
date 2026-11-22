@@ -151,7 +151,7 @@ func skin_rows() -> Array:
 	var out := []
 	for i in _rows.size():
 		out.append({"text": _rows[i][1], "right": status_text(i),
-			"right_color": XUiSkin.TEXT_2 if _is_default(i) else XUiSkin.GOLD_LIGHT})
+			"right_color": XSkinSubPage.value_color(status_text(i), XUiSkin.TEXT_2 if _is_default(i) else XUiSkin.GOLD_LIGHT)})   # T359 F-14
 	return out
 
 

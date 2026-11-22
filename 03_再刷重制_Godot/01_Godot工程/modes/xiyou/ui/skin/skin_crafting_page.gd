@@ -130,6 +130,7 @@ func sync() -> void:
 			set_focus("stepper" if stepper.visible else "card")
 			list.active = true   # 列表那一行照旧亮着：焦点只是落到右牌底
 	stepper.focused = sc.mode == "confirm" and stepper.visible
+	list.quiet = sc.mode == "confirm"   # T359 D256：数量态列表选中行降静默
 	if sc.mode != "confirm":
 		stepper.close_editor()
 	set_hint_list(_hints())
