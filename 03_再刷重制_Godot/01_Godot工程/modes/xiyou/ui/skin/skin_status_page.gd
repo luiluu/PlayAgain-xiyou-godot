@@ -273,7 +273,24 @@ static func body_ops(a: XActor, p: int) -> Array:
 					out.append(op)
 			"face":
 				pass
+	if p == 0 and XSkinList.T366_V1:   # T372：没穿装备的栏位画淡色空槽（栏位名用最暗字色）；T366_V1 关＝照旧不画
+		out.append_array(empty_slot_ops(a))
 	return out
+
+
+## T372：状态页签（第 0 页）右栏装备列里没穿的栏位，各补一条「栏位名」文字（TEXT_3），行位置同已穿的那行
+static func empty_slot_ops(a: XActor) -> Array:
+	var ops := []
+	var y0 := XStatusPage.LH * XStatusPage.HEADER_LINES
+	var view := XTianqiGear.view(a)
+	var slots := a.equip_slots()
+	for row in range(view.size()):
+		var slot: int = view[row]
+		var e = a.equips[slot] if slot < a.equips.size() else null
+		if e is Dictionary and not e.is_empty():
+			continue
+		ops.append(XStatusPage._t(XTianqiGear.type_name(int(slots[slot])), XStatusPage.EQUIP_X + 36, y0 + row * XStatusPage.LH, 276, "left", XUiSkin.TEXT_3))
+	return ops
 
 
 func _draw_page_body() -> void:
