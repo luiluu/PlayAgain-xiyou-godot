@@ -36,6 +36,11 @@ static func wanted() -> bool:
 	return allow_headless or DisplayServer.get_name() != "headless"
 
 
+## 片头前、标题还没建出来时的新样式门：同天启标题（XTianqiTitle：素材齐＋天启篇发行门＋界面风格设置）
+static func skin_gate() -> bool:
+	return XTianqiTitle.available() and XTianqiTitle.skin_on()
+
+
 ## 测试用：清掉这次运行的记录
 static func reset() -> void:
 	result = {}
@@ -64,7 +69,9 @@ static func blocks(r: Dictionary) -> bool:
 
 ## 标题建好后调（host 是西游标题节点）。要拦就盖强制更新框，返回那一页；不拦返回 null。
 ## 连不上时在 hint_parent 里放一行「未能检查更新」（给了才放）。
-static func on_title(host: Node, hint_parent: Control = null) -> XUpdatePage:
+## use_skin：T369 由调用处传（天启标题传真、重制旧标题传假，O-467：这里没有存档，不问 XUiSkin.on()）；
+## 标题还没建出来就要判断时（片头前）用 skin_gate()，同天启标题的发行门。
+static func on_title(host: Node, hint_parent: Control = null, use_skin: bool = false) -> XUpdatePage:
 	if not _started:
 		return null
 	if host.get_node_or_null("UpdateLayer/UpdatePage") is XUpdatePage:  # 已经盖着（从子页回到标题时）
@@ -73,17 +80,17 @@ static func on_title(host: Node, hint_parent: Control = null) -> XUpdatePage:
 			return p
 	if _done:
 		if blocks(result):
-			return XUpdatePage.open_forced(host, result)
+			return XUpdatePage.open_forced(host, result, use_skin)
 		if str(result.get("state", "")) == XUpdateCheck.BAD and hint_parent != null:
 			_add_hint(hint_parent)
 		return null
 	# 还没查完：先盖「正在检查」，查完再定
-	var page := XUpdatePage.open_forced(host, {"state": "checking"})
-	_wait(host, page, hint_parent)
+	var page := XUpdatePage.open_forced(host, {"state": "checking"}, use_skin)
+	_wait(host, page, hint_parent, use_skin)
 	return page
 
 
-static func _wait(host: Node, page: XUpdatePage, hint_parent: Control) -> void:
+static func _wait(host: Node, page: XUpdatePage, hint_parent: Control, use_skin := false) -> void:
 	var tree := host.get_tree()  # 等的时候标题节点可能已经换掉：后面只用 tree，不再碰 host 的方法（发行模板对已释放对象调方法会崩）
 	var client := XUpdateClient.instance(tree)
 	var timer := tree.create_timer(WAIT_SEC, true, false, true)
@@ -101,7 +108,7 @@ static func _wait(host: Node, page: XUpdatePage, hint_parent: Control) -> void:
 		if state["timed_out"] or not is_instance_valid(page) or page.is_queued_for_deletion():
 			if host.has_method("is_title_page") and not host.is_title_page():
 				return  # 已经离开标题（读档页、设置页等也还在西游标题节点里，这里只在标题本页才补盖）
-			XUpdatePage.open_forced(host, result)
+			XUpdatePage.open_forced(host, result, use_skin)
 		else:
 			page.show_forced(result)
 		return
