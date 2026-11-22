@@ -18,6 +18,7 @@ extends Control
 ## 与原版不同（O-084）：原版进过技能详情再返回，说明卡的品质边框（4 层 Window_ItemHelp）留在状态页上；这里返回时整张卡隐藏。
 ## 切片外角色（108、143～145、157、169～171）没导出 SV 图，状态页不画立绘（补图要扩切片）；
 ## 167 号以后的立绘照 CodexSV 档缩放，168、173～177 换成逐帧图（sprite_spec）。
+## T364 卡 P 新界面（天启篇，XSkinBookPage.wanted()）：同一套状态，左目录＋右大牌（XSkinBookPage）；旧窗口不画，按键先问新页；开关关着一行不变。
 
 signal closed
 
@@ -68,6 +69,7 @@ var status_win: XMVWindow
 var header_win: XMVWindow
 var list_win: XMVWindow
 var help_card: XHelpCard
+var skin: XSkinBookPage   # T364 新界面（关着时为 null）
 var _frame := 0
 var _sprite_tex: Texture2D
 var _sprite_spec := {}
@@ -93,6 +95,13 @@ func _ready() -> void:
 	help_card.card_width = HELP_WIDTH
 	help_card.skill_copy = true
 	add_child(help_card)
+	if XSkinBookPage.wanted():
+		skin = XSkinBookPage.new(self, "actor")
+		add_child(skin)
+		var first := index_ids().find_custom(func(i): return int(i) > 0)
+		if first > 0:   # 新页进来停在第一位有名角色（0 号槽是空的「？？？」，旧页停在它上面、右边一片空）
+			index = first
+			top = XMenu._scroll_to(index, top, index_rows())
 	_show_skills(false)
 	_select_actor()
 
@@ -633,6 +642,8 @@ static func sprite_rect(id: int, spec: Dictionary, tex_size: Vector2, pattern: i
 
 ## T049：天启篇新界面开着且列表超一页时少放一行，给翻页件腾地方（见 XListPager.rows_for）
 func index_rows() -> int:
+	if skin != null:
+		return skin.list_rows()   # T364：新目录一屏 11 行
 	return XListPager.rows_for(INDEX_ROWS, actor_count())
 
 
@@ -653,6 +664,8 @@ func _refresh() -> void:
 		list_win.down_arrow = list_win.down_arrow and not list_pager.visible
 	for w in [index_win, status_win, header_win, list_win]:
 		w.refresh()
+	if skin != null:
+		skin.sync()
 
 
 func _show_skills(on: bool) -> void:
@@ -688,6 +701,9 @@ func select_skill(i: int) -> void:
 
 ## Window_ActorBookSkillList.updateHelp：说明卡固定在 (545, 8)
 func _update_help() -> void:
+	if skin != null:   # T364：说明进右大牌的长说明卡（XSkinBookPage.sync）
+		help_card.show_for({})
+		return
 	if skill_index < 0 or skill_index >= skill_list.size():
 		help_card.show_for({})
 		return
@@ -756,6 +772,8 @@ func _page(d: int) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinBookPage）
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
@@ -789,6 +807,9 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
 		cancel()
