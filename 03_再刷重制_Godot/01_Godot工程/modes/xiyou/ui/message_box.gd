@@ -52,6 +52,8 @@ var _msg := {}
 var _pending_start := false
 var _state: XMVText
 var _page_glyphs: Array = []
+## T330 逐字渐显：本页开始的毫秒（-1＝这页不演；-2＝这页要演、等窗口开完字画出来再计时）
+var _fade_start_ms := -1
 var _face := ""
 var _face_index := 0
 var _wait := 0
@@ -334,6 +336,8 @@ func _new_page() -> void:
 	_pause_skip = XConfig.flag("dhtg")
 	_sound_count = 0
 	_hang_count = int(str(XHangUp.params().get("messageCount", "60"))) if XHangUp.is_active(XState.current) else 0
+	# 挂机自动翻页、对话跳过、快进键时不演（不拖慢）
+	_fade_start_ms = -2 if XSkinDialogueFade.on() and _hang_count == 0 and not XConfig.flag("dhtg") and not _fast_forward() else -1
 	win.refresh()
 
 
@@ -457,7 +461,11 @@ func _physics_process(_delta: float) -> void:
 	elif _wait > 0:
 		_wait -= 1
 	elif win.pause:
-		if _triggered():
+		if _fade_running() and (_triggered() or _fast_forward()):
+			_consume()   # 逐字渐显中按确认：先把整句显示出来，不翻页
+			_fade_start_ms = -1
+			win.refresh()
+		elif _triggered():
 			_consume()
 			win.pause = false
 			if _state == null:
@@ -468,7 +476,18 @@ func _physics_process(_delta: float) -> void:
 	elif _state != null:
 		_update_message()
 	_update_hang_up_auto()
+	if _fade_start_ms == -2 and not _page_glyphs.is_empty():
+		_fade_start_ms = Time.get_ticks_msec()
+	if _fade_running():
+		win.refresh()   # 动画期间每帧重画（只在新皮肤剧情对白，演完即停）
+	elif _fade_start_ms >= 0:
+		_fade_start_ms = -1
+		win.refresh()
 	_in.clear()
+
+
+func _fade_running() -> bool:
+	return _fade_start_ms >= 0 and float(Time.get_ticks_msec() - _fade_start_ms) < XSkinDialogueFade.total_ms(_page_glyphs.size())
 
 
 ## Window_Message.updateHangUpAuto：计数到 0 时取消等待，还有字就翻新页，否则结束（选项与数值输入不在此列）
@@ -902,7 +921,7 @@ func _paint_message(c: XMVCanvas) -> void:
 			fr.set_corner_radius_all(8)
 			c.draw_style_box(fr, Rect2(0, 0, 144, 144))
 			c.draw_line(Vector2(156, 4), Vector2(156, 140), Color(XUiSkin.LINE, 0.16), 1.0)
-	XMVText.paint(c, _page_glyphs)
+	XSkinDialogueFade.paint(c, _page_glyphs, -1.0 if _fade_start_ms < 0 else float(Time.get_ticks_msec() - _fade_start_ms))
 
 
 func _paint_name(c: XMVCanvas) -> void:
