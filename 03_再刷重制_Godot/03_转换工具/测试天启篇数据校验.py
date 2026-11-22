@@ -995,5 +995,227 @@ class SixDim(unittest.TestCase):
         self.assertTrue(any('同 horsemen.json' in x for x in b))
 
 
+class K5SixTables(unittest.TestCase):
+    """T391（K5）：drop_table／gojo_trials／money_table／ring_styles／trumpet／weak_affix_table 六份表的规则；每份先正例再多条反例（形状、范围、引用）。"""
+
+    def load(self, name):
+        return json.loads((REAL_DIR / name).read_text(encoding='utf-8'))
+
+    def has(self, bad, word):
+        self.assertTrue(any(word in b for b in bad), '没报出「%s」：%r' % (word, bad))
+
+    def test_real_pass_and_in_checks(self):
+        names = [n for n, _ in chk.CHECKS]
+        for n in ('drop_table', 'gojo_trials', 'money_table', 'ring_styles', 'trumpet', 'weak_affix_table'):
+            self.assertIn(n, names)
+        self.assertEqual(chk.drop_table_rules(self.load('drop_table.json')), [])
+        self.assertEqual(chk.gojo_trials_rules(self.load('gojo_trials.json'), self.load('six_dim.json')), [])
+        self.assertEqual(chk.money_table_rules(self.load('money_table.json')), [])
+        self.assertEqual(chk.ring_styles_rules(self.load('ring_styles.json')), [])
+        self.assertEqual(chk.trumpet_rules(self.load('trumpet.json')), [])
+        self.assertEqual(chk.weak_affix_rules(self.load('weak_affix_table.json'), self.load('six_dim.json')), [])
+
+    # ---- drop_table ----
+    def test_drop_shape_and_range(self):
+        t = self.load('drop_table.json')
+        t['generic']['floors'] = [30, 1]
+        self.has(chk.drop_table_rules(t), 'generic.floors')
+        t = self.load('drop_table.json')
+        t['generic']['quality_weights'] = [0, 0, 0, 0]
+        self.has(chk.drop_table_rules(t), 'quality_weights')
+        t = self.load('drop_table.json')
+        t['generic']['smart_share'] = 1.5
+        self.has(chk.drop_table_rules(t), 'smart_share')
+        t = self.load('drop_table.json')
+        t['generic']['level_by_floor'][2][0] = 3   # 层号倒退
+        self.has(chk.drop_table_rules(t), 'level_by_floor 顺序')
+        t = self.load('drop_table.json')
+        t['dungeon_up']['by_tier'] = [1.0, 2.0, 1.6, 2.0]
+        self.has(chk.drop_table_rules(t), 'dungeon_up.by_tier')
+        t = self.load('drop_table.json')
+        t['signature']['gear_range']['3'] = [0.2, 0.1]
+        self.has(chk.drop_table_rules(t), 'signature.gear_range')
+        t = self.load('drop_table.json')
+        del t['guardian']
+        self.has(chk.drop_table_rules(t), 'guardian.first')
+
+    def test_drop_refs(self):
+        t = self.load('drop_table.json')
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / 'Skills.json').write_text(json.dumps([None, {'id': 5547}, {'id': 5549}, {'id': 9000}]), encoding='utf-8')
+            self.has(chk.drop_table_rules(t, Path(d)), 'bonus.ignore_skills')   # 5548 落在库里范围内的空洞
+        t['bonus']['ignore_skills'] = [5547, 5547]
+        self.has(chk.drop_table_rules(t), '不重复')
+
+    # ---- gojo_trials ----
+    def test_gojo(self):
+        six = self.load('six_dim.json')
+        t = self.load('gojo_trials.json')
+        t['trials']['3'] = t['trials'].pop('2')   # 试炼号断档
+        self.has(chk.gojo_trials_rules(t, six), 'trials 的键')
+        t = self.load('gojo_trials.json')
+        t['trials']['2']['key'] = t['trials']['1']['key']
+        self.has(chk.gojo_trials_rules(t, six), 'key 不重复')
+        t = self.load('gojo_trials.json')
+        t['trials']['1']['ratio']['spear'] = 1.5
+        self.has(chk.gojo_trials_rules(t, six), 'ratio')
+        t = self.load('gojo_trials.json')
+        t['trials']['2']['domain'].pop('turns')
+        self.has(chk.gojo_trials_rules(t, six), 'domain')
+        t = self.load('gojo_trials.json')
+        t['tint'] = [0.5, 2, 0.5]
+        t['trials']['1']['awaken_below'] = 1
+        b = chk.gojo_trials_rules(t, six)
+        self.has(b, 'tint')
+        self.has(b, 'awaken_below')
+        t = self.load('gojo_trials.json')
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / 'Troops.json').write_text(json.dumps([None, {'id': 1}, {'id': 99}]), encoding='utf-8')
+            self.has(chk.gojo_trials_rules(t, six, Path(d)), 'troop')   # 30 在库里范围内缺失
+
+    # ---- money_table ----
+    def test_money(self):
+        t = self.load('money_table.json')
+        t['field_gold']['by_floor'].pop()
+        self.has(chk.money_table_rules(t), 'field_gold.by_floor')
+        t = self.load('money_table.json')
+        del t['price_mult']['zhengdao']
+        self.has(chk.money_table_rules(t), 'price_mult')
+        t = self.load('money_table.json')
+        t['price_mult']['jiusi'] = 0.1   # 比艰险还便宜
+        self.has(chk.money_table_rules(t), 'price_mult 顺序')
+        t = self.load('money_table.json')
+        t['sell']['by_grade'] = [0.1, 0.2]
+        self.has(chk.money_table_rules(t), 'sell.by_grade')
+        t = self.load('money_table.json')
+        t['advance']['gold'] = [100000, 100000, 600000, 1000000]
+        self.has(chk.money_table_rules(t), 'advance.gold')
+        t = self.load('money_table.json')
+        t['training']['levels'] = 20   # 20×3 层超过 36
+        self.has(chk.money_table_rules(t), 'training 开放层')
+        t = self.load('money_table.json')
+        t['scale']['oil'] = 5
+        t['reforge']['tier_coef'] = [1, 2, 3]
+        b = chk.money_table_rules(t)
+        self.has(b, 'scale.oil')
+        self.has(b, 'reforge.tier_coef')
+
+    # ---- ring_styles ----
+    def test_ring_styles(self):
+        t = self.load('ring_styles.json')
+        t['styles']['seal_bai']['layer'] = 'ring'
+        self.has(chk.ring_styles_rules(t), 'seal_bai.layer')
+        t = self.load('ring_styles.json')
+        t['rules'][0]['style'] = 'seal_{seal}x'   # 展开后的样式不存在
+        self.has(chk.ring_styles_rules(t), "不在 styles 里")
+        t = self.load('ring_styles.json')
+        t['rules'][1]['when'] = {'nonsense': True}
+        self.has(chk.ring_styles_rules(t), 'when')
+        t = self.load('ring_styles.json')
+        t['styles']['seal_bai']['art']['band'] = 'no_such_band.png'
+        self.has(chk.ring_styles_rules(t), 'art.band')
+        t = self.load('ring_styles.json')
+        t['styles']['seal_bai']['art']['circle'] = 'res://content/tianqi/qiyin/circles/none.png'
+        self.has(chk.ring_styles_rules(t), 'art.circle')
+        t = self.load('ring_styles.json')
+        t['seal_tints'].pop('mo')
+        t['styles']['seal_hong']['style']['knot'] = 'red'
+        t['styles']['relic_war']['intro'] = 'boom'
+        t['dots']['min_pieces'] = 0
+        b = chk.ring_styles_rules(t)
+        for w in ('seal_tints', 'style.knot', 'intro', 'min_pieces'):
+            self.has(b, w)
+
+    # ---- trumpet ----
+    def test_trumpet(self):
+        t = self.load('trumpet.json')
+        t['scrolls'].pop()
+        self.has(chk.trumpet_rules(t), '正好七卷')
+        t = self.load('trumpet.json')
+        t['scrolls'][1]['item'] = t['scrolls'][0]['item']
+        self.has(chk.trumpet_rules(t), 'item 不重复')
+        t = self.load('trumpet.json')
+        t['scrolls'][2]['segment'] = 9
+        self.has(chk.trumpet_rules(t), 'segment')
+        t = self.load('trumpet.json')
+        t['drop']['segments'][1][0] = 20   # 段间有缝
+        self.has(chk.trumpet_rules(t), 'drop.segments')
+        t = self.load('trumpet.json')
+        t['drop']['difficulties'] = ['lianyu', 'hell']
+        self.has(chk.trumpet_rules(t), 'drop.difficulties')
+        t = self.load('trumpet.json')
+        t['limit']['强者'] = 5   # 强者比弱者可学更多
+        t['limit']['弱者'] = 3
+        self.has(chk.trumpet_rules(t), 'limit 顺序')
+        t = self.load('trumpet.json')
+        t['scrolls'][0]['aoe'] = 20.5
+        t['scrolls'][1]['low_rate'] = 0
+        t['retired']['items'].append(t['scrolls'][0]['item'])
+        b = chk.trumpet_rules(t)
+        for w in ('aoe', 'low_rate', '不和七卷重号'):
+            self.has(b, w)
+        t = self.load('trumpet.json')
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / 'Items.json').write_text(json.dumps([None, {'id': 1654}, {'id': 1718}, {'id': 9999}]), encoding='utf-8')
+            self.has(chk.trumpet_rules(t, Path(d)), 'scrolls[1].item')   # 1655 落在库里范围内的空洞
+
+    # ---- weak_affix_table ----
+    def test_weak_affix(self):
+        six = self.load('six_dim.json')
+        t = self.load('weak_affix_table.json')
+        t['entries']['w21']['actor'] = 99999
+        self.has(chk.weak_affix_rules(t, six), 'actor 在六维表')
+        t = self.load('weak_affix_table.json')
+        t['entries']['w17']['no'] = 18
+        self.has(chk.weak_affix_rules(t, six), '.no')
+        t = self.load('weak_affix_table.json')
+        t['entries']['w21']['enabled'] = 'no'
+        self.has(chk.weak_affix_rules(t, six), 'enabled')
+        t = self.load('weak_affix_table.json')
+        t['rules']['drop_rate'] = 1.5
+        self.has(chk.weak_affix_rules(t, six), 'drop_rate')
+        t = self.load('weak_affix_table.json')
+        t['guidable_skills'].append(t['guidable_skills'][0])
+        self.has(chk.weak_affix_rules(t, six), 'guidable_skills')
+        t = self.load('weak_affix_table.json')
+        t['entries']['w21']['proj']['4507']['oops'] = 1
+        self.has(chk.weak_affix_rules(t, six), 'proj')
+        t = self.load('weak_affix_table.json')
+        t['entries']['w23']['thunder']['full_high'] = 9   # 高档满格比低档多
+        t['entries']['w103']['mark']['cut_pct'] = 0
+        t['entries']['w42']['invite'].pop('cast')
+        b = chk.weak_affix_rules(t, six)
+        for w in ('thunder 满格', 'cut_pct', 'invite.cast'):
+            self.has(b, w)
+        t = self.load('weak_affix_table.json')
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / 'Skills.json').write_text(json.dumps([None, {'id': 623}, {'id': 9000}]), encoding='utf-8')
+            self.has(chk.weak_affix_rules(t, six, Path(d)), 'guidable_skills')   # 库里范围内缺的技能号
+
+    def test_check_functions_skip_when_missing(self):
+        # 表文件不在就跳过（云端没有转换产物同款）
+        with tempfile.TemporaryDirectory() as d:
+            old = chk.DATA_DIR
+            chk.DATA_DIR = Path(d)
+            try:
+                for fn in (chk.check_drop_table, chk.check_gojo_trials, chk.check_money_table, chk.check_ring_styles, chk.check_trumpet, chk.check_weak_affix_table):
+                    ok, out = run(fn, None)
+                    self.assertTrue(ok)
+                    self.assertIn('跳过', out)
+            finally:
+                chk.DATA_DIR = old
+
+    def test_broken_file_fails(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / 'drop_table.json').write_text('{"generic": 3}', encoding='utf-8')
+            old = chk.DATA_DIR
+            chk.DATA_DIR = Path(d)
+            try:
+                ok, out = run(chk.check_drop_table, None)
+            finally:
+                chk.DATA_DIR = old
+            self.assertFalse(ok)
+
+
 if __name__ == '__main__':
     unittest.main()
