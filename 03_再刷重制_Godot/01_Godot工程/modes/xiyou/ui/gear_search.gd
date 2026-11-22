@@ -536,9 +536,20 @@ func _refresh_skin_bar() -> void:
 
 ## 新皮肤：筛选面板开着时取消先关面板
 ## R9：取消先收输入框、挑选框、牌，再关页；方向键、确定、X 交给新页（输入框开着时只认取消）
+## R1 返修（小A核 P1-1）：X 也绑在 ui_cancel 上（XKeyMap.EXTRA），没在输入时 X 先于取消判成「搜词条」；
+## P1-2：输入时取消只走 XKeyMap.popup_cancel（输入框聚焦时放行能打字的 x／k／小键盘 0）；
+## P2-1：输入时点到输入框外面先收起输入框（点击照常落到被点的小块／列表上）。
 func _input(event: InputEvent) -> void:
 	if skin_r9() and page != null and is_instance_valid(page):
-		if XKeyMap.popup_cancel(event, self) or (page.typing() and event.is_action_pressed("ui_cancel")):
+		if page.typing() and page.tap_outside_edit(event):
+			page.close_search()
+		var key := event as InputEventKey
+		if not page.typing() and key != null and key.pressed and not key.echo \
+				and (key.physical_keycode if key.physical_keycode != 0 else key.keycode) == KEY_X:
+			XKeyMap.handled(self)
+			page.open_search()
+			return
+		if XKeyMap.popup_cancel(event, self):
 			XKeyMap.handled(self)
 			if not page.cancel_step():
 				close()

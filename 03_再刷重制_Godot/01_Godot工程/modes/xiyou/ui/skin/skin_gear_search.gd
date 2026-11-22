@@ -2,7 +2,7 @@ class_name XSkinGearSearch
 extends XSkinTemplatePage
 ## 【cc·天启篇·未经审查】T368 卡 G（T254 R9）：装备检索新皮肤版，网页表单改成「筛选小块」，套模板页（XSkinTemplatePage，不要分类环）。
 ## - 左块：筛选小块，点一下就生效（数据与规则照旧在 XGearSearch.filter／XGearQuery，本页只换摆法）：
-##     「搜词条」一枚按钮（点了才出输入框、才弹键盘；有词时写「搜：…」，右端 ✕ 清掉）；
+##     「搜词条」一枚按钮（自画放大镜）（点了才出输入框、才弹键盘；有词时写「搜：…」，右端 ✕ 清掉）；
 ##     品质七枚色块（可多选，filter.quality 逗号分隔）＋「★」（旧档细分，在挑选框里多选）；部位一排图标（单选，再点取消）；
 ##     位置两枚「已装备」「背包」（单选，再点回到全部）；排序四枚「品质」「词条数」「名称」「更多 ▾」（更多＝原有顺序、战力、八项能力、单项词条）；
 ##     「分类 ▾」「指定词条 ▾」各一枚（点开挑选框）；最底「清空条件」。
@@ -61,7 +61,7 @@ func _ready() -> void:
 	layout.left.add_child(filters)
 	search_edit = LineEdit.new()
 	search_edit.visible = false
-	search_edit.placeholder_text = "装备名或词条，空格隔开，如：暴击 掉宝"
+	search_edit.placeholder_text = "搜装备名或词条，空格隔开"
 	search_edit.add_theme_font_override("font", XUiSkin.font("body"))
 	search_edit.add_theme_font_size_override("font_size", XUiSkin.FS_AUX_MAX)
 	search_edit.add_theme_color_override("font_color", XUiSkin.TEXT)
@@ -96,6 +96,7 @@ func _ready() -> void:
 	picker_panel.resized.connect(_place_picker)
 	card_button.connect(func(_i): host.apply_filter())
 	list.index_changed.connect(_on_list_index)
+	list.gui_input.connect(_list_tapped)   # R1 P2-3：点列表行＝焦点回到列表
 	list.empty_center = true
 	list.empty_text = "没有符合的装备，放宽条件再找找。"
 	set_focus("list")
@@ -179,7 +180,7 @@ func rebuild_chips() -> void:
 	# 搜词条
 	var q := str(f.get("query", ""))
 	if q == "":
-		out.append({"group": "search", "key": "", "rect": Rect2(0, y, w, CHIP_H + 4), "text": "⌕ 搜词条", "on": false})
+		out.append({"group": "search", "key": "", "rect": Rect2(0, y, w, CHIP_H + 4), "text": "搜词条", "on": false, "magnifier": true})
 	else:
 		out.append({"group": "search", "key": "", "rect": Rect2(0, y, w - CHIP_H - 4 - CHIP_GAP, CHIP_H + 4), "text": "搜：" + q, "on": true})
 		out.append({"group": "search_clear", "key": "", "rect": Rect2(w - CHIP_H - 4, y, CHIP_H + 4, CHIP_H + 4), "text": "✕", "on": false})
@@ -199,18 +200,19 @@ func rebuild_chips() -> void:
 		var lon := qs.any(func(k): return str(k).begins_with("L"))
 		out.append({"group": "legacy", "key": "", "rect": Rect2(n * (qw + CHIP_GAP), y, qw, CHIP_H), "text": "★", "on": lon})
 	y += CHIP_H + GROUP_GAP
-	# 部位：一排图标（放不下折行）
+	# 部位：一排图标（放不下折行；行数多到左块放不下时图标收小，R1 P2-4：后期 30 种部位 5 行会掉出底边）
 	y += LABEL_H
 	var types := type_icons()
+	var ts := type_chip_size(types.size(), w, filters.size.y)
 	var tx := 0.0
 	for t in types:
-		if tx > 0 and tx + CHIP_H > w:
+		if tx > 0 and tx + ts > w + 0.5:
 			tx = 0.0
-			y += CHIP_H + CHIP_GAP
-		out.append({"group": "type", "key": str(t.key), "rect": Rect2(tx, y, CHIP_H, CHIP_H), "text": str(t.name), "icon": int(t.icon),
+			y += ts + CHIP_GAP
+		out.append({"group": "type", "key": str(t.key), "rect": Rect2(tx, y, ts, ts), "text": str(t.name), "icon": int(t.icon),
 			"on": str(f.type) == str(t.key)})
-		tx += CHIP_H + CHIP_GAP
-	y += CHIP_H + GROUP_GAP
+		tx += ts + CHIP_GAP
+	y += ts + GROUP_GAP
 	# 位置：两枚
 	y += LABEL_H
 	var half := floorf((w - CHIP_GAP) / 2.0)
@@ -245,6 +247,27 @@ func rebuild_chips() -> void:
 	filters.queue_redraw()
 
 
+## 除部位图标那几行外，左块别的小块与小标题占的高（搜词条、品质、位置、排序各一行带小标题，分类、指定词条、清空三行）
+const FIXED_H := (CHIP_H + 4 + GROUP_GAP) + (LABEL_H + CHIP_H + GROUP_GAP) * 3 + (LABEL_H + GROUP_GAP) \
+		+ (CHIP_H + CHIP_GAP) + (CHIP_H + GROUP_GAP) + CHIP_H
+const TYPE_MIN := 24.0
+
+
+## 部位图标边长：n 枚按行排进宽 w，整列高 h 放得下就用 CHIP_H，放不下逐像素收小（最小 TYPE_MIN）
+static func type_chip_size(n: int, w: float, h: float) -> float:
+	if n <= 0 or h <= 0:
+		return CHIP_H
+	var avail := h - FIXED_H
+	var s := CHIP_H
+	while s > TYPE_MIN:
+		var per := maxi(1, floori((w + CHIP_GAP) / (s + CHIP_GAP)))
+		var rows := ceili(n / float(per))
+		if rows * (s + CHIP_GAP) - CHIP_GAP <= avail:
+			break
+		s -= 1.0
+	return s
+
+
 ## 部位图标：检索源里每种部位取第一件的图标（没有图标的用空框写首字）
 func type_icons() -> Array:
 	var out := []
@@ -267,11 +290,11 @@ func sort_short(sort: String) -> String:
 		return XGearQuery.PARAMS[int(sort.substr(5))]
 	match sort:
 		"original":
-			return "原序"
+			return "默认"
 		"power":
 			return "战力"
 		"term":
-			return "单项词条"
+			return "词条"
 	return str(SORT_MAIN_NAMES.get(sort, sort))
 
 
@@ -295,6 +318,8 @@ func group_note(group: String) -> String:
 					names.append(str(o[1]))
 			return "、".join(names) if not names.is_empty() else "全部"
 		"type":
+			if focus == "filters" and cursor >= 0 and cursor < chips.size() and str(chips[cursor].group) == "type":
+				return "› " + str(chips[cursor].text)   # R1 P3-2：光标停在部位图标上先预览名字
 			for o in XGearSearch.type_options(host.source):
 				if str(o[0]) == str(f.type):
 					return str(o[1]) if str(o[0]) != "" else "全部"
@@ -320,11 +345,11 @@ func _draw_filters() -> void:
 			seen[lg] = true
 			var ly: float = c.rect.position.y - 9
 			var lab := str(labels[lg])
-			XUiSkin.ds(filters, body, Vector2(0, ly), lab, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, XUiSkin.TEXT_2)
+			XUiSkin.ds(filters, body, Vector2(0, ly), lab, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.fs(15), XUiSkin.TEXT_2)
 			var note := group_note(lg)
 			if note != "":
-				var lw := body.get_string_size(lab, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x
-				XUiSkin.ds(filters, body, Vector2(lw + 10, ly), note, HORIZONTAL_ALIGNMENT_LEFT, filters.size.x - lw - 10, 15, XUiSkin.TEXT)
+				var lw := body.get_string_size(lab, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.fs(15)).x
+				XUiSkin.ds(filters, body, Vector2(lw + 10, ly), note, HORIZONTAL_ALIGNMENT_LEFT, filters.size.x - lw - 10, XUiSkin.fs(15), XUiSkin.TEXT)
 		_draw_chip(c, i == cursor and focus == "filters")
 
 
@@ -355,15 +380,20 @@ func _draw_chip(c: Dictionary, cur: bool) -> void:
 			filters.draw_texture_rect(tex, r.grow(-3), false, Color(1, 1, 1, 1.0 if on else 0.62))
 		else:
 			var t := str(c.text).left(1)
-			XUiSkin.ds(filters, body, Vector2(r.position.x, r.get_center().y + 6), t, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 16, XUiSkin.TEXT)
+			XUiSkin.ds(filters, body, Vector2(r.position.x, r.get_center().y + 6), t, HORIZONTAL_ALIGNMENT_CENTER, r.size.x, XUiSkin.fs(16), XUiSkin.TEXT)
 	else:
 		filters.draw_style_box(_chip_box(on), r)
-		var fs := 16
+		var fs := XUiSkin.fs(16)
 		var col := XUiSkin.GOLD_LIGHT if on else XUiSkin.TEXT
 		if g == "reset" or g == "search_clear":
 			col = XUiSkin.TEXT_2
 		var align := HORIZONTAL_ALIGNMENT_LEFT if g in ["search", "category", "term"] else HORIZONTAL_ALIGNMENT_CENTER
 		var px := 12.0 if align == HORIZONTAL_ALIGNMENT_LEFT else 2.0
+		if bool(c.get("magnifier", false)):   # R1 P3-1：「⌕」在玩家版字体里糊成小点，改自画放大镜
+			var mc := Vector2(r.position.x + 12 + 7, r.get_center().y - 2)
+			filters.draw_arc(mc, 6.0, 0, TAU, 24, col, 1.8, true)
+			filters.draw_line(mc + Vector2(4.5, 4.5), mc + Vector2(9, 9), col, 2.2, true)
+			px += 24.0
 		XUiSkin.ds(filters, body, Vector2(r.position.x + px, r.get_center().y + fs * 0.36), str(c.text), align, r.size.x - px * 2, fs, col)
 	if cur:
 		var cs := StyleBoxFlat.new()
@@ -422,6 +452,9 @@ func _filters_input(event: InputEvent) -> void:
 func open_search() -> void:
 	if picker_panel.visible:
 		close_picker()
+	if card.expanded:
+		card.set_expanded(false)
+	card.set_process_input(false)   # R1 P2-1：输入时 Y 不给详情牌拦走（牌的 _input 先于页面收键）
 	search_edit.text = str(XGearSearch.filter.get("query", ""))
 	search_edit.visible = true
 	set_focus("typing")
@@ -435,6 +468,7 @@ func close_search() -> void:
 		return
 	search_edit.visible = false
 	search_edit.release_focus()
+	card.set_process_input(true)
 	set_focus("filters")
 	rebuild_chips()
 
@@ -443,9 +477,23 @@ func typing() -> bool:
 	return search_edit != null and search_edit.visible
 
 
+## 输入时这一下点在输入框外面（R1 P2-1：点别的小块／列表／牌先收起输入框，不然 typing 卡住、键盘失灵）
+func tap_outside_edit(event: InputEvent) -> bool:
+	var pos := Vector2.INF
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		pos = event.position
+	elif event is InputEventScreenTouch and event.pressed:
+		pos = event.position
+	if pos == Vector2.INF:
+		return false
+	return not search_edit.get_global_rect().has_point(pos)
+
+
 # ---- 挑选框（分类、指定词条、更多排序、旧档品质）----
 
 func open_picker(kind: String) -> void:
+	if typing():
+		close_search()
 	picker_kind = kind
 	var f := XGearSearch.filter
 	var opts := []
@@ -499,13 +547,14 @@ func _place_picker() -> void:
 		return
 	var s := picker_panel.size
 	var rows := floori((s.y - LIST_TOP - XUiSkin.PAD) / float(picker.row_height))
-	picker.position = Vector2(XUiSkin.GRID, LIST_TOP)
-	picker.size = Vector2(s.x - XUiSkin.GRID * 2, maxi(rows, 1) * picker.row_height)
+	var lx := 28.0 if XSkinArt.select_on() else 8.0   # R1 P2-2：外置选中箭头左探 22，同模板页列表留 28
+	picker.position = Vector2(lx, LIST_TOP)
+	picker.size = Vector2(s.x - lx - 8.0, maxi(rows, 1) * picker.row_height)
 
 
 func _draw_picker() -> void:
 	var body := XUiSkin.font("body")
-	XUiSkin.ds(picker_panel, body, Vector2(XUiSkin.PAD + 8, XUiSkin.PAD + 20), picker_title, HORIZONTAL_ALIGNMENT_LEFT, picker_panel.size.x - 48, 20, XUiSkin.GOLD)
+	XUiSkin.ds(picker_panel, body, Vector2(XUiSkin.PAD + 8, XUiSkin.PAD + 20), picker_title, HORIZONTAL_ALIGNMENT_LEFT, picker_panel.size.x - 48, XUiSkin.fs(20), XUiSkin.GOLD)
 
 
 func _picker_pick(i: int) -> void:
@@ -560,6 +609,13 @@ static func row_of(r: Dictionary) -> Dictionary:
 	if str(r.owner) != "":
 		row.tags = ["穿着"]
 	return row
+
+
+func _list_tapped(event: InputEvent) -> void:
+	var press: bool = (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT) \
+			or (event is InputEventScreenTouch and event.pressed)
+	if press and focus in ["filters", "card"]:
+		set_focus("list")
 
 
 func _on_list_index(i: int) -> void:
@@ -638,7 +694,7 @@ func _hints_for(f: String) -> Array:
 		"picker":
 			return [["确定", "选择"], ["取消", "关闭"]]
 		"typing":
-			return [["回车", "完成"]]
+			return [["取消", "收起"]]   # R1 P3-1：「回车」不是可点的键，触屏点不了；「取消」点了收起输入框
 	return filter_hints()
 
 

@@ -2,7 +2,7 @@ extends Node
 ## 工具（不是专项）：T368 卡 G 装备检索「筛选小块」验收截图。要真窗口：
 ##   godot --audio-driver Dummy --path 01_Godot工程 res://tests/t368_shots.tscn -- --out=<目录>
 ## 16:9 拍在 800×450 窗口（视口 1280×720），20:9 拍在 1000×450（同 xiyou_ui_skin_card_e 的拍法）。
-## 张：默认；两个品质一个部位；搜词条点之前／点之后（输入框出来、写了字）；没有结果；挑选框；20:9；对照：T361 版（SKIN_PAGE_R9 关）、皮肤关（网页版）。
+## 张：默认；两个品质一个部位；光标在部位图标上预览名字（R1）；搜词条点之前／点之后（输入框出来、写了字）；没有结果；挑选框；20:9；对照：T361 版（SKIN_PAGE_R9 关）、皮肤关（网页版）。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const R9Test = preload("res://tests/xiyou_t368_gear_r9.gd")
 
@@ -98,6 +98,11 @@ func _run() -> void:
 	p.press_chip(_chip(p, "type", pick[2]))
 	await _shot("2_two_quality_one_type")
 	p.press_chip(_chip(p, "reset"))
+	# R1 P3-2：光标停在没选中的部位图标上，「部位」旁预览名字
+	p.set_focus("filters")
+	p.cursor = _chip(p, "type", pick[2])
+	p.filters.queue_redraw()
+	await _shot("c_type_cursor_preview")
 	# 搜词条：点之前（光标停在按钮上）、点之后
 	p.set_focus("filters")
 	p.cursor = _chip(p, "search")

@@ -80,6 +80,7 @@ func _run() -> void:
 	XConfig.path_override = "user://test_t368_options.json"
 	XConfig.ensure_loaded()
 	XUiSkin.FORCE = true
+	XKeyMap.apply()   # R1：实机 X／K／小键盘 0 也绑在 ui_cancel 上，测试照实机键位
 	var s := _state()
 	_query_rules(s)
 	var host := Control.new()
@@ -247,6 +248,116 @@ func _chips_work(gs: XGearSearch, p: XSkinGearSearch) -> void:
 	await frames(1)
 	check("key_x_search", p.typing())
 	p.close_search()
+	await _r1_keys(gs, p)
+
+
+func _key(code: int, uni := 0) -> InputEventKey:
+	var e := InputEventKey.new()
+	e.physical_keycode = code
+	e.keycode = code
+	e.unicode = uni
+	e.pressed = true
+	return e
+
+
+func _tap(pos: Vector2) -> InputEventMouseButton:
+	var e := InputEventMouseButton.new()
+	e.button_index = MOUSE_BUTTON_LEFT
+	e.pressed = true
+	e.position = pos
+	e.global_position = pos
+	return e
+
+
+# ---- R1 返修（小A核 T368_核报告R1）：经 gs._input 走实机路径 ----
+func _r1_keys(gs: XGearSearch, p: XSkinGearSearch) -> void:
+	check("r1_x_is_cancel_bound", _key(KEY_X, 120).is_action_pressed("ui_cancel"))
+	# P1-1：没在输入时按 X（键盘或点「X 搜词条」胶囊合成的 KEY_X）＝搜词条，不关页
+	p.set_focus("list")
+	gs._input(_key(KEY_X, 120))
+	await frames(1)
+	if not check("r1_p1_1_x_opens_search", is_instance_valid(gs) and not gs.is_queued_for_deletion() and p.typing() and p.search_edit.has_focus()):
+		_bail()
+		return
+	# P1-2：输入框聚焦时 x／k／小键盘 0 是打字，不收起输入框、不关页
+	for kc in [[KEY_X, 120], [KEY_K, 107], [KEY_KP_0, 48]]:
+		gs._input(_key(kc[0], kc[1]))
+		await frames(1)
+		if not check("r1_p1_2_typing_keeps_%d" % kc[0], is_instance_valid(gs) and not gs.is_queued_for_deletion() and p.typing()):
+			_bail()
+			return
+	# P2-1：输入时 Y 不给详情牌拦（牌不收键）；Esc 收起输入框、不关页
+	check("r1_p2_1_card_no_y_while_typing", not p.card.is_processing_input())
+	gs._input(_key(KEY_ESCAPE))
+	await frames(1)
+	check("r1_esc_closes_search_only", is_instance_valid(gs) and not gs.is_queued_for_deletion() and not p.typing() and p.card.is_processing_input())
+	# 触屏「取消 收起」：输入态提示是可点的「取消」
+	p.open_search()
+	check("r1_p3_typing_hint_tappable", p._hints_for("typing").all(func(h): return not XSkinKeyHints.key_events(str(h[0])).is_empty()), p._hints_for("typing"))
+	gs._input(_act("ui_cancel"))
+	await frames(1)
+	check("r1_action_cancel_closes_search", is_instance_valid(gs) and not p.typing())
+	# P2-1：输入时点别的小块：输入框收起、键盘方向键照常走
+	p.open_search()
+	await frames(1)
+	var qc: Rect2 = p.chips[_chip(p, "quality", "0")].rect
+	gs._input(_tap(p.filters.get_global_rect().position + qc.get_center()))
+	check("r1_p2_1_tap_chip_closes_search", not p.typing() and p.focus == "filters")
+	check("r1_p2_1_keys_work_after", p.handle_key(_act("ui_down")))
+	# 点在输入框里面不收
+	p.open_search()
+	await frames(1)
+	gs._input(_tap(p.search_edit.get_global_rect().get_center()))
+	check("r1_p2_1_tap_inside_keeps", p.typing())
+	# 输入时开挑选框也先收输入框
+	p.open_picker("category")
+	check("r1_p2_1_picker_closes_search", not p.typing() and p.focus == "picker")
+	# P2-2：挑选框左边留外置箭头
+	check("r1_p2_2_picker_margin", p.picker.position.x == (28.0 if XSkinArt.select_on() else 8.0) and p.picker.get_rect().end.x <= p.picker_panel.size.x - 7.5, [p.picker.position, p.picker.size, p.picker_panel.size])
+	p.close_picker()
+	# P2-3：在筛选区／牌上时点列表行，焦点回列表
+	p.set_focus("filters")
+	p.list.gui_input.emit(_tap(Vector2(40, 10)))
+	check("r1_p2_3_tap_list_focus", p.focus == "list")
+	p.set_focus("card")
+	p.list.gui_input.emit(_tap(Vector2(40, 10)))
+	check("r1_p2_3_tap_list_from_card", p.focus == "list")
+	# P2-4：30 种部位也收得进左块
+	var lw := p.layout.left.size.x
+	var lh := p.filters.size.y
+	var ok := true
+	for n in [1, 7, 14, 21, 28, 30, 35]:
+		var ts := XSkinGearSearch.type_chip_size(n, lw, lh)
+		var per := maxi(1, floori((lw + XSkinGearSearch.CHIP_GAP) / (ts + XSkinGearSearch.CHIP_GAP)))
+		var rows := ceili(n / float(per))
+		if XSkinGearSearch.FIXED_H + rows * (ts + XSkinGearSearch.CHIP_GAP) - XSkinGearSearch.CHIP_GAP > lh or ts < XSkinGearSearch.TYPE_MIN:
+			ok = false
+	check("r1_p2_4_30_types_fit", ok, [lw, lh])
+	check("r1_p2_4_few_types_full_size", XSkinGearSearch.type_chip_size(7, lw, lh) == XSkinGearSearch.CHIP_H)
+	var last: Rect2 = p.chips[p.chips.size() - 1].rect
+	check("r1_fixed_h_matches_layout", absf(last.end.y - (XSkinGearSearch.FIXED_H + _type_rows_h(p))) < 0.5, [last.end.y, XSkinGearSearch.FIXED_H, _type_rows_h(p)])
+	# P3：文字、部位名预览
+	check("r1_p3_sort_names", p.sort_short("original") == "默认" and p.sort_short("term") == "词条")
+	check("r1_p3_search_text", str(p.chips[_chips(p, "search")[0]].text) == "搜词条" and p.search_edit.placeholder_text == "搜装备名或词条，空格隔开")
+	p.set_focus("filters")
+	p.cursor = _chips(p, "type")[1]
+	check("r1_p3_type_preview", p.group_note("type").contains(str(p.chips[p.cursor].text)) and str(XGearSearch.filter.type) == "", p.group_note("type"))
+	p.set_focus("list")
+	check("r1_p3_type_note_back", p.group_note("type") == "全部", p.group_note("type"))
+
+
+## 页被关掉后面没法再测：直接收尾报失败（不然协程断在已释放的页上，测试挂住不退）
+func _bail() -> void:
+	var passed := results.filter(func(r): return r.passed).size()
+	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
+	get_tree().quit(1)
+
+
+func _type_rows_h(p: XSkinGearSearch) -> float:
+	var t := _chips(p, "type")
+	var top: float = p.chips[t[0]].rect.position.y
+	var bot: float = p.chips[t[t.size() - 1]].rect.end.y
+	return bot - top
 
 
 # ---- 旧页每项新页都取得到（对应表逐行）----

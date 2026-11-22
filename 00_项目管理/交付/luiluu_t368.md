@@ -1,7 +1,22 @@
 # 交付：luiluu/t368
 
 - 车道／工作者：T368 卡 G 装备检索重做成筛选小块（T254 R9）／cc 车道（Opus＋medium，P8）
-- 状态：可合并
+- 状态：可合并（R1 返修已做，待小A 复核）
+
+## R1 返修（小A 核报告 `xiyou-design-docs/协作交接/派单/T368_核报告R1.md`，P1×2 P2×4 P3×2 逐条）
+
+| 条 | 改法 | 复现测试（专项 `xiyou_t368_gear_r9`，开头 `XKeyMap.apply()` 照实机键位，经 `gs._input` 走） |
+| --- | --- | --- |
+| P1-1 X 关页 | `gear_search.gd` `_input`：没在输入时 KEY_X（含点「X 搜词条」胶囊合成的键）先于 `popup_cancel` 判成搜词条 | `r1_x_is_cancel_bound`、`r1_p1_1_x_opens_search`（换回旧 `_input` 实测失败：58/59，失败即收尾不挂住） |
+| P1-2 打字 x/k/小键盘 0 关框 | 删掉 `or (page.typing() and ui_cancel)`，只走 `XKeyMap.popup_cancel` | `r1_p1_2_typing_keeps_88/75/4194438`；Esc、触屏「取消」仍收起：`r1_esc_closes_search_only`、`r1_action_cancel_closes_search` |
+| P2-1 点别处 typing 卡住；Y 被牌拦 | 输入时点在输入框外先 `close_search()`（点击照常落到被点处）；`open_picker` 先收输入框；输入时牌 `set_process_input(false)`（展开的先收回），收起时还原 | `r1_p2_1_tap_chip_closes_search`、`r1_p2_1_keys_work_after`、`r1_p2_1_tap_inside_keeps`、`r1_p2_1_picker_closes_search`、`r1_p2_1_card_no_y_while_typing` |
+| P2-2 挑选框箭头出框 | `_place_picker` 照模板页左留 28（`XSkinArt.select_on()`，否则 8） | `r1_p2_2_picker_margin`；截图 `7_picker_sort` |
+| P2-3 点列表焦点不回 | `list.gui_input` 按下时焦点在筛选区／牌上就切 `list`（不接 `index_changed`，免得 `set_items` 内部回调误切） | `r1_p2_3_tap_list_focus`、`r1_p2_3_tap_list_from_card` |
+| P2-4 30 种部位溢出 | 新 `type_chip_size`：按左块高减其余固定高（`FIXED_H`）算，放不下逐像素收小（最小 24）；少于 4 行仍 36 | `r1_p2_4_30_types_fit`（1/7/14/21/28/30/35 种）、`r1_p2_4_few_types_full_size`、`r1_fixed_h_matches_layout` |
+| P3-1 文字 | 照小A：「⌕ 搜词条」→「搜词条」＋自画放大镜；「原序」→「默认」、「单项词条」→「词条」；占位「搜装备名或词条，空格隔开」；输入态提示「取消 收起」（可点） | `r1_p3_sort_names`、`r1_p3_search_text`、`r1_p3_typing_hint_tappable` |
+| P3-2 字号、部位名预览 | 自画字号过 `XUiSkin.fs()`（输入框本来就用 `FS_AUX_MAX`＝`fs(17)`）；光标停在部位图标上，「部位」旁写「› 名字」，移开回到已选 | `r1_p3_type_preview`、`r1_p3_type_note_back`；截图 `c_type_cursor_preview` |
+
+- 截图重拍：`00_项目管理/归档/交付截图/T368_装备检索/`（原 11 张全部重拍＋新增 `c_type_cursor_preview`）。
 
 ## T361 已做／R9 还差（开工对照表）
 
@@ -41,17 +56,18 @@
 
 ## 文字（玩家可见新字，草稿，待小A 审）
 
-- 小块：「⌕ 搜词条」「搜：<词>」「✕」「已装备」「背包」「品质」「词条数」「名称」「更多 ▾」「原序 ▾」「单项词条 ▾」「战力 ▾」（八项能力时写能力名，如「物攻 ▾」）「分类：全部 ▾」「指定词条：不限 ▾」「清空条件」
+- （R1 已照小A 文字审改，下列为改后）小块：「搜词条」（前面自画放大镜）「搜：<词>」「✕」「已装备」「背包」「品质」「词条数」「名称」「更多 ▾」「默认 ▾」「词条 ▾」「战力 ▾」（八项能力时写能力名，如「物攻 ▾」）「分类：全部 ▾」「指定词条：不限 ▾」「清空条件」
 - 组名与说明：「品质」「部位」「位置」「排序」，组名后写当前选择（「全部」、多选品质用「、」连，如「精良、传说」）
-- 输入框占位：「装备名或词条，空格隔开，如：暴击 掉宝」
+- 输入框占位：「搜装备名或词条，空格隔开」
 - 列表小标题：「符合 a / b 件 · 排序：<排序名>」；空列表：「没有符合的装备，放宽条件再找找。」
 - 挑选框标题：「分类」「指定词条」「排序」「品质细分（可多选）」
 - 牌：节名「能力」（其余节名、按钮「按此筛选」沿用 T361）
-- 按键提示：「切换」「搜词条」「选择」「返回」「按此筛选」「返回列表」「关闭」「回车 完成」
+- 按键提示：「切换」「搜词条」「选择」「返回」「按此筛选」「返回列表」「关闭」「取消 收起」（输入态）；光标在部位图标上：「部位 › <名字>」
 
 ## 验证
 
-- 本机专项：`xiyou_t368_gear_r9`（新增）75/75；`xiyou_t361_unslop` 44/44；`xiyou_gear_search` 60/60；`xiyou_ui_skin_close` 71/71；`xiyou_power_hidden` 21/21。
+- R1 本机（`--headless --audio-driver Dummy`，独立 HOME）：`xiyou_t368_gear_r9` 98/98；`xiyou_t361_unslop` 44/44；`xiyou_gear_search` 60/60；`xiyou_ui_skin_close` 71/71；`语法检查.py` 0 问题；`发行空壳.py check` 退出 0。云端选测见下。
+- 原单本机专项：`xiyou_t368_gear_r9`（新增）75/75；`xiyou_t361_unslop` 44/44；`xiyou_gear_search` 60/60；`xiyou_ui_skin_close` 71/71；`xiyou_power_hidden` 21/21。
 - 本机：`语法检查.py` 0 问题；`工具回归.py` 全过；`发行空壳.py check` 退出 0；`回退开关覆盖.py` 只有旧的解析不了条目（与本单无关）。
 - 云端选测（bd67df8037，19 个场景、3 片）：全过；`gh run watch` 前台等完，结论 success（选测.py 列的 19 个场景：含 xiyou_event_compare 四个、xiyou_ui_skin_1c／close／offshot、xiyou_gear_search、xiyou_gear_ui、xiyou_item_list、xiyou_gear_query_cache、xiyou_input_handled 等）。
 
@@ -73,4 +89,5 @@
 ## 本分支提交
 
 - bd67df803 T368 卡 G 新页、开关、品质多选、专项与截图工具
-- （本提交）交付单
+- ffd35be5f 交付单
+- （本提交）R1 返修：P1×2 P2×4 P3×2、专项补 23 条复现、截图重拍
