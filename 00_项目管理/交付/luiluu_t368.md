@@ -1,7 +1,12 @@
 # 交付：luiluu/t368
 
 - 车道／工作者：T368 卡 G 装备检索重做成筛选小块（T254 R9）／cc 车道（Opus＋medium，P8）
-- 状态：可合并（R1 返修已做，待小A 复核）
+- 状态：可合并（R2 热修 P1-3 已做，待小A 复核；R1 旧项小A 已确认修好）
+
+## R2 热修（小A 核报告 `xiyou-design-docs/协作交接/派单/T368_核报告R2.md`，只修 P1-3）
+
+- **P1-3**：输入态点右下「取消 收起」／触屏「收起」或左上「‹」，`gear_search._input` 先按「点在输入框外」收起，提示切成「取消 返回」，同一下点击再落到提示条／返回钮派 `ui_cancel` 把整页关掉。改法：`XSkinGearSearch.tap_outside_edit` 排除提示条里点中的那颗胶囊（`hints.hit`）和 `back_button` 区域，让它们自己的取消去收起输入框。
+- 复现测试（专项 `xiyou_t368_gear_r9` 新增 7 条，`get_viewport().push_input(e, true)` 经真实视口按下＋松开）：`r2_p1_3_desk_hint_collapses_only`（桌面点「取消 收起」）、`r2_p1_3_touch_hint_collapses_only`（触屏点「收起」）、`r2_p1_3_back_collapses_only`（点「‹」）——都断言输入框收起、检索页仍在；换回旧代码三条各自失败（逐条单独跑过）。
 
 ## R1 返修（小A 核报告 `xiyou-design-docs/协作交接/派单/T368_核报告R1.md`，P1×2 P2×4 P3×2 逐条）
 
@@ -66,6 +71,7 @@
 
 ## 验证
 
+- R2 本机（`--headless --audio-driver Dummy`，独立 HOME）：`xiyou_t368_gear_r9` 105/105；`xiyou_gear_search` 60/60；`xiyou_t361_unslop` 44/44；`语法检查.py` 0 问题；`发行空壳.py check` 退出 0。
 - R1 本机（`--headless --audio-driver Dummy`，独立 HOME）：`xiyou_t368_gear_r9` 98/98；`xiyou_t361_unslop` 44/44；`xiyou_gear_search` 60/60；`xiyou_ui_skin_close` 71/71；`语法检查.py` 0 问题；`发行空壳.py check` 退出 0；`交付自检.py` 可以交付。R1 云端选测（4b1542c09，14 个场景）：通过，`gh run watch` 等完 success（run 44968469067）。
 - 原单本机专项：`xiyou_t368_gear_r9`（新增）75/75；`xiyou_t361_unslop` 44/44；`xiyou_gear_search` 60/60；`xiyou_ui_skin_close` 71/71；`xiyou_power_hidden` 21/21。
 - 本机：`语法检查.py` 0 问题；`工具回归.py` 全过；`发行空壳.py check` 退出 0；`回退开关覆盖.py` 只有旧的解析不了条目（与本单无关）。
@@ -90,4 +96,6 @@
 
 - bd67df803 T368 卡 G 新页、开关、品质多选、专项与截图工具
 - ffd35be5f 交付单
-- （本提交）R1 返修：P1×2 P2×4 P3×2、专项补 23 条复现、截图重拍
+- 4b1542c09 R1 返修：P1×2 P2×4 P3×2、专项补 23 条复现、截图重拍
+- b2027f108 交付单补 R1 云端选测
+- （本提交）R2 热修 P1-3：输入态点提示条／「‹」只收输入框、专项补真实视口点击 3 处

@@ -10,6 +10,7 @@ extends Node
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 var results: Array = []
+var bailed := false
 
 
 func _ready() -> void:
@@ -92,6 +93,8 @@ func _run() -> void:
 	check("r9_page", p != null and is_instance_valid(p) and gs._filter_panel == null)
 	await _basics(gs, p)
 	await _chips_work(gs, p)
+	if bailed:
+		return
 	_old_options_reachable(gs, p)
 	_detail_parity(gs, p)
 	await _empty_and_cancel(gs, p, host)
@@ -344,10 +347,59 @@ func _r1_keys(gs: XGearSearch, p: XSkinGearSearch) -> void:
 	check("r1_p3_type_preview", p.group_note("type").contains(str(p.chips[p.cursor].text)) and str(XGearSearch.filter.type) == "", p.group_note("type"))
 	p.set_focus("list")
 	check("r1_p3_type_note_back", p.group_note("type") == "全部", p.group_note("type"))
+	await _r2_taps(gs, p)
+
+
+## 经真实视口点一下（按下＋松开），走 gs._input → GUI 控件的实机顺序
+func _vtap(pos: Vector2) -> void:
+	for down in [true, false]:
+		var e := InputEventMouseButton.new()
+		e.button_index = MOUSE_BUTTON_LEFT
+		e.pressed = down
+		e.position = pos
+		e.global_position = pos
+		get_viewport().push_input(e, true)   # 视口坐标（无头窗口尺寸与视口不同，false 会再缩放一遍点歪）
+		await frames(1)
+	await frames(3)   # 提示胶囊／「‹」是 call_deferred 合成取消，下一帧才进 _input
+
+
+func _hint_pos(p: XSkinGearSearch, key: String) -> Vector2:
+	for i in p.hints.hints.size():
+		if str(p.hints.hints[i][0]) == key:
+			return p.hints.get_global_transform() * p.hints.chip_rect(i).get_center()
+	return Vector2.INF
+
+
+# ---- R2 返修（小A核 T368_核报告R2 P1-3）：输入时点「取消 收起」／触屏「收起」／左上「‹」只收输入框，不关页 ----
+func _r2_taps(gs: XGearSearch, p: XSkinGearSearch) -> void:
+	for mode in [0, 1]:
+		XUiSkin.touch_override = mode
+		p.open_search()
+		p.relayout()
+		await frames(2)
+		var at := _hint_pos(p, "取消")
+		var tag := "touch" if mode == 1 else "desk"
+		check("r2_p1_3_%s_hint_found" % tag, at != Vector2.INF and int(p.hints.hit(p.hints.get_global_transform().affine_inverse() * at)[0]) >= 0, [at, p.hints.hints])
+		await _vtap(at)
+		if not check("r2_p1_3_%s_hint_collapses_only" % tag, is_instance_valid(gs) and not gs.is_queued_for_deletion() and is_instance_valid(p) and not p.typing()):
+			XUiSkin.touch_override = -1
+			_bail()
+			return
+	XUiSkin.touch_override = -1
+	p.relayout()
+	p.open_search()
+	await frames(2)
+	check("r2_p1_3_back_button_present", p.back_button != null and is_instance_valid(p.back_button))
+	await _vtap(p.back_button.get_global_rect().get_center())
+	if not check("r2_p1_3_back_collapses_only", is_instance_valid(gs) and not gs.is_queued_for_deletion() and is_instance_valid(p) and not p.typing()):
+		_bail()
+		return
+	check("r2_p1_3_hint_back_to_return", p.hint_list.any(func(h): return str(h[1]) == "返回"), p.hint_list)
 
 
 ## 页被关掉后面没法再测：直接收尾报失败（不然协程断在已释放的页上，测试挂住不退）
 func _bail() -> void:
+	bailed = true
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit(1)

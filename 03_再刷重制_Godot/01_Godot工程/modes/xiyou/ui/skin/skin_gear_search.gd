@@ -486,6 +486,14 @@ func tap_outside_edit(event: InputEvent) -> bool:
 		pos = event.position
 	if pos == Vector2.INF:
 		return false
+	# R2 P1-3：点右下提示条（「取消 收起」／触屏「收起」）或左上「‹」不算点外面——它们自己发一次取消来收起输入框；
+	# 这里再先收起一次，提示就切成「取消 返回」，随后那下取消会把整页关掉
+	if hints != null and is_instance_valid(hints) and hints.visible \
+			and int(hints.hit(hints.get_global_transform().affine_inverse() * pos)[0]) >= 0:
+		return false
+	if back_button != null and is_instance_valid(back_button) and back_button.visible \
+			and back_button.get_global_rect().has_point(pos):
+		return false
 	return not search_edit.get_global_rect().has_point(pos)
 
 
