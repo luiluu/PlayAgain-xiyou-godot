@@ -70,7 +70,8 @@ MIXED_OK = {
 # 「重铸」是天启篇才有的，但 alien_workshop.gd 的按钮样式正则 PRIMARY_RE 里也有（换掉会让西游档按钮全变主色），所以只认带上下文的说法。
 # 查不到的：没有固定玩法名的天启篇规则长文（如 guide.gd milestone_intro／advice 的天启篇分支），见 交付/luiluu_t385.md。
 TIANQI_WORDS = re.compile(r'号卷|封卷|七印|烙印|刻印|天启之路|天启篇词条|异化核|骑士遗物|毕业武器|炼狱、证道|证道难度|炼狱难度'
-    r'|装备重铸|重铸第|重铸哪件|已重铸|不能重铸|不会重铸|重铸词条|洗其余')
+    r'|装备重铸|重铸第|重铸哪件|已重铸|不能重铸|不会重铸|重铸词条|洗其余'
+    r'|侵染、蚀骨|本线异化图鉴|确认取核|战商|装备环纹')  # T388：T385 核 P2-1 补；单独「取核」在 alien_workshop DANGER_RE 里，只收「确认取核」
 # 登记过的混合脚本：路径 →（命中的字面量条数, 为什么走不到）。make_tree 在发行克隆里把这些文件命中的字面量换成只剩格式符的占位
 # （"%s 的烙印加深至「%s」" → "%s%s"，% 运算照样不报错），游戏脚本本身一字不改；没登记的文件有命中、或条数变多，check 报错。
 MIXED_STR = {
@@ -78,15 +79,18 @@ MIXED_STR = {
     'modes/xiyou/core/guide.gd': (2, '354 烙印标题在 XTianqiBrand.status_rows 非空时（空壳给 []）；470 在 _tianqi_milestone_on（XTianqi.active，空壳 false）'),
     'modes/xiyou/core/power_books.gd': (4, '号卷说法都是 XTianqiTrumpet.on() 的真分支，空壳恒 false'),
     'modes/xiyou/ui/power_forget.gd': (8, '号卷／封卷说法都是 tq＝XTianqiTrumpet.on() 的真分支，空壳恒 false'),
-    'modes/xiyou/ui/alien_workshop.gd': (13, '216 在 tq_on 分支、265 在 confirming_core（只由天启篇取核钮置真）、379/381 在 _core_section（tq_on 才调）、'
+    'modes/xiyou/ui/alien_workshop.gd': (17, '215 在 tq_on 分支（空本线怪池）、264／266 确认取核在 confirming_core、450 本线异化图鉴在 XTianqiAlienCodex.on 才调；216、265 在 confirming_core（只由天启篇取核钮置真）、379/381 在 _core_section（tq_on 才调）、'
         '399～422 在 _reforge_section（XTianqiReforge.on 才调），434/442 是该节按钮回调的报错；XTianqiAlienGear／XTianqiReforge 空壳恒 false'),
     'modes/xiyou/ui/skin/ui_skin.gd': (1, '工坊菜单「异化工坊」说明，只在新界面菜单显示，发行恒关（XUiSkin.on false）'),
     'modes/xiyou/ui/save_scene.gd': (1, '「天启之路」行在 save_line(d) 非空时，XTianqiLook.line_of_save 空壳给 ""'),
     'modes/xiyou/ui/skin/skin_save_page.gd': (1, 'T_LINE 只在天启篇存档行用；新界面发行恒关（XUiSkin.on false）'),
     'modes/xiyou/ui/skin/skin_main_menu.gd': (2, '七印行在 seal_states 非空时，XTianqiQiyin.allowed 空壳 false；新界面发行恒关'),
+    'modes/xiyou/core/boss_status.gd': (2, '战商档位行（T388）：six_summary 在 XTianqiSixDim.active() 守卫内，空壳恒 false'),
+    'modes/xiyou/ui/options_scene.gd': (1, '装备环纹选项名（T388）：RING_STYLE_OPTION 只在新界面开着时列入（XUiSkin.on，发行恒 false）'),
+    'modes/xiyou/ui/skin/skin_six_dim_radar.gd': (1, '六维名「战商」（T388）：DIM_NAMES 只在 XTianqiSixDim.active() 为真时被引用，发行恒 false；占位成空串不影响编译'),
     'modes/xiyou/ui/skin/skin_options_page.gd': (1, '装备环纹说明只在新界面设置页显示，发行恒关'),
 }
-_STR_LIT = re.compile(r'(?<![&^\w])"(?:[^"\\\n]|\\.)*"|(?<![&^\w])\'(?:[^\'\\\n]|\\.)*\'')
+_STR_LIT = re.compile(r'(?<![&^\w])r?"(?:[^"\\\n]|\\.)*"|(?<![&^\w])r?\'(?:[^\'\\\n]|\\.)*\'')
 _FMT_TOKEN = re.compile(r'%[-+ 0#]*(?:\d+|\*)?(?:\.(?:\d+|\*))?[scdoxXfv%]')
 
 
@@ -106,7 +110,9 @@ def _str_scan(src: str, fix: bool = False):
             if not TIANQI_WORDS.search(lit):
                 return lit
             hits.append((i, lit))
-            return lit[0] + ''.join(_FMT_TOKEN.findall(lit[1:-1])) + lit[0]
+            pre = 'r' if lit[0] == 'r' else ''  # T388：原始字符串 r"..." 保留前缀
+            q = lit[len(pre)]
+            return pre + q + ''.join(_FMT_TOKEN.findall(lit[len(pre) + 1:-1])) + q
         new = _STR_LIT.sub(sub, code)
         out.append((new if fix and '"""' not in code and "'''" not in code else code) + tail)
     return '\n'.join(out), hits
@@ -170,8 +176,12 @@ def _strip_comment(line: str) -> str:
     for i, ch in enumerate(line):
         if q:
             out.append(ch)
-            if ch == q and line[i - 1] != '\\':
-                q = None
+            if ch == q:
+                n = 0  # T388：引号前连续反斜杠数为偶数才是真收尾
+                while n < i and line[i - 1 - n] == '\\':
+                    n += 1
+                if n % 2 == 0:
+                    q = None
         elif ch in '"\'':
             q = ch
             out.append(ch)
@@ -613,10 +623,8 @@ def is_stub_tree(root: Path) -> list:
     f = root / RULES_REL
     if f.is_file() and 'tianqi_dict' in json.loads(f.read_text(encoding='utf-8')):
         out.append(f'{RULES_REL}（还带 tianqi_dict）')
-    for rel in MIXED_STR:  # T385：登记过的混合脚本里天启篇玩法名字符串要已换成占位
-        f = root / rel
-        if f.is_file() and _str_scan(f.read_text(encoding='utf-8'))[1]:
-            out.append(f'{rel}（还带天启篇玩法名字符串）')
+    for rel in tianqi_string_hits(root):  # T388：不止登记过的，任何不换空壳的脚本还有天启篇玩法名字符串都算（T385 核 P2-2）
+        out.append(f'{rel}（还带天启篇玩法名字符串）')
     return out
 
 
