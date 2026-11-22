@@ -31,6 +31,10 @@ T363 迭代（Kyo 11-21 事项17「全按推荐」）：
 - 守层者每回合打我方优先取 enemyDmgBase（集火招按表里倍率多打的折回统一倍率，量数照新表打时用）。
 - 12、15、25 层（SINGLE）没有单体伤害招：指定一招在守层者手里改打一人（表里 "single": 1，游戏 XGuardianRework.single_action）；
               量数里那招已是单体（scope 1）就照实测；还是多体（老量数）就按一次出手的目标数 n（全体＝队伍人数、随机 k 个＝k）把每回合打我方、一次占比都 ÷n 估单体。
+- 真打校准（--duel-calib <真打 json>…，T363 第 2 步）：量数的 dmgRaw 是每下前补满、不算守层者回血闪避与同场异化（19 层号令官），
+              真打实际掉血可能只有它的一半，也可能更多。按真打（baseline_dps --duel 的输出，表是当时写进去的那份）重定 hp_base：
+              每队实效每回合伤害＝输了的队取真打每回合掉血、赢了的队取 当时血量÷赢的回合数；hp_base＝各层普通阵容实效的 90 分位 ×（目标回合−2）÷目标回合。
+              atk_scale、focus、resist 仍按量数。
 空表（rows 为空）：什么都不写，退出码 0，打印「没有数」。写入时只动 balance_table.json 里 guardian_phase4 这一键（文本层面替换，其余字节不动）。"""
 import argparse
 import json
@@ -275,6 +279,21 @@ def build6(rows: list, turns: int = 8, share: float = 0.40, mode: str = 'c', hp_
     return out
 
 
+def duel_calib(paths: list, turns: int = 8) -> dict:
+    """T363：按真打重定 hp_base（见头注释）。返回 {层: 每回合血量}"""
+    eff = {}
+    for p in paths:
+        for r in json.loads(Path(p).read_text(encoding='utf-8')).get('rows', []):
+            f = int(r['floor'])
+            for t in r.get('per', []):
+                if t.get('team') == '奶妈队' or int(t.get('turns', 0)) <= 0:
+                    continue
+                e = float(t.get('enemyHp', r.get('enemyHp', 0))) / int(t['turns']) if t.get('won') else float(t.get('dmg', 0))
+                if e > 0:
+                    eff.setdefault(f, []).append(e)
+    return {f: int(sig3(_quant(v, HP_QUANTILE) * (turns - 2) / turns)) for f, v in eff.items() if v}
+
+
 def render(tables: dict) -> str:
     lines = []
     for name, t in tables.items():
@@ -327,6 +346,11 @@ def cmd_build(args) -> int:
             print('%d | %d | %.0f | %s | %.0f | %.3g | %s | %.3g | %.0f | C 招 %d 单次占比 %.3g 集火倍率/其余倍率 %s 定到单下 %.2f 不够队数 %d' % (
                 f, s['n'], s['dmg'], tables.get('hp_base', {}).get(str(f)), s['rec'], s['sus'], '/'.join('%.3g' % x for x in fo),
                 max(mx['sus'], mx['focus']), s['atkHit'], cs[1]['skill'], cs[1]['useRatio'], ' '.join('%.3g/%.3g' % (c['scale'], c['atk']) for c in cs), cs[1]['hitRatio'], cs[1]['short']), file=sys.stderr)
+    if args.v6 and args.duel_calib and tables:
+        cal = duel_calib(args.duel_calib, args.turns)
+        for f, v in sorted(cal.items()):
+            print('真打校准 %d 层 hp_base %s → %d' % (f, tables.get('hp_base', {}).get(str(f)), v), file=sys.stderr)
+            tables.setdefault('hp_base', {})[str(f)] = v
     if not tables:
         print('没有数（输入里没有可用的层），不写。')
         return 0
@@ -410,6 +434,15 @@ def selftest() -> int:
     t12b = dict(t0, enemyDmg=500.0, enemyDmgBase=100.0, bySkill={'661': {'scope': 1, 'type': 1, 'useRatio': 0.1, 'ratio': 0.1, 'dmg': 10.0}, '9': {'scope': 1, 'type': 1, 'useRatio': 0.5, 'dmg': 90.0}})
     tb2 = build6([{'floor': 12, 'teams': [t12b]}], 8, 0.40)
     assert tb2['focus']['12']['skill'] == 661 and tb2['atk_scale']['12'] == sig3(60 / 90), tb2   # 其余预算 100−40＝60 摊给其余 90
+    # T363 真打校准：输的队取每回合掉血，赢的队取 血量÷回合；奶妈队不算
+    import os
+    fd, tmp = tempfile.mkstemp(suffix='.json')
+    os.close(fd)
+    Path(tmp).write_text(json.dumps({'rows': [{'floor': 19, 'enemyHp': 800.0, 'per': [
+        {'team': '原队', 'won': False, 'turns': 9, 'dmg': 50.0}, {'team': '随机1', 'won': True, 'turns': 4, 'dmg': 999.0},
+        {'team': '奶妈队', 'won': True, 'turns': 1, 'dmg': 1e9}]}]}), encoding='utf-8')
+    assert duel_calib([tmp]) == {19: int(sig3((50 + 0.9 * 150) * 0.75))}, duel_calib([tmp])
+    os.unlink(tmp)
     print('selftest 通过')
     return 0
 
@@ -424,6 +457,7 @@ def main(argv=None) -> int:
     b.add_argument('--turns', type=int, default=8, help='目标回合（艰险 8）')
     b.add_argument('--share', type=float, default=0.40, help='集火：单下打中一人占其最大生命的比例')
     b.add_argument('--focus-mode', choices=['c', 'add', 'max'], default='c')
+    b.add_argument('--duel-calib', action='append', default=[], help='T363：按真打 json 重定 hp_base（可多个）')
     b.add_argument('--hp-mode', choices=['top', 'smooth'], default='top', help='T363 top＝每层强队 90 分位×(回合−2)÷回合；smooth＝第 6 轮平滑')
     sub.add_parser('selftest')
     args = ap.parse_args(argv)
