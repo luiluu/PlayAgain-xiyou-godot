@@ -13,10 +13,10 @@ const PARAM_IDS := {"mhp": 0, "mmp": 1, "atk": 2, "def": 3, "mat": 4, "mdf": 5, 
 const ICON_BUFF_START := 32  # Game_BattlerBase.ICON_BUFF_START
 const ICON_DEBUFF_START := 48
 
-## 【T279】战商档一句话提示（玩家可见草稿，待小A 审）；档名在 six_dim.json 的 ai_tier_names
+## 【T279】战商档一句话提示；档名在 six_dim.json 的 ai_tier_names
 const TIER_HINTS := {
 	1: "全无章法，按本能随机出招",
-	2: "选目标时有一半几率盯紧血量最低的",
+	2: "选目标时有一半概率盯紧生命比例最低者",
 	3: "会避开免疫与重复控制，优先打弱点",
 	4: "专盯弱点与可斩杀目标，优先点治疗者",
 	5: "遇厚盾与护持会留大招，先铺垫再爆发",

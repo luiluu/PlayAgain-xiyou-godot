@@ -360,7 +360,9 @@ func _text(s: XState) -> void:
 
 	# T286（D247）：状态行不再说「第几层」，改「计数 → 加了多少」；括号提示越往后越慢
 	var slow := "（越往后涨得越慢）"
-	var slow_r := "（超20万起算，越往后涨得越慢）"
+	var slow_r := "（超 20 万起算，越往后涨得越慢）"
+	var slow_n := "（超 2,000 次起算，越往后涨得越慢）"
+	var slow_l := "（超 300 场起算，越往后涨得越慢）"
 	var no_layer := func(t: String) -> bool: return not t.contains("层")
 	# 1) 渡鸦状态行：没学 10136 或未到起点空；到起点＋0；半份；拐点；接入 ledger_help
 	r.forget_skill(10136)
@@ -390,16 +392,16 @@ func _text(s: XState) -> void:
 	_check("txt_nanoha_below", G.status_line(G.NANOHA, n) == "" and not _card_text(XHelpCard.content(XDB.rec("Skills", 5683), "skill", false, 300.0)).contains("超限适应"))
 	set_n.call(n_base)
 	var n0 := G.status_line(G.NANOHA, n)
-	var n0_want := "超限适应：适应 %s 次 → 额外最大生命 +0、最大魔法 +0%s" % [G._fmt_num(n_base), slow]
+	var n0_want := "超限适应：适应 %s 次 → 额外最大生命 +0、最大魔法 +0%s" % [G._fmt_num(n_base), slow_n]
 	_check("txt_nanoha_start", n0 == n0_want and no_layer.call(n0), [n0, n0_want])
 	set_n.call(n_base + 12.5)
 	var nh := G.status_line(G.NANOHA, n)
 	var nh_l := 12.5 / n_share
-	var nh_want := "超限适应：适应 %s 次 → 额外最大生命 +%s、最大魔法 +%s%s" % [G._fmt_num(n_base + 12.5), G._fmt_int(roundi(n_hp * nh_l)), G._fmt_int(roundi(n_mp * nh_l)), slow]
+	var nh_want := "超限适应：适应 %s 次 → 额外最大生命 +%s、最大魔法 +%s%s" % [G._fmt_num(n_base + 12.5), G._fmt_int(roundi(n_hp * nh_l)), G._fmt_int(roundi(n_mp * nh_l)), slow_n]
 	_check("txt_nanoha_half", nh == nh_want and nh.contains(".5 次"), [nh, nh_want])
 	set_n.call(n_base + G.cumulative(24) * n_share)
 	var n24 := G.status_line(G.NANOHA, n)
-	var n24_want := "超限适应：适应 %s 次 → 额外最大生命 +%s、最大魔法 +%s%s" % [G._fmt_num(n_base + G.cumulative(24) * n_share), G._fmt_int(24 * n_hp), G._fmt_int(24 * n_mp), slow]
+	var n24_want := "超限适应：适应 %s 次 → 额外最大生命 +%s、最大魔法 +%s%s" % [G._fmt_num(n_base + G.cumulative(24) * n_share), G._fmt_int(24 * n_hp), G._fmt_int(24 * n_mp), slow_n]
 	var card_n := _card_text(XHelpCard.content(XDB.rec("Skills", 5683), "skill", false, 300.0))
 	var book_n := _card_text(XHelpCard.content(XDB.rec("Skills", 5683), "skill", true, 300.0))
 	_check("txt_nanoha_l24", n24 == n24_want and no_layer.call(n24) and card_n.contains(n24) and not book_n.contains("超限适应"), [n24, n24_want])
@@ -411,20 +413,20 @@ func _text(s: XState) -> void:
 	_check("txt_ly_below", G.status_line(G.LIUYING, a) == "" and not _card_text(XHelpCard.content(XDB.rec("Skills", 10624), "skill", false, 300.0)).contains("不熄之火"))
 	sd["_codexLbEmberWins"] = l_base
 	var l0 := G.status_line(G.LIUYING, a)
-	var l0_want := "不熄之火：胜场 %s → 额外余烬生命 +0、伤害 +0%%%s" % [G._fmt_int(roundi(l_base)), slow]
+	var l0_want := "不熄之火：胜场 %s → 额外余烬生命 +0、伤害 +0%%%s" % [G._fmt_int(roundi(l_base)), slow_l]
 	_check("txt_ly_start", l0 == l0_want and no_layer.call(l0), [l0, l0_want])
 	sd["_codexLbEmberWins"] = l_base + l_share
 	var l1 := G.status_line(G.LIUYING, a)
-	var l1_want := "不熄之火：胜场 %s → 额外余烬生命 +%s、伤害 +%d%%%s" % [G._fmt_int(roundi(l_base + l_share)), G._fmt_int(l_ember), l_dmg1, slow]
+	var l1_want := "不熄之火：胜场 %s → 额外余烬生命 +%s、伤害 +%d%%%s" % [G._fmt_int(roundi(l_base + l_share)), G._fmt_int(l_ember), l_dmg1, slow_l]
 	_check("txt_ly_l1_no3000", l1 == l1_want, [l1, l1_want])
 	sd["_codexLbEmberWins"] = l_base + l_share + 27.0
 	var lm := G.status_line(G.LIUYING, a)
 	var lm_l := 1.0 + 27.0 / (G.price(2) * l_share)
-	var lm_want := "不熄之火：胜场 %s → 额外余烬生命 +%s、伤害 +%d%%%s" % [G._fmt_int(roundi(l_base + l_share + 27.0)), G._fmt_int(floori(l_ember * lm_l + 1e-9)), l_dmg1, slow]
+	var lm_want := "不熄之火：胜场 %s → 额外余烬生命 +%s、伤害 +%d%%%s" % [G._fmt_int(roundi(l_base + l_share + 27.0)), G._fmt_int(floori(l_ember * lm_l + 1e-9)), l_dmg1, slow_l]
 	_check("txt_ly_mid_floor", lm == lm_want, [lm, lm_want])
 	sd["_codexLbEmberWins"] = l_base + G.cumulative(24) * l_share
 	var l24 := G.status_line(G.LIUYING, a)
-	var l24_want := "不熄之火：胜场 %s → 额外余烬生命 +%s、伤害 +%d%%%s" % [G._fmt_int(roundi(l_base + G.cumulative(24) * l_share)), G._fmt_int(24 * l_ember), G.dmg_pct_of(24), slow]
+	var l24_want := "不熄之火：胜场 %s → 额外余烬生命 +%s、伤害 +%d%%%s" % [G._fmt_int(roundi(l_base + G.cumulative(24) * l_share)), G._fmt_int(24 * l_ember), G.dmg_pct_of(24), slow_l]
 	var card_l := _card_text(XHelpCard.content(XDB.rec("Skills", 10624), "skill", false, 300.0))
 	var book_l := _card_text(XHelpCard.content(XDB.rec("Skills", 10624), "skill", true, 300.0))
 	_check("txt_ly_l24", l24 == l24_want and no_layer.call(l24) and card_l.contains(l24) and not book_l.contains("不熄之火"), [l24, l24_want])
@@ -434,7 +436,7 @@ func _text(s: XState) -> void:
 
 	# 4) 卡面内容（天启篇）：10136、5683、10624、weapon:4004
 	var c10136 := _card_text(XHelpCard.content(XDB.rec("Skills", 10136), "skill", true, 300.0))
-	_check("card_10136", c10136.contains("20万") and c10136.contains("魂海刻度") and not c10136.contains("4.25") and not c10136.contains("1.1"), c10136)
+	_check("card_10136", c10136.contains("20 万") and c10136.contains("魂海刻度") and not c10136.contains("4.25") and not c10136.contains("1.1"), c10136)
 	_check("card_5683", book_n.contains("2,000") and book_n.contains("达标楼层") and not book_n.contains("结算伤害*0.05") and not book_n.contains("1-45级"), book_n)
 	_check("card_10624", book_l.contains("10 层") and book_l.contains("+3%") and book_l.contains("−5%") and book_l.contains("9 倍火属性") and book_l.contains("300 场") and not book_l.contains("12层") and not book_l.contains("真实伤害") and not book_l.contains("全队生效"), book_l)
 	var w4004 := XGear.create("weapon", XLiuying.WEAPON, s)

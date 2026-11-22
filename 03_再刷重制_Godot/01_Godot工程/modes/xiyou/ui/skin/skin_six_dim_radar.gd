@@ -8,13 +8,13 @@ extends Control
 ##   2. 节点：var r := XSkinSixDimRadar.new(); r.six = …; r.compact = true; add_child(r)；控件按自身 size 居中画，悬停给六维说明。
 ## opts（都可省）：compact＝紧凑（顶点标签一行「名 档」）、font／text／dim／line／accent／gold＝换字体与配色（人物图鉴用旧窗口字与色）、
 ##   fs＝标签字号、highlight＝SS／SSS 档字高光（默认开）。
-## 画法只管形状；六维名称与说明字见 DIM_NAMES／DIM_HINTS（玩家可见文字，待小A 审）。
+## 画法只管形状；六维名称与说明字见 DIM_NAMES／DIM_HINTS（玩家可见文字）。
 ## 只在天启篇开着时才该有人调用它；西游档由调用方不画（本控件本身不判断）。
 
 ## 顶点顺序：自正上方起顺时针，同 XTianqiSixDim.DIMS
 const DIMS := ["output", "survive", "speed", "wit", "resolve", "support"]
 const DIM_NAMES := {"output": "输出", "survive": "生存", "speed": "速度", "wit": "战商", "resolve": "韧性", "support": "辅助"}
-## 一句话说明（定稿 1.1 的玩家可见草稿；待小A 审）
+## 一句话说明（定稿 1.1 的玩家可见文字）
 const DIM_HINTS := {
 	"output": "杀伤与爆发能力（不区分物理与魔法）",
 	"survive": "抗击打与保命能力（生命、防御、护盾与回复）",

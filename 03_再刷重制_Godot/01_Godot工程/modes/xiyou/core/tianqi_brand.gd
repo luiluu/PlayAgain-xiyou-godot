@@ -1238,13 +1238,13 @@ static func panel(s: XState, a) -> Dictionary:
 
 
 ## 状态界面修行页（第 4 页「修行」、第 5 页「修行·详细」，XGuide.panel_rows／detail_rows 在天启篇调；T121，卡验收第 4 条）。
-## 玩家可见文字（待小A 审）：只说段名（守一～逆命）、百分比、怎么加深，不用「境」「锚」作总称（T140、D174）。关着、西游档返回空。
+## 玩家可见文字：只说段名（守一～逆命）、百分比、怎么加深，不用「境」「锚」作总称（T140、D174）。关着、西游档返回空。
 const TEXT_ROW := "烙印：\\C[6]「%s」\\C[0] %s%%%s　伤害 \\C[3]+%s%%\\C[0]"
 const TEXT_HOW_END := "烙印已到尽头，不再加深"
 const TEXT_HOW_STAND := "\\C[17]已达「%s」上限：击败心魔后方可继续加深（大厅「闭关」）\\C[0]"
 const TEXT_HOW_SEALED := "\\C[17]未刻印止步于「%s」（%s%%）：刻印后方可继续加深（大厅「闭关」）\\C[0]"
 const TEXT_HOW_CARVED := "加深：首领战获胜可加深（首通守层者最多）；「%s」上限 %s%%"
-const TEXT_HOW_UNCARVED := "加深：未刻印，仅在首领战受击时积累；上限「%s」（%s%%）"
+const TEXT_HOW_UNCARVED := "加深：未刻印，仅在首领战受击时积累；「%s」上限 %s%%"
 const TEXT_COSTS := "代价：%s"
 
 

@@ -186,7 +186,7 @@ static func _fmt_num(v: float) -> String:
 
 
 ## 三人状态行（空串＝未达起点、缺前置技能、或未在天启篇无限成长里）
-## T286（D247）：不再说「第几层」，改成「计数 → 加了多少」；括号里一句提示越往后越慢。文字待小A 审。
+## T286（D247）：不再说「第几层」，改成「计数 → 加了多少」；括号里一句提示越往后越慢。
 static func status_line(key: String, a) -> String:
 	if not on():
 		return ""
@@ -206,11 +206,11 @@ static func status_line(key: String, a) -> String:
 	var n := layers(cnt, base, share)
 	match key:
 		RAVEN:
-			return "冥冠：灵魂 %s → 魔法攻击 +%s（超20万起算，越往后涨得越慢）" % [_fmt_int(floori(cnt)), _fmt_int(flat_amount(RAVEN, 4, n))]
+			return "冥冠：灵魂 %s → 魔法攻击 +%s（超 20 万起算，越往后涨得越慢）" % [_fmt_int(floori(cnt)), _fmt_int(flat_amount(RAVEN, 4, n))]
 		NANOHA:
-			return "超限适应：适应 %s 次 → 额外最大生命 +%s、最大魔法 +%s（越往后涨得越慢）" % [_fmt_num(cnt), _fmt_int(flat_amount(NANOHA, 0, n)), _fmt_int(flat_amount(NANOHA, 1, n))]
+			return "超限适应：适应 %s 次 → 额外最大生命 +%s、最大魔法 +%s（超 2,000 次起算，越往后涨得越慢）" % [_fmt_num(cnt), _fmt_int(flat_amount(NANOHA, 0, n)), _fmt_int(flat_amount(NANOHA, 1, n))]
 		LIUYING:
-			return "不熄之火：胜场 %s → 额外余烬生命 +%s、伤害 +%d%%（越往后涨得越慢）" % [_fmt_int(floori(cnt)), _fmt_int(ember_bonus(n)), dmg_pct_of(n)]
+			return "不熄之火：胜场 %s → 额外余烬生命 +%s、伤害 +%d%%（超 300 场起算，越往后涨得越慢）" % [_fmt_int(floori(cnt)), _fmt_int(ember_bonus(n)), dmg_pct_of(n)]
 	return ""
 
 
