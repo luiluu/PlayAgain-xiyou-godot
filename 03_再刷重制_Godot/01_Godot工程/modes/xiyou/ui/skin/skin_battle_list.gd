@@ -18,6 +18,10 @@ static var GAP_TO_ACTOR := 37.0
 ## true（默认）＝列表和行动条横向有重叠时，底边收到条顶上方 OTB_GAP；false＝照旧只收在画面里（可回退）。
 static var AVOID_OTB := true
 const OTB_GAP := 4.0
+## T371：列表窗口压在敌人名牌／血条（XBattleScene._make_enemy_gauge，z 5）之上，名牌不再盖住说明栏第一行（行动条、消息窗 z 8、说明卡 z 10 仍在它上面）：
+## true（默认）＝列表 z 6；false＝照旧 z 0（可回退）。
+static var ABOVE_GAUGES := true
+const GAUGE_Z := 6
 
 var title := ""
 var header := ""
@@ -29,6 +33,8 @@ var sel_scale: XSkinSelScale
 
 static func create_list(parent: Control, list: Array, list_title: String, header_text := "") -> XSkinBattleSkillList:
 	var w := XSkinBattleSkillList.new()
+	if ABOVE_GAUGES:
+		w.z_index = GAUGE_Z
 	w.entries = list
 	w.align = "left"
 	w.title = list_title
@@ -307,6 +313,8 @@ func _draw_row(i: int, body: Font, num: Font) -> void:
 	# 用不了的原因（橙、小字）
 	var reason := str(e.get("reason", "")) if not en else ""
 	if reason != "":
+		if XUiSkin.detail_on():
+			reason = "不可用"   # T360 F-16：行尾只标「不可用」，真实原因写在说明栏底行（foot_text）；关着照旧写原因
 		var rw := body.get_string_size(reason, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
 		XUiSkin.ds(self, body, Vector2(x - rw, cy + 5), reason, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, Color(XUiSkin.DOWN, 0.9))
 		x -= rw + 10

@@ -535,16 +535,21 @@ func _draw_card() -> void:
 		var b: Dictionary = buttons[i]
 		var br := XSkinSelScale.grow(button_rect(i), btn_scale.k(i))
 		var sb := StyleBoxFlat.new()
-		sb.set_corner_radius_all(int(br.size.y / 2.0))
+		sb.set_corner_radius_all(XUiSkin.btn_radius(br.size.y))   # T359 D251：圆角矩形
 		if bool(b.get("primary", false)) and not bool(b.get("disabled", false)):
 			XUiSkin.primary_button_style(sb, i == button and not rules_open)
 		else:
 			sb.bg_color = Color(0, 0, 0, 0)
 			sb.border_color = Color(XUiSkin.LINE, 0.55)
 			sb.set_border_width_all(1)
+		if i == button and not rules_open and XUiSkin.detail_on():
+			sb.shadow_size = 0   # T359：焦点由淡金双环表达，不垫红晕
 		sb.draw(ci, br)
 		if i == button and not rules_open:
-			XUiSkin.draw_select(ci, br.grow(3), XUiSkin.breath_alpha())
+			if not XUiSkin.detail_on():
+				XUiSkin.draw_select(ci, br.grow(3), XUiSkin.breath_alpha())
+			elif XUiSkin.show_focus_ring():
+				XUiSkin.draw_focus_ring(ci, br, XUiSkin.btn_radius(br.size.y))
 		var t := str(b.get("text", ""))
 		var fit := XSkinList.fit_text(body, t, br.size.x - 24, XSkinSelScale.fs(XUiSkin.FS_LIST, btn_scale.k(i), floori(br.size.y * 0.62)), 15)
 		var tw := body.get_string_size(fit[0], HORIZONTAL_ALIGNMENT_LEFT, -1, fit[1]).x
@@ -619,13 +624,18 @@ func _draw_rules() -> void:
 	if not rules_open:
 		return
 	var v := view()
-	rules.draw_rect(Rect2(Vector2.ZERO, v), Color(0, 0, 0, 0.6))
+	var dn := XUiSkin.detail_on()
+	rules.draw_rect(Rect2(Vector2.ZERO, v), Color(0, 0, 0, 0.74 if dn else 0.6))   # T360 F-12：遮罩≥72%（关着照旧 60%）
 	var w := 640.0
 	var h := 420.0
 	var box := Rect2(roundf((v.x - w) / 2.0), roundf((v.y - h) / 2.0) - 8, w, h)
 	var ci := rules.get_canvas_item()
 	XUiSkin.shadow_style().draw(ci, box)
-	XUiSkin.panel_style().draw(ci, box)
+	if dn:
+		RenderingServer.canvas_item_add_nine_patch(ci, box, Rect2(0, 0, 96, 96), XSkinConfirm.s3_panel_tex().get_rid(), Vector2(24, 24), Vector2(24, 24),
+			RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color.WHITE)   # T360 F-12：弹窗底 S3 94% 不透明
+	else:
+		XUiSkin.panel_style().draw(ci, box)
 	var head := XUiSkin.font("title")
 	var body := XUiSkin.font("body")
 	var pad := float(XUiSkin.PAD_LG)

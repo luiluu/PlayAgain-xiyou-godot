@@ -174,7 +174,7 @@ func _title() -> void:
 	# 原版 selectLast：上回按过的项 → 有存档选「旧的回忆」（XTianqiTitle.initial_index，MV_SELECT_LAST 关掉回第一项）
 	_sel = XTianqiTitle.initial_index(_commands.map(func(c): return [str(c.get("key", "")), bool(c.enabled)]))
 	_select(_sel, true)
-	XForceUpdate.on_title(self, _layer)
+	XForceUpdate.on_title(self, _layer, false)  # T369：重制版旧标题，更新页旧样式
 	_whats_new_hook()
 
 
@@ -218,7 +218,7 @@ func _tq_build_title() -> void:
 	if not client.checked.is_connected(_tq_on_update_checked):
 		client.checked.connect(_tq_on_update_checked)
 	client.auto_check()
-	XForceUpdate.on_title(self, _layer)  # 低于清单的最低可玩版本：盖强制更新框，不能进标题
+	XForceUpdate.on_title(self, _layer, _tq_title != null and XTianqiTitle.skin_on())  # T369：新样式要天启发行门＋界面风格（O-467）；低于清单的最低可玩版本：盖强制更新框，不能进标题
 	_whats_new_hook()
 
 
@@ -275,7 +275,7 @@ func _tq_open_achievements() -> void:
 
 ## 新标题「检查更新」：打开更新页（XUpdatePage，联网查清单、下载补丁、退回）
 func _tq_check_update() -> void:
-	XUpdatePage.open(self)
+	XUpdatePage.open(self, _tq_title != null and XTianqiTitle.skin_on())  # T369：天启发行门＋界面风格（O-467，标题上没有存档，不问 XUiSkin.on()）
 
 ## 标题右下角「问题反馈 QQ 群」（XFeedback，Kyo 11-13）：版本说明上面一行，点一下复制群号；不抢键盘焦点。
 ## 有问卷时群号行上面再放「填写反馈问卷」

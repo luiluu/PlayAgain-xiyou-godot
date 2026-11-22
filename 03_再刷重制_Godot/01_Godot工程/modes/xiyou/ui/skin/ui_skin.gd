@@ -837,11 +837,11 @@ static func draw_panel(ci: RID, rect: Rect2, opacity := 1.0) -> void:
 ## 选中条（静态）。SELECT_V2（默认）：整行实心暗红底（左 #761c14 → 右 #4e1410，不掉透明）＋2px 不透明朱红框＋外晕＋左侧 6px 朱红光标＋光标中点淡金小三角；
 ## state：FOCUS 焦点（全画）、HOVER 悬停（同样式减淡、不画光标）、PRESSED 按下（底色压暗、整体下沉 1px）。
 ## SELECT_V2 = false：v0.7 打磨版（绯红底光从左 40% 渐到 68% 处 8%、再到右端透明；朱红 1px 描边 45%＋外晕；左侧 4px 光标，上下各缩 5），state 不区分。
-static func draw_select(ci: RID, rect: Rect2, bar_alpha := 1.0, alpha := 1.0, state := SelState.FOCUS) -> void:
+static func draw_select(ci: RID, rect: Rect2, bar_alpha := 1.0, alpha := 1.0, state := SelState.FOCUS, symmetric := false) -> void:
 	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
 		return
 	if XSkinArt.select_on():   # 第一期正式美术（D51）：渐隐暗红底＋左外小箭头
-		XSkinArt.draw_select(ci, rect, alpha, state)
+		XSkinArt.draw_select(ci, rect, alpha, state, "selection_wash_128x24", symmetric and detail_on())   # T359 D254：居中菜单对称
 		return
 	if SELECT_V2:
 		_draw_select_v2(ci, rect, bar_alpha, alpha, state)
@@ -1139,6 +1139,16 @@ static var DETAIL_V1 := true
 
 static func detail_on() -> bool:
 	return DETAIL_V1 and on()
+
+
+## T359（D251，K2 甲）：框形主／次按钮、数量按钮统一圆角矩形 8～10px（面板 14、列表行 6 的标准嵌套）；全圆角只留键帽与顶部提示道。
+## DETAIL_V1 关＝回 height/2 全圆角胶囊。h＝按钮高，矮于 18 时跟着缩（不超过半高）
+const BTN_RADIUS := 9
+
+
+static func btn_radius(h: float) -> int:
+	var half := int(h / 2.0)
+	return mini(BTN_RADIUS, half) if detail_on() else half
 
 
 ## ---- 规范 1：数字等宽 ----

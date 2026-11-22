@@ -81,6 +81,15 @@ const SKIN_LIST_W := 360.0
 ## 页签统一成一套（字＋当前页旧金下划线，不再一个红乙选中条带红箭头、其余描边框）、右上多余的「返回」框换成页名前的「‹」、
 ## 左下说明按 XSkinText 折行防孤字；false＝回到 ui-skin-3b 的排法
 static var LAYOUT_V2 := true
+## T367（T254 R8、卡 F）回退开关：套模板页补齐——页名白字；分解／取核／重抽／净化／刻到有词条的装备走统一确认弹窗
+## （XSkinConfirm，橙边、光标停在取消）；空列表正中一句人话；异化核、装备重铸两页的下拉框换成左列表＋右牌。
+## 画法在 ui/skin/skin_alien_workshop.gd（XSkinAlienWorkshop）；false＝回到 T361 的排法
+static var LAYOUT_V3 := true
+## 新界面开着的确认弹窗；_ask＝重抽这类「点了先问」的待确认操作 {spec, on}（重画时照样重开）
+var _dlg: XSkinConfirm
+var _ask := {}
+## 左列表里当前选中的那件（异化核、装备重铸页）：重画后焦点停在它上面
+var _skin_focus_pick: Control
 const SKIN_TAB_H := 36.0
 
 
@@ -111,6 +120,16 @@ func s() -> XState:
 
 func close() -> void:
 	closed.emit()
+
+
+func _v3() -> bool:
+	return skin and LAYOUT_V3
+
+
+## 确认弹窗开着时它先吃键（同商店：弹窗模态，按键不穿到底下的列表和按钮）
+func _input(event: InputEvent) -> void:
+	if _dlg != null and is_instance_valid(_dlg) and _dlg.handle_input(event):
+		XKeyMap.handled(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -956,7 +975,12 @@ func _make(n: Dictionary) -> Control:
 			var b := _button(str(n.text), cls, bool(n.get("disabled", false)))
 			b.alignment = HORIZONTAL_ALIGNMENT_LEFT if n.tag == "summary" else HORIZONTAL_ALIGNMENT_CENTER
 			if n.has("on"):
-				b.pressed.connect(n.on)
+				if _v3() and n.tag == "button":   # T367：会毁东西的先弹确认（节点树和 click() 不变）
+					var on: Callable = n.on
+					var label := str(n.text)
+					b.pressed.connect(func(): _skin_try(label, on))
+				else:
+					b.pressed.connect(n.on)
 			return b
 	var kids: Array = n.children
 	match cls:
@@ -1178,6 +1202,10 @@ func skin_tab_name() -> String:
 
 func _render_skin(nodes: Array) -> void:
 	var pane: Dictionary = nodes[0]
+	if _dlg != null and is_instance_valid(_dlg):
+		_dlg.queue_free()
+	_dlg = null
+	_skin_focus_pick = null
 	var page := Control.new()
 	page.name = "SkinPage"
 	page.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1226,7 +1254,7 @@ func _render_skin(nodes: Array) -> void:
 	page.add_child(head)
 	if heading != null:
 		var t := _skin_label(str(heading.children[0].get("text", "")), SIZES.h1, XUiSkin.GOLD, true)
-		t.label_settings.font_color = XUiSkin.GOLD
+		t.label_settings.font_color = XUiSkin.TEXT_HI if _v3() else XUiSkin.GOLD   # T367：页名白字，同别的模板页
 		t.autowrap_mode = TextServer.AUTOWRAP_OFF
 		t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -1317,20 +1345,23 @@ func _render_skin(nodes: Array) -> void:
 		focus_in = _skin_body(page, body, note, Rect2(m, top, content_w, bottom - top))
 	else:
 		var sec: Dictionary = skin_tabs[skin_tab][1]
-		var pc := _skin_panel()
-		pc.position = Vector2(m, top)
-		pc.size = Vector2(content_w, bottom - top)
-		page.add_child(pc)
-		var sc := _skin_scroll()
-		pc.add_child(sc)
-		# 一节的内容直接放进面板（不再套一层盒子）；「最近异化掉落」的展开按钮就是页签，行直接列出来
-		var kids: Array = sec.children
-		if str(sec.tag) == "details":
-			kids = kids.filter(func(k): return str(k.tag) != "summary")
-		var v := _stack(kids)
-		v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		sc.add_child(v)
-		focus_in = v
+		if _v3():   # T367：有下拉框的节换成左列表＋右牌、没内容的节一句空状态；其余（图鉴、最近掉落）照旧一整块
+			focus_in = _skin_section_v3(page, sec, Rect2(m, top, content_w, bottom - top))
+		if focus_in == null:
+			var pc := _skin_panel()
+			pc.position = Vector2(m, top)
+			pc.size = Vector2(content_w, bottom - top)
+			page.add_child(pc)
+			var sc := _skin_scroll()
+			pc.add_child(sc)
+			# 一节的内容直接放进面板（不再套一层盒子）；「最近异化掉落」的展开按钮就是页签，行直接列出来
+			var kids: Array = sec.children
+			if str(sec.tag) == "details":
+				kids = kids.filter(func(k): return str(k.tag) != "summary")
+			var v := _stack(kids)
+			v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			sc.add_child(v)
+			focus_in = v
 	# 按键提示
 	_skin_hints = XSkinKeyHints.new()
 	_skin_hints.name = "SkinKeyHints"
@@ -1345,11 +1376,15 @@ func _render_skin(nodes: Array) -> void:
 	if not is_instance_valid(page) or page != root:
 		return
 	# 焦点：确认框开着时放在「确认…」上，配置开着时放在第一个下拉框，否则第一个能点的按钮（同旧版 O-089：先不画框）
+	if _v3() and _skin_open_dialog():
+		return
 	var first: Control = null
 	if confirming or confirming_core:
 		first = _skin_find(page, func(c): return c is Button and not c.disabled and c.text.begins_with("确认"))
 	elif cfg_open:
 		first = _skin_find(page, func(c): return c is OptionButton)
+	if first == null and _skin_focus_pick != null and is_instance_valid(_skin_focus_pick):
+		first = _skin_focus_pick
 	if first == null and focus_in != null:
 		first = _first_button(focus_in)
 	if first != null and focus_first:
@@ -1382,7 +1417,15 @@ func _skin_body(page: Control, body: Dictionary, note, r: Rect2) -> Control:
 	var uids := XAlienation.owned(s()).filter(func(e): return not XAlienation.mark(e).is_empty()).map(func(e): return str(XAlienation.mark(e).uid))
 	var sel_i := uids.find(selected)
 	var bi := 0
-	for k in list_node.children:
+	var empty: bool = _v3() and not list_node.children.any(func(k): return str(k.tag) == "button")
+	if empty:   # T367：空列表——列表区正中一句人话（19 号 TEXT_3），说明照旧在下面
+		var txt := ""
+		for k in list_node.children:
+			txt = str(k.get("text", txt))
+		lv.remove_child(lsc)
+		lsc.queue_free()
+		lv.add_child(XSkinAlienWorkshop.empty_label(txt))
+	for k in ([] if empty else list_node.children):
 		var c := _make(k)
 		if c is Button:
 			if bi == sel_i:
@@ -1418,6 +1461,8 @@ func _skin_body(page: Control, body: Dictionary, note, r: Rect2) -> Control:
 	for k in detail_node.children:
 		if str(k.get("class", "")) == "alien-actions" and actions == null:
 			actions = k
+		elif _v3() and str(k.get("class", "")) == "alien-confirm":
+			continue   # T367：确认框改成弹窗（_skin_open_dialog），详情里不再嵌
 		else:
 			rest.append(k)
 	var inner := _stack(rest, 10)
@@ -1523,6 +1568,124 @@ func _skin_action_bar(actions: Dictionary) -> Control:
 		right.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		bar.add_child(right)
 	return bar
+
+
+## ---- T367（LAYOUT_V3）：确认弹窗、异化核／装备重铸的左列表＋右牌 ----
+
+## 按了屏上的操作钮：重抽、净化、刻到有词条的装备先弹确认，其余照旧直接做
+func _skin_try(label: String, on: Callable) -> void:
+	var st := s()
+	var item = _selected_item(st)
+	var target = _engrave_target(st)
+	var spec := XSkinAlienWorkshop.ask_spec(label, str(item.name) if item != null else "",
+		target != null and not XAlienation.mark(target).is_empty(), str(target.name) if target != null else "")
+	if spec.is_empty():
+		on.call()
+		return
+	_ask = {"spec": spec, "on": on}
+	_skin_open_dialog()
+
+
+## 开着的确认（待确认的操作、分解／取核的确认状态）画成弹窗；开了返回 true
+func _skin_open_dialog() -> bool:
+	if _dlg != null and is_instance_valid(_dlg):
+		_dlg.queue_free()
+	_dlg = null
+	var spec := {}
+	var yes := Callable()
+	if not _ask.is_empty():
+		spec = _ask.spec
+		yes = _ask.on
+	elif confirming or confirming_core:
+		var secs := _collect(tree, func(n): return str(n.get("class", "")) == "alien-confirm")
+		if not secs.is_empty():
+			spec = XSkinAlienWorkshop.section_dialog(secs[0])
+			yes = XSkinAlienWorkshop.section_yes(secs[0])
+	if spec.is_empty():
+		return false
+	get_viewport().gui_release_focus()   # 底下的按钮别再吃确定键
+	_dlg = XSkinConfirm.open(self, spec)
+	var dlg := _dlg
+	dlg.chosen.connect(func(i: int):
+		if i == 0 and yes.is_valid():
+			_ask = {}
+			XSound.system(1)
+			yes.call()
+		else:
+			_skin_dialog_cancel())
+	dlg.cancelled.connect(_skin_dialog_cancel)
+	return true
+
+
+func _skin_dialog_cancel() -> void:
+	XSound.system(2)
+	if not _ask.is_empty():
+		_ask = {}
+		if _dlg != null and is_instance_valid(_dlg):
+			_dlg.queue_free()
+		_dlg = null
+		render(true)
+		return
+	_cancel_confirm()
+
+
+## 测试用：现在开着的确认弹窗（没有＝null）
+func skin_dialog() -> XSkinConfirm:
+	return _dlg if _dlg != null and is_instance_valid(_dlg) else null
+
+
+## 异化核、装备重铸：下拉框（刻到哪件／重铸哪件）换成左边一列装备，右牌放这一节其余的行；
+## 这一节只有标题和一句说明（没有可选的）时整块一句空状态。都不是（图鉴、最近掉落）返回 null，照旧一整块
+func _skin_section_v3(page: Control, sec: Dictionary, r: Rect2) -> Control:
+	var kids: Array = sec.get("children", [])
+	var found := XSkinAlienWorkshop.find_select(sec)
+	if found.is_empty():
+		var texts := kids.filter(func(k): return str(k.tag) == "p")
+		if str(sec.tag) == "details" or kids.size() != 2 or texts.size() != 1:
+			return null
+		var pc := _skin_panel()
+		pc.name = "SkinSectionEmpty"
+		pc.position = r.position
+		pc.size = r.size
+		page.add_child(pc)
+		pc.add_child(XSkinAlienWorkshop.empty_label(str(texts[0].text)))
+		return pc
+	var lab: Dictionary = found[0]
+	var sel: Dictionary = found[1]
+	var lp := _skin_panel()
+	lp.name = "SkinList"
+	lp.position = r.position
+	lp.size = Vector2(XSkinAlienWorkshop.LIST_W, r.size.y)
+	page.add_child(lp)
+	var lv := _vbox(8)
+	lp.add_child(lv)
+	lv.add_child(XSkinAlienWorkshop.list_title(str(lab.get("text", ""))))
+	var lsc := _skin_scroll()
+	lv.add_child(lsc)
+	var im := MarginContainer.new()
+	im.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for side in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+		im.add_theme_constant_override(side, SCALE_ROOM)
+	lsc.add_child(im)
+	var items := _vbox(6)
+	items.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	im.add_child(items)
+	var key := str(sel.get("key", ""))
+	for b in XSkinAlienWorkshop.option_buttons(sel, func(v): set_value(key, v)):
+		items.add_child(b)
+		if b.has_meta("current"):
+			_skin_focus_pick = b
+	var dp := _skin_panel()
+	dp.name = "SkinDetail"
+	dp.position = Vector2(r.position.x + XSkinAlienWorkshop.LIST_W + XUiSkin.PANEL_GAP, r.position.y)
+	dp.size = Vector2(r.size.x - XSkinAlienWorkshop.LIST_W - XUiSkin.PANEL_GAP, r.size.y)
+	page.add_child(dp)
+	var dsc := _skin_scroll()
+	dp.add_child(dsc)
+	var inner := _stack(kids.filter(func(k): return k != lab), 10)
+	inner.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dsc.add_child(inner)
+	return items
 
 
 func _skin_scroll_bottom(sc: ScrollContainer) -> void:

@@ -22,12 +22,36 @@ const LINE_W := 2.0
 var tabs: Array = []
 var index := 0
 var sound := false
+## T359 D255：页签条的焦点态。Q／E 换页（或点页签）＝页签条拿到焦点，当前页签外画淡金双环（键盘／手柄态才画）；
+## 之后按了别的键（上下左右、确定、取消等）就放掉。DETAIL_V1 关＝不画。页面不用管，条自己听输入
+## 页签拿焦点时要一起降静默的列表（可空）；页面自己的静默条件（数量态等）另算，别把它冲掉
+var linked_list: XSkinList
+var focused := false:
+	set(v):
+		if focused == v:
+			return
+		focused = v
+		if linked_list != null and is_instance_valid(linked_list):
+			linked_list.quiet = v   # 页签亮焦点时同屏的列表选中行降静默
+		queue_redraw()
 
 
 func _init() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	custom_minimum_size = Vector2(0, H)
 	resized.connect(queue_redraw)
+
+
+func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree() or not XUiSkin.detail_on():
+		if focused:
+			focused = false
+		return
+	if not (event is InputEventKey or event is InputEventJoypadButton) or not event.is_pressed():
+		return
+	if event is InputEventKey and event.echo:
+		return
+	focused = XMenu.page_dir(event) != 0 and tabs.size() > 1
 
 
 func set_tabs(arr: Array, i := 0) -> void:
@@ -108,3 +132,20 @@ func _draw() -> void:
 				draw_rect(Rect2(x - 2.0, size.y - LINE_W - 2.0, w + 4.0, LINE_W + 2.0), Color(XUiSkin.GOLD, 0.22))
 			draw_rect(Rect2(x, size.y - LINE_W - 1.0, w, LINE_W), XUiSkin.GOLD)
 		x += w + GAP
+	if focused and XUiSkin.detail_on() and XUiSkin.show_focus_ring() and index >= 0 and index < tabs.size():
+		XUiSkin.draw_focus_ring(ci, ring_rect(), 5)
+
+
+## 焦点环围着的矩形：当前页签的底托（左右各 8、上 2、高 size.y-5，同 _draw 里 polish 的底托）
+func ring_rect() -> Rect2:
+	var r := tab_rect(index)
+	var f := XUiSkin.font("body")
+	var w := f.get_string_size(str(tabs[index]), HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.fs(FS)).x
+	var x := r.position.x + GAP / 2.0
+	var pad_x := clampf(minf(x, size.x - x - w), 0.0, 8.0)
+	return Rect2(x - pad_x, 2.0, w + pad_x * 2.0, size.y - 5.0)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_VISIBILITY_CHANGED and not is_visible_in_tree():
+		focused = false

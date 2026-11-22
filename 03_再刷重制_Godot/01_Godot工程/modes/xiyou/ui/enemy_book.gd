@@ -19,6 +19,7 @@ extends Control
 ##   队伍指令窗里的「怪物信息」「图鉴」两项：Olivia OTB 不开队伍指令窗，原版玩家点不到，不做。
 ## 与原版不同（O-078）：原版本想在图鉴里关掉神话（Morpho_EliteEnemy_Switch），但该参数读成 NaN 没关上，每次打开都按 50% 随机
 ## 把敌人显示成「【神话】」（能力 ×3.5、掉率 ×5）；这里固定按普通敌人显示，BOOK_FIXED_NORMAL 设 false 恢复原版的随机。
+## T364 卡 P 新界面（天启篇，XSkinBookPage.wanted()）：同一套状态，左目录＋右大牌（XSkinBookPage；战斗里是压暗 66% 的弹层）；旧窗口不画，按键先问新页；开关关着一行不变。
 
 signal closed
 
@@ -73,6 +74,7 @@ var status_win: XMVWindow
 var drop_win: XMVWindow
 var drop_pager: XListPager   # T050 掉落列表的翻页件（新界面关着、战斗内图鉴时为 null）
 var help_card: XHelpCard
+var skin: XSkinBookPage   # T364 新界面（关着时为 null）
 var _enemies := {}
 var _status_ops: Array = []
 var _sprite_tex: Texture2D
@@ -100,6 +102,9 @@ func _ready() -> void:
 	help_card = XHelpCard.new()
 	help_card.show_frame = false
 	add_child(help_card)
+	if XSkinBookPage.wanted():
+		skin = XSkinBookPage.new(self, "enemy", in_battle)
+		add_child(skin)
 	index = 0 if in_battle else clampi(last_index, 0, maxi(0, ids.size() - 1))
 	top = XMenu._scroll_to(index, 0, index_rows())
 	if index_pager != null:   # T049：重新进图鉴＝翻到上次选中那只所在的那一页
@@ -410,6 +415,8 @@ func _select_enemy() -> void:
 
 ## T049：天启篇新界面开着且列表超一页时少放一行，给翻页件腾地方（见 XListPager.rows_for）
 func index_rows() -> int:
+	if skin != null:
+		return skin.list_rows()   # T364：新目录一屏 11 行
 	return XListPager.rows_for(ROWS, ids.size())
 
 
@@ -433,6 +440,8 @@ func _refresh() -> void:
 		drop_pager.set_state(drop_top, drop_rows_visible(), drop_list.size() if mode == "drops" else 0)
 	for w in [index_win, status_win, drop_win]:
 		w.refresh()
+	if skin != null:
+		skin.sync()
 
 
 ## MV WindowLayer 会把后建的窗口范围从前面的窗口里挖掉：掉落列表打开时状态窗整片被盖住
@@ -480,6 +489,9 @@ func select_drop(i: int) -> void:
 ## Window_EnemyBookItemList.updateHelp：说明卡放在选中行右下，超出画面就靠右／靠下；
 ## 末尾 HEw.hide() 再 visible=true，品质外框与技能书附卡都被移除，只留卡本体
 func _update_help() -> void:
+	if skin != null:   # T364：说明进右大牌的长说明卡（XSkinBookPage.sync）
+		help_card.show_for({})
+		return
 	if drop_index < 0 or drop_index >= drop_list.size():
 		help_card.show_for({})
 		return
@@ -550,6 +562,8 @@ func _page_jump(d: int) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinBookPage）
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
@@ -586,6 +600,9 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
 		cancel()

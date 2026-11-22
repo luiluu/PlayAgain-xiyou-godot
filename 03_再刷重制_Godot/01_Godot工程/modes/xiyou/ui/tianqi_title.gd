@@ -177,6 +177,7 @@ func setup(actions: Dictionary, disabled: Array = []) -> XTianqiTitle:
 	if skin_on():
 		cursor.visible = false
 		skin_bar = XSkinSelectBar.new()
+		skin_bar.symmetric = true   # T359 D254：居中菜单对称渐隐
 		menu.add_child(skin_bar)
 		menu.move_child(skin_bar, 0)   # 垫在字图后面
 		if not XPlatform.is_touch():

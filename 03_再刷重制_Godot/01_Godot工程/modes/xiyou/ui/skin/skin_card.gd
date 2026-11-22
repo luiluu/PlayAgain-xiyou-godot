@@ -42,6 +42,8 @@ var expand_bounds := Vector2(XUiSkin.TOP, XUiSkin.BOTTOM)
 ## 展开时向左展开成 2 倍宽；false＝宽度不变、只往上下长（战斗详情卡：不盖住战技列表和角色，小A核 P2-1）
 var expand_wide := true
 var expanded := false
+## T360 F-11：浮层说明卡（XHelpCard 按节画的那张）：XUiSkin.detail_on() 开时底画 S3 暖炭实底＋柔投影，不画烟底亮雾边；常规右牌不设
+var floating_s3 := false
 var scroll := 0.0
 const FADE_H := 56.0
 const STRIP_H := 40.0
@@ -246,8 +248,11 @@ func _draw() -> void:
 		return   # 展开时由 _sheet 画整张
 	var ci := get_canvas_item()
 	var pol := XUiSkin.polish_on()
-	XUiSkin.shadow_style().draw(ci, Rect2(Vector2.ZERO, size))
-	XUiSkin.panel_style().draw(ci, Rect2(Vector2.ZERO, size))
+	if floating_s3 and XUiSkin.detail_on():
+		draw_float_s3(ci, Rect2(Vector2.ZERO, size))
+	else:
+		XUiSkin.shadow_style().draw(ci, Rect2(Vector2.ZERO, size))
+		XUiSkin.panel_style().draw(ci, Rect2(Vector2.ZERO, size))
 	_draw_border(ci, Rect2(Vector2.ZERO, size))
 	if pol and size.x >= 260.0 and size.y >= 240.0:
 		var seal := XSkinArt.part("seven_seal_128x128")
@@ -272,7 +277,7 @@ func _draw() -> void:
 		var r := button_rect(i)
 		var b: Dictionary = buttons[i]
 		var sb := StyleBoxFlat.new()
-		sb.set_corner_radius_all(int(BUTTON_H / 2))
+		sb.set_corner_radius_all(XUiSkin.btn_radius(BUTTON_H))
 		if bool(b.get("primary", false)) and not bool(b.get("disabled", false)):
 			XUiSkin.primary_button_style(sb, i == button_index)
 		else:
@@ -288,7 +293,7 @@ func _draw() -> void:
 			if not XUiSkin.detail_on():
 				XUiSkin.draw_select(ci, r.grow(3), XUiSkin.breath_alpha())
 			elif XUiSkin.show_focus_ring():
-				XUiSkin.draw_focus_ring(ci, r, int(BUTTON_H / 2))   # T349 D1b
+				XUiSkin.draw_focus_ring(ci, r, XUiSkin.btn_radius(BUTTON_H))   # T349 D1b
 		var t := str(b.get("text", ""))
 		var bfs := XSkinSelScale.fs(XUiSkin.FS_LIST, sel_scale.k(i), floori(r.size.y * 0.66))
 		var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x
@@ -297,6 +302,19 @@ func _draw() -> void:
 			tw = body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x
 		XUiSkin.ds(self, body, Vector2(r.position.x + (r.size.x - tw) / 2.0, r.position.y + r.size.y / 2.0 + bfs * 0.36), t,
 			HORIZONTAL_ALIGNMENT_LEFT, -1, bfs, XUiSkin.TEXT_3 if bool(b.get("disabled", false)) else XUiSkin.TEXT)
+
+
+## 浮层实底（T360 F-11）：柔投影＋S3 暖炭九宫（94% 不透明），没有亮雾边
+static func draw_float_s3(ci: RID, r: Rect2) -> void:
+	var sh := StyleBoxFlat.new()
+	sh.draw_center = false
+	sh.shadow_color = Color(0, 0, 0, 0.55)
+	sh.shadow_size = 12
+	sh.shadow_offset = Vector2(0, 8)
+	sh.set_corner_radius_all(XUiSkin.RADIUS)
+	sh.draw(ci, r)
+	RenderingServer.canvas_item_add_nine_patch(ci, r, Rect2(0, 0, 96, 96), XSkinConfirm.s3_panel_tex().get_rid(), Vector2(24, 24), Vector2(24, 24),
+		RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color.WHITE)
 
 
 func _draw_border(ci: RID, r: Rect2) -> void:
@@ -394,7 +412,11 @@ func _body(t: Control, x0: float, y: float, w: float, bottom: float, dry: bool) 
 	if subtitle != "":
 		y += 4
 		if not dry and _vis(y, XUiSkin.FS_AUX_MAX) > 0.0:
-			XUiSkin.ds(t, body, Vector2(x0, y + XUiSkin.FS_AUX_MAX * 0.86), subtitle, HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+			if XUiSkin.detail_on():
+				var sfit := XSkinList.fit_text(body, subtitle, w, XUiSkin.FS_AUX, XUiSkin.FS_AUX)   # T360 F-10：超长加省略号，不被右缘硬截断
+				XUiSkin.ds(t, body, Vector2(x0, y + XUiSkin.FS_AUX_MAX * 0.86), str(sfit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+			else:
+				XUiSkin.ds(t, body, Vector2(x0, y + XUiSkin.FS_AUX_MAX * 0.86), subtitle, HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX, XUiSkin.TEXT_2)
 		y += XUiSkin.FS_AUX_MAX + 6
 	if notice != "":
 		y += 6

@@ -299,6 +299,7 @@ func _item_page() -> void:
 func _books() -> void:
 	XState.new_game(3, 1, [8, 9, 10])   # 不带天启篇标记：FORCE 关掉后新界面也是关的（西游档）
 	XUiSkin.FORCE = true
+	XSkinBookPage.ENABLED = false   # T364 卡 P：三本图鉴在新界面开着时换成新页（旧窗藏起）；这里查的是旧窗上的 T049 翻页件，新页的目录见 xiyou_ui_skin_card_p
 	var book := XActorBook.new()
 	add_child(book)
 	await frames(4)
@@ -390,6 +391,7 @@ func _books() -> void:
 	await frames(3)
 	check("skin_off_inlay_unchanged", oi.index_pager == null and oi.index_rows() == XInlayBook.ROWS and oi.index_win.down_arrow)
 	await _clear()
+	XSkinBookPage.ENABLED = true
 
 
 # ---------------- T050：其余旧画布页 ----------------

@@ -19,6 +19,8 @@ var only := ""        # -- --only=a／b／u：只跑卡 A、卡 B 或卡 U（开
 
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
+		if arg == "--detail-off":   # T360 截图对照：DETAIL_V1 关
+			XUiSkin.DETAIL_V1 = false
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
 		elif arg.begins_with("--only="):

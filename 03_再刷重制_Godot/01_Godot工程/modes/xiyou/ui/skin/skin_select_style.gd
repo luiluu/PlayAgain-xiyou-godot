@@ -14,6 +14,6 @@ func _draw(ci: RID, rect: Rect2) -> void:
 	if ring and XUiSkin.detail_on():
 		if state == XUiSkin.SelState.FOCUS:
 			if XUiSkin.show_focus_ring():
-				XUiSkin.draw_focus_ring(ci, rect, XUiSkin.ROW_RADIUS, false, alpha)
+				XUiSkin.draw_focus_ring(ci, rect, XSkinButton.radius(), false, alpha)
 			return
 	XUiSkin.draw_select(ci, rect, XUiSkin.breath_alpha(), alpha, state)

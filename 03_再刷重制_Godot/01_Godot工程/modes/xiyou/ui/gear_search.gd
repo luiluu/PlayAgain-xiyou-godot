@@ -23,7 +23,7 @@ static var filter := {}
 static var selected_key := ""
 ## T361（F-06）回退开关：新皮肤下检索页走模板页版式（页名＋搜索条＋「筛选」面板＋按键提示）；false＝回到 XWebPanel 换皮版
 static var SKIN_PAGE_V2 := true
-## T368 卡 G（T254 R9）回退开关：新皮肤下检索页改成「筛选小块」模板页（XSkinGearSearch：左筛选小块、中通用列表、右详情牌，搜词条点了才弹键盘）；
+## T368 卡 G（T254 R9，O-632）回退开关：新皮肤下检索页改成「筛选小块」模板页（XSkinGearSearch：左筛选小块、中通用列表、右详情牌，搜词条点了才弹键盘）；
 ## false＝回到上面 T361 的版式（SKIN_PAGE_V2 照旧管它和网页换皮版）
 static var SKIN_PAGE_R9 := true
 ## 新皮肤版式：筛选面板开着没有（重建页面时保留）

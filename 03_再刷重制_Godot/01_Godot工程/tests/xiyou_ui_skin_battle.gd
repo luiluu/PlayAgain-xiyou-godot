@@ -14,6 +14,8 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
+		if arg == "--detail-off":   # T360 截图对照：DETAIL_V1 关
+			XUiSkin.DETAIL_V1 = false
 		if arg == "--wide":
 			wide = true
 		if arg == "--tablet":
@@ -282,6 +284,15 @@ func _reasons(b: XBattleScene, a: XActor, cold: Dictionary) -> void:
 	_check("reason_tp_short", not bool(d.enabled) and str(d.reason) == "TP 不够", d.reason)
 	var one := XSkinBattleSkillList.create_list(b.ui, [d], "战技")
 	one.active = false  # 只看说明栏，不收键
+	# T371：列表压在敌人名牌上，说明栏第一行不被名牌挡（截图：新层级／旧层级对照）
+	var gauge_box: Control = b.gauges[b.logic.enemies[0]].box
+	one.position = gauge_box.global_position + Vector2(320.0 - one.size.x / 2.0, 30.0 - one.size.y + 20.0)
+	await _shot("t371_gauge_under_list")
+	one.z_index = 0
+	await _shot("t371_gauge_over_list_old")
+	one.z_index = XSkinBattleSkillList.GAUGE_Z
+	one.position = Vector2(300, 260)   # T360 F-16 截图：不能用的行＋说明栏写原因
+	await _shot("t360_reason_foot")
 	_check("reason_foot_only_reason", one.foot_text() == "TP 不够", one.foot_text())
 	one.queue_free()
 	await _frames(1)
@@ -396,6 +407,16 @@ func _list_avoid_otb(b: XBattleScene) -> void:
 	lw.place_for_actor(Vector2(819, 600), XBattleScene.BOX)
 	_check("list_avoid_switch_off_old", Rect2(lw.position, lw.size).intersects(otb), [lw.position, lw.size])
 	XSkinBattleSkillList.AVOID_OTB = true
+	# T371：列表窗口压在敌人名牌（z 5）之上、行动条（z 8）之下；开关关掉回到 z 0
+	var gz := 0
+	for g in b.gauges.values():
+		gz = maxi(gz, g.box.z_index)
+	_check("list_above_enemy_gauge_t371", lw.z_index > gz and lw.z_index < b.otb.z_index and gz == 5, [lw.z_index, gz, b.otb.z_index])
+	XSkinBattleSkillList.ABOVE_GAUGES = false
+	var old_z := XSkinBattleSkillList.create_list(b.ui, [lw.entries[0]], "战技")
+	_check("list_above_gauge_switch_off_t371", old_z.z_index == 0, old_z.z_index)
+	old_z.queue_free()
+	XSkinBattleSkillList.ABOVE_GAUGES = true
 	# 截图：8 行满屏、下排角色位置（最容易撞的那种）
 	lw.place_for_actor(Vector2(819, 600), XBattleScene.BOX)
 	lw.position += b._origin
