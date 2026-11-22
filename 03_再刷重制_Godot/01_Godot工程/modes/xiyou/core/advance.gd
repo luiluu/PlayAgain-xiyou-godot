@@ -82,12 +82,22 @@ static func row(s: XState, actor_id: int):
 	for r in rows():
 		if int(r.actor) == actor_id and int(r.num) == n:
 			var tq := XTianqiMoney.advance_gold(s, n) if not XTianqiGojoTrial.own_gold(actor_id) and actor_id != XGarou.ACTOR else -1  # 天启篇金钱重构：四阶 10 万／30 万／60 万／100 万（五条悟两阶照自己的表，XTianqiGojoTrial；饿狼进阶走 XGarou 不扣表里金钱，不套，T308）
-			if tq >= 0 and tq != int(r.gold):
+			var items: Array = _tianqi_items(s, r.items)
+			if (tq >= 0 and tq != int(r.gold)) or items.size() != r.items.size():
 				var out: Dictionary = r.duplicate()
-				out.gold = tq
+				if tq >= 0:
+					out.gold = tq
+				out.items = items
 				return out
 			return r
 	return null
+
+
+## 天启篇（T399，Kyo 11-22）：进阶材料去掉伙伴号角（O-267 把号角整类挡在 gain_item 入口，本人号角永远凑不齐）；其余材料照旧，西游档原样
+static func _tianqi_items(s: XState, items: Array) -> Array:
+	if not XTianqi.active(s) or not XTianqi.NO_RECRUIT:
+		return items
+	return items.filter(func(p): return not XTianqi.horn_blocked(s, XDB.rec("Items", int(p[0]))))
 
 
 ## 状态窗「最大进阶次数」：有行用其最大值，否则用当前次数
