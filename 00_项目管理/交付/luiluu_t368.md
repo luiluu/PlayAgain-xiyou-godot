@@ -71,7 +71,7 @@
 
 ## 验证
 
-- R2 本机（`--headless --audio-driver Dummy`，独立 HOME）：`xiyou_t368_gear_r9` 105/105；`xiyou_gear_search` 60/60；`xiyou_t361_unslop` 44/44；`语法检查.py` 0 问题；`发行空壳.py check` 退出 0。
+- R2 本机（`--headless --audio-driver Dummy`，独立 HOME）：`xiyou_t368_gear_r9` 105/105；`xiyou_gear_search` 60/60；`xiyou_t361_unslop` 44/44；`语法检查.py` 0 问题；`发行空壳.py check` 退出 0；`交付自检.py` 可以交付。R2 云端选测（39451f1bb，6 个场景）：通过，`gh run watch` 前台等完 success（run 44971149713）。
 - R1 本机（`--headless --audio-driver Dummy`，独立 HOME）：`xiyou_t368_gear_r9` 98/98；`xiyou_t361_unslop` 44/44；`xiyou_gear_search` 60/60；`xiyou_ui_skin_close` 71/71；`语法检查.py` 0 问题；`发行空壳.py check` 退出 0；`交付自检.py` 可以交付。R1 云端选测（4b1542c09，14 个场景）：通过，`gh run watch` 等完 success（run 44968469067）。
 - 原单本机专项：`xiyou_t368_gear_r9`（新增）75/75；`xiyou_t361_unslop` 44/44；`xiyou_gear_search` 60/60；`xiyou_ui_skin_close` 71/71；`xiyou_power_hidden` 21/21。
 - 本机：`语法检查.py` 0 问题；`工具回归.py` 全过；`发行空壳.py check` 退出 0；`回退开关覆盖.py` 只有旧的解析不了条目（与本单无关）。
