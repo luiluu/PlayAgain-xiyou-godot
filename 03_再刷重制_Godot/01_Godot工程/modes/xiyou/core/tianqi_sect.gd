@@ -878,18 +878,18 @@ const XIN_GUARDIANS := {
 }
 ## 天启篇里的材料名和说明（去掉「真*」；说明末尾加去处）
 const XIN_ITEM_TEXT := {
-	1975: ["原初火种·源", "神物\n真正的原初火种，天地初开时所诞生。交给 19 层守层者，可让「永恒之火」极尽升华。"],
-	1976: ["永恒玄冰", "物品\n永恒不化的寒冰，据说与天同寿。交给 25 层守层者，可让「天宫之寒」极尽升华。"],
-	1977: ["极渊重岩", "物品\n永镇极渊的重岩，据说只是鸡蛋大小都有如山般沉重。交给 27 层守层者，可让「镇渊之岩」极尽升华。"],
+	1975: ["原初火种·源", "神物\n天地初开时诞生的第一缕火种。交给19层守层者炎龙队长，可让被动「永恒之火」极尽升华。"],
+	1976: ["永恒玄冰", "物品\n永恒不化的寒冰，据说与天同寿。交给25层守层者嫦娥，可让被动「天宫之寒」极尽升华。"],
+	1977: ["极渊重岩", "物品\n永镇极渊的重岩，据说仅鸡蛋大小便重如山岳。交给27层守层者多宝道人，可让被动「镇渊之岩」极尽升华。"],
 }
-## 守层者台词（草稿，待小A 审）：[升华, 没人学过]
+## 守层者台词（小A 文字审定稿，T389 核 r1）：[升华, 没人学过]
 const XIN_LINES := {
-	1975: ["这团火……是天地初开时的第一缕火。交给我，我用龙炎替你们把「永恒之火」烧到尽头。",
-		"这团火种是好东西，可惜你们没人会「永恒之火」。等学会了，再带它来找我。"],
-	1976: ["永恒玄冰……和广寒宫的寒气同出一源呢。交给我吧，小哥哥，我替你们把「天宫之寒」推到极处。",
-		"这块玄冰我认得。不过你们还没人会「天宫之寒」，学会了再来找我吧。"],
-	1977: ["极渊重岩！贫道找了它许多年……也罢，借它压一压你们的「镇渊之岩」，炼到尽头。",
-		"重岩虽好，你们却没人会「镇渊之岩」。学会了再来。"],
+	1975: ["这团火……竟是天地初开时的第一缕本源之火！交给我，我以龙炎替你们把「永恒之火」燃至尽头！",
+		"这团火种可是好东西，可惜你们没人会「永恒之火」。先学会了，再带它来找我。"],
+	1976: ["永恒玄冰……竟与广寒宫的寒气同出一源呢。交给我吧，小哥哥，我替你们把「天宫之寒」凝至极境。",
+		"这块玄冰我认得呢。不过你们还没人会「天宫之寒」，等学会了再来找我吧。"],
+	1977: ["极渊重岩！贫道寻了它许多年……也罢，便借它替你们重炼「镇渊之岩」，直臻极境。",
+		"重岩虽好，你们却尚未有人习得「镇渊之岩」。学会了再来找贫道吧。"],
 }
 
 
@@ -910,25 +910,37 @@ static func _xin_has_item(s, id: int) -> bool:
 	return id >= 1975 and id <= 1977 and _xin_on(s)
 
 
+## 只读：账里 kills／sublimed 某层记过没有（走 peek，不新建 sect_xin 分区，T389 核 P2-1）
+static func _xin_peek(s, key: String, layer: int) -> bool:
+	if not _xin_on(s):
+		return false
+	var d = XTianqiSave.peek(s, "sect_xin")
+	if not d is Dictionary or not d.get(key) is Dictionary:
+		return false
+	return bool((d[key] as Dictionary).get(str(layer), false))
+
+
 ## 这一层（31～33）的守层者打赢过（掉过材料）
 static func xin_killed(s, layer: int) -> bool:
-	return _xin_on(s) and bool((_xin_flag(s).kills as Dictionary).get(str(layer), false))
+	return _xin_peek(s, "kills", layer)
 
 
 ## 这层守层者（19／25／27）办过升华
 static func xin_sublimed(s, layer: int) -> bool:
-	return _xin_on(s) and bool((_xin_flag(s).sublimed as Dictionary).get(str(layer), false))
+	return _xin_peek(s, "sublimed", layer)
 
 
 ## 31～33 层守层者首杀：给材料、记账；返回给的物品号（这次没给为 0）
 static func xin_grant_kill(s, troop_id: int) -> int:
 	if not _xin_on(s) or not XIN_KILLS.has(troop_id):
 		return 0
+	if XTianqiSummit.last_was_hongjun():
+		return 0  # 34 层鸿钧借 33 层鸿蒙老祖的敌群 469，不算 33 层首杀（T389 核 P2-2）
 	var layer := int(XIN_KILLS[troop_id][0])
 	var item := int(XIN_KILLS[troop_id][1])
-	var kills: Dictionary = _xin_flag(s).kills
-	if bool(kills.get(str(layer), false)):
+	if xin_killed(s, layer):
 		return 0
+	var kills: Dictionary = _xin_flag(s).kills
 	kills[str(layer)] = true
 	s.gain_item(item, 1)
 	return item
@@ -940,7 +952,7 @@ static func xin_after_battle(host, s, troop_id: int) -> void:
 	if item == 0 or host == null or not host.has_method("show_text"):
 		return
 	var g: Dictionary = _xin_guardian_of_item(item)
-	await host.show_text("", 0, ["获得了\\c[2]%s\\c[0]！带去 %d 层，交给守层者%s。" % [str(XIN_ITEM_TEXT[item][0]), int(g.floor), str(g.name)]])
+	await host.show_text("", 0, ["获得了\\c[2]%s\\c[0]！可带回第%d层，交给守层者%s。" % [str(XIN_ITEM_TEXT[item][0]), int(g.floor), str(g.name)]])
 
 
 static func _xin_guardian_of_item(item: int) -> Dictionary:
@@ -964,15 +976,16 @@ static func xin_intercepts(s, map_id: int, event_id: int) -> bool:
 	return not xin_sublimed(s, int(g.floor))
 
 
-## 有没有人学过这层的旧被动（原版公共事件判 hasSkill，遍历全体角色）
+## 有没有人学过这层的旧被动（原版公共事件判 hasSkill，遍历全体角色）。
+## 只看存档里已有的角色（s.actors），不调 s.actor(id)：那是懒创建，会把没招募的角色写进存档（T389 核 P1-1）；
+## 没建过的角色职业也不自带这三本被动，漏不掉
 static func xin_learners(s, from_skill: int) -> Array:
 	var out := []
-	for rec in XDB.table("Actors"):
-		if rec == null or str(rec.get("name", "")) == "":
-			continue
-		var a: XActor = s.actor(int(rec.id))
-		if a != null and a.skill_ids.has(from_skill):
-			out.append(int(rec.id))
+	for id in s.actors:
+		var a = s.actors[id]
+		if a is XActor and a.skill_ids.has(from_skill):
+			out.append(int(id))
+	out.sort()
 	return out
 
 
@@ -991,7 +1004,7 @@ static func xin_sublimate(s, map_id: int, event_id: int) -> Dictionary:
 		return {"ok": false, "reason": "none"}
 	s.gain_item(int(g.item), -1)
 	for id in who:
-		var a: XActor = s.actor(int(id))
+		var a: XActor = s.actors[id]
 		a.forget_skill(int(g.from))
 		a.learn_skill(int(g.to))
 		a.refresh_passive()
@@ -1003,6 +1016,12 @@ static func xin_sublimate(s, map_id: int, event_id: int) -> Dictionary:
 static func _xin_run_guardian(host, s, map_id: int, event_id: int) -> void:
 	var g := _xin_guardian(map_id, event_id)
 	var lines: Array = XIN_LINES[int(g.item)]
+	var e = _xin_event_node(host, event_id)
+	# 照 XMapScene.run_event 的普通路径：锁住、转向玩家（T389 核 P3-1）
+	if e != null:
+		e.locked = true
+		if not e.direction_fix and e.trigger() == 0 and "player" in host and host.player != null:
+			e.set_direction(MVCharacter.reverse_dir(host.player.direction))
 	var res := xin_sublimate(s, map_id, event_id)
 	var face := str(g.face)
 	var idx := int(g.index)
@@ -1011,10 +1030,13 @@ static func _xin_run_guardian(host, s, map_id: int, event_id: int) -> void:
 		XToast.show_text("你的被动：%s极尽升华！" % str(g.passive))
 	elif str(res.get("reason", "")) == "none":
 		await host.show_text(face, idx, ["\\n<%s>%s" % [str(g.name), str(lines[1])]])
-	var e = _xin_event_node(host, event_id)
-	if e != null and not e.command_list().is_empty():
+	if e != null and is_instance_valid(e) and not e.command_list().is_empty():
 		var interp := MVInterpreter.new(host, map_id, event_id, e.command_list())
+		host.running_event_id = event_id
 		await interp.run()
+		host.running_event_id = 0
+	if e != null and is_instance_valid(e):
+		e.locked = false
 
 
 static func _xin_event_node(host, event_id: int):

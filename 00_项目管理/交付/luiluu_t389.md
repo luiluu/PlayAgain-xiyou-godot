@@ -13,6 +13,7 @@
 - 19 层炎龙队长（Map047 EV013）、25 层嫦娥（Map147 EV001）、27 层多宝道人（Map182 EV001）打赢后的普通商店页（独立开关 A）：身上有对应材料、这层还没升华过时由 `XTianqiSect.intercepts／run_event` 接管：有人学过旧被动→收材料，照原公共事件 1388／1389／1390 的做法所有学过的角色忘掉永恒之火 6133／天宫之寒 6138／镇渊之岩 6238、学「·极尽升华」6236／6237／6239，守层者说一句、弹「你的被动：…极尽升华！」，记 `sect_xin.sublimed`；没人学过→守层者提示、不收材料。之后照原来的普通页继续（商店、索要礼物，含见面礼模块改过的那页）。升华每层只一次。
 - 这三层的随机页、轮回页和魔塔外围送真材料页本来就被包甲拦住，不动（专项锁住）。
 - `XTianqiSave.SECTIONS`／`WIRED` 登记 `sect_xin`。
+- 返修（小A 核 r1）：`xin_learners` 只遍历存档里已有的角色（`s.actors`），不再调懒创建的 `s.actor(id)`（原写法会把 167 个没招募的角色写进存档，3.5KB→225KB）；`xin_killed／xin_sublimed` 只读走 `XTianqiSave.peek`，不新建分区；34 层鸿钧借敌群 469，`XTianqiSummit.setup` 记下最近一场是不是鸿钧（`last_was_hongjun`），鸿钧战不算 33 层首杀；接管守层者时照普通路径锁住、转向玩家、记 running_event_id；玩家可见文字换成小A 定稿句；截图工具挪到 `00_项目管理/归档/交付截图/luiluu_t389/t389_xin_shot.gd.txt`，不再留在 tests/。
 - 玩家可见：天启篇 31～33 层守层者首杀掉三件材料，带回 19／25／27 层守层者处可让三本被动极尽升华。
 
 ## 验收逐条
@@ -27,18 +28,18 @@
 
 ## 验证
 
-- 专项 `xiyou_tianqi_sect_xin` 27/27（含实机：真进 32 层打伏羲、真进 19 层跟炎龙队长说话）。
+- 专项 `xiyou_tianqi_sect_xin` 33/33（含实机：真进 32 层打伏羲、真进 19 层跟炎龙队长说话；返修加了角色条数／存档体积不涨、只读不建分区、鸿钧不算 33 层首杀）；`xiyou_tianqi_summit` 78/78。
 - 相关专项本机：`xiyou_tianqi_sect_a`、`xiyou_tianqi_sect_b`、`xiyou_tianqi_sect_bing`、`xiyou_tianqi_sect_geng`、`xiyou_tianqi_sect_ren`、`xiyou_tianqi_guardian_gift`、`xiyou_tianqi_save` 全过。
-- `选测.py main --list` 选中的 17 个场景交云端选测（结果见回执）。
+- `选测.py main --list` 选中的 29 个场景（返修动了 tianqi_summit.gd，多选了它的引用方）交云端选测（结果见回执）。
 - `语法检查.py` 0 问题；`工具回归.py` 全过；`天启篇存档登记.py` 通过；`发行空壳.py check` 通过。
-- 截图：`00_项目管理/归档/交付截图/luiluu_t389/xin_kill32.png`（32 层首杀提示）、`xin_sublimate19.png`（19 层炎龙队长升华台词）；截图工具 `tests/t389_xin_shot.tscn`（无头时跳过）。
+- 截图：`00_项目管理/归档/交付截图/luiluu_t389/xin_kill32.png`（32 层首杀提示）、`xin_sublimate19.png`（19 层炎龙队长升华台词）；截图工具归档在同目录 `t389_xin_shot.gd.txt`。
 
 ## 没做／偏离
 
-- 独占文件之外动了：`tianqi_save.gd` 登记一行 `sect_xin` 分区（存档登记检查要求）；`tianqi_sect.gd` 里包丙的 `has_item／item_rec` 各加一个分支、包乙的 `after_map_battle` 末尾加一行调辛段（这两个是 XDB.rec／地图战斗的共用挂点）。没碰 `tianqi_drop.gd`、`guardian_rework.gd`、`balance_table.json`。
+- 独占文件之外动了：`tianqi_summit.gd` 加 `_last`／`last_was_hongjun()`（setup 里记一行，返修 P2-2 区分鸿钧用）；`tianqi_save.gd` 登记一行 `sect_xin` 分区（存档登记检查要求）；`tianqi_sect.gd` 里包丙的 `has_item／item_rec` 各加一个分支、包乙的 `after_map_battle` 末尾加一行调辛段（这两个是 XDB.rec／地图战斗的共用挂点）。没碰 `tianqi_drop.gd`、`guardian_rework.gd`、`balance_table.json`。
 - 首杀掉落没走掉落表，用地图战斗打完的挂点直接给（避免碰 tianqi_drop.gd，且「首杀」按敌群认更直接）。
 - 升华时没跑原公共事件 1388～1390 本身，按它的写法在 GDScript 里做（遍历全体角色 hasSkill→forget/learn），多了「没人学过只提示」。
-- 守层者台词、获得提示、材料说明是草稿，待小A 文字审。
+- 守层者台词、获得提示、材料说明已换成小A 核查报告 r1 的定稿句。
 
 ## 交接板
 

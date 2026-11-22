@@ -1,5 +1,5 @@
 extends Node
-## 工具（不是专项）：T389 教派包辛截图（800×450）。要真窗口：
+## 工具（不是专项）：T389 教派包辛截图（800×450）。要真窗口：（归档备查：用时拷回 tests/ 改名 .gd，配同名 .tscn）
 ##   godot --audio-driver Dummy --path 01_Godot工程 res://tests/t389_xin_shot.tscn -- --out=<目录>
 ## 两张：xin_kill32（32 层打赢伏羲后的获得提示，直接调 xin_after_battle）、xin_sublimate19（19 层炎龙队长升华台词）。
 const Kit := preload("res://tests/lib/tq_save_kit.gd")

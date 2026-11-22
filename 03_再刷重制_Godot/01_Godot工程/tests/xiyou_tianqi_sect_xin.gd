@@ -7,6 +7,8 @@ extends Node
 ##    记账、只一次；接管后照原页走（这里 host 没有事件节点，只看台词）。
 ## 四、存档：存→读后首杀、升华的账还在。
 ## 五、开关 XIN 关掉回原样；西游档不受影响。
+## 返修（T389 核 r1）：七、查升华不把没招募的角色建进存档（s.actors 条数、存档体积不涨）；只读查询不建 sect_xin 分区；
+##    34 层鸿钧（借敌群 469）打赢不算 33 层首杀。
 ## 六、实机：真进 32 层（Map156）打伏羲（战斗一开就击倒），首杀拿到永恒玄冰；真进 19 层（Map047）跟炎龙队长说话，
 ##    先升华、再照原页开商店（XShop.auto_log 记到原页的货单）。
 
@@ -16,6 +18,11 @@ const MAP_SCENE := "res://modes/xiyou/map/map_scene.tscn"
 const TIMEOUT_MS := 90000
 var results: Array = []
 var kit: Kit
+
+
+class FakeLogic:
+	extends RefCounted
+	var enemies: Array = []
 
 
 class MockHost:
@@ -46,7 +53,9 @@ func _run() -> void:
 	XMessageBox.auto = true
 	kit = Kit.new("xiyou_tianqi_sect_xin")
 	_data_matches()
+	XTianqiSummit._last = ""
 	await _first_kills()
+	_review_fixes()
 	await _sublimate()
 	_save_roundtrip()
 	await _switch_off_and_original()
@@ -348,3 +357,51 @@ func _live() -> void:
 	XShop.auto_log.clear()
 	done = await _run_live_event(map, 13, [0])
 	_check("live_19_after_plain", done and XShop.auto_log.size() == 1)
+
+
+# ---- 返修（T389 核 r1）----
+
+func _save_size(s: XState) -> int:
+	return JSON.stringify(s.to_dict()).length()
+
+
+func _review_fixes() -> void:
+	# P1-1：升华（没人学过、学过两条路）都不往 s.actors 里建没招募的角色，存档体积不涨
+	var s := Kit.new_game()
+	var n0 := s.actors.size()
+	var size0 := _save_size(s)
+	s.set_self_switch(47, 13, "A", true)
+	s.gain_item(1975, 1)
+	for id in s.actors:
+		s.actors[id].forget_skill(6133)
+	var none := XTianqiSect.xin_sublimate(s, 47, 13)
+	var n1 := s.actors.size()
+	var a1 := int(s.party[0])
+	s.actors[a1].learn_skill(6133)
+	var ok := XTianqiSect.xin_sublimate(s, 47, 13)
+	var n2 := s.actors.size()
+	var size2 := _save_size(s)
+	_check("p1_no_actor_bloat", str(none.reason) == "none" and bool(ok.ok) and n1 == n0 and n2 == n0, [n0, n1, n2, none, ok])
+	_check("p1_save_size_flat", size2 < size0 + 2000, [size0, size2])
+	_check("p1_learners_only_known", XTianqiSect.xin_learners(s, 6236) == [a1] and s.actors.size() == n0)
+
+	# P2-1：只读查询不建分区
+	s = Kit.new_game()
+	var q := [XTianqiSect.xin_killed(s, 31), XTianqiSect.xin_killed(s, 33), XTianqiSect.xin_sublimed(s, 19), XTianqiSect.xin_intercepts(s, 47, 13)]
+	_check("p2_peek_no_section", q == [false, false, false, false] and XTianqiSave.peek(s, "sect_xin") == null, [q, XTianqiSave.peek(s, "sect_xin")])
+
+	# P2-2：34 层鸿钧借敌群 469，打赢不发极渊重岩、不记 33 层
+	s = Kit.new_game()
+	var h := MockHost.new()
+	XTianqiSummit._last = "hongjun"
+	await XTianqiSect.after_map_battle(h, s, 469, 0)
+	var hj := [s.item_count(1977), XTianqiSect.xin_killed(s, 33), h.texts.size()]
+	XTianqiSummit._last = ""
+	await XTianqiSect.after_map_battle(h, s, 469, 0)
+	# 真链：prepare_hongjun → BattleLogic.setup 里的 XTianqiSummit.setup 记下鸿钧；下一场普通战斗 setup 清掉
+	XTianqiSummit.prepare_hongjun(s)
+	XTianqiSummit.setup(FakeLogic.new(), s)
+	var after_hj := XTianqiSummit.last_was_hongjun()
+	XTianqiSummit.setup(FakeLogic.new(), s)
+	_check("p2_summit_marks_hongjun", after_hj == XTianqiSummit.allowed(s) and not XTianqiSummit.last_was_hongjun(), [after_hj, XTianqiSummit.allowed(s)])
+	_check("p2_hongjun_not_33", hj == [0, false, 0] and s.item_count(1977) == 1 and XTianqiSect.xin_killed(s, 33), [hj, s.item_count(1977)])

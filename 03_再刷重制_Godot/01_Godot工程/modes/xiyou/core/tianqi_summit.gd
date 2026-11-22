@@ -385,10 +385,20 @@ static func pending() -> String:
 	return _pending
 
 
+## 最近一场战斗是不是 34 层鸿钧（借鸿蒙老祖的敌群 469；BattleLogic.setup 每场都改写，打完后还能查）。
+## 教派包辛认 33 层首杀时用它排除鸿钧（T389 核 P2-2）
+static var _last := ""
+
+
+static func last_was_hongjun() -> bool:
+	return _last == "hongjun"
+
+
 ## BattleLogic.setup：敌群成员建完后调。prepare 过就把鸿蒙老祖那只换成鸿钧（名字、能力值 × rate；外观、行动、难度倍率、霸体照旧）
 static func setup(logic, s: XState) -> void:
 	var key := _pending
 	_pending = ""
+	_last = key
 	if key != "hongjun" or not allowed(s):
 		return
 	var h: Dictionary = data().get("hongjun", {})
