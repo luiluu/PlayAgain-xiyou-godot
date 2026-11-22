@@ -1,7 +1,7 @@
 # 交付：luiluu/t386
 
 - 车道／工作者：T386 战中「本场规则」条实现（K1b）／cc 车道（Opus＋medium，P8；原车道额度用完，同工作树续做）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -23,7 +23,8 @@
 4. 西游档零变化：专项 `xiyou_collect_empty`、`xiyou_no_strip`（西游档 `make()` 不建）；云端选测见下。
 5. 发行空壳：`XTianqiBattleRules` 按类名前缀自动换空壳（collect→[]、source_label→""）；`XSkinRuleStrip` 同 `skin_seal_dial` 归「新界面门」真脚本（`make()` 先问 `XUiSkin.on()`，发行包里恒 false）。`发行空壳.py check` 通过（81 个脚本，775 个函数都有），`测试发行空壳.py` OK。
 6. 文字：照 T387 定稿句落地。偏离两处，见「没做／偏离」。
-7. 本交付单＋交付自检、云端选测结果见下。
+7. 本交付单＋交付自检 0；云端选测 5a1a5fdec（基准 02270961b）210 个场景 7 片全部通过：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45035732218 。前一次 634688d16 的云端（run 45034293380）只挂本专项 `scroll_rule` 一项＝同场随机按段异化混进来的偶发，5e436233b 修掉，本地连跑 3 次 120/120。
+   反向验证：去掉 `make()` 的开关判断 → `off_no_strip` 挂；去掉死期点名附加行 → `death_doom_log_match` 挂（都已还原）。
 
 ## 没做／偏离
 
@@ -52,3 +53,5 @@
 - 0d2f5ed29 WIP: 数据源、三模块只读出口、XSkinRuleStrip、专项
 - 634688d16 起点按圆钮实际右缘、上行限宽照定稿样稿；实机截图
 - 5e436233b 专项：书卷那条只看七印规则
+- 5a1a5fdec 交付单
+- （本提交）补专项 .gd.uid、交付单标可合并
