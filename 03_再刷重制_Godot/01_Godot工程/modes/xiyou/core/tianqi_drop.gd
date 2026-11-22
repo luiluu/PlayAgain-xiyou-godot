@@ -30,6 +30,8 @@ extends RefCounted
 ##
 ## T395（Kyo 11-22「首层者只能打一次的啊。所以是必须要掉落」）：35 种奖碑（换楼层奖励用）原表必掉的行在天启篇照旧必掉，
 ##   不乘 0.2、不走递增概率，也不吃「荒年」这类减掉率（roll_signature 按键认出奖碑直接给）。奖碑在哪只怪身上都算（项目经理cc 批 A）。
+##   补（Kyo 11-22「2按推荐 3改」）：只能打一次的天道信物 1958、天道研究日志[典藏版] 1961、配方:究极进化花仙子 1001 同样必掉（SURE_EXTRA）；
+##   28 层乌尔奇奥拉（敌人 2025，Map145 EV012 能反复打）那一行排除（SURE_EXCLUDE_ENEMIES），照原表 × 0.2。
 ##   `MEDAL_SURE = false` 回到原表 × 0.2。
 ##
 ## 回退（O-403）：`SEED_FROM_SAVE`／`PITY_RESET_ON_SURE`（O-429，返修）关掉回旧写法；`AUTO_SELL = false` 屏蔽掉落照原版丢；`NO_FEED_BOUGHT = false` 商店货也能喂；`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
@@ -64,6 +66,10 @@ static var _best_rate: Dictionary = {}
 ## 35 种奖碑的道具编号（Items.json 名字以「奖碑」开头的全部；原版只靠敌人掉落拿到，见 T393 交付单）
 const MEDALS := [9, 11, 13, 30, 54, 60, 63, 65, 78, 99, 102, 143, 145, 148, 153, 176, 190, 193, 195, 246, 438,
 	1543, 1544, 1545, 1546, 1547, 1548, 1549, 1550, 1551, 1552, 1553, 1554, 1555, 1556]
+## 奖碑以外、只能打一次的战斗里掉、别处拿不到的必掉道具（T395 清单，Kyo 11-22 定）
+const SURE_EXTRA := [1001, 1958, 1961]
+## 能反复打的敌人：身上的奖碑照原表 × 0.2（乌尔奇奥拉·西法，打赢后有「再次挑战」）
+const SURE_EXCLUDE_ENEMIES := [2025]
 
 
 static func table() -> Dictionary:
@@ -206,11 +212,12 @@ static func signature_on(s = null) -> bool:
 	return SIGNATURE and on(s)
 
 
-## 一行的面板概率（没乘全队倍率、难度倍率）：raw 是原表的概率（1÷分母，或 <Enemy Drops> 的百分数）
-static func signature_base(kind: int, id: int, raw: float) -> float:
+## 一行的面板概率（没乘全队倍率、难度倍率）：raw 是原表的概率（1÷分母，或 <Enemy Drops> 的百分数）；
+## enemy_id：这一行在哪只敌人身上（T395 排除能反复打的敌人用，-1＝不看）
+static func signature_base(kind: int, id: int, raw: float, enemy_id := -1) -> float:
 	var g: Dictionary = table().get("signature", {})
 	var item_p := minf(1.0, maxf(raw * float(g.get("item_base", BASE_RATE)), float(g.get("item_floor", 0.005))))
-	if raw >= 1.0 and sure_medal(kind, id):
+	if raw >= 1.0 and sure_medal(kind, id, enemy_id):
 		return 1.0
 	if kind < 2:
 		return item_p
@@ -224,9 +231,9 @@ static func signature_base(kind: int, id: int, raw: float) -> float:
 	return clampf(raw, float(range_[0]), float(range_[1]))
 
 
-## T395：原表必掉时一定给的奖碑（MEDAL_SURE 关掉不认）
-static func sure_medal(kind: int, id: int) -> bool:
-	return MEDAL_SURE and kind == 1 and MEDALS.has(id)
+## T395：原表必掉时一定给的奖碑和 SURE_EXTRA 三样（MEDAL_SURE 关掉不认；SURE_EXCLUDE_ENEMIES 身上的不算）
+static func sure_medal(kind: int, id: int, enemy_id := -1) -> bool:
+	return MEDAL_SURE and kind == 1 and (MEDALS.has(id) or SURE_EXTRA.has(id)) and not SURE_EXCLUDE_ENEMIES.has(enemy_id)
 
 
 ## 招牌键 "敌人:种类:编号" 是不是奖碑，且原表这一行必掉（荒年等减掉率乘下去后 p 不到 1，也照给）
@@ -234,7 +241,7 @@ static func _sure_medal_key(key: String) -> bool:
 	if not MEDAL_SURE:
 		return false
 	var parts := key.split(":")
-	if parts.size() != 3 or not sure_medal(int(parts[1]), int(parts[2])):
+	if parts.size() != 3 or not sure_medal(int(parts[1]), int(parts[2]), int(parts[0])):
 		return false
 	var e := XDB.rec("Enemies", int(parts[0]))
 	for d in e.get("dropItems", []):

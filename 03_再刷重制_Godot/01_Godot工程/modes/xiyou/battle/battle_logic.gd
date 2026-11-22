@@ -3838,14 +3838,14 @@ func drop_chances(e: XEnemy, all_rows := false) -> Array:
 		if int(drop.kind) > 0 and float(drop.denominator) > 0 and (all_rows or XTianqiDrop.keeps_row(state, int(drop.kind), int(drop.dataId))):  # 天启篇：精良及以下的装备交给通用掉落
 			var row := {"kind": int(drop.kind), "id": int(drop.dataId), "chance": rate / float(drop.denominator), "extra": false}
 			if sig:
-				row.chance = minf(1.0, XTianqiDrop.signature_base(int(drop.kind), int(drop.dataId), 1.0 / float(drop.denominator)) * sig_mult)
+				row.chance = minf(1.0, XTianqiDrop.signature_base(int(drop.kind), int(drop.dataId), 1.0 / float(drop.denominator), e.enemy_id) * sig_mult)
 				row["sig"] = "%d:%d:%d" % [e.enemy_id, int(drop.kind), int(drop.dataId)]
 			out.append(row)
 	for extra in _extra_drops(e.data()):
 		if all_rows or XTianqiDrop.keeps_row(state, int(extra.kind), int(extra.id)):
 			var row := {"kind": extra.kind, "id": extra.id, "chance": extra.rate * rate, "extra": true}
 			if sig:
-				row.chance = minf(1.0, XTianqiDrop.signature_base(int(extra.kind), int(extra.id), float(extra.rate)) * sig_mult)
+				row.chance = minf(1.0, XTianqiDrop.signature_base(int(extra.kind), int(extra.id), float(extra.rate), e.enemy_id) * sig_mult)
 				row["sig"] = "%d:%d:%d" % [e.enemy_id, int(extra.kind), int(extra.id)]
 			out.append(row)
 	return XTianqiSect.drop_rows(state, e.enemy_id, out)  # 天启篇教派连带内容：研究日志去掉、夏娜心魔换碎片（XTianqiSect）
