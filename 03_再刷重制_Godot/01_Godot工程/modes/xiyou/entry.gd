@@ -218,7 +218,7 @@ func _tq_build_title() -> void:
 	if not client.checked.is_connected(_tq_on_update_checked):
 		client.checked.connect(_tq_on_update_checked)
 	client.auto_check()
-	XForceUpdate.on_title(self, _layer, _tq_title != null)  # T369：天启标题用新样式；低于清单的最低可玩版本：盖强制更新框，不能进标题
+	XForceUpdate.on_title(self, _layer, _tq_title != null and XTianqiTitle.skin_on())  # T369：新样式要天启发行门＋界面风格（O-467）；低于清单的最低可玩版本：盖强制更新框，不能进标题
 	_whats_new_hook()
 
 
@@ -275,7 +275,7 @@ func _tq_open_achievements() -> void:
 
 ## 新标题「检查更新」：打开更新页（XUpdatePage，联网查清单、下载补丁、退回）
 func _tq_check_update() -> void:
-	XUpdatePage.open(self, _tq_title != null)  # T369：天启标题传真（O-467，标题上没有存档，不问 XUiSkin.on()）
+	XUpdatePage.open(self, _tq_title != null and XTianqiTitle.skin_on())  # T369：天启发行门＋界面风格（O-467，标题上没有存档，不问 XUiSkin.on()）
 
 ## 标题右下角「问题反馈 QQ 群」（XFeedback，Kyo 11-13）：版本说明上面一行，点一下复制群号；不抢键盘焦点。
 ## 有问卷时群号行上面再放「填写反馈问卷」

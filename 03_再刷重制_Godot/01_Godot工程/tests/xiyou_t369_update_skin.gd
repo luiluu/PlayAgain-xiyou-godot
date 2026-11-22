@@ -60,6 +60,7 @@ func _run() -> void:
 	await _rollback()
 	await _forced()
 	await _gate()
+	await _buttons_click()
 	await _height()
 	XUpdatePage.patch_installer = Callable()   # 静态变量里留着本脚本的 lambda，退出时会崩
 	XUpdatePage.link_opener = Callable()
@@ -267,6 +268,50 @@ func _gate() -> void:
 	await frames(3)
 	XForceUpdate.reset()
 	check("gate_helper_exists", XForceUpdate.skin_gate() is bool)
+	# P1-1：entry.gd 用的 XTianqiTitle.skin_on()（＝天启发行门＋界面风格）三种情况
+	var saved_sim := ReleaseEntry.simulate_release
+	var saved_open := XTianqi.RELEASE_OPEN
+	ReleaseEntry.simulate_release = true
+	XTianqi.RELEASE_OPEN = false
+	XConfig._values["codexUiSkin"] = true
+	check("gate_release_closed_old", not XTianqiTitle.skin_on())
+	XTianqi.RELEASE_OPEN = true
+	check("gate_release_open_new", XTianqiTitle.skin_on())
+	XConfig._values["codexUiSkin"] = false
+	check("gate_ui_skin_original_old", not XTianqiTitle.skin_on())
+	XConfig._values["codexUiSkin"] = true
+	ReleaseEntry.simulate_release = saved_sim
+	XTianqi.RELEASE_OPEN = saved_open
+	host.queue_free()
+	await frames(2)
+
+
+func _buttons_click() -> void:
+	# 非强制新样式的「重新检查」「手动下载」真点一下
+	var host := _host()
+	var page := XUpdatePage.open(host, true)
+	await frames(3)
+	page.show_result({"state": XUpdateCheck.LATEST, "current": "0.9460"})
+	await frames(2)
+	var rc: Button = page.find_child("Recheck", true, false)
+	check("click_recheck_visible", rc != null and rc.visible, rc)
+	if rc != null:
+		rc.pressed.emit()
+		check("click_recheck_goes_checking", page.state == "checking", page.state)
+	await frames(4)
+	page.show_result({"state": XUpdatePage.FAILED, "version": "0.9470", "message": "网络不通或空间不够。", "source": _patch_result()})
+	await frames(2)
+	var lk: Button = page.find_child("Link", true, false)
+	var opened := []
+	XUpdatePage.link_opener = func(u): opened.append(u)
+	check("click_link_visible", lk != null and lk.visible and lk.text == "手动下载", lk)
+	if lk != null:
+		lk.pressed.emit()
+		check("click_link_opened", opened == ["https://example.invalid/download"] and lk.text == "已打开（链接已复制）", [opened, lk.text])
+		page.show_result({"state": XUpdatePage.FAILED, "version": "0.9470", "message": "再失败一次。", "source": _patch_result()})
+		await frames(2)
+		check("click_link_text_reset", lk.text == "手动下载", lk.text)
+	XUpdatePage.link_opener = Callable()
 	host.queue_free()
 	await frames(2)
 
@@ -285,9 +330,14 @@ func _height() -> void:
 	check("h_max_620", panel.size.y <= XUpdatePage.SKIN_MAX_H + 1.0, panel.size)
 	check("h_scrolls", (page.find_child("More", true, false) as Label).visible)
 	XConfig._values[XFontScale.KEY] = {"global": 130, "toast": 100}
-	page.show_result(_patch_result({"notes": notes}))
+	var host2 := _host()
+	var page2 := XUpdatePage.open(host2, true)  # 先改字号再建弹窗：字号在建节点时固化
+	await frames(3)
+	page2.show_result(_patch_result({"notes": notes}))
 	await frames(4)
-	check("h_font130_max_620", panel.size.y <= XUpdatePage.SKIN_MAX_H + 1.0 and XUiSkin.font_mult() > 1.2, [panel.size, XUiSkin.font_mult()])
+	var panel2: Control = page2.find_child("Panel", true, false)
+	check("h_font130_max_620", panel2.size.y <= XUpdatePage.SKIN_MAX_H + 1.0 and XUiSkin.font_mult() > 1.2, [panel2.size, XUiSkin.font_mult()])
+	host2.queue_free()
 	XConfig._values.erase(XFontScale.KEY)
 	host.queue_free()
 	await frames(2)

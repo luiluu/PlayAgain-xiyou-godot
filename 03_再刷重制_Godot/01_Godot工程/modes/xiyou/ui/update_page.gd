@@ -502,12 +502,6 @@ func _make_candle() -> Control:
 
 
 func _build_skin_head(box: VBoxContainer) -> void:
-	_notice_l = _lbl("", XUiSkin.FS_AUX, XUiSkin.DOWN)
-	_notice_l.name = "Notice"
-	_notice_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_notice_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_notice_l.visible = false
-	box.add_child(_notice_l)
 	_verrow = HBoxContainer.new()
 	_verrow.name = "VersionRow"
 	_verrow.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -520,6 +514,12 @@ func _build_skin_head(box: VBoxContainer) -> void:
 	_verrow.add_child(_ver_new)
 	_verrow.add_child(_ver_rest)
 	box.add_child(_verrow)
+	_notice_l = _lbl("", XUiSkin.FS_AUX, XUiSkin.DOWN)
+	_notice_l.name = "Notice"
+	_notice_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_notice_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_notice_l.visible = false
+	box.add_child(_notice_l)
 
 
 func _build_skin_progress(box: VBoxContainer) -> void:
@@ -600,7 +600,8 @@ func _style_rollback(armed: bool, b: Button = null) -> void:
 		var sel := XSkinButton.select(null, XUiSkin.SelState.FOCUS)
 		for st in ["normal", "hover", "focus", "pressed", "hover_pressed"]:
 			l.add_theme_stylebox_override(st, sel)
-		l.add_theme_color_override("font_color", XUiSkin.TEXT_HI)
+		for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+			l.add_theme_color_override(k, XUiSkin.TEXT_HI)
 		return
 	var flat := StyleBoxFlat.new()
 	flat.bg_color = Color(0, 0, 0, 0)
@@ -612,7 +613,8 @@ func _style_rollback(armed: bool, b: Button = null) -> void:
 		l.add_theme_stylebox_override(st, flat)
 	var foc := XSkinButton.select(flat, XUiSkin.SelState.FOCUS)
 	l.add_theme_stylebox_override("focus", foc)
-	l.add_theme_color_override("font_color", XUiSkin.TEXT_2)
+	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		l.add_theme_color_override(k, XUiSkin.TEXT_2)
 	var u := ColorRect.new()
 	u.name = "Underline"
 	u.color = Color(XUiSkin.TEXT_2, 0.7)
@@ -695,6 +697,8 @@ func _show_skin(result: Dictionary, t: Dictionary) -> void:
 		_recheck.visible = state in [XUpdateCheck.LATEST, XUpdateCheck.BAD]
 	_recheck.disabled = false
 	_recheck.text = "重新检查"
+	if _link != null:
+		_link.text = "手动下载"
 	_arrange_buttons(state == FAILED and not forced)
 	_scroll.scroll_vertical = 0
 	_fit()

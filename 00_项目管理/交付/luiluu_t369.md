@@ -38,8 +38,8 @@
 ## entry.gd 改动行（回执用）
 
 - `modes/xiyou/entry.gd:177`（重制旧标题的强制更新）：`XForceUpdate.on_title(self, _layer, false)`
-- `modes/xiyou/entry.gd:221`（天启新标题的强制更新）：`XForceUpdate.on_title(self, _layer, _tq_title != null)`
-- `modes/xiyou/entry.gd:278`（天启新标题「检查更新」按钮）：`XUpdatePage.open(self, _tq_title != null)`
+- `modes/xiyou/entry.gd:221`（天启新标题的强制更新）：`XForceUpdate.on_title(self, _layer, _tq_title != null and XTianqiTitle.skin_on())`（R1 返修：补天启发行门＋界面风格，O-467）
+- `modes/xiyou/entry.gd:278`（天启新标题「检查更新」按钮）：`XUpdatePage.open(self, _tq_title != null and XTianqiTitle.skin_on())`（R1 返修，同上）
 - 其余（`_whats_new_hook`、设置页的更新说明页）没动。
 
 ## 文字（待小A 审）
@@ -59,6 +59,19 @@
 - 20:9（1600×720）：`new_patch_20x9`、`new_forced_patch_20x9`。字体 130%：`new_patch_font130`。
 - 其余九种状态的 20:9 没拍（弹窗居中不变宽，同 16:9 版式）。
 
+## 没做／偏离
+
+- 更新内容小菱形：用同色「◆」字符，没有单独上旧金（单 Label 保住折行估算和 130% 滚动计算；小A 核查认可）。
+- 其余九种状态的 20:9 没拍（见截图节）。
+- 无其他偏离。
+
+## R1 返修（小A 退回 P1×1 P2×1 P3×2）
+
+- P1-1：`entry.gd:221、278` 门控改 `_tq_title != null and XTianqiTitle.skin_on()`；专项补三种：发行门关（RELEASE_OPEN=false＋模拟发行）、发行门开、界面风格原版，前者与后者都走旧样式。
+- P2-1：130% 高度测试先改字号再新建弹窗；补「重新检查」「手动下载」点击断言（含再失败后文字复位）。
+- P3-1：橙色小字挪到版本行下方；`_show_skin` 重置「手动下载」文字；退回确认条 hover／focus／pressed 字色补齐（取消确认时复原）。P3-2：本节即补。
+- 受影响的 13 张 new_* 截图已重拍。
+
 ## 交接板
 
 - 下一步：无
@@ -77,3 +90,4 @@
 ## 本分支提交
 
 - 1efb174df 主体＋专项＋交付单；随后补 .gd.uid
+- R1 返修提交见 git log（`T369 返修 R1`）
