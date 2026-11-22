@@ -129,7 +129,7 @@ func _v3() -> bool:
 ## 确认弹窗开着时它先吃键（同商店：弹窗模态，按键不穿到底下的列表和按钮）
 func _input(event: InputEvent) -> void:
 	if _dlg != null and is_instance_valid(_dlg) and _dlg.handle_input(event):
-		get_viewport().set_input_as_handled()
+		XKeyMap.handled(self)
 
 
 func _unhandled_input(event: InputEvent) -> void:
