@@ -344,3 +344,60 @@ static func end(logic) -> void:
 				e.remove_meta("tianqi_prefix")
 		logic.remove_meta(META)
 		f.clear()
+
+
+# ---- 战中「本场规则」条（T386 / K1b）：只读出口，零逻辑修改、零随机数；玩家可见文字照小A 文字审定稿（T387） ----
+
+static func battle_rules(logic) -> Array:
+	if not active(logic):
+		return []
+	var f := fight(logic)
+	var kinds := XTianqiBattleRules.alien_kinds(f)
+	if kinds.is_empty():
+		return []
+	var out := []
+	var base := {"line": "war", "icon": XTianqiBattleRules.LINE_ICONS.war, "tone": "line", "priority": 30}
+	for kind in kinds:
+		var idx := int(kinds[kind])
+		var ki := kind_info(str(kind))
+		var o := base.duplicate()
+		o["badge"] = XTianqiBattleRules.tier_badge(idx)
+		o["counter"] = XTianqiBattleRules.tier_name(idx)
+		var text := ""
+		match str(kind):
+			"fervor":
+				var best := [0, int(ki.full[idx])]
+				for e in f.units:
+					var u: Dictionary = f.units[e]
+					if e.is_alive() and str(u.kind) == "fervor":
+						var need := int(ki.full[int(u.idx)])
+						if best[1] - best[0] > need - int(u.fervor):
+							best = [int(u.fervor), need]
+				o["counter"] = "%d / %d" % best
+				o["value"] = float(best[0])
+				o["max_value"] = float(best[1])
+				if best[1] - best[0] <= 1:
+					o["tone"] = "warn"
+					o["priority"] = 10
+				text = XTianqiBattleRules.tier_tail("每次受击叠 1 层「战意」，满 %d 层立刻再动。" % best[1], idx, "再动时清除减益。", "再动伤害 ×2。")
+			"commander":
+				o["counter"] = "全怪 +%s" % XTianqiBattleRules.pct(float(ki.buff[idx]))
+				text = XTianqiBattleRules.tier_tail("在场时敌方全体属性 +%s，每回合额外行动 %d 次。" % [XTianqiBattleRules.pct(float(ki.buff[idx])), int(ki.extra[idx])],
+					idx, "倒下时敌方全体再动。", "随存活敌人数追加再动。")
+			"berserk":
+				text = XTianqiBattleRules.tier_tail("基础属性大幅强化。", idx, "每次受击攻击 +5%。", "免疫能力减益。")
+			"pyro":
+				var n := int(data().sparks.per_action) + int(ki.get("spark_extra", 1))
+				o["counter"] = "火花 +%d" % n
+				text = XTianqiBattleRules.tier_tail("每次行动额外积攒 %d 点火花。" % n, idx, "满火花时额外再动。", "满火花时触发全体轰炸。")
+				if idx >= 3:
+					o["tone"] = "warn"
+		out.append(XTianqiBattleRules.entry("alien:war:" + str(kind), "alien", str(ki.get("name", kind)), text, o))
+	var c: Dictionary = data().clash
+	var m := clash_mult(logic)
+	var co := base.duplicate()
+	co["priority"] = 20
+	co["counter"] = ("伤害 +%s" % XTianqiBattleRules.pct(m - 1.0)) if m > 1.0 else "第 %d 回合起" % int(c.from_turn)
+	out.append(XTianqiBattleRules.entry("alien:war:clash", "alien", "交锋",
+		"有异化敌人在场时，第 %d 回合起敌我双方伤害每回合 +%s（上限 +%s）。" % [int(c.from_turn), XTianqiBattleRules.pct(float(c.per_turn)), XTianqiBattleRules.pct(float(c.cap))], co))
+	return out

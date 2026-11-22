@@ -385,3 +385,86 @@ static func end(logic, result: int) -> void:
 	if result != 0 or logic.state == null:
 		return
 	XTianqiQiyin.field_drop(logic.state, int(logic.state.map_id), str(XDB.rec("Troops", int(logic.troop_id)).get("name", "")))
+
+
+# ---- 战中「本场规则」条（T386 / K1b）：只读出口，零逻辑修改、零随机数；玩家可见文字照小A 文字审定稿（T387） ----
+
+## O1 规则图标（XTianqiQiyinArt.SMALL 500 块，同 qiyin_altar.json 七印的 rule 顺序）
+const RULE_ICONS := {"no_cure": 310500, "war_cry": 310501, "exam": 310502, "magic_tower": 310503, "sacrifice": 310504, "star_fall": 310505, "silence": 310506}
+
+
+static func battle_rules(logic) -> Array:
+	if not active(logic):
+		return []
+	var f := fight(logic)
+	var rule := str(f.get("rule", ""))
+	if rule == "" or bool(f.get("exempt", false)):
+		return []
+	var info := XTianqiQiyin.seal_info(str(f.get("seal", "")))
+	var t := int(logic.turn)
+	var book := enemy_only(logic)
+	var o := {"seal": str(f.get("seal", "")), "icon": int(RULE_ICONS.get(rule, 0)), "tone": "gold", "priority": 20}
+	if bool(f.get("dragon", false)):
+		o["badge"] = "七首之龙"
+	elif book:
+		o["badge"] = "七印书卷"
+		var own = scroll_owner(logic)
+		o["detail_extra"] = "作用对象：敌方与 %s" % own.display_name() if own != null else "作用对象：仅敌方"
+	match rule:
+		"no_cure":
+			o["counter"] = "减益不到期"
+		"war_cry":
+			var dead := 0
+			for b in logic.actors + logic.enemies:
+				if b.is_dead():
+					dead += 1
+			o["counter"] = "伤害 +%s" % XTianqiBattleRules.pct(float(param("war_cry").get("per_death", 0.05)) * dead)
+			if dead > 0:
+				o["tone"] = "warn"
+		"exam":
+			var cap := int(param("exam").get("skills_per_turn", 5))
+			var used := int(f.get("skills_used", 0))
+			o["counter"] = "已用 %d / %d" % [used, cap]
+			o["value"] = float(used)
+			o["max_value"] = float(cap)
+			if used >= cap - 1:
+				o["tone"] = "warn"
+				o["priority"] = 10
+		"magic_tower":
+			o["counter"] = "无暴击"
+			var g: Dictionary = f.get("gems", {})
+			var a := float(g.get("atk", 0.0))
+			var d := float(g.get("def", 0.0))
+			var h := float(g.get("hp", 0.0))
+			if a + d + h > 0.0 and not book:
+				o["tone"] = "buff"
+				o["detail_extra"] = "红攻 +%s · 蓝防 +%s · 绿命 +%s" % [XTianqiBattleRules.pct(a), XTianqiBattleRules.pct(d), XTianqiBattleRules.pct(h)]
+		"sacrifice":
+			var up := XTianqiBattleRules.pct(float(param("sacrifice").get("dmg_up", 0.1)))
+			match str(f.get("side_bonus", "")):
+				"actor":
+					o["counter"] = "我方伤害 +%s" % up
+					o["tone"] = "buff"
+				"enemy":
+					o["counter"] = "敌方伤害 +%s" % up
+					o["tone"] = "warn"
+		"star_fall":
+			var every := maxi(1, int(param("star_fall").get("every_turns", 3)))
+			var rem := (every - t % every) % every
+			o["countdown"] = rem
+			o["counter"] = "本回合已落" if rem == 0 else XTianqiBattleRules.countdown_text(rem)
+			if rem <= 1:
+				o["tone"] = "warn"
+				o["priority"] = 10
+		"silence":
+			if bool(f.get("silent", false)):
+				o["counter"] = "沉默中"
+				o["countdown"] = 0
+				o["tone"] = "warn"
+				o["priority"] = 10
+				if bool(f.get("boss", false)) and str(f.get("seal", "")) == "mo" and not book:
+					o["detail_extra"] = "下回合（第 %d 回合）解除沉默，守默者香炉将燃起。" % (t + 1)
+			else:
+				o["counter"] = "下回合沉默"
+				o["countdown"] = 1
+	return [XTianqiBattleRules.entry("qiyin:" + rule, "qiyin", str(info.get("rule_name", rule)), str(info.get("rule_text", "")), o)]

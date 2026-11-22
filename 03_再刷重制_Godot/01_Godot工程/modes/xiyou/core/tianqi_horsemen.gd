@@ -1504,3 +1504,246 @@ static func fresh_param(b) -> void:
 static func _flush_params(logic) -> void:
 	for a in logic.actors:
 		a.param_mark_dirty()
+
+
+# ---- 战中「本场规则」条（T386 / K1b）：只读出口，零逻辑修改、零随机数；玩家可见文字照小A 文字审定稿（T387） ----
+
+const WAR_FORMULAS := ["", "连珠爆竹", "碎甲弹片", "莉co特调", "引信已燃", "满天星火", "炮火连天"]
+## 配方每层的一句效果（K1b 新写，不在 T387 定稿表里，待小A 审）
+const WAR_FORMULA_BRIEF := ["", "多段爆竹轰击", "弹片削减我方最大生命", "暴击提升", "伤害提升", "火力全开", "每次行动额外 +3 火花"]
+
+
+static func battle_rules(logic) -> Array:
+	if not active(logic):
+		return []
+	var f := fight(logic)
+	var line := str(f.get("line", ""))
+	var mode := str(f.get("mode", "body"))
+	var turn := int(logic.turn)
+	var M := XTianqiBattleRules.MINUS
+	var zd := not zd_rule(f).is_empty()
+	var out := []
+	var base := {"line": line, "icon": int(XTianqiBattleRules.LINE_ICONS.get(line, 0)), "tone": "line", "priority": 20}
+	var o := {}
+	# ---- 各线共用：生存战、狂暴、证道再生 ----
+	if mode == "survival":
+		var full := int(data().survival.survive_turns)
+		var rem := maxi(0, full - turn)
+		o = base.duplicate()
+		o.merge({"icon": 0, "tone": "gold", "badge": "生存战", "counter": "剩 %d 回合" % rem, "countdown": rem}, true)
+		out.append(XTianqiBattleRules.entry("horsemen:survival:turns", "horsemen", "生存战", "骑士生命最低保留 1 点，无法击倒；撑过第 %d 回合即胜。" % full, o))
+	var er := enrage_turn(f)
+	if er > 0:
+		o = base.duplicate()
+		o["badge"] = "证道"
+		var mult := enrage_mult(logic)
+		if turn >= er:
+			o.merge({"counter": "×%s" % XTianqiBalance._num_text(mult), "countdown": 0, "tone": "warn", "priority": 10}, true)
+		else:
+			var n := er - turn
+			o.merge({"counter": XTianqiBattleRules.countdown_text(n), "countdown": n, "tone": "warn" if n <= 2 else "gold", "priority": 10 if n <= 1 else 20}, true)
+		var mt := XTianqiBalance._num_text(maxf(2.0, mult))
+		var text := "第 %d 回合起狂暴，骑士伤害大幅提升（×%s）" % [er, mt]
+		text += "，且我方受到治疗减半。" if line == "plague" else "。"
+		out.append(XTianqiBattleRules.entry("horsemen:%s:enrage" % line, "horsemen", "狂暴", text, o))
+	var rr := zd_regen_rate(f)
+	if rr > 0.0:
+		o = base.duplicate()
+		o.merge({"icon": 0, "tone": "gold", "priority": 40, "badge": "证道", "counter": "每回合 +%s" % _pct_text(rr)}, true)
+		out.append(XTianqiBattleRules.entry("horsemen:%s:zd_regen" % line, "horsemen", "证道·再生", "每回合末回复最大生命 %s。" % _pct_text(rr), o))
+	match line:
+		"death":
+			out.append_array(_death_rules(logic, f, mode, turn, zd, base))
+		"war":
+			out.append_array(_war_rules(logic, f, mode, turn, base))
+		"famine":
+			o = base.duplicate()
+			o.merge({"counter": "禁回 MP／TP", "tone": "warn"}, true)
+			out.append(XTianqiBattleRules.entry("horsemen:famine:starve", "horsemen", "绝粮", "本场我方魔法（MP）与 TP 均无法恢复。", o))
+			if mode == "body":
+				var k := knight("famine")
+				var sen := int(f.get("seniority", 0))
+				o = base.duplicate()
+				o.merge({"counter": "%d 层" % sen, "value": float(sen), "max_value": float(k.seniority.lines[1])}, true)
+				if bool(f.get("broke2", false)):
+					var every := int(k.sword_rain.every)
+					var rem := (every - turn % every) % every
+					o.merge({"badge": "百亿剑雨", "tone": "warn", "detail_extra": "每 %d 回合施放「百亿剑雨」（%s）" % [every, XTianqiBattleRules.countdown_text(rem)]}, true)
+				out.append(XTianqiBattleRules.entry("horsemen:famine:seniority", "horsemen", "资历",
+					"每层技能伤害 +3%；满 5 层翻倍至 +6% 并解锁「破产一剑」；满 10 层全属性 +33% 并领悟「百亿剑雨」。", o))
+			if not f.adds.is_empty():
+				var n := 0
+				for e in f.adds:
+					if e.is_alive():
+						n += 1
+				o = base.duplicate()
+				o.merge({"counter": "在场 %d 只" % n, "priority": 30}, true)
+				out.append(XTianqiBattleRules.entry("horsemen:famine:devour", "horsemen", "结党",
+					"行动前吞噬 1 名小怪 50% 生命，本次伤害 +33%；若吞噬致死，将再召唤 1 名并叠 1 层「资历」。", o))
+		"plague":
+			out.append_array(_plague_rules(logic, f, mode, turn, base))
+	return out
+
+
+static func _pct_text(v: float) -> String:
+	var p := snappedf(v * 100.0, 0.1)
+	return ("%d%%" % roundi(p)) if is_equal_approx(p, roundf(p)) else ("%s%%" % str(p))
+
+
+static func _death_rules(logic, f: Dictionary, mode: String, turn: int, zd: bool, base: Dictionary) -> Array:
+	var out := []
+	var k := knight("death")
+	var o := {}
+	if mode == "shadow":
+		o = base.duplicate()
+		o.merge({"counter": "禁复活", "tone": "warn", "badge": "终焉"}, true)
+		out.append(XTianqiBattleRules.entry("horsemen:death:shadow_no_revive", "horsemen", "死之终焉",
+			"本场倒下的我方无法复活；单数回合施放 %d 段「神圣剑」，双数回合点名「死期」。" % int(data().shadow.holy_sword_hits), o))
+		return out
+	# 死期：照 _death_turn_start 的间隔算下一次（只读）
+	var interval := int(k.doom.phase_interval) if int(f.phase) >= 3 else int(k.doom.interval)
+	if mode == "survival":
+		interval = int(data().survival.doom_interval)
+	var zr := zd_doom(f)
+	var every_from := int(zr.get("doom_every_from", 0))
+	if every_from > 0 and turn + 1 >= every_from:
+		interval = 1
+	var marked := PackedStringArray()
+	for a in doom_people(logic):
+		if bool(f.marks.get(a, {}).get("doom", false)) and a.is_alive():
+			marked.append(a.display_name())
+	o = base.duplicate()
+	var extra := PackedStringArray()
+	if not marked.is_empty():
+		o.merge({"counter": "本回合末", "countdown": 0, "tone": "warn", "priority": 10}, true)
+		extra.append("当前点名：%s（换至助力位仍生效）" % "、".join(marked))
+	else:
+		var rem := maxi(1, int(f.doom_last) + interval - turn)
+		o.merge({"counter": XTianqiBattleRules.countdown_text(rem), "countdown": rem, "tone": "warn" if rem <= 1 else "line", "priority": 10 if rem <= 1 else 20}, true)
+	if not zr.is_empty() and (bool(zr.get("doom_from_last", false)) or every_from > 0):
+		o["badge"] = "证道"
+		extra.append("证道：从末位倒序点名，第 %d 回合起每回合点名。" % every_from)
+	o["detail_extra"] = "\n".join(extra)
+	var dtext := "每回合开始点名 1 人" if interval <= 1 else "每 %d 回合点名 1 人" % interval
+	out.append(XTianqiBattleRules.entry("horsemen:death:doom", "horsemen", "死期", dtext + "，回合末必死且本场无法复活（换至助力位仍生效）。", o))
+	# 神圣剑
+	var every := int(k.holy_sword.every)
+	var srem := (every - turn % every) % every
+	o = base.duplicate()
+	var hits := maxi(1, int(f.get("unique", 0)))
+	o.merge({"countdown": srem, "counter": "%s · %d 段" % [XTianqiBattleRules.countdown_text(srem), hits], "tone": "warn" if srem <= 1 else "line", "priority": 10 if srem <= 1 else 20}, true)
+	var st = f.get("sword_target")
+	if srem == 1 and st != null and is_instance_valid(st) and st.is_alive():
+		o["detail_extra"] = "剑锋指向：%s" % st.display_name()
+	out.append(XTianqiBattleRules.entry("horsemen:death:holy_sword", "horsemen", "神圣剑", "每 %d 回合发动多段斩击（当前 %d 段，按已施放的不同技能数计）。" % [every, hits], o))
+	# 终末（第 3 阶段起，本体战）
+	if mode == "body" and int(f.phase) >= 3:
+		var full := int(k.finale.full)
+		var fin := int(f.get("finale", 0))
+		o = base.duplicate()
+		o.merge({"counter": "%d / %d" % [fin, full], "value": float(fin), "max_value": float(full), "countdown": full - fin,
+			"tone": "warn" if full - fin <= 1 else "line", "priority": 10 if full - fin <= 1 else 20}, true)
+		out.append(XTianqiBattleRules.entry("horsemen:death:finale", "horsemen", "终末", "第 3 阶段起每回合末叠 1 层，满 %d 层施放全体终结「现在一切结束了」。" % full, o))
+	# 骑士队长（变身后）
+	if bool(f.get("captain", false)):
+		o = base.duplicate()
+		o.merge({"counter": "禁逃跑", "badge": "已变身", "priority": 30}, true)
+		out.append(XTianqiBattleRules.entry("horsemen:death:captain", "horsemen", "骑士队长", "本场逃跑必定失败；物攻、物防各 +%s，且免疫暴击。" % _pct_text(float(k.captain)), o))
+	return out
+
+
+static func _war_rules(logic, f: Dictionary, mode: String, turn: int, base: Dictionary) -> Array:
+	var out := []
+	var k := knight("war")
+	var r: Dictionary = k.reinforce
+	var o := base.duplicate()
+	var rem := -1
+	if mode == "survival":
+		for w in data().survival.war_waves:
+			if int(w) > turn:
+				rem = int(w) - turn
+				break
+	else:
+		var ev := int(r.every)
+		rem = ev - posmod(turn - 1, ev)
+	var alive := 0
+	for e in f.adds:
+		if e.is_alive():
+			alive += 1
+	var extra := war_extra_actions(logic)
+	o["detail_extra"] = "在场援军：%d / %d（骑士额外行动 +%d）" % [alive, int(r.max_adds), extra]
+	if rem > 0:
+		o.merge({"counter": XTianqiBattleRules.countdown_text(rem), "countdown": rem, "tone": "warn" if rem <= 1 else "line", "priority": 10 if rem <= 1 else 20}, true)
+	else:
+		o["counter"] = "%d / %d" % [alive, int(r.max_adds)]
+	var text := "第 1、3、5 回合召唤援军；每有 2 名援军在场，骑士额外行动 +1。" if mode == "survival" else \
+		"每 %d 回合增援 %d 名（场上上限 %d 名）；每有 2 名援军在场，骑士额外行动 +1。" % [int(r.every), int(r.per_wave), int(r.max_adds)]
+	out.append(XTianqiBattleRules.entry("horsemen:war:reinforce", "horsemen", "兵临", text, o))
+	if mode == "body":
+		var layer := clampi(int(f.get("layer", 1)), 1, 6)
+		o = base.duplicate()
+		o.merge({"counter": "%d 层" % layer, "tone": "warn" if layer >= 5 else "line",
+			"detail_extra": "当前火花：%d / %d · 火元素伤害 +%s" % [int(f.get("sparks", 0)), int(k.sparks.full), _pct_text(float(f.get("fire_up", 0.0)))]}, true)
+		out.append(XTianqiBattleRules.entry("horsemen:war:layer", "horsemen", "配方", "当前配方「%s」（第 %d 层）：%s。" % [WAR_FORMULAS[layer], layer, WAR_FORMULA_BRIEF[layer]], o))
+	elif mode == "survival":
+		var full := int(data().survival.war_spark_full)
+		var sp := int(f.get("sparks", 0))
+		o = base.duplicate()
+		o.merge({"counter": "%d / %d" % [sp, full], "value": float(sp), "max_value": float(full), "tone": "warn" if sp >= full - 3 else "line"}, true)
+		out.append(XTianqiBattleRules.entry("horsemen:war:survival_sparks", "horsemen", "火花", "骑士与援军攒满 %d 点火花时，敌方全体立刻再动。" % full, o))
+	return out
+
+
+static func _plague_rules(logic, f: Dictionary, mode: String, turn: int, base: Dictionary) -> Array:
+	var out := []
+	var k := knight("plague")
+	var p: Dictionary = k.plague
+	var M := XTianqiBattleRules.MINUS
+	var o := base.duplicate()
+	o.merge({"counter": "%s%s" % [M, _pct_text(float(f.get("plague_down", 0.0)))], "tone": "warn"}, true)
+	out.append(XTianqiBattleRules.entry("horsemen:plague:plague", "horsemen", "疫病",
+		"全体染疫：每回合末失去最大生命 %s，受到治疗 %s%s，并有概率混乱；全属性初始 %s%s，每回合再降 %s（上限 %s%s）。" % [
+			_pct_text(float(p.dot)), M, _pct_text(float(p.heal_down)), M, _pct_text(float(p.down_start)), _pct_text(float(p.down_per)), M, _pct_text(float(p.down_cap))], o))
+	# 混子之盾／嘲讽
+	o = base.duplicate()
+	var name := "混子之盾"
+	var text := ""
+	var bt := int(f.get("broken_turn", -1))
+	if bt >= 0 and turn == bt + 1:
+		name = "盾碎"
+		o.merge({"counter": "可打小弟", "tone": "buff", "priority": 10}, true)
+		text = "护盾已碎，本回合嘲讽失效，可直接清除小弟。"
+	elif bt >= 0:
+		name = "盾碎"
+		o.merge({"counter": "下回合", "countdown": 1, "tone": "buff", "priority": 10}, true)
+		text = "护盾已碎，下回合嘲讽失效，可直接清除小弟。"
+	elif bool(f.get("shield_open", false)):
+		var sk: Dictionary = k.shield
+		var rate := float(sk.break3 if int(f.phase) >= 3 else sk.break) * XTianqiPlagueLine.shield_need_mult()
+		var need := float(f.knight.mhp) * rate
+		var acc := float(f.get("shield_acc", 0.0))
+		o.merge({"counter": "%d%%" % roundi(100.0 * acc / maxf(1.0, need)), "value": acc, "max_value": need}, true)
+		if int(f.phase) >= 3:
+			o["badge"] = "P3"
+		text = "全体嘲讽中，只能攻击混子；累计造成其最大生命 %s 伤害可碎盾，下回合解除嘲讽。" % _pct_text(rate)
+	else:
+		o["counter"] = "嘲讽中"
+		text = "全体嘲讽中，我方只能攻击混子；小弟在场时混子承伤降低。"
+	if bool(f.get("taunt", true)) or bt >= 0:
+		out.append(XTianqiBattleRules.entry("horsemen:plague:shield", "horsemen", name, text, o))
+	# 不服
+	var dk: Dictionary = k.defiance
+	var top := 0
+	var parts := PackedStringArray()
+	for a in logic.actors:
+		var n := int(f.marks.get(a, {}).get("defiance", 0))
+		if n > 0:
+			top = maxi(top, n)
+			parts.append("%s %d" % [a.display_name(), n])
+	o = base.duplicate()
+	o.merge({"counter": "最高 %d / %d" % [top, int(dk.full)], "tone": "warn" if top >= int(dk.full) - 2 else "line", "priority": 30}, true)
+	if not parts.is_empty():
+		o["detail_extra"] = "当前「不服」：%s" % "、".join(parts)
+	out.append(XTianqiBattleRules.entry("horsemen:plague:defiance", "horsemen", "不服",
+		"攻击混子或遭小弟起哄会叠加「不服」，满 %d 层陷入混乱并随机传染 %d 层给队友。" % [int(dk.full), int(dk.pass)], o))
+	return out
