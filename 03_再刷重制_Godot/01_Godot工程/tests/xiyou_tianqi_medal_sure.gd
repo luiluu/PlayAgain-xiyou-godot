@@ -6,7 +6,7 @@ extends Node
 ## 四、开关关掉回到原表 × 0.2。
 ## 六、补（Kyo 11-22）：乌尔奇奥拉（2025，能反复打）身上的镇元大仙奖碑照原表 × 0.2（掉落行、图鉴都是）；
 ##   天道信物 1958（天道使者 747）、典藏版日志 1961（求道者 766）、究极进化花仙子配方 1001（萨麦尔格 833）首场必掉。
-## 五、西游档零变化：开关开关两种下，里德的掉落行、掉落结果完全一样，且没有 sig。
+## 五、西游档零变化：开关开关两种下，里德的掉落行逐字节一样，且没有 sig（掉落结果每次空档种子不同，只跑通不比）。
 
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
 var results: Array = []
@@ -182,6 +182,9 @@ func _exclude_and_extra() -> void:
 	var s := Kit.new_game("xunchang")
 	var book := XMapTransfer.drops(s, XDB.rec("Enemies", 2025)).filter(func(r): return int(r.kind) == 1 and int(r.id) == 1551)
 	var book_g := XMapTransfer.drops(s, XDB.rec("Enemies", 532)).filter(func(r): return int(r.kind) == 1 and int(r.id) == 1551)
+	# 图鉴：里德的奖碑显示 100%（小A 核 P3-3：加成为负时 map_transfer 也直接给 100，负加成没造出来，只测正常档）
+	var book_reed := XMapTransfer.drops(s, XDB.rec("Enemies", 6)).filter(func(r): return int(r.kind) == 1 and int(r.id) == 9)
+	_check("book_medal_100", book_reed.size() == 1 and is_equal_approx(float(book_reed[0].rate), 100.0), book_reed)
 	_check("ulquiorra_book_not_100", book.size() == 1 and float(book[0].rate) < 50.0 and book_g.size() == 1 and is_equal_approx(float(book_g[0].rate), 100.0), [book, book_g])
 	# 三样一次性道具：首场必掉（各换 10 个种子）
 	for spec in [[747, 1958], [766, 1961], [833, 1001]]:
