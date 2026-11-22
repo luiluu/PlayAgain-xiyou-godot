@@ -14,7 +14,7 @@ extends RefCounted
 ## - drop_rows(s, enemy_id, rows)       掉落行改写（挂点 XBattleLogic.drop_chances 末尾）；行可带 count（一次掉几个）
 ## - opening_commands()                开局补发的事件指令（挂点 XTianqi.opening_commands；开局一定是天启篇，不看状态）
 ##
-## 回退开关（O 号由总装合并时编）：JIA（包甲）；BING（包丙，O-445）；乙、丁一、己、庚、辛、壬 各一个，建段时再加。
+## 回退开关（O 号由总装合并时编）：JIA（包甲）；BING（包丙，O-445）；XIN（包辛）；乙、丁一、己、庚、壬 各一个，建段时再加。
 ##
 ## ==== 包甲：清理与骨架（本段）====
 ## - 大厅两位使者（Map004 EV016、EV035）不出。EV016 原来的实际用处是白送「控制器:副本协会」1340 和「指路灯:牛马关」386，
@@ -319,7 +319,7 @@ static func _hall_trim_message(event_id: int, msg: Dictionary) -> Dictionary:
 
 ## 包丙：数据库记录按天启篇存档动态改写（XDB.rec 调）
 static func has_item(s, id: int) -> bool:
-	return _bing_on(s) and (id == BING_LAO_LEDGER or id == BING_XIAO_LEDGER)
+	return (_bing_on(s) and (id == BING_LAO_LEDGER or id == BING_XIAO_LEDGER)) or _xin_has_item(s, id)
 
 
 static func item_rec(id: int, base: Dictionary) -> Dictionary:
@@ -330,6 +330,9 @@ static func item_rec(id: int, base: Dictionary) -> Dictionary:
 	elif id == BING_XIAO_LEDGER:
 		d["name"] = "小钱的账本"
 		d["description"] = "物品\n小钱记账用的小册子，字迹工整得吓人，似乎贪财的商人愿意用好东西换它。"
+	elif XIN_ITEM_TEXT.has(id):
+		d["name"] = str(XIN_ITEM_TEXT[id][0])
+		d["description"] = str(XIN_ITEM_TEXT[id][1])
 	return d
 
 
@@ -482,6 +485,8 @@ static func intercepts(_s, _map_id: int, _event_id: int) -> bool:
 	# ---- 槽位：庚 ----
 
 	# ---- 槽位：辛 ----
+	if xin_intercepts(_s, _map_id, _event_id):
+		return true
 
 	# ---- 槽位：壬 ----
 	return false
@@ -507,6 +512,9 @@ static func run_event(_host, _s, _map_id: int, _event_id: int) -> void:
 	# ---- 槽位：庚 ----
 
 	# ---- 槽位：辛 ----
+	if xin_intercepts(_s, _map_id, _event_id):
+		await _xin_run_guardian(_host, _s, _map_id, _event_id)
+		return
 
 	# ---- 槽位：壬 ----
 	return
@@ -696,6 +704,8 @@ static func is_apostle20(s, troop_id: int) -> bool:
 static func after_map_battle(host, s, troop_id: int, result: int) -> void:
 	if YI and result == 0 and on(s) and is_apostle20(s, troop_id):
 		await run_fetter(host, s, YI_APOSTLE_TIER)
+	if result == 0:
+		await xin_after_battle(host, s, troop_id)  # 包辛：31～33 层守层者首杀掉真材料
 
 
 ## XDB.rec 的快路径：要改写的技能
@@ -844,3 +854,173 @@ static func _geng_rewrite_chenghuang_page(page: Dictionary) -> Dictionary:
 		out.append(d)
 	p["list"] = out
 	return p
+
+
+## ==== 包辛：真材料首杀与升华 ====
+## - 31／32／33 层守层者（女娲、伏羲、鸿蒙老祖，敌群 467／468／469，Map148／156／157 照原版）第一次打赢各掉一件：
+##   原初火种·源（1975）、永恒玄冰（1976）、极渊重岩（1977）。天启篇里去掉「真*」；1975 和普通「原初火种」1953 重名，叫「原初火种·源」。
+##   只掉一次（地图战斗打完 after_map_battle 认敌群，记进 flags.tianqi.sect_xin.kills），再打、再挑战都不再掉。
+## - 19／25／27 层守层者（炎龙队长 Map047 EV013、嫦娥 Map147 EV001、多宝道人 Map182 EV001）打赢后的普通商店页（独立开关 A）：
+##   身上有对应材料时开口先办升华，再照原页走商店。原版随机页（第 5 页）的做法：收掉材料、跑升华公共事件 1388／1389／1390
+##   （所有角色学过旧被动的忘掉、学「·极尽升华」）。天启篇加两条：没人学过旧被动时只提示、不收材料；升华一层只办一次（记 sublimed）。
+##   台词改成守层者本人口吻（草稿，待小A 审）。
+## - 这三层的随机页、轮回页本来就被包甲拦住（教派开关页），不动。原版魔塔外围送真材料（Map195 EV008 第 3、5 页）也被包甲拦住。
+## - 回退开关 XIN：false＝不掉材料、不接管守层者、材料名照原版（XIN 关掉后已得的材料留在包里，原版档从来不受影响）。
+static var XIN := true
+
+## 31～33 层守层者敌群 → 层、材料
+const XIN_KILLS := {467: [31, 1975], 468: [32, 1976], 469: [33, 1977]}
+## 守层者事件 [地图, 事件] → 材料、旧被动、升华被动、原公共事件、脸图、名字
+const XIN_GUARDIANS := {
+	"47:13": {"floor": 19, "item": 1975, "from": 6133, "to": 6236, "ce": 1388, "face": "DF_Actor11", "index": 6, "name": "炎龙队长", "passive": "永恒之火"},
+	"147:1": {"floor": 25, "item": 1976, "from": 6138, "to": 6237, "ce": 1389, "face": "ce", "index": 0, "name": "嫦娥", "passive": "天宫之寒"},
+	"182:1": {"floor": 27, "item": 1977, "from": 6238, "to": 6239, "ce": 1390, "face": "dbdr", "index": 0, "name": "多宝道人", "passive": "镇渊之岩"},
+}
+## 天启篇里的材料名和说明（去掉「真*」；说明末尾加去处）
+const XIN_ITEM_TEXT := {
+	1975: ["原初火种·源", "神物\n真正的原初火种，天地初开时所诞生。交给 19 层守层者，可让「永恒之火」极尽升华。"],
+	1976: ["永恒玄冰", "物品\n永恒不化的寒冰，据说与天同寿。交给 25 层守层者，可让「天宫之寒」极尽升华。"],
+	1977: ["极渊重岩", "物品\n永镇极渊的重岩，据说只是鸡蛋大小都有如山般沉重。交给 27 层守层者，可让「镇渊之岩」极尽升华。"],
+}
+## 守层者台词（草稿，待小A 审）：[升华, 没人学过]
+const XIN_LINES := {
+	1975: ["这团火……是天地初开时的第一缕火。交给我，我用龙炎替你们把「永恒之火」烧到尽头。",
+		"这团火种是好东西，可惜你们没人会「永恒之火」。等学会了，再带它来找我。"],
+	1976: ["永恒玄冰……和广寒宫的寒气同出一源呢。交给我吧，小哥哥，我替你们把「天宫之寒」推到极处。",
+		"这块玄冰我认得。不过你们还没人会「天宫之寒」，学会了再来找我吧。"],
+	1977: ["极渊重岩！贫道找了它许多年……也罢，借它压一压你们的「镇渊之岩」，炼到尽头。",
+		"重岩虽好，你们却没人会「镇渊之岩」。学会了再来。"],
+}
+
+
+static func _xin_on(s) -> bool:
+	return XIN and on(s)
+
+
+static func _xin_flag(s) -> Dictionary:
+	var d: Dictionary = XTianqiSave.section(s, "sect_xin")
+	if not d.get("kills") is Dictionary:
+		d["kills"] = {}
+	if not d.get("sublimed") is Dictionary:
+		d["sublimed"] = {}
+	return d
+
+
+static func _xin_has_item(s, id: int) -> bool:
+	return id >= 1975 and id <= 1977 and _xin_on(s)
+
+
+## 这一层（31～33）的守层者打赢过（掉过材料）
+static func xin_killed(s, layer: int) -> bool:
+	return _xin_on(s) and bool((_xin_flag(s).kills as Dictionary).get(str(layer), false))
+
+
+## 这层守层者（19／25／27）办过升华
+static func xin_sublimed(s, layer: int) -> bool:
+	return _xin_on(s) and bool((_xin_flag(s).sublimed as Dictionary).get(str(layer), false))
+
+
+## 31～33 层守层者首杀：给材料、记账；返回给的物品号（这次没给为 0）
+static func xin_grant_kill(s, troop_id: int) -> int:
+	if not _xin_on(s) or not XIN_KILLS.has(troop_id):
+		return 0
+	var layer := int(XIN_KILLS[troop_id][0])
+	var item := int(XIN_KILLS[troop_id][1])
+	var kills: Dictionary = _xin_flag(s).kills
+	if bool(kills.get(str(layer), false)):
+		return 0
+	kills[str(layer)] = true
+	s.gain_item(item, 1)
+	return item
+
+
+## XMapScene.start_battle 末尾（经 after_map_battle，已判赢）
+static func xin_after_battle(host, s, troop_id: int) -> void:
+	var item := xin_grant_kill(s, troop_id)
+	if item == 0 or host == null or not host.has_method("show_text"):
+		return
+	var g: Dictionary = _xin_guardian_of_item(item)
+	await host.show_text("", 0, ["获得了\\c[2]%s\\c[0]！带去 %d 层，交给守层者%s。" % [str(XIN_ITEM_TEXT[item][0]), int(g.floor), str(g.name)]])
+
+
+static func _xin_guardian_of_item(item: int) -> Dictionary:
+	for k in XIN_GUARDIANS:
+		if int(XIN_GUARDIANS[k].item) == item:
+			return XIN_GUARDIANS[k]
+	return {}
+
+
+static func _xin_guardian(map_id: int, event_id: int) -> Dictionary:
+	return XIN_GUARDIANS.get("%d:%d" % [map_id, event_id], {})
+
+
+## 接管条件：19／25／27 层守层者已打赢（独立开关 A＝普通商店页）、身上有对应材料、这层还没升华过
+static func xin_intercepts(s, map_id: int, event_id: int) -> bool:
+	var g := _xin_guardian(map_id, event_id)
+	if g.is_empty() or not _xin_on(s):
+		return false
+	if not s.self_switch(map_id, event_id, "A") or s.item_count(int(g.item)) <= 0:
+		return false
+	return not xin_sublimed(s, int(g.floor))
+
+
+## 有没有人学过这层的旧被动（原版公共事件判 hasSkill，遍历全体角色）
+static func xin_learners(s, from_skill: int) -> Array:
+	var out := []
+	for rec in XDB.table("Actors"):
+		if rec == null or str(rec.get("name", "")) == "":
+			continue
+		var a: XActor = s.actor(int(rec.id))
+		if a != null and a.skill_ids.has(from_skill):
+			out.append(int(rec.id))
+	return out
+
+
+## 升华（原公共事件 1388～1390）：收材料、所有学过旧被动的角色忘掉旧的学新的、记账。
+## 返回 {ok, reason?, actors?}：reason＝"none"（没人学过，不收材料）／"item"（没材料）／"done"（升华过）／"off"
+static func xin_sublimate(s, map_id: int, event_id: int) -> Dictionary:
+	var g := _xin_guardian(map_id, event_id)
+	if g.is_empty() or not _xin_on(s):
+		return {"ok": false, "reason": "off"}
+	if xin_sublimed(s, int(g.floor)):
+		return {"ok": false, "reason": "done"}
+	if s.item_count(int(g.item)) <= 0:
+		return {"ok": false, "reason": "item"}
+	var who := xin_learners(s, int(g.from))
+	if who.is_empty():
+		return {"ok": false, "reason": "none"}
+	s.gain_item(int(g.item), -1)
+	for id in who:
+		var a: XActor = s.actor(int(id))
+		a.forget_skill(int(g.from))
+		a.learn_skill(int(g.to))
+		a.refresh_passive()
+	(_xin_flag(s).sublimed as Dictionary)[str(int(g.floor))] = true
+	return {"ok": true, "actors": who}
+
+
+## 守层者开口：先办升华（或提示），再照原来的普通商店页走
+static func _xin_run_guardian(host, s, map_id: int, event_id: int) -> void:
+	var g := _xin_guardian(map_id, event_id)
+	var lines: Array = XIN_LINES[int(g.item)]
+	var res := xin_sublimate(s, map_id, event_id)
+	var face := str(g.face)
+	var idx := int(g.index)
+	if bool(res.get("ok", false)):
+		await host.show_text(face, idx, ["\\n<%s>%s" % [str(g.name), str(lines[0])]])
+		XToast.show_text("你的被动：%s极尽升华！" % str(g.passive))
+	elif str(res.get("reason", "")) == "none":
+		await host.show_text(face, idx, ["\\n<%s>%s" % [str(g.name), str(lines[1])]])
+	var e = _xin_event_node(host, event_id)
+	if e != null and not e.command_list().is_empty():
+		var interp := MVInterpreter.new(host, map_id, event_id, e.command_list())
+		await interp.run()
+
+
+static func _xin_event_node(host, event_id: int):
+	if host == null or not ("events" in host):
+		return null
+	for e in host.events:
+		if e is MVEvent and e.event_id == event_id:
+			return e
+	return null
