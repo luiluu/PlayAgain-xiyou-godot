@@ -65,6 +65,8 @@ var revive_team := false
 var lineups := 1
 var rng_seeds: Array = []
 var add_healer := false
+## T244：--all-weak 随机阵容只抽 4 个弱者（4 弱者／真·无名者之路量数；原队不是全弱者时照旧量、结果里 allWeak=false）
+var all_weak := false
 var shape := "4w"
 var templates: Array = ["A", "B", "C", "D"]   # --shape=tb 时的职责模板
 var sets := 20
@@ -107,6 +109,8 @@ func _ready() -> void:
 				XTianqiSegAlien.FORCE_KIND = v
 		elif a == "--add-healer":
 			add_healer = true
+		elif a == "--all-weak":
+			all_weak = true
 		elif a == "--no-raw":
 			raw_mode = false
 		elif a == "--duel":
@@ -365,7 +369,8 @@ func _fight(s: XState, troop: int) -> Dictionary:
 	return {"trace": trace, "atkScale": _out_scale(logic), "alien": _alien_desc(logic), "dmg": total / maxf(1.0, float(done)), "turns": done, "alive": alive, "won": logic.is_won(), "lost": logic.is_lost(),
 		"aborted": logic.aborted, "enemyHp": hp0, "enemyAtk": logic.enemies.map(func(e): return int(e.param(2))), "enemyDef": logic.enemies.map(func(e): return [int(e.param(3)), int(e.param(5))]),
 		"partyAtk": logic.actors.map(func(a): return [int(a.param(2)), int(a.param(4))]),
-		"party": logic.actors.map(func(a): return int(a.actor_id)), "members": s.battle_members().map(func(a): return int(a.actor_id)), "partyHp": logic.actors.map(func(a): return int(a.mhp))}
+		"party": logic.actors.map(func(a): return int(a.actor_id)), "members": s.battle_members().map(func(a): return int(a.actor_id)),
+		"allWeak": s.battle_members().all(func(a): return XTianqiSkills.is_weak(int(a.actor_id), true)), "partyHp": logic.actors.map(func(a): return int(a.mhp))}
 
 
 ## 撑到第几回合团灭（没团灭记 turns＋1）
@@ -928,6 +933,8 @@ func _snapshot_states(f: int) -> Array:
 					break
 				pick.append(int(bag.pop_at(rng.randi_range(0, bag.size() - 1))))
 			if pick.size() != 4 or seen.has(_team_key(pick)) or not CT.TB.legal(pick, difficulty):
+				continue
+			if all_weak and not pick.all(func(id): return XTianqiSkills.is_weak(int(id), true)):
 				continue
 			seen[_team_key(pick)] = true
 			variants.append(_tagged(_relineup(_clone(st), pick, helper_id), "随机%d" % (variants.size())))
