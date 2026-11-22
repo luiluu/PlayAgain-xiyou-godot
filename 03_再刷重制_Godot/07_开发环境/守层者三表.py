@@ -33,7 +33,8 @@ T363 迭代（Kyo 11-21 事项17「全按推荐」）：
               量数里那招已是单体（scope 1）就照实测；还是多体（老量数）就按一次出手的目标数 n（全体＝队伍人数、随机 k 个＝k）把每回合打我方、一次占比都 ÷n 估单体。
 - 真打校准（--duel-calib <真打 json>…，T363 第 2 步）：量数的 dmgRaw 是每下前补满、不算守层者回血闪避与同场异化（19 层号令官），
               真打实际掉血可能只有它的一半，也可能更多。按真打（baseline_dps --duel 的输出，表是当时写进去的那份）重定 hp_base：
-              每队实效每回合伤害＝输了的队取真打每回合掉血、赢了的队取 当时血量÷赢的回合数；hp_base＝各层普通阵容实效的 90 分位 ×（目标回合−2）÷目标回合。
+              每队实效每回合伤害＝输了的队取真打每回合掉血、赢了的队取 当时血量÷赢的回合数；hp_base＝各层普通阵容实效的 90 分位 ×（目标回合−2）÷目标回合；
+              只校至少 CALIB_MIN（8）场的层（1～5 层每层 4 队，照量数）。可给多遍真打（不同表下）一起校。
               atk_scale、focus、resist 仍按量数。
 空表（rows 为空）：什么都不写，退出码 0，打印「没有数」。写入时只动 balance_table.json 里 guardian_phase4 这一键（文本层面替换，其余字节不动）。"""
 import argparse
@@ -52,6 +53,7 @@ RESIST_FLOORS = range(19, 34)
 PARTY_HP_DIV = 6.4
 RESIST_SHARE = 0.3
 HP_QUANTILE = 0.9   # T363：hp_base 取各队 dmgRaw 的这个分位（强队）
+CALIB_MIN = 8   # T363：真打校准只校普通阵容至少这么多队（场次）的层；1～5 层每层 4 队，90 分位就是最强那队，校了只会一轮轮往上翻，照量数
 SINGLE = {12: 661, 15: 827, 25: 3563}   # T363（Kyo 11-21 事项17 问2）：奥术波动（3 随机）、如来神掌（2 随机）、仙宫寒气（3 随机）改打一人
 
 
@@ -281,17 +283,18 @@ def build6(rows: list, turns: int = 8, share: float = 0.40, mode: str = 'c', hp_
 
 def duel_calib(paths: list, turns: int = 8) -> dict:
     """T363：按真打重定 hp_base（见头注释）。返回 {层: 每回合血量}"""
-    eff = {}
-    for p in paths:
+    eff, keys = {}, {}
+    for i, p in enumerate(paths):
         for r in json.loads(Path(p).read_text(encoding='utf-8')).get('rows', []):
             f = int(r['floor'])
             for t in r.get('per', []):
                 if t.get('team') == '奶妈队' or int(t.get('turns', 0)) <= 0:
                     continue
+                keys.setdefault(f, set()).add((str(t.get('team')), int(t.get('rng', 0)), tuple(t.get('members') or []), json.dumps(t.get('partyHp'))))
                 e = float(t.get('enemyHp', r.get('enemyHp', 0))) / int(t['turns']) if t.get('won') else float(t.get('dmg', 0))
                 if e > 0:
                     eff.setdefault(f, []).append(e)
-    return {f: int(sig3(_quant(v, HP_QUANTILE) * (turns - 2) / turns)) for f, v in eff.items() if v}
+    return {f: int(sig3(_quant(v, HP_QUANTILE) * (turns - 2) / turns)) for f, v in eff.items() if len(keys.get(f, ())) >= CALIB_MIN}   # 按不同的队（阵容×种子）数，多遍真打同一队不重复算
 
 
 def render(tables: dict) -> str:
@@ -441,7 +444,13 @@ def selftest() -> int:
     Path(tmp).write_text(json.dumps({'rows': [{'floor': 19, 'enemyHp': 800.0, 'per': [
         {'team': '原队', 'won': False, 'turns': 9, 'dmg': 50.0}, {'team': '随机1', 'won': True, 'turns': 4, 'dmg': 999.0},
         {'team': '奶妈队', 'won': True, 'turns': 1, 'dmg': 1e9}]}]}), encoding='utf-8')
-    assert duel_calib([tmp]) == {19: int(sig3((50 + 0.9 * 150) * 0.75))}, duel_calib([tmp])
+    assert duel_calib([tmp] * 4) == {}   # 同 2 队打 4 遍，不到 CALIB_MIN 队
+    import copy
+    d = json.loads(Path(tmp).read_text(encoding='utf-8'))
+    base = d['rows'][0]['per'][:2]
+    d['rows'][0]['per'] = [dict(copy.deepcopy(x), rng=k) for k in range(4) for x in base]
+    Path(tmp).write_text(json.dumps(d), encoding='utf-8')
+    assert duel_calib([tmp]) == {19: 150}, duel_calib([tmp])   # 8 队：4 队 50、4 队 800÷4＝200 → 90 分位 200 × 0.75
     os.unlink(tmp)
     print('selftest 通过')
     return 0
