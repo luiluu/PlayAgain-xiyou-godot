@@ -66,4 +66,5 @@
 ## 本分支提交
 
 - db0f272cc WIP: T244 baseline_dps 加 --all-weak（随机阵容只抽 4 弱）
-- （本提交）T244 量数、对比表、交付单；baseline_dps 加 --troop、--weak-assist、每层写输出
+- 471c60c67 T244 量数、对比表、交付单；baseline_dps 加 --troop、--weak-assist、每层写输出
+- 766eeea5d 交付单补验证结果
