@@ -131,11 +131,13 @@ func _gate() -> void:
 		check("gate.%s.enemy_old" % scen, e.skin == null and e.index_win.visible and e.status_win.visible)
 		check("gate.%s.inlay_old" % scen, b.skin == null and b.type_win.visible and b.mode == "type" and b.list.is_empty())
 		if scen == "switch_off":   # 旧画法对照（旧页只按 1280×720 摆，只拍 16:9）
-			a.visible = false
-			e.visible = false
+			e.visible = false   # R1 P1-3：只留人物旧页（选 1 号有名角色，免得右边一片空）
+			b.visible = false
+			a.select(XActorBook.index_ids().find(1))
+			await frames(2)
 			await shot("actor_old_compare_16x9")
-			a.visible = true
 			e.visible = true
+			b.visible = true
 			a.visible = false
 			b.visible = false
 			await shot("enemy_old_compare_16x9")
@@ -244,7 +246,21 @@ func _actor() -> void:
 		old_skills.sort()
 		check("actor.skills_all.%d" % id, new_skills == old_skills, [new_skills.size(), old_skills.size()])
 		check("actor.advance.%d" % id, str(info.line).contains(XActorBook.advance_max(id)))
+	# R1 P1-1：名字品质色走 XUiSkin.quality_color（不过 legacy_color）
+	var col_ok := true
+	for id in probe_ids:
+		var inf := XSkinBookPage.actor_info(id)
+		var q = XDB.rec("Actors", id).get("meta", {}).get("Actorquality", 0)
+		var raw := int(float(str(q).strip_edges())) if str(q).strip_edges().is_valid_float() else 0
+		if raw == 12:
+			raw = 10
+		var want := XUiSkin.quality_color(clampi(XActorBook.quality_grade(raw), 0, 6)) if raw != 0 else XUiSkin.TEXT
+		if inf.name_color != want:
+			col_ok = false
+	check("actor.name_quality_color", col_ok)
 	await shots("actor_book")
+	# R1 P2-4：目录态选中行放大，进详情后目录复原、技能列表选中行放大
+	check("actor.sel_scale_index", is_equal_approx(sk.list.sel_scale.k(sk.list.index), XUiSkin.SEL_SCALE), sk.list.sel_scale.k(sk.list.index))
 	var home := XActorBook.index_ids().find(1)
 	a.select(home)
 	await frames(1)
@@ -281,6 +297,9 @@ func _actor() -> void:
 	act(a, "ui_down")
 	await frames(1)
 	check("actor.detail_down", a.skill_index == 1 and sk.detail_list.index == 1 and str(sk.card.title) == str(a.skill_list[1].name))
+	await get_tree().create_timer(0.3, true, false, true).timeout
+	check("actor.sel_scale_detail", is_equal_approx(sk.list.sel_scale.k(sk.list.index), 1.0) and is_equal_approx(sk.detail_list.sel_scale.k(sk.detail_list.index), XUiSkin.SEL_SCALE),
+		[sk.list.sel_scale.k(sk.list.index), sk.detail_list.sel_scale.k(sk.detail_list.index)])
 	await shots("actor_book_skills")
 	act(a, "ui_cancel")
 	await frames(1)
@@ -295,8 +314,16 @@ func _actor() -> void:
 		if id == 167:
 			await shots("actor_book_raven_long")
 			check("actor.raven_skill_scroll_range", sk._skill_max >= 0.0)
+			# R1 P1-2：牌头高按掌握那几行算，不裁字
+			check("actor.raven_head_fits", sk.head_bottom >= sk.mastery_end - 0.5 and sk.mastery_end > 0.0, [sk.head_bottom, sk.mastery_end])
 		act(a, "ui_accept")
 		await frames(2)
+		if a.skill_list.size() > sk.detail_list.visible_rows():   # R1 P2-2：技能详情 PageDown 照旧翻一页
+			act(a, "ui_page_down")
+			await frames(1)
+			check("actor.detail_pagedown.%d" % id, a.skill_index == mini(sk.detail_list.visible_rows(), a.skill_list.size() - sk.detail_list.visible_rows()) and a.skill_index > 0 and sk.detail_list.index == a.skill_index, [a.skill_index, sk.detail_list.visible_rows()])
+			act(a, "ui_page_up")
+			await frames(1)
 		var known := XActorBook.known_skill_ids(id)
 		var ok_locked := true
 		for i in a.skill_list.size():
@@ -419,6 +446,24 @@ func _enemy() -> void:
 	ws.sort()
 	ratings.sort()
 	check("enemy.weights_shown", ws == ratings and ws.size() > 0, [ws, ratings])
+	# R1 P1-1：难度色照旧（不过 legacy_color）
+	check("enemy.name_difficulty_color", info0.name_color == XEnemy.name_color(e0.display_name(), XEnemyBookPage._difficulty(), XUiSkin.TEXT))
+	# R1 P2-1：招式多的那只，十条都画得到（压行距，还放不下就能滚到）
+	var most := 0
+	for i in mini(p.ids.size(), 40):
+		var id2 := int(p.ids[i])
+		if XEnemyBook.registered(s, id2) and (p.enemy(id2).data().get("actions", []) as Array).size() > (p.enemy(int(p.ids[most])).data().get("actions", []) as Array).size():
+			most = i
+	p.select(most)
+	await frames(2)
+	var nm: int = (sk.info.moves as Array).size()
+	check("enemy.moves_all_reachable", nm > 0 and nm * sk.moves_row_h <= sk._skill_rect.size.y + sk._skill_max + 0.5, [nm, sk.moves_row_h, sk._skill_rect.size.y, sk._skill_max])
+	await shots("enemy_book_many_moves")
+	if sk._skill_max > 0.0:
+		sk.scroll_skills(9999.0)
+		check("enemy.moves_scroll_end", is_equal_approx(sk.skill_scroll, sk._skill_max))
+	p.select(0)
+	await frames(1)
 	await shots("enemy_book")
 	# 左右翻一页（11 行）
 	act(p, "ui_right")
@@ -448,6 +493,7 @@ func _enemy() -> void:
 		check("enemy.drop_rows_eq_old", ok_rows and sk.detail_list.items.size() == p.drop_list.size())
 		check("enemy.drop_card_title", str(sk.card.title).contains(str(p.drop_list[0].base.name)), [sk.card.title])
 		await shots("enemy_book_drops")
+		check("enemy.drops_hint", sk._hint_list == [["上下", "选掉落"], ["取消", "回目录"]])
 		act(p, "ui_accept")   # 确定回目录（照旧）
 		check("enemy.drops_ok_back", p.mode == "index" and not sk.detail_list.visible)
 	# 没登记的：右牌「还没遇到过」，确定不进掉落
@@ -544,6 +590,8 @@ func _inlay_reachable(r: Dictionary, k: int) -> Array:
 
 func _inlay() -> void:
 	_state(true)
+	XSkinNoticeLane.reset()   # R1 P3-2：怪物页点未登记弹的「未解锁」别留到镶嵌图里
+	await frames(1)
 	var b := XInlayBook.new()
 	add_child(b)
 	await frames(3)
@@ -571,6 +619,19 @@ func _inlay() -> void:
 	check("inlay.tab_q_weapon", b.type_index == 0 and sk.list.items.size() == b.lists[0].size())
 	act(b, "ui_down")
 	check("inlay.down", b.index == 1 and sk.list.index == 1)
+	# R1 P2-2：PageDown／右键翻目录一页（不切页签）；Q／E 才切
+	if b.lists[0].size() > sk.list.visible_rows():
+		act(b, "ui_page_down")
+		await frames(1)
+		check("inlay.pagedown_pages", b.type_index == 0 and b.index == 1 + sk.list.visible_rows() and sk.list.index == b.index, [b.type_index, b.index])
+		act(b, "ui_page_up")
+		await frames(1)
+		act(b, "ui_right")
+		await frames(1)
+		check("inlay.right_pages", b.type_index == 0 and b.index == 1 + sk.list.visible_rows(), [b.type_index, b.index])
+		act(b, "ui_left")
+		await frames(1)
+		check("inlay.left_back", b.index == 1, b.index)
 	# 空页签：一句居中、右牌不画
 	var keep: Array = b.lists[1]
 	b.lists[1] = []

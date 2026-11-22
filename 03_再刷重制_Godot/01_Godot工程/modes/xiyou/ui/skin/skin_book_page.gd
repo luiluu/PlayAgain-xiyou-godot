@@ -46,7 +46,7 @@ const T_RESIST := "抗"
 const T_MOVES := "会用的招"
 const T_WEIGHT := "权重 %s"
 const T_DROPS := "掉落"
-const T_NO_DROPS := "没有会掉的东西"
+const T_NO_DROPS := "没有掉落"
 const T_SLOTS := "能镶在：%s"
 const T_INLAY_PARAMS := "镶好后的属性"
 const T_INLAY_EFFECT := "镶好后的效果"
@@ -65,6 +65,8 @@ const HEAD_H := 168.0
 const CIRCLE_R := 72.0
 const CELL_H := 28.0
 const SKILL_H := 32.0
+## 怪物「会用的招」压行距的下限
+const MOVE_H_MIN := 26.0
 
 var host: Control
 var kind := "actor"          # actor / enemy / inlay
@@ -89,11 +91,15 @@ var _syncing := false
 var _list_key := []
 var _detail_key := []
 var _hint_list: Array = []
-## 人物技能一节放不下时的内部滚动（像素）
+## 人物「技能」、怪物「会用的招」一节放不下时的内部滚动（像素）
 var skill_scroll := 0.0
 var _skill_max := 0.0
 var _skill_drag := XSkinDrag.new()
 var _skill_rect := Rect2()
+## 测试读：人物牌头底、掌握那几行画到哪；怪物「会用的招」行高
+var head_bottom := 0.0
+var mastery_end := 0.0
+var moves_row_h := 0.0
 ## 右大牌当前画的内容（测试读）：人物 actor_info／怪物 enemy_info／镶嵌 inlay_info 的结果
 var info := {}
 static var _avatar_cache := {}
@@ -172,6 +178,7 @@ func _ready() -> void:
 	card.fold = true
 	card.visible = false
 	card.mouse_filter = Control.MOUSE_FILTER_PASS
+	card.expanded_changed.connect(_on_card_expanded)
 	right_panel.add_child(card)
 	top_layer = Control.new()
 	top_layer.name = "Top"
@@ -371,7 +378,10 @@ func _sync_enemy() -> void:
 		_detail_key = []
 		if card.expanded:
 			card.set_expanded(false)
-	info = enemy_info(h.enemy(int(h.ids[h.index])) if not h.ids.is_empty() else null, not in_battle)
+	var ninfo := enemy_info(h.enemy(int(h.ids[h.index])) if not h.ids.is_empty() else null, not in_battle)
+	if ninfo.get("id", -1) != info.get("id", -2):
+		skill_scroll = 0.0
+	info = ninfo
 
 
 func _sync_inlay() -> void:
@@ -484,8 +494,8 @@ static func help_card_data(obj: Dictionary, k: String, skill_copy: bool, width: 
 
 
 static func name_color(text: String) -> Color:
-	var c := XEnemy.name_color(text, XEnemyBookPage._difficulty(), XUiSkin.TEXT)
-	return c if c == XUiSkin.TEXT else XUiSkin.legacy_color(c)
+	# 难度色照旧（§3.15）：不过旧颜色对照表（legacy_color 只给说明行用，会把绿／蓝／紫洗成骨白／灰）
+	return XEnemy.name_color(text, XEnemyBookPage._difficulty(), XUiSkin.TEXT)
 
 
 ## 透明占位图标（没有头像的行、怪物序号那一格）：行文字照样从图标后起
@@ -547,13 +557,12 @@ static func actor_info(id: int) -> Dictionary:
 		raw = 10
 	var g := XActorBook.quality_grade(raw)
 	var qname := str(XQuality.config().names[g]) if raw != 0 else "无"
-	var qcol := XQuality.parse_rgba(str(XQuality.config().colors[g]))
 	var probe := XActor.new()
 	probe.actor_id = id
 	var parts := XPowerStrip.attribute_parts(probe)
 	var attrs := []
 	for i in range(1, parts.size()):
-		attrs.append([str(parts[i][0]).replace("／", " · "), XUiSkin.TEXT_3 if str(parts[i][0]) == "／" else XUiSkin.legacy_color(parts[i][1])])
+		attrs.append([str(parts[i][0]).replace("／", " · "), XUiSkin.TEXT_3 if str(parts[i][0]) == "／" else parts[i][1]])   # 元素属性色照旧（黑暗、神圣…）
 	var sys: Dictionary = XDB.system()
 	var masteries := [[], []]
 	for kk in 2:
@@ -597,7 +606,7 @@ static func actor_info(id: int) -> Dictionary:
 		head.append(str(cls.get("name", "")))
 	head.append(qname)
 	head.append(T_ADVANCE % XActorBook.advance_max(id))
-	return {"id": id, "known": true, "name": XActorBook.actor_name(id), "name_color": XUiSkin.legacy_color(qcol) if raw != 0 else XUiSkin.TEXT,
+	return {"id": id, "known": true, "name": XActorBook.actor_name(id), "name_color": XUiSkin.quality_color(clampi(g, 0, 6)) if raw != 0 else XUiSkin.TEXT,
 		"quality": qname, "advance": XActorBook.advance_max(id), "line": " · ".join(head), "attrs": attrs,
 		"weapons": masteries[0], "armors": masteries[1], "params": pv, "cols": cols, "note": note,
 		"six": XTianqiSixDim.of_actor(id) if XTianqiSixDim.active() else {}}
@@ -731,17 +740,37 @@ static func color_spans(raw: String) -> Array:
 func input(event: InputEvent) -> bool:
 	if kind == "inlay":
 		var h: XInlayBook = host
-		var d := XMenu.page_dir(event)
-		if d != 0:
-			switch_type(posmod(h.type_index + d, XInlayBook.TYPES.size()))
+		var q := qe_dir(event)
+		if q != 0:   # 页签只认 Q／E；PageUp／PageDown、左右留给目录翻页（武器、防具各十几页）
+			switch_type(posmod(h.type_index + q, XInlayBook.TYPES.size()))
+			return true
+		var pd := XMenu.page_dir(event)
+		if pd == 0 and (event.is_action_pressed("ui_right", true) or event.is_action_pressed("ui_left", true)):
+			pd = 1 if event.is_action_pressed("ui_right", true) else -1
+		if pd != 0:
+			if list.page(pd, true):
+				XSound.system(0)
 			return true
 	if kind == "actor":
 		var d2 := XMenu.page_dir(event)
-		if d2 != 0:   # 旧页只认 PageUp／PageDown；新页按键提示写「Q / E 翻页」，Q／E 也翻目录（技能详情不翻）
+		if d2 != 0:   # 旧页只认 PageUp／PageDown；新页按键提示写「Q / E 翻页」，Q／E 也翻目录
 			if (host as XActorBook).mode == "index":
 				(host as XActorBook)._page(d2)
+			elif detail_list.page(d2, true):   # 技能详情：照旧页按页翻技能列表（按新列表一屏行数）
+				XSound.system(0)
 			return true
 	return false
+
+
+## 只认 Q／E 键（XMenu.page_dir 还认 PageUp／PageDown）
+static func qe_dir(event: InputEvent) -> int:
+	if event is InputEventKey and event.pressed and not event.echo:
+		var k: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
+		if k == KEY_E:
+			return 1
+		if k == KEY_Q:
+			return -1
+	return 0
 
 
 ## 镶嵌：换武器／防具页签（XInlayBook.switch_type：旧页「回类型窗→换类型→确定」一步做完）
@@ -806,6 +835,12 @@ func _on_detail_activated(_i: int) -> void:
 		(host as XEnemyBookPage).ok()   # 掉落列表：确定或取消都回目录（照旧）
 
 
+## 长说明卡展开时，左边技能／掉落列表的红选中条（带左侧光标三角）藏起来，不从展开卡边上露出
+func _on_card_expanded(on: bool) -> void:
+	if detail_list != null and detail_list.bar != null:
+		detail_list.bar.modulate.a = 0.0 if on else 1.0
+
+
 func _on_pager(d: int) -> void:
 	list.page(d, list.active)
 
@@ -816,13 +851,13 @@ func _on_gui(event: InputEvent) -> void:
 		accept_event()
 
 
-## 人物技能一节：滚轮、手指拖滚动
+## 人物「技能」、怪物「会用的招」一节：滚轮、手指拖滚动
 func _right_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 		host.call("cancel")
 		right_panel.accept_event()
 		return
-	if kind != "actor" or (host as XActorBook).mode != "index" or _skill_max <= 0.0:
+	if kind == "inlay" or str(host.get("mode")) != "index" or _skill_max <= 0.0:
 		return
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
@@ -859,9 +894,9 @@ func _hints() -> Array:
 			if h.in_battle:
 				return [["上下", "选敌人"], ["取消", "返回"]]
 			if h.mode == "drops":
-				return [["确定", "回目录"], ["取消", "回目录"]]
+				return [["上下", "选掉落"], ["取消", "回目录"]]
 			return [["确定", "看掉落"], ["左右", "翻页"], ["取消", "返回"]]
-	return [["Q / E", "武器 / 防具"], ["取消", "返回"]]
+	return [["Q / E", "武器 / 防具"], ["左右", "翻页"], ["取消", "返回"]]
 
 
 func _set_hints(arr: Array) -> void:
@@ -929,14 +964,24 @@ func _draw_list_over() -> void:
 			continue   # 只画列表里看得见的行（手指拖出半行时列表自己裁）
 		var x := r.position.x + 14.0 + (XSkinList.CHECK_W if list.check_column else 0.0)
 		var cy := r.position.y + r.size.y / 2.0
+		# 跟列表画占位图标的格子一样算（含选中放大），序号／「？」头像跟着选中行一起放大
+		var ir0 := Rect2(x, cy - list.icon_size / 2.0, list.icon_size, list.icon_size)
+		if XUiSkin.detail_on():
+			ir0 = XUiSkin.inline_icon_rect(x, cy, list.icon_size, list.font_size)
+		var sk := list.sel_scale.k(i)
+		var ir := XSkinSelScale.grow(ir0, sk)
 		if it.has("num"):
-			var fs := XUiSkin.FS_AUX
-			XUiSkin.ds(list_over, num, Vector2(x, cy + fs * 0.36), str(it.num), HORIZONTAL_ALIGNMENT_LEFT, AVATAR + 6, fs, XUiSkin.TEXT_3 if it.get("color") == XUiSkin.TEXT_3 else XUiSkin.TEXT_2)
+			var fs := int(roundf(XUiSkin.FS_AUX * sk))
+			var t := str(it.num)
+			while fs > 11 and num.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x > ir.size.x + 2.0:
+				fs -= 1   # 130% 字号时「001」比格子宽：缩到格子里，不贴名字
+			XUiSkin.ds(list_over, num, Vector2(ir.position.x, ir.get_center().y + fs * 0.36), t, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.TEXT_3 if it.get("color") == XUiSkin.TEXT_3 else XUiSkin.TEXT_2)
 		elif bool(it.get("unknown", false)) and kind == "actor":
-			var c := Vector2(x + AVATAR / 2.0, cy)
-			list_over.draw_circle(c, AVATAR / 2.0 - 1.0, Color(XUiSkin.panel_low_c(), 0.95))
-			list_over.draw_arc(c, AVATAR / 2.0 - 1.0, 0, TAU, 32, Color(XUiSkin.LINE, 0.55), 1.0, true)
-			var fs2 := XUiSkin.FS_AUX
+			var c := ir.get_center()
+			var rad := ir.size.x / 2.0 - 1.0
+			list_over.draw_circle(c, rad, Color(XUiSkin.panel_low_c(), 0.95))
+			list_over.draw_arc(c, rad, 0, TAU, 32, Color(XUiSkin.LINE, 0.55), 1.0, true)
+			var fs2 := int(roundf(XUiSkin.FS_AUX * sk))
 			var qw := body.get_string_size("?", HORIZONTAL_ALIGNMENT_LEFT, -1, fs2).x
 			XUiSkin.ds(list_over, body, Vector2(c.x - qw / 2.0, c.y + fs2 * 0.36), "?", HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, XUiSkin.TEXT_3)
 
@@ -946,6 +991,8 @@ func _draw_list_over() -> void:
 func _draw_right() -> void:
 	var ci := right_panel
 	var s := ci.size
+	if kind == "inlay" and info.is_empty():
+		return   # 空页签：右牌不画（T254 3.0「空列表：右牌不画」）
 	XUiSkin.panel_style().draw(ci.get_canvas_item(), Rect2(Vector2.ZERO, s))
 	var p := float(XUiSkin.PAD_LG)
 	var area := Rect2(p, p, s.x - p * 2, s.y - p * 2)
@@ -1001,46 +1048,50 @@ func _cell(ci: CanvasItem, r: Rect2, label: String, value: String, vcol := XUiSk
 	XUiSkin.ds(ci, body, Vector2(r.position.x, base), label, HORIZONTAL_ALIGNMENT_LEFT, maxf(r.size.x - vw - 8.0, 8.0), fs, XUiSkin.TEXT_2)
 
 
-## 自动折行画一串 [[字, 色]…]；返回画完后的 y（下一行顶）
+## 自动折行画一串 [[字, 色]…]（折行走 XSkinText：避头尾、英文数字不腰斩；DETAIL_V1 关时它自己回旧折行）；
+## 超过 bottom 的行不画；返回全部行画完后的 y（下一行顶，不管有没有被 bottom 裁）
 static func draw_spans(ci: CanvasItem, spans: Array, x: float, y: float, w: float, fs: int, lh: float, bottom := INF) -> float:
 	var f := XUiSkin.font("body")
-	var cx := x
-	var line_y := y
-	for sp in spans:
-		var t := str(sp[0])
-		var col: Color = sp[1]
-		for ch in t:
-			if ch == "\n":
-				cx = x
-				line_y += lh
-				continue
-			var cw := f.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			if cx + cw > x + w and cx > x:
-				cx = x
-				line_y += lh
-			if line_y + lh <= bottom + 0.5:
-				XUiSkin.ds(ci, f, Vector2(cx, line_y + lh / 2.0 + fs * 0.36), ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
-			cx += cw
-	return line_y + lh
+	var text := ""
+	var owner := PackedInt32Array()   # 每个字属于第几段
+	for k in spans.size():
+		var t := str(spans[k][0])
+		text += t
+		for _c in t.length():
+			owner.append(k)
+	var ranges := XSkinText.wrap_ranges(text, f, fs, w) if text != "" else ([] as Array[Vector2i])
+	for li in ranges.size():
+		var line_y := y + li * lh
+		if line_y + lh > bottom + 0.5:
+			break
+		var rg: Vector2i = ranges[li]
+		var cx := x
+		var a := rg.x
+		while a < rg.y:
+			var b := a
+			while b < rg.y and owner[b] == owner[a]:
+				b += 1
+			var seg := text.substr(a, b - a).replace("\n", "")
+			if seg != "":
+				XUiSkin.ds(ci, f, Vector2(cx, line_y + lh / 2.0 + fs * 0.36), seg, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, spans[owner[a]][1])
+				cx += f.get_string_size(seg, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+			a = b
+	return y + maxi(ranges.size(), 1) * lh
 
 
 ## 要几行（同 draw_spans 的折行）
 static func span_lines(spans: Array, w: float, fs: int) -> int:
-	var f := XUiSkin.font("body")
-	var cx := 0.0
-	var n := 1
+	var text := ""
 	for sp in spans:
-		for ch in str(sp[0]):
-			if ch == "\n":
-				cx = 0.0
-				n += 1
-				continue
-			var cw := f.get_string_size(ch, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-			if cx + cw > w and cx > 0.0:
-				cx = 0.0
-				n += 1
-			cx += cw
-	return n
+		text += str(sp[0])
+	if text == "":
+		return 1
+	return maxi(XSkinText.line_count(text, XUiSkin.font("body"), fs, w), 1)
+
+
+## 「名 值」格子行高：130% 字号时跟着加高（100% 仍 28）
+static func cell_h() -> float:
+	return maxf(CELL_H, roundf(XUiSkin.FS_LIST * 1.3))
 
 
 func _draw_actor(a: Rect2) -> void:
@@ -1087,8 +1138,11 @@ func _draw_actor(a: Rect2) -> void:
 	spans.append(["、".join(info.weapons) if not (info.weapons as Array).is_empty() else "—", XUiSkin.TEXT])
 	spans.append(["    " + T_ARMOR + "  ", XUiSkin.TEXT_2])
 	spans.append(["、".join(info.armors) if not (info.armors as Array).is_empty() else "—", XUiSkin.TEXT])
-	draw_spans(ci, spans, tx, ny, tw, XUiSkin.FS_AUX_MAX, XUiSkin.FS_AUX_MAX * 1.6, y + HEAD_H)
-	y += HEAD_H
+	# 牌头高按内容算：掌握多（渡鸦）或 130% 字号折成三四行时往下推，不裁字
+	var span_end := draw_spans(ci, spans, tx, ny, tw, XUiSkin.FS_AUX, XUiSkin.FS_AUX * 1.55)
+	y = maxf(y + HEAD_H, span_end + 8.0)
+	mastery_end = span_end
+	head_bottom = y
 	# 1 级时的能力：四列两行
 	y = _section(ci, x, y, w, T_ABILITY)
 	var colw := (w - 3 * 32.0) / 4.0
@@ -1096,8 +1150,8 @@ func _draw_actor(a: Rect2) -> void:
 		var col := k2 % 4
 		var row := floori(k2 / 4.0)
 		var pr: Array = info.params[k2]
-		_cell(ci, Rect2(x + col * (colw + 32.0), y + row * CELL_H, colw, CELL_H), str(pr[0]), str(pr[1]))
-	y += CELL_H * 2 + 10.0
+		_cell(ci, Rect2(x + col * (colw + 32.0), y + row * cell_h(), colw, cell_h()), str(pr[0]), str(pr[1]))
+	y += cell_h() * 2 + 10.0
 	# 备注先量（排在牌底），技能占中间
 	var note_spans := []
 	for i in (info.note as Array).size():
@@ -1105,8 +1159,10 @@ func _draw_actor(a: Rect2) -> void:
 	var nfs := XUiSkin.FS_AUX_MAX
 	var nlh := nfs * 1.6
 	var note_h := 0.0
-	if not note_spans.is_empty():
-		note_h = 12.0 + nfs * 1.5 + mini(span_lines(note_spans, w, nfs), 4) * nlh
+	if not note_spans.is_empty():   # 备注最多 4 行，但技能一节至少留两行（130% 字号、掌握多时备注让行）
+		var sec := 12.0 + XUiSkin.fs(17) * 1.5
+		var room := floori((a.end.y - y - sec - XUiSkin.FS_AUX * 1.5 - SKILL_H * 2 - 6.0 - 12.0 - nfs * 1.5) / nlh)
+		note_h = 12.0 + nfs * 1.5 + clampi(mini(span_lines(note_spans, w, nfs), room), 1, 4) * nlh
 	var skills_bottom := a.end.y - note_h
 	y = _section(ci, x, y, w, T_SKILLS)
 	_draw_skill_cols(ci, Rect2(x, y, w, maxf(skills_bottom - y - 6.0, SKILL_H)))
@@ -1186,7 +1242,10 @@ func _draw_enemy(a: Rect2) -> void:
 	var fa := XUiSkin.FS_AUX
 	y = draw_spans(ci, [[" · ".join(sub), XUiSkin.TEXT_2]], x, y, lw, fa, fa * 1.5, y + fa * 1.5 * 3)
 	var six: Dictionary = info.get("six", {})
-	var box := Rect2(x, y + 4.0, lw, 168.0)
+	# 图的高按下面弱／抗要占的高让出来（出没地图多、弱抗图标多行、130% 字号时图变矮，最矮 80），不画出面板
+	var sec_h := 12.0 + XUiSkin.fs(17) * 1.5
+	var below := 4.0 + (fa * 1.6 if not six.is_empty() else 0.0) + 4.0 + sec_h + (36.0 if bool(info.hide) else _icons_h(info.weak, lw)) + 4.0 + sec_h + (36.0 if bool(info.hide) else _icons_h(info.resist, lw))
+	var box := Rect2(x, y + 4.0, lw, clampf(a.end.y - y - 4.0 - below, 80.0, 168.0))
 	var spr_box := box
 	if not six.is_empty():   # 天启篇六维：图靠左、雷达靠右，战商档和控制抗性一行写在图下面
 		spr_box = Rect2(x, box.position.y, lw * 0.52, box.size.y)
@@ -1200,9 +1259,10 @@ func _draw_enemy(a: Rect2) -> void:
 		y += fa * 1.6
 	y += 4.0
 	y = _section(ci, x, y, lw, T_WEAK)
-	y = _element_icons(ci, x, y, lw, info.weak, true)
-	y = _section(ci, x, y + 4.0, lw, T_RESIST)
-	_element_icons(ci, x, y, lw, info.resist, false)
+	y = _element_icons(ci, x, y, lw, info.weak, true, a.end.y)
+	if y + 4.0 + sec_h < a.end.y:
+		y = _section(ci, x, y + 4.0, lw, T_RESIST)
+		_element_icons(ci, x, y, lw, info.resist, false, a.end.y)
 	# 右栏：能力两列（击败数放最后）、会用的招、备注
 	var rx := x + lw + 32.0
 	var rw := a.end.x - rx
@@ -1216,22 +1276,48 @@ func _draw_enemy(a: Rect2) -> void:
 		_cell(ci, Rect2(rx + col * (cw + 32.0), ry + row * CELL_H, cw, CELL_H), str(cells[i][0]), str(cells[i][1]))
 	ry += ceili(cells.size() / 2.0) * CELL_H + 8.0
 	ry = _section(ci, rx, ry, rw, T_MOVES)
-	var lfs := XUiSkin.FS_LIST
 	var note: Array = info.note
+	var note_spans := []
+	for i in note.size():
+		note_spans.append([str(note[i]) + ("\n" if i < note.size() - 1 else ""), XUiSkin.TEXT])
+	var nfs := XUiSkin.FS_AUX_MAX
+	var nlh := nfs * 1.6
 	var note_h := 0.0
-	if not note.is_empty():
-		note_h = 12.0 + XUiSkin.fs(17) * 1.5 + mini(note.size(), 3) * XUiSkin.FS_AUX_MAX * 1.6
+	if not note.is_empty():   # 备注按折行后的真实行数算高（最多 4 行，再多的裁掉；招式至少留 3 行）
+		var want := mini(span_lines(note_spans, rw, nfs), 4)
+		var room := floori((a.end.y - ry - MOVE_H_MIN * 3 - 12.0 - XUiSkin.fs(17) * 1.5) / nlh)
+		note_h = 12.0 + XUiSkin.fs(17) * 1.5 + clampi(mini(want, room), 1, 4) * nlh
 	var bottom := a.end.y - note_h
-	for mv in info.moves:
-		if ry + SKILL_H > bottom + 0.5:
-			break
-		var base := ry + SKILL_H / 2.0
+	_draw_moves(ci, Rect2(rx, ry, rw, maxf(bottom - ry - 4.0, MOVE_H_MIN)))
+	if not note.is_empty():
+		var ny := _section(ci, rx, bottom, rw, T_NOTE)
+		draw_spans(ci, note_spans, rx, ny, rw, nfs, nlh, a.end.y)
+
+
+## 「会用的招」（旧页列前 10 条）：行距在 MOVE_H_MIN～SKILL_H 之间压到能全放下；还放不下就在这一块里滚（滚轮、手指拖，带细滚动条）
+func _draw_moves(ci: CanvasItem, r: Rect2) -> void:
+	var body := XUiSkin.font("body")
+	var moves: Array = info.moves
+	var lfs := XUiSkin.FS_LIST
+	var mh := clampf(floorf(r.size.y / maxf(moves.size(), 1.0)), MOVE_H_MIN, SKILL_H)
+	var content_h := moves.size() * mh
+	moves_row_h = mh
+	_skill_max = maxf(content_h - r.size.y, 0.0)
+	skill_scroll = clampf(skill_scroll, 0.0, _skill_max)
+	_skill_rect = r
+	var rw := r.size.x - (10.0 if _skill_max > 0.0 else 0.0)
+	var rx := r.position.x
+	for i in moves.size():
+		var mv: Dictionary = moves[i]
+		var top := r.position.y + i * mh - skill_scroll
+		if top < r.position.y - 0.5 or top + mh > r.end.y + 0.5:
+			continue
+		var base := top + mh / 2.0
 		if bool(info.hide):
 			XUiSkin.ds(ci, body, Vector2(rx, base + lfs * 0.36), XEnemyBookPage.UNKNOWN_DATA, HORIZONTAL_ALIGNMENT_LEFT, -1, lfs, XUiSkin.TEXT_3)
-			ry += SKILL_H
 			continue
 		var wt := T_WEIGHT % mv.weight
-		var wfs := XUiSkin.FS_MIN
+		var wfs := XUiSkin.FS_AUX
 		var ww := body.get_string_size(wt, HORIZONTAL_ALIGNMENT_LEFT, -1, wfs).x
 		XUiSkin.ds(ci, body, Vector2(rx + rw - ww, base + wfs * 0.36), wt, HORIZONTAL_ALIGNMENT_LEFT, -1, wfs, XUiSkin.TEXT_3)
 		var cond := str(mv.cond)
@@ -1243,17 +1329,15 @@ func _draw_enemy(a: Rect2) -> void:
 		XUiSkin.ds(ci, body, Vector2(rx + rw - ww - 12.0 - cww, base + int(cfit[1]) * 0.36), str(cfit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(cfit[1]), XUiSkin.TEXT_2)
 		var nfit := XSkinList.fit_text(body, str(mv.name), rw - ww - cww - 28.0, lfs, XUiSkin.FS_MIN)
 		XUiSkin.ds(ci, body, Vector2(rx, base + int(nfit[1]) * 0.36), str(nfit[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, int(nfit[1]), mv.color)
-		ry += SKILL_H
-	if not note.is_empty():
-		var ny := _section(ci, rx, bottom, rw, T_NOTE)
-		var spans := []
-		for i in note.size():
-			spans.append([str(note[i]) + ("\n" if i < note.size() - 1 else ""), XUiSkin.TEXT])
-		draw_spans(ci, spans, rx, ny, rw, XUiSkin.FS_AUX_MAX, XUiSkin.FS_AUX_MAX * 1.6, a.end.y)
+	if _skill_max > 0.0:
+		var track := Rect2(r.end.x - 4.0, r.position.y, 4.0, r.size.y)
+		var th := maxf(track.size.y * r.size.y / content_h, 16.0)
+		var ty := track.position.y + (track.size.y - th) * skill_scroll / _skill_max
+		XUiSkin.draw_scrollbar(ci, track, ty, th, Color(1, 1, 1, 0.06), Color(XUiSkin.LINE, 0.55))
 
 
 ## 弱／抗一行图标＋百分比：弱 UP 绿、抗 DOWN 橙、无效（倍率 0）灰；返回下一行顶
-func _element_icons(ci: CanvasItem, x: float, y: float, w: float, arr: Array, weak: bool) -> float:
+func _element_icons(ci: CanvasItem, x: float, y: float, w: float, arr: Array, weak: bool, bottom := INF) -> float:
 	var body := XUiSkin.font("body")
 	var fs := XUiSkin.FS_AUX
 	if bool(info.hide):
@@ -1269,6 +1353,8 @@ func _element_icons(ci: CanvasItem, x: float, y: float, w: float, arr: Array, we
 		if cx + 36.0 > x + w + 0.5:
 			cx = x
 			line_y += 54.0
+		if line_y + 34.0 + fs * 1.1 > bottom + 0.5:
+			break   # 面板底放不下的那一行不画（图已经让到最矮）
 		var tex := XUiSkin.icon(int(e.icon))
 		if tex != null:
 			ci.draw_texture_rect(tex, Rect2(cx + (step - 32.0) / 2.0 if step > 32.0 else cx, line_y, 32, 32), false)
@@ -1277,6 +1363,15 @@ func _element_icons(ci: CanvasItem, x: float, y: float, w: float, arr: Array, we
 		XUiSkin.ds(ci, body, Vector2(cx + (step - pw) / 2.0, line_y + 34.0 + fs * 0.9), str(e.pct), HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
 		cx += step
 	return line_y + 58.0
+
+
+## _element_icons 占的高（同它的折行）
+static func _icons_h(arr: Array, w: float) -> float:
+	if arr.is_empty():
+		return 36.0
+	var step := clampf(w / arr.size(), 36.0, 56.0)
+	var per := maxi(1, floori((w + 0.5 - 36.0) / step) + 1)
+	return (ceili(arr.size() / float(per)) - 1) * 54.0 + 58.0
 
 
 func _draw_enemy_sprite(ci: CanvasItem, h: XEnemyBookPage, box: Rect2) -> void:
@@ -1322,8 +1417,8 @@ func _draw_inlay(a: Rect2) -> void:
 		for k in 8:
 			var pr: Array = info.params[k]
 			var zero := bool(pr[2])
-			_cell(ci, Rect2(x + (k % 4) * (colw + 32.0), y + floori(k / 4.0) * CELL_H, colw, CELL_H), str(pr[0]), str(pr[1]), XUiSkin.TEXT_3 if zero else XUiSkin.GOLD_LIGHT)
-		y += CELL_H * 2 + 10.0
+			_cell(ci, Rect2(x + (k % 4) * (colw + 32.0), y + floori(k / 4.0) * cell_h(), colw, cell_h()), str(pr[0]), str(pr[1]), XUiSkin.TEXT_3 if zero else XUiSkin.GOLD_LIGHT)
+		y += cell_h() * 2 + 10.0
 		y = _section(ci, x, y, w, T_INLAY_EFFECT)
 		var efs := XUiSkin.FS_AUX_MAX
 		for sp in info.effects:
