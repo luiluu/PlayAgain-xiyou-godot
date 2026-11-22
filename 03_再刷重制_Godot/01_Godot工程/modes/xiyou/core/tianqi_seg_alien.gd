@@ -191,3 +191,46 @@ static func setup(logic, s: XState) -> void:
 	var list := plan(s, logic.enemies, func(reason: String, key: String) -> float: return rng.next_float(reason, key))
 	if not list.is_empty():
 		XTianqiLine.alien_apply(XTianqiLine.current(s), logic, s, list)
+
+
+# ---- 战中「本场规则」条（T386 / K1b）：只读出口 ----
+
+## 这一场有异化的线（按段或本线预设都算）；没有为 ""
+static func active_line(logic) -> String:
+	if XTianqiWarAlien.active(logic):
+		return "war"
+	if XTianqiFamineAlien.active(logic):
+		return "famine"
+	if XTianqiPlagueAlien.active(logic):
+		return "plague"
+	if XTianqiDeathAlien.active(logic):
+		return "death"
+	return ""
+
+
+## 这一场的异化是按段异化抽的（不是开场、使徒等本线预设）
+static func segment_fight(logic) -> bool:
+	match active_line(logic):
+		"war":
+			return str(XTianqiWarAlien.fight(logic).get("preset", "")) == "segment"
+		"famine":
+			return str(XTianqiFamineAlien.fight(logic).get("preset", "")) == "segment"
+		"plague":
+			return str(XTianqiPlagueAlien.fight(logic).get("preset", "")) == "segment"
+		"death":
+			return str(XTianqiDeathAlien.fight(logic).get("preset", "")) == "segment"
+	return false
+
+
+## XTianqiBattleRules.collect：转给这一场异化的线模块（零逻辑修改、零随机数）
+static func battle_rules(logic) -> Array:
+	match active_line(logic):
+		"war":
+			return XTianqiWarAlien.battle_rules(logic)
+		"famine":
+			return XTianqiFamineAlien.battle_rules(logic)
+		"plague":
+			return XTianqiPlagueAlien.battle_rules(logic)
+		"death":
+			return XTianqiDeathAlien.battle_rules(logic)
+	return []

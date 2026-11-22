@@ -475,3 +475,79 @@ static func end(logic) -> void:
 		logic.remove_meta(META)
 		f.clear()
 	_logic_ref = null
+
+
+# ---- 战中「本场规则」条（T386 / K1b）：只读出口，零逻辑修改、零随机数；玩家可见文字照小A 文字审定稿（T387） ----
+
+const RULE_NAMES := {"exhaust": "枯竭", "lean": "荒年者", "night": "熬夜", "overdraw": "透支", "plunder": "掠夺"}
+
+
+static func battle_rules(logic) -> Array:
+	if not active(logic):
+		return []
+	var f := fight(logic)
+	var kinds := XTianqiBattleRules.alien_kinds(f)
+	if kinds.is_empty():
+		return []
+	var M := XTianqiBattleRules.MINUS
+	var out := []
+	var base := {"line": "famine", "icon": XTianqiBattleRules.LINE_ICONS.famine, "tone": "line", "priority": 30}
+	# 线规则：口粮、荒年（饥饿倍率在 B 印盘，不重复）
+	var o := base.duplicate()
+	o["priority"] = 20
+	var rate := ration_rate(logic)
+	o["counter"] = "%s MP" % XTianqiBattleRules.pct(rate)
+	var s: XState = logic.state
+	var tq = s.flags.get("tianqi", {}) if s != null and s.flags is Dictionary else {}
+	var fam = tq.get("famine", {}) if tq is Dictionary else {}
+	o["detail_extra"] = "当前余粮：%d 份" % int(fam.get("grain", 0) if fam is Dictionary else 0)
+	out.append(XTianqiBattleRules.entry("alien:famine:ration", "alien", "口粮",
+		"施放不消耗资源的技能需交口粮（最大 MP 的 %s），优先扣余粮。" % XTianqiBattleRules.pct(rate), o))
+	var dm := float(data().get("lean_year", {}).get("drop_mult", 1.0))
+	o = base.duplicate()
+	o["priority"] = 40
+	o["tone"] = "gold"
+	o["counter"] = "掉落 ×%s" % str(snappedf(dm, 0.01))
+	out.append(XTianqiBattleRules.entry("alien:famine:lean_year", "alien", "荒年", "本场战利品掉落倍率 ×%s。" % str(snappedf(dm, 0.01)), o))
+	for kind in kinds:
+		var idx := int(kinds[kind])
+		var ki := kind_info(str(kind))
+		o = base.duplicate()
+		o["badge"] = XTianqiBattleRules.tier_badge(idx)
+		o["counter"] = XTianqiBattleRules.tier_name(idx)
+		var text := ""
+		match str(kind):
+			"exhaust":
+				var mmp := float(f.get("mmp_down", 0.0))
+				if idx >= 3:
+					o["counter"] = "MP 上限 %s%s" % [M, XTianqiBattleRules.pct(mmp)]
+					o["tone"] = "warn"
+				text = XTianqiBattleRules.tier_tail("施放技能消耗增加。", idx, "同时消耗生命。",
+					"我方最大 MP %s%s。" % [M, XTianqiBattleRules.pct(mmp if mmp > 0.0 else float(ki.get("finale_mmp", 0.05)))])
+			"lean":
+				if idx >= 2:
+					o["tone"] = "warn"
+				text = XTianqiBattleRules.tier_tail("压制我方回复效果。", idx, "再生效果失效。", "复活当次回复无效。")
+			"night":
+				var tpm := tp_mult(logic)
+				o["counter"] = "每回合清 TP" if idx >= 3 else ("回合末 TP %s%d" % [M, int(ki.get("tp_drain", 10))] if idx >= 2 else "TP ×%s" % _num(tpm))
+				if idx >= 3:
+					o["tone"] = "warn"
+				text = XTianqiBattleRules.tier_tail("我方 TP 获取倍率 ×%s。" % _num(tpm), idx, "回合末全队 TP %s%d。" % [M, int(ki.get("tp_drain", 10))], "每回合清空我方 TP。")
+			"overdraw":
+				var hp := _sum(logic, "overdraw", "hp_cost")
+				o["counter"] = "施技 %s%s 血" % [M, XTianqiBattleRules.pct(hp)]
+				o["tone"] = "warn"
+				text = XTianqiBattleRules.tier_tail("我方施放技能时额外失去 %s 当前生命。" % XTianqiBattleRules.pct(hp), idx, "改为按最大生命扣除。", "另扣 10% 当前 MP。")
+			"plunder":
+				var gold := 0
+				for e in f.units:
+					if e.is_alive():
+						gold += int(f.units[e].get("gold", 0))
+				o["counter"] = "命中吸 MP／TP"
+				if gold > 0:
+					o["tone"] = "warn"
+					o["detail_extra"] = "已夺走 %d 精魂，击倒即归还" % gold
+				text = "命中时吸取我方 MP 与 TP 转为护盾，并可能夺走精魂（击倒后归还）。"
+		out.append(XTianqiBattleRules.entry("alien:famine:" + str(kind), "alien", str(RULE_NAMES.get(kind, ki.get("name", kind))), text, o))
+	return out

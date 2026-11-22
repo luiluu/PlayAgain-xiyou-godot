@@ -78,6 +78,7 @@ var list_win: XBattleList
 var mimic_win: XAlienMimicWindow
 var tianqi_meter: XTianqiMeter
 var seal_dial: XSkinSealDial
+var rule_strip: XSkinRuleStrip  # T386：天启篇战中「本场规则」条（不建为 null）
 var tianqi_weak_badges: XTianqiWeakBadges  # 天启篇弱者专属词条的头顶角标（T230）
 var tianqi_sear_bar: XTianqiSearBar
 ## 云裳的选择窗（赠行选人、裁身、七曜元素、收针选人、换锦选状态）
@@ -758,6 +759,18 @@ func _build_ui(vs: Vector2) -> void:
 	if seal_dial != null:
 		XSkinSealDial.place(seal_dial, side, _origin)
 		ui.add_child(seal_dial)
+	# T386 / K1b：战中「本场规则」条（自动／变速圆钮正右侧；天启篇档、新界面、XTianqiBattleRules.ENABLED 都开才建）
+	rule_strip = XSkinRuleStrip.make(logic, side, _origin)
+	if rule_strip != null:
+		rule_strip.arc_source = func(): return boss_hp is XSkinBossArc and is_instance_valid(boss_hp) and boss_hp.visible
+		rule_strip.blocker_source = func():
+			if list_win != null and is_instance_valid(list_win) and list_win.visible:
+				return Rect2(list_win.global_position, list_win.size)
+			return Rect2(help_card.global_position, help_card.size) if help_card != null and is_instance_valid(help_card) and help_card.visible else Rect2()
+		# 战斗图鉴、角色状态页、首领详情开着：不切规则条、开着的详卡收起（小A T386 核 P1-1、P2-2）
+		rule_strip.input_blocked = func(): return (book_page != null and is_instance_valid(book_page)) or (status_panel != null and is_instance_valid(status_panel)) \
+			or (boss_panel != null and is_instance_valid(boss_panel) and bool(boss_panel.get("open")))
+		ui.add_child(rule_strip)
 	# 天启篇弱者专属词条：头顶文字角标（蓄雷格数、传球库存…，只写状态不写词条名；模块不在天启篇档时不建）
 	tianqi_weak_badges = XTianqiWeakBadges.make(logic, func(): return sprites)
 	if tianqi_weak_badges != null:
@@ -766,7 +779,7 @@ func _build_ui(vs: Vector2) -> void:
 	tianqi_sear_bar = XTianqiSearBar.make(logic, func(): return status_rows)
 	tianqi_sear_bar.position = _origin
 	ui.add_child(tianqi_sear_bar)
-	XSkinBattleMotion.hud_in([hp_holder, boss_panel, holder, side, otb, tianqi_meter] + ([seal_dial] if seal_dial != null else []))  # T096：新界面开战时依次淡入（样稿 .in）；动效关、皮肤关什么也不做
+	XSkinBattleMotion.hud_in([hp_holder, boss_panel, holder, side, otb, tianqi_meter] + ([seal_dial] if seal_dial != null else []) + ([rule_strip] if rule_strip != null else []))  # T096：新界面开战时依次淡入（样稿 .in）；动效关、皮肤关什么也不做
 
 
 ## 说明卡（选技能／物品时右侧的详情）显示时的矩形（减 _origin，原版坐标）；没显示为空
@@ -2467,6 +2480,9 @@ static var HOLD_OK_TARGET := true
 func _unhandled_input(event: InputEvent) -> void:
 	if book_page != null:
 		return
+	if rule_strip != null and is_instance_valid(rule_strip) and rule_strip.try_toggle_input(event):  # T386：R／LB 开关「本场规则」
+		XKeyMap.handled(self)
+		return
 	# AB_EnemyBook v1.28：角色指令窗、技能／物品列表开着且可操作时按 Shift（ShortCutButtonName）打开「怪物信息」
 	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_SHIFT and _target_mode == "" and not logic.auto:
 		var w: XBattleList = list_win if list_win != null and list_win.active else (cmd_win if cmd_win != null and cmd_win.active else null)
@@ -3296,6 +3312,8 @@ func _victory() -> void:
 ## T291（T273 发现②）：结算页出来时，画在 field 上的敌人名字／血条／状态图标（z 5）和首领状态胶囊（自己每帧把 visible 设回来）
 ## 不再压在结算页上。同 ui 那批一起在 0.5 秒隐藏；RESULT_CLEAR 关＝照旧留着。新旧皮肤都一样
 func _hide_field_ui_for_result() -> void:
+	if rule_strip != null and is_instance_valid(rule_strip):
+		rule_strip.fade_out()  # T386：规则条随结算一并淡出
 	if not XSkin2C.RESULT_CLEAR:
 		return
 	for e in gauges:

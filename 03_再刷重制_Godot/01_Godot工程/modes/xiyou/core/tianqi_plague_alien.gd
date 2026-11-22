@@ -547,3 +547,60 @@ static func end(logic) -> void:
 				a.param_mark_dirty()
 		f.clear()
 	_logic_ref = null
+
+
+# ---- 战中「本场规则」条（T386 / K1b）：只读出口，零逻辑修改、零随机数；玩家可见文字照小A 文字审定稿（T387） ----
+# 毒腺一句偏离 T387 定稿：代码里命中必中毒、poison 是每回合扣最大生命的比例（不是概率），按实际机制写（小A T386 核查复审通过）。
+
+static func battle_rules(logic) -> Array:
+	if not active(logic):
+		return []
+	var f := fight(logic)
+	var kinds := XTianqiBattleRules.alien_kinds(f)
+	if kinds.is_empty():
+		return []
+	var M := XTianqiBattleRules.MINUS
+	var out := []
+	var base := {"line": "plague", "icon": XTianqiBattleRules.LINE_ICONS.plague, "tone": "line", "priority": 30}
+	var fr: Dictionary = data().frail
+	var cap := float(fr.cap_end) if finale(logic) else float(fr.cap)
+	var o := base.duplicate()
+	o["priority"] = 20
+	o["counter"] = "上限 %s%s" % [M, XTianqiBattleRules.pct(cap)]
+	out.append(XTianqiBattleRules.entry("alien:plague:frail", "alien", "病弱",
+		"每带 1 个减益，八项属性 %s%s（上限 %s%s）；病灶满层时爆发「中毒」并延长「混乱」。" % [M, XTianqiBattleRules.pct(float(fr.per)), M, XTianqiBattleRules.pct(cap)], o))
+	for kind in kinds:
+		var idx := int(kinds[kind])
+		var ki := kind_info(str(kind))
+		o = base.duplicate()
+		o["badge"] = XTianqiBattleRules.tier_badge(idx)
+		o["counter"] = XTianqiBattleRules.tier_name(idx)
+		var text := ""
+		match str(kind):
+			"gland":
+				var p := XTianqiBattleRules.pct(float(ki.poison[idx]))
+				o["counter"] = "中毒 %s" % p
+				if idx >= 3:
+					o["counter"] = "中毒禁疗"
+					o["tone"] = "warn"
+				text = XTianqiBattleRules.tier_tail("攻击使目标「中毒」，每回合失去最大生命 %s。" % p, idx, "最高叠至 %d 层。" % int(ki.get("stack_max", 3)), "「中毒」期间无法受到治疗。")
+			"chaos":
+				var p := XTianqiBattleRules.pct(float(ki.chance[idx]))
+				o["counter"] = "%s 混乱" % p
+				text = XTianqiBattleRules.tier_tail("攻击有 %s 概率使目标「混乱」。" % p, idx, "", "「混乱」持续 %d 回合。" % int(ki.get("finale_turns", 2)))
+			"taunt":
+				o["counter"] = "全体挑衅" if idx >= 3 else "单体挑衅"
+				o["tone"] = "warn"
+				text = XTianqiBattleRules.tier_tail("强制单体挑衅，攻击它时附加「不服」。", idx, "我方群攻伤害减半。", "改为全体挑衅，附加「混乱」。")
+			"contagion":
+				var n := int(ki.copies[idx])
+				o["counter"] = "回合末传 %d 个" % n if n < 99 else "回合末全传"
+				text = XTianqiBattleRules.tier_tail("每回合末将身上%s减益传染给队友。" % (" %d 个" % n if n < 99 else "全部"), idx, "传染后持续 +1 回合。", "每回合传染 2 次。")
+			"source":
+				var ext := int(ki.extend[idx])
+				o["counter"] = "延长 %d 回合" % ext
+				if idx >= 3:
+					o["tone"] = "warn"
+				text = XTianqiBattleRules.tier_tail("延长我方减益 %d 回合，并使净化有概率失败。" % ext, idx, "净化成功时反染给队友。", "减益免疫失效。")
+		out.append(XTianqiBattleRules.entry("alien:plague:" + str(kind), "alien", str(ki.get("name", kind)), text, o))
+	return out

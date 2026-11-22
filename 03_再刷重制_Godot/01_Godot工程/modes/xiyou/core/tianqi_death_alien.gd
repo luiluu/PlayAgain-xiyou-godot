@@ -524,3 +524,99 @@ static func end(logic) -> void:
 		logic.remove_meta(META)
 		f.clear()
 	_logic_ref = null
+
+
+# ---- 战中「本场规则」条（T386 / K1b）：只读出口，零逻辑修改、零随机数；玩家可见文字照小A 文字审定稿（T387） ----
+
+const RULE_NAMES := {"verdict": "宣判"}
+
+
+static func battle_rules(logic) -> Array:
+	if not active(logic):
+		return []
+	var f := fight(logic)
+	var kinds := XTianqiBattleRules.alien_kinds(f)
+	if kinds.is_empty():
+		return []
+	var M := XTianqiBattleRules.MINUS
+	var turn := int(logic.turn)
+	var out := []
+	var base := {"line": "death", "icon": XTianqiBattleRules.LINE_ICONS.death, "tone": "line", "priority": 30}
+	for kind in kinds:
+		var idx := int(kinds[kind])
+		var ki := kind_info(str(kind))
+		var o := base.duplicate()
+		o["badge"] = XTianqiBattleRules.tier_badge(idx)
+		o["counter"] = XTianqiBattleRules.tier_name(idx)
+		var text := ""
+		match str(kind):
+			"verdict":
+				var iv := verdict_interval(logic, idx)
+				var rem := 99
+				for pair in _alive_of(logic, "verdict"):
+					rem = mini(rem, maxi(1, int(pair[1].last) + verdict_interval(logic, int(pair[1].idx)) - turn))
+				var marked := PackedStringArray()
+				for a in f.doom:
+					if is_instance_valid(a) and a.is_alive():
+						marked.append(a.display_name())
+				if not marked.is_empty():
+					o["counter"] = "本回合末"
+					o["countdown"] = 0
+					o["tone"] = "warn"
+					o["priority"] = 10
+					o["detail_extra"] = "当前点名：%s" % "、".join(marked)
+				else:
+					o["counter"] = XTianqiBattleRules.countdown_text(rem)
+					o["countdown"] = rem
+					o["priority"] = 10 if rem <= 1 else 20
+					if rem <= 1:
+						o["tone"] = "warn"
+				text = XTianqiBattleRules.tier_tail("每 %d 回合点名「死期」，回合末必死。" % iv, idx, "无视即死免疫，击倒不解除。", "每次点名 2 人，死后禁复活。")
+			"knell":
+				var n := 99
+				for pair in _alive_of(logic, "knell"):
+					n = mini(n, int(pair[1].get("count", 0)))
+				o["counter"] = XTianqiBattleRules.countdown_text(n)
+				o["countdown"] = n
+				if n <= 1:
+					o["tone"] = "warn"
+					o["priority"] = 10
+				text = XTianqiBattleRules.tier_tail("倒数归零时，立刻带走我方生命比例最低者。", idx, "敲响时我方全体生命 %s%s。" % [M, XTianqiBattleRules.pct(float(ki.get("toll_loss", 0.2)))], "当回合无法复活。")
+			"captain":
+				o["counter"] = "禁逃跑"
+				o["tone"] = "warn"
+				o["priority"] = 20
+				text = XTianqiBattleRules.tier_tail("本场逃跑必定失败；我方即死免疫与保命效果有 %s 概率失效。" % XTianqiBattleRules.pct(float(ki.fail[idx])),
+					idx, "「死期」改为行动后立刻结算。", "宣判间隔 %s1 回合。" % M)
+			"reaper":
+				if idx >= 2:
+					o["counter"] = "禁复活"
+					o["tone"] = "warn"
+				var locked := PackedStringArray()
+				for a in f.lock:
+					if is_instance_valid(a) and turn < int(f.lock[a]):
+						locked.append(a.display_name())
+				var skills := PackedStringArray()
+				for pair in _alive_of(logic, "reaper"):
+					for sid in f.absorbed.get(pair[0], []):
+						var nm := str(XDB.rec("Skills", int(sid)).get("name", ""))
+						if nm != "" and not skills.has(nm):
+							skills.append(nm)
+				var ex := PackedStringArray()
+				if not locked.is_empty():
+					ex.append("已锁复活：%s" % "、".join(locked))
+				if not skills.is_empty():
+					ex.append("已吸收：%s" % "、".join(skills))
+				o["detail_extra"] = " · ".join(ex)
+				text = XTianqiBattleRules.tier_tail("吸收倒下单位以强化自身属性。", idx, "被收走者本场无法复活。")
+			"double":
+				var left := 0
+				for pair in _alive_of(logic, "double"):
+					left += maxi(0, int(ki.times[int(pair[1].idx)]) - int(pair[1].get("used", 0)))
+				if left <= 0:
+					continue  # 次数用尽自动移除（设计稿表 B2）
+				o["counter"] = "剩 %d 次" % left
+				o["tone"] = "warn"
+				text = XTianqiBattleRules.tier_tail("遭受致命伤时，由生命比例 ≤ %s 的我方代死（剩 %d 次）。" % [XTianqiBattleRules.pct(float(ki.below[idx])), left], idx, "", "代死者本场无法复活。")
+		out.append(XTianqiBattleRules.entry("alien:death:" + str(kind), "alien", str(RULE_NAMES.get(kind, ki.get("name", kind))), text, o))
+	return out
