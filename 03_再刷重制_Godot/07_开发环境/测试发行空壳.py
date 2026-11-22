@@ -455,6 +455,25 @@ class T(unittest.TestCase):
             K.MIXED_STR.clear()
             K.MIXED_STR.update(old)
 
+    def test_t388_new_words_unregistered_tree_and_lexer(self):
+        # T388（T385 核 P2-1/P2-2/P3-1）：新词命中；未登记文件也让 is_stub_tree 报错；r"..." 与偶数反斜杠
+        for w in ('侵染、蚀骨', '本线异化图鉴', '确认取核', '战商', '装备环纹'):
+            self.assertTrue(K.TIANQI_WORDS.search(f'x{w}y'), w)
+        self.assertFalse(K.TIANQI_WORDS.search('取核'))  # 单独「取核」在 DANGER_RE 里，不收
+        f = self.root / 'modes/xiyou/core/mix2.gd'
+        f.write_text('extends RefCounted\n'
+                     'func f():\n'
+                     '\tvar a := r"战商\\n"\n'
+                     '\tvar b := "路径\\\\"  # 战商 注释\n'
+                     '\treturn "确认取核 %s" % a\n', encoding='utf-8')
+        hits = K.tianqi_string_hits(self.root)['modes/xiyou/core/mix2.gd']
+        self.assertEqual([i for i, _ in hits], [3, 5])  # 第 4 行偶数反斜杠后引号收尾，注释不算
+        self.assertEqual(hits[0][1], 'r"战商\\n"')
+        self.assertIn('modes/xiyou/core/mix2.gd（还带天启篇玩法名字符串）', K.is_stub_tree(self.root))  # 没登记也检出
+        new, _ = K._str_scan(f.read_text(encoding='utf-8'), fix=True)
+        self.assertIn('var a := r""', new)
+        self.assertEqual(K._strip_comment('x "a\\\\" # c'), 'x "a\\\\" ')
+
     def test_real_project_tianqi_strings_registered(self):
         # 真工程：命中的混合脚本都登记了、条数不超；PRIMARY_RE 样式正则里的「重铸」不算（换掉西游档按钮会全变主色）
         hits = K.tianqi_string_hits()
