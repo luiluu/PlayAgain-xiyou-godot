@@ -50,6 +50,12 @@ class GuardianPhase4Rules(unittest.TestCase):
         self.assertEqual(chk.guardian_phase4_rules({'focus': {'12': {'skill': 661, 'scale': 1.5, 'single': 1}}}), [])   # T363
         self.assertTrue(chk.guardian_phase4_rules({'focus': {'12': {'skill': 661, 'scale': 1.5, 'single': 2}}}))
         self.assertTrue(chk.guardian_phase4_rules({'focus': {'12': {'skill': 661, 'scale': 1.5, 'single': True}}}))
+        ok = {'skills': [3805], 'pct': {'xunchang': 50, 'zhengdao': 300}}   # T392
+        self.assertEqual(chk.guardian_phase4_rules({'lifesteal_cap': ok}), [])
+        self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, pct={'jianxian': 1.5})}))   # 不是整数
+        self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, pct={'hard': 100})}))   # 难度键不认识
+        self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, skills=[])}))
+        self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, extra=1)}))
 
     def test_bad_tables(self):
         self.assertTrue(chk.guardian_phase4_rules({'hp_base': {'35': 1}}))

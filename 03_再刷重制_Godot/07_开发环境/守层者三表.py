@@ -54,6 +54,8 @@ PARTY_HP_DIV = 6.4
 RESIST_SHARE = 0.3
 HP_QUANTILE = 0.9   # T363：hp_base 取各队 dmgRaw 的这个分位（强队）
 CALIB_MIN = 8   # T363：真打校准只校普通阵容至少这么多队（场次）的层；1～5 层每层 4 队，90 分位就是最强那队，校了只会一轮轮往上翻，照量数
+BUILT = ('hp_base', 'atk_scale', 'resist', 'focus')   # 构表产出、写入时整份换掉的键
+BAND_AIM = 1   # T392（P2-1）：强队回合出了 目标±2 时拉回到 目标∓1（留一回合余量，回合数跟血量不完全成正比）
 SINGLE = {12: 661, 15: 827, 25: 3563}   # T363（Kyo 11-21 事项17 问2）：奥术波动（3 随机）、如来神掌（2 随机）、仙宫寒气（3 随机）改打一人
 
 
@@ -281,12 +283,18 @@ def build6(rows: list, turns: int = 8, share: float = 0.40, mode: str = 'c', hp_
     return out
 
 
-def duel_calib(paths: list, turns: int = 8) -> dict:
-    """T363：按真打重定 hp_base（见头注释）。返回 {层: 每回合血量}"""
-    eff, keys = {}, {}
+def duel_calib(paths: list, turns: int = 8, base: dict = None, mode: str = 'band') -> dict:
+    """T363：按真打重定 hp_base（见头注释）。返回 {层: 每回合血量}。
+    T392（T363 核 P2-1）mode='band'（默认）：按强队（普通阵容每回合打得最多的四分之一，同对比表）分三种：
+      强队全输 → 只降不升：min(老算法, 量数 hp_base〔base，没有就不限〕)，不再用输队前几回合的爆发反抬血；
+      强队赢的均回合在 目标±2 之外 → 照最后一份真打的血量按回合比例拉回：血量 ×（目标∓BAND_AIM）÷ 强队均回合；
+      在 目标±2 之内 → 照最后一份真打的血量不动（已达标的层不再被 90 分位×(目标−2) 推着走）。
+    mode='t363' 回到 T363 做法（全按老算法）。"""
+    eff, keys, last = {}, {}, {}
     for i, p in enumerate(paths):
         for r in json.loads(Path(p).read_text(encoding='utf-8')).get('rows', []):
             f = int(r['floor'])
+            last[f] = r
             for t in r.get('per', []):
                 if t.get('team') == '奶妈队' or int(t.get('turns', 0)) <= 0:
                     continue
@@ -294,13 +302,42 @@ def duel_calib(paths: list, turns: int = 8) -> dict:
                 e = float(t.get('enemyHp', r.get('enemyHp', 0))) / int(t['turns']) if t.get('won') else float(t.get('dmg', 0))
                 if e > 0:
                     eff.setdefault(f, []).append(e)
-    return {f: int(sig3(_quant(v, HP_QUANTILE) * (turns - 2) / turns)) for f, v in eff.items() if len(keys.get(f, ())) >= CALIB_MIN}   # 按不同的队（阵容×种子）数，多遍真打同一队不重复算
+    out = {}
+    for f, v in eff.items():
+        if len(keys.get(f, ())) < CALIB_MIN:   # 按不同的队（阵容×种子）数，多遍真打同一队不重复算
+            continue
+        old = int(sig3(_quant(v, HP_QUANTILE) * (turns - 2) / turns))
+        if mode != 'band':
+            out[f] = old
+            continue
+        st = strong_stats(last[f].get('per', []))
+        cur = float(last[f].get('enemyHp', 0)) / turns
+        if st['won'] == 0:
+            b = (base or {}).get(str(f))
+            out[f] = min(old, int(b)) if b else old
+        elif cur > 0 and st['avg'] < turns - 2:
+            out[f] = int(sig3(cur * (turns - BAND_AIM) / st['avg']))
+        elif cur > 0 and st['avg'] > turns + 2:
+            out[f] = int(sig3(cur * (turns + BAND_AIM) / st['avg']))
+        elif cur > 0:
+            out[f] = int(sig3(cur))
+        else:
+            out[f] = old
+    return out
+
+
+def strong_stats(per: list) -> dict:
+    """T392：强队＝普通阵容按每回合掉血 dmg 排前四分之一（至少 1 队，同 对比表生成.py）；返回 {n, won, avg（赢的均回合，没赢为 0）}"""
+    nm = [p for p in per if p.get('team') != '奶妈队' and int(p.get('turns', 0)) > 0]
+    top = sorted(nm, key=lambda p: -float(p.get('dmg', 0)))[:max(1, len(nm) // 4)]
+    tw = [int(p['turns']) for p in top if p.get('won')]
+    return {'n': len(top), 'won': len(tw), 'avg': sum(tw) / len(tw) if tw else 0.0}
 
 
 def render(tables: dict) -> str:
     lines = []
     for name, t in tables.items():
-        lines.append('  "%s": {%s}' % (name, ', '.join('"%s": %s' % (k, json.dumps(v)) for k, v in t.items())))
+        lines.append('  "%s": {%s}' % (name, ', '.join('"%s": %s' % (k, json.dumps(v, ensure_ascii=False)) for k, v in t.items())))
     return ' "%s": {\n%s\n }' % (KEY, ',\n'.join(lines))
 
 
@@ -308,8 +345,9 @@ def apply(text: str, tables: dict) -> str:
     """文本层面写 guardian_phase4：有就换，没有就加在顶层末尾；其余字节不动。"""
     m = re.search(r',?\n "%s": ' % KEY, text)
     if m:
-        _, end = json.JSONDecoder().raw_decode(text, m.end())
+        old, end = json.JSONDecoder().raw_decode(text, m.end())
         text = text[:m.start()] + text[end:]
+        tables = dict(tables, **{k: v for k, v in old.items() if k not in tables and k not in BUILT})   # T392：构表不产出的键（lifesteal_cap）原样留着
     stripped = text.rstrip()
     assert stripped.endswith('}'), 'balance_table.json 末尾不是 }'
     body = stripped[:-1].rstrip()
@@ -350,7 +388,7 @@ def cmd_build(args) -> int:
                 f, s['n'], s['dmg'], tables.get('hp_base', {}).get(str(f)), s['rec'], s['sus'], '/'.join('%.3g' % x for x in fo),
                 max(mx['sus'], mx['focus']), s['atkHit'], cs[1]['skill'], cs[1]['useRatio'], ' '.join('%.3g/%.3g' % (c['scale'], c['atk']) for c in cs), cs[1]['hitRatio'], cs[1]['short']), file=sys.stderr)
     if args.v6 and args.duel_calib and tables:
-        cal = duel_calib(args.duel_calib, args.turns)
+        cal = duel_calib(args.duel_calib, args.turns, dict(tables.get('hp_base', {})), args.calib_mode)
         for f, v in sorted(cal.items()):
             print('真打校准 %d 层 hp_base %s → %d' % (f, tables.get('hp_base', {}).get(str(f)), v), file=sys.stderr)
             tables.setdefault('hp_base', {})[str(f)] = v
@@ -444,14 +482,31 @@ def selftest() -> int:
     Path(tmp).write_text(json.dumps({'rows': [{'floor': 19, 'enemyHp': 800.0, 'per': [
         {'team': '原队', 'won': False, 'turns': 9, 'dmg': 50.0}, {'team': '随机1', 'won': True, 'turns': 4, 'dmg': 999.0},
         {'team': '奶妈队', 'won': True, 'turns': 1, 'dmg': 1e9}]}]}), encoding='utf-8')
-    assert duel_calib([tmp] * 4) == {}   # 同 2 队打 4 遍，不到 CALIB_MIN 队
+    assert duel_calib([tmp] * 4) == {} and duel_calib([tmp] * 4, mode='t363') == {}   # 同 2 队打 4 遍，不到 CALIB_MIN 队
     import copy
     d = json.loads(Path(tmp).read_text(encoding='utf-8'))
     base = d['rows'][0]['per'][:2]
     d['rows'][0]['per'] = [dict(copy.deepcopy(x), rng=k) for k in range(4) for x in base]
     Path(tmp).write_text(json.dumps(d), encoding='utf-8')
-    assert duel_calib([tmp]) == {19: 150}, duel_calib([tmp])   # 8 队：4 队 50、4 队 800÷4＝200 → 90 分位 200 × 0.75
+    assert duel_calib([tmp], mode='t363') == {19: 150}, duel_calib([tmp], mode='t363')   # 8 队：4 队 50、4 队 800÷4＝200 → 90 分位 200 × 0.75
+    # T392 P2-1 band：强队全输只降不升；强队太快按回合拉回到 目标−1；达标不动
+    def per(won, turns_, dmg, k):
+        return {'team': '随机%d' % k, 'rng': k, 'won': won, 'turns': turns_, 'dmg': dmg}
+    lose = [per(False, 3, 900.0 if k < 2 else 100.0, k) for k in range(8)]   # 强队（前 2 队）爆发 900 也全输
+    Path(tmp).write_text(json.dumps({'rows': [{'floor': 22, 'enemyHp': 8000.0, 'per': lose}]}), encoding='utf-8')
+    assert duel_calib([tmp], 8, mode='t363') == {22: 675}   # 老算法：900×0.75 往上抬
+    assert duel_calib([tmp], 8, {'22': 500}) == {22: 500} and duel_calib([tmp], 8) == {22: 675}   # 有量数就封在量数
+    fast = [per(True, 4, 900.0, k) if k < 2 else per(False, 9, 100.0, k) for k in range(8)]
+    Path(tmp).write_text(json.dumps({'rows': [{'floor': 28, 'enemyHp': 8000.0, 'per': fast}]}), encoding='utf-8')
+    assert duel_calib([tmp], 8) == {28: 1750}, duel_calib([tmp], 8)   # 1000×7÷4
+    ok = [per(True, 7, 900.0, k) if k < 2 else per(False, 9, 100.0, k) for k in range(8)]
+    Path(tmp).write_text(json.dumps({'rows': [{'floor': 28, 'enemyHp': 8000.0, 'per': ok}]}), encoding='utf-8')
+    assert duel_calib([tmp], 8) == {28: 1000}
     os.unlink(tmp)
+    # T392：写表留着构表不产出的键
+    lc = {'skills': [3805], 'pct': {'jianxian': 100}}
+    r2 = json.loads(apply(apply(real, dict(t2, lifesteal_cap=lc)), t2))
+    assert r2[KEY]['lifesteal_cap'] == lc and r2[KEY]['hp_base'] == {'20': 3000000} and 'focus' not in r2[KEY], r2[KEY]
     print('selftest 通过')
     return 0
 
@@ -467,6 +522,7 @@ def main(argv=None) -> int:
     b.add_argument('--share', type=float, default=0.40, help='集火：单下打中一人占其最大生命的比例')
     b.add_argument('--focus-mode', choices=['c', 'add', 'max'], default='c')
     b.add_argument('--duel-calib', action='append', default=[], help='T363：按真打 json 重定 hp_base（可多个）')
+    b.add_argument('--calib-mode', choices=['band', 't363'], default='band', help='T392：band＝强队全输只降不升、出了目标±2 按回合拉回、达标不动；t363＝T363 老算法')
     b.add_argument('--hp-mode', choices=['top', 'smooth'], default='top', help='T363 top＝每层强队 90 分位×(回合−2)÷回合；smooth＝第 6 轮平滑')
     sub.add_parser('selftest')
     args = ap.parse_args(argv)
