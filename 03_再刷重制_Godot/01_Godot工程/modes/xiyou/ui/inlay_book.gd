@@ -11,6 +11,8 @@ extends Control
 ##   y 504「镶嵌顺序:」与右下 y 648「镶嵌顺序为从左到右显示」，y 540 起逐个宝珠（drawItemName，每行 4 个、间隔 236.5）。
 ## - 解锁：原版 $gameParty.StarEMosaicOpt 记形成过的符文之语，没形成的写「？？？」；但正式版唯一的入口（Map4 EV40、Map66、Map137）
 ##   都先执行 StarEIBook GetAll 全部解锁，玩家看到的永远是全部，所以这里不记解锁、全部列出（GetAll 无操作）。
+## T364 卡 P 新界面（天启篇，XSkinBookPage.wanted()）：类型窗换成目录上方两枚页内页签（Q／E），进页就在目录上（武器），
+##   目录上取消直接离开（没有类型窗这一层）；右大牌见 XSkinBookPage。开关关着一行不变。
 
 signal closed
 
@@ -36,6 +38,7 @@ var index_pager: XListPager   # T049 翻页件（新界面关着时为 null）
 var type_win: XMVWindow
 var index_win: XMVWindow
 var status_win: XMVWindow
+var skin: XSkinBookPage   # T364 新界面（关着时为 null）
 var _status_ops: Array = []
 
 
@@ -52,6 +55,11 @@ func _ready() -> void:
 	type_win.canvas.blink = true
 	index_win.canvas.blink = true
 	index_pager = XListPager.attach(index_win, _page)
+	if XSkinBookPage.wanted():
+		skin = XSkinBookPage.new(self, "inlay")
+		add_child(skin)
+		switch_type(0, false)   # 新页：进页就在武器目录上
+		return
 	_refresh()
 
 
@@ -212,6 +220,8 @@ func _paint_status(c: XMVCanvas) -> void:
 
 ## T049：天启篇新界面开着且目录超一页时少放一行，给翻页件腾地方（见 XListPager.rows_for）
 func index_rows() -> int:
+	if skin != null:
+		return skin.list_rows()
 	return XListPager.rows_for(ROWS, list.size())
 
 
@@ -223,6 +233,8 @@ func _refresh() -> void:
 		index_win.down_arrow = index_win.down_arrow and not index_pager.visible
 	for w in [type_win, index_win, status_win]:
 		w.refresh()
+	if skin != null:
+		skin.sync()
 
 
 # ---- 操作 ----
@@ -249,10 +261,29 @@ func ok() -> void:
 		_select(0)
 
 
-## OnCancel：目录清空、状态窗清空，回类型窗；类型窗取消关闭
+## T364 新页：换武器／防具页签＝旧页「回类型窗→换类型→确定」一步做完，停在新目录第 1 项
+func switch_type(t: int, sound := true) -> void:
+	if t == type_index and mode == "index":
+		return
+	if sound:
+		XSound.system(0)
+	type_index = t
+	mode = "index"
+	list = lists[type_index]
+	top = 0
+	_status_ops = []
+	if list.is_empty():
+		index = -1
+		_refresh()
+	else:
+		index = -1
+		_select(0)
+
+
+## OnCancel：目录清空、状态窗清空，回类型窗；类型窗取消关闭（T364 新页没有类型窗这一层：目录上取消直接关）
 func cancel() -> void:
 	XSound.system(2)
-	if mode == "index":
+	if mode == "index" and skin == null:
 		mode = "type"
 		list = []
 		index = -1
@@ -295,6 +326,8 @@ func _page(d: int) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinBookPage）
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
@@ -324,6 +357,9 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
 		cancel()
