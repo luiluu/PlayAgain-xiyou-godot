@@ -1,0 +1,53 @@
+extends Node
+## 工具（不是专项）：T379 七印套装、武器说明卡（带 O2 图标）截图。真窗口：godot --audio-driver Dummy --path 01_Godot工程 res://tests/t379_card_shots.tscn -- --out=<目录>
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
+var out_dir := ""
+
+
+func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out_dir = arg.substr(6)
+	_run.call_deferred()
+
+
+func _frames(n := 10) -> void:
+	for i in range(n):
+		await get_tree().process_frame
+
+
+func _run() -> void:
+	if out_dir == "" or DisplayServer.get_name() == "headless":
+		get_tree().quit()
+		return
+	TestEnv.isolate("t379_card_shots")
+	XSplashScreen.shown = true
+	XConfig.ensure_loaded()
+	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	var rng := XRandomStream.create("0123012301230123", "t379")
+	var hei := XTianqiQiyinEquip.make({"kind": "set", "seal": "hei", "part": "head", "true_seal": false, "grades": []}, "jianxian", rng)
+	var bai := XTianqiQiyinEquip.make({"kind": "weapon", "seal": "bai", "wtype": "sword", "true_seal": false, "grades": []}, "jianxian", rng)
+	var win := get_window()
+	for wide in [false, true]:
+		win.size = Vector2i(1000, 450) if wide else Vector2i(800, 450)
+		if wide:
+			XSkinLayout.window_override = Vector2(1000, 450)
+		await _frames(10)
+		var bg := ColorRect.new()
+		bg.color = Color("202020")
+		bg.size = Vector2(1600, 720) if wide else Vector2(1280, 720)
+		add_child(bg)
+		var x := 60.0
+		for it in [hei, bai]:
+			var card := XHelpCard.new()
+			bg.add_child(card)
+			card.show_for(it)
+			card.position = Vector2(x, 80)
+			x += 560.0 if wide else 480.0
+		await _frames(8)
+		await RenderingServer.frame_post_draw
+		DirAccess.make_dir_recursive_absolute(out_dir)
+		get_viewport().get_texture().get_image().save_png(out_dir.path_join("card_%s.png" % ("20x9" if wide else "16x9")))
+		bg.queue_free()
+		await _frames(3)
+	get_tree().quit()

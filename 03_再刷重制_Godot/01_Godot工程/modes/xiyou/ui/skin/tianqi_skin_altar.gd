@@ -103,6 +103,7 @@ static func seal_rows(s: XState) -> Array:
 			else:
 				n_set += 1
 		out.append({"key": k, "seal": str(info.get("seal", k)), "place": str(info.get("name", "")),
+			"rule_icon": XTianqiQiyinArt.rule_icon(str(info.get("rule", ""))) if XTianqiQiyinArt.ENABLED else 0,   # T379 O1：规则图标号（0＝不画）
 			"rule_name": str(info.get("rule_name", "")), "rule_text": str(info.get("rule_text", "")),
 			"state": int(states[i]) if i < states.size() else 0, "cond": cond_text(k), "restless": restless == k,
 			"set": n_set, "weapon": n_weapon})
@@ -172,6 +173,7 @@ func _ready() -> void:
 	add_child(hints)
 	rules = _layer("Rules", _draw_rules)
 	rules.visible = false
+	rules.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST   # T379：32 格像素图标放大不糊
 	resized.connect(relayout)
 	get_viewport().size_changed.connect(relayout)
 	relayout()
@@ -705,6 +707,13 @@ func _draw_rules() -> void:
 	XUiSkin.ds(rules, body, Vector2(x, y + 18), "%s · %s" % [str(r.seal), str(r.place)], HORIZONTAL_ALIGNMENT_LEFT, w - pad * 2, XUiSkin.FS_AUX_MAX, XUiSkin.GOLD)
 	y += 30
 	var rt := "规则「%s」：%s" % [str(r.rule_name), str(r.rule_text)]
-	for rg in XSkinText.wrap_ranges(rt, body, 16, w - pad * 2):   # T338 D2：避头尾＋防孤字
-		XUiSkin.ds(rules, body, Vector2(x, y + 17), rt.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, XUiSkin.TEXT_2)
+	var itex: Texture2D = XUI.icon_texture(int(r.get("rule_icon", 0))) if int(r.get("rule_icon", 0)) > 0 else null   # T379 O1：规则行前画规则图标（32 格，放大一倍）
+	var tx := x
+	var tw := w - pad * 2
+	if itex != null:
+		rules.draw_texture_rect(itex, Rect2(x, y + 2, 48, 48), false)
+		tx = x + 58
+		tw -= 58
+	for rg in XSkinText.wrap_ranges(rt, body, 16, tw):   # T338 D2：避头尾＋防孤字
+		XUiSkin.ds(rules, body, Vector2(tx, y + 17), rt.substr(rg.x, rg.y - rg.x), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, XUiSkin.TEXT_2)
 		y += 24
