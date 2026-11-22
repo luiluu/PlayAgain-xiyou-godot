@@ -251,6 +251,14 @@ static func skin_color(html: String) -> Color:
 	return c
 
 
+## T366 R11：长属性名换短名、不缩字（规矩是不缩字；原版名字是 JAH_StatusMenuCore 配的，这里只改新皮肤的画）
+const SHORT_NAMES := {"生命自动回复率": "生命自动回复", "魔法自动回复率": "魔法自动回复", "能量自动回复率": "能量自动回复"}
+
+
+static func short_name(s: String) -> String:
+	return str(SHORT_NAMES.get(s, s)) if XSkinList.T366_V1 else s
+
+
 ## 这一页要画的（旧页 page_ops 去掉表头；y 换成内容行号）
 static func body_ops(a: XActor, p: int) -> Array:
 	var y0 := XStatusPage.LH * XStatusPage.HEADER_LINES
@@ -283,7 +291,7 @@ func _draw_page_body() -> void:
 				var row := (float(op[3]) - y0) / XStatusPage.LH - top
 				if row < 0 or (row + 1) * ROW > sz.y + 0.5:
 					continue
-				var s := str(op[1])
+				var s := short_name(str(op[1]))
 				var col := skin_color(str(op[8]))
 				if s.begins_with("【"):
 					col = XUiSkin.GOLD

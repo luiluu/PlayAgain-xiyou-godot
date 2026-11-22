@@ -96,6 +96,11 @@ var skill_scroll := 0.0
 var _skill_max := 0.0
 var _skill_drag := XSkinDrag.new()
 var _skill_rect := Rect2()
+## T366（T364 P3）：备注超过 4 行时在备注这一块里滚（滚轮、手指拖），带细滚动条；T366_V1 关＝照旧只画前 4 行
+var note_scroll := 0.0
+var _note_max := 0.0
+var _note_drag := XSkinDrag.new()
+var _note_rect := Rect2()
 ## 测试读：人物牌头底、掌握那几行画到哪；怪物「会用的招」行高
 var head_bottom := 0.0
 var mastery_end := 0.0
@@ -348,6 +353,7 @@ func _sync_actor() -> void:
 	var ninfo := actor_info(id)
 	if ninfo.get("id", -1) != info.get("id", -2):
 		skill_scroll = 0.0
+		note_scroll = 0.0
 	info = ninfo
 
 
@@ -381,6 +387,7 @@ func _sync_enemy() -> void:
 	var ninfo := enemy_info(h.enemy(int(h.ids[h.index])) if not h.ids.is_empty() else null, not in_battle)
 	if ninfo.get("id", -1) != info.get("id", -2):
 		skill_scroll = 0.0
+		note_scroll = 0.0
 	info = ninfo
 
 
@@ -857,23 +864,45 @@ func _right_input(event: InputEvent) -> void:
 		host.call("cancel")
 		right_panel.accept_event()
 		return
-	if kind == "inlay" or str(host.get("mode")) != "index" or _skill_max <= 0.0:
+	if kind == "inlay" or str(host.get("mode")) != "index" or (_skill_max <= 0.0 and _note_max <= 0.0):
 		return
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
-		if mb.pressed and (mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN) and _skill_rect.has_point(mb.position):
+		var wheel := mb.pressed and (mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN)
+		if wheel and _note_max > 0.0 and _note_rect.has_point(mb.position):
+			scroll_note(-_note_lh() if mb.button_index == MOUSE_BUTTON_WHEEL_UP else _note_lh())
+			right_panel.accept_event()
+		elif wheel and _skill_max > 0.0 and _skill_rect.has_point(mb.position):
 			scroll_skills(-SKILL_H if mb.button_index == MOUSE_BUTTON_WHEEL_UP else SKILL_H)
 			right_panel.accept_event()
 		elif mb.button_index == MOUSE_BUTTON_LEFT:
-			if mb.pressed and _skill_rect.has_point(mb.position):
+			if mb.pressed and _note_max > 0.0 and _note_rect.has_point(mb.position):
+				_note_drag.press(mb.position, note_scroll)
+			elif mb.pressed and _skill_max > 0.0 and _skill_rect.has_point(mb.position):
 				_skill_drag.press(mb.position, skill_scroll)
 			elif not mb.pressed:
 				_skill_drag.release()
+				_note_drag.release()
+	elif event is InputEventMouseMotion and _note_drag.active():
+		var to2 := _note_drag.motion((event as InputEventMouseMotion).position, XSkinDrag.is_touch_event(event))
+		if not is_nan(to2):
+			note_scroll = clampf(to2, 0.0, _note_max)
+			right_panel.queue_redraw()
 	elif event is InputEventMouseMotion and _skill_drag.active():
 		var to := _skill_drag.motion((event as InputEventMouseMotion).position, XSkinDrag.is_touch_event(event))
 		if not is_nan(to):
 			skill_scroll = clampf(to, 0.0, _skill_max)
 			right_panel.queue_redraw()
+
+
+## 备注一行的高（和画的时候同一个算法）
+static func _note_lh() -> float:
+	return XUiSkin.FS_AUX_MAX * 1.6
+
+
+func scroll_note(dy: float) -> void:
+	note_scroll = clampf(note_scroll + dy, 0.0, _note_max)
+	right_panel.queue_redraw()
 
 
 func scroll_skills(dy: float) -> void:
@@ -1050,7 +1079,7 @@ func _cell(ci: CanvasItem, r: Rect2, label: String, value: String, vcol := XUiSk
 
 ## 自动折行画一串 [[字, 色]…]（折行走 XSkinText：避头尾、英文数字不腰斩；DETAIL_V1 关时它自己回旧折行）；
 ## 超过 bottom 的行不画；返回全部行画完后的 y（下一行顶，不管有没有被 bottom 裁）
-static func draw_spans(ci: CanvasItem, spans: Array, x: float, y: float, w: float, fs: int, lh: float, bottom := INF) -> float:
+static func draw_spans(ci: CanvasItem, spans: Array, x: float, y: float, w: float, fs: int, lh: float, bottom := INF, scroll := 0.0) -> float:
 	var f := XUiSkin.font("body")
 	var text := ""
 	var owner := PackedInt32Array()   # 每个字属于第几段
@@ -1061,7 +1090,9 @@ static func draw_spans(ci: CanvasItem, spans: Array, x: float, y: float, w: floa
 			owner.append(k)
 	var ranges := XSkinText.wrap_ranges(text, f, fs, w) if text != "" else ([] as Array[Vector2i])
 	for li in ranges.size():
-		var line_y := y + li * lh
+		var line_y := y + li * lh - scroll
+		if line_y < y - 0.5:
+			continue   # T366：滚上去的行不画（备注滚动；scroll 默认 0 不影响别处）
 		if line_y + lh > bottom + 0.5:
 			break
 		var rg: Vector2i = ranges[li]
@@ -1087,6 +1118,29 @@ static func span_lines(spans: Array, w: float, fs: int) -> int:
 	if text == "":
 		return 1
 	return maxi(XSkinText.line_count(text, XUiSkin.font("body"), fs, w), 1)
+
+
+## 备注：放不下（折行后超过这一块能放的行数，最多 4 行）时内部滚，右侧细滚动条；T366_V1 关＝照旧只画放得下的前几行
+func _draw_note(ci: CanvasItem, spans: Array, x: float, y: float, w: float, fs: int, lh: float, bottom: float) -> void:
+	if not XSkinList.T366_V1:
+		_note_max = 0.0
+		draw_spans(ci, spans, x, y, w, fs, lh, bottom)
+		return
+	var total := span_lines(spans, w - 10.0, fs)
+	var shown := maxi(floori((bottom - y + 0.5) / lh), 1)
+	if total <= shown:
+		_note_max = 0.0
+		note_scroll = 0.0
+		draw_spans(ci, spans, x, y, w, fs, lh, bottom)
+		return
+	var view_h := shown * lh
+	_note_max = (total - shown) * lh
+	note_scroll = clampf(note_scroll, 0.0, _note_max)
+	_note_rect = Rect2(x, y, w, view_h)
+	draw_spans(ci, spans, x, y, w - 10.0, fs, lh, y + view_h, note_scroll)
+	var track := Rect2(x + w - 4.0, y, 4.0, view_h)
+	var th := maxf(view_h * shown / float(total), 16.0)
+	XUiSkin.draw_scrollbar(ci, track, y + (view_h - th) * note_scroll / _note_max, th, Color(1, 1, 1, 0.06), Color(XUiSkin.LINE, 0.55))
 
 
 ## 「名 值」格子行高：130% 字号时跟着加高（100% 仍 28）
@@ -1168,7 +1222,9 @@ func _draw_actor(a: Rect2) -> void:
 	_draw_skill_cols(ci, Rect2(x, y, w, maxf(skills_bottom - y - 6.0, SKILL_H)))
 	if not note_spans.is_empty():
 		var ny2 := _section(ci, x, skills_bottom, w, T_NOTE)
-		draw_spans(ci, note_spans, x, ny2, w, nfs, nlh, a.end.y)
+		_draw_note(ci, note_spans, x, ny2, w, nfs, nlh, a.end.y)
+	else:
+		_note_max = 0.0
 
 
 ## 技能三列（或光环四列）：各带小标题；行多了在这一块里滚
@@ -1270,11 +1326,12 @@ func _draw_enemy(a: Rect2) -> void:
 	var ry := _section(ci, rx, a.position.y, rw, T_POWER, false)
 	var cells: Array = (info.params as Array) + (info.xparams as Array) + [[T_DEFEAT, str(info.defeat)]]
 	var cw := (rw - 32.0) / 2.0
+	var ch := cell_h() if XSkinList.T366_V1 else CELL_H   # T366（T364 P3）：怪物「能力」格行高也随 130% 字号加高（人物页早已如此）
 	for i in cells.size():
 		var col := i % 2
 		var row := floori(i / 2.0)
-		_cell(ci, Rect2(rx + col * (cw + 32.0), ry + row * CELL_H, cw, CELL_H), str(cells[i][0]), str(cells[i][1]))
-	ry += ceili(cells.size() / 2.0) * CELL_H + 8.0
+		_cell(ci, Rect2(rx + col * (cw + 32.0), ry + row * ch, cw, ch), str(cells[i][0]), str(cells[i][1]))
+	ry += ceili(cells.size() / 2.0) * ch + 8.0
 	ry = _section(ci, rx, ry, rw, T_MOVES)
 	var note: Array = info.note
 	var note_spans := []
@@ -1291,7 +1348,9 @@ func _draw_enemy(a: Rect2) -> void:
 	_draw_moves(ci, Rect2(rx, ry, rw, maxf(bottom - ry - 4.0, MOVE_H_MIN)))
 	if not note.is_empty():
 		var ny := _section(ci, rx, bottom, rw, T_NOTE)
-		draw_spans(ci, note_spans, rx, ny, rw, nfs, nlh, a.end.y)
+		_draw_note(ci, note_spans, rx, ny, rw, nfs, nlh, a.end.y)
+	else:
+		_note_max = 0.0
 
 
 ## 「会用的招」（旧页列前 10 条）：行距在 MOVE_H_MIN～SKILL_H 之间压到能全放下；还放不下就在这一块里滚（滚轮、手指拖，带细滚动条）

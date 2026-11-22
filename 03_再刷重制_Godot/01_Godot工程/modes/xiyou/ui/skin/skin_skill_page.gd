@@ -102,7 +102,7 @@ func sync() -> void:
 	for sk in sc.entries():
 		rows.append(_row(a, sk))
 	list_title = sc.type_name(types[clampi(sc.type_index, 0, types.size() - 1)]) if not types.is_empty() else ""
-	var key := [a.actor_id, sc.type_index, rows.map(func(r): return [r.text, r.get("right", ""), r.disabled, r.get("sub", "")])]
+	var key := [a.actor_id, sc.type_index, rows.map(func(r): return [r.text, r.get("right", ""), r.disabled, r.get("sub", ""), r.get("reason", "")])]
 	if key != _list_key:
 		_list_key = key
 		set_items(rows, clampi(sc.index, 0, maxi(rows.size() - 1, 0)))
@@ -172,6 +172,8 @@ static func name_color(sk: Dictionary) -> Color:
 
 func _row(a: XActor, sk: Dictionary) -> Dictionary:
 	var r := {"text": str(sk.get("name", "")), "icon": int(sk.get("iconIndex", 0)), "color": name_color(sk), "disabled": not scene.usable(sk)}
+	if r.disabled and XSkinList.T366_V1:   # T366 R12：选中用不了的行，行尾写原因（只有选中那行才画，见 XSkinList）
+		r.reason = skill_reason(a, sk)
 	var costs := scene._costs(a, sk)
 	if not costs.is_empty():
 		var c: Dictionary = costs[costs.size() - 1] if costs.size() > 1 else costs[0]
@@ -182,6 +184,16 @@ func _row(a: XActor, sk: Dictionary) -> Dictionary:
 	if lv > 0:
 		r.sub = str(XDB.plugin("YEP_SkillMasteryLevels").get("Text Format", "LV.%1")).replace("%1", XSkillScene.mastery_level_text(lv))
 	return r
+
+
+## T366 R12：菜单里用不了的原因一句话（战斗专用、不能用走固定句；其余沿用战斗里的禁放原因 XSkinBattle.reason：TP／MP 不够、被封印、冷却……）
+func skill_reason(a: XActor, sk: Dictionary) -> String:
+	var occ := int(sk.get("occasion", 0))
+	if occ == 1:
+		return "战斗专用"
+	if occ not in [0, 2]:
+		return "不可用"
+	return XSkinBattle.reason(scene.logic, a, sk, false)
 
 
 func _sync_card(a: XActor) -> void:

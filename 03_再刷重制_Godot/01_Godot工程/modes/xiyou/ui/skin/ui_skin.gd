@@ -844,7 +844,7 @@ static func draw_select(ci: RID, rect: Rect2, bar_alpha := 1.0, alpha := 1.0, st
 		XSkinArt.draw_select(ci, rect, alpha, state, "selection_wash_128x24", symmetric and detail_on())   # T359 D254：居中菜单对称
 		return
 	if SELECT_V2:
-		_draw_select_v2(ci, rect, bar_alpha, alpha, state)
+		_draw_select_v2(ci, rect, bar_alpha, alpha, state, symmetric and detail_on())   # T366（T359 P3）：美术关着的兜底画法也认居中对称
 		return
 	var rs := RenderingServer
 	# 外晕（0 0 12px 绯红 30%）
@@ -882,7 +882,7 @@ static func draw_select(ci: RID, rect: Rect2, bar_alpha := 1.0, alpha := 1.0, st
 		b.draw(ci, bar)
 
 
-static func _draw_select_v2(ci: RID, rect: Rect2, bar_alpha: float, alpha: float, state: int) -> void:
+static func _draw_select_v2(ci: RID, rect: Rect2, bar_alpha: float, alpha: float, state: int, symmetric := false) -> void:
 	var rs := RenderingServer
 	var a := alpha * (SEL2_HOVER_ALPHA if state == SelState.HOVER else 1.0)
 	var r := rect
@@ -923,6 +923,13 @@ static func _draw_select_v2(ci: RID, rect: Rect2, bar_alpha: float, alpha: float
 		var x0 := bar.end.x + 1.0
 		rs.canvas_item_add_polygon(ci, PackedVector2Array([Vector2(x0, cy - th), Vector2(x0 + th * 0.9, cy), Vector2(x0, cy + th)]),
 			PackedColorArray([Color(SEL2_ANCHOR, alpha), Color(SEL2_ANCHOR, alpha), Color(SEL2_ANCHOR, alpha)]))
+		if symmetric:   # 居中菜单：右端镜像一根光标＋小三角（朝左）
+			var bar2 := Rect2(r.end.x - SEL2_BAR_W, bar.position.y, SEL2_BAR_W, bh)
+			rs.canvas_item_add_texture_rect(ci, bar2.grow_individual(10, 10, 10, 10), glow_texture().get_rid(), false, Color(SEL_LINE, 0.65 * ba))
+			b.draw(ci, bar2)
+			var x1 := bar2.position.x - 1.0
+			rs.canvas_item_add_polygon(ci, PackedVector2Array([Vector2(x1, cy - th), Vector2(x1 - th * 0.9, cy), Vector2(x1, cy + th)]),
+				PackedColorArray([Color(SEL2_ANCHOR, alpha), Color(SEL2_ANCHOR, alpha), Color(SEL2_ANCHOR, alpha)]))
 
 
 ## 选中条上的字色：加厚版下红字（神话红、朱红一类）换亮珊瑚色，其余不变；v0.7 版原样返回

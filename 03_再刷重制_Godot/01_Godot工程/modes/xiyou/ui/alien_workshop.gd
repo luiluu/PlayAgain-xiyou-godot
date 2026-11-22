@@ -380,6 +380,9 @@ func _core_section(st: XState, stones: int) -> Dictionary:
 	if list.is_empty():
 		kids.append(el("p", "取核、骑士和 34～36 层的首领会给异化核。"))
 		return el("section", null, "alien-cores", kids)
+	if opts.is_empty() and _v3():   # T366（T367 P3）：有核但没有能刻的装备＝整节一句空状态（原来是个没有选项的下拉＋灰掉的钮）
+		kids.append(el("p", "背包里没有能刻异化词条的装备（已装备、锁定或绑定的不能刻）。", "alien-note"))
+		return el("section", null, "alien-cores", kids)
 	kids.append(_select_node("刻到哪件", opts, cfg_vals.get("engrave"), "engrave"))
 	var target = _engrave_target(st)
 	if target != null and not XAlienation.mark(target).is_empty():
@@ -1254,7 +1257,7 @@ func _render_skin(nodes: Array) -> void:
 	page.add_child(head)
 	if heading != null:
 		var t := _skin_label(str(heading.children[0].get("text", "")), SIZES.h1, XUiSkin.GOLD, true)
-		t.label_settings.font_color = XUiSkin.TEXT_HI if _v3() else XUiSkin.GOLD   # T367：页名白字，同别的模板页
+		t.label_settings.font_color = XUiSkin.TEXT if _v3() else XUiSkin.GOLD   # T367：页名白字，同别的模板页（T366：TEXT，和其余模板页的页名同一个色）
 		t.autowrap_mode = TextServer.AUTOWRAP_OFF
 		t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		t.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -1641,7 +1644,9 @@ func _skin_section_v3(page: Control, sec: Dictionary, r: Rect2) -> Control:
 	var found := XSkinAlienWorkshop.find_select(sec)
 	if found.is_empty():
 		var texts := kids.filter(func(k): return str(k.tag) == "p")
-		if str(sec.tag) == "details" or kids.size() != 2 or texts.size() != 1:
+		# T366（T367 P3）：空节按节点类别判：只有标题和一句说明（没有按钮行、下拉、折叠），不再数节点个数
+		var only_text := not kids.any(func(k): return not (str(k.tag) in ["h2", "p"]) or str(k.get("class", "")) in ["alien-actions", "alien-cost"])
+		if str(sec.tag) == "details" or not only_text or texts.size() != 1:
 			return null
 		var pc := _skin_panel()
 		pc.name = "SkinSectionEmpty"

@@ -47,7 +47,18 @@ func _input(event: InputEvent) -> void:
 	elif focused and not is_visible_in_tree():
 		focused = false
 	elif is_visible_in_tree() and XUiSkin.detail_on() and event.is_action_pressed("ui_cancel") and not (event is InputEventKey and event.echo):
-		focused = true
+		focused = not (XSkinList.T366_V1 and _covered_by_dialog())   # T366（T359 P3）：弹窗盖在上面时取消键是弹窗的，底层返回钮不亮环
+
+
+## 页面没隐藏、上面却压着确认弹窗（XSkinConfirm）：取消键归弹窗
+func _covered_by_dialog() -> bool:
+	var tree := get_tree()
+	if tree == null:
+		return false
+	for c in tree.root.find_children("SkinConfirm*", "", true, false):
+		if c is XSkinConfirm and (c as CanvasItem).is_visible_in_tree() and not c.is_queued_for_deletion():
+			return true
+	return false
 
 
 func _notification(what: int) -> void:
