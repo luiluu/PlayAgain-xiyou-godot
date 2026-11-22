@@ -36,6 +36,9 @@ T363 迭代（Kyo 11-21 事项17「全按推荐」）：
               每队实效每回合伤害＝输了的队取真打每回合掉血、赢了的队取 当时血量÷赢的回合数；hp_base＝各层普通阵容实效的 90 分位 ×（目标回合−2）÷目标回合；
               只校至少 CALIB_MIN（8）场的层（1～5 层每层 4 队，照量数）。可给多遍真打（不同表下）一起校。
               atk_scale、focus、resist 仍按量数。
+T392（T363 核 P2-1）：--duel-calib 默认 --calib-mode band：按强队（普通阵容每回合掉血前四分之一）分三种——强队全输只降不升（不超过量数 hp_base，
+              不再用输队前几回合的爆发反抬血，22 层）；强队赢的均回合出了 目标±2 就照最后那个血量按回合比例拉回到 目标∓1（28 层 5.2 回合）；
+              在 目标±2 之内照最后那个血量不动。--calib-mode t363 回到上面的老算法。写入时构表不产出的键（lifesteal_cap）原样留着。
 空表（rows 为空）：什么都不写，退出码 0，打印「没有数」。写入时只动 balance_table.json 里 guardian_phase4 这一键（文本层面替换，其余字节不动）。"""
 import argparse
 import json
@@ -288,13 +291,16 @@ def duel_calib(paths: list, turns: int = 8, base: dict = None, mode: str = 'band
     T392（T363 核 P2-1）mode='band'（默认）：按强队（普通阵容每回合打得最多的四分之一，同对比表）分三种：
       强队全输 → 只降不升：min(老算法, 量数 hp_base〔base，没有就不限〕)，不再用输队前几回合的爆发反抬血；
       强队赢的均回合在 目标±2 之外 → 照最后一份真打的血量按回合比例拉回：血量 ×（目标∓BAND_AIM）÷ 强队均回合；
-      在 目标±2 之内 → 照最后一份真打的血量不动（已达标的层不再被 90 分位×(目标−2) 推着走）。
+      在 目标±2 之内 → 照最后一份真打的血量不动（「最后一份」＝最后那个血量下的各条存档链合起来）（已达标的层不再被 90 分位×(目标−2) 推着走）。
     mode='t363' 回到 T363 做法（全按老算法）。"""
     eff, keys, last = {}, {}, {}
     for i, p in enumerate(paths):
         for r in json.loads(Path(p).read_text(encoding='utf-8')).get('rows', []):
             f = int(r['floor'])
-            last[f] = r
+            hp = float(r.get('enemyHp', 0))
+            if f not in last or last[f][0] != hp:   # 同一份表（同血量）的多条存档链合在一起看强队；换了表就从这份起重算
+                last[f] = (hp, [])
+            last[f][1].extend(r.get('per', []))
             for t in r.get('per', []):
                 if t.get('team') == '奶妈队' or int(t.get('turns', 0)) <= 0:
                     continue
@@ -310,8 +316,8 @@ def duel_calib(paths: list, turns: int = 8, base: dict = None, mode: str = 'band
         if mode != 'band':
             out[f] = old
             continue
-        st = strong_stats(last[f].get('per', []))
-        cur = float(last[f].get('enemyHp', 0)) / turns
+        st = strong_stats(last[f][1])
+        cur = last[f][0] / turns
         if st['won'] == 0:
             b = (base or {}).get(str(f))
             out[f] = min(old, int(b)) if b else old
