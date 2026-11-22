@@ -2714,6 +2714,458 @@ def check_xinmo_traits(_args) -> bool:
     return _run_table('xinmo_traits.json', xinmo_traits_rules)
 
 
+# ---- K5（T391）：drop_table／gojo_trials／money_table／ring_styles／trumpet／weak_affix_table 六份表的形状、范围、引用 ----
+
+K5_DIFFS = ('xunchang', 'jianxian', 'jiusi', 'lianyu', 'zhengdao')  # 同 core/tianqi.gd 的 DIFFICULTIES
+K5_FLOOR_MAX = 36
+K5_GRADE_MAX = 6  # 品质 0 普通～6 神话
+
+
+def _num(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def _in(v, lo, hi) -> bool:
+    return _num(v) and lo <= v <= hi
+
+
+def _text(v) -> bool:
+    return isinstance(v, str) and bool(v.strip())
+
+
+def _pos_ints(v, n=None, strict=False) -> bool:
+    """正整数列表；strict＝要严格递增。"""
+    if not isinstance(v, list) or not v or (n is not None and len(v) != n):
+        return False
+    if not all(_is_int(x) and x > 0 for x in v):
+        return False
+    return all(a < b for a, b in zip(v, v[1:])) if strict else True
+
+
+def _db_ids(fname: str, db_dir: Path = None):
+    """数据库表（Items／Skills／States）里的号集合；没有转换产物就返回 None，引用检查跳过（云端同款）。"""
+    path = (db_dir or DB_DIR) / fname
+    if not path.is_file():
+        return None
+    return {x['id'] for x in json.loads(path.read_text(encoding='utf-8')) if x}
+
+
+def _need_ref(bad, where, ids, v):
+    # 转换产物 generated/db 不进仓库、会比表旧：号比库里最大号还大的当「库比表旧」不判，只抓库里范围内的空洞
+    if ids and v not in ids and v <= max(ids):
+        bad.append('%s＝%r 在数据库里不存在' % (where, v))
+
+
+def drop_table_rules(t: dict, db_dir: Path = None) -> list:
+    bad, check = _checker()
+    check('version', _is_int(t.get('version')), '要是整数')
+    g = t.get('generic', {})
+    check('generic.pieces', _in(g.get('pieces'), 0, 10) and g.get('pieces') > 0, '要在 (0,10]：%r' % g.get('pieces'))
+    fl = g.get('floors')
+    floors_ok = isinstance(fl, list) and len(fl) == 2 and all(_is_int(x) for x in fl) and 1 <= fl[0] <= fl[1] <= K5_FLOOR_MAX
+    check('generic.floors', floors_ok, '要是 [起,止]，1～%d 且起≤止：%r' % (K5_FLOOR_MAX, fl))
+    fm = g.get('floor_mult', {})
+    check('generic.floor_mult', isinstance(fm, dict) and all(str(k).isdigit() and 1 <= int(k) <= K5_FLOOR_MAX and _in(v, 0.01, 100)
+                                                           for k, v in fm.items()), '键要是 1～%d 的层号、倍数在 0.01～100：%r' % (K5_FLOOR_MAX, fm))
+    qw = g.get('quality_weights')
+    check('generic.quality_weights', isinstance(qw, list) and qw and all(_is_int(x) and x >= 0 for x in qw) and sum(qw) > 0,
+          '要是非负整数且不全为 0：%r' % (qw,))
+    for k in ('top_grade', 'table_cut_grade'):
+        check('generic.' + k, _is_int(g.get(k)) and 0 <= g.get(k) <= K5_GRADE_MAX, '要是 0～%d 的整数：%r' % (K5_GRADE_MAX, g.get(k)))
+    check('generic.level_window', _is_int(g.get('level_window')) and g.get('level_window') > 0, '要是正整数：%r' % g.get('level_window'))
+    for k in ('smart_share', 'rare_below'):
+        check('generic.' + k, _in(g.get(k), 0, 1), '要在 0～1：%r' % g.get(k))
+    lv = g.get('level_by_floor')
+    lv_ok = isinstance(lv, list) and lv and all(isinstance(r, list) and len(r) == 2 and all(_is_int(x) and x > 0 for x in r) for r in lv)
+    check('generic.level_by_floor', lv_ok, '要是 [[层, 等级], …] 正整数：%r' % (lv,))
+    if lv_ok:
+        check('generic.level_by_floor 顺序', all(a[0] < b[0] and a[1] <= b[1] for a, b in zip(lv, lv[1:])), '层要严格递增、等级不降')
+        check('generic.level_by_floor 范围', lv[0][0] == 1 and lv[-1][0] <= K5_FLOOR_MAX, '要从第 1 层起、不超过 %d 层' % K5_FLOOR_MAX)
+    gd = t.get('guardian', {})
+    check('guardian.first', _pos_ints(gd.get('first'), 2), '要是 [高一档件数, 门槛档件数] 两个正整数：%r' % (gd.get('first'),))
+    for k in ('repeat', 'late_repeat'):
+        check('guardian.' + k, _is_int(gd.get(k)) and gd.get(k) > 0, '要是正整数：%r' % gd.get(k))
+    check('guardian.late_floors', _is_int(gd.get('late_floors')) and 1 <= gd.get('late_floors') <= K5_FLOOR_MAX, '要是 1～%d 的层号：%r' % (K5_FLOOR_MAX, gd.get('late_floors')))
+    bt = t.get('dungeon_up', {}).get('by_tier')
+    check('dungeon_up.by_tier', isinstance(bt, list) and len(bt) == 4 and all(_in(x, 1, 100) for x in bt) and bt == sorted(bt),
+          '要是普通～王者四档、≥1 且不降：%r' % (bt,))
+    b = t.get('bonus', {})
+    check('bonus.k', _in(b.get('k'), 1, 100000), '要是正数：%r' % b.get('k'))
+    tiers = b.get('tiers')
+    tiers_ok = isinstance(tiers, list) and tiers and all(isinstance(r, list) and len(r) == 2 and all(_is_int(x) and x > 0 for x in r) for r in tiers)
+    check('bonus.tiers', tiers_ok and all(a[0] < c[0] and a[1] <= c[1] for a, c in zip(tiers, tiers[1:])), '要是 [[原值小于, 新值], …]，两列都递增：%r' % (tiers,))
+    check('bonus.top', _is_int(b.get('top')) and b.get('top') > 0 and (not tiers_ok or b.get('top') >= tiers[-1][1]), '要是正整数且不小于最后一档新值：%r' % b.get('top'))
+    for k in ('treasure_hunter', 'soul_drain'):
+        check('bonus.' + k, _is_int(b.get(k)) and b.get(k) >= 0, '要是非负整数：%r' % b.get(k))
+    check('bonus.negative_floor', _is_int(b.get('negative_floor')) and -100 < b.get('negative_floor') < 0, '要在 -99～-1：%r' % b.get('negative_floor'))
+    ig = b.get('ignore_skills')
+    check('bonus.ignore_skills', _pos_ints(ig) and len(set(ig)) == len(ig), '要是不重复的技能号：%r' % (ig,))
+    sk = _db_ids('Skills.json', db_dir)
+    for sid in (ig if _pos_ints(ig) else []):
+        _need_ref(bad, 'bonus.ignore_skills', sk, sid)
+    s = t.get('signature', {})
+    gr = s.get('gear_range', {})
+    check('signature.gear_range', isinstance(gr, dict) and gr and all(str(k).isdigit() and 0 <= int(k) <= K5_GRADE_MAX and isinstance(v, list) and len(v) == 2
+                                                                     and all(_in(x, 0, 1) for x in v) and v[0] <= v[1] for k, v in gr.items()),
+          '键要是 0～%d 的品质档，值 [下限, 上限] 在 0～1 且下限≤上限：%r' % (K5_GRADE_MAX, gr))
+    for k in ('item_base', 'item_floor', 'prd_exact_from'):
+        check('signature.' + k, _in(s.get(k), 0, 1), '要在 0～1：%r' % s.get(k))
+    return bad
+
+
+def check_drop_table(_args) -> bool:
+    return _run_table('drop_table.json', drop_table_rules)
+
+
+def gojo_trials_rules(t: dict, six: dict = None, db_dir: Path = None) -> list:
+    bad, check = _checker()
+    for k in ('troop', 'shell_enemy', 'settle'):
+        check(k, _is_int(t.get(k)) and t.get(k) > 0, '要是正整数：%r' % t.get(k))
+    tint = t.get('tint')
+    check('tint', isinstance(tint, list) and len(tint) == 3 and all(_in(x, 0, 1) for x in tint), '要是 3 个 0～1 的颜色分量：%r' % (tint,))
+    check('def_nominal', _in(t.get('def_nominal'), 0, 1) and t.get('def_nominal') > 0, '要在 (0,1]：%r' % t.get('def_nominal'))
+    tr = t.get('trials')
+    if not isinstance(tr, dict) or not tr or sorted(tr) != [str(i) for i in range(1, len(tr) + 1)]:
+        return bad + ['trials 的键要是从 1 起连续的试炼号：%r' % (sorted(tr) if isinstance(tr, dict) else tr)]
+    troops = _db_ids('Troops.json', db_dir)
+    enemies = _db_ids('Enemies.json', db_dir)
+    _need_ref(bad, 'troop', troops, t.get('troop'))
+    _need_ref(bad, 'shell_enemy', enemies, t.get('shell_enemy'))
+    keys = set()
+    for no, r in tr.items():
+        w = 'trials.%s' % no
+        for f in ('key', 'name', 'foe', 'sv'):
+            check('%s.%s' % (w, f), _text(r.get(f)), '要有文字')
+        check(w + '.key 不重复', r.get('key') not in keys, '重复：%r' % r.get('key'))
+        keys.add(r.get('key'))
+        check(w + '.hp_units', _is_int(r.get('hp_units')) and r.get('hp_units') > 0, '要是正整数：%r' % r.get('hp_units'))
+        check(w + '.atk_def', _in(r.get('atk_def'), 0, 100) and r.get('atk_def') > 0, '要在 (0,100]：%r' % r.get('atk_def'))
+        check(w + '.mdf_mat', _in(r.get('mdf_mat'), 0, 100), '要在 0～100：%r' % r.get('mdf_mat'))
+        check(w + '.agi_rate', _in(r.get('agi_rate'), 0, 10) and r.get('agi_rate') > 0, '要在 (0,10]：%r' % r.get('agi_rate'))
+        check(w + '.actions', _is_int(r.get('actions')) and 1 <= r.get('actions') <= 5, '要是 1～5 的整数：%r' % r.get('actions'))
+        ra = r.get('ratio')
+        check(w + '.ratio', isinstance(ra, dict) and ra and all(_text(k) and _in(v, 0, 1) and v > 0 for k, v in ra.items()), '要是 {招名: (0,1] 的占比}：%r' % (ra,))
+        if 'awaken_below' in r:
+            check(w + '.awaken_below', _in(r['awaken_below'], 0, 1) and 0 < r['awaken_below'] < 1, '要在 (0,1)：%r' % r['awaken_below'])
+        if 'phase4_dmg_pct' in r:
+            check(w + '.phase4_dmg_pct', _is_int(r['phase4_dmg_pct']) and 1 <= r['phase4_dmg_pct'] <= 100, '要是 1～100 的整数：%r' % r['phase4_dmg_pct'])
+        if 'domain' in r:
+            dm = r['domain']
+            check(w + '.domain', isinstance(dm, dict) and sorted(dm) == ['every', 'first', 'turns'] and all(_is_int(v) and v > 0 for v in dm.values()),
+                  '要有 first／every／turns 三个正整数：%r' % (dm,))
+    return bad
+
+
+def check_gojo_trials(_args) -> bool:
+    return _run_table('gojo_trials.json', lambda t: gojo_trials_rules(t))
+
+
+def money_table_rules(t: dict, db_dir: Path = None) -> list:
+    bad, check = _checker()
+    check('version', _is_int(t.get('version')), '要是整数')
+    check('draft', isinstance(t.get('draft'), bool), '要是布尔')
+    f = t.get('field_gold', {})
+    bf = f.get('by_floor')
+    check('field_gold.floor_max', _is_int(f.get('floor_max')) and 1 <= f.get('floor_max') <= K5_FLOOR_MAX, '要是 1～%d：%r' % (K5_FLOOR_MAX, f.get('floor_max')))
+    check('field_gold.by_floor', _pos_ints(bf) and len(bf) == f.get('floor_max'), '要是 floor_max 个正整数：%r 个' % (len(bf) if isinstance(bf, list) else bf))
+    pm = {k: v for k, v in t.get('price_mult', {}).items() if not k.startswith('_')}
+    check('price_mult', isinstance(pm, dict) and set(pm) == set(K5_DIFFS) and all(_in(v, 0.01, 100) for v in pm.values()), '五档键要齐、倍数在 0.01～100：%r' % (pm,))
+    if isinstance(pm, dict) and set(pm) == set(K5_DIFFS) and all(_num(v) for v in pm.values()):
+        seq = [pm[d] for d in K5_DIFFS]
+        check('price_mult 顺序', seq == sorted(seq), '难度越高价格倍数不降：%r' % seq)
+    i = t.get('income', {})
+    check('income.k', _in(i.get('k'), 1, 100000), '要是正数：%r' % i.get('k'))
+    check('income.negative_floor', _is_int(i.get('negative_floor')) and -100 < i.get('negative_floor') < 0, '要在 -99～-1：%r' % i.get('negative_floor'))
+    check('income.party_gold_double', _is_int(i.get('party_gold_double')) and i.get('party_gold_double') >= 0, '要是非负整数：%r' % i.get('party_gold_double'))
+    ig = i.get('ignore_skills')
+    check('income.ignore_skills', _pos_ints(ig) and len(set(ig)) == len(ig), '要是不重复的技能号：%r' % (ig,))
+    sk = _db_ids('Skills.json', db_dir)
+    for sid in (ig if _pos_ints(ig) else []):
+        _need_ref(bad, 'income.ignore_skills', sk, sid)
+    bg = t.get('sell', {}).get('by_grade')
+    check('sell.by_grade', isinstance(bg, list) and len(bg) == K5_GRADE_MAX + 1 and all(_in(x, 0, 1000) for x in bg) and bg == sorted(bg),
+          '要是 0～%d 七档、非负且不降：%r' % (K5_GRADE_MAX, bg))
+    r = t.get('reforge', {})
+    check('reforge.base', _in(r.get('base'), 0, 1e6) and r.get('base') > 0, '要是正数：%r' % r.get('base'))
+    tc = r.get('tier_coef')
+    check('reforge.tier_coef', isinstance(tc, list) and len(tc) == 4 and all(_in(x, 0, 1000) and x > 0 for x in tc) and tc == sorted(tc), '要是词条阶 1～4 的正系数、不降：%r' % (tc,))
+    check('reforge.step', _in(r.get('step'), 0, 10), '要在 0～10：%r' % r.get('step'))
+    check('reforge.cap', _in(r.get('cap'), 1, 1000), '要 ≥1：%r' % r.get('cap'))
+    check('reforge.lock_mult', _in(r.get('lock_mult'), 1, 1000), '要 ≥1：%r' % r.get('lock_mult'))
+    check('reforge.lock_max', _is_int(r.get('lock_max')) and r.get('lock_max') >= 0, '要是非负整数：%r' % r.get('lock_max'))
+    adv = t.get('advance', {}).get('gold')
+    check('advance.gold', _pos_ints(adv, strict=True), '要是逐阶严格变贵的正整数：%r' % (adv,))
+    tn = t.get('training', {})
+    check('training.params', tn.get('params') == 8, '修炼是八项属性，要是 8：%r' % tn.get('params'))
+    check('training.levels', _is_int(tn.get('levels')) and tn.get('levels') > 0, '要是正整数：%r' % tn.get('levels'))
+    check('training.floors_per_level', _is_int(tn.get('floors_per_level')) and tn.get('floors_per_level') > 0, '要是正整数：%r' % tn.get('floors_per_level'))
+    if _is_int(tn.get('levels')) and _is_int(tn.get('floors_per_level')):
+        check('training 开放层', tn['levels'] * tn['floors_per_level'] <= K5_FLOOR_MAX, '级数×每级层数不能超过 %d 层' % K5_FLOOR_MAX)
+    check('training.first', _in(tn.get('first'), 0, 1e6) and tn.get('first') > 0, '要是正数：%r' % tn.get('first'))
+    check('training.step', _in(tn.get('step'), 0, 10), '要在 0～10：%r' % tn.get('step'))
+    check('training.pct_per_level', _in(tn.get('pct_per_level'), 0, 1) and tn.get('pct_per_level') > 0, '要在 (0,1]：%r' % tn.get('pct_per_level'))
+    s = t.get('scale', {})
+    check('scale.price', _in(s.get('price'), 0, 1e6) and s.get('price') > 0, '要是正数：%r' % s.get('price'))
+    check('scale.max_buys', _is_int(s.get('max_buys')) and s.get('max_buys') >= 1, '要是正整数：%r' % s.get('max_buys'))
+    check('scale.famine_mult', _in(s.get('famine_mult'), 1, 100), '要 ≥1：%r' % s.get('famine_mult'))
+    for k in ('oil', 'wine'):
+        check('scale.' + k, _in(s.get(k), 0, 1), '要在 0～1：%r' % s.get(k))
+    return bad
+
+
+def check_money_table(_args) -> bool:
+    return _run_table('money_table.json', money_table_rules)
+
+
+RING_LAYERS = ('band', 'center', 'orb')
+RING_INTROS = ('burn', 'fade')
+RING_ART_DIR = PROJECT / 'content' / 'tianqi' / 'ring_style'
+RING_WHEN = {'qiyin_set_pieces', 'orig_set_full', 'jingyin', 'runeword_active', 'relic', 'qiyin_artifact', 'qiyin_weapon', 'qiyin_engrave', 'item_tag'}
+RING_COLOR_RE = re.compile(r'^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$')
+
+
+def ring_styles_rules(t: dict, art_dir: Path = None, res_root: Path = None) -> list:
+    """art_dir／res_root 给反例测试换目录；文件不在只报缺图（XTianqiRingStyle 没图用灰圈占位，但表里写了就该有）。"""
+    bad, check = _checker()
+    art_dir = art_dir or RING_ART_DIR
+    res_root = res_root or PROJECT
+    check('version', _is_int(t.get('version')), '要是整数')
+    tints = t.get('seal_tints', {})
+    check('seal_tints', isinstance(tints, dict) and sorted(tints) == sorted(QIYIN_SEALS) and all(isinstance(v, str) and RING_COLOR_RE.match(v) for v in tints.values()),
+          '键要正好是七印、值是 #RRGGBB：%r' % (tints,))
+    st = t.get('styles', {})
+    if not isinstance(st, dict) or not st:
+        return bad + ['styles 要是非空的 {样式键: 样式}']
+    for k, s in st.items():
+        w = 'styles.%s' % k
+        check(w + '.layer', s.get('layer') in RING_LAYERS, '要是 %s 之一：%r' % (RING_LAYERS, s.get('layer')))
+        if s.get('layer') != 'orb' or 'name' in s:
+            check(w + '.name', isinstance(s.get('name'), str), '要有 name 字段（可为空串）')
+        if 'priority' in s:
+            check(w + '.priority', _is_int(s['priority']) and 0 <= s['priority'] <= 100, '要是 0～100 的整数：%r' % s['priority'])
+        elif s.get('layer') in ('band', 'center'):
+            bad.append('%s.priority 缺：环身、环心要有优先级' % w)
+        if 'intro' in s:
+            check(w + '.intro', s['intro'] in RING_INTROS, '要是 %s 之一：%r' % (RING_INTROS, s['intro']))
+        for ck, cv in (s.get('style') or {}).items():
+            if isinstance(cv, str):
+                check(w + '.style.' + ck, bool(RING_COLOR_RE.match(cv)), '颜色要是 #RRGGBB(AA)：%r' % cv)
+        mo = s.get('motion')
+        if mo is not None:
+            check(w + '.motion', isinstance(mo, dict) and all(_in(mo.get(f), 0, 100) for f in ('spin', 'breath', 'motes')) and _is_int(mo.get('motes'))
+                  and isinstance(mo.get('mote_color'), str) and RING_COLOR_RE.match(mo['mote_color']), '要有 spin／breath／motes（整数）／mote_color')
+        hf = s.get('half')
+        if hf is not None:
+            check(w + '.half', isinstance(hf, dict) and _in(hf.get('dim'), 0, 1) and _text(hf.get('suffix')), '要有 dim（0～1）和 suffix')
+        if 'tint_by' in s:
+            check(w + '.tint_by', s['tint_by'] in ('seal', 'quality'), '目前只认 seal／quality：%r' % s['tint_by'])
+        if 'outline_w' in s:
+            check(w + '.outline_w', _in(s['outline_w'], 0, 20), '要在 0～20：%r' % s['outline_w'])
+        if 'red_safe_tint' in s:
+            check(w + '.red_safe_tint', isinstance(s['red_safe_tint'], str) and bool(RING_COLOR_RE.match(s['red_safe_tint'])), '要是 #RRGGBB：%r' % s['red_safe_tint'])
+        art = s.get('art')
+        if s.get('layer') in ('band', 'center', 'orb') and k != 'glint' and 'tint_by' not in s or art is not None and not isinstance(art, dict):
+            check(w + '.art', isinstance(art, dict) and art, '要有 art')
+        for ak, av in (art or {}).items():
+            if ak in ('band', 'frame'):
+                check('%s.art.%s' % (w, ak), isinstance(av, str) and (art_dir / av).is_file(), '图 %r 不在 content/tianqi/ring_style/' % av)
+            elif ak == 'circle':
+                ok = isinstance(av, str) and av.startswith('res://') and (res_root / av[len('res://'):]).is_file()
+                check('%s.art.circle' % w, ok, '图 %r 不存在' % av)
+            elif ak == 'circle_a':
+                check('%s.art.circle_a' % w, _in(av, 0, 1), '要在 0～1：%r' % av)
+            elif ak == 'circle_tint':
+                check('%s.art.circle_tint' % w, isinstance(av, str) and bool(RING_COLOR_RE.match(av)), '要是 #RRGGBB：%r' % av)
+    rules = t.get('rules')
+    if not isinstance(rules, list) or not rules:
+        return bad + ['rules 要是非空列表']
+    for i, r in enumerate(rules):
+        w = 'rules[%d]' % i
+        sk = r.get('style', '')
+        when = r.get('when')
+        check(w + '.when', isinstance(when, dict) and when and set(when) <= RING_WHEN, '要是非空条件、键只能是 %s：%r' % (sorted(RING_WHEN), when))
+        if not isinstance(sk, str):
+            bad.append('%s.style 要是字符串' % w)
+            continue
+        if '{seal}' in sk:
+            want = [sk.replace('{seal}', x) for x in QIYIN_SEALS]
+        elif '{line}' in sk:
+            want = [sk.replace('{line}', x) for x in ('death', 'war', 'famine', 'plague')]
+        else:
+            want = [sk]
+        for x in want:
+            check(w + '.style', x in st, '样式 %r 不在 styles 里' % x)
+        if isinstance(when, dict) and 'item_tag' in when:
+            check(w + '.when.item_tag', when['item_tag'] == 'ring_style', '目前只认 ring_style：%r' % when['item_tag'])
+    md = t.get('dots', {}).get('min_pieces')
+    check('dots.min_pieces', _is_int(md) and 1 <= md <= QIYIN_SET_PIECES, '要是 1～%d 的整数：%r' % (QIYIN_SET_PIECES, md))
+    return bad
+
+
+def check_ring_styles(_args) -> bool:
+    return _run_table('ring_styles.json', ring_styles_rules)
+
+
+TRUMPET_LIMIT_KEYS = ('弱者', '强者', '超强者')
+TRUMPET_PCT_KEYS = ('aoe', 'single', 'low', 'high', 'over_time', 'heal_taken', 'taken', 'crit', 'after', 'late', 'drop', 'gold')
+TRUMPET_RATE_KEYS = ('low_rate', 'high_rate', 'revive_hp')  # 0～100 的百分点
+
+
+def trumpet_rules(t: dict, db_dir: Path = None) -> list:
+    bad, check = _checker()
+    check('version', _is_int(t.get('version')), '要是整数')
+    d = t.get('drop', {})
+    check('drop.difficulties', isinstance(d.get('difficulties'), list) and d['difficulties'] and set(d['difficulties']) <= set(K5_DIFFS)
+          and len(set(d['difficulties'])) == len(d['difficulties']), '要是难度键（%s）且不重复：%r' % ('／'.join(K5_DIFFS), d.get('difficulties')))
+    check('drop.base', _in(d.get('base'), 0, 100), '要在 0～100：%r' % d.get('base'))
+    check('drop.step', _in(d.get('step'), 0, 100), '要在 0～100：%r' % d.get('step'))
+    seg = d.get('segments')
+    seg_ok = isinstance(seg, list) and seg and all(isinstance(r, list) and len(r) == 2 and all(_is_int(x) and x >= 0 for x in r) and r[0] <= r[1] for r in seg)
+    check('drop.segments', seg_ok, '要是 [[起层,止层], …]，起≤止：%r' % (seg,))
+    if seg_ok:
+        check('drop.segments 衔接', seg[0][0] == 0 and all(b[0] == a[1] + 1 for a, b in zip(seg, seg[1:])), '要从 0 层起、前一段止层+1＝后一段起层（不留缝不重叠）')
+    lm = t.get('limit', {})
+    check('limit', isinstance(lm, dict) and sorted(lm) == sorted(TRUMPET_LIMIT_KEYS) and all(_is_int(v) and 0 < v <= 7 for v in lm.values()),
+          '键要是 弱者／强者／超强者，值是 1～7：%r' % (lm,))
+    if isinstance(lm, dict) and all(_is_int(lm.get(k)) for k in TRUMPET_LIMIT_KEYS):
+        check('limit 顺序', lm['弱者'] >= lm['强者'] >= lm['超强者'], '越强的人可学越少：%r' % (lm,))
+    fg = t.get('forget', {})
+    check('forget', _text(fg.get('name')) and _text(fg.get('desc')), '要有 name 和 desc')
+    check('forget.difficulties', isinstance(fg.get('difficulties'), list) and fg['difficulties'] and set(fg['difficulties']) <= set(K5_DIFFS), '要是难度键：%r' % (fg.get('difficulties'),))
+    ch = t.get('chorus', {})
+    check('chorus', _text(ch.get('name')) and _is_int(ch.get('first_turn_damage')) and 0 <= ch['first_turn_damage'] <= 100, '要有 name，first_turn_damage 是 0～100 的整数')
+    sc = t.get('scrolls')
+    if not isinstance(sc, list) or len(sc) != 7:
+        return bad + ['scrolls 要正好七卷：%r' % (len(sc) if isinstance(sc, list) else sc)]
+    items, skills = _db_ids('Items.json', db_dir), _db_ids('Skills.json', db_dir)
+    seen = {'n': set(), 'key': set(), 'item': set(), 'skill': set()}
+    for i, r in enumerate(sc):
+        w = 'scrolls[%d]' % i
+        check(w + '.n', r.get('n') == i + 1, '要按 1～7 顺序：%r' % r.get('n'))
+        for f in ('key', 'name', 'lore', 'sweet', 'bitter'):
+            check('%s.%s' % (w, f), _text(r.get(f)), '要有文字')
+        for f in ('item', 'skill'):
+            check('%s.%s' % (w, f), _is_int(r.get(f)) and r[f] > 0, '要是正整数号：%r' % r.get(f))
+        for f in ('key', 'item', 'skill'):
+            check('%s.%s 不重复' % (w, f), r.get(f) not in seen[f], '重复：%r' % r.get(f))
+            seen[f].add(r.get(f))
+        check(w + '.segment', _is_int(r.get('segment')) and (not seg_ok or 1 <= r['segment'] <= len(seg)), '要是 1～%d 的段号：%r' % (len(seg) if seg_ok else 0, r.get('segment')))
+        for f in TRUMPET_PCT_KEYS:
+            if f in r:
+                check('%s.%s' % (w, f), _is_int(r[f]) and -100 <= r[f] <= 100, '百分数要是 -100～100 的整数：%r' % r[f])
+        for f in TRUMPET_RATE_KEYS:
+            if f in r:
+                check('%s.%s' % (w, f), _is_int(r[f]) and 0 < r[f] <= 100, '要是 1～100 的整数：%r' % r[f])
+        for f in ('saves', 'revives', 'from_turn'):
+            if f in r:
+                check('%s.%s' % (w, f), _is_int(r[f]) and r[f] > 0, '要是正整数：%r' % r[f])
+        if _is_int(r.get('item')):
+            _need_ref(bad, w + '.item', items, r['item'])
+        if _is_int(r.get('skill')):
+            _need_ref(bad, w + '.skill', skills, r['skill'])
+    rt = t.get('retired', {}).get('items')
+    check('retired.items', _pos_ints(rt) and len(set(rt)) == len(rt), '要是不重复的物品号：%r' % (rt,))
+    if _pos_ints(rt):
+        check('retired.items 不和七卷重号', not (set(rt) & seen['item']), '退役的号卷不能还在 scrolls 里：%r' % sorted(set(rt) & seen['item']))
+        for x in rt:
+            _need_ref(bad, 'retired.items', items, x)
+    return bad
+
+
+def check_trumpet(_args) -> bool:
+    return _run_table('trumpet.json', trumpet_rules)
+
+
+WEAK_SUB_SKILL_KEYS = {'settle': ('skill',), 'mark': ('skill',), 'pass': ('cast',), 'invite': ('throw', 'cast', 'cnt_skill'), 'ward': ('cast', 'guard_skill')}
+WEAK_SUB_PCT_KEYS = {'mark': ('cut_pct',), 'pass': ('pct',), 'invite': ('pct', 'cnt_pct'), 'ward': ('pct',)}
+WEAK_PROJ_KEYS = {'stat_swap', 'mult', 'scope', 'header', 'text', 'line'}
+
+
+def weak_affix_rules(t: dict, six: dict = None, db_dir: Path = None) -> list:
+    bad, check = _checker()
+    check('version', _text(t.get('version')), '要有版本文字')
+    r = t.get('rules', {})
+    check('rules.drop_rate', _in(r.get('drop_rate'), 0, 1), '要在 0～1：%r' % r.get('drop_rate'))
+    sl = r.get('slots')
+    check('rules.slots', isinstance(sl, list) and sl and all(_is_int(x) and x >= 0 for x in sl) and len(set(sl)) == len(sl), '要是不重复的栏位号：%r' % (sl,))
+    for f in ('boss_control', 'boss_debuff'):
+        check('rules.' + f, _text(r.get(f)), '要有取值')
+    gs = t.get('guidable_skills')
+    check('guidable_skills', _pos_ints(gs) and len(set(gs)) == len(gs), '要是不重复的技能号')
+    skills, states = _db_ids('Skills.json', db_dir), _db_ids('States.json', db_dir)
+    if _pos_ints(gs):
+        for sid in gs:
+            _need_ref(bad, 'guidable_skills', skills, sid)
+    en = t.get('entries')
+    if not isinstance(en, dict) or not en:
+        return bad + ['entries 要是非空 {词条键: 词条}']
+    actors = (six or {}).get('actors')
+    nos, actor_seen = set(), set()
+    for k, e in en.items():
+        w = 'entries.%s' % k
+        check(w + '.no', _is_int(e.get('no')) and e['no'] > 0 and k == 'w%d' % e['no'], '键要是 w<no>：%r／%r' % (k, e.get('no')))
+        check(w + '.no 不重复', e.get('no') not in nos, '重复：%r' % e.get('no'))
+        nos.add(e.get('no'))
+        check(w + '.actor', _is_int(e.get('actor')) and e['actor'] > 0, '要是角色号：%r' % e.get('actor'))
+        check(w + '.actor 不重复', e.get('actor') not in actor_seen, '同一角色只配一条：%r' % e.get('actor'))
+        actor_seen.add(e.get('actor'))
+        if isinstance(actors, dict) and _is_int(e.get('actor')):
+            check(w + '.actor 在六维表', str(e['actor']) in actors, '角色 %r 不在 six_dim.json 的 actors 里' % e['actor'])
+        check(w + '.enabled', isinstance(e.get('enabled'), bool), '要是布尔')
+        check(w + '.name', _text(e.get('name')), '要有显示名')
+        pj = e.get('proj', {})
+        check(w + '.proj', isinstance(pj, dict) and all(str(a).isdigit() and isinstance(v, dict) and v and set(v) <= WEAK_PROJ_KEYS for a, v in pj.items()),
+              '键要是技能号、值只用 %s' % sorted(WEAK_PROJ_KEYS))
+        for sid in pj if isinstance(pj, dict) else []:
+            if str(sid).isdigit():
+                _need_ref(bad, '%s.proj' % w, skills, int(sid))
+            v = pj[sid] if isinstance(pj[sid], dict) else {}
+            if 'mult' in v:
+                check('%s.proj.%s.mult' % (w, sid), _is_int(v['mult']) and v['mult'] > 0, '要是正整数倍率：%r' % v['mult'])
+            if 'scope' in v:
+                check('%s.proj.%s.scope' % (w, sid), _is_int(v['scope']) and v['scope'] > 0, '要是范围号：%r' % v['scope'])
+        for sub, fields in WEAK_SUB_SKILL_KEYS.items():
+            if sub in e:
+                sd = e[sub]
+                for f in fields:
+                    ok = isinstance(sd, dict) and _is_int(sd.get(f)) and sd[f] > 0
+                    check('%s.%s.%s' % (w, sub, f), ok, '要是技能号：%r' % (sd.get(f) if isinstance(sd, dict) else sd))
+                    if ok:
+                        _need_ref(bad, '%s.%s.%s' % (w, sub, f), skills, sd[f])
+                for f in WEAK_SUB_PCT_KEYS.get(sub, ()):
+                    check('%s.%s.%s' % (w, sub, f), isinstance(sd, dict) and _is_int(sd.get(f)) and 0 < sd[f] <= 100, '要是 1～100 的整数')
+        if 'settle' in e and isinstance(e['settle'], dict):
+            check(w + '.settle.state', _is_int(e['settle'].get('state')) and e['settle']['state'] > 0, '要是状态号')
+            if _is_int(e['settle'].get('state')):
+                _need_ref(bad, w + '.settle.state', states, e['settle']['state'])
+        if 'mark' in e and isinstance(e['mark'], dict):
+            m = e['mark']
+            check(w + '.mark.state', _is_int(m.get('state')) and m['state'] > 0, '要是状态号')
+            if _is_int(m.get('state')):
+                _need_ref(bad, w + '.mark.state', states, m['state'])
+            check(w + '.mark.turns', _is_int(m.get('turns')) and m['turns'] > 0, '要是正整数')
+            check(w + '.mark.shift', _is_int(m.get('shift')), '要是整数')
+        if 'thunder' in e:
+            th = e['thunder'] if isinstance(e['thunder'], dict) else {}
+            cs = th.get('casts')
+            check(w + '.thunder.casts', _pos_ints(cs), '要是技能号列表：%r' % (cs,))
+            if _pos_ints(cs):
+                for sid in cs:
+                    _need_ref(bad, w + '.thunder.casts', skills, sid)
+            for f in ('full_low', 'full_high'):
+                check('%s.thunder.%s' % (w, f), _is_int(th.get(f)) and th[f] > 0, '要是正整数：%r' % th.get(f))
+            if _is_int(th.get('full_low')) and _is_int(th.get('full_high')):
+                check(w + '.thunder 满格', th['full_high'] <= th['full_low'], '高档满格不能比低档更多：%r／%r' % (th['full_high'], th['full_low']))
+            check(w + '.thunder.high_from', _is_int(th.get('high_from')) and 0 < th['high_from'] <= 100, '要是 1～100 的整数：%r' % th.get('high_from'))
+        if 'pass' in e and isinstance(e['pass'], dict):
+            check(w + '.pass.stock', _is_int(e['pass'].get('stock')) and e['pass']['stock'] > 0, '要是正整数')
+    return bad
+
+
+def check_weak_affix_table(_args) -> bool:
+    return _run_table('weak_affix_table.json', lambda t: weak_affix_rules(t, _load_opt('six_dim.json')))
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -2752,6 +3204,12 @@ CHECKS = [
     ('growth', check_growth),
     ('six_dim', check_six_dim),
     ('xinmo_traits', check_xinmo_traits),
+    ('drop_table', check_drop_table),
+    ('gojo_trials', check_gojo_trials),
+    ('money_table', check_money_table),
+    ('ring_styles', check_ring_styles),
+    ('trumpet', check_trumpet),
+    ('weak_affix_table', check_weak_affix_table),
 ]
 
 
