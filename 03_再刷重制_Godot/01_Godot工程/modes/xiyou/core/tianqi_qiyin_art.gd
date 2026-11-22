@@ -99,6 +99,30 @@ static func small_icon(file: String) -> int:
 	return 0
 
 
+## O1：七印规则图标号（规则键＝qiyin_altar.json 各印的 rule，如 "silence"）；不认识返回 0
+static func rule_icon(rule: String) -> int:
+	return small_icon("rule_" + rule)
+
+
+## O2：装备效果码 → 效果图文件名。龙血没有装备效果码（它是龙隙的奖励），只映射键 "dragon_blood"，不接线
+const EFFECT_FILES := {
+	"plague_stack": "effect_plague", "weight_stack": "effect_weight", "judgment": "effect_verdict",
+	"star_moon": "effect_fallen_moon", "star_pages": "effect_book_page", "kill_chain_slash": "effect_chain_cut",
+	"cheat_death": "effect_reprieve", "dragon_blood": "effect_dragon_blood",
+}
+
+
+static func effect_icon(code: String) -> int:
+	return small_icon(str(EFFECT_FILES.get(code, ""))) if EFFECT_FILES.has(code) else 0
+
+
+## 说明卡里一条效果的文字：O2 那几种前面带图标（\\I[号]），开关关或图不在就原文
+static func fx_text(fx: Dictionary) -> String:
+	var t := str(fx.get("text", ""))
+	var i := effect_icon(str(fx.get("code", ""))) if ENABLED else 0
+	return "\\I[%d]%s" % [i, t] if i > 0 and icon_texture(i) != null else t
+
+
 static func icon_texture(index: int) -> AtlasTexture:
 	if _icons.has(index):
 		return _icons[index]

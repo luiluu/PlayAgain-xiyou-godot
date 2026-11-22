@@ -248,7 +248,7 @@ static func make_artifact(key: String) -> Dictionary:
 	XTianqiQiyinEffects.mark(item, {"kind": "artifact", "key": key})
 	var lines := [str(data().names.kind_artifact)]
 	for fx in a.get("effects", []):
-		lines.append(str(fx.get("text", "")))
+		lines.append(XTianqiQiyinArt.fx_text(fx))
 	for fx in a.get("costs", []):
 		lines.append(str(data().names.cost) % str(fx.get("text", "")))
 	item.description = "\n".join(PackedStringArray(lines))
@@ -279,22 +279,22 @@ static func describe(item: Dictionary) -> void:
 		var st := XTianqiQiyinGear.set_of(seal)
 		lines.append("%s「%s」" % [str(n.kind_set), str(st.get("name", ""))])
 		for b in st.get("bonuses", []):
-			var texts: Array = b.get("effects", []).map(func(fx): return str(fx.get("text", "")))
+			var texts: Array = b.get("effects", []).map(func(fx): return XTianqiQiyinArt.fx_text(fx))
 			lines.append(str(n.set_bonus) % [int(b.count), "；".join(PackedStringArray(texts))])
 	else:
 		var sc := XTianqiQiyinGear.school(seal)
 		lines.append("%s「%s」" % [str(n.kind_weapon), str(sc.get("name", ""))])
 		for fx in sc.get("mark", []):
-			lines.append(str(n.school_mark) % str(fx.get("text", "")))
+			lines.append(str(n.school_mark) % XTianqiQiyinArt.fx_text(fx))
 		if bool(m.get("true_seal", false)):
 			for fx in sc.get("true_extra", []):
-				lines.append(str(n.true_extra) % str(fx.get("text", "")))
+				lines.append(str(n.true_extra) % XTianqiQiyinArt.fx_text(fx))
 		for fx in XTianqiQiyinGear.weapon(str(m.get("key", ""))).get("effects", []):
 			if str(fx.get("code", "")) != "random_unique":
-				lines.append(str(n.unique) % str(fx.get("text", "")))
+				lines.append(str(n.unique) % XTianqiQiyinArt.fx_text(fx))
 		if str(m.get("unique", "")) != "":
 			for fx in XTianqiQiyinGear.weapon(str(m.unique)).get("effects", []):
-				lines.append(str(n.engraved) % str(fx.get("text", "")))
+				lines.append(str(n.engraved) % XTianqiQiyinArt.fx_text(fx))
 	for a in m.get("affixes", []):
 		lines.append(affix_line(a))
 	item.description = "\n".join(PackedStringArray(lines))

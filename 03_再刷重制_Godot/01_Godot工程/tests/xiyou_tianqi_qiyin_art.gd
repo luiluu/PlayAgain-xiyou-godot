@@ -159,6 +159,47 @@ func _icons() -> void:
 		if XTianqiQiyinArt.small_icon("rule_" + str(XTianqiQiyin.seal_info(k).rule)) == 0:
 			small_bad.append("rule_of_" + k)
 	_check("small_icons", small_bad.is_empty(), small_bad)
+	# T379 K3 O1：七印规则图标号与 qiyin_altar.json 各印 rule 对得上，祭坛行带上图标号、图在；开关关了不带
+	var o1_bad := []
+	var rows := XTianqiSkinAltar.seal_rows(_state())
+	for i in rows.size():
+		var k: String = XTianqiQiyinArt.SEALS[i]
+		var want := XTianqiQiyinArt.ICON_BASE + 500 + i
+		var rule := str(XTianqiQiyin.seal_info(k).rule)
+		if int(rows[i].rule_icon) != want or XTianqiQiyinArt.rule_icon(rule) != want or XTianqiQiyinArt.icon_files(want) != ["rule_" + rule] or XUI.icon_texture(want) == null:
+			o1_bad.append(k)
+	_check("o1_rule_icons_in_altar_rows", rows.size() == 7 and o1_bad.is_empty(), o1_bad)
+	XTianqiQiyinArt.ENABLED = false
+	var off_rows := XTianqiSkinAltar.seal_rows(_state())
+	XTianqiQiyinArt.ENABLED = true
+	_check("o1_off_switch", off_rows.all(func(r): return int(r.rule_icon) == 0))
+	# T379 K3 O2：8 个效果的编号与图（龙血只映射不接线）；说明卡效果文字带 \\I[号]，开关关了是原文
+	var o2 := {"plague_stack": 600, "weight_stack": 601, "judgment": 602, "star_moon": 603, "star_pages": 604, "kill_chain_slash": 605, "cheat_death": 606, "dragon_blood": 607}
+	var o2_bad := []
+	for code in o2:
+		var o2n := XTianqiQiyinArt.ICON_BASE + int(o2[code])
+		if XTianqiQiyinArt.effect_icon(code) != o2n or XUI.icon_texture(o2n) == null or not str(XTianqiQiyinArt.icon_files(o2n)[0]).begins_with("effect_"):
+			o2_bad.append(code)
+	_check("o2_effect_icons", o2_bad.is_empty() and XTianqiQiyinArt.effect_icon("max_hp_pct") == 0, o2_bad)
+	var fx_plague := {"code": "plague_stack", "text": "测试疫"}
+	var tag := "\\I[%d]测试疫" % (XTianqiQiyinArt.ICON_BASE + 600)
+	var plain_ok := XTianqiQiyinArt.fx_text({"code": "max_hp_pct", "text": "生命"}) == "生命"
+	XTianqiQiyinArt.ENABLED = false
+	var off_txt := XTianqiQiyinArt.fx_text(fx_plague)
+	XTianqiQiyinArt.ENABLED = true
+	_check("o2_fx_text", XTianqiQiyinArt.fx_text(fx_plague) == tag and plain_ok and off_txt == "测试疫", XTianqiQiyinArt.fx_text(fx_plague))
+	# 说明卡：黑印套 2 件的「砝码」、白印武器流派印记的「疫」带图标；开关关了说明里没有 \\I[
+	var o2rng := XRandomStream.create("0123012301230123", "o2")
+	var hei := XTianqiQiyinEquip.make({"kind": "set", "seal": "hei", "part": "head", "true_seal": false, "grades": []}, "jianxian", o2rng)
+	var bai := XTianqiQiyinEquip.make({"kind": "weapon", "seal": "bai", "wtype": "sword", "true_seal": false, "grades": []}, "jianxian", o2rng)
+	var w_tag := "\\I[%d]" % (XTianqiQiyinArt.ICON_BASE + 601)
+	var p_tag := "\\I[%d]" % (XTianqiQiyinArt.ICON_BASE + 600)
+	_check("o2_in_item_desc", str(hei.description).contains(w_tag) and str(bai.description).contains(p_tag), [hei.description, bai.description])
+	XTianqiQiyinArt.ENABLED = false
+	XTianqiQiyinEquip.describe(hei)
+	XTianqiQiyinEquip.describe(bai)
+	XTianqiQiyinArt.ENABLED = true
+	_check("o2_desc_off_plain", not str(hei.description).contains("\\I[3106") and not str(bai.description).contains("\\I[3106"), hei.description)
 	_check("small_fixed_numbers", XTianqiQiyinArt.small_icon("item_seal_key") == XTianqiQiyinArt.KEY_ICON and XTianqiQiyinArt.small_icon("item_shards") == XTianqiQiyinArt.SHARDS_ICON
 		and XTianqiQiyinArt.small_icon("item_dragon_blood") == XTianqiQiyinArt.BLOOD_ICON and XTianqiQiyinArt.small_icon("item_sealed") == XTianqiQiyinArt.SEALED_ICON)
 	# 祭坛文字里的图标号就是这几个
