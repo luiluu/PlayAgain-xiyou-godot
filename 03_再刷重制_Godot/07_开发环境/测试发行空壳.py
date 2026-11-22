@@ -373,6 +373,46 @@ class T(unittest.TestCase):
         self.assertEqual(K.EMPTY_RET, set())
         self.assertEqual(K.check_errors(missing, how), [])
 
+    def test_tianqi_strings_scan_and_scrub(self):
+        # T385：不换空壳的脚本里写着天启篇玩法名的字符串：没登记 check 报错；登记后发行克隆换成只剩格式符的占位，别的字不动
+        f = self.root / 'modes/xiyou/core/mix.gd'
+        f.write_text('extends RefCounted\n'
+                     '# "烙印" 注释里的不算\n'
+                     'func f(a, b):\n'
+                     '\tvar t := "\\\\C[6]%s 的烙印加深至「%s」！" % [a, b]  # 行尾注释 "号卷" 不算\n'
+                     '\tvar u := \'封卷完成：\' + "心魔" + "重铸"\n'
+                     '\treturn "西游的字 %d%%" % 3\n', encoding='utf-8')
+        hits = K.tianqi_string_hits(self.root)
+        self.assertEqual([(i, l) for i, l in hits['modes/xiyou/core/mix.gd']],
+                         [(4, '"\\\\C[6]%s 的烙印加深至「%s」！"'), (5, "'封卷完成：'")])  # 心魔、单独的重铸不算
+        self.assertNotIn('modes/xiyou/core/tianqi_foo.gd', hits)  # 换空壳的脚本不归这里管
+        self.assertEqual(len(K.string_errors(hits)), 1)
+        old = dict(K.MIXED_STR)
+        K.MIXED_STR.clear()
+        K.MIXED_STR['modes/xiyou/core/mix.gd'] = (2, '测试')
+        try:
+            self.assertEqual(K.string_errors(hits), [])
+            self.assertEqual(K.is_stub_tree(self.root)[-1], 'modes/xiyou/core/mix.gd（还带天启篇玩法名字符串）')
+            self.assertEqual(K.scrub_strings(self.root), 2)
+            out = f.read_text(encoding='utf-8')
+            self.assertIn('\tvar t := "%s%s" % [a, b]  # 行尾注释 "号卷" 不算\n', out)
+            self.assertIn("\tvar u := '' + \"心魔\" + \"重铸\"\n", out)
+            self.assertIn('# "烙印" 注释里的不算', out)
+            self.assertIn('"西游的字 %d%%"', out)
+            self.assertNotIn('mix.gd', ' '.join(K.is_stub_tree(self.root)))
+            K.MIXED_STR['modes/xiyou/core/mix.gd'] = (1, '测试')  # 条数变多也报错
+            self.assertEqual(len(K.string_errors(hits)), 1)
+        finally:
+            K.MIXED_STR.clear()
+            K.MIXED_STR.update(old)
+
+    def test_real_project_tianqi_strings_registered(self):
+        # 真工程：命中的混合脚本都登记了、条数不超；PRIMARY_RE 样式正则里的「重铸」不算（换掉西游档按钮会全变主色）
+        hits = K.tianqi_string_hits()
+        self.assertEqual(K.string_errors(hits), [])
+        self.assertTrue(all(n == len(hits.get(r, [])) for r, (n, _) in K.MIXED_STR.items()), '登记条数和实际对不上')
+        self.assertFalse(any('刻上|重铸' in l for _, l in hits['modes/xiyou/ui/alien_workshop.gd']))
+
     def test_real_project_empty_returns_all_reviewed(self):
         # 真工程：每个按空容器返回的成员都已登记理由，且登记的都还在用（防名单烂）
         K.OVERRIDES = self._over
