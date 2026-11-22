@@ -28,6 +28,12 @@ extends RefCounted
 ##   原版只在剑道争锋巅峰首领身上 1/700、1/500，数据品质写的是普通、等级需求 1，没有这条会成为第 1 层最常见的掉落之一（Kyo 11-16 反馈）。
 ##   `RARE_KEEP = false` 回到旧写法。
 ##
+## T395（Kyo 11-22「首层者只能打一次的啊。所以是必须要掉落」）：35 种奖碑（换楼层奖励用）原表必掉的行在天启篇照旧必掉，
+##   不乘 0.2、不走递增概率，也不吃「荒年」这类减掉率（roll_signature 按键认出奖碑直接给）。奖碑在哪只怪身上都算（项目经理cc 批 A）。
+##   补（Kyo 11-22「2按推荐 3改」）：只能打一次的天道信物 1958、天道研究日志[典藏版] 1961、配方:究极进化花仙子 1001 同样必掉（SURE_EXTRA）；
+##   28 层乌尔奇奥拉（敌人 2025，Map145 EV012 能反复打）那一行排除（SURE_EXCLUDE_ENEMIES），照原表 × 0.2。
+##   `MEDAL_SURE = false` 回到原表 × 0.2。
+##
 ## 回退（O-403）：`SEED_FROM_SAVE`／`PITY_RESET_ON_SURE`（O-429，返修）关掉回旧写法；`AUTO_SELL = false` 屏蔽掉落照原版丢；`NO_FEED_BOUGHT = false` 商店货也能喂；`XTianqiDrop.ENABLED = false` 整个关；`GENERIC`／`BONUS`／`DIFFICULTY`／`SIGNATURE` 各关一项。
 
 static var ENABLED := true
@@ -42,6 +48,8 @@ static var SEED_FROM_SAVE := true
 static var PITY_RESET_ON_SURE := true
 ## 返修（T099）：低档稀有装备不进通用池、留在原怪物表
 static var RARE_KEEP := true
+## T395：奖碑必掉（O-637）
+static var MEDAL_SURE := true
 
 const PATH := "res://modes/xiyou/tianqi_data/drop_table.json"
 const BASE_RATE := 0.2
@@ -55,6 +63,13 @@ static var _pool: Dictionary = {}
 static var _pool_common: Dictionary = {}
 ## "种类:编号" → 全部敌人掉落表里的最高概率（dropItems 1÷分母、<Enemy Drops> 百分数）
 static var _best_rate: Dictionary = {}
+## 35 种奖碑的道具编号（Items.json 名字以「奖碑」开头的全部；原版只靠敌人掉落拿到，见 T393 交付单）
+const MEDALS := [9, 11, 13, 30, 54, 60, 63, 65, 78, 99, 102, 143, 145, 148, 153, 176, 190, 193, 195, 246, 438,
+	1543, 1544, 1545, 1546, 1547, 1548, 1549, 1550, 1551, 1552, 1553, 1554, 1555, 1556]
+## 奖碑以外、只能打一次的战斗里掉、别处拿不到的必掉道具（T395 清单，Kyo 11-22 定）
+const SURE_EXTRA := [1001, 1958, 1961]
+## 能反复打的敌人：身上的奖碑照原表 × 0.2（乌尔奇奥拉·西法，打赢后有「再次挑战」）
+const SURE_EXCLUDE_ENEMIES := [2025]
 
 
 static func table() -> Dictionary:
@@ -197,10 +212,13 @@ static func signature_on(s = null) -> bool:
 	return SIGNATURE and on(s)
 
 
-## 一行的面板概率（没乘全队倍率、难度倍率）：raw 是原表的概率（1÷分母，或 <Enemy Drops> 的百分数）
-static func signature_base(kind: int, id: int, raw: float) -> float:
+## 一行的面板概率（没乘全队倍率、难度倍率）：raw 是原表的概率（1÷分母，或 <Enemy Drops> 的百分数）；
+## enemy_id：这一行在哪只敌人身上（T395 排除能反复打的敌人用，-1＝不看）
+static func signature_base(kind: int, id: int, raw: float, enemy_id := -1) -> float:
 	var g: Dictionary = table().get("signature", {})
 	var item_p := minf(1.0, maxf(raw * float(g.get("item_base", BASE_RATE)), float(g.get("item_floor", 0.005))))
+	if raw >= 1.0 and sure_medal(kind, id, enemy_id):
+		return 1.0
 	if kind < 2:
 		return item_p
 	if raw >= 1.0:
@@ -211,6 +229,25 @@ static func signature_base(kind: int, id: int, raw: float) -> float:
 	if not range_ is Array:
 		return item_p  # 精良及以下（通用掉落关着或异化装备挑本体时才会问到）
 	return clampf(raw, float(range_[0]), float(range_[1]))
+
+
+## T395：原表必掉时一定给的奖碑和 SURE_EXTRA 三样（MEDAL_SURE 关掉不认；SURE_EXCLUDE_ENEMIES 身上的不算）
+static func sure_medal(kind: int, id: int, enemy_id := -1) -> bool:
+	return MEDAL_SURE and kind == 1 and (MEDALS.has(id) or SURE_EXTRA.has(id)) and not SURE_EXCLUDE_ENEMIES.has(enemy_id)
+
+
+## 招牌键 "敌人:种类:编号" 是不是奖碑，且原表这一行必掉（荒年等减掉率乘下去后 p 不到 1，也照给）
+static func _sure_medal_key(key: String) -> bool:
+	if not MEDAL_SURE:
+		return false
+	var parts := key.split(":")
+	if parts.size() != 3 or not sure_medal(int(parts[1]), int(parts[2]), int(parts[0])):
+		return false
+	var e := XDB.rec("Enemies", int(parts[0]))
+	for d in e.get("dropItems", []):
+		if int(d.get("kind", 0)) == 1 and int(d.get("dataId", 0)) == int(parts[2]) and float(d.get("denominator", 0)) > 0.0 and float(d.denominator) <= 1.0:
+			return true
+	return false
 
 
 ## 递增概率的步长 C：第 n 次（从 1 数）掷中的几率是 min(1, C×n)，长期平均是 p
@@ -277,6 +314,8 @@ static func signature_chance(p: float, fails: int) -> float:
 
 ## 掷一次招牌掉落：key＝「敌人号:种类:编号」，p＝乘完倍率的面板概率。结果由存档里的种子和次数算出，记账后返回中没中
 static func roll_signature(s: XState, key: String, p: float) -> bool:
+	if p > 0.0 and p < 1.0 and _sure_medal_key(key):
+		p = 1.0  # T395：奖碑必掉，荒年等倍率压到 1 以下也照给
 	if p <= 0.0:
 		return false
 	if p >= 1.0:
