@@ -8,7 +8,7 @@
 ## 2026-11-22 【cc·天启篇·未经审查】战中「本场规则」条（T386 / K1b，dev.待定）
 
 - 依据：私密设计仓 `重制设定/界面风格提案_v0.7/T254_战中规则条.md`（T382 定稿，Kyo 11-22 五问全按推荐：圆钮正右侧、详卡贴左下拉、R／LB／轻点、默认折叠、与 B 印盘互补去重）；玩家可见文字照同稿「小A 文字审定稿（T387）」。
-- 新增统一数据源 `XTianqiBattleRules`（`modes/xiyou/core/tianqi_battle_rules.gd`）：`collect(logic)` 依次读骑士、七印、异化三个模块的只读出口 `battle_rules(logic)`，按 priority → 模块序 → 稳定序排；`source_label` 给详卡顶栏来源胶囊。开关 `ENABLED`（O-待定）：false＝collect 恒空、规则条不建。
+- 新增统一数据源 `XTianqiBattleRules`（`modes/xiyou/core/tianqi_battle_rules.gd`）：`collect(logic)` 依次读骑士、七印、异化三个模块的只读出口 `battle_rules(logic)`，按 priority → 模块序 → 稳定序排；`source_label` 给详卡顶栏来源胶囊。开关 `ENABLED`（O-待定·战中本场规则条）：false＝collect 恒空、规则条不建。
 - 三个模块各加只读出口（零逻辑修改、零随机数；专项钉住 collect 前后战斗随机数流 draws 不变）：`XTianqiHorsemen.battle_rules`（本体四线、生存战、骑士之影：死期、神圣剑、终末、骑士队长、死之终焉、兵临、配方、火花、绝粮、资历、结党、疫病、混子之盾／盾碎、不服、狂暴、证道·再生）；`XTianqiQiyinRule.battle_rules`（七印七条＋七印书卷＋七首之龙角标，O1 图标 310500～310506）；`XTianqiSegAlien.battle_rules` 转四线异化模块各自的 `battle_rules`（20 种里已实装 19 种＋交锋、口粮、荒年、病弱）。
 - 新增界面 `XSkinRuleStrip`（`modes/xiyou/ui/skin/skin_rule_strip.gd`）：1 条＝单条英雄态（y 79～115 居中于圆钮），≥2 条＝双行阶梯（引导头「◆ 规则 R ▾」＋短签，放不下末端「+N」）；展开详卡贴左 y 142 起、宽 368（130% 字号 420）、下沿 ≤ 618、超出内滚＋底缘渐隐＋暖金滚动条；警戒橙慢呼吸、读数变化轻闪只在「全部」动效档。键盘 R、手柄 LB 开关，Esc／B 收起，点外侧收起；技能／物品列表与详卡相交时自动收起；结算随场淡出。
 - `battle_scene.gd` 挂点：印盘之后建（同入 ui 层与 hud_in）、`_unhandled_input` 最前一行、`_hide_field_ui_for_result` 淡出。新界面关、西游档、开关关时 `make()` 返回 null，零像素变化。
@@ -34,9 +34,14 @@
 - 没做：B 印盘被关（`XSkin2C.METER=false`）时在规则条兜底补火花一条——这时旧计量条照样显示火花，没有重复的必要。↑↓ 内滚只在内容放不下时接管（不抢指令环的方向键）；右摇杆滚动没做。
 - 截图工具第二次跑时在 130% 那段卡住一次，第三次重跑正常、没复现；我猜是那场战斗的随机演出，不在专项里。
 
-## 交接板
+## 优化登记草稿
 
-- 下一步：小A 复审上面「偏离」两类文字；总装合并时把 `XTianqiBattleRules.ENABLED` 登记成 O 号。
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定·战中本场规则条 | `modes/xiyou/core/tianqi_battle_rules.gd` `XTianqiBattleRules.ENABLED`（`skin_rule_strip.gd` 的 `make()`、`collect()` 读） | 战斗里的规则只在战斗日志里一闪而过，没有常驻显示 | 天启篇新界面战斗左上自动／变速圆钮右侧常驻「本场规则」条（骑士战、七印里副本／书卷／七首之龙、异化战），R／LB／轻点展开全文详卡；纯只读，不动战斗与随机数；西游档、新界面关时不建 | 启封缺口 K1b（T254 战中规则条定稿，Kyo 11-22 五问按推荐） | `XTianqiBattleRules.ENABLED = false` | cc（T386） | 保留 |
+
+
+- 下一步：小A 复审上面「偏离」两类文字；总装合并时换上优化登记草稿里的 O 号。
 - 用户试玩说明：天启篇骑士战、七印里副本、异化战左上多一条「本场规则」；按 R／LB 或点它展开。
 - 需要用户决定：无
 
