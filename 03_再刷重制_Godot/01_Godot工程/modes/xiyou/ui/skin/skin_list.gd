@@ -383,7 +383,7 @@ func _draw_check(pos: Vector2, on: bool, dis: bool) -> void:
 	sb.draw(get_canvas_item(), Rect2(pos.x, pos.y - 7.0, 14.0, 14.0))
 
 
-## T366 卡 H（R10～R12、R16～R20 零碎返修）总开关：false＝全部回到改前画法（图标角标、选线卡、标题角钮、主菜单子项、祭坛按钮、物品页、状态页、行尾原因都走旧样）
+## T366 卡 H（R10～R12、R16～R20 零碎返修，O-633）总开关：false＝全部回到改前画法（图标角标、选线卡、标题角钮、主菜单子项、祭坛按钮、物品页、状态页、行尾原因都走旧样）
 static var T366_V1 := true
 ## T254 3.0「用不了的行」：字 TEXT_3，被选中时提到 #c9cbd0（T300 小A核 P2-3）。DIS_SEL_ON＝false 回到选中也是 TEXT_3
 static var DIS_SEL_ON := true
