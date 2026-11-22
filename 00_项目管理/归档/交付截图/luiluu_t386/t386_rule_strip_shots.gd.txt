@@ -1,0 +1,147 @@
+extends Node
+## 工具（不是专项）：T386 战中「本场规则」条实机截图。要真窗口：
+##   godot --audio-driver Dummy --path 01_Godot工程 res://tests/t386_rule_strip_shots.tscn -- --out=<目录>
+## 拍：骑士战折叠（16:9）、骑士战展开（16:9）、七印默印守默者（20:9）、骑士战 130% 字号（16:9、20:9）、关开关对照（16:9）。
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
+
+var out_dir := ""
+
+
+func _ready() -> void:
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--out="):
+			out_dir = arg.substr(6)
+	_run.call_deferred()
+
+
+func _frames(n := 20) -> void:
+	for i in range(n):
+		await get_tree().process_frame
+
+
+func _shot(name: String) -> void:
+	await _frames(3)
+	await RenderingServer.frame_post_draw
+	DirAccess.make_dir_recursive_absolute(out_dir)
+	var img := get_viewport().get_texture().get_image()
+	img.save_png(out_dir.path_join(name + ".png"))
+	print("SHOT ", name, " ", img.get_width(), "x", img.get_height())
+
+
+func _ids() -> Array:
+	return XTier.ids(XTier.WEAK).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not XActorModules.IDS.has(id))
+
+
+func _state(line: String) -> XState:
+	var lineup := _ids().slice(0, 4)
+	var s := XTianqi.start_new_game(3, "jianxian", lineup)
+	XTianqi.take_pending()
+	for id in lineup:
+		XTianqi._joining = true
+		s.add_actor(int(id))
+		XTianqi._joining = false
+	s.party.assign(lineup)
+	s.map_id = 4
+	s.set_variable(20, 36)
+	s.flags.tianqi["line"] = line
+	XState.current = s
+	return s
+
+
+func _wide(on: bool) -> void:
+	var win := get_window()
+	win.size = Vector2i(1000, 450) if on else Vector2i(800, 450)
+	XSkinLayout.window_override = Vector2(1000, 450) if on else Vector2.ZERO
+	await _frames(6)
+
+
+func _scene(troop: int) -> XBattleScene:
+	print("SCENE ", troop)
+	var sc := XBattleScene.new()
+	sc.setup(troop, true, false, XDB.map(5))
+	add_child(sc)
+	print("SCENE built")
+	await _frames(50)
+	print("SCENE ready")
+	return sc
+
+
+func _knight(line: String, hp_rate: float) -> XBattleScene:
+	var s := _state(line)
+	XTianqiHorsemen.prepare(line, s)
+	var sc: XBattleScene = await _scene(2)
+	var f := XTianqiHorsemen.fight(sc.logic)
+	f.knight.hp = f.knight.mhp * hp_rate
+	f.knight.refresh_resources()
+	XTianqiHorsemen._check_phase(sc.logic, f)
+	XTianqiHorsemen.take_logs(sc.logic)
+	await _frames(10)
+	return sc
+
+
+func _run() -> void:
+	if out_dir == "" or DisplayServer.get_name() == "headless":
+		print("SKIP 工具场景，没给参数")
+		print("TEST_RESULT=" + JSON.stringify({"passed": 1, "total": 1}))
+		get_tree().quit.call_deferred(0)
+		return
+	TestEnv.isolate("t386_rule_strip_shots")
+	XSplashScreen.shown = true
+	XConfig.ensure_loaded()
+	XUiSkin.FORCE = true
+	XUiSkin.motion_override = XUiSkin.Motion.OFF
+	# 1. 战争骑士折叠态（16:9）
+	await _wide(false)
+	var sc: XBattleScene = await _knight("war", 0.55)
+	await _shot("knight_war_16x9")
+	sc.queue_free()
+	await _frames(5)
+	# 2. 死亡骑士展开（16:9）：第 3 阶段、骑士队长、终末
+	sc = await _knight("death", 0.2)
+	var f := XTianqiHorsemen.fight(sc.logic)
+	f.finale = 3
+	sc.rule_strip.refresh()
+	sc.rule_strip.set_open(true)
+	await _frames(10)
+	await _shot("knight_death_open_16x9")
+	sc.queue_free()
+	await _frames(5)
+	# 3. 七印默印守默者（20:9）：双数回合沉默中
+	await _wide(true)
+	var s := _state("war")
+	XTianqiQiyin.set_current("mo")
+	XTianqiQiyinRule.prepare("mo", true, {})
+	XTianqiSegAlien.ENABLED = false
+	sc = await _scene(216)
+	XTianqiSegAlien.ENABLED = true
+	sc.logic.turn = 2
+	XTianqiQiyinRule.fight(sc.logic).silent = true
+	await _frames(10)
+	await _shot("qiyin_mo_20x9")
+	sc.rule_strip.set_open(true)
+	await _frames(10)
+	await _shot("qiyin_mo_open_20x9")
+	sc.queue_free()
+	XTianqiQiyin.set_current("")
+	await _frames(5)
+	# 4. 130% 字号：骑士战（16:9、20:9）
+	XFontScale.set_value("global", 130)
+	for wide in [false, true]:
+		await _wide(wide)
+		sc = await _knight("plague", 0.5)
+		await _shot("knight_plague_130_%s" % ("20x9" if wide else "16x9"))
+		sc.rule_strip.set_open(true)
+		await _frames(10)
+		await _shot("knight_plague_130_open_%s" % ("20x9" if wide else "16x9"))
+		sc.queue_free()
+		await _frames(5)
+	XFontScale.set_value("global", 100)
+	# 5. 开关关：同一场战争骑士，规则条不建
+	await _wide(false)
+	XTianqiBattleRules.ENABLED = false
+	sc = await _knight("war", 0.55)
+	print("OFF strip=", sc.rule_strip)
+	await _shot("knight_war_off_16x9")
+	sc.queue_free()
+	XTianqiBattleRules.ENABLED = true
+	get_tree().quit()

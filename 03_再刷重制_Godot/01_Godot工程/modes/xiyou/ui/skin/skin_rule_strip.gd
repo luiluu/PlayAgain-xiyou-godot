@@ -14,7 +14,7 @@ const ROW_GAP := 8.0
 const HERO_CY := 97.0           # 单条英雄态竖直居中于圆钮（y 79～115）
 const HERO_H := 36.0
 const NO_ARC_W := 420.0         # 无血弧时单行最宽
-const ARC_LIMIT1 := 416.0       # 有血弧：上行右界（16:9；20:9 加 origin.x）
+const ARC_LIMIT1 := 432.0       # 有血弧：上行右界（16:9；20:9 加 origin.x）。稿面写 416，Kyo 定稿样稿上行画到 432（血弧外晕圆角处），照样稿
 const ARC_LIMIT2 := 472.0       # 有血弧：下行右界
 const CHIP_NAME_MAX := 118.0    # 短签名最宽，超出省略号
 const DRAWER_Y := 142.0
@@ -241,7 +241,14 @@ func _row_h() -> float:
 
 func _x0() -> float:
 	if toggles != null and is_instance_valid(toggles):
-		return toggles.position.x + toggles.size.x + GAP_TOGGLES
+		# 按圆钮（容器里可见的子节点）的实际右缘算：HBox 自己的 size 会被旧横条胶囊的最小宽撑大
+		var right := 0.0
+		for c in toggles.get_children():
+			if c is Control and c.visible:
+				right = maxf(right, c.position.x + c.size.x)
+		if right <= 0.0:
+			right = toggles.size.x
+		return toggles.position.x + right + GAP_TOGGLES
 	return origin.x + 202.0
 
 
@@ -492,7 +499,7 @@ func _chip_w(r: Dictionary, fs: int) -> float:
 
 func _head_w(fs: int) -> float:
 	var key := _key_label()
-	return 12.0 + 10.0 + _tw("规则", fs) + 8.0 + (_tw(key, _fs(12)) + 16.0 if key != "" else 0.0) + 12.0 + 10.0
+	return 10.0 + 10.0 + _tw("规则", fs) + 6.0 + (_tw(key, _fs(12)) + 16.0 if key != "" else 0.0) + 12.0 + 6.0
 
 
 func _draw_head(head: Rect2, fs: int) -> void:
@@ -503,11 +510,11 @@ func _draw_head(head: Rect2, fs: int) -> void:
 		hborder = XUiSkin.GOLD_LIGHT
 	_pill(head, hfill, hborder)
 	var cy := head.get_center().y
-	var hx := head.position.x + 12.0
+	var hx := head.position.x + 11.0
 	draw_colored_polygon(PackedVector2Array([Vector2(hx, cy - 4), Vector2(hx + 4, cy), Vector2(hx, cy + 4), Vector2(hx - 4, cy)]), XUiSkin.GOLD)
 	hx += 10.0
 	XUiSkin.ds(self, XUiSkin.font("body"), Vector2(hx, XUiSkin.text_baseline_y(cy, fs)), "规则", HORIZONTAL_ALIGNMENT_LEFT, -1, fs, XUiSkin.GOLD_LIGHT)
-	hx += _tw("规则", fs) + 8.0
+	hx += _tw("规则", fs) + 6.0
 	_draw_key_and_arrow(hx, cy, _key_label())
 
 
