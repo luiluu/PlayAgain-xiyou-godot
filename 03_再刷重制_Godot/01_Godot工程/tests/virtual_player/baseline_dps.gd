@@ -65,6 +65,12 @@ var revive_team := false
 var lineups := 1
 var rng_seeds: Array = []
 var add_healer := false
+## T244：--all-weak 随机阵容只抽 4 个弱者（4 弱者／真·无名者之路量数；原队不是全弱者时照旧量、结果里 allWeak=false）
+var all_weak := false
+## T244：--troop=N 量数／真打时把守层者那场换成敌群 N（如 1 层副本首领嘤孙 422）；0＝照层号取守层者
+var troop_override := 0
+## T244：--weak-assist=出伤%,承伤% 把 4 弱全队协力换成这两个整数百分比（4 人合计，如 33,-22＝九死档补偿），只改内存里的表、不写文件
+var weak_assist := ""
 var shape := "4w"
 var templates: Array = ["A", "B", "C", "D"]   # --shape=tb 时的职责模板
 var sets := 20
@@ -107,6 +113,12 @@ func _ready() -> void:
 				XTianqiSegAlien.FORCE_KIND = v
 		elif a == "--add-healer":
 			add_healer = true
+		elif a == "--all-weak":
+			all_weak = true
+		elif a.begins_with("--troop="):
+			troop_override = int(a.substr(8))
+		elif a.begins_with("--weak-assist="):
+			weak_assist = a.substr(14)
 		elif a == "--no-raw":
 			raw_mode = false
 		elif a == "--duel":
@@ -153,6 +165,12 @@ func _ready() -> void:
 			else:
 				var p := a.substr(9).split("-")
 				floors = range(int(p[0]), int(p[p.size() - 1]) + 1)
+	if weak_assist != "":
+		var wp := weak_assist.split(",")
+		var wa: Dictionary = XTianqiBalance.data().get("weak_assist", {})
+		wa["damage_dealt_per"] = float(int(wp[0])) / 100.0 / float(XTianqiBalance.FIELD_SIZE)
+		wa["damage_taken_per"] = float(int(wp[1])) / 100.0 / float(XTianqiBalance.FIELD_SIZE) if wp.size() > 1 else float(wa.get("damage_taken_per", 0.0))
+		print("WEAK_ASSIST 4 弱合计 出伤 %+d%% 承伤 %+d%%" % [roundi(float(wa.damage_dealt_per) * 400.0), roundi(float(wa.damage_taken_per) * 400.0)])
 	_run.call_deferred()
 
 
@@ -365,7 +383,8 @@ func _fight(s: XState, troop: int) -> Dictionary:
 	return {"trace": trace, "atkScale": _out_scale(logic), "alien": _alien_desc(logic), "dmg": total / maxf(1.0, float(done)), "turns": done, "alive": alive, "won": logic.is_won(), "lost": logic.is_lost(),
 		"aborted": logic.aborted, "enemyHp": hp0, "enemyAtk": logic.enemies.map(func(e): return int(e.param(2))), "enemyDef": logic.enemies.map(func(e): return [int(e.param(3)), int(e.param(5))]),
 		"partyAtk": logic.actors.map(func(a): return [int(a.param(2)), int(a.param(4))]),
-		"party": logic.actors.map(func(a): return int(a.actor_id)), "members": s.battle_members().map(func(a): return int(a.actor_id)), "partyHp": logic.actors.map(func(a): return int(a.mhp))}
+		"party": logic.actors.map(func(a): return int(a.actor_id)), "members": s.battle_members().map(func(a): return int(a.actor_id)),
+		"allWeak": s.battle_members().all(func(a): return XTianqiSkills.is_weak(int(a.actor_id), true)), "partyHp": logic.actors.map(func(a): return int(a.mhp))}
 
 
 ## 撑到第几回合团灭（没团灭记 turns＋1）
@@ -478,6 +497,8 @@ static func _party_hp(logic: XBattleLogic) -> float:
 ## --both：两边每回合开始补满（我方倒下的先复活），量我方每回合伤害、守层者每回合对我方伤害、我方每次出手的伤害
 ## 34～36 层（天启篇重做）：34 鸿钧（鸿蒙老祖那场换能力值）、35 本线影子、36 本线骑士本体；之前的层照守层者敌群
 func _troop_for(s: XState, f: int) -> int:
+	if troop_override > 0:
+		return troop_override
 	if f <= 33:
 		return int(GUARDIAN[f])
 	s.flags.tianqi["line"] = line
@@ -929,6 +950,8 @@ func _snapshot_states(f: int) -> Array:
 				pick.append(int(bag.pop_at(rng.randi_range(0, bag.size() - 1))))
 			if pick.size() != 4 or seen.has(_team_key(pick)) or not CT.TB.legal(pick, difficulty):
 				continue
+			if all_weak and not pick.all(func(id): return XTianqiSkills.is_weak(int(id), true)):
+				continue
 			seen[_team_key(pick)] = true
 			variants.append(_tagged(_relineup(_clone(st), pick, helper_id), "随机%d" % (variants.size())))
 		if add_healer:
@@ -1071,6 +1094,9 @@ func _run_duel_snapshots() -> void:
 		rows.append(row)
 		print("DUEL floor=%d won=%d/%d turns=%.1f dmg=%.0f enemyHp=%.0f alive=%s atk=%s" % [f, int(row.won), per.size(), float(row.turns), float(row.dmg), float(row.enemyHp),
 			str(per.map(func(r): return int(r.alive))), str(row.atkScale)])
+		if out_path != "":   # T244：每层写一次，长跑被中途停掉也留得下已量的层
+			var fp := FileAccess.open(out_path, FileAccess.WRITE)
+			fp.store_string(JSON.stringify({"mode": "duel-snapshots", "events": events, "turns": turns, "partial": true, "rows": rows}, "\t"))
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)

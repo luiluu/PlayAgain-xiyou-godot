@@ -48,7 +48,7 @@ static var SEED_FROM_SAVE := true
 static var PITY_RESET_ON_SURE := true
 ## 返修（T099）：低档稀有装备不进通用池、留在原怪物表
 static var RARE_KEEP := true
-## T395：奖碑必掉
+## T395：奖碑必掉（O-637）
 static var MEDAL_SURE := true
 
 const PATH := "res://modes/xiyou/tianqi_data/drop_table.json"

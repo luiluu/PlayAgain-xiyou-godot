@@ -1,0 +1,139 @@
+{
+	"events": true,
+	"mode": "duel-snapshots",
+	"rows": [
+		{
+			"atkScale": 1.0,
+			"dmg": 4944.0,
+			"enemyHp": 4944.0,
+			"floor": 1,
+			"per": [
+				{
+					"aborted": false,
+					"alien": [],
+					"alive": 4,
+					"allWeak": true,
+					"atkScale": 1.0,
+					"dmg": 4944.0,
+					"enemyAtk": [
+						224
+					],
+					"enemyDef": [
+						[
+							150,
+							150
+						]
+					],
+					"enemyHp": 4944.0,
+					"lost": false,
+					"members": [
+						7,
+						63,
+						12,
+						88
+					],
+					"party": [
+						7,
+						63,
+						12,
+						88
+					],
+					"partyAtk": [
+						[
+							406,
+							220
+						],
+						[
+							362,
+							220
+						],
+						[
+							406,
+							220
+						],
+						[
+							447,
+							220
+						]
+					],
+					"partyHp": [
+						8960,
+						12209,
+						7020,
+						5445
+					],
+					"rng": 100001,
+					"swap": {},
+					"team": "原队",
+					"turns": 1,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [],
+					"alive": 4,
+					"allWeak": true,
+					"atkScale": 1.0,
+					"dmg": 4944.0,
+					"enemyAtk": [
+						224
+					],
+					"enemyDef": [
+						[
+							150,
+							150
+						]
+					],
+					"enemyHp": 4944.0,
+					"lost": false,
+					"members": [
+						7,
+						63,
+						12,
+						88
+					],
+					"party": [
+						7,
+						63,
+						12,
+						88
+					],
+					"partyAtk": [
+						[
+							406,
+							220
+						],
+						[
+							362,
+							220
+						],
+						[
+							406,
+							220
+						],
+						[
+							447,
+							220
+						]
+					],
+					"partyHp": [
+						8960,
+						12209,
+						7020,
+						5445
+					],
+					"rng": 200001,
+					"swap": {},
+					"team": "原队",
+					"turns": 1,
+					"won": true
+				}
+			],
+			"teams": 2,
+			"troop": 422,
+			"turns": 1.0,
+			"won": 2
+		}
+	],
+	"turns": 40
+}
