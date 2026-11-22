@@ -65,6 +65,99 @@ MIXED_OK = {
     'modes/xiyou/ui/skin/skin_six_dim_radar.gd': '六维雷达纯绘制控件（T278）：人物图鉴 actor_book、状态页 skin_status_page 只在 XTianqiSixDim.active() 为真时调用 paint，图鉴 six_line 也在同一守卫内；发行包里 XTianqiSixDim 换空壳 active() 恒 false，走不到；带真脚本是为了 DIMS／DIM_NAMES 常量引用能编译',
     'modes/xiyou/ui/skin/skin_battle_2c.gd': '新界面 2C 结算落印／全灭灭印（T265）：只在 XSkin2C.on()（XUiSkin.on()）时走，发行包里恒为 false；本线底图 content/ui_skin/phase01/bg/ 走 ResourceLoader.exists 守卫，在 DENY 里不进包',
 }
+# T385（cc 11-22）：混合脚本（带真脚本进包、不换空壳）里写着天启篇玩法名的字符串字面量。走不到（都在天启篇开关后面），
+# 但字随真脚本进包、解包能看到。只认天启篇独有的说法：心魔、骑士、炼狱、权能、异化原版就有，单字不算；「天启篇」是发行包应用名，不算。
+# 「重铸」是天启篇才有的，但 alien_workshop.gd 的按钮样式正则 PRIMARY_RE 里也有（换掉会让西游档按钮全变主色），所以只认带上下文的说法。
+# 查不到的：没有固定玩法名的天启篇规则长文（如 guide.gd milestone_intro／advice 的天启篇分支），见 交付/luiluu_t385.md。
+TIANQI_WORDS = re.compile(r'号卷|封卷|七印|烙印|刻印|天启之路|天启篇词条|异化核|骑士遗物|毕业武器|炼狱、证道|证道难度|炼狱难度'
+    r'|装备重铸|重铸第|重铸哪件|已重铸|不能重铸|不会重铸|重铸词条|洗其余')
+# 登记过的混合脚本：路径 →（命中的字面量条数, 为什么走不到）。make_tree 在发行克隆里把这些文件命中的字面量换成只剩格式符的占位
+# （"%s 的烙印加深至「%s」" → "%s%s"，% 运算照样不报错），游戏脚本本身一字不改；没登记的文件有命中、或条数变多，check 报错。
+MIXED_STR = {
+    'modes/xiyou/core/zhenqi.gd': (11, '闭关页天启篇烙印分支（T117／T140）：都在 XTianqiBrand.on(s) 后面，空壳恒 false'),
+    'modes/xiyou/core/guide.gd': (2, '354 烙印标题在 XTianqiBrand.status_rows 非空时（空壳给 []）；470 在 _tianqi_milestone_on（XTianqi.active，空壳 false）'),
+    'modes/xiyou/core/power_books.gd': (4, '号卷说法都是 XTianqiTrumpet.on() 的真分支，空壳恒 false'),
+    'modes/xiyou/ui/power_forget.gd': (8, '号卷／封卷说法都是 tq＝XTianqiTrumpet.on() 的真分支，空壳恒 false'),
+    'modes/xiyou/ui/alien_workshop.gd': (13, '216 在 tq_on 分支、265 在 confirming_core（只由天启篇取核钮置真）、379/381 在 _core_section（tq_on 才调）、'
+        '399～422 在 _reforge_section（XTianqiReforge.on 才调），434/442 是该节按钮回调的报错；XTianqiAlienGear／XTianqiReforge 空壳恒 false'),
+    'modes/xiyou/ui/skin/ui_skin.gd': (1, '工坊菜单「异化工坊」说明，只在新界面菜单显示，发行恒关（XUiSkin.on false）'),
+    'modes/xiyou/ui/save_scene.gd': (1, '「天启之路」行在 save_line(d) 非空时，XTianqiLook.line_of_save 空壳给 ""'),
+    'modes/xiyou/ui/skin/skin_save_page.gd': (1, 'T_LINE 只在天启篇存档行用；新界面发行恒关（XUiSkin.on false）'),
+    'modes/xiyou/ui/skin/skin_main_menu.gd': (2, '七印行在 seal_states 非空时，XTianqiQiyin.allowed 空壳 false；新界面发行恒关'),
+    'modes/xiyou/ui/skin/skin_options_page.gd': (1, '装备环纹说明只在新界面设置页显示，发行恒关'),
+}
+_STR_LIT = re.compile(r'(?<![&^\w])"(?:[^"\\\n]|\\.)*"|(?<![&^\w])\'(?:[^\'\\\n]|\\.)*\'')
+_FMT_TOKEN = re.compile(r'%[-+ 0#]*(?:\d+|\*)?(?:\.(?:\d+|\*))?[scdoxXfv%]')
+
+
+def _str_scan(src: str, fix: bool = False):
+    """src 里非注释代码中命中 TIANQI_WORDS 的字符串字面量：返回 (改后的源码, [(行号, 字面量)])。
+    fix 为真时把命中的字面量换成只剩格式符的同引号占位；带三引号的行不动（只报不改）。"""
+    hits, out = [], []
+    for i, line in enumerate(src.split('\n'), 1):
+        if line.lstrip().startswith('#'):
+            out.append(line)
+            continue
+        code = _strip_comment(line)
+        tail = line[len(code):]
+
+        def sub(m):
+            lit = m.group(0)
+            if not TIANQI_WORDS.search(lit):
+                return lit
+            hits.append((i, lit))
+            return lit[0] + ''.join(_FMT_TOKEN.findall(lit[1:-1])) + lit[0]
+        new = _STR_LIT.sub(sub, code)
+        out.append((new if fix and '"""' not in code and "'''" not in code else code) + tail)
+    return '\n'.join(out), hits
+
+
+def tianqi_string_hits(root: Path = PROJECT, tg: dict = None) -> dict:
+    """不换空壳的脚本里命中天启篇玩法名的字符串：路径 → [(行号, 字面量)]（tests、.godot 不算）。"""
+    tg = targets(root) if tg is None else tg
+    done = {str(p) for p in tg.values()}
+    out = {}
+    for d in SCAN_DIRS:
+        base = root / d
+        if not base.exists():
+            continue
+        for p in sorted(base.rglob('*.gd')):
+            rel = str(p.relative_to(root))
+            if rel in done or rel.startswith(('tests/', '.godot/')):
+                continue
+            _, h = _str_scan(p.read_text(encoding='utf-8', errors='replace'))
+            if h:
+                out[rel] = h
+    return out
+
+
+def string_errors(hits: dict) -> list:
+    """没登记的混合脚本有天启篇玩法名字符串，或登记过的条数变多：报错（T385）。"""
+    bad = []
+    for rel, h in sorted(hits.items()):
+        n = MIXED_STR.get(rel, (0, ''))[0]
+        if len(h) > n:
+            bad.append(f'{rel}（{len(h)} 条，登记 {n}；如第 {h[0][0]} 行 {h[0][1][:40]}）')
+    if not bad:
+        return []
+    return ['发行空壳：这些不换空壳的脚本里有天启篇玩法名字符串，会随真脚本进包（T385）。确认都在天启篇开关后面后，'
+            '在 发行空壳.py 的 MIXED_STR 登记条数和理由（make_tree 会在发行克隆里换成占位），或把文字挪进 XTianqi* 模块：' + '；'.join(bad)]
+
+
+def scrub_strings(root: Path) -> int:
+    """发行克隆里把 MIXED_STR 登记文件命中的字面量换成占位，返回换掉的条数。"""
+    n = 0
+    for rel in MIXED_STR:
+        f = Path(root) / rel
+        if not f.is_file():
+            continue
+        new, h = _str_scan(f.read_text(encoding='utf-8'), fix=True)
+        if h:
+            f.write_text(new, encoding='utf-8')
+            n += len(h)
+    return n
+
+
 HAND = HERE / '发行空壳手写'  # 手写空壳：<类名>.gd，整份照用（要保留部分发行功能的，如漩涡二阶画面）
 NUMERIC = set()  # 返回 int／float 的成员（check 要求它们不靠按类型空值）
 PASSTHRU = set()  # 返回字典／数组、真脚本会原样传回同类型参数的成员（如消耗表 c）：按类型给空值会把参数吞掉，check 要求写特例
@@ -496,7 +589,7 @@ def make_tree(out: Path, src: Path = None) -> Path:
         raise SystemExit(f'{src} 不是 Godot 工程（没有 project.godot）')
     src = Path(src).resolve() if src is not None else PROJECT
     stubs, missing, how = build_all(src)
-    errs = check_errors(missing, how, suspects(src))
+    errs = check_errors(missing, how, suspects(src)) + string_errors(tianqi_string_hits(src))
     if errs:
         raise SystemExit('\n'.join(errs))
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -506,6 +599,7 @@ def make_tree(out: Path, src: Path = None) -> Path:
     for p, s in stubs.items():
         (out / p).write_text(s, encoding='utf-8')
     scrub_rules(out)
+    scrub_strings(out)
     return out
 
 
@@ -519,6 +613,10 @@ def is_stub_tree(root: Path) -> list:
     f = root / RULES_REL
     if f.is_file() and 'tianqi_dict' in json.loads(f.read_text(encoding='utf-8')):
         out.append(f'{RULES_REL}（还带 tianqi_dict）')
+    for rel in MIXED_STR:  # T385：登记过的混合脚本里天启篇玩法名字符串要已换成占位
+        f = root / rel
+        if f.is_file() and _str_scan(f.read_text(encoding='utf-8'))[1]:
+            out.append(f'{rel}（还带天启篇玩法名字符串）')
     return out
 
 
@@ -626,10 +724,14 @@ def main(argv) -> int:
         return 0
     if COPIED_TRUE:
         print('警告：以下函数由规则 2 照搬出 return true：' + '、'.join(sorted(COPIED_TRUE)))
-    errs = check_errors(missing, how, suspects(PROJECT))
+    hits = tianqi_string_hits(PROJECT)
+    errs = check_errors(missing, how, suspects(PROJECT)) + string_errors(hits)
     if errs:
         print('\n'.join(errs))
         return 1
+    stale = sorted(r for r, (n, _) in MIXED_STR.items() if len(hits.get(r, [])) < n)
+    if stale:
+        print('提示：MIXED_STR 登记条数比实际多（文字挪走或删了），可以把条数改小：' + '、'.join(f'{r}（实际 {len(hits.get(r, []))}）' for r in stale))
     print(f'发行空壳：{len(stubs)} 个脚本，{len(how)} 个函数都有')
     return 0
 
