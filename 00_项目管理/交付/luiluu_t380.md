@@ -12,6 +12,11 @@
 - 私密仓设计稿新建 v0.11（提交 feeb259），只改第 3.4 节上限「−40% → −33%」和「本版变化」一行：**−40% → −33% 是照 D4「以游戏为准」回写稿**，供 Kyo 知情。
 - 反向验证（`反向验证.py`）三处改坏都被咬住：`down_cap` 0.33→0.40、去掉 `minf` 封顶、`down_start` 0.1→0.2。
 
+## 云端选测
+
+- 提交 01ea08dcf5，6 个场景分 2 片，全绿：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45029313689
+- 本机：xiyou_tianqi_plague_cap 10/10、xiyou_tianqi_horsemen_battle 142/142。
+
 ## 交接板
 
 - 下一步：无
