@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """T392 对比表：T363 最终表＋第三遍真打（d3）对 T392（19 层吸血封顶＋P2-1 band 校准）。
-「后」只重打了血量变了的层和 19 层（v1a／v1b_jianxian_*、f19_jianxian_*）；其余层表没变，后＝前。另列 19 层五档各一组（f19_<难度>_*）。
+「后」只重打了血量变了的层和 19 层（v1a／v1b_jianxian_*、f19_jianxian_*；34 层取第二遍 v2_jianxian_*）；其余层表没变，后＝前。另列 19 层五档各一组（f19_<难度>_*）。
 用法（仓库根）：python3 00_项目管理/归档/交付截图/luiluu_t392/T392_量数/对比表生成.py，打印 Markdown。"""
 import json, statistics as st, subprocess
 from pathlib import Path
@@ -42,6 +42,7 @@ def main():
     oldt, newt = git('4ed357edd'), json.load(open(root / TABLE))['guardian_phase4']
     o = duel([OLD / 'd3_r6.json', OLD / 'd3_t298.json'])
     n = duel(sorted(HERE.glob('v1*_jianxian_*.json')) + [HERE / 'f19_jianxian_r6.json', HERE / 'f19_jianxian_t298.json'])
+    n.update(duel(sorted(HERE.glob('v2_jianxian_*.json'))))   # 第二遍只重打 34 层（v1 量出 4.5 回合矫枉过正，按 750 万再量），整层替换
     print('### 艰险 1～34 层（真打 2 存档链×4 队×2 种子＋奶妈队，40 回合带敌群事件；强队＝每回合打得最多的四分之一，目标 8±2）\n')
     print('| 层 | 血/回合 前 | **血/回合 后** | 普通胜/队 前 | **后** | 赢的均回合 前 | **后** | 强队¼ 前 | **强队¼ 后** | 奶妈队 前 | **后** | 重打 |')
     print('|' + '---|' * 12)
