@@ -42,6 +42,8 @@
 - 本机验证：`xiyou_ui_t360` 42/42（开／关回退、属性名 TEXT_2、冒号空格、物品场合／库存、万籁俱寂用完／没穿满、七印寂静／限时、文案长度与 298px、浮层标记）；`xiyou_help_card_sections` 35/35、`xiyou_ui_skin_battle` 74/74（窗口）、`xiyou_ui_skin_card_n` 185/185（窗口）、`xiyou_ui_skin_2c` 705/705（窗口，关态也 705/705；开态第一遍窗口跑 704/705 一次，没抓到项名，重跑和无头 181/181 都过，记为偶发）、`xiyou_ui_detail_d1b` 12/12、`d1c` 116/116、`skin_1c` 81/81；`xiyou_ui_skin_3a` 105/106，`wide_margin_56` 本机窗口不能缩放，开／关都一样，与本单无关（R1 已记）。
 - `发行空壳特例.json`：`XSkinBattle.qiyin_reason` 新调了 `XTianqiQiyinEffects.skill_usable／fold／gear_effects`、`XTianqiQiyinRule.fight`，逐个看过调用处后登记放行／空值安全（空壳 can_use、skill_usable 恒 true，走不到；走到也落兜底）。
 
+- 云端选测（R1 返修，提交 110b30be0，已合 main 195408e19）：run 44969227009 通过，65 个场景 2 片；偶发 `xiyou_ui_detail_d3`（并行失败、单跑通过）。合 main 时解了 `xiyou_ui_skin_battle.gd` 与 T371 的截图冲突（两段都留，T360 截图挪到 T371 之后）。
+
 ## 本分支提交
 
 - 见 git log
