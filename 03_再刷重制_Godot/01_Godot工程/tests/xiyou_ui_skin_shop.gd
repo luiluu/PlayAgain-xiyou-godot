@@ -441,6 +441,7 @@ func _sell() -> void:
 	check("sell.stack_stepper", pg.stepper.visible and pg.stepper.max_value == 7 and pg.stepper.value == 1 and pg.card.buttons[0].text == "出售", [pg.stepper.visible, pg.stepper.max_value])
 	act(shop, "ui_accept")
 	check("sell.stack_number", shop._mode == "number" and pg.stepper.visible and pg.stepper.max_value == 7, [shop._mode, pg.stepper.max_value])
+	check("sell.number_tabs_quiet", not pg.inner_tabs.focused and not pg.inner_tabs.is_processing_input() and pg.list.quiet, [pg.inner_tabs.focused, pg.list.quiet])
 	await shots("shop_state_sell_stack")
 	act(shop, "ui_cancel")
 	shop._cat = 2

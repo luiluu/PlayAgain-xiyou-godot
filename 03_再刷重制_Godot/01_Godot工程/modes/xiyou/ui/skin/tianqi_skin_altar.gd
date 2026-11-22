@@ -516,25 +516,9 @@ func button_rect(i: int) -> Rect2:
 	return Rect2()
 
 
-## 上下键：按行走，保持左右列（只有旧画法是线性一格一格）
+## 上下键：线性遍历全部入口（两枚一行的排版只是画法，键盘照旧一枚一枚走，每个入口都选得到）
 func step_button(d: int) -> void:
-	var brs := btn_rows()
-	if not XSkinList.T366_V1 or brs.size() == buttons.size():
-		button = posmod(button + d, buttons.size())
-		return
-	var r := 0
-	var c := 0
-	for k in brs.size():
-		var at: int = (brs[k] as Array).find(button)
-		if at >= 0:
-			r = k
-			c = at
-	var nr := posmod(r + d, brs.size())
-	var row: Array = brs[nr]
-	if d < 0 and r == 0:
-		button = row[row.size() - 1]   # 最上一行再往上＝绕到最后一枚（同旧线性顺序）
-	else:
-		button = row[mini(c, row.size() - 1)]
+	button = posmod(button + d, buttons.size())
 
 
 func _draw_card() -> void:

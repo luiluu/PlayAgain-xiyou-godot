@@ -193,7 +193,11 @@ func skill_reason(a: XActor, sk: Dictionary) -> String:
 		return "战斗专用"
 	if occ not in [0, 2]:
 		return "不可用"
-	return XSkinBattle.reason(scene.logic, a, sk, false)
+	var q := sk
+	if occ == 2:   # 菜单专用：同 skill_scene 改成 0 再问原因，别被吞成「当前条件不满足」
+		q = sk.duplicate()
+		q["occasion"] = 0
+	return XSkinBattle.reason(scene.logic, a, q, false)
 
 
 func _sync_card(a: XActor) -> void:

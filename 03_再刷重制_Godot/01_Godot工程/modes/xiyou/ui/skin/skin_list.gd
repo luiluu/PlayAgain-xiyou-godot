@@ -548,7 +548,8 @@ func _draw() -> void:
 			col = XUiSkin.sel_text(col)
 		var tags: Array = it.get("tags", [])
 		var tags_w := XSkinTag.row_width(tags) + XSkinTag.GAP * 2.0 if not tags.is_empty() else 0.0
-		var fit := fit_text(body, str(it.get("text", "")), max_w - tags_w, XSkinSelScale.fs(font_size, sk, sel_font_cap()), min_font_size)
+		var badge_w := 14.0 if (T366_V1 and it.get("badge") is Texture2D) else 0.0   # R16 旧金小点留宽，长名字先省略
+		var fit := fit_text(body, str(it.get("text", "")), max_w - tags_w - badge_w, XSkinSelScale.fs(font_size, sk, sel_font_cap()), min_font_size)
 		var text: String = fit[0]
 		var fs: int = fit[1]
 		XUiSkin.ds(self, body, Vector2(x, base + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, dis_color(i) if dis else col)

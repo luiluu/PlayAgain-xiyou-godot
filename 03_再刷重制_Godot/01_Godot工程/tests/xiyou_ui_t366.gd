@@ -166,6 +166,12 @@ func _skill() -> void:
 		var row: Dictionary = page.skin.list.items[page.skin.list.index]
 		check("r12_row_has_reason", bool(row.disabled) and str(row.get("reason", "")) != "" or old, row)
 		check("r12_reason_fixed_text", page.skin.skill_reason(page.actor(), page.entries()[pick]) != "", page.entries()[pick].get("name"))
+	if page.skin != null and pick >= 0:   # 菜单专用（occasion 2）按 0 问原因，不被吞成「当前条件不满足」
+		var sk2: Dictionary = (page.entries()[pick] as Dictionary).duplicate()
+		sk2["occasion"] = 0
+		var r0 := page.skin.skill_reason(page.actor(), sk2)
+		sk2["occasion"] = 2
+		check("r12_occ2_reason_same", old or page.skin.skill_reason(page.actor(), sk2) == r0, [r0, page.skin.skill_reason(page.actor(), sk2)])
 	await shot("R12_技能页_选中用不了的行")
 	page.queue_free()
 	await frames()
@@ -280,11 +286,23 @@ func _altar() -> void:
 		var r2: Rect2 = a.button_rect((rows_b[rows_b.size() - 1] as Array)[0])
 		var r3: Rect2 = a.button_rect((rows_b[rows_b.size() - 1] as Array)[1])
 		check("r20_pair_same_row", is_equal_approx(r2.position.y, r3.position.y) and r3.position.x > r2.end.x and r2.size.y < a.button_rect(0).size.y, [r2, r3])
-		a.button = 1
-		a.step_button(1)
-		check("r20_down_to_pair", a.button == (rows_b[rows_b.size() - 1] as Array)[0], a.button)
-		a.step_button(1)
-		check("r20_down_wraps", a.button == 0, a.button)
+		# 上下键线性走：每个入口都选得到（4 钮、5 钮也一样）
+		var saved: Array = a.buttons
+		for n in [saved.size(), 4, 5]:
+			a.buttons = saved.slice(0, n) if n <= saved.size() else saved + saved.slice(0, n - saved.size())
+			a.button = 0
+			var seen := {}
+			for k in n:
+				seen[a.button] = true
+				a.step_button(1)
+			check("r20_down_reaches_all_%d" % n, seen.size() == n and a.button == 0, [n, seen])
+			seen = {}
+			for k in n:
+				seen[a.button] = true
+				a.step_button(-1)
+			check("r20_up_reaches_all_%d" % n, seen.size() == n and a.button == 0, [n, seen])
+		a.buttons = saved
+		a.button = 0
 		a.step_button(-1)
 		check("r20_up_wraps_to_last", a.button == a.buttons.size() - 1, a.button)
 	await shot("R20_七印祭坛")
