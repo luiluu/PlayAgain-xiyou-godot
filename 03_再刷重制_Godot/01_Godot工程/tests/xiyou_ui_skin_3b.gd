@@ -338,11 +338,18 @@ func _workshop() -> void:
 	await frames(4)
 	check("ws_confirm_shown", page.confirming and XAlienWorkshop.flatten(page.tree).any(func(r): return str(r.get("text", "")) == "确认分解"))
 	var focus := get_viewport().gui_get_focus_owner()
-	check("ws_confirm_focus", focus is Button and (focus as Button).text == "确认分解", focus)
+	var dlg := page.skin_dialog()
+	if XAlienWorkshop.LAYOUT_V3:   # T367：确认框改成统一确认弹窗（光标停在「取消」），确认在弹窗里按
+		check("ws_confirm_focus", dlg != null and dlg.danger and dlg.index == 1 and not (focus is Button), [focus, dlg])
+	else:
+		check("ws_confirm_focus", focus is Button and (focus as Button).text == "确认分解", focus)
 	await shots("ui_skin_3b_alien_workshop_confirm", 8)
 	var n0 := s.gear.filter(func(e): return XTianqiAlienGear.is_tq(e)).size()
-	var yes: Button = _find(page.root, func(c): return c is Button and c.text == "确认分解")
-	yes.pressed.emit()
+	if XAlienWorkshop.LAYOUT_V3:
+		page.skin_dialog().activate(0)
+	else:
+		var yes: Button = _find(page.root, func(c): return c is Button and c.text == "确认分解")
+		yes.pressed.emit()
 	await frames(4)
 	check("ws_dismantle_done", s.gear.filter(func(e): return XTianqiAlienGear.is_tq(e)).size() == n0 - 1 and not page.confirming, [n0])
 	page.queue_free()
