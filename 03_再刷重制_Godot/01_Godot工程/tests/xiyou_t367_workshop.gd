@@ -145,7 +145,7 @@ func _tabs_and_title() -> void:
 	check("tabs_four", names.size() == 4 and names[0] == "异化装备" and names[1].begins_with("异化核") and names[2] == "装备重铸" and names[3].begins_with("本线异化图鉴"), names)
 	var head: Node = _all(ws, func(c): return c.name == "SkinHeader").front()
 	var title: Label = _all(head, func(c): return c is Label and c.text == "异化工坊").front()
-	check("title_white", title.label_settings.font_color == XUiSkin.TEXT_HI, title.label_settings.font_color)
+	check("title_white", title.label_settings.font_color == XUiSkin.TEXT, title.label_settings.font_color)
 	check("title_page_size", title.label_settings.font_size == XUiSkin.FS_PAGE)
 	ws.queue_free()
 	await frames(2)

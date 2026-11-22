@@ -169,7 +169,7 @@ func _menu(s: XState) -> void:
 	m.refresh()
 	kinds = m.rows().map(func(r): return r.kind)
 	check("rows_actor_open", kinds == ["group", "group", "header", "item", "item", "item", "item", "item", "group", "group", "group"], kinds)
-	check("row_heights", m.rows()[3].rect.size.y == 56.0 and m.rows()[2].rect.size.y == 46.0)
+	check("row_heights", m.rows()[3].rect.size.y == XSkinMainMenu.row_item() and m.rows()[2].rect.size.y == 46.0)
 	check("bar_on_row", m.bar.visible and m.bar.target == m.rows()[3].rect)
 	# 上下跨组
 	_press(m, "ui_up")

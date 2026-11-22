@@ -530,7 +530,11 @@ func step_button(d: int) -> void:
 			r = k
 			c = at
 	var nr := posmod(r + d, brs.size())
-	button = (brs[nr] as Array)[mini(c, (brs[nr] as Array).size() - 1)]
+	var row: Array = brs[nr]
+	if d < 0 and r == 0:
+		button = row[row.size() - 1]   # 最上一行再往上＝绕到最后一枚（同旧线性顺序）
+	else:
+		button = row[mini(c, row.size() - 1)]
 
 
 func _draw_card() -> void:

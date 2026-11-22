@@ -285,6 +285,8 @@ func _altar() -> void:
 		check("r20_down_to_pair", a.button == (rows_b[rows_b.size() - 1] as Array)[0], a.button)
 		a.step_button(1)
 		check("r20_down_wraps", a.button == 0, a.button)
+		a.step_button(-1)
+		check("r20_up_wraps_to_last", a.button == a.buttons.size() - 1, a.button)
 	await shot("R20_七印祭坛")
 	a.queue_free()
 	await frames()
