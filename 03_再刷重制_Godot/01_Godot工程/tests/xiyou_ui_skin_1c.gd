@@ -365,6 +365,24 @@ func _status_page() -> void:
 	check("status_body_no_header", not ops.is_empty() and ops.all(func(o): return o[0] != "face" and (float(o[3]) if o[0] in ["text", "icon"] else float(o[2])) >= XStatusPage.LH * XStatusPage.HEADER_LINES))
 	check("status_skin_color", XSkinStatusPage.skin_color("#" + XUI.SYSTEM.to_html(false)) == XUiSkin.TEXT_2)
 	await shots("ui_skin_1c_status_p0")
+	# T372：没穿的栏位补暗灰栏位名；T366_V1 关＝不补
+	var a0 := page.actor()
+	var n_empty := 0
+	for sl in XTianqiGear.view(a0):
+		var e0 = a0.equips[sl] if sl < a0.equips.size() else null
+		if not (e0 is Dictionary and not e0.is_empty()):
+			n_empty += 1
+	var eops := XSkinStatusPage.empty_slot_ops(a0)
+	check("t372_empty_slots_drawn", eops.size() == n_empty and n_empty > 0 and eops.all(func(o): return o[8] == "#" + XUiSkin.TEXT_3.to_html(false)), [eops.size(), n_empty])
+	check("t372_in_body_page0_only", XSkinStatusPage.body_ops(a0, 0).size() >= eops.size() and XSkinStatusPage.body_ops(a0, 2).size() == XSkinStatusPage.body_ops(a0, 2).filter(func(o): return not eops.has(o)).size())
+	XSkinList.T366_V1 = false
+	check("t372_off_no_empty", XSkinStatusPage.body_ops(a0, 0).size() == XSkinStatusPage.body_ops(a0, 0).filter(func(o): return not eops.has(o)).size())
+	XSkinList.T366_V1 = true
+	XFontScale.set_value("global", 130)
+	sk.sync()
+	await shots("ui_skin_1c_status_p0_f130")
+	XFontScale.set_value("global", 100)
+	sk.sync()
 	page._unhandled_input(_key("ui_right"))
 	check("status_right_page", page.page == 1)
 	await shots("ui_skin_1c_status_p1")
