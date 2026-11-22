@@ -483,7 +483,8 @@ static func drop_help_row(t: String) -> bool:
 
 
 ## 装备「自带」属性分色（T095，Kyo 11-16「生命值绿色、魔法值蓝色等等」；T360 D250 收口）：
-## 属性名保持次要色（行本色），只给数值着色；颜色降饱和、「攻击」「暴击」避开警示橙（DOWN）和选中／神话红；冒号统一成全角「：」。
+## XUiSkin.detail_on() 开时：属性名与冒号一律次要色 TEXT_2，只给数值着色；颜色降饱和、「攻击」「暴击」避开警示橙（DOWN）和选中／神话红；
+## 冒号统一成全角「：」、冒号后的空格去掉。关时照改造前：整段「名：数」按属性上色（STAT_COLORS_OLD）。
 ## 颜色只是辅助，字照旧写着属性名（色弱也不靠颜色分）。false＝回到整行一色
 static var STAT_COLORS_ON := true
 ## [名里含的词, 数值颜色]，按顺序认第一个（「魔法攻击」要排在「攻击」前）
@@ -498,11 +499,23 @@ const STAT_COLORS := [
 	["幸运", Color("c796ae")],
 	["暴击", Color("bf8a8f")],
 ]
+## 改造前的整段颜色（DETAIL_V1 关时用）
+const STAT_COLORS_OLD := [
+	["魔法攻击", Color("c79bff")], ["魔攻", Color("c79bff")],
+	["魔法防御", Color("62d2cf")], ["魔防", Color("62d2cf")],
+	["生命", Color("7fd67a")], ["HP", Color("7fd67a")],
+	["魔法", Color("63a4ff")], ["法力", Color("63a4ff")], ["MP", Color("63a4ff")],
+	["攻击", Color("ff9b5e")],
+	["防御", Color("a9bdd6")],
+	["敏捷", Color("f1dc6a")],
+	["幸运", Color("ff8fc6")],
+	["暴击", Color("ff6b6b")],
+]
 
 
-## 属性名对应的颜色；认不出返回 null
+## 属性名对应的颜色（开关开着用 STAT_COLORS，关着用 STAT_COLORS_OLD）；认不出返回 null
 static func stat_color(name: String):
-	for pair in STAT_COLORS:
+	for pair in (STAT_COLORS if XUiSkin.detail_on() else STAT_COLORS_OLD):
 		if name.contains(str(pair[0])):
 			return pair[1]
 	return null
@@ -510,16 +523,19 @@ static func stat_color(name: String):
 
 ## 把一段「名：数」「名:数」「名+数」拆成 [名, 分隔, 数]；拆不出返回空数组
 static func _split_stat(chunk: String) -> Array:
-	var m := RegEx.create_from_string("^([^：:+\\-\\d]+)([：:])?(.*)$").search(chunk)
+	var m := RegEx.create_from_string("^([^：:+\\-\\d]+)([：:])?([+\\-]?\\d.*)$").search(chunk)
 	if m == null or m.get_string(3) == "":
 		return []
 	return [m.get_string(1), m.get_string(2), m.get_string(3)]
 
 
-## 给一行「自带」加 spans：[[字, 颜色], …]；名字和空白照行本色，只有数值着色，冒号统一为「：」。认不出任何属性就原样返回
+## 给一行「自带」加 spans：[[字, 颜色], …]。认不出任何属性就原样返回
 static func with_stat_spans(r: Dictionary) -> Dictionary:
-	var t := str(r.get("text", ""))
+	if not XUiSkin.detail_on():
+		return _with_stat_spans_legacy(r)
 	var base: Color = r.get("color", XUiSkin.TEXT_2)
+	# 冒号后带空格的「最大生命值: 379」先并成一块，免得名和数被空白切开（核报告 P2-1）
+	var t := RegEx.create_from_string("([：:])[ \\t　]+(?=[+\\-]?\\d)").sub(str(r.get("text", "")), "$1", true)
 	var spans := []
 	var hit := false
 	var re := RegEx.create_from_string("[\\s　]+")
@@ -539,14 +555,15 @@ static func with_stat_spans(r: Dictionary) -> Dictionary:
 			continue
 		var parts := _split_stat(chunk)
 		var c = stat_color(chunk.split("：")[0].split(":")[0])
-		if parts.is_empty() or c == null:
+		if parts.is_empty():
 			spans.append([chunk, base])
 			continue
+		# 「名：数」形状的块：属性名统一次要色，不跟行本色（核报告 P1-4）；色表里没有的（命中率、闪避率…）数值照行本色
 		hit = true
-		spans.append([str(parts[0]), base])
+		spans.append([str(parts[0]), XUiSkin.TEXT_2])
 		if str(parts[1]) != "":
-			spans.append(["：", base])
-		spans.append([str(parts[2]), c])
+			spans.append(["：", XUiSkin.TEXT_2])
+		spans.append([str(parts[2]), c if c != null else base])
 	if not hit:
 		return r
 	var out := r.duplicate()
@@ -554,6 +571,34 @@ static func with_stat_spans(r: Dictionary) -> Dictionary:
 	for sp in spans:
 		txt += str(sp[0])
 	out["text"] = txt
+	out["spans"] = spans
+	return out
+
+
+## 改造前：整段「名：数」按属性上色（拼起来就是原文；空白照原色）
+static func _with_stat_spans_legacy(r: Dictionary) -> Dictionary:
+	var t := str(r.get("text", ""))
+	var base: Color = r.get("color", XUiSkin.TEXT_2)
+	var spans := []
+	var hit := false
+	var re := RegEx.create_from_string("[\\s　]+")
+	var pos := 0
+	for m in re.search_all(t):
+		var chunk := t.substr(pos, m.get_start() - pos)
+		if chunk != "":
+			var c = stat_color(chunk.split("：")[0].split(":")[0])
+			hit = hit or c != null
+			spans.append([chunk, c if c != null else base])
+		spans.append([m.get_string(), base])
+		pos = m.get_end()
+	var tail := t.substr(pos)
+	if tail != "":
+		var c2 = stat_color(tail.split("：")[0].split(":")[0])
+		hit = hit or c2 != null
+		spans.append([tail, c2 if c2 != null else base])
+	if not hit:
+		return r
+	var out := r.duplicate()
 	out["spans"] = spans
 	return out
 

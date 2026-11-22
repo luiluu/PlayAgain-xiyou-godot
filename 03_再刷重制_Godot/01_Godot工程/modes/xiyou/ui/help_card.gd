@@ -1444,16 +1444,11 @@ func _draw_frame() -> void:
 	if skinned():
 		var ci := frame.get_canvas_item()
 		var r := Rect2(Vector2(4, 4), frame.size - Vector2(8, 8))
-		# T360 F-11：说明卡浮层底＝S3 暖炭（94%），不再用烟底／亮边的玻璃高光
-		var sh := StyleBoxFlat.new()
-		sh.draw_center = false
-		sh.shadow_color = Color(0, 0, 0, 0.55)
-		sh.shadow_size = 12
-		sh.shadow_offset = Vector2(0, 8)
-		sh.set_corner_radius_all(XUiSkin.RADIUS)
-		sh.draw(ci, r)
-		RenderingServer.canvas_item_add_nine_patch(ci, r, Rect2(0, 0, 96, 96), XSkinConfirm.s3_panel_tex().get_rid(), Vector2(24, 24), Vector2(24, 24),
-			RenderingServer.NINE_PATCH_STRETCH, RenderingServer.NINE_PATCH_STRETCH, true, Color.WHITE)
+		if XUiSkin.detail_on():
+			XSkinCard.draw_float_s3(ci, r)   # T360 F-11：说明卡浮层底＝S3 暖炭（94%），不再用烟底／亮边的玻璃高光
+		else:
+			XUiSkin.shadow_style().draw(ci, r)
+			XUiSkin.draw_panel(ci, r)
 		var sb := StyleBoxFlat.new()
 		sb.draw_center = false
 		if robe_card:
@@ -1679,6 +1674,7 @@ func _apply_sections(w: float) -> void:
 		skin_card = XSkinCard.new()
 		skin_card.mouse_filter = Control.MOUSE_FILTER_PASS
 		skin_card.fold = true
+		skin_card.floating_s3 = true   # T360 F-11 返修：真实说明卡走这里画，浮层底改 S3 实底（detail_on() 关时照旧）
 		add_child(skin_card)
 	var d := skin_card_data(rows, _obj)
 	d.merge({"notice": "", "buttons": [], "button_index": -1, "reserve_bottom": 0.0}, true)

@@ -101,12 +101,31 @@ static func help_card_shown() -> bool:
 	return not (on() and HELP_COLLAPSE) or help_open
 
 
-## 不能用的原因（只在用不了时调）：照 XBattleLogic.can_use 的先后，认得出的写具体原因，其余写「当前条件不满足」（T360 F-16：不再复读「现在不能用」）
+## 不能用的原因（只在用不了时调）：照 XBattleLogic.can_use 的先后，认得出的写具体原因。
+## T360 F-16（XUiSkin.detail_on() 开时）：兜底写「当前条件不满足」，物品分场合／库存，七印分万籁俱寂／寂静／限时，补武器、异化封印；
+## 文字按小A R1 定稿，压在 298px 说明栏一行内。关着照改造前（兜底「现在不能用」、物品不分）
+const T_REASON_SILENCED := "沉默中，无法使用技能"
+const T_REASON_SILENCE_USED := "本场次数已用完"
+const T_REASON_QIYIN_SILENT := "寂静回合，无法使用技能"
+const T_REASON_QIYIN_EXAM := "本回合技能次数已满"
+const T_REASON_WTYPE := "当前武器无法使用该技能"
+const T_REASON_ITEM_OCCASION := "战斗中无法使用"
+const T_REASON_ITEM_EMPTY := "物品已用完"
+const T_REASON_FALLBACK := "当前条件不满足"
+
+
 static func reason(logic: XBattleLogic, a: XActor, e: Dictionary, items: bool) -> String:
+	if not XUiSkin.detail_on():
+		return _reason_legacy(logic, a, e, items)
 	if a == null or logic == null:
-		return "当前条件不满足"
-	if items:
-		return "这件物品用完了"
+		return T_REASON_FALLBACK
+	var occ := int(e.get("occasion", 0))
+	if occ != 0 and occ != 1:
+		return T_REASON_ITEM_OCCASION if items else T_REASON_FALLBACK
+	if items or XBattleLogic.is_item(e):
+		if int(logic.state.items.get(int(e.get("id", 0)), 0)) <= 0:
+			return T_REASON_ITEM_EMPTY
+		return T_REASON_FALLBACK
 	var id := int(e.get("id", 0))
 	var wu := ceili(float(a.warmups.get(id, 0)))
 	if wu > 0:
@@ -115,7 +134,7 @@ static func reason(logic: XBattleLogic, a: XActor, e: Dictionary, items: bool) -
 	if cd > 0:
 		return "冷却 %d 回合" % cd
 	if XTianqiQiyinEffects.silenced(logic, a) and not a.is_attack(e) and id != XBattleLogic.GUARD_SKILL:
-		return "沉默中，只能普攻、防御、用物品"
+		return T_REASON_SILENCED
 	if int(e.get("stypeId", 0)) > 0 and a.traits_set(XBattler.TRAIT_STYPE_SEAL).has(int(e.stypeId)):
 		return "被封印"
 	if a.traits_set(XBattler.TRAIT_SKILL_SEAL).has(id):
@@ -130,11 +149,62 @@ static func reason(logic: XBattleLogic, a: XActor, e: Dictionary, items: bool) -
 	var mp = XAlienBattle.glutton_mp(a)
 	if (a.mp if mp == null else float(mp)) < float(c.mp):
 		return "MP 不够"
-	if not XTianqiQiyinRule.can_use(logic, a, e):   # T360 F-16：七印祭坛的限制写出来
-		return "七印规则限制，本回合只能普攻、防御、用物品"
+	var q := qiyin_reason(logic, a, e)
+	if q != "":
+		return q
+	if XAlienBattle.sealed(logic, a, e):   # 异化蚀术封印的技能（核报告 P3-2）
+		return "被封印"
 	if not XBattleLogic.wtype_ok(a, e):
-		return "当前武器不能用这个技能"
-	return "当前条件不满足"
+		return T_REASON_WTYPE
+	return T_REASON_FALLBACK
+
+
+## 七印那一段（XTianqiQiyinRule.can_use）挡下时的原因；没挡或认不出返回 ""（认不出的落兜底）
+static func qiyin_reason(logic, a, e: Dictionary) -> String:
+	if not XTianqiQiyinEffects.skill_usable(logic, a, e):
+		# 默印 5 件自带的「万籁俱寂」：穿满了才是「次数用完」，没穿满落兜底（不是七印祭坛规则）
+		var p: Dictionary = XTianqiQiyinEffects.fold(XTianqiQiyinEffects.gear_effects(a)).get("grant_skill_silence_all", {})
+		return T_REASON_SILENCE_USED if not p.is_empty() else T_REASON_FALLBACK
+	if XTianqiQiyinRule.can_use(logic, a, e):
+		return ""
+	var f := XTianqiQiyinRule.fight(logic)
+	if bool(f.get("silent", false)):
+		return T_REASON_QIYIN_SILENT
+	if str(f.get("rule", "")) == "exam":
+		return T_REASON_QIYIN_EXAM
+	return T_REASON_FALLBACK
+
+
+## 改造前的原因（DETAIL_V1 关时用）
+static func _reason_legacy(logic: XBattleLogic, a: XActor, e: Dictionary, items: bool) -> String:
+	if a == null or logic == null:
+		return "现在不能用"
+	if items:
+		return "现在不能用"
+	var id := int(e.get("id", 0))
+	var wu := ceili(float(a.warmups.get(id, 0)))
+	if wu > 0:
+		return "预热 %d 回合" % wu
+	var cd := ceili(float(a.cooldowns.get(id, 0)))
+	if cd > 0:
+		return "冷却 %d 回合" % cd
+	if XTianqiQiyinEffects.silenced(logic, a) and not a.is_attack(e) and id != XBattleLogic.GUARD_SKILL:
+		return "沉默中"
+	if int(e.get("stypeId", 0)) > 0 and a.traits_set(XBattler.TRAIT_STYPE_SEAL).has(int(e.stypeId)):
+		return "被封印"
+	if a.traits_set(XBattler.TRAIT_SKILL_SEAL).has(id):
+		return "被封印"
+	if not logic.can_pay_items(a, e):
+		return "物品不够"
+	if not XBattleLogic.can_pay_hp(a, e):
+		return "生命不够"
+	var c := logic.skill_cost(a, e)
+	if a.tp < float(c.tp):
+		return "TP 不够"
+	var mp = XAlienBattle.glutton_mp(a)
+	if (a.mp if mp == null else float(mp)) < float(c.mp):
+		return "MP 不够"
+	return "现在不能用"
 
 
 ## 右侧消耗：TP／MP／生命写成「TP 5」（窄体数字、按资源上色）；物品数量、物品费用、自定义费用、元素徽记照原行的字和图标
