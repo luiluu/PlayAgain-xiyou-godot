@@ -19,7 +19,7 @@ static func ask_spec(text: String, item_name: String, engrave_replaces := false,
 		return {"title": "用 1 颗异化石重抽？", "body": "%s：异化石马上用掉、不退；抽完在旧词条和新词条里挑一条。" % item_name,
 			"buttons": ["重抽", "取消"], "danger": true}
 	if text.begins_with("使用1颗异化石净化"):
-		return {"title": "净化 %s？" % item_name, "body": "异化词条会被移除、找不回来，退还一部分异化能量。",
+		return {"title": "净化 %s？" % item_name, "body": "异化词条会被移除、找不回来，退还一部分异化能量；会用掉 1 颗异化石，装备保留。",
 			"buttons": ["净化", "取消"], "danger": true}
 	if text.begins_with("刻上") and engrave_replaces:
 		return {"title": "刻到 %s 上？" % target_name, "body": "这件已有的异化词条会被换掉、找不回来；会用掉 1 颗异化石。",

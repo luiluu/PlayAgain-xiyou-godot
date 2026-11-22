@@ -142,6 +142,10 @@ func sync() -> void:
 		"confirm":
 			set_focus("none")
 	stepper.focused = mode == "number" and stepper.visible
+	if XSkinList.T366_V1 and inner_tabs != null:   # T366（T359 P3）：数量态里页签条不听键（Q／E 误按会把页签焦点开关、顺手把列表静默清掉）
+		if mode == "number" or mode == "confirm":
+			inner_tabs.focused = false
+		inner_tabs.set_process_input(mode != "number" and mode != "confirm")
 	list.quiet = mode == "number" or (inner_tabs != null and inner_tabs.focused)   # T359 D256：焦点在数量条／右牌钮时列表选中行降静默，同屏只一个强焦点
 	if mode != "number":
 		stepper.close_editor()   # 离开数量态：手输框收起，别留着吞数字键和回车（小A核 P2-1）

@@ -316,7 +316,7 @@ func handle_input(event: InputEvent) -> bool:
 	if event.is_action_pressed("ui_up", true) or event.is_action_pressed("ui_down", true):
 		if buttons.size() > 1:
 			XSound.system(0)
-			button = posmod(button + (-1 if event.is_action("ui_up") else 1), buttons.size())
+			step_button(-1 if event.is_action("ui_up") else 1)
 			card.queue_redraw()
 		return true
 	if event.is_action_pressed("ui_accept"):
@@ -462,14 +462,63 @@ func _draw_ring() -> void:
 		XUiSkin.ds(ring, body, Vector2(lp.x - tw / 2.0, lp.y + 22), stt, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, state_color(st))
 
 
+## T366 R20：入口按钮的行（每行是按钮序号）。大钮（揭印／再进里副本、揭开封着的）各占一行；其余（看印库、熔炼分解兑换、龙隙、外观…）两枚一行的小钮，
+## 落单的小钮占满一行。T366_V1 关＝每钮一行（旧）
+func btn_rows() -> Array:
+	var out := []
+	var small := []
+	for i in buttons.size():
+		if XSkinList.T366_V1 and not _is_big(buttons[i]):
+			small.append(i)
+			if small.size() == 2:
+				out.append(small)
+				small = []
+		else:
+			if not small.is_empty():   # 大钮前面落单的小钮先收成一行
+				out.append(small)
+				small = []
+			out.append([i])
+	if not small.is_empty():
+		out.append(small)
+	return out
+
+
+static func _is_big(b: Dictionary) -> bool:
+	return str(b.get("id", "")) in ["enter", "reveal"]
+
+
+const SMALL_H := 36.0
+
+
 func button_rect(i: int) -> Rect2:
 	var cr := card_rect()
 	var pad := float(XUiSkin.PAD_LG)
-	var n := buttons.size()
 	var gap := float(XUiSkin.GRID)
-	var bh := minf(BUTTON_H, (cr.size.y * 0.55 - gap * (n - 1)) / maxf(n, 1.0))
-	var y0 := cr.size.y - pad - n * bh - (n - 1) * gap
-	return Rect2(pad, y0 + i * (bh + gap), cr.size.x - pad * 2, bh)
+	var brs := btn_rows()
+	var n := brs.size()
+	if not XSkinList.T366_V1:
+		var bh0 := minf(BUTTON_H, (cr.size.y * 0.55 - gap * (n - 1)) / maxf(n, 1.0))
+		var y00 := cr.size.y - pad - n * bh0 - (n - 1) * gap
+		return Rect2(pad, y00 + i * (bh0 + gap), cr.size.x - pad * 2, bh0)
+	var big_h := minf(BUTTON_H, (cr.size.y * 0.55 - gap * (n - 1)) / maxf(n, 1.0))
+	var heights := brs.map(func(r): return big_h if _is_big(buttons[r[0]]) else minf(SMALL_H, big_h))
+	var total := gap * (n - 1)
+	for h in heights:
+		total += h
+	var y := cr.size.y - pad - total
+	for k in n:
+		var row: Array = brs[k]
+		var c := row.find(i)
+		if c >= 0:
+			var w := (cr.size.x - pad * 2 - gap * (row.size() - 1)) / row.size()
+			return Rect2(pad + c * (w + gap), y, w, heights[k])
+		y += heights[k] + gap
+	return Rect2()
+
+
+## 上下键：线性遍历全部入口（两枚一行的排版只是画法，键盘照旧一枚一枚走，每个入口都选得到）
+func step_button(d: int) -> void:
+	button = posmod(button + d, buttons.size())
 
 
 func _draw_card() -> void:

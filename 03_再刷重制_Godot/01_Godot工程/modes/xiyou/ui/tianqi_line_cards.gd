@@ -212,6 +212,11 @@ func _make_card(i: int) -> Control:
 	card.portrait = XTianqiLook.CARD_PORTRAIT or XTianqiRewards.badges().has(key)
 	if not card.portrait:
 		fig.material = XTianqiLook.silhouette_material(key)
+		if skin and not ok and XSkinList.T366_V1:   # T366 R17：暂未开放的剪影去饱和（填色、边光都取同亮度的灰）
+			var m := fig.material as ShaderMaterial
+			for k in ["fill", "rim"]:
+				var c: Color = m.get_shader_parameter(k)
+				m.set_shader_parameter(k, Color(c.v, c.v, c.v, c.a))
 	card.add_child(fig)
 	card.fig = fig
 	var y := FIG_H + 22.0
@@ -285,6 +290,8 @@ func _make_card(i: int) -> Control:
 		tag.position = Vector2(0, FIG_H / 2.0)
 		tag.size = Vector2(CARD.x, 30)
 		tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		if skin and XSkinList.T366_V1:   # T366 R17：整张卡压到 45%，这行字把亮度补回来（父级 modulate 相乘，字仍看得清）
+			tag.modulate = Color(2.0, 2.0, 2.0, 1.0)
 		card.add_child(tag)
 	return card
 
@@ -304,6 +311,8 @@ func _highlight() -> void:
 		c.selected = i == index
 		var y := TOP - (LIFT if c.selected else 0.0)
 		var tint := Color.WHITE if c.selected else UNSELECTED
+		if skin and not c.ok and XSkinList.T366_V1:   # T366 R17：没开放的整张压到 45% 亮度，比能选的三张都暗
+			tint = Color(0.45, 0.45, 0.45, 1.0)
 		var k := Vector2.ONE * _card_scale(c.selected)
 		c.pivot_offset = CARD / 2.0
 		if is_inside_tree() and (not is_equal_approx(c.position.y, y) or c.modulate != tint or c.scale != k) and not (skin and XUiSkin.motion() == XUiSkin.Motion.OFF):
@@ -442,7 +451,7 @@ class _Card extends Control:
 			bar.bg_color = Color(XUiSkin.SEL_LINE, XUiSkin.breath_alpha())
 			bar.set_corner_radius_all(2)
 			bar.draw(ci, Rect2(XUiSkin.RADIUS + 8, 0, size.x - (XUiSkin.RADIUS + 8) * 2, XUiSkin.BAR_W))
-		if not ok:
+		if not ok and not XSkinList.T366_V1:   # T366 R17：新画法整张 modulate 压到 45%（见 _highlight），不再叠黑层
 			var dim := StyleBoxFlat.new()
 			dim.bg_color = Color(0, 0, 0, 0.45)
 			dim.set_corner_radius_all(XUiSkin.RADIUS)

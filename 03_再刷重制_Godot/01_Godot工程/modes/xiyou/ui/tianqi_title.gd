@@ -354,6 +354,18 @@ static func _skin_button(b: Button) -> void:
 	for sb in styles:
 		for side in [SIDE_LEFT, SIDE_RIGHT, SIDE_TOP, SIDE_BOTTOM]:
 			sb.set_content_margin(side, old.get_content_margin(side) if old != null else 4.0)
+	if XSkinList.T366_V1:   # T366 R18：角落按钮（继续／返回版本选择）换胶囊：圆角＝半高，深底淡金细线，同按键提示的样子
+		var cap := int(maxf(keep.y, 24.0) / 2.0)
+		for k in styles.size():
+			var sb = styles[k]
+			if sb is StyleBoxFlat:
+				(sb as StyleBoxFlat).set_corner_radius_all(cap)
+				if k < 2:   # normal、disabled
+					(sb as StyleBoxFlat).bg_color = Color(XUiSkin.bg_c(), 0.88)
+					(sb as StyleBoxFlat).border_color = Color(XUiSkin.GOLD, 0.6)
+					(sb as StyleBoxFlat).set_border_width_all(1)
+				for side in [SIDE_LEFT, SIDE_RIGHT]:
+					sb.set_content_margin(side, maxf(sb.get_content_margin(side), float(cap) * 0.6))
 	# 思源黑体行高比原字体高：撑高了就先压上下内边距、再把字号降一档（不低于 14），保持原高
 	var f := clampi(fs, XUiSkin.FS_AUX, XUiSkin.FS_AUX_MAX)
 	for k in 6:

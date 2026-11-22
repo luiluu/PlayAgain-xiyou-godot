@@ -22,6 +22,12 @@ const TITLE := "菜单"
 const ROW_GROUP := 46.0      # 收起的组一行
 const ROW_HEADER := 46.0     # 展开组的组名行
 const ROW_ITEM := float(XUiSkin.ROW_H_MENU)   # 子项 56
+const ROW_ITEM_2L := 72.0    # T366 R19：子项两行式（名字一行、说明一行）行高
+
+
+## 子项行高：T366_V1 开＝两行式 72，关＝旧单行 56
+static func row_item() -> float:
+	return ROW_ITEM_2L if XSkinList.T366_V1 else ROW_ITEM
 const LEFT_W := 416.0
 const RIGHT_W := 360.0
 const RUN_H := 96.0          # 本局条（有七印行）
@@ -418,9 +424,9 @@ func _layout_rows() -> void:
 		if k != gi:
 			collapsed += 1
 		elif n <= 1:
-			fixed += ROW_ITEM
+			fixed += row_item()
 		else:
-			fixed += ROW_HEADER + ROW_ITEM * n
+			fixed += ROW_HEADER + row_item() * n
 	var gh := ROW_GROUP
 	if collapsed > 0:
 		gh = clampf((h - fixed) / collapsed, 30.0, ROW_GROUP)
@@ -432,14 +438,14 @@ func _layout_rows() -> void:
 			_rows.append({"kind": "group", "g": k, "i": 0, "rect": Rect2(row_x(), y, w, gh)})
 			y += gh
 		elif n <= 1:
-			_rows.append({"kind": "item", "g": k, "i": 0, "rect": Rect2(row_x(), y, w, ROW_ITEM)})
-			y += ROW_ITEM
+			_rows.append({"kind": "item", "g": k, "i": 0, "rect": Rect2(row_x(), y, w, row_item())})
+			y += row_item()
 		else:
 			_rows.append({"kind": "header", "g": k, "i": -1, "rect": Rect2(row_x(), y, w, ROW_HEADER)})
 			y += ROW_HEADER
 			for i in n:
-				_rows.append({"kind": "item", "g": k, "i": i, "rect": Rect2(row_x(), y, w, ROW_ITEM)})
-				y += ROW_ITEM
+				_rows.append({"kind": "item", "g": k, "i": i, "rect": Rect2(row_x(), y, w, row_item())})
+				y += row_item()
 
 
 ## 行左边：第一期正式美术的选中条箭头外置在行左外 22px，行往里收到 28，箭头收在烟底面板里（小A核 P2-1）；否则照旧 10
@@ -460,8 +466,8 @@ func _layout_rows_two() -> void:
 		_rows.append({"kind": "note", "g": gi, "i": 0, "rect": Rect2(row_x(), y, w, NOTE_H)})
 		return
 	for i in n:
-		_rows.append({"kind": "item", "g": gi, "i": i, "rect": Rect2(row_x(), y, w, ROW_ITEM)})
-		y += ROW_ITEM
+		_rows.append({"kind": "item", "g": gi, "i": i, "rect": Rect2(row_x(), y, w, row_item())})
+		y += row_item()
 
 
 func rows() -> Array:
@@ -727,6 +733,7 @@ func _draw_pane() -> void:
 	var body := XUiSkin.font("body")
 	var head := XUiSkin.font("title")
 	item_scale.sel("%d:%d" % [gi, ii] if not TWO_LEVEL or level == 1 else null)
+	_draw_watermark()
 	for r in _rows:
 		var rect: Rect2 = r.rect
 		var g: Dictionary = groups[r.g]
@@ -753,14 +760,37 @@ func _draw_pane() -> void:
 				var fs := XSkinSelScale.fs(XUiSkin.FS_LIST_MAX, item_scale.k("%d:%d" % [r.g, r.i]), floori(rect.size.y * 0.62))
 				var nm := str(it.name)
 				# T095（Kyo 11-16）：选中只放大、不换字体（原先选中用标题衬线体，切换时跳字体）
-				XUiSkin.ds(text_layer, body, Vector2(ix, base + fs * 0.36), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
-					XUiSkin.TEXT_3 if not ok else (Color.WHITE if on else XUiSkin.TEXT))
+				if not XSkinList.T366_V1:
+					XUiSkin.ds(text_layer, body, Vector2(ix, base + fs * 0.36), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
+						XUiSkin.TEXT_3 if not ok else (Color.WHITE if on else XUiSkin.TEXT))
 				var nw := body.get_string_size(nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 				var desc := str(it.get("desc", ""))
+				if XSkinList.T366_V1:   # T366 R19：两行式——名字一行、说明另起一行（次要字），整块在行内垂直居中
+					XUiSkin.ds(text_layer, body, Vector2(ix, rect.position.y + rect.size.y * 0.40 + fs * 0.36 - 2.0), nm, HORIZONTAL_ALIGNMENT_LEFT, -1, fs,
+						XUiSkin.TEXT_3 if not ok else (Color.WHITE if on else XUiSkin.TEXT))
+					if desc != "":
+						XUiSkin.ds(text_layer, body, Vector2(ix, rect.position.y + rect.size.y * 0.74 + 15 * 0.36), desc, HORIZONTAL_ALIGNMENT_LEFT, maxf(rect.end.x - ix - 12.0, 10.0), 15,
+							XUiSkin.TEXT_3 if not ok else XUiSkin.TEXT_2)
+					continue
 				if desc != "":
 					var dx := ix + nw + 14.0
 					XUiSkin.ds(text_layer, body, Vector2(dx, base + 15 * 0.36), desc, HORIZONTAL_ALIGNMENT_LEFT, maxf(rect.end.x - dx - 12.0, 10.0), 15,
 						XUiSkin.TEXT_3 if not ok else XUiSkin.TEXT_2)
+
+
+## T366 R19：中栏右下角放当前这一组图标的大水印（8% 透明度；组图标 64 贴图放 4 倍）。没有贴图（旧图标号模式）不画
+func _draw_watermark() -> void:
+	if not XSkinList.T366_V1:
+		return
+	var g := current_group()
+	var tex := XUiSkin.group_icon(str(g.get("art", "")), false, 64) if not g.is_empty() else null
+	if tex == null:
+		return
+	var sz := text_layer.size
+	var side := minf(minf(sz.x, sz.y) - 24.0, 256.0)
+	if side < 96.0:
+		return
+	text_layer.draw_texture_rect(tex, Rect2(sz.x - side - 12.0, sz.y - side - 12.0, side, side), false, Color(1, 1, 1, 0.08))
 
 
 func _draw_run() -> void:

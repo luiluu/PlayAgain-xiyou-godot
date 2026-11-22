@@ -1,7 +1,7 @@
 class_name XSkinList
 extends Control
 ## 【cc·天启篇·未经审查】直列表：一列／两列、行高可设、超出时右侧细滚动条，选中用红乙选中条（XSkinSelectBar）。
-## 每项 {text, icon（图标号或 Texture2D）, badge（图标左上角的小角标贴图，如「新」）, sub（名字后的辅助小字）, right（右对齐数值，窄体数字字）, color, right_color, disabled}。
+## 每项 {text, icon（图标号或 Texture2D）, badge（有就在名字后画一枚旧金小点＝「新」，T366 R16；T366_V1 关时仍是图标左上角贴图）, reason（T366 R12：用不了且被选中时行尾的原因小字）, sub（名字后的辅助小字）, right（右对齐数值，窄体数字字）, color, right_color, disabled}。
 ## 1C 加（可不给）：right2（right 再右边的第二列，正文字、右对齐，如装备候选的「▲23」）、right2_color；列宽 right2_w（整表一致，列才对得齐）。
 ## T283 加（可不给，不给就不画、和以前逐像素一样）：tags（名字后的小标 XSkinTag：["新"] 或 [{text, color}]，名字放不下先缩名字、小标不缩）、
 ## check（多选方框：0 空框、1 金色 ✓；没这个键的行不画框；要整表先设 check_column = true 才留出行首 28 的位置）；
@@ -383,6 +383,8 @@ func _draw_check(pos: Vector2, on: bool, dis: bool) -> void:
 	sb.draw(get_canvas_item(), Rect2(pos.x, pos.y - 7.0, 14.0, 14.0))
 
 
+## T366 卡 H（R10～R12、R16～R20 零碎返修，O-633）总开关：false＝全部回到改前画法（图标角标、选线卡、标题角钮、主菜单子项、祭坛按钮、物品页、状态页、行尾原因都走旧样）
+static var T366_V1 := true
 ## T254 3.0「用不了的行」：字 TEXT_3，被选中时提到 #c9cbd0（T300 小A核 P2-3）。DIS_SEL_ON＝false 回到选中也是 TEXT_3
 static var DIS_SEL_ON := true
 const DIS_SEL := Color("c9cbd0")
@@ -511,7 +513,7 @@ func _draw() -> void:
 			var ir := XSkinSelScale.grow(ir0, sk)
 			draw_texture_rect(tex, ir, false, Color(1, 1, 1, 0.45 if dis else 1.0))
 			var badge = it.get("badge")
-			if badge is Texture2D:
+			if badge is Texture2D and not T366_V1:   # T366 R16：新标记改画成名字后的旧金小点（见下），不再在图标角上贴图
 				var bs: Vector2 = (badge as Texture2D).get_size()
 				var bk := 14.0 / maxf(bs.y, 1.0)
 				draw_texture_rect(badge, Rect2(ir.position.x - 4, ir.position.y - 4, bs.x * bk, bs.y * bk), false)
@@ -525,18 +527,29 @@ func _draw() -> void:
 			XUiSkin.ds(self, body, Vector2(end_x - r2w, base + (right_size - 3) * 0.36), r2, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size - 3,
 				dis_color(i) if dis else it.get("right2_color", XUiSkin.TEXT_2))
 			end_x -= right2_w
+		# T366 R12：用不了的行被选中时行尾（right 左边）写一句原因小字（行键 reason）；名字让出这段宽。窄格（两列表）放不下名字＋原因＋数值时，原因顶掉数值
+		var why := str(it.get("reason", "")) if (T366_V1 and dis and i == index and active) else ""
+		var why_w := 0.0
+		if why != "":
+			why_w = body.get_string_size(why, HORIZONTAL_ALIGNMENT_LEFT, -1, sub_size).x
+			if right != "" and body.get_string_size(str(it.get("text", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x + why_w + 24.0 + num.get_string_size(right, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size).x + 10.0 > end_x - x:
+				right = ""
 		if right != "":
 			right_w = num.get_string_size(right, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size).x
 			var rc: Color = it.get("right_color", XUiSkin.TEXT)
 			XUiSkin.ds(self, num, Vector2(end_x - right_w, base + right_size * 0.36), right, HORIZONTAL_ALIGNMENT_LEFT, -1, right_size,
 				dis_color(i) if dis else rc)
-		var max_w := end_x - right_w - (10.0 if right_w > 0 else 0.0) - x
+		if why != "":
+			XUiSkin.ds(self, body, Vector2(end_x - right_w - (10.0 if right_w > 0 else 0.0) - why_w, base + sub_size * 0.36), why, HORIZONTAL_ALIGNMENT_LEFT, -1, sub_size, DIS_SEL)
+			why_w += 12.0
+		var max_w := end_x - right_w - (10.0 if right_w > 0 else 0.0) - why_w - x
 		var col: Color = it.get("color", XUiSkin.TEXT)
 		if i == index and active:
 			col = XUiSkin.sel_text(col)
 		var tags: Array = it.get("tags", [])
 		var tags_w := XSkinTag.row_width(tags) + XSkinTag.GAP * 2.0 if not tags.is_empty() else 0.0
-		var fit := fit_text(body, str(it.get("text", "")), max_w - tags_w, XSkinSelScale.fs(font_size, sk, sel_font_cap()), min_font_size)
+		var badge_w := 14.0 if (T366_V1 and it.get("badge") is Texture2D) else 0.0   # R16 旧金小点留宽，长名字先省略
+		var fit := fit_text(body, str(it.get("text", "")), max_w - tags_w - badge_w, XSkinSelScale.fs(font_size, sk, sel_font_cap()), min_font_size)
 		var text: String = fit[0]
 		var fs: int = fit[1]
 		XUiSkin.ds(self, body, Vector2(x, base + fs * 0.36), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, dis_color(i) if dis else col)
@@ -551,6 +564,11 @@ func _draw() -> void:
 				tx += tw2 + XSkinTag.GAP
 				after += tw2 + XSkinTag.GAP
 			after += XSkinTag.GAP
+		if T366_V1 and it.get("badge") is Texture2D:   # T366 R16：名字（和小标）后一枚旧金小点
+			var dx := x + body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + after + 9.0
+			if dx + 4.0 < x + max_w:
+				draw_circle(Vector2(dx, base), 4.0, Color(XUiSkin.GOLD, 0.45 if dis else 1.0))
+				after += 14.0
 		var sub := str(it.get("sub", ""))
 		if sub != "":
 			var tw := body.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x + after

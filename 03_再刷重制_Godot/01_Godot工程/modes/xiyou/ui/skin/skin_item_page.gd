@@ -59,6 +59,16 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_PASS
 
 
+## T366 R10：「给谁用」跟着说明往上贴（说明、效果、用法写完空一格就是它），不再沉在牌底留一大截空；按钮仍在牌底。
+## 说明多到放不下时仍贴在牌底上方（同旧位置），所以只会比旧位置高、不会更低。T366_V1 关＝照旧贴牌底
+func _place_targets() -> void:
+	super()
+	if not XSkinList.T366_V1 or card == null or targets == null or not targets.visible or card.size.x < 100.0:
+		return
+	var end_y := card.natural_height(card.size.x) - card.pad - (XSkinCard.BUTTON_H + XUiSkin.GRID if not card.buttons.is_empty() else 0.0) - card.reserve_bottom
+	targets.position.y = minf(targets.position.y, maxf(end_y + XUiSkin.PAD, 0.0))
+
+
 ## 旧窗口里还在用的（数量窗、藏宝图）在宽屏时往右挪的距离；点击坐标同样减回去
 func legacy_offset() -> Vector2:
 	return Vector2(roundf((layout.view_size().x - 1280.0) / 2.0), 0) if layout != null else Vector2.ZERO
