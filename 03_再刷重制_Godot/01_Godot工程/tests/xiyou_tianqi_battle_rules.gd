@@ -328,7 +328,7 @@ func _qiyin() -> void:
 	sl.setup(187, s)
 	XTianqiQiyinEffects._store(sl).scroll_rule = "zhen"
 	XTianqiQiyinRule.take_logs(sl)
-	var br := _collect_pure(sl)
+	var br := _collect_pure(sl).filter(func(r): return str(r.source) == "qiyin")  # 同场可能还按段异化（随机），只看书卷那条
 	_check("scroll_rule", br.size() == 1 and str(br[0].badge) == "七印书卷" and str(br[0].detail_extra).begins_with("作用对象：") and int(br[0].icon) == 310505, br)
 	_check("scroll_source", XTianqiBattleRules.source_label(sl) == "七印书卷")
 	sl.end_battle(2)
