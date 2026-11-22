@@ -33,6 +33,15 @@ const ROLLED := "rolled"        # 已手动退回，等重启
 ## 内边距走 8 的网格；false＝回到深紫蓝底＋2px 亮金硬框、22px 上下边距
 static var FRAME_V2 := true
 
+## T369（卡 T，T254 §4.2）回退开关：天启篇新标题上的更新页换新界面样式（XUiSkin 弹窗：宽 640／400、标题 26、橙色问题边、金进度条、
+## 次按钮在左主按钮在右、退回改小字链接 3 秒复位、新增「重新检查」「手动下载」位）。是否用新样式由调用处传 use_skin（O-467：标题上没有存档，
+## XUiSkin.on() 答不上来）；false＝照 T361 的暖炭框旧画法，一行不变。
+static var SKIN_V1 := true
+const SKIN_W := 640.0
+const SKIN_W_SMALL := 400.0
+const SKIN_MAX_H := 620.0
+const ROLLBACK_RESET_SEC := 3.0
+
 
 ## 更新页／更新说明页共用的框（更新说明页旧样式也借它）
 static func frame_style() -> StyleBoxFlat:
@@ -97,27 +106,43 @@ var _forced_result: Dictionary = {}
 var _action := ""   # 强制模式下主按钮做什么：install／retry／link／cancel／restart
 var _link: Button   # 强制模式：下载失败时的「手动下载」按钮
 var _recheck: Button  # 强制模式：只能整包时的「重新检查」（重新拉清单，不因失败次数放行）
+## 新界面样式（T369）：调用处传 use_skin 决定，不问 XUiSkin.on()
+var skin := false
+var _notice_l: Label       # 新样式：「上次更新没用上」「已撤回」的橙色小字（旧样式放进正文）
+var _verrow: HBoxContainer # 新样式：版本行（新版本号 GOLD_LIGHT）
+var _ver_new: Label
+var _ver_rest: Label
+var _bar_row: HBoxContainer  # 新样式：下载进度条＋百分比
+var _bar_fill: ColorRect
+var _pct: Label
+var _dots: HBoxContainer   # 新样式：检查中三枚金点
+var _candle: Control       # 新样式：下好了标题前的小金蜡
+var _buttons2: HBoxContainer  # 新样式：下载没完成时「关闭」单独一行
+var _rb_gen := 0
+var _dots_tween: Tween
 
 
 ## 页面放进单独的 CanvasLayer（盖在标题、logo 和一切画面之上，按整个视口居中），挂在 host 下，关页面时一起删。
-static func open(host: Node) -> XUpdatePage:
+static func open(host: Node, use_skin := false) -> XUpdatePage:
 	var layer := CanvasLayer.new()
 	layer.name = "UpdateLayer"
 	layer.layer = LAYER
 	var p := XUpdatePage.new()
 	p.name = "UpdatePage"
+	p.skin = use_skin and SKIN_V1
 	layer.add_child(p)
 	host.add_child(layer)
 	return p
 
 
 ## 强制更新框（XForceUpdate 用）：result 是 XUpdateClient.check 的结果（forced＝true），或 {"state": "checking"}（还在查）。
-static func open_forced(host: Node, result: Dictionary) -> XUpdatePage:
+static func open_forced(host: Node, result: Dictionary, use_skin := false) -> XUpdatePage:
 	var layer := CanvasLayer.new()
 	layer.name = "UpdateLayer"
 	layer.layer = LAYER
 	var p := XUpdatePage.new()
 	p.name = "UpdatePage"
+	p.skin = use_skin and SKIN_V1
 	p.forced = true
 	p._forced_result = result
 	layer.add_child(p)
@@ -226,10 +251,12 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_fit)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	theme = XUI.theme()
+	theme = XUiSkin.theme() if skin else XUI.theme()
 	var dim := ColorRect.new()
 	dim.name = "Dim"
 	dim.color = dim_color(0.95 if forced else 0.72)  # 强制更新：标题整个盖住
+	if skin:
+		dim.color = Color(0, 0, 0, 1.0 if forced else XSkinConfirm.DIM)  # 新样式：压暗 66%，强制更新底不透明
 	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(dim)
@@ -240,38 +267,53 @@ func _ready() -> void:
 	_panel = PanelContainer.new()
 	_panel.name = "Panel"
 	_panel.mouse_filter = Control.MOUSE_FILTER_STOP  # 点框里不算点外面
-	_panel.add_theme_stylebox_override("panel", frame_style())
+	_panel.add_theme_stylebox_override("panel", skin_frame(false) if skin else frame_style())
 	center.add_child(_panel)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	_panel.add_child(box)
-	_title = XUI.label("", 32, title_color())
+	_title = _lbl("", XUiSkin.FS_CARD if skin else 32, XUiSkin.TEXT_HI if skin else title_color())
 	_title.name = "Title"
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	box.add_child(_title)
+	if skin:
+		_title.add_theme_font_override("font", XUiSkin.font("title"))
+		var trow := HBoxContainer.new()
+		trow.alignment = BoxContainer.ALIGNMENT_CENTER
+		trow.add_theme_constant_override("separation", 10)
+		_candle = _make_candle()
+		_candle.visible = false
+		trow.add_child(_candle)
+		trow.add_child(_title)
+		box.add_child(trow)
+	else:
+		box.add_child(_title)
 	var line := ColorRect.new()
 	line.color = line_color()
-	line.custom_minimum_size = Vector2(0, 1 if FRAME_V2 else 2)
+	line.custom_minimum_size = Vector2(0, 1 if FRAME_V2 or skin else 2)
 	box.add_child(line)
+	if skin:
+		_build_skin_head(box)
 	_scroll = ScrollContainer.new()
 	_scroll.name = "Scroll"
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	_scroll.follow_focus = false
 	box.add_child(_scroll)
-	_body = XUI.label("", 22)
+	_body = _lbl("", XUiSkin.FS_LIST - 2 if skin else 22, XUiSkin.TEXT if skin else XUI.TEXT)
 	_body.name = "Body"
 	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_scroll.add_child(_body)
-	_more = XUI.label("↑↓ 滚动查看全部内容", 16, XUI.DIM)
+	_more = _lbl("↑↓ 滚动查看全部内容", XUiSkin.FS_AUX if skin else 16, XUiSkin.TEXT_2 if skin else XUI.DIM)
 	_more.name = "More"
 	_more.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	box.add_child(_more)
+	if skin:
+		_build_skin_progress(box)
 	_buttons = HBoxContainer.new()
 	_buttons.alignment = BoxContainer.ALIGNMENT_CENTER
-	_buttons.add_theme_constant_override("separation", 32)
+	_buttons.add_theme_constant_override("separation", 16 if skin else 32)
 	box.add_child(_buttons)
-	_primary = _make_button("立即更新")
+	_primary = _make_button("立即更新", "primary")
 	_primary.name = "Primary"
 	_primary.pressed.connect(_on_primary)
 	_buttons.add_child(_primary)
@@ -279,7 +321,24 @@ func _ready() -> void:
 	_close.name = "Close"
 	_close.pressed.connect(_on_close)
 	_buttons.add_child(_close)
-	if forced:
+	if skin:
+		_link = _make_button("手动下载")
+		_link.name = "Link"
+		_link.pressed.connect(_open_link)
+		_link.visible = false
+		_buttons.add_child(_link)
+		_recheck = _make_button("重新检查")
+		_recheck.name = "Recheck"
+		_recheck.pressed.connect(_on_recheck)
+		_recheck.visible = false
+		_buttons.add_child(_recheck)
+		_buttons2 = HBoxContainer.new()
+		_buttons2.name = "Buttons2"
+		_buttons2.alignment = BoxContainer.ALIGNMENT_CENTER
+		_buttons2.visible = false
+		box.add_child(_buttons2)
+		_arrange_buttons(false)  # 次按钮在左、主按钮在右（T254 §4.2）
+	elif forced:
 		_link = _make_button("手动下载")
 		_link.name = "Link"
 		_link.pressed.connect(_open_link)
@@ -301,11 +360,7 @@ func _ready() -> void:
 		_form = XFeedback.make_form_button(18)
 		_form.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		box.add_child(_form)
-	_rollback = XUI.button("退回安装包自带版本", 36)
-	_rollback.name = "Rollback"
-	_rollback.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_rollback.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	_rollback.add_theme_font_size_override("font_size", 18)
+	_rollback = _make_rollback()
 	_rollback.pressed.connect(_on_rollback)
 	_rollback.visible = bool(XUpdateInstall.BootPatchScript.result.get("loaded", false)) and not forced
 	box.add_child(_rollback)
@@ -325,6 +380,12 @@ func _ready() -> void:
 		return
 	show_result({"state": "checking"})
 	_check.call_deferred()
+
+
+func _exit_tree() -> void:
+	if _dots_tween != null:
+		_dots_tween.kill()
+		_dots_tween = null
 
 
 func _check() -> void:
@@ -356,6 +417,9 @@ func show_result(result: Dictionary) -> void:
 	var can_install := patch_installer.is_valid() or XUpdateInstall.ENABLED
 	var t := forced_texts(result, can_install) if forced else texts(result, can_install)
 	_action = str(t.get("action", ""))
+	if skin:
+		_show_skin(result, t)
+		return
 	_title.text = t["title"]
 	_set_body(_notice + t["body"])
 	_primary.visible = t["primary"] != ""
@@ -372,6 +436,293 @@ func show_result(result: Dictionary) -> void:
 	_focus_default.call_deferred()
 
 
+# ---------------- T369 新界面样式（skin＝true 才走；旧样式不经过这里） ----------------
+
+func _lbl(text: String, fs: int, col: Color) -> Label:
+	if skin:
+		var l := Label.new()
+		l.text = text
+		l.add_theme_font_size_override("font_size", fs)
+		l.add_theme_color_override("font_color", col)
+		l.add_theme_constant_override("outline_size", XUiSkin.outline_size())
+		l.add_theme_color_override("font_outline_color", XUiSkin.outline_color())
+		return l
+	return XUI.label(text, fs, col)
+
+
+## 新样式的弹窗框：同统一确认弹窗（DLG_LOW 底、灰细线）；danger＝出了问题的状态，边用 DOWN 橙
+static func skin_frame(danger: bool) -> StyleBoxFlat:
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(XSkinConfirm.DLG_LOW, 0.98)
+	st.border_color = Color(XUiSkin.DOWN, 0.9) if danger else Color(XUiSkin.line_c(), 0.42)
+	st.set_border_width_all(2 if danger else 1)
+	st.set_corner_radius_all(XUiSkin.RADIUS)
+	st.anti_aliasing = true
+	st.shadow_color = Color(0, 0, 0, 0.62)
+	st.shadow_size = 18
+	st.shadow_offset = Vector2(0, 8)
+	st.content_margin_left = 32
+	st.content_margin_right = 32
+	st.content_margin_top = 24
+	st.content_margin_bottom = 24
+	return st
+
+
+## 出了问题的状态：下载没完成，和强制更新的「需要更新」
+static func is_problem(st: String, is_forced: bool) -> bool:
+	return st == FAILED or (is_forced and st in [XUpdateCheck.PATCH, XUpdateCheck.FULL])
+
+
+## 内容少的状态宽 400，其余 640
+static func skin_narrow(st: String) -> bool:
+	return st in ["checking", XUpdateCheck.LATEST, XUpdateCheck.BAD, ROLLED, READY]
+
+
+func _panel_w() -> float:
+	if skin:
+		return SKIN_W_SMALL if skin_narrow(state) else SKIN_W
+	return W
+
+
+func _make_candle() -> Control:
+	var c := Control.new()
+	c.name = "Candle"
+	c.custom_minimum_size = Vector2(12, 24)
+	var wax := ColorRect.new()
+	wax.color = XUiSkin.GOLD
+	wax.position = Vector2(3, 10)
+	wax.size = Vector2(6, 14)
+	var flame := ColorRect.new()
+	flame.color = XUiSkin.GOLD_LIGHT
+	flame.position = Vector2(4, 3)
+	flame.size = Vector2(4, 6)
+	c.add_child(wax)
+	c.add_child(flame)
+	return c
+
+
+func _build_skin_head(box: VBoxContainer) -> void:
+	_verrow = HBoxContainer.new()
+	_verrow.name = "VersionRow"
+	_verrow.alignment = BoxContainer.ALIGNMENT_CENTER
+	_verrow.visible = false
+	var a := _lbl("新版本 ", XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+	_ver_new = _lbl("", XUiSkin.FS_AUX, XUiSkin.GOLD_LIGHT)
+	_ver_new.name = "NewVersion"
+	_ver_rest = _lbl("", XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+	_verrow.add_child(a)
+	_verrow.add_child(_ver_new)
+	_verrow.add_child(_ver_rest)
+	box.add_child(_verrow)
+	_notice_l = _lbl("", XUiSkin.FS_AUX, XUiSkin.DOWN)
+	_notice_l.name = "Notice"
+	_notice_l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_notice_l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_notice_l.visible = false
+	box.add_child(_notice_l)
+
+
+func _build_skin_progress(box: VBoxContainer) -> void:
+	_dots = HBoxContainer.new()
+	_dots.name = "Dots"
+	_dots.alignment = BoxContainer.ALIGNMENT_CENTER
+	_dots.add_theme_constant_override("separation", 10)
+	_dots.visible = false
+	for i in 3:
+		var d := ColorRect.new()
+		d.color = XUiSkin.GOLD
+		d.custom_minimum_size = Vector2(8, 8)
+		d.modulate.a = 0.35
+		_dots.add_child(d)
+	box.add_child(_dots)
+	_bar_row = HBoxContainer.new()
+	_bar_row.name = "ProgressRow"
+	_bar_row.add_theme_constant_override("separation", 12)
+	_bar_row.visible = false
+	var track := ColorRect.new()
+	track.name = "ProgressTrack"
+	track.color = Color(1, 1, 1, 0.12)
+	track.custom_minimum_size = Vector2(0, 8)
+	track.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	track.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_bar_fill = ColorRect.new()
+	_bar_fill.name = "ProgressFill"
+	_bar_fill.color = XUiSkin.GOLD
+	_bar_fill.set_anchors_preset(Control.PRESET_LEFT_WIDE)
+	_bar_fill.anchor_right = 0.0
+	track.add_child(_bar_fill)
+	_bar_row.add_child(track)
+	_pct = _lbl("0%", XUiSkin.FS_AUX, XUiSkin.TEXT_2)
+	_pct.name = "Percent"
+	_bar_row.add_child(_pct)
+	box.add_child(_bar_row)
+
+
+func _set_progress(done: int, total: int) -> void:
+	if _bar_fill == null:
+		return
+	var r := clampf(float(done) / float(maxi(1, total)), 0.0, 1.0)
+	_bar_fill.anchor_right = r
+	_bar_fill.offset_right = 0.0
+	_pct.text = "%d%%" % int(round(r * 100.0))
+
+
+func _make_rollback() -> Button:
+	if not skin:
+		var b := XUI.button("退回安装包自带版本", 36)
+		b.name = "Rollback"
+		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		b.add_theme_font_size_override("font_size", 18)
+		return b
+	# 新样式：弹窗底一行带下划线的小字链接；点一下变红色选中条，再点才执行
+	var l := Button.new()
+	l.name = "Rollback"
+	l.text = "退回安装包自带版本"
+	l.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	l.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	l.add_theme_font_override("font", XUiSkin.font("body"))
+	l.add_theme_font_size_override("font_size", XUiSkin.FS_AUX)
+	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		l.add_theme_color_override(k, XUiSkin.TEXT_2)
+	_style_rollback(false, l)
+	return l
+
+
+## armed＝红色选中条；否则透明底、字下一条细线
+func _style_rollback(armed: bool, b: Button = null) -> void:
+	var l := b if b != null else _rollback
+	var old := l.get_node_or_null("Underline")
+	if old != null:
+		l.remove_child(old)
+		old.queue_free()
+	if armed:
+		var sel := XSkinButton.select(null, XUiSkin.SelState.FOCUS)
+		for st in ["normal", "hover", "focus", "pressed", "hover_pressed"]:
+			l.add_theme_stylebox_override(st, sel)
+		for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+			l.add_theme_color_override(k, XUiSkin.TEXT_HI)
+		return
+	var flat := StyleBoxFlat.new()
+	flat.bg_color = Color(0, 0, 0, 0)
+	flat.content_margin_left = 12
+	flat.content_margin_right = 12
+	flat.content_margin_top = 4
+	flat.content_margin_bottom = 6
+	for st in ["normal", "hover", "pressed", "hover_pressed"]:
+		l.add_theme_stylebox_override(st, flat)
+	var foc := XSkinButton.select(flat, XUiSkin.SelState.FOCUS)
+	l.add_theme_stylebox_override("focus", foc)
+	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		l.add_theme_color_override(k, XUiSkin.TEXT_2)
+	var u := ColorRect.new()
+	u.name = "Underline"
+	u.color = Color(XUiSkin.TEXT_2, 0.7)
+	u.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	u.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	u.offset_left = 12
+	u.offset_right = -12
+	u.offset_top = -4
+	u.offset_bottom = -3
+	l.add_child(u)
+
+
+## 3 秒没点第二下：变回去（gen 防旧计时器误伤新一轮）
+func _rollback_reset(gen: int) -> void:
+	if gen != _rb_gen or not _rollback_armed or _rollback == null or not is_instance_valid(_rollback):
+		return
+	_rollback_armed = false
+	_rollback.text = "退回安装包自带版本"
+	_style_rollback(false)
+
+
+## 按钮从左到右：次按钮（关闭／退出游戏）、手动下载、重新检查、主按钮；second_row＝关闭挪到第二排（下载没完成）
+func _arrange_buttons(second_row: bool) -> void:
+	var order: Array = [_link, _recheck, _primary] if second_row else [_close, _link, _recheck, _primary]
+	var home: Node = _buttons2 if second_row else _buttons
+	if _close.get_parent() != home:
+		_close.reparent(home, false)
+	var i := 0
+	for b in order:
+		_buttons.move_child(b, i)
+		i += 1
+	_buttons2.visible = second_row
+
+
+## 新样式下各状态的显示（_action 已定）：标题／边／版本行／橙字／进度条／按钮个数与文字
+func _show_skin(result: Dictionary, t: Dictionary) -> void:
+	var problem := is_problem(state, forced)
+	_panel.add_theme_stylebox_override("panel", skin_frame(problem))
+	_title.text = t["title"]
+	_title.add_theme_color_override("font_color", XUiSkin.DOWN if problem else XUiSkin.TEXT_HI)
+	_candle.visible = state == READY
+	var body: String = t["body"]
+	var is_new := state in [XUpdateCheck.PATCH, XUpdateCheck.FULL] and not forced
+	_verrow.visible = is_new
+	if is_new:  # 版本行单独一行（新版本号淡金）；正文里的前两行（新版本、当前版本）去掉
+		_ver_new.text = str(result.get("version", ""))
+		var date := str(result.get("date", ""))
+		_ver_rest.text = "%s  ·  当前版本 %s" % ["（%s）" % date if date != "" else "", result.get("current", "")]
+		body = "\n".join(Array(body.split("\n")).slice(2))
+	body = body.replace("· ", "◆ ")  # 更新内容的小菱形
+	_notice_l.visible = _notice != ""
+	_notice_l.text = _notice.strip_edges()
+	_set_body(body)
+	var downloading := state == DOWNLOADING
+	_bar_row.visible = downloading
+	if downloading:
+		_set_progress(int(result.get("done", 0)), int(result.get("total", 0)))
+	_set_dots(state == "checking")
+	# 按钮
+	var url := download_link(result)
+	if url == "" and result.get("source") is Dictionary:
+		url = download_link(result["source"])
+	if url == "" and forced:
+		url = download_link(_forced_result)
+	if url != "" and download_link(result) == "":
+		result["download_url"] = url
+	var primary_text: String = t["primary"]
+	if not forced and state in [XUpdateCheck.PATCH, XUpdateCheck.FULL] and primary_text == "" and url != "":
+		primary_text = "打开下载页"  # 要换整包：和强制更新同一个按钮，点了换成「已打开（链接已复制）」
+		_action = "link"
+	_primary.visible = primary_text != ""
+	_primary.text = primary_text if primary_text != "" else "立即更新"
+	if forced:
+		_close.text = "退出游戏"
+		_link.visible = url != "" and _action != "link" and (state == FAILED or _notice != "")
+		_recheck.visible = state == XUpdateCheck.FULL or (state == XUpdateCheck.PATCH and _action != "install")
+	else:
+		_close.text = "稍后再说" if (state == XUpdateCheck.PATCH and _primary.visible) or state == READY else "关闭"
+		_link.visible = state == FAILED and url != ""
+		_recheck.visible = state in [XUpdateCheck.LATEST, XUpdateCheck.BAD]
+	_recheck.disabled = false
+	_recheck.text = "重新检查"
+	if _link != null:
+		_link.text = "手动下载"
+	_arrange_buttons(state == FAILED and not forced)
+	_scroll.scroll_vertical = 0
+	_fit()
+	_focus_default.call_deferred()
+
+
+## 检查中：三枚金点依次亮（动效「全部」档才动，简化档、关：静止）
+func _set_dots(on: bool) -> void:
+	if _dots_tween != null:
+		_dots_tween.kill()
+		_dots_tween = null
+	_dots.visible = on
+	if not on:
+		return
+	for d in _dots.get_children():
+		d.modulate.a = 0.35
+	if not XUiSkin.breathing():
+		return
+	_dots_tween = create_tween().set_loops()
+	for d in _dots.get_children():
+		_dots_tween.tween_property(d, "modulate:a", 1.0, 0.25)
+		_dots_tween.tween_property(d, "modulate:a", 0.35, 0.15)
+
+
 func _set_body(text: String) -> void:
 	_body.text = text
 	_fit()
@@ -382,7 +733,7 @@ func _fit() -> void:
 	if _panel == null:
 		return
 	var vp := get_viewport_rect().size
-	var w := minf(W, vp.x - 64.0)
+	var w := minf(_panel_w(), vp.x - 64.0)
 	_panel.custom_minimum_size = Vector2(w, 0)
 	var inner := w - 64.0
 	_body.custom_minimum_size = Vector2(inner - 12.0, 0)
@@ -393,7 +744,13 @@ func _fit() -> void:
 	var chrome := 44.0 + 2.0 + 22.0 + 48.0 + (44.0 if _rollback != null and _rollback.visible else 0.0) + 44.0 + 12.0 * 5
 	if _form != null:  # 反馈问卷一行（XFeedback.has_form）
 		chrome += _form.get_combined_minimum_size().y + 12.0
+	if skin:  # 版本行、橙色小字、进度条、第二排按钮（可见时）各占一行
+		for c in [_verrow, _notice_l, _bar_row, _dots, _buttons2]:
+			if c != null and c.visible:
+				chrome += c.get_combined_minimum_size().y + 12.0
 	var cap := maxf(120.0, vp.y - 64.0 - chrome)
+	if skin:  # 弹窗最高 620（字体 130% 时跟着内容长到这里，再多在框里滚）
+		cap = minf(cap, maxf(120.0, SKIN_MAX_H - chrome - 48.0))
 	var h := minf(want, cap)
 	_scroll.custom_minimum_size = Vector2(inner, h)
 	_more.visible = want > cap + 1.0
@@ -417,6 +774,14 @@ func _focus_default() -> void:
 
 func _focus_buttons() -> Array[Button]:
 	var out: Array[Button] = []
+	if skin:  # 新样式：按画面上的次序（左→右、第二排、退回链接）
+		for row in [_buttons, _buttons2]:
+			for c in row.get_children():
+				if c is Button and c.visible:
+					out.append(c)
+		if _rollback != null and _rollback.visible:
+			out.append(_rollback)
+		return out
 	for b in [_primary, _link, _recheck, _close, _rollback]:
 		if b != null and b.visible:
 			out.append(b)
@@ -432,7 +797,13 @@ func focused_button() -> Button:
 	return _primary if _primary.visible else _close
 
 
-func _make_button(text: String) -> Button:
+func _make_button(text: String, kind := "") -> Button:
+	if skin:
+		var sb := XSkinButton.apply(Button.new(), kind, XUiSkin.FS_LIST)
+		sb.text = text
+		sb.custom_minimum_size = Vector2(168, 46)
+		sb.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		return sb
 	var b := XUI.button(text, 52)
 	b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 	b.custom_minimum_size.x = 200
@@ -456,7 +827,7 @@ func _make_button(text: String) -> Button:
 
 
 func _on_primary() -> void:
-	if forced:
+	if forced or (skin and _action == "link"):
 		match _action:
 			"link":
 				_open_link()
@@ -510,13 +881,19 @@ func _on_progress(done: int, total: int) -> void:
 		var r: Dictionary = get_meta("result")
 		r["done"] = done
 		r["total"] = total
-		_body.text = _notice + (forced_texts(r, true) if forced else texts(r, true))["body"]
+		_body.text = ("" if skin else _notice) + (forced_texts(r, true) if forced else texts(r, true))["body"]
+		_set_progress(done, total)
 
 
 func _on_rollback() -> void:
 	if not _rollback_armed:
 		_rollback_armed = true
 		_rollback.text = "再点一次确认退回"
+		if skin:  # 新样式：变成红色选中条，3 秒不点自己变回去
+			_style_rollback(true)
+			_rb_gen += 1
+			var gen := _rb_gen
+			get_tree().create_timer(ROLLBACK_RESET_SEC, true, false, true).timeout.connect(func(): _rollback_reset(gen))
 		return
 	XUpdateInstall.rollback(true)
 	_rollback.visible = false
@@ -527,6 +904,10 @@ func _on_rollback() -> void:
 ## 还要强制就换成新结果；连不上就留在框里提示，不因为查不到放行（启动时连不上才放行）。
 func _on_recheck() -> void:
 	if client == null or client.checking:
+		return
+	if skin and not forced:  # 新样式：已是最新／读不到时的「重新检查」，重查一遍清单
+		show_result({"state": "checking"})
+		_check.call_deferred()
 		return
 	_recheck.disabled = true
 	_recheck.text = "正在检查……"
