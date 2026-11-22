@@ -277,7 +277,7 @@ func _draw() -> void:
 		var r := button_rect(i)
 		var b: Dictionary = buttons[i]
 		var sb := StyleBoxFlat.new()
-		sb.set_corner_radius_all(int(BUTTON_H / 2))
+		sb.set_corner_radius_all(XUiSkin.btn_radius(BUTTON_H))
 		if bool(b.get("primary", false)) and not bool(b.get("disabled", false)):
 			XUiSkin.primary_button_style(sb, i == button_index)
 		else:
@@ -293,7 +293,7 @@ func _draw() -> void:
 			if not XUiSkin.detail_on():
 				XUiSkin.draw_select(ci, r.grow(3), XUiSkin.breath_alpha())
 			elif XUiSkin.show_focus_ring():
-				XUiSkin.draw_focus_ring(ci, r, int(BUTTON_H / 2))   # T349 D1b
+				XUiSkin.draw_focus_ring(ci, r, XUiSkin.btn_radius(BUTTON_H))   # T349 D1b
 		var t := str(b.get("text", ""))
 		var bfs := XSkinSelScale.fs(XUiSkin.FS_LIST, sel_scale.k(i), floori(r.size.y * 0.66))
 		var tw := body.get_string_size(t, HORIZONTAL_ALIGNMENT_LEFT, -1, bfs).x

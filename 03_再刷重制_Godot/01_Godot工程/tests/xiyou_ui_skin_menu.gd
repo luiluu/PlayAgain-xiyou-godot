@@ -324,6 +324,7 @@ func _shots(s: XState) -> void:
 	var win := get_window()
 	var old := win.size
 	win.size = Vector2i(1600, 720)
+	XSkinLayout._apply_wide(get_tree().root)   # 程序改窗口大小不发 size_changed（只有真实拖动才发），手动补一次
 	await frames(10)
 	check("wide_view_20x9", absf(menu.skin.layout.view_size().x / menu.skin.layout.view_size().y - 20.0 / 9.0) < 0.01, menu.skin.layout.view_size())
 	check("wide_margin_56", menu.skin.layout.left.position.x == 56.0, menu.skin.layout.left.position)

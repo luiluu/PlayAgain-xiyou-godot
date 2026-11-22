@@ -92,6 +92,7 @@ func _init(s: XOptionsScene) -> void:
 	row_height = XUiSkin.ROW_H
 	auto_nav = false
 	hint_list = [["确定", "切换"], ["左右", "调整"], ["Q / E", "换分类"], ["取消", "返回"]]
+	currencies = [] if XUiSkin.detail_on() else null   # T359 F-14：设置主页右上不挂无关的「精魂 0」（S-TPL-1）；DETAIL_V1 关＝默认精魂
 
 
 func _ready() -> void:
@@ -216,7 +217,7 @@ func sync() -> void:
 	list_title = str(cats[cur].name)
 	var rows := []
 	for i in cats[cur].idx:
-		rows.append({"text": row_name(i), "right": status_of(i), "right_color": XUiSkin.GOLD_LIGHT})
+		rows.append({"text": row_name(i), "right": status_of(i), "right_color": XSkinSubPage.value_color(status_of(i), XUiSkin.GOLD_LIGHT)})
 	var pos: int = cats[cur].idx.find(scene.index)
 	var key := [cur, rows.map(func(r): return [r.text, r.right])]
 	if key != _rows_key:

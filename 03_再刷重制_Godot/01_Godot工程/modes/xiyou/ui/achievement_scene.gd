@@ -31,6 +31,7 @@ var type_win: XMVWindow
 var list_win: XMVWindow
 var list_pager: XListPager   # T050 翻页件（新界面关着时为 null）；每页仍 6 条：窗口底边本来有 44px 空地，不少放行
 var count_win: XMVWindow
+var skin: XSkinAchievementPage   # T365 新界面（天启篇，XUiSkin.on() 且 XSkinAchievementPage.ENABLED 时）；旧窗口藏起来、同一套状态
 
 
 func _ready() -> void:
@@ -45,6 +46,9 @@ func _ready() -> void:
 	type_win.canvas.blink = true
 	list_win.canvas.blink = true
 	list_pager = XListPager.attach(list_win, _pager_step)
+	if XUiSkin.on() and XSkinAchievementPage.ENABLED:
+		skin = XSkinAchievementPage.new(self)
+		add_child(skin)
 	_load_list()
 
 
@@ -70,6 +74,8 @@ func _refresh() -> void:
 		list_win.down_arrow = list_win.down_arrow and not list_pager.visible
 	for w in [type_win, list_win, count_win]:
 		w.refresh()
+	if skin != null:
+		skin.sync()
 
 
 # ---- 绘制 ----
@@ -212,6 +218,8 @@ func _scroll(d: int) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
+	if skin != null:
+		return   # 新布局的点击由各组件自己接（XSkinAchievementPage）
 	if not (event is InputEventMouseButton and event.pressed):
 		return
 	var p: Vector2 = event.position
@@ -236,6 +244,9 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if skin != null and skin.input(event):
+		XKeyMap.handled(self)
+		return
 	if event.is_action_pressed("ui_cancel"):
 		XKeyMap.handled(self)
 		cancel()

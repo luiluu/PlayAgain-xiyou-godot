@@ -361,14 +361,16 @@ func _mv_canvas() -> void:
 	c4._process(0.2)
 	check("mv_new_row_grows", is_equal_approx(c4.sel_k_at(Vector2(10, 80)), XMVCanvas.SEL_PEAK))
 	XUiSkin.motion_override = XUiSkin.Motion.OFF
-	# 图鉴页真画一次：活动光标行登记上了
+	# 图鉴页真画一次：活动光标行登记上了（旧页 MV 画布；T364 卡 P 新图鉴页开着时旧窗不画，这段关它、段末开回）
 	_state()
+	XSkinBookPage.ENABLED = false
 	var book := XEnemyBookPage.new()
 	add_child(book)
 	await frames(4)
 	var canv := _all(book, func(n): return n is XMVCanvas and (n as XMVCanvas)._sel_rect.has_area())
 	check("enemy_book_cursor_row_marked", canv.size() >= 1)
 	book.queue_free()
+	XSkinBookPage.ENABLED = true
 	for n in [c, c2, c3, c4]:
 		n.queue_free()
 	await frames(2)

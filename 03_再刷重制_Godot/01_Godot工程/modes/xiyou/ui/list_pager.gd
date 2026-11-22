@@ -116,8 +116,17 @@ func _draw() -> void:
 		var r := button_rect(side).grow(-3)
 		var on := _enabled(side)
 		var pressed: bool = _down == side
-		draw_rect(r, Color(XUiSkin.SEL_LINE, 0.25) if pressed else Color(1, 1, 1, 0.06 if on else 0.02))
-		draw_rect(r, Color(XUiSkin.GOLD, 0.7) if on else Color(XUiSkin.LINE, 0.35), false, 1.5)
+		if XUiSkin.detail_on():   # T359：翻页钮 0px 直角改 6px 圆角（规范 D251）
+			var psb := StyleBoxFlat.new()
+			psb.bg_color = Color(XUiSkin.SEL_LINE, 0.25) if pressed else Color(1, 1, 1, 0.06 if on else 0.02)
+			psb.border_color = Color(XUiSkin.GOLD, 0.7) if on else Color(XUiSkin.LINE, 0.35)
+			psb.set_border_width_all(2)
+			psb.set_corner_radius_all(XUiSkin.ROW_RADIUS)
+			psb.anti_aliasing = true
+			psb.draw(get_canvas_item(), r)
+		else:
+			draw_rect(r, Color(XUiSkin.SEL_LINE, 0.25) if pressed else Color(1, 1, 1, 0.06 if on else 0.02))
+			draw_rect(r, Color(XUiSkin.GOLD, 0.7) if on else Color(XUiSkin.LINE, 0.35), false, 1.5)
 		var c := r.get_center()
 		var k := float(side)
 		var col := Color(XUiSkin.SEL_LINE) if pressed else (Color(XUiSkin.GOLD, 0.95) if on else Color(XUiSkin.TEXT_3, 0.6))

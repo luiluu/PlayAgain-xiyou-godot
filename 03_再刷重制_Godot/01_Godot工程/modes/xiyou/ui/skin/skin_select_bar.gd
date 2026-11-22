@@ -15,6 +15,20 @@ var slides := 0
 ## 按下反馈（p1fix）：手指／鼠标点下去后这段时间内画按下态（压暗、下沉 1px）
 var _press_until := -1.0
 var presses := 0
+## T359 D254：居中菜单（标题页）用对称渐隐暗红底；DETAIL_V1 关＝照旧左浓右淡
+var symmetric := false:
+	set(v):
+		if symmetric == v:
+			return
+		symmetric = v
+		queue_redraw()
+## T359 D256：焦点在别处（右牌按钮、数量条）时降成静默选中态：只留减淡暗红底（HOVER 档 45%）、不画外置箭头与光标；DETAIL_V1 关＝不降
+var quiet := false:
+	set(v):
+		if quiet == v:
+			return
+		quiet = v
+		queue_redraw()
 
 
 func _init() -> void:
@@ -89,6 +103,12 @@ func _apply() -> void:
 	queue_redraw()
 
 
+func quiet_now() -> bool:
+	return quiet and XUiSkin.detail_on()
+
+
 func _draw() -> void:
-	XUiSkin.draw_select(get_canvas_item(), Rect2(Vector2.ZERO, size), XUiSkin.breath_alpha(), 1.0,
-		XUiSkin.SelState.PRESSED if pressed_now() else XUiSkin.SelState.FOCUS)
+	var st := XUiSkin.SelState.PRESSED if pressed_now() else XUiSkin.SelState.FOCUS
+	if quiet_now():
+		st = XUiSkin.SelState.HOVER
+	XUiSkin.draw_select(get_canvas_item(), Rect2(Vector2.ZERO, size), XUiSkin.breath_alpha(), 1.0, st, symmetric)
