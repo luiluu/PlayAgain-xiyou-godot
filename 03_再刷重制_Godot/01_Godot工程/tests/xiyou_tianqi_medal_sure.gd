@@ -187,7 +187,7 @@ func _exclude_and_extra() -> void:
 	_check("book_medal_100", book_reed.size() == 1 and is_equal_approx(float(book_reed[0].rate), 100.0), book_reed)
 	_check("ulquiorra_book_not_100", book.size() == 1 and float(book[0].rate) < 50.0 and book_g.size() == 1 and is_equal_approx(float(book_g[0].rate), 100.0), [book, book_g])
 	# 三样一次性道具：首场必掉（各换 10 个种子）
-	for spec in [[747, 1958], [766, 1961], [833, 1001]]:
+	for spec in [[747, 1958], [766, 1961], [833, 1001], [407, 724], [408, 725], [409, 726], [410, 727], [411, 728]]:
 		var got := []
 		for i in 10:
 			got.append(_first_fight(spec[0], spec[1], 3000 + i))
@@ -197,3 +197,14 @@ func _exclude_and_extra() -> void:
 		var v := XTianqiDrop.signature_base(1, 1958, 1.0)
 		XTianqiDrop.MEDAL_SURE = true
 		return is_equal_approx(v, 0.2)).call())
+	# T401：混沌避难所五件祭祀物 724～728（敌人 459～463）开关关掉回原 × 0.2，图鉴显示 100%
+	for k in 5:
+		var it := 724 + k
+		var off := (func():
+			XTianqiDrop.MEDAL_SURE = false
+			var v := XTianqiDrop.signature_base(1, it, 1.0, 459 + k)
+			XTianqiDrop.MEDAL_SURE = true
+			return v).call()
+		_check("shrine_switch_off_%d" % it, is_equal_approx(off, 0.2), off)
+		var bk := XMapTransfer.drops(s, XDB.rec("Enemies", 459 + k)).filter(func(r): return int(r.kind) == 1 and int(r.id) == it)
+		_check("shrine_book_100_%d" % it, bk.size() == 1 and is_equal_approx(float(bk[0].rate), 100.0), bk)
