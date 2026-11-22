@@ -1,7 +1,7 @@
 # 交付：luiluu/t367
 
 - 车道／工作者：T367 新界面卡 F：异化工坊套模板页（R8）／cc 车道（Opus＋medium，P8）
-- 状态：进行中
+- 状态：可合并
 
 ## T361 已做／R8 还差（对照表，本单只做「还差」）
 
@@ -44,7 +44,7 @@
 - 皮肤关闭对照：改动全在 `skin`（`XUiSkin.on()`）为真的分支里，皮肤关走原版排法一行没动；专项 `off_old`／`off_inline_confirm` 断言了皮肤关时是旧 PaneFrame、确认框照旧嵌在页里、没有弹窗。`皮肤关闭对照.py`（逐像素）没跑：它拍的是主菜单／状态／物品／装备／设置／战斗，不含工坊页。
 - `语法检查.py` 0 问题；`发行空壳.py check` 退出 0。
 - 截图（真窗口，800×450＝16:9、1000×450＝20:9；before＝`LAYOUT_V3` 关、after＝默认）：本机 `03_再刷重制_Godot/04_验证/本地结果/T367_截图/`：四个页签各一张（after_tab1～4、before_tab1～4）、分解确认（after／before_dismantle_confirm）、重抽确认、空列表、字体 130%、20:9 两张（after_wide_tab1、after_wide_tab2）。
-- 云端选测：待写
+- 云端选测（cf863a7d7a，基准 0cd232aef，25 个场景、2 片，含 xiyou_t367_workshop、xiyou_ui_skin_3b、xiyou_t361_unslop、xiyou_alien_workshop／alien_config、xiyou_tianqi_alien_gear／reforge／ending、xiyou_ui_sel_scale、xiyou_input_handled、xiyou_event_compare 四个、xiyou_ui_skin_offshot 等）：全过；`gh run watch` 前台等完，结论 success。
 
 ## 交接板
 
@@ -70,3 +70,4 @@
 
 - 45c49cca2 T367 异化工坊套模板页补齐＋专项
 - 9c3f16310 弹窗按键改走 XKeyMap.handled、截图工具
+- （本提交）交付单写云端结果、标可合并
