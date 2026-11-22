@@ -1586,7 +1586,7 @@ func _t121_status() -> void:
 	_check("t121.row_sealed", not str(r[0]).contains("+\\C") and not str(r[0]).contains("40%+") and str(r[1]).contains("未刻印止步于「铸骨」（40%）") and str(r[1]).contains("刻印后"), r)
 	_setb(a, 1200, 1, false)
 	r = XTianqiBrand.status_rows(s, a)
-	_check("t121.row_uncarved", str(r[1]).contains("仅在首领战受击时积累") and str(r[1]).contains("「铸骨」（40%）"), r)
+	_check("t121.row_uncarved", str(r[1]).contains("仅在首领战受击时积累") and str(r[1]).contains("「铸骨」上限 40%"), r)
 	_setb(a, 10000, 6, true)
 	r = XTianqiBrand.status_rows(s, a)
 	_check("t121.row_end", str(r[0]).contains("「逆命」") and str(r[0]).contains(" 100%") and str(r[0]).contains("+50%") and str(r[1]) == XTianqiBrand.TEXT_HOW_END, r)
