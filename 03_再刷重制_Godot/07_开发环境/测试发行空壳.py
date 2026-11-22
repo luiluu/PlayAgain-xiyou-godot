@@ -299,6 +299,55 @@ class T(unittest.TestCase):
         self.assertIn('NO_STUB_SMOKE', body)
 
 
+    # K6（T381）：dev.664～845 新增的 56 个脚本逐个复核过。下面三组钉住结论，以后谁改了归类（改名、换前缀、去掉门）这里先红。
+    K6_STUBBED = (  # 只在天启篇：类名带 XTianqi 前缀，换空壳
+        'modes/xiyou/battle/tianqi_enemy_ai.gd', 'modes/xiyou/battle/tianqi_sear_bar.gd',
+        'modes/xiyou/battle/tianqi_swap_view.gd', 'modes/xiyou/battle/tianqi_weak_badges.gd',
+        'modes/xiyou/core/tianqi_base.gd', 'modes/xiyou/core/tianqi_brand.gd', 'modes/xiyou/core/tianqi_gem_power.gd',
+        'modes/xiyou/core/tianqi_growth.gd', 'modes/xiyou/core/tianqi_guardian_gift.gd', 'modes/xiyou/core/tianqi_hall.gd',
+        'modes/xiyou/core/tianqi_hall_text.gd', 'modes/xiyou/core/tianqi_six_dim.gd', 'modes/xiyou/core/tianqi_weak_b2.gd',
+        'modes/xiyou/core/xinmo_traits.gd',  # 文件名不带 tianqi，靠类名 XTianqiXinmoTraits 进名单
+        'modes/xiyou/ui/tianqi/tianqi_hall_intro.gd', 'modes/xiyou/ui/tianqi_start_page.gd',
+    )
+    K6_SHARED = (  # 西游档也走的真脚本：带进包
+        'modes/xiyou/battle/battle_eval.gd',      # 我方 XSmartAI 估值内核（西游自动战斗）
+        'modes/xiyou/battle/battle_stream.gd',    # 多段逐段结算 O-609（所有战斗）
+        'modes/xiyou/core/main_thread.gd',        # 交接线程的界面入口保险（所有战斗）
+        'modes/xiyou/core/xconfig_transfer.gd',   # 设置导入导出（玩家建议，西游档可用）
+        'modes/xiyou/ui/config_transfer_options.gd',
+    )
+    K6_SKIN_GATED = (  # 新界面专用：自己的 on() 挂在 XUiSkin.on() 上，发行包里恒关
+        'modes/xiyou/battle/battle_layout.gd', 'modes/xiyou/battle/party_fold.gd', 'modes/xiyou/battle/turn_marker.gd',
+        'modes/xiyou/ui/skin/skin_enemy_hp.gd', 'modes/xiyou/ui/skin/skin_damage_popup.gd',
+        'modes/xiyou/ui/skin/skin_battle_motion.gd', 'modes/xiyou/ui/skin/skin_dialogue_fade.gd',
+    )
+
+    def test_k6_dev664_845_classification(self):
+        done = {str(p) for p in K.targets().values()}
+        for rel in self.K6_STUBBED:
+            self.assertIn(rel, done, rel + ' 只在天启篇，应换空壳')
+        for rel in self.K6_SHARED + self.K6_SKIN_GATED:
+            self.assertNotIn(rel, done, rel + ' 西游代码要用真脚本')
+            self.assertTrue((K.PROJECT / rel).exists(), rel)
+        for rel in self.K6_SKIN_GATED:
+            self.assertIn('XUiSkin.on()', (K.PROJECT / rel).read_text(encoding='utf-8'), rel + ' 没挂新界面门')
+
+    def test_k6_new_ui_gate_closed_in_release(self):
+        # 新界面那批真脚本（skin_*、站位、队伍栏…）进包的前提：XUiSkin.on() 在发行包里恒 false。
+        # 命令行强开在发行时不认；最后一道 XTianqiLine.open_for 换空壳后恒 false。
+        src = (K.PROJECT / 'modes/xiyou/ui/skin/ui_skin.gd').read_text(encoding='utf-8')
+        self.assertRegex(src, r'static func parse_cli\(args: PackedStringArray, release: bool\) -> int:\n\tif release:\n\t\treturn -1')
+        self.assertIn('return XTianqiLine.open_for(XState.current) and XConfig.ui_skin_new()', src)
+        self.assertRegex(src, r'(?m)^static var FORCE := false')
+        old_ov = K.OVERRIDES
+        K.OVERRIDES = HERE / '发行空壳特例.json'
+        try:
+            stubs, _missing, _how = K.build_all(K.PROJECT)
+        finally:
+            K.OVERRIDES = old_ov
+        line = next(v for k, v in stubs.items() if str(k).endswith('modes/xiyou/core/tianqi_line.gd'))
+        self.assertRegex(line, r'static func open_for\([^)]*\) -> bool:\n\treturn false')
+
     def test_real_project_sect_stub(self):
         real_proj = HERE.parent / '01_Godot工程'
         old_ov = K.OVERRIDES
