@@ -63,3 +63,4 @@
 
 - 见 git log
 - 云端选测（`云端选测.py run`，13 个场景含 `xiyou_ui_skin_card_q`、旧三专项、徽章、列表翻页）全过，运行页 actions/runs/44962646192；`语法检查.py` 0 问题；`发行空壳.py check` 通过（80 个脚本 767 个函数都有）
+- R1 云端选测（8 个场景）全过：actions/runs/44964480579（提交 61c5dcdef）
