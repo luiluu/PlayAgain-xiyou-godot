@@ -19,6 +19,8 @@ const PATH := "res://modes/xiyou/tianqi_data/seg_alien.json"
 
 ## 开关：false＝普通楼层的怪不按段异化
 static var ENABLED := true
+## 量数用（T363，baseline_dps --seg-alien=<种类>）：非空时抽中的种类换成它（本层能抽到才换；随机数照取，不动随机流）。游戏里恒为空
+static var FORCE_KIND := ""
 
 static var _data: Dictionary = {}
 static var _tag := RegEx.create_from_string("^【([^】]+)】")
@@ -179,6 +181,8 @@ static func plan(s: XState, enemies: Array, roll: Callable) -> Array:
 		if ks.is_empty():
 			continue
 		var kind = ks[mini(floori(float(roll.call("tianqi_seg.kind", key)) * ks.size()), ks.size() - 1)]
+		if FORCE_KIND != "" and ks.has(FORCE_KIND):
+			kind = FORCE_KIND
 		out.append({"enemy": e, "tier": tier, "kind": str(kind), "class": cls})
 	return out
 
