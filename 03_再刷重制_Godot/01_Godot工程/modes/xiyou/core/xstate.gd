@@ -407,6 +407,8 @@ func _add_actor(id: int, notice := Callable()) -> void:
 	if XImportedBalance.is_disabled_actor(id):
 		return
 	if not party.has(id):
+		if XTianqi.on_join(self, id):  # 天启篇第一次入队：照原版号角入队给专属装备（穿上）、技能；模块角色在里面跑完入队（T398）
+			return
 		inherit_difficulty(actor(id))
 		party.append(id)
 		XGojo.on_join(self, id)  # 天启篇五条悟入队：装上专属法宝「眼罩」
