@@ -10,7 +10,7 @@ extends RefCounted
 ## 每条规则一个 Dictionary（字段见 entry()）：id、source、line、seal、name、summary、icon、counter、value、max_value、
 ## countdown、tone（warn／buff／line／gold）、priority（10 紧迫、20 主规则、30 光环／异化、40 补充）、badge、detail_extra。
 ##
-## 开关 ENABLED（O-待定）：false＝collect 恒返回 []，规则条不建（回到现状）；西游档、非天启篇战斗本来就是空。
+## 开关 ENABLED（O-635）：false＝collect 恒返回 []，规则条不建（回到现状）；西游档、非天启篇战斗本来就是空。
 
 static var ENABLED := true
 
