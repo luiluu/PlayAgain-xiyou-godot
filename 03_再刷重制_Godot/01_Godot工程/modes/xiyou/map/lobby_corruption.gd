@@ -159,7 +159,7 @@ func setup(map: XMapScene) -> void:
 	z_index = -9   # 在下层图块（-10）之上、人物（0）之下
 	rng.randomize()
 	var s := XState.current
-	if s:
+	if s and not XTianqi.active(s):
 		var r := record(s)
 		r["maxStage"] = maxi(int(r.get("maxStage", 1)), stage())
 	_build_desat()
@@ -617,12 +617,14 @@ func wants_after(e: MVEvent) -> bool:
 	if not AFTER_LINES.has(e.event_id) or e.command_list().size() <= 1:
 		return false
 	var s := XState.current
-	return s != null and not (record(s).said as Array).has(str(e.event_id))
+	if s == null or XTianqi.active(s):
+		return false
+	return not (record(s).said as Array).has(str(e.event_id))
 
 
 func after_event(event_id: int) -> void:
 	var s := XState.current
-	if s == null or not AFTER_LINES.has(event_id):
+	if s == null or XTianqi.active(s) or not AFTER_LINES.has(event_id):
 		return
 	var said: Array = record(s).said
 	if said.has(str(event_id)):
@@ -649,9 +651,13 @@ static func text_list(face: String, idx: int, who: String, text: String) -> Arra
 func on_action(cell: Vector2i) -> bool:
 	var text := ""
 	if cell == CRACK_CELL:
-		var r := record(XState.current)
-		text = CRACK_TEXTS[mini(int(r.get("crack", 0)), 1)]
-		r["crack"] = int(r.get("crack", 0)) + 1
+		var s := XState.current
+		if s != null and not XTianqi.active(s):
+			var r := record(s)
+			text = CRACK_TEXTS[mini(int(r.get("crack", 0)), 1)]
+			r["crack"] = int(r.get("crack", 0)) + 1
+		else:
+			text = CRACK_TEXTS[0]
 	elif cell == FIXED_FLOAT and floats.has(FIXED_FLOAT):
 		text = FLOAT_TEXT
 	elif _scale_cell.x >= 0 and cell == _scale_cell:
