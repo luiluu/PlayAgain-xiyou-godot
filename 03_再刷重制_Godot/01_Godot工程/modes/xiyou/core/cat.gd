@@ -224,8 +224,9 @@ static func recruit(s: XState) -> bool:
 		s.flags["_codexCatRelicGranted"] = true
 	# 练习剑总是新生成一把（gainIndependentItem）再装上，背包里原有的同款不动；原来武器槽里的东西回背包（changeEquip 的交换）
 	if not has_sword(a) and not bool(s.flags.get("_codexCatStarterGranted", false)):
-		var sword := XGear.create("weapon", STARTER_SWORD, s)
-		s.register_gear(sword)
+		var src := XTianqi.gift_source("weapon", STARTER_SWORD)  # 天启篇入队赠品（T398）：按来源键生成，读档不变；别处为空＝照旧 XGear.create
+		var sword := XTianqiRandom.create_gear(s, "weapon", STARTER_SWORD, src)
+		s.register_gear(sword, src)
 		if a.equips[0] is Dictionary and not a.equips[0].is_empty():
 			s.gear.append(a.equips[0])
 		a.equips[0] = sword

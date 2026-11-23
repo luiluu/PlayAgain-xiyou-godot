@@ -209,7 +209,8 @@
     "XTianqiRewards.line_name": "T265：只在 XSkin2C.gameover_summary 里、GAMEOVER_SUMMARY 开着且 XTianqiLine.current 不为空时调；发行包里新界面恒关、天启篇线为空，走不到；拿到空串也只是少写一段",
     "XTianqiQiyinEffects.fold": "T360：XSkinBattle.qiyin_reason 只在 skill_usable 为假时调，空壳 skill_usable 恒 true 走不到；即便走到，{}.get 落兜底原因",
     "XTianqiQiyinEffects.gear_effects": "T360：同 fold，只作 fold 的参数，[] 折出 {}，落兜底原因",
-    "XTianqiQiyinRule.fight": "T360：XSkinBattle.qiyin_reason 只在 XTianqiQiyinRule.can_use 为假时调，空壳 can_use 恒 true 走不到；即便走到，{}.get 带默认值落兜底原因"
+    "XTianqiQiyinRule.fight": "T360：XSkinBattle.qiyin_reason 只在 XTianqiQiyinRule.can_use 为假时调，空壳 can_use 恒 true 走不到；即便走到，{}.get 带默认值落兜底原因",
+    "XTianqi.gift_source": "T398：XState.gain_gear 没传来源键时、XCat.recruit 练习剑调；真脚本只在天启篇 on_join 发赠品期间给「horn|种类:底本」，别处（含西游档）本来就返回 \"\"，空壳返回 \"\" 与真脚本在西游档的结果相同"
   },
   "_已确认空值安全说明": "T149：被西游代码调用、空壳按类型返回 []／{}／\"\"／null 的成员，逐个核对调用处后登记在此（值是理由）。新加的天启篇函数被西游档调用时，check 会要求来这里登记或写特例。"
 }

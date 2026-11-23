@@ -588,6 +588,7 @@ static func take_draw(s: XState, id: int) -> bool:
 	s.add_actor(id)
 	_joining = false
 	XTianqiSect.ren_sync(s, id, ren_lv)
+	wear_left(s, id)  # T398：等级拉上来后，入队时穿不上的赠品再试一次
 	s.flags.tianqi["draws"] = draws_used(s) + 1
 	s.flags.tianqi.erase("offer")
 	return s.party.has(id)
@@ -617,6 +618,15 @@ const _MODULE_JOIN := {
 const JOIN_GIFTS_KEY := "join_gifts"
 static var _gifting := false
 static var _horn_gift_cache := {}
+## 刚入队时穿不上、留在背包的赠品（角色号 → 装备实例），take_draw 同步完等级（包壬）后再试穿一次；不存档
+static var _unworn := {}
+
+
+## 入队赠品的装备来源键（XState.gain_gear 没传来源时取；模块 recruit() 里的 gain_gear、哈基米练习剑都走这里）：
+## 只在 on_join 跑赠品期间给「horn|种类:底本」（同超强者号角脚本），让底子、孔数、词条按存档派生、读档不变，不动 rom／affix_roll_n；
+## 别的时候（西游档、天启篇其它入口）返回空，照旧
+static func gift_source(kind: String, base_id: int) -> String:
+	return "horn|%s:%d" % [kind, base_id] if _gifting else ""
 
 
 ## XState._add_actor 在新角色加进队伍前调：模块角色由这里跑 recruit()（里面会再进 add_actor 完成入队）并返回 true，调用方直接返回；
@@ -632,8 +642,8 @@ static func on_join(s: XState, id: int) -> bool:
 		return false
 	done.append(id)
 	s.flags.tianqi[JOIN_GIFTS_KEY] = done
-	var before := s.gear.duplicate()
 	var a := s.actor(id)
+	var before := s.gear.duplicate() + a.equips.filter(func(e): return e is Dictionary and not e.is_empty())  # 原来就有的（背包＋身上）不算赠品：模块换装放回背包的旧装备不再穿回去
 	var handled := false
 	_gifting = true
 	if _MODULE_JOIN.has(id):
@@ -642,12 +652,26 @@ static func on_join(s: XState, id: int) -> bool:
 	else:
 		for g in plan.gear:
 			if not bool(g.only_missing) or not _has_gear(s, a, g.kind, int(g.base)):
-				s.gain_gear(g.kind, int(g.base), int(g.amount), "horn|%s:%d" % [g.kind, int(g.base)])  # 来源键同号角脚本（mv_script 超强者号角）
+				s.gain_gear(g.kind, int(g.base), int(g.amount), gift_source(g.kind, int(g.base)))  # 来源键同号角脚本（mv_script 超强者号角）
 		for sid in plan.skills:
 			a.learn_skill(int(sid))
 	_gifting = false
-	_wear_new(s, a, before)
+	var left := _wear_new(s, a, before)
+	if left.is_empty():
+		_unworn.erase(id)
+	else:
+		_unworn[id] = left
 	return handled
+
+
+## 入队时穿不上的赠品再试穿一次（take_draw 包壬拉等级之后：均级 ≥45 抽到李逍遥，戮仙剑这时能穿）
+static func wear_left(s: XState, id: int) -> void:
+	var left: Array = _unworn.get(id, [])
+	_unworn.erase(id)
+	if left.is_empty() or not s.party.has(id):
+		return
+	var items := left.filter(func(e): return s.gear.any(func(g): return is_same(g, e)))
+	_wear_items(s, s.actor(id), items)
 
 
 static func _module_recruit(s: XState, id: int) -> void:
@@ -720,20 +744,31 @@ static func _has_gear(s: XState, a: XActor, kind: String, base_id: int) -> bool:
 	return false
 
 
-## 这次新进背包的装备（入队给的）当场穿上：第一个类型相符、还没被这批占用的栏；原来穿着的照换装规则回背包（XEquipment.change）
-static func _wear_new(s: XState, a: XActor, before: Array) -> void:
+## 这次新进背包的装备（入队给的；before 是之前背包里和身上的）当场穿上，返回穿不上留在背包的
+static func _wear_new(s: XState, a: XActor, before: Array) -> Array:
 	var fresh := s.gear.filter(func(e): return not before.any(func(b): return is_same(b, e)))
+	return _wear_items(s, a, fresh)
+
+
+## 逐件穿：第一个类型相符、还没被这批占用的栏；原来穿着的照换装规则回背包（XEquipment.change）。返回没穿上的
+static func _wear_items(s: XState, a: XActor, items: Array) -> Array:
+	var left := []
 	var used := []
 	var types := a.equip_slots()
-	for item in fresh:
+	for item in items:
 		var rec := XDB.rec("Weapons" if str(item.kind) == "weapon" else "Armors", int(item.base))
 		var etype := int(rec.get("etypeId", 0))
+		var worn := false
 		for slot in range(types.size()):
 			if int(types[slot]) != etype or used.has(slot):
 				continue
 			if XEquipment.change(s, a, slot, item):
 				used.append(slot)
+				worn = true
 				break
+		if not worn:
+			left.append(item)
+	return left
 
 
 const JOIN_BLOCKED_NOTICE := "天启篇的伙伴只从方桌大厅的通关招募来。"

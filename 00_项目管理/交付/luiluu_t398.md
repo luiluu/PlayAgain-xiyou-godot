@@ -31,6 +31,16 @@
 - 云端整轮（改了 `xstate.gd`，选测判整轮 781 场景）：第一轮 d1e07689f 有 6 个场景没过（xiyou_tianqi_growth_count、xiyou_battle_stream_e、xiyou_tianqi_phase4、xiyou_tianqi_phase4_modules、xiyou_tianqi_skills、xiyou_tianqi_smart_ai_eval），都是夹具建天启篇档后要光身角色（如 `raven_no_scythe`、`ly_no_4004`），现在入队带了赠品。这 6 个测试 `_run` 开头加 `XTianqi.JOIN_GIFTS = false`（只改测试，各 1 行）。battle_stream_e 的 off／on 两场对不上，原因是赠品装备在夹具设 `random_master` 之前生成，随机身份取自新档的 fresh_seed，两边属性不同（读代码核过，没另跑实验）。第二轮 9e15fe89f：云端选测 run 45076088925 整轮通过。之后把分支重新接到新 main（c04fc8b99，开工时 rebase 误带了 T244 的已合提交，已去掉；提交号随之变了，内容不变），在新 main 上再跑一轮云端，结果见回执。
 - `发行空壳.py check`：81 个脚本、777 个函数都有。
 
+## 返修（小A 核 r1：P1×1、P2×1、P3×3，报告在私密仓 协作交接/派单/报告/T398_核_小A.md）
+
+- P1-1：`flags.tianqi.join_gifts` 登记进 `XTianqiSave.ROOT_KEYS`（`modes/xiyou/core/tianqi_save.gd`），`天启篇存档登记.py` 退出码 0。
+- P2-1：新增 `XTianqi.gift_source(种类, 底本)`，只在 on_join 发赠品期间返回「horn|种类:底本」。`XState.gain_gear` 没传来源键时取它（`xstate.gd` 多一行），所以 167～179 模块 recruit() 里发的专属装备也按来源键生成。哈基米练习剑从直调 `XGear.create` 改走 `XTianqiRandom.create_gear(…, 来源键)`＋`register_gear(…, 来源键)`（`cat.gd`）；西游档来源键为空，走原来的 `XGear.create`，结果不变。专项新增：167、173、177、178、179、163、84 七人同 orb_seed、换 random_master 后，赠品装备（去掉实例号）逐字一样；存档往返后也一样；入队前后 rom、affix_roll_n 不变。临时把 gift_source 改回空，这 14 条全红，证明能抓住问题。发行空壳 `gift_source` 返回 ""，与真脚本在西游档的结果相同，登记进 `发行空壳特例.json`「已确认空值安全」。
+- P3-1：入队时穿不上的赠品记在 `XTianqi._unworn`（不存档）。`take_draw` 在包壬 `ren_sync` 拉等级之后调 `wear_left` 再试穿一次。专项核了李逍遥 1 级入队戮仙剑留背包、升到 50 级后 wear_left 穿上。七印龙线招募没有等级同步，没接。
+- P3-2：`_wear_new` 的「新来的」改成排除入队前背包里和本人身上原有的装备，模块换装放回背包的旧装备不会被穿回去。专项核了璇原来法宝栏有一件防具，入队后穿 4048、旧的回背包。
+- P3-3：`damage_ledger.json` module_review 补 `module.raven｜skillMultiplier`（keep false）；`xiyou_tianqi_phase4_modules` 去掉 `JOIN_GIFTS=false`，审计照带赠品跑。
+- battle_stream_e：小A 已核实只是夹具没钉 orb_seed，不影响随机序列，照派单不动。
+- 专项 `xiyou_tianqi_join_gifts` 203/203。
+
 ## 交接板
 
 - 下一步：拍板卡「进阶要本人号角，82 人进不了阶」（T396 要 Kyo 定第 1 条）仍等 Kyo。

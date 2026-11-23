@@ -5,6 +5,8 @@ extends Node
 ## 二、17 名超强者（141～166 去掉天启篇停用的 9 人）：号角脚本里的专属武器／防具穿上（同类栏不够的留背包）、超越极限 I～IV；诸葛孔明两招。
 ## 三、开局阵容（不走 _joining、靠 lineup）同样给；停用角色不入队也不给；原有同栏装备回背包。
 ## 四、号角仍不进背包；开关 JOIN_GIFTS 关＝不给；西游档零变化。
+## 五（小A 核 r1）：赠品按来源键生成——同 orb_seed 换 random_master 属性、孔数、词条一样，读档不变，不推进 rom／affix_roll_n；
+## 入队穿不上的升级后 wear_left 能穿；模块角色原来穿着的旧装备换下后不再穿回去。
 
 const MODULE_GEAR := {167: [["armor", 4001]], 168: [["armor", 4577]], 169: [["armor", 0]], 170: [["armor", 0]], 171: [["armor", 4580]],
 	172: [["armor", 4581]], 173: [["armor", -1]], 174: [["armor", 7935]], 175: [["armor", 7912]], 176: [["armor", 4047]], 177: [["armor", 4048]],
@@ -81,6 +83,8 @@ func _run() -> void:
 	_supers()
 	_lineup()
 	_guards()
+	_stable()
+	_review_fixes()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:
@@ -192,3 +196,77 @@ func _guards() -> void:
 	_check("xiyou_no_flag", not (x.flags.get("tianqi", {}) as Dictionary).has(XTianqi.JOIN_GIFTS_KEY))
 	x.gain_item(1542, 1)
 	_check("xiyou_horn_ok", x.item_count(1542) == 1, x.item_count(1542))  # 伙伴号角：蜘蛛精（非超强者，西游档照常能拿）
+
+
+## 装备的可比内容（去掉实例编号）
+func _sig(item) -> String:
+	if not (item is Dictionary):
+		return "null"
+	var d: Dictionary = item.duplicate(true)
+	d.erase("instanceId")
+	return JSON.stringify(d, "", true)
+
+
+func _gift_sigs(s: XState, id: int) -> Array:
+	var out := []
+	for g in _expected(id):
+		var hit = null
+		for e in s.actor(id).equips + s.gear:
+			if e is Dictionary and str(e.get("kind", "")) == str(g[0]) and (int(e.get("base", 0)) == int(g[1]) or (int(g[1]) == -1 and XGarou.is_relic(e))):
+				hit = e
+				break
+		out.append(_sig(hit))
+	if id == XCat.ACTOR:
+		out.append(_sig(s.actor(id).equips[0]))  # 练习剑
+	return out
+
+
+func _stable() -> void:
+	for id in [167, 173, 177, 178, 179, 163, 84]:
+		var sigs := []
+		var counters_ok := true
+		for master in ["aaaa1111bbbb2222", "9999cccc0000dddd"]:
+			var s := _state(_w)
+			s.orb_seed = 424242
+			s.random_master = master
+			var roll_n = s.flags.tianqi.get("affix_roll_n")
+			var rom := JSON.stringify(s.rom, "", true)
+			_join(s, id)
+			counters_ok = counters_ok and s.flags.tianqi.get("affix_roll_n") == roll_n and JSON.stringify(s.rom, "", true) == rom
+			var got := _gift_sigs(s, id)
+			sigs.append(got)
+			# 读档：存档往返后同一件还是同样的底子、孔数、词条
+			var back := XState.from_dict(s.to_dict())
+			XState.current = back
+			_check("stable_%d_reload" % id, _gift_sigs(back, id) == got, [got, _gift_sigs(back, id)])
+		_check("stable_%d_same_orb_seed" % id, sigs[0] == sigs[1] and not sigs[0].has("null"), sigs)
+		_check("stable_%d_no_rom_affix_counter" % id, counters_ok)
+
+
+func _review_fixes() -> void:
+	# 李逍遥：入队时 1 级穿不上戮仙剑（等级需求 45），拉到 50 级后 wear_left 穿上（take_draw 在包壬同步等级之后调）
+	var s := _state(_w)
+	_join(s, 165)
+	var a := s.actor(165)
+	_check("lxy_sword_left_at_join", not _wears(a, "weapon", 78) and s.gear_count("weapon", 78) == 1)
+	s.actor_max_level = 99  # 新档等级上限 10，中后期才放开
+	a.change_level_mv(50)
+	XTianqi.wear_left(s, 165)
+	_check("lxy_sword_worn_after_level", _wears(a, "weapon", 78) and s.gear_count("weapon", 78) == 0)
+	# 模块角色原来法宝栏里有东西：换上专属法宝，旧的回背包，不再被穿回去
+	var s2 := _state(_w)
+	var x := s2.actor(177)
+	var etype := int(XDB.rec("Armors", 4048).get("etypeId", 0))
+	var slot := x.equip_slots().find(etype)
+	var other := 0
+	for rec in XDB.table("Armors"):
+		if rec is Dictionary and int(rec.get("id", 0)) != 4048 and int(rec.get("etypeId", 0)) == etype and str(rec.get("name", "")) != "" \
+				and not str(rec.get("note", "")).contains("req_actors"):
+			other = int(rec.id)
+			break
+	s2.gain_gear("armor", other, 1)
+	var old: Dictionary = s2.gear[s2.gear.size() - 1]
+	s2.gear.remove_at(s2.gear.size() - 1)
+	x.equips[slot] = old
+	_join(s2, 177)
+	_check("module_old_gear_back_to_bag", other > 0 and slot >= 0 and _wears(x, "armor", 4048) and s2.gear.any(func(e): return is_same(e, old)), [other, slot, x.equips])
