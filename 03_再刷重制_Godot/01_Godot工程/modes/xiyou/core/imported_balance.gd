@@ -47,8 +47,8 @@ static func released_actor(id: int) -> bool:
 static var RELEASE_XUFENG := true
 const XUFENG := 152
 const XUFENG_HORN := 359
-## 号角 359 上架门槛（D262「漩涡三阶段后开放」）：漩涡三阶段还没做，具体条件待 Kyo 定（T411 回执），
-## 现在 xufeng_gate_met() 恒为假＝新档买不到；Kyo 11-23 定先做漩涡三阶段（T412，过场甩出徐凤年），T412 的 rift3 标记接进 xufeng_gate_met()。已有 359 号角或 152 已在队伍／仓库的老档不受影响（始终上架）。
+## 号角 359 上架门槛（D262「漩涡三阶段后开放」）：
+## Kyo 11-23 定先做漩涡三阶段（T412：看完二阶后下一次进大厅播三阶，徐凤年从天而降），看过 rift3 才上架；没看过的新档买不到。已有 359 号角或 152 已在队伍／仓库的老档不受影响（始终上架）。
 ## XUFENG_HORN_GATE = false 回到「解放即上架」。
 static var XUFENG_HORN_GATE := true
 ## 天启篇候选池（抽阵容）放不放 152：天启篇技能卡还没给徐凤年写（skill_rework.json 0 条，T204 K_SKIP no_damage_row），
@@ -56,9 +56,12 @@ static var XUFENG_HORN_GATE := true
 static var XUFENG_TIANQI := false
 
 
-## 漩涡三阶段条件占位（待 Kyo 定；定了改这里，别处不动）
+## 漩涡三阶段过场看过没有（T412 交出的 CodexWhisper 键 rift3，记在配置 codexWhisperSeen，全存档共用，同 rift2）
+const XUFENG_WHISPER := "rift3"
+
+
 static func xufeng_gate_met() -> bool:
-	return false
+	return XConfig.whisper_seen(XUFENG_WHISPER)
 
 
 static func xufeng_horn_on_sale() -> bool:
