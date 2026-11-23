@@ -39,6 +39,7 @@
 - P3-2：`_wear_new` 的「新来的」改成排除入队前背包里和本人身上原有的装备，模块换装放回背包的旧装备不会被穿回去。专项核了璇原来法宝栏有一件防具，入队后穿 4048、旧的回背包。
 - P3-3：`damage_ledger.json` module_review 补 `module.raven｜skillMultiplier`（keep false）；`xiyou_tianqi_phase4_modules` 去掉 `JOIN_GIFTS=false`，审计照带赠品跑。
 - battle_stream_e：小A 已核实只是夹具没钉 orb_seed，不影响随机序列，照派单不动。
+- 连带：`xiyou_tianqi_ledger` 的 module_review 行数断言 25→26（补了渡鸦那行），本机 82/82。
 - 专项 `xiyou_tianqi_join_gifts` 203/203。
 
 ## 交接板
