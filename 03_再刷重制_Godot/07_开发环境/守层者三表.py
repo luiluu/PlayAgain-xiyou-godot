@@ -289,7 +289,7 @@ def build6(rows: list, turns: int = 8, share: float = 0.40, mode: str = 'c', hp_
 def duel_calib(paths: list, turns: int = 8, base: dict = None, mode: str = 'band') -> dict:
     """T363：按真打重定 hp_base（见头注释）。返回 {层: 每回合血量}。
     T392（T363 核 P2-1）mode='band'（默认）：按强队（普通阵容每回合打得最多的四分之一，同对比表）分三种：
-      强队全输 → 只降不升：min(老算法, 量数 hp_base〔base，没有就不限〕)，不再用输队前几回合的爆发反抬血；
+      强队全输（r2 起：赢不到一半） → 只降不升：min(老算法, 量数 hp_base〔base，没有就不限〕)，不再用输队前几回合的爆发反抬血；
       强队赢的均回合在 目标±2 之外 → 照最后一份真打的血量按回合比例拉回：血量 ×（目标∓BAND_AIM）÷ 强队均回合；
       在 目标±2 之内 → 照最后一份真打的血量不动（「最后一份」＝最后那个血量下的各条存档链合起来）（已达标的层不再被 90 分位×(目标−2) 推着走）。
     mode='t363' 回到 T363 做法（全按老算法）。"""
@@ -298,13 +298,17 @@ def duel_calib(paths: list, turns: int = 8, base: dict = None, mode: str = 'band
         for r in json.loads(Path(p).read_text(encoding='utf-8')).get('rows', []):
             f = int(r['floor'])
             hp = float(r.get('enemyHp', 0))
-            if f not in last or last[f][0] != hp:   # 同一份表（同血量）的多条存档链合在一起看强队；换了表就从这份起重算
-                last[f] = (hp, [])
+            tk = {_team_key(t) for t in r.get('per', [])}
+            # 同一份表（同血量）的多条存档链合在一起看强队；换了血量、或同血量下又出现已量过的队（同队同种子重打＝换了一轮，
+            # 比如血量没变只改了机制），就从这份起重算，不把前后两轮混拼（T392 核 P2-1）
+            if f not in last or last[f][0] != hp or (tk & last[f][2]):
+                last[f] = (hp, [], set())
             last[f][1].extend(r.get('per', []))
+            last[f][2].update(tk)
             for t in r.get('per', []):
                 if t.get('team') == '奶妈队' or int(t.get('turns', 0)) <= 0:
                     continue
-                keys.setdefault(f, set()).add((str(t.get('team')), int(t.get('rng', 0)), tuple(t.get('members') or []), json.dumps(t.get('partyHp'))))
+                keys.setdefault(f, set()).add(_team_key(t))
                 e = float(t.get('enemyHp', r.get('enemyHp', 0))) / int(t['turns']) if t.get('won') else float(t.get('dmg', 0))
                 if e > 0:
                     eff.setdefault(f, []).append(e)
@@ -318,7 +322,7 @@ def duel_calib(paths: list, turns: int = 8, base: dict = None, mode: str = 'band
             continue
         st = strong_stats(last[f][1])
         cur = last[f][0] / turns
-        if st['won'] == 0:
+        if st['won'] * 2 < st['n']:   # 强队赢不到一半（含全输）：赢的那一两队回合快不说明这层太软，同全输只降不升（T392 r2，22 层 1/4 赢 5 回合不再抬血）
             b = (base or {}).get(str(f))
             out[f] = min(old, int(b)) if b else old
         elif cur > 0 and st['avg'] < turns - 2:
@@ -330,6 +334,11 @@ def duel_calib(paths: list, turns: int = 8, base: dict = None, mode: str = 'band
         else:
             out[f] = old
     return out
+
+
+def _team_key(t: dict) -> tuple:
+    """一支真打队的身份：阵容名×战斗种子×上场成员×我方血量（同一存档链同一队重打时相同，不同存档链不同）"""
+    return (str(t.get('team')), int(t.get('rng', 0)), tuple(t.get('members') or []), json.dumps(t.get('partyHp')))
 
 
 def strong_stats(per: list) -> dict:
@@ -508,6 +517,19 @@ def selftest() -> int:
     ok = [per(True, 7, 900.0, k) if k < 2 else per(False, 9, 100.0, k) for k in range(8)]
     Path(tmp).write_text(json.dumps({'rows': [{'floor': 28, 'enemyHp': 8000.0, 'per': ok}]}), encoding='utf-8')
     assert duel_calib([tmp], 8) == {28: 1000}
+    few = [per(True, 4, 900.0, 0)] + [per(False, 3, 800.0, k) for k in (1, 2, 3)] + [per(False, 9, 100.0, k) for k in range(4, 16)]
+    Path(tmp).write_text(json.dumps({'rows': [{'floor': 22, 'enemyHp': 8000.0, 'per': few}]}), encoding='utf-8')
+    assert duel_calib([tmp], 8, {'22': 500}) == {22: 500}, duel_calib([tmp], 8, {'22': 500})   # r2：强队 1/4 赢 4 回合不抬到 1750
+    Path(tmp).write_text(json.dumps({'rows': [{'floor': 28, 'enemyHp': 8000.0, 'per': ok}]}), encoding='utf-8')
+    # T392 核 P2-1：同血量两轮（血量没变、只改了机制）同队重打 → 后一轮整层替换，不混拼；不同存档链（成员不同）同血量 → 合起来看
+    fd2, tmp2 = tempfile.mkstemp(suffix='.json')
+    os.close(fd2)
+    Path(tmp2).write_text(json.dumps({'rows': [{'floor': 28, 'enemyHp': 8000.0, 'per': fast}]}), encoding='utf-8')
+    assert duel_calib([tmp2, tmp], 8) == {28: 1000}, duel_calib([tmp2, tmp], 8)   # 混拼会是强队 (4+4+7+7)÷4＝5.5 → 1270
+    Path(tmp2).write_text(json.dumps({'rows': [{'floor': 28, 'enemyHp': 8000.0, 'per': [dict(x, members=[1]) for x in fast]}]}), encoding='utf-8')
+    Path(tmp).write_text(json.dumps({'rows': [{'floor': 28, 'enemyHp': 8000.0, 'per': [dict(x, members=[2]) for x in ok]}]}), encoding='utf-8')
+    assert duel_calib([tmp2, tmp], 8) == {28: 1270}, duel_calib([tmp2, tmp], 8)   # 两条链合看：强队 4 队均 5.5 → 1000×7÷5.5
+    os.unlink(tmp2)
     os.unlink(tmp)
     # T392：写表留着构表不产出的键
     lc = {'skills': [3805], 'pct': {'jianxian': 100}}

@@ -50,10 +50,12 @@ class GuardianPhase4Rules(unittest.TestCase):
         self.assertEqual(chk.guardian_phase4_rules({'focus': {'12': {'skill': 661, 'scale': 1.5, 'single': 1}}}), [])   # T363
         self.assertTrue(chk.guardian_phase4_rules({'focus': {'12': {'skill': 661, 'scale': 1.5, 'single': 2}}}))
         self.assertTrue(chk.guardian_phase4_rules({'focus': {'12': {'skill': 661, 'scale': 1.5, 'single': True}}}))
-        ok = {'skills': [3805], 'pct': {'xunchang': 50, 'zhengdao': 300}}   # T392
+        ok = {'skills': [3805], 'pct': {'xunchang': 50, 'jianxian': 100, 'jiusi': 150, 'lianyu': 200, 'zhengdao': 300}}   # T392
         self.assertEqual(chk.guardian_phase4_rules({'lifesteal_cap': ok}), [])
         self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, pct={'jianxian': 1.5})}))   # 不是整数
         self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, pct={'hard': 100})}))   # 难度键不认识
+        self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, pct={'xunchang': 50, 'zhengdao': 300})}))   # 五档不齐（T392 核 P3-3）
+        self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, pct=dict(ok['pct'], hard=100))}))   # 多了不认识的键
         self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, skills=[])}))
         self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, extra=1)}))
 

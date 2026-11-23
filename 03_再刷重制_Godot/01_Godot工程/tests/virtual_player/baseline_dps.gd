@@ -1105,7 +1105,7 @@ func _run_duel_snapshots() -> void:
 			str(per.map(func(r): return int(r.alive))), str(row.atkScale)])
 		if out_path != "":   # T244：每层写一次，长跑被中途停掉也留得下已量的层
 			var fp := FileAccess.open(out_path, FileAccess.WRITE)
-			fp.store_string(JSON.stringify({"mode": "duel-snapshots", "events": events, "turns": turns, "partial": true, "rows": rows}, "\t"))
+			fp.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "events": events, "turns": turns, "partial": true, "rows": rows}, "\t"))
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
