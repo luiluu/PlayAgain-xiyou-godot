@@ -257,6 +257,9 @@ func _test_stage3_audio() -> void:
 		await close(map)
 		return
 	fx.set_process(false)
+	# 开图异步等待了若干帧，量进厅时抽到的计时长度。
+	var initial_drop: float = fx._bgm_drop_in + XSpeedGear.real_seconds(fx._t)
+	check("stage3.drop.first_window", initial_drop >= 50.0 and initial_drop <= 80.0, initial_drop)
 	map.play_bgm({"name": "TCLH-60", "volume": 80})
 	var base_db := map.bgm.volume_db
 	map.player.locate(14, 21)
@@ -283,7 +286,6 @@ func _test_stage3_audio() -> void:
 		map._menu_open = false
 		XLobbyCorruption.STAGE3_BGM_DETUNE = true
 
-	check("stage3.drop.first_window", fx._bgm_drop_in >= 50.0 and fx._bgm_drop_in <= 80.0, fx._bgm_drop_in)
 	XLobbyCorruption.STAGE3_BGM_DETUNE = false
 	fx._bgm_drop_in = 0.0
 	fx._update_stage3_bgm(0.0)
