@@ -122,6 +122,10 @@ func _ready() -> void:
 			XTianqiWarAlien.BOMB_SCALE = false   # T394：终焉烟火师轰炸回到修前（不乘出伤倍率、系数 1.5）
 		elif a.begins_with("--bomb-coef="):
 			XTianqiWarAlien.kind_info("pyro")["finale_bomb"] = float(a.substr(12))   # T394：轰炸系数换成这个数，只改内存里的表
+		elif a == "--bomb-pct=off":
+			XTianqiWarAlien.BOMB_PCT = false   # T407：轰炸回到 T394 按攻击算的口径
+		elif a.begins_with("--bomb-pct="):
+			XTianqiWarAlien.kind_info("pyro")["finale_bomb_pct"] = int(a.substr(11))   # T407：轰炸百分比换成这个整数，只改内存里的表
 		elif a == "--add-healer":
 			add_healer = true
 		elif a == "--all-weak":
@@ -337,6 +341,8 @@ func _use_vp() -> bool:
 
 
 func _fight(s: XState, troop: int) -> Dictionary:
+	XTianqiWarAlien.BOMB_STATS_ON = true   # T407：记每下轰炸占血比
+	XTianqiWarAlien.bomb_stats = []
 	var logic: XBattleLogic = VPLogic.new() if _use_vp() else XBattleLogic.new()
 	if s.has_meta("t239_rng"):
 		seed(int(s.get_meta("t239_rng")))   # T239 第 6 轮：全局随机（VPLogic 选招等）也按这支队的种子定住
@@ -397,7 +403,8 @@ func _fight(s: XState, troop: int) -> Dictionary:
 		"aborted": logic.aborted, "enemyHp": hp0, "enemyAtk": logic.enemies.map(func(e): return int(e.param(2))), "enemyDef": logic.enemies.map(func(e): return [int(e.param(3)), int(e.param(5))]),
 		"partyAtk": logic.actors.map(func(a): return [int(a.param(2)), int(a.param(4))]),
 		"party": logic.actors.map(func(a): return int(a.actor_id)), "members": s.battle_members().map(func(a): return int(a.actor_id)),
-		"allWeak": s.battle_members().all(func(a): return XTianqiSkills.is_weak(int(a.actor_id), true)), "partyHp": logic.actors.map(func(a): return int(a.mhp))}
+		"allWeak": s.battle_members().all(func(a): return XTianqiSkills.is_weak(int(a.actor_id), true)), "partyHp": logic.actors.map(func(a): return int(a.mhp)),
+		"bomb": XTianqiWarAlien.bomb_stats.duplicate()}   # T407：这场每下轰炸占血比（每人每下一笔）
 
 
 ## 撑到第几回合团灭（没团灭记 turns＋1）
