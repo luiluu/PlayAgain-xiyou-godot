@@ -9,7 +9,7 @@
 
 - 玩家可见：二阶到三阶方桌大厅徐凤年回归过场正式升级为 30.5 秒 7 幕 15 格三色动态漫画动画（含新增徐凤年×染紫异化怪 4 格交互、0.00s～4.98s 物理连贯拔刀特写与刀锋纯白寒光、破页挥斩露真大厅、左侧破边立绘残格三连对白与碎页收尾），支持 0.8s 保护期后单次按键／点击跳过并精准补播未读台词；原像素过场仍可通过 `XRift.RIFT3_ANIM = false` 或 `XRift3Anim.ENABLED = false` 一键回退。
 - 依据：私密设计仓 `重制设定/二阶到三阶_徐凤年回归动画_分镜_v0.6.md`（30.5s 15 格，5 句台词正文一字不改）；Kyo 定稿素材（T427 11 格、T437 斩怪交互 4 格含 `M9_v2`、`M5a` 定妆图、`M5b_拔刀_gemini_v1.mp4` 严格截取 `0.00s～4.98s` 零穿帮段）；小A·文字审定定稿 3 处新拟声字（P8b「嗖！」、P9a「铿！」、P9b「嗤！」）。
-- 素材落盘（`03_再刷重制_Godot/01_Godot工程/content/rift3/`，共 20 个资产＋20 份 `.import`＋`README.md`，合计约 3.51 MB）：
+- 素材落盘（`03_再刷重制_Godot/01_Godot工程/content/rift3/`，共 20 个资产＋20 份 `.import`＋`README.md`，19 份 `.webp.import` 均启用有损压缩 `compress/mode=1`、`compress/lossy_quality=0.85`，Godot 实测导入后总计 **3.55 MB**〔19 份 `.ctex` 3.22 MB ＋ 1 份 `.oggvorbisstr` 0.32 MB〕；源 20 资产 3.48 MB）：
   - `rift3_m1_1.webp`～`rift3_m1_4.webp`：M1 漩涡 4 格图接图（P2 平稳→加速，P3 紫色暴走→裂开）。
   - `rift3_m2_mob.webp`：M2 染紫异化怪透明 RGBA WebP（P5 破框出格＋P7 眼部横条复用）。
   - `rift3_m3_sky.webp`、`rift3_m4_dive.webp`：P6 高空掠影、P8 俯冲追杀安全带裁切。
@@ -24,7 +24,7 @@
     - 四段状态机升级对齐分镜 v0.6：`TOTAL_DURATION=30.5`、`PHASE_P1_END=2.6`、`PHASE_MID_END=19.5`、`PHASE_P10_END=21.8`、`PHASE_P11D_START=29.2`、P11b 框边微紫闪中心 `25.7s`；5 句审定台词直读 `XRift.RIFT3_LINES` 正文一字不改，后 4 句显示与已看全阈值整体顺延 `+4.5s`。
     - 构建 Phase.MID 动态漫画 6 页实时合成舞台（P1 左格留驻＋P2/P3 漩涡图接图与幽紫蚀框裂脉→P4 三块实机大厅残格撕裂＋P5 M2 透明前景真出格→P6/P7 眼部反色闪/P8 红带连环追杀→P8a/P8b 落地对峙与怪扑侧闪→P9 M5b 30 帧 12fps 拔刀图集＋尾段程序柔和径向纯白刀锋光束与纤细四芒十字星芒→P9a/P9b 刀爪硬撼与一刀斩怪化紫雾，末 0.15s 定格像素级无缝移交 P10 劈页）。
     - 新增 3 处审定定稿拟声字独立常量 `SFX_P8B="嗖！"`（套用硬朗瘦劲刀笔斜体 `FontVariation`）、`SFX_P9A="铿！"`、`SFX_P9B="嗤！"`，共 11 处叠字（10 拟声＋1 唯一刀意字「斩」）。
-    - 解决 T430 核 P3-2 `available()` 门槛：19 项核心视觉资产全列入 `REQUIRED_ASSETS`，真运行时 `available()` 恒核三层开关与全部资产，全齐即真、缺任一项安全回退 `false`。
+    - 解决 T430 核 P3-2 `available()` 门槛：19 项核心视觉资产全列入 `REQUIRED_ASSETS`，真运行时 `available()` 恒核三层开关与全部资产，全齐即真、缺任一项安全回退 `false`；并在 `_process()` 首帧检测到载图卡顿尖峰（`real_dt > 0.105s`）时夹断至 `1/30s`，防开播当帧载图卡顿跳过 P1 开头（cc 核 P3-2）。
   - `03_再刷重制_Godot/01_Godot工程/tests/xiyou_rift3_anim_player.gd`、`tests/xiyou_rift3_anim_fx.gd`、`tests/xiyou_rift3_anim.gd`：同步 v0.6 30.5s 时间轴、跳过点 `1.0s`/`15.0s`/`27.5s`、11 处叠字、真实仓内零 override `available()==true` 端到端实跑及 6 张关键帧实机截图。
   - `03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_e2e.gd`：`_settle()` 补上大厅播放 `XRift3Anim` 时按确定键跳过（模拟真实玩家进大厅按键跳过漫画并翻完补播对话，解决全量云端首轮 793 场景中唯一超时的该项）。
 - 专项与验证：
@@ -38,7 +38,7 @@
     - `03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_e2e.tscn`：**60/60**
     - `03_再刷重制_Godot/01_Godot工程/tests/xiyou_ui_detail_d3.tscn`：**93/93**
   - 静态与空壳检查：`语法检查.py`（1192 个 `.gd` 0 个问题）、`发行空壳.py check`（81 个脚本 782 个函数全过，退出码 0）。
-  - 云端选测（提交 `c06a778f23`，基准 `1ed54e63e4`）：**通过**（整轮 793 个场景、16 片全绿，最长一片 18.3 分钟），Run 链接：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45274274763 。
+  - 云端选测（返修提交 `fd77abe4ca`，基准 `721ee95193`）：**通过**（整轮 793 个场景、16 片全绿，最长一片 17.1 分钟），Run 链接：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45283098435 （前轮 `c06a778f23` Run 45274274763 亦 793 全绿）。
 - 真机渲染截图（均已入仓 `00_项目管理/交付截图/luiluu_t429/`）：
   - `00_项目管理/交付截图/luiluu_t429/01_p8b_dodge.png`（P8a 落地对峙＋P8b 怪扑侧闪＋审定瘦劲拟声字「嗖！」）
   - `00_项目管理/交付截图/luiluu_t429/02_p9_draw_blade.png`（P9 M5b 0.00～4.98s 零穿帮拔刀特写＋程序柔和纯白刀锋光束与纤细十字星芒＋「锵——！」）
@@ -67,7 +67,7 @@
 
 ## 云端选测与独占范围
 
-- 云端选测（提交 `c06a778f23`，基准 `1ed54e63e4`）：**通过**（整轮 793 个场景、16 片全绿，最长一片 18.3 分钟），Run 链接：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45274274763
+- 云端选测（返修提交 `fd77abe4ca`，基准 `721ee95193`）：**通过**（整轮 793 个场景、16 片全绿，最长一片 17.1 分钟），Run 链接：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45283098435
 - 截图（6 张全已提交入仓）：
   - `00_项目管理/交付截图/luiluu_t429/01_p8b_dodge.png`
   - `00_项目管理/交付截图/luiluu_t429/02_p9_draw_blade.png`
@@ -89,3 +89,5 @@
 
 - `0b2b1fb72` T429 三阶漫画动画④：全套定稿素材合成与接入 XRift3Anim（分镜 v0.6，30.5s 15格）
 - `c06a778f2` T429 修 xiyou_tianqi_e2e._settle 进大厅遇 XRift3Anim 漫画过场时按键跳过（全量云端 793 仅此 1 处）
+- `721ee9519` T429 补交付单 luiluu_t429-rift3-anim-assets.md（云端选测 45274274763 整轮 793 全绿）
+- `fd77abe4c` T429 返修：P2-1 19份 webp.import 改有损 0.85（导入 3.55MB）、P3-2 首帧 dt 卡顿夹断
