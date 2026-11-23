@@ -32,6 +32,8 @@ const PHASE_P11D_START := 29.2     # v0.6：P11d 碎纸收尾起始（原 24.7s 
 const SKIP_GUARD_SEC := 0.8
 const SKIP_FADE_SEC := 0.25
 const END_FADE_SEC := 0.3
+const FIRST_FRAME_SPIKE_SEC := 0.105   # P3-2：开播首帧载图若引发 >105ms 卡顿尖峰，夹至 1/30s 防跳过 P1 开头
+const FIRST_FRAME_CLAMP_SEC := 1.0 / 30.0
 
 ## P1 / P10 / P11 视觉参数与粒子硬上限（P10 96 ＋ P11d 20 = 116 <= 120）
 const SHADER_HALFTONE := "res://modes/xiyou/ui/shaders/comic_halftone.gdshader"
@@ -215,6 +217,7 @@ var _skip_time := -1.0
 var _fade := 0.0
 var _done := false
 var _pressed := false
+var _first_frame := true
 var _mid_started := false
 var _active_dialogue_key := ""
 var _active_dialogue_text := ""
@@ -507,7 +510,12 @@ func _process(delta: float) -> void:
 	var scale := maxf(Engine.time_scale, 0.001)
 	if _video_player != null:
 		_video_player.speed_scale = 1.0 / scale
-	step(delta / scale, _pressed)
+	var real_dt := delta / scale
+	if _first_frame:
+		_first_frame = false
+		if real_dt > FIRST_FRAME_SPIKE_SEC:
+			real_dt = minf(real_dt, FIRST_FRAME_CLAMP_SEC)
+	step(real_dt, _pressed)
 	_pressed = false
 
 
