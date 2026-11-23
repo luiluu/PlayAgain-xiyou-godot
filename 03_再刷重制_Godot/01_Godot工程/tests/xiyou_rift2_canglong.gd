@@ -64,7 +64,7 @@ func _rift() -> void:
 	check("rift2.jump_to_drop", jump.any(func(c): return int(c.code) == 14 and Vector2i(int(c.parameters[0]), int(c.parameters[1])) == XRift.DROP - XRift.CELL))
 	check("rift2.actor_img", jump.any(func(c): return int(c.code) == 41 and str(c.parameters[0]) == str(XDB.rec("Actors", 146).characterName)))
 	check("canglong_ev", _ev(204) is Dictionary and bool(_ev(204).pages[0].through) and str(_ev(204).pages[0].image.characterName) == "")
-	check("keep", XRift.keep_event(4, 201) and XRift.keep_event(4, 204) and not XRift.keep_event(4, 205) and not XRift.keep_event(5, 201))
+	check("keep", XRift.keep_event(4, 201) and XRift.keep_event(4, 204) and not XRift.keep_event(4, 208) and not XRift.keep_event(5, 201))  # 205～207 是三阶段（T412）
 	# 关
 	XRift.STAGE2 = false
 	XRift.clear_cache()
@@ -72,8 +72,14 @@ func _rift() -> void:
 	check("off.img", str(_ev(75).pages[0].image.characterName) == "!Codex_Rift_Stage1")
 	check("off.no_new", (XDB.map(4).events as Array).size() == 78 and not XRift.keep_event(4, 201))
 	XLobbyDebugNpc.BOOK_ONLY = false  # 大厅全图鉴 NPC 也改 Map004（Kyo 11-12），比原图时一起关
+	var rel := [XImportedBalance.RELEASE_CANGLONG, XImportedBalance.RELEASE_XUFENG]
+	XImportedBalance.RELEASE_CANGLONG = false  # 解放也改改版向导 EV071 那句（T411），比原图时一起关
+	XImportedBalance.RELEASE_XUFENG = false
 	XRift.clear_cache()
 	check("off.same_as_source", JSON.stringify(XDB.map(4)) == JSON.stringify(XDB.load_json("maps/Map004.json")))
+	XImportedBalance.RELEASE_CANGLONG = rel[0]
+	XImportedBalance.RELEASE_XUFENG = rel[1]
+	XRift.clear_cache()
 	XLobbyDebugNpc.BOOK_ONLY = true
 	XRift.STAGE2 = true
 	XRift.clear_cache()

@@ -33,6 +33,7 @@ func _capture() -> void:
 	XRift.STAGE2 = true
 	XLobbyCorruption.STAGE_OVERRIDE = 0
 	(XConfig._values.codexWhisperSeen as Array).append("rift2")
+	(XConfig._values.codexWhisperSeen as Array).append("rift3")   # 三阶段过场（EV205）同上
 	for mode in ["xiyou", "tianqi", "baby"]:
 		print("CAPTURE_OPEN ", mode)
 		var view := await open_lobby(XFest.START, 14, 8, true, mode == "tianqi", mode == "baby")
@@ -168,6 +169,7 @@ func all_strings(v, out: Array) -> void:
 func _run() -> void:
 	TestEnv.isolate("xiyou_fest_lobby")
 	(XConfig._values.codexWhisperSeen as Array).erase("rift2")
+	(XConfig._values.codexWhisperSeen as Array).erase("rift3")   # 三阶段过场（EV205）同上
 	XRift.STAGE2 = false
 	XRift.clear_cache()
 	XLobbyCorruption.STAGE_OVERRIDE = 1   # 大厅异化层另测，这里一律不叠
@@ -381,6 +383,7 @@ func _run() -> void:
 	XRift.STAGE2 = true
 	XRift.clear_cache()
 	(XConfig._values.codexWhisperSeen as Array).append("rift2")   # 不让二阶段过场在这里开播（另有专项测）
+	(XConfig._values.codexWhisperSeen as Array).append("rift3")   # 三阶段过场（EV205）同上
 	var mr := await open_lobby(day1, 7, 20)
 	check("rift2_on.events_padded", (mr.map_data.get("events", []) as Array).size() > XRift.CANGLONG_EV, (mr.map_data.get("events", []) as Array).size())
 	check("rift2_on.envoy_enroll_trophy", ids(mr).has(XFestLobby.ENVOY_EV) and ids(mr).has(XFestLobby.ENROLL_EV) and XFestLobby.TROPHY_EVS.all(func(i): return ids(mr).has(i)), ids(mr))
@@ -397,6 +400,7 @@ func _run() -> void:
 	await shot("fest_lobby_rift2_tianqi.png")
 	await close(mt)
 	(XConfig._values.codexWhisperSeen as Array).erase("rift2")
+	(XConfig._values.codexWhisperSeen as Array).erase("rift3")   # 三阶段过场（EV205）同上
 	XRift.STAGE2 = false
 	XRift.clear_cache()
 	XFestLobby.reload_map()
@@ -406,6 +410,7 @@ func _run() -> void:
 	XRift.STAGE2 = true
 	XRift.clear_cache()
 	(XConfig._values.codexWhisperSeen as Array).append("rift2")
+	(XConfig._values.codexWhisperSeen as Array).append("rift3")   # 三阶段过场（EV205）同上
 	for mode in ["xiyou", "tianqi", "baby"]:
 		var view := await open_lobby(day1, 14, 8, true, mode == "tianqi", mode == "baby")
 		await frames(200)

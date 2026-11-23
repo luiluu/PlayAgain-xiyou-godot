@@ -227,6 +227,7 @@ static func map(map_id: int) -> Dictionary:
 		XTextFix.patch_map(map_id, _tables[key])  # 原版文字错（名字框、挑战符文等；开关见 XTextFix）
 		XDeadContent.patch_map(map_id, _tables[key])  # 死内容做活（一护卍解 Map213；O-184）
 		XRift.patch_map(map_id, _tables[key])  # 时空漩涡二阶段（Map004；O-312，开关 XRift.STAGE2）
+		XImportedBalance.patch_map(map_id, _tables[key])  # 改版向导停用名单删掉已解放的苍龙、徐凤年（T411）
 		XLobbyDebugNpc.patch_map(map_id, _tables[key])  # 大厅全图鉴 NPC 只留怪物图鉴（Kyo 11-12）
 		XFestLobby.patch_map(map_id, _tables[key])  # 冠军庆典：大厅使者、报名处、奖杯、BGM（只在活动期间，O-466）
 		XTianqiGuardianGift.patch_map(map_id, _tables[key])  # 天启篇守层者去见面礼、首胜必给宝珠必开压箱底店（T236）

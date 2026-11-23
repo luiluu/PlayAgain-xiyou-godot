@@ -946,7 +946,7 @@ var rv_tp_refreshed := false
 var stale_state_ids: Array = []
 
 func trait_objects() -> Array:
-	var out := [data(), class_data()]
+	var out := [XTianqiSkills.actor_trait_obj(self, data()), class_data()]
 	out.append_array(stat_equips())
 	if not stale_state_ids.is_empty():
 		for st in states():

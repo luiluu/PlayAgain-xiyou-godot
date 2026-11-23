@@ -1180,6 +1180,15 @@ def skill_rework_rules(table: dict) -> list:
     for sid, row in table.get('states', {}).items():
         if isinstance(row, dict) and 'battle_end' in row and not isinstance(row['battle_end'], bool):
             bad.append('states/%s battle_end（战斗结束移除，T263）要是 true／false' % sid)
+        if isinstance(row, dict) and 'hit_extra_pct' in row:
+            v = row['hit_extra_pct']
+            if not (isinstance(v, int) and not isinstance(v, bool) and 1 <= v <= 100):
+                bad.append('states/%s hit_extra_pct（命中追加伤害整数 %%，T411）要是 1～100 的整数：%r' % (sid, v))
+    for aid, row in table.get('actors', {}).items():
+        if isinstance(row, dict) and 'traits_remove' in row:
+            tr = row['traits_remove']
+            if not (isinstance(tr, list) and all(isinstance(p, list) and len(p) == 2 and all(isinstance(x, int) and not isinstance(x, bool) for x in p) for p in tr)):
+                bad.append('actors/%s traits_remove（角色本体特性移除，T411）要是 [[code, dataId]…] 整数对列表：%r' % (aid, tr))
     return bad
 
 

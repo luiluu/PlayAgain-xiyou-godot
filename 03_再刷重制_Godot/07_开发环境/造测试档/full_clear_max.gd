@@ -48,7 +48,9 @@ func _run() -> void:
 	var orig_param_max = XActor.test_param_max
 	XMessageBox.auto = true
 	# main 有、补丁线没有的开关：按名字设，没有就跳过（Object.set 对不存在的属性不做事）
-	load("res://modes/xiyou/core/rift_alien.gd").set("ALIGN_LOBBY", false)
+	var rift_alien = load("res://modes/xiyou/core/rift_alien.gd")
+	rift_alien.set("ALIGN_LOBBY", false)
+	rift_alien.set("STAGE3_ALIEN", false)
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0
 	XGuide.MILESTONE_ENABLED = false

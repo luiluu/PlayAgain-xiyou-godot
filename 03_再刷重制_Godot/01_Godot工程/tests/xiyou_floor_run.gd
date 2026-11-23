@@ -521,8 +521,9 @@ func _first_diff(a: String, b: String) -> Array:
 
 func _run() -> void:
 	XMessageBox.auto = true
-	# 敌人数值按原版对照：漩涡怪物异化对齐大厅稿（O-468，Kyo 11-15 D8）二阶就会把守层者变成异化怪，这里关掉，由 tests/xiyou_rift_alien 核
+	# 敌人数值按原版对照：漩涡怪物异化对齐大厅稿（O-468）二阶与三阶蚀骨（O-641，TestEnv.isolate 已记 rift3）都会把守层者变成异化怪，这里两开关一并关掉，由 tests/xiyou_rift_alien 核
 	XRiftAlien.ALIGN_LOBBY = false
+	XRiftAlien.STAGE3_ALIEN = false
 	XBattleScene.force_auto = true
 	XEnemy.force_roll = 100.0
 	XGuide.MILESTONE_ENABLED = false   # 区段里程碑会在走路时插进对话（tests/xiyou_guide 另测）

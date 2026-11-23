@@ -155,5 +155,101 @@ class BaselineTests(unittest.TestCase):
                 self.assertGreater(v['seconds'], 0, k)
 
 
+class SaveSealSmokeTests(unittest.TestCase):
+    """T423：发行入口冒烟断言存档封存生效（SAVE_SEAL_ACTIVE=true）且导出 v2（kyo-remake-save-sealed-v2）。"""
+
+    def _fake_exe(self, d: Path, lines: list, args_log: Path = None) -> Path:
+        exe = d / 'fake_game'
+        body = ['#!/bin/sh']
+        if args_log is not None:
+            body.append(f'printf "%s\\n" "$@" > "{args_log}"')
+        for ln in lines:
+            body.append(f'printf "%s\\n" "{ln}"')
+        exe.write_text('\n'.join(body) + '\n', encoding='utf-8')
+        exe.chmod(0o755)
+        return exe
+
+    def test_run_entry_passes_when_sealed_v2(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d)
+            args_log = p / 'args.txt'
+            exe = self._fake_exe(p, [
+                'ENTRY_SCENE=res://modes/xiyou/entry.tscn',
+                'AUTO_SAVE_PRESENT=false',
+                'SAVE_SEAL_ACTIVE=true',
+                'SAVE_EXPORT_FORMAT=kyo-remake-save-sealed-v2',
+            ], args_log)
+            got = {}
+            M.run_entry(p, exe, lambda n, ok, note='': got.__setitem__(n, (ok, note)), 'macos', require_seal=True)
+            self.assertTrue(got['release_enters_title'][0])
+            self.assertTrue(got['release_exit_clean'][0])
+            self.assertTrue(got['release_save_seal_active'][0], got['release_save_seal_active'])
+            self.assertTrue(got['release_save_export_format_v2'][0], got['release_save_export_format_v2'])
+            argv = args_log.read_text(encoding='utf-8').splitlines()
+            self.assertIn('--audio-driver', argv)
+            self.assertIn('Dummy', argv)
+
+    def test_run_entry_fails_when_unsealed_or_v1(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d)
+            exe = self._fake_exe(p, [
+                'ENTRY_SCENE=res://modes/xiyou/entry.tscn',
+                'SAVE_SEAL_ACTIVE=false',
+                'SAVE_EXPORT_FORMAT=kyo-remake-save-json-v1',
+            ])
+            got = {}
+            M.run_entry(p, exe, lambda n, ok, note='': got.__setitem__(n, (ok, note)), 'macos', require_seal=True)
+            self.assertFalse(got['release_save_seal_active'][0])
+            self.assertIn('--no-save-key', got['release_save_seal_active'][1])
+            self.assertIn('--allow-unsealed', got['release_save_seal_active'][1])
+            self.assertFalse(got['release_save_export_format_v2'][0])
+            self.assertIn('kyo-remake-save-sealed-v2', got['release_save_export_format_v2'][1])
+
+    def test_run_entry_fails_when_seal_lines_missing(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d)
+            exe = self._fake_exe(p, ['ENTRY_SCENE=res://modes/xiyou/entry.tscn'])
+            got = {}
+            M.run_entry(p, exe, lambda n, ok, note='': got.__setitem__(n, (ok, note)), 'macos', require_seal=True)
+            self.assertFalse(got['release_save_seal_active'][0])
+            self.assertIn('未打印 SAVE_SEAL_ACTIVE', got['release_save_seal_active'][1])
+            self.assertFalse(got['release_save_export_format_v2'][0])
+            self.assertIn('未打印 SAVE_EXPORT_FORMAT', got['release_save_export_format_v2'][1])
+
+    def test_run_entry_standalone_default_does_not_fail_on_unsealed(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d)
+            exe = self._fake_exe(p, [
+                'ENTRY_SCENE=res://modes/xiyou/entry.tscn',
+                'SAVE_SEAL_ACTIVE=false',
+                'SAVE_EXPORT_FORMAT=kyo-remake-save-json-v1',
+            ])
+            got = {}
+            M.run_entry(p, exe, lambda n, ok, note='': got.__setitem__(n, (ok, note)), 'macos', require_seal=False)
+            self.assertTrue(all(ok for ok, _ in got.values()), got)
+            self.assertNotIn('release_save_seal_active', got)
+
+    def test_allow_unsealed_warns_not_for_players(self):
+        import contextlib
+        import io
+        buf = io.StringIO()
+        got = {}
+        with contextlib.redirect_stdout(buf):
+            M.check_save_seal_output('SAVE_SEAL_ACTIVE=false\nSAVE_EXPORT_FORMAT=kyo-remake-save-json-v1\n',
+                                     lambda n, ok, note='': got.__setitem__(n, (ok, note)),
+                                     require_seal=False, allow_unsealed=True)
+        self.assertEqual(got, {})
+        self.assertIn('此包不能发给玩家', buf.getvalue())
+
+    def test_cli_seal_flags_and_conflict(self):
+        h = subprocess.run([sys.executable, str(HERE / '发行入口冒烟.py'), '--help'], capture_output=True, text=True)
+        self.assertEqual(h.returncode, 0)
+        self.assertIn('--require-save-seal', h.stdout)
+        self.assertIn('--allow-unsealed', h.stdout)
+        bad = subprocess.run([sys.executable, str(HERE / '发行入口冒烟.py'), '--require-save-seal', '--allow-unsealed'],
+                             capture_output=True, text=True)
+        self.assertEqual(bad.returncode, 2)
+
+
 if __name__ == '__main__':
     unittest.main()

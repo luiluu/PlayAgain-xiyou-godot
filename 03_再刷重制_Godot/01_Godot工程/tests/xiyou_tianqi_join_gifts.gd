@@ -2,7 +2,7 @@ extends Node
 ## T398（O-267 连带，Kyo 11-22「我怎么没有璇的法宝可以装备或者买」「法宝改成所有人入队都穿在身上」「号角送的技能：给」）：
 ## 天启篇第一次入队（开局阵容、通关抽角色）照原版号角入队那段给专属法宝／专属武器防具、学号角技能，给的装备穿在本人身上（XTianqi.on_join）。
 ## 一、14 名模块与号角法宝角色（167～179、84 小毒、85 爱莉）逐个：入队、法宝穿上、队伍顺序不变、只记一次、再入队不重复给。
-## 二、17 名超强者（141～166 去掉天启篇停用的 9 人）：号角脚本里的专属武器／防具穿上（同类栏不够的留背包）、超越极限 I～IV；诸葛孔明两招。
+## 二、141～166 中未停用的导入角色（动态扣除 DISABLED_ACTORS 中未放出者，含已放出的 146 苍龙破晓、152 徐凤年）：号角脚本里的专属武器／防具穿上（同类栏不够的留背包）、超越极限 I～IV；诸葛孔明两招。
 ## 三、开局阵容（不走 _joining、靠 lineup）同样给；停用角色不入队也不给；原有同栏装备回背包。
 ## 四、号角仍不进背包；开关 JOIN_GIFTS 关＝不给；西游档零变化。
 ## 五（小A 核 r1）：赠品按来源键生成——同 orb_seed 换 random_master 属性、孔数、词条一样，读档不变，不推进 rom／affix_roll_n；
@@ -133,7 +133,9 @@ func _supers() -> void:
 		if XImportedBalance.is_disabled_actor(id):
 			continue
 		ids.append(id)
-	_check("super_count_17", ids.size() == 17, ids)  # 141～166 共 26 人，停用 9 人（DISABLED_ACTORS 去掉已放出的 146）
+	var disabled_n := XImportedBalance.DISABLED_ACTORS.filter(func(x): return x >= 141 and x <= 166 and not XImportedBalance.released_actor(x)).size()
+	var want_n := 26 - disabled_n  # 141～166 共 26 人，动态扣除未放出的停用角色（含已放出的 146 苍龙、152 徐凤年）
+	_check("super_count", ids.size() == want_n, {"got": ids.size(), "want": want_n, "ids": ids})
 	for id in ids:
 		_check("super_%d_has_gear" % id, not XTianqi.horn_gifts(id).gear.is_empty(), XTianqi.horn_gifts(id))
 		_one(id, "super")

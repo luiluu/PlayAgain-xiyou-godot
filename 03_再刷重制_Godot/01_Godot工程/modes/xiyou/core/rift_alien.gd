@@ -3,7 +3,7 @@ extends RefCounted
 ## 【cc·天启篇相关·未经审查】漩涡五阶段「怪物逐渐异化」（设计稿 方案/重制版_漩涡五阶段怪物异化设计稿_v0.1.md，Kyo 11-12 六项全按默认）。
 ## 数据 res://modes/xiyou/rift_alien.json（测试参数，数字避开 4）。只管西游（玩家手里的重制版）；天启篇存档一概不动（天启篇走 XTianqiSegAlien）。
 ##
-## 阶段读 stage()：XRift.stage()（现在 1 或 2），测试和以后的阶段三～五用 STAGE_OVERRIDE。每升一阶，上一阶的东西保留再往上叠。
+## 阶段读 stage()：XRift.stage()（1～3；三阶怪物端由 STAGE3_ALIEN 控制，T413 默认开），测试和以后的阶段三～五用 STAGE_OVERRIDE。每升一阶，上一阶的东西保留再往上叠。
 ## - 一阶、开关关：什么都不建，战斗与原版逐值相同。
 ## - 二阶「侵染」：只有画面。守层者身上幽紫一明一暗（6 秒）；稀有、精英、首领、非常稀有进场 11% 闪一下（1 秒褪掉）。
 ##   不进存档、不改数值、不改名字；闪不闪用本模块自己的随机流（由本场种子派生），战斗规则随机流一个数都不取。
@@ -32,6 +32,9 @@ const LOOK := "xrift_look"
 static var ENABLED := true
 ## 测试用／以后扩阶段：>0 时当作这一阶（1～5），0＝读 XRift.stage()
 static var STAGE_OVERRIDE := 0
+## O-641（T412 加开关，T413 Kyo 11-23 拍板打开）：漩涡三阶段（XRift.stage()==3，rift3 过场播过）的怪物异化（蚀骨）开不开（几率仍用测试参数，待标定）。
+## true＝rift3 看过后按三阶阶段表（稀有／首领／守层者／深渊怪）；false＝XRift 给 3 时怪物端仍按二阶（回退）；STAGE_OVERRIDE 不受它管（测试照旧能指定三～五阶）
+static var STAGE3_ALIEN := true
 ## 阶段对齐大厅稿（O-468）：true＝读 stages_aligned（二阶起异化）；false＝旧表 stages（三阶起异化）
 static var ALIGN_LOBBY := true
 ## 发行开关：false＝发行构建（ReleaseEntry.is_release）里一概不建（天启篇相关，Kyo 11-12 只进本地 main、不推给玩家）；以后对玩家开放改成 true
@@ -67,7 +70,10 @@ static func reload_table() -> void:
 # ---- 开关、阶段 ----
 
 static func stage() -> int:
-	return clampi(STAGE_OVERRIDE, 1, 5) if STAGE_OVERRIDE > 0 else XRift.stage()
+	if STAGE_OVERRIDE > 0:
+		return clampi(STAGE_OVERRIDE, 1, 5)
+	var st := XRift.stage()
+	return mini(st, 2) if not STAGE3_ALIEN else st
 
 
 ## 这一档受漩涡阶段影响：开关开着、不是天启篇存档、阶段二起

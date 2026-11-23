@@ -63,6 +63,7 @@ func _run() -> void:
 	var kit = Kit.new("t079_hall_shot")
 	XConfig.whisper_mark("rift1")
 	XConfig.whisper_mark("rift2")
+	XConfig.whisper_mark("rift3")   # 漩涡三阶段过场（XRift，Map4 EV205：rift2 看过后下一次进大厅就播）同样占住大厅，一并记成看过
 	await _hall(Kit.new_game("jiusi"), "tq_hall")
 	var plain := XState.new_game_blank()
 	plain.set_variable(20, 3)

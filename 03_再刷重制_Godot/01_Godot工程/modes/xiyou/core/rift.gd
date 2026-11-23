@@ -12,13 +12,26 @@ extends RefCounted
 ##   先记 rift2 再播；全存档只播一次（配置 codexWhisperSeen，同 rift1）。
 ## - EV204「时空漩涡_苍龙2」：过场用的人物，平时无图（行走图 TZX04 第 0 格，即角色 146 的行走图）。
 ## 新事件号从 201 起，避开原版以后在 Map004 追加事件时撞号；切片 keepEvents 不列它们，由 keep_event 放行。
-## 开关 STAGE2＝false 后 clear_cache() 回第一阶。给大厅异化留的接口：stage()、canglong_drop_cell()；本文件只占 (13～15,19) 三格与 EV75～77、201～204。
+## 开关 STAGE2＝false 后 clear_cache() 回第一阶。给大厅异化留的接口：stage()、canglong_drop_cell()；本文件只占 (13～15,19) 三格与 EV75～77、201～207。
+##
+## 【cc·未经审查】三阶段（T412，Kyo 11-23 事项34→D262「先做漩涡三阶段，再开放」、事项35「看完二阶后下一次进大厅就播」「不再做甩出来，徐凤年从天而降」）：
+## - EV205「时空漩涡_字幕3」：rift2 播过、rift3 没播、且不是刚播完 rift2 的同一次进大厅时播（不跟 CHAIN_AFTER_RIFT1 走，总要隔一次进图）——
+##   变暗 →「??????」一句 → 漩涡闪光震屏 → 一只异化怪物从天上摔到 (14,22) → 白光，徐凤年追下来落到 (14,21) →
+##   斩击动画＋重震屏＋白闪、怪物淡掉 → 徐凤年三句（隐世强者察觉天地变化／暗示四阶化形／决定跟随）→ 淡出往南 → 小字。
+##   先记 rift3 再播；全存档只播一次（配置 codexWhisperSeen）。
+## - EV206「时空漩涡_徐凤年3」、EV207「时空漩涡_异化怪3」：过场用的人物，平时无图、起点在漩涡正上方 FALL_FROM 格
+##   （徐凤年用行走图 7mobu7 第 2 格＝角色 152 的行走图；怪物用原版 Monster 第 6 格，大厅异化层按备注染幽紫）。
+## - stage()：rift3 播过（且 STAGE3 开着）返回 3，给 T411 徐凤年招募／号角门槛用（它读 XConfig.whisper_seen("rift3") 或 stage() >= 3）。
+##   三阶怪物异化（蚀骨）这单不开：XRiftAlien.STAGE3_ALIEN 默认关，XRift 给 3 时怪物端仍按二阶。
+## 开关 STAGE3＝false 后 clear_cache()：不加 205／206、stage() 不到 3（二阶的东西不变）。
 
 static var STAGE2 := true
 ## O-339：原设计 rift2 要等「下一次进大厅」才播，玩家第一次进大厅看完流萤后苍龙不出，
 ## 要出去再进来（玩家反馈 v0.01「流萤和苍龙的解锁动画冲突，退出重新切图才刷出苍龙」）。开着时 rift1 放完（地图不忙了）
 ## 自动执行页紧接着播 rift2，两段不会同时跑（自动执行只在没有别的事件时启动）。false 回到「下一次进大厅」。
 static var CHAIN_AFTER_RIFT1 := true
+## T412：漩涡三阶段（rift3 过场、stage()==3）。false 回到只有二阶段
+static var STAGE3 := true
 
 const MAP := 4
 const VORTEX := 75
@@ -28,6 +41,16 @@ const BLOCK_R := 202
 const RIFT2 := 203
 const CANGLONG_EV := 204
 const NEW_EVENTS := [BLOCK_L, BLOCK_R, RIFT2, CANGLONG_EV]
+const RIFT3 := 205
+const XUFENG_EV := 206
+const MOB_EV := 207
+const STAGE3_EVENTS := [RIFT3, XUFENG_EV, MOB_EV]
+const XUFENG_ACTOR := 152
+## 徐凤年起落：从漩涡正上方 FALL_FROM 落到 XUFENG_DROP（同苍龙落点，苍龙早已离场）
+const FALL_FROM := Vector2i(14, 12)
+const XUFENG_DROP := Vector2i(14, 21)
+## 被追杀的异化怪物落点（徐凤年落点南边一格）
+const MOB_DROP := Vector2i(14, 22)
 const STAGE1_IMG := "!Codex_Rift_Stage1"
 const STAGE2_IMG := "!Codex_Rift_Stage2"
 const CELL := Vector2i(14, 19)
@@ -36,15 +59,22 @@ const INVESTIGATE_TEXT := "转得比上次快了。贴近了，能听见很远�
 ## 「刚播完 rift1 的同一次进大厅」的虚拟键（XConfig.whisper_seen 转来问 this_visit_seen）
 const THIS_VISIT_KEY := "rift1@thisvisit"
 const RIFT2_CONDITION := "window.CodexWhisper&&CodexWhisper.seen('rift1')&&!CodexWhisper.seen('rift2')&&!CodexWhisper.seen('rift1@thisvisit')"
+## 「刚播完 rift2 的同一次进大厅」的虚拟键（三阶段要等下一次进大厅）
+const RIFT2_VISIT_KEY := "rift2@thisvisit"
+const RIFT3_CONDITION := "window.CodexWhisper&&CodexWhisper.seen('rift2')&&!CodexWhisper.seen('rift3')&&!CodexWhisper.seen('rift2@thisvisit')"
 
-## 进图次数（map_scene.load_map 换图时加一）与 rift1 记下时的那一次
+## 进图次数（map_scene.load_map 换图时加一）与各键记下时的那一次（键 → 第几次进图；不写盘）
 static var _visit := 0
-static var _rift1_visit := -1
+static var _mark_visit := {}
 
 
-## 当前阶段：开关开着是 2，关了是 1
+## 当前阶段：STAGE2 关了是 1；开着是 2，rift3 播过（STAGE3 开着）是 3
 static func stage() -> int:
-	return 2 if STAGE2 else 1
+	if not STAGE2:
+		return 1
+	if STAGE3 and XConfig.whisper_seen("rift3"):
+		return 3
+	return 2
 
 
 ## 苍龙破晓被甩出的落点（漩涡正南两格）；大厅异化在这放青色鳞
@@ -62,17 +92,27 @@ static func on_map_setup(_map_id: int) -> void:
 
 ## XConfig.whisper_mark 记键时通知
 static func on_mark(key: String) -> void:
-	if key == "rift1":
-		_rift1_visit = _visit
+	_mark_visit[key] = _visit
+
+
+## 是不是「同一次进大厅」的虚拟键（XConfig.whisper_seen 转来问 this_visit_seen）
+static func is_visit_key(key: String) -> bool:
+	return key == THIS_VISIT_KEY or key == RIFT2_VISIT_KEY
 
 
 static func this_visit_seen(key: String) -> bool:
-	return key == THIS_VISIT_KEY and _rift1_visit == _visit and not CHAIN_AFTER_RIFT1
+	if key == THIS_VISIT_KEY:
+		return int(_mark_visit.get("rift1", -1)) == _visit and not CHAIN_AFTER_RIFT1
+	if key == RIFT2_VISIT_KEY:
+		return int(_mark_visit.get("rift2", -1)) == _visit
+	return false
 
 
-## 切片 keepEvents 之外也要放进地图的事件（二阶段新加的）
+## 切片 keepEvents 之外也要放进地图的事件（二、三阶段新加的）
 static func keep_event(map_id: int, ev_id: int) -> bool:
-	return STAGE2 and map_id == MAP and NEW_EVENTS.has(ev_id)
+	if not STAGE2 or map_id != MAP:
+		return false
+	return NEW_EVENTS.has(ev_id) or (STAGE3 and STAGE3_EVENTS.has(ev_id))
 
 
 static func patch_map(map_id: int, data) -> void:
@@ -91,6 +131,12 @@ static func patch_map(map_id: int, data) -> void:
 	events[BLOCK_R] = _blocker(BLOCK_R, CELL.x + 1, vortex)
 	events[RIFT2] = _rift2_event()
 	events[CANGLONG_EV] = _canglong_event()
+	if STAGE3:
+		while events.size() <= MOB_EV:
+			events.append(null)
+		events[RIFT3] = _rift3_event()
+		events[XUFENG_EV] = _xufeng_event()
+		events[MOB_EV] = _mob_event()
 
 
 static func _patch_vortex(ev: Dictionary) -> void:
@@ -195,3 +241,119 @@ static func _rift2_event() -> Dictionary:
 
 static func _canglong_event() -> Dictionary:
 	return _ev(CANGLONG_EV, "时空漩涡_苍龙2", "<codex_rift_actor:146>", CELL.x, CELL.y, [_page([_c(0, [], 0)], 0, 2, true)])
+
+
+## 自动执行过场的三页：第 1 页并行查条件（满足开 B、已播过开 A），第 2 页（B）自动执行播 body，第 3 页（A）停
+static func _whisper_pages(seen_key: String, condition: String, body: Array) -> Array:
+	for c in body:
+		c.indent = 0
+	var watch := [
+		_c(111, [12, "window.CodexWhisper&&CodexWhisper.seen('%s')" % seen_key], 0),
+		_c(123, ["A", 0]),
+		_c(0, []),
+		_c(411, [], 0),
+		_c(111, [12, condition], 1),
+		_c(123, ["B", 0], 2),
+		_c(0, [], 2),
+		_c(412, [], 1),
+		_c(230, [30], 1),
+		_c(0, [], 1),
+		_c(412, [], 0),
+		_c(0, [], 0),
+	]
+	var p1 := _page(watch, 4, 0)
+	var p2 := _page(body, 3, 0)
+	p2.conditions.selfSwitchValid = true
+	p2.conditions.selfSwitchCh = "B"
+	var p3 := _page([_c(0, [], 0)], 0, 0)
+	p3.conditions.selfSwitchValid = true
+	return [p1, p2, p3]
+
+
+## 三阶段过场（T412）。设定（Kyo 11-23）：徐凤年是隐世强者，察觉天地变化，追杀一只异化怪物时从天而降落进大厅，斩掉它后决定跟随玩家；
+## 台词点到一点四阶段（化形）。不新画：异化怪物用原版行走图 Monster 第 6 格，大厅异化层（XLobbyCorruption）按备注染漩涡幽紫；
+## 没有专门的落地、斩击美术，用白光＋震屏＋原版斩击动画代替。台词已过小A 文字审（XRift.RIFT3_LINES）。
+const RIFT3_LINES := {
+	"whisper": "\\n<??????>……又有东西，从那头漏过来了。",
+	"sense": "\\n<徐凤年>山里清静了这些年，天地气机一乱，还是追着这东西出了山。",
+	"hint": "\\n<徐凤年>刚才那只，不过是染了层异色。再往后……怕是连模样都要换了。",
+	"follow": "\\n<徐凤年>你身上沾着漩涡的气息，想来前头热闹还多。这一程，我跟你走。",
+	"after": "\\c[8]兑换大厅里，好像又来了一个人。\\c[0]",
+}
+const MOB_IMG := "Monster"
+const MOB_INDEX := 6
+const MOB_NOTE := "<codex_rift_alien_mob>"
+## 斩击动画（原版 Animations 23「斩击/必杀技 1」）
+const SLASH_ANIM := 23
+
+
+static func _fall_route(img: String, idx: int, to_y: int) -> Dictionary:
+	var cmds := [[41, img, idx], [35], [32], [34], [37], [29, 6], [42, 255]]
+	for i in to_y - FALL_FROM.y:
+		cmds.append([1])
+	return _route(cmds)
+
+
+static func _rift3_event() -> Dictionary:
+	var a := XDB.rec("Actors", XUFENG_ACTOR)
+	var img := str(a.get("characterName", "7mobu7"))
+	var idx := int(a.get("characterIndex", 2))
+	var face := [str(a.get("faceName", "")), int(a.get("faceIndex", 0)), 0, 2]
+	var body := [
+		_c(355, ["CodexWhisper.mark('rift3');"], 0),
+		_c(223, [[-51, -51, -17, 51], 45, true]),
+		_c(230, [20]),
+		_c(101, ["", 0, 1, 1]),
+		_c(401, [RIFT3_LINES.whisper]),
+		_c(225, [5, 9, 30, false]),
+		_c(224, [[200, 180, 255, 170], 30, false]),
+		_c(212, [VORTEX, 136, false]),
+		_c(230, [20]),
+		# 异化怪物先从天上摔下来，落在落点南边一格，抬头望天
+		_c(205, [MOB_EV, _fall_route(MOB_IMG, MOB_INDEX, MOB_DROP.y)]),
+		_c(225, [5, 9, 12, false]),
+		_c(230, [10]),
+		_c(205, [MOB_EV, _route([[36], [19], [35]])]),
+		_c(230, [20]),
+		# 天上一道白光：徐凤年追下来，正落在它头顶一格
+		_c(224, [[255, 255, 255, 200], 20, true]),
+		_c(205, [XUFENG_EV, _fall_route(img, idx, XUFENG_DROP.y)]),
+		# 一刀斩下：斩击动画＋重震＋白闪，怪物淡掉
+		_c(212, [MOB_EV, SLASH_ANIM, false]),
+		_c(225, [9, 9, 24, false]),
+		_c(224, [[255, 255, 255, 255], 12, false]),
+		_c(205, [XUFENG_EV, _route([[14, 0, 0]])]),
+		_c(230, [30]),
+		_c(205, [MOB_EV, _route([[42, 180], [15, 6], [42, 110], [15, 6], [42, 50], [15, 6], [42, 0]])]),
+		_c(230, [30]),
+		_c(205, [XUFENG_EV, _route([[36], [38], [16]])]),
+		_c(230, [20]),
+		_c(101, face),
+		_c(401, [RIFT3_LINES.sense]),
+		_c(101, face),
+		_c(401, [RIFT3_LINES.hint]),
+		_c(101, face),
+		_c(401, [RIFT3_LINES.follow]),
+		_c(230, [30]),
+		_c(205, [XUFENG_EV, _route([[31], [29, 4], [42, 200], [1], [42, 150], [1], [42, 100], [1], [42, 50], [1], [42, 0]])]),
+		_c(223, [[0, 0, 0, 0], 45, true]),
+		_c(101, ["", 0, 2, 1]),
+		_c(401, [RIFT3_LINES.after]),
+		_c(123, ["A", 0], 0),
+		_c(0, [], 0),
+	]
+	return _ev(RIFT3, "时空漩涡_字幕3", "<codex_rift_whisper:rift3>", 2, 31, _whisper_pages("rift3", RIFT3_CONDITION, body))
+
+
+## 过场人物：平时无图、穿透、在人物之上，起点在漩涡正上方
+static func _actor_event(id: int, name: String, note: String) -> Dictionary:
+	var p := _page([_c(0, [], 0)], 0, 2, true)
+	return _ev(id, name, note, FALL_FROM.x, FALL_FROM.y, [p])
+
+
+static func _xufeng_event() -> Dictionary:
+	return _actor_event(XUFENG_EV, "时空漩涡_徐凤年3", "<codex_rift_actor:%d>" % XUFENG_ACTOR)
+
+
+static func _mob_event() -> Dictionary:
+	return _actor_event(MOB_EV, "时空漩涡_异化怪3", MOB_NOTE)
