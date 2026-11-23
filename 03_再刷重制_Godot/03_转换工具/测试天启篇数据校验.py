@@ -58,6 +58,14 @@ class GuardianPhase4Rules(unittest.TestCase):
         self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, pct=dict(ok['pct'], hard=100))}))   # 多了不认识的键
         self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, skills=[])}))
         self.assertTrue(chk.guardian_phase4_rules({'lifesteal_cap': dict(ok, extra=1)}))
+        dp = {'_note': 'x', '22': {'177': 15, '91': 13}}   # T402
+        self.assertEqual(chk.guardian_phase4_rules({'dot_pct': dp}), [])
+        self.assertTrue(chk.guardian_phase4_rules({'dot_pct': {'22': {'177': 15.5}}}))   # 不是整数
+        self.assertTrue(chk.guardian_phase4_rules({'dot_pct': {'22': {'177': 0}}}))
+        self.assertTrue(chk.guardian_phase4_rules({'dot_pct': {'22': {'177': 101}}}))
+        self.assertTrue(chk.guardian_phase4_rules({'dot_pct': {'35': {'177': 15}}}))   # 层号越界
+        self.assertTrue(chk.guardian_phase4_rules({'dot_pct': {'22': {'x': 15}}}))
+        self.assertTrue(chk.guardian_phase4_rules({'dot_pct': {'22': {}}}))
 
     def test_bad_tables(self):
         self.assertTrue(chk.guardian_phase4_rules({'hp_base': {'35': 1}}))

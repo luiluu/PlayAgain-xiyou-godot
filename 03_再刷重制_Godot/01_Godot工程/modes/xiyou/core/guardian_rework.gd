@@ -773,3 +773,32 @@ static func steal_cap(u, item: Dictionary, damage: float, steal: float) -> float
 	if pct == null:
 		return steal
 	return minf(steal, floorf(maxf(0.0, damage) * int(pct) / 100.0))
+
+
+## T402（D257，Kyo 11-22）：守层者挂的常数持续伤害按层单列比例。表 balance_table.guardian_phase4.dot_pct ＝ {"层号": {"状态号": 整数%}}：
+## 施加者是守层者本身（敌人号或变身前是守层者；心魔、骑士、七印里副本、同层小怪、别的敌人挂同一状态都不认）时，
+## 这一跳改成 ⌊持有者生命上限 × 整数%⌋，取代 abs_rescale.json 那一行的 T080 换算（22 层三眼娃：猩红飞蛇之毒 177 65%→15%、出血 91 58%→13%）。
+## 只管 abs_rescale 里常数整条换的行（带 base 的公式型、raw 不动）；西游档、期四总开关关、没表、施加者记录没了：原样返回。
+## 回退：`XGuardianRework.DOT_PCT = false`。XExtDot._one 在 XTianqiBase.dot_value 之后调。a：施加者，b：持有者
+static var DOT_PCT := true
+
+
+static func dot_pct(id: int, value: float, a, b) -> float:
+	if not DOT_PCT or b == null or not a is XEnemy or is_same(a, b) or not _on() or not XTianqiBase.on():
+		return value
+	var e := a as XEnemy
+	if not e.horseman.is_empty() or xinmo_floor(e) > 0:
+		return value
+	var f := guardian_floor(e)
+	if f <= 0:
+		return value
+	var g = XTianqiBalance.data().get("guardian_phase4", {})
+	var tab = g.get("dot_pct", {}) if g is Dictionary else {}
+	var row = tab.get(str(f), {}) if tab is Dictionary else {}
+	var pct = row.get(str(id)) if row is Dictionary else null
+	if pct == null:
+		return value
+	var ent := XTianqiBase.abs_entry("state_dot", id)
+	if ent.is_empty() or str(ent.new.get("mode", "")) == "raw" or ent.new.has("base"):
+		return value
+	return floorf(float(b.mhp) * int(pct) / 100.0)
