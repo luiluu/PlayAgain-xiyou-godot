@@ -236,6 +236,8 @@ static func pool(key: String) -> Dictionary:
 
 ## 候选池里停用的角色；五条悟只看最强之名解锁没有（开新局时当前存档还不是天启篇，XGojo.hidden 不作数）
 static func _disabled(id: int) -> bool:
+	if id == XImportedBalance.XUFENG and not XImportedBalance.XUFENG_TIANQI:
+		return true  # T411：徐凤年天启篇技能卡未接线前不进候选池
 	return XGojo.locked(id) if id == XGojo.ACTOR else XImportedBalance.is_disabled_actor(id)
 
 
