@@ -28,7 +28,7 @@
   - 未动工程 `.gd` 文件，不涉及云端选测。
 - **真钥匙实跑记录（M5a 图生图）**：
   - 首跑（旧默认 `url` 模式）API 鉴权与生成已 200 返回但跨区下载临时对象存储 URL 超时（`[Errno 60] Operation timed out`）；经协调者批准默认改 `b64_json` 并补 `url` 仅下载重试后，补跑 1 张一次成功。
-  - 参数：`img2img`、模型 `doubao-seedream-5.5`、参考图私密仓 `重制设定/美术定妆图/徐凤年_形象参考_Kyo.jpg`、提示词取分镜 v0.5 第 3.2 节 Muse #5 Step 5a、`--size 1:1`（`2048x2048`）、`watermark=false`。
+  - 参数：`img2img`、模型 `doubao-seedream-5.5`、参考图取私密设计仓 `xiyou-design-docs` 的徐凤年形象参考图（只读输入）、提示词取分镜 v0.5 第 3.2 节 Muse #5 Step 5a、`--size 1:1`（`2048x2048`）、`watermark=false`。
   - 产物：`00_项目管理/归档/交付截图/luiluu_t435-volcano-ark-media/M5a_seedream55.png`（原生真 PNG，`2048×2048`，8-bit RGB，6.6MB，无水印，黑白线稿网点＋朱红三色准确）。
   - 用量：`{"input_images": 1, "generated_images": 1, "output_tokens": 16384, "total_tokens": 16384}`。
   - 视频实跑：**未实跑**（订阅不含 Seedance，需另购，地址未知；视频子命令已默认禁用）。
