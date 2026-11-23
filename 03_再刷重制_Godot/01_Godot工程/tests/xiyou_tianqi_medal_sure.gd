@@ -200,9 +200,9 @@ func _exclude_and_extra() -> void:
 	# T401：混沌避难所五件祭祀物 724～728（敌人 459～463）开关关掉回原 × 0.2，图鉴显示 100%
 	for k in 5:
 		var it := 724 + k
-		var off := (func():
+		var off: float = (func() -> float:
 			XTianqiDrop.MEDAL_SURE = false
-			var v := XTianqiDrop.signature_base(1, it, 1.0, 459 + k)
+			var v: float = XTianqiDrop.signature_base(1, it, 1.0, 459 + k)
 			XTianqiDrop.MEDAL_SURE = true
 			return v).call()
 		_check("shrine_switch_off_%d" % it, is_equal_approx(off, 0.2), off)
