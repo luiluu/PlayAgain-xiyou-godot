@@ -162,8 +162,7 @@ func _title() -> void:
 		_add_transfer_buttons()
 	if XSave.exists_auto():
 		_add_auto_button()
-	if OS.get_cmdline_user_args().has("--report-entry"):  # 冒烟：标题有没有「继续」（安卓实机冒烟.py，平台 FB 四单）
-		print("AUTO_SAVE_PRESENT=%s" % XSave.exists_auto())
+	_report_entry_state()
 	# 光标与初始选中（审查报告第 16 项：原先误放在 _load_auto 末尾，标题没有光标，读自动存档失败后才冒出来）
 	var cp := XDB.img_path("titles2", "Cursor")
 	if cp != "":
@@ -209,8 +208,7 @@ func _tq_build_title() -> void:
 		_add_auto_button()
 	for n in _layer.get_children().slice(before):
 		n.reparent(_tq_title.extras, false)
-	if OS.get_cmdline_user_args().has("--report-entry"):  # 冒烟：标题有没有「继续」（安卓实机冒烟.py）
-		print("AUTO_SAVE_PRESENT=%s" % XSave.exists_auto())
+	_report_entry_state()
 	XSaveSlim.sweep_once()  # 残留临时文件：每次启动进标题清一次（XSaveSlim.TEMP_FILES）
 	# 自动更新接线（update-check1 交付单）：进标题静默查一次（一天最多一次，只在发行构建），按钮红点看上次结果，查完刷新
 	var client := XUpdateClient.instance(get_tree())
@@ -225,6 +223,31 @@ func _tq_build_title() -> void:
 func _tq_on_update_checked(_result: Dictionary) -> void:
 	if _tq_title != null and is_instance_valid(_tq_title):
 		_tq_title.set_badge("check_update", XUpdateClient.instance(get_tree()).has_update())
+
+
+## 发行包存档封存自检结果（只读，不写盘、不触碰或输出密钥内容与路径；T423）：
+## active 为真要求 XSaveSeal.active_now() 为真且内存封存／解封闭环通过；format 对应导出格式（v2 或明文 v1）。
+static func save_seal_report() -> Dictionary:
+	var sealed := XSaveSeal.active_now()
+	var fmt := XSaveTransfer.FORMAT
+	if sealed:
+		var probe := XSaveSeal.seal("{}")
+		var back := XSaveSeal.unseal(probe) if not probe.is_empty() else {"ok": false}
+		if bool(back.get("ok", false)) and str(back.get("text", "")) == "{}":
+			fmt = XSaveTransfer.FORMAT_SEALED
+		else:
+			sealed = false
+	return {"active": sealed, "format": fmt}
+
+
+## 冒烟状态输出（仅命令行带 --report-entry 时打印，不改流程）：标题「继续」与存档封存生效状态。
+func _report_entry_state() -> void:
+	if not OS.get_cmdline_user_args().has("--report-entry"):
+		return
+	print("AUTO_SAVE_PRESENT=%s" % XSave.exists_auto())
+	var seal := save_seal_report()
+	print("SAVE_SEAL_ACTIVE=%s" % bool(seal.active))
+	print("SAVE_EXPORT_FORMAT=%s" % str(seal.format))
 
 
 ## 更新装好、重启进标题后弹一次「本次更新内容」（XWhatsNewPage，update-whatsnew）。天启篇新标题走新皮肤，重制版旧标题走旧样式。
