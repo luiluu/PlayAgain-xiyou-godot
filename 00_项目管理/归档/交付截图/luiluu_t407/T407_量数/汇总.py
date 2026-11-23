@@ -85,7 +85,7 @@ for chain, title in (('weak', '纯 4 弱（r7 链，allWeak）'), ('norm', '普�
                 g[i] += c[i]
         print(f'| {fl} | ' + ' | '.join(cells) + ' | ' + ' | '.join(tots) + f' | {kinds(data[labels[0]][chain].get(fl, []))} |')
     print(f'\n分段合计（{title}）：\n')
-    print('| 数据 | 10～30 层 胜/场 | 胜率 | 31～33 层 胜/场 | 胜率 | 31～33 秒杀场 |')
+    print('| 数据 | 10～30 层 胜/场 | 胜率 | 31～34 层 胜/场 | 胜率 | 31～34 秒杀场 |')
     print('|---|---|---|---|---|---|')
     for l in labels:
         lo = seg.get((l, '10～30'), [0, 0, 0])
