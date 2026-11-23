@@ -43,13 +43,15 @@
 
 | 函数／开关 | 自检调用处粗数（含同名函数） | 调用处结论 |
 | --- | --- | --- |
-| `XState.gain_gear` | 167 处（`git grep -n 'gain_gear(' -- '*.gd'`） | 西游档新增装备统一由 `create_prestige_drop` 生成。由入包入口按档案分流，事件指令 127/128、战斗和挖宝无需单独传补候选标记。天启篇仍按来源键生成，装备登记、入包和提示沿用原出口。 |
+| `XState.gain_gear` | 166 处调用（`git grep -n 'gain_gear(' -- '*.gd'` 共 167 行，含定义） | 西游档新增装备统一由 `create_prestige_drop` 生成。由入包入口按档案分流，事件指令 127/128、战斗和挖宝无需单独传补候选标记。天启篇仍按来源键生成，装备登记、入包和提示沿用原出口。 |
+| `XGear.create` | 173 处（`git grep -n 'XGear.create(' -- '*.gd'`） | 直接创建按原底材的词条行掷骰。补候选由西游档入包调用的专用工厂负责。 |
 | `XGear.create_prestige_drop` | 1 处生产调用、1 处测试调用 | 工厂自己校验回退开关。至臻原候选全部被过滤时才补合法候选。普通底材与关闭开关时按原词条行掷骰。 |
 | `XGear.roll_item` | 6 处（`git grep -n 'roll_item(' -- '*.gd'`） | `create_prestige_drop` 在补候选时传替换行，其余使用实例模板的原行。深渊商人、云裳订单、心钢测试和普通创建继续使用原参数。 |
 | `XBattleLogic.gain_drops` | 12 处（`git grep -n 'gain_drops(' -- '*.gd'`） | 生产调用来自倒下即发和战后结算，两条沿用同一装备入口。天启篇通用奖励仍走天启篇装备生成。物品、掉落快照、来源键、测试加速照原流程。 |
 | `XTreasureMap._dig` | 2 处（`git grep -n '_dig(' -- '*/core/treasure_map.gd'`） | 两个挖宝入口的武器、防具发奖均走 `gain_gear`，扣图、宝点记录、物品和事件奖照原流程。 |
 | `XDB.rec` | 2534 处（`git grep -nE '[^[:alnum:]_]rec[[:space:]]*\(' -- '*.gd'`） | 商店与背包读取两张图纸，地图事件读取对应公共事件。补丁只返回这四条西游记录的副本，原缓存与其它记录仍照原路径取值。 |
 | `XToji.start_battle`、`XToji.finish` | 63、284 处。生产调用各 1 处（`git grep -nE 'XToji\.(start_battle\|finish)\(' -- '*.gd'`） | 战斗开场清本场记录，行动结束确认切换成功才取离开的形态。原切换仍由 `set_shape` 完成。 |
+| `XToji.end_battle` | 1 处实际调用（`XBattleLogic.end_battle`） | 战斗结束清形态与本场战斗的弱引用。 |
 | `XToji.revived` | 1 处生产调用（`XActor.remove_state`） | 实际复活并成功回游云时，经本场战斗的弱引用定位当前甚尔，在西游档清除旧形态。 |
 | `XSmartAI._choose` | 14 处（`git grep -nE '[^[:alnum:]_]_choose[[:space:]]*\(' -- '*.gd'`） | 开关只约束西游档甚尔返回刚离开的形态。自动行动仍优先跑可用的挂机顺序。其他技能、角色和天启篇沿用原估值。 |
 | `MVInterpreter._host_command` | 2（`git grep -n '_host_command(' -- '*.gd'`） | 事件循环调用解释器。只在陈塘关主席送活力水分支的消除指令完成后发起同图传送，同图流程保留已移除事件。 |
