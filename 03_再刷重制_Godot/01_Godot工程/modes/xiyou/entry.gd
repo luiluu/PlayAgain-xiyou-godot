@@ -713,8 +713,9 @@ func _tq_lineup(slot: int, key: String, lineup: Array) -> void:
 		_back = p.cancel
 		return
 	var d := XTianqi.difficulty(key)
-	var cap_text := "同一场最多上阵 %d 名超强者" % int(d.super_cap)
-	if XTianqi.HELPER_RULES and bool(d.get("helper_super", false)):
+	var super_cap := int(d.super_cap)
+	var cap_text := "无法获得超强者" if super_cap <= 0 else "同一场最多上阵 %d 名超强者" % super_cap
+	if super_cap > 0 and XTianqi.HELPER_RULES and bool(d.get("helper_super", false)):
 		cap_text += "，助力位可再放 1 名"  # D57：只有证道的助力位能放超强者
 	_window("随机阵容 · %s（%s）" % [d.name, cap_text], 760.0)
 	for i in lineup.size():
