@@ -85,7 +85,7 @@
 ## 验证
 
 - 本地：专项 `xiyou_tianqi_guardian_dot` 23/23、`xiyou_tianqi_guardian_lifesteal` 12/12、`xiyou_dot` 2259/2259、`xiyou_tianqi_abs_skill` 43/43；`天启篇数据校验.py` 全部通过；`测试天启篇数据校验.py` 130 条 OK；`语法检查.py` 通过；`发行空壳.py check` 81 个脚本 779 个函数都有；`回退开关覆盖.py` 退出码 0。
-- 云端选测（第 2 轮）：待写
+- 云端选测（第 2 轮）：选测 4 场景 1 片通过（提交 9502d2a0d，基准 588d9404e，run https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45108302110）。只改了 balance_table 一个数，选测按影响面选的 4 个场景；第 1 轮已跑过整轮 784。
 - 云端选测（第 1 轮）：整轮 784 场景 16 片通过（提交 de151c7ee，run https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45105615829，基准 a084e0583）；偶发 1 个 xiyou_tianqi_followup_kill（并行失败、单跑通过，云端判通过）。
 
 ## 本分支提交
