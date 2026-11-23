@@ -178,7 +178,7 @@ static func _dig(s: XState, spot: Dictionary, out: Dictionary) -> void:
 			out.toasts.append("获取防具失败：请重新使用")
 		else:
 			var id: int = spot.armor[v % spot.armor.size()]
-			s.gain_gear("armor", id, 1)
+			s.gain_gear("armor", id, 1, "", true)
 			out.toasts.append("获得防具：" + str(XDB.rec("Armors", id).get("name", "")))
 	elif roll < 60:
 		if spot.weapon.is_empty():
@@ -186,7 +186,7 @@ static func _dig(s: XState, spot: Dictionary, out: Dictionary) -> void:
 			out.toasts.append("获取武器失败：请重新使用")
 		else:
 			var id: int = spot.weapon[v % spot.weapon.size()]
-			s.gain_gear("weapon", id, 1)
+			s.gain_gear("weapon", id, 1, "", true)
 			out.toasts.append("获得武器：" + str(XDB.rec("Weapons", id).get("name", "")))
 	else:
 		if spot.common.is_empty():
