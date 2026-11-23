@@ -19,7 +19,7 @@ extends RefCounted
 ## 开关：XTianqiWarLine.ENABLED（战争线整条）；只认天启篇存档、发行构建里还要 XTianqi.RELEASE_OPEN。没 prepare 的战斗一概不动。
 
 const META := "xwar_alien"
-## O-待定（T394）：终焉烟火师轰炸乘攻击方出伤倍率（XEnemy.output_scale；守层者按层重算的那个，其余敌人是 1 不变），系数读表 finale_bomb。
+## O-639（T394）：终焉烟火师轰炸乘攻击方出伤倍率（XEnemy.output_scale；守层者按层重算的那个，其余敌人是 1 不变），系数读表 finale_bomb。
 ## 原来轰炸直接按攻击力算、漏乘倍率：31～33 层守层者攻击 264 万、倍率约 1e-5，普通招每下打我方约 500，轰炸一下每人约 390 万，第 1 回合团灭。
 ## 回退：BOMB_SCALE = false（不乘倍率、系数回到原来的 BOMB_LEGACY_COEF）。
 static var BOMB_SCALE := true
