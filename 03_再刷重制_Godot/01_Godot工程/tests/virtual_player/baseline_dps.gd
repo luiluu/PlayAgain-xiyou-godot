@@ -34,6 +34,7 @@ var seed := 20261113
 var no_fabao := false
 var gear := true
 var debug := false
+var keep_trace := false
 var atk_search := false
 var atk_target := 10.0   # --atk-search：找让基准队中位数撑到这么多回合团灭的攻击倍率
 var atk_scale := 1.0
@@ -122,6 +123,17 @@ func _ready() -> void:
 			XTianqiWarAlien.BOMB_SCALE = false   # T394：终焉烟火师轰炸回到修前（不乘出伤倍率、系数 1.5）
 		elif a.begins_with("--bomb-coef="):
 			XTianqiWarAlien.kind_info("pyro")["finale_bomb"] = float(a.substr(12))   # T394：轰炸系数换成这个数，只改内存里的表
+		elif a.begins_with("--hp-pct="):
+			var hp := a.substr(9).split(":")   # T406：层:整数%，只改内存里的 guardian_phase4.hp_pct；off＝HP_PCT 关
+			if hp[0] == "off":
+				XGuardianRework.HP_PCT = false
+			else:
+				var gp: Dictionary = XTianqiBalance.data().get("guardian_phase4", {})
+				if not gp.get("hp_pct") is Dictionary:
+					gp["hp_pct"] = {}
+				gp["hp_pct"][hp[0]] = int(hp[1])
+		elif a == "--focus=off":
+			XGuardianRework.FOCUS = false   # T406：守层者集火招不单独乘倍率（照 atk_scale），拆败因用
 		elif a == "--add-healer":
 			add_healer = true
 		elif a == "--all-weak":
@@ -154,6 +166,8 @@ func _ready() -> void:
 			atk_target = float(a.substr(13))
 		elif a == "--debug":
 			debug = true
+		elif a == "--keep-trace":
+			keep_trace = true
 		elif a == "--no-gear":
 			gear = false
 		elif a.begins_with("--quality="):
@@ -1098,7 +1112,8 @@ func _run_duel_snapshots() -> void:
 			XState._become_current(st)
 			tid = _troop_for(st, f)
 			var r := _fight(st, tid)   # T239（核 P3-1）：34 层借 33 层档真打鸿钧
-			r.erase("trace")
+			if not keep_trace:
+				r.erase("trace")   # T406：--keep-trace 留着逐步血量，拆败因用
 			r["swap"] = st.get_meta("t239_swap", {})
 			r["team"] = str(st.get_meta("t239_team", ""))
 			r["rng"] = int(st.get_meta("t239_rng", 0))

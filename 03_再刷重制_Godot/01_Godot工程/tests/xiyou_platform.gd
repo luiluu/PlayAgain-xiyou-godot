@@ -234,6 +234,49 @@ func emulated_click(pos: Vector2, pressed: bool) -> void:
 	e.global_position = e.position
 	Input.parse_input_event(e)
 
+func _resume_pad(pad: XTouchControls, ok_center: Vector2, hide_center: Vector2) -> void:
+	var previous := XState.current
+	XState.current = XState.new()
+	var entries := []
+	pad.root.tree_entered.connect(func(): entries.append(true))
+	pad.root.hide()
+	check("resume_hidden_controls_no_hit", pad.hit(ok_center) == "" and pad.hit(hide_center) == "")
+	pad.root.show()
+	touch(0, ok_center, true)
+	await frames(1)
+	pad.root.hide()
+	pad.notification(NOTIFICATION_APPLICATION_RESUMED)
+	pad.notification(NOTIFICATION_APPLICATION_FOCUS_IN)
+	pad._viewport_resized()
+	await frames(2)
+	check("resume_reattaches_once", entries.size() == 1, entries.size())
+	check("resume_releases_input", not Input.is_action_pressed("ui_accept"))
+	check("resume_restores_controls", (pad._buttons.ok as Panel).is_visible_in_tree() and (pad._buttons.hide as Panel).is_visible_in_tree()
+		and pad.hit(ok_center) == "ok" and pad.hit(hide_center) == "hide")
+	touch(0, ok_center, false)
+	pad.set_hidden(true)
+	pad.root.hide()
+	pad.notification(NOTIFICATION_APPLICATION_RESUMED)
+	await frames(2)
+	var other_buttons_hidden := pad._buttons.keys().all(func(key):
+		return key == "hide" or not (pad._buttons[key] as Panel).is_visible_in_tree())
+	check("resume_preserves_user_hidden", entries.size() == 2 and pad.hidden and other_buttons_hidden
+		and not pad._stick_base.is_visible_in_tree() and not pad._ghost_base.is_visible_in_tree()
+		and (pad._buttons.hide as Panel).is_visible_in_tree() and pad.hit(ok_center) == "" and pad.hit(hide_center) == "hide")
+	pad.set_hidden(false)
+	XState.current.flags.tianqi = {"rules": 1}
+	pad.notification(NOTIFICATION_APPLICATION_RESUMED)
+	await frames(2)
+	check("resume_tianqi_unchanged", entries.size() == 2, entries.size())
+	XState.current.flags.erase("tianqi")
+	XTouchControls.XIYOU_REATTACH_ON_RESUME = false
+	pad.notification(NOTIFICATION_APPLICATION_RESUMED)
+	await frames(2)
+	check("resume_rollback", entries.size() == 2, entries.size())
+	XTouchControls.XIYOU_REATTACH_ON_RESUME = true
+	XState.current = previous
+
+
 func _run() -> void:
 	var saved_probe := XPlatform.idle_probe
 	XPlatform.force_mobile = true
@@ -588,6 +631,7 @@ func _run() -> void:
 	touch(0, hide_center, false)
 	await frames(2)
 	check("show_again", not pad.hidden and pad.hit(ok_center) == "ok")
+	await _resume_pad(pad, ok_center, hide_center)
 
 	# 三期：大小／透明度／位置（原版 limits、步长 5）、安全区
 	XTouchControls.instance = pad

@@ -23,7 +23,10 @@
   - Windows：.pck 里原样带着运行时窗口图标 content/app_icon_runtime/icon.png、icon.ico（标题栏、任务栏用）
   - 版本号（平台 EC）：Mac CFBundleShortVersionString／CFBundleVersion＝0.<号>／<号>，Windows exe 资源里有 0.<号>.0.0；
     号取当前工程的 build_info（查旧包时号对不上会报失败）；XDesktopVersion.AUTO 关着就不查
-  - 包内运行（--headless --quit-after，加 --report-entry 让游戏打印进了哪个场景）：只出现 ENTRY_SCENE=res://modes/xiyou/entry.tscn
+  - 包内运行（--headless --audio-driver Dummy --quit-after，加 --report-entry 让游戏打印进了哪个场景）：只出现 ENTRY_SCENE=res://modes/xiyou/entry.tscn
+  - 存档封存生效断言（T423）：查现成发行包（--zip／--win-dir／--apk）或显式 --require-save-seal 时，断言游戏打印
+    SAVE_SEAL_ACTIVE=true 且 SAVE_EXPORT_FORMAT=kyo-remake-save-sealed-v2（防误传 --no-save-key 或过滤变动静默导明文）；
+    独立自导出冒烟默认只记 INFO；本地测试明文包需显式加 --allow-unsealed（大字警告「此包不能发给玩家」）
   - 启动基线（平台 EC）：起进程到打印 ENTRY_SCENE 的秒数，跟 发行入口启动基线.json 比；慢一倍以上且多 2 秒打 WARN「变慢」，
     只提示不算失败（机器忙时会抖）；Windows／安卓是 macOS 发行模板当替身，量的是读包数据进标题，不是真机
 发行包排除了 tests/、不认 --verify-export，所以这里只看入口，不跑包内测试（那是 导出冒烟.py 对「macOS 验收」调试包做的）。
@@ -53,6 +56,13 @@ PRESET = 'macOS 发行'
 APP_NAME = '再刷一把：天启篇'
 TITLE = 'res://modes/xiyou/entry.tscn'
 MAP = 'res://modes/xiyou/map/map_scene.tscn'
+SEAL_EXPORT_FORMAT = 'kyo-remake-save-sealed-v2'
+UNSEALED_WARNING = (
+    '============================================================\n'
+    '⚠️  警告：已启用 --allow-unsealed（跳过发行包存档封存生效断言）\n'
+    '⚠️  此包不能发给玩家！仅限本地测试使用！\n'
+    '============================================================'
+)
 CRASH_WAIT = 40
 RUN_PREFIX: list = []  # --arch x86_64 时是 ['arch', '-x86_64']
 CRASH_DIR = Path.home() / 'Library' / 'Logs' / 'DiagnosticReports'
@@ -67,7 +77,7 @@ KEY_RUNS = [
 ]
 
 
-def windows(work: Path, check, keys=False, win_dir=None) -> int:
+def windows(work: Path, check, keys=False, win_dir=None, require_seal=False, allow_unsealed=False) -> int:
     exe = work / 'win' / '再刷一把_天启篇.exe'
     exe.parent.mkdir()
     if win_dir:
@@ -105,7 +115,7 @@ def windows(work: Path, check, keys=False, win_dir=None) -> int:
     runner = release_runner(work, pck)
     if runner is None:
         return 2
-    run_entry(work, runner, check, 'windows')
+    run_entry(work, runner, check, 'windows', require_seal, allow_unsealed)
     return run_keys(work, runner, check) if keys else 0
 
 
@@ -154,7 +164,7 @@ def emulators(adb: Path) -> tuple:
     return [s for s in online if s.startswith('emulator-')], [s for s in online if not s.startswith('emulator-')]
 
 
-def android(work: Path, check, keys=False, apk=None) -> int:
+def android(work: Path, check, keys=False, apk=None, require_seal=False, allow_unsealed=False) -> int:
     """安卓发行包：静态查 apk（签名、包名、应用名、版本号、入口和资源、没有 tests/）；
     把 apk 的 assets/ 打成 pck 放到 macOS 发行模板旁跑入口（和按键）；有模拟器就装机启动，没有就写明只做了静态检查。"""
     import zipfile
@@ -210,7 +220,7 @@ def android(work: Path, check, keys=False, apk=None) -> int:
     runner = release_runner(work, pck)
     if runner is None:
         return 2
-    run_entry(work, runner, check, 'android')
+    run_entry(work, runner, check, 'android', require_seal, allow_unsealed)
     if keys:
         run_keys(work, runner, check)
     # 模拟器：有就装上、启动、看进程活着；没有（或只有真机）就只写明
@@ -287,10 +297,47 @@ def compare_baseline(key: str, secs, base: dict) -> str:
     return f'启动到标题 {secs:.1f} 秒，基线 {b:.1f} 秒（{key}）'
 
 
-def run_entry(work: Path, exe: Path, check, platform='macos') -> int:
+def check_save_seal_output(out: str, check, require_seal: bool, allow_unsealed: bool = False) -> None:
+    """核对发行包 --report-entry 打印的存档封存状态（T423，只读状态行，不碰密钥内容与路径）：
+    - require_seal=True（查现成发行包 --zip／--win-dir／--apk，或显式 --require-save-seal）：
+      断言 SAVE_SEAL_ACTIVE=true 且 SAVE_EXPORT_FORMAT=kyo-remake-save-sealed-v2；缺失或不符即失败并给人话提示。
+    - allow_unsealed=True：本地测试明文包显式放行，打印警告「此包不能发给玩家」。
+    - 其余（独立自导出冒烟，如 检查.sh --release-keys 未注入密钥）：只打 INFO。"""
+    actives = [l.split('=', 1)[1].strip() for l in out.splitlines() if l.startswith('SAVE_SEAL_ACTIVE=')]
+    formats = [l.split('=', 1)[1].strip() for l in out.splitlines() if l.startswith('SAVE_EXPORT_FORMAT=')]
+    if allow_unsealed:
+        print('WARN release_save_seal（已启用 --allow-unsealed，跳过封存断言——此包不能发给玩家！当前：'
+              f'SAVE_SEAL_ACTIVE={",".join(actives) or "无"}，SAVE_EXPORT_FORMAT={",".join(formats) or "无"}）')
+        return
+    if not require_seal:
+        print('INFO release_save_seal（独立自导出未注入发行密钥，未强制断言封存；'
+              f'SAVE_SEAL_ACTIVE={",".join(actives) or "无"}，SAVE_EXPORT_FORMAT={",".join(formats) or "无"}）')
+        return
+    active_ok = bool(actives) and all(v == 'true' for v in actives)
+    if not actives:
+        active_note = '未打印 SAVE_SEAL_ACTIVE（发行包必须确认存档封存已生效，请核查是否旧包或入口探针缺失）'
+    elif active_ok:
+        active_note = 'XSaveSeal.active_now() 为真且封存自检通过'
+    else:
+        active_note = (f'SAVE_SEAL_ACTIVE={",".join(actives)}（发行包存档封存未生效，会静默写明文；'
+                       '请检查是否误传 --no-save-key、导出过滤变动或封存开关关闭；确需出本地测试明文包请加 --allow-unsealed）')
+    check('release_save_seal_active', active_ok, active_note)
+
+    fmt_ok = bool(formats) and all(v == SEAL_EXPORT_FORMAT for v in formats)
+    if not formats:
+        fmt_note = f'未打印 SAVE_EXPORT_FORMAT（发行包存档导出格式必须为 {SEAL_EXPORT_FORMAT}）'
+    elif fmt_ok:
+        fmt_note = SEAL_EXPORT_FORMAT
+    else:
+        fmt_note = (f'SAVE_EXPORT_FORMAT={",".join(formats)}（应为 {SEAL_EXPORT_FORMAT}，当前会静默导明文存档；'
+                    '请检查是否误传 --no-save-key 或导出过滤变动；确需出本地测试明文包请加 --allow-unsealed）')
+    check('release_save_export_format_v2', fmt_ok, fmt_note)
+
+
+def run_entry(work: Path, exe: Path, check, platform='macos', require_seal=False, allow_unsealed=False) -> int:
     home = Path(tempfile.mkdtemp(prefix='xiyou_export_home_'))
     try:
-        out, rc, secs = timed_run([*RUN_PREFIX, str(exe), '--headless', '--quit-after', '600', '--', '--report-entry'],
+        out, rc, secs = timed_run([*RUN_PREFIX, str(exe), '--headless', '--audio-driver', 'Dummy', '--quit-after', '600', '--', '--report-entry'],
                                   env=dict(os.environ, HOME=str(home)), cwd=str(home))
     finally:
         shutil.rmtree(home, ignore_errors=True)
@@ -298,6 +345,7 @@ def run_entry(work: Path, exe: Path, check, platform='macos') -> int:
     entries = [l.split('=', 1)[1].strip() for l in out.splitlines() if l.startswith('ENTRY_SCENE=')]
     check('release_enters_title', entries == [TITLE], ','.join(entries) or '没有 ENTRY_SCENE')
     check('release_exit_clean', rc == 0, f'退出码 {rc}')
+    check_save_seal_output(out, check, require_seal, allow_unsealed)
     key = baseline_key(platform)
     note = compare_baseline(key, secs, load_baseline())
     print(('WARN ' if note.startswith('变慢') else 'INFO ') + 'startup_time（' + note + '）')
@@ -429,9 +477,18 @@ def main() -> int:
     ap.add_argument('--win-dir', help='--platform windows：不导出，直接查这个目录里现成的 再刷一把_天启篇.exe／.pck')
     ap.add_argument('--keys', action='store_true', help='另外跑按键冒烟')
     ap.add_argument('--keys-only', action='store_true', help='只跑按键冒烟（配合 --zip 验证现成的包）')
+    ap.add_argument('--require-save-seal', action='store_true', help='强制断言发行包存档封存生效且导出 v2（查现成包 --zip/--win-dir/--apk 时默认开启）')
+    ap.add_argument('--allow-unsealed', action='store_true', help='显式允许未封存的本地测试包跳过封存断言（产出的包不能发给玩家）')
     ap.add_argument('--update-baseline', action='store_true', help='全部通过时把这次的启动用时记成基线（发行入口启动基线.json）')
     a = ap.parse_args()
     a.keys = a.keys or a.keys_only
+    if a.require_save_seal and a.allow_unsealed:
+        print('--require-save-seal 和 --allow-unsealed 不能同时使用')
+        return 2
+    has_prebuilt = bool(a.zip or a.win_dir or a.apk)
+    require_seal = (has_prebuilt or a.require_save_seal) and not a.allow_unsealed
+    if a.allow_unsealed:
+        print(UNSEALED_WARNING)
     if a.arch:
         if a.platform != 'macos':
             print('--arch 只配 macOS 包')
@@ -451,8 +508,8 @@ def main() -> int:
 
     def run() -> int:
         if a.platform in ('windows', 'android'):
-            code = windows(work, check, a.keys, a.win_dir) if a.platform == 'windows' else \
-                android(work, check, a.keys, Path(a.apk).resolve() if a.apk else None)
+            code = windows(work, check, a.keys, a.win_dir, require_seal, a.allow_unsealed) if a.platform == 'windows' else \
+                android(work, check, a.keys, Path(a.apk).resolve() if a.apk else None, require_seal, a.allow_unsealed)
             if code:
                 return code
             ok = all(c[1] for c in checks)
@@ -511,7 +568,7 @@ def main() -> int:
         icon = app / 'Contents' / 'Resources' / (str(info.get('CFBundleIconFile', 'icon')).removesuffix('.icns') + '.icns')
         want = PROJECT / 'content' / 'app_icon' / 'icon.icns'
         check('icon_from_app_icon', icon.is_file() and want.is_file() and icon.read_bytes() == want.read_bytes(), icon.name)
-        run_entry(work, exes[0], check)
+        run_entry(work, exes[0], check, 'macos', require_seal, a.allow_unsealed)
         if a.keys:
             run_keys(work, exes[0], check)
         ok = all(c[1] for c in checks)

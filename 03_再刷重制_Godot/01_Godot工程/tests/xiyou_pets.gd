@@ -114,16 +114,71 @@ func _setup(ref: Dictionary) -> XState:
 	return s
 
 
+func _check_async_sprite(page: XPetScene) -> void:
+	await _wait_sprite(page)
+	var rec := XDB.rec("Enemies", int(page.current().enemy))
+	var side := str(rec.get("meta", {}).get("Sideview Battler", "")).strip_edges()
+	var expected := XDB.img_path("sv_actors", side) if side != "" else XDB.img_path("sv_enemies", str(rec.get("battlerName", "")))
+	check("async_pet_sprite_loaded", page._sprite_tex != null and page._sprite_tex.resource_path == expected and page._sprite_sv == (side != ""))
+
+
+func _wait_sprite(page: XPetScene) -> void:
+	var started := Time.get_ticks_msec()
+	while page._sprite_tex == null and Time.get_ticks_msec() - started < 2000:
+		await get_tree().process_frame
+
+
+func _check_hued_sprite(s: XState, page: XPetScene) -> void:
+	var pet: Dictionary = s.pets.list[0].duplicate(true)
+	pet.enemy = 475  # 冻结敌人表：使用转色的正面图，不走侧视图。
+	s.pets.list.append(pet)
+	var hued_index: int = s.pets.list.size() - 1
+	var original_sprite := page._sprite_tex
+	page.select(hued_index)
+	page.ok()  # 转色尚未结束时打开底部菜单，再回到目录。
+	page.cancel()
+	await _wait_sprite(page)
+	var sprite := page._sprite_tex as ImageTexture
+	if check("async_hued_pet_sprite_loaded", sprite != null and not page._sprite_sv):
+		page.ok()
+		var bottom_kept := page.mode == "bottom" and page._sprite_tex == sprite
+		page.cmd = 4
+		page.ok()
+		var skills_kept := page.mode == "skills" and page._sprite_tex == sprite
+		page.cancel()
+		page.cmd = 6
+		page.ok()
+		var feed_kept := page.mode == "feed" and page._sprite_tex == sprite
+		page.cancel()
+		page.cancel()
+		check("hued_pet_sprite_stays_during_actions", bottom_kept and skills_kept and feed_kept
+			and page.mode == "index" and page._sprite_tex == sprite)
+		page.select(0)
+		var original_restored := page._sprite_tex == original_sprite
+		page.select(hued_index)
+		check("hued_pet_sprite_reused_after_switch", original_restored and page._sprite_tex == sprite)
+	page.select(0)
+	s.pets.list.pop_back()
+
+
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if not check("fixture_loaded", ref is Dictionary and ref.pets.size() == 3):
 		get_tree().quit.call_deferred(1)
 		return
 	var s := _setup(ref)
+	var fast_status := XPetScene.status_ops(s, s.pets.list[0])
+	XPetScene.XIYOU_FAST_OPEN = false
+	var old_status := XPetScene.status_ops(s, s.pets.list[0])
+	XPetScene.XIYOU_FAST_OPEN = true
+	check("fast_pet_status_preserves_layout", fast_status == old_status)
 	check("levels", s.pets.list.map(func(p): return XPets.level(p)) == ref.pets.map(func(p): return int(p.lv)), s.pets.list.map(func(p): return XPets.level(p)))
 	check("names", s.pets.list.map(func(p): return XPets.pet_name(s, p)) == ref.pets.map(func(p): return str(p.name)), s.pets.list.map(func(p): return XPets.pet_name(s, p)))
 	var page := XPetScene.new()
 	add_child(page)
+	check("async_pet_data_ready_on_open", not page._status_ops.is_empty())
+	await _check_async_sprite(page)
+	await _check_hued_sprite(s, page)
 	await frames()
 	var rect := func(w: Control) -> Array: return [w.position.x, w.position.y, w.size.x, w.size.y]
 	var geo: Dictionary = ref.geo

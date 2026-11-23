@@ -43,10 +43,10 @@
   "boss_hp_temp_unit": {"crit": 100, "no_crit": 100},
   "phase4_note": "T080 暗装填表、T081 接线（基础数值重构 v0.4 第三节、第七节）：base_damage＝基准系数 K「天启注视」，起点 0.088（D141 丙：九线不让，多出来的全由 K 收；T012-c 实机标定再改；T082 0.2、T163 0.27；T175 按 D195 一次施放总伤害重量，超强者最大 169 黄泉归葬 6 段顶回锚 200 万→0.13）；boss_hp_temp_unit＝首领生命临时折算 U，整数百分比（血量×U÷100 向零取整，100＝不打折；crit 能暴击的、no_crit 免暴击的），先填 100，M5 实机标定骑士血量后删（D222 丙）。只在总开关 XTianqiBase.PHASE4 开着时读（XTianqiBase.k_base、boss_hp_unit），关着 K 按 1、U 按 100。guardian_phase4（守层者三张新表 atk_scale／hp_base／resist）由 T012-c 实机量出来补，没有时开着也退回代码里的旧表。",
   "enemy_xparam_cap": {
-   "_note": "T285（D237 丙，首领暴击闪避评估 v0.2 第二节丙、第五节；Kyo 11-20「237 减暴闪要根据难度来升高」）：天启篇敌人闪避 eva、暴击 cri、暴击闪避（cev_tiers）、魔法闪避 mev 的底子上限，整数百分比，-1＝不封顶（eva／cri／mev 评估稿建议 30／50／30，改首领强度，待 Kyo 跟 T012-c 一起定，先 -1）。底子＝敌人数据特性＋自身正值状态（照旧乘仓库倍率）夹到上限；我方减益（负值状态）不再 ×2，加在夹完的底子上，再扣词条压制，最后不低于 0。cev_tiers：所在层 ≤ max_floor 的第一行，cap 按难度键取（寻常一行＝评估稿 20／30／40，高难度每升一档先按 +5 填推荐值，待 Kyo 定）；层数 0（骑士、七印里副本、七首之龙）按第一行，超过最后一行按最后一行。toji_cev_pct：甚尔五感读到的底子乘这个整数百分比（50＝减半）再扣队友的降暴击闪避。开关 XTianqiCombat.ENEMY_XPARAM_CAP、SUBTRACTIVE_CEV，XTianqiAffixBattle.SUPPRESS_CEV，XToji.TIANQI_CEV_HALF。",
-   "eva": -1,
-   "cri": -1,
-   "mev": -1,
+   "_note": "T285（D237 丙，首领暴击闪避评估 v0.2 第二节丙、第五节；Kyo 11-20「237 减暴闪要根据难度来升高」）：天启篇敌人闪避 eva、暴击 cri、暴击闪避（cev_tiers）、魔法闪避 mev 的底子上限，整数百分比，-1＝不封顶。eva／cri／mev（T397，D242：Kyo 11-22「按难度来调整」、11-23 再确认）按五档难度键各一个整数：寻常＝评估稿 30／50／30，每升一档 +5（同 cev_tiers 的难度步长），证道 50／70／50；写回 -1（或 brand_calib --xcap=-1,-1,-1）就退回不封顶、照原路 ×2。底子本身为负的闪避（1～9 层小怪等）不抬成 0，只去 ×2。底子＝敌人数据特性＋自身正值状态（照旧乘仓库倍率）夹到上限；我方减益（负值状态）不再 ×2，加在夹完的底子上，再扣词条压制，最后不低于 0。cev_tiers：所在层 ≤ max_floor 的第一行，cap 按难度键取（寻常一行＝评估稿 20／30／40，高难度每升一档先按 +5 填推荐值，待 Kyo 定）；层数 0（骑士、七印里副本、七首之龙）按第一行，超过最后一行按最后一行。toji_cev_pct：甚尔五感读到的底子乘这个整数百分比（50＝减半）再扣队友的降暴击闪避。开关 XTianqiCombat.ENEMY_XPARAM_CAP、SUBTRACTIVE_CEV，XTianqiAffixBattle.SUPPRESS_CEV，XToji.TIANQI_CEV_HALF。",
+   "eva": {"xunchang": 30, "jianxian": 35, "jiusi": 40, "lianyu": 45, "zhengdao": 50},
+   "cri": {"xunchang": 50, "jianxian": 55, "jiusi": 60, "lianyu": 65, "zhengdao": 70},
+   "mev": {"xunchang": 30, "jianxian": 35, "jiusi": 40, "lianyu": 45, "zhengdao": 50},
    "cev_tiers": [
     {"max_floor": 24, "cap": {"xunchang": 20, "jianxian": 25, "jiusi": 30, "lianyu": 35, "zhengdao": 40}},
     {"max_floor": 30, "cap": {"xunchang": 30, "jianxian": 35, "jiusi": 40, "lianyu": 45, "zhengdao": 50}},
@@ -88,6 +88,7 @@
   "resist": {"19": 1270, "20": 1140, "21": 981, "22": 100000, "23": 388, "24": 63, "25": 62, "26": 454, "27": 724, "28": 816, "29": 450, "30": 320, "31": 1170, "32": 1570, "33": 331},
   "focus": {"5": {"skill": 1, "scale": 40.6}, "6": {"skill": 332, "scale": 17.2}, "7": {"skill": 372, "scale": 2.21}, "8": {"skill": 365, "scale": 3.45}, "9": {"skill": 483, "scale": 3.56}, "10": {"skill": 342, "scale": 3.22}, "11": {"skill": 604, "scale": 14.6}, "12": {"skill": 661, "scale": 4.52, "single": 1}, "13": {"skill": 681, "scale": 4.41}, "14": {"skill": 2751, "scale": 0.529}, "15": {"skill": 827, "scale": 1.62, "single": 1}, "16": {"skill": 903, "scale": 0.922}, "17": {"skill": 905, "scale": 1.75}, "18": {"skill": 908, "scale": 7.13}, "19": {"skill": 1039, "scale": 1.47}, "20": {"skill": 3558, "scale": 0.115}, "21": {"skill": 3559, "scale": 0.0865}, "22": {"skill": 3560, "scale": 0.204}, "23": {"skill": 2462, "scale": 2.57}, "24": {"skill": 3562, "scale": 0.0142}, "25": {"skill": 3563, "scale": 0.0575, "single": 1}, "26": {"skill": 3801, "scale": 0.00293}, "27": {"skill": 3802, "scale": 0.0155}, "28": {"skill": 3801, "scale": 0.000717}, "29": {"skill": 3798, "scale": 0.00243}, "30": {"skill": 3798, "scale": 0.00272}, "31": {"skill": 3801, "scale": 8.91e-05}, "32": {"skill": 3798, "scale": 0.000172}, "33": {"skill": 3798, "scale": 7.34e-05}},
   "lifesteal_cap": {"_note": "T392：守层者这几招一次吸回的血 ≤ 打出伤害×本档 pct%（整数，XGuardianRework.steal_cap，回退 LIFESTEAL_CAP=false）；3805 19 层炎龙队长厄运剥夺，原版 10000%", "skills": [3805], "pct": {"xunchang": 50, "jianxian": 100, "jiusi": 150, "lianyu": 200, "zhengdao": 300}},
-  "dot_pct": {"_note": "T402（D257，Kyo 11-22）：守层者本身挂的常数持续伤害按层单列持有者生命上限的整数%，取代 abs_rescale 的 T080 换算（XGuardianRework.dot_pct，回退 DOT_PCT=false）；22 层三眼娃 猩红飞蛇之毒 177 原 65%、出血 91 原 58%", "22": {"177": 15, "91": 13}}
+  "dot_pct": {"_note": "T402（D257，Kyo 11-22）：守层者本身挂的常数持续伤害按层单列持有者生命上限的整数%，取代 abs_rescale 的 T080 换算（XGuardianRework.dot_pct，回退 DOT_PCT=false）；22 层三眼娃 猩红飞蛇之毒 177 原 65%、出血 91 原 58%", "22": {"177": 15, "91": 13}},
+  "hp_pct": {"_note": "T406（协调 11-23 定 A）：守层者那场血量按层单列整数%（XGuardianRework.hp_pct，只乘 troop_floor 那场、变身后跟着；七印副本、楼层小怪、心魔不跟；回退 HP_PCT=false）；33 层纯 4 弱打不穿三管血＋终焉异化多动", "33": 70}
  }
 }
