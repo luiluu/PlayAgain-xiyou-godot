@@ -703,11 +703,13 @@ func build_lineup(slot: int, key: String, lineup: Array, on_back: Callable) -> D
 	var n_super := lineup.filter(func(id): return XTianqiSkills.tier_of(int(id), true) == XTier.SUPER).size()
 	var n_strong := lineup.filter(func(id): return XTianqiSkills.tier_of(int(id), true) == XTier.STRONG).size()
 	var n_weak := lineup.filter(func(id): return XTianqiSkills.tier_of(int(id), true) == XTier.WEAK).size()
+	var super_cap := int(d.get("super_cap", 0))
 	var cap := XTianqi.lineup_super_max(key)
-	var cnt := _label("超强者 %d / %d　强者 %d　弱者 %d" % [n_super, cap, n_strong, n_weak], "body", XUiSkin.fs(18), XUiSkin.TEXT)
+	var cnt_text := "强者 %d　弱者 %d" % [n_strong, n_weak] if super_cap <= 0 \
+		else "超强者 %d / %d　强者 %d　弱者 %d" % [n_super, cap, n_strong, n_weak]
+	var cnt := _label(cnt_text, "body", XUiSkin.fs(18), XUiSkin.TEXT)
 	cnt.name = "LineupCount"
 	stage.add_child(_at(cnt, Vector2(x0, 540)))
-	var super_cap := int(d.get("super_cap", 0))
 	var rule := "%s：无法获得超强者" % str(d.get("name", "")) if super_cap <= 0 \
 		else "%s：同一场最多上阵 %d 名超强者" % [str(d.get("name", "")), super_cap]
 	if super_cap > 0 and XTianqi.HELPER_RULES and bool(d.get("helper_super", false)):

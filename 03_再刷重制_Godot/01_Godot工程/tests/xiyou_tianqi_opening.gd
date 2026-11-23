@@ -226,6 +226,33 @@ func _title_pages() -> void:
 			if txt != want_rules[k] or txt.contains("0 名"):
 				rule_bad[k] = {"got": txt, "want": want_rules[k]}
 		_check("page_lineup_rule_super_cap_text_t433", rule_bad.is_empty(), rule_bad)
+		# T434：super_cap=0（寻常／艰险）阵容页计数行藏掉超强者段，九死／炼狱／证道不变
+		var w_ids: Array = XTianqiSkills.ids(XTier.WEAK, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id))
+		var st_ids: Array = XTianqiSkills.ids(XTier.STRONG, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id))
+		var sup_ids: Array = XTianqiSkills.ids(XTier.SUPER, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not [95, 173].has(id))
+		var zd_cap := XTianqi.lineup_super_max("zhengdao")
+		var count_cases := {
+			"xunchang": {"lineup": [st_ids[0], st_ids[1], w_ids[0], w_ids[1], w_ids[2]], "want": "强者 2　弱者 3", "hide_super": true},
+			"jianxian": {"lineup": [st_ids[0], st_ids[1], st_ids[2], w_ids[0], w_ids[1]], "want": "强者 3　弱者 2", "hide_super": true},
+			"jiusi": {"lineup": [sup_ids[0], st_ids[0], st_ids[1], w_ids[0], w_ids[1]], "want": "超强者 1 / 1　强者 2　弱者 2", "hide_super": false},
+			"lianyu": {"lineup": [sup_ids[0], sup_ids[1], st_ids[0], w_ids[0], w_ids[1]], "want": "超强者 2 / 2　强者 1　弱者 2", "hide_super": false},
+			"zhengdao": {
+				"lineup": [sup_ids[0], sup_ids[1], st_ids[0], w_ids[0], sup_ids[2]] if XTianqi.HELPER_RULES else [sup_ids[0], sup_ids[1], st_ids[0], w_ids[0], w_ids[1]],
+				"want": ("超强者 3 / %d　强者 1　弱者 1" if XTianqi.HELPER_RULES else "超强者 2 / %d　强者 1　弱者 2") % zd_cap,
+				"hide_super": false,
+			},
+		}
+		var count_bad := {}
+		for k in count_cases:
+			var cfg: Dictionary = count_cases[k]
+			entry._tq_lineup(2, k, cfg.lineup)
+			await get_tree().process_frame
+			var c_lbl = _find(entry, "LineupCount")
+			var c_txt: String = (c_lbl as Label).text if c_lbl is Label else ""
+			var ok_cnt: bool = c_txt == str(cfg.want) and (not c_txt.contains("超强者") and not c_txt.contains("/") if bool(cfg.hide_super) else c_txt.begins_with("超强者 "))
+			if not ok_cnt:
+				count_bad[k] = {"got": c_txt, "want": cfg.want}
+		_check("page_lineup_count_super_cap_t434", count_bad.is_empty(), count_bad)
 		# 动效「关」：重抽后新卡直接到位，不翻牌（scale／透明度当帧就是 1）
 		var keep := XUiSkin.motion_override
 		XUiSkin.motion_override = XUiSkin.Motion.OFF
