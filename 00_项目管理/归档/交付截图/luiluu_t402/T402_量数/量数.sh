@@ -1,10 +1,10 @@
 #!/bin/zsh
 # T402：22 层真打（T392 band 量法）：存档链 r6、t298 × 寻常／艰险（--force-difficulty）× 4 队（原队＋3 随机）× 种子 1,2,3，＋奶妈队单列；
 # 40 回合、带敌群事件；dot_pct 开（本单）／关（--dot-pct=off，回到 T080 的 65%／58%）各一遍做前后对照。仓库根下：zsh <本文件>
-cd "${0:A:h}/../../../../../03_再刷重制_Godot"
 R=${0:A:h}
+cd "$R/../../../../../03_再刷重制_Godot"
 jobs_file=$R/jobs.txt
-: > $jobs_file
+: > $jobs_file   # 跑完可删
 for chain in r6:$HOME/orca/vp-saves/t238/r6/saves t298:$HOME/orca/vp-saves/t298/full/saves; do
   c=${chain%%:*}; p=${chain#*:}
   for d in xunchang jianxian; do
