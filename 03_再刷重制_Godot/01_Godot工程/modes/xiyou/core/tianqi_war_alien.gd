@@ -24,7 +24,7 @@ const META := "xwar_alien"
 ## 回退：BOMB_SCALE = false（不乘倍率、系数回到原来的 BOMB_LEGACY_COEF）。
 static var BOMB_SCALE := true
 const BOMB_LEGACY_COEF := 1.5
-## O-待定（T407，D260）：轰炸改按我方每人生命上限百分比扣血（表 finale_bomb_pct，整数 %），交锋照乘、护盾照吸，不看攻防、不乘出伤倍率。
+## O-650（T407，D260）：轰炸改按我方每人生命上限百分比扣血（表 finale_bomb_pct，整数 %），交锋照乘、护盾照吸，不看攻防、不乘出伤倍率。
 ## T394 修后按攻击算每下只扣 0.1%～0.9% 血，近乎装饰；T407 两轮量 5～20%，取 5（交锋叠上每下 6%～10%、无秒杀，8% 起烟火师场胜率掉一半）。回退：BOMB_PCT = false（回到 T394 的攻击×系数×出伤倍率口径，BOMB_SCALE 照旧管它）。
 static var BOMB_PCT := true
 ## 量数用：每下轰炸 [扣的血÷生命上限]（只在 BOMB_STATS_ON 时记，游戏里不开）
