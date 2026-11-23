@@ -123,6 +123,15 @@ func _ready() -> void:
 			XTianqiWarAlien.BOMB_SCALE = false   # T394：终焉烟火师轰炸回到修前（不乘出伤倍率、系数 1.5）
 		elif a.begins_with("--bomb-coef="):
 			XTianqiWarAlien.kind_info("pyro")["finale_bomb"] = float(a.substr(12))   # T394：轰炸系数换成这个数，只改内存里的表
+		elif a.begins_with("--hp-pct="):
+			var hp := a.substr(9).split(":")   # T406：层:整数%，只改内存里的 guardian_phase4.hp_pct；off＝HP_PCT 关
+			if hp[0] == "off":
+				XGuardianRework.HP_PCT = false
+			else:
+				var gp: Dictionary = XTianqiBalance.data().get("guardian_phase4", {})
+				if not gp.get("hp_pct") is Dictionary:
+					gp["hp_pct"] = {}
+				gp["hp_pct"][hp[0]] = int(hp[1])
 		elif a == "--focus=off":
 			XGuardianRework.FOCUS = false   # T406：守层者集火招不单独乘倍率（照 atk_scale），拆败因用
 		elif a == "--add-healer":

@@ -369,9 +369,25 @@ static func setup(logic, s: XState) -> void:
 		total += float(e.mhp)
 	if total <= 0.0:
 		return
-	var k := hp_base(f) * turns(s) / total
+	var k := hp_base(f) * turns(s) / total * float(hp_pct(f)) / 100.0   # T406：按层单列的整数百分比（表里没写＝100）
 	for e in logic.enemies:
 		_scale_hp(e, k)
+
+
+## T406（协调 11-23 定 A）：守层者那场血量按层单列整数百分比。表 balance_table.guardian_phase4.hp_pct ＝ {"层号": 整数%}，
+## 只乘在本层守层者那场（troop_floor，TROOPS 里的敌群；残血变身 930 等沿用变身前的血量倍率，一起跟着）；
+## 七印里副本（读 hp_base(33) 的那支）、楼层小怪（_world）、心魔（xinmo_hp）都不读它。33 层：纯 4 弱打不穿三管血＋终焉异化多动，先压血量。
+## 西游档、期四总开关关、没表、没写这一层：100。回退：`XGuardianRework.HP_PCT = false`。
+static var HP_PCT := true
+
+
+static func hp_pct(f: int) -> int:
+	if not HP_PCT or not XTianqiBase.on():
+		return 100
+	var g = XTianqiBalance.data().get("guardian_phase4", {})
+	var tab = g.get("hp_pct", {}) if g is Dictionary else {}
+	var v = tab.get(str(f)) if tab is Dictionary else null
+	return int(v) if v != null and int(v) > 0 else 100
 
 
 static func _scale_hp(e: XEnemy, k: float) -> void:
