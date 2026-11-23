@@ -69,23 +69,27 @@
 
 ## 验证结果
 
-- **本机无头专项（`--headless --audio-driver Dummy`，已于 rebase 到 T415 `92a72e48f` 后复跑）**：
-  - `res://tests/xiyou_lobby_corruption.tscn`：83/83 通过（含阶段一/二/天启篇零视觉变化与 `maxStage` 不写、全图 29×33×4 通行逐格不变、浮砖四向通行与庆典避让、5 个视觉开关含 `STAGE3_DECAY` 独立回退、闪烁与关特效、7 组热替换口冒烟、庆典门框与桌灯隐藏恢复）
-  - 性能对比（无头 600 帧均值）：阶段三 `161.7 微秒/帧` vs 阶段二 `118.2 微秒/帧`（增幅 **`+43.5 微秒/帧`**，`< 200 微秒` 预算；窗口实机截图轮测得 `141.2 vs 104.7 微秒/帧`，增幅 `+36.5 微秒/帧`；光尘 48 粒）
-  - `res://tests/xiyou_tianqi_lobby_maxstage.tscn`：21/21 通过（T415 天启篇守卫与会话内去重零回归）
-  - `res://tests/xiyou_rift3_xufeng.tscn`：53/53 通过
+- **核 r1 返修（提交 `5374ca637`）**：
+  - P2-1：`tests/xiyou_lobby_corruption.gd:346-354` 的 `stage3.perf_delta` 改为 `diff < maxf(200.0, per2 * 0.8) and per3 < maxf(2000.0, per2 * 1.8)`（空闲严守 `< 200 微秒`，高负载按三阶/二阶比值 `< 1.8x` 判，日志追加比值），消除高负载误红。
+  - P3-2：`modes/xiyou/map/lobby_corruption.gd:19` 子开关骨架注释由「14 个」更正为「15 个」。
+  - 其余未动（P3-1 枯死盆栽坐标调整留 T419 出图一并处理）。
+- **本机无头专项（`--headless --audio-driver Dummy`）**：
+  - `res://tests/xiyou_lobby_corruption.tscn`：83/83 通过（r1 返修后复跑：高负载下 291.6 vs 384.0 微秒/帧，增幅 `-92.4 微秒`，比值 `0.76x`，光尘 48 粒；前期空闲轮测得 `161.7 vs 118.2 微秒/帧`，增幅 `+43.5 微秒/帧`）
+  - `res://tests/xiyou_tianqi_lobby_maxstage.tscn`：21/21 通过（rebase 后验证，T415 守卫零回归）
+  - `res://tests/xiyou_rift3_xufeng.tscn`：53/53 通过（rebase 后验证）
 - **工具检查**：
   - `python3 03_再刷重制_Godot/07_开发环境/发行空壳.py check`：退出码 0（81 个脚本，782 个函数都有）
-- **云端选测**（提交 `15ed6e058b`，分支 `ci/luiluu/t416`，687 个场景、16 片全绿）：
-  - https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45194758106
-  - 注：云端全绿后按协调通知无冲突 rebase 到含 T415 的 `github/main`（`92a72e48f`），已在本机复跑 `xiyou_lobby_corruption`（83/83）、`xiyou_tianqi_lobby_maxstage`（21/21）、`xiyou_rift3_xufeng`（53/53）与 `发行空壳.py check` 全过。
+- **云端选测（已通过 `gh run watch 45215144691 --exit-status` 前台等完）**：
+  - 最新 r1 返修提交 `5374ca637c`（分支 `ci/luiluu/t416`，72 个场景、3 片全绿，最长一片 9.4 分钟）：
+    https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45215144691
+  - 历史记录：上一轮 `73316550fa` 72 场景全绿（run `45211364109`）；初版 `15ed6e058b` 687 场景 16 片全绿（run `45194758106`）。
 
 ## 变更记录草稿
 
 ### 2026-11-23 【小A·未经审查】方桌大厅三阶「蚀骨」视觉叠加层、开关骨架与腐烂破败层（dev.待定）
 
 - **改动**：按设计稿 `重制版_大厅三阶异化设计稿_v0.2.md`（Kyo 11-23 D263 全 A 拍板，拆卡 1）与 Kyo 11-23 追加腐烂破败要求，在 `03_再刷重制_Godot/01_Godot工程/modes/xiyou/map/lobby_corruption.gd` 落地三阶总闸 `STAGE3_ENABLED`、15 个独立子开关骨架（含 `STAGE3_DECAY`）及 `stage3_active(s)` 天启篇守卫（保留 T415 `maxStage` 与会话去重守卫）；实现 10 格 22% 褪色、11×11 网状裂纹（种子 `0x53B9`）、5～7 块离地浮砖（含 `(18,16)`）、主厅四角四线渗色与 50 粒光尘、东西墙与北隔墙及高塔之门蚀骨纹（庆典横幅期自动隐藏塔门纹），以及大厅腐烂破败层（9 处家具朽坏缺角、6 处枯死盆栽、16 处墙角地缝霉斑、5 处灯具变暗与全厅微压暗偶发闪烁），全部贴花均预留零代码热替换口。
-- **验证**：扩写 `03_再刷重制_Godot/01_Godot工程/tests/xiyou_lobby_corruption.gd` 至 83/83 全通过（全图四向通行与阶段一逐格一致，阶段三 vs 阶段二 `_process` 增幅 `+43.5 微秒/帧` `< 0.2ms`），回归 `xiyou_tianqi_lobby_maxstage`（21/21）与 `xiyou_rift3_xufeng`（53/53），`发行空壳.py check` 退出码 0；云端选测 687 场景 16 片全绿（run `45194758106`）；7 张实机对比截图（含总闸关／开与 `STAGE3_DECAY` 关／开对比）已入仓核对无穿帮。
+- **验证**：扩写 `03_再刷重制_Godot/01_Godot工程/tests/xiyou_lobby_corruption.gd` 至 83/83 全通过（全图四向通行与阶段一逐格一致，阶段三 vs 阶段二 `_process` 增幅按 `< max(200, per2×0.8)` 比值与绝对双守、空闲 `+43.5 微秒/帧`、忙机 `0.76x`），回归 `xiyou_tianqi_lobby_maxstage`（21/21）与 `xiyou_rift3_xufeng`（53/53），`发行空壳.py check` 退出码 0；云端选测 72 场景 3 片全绿（run `45215144691`，初版 687 场景全绿 run `45194758106`）；7 张实机对比截图（含总闸关／开与 `STAGE3_DECAY` 关／开对比）已入仓核对无穿帮。
 - **玩家可见**：西游存档在时空漩涡进入三阶段后，方桌大厅呈现更深更广的裂纹、离地浮砖、四角微光、墙面与高塔门框暗纹，以及家具朽坏、盆栽枯死、墙角霉斑与灯光暗沉偶闪；不改地形通行，天启篇存档不受影响。
 
 ## 交接板
@@ -116,4 +120,6 @@
 ## 本分支提交
 
 - `b99e704bb` T416 大厅三阶①：视觉叠加层、开关骨架、天启篇守卫与腐烂破败层（STAGE3_DECAY）（已无冲突 rebase 到 `92a72e48f`）
-- 本提交：补充交付单 `00_项目管理/交付/luiluu_t416.md`（含腐烂破败选点表、7 张入仓截图索引、rebase 后专项验证与云端选测 run `45194758106` 结果）
+- `73316550f` T416 交付单：大厅三阶视觉叠加层、开关骨架与腐烂破败层（STAGE3_DECAY）
+- `5374ca637` T416 核 r1 修复：perf_delta 改按比值判防忙机误红、子开关注释改 15 个
+- 本提交：更新交付单 `00_项目管理/交付/luiluu_t416.md`（登记 r1 修复、本机复跑与云端 run `45215144691` 结果）
