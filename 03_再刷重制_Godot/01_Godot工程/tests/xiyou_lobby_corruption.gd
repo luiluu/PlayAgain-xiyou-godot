@@ -47,8 +47,10 @@ func open_lobby(stage: int, x := 14, y := 25, tianqi := false, pre_flags := {}) 
 	for k in pre_flags:
 		s.flags[k] = pre_flags[k].duplicate(true) if pre_flags[k] is Dictionary else pre_flags[k]
 	s.set_variable(206, -3000)   # 讨债人三人组只在欠积分时出来（页 2、3 条件变量 206 ≥ −2000 是空页）
-	s.set_variable(20, 1)        # 大工匠第 1 页
+	s.set_variable(20, 3)        # 大工匠、阿伯特的可交互页
 	s.set_variable(14, 1)        # 动保协会成员
+	s.set_self_switch(4, 1, "A", true)   # 奥尔夫尼的常态页，初见送礼会换页
+	s.set_self_switch(4, 40, "A", true)  # 魂灯商人的图鉴页
 	s.map_id = 4
 	s.x = x
 	s.y = y
@@ -68,14 +70,19 @@ func close(map: XMapScene) -> void:
 
 
 ## 选项一律选「离开」那一项（ANSWERS），免得原事件改状态、第二次对话不同
-const ANSWERS := {50: 1, 51: 1, 7: 3, 43: 1}
+const ANSWERS := {1: 5, 7: 3, 14: 2, 17: 1, 25: 3, 40: 1, 43: 1, 50: 1, 51: 1}
+const STAGE3_ACTIONS := {
+	1: [Vector2i.DOWN, 8], 7: [Vector2i.RIGHT, 4], 14: [Vector2i.LEFT, 6],
+	17: [Vector2i.RIGHT, 4], 21: [Vector2i.DOWN, 8], 25: [Vector2i.RIGHT, 4], 40: [Vector2i.RIGHT, 4],
+}
 
 func act(map: XMapScene, cell: Vector2i, dir: int, id := 0) -> Array:
 	# NPC 会随机走动：站到事件当前格的正下方、面朝上
 	for e in map.events:
-		if id > 0 and e.event_id == id and id != 21:
-			cell = e.grid + Vector2i(0, 1)
-			dir = 8
+		if id > 0 and e.event_id == id and not e.erased:
+			var approach: Array = STAGE3_ACTIONS.get(id, [Vector2i.DOWN, 8])
+			cell = e.grid + Vector2i(approach[0])
+			dir = approach[1]
 	map.player.locate(cell.x, cell.y)
 	map.player.direction = dir
 	XMessageBox.transcript.clear()
@@ -124,6 +131,9 @@ func _run() -> void:
 	var said1 := {}
 	for row in [[51, Vector2i(13, 13), 8], [50, Vector2i(14, 14), 8], [7, Vector2i(5, 17), 4], [43, Vector2i(5, 19), 4], [21, Vector2i(9, 27), 8]]:
 		said1[row[0]] = await act(m1, row[1], row[2], row[0])
+	for id in STAGE3_ACTIONS:
+		if not said1.has(id):
+			said1[id] = await act(m1, Vector2i.ZERO, 2, id)
 	await close(m1)
 
 	# ---- 开关关掉：阶段二也不建 ----
@@ -234,6 +244,7 @@ func _run() -> void:
 
 	# ---- 阶段三「蚀骨」（T416 拆卡 1：视觉叠加层、开关骨架、天启篇守卫、庆典兼容与性能） ----
 	await _test_stage3(pass1, ev1, data_before, per)
+	await _test_stage3_interactions(said1)
 	_finish()
 
 
@@ -397,6 +408,10 @@ func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -
 		and fx_fest.decay_furniture_count() == 7 and fx_fest.decay_lamp_count() == 3,
 		[XFestLobby.decor(), fx_fest.gate_vein_visible() if fx_fest else null, fx_fest.wall_vein_count() if fx_fest else -1, fx_fest.decay_furniture_count() if fx_fest else -1, fx_fest.decay_lamp_count() if fx_fest else -1])
 	check("stage3.fest_floats_avoid", fx_fest != null and fx_fest.floats.all(func(f): return _float_s3_clear(m_fest, fx_fest, f)), fx_fest.floats if fx_fest else [])
+	var olf := fx_fest._event_by_id(1)
+	check("stage3.fest_olf_outside", olf.grid == Vector2i(17, 5) and olf.self_modulate == Color.WHITE and not fx_fest._npc_fx.has(olf.get_instance_id()), olf.grid)
+	for cell in [XLobbyCorruption.STAGE3_INVEST_CELL, XLobbyCorruption.FIXED_FLOAT_S3]:
+		check("stage3.fest_investigation_clear.%s" % cell, not m_fest.events.any(func(e): return e.grid == cell))
 	await frames(15)
 	await shot("lobby_stage3_fest_gate.png")
 	XFest.TODAY_OVERRIDE = "2026-12-20"
@@ -470,6 +485,216 @@ func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -
 		[fx_nd.decay_furniture_count(), fx_nd.decay_plant_count(), fx_nd.decay_mold_count(), fx_nd.decay_lamp_count(), fx_nd.decay_dim_alpha()])
 	await close(m_nd)
 	XLobbyCorruption.STAGE3_DECAY = true
+
+
+func _test_stage3_interactions(original: Dictionary) -> void:
+	(XConfig._values.codexWhisperSeen as Array).erase("rift3")
+	var before_rift := await open_lobby(3, 14, 22, false, {XLobbyCorruption.FLAG_KEY: {"said": [], "crack": 2}})
+	check("stage3.crack_waits_for_rift", await act(before_rift, XLobbyCorruption.CRACK_CELL, 2) == [XLobbyCorruption.CRACK_TEXTS[1]] \
+		and not XState.current.flags[XLobbyCorruption.FLAG_KEY].has("s3_crack"))
+	await close(before_rift)
+	XConfig.whisper_mark("rift3")
+
+	var map := await open_lobby(3, 14, 21)
+	var fx := map.lobby_fx
+	var olf := fx._event_by_id(1)
+	var debt := fx._event_by_id(50)
+	var artisan := fx._event_by_id(7)
+	var chest := fx._event_by_id(67)
+	var purple := XLobbyCorruption.PURPLE
+	check("stage3.tint_near_party", map.player.self_modulate.is_equal_approx(Color.WHITE.lerp(purple, 0.25)) \
+		and map.followers.all(func(f): return f.self_modulate.is_equal_approx(Color.WHITE.lerp(purple, 0.25))))
+	map.player.locate(14, 23)
+	await frames(2)
+	check("stage3.tint_fade", map.player.self_modulate.is_equal_approx(Color.WHITE.lerp(purple, 0.25 / 3.0)))
+	map.player.locate(14, 24)
+	await frames(2)
+	check("stage3.tint_radius", map.player.self_modulate == Color.WHITE)
+	check("stage3.npc_realtime_and_exclusions", fx._npc_fx.has(olf.get_instance_id()) \
+		and fx._npc_fx.has(artisan.get_instance_id()) and fx._npc_fx.has(debt.get_instance_id()) \
+		and fx._event_by_id(75).self_modulate == Color.WHITE and chest.self_modulate == Color.WHITE and not fx._npc_fx.has(chest.get_instance_id()))
+	olf.locate(17, 5)
+	fx._next_npc_refresh = fx._t
+	fx._update_tint()
+	check("stage3.npc_leaves_range", olf.self_modulate == Color.WHITE and not fx._npc_fx.has(olf.get_instance_id()))
+	olf.locate(14, 10)
+	fx._next_npc_refresh = fx._t
+	fx._update_tint()
+	check("stage3.npc_returns_to_range", olf.self_modulate != Color.WHITE and fx._npc_fx.has(olf.get_instance_id()))
+	check("stage3.debt_render_only", debt.grid == Vector2i(14, 13) and debt.real == Vector2(14, 13) and debt.frames_offset.y == -5.0)
+	fx._next_wall_tremor = fx._t
+	fx._next_npc_refresh = fx._t
+	fx._update_tint()
+	check("stage3.wall_render_only", artisan.grid == Vector2i(4, 17) and artisan.real == Vector2(4, 17) and artisan.frames_offset.y == -1.0)
+	fx._wall_tremor_until = 0.0
+	fx._next_npc_refresh = fx._t
+	fx._update_tint()
+	check("stage3.wall_offset_restored", artisan.frames_offset.y == 0.0)
+	check("stage3.stump_shadow", is_instance_valid(fx._stump_shadow) and is_equal_approx(fx._stump_shadow.self_modulate.a, 0.28) \
+		and fx._stump_shadow.position.x > 0.0 and fx._stump_shadow.position.y < 0.0)
+	fx._next_bubble = 0.0
+	fx._update_bubbles(0.0)
+	check("stage3.bubble_interval", fx._next_bubble >= 50.0 and fx._next_bubble <= 95.0)
+	map.player.locate(14, 17)
+	await frames(15)
+	await shot("stage3_npc.png")
+
+	var ghost_seen := {}
+	map.busy_changed.connect(func(busy: bool):
+		if busy and is_instance_valid(fx._dialogue_ghost):
+			var ghost := fx._dialogue_ghost
+			var speaker := fx._event_by_id(fx._ghost_speaker_id)
+			ghost_seen[fx._ghost_speaker_id] = is_instance_valid(speaker) and is_equal_approx(ghost.modulate.a, 0.32) \
+				and is_equal_approx(ghost.position.x - speaker.position.x, 3.0) and ghost.texture == speaker._tex)
+	for id in STAGE3_ACTIONS:
+		var base: Array = original[id]
+		var got := await act(map, Vector2i.ZERO, 2, id)
+		if id == 21:
+			check("stage3.mirror.stage2_first", got.size() == base.size() + 1 and got.slice(0, base.size()) == base \
+				and str(got.back()) == XLobbyCorruption.AFTER_LINES[21][3] and not is_instance_valid(fx._mirror_ghost), got)
+			_check_mirror_frame(fx)
+			got = await act(map, Vector2i.ZERO, 2, id)
+		check("stage3.dialogue.%d.original_then_extra" % id, not base.is_empty() and got.slice(0, base.size()) == base \
+			and got.size() == base.size() + 1 and str(got.back()).ends_with(XLobbyCorruption.STAGE3_AFTER_LINES[id][3]), [base, got])
+		check("stage3.dialogue.%d.once" % id, await act(map, Vector2i.ZERO, 2, id) == base)
+	check("stage3.ghost.only_while_speaking", ghost_seen == {40: true, 17: true} and not is_instance_valid(fx._dialogue_ghost), ghost_seen)
+	await get_tree().create_timer(0.65).timeout
+	check("stage3.mirror.fade_clears", not is_instance_valid(fx._mirror_ghost))
+	var record := XLobbyCorruption.record(XState.current)
+	check("stage3.old_record_defaults", not record.has("s3_crack"))
+	var c1 := await act(map, XLobbyCorruption.CRACK_CELL, 2)
+	var c2 := await act(map, XLobbyCorruption.CRACK_CELL, 2)
+	var c3 := await act(map, XLobbyCorruption.CRACK_CELL, 2)
+	check("stage3.crack_sequence", c1 == [XLobbyCorruption.CRACK_TEXTS[0]] and c2 == [XLobbyCorruption.CRACK_TEXTS[1]] \
+		and c3 == [XLobbyCorruption.STAGE3_CRACK_TEXT] and record.crack == 2 and record.s3_crack and is_instance_valid(fx._crack_scorch), [c1, c2, c3])
+	check("stage3.crack_once", await act(map, XLobbyCorruption.CRACK_CELL, 2) == [XLobbyCorruption.CRACK_TEXTS[1]])
+	var drop := XLobbyCorruption.drop_cell()
+	check("stage3.scale_swallowed", XLobbyCorruption.canglong_dropped() and fx.scale_cell() == Vector2i(-1, -1) \
+		and not fx._scale_node.visible and not fx.is_investigation(drop) and (await act(map, drop, 2)).is_empty())
+	var west_float := XLobbyCorruption.FIXED_FLOAT
+	check("stage3.west_float_only_visual", fx.floats.has(west_float) and not fx.is_investigation(west_float) \
+		and (await act(map, west_float, 2)).is_empty())
+	var investigations := {XLobbyCorruption.STAGE3_INVEST_CELL: XLobbyCorruption.STAGE3_WALL_TEXT, XLobbyCorruption.FIXED_FLOAT_S3: XLobbyCorruption.STAGE3_FLOAT_TEXT}
+	for cell in investigations:
+		var pass4 := [2, 4, 6, 8].all(func(dir): return map.lower.is_passable(cell.x, cell.y, dir))
+		var clear := not map.events.any(func(e): return e.grid == cell)
+		check("stage3.investigation.%s" % str(cell), pass4 and clear and await act(map, cell, 2) == [investigations[cell]])
+	var restored := XState.from_dict(JSON.parse_string(JSON.stringify(XState.current.to_dict())))
+	var back := XLobbyCorruption.record(restored)
+	check("stage3.persist_all", back.s3_crack and back.said.has("21") and not back.said.has("7") \
+		and STAGE3_ACTIONS.keys().all(func(id): return back.said.has("s3:%d" % id)), back)
+	var artisan_instance := artisan.get_instance_id()
+	map.events.erase(artisan)
+	artisan.queue_free()
+	await frames(2)
+	fx._next_npc_refresh = fx._t
+	fx._update_tint()
+	check("stage3.released_event_cleared", not is_instance_valid(artisan) and not fx._npc_fx.has(artisan_instance) and not fx._npc_y_offsets.has(artisan_instance))
+	fx.queue_free()
+	await frames(2)
+	check("stage3.exit_restores_rendering", map.player.self_modulate == Color.WHITE and olf.self_modulate == Color.WHITE \
+		and debt.self_modulate == Color.WHITE and debt.frames_offset.y == 0.0 and not is_instance_valid(fx) \
+		and not debt.get_children().any(func(n): return n is Sprite2D))
+	await close(map)
+	map = await open_lobby(3)
+	fx = map.lobby_fx
+	map.load_map(5, 11, 13, 2)
+	await frames(3)
+	check("stage3.transfer_frees_fx_and_events", map.map_id == 5 and map.lobby_fx == null and not is_instance_valid(fx))
+	await close(map)
+	await _test_stage3_interaction_switches()
+	await _test_stage3_tianqi_source()
+
+
+func _check_mirror_frame(fx: XLobbyCorruption) -> void:
+	for i in TIMEOUT_FRAMES:
+		await frames(1)
+		if not is_instance_valid(fx):
+			return
+		if fx._mirror_pending:
+			break
+	var ghost := fx._mirror_ghost
+	check("stage3.mirror.at_mirror_before_line", is_instance_valid(ghost) and not fx.host.busy \
+		and ghost.position.distance_to(XLobbyCorruption.cell_px(Vector2i(9, 26))) < 5.0 \
+		and ghost.texture == fx.host.player._tex and ghost.modulate.a > 0.0)
+	await shot("stage3_mirror.png")
+
+
+func _test_stage3_interaction_switches() -> void:
+	XLobbyCorruption.STAGE3_NPC_FX = false
+	var map := await open_lobby(3, 14, 21)
+	var fx := map.lobby_fx
+	XLobbyCorruption.STAGE3_NPC_FX = true  # 只随进图取值
+	fx._next_bubble = 0.0
+	fx._update_bubbles(0.0)
+	var ghost_seen := [false]
+	map.busy_changed.connect(func(busy: bool):
+		if busy and is_instance_valid(fx._dialogue_ghost):
+			ghost_seen[0] = true)
+	var talk := await act(map, Vector2i.ZERO, 2, 40)
+	check("stage3.switch_npc_fx", not ghost_seen[0] and not talk.is_empty() and str(talk.back()).ends_with(XLobbyCorruption.STAGE3_AFTER_LINES[40][3]) \
+		and fx._npc_fx.is_empty() and fx._next_bubble >= 60.0 and fx._next_bubble <= 120.0)
+	map.player.locate(14, 21)
+	await frames(2)
+	check("stage3.switch_party_tint", map.player.self_modulate.is_equal_approx(Color.WHITE.lerp(XLobbyCorruption.PURPLE, 0.05)))
+	await close(map)
+
+	XLobbyCorruption.STAGE3_NPC_LINES = false
+	map = await open_lobby(3)
+	talk = await act(map, Vector2i.ZERO, 2, 7)
+	check("stage3.switch_npc_lines", str(talk.back()).ends_with(XLobbyCorruption.AFTER_LINES[7][3]) \
+		and XLobbyCorruption.record(XState.current).said == ["7"] and not map.lobby_fx._npc_fx.is_empty())
+	await close(map)
+	XLobbyCorruption.STAGE3_NPC_LINES = true
+
+	XLobbyCorruption.STAGE3_MIRROR = false
+	map = await open_lobby(3)
+	talk = await act(map, Vector2i.ZERO, 2, 21)
+	var mirror := map.lobby_fx._event_by_id(21)
+	check("stage3.switch_mirror", str(talk.back()) == XLobbyCorruption.AFTER_LINES[21][3] and not map.lobby_fx.wants_after(mirror) \
+		and not is_instance_valid(map.lobby_fx._mirror_ghost) and XLobbyCorruption.record(XState.current).said == ["21"])
+	await close(map)
+	XLobbyCorruption.STAGE3_MIRROR = true
+
+	XLobbyCorruption.STAGE3_STUMP = false
+	map = await open_lobby(3)
+	check("stage3.switch_stump", not is_instance_valid(map.lobby_fx._stump_shadow) and not map.lobby_fx.wants_after(map.lobby_fx._event_by_id(25)))
+	await close(map)
+	XLobbyCorruption.STAGE3_STUMP = true
+
+	XLobbyCorruption.STAGE3_INVESTIGATIONS = false
+	map = await open_lobby(3, 14, 22, false, {XLobbyCorruption.FLAG_KEY: {"crack": 2}})
+	fx = map.lobby_fx
+	check("stage3.switch_investigations", not is_instance_valid(fx._crack_scorch) and not fx.is_investigation(XLobbyCorruption.STAGE3_INVEST_CELL) \
+		and not fx.is_investigation(XLobbyCorruption.FIXED_FLOAT_S3) and fx.is_investigation(XLobbyCorruption.FIXED_FLOAT) \
+		and await act(map, XLobbyCorruption.CRACK_CELL, 2) == [XLobbyCorruption.CRACK_TEXTS[1]] and not XLobbyCorruption.record(XState.current).has("s3_crack"))
+	var drop := XLobbyCorruption.drop_cell()
+	check("stage3.switch_restores_stage2_props", fx.scale_cell() == drop and fx._scale_node.visible \
+		and fx.is_investigation(drop) and await act(map, drop, 2) == [XLobbyCorruption.SCALE_TEXT] \
+		and await act(map, XLobbyCorruption.FIXED_FLOAT, 2) == [XLobbyCorruption.FLOAT_TEXT])
+	await close(map)
+	XLobbyCorruption.STAGE3_INVESTIGATIONS = true
+
+
+func _test_stage3_tianqi_source() -> void:
+	var map := await open_lobby(3, 14, 6, true)
+	var fx := map.lobby_fx
+	var s := XState.current
+	# 选商店向导的符文图鉴，从 XTianqiHall.run_host 实际代调 EV40 的 after_event。
+	var opts := XTianqiHall.menu(map, s, 73)
+	var index := opts.find_custom(func(opt): return opt[1] == ["src", 40])
+	if check("stage3.tianqi_source_menu_has_40", index >= 0, opts):
+		XMessageBox.transcript.clear()
+		XMessageBox.auto_answers = [index, 1]
+		await XTianqiHall.run_host(map, s, fx._event_by_id(73))
+		check("stage3.tianqi_source_exercised", XMessageBox.transcript.has("选择：" + XTianqiHall.LABELS[40]), XMessageBox.transcript)
+		check("stage3.tianqi_source_no_s3", not XMessageBox.transcript.any(func(line): return str(line).ends_with(XLobbyCorruption.STAGE3_AFTER_LINES[40][3])) \
+			and not is_instance_valid(fx._dialogue_ghost) and not s.flags.has(XLobbyCorruption.FLAG_KEY))
+	var npc := fx._event_by_id(14)
+	check("stage3.tianqi_wants_guard", npc != null and not fx.wants_after(npc))
+	check("stage3.tianqi_crack_stays_stage2", await act(map, XLobbyCorruption.CRACK_CELL, 2) == [XLobbyCorruption.CRACK_TEXTS[0]] \
+		and not fx.is_investigation(XLobbyCorruption.STAGE3_INVEST_CELL) and not s.flags.has(XLobbyCorruption.FLAG_KEY))
+	await close(map)
 
 
 func _float_clear(f: Vector2i) -> bool:

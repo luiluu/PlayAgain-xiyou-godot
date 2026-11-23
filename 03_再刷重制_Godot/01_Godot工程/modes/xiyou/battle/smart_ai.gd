@@ -104,6 +104,11 @@ static func choose(l: XBattleLogic, a: XActor, cannon_only := false) -> Dictiona
 ## false＝照原来每次读取各算各的。XIYOU_READ_VERIFY=1 时窗口里每次命中都重算比对（同 O-348）。
 static var CHOOSE_WINDOW := true
 
+## O-654：西游档最近离开的形态，扣切换成本后的分数须高出当前直接攻击 25% 才考虑切回。
+## false 恢复原评分。只作用于智能选招，预设顺序与手动切换照常。
+static var TOJI_SWITCH_HYSTERESIS := true
+const TOJI_RETURN_MARGIN := 1.25
+
 
 # ---- 数据判断（敌我共用的在 XBattleEval，这里转发，外部调用不变）----
 static func is_item(rec: Dictionary) -> bool:
@@ -834,8 +839,13 @@ func _choose(cannon_only := false) -> Dictionary:
 	var best := {}
 	var best_score := 0.0
 	var ranking := []
+	var return_skill := 0
+	if TOJI_SWITCH_HYSTERESIS and logic.toji_previous_shape >= 0 and XToji.own(actor) and not XTianqi.active(logic.state):
+		return_skill = XToji.SWITCH[logic.toji_previous_shape]
 	for c in candidates:
 		var r := score_candidate(c.eval, c.item, context, c.dir)
+		if not c.item and int(c.rec.id) == return_skill and r.score <= best_attack * TOJI_RETURN_MARGIN:
+			r.score = 0.0
 		ranking.append({"id": int(c.rec.id), "item": c.item, "score": roundf(r.score), "target": r.target})
 		if r.score > best_score:
 			best_score = r.score

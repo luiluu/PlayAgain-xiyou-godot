@@ -10,7 +10,7 @@ extends RefCounted
 ##   层数照设计稿附录避开 4）、号令官（存活时同场所有怪属性 +10／20／30／50%、每回合再动 0／1／1／2 次；化形起被打倒时其他怪各立刻行动一次）、
 ##   烟火师（每次行动火花额外 +1；化形起火花满触发再动时自己多动一次；随机雷电段数没做）。
 ## - 终焉效果（cc/tianqi-alien-finale）：战狂免疫能力值减益（BattleLogic.sequence_buff）；号令官同场每多一只活着的怪自己多再动 1 次（上限 3）；
-##   烟火师火花满时额外对我方全体轰炸一次（攻击×系数×攻÷(攻＋防)×出伤倍率，不吃护盾外的减伤）；战意满层那次再动伤害 ×2。
+##   烟火师火花满时额外对我方全体轰炸一次（T407 起按每人生命上限 finale_bomb_pct%×交锋，护盾照吸；回退口径攻击×系数×攻÷(攻＋防)×出伤倍率）；战意满层那次再动伤害 ×2。
 ##   战意化形起：满层再动时清掉自己一个减益（能力值减益或减益状态）。连击兵这个种类还没做。
 ## - 火花（本线核心计量）：异化怪每行动 +1，满 10（终焉在场时 6）全体异化怪立刻再动一次，火花归零。
 ## - 交锋（线规则）：场上有异化怪时，从第 3 回合起双方伤害每回合 +10%（上限 +100%）。
@@ -24,6 +24,12 @@ const META := "xwar_alien"
 ## 回退：BOMB_SCALE = false（不乘倍率、系数回到原来的 BOMB_LEGACY_COEF）。
 static var BOMB_SCALE := true
 const BOMB_LEGACY_COEF := 1.5
+## O-650（T407，D260）：轰炸改按我方每人生命上限百分比扣血（表 finale_bomb_pct，整数 %），交锋照乘、护盾照吸，不看攻防、不乘出伤倍率。
+## T394 修后按攻击算每下只扣 0.1%～0.9% 血，近乎装饰；T407 两轮量 5～20%，取 5（交锋叠上每下 6%～10%、无秒杀，8% 起烟火师场胜率掉一半）。回退：BOMB_PCT = false（回到 T394 的攻击×系数×出伤倍率口径，BOMB_SCALE 照旧管它）。
+static var BOMB_PCT := true
+## 量数用：每下轰炸 [扣的血÷生命上限]（只在 BOMB_STATS_ON 时记，游戏里不开）
+static var BOMB_STATS_ON := false
+static var bomb_stats: Array = []
 
 static var _pending := ""
 
@@ -271,14 +277,21 @@ static func after_action(logic, u) -> Array:
 static func _bomb(logic, f: Dictionary, e) -> void:
 	var coef := float(kind_info("pyro").get("finale_bomb", 16)) if BOMB_SCALE else BOMB_LEGACY_COEF
 	var scale := float(e.output_scale) if BOMB_SCALE and e is XEnemy else 1.0  # T394：同 XDamage.finish 乘守层者出伤倍率
+	var pct := int(kind_info("pyro").get("finale_bomb_pct", 0)) if BOMB_PCT else 0  # T407：按生命上限百分比
 	var atk: float = maxf(1.0, float(e.atk))
 	var hit := 0
 	for a in logic.alive(logic.actors):
-		var v := floorf(atk * coef * atk / (atk + maxf(0.0, float(a.def))) * clash_mult(logic) * scale)
+		var v: float
+		if pct > 0:
+			v = floorf(float(a.mhp) * float(pct) / 100.0 * clash_mult(logic))
+		else:
+			v = floorf(atk * coef * atk / (atk + maxf(0.0, float(a.def))) * clash_mult(logic) * scale)
 		if v <= 0.0:
 			continue
 		var before: float = a.hp
 		a.hp = maxf(0.0, a.hp - float(a.absorb_shield(v)))
+		if BOMB_STATS_ON:
+			bomb_stats.append((before - a.hp) / maxf(1.0, float(a.mhp)))
 		a.refresh_resources()
 		f.queue.append({"type": "regen", "target": a, "hp": before - a.hp, "views": logic.views([a])})
 		if a.is_dead():

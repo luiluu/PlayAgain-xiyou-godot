@@ -90,6 +90,7 @@ static var _system_states := {}
 
 ## 战斗内：开战设、结束清（复活回形态只在战斗中）。不存战斗对象本身：静态变量拿着它，没走 end_battle 的测试退出时引擎会崩
 static var battling := false
+static var _battle_ref: WeakRef
 ## 本次行动（startAction 记，endAction 清）：switch 切换到的形态；count 段数、extra 追加次数、index 第几段、done 段已打完
 static var action := {}
 ## 内部行动（溅射）进行中与它的倍率
@@ -432,6 +433,8 @@ static func set_shape(logic, a, index: int) -> bool:
 ## BattleManager.startBattle 包装（原 startBattle 之前）：甚尔在队就设第一形态
 static func start_battle(logic) -> void:
 	battling = true
+	_battle_ref = weakref(logic)
+	logic.toji_previous_shape = -1
 	action = {}
 	internal = false
 	spread_rate = 0.0
@@ -449,6 +452,7 @@ static func end_battle(logic) -> void:
 			if a.state_ids.has(id):
 				logic._state_remove(a, id)
 	battling = false
+	_battle_ref = null
 	action = {}
 
 
@@ -456,7 +460,10 @@ static func end_battle(logic) -> void:
 static func revived(a, id: int, had: bool) -> void:
 	if not battling or id != DEATH or not had or not own(a) or not a.is_alive() or SHAPES.any(func(s): return a.state_ids.has(s)):
 		return
-	set_shape(null, a, 0)
+	if set_shape(null, a, 0):
+		var logic = _battle_ref.get_ref() if _battle_ref != null else null
+		if logic != null and logic.state.actors.get(ACTOR) == a and not XTianqi.active(logic.state):
+			logic.toji_previous_shape = -1
 
 
 ## Window_SkillList.includes 包装（战斗中）：战技类别只列切换技能；主技能、武器库、反弹不列
@@ -661,7 +668,9 @@ static func finish(logic, u, _skill) -> void:
 	var shape = action.get("switch")
 	action = {}
 	if shape != null:
-		set_shape(logic, u, int(shape))
+		var previous := current_shape(u)
+		if set_shape(logic, u, int(shape)) and previous != int(shape):
+			logic.toji_previous_shape = previous
 
 
 # ---- 第三期：术师杀手 ----

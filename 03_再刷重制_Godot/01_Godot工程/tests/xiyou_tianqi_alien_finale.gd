@@ -110,20 +110,38 @@ func _war() -> void:
 	_check("pyro_bomb", hurt == lp.actors.size() and logs.any(func(l): return str(l.get("text", "")).contains("轰炸")), [hurt, lp.actors.size()])
 	lp.end_battle(1)
 	# T394：轰炸乘攻击方出伤倍率（守层者按层重算的 output_scale），系数读表（整数 16）；回退 BOMB_SCALE = false 回到不乘倍率、系数 1.5
+	# T407：默认改按我方每人生命上限百分比（表 finale_bomb_pct，整数）×交锋，不看攻防和出伤倍率；回退 BOMB_PCT = false 回到 T394 口径
 	_check("pyro_bomb_coef_int", float(XTianqiWarAlien.kind_info("pyro").finale_bomb) == 16.0, XTianqiWarAlien.kind_info("pyro").finale_bomb)
-	for mode in [[true, 0.25, 16.0], [false, 0.25, 1.5]]:
-		XTianqiWarAlien.BOMB_SCALE = mode[0]
+	var pct = XTianqiWarAlien.kind_info("pyro").get("finale_bomb_pct")
+	_check("pyro_bomb_pct_int", (pct is int or pct is float) and float(pct) == floorf(float(pct)) and float(pct) >= 1.0 and float(pct) <= 100.0, pct)   # JSON 读进来可能是 float，值要整数
+	# [BOMB_PCT, BOMB_SCALE, output_scale, 名]
+	for mode in [[true, true, 0.25, "pct"], [true, false, 0.25, "pct_scale_off"], [false, true, 0.25, "scale_on"], [false, false, 0.25, "scale_off"]]:
+		if mode[0]:
+			XTianqiWarAlien.BOMB_PCT = true
+		else:
+			XTianqiWarAlien.BOMB_PCT = false   # T407 回退支
+		if mode[1]:
+			XTianqiWarAlien.BOMB_SCALE = true
+		else:
+			XTianqiWarAlien.BOMB_SCALE = false   # T394 回退支
 		var lb := _fight("war", [[0, "zhongyan", "pyro"]])
 		var be: XEnemy = lb.enemies[0]
-		be.output_scale = mode[1]
+		be.output_scale = mode[2]
 		XTianqiWarAlien.fight(lb).sparks = XTianqiWarAlien.spark_full(lb) - 1
 		var a0 = lb.actors[0]
 		var hp0: float = a0.hp
-		var atk: float = maxf(1.0, float(be.atk))
-		var want := floorf(atk * mode[2] * atk / (atk + maxf(0.0, float(a0.def))) * XTianqiWarAlien.clash_mult(lb) * (mode[1] if mode[0] else 1.0))
+		var want: float
+		if mode[0]:
+			want = floorf(float(a0.mhp) * float(pct) / 100.0 * XTianqiWarAlien.clash_mult(lb))
+		else:
+			var atk: float = maxf(1.0, float(be.atk))
+			want = floorf(atk * (16.0 if mode[1] else 1.5) * atk / (atk + maxf(0.0, float(a0.def))) * XTianqiWarAlien.clash_mult(lb) * (mode[2] if mode[1] else 1.0))
 		XTianqiWarAlien.after_action(lb, be)
-		_check("pyro_bomb_scale_" + ("on" if mode[0] else "off"), is_equal_approx(hp0 - a0.hp, minf(hp0, want)), [hp0 - a0.hp, want])
+		_check("pyro_bomb_" + str(mode[3]), want > 0.0 and is_equal_approx(hp0 - a0.hp, minf(hp0, want)), [hp0 - a0.hp, want])
+		if mode[0]:
+			_check("pyro_bomb_pct_no_kill", a0.is_alive() and lb.actors.all(func(x): return x.is_alive()), [a0.hp, a0.mhp])   # 一下打不死满血的
 		lb.end_battle(1)
+	XTianqiWarAlien.BOMB_PCT = true
 	XTianqiWarAlien.BOMB_SCALE = true
 	var lp2 := _fight("war", [[0, "huaxing", "pyro"]])
 	XTianqiWarAlien.fight(lp2).sparks = XTianqiWarAlien.spark_full(lp2) - 1

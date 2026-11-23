@@ -15,6 +15,7 @@ var actors: Array = []          # XActor（出战）
 var nanoha_frame := {}          # 奈叶共享击杀：本次行动打中的敌人（XNanoha.begin／applied／finish）
 var enemies: Array = []         # XEnemy
 var turn := 0
+var toji_previous_shape := -1  # 本场最近一次成功切换前的咒具形态
 var can_escape := true
 var escaped := false
 ## MOG_TrPopUpBattle：掉落已在敌人倒下时实时获得，胜利时不再发放物品（$gameTemp._trBatDropLock）

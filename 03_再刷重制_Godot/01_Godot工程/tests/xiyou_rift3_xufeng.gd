@@ -49,6 +49,7 @@ func _run() -> void:
 	XFestLobby.ENABLED = false  # 冠军庆典期间大厅多 78～81 号事件，与本专项无关
 	XRift.STAGE2 = true
 	XRift.STAGE3 = true
+	XRift.RIFT3_ANIM = false  # T430：本专项验 T412 原像素过场，关漫画替换开关、既有断言一行不改
 	XRift.CHAIN_AFTER_RIFT1 = true
 	XRiftAlien.STAGE3_ALIEN = false
 	XRift.clear_cache()

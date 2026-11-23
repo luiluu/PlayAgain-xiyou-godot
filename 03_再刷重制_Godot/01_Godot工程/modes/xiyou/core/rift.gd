@@ -32,6 +32,9 @@ static var STAGE2 := true
 static var CHAIN_AFTER_RIFT1 := true
 ## T412：漩涡三阶段（rift3 过场、stage()==3）。false 回到只有二阶段
 static var STAGE3 := true
+## T430（O-651）：三阶过场整段替换为 26 秒漫画动画（XRift3Anim，分镜 v0.5）。
+## true＝资源就绪走漫画替换支，缺资源自动走 411 Else 支回退原像素过场；false＝回退 T412 原像素过场（clear_cache() 生效）
+static var RIFT3_ANIM := true
 
 const MAP := 4
 const VORTEX := 75
@@ -243,10 +246,9 @@ static func _canglong_event() -> Dictionary:
 	return _ev(CANGLONG_EV, "时空漩涡_苍龙2", "<codex_rift_actor:146>", CELL.x, CELL.y, [_page([_c(0, [], 0)], 0, 2, true)])
 
 
-## 自动执行过场的三页：第 1 页并行查条件（满足开 B、已播过开 A），第 2 页（B）自动执行播 body，第 3 页（A）停
+## 自动执行过场的三页：第 1 页并行查条件（满足开 B、已播过开 A），第 2 页（B）自动执行播 body，第 3 页（A）停。
+## body 保留调用方显式缩进（支持 111／411／412 条件分支）
 static func _whisper_pages(seen_key: String, condition: String, body: Array) -> Array:
-	for c in body:
-		c.indent = 0
 	var watch := [
 		_c(111, [12, "window.CodexWhisper&&CodexWhisper.seen('%s')" % seen_key], 0),
 		_c(123, ["A", 0]),
@@ -294,54 +296,75 @@ static func _fall_route(img: String, idx: int, to_y: int) -> Dictionary:
 	return _route(cmds)
 
 
-static func _rift3_event() -> Dictionary:
+## T412 原像素过场指令体（RIFT3_ANIM=false 顶层 indent=0；RIFT3_ANIM=true 放进 411 Else 支 indent=1 作缺资源运行时回退）
+static func _rift3_pixel_body(indent := 0) -> Array:
 	var a := XDB.rec("Actors", XUFENG_ACTOR)
 	var img := str(a.get("characterName", "7mobu7"))
 	var idx := int(a.get("characterIndex", 2))
 	var face := [str(a.get("faceName", "")), int(a.get("faceIndex", 0)), 0, 2]
-	var body := [
-		_c(355, ["CodexWhisper.mark('rift3');"], 0),
-		_c(223, [[-51, -51, -17, 51], 45, true]),
-		_c(230, [20]),
-		_c(101, ["", 0, 1, 1]),
-		_c(401, [RIFT3_LINES.whisper]),
-		_c(225, [5, 9, 30, false]),
-		_c(224, [[200, 180, 255, 170], 30, false]),
-		_c(212, [VORTEX, 136, false]),
-		_c(230, [20]),
+	return [
+		_c(223, [[-51, -51, -17, 51], 45, true], indent),
+		_c(230, [20], indent),
+		_c(101, ["", 0, 1, 1], indent),
+		_c(401, [RIFT3_LINES.whisper], indent),
+		_c(225, [5, 9, 30, false], indent),
+		_c(224, [[200, 180, 255, 170], 30, false], indent),
+		_c(212, [VORTEX, 136, false], indent),
+		_c(230, [20], indent),
 		# 异化怪物先从天上摔下来，落在落点南边一格，抬头望天
-		_c(205, [MOB_EV, _fall_route(MOB_IMG, MOB_INDEX, MOB_DROP.y)]),
-		_c(225, [5, 9, 12, false]),
-		_c(230, [10]),
-		_c(205, [MOB_EV, _route([[36], [19], [35]])]),
-		_c(230, [20]),
+		_c(205, [MOB_EV, _fall_route(MOB_IMG, MOB_INDEX, MOB_DROP.y)], indent),
+		_c(225, [5, 9, 12, false], indent),
+		_c(230, [10], indent),
+		_c(205, [MOB_EV, _route([[36], [19], [35]])], indent),
+		_c(230, [20], indent),
 		# 天上一道白光：徐凤年追下来，正落在它头顶一格
-		_c(224, [[255, 255, 255, 200], 20, true]),
-		_c(205, [XUFENG_EV, _fall_route(img, idx, XUFENG_DROP.y)]),
+		_c(224, [[255, 255, 255, 200], 20, true], indent),
+		_c(205, [XUFENG_EV, _fall_route(img, idx, XUFENG_DROP.y)], indent),
 		# 一刀斩下：斩击动画＋重震＋白闪，怪物淡掉
-		_c(212, [MOB_EV, SLASH_ANIM, false]),
-		_c(225, [9, 9, 24, false]),
-		_c(224, [[255, 255, 255, 255], 12, false]),
-		_c(205, [XUFENG_EV, _route([[14, 0, 0]])]),
-		_c(230, [30]),
-		_c(205, [MOB_EV, _route([[42, 180], [15, 6], [42, 110], [15, 6], [42, 50], [15, 6], [42, 0]])]),
-		_c(230, [30]),
-		_c(205, [XUFENG_EV, _route([[36], [38], [16]])]),
-		_c(230, [20]),
-		_c(101, face),
-		_c(401, [RIFT3_LINES.sense]),
-		_c(101, face),
-		_c(401, [RIFT3_LINES.hint]),
-		_c(101, face),
-		_c(401, [RIFT3_LINES.follow]),
-		_c(230, [30]),
-		_c(205, [XUFENG_EV, _route([[31], [29, 4], [42, 200], [1], [42, 150], [1], [42, 100], [1], [42, 50], [1], [42, 0]])]),
-		_c(223, [[0, 0, 0, 0], 45, true]),
-		_c(101, ["", 0, 2, 1]),
-		_c(401, [RIFT3_LINES.after]),
-		_c(123, ["A", 0], 0),
-		_c(0, [], 0),
+		_c(212, [MOB_EV, SLASH_ANIM, false], indent),
+		_c(225, [9, 9, 24, false], indent),
+		_c(224, [[255, 255, 255, 255], 12, false], indent),
+		_c(205, [XUFENG_EV, _route([[14, 0, 0]])], indent),
+		_c(230, [30], indent),
+		_c(205, [MOB_EV, _route([[42, 180], [15, 6], [42, 110], [15, 6], [42, 50], [15, 6], [42, 0]])], indent),
+		_c(230, [30], indent),
+		_c(205, [XUFENG_EV, _route([[36], [38], [16]])], indent),
+		_c(230, [20], indent),
+		_c(101, face, indent),
+		_c(401, [RIFT3_LINES.sense], indent),
+		_c(101, face, indent),
+		_c(401, [RIFT3_LINES.hint], indent),
+		_c(101, face, indent),
+		_c(401, [RIFT3_LINES.follow], indent),
+		_c(230, [30], indent),
+		_c(205, [XUFENG_EV, _route([[31], [29, 4], [42, 200], [1], [42, 150], [1], [42, 100], [1], [42, 50], [1], [42, 0]])], indent),
+		_c(223, [[0, 0, 0, 0], 45, true], indent),
+		_c(101, ["", 0, 2, 1], indent),
+		_c(401, [RIFT3_LINES.after], indent),
 	]
+
+
+static func _rift3_event() -> Dictionary:
+	# 1) 两支共用：首条落盘防重
+	var body: Array = [_c(355, ["CodexWhisper.mark('rift3');"], 0)]
+	if not RIFT3_ANIM:
+		# 开关关闭：生成与 T412 原版逐条一致的像素过场
+		body.append_array(_rift3_pixel_body(0))
+	else:
+		# 2) 运行时条件分支：动画可用走整段替换支，缺资源走 411 Else 支自动回退原像素过场
+		body.append(_c(111, [12, "CodexRift3.available()"], 0))
+		# 成立支（完整替换）：不含 MOB_EV/XUFENG_EV 移动、不含 SLASH_ANIM 23、不含静态 401 对话
+		body.append(_c(355, ["CodexRift3.play();"], 1))
+		body.append(_c(355, ["CodexRift3.replayMissed();"], 1))
+		body.append(_c(0, [], 1))
+		body.append(_c(411, [], 0))
+		# Else 支（运行时缺资源自动回退）：完整原版像素过场（indent=1）
+		body.append_array(_rift3_pixel_body(1))
+		body.append(_c(0, [], 1))
+		body.append(_c(412, [], 0))
+	# 3) 两支合流收尾
+	body.append(_c(123, ["A", 0], 0))
+	body.append(_c(0, [], 0))
 	return _ev(RIFT3, "时空漩涡_字幕3", "<codex_rift_whisper:rift3>", 2, 31, _whisper_pages("rift3", RIFT3_CONDITION, body))
 
 

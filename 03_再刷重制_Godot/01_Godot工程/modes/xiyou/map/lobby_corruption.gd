@@ -14,7 +14,7 @@ extends Node2D
 
 ## O-311：大厅初步异化叠加层；false 回到阶段一的大厅。
 static var ENABLED := true
-## 大厅三阶「蚀骨」总开关（设计稿 重制设定/重制版_大厅三阶异化设计稿_v0.2.md；false 完整退回二阶）。
+## O-649：大厅三阶「蚀骨」总开关（设计稿 重制设定/重制版_大厅三阶异化设计稿_v0.2.md；false 完整退回二阶）。
 static var STAGE3_ENABLED := true
 ## 三阶子开关骨架（15 个，默认全 true；任一置 false 精确退回二阶对应表现）
 static var STAGE3_GROUND := true          # 3.1 褪色 10 格、裂纹成片、浮砖 5～7 块离地
@@ -25,11 +25,11 @@ static var STAGE3_BGM_DETUNE := true      # 3.4 BGM 近距微变调（拆卡 2 �
 static var STAGE3_BGM_DROP := true        # 3.4 BGM 偶发安全掉拍（拆卡 2 挂接）
 static var STAGE3_HUM_DEEP := true        # 3.4 低鸣外扩至 12 格（拆卡 2 挂接）
 static var STAGE3_WHISPER := true         # 3.4 低鸣偶发远处低语（拆卡 2 挂接）
-static var STAGE3_NPC_FX := true          # 3.5 玩家 5 格染紫、圈内 NPC 浅染/微偏/重影、气泡扩充（拆卡 3 挂接）
-static var STAGE3_NPC_LINES := true       # 3.5 5 位 NPC 三阶追加句（拆卡 3 挂接）
-static var STAGE3_MIRROR := true          # 3.6 A 镜子三阶升级句＋镜面剪影（拆卡 3 挂接）
-static var STAGE3_STUMP := true           # 3.6 B 练功木桩错向影＋追加句（拆卡 3 挂接）
-static var STAGE3_INVESTIGATIONS := true  # 3.7 A 裂纹三段＋新调查点（拆卡 3 挂接）
+static var STAGE3_NPC_FX := true          # 3.5 玩家 5 格染紫、圈内 NPC 浅染/微偏/重影、气泡扩充
+static var STAGE3_NPC_LINES := true       # 3.5 5 位 NPC 三阶追加句
+static var STAGE3_MIRROR := true          # 3.6 A 镜子三阶升级句＋镜面剪影
+static var STAGE3_STUMP := true           # 3.6 B 练功木桩错向影＋追加句
+static var STAGE3_INVESTIGATIONS := true  # 3.7 A 裂纹三段＋新调查点
 static var STAGE3_NAME_GLITCH := true     # 3.7 B 地图名牌偶发闪字（拆卡 2 挂接）
 static var STAGE3_AMBIENT := true         # 3.7 C 三阶新小字与频次微调（拆卡 2 挂接）
 ## 测试用：> 0 时直接当作这个阶段
@@ -76,8 +76,25 @@ const AFTER_LINES := {
 	24: ["Nature", 1, "猫哥", "……\n（它没醒，耳朵却一直朝着大厅中间。）"],
 	21: ["", 0, "", "……镜子里的你，好像慢了半拍。"],
 }
+## T420 v0.3 文字审定稿
+const STAGE3_AFTER_LINES := {
+	1: ["Evil1", 6, "奥尔夫尼", "这大厅本该与神魔之塔各不相干。最近进塔，你没觉得门框比从前凉？"],
+	7: ["People12", 6, "大工匠", "这回真不关我的事！连墙根都裂出细纹了，刚才拿锤子敲了两下，里头全是空的。"],
+	40: ["", 4, "魂灯商人", "灯火明明没风，火苗却总往墙角偏……那几个角落泛起的光，别盯着看太久。"],
+	14: ["People14", 2, "阿伯特", "最近练战技，出招收势总差着半口气——好端端的，像是周遭平白断了一瞬。"],
+	17: ["People5_mvt", 4, "衣橱管理员", "衣裳一件没少，可架子底下的影子，怎么数都多出一道……要换形象，麻利些吧。"],
+	21: ["", 0, "", "……镜子里站着两个人。另一个就在你肩后半步。回过头，身后什么也没有。"],
+	25: ["", 0, "", "……木桩上那道旧刀痕，像是自己合上了。它底下的影子斜着，一直指着大厅中间。"],
+}
+const MIRROR_EVENT := 21
+const MIRROR_CELL := Vector2i(9, 26)
+const STUMP_EVENT := 25
+const STAGE3_GHOST_EVENTS := [40, 17]
+const STAGE3_NPC_RADIUS := 10.5
+const STAGE3_NPC_REFRESH := 0.05
 ## 偶尔冒气泡的人：讨债人两个小弟、猫哥。气泡号：6 汗滴、8 省略号
 const BUBBLE_EVENTS := [51, 52, 24]
+const STAGE3_BUBBLE_EVENTS := [51, 52, 24, 7, 14]
 const BUBBLE_IDS := [6, 8]
 ## 可调查格（踩在上面按确认键）
 const CRACK_CELL := Vector2i(14, 22)
@@ -85,6 +102,9 @@ const FIXED_FLOAT := Vector2i(11, 17)
 const CRACK_TEXTS := ["地砖裂了一道缝。缝里不是土，是很深的颜色。", "你把手伸过去。缝里是凉的，有风。"]
 const FLOAT_TEXT := "这块地砖浮起来一指高。按下去，它又慢慢浮回来。"
 const SCALE_TEXT := "一片青色的鳞，还是温的。"
+const STAGE3_CRACK_TEXT := "缝口边多了一道齐整的焦痕，像是被谁一刀斩过。底下的风，比上次更冷了。"
+const STAGE3_WALL_TEXT := "石墙里渗出细密的暗纹，摸上去冰凉发硬。顺着往北看，纹路一路延向高塔门那边。"
+const STAGE3_FLOAT_TEXT := "这块地砖离地快有半掌高了。往缝里看，底下不再是白石，暗沉沉地泛着别的颜色。"
 ## 苍龙破晓落点（XRift.canglong_drop_cell 没给时）：漩涡正南两格
 const FALLBACK_DROP := Vector2i(14, 21)
 ## 进大厅时飘的小字（两成概率、两次至少隔 10 分钟、轮着出）
@@ -103,7 +123,7 @@ const STAGE3_RADIUS := 10.0
 const STAGE3_FLOAT_MAX_DIST := 9.2
 const STAGE3_FLOAT_NEAR_DIST := 5.0
 const FIXED_FLOAT_S3 := Vector2i(18, 16)
-const STAGE3_INVEST_CELL := Vector2i(12, 9)   # 拆卡 3 北隔墙调查点，浮砖提前避开
+const STAGE3_INVEST_CELL := Vector2i(12, 9)   # 北隔墙调查点，浮砖避开
 const STAGE3_CRACK_SEED := 0x53B9
 const STAGE3_CRACK_BREATH := 5.0
 const STAGE3_WALL_BREATH := 5.5
@@ -229,6 +249,25 @@ var _next_drip := 0.0
 var _next_bubble := 0.0
 var _ambient: Label
 var _tinted: Array = []
+var _s3_npc_fx := false
+var _s3_npc_lines := false
+var _s3_mirror := false
+var _s3_stump := false
+var _s3_investigations := false
+# 换图时角色可能先于大厅叠加层释放，按实例编号追踪渲染状态。
+var _npc_fx: Dictionary[int, int] = {}  # 事件实例编号 → 影斑实例编号
+var _npc_y_offsets: Dictionary[int, Vector2] = {}  # 原生 Y、叠加后的 Y
+var _shadow_texture: GradientTexture2D
+var _stump_shadow: Sprite2D
+var _crack_scorch: Node2D
+var _next_npc_refresh := 0.0
+var _next_wall_tremor := 0.0
+var _wall_tremor_until := 0.0
+var _dialogue_ghost: Sprite2D
+var _ghost_speaker_id := 0
+var _ghost_started := 0.0
+var _mirror_ghost: Sprite2D
+var _mirror_pending := false
 
 
 ## 当前阶段（1 或 2…）：开关关掉时当作 1
@@ -322,6 +361,12 @@ func setup(map: XMapScene) -> void:
 		var r := record(s)
 		r["maxStage"] = maxi(int(r.get("maxStage", 1)), stage())
 	_s3 = stage3_active(s)
+	# 这五个子开关随地图初始化，演出中途不重挂节点。
+	_s3_npc_fx = _s3 and STAGE3_NPC_FX
+	_s3_npc_lines = _s3 and STAGE3_NPC_LINES
+	_s3_mirror = _s3 and STAGE3_MIRROR
+	_s3_stump = _s3 and STAGE3_STUMP
+	_s3_investigations = _s3 and STAGE3_INVESTIGATIONS
 	_build_desat()
 	_build_corners()
 	_build_decay_molds()
@@ -329,20 +374,32 @@ func setup(map: XMapScene) -> void:
 	_pick_floats()
 	_floats_node = _layer(_draw_floats)
 	_scale_node = _layer(_draw_scale)
+	_scale_node.hide()
 	if SCALE_TEX != "" and ResourceLoader.exists(SCALE_TEX):
 		_scale_tex = load(SCALE_TEX)
 	_motes_node = _layer(_draw_motes)
 	_build_wall_veins()
 	_build_decay_props()
+	if _s3_stump:
+		_build_stump_shadow()
+	if _s3_investigations and XConfig.whisper_seen("rift3"):
+		_crack_scorch = _layer(_draw_crack_scorch)
 	_build_audio()
 	_next_drip = rng.randf_range(60.0, 90.0)
-	_next_bubble = rng.randf_range(20.0, 60.0)
+	_next_bubble = rng.randf_range(50.0, 95.0) if _s3_npc_fx else rng.randf_range(20.0, 60.0)
+	if _s3_npc_fx:
+		_next_wall_tremor = rng.randf_range(5.0, 8.0)
 	_next_bright = rng.randf_range(STAGE3_BRIGHT_MIN, STAGE3_BRIGHT_MAX) if _s3_four_colors() else rng.randf_range(20.0, 30.0)
 	_decay_next_flicker = rng.randf_range(STAGE3_DECAY_FLICKER_MIN, STAGE3_DECAY_FLICKER_MAX)
 	_maybe_ambient.call_deferred()
 
 
 func _exit_tree() -> void:
+	for instance_id in _npc_fx.keys():
+		_clear_npc_fx(instance_id)
+	if is_instance_valid(_stump_shadow) and not _stump_shadow.is_queued_for_deletion():
+		_stump_shadow.hide()
+		_stump_shadow.queue_free()
 	for c in _tinted:
 		if is_instance_valid(c):
 			c.self_modulate = Color.WHITE
@@ -1511,16 +1568,35 @@ func _on_shake() -> void:
 # ---- 人物染紫、气泡 ----
 
 func _update_tint() -> void:
-	# 漩涡三阶段过场（XRift EV207）的异化怪物：原版行走图整只染幽紫（T412，不新画）
+	var npc_fx := _s3_npc_fx and stage3_on()
+	var refresh_npcs := npc_fx and _t >= _next_npc_refresh
+	if refresh_npcs:
+		_next_npc_refresh = _t + STAGE3_NPC_REFRESH
+		if _t >= _next_wall_tremor:
+			_wall_tremor_until = _t + 0.16
+			_next_wall_tremor = _t + rng.randf_range(5.0, 8.0)
 	for e in host.events:
-		if is_instance_valid(e) and str(e.data.get("note", "")) == MOB_TINT_NOTE and e.self_modulate != PURPLE:
-			e.self_modulate = PURPLE
+		if not is_instance_valid(e) or e.is_queued_for_deletion():
+			continue
+		# XRift EV207 保留专用的整只染紫。
+		if str(e.data.get("note", "")) == MOB_TINT_NOTE:
+			if e.self_modulate != PURPLE:
+				e.self_modulate = PURPLE
+				if not _tinted.has(e):
+					_tinted.append(e)
+		elif refresh_npcs:
+			_update_npc_fx(e)
+	if not _npc_fx.is_empty() and (refresh_npcs or not npc_fx):
+		for instance_id in _npc_fx.keys():
+			var e := instance_from_id(instance_id) as MVEvent
+			if not npc_fx or not is_instance_valid(e) or e.is_queued_for_deletion():
+				_clear_npc_fx(instance_id)
 	var chars: Array = [host.player] + host.followers
 	for c in chars:
 		if not is_instance_valid(c):
 			continue
-		var d: float = (c.real + Vector2(0.5, 0.5)).distance_to(Vector2(CENTER) + Vector2(0.5, 0.5))
-		var k := clampf((2.5 - d) / 1.5, 0.0, 1.0) * 0.15
+		var d: float = c.real.distance_to(Vector2(CENTER))
+		var k := clampf((5.0 - d) / 3.0, 0.0, 1.0) * 0.25 if npc_fx else clampf((2.5 - d) / 1.5, 0.0, 1.0) * 0.15
 		var col := Color.WHITE.lerp(PURPLE, k)
 		if c.self_modulate != col:
 			c.self_modulate = col
@@ -1528,14 +1604,184 @@ func _update_tint() -> void:
 				_tinted.append(c)
 
 
+func _update_npc_fx(e: MVEvent) -> void:
+	var id := e.event_id
+	var instance_id := e.get_instance_id()
+	var d2 := (e.grid - CENTER).length_squared()
+	if e.erased or not _has_walk_sprite(e) or id == 67 or (id >= 75 and id <= 81) \
+			or (id >= 201 and id <= 207) or d2 > STAGE3_NPC_RADIUS * STAGE3_NPC_RADIUS:
+		if _npc_fx.has(instance_id):
+			_clear_npc_fx(instance_id)
+		return
+	var col := Color.WHITE.lerp(PURPLE, lerpf(0.18, 0.12, sqrt(d2) / STAGE3_NPC_RADIUS))
+	if e.self_modulate != col:
+		e.self_modulate = col
+	if not _npc_fx.has(instance_id):
+		_npc_fx[instance_id] = _add_shadow(e, Vector2(0.0, -3.0), 0.24).get_instance_id()
+	var offset := 0.0
+	if id >= 50 and id <= 52:
+		offset = -5.0
+	elif (e.grid.x == 4 or e.grid.x == 24) and _t < _wall_tremor_until:
+		# 沿墙竖向微颤，避免横移进墙。
+		offset = -1.0 if _wall_tremor_until - _t > 0.08 else 1.0
+	_apply_npc_y(e, instance_id, offset)
+
+
+func _apply_npc_y(e: MVEvent, instance_id: int, offset: float) -> void:
+	var current := e.frames_offset.y
+	var prior: Vector2 = _npc_y_offsets.get(instance_id, Vector2(current, current))
+	# 原生换页或换图可以重设 frames_offset，清除效果时保留新值。
+	var base := prior.x if current == prior.y else current
+	if current != base + offset:
+		e.frames_offset.y = base + offset
+		e.queue_redraw()
+	if offset == 0.0:
+		_npc_y_offsets.erase(instance_id)
+	else:
+		_npc_y_offsets[instance_id] = Vector2(base, base + offset)
+
+
+func _clear_npc_fx(instance_id: int) -> void:
+	var shadow := instance_from_id(_npc_fx[instance_id]) as Sprite2D
+	if is_instance_valid(shadow) and not shadow.is_queued_for_deletion():
+		shadow.hide()
+		shadow.queue_free()
+	var e := instance_from_id(instance_id) as MVEvent
+	if is_instance_valid(e):
+		e.self_modulate = Color.WHITE
+		_apply_npc_y(e, instance_id, 0.0)
+	else:
+		_npc_y_offsets.erase(instance_id)
+	_npc_fx.erase(instance_id)
+
+
+func _add_shadow(anchor: Node2D, offset: Vector2, alpha: float) -> Sprite2D:
+	if _shadow_texture == null:
+		var gradient := Gradient.new()
+		gradient.set_color(0, Color(0.12, 0.035, 0.17))
+		gradient.set_color(1, Color(0.12, 0.035, 0.17, 0.0))
+		_shadow_texture = GradientTexture2D.new()
+		_shadow_texture.gradient = gradient
+		_shadow_texture.width = 36
+		_shadow_texture.height = 12
+		_shadow_texture.fill = GradientTexture2D.FILL_RADIAL
+		_shadow_texture.fill_from = Vector2(0.5, 0.5)
+		_shadow_texture.fill_to = Vector2(1.0, 0.5)
+	var shadow := Sprite2D.new()
+	shadow.texture = _shadow_texture
+	shadow.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	shadow.z_as_relative = false
+	shadow.z_index = -8
+	shadow.position = offset
+	shadow.self_modulate.a = alpha
+	anchor.add_child(shadow)
+	return shadow
+
+
+func _build_stump_shadow() -> void:
+	var stump := _event_by_id(STUMP_EVENT)
+	if stump == null:
+		return
+	var toward := Vector2(CENTER - stump.grid).normalized()
+	_stump_shadow = _add_shadow(stump, toward * 11.0 - Vector2(0.0, 3.0), 0.28)
+	_stump_shadow.rotation = toward.angle()
+	_stump_shadow.scale.y = 0.65
+
+
+func _draw_crack_scorch() -> void:
+	var center := cell_px(CRACK_CELL)
+	_crack_scorch.draw_polyline(PackedVector2Array([center + Vector2(-8, 3), center, center + Vector2(6, -4)]), Color(0.23, 0.08, 0.29, 0.82), 2.0, true)
+
+
+func _event_by_id(id: int) -> MVEvent:
+	for e in host.events:
+		if is_instance_valid(e) and e.event_id == id and not e.erased:
+			return e
+	return null
+
+
+static func _has_walk_sprite(c: MVCharacter) -> bool:
+	return c.visible and not c.transparent and not c._anim_hidden and c.opacity > 0 and c.character_name != "" and c._tex != null
+
+
+func _make_ghost(source: MVCharacter, ink: Color, alpha: float) -> Sprite2D:
+	var ghost := Sprite2D.new()
+	ghost.name = "CorruptionGhost"
+	var mat := ShaderMaterial.new()
+	mat.shader = XBattlerSprite.body_shader()
+	mat.set_shader_parameter("blend", ink)
+	ghost.material = mat
+	ghost.region_enabled = true
+	ghost.region_filter_clip_enabled = true
+	ghost.centered = false
+	ghost.z_as_relative = false
+	ghost.z_index = 1
+	ghost.modulate.a = alpha
+	_sample_ghost(ghost, source)
+	return ghost
+
+
+static func _sample_ghost(ghost: Sprite2D, source: MVCharacter) -> void:
+	ghost.texture = source._tex
+	var walk := source._walk
+	var size: Vector2 = walk.cell
+	var seq: Array = walk.sequence
+	var pattern: int = seq[source.pattern % seq.size()]
+	var row: int = walk.rows.get(source.direction, 0)
+	ghost.region_rect = Rect2(Vector2(walk.origin) + Vector2(pattern * size.x, row * size.y), size)
+	ghost.offset = source.frames_shift() - Vector2(size.x / 2.0, size.y + (0.0 if source.is_object() else 6.0))
+
+
+func _start_dialogue_ghost(id: int) -> void:
+	var speaker := _event_by_id(id)
+	if speaker == null or not _has_walk_sprite(speaker):
+		return
+	_dialogue_ghost = _make_ghost(speaker, Color(0.40, 0.23, 0.65), 0.32)
+	add_child(_dialogue_ghost)
+	_ghost_speaker_id = id
+	_ghost_started = _t
+	_update_dialogue_ghost()
+
+
+func _update_dialogue_ghost() -> void:
+	var speaker := _event_by_id(_ghost_speaker_id)
+	if speaker == null or not _has_walk_sprite(speaker) or not stage3_on():
+		_dialogue_ghost.hide()
+		return
+	_dialogue_ghost.show()
+	_sample_ghost(_dialogue_ghost, speaker)
+	_dialogue_ghost.position = speaker.position + Vector2(3.0 + sin((_t - _ghost_started) * TAU / 0.25), 0.0)
+
+
+func _start_mirror_ghost() -> void:
+	var source := host.player
+	if not is_instance_valid(source) or not _has_walk_sprite(source):
+		return
+	var mirror := _event_by_id(MIRROR_EVENT)
+	if mirror == null or mirror.grid != MIRROR_CELL:
+		return
+	var ghost := _make_ghost(source, Color(0.26, 0.12, 0.37), 0.44)
+	_mirror_ghost = ghost
+	add_child(ghost)
+	var size := ghost.region_rect.size
+	ghost.scale = Vector2.ONE * minf(1.0, minf(30.0 / size.x, 34.0 / size.y))
+	ghost.offset = Vector2(-size.x / 2.0, -size.y / 2.0)
+	ghost.position = cell_px(MIRROR_CELL) - Vector2(0.0, 3.0)
+	var tw := ghost.create_tween()
+	tw.tween_property(ghost, "modulate:a", 0.0, 0.6)
+	tw.tween_callback(ghost.queue_free)
+
+
 func _update_bubbles(dt: float) -> void:
 	_next_bubble -= dt
 	if _next_bubble > 0.0:
 		return
-	_next_bubble = rng.randf_range(60.0, 120.0)
+	var s3 := _s3_npc_fx and stage3_on()
+	_next_bubble = rng.randf_range(50.0, 95.0) if s3 else rng.randf_range(60.0, 120.0)
 	if not quiet():
 		return
-	var id: int = BUBBLE_EVENTS[rng.randi_range(0, BUBBLE_EVENTS.size() - 1)]
+	var pool := STAGE3_BUBBLE_EVENTS if s3 else BUBBLE_EVENTS
+	var id: int = pool[rng.randi_range(0, pool.size() - 1)]
 	for e in host.events:
 		if is_instance_valid(e) and e.event_id == id and not e.erased and e.character_name != "" and host.near_screen(e):
 			e.start_balloon(BUBBLE_IDS[rng.randi_range(0, BUBBLE_IDS.size() - 1)])
@@ -1638,15 +1884,24 @@ func _process(dt: float) -> void:
 			moved = true
 	if moved:
 		_floats_node.queue_redraw()
-	var want_scale := drop_cell() if canglong_dropped() else Vector2i(-1, -1)
+	# D268：三阶漩涡吞掉青鳞。调查子开关关闭时沿用二阶调查与青鳞。
+	var want_scale := drop_cell() if not (_s3_investigations and stage3_on()) and canglong_dropped() else Vector2i(-1, -1)
 	if want_scale != _scale_cell:
 		_scale_cell = want_scale
+		_scale_node.visible = _scale_cell.x >= 0
 	if _scale_cell.x >= 0:
 		_scale_node.queue_redraw()
 	_update_motes(dt)
 	_motes_node.queue_redraw()
 	_update_audio(dt)
 	_update_tint()
+	if is_instance_valid(_stump_shadow):
+		var stump := _stump_shadow.get_parent() as MVEvent
+		_stump_shadow.visible = stage3_on() and not stump.erased and _has_walk_sprite(stump)
+	if is_instance_valid(_crack_scorch):
+		_crack_scorch.visible = stage3_on()
+	if is_instance_valid(_dialogue_ghost):
+		_update_dialogue_ghost()
 	_update_bubbles(dt)
 
 
@@ -1666,26 +1921,67 @@ static func _tq_said(s: XState) -> Array:
 
 ## 这次确认键启动的事件跑完后要不要追加一句（启动前判定：事件在表里、当前页有内容、本存档还没说过；天启篇走会话内去重、不写存档）
 func wants_after(e: MVEvent) -> bool:
-	if not AFTER_LINES.has(e.event_id) or e.command_list().size() <= 1:
-		return false
 	var s := XState.current
 	if s == null:
 		return false
-	var said: Array = _tq_said(s) if XTianqi.active(s) else (record(s).said as Array)
-	return not said.has(str(e.event_id))
+	if not AFTER_LINES.has(e.event_id) and not (_s3 and STAGE3_AFTER_LINES.has(e.event_id)):
+		return false
+	return e.command_list().size() > 1 and _after_key(e.event_id, _said(s), _s3 and stage3_active(s)) != ""
 
 
 func after_event(event_id: int) -> void:
 	var s := XState.current
-	if s == null or not AFTER_LINES.has(event_id):
+	if s == null or not is_instance_valid(host) or host.map_id != MAP_ID:
 		return
-	var said: Array = _tq_said(s) if XTianqi.active(s) else (record(s).said as Array)
-	if said.has(str(event_id)):
+	var s3 := _s3 and stage3_active(s)
+	if not AFTER_LINES.has(event_id) and (not s3 or not STAGE3_AFTER_LINES.has(event_id)):
 		return
-	said.append(str(event_id))
-	var custom := XTianqiHallText.corruption_after(s, event_id)
-	var row: Array = custom if not custom.is_empty() else AFTER_LINES[event_id]
+	var said := _said(s)
+	var key := _after_key(event_id, said, s3)
+	if key == "":
+		return
+	var row: Array
+	if key.begins_with("s3:"):
+		row = STAGE3_AFTER_LINES[event_id]
+		if event_id == MIRROR_EVENT:
+			_mirror_pending = true
+			_start_mirror_ghost()
+			await get_tree().create_timer(0.3).timeout
+			_mirror_pending = false
+			# 剪影期间仍可走动；转场、换档或另开窗口时不抢占新事件。
+			if not is_inside_tree() or is_queued_for_deletion() or not is_instance_valid(host) \
+					or host.map_id != MAP_ID or XState.current != s or not stage3_active(s) or not quiet():
+				if is_instance_valid(_mirror_ghost):
+					_mirror_ghost.hide()
+					_mirror_ghost.queue_free()
+				return
+		elif _s3_npc_fx and STAGE3_GHOST_EVENTS.has(event_id):
+			_start_dialogue_ghost(event_id)
+	else:
+		var custom := XTianqiHallText.corruption_after(s, event_id)
+		row = custom if not custom.is_empty() else AFTER_LINES[event_id]
+	said.append(key)
 	await host.run_command_list(text_list(row[0], row[1], row[2], row[3]))
+	if is_instance_valid(_dialogue_ghost):
+		_dialogue_ghost.hide()
+		_dialogue_ghost.queue_free()
+		_dialogue_ghost = null
+
+
+static func _said(s: XState) -> Array:
+	return _tq_said(s) if XTianqi.active(s) else (record(s).said as Array)
+
+
+func _after_key(id: int, said: Array, s3: bool) -> String:
+	var key := str(id)
+	var old_line := AFTER_LINES.has(id) and not said.has(key)
+	var s3_key := "s3:" + key
+	if s3:
+		if id == MIRROR_EVENT and _s3_mirror and not old_line:
+			return s3_key if not _mirror_pending and not said.has(s3_key) else ""
+		if (id == STUMP_EVENT and _s3_stump) or (_s3_npc_lines and STAGE3_AFTER_LINES.has(id) and id != MIRROR_EVENT and id != STUMP_EVENT):
+			return s3_key if not said.has(s3_key) else ""
+	return key if old_line else ""
 
 
 static func text_list(face: String, idx: int, who: String, text: String) -> Array:
@@ -1707,8 +2003,13 @@ func on_action(cell: Vector2i) -> bool:
 		var s := XState.current
 		if s != null and not XTianqi.active(s):
 			var r := record(s)
-			text = CRACK_TEXTS[mini(int(r.get("crack", 0)), 1)]
-			r["crack"] = int(r.get("crack", 0)) + 1
+			var count := int(r.get("crack", 0))
+			if _investigations_on() and XConfig.whisper_seen("rift3") and count >= 2 and not bool(r.get("s3_crack", false)):
+				text = STAGE3_CRACK_TEXT
+				r["s3_crack"] = true
+			else:
+				text = CRACK_TEXTS[mini(count, 1)]
+				r["crack"] = count + 1
 		elif s != null:
 			var key := s.get_instance_id()
 			if _tq_crack_session.size() > 16:
@@ -1720,10 +2021,8 @@ func on_action(cell: Vector2i) -> bool:
 			_tq_crack_session[key] = n + 1
 		else:
 			text = CRACK_TEXTS[0]
-	elif cell == FIXED_FLOAT and floats.has(FIXED_FLOAT):
-		text = FLOAT_TEXT
-	elif _scale_cell.x >= 0 and cell == _scale_cell:
-		text = SCALE_TEXT
+	else:
+		text = _prop_investigation_text(cell)
 	if text == "":
 		return false
 	await host.run_command_list(text_list("", 0, "", text))
@@ -1731,4 +2030,23 @@ func on_action(cell: Vector2i) -> bool:
 
 
 func is_investigation(cell: Vector2i) -> bool:
-	return cell == CRACK_CELL or (cell == FIXED_FLOAT and floats.has(FIXED_FLOAT)) or (_scale_cell.x >= 0 and cell == _scale_cell)
+	return cell == CRACK_CELL or _prop_investigation_text(cell) != ""
+
+
+func _prop_investigation_text(cell: Vector2i) -> String:
+	if _investigations_on():
+		if cell == STAGE3_INVEST_CELL:
+			return STAGE3_WALL_TEXT
+		if cell == FIXED_FLOAT_S3 and floats.has(FIXED_FLOAT_S3):
+			return STAGE3_FLOAT_TEXT
+		# 三阶改查东侧浮砖。西侧固定砖仅保留原地面演出。
+		return ""
+	if cell == FIXED_FLOAT and floats.has(FIXED_FLOAT):
+		return FLOAT_TEXT
+	if _scale_cell.x >= 0 and cell == _scale_cell:
+		return SCALE_TEXT
+	return ""
+
+
+func _investigations_on() -> bool:
+	return _s3_investigations and stage3_active()

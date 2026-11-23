@@ -1,5 +1,8 @@
 class_name MVInterpreter
 extends MVEventCore
+
+## O-655：西游档陈塘关成功送礼后传到李静正前方。false 恢复步行。
+static var CHENTANG_GIFT_TRANSFER := true
 ## 地图事件解释器：指令语义在共用核心 MVEventCore（同战斗的 XBattleEventRunner），这里在外面包一层 await，
 ## 并处理只有地图才有的宿主指令。
 ## host 提供画面服务（文字、选项、场所移动、战斗、商店、淡入淡出、移动路线、动画、气泡、提示、输入名字、存档），见 map_scene.gd。
@@ -388,6 +391,9 @@ func _host_command(c: Dictionary):
 			# 同 isOnCurrentMap：先 201 换了图再 214 时不动新图的同号事件
 			if event_id > 0 and map_id == state().map_id and host.has_method("erase_event"):
 				host.erase_event(event_id)
+				# Map169 EV009 唯一的消除指令在首领未败且成功交付活力水的分支。
+				if CHENTANG_GIFT_TRANSFER and map_id == 169 and event_id == 9 and indent == 3 and not XTianqi.active(state()):
+					await host.transfer(169, 12, 8, 8)
 		212:
 			# 显示动画 [角色, 动画, 等待]
 			var ch = host.character(int(p[0]), event_id)

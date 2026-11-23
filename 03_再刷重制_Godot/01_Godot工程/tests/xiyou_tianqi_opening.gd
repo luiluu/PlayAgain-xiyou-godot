@@ -1,6 +1,6 @@
 extends Node
 ## 天启篇开局（XTianqi，Kyo 2026-11-10）：
-## 一、随机阵容：五档各抽 200 次，人数、不重复、弱者下限、超强者上限、候选池（寻常／艰险无超强者）；lineup_ok 能拒绝坏阵容。
+## 一、随机阵容：五档各抽 1000 次（D265 取消弱者人数下限），人数、不重复、弱者数 0～5（寻常／艰险出现 0 弱者）、超强者上限、候选池（寻常／艰险无超强者）；lineup_ok 接受 0 弱者与全弱者并拒绝坏阵容。
 ## 二、标题新游戏三页：存档位 10 格、五档难度（证道锁定）、随机阵容页可重抽。
 ## 三、实跑开局：九死、存档位 3、固定阵容 → 大厅跑完开局指令与 EV020 → 阵容、道号、存档位、难度、开关、物品、1 号位技能、
 ##     存档里的规则版本；没有教派、没有号角。
@@ -72,11 +72,17 @@ func _lineups() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 20261110
 	for d0 in XTianqi.DIFFICULTIES:
-		var d := XTianqi.difficulty(d0.key)  # super_cap／min_weak 并自数值表（第三批）
+		var d := XTianqi.difficulty(d0.key)  # super_cap／min_weak 并自数值表（第三批；D265 起 min_weak=0）
+		var p := XTianqi.pool(d.key)
+		var pool_all: Array = p[XTier.WEAK] + p[XTier.STRONG] + p[XTier.SUPER]
 		var bad := []
 		var seen_super := false
 		var firsts := {}
-		for i in 200:
+		var weak_min := 6
+		var weak_max := -1
+		var zero_weak := 0
+		# D265：五档各抽 1000 次，不再检查 weak >= min_weak，验证候选池、超强者上限与弱者数分布（0～5）
+		for i in 1000:
 			var l := XTianqi.roll_lineup(d.key, rng)
 			var weak := l.filter(func(id): return XTianqiSkills.is_weak(id, true)).size()
 			var supers := l.filter(func(id): return XTianqiSkills.is_super(id, true)).size()
@@ -85,20 +91,35 @@ func _lineups() -> void:
 				uniq[id] = true
 			seen_super = seen_super or supers > 0
 			firsts[l[0]] = true
-			if l.size() != 5 or uniq.size() != 5 or weak < int(d.min_weak) or supers > XTianqi.lineup_super_max(d.key) or not XTianqi.lineup_ok(d.key, l) \
-					or l.any(func(id): return XImportedBalance.is_disabled_actor(id)):
+			weak_min = mini(weak_min, weak)
+			weak_max = maxi(weak_max, weak)
+			if weak == 0:
+				zero_weak += 1
+			if l.size() != 5 or uniq.size() != 5 or supers > XTianqi.lineup_super_max(d.key) or not XTianqi.lineup_ok(d.key, l) \
+					or l.any(func(id): return not pool_all.has(int(id)) or XImportedBalance.is_disabled_actor(id)):
 				bad.append(l)
 		_check("roll_%s" % d.key, bad.is_empty(), bad.slice(0, 3))
 		_check("roll_%s_super_seen" % d.key, seen_super == (int(d.super_cap) > 0), seen_super)
 		_check("roll_%s_varied" % d.key, firsts.size() > 20, firsts.size())
-	var w: Array = XTianqiSkills.ids(XTier.WEAK, true)
-	var sup: Array = XTianqiSkills.ids(XTier.SUPER, true)
+		_check("roll_%s_weak_range_d265" % d.key, weak_min >= 0 and weak_max <= 5 and (zero_weak > 0 if d.key in ["xunchang", "jianxian"] else weak_min <= 1),
+			{"weak_min": weak_min, "weak_max": weak_max, "zero_weak": zero_weak})
+	var w: Array = XTianqiSkills.ids(XTier.WEAK, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id))
+	var st: Array = XTianqiSkills.ids(XTier.STRONG, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id))
+	var sup: Array = XTianqiSkills.ids(XTier.SUPER, true).filter(func(id): return not XImportedBalance.is_disabled_actor(id) and not [95, 173].has(id))
 	_check("lineup_ok_rejects", not XTianqi.lineup_ok("jiusi", [w[0], w[0], w[1], w[2], w[3]])
 		and not XTianqi.lineup_ok("jiusi", [w[0], w[1], w[2], sup[0], sup[1]])
 		and not XTianqi.lineup_ok("jianxian", [w[0], w[1], w[2], w[3], sup[0]])
 		and not XTianqi.lineup_ok("jiusi", [w[0], w[1], w[2], w[3]])
 		and not XTianqi.lineup_ok("jiusi", [w[0], w[1], w[2], w[3], sup[0]])  # D57：九死第 5 位（助力位）不许超强者
 		and XTianqi.lineup_ok("jiusi", [sup[0], w[0], w[1], w[2], w[3]]))
+	# D265：取消弱者人数下限，0 弱者合规阵容五档皆过；全弱者（5 弱者）同样合法
+	_check("lineup_ok_d265_zero_and_all_weak",
+		XTianqi.lineup_ok("xunchang", [st[0], st[1], st[2], st[3], st[4]])
+		and XTianqi.lineup_ok("jianxian", [st[0], st[1], st[2], st[3], st[4]])
+		and XTianqi.lineup_ok("jiusi", [sup[0], st[0], st[1], st[2], st[3]])
+		and XTianqi.lineup_ok("lianyu", [sup[0], sup[1], st[0], st[1], st[2]])
+		and XTianqi.lineup_ok("zhengdao", [sup[0], sup[1], st[0], st[1], sup[2]])
+		and XTianqi.DIFFICULTIES.all(func(d0): return XTianqi.lineup_ok(d0.key, [w[0], w[1], w[2], w[3], w[4]])))
 	_check("zhengdao_locked", XTianqi.locked("zhengdao") and not XTianqi.locked("lianyu"))
 
 
@@ -136,6 +157,39 @@ func _title_pages() -> void:
 		else:
 			diffs[d.key] = b != null and b.icon != null and b.disabled == XTianqi.locked(d.key)
 	_check("page_difficulty", diffs.values().all(func(v): return v), diffs)
+	if skin:
+		# D265：难度卡不再显示「弱者至少 N 名」（保留「能抽到」与超强者规则）
+		var diff_no_min_weak := true
+		var diff_super_bad := {}
+		for d in XTianqi.DIFFICULTIES:
+			var full := XTianqi.difficulty(d.key)
+			var rows := XTianqiStartPage._rule_rows(full)
+			if rows.size() != 2 or rows.any(func(r): return str(r[0]).contains("弱者") or str(r[0]).contains("至少") or str(r[1]).contains("至少")):
+				diff_no_min_weak = false
+			var b = _find(entry, "TianqiDifficulty_" + str(d.key))
+			var texts: Array = []
+			if b != null:
+				for n in b.get_children():
+					if n is Label:
+						texts.append(n.text)
+						if n.text.contains("弱者至少") or n.text.contains("至少"):
+							diff_no_min_weak = false
+			# T433：super_cap=0（寻常／艰险）写「无法获得超强者」，不出现「0 名」；九死／炼狱／证道原句不变
+			var cap := int(full.get("super_cap", 0))
+			var want_row: Array = ["", "无法获得超强者"] if cap <= 0 else ["超强者最多上阵", "%d 名" % cap]
+			if cap > 0 and XTianqi.HELPER_RULES and bool(full.get("helper_super", false)):
+				want_row.append("助力位可再放 1 名超强者")
+			var row_ok: bool = rows.size() == 2 and rows[1] == want_row
+			var card_ok := false
+			if cap <= 0:
+				card_ok = texts.has("无法获得超强者") and not texts.any(func(t): return t.contains("0 名") or t.contains("超强者最多上阵"))
+			else:
+				card_ok = texts.has("超强者最多上阵") and texts.has("%d 名" % cap) and not texts.has("无法获得超强者") \
+					and (not (XTianqi.HELPER_RULES and bool(full.get("helper_super", false))) or texts.has("助力位可再放 1 名超强者"))
+			if not (row_ok and card_ok):
+				diff_super_bad[d.key] = {"rows": rows, "texts": texts}
+		_check("page_difficulty_no_min_weak_d265", diff_no_min_weak)
+		_check("page_difficulty_super_cap_text_t433", diff_super_bad.is_empty(), diff_super_bad)
 	if skin and XTianqi.locked("zhengdao"):
 		# 证道能拿到焦点，按确定还停在难度页（抖一下、出提示）
 		var zd = _find(entry, "TianqiDifficulty_zhengdao") as Button
@@ -151,6 +205,27 @@ func _title_pages() -> void:
 	await get_tree().process_frame
 	_check("page_lineup", _find(entry, "TianqiReroll") != null and _find(entry, "TianqiConfirm") != null)
 	if skin:
+		# D265：阵容页规则句去掉「至少 N 名弱者」，保留超强者上限说明
+		var rl = _find(entry, "LineupRule")
+		_check("page_lineup_rule_no_min_weak_d265", rl is Label and rl.text.contains("最多上阵 2 名超强者") and not rl.text.contains("弱者") and not rl.text.contains("至少"),
+			rl.text if rl is Label else null)
+		# T433：五档阵容页规则句——寻常／艰险写「无法获得超强者」（不含「0 名」），九死／炼狱／证道原句不变
+		var want_rules := {
+			"xunchang": "寻常：无法获得超强者",
+			"jianxian": "艰险：无法获得超强者",
+			"jiusi": "九死：同一场最多上阵 1 名超强者",
+			"lianyu": "炼狱：同一场最多上阵 2 名超强者",
+			"zhengdao": "证道：同一场最多上阵 2 名超强者" + ("；助力位可再放 1 名超强者" if XTianqi.HELPER_RULES else ""),
+		}
+		var rule_bad := {}
+		for k in want_rules:
+			entry._tq_lineup(2, k, [])
+			await get_tree().process_frame
+			var r_lbl = _find(entry, "LineupRule")
+			var txt: String = (r_lbl as Label).text if r_lbl is Label else ""
+			if txt != want_rules[k] or txt.contains("0 名"):
+				rule_bad[k] = {"got": txt, "want": want_rules[k]}
+		_check("page_lineup_rule_super_cap_text_t433", rule_bad.is_empty(), rule_bad)
 		# 动效「关」：重抽后新卡直接到位，不翻牌（scale／透明度当帧就是 1）
 		var keep := XUiSkin.motion_override
 		XUiSkin.motion_override = XUiSkin.Motion.OFF
@@ -173,6 +248,23 @@ func _title_pages() -> void:
 		await get_tree().process_frame
 		var old_lineup := _find(entry, "TianqiStartPage") == null and _find(entry, "TianqiReroll") != null
 		_check("setting_old_pages_old_frame", not XTianqiTitle.skin_on() and old_slots and old_diff and old_lineup, [old_slots, old_diff, old_lineup])
+		# T433：旧回退路径（entry.gd:_tq_lineup）五档标题——寻常／艰险写「无法获得超强者」（不含「0 名」），九死／炼狱／证道原句不变
+		var want_old_titles := {
+			"xunchang": "随机阵容 · 寻常（无法获得超强者）",
+			"jianxian": "随机阵容 · 艰险（无法获得超强者）",
+			"jiusi": "随机阵容 · 九死（同一场最多上阵 1 名超强者）",
+			"lianyu": "随机阵容 · 炼狱（同一场最多上阵 2 名超强者）",
+			"zhengdao": "随机阵容 · 证道（同一场最多上阵 2 名超强者" + ("，助力位可再放 1 名" if XTianqi.HELPER_RULES else "") + "）",
+		}
+		var old_title_bad := {}
+		for k in want_old_titles:
+			entry._tq_lineup(2, k, [])
+			await get_tree().process_frame
+			var title_node = entry.column.get_child(0) if entry.column != null and entry.column.get_child_count() > 0 else null
+			var title_txt: String = (title_node as Label).text if title_node is Label else ""
+			if title_txt != want_old_titles[k] or title_txt.contains("0 名"):
+				old_title_bad[k] = {"got": title_txt, "want": want_old_titles[k]}
+		_check("old_lineup_title_super_cap_text_t433", old_title_bad.is_empty(), old_title_bad)
 		XConfig._values["codexUiSkin"] = true
 
 
