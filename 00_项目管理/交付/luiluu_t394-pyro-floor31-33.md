@@ -26,9 +26,11 @@
 
 - 不涉及完成度变化（天启篇数值调校）。
 
-## 优化登记（总装并入 `03_再刷重制_Godot/00_设计/优化登记.md`）
+## 优化登记草稿
 
-- O-待定 终焉烟火师轰炸乘守层者出伤倍率（T394）｜天启篇战争线异化｜原版没有这条（天启篇新机制的 bug 修复）｜状态：保留｜恢复方法：`XTianqiWarAlien.BOMB_SCALE = false`（回到不乘倍率、系数 1.5）｜测试：`xiyou_tianqi_alien_finale` `pyro_bomb_scale_off`
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | `modes/xiyou/core/tianqi_war_alien.gd` `XTianqiWarAlien.BOMB_SCALE`（`_bomb`；`tianqi_data/war_line.json` `alien.kinds.pyro.finale_bomb` 1.5→16） | 天启篇新机制，原版没有：终焉烟火师火花满时的全体轰炸按攻击力直接算、不乘守层者按层重算的出伤倍率，31～33 层每人约 390 万、第 1 回合团灭 | 轰炸结果乘攻击方 `output_scale`（非守层者 1 不变），系数读表、整数 16；只天启篇战争线异化生效，西游档不变 | 漏乘倍率的 bug（T394，D259，协调 11-23 定 A） | `XTianqiWarAlien.BOMB_SCALE = false`（不乘倍率、系数回到 1.5） | cc（T394） | 保留 |
 
 ## 可优化（流程／工具／效率）
 
@@ -40,8 +42,9 @@
 
 | 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |
 | --- | --- | --- |
-| `XTianqiWarAlien._bomb` | 1 处（`git grep -nE '_bomb\(' -- '*.gd'`，另有骑士 `horseman_bomb` 是别的东西） | 只有 `after_action` 在终焉烟火师火花满时调它；新乘的 `output_scale` 对非守层者是 1，`e is XEnemy` 才读 |
+| `XTianqiWarAlien._bomb` | 1 处（`git grep -nE '_bomb\(' -- '*.gd'`，另有骑士 `horseman_bomb` 是别的东西） | 调用方 1 处逐处结论：只有 `after_action` 在终焉烟火师火花满时调它；新乘的 `output_scale` 对非守层者是 1，`e is XEnemy` 才读 |
 | `XTianqiWarAlien.BOMB_SCALE`（新） | 3 处读写（`git grep -n BOMB_SCALE -- '*.gd'`）：本体、专项、baseline_dps | 默认 true；专项测完回退支设回 true |
+| `XTianqiWarAlien.after_action` | 自检粗数 25 处（`git grep -nE '[^[:alnum:]_]after_action[[:space:]]*\(' -- '*.gd'`，同名别的类居多） | 调用方 25 处逐处结论：本单没改 `after_action` 本身的代码，只改了它调的 `_bomb`；别的类同名函数不受影响；走到 `_bomb` 的只有终焉烟火师火花满那一支 |
 | `war_line.json` `pyro.finale_bomb` | 1 处读（`_bomb`） | 只在 BOMB_SCALE 开着时读表；数据校验通过 |
 
 ## 数值报告：逐种子分布
