@@ -66,6 +66,7 @@ func _run() -> void:
 	_records_12()
 	_equip_and_damage()
 	_legacy_instance_view()
+	_save_load_legacy_sync()
 	_rollback_and_xiyou()
 	XState.current = null
 	var passed := results.filter(func(r): return r.passed).size()
@@ -163,9 +164,19 @@ func _records_12() -> void:
 		str(r4548.get("name", "")) == "森罗灵剑" and str(r8101.get("name", "")) == "沧澜水剑" and str(r8102.get("name", "")) == "青岚风剑"
 		and int(r8101.get("iconIndex", 0)) > 0 and int(r8102.get("iconIndex", 0)) > 0,
 		[r4548.get("name"), r8101.get("name"), r8102.get("name")])
+	_check("efabao_r1_wording",
+		str(r4548.get("description", "")).contains("蕴含草木生机的灵剑，提升自然伤害。")
+		and str(r8101.get("description", "")).contains("凝聚沧澜之水的灵剑，提升水伤害。")
+		and str(r8102.get("description", "")).contains("驾驭青岚罡风的灵剑，提升风伤害。")
+		and str(r8101.get("note", "")).contains("特效：水伤害+10%") and not str(r8101.get("note", "")).contains("水属性伤害")
+		and str(r8102.get("note", "")).contains("特效：风伤害+10%") and not str(r8102.get("note", "")).contains("风属性伤害")
+		and str(r4548.get("note", "")).contains("法宝等级上限随楼层提升，可带1条法宝光环"),
+		[r4548.get("description"), r8101.get("description"), r8102.get("description")])
+	var all_desc_ok := want_ids.all(func(nid): return str(XDB.rec("Armors", int(nid)).get("description", "")).strip_edges() != "")
+	_check("efabao_12_all_have_desc", all_desc_ok)
 	var items: Array = XTianqiGear.table().get("element_fabaos", {}).get("items", [])
-	var pending_ok := [4548, 8101, 8102].all(func(nid):
-		return items.any(func(row): return int(row.get("id", 0)) == nid and str(row.get("text_review", "")) == "pending"))
+	var pending_ok := want_ids.all(func(nid):
+		return items.any(func(row): return int(row.get("id", 0)) == int(nid) and str(row.get("text_review", "")) == "pending"))
 	_check("efabao_text_review_pending", pending_ok)
 
 
@@ -273,14 +284,30 @@ func _equip_and_damage() -> void:
 	_check("fabao_aura_roll_1_line", aura_cnt == 5, aura_cnt)
 
 
+func _help_text(item: Dictionary) -> String:
+	var rows := XHelpCard.detail_rows(item, 480.0)
+	var parts := PackedStringArray()
+	for r in rows:
+		parts.append(str(r[0]))
+	return "\n".join(parts)
+
+
 func _legacy_instance_view() -> void:
 	var s := _tianqi_state()
-	# 先关开关模拟老天启篇存档里已经买下的原版 4543、4552 实例
+	# 先关开关模拟老天启篇存档里已经买下的原版 4543、4548、4552 实例
 	XTianqiGear.ELEMENT_FABAOS = false
 	var old_4543 := XGear.template("armor", 4543)
+	var old_4548 := XGear.template("armor", 4548)
 	var old_4552 := XGear.template("armor", 4552)
 	XTianqiGear.ELEMENT_FABAOS = true
 	_check("old_inst_has_raw_traits", (old_4543.get("traits", []) as Array).size() > 0 and float(old_4543.get("yep", {}).get("elementAmplify", {}).get("1", 0.0)) == 5.0)
+	var h4548 := _help_text(old_4548)
+	_check("old_inst_help_card_4548",
+		h4548.contains("森罗灵剑") and not h4548.contains("御风灵剑")
+		and h4548.contains("蕴含草木生机的灵剑，提升自然伤害。")
+		and h4548.contains("自然伤害+10%") and h4548.contains("法宝等级上限随楼层提升，可带1条法宝光环")
+		and not h4548.contains("*135%") and not h4548.contains("+300%") and not h4548.contains("再动"),
+		h4548)
 	var a: XActor = s.actor(s.party[0])
 	a.change_level(50)
 	for i in a.equips.size():
@@ -290,16 +317,106 @@ func _legacy_instance_view() -> void:
 	var bare_cri := a.cri
 	var bare_hit := a.hit
 	var bare_er10 := a.element_rate(10)
+	var bare_own1 := XDamage.own_bonus(a, 1)
+	var bare_own10 := XDamage.own_bonus(a, 10)
 	_equip_fabao(a, old_4543)
 	var ok4543 := _near(a.param_rate(2), 1.0) and _near(a.cri, bare_cri) and _near(a.hit, bare_hit) \
 		and _near(float(a.passive_cache().get("globalHarmRi", 0.0)), 0.0) \
-		and _near(XDamage.own_bonus(a, 1), 0.10)
-	_check("old_save_4543_cleaned", ok4543, [a.param_rate(2), a.cri, a.hit, a.passive_cache().get("globalHarmRi"), XDamage.own_bonus(a, 1)])
+		and _near(XDamage.own_bonus(a, 1) - bare_own1, 0.10)
+	_check("old_save_4543_cleaned", ok4543, [a.param_rate(2), a.cri, a.hit, a.passive_cache().get("globalHarmRi"), XDamage.own_bonus(a, 1) - bare_own1])
 	_equip_fabao(a, old_4552)
 	var ok4552 := _near(a.param_rate(0), 1.0) and _near(a.element_rate(10), bare_er10) \
-		and _near(XDamage.own_bonus(a, 10), 0.10)
-	_check("old_save_4552_cleaned", ok4552, [a.param_rate(0), a.element_rate(10), XDamage.own_bonus(a, 10)])
+		and _near(XDamage.own_bonus(a, 10) - bare_own10, 0.10)
+	_check("old_save_4552_cleaned", ok4552, [a.param_rate(0), a.element_rate(10), XDamage.own_bonus(a, 10) - bare_own10])
 	_unequip_fabao(a)
+
+
+## P2-1 真存→读档回归：老天启篇档里背包/身上/仓库已有的原版 4543/4548/4552 读档后同步名字、说明、备注、特性与 yep；
+## 保留 [锁定] 前缀、(+N) 强化后缀与天启篇法宝光环；西游档真存→读档零变化。
+func _save_load_legacy_sync() -> void:
+	var kit := Kit.new("xiyou_tianqi_element_fabaos")
+	var s := _tianqi_state()
+	var a: XActor = s.actor(s.party[0])
+	a.change_level(50)
+	for i in a.equips.size():
+		a.equips[i] = null
+	# 关开关造老档里的原版实例并写盘
+	XTianqiGear.ELEMENT_FABAOS = false
+	var bag_4548 := XGear.template("armor", 4548)
+	bag_4548["instanceId"] = "legacy_4548"
+	bag_4548["name"] = "[锁定]御风灵剑 (+3)"
+	bag_4548["baseName"] = "御风灵剑"
+	XTianqiAffixRoll.apply(bag_4548, s, func(): return 0.1)  # 老档已掷过 1 条光环
+	var aura_line_before := str(bag_4548.get("description", "")).strip_edges()
+	s.gear.append(bag_4548)
+	var eq_4543 := XGear.template("armor", 4543)
+	eq_4543["instanceId"] = "legacy_4543"
+	_equip_fabao(a, eq_4543)
+	var wh_4552 := XGear.template("armor", 4552)
+	wh_4552["instanceId"] = "legacy_4552"
+	s.warehouses["w1"] = {"items": {"armor": [wh_4552]}}
+	var saved := kit.save()
+	var raw_d := kit.raw()
+	var raw_bag: Array = raw_d.get("gear", []).filter(func(x): return str(x.get("instanceId", "")) == "legacy_4548")
+	_check("disk_raw_is_legacy", saved and raw_bag.size() == 1 and str(raw_bag[0].get("name", "")) == "[锁定]御风灵剑 (+3)" and (raw_bag[0].get("traits", []) as Array).size() > 0, raw_bag)
+
+	# 开开关真读档：读档后背包/身上/仓库实例全部同步
+	XTianqiGear.ELEMENT_FABAOS = true
+	var loaded := kit.reload()
+	_check("disk_loaded_ok", loaded != null)
+	if loaded != null:
+		var lb: Array = loaded.gear.filter(func(x): return str(x.get("instanceId", "")) == "legacy_4548")
+		var b48: Dictionary = lb[0] if not lb.is_empty() else {}
+		var b48_desc := str(b48.get("description", ""))
+		var b48_note := str(b48.get("note", ""))
+		_check("disk_load_bag_4548_synced",
+			str(b48.get("name", "")) == "[锁定]森罗灵剑 (+3)"
+			and str(b48.get("baseName", "")) == "森罗灵剑"
+			and (b48.get("traits", []) as Array).is_empty()
+			and b48_desc.contains("蕴含草木生机的灵剑，提升自然伤害。")
+			and (aura_line_before == "" or b48_desc.contains(aura_line_before))
+			and b48_note.contains("特效：自然伤害+10%")
+			and b48_note.contains("法宝等级上限随楼层提升，可带1条法宝光环")
+			and not b48_note.contains("*135%") and not b48_note.contains("+300%")
+			and _near(float(b48.get("yep", {}).get("elementAmplify", {}).get("6", 0.0)), 0.10),
+			[b48.get("name"), b48.get("baseName"), b48.get("traits"), b48_desc, b48.get("yep")])
+		var la: XActor = loaded.actor(loaded.party[0])
+		var leq: Dictionary = la.equips[la.equip_slots().find(13)]
+		var h43 := _help_text(leq)
+		_check("disk_load_eq_4543_synced",
+			(leq.get("traits", []) as Array).is_empty()
+			and _near(float(leq.get("yep", {}).get("elementAmplify", {}).get("1", 0.0)), 0.10)
+			and _near(la.param_rate(2), 1.0)
+			and _near(float(la.passive_cache().get("globalHarmRi", 0.0)), 0.0)
+			and h43.contains("凝聚勇者之力的神剑，提升物理伤害。")
+			and h43.contains("物理伤害+10%")
+			and not h43.contains("*135%") and not h43.contains("+500%") and not h43.contains("再动"),
+			[leq.get("traits"), leq.get("yep"), la.param_rate(2), h43])
+		var lwh: Dictionary = loaded.warehouses.get("w1", {}).get("items", {}).get("armor", [{}])[0]
+		_check("disk_load_wh_4552_synced",
+			(lwh.get("traits", []) as Array).is_empty()
+			and str(lwh.get("description", "")).contains("沐浴凤羽神辉的灵羽，提升治疗效果。")
+			and _near(float(lwh.get("yep", {}).get("elementAmplify", {}).get("10", 0.0)), 0.10),
+			[lwh.get("traits"), lwh.get("description"), lwh.get("yep")])
+		# 幂等：再次真存→读档结果一致
+		var again := kit.roundtrip()
+		var ab: Array = again.gear.filter(func(x): return str(x.get("instanceId", "")) == "legacy_4548") if again != null else []
+		_check("disk_roundtrip_idempotent", not ab.is_empty() and str(ab[0].get("name", "")) == "[锁定]森罗灵剑 (+3)" and str(ab[0].get("description", "")) == b48_desc)
+
+	# 西游档真存→读档零变化
+	var leg := _legacy_state()
+	var leg48 := XGear.template("armor", 4548)
+	leg48["instanceId"] = "xiyou_4548"
+	leg.gear.append(leg48)
+	var leg_back := kit.roundtrip(2)
+	var lb_leg: Array = leg_back.gear.filter(func(x): return str(x.get("instanceId", "")) == "xiyou_4548") if leg_back != null else []
+	_check("disk_xiyou_untouched",
+		not lb_leg.is_empty()
+		and str(lb_leg[0].get("name", "")) == "御风灵剑"
+		and (lb_leg[0].get("traits", []) as Array).size() > 0
+		and _near(float(lb_leg[0].get("yep", {}).get("elementAmplify", {}).get("6", 0.0)), 3.0),
+		lb_leg)
+	kit.teardown()
 
 
 func _rollback_and_xiyou() -> void:

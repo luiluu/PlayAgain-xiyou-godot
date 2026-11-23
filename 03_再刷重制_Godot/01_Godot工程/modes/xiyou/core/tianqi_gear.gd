@@ -881,6 +881,7 @@ static func _compute_core(item: Dictionary) -> Array:
 ## 只留本系或治疗 +10%、FABAO_TABLE 成长与 1 条通用法宝光环；4548 改名「森罗灵剑」避免与风系冲突（标待小A·文字审）。
 ## false＝回退（4543～4552 照原版，8101／8102 不存在）。西游档恒不生效。
 static var ELEMENT_FABAOS := true
+const EFABAO_VER := 2
 static var _efabao_specs: Dictionary = {}
 static var _efabao_recs: Dictionary = {}
 static var _efabao_views: Dictionary = {}
@@ -983,11 +984,53 @@ static func _build_element_fabao(src: Dictionary, sp: Dictionary, id: int) -> Di
 	out["note"] = note
 	out["meta"] = XTianqiSkills.parse_meta(note)
 	out["yep"] = {"elementAmplify": {str(elem): float(pct) / 100.0}}
-	out["_tq_efabao_v"] = 1
+	out["_tq_efabao_v"] = EFABAO_VER
 	return out
 
 
-## 战斗/属性计算视图（XTianqiGear.stat_list 调）：兼容老天启篇存档里已持有的 4543～4552 旧实例
+## 替换改名系别法宝的名字，保留 [锁定] 前缀与 (+N) 强化后缀
+static func _efabao_sync_name(old_name: String, base_id: int, new_base: String) -> String:
+	if new_base == "":
+		return old_name
+	var raw_t = XDB.table("Armors")
+	var raw_name := str(raw_t[base_id].get("name", "")) if raw_t is Array and base_id > 0 and base_id < raw_t.size() and raw_t[base_id] is Dictionary else ""
+	if raw_name != "" and old_name.contains(raw_name) and not old_name.contains(new_base):
+		return old_name.replace(raw_name, new_base)
+	return new_base if old_name == "" else old_name
+
+
+## 更新系别法宝说明，已有天启篇光环时保留末尾光环行
+static func _efabao_apply_desc(item: Dictionary, new_desc: String) -> void:
+	if new_desc == "":
+		return
+	var aff = item.get("tianqi_affixes", null)
+	if aff is Array and not (aff as Array).is_empty():
+		item["tianqi_desc_base"] = new_desc
+		XTianqiAffixRoll.set_affixes(item, aff)
+	else:
+		item["description"] = new_desc
+
+
+static func _efabao_clean_traits(src_traits, strip_codes: Array) -> Array:
+	var traits: Array = []
+	if src_traits is Array:
+		for t in src_traits:
+			if t is Dictionary and (t.has("_codexOrb") or not strip_codes.any(func(code): return int(code) == int(t.get("code", -1)))):
+				traits.append(t)
+	return traits
+
+
+static func _efabao_clean_yep(item: Dictionary, elem: int, pct: int) -> Dictionary:
+	var yep: Dictionary = (item.get("yep", {}) as Dictionary).duplicate(true)
+	var amp := {str(elem): float(pct) / 100.0}
+	var orb_amp := XTianqiLedger.orb_amplify(item)
+	for k in orb_amp:
+		amp[str(k)] = float(amp.get(str(k), 0.0)) + float(orb_amp[k])
+	yep["elementAmplify"] = amp
+	return yep
+
+
+## 战斗/说明卡视图（XTianqiGear.stat_list、XHelpCard 调）：兼容老天启篇存档里已持有的 4543～4552 旧实例
 static func element_fabao_view(item):
 	if not element_fabaos_on() or not (item is Dictionary) or item.is_empty():
 		return item
@@ -997,34 +1040,79 @@ static func element_fabao_view(item):
 	var sp: Dictionary = _efabao_map().get(base_id, {})
 	if sp.is_empty():
 		return item
-	if int(item.get("_tq_efabao_v", 0)) >= 1:
+	var cur_ver := int(item.get("_tq_efabao_v", 0))
+	if cur_ver >= EFABAO_VER:
 		return item
 	var elem := int(sp.get("element", 0))
 	var pct := int(sp.get("bonus_pct", table().get("element_fabaos", {}).get("bonus_pct", 10)))
 	var src_note := str(item.get("note", ""))
 	var src_traits = item.get("traits", [])
+	var strip_codes: Array = table().get("element_fabaos", {}).get("strip_trait_codes", [11, 21, 22, 34, 61])
 	var c = _efabao_views.get(base_id)
-	if not (c is Array and is_same(c[1], src_traits) and c[0] == src_note):
-		var strip_codes: Array = table().get("element_fabaos", {}).get("strip_trait_codes", [11, 21, 22, 34, 61])
-		var traits: Array = []
-		if src_traits is Array:
-			for t in src_traits:
-				if t is Dictionary and (t.has("_codexOrb") or not strip_codes.any(func(code): return int(code) == int(t.get("code", -1)))):
-					traits.append(t)
+	if not (c is Array and is_same(c[1], src_traits) and c[0] == src_note and int(c[5]) == cur_ver):
+		var traits: Array = _efabao_clean_traits(src_traits, strip_codes) if cur_ver < 1 else (src_traits as Array if src_traits is Array else [])
 		var note := _rewrite_efabao_note(src_note, sp, elem, pct)
-		c = [src_note, src_traits, note, XTianqiSkills.parse_meta(note), traits]
+		c = [src_note, src_traits, note, XTianqiSkills.parse_meta(note), traits, cur_ver]
 		_efabao_views[base_id] = c
 	var v: Dictionary = item.duplicate(false)
 	if sp.has("name") and str(sp.name) != "":
-		v["name"] = str(sp.name)
+		v["name"] = _efabao_sync_name(str(item.get("name", "")), base_id, str(sp.name))
+	if sp.has("description"):
+		_efabao_apply_desc(v, str(sp.description))
 	v["note"] = c[2]
 	v["meta"] = c[3]
 	v["traits"] = c[4]
-	var yep: Dictionary = (item.get("yep", {}) as Dictionary).duplicate(true)
-	var amp := {str(elem): float(pct) / 100.0}
-	var orb_amp := XTianqiLedger.orb_amplify(item)
-	for k in orb_amp:
-		amp[str(k)] = float(amp.get(str(k), 0.0)) + float(orb_amp[k])
-	yep["elementAmplify"] = amp
-	v["yep"] = yep
+	v["yep"] = _efabao_clean_yep(item, elem, pct)
 	return v
+
+
+## 读档后同步老天启篇档里的系别法宝实例（XTianqiSave.after_load 调）：同步名字/说明/备注/特性/yep，西游档与开关关时不动
+static func sync_element_fabaos(s: XState) -> void:
+	if s == null or not element_fabaos_on(s):
+		return
+	var all := s.gear.duplicate()
+	for a in s.actors.values():
+		all.append_array(a.raw_equip_list())
+	for w in s.warehouses.values():
+		if w is Dictionary and w.get("items") is Dictionary:
+			for list in w.items.values():
+				if list is Array:
+					for v in list:
+						if v is Dictionary:
+							all.append(v)
+	var seen := []
+	var touched := false
+	var strip_codes: Array = table().get("element_fabaos", {}).get("strip_trait_codes", [11, 21, 22, 34, 61])
+	for item in all:
+		if not (item is Dictionary) or item.is_empty() or seen.any(func(x): return is_same(x, item)):
+			continue
+		seen.append(item)
+		if str(item.get("kind", "")) != "armor":
+			continue
+		var base_id := int(item.get("base", item.get("id", 0)))
+		var sp: Dictionary = _efabao_map().get(base_id, {})
+		if sp.is_empty():
+			continue
+		var cur_ver := int(item.get("_tq_efabao_v", 0))
+		if cur_ver >= EFABAO_VER:
+			continue
+		var elem := int(sp.get("element", 0))
+		var pct := int(sp.get("bonus_pct", table().get("element_fabaos", {}).get("bonus_pct", 10)))
+		if sp.has("name") and str(sp.name) != "":
+			item["name"] = _efabao_sync_name(str(item.get("name", "")), base_id, str(sp.name))
+			if item.has("baseName"):
+				item["baseName"] = _efabao_sync_name(str(item.get("baseName", "")), base_id, str(sp.name))
+		if sp.has("description"):
+			_efabao_apply_desc(item, str(sp.description))
+		if cur_ver < 1:
+			item["traits"] = _efabao_clean_traits(item.get("traits", []), strip_codes)
+		var note := _rewrite_efabao_note(str(item.get("note", "")), sp, elem, pct)
+		item["note"] = note
+		item["meta"] = XTianqiSkills.parse_meta(note)
+		item["yep"] = _efabao_clean_yep(item, elem, pct)
+		item["_tq_efabao_v"] = EFABAO_VER
+		touched = true
+	if touched:
+		for a in s.actors.values():
+			a.refresh_passive()
+			a.param_mark_dirty()

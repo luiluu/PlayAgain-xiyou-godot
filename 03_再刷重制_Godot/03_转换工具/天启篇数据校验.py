@@ -605,6 +605,7 @@ def gear_rules(table: dict) -> list:
                     check('element_fabaos.%s element 合法' % aid, isint(el) and el in want_elems, el)
                     check('element_fabaos.%s bonus_pct 与表头一致的整数' % aid, isint(rp) and rp == bp, [rp, bp])
                     check('element_fabaos.%s effect_label 非空' % aid, isinstance(lbl, str) and bool(lbl), lbl)
+                    check('element_fabaos.%s description 非空' % aid, isinstance(row.get('description'), str) and bool(row.get('description')), row.get('description'))
                     ids.append(aid)
                     elems.append(el)
                     if 'name' in row:
