@@ -193,7 +193,7 @@ func _check_rework_data_and_text() -> void:
 		and str(w76.meta.get("passiveCrHarmRi", "")) == "125"
 		and str(w76.meta.get("Element Amplify 1", "")).strip_edges() == "+195%"
 		and is_equal_approx(float(w76.customParams.params[2].level), 6.0)
-		and n76.contains("造成所有伤害结果*249%")
+		and n76.contains("造成所有伤害结果*350%")
 		and n76.contains("混沌伤+195%")
 		and n76.contains("攻击力能力值*150%，爆伤与伤害+125%")
 		and n76.contains("每级+6)"),

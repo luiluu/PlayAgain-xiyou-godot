@@ -77,6 +77,7 @@ const XIUDONG_GROW := 6          # 绣冬 76 每级物攻/魔攻 +6（原 +10）
 static var _st_tianxia_cache: Array = []  # [src_ref, copy_dict]
 static var _st_2539_cache: Array = []     # [src_ref, copy_dict]
 static var _sk9997_cache: Array = []      # [src_ref, copy_dict]
+static var _arm129_cache: Array = []      # [src_ref, copy_dict]
 
 
 static func on() -> bool:
@@ -101,10 +102,24 @@ static func clear_cache() -> void:
 	_st_tianxia_cache.clear()
 	_st_2539_cache.clear()
 	_sk9997_cache.clear()
+	_arm129_cache.clear()
 	XActor._magic_growth_cache.erase("armor:%d" % ARM_FABAO)
 	XActor._custom_param_cache.erase("weapon:%d" % WPN_XIUDONG)
 	XActor._custom_param_cache.erase("armor:%d" % ARM_CHUNLEI)
 	XActor.read_touch()
+
+
+## 西游档（非天启篇）Armor 129 春雷经 XDB.rec 返回重做副本，不动 Armors 表原件，
+## 避免破坏原版战力参照（xiyou_power 无存档测 129）与天启篇池文字（xiyou_tianqi_pool_text）
+static func armor_129_rec(base: Dictionary) -> Dictionary:
+	if not REWORK or base.is_empty():
+		return base
+	if _arm129_cache.size() == 2 and is_same(_arm129_cache[0], base):
+		return _arm129_cache[1]
+	var r: Dictionary = base.duplicate(true)
+	_patch_chunlei_129(r)
+	_arm129_cache = [base, r]
+	return r
 
 
 ## 西游档（非天启篇）2539 真·剑九读记录时返回副本（k = ST2539_RATE），不改 XDB.table("States")[2539] 原件，
@@ -184,8 +199,7 @@ static func patch_armors(t) -> void:
 		return
 	if t.size() > ARM_FABAO and t[ARM_FABAO] is Dictionary:
 		_patch_fabao_143(t[ARM_FABAO])
-	if t.size() > ARM_CHUNLEI and t[ARM_CHUNLEI] is Dictionary:
-		_patch_chunlei_129(t[ARM_CHUNLEI])
+	# Armor 129 春雷改经 XDB.rec 仅在西游档返回副本（保 xiyou_power 与 xiyou_tianqi_pool_text 原表一致）
 
 
 static func patch_weapons(t) -> void:
@@ -366,7 +380,7 @@ static func _patch_xiudong_76(w: Dictionary) -> void:
 			ps[2].level = float(XIUDONG_GROW)
 			ps[4].level = float(XIUDONG_GROW)
 	_replace_note_meta(w, "atk += user.level * 10; mat += user.level * 10;", "atk += user.level * %d; mat += user.level * %d;" % [XIUDONG_GROW, XIUDONG_GROW])
-	_replace_note_meta(w, "造成所有伤害结果*350%", "造成所有伤害结果*249%")
+	# 紫炎 2301 未改数，保留「造成所有伤害结果*350%」原文（供 XTextFix 天启篇 pool_text 锚点匹配）
 	_replace_note_meta(w, "物理 、雷电 阴阳 混沌伤+600%", "物理 、雷电 阴阳 混沌伤+%d%%" % GEAR_EL_AMP)
 	_replace_note_meta(w, "攻击力能力值*300%", "攻击力能力值*%d%%，爆伤与伤害+%d%%" % [GEAR_ATK_PCT, GEAR_HARM])
 	_replace_note_meta(w, "每级+10)", "每级+%d)" % XIUDONG_GROW)

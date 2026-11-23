@@ -217,6 +217,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		out = XTianqiSkills.rec_state(id, out)
 	if name == "States" and id == XXufeng.ST_TRUE_SWORD9 and XXufeng.xiyou_save_on():
 		out = XXufeng.state_2539_rec(out)  # 西游档徐凤年 2539 真·剑九（不动 States 表原件，保天启篇总账，T440）
+	if name == "Armors" and id == XXufeng.ARM_CHUNLEI and XXufeng.xiyou_save_on():
+		out = XXufeng.armor_129_rec(out)  # 西游档徐凤年 129 春雷（不动 Armors 表原件，保原版战力与天启篇池文字，T440）
 	if XTianqiElements.touches(name, id):
 		out = XTianqiElements.rec(name, id, out)  # 天启篇元素重做：技能转属、被动转属、自然书改名
 	return out
