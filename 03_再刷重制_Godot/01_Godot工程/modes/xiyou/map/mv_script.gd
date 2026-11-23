@@ -140,6 +140,14 @@ static func run(code: String, interp) -> Array:
 	if js.begins_with("CodexFest."):
 		await XFestLobby.run_script(js, interp)
 		return []
+	# 三阶漫画动画（T430，分镜 v0.5）：播放 26 秒漫画过场；中途跳过后按 missed_lines 原参数补播未看全的句
+	if _re("^CodexRift3\\.play\\(\\);?$").search(js) != null:
+		if interp != null and interp.host != null and is_instance_valid(interp.host) and interp.host.has_method("play_rift3_anim"):
+			await interp.host.play_rift3_anim()
+		return []
+	if _re("^CodexRift3\\.replayMissed\\(\\);?$").search(js) != null:
+		await _replay_rift3_missed(interp)
+		return []
 	if js.contains("CodexTier.nonWeakIds()"):
 		js = js.replace("CodexTier.nonWeakIds()", "[%s]" % ",".join(XState.tier_non_weak_ids().map(func(v): return str(v))))
 	var s := XState.current
@@ -951,6 +959,8 @@ static func eval_expr(js: String) -> Variant:
 	e = e.replace("window.CodexWhisper", "true")
 	for m in _re("CodexWhisper\\.seen\\('([^'\\\\]*)'\\)").search_all(e):
 		e = e.replace(m.get_string(), "true" if XConfig.whisper_seen(m.get_string(1)) else "false")
+	# 三阶漫画动画（T430，分镜 v0.5）：条件分支 111 校验开关与必需资源是否就绪
+	e = e.replace("CodexRift3.available()", "true" if XRift3Anim.available() else "false")
 	while e.ends_with(";"):
 		e = e.left(-1).strip_edges()
 	if e == "" or e.contains("%") or e.contains("=>") or e.contains("\"") or e.contains("'"):
@@ -1365,3 +1375,32 @@ static func _strip_comments(code: String) -> String:
 			i += 1
 		out.append(line.substr(0, cut))
 	return "\n".join(out)
+
+
+## 三阶漫画动画中途跳过后的精准补播（T430，分镜 v0.5 第 4.2 节）：
+## 按 XRift3Anim.missed_lines 顺序逐句调用 host.show_message，头像／背景／位置与原版 rift.gd:306-341 逐项对齐；播完清空。
+static func _replay_rift3_missed(interp) -> void:
+	if XRift3Anim.missed_lines.is_empty():
+		return
+	var keys: Array[String] = XRift3Anim.missed_lines.duplicate()
+	if interp == null or interp.host == null or not is_instance_valid(interp.host) or not interp.host.has_method("show_message"):
+		XRift3Anim.missed_lines.clear()
+		return
+	var actor := XDB.rec("Actors", XRift.XUFENG_ACTOR)
+	var fn := str(actor.get("faceName", ""))
+	var fi := int(actor.get("faceIndex", 0))
+	for k in keys:
+		if (interp.has_method("is_cancelled") and interp.is_cancelled()) or not is_instance_valid(interp.host):
+			break
+		if not XRift.RIFT3_LINES.has(k):
+			continue
+		var line := str(XRift.RIFT3_LINES[k])
+		var msg: Dictionary
+		if k == "whisper":
+			msg = {"face": "", "index": 0, "background": 1, "position": 1, "lines": [line]}
+		elif k == "after":
+			msg = {"face": "", "index": 0, "background": 2, "position": 1, "lines": [line]}
+		else:
+			msg = {"face": fn, "index": fi, "background": 0, "position": 2, "lines": [line]}
+		await interp.host.show_message(msg)
+	XRift3Anim.missed_lines.clear()
