@@ -1,0 +1,39 @@
+{
+ "sha": "d8731038de9d629bb515487d461ab55402abca9a",
+ "branch": "ci/luiluu/t410-xiyou-rules-fix-oracle",
+ "mode": "affected",
+ "base": "b041fe81aa91528777190a2684698c3da040206a",
+ "passed": false,
+ "scenes": 16,
+ "failed": [
+  "xiyou_dungeon.tscn"
+ ],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 3,
+ "longestShardSeconds": 204.9,
+ "testSeconds": 910,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "7f7cc73cc504821d93480d517c372a4708690bec",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45141083534",
+ "sceneNames": [
+  "xiyou_autosave.tscn",
+  "xiyou_battle_end_ce.tscn",
+  "xiyou_common_scripts.tscn",
+  "xiyou_cover_interp.tscn",
+  "xiyou_difficulty_actor.tscn",
+  "xiyou_dungeon.tscn",
+  "xiyou_dungeon_inside_flag.tscn",
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_honghuang_curse.tscn",
+  "xiyou_honghuang_reward.tscn",
+  "xiyou_lobby_shops.tscn",
+  "xiyou_script_census.tscn",
+  "xiyou_tianqi_sect_b.tscn"
+ ],
+ "time": "2026-11-23T08:52:36+00:00"
+}
