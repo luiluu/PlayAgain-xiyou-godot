@@ -46,6 +46,7 @@ def load(name, path):
 
 
 merge = load('lane_merge_for_precheck', HERE / '合并车道.py')
+gates_mod = load('delivery_gates', HERE / '交付门禁.py')
 git = merge.git
 SHEET_DIR = '00_项目管理/交付/'
 SHEET_NAME = re.compile(r'(?:cc|gpt|xa|claude|codex)_(.+)\.md')
@@ -439,6 +440,14 @@ def check(root, ref, task=None, main=None, sandbox=None, local=None):
     if local:
         fake = state or dict(refresh=False)
         local_checks(Path(quiet(root, 'rev-parse', '--show-toplevel')[1]), fake, result)
+    # T403 内容门禁：发行空壳 check、云端 run／截图、启动脚本静音、恒真断言、截图比例与重复、调用方提醒（见 交付门禁.py）
+    try:
+        gate_problems, gate_hints = gates_mod.gates(root, fork, target, '\n'.join(sheets.values()),
+                                                    Path(quiet(root, 'rev-parse', '--show-toplevel')[1]) if local else None)
+        result['problems'] += gate_problems
+        result['hints'] += gate_hints
+    except Exception as e:  # noqa: BLE001 门禁自己出错不该让自检崩，但要说出来
+        result['hints'].append('内容门禁没跑成：%s' % str(e)[:120])
     return result
 
 
@@ -469,6 +478,8 @@ def render(result, out=sys.stdout):
         w('  分道：' + lane_class(result))
         w('  开发编号：' + ('合并时递增（改了游戏内容）' if result['gameplay'] else '不递增（只改文档、工具或测试）'))
     w('结论：' + ('先改完上面的问题、提交后重跑本工具，再报可合并' if result['problems'] else '可以交付'))
+    if not result['problems']:
+        w('  发回执前：交付单＋本自检退出码 0＋发行空壳 check 退出码 0 三样齐；云端选测用 gh run watch <id> 前台等到结束再发，不凭后台通知')
 
 
 def main(argv=None):
