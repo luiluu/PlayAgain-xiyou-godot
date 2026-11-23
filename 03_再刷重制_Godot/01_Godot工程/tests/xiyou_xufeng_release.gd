@@ -48,6 +48,10 @@ func _run() -> void:
 	XConfig.whisper_mark("rift3")  # T412 三阶过场记的键
 	g = XItemMarks.shop_goods(rows, 132)
 	check("gate.rift3", XImportedBalance.xufeng_gate_met() and g.any(func(x): return x[1] == 359) and not g.any(func(x): return x[1] == 255), g)
+	# T411 P2-1：三阶开关 XRift.STAGE3 关掉时，即使看过 rift3 也不上架
+	XRift.STAGE3 = false
+	check("gate.stage3_off", not XImportedBalance.xufeng_gate_met() and not XItemMarks.shop_goods(rows, 132).any(func(x): return x[1] == 359))
+	XRift.STAGE3 = true
 	(XConfig._values.codexWhisperSeen as Array).erase("rift3")
 	s.items[359] = 1
 	check("gate.owner", XItemMarks.shop_goods(rows, 132).any(func(x): return x[1] == 359))

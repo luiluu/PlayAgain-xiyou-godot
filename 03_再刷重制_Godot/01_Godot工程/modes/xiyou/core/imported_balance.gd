@@ -55,12 +55,9 @@ static var XUFENG_HORN_GATE := true
 static var XUFENG_TIANQI := true
 
 
-## 漩涡三阶段过场看过没有（T412 交出的 CodexWhisper 键 rift3，记在配置 codexWhisperSeen，全存档共用，同 rift2）
-const XUFENG_WHISPER := "rift3"
-
-
+## 漩涡三阶段是否开放并已看过过场（T412：认 XRift.stage() >= 3，STAGE2／STAGE3 任一关闭时均不上架）
 static func xufeng_gate_met() -> bool:
-	return XConfig.whisper_seen(XUFENG_WHISPER)
+	return XRift.stage() >= 3
 
 
 static func xufeng_horn_on_sale() -> bool:
