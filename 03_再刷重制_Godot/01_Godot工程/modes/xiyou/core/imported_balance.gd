@@ -38,7 +38,33 @@ const CANGLONG_HORN := 274
 
 
 static func released_actor(id: int) -> bool:
-	return RELEASE_CANGLONG and id == CANGLONG
+	return (RELEASE_CANGLONG and id == CANGLONG) or (RELEASE_XUFENG and id == XUFENG)
+
+
+## 【cc·未经审查】解放徐凤年（Kyo 11-23，D262，T411，O-待定）：开关开着时 152 不算停用、不隐藏，号角 359 不算停用号角
+## （Map132 EV16 号角商店本来就有这一行）。招募照旧走 CE2512（入队、送绣冬 76 与不朽法宝 143），超强者门槛照旧。
+## 名单常量不动；RELEASE_XUFENG = false 回原版（参照测试由 XCanglong.original_data 一并关掉）。
+static var RELEASE_XUFENG := true
+const XUFENG := 152
+const XUFENG_HORN := 359
+## 号角 359 上架门槛（D262「漩涡三阶段后开放」）：
+## Kyo 11-23 定先做漩涡三阶段（T412：看完二阶后下一次进大厅播三阶，徐凤年从天而降），看过 rift3 才上架；没看过的新档买不到。已有 359 号角或 152 已在队伍／仓库的老档不受影响（始终上架）。
+## XUFENG_HORN_GATE = false 回到「解放即上架」。
+static var XUFENG_HORN_GATE := true
+## 天启篇候选池（抽阵容）放不放 152：T411 技能卡 v0.3 已接线且 K 探针 3 种子过线（1.21×狂刀），打开进候选池；false＝回退为不放。只管天启篇抽阵容（XTianqi._disabled），西游档不看它。
+static var XUFENG_TIANQI := true
+
+
+## 漩涡三阶段是否开放并已看过过场（T412：认 XRift.stage() >= 3，STAGE2／STAGE3 任一关闭时均不上架）
+static func xufeng_gate_met() -> bool:
+	return XRift.stage() >= 3
+
+
+static func xufeng_horn_on_sale() -> bool:
+	if not XUFENG_HORN_GATE or xufeng_gate_met():
+		return true
+	var s: XState = XState.current
+	return s != null and (s.item_count(XUFENG_HORN) > 0 or s.saved_actors.has(XUFENG) or s.party.has(XUFENG))
 
 
 ## 苍龙破晓号角 274 上架条件（Kyo 11-15，#005）：要等漩涡二阶段过场（CodexWhisper 'rift2'）看过之后才进 Map132 EV16 商店；
@@ -53,9 +79,34 @@ static func canglong_horn_on_sale() -> bool:
 	return s != null and (s.item_count(CANGLONG_HORN) > 0 or s.saved_actors.has(CANGLONG) or s.party.has(CANGLONG))
 
 
+## 改版向导 Map004 EV071「花橙、落芸、苍龙破晓、徐凤年……已停用」那一句（Kyo 11-23，T411 Q3）：解放开着的人从名单里删掉
+## （苍龙 RELEASE_CANGLONG、徐凤年 RELEASE_XUFENG 各管各的；开关关着照原文）。XDB.map 读图时调，改开关后要清 map:4 缓存。
+const GUIDE_MAP := 4
+const GUIDE_EVENT := 71
+const GUIDE_MARK := "已停用，不能招募"
+
+
+static func patch_map(map_id: int, data) -> void:
+	if map_id != GUIDE_MAP or not data is Dictionary or not (RELEASE_CANGLONG or RELEASE_XUFENG):
+		return
+	var events: Array = data.get("events", [])
+	if events.size() <= GUIDE_EVENT or not events[GUIDE_EVENT] is Dictionary:
+		return
+	for p in events[GUIDE_EVENT].get("pages", []):
+		for c in (p as Dictionary).get("list", []):
+			if int(c.get("code", 0)) != 401 or not str(c.parameters[0]).contains(GUIDE_MARK):
+				continue
+			var line := str(c.parameters[0])
+			if RELEASE_CANGLONG:
+				line = line.replace("苍龙破晓、", "")
+			if RELEASE_XUFENG:
+				line = line.replace("徐凤年、", "")
+			c.parameters[0] = line
+
+
 ## 号角编号是不是停用号角（商店过滤、能否购买、菜单「使用」灰）
 static func horn_id_disabled(id: int) -> bool:
-	return DISABLED_HORNS.has(id) and not (RELEASE_CANGLONG and id == CANGLONG_HORN)
+	return DISABLED_HORNS.has(id) and not (RELEASE_CANGLONG and id == CANGLONG_HORN) and not (RELEASE_XUFENG and id == XUFENG_HORN)
 
 
 ## B.migrateParty（读档 extractSaveContents 包装；新局、initializeBattleMembers 等时也跑，重制 add_actor 本来就拦，只剩读档要做）：

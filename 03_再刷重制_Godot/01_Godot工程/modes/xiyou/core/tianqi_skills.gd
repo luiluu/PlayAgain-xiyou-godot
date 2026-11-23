@@ -41,6 +41,10 @@ static var _state_recs: Dictionary = {}
 static var _tier: Dictionary = {}  # int 角色号 → 名单档位（含「不开放」）
 static var _gear: Dictionary = {}  # "armor:底号"／"weapon:底号" → 专属装备改写规格
 static var _gear_cache: Dictionary = {}
+static var _actor_trait_cache: Dictionary = {}  # int 角色号 → [原 data 引用, 过滤 traits_remove 后的副本]
+## T411：天启篇状态命中追加伤害（hit_extra_pct，徐凤年剑一～剑八）与角色本体 traits_remove 开关；false＝回退
+static var HIT_EXTRA_ON := true
+static var ACTOR_TRAITS_STRIP := true
 static var _again: Dictionary = {}  # again_sources：读再释放的改写技能号（int）／装备键 → true（空表＝还没建）
 static var _counter_ids: Array = []  # 技能行带 counter／counter_next／guard 的技能号（data() 读表时列出）
 static var _counter_next_ids: Array = []
@@ -130,6 +134,7 @@ static func reload_table() -> void:
 	_tier = {}
 	_gear = {}
 	_gear_cache = {}
+	_actor_trait_cache = {}
 	_again = {}
 	_new_recs = {}
 	_new_state_recs = {}
@@ -648,8 +653,32 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 		d.kind = "tianqi"
 		d.state = id
 		r.dot = d
+	if sp.has("hit_extra_pct"):  # T411：攻击命中时按本次实际 HP 伤害整数 % 追加扣血（走 establish 阶段与 r.extra／r.hit_extra；原版 2530～2537 闭合标签笔误导致 effects 为空）
+		var effs: Array = (r.get("effects", []) as Array).duplicate(true) if r.get("effects") is Array else []
+		effs.append({"phase": "establish", "op": "hit_extra_pct", "pct": int(sp.hit_extra_pct)})
+		r.effects = effs
 	_state_recs[id] = [base, r]
 	return r
+
+
+## T411：角色本体（Actors.json）特性清理——actors.<id>.traits_remove [[code, dataId]…] 只在天启篇卡开着时生效，西游档原样返回 base（首句 return base 供发行空壳规则 2 照搬）
+static func actor_trait_obj(a, base: Dictionary) -> Dictionary:
+	if not ACTOR_TRAITS_STRIP or not cards_flag() or not (a is XActor) or base.is_empty() or not cards_on():
+		return base
+	var id := int(a.actor_id)
+	var rem = data().get("actors", {}).get(str(id), {}).get("traits_remove", [])
+	if not rem is Array or (rem as Array).is_empty():
+		return base
+	var hit = _actor_trait_cache.get(id)
+	if hit is Array and is_same(hit[0], base):
+		return hit[1]
+	var out: Dictionary = base.duplicate(false)
+	var traits: Array = (base.get("traits", []) as Array).duplicate(true) if base.get("traits") is Array else []
+	for e in rem:
+		traits = traits.filter(func(t): return not (int(t.get("code", -1)) == int(e[0]) and int(t.get("dataId", -1)) == int(e[1])))
+	out.traits = traits
+	_actor_trait_cache[id] = [base, out]
+	return out
 
 
 ## 状态缓存的键：被改写的状态在天启篇存档里用负号，免得和原版档的缓存混用

@@ -377,9 +377,10 @@ func _hall_text() -> void:
 						if cj.contains(bad):
 							leak.append([eid, "choice", i, bad, cj])
 	_check("npcs_no_xiyou_leaks", leak.is_empty(), leak)
-	var ev71_forbidden := ["Boss", "boss", "神武", "12.27", "×0.01", "境界", "大境界", "大圆满", "赌场", "移植", "真气", "闭关", "道法", "本命兵", "灵根", "兵仙", "神兵试炼", "丹药批量使用", "用丹", "花橙、落芸、苍龙破晓等已停用"]
+	var ev71_forbidden := ["Boss", "boss", "神武", "12.27", "×0.01", "境界", "大境界", "大圆满", "赌场", "移植", "真气", "闭关", "道法", "本命兵", "灵根", "兵仙", "神兵试炼", "丹药批量使用", "用丹", "已停用，不能招募", "胡桃、利姆露"]
 	var ev71_leaks := ev71_forbidden.filter(func(b): return ev71_all.contains(b))
 	_check("ev71_t139_no_residue", ev71_leaks.is_empty(), ev71_leaks)
+	_check("ev71_t411_tq_disabled_list", ev71_all.contains("暂未进入天启篇候选池") and ev71_all.contains("苍龙破晓、徐凤年、胡桃则按各自档位正常开放") and not ev71_all.contains("已停用，不能招募"), "missing t411 tianqi EV071 rewrite")
 	_check("ev71_t139_wording_locked", ev71_all.contains("助力位与后备均不计入") and ev71_all.contains("36层四骑士不吃霸体、改用各自阶段规则") and ev71_all.contains("阶段成长与突破奖励机制正随版本重制接入中") and ev71_all.contains("取消了旧版的超额行动增伤机制") and ev71_all.contains("成长与试炼") and ev71_all.contains("成长查看说明") and ev71_all.contains("超额行动与体系") and ev71_all.contains("神器装备与打造") and ev71_all.contains("抽奖与法宝喂养") and ev71_all.contains("成长机制怎么看") and ev71_all.contains("品质、检索与排序") and ev71_all.contains("开放与停用角色") and ev71_all.contains("丹药下架与法宝喂养"), "missing t139 wording")
 	_check("ev73_fixed_face_index", ev73_faces == [6, 6, 6, 6], ev73_faces)
 	var ev26_m := XTianqiHallText.rewrite_message(s, 4, 26, {"face": "", "index": 0, "lines": ["\\n<奇怪的老太>又来\\c[4]白票\\c[0]啊。"]})
@@ -424,5 +425,14 @@ func _hall_text() -> void:
 	XTianqiHallText.ENABLED = true
 	var plain := _plain_state()
 	_check("plain_text_untouched", XTianqiHallText.rewrite_message(plain, 4, 70, sample_msg.duplicate(true)) == sample_msg and XTianqiHallText.rewrite_choices(plain, 4, 70, sample_ch.duplicate(true)) == sample_ch and XTianqiHallText.corruption_after(plain, 24).is_empty())
+	# T411：核对西游档改版向导 EV071 停用名单实机原文（删苍龙破晓与徐凤年，不走天启篇文案）
+	var plain_ev71_lines := []
+	for p in _ev(4, 71).get("pages", []):
+		for c in p.get("list", []):
+			if int(c.code) == 401 and str(c.parameters[0]).contains("已停用，不能招募"):
+				var pm := XTianqiHallText.rewrite_message(plain, 4, 71, {"face": "", "index": 0, "lines": [str(c.parameters[0])]})
+				plain_ev71_lines.append("\n".join(pm.lines))
+	var plain_ev71 := "\n".join(plain_ev71_lines)
+	_check("plain_ev71_disabled_list", plain_ev71.contains("花橙、落芸、胡桃、利姆露、初代萌王、赛维里昂圣剑、人形自动人偶已停用，不能招募") and not plain_ev71.contains("苍龙破晓") and not plain_ev71.contains("徐凤年") and not plain_ev71.contains("天启篇候选池"), plain_ev71)
 	XState.current = s
 
