@@ -166,7 +166,9 @@ static func drops(s: XState, enemy: Dictionary, rate_base := -1.0) -> Array:
 		if tq_sig:  # 天启篇招牌掉落：面板概率（递增概率的长期平均）、连着没出几次；交给通用掉落的行不列
 			if not XTianqiDrop.keeps_row(s, kind, int(d.dataId)):
 				continue
-			rate = minf(XPower.js_round(XTianqiDrop.signature_base(kind, int(d.dataId), 1.0 / float(d.denominator)) * tq_mult * 100000.0) / 1000.0, 100.0)
+			rate = minf(XPower.js_round(XTianqiDrop.signature_base(kind, int(d.dataId), 1.0 / float(d.denominator), int(enemy.get("id", -1))) * tq_mult * 100000.0) / 1000.0, 100.0)
+			if float(d.denominator) <= 1.0 and XTianqiDrop.sure_medal(kind, int(d.dataId), int(enemy.get("id", -1))):
+				rate = 100.0  # T395：必掉的奖碑等，掉率加成为负时也显示 100%（实战 roll_signature 照给）
 			fails = XTianqiDrop.signature_fails(s, "%d:%d:%d" % [int(enemy.get("id", 0)), kind, int(d.dataId)])
 		out.append({"type": TYPES[kind], "kind": kind, "id": int(d.dataId), "rate": rate, "item": item, "order": out.size(), "fails": fails})
 	out.sort_custom(func(a, b):
