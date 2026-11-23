@@ -19,7 +19,7 @@
 1. ✓ 只改天启篇 22 层三眼娃这两条：177 15%、91 13%，整数，表驱动，回退 `XGuardianRework.DOT_PCT=false`。
 2. ✓ 西游档零变化：专项 `xiyou_dot` 2259/2259（原版对照）照过；`xiyou_tianqi_guardian_dot` 西游档两条照原版 4500／4000 且开关开关逐值一样。
 3. ✓ 22 层强队重量回合数写进本单（见下「数值报告」），前后对照同一批种子。
-4. 交付单＋自检 0、云端选测前台等完：见「验证」。
+4. ✓ 交付单＋自检 0、云端选测前台等完（整轮 784/784，见「验证」）。
 
 ## 数值报告：22 层真打（T392 band 量法）
 
@@ -77,10 +77,11 @@
 ## 验证
 
 - 本地：专项 `xiyou_tianqi_guardian_dot` 23/23、`xiyou_tianqi_guardian_lifesteal` 12/12、`xiyou_dot` 2259/2259、`xiyou_tianqi_abs_skill` 43/43；`天启篇数据校验.py` 全部通过；`测试天启篇数据校验.py` 130 条 OK；`语法检查.py` 通过；`发行空壳.py check` 81 个脚本 779 个函数都有；`回退开关覆盖.py` 退出码 0。
-- 云端选测：待写
+- 云端选测：整轮 784 场景 16 片通过（提交 de151c7ee，run https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45105615829，基准 a084e0583）；偶发 1 个 xiyou_tianqi_followup_kill（并行失败、单跑通过，云端判通过）。
 
 ## 本分支提交
 
 - 2a0384a30 dot_pct 表＋DOT_PCT 开关、ext_dot 接线、数据校验与专项
 - b123d552b baseline_dps --dot-pct=off、量数脚本
-- （本提交）22 层真打 8 组、统计、交付单
+- de151c7ee 22 层真打 8 组、统计、交付单
+- （本提交）交付单补云端选测结果
