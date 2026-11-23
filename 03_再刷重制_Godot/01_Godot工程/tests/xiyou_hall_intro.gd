@@ -100,9 +100,11 @@ func _new_game(slot: int, scene := true) -> XState:
 	return s
 
 
-## 大厅首次到达的漩涡过场（EV76）、苍龙破晓（EV203）放完再走，免得协程挂着
+## 大厅首次到达的漩涡过场（EV76）、苍龙破晓（EV203）、徐凤年（EV205）放完再走，免得协程挂着
 func _settle(s: XState) -> void:
-	await _wait(func(): return _map_idle() and s.self_switch(HUB, 76, "A") and (not XRift.STAGE2 or s.self_switch(HUB, XRift.RIFT2, "A")))
+	await _wait(func():
+		var r3_done := not (XRift.STAGE2 and XRift.STAGE3) or XConfig.whisper_seen(XRift.RIFT2_VISIT_KEY) or s.self_switch(HUB, XRift.RIFT3, "A")
+		return _map_idle() and s.self_switch(HUB, 76, "A") and (not XRift.STAGE2 or s.self_switch(HUB, XRift.RIFT2, "A")) and r3_done)
 
 
 func _opening_done(tag: String, s: XState, slot: int) -> void:
