@@ -432,6 +432,7 @@ static func set_shape(logic, a, index: int) -> bool:
 ## BattleManager.startBattle 包装（原 startBattle 之前）：甚尔在队就设第一形态
 static func start_battle(logic) -> void:
 	battling = true
+	logic.toji_previous_shape = -1
 	action = {}
 	internal = false
 	spread_rate = 0.0
@@ -661,7 +662,9 @@ static func finish(logic, u, _skill) -> void:
 	var shape = action.get("switch")
 	action = {}
 	if shape != null:
-		set_shape(logic, u, int(shape))
+		var previous := current_shape(u)
+		if set_shape(logic, u, int(shape)) and previous != int(shape):
+			logic.toji_previous_shape = previous
 
 
 # ---- 第三期：术师杀手 ----
