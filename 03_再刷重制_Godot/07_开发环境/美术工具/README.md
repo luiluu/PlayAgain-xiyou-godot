@@ -57,3 +57,65 @@ python3 muse转精灵.py --selftest        # 合成绿底视频自测 13 项，�
 - 视频首帧要是站姿（与定妆图同姿势），否则 `frame0` 对齐会把整段带偏；首帧不是站姿时改用 `--align ref`。
 - 精灵自检（`../精灵自检.py`）现按 64 格写死：待机条 192×64、行走 144×192、待机脚底 64，128 格图集第一项 `native_size` 就失败退出，后面的检查都不跑。要支持 128 需按格尺寸换算这几项（另开卡，不在 T352 改）。
 - 样片演示（swing，样片第 0 帧当临时定妆图）与取景不一致示例在私密设计仓 `协作交接/附图/T352/`。
+
+## 火山方舟出图出视频（T435）
+
+`方舟出图.py`：直接调用火山方舟（Volcengine Ark）REST 接口的命令行工具，替代第三方 MCP。基础出图／出视频仅用 Python 标准库（零第三方依赖），开启 `--green-key` 时按需复用同目录 `muse转精灵.py` 的 `key_mask` 与 `despill`（此时需 Pillow＋numpy，可用 `uv run --with pillow --with numpy` 或 venv）。
+
+### 怎么开通
+
+1. 登录火山引擎控制台（`https://console.volcengine.com/ark`），完成实名认证并开通「火山方舟」。
+2. 在「模型广场」／「开通管理」开通需要用到的模型（按量计费）：
+   - 出图（Seedream）：默认 `doubao-seedream-5-5-261028`（也可通过 `--model` 指定 `doubao-seedream-5-0-pro-260628`、`doubao-seedream-5-0-lite-260128`、`doubao-seedream-4-5-251128` 或自定义推理接入点 `ep-xxxx`）。
+   - 视频（Seedance）：默认 `doubao-seedance-2-5-260628`（也可通过 `--model` 指定 `doubao-seedance-2-0-260128`、`doubao-seedance-2-0-fast-260128`、`doubao-seedance-1-5-pro-251215` 或 `ep-xxxx`）。
+3. 在「API Key 管理」新建一把 API Key，并确保账户有可用按量计费余额。
+
+### 怎么存钥匙
+
+本工具**只从 macOS 钥匙串读取**（`security find-generic-password -s ark-api-key -w`），不读环境变量或 `.env` 文件，不落盘，日志、报错与 `--meta-out` 均自动打码；下载结果文件时也不携带 `Authorization` 头。
+
+```sh
+# 存入或更新 API Key（回车后密文输入，不留命令历史）
+security add-generic-password -U -a "$USER" -s ark-api-key -w
+
+# 只验证是否已存（不打印内容）
+security find-generic-password -s ark-api-key >/dev/null && echo "已存入"
+
+# 如需删除
+security delete-generic-password -s ark-api-key
+```
+
+### 每次大概花多少（人民币参考）
+
+具体扣费随模型档位、分辨率与资源包浮动，以火山方舟控制台实时刊例为准：
+
+- **Seedream 文生图／图生图**：按张计费，大致 **0.22～0.40 元／张**（如 5.0 Lite 约 0.22 元起、5.0 Pro 约 0.30 元起）。
+- **Seedance 图生视频**：按分辨率与时长计费（底层折算 Token），大致折合：
+  - `480p`：约 **0.46～0.70 元／秒**（4 秒约 **2～3 元**）
+  - `720p`（默认）：约 **0.99～1.50 元／秒**（4 秒约 **4～6 元**）
+  - `1080p`：约 **2.50～3.70 元／秒**（4 秒约 **10～15 元**）
+
+### 常用命令与自测
+
+默认均为 **1:1 比例**、**关闭水印**（加 `--watermark` 才开启）。本地参考图自动转 Base64 Data URI，无需公网图床。
+
+```sh
+# 文生图（支持别名 t2i / 文生图），加 --green-key 抠绿并保留 *_raw 原绿底图
+python3 方舟出图.py txt2img --prompt "纯绿底侧视像素剑客" --out /tmp/role.png
+uv run --with pillow --with numpy python3 方舟出图.py txt2img \
+  --prompt "纯绿底侧视像素剑客" --green-key --out /tmp/role.png
+
+# 图生图（支持别名 i2i / 图生图；--ref 可重复传多张本地图）
+python3 方舟出图.py img2img --ref ref1.jpg --ref ref2.png \
+  --prompt "保持造型，拔刀定妆，纯绿底" --out /tmp/m5a.png
+
+# 图生视频（支持别名 i2v / 图生视频；建任务后自动轮询并下载）
+python3 方舟出图.py img2vid --first-frame /tmp/m5a.png \
+  --prompt "拔刀挥砍后收势" --duration 4 --ratio 1:1 --out /tmp/m5a.mp4
+
+# 假服务器单测（11 项：三条路径、任务失败、超时、URL 过期、钥匙串缺失、脱敏与抠绿）
+python3 -m unittest -v 03_再刷重制_Godot/07_开发环境/美术工具/test_方舟出图.py
+uv run --with pillow --with numpy python3 -m unittest -v 03_再刷重制_Godot/07_开发环境/美术工具/test_方舟出图.py
+```
+
+图生视频输出的纯绿底 `.mp4` 可直接交给同目录 `muse转精灵.py` 转为 128 格战斗图集；如只想快速逐帧抠绿导出透明 PNG 序列，也可在 `img2vid` 加上 `--green-key`（输出到 `<视频名>_keyed/`）。
