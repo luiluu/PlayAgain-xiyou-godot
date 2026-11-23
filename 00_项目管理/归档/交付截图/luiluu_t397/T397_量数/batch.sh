@@ -12,12 +12,14 @@ for chain in r6:$HOME/orca/vp-saves/t238/r6/saves:33 t298:$HOME/orca/vp-saves/t2
   c=${chain%%:*}; rest=${chain#*:}; p=${rest%:*}; sf=${rest##*:}
   for cfg in off:--xcap=-1,-1,-1 on:--xcap-default; do
     k=${cfg%%:*}; x=${cfg#*:}; [[ $x == --xcap-default ]] && x=""
-    echo "g_${k}_$c --floors=$F --snapshots=$p $x" >> $J
-    echo "m_${k}_$c --floors=10,20,25 --minion=$M --snapshots=$p $x" >> $J
+    echo "g_${k}_$c --floors=$F --snapshots=$p${x:+ $x}" >> $J
+    echo "m_${k}_$c --floors=10,20,25 --minion=$M --snapshots=$p${x:+ $x}" >> $J
     for l in war death famine plague; do
-      echo "k_${k}_${c}_$l --floors=36 --snap-floor=$sf --line=$l --snapshots=$p $x" >> $J
+      echo "k_${k}_${c}_$l --floors=36 --snap-floor=$sf --line=$l --snapshots=$p${x:+ $x}" >> $J
     done
   done
 done
-cat $J | xargs -P 3 -L 1 zsh -c 'name=$0; ./07_开发环境/godot --headless --audio-driver Dummy --path 01_Godot工程 -s res://tests/test_main_loop.gd res://tests/virtual_player/brand_calib.tscn -- --lineups=4 --rng-seeds=1,2,3 --turns=40 --carve=all "$@" --out=$PWD/'$R'/$name.json > '$R'/$name.log 2>&1; echo "$name exit=$?"'
+# 行尾不能留空格（xargs -L 把行尾空白当续行，第一次跑「开」组两两拼成一条，作废重跑）；跑完的（log 有 BRAND_DONE）跳过
+while read -r line; do n=${line%% *}; grep -q BRAND_DONE $R/$n.log 2>/dev/null || echo "$line"; done < $J > $J.todo
+cat $J.todo | xargs -P 3 -L 1 zsh -c 'name=$0; ./07_开发环境/godot --headless --audio-driver Dummy --path 01_Godot工程 -s res://tests/test_main_loop.gd res://tests/virtual_player/brand_calib.tscn -- --lineups=4 --rng-seeds=1,2,3 --turns=40 --carve=all "$@" --out=$PWD/'$R'/$name.json > '$R'/$name.log 2>&1; echo "$name exit=$?"'
 echo BATCH_DONE
