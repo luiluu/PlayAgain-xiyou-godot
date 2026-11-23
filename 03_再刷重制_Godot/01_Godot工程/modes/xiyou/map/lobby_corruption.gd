@@ -374,6 +374,7 @@ func setup(map: XMapScene) -> void:
 	_pick_floats()
 	_floats_node = _layer(_draw_floats)
 	_scale_node = _layer(_draw_scale)
+	_scale_node.hide()
 	if SCALE_TEX != "" and ResourceLoader.exists(SCALE_TEX):
 		_scale_tex = load(SCALE_TEX)
 	_motes_node = _layer(_draw_motes)
@@ -1883,9 +1884,11 @@ func _process(dt: float) -> void:
 			moved = true
 	if moved:
 		_floats_node.queue_redraw()
-	var want_scale := drop_cell() if canglong_dropped() else Vector2i(-1, -1)
+	# D268：三阶漩涡吞掉青鳞。调查子开关关闭时沿用二阶调查与青鳞。
+	var want_scale := drop_cell() if not (_s3_investigations and stage3_on()) and canglong_dropped() else Vector2i(-1, -1)
 	if want_scale != _scale_cell:
 		_scale_cell = want_scale
+		_scale_node.visible = _scale_cell.x >= 0
 	if _scale_cell.x >= 0:
 		_scale_node.queue_redraw()
 	_update_motes(dt)
@@ -2018,15 +2021,8 @@ func on_action(cell: Vector2i) -> bool:
 			_tq_crack_session[key] = n + 1
 		else:
 			text = CRACK_TEXTS[0]
-	elif cell == FIXED_FLOAT and floats.has(FIXED_FLOAT):
-		text = FLOAT_TEXT
-	elif _scale_cell.x >= 0 and cell == _scale_cell:
-		text = SCALE_TEXT
-	elif _investigations_on():
-		if cell == STAGE3_INVEST_CELL:
-			text = STAGE3_WALL_TEXT
-		elif cell == FIXED_FLOAT_S3 and floats.has(FIXED_FLOAT_S3):
-			text = STAGE3_FLOAT_TEXT
+	else:
+		text = _prop_investigation_text(cell)
 	if text == "":
 		return false
 	await host.run_command_list(text_list("", 0, "", text))
@@ -2034,8 +2030,22 @@ func on_action(cell: Vector2i) -> bool:
 
 
 func is_investigation(cell: Vector2i) -> bool:
-	return cell == CRACK_CELL or (cell == FIXED_FLOAT and floats.has(FIXED_FLOAT)) or (_scale_cell.x >= 0 and cell == _scale_cell) \
-		or (_investigations_on() and (cell == STAGE3_INVEST_CELL or (cell == FIXED_FLOAT_S3 and floats.has(FIXED_FLOAT_S3))))
+	return cell == CRACK_CELL or _prop_investigation_text(cell) != ""
+
+
+func _prop_investigation_text(cell: Vector2i) -> String:
+	if _investigations_on():
+		if cell == STAGE3_INVEST_CELL:
+			return STAGE3_WALL_TEXT
+		if cell == FIXED_FLOAT_S3 and floats.has(FIXED_FLOAT_S3):
+			return STAGE3_FLOAT_TEXT
+		# 三阶改查东侧浮砖。西侧固定砖仅保留原地面演出。
+		return ""
+	if cell == FIXED_FLOAT and floats.has(FIXED_FLOAT):
+		return FLOAT_TEXT
+	if _scale_cell.x >= 0 and cell == _scale_cell:
+		return SCALE_TEXT
+	return ""
 
 
 func _investigations_on() -> bool:

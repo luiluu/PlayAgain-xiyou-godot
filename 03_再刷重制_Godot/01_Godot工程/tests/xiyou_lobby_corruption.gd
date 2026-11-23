@@ -568,6 +568,12 @@ func _test_stage3_interactions(original: Dictionary) -> void:
 	check("stage3.crack_sequence", c1 == [XLobbyCorruption.CRACK_TEXTS[0]] and c2 == [XLobbyCorruption.CRACK_TEXTS[1]] \
 		and c3 == [XLobbyCorruption.STAGE3_CRACK_TEXT] and record.crack == 2 and record.s3_crack and is_instance_valid(fx._crack_scorch), [c1, c2, c3])
 	check("stage3.crack_once", await act(map, XLobbyCorruption.CRACK_CELL, 2) == [XLobbyCorruption.CRACK_TEXTS[1]])
+	var drop := XLobbyCorruption.drop_cell()
+	check("stage3.scale_swallowed", XLobbyCorruption.canglong_dropped() and fx.scale_cell() == Vector2i(-1, -1) \
+		and not fx._scale_node.visible and not fx.is_investigation(drop) and (await act(map, drop, 2)).is_empty())
+	var west_float := XLobbyCorruption.FIXED_FLOAT
+	check("stage3.west_float_only_visual", fx.floats.has(west_float) and not fx.is_investigation(west_float) \
+		and (await act(map, west_float, 2)).is_empty())
 	var investigations := {XLobbyCorruption.STAGE3_INVEST_CELL: XLobbyCorruption.STAGE3_WALL_TEXT, XLobbyCorruption.FIXED_FLOAT_S3: XLobbyCorruption.STAGE3_FLOAT_TEXT}
 	for cell in investigations:
 		var pass4 := [2, 4, 6, 8].all(func(dir): return map.lower.is_passable(cell.x, cell.y, dir))
@@ -662,6 +668,10 @@ func _test_stage3_interaction_switches() -> void:
 	check("stage3.switch_investigations", not is_instance_valid(fx._crack_scorch) and not fx.is_investigation(XLobbyCorruption.STAGE3_INVEST_CELL) \
 		and not fx.is_investigation(XLobbyCorruption.FIXED_FLOAT_S3) and fx.is_investigation(XLobbyCorruption.FIXED_FLOAT) \
 		and await act(map, XLobbyCorruption.CRACK_CELL, 2) == [XLobbyCorruption.CRACK_TEXTS[1]] and not XLobbyCorruption.record(XState.current).has("s3_crack"))
+	var drop := XLobbyCorruption.drop_cell()
+	check("stage3.switch_restores_stage2_props", fx.scale_cell() == drop and fx._scale_node.visible \
+		and fx.is_investigation(drop) and await act(map, drop, 2) == [XLobbyCorruption.SCALE_TEXT] \
+		and await act(map, XLobbyCorruption.FIXED_FLOAT, 2) == [XLobbyCorruption.FLOAT_TEXT])
 	await close(map)
 	XLobbyCorruption.STAGE3_INVESTIGATIONS = true
 
