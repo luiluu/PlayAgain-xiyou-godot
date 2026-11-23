@@ -28,7 +28,7 @@
 ## 验证
 
 - 专项 `tests/xiyou_tianqi_join_gifts`（新）：172/172。含逐人入队／穿上／只记一次／移出再入队不重复、17 名超强者、12 人超越极限、孔明两招、开局阵容路径（不走 `_joining`）与出战栏、普通角色入队不给不记、原有同栏装备回背包、停用角色不入队不给、号角仍被挡、开关关不给不记、西游档不给不记且号角照常能拿。
-- 云端整轮（改了 `xstate.gd`，选测判整轮 781 场景）：见本分支最后一个提交。
+- 云端整轮（改了 `xstate.gd`，选测判整轮 781 场景）：第一轮 d1e07689f 有 6 个场景没过（xiyou_tianqi_growth_count、xiyou_battle_stream_e、xiyou_tianqi_phase4、xiyou_tianqi_phase4_modules、xiyou_tianqi_skills、xiyou_tianqi_smart_ai_eval），都是夹具建天启篇档后要光身角色（如 `raven_no_scythe`、`ly_no_4004`），现在入队带了赠品。这 6 个测试 `_run` 开头加 `XTianqi.JOIN_GIFTS = false`（只改测试，各 1 行）。battle_stream_e 的 off／on 两场对不上，原因是赠品装备在夹具设 `random_master` 之前生成，随机身份取自新档的 fresh_seed，两边属性不同（读代码核过，没另跑实验）。第二轮 9e15fe89f：云端选测 run 45076088925 整轮通过。
 - `发行空壳.py check`：81 个脚本、777 个函数都有。
 
 ## 交接板
@@ -52,3 +52,6 @@
 ## 本分支提交
 
 - d1e07689f 入队钩子＋专项
+- e9b723058 交付单
+- be8c21a8f 补专项 .uid
+- 9e15fe89f 六个天启篇夹具关入队赠品
