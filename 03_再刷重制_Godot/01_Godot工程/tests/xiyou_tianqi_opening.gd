@@ -158,18 +158,38 @@ func _title_pages() -> void:
 			diffs[d.key] = b != null and b.icon != null and b.disabled == XTianqi.locked(d.key)
 	_check("page_difficulty", diffs.values().all(func(v): return v), diffs)
 	if skin:
-		# D265：难度卡不再显示「弱者至少 N 名」（保留「能抽到」与「超强者最多上阵」）
+		# D265：难度卡不再显示「弱者至少 N 名」（保留「能抽到」与超强者规则）
 		var diff_no_min_weak := true
+		var diff_super_bad := {}
 		for d in XTianqi.DIFFICULTIES:
-			var rows := XTianqiStartPage._rule_rows(XTianqi.difficulty(d.key))
+			var full := XTianqi.difficulty(d.key)
+			var rows := XTianqiStartPage._rule_rows(full)
 			if rows.size() != 2 or rows.any(func(r): return str(r[0]).contains("弱者") or str(r[0]).contains("至少") or str(r[1]).contains("至少")):
 				diff_no_min_weak = false
 			var b = _find(entry, "TianqiDifficulty_" + str(d.key))
+			var texts: Array = []
 			if b != null:
 				for n in b.get_children():
-					if n is Label and (n.text.contains("弱者至少") or n.text.contains("至少")):
-						diff_no_min_weak = false
+					if n is Label:
+						texts.append(n.text)
+						if n.text.contains("弱者至少") or n.text.contains("至少"):
+							diff_no_min_weak = false
+			# T433：super_cap=0（寻常／艰险）写「无法获得超强者」，不出现「0 名」；九死／炼狱／证道原句不变
+			var cap := int(full.get("super_cap", 0))
+			var want_row: Array = ["", "无法获得超强者"] if cap <= 0 else ["超强者最多上阵", "%d 名" % cap]
+			if cap > 0 and XTianqi.HELPER_RULES and bool(full.get("helper_super", false)):
+				want_row.append("助力位可再放 1 名超强者")
+			var row_ok: bool = rows.size() == 2 and rows[1] == want_row
+			var card_ok := false
+			if cap <= 0:
+				card_ok = texts.has("无法获得超强者") and not texts.any(func(t): return t.contains("0 名") or t.contains("超强者最多上阵"))
+			else:
+				card_ok = texts.has("超强者最多上阵") and texts.has("%d 名" % cap) and not texts.has("无法获得超强者") \
+					and (not (XTianqi.HELPER_RULES and bool(full.get("helper_super", false))) or texts.has("助力位可再放 1 名超强者"))
+			if not (row_ok and card_ok):
+				diff_super_bad[d.key] = {"rows": rows, "texts": texts}
 		_check("page_difficulty_no_min_weak_d265", diff_no_min_weak)
+		_check("page_difficulty_super_cap_text_t433", diff_super_bad.is_empty(), diff_super_bad)
 	if skin and XTianqi.locked("zhengdao"):
 		# 证道能拿到焦点，按确定还停在难度页（抖一下、出提示）
 		var zd = _find(entry, "TianqiDifficulty_zhengdao") as Button
@@ -189,6 +209,23 @@ func _title_pages() -> void:
 		var rl = _find(entry, "LineupRule")
 		_check("page_lineup_rule_no_min_weak_d265", rl is Label and rl.text.contains("最多上阵 2 名超强者") and not rl.text.contains("弱者") and not rl.text.contains("至少"),
 			rl.text if rl is Label else null)
+		# T433：五档阵容页规则句——寻常／艰险写「无法获得超强者」（不含「0 名」），九死／炼狱／证道原句不变
+		var want_rules := {
+			"xunchang": "寻常：无法获得超强者",
+			"jianxian": "艰险：无法获得超强者",
+			"jiusi": "九死：同一场最多上阵 1 名超强者",
+			"lianyu": "炼狱：同一场最多上阵 2 名超强者",
+			"zhengdao": "证道：同一场最多上阵 2 名超强者" + ("；助力位可再放 1 名超强者" if XTianqi.HELPER_RULES else ""),
+		}
+		var rule_bad := {}
+		for k in want_rules:
+			entry._tq_lineup(2, k, [])
+			await get_tree().process_frame
+			var r_lbl = _find(entry, "LineupRule")
+			var txt: String = (r_lbl as Label).text if r_lbl is Label else ""
+			if txt != want_rules[k] or txt.contains("0 名"):
+				rule_bad[k] = {"got": txt, "want": want_rules[k]}
+		_check("page_lineup_rule_super_cap_text_t433", rule_bad.is_empty(), rule_bad)
 		# 动效「关」：重抽后新卡直接到位，不翻牌（scale／透明度当帧就是 1）
 		var keep := XUiSkin.motion_override
 		XUiSkin.motion_override = XUiSkin.Motion.OFF

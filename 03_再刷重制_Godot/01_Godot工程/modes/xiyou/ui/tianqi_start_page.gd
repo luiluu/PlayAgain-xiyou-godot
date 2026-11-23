@@ -598,12 +598,16 @@ func _difficulty_card(d: Dictionary) -> Button:
 	line.color = Color(XUiSkin.LINE, 0.42)
 	b.add_child(_at(line, Vector2(16, 244), Vector2(w - 32, 1)))
 	b.add_child(_at(_label("随机阵容", "body", XUiSkin.fs(15), XUiSkin.GOLD), Vector2(16, 254)))
-	# 每行：小字名＋一行值（值都短，不换行）；证道「超强者最多上阵」下面再加一行小注（助力位），整块不出卡底（T102 截图修：原来长值换行压到下一行、出卡底）
+	# 每行：小字名＋一行值（值都短，不换行；名为空时单行直接显示规则句，如 super_cap=0「无法获得超强者」）；证道「超强者最多上阵」下面再加一行小注（助力位），整块不出卡底（T102 截图修：原来长值换行压到下一行、出卡底）
 	var y := 280.0
 	for row in _rule_rows(d):
-		b.add_child(_at(_label(str(row[0]), "body", XUiSkin.fs(15), XUiSkin.TEXT_2), Vector2(16, y)))
-		b.add_child(_fit(_at(_label(str(row[1]), "body", XUiSkin.fs(16), XUiSkin.TEXT), Vector2(16, y + 20)) as Label, w - 32, 13))
-		y += 44.0
+		if str(row[0]).is_empty():
+			b.add_child(_fit(_at(_label(str(row[1]), "body", XUiSkin.fs(16), XUiSkin.TEXT), Vector2(16, y + 4)) as Label, w - 32, 13))
+			y += 28.0
+		else:
+			b.add_child(_at(_label(str(row[0]), "body", XUiSkin.fs(15), XUiSkin.TEXT_2), Vector2(16, y)))
+			b.add_child(_fit(_at(_label(str(row[1]), "body", XUiSkin.fs(16), XUiSkin.TEXT), Vector2(16, y + 20)) as Label, w - 32, 13))
+			y += 44.0
 		if row.size() > 2:
 			b.add_child(_fit(_at(_label(str(row[2]), "body", XUiSkin.fs(14), XUiSkin.TEXT_3), Vector2(16, y - 4)) as Label, w - 32, 12))
 			y += 20.0
@@ -617,14 +621,15 @@ func _difficulty_card(d: Dictionary) -> Button:
 	return b
 
 
-## 「随机阵容」小节两行：[名, 值]或[名, 值, 小注]（数值表 roster；规则那几行都带「名」；证道的助力位规则作小注；D265 去掉「弱者至少」）
+## 「随机阵容」小节两行：[名, 值]或[名, 值, 小注]（数值表 roster；super_cap<=0 单行写「无法获得超强者」；证道的助力位规则作小注；D265 去掉「弱者至少」）
 static func _rule_rows(d: Dictionary) -> Array:
 	var tiers: Array = []
 	for t in [XTier.WEAK, XTier.STRONG, XTier.SUPER]:
 		if (d.get("pool", []) as Array).has(t):
 			tiers.append(t)
-	var cap: Array = ["超强者最多上阵", "%d 名" % int(d.get("super_cap", 0))]
-	if XTianqi.HELPER_RULES and bool(d.get("helper_super", false)):
+	var super_cap := int(d.get("super_cap", 0))
+	var cap: Array = ["", "无法获得超强者"] if super_cap <= 0 else ["超强者最多上阵", "%d 名" % super_cap]
+	if super_cap > 0 and XTianqi.HELPER_RULES and bool(d.get("helper_super", false)):
 		cap.append("助力位可再放 1 名超强者")
 	return [["能抽到", " · ".join(tiers)], cap]
 
@@ -702,8 +707,10 @@ func build_lineup(slot: int, key: String, lineup: Array, on_back: Callable) -> D
 	var cnt := _label("超强者 %d / %d　强者 %d　弱者 %d" % [n_super, cap, n_strong, n_weak], "body", XUiSkin.fs(18), XUiSkin.TEXT)
 	cnt.name = "LineupCount"
 	stage.add_child(_at(cnt, Vector2(x0, 540)))
-	var rule := "%s：同一场最多上阵 %d 名超强者" % [str(d.get("name", "")), int(d.get("super_cap", 0))]
-	if XTianqi.HELPER_RULES and bool(d.get("helper_super", false)):
+	var super_cap := int(d.get("super_cap", 0))
+	var rule := "%s：无法获得超强者" % str(d.get("name", "")) if super_cap <= 0 \
+		else "%s：同一场最多上阵 %d 名超强者" % [str(d.get("name", "")), super_cap]
+	if super_cap > 0 and XTianqi.HELPER_RULES and bool(d.get("helper_super", false)):
 		rule += "；助力位可再放 1 名超强者"
 	var rl := _label(rule, "body", XUiSkin.fs(15), XUiSkin.TEXT_2)
 	rl.name = "LineupRule"
