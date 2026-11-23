@@ -538,7 +538,7 @@ func pick_line(lines: Array, playable: Array) -> int:
 	return await XTianqiLineCards.pick(self, lines, playable)
 
 
-## 大厅初步异化：换图时先拆旧的，到了大厅且阶段二起（开关开着）再建（同图移动不重建）
+## 大厅异化随地图重建；相连地图的三阶画层跟随各自的下层图块释放。
 func _setup_lobby_fx() -> void:
 	if lobby_fx != null and is_instance_valid(lobby_fx):
 		lobby_fx.queue_free()
@@ -547,6 +547,8 @@ func _setup_lobby_fx() -> void:
 		lobby_fx = XLobbyCorruption.new()
 		add_child(lobby_fx)
 		lobby_fx.setup(self)
+	else:
+		XLobbyStage3Adjacent.attach(map_id, lower, upper)
 
 
 ## 冠军庆典：换图时先拆旧的，到了大厅且活动进行中（开关开着）再建
