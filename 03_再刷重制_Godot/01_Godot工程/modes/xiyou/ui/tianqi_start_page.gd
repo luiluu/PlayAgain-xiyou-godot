@@ -617,7 +617,7 @@ func _difficulty_card(d: Dictionary) -> Button:
 	return b
 
 
-## 「随机阵容」小节三行：[名, 值]或[名, 值, 小注]（数值表 roster；规则那几行都带「名」；证道的助力位规则作小注）
+## 「随机阵容」小节两行：[名, 值]或[名, 值, 小注]（数值表 roster；规则那几行都带「名」；证道的助力位规则作小注；D265 去掉「弱者至少」）
 static func _rule_rows(d: Dictionary) -> Array:
 	var tiers: Array = []
 	for t in [XTier.WEAK, XTier.STRONG, XTier.SUPER]:
@@ -626,7 +626,7 @@ static func _rule_rows(d: Dictionary) -> Array:
 	var cap: Array = ["超强者最多上阵", "%d 名" % int(d.get("super_cap", 0))]
 	if XTianqi.HELPER_RULES and bool(d.get("helper_super", false)):
 		cap.append("助力位可再放 1 名超强者")
-	return [["能抽到", " · ".join(tiers)], cap, ["弱者至少", "%d 名" % int(d.get("min_weak", 0))]]
+	return [["能抽到", " · ".join(tiers)], cap]
 
 
 static func _card_tint(locked: bool, focused: bool) -> Color:
@@ -702,7 +702,7 @@ func build_lineup(slot: int, key: String, lineup: Array, on_back: Callable) -> D
 	var cnt := _label("超强者 %d / %d　强者 %d　弱者 %d" % [n_super, cap, n_strong, n_weak], "body", XUiSkin.fs(18), XUiSkin.TEXT)
 	cnt.name = "LineupCount"
 	stage.add_child(_at(cnt, Vector2(x0, 540)))
-	var rule := "%s：同一场最多上阵 %d 名超强者，至少 %d 名弱者" % [str(d.get("name", "")), int(d.get("super_cap", 0)), int(d.get("min_weak", 0))]
+	var rule := "%s：同一场最多上阵 %d 名超强者" % [str(d.get("name", "")), int(d.get("super_cap", 0))]
 	if XTianqi.HELPER_RULES and bool(d.get("helper_super", false)):
 		rule += "；助力位可再放 1 名超强者"
 	var rl := _label(rule, "body", XUiSkin.fs(15), XUiSkin.TEXT_2)

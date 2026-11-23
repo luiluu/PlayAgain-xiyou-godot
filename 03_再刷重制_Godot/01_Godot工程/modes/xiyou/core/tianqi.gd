@@ -31,9 +31,9 @@ const HELPER_SLOT := 4
 const GUIDE_NAME := "小小鱼"
 const BADGE_DIR := "res://modes/xiyou/ui/tianqi/"
 
-## 五档难度（数值重构方案第五、六节；出战上限与弱者下限是试算起点）。
+## 五档难度（数值重构方案第五、六节；D265 起不再设弱者人数下限，五档 min_weak 均为 0）。
 ## legacy：第一、二批借用的原版难度（Vitsuno 难度号，2 简单 3 普通 4 困难 5 地狱 6 天灾）；第三批起只在 UNIFIED_LEGACY＝false 时用。
-## super_cap（同一场上阵的超强者上限）、min_weak（每次随机阵容至少几名弱者）、候选池的档位：第三批起只认数值表
+## super_cap（同一场上阵的超强者上限）、min_weak（D265 起五档均为 0，不再限制）、候选池的档位：第三批起只认数值表
 ## （XTianqiBalance，balance_table.json），difficulty() 把它们并进来，这里不再写一份。
 const DIFFICULTIES := [
 	{"key": "xunchang", "name": "寻常", "desc": "初入高塔，熟悉玩法", "legacy": 2, "badge": "01_xunchang.png"},
@@ -241,17 +241,13 @@ static func _disabled(id: int) -> bool:
 	return XGojo.locked(id) if id == XGojo.ACTOR else XImportedBalance.is_disabled_actor(id)
 
 
-## 抽一次阵容：先抽够弱者下限，再从全池补满（超强者不超过本难度上限），最后打乱顺序（第一个是 1 号位）。
+## 抽一次阵容（D265：不再设弱者人数下限）：从本档候选池均匀抽满 5 人（超强者不超过本难度上限），最后打乱顺序（第一个是 1 号位）。
 static func roll_lineup(key: String, rng: RandomNumberGenerator) -> Array:
 	var d := difficulty(key)
 	var p := pool(key)
-	var picked := []
-	var weak: Array = p[XTier.WEAK].duplicate()
-	_shuffle(weak, rng)
-	for id in weak.slice(0, mini(int(d.get("min_weak", 0)), LINEUP_SIZE)):
-		picked.append(id)
-	var rest: Array = (p[XTier.WEAK] + p[XTier.STRONG] + p[XTier.SUPER]).filter(func(id): return not picked.has(id))
+	var rest: Array = p[XTier.WEAK] + p[XTier.STRONG] + p[XTier.SUPER]
 	_shuffle(rest, rng)
+	var picked := []
 	var supers := 0
 	var max_supers := lineup_super_max(key)
 	for id in rest:
@@ -297,7 +293,7 @@ static func _shuffle(a: Array, rng: RandomNumberGenerator) -> void:
 		a[j] = t
 
 
-## 阵容是否合法（选定时再查一次）
+## 阵容是否合法（选定时再查一次；D265：不再限制弱者人数）
 static func lineup_ok(key: String, lineup: Array) -> bool:
 	var d := difficulty(key)
 	if d.is_empty() or lineup.size() != LINEUP_SIZE:
@@ -305,20 +301,18 @@ static func lineup_ok(key: String, lineup: Array) -> bool:
 	var p := pool(key)
 	var all: Array = p[XTier.WEAK] + p[XTier.STRONG] + p[XTier.SUPER]
 	var seen := {}
-	var weak := 0
 	var supers := 0
 	for id in lineup:
 		if not all.has(int(id)) or seen.has(int(id)):
 			return false
 		seen[int(id)] = true
-		weak += 1 if XTianqiSkills.is_weak(id, true) else 0
 		supers += 1 if XTianqiSkills.is_super(id, true) else 0
 	if not HELPER_RULES:
-		return weak >= int(d.min_weak) and supers <= int(d.super_cap)
+		return supers <= int(d.super_cap)
 	# D57／D76：总数 ≤ 上限（证道 ＋1）；前 4 个（上场）≤ super_cap；第 5 个（助力位）是超强者时本档要许可
 	var front := lineup.slice(0, FIGHTERS).filter(func(id): return XTianqiSkills.is_super(id, true)).size()
 	var helper_bad := XTianqiSkills.is_super(lineup[HELPER_SLOT], true) and not helper_super_key(key)
-	return weak >= int(d.min_weak) and supers <= lineup_super_max(key) and front <= int(d.super_cap) and not helper_bad
+	return supers <= lineup_super_max(key) and front <= int(d.super_cap) and not helper_bad
 
 
 # ---- 开新档 ----
