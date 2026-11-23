@@ -63,6 +63,7 @@ static func original_data() -> void:
 	FIX_10091_DESC = false
 	clear_cache()
 	XImportedBalance.RELEASE_CANGLONG = false
+	XImportedBalance.RELEASE_XUFENG = false  # T411 解放徐凤年同属「按原版比要关」
 
 
 ## 真龙之力：1＋等级²×2%
