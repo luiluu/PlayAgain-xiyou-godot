@@ -41,7 +41,7 @@ static func released_actor(id: int) -> bool:
 	return (RELEASE_CANGLONG and id == CANGLONG) or (RELEASE_XUFENG and id == XUFENG)
 
 
-## 【cc·未经审查】解放徐凤年（Kyo 11-23，D262，T411，O-待定）：开关开着时 152 不算停用、不隐藏，号角 359 不算停用号角
+## 【cc·未经审查】解放徐凤年（Kyo 11-23，D262，T411，O-642）：开关开着时 152 不算停用、不隐藏，号角 359 不算停用号角
 ## （Map132 EV16 号角商店本来就有这一行）。招募照旧走 CE2512（入队、送绣冬 76 与不朽法宝 143），超强者门槛照旧。
 ## 名单常量不动；RELEASE_XUFENG = false 回原版（参照测试由 XCanglong.original_data 一并关掉）。
 static var RELEASE_XUFENG := true
