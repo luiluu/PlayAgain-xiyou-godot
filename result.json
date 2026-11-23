@@ -1,0 +1,20 @@
+{
+ "sha": "8b24a7491912cc686fbf1e07874b012ad8085e09",
+ "branch": "ci/luiluu/t403-delivery-selfcheck-gates",
+ "mode": "affected",
+ "base": "e872c8c58cee1240f23510a939716e3710b67b16",
+ "passed": true,
+ "scenes": 0,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 0,
+ "longestShardSeconds": 0,
+ "testSeconds": 0,
+ "generatedRef": "",
+ "generatedCommit": "",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45096420475",
+ "sceneNames": [],
+ "time": "2026-11-23T01:47:17+00:00"
+}
