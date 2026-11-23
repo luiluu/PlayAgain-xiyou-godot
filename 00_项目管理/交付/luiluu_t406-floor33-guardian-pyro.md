@@ -87,11 +87,13 @@
 ## 验证
 
 - 专项 `tests/xiyou_tianqi_guardian_hp_pct.tscn`：12/12。覆盖：表是整数；33 层 = 关开关 ×70%；变身 930 后也 ×70%；32 层、心魔、七印读的 hp_base(33) 不变；回退；西游档 hp_pct=100、血量倍率开关开关一样。
-- `天启篇数据校验.py` 全部通过；`发行空壳.py check` 退出 0（81 个脚本、781 个函数都有）；`工具回归.py`：见下行。
+- `天启篇数据校验.py` 全部通过；`发行空壳.py check` 退出 0（81 个脚本、781 个函数都有）；`工具回归.py` 全部通过（209 秒）。
 - 量数日志里没有 `SCRIPT ERROR`（6 份第 1 轮＋9 份归因，exit 全 0）。
-- 云端选测：见下行。
+- 云端选测：整轮通过（提交 3de655b42e；改了 baseline_dps.gd，选测判整轮；786 个场景 ✓、0 个 ✗，16 片全绿，新专项 12/12），运行 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45137859979 ，`gh run watch` 前台等完。之后的提交只加了交付单和专项的 `.gd.uid`。
 
 ## 本分支提交
 
 - 085d1c8c2 WIP: baseline_dps 加 --keep-trace、--focus=off
-- 其余见 git log（hp_pct 逻辑＋表＋校验＋专项、量数、本交付单）
+- 370bd9bc9 hp_pct 逻辑＋表＋数据校验＋专项、baseline_dps --hp-pct
+- 3de655b42 量数（第 1 轮、归因组）
+- 之后：交付单、专项 .gd.uid（见 git log）
