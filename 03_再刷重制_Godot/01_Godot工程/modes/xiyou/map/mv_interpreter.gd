@@ -1,7 +1,7 @@
 class_name MVInterpreter
 extends MVEventCore
 
-## O-待定-4：西游档陈塘关成功送礼后传到李静正前方。false 恢复步行。
+## O-655：西游档陈塘关成功送礼后传到李静正前方。false 恢复步行。
 static var CHENTANG_GIFT_TRANSFER := true
 ## 地图事件解释器：指令语义在共用核心 MVEventCore（同战斗的 XBattleEventRunner），这里在外面包一层 await，
 ## 并处理只有地图才有的宿主指令。

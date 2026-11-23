@@ -94,7 +94,7 @@ static func create(kind: String, id: int, owner: XState = null) -> Dictionary:
 	return roll_item(template(kind, id), owner)
 
 
-## O-待定-1：西游档获取装备时，给候选全被过滤的至臻底材补同库 Mod 候选。false 恢复原配置。
+## O-652：西游档获取装备时，给候选全被过滤的至臻底材补同库 Mod 候选。false 恢复原配置。
 static var PRESTIGE_DROP_AFFIX := true
 
 
