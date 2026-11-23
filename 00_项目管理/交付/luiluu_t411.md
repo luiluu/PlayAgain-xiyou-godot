@@ -18,10 +18,11 @@
   - `modes/xiyou/tianqi_data/skill_rework.json`：补齐 152 段（`actors.152`、`skills` 9985～9998 共 14 条、`states` 2530～2537 与 `10833 剑竭`、`new_states.10833`、`gear` 4 件专属装备 `armor:143`／`weapon:76`／`armor:129`／`weapon:94`）。
   - `03_转换工具/天启篇数据校验.py`：同步校验 `states.*.hit_extra_pct`（1～100 整数）与 `actors.*.traits_remove`（`[[code, dataId]…]` 整数对），校验退出码 0。
   - `tests/virtual_player/k_calibrate.gd`：`_scan` 与 `_collect_hits` 计入 `r.hit_extra`（与奈叶／空间空蚀的 `r.extra` 隔离），并新增 `_target_hp_rate()` 仅对 152 徐凤年剑九（9995）把木桩血量压至 `<30%`（29%），确保整招各段条件全中且不波及 14/27/95/124/155 与狂刀等已标定角色。
+  - `modes/xiyou/core/tianqi_hall_text.gd`：改版向导 EV071 天启篇停用名单替换锚点由 `"花橙、落芸、苍龙破晓"` 改为稳定锚点 `"已停用，不能招募"`，修复 `XImportedBalance.patch_map` 删去 `苍龙破晓、`／`徐凤年、` 后天启篇漏出西游停用名单的问题；`tests/xiyou_tianqi_hall.gd` 补天启篇与西游档双向实机文字断言（去「等」字漏测），`modes/xiyou/core/item_marks.gd:250` 删过时「条件待定」注释。
 - 验证：
   - `03_转换工具/天启篇数据校验.py`：全部通过（退出码 0）。
   - `03_开发环境/发行空壳.py check`：81 个脚本 782 个函数全过（退出码 0）。
-  - 本机专项：`tests/xiyou_tianqi_xufeng.tscn` 33/33（含天启篇扣血、回退开关与西游档零变化证明）、`tests/xiyou_xufeng_release.tscn` 27/27、`tests/xiyou_tianqi_skills.tscn` 245/245、`tests/xiyou_tianqi_join_gifts.tscn` 208/208。
+  - 本机专项：`tests/xiyou_tianqi_xufeng.tscn` 33/33（含天启篇扣血、回退开关与西游档零变化证明）、`tests/xiyou_xufeng_release.tscn` 27/27、`tests/xiyou_tianqi_skills.tscn` 245/245、`tests/xiyou_tianqi_join_gifts.tscn` 208/208、`tests/xiyou_tianqi_hall.tscn` 74/74。
   - 云端选测：Run `45152905079`（16 片 683 场景全绿），链接 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45152905079 。
 
 ## 交接板
@@ -60,6 +61,8 @@
 | `XStateEffects.run_one` | 94 处（`git grep -nE '[^[:alnum:]_]run_one[[:space:]]*\(' -- '*.gd'`） | 调用方 94 处逐处结论：仅新增 `elif op == "hit_extra_pct"` 分支（只对天启篇合成的 2530～2537 生效），原有全部 op 分支一行未动，西游档与其他角色零影响 |
 | `XImportedBalance.XUFENG_TIANQI` | 3 处（`git grep -n XUFENG_TIANQI -- '*.gd'`：`imported_balance.gd`、`tianqi.gd`、`xiyou_xufeng_release.gd`） | 调用方 3 处逐处结论：仅控制 `XTianqi._disabled(152)` 是否放进天启篇候选池，西游档不读；过线后翻 `true`，同步更新了 `xiyou_xufeng_release.gd` 与 `xiyou_tianqi_join_gifts.gd` |
 | `XImportedBalance.released_actor`／`is_hidden_actor`／`horn_id_disabled`／`patch_map` | 5／12／8／17 处（cc 前序提交 `80a53a172`、`0c20e6afa`） | 调用方 42 处逐处结论：仅在 `RELEASE_XUFENG` 开着时放行 152 与号角 359 并清改版向导停用名单，`RELEASE_XUFENG = false` 及 `XCanglong.original_data()` 一并回原版，隐藏角色与苍龙专项全过 |
+| `XItemMarks.shop_goods` | 53 处（`git grep -nE '[^[:alnum:]_]shop_goods[[:space:]]*\(' -- '*.gd'`） | 调用方 53 处逐处结论：仅新增 `xufeng_horn_on_sale()` 过滤号角 359（及清理过时注释），`XUFENG_HORN_GATE = false` 回退，其余商品与商店不受影响 |
+| `XTianqiHallText.rewrite_message` | 18 处（`git grep -nE '[^[:alnum:]_]rewrite_message[[:space:]]*\(' -- '*.gd'`） | 调用方 18 处逐处结论：仅将 EV071 停用名单匹配锚点由 `"花橙、落芸、苍龙破晓"` 改为 `"已停用，不能招募"`，西游档不走 `XTianqiHallText`，天启篇 EV071 实机文字与 `xiyou_tianqi_hall.tscn` 74/74 全过 |
 | `XTianqiSkills.HIT_EXTRA_ON`／`ACTOR_TRAITS_STRIP`（新） | 各 2 处（本体＋专项 `xiyou_tianqi_xufeng.gd`） | 默认 `true`，专项已测开／关两支与西游档零变化 |
 
 ## 数值报告：逐种子分布
@@ -98,12 +101,14 @@
   - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/state_effects.gd`
   - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor.gd`
   - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/imported_balance.gd`（仅打开 `XUFENG_TIANQI`）
+  - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_hall_text.gd`、`modes/xiyou/core/item_marks.gd`
   - `03_再刷重制_Godot/03_转换工具/天启篇数据校验.py`
   - `03_再刷重制_Godot/01_Godot工程/tests/virtual_player/k_calibrate.gd`
   - `03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_xufeng.gd`／`.tscn`／`.gd.uid`
-  - `03_再刷重制_Godot/01_Godot工程/tests/xiyou_xufeng_release.gd`、`tests/xiyou_tianqi_join_gifts.gd`
+  - `03_再刷重制_Godot/01_Godot工程/tests/xiyou_xufeng_release.gd`、`tests/xiyou_tianqi_join_gifts.gd`、`tests/xiyou_tianqi_hall.gd`
   - `00_项目管理/交付/luiluu_t411.md`
 - 后续项：
+  - P2-1：`xufeng_gate_met` 改走 `XRift.stage() >= 3`，等 T412 合进 `main` 后 rebase 一起改；
   - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/six_dim.json` 的 152 行留后续统一重算，本单未改动；
   - P3-2 弹字合并：剑一～剑八当前每段由 8 个状态各自往 `r.extra` 弹 1 次，后续如实机观感偏密再合并为每段 1 个汇总弹字。
 
