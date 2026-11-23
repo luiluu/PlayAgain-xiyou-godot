@@ -171,6 +171,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		return XFestRoad.rec(name, id, t)  # 冠军庆典·冠军之路：四支五人队、四个敌群、辅助的「应援」（表外号段 9300／19300）
 	if name == "Enemies" and XTianqiSect.has_enemy(XState.current, id):
 		return XTianqiSect.enemy_rec(id, t)  # 天启篇教派连带内容（包丙）：老钱／小钱及打手
+	if name == "Armors" and XTianqiGear.touches_element_fabao(id):
+		return XTianqiGear.element_fabao_rec(id, t)  # 天启篇系别法宝（T442）：4543～4552 改写＋表外水/风 8101/8102
 	if id <= 0 or id >= t.size() or t[id] == null:
 		return {}
 	var out: Dictionary = t[id]

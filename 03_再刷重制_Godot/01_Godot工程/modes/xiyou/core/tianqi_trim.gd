@@ -9,7 +9,8 @@ extends RefCounted
 ## - O-407 DIFF_NAME：地图左下的难度名（XMapHud.difficulty_text）、难度变化提示（XDifficultyNotice）显示五档档名。
 ## - O-408 HIDE_AFFIX_RATE：修行·详细页末尾的「高阶词条概率」一段不显示（XAffixRate.detail_rows）。
 ## - O-410 NO_HONGHUANG：洪荒通关奖励取消（XTianqiSummit._honghuang 不跑）；大厅 EV065 洪荒女皇、EV066 兑换大厅传送、
-##   EV068 强者的礼物不出现；混元星河剑 4555、黎明—破晓 5199、技能书免疫转换 1991 不上架；仙道模式 5198 并进人族首领 EV054 的神武页。
+##   EV068 强者的礼物不出现；混元星河剑（洪荒 4555／人族首领本体 4553）、黎明—破晓（洪荒 5199／人族首领本体 4540）、
+##   技能书免疫转换（洪荒 1991／人族首领本体 1981）不上架；仙道模式 5198 并进人族首领 EV054 的神武页。
 ## - O-412 ROUTE_TABLE：真气路线系数、流萤残核掉率、星爆书概率、开局抽奖被动上限（变量 9）读 balance_table 的 routes（按吸收的旧路线映射）。
 ## 另两项开关在各自模块：O-409 XTianqiAffixRoll.SKIP_HIGH_ROWS、O-411 XTianqiCombat.DUNGEON_TIER。
 
@@ -26,8 +27,8 @@ const LAODA_EVENT := 62
 const GUARDIAN_TROOPS := {30: 466, 31: 467, 32: 468, 33: 469}
 const EXCHANGE_SHOP := [0, 1060, 0, 0, false]
 const HONGHUANG_EVENTS := [65, 66, 68]
-## 不上架：[类型, 编号]（0 物品、1 武器、2 防具）
-const NO_SALE := [[2, 4555], [2, 5199], [0, 1991]]
+## 不上架：[类型, 编号]（0 物品、1 武器、2 防具）：洪荒女皇版（4555/5199/1991）＋人族首领 EV054 本体版（4553/4540/1981，T442）
+const NO_SALE := [[2, 4555], [2, 5199], [0, 1991], [2, 4553], [2, 4540], [0, 1981]]
 const SHOP_EVENT := 54
 ## 人族首领神武页的第一件（这一页才并进仙道模式）
 const DIVINE_PAGE_FIRST := 4279

@@ -15,5 +15,31 @@
   },
   "drop_reroll": {
     "level_band": 10
+  },
+  "element_fabaos": {
+    "source": "养成线重做方案 v0.3 第三节第 9 条；T441 子卡 T013-1a（12 把系别法宝归法宝线，补水/风）",
+    "bonus_pct": 10,
+    "strip_trait_codes": [11, 21, 22, 34, 61],
+    "strip_note_tags": [
+      "Element Amplify \\d+",
+      "DepassiveHarmRe\\d+",
+      "passiveCrHarmRi",
+      "passiveHarmRi"
+    ],
+    "aura_line": "法宝成长按楼层上限与天启篇法宝表结算，可带1条法宝光环",
+    "items": [
+      {"id": 4543, "element": 1, "effect_label": "物理伤害", "bonus_pct": 10},
+      {"id": 4544, "element": 2, "effect_label": "火焰伤害", "bonus_pct": 10},
+      {"id": 4545, "element": 3, "effect_label": "寒冰伤害", "bonus_pct": 10},
+      {"id": 4546, "element": 4, "effect_label": "大地伤害", "bonus_pct": 10},
+      {"id": 4547, "element": 5, "effect_label": "雷电伤害", "bonus_pct": 10},
+      {"id": 4548, "element": 6, "effect_label": "自然伤害", "bonus_pct": 10, "name": "森罗灵剑", "description": "系别法宝\n蕴含森罗生机的灵剑，提升自然伤害。", "text_review": "pending"},
+      {"id": 4549, "element": 7, "effect_label": "奥术伤害", "bonus_pct": 10},
+      {"id": 4550, "element": 8, "effect_label": "神圣伤害", "bonus_pct": 10},
+      {"id": 4551, "element": 9, "effect_label": "黑暗伤害", "bonus_pct": 10},
+      {"id": 4552, "element": 10, "effect_label": "治疗效果", "bonus_pct": 10},
+      {"id": 8101, "template": 4545, "element": 14, "effect_label": "水属性伤害", "bonus_pct": 10, "name": "沧澜水剑", "icon": 5222, "buy_price": 50, "description": "系别法宝\n凝聚沧澜水力的灵剑，提升水属性伤害。", "text_review": "pending"},
+      {"id": 8102, "template": 4548, "element": 15, "effect_label": "风属性伤害", "bonus_pct": 10, "name": "青岚风剑", "icon": 3308, "buy_price": 50, "description": "系别法宝\n御使青岚罡风的灵剑，提升风属性伤害。", "text_review": "pending"}
+    ]
   }
 }

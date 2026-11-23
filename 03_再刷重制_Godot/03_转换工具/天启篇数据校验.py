@@ -575,6 +575,57 @@ def gear_rules(table: dict) -> list:
         check('神器上限 %s 是正整数' % k, isinstance(c.get(k), int) and c.get(k) > 0, c.get(k))
     band = table.get('drop_reroll', {}).get('level_band')
     check('重抽等级段是正整数', isinstance(band, int) and band > 0, band)
+    ef = table.get('element_fabaos')
+    if ef is not None:
+        isint = lambda v: isinstance(v, int) and not isinstance(v, bool)
+        check('element_fabaos 是对象', isinstance(ef, dict), ef)
+        if isinstance(ef, dict):
+            bp = ef.get('bonus_pct')
+            check('element_fabaos.bonus_pct 是 1～100 整数', isint(bp) and 1 <= bp <= 100, bp)
+            sc = ef.get('strip_trait_codes', [])
+            check('element_fabaos.strip_trait_codes 含 11/21/22/34/61',
+                  isinstance(sc, list) and all(isint(x) for x in sc) and {11, 21, 22, 34, 61}.issubset(set(sc)), sc)
+            stags = ef.get('strip_note_tags', [])
+            check('element_fabaos.strip_note_tags 非空字符串列表',
+                  isinstance(stags, list) and bool(stags) and all(isinstance(x, str) and x for x in stags), stags)
+            items = ef.get('items', [])
+            check('element_fabaos.items 共 12 把', isinstance(items, list) and len(items) == 12, len(items) if isinstance(items, list) else items)
+            if isinstance(items, list):
+                ids, elems, names = [], [], []
+                want_elems = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 15}
+                for row in items:
+                    if not isinstance(row, dict):
+                        check('element_fabaos 行是对象', False, row)
+                        continue
+                    aid = row.get('id')
+                    el = row.get('element')
+                    rp = row.get('bonus_pct')
+                    lbl = row.get('effect_label', '')
+                    check('element_fabaos.%s id 是正整数' % aid, isint(aid) and aid > 0, aid)
+                    check('element_fabaos.%s element 合法' % aid, isint(el) and el in want_elems, el)
+                    check('element_fabaos.%s bonus_pct 与表头一致的整数' % aid, isint(rp) and rp == bp, [rp, bp])
+                    check('element_fabaos.%s effect_label 非空' % aid, isinstance(lbl, str) and bool(lbl), lbl)
+                    ids.append(aid)
+                    elems.append(el)
+                    if 'name' in row:
+                        nm = row.get('name', '')
+                        check('element_fabaos.%s 新名非空' % aid, isinstance(nm, str) and bool(nm), nm)
+                        names.append(nm)
+                    if aid == 4548:
+                        check('4548 改名避免与风系冲突', isinstance(row.get('name'), str) and bool(row.get('name')) and row.get('name') != '御风灵剑', row.get('name'))
+                        check('4548 标待文字审', row.get('text_review') == 'pending', row.get('text_review'))
+                    if isint(aid) and aid > 8000:
+                        tpl = row.get('template')
+                        check('表外法宝 %s template 在 4543～4552' % aid, isint(tpl) and 4543 <= tpl <= 4552, tpl)
+                        check('表外法宝 %s 含 name/description/icon/buy_price' % aid,
+                              isinstance(row.get('name'), str) and bool(row.get('name'))
+                              and isinstance(row.get('description'), str) and bool(row.get('description'))
+                              and isint(row.get('icon')) and row.get('icon') > 0
+                              and isint(row.get('buy_price')) and row.get('buy_price') > 0, row)
+                        check('表外法宝 %s 标待文字审' % aid, row.get('text_review') == 'pending', row.get('text_review'))
+                check('element_fabaos id 无重复', len(set(ids)) == len(ids), ids)
+                check('element_fabaos 覆盖 12 系（物理+基础十系+治疗）', set(elems) == want_elems and len(elems) == 12, elems)
+                check('element_fabaos 改写/新增名无重名', len(set(names)) == len(names), names)
     return bad
 
 
