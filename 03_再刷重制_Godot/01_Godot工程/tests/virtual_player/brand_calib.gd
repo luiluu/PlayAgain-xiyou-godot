@@ -8,6 +8,8 @@ extends "res://tests/virtual_player/baseline_dps.gd"
 ##     [--xcap=30,50,30]（D242：敌人闪避、暴击、魔法闪避底子上限，改 balance_table 那三格；缺省照表 -1）
 ##     [--strip-guardian=1,3,4,7|none]（T348 起游戏默认就清守层者（含变身 538／929／930）这四项正值＝XGuardianRework.STRIP；
 ##      这里改 STRIP_XPARAM 拆开量，如 =3 只清暴闪、=7 只清回血；none＝关开关、照原数据。缺省照游戏默认）
+##     [--minion=10:17:63,20:116:476]（T397：小怪战，层:地图:敌群；这一层改打该地图的遇敌敌群，存档地图改成它（楼层缩放按它取层））
+##     [--snap-floor=33]（T397：骑士战用，--floors=36 时读 33 层存档；36 层照 --line= 那条线的骑士本体，35＝影子）
 ##     [--pozhen-type]（T317：XTianqiElements.POZHEN_BY_TYPE 打开＝破阵认伤害类型）
 ##     [--brand-set=sear.per_hit.终焉=12;sear.cap.base=70]（T390：进程内改 brand.json 的整数项量候选值，不写文件；键用点分路径、分号隔开）
 ##     [--snapshots=<存档目录> --lineups=4 --rng-seeds=1,2]（T390：改用虚拟玩家每层存档链，同 T363 真打口径，不用配队器丙档队；
@@ -33,6 +35,8 @@ var gear_cache := ""
 var _knobs_printed := false
 var gear_floors: Array = [10, 20, 25, 30, 31, 32, 33]   # 装备按这一组层掷（缺省和第一轮 s45_raw 同一组，换层数不改装备）；--gear-floors= 换一组（要换缓存文件）
 var strip_ids := []
+var minion := {}   # T397 --minion：{层: [地图, 敌群]}
+var snap_floor := 0   # T397 --snap-floor
 var brand_set := {}   # T390 --brand-set：{"sear.per_hit.终焉": 12, ...}
 
 
@@ -63,6 +67,12 @@ func _ready() -> void:
 		elif a.begins_with("--brand-set="):
 			for kv in a.substr(12).split(";", false):
 				brand_set[kv.get_slice("=", 0)] = int(kv.get_slice("=", 1))
+		elif a.begins_with("--minion="):
+			for it in a.substr(9).split(",", false):
+				var p := it.split(":")
+				minion[int(p[0])] = [int(p[1]), int(p[2])]
+		elif a.begins_with("--snap-floor="):
+			snap_floor = int(a.substr(13))
 		elif a == "--pozhen-type":
 			XTianqiElements.POZHEN_BY_TYPE = true
 	super._ready()
@@ -90,7 +100,7 @@ func _apply_knobs() -> void:
 			push_error("brand_calib --brand-set 找不到 " + str(path))
 	var seen := {}
 	for f in floors:
-		for m in XDB.rec("Troops", int(GUARDIAN[f])).get("members", []):
+		for m in XDB.rec("Troops", int(GUARDIAN.get(f, 0))).get("members", []):
 			var id := int(m.get("enemyId", 0))
 			if id > 0 and XGuardianRework.strip_touches(id):
 				seen[id] = true
@@ -187,7 +197,7 @@ func _brand_team(s: XState, team: Array, f: int) -> void:
 ## T390 --snapshots：虚拟玩家存档链（同 T363 真打：原队＋--lineups 随机阵容 × --rng-seeds），上场 4 人按职责改写烙印
 func _snap_calib_states(f: int) -> Array:
 	var out := []
-	for st in _snapshot_states(f):
+	for st in _snapshot_states(snap_floor if snap_floor > 0 else f):
 		XState._become_current(st)
 		var team: Array = st.battle_members().map(func(a): return int(a.actor_id))
 		st.flags["tianqi"]["difficulty"] = difficulty
@@ -314,7 +324,14 @@ func _run() -> void:
 		if snapshots != "":
 			for st in _snap_calib_states(f):
 				XState._become_current(st)
-				var r := _calib_fight(st, _troop_for(st, f))
+				var tid := 0
+				if minion.has(f):
+					st.map_id = int(minion[f][0])
+					tid = int(minion[f][1])
+				else:
+					tid = _troop_for(st, f)
+				var r := _calib_fight(st, tid)
+				r["troop"] = tid
 				r["team"] = st.get_meta("t390_team")
 				r["label"] = str(st.get_meta("t239_team", ""))
 				r["rep"] = int(st.get_meta("t239_rng", 0))
@@ -335,7 +352,7 @@ func _run() -> void:
 			print("BRAND_SKIP floor=%d（没有样本）" % f)
 			continue
 		var won := per.filter(func(r): return bool(r.won))
-		var row := {"floor": f, "troop": GUARDIAN[f], "n": n, "won": won.size(), "win_rate": float(won.size()) / maxf(1.0, n),
+		var row := {"floor": f, "troop": per[0].get("troop", GUARDIAN.get(f, 0)), "n": n, "won": won.size(), "win_rate": float(won.size()) / maxf(1.0, n),
 			"turns_won_avg": _avg(won.map(func(r): return r.turns)), "turns_all_avg": _avg(per.map(func(r): return r.turns)),
 			"downs_avg": _avg(per.map(func(r): return r.downs)), "harm_fights": per.filter(func(r): return int(r.harm) > 0).size(),
 			"ripe_flag": per.all(func(r): return bool(r.ripe)), "boss_kind": per[0].kind if n else "", "carved_value": carved_value(f)}
@@ -399,7 +416,7 @@ func _run() -> void:
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
-		fh.store_string(JSON.stringify({"brand_set": brand_set, "snapshots": snapshots, "lineups": lineups, "rng_seeds": rng_seeds, "xcap": xcap, "strip": XGuardianRework.STRIP_XPARAM if XGuardianRework.STRIP else [], "pozhen_type": XTianqiElements.POZHEN_BY_TYPE, "difficulty": difficulty, "carve": carve_mode, "carved_brand": carved_brand, "other_brand": other_brand,
+		fh.store_string(JSON.stringify({"brand_set": brand_set, "snapshots": snapshots, "lineups": lineups, "rng_seeds": rng_seeds, "xcap": xcap, "minion": minion, "snap_floor": snap_floor, "line": line, "strip": XGuardianRework.STRIP_XPARAM if XGuardianRework.STRIP else [], "pozhen_type": XTianqiElements.POZHEN_BY_TYPE, "difficulty": difficulty, "carve": carve_mode, "carved_brand": carved_brand, "other_brand": other_brand,
 			"ripe": ripe_mode, "reps": reps, "teams": list, "turns": turns, "seed": seed, "rows": rows}, "\t"))
 	print("BRAND_DONE")
 	get_tree().quit(0)

@@ -2074,12 +2074,21 @@ def enemy_xparam_cap_rules(table: dict) -> list:
         return bad  # 没有这张表＝不封顶（代码按 -1）
     if not isinstance(c, dict):
         return ['combat_rules.enemy_xparam_cap 要是一张表']
+    keys = [str(d.get('key')) for d in table.get('difficulties', [])]
     for k in ('eva', 'cri', 'mev'):
-        if not _int_pct(c.get(k)):
-            bad.append('enemy_xparam_cap.%s 要是 -1～100 的整数：%s' % (k, c.get(k)))
+        v = c.get(k)
+        if isinstance(v, dict):  # T397（D242 按难度）：按难度键的整数表
+            if list(v) != keys:
+                bad.append('enemy_xparam_cap.%s 的键要和 difficulties 同序：%s' % (k, list(v)))
+            vals = list(v.values())
+            if not all(_int_pct(x) for x in vals):
+                bad.append('enemy_xparam_cap.%s 要全是 -1～100 的整数：%s' % (k, vals))
+            elif vals != sorted(vals):
+                bad.append('enemy_xparam_cap.%s 要随难度不降：%s' % (k, vals))
+        elif not _int_pct(v):
+            bad.append('enemy_xparam_cap.%s 要是 -1～100 的整数或按难度键的整数表：%s' % (k, v))
     if not _int_pct(c.get('toji_cev_pct'), 0, 100):
         bad.append('enemy_xparam_cap.toji_cev_pct 要是 0～100 的整数：%s' % c.get('toji_cev_pct'))
-    keys = [str(d.get('key')) for d in table.get('difficulties', [])]
     tiers = c.get('cev_tiers')
     if not isinstance(tiers, list) or not tiers:
         bad.append('enemy_xparam_cap.cev_tiers 要是非空列表')
