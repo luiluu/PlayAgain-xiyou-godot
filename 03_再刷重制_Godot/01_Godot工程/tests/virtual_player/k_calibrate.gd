@@ -1140,10 +1140,12 @@ func _has_trumpet(a) -> bool:
 	return not bare and XTianqiTrumpet.has(a, trumpet_n)
 
 
-## T411：木桩起始生命比例——有二号血海压到 30%，若本招带 target_hp_below（如剑九 <30% 斩杀翻倍）再压到阈值以下（th - 1%），保证整招各段条件全中
+## T411：木桩起始生命比例——有二号血海压到 30%；仅 152 徐凤年剑九（9995，Kyo 11-23 事项 34 定按 30% 以下斩杀翻倍标定）压到阈值以下（29%），不波及其他已标定角色
 func _target_hp_rate(a, sk: Dictionary) -> float:
 	var rate := 0.3 if _has_trumpet(a) else 1.0
-	var sp := XTianqiSkills.spec(int(sk.get("id", 0)))
+	if int(a.actor_id) != 152 or int(sk.get("id", 0)) != 9995:
+		return rate
+	var sp := XTianqiSkills.spec(9995)
 	for c in sp.get("damage", {}).get("conds", []):
 		if str(c.get("if", "")) == "target_hp_below":
 			var th := XTianqiSkills._rate(a, c)

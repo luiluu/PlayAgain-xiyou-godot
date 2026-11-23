@@ -17,7 +17,7 @@
   - `modes/xiyou/core/actor.gd`、`modes/xiyou/core/tianqi_skills.gd`：新增天启篇角色本体特性清理 `actors.<id>.traits_remove`（`actor_trait_obj(self, data())`，首句返回 `base` 合规发行空壳规则 2，回退开关 `ACTOR_TRAITS_STRIP`），清理 `Actors.json[152].traits` 再动 +100%、攻次 +2 与物理承伤 −20%；西游原版档零变化。
   - `modes/xiyou/tianqi_data/skill_rework.json`：补齐 152 段（`actors.152`、`skills` 9985～9998 共 14 条、`states` 2530～2537 与 `10833 剑竭`、`new_states.10833`、`gear` 4 件专属装备 `armor:143`／`weapon:76`／`armor:129`／`weapon:94`）。
   - `03_转换工具/天启篇数据校验.py`：同步校验 `states.*.hit_extra_pct`（1～100 整数）与 `actors.*.traits_remove`（`[[code, dataId]…]` 整数对），校验退出码 0。
-  - `tests/virtual_player/k_calibrate.gd`：`_scan` 与 `_collect_hits` 计入 `r.hit_extra`（与奈叶／空间空蚀的 `r.extra` 隔离），并新增 `_target_hp_rate()` 对 `target_hp_below` 技能压木桩血量至阈值以下（如剑九 <30% 压到 29%），确保整招各段条件全中且不改狂刀既有口径。
+  - `tests/virtual_player/k_calibrate.gd`：`_scan` 与 `_collect_hits` 计入 `r.hit_extra`（与奈叶／空间空蚀的 `r.extra` 隔离），并新增 `_target_hp_rate()` 仅对 152 徐凤年剑九（9995）把木桩血量压至 `<30%`（29%），确保整招各段条件全中且不波及 14/27/95/124/155 与狂刀等已标定角色。
 - 验证：
   - `03_转换工具/天启篇数据校验.py`：全部通过（退出码 0）。
   - `03_开发环境/发行空壳.py check`：81 个脚本 782 个函数全过（退出码 0）。
@@ -27,8 +27,8 @@
 ## 交接板
 
 - 下一步：
-  - 总装合并 `luiluu/t411`（由 cc 换家核查小A 提交）；
-  - 后续单：`six_dim.json` 的 152 行目前全为 `C`，按 v0.3 新卡与实测强度重算（本单未动 `six_dim.json`）。
+  - 总装合并 `luiluu/t411`（cc 换家核过无 P1，已按审核意见完成 P2-1／P3-1／P3-4 小修）；
+  - 后续单：①`six_dim.json` 的 152 行目前全为 `C`，按 v0.3 新卡与实测强度重算（本单未动 `six_dim.json`）；②P3-2 弹字合并：剑一～剑八当前每段由 8 个状态各自往 `r.extra` 弹 1 次（滚龙壁五段合计 40 个追加弹字、剑九八段合计 64 个），后续若实机观感偏密可合并为每段 1 个汇总弹字。
 - 用户试玩说明：
   - 西游档：看过漩涡三阶过场后，在兑换大厅号角商店购买「徐凤年号角」即可招募徐凤年；
   - 天启篇：开局随机阵容或通关抽角色可抽到超强者「徐凤年」，剑一～剑八被动命中后自动追加伤害，50 级终式「剑九」在敌人 30% 血以下触发斩杀翻倍。
@@ -47,7 +47,7 @@
 ## 可优化（流程／工具／效率）
 
 - 已做：`XTianqiSkills.actor_trait_obj(a, base)` 首句写 `if …: return base`，天然命中 `发行空壳.py` 规则 2，无需改 `发行空壳特例.json` 即可在西游发行包里原样保留 `data()`（回退：`ACTOR_TRAITS_STRIP = false`）。
-- 建议：`tests/xiyou_tianqi_join_gifts.gd` 中 `super_count_18` 原本硬编码 `17`，后续每解放一名导入超强者都会触发修改；建议后续改按 `26 - DISABLED_ACTORS(141..166).filter(not released_actor)` 动态算预期数，避免重复返工。
+- 已做（P3-4）：`tests/xiyou_tianqi_join_gifts.gd` 中 141～166 放行超强者计数已由硬编码改为按 `26 - DISABLED_ACTORS(141..166).filter(not released_actor)` 动态计算，后续再解放导入角色无需手改该专项。
 
 ## 动了的共用函数和开关
 
@@ -64,7 +64,7 @@
 
 ## 数值报告：逐种子分布
 
-- 口径：D209（81 级甲档，烙印 100%，`exact` 确定值口径，黑印真印满配＋二号血海＋3 秘籍格＋极四阶贪心词条＋满熟练度）。`k_calibrate.gd` 对 `152` 计入 `r.hit_extra` 并对 `target_hp_below` 技能压木桩血量至阈值以下（剑九 `<30%` 压到 29%）；狂刀 `6026` 无 `hit_extra` 与 `target_hp_below`，基线值 `2,308,294` 逐字节不变。
+- 口径：D209（81 级甲档，烙印 100%，`exact` 确定值口径，黑印真印满配＋二号血海＋3 秘籍格＋极四阶贪心词条＋满熟练度）。`k_calibrate.gd` 对 `152` 计入 `r.hit_extra` 并仅对 152 剑九（9995）压木桩血量至 29%（不波及 14/27/95/124/155 与狂刀等已标定角色）；狂刀 `6026` 基线值 `2,308,294` 逐字节不变。
 - 目标：徐凤年 152 ／ 狂刀 122 ＝ **1.2**（允许 **1.1～1.3**）。
 
 ### 第 1 轮（剑九 7 段×1，斩杀翻倍 14，滚龙壁 5 段×2＝10）
@@ -103,7 +103,9 @@
   - `03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_xufeng.gd`／`.tscn`／`.gd.uid`
   - `03_再刷重制_Godot/01_Godot工程/tests/xiyou_xufeng_release.gd`、`tests/xiyou_tianqi_join_gifts.gd`
   - `00_项目管理/交付/luiluu_t411.md`
-- 后续项：`03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/six_dim.json` 的 152 行留后续统一重算，本单未改动。
+- 后续项：
+  - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/six_dim.json` 的 152 行留后续统一重算，本单未改动；
+  - P3-2 弹字合并：剑一～剑八当前每段由 8 个状态各自往 `r.extra` 弹 1 次，后续如实机观感偏密再合并为每段 1 个汇总弹字。
 
 ## 本分支提交
 

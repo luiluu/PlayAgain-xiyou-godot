@@ -456,7 +456,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 		elif op == "hit_extra_pct" and execute and ctx.get("resources") != null and XTianqiSkills.HIT_EXTRA_ON:
 			var r2: Dictionary = ctx.record
 			var base_dmg := float(r2.get("hp", 0.0))
-			if base_dmg > 0.0 and c.target != c.user and int(c.item.get("damage", {}).get("type", 0)) in [1, 3, 5]:
+			if base_dmg > 0.0 and c.target != c.user and int(c.item.get("damage", {}).get("type", 0)) in [1, 5]:
 				var amount2 := floorf(base_dmg * float(e.pct) / 100.0)
 				if amount2 > 0.0:
 					ctx.resources.gain(c.target, "hp", -amount2)
