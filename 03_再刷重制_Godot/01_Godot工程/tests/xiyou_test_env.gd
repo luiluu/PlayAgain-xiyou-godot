@@ -8,7 +8,7 @@ extends RefCounted
 
 
 ## 设 XSave.dir_override 与 XConfig.path_override 到 user://test_<name>，删掉上次留下的 options.json 并按默认值重读；
-## rift_seen 为真时把 rift1、rift2（漩涡二阶段，XRift）记成看过（立即写盘）。返回测试目录。
+## rift_seen 为真时把 rift1、rift2、rift3（漩涡二、三阶段，XRift）记成看过（立即写盘）。返回测试目录。
 static func isolate(name: String, rift_seen := true) -> String:
 	XSave.dir_override = "user://test_" + name
 	XConfig.path_override = XSave.dir().path_join("options.json")
@@ -17,4 +17,5 @@ static func isolate(name: String, rift_seen := true) -> String:
 	if rift_seen:
 		XConfig.whisper_mark("rift1")
 		XConfig.whisper_mark("rift2")   # 漩涡二阶段过场（XRift，Map4 EV203：rift1 看过就播）同样占住大厅，一并记成看过
+		XConfig.whisper_mark("rift3")   # 漩涡三阶段过场（XRift，Map4 EV205：rift2 看过后下一次进大厅就播）同样占住大厅，一并记成看过
 	return XSave.dir()

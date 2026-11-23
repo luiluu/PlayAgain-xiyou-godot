@@ -29,6 +29,7 @@ func _run() -> void:
 	var kit = Kit.new("xiyou_tianqi_hall")   # 存档、配置都写测试目录，不碰本机设置
 	XConfig.whisper_mark("rift1")   # 大厅漩涡过场（EV76）、二阶段过场当作播过：不占住大厅，退出时也不挂在色调等待上
 	XConfig.whisper_mark("rift2")
+	XConfig.whisper_mark("rift3")   # 漩涡三阶段过场（XRift，Map4 EV205：rift2 看过后下一次进大厅就播）同样占住大厅，一并记成看过
 	_lists()
 	_hidden()
 	_altar()
