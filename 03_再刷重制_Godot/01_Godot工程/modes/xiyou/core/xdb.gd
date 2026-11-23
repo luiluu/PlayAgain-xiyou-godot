@@ -5,6 +5,10 @@ extends RefCounted
 
 const BASE := "res://modes/xiyou/generated/"
 static var _tables := {}
+## T410·西游档：两张乌鸦图纸和学会提示跟配方产物对齐。false 恢复原文。
+static var CROW_BLUEPRINT_NAMES := true
+const CROW_BLUEPRINT_ITEMS := {1761: "五眼乌鸦", 1762: "七眼乌鸦"}
+const CROW_BLUEPRINT_EVENTS := {710: "五眼乌鸦", 711: "七眼乌鸦"}
 ## 解析结果的只读缓存（木吒 2026-10-25）：大 JSON 每个测试场景、每次启动都要重新解析（Skills 23 MB 约 1.2 秒，
 ## slice_d* 150 MB 约 5 秒）。按文件内容 SHA-256 与引擎版本作键，把 JSON.parse_string 的结果 var_to_bytes 后 zstd 压缩存起来，
 ## 命中时 bytes_to_var 还原（同一份 Variant，回归 xiyou_json_cache 逐字节比对）。键只看内容，不看修改时间；缓存坏了就照常解析再重写。
@@ -172,6 +176,17 @@ static func rec(name: String, id: int) -> Dictionary:
 	var out: Dictionary = t[id]
 	if name == "Items" and XTianqiSect.has_item(XState.current, id):
 		out = XTianqiSect.item_rec(id, out)  # 天启篇教派连带内容（包丙）：老钱／小钱的账本
+	if CROW_BLUEPRINT_NAMES:
+		if name == "Items" and CROW_BLUEPRINT_ITEMS.has(id) and not XTianqi.active(XState.current):
+			out = out.duplicate()
+			out.name = "配方:" + CROW_BLUEPRINT_ITEMS[id]
+		elif name == "CommonEvents" and CROW_BLUEPRINT_EVENTS.has(id) and not XTianqi.active(XState.current):
+			var original_name := str(out.name)
+			out = out.duplicate(true)
+			out.name = CROW_BLUEPRINT_EVENTS[id]
+			for command in out.list:
+				if int(command.code) == 355 and str(command.parameters[0]).begins_with("$.toaster("):
+					command.parameters[0] = str(command.parameters[0]).replace(original_name, out.name)
 	if name == "Troops" and XTianqiSect.has_troop(XState.current, id):
 		out = XTianqiSect.troop_rec(id, out)  # 天启篇教派连带内容（包丙）：讨债战敌群 747／766
 	if name == "Enemies" and XGuardianRework.strip_touches(id):
