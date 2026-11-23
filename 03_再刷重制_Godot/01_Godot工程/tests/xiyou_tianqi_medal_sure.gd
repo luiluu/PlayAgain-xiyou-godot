@@ -221,5 +221,5 @@ func _shrine_famine() -> void:
 	# 非必掉的 <Enemy Drops> 小概率行（铁马 831 的 1001 配方 0.1%）不算
 	_check("extra_low_rate_not_sure", not XTianqiDrop._sure_medal_key("831:1:1001"))
 	# 已有的三样与奖碑在荒年下同样命中（dropItems 路径）
-	for spec in [[747, 1958], [766, 1961], [833, 1001], [6, 9]]:
+	for spec in [[871, 1958], [892, 1961], [983, 1001], [6, 9]]:
 		_check("famine_sure_%d" % spec[1], XTianqiDrop._sure_medal_key("%d:1:%d" % spec), spec)
