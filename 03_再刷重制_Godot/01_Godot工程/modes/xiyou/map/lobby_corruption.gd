@@ -21,17 +21,17 @@ static var STAGE3_GROUND := true          # 3.1 褪色 10 格、裂纹成片、�
 static var STAGE3_FOUR_COLORS := true     # 3.2 主厅四角四线渗色与 50 粒光尘
 static var STAGE3_WALL_VEINS := true      # 3.3 塔门与墙面蚀骨纹
 static var STAGE3_DECAY := true           # 3.8 大厅腐烂破败（家具朽坏、盆栽枯死、墙角地缝霉斑、灯光变暗闪烁；Kyo 11-23）
-static var STAGE3_BGM_DETUNE := true      # 3.4 BGM 近距微变调（拆卡 2 挂接）
-static var STAGE3_BGM_DROP := true        # 3.4 BGM 偶发安全掉拍（拆卡 2 挂接）
-static var STAGE3_HUM_DEEP := true        # 3.4 低鸣外扩至 12 格（拆卡 2 挂接）
-static var STAGE3_WHISPER := true         # 3.4 低鸣偶发远处低语（拆卡 2 挂接）
+static var STAGE3_BGM_DETUNE := true      # 3.4 BGM 近距微变调
+static var STAGE3_BGM_DROP := true        # 3.4 BGM 偶发安全掉拍
+static var STAGE3_HUM_DEEP := true        # 3.4 低鸣外扩至 12 格
+static var STAGE3_WHISPER := true         # 3.4 低鸣偶发远处低语
 static var STAGE3_NPC_FX := true          # 3.5 玩家 5 格染紫、圈内 NPC 浅染/微偏/重影、气泡扩充
 static var STAGE3_NPC_LINES := true       # 3.5 5 位 NPC 三阶追加句
 static var STAGE3_MIRROR := true          # 3.6 A 镜子三阶升级句＋镜面剪影
 static var STAGE3_STUMP := true           # 3.6 B 练功木桩错向影＋追加句
 static var STAGE3_INVESTIGATIONS := true  # 3.7 A 裂纹三段＋新调查点
-static var STAGE3_NAME_GLITCH := true     # 3.7 B 地图名牌偶发闪字（拆卡 2 挂接）
-static var STAGE3_AMBIENT := true         # 3.7 C 三阶新小字与频次微调（拆卡 2 挂接）
+static var STAGE3_NAME_GLITCH := true     # 3.7 B 地图名牌偶发闪字
+static var STAGE3_AMBIENT := true         # 3.7 C 三阶新小字与频次微调
 ## 测试用：> 0 时直接当作这个阶段
 static var STAGE_OVERRIDE := 0
 ## 没有 XRift（漩涡二阶段还没合进来）时的阶段：本次整包定 2
@@ -65,6 +65,7 @@ static var DECAY_FURNITURE_TEX := "res://content/lobby/decay_furniture_stage3.pn
 static var DECAY_PLANT_TEX := "res://content/lobby/decay_plant_stage3.png"
 static var DECAY_MOLD_TEX := "res://content/lobby/decay_mold_stage3.png"
 static var DECAY_LAMP_TEX := "res://content/lobby/decay_lamp_stage3.png"
+static var WHISPER_AUDIO := "res://content/lobby/rift_whisper_stage3.ogg"
 
 ## 原事件跑完后追加的一句：事件号 → [脸图, 脸号, 名字, 文字]（名字空＝旁白）
 const AFTER_LINES := {
@@ -113,10 +114,41 @@ const AMBIENT_LINES := ["地面轻轻震了一下。", "远处有水声。大厅
 const AMBIENT_CHANCE := 0.2
 const AMBIENT_GAP_MS := 10 * 60 * 1000
 const AMBIENT_SECONDS := 2.5
+const STAGE3_AMBIENT_LINES := [
+	"墙角的光，好像比上次亮了一点。", "刚才好像漏了一拍。", "高塔门那边，有风往里灌。",
+	"有块地砖浮起来，没再落回去。", "有张熟面孔，刚才差点没认出来。"]
+const STAGE3_AMBIENT_CHANCE := 0.25
+const STAGE3_AMBIENT_GAP_MS := 8 * 60 * 1000
+const NAME_GLITCH_LINES := ["方桌……", "方桌？厅", "无人大厅", "空桌大厅", "方桌旧厅"]
+const NAME_GLITCH_GAP_MS := 5 * 60 * 1000
+const NAME_GLITCH_CHANCE := 0.25
+const NAME_GLITCH_DELAY := 1.1
+const NAME_GLITCH_SECONDS := 0.28
 const MAX_MOTES := 28
 const HUM_FAR := 9.0
 const HUM_NEAR := 2.0
 const HUM_MAX := 0.3
+const HUM_PITCH := 0.70
+const STAGE3_HUM_FAR := 12.0
+const STAGE3_HUM_MAX := 0.36
+const STAGE3_HUM_PITCH := 0.66
+const STAGE3_BGM_TRACK := "TCLH-60"
+const DETUNE_MIN_PITCH := 0.96
+const DETUNE_NEAR := 2.0
+const DETUNE_FAR := 5.0
+const DETUNE_SECONDS := 0.8
+const DROP_WARMUP := 15.0
+const DROP_INTERVAL := Vector2(35.0, 65.0)
+const DROP_RAMP := 0.10
+const DROP_HOLD := 0.15
+const DROP_DURATION := 2.0 * DROP_RAMP + DROP_HOLD
+const DROP_GAIN := 0.15
+const DROP_PITCH := 0.06
+const WHISPER_INTERVAL := Vector2(75.0, 110.0)
+const WHISPER_RADIUS := 10.0
+const WHISPER_GAIN := 0.15
+const WHISPER_DURATION := 1.5
+const WHISPER_FADE := 0.20
 
 ## 三阶「蚀骨」视觉常量（数值避开 4；客观坐标与既有名称除外）
 const STAGE3_RADIUS := 10.0
@@ -195,6 +227,8 @@ const STAGE3_DECAY_LAMPS := [
 static var _rift_script: Variant = false   # false 未查；null 没有 XRift；否则脚本
 static var _ambient_last_ms := -AMBIENT_GAP_MS
 static var _ambient_index := 0
+static var _name_glitch_last_ms := -NAME_GLITCH_GAP_MS
+static var _name_glitch_index := 0
 ## 天启篇会话内去重（T415：不写存档 _remakeLobbyCorruption／maxStage，也不改 flags.tianqi；按 XState 实例 ID 隔离）
 static var _tq_said_session := {}
 static var _tq_crack_session := {}
@@ -248,6 +282,17 @@ var _thud: AudioStreamPlayer
 var _next_drip := 0.0
 var _next_bubble := 0.0
 var _ambient: Label
+var _ambient_is_stage3 := false
+var _atmosphere_rng := RandomNumberGenerator.new()
+var _detune_pitch := 1.0
+var _bgm_drop_in := 0.0
+var _bgm_drop_elapsed := -1.0
+var _bgm_base_db := 0.0
+var _whisper: AudioStreamPlayer2D
+var _whisper_in := 0.0
+var _whisper_elapsed := 0.0
+var name_glitch_text := ""
+var _name_glitch_plate: CanvasItem
 var _tinted: Array = []
 var _s3_npc_fx := false
 var _s3_npc_lines := false
@@ -361,6 +406,10 @@ func setup(map: XMapScene) -> void:
 		var r := record(s)
 		r["maxStage"] = maxi(int(r.get("maxStage", 1)), stage())
 	_s3 = stage3_active(s)
+	if _s3:
+		_atmosphere_rng.randomize()
+		_bgm_drop_in = DROP_WARMUP + _atmosphere_rng.randf_range(DROP_INTERVAL.x, DROP_INTERVAL.y)
+		_whisper_in = _atmosphere_rng.randf_range(WHISPER_INTERVAL.x, WHISPER_INTERVAL.y)
 	# 这五个子开关随地图初始化，演出中途不重挂节点。
 	_s3_npc_fx = _s3 and STAGE3_NPC_FX
 	_s3_npc_lines = _s3 and STAGE3_NPC_LINES
@@ -395,6 +444,7 @@ func setup(map: XMapScene) -> void:
 
 
 func _exit_tree() -> void:
+	suspend_stage3_audio()
 	for instance_id in _npc_fx.keys():
 		_clear_npc_fx(instance_id)
 	if is_instance_valid(_stump_shadow) and not _stump_shadow.is_queued_for_deletion():
@@ -1495,7 +1545,7 @@ func _build_audio() -> void:
 			st = st.duplicate()
 			st.loop = true
 		_hum.stream = st
-	_hum.pitch_scale = 0.7
+	_hum.pitch_scale = HUM_PITCH
 	_hum.volume_db = -80.0
 	add_child(_hum)
 	_drip = AudioStreamPlayer2D.new()
@@ -1519,12 +1569,22 @@ func _build_audio() -> void:
 		host.screen_shaken.connect(_on_shake)
 
 
-## 漩涡低鸣的音量（线性，0～HUM_MAX）：9 格外 0，2 格内最大；漩涡过场、战斗中让路
+func _stage3_atmosphere() -> bool:
+	return ENABLED and stage3_on() and host.map_id == MAP_ID
+
+
+func _distance_to_center() -> float:
+	return host.player.real.distance_to(Vector2(CENTER))
+
+
+## 漩涡低鸣的线性音量：二阶 9 格、三阶 12 格，战斗和漩涡过场暂停。
 func hum_level() -> float:
-	if host.player == null or host._in_battle or rift_event_running():
+	var deep := _stage3_atmosphere() and STAGE3_HUM_DEEP
+	if host.player == null or host._in_battle or (deep and host.bgm.stream_paused) or rift_event_running():
 		return 0.0
-	var d := (host.player.real + Vector2(0.5, 0.5)).distance_to(Vector2(CENTER) + Vector2(0.5, 0.5))
-	return HUM_MAX * clampf((HUM_FAR - d) / (HUM_FAR - HUM_NEAR), 0.0, 1.0)
+	var far := STAGE3_HUM_FAR if deep else HUM_FAR
+	var peak := STAGE3_HUM_MAX if deep else HUM_MAX
+	return peak * clampf((far - _distance_to_center()) / (far - HUM_NEAR), 0.0, 1.0)
 
 
 func rift_event_running() -> bool:
@@ -1537,8 +1597,13 @@ func rift_event_running() -> bool:
 
 
 func _update_audio(dt: float) -> void:
+	if _s3:
+		var seconds := XSpeedGear.real_seconds(dt)
+		_update_stage3_bgm(seconds)
+		_update_whisper(seconds)
 	var lv := hum_level()
 	if _hum.stream != null:
+		_hum.pitch_scale = STAGE3_HUM_PITCH if _stage3_atmosphere() and STAGE3_HUM_DEEP else HUM_PITCH
 		if lv <= 0.001:
 			if _hum.playing:
 				_hum.stop()
@@ -1552,6 +1617,128 @@ func _update_audio(dt: float) -> void:
 		if _drip.stream != null and not host._in_battle and not rift_event_running():
 			_drip.play(rng.randf_range(0.0, maxf(0.0, _drip.stream.get_length() - 1.0)))
 			get_tree().create_timer(0.6).timeout.connect(_stop_drip)
+
+
+func _stage3_audio_quiet() -> bool:
+	return quiet() and (host.message == null or not host.message.is_busy())
+
+
+func _update_stage3_bgm(dt: float) -> void:
+	_bgm_drop_in -= dt
+	var due := _bgm_drop_in <= 0.0
+	if due:
+		_bgm_drop_in = _atmosphere_rng.randf_range(DROP_INTERVAL.x, DROP_INTERVAL.y)
+	var bgm := host.bgm
+	if not _stage3_atmosphere() or host.player == null or host._bgm_name != STAGE3_BGM_TRACK \
+			or not bgm.playing or bgm.stream_paused or host._in_battle or rift_event_running() \
+			or host._menu_open or host.transfer_page != null or host.scene_page_open():
+		reset_stage3_bgm()
+		return
+
+	var was_detuned := _detune_pitch != 1.0
+	if STAGE3_BGM_DETUNE:
+		var proximity := 1.0 - clampf(inverse_lerp(DETUNE_NEAR, DETUNE_FAR, _distance_to_center()), 0.0, 1.0)
+		var target := lerpf(1.0, DETUNE_MIN_PITCH, proximity)
+		_detune_pitch = move_toward(_detune_pitch, target, (1.0 - DETUNE_MIN_PITCH) / DETUNE_SECONDS * dt)
+	else:
+		_detune_pitch = 1.0
+
+	var was_dropping := _bgm_drop_elapsed >= 0.0
+	if due or was_dropping:
+		var fading := _bgm_fading(bgm)
+		var bus := AudioServer.get_bus_index(bgm.bus)
+		var allowed := STAGE3_BGM_DROP and not fading and _stage3_audio_quiet() \
+				and bgm.volume_db > -80.0 and not AudioServer.is_bus_mute(bus)
+		if was_dropping:
+			_bgm_drop_elapsed += dt
+			if not allowed or _bgm_drop_elapsed >= DROP_DURATION:
+				_restore_drop_gain(bgm, fading)
+		elif allowed:
+			_bgm_base_db = bgm.volume_db
+			_bgm_drop_elapsed = 0.0
+
+	if _bgm_drop_elapsed >= 0.0:
+		var down := clampf(_bgm_drop_elapsed / DROP_RAMP, 0.0, 1.0)
+		var up := clampf((_bgm_drop_elapsed - DROP_RAMP - DROP_HOLD) / DROP_RAMP, 0.0, 1.0)
+		bgm.volume_db = _bgm_base_db + linear_to_db(lerpf(1.0, DROP_GAIN, down - up))
+		bgm.pitch_scale = _detune_pitch - DROP_PITCH * (1.0 - up)
+	elif was_detuned or was_dropping or _detune_pitch != 1.0:
+		bgm.pitch_scale = _detune_pitch
+
+
+func _bgm_fading(bgm: AudioStreamPlayer) -> bool:
+	var fade = bgm.get_meta("fade_tween") if bgm.has_meta("fade_tween") else null
+	return fade is Tween and fade.is_valid()
+
+
+func _restore_drop_gain(bgm: AudioStreamPlayer, fading: bool) -> void:
+	_bgm_drop_elapsed = -1.0
+	# XAudio 先接管时，其 tween 独占播放器音量。
+	if not fading:
+		bgm.volume_db = _bgm_base_db
+
+
+## 播曲、淡入、切图或过场接管播放器之前，先撤掉大厅的修饰。
+func reset_stage3_bgm() -> void:
+	if _detune_pitch == 1.0 and _bgm_drop_elapsed < 0.0:
+		return
+	if is_instance_valid(host) and is_instance_valid(host.bgm):
+		var bgm := host.bgm
+		if _bgm_drop_elapsed >= 0.0:
+			_restore_drop_gain(bgm, _bgm_fading(bgm))
+		bgm.pitch_scale = 1.0
+	_detune_pitch = 1.0
+	_bgm_drop_elapsed = -1.0
+
+
+func suspend_stage3_audio() -> void:
+	reset_stage3_bgm()
+	if is_instance_valid(_whisper):
+		_whisper.stop()
+
+
+func _build_whisper() -> void:
+	_whisper = AudioStreamPlayer2D.new()
+	_whisper.bus = XAudio.bus("BGS")
+	_whisper.position = cell_px(CENTER)
+	_whisper.max_distance = 960.0
+	if WHISPER_AUDIO != "" and ResourceLoader.exists(WHISPER_AUDIO):
+		_whisper.stream = load(WHISPER_AUDIO) as AudioStream
+	if _whisper.stream == null:
+		var path := XDB.audio_path("se", "Wind5")
+		if path != "":
+			_whisper.stream = load(path)
+		_whisper.pitch_scale = 0.58
+	add_child(_whisper)
+
+
+func _update_whisper(dt: float) -> void:
+	_whisper_in -= dt
+	var due := _whisper_in <= 0.0
+	if due:
+		_whisper_in = _atmosphere_rng.randf_range(WHISPER_INTERVAL.x, WHISPER_INTERVAL.y)
+	var playing := is_instance_valid(_whisper) and _whisper.playing
+	if not due and not playing:
+		return
+	if not (_stage3_atmosphere() and STAGE3_WHISPER and host.player != null \
+			and not host.bgm.stream_paused and _stage3_audio_quiet() and _distance_to_center() <= WHISPER_RADIUS):
+		if playing:
+			_whisper.stop()
+		return
+	if due and not playing:
+		if _whisper == null:
+			_build_whisper()
+		if _whisper.stream != null:
+			_whisper_elapsed = 0.0
+			_whisper.volume_db = -80.0
+			_whisper.play()
+		return
+	_whisper_elapsed += dt
+	if _whisper_elapsed >= WHISPER_DURATION:
+		_whisper.stop()
+	else:
+		var envelope := minf(_whisper_elapsed, WHISPER_DURATION - _whisper_elapsed) / WHISPER_FADE
+		_whisper.volume_db = linear_to_db(maxf(0.0001, WHISPER_GAIN * clampf(envelope, 0.0, 1.0)))
 
 
 func _stop_drip() -> void:
@@ -1794,22 +1981,66 @@ func quiet() -> bool:
 
 # ---- 氛围小字 ----
 
-func _maybe_ambient() -> void:
-	if not fx_on() or Time.get_ticks_msec() - _ambient_last_ms < AMBIENT_GAP_MS:
+func name_glitch_enabled() -> bool:
+	return _stage3_atmosphere() and STAGE3_NAME_GLITCH and fx_on()
+
+
+func roll_name_glitch(text: String) -> bool:
+	return text == "方桌大厅" and name_glitch_enabled() \
+		and Time.get_ticks_msec() - _name_glitch_last_ms >= NAME_GLITCH_GAP_MS \
+		and _atmosphere_rng.randf() < NAME_GLITCH_CHANCE
+
+
+func start_name_glitch(plate: CanvasItem) -> void:
+	if not name_glitch_enabled():
 		return
-	if rng.randf() >= AMBIENT_CHANCE:
+	_name_glitch_last_ms = Time.get_ticks_msec()
+	name_glitch_text = NAME_GLITCH_LINES[_name_glitch_index % NAME_GLITCH_LINES.size()]
+	_name_glitch_index += 1
+	_name_glitch_plate = plate
+	plate.queue_redraw()
+
+
+func clear_name_glitch() -> void:
+	name_glitch_text = ""
+	if is_instance_valid(_name_glitch_plate):
+		_name_glitch_plate.queue_redraw()
+	_name_glitch_plate = null
+
+
+func _stage3_ambient() -> bool:
+	return _stage3_atmosphere() and STAGE3_AMBIENT
+
+
+func ambient_gap_ms() -> int:
+	return STAGE3_AMBIENT_GAP_MS if _stage3_ambient() else AMBIENT_GAP_MS
+
+
+func ambient_chance() -> float:
+	return STAGE3_AMBIENT_CHANCE if _stage3_ambient() else AMBIENT_CHANCE
+
+
+func _maybe_ambient() -> void:
+	if not fx_on() or Time.get_ticks_msec() - _ambient_last_ms < ambient_gap_ms():
+		return
+	var roll := (_atmosphere_rng if _stage3_ambient() else rng).randf()
+	if roll >= ambient_chance():
 		return
 	await get_tree().create_timer(1.5).timeout
-	if not is_inside_tree() or not quiet():
+	if not is_inside_tree() or is_queued_for_deletion() or not fx_on() or not quiet() \
+			or Time.get_ticks_msec() - _ambient_last_ms < ambient_gap_ms() or roll >= ambient_chance():
 		return
 	show_ambient()
 
 
 func show_ambient() -> Label:
 	_ambient_last_ms = Time.get_ticks_msec()
-	var text: String = AMBIENT_LINES[_ambient_index % AMBIENT_LINES.size()]
+	_ambient_is_stage3 = _stage3_ambient()
+	var pool := AMBIENT_LINES + STAGE3_AMBIENT_LINES if _ambient_is_stage3 else AMBIENT_LINES
+	var text: String = pool[_ambient_index % pool.size()]
 	_ambient_index += 1
 	if is_instance_valid(_ambient):
+		_ambient.hide()
 		_ambient.queue_free()
 	_ambient = Label.new()
 	_ambient.text = text
@@ -1837,6 +2068,12 @@ func show_ambient() -> Label:
 func _process(dt: float) -> void:
 	if host == null or not is_instance_valid(host):
 		return
+	if name_glitch_text != "" and not name_glitch_enabled():
+		clear_name_glitch()
+	if is_instance_valid(_ambient) and (not fx_on() or (_ambient_is_stage3 and not _stage3_ambient())):
+		_ambient.hide()
+		_ambient.queue_free()
+		_ambient = null
 	_t += dt
 	var s3g := _s3_ground()
 	var crack_period := STAGE3_CRACK_BREATH if s3g else 6.0
