@@ -476,7 +476,7 @@ func _render_gear_skin() -> void:
 	for i in fields.size():
 		var f: Control = fields[i]
 		var lab: Label = f.get_child(0)
-		var opt: OptionButton = f.get_child(1)
+		var opt: Button = f.get_child(1)
 		lab.size.x = 80
 		lab.position = Vector2(0, (SK_ROW_H - lab.size.y) / 2.0)
 		opt.position = Vector2(80, 0)

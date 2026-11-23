@@ -254,15 +254,25 @@ func _resume_pad(pad: XTouchControls, ok_center: Vector2, hide_center: Vector2) 
 	check("resume_restores_controls", (pad._buttons.ok as Panel).is_visible_in_tree() and (pad._buttons.hide as Panel).is_visible_in_tree()
 		and pad.hit(ok_center) == "ok" and pad.hit(hide_center) == "hide")
 	touch(0, ok_center, false)
+	pad.set_hidden(true)
+	pad.root.hide()
+	pad.notification(NOTIFICATION_APPLICATION_RESUMED)
+	await frames(2)
+	var other_buttons_hidden := pad._buttons.keys().all(func(key):
+		return key == "hide" or not (pad._buttons[key] as Panel).is_visible_in_tree())
+	check("resume_preserves_user_hidden", entries.size() == 2 and pad.hidden and other_buttons_hidden
+		and not pad._stick_base.is_visible_in_tree() and not pad._ghost_base.is_visible_in_tree()
+		and (pad._buttons.hide as Panel).is_visible_in_tree() and pad.hit(ok_center) == "" and pad.hit(hide_center) == "hide")
+	pad.set_hidden(false)
 	XState.current.flags.tianqi = {"rules": 1}
 	pad.notification(NOTIFICATION_APPLICATION_RESUMED)
 	await frames(2)
-	check("resume_tianqi_unchanged", entries.size() == 1, entries.size())
+	check("resume_tianqi_unchanged", entries.size() == 2, entries.size())
 	XState.current.flags.erase("tianqi")
 	XTouchControls.XIYOU_REATTACH_ON_RESUME = false
 	pad.notification(NOTIFICATION_APPLICATION_RESUMED)
 	await frames(2)
-	check("resume_rollback", entries.size() == 1, entries.size())
+	check("resume_rollback", entries.size() == 2, entries.size())
 	XTouchControls.XIYOU_REATTACH_ON_RESUME = true
 	XState.current = previous
 
