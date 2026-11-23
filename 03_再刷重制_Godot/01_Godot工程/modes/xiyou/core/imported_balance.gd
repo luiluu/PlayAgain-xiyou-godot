@@ -51,9 +51,8 @@ const XUFENG_HORN := 359
 ## Kyo 11-23 定先做漩涡三阶段（T412：看完二阶后下一次进大厅播三阶，徐凤年从天而降），看过 rift3 才上架；没看过的新档买不到。已有 359 号角或 152 已在队伍／仓库的老档不受影响（始终上架）。
 ## XUFENG_HORN_GATE = false 回到「解放即上架」。
 static var XUFENG_HORN_GATE := true
-## 天启篇候选池（抽阵容）放不放 152：天启篇技能卡还没给徐凤年写（skill_rework.json 0 条，T204 K_SKIP no_damage_row），
-## 先不放；技能卡接线、量数过线后改 true。只管天启篇抽阵容（XTianqi._disabled），西游档不看它。
-static var XUFENG_TIANQI := false
+## 天启篇候选池（抽阵容）放不放 152：T411 技能卡 v0.3 已接线且 K 探针 3 种子过线（1.21×狂刀），打开进候选池；false＝回退为不放。只管天启篇抽阵容（XTianqi._disabled），西游档不看它。
+static var XUFENG_TIANQI := true
 
 
 ## 漩涡三阶段过场看过没有（T412 交出的 CodexWhisper 键 rift3，记在配置 codexWhisperSeen，全存档共用，同 rift2）

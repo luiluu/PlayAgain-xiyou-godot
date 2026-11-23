@@ -72,11 +72,11 @@ func _run() -> void:
 	check("book", XActorBook.index_ids().has(152))
 	check("baby", not XBabyAllActors.excluded(152) and XBabyAllActors.excluded(141))
 	check("migrate.keeps", not XImportedBalance.migrate_party(s) and s.party.has(152))
-	# 天启篇候选池：技能卡没接线前不放 152；开关开着才进超强者池
-	check("tianqi.pool_blocked", XTianqi._disabled(152) and not XTianqi._disabled(122))
-	XImportedBalance.XUFENG_TIANQI = true
-	check("tianqi.pool_on", not XTianqi._disabled(152))
+	# 天启篇候选池：T411 技能卡接线量数过线后默认打开（进超强者池）；关掉可回退
+	check("tianqi.pool_on", not XTianqi._disabled(152) and not XTianqi._disabled(122))
 	XImportedBalance.XUFENG_TIANQI = false
+	check("tianqi.pool_blocked", XTianqi._disabled(152))
+	XImportedBalance.XUFENG_TIANQI = true
 	# 改版向导那句：两人都解放 → 两个名字都不在；各自关掉各自回来
 	var line := _guide_line()
 	check("guide.both", line.contains("花橙、落芸、胡桃") and not line.contains("苍龙破晓") and not line.contains("徐凤年"), line)

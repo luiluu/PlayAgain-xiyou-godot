@@ -847,7 +847,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 		var sk_best := {}
 		for n in hits:
 			_pin_def(e)
-			e.hp = e.mhp * (0.3 if _has_trumpet(a) else 1.0)  # 二号血海：目标生命低于 33% 时 +50%（条件全中）
+			e.hp = e.mhp * _target_hp_rate(a, sk)  # 二号血海（<33%）／斩杀条件（target_hp_below，T411 剑九压到 30% 以下）
 			a.hp = a.mhp
 			a.mp = a.mmp
 			a.tp = a.max_tp()
@@ -872,7 +872,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 					if not ops.is_empty():
 						print("K_DEBUG trace %s %s" % [t.get("module", t.get("id", "?")), JSON.stringify(ops)])
 			var r: Dictionary = logic.apply(a, sk, e)
-			var dealt := float(r.get("shown", {}).get("hp", r.get("hp", 0.0)))  # 跳出来的那一个数（木桩生命有上限，不能用掉血量）
+			var dealt := float(r.get("shown", {}).get("hp", r.get("hp", 0.0))) + float(r.get("hit_extra", 0.0))  # 跳出来的那一个数＋T411 命中追加伤害（hit_extra，不影响奈叶／空间空蚀）
 			XStateEffects.force_critical = false
 			XSukuna.cast = {}
 			XSukuna.term_seg = 0
@@ -923,7 +923,7 @@ func _cast_ratio(s: XState, a, sk: Dictionary) -> Dictionary:
 		e.add_param(0, 1.0e9)
 		e.param_mark_dirty()
 		_pin_def(e)
-		e.hp = e.mhp * (0.3 if _has_trumpet(a) else 1.0)
+		e.hp = e.mhp * _target_hp_rate(a, sk)
 		a.hp = a.mhp
 		a.mp = a.mmp
 		a.tp = a.max_tp()
@@ -959,7 +959,7 @@ static func _collect_hits(logs, e, out: Array) -> void:
 			_collect_hits(x, e, out)
 		elif x is Dictionary:
 			if str(x.get("type", "")) == "hit" and is_same(x.get("target"), e) and not bool(x.get("reflected", false)):
-				var v := float(x.get("shown", {}).get("hp", 0.0))
+				var v := float(x.get("shown", {}).get("hp", 0.0)) + float(x.get("hit_extra", 0.0))
 				if v > 0.0:
 					out.append(v)
 					if _debug_cast:
@@ -1140,6 +1140,18 @@ func _has_trumpet(a) -> bool:
 	return not bare and XTianqiTrumpet.has(a, trumpet_n)
 
 
+## T411：木桩起始生命比例——有二号血海压到 30%，若本招带 target_hp_below（如剑九 <30% 斩杀翻倍）再压到阈值以下（th - 1%），保证整招各段条件全中
+func _target_hp_rate(a, sk: Dictionary) -> float:
+	var rate := 0.3 if _has_trumpet(a) else 1.0
+	var sp := XTianqiSkills.spec(int(sk.get("id", 0)))
+	for c in sp.get("damage", {}).get("conds", []):
+		if str(c.get("if", "")) == "target_hp_below":
+			var th := XTianqiSkills._rate(a, c)
+			if th > 0.0:
+				rate = minf(rate, maxf(0.01, th - 0.01))
+	return rate
+
+
 ## 每一下之前：行动帧（XBattleLogic 出手时才建，探针直接 apply 要自己建）。砝码攒满 5 层、上一回合防御过、本回合第一次出手；词条先声每下都算第一下
 func _prime(logic, a, e, sk: Dictionary) -> void:
 	var sid := int(sk.get("id", 0))
@@ -1177,7 +1189,7 @@ func _probe_value(a, e, logic, sk: Dictionary) -> float:
 	a.param_mark_dirty()
 	a.refresh_passive()
 	_pin_def(e)
-	e.hp = e.mhp * (0.3 if _has_trumpet(a) else 1.0)
+	e.hp = e.mhp * _target_hp_rate(a, sk)
 	a.hp = a.mhp  # T258（稿第四节第 4 条）：试词条前回满生命、魔法、TP（试「最大魔法 +12%」时上限变大而当前魔法没跟上，大招按耗掉的比例算会被错扣，魔法词条被低估）
 	a.mp = a.mmp
 	a.tp = a.max_tp()

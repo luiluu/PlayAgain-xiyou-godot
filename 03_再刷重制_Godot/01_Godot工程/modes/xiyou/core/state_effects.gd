@@ -7,7 +7,7 @@ extends RefCounted
 const BATTLER_PHASES := ["battle", "turn_start", "turn_end", "regenerate", "action_start", "victory", "escape", "defeat"]
 const ACTION_PHASES := ["initiate", "select", "deselect", "conclude", "confirm", "react", "respond", "establish"]
 ## 原来分散在 damage.gd 与 battle_logic.gd 的两个 op，统一在本类执行。
-const SUPPORTED_OPS := ["mul", "user_param_damage", "value_steps", "value_program", "value_query", "gain_resource", "param_add",
+const SUPPORTED_OPS := ["mul", "user_param_damage", "hit_extra_pct", "value_steps", "value_program", "value_query", "gain_resource", "param_add",
 	"poison_stack", "poison_tick", "add_state", "gain_steps", "set_variable", "syntax_error", "counter_init", "counter_set",
 	"reserve_common_event", "noop", "revive", "effect_program", "costume_image", "costume_restore", "costume_form_remove"]
 ## 冻结版不触发的 phase：数据里有块但运行时从不调用
@@ -453,6 +453,16 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 					ctx.resources.gain(c.target, "hp", -amount)
 					r.extra = r.get("extra", []) + [amount]
 					r.record_hp = float(r.get("record_hp", 0.0)) + floorf(amount)
+		elif op == "hit_extra_pct" and execute and ctx.get("resources") != null and XTianqiSkills.HIT_EXTRA_ON:
+			var r2: Dictionary = ctx.record
+			var base_dmg := float(r2.get("hp", 0.0))
+			if base_dmg > 0.0 and c.target != c.user and int(c.item.get("damage", {}).get("type", 0)) in [1, 3, 5]:
+				var amount2 := floorf(base_dmg * float(e.pct) / 100.0)
+				if amount2 > 0.0:
+					ctx.resources.gain(c.target, "hp", -amount2)
+					r2.extra = r2.get("extra", []) + [amount2]
+					r2.hit_extra = float(r2.get("hit_extra", 0.0)) + amount2
+					r2.record_hp = float(r2.get("record_hp", 0.0)) + floorf(amount2)
 		elif not SUPPORTED_OPS.has(op):
 			if ctx.has("untranslated"):
 				ctx.untranslated.append({"state": int(st.id), "phase": phase})
