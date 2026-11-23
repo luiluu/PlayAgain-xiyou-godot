@@ -66,6 +66,8 @@ class GuardianPhase4Rules(unittest.TestCase):
         self.assertTrue(chk.guardian_phase4_rules({'dot_pct': {'35': {'177': 15}}}))   # 层号越界
         self.assertTrue(chk.guardian_phase4_rules({'dot_pct': {'22': {'x': 15}}}))
         self.assertTrue(chk.guardian_phase4_rules({'dot_pct': {'22': {}}}))
+        self.assertTrue(chk.guardian_phase4_rules({'dot_pct': []}))   # T402 P2-1：非字典不崩（报错串 %% 转义）
+        self.assertTrue(chk.guardian_phase4_rules({'dot_pct': 'bad'}))
 
     def test_bad_tables(self):
         self.assertTrue(chk.guardian_phase4_rules({'hp_base': {'35': 1}}))

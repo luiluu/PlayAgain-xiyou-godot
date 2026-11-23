@@ -208,7 +208,7 @@ def guardian_phase4_rules(g) -> list:
     if dp is not None:   # T402：{层号: {状态号: 正整数%}}，层号 1～34、状态号正整数、值 1～100 整数（附则 E）
         isint = lambda v: isinstance(v, int) and not isinstance(v, bool)
         if not isinstance(dp, dict):
-            bad.append('guardian_phase4.dot_pct＝%r：要 {层号: {状态号: 整数%}}' % (dp,))
+            bad.append('guardian_phase4.dot_pct＝%r：要 {层号: {状态号: 整数%%}}' % (dp,))
         else:
             for f, row in dp.items():
                 if str(f).startswith('_'):
