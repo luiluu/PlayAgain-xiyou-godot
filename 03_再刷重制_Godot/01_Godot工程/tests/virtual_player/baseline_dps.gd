@@ -160,6 +160,8 @@ func _ready() -> void:
 			XTianqiNoX6.GUARDIAN_HEAL = false   # 守层者回血只缩 1/6、不乘重算缩放比（O-469 关）
 		elif a == "--dot-pct=off":
 			XGuardianRework.DOT_PCT = false   # T402：守层者按层单列的持续伤害比例关（22 层毒回到 T080 换算），前后对照用
+		elif a == "--boss-neg-hrg-cap=off":
+			XTianqiCombat.BOSS_NEG_HRG_CAP = false   # T405（D273）：守层者／首领回合末负 HP 再生封顶关，前后对照用
 		elif a == "--both":
 			both = true
 		elif a.begins_with("--resist="):
@@ -368,6 +370,7 @@ func _fight(s: XState, troop: int) -> Dictionary:
 	if events:
 		_drain(logic, logic.troop_events())
 	var total := 0.0
+	var end_total := 0.0
 	var done := 0
 	var hp0 := 0.0
 	var trace := []   # --duel：每次行动 [回合, 行动者, 技能, 目标, 敌方各人血量, 我方各人血量]，开关对照找首个分歧点
@@ -405,7 +408,9 @@ func _fight(s: XState, troop: int) -> Dictionary:
 				print("DBG t%d %s skill=%s enemyHp=%s logs=%s" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-",
 					str(logic.enemies.map(func(e): return int(e.hp))), JSON.stringify(logs).left(300)])
 		if not logic.is_over():
+			var hp_before_end := _enemy_hp(logic)
 			logic.end_turn()
+			end_total += maxf(0.0, hp_before_end - _enemy_hp(logic))
 			if events:
 				_drain(logic, logic.troop_events(null, true))   # T239（T229 核 P3-1）：回合末的敌群事件页（残血变身、阶段页等），同战斗画面
 		total += turn_dmg
@@ -413,7 +418,7 @@ func _fight(s: XState, troop: int) -> Dictionary:
 		if logic.is_over():
 			break
 	var alive := logic.actors.filter(func(a): return a.hp > 0).size()
-	return {"trace": trace, "atkScale": _out_scale(logic), "alien": _alien_desc(logic), "dmg": total / maxf(1.0, float(done)), "turns": done, "alive": alive, "won": logic.is_won(), "lost": logic.is_lost(),
+	return {"trace": trace, "atkScale": _out_scale(logic), "alien": _alien_desc(logic), "dmg": total / maxf(1.0, float(done)), "endTurnDmg": end_total / maxf(1.0, float(done)), "turns": done, "alive": alive, "won": logic.is_won(), "lost": logic.is_lost(),
 		"aborted": logic.aborted, "enemyHp": hp0, "enemyAtk": logic.enemies.map(func(e): return int(e.param(2))), "enemyDef": logic.enemies.map(func(e): return [int(e.param(3)), int(e.param(5))]),
 		"partyAtk": logic.actors.map(func(a): return [int(a.param(2)), int(a.param(4))]),
 		"party": logic.actors.map(func(a): return int(a.actor_id)), "members": s.battle_members().map(func(a): return int(a.actor_id)),
@@ -1133,10 +1138,10 @@ func _run_duel_snapshots() -> void:
 			str(per.map(func(r): return int(r.alive))), str(row.atkScale)])
 		if out_path != "":   # T244：每层写一次，长跑被中途停掉也留得下已量的层
 			var fp := FileAccess.open(out_path, FileAccess.WRITE)
-			fp.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "dotPct": XGuardianRework.DOT_PCT, "events": events, "turns": turns, "partial": true, "rows": rows}, "\t"))
+			fp.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "dotPct": XGuardianRework.DOT_PCT, "bossNegHrgCap": XTianqiCombat.BOSS_NEG_HRG_CAP, "events": events, "turns": turns, "partial": true, "rows": rows}, "\t"))
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
-		fh.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "dotPct": XGuardianRework.DOT_PCT, "events": events, "turns": turns, "rows": rows}, "\t"))
+		fh.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "dotPct": XGuardianRework.DOT_PCT, "bossNegHrgCap": XTianqiCombat.BOSS_NEG_HRG_CAP, "events": events, "turns": turns, "rows": rows}, "\t"))
 	print("BASELINE_DONE")
 	get_tree().quit(0)

@@ -2071,6 +2071,9 @@ def combat_rules_phase4_rules(table: dict) -> list:
             # T241（D222 丙）：U 改整数百分比，先填 100＝不打折，标定后约 20～30
             if not isinstance(v, int) or isinstance(v, bool) or not 10 <= v <= 100:
                 bad.append('combat_rules.boss_hp_temp_unit.%s 要是 10～100 的整数百分比（先填 100，标定后约 20～30）：%s' % (kk, v))
+    cap = cr.get('boss_neg_hrg_cap_pct')
+    if cap is not None and (not isinstance(cap, int) or isinstance(cap, bool) or not 1 <= cap <= 100):
+        bad.append('combat_rules.boss_neg_hrg_cap_pct 要是 1～100 的整数百分比：%r' % (cap,))
     return bad
 
 

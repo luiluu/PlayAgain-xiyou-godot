@@ -159,6 +159,31 @@ static func regen_unscaled() -> bool:
 	return DOT_NO_WAREHOUSE and on()
 
 
+## 开关（T405，D273，Kyo 11-23）：true＝天启篇守层者与首领（普通小怪不封）回合末负 HP 再生（灼伤、中毒、湮灭等）
+## 合计每回合最多扣 balance_table.combat_rules.boss_neg_hrg_cap_pct% 最大生命（整数 5＝−5%）；正再生照旧。
+## 随 T332 正负拆算（regen_unscaled）生效；false＝不封顶。西游存档不走这里。
+static var BOSS_NEG_HRG_CAP := true
+
+
+## 这只敌人吃不吃回合末负 HP 再生封顶：守层者（含变身后）、鸿钧、四骑士、七印首领、七首之龙、副本首领返回 true，普通小怪返回 false。
+static func is_neg_hrg_boss(e) -> bool:
+	if not (e is XEnemy):
+		return false
+	var en := e as XEnemy
+	if XTianqiElements.is_boss_enemy(en):
+		return true
+	return str(en.horseman.get("rec", {}).get("_ref", "")) == "dragon"
+
+
+## 守层者／首领回合末负 HP 再生率上限（负数，如 -0.05；不封顶返回 0.0）。
+static func boss_neg_hrg_cap(e) -> float:
+	if not BOSS_NEG_HRG_CAP or not on() or not is_neg_hrg_boss(e):
+		return 0.0
+	var cr = XTianqiBalance.data().get("combat_rules", {})
+	var pct := int(cr.get("boss_neg_hrg_cap_pct", 0)) if cr is Dictionary else 0
+	return -float(pct) / 100.0 if pct > 0 else 0.0
+
+
 ## combat_rules.enemy_xparam_cap 整张表（读不到为空）
 static func xparam_cap_table() -> Dictionary:
 	var t = XTianqiBalance.data().get("combat_rules", {})

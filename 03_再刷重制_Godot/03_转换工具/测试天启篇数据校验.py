@@ -74,6 +74,13 @@ class GuardianPhase4Rules(unittest.TestCase):
         self.assertTrue(chk.guardian_phase4_rules({'atk_scale': {'5': 0}}))
         self.assertTrue(chk.guardian_phase4_rules({'oops': {}}))
 
+    def test_boss_neg_hrg_cap_rules(self):
+        base = {'combat_rules': {'base_damage': 0.13, 'boss_hp_temp_unit': {'crit': 100, 'no_crit': 100}}}
+        self.assertEqual(chk.combat_rules_phase4_rules(base), [])
+        self.assertEqual(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], boss_neg_hrg_cap_pct=5)}), [])
+        for bad_v in (0, -5, 101, 5.5, True, '5', []):
+            self.assertTrue(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], boss_neg_hrg_cap_pct=bad_v)}), repr(bad_v))
+
 
 class RealTables(unittest.TestCase):
     def test_real_tables_pass(self):
