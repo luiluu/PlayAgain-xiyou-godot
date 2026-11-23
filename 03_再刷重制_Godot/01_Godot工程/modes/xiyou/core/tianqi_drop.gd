@@ -30,7 +30,7 @@ extends RefCounted
 ##
 ## T395（Kyo 11-22「首层者只能打一次的啊。所以是必须要掉落」）：35 种奖碑（换楼层奖励用）原表必掉的行在天启篇照旧必掉，
 ##   不乘 0.2、不走递增概率，也不吃「荒年」这类减掉率（roll_signature 按键认出奖碑直接给）。奖碑在哪只怪身上都算（项目经理cc 批 A）。
-##   补（Kyo 11-22「2按推荐 3改」）：只能打一次的天道信物 1958、天道研究日志[典藏版] 1961、配方:究极进化花仙子 1001 同样必掉（SURE_EXTRA）；
+##   补（Kyo 11-22「2按推荐 3改」）：只能打一次的天道信物 1958、天道研究日志[典藏版] 1961、配方:究极进化花仙子 1001 同样必掉（SURE_EXTRA）；T401 再加混沌避难所五件祭祀物 724～728；
 ##   28 层乌尔奇奥拉（敌人 2025，Map145 EV012 能反复打）那一行排除（SURE_EXCLUDE_ENEMIES），照原表 × 0.2。
 ##   `MEDAL_SURE = false` 回到原表 × 0.2。
 ##
@@ -66,8 +66,8 @@ static var _best_rate: Dictionary = {}
 ## 35 种奖碑的道具编号（Items.json 名字以「奖碑」开头的全部；原版只靠敌人掉落拿到，见 T393 交付单）
 const MEDALS := [9, 11, 13, 30, 54, 60, 63, 65, 78, 99, 102, 143, 145, 148, 153, 176, 190, 193, 195, 246, 438,
 	1543, 1544, 1545, 1546, 1547, 1548, 1549, 1550, 1551, 1552, 1553, 1554, 1555, 1556]
-## 奖碑以外、只能打一次的战斗里掉、别处拿不到的必掉道具（T395 清单，Kyo 11-22 定）
-const SURE_EXTRA := [1001, 1958, 1961]
+## 奖碑以外的必掉道具（T395 清单，Kyo 11-22 定）；T401 加混沌避难所五件开门祭祀物 724～728（Kyo 11-22 事项 28「改必掉」，5 只首领能反复打，为的是不用平均 25 场凑一轮）
+const SURE_EXTRA := [1001, 1958, 1961, 724, 725, 726, 727, 728]
 ## 能反复打的敌人：身上的奖碑照原表 × 0.2（乌尔奇奥拉·西法，打赢后有「再次挑战」）
 const SURE_EXCLUDE_ENEMIES := [2025]
 
@@ -231,7 +231,7 @@ static func signature_base(kind: int, id: int, raw: float, enemy_id := -1) -> fl
 	return clampf(raw, float(range_[0]), float(range_[1]))
 
 
-## T395：原表必掉时一定给的奖碑和 SURE_EXTRA 三样（MEDAL_SURE 关掉不认；SURE_EXCLUDE_ENEMIES 身上的不算）
+## T395：原表必掉时一定给的奖碑和 SURE_EXTRA 八样（MEDAL_SURE 关掉不认；SURE_EXCLUDE_ENEMIES 身上的不算）
 static func sure_medal(kind: int, id: int, enemy_id := -1) -> bool:
 	return MEDAL_SURE and kind == 1 and (MEDALS.has(id) or SURE_EXTRA.has(id)) and not SURE_EXCLUDE_ENEMIES.has(enemy_id)
 
@@ -246,6 +246,10 @@ static func _sure_medal_key(key: String) -> bool:
 	var e := XDB.rec("Enemies", int(parts[0]))
 	for d in e.get("dropItems", []):
 		if int(d.get("kind", 0)) == 1 and int(d.get("dataId", 0)) == int(parts[2]) and float(d.get("denominator", 0)) > 0.0 and float(d.denominator) <= 1.0:
+			return true
+	# T401 返修（小A 核 P1-1）：<Enemy Drops>（YEP_ExtraEnemyDrops）里写 100% 的行也算必掉（混沌避难所 724～728 配在这里）
+	for x in XBattleLogic._extra_drops(e):
+		if int(x.kind) == 1 and int(x.id) == int(parts[2]) and float(x.rate) >= 1.0:
 			return true
 	return false
 
