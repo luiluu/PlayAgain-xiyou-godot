@@ -16,6 +16,8 @@ extends RefCounted
 
 static var SHOW := true
 static var FLOOR_TEXT := true
+## T409：西游档按 YEP Enemy State Counter 显示状态的独立计数。
+static var XIYOU_STATE_COUNTER := true
 const ICON_BUFF_START := 32
 const ICON_DEBUFF_START := 48
 const NAME_SIZE := 18          # Olivia Name Font Size
@@ -47,6 +49,8 @@ static func group(b: XBattler) -> Array:
 	var out := []
 	if b == null or not b.is_alive():
 		return out
+	var counters: Dictionary = b.state_data.get("_stateCounter", {}) if XIYOU_STATE_COUNTER and not XTianqi.active(XState.current) else {}
+	var settings := XDB.plugin("YEP_BuffsStatesCore") if not counters.is_empty() else {}
 	for st in b.states():
 		var icon := int(st.get("iconIndex", 0))
 		if icon <= 0:
@@ -57,6 +61,9 @@ static func group(b: XBattler) -> Array:
 			row.turns = XMenu._group(ceilf(float(b.state_turns[id])))
 		if XBattler.FLOOR_STATES.has(id):  # hasStateMoreFloor：带 <Max State Floor> 的状态（canAddedFloor）
 			row.floor = "%d层" % b.state_floor(id)
+		if str(settings.get("Enemy State Counter", "false")) == "true" and counters.has(str(id)):
+			row.counter = _counter_text(counters[str(id)])
+			row.counter_settings = settings
 		out.append(row)
 	for i in range(b.buffs.size()):
 		var lv: int = b.buffs[i]
@@ -64,6 +71,14 @@ static func group(b: XBattler) -> Array:
 			continue
 		out.append({"icon": buff_icon(lv, i), "turns": XMenu._group(ceilf(float(b.buff_turns[i]))), "color": 24 if lv > 0 else 2, "floor": ""})
 	return out
+
+
+static func _counter_text(value: Variant) -> String:
+	if not (value is float or value is int):
+		return str(value)
+	var n := snappedf(absf(float(value)), 0.001)
+	var fractional := String.num(n, 3).get_slice(".", 1).rstrip("0")
+	return ("-" if float(value) < 0.0 else "") + XMenu._group(floorf(n)) + ("." + fractional if not fractional.is_empty() else "")
 
 
 ## 图标中心（窗口内容坐标）
@@ -108,5 +123,9 @@ static func paint(c: XMVCanvas, st: Dictionary, name_width: float, alpha := 1.0)
 	c.icon(int(cur.icon), p.x - 16, p.y - 16, alpha)
 	if str(cur.turns) != "":
 		c.text(str(cur.turns), p.x - 16 - 3, p.y - 16 - 8, 32, "right", XUI.text_color(int(cur.color)), 16, 36, alpha)
+	if cur.has("counter"):
+		var s: Dictionary = cur.counter_settings
+		c.text(cur.counter, p.x - 16 + int(s.get("Counter Buffer X", 0)), p.y - 18 + int(s.get("Counter Buffer Y", 8)),
+			32, str(s.get("Counter Alignment", "center")), XUI.text_color(int(s.get("Counter Color", 0))), int(s.get("Counter Font Size", 16)), LINE_H, alpha)
 	if floor_text(cur) != "":
 		c.text(floor_text(cur), p.x - 16 + 2, p.y - 16 + 6, 32, "left", Color("#ffffa0"), 12, 36, alpha)

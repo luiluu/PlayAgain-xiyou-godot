@@ -45,6 +45,8 @@ static var DETAIL_V041 := true
 ## 开着：候选按（角色、槽位、筛选条件、排序设置、背包件数、换装次数）记住，同样的条件直接取；逐件判定放进只读窗口（O-348），
 ## 角色的技能表、特性表只算一次。换装、清空、换角色、改筛选都会重算，结果与每次重算相同。false＝每次重算（原来的做法）。
 static var CACHE_CANDIDATES := true
+## T409：西游档先算排序键保留背包序号，只对当前槽位的装备做穿戴判定。
+static var XIYOU_FAST_CANDIDATES := true
 
 var actor_index := 0
 var _mode := "command"              # command / slot / item
@@ -198,9 +200,17 @@ func _raw_candidates() -> Array:
 	var out := []
 	if CACHE_CANDIDATES:
 		XActor.read_begin()  # 只读窗口（O-348）：逐件判能不能装只读角色的特性、被动
+	var fast := XIYOU_FAST_CANDIDATES and not XTianqi.active(XState.current)
+	var etype := 0
+	if fast:
+		var slots := a.equip_slots()
+		if _slot >= 0 and _slot < slots.size():
+			etype = int(slots[_slot])
 	for kind in ["weapon", "armor"]:
-		var bag := XItemScene.bag_gear(kind)
+		var bag := XItemScene.bag_gear(kind, fast)
 		for i in range(bag.size()):
+			if etype != 0 and int(bag[i].get("etypeId", 0)) != etype:
+				continue
 			if XEquipment.fits(a, _slot, bag[i]):
 				out.append({"rec": bag[i], "carry": i + 1})
 	if CACHE_CANDIDATES:

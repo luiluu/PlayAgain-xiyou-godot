@@ -233,9 +233,13 @@ static func instance_no(e: Dictionary) -> int:
 
 ## $gameParty.weapons()/armors()：YEP independentItemSort 按基础 ID 排，同基础保持实例先后（正式版运行时读数）；
 ## 「序号/9,999」的序号即在这里的位置，物品页、装备页、商店出售共用，筛选与排序后不重编
-static func bag_gear(kind: String) -> Array:
+static func bag_gear(kind: String, presort_keys := false) -> Array:
 	# installAlienationHide 包 Game_Party.weapons／armors：隐藏生效时不列残响（O-283；读档迁移已移走，这里兜底）
 	var list := XAlienHide.filter_gear(XState.current.gear.filter(func(e): return e.kind == kind))
+	if presort_keys:
+		var keyed := list.map(func(e): return [[int(e.base), instance_no(e)], e])
+		keyed.sort_custom(func(a, b): return a[0] < b[0])
+		return keyed.map(func(row): return row[1])
 	list.sort_custom(func(a, b): return [int(a.base), instance_no(a)] < [int(b.base), instance_no(b)])
 	return list
 

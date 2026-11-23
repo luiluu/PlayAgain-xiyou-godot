@@ -28,6 +28,8 @@ const ROWS := 11                          # floor((440 − 28) / 36)
 const SKILL_ROWS := 4                     # floor((180 − 28) / 36)
 const SPRITE_CENTER := Vector2(CW / 4.0, CW / 4.0)
 const ATTR := ["生命", "魔法", "物理攻击", "物理防御", "魔法攻击", "魔法防御", "敏捷", "幸运", "命中", "闪避", "暴击", "暴击闪避", "魔法闪避", "反击"]
+## 随包 GameFont 在 26 号字下的两个空格宽，ATTR 的汉字各占 26。
+const ATTR_SPACES_WIDTH := 14.43
 ## 状态窗七行两列：[左, 右]（加成序号）
 const ATTR_ROWS := [[0, 1], [2, 6], [4, 7], [3, 8], [5, 9], [11, 10], [12, 13]]
 ## Star_PetSynthesis 在变量 21 为 0 时加「合成」，Star_PetUpLevel 加「喂养」；窗口可见 6 行，第 7 行要滚动
@@ -63,9 +65,15 @@ var bottom_win: XMVWindow
 var team_win: XMVWindow
 var help_card: XHelpCard
 static var SKILL_CARD_NO_FRAME := true
+## T409：西游档用随包字体的固定度量先显示宠物资料，贴图读取和转色在后台完成。
+static var XIYOU_FAST_OPEN := true
 var _status_ops: Array = []
 var _sprite_tex: Texture2D
 var _sprite_sv := false
+var _sprite_enemy := -1
+## 同一敌人模板共用贴图，页面关闭时释放缓存。
+var _sprite_cache: Dictionary[int, Texture2D] = {}
+var _sprite_loading: Array[int] = []
 var _frame := 0
 var status_cover := -1.0      # 状态窗内容被挖掉的起点（画面 y）；没有窗口盖住时为 720
 
@@ -167,12 +175,14 @@ static func status_ops(s: XState, pet: Dictionary, suffix := "") -> Array:
 		ops.append(_t(ATTR[ATTR_ROWS[k][0]], COL2, y + LH * (k + 1), COLW, XUI.SYSTEM))
 		ops.append(_t(ATTR[ATTR_ROWS[k][1]], right, y + LH * (k + 1), COLW, XUI.SYSTEM))
 	var push: Array = pet.get("push", [])
+	var fixed_width := XIYOU_FAST_OPEN and not XTianqi.active(s) and XUI.font().resource_path == GameFont.PATH
 	for k in ATTR_ROWS.size():
 		for side in 2:
 			var i: int = ATTR_ROWS[k][side]
 			var v := float(push[i]) if i < push.size() else 0.0
 			var text := str(floori(v)) if i < 8 else str(floori(v * 100.0)) + "%"
-			var x := (COL2 if side == 0 else right) + XActorBook.js_width(ATTR[i] + "  ", XUI.FONT_SIZE)
+			var width: float = ATTR[i].length() * XUI.FONT_SIZE + ATTR_SPACES_WIDTH if fixed_width else XActorBook.js_width(ATTR[i] + "  ", XUI.FONT_SIZE)
+			var x := (COL2 if side == 0 else right) + width
 			ops.append(_t(text, x, y + LH * (k + 1), COLW))
 	y += LH * 19.0 / 2.0 + LH
 	var skills := skill_ids(pet)
@@ -317,18 +327,70 @@ func _paint_skills(c: XMVCanvas) -> void:
 func _select_pet() -> void:
 	var pet := current()
 	_status_ops = status_ops(XState.current, pet, syn_suffix(pet))
-	_sprite_tex = null
-	_sprite_sv = false
-	if not pet.is_empty():
-		var rec := XDB.rec("Enemies", int(pet.enemy))
-		var side := str(rec.get("meta", {}).get("Sideview Battler", "")).strip_edges()
-		if side != "":
-			var p := XDB.img_path("sv_actors", side)
-			_sprite_tex = load(p) if p != "" else null
-			_sprite_sv = _sprite_tex != null
-		else:
-			_sprite_tex = XMapTransfer.enemy_texture(rec)
+	if XIYOU_FAST_OPEN and not XTianqi.active(XState.current):
+		_select_fast_sprite(int(pet.get("enemy", -1)))
+	else:
+		_sprite_enemy = -1
+		_sprite_tex = null
+		_sprite_sv = false
+		if not pet.is_empty():
+			var rec := XDB.rec("Enemies", int(pet.enemy))
+			var side := str(rec.get("meta", {}).get("Sideview Battler", "")).strip_edges()
+			if side != "":
+				var p := XDB.img_path("sv_actors", side)
+				_sprite_tex = load(p) if p != "" else null
+				_sprite_sv = _sprite_tex != null
+			else:
+				_sprite_tex = XMapTransfer.enemy_texture(rec)
 	_refresh()
+
+
+func _select_fast_sprite(enemy: int) -> void:
+	if enemy >= 0 and enemy == _sprite_enemy and (_sprite_tex != null or _sprite_loading.has(enemy)):
+		return
+	_sprite_enemy = enemy
+	_sprite_tex = _sprite_cache.get(enemy)
+	_sprite_sv = false
+	if enemy < 0:
+		return
+	var rec := XDB.rec("Enemies", enemy)
+	var side := str(rec.get("meta", {}).get("Sideview Battler", "")).strip_edges()
+	_sprite_sv = side != ""
+	if _sprite_tex != null or _sprite_loading.has(enemy):
+		return
+	var path := XDB.img_path("sv_actors", side) if _sprite_sv else XDB.img_path("sv_enemies", str(rec.get("battlerName", "")))
+	if path != "" and ResourceLoader.load_threaded_request(path, "Texture2D") == OK:
+		_sprite_loading.append(enemy)
+		var hue := 0 if _sprite_sv else int(rec.get("battlerHue", 0))
+		_load_pet_sprite(get_tree(), weakref(self), enemy, path, hue)
+
+
+static func _load_pet_sprite(tree: SceneTree, owner: WeakRef, enemy: int, path: String, hue: int) -> void:
+	while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+		await tree.process_frame
+	var tex := ResourceLoader.load_threaded_get(path) as Texture2D
+	var page := owner.get_ref() as XPetScene
+	if page == null:
+		return
+	if tex == null or page._sprite_enemy != enemy:
+		page._sprite_loading.erase(enemy)
+		return
+	if hue != 0:
+		var image := tex.get_image()
+		var result := []
+		var job := WorkerThreadPool.add_task(func(): result.append(XMapTransfer.rotate_hue(image, hue)))
+		while not WorkerThreadPool.is_task_completed(job):
+			await tree.process_frame
+		WorkerThreadPool.wait_for_task_completion(job)
+		page = owner.get_ref() as XPetScene
+		if page == null:
+			return
+		tex = ImageTexture.create_from_image(result[0])
+	page._sprite_loading.erase(enemy)
+	page._sprite_cache[enemy] = tex
+	if page._sprite_enemy == enemy:
+		page._sprite_tex = tex
+		page.status_win.canvas.queue_redraw()
 
 
 func _refresh() -> void:
