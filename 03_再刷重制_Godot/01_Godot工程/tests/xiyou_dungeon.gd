@@ -132,6 +132,7 @@ const KUN_SKILLS := [2765, 4397, 4398, 4399, 4400, 4401, 4402, 4403, 4404, 4405,
 func _ready() -> void:
 	# 参照是原版文字：原版文字错的加载时修正（XTextFix，cc/text-fix-b）比对时整组关掉；修正本身由 tests/xiyou_text_fix 核
 	XTextFix.set_all(false)
+	MVInterpreter.CHENTANG_GIFT_TRANSFER = false  # T410：两轮都沿用原版送礼路径。新落点由 xiyou_common_scripts 核。
 	_run.call_deferred()
 
 
