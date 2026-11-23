@@ -153,7 +153,8 @@ func _registry_shape() -> void:
 	var no_reason := review.filter(func(r): return str(r.get("reason", "")).length() < 4)
 	var kept := review.filter(func(r): return bool(r.get("keep", false))).map(func(r): return "%s|%s" % [r.module, r.field])
 	var listed := wl4.map(func(w): return "%s|%s" % [w.module, w.field])
-	_check("p4_whitelist_final", no_reason.is_empty() and review.size() == 25 and kept == listed and wl4.all(func(w): return str(w.get("reason", "")) != ""), [no_reason, kept, listed])
+	# 26 行：T398 补渡鸦 skillMultiplier（入队即戴镰刀才走到）
+	_check("p4_whitelist_final", no_reason.is_empty() and review.size() == 26 and kept == listed and wl4.all(func(w): return str(w.get("reason", "")) != ""), [no_reason, kept, listed])
 	# 来源名都有一行（tags、注册表模块）
 	var missing := []
 	for t in XActorDamageHooks.MODULE_TAGS + ["qiyin", "affix_skill", "module.tianqi_modules"] + XTianqiLedger.MODULE_SOURCE.values().filter(func(v): return v != "alienation"):

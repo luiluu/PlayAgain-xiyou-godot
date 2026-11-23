@@ -407,6 +407,8 @@ func _add_actor(id: int, notice := Callable()) -> void:
 	if XImportedBalance.is_disabled_actor(id):
 		return
 	if not party.has(id):
+		if XTianqi.on_join(self, id):  # 天启篇第一次入队：照原版号角入队给专属装备（穿上）、技能；模块角色在里面跑完入队（T398）
+			return
 		inherit_difficulty(actor(id))
 		party.append(id)
 		XGojo.on_join(self, id)  # 天启篇五条悟入队：装上专属法宝「眼罩」
@@ -791,6 +793,8 @@ func _gain_raw(id: int, amount: int) -> void:
 
 ## source：天启篇装备随机身份的来源键（XTianqiRandom.on_register）；来源读档稳定的入口才传，空＝照 instanceId
 func gain_gear(kind: String, base_id: int, amount: int, source := "") -> void:
+	if source == "":
+		source = XTianqi.gift_source(kind, base_id)  # 天启篇入队赠品期间（T398）：模块 recruit() 发的专属装备也按来源键；别处为空
 	if amount > 0 and XAlienHide.blocks_base(kind, base_id):
 		return  # installAlienationHide：隐藏生效时深渊残刃／残杖／残甲／残环得不到（O-283）
 	if amount > 0:

@@ -1168,6 +1168,12 @@
     "reason": "原版数；天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops（渡鸦：残响 3 层追加 50% 改写在天启分支，收口之后、卡预算内），不留"
    },
    {
+    "module": "module.raven",
+    "field": "skillMultiplier",
+    "keep": false,
+    "reason": "原版数（戴冥河断罪镰时 raven.gd 技能倍率 ×1.6）；T398 起天启篇入队即戴镰刀才走到。天启篇版本按技能重构 v0.2 写在卡里（skill_rework.json）或 XTianqiModules.damage_ops，收口之后、卡预算内，不留"
+   },
+   {
     "module": "module.number_boost",
     "field": "criticalAdd",
     "keep": false,

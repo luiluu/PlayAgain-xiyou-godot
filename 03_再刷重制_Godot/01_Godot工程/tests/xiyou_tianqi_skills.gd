@@ -28,6 +28,7 @@ static func _sd(v: float) -> float:  # 去全队 ×6（XTianqiNoX6，O-470）开
 
 
 func _run() -> void:
+	XTianqi.JOIN_GIFTS = false  # T398：夹具要不带入队赠品的光身角色（赠品装备另有专项 xiyou_tianqi_join_gifts）
 	XMessageBox.auto = true
 	seed(20261112)
 	XTianqiSkills.reload_table()

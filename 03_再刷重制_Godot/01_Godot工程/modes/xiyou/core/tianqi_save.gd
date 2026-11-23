@@ -52,8 +52,9 @@ const WIRED := [
 	"qiyin", "drop", "elements", "money", "trumpet", "skill_grow",
 	"gojo", "sect_bing", "fetters", "sect_xin", "brand",
 ]
-## 根上的散键（开局写一次或单值）：rules 规则版本、difficulty、lineup、line、draws／offer 抽角色、reincarnate
-const ROOT_KEYS := ["rules", "difficulty", "lineup", "line", "draws", "offer", "reincarnate", VKEY]
+## 根上的散键（开局写一次或单值）：rules 规则版本、difficulty、lineup、line、draws／offer 抽角色、reincarnate、
+## join_gifts 入队赠品已给过的角色号（XTianqi.on_join，T398；老档缺当空）
+const ROOT_KEYS := ["rules", "difficulty", "lineup", "line", "draws", "offer", "reincarnate", "join_gifts", VKEY]
 ## 根上的随机计数（随机门面 XTianqi.save_stream 一族，cc/tianqi-seed-fix）：不搬位置，老档缺当 0。
 ## rng：门面新开的域的计数（R3 起：rng["battle|敌群号"]＝本档打这个敌群几次，XTianqiRandom.battle_key／note_battle），老档缺当空
 const COUNTER_KEYS := ["affix_roll_n", "affix_src_n", "src_n", "rng"]

@@ -304,6 +304,7 @@ func _run_f() -> void:
 
 
 func _run() -> void:
+	XTianqi.JOIN_GIFTS = false  # T398：夹具要不带入队赠品的光身角色（赠品装备另有专项 xiyou_tianqi_join_gifts）
 	XSave.dir_override = "user://test_xiyou_battle_stream"
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	if group == "f":
