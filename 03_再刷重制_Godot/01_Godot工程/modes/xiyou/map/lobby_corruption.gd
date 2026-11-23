@@ -65,6 +65,8 @@ static var DECAY_FURNITURE_TEX := "res://content/lobby/decay_furniture_stage3.pn
 static var DECAY_PLANT_TEX := "res://content/lobby/decay_plant_stage3.png"
 static var DECAY_MOLD_TEX := "res://content/lobby/decay_mold_stage3.png"
 static var DECAY_LAMP_TEX := "res://content/lobby/decay_lamp_stage3.png"
+const STAGE3_ART_DIR := "res://content/lobby/"
+const STAGE3_RIFT_EVENT := 75
 
 ## 原事件跑完后追加的一句：事件号 → [脸图, 脸号, 名字, 文字]（名字空＝旁白）
 const AFTER_LINES := {
@@ -172,8 +174,8 @@ const STAGE3_DECAY_FURNITURE := [
 ## 枯死盆栽（墙脚装饰位，均实测无事件、不压栏杆柱、不改通行）
 const STAGE3_DECAY_PLANTS := [
 	Vector2i(5, 9), Vector2i(23, 9),
-	Vector2i(7, 24), Vector2i(21, 24),
-	Vector2i(10, 25), Vector2i(16, 25),
+	Vector2i(3, 14), Vector2i(25, 14),
+	Vector2i(7, 8), Vector2i(21, 8),
 ]
 ## 墙角与地缝霉斑（贴墙根与瓷砖缝）
 const STAGE3_DECAY_MOLDS := [
@@ -235,6 +237,20 @@ var _decay_next_flicker := 0.0
 var _decay_flicker_left := 0.0
 var _decay_last_fest := -1               # -1 未初始化，0/1 缓存上帧庆典态，避免每帧反复刷可见性
 var _decay_tex_used := {"furniture": false, "plant": false, "mold": false, "lamp": false}
+var _art_backdrop: Sprite2D
+var _art_foreground: Sprite2D
+var _art_runoff: Sprite2D
+var _art_roots: Sprite2D
+var _art_vortex: Sprite2D
+var _art_backdrops: Array[Texture2D] = []
+var _art_foregrounds: Array[Texture2D] = []
+var _art_variant := -1
+var _art_upper: MVTilemap
+var _art_upper_hidden := false
+var _art_vortex_event: MVEvent
+var _art_vortex_hidden := false
+var _art_vortex_material: Material
+static var _art_vortex_mask: ShaderMaterial
 var _floats_node: Node2D
 var _motes_node: Node2D
 var _motes: Array = []       # {p: Vector2, v: Vector2, a: float, r: float, bright: bool, life: float, corner: int, col: Color}
@@ -368,6 +384,7 @@ func setup(map: XMapScene) -> void:
 	_s3_stump = _s3 and STAGE3_STUMP
 	_s3_investigations = _s3 and STAGE3_INVESTIGATIONS
 	_build_desat()
+	_build_stage3_art()
 	_build_corners()
 	_build_decay_molds()
 	_build_cracks()
@@ -395,6 +412,10 @@ func setup(map: XMapScene) -> void:
 
 
 func _exit_tree() -> void:
+	if _art_upper_hidden and is_instance_valid(_art_upper):
+		_art_upper.show()
+	if _art_vortex_hidden and is_instance_valid(_art_vortex_event):
+		_art_vortex_event.material = _art_vortex_material
 	for instance_id in _npc_fx.keys():
 		_clear_npc_fx(instance_id)
 	if is_instance_valid(_stump_shadow) and not _stump_shadow.is_queued_for_deletion():
@@ -417,6 +438,96 @@ func _layer(cb: Callable) -> Node2D:
 	n.draw.connect(cb)
 	add_child(n)
 	return n
+
+
+func _stage3_texture(file: String) -> Texture2D:
+	var path := STAGE3_ART_DIR + file
+	return load(path) as Texture2D if ResourceLoader.exists(path) else null
+
+
+func _stage3_sprite(label: String, tex: Texture2D, z: int) -> Sprite2D:
+	if tex == null:
+		return null
+	var sprite := Sprite2D.new()
+	sprite.name = label
+	sprite.texture = tex
+	sprite.centered = false
+	sprite.z_as_relative = false
+	sprite.z_index = z
+	add_child(sprite)
+	return sprite
+
+
+## Only paint is replaced. The live tilemaps still supply passage, events and coordinates.
+func _build_stage3_art() -> void:
+	if not stage3_on():
+		return
+	if _s3_decay():
+		var ground := _stage3_texture("hall_stage3_backdrop.png")
+		var front := _stage3_texture("hall_stage3_foreground.png")
+		var fest_ground := _stage3_texture("hall_stage3_backdrop_fest.png")
+		var fest_front := _stage3_texture("hall_stage3_foreground_fest.png")
+		if ground != null and front != null and fest_ground != null and fest_front != null:
+			_art_upper = host.upper
+			_art_backdrops.assign([ground, fest_ground])
+			_art_foregrounds.assign([front, fest_front])
+			_art_backdrop = _stage3_sprite("Stage3Backdrop", ground, -9)
+			# The festival banner is at 11, so it retains its original priority.
+			_art_foreground = _stage3_sprite("Stage3Foreground", front, 10)
+	if _s3_four_colors():
+		_art_runoff = _stage3_sprite("Stage3Runoff", _stage3_texture("hall_stage3_runoff.png"), -9)
+		_art_roots = _stage3_sprite("Stage3Roots", _stage3_texture("hall_stage3_roots.png"), -9)
+	_art_vortex_event = _event_by_id(STAGE3_RIFT_EVENT)
+	if is_instance_valid(_art_vortex_event):
+		_art_vortex = _stage3_sprite("Stage3Vortex", _stage3_texture("hall_stage3_vortex.png"), -7)
+		if _art_vortex != null:
+			_art_vortex.centered = true
+			_art_vortex.position = Vector2(CENTER * TS) + Vector2(TS * 0.5, 8.0)
+			_art_vortex.hframes = 8
+			_art_vortex.vframes = 4
+	_update_stage3_art(XFestLobby.decor())
+
+
+func _update_stage3_art(fest: bool) -> void:
+	if _art_backdrop != null:
+		var decay := _s3_decay()
+		var variant := int(fest)
+		if _art_variant != variant:
+			_art_variant = variant
+			_art_backdrop.texture = _art_backdrops[variant]
+			_art_foreground.texture = _art_foregrounds[variant]
+		_art_backdrop.visible = decay
+		_art_foreground.visible = decay
+		_desat.visible = not decay
+		if is_instance_valid(_art_upper):
+			_art_upper.visible = not decay
+			_art_upper_hidden = decay
+	var colors := _s3_four_colors()
+	if _art_runoff != null:
+		_art_runoff.visible = colors
+	if _art_roots != null:
+		_art_roots.visible = colors
+	if _art_vortex != null:
+		var has_event := is_instance_valid(_art_vortex_event)
+		var show_rift := (stage3_on() and has_event and not _art_vortex_event.erased
+			and _art_vortex_event.visible and _art_vortex_event.opacity > 0
+			and _has_walk_sprite(_art_vortex_event))
+		_art_vortex.visible = show_rift
+		if has_event and show_rift != _art_vortex_hidden:
+			if show_rift:
+				_art_vortex_material = _art_vortex_event.material
+				if _art_vortex_mask == null:
+					var shader := Shader.new()
+					shader.code = "shader_type canvas_item; void fragment() { COLOR.a = 0.0; }"
+					_art_vortex_mask = ShaderMaterial.new()
+					_art_vortex_mask.shader = shader
+				_art_vortex_event.material = _art_vortex_mask
+			else:
+				_art_vortex_event.material = _art_vortex_material
+			_art_vortex_hidden = show_rift
+		if show_rift:
+			_art_vortex.frame = int(_t * 12.0) % 32 if fx_on() else 8
+			_art_vortex.modulate.a = _art_vortex_event.opacity / 255.0
 
 
 # ---- 地面：褪色、四角渗色、裂纹、浮砖 ----
@@ -477,6 +588,7 @@ func _build_corners() -> void:
 		sp.texture = tex
 		sp.position = cell_px(cfg.cell)
 		sp.modulate.a = STAGE3_CORNER_ALPHA_STATIC if not fx_on() else STAGE3_CORNER_ALPHA * 0.8
+		sp.visible = _art_runoff == null
 		_corners_node.add_child(sp)
 		_corner_sprites.append(sp)
 
@@ -1222,6 +1334,11 @@ func _draw_floats() -> void:
 		var shadow_a := (0.16 + lift * 0.028) if s3 else (0.12 + lift * 0.03)
 		_floats_node.draw_circle(Vector2.ZERO, TS * (0.44 if s3 else 0.42), Color(0, 0, 0, clampf(shadow_a, 0.0, 0.55)))
 		_floats_node.draw_set_transform(Vector2.ZERO)
+		if _art_backdrop != null and _art_backdrop.visible:
+			var cell_rect := Rect2(p, Vector2(TS, TS))
+			_floats_node.draw_texture_rect_region(_art_backdrop.texture,
+				Rect2(p - Vector2(0, roundf(lift)), cell_rect.size), cell_rect)
+			continue
 		for id in tm._tiles_at(f.x, f.y):
 			if id > 0:
 				tm._draw_id(id, int(p.x), int(p.y - roundf(lift)))
@@ -1859,7 +1976,8 @@ func _process(dt: float) -> void:
 					sp.modulate.a = STAGE3_CORNER_ALPHA_STATIC
 				else:
 					sp.modulate.a = 0.10 + (STAGE3_CORNER_ALPHA - 0.10) * (0.5 + 0.5 * sin(_t * TAU / STAGE3_CORNER_BREATH + i * TAU / float(STAGE3_CORNERS.size())))
-	var fest := XFestLobby.decor() if (_wall_veins_node != null or _decay_light_node != null) else false
+	var fest := XFestLobby.decor() if (_wall_veins_node != null or _decay_light_node != null or _art_backdrop != null) else false
+	_update_stage3_art(fest)
 	if _wall_veins_node != null:
 		var s3w := _s3_wall_veins()
 		_wall_veins_node.visible = s3w

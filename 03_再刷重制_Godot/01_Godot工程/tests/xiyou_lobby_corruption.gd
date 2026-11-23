@@ -263,6 +263,7 @@ func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -
 	var mtq := await open_lobby(3, 14, 25, true)
 	var fxtq := mtq.lobby_fx
 	check("stage3.tianqi_active_guard", XTianqi.active(XState.current) and not XLobbyCorruption.stage3_active(XState.current) and fxtq != null and not fxtq.stage3_on())
+	check("stage3.final_tianqi_guard", fxtq != null and not fxtq.has_node("Stage3Backdrop"))
 	check("stage3.tianqi_no_maxstage", not XState.current.flags.has(XLobbyCorruption.FLAG_KEY), XState.current.flags.get(XLobbyCorruption.FLAG_KEY))
 	await frames(10)
 	check("stage3.tianqi_zero_visual", absf(fxtq.desat_radius_cells() - 6.0) < 0.01 and not fxtq.has_stage3_cracks() \
@@ -287,6 +288,34 @@ func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -
 	check("stage3.max_stage", int(XLobbyCorruption.record(XState.current).maxStage) == 3, XState.current.flags.get(XLobbyCorruption.FLAG_KEY))
 	check("stage3.pass_same", passability(m3) == pass1)
 	check("stage3.events_same", event_digest(m3) == ev1, [event_digest(m3), ev1])
+	var backdrop := fx3.get_node_or_null("Stage3Backdrop") as Sprite2D
+	var runoff := fx3.get_node_or_null("Stage3Runoff") as Sprite2D
+	var roots := fx3.get_node_or_null("Stage3Roots") as Sprite2D
+	check("stage3.final_scenery", backdrop != null and backdrop.texture.get_size() == Vector2(1392, 1584)
+		and runoff != null and runoff.texture.get_size() == backdrop.texture.get_size()
+		and roots != null and roots.texture.get_size() == backdrop.texture.get_size())
+	var front := fx3.get_node_or_null("Stage3Foreground") as Sprite2D
+	var vortex := fx3.get_node_or_null("Stage3Vortex") as Sprite2D
+	check("stage3.final_layers", front != null and front.z_index == 10 and not m3.upper.visible
+		and vortex != null and vortex.hframes == 8 and vortex.vframes == 4
+		and vortex.texture.get_size() == Vector2(2176, 1088)
+		and vortex.position == Vector2(696, 920))
+	var plate_sizes := {
+		XLobbyCorruption.CRACK3_TEX: Vector2(528, 528),
+		XLobbyCorruption.CRACK3_GLOW_TEX: Vector2(528, 528),
+		XLobbyCorruption.WALL_VEIN_TEX: Vector2(48, 96),
+		XLobbyCorruption.WALL_VEIN_H_TEX: Vector2(96, 48),
+		XLobbyCorruption.GATE_VEIN_TEX: Vector2(144, 96),
+	}
+	for path in plate_sizes:
+		var texture: Texture2D = load(path) if ResourceLoader.exists(path) else null
+		check("stage3.final_plate.%s" % path.get_file(), texture != null and texture.get_size() == plate_sizes[path])
+	var gate: Texture2D = load(XLobbyCorruption.GATE_VEIN_TEX) if ResourceLoader.exists(XLobbyCorruption.GATE_VEIN_TEX) else null
+	var aperture := gate.get_image().get_region(Rect2i(48, 0, 48, 96)) if gate != null else null
+	check("stage3.final_gate_aperture", aperture != null and not aperture.get_used_rect().has_area())
+	for cell in XLobbyCorruption.STAGE3_DECAY_PLANTS.slice(2):
+		var blocked := not [2, 4, 6, 8].any(func(d): return m3.lower.is_passable(cell.x, cell.y, d))
+		check("stage3.withered_plant_beside_wall.%s" % cell, blocked and not m3.events.any(func(e): return e.grid == cell))
 
 	# 3.1 地面升级：10 格褪色、11×11 裂纹占位、5～7 块离地浮砖（含 (11,17) 与 (18,16)）
 	check("stage3.desat_10", absf(fx3.desat_radius_cells() - 10.0) < 0.01, fx3.desat_radius_cells())
@@ -413,9 +442,12 @@ func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -
 	for cell in [XLobbyCorruption.STAGE3_INVEST_CELL, XLobbyCorruption.FIXED_FLOAT_S3]:
 		check("stage3.fest_investigation_clear.%s" % cell, not m_fest.events.any(func(e): return e.grid == cell))
 	await frames(15)
+	var fest_backdrop := fx_fest.get_node_or_null("Stage3Backdrop") as Sprite2D
+	check("stage3.final_fest_backdrop", fest_backdrop != null and fest_backdrop.texture.resource_path.ends_with("_fest.png"))
 	await shot("lobby_stage3_fest_gate.png")
 	XFest.TODAY_OVERRIDE = "2026-12-20"
 	await frames(2)
+	check("stage3.final_regular_backdrop", fest_backdrop != null and fest_backdrop.texture.resource_path.ends_with("_backdrop.png"))
 	check("stage3.fest_gate_restored", not XFestLobby.decor() and fx_fest.gate_vein_visible() and fx_fest.wall_vein_count() == 7 \
 		and fx_fest.decay_furniture_count() == 9 and fx_fest.decay_lamp_count() == 5,
 		[XFestLobby.decor(), fx_fest.gate_vein_visible(), fx_fest.wall_vein_count(), fx_fest.decay_furniture_count(), fx_fest.decay_lamp_count()])
