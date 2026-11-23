@@ -16,7 +16,7 @@ extends Node2D
 static var ENABLED := true
 ## 大厅三阶「蚀骨」总开关（设计稿 重制设定/重制版_大厅三阶异化设计稿_v0.2.md；false 完整退回二阶）。
 static var STAGE3_ENABLED := true
-## 三阶子开关骨架（14 个，默认全 true；任一置 false 精确退回二阶对应表现）
+## 三阶子开关骨架（15 个，默认全 true；任一置 false 精确退回二阶对应表现）
 static var STAGE3_GROUND := true          # 3.1 褪色 10 格、裂纹成片、浮砖 5～7 块离地
 static var STAGE3_FOUR_COLORS := true     # 3.2 主厅四角四线渗色与 50 粒光尘
 static var STAGE3_WALL_VEINS := true      # 3.3 塔门与墙面蚀骨纹
