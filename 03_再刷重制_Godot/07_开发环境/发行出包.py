@@ -10,6 +10,7 @@
   python3 发行出包.py --dry-run        只打印会做什么
   python3 发行出包.py --keep-old       出完不删旧发行目录
   python3 发行出包.py --since <号>     发行说明从这个开发编号之后算（默认上一个发行目录的号）
+  python3 发行出包.py --no-save-key --allow-unsealed  仅限本地测试用明文包（单传 --no-save-key 默认拦下；此包不能发给玩家）
 
 产物：<上一级>/dev<号>_三平台发行/
   再刷一把_天启篇_mac.zip              macOS 发行（universal）
@@ -244,11 +245,20 @@ REAL_SCRIPTS = False  # 回退开关：True＝发行包照旧带天启篇真脚�
 NO_STUB_SMOKE = False  # 回退开关：True＝导出前不跑空壳树开战冒烟（--no-stub-smoke）
 
 # 存档封存发行密钥（D28，co 甲档核查 P2④）：放在私密设计仓，不进本仓库；出包时写进导出用的工程（res://content/save_seal_key.json），
-# 导完就删。没有密钥时发行包不封存存档（照旧写明文），所以缺密钥算出包问题、不出包；--no-save-key 明知故出（不封存）。
+# 导完就删。没有密钥时发行包不封存存档（照旧写明文），所以缺密钥算出包问题、不出包。
+# T423：出包后检查默认强制断言发行包存档封存生效、导出 v2；单独传 --no-save-key 会被默认拦下，确需出本地测试用明文包须同时传 --allow-unsealed（输出大字警告「此包不能发给玩家」）。
 # 第一次准备：python3 存档密钥.py --init（在私密设计仓生成，见该脚本说明）。
 SAVE_KEY_SRC = Path(os.environ.get('XIYOU_SAVE_KEY') or Path.home() / 'Documents' / 'xiyou-design-docs' / '发行密钥' / 'save_seal_key.json')
 SAVE_KEY_DEST = 'content/save_seal_key.json'
 NO_SAVE_KEY = False
+ALLOW_UNSEALED = False
+SEAL_EXPORT_FORMAT = 'kyo-remake-save-sealed-v2'
+UNSEALED_WARNING = (
+    '============================================================\n'
+    '⚠️  警告：已启用 --allow-unsealed（未强制要求存档封存生效）\n'
+    '⚠️  此包不能发给玩家！仅限本地测试使用！\n'
+    '============================================================'
+)
 
 
 def _key_tool():
@@ -361,11 +371,81 @@ def _export_all(out: Path, logs: Path, src: Path, problems: list) -> list:
     return problems
 
 
-def audit_unreleased(out: Path) -> list:
-    """发行内容审计（11-13 漩涡异化设计稿外泄后加）：三个包里不许有没发行的内容，有就不往下走。"""
+def _audit_mod():
     spec = importlib.util.spec_from_file_location('发行内容审计', HERE / '发行内容审计.py')
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
+    return m
+
+
+def _seal_source_problems(project: Path) -> list:
+    """检查源工程的封存总开关与 v2 导出格式常量未被关掉或改走（只读源码，不碰密钥）。"""
+    problems = []
+    seal_gd = project / 'modes' / 'xiyou' / 'core' / 'save_seal.gd'
+    if seal_gd.is_file():
+        text = seal_gd.read_text(encoding='utf-8', errors='replace')
+        if not re.search(r'^\s*static\s+var\s+ENABLED\s*:=\s*true\b', text, re.M):
+            problems.append('XSaveSeal.ENABLED 不是 true（发行包不会封存存档，会静默写明文）')
+    transfer_gd = project / 'modes' / 'xiyou' / 'core' / 'save_transfer.gd'
+    if transfer_gd.is_file():
+        text = transfer_gd.read_text(encoding='utf-8', errors='replace')
+        if not re.search(r'^\s*const\s+FORMAT_SEALED\s*:=\s*"' + re.escape(SEAL_EXPORT_FORMAT) + r'"', text, re.M):
+            problems.append(f'XSaveTransfer.FORMAT_SEALED 不是 {SEAL_EXPORT_FORMAT}（发行包导出格式不符）')
+    return problems
+
+
+def verify_save_seal_artifacts(out: Path, project: Path = None) -> list:
+    """T423 出包后兜底检查：不依赖外部密钥原件、不打印密钥内容与路径，直接核对各发行包产物内：
+    1. 源工程封存开关与 v2 导出格式常量有效；
+    2. 每个已导出产物（macOS .zip、Windows .pck、安卓 .apk）包内均含格式合格的封存配置且带 v2 导出格式脚本。
+    哪怕误传 --no-save-key 或导出过滤变动导致静默导明文，此处也会拦下；只有显式 --allow-unsealed 才放行并打大字警告。"""
+    if ALLOW_UNSEALED:
+        print(UNSEALED_WARNING)
+        return []
+    problems = _seal_source_problems(project or PROJECT)
+    pkgs = [p for p in (out / MAC_ZIP, out / WIN_DIR / WIN_FILES[1], out / APK) if p.is_file()]
+    if not pkgs:
+        problems.append('未找到发行包产物，无法确认存档封存生效')
+        print('== 出包后存档封存检查：有问题')
+        return problems
+    audit_mod = _audit_mod()
+    key_tool = _key_tool()
+    want_names = {SAVE_KEY_DEST, 'modes/xiyou/core/save_transfer.gd', 'modes/xiyou/core/save_transfer.gdc'}
+    fmt_bytes = SEAL_EXPORT_FORMAT.encode('utf-8')
+    for pkg in pkgs:
+        try:
+            got = audit_mod.read_files(pkg, lambda n: n in want_names)
+        except Exception:  # noqa: BLE001
+            problems.append(f'{pkg.name}：无法读取发行包产物以核对存档封存配置')
+            continue
+        raw_key = got.get(SAVE_KEY_DEST)
+        if raw_key is None:
+            problems.append(f'{pkg.name}：发行包内缺少存档封存配置，运行时封存不会生效（会静默导明文而非 {SEAL_EXPORT_FORMAT}）；'
+                            '请核查是否误传 --no-save-key 或导出过滤变动；确需出本地测试用明文包请同时加 --allow-unsealed')
+        else:
+            try:
+                parsed = json.loads(raw_key.decode('utf-8'))
+            except (ValueError, UnicodeDecodeError):
+                parsed = None
+            if parsed is None or key_tool.check(parsed) != '':
+                problems.append(f'{pkg.name}：发行包内的存档封存配置格式不合格，运行时封存不会生效（会静默导明文而非 {SEAL_EXPORT_FORMAT}）')
+        tr_blob = got.get('modes/xiyou/core/save_transfer.gdc') or got.get('modes/xiyou/core/save_transfer.gd')
+        if tr_blob is None:
+            problems.append(f'{pkg.name}：发行包内缺少存档导出模块，无法确认导出格式 {SEAL_EXPORT_FORMAT}')
+        else:
+            try:
+                tr_txt = audit_mod.script_text(tr_blob)
+            except Exception:  # noqa: BLE001
+                tr_txt = b''
+            if fmt_bytes not in tr_txt:
+                problems.append(f'{pkg.name}：发行包内未检出导出格式 {SEAL_EXPORT_FORMAT}（可能导出过滤异常或导出格式已改动）')
+    print('== 出包后存档封存检查：' + ('有问题' if problems else '通过'))
+    return problems
+
+
+def audit_unreleased(out: Path) -> list:
+    """发行内容审计（11-13 漩涡异化设计稿外泄后加）：三个包里不许有没发行的内容，有就不往下走。"""
+    m = _audit_mod()
     problems = []
     for pkg in (out / WIN_DIR / WIN_FILES[1], out / APK, out / MAC_ZIP):
         if not pkg.is_file():
@@ -389,10 +469,11 @@ SMOKES = [
 
 def smoke_all(out: Path, logs: Path) -> list:
     rows = []
+    extra = ['--allow-unsealed'] if ALLOW_UNSEALED else []
     for name, args in SMOKES:
         print(f'== 冒烟 {name}')
         log = logs / f'冒烟_{name}.log'
-        rc = run([sys.executable, str(SMOKE), *args(out)], log, timeout=3600)
+        rc = run([sys.executable, str(SMOKE), *args(out), *extra], log, timeout=3600)
         text = log.read_text(encoding='utf-8')
         verdict = ([l for l in text.splitlines() if l.startswith('结论：')] or ['结论：没有结论行'])[-1]
         note = [l for l in text.splitlines() if l.startswith('没有在跑的安卓模拟器')]
@@ -482,17 +563,25 @@ def main(argv=None) -> int:
     ap.add_argument('--no-smoke', action='store_true')
     ap.add_argument('--real-scripts', action='store_true', help='回退：发行包带天启篇真脚本（不换空壳）')
     ap.add_argument('--no-stub-smoke', action='store_true', help='导出前不跑空壳树开战冒烟（默认跑，约 40 秒）')
-    ap.add_argument('--no-save-key', action='store_true', help='不注入存档封存密钥（发行包不封存存档，照旧明文）')
+    ap.add_argument('--no-save-key', action='store_true', help='不注入存档封存密钥（默认会被出包后检查拦下；本地测试明文包须同时加 --allow-unsealed）')
+    ap.add_argument('--allow-unsealed', action='store_true', help='显式允许出未封存的本地测试包（配合 --no-save-key 使用；此包不能发给玩家）')
     ap.add_argument('--notes-only', action='store_true')
     ap.add_argument('--notes-audit', action='store_true', help='列出会进说明但没写「- 玩家可见：」行的条目')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--keep-old', action='store_true', help='出完不删旧发行目录')
     ap.add_argument('--since', type=int, help='发行说明从哪个开发编号之后算起（默认上一个发行目录的号）')
     a = ap.parse_args(argv)
-    global REAL_SCRIPTS, NO_SAVE_KEY, NO_STUB_SMOKE
+    global REAL_SCRIPTS, NO_SAVE_KEY, NO_STUB_SMOKE, ALLOW_UNSEALED
     NO_STUB_SMOKE = NO_STUB_SMOKE or a.no_stub_smoke
     REAL_SCRIPTS = REAL_SCRIPTS or a.real_scripts
     NO_SAVE_KEY = NO_SAVE_KEY or a.no_save_key
+    ALLOW_UNSEALED = ALLOW_UNSEALED or a.allow_unsealed
+    if NO_SAVE_KEY and not ALLOW_UNSEALED and not a.notes_only and not a.notes_audit:
+        print(f'✗ 传入了 --no-save-key 但未传 --allow-unsealed：发行包默认必须启用存档封存（导出 {SEAL_EXPORT_FORMAT}），'
+              '禁止静默出明文包；若确需出本地测试用明文包，请同时加 --allow-unsealed（产出的包不能发给玩家）')
+        return 1
+    if ALLOW_UNSEALED and not a.notes_only and not a.notes_audit:
+        print(UNSEALED_WARNING)
     parent = Path(a.out).resolve() if a.out else main_root() / '03_再刷重制_Godot' / '05_发布' / '导出包'
     dev = dev_number()
     out = parent / f'dev{dev}_三平台发行'
@@ -536,6 +625,8 @@ def main(argv=None) -> int:
     problems = export_all(out, logs)
     if not problems:
         problems = audit_unreleased(out)
+    if not problems:
+        problems = verify_save_seal_artifacts(out)
     if problems:
         print('✗ ' + '；'.join(problems))
         return 1
@@ -545,12 +636,18 @@ def main(argv=None) -> int:
     now = sizes(out)
     (out / '体积.md').write_text(size_table(dev, now, prev_dev, sizes(prev_dir) if prev_dir else {}), encoding='utf-8')
     smoke_md = ['# 冒烟', '', '| 包 | 结果 | 说明 |', '| --- | --- | --- |'] + [f'| {n} | {"通过" if ok else "失败"} | {v} |' for n, ok, v in rows]
-    (out / '冒烟.md').write_text('\n'.join(smoke_md if rows else ['# 冒烟', '', '没跑（--no-smoke）']) + '\n', encoding='utf-8')
+    smoke_body = smoke_md if rows else ['# 冒烟', '', '没跑（--no-smoke）']
+    if ALLOW_UNSEALED:
+        smoke_body = ['# 冒烟', '', '> ⚠️ 警告：本次启用了 `--allow-unsealed`（未要求存档封存生效）——**此包不能发给玩家！**', ''] + smoke_body[2:]
+    (out / '冒烟.md').write_text('\n'.join(smoke_body) + '\n', encoding='utf-8')
     (out / '发行说明.txt').write_text(notes, encoding='utf-8')
     print((out / '体积.md').read_text(encoding='utf-8'))
-    print('\n'.join(smoke_md))
+    print('\n'.join(smoke_body))
     ok = all(r[1] for r in rows)
-    if a.keep_old:
+    if ALLOW_UNSEALED:
+        print(UNSEALED_WARNING)
+        print('已启用 --allow-unsealed（此包不能发给玩家）：旧发行目录留着没删')
+    elif a.keep_old:
         print('--keep-old：旧发行目录没删')
     elif not rows:
         print('没跑冒烟（--no-smoke）：旧发行目录没删')

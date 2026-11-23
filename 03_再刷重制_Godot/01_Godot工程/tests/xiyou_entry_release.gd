@@ -76,6 +76,18 @@ func _run() -> void:
 	if XDB.available():
 		_check("debug_title_keeps_version_select", _find("ReturnToMenu") != null)
 	_check("app_name", ReleaseEntry.APP_NAME == "再刷一把：天启篇")
+	# T423：--report-entry 存档封存自检口径（有效密钥→active+v2，发行模板缺密钥→false+v1）
+	var entry_cls := load("res://modes/xiyou/entry.gd")
+	var seal_on: Dictionary = entry_cls.save_seal_report()
+	_check("save_seal_report_active_v2", bool(seal_on.get("active", false)) and str(seal_on.get("format", "")) == XSaveTransfer.FORMAT_SEALED)
+	XSaveSeal.simulate_template = true
+	XSaveSeal.key_file_override = XSave.dir().path_join("missing_key.json")
+	XSaveSeal.reload_keys()
+	var seal_off: Dictionary = entry_cls.save_seal_report()
+	XSaveSeal.simulate_template = false
+	XSaveSeal.key_file_override = ""
+	XSaveSeal.reload_keys()
+	_check("save_seal_report_unsealed_v1", not bool(seal_off.get("active", true)) and str(seal_off.get("format", "")) == XSaveTransfer.FORMAT)
 	_check("no_user_saves_written", not DirAccess.dir_exists_absolute(XSave.dir()))
 	var passed := results.filter(func(r): return r["passed"]).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size(), "results": results}))
