@@ -32,7 +32,7 @@ static var STAGE2 := true
 static var CHAIN_AFTER_RIFT1 := true
 ## T412：漩涡三阶段（rift3 过场、stage()==3）。false 回到只有二阶段
 static var STAGE3 := true
-## T430：三阶过场整段替换为 26 秒漫画动画（XRift3Anim，分镜 v0.5）。
+## T430（O-651）：三阶过场整段替换为 26 秒漫画动画（XRift3Anim，分镜 v0.5）。
 ## true＝资源就绪走漫画替换支，缺资源自动走 411 Else 支回退原像素过场；false＝回退 T412 原像素过场（clear_cache() 生效）
 static var RIFT3_ANIM := true
 
