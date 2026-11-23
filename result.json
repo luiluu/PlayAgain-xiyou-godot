@@ -1,0 +1,37 @@
+{
+ "sha": "d3fb3e12dd6509080e9de41135d7bbc24289d75a",
+ "branch": "ci/luiluu/t401-chaos-shelter",
+ "mode": "affected",
+ "base": "27ae295722c5294c5fbf7485b9046a828902bcdf",
+ "passed": false,
+ "scenes": 14,
+ "failed": [
+  "xiyou_tianqi_medal_sure.tscn"
+ ],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "failure",
+ "shards": 2,
+ "longestShardSeconds": 464.5,
+ "testSeconds": 1040,
+ "generatedRef": "refs/ci/generated/luiluu/t401-chaos-shelter",
+ "generatedCommit": "33c63d06d800e053a24637b8dc9b84e57d24c355",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45097618518",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_tianqi_battle_seed.tscn",
+  "xiyou_tianqi_c_tier.tscn",
+  "xiyou_tianqi_drop.tscn",
+  "xiyou_tianqi_medal_sure.tscn",
+  "xiyou_tianqi_money.tscn",
+  "xiyou_tianqi_no_diff_passive.tscn",
+  "xiyou_tianqi_qiyin_endgame.tscn",
+  "xiyou_tianqi_random.tscn",
+  "xiyou_tianqi_save.tscn",
+  "xiyou_tianqi_trumpet.tscn"
+ ],
+ "time": "2026-11-23T02:10:10+00:00"
+}
