@@ -41,6 +41,7 @@ var iters := 7
 var atk_table := {}   # --atk-table=<json>：{"层": 攻击倍率}，--both 时按层设 output_scale
 var _cur_floor := 0
 var line := "war"   # --line=：35、36 层（天启篇影子、骑士本体）按哪条线
+var force_difficulty := ""   # T392：--force-difficulty=<难度键>：快照存档的天启篇难度换成这一档（只改敌人强度：血量倍率、目标回合、吸血封顶；随机阵容仍按 --difficulty 的规则抽）
 var snapshots := ""   # --snapshots=<目录>：虚拟玩家每层挑战守层者前的存档（floor_<层>*.json，XState.to_dict()），用它的真实队伍量（Kyo 11-13 定 C）
 var raw_mode := true   # T239：--both 每次我方出手前补满敌人、按日志原始伤害量；敌人被打死当场复活补满、不提前收场，量满 turns 回合（T239 核 P1-1）
                       # （--no-raw 完整回到旧量法：每回合开头补满、按掉血量、打死就收场、输出不写 dmgRaw）
@@ -97,6 +98,12 @@ func _ready() -> void:
 			neutral = true
 		elif a.begins_with("--line="):
 			line = a.substr(7)
+		elif a.begins_with("--force-difficulty="):
+			force_difficulty = a.substr(19)
+			if not XTianqiBalance.difficulty_keys().has(force_difficulty):
+				push_error("--force-difficulty 不认识：" + force_difficulty)
+				get_tree().quit(2)
+				return
 		elif a.begins_with("--snapshots="):
 			snapshots = a.substr(12)   # 缺省按 --both 量；配 --duel 时真打（T239）
 		elif a == "--revive-team":
@@ -894,6 +901,8 @@ func _snapshot_bases(f: int) -> Array:
 			continue
 		var st := XState.from_dict(parsed)
 		st.set_variable(20, f)
+		if force_difficulty != "" and st.flags.get("tianqi") is Dictionary:
+			st.flags.tianqi["difficulty"] = force_difficulty
 		if revive_team:
 			XState._become_current(st)
 			# T239 第 5 轮：先用原队在本层量一遍各人出伤（同 --both 量法、存档副本上打），换下的按实测出伤最低挑，主力不动
@@ -1096,10 +1105,10 @@ func _run_duel_snapshots() -> void:
 			str(per.map(func(r): return int(r.alive))), str(row.atkScale)])
 		if out_path != "":   # T244：每层写一次，长跑被中途停掉也留得下已量的层
 			var fp := FileAccess.open(out_path, FileAccess.WRITE)
-			fp.store_string(JSON.stringify({"mode": "duel-snapshots", "events": events, "turns": turns, "partial": true, "rows": rows}, "\t"))
+			fp.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "events": events, "turns": turns, "partial": true, "rows": rows}, "\t"))
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
-		fh.store_string(JSON.stringify({"mode": "duel-snapshots", "events": events, "turns": turns, "rows": rows}, "\t"))
+		fh.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "events": events, "turns": turns, "rows": rows}, "\t"))
 	print("BASELINE_DONE")
 	get_tree().quit(0)

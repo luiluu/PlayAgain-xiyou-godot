@@ -17,7 +17,7 @@
 - skill_rework.json（全角色技能重构）：forced_copy_pending（T255 登记：技能号→原因）、forced_copy_unreachable（T261：副本分支天启篇走不到，技能号→原因）；卡里技能的效果 44 调公共事件强制放副本、副本没进卡的，要 effects_remove 或副本进卡或登记；只有 B 组，超强者 17（含五条悟）／强者 54 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1；状态行 battle_end 是布尔（T263）；技能行 self_states_on_hit 只能是 true 且要带 self_states（T264）；技能行 cast_pick、seg_elements_of、伤害条件 stat_floor 的格式（T268）。
 - reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
 - brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。
-- balance_table.json 的 guardian_phase4（守层者三表，T239）：hp_base／atk_scale／resist 层号 1～34、值为正；focus 层号 5～33、{skill: 正整数, scale: 正数[, single: 1]}（T363）。
+- balance_table.json 的 guardian_phase4（守层者三表，T239）：hp_base／atk_scale／resist 层号 1～34、值为正；focus 层号 5～33、{skill: 正整数, scale: 正数[, single: 1]}（T363）。lifesteal_cap {skills: 正整数列表, pct: {五档难度键齐全: 正整数}}（T392）。
 - guardian_params.json（守层者能力值重锚，T237／T245）：只有 B 组，ref_enemy 是正整数、stats 八项对 0～7、floors 只有 31～34 层、qiyin 行（可没有）和每层只写 stats 里的项（下划线开头的注释键除外）、取值是正整数百分比（附则 E）。
 - growth.json（渡鸦、奈叶、流萤无限成长，T256）：只有 B 组，全表整数（附则 E）、层价分段从 1 层起连续且份数不降、翻倍倍数 ≥2、拐点在分段里、Q6 判定四项范围、三人行齐全且角色号对、一份是正整数、平加只认能力编号 0～7 且渡鸦只加魔攻、奈叶只加生命魔法、流萤不走平加。
 - six_dim.json（天启篇六维，T275）：只有 B 组，八档刻度、全整数（附则 E）、韧性抗控表 −10～+10 随档不降、R1～R3（SSS 唯一极化、SS 其余五维至少 2 项 ≤C、S 稀有度）逐份过，R4 分档总分只报告不拦（T280）、普通怪模板 8～10 个、样板角色号在 base_line.json、骑士键同 horsemen.json。\n有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
@@ -193,8 +193,19 @@ def guardian_phase4_rules(g) -> list:
             and v.get('single', 1) == 1 and not isinstance(v.get('single'), bool)
         if not ok:
             bad.append('guardian_phase4.focus[%s]＝%r：层号要 5～33，值要 {skill: 正整数, scale: 正数[, single: 1]}' % (k, v))
+    lc = g.get('lifesteal_cap')
+    if lc is not None:   # T392：{skills: [正整数技能号…], pct: {难度键: 正整数}}，五档难度键要齐（T392 核 P3-3）
+        isint = lambda v: isinstance(v, int) and not isinstance(v, bool)
+        sk, pc = (lc.get('skills'), lc.get('pct')) if isinstance(lc, dict) else (None, None)
+        if not isinstance(sk, list) or not sk or not all(isint(x) and x > 0 for x in sk):
+            bad.append('guardian_phase4.lifesteal_cap.skills＝%r：要非空的正整数技能号列表' % (sk,))
+        if not isinstance(pc, dict) or set(pc) != set(DIFF_NAMES) or not all(isint(v) and v > 0 for v in pc.values()):
+            bad.append('guardian_phase4.lifesteal_cap.pct＝%r：五档难度键要齐（%s，不多不少）、值要正整数（百分比）' % (pc, '／'.join(DIFF_NAMES)))
+        for k in (lc if isinstance(lc, dict) else {}):
+            if k not in ('skills', 'pct') and not str(k).startswith('_'):
+                bad.append('guardian_phase4.lifesteal_cap 有不认识的键：%s' % k)
     for k in g:
-        if k not in ('hp_base', 'atk_scale', 'resist', 'focus') and not str(k).startswith('_'):
+        if k not in ('hp_base', 'atk_scale', 'resist', 'focus', 'lifesteal_cap') and not str(k).startswith('_'):
             bad.append('guardian_phase4 有不认识的键：%s' % k)
     return bad
 

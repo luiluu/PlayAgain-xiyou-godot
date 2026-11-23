@@ -748,3 +748,28 @@ static func strip_rec(id: int, base: Dictionary) -> Dictionary:
 		r["traits"] = traits
 	_strip_recs[id] = [base, r, key]
 	return r
+
+
+## T392（Kyo 11-22 事项26「按推荐，随我们自己的难度而变化」）：守层者高倍吸血招在天启篇按本档难度封顶。
+## 表 balance_table.guardian_phase4.lifesteal_cap ＝ {"skills": [技能号…], "pct": {难度键: 整数}}：这几招由守层者本身（敌人号或变身前是守层者；
+## 心魔、骑士、鸿钧、七印里副本、同层小怪都不认）放出时，一次吸回的血 ≤ 这一下实际打出的伤害 × pct%（pct 缺这一档不封）。
+## 19 层炎龙队长「厄运剥夺」3805 原版 <HP Life Steal: 10000%>，一下能把全场血吸满（T363 核⑤）。西游档、开关关、没表：原样返回。
+## 回退：`XGuardianRework.LIFESTEAL_CAP = false`。BattleLogic._life_steal 只在天启篇存档且开关开着时调这里。
+static var LIFESTEAL_CAP := true
+
+
+static func steal_cap(u, item: Dictionary, damage: float, steal: float) -> float:
+	if not LIFESTEAL_CAP or steal <= 0.0 or not u is XEnemy or not _on():
+		return steal
+	var e := u as XEnemy
+	if not e.horseman.is_empty() or guardian_floor(e) <= 0:
+		return steal
+	var g = XTianqiBalance.data().get("guardian_phase4", {})
+	var row = g.get("lifesteal_cap", {}) if g is Dictionary else {}
+	if not row is Dictionary or not (row.get("skills", []) as Array).any(func(x): return int(x) == int(item.get("id", 0))):
+		return steal
+	var key := str(XState.current.flags.get("tianqi", {}).get("difficulty", ""))
+	var pct = (row.get("pct", {}) as Dictionary).get(key)
+	if pct == null:
+		return steal
+	return minf(steal, floorf(maxf(0.0, damage) * int(pct) / 100.0))

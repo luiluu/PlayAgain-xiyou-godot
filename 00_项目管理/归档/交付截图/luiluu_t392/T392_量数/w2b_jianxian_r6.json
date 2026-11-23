@@ -1,0 +1,650 @@
+{
+	"events": true,
+	"forceDifficulty": "jianxian",
+	"mode": "duel-snapshots",
+	"rows": [
+		{
+			"atkScale": 0.0133,
+			"dmg": 173467.956349206,
+			"enemyHp": 1560000.0,
+			"floor": 30,
+			"per": [
+				{
+					"aborted": false,
+					"alien": [
+						"538:huaxing:fervor"
+					],
+					"alive": 2,
+					"allWeak": false,
+					"atkScale": 0.0133,
+					"dmg": 309027.125,
+					"enemyAtk": [
+						72044
+					],
+					"enemyDef": [
+						[
+							14850,
+							14850
+						]
+					],
+					"enemyHp": 1560000.0,
+					"lost": false,
+					"members": [
+						3,
+						32,
+						115,
+						45
+					],
+					"party": [
+						3,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							2869,
+							2869
+						],
+						[
+							12266,
+							7948
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							6391,
+							14113
+						]
+					],
+					"partyHp": [
+						110979,
+						466426,
+						103455,
+						411331
+					],
+					"rng": 100030,
+					"swap": {},
+					"team": "原队",
+					"turns": 8,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"534:huaxing:berserk"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.0133,
+					"dmg": 38826.1111111111,
+					"enemyAtk": [
+						280506
+					],
+					"enemyDef": [
+						[
+							60588,
+							60588
+						]
+					],
+					"enemyHp": 1560000.0,
+					"lost": true,
+					"members": [
+						3,
+						32,
+						115,
+						45
+					],
+					"party": [
+						3,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							2869,
+							2869
+						],
+						[
+							12266,
+							7948
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							6391,
+							14113
+						]
+					],
+					"partyHp": [
+						110979,
+						466426,
+						103455,
+						411331
+					],
+					"rng": 200030,
+					"swap": {},
+					"team": "原队",
+					"turns": 9,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"538:huaxing:fervor"
+					],
+					"alive": 2,
+					"allWeak": false,
+					"atkScale": 0.0133,
+					"dmg": 328031.875,
+					"enemyAtk": [
+						58100
+					],
+					"enemyDef": [
+						[
+							14850,
+							14850
+						]
+					],
+					"enemyHp": 1560000.0,
+					"lost": false,
+					"members": [
+						32,
+						115,
+						53,
+						49
+					],
+					"party": [
+						32,
+						115,
+						53,
+						49
+					],
+					"partyAtk": [
+						[
+							12623,
+							7948
+						],
+						[
+							2697,
+							2618
+						],
+						[
+							3175,
+							12509
+						],
+						[
+							1566,
+							1520
+						]
+					],
+					"partyHp": [
+						466426,
+						103455,
+						294166,
+						34200
+					],
+					"rng": 100030,
+					"swap": {},
+					"team": "随机1",
+					"turns": 8,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"538:huaxing:berserk"
+					],
+					"alive": 2,
+					"allWeak": false,
+					"atkScale": 0.0133,
+					"dmg": 245658.857142857,
+					"enemyAtk": [
+						199160
+					],
+					"enemyDef": [
+						[
+							42852,
+							42852
+						]
+					],
+					"enemyHp": 1560000.0,
+					"lost": false,
+					"members": [
+						32,
+						115,
+						53,
+						49
+					],
+					"party": [
+						32,
+						115,
+						53,
+						49
+					],
+					"partyAtk": [
+						[
+							12623,
+							7948
+						],
+						[
+							2697,
+							2618
+						],
+						[
+							3175,
+							12509
+						],
+						[
+							1566,
+							1520
+						]
+					],
+					"partyHp": [
+						466426,
+						103455,
+						294166,
+						34200
+					],
+					"rng": 200030,
+					"swap": {},
+					"team": "随机1",
+					"turns": 7,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"534:huaxing:fervor"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.0133,
+					"dmg": 101277.055555556,
+					"enemyAtk": [
+						79016
+					],
+					"enemyDef": [
+						[
+							20196,
+							20196
+						]
+					],
+					"enemyHp": 1560000.0,
+					"lost": true,
+					"members": [
+						53,
+						149,
+						49,
+						19
+					],
+					"party": [
+						53,
+						149,
+						49,
+						19
+					],
+					"partyAtk": [
+						[
+							3175,
+							12509
+						],
+						[
+							9015,
+							4195
+						],
+						[
+							1566,
+							1520
+						],
+						[
+							2466,
+							2394
+						]
+					],
+					"partyHp": [
+						294166,
+						262967,
+						34200,
+						98753
+					],
+					"rng": 100030,
+					"swap": {},
+					"team": "随机2",
+					"turns": 18,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"534:huaxing:berserk"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.0133,
+					"dmg": 34150.5,
+					"enemyAtk": [
+						221244
+					],
+					"enemyDef": [
+						[
+							49896,
+							49896
+						]
+					],
+					"enemyHp": 1560000.0,
+					"lost": true,
+					"members": [
+						53,
+						149,
+						49,
+						19
+					],
+					"party": [
+						53,
+						149,
+						49,
+						19
+					],
+					"partyAtk": [
+						[
+							3175,
+							12509
+						],
+						[
+							9015,
+							4195
+						],
+						[
+							1566,
+							1520
+						],
+						[
+							2466,
+							2394
+						]
+					],
+					"partyHp": [
+						294166,
+						262967,
+						34200,
+						98753
+					],
+					"rng": 200030,
+					"swap": {},
+					"team": "随机2",
+					"turns": 4,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"538:huaxing:fervor"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.0133,
+					"dmg": 444777.428571429,
+					"enemyAtk": [
+						58100
+					],
+					"enemyDef": [
+						[
+							14850,
+							14850
+						]
+					],
+					"enemyHp": 1560000.0,
+					"lost": false,
+					"members": [
+						45,
+						53,
+						32,
+						149
+					],
+					"party": [
+						45,
+						53,
+						32,
+						149
+					],
+					"partyAtk": [
+						[
+							6574,
+							14113
+						],
+						[
+							3175,
+							12509
+						],
+						[
+							12623,
+							7948
+						],
+						[
+							9015,
+							4195
+						]
+					],
+					"partyHp": [
+						411331,
+						294166,
+						466426,
+						262967
+					],
+					"rng": 100030,
+					"swap": {},
+					"team": "随机3",
+					"turns": 7,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"538:huaxing:berserk"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.0133,
+					"dmg": 60986.0,
+					"enemyAtk": [
+						427186
+					],
+					"enemyDef": [
+						[
+							58280,
+							58280
+						]
+					],
+					"enemyHp": 1560000.0,
+					"lost": true,
+					"members": [
+						45,
+						53,
+						32,
+						149
+					],
+					"party": [
+						45,
+						53,
+						32,
+						149
+					],
+					"partyAtk": [
+						[
+							6574,
+							14113
+						],
+						[
+							3175,
+							12509
+						],
+						[
+							12623,
+							7948
+						],
+						[
+							9015,
+							4195
+						]
+					],
+					"partyHp": [
+						411331,
+						294166,
+						466426,
+						262967
+					],
+					"rng": 200030,
+					"swap": {},
+					"team": "随机3",
+					"turns": 9,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"538:huaxing:fervor"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.0133,
+					"dmg": 286550.916666667,
+					"enemyAtk": [
+						79016
+					],
+					"enemyDef": [
+						[
+							13896,
+							18176
+						]
+					],
+					"enemyHp": 1560000.0,
+					"lost": true,
+					"members": [
+						81,
+						32,
+						115,
+						45
+					],
+					"party": [
+						81,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							5734,
+							7586
+						],
+						[
+							12266,
+							7948
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							6391,
+							14113
+						]
+					],
+					"partyHp": [
+						282640,
+						466426,
+						103455,
+						411331
+					],
+					"rng": 100030,
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 75,
+						"out": 3
+					},
+					"team": "奶妈队",
+					"turns": 12,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"534:huaxing:berserk"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.0133,
+					"dmg": 12495.0,
+					"enemyAtk": [
+						395080
+					],
+					"enemyDef": [
+						[
+							60588,
+							60588
+						]
+					],
+					"enemyHp": 1560000.0,
+					"lost": true,
+					"members": [
+						81,
+						32,
+						115,
+						45
+					],
+					"party": [
+						81,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							5734,
+							7586
+						],
+						[
+							12266,
+							7948
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							6391,
+							14113
+						]
+					],
+					"partyHp": [
+						282640,
+						466426,
+						103455,
+						411331
+					],
+					"rng": 200030,
+					"swap": {
+						"from": "冷板凳",
+						"in": 81,
+						"level": 75,
+						"out": 3
+					},
+					"team": "奶妈队",
+					"turns": 11,
+					"won": false
+				}
+			],
+			"teams": 10,
+			"troop": 466,
+			"turns": 8.5,
+			"won": 4
+		}
+	],
+	"turns": 40
+}

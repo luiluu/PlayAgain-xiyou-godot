@@ -3263,6 +3263,7 @@ func _execute_hp_damage_ledger(u: XBattler, t: XBattler, value: float, drain: bo
 func _life_steal(u: XBattler, damage: float, item: Dictionary, t: XBattler = null) -> void:
 	# 天启篇去全队 ×6（O-470）：先还原成原来的伤害（÷dealt_scale），吸血量再按攻击方自己的血量缩（heal_scale）；西游档两个都是 1
 	var steal := XLifeSteal.amount(u, item, damage / XTianqiNoX6.dealt_scale(u, t)) * XTianqiNoX6.heal_scale(u)
+	if XGuardianRework.LIFESTEAL_CAP and XTianqi.active(XState.current): steal = XGuardianRework.steal_cap(u, item, damage, steal)  # T392 守层者高倍吸血按天启篇难度封顶
 	if steal <= 0.0:
 		return
 	for row in XLifeSteal.push_rows(u):
