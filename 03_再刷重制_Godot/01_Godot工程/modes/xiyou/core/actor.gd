@@ -1265,7 +1265,7 @@ static var _custom_param_cache := {}
 func custom_param(e: Dictionary, i: int) -> float:
 	var kind := str(e.get("kind", ""))
 	var base := int(e.get("base", e.get("id", 0)))
-	var key := kind + ":" + str(base)
+	var key := ("%s:%d:xy" if XXufeng.xiyou_save_on() else "%s:%d") % [kind, base]
 	if not _custom_param_cache.has(key):
 		var rec := XDB.rec("Weapons" if kind == "weapon" else "Armors", base)
 		var cp: Dictionary = (rec if not rec.is_empty() else e).get("customParams", {})
@@ -1293,9 +1293,10 @@ static func magic_param(e: Dictionary, i: int) -> float:
 	if not grown.is_empty():
 		return float(lv) * float(grown[i])
 	var kind := str(e.get("kind", ""))
-	var key := kind + ":" + str(int(e.get("base", e.get("id", 0))))
+	var base := int(e.get("base", e.get("id", 0)))
+	var key := ("%s:%d:xy" if XXufeng.xiyou_save_on() else "%s:%d") % [kind, base]
 	if not _magic_growth_cache.has(key):
-		var rec := XDB.rec("Weapons" if kind == "weapon" else "Armors", int(e.get("base", e.get("id", 0))))
+		var rec := XDB.rec("Weapons" if kind == "weapon" else "Armors", base)
 		_magic_growth_cache[key] = XPower.magic_growth(rec if not rec.is_empty() else e)
 	return float(lv) * float(_magic_growth_cache[key][i])
 

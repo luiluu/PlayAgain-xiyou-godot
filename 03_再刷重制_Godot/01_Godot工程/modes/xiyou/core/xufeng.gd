@@ -1,12 +1,14 @@
 class_name XXufeng
 extends RefCounted
 ## 【小A·未经审查】西游档 152 徐凤年数值重做（D272，Kyo 11-23 定案，T440）。
-## 仅对西游档（XDB.table 读表就地打补丁＋XDB.rec 仅在非天启篇分派 9997 独立状态）生效；
-## 天启篇徐凤年（skill_rework.json，T411）不受任何影响。
+## 仅在已载入西游档（XState.current != null 且非天启篇）时经 XDB.rec 返回重做副本，
+## 不修改 XDB.table 共享原表，天启篇徐凤年（skill_rework.json，T411）与无存档表校验完全读原表。
+## 读档时（XState.from_dict → XXufeng.after_load）按当前开关双向同步既有专属装备实例（76/129/143），
+## 保留随机属性浮动、强化、等级经验与词缀。
 ## 保留原版全部技能与状态机制（大黄庭、大帝转世、剑一～剑八、剑九、九阶基因锁、天下第一、
 ## 剑气滚龙壁·封印、真·剑九、绣冬、春雷、不朽法宝），去掉 9998 随目标血量无限膨胀的 b.hp*0.000015，
-## 各乘区倍率与属性均匀调整（系数全整数，附则 E），西游档 50/70/75/80 级五回合木桩（满级法宝 99 级主口径）
-## 均稳落在 1.15～1.25× 狂刀（70 级锚定 1.20× 狂刀）。
+## 各乘区倍率与属性均匀调整（系数全整数，附则 E），西游档 50/70/75(全套)/80(全套) 级五回合木桩（满级法宝 99 级主口径）
+## 均稳落在 1.15～1.25× 狂刀（70 级锚定 1.20× 狂刀；75/80 级采用方案 B：绣冬承接主输出、春雷保留再动+1与生存成长及轻输出）。
 ## 开关 REWORK = false 后 clear_cache() 回原版数据；原版参照测试由 XCanglong.original_data() 一并关闭。
 
 static var REWORK := true
@@ -21,7 +23,7 @@ const SK_GENELOCK := 9996
 const SK_TIANXIA := 9997
 const SK_GUNLONG := 9998
 const ST_SHENG_SRC := 2525      # 公共状态「神秘成圣」（9984/9997/10512 共用），原件不动
-const ST_TIANXIA := 19501       # 表外号段：西游档 9997 专属「神秘成圣」副本（不改 States 表长与 2525，不串天启篇）
+const ST_TIANXIA := 19501       # 表外号段：西游档 9997 专属「神秘成圣」副本（仅西游档可读，不改 States 表长与 2525）
 const ST_TRUE_SWORD9 := 2539
 const WPN_XIUDONG := 76
 const ARM_CHUNLEI := 129
@@ -68,79 +70,100 @@ const FABAO_CRIT_PCT := 100      # 暴击率 +100%（原 200%）
 const FABAO_GROW_ALL := 12       # 每级全属性 +12（原 15）
 const FABAO_GROW_MMP_EXTRA := 18 # 魔法额外 +18，即每级 +30（原额外 +35，即 +50）
 
-## Weapon 76 绣冬 & Armor 129 春雷（75 级专属，保留 2301 紫炎与成长）
-const GEAR_ATK_PCT := 150        # 物攻能力值 *150%（原 300%）
-const GEAR_EL_AMP := 195         # 11 元素增幅 +195%（原 +600%）
-const GEAR_HARM := 125           # 终伤/爆伤 +125%（原 +450%）
-const XIUDONG_GROW := 6          # 绣冬 76 每级物攻/魔攻 +6（原 +10）
+## Weapon 76 绣冬（75 级专属主手，方案 B：承接主要输出，保留 2301 紫炎与成长）
+const XIUDONG_ATK_PCT := 137     # 物攻能力值 *137%（原 300%）
+const XIUDONG_EL_AMP := 290      # 11 元素增幅 +290%（原 +600%）
+const XIUDONG_HARM := 120        # 终伤/爆伤 +120%（原 +450%）
+const XIUDONG_GROW := 4          # 绣冬 76 每级物攻/魔攻 +4（原 +10）
+
+## Armor 129 春雷（75 级专属副手，方案 B：保留再动+1、完整生存成长 mhp*200/mmp*150/agi*25 与 2301 紫炎，配轻输出词条）
+const CHUNLEI_ATK_PCT := 105     # 物攻能力值 *105%（原 300%）
+const CHUNLEI_EL_AMP := 45       # 11 元素增幅 +45%（原 +600%）
+const CHUNLEI_HARM := 5          # 终伤/爆伤 +5%（原 +450%）
+const CHUNLEI_ATK_GROW := 1      # 每级物攻/魔攻 +1（原 +30；生命 +200、魔法 +150、敏捷 +25 保留原值）
 
 static var _st_tianxia_cache: Array = []  # [src_ref, copy_dict]
-static var _st_2539_cache: Array = []     # [src_ref, copy_dict]
-static var _sk9997_cache: Array = []      # [src_ref, copy_dict]
-static var _arm129_cache: Array = []      # [src_ref, copy_dict]
+static var _rec_cache := {}               # "Table:id" -> [base_ref, copy_dict]
+static var _gear_tpl_cache := {}          # "kind:id" -> [orig_ref, rework_copy]
 
 
 static func on() -> bool:
 	return REWORK
 
 
-## 仅在已载入西游档（非天启篇、非无存档静态表校验）时生效的状态／记录分派
+## 仅在已载入西游档（非天启篇、非无存档静态表校验）时生效的记录分派
 static func xiyou_save_on() -> bool:
 	return REWORK and XState.current != null and not XTianqi.active(XState.current)
 
 
-## 原版参照测试用：关闭开关并清除受影响表缓存
+## 原版参照测试用：关闭开关并清除受影响缓存
 static func original_data() -> void:
 	REWORK = false
 	clear_cache()
 
 
-## 清掉 XDB 与 XActor 里受影响的缓存，下次读按当前开关重新打补丁
+## 清掉本模块与 XActor 里受影响的缓存（共享原表 XDB._tables 从未被修改，无需驱逐）
 static func clear_cache() -> void:
-	for t in ["Skills", "States", "Armors", "Weapons"]:
-		XDB._tables.erase(t)
 	_st_tianxia_cache.clear()
-	_st_2539_cache.clear()
-	_sk9997_cache.clear()
-	_arm129_cache.clear()
-	XActor._magic_growth_cache.erase("armor:%d" % ARM_FABAO)
-	XActor._custom_param_cache.erase("weapon:%d" % WPN_XIUDONG)
-	XActor._custom_param_cache.erase("armor:%d" % ARM_CHUNLEI)
+	_rec_cache.clear()
+	_gear_tpl_cache.clear()
+	for suffix in ["", ":xy"]:
+		XActor._magic_growth_cache.erase("armor:%d%s" % [ARM_FABAO, suffix])
+		XActor._custom_param_cache.erase("weapon:%d%s" % [WPN_XIUDONG, suffix])
+		XActor._custom_param_cache.erase("armor:%d%s" % [ARM_CHUNLEI, suffix])
 	XActor.read_touch()
 
 
-## 西游档（非天启篇）Armor 129 春雷经 XDB.rec 返回重做副本，不动 Armors 表原件，
-## 避免破坏原版战力参照（xiyou_power 无存档测 129）与天启篇池文字（xiyou_tianqi_pool_text）
-static func armor_129_rec(base: Dictionary) -> Dictionary:
+## 本模块经 XDB.rec 改写哪些表内记录（仅在 xiyou_save_on() 时分派副本）
+static func touches(table_name: String, id: int) -> bool:
+	match table_name:
+		"Skills":
+			return id == SK_DAHUANGTING or id == SK_TIANXIA or id == SK_GUNLONG or SWORDS.has(id)
+		"States":
+			return id == ST_TRUE_SWORD9
+		"Armors":
+			return id == ARM_FABAO or id == ARM_CHUNLEI
+		"Weapons":
+			return id == WPN_XIUDONG
+	return false
+
+
+## 西游档经 XDB.rec 取副本（缓存按原件引用校验，不改共享原表）
+static func rec(table_name: String, id: int, base: Dictionary) -> Dictionary:
 	if not REWORK or base.is_empty():
 		return base
-	if _arm129_cache.size() == 2 and is_same(_arm129_cache[0], base):
-		return _arm129_cache[1]
+	var key := "%s:%d" % [table_name, id]
+	var cached = _rec_cache.get(key)
+	if cached is Array and cached.size() == 2 and is_same(cached[0], base):
+		return cached[1]
 	var r: Dictionary = base.duplicate(true)
-	_patch_chunlei_129(r)
-	_arm129_cache = [base, r]
+	match table_name:
+		"Skills":
+			if id == SK_DAHUANGTING:
+				_patch_9985(r)
+			elif SWORDS.has(id):
+				_patch_sword(r, id, SWORDS[id])
+			elif id == SK_TIANXIA:
+				_patch_9997(r)
+				_redirect_9997_state(r)
+			elif id == SK_GUNLONG:
+				_patch_9998(r)
+		"States":
+			if id == ST_TRUE_SWORD9:
+				_patch_state_2539(r)
+		"Armors":
+			if id == ARM_FABAO:
+				_patch_fabao_143(r)
+			elif id == ARM_CHUNLEI:
+				_patch_chunlei_129(r)
+		"Weapons":
+			if id == WPN_XIUDONG:
+				_patch_xiudong_76(r)
+	_rec_cache[key] = [base, r]
 	return r
 
 
-## 西游档（非天启篇）2539 真·剑九读记录时返回副本（k = ST2539_RATE），不改 XDB.table("States")[2539] 原件，
-## 避免破坏天启篇总账 damage_ledger 对 States 表原值的核对（xiyou_tianqi_live_sample）
-static func state_2539_rec(base: Dictionary) -> Dictionary:
-	if not REWORK or base.is_empty():
-		return base
-	if _st_2539_cache.size() == 2 and is_same(_st_2539_cache[0], base):
-		return _st_2539_cache[1]
-	var r: Dictionary = base.duplicate(true)
-	for e in r.get("effects", []):
-		for g in e.get("groups", []):
-			for step in g.get("steps", []):
-				if is_equal_approx(float(step.get("k", 0.0)), 5.0):
-					step.k = float(ST2539_RATE)
-	r.note = str(r.get("note", "")).replace("var finalRate = 5.0;", "var finalRate = %d.0;" % ST2539_RATE)
-	_st_2539_cache = [base, r]
-	return r
-
-
-## 表外状态 ST_TIANXIA（19501）：从原版 2525 复制并均匀下调 finalRate／bonusRate，仅由 XDB.rec("States", 19501) 返回
+## 表外状态 ST_TIANXIA（19501）：从原版 2525 复制并均匀下调 finalRate／bonusRate，仅在西游档经 XDB.rec 返回
 static func tianxia_state_rec(t: Array) -> Dictionary:
 	if not REWORK or ST_SHENG_SRC >= t.size() or not (t[ST_SHENG_SRC] is Dictionary):
 		return {}
@@ -160,13 +183,191 @@ static func tianxia_state_rec(t: Array) -> Dictionary:
 	return r
 
 
-## 西游档（非天启篇）9997 天下第一读记录时把开战状态 2525 重指向表外 19501；天启篇存档走原 2525 由 skill_rework.json 清除
-static func skill_9997_rec(base: Dictionary) -> Dictionary:
-	if not REWORK or base.is_empty():
-		return base
-	if _sk9997_cache.size() == 2 and is_same(_sk9997_cache[0], base):
-		return _sk9997_cache[1]
-	var r: Dictionary = base.duplicate(true)
+# ---- 读档双向同步既有专属装备实例（P1-2） ----
+
+## XState.from_dict 末尾调用：按当前 REWORK 开关与存档模式（仅西游档启用重做，天启篇与 REWORK=false 均还原原版）
+## 双向同步角色已穿戴、背包及仓库中的 76 绣冬／129 春雷／143 不朽法宝实例，保留随机浮动 params、强化、等级经验与词缀。
+static func after_load(s: XState) -> int:
+	if s == null:
+		return 0
+	var want_rework := REWORK and not XTianqi.active(s)
+	var all := s.gear.duplicate()
+	for a in s.actors.values():
+		all.append_array(a.raw_equip_list())
+	for w in s.warehouses.values():
+		for list in w.get("items", {}).values():
+			for v in list:
+				if v is Dictionary:
+					all.append(v)
+	var seen := []
+	var changed := 0
+	for item in all:
+		if not (item is Dictionary) or seen.any(func(x): return is_same(x, item)):
+			continue
+		seen.append(item)
+		if sync_gear_item(item, want_rework):
+			changed += 1
+	# 2525「神秘成圣」removeAtBattleEnd = false，旧档战斗后可能常驻在 152 身上；切换 REWORK 时清掉陈旧状态防双叠或残留
+	var xf: XActor = s.actors.get(ACTOR)
+	if xf != null:
+		if want_rework and xf.state_ids.has(ST_SHENG_SRC) and not xf.skill_ids.has(9984) and not xf.skill_ids.has(10512):
+			xf.state_ids.erase(ST_SHENG_SRC)
+			xf.state_turns.erase(ST_SHENG_SRC)
+			changed += 1
+		elif not want_rework and xf.state_ids.has(ST_TIANXIA):
+			xf.state_ids.erase(ST_TIANXIA)
+			xf.state_turns.erase(ST_TIANXIA)
+			changed += 1
+	if changed > 0:
+		for a in s.actors.values():
+			a.refresh_passive()
+	return changed
+
+
+static func _is_xufeng_gear(kind: String, base_id: int) -> bool:
+	return (kind == "weapon" and base_id == WPN_XIUDONG) or (kind == "armor" and (base_id == ARM_CHUNLEI or base_id == ARM_FABAO))
+
+
+static func _gear_pair(kind: String, base_id: int) -> Array:
+	var tbl := "Weapons" if kind == "weapon" else "Armors"
+	var arr = XDB.table(tbl)
+	if not (arr is Array) or base_id <= 0 or base_id >= arr.size() or not (arr[base_id] is Dictionary):
+		return []
+	var orig: Dictionary = arr[base_id]
+	var key := "%s:%d" % [kind, base_id]
+	var cached = _gear_tpl_cache.get(key)
+	if cached is Array and cached.size() == 2 and is_same(cached[0], orig):
+		return cached
+	var rw: Dictionary = orig.duplicate(true)
+	if kind == "weapon" and base_id == WPN_XIUDONG:
+		_patch_xiudong_76(rw)
+	elif kind == "armor" and base_id == ARM_CHUNLEI:
+		_patch_chunlei_129(rw)
+	elif kind == "armor" and base_id == ARM_FABAO:
+		_patch_fabao_143(rw)
+	var pair := [orig, rw]
+	_gear_tpl_cache[key] = pair
+	return pair
+
+
+static func _traits_prefix_eq(own: Array, prefix: Array) -> bool:
+	if own.size() < prefix.size():
+		return false
+	for i in range(prefix.size()):
+		if JSON.stringify(own[i]) != JSON.stringify(prefix[i]):
+			return false
+	return true
+
+
+## 双向同步单件专属装备实例（orig ↔ rework）；已匹配时不写任何字段，返回是否改动。
+static func sync_gear_item(item: Dictionary, want_rework: bool) -> bool:
+	var kind := str(item.get("kind", ""))
+	var base_id := int(item.get("base", item.get("id", 0)))
+	if not _is_xufeng_gear(kind, base_id):
+		return false
+	var pair := _gear_pair(kind, base_id)
+	if pair.size() != 2:
+		return false
+	var orig: Dictionary = pair[0]
+	var rw: Dictionary = pair[1]
+	var target: Dictionary = rw if want_rework else orig
+	var other: Dictionary = orig if want_rework else rw
+	var changed := false
+	var switched_from_other := false
+
+	# 1) traits：仅替换原件/重做模板前缀，保留词缀与强化追加的 traits
+	var own_traits: Array = item.get("traits", [])
+	var tgt_traits: Array = target.get("traits", [])
+	var oth_traits: Array = other.get("traits", [])
+	if not _traits_prefix_eq(own_traits, tgt_traits) and _traits_prefix_eq(own_traits, oth_traits):
+		item.traits = tgt_traits.duplicate(true) + own_traits.slice(oth_traits.size()).duplicate(true)
+		changed = true
+		switched_from_other = true
+
+	# 2) note：仅替换原件/重做模板前缀，保留词缀等追加备注
+	var own_note := str(item.get("note", ""))
+	var tgt_note := str(target.get("note", ""))
+	var oth_note := str(other.get("note", ""))
+	if not own_note.begins_with(tgt_note) and own_note.begins_with(oth_note):
+		item.note = tgt_note + own_note.substr(oth_note.length())
+		changed = true
+		switched_from_other = true
+
+	# 3) meta：仅同步 orig 与 rework 之间存在差异的键；若实例词缀覆盖了同名键，按 affixIds 还原词缀覆盖
+	var orig_meta: Dictionary = orig.get("meta", {})
+	var rw_meta: Dictionary = rw.get("meta", {})
+	var tgt_meta: Dictionary = target.get("meta", {})
+	var diff_keys := {}
+	for k in orig_meta:
+		if not rw_meta.has(k) or orig_meta[k] != rw_meta[k]:
+			diff_keys[k] = true
+	for k in rw_meta:
+		if not orig_meta.has(k) or orig_meta[k] != rw_meta[k]:
+			diff_keys[k] = true
+	var affix_overrides := {}
+	var default_tbl := "Weapons" if kind == "weapon" else "Armors"
+	for affix in item.get("affixIds", []):
+		if not (affix is Dictionary):
+			continue
+		var af_tbl := str(affix.get("table", default_tbl))
+		var af_id := int(affix.get("id", 0))
+		var af_rec := XDB.rec(af_tbl, af_id)
+		var af_meta: Dictionary = af_rec.get("meta", {})
+		for k in af_meta:
+			if diff_keys.has(k):
+				affix_overrides[k] = af_meta[k]
+	var own_meta: Dictionary = item.get("meta", {})
+	if not (own_meta is Dictionary):
+		own_meta = {}
+		item["meta"] = own_meta
+	for k in diff_keys:
+		if affix_overrides.has(k):
+			if not own_meta.has(k) or own_meta[k] != affix_overrides[k]:
+				own_meta[k] = affix_overrides[k]
+				changed = true
+		elif tgt_meta.has(k):
+			if not own_meta.has(k) or own_meta[k] != tgt_meta[k]:
+				own_meta[k] = tgt_meta[k]
+				changed = true
+		elif own_meta.has(k):
+			own_meta.erase(k)
+			changed = true
+
+	# 4) customParams（76 绣冬 / 129 春雷成长表）
+	if target.has("customParams"):
+		if JSON.stringify(item.get("customParams", {})) != JSON.stringify(target.customParams):
+			item["customParams"] = target.customParams.duplicate(true)
+			changed = true
+
+	# 5) yep.elementAmplify（76 绣冬 / 129 春雷元素增幅；用差值同步，保留词缀／强化／宝珠叠加）
+	if switched_from_other and target.get("yep") is Dictionary and target.yep.get("elementAmplify") is Dictionary \
+			and other.get("yep") is Dictionary and other.yep.get("elementAmplify") is Dictionary:
+		var tgt_ea: Dictionary = target.yep.elementAmplify
+		var oth_ea: Dictionary = other.yep.elementAmplify
+		var own_yep: Dictionary = item.get("yep", {}) if item.get("yep") is Dictionary else {}
+		var own_ea: Dictionary = (own_yep.get("elementAmplify", {}) as Dictionary).duplicate() if own_yep.get("elementAmplify") is Dictionary else {}
+		for ek in tgt_ea:
+			if oth_ea.has(ek):
+				own_ea[ek] = snappedf(float(own_ea.get(ek, float(oth_ea[ek]))) + float(tgt_ea[ek]) - float(oth_ea[ek]), 0.0001)
+		own_yep["elementAmplify"] = own_ea
+		item["yep"] = own_yep
+		changed = true
+
+	return changed
+
+
+# ---- 逐项补丁（仅用于生成副本，不改共享原表） ----
+
+static func _patch_state_2539(r: Dictionary) -> void:
+	for e in r.get("effects", []):
+		for g in e.get("groups", []):
+			for step in g.get("steps", []):
+				if is_equal_approx(float(step.get("k", 0.0)), 5.0):
+					step.k = float(ST2539_RATE)
+	r.note = str(r.get("note", "")).replace("var finalRate = 5.0;", "var finalRate = %d.0;" % ST2539_RATE)
+
+
+static func _redirect_9997_state(r: Dictionary) -> void:
 	var old_k := "StartPushState%d" % ST_SHENG_SRC
 	var new_k := "StartPushState%d" % ST_TIANXIA
 	r.note = str(r.get("note", "")).replace("<%s:" % old_k, "<%s:" % new_k)
@@ -176,39 +377,7 @@ static func skill_9997_rec(base: Dictionary) -> Dictionary:
 		for k in meta.keys():
 			m2[new_k if str(k) == old_k else k] = meta[k]
 		r.meta = m2
-	_sk9997_cache = [base, r]
-	return r
 
-
-static func patch_skills(t) -> void:
-	if not REWORK or not (t is Array) or t.size() <= SK_GUNLONG:
-		return
-	_patch_9985(t[SK_DAHUANGTING])
-	for id in SWORDS:
-		_patch_sword(t[id], id, SWORDS[id])
-	_patch_9997(t[SK_TIANXIA])
-	_patch_9998(t[SK_GUNLONG])
-
-
-static func patch_states(_t) -> void:
-	pass  # 2539 与 19501 均经 XDB.rec 仅在西游档分派副本，不动 States 表原件（保天启篇总账 damage_ledger 一致）
-
-
-static func patch_armors(t) -> void:
-	if not REWORK or not (t is Array):
-		return
-	if t.size() > ARM_FABAO and t[ARM_FABAO] is Dictionary:
-		_patch_fabao_143(t[ARM_FABAO])
-	# Armor 129 春雷改经 XDB.rec 仅在西游档返回副本（保 xiyou_power 与 xiyou_tianqi_pool_text 原表一致）
-
-
-static func patch_weapons(t) -> void:
-	if not REWORK or not (t is Array) or t.size() <= WPN_XIUDONG or not (t[WPN_XIUDONG] is Dictionary):
-		return
-	_patch_xiudong_76(t[WPN_XIUDONG])
-
-
-# ---- 逐项补丁 ----
 
 static func _patch_9985(s) -> void:
 	if not (s is Dictionary):
@@ -369,20 +538,26 @@ static func _patch_fabao_143(a: Dictionary) -> void:
 static func _patch_xiudong_76(w: Dictionary) -> void:
 	for tr in w.get("traits", []):
 		if int(tr.get("code", 0)) == 21 and int(tr.get("dataId", 0)) == 2:
-			tr.value = float(GEAR_ATK_PCT) / 100.0
+			tr.value = float(XIUDONG_ATK_PCT) / 100.0
 	for el in [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12]:
-		_replace_tag(w, "Element Amplify %d" % el, " +%d%%" % GEAR_EL_AMP)
-	_replace_tag(w, "passiveHarmRi", str(GEAR_HARM))
-	_replace_tag(w, "passiveCrHarmRi", str(GEAR_HARM))
+		_replace_tag(w, "Element Amplify %d" % el, " +%d%%" % XIUDONG_EL_AMP)
+	if w.get("yep") is Dictionary and w.yep.get("elementAmplify") is Dictionary:
+		var ea: Dictionary = w.yep.elementAmplify
+		for el in [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12]:
+			var ek := str(el)
+			if ea.has(ek):
+				ea[ek] = float(XIUDONG_EL_AMP) / 100.0
+	_replace_tag(w, "passiveHarmRi", str(XIUDONG_HARM))
+	_replace_tag(w, "passiveCrHarmRi", str(XIUDONG_HARM))
 	if w.get("customParams") is Dictionary and w.customParams.get("params") is Array:
 		var ps: Array = w.customParams.params
 		if ps.size() > 4:
 			ps[2].level = float(XIUDONG_GROW)
 			ps[4].level = float(XIUDONG_GROW)
 	_replace_note_meta(w, "atk += user.level * 10; mat += user.level * 10;", "atk += user.level * %d; mat += user.level * %d;" % [XIUDONG_GROW, XIUDONG_GROW])
-	# 紫炎 2301 未改数，保留「造成所有伤害结果*350%」原文（供 XTextFix 天启篇 pool_text 锚点匹配）
-	_replace_note_meta(w, "物理 、雷电 阴阳 混沌伤+600%", "物理 、雷电 阴阳 混沌伤+%d%%" % GEAR_EL_AMP)
-	_replace_note_meta(w, "攻击力能力值*300%", "攻击力能力值*%d%%，爆伤与伤害+%d%%" % [GEAR_ATK_PCT, GEAR_HARM])
+	_replace_note_meta(w, "造成所有伤害结果*350%", "造成所有伤害结果*249%")
+	_replace_note_meta(w, "物理 、雷电 阴阳 混沌伤+600%", "物理 、雷电 阴阳 混沌伤+%d%%" % XIUDONG_EL_AMP)
+	_replace_note_meta(w, "攻击力能力值*300%", "攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [XIUDONG_ATK_PCT, XIUDONG_HARM, XIUDONG_HARM])
 	_replace_note_meta(w, "每级+10)", "每级+%d)" % XIUDONG_GROW)
 
 
@@ -391,7 +566,7 @@ static func _patch_chunlei_129(a: Dictionary) -> void:
 	var new_traits := []
 	for tr in a.get("traits", []):
 		if int(tr.get("code", 0)) == 21 and int(tr.get("dataId", 0)) == 2:
-			tr.value = float(GEAR_ATK_PCT) / 100.0
+			tr.value = float(CHUNLEI_ATK_PCT) / 100.0
 			new_traits.append(tr)
 		elif int(tr.get("code", 0)) == 61 and int(tr.get("dataId", 0)) == 0:
 			aplus_seen += 1
@@ -401,14 +576,27 @@ static func _patch_chunlei_129(a: Dictionary) -> void:
 			new_traits.append(tr)
 	a.traits = new_traits
 	for el in [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12]:
-		_replace_tag(a, "Element Amplify %d" % el, " +%d%%" % GEAR_EL_AMP)
-	_replace_tag(a, "passiveHarmRi", str(GEAR_HARM))
-	_replace_tag(a, "passiveCrHarmRi", str(GEAR_HARM))
+		_replace_tag(a, "Element Amplify %d" % el, " +%d%%" % CHUNLEI_EL_AMP)
+	if a.get("yep") is Dictionary and a.yep.get("elementAmplify") is Dictionary:
+		var ea: Dictionary = a.yep.elementAmplify
+		for el in [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12]:
+			var ek := str(el)
+			if ea.has(ek):
+				ea[ek] = float(CHUNLEI_EL_AMP) / 100.0
+	_replace_tag(a, "passiveHarmRi", str(CHUNLEI_HARM))
+	_replace_tag(a, "passiveCrHarmRi", str(CHUNLEI_HARM))
+	if a.get("customParams") is Dictionary and a.customParams.get("params") is Array:
+		var ps: Array = a.customParams.params
+		if ps.size() > 4:
+			ps[2].level = float(CHUNLEI_ATK_GROW)
+			ps[4].level = float(CHUNLEI_ATK_GROW)
+	_replace_note_meta(a, "atk = user.level * 30;", "atk = user.level * %d;" % CHUNLEI_ATK_GROW)
+	_replace_note_meta(a, "mat = user.level * 30;", "mat = user.level * %d;" % CHUNLEI_ATK_GROW)
 	_replace_note_meta(a, "等级需求:1 ", "等级需求:75 ")
 	_replace_note_meta(a, "造成所有伤害结果*350%", "造成所有伤害结果*249%")
-	_replace_note_meta(a, "物理 、雷电 阴阳 混沌伤+600%", "物理 、雷电 阴阳 混沌伤+%d%%" % GEAR_EL_AMP)
+	_replace_note_meta(a, "物理 、雷电 阴阳 混沌伤+600%", "物理 、雷电 阴阳 混沌伤+%d%%" % CHUNLEI_EL_AMP)
 	_replace_note_meta(a, "再动+2 ", "再动+1 ")
-	_replace_note_meta(a, "攻击力能力值*300%", "攻击力能力值*%d%%，爆伤与伤害+%d%%" % [GEAR_ATK_PCT, GEAR_HARM])
+	_replace_note_meta(a, "攻击力能力值*300%", "攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [CHUNLEI_ATK_PCT, CHUNLEI_HARM, CHUNLEI_HARM])
 
 
 # ---- 通用替换工具 ----
