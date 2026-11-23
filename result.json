@@ -1,0 +1,26 @@
+{
+ "sha": "026dd4424aef93e78c0fcd87234278c4c7f6e537",
+ "branch": "ci/luiluu/t434-hide-super-count",
+ "mode": "affected",
+ "base": "7fd1e2bcb58ea54092155698633b6e124f6f9f87",
+ "passed": true,
+ "scenes": 5,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 276.5,
+ "testSeconds": 527,
+ "generatedRef": "refs/ci/generated/luiluu/t434-hide-super-count",
+ "generatedCommit": "51a10ccd8480ff894ae855d25be2c5a48fd077a6",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45253525102",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_tianqi_opening.tscn"
+ ],
+ "time": "2026-11-23T20:02:47+00:00"
+}
