@@ -212,6 +212,8 @@ var _brand_visits := {}            # 层 → 去闭关做烙印的次数（保�
 var _brand_realms_before := []
 var _growth_stamp = null
 var _lottery_stamp := -1
+var _lottery_rounds := [[], 0]     # T432：同一回大厅（[层, _bcount]）已在希禾抽过的轮数，防积分高时连抽 80 轮撞 msg_loop_limit
+const LOTTERY_ROUNDS_MAX := 20
 var lottery_draws := 0
 var _last_over_tick := -1
 var settled := false
@@ -1516,11 +1518,14 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 			_mark("growth_done")
 	# 抽奖：有券就去希禾那里选「自定义单抽」，数量填最多（数量框由 _act 里代填）
 	var tickets := XCasinoBatch.stock(st)
-	if lottery_enabled and tickets > 0 and tickets != _lottery_stamp and (lottery_keep <= 0 or int(st.variable(XCasinoBatch.VAR_POINTS)) >= lottery_keep + 500):
+	var lot_sig := [int(st.variable(FLOOR_VAR)), _bcount()]
+	if lottery_enabled and tickets > 0 and tickets != _lottery_stamp and _lottery_can_round(lot_sig) \
+			and (lottery_keep <= 0 or int(st.variable(XCasinoBatch.VAR_POINTS)) >= lottery_keep + 500):
 		e = _find_event(map, func(x): return _has_choice(x, "自定义单抽"))
 		if e != null and _aim(map, e, "lottery"):
 			if _arrived(map.player):
 				_lottery_stamp = tickets
+				_lottery_mark_round(lot_sig)
 			await _goto_target(map)
 			return
 		_lottery_stamp = tickets         # 找不到或走不到希禾：这批券先不管
@@ -1632,8 +1637,7 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 		e = _find_event(map, func(x): return x.event_id == _door_id)
 	if e != null and _aim(map, e, "enter"):
 		var sig := [int(st.variable(FLOOR_VAR)), _bcount()]
-		_door_idle = [sig, int(_door_idle[1]) + 1] if sig == _door_idle[0] else [sig, 1]
-		if int(_door_idle[1]) > DOOR_IDLE_MAX:
+		if _bump_door_idle(sig, _arrived(map.player)):
 			climb_stop = "塔门连着 %d 次只回对话、不开打（层数变量 %d；塔顶或下一层还没做）" % [DOOR_IDLE_MAX, int(sig[0])]
 			_log(climb_stop)
 			return
@@ -1642,6 +1646,23 @@ func _climb_lobby(map: XMapScene, st: XState) -> void:
 	# 门走不到或认不出：退回随便逛
 	_intent = ""
 	await _act_map({"map": map})
+
+
+## T432：塔门空转计数只在到达门前互动时递增（避免 28 层等 0 场快进后走两趟去塔门的脚步超过 DOOR_IDLE_MAX 被误杀）
+func _bump_door_idle(sig: Array, arrived: bool) -> bool:
+	if not arrived:
+		return false
+	_door_idle = [sig, int(_door_idle[1]) + 1] if sig == _door_idle[0] else [sig, 1]
+	return int(_door_idle[1]) > DOOR_IDLE_MAX
+
+
+## T432：同一回大厅希禾抽奖轮数上限（低于 msg_loop_limit，防积分高时原地连抽 80 轮被对话循环保护中止）
+func _lottery_can_round(sig: Array) -> bool:
+	return sig != _lottery_rounds[0] or int(_lottery_rounds[1]) < LOTTERY_ROUNDS_MAX
+
+
+func _lottery_mark_round(sig: Array) -> void:
+	_lottery_rounds = [sig, int(_lottery_rounds[1]) + 1] if sig == _lottery_rounds[0] else [sig, 1]
 
 
 func _gear_sig(st: XState) -> Array:

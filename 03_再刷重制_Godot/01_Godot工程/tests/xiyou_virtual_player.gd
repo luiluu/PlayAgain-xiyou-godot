@@ -138,6 +138,33 @@ func _check_spend_rules(climb: bool) -> void:
 	await get_tree().process_frame
 
 
+## T432 回归断言：① 走去塔门途中（未到门前）不触发 _door_idle，真到门前连点超过 DOOR_IDLE_MAX 才触发；
+## ② 同一回大厅希禾抽奖达 LOTTERY_ROUNDS_MAX 轮后停止继续抽，换战斗计数后恢复（防撞 msg_loop_limit=80）。
+func _check_guard_regressions() -> void:
+	var b := VP.new()
+	var walked_hit := false
+	for i in 50:
+		if b._bump_door_idle([28, 100], false):
+			walked_hit = true
+	var arrive_before := false
+	for i in VP.DOOR_IDLE_MAX:
+		if b._bump_door_idle([28, 100], true):
+			arrive_before = true
+	var arrive_over: bool = b._bump_door_idle([28, 100], true)
+	_check("door_idle_counts_arrived_only", not walked_hit and not arrive_before and arrive_over,
+		[walked_hit, arrive_before, arrive_over, b._door_idle])
+	var can_before := true
+	for i in VP.LOTTERY_ROUNDS_MAX:
+		if not b._lottery_can_round([22, 50]):
+			can_before = false
+		b._lottery_mark_round([22, 50])
+	var blocked_at_cap: bool = not b._lottery_can_round([22, 50])
+	var reset_next_sig: bool = b._lottery_can_round([22, 51])
+	_check("lottery_round_cap_prevents_msg_loop", can_before and blocked_at_cap and reset_next_sig and VP.LOTTERY_ROUNDS_MAX < b.msg_loop_limit,
+		[can_before, blocked_at_cap, reset_next_sig, b._lottery_rounds])
+	b.free()
+
+
 func _run() -> void:
 	var free: bool = OS.get_cmdline_user_args().has("--vp-free")
 	var bot := VP.new()
@@ -277,6 +304,7 @@ func _run() -> void:
 			"dungeon": [rep.dungeon_runs, rep.dungeon_kills, rep.dungeon_defeats], "farm_block": rep.farm_block, "growth": rep.growth, "frames": rep.frames}))
 	print("VP_CONFIRM_SEEN=" + JSON.stringify(XTianqiLedger.confirm_seen))  # T185：总账守卫确认阶段实际碰到的状态号（只记不报）
 	await _check_spend_rules(climb)
+	_check_guard_regressions()
 	# 报告：给了 --vp-out 就写文件；摘要总是打印
 	if bot.out_dir != "":
 		var f := FileAccess.open(bot.out_dir.path_join("report.json"), FileAccess.WRITE)
