@@ -30,6 +30,8 @@ OPT = 'O-' + '待定'
 
 
 class Fixture(unittest.TestCase):
+    CLOUD = '\n- 没跑云端：夹具\n'     # 内容门禁要求交付单有云端 run 链接或这句；GateTests 置空来测它
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix='xiyou_precheck_fixture_')
         self.root = Path(self.tmp.name) / 'main'
@@ -81,7 +83,7 @@ class Fixture(unittest.TestCase):
         for rel, text in files.items():
             self.put(rel, text, cwd=wt)
         if sheet is not False:
-            self.put('00_项目管理/交付/%s.md' % (sheet or branch.replace('/', '_')), SHEET % (branch, status) + extra, cwd=wt)
+            self.put('00_项目管理/交付/%s.md' % (sheet or branch.replace('/', '_')), SHEET % (branch, status) + extra + self.CLOUD, cwd=wt)
         self.commit('lane ' + branch, cwd=wt, at=at)
         return wt
 
@@ -336,6 +338,179 @@ class PrecheckTests(Fixture):
         self.assertEqual(pre.pick_main(clone, 'main')[1], self.g('rev-parse', 'main', cwd=clone))
         with self.assertRaises(RuntimeError):
             pre.pick_main(clone, 'no-such-ref')
+
+
+class GateTests(Fixture):
+    """T403 内容门禁（交付门禁.py）：每项一正（该报）一反（不该报）。"""
+    CLOUD = ''
+    ENG = str(merge.PROJECT) + '/'
+
+    def run_check(self, branch, files, extra='', **kw):
+        self.lane(branch, files=files, extra=extra, **kw)
+        return pre.check(self.root, branch)
+
+    def gd(self, name, body='extends Node\n'):
+        return {self.ENG + 'modes/' + name + '.gd': body, self.ENG + 'modes/' + name + '.gd.uid': 'uid://x\n'}
+
+    def has(self, r, word):
+        return any(word in p for p in r['problems'])
+
+    def test_cloud_run_link_required_for_engine_change(self):
+        r = self.run_check('cc/a', self.gd('a'))
+        self.assertTrue(self.has(r, '云端选测 run 链接'))
+        r = self.run_check('cc/b', self.gd('b'), extra='\n- 云端：https://github.com/o/r/actions/runs/123456789\n')
+        self.assertFalse(self.has(r, '云端选测'))
+        r = self.run_check('cc/b2', self.gd('b2'), extra='\n- 选测：云端整轮通过（运行 45064269859）\n')
+        self.assertFalse(self.has(r, '云端选测'))
+        r = self.run_check('cc/b3', self.gd('b3'), extra='\n- 云端选测结论见回执\n')
+        self.assertTrue(self.has(r, '云端选测 run 链接'))
+        r = self.run_check('cc/c', self.gd('c'), extra='\n- 没跑云端：只改文案\n')
+        self.assertFalse(self.has(r, '云端选测'))
+
+    def test_cloud_run_not_required_for_docs_only(self):
+        r = self.run_check('cc/d', {'00_项目管理/笔记.md': 'x\n'})
+        self.assertFalse(self.has(r, '云端选测'))
+
+    def test_sheet_screenshot_must_exist(self):
+        ref = '00_项目管理/交付/shots/a.png'
+        r = self.run_check('cc/e', {'00_项目管理/x.md': 'x\n'}, extra='\n- 截图：`%s`\n' % ref)
+        self.assertTrue(self.has(r, '不在分支提交里'))
+        r = self.run_check('cc/f', {'00_项目管理/x.md': 'x\n', ref: 'png'}, extra='\n- 截图：`%s`\n' % ref)
+        self.assertFalse(self.has(r, '不在分支提交里'))
+
+    def test_launch_script_needs_audio_dummy(self):
+        bad = '#!/bin/sh\ngodot --headless --path proj -s res://t.gd\n'
+        r = self.run_check('cc/g', {'03_再刷重制_Godot/07_开发环境/run_a.sh': bad})
+        self.assertTrue(self.has(r, '--audio-driver Dummy'))
+        good = '#!/bin/sh\ngodot --headless --audio-driver Dummy --path proj -s res://t.gd\n'
+        r = self.run_check('cc/h', {'03_再刷重制_Godot/07_开发环境/run_b.sh': good})
+        self.assertFalse(self.has(r, '--audio-driver'))
+        exempt = bad.rstrip() + ' # 门禁豁免：只查版本\n'
+        r = self.run_check('cc/i', {'03_再刷重制_Godot/07_开发环境/run_c.sh': exempt})
+        self.assertFalse(self.has(r, '--audio-driver'))
+
+    def test_truthy_assertions_in_new_tests(self):
+        path = self.ENG + 'tests/new_probe.gd'
+        bad = 'extends Node\nfunc t():\n\tassert(' + 'true)\n\tvar ok = x ' + 'or true\n'  # 门禁豁免：夹具里故意写的恒真断言
+        r = self.run_check('cc/j', {path: bad, path + '.uid': 'uid://y\n'})
+        self.assertEqual(sum('恒真断言' in p for p in r['problems']), 2)
+        r = self.run_check('cc/k', {path: 'extends Node\nfunc t():\n\tassert(1 == 1)\n', path + '.uid': 'uid://y\n'})
+        self.assertFalse(self.has(r, '恒真断言'))
+        # 不是测试文件的同样写法不查
+        r = self.run_check('cc/l', self.gd('plain', bad))
+        self.assertFalse(self.has(r, '恒真断言'))
+
+    @staticmethod
+    def png(w, h):
+        import struct
+        return b'\x89PNG\r\n\x1a\n' + b'\0\0\0\rIHDR' + struct.pack('>II', w, h) + b'\x08\x06\0\0\0'
+
+    def put_bytes(self, wt, rel, data):
+        p = wt / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(data)
+
+    def lane_images(self, branch, images):
+        wt = self.lane(branch, files={'00_项目管理/x.md': 'x\n'})
+        for rel, data in images.items():
+            self.put_bytes(wt, rel, data)
+        self.commit('imgs', cwd=wt)
+        return pre.check(self.root, branch)
+
+    def test_screenshot_ratio_in_name(self):
+        r = self.lane_images('cc/m', {'00_项目管理/交付/s/shot_16x9.png': self.png(1600, 900)})
+        self.assertFalse(self.has(r, '宽高比'))
+        r = self.lane_images('cc/n', {'00_项目管理/交付/s/shot_20x9.png': self.png(1600, 900)})
+        self.assertTrue(self.has(r, '宽高比'))
+
+    SHOTS = '00_项目管理/归档/交付截图/t/'
+
+    def test_same_group_screenshots_must_differ(self):
+        same = self.png(1600, 900)
+        r = self.lane_images('cc/o', {self.SHOTS + 'a_16x9.png': same, self.SHOTS + 'b_16x9.png': same})
+        self.assertTrue(self.has(r, 'MD5'))
+        r = self.lane_images('cc/p', {self.SHOTS + 'a_16x9.png': same, self.SHOTS + 'b_16x9.png': same + b'x'})
+        self.assertFalse(self.has(r, 'MD5'))
+
+    def test_md5_only_for_delivery_shot_dir_and_exemptable(self):
+        same = self.png(64, 64)
+        art = self.ENG + 'content/mira/sv/'      # 美术素材：同目录同内容是合法的精灵帧
+        r = self.lane_images('cc/o2', {art + 'f0.png': same, art + 'f1.png': same})
+        self.assertFalse(self.has(r, 'MD5'))
+        wt = self.lane('cc/o3', files={'00_项目管理/x.md': 'x\n'}, extra='\n- 门禁豁免：a.png、b.png 是同一画面的两个版本\n')
+        for n in ('a.png', 'b.png'):
+            self.put_bytes(wt, self.SHOTS + n, same)
+        self.commit('imgs', cwd=wt)
+        self.assertFalse(self.has(pre.check(self.root, 'cc/o3'), 'MD5'))
+
+    def test_caller_header_template_does_not_swallow_reminder(self):
+        base = self.ENG + 'modes/xiyou/core/calc2.gd'
+        user = self.ENG + 'modes/xiyou/ui/user2.gd'
+        self.put(base, 'extends Node\n\nfunc calc2(a):\n\treturn a\n')
+        self.put(user, 'extends Node\n\nfunc go():\n\tcalc2(1)\n')
+        self.put(base + '.uid', 'u\n'), self.put(user + '.uid', 'u\n')
+        self.commit('callers base 2')
+        template = '\n- 没跑云端：测试\n\n| 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |\n| --- | --- | --- |\n| `XFoo.bar` | 12 处 | 调用方 N 处逐处结论（N 换成真实数字）：x |\n'
+        r = self.run_check('cc/t1', {base: 'extends Node\n\nfunc calc2(a):\n\treturn a + 1\n'}, extra=template)
+        self.assertTrue(any('calc2 1 处' in h for h in r['hints']), r['hints'])
+
+    def test_image_ref_with_cjk_brackets(self):
+        ref = '00_项目管理/交付/shots/a.png'
+        for text in ('截图（%s）', '参考图(%s)', '如图%s'):
+            r = self.run_check('cc/u%d' % len(text), {'00_项目管理/x.md': 'x\n', ref: 'png'}, extra='\n- ' + (text % ref) + '\n')
+            self.assertFalse(self.has(r, '不在分支提交里'), (text, r['problems']))
+        r = self.run_check('cc/u9', {'00_项目管理/x.md': 'x\n'}, extra='\n- 截图（%s）\n' % ref)
+        self.assertTrue(self.has(r, '不在分支提交里'))
+        # 工程相对路径写法
+        eng = 'modes/xiyou/ui/pic.png'
+        r = self.run_check('cc/u10', {self.ENG + eng: 'png'}, extra='\n- 图：`%s`\n' % eng)
+        self.assertFalse(self.has(r, '不在分支提交里'))
+
+    def test_launch_check_skips_comments_echo_docstrings(self):
+        body = ('#!/bin/sh\n# godot --headless --path proj 说明\necho "godot --headless --path proj"\n')
+        r = self.run_check('cc/v1', {'03_再刷重制_Godot/07_开发环境/n1.sh': body})
+        self.assertFalse(self.has(r, '--audio-driver'))
+        py = '"""\n说明：godot --headless --path x\n"""\nprint("godot --headless --path x")\n'
+        r = self.run_check('cc/v2', {'03_再刷重制_Godot/07_开发环境/n2.py': py})
+        self.assertFalse(self.has(r, '--audio-driver'))
+        r = self.run_check('cc/v3', {'03_再刷重制_Godot/07_开发环境/n3.sh': '#!/bin/sh\ngodot --headless --path proj\n'})
+        self.assertTrue(self.has(r, '--audio-driver'))
+
+    def test_truthy_skips_comments_and_catches_two_arg_assert(self):
+        path = self.ENG + 'tests/new_probe2.gd'
+        r = self.run_check('cc/w1', {path: 'extends Node\n# x ' + 'or true 的说明\nfunc t():\n\tpass\n', path + '.uid': 'u\n'})  # 门禁豁免：夹具里故意写的注释
+        self.assertFalse(self.has(r, '恒真断言'))
+        r = self.run_check('cc/w2', {path: 'extends Node\nfunc t():\n\tassert(' + 'true, "m")\n', path + '.uid': 'u\n'})
+        self.assertTrue(self.has(r, '恒真断言'))
+
+    def test_caller_reminder_only_hint(self):
+        base = self.ENG + 'modes/xiyou/core/calc.gd'
+        user = self.ENG + 'modes/xiyou/ui/user.gd'
+        self.put(base, 'extends Node\n\nfunc calc(a):\n\treturn a\n')
+        self.put(user, 'extends Node\n\nfunc go():\n\tcalc(1)\n\tcalc(2)\n')
+        self.put(base + '.uid', 'u\n'), self.put(user + '.uid', 'u\n')
+        self.commit('callers base')
+        r = self.run_check('cc/q', {base: 'extends Node\n\nfunc calc(a):\n\treturn a + 1\n'}, extra='\n- 没跑云端：测试\n')
+        self.assertTrue(any('calc 2 处' in h for h in r['hints']), r['hints'])
+        self.assertFalse(self.has(r, '调用方'))
+        r = self.run_check('cc/r', {base: 'extends Node\n\nfunc calc(a):\n\treturn a + 2\n'}, extra='\n- 没跑云端：测试\n- 调用方 2 处逐处结论：都不受影响\n')
+        self.assertTrue(any('已写调用方' in h for h in r['hints']), r['hints'])
+        # 新增函数没有旧调用方，不提醒
+        r = self.run_check('cc/s', {base: 'extends Node\n\nfunc calc(a):\n\treturn a\n\n\nfunc fresh():\n\tpass\n'}, extra='\n- 没跑云端：测试\n')
+        self.assertFalse(any('调用方' in h for h in r['hints']), r['hints'])
+
+    def test_shell_check_exit_codes(self):
+        gates = pre.gates_mod
+        with tempfile.TemporaryDirectory() as d:
+            tool = Path(d) / '03_再刷重制_Godot/07_开发环境'
+            tool.mkdir(parents=True)
+            (tool / '发行空壳.py').write_text('import sys\nsys.exit(1)\n')
+            ok, msg = gates.shell_check(None, d)
+            self.assertFalse(ok)
+            self.assertIn('发行空壳特例.json', msg)
+            (tool / '发行空壳.py').write_text('import sys\nsys.exit(0)\n')
+            self.assertEqual(gates.shell_check(None, d), (True, ''))
+        self.assertIsNone(gates.shell_check(None, '/nonexistent-dir')[0])
 
 
 class BoardTests(Fixture):
