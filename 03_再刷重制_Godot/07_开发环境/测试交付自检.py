@@ -478,7 +478,7 @@ class GateTests(Fixture):
 
     def test_truthy_skips_comments_and_catches_two_arg_assert(self):
         path = self.ENG + 'tests/new_probe2.gd'
-        r = self.run_check('cc/w1', {path: 'extends Node\n# x ' + 'or true 的说明\nfunc t():\n\tpass\n', path + '.uid': 'u\n'})
+        r = self.run_check('cc/w1', {path: 'extends Node\n# x ' + 'or true 的说明\nfunc t():\n\tpass\n', path + '.uid': 'u\n'})  # 门禁豁免：夹具里故意写的注释
         self.assertFalse(self.has(r, '恒真断言'))
         r = self.run_check('cc/w2', {path: 'extends Node\nfunc t():\n\tassert(' + 'true, "m")\n', path + '.uid': 'u\n'})
         self.assertTrue(self.has(r, '恒真断言'))
