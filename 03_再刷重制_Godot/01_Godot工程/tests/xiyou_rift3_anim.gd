@@ -5,9 +5,9 @@ extends Node
 ##    Else 支完整保留原 T412 像素过场（indent=1）；RIFT3_ANIM=false 回到与 T412 逐条一致的指令表。
 ## 2) MVScript.eval_expr("CodexRift3.available()") 与三层开关／缺资源守卫。
 ## 3) CodexRift3.replayMissed() 逐句参数（face/index/background/position/原文）严格对齐 rift.gd:306-341。
-## 4) 真开 Map004 端到端：自然播满 26.0s 零弹窗直接自由移动、BGM 暂停/淡入恢复、lobby_fx 让路、不摆 XUFENG_EV、再进不重播、
+## 4) 真开 Map004 端到端：全套定稿素材自然播满 30.5s 零弹窗直接自由移动、BGM 暂停/淡入恢复、lobby_fx 让路、不摆 XUFENG_EV、再进不重播、
 ##    以及 Engine.time_scale=1.6 真实秒计时准确。
-## 5) 真开 Map004 端到端跳过补播：t=1.0s（5 句）、t=10.0s（4 句）、t=23.0s（2 句）逐字对齐 XRift.RIFT3_LINES 且播完清空 missed_lines。
+## 5) 真开 Map004 端到端跳过补播（分镜 v0.6）：t=1.0s（5 句）、t=15.0s（4 句）、t=27.5s（2 句）逐字对齐 XRift.RIFT3_LINES 且播完清空 missed_lines。
 ## 6) 三层回退实机干净：缺资源走 411 Else 支回原像素过场、RIFT3_ANIM=false 回原像素过场、STAGE3=false 回二阶。
 const TestEnv = preload("res://tests/xiyou_test_env.gd")
 const TIMEOUT_FRAMES := 3000
@@ -136,8 +136,8 @@ func _run() -> void:
 	await _test_replay_missed_params()
 	await _test_lobby_natural_full_play()
 	await _test_lobby_skip_replay(1.0, ["whisper", "sense", "hint", "follow", "after"], "skip_1s")
-	await _test_lobby_skip_replay(10.0, ["sense", "hint", "follow", "after"], "skip_10s")
-	await _test_lobby_skip_replay(23.0, ["follow", "after"], "skip_23s")
+	await _test_lobby_skip_replay(15.0, ["sense", "hint", "follow", "after"], "skip_15s")
+	await _test_lobby_skip_replay(27.5, ["follow", "after"], "skip_27_5s")
 	await _test_missing_assets_fallback_to_pixel()
 	await _test_switch_off_and_stage3_off()
 
@@ -204,17 +204,14 @@ func _test_event_structure() -> void:
 
 
 func _test_eval_expr_and_switches() -> void:
-	# 1) 真实仓内缺 4 个 Muse 资源 → available() 为 false
+	# 1) T429 全套定稿素材已入仓 content/rift3/ → 真实无 override 时 available() 为 true
 	XRift3Anim._asset_exists_override = Callable()
-	check("expr.missing_assets_false", not XRift3Anim.available() and MVScript.eval_expr("CodexRift3.available()") == false)
-
-	# 2) 模拟 4 资源全齐 → 三层开关任一关闭即返回 false
-	XRift3Anim._asset_exists_override = func(_p: String) -> bool: return true
 	XRift.STAGE3 = true
 	XRift.RIFT3_ANIM = true
 	XRift3Anim.ENABLED = true
-	check("expr.all_ready_true", XRift3Anim.available() and MVScript.eval_expr("CodexRift3.available()") == true)
+	check("expr.real_assets_true", XRift3Anim.available() and MVScript.eval_expr("CodexRift3.available()") == true)
 
+	# 2) 三层开关任一关闭即返回 false
 	XRift.RIFT3_ANIM = false
 	check("expr.rift3_anim_off_false", not XRift3Anim.available() and MVScript.eval_expr("CodexRift3.available()") == false)
 	XRift.RIFT3_ANIM = true
@@ -227,7 +224,9 @@ func _test_eval_expr_and_switches() -> void:
 	check("expr.enabled_off_false", not XRift3Anim.available() and MVScript.eval_expr("CodexRift3.available()") == false)
 	XRift3Anim.ENABLED = true
 
-	# 3) 缺任一必需资源 → eval_expr 返回 false
+	# 3) 缺全部或任一必需资源 → eval_expr 返回 false
+	XRift3Anim._asset_exists_override = func(_p: String) -> bool: return false
+	check("expr.missing_all_false", not XRift3Anim.available() and MVScript.eval_expr("CodexRift3.available()") == false)
 	var missing_path := XRift3Anim.REQUIRED_ASSETS[0]
 	XRift3Anim._asset_exists_override = func(p: String) -> bool: return p != missing_path
 	check("expr.missing_one_false", MVScript.eval_expr("CodexRift3.available()") == false)
@@ -262,12 +261,12 @@ func _test_lobby_natural_full_play() -> void:
 	XRift.STAGE3 = true
 	XRift.RIFT3_ANIM = true
 	XRift3Anim.ENABLED = true
-	XRift3Anim._asset_exists_override = func(_p: String) -> bool: return true
+	XRift3Anim._asset_exists_override = Callable()
 	_prepare_rift3_trigger()
 
 	var map := _open_lobby()
 	var anim := await _wait_for_anim(map)
-	check("full.anim_spawned", anim != null and map.busy)
+	check("full.anim_spawned", anim != null and map.busy and not bool(anim.state().placeholder_mode) and bool(anim.state().mid_assets_ready))
 	if anim == null:
 		map.queue_free()
 		await frames(2)
@@ -318,7 +317,7 @@ func _test_lobby_skip_replay(skip_at: float, expected_keys: Array[String], tag: 
 	XRift.STAGE3 = true
 	XRift.RIFT3_ANIM = true
 	XRift3Anim.ENABLED = true
-	XRift3Anim._asset_exists_override = func(_p: String) -> bool: return true
+	XRift3Anim._asset_exists_override = Callable()
 	_prepare_rift3_trigger()
 
 	var map := _open_lobby()
@@ -385,21 +384,22 @@ func _run_pixel_lobby_check(tag: String) -> void:
 
 
 func _test_missing_assets_fallback_to_pixel() -> void:
-	# RIFT3_ANIM=true 但仓内缺 Muse 资源 → 走 411 Else 支完整回退原像素过场
+	# RIFT3_ANIM=true 但模拟缺资产 → 走 411 Else 支完整回退原像素过场
 	XRift.STAGE3 = true
 	XRift.RIFT3_ANIM = true
 	XRift3Anim.ENABLED = true
-	XRift3Anim._asset_exists_override = Callable()
+	XRift3Anim._asset_exists_override = func(_p: String) -> bool: return false
 	check("fallback_missing.avail_false", not XRift3Anim.available())
 	await _run_pixel_lobby_check("fallback_missing")
+	XRift3Anim._asset_exists_override = Callable()
 
 
 func _test_switch_off_and_stage3_off() -> void:
-	# 1) RIFT3_ANIM=false：即使资源存在，也干净回退 T412 原像素过场
+	# 1) RIFT3_ANIM=false：即使仓内真实资源全齐，也干净回退 T412 原像素过场
 	XRift.STAGE3 = true
 	XRift.RIFT3_ANIM = false
 	XRift3Anim.ENABLED = true
-	XRift3Anim._asset_exists_override = func(_p: String) -> bool: return true
+	XRift3Anim._asset_exists_override = Callable()
 	check("fallback_switch.avail_false", not XRift3Anim.available())
 	await _run_pixel_lobby_check("fallback_switch")
 
