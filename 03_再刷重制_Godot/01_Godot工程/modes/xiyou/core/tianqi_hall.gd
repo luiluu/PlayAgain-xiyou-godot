@@ -163,8 +163,9 @@ static func run_host(host, s, e: MVEvent) -> void:
 			await _run_list(host, src, list)
 			if not list.any(func(c): return int(c.get("code", 0)) == 101) and host.map_id == MAP:
 				await host.show_text(str(h[0]), int(h[1]), ["\\n<%s>%s" % [_host_name(h), GIVEN_LINE]])
-			# 大厅初步异化：天启篇存档不写 _remakeLobbyCorruption，仅西游档走 after_event（T415）
-			if not XTianqi.active(s) and "lobby_fx" in host and host.lobby_fx != null and is_instance_valid(host.lobby_fx) and host.map_id == MAP:
+			# 大厅初步异化：源原来跑完追加的那一句（猫哥 24、讨债人 50，说话人由 XTianqiHallText.corruption_after 统一）；
+			# 天启篇存档由 after_event 内部走会话内去重，不写 _remakeLobbyCorruption／maxStage（T415）
+			if "lobby_fx" in host and host.lobby_fx != null and is_instance_valid(host.lobby_fx) and host.map_id == MAP:
 				await host.lobby_fx.after_event(src)
 
 

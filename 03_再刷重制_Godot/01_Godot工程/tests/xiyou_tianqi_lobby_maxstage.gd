@@ -2,7 +2,8 @@ extends Node
 ## 【小A·天启篇】T415：天启篇大厅不写漩涡 maxStage 与 _remakeLobbyCorruption（T091 P2-6／T412 遗留）。
 ## 验证：
 ## 1. rift3 已看（XRift.stage() == 3）时，天启篇存档进大厅（setup()）不写 _remakeLobbyCorruption／maxStage，进大厅前后存档字节一致；
-## 2. XTianqiHall.run_host 代调 after_event（希禾 60->50、仓库管理员 8->24）及 wants_after／after_event／on_action(裂缝) 均不写天启篇存档；
+## 2. XTianqiHall.run_host 代调 after_event（希禾 60->50、仓库管理员 8->24）及 wants_after／after_event（大工匠 7、镜子 21）／on_action(裂缝)：
+##    天启篇追记台词与裂缝两段文字照常出现、会话内去重不重复，同时不写 _remakeLobbyCorruption／maxStage；
 ## 3. 已被写过 maxStage=3 的天启篇老档进大厅与存读档无异常、不被改写；
 ## 4. 西游档照旧写入 maxStage=3、said 与 crack。
 
@@ -109,14 +110,20 @@ func _run() -> void:
 	s = back
 	XState.current = s
 
-	# ---- 3. tianqi_hall.gd:167 代调 after_event 路径不写（希禾 60->50、仓库管理员 8->24）----
+	# ---- 3. tianqi_hall.gd:167 代调 after_event 路径（希禾 60->50、仓库管理员 8->24）：追记台词照常出现、会话内只播一次、不写漩涡键 ----
 	s.set_variable(206, -3000)
 	var l60 := XTianqiHall.menu(m2, s, 60).map(func(o): return str(o[0]))
 	XMessageBox.auto_answers = [l60.find("欠债限制与福利"), 1]
 	XMessageBox.transcript.clear()
 	await m2.run_event(_event(m2, 60))
 	var ev50_text := "\n".join(XMessageBox.transcript)
-	_check("tq.hall60_src50_ran_no_write", ev50_text.contains("换作别人我早就不客气了") and not ev50_text.contains("它是来收账的") and not s.flags.has(XLobbyCorruption.FLAG_KEY), [s.flags.get(XLobbyCorruption.FLAG_KEY), ev50_text])
+	_check("tq.hall60_src50_line_shown_no_write", ev50_text.contains("换作别人我早就不客气了") and ev50_text.contains("它是来收账的") and not s.flags.has(XLobbyCorruption.FLAG_KEY), [s.flags.get(XLobbyCorruption.FLAG_KEY), ev50_text])
+	# 同会话第二次不再重复追记，且仍不写档
+	XMessageBox.auto_answers = [l60.find("欠债限制与福利"), 1]
+	XMessageBox.transcript.clear()
+	await m2.run_event(_event(m2, 60))
+	var ev50_again := "\n".join(XMessageBox.transcript)
+	_check("tq.hall60_src50_dedup_no_write", ev50_again.contains("换作别人我早就不客气了") and not ev50_again.contains("它是来收账的") and not s.flags.has(XLobbyCorruption.FLAG_KEY), [s.flags.get(XLobbyCorruption.FLAG_KEY), ev50_again])
 	s.set_variable(206, 0)
 
 	var l8 := XTianqiHall.menu(m2, s, 8).map(func(o): return str(o[0]))
@@ -124,19 +131,35 @@ func _run() -> void:
 	XMessageBox.transcript.clear()
 	await m2.run_event(_event(m2, 8))
 	var ev24_text := "\n".join(XMessageBox.transcript)
-	_check("tq.hall8_src24_no_write", not ev24_text.contains("别在裂纹边久待") and not s.flags.has(XLobbyCorruption.FLAG_KEY), [s.flags.get(XLobbyCorruption.FLAG_KEY), ev24_text])
+	_check("tq.hall8_src24_line_shown_no_write", ev24_text.contains("别在裂纹边久待") and not s.flags.has(XLobbyCorruption.FLAG_KEY), [s.flags.get(XLobbyCorruption.FLAG_KEY), ev24_text])
+	XMessageBox.auto_answers = [l8.find("整理存档"), 1]
+	XMessageBox.transcript.clear()
+	await m2.run_event(_event(m2, 8))
+	var ev24_again := "\n".join(XMessageBox.transcript)
+	_check("tq.hall8_src24_dedup_no_write", not ev24_again.contains("别在裂纹边久待") and not s.flags.has(XLobbyCorruption.FLAG_KEY), [s.flags.get(XLobbyCorruption.FLAG_KEY), ev24_again])
 
-	# ---- 4. wants_after / after_event / on_action(裂缝) 均不写天启篇存档 ----
+	# ---- 4. wants_after / after_event（大工匠 7、镜子 21）与 on_action(裂缝)：台词照常出现、会话内去重、不写漩涡键 ----
 	var ev7 := _event(m2, 7)
 	var ev21 := _event(m2, 21)
-	_check("tq.wants_after_false", ev7 != null and ev21 != null and not m2.lobby_fx.wants_after(ev7) and not m2.lobby_fx.wants_after(ev21) and not s.flags.has(XLobbyCorruption.FLAG_KEY), s.flags.get(XLobbyCorruption.FLAG_KEY))
+	_check("tq.wants_after_true_no_write", ev7 != null and ev21 != null and m2.lobby_fx.wants_after(ev7) and m2.lobby_fx.wants_after(ev21) and not s.flags.has(XLobbyCorruption.FLAG_KEY), s.flags.get(XLobbyCorruption.FLAG_KEY))
 	XMessageBox.transcript.clear()
-	await m2.lobby_fx.after_event(50)
-	await m2.lobby_fx.after_event(24)
-	_check("tq.direct_after_event_noop", XMessageBox.transcript.is_empty() and not s.flags.has(XLobbyCorruption.FLAG_KEY), [XMessageBox.transcript.duplicate(), s.flags.get(XLobbyCorruption.FLAG_KEY)])
+	await m2.lobby_fx.after_event(7)
+	var ev7_after := "\n".join(XMessageBox.transcript)
 	XMessageBox.transcript.clear()
-	var crack_handled := await m2.lobby_fx.on_action(XLobbyCorruption.CRACK_CELL)
-	_check("tq.crack_no_write", crack_handled and not s.flags.has(XLobbyCorruption.FLAG_KEY), [crack_handled, s.flags.get(XLobbyCorruption.FLAG_KEY)])
+	await m2.lobby_fx.after_event(21)
+	var ev21_after := "\n".join(XMessageBox.transcript)
+	_check("tq.ev7_ev21_after_shown_no_write", ev7_after.contains("地砖不是我弄裂的") and ev21_after.contains("慢了半拍") and not s.flags.has(XLobbyCorruption.FLAG_KEY), [ev7_after, ev21_after, s.flags.get(XLobbyCorruption.FLAG_KEY)])
+	XMessageBox.transcript.clear()
+	await m2.lobby_fx.after_event(7)
+	await m2.lobby_fx.after_event(21)
+	_check("tq.ev7_ev21_dedup_no_write", not m2.lobby_fx.wants_after(ev7) and not m2.lobby_fx.wants_after(ev21) and XMessageBox.transcript.is_empty() and not s.flags.has(XLobbyCorruption.FLAG_KEY), [XMessageBox.transcript.duplicate(), s.flags.get(XLobbyCorruption.FLAG_KEY)])
+	XMessageBox.transcript.clear()
+	var crack1 := await m2.lobby_fx.on_action(XLobbyCorruption.CRACK_CELL)
+	var c1_text := "\n".join(XMessageBox.transcript)
+	XMessageBox.transcript.clear()
+	var crack2 := await m2.lobby_fx.on_action(XLobbyCorruption.CRACK_CELL)
+	var c2_text := "\n".join(XMessageBox.transcript)
+	_check("tq.crack_two_lines_no_write", crack1 and crack2 and c1_text.contains("缝里不是土") and c2_text.contains("凉的") and not s.flags.has(XLobbyCorruption.FLAG_KEY), [c1_text, c2_text, s.flags.get(XLobbyCorruption.FLAG_KEY)])
 	await _close_hall(m2)
 
 	# ---- 5. 已被写过 maxStage=3 的天启篇老档：进大厅与存读档不报错、键原样保持 ----

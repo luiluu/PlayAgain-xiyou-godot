@@ -72,6 +72,9 @@ const HUM_MAX := 0.3
 static var _rift_script: Variant = false   # false 未查；null 没有 XRift；否则脚本
 static var _ambient_last_ms := -AMBIENT_GAP_MS
 static var _ambient_index := 0
+## 天启篇会话内去重（T415：不写存档 _remakeLobbyCorruption／maxStage，也不改 flags.tianqi；按 XState 实例 ID 隔离）
+static var _tq_said_session := {}
+static var _tq_crack_session := {}
 
 var host: XMapScene
 var rng := RandomNumberGenerator.new()
@@ -612,21 +615,34 @@ func _process(dt: float) -> void:
 
 # ---- 追加台词与调查 ----
 
-## 这次确认键启动的事件跑完后要不要追加一句（启动前判定：事件在表里、当前页有内容、本存档还没说过）
+## 天启篇会话内已说追记表（不写存档）
+static func _tq_said(s: XState) -> Array:
+	var key := s.get_instance_id()
+	if _tq_said_session.size() > 16:
+		for k in _tq_said_session.keys():
+			if not is_instance_id_valid(k):
+				_tq_said_session.erase(k)
+	if not _tq_said_session.has(key):
+		_tq_said_session[key] = []
+	return _tq_said_session[key]
+
+
+## 这次确认键启动的事件跑完后要不要追加一句（启动前判定：事件在表里、当前页有内容、本存档还没说过；天启篇走会话内去重、不写存档）
 func wants_after(e: MVEvent) -> bool:
 	if not AFTER_LINES.has(e.event_id) or e.command_list().size() <= 1:
 		return false
 	var s := XState.current
-	if s == null or XTianqi.active(s):
+	if s == null:
 		return false
-	return not (record(s).said as Array).has(str(e.event_id))
+	var said: Array = _tq_said(s) if XTianqi.active(s) else (record(s).said as Array)
+	return not said.has(str(e.event_id))
 
 
 func after_event(event_id: int) -> void:
 	var s := XState.current
-	if s == null or XTianqi.active(s) or not AFTER_LINES.has(event_id):
+	if s == null or not AFTER_LINES.has(event_id):
 		return
-	var said: Array = record(s).said
+	var said: Array = _tq_said(s) if XTianqi.active(s) else (record(s).said as Array)
 	if said.has(str(event_id)):
 		return
 	said.append(str(event_id))
@@ -656,6 +672,15 @@ func on_action(cell: Vector2i) -> bool:
 			var r := record(s)
 			text = CRACK_TEXTS[mini(int(r.get("crack", 0)), 1)]
 			r["crack"] = int(r.get("crack", 0)) + 1
+		elif s != null:
+			var key := s.get_instance_id()
+			if _tq_crack_session.size() > 16:
+				for k in _tq_crack_session.keys():
+					if not is_instance_id_valid(k):
+						_tq_crack_session.erase(k)
+			var n := int(_tq_crack_session.get(key, 0))
+			text = CRACK_TEXTS[mini(n, 1)]
+			_tq_crack_session[key] = n + 1
 		else:
 			text = CRACK_TEXTS[0]
 	elif cell == FIXED_FLOAT and floats.has(FIXED_FLOAT):
