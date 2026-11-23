@@ -130,6 +130,11 @@ func _run() -> void:
 		get_tree().quit.call_deferred(1)
 		return
 	var s := _setup(ref)
+	var fast_status := XPetScene.status_ops(s, s.pets.list[0])
+	XPetScene.XIYOU_FAST_OPEN = false
+	var old_status := XPetScene.status_ops(s, s.pets.list[0])
+	XPetScene.XIYOU_FAST_OPEN = true
+	check("fast_pet_status_preserves_layout", fast_status == old_status)
 	check("levels", s.pets.list.map(func(p): return XPets.level(p)) == ref.pets.map(func(p): return int(p.lv)), s.pets.list.map(func(p): return XPets.level(p)))
 	check("names", s.pets.list.map(func(p): return XPets.pet_name(s, p)) == ref.pets.map(func(p): return str(p.name)), s.pets.list.map(func(p): return XPets.pet_name(s, p)))
 	var page := XPetScene.new()

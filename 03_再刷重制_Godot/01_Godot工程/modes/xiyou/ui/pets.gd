@@ -28,6 +28,8 @@ const ROWS := 11                          # floor((440 − 28) / 36)
 const SKILL_ROWS := 4                     # floor((180 − 28) / 36)
 const SPRITE_CENTER := Vector2(CW / 4.0, CW / 4.0)
 const ATTR := ["生命", "魔法", "物理攻击", "物理防御", "魔法攻击", "魔法防御", "敏捷", "幸运", "命中", "闪避", "暴击", "暴击闪避", "魔法闪避", "反击"]
+## 随包 GameFont 在 26 号字下的两个空格宽，ATTR 的汉字各占 26。
+const ATTR_SPACES_WIDTH := 14.43
 ## 状态窗七行两列：[左, 右]（加成序号）
 const ATTR_ROWS := [[0, 1], [2, 6], [4, 7], [3, 8], [5, 9], [11, 10], [12, 13]]
 ## Star_PetSynthesis 在变量 21 为 0 时加「合成」，Star_PetUpLevel 加「喂养」；窗口可见 6 行，第 7 行要滚动
@@ -63,8 +65,8 @@ var bottom_win: XMVWindow
 var team_win: XMVWindow
 var help_card: XHelpCard
 static var SKILL_CARD_NO_FRAME := true
-## T409：西游档先显示宠物资料，贴图读取和转色在后台完成。
-static var XIYOU_ASYNC_SPRITE := true
+## T409：西游档用随包字体的固定度量先显示宠物资料，贴图读取和转色在后台完成。
+static var XIYOU_FAST_OPEN := true
 var _status_ops: Array = []
 var _sprite_tex: Texture2D
 var _sprite_sv := false
@@ -170,12 +172,14 @@ static func status_ops(s: XState, pet: Dictionary, suffix := "") -> Array:
 		ops.append(_t(ATTR[ATTR_ROWS[k][0]], COL2, y + LH * (k + 1), COLW, XUI.SYSTEM))
 		ops.append(_t(ATTR[ATTR_ROWS[k][1]], right, y + LH * (k + 1), COLW, XUI.SYSTEM))
 	var push: Array = pet.get("push", [])
+	var fixed_width := XIYOU_FAST_OPEN and not XTianqi.active(s) and XUI.font().resource_path == GameFont.PATH
 	for k in ATTR_ROWS.size():
 		for side in 2:
 			var i: int = ATTR_ROWS[k][side]
 			var v := float(push[i]) if i < push.size() else 0.0
 			var text := str(floori(v)) if i < 8 else str(floori(v * 100.0)) + "%"
-			var x := (COL2 if side == 0 else right) + XActorBook.js_width(ATTR[i] + "  ", XUI.FONT_SIZE)
+			var width: float = ATTR[i].length() * XUI.FONT_SIZE + ATTR_SPACES_WIDTH if fixed_width else XActorBook.js_width(ATTR[i] + "  ", XUI.FONT_SIZE)
+			var x := (COL2 if side == 0 else right) + width
 			ops.append(_t(text, x, y + LH * (k + 1), COLW))
 	y += LH * 19.0 / 2.0 + LH
 	var skills := skill_ids(pet)
@@ -326,7 +330,7 @@ func _select_pet() -> void:
 	if not pet.is_empty():
 		var rec := XDB.rec("Enemies", int(pet.enemy))
 		var side := str(rec.get("meta", {}).get("Sideview Battler", "")).strip_edges()
-		if XIYOU_ASYNC_SPRITE and not XTianqi.active(XState.current):
+		if XIYOU_FAST_OPEN and not XTianqi.active(XState.current):
 			var path := XDB.img_path("sv_actors", side) if side != "" else XDB.img_path("sv_enemies", str(rec.get("battlerName", "")))
 			if path != "":
 				_load_pet_sprite(get_tree(), weakref(self), _sprite_request, path, side != "", int(rec.get("battlerHue", 0)))
