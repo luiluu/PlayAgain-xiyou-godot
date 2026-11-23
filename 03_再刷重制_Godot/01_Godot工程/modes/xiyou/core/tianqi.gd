@@ -606,7 +606,7 @@ static func horn_blocked(s: XState, rec: Dictionary) -> bool:
 	return active(s) and NO_RECRUIT and XItemMarks.recruit_actor_id(rec) > 0
 
 
-## 开关（T398，O-267 连带）：true＝天启篇角色第一次入队（开局阵容、通关抽角色、七印龙线招募，都经 XState._add_actor）照原版号角入队那段
+## 开关（T398，O-638，O-267 连带）：true＝天启篇角色第一次入队（开局阵容、通关抽角色、七印龙线招募，都经 XState._add_actor）照原版号角入队那段
 ## 给专属法宝／专属武器防具、学号角送的技能，给的装备一律当场穿在本人身上（Kyo 11-22「法宝改成所有人入队都穿在身上」「号角送的技能：给」）；
 ## false＝照 T398 前，抽角色入队只加人。西游档不走（active 为假）。旧档不补（Kyo 定）。
 static var JOIN_GIFTS := true
