@@ -179,6 +179,7 @@ func _run() -> void:
 		_v029(s, items, armors, weapons, commons, m1)
 	else:
 		check("v029_runtime_absent_native", XTreasureMap.run(s, 1, 10, 117).toasts.size() > 0)
+	_prestige(m1)
 	XTreasureMap._spots = saved_spots
 	finish()
 
@@ -219,6 +220,51 @@ func _v029(s: XState, items: Array, armors: Array, weapons: Array, commons: Arra
 		check("v029_by_range_last_wins", s.item_count(other) == 0 and s.item_count(TICKET) == 1, [s.item_count(other), s.item_count(TICKET)])
 	else:
 		check("v029_item342_shape", false, item342.get("effects"))
+
+
+## T410：同一把原词条候选全是专武的至臻武器，两个正式发奖入口都能掷出合法词条。
+func _prestige(map_id: int) -> void:
+	const PRESTIGE_WEAPON := 1887
+	var logic := XBattleLogic.new()
+	var saved := XGear.PRESTIGE_DROP_AFFIX
+	for enabled in [true, false]:
+		XGear.PRESTIGE_DROP_AFFIX = enabled
+		var s := XState.new_game_blank()
+		XState.current = s
+		logic.state = s
+		_seed_affix_roll(s, 0.0)
+		logic.gain_drops([{"kind": 2, "id": PRESTIGE_WEAPON}])
+		check("prestige.battle.%s" % enabled, s.gear.size() == 1 and _prestige_affix_ok(s.gear.back(), enabled))
+		s.map_id = map_id
+		s.x = 5
+		s.y = 6
+		s.gain_item(TICKET, 1)
+		s.rom.g = _pool(45)
+		XTreasureMap._spots = [null, _spot(1, map_id, 5, 6, [], [], [PRESTIGE_WEAPON], [])]
+		_seed_affix_roll(s, 0.0)
+		XTreasureMap.run(s, 1, 1)
+		check("prestige.treasure.%s" % enabled, s.gear.size() == 2 and _prestige_affix_ok(s.gear.back(), enabled))
+	XGear.PRESTIGE_DROP_AFFIX = saved
+	_seed_affix_roll(logic.state, 0.99)
+	logic.gain_drops([{"kind": 2, "id": PRESTIGE_WEAPON}])
+	check("prestige.battle_can_miss", logic.state.gear.size() == 3 and logic.state.gear.back().affixIds.is_empty())
+
+
+func _seed_affix_roll(s: XState, roll: float) -> void:
+	s.rom.x = _pool(0)
+	s.rom.x.fill(roll)
+	s.rom.xn = 0
+	s.rom.xs = _pool(0)
+	s.rom.xs.fill(0)
+	s.rom.xsn = 0
+
+
+func _prestige_affix_ok(item: Dictionary, enabled: bool) -> bool:
+	var affixes: Array = item.affixIds
+	if not enabled:
+		return affixes.is_empty()
+	return affixes.size() == 1 and affixes[0].table == "Weapons" and XGear.valid_affix("Weapons", int(affixes[0].id)) \
+		and XAbyssMerchant.candidates("mod", "Weapons").any(func(a): return int(a.id) == int(affixes[0].id))
 
 
 func finish() -> void:

@@ -94,7 +94,7 @@ static func create(kind: String, id: int, owner: XState = null) -> Dictionary:
 	return roll_item(template(kind, id), owner)
 
 
-## T410·西游档自然掉落／挖宝：给候选全被过滤的至臻底材补同库 Mod 候选。false 恢复原配置。
+## O-待定-1：西游档自然掉落／挖宝给候选全被过滤的至臻底材补同库 Mod 候选。false 恢复原配置。
 static var PRESTIGE_DROP_AFFIX := true
 
 
@@ -114,9 +114,11 @@ static func create_prestige_drop(kind: String, id: int, owner: XState) -> Dictio
 				if str(affix.db) == table and valid_affix(table, affix_id) and not ids.has(affix_id):
 					ids.append(affix_id)
 			if not ids.is_empty():
-				for row in rows:
+				var replacement := rows.duplicate(true)
+				for row in replacement:
 					for choice in row.choices:
 						choice.ids = ids
+				return roll_item(item, owner, replacement)
 	return roll_item(item, owner)
 
 
@@ -129,11 +131,12 @@ static func _affix_table(item: Dictionary) -> String:
 	return "Weapons" if str(item.kind) == "weapon" else "Armors"
 
 ## 对一份已备好的模板掷词缀、属性浮动与插槽（DreamX.RandomPrefixSuffix.makeItem 那段）；云裳天衣铺开工时用改过的模板调它
-static func roll_item(item: Dictionary, owner: XState = null) -> Dictionary:
+static func roll_item(item: Dictionary, owner: XState = null, replacement_rows := []) -> Dictionary:
 	if item.is_empty(): return {}
 	var definition: Dictionary = item.get("equipment", {})
 	var table := _affix_table(item)
-	for row in ([] if XTestMode.boost_depth > 0 else definition.get("affixes", [])):
+	var rows: Array = definition.get("affixes", []) if replacement_rows.is_empty() else replacement_rows
+	for row in ([] if XTestMode.boost_depth > 0 else rows):
 		if XTianqiAffixRoll.skips_row(row, owner if owner != null else XState.current, table):
 			continue  # 天启篇：原版随机词缀行不掷（必出的行照合），改掷天启篇词条（XTianqiAffixRoll，见末尾）
 		var affix_id := choose_affix(row.choices, table, owner)
@@ -141,7 +144,7 @@ static func roll_item(item: Dictionary, owner: XState = null) -> Dictionary:
 			combine(item, XDB.rec(table, affix_id), str(row.kind))
 			item.affixIds.append({"table": table, "id": affix_id, "kind": row.kind})
 	if XTestMode.boost_depth > 0:
-		XTestMode.roll_affixes(item, definition.get("affixes", []), table)  # 测试模式：掉落装备词缀加速
+		XTestMode.roll_affixes(item, rows, table)  # 测试模式：掉落装备词缀加速
 	# YEP_CoreEngine 备注参数覆盖合并值；原版处理完这些标签才掷属性浮动。
 	_apply_note_params(item)
 	var variance := int(item.get("meta", {}).get("Random Variance", definition.get("variance",0)))

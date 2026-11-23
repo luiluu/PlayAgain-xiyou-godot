@@ -104,7 +104,7 @@ static func choose(l: XBattleLogic, a: XActor, cannon_only := false) -> Dictiona
 ## false＝照原来每次读取各算各的。XIYOU_READ_VERIFY=1 时窗口里每次命中都重算比对（同 O-348）。
 static var CHOOSE_WINDOW := true
 
-## T410·西游档：最近离开的形态，扣切换成本后的分数要高出当前直接攻击至少 25% 才考虑切回。
+## O-待定-3：西游档最近离开的形态，扣切换成本后的分数须高出当前直接攻击 25% 才考虑切回。
 ## false 恢复原评分。只作用于智能选招，预设顺序与手动切换照常。
 static var TOJI_SWITCH_HYSTERESIS := true
 const TOJI_RETURN_MARGIN := 1.25

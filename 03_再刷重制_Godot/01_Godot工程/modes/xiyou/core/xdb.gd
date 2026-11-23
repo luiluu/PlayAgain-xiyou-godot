@@ -5,7 +5,7 @@ extends RefCounted
 
 const BASE := "res://modes/xiyou/generated/"
 static var _tables := {}
-## T410·西游档：两张乌鸦图纸和学会提示跟配方产物对齐。false 恢复原文。
+## O-待定-2：西游档两张乌鸦图纸和学会提示跟配方产物对齐。false 恢复原文。
 static var CROW_BLUEPRINT_NAMES := true
 const CROW_BLUEPRINT_ITEMS := {1761: "五眼乌鸦", 1762: "七眼乌鸦"}
 const CROW_BLUEPRINT_EVENTS := {710: "五眼乌鸦", 711: "七眼乌鸦"}
