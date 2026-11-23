@@ -1,0 +1,27 @@
+{
+ "sha": "1cccf53d37581fb50f5f6ea4e0e5f77d6e2563db",
+ "branch": "ci/luiluu/t428-manga-panel-animation",
+ "mode": "affected",
+ "base": "ee7cd3b85942a3da36b45d969a61079217c6fc28",
+ "passed": true,
+ "scenes": 6,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 2,
+ "longestShardSeconds": 206.7,
+ "testSeconds": 710,
+ "generatedRef": "refs/ci/generated/luiluu/t428-manga-panel-animation",
+ "generatedCommit": "29f157d4041709ed85b956bbe75d4b9ff09a78f4",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45224452124",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_rift3_anim_fx.tscn",
+  "xiyou_rift3_anim_player.tscn"
+ ],
+ "time": "2026-11-23T17:17:16+00:00"
+}
