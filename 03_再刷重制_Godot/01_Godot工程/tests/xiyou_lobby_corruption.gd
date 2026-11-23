@@ -245,7 +245,216 @@ func _run() -> void:
 	# ---- 阶段三「蚀骨」（T416 拆卡 1：视觉叠加层、开关骨架、天启篇守卫、庆典兼容与性能） ----
 	await _test_stage3(pass1, ev1, data_before, per)
 	await _test_stage3_interactions(said1)
+	await _test_stage3_audio()
+	await _test_stage3_atmosphere()
 	_finish()
+
+
+func _test_stage3_audio() -> void:
+	var map := await open_lobby(3, 14, 26)
+	var fx: Variant = map.lobby_fx
+	if not check("stage3.audio.hooked", fx.has_method("_update_stage3_bgm")):
+		await close(map)
+		return
+	fx.set_process(false)
+	# 开图异步等待了若干帧，量进厅时抽到的计时长度。
+	var initial_drop: float = fx._bgm_drop_in + XSpeedGear.real_seconds(fx._t)
+	check("stage3.drop.first_window", initial_drop >= 50.0 and initial_drop <= 80.0, initial_drop)
+	map.play_bgm({"name": "TCLH-60", "volume": 80})
+	var base_db := map.bgm.volume_db
+	map.player.locate(14, 21)
+	fx._update_stage3_bgm(0.4)
+	check("stage3.detune.smooth", map.bgm.pitch_scale < 1.0 and map.bgm.pitch_scale > 0.96, map.bgm.pitch_scale)
+	fx._update_stage3_bgm(0.4)
+	check("stage3.detune.near", is_equal_approx(map.bgm.pitch_scale, 0.96), map.bgm.pitch_scale)
+	map.player.locate(14, 25)
+	fx._update_stage3_bgm(0.8)
+	check("stage3.detune.far", map.bgm.pitch_scale == 1.0)
+	map.player.locate(14, 21)
+	for mode in ["battle", "rift", "menu", "disabled"]:
+		fx._update_stage3_bgm(0.8)
+		map._in_battle = mode == "battle"
+		map.busy = mode == "rift"
+		map.running_event_id = 75 if map.busy else 0
+		map._menu_open = mode == "menu"
+		XLobbyCorruption.STAGE3_BGM_DETUNE = mode != "disabled"
+		fx._update_stage3_bgm(0.0)
+		check("stage3.detune.reset_" + mode, map.bgm.pitch_scale == 1.0, map.bgm.pitch_scale)
+		map._in_battle = false
+		map.busy = false
+		map.running_event_id = 0
+		map._menu_open = false
+		XLobbyCorruption.STAGE3_BGM_DETUNE = true
+
+	XLobbyCorruption.STAGE3_BGM_DETUNE = false
+	fx._bgm_drop_in = 0.0
+	fx._update_stage3_bgm(0.0)
+	check("stage3.drop.start", is_equal_approx(map.bgm.pitch_scale, 0.94) and fx._bgm_drop_in >= 35.0 and fx._bgm_drop_in <= 65.0)
+	fx._update_stage3_bgm(0.1)
+	check("stage3.drop.low", is_equal_approx(db_to_linear(map.bgm.volume_db - base_db), 0.15))
+	fx._update_stage3_bgm(0.15)
+	check("stage3.drop.hold", is_equal_approx(db_to_linear(map.bgm.volume_db - base_db), 0.15))
+	fx._update_stage3_bgm(0.05)
+	check("stage3.drop.rise", is_equal_approx(db_to_linear(map.bgm.volume_db - base_db), 0.575)
+		and is_equal_approx(map.bgm.pitch_scale, 0.97), [map.bgm.volume_db, map.bgm.pitch_scale])
+	fx._update_stage3_bgm(0.05)
+	check("stage3.drop.restore", map.bgm.volume_db == base_db and map.bgm.pitch_scale == 1.0,
+		[map.bgm.volume_db, base_db, map.bgm.pitch_scale])
+	XLobbyCorruption.STAGE3_BGM_DETUNE = true
+
+	var bgm_bus := AudioServer.get_bus_index(XAudio.bus("BGM"))
+	var old_mute := AudioServer.is_bus_mute(bgm_bus)
+	for mode in ["fade", "other_track", "mute", "menu", "dialogue", "disabled"]:
+		if mode == "fade":
+			XAudio.fade_in(map.bgm)
+		if mode == "other_track":
+			# 同一播放器上替换曲名，验证现有庆典曲白名单分支。
+			map._bgm_name = "festival"
+		AudioServer.set_bus_mute(bgm_bus, mode == "mute")
+		map._menu_open = mode == "menu"
+		map.busy = mode == "dialogue"
+		XLobbyCorruption.STAGE3_BGM_DROP = mode != "disabled"
+		fx._bgm_drop_in = 0.0
+		fx._update_stage3_bgm(0.1)
+		check("stage3.drop.skip_" + mode, fx._bgm_drop_elapsed < 0.0 and fx._bgm_drop_in > 0.0)
+		if mode == "fade":
+			check("stage3.drop.fade_owns_gain", is_equal_approx(map.bgm.volume_db, -80.0))
+			XAudio.stop_fade(map.bgm)
+		map._bgm_name = "TCLH-60"
+	AudioServer.set_bus_mute(bgm_bus, old_mute)
+	map._menu_open = false
+	map.busy = false
+	XLobbyCorruption.STAGE3_BGM_DROP = true
+	fx._bgm_drop_in = 0.0
+	fx._update_stage3_bgm(0.1)
+	fx._update_stage3_bgm(0.1)
+	check("stage3.drop.layers_with_detune", map.bgm.pitch_scale < 0.94 and map.bgm.volume_db < base_db)
+	XLobbyCorruption.STAGE3_BGM_DROP = false
+	fx._update_stage3_bgm(0.0)
+	check("stage3.drop.cancel_keeps_detune", map.bgm.volume_db == base_db and map.bgm.pitch_scale < 1.0)
+	XLobbyCorruption.STAGE3_BGM_DROP = true
+
+	fx._update_audio(0.0)
+	check("stage3.hum.near", is_equal_approx(fx.hum_level(), 0.36) and is_equal_approx(fx._hum.pitch_scale, 0.66))
+	map.player.locate(14, 30)
+	check("stage3.hum.expanded", fx.hum_level() > 0.0)
+	XLobbyCorruption.STAGE3_HUM_DEEP = false
+	fx._update_audio(0.0)
+	check("stage3.hum.fallback", fx.hum_level() == 0.0 and is_equal_approx(fx._hum.pitch_scale, 0.70))
+	XLobbyCorruption.STAGE3_HUM_DEEP = true
+
+	map.player.locate(14, 21)
+	fx._whisper_in = 0.0
+	fx._update_whisper(0.0)
+	check("stage3.whisper.positional", fx._whisper.playing and fx._whisper.bus == XAudio.bus("BGS")
+		and fx._whisper.position == XLobbyCorruption.cell_px(XLobbyCorruption.CENTER)
+		and is_equal_approx(fx._whisper.pitch_scale, 0.58) and fx._whisper_in >= 75.0 and fx._whisper_in <= 110.0)
+	fx._update_whisper(0.25)
+	check("stage3.whisper.gain", is_equal_approx(db_to_linear(fx._whisper.volume_db), 0.15))
+	fx._update_whisper(1.25)
+	check("stage3.whisper.ends", not fx._whisper.playing)
+	fx._whisper_in = 0.0
+	fx._update_whisper(0.0)
+	XLobbyCorruption.STAGE3_WHISPER = false
+	fx._update_whisper(0.0)
+	check("stage3.whisper.disabled", not fx._whisper.playing)
+	XLobbyCorruption.STAGE3_WHISPER = true
+
+	fx._bgm_drop_in = 0.0
+	fx._update_stage3_bgm(0.2)
+	fx._whisper_in = 0.0
+	fx._update_whisper(0.0)
+	map.load_map(5, 11, 13, 2)
+	check("stage3.bgm.transfer_immediate", map.bgm.pitch_scale == 1.0 and not fx._whisper.playing)
+	await frames(2)
+	check("stage3.audio.no_late_reset", not is_instance_valid(fx))
+	await close(map)
+
+	map = await open_lobby(3, 14, 21)
+	fx = map.lobby_fx
+	fx._update_stage3_bgm(0.8)
+	var exit_pitch := []
+	var bgm := map.bgm
+	fx.tree_exited.connect(func(): exit_pitch.append(bgm.pitch_scale))
+	await close(map)
+	check("stage3.bgm.scene_exit", exit_pitch == [1.0], exit_pitch)
+
+
+func _test_stage3_atmosphere() -> void:
+	var map: Variant = await open_lobby(3)
+	var fx: Variant = map.lobby_fx
+	if not check("stage3.name.hooked", fx.has_method("roll_name_glitch")):
+		await close(map)
+		return
+	var script: Variant = fx.get_script()
+	var hall_name := "方桌大厅"
+	var seed_rng := RandomNumberGenerator.new()
+	while seed_rng.randf() >= 0.25:
+		seed_rng.seed += 1
+	fx._atmosphere_rng.seed = seed_rng.seed
+	script._name_glitch_last_ms = -300000
+	script._name_glitch_index = 0
+	var data_name: String = map.map_data.displayName
+	map._show_map_name(hall_name, true)
+	var tween: Tween = map._map_name_tween
+	var fade := 0.3 if XMapScene.MAP_NAME_BACKDROP_V2 and XUiSkin.on() else 1.0
+	tween.pause()
+	tween.custom_step(fade + 1.09)
+	check("stage3.name.before", map.displayed_map_name() == hall_name)
+	tween.custom_step(0.02)
+	check("stage3.name.flash", map.displayed_map_name() == "方桌……" and map.map_name_text == hall_name)
+	await shot("t418_name_glitch.png")
+	tween.custom_step(0.26)
+	check("stage3.name.held", map.displayed_map_name() == "方桌……")
+	tween.custom_step(0.02)
+	check("stage3.name.restored", map.displayed_map_name() == hall_name and map.map_data.displayName == data_name)
+	await shot("t418_name_restored.png")
+	fx._atmosphere_rng.seed = seed_rng.seed
+	check("stage3.name.cooldown", not fx.roll_name_glitch(hall_name))
+	script._name_glitch_last_ms = -300000
+	XConfig.set_flag("codexScreenFx", false)
+	check("stage3.name.fx_off", not fx.roll_name_glitch(hall_name))
+	XConfig.set_flag("codexScreenFx", true)
+	XLobbyCorruption.STAGE3_NAME_GLITCH = false
+	check("stage3.name.disabled", not fx.roll_name_glitch(hall_name))
+	XLobbyCorruption.STAGE3_NAME_GLITCH = true
+	var expected_names := ["方桌？厅", "无人大厅", "空桌大厅", "方桌旧厅", "方桌……"]
+	for expected in expected_names:
+		script._name_glitch_last_ms = -300000
+		fx._atmosphere_rng.seed = seed_rng.seed
+		map._show_map_name(hall_name, true)
+		tween = map._map_name_tween
+		tween.pause()
+		tween.custom_step(fade + 1.11)
+		check("stage3.name.rotation", map.displayed_map_name() == expected, [expected, map.displayed_map_name()])
+	var previous_tween := tween
+	map.load_map(4, 14, 25, 2)
+	check("stage3.name.same_map_refresh", not previous_tween.is_valid() and map.displayed_map_name() == hall_name)
+
+	script._ambient_index = 0
+	var lines := [
+		"墙角的光，好像比上次亮了一点。", "刚才好像漏了一拍。", "高塔门那边，有风往里灌。",
+		"有块地砖浮起来，没再落回去。", "有张熟面孔，刚才差点没认出来。"]
+	var observed := []
+	for i in 12:
+		observed.append(fx.show_ambient().text)
+	check("stage3.ambient.rotation", observed == XLobbyCorruption.AMBIENT_LINES + lines + [XLobbyCorruption.AMBIENT_LINES[0]], observed)
+	check("stage3.ambient.rate", fx.ambient_chance() == 0.25 and fx.ambient_gap_ms() == 480000)
+	script._ambient_index = 6
+	fx.show_ambient().modulate.a = 1.0
+	await shot("t418_ambient.png")
+	XLobbyCorruption.STAGE3_AMBIENT = false
+	check("stage3.ambient.fallback", fx.ambient_chance() == 0.2 and fx.ambient_gap_ms() == 600000
+		and XLobbyCorruption.AMBIENT_LINES.has(fx.show_ambient().text))
+	XLobbyCorruption.STAGE3_AMBIENT = true
+	await close(map)
+
+	var tq := await open_lobby(3, 14, 21, true)
+	fx = tq.lobby_fx
+	fx._atmosphere_rng.seed = seed_rng.seed
+	check("stage3.atmosphere.tianqi_exempt", not fx.roll_name_glitch(hall_name) and tq.bgm.pitch_scale == 1.0
+		and is_equal_approx(fx.hum_level(), 0.3) and fx.ambient_gap_ms() == 600000 and fx._whisper == null)
+	await close(tq)
 
 
 func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -> void:

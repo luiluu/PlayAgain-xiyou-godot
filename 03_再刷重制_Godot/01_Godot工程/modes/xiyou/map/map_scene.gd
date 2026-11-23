@@ -319,14 +319,15 @@ var _map_name_fade := 1.0  # T361 P1-1：地名横幅淡入进度（底先到满
 ## 正式版改过的 Window_MapName.refresh：暗底从 640−80×1.5 起、宽＝字宽＋160（左半由透明渐到 0.6 黑、右半渐回透明），
 ## 文字以 640 为中心
 func _paint_map_name(c: XMVCanvas) -> void:
-	if map_name_text == "":
+	var text := displayed_map_name()
+	if text == "":
 		return
 	if XUiSkin.on():
 		var vw := c.size.x
 		var cx := vw / 2.0
 		var f := XUiSkin.font("title")
 		var fs := XUiSkin.FS_CARD
-		var tw := f.get_string_size(map_name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		var tw := f.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
 		var bw := maxf(280.0, tw + 112.0)
 		var bh := 44.0
 		var bx := cx - bw / 2.0
@@ -353,12 +354,12 @@ func _paint_map_name(c: XMVCanvas) -> void:
 			]), Color(XUiSkin.GOLD, 0.85))
 		var tx := roundf(cx - tw / 2.0)
 		var ty := roundf(bh / 2.0 + fs * 0.36)
-		c.draw_string(f, Vector2(tx, ty + 1.0), map_name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0, 0, 0, 0.8 * ta))
-		c.draw_string(f, Vector2(tx, ty), map_name_text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(XUiSkin.TEXT, ta))
+		c.draw_string(f, Vector2(tx, ty + 1.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(0, 0, 0, 0.8 * ta))
+		c.draw_string(f, Vector2(tx, ty), text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color(XUiSkin.TEXT, ta))
 		return
 	c.font = XUI.font()
 	c.clean_text = false
-	var tw := c.text_width(map_name_text)
+	var tw := c.text_width(text)
 	var distance := 80.0
 	var w := tw + distance * 2.0
 	var bx := 640.0 - distance * 1.5
@@ -366,13 +367,27 @@ func _paint_map_name(c: XMVCanvas) -> void:
 	var clear := Color(0, 0, 0, 0)
 	c.gradient(Rect2(bx, 0, w / 2.0, 36), clear, dark)
 	c.gradient(Rect2(bx + w / 2.0, 0, w / 2.0, 36), dark, clear)
-	c.text(map_name_text, 640.0 - w / 2.0 + distance, 0, tw + 2, "left", XUI.TEXT, 26, 34)
+	c.text(text, 640.0 - w / 2.0 + distance, 0, tw + 2, "left", XUI.TEXT, 26, 34)
 
 
-func _show_map_name(text: String) -> void:
+func displayed_map_name() -> String:
+	if is_instance_valid(lobby_fx) and lobby_fx.name_glitch_text != "":
+		return lobby_fx.name_glitch_text
+	return map_name_text
+
+
+func _show_current_map_name(entering := false) -> void:
+	var text := str(map_data.get("displayName", ""))
+	# 天启篇 34～36 层、七印祭坛借图时用新名字
+	_show_map_name(XTianqiQiyin.map_name(XState.current, map_id, XTianqiSummit.map_name(XState.current, map_id, text)), entering)
+
+
+func _show_map_name(text: String, entering := false) -> void:
 	# 快速连续场所移动时，上一张地图的 tween 不能继续改新地图名的位置/透明度。
 	if _map_name_tween:
 		_map_name_tween.kill()
+	if is_instance_valid(lobby_fx):
+		lobby_fx.clear_name_glitch()
 	var plate: XMVCanvas = hud.find_child("MapNamePlate", true, false)
 	if XUiSkin.on():
 		plate.size = Vector2(get_viewport().get_visible_rect().size.x, 44.0)
@@ -396,7 +411,18 @@ func _show_map_name(text: String) -> void:
 		t.parallel().tween_method(_plate_alpha.bind(plate), 0.0, 1.0, 0.3)
 	else:
 		t.parallel().tween_property(plate, "modulate:a", 1.0, 1.0)
-	t.tween_interval(1.0)
+	if entering and is_instance_valid(lobby_fx) and lobby_fx.roll_name_glitch(text):
+		var fade_in := 0.3 if fast else 1.0
+		var start := fade_in + XLobbyCorruption.NAME_GLITCH_DELAY - 1.0 # 滑入占了首秒
+		t.tween_interval(start)
+		t.tween_callback(lobby_fx.start_name_glitch.bind(plate))
+		t.tween_interval(XLobbyCorruption.NAME_GLITCH_SECONDS)
+		t.tween_callback(lobby_fx.clear_name_glitch)
+		var remaining := 1.0 - start - XLobbyCorruption.NAME_GLITCH_SECONDS
+		if remaining > 0.0:
+			t.tween_interval(remaining)
+	else:
+		t.tween_interval(1.0)
 	t.tween_property(plate, "position:y", 78.0, 1.0)
 	if fast:
 		t.parallel().tween_method(_plate_alpha.bind(plate), 1.0, 0.0, 0.3).set_delay(0.7)
@@ -426,8 +452,11 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 				chars.remove_child(c)
 				c.queue_free()
 		_place_party(x, y, d)
+		_show_current_map_name()
 		return
 	# 换图：旧图事件的并行解释器随 $gameMap.setup 丢弃，这里先叫停，免得等待中的协程在节点释放前后接着执行
+	if is_instance_valid(lobby_fx):
+		lobby_fx.suspend_stage3_audio()
 	_stop_parallels()
 	for n in [lower, upper, chars]:
 		if n:
@@ -487,6 +516,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	_clear_treasure_popups()
 	_place_party(x, y, d)
 	_setup_lobby_fx()
+	_show_current_map_name(true)
 	_setup_fest_fx()
 	_setup_tianqi_look()
 
@@ -582,7 +612,6 @@ func _place_party(x: int, y: int, d: int) -> void:
 	camera.reparent(player)
 	camera.position = Vector2(0, -TS / 2.0)
 	camera.reset_smoothing()
-	_show_map_name(XTianqiQiyin.map_name(XState.current, map_id, XTianqiSummit.map_name(XState.current, map_id, str(map_data.get("displayName", "")))))  # 天启篇 34～36 层、七印祭坛借图时用新名字
 	_place_vehicle()
 	# Game_Map.autoplay：乘载具时只记下地图 BGM（saveWalkingBgm2），继续放载具的
 	if bool(map_data.get("autoplayBgm", false)):
@@ -989,6 +1018,8 @@ func run_event(e: MVEvent) -> void:
 	var rerun_key := "%d:%d:%d" % [map_id, ev_id, e.page_index]
 	var interp := MVInterpreter.new(self, map_id, ev_id, e.command_list())
 	running_event_id = ev_id
+	if is_instance_valid(lobby_fx) and lobby_fx.rift_event_running():
+		lobby_fx.suspend_stage3_audio()
 	await interp.run()
 	running_event_id = 0
 	# 事件里若有场所移动，旧地图的事件节点已释放，之后不能再访问 e
@@ -1429,6 +1460,8 @@ func play_bgm(audio) -> void:
 	var name := str(audio.get("name", "")) if audio is Dictionary else ""
 	if name == _bgm_name:
 		return
+	if is_instance_valid(lobby_fx):
+		lobby_fx.reset_stage3_bgm()
 	_bgm_name = name
 	_bgm_audio = (audio as Dictionary).duplicate() if audio is Dictionary and name != "" else null
 	var p := XDB.audio_path("bgm", name) if name != "" else ""
@@ -1451,6 +1484,8 @@ func play_movie(name: String) -> void:
 func play_rift3_anim(allow_placeholder := false) -> void:
 	if not XRift3Anim.available() and not allow_placeholder:
 		return
+	if is_instance_valid(lobby_fx):
+		lobby_fx.suspend_stage3_audio()
 	var bgm_was_playing := bgm != null and bgm.playing and not bgm.stream_paused
 	var bgm_pos := bgm.get_playback_position() if bgm_was_playing else 0.0
 	if bgm_was_playing:
@@ -1544,6 +1579,8 @@ func take_battle_me(battle: XBattleScene) -> bool:
 
 
 func play_me(audio: Dictionary) -> void:
+	if is_instance_valid(lobby_fx):
+		lobby_fx.reset_stage3_bgm()
 	me.stop()
 	var path := XDB.audio_path("me", str(audio.get("name", "")))
 	bgm.stream_paused = path != ""
@@ -1567,6 +1604,8 @@ func start_battle(troop_id: int, can_escape: bool, can_lose: bool, random_encoun
 	if not random_encounter:
 		await XTianqiLine.before_battle(self, XState.current, troop_id)  # 天启篇四线：10／20／30 层守层者变使徒，先放骑士的声音
 	# BattleManager.saveBgmAndBgs/playBattleBgm：地图音乐不能和战斗音乐叠播，返回保留播放位置。
+	if is_instance_valid(lobby_fx):
+		lobby_fx.suspend_stage3_audio()
 	me.stop()
 	bgm.stream_paused = true
 	bgs.stream_paused = true
