@@ -1446,6 +1446,49 @@ func play_movie(name: String) -> void:
 		await movie.finished
 
 
+## 三阶漫画动画（T430，分镜 v0.5）：暂停大厅 BGM 并让 lobby_fx 低鸣／氛围小字让路，截当前视口传给 XRift3Anim，
+## 播完（自然结束或跳过）直接恢复大厅 BGM（不摆 XUFENG_EV 上地图）并返回解释器。
+func play_rift3_anim(allow_placeholder := false) -> void:
+	if not XRift3Anim.available() and not allow_placeholder:
+		return
+	var bgm_was_playing := bgm != null and bgm.playing and not bgm.stream_paused
+	var bgm_pos := bgm.get_playback_position() if bgm_was_playing else 0.0
+	if bgm_was_playing:
+		XAudio.stop_fade(bgm)
+		bgm.stream_paused = true
+	var fx_paused := false
+	if lobby_fx != null and is_instance_valid(lobby_fx):
+		if lobby_fx._hum != null and is_instance_valid(lobby_fx._hum):
+			lobby_fx._hum.stop()
+		if lobby_fx._drip != null and is_instance_valid(lobby_fx._drip):
+			lobby_fx._drip.stop()
+		if lobby_fx._ambient != null and is_instance_valid(lobby_fx._ambient):
+			lobby_fx._ambient.queue_free()
+			lobby_fx._ambient = null
+		if not lobby_fx.rift_event_running() and lobby_fx.is_processing():
+			lobby_fx.set_process(false)
+			fx_paused = true
+	var vp_tex: Texture2D = null
+	if DisplayServer.get_name() != "headless":
+		var vp := get_viewport()
+		var raw_tex := vp.get_texture() if vp != null else null
+		var img := raw_tex.get_image() if raw_tex != null else null
+		if img != null and not img.is_empty():
+			vp_tex = ImageTexture.create_from_image(img)
+	var anim := XRift3Anim.play(self, vp_tex, allow_placeholder)
+	if anim != null:
+		await anim.finished
+	if not is_inside_tree():
+		return
+	if fx_paused and lobby_fx != null and is_instance_valid(lobby_fx):
+		lobby_fx.set_process(true)
+	if bgm_was_playing and bgm != null and is_instance_valid(bgm):
+		bgm.stream_paused = false
+		if not bgm.playing and bgm.stream != null:
+			bgm.play(bgm_pos)
+		XAudio.fade_in(bgm)
+
+
 func play_se(audio) -> void:
 	var p := XDB.audio_path("se", str(audio.get("name", ""))) if audio is Dictionary else ""
 	if p != "":
