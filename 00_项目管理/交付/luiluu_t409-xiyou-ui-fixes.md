@@ -78,8 +78,8 @@
 
 ## 截图
 
-- [指定词条长列表拖动后](../归档/交付截图/luiluu_t409/gear_search_touch_terms.png)
-- [宠物页资料与贴图](../归档/交付截图/luiluu_t409/pets.png)
+- 指定词条长列表拖动后对应 `00_项目管理/归档/交付截图/luiluu_t409/gear_search_touch_terms.png`。
+- 宠物页资料与贴图对应 `00_项目管理/归档/交付截图/luiluu_t409/pets.png`。
 
 ## 本分支提交
 
