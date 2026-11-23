@@ -254,8 +254,9 @@ var _s3_npc_lines := false
 var _s3_mirror := false
 var _s3_stump := false
 var _s3_investigations := false
-var _npc_fx: Dictionary[MVEvent, Sprite2D] = {}
-var _npc_y_offsets: Dictionary[MVEvent, Vector2] = {}  # 原生 Y、叠加后的 Y
+# 换图时角色可能先于大厅叠加层释放，按实例编号追踪渲染状态。
+var _npc_fx: Dictionary[int, int] = {}  # 事件实例编号 → 影斑实例编号
+var _npc_y_offsets: Dictionary[int, Vector2] = {}  # 原生 Y、叠加后的 Y
 var _shadow_texture: GradientTexture2D
 var _stump_shadow: Sprite2D
 var _crack_scorch: Node2D
@@ -393,8 +394,8 @@ func setup(map: XMapScene) -> void:
 
 
 func _exit_tree() -> void:
-	for e in _npc_fx.keys():
-		_clear_npc_fx(e)
+	for instance_id in _npc_fx.keys():
+		_clear_npc_fx(instance_id)
 	if is_instance_valid(_stump_shadow) and not _stump_shadow.is_queued_for_deletion():
 		_stump_shadow.hide()
 		_stump_shadow.queue_free()
@@ -1574,7 +1575,7 @@ func _update_tint() -> void:
 			_wall_tremor_until = _t + 0.16
 			_next_wall_tremor = _t + rng.randf_range(5.0, 8.0)
 	for e in host.events:
-		if not is_instance_valid(e):
+		if not is_instance_valid(e) or e.is_queued_for_deletion():
 			continue
 		# XRift EV207 保留专用的整只染紫。
 		if str(e.data.get("note", "")) == MOB_TINT_NOTE:
@@ -1585,9 +1586,10 @@ func _update_tint() -> void:
 		elif refresh_npcs:
 			_update_npc_fx(e)
 	if not _npc_fx.is_empty() and (refresh_npcs or not npc_fx):
-		for e in _npc_fx.keys():
+		for instance_id in _npc_fx.keys():
+			var e := instance_from_id(instance_id) as MVEvent
 			if not npc_fx or not is_instance_valid(e) or e.is_queued_for_deletion():
-				_clear_npc_fx(e)
+				_clear_npc_fx(instance_id)
 	var chars: Array = [host.player] + host.followers
 	for c in chars:
 		if not is_instance_valid(c):
@@ -1603,51 +1605,53 @@ func _update_tint() -> void:
 
 func _update_npc_fx(e: MVEvent) -> void:
 	var id := e.event_id
+	var instance_id := e.get_instance_id()
 	var d2 := (e.grid - CENTER).length_squared()
 	if e.erased or not _has_walk_sprite(e) or id == 67 or (id >= 75 and id <= 81) \
 			or (id >= 201 and id <= 207) or d2 > STAGE3_NPC_RADIUS * STAGE3_NPC_RADIUS:
-		if _npc_fx.has(e):
-			_clear_npc_fx(e)
+		if _npc_fx.has(instance_id):
+			_clear_npc_fx(instance_id)
 		return
 	var col := Color.WHITE.lerp(PURPLE, lerpf(0.18, 0.12, sqrt(d2) / STAGE3_NPC_RADIUS))
 	if e.self_modulate != col:
 		e.self_modulate = col
-	if not _npc_fx.has(e):
-		_npc_fx[e] = _add_shadow(e, Vector2(0.0, -3.0), 0.24)
+	if not _npc_fx.has(instance_id):
+		_npc_fx[instance_id] = _add_shadow(e, Vector2(0.0, -3.0), 0.24).get_instance_id()
 	var offset := 0.0
 	if id >= 50 and id <= 52:
 		offset = -5.0
 	elif (e.grid.x == 4 or e.grid.x == 24) and _t < _wall_tremor_until:
 		# 沿墙竖向微颤，避免横移进墙。
 		offset = -1.0 if _wall_tremor_until - _t > 0.08 else 1.0
-	_apply_npc_y(e, offset)
+	_apply_npc_y(e, instance_id, offset)
 
 
-func _apply_npc_y(e: MVEvent, offset: float) -> void:
+func _apply_npc_y(e: MVEvent, instance_id: int, offset: float) -> void:
 	var current := e.frames_offset.y
-	var prior: Vector2 = _npc_y_offsets.get(e, Vector2(current, current))
+	var prior: Vector2 = _npc_y_offsets.get(instance_id, Vector2(current, current))
 	# 原生换页或换图可以重设 frames_offset，清除效果时保留新值。
 	var base := prior.x if current == prior.y else current
 	if current != base + offset:
 		e.frames_offset.y = base + offset
 		e.queue_redraw()
 	if offset == 0.0:
-		_npc_y_offsets.erase(e)
+		_npc_y_offsets.erase(instance_id)
 	else:
-		_npc_y_offsets[e] = Vector2(base, base + offset)
+		_npc_y_offsets[instance_id] = Vector2(base, base + offset)
 
 
-func _clear_npc_fx(e: Variant) -> void:
-	var shadow: Sprite2D = _npc_fx[e]
+func _clear_npc_fx(instance_id: int) -> void:
+	var shadow := instance_from_id(_npc_fx[instance_id]) as Sprite2D
 	if is_instance_valid(shadow) and not shadow.is_queued_for_deletion():
 		shadow.hide()
 		shadow.queue_free()
+	var e := instance_from_id(instance_id) as MVEvent
 	if is_instance_valid(e):
 		e.self_modulate = Color.WHITE
-		_apply_npc_y(e, 0.0)
+		_apply_npc_y(e, instance_id, 0.0)
 	else:
-		_npc_y_offsets.erase(e)
-	_npc_fx.erase(e)
+		_npc_y_offsets.erase(instance_id)
+	_npc_fx.erase(instance_id)
 
 
 func _add_shadow(anchor: Node2D, offset: Vector2, alpha: float) -> Sprite2D:

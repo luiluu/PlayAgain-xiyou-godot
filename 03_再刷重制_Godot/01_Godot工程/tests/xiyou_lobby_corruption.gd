@@ -409,7 +409,7 @@ func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -
 		[XFestLobby.decor(), fx_fest.gate_vein_visible() if fx_fest else null, fx_fest.wall_vein_count() if fx_fest else -1, fx_fest.decay_furniture_count() if fx_fest else -1, fx_fest.decay_lamp_count() if fx_fest else -1])
 	check("stage3.fest_floats_avoid", fx_fest != null and fx_fest.floats.all(func(f): return _float_s3_clear(m_fest, fx_fest, f)), fx_fest.floats if fx_fest else [])
 	var olf := fx_fest._event_by_id(1)
-	check("stage3.fest_olf_outside", olf.grid == Vector2i(17, 5) and olf.self_modulate == Color.WHITE and not fx_fest._npc_fx.has(olf), olf.grid)
+	check("stage3.fest_olf_outside", olf.grid == Vector2i(17, 5) and olf.self_modulate == Color.WHITE and not fx_fest._npc_fx.has(olf.get_instance_id()), olf.grid)
 	for cell in [XLobbyCorruption.STAGE3_INVEST_CELL, XLobbyCorruption.FIXED_FLOAT_S3]:
 		check("stage3.fest_investigation_clear.%s" % cell, not m_fest.events.any(func(e): return e.grid == cell))
 	await frames(15)
@@ -510,16 +510,17 @@ func _test_stage3_interactions(original: Dictionary) -> void:
 	map.player.locate(14, 24)
 	await frames(2)
 	check("stage3.tint_radius", map.player.self_modulate == Color.WHITE)
-	check("stage3.npc_realtime_and_exclusions", fx._npc_fx.has(olf) and fx._npc_fx.has(artisan) and fx._npc_fx.has(debt) \
-		and fx._event_by_id(75).self_modulate == Color.WHITE and chest.self_modulate == Color.WHITE and not fx._npc_fx.has(chest))
+	check("stage3.npc_realtime_and_exclusions", fx._npc_fx.has(olf.get_instance_id()) \
+		and fx._npc_fx.has(artisan.get_instance_id()) and fx._npc_fx.has(debt.get_instance_id()) \
+		and fx._event_by_id(75).self_modulate == Color.WHITE and chest.self_modulate == Color.WHITE and not fx._npc_fx.has(chest.get_instance_id()))
 	olf.locate(17, 5)
 	fx._next_npc_refresh = fx._t
 	fx._update_tint()
-	check("stage3.npc_leaves_range", olf.self_modulate == Color.WHITE and not fx._npc_fx.has(olf))
+	check("stage3.npc_leaves_range", olf.self_modulate == Color.WHITE and not fx._npc_fx.has(olf.get_instance_id()))
 	olf.locate(14, 10)
 	fx._next_npc_refresh = fx._t
 	fx._update_tint()
-	check("stage3.npc_returns_to_range", olf.self_modulate != Color.WHITE and fx._npc_fx.has(olf))
+	check("stage3.npc_returns_to_range", olf.self_modulate != Color.WHITE and fx._npc_fx.has(olf.get_instance_id()))
 	check("stage3.debt_render_only", debt.grid == Vector2i(14, 13) and debt.real == Vector2(14, 13) and debt.frames_offset.y == -5.0)
 	fx._next_wall_tremor = fx._t
 	fx._next_npc_refresh = fx._t
@@ -576,11 +577,24 @@ func _test_stage3_interactions(original: Dictionary) -> void:
 	var back := XLobbyCorruption.record(restored)
 	check("stage3.persist_all", back.s3_crack and back.said.has("21") and not back.said.has("7") \
 		and STAGE3_ACTIONS.keys().all(func(id): return back.said.has("s3:%d" % id)), back)
+	var artisan_instance := artisan.get_instance_id()
+	map.events.erase(artisan)
+	artisan.queue_free()
+	await frames(2)
+	fx._next_npc_refresh = fx._t
+	fx._update_tint()
+	check("stage3.released_event_cleared", not is_instance_valid(artisan) and not fx._npc_fx.has(artisan_instance) and not fx._npc_y_offsets.has(artisan_instance))
 	fx.queue_free()
 	await frames(2)
 	check("stage3.exit_restores_rendering", map.player.self_modulate == Color.WHITE and olf.self_modulate == Color.WHITE \
 		and debt.self_modulate == Color.WHITE and debt.frames_offset.y == 0.0 and not is_instance_valid(fx) \
 		and not debt.get_children().any(func(n): return n is Sprite2D))
+	await close(map)
+	map = await open_lobby(3)
+	fx = map.lobby_fx
+	map.load_map(5, 11, 13, 2)
+	await frames(3)
+	check("stage3.transfer_frees_fx_and_events", map.map_id == 5 and map.lobby_fx == null and not is_instance_valid(fx))
 	await close(map)
 	await _test_stage3_interaction_switches()
 	await _test_stage3_tianqi_source()
