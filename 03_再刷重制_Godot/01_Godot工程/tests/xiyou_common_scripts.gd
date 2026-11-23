@@ -12,6 +12,11 @@ const PARTY := [1, 8, 9, 10]
 var results: Array = []
 
 
+class GiftHost extends EC.EventHost:
+	func erase_event(id: int) -> void:
+		XState.current.erased_events.append(id)
+
+
 func _ready() -> void:
 	# 参照是原版文字：原版文字错的加载时修正（XTextFix，cc/text-fix-b）比对时整组关掉；修正本身由 tests/xiyou_text_fix 核
 	XTextFix.set_all(false)
@@ -53,7 +58,65 @@ func _run() -> void:
 		_check(str(c.id), diffs.is_empty(), diffs)
 	print("COMMON_SCRIPTS ", JSON.stringify(kinds))
 	XConfig.clothes_unlocked().clear()
+	await _crow_blueprints(host)
+	await _chentang_gift()
 	_finish()
+
+
+func _crow_blueprints(host: EC.EventHost) -> void:
+	var s := XState.new_game_blank()
+	XState.current = s
+	for pair in [[1761, 710, 198, "五眼乌鸦", "六眼乌鸦"], [1762, 711, 199, "七眼乌鸦", "九眼乌鸦"]]:
+		var recipe := XCrafting.recipe(pair[2])
+		var product := XCrafting.item_of(recipe.result)
+		_check("crow.name." + pair[3], str(product.name).ends_with(pair[3]) and XDB.rec("Items", pair[0]).name == "配方:" + pair[3])
+		host.trace.clear()
+		var ce := XDB.rec("CommonEvents", pair[1])
+		await MVInterpreter.new(host, s.map_id, 0, ce.list).run()
+		_check("crow.learn." + pair[3], XCrafting.known(s, recipe) and host.trace.any(
+			func(e): return e.t == "toast" and str(e.text).contains(pair[3]) and not str(e.text).contains(pair[4])), host.trace)
+		XDB.CROW_BLUEPRINT_NAMES = false
+		_check("crow.rollback." + pair[3], XDB.rec("Items", pair[0]).name == "配方:" + pair[4] and XDB.rec("CommonEvents", pair[1]).name == pair[4])
+		XDB.CROW_BLUEPRINT_NAMES = true
+		s.flags.tianqi = {"rules": 1}
+		_check("crow.tianqi." + pair[3], XDB.rec("Items", pair[0]).name == "配方:" + pair[4] and XDB.rec("CommonEvents", pair[1]).name == pair[4])
+		s.flags.erase("tianqi")
+
+
+func _chentang_gift() -> void:
+	var host := GiftHost.new()
+	add_child(host)
+	var m := XDB.map(169)
+	var commands: Array = m.events[9].pages[0].list
+	for spec in [
+		{"name": "gift", "water": 1, "pick": 0, "result": true},
+		{"name": "missing_water", "water": 0, "pick": 0, "result": false},
+		{"name": "look", "water": 1, "pick": 2, "result": false},
+		{"name": "boss_defeated", "water": 1, "pick": 0, "result": false},
+		{"name": "rollback", "water": 1, "pick": 0, "result": false},
+		{"name": "tianqi", "water": 1, "pick": 0, "result": false},
+	]:
+		var s := XState.new_game_blank()
+		XState.current = s
+		s.map_id = 169
+		s.x = 11
+		s.y = 21
+		s.gain_item(912, spec.water)
+		s.set_switch(247, spec.name == "boss_defeated")
+		if spec.name == "tianqi":
+			s.flags.tianqi = {"rules": 1}
+		MVInterpreter.CHENTANG_GIFT_TRANSFER = spec.name != "rollback"
+		host.trace.clear()
+		host.answers = [spec.pick]
+		await MVInterpreter.new(host, 169, 9, commands).run()
+		var moves := host.trace.filter(func(e): return e.t == "transfer")
+		var sent: bool = spec.result
+		_check("chentang." + spec.name, moves.size() == int(sent) and s.map_id == 169 \
+			and (Vector2i(s.x, s.y) == Vector2i(m.events[1].x, m.events[1].y + 1) and s.direction == 8 if sent else Vector2i(s.x, s.y) == Vector2i(11, 21)), host.trace)
+		if sent:
+			_check("chentang.gift_preserved", s.item_count(912) == 0 and s.erased_events.has(9) and s.variable(246) == 4 and s.variable(364) == 1)
+	MVInterpreter.CHENTANG_GIFT_TRANSFER = true
+	host.queue_free()
 
 
 static func _norm(v):

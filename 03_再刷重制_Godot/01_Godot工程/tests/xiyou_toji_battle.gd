@@ -198,7 +198,9 @@ func _target_index(logic: XBattleLogic, t) -> int:
 ## 参照是原版：档案段数再乘 numRepeats（O-131 o_profile_hits 关）
 func _ai(logic: XBattleLogic, a: XActor, want: Dictionary, name: String) -> void:
 	var keep := XSmartAI.o_profile_hits
+	var keep_return := XSmartAI.TOJI_SWITCH_HYSTERESIS
 	XSmartAI.o_profile_hits = false
+	XSmartAI.TOJI_SWITCH_HYSTERESIS = false
 	check(name + ".extra", a.attack_times_add() == float(want.extra), [a.attack_times_add(), want.extra])
 	var power: Array = logic.enemies.map(func(t): return snappedf(t.atk + t.mat + t.agi * 0.3, 1e-6))
 	check(name + ".power", power == want.power.map(func(v): return snappedf(float(v), 1e-6)), [power, want.power])  # 威胁度读的能力
@@ -232,6 +234,7 @@ func _ai(logic: XBattleLogic, a: XActor, want: Dictionary, name: String) -> void
 			same = int(cands[k].id) == int(exp_c[k].id) and absf(float(cands[k].score) - float(exp_c[k].score)) <= maxf(1.0, absf(float(exp_c[k].score)) * 1e-4)
 	check(name + ".candidates", same, [cands.map(func(x): return [x.id, x.score]), exp_c.map(func(x): return [x.id, x.score])])
 	XSmartAI.o_profile_hits = keep
+	XSmartAI.TOJI_SWITCH_HYSTERESIS = keep_return
 
 
 ## 命中／闪避／暴击（参照 rates）：忘暴君、e0 加暴击闪避＋60%，再依次忘五感、天与咒缚
@@ -377,6 +380,58 @@ func _local_visual() -> void:
 	logic.end_battle(0)
 
 
+## 固定估值以覆盖两个边界，选招和切换记录仍走真实逻辑。
+class ReturnAI extends XSmartAI:
+	var back_score := 110.0
+
+	func score_candidate(rec: Dictionary, item: bool, _ctx: Dictionary, _dir := {}) -> Dictionary:
+		var id := int(rec.id)
+		var score := 0.0
+		if not item and id == XToji.SWITCH[0]:
+			score = back_score
+		elif not item and id == actor.attack_skill_id():
+			score = 100.0
+		return {"score": score, "target": null}
+
+
+func _local_switch_return() -> void:
+	var r := _battle()
+	var logic: XBattleLogic = r[0]
+	var a: XActor = r[1]
+	XToji.start_battle(logic)
+	var other := XDB.rec("Skills", XToji.SWITCH[1])
+	logic.act(a, other, a)
+	check("local_return.record", logic.toji_previous_shape == 0 and XToji.current_shape(a) == 1)
+	var ai := ReturnAI.new(logic, a)
+	var back: int = XToji.SWITCH[0]
+	var attack: int = XToji.MAIN[1]
+	var disabled := XSmartAI.TOJI_SWITCH_HYSTERESIS
+	for step in range(4):
+		check("local_return.stays.%d" % step, int(ai._choose().get("skill", {}).get("id", 0)) == attack)
+	XSmartAI.TOJI_SWITCH_HYSTERESIS = false
+	check("local_return.rollback", int(ai._choose().get("skill", {}).get("id", 0)) == back)
+	XSmartAI.TOJI_SWITCH_HYSTERESIS = true
+	logic.state.flags.tianqi = {"rules": 1}
+	check("local_return.tianqi", int(ai._choose().get("skill", {}).get("id", 0)) == back)
+	logic.state.flags.erase("tianqi")
+	ai.back_score = 150.0
+	check("local_return.strong", int(ai._choose().get("skill", {}).get("id", 0)) == back)
+	var original := XDB.rec("Skills", back)
+	logic.act(a, original, a)
+	check("local_return.manual", logic.toji_previous_shape == 1 and XToji.current_shape(a) == 0)
+	logic.act(a, other, a)
+	logic.act(a, XDB.rec("Skills", XToji.SWITCH[2]), a)
+	check("local_return.before_death", logic.toji_previous_shape == 1 and XToji.current_shape(a) == 2)
+	logic._state_add(a, XToji.DEATH)
+	logic._state_remove(a, XToji.DEATH)
+	check("local_return.revive", a.state_ids.has(XToji.SHAPES[0]) and logic.toji_previous_shape == -1)
+	logic.act(a, other, a)
+	XToji.start_battle(logic)
+	check("local_return.reset", logic.toji_previous_shape == -1)
+	logic.end_battle(0)
+	XSmartAI.TOJI_SWITCH_HYSTERESIS = disabled
+
+
 func _run() -> void:
 	var ref = XDB.load_json(ORACLE)
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
@@ -395,6 +450,7 @@ func _run() -> void:
 	check("covers_all", seen == 11, seen)
 	_local()
 	_local_ai()
+	_local_switch_return()
 	_local_visual()
 	finish()
 
