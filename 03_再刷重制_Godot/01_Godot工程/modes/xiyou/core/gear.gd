@@ -94,13 +94,13 @@ static func create(kind: String, id: int, owner: XState = null) -> Dictionary:
 	return roll_item(template(kind, id), owner)
 
 
-## O-待定-1：西游档自然掉落／挖宝给候选全被过滤的至臻底材补同库 Mod 候选。false 恢复原配置。
+## O-待定-1：西游档获取装备时，给候选全被过滤的至臻底材补同库 Mod 候选。false 恢复原配置。
 static var PRESTIGE_DROP_AFFIX := true
 
 
 static func create_prestige_drop(kind: String, id: int, owner: XState) -> Dictionary:
 	var item := template(kind, id)
-	if not item.is_empty() and XTreasureBatch.is_prestige(item):
+	if PRESTIGE_DROP_AFFIX and not item.is_empty() and XTreasureBatch.is_prestige(item):
 		var table := _affix_table(item)
 		var equipment: Dictionary = item.get("equipment", {})
 		var rows: Array = equipment.get("affixes", [])

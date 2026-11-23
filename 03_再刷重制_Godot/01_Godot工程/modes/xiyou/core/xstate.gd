@@ -792,7 +792,7 @@ func _gain_raw(id: int, amount: int) -> void:
 		items.erase(id)
 
 ## source：天启篇装备随机身份的来源键（XTianqiRandom.on_register）；来源读档稳定的入口才传，空＝照 instanceId
-func gain_gear(kind: String, base_id: int, amount: int, source := "", prestige_drop := false) -> void:
+func gain_gear(kind: String, base_id: int, amount: int, source := "") -> void:
 	if source == "":
 		source = XTianqi.gift_source(kind, base_id)  # 天启篇入队赠品期间（T398）：模块 recruit() 发的专属装备也按来源键；别处为空
 	if amount > 0 and XAlienHide.blocks_base(kind, base_id):
@@ -801,9 +801,11 @@ func gain_gear(kind: String, base_id: int, amount: int, source := "", prestige_d
 		if kind == "armor" and base_id == XDemonCrown.ARMOR and not XDemonCrown.mutating():
 			XDemonCrown.grant(self, amount)  # 魔冠 gainItem 包装：得到数据库那件改由成长账本发
 			return
+		var tianqi := XTianqi.active(self)
 		for i in range(amount):
-			var inst := XGear.create_prestige_drop(kind, base_id, self) if prestige_drop and XGear.PRESTIGE_DROP_AFFIX and not XTianqi.active(self) \
-				else XTianqiRandom.create_gear(self, kind, base_id, source)  # 天启篇：词条与底子按来源键（R3）
+			# 西游档统一补至臻空候选，含战斗、挖宝和事件发奖。天启篇按来源键生成（R3）。
+			var inst := XTianqiRandom.create_gear(self, kind, base_id, source) if tianqi \
+				else XGear.create_prestige_drop(kind, base_id, self)
 			if not inst.is_empty():
 				register_gear(inst, source)
 				gear.append(inst)

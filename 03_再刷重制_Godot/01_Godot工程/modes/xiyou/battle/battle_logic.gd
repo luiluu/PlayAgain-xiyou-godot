@@ -3860,8 +3860,8 @@ func gain_drops(drops: Array) -> void:
 			XTestMode.boost_depth += 1
 		match int(d.kind):
 			1: state.gain_item(d.id, int(d.get("count", 1)))  # count：XTianqiSect 掉落行一次掉几个
-			2: state.gain_gear("weapon", d.id, 1, _gear_src(d), true)  # 招牌掉落走掉落账，来源键稳定；天启篇钉住的本场带战斗来源键；其余照 instanceId
-			3: state.gain_gear("armor", d.id, 1, _gear_src(d), true)
+			2: state.gain_gear("weapon", d.id, 1, _gear_src(d))  # 招牌掉落走掉落账，来源键稳定；天启篇钉住的本场带战斗来源键；其余照 instanceId
+			3: state.gain_gear("armor", d.id, 1, _gear_src(d))
 		if d.get("boost", false):
 			XTestMode.boost_depth -= 1
 

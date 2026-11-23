@@ -180,6 +180,7 @@ func _run() -> void:
 	else:
 		check("v029_runtime_absent_native", XTreasureMap.run(s, 1, 10, 117).toasts.size() > 0)
 	_prestige(m1)
+	_prestige_dungeon_chest()
 	XTreasureMap._spots = saved_spots
 	finish()
 
@@ -248,6 +249,47 @@ func _prestige(map_id: int) -> void:
 	_seed_affix_roll(logic.state, 0.99)
 	logic.gain_drops([{"kind": 2, "id": PRESTIGE_WEAPON}])
 	check("prestige.battle_can_miss", logic.state.gear.size() == 3 and logic.state.gear.back().affixIds.is_empty())
+
+
+func _prestige_dungeon_chest() -> void:
+	const MAP := 9
+	const CHEST := 2
+	const FISH_CROSSBOW := 1888
+	# 直接执行王者宝箱的至臻发奖指令，固定装备骰以验证随机词条。
+	var command := {}
+	for page in XDB.map(MAP).events[CHEST].pages:
+		var commands: Array = page.list
+		var idx := commands.find_custom(func(c): return int(c.code) == 127 and int(c.parameters[0]) == FISH_CROSSBOW)
+		if idx >= 0:
+			command = commands[idx]
+			break
+	if not check("prestige.chest.command", not command.is_empty()):
+		return
+	var saved := XGear.PRESTIGE_DROP_AFFIX
+	for enabled in [true, false]:
+		XGear.PRESTIGE_DROP_AFFIX = enabled
+		var s := XState.new_game_blank()
+		XState.current = s
+		s.map_id = MAP
+		_seed_affix_roll(s, 0.0)
+		var event := MVEventCore.new()
+		event.list = [command]
+		check("prestige.chest.%s" % enabled, event.advance().kind == "done" and s.gear.size() == 1
+			and int(s.gear[0].base) == FISH_CROSSBOW and _prestige_affix_ok(s.gear[0], enabled))
+		_seed_affix_roll(s, 0.0)
+		var direct := XGear.create_prestige_drop("weapon", FISH_CROSSBOW, s)
+		check("prestige.factory.%s" % enabled, _prestige_affix_ok(direct, enabled))
+	XGear.PRESTIGE_DROP_AFFIX = true
+	var tianqi := XState.new_game_blank()
+	tianqi.flags.tianqi = {"rules": 1}
+	XState.current = tianqi
+	tianqi.map_id = MAP
+	_seed_affix_roll(tianqi, 0.0)
+	var event := MVEventCore.new()
+	event.list = [command]
+	check("prestige.chest.tianqi", event.advance().kind == "done" and tianqi.gear.size() == 1
+		and int(tianqi.gear[0].base) == FISH_CROSSBOW and _prestige_affix_ok(tianqi.gear[0], false))
+	XGear.PRESTIGE_DROP_AFFIX = saved
 
 
 func _seed_affix_roll(s: XState, roll: float) -> void:
