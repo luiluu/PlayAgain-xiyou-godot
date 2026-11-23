@@ -17,7 +17,7 @@
 - skill_rework.json（全角色技能重构）：forced_copy_pending（T255 登记：技能号→原因）、forced_copy_unreachable（T261：副本分支天启篇走不到，技能号→原因）；卡里技能的效果 44 调公共事件强制放副本、副本没进卡的，要 effects_remove 或副本进卡或登记；只有 B 组，超强者 17（含五条悟）／强者 54 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1；状态行 battle_end 是布尔（T263）；技能行 self_states_on_hit 只能是 true 且要带 self_states（T264）；技能行 cast_pick、seg_elements_of、伤害条件 stat_floor 的格式（T268）。
 - reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
 - brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。
-- balance_table.json 的 guardian_phase4（守层者三表，T239）：hp_base／atk_scale／resist 层号 1～34、值为正；focus 层号 5～33、{skill: 正整数, scale: 正数[, single: 1]}（T363）。lifesteal_cap {skills: 正整数列表, pct: {五档难度键齐全: 正整数}}（T392）。dot_pct {层号 1～34: {状态号: 1～100 整数}}（T402）。
+- balance_table.json 的 guardian_phase4（守层者三表，T239）：hp_base／atk_scale／resist 层号 1～34、值为正；focus 层号 5～33、{skill: 正整数, scale: 正数[, single: 1]}（T363）。lifesteal_cap {skills: 正整数列表, pct: {五档难度键齐全: 正整数}}（T392）。dot_pct {层号 1～34: {状态号: 1～100 整数}}（T402）。hp_pct {层号 1～34: 1～100 整数}（T406）。
 - guardian_params.json（守层者能力值重锚，T237／T245）：只有 B 组，ref_enemy 是正整数、stats 八项对 0～7、floors 只有 31～34 层、qiyin 行（可没有）和每层只写 stats 里的项（下划线开头的注释键除外）、取值是正整数百分比（附则 E）。
 - growth.json（渡鸦、奈叶、流萤无限成长，T256）：只有 B 组，全表整数（附则 E）、层价分段从 1 层起连续且份数不降、翻倍倍数 ≥2、拐点在分段里、Q6 判定四项范围、三人行齐全且角色号对、一份是正整数、平加只认能力编号 0～7 且渡鸦只加魔攻、奈叶只加生命魔法、流萤不走平加。
 - six_dim.json（天启篇六维，T275）：只有 B 组，八档刻度、全整数（附则 E）、韧性抗控表 −10～+10 随档不降、R1～R3（SSS 唯一极化、SS 其余五维至少 2 项 ≤C、S 稀有度）逐份过，R4 分档总分只报告不拦（T280）、普通怪模板 8～10 个、样板角色号在 base_line.json、骑士键同 horsemen.json。\n有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
@@ -219,8 +219,19 @@ def guardian_phase4_rules(g) -> list:
                 for sid, v in row.items():
                     if not (str(sid).isdigit() and int(sid) > 0) or not isint(v) or not 1 <= v <= 100:
                         bad.append('guardian_phase4.dot_pct[%s][%s]＝%r：状态号要正整数、值要 1～100 的整数（百分比）' % (f, sid, v))
+    hpp = g.get('hp_pct')
+    if hpp is not None:   # T406：{层号: 整数%}，层号 1～34、值 1～100 整数（附则 E）
+        isint = lambda v: isinstance(v, int) and not isinstance(v, bool)
+        if not isinstance(hpp, dict):
+            bad.append('guardian_phase4.hp_pct＝%r：要 {层号: 整数%%}' % (hpp,))
+        else:
+            for f, v in hpp.items():
+                if str(f).startswith('_'):
+                    continue
+                if not (str(f).isdigit() and 1 <= int(f) <= 34) or not isint(v) or not 1 <= v <= 100:
+                    bad.append('guardian_phase4.hp_pct[%s]＝%r：层号要 1～34、值要 1～100 的整数（百分比）' % (f, v))
     for k in g:
-        if k not in ('hp_base', 'atk_scale', 'resist', 'focus', 'lifesteal_cap', 'dot_pct') and not str(k).startswith('_'):
+        if k not in ('hp_base', 'atk_scale', 'resist', 'focus', 'lifesteal_cap', 'dot_pct', 'hp_pct') and not str(k).startswith('_'):
             bad.append('guardian_phase4 有不认识的键：%s' % k)
     return bad
 
@@ -2074,12 +2085,21 @@ def enemy_xparam_cap_rules(table: dict) -> list:
         return bad  # 没有这张表＝不封顶（代码按 -1）
     if not isinstance(c, dict):
         return ['combat_rules.enemy_xparam_cap 要是一张表']
+    keys = [str(d.get('key')) for d in table.get('difficulties', [])]
     for k in ('eva', 'cri', 'mev'):
-        if not _int_pct(c.get(k)):
-            bad.append('enemy_xparam_cap.%s 要是 -1～100 的整数：%s' % (k, c.get(k)))
+        v = c.get(k)
+        if isinstance(v, dict):  # T397（D242 按难度）：按难度键的整数表
+            if list(v) != keys:
+                bad.append('enemy_xparam_cap.%s 的键要和 difficulties 同序：%s' % (k, list(v)))
+            vals = list(v.values())
+            if not all(_int_pct(x) for x in vals):
+                bad.append('enemy_xparam_cap.%s 要全是 -1～100 的整数：%s' % (k, vals))
+            elif vals != sorted(vals):
+                bad.append('enemy_xparam_cap.%s 要随难度不降：%s' % (k, vals))
+        elif not _int_pct(v):
+            bad.append('enemy_xparam_cap.%s 要是 -1～100 的整数或按难度键的整数表：%s' % (k, v))
     if not _int_pct(c.get('toji_cev_pct'), 0, 100):
         bad.append('enemy_xparam_cap.toji_cev_pct 要是 0～100 的整数：%s' % c.get('toji_cev_pct'))
-    keys = [str(d.get('key')) for d in table.get('difficulties', [])]
     tiers = c.get('cev_tiers')
     if not isinstance(tiers, list) or not tiers:
         bad.append('enemy_xparam_cap.cev_tiers 要是非空列表')

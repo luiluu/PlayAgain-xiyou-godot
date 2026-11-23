@@ -16,8 +16,14 @@ extends Node
 ## 十、eva／cri／mev 上限 -1 时零影响（P1-1）：1 层守层者负闪避照旧 ×2（−40%），20／34 层挂紫金法咒时闪避、魔法闪避开关前后一样。
 ## 十一、守层者残血变身（30 层玉皇大帝 → 538）在非楼层地图仍按 30 层段（P2-3）。
 ## 十二、封顶关、减法开：攻击方暴击 ≤0 时不因负暴击闪避倒推（P3-1）。
+## 【cc·T397】D242 按难度（Kyo 11-22「按难度来调整」）：eva／cri／mev 上限按五档难度键（寻常 30／50／30，每档 +5，证道 50／70／50）。
+## 上面一～十二节量的是 T285 机制本身，照旧在 eva／cri／mev 写回 -1 的表上跑（_xpc_off）；十三节 _d242 量开着的表：
+## 十三、30 层守层者三档夹到上限、10 层原值低于上限照原值不 ×2、1 层负闪避留原值 −20%（不 ×2、不抬 0）、小怪敌群同样封顶、
+##     开关关／表写回 -1 退回 ×2、西游档开着关着一样。
 
 var results: Array = []
+var _xpc_off := true   # T397：一～十二节在 eva／cri／mev＝-1 的表上跑
+var _xpc_saved := {}
 
 
 func _ready() -> void:
@@ -42,6 +48,7 @@ func _run() -> void:
 	var was := [XTianqiCombat.ENEMY_XPARAM_CAP, XTianqiCombat.SUBTRACTIVE_CEV, XTianqiAffixBattle.SUPPRESS_CEV, XToji.TIANQI_CEV_HALF]
 	_check("switches.default_on", was == [true, true, true, true], was)
 	_table()
+	_xpc_apply()
 	_floors()
 	_debuffs()
 	_floor_zero()
@@ -53,6 +60,8 @@ func _run() -> void:
 	_zero_impact()
 	_transform()
 	_immune()
+	_xpc_off = false
+	_d242()
 	XTianqiCombat.ENEMY_XPARAM_CAP = was[0]
 	XTianqiCombat.SUBTRACTIVE_CEV = was[1]
 	XTianqiAffixBattle.SUPPRESS_CEV = was[2]
@@ -85,7 +94,20 @@ func _state(tianqi := true, diff := "xunchang") -> XState:
 		s.flags["DCultyL%d" % i] = i == legacy
 	s.map_id = 4
 	XState.current = s
+	_xpc_apply()
 	return s
+
+
+## T397：按 _xpc_off 把 eva／cri／mev 改成 -1 或还原（建档后调，防重读数据表）
+func _xpc_apply() -> void:
+	var t := XTianqiCombat.xparam_cap_table()
+	for k in ["eva", "cri", "mev"]:
+		if not _xpc_saved.has(k) and t.has(k) and not (t[k] is float and int(t[k]) == -1):
+			_xpc_saved[k] = t[k]
+		if _xpc_off:
+			t[k] = -1
+		elif _xpc_saved.has(k):
+			t[k] = _xpc_saved[k]
 
 
 ## 第 f 层守层者（34＝鸿钧）；返回 [logic, enemy]
@@ -121,9 +143,14 @@ func _table() -> void:
 	var t := XTianqiCombat.xparam_cap_table()
 	_check("table.loaded", not t.is_empty() and (t.get("cev_tiers", []) as Array).size() == 3, t.keys())
 	var ints := true
-	_check("table.eva_cri_mev_off", [int(t.get("eva", 0)), int(t.get("cri", 0)), int(t.get("mev", 0))] == [-1, -1, -1])
-	for k in ["eva", "cri", "mev", "toji_cev_pct"]:
-		ints = ints and t.get(k) is float and float(t[k]) == floorf(float(t[k]))  # JSON 读进来是 float，值是整数
+	var want := {"eva": [30, 35, 40, 45, 50], "cri": [50, 55, 60, 65, 70], "mev": [30, 35, 40, 45, 50]}
+	for k in want:
+		var v = t.get(k)
+		_check("table.%s_by_diff" % k, v is Dictionary and v.keys() == ["xunchang", "jianxian", "jiusi", "lianyu", "zhengdao"] and v.values().map(func(x): return int(x)) == want[k], v)
+		if v is Dictionary:
+			for x in v.values():
+				ints = ints and float(x) == floorf(float(x))
+	ints = ints and t.get("toji_cev_pct") is float and float(t.toji_cev_pct) == floorf(float(t.toji_cev_pct))  # JSON 读进来是 float，值是整数
 	for r in t.get("cev_tiers", []):
 		for v in (r.cap as Dictionary).values():
 			ints = ints and float(v) == floorf(float(v))
@@ -407,3 +434,69 @@ func _immune() -> void:
 
 class _Src:
 	var cri := 0.0
+
+
+## T397 十三：D242 eva／cri／mev 上限按难度开着
+func _d242() -> void:
+	var caps := {"xunchang": [0.30, 0.50, 0.30], "jianxian": [0.35, 0.55, 0.35], "zhengdao": [0.50, 0.70, 0.50]}
+	for diff in caps:
+		var e: XEnemy = _guardian(30, true, diff)[1]
+		if e == null:
+			_check("d242.f30.%s.found" % diff, false)
+			continue
+		var raw := [float(e.xparam_parts(1)[0]), float(e.xparam_parts(2)[0]), float(e.xparam_parts(4)[0])]
+		var got := [e.eva, e.cri, e.mev]
+		var exp := []
+		for j in 3:
+			exp.append(minf(float(raw[j]), float(caps[diff][j])))
+		print("T397 f30 %s raw=%s got=%s exp=%s" % [diff, raw, got, exp])
+		_check("d242.f30.%s.raw_above" % diff, raw.all(func(x): return float(x) >= 0.5), raw)
+		_check("d242.f30.%s.capped" % diff, _near(got[0], exp[0]) and _near(got[1], exp[1]) and _near(got[2], exp[2]), [got, exp])
+		XTianqiCombat.ENEMY_XPARAM_CAP = false
+		var off := [e.eva, e.cri, e.mev]
+		XTianqiCombat.ENEMY_XPARAM_CAP = true
+		_check("d242.f30.%s.switch_off_x2" % diff, _near(off[0], raw[0] * 2.0) and _near(off[1], raw[1] * 2.0) and _near(off[2], raw[2] * 2.0), off)
+	# 10 层守层者暴击原值 15% 低于上限：照原值、不 ×2
+	var e10: XEnemy = _guardian(10)[1]
+	if e10 != null:
+		var r10 := float(e10.xparam_parts(2)[0])
+		_check("d242.f10.cri_raw", r10 < 0.5 and _near(e10.cri, r10), [e10.cri, r10])
+	# 1 层守层者负闪避：留原值（不 ×2、不抬 0）
+	var e1: XEnemy = _guardian(1)[1]
+	if e1 != null:
+		var r1 := float(e1.xparam_parts(1)[0])
+		_check("d242.f1.eva_neg_raw", r1 < 0.0 and _near(e1.eva, r1), [e1.eva, r1])
+	# 表写回 -1＝退回原路 ×2
+	var e30: XEnemy = _guardian(30)[1]
+	if e30 != null:
+		var t := XTianqiCombat.xparam_cap_table()
+		var keep = t.cri
+		t.cri = -1
+		var rc := float(e30.xparam_parts(2)[0])
+		var c_off := e30.cri
+		t.cri = keep
+		_check("d242.table_minus1_x2", _near(c_off, rc * 2.0) and _near(e30.cri, 0.5), [c_off, rc, e30.cri])
+	# 小怪敌群（20 层喜乐天吉吉战士 476、25 层古树守护者 501）：同样封顶
+	for troop in [476, 501]:
+		var s := _state(true, "jianxian")
+		var lg := XBattleLogic.new()
+		lg.setup(troop, s)
+		var ok := not lg.enemies.is_empty()
+		var seen := []
+		for m in lg.enemies:
+			var mm: XEnemy = m
+			seen.append([mm.enemy_id, mm.eva, mm.cri, mm.mev])
+			for j in [[1, 0.35], [2, 0.55], [4, 0.35]]:
+				var rw := float(mm.xparam_parts(j[0])[0])
+				ok = ok and _near(mm.xparam(j[0]), minf(rw, j[1]) if rw >= 0.0 else rw)
+		print("T397 minion troop %d %s" % [troop, seen])
+		_check("d242.minion%d" % troop, ok, seen)
+	# 西游档：开着的表也不动
+	var sk := _crit_skill()
+	var ex: XEnemy = _guardian(30, false)[1]
+	if ex != null:
+		var on := [ex.xparam(1), ex.xparam(2), ex.xparam(4), XTianqiCombat.crit_after_cev(1.0, null, sk, ex)]
+		XTianqiCombat.ENEMY_XPARAM_CAP = false
+		var off := [ex.xparam(1), ex.xparam(2), ex.xparam(4), XTianqiCombat.crit_after_cev(1.0, null, sk, ex)]
+		XTianqiCombat.ENEMY_XPARAM_CAP = true
+		_check("d242.xiyou.same", on == off, [on, off])

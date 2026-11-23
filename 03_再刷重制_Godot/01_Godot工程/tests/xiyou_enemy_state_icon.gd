@@ -51,6 +51,20 @@ func _run() -> void:
 		if XEnemyStateIcon.tick(st, e, 1.0):
 			seq.append([int(st.index), int(st.cur.icon)])
 	check("cycle_like_oracle", seq == [[1, 916], [2, 34], [0, 942], [1, 916]], seq)
+	check("counter_absent", not g[0].has("counter") and not g[2].has("counter"))
+	e.state_data._stateCounter = {"4": 0, "10": 1234.5}
+	XEnemyStateIcon.tick(st, e, XEnemyStateIcon.wait())
+	check("count_does_not_carry_into_buff", not st.cur.has("counter"), st.cur)
+	XEnemyStateIcon.tick(st, e, XEnemyStateIcon.wait())
+	check("counter_and_turn", st.cur.turns == "4" and st.cur.get("counter") == "1,234.5", st.cur)
+	e.state_data._stateCounter["4"] = 3
+	XEnemyStateIcon.tick(st, e, XEnemyStateIcon.wait())
+	check("counter_updated_on_cycle", st.cur.turns == "" and st.cur.get("counter") == "3", st.cur)
+	e.state_data._stateCounter["4"] = 0
+	check("counter_zero_visible", XEnemyStateIcon.group(e)[1].get("counter") == "0")
+	XEnemyStateIcon.XIYOU_STATE_COUNTER = false
+	check("counter_rollback", not XEnemyStateIcon.group(e)[0].has("counter"))
+	XEnemyStateIcon.XIYOU_STATE_COUNTER = true
 	check("buff_icon_formula", XEnemyStateIcon.buff_icon(1, 2) == 34 and XEnemyStateIcon.buff_icon(3, 2) == 42 and XEnemyStateIcon.buff_icon(-1, 0) == 48 and XEnemyStateIcon.buff_icon(-2, 7) == 63, null)
 	# 死了不画
 	var dead := XEnemy.new().setup(int(ref.enemy.enemy_id), 1)

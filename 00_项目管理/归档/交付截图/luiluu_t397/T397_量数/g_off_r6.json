@@ -1,0 +1,11044 @@
+{
+	"brand_set": {},
+	"carve": "all",
+	"carved_brand": "line",
+	"difficulty": "jianxian",
+	"line": "war",
+	"lineups": 4,
+	"minion": {},
+	"other_brand": 7.0,
+	"pozhen_type": false,
+	"reps": 4,
+	"ripe": false,
+	"rng_seeds": [
+		1,
+		2,
+		3
+	],
+	"rows": [
+		{
+			"boss_kind": "boss",
+			"capped": 0,
+			"carved_value": 22.0,
+			"dealt_per_turn_avg": 25190.5152717653,
+			"dot_per_turn_avg": 2656.68759018759,
+			"downs_avg": 1.66666666666667,
+			"fights": [
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							22.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 28679.8333333333,
+					"dot_per_turn": 2853.33333333333,
+					"downs": 2,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 146.5,
+					"foe_hp_left": [
+						[
+							72,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						171200.0
+					],
+					"foe_xparam": [
+						[
+							72,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:10",
+					"kind": "boss",
+					"kinds": {},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						41150,
+						131193,
+						92085,
+						80103
+					],
+					"rep": 100010,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						19
+					],
+					"troop": 69,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							22.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 28621.8333333333,
+					"dot_per_turn": 4280.0,
+					"downs": 0,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 88.5,
+					"foe_hp_left": [
+						[
+							72,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						171200.0
+					],
+					"foe_xparam": [
+						[
+							72,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:10",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						41150,
+						131193,
+						92085,
+						80103
+					],
+					"rep": 200010,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						19
+					],
+					"troop": 69,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							22.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 28601.3333333333,
+					"dot_per_turn": 4280.0,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 68.0,
+					"foe_hp_left": [
+						[
+							72,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						171200.0
+					],
+					"foe_xparam": [
+						[
+							72,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:10",
+					"kind": "boss",
+					"kinds": {},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						41150,
+						131193,
+						92085,
+						80103
+					],
+					"rep": 300010,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						19
+					],
+					"troop": 69,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							22.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 24762.4285714286,
+					"dot_per_turn": 0.0,
+					"downs": 2,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 305.285714285714,
+					"foe_hp_left": [
+						[
+							72,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						171200.0
+					],
+					"foe_xparam": [
+						[
+							72,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:10",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						131193,
+						92085,
+						41150,
+						99123
+					],
+					"rep": 100010,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						32,
+						115,
+						3,
+						53
+					],
+					"troop": 69,
+					"turns": 7,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							22.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 28676.1666666667,
+					"dot_per_turn": 0.0,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 142.833333333333,
+					"foe_hp_left": [
+						[
+							72,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						171200.0
+					],
+					"foe_xparam": [
+						[
+							72,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:10",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						131193,
+						92085,
+						41150,
+						99123
+					],
+					"rep": 200010,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						32,
+						115,
+						3,
+						53
+					],
+					"troop": 69,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							22.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 24526.5714285714,
+					"dot_per_turn": 0.0,
+					"downs": 1,
+					"fills": {
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 69.4285714285714,
+					"foe_hp_left": [
+						[
+							72,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						171200.0
+					],
+					"foe_xparam": [
+						[
+							72,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:10",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1
+					},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						131193,
+						92085,
+						41150,
+						99123
+					],
+					"rep": 300010,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						32,
+						115,
+						3,
+						53
+					],
+					"troop": 69,
+					"turns": 7,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							22.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 16202.5555555556,
+					"dot_per_turn": 2853.33333333333,
+					"downs": 4,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 175.333333333333,
+					"foe_hp_left": [
+						[
+							72,
+							0.157447429906542
+						]
+					],
+					"foe_mhp": [
+						171200.0
+					],
+					"foe_xparam": [
+						[
+							72,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:10",
+					"kind": "boss",
+					"kinds": {
+						"daze": 2
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						99123,
+						80103,
+						41150,
+						92085
+					],
+					"rep": 100010,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						53,
+						19,
+						3,
+						115
+					],
+					"troop": 69,
+					"turns": 9,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							22.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 24527.8571428571,
+					"dot_per_turn": 3668.57142857143,
+					"downs": 2,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 70.7142857142857,
+					"foe_hp_left": [
+						[
+							72,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						171200.0
+					],
+					"foe_xparam": [
+						[
+							72,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:10",
+					"kind": "boss",
+					"kinds": {
+						"daze": 2
+					},
+					"label": "随机2",
+					"lost": false,
+					"party_mhp": [
+						99123,
+						80103,
+						41150,
+						92085
+					],
+					"rep": 200010,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						53,
+						19,
+						3,
+						115
+					],
+					"troop": 69,
+					"turns": 7,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							22.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 24673.2857142857,
+					"dot_per_turn": 2272.28571428571,
+					"downs": 2,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 216.142857142857,
+					"foe_hp_left": [
+						[
+							72,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						171200.0
+					],
+					"foe_xparam": [
+						[
+							72,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:10",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1
+					},
+					"label": "随机2",
+					"lost": false,
+					"party_mhp": [
+						99123,
+						80103,
+						41150,
+						92085
+					],
+					"rep": 300010,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						53,
+						19,
+						3,
+						115
+					],
+					"troop": 69,
+					"turns": 7,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							22.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 15686.8181818182,
+					"dot_per_turn": 3112.72727272727,
+					"downs": 3,
+					"fills": {
+						"32": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 123.181818181818,
+					"foe_hp_left": [
+						[
+							72,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						171200.0
+					],
+					"foe_xparam": [
+						[
+							72,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:10",
+					"kind": "boss",
+					"kinds": {
+						"daze": 2
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						131193,
+						92085,
+						99123,
+						80103
+					],
+					"rep": 100010,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						32,
+						115,
+						53,
+						19
+					],
+					"troop": 69,
+					"turns": 11,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							22.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 28714.8333333333,
+					"dot_per_turn": 4280.0,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 181.5,
+					"foe_hp_left": [
+						[
+							72,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						171200.0
+					],
+					"foe_xparam": [
+						[
+							72,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:10",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						131193,
+						92085,
+						99123,
+						80103
+					],
+					"rep": 200010,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						32,
+						115,
+						53,
+						19
+					],
+					"troop": 69,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							22.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							22.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 28612.6666666667,
+					"dot_per_turn": 4280.0,
+					"downs": 1,
+					"fills": {
+						"53": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 79.3333333333333,
+					"foe_hp_left": [
+						[
+							72,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						171200.0
+					],
+					"foe_xparam": [
+						[
+							72,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:10",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						131193,
+						92085,
+						99123,
+						80103
+					],
+					"rep": 300010,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						32,
+						115,
+						53,
+						19
+					],
+					"troop": 69,
+					"turns": 6,
+					"won": true
+				}
+			],
+			"floor": 10,
+			"foe_heal_per_turn_avg": 138.896103896104,
+			"foe_mhp": [
+				171200.0
+			],
+			"harm_fights": 0,
+			"kinds": {
+				"daze": 10
+			},
+			"n": 12,
+			"n8u_坦克": 0,
+			"n8u_辅助": 0,
+			"n8u_输出": 12,
+			"n_坦克": 0,
+			"n_辅助": 0,
+			"n_输出": 12,
+			"ripe_flag": false,
+			"sear8_坦克": 0.0,
+			"sear8_辅助": 0.0,
+			"sear8_输出": 0.038961038961039,
+			"sear8u_坦克": 0.0,
+			"sear8u_辅助": 0.0,
+			"sear8u_输出": 0.038961038961039,
+			"sear_坦克": 0.0,
+			"sear_辅助": 0.0,
+			"sear_输出": 0.0416666666666667,
+			"self8_坦克": 0.0,
+			"self8_辅助": 0.0,
+			"self8_输出": 0.179172679172679,
+			"self8u_坦克": 0.0,
+			"self8u_辅助": 0.0,
+			"self8u_输出": 0.179172679172679,
+			"self_坦克": 0.0,
+			"self_辅助": 0.0,
+			"self_输出": 0.166666666666667,
+			"team_self8": 0.716690716690717,
+			"team_self_avg": 0.666666666666667,
+			"troop": 69,
+			"turns_all_avg": 7.0,
+			"turns_won_avg": 6.81818181818182,
+			"win_rate": 0.916666666666667,
+			"won": 11
+		},
+		{
+			"boss_kind": "boss",
+			"capped": 0,
+			"carved_value": 37.0,
+			"dealt_per_turn_avg": 44213.730952381,
+			"dot_per_turn_avg": 0.0,
+			"downs_avg": 2.16666666666667,
+			"fights": [
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							37.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 53452.8,
+					"dot_per_turn": 0.0,
+					"downs": 2,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							128,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						270400.0
+					],
+					"foe_xparam": [
+						[
+							128,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:15",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						54425,
+						168516,
+						55811,
+						212214
+					],
+					"rep": 100015,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						19
+					],
+					"troop": 138,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							37.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 45458.2857142857,
+					"dot_per_turn": 0.0,
+					"downs": 2,
+					"fills": {
+						"19": 1,
+						"32": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 2,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							128,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						270400.0
+					],
+					"foe_xparam": [
+						[
+							128,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:15",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"misfire": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						54425,
+						168516,
+						55811,
+						212214
+					],
+					"rep": 200015,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						19
+					],
+					"troop": 138,
+					"turns": 7,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							37.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 44021.3333333333,
+					"dot_per_turn": 0.0,
+					"downs": 1,
+					"fills": {
+						"19": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							128,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						270400.0
+					],
+					"foe_xparam": [
+						[
+							128,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:15",
+					"kind": "boss",
+					"kinds": {
+						"misfire": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						54425,
+						168516,
+						55811,
+						212214
+					],
+					"rep": 300015,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						19
+					],
+					"troop": 138,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 12326.9333333333,
+					"dot_per_turn": 0.0,
+					"downs": 6,
+					"fills": {
+						"53": 1,
+						"81": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 2,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							128,
+							0.409102916314455
+						]
+					],
+					"foe_mhp": [
+						270400.0
+					],
+					"foe_xparam": [
+						[
+							128,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:15",
+					"kind": "boss",
+					"kinds": {
+						"daze": 3
+					},
+					"label": "随机1",
+					"lost": true,
+					"party_mhp": [
+						133979,
+						55811,
+						54425,
+						133384
+					],
+					"rep": 100015,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						53,
+						115,
+						3,
+						81
+					],
+					"troop": 138,
+					"turns": 15,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 11486.2,
+					"dot_per_turn": 0.0,
+					"downs": 6,
+					"fills": {
+						"53": 2,
+						"81": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 2,
+							"self": 0
+						},
+						"输出": {
+							"sear": 2,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							128,
+							0.587767226569956
+						]
+					],
+					"foe_mhp": [
+						270400.0
+					],
+					"foe_xparam": [
+						[
+							128,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:15",
+					"kind": "boss",
+					"kinds": {
+						"daze": 4,
+						"misfire": 1
+					},
+					"label": "随机1",
+					"lost": true,
+					"party_mhp": [
+						133979,
+						55811,
+						54425,
+						133384
+					],
+					"rep": 200015,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						53,
+						115,
+						3,
+						81
+					],
+					"troop": 138,
+					"turns": 15,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 12444.2857142857,
+					"dot_per_turn": 0.0,
+					"downs": 7,
+					"fills": {
+						"3": 1,
+						"53": 2,
+						"81": 2,
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 2,
+							"self": 0
+						},
+						"输出": {
+							"sear": 4,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							128,
+							0.454736369399831
+						]
+					],
+					"foe_mhp": [
+						270400.0
+					],
+					"foe_xparam": [
+						[
+							128,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:15",
+					"kind": "boss",
+					"kinds": {
+						"daze": 4,
+						"misfire": 3
+					},
+					"label": "随机1",
+					"lost": true,
+					"party_mhp": [
+						133979,
+						55811,
+						54425,
+						133384
+					],
+					"rep": 300015,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						53,
+						115,
+						3,
+						81
+					],
+					"troop": 138,
+					"turns": 14,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							37.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 66816.0,
+					"dot_per_turn": 0.0,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							128,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						270400.0
+					],
+					"foe_xparam": [
+						[
+							128,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:15",
+					"kind": "boss",
+					"kinds": {
+						"misfire": 1
+					},
+					"label": "随机2",
+					"lost": false,
+					"party_mhp": [
+						54425,
+						212214,
+						133384,
+						168516
+					],
+					"rep": 100015,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						3,
+						19,
+						81,
+						32
+					],
+					"troop": 138,
+					"turns": 4,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							37.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 53452.8,
+					"dot_per_turn": 0.0,
+					"downs": 1,
+					"fills": {
+						"81": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 1,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							128,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						270400.0
+					],
+					"foe_xparam": [
+						[
+							128,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:15",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"misfire": 1
+					},
+					"label": "随机2",
+					"lost": false,
+					"party_mhp": [
+						54425,
+						212214,
+						133384,
+						168516
+					],
+					"rep": 200015,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						3,
+						19,
+						81,
+						32
+					],
+					"troop": 138,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							37.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 66816.0,
+					"dot_per_turn": 0.0,
+					"downs": 0,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							128,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						270400.0
+					],
+					"foe_xparam": [
+						[
+							128,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:15",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机2",
+					"lost": false,
+					"party_mhp": [
+						54425,
+						212214,
+						133384,
+						168516
+					],
+					"rep": 300015,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						3,
+						19,
+						81,
+						32
+					],
+					"troop": 138,
+					"turns": 4,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							37.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 53452.8,
+					"dot_per_turn": 0.0,
+					"downs": 0,
+					"fills": {
+						"32": 1,
+						"53": 1,
+						"81": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 1,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							128,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						270400.0
+					],
+					"foe_xparam": [
+						[
+							128,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:15",
+					"kind": "boss",
+					"kinds": {
+						"daze": 2
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						212214,
+						133979,
+						133384,
+						168516
+					],
+					"rep": 100015,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						19,
+						53,
+						81,
+						32
+					],
+					"troop": 138,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							37.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 44021.3333333333,
+					"dot_per_turn": 0.0,
+					"downs": 0,
+					"fills": {
+						"19": 1,
+						"32": 1,
+						"53": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 3,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							128,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						270400.0
+					],
+					"foe_xparam": [
+						[
+							128,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:15",
+					"kind": "boss",
+					"kinds": {
+						"daze": 3,
+						"misfire": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						212214,
+						133979,
+						133384,
+						168516
+					],
+					"rep": 200015,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						19,
+						53,
+						81,
+						32
+					],
+					"troop": 138,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							37.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							37.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 66816.0,
+					"dot_per_turn": 0.0,
+					"downs": 0,
+					"fills": {
+						"53": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							128,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						270400.0
+					],
+					"foe_xparam": [
+						[
+							128,
+							1.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:15",
+					"kind": "boss",
+					"kinds": {
+						"misfire": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						212214,
+						133979,
+						133384,
+						168516
+					],
+					"rep": 300015,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						19,
+						53,
+						81,
+						32
+					],
+					"troop": 138,
+					"turns": 4,
+					"won": true
+				}
+			],
+			"floor": 15,
+			"foe_heal_per_turn_avg": 0.0,
+			"foe_mhp": [
+				270400.0
+			],
+			"harm_fights": 0,
+			"kinds": {
+				"daze": 19,
+				"misfire": 10
+			},
+			"n": 12,
+			"n8u_坦克": 0,
+			"n8u_辅助": 9,
+			"n8u_输出": 12,
+			"n_坦克": 0,
+			"n_辅助": 9,
+			"n_输出": 12,
+			"ripe_flag": false,
+			"sear8_坦克": 0.0,
+			"sear8_辅助": 0.71957671957672,
+			"sear8_输出": 0.311111111111111,
+			"sear8u_坦克": 0.0,
+			"sear8u_辅助": 0.71957671957672,
+			"sear8u_输出": 0.311111111111111,
+			"sear_坦克": 0.0,
+			"sear_辅助": 0.888888888888889,
+			"sear_输出": 0.347222222222222,
+			"self8_坦克": 0.0,
+			"self8_辅助": 0.0,
+			"self8_输出": 0.284391534391534,
+			"self8u_坦克": 0.0,
+			"self8u_辅助": 0.0,
+			"self8u_输出": 0.284391534391534,
+			"self_坦克": 0.0,
+			"self_辅助": 0.0,
+			"self_输出": 0.208333333333333,
+			"team_self8": 0.914285714285714,
+			"team_self_avg": 0.666666666666667,
+			"troop": 138,
+			"turns_all_avg": 7.5,
+			"turns_won_avg": 5.11111111111111,
+			"win_rate": 0.75,
+			"won": 9
+		},
+		{
+			"boss_kind": "boss",
+			"capped": 0,
+			"carved_value": 52.0,
+			"dealt_per_turn_avg": 2415649.20406746,
+			"dot_per_turn_avg": 1455233.1547619,
+			"downs_avg": 1.91666666666667,
+			"fights": [
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							52.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 3049854.4,
+					"dot_per_turn": 1544078.4,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 90781.2,
+					"foe_hp_left": [
+						[
+							523,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						14800000.0
+					],
+					"foe_xparam": [
+						[
+							523,
+							3.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:20",
+					"kind": "boss",
+					"kinds": {},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						232808,
+						67700,
+						235355,
+						63112
+					],
+					"rep": 100020,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 456,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							52.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2521068.66666667,
+					"dot_per_turn": 1632090.16666667,
+					"downs": 3,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 55174.5,
+					"foe_hp_left": [
+						[
+							523,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						14800000.0
+					],
+					"foe_xparam": [
+						[
+							523,
+							3.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:20",
+					"kind": "boss",
+					"kinds": {},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						232808,
+						67700,
+						235355,
+						63112
+					],
+					"rep": 200020,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 456,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							52.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2986778.0,
+					"dot_per_turn": 1657600.8,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 27550.4,
+					"foe_hp_left": [
+						[
+							523,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						14800000.0
+					],
+					"foe_xparam": [
+						[
+							523,
+							3.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:20",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"hit_self": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						232808,
+						67700,
+						235355,
+						63112
+					],
+					"rep": 300020,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 456,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							52.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 3623126.0,
+					"dot_per_turn": 1757056.4,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 72052.8,
+					"foe_hp_left": [
+						[
+							523,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						14800000.0
+					],
+					"foe_xparam": [
+						[
+							523,
+							3.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:20",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						67700,
+						26775,
+						232808,
+						217907
+					],
+					"rep": 100020,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						32,
+						81,
+						3,
+						53
+					],
+					"troop": 456,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							52.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1601300.66666667,
+					"dot_per_turn": 1036000.5,
+					"downs": 3,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 62331.1666666667,
+					"foe_hp_left": [
+						[
+							523,
+							0.37546722972973
+						]
+					],
+					"foe_mhp": [
+						14800000.0
+					],
+					"foe_xparam": [
+						[
+							523,
+							3.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:20",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机1",
+					"lost": true,
+					"party_mhp": [
+						67700,
+						26775,
+						232808,
+						217907
+					],
+					"rep": 200020,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						32,
+						81,
+						3,
+						53
+					],
+					"troop": 456,
+					"turns": 6,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							52.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 3000722.6,
+					"dot_per_turn": 1657600.8,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 41495.0,
+					"foe_hp_left": [
+						[
+							523,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						14800000.0
+					],
+					"foe_xparam": [
+						[
+							523,
+							3.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:20",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						67700,
+						26775,
+						232808,
+						217907
+					],
+					"rep": 300020,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						32,
+						81,
+						3,
+						53
+					],
+					"troop": 456,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							52.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1273522.0,
+					"dot_per_turn": 1243200.6,
+					"downs": 4,
+					"fills": {
+						"49": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 70093.6,
+					"foe_hp_left": [
+						[
+							523,
+							0.593123243243243
+						]
+					],
+					"foe_mhp": [
+						14800000.0
+					],
+					"foe_xparam": [
+						[
+							523,
+							3.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:20",
+					"kind": "boss",
+					"kinds": {
+						"misfire": 2
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						67700,
+						26775,
+						63112,
+						216716
+					],
+					"rep": 100020,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						32,
+						81,
+						45,
+						49
+					],
+					"troop": 456,
+					"turns": 5,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							52.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1067693.625,
+					"dot_per_turn": 1036000.5,
+					"downs": 5,
+					"fills": {
+						"49": 1,
+						"81": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 1,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 56246.625,
+					"foe_hp_left": [
+						[
+							523,
+							0.452645675675676
+						]
+					],
+					"foe_mhp": [
+						14800000.0
+					],
+					"foe_xparam": [
+						[
+							523,
+							3.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:20",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"misfire": 2
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						67700,
+						26775,
+						63112,
+						216716
+					],
+					"rep": 200020,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						32,
+						81,
+						45,
+						49
+					],
+					"troop": 456,
+					"turns": 8,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							52.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1815378.85714286,
+					"dot_per_turn": 1776000.85714286,
+					"downs": 2,
+					"fills": {
+						"49": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 43449.2857142857,
+					"foe_hp_left": [
+						[
+							523,
+							0.161403310810811
+						]
+					],
+					"foe_mhp": [
+						14800000.0
+					],
+					"foe_xparam": [
+						[
+							523,
+							3.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:20",
+					"kind": "boss",
+					"kinds": {
+						"hit_self": 1
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						67700,
+						26775,
+						63112,
+						216716
+					],
+					"rep": 300020,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						32,
+						81,
+						45,
+						49
+					],
+					"troop": 456,
+					"turns": 7,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							49,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							52.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2541456.16666667,
+					"dot_per_turn": 1455374.16666667,
+					"downs": 0,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 75562.0,
+					"foe_hp_left": [
+						[
+							523,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						14800000.0
+					],
+					"foe_xparam": [
+						[
+							523,
+							3.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:20",
+					"kind": "boss",
+					"kinds": {
+						"hit_self": 1,
+						"misfire": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						216716,
+						217907,
+						232808,
+						235355
+					],
+					"rep": 100020,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						49,
+						53,
+						3,
+						115
+					],
+					"troop": 456,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							49,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							52.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2525175.66666667,
+					"dot_per_turn": 1401345.66666667,
+					"downs": 1,
+					"fills": {
+						"49": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 3
+						}
+					},
+					"foe_heal_per_turn": 59281.5,
+					"foe_hp_left": [
+						[
+							523,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						14800000.0
+					],
+					"foe_xparam": [
+						[
+							523,
+							3.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 4,
+					"key": "guardian:20",
+					"kind": "boss",
+					"kinds": {
+						"hit_self": 4
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						216716,
+						217907,
+						232808,
+						235355
+					],
+					"rep": 200020,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						49,
+						53,
+						3,
+						115
+					],
+					"troop": 456,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							49,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							52.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							52.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2981713.8,
+					"dot_per_turn": 1266449.0,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 3
+						}
+					},
+					"foe_heal_per_turn": 22486.2,
+					"foe_hp_left": [
+						[
+							523,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						14800000.0
+					],
+					"foe_xparam": [
+						[
+							523,
+							3.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 2,
+					"key": "guardian:20",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"hit_self": 2
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						216716,
+						217907,
+						232808,
+						235355
+					],
+					"rep": 300020,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						49,
+						53,
+						3,
+						115
+					],
+					"troop": 456,
+					"turns": 5,
+					"won": true
+				}
+			],
+			"floor": 20,
+			"foe_heal_per_turn_avg": 56375.3564484127,
+			"foe_mhp": [
+				14800000.0
+			],
+			"harm_fights": 5,
+			"kinds": {
+				"daze": 3,
+				"hit_self": 9,
+				"misfire": 5
+			},
+			"n": 12,
+			"n8u_坦克": 0,
+			"n8u_辅助": 6,
+			"n8u_输出": 12,
+			"n_坦克": 0,
+			"n_辅助": 6,
+			"n_输出": 12,
+			"ripe_flag": false,
+			"sear8_坦克": 0.0,
+			"sear8_辅助": 0.166666666666667,
+			"sear8_输出": 0.131746031746032,
+			"sear8u_坦克": 0.0,
+			"sear8u_辅助": 0.166666666666667,
+			"sear8u_输出": 0.131746031746032,
+			"sear_坦克": 0.0,
+			"sear_辅助": 0.166666666666667,
+			"sear_输出": 0.104166666666667,
+			"self8_坦克": 0.0,
+			"self8_辅助": 0.0,
+			"self8_输出": 0.377777777777778,
+			"self8u_坦克": 0.0,
+			"self8u_辅助": 0.0,
+			"self8u_输出": 0.377777777777778,
+			"self_坦克": 0.0,
+			"self_辅助": 0.0,
+			"self_输出": 0.263888888888889,
+			"team_self8": 1.43888888888889,
+			"team_self_avg": 1.0,
+			"troop": 456,
+			"turns_all_avg": 5.75,
+			"turns_won_avg": 5.375,
+			"win_rate": 0.666666666666667,
+			"won": 8
+		},
+		{
+			"boss_kind": "boss",
+			"capped": 0,
+			"carved_value": 67.0,
+			"dealt_per_turn_avg": 2639494.12503492,
+			"dot_per_turn_avg": 2063319.53927485,
+			"downs_avg": 1.83333333333333,
+			"fights": [
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							67.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2812149.42857143,
+					"dot_per_turn": 2361600.85714286,
+					"downs": 1,
+					"fills": {
+						"32": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 2218.85714285714,
+					"foe_hp_left": [
+						[
+							528,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						19680000.0
+					],
+					"foe_xparam": [
+						[
+							528,
+							3.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:25",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"misfire": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						96377,
+						413996,
+						308014,
+						282255
+					],
+					"rep": 100025,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 461,
+					"turns": 7,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							67.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 3379674.85714286,
+					"dot_per_turn": 2550528.85714286,
+					"downs": 1,
+					"fills": {
+						"32": 1,
+						"45": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 2,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 6473.14285714286,
+					"foe_hp_left": [
+						[
+							528,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						19680000.0
+					],
+					"foe_xparam": [
+						[
+							528,
+							3.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:25",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"hit_self": 1,
+						"misfire": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						96377,
+						413996,
+						308014,
+						282255
+					],
+					"rep": 200025,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 461,
+					"turns": 7,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							67.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 3944262.0,
+					"dot_per_turn": 2461312.83333333,
+					"downs": 0,
+					"fills": {
+						"32": 1,
+						"45": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 2,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 8860.0,
+					"foe_hp_left": [
+						[
+							528,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						19680000.0
+					],
+					"foe_xparam": [
+						[
+							528,
+							3.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:25",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"misfire": 2
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						96377,
+						413996,
+						308014,
+						282255
+					],
+					"rep": 300025,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 461,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							67.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1863942.8,
+					"dot_per_turn": 1752307.8,
+					"downs": 4,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 1138.3,
+					"foe_hp_left": [
+						[
+							528,
+							0.225597778745645
+						]
+					],
+					"foe_mhp": [
+						19680000.0
+					],
+					"foe_xparam": [
+						[
+							528,
+							3.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:25",
+					"kind": "boss",
+					"kinds": {
+						"misfire": 1
+					},
+					"label": "随机1",
+					"lost": true,
+					"party_mhp": [
+						85759,
+						282255,
+						96377,
+						29700
+					],
+					"rep": 100025,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						19,
+						45,
+						3,
+						49
+					],
+					"troop": 461,
+					"turns": 10,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							67.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2394653.6,
+					"dot_per_turn": 2204160.8,
+					"downs": 4,
+					"fills": {
+						"45": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 2276.6,
+					"foe_hp_left": [
+						[
+							528,
+							0.392089481707317
+						]
+					],
+					"foe_mhp": [
+						19680000.0
+					],
+					"foe_xparam": [
+						[
+							528,
+							3.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:25",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"hit_self": 1
+					},
+					"label": "随机1",
+					"lost": true,
+					"party_mhp": [
+						85759,
+						282255,
+						96377,
+						29700
+					],
+					"rep": 200025,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						19,
+						45,
+						3,
+						49
+					],
+					"troop": 461,
+					"turns": 5,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							67.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1941000.7,
+					"dot_per_turn": 1818432.6,
+					"downs": 2,
+					"fills": {
+						"45": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 2,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 1391.5,
+					"foe_hp_left": [
+						[
+							528,
+							0.353348987018096
+						]
+					],
+					"foe_mhp": [
+						19680000.0
+					],
+					"foe_xparam": [
+						[
+							528,
+							3.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:25",
+					"kind": "boss",
+					"kinds": {
+						"daze": 2
+					},
+					"label": "随机1",
+					"lost": true,
+					"party_mhp": [
+						85759,
+						282255,
+						96377,
+						29700
+					],
+					"rep": 300025,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						19,
+						45,
+						3,
+						49
+					],
+					"troop": 461,
+					"turns": 10,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							115,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							67.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1816199.15384615,
+					"dot_per_turn": 1733228.84615385,
+					"downs": 3,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 4
+						}
+					},
+					"foe_heal_per_turn": 974.230769230769,
+					"foe_hp_left": [
+						[
+							528,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						19680000.0
+					],
+					"foe_xparam": [
+						[
+							528,
+							3.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:25",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"hit_self": 1,
+						"misfire": 2
+					},
+					"label": "随机2",
+					"lost": false,
+					"party_mhp": [
+						308014,
+						313430,
+						85759,
+						29700
+					],
+					"rep": 100025,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						115,
+						53,
+						19,
+						49
+					],
+					"troop": 461,
+					"turns": 13,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							115,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							67.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1791651.36363636,
+					"dot_per_turn": 1633114.36363636,
+					"downs": 3,
+					"fills": {
+						"53": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 2,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 3049.72727272727,
+					"foe_hp_left": [
+						[
+							528,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						19680000.0
+					],
+					"foe_xparam": [
+						[
+							528,
+							3.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:25",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"daze": 2
+					},
+					"label": "随机2",
+					"lost": false,
+					"party_mhp": [
+						308014,
+						313430,
+						85759,
+						29700
+					],
+					"rep": 200025,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						115,
+						53,
+						19,
+						49
+					],
+					"troop": 461,
+					"turns": 11,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							115,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							67.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1654544.55555556,
+					"dot_per_turn": 1530667.22222222,
+					"downs": 3,
+					"fills": {
+						"53": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 3990.22222222222,
+					"foe_hp_left": [
+						[
+							528,
+							0.244899847560976
+						]
+					],
+					"foe_mhp": [
+						19680000.0
+					],
+					"foe_xparam": [
+						[
+							528,
+							3.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:25",
+					"kind": "boss",
+					"kinds": {
+						"misfire": 1
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						308014,
+						313430,
+						85759,
+						29700
+					],
+					"rep": 300025,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						115,
+						53,
+						19,
+						49
+					],
+					"troop": 461,
+					"turns": 9,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							67.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 3502710.875,
+					"dot_per_turn": 2568846.625,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 1029.125,
+					"foe_hp_left": [
+						[
+							528,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						19680000.0
+					],
+					"foe_xparam": [
+						[
+							528,
+							3.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:25",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"hit_self": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						313430,
+						282255,
+						413996,
+						308014
+					],
+					"rep": 100025,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						53,
+						45,
+						32,
+						115
+					],
+					"troop": 461,
+					"turns": 8,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							67.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 3284878.16666667,
+					"dot_per_turn": 1849632.83333333,
+					"downs": 0,
+					"fills": {
+						"32": 1,
+						"45": 1,
+						"53": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 3,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 5177.33333333333,
+					"foe_hp_left": [
+						[
+							528,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						19680000.0
+					],
+					"foe_xparam": [
+						[
+							528,
+							3.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 2,
+					"key": "guardian:25",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"hit_self": 2,
+						"misfire": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						313430,
+						282255,
+						413996,
+						308014
+					],
+					"rep": 200025,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						53,
+						45,
+						32,
+						115
+					],
+					"troop": 461,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							67.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							67.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 3288262.0,
+					"dot_per_turn": 2296000.83333333,
+					"downs": 0,
+					"fills": {
+						"32": 1,
+						"53": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 3
+						}
+					},
+					"foe_heal_per_turn": 8860.0,
+					"foe_hp_left": [
+						[
+							528,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						19680000.0
+					],
+					"foe_xparam": [
+						[
+							528,
+							3.9,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:25",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"daze": 1,
+						"hit_self": 1,
+						"misfire": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						313430,
+						282255,
+						413996,
+						308014
+					],
+					"rep": 300025,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						53,
+						45,
+						32,
+						115
+					],
+					"troop": 461,
+					"turns": 6,
+					"won": true
+				}
+			],
+			"floor": 25,
+			"foe_heal_per_turn_avg": 3786.5865497928,
+			"foe_mhp": [
+				19680000.0
+			],
+			"harm_fights": 6,
+			"kinds": {
+				"break_guard": 6,
+				"daze": 8,
+				"hit_self": 7,
+				"misfire": 10
+			},
+			"n": 12,
+			"n8u_坦克": 0,
+			"n8u_辅助": 0,
+			"n8u_输出": 12,
+			"n_坦克": 0,
+			"n_辅助": 0,
+			"n_输出": 12,
+			"ripe_flag": false,
+			"sear8_坦克": 0.0,
+			"sear8_辅助": 0.0,
+			"sear8_输出": 0.353583453583454,
+			"sear8u_坦克": 0.0,
+			"sear8u_辅助": 0.0,
+			"sear8u_输出": 0.353583453583454,
+			"sear_坦克": 0.0,
+			"sear_辅助": 0.0,
+			"sear_输出": 0.3125,
+			"self8_坦克": 0.0,
+			"self8_辅助": 0.0,
+			"self8_输出": 0.34460816960817,
+			"self8u_坦克": 0.0,
+			"self8u_辅助": 0.0,
+			"self8u_输出": 0.34460816960817,
+			"self_坦克": 0.0,
+			"self_辅助": 0.0,
+			"self_输出": 0.333333333333333,
+			"team_self8": 1.37843267843268,
+			"team_self_avg": 1.33333333333333,
+			"troop": 461,
+			"turns_all_avg": 8.16666666666667,
+			"turns_won_avg": 8.0,
+			"win_rate": 0.666666666666667,
+			"won": 8
+		},
+		{
+			"boss_kind": "boss",
+			"capped": 0,
+			"carved_value": 76.0,
+			"dealt_per_turn_avg": 1773424.54543651,
+			"dot_per_turn_avg": 1066329.97829185,
+			"downs_avg": 2.58333333333333,
+			"fights": [
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							76.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2039317.5,
+					"dot_per_turn": 1253895.0,
+					"downs": 3,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							532,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12240000.0
+					],
+					"foe_xparam": [
+						[
+							532,
+							4.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:28",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						103675,
+						117813,
+						365492,
+						87862
+					],
+					"rep": 100028,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 464,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							76.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 747865.8,
+					"dot_per_turn": 685440.4,
+					"downs": 2,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							532,
+							0.694380964052288
+						]
+					],
+					"foe_mhp": [
+						12240000.0
+					],
+					"foe_xparam": [
+						[
+							532,
+							4.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:28",
+					"kind": "boss",
+					"kinds": {},
+					"label": "原队",
+					"lost": true,
+					"party_mhp": [
+						103675,
+						117813,
+						365492,
+						87862
+					],
+					"rep": 200028,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 464,
+					"turns": 5,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							76.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2447814.16666667,
+					"dot_per_turn": 1219886.16666667,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							532,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12240000.0
+					],
+					"foe_xparam": [
+						[
+							532,
+							4.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:28",
+					"kind": "boss",
+					"kinds": {
+						"misfire": 2
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						103675,
+						117813,
+						365492,
+						87862
+					],
+					"rep": 300028,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 464,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							149,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							76.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1192264.66666667,
+					"dot_per_turn": 829600.333333333,
+					"downs": 4,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							532,
+							0.287897554855275
+						]
+					],
+					"foe_mhp": [
+						12240000.0
+					],
+					"foe_xparam": [
+						[
+							532,
+							4.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:28",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"hit_self": 1
+					},
+					"label": "随机1",
+					"lost": true,
+					"party_mhp": [
+						31950,
+						365492,
+						351571,
+						117813
+					],
+					"rep": 100028,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						149,
+						115,
+						81,
+						32
+					],
+					"troop": 464,
+					"turns": 9,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							149,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							76.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2178361.625,
+					"dot_per_turn": 1300083.25,
+					"downs": 3,
+					"fills": {
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							532,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12240000.0
+					],
+					"foe_xparam": [
+						[
+							532,
+							4.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:28",
+					"kind": "boss",
+					"kinds": {
+						"hit_ally": 1
+					},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						31950,
+						365492,
+						351571,
+						117813
+					],
+					"rep": 200028,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						149,
+						115,
+						81,
+						32
+					],
+					"troop": 464,
+					"turns": 8,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							149,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							76.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2447777.2,
+					"dot_per_turn": 1160984.0,
+					"downs": 2,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							532,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12240000.0
+					],
+					"foe_xparam": [
+						[
+							532,
+							4.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:28",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						31950,
+						365492,
+						351571,
+						117813
+					],
+					"rep": 300028,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						149,
+						115,
+						81,
+						32
+					],
+					"troop": 464,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							45,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							149,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							76.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1481703.625,
+					"dot_per_turn": 1374840.125,
+					"downs": 4,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							532,
+							0.206138830532213
+						]
+					],
+					"foe_mhp": [
+						12240000.0
+					],
+					"foe_xparam": [
+						[
+							532,
+							4.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:28",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						87862,
+						31950,
+						31950,
+						260414
+					],
+					"rep": 100028,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						45,
+						53,
+						149,
+						49
+					],
+					"troop": 464,
+					"turns": 8,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							45,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							149,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							76.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1111320.42857143,
+					"dot_per_turn": 1018715.28571429,
+					"downs": 4,
+					"fills": {
+						"49": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							532,
+							0.364204330065359
+						]
+					],
+					"foe_mhp": [
+						12240000.0
+					],
+					"foe_xparam": [
+						[
+							532,
+							4.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:28",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 2,
+						"misfire": 1
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						87862,
+						31950,
+						31950,
+						260414
+					],
+					"rep": 200028,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						45,
+						53,
+						149,
+						49
+					],
+					"troop": 464,
+					"turns": 7,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							45,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							149,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							76.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1108193.0,
+					"dot_per_turn": 998223.545454545,
+					"downs": 4,
+					"fills": {
+						"49": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							532,
+							0.181965963468721
+						]
+					],
+					"foe_mhp": [
+						12240000.0
+					],
+					"foe_xparam": [
+						[
+							532,
+							4.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:28",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"hit_self": 1
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						87862,
+						31950,
+						31950,
+						260414
+					],
+					"rep": 300028,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						45,
+						53,
+						149,
+						49
+					],
+					"troop": 464,
+					"turns": 11,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							76.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2447317.2,
+					"dot_per_turn": 914235.8,
+					"downs": 3,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							532,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12240000.0
+					],
+					"foe_xparam": [
+						[
+							532,
+							4.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:28",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						414909,
+						365492,
+						351571,
+						260414
+					],
+					"rep": 100028,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						19,
+						115,
+						81,
+						49
+					],
+					"troop": 464,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							76.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2039527.0,
+					"dot_per_turn": 896212.0,
+					"downs": 1,
+					"fills": {
+						"19": 1,
+						"49": 1,
+						"81": 1,
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 1,
+							"self": 0
+						},
+						"输出": {
+							"sear": 2,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							532,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12240000.0
+					],
+					"foe_xparam": [
+						[
+							532,
+							4.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:28",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 2,
+						"daze": 2,
+						"misfire": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						414909,
+						365492,
+						351571,
+						260414
+					],
+					"rep": 200028,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						19,
+						115,
+						81,
+						49
+					],
+					"troop": 464,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							76.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							76.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2039632.33333333,
+					"dot_per_turn": 1143843.83333333,
+					"downs": 0,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							532,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12240000.0
+					],
+					"foe_xparam": [
+						[
+							532,
+							4.4,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:28",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						414909,
+						365492,
+						351571,
+						260414
+					],
+					"rep": 300028,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						19,
+						115,
+						81,
+						49
+					],
+					"troop": 464,
+					"turns": 6,
+					"won": true
+				}
+			],
+			"floor": 28,
+			"foe_heal_per_turn_avg": 0.0,
+			"foe_mhp": [
+				12240000.0
+			],
+			"harm_fights": 3,
+			"kinds": {
+				"break_guard": 6,
+				"daze": 3,
+				"hit_ally": 1,
+				"hit_self": 2,
+				"misfire": 4
+			},
+			"n": 12,
+			"n8u_坦克": 0,
+			"n8u_辅助": 6,
+			"n8u_输出": 12,
+			"n_坦克": 0,
+			"n_辅助": 6,
+			"n_输出": 12,
+			"ripe_flag": false,
+			"sear8_坦克": 0.0,
+			"sear8_辅助": 0.222222222222222,
+			"sear8_输出": 0.113035113035113,
+			"sear8u_坦克": 0.0,
+			"sear8u_辅助": 0.222222222222222,
+			"sear8u_输出": 0.113035113035113,
+			"sear_坦克": 0.0,
+			"sear_辅助": 0.166666666666667,
+			"sear_输出": 0.0972222222222222,
+			"self8_坦克": 0.0,
+			"self8_辅助": 0.0,
+			"self8_输出": 0.297338464005131,
+			"self8u_坦克": 0.0,
+			"self8u_辅助": 0.0,
+			"self8u_输出": 0.297338464005131,
+			"self_坦克": 0.0,
+			"self_辅助": 0.0,
+			"self_输出": 0.263888888888889,
+			"team_self8": 1.03811928811929,
+			"team_self_avg": 0.916666666666667,
+			"troop": 464,
+			"turns_all_avg": 6.83333333333333,
+			"turns_won_avg": 6.0,
+			"win_rate": 0.583333333333333,
+			"won": 7
+		},
+		{
+			"boss_kind": "boss",
+			"capped": 0,
+			"carved_value": 82.0,
+			"dealt_per_turn_avg": 377910.991287879,
+			"dot_per_turn_avg": 105167.098021886,
+			"downs_avg": 1.33333333333333,
+			"fights": [
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							82.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 515084.833333333,
+					"dot_per_turn": 163316.833333333,
+					"downs": 0,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 48990.5,
+					"foe_hp_left": [
+						[
+							538,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1560000.0
+					],
+					"foe_xparam": [
+						[
+							538,
+							4.8,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:30",
+					"kind": "boss",
+					"kinds": {
+						"misfire": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						110979,
+						466426,
+						103455,
+						411331
+					],
+					"rep": 100030,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 466,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							82.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 355860.666666667,
+					"dot_per_turn": 171117.666666667,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 126669.166666667,
+					"foe_hp_left": [
+						[
+							538,
+							0.988262374298028
+						]
+					],
+					"foe_mhp": [
+						1560000.0
+					],
+					"foe_xparam": [
+						[
+							538,
+							4.8,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:30",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1
+					},
+					"label": "原队",
+					"lost": true,
+					"party_mhp": [
+						110979,
+						466426,
+						103455,
+						411331
+					],
+					"rep": 200030,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 466,
+					"turns": 6,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							82.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 469235.166666667,
+					"dot_per_turn": 158584.333333333,
+					"downs": 2,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 66065.1666666667,
+					"foe_hp_left": [
+						[
+							538,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1560000.0
+					],
+					"foe_xparam": [
+						[
+							538,
+							4.8,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:30",
+					"kind": "boss",
+					"kinds": {},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						110979,
+						466426,
+						103455,
+						411331
+					],
+					"rep": 300030,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 466,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							82.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 645466.25,
+					"dot_per_turn": 97008.75,
+					"downs": 2,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 12981.75,
+					"foe_hp_left": [
+						[
+							538,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1560000.0
+					],
+					"foe_xparam": [
+						[
+							538,
+							4.8,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:30",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1
+					},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						466426,
+						103455,
+						294166,
+						34200
+					],
+					"rep": 100030,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						32,
+						115,
+						53,
+						49
+					],
+					"troop": 466,
+					"turns": 4,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							82.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 418403.75,
+					"dot_per_turn": 96165.25,
+					"downs": 0,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							538,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1560000.0
+					],
+					"foe_xparam": [
+						[
+							538,
+							4.8,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:30",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						466426,
+						103455,
+						294166,
+						34200
+					],
+					"rep": 200030,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						32,
+						115,
+						53,
+						49
+					],
+					"troop": 466,
+					"turns": 4,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							82.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 499286.166666667,
+					"dot_per_turn": 138830.833333333,
+					"downs": 0,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 25938.8333333333,
+					"foe_hp_left": [
+						[
+							538,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1560000.0
+					],
+					"foe_xparam": [
+						[
+							538,
+							4.8,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:30",
+					"kind": "boss",
+					"kinds": {},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						466426,
+						103455,
+						294166,
+						34200
+					],
+					"rep": 300030,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						32,
+						115,
+						53,
+						49
+					],
+					"troop": 466,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							149,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							82.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 157591.666666667,
+					"dot_per_turn": 22557.7777777778,
+					"downs": 2,
+					"fills": {
+						"53": 1,
+						"149": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 16929.0,
+					"foe_hp_left": [
+						[
+							534,
+							0.932352941176471
+						]
+					],
+					"foe_mhp": [
+						1560000.0
+					],
+					"foe_xparam": [
+						[
+							534,
+							4.8,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:30",
+					"kind": "boss",
+					"kinds": {
+						"daze": 2,
+						"hit_ally": 1
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						294166,
+						262967,
+						34200,
+						98753
+					],
+					"rep": 100030,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						53,
+						149,
+						49,
+						19
+					],
+					"troop": 466,
+					"turns": 9,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							149,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							82.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 110860.5,
+					"dot_per_turn": 28868.4,
+					"downs": 3,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 3
+						}
+					},
+					"foe_heal_per_turn": 26394.7,
+					"foe_hp_left": [
+						[
+							534,
+							1.0
+						]
+					],
+					"foe_mhp": [
+						1560000.0
+					],
+					"foe_xparam": [
+						[
+							534,
+							4.8,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:30",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"hit_ally": 1,
+						"misfire": 1
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						294166,
+						262967,
+						34200,
+						98753
+					],
+					"rep": 200030,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						53,
+						149,
+						49,
+						19
+					],
+					"troop": 466,
+					"turns": 10,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							149,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							82.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 102597.545454545,
+					"dot_per_turn": 26418.1818181818,
+					"downs": 2,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 19828.0727272727,
+					"foe_hp_left": [
+						[
+							534,
+							0.995456165158371
+						]
+					],
+					"foe_mhp": [
+						1560000.0
+					],
+					"foe_xparam": [
+						[
+							534,
+							4.8,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:30",
+					"kind": "boss",
+					"kinds": {
+						"hit_self": 1,
+						"misfire": 1
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						294166,
+						262967,
+						34200,
+						98753
+					],
+					"rep": 300030,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						53,
+						149,
+						49,
+						19
+					],
+					"troop": 466,
+					"turns": 11,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							45,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							149,
+							"输出",
+							true,
+							82.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 633887.25,
+					"dot_per_turn": 105701.75,
+					"downs": 0,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 16381.75,
+					"foe_hp_left": [
+						[
+							538,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1560000.0
+					],
+					"foe_xparam": [
+						[
+							538,
+							4.8,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:30",
+					"kind": "boss",
+					"kinds": {
+						"misfire": 2
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						411331,
+						294166,
+						466426,
+						262967
+					],
+					"rep": 100030,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						45,
+						53,
+						32,
+						149
+					],
+					"troop": 466,
+					"turns": 4,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							45,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							149,
+							"输出",
+							true,
+							82.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 207353.7,
+					"dot_per_turn": 132356.0,
+					"downs": 3,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 38424.3,
+					"foe_hp_left": [
+						[
+							538,
+							0.944595439390331
+						]
+					],
+					"foe_mhp": [
+						1560000.0
+					],
+					"foe_xparam": [
+						[
+							538,
+							4.8,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:30",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1
+					},
+					"label": "随机3",
+					"lost": true,
+					"party_mhp": [
+						411331,
+						294166,
+						466426,
+						262967
+					],
+					"rep": 200030,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						45,
+						53,
+						32,
+						149
+					],
+					"troop": 466,
+					"turns": 10,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							45,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							82.0
+						],
+						[
+							149,
+							"输出",
+							true,
+							82.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 419304.4,
+					"dot_per_turn": 121079.4,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 351.2,
+					"foe_hp_left": [
+						[
+							538,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1560000.0
+					],
+					"foe_xparam": [
+						[
+							538,
+							4.8,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:30",
+					"kind": "boss",
+					"kinds": {
+						"hit_ally": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						411331,
+						294166,
+						466426,
+						262967
+					],
+					"rep": 300030,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						45,
+						53,
+						32,
+						149
+					],
+					"troop": 466,
+					"turns": 5,
+					"won": true
+				}
+			],
+			"floor": 30,
+			"foe_heal_per_turn_avg": 33246.2032828283,
+			"foe_mhp": [
+				1560000.0
+			],
+			"harm_fights": 4,
+			"kinds": {
+				"break_guard": 3,
+				"daze": 3,
+				"hit_ally": 3,
+				"hit_self": 1,
+				"misfire": 5
+			},
+			"n": 12,
+			"n8u_坦克": 0,
+			"n8u_辅助": 0,
+			"n8u_输出": 12,
+			"n_坦克": 0,
+			"n_辅助": 0,
+			"n_输出": 12,
+			"ripe_flag": false,
+			"sear8_坦克": 0.0,
+			"sear8_辅助": 0.0,
+			"sear8_输出": 0.0185185185185185,
+			"sear8u_坦克": 0.0,
+			"sear8u_辅助": 0.0,
+			"sear8u_输出": 0.0185185185185185,
+			"sear_坦克": 0.0,
+			"sear_辅助": 0.0,
+			"sear_输出": 0.0208333333333333,
+			"self8_坦克": 0.0,
+			"self8_辅助": 0.0,
+			"self8_输出": 0.347895622895623,
+			"self8u_坦克": 0.0,
+			"self8u_辅助": 0.0,
+			"self8u_输出": 0.347895622895623,
+			"self_坦克": 0.0,
+			"self_辅助": 0.0,
+			"self_输出": 0.291666666666667,
+			"team_self8": 1.39158249158249,
+			"team_self_avg": 1.16666666666667,
+			"troop": 466,
+			"turns_all_avg": 6.75,
+			"turns_won_avg": 5.0,
+			"win_rate": 0.583333333333333,
+			"won": 7
+		},
+		{
+			"boss_kind": "boss",
+			"capped": 0,
+			"carved_value": 85.0,
+			"dealt_per_turn_avg": 3812205.8362,
+			"dot_per_turn_avg": 1185992.03060399,
+			"downs_avg": 2.58333333333333,
+			"fights": [
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							85.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 4830957.6,
+					"dot_per_turn": 1119363.6,
+					"downs": 0,
+					"fills": {
+						"3": 2,
+						"32": 2,
+						"45": 2,
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 4,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							535,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12960000.0
+					],
+					"foe_xparam": [
+						[
+							535,
+							5.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:31",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"hit_self": 1,
+						"misfire": 2
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						413038,
+						431858,
+						456679,
+						94050
+					],
+					"rep": 100031,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 467,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							85.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 6392094.0,
+					"dot_per_turn": 1077067.6,
+					"downs": 0,
+					"fills": {
+						"3": 2,
+						"32": 2,
+						"45": 2,
+						"115": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 3,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 1035346.0,
+					"foe_hp_left": [
+						[
+							929,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12960000.0
+					],
+					"foe_xparam": [
+						[
+							929,
+							6.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 3,
+					"key": "guardian:31",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"hit_ally": 1,
+						"hit_self": 2
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						413038,
+						431858,
+						456679,
+						94050
+					],
+					"rep": 200031,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 467,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							85.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 6090526.0,
+					"dot_per_turn": 1785393.0,
+					"downs": 0,
+					"fills": {
+						"3": 1,
+						"32": 1,
+						"45": 2,
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 4,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							535,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12960000.0
+					],
+					"foe_xparam": [
+						[
+							535,
+							5.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 3,
+					"key": "guardian:31",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"hit_self": 3
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						413038,
+						431858,
+						456679,
+						94050
+					],
+					"rep": 300031,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 467,
+					"turns": 4,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2557243.05882353,
+					"dot_per_turn": 1230546.17647059,
+					"downs": 6,
+					"fills": {
+						"32": 6,
+						"49": 1,
+						"53": 3,
+						"81": 10
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 5,
+							"self": 0
+						},
+						"输出": {
+							"sear": 8,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 886507.764705882,
+					"foe_hp_left": [
+						[
+							929,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12960000.0
+					],
+					"foe_xparam": [
+						[
+							929,
+							6.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 4,
+					"key": "guardian:31",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 2,
+						"daze": 7,
+						"hit_self": 4,
+						"misfire": 2
+					},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						431858,
+						34200,
+						34200,
+						374946
+					],
+					"rep": 100031,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						32,
+						49,
+						53,
+						81
+					],
+					"troop": 467,
+					"turns": 17,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2538766.9375,
+					"dot_per_turn": 935585.75,
+					"downs": 6,
+					"fills": {
+						"32": 8,
+						"49": 2,
+						"53": 2,
+						"81": 10
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 5,
+							"self": 0
+						},
+						"输出": {
+							"sear": 7,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 334108.625,
+					"foe_hp_left": [
+						[
+							929,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12960000.0
+					],
+					"foe_xparam": [
+						[
+							929,
+							6.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 3,
+					"key": "guardian:31",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"daze": 8,
+						"hit_ally": 2,
+						"hit_self": 1,
+						"misfire": 1
+					},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						431858,
+						34200,
+						34200,
+						374946
+					],
+					"rep": 200031,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						32,
+						49,
+						53,
+						81
+					],
+					"troop": 467,
+					"turns": 16,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							32,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 2690993.69565217,
+					"dot_per_turn": 1407218.86956522,
+					"downs": 7,
+					"fills": {
+						"32": 9,
+						"49": 3,
+						"53": 3,
+						"81": 11
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 7,
+							"self": 0
+						},
+						"输出": {
+							"sear": 13,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 5556.39130434783,
+					"foe_hp_left": [
+						[
+							929,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12960000.0
+					],
+					"foe_xparam": [
+						[
+							929,
+							6.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 5,
+					"key": "guardian:31",
+					"kind": "boss",
+					"kinds": {
+						"daze": 12,
+						"hit_ally": 1,
+						"hit_self": 4,
+						"misfire": 4
+					},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						431858,
+						34200,
+						34200,
+						374946
+					],
+					"rep": 300031,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						32,
+						49,
+						53,
+						81
+					],
+					"troop": 467,
+					"turns": 23,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							1,
+							"输出",
+							true,
+							85.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1596208.63636364,
+					"dot_per_turn": 1479231.27272727,
+					"downs": 4,
+					"fills": {
+						"1": 3,
+						"19": 4,
+						"45": 4,
+						"49": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 9,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							535,
+							0.519623191625578
+						]
+					],
+					"foe_mhp": [
+						12960000.0
+					],
+					"foe_xparam": [
+						[
+							535,
+							5.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 4,
+					"key": "guardian:31",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 4,
+						"daze": 2,
+						"hit_ally": 1,
+						"hit_self": 3
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						98753,
+						34200,
+						94050,
+						34200
+					],
+					"rep": 100031,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						19,
+						49,
+						45,
+						1
+					],
+					"troop": 467,
+					"turns": 11,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							1,
+							"输出",
+							true,
+							85.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1141887.27272727,
+					"dot_per_turn": 1053012.18181818,
+					"downs": 4,
+					"fills": {
+						"1": 1,
+						"19": 5,
+						"45": 4,
+						"49": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 8,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							535,
+							0.578084747544242
+						]
+					],
+					"foe_mhp": [
+						12960000.0
+					],
+					"foe_xparam": [
+						[
+							535,
+							5.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 5,
+					"key": "guardian:31",
+					"kind": "boss",
+					"kinds": {
+						"daze": 2,
+						"hit_ally": 2,
+						"hit_self": 3,
+						"misfire": 1
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						98753,
+						34200,
+						94050,
+						34200
+					],
+					"rep": 200031,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						19,
+						49,
+						45,
+						1
+					],
+					"troop": 467,
+					"turns": 11,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							1,
+							"输出",
+							true,
+							85.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1196369.33333333,
+					"dot_per_turn": 1085918.58333333,
+					"downs": 4,
+					"fills": {
+						"1": 2,
+						"19": 3,
+						"45": 4,
+						"49": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 8,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 0.0,
+					"foe_hp_left": [
+						[
+							535,
+							0.935640862095325
+						]
+					],
+					"foe_mhp": [
+						12960000.0
+					],
+					"foe_xparam": [
+						[
+							535,
+							5.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 6,
+					"key": "guardian:31",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 3,
+						"hit_ally": 4,
+						"hit_self": 2,
+						"misfire": 1
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						98753,
+						34200,
+						94050,
+						34200
+					],
+					"rep": 300031,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						19,
+						49,
+						45,
+						1
+					],
+					"troop": 467,
+					"turns": 12,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							115,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 5482560.0,
+					"dot_per_turn": 1105834.33333333,
+					"downs": 0,
+					"fills": {
+						"3": 2,
+						"32": 2,
+						"81": 3,
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 1,
+							"self": 0
+						},
+						"输出": {
+							"sear": 2,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 14380.5,
+					"foe_hp_left": [
+						[
+							929,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12960000.0
+					],
+					"foe_xparam": [
+						[
+							929,
+							6.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 2,
+					"key": "guardian:31",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"daze": 1,
+						"hit_ally": 2,
+						"misfire": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						456679,
+						413038,
+						431858,
+						374946
+					],
+					"rep": 100031,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						115,
+						3,
+						32,
+						81
+					],
+					"troop": 467,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							115,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 5896848.0,
+					"dot_per_turn": 1071167.16666667,
+					"downs": 0,
+					"fills": {
+						"3": 2,
+						"32": 2,
+						"81": 2,
+						"115": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 1,
+							"self": 0
+						},
+						"输出": {
+							"sear": 3,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 11524.3333333333,
+					"foe_hp_left": [
+						[
+							929,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12960000.0
+					],
+					"foe_xparam": [
+						[
+							929,
+							6.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 3,
+					"key": "guardian:31",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"hit_ally": 1,
+						"hit_self": 2,
+						"misfire": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						456679,
+						413038,
+						431858,
+						374946
+					],
+					"rep": 200031,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						115,
+						3,
+						32,
+						81
+					],
+					"troop": 467,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							115,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							85.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 5332015.5,
+					"dot_per_turn": 881565.833333333,
+					"downs": 0,
+					"fills": {
+						"3": 1,
+						"32": 2,
+						"81": 2,
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 1,
+							"self": 0
+						},
+						"输出": {
+							"sear": 3,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 1242188.66666667,
+					"foe_hp_left": [
+						[
+							929,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						12960000.0
+					],
+					"foe_xparam": [
+						[
+							929,
+							6.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:31",
+					"kind": "boss",
+					"kinds": {
+						"daze": 2,
+						"hit_ally": 1,
+						"misfire": 2
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						456679,
+						413038,
+						431858,
+						374946
+					],
+					"rep": 300031,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						115,
+						3,
+						32,
+						81
+					],
+					"troop": 467,
+					"turns": 6,
+					"won": true
+				}
+			],
+			"floor": 31,
+			"foe_heal_per_turn_avg": 294134.356750852,
+			"foe_mhp": [
+				12960000.0
+			],
+			"harm_fights": 12,
+			"kinds": {
+				"break_guard": 13,
+				"daze": 36,
+				"hit_ally": 15,
+				"hit_self": 25,
+				"misfire": 15
+			},
+			"n": 12,
+			"n8u_坦克": 0,
+			"n8u_辅助": 6,
+			"n8u_输出": 12,
+			"n_坦克": 0,
+			"n_辅助": 6,
+			"n_输出": 12,
+			"ripe_flag": false,
+			"sear8_坦克": 0.0,
+			"sear8_辅助": 1.88128729752771,
+			"sear8_输出": 1.39238441533838,
+			"sear8u_坦克": 0.0,
+			"sear8u_辅助": 1.88128729752771,
+			"sear8u_输出": 1.39238441533838,
+			"sear_坦克": 0.0,
+			"sear_辅助": 3.33333333333333,
+			"sear_输出": 1.75,
+			"self8_坦克": 0.0,
+			"self8_辅助": 0.0,
+			"self8_输出": 0.274105289898129,
+			"self8u_坦克": 0.0,
+			"self8u_辅助": 0.0,
+			"self8u_输出": 0.274105289898129,
+			"self_坦克": 0.0,
+			"self_辅助": 0.0,
+			"self_输出": 0.305555555555556,
+			"team_self8": 0.898578495957013,
+			"team_self_avg": 1.0,
+			"troop": 467,
+			"turns_all_avg": 10.1666666666667,
+			"turns_won_avg": 9.77777777777778,
+			"win_rate": 0.75,
+			"won": 9
+		},
+		{
+			"boss_kind": "boss",
+			"capped": 2,
+			"carved_value": 86.0,
+			"dealt_per_turn_avg": 740583.677973647,
+			"dot_per_turn_avg": 152602.664267908,
+			"downs_avg": 1.83333333333333,
+			"fights": [
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							86.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 895142.4,
+					"dot_per_turn": 171402.4,
+					"downs": 0,
+					"fills": {
+						"32": 1,
+						"45": 1,
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 2,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 328678.6,
+					"foe_hp_left": [
+						[
+							536,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1976000.0
+					],
+					"foe_xparam": [
+						[
+							536,
+							5.2,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:32",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"hit_self": 1,
+						"misfire": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						359004,
+						126113,
+						103455,
+						94050
+					],
+					"rep": 100032,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 468,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							86.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1352145.0,
+					"dot_per_turn": 364287.857142857,
+					"downs": 0,
+					"fills": {
+						"3": 1,
+						"32": 2,
+						"45": 2,
+						"115": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 5,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 9585.14285714286,
+					"foe_hp_left": [
+						[
+							929,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1976000.0
+					],
+					"foe_xparam": [
+						[
+							929,
+							6.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 2,
+					"key": "guardian:32",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 3,
+						"daze": 2,
+						"hit_ally": 2
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						359004,
+						126113,
+						103455,
+						94050
+					],
+					"rep": 200032,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 468,
+					"turns": 7,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							86.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1115804.0,
+					"dot_per_turn": 204990.25,
+					"downs": 0,
+					"fills": {
+						"32": 1,
+						"45": 1,
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 3,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 8263.5,
+					"foe_hp_left": [
+						[
+							536,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1976000.0
+					],
+					"foe_xparam": [
+						[
+							536,
+							5.2,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:32",
+					"kind": "boss",
+					"kinds": {
+						"blackout": 1,
+						"break_guard": 1,
+						"hit_ally": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						359004,
+						126113,
+						103455,
+						94050
+					],
+					"rep": 300032,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 468,
+					"turns": 4,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							115,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 79417.2222222222,
+					"dot_per_turn": 42132.8888888889,
+					"downs": 4,
+					"fills": {
+						"19": 3,
+						"53": 2,
+						"81": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 1,
+							"self": 0
+						},
+						"输出": {
+							"sear": 3,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 10947.5555555556,
+					"foe_hp_left": [
+						[
+							536,
+							1.0
+						]
+					],
+					"foe_mhp": [
+						1976000.0
+					],
+					"foe_xparam": [
+						[
+							536,
+							5.2,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 2,
+					"key": "guardian:32",
+					"kind": "boss",
+					"kinds": {
+						"blackout": 1,
+						"break_guard": 1,
+						"daze": 1,
+						"hit_ally": 2
+					},
+					"label": "随机1",
+					"lost": true,
+					"party_mhp": [
+						103455,
+						34200,
+						380552,
+						49400
+					],
+					"rep": 100032,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						115,
+						53,
+						19,
+						81
+					],
+					"troop": 468,
+					"turns": 9,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							115,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 126433.0,
+					"dot_per_turn": 75731.7142857143,
+					"downs": 4,
+					"fills": {
+						"19": 6,
+						"53": 2,
+						"81": 2,
+						"115": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 1,
+							"self": 0
+						},
+						"输出": {
+							"sear": 7,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 12777.9285714286,
+					"foe_hp_left": [
+						[
+							536,
+							0.944977500908738
+						]
+					],
+					"foe_mhp": [
+						1976000.0
+					],
+					"foe_xparam": [
+						[
+							536,
+							5.2,
+							0.0,
+							0.0,
+							-0.04
+						]
+					],
+					"harm": 3,
+					"key": "guardian:32",
+					"kind": "boss",
+					"kinds": {
+						"blackout": 1,
+						"daze": 4,
+						"hit_self": 3,
+						"misfire": 1
+					},
+					"label": "随机1",
+					"lost": true,
+					"party_mhp": [
+						103455,
+						34200,
+						380552,
+						49400
+					],
+					"rep": 200032,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						115,
+						53,
+						19,
+						81
+					],
+					"troop": 468,
+					"turns": 14,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							115,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": true,
+					"dealt_per_turn": 148007.425,
+					"dot_per_turn": 94294.9,
+					"downs": 3,
+					"fills": {
+						"19": 11,
+						"53": 1,
+						"115": 3
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 14,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 10727.0,
+					"foe_hp_left": [
+						[
+							536,
+							0.997467402953084
+						]
+					],
+					"foe_mhp": [
+						1976000.0
+					],
+					"foe_xparam": [
+						[
+							536,
+							5.2,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 5,
+					"key": "guardian:32",
+					"kind": "boss",
+					"kinds": {
+						"blackout": 1,
+						"break_guard": 3,
+						"daze": 5,
+						"hit_ally": 3,
+						"hit_self": 2,
+						"misfire": 1
+					},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						103455,
+						34200,
+						380552,
+						49400
+					],
+					"rep": 300032,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						115,
+						53,
+						19,
+						81
+					],
+					"troop": 468,
+					"turns": 40,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							86.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 194524.538461538,
+					"dot_per_turn": 115273.769230769,
+					"downs": 4,
+					"fills": {
+						"19": 4,
+						"32": 2,
+						"49": 3,
+						"53": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 9,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 17870.6153846154,
+					"foe_hp_left": [
+						[
+							536,
+							0.908701633220942
+						]
+					],
+					"foe_mhp": [
+						1976000.0
+					],
+					"foe_xparam": [
+						[
+							536,
+							5.2,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 3,
+					"key": "guardian:32",
+					"kind": "boss",
+					"kinds": {
+						"blackout": 1,
+						"break_guard": 2,
+						"daze": 1,
+						"hit_ally": 2,
+						"hit_self": 1,
+						"misfire": 2
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						34200,
+						126113,
+						262552,
+						380552
+					],
+					"rep": 100032,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						53,
+						32,
+						49,
+						19
+					],
+					"troop": 468,
+					"turns": 13,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							86.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 218420.75,
+					"dot_per_turn": 124479.666666667,
+					"downs": 4,
+					"fills": {
+						"19": 6,
+						"32": 3,
+						"49": 3,
+						"53": 3
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 9,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 15168.0833333333,
+					"foe_hp_left": [
+						[
+							536,
+							0.852872629448114
+						]
+					],
+					"foe_mhp": [
+						1976000.0
+					],
+					"foe_xparam": [
+						[
+							536,
+							5.2,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 3,
+					"key": "guardian:32",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 3,
+						"daze": 2,
+						"hit_ally": 1,
+						"hit_self": 2,
+						"misfire": 1
+					},
+					"label": "随机2",
+					"lost": true,
+					"party_mhp": [
+						34200,
+						126113,
+						262552,
+						380552
+					],
+					"rep": 200032,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						53,
+						32,
+						49,
+						19
+					],
+					"troop": 468,
+					"turns": 12,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							53,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							86.0
+						]
+					],
+					"capped": true,
+					"dealt_per_turn": 155602.25,
+					"dot_per_turn": 50541.875,
+					"downs": 3,
+					"fills": {
+						"19": 9,
+						"32": 2,
+						"49": 2,
+						"53": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 14,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 49323.125,
+					"foe_hp_left": [
+						[
+							536,
+							0.920006016470087
+						]
+					],
+					"foe_mhp": [
+						1976000.0
+					],
+					"foe_xparam": [
+						[
+							536,
+							5.2,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 7,
+					"key": "guardian:32",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"daze": 3,
+						"hit_ally": 6,
+						"hit_self": 1,
+						"misfire": 4
+					},
+					"label": "随机2",
+					"lost": false,
+					"party_mhp": [
+						34200,
+						126113,
+						262552,
+						380552
+					],
+					"rep": 300032,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						53,
+						32,
+						49,
+						19
+					],
+					"troop": 468,
+					"turns": 40,
+					"won": false
+				},
+				{
+					"brand": [
+						[
+							1,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							86.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1412396.6,
+					"dot_per_turn": 226921.2,
+					"downs": 0,
+					"fills": {
+						"1": 1,
+						"19": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 3
+						}
+					},
+					"foe_heal_per_turn": 8775.2,
+					"foe_hp_left": [
+						[
+							929,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1976000.0
+					],
+					"foe_xparam": [
+						[
+							929,
+							6.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:32",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"hit_ally": 1,
+						"misfire": 2
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						387409,
+						380552,
+						359004,
+						262552
+					],
+					"rep": 100032,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						1,
+						19,
+						3,
+						49
+					],
+					"troop": 468,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							1,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							86.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1481786.2,
+					"dot_per_turn": 237183.2,
+					"downs": 0,
+					"fills": {
+						"1": 2,
+						"3": 1,
+						"19": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 3,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 6805.4,
+					"foe_hp_left": [
+						[
+							929,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1976000.0
+					],
+					"foe_xparam": [
+						[
+							929,
+							6.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 2,
+					"key": "guardian:32",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"hit_ally": 1,
+						"hit_self": 1,
+						"misfire": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						387409,
+						380552,
+						359004,
+						262552
+					],
+					"rep": 200032,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						1,
+						19,
+						3,
+						49
+					],
+					"troop": 468,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							1,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							19,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							3,
+							"输出",
+							true,
+							86.0
+						],
+						[
+							49,
+							"输出",
+							true,
+							86.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 1707324.75,
+					"dot_per_turn": 123992.25,
+					"downs": 0,
+					"fills": {
+						"1": 1,
+						"19": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 5110.5,
+					"foe_hp_left": [
+						[
+							929,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						1976000.0
+					],
+					"foe_xparam": [
+						[
+							929,
+							6.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 2,
+					"key": "guardian:32",
+					"kind": "boss",
+					"kinds": {
+						"hit_ally": 2
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						387409,
+						380552,
+						359004,
+						262552
+					],
+					"rep": 300032,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						1,
+						19,
+						3,
+						49
+					],
+					"troop": 468,
+					"turns": 4,
+					"won": true
+				}
+			],
+			"floor": 32,
+			"foe_heal_per_turn_avg": 40336.054225173,
+			"foe_mhp": [
+				1976000.0
+			],
+			"harm_fights": 12,
+			"kinds": {
+				"blackout": 5,
+				"break_guard": 16,
+				"daze": 19,
+				"hit_ally": 21,
+				"hit_self": 11,
+				"misfire": 13
+			},
+			"n": 12,
+			"n8u_坦克": 0,
+			"n8u_辅助": 2,
+			"n8u_输出": 10,
+			"n_坦克": 0,
+			"n_辅助": 3,
+			"n_输出": 12,
+			"ripe_flag": false,
+			"sear8_坦克": 0.0,
+			"sear8_辅助": 0.486772486772487,
+			"sear8_输出": 1.0473951973952,
+			"sear8u_坦克": 0.0,
+			"sear8u_辅助": 0.73015873015873,
+			"sear8u_输出": 1.0935409035409,
+			"sear_坦克": 0.0,
+			"sear_辅助": 0.666666666666667,
+			"sear_输出": 1.64583333333333,
+			"self8_坦克": 0.0,
+			"self8_辅助": 0.0,
+			"self8_输出": 0.30623897707231,
+			"self8u_坦克": 0.0,
+			"self8u_辅助": 0.0,
+			"self8u_输出": 0.355820105820106,
+			"self_坦克": 0.0,
+			"self_辅助": 0.0,
+			"self_输出": 0.270833333333333,
+			"team_self8": 1.17883597883598,
+			"team_self_avg": 1.0,
+			"troop": 468,
+			"turns_all_avg": 13.1666666666667,
+			"turns_won_avg": 5.0,
+			"win_rate": 0.5,
+			"won": 6
+		},
+		{
+			"boss_kind": "boss",
+			"capped": 0,
+			"carved_value": 87.0,
+			"dealt_per_turn_avg": 378619.109181097,
+			"dot_per_turn_avg": 94684.6854527417,
+			"downs_avg": 1.16666666666667,
+			"fights": [
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							87.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 442978.714285714,
+					"dot_per_turn": 94447.5714285714,
+					"downs": 0,
+					"fills": {
+						"3": 1,
+						"32": 1,
+						"45": 1,
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 4,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 120968.428571429,
+					"foe_hp_left": [
+						[
+							930,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						920000.0
+					],
+					"foe_xparam": [
+						[
+							930,
+							7.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 2,
+					"key": "guardian:33",
+					"kind": "boss",
+					"kinds": {
+						"blackout": 1,
+						"daze": 1,
+						"hit_ally": 1,
+						"hit_self": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						110979,
+						469361,
+						103455,
+						415162
+					],
+					"rep": 100033,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 469,
+					"turns": 7,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							87.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 446967.4,
+					"dot_per_turn": 104350.6,
+					"downs": 1,
+					"fills": {
+						"3": 2,
+						"32": 1,
+						"45": 2,
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 2,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 45552.4,
+					"foe_hp_left": [
+						[
+							537,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						920000.0
+					],
+					"foe_xparam": [
+						[
+							537,
+							5.6,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:33",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"daze": 1,
+						"misfire": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						110979,
+						469361,
+						103455,
+						415162
+					],
+					"rep": 200033,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 469,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							3,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							45,
+							"输出",
+							true,
+							87.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 394871.0,
+					"dot_per_turn": 67058.5,
+					"downs": 1,
+					"fills": {},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 0,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 150138.0,
+					"foe_hp_left": [
+						[
+							537,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						920000.0
+					],
+					"foe_xparam": [
+						[
+							537,
+							5.6,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:33",
+					"kind": "boss",
+					"kinds": {
+						"misfire": 1
+					},
+					"label": "原队",
+					"lost": false,
+					"party_mhp": [
+						110979,
+						469361,
+						103455,
+						415162
+					],
+					"rep": 300033,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						3,
+						32,
+						115,
+						45
+					],
+					"troop": 469,
+					"turns": 4,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							149,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							87.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 303511.75,
+					"dot_per_turn": 93365.875,
+					"downs": 1,
+					"fills": {
+						"32": 1,
+						"115": 1,
+						"149": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 3,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 12884.375,
+					"foe_hp_left": [
+						[
+							537,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						920000.0
+					],
+					"foe_xparam": [
+						[
+							537,
+							5.6,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 2,
+					"key": "guardian:33",
+					"kind": "boss",
+					"kinds": {
+						"daze": 1,
+						"hit_ally": 1,
+						"hit_self": 1
+					},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						270881,
+						34200,
+						103455,
+						469361
+					],
+					"rep": 100033,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						149,
+						53,
+						115,
+						32
+					],
+					"troop": 469,
+					"turns": 8,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							149,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							87.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 369698.142857143,
+					"dot_per_turn": 105867.571428571,
+					"downs": 2,
+					"fills": {
+						"32": 2,
+						"53": 1,
+						"115": 1,
+						"149": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 4,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 15802.5714285714,
+					"foe_hp_left": [
+						[
+							537,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						920000.0
+					],
+					"foe_xparam": [
+						[
+							537,
+							5.6,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 2,
+					"key": "guardian:33",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"daze": 1,
+						"hit_ally": 1,
+						"hit_self": 1,
+						"misfire": 1
+					},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						270881,
+						34200,
+						103455,
+						469361
+					],
+					"rep": 200033,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						149,
+						53,
+						115,
+						32
+					],
+					"troop": 469,
+					"turns": 7,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							149,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							87.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 341323.25,
+					"dot_per_turn": 94727.25,
+					"downs": 1,
+					"fills": {
+						"32": 1,
+						"53": 1,
+						"149": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 3,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 14013.625,
+					"foe_hp_left": [
+						[
+							537,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						920000.0
+					],
+					"foe_xparam": [
+						[
+							537,
+							5.6,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 2,
+					"key": "guardian:33",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"daze": 2,
+						"hit_self": 2
+					},
+					"label": "随机1",
+					"lost": false,
+					"party_mhp": [
+						270881,
+						34200,
+						103455,
+						469361
+					],
+					"rep": 300033,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						149,
+						53,
+						115,
+						32
+					],
+					"troop": 469,
+					"turns": 8,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							87.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 366272.166666667,
+					"dot_per_turn": 91815.3333333333,
+					"downs": 2,
+					"fills": {
+						"19": 1,
+						"32": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 1,
+							"self": 2
+						}
+					},
+					"foe_heal_per_turn": 6985.33333333333,
+					"foe_hp_left": [
+						[
+							537,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						920000.0
+					],
+					"foe_xparam": [
+						[
+							537,
+							5.6,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:33",
+					"kind": "boss",
+					"kinds": {
+						"blackout": 1,
+						"hit_ally": 1,
+						"misfire": 1
+					},
+					"label": "随机2",
+					"lost": false,
+					"party_mhp": [
+						98753,
+						469361,
+						103455,
+						34200
+					],
+					"rep": 100033,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						19,
+						32,
+						115,
+						53
+					],
+					"troop": 469,
+					"turns": 6,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							87.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 531170.25,
+					"dot_per_turn": 135540.5,
+					"downs": 2,
+					"fills": {
+						"19": 1,
+						"32": 2,
+						"115": 2
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 2,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 11153.0,
+					"foe_hp_left": [
+						[
+							537,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						920000.0
+					],
+					"foe_xparam": [
+						[
+							537,
+							5.6,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:33",
+					"kind": "boss",
+					"kinds": {
+						"blackout": 1,
+						"break_guard": 1
+					},
+					"label": "随机2",
+					"lost": false,
+					"party_mhp": [
+						98753,
+						469361,
+						103455,
+						34200
+					],
+					"rep": 200033,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						19,
+						32,
+						115,
+						53
+					],
+					"troop": 469,
+					"turns": 4,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							19,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							115,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							53,
+							"输出",
+							true,
+							87.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 261571.636363636,
+					"dot_per_turn": 68705.0909090909,
+					"downs": 3,
+					"fills": {
+						"19": 2,
+						"32": 3,
+						"115": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 0,
+							"self": 0
+						},
+						"输出": {
+							"sear": 5,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 18794.0,
+					"foe_hp_left": [
+						[
+							537,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						920000.0
+					],
+					"foe_xparam": [
+						[
+							537,
+							5.6,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 2,
+					"key": "guardian:33",
+					"kind": "boss",
+					"kinds": {
+						"blackout": 3,
+						"daze": 1,
+						"hit_self": 2
+					},
+					"label": "随机2",
+					"lost": false,
+					"party_mhp": [
+						98753,
+						469361,
+						103455,
+						34200
+					],
+					"rep": 300033,
+					"ripe": false,
+					"roles": {
+						"输出": 4
+					},
+					"team": [
+						19,
+						32,
+						115,
+						53
+					],
+					"troop": 469,
+					"turns": 11,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							45,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							149,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 402735.6,
+					"dot_per_turn": 110801.6,
+					"downs": 0,
+					"fills": {
+						"32": 1,
+						"45": 1,
+						"81": 2,
+						"149": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 1,
+							"self": 0
+						},
+						"输出": {
+							"sear": 2,
+							"self": 1
+						}
+					},
+					"foe_heal_per_turn": 11194.0,
+					"foe_hp_left": [
+						[
+							537,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						920000.0
+					],
+					"foe_xparam": [
+						[
+							537,
+							5.6,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 1,
+					"key": "guardian:33",
+					"kind": "boss",
+					"kinds": {
+						"blackout": 1,
+						"daze": 2,
+						"hit_ally": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						415162,
+						469361,
+						270881,
+						349088
+					],
+					"rep": 100033,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						45,
+						32,
+						149,
+						81
+					],
+					"troop": 469,
+					"turns": 5,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							45,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							149,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 341640.4,
+					"dot_per_turn": 85235.0,
+					"downs": 1,
+					"fills": {
+						"32": 6,
+						"45": 5,
+						"81": 7,
+						"149": 4
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 3,
+							"self": 0
+						},
+						"输出": {
+							"sear": 7,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 26377.57,
+					"foe_hp_left": [
+						[
+							930,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						920000.0
+					],
+					"foe_xparam": [
+						[
+							930,
+							7.0,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 3,
+					"key": "guardian:33",
+					"kind": "boss",
+					"kinds": {
+						"blackout": 2,
+						"daze": 4,
+						"hit_ally": 2,
+						"hit_self": 1,
+						"misfire": 1
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						415162,
+						469361,
+						270881,
+						349088
+					],
+					"rep": 200033,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						45,
+						32,
+						149,
+						81
+					],
+					"troop": 469,
+					"turns": 10,
+					"won": true
+				},
+				{
+					"brand": [
+						[
+							45,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							32,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							149,
+							"输出",
+							true,
+							87.0
+						],
+						[
+							81,
+							"辅助",
+							false,
+							7.0
+						]
+					],
+					"capped": false,
+					"dealt_per_turn": 340689.0,
+					"dot_per_turn": 84301.3333333333,
+					"downs": 0,
+					"fills": {
+						"32": 1,
+						"45": 1,
+						"81": 1,
+						"149": 1
+					},
+					"fits": {
+						"坦克": {
+							"sear": 0,
+							"self": 0
+						},
+						"辅助": {
+							"sear": 1,
+							"self": 0
+						},
+						"输出": {
+							"sear": 3,
+							"self": 0
+						}
+					},
+					"foe_heal_per_turn": 120907.166666667,
+					"foe_hp_left": [
+						[
+							537,
+							0.0
+						]
+					],
+					"foe_mhp": [
+						920000.0
+					],
+					"foe_xparam": [
+						[
+							537,
+							5.6,
+							0.0,
+							0.0,
+							0.0
+						]
+					],
+					"harm": 0,
+					"key": "guardian:33",
+					"kind": "boss",
+					"kinds": {
+						"break_guard": 1,
+						"daze": 1,
+						"misfire": 2
+					},
+					"label": "随机3",
+					"lost": false,
+					"party_mhp": [
+						415162,
+						469361,
+						270881,
+						349088
+					],
+					"rep": 300033,
+					"ripe": false,
+					"roles": {
+						"辅助": 1,
+						"输出": 3
+					},
+					"team": [
+						45,
+						32,
+						149,
+						81
+					],
+					"troop": 469,
+					"turns": 6,
+					"won": true
+				}
+			],
+			"floor": 33,
+			"foe_heal_per_turn_avg": 46230.8725,
+			"foe_mhp": [
+				920000.0
+			],
+			"harm_fights": 8,
+			"kinds": {
+				"blackout": 9,
+				"break_guard": 5,
+				"daze": 14,
+				"hit_ally": 7,
+				"hit_self": 8,
+				"misfire": 7
+			},
+			"n": 12,
+			"n8u_坦克": 0,
+			"n8u_辅助": 3,
+			"n8u_输出": 12,
+			"n_坦克": 0,
+			"n_辅助": 3,
+			"n_输出": 12,
+			"ripe_flag": false,
+			"sear8_坦克": 0.0,
+			"sear8_辅助": 1.77777777777778,
+			"sear8_输出": 0.9245670995671,
+			"sear8u_坦克": 0.0,
+			"sear8u_辅助": 1.77777777777778,
+			"sear8u_输出": 0.9245670995671,
+			"sear_坦克": 0.0,
+			"sear_辅助": 1.66666666666667,
+			"sear_输出": 0.833333333333333,
+			"self8_坦克": 0.0,
+			"self8_辅助": 0.0,
+			"self8_输出": 0.255627705627706,
+			"self8u_坦克": 0.0,
+			"self8u_辅助": 0.0,
+			"self8u_输出": 0.255627705627706,
+			"self_坦克": 0.0,
+			"self_辅助": 0.0,
+			"self_输出": 0.194444444444444,
+			"team_self8": 0.978066378066378,
+			"team_self_avg": 0.75,
+			"troop": 469,
+			"turns_all_avg": 6.75,
+			"turns_won_avg": 6.75,
+			"win_rate": 1.0,
+			"won": 12
+		}
+	],
+	"seed": 20261113,
+	"snap_floor": 0,
+	"snapshots": "/Users/kyo/orca/vp-saves/t238/r6/saves",
+	"strip": [
+		1,
+		3,
+		4,
+		7
+	],
+	"teams": [],
+	"turns": 40,
+	"xcap": [
+		-1,
+		-1,
+		-1
+	]
+}

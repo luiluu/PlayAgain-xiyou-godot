@@ -135,7 +135,8 @@ static func damage_mult(a, b) -> float:
 ## 开关：true＝天启篇敌人闪避、暴击、暴击闪避、魔法闪避（xparam 1～4）里，表上有上限（≥0）的项拆成「底子」和「我方减益」两块，
 ## 都不再乘仓库倍率（天启篇开局 DCultyL3 的 ×2，D237 丙「去 ×2」）：底子（数据特性＋敌人身上的正值状态特性）按 balance_table 的
 ## combat_rules.enemy_xparam_cap 夹上限（暴击闪避按层段×难度查表），原值低于上限的照原值；我方减益（负值状态特性）加在夹完的底子上；
-## 再扣词条「压制」；最后不低于 0。上限填 -1 的项（现在 eva／cri／mev）一律照原路，逐字节不变（r2 P1-1）。
+## 再扣词条「压制」；最后不低于 0（闪避、暴击、魔法闪避底子本身为负的不抬，留不乘 ×2 的原值）。上限填 -1 的项一律照原路，逐字节不变（r2 P1-1）。
+## T397（D242，Kyo 11-22「按难度来调整」）：闪避、暴击、魔法闪避上限按天启篇五档难度各一个整数（表里写成按难度键的整数表）。
 ## false＝照旧：底子＋减益一起乘仓库倍率，不封顶、不夹 0。西游存档不走这里。
 static var ENEMY_XPARAM_CAP := true
 ## 开关：true＝天启篇里我方打敌人的暴击率改成减法（面板暴击＋critPush − 有效暴击闪避，夹 0～1，对齐指引「暴击率还要减去敌人的暴击闪避」）；
@@ -198,11 +199,11 @@ static func xparam_cap_pct(e, i: int) -> int:
 	var t := xparam_cap_table()
 	match i:
 		1:
-			return int(t.get("eva", -1))
+			return _diff_cap(t.get("eva", -1))
 		2:
-			return int(t.get("cri", -1))
+			return _diff_cap(t.get("cri", -1))
 		4:
-			return int(t.get("mev", -1))
+			return _diff_cap(t.get("mev", -1))
 		3:
 			var tiers: Array = t.get("cev_tiers", [])
 			if tiers.is_empty():
@@ -213,13 +214,17 @@ static func xparam_cap_pct(e, i: int) -> int:
 				if f <= int(r.get("max_floor", 0)):
 					row = r
 					break
-			var caps = row.get("cap", -1)
-			if caps is Dictionary:
-				var s := XState.current
-				var key := str(s.flags.tianqi.get("difficulty", "")) if s != null else ""
-				return int(caps.get(key, caps.values().min() if not caps.is_empty() else -1))
-			return int(caps)
+			return _diff_cap(row.get("cap", -1))
 	return -1
+
+
+## 上限格：整数＝五档一样；按难度键的整数表＝取本档（T397，D242 按难度；缺本档的键取表里最小的）
+static func _diff_cap(caps) -> int:
+	if caps is Dictionary:
+		var s := XState.current
+		var key := str(s.flags.tianqi.get("difficulty", "")) if s != null and s.flags.get("tianqi") is Dictionary else ""
+		return int(caps.get(key, caps.values().min() if not caps.is_empty() else -1))
+	return int(caps)
 
 
 ## 免暴击标记（T285 r3）：敌人身上 set_meta(META_CRIT_IMMUNE, true) 就免暴击。和死亡骑士 crit_immune、七印魔塔 no_crit 一样
@@ -242,7 +247,7 @@ static func enemy_xparam(e, i: int, base_pct := 100) -> float:
 	if base_pct != 100:
 		base = base * float(base_pct) / 100.0
 	var v := XTianqiAffixBattle.enemy_xparam(e, i, base + float(parts[1]))  # 天启篇词条「压制」
-	return maxf(0.0, v)
+	return maxf(minf(0.0, base) if i != 3 else 0.0, v)  # 下限 0；闪避、暴击、魔法闪避底子本来就是负的（如 1～9 层小怪闪避 −20%）留原值（不再 ×2），不抬成 0（T397）
 
 
 ## itemCri 里「暴击率 × 目标暴击闪避」那一步（battle_logic.item_cri 调）。rate：攻击方暴击＋critPush。
