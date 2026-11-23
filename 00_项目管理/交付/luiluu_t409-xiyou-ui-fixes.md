@@ -1,7 +1,7 @@
 # 交付：luiluu/t409-xiyou-ui-fixes
 
 - 车道／工作者：T409 西游档界面修／小o（sol＋high，P6）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -54,12 +54,13 @@
 2. #12 用 Godot 触屏模拟鼠标事件在实际弹层拖动，列表滚开后松手未选中，后续轻点正确选择；检索夹具已有原版排序结果对照。
 3. #11 本机计时与候选、贴图一致性对照见下节。宠物专项检查状态指令坐标与回退一致，后台贴图读取能完成。
 4. #7 测有计数、无计数、数值为 0、状态切换时读数更新、强化图标无计数、回退开关和绘制路径。
-5. 交付自检及云端结果待补。
+5. 云端选测 72/72，两片分别 35/35、37/37，无偶发。发行空壳检查退出 0。
 
 - 本机 Godot 4.7.2 / macOS。无 Android 真机或模拟器，本机画面确认和触屏模拟均使用测试数据。
 - `xiyou_platform` 161/161，`xiyou_gear_search` 64/64（带截图运行 66/66），`xiyou_enemy_state_icon` 25/25，`xiyou_pets` 34/34（无窗口及带画面版），`xiyou_gear_ui` 50/50，`xiyou_input_handled` 10/10，`xiyou_event_compare` 14/14（0 新回归）。
+- 补跑 `xiyou_t368_gear_r9` 105/105，`xiyou_tianqi_gear` 36/36，`xiyou_battle_pixel` 28/28，`xiyou_transfer_touch` 12/12。
 - 语法检查 0，工具快速回归 23 项全部通过。`发行空壳.py check` 退出 0，81 个脚本、781 个函数齐全。
-- 云端选测前台等待 [Actions 45140332983](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45140332983)，代码提交 `9ed23da66`。
+- 云端选测用 `gh run watch 45140332983 --exit-status` 前台等到成功，代码提交 `9ed23da66`。[Actions 45140332983](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45140332983)
 
 ## 首开耗时
 
@@ -84,3 +85,4 @@
 
 - `26cf5f2a9` 窗口切回、触屏词条、宝宝首开、敌人状态计数与回归测试。
 - `9ed23da66` 去掉宠物页首开随包字体固定标签的大字号量字开销。
+- `2dcbca090` 寄存交付单、回退登记及截图。
