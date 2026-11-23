@@ -40,14 +40,16 @@
 
 ## 动了的共用函数和开关
 
-| 函数／开关 | 全工程同名粗数（含定义与测试） | 调用处结论 |
+| 函数／开关 | 自检调用处粗数（含同名函数） | 调用处结论 |
 | --- | --- | --- |
-| `XState.gain_gear` | 167（`git grep -n 'gain_gear(' -- '*.gd'`） | 战斗 `gain_drops` 的两支及挖宝的两支启用补候选。其他调用保留参数默认值，装备登记、入包和提示走原出口。天启篇仍由 `XTianqiRandom.create_gear` 处理。 |
-| `XGear.roll_item` | 7（`git grep -n 'roll_item(' -- '*.gd'`） | `create_prestige_drop` 在补候选时传替换行，其余使用实例模板的原行。深渊商人、云裳订单、心钢测试和普通创建继续使用原参数。 |
-| `XBattleLogic.gain_drops` | 13（`git grep -n 'gain_drops(' -- '*.gd'`） | 生产调用来自倒下即发和战后结算，两条沿用同一装备入口。天启篇通用奖励仍走天启篇装备生成。物品、掉落快照、来源键、测试加速照原流程。 |
-| `XDB.rec` | 2545（`git grep -nE '[^[:alnum:]_]rec[[:space:]]*\(' -- '*.gd'`） | 商店与背包读取两张图纸，地图事件读取对应公共事件。补丁只返回这四条西游记录的副本，原缓存与其它记录仍照原路径取值。 |
-| `XToji.start_battle`、`XToji.finish` | 生产调用各 1 处（`git grep -nE 'XToji\.(start_battle\|finish)\(' -- '*.gd'`） | 战斗开场清本场记录，行动结束确认切换成功才取离开的形态。原切换仍由 `set_shape` 完成。 |
-| `XSmartAI._choose` | 18（`git grep -nE '[^[:alnum:]_]_choose[[:space:]]*\(' -- '*.gd'`，含其他同名函数） | 开关只约束西游档甚尔返回刚离开的形态。自动行动仍优先跑可用的挂机顺序。其他技能、角色和天启篇沿用原估值。 |
+| `XState.gain_gear` | 166 处（`git grep -n 'gain_gear(' -- '*.gd'`） | 战斗 `gain_drops` 的两支及挖宝的两支启用补候选。其他调用保留参数默认值，装备登记、入包和提示走原出口。天启篇仍由 `XTianqiRandom.create_gear` 处理。 |
+| `XGear.create` | 484 处（`git grep -n 'XGear.create(' -- '*.gd'` 定位该类） | 该函数原语句不变，附近新增 `create_prestige_drop`。普通创建与天启篇的现有调用继续传原参数、掷原行。 |
+| `XGear.roll_item` | 6 处（`git grep -n 'roll_item(' -- '*.gd'`） | `create_prestige_drop` 在补候选时传替换行，其余使用实例模板的原行。深渊商人、云裳订单、心钢测试和普通创建继续使用原参数。 |
+| `XBattleLogic.gain_drops` | 12 处（`git grep -n 'gain_drops(' -- '*.gd'`） | 生产调用来自倒下即发和战后结算，两条沿用同一装备入口。天启篇通用奖励仍走天启篇装备生成。物品、掉落快照、来源键、测试加速照原流程。 |
+| `XTreasureMap._dig` | 2 处（`git grep -n '_dig(' -- '*/core/treasure_map.gd'`） | 原来需站在宝点的入口与后续直接使用宝图的入口都进入原发奖分支。只在武器、防具发奖时传入补候选参数。扣图、宝点记录、物品和事件奖走原处理。 |
+| `XDB.rec` | 2534 处（`git grep -nE '[^[:alnum:]_]rec[[:space:]]*\(' -- '*.gd'`） | 商店与背包读取两张图纸，地图事件读取对应公共事件。补丁只返回这四条西游记录的副本，原缓存与其它记录仍照原路径取值。 |
+| `XToji.start_battle`、`XToji.finish` | 63、284 处。生产调用各 1 处（`git grep -nE 'XToji\.(start_battle\|finish)\(' -- '*.gd'`） | 战斗开场清本场记录，行动结束确认切换成功才取离开的形态。原切换仍由 `set_shape` 完成。 |
+| `XSmartAI._choose` | 14 处（`git grep -nE '[^[:alnum:]_]_choose[[:space:]]*\(' -- '*.gd'`） | 开关只约束西游档甚尔返回刚离开的形态。自动行动仍优先跑可用的挂机顺序。其他技能、角色和天启篇沿用原估值。 |
 | `MVInterpreter._host_command` | 2（`git grep -n '_host_command(' -- '*.gd'`） | 事件循环调用解释器。只在陈塘关主席送活力水分支的消除指令完成后发起同图传送，同图流程保留已移除事件。 |
 | 四个回退开关 | 见优化登记草稿 | 每个开关各管相应行为，均默认开启。 |
 
