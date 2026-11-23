@@ -231,7 +231,7 @@ static func signature_base(kind: int, id: int, raw: float, enemy_id := -1) -> fl
 	return clampf(raw, float(range_[0]), float(range_[1]))
 
 
-## T395：原表必掉时一定给的奖碑和 SURE_EXTRA 三样（MEDAL_SURE 关掉不认；SURE_EXCLUDE_ENEMIES 身上的不算）
+## T395：原表必掉时一定给的奖碑和 SURE_EXTRA 八样（MEDAL_SURE 关掉不认；SURE_EXCLUDE_ENEMIES 身上的不算）
 static func sure_medal(kind: int, id: int, enemy_id := -1) -> bool:
 	return MEDAL_SURE and kind == 1 and (MEDALS.has(id) or SURE_EXTRA.has(id)) and not SURE_EXCLUDE_ENEMIES.has(enemy_id)
 
@@ -246,6 +246,10 @@ static func _sure_medal_key(key: String) -> bool:
 	var e := XDB.rec("Enemies", int(parts[0]))
 	for d in e.get("dropItems", []):
 		if int(d.get("kind", 0)) == 1 and int(d.get("dataId", 0)) == int(parts[2]) and float(d.get("denominator", 0)) > 0.0 and float(d.denominator) <= 1.0:
+			return true
+	# T401 返修（小A 核 P1-1）：<Enemy Drops>（YEP_ExtraEnemyDrops）里写 100% 的行也算必掉（混沌避难所 724～728 配在这里）
+	for x in XBattleLogic._extra_drops(e):
+		if int(x.kind) == 1 and int(x.id) == int(parts[2]) and float(x.rate) >= 1.0:
 			return true
 	return false
 

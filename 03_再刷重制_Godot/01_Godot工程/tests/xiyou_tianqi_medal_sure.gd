@@ -34,6 +34,7 @@ func _run() -> void:
 	_all_rows()
 	_switch()
 	_exclude_and_extra()
+	_shrine_famine()
 	_xiyou_unchanged()
 	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
@@ -186,7 +187,7 @@ func _exclude_and_extra() -> void:
 	var book_reed := XMapTransfer.drops(s, XDB.rec("Enemies", 6)).filter(func(r): return int(r.kind) == 1 and int(r.id) == 9)
 	_check("book_medal_100", book_reed.size() == 1 and is_equal_approx(float(book_reed[0].rate), 100.0), book_reed)
 	_check("ulquiorra_book_not_100", book.size() == 1 and float(book[0].rate) < 50.0 and book_g.size() == 1 and is_equal_approx(float(book_g[0].rate), 100.0), [book, book_g])
-	# 三样一次性道具：首场必掉（各换 10 个种子）
+	# 八样一次性道具（1958／1961／1001＋724～728）：首场必掉（各换 10 个种子）
 	for spec in [[747, 1958], [766, 1961], [833, 1001], [407, 724], [408, 725], [409, 726], [410, 727], [411, 728]]:
 		var got := []
 		for i in 10:
@@ -208,3 +209,17 @@ func _exclude_and_extra() -> void:
 		_check("shrine_switch_off_%d" % it, is_equal_approx(off, 0.2), off)
 		var bk := XMapTransfer.drops(s, XDB.rec("Enemies", 459 + k)).filter(func(r): return int(r.kind) == 1 and int(r.id) == it)
 		_check("shrine_book_100_%d" % it, bk.size() == 1 and is_equal_approx(float(bk[0].rate), 100.0), bk)
+
+
+## T401 返修（小A 核 P1-1／P2-1）：荒年这类减掉率（p＜1）下，724～728（<Enemy Drops> 100%）招牌键命中必掉、roll_signature 照给
+func _shrine_famine() -> void:
+	var s := Kit.new_game("xunchang", "war", 4100)
+	for k in 5:
+		var key := "%d:1:%d" % [459 + k, 724 + k]
+		_check("shrine_key_sure_%d" % (724 + k), XTianqiDrop._sure_medal_key(key), key)
+		_check("shrine_famine_roll_%d" % (724 + k), XTianqiDrop.roll_signature(s, key, 0.67) and XTianqiDrop.roll_signature(s, key, 0.3), key)
+	# 非必掉的 <Enemy Drops> 小概率行（铁马 831 的 1001 配方 0.1%）不算
+	_check("extra_low_rate_not_sure", not XTianqiDrop._sure_medal_key("831:1:1001"))
+	# 已有的三样与奖碑在荒年下同样命中（dropItems 路径）
+	for spec in [[747, 1958], [766, 1961], [833, 1001], [6, 9]]:
+		_check("famine_sure_%d" % spec[1], XTianqiDrop._sure_medal_key("%d:1:%d" % spec), spec)
