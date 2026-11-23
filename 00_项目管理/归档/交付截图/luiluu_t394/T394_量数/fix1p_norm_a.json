@@ -1,0 +1,2276 @@
+{
+	"events": true,
+	"forceDifficulty": "",
+	"mode": "duel-snapshots",
+	"rows": [
+		{
+			"atkScale": 0.000247,
+			"dmg": 1698054.57833333,
+			"enemyHp": 12960000.0,
+			"floor": 31,
+			"per": [
+				{
+					"aborted": false,
+					"alien": [
+						"929:zhongyan:commander"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.000247,
+					"dmg": 2482872.0,
+					"enemyAtk": [
+						168928
+					],
+					"enemyDef": [
+						[
+							13182,
+							13182
+						]
+					],
+					"enemyHp": 12960000.0,
+					"lost": false,
+					"members": [
+						3,
+						32,
+						115,
+						45
+					],
+					"party": [
+						3,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							9896,
+							10458
+						],
+						[
+							14856,
+							6810
+						],
+						[
+							7364,
+							15672
+						],
+						[
+							2348,
+							2280
+						]
+					],
+					"partyHp": [
+						413038,
+						431858,
+						456679,
+						94050
+					],
+					"rng": 100031,
+					"swap": {},
+					"team": "原队",
+					"turns": 8,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"535:zhongyan:pyro"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.000247,
+					"dmg": 3333911.6,
+					"enemyAtk": [
+						237300
+					],
+					"enemyDef": [
+						[
+							15892,
+							15892
+						]
+					],
+					"enemyHp": 12960000.0,
+					"lost": false,
+					"members": [
+						3,
+						32,
+						115,
+						45
+					],
+					"party": [
+						3,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							9896,
+							10458
+						],
+						[
+							14856,
+							6810
+						],
+						[
+							7364,
+							15672
+						],
+						[
+							2348,
+							2280
+						]
+					],
+					"partyHp": [
+						413038,
+						431858,
+						456679,
+						94050
+					],
+					"rng": 200031,
+					"swap": {},
+					"team": "原队",
+					"turns": 5,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"929:zhongyan:commander"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.000247,
+					"dmg": 3093918.0,
+					"enemyAtk": [
+						287578
+					],
+					"enemyDef": [
+						[
+							21128,
+							21128
+						]
+					],
+					"enemyHp": 12960000.0,
+					"lost": false,
+					"members": [
+						3,
+						32,
+						115,
+						45
+					],
+					"party": [
+						3,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							9896,
+							10458
+						],
+						[
+							14856,
+							6810
+						],
+						[
+							7364,
+							15672
+						],
+						[
+							2348,
+							2280
+						]
+					],
+					"partyHp": [
+						413038,
+						431858,
+						456679,
+						94050
+					],
+					"rng": 300031,
+					"swap": {},
+					"team": "原队",
+					"turns": 7,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"929:zhongyan:commander"
+					],
+					"alive": 2,
+					"allWeak": true,
+					"atkScale": 0.000247,
+					"dmg": 938210.214285714,
+					"enemyAtk": [
+						287578
+					],
+					"enemyDef": [
+						[
+							21128,
+							21128
+						]
+					],
+					"enemyHp": 12960000.0,
+					"lost": false,
+					"members": [
+						32,
+						49,
+						53,
+						81
+					],
+					"party": [
+						32,
+						49,
+						53,
+						81
+					],
+					"partyAtk": [
+						[
+							14436,
+							6810
+						],
+						[
+							1520,
+							1520
+						],
+						[
+							1520,
+							1520
+						],
+						[
+							5212,
+							10955
+						]
+					],
+					"partyHp": [
+						431858,
+						34200,
+						34200,
+						374946
+					],
+					"rng": 100031,
+					"swap": {},
+					"team": "随机1",
+					"turns": 28,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"929:zhongyan:pyro"
+					],
+					"alive": 2,
+					"allWeak": true,
+					"atkScale": 0.000247,
+					"dmg": 1037455.24,
+					"enemyAtk": [
+						237300
+					],
+					"enemyDef": [
+						[
+							15892,
+							15892
+						]
+					],
+					"enemyHp": 12960000.0,
+					"lost": false,
+					"members": [
+						32,
+						49,
+						53,
+						81
+					],
+					"party": [
+						32,
+						49,
+						53,
+						81
+					],
+					"partyAtk": [
+						[
+							14436,
+							6810
+						],
+						[
+							1520,
+							1520
+						],
+						[
+							1520,
+							1520
+						],
+						[
+							5212,
+							10955
+						]
+					],
+					"partyHp": [
+						431858,
+						34200,
+						34200,
+						374946
+					],
+					"rng": 200031,
+					"swap": {},
+					"team": "随机1",
+					"turns": 25,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"535:zhongyan:commander"
+					],
+					"alive": 2,
+					"allWeak": true,
+					"atkScale": 0.000247,
+					"dmg": 914959.0,
+					"enemyAtk": [
+						355950
+					],
+					"enemyDef": [
+						[
+							23836,
+							23836
+						]
+					],
+					"enemyHp": 12960000.0,
+					"lost": false,
+					"members": [
+						32,
+						49,
+						53,
+						81
+					],
+					"party": [
+						32,
+						49,
+						53,
+						81
+					],
+					"partyAtk": [
+						[
+							14436,
+							6810
+						],
+						[
+							1520,
+							1520
+						],
+						[
+							1520,
+							1520
+						],
+						[
+							5212,
+							10955
+						]
+					],
+					"partyHp": [
+						431858,
+						34200,
+						34200,
+						374946
+					],
+					"rng": 300031,
+					"swap": {},
+					"team": "随机1",
+					"turns": 20,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"535:zhongyan:commander"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.000247,
+					"dmg": 88181.9166666667,
+					"enemyAtk": [
+						484092
+					],
+					"enemyDef": [
+						[
+							32418,
+							32418
+						]
+					],
+					"enemyHp": 12960000.0,
+					"lost": true,
+					"members": [
+						19,
+						49,
+						45,
+						1
+					],
+					"party": [
+						19,
+						49,
+						45,
+						1
+					],
+					"partyAtk": [
+						[
+							2394,
+							2394
+						],
+						[
+							1520,
+							1520
+						],
+						[
+							2280,
+							2280
+						],
+						[
+							1520,
+							1520
+						]
+					],
+					"partyHp": [
+						98753,
+						34200,
+						94050,
+						34200
+					],
+					"rng": 100031,
+					"swap": {},
+					"team": "随机2",
+					"turns": 12,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"535:zhongyan:pyro"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.000247,
+					"dmg": 127049.888888889,
+					"enemyAtk": [
+						322728
+					],
+					"enemyDef": [
+						[
+							21612,
+							21612
+						]
+					],
+					"enemyHp": 12960000.0,
+					"lost": true,
+					"members": [
+						19,
+						49,
+						45,
+						1
+					],
+					"party": [
+						19,
+						49,
+						45,
+						1
+					],
+					"partyAtk": [
+						[
+							2394,
+							2394
+						],
+						[
+							1520,
+							1520
+						],
+						[
+							2280,
+							2280
+						],
+						[
+							1520,
+							1520
+						]
+					],
+					"partyHp": [
+						98753,
+						34200,
+						94050,
+						34200
+					],
+					"rng": 200031,
+					"swap": {},
+					"team": "随机2",
+					"turns": 18,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"535:zhongyan:commander"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.000247,
+					"dmg": 120839.5,
+					"enemyAtk": [
+						484092
+					],
+					"enemyDef": [
+						[
+							22304,
+							29176
+						]
+					],
+					"enemyHp": 12960000.0,
+					"lost": true,
+					"members": [
+						19,
+						49,
+						45,
+						1
+					],
+					"party": [
+						19,
+						49,
+						45,
+						1
+					],
+					"partyAtk": [
+						[
+							2394,
+							2394
+						],
+						[
+							1520,
+							1520
+						],
+						[
+							2280,
+							2280
+						],
+						[
+							1520,
+							1520
+						]
+					],
+					"partyHp": [
+						98753,
+						34200,
+						94050,
+						34200
+					],
+					"rng": 300031,
+					"swap": {},
+					"team": "随机2",
+					"turns": 12,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"929:zhongyan:commander"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.000247,
+					"dmg": 2358653.91666667,
+					"enemyAtk": [
+						168928
+					],
+					"enemyDef": [
+						[
+							13182,
+							13182
+						]
+					],
+					"enemyHp": 12960000.0,
+					"lost": false,
+					"members": [
+						115,
+						3,
+						32,
+						81
+					],
+					"party": [
+						115,
+						3,
+						32,
+						81
+					],
+					"partyAtk": [
+						[
+							7364,
+							15672
+						],
+						[
+							9896,
+							10458
+						],
+						[
+							14856,
+							6810
+						],
+						[
+							5368,
+							10955
+						]
+					],
+					"partyHp": [
+						456679,
+						413038,
+						431858,
+						374946
+					],
+					"rng": 100031,
+					"swap": {},
+					"team": "随机3",
+					"turns": 12,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"929:zhongyan:pyro"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.000247,
+					"dmg": 3056032.71428571,
+					"enemyAtk": [
+						237300
+					],
+					"enemyDef": [
+						[
+							15892,
+							15892
+						]
+					],
+					"enemyHp": 12960000.0,
+					"lost": false,
+					"members": [
+						115,
+						3,
+						32,
+						81
+					],
+					"party": [
+						115,
+						3,
+						32,
+						81
+					],
+					"partyAtk": [
+						[
+							7364,
+							15672
+						],
+						[
+							9896,
+							10458
+						],
+						[
+							14856,
+							6810
+						],
+						[
+							5368,
+							10955
+						]
+					],
+					"partyHp": [
+						456679,
+						413038,
+						431858,
+						374946
+					],
+					"rng": 200031,
+					"swap": {},
+					"team": "随机3",
+					"turns": 7,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"535:zhongyan:commander"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.000247,
+					"dmg": 2550924.625,
+					"enemyAtk": [
+						237300
+					],
+					"enemyDef": [
+						[
+							15892,
+							15892
+						]
+					],
+					"enemyHp": 12960000.0,
+					"lost": false,
+					"members": [
+						115,
+						3,
+						32,
+						81
+					],
+					"party": [
+						115,
+						3,
+						32,
+						81
+					],
+					"partyAtk": [
+						[
+							7364,
+							15672
+						],
+						[
+							9896,
+							10458
+						],
+						[
+							14856,
+							6810
+						],
+						[
+							5368,
+							10955
+						]
+					],
+					"partyHp": [
+						456679,
+						413038,
+						431858,
+						374946
+					],
+					"rng": 300031,
+					"swap": {},
+					"team": "随机3",
+					"turns": 8,
+					"won": true
+				}
+			],
+			"teams": 12,
+			"troop": 467,
+			"turns": 12.0,
+			"won": 9
+		},
+		{
+			"atkScale": 0.0000196,
+			"dmg": 338251.9125,
+			"enemyHp": 1976000.0,
+			"floor": 32,
+			"per": [
+				{
+					"aborted": false,
+					"alien": [
+						"536:zhongyan:commander"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.0000196,
+					"dmg": 591811.2,
+					"enemyAtk": [
+						685300
+					],
+					"enemyDef": [
+						[
+							16930,
+							16930
+						]
+					],
+					"enemyHp": 1976000.0,
+					"lost": false,
+					"members": [
+						3,
+						32,
+						115,
+						45
+					],
+					"party": [
+						3,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							8230,
+							11076
+						],
+						[
+							3135,
+							2850
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							2280,
+							2280
+						]
+					],
+					"partyHp": [
+						359004,
+						126113,
+						103455,
+						94050
+					],
+					"rng": 100032,
+					"swap": {},
+					"team": "原队",
+					"turns": 5,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"536:zhongyan:pyro"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.0000196,
+					"dmg": 716529.75,
+					"enemyAtk": [
+						685300
+					],
+					"enemyDef": [
+						[
+							16930,
+							16930
+						]
+					],
+					"enemyHp": 1976000.0,
+					"lost": false,
+					"members": [
+						3,
+						32,
+						115,
+						45
+					],
+					"party": [
+						3,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							8230,
+							11076
+						],
+						[
+							3135,
+							2850
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							2280,
+							2280
+						]
+					],
+					"partyHp": [
+						359004,
+						126113,
+						103455,
+						94050
+					],
+					"rng": 200032,
+					"swap": {},
+					"team": "原队",
+					"turns": 4,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"929:zhongyan:fervor"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.0000196,
+					"dmg": 828962.142857143,
+					"enemyAtk": [
+						685300
+					],
+					"enemyDef": [
+						[
+							16930,
+							16930
+						]
+					],
+					"enemyHp": 1976000.0,
+					"lost": false,
+					"members": [
+						3,
+						32,
+						115,
+						45
+					],
+					"party": [
+						3,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							8230,
+							11076
+						],
+						[
+							3135,
+							2850
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							2280,
+							2280
+						]
+					],
+					"partyHp": [
+						359004,
+						126113,
+						103455,
+						94050
+					],
+					"rng": 300032,
+					"swap": {},
+					"team": "原队",
+					"turns": 7,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"536:zhongyan:commander"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.0000196,
+					"dmg": 38843.75,
+					"enemyAtk": [
+						1398012
+					],
+					"enemyDef": [
+						[
+							23762,
+							31082
+						]
+					],
+					"enemyHp": 1976000.0,
+					"lost": true,
+					"members": [
+						115,
+						53,
+						19,
+						81
+					],
+					"party": [
+						115,
+						53,
+						19,
+						81
+					],
+					"partyAtk": [
+						[
+							2697,
+							2618
+						],
+						[
+							1566,
+							1520
+						],
+						[
+							4176,
+							14468
+						],
+						[
+							2035,
+							1976
+						]
+					],
+					"partyHp": [
+						103455,
+						34200,
+						380552,
+						49400
+					],
+					"rng": 100032,
+					"swap": {},
+					"team": "随机1",
+					"turns": 16,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"536:zhongyan:pyro"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.0000196,
+					"dmg": 46887.7692307692,
+					"enemyAtk": [
+						932008
+					],
+					"enemyDef": [
+						[
+							23024,
+							23024
+						]
+					],
+					"enemyHp": 1976000.0,
+					"lost": true,
+					"members": [
+						115,
+						53,
+						19,
+						81
+					],
+					"party": [
+						115,
+						53,
+						19,
+						81
+					],
+					"partyAtk": [
+						[
+							2697,
+							2618
+						],
+						[
+							1566,
+							1520
+						],
+						[
+							4176,
+							14468
+						],
+						[
+							2035,
+							1976
+						]
+					],
+					"partyHp": [
+						103455,
+						34200,
+						380552,
+						49400
+					],
+					"rng": 200032,
+					"swap": {},
+					"team": "随机1",
+					"turns": 13,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"536:zhongyan:fervor"
+					],
+					"alive": 1,
+					"allWeak": false,
+					"atkScale": 0.0000196,
+					"dmg": 35236.475,
+					"enemyAtk": [
+						932008
+					],
+					"enemyDef": [
+						[
+							14736,
+							23024
+						]
+					],
+					"enemyHp": 1976000.0,
+					"lost": false,
+					"members": [
+						115,
+						53,
+						19,
+						81
+					],
+					"party": [
+						115,
+						53,
+						19,
+						81
+					],
+					"partyAtk": [
+						[
+							2697,
+							2618
+						],
+						[
+							1566,
+							1520
+						],
+						[
+							4176,
+							14468
+						],
+						[
+							2035,
+							1976
+						]
+					],
+					"partyHp": [
+						103455,
+						34200,
+						380552,
+						49400
+					],
+					"rng": 300032,
+					"swap": {},
+					"team": "随机1",
+					"turns": 40,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"536:zhongyan:commander"
+					],
+					"alive": 0,
+					"allWeak": true,
+					"atkScale": 0.0000196,
+					"dmg": 53891.0,
+					"enemyAtk": [
+						1398012
+					],
+					"enemyDef": [
+						[
+							22104,
+							34536
+						]
+					],
+					"enemyHp": 1976000.0,
+					"lost": true,
+					"members": [
+						53,
+						32,
+						49,
+						19
+					],
+					"party": [
+						53,
+						32,
+						49,
+						19
+					],
+					"partyAtk": [
+						[
+							1566,
+							1520
+						],
+						[
+							3229,
+							2850
+						],
+						[
+							8353,
+							4119
+						],
+						[
+							4176,
+							14468
+						]
+					],
+					"partyHp": [
+						34200,
+						126113,
+						262552,
+						380552
+					],
+					"rng": 100032,
+					"swap": {},
+					"team": "随机2",
+					"turns": 17,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"536:zhongyan:pyro"
+					],
+					"alive": 0,
+					"allWeak": true,
+					"atkScale": 0.0000196,
+					"dmg": 60643.5,
+					"enemyAtk": [
+						932008
+					],
+					"enemyDef": [
+						[
+							23024,
+							23024
+						]
+					],
+					"enemyHp": 1976000.0,
+					"lost": true,
+					"members": [
+						53,
+						32,
+						49,
+						19
+					],
+					"party": [
+						53,
+						32,
+						49,
+						19
+					],
+					"partyAtk": [
+						[
+							1566,
+							1520
+						],
+						[
+							3229,
+							2850
+						],
+						[
+							8353,
+							4119
+						],
+						[
+							4176,
+							14468
+						]
+					],
+					"partyHp": [
+						34200,
+						126113,
+						262552,
+						380552
+					],
+					"rng": 200032,
+					"swap": {},
+					"team": "随机2",
+					"turns": 14,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"536:zhongyan:fervor"
+					],
+					"alive": 1,
+					"allWeak": true,
+					"atkScale": 0.0000196,
+					"dmg": 84692.625,
+					"enemyAtk": [
+						932008
+					],
+					"enemyDef": [
+						[
+							14736,
+							23024
+						]
+					],
+					"enemyHp": 1976000.0,
+					"lost": false,
+					"members": [
+						53,
+						32,
+						49,
+						19
+					],
+					"party": [
+						53,
+						32,
+						49,
+						19
+					],
+					"partyAtk": [
+						[
+							1566,
+							1520
+						],
+						[
+							3229,
+							2850
+						],
+						[
+							8353,
+							4119
+						],
+						[
+							4176,
+							14468
+						]
+					],
+					"partyHp": [
+						34200,
+						126113,
+						262552,
+						380552
+					],
+					"rng": 300032,
+					"swap": {},
+					"team": "随机2",
+					"turns": 40,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"929:zhongyan:commander"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.0000196,
+					"dmg": 930488.857142857,
+					"enemyAtk": [
+						1104618
+					],
+					"enemyDef": [
+						[
+							27586,
+							27586
+						]
+					],
+					"enemyHp": 1976000.0,
+					"lost": false,
+					"members": [
+						1,
+						19,
+						3,
+						49
+					],
+					"party": [
+						1,
+						19,
+						3,
+						49
+					],
+					"partyAtk": [
+						[
+							9808,
+							7133
+						],
+						[
+							4176,
+							14468
+						],
+						[
+							8459,
+							11076
+						],
+						[
+							8353,
+							4119
+						]
+					],
+					"partyHp": [
+						387409,
+						380552,
+						359004,
+						262552
+					],
+					"rng": 100032,
+					"swap": {},
+					"team": "随机3",
+					"turns": 7,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"536:zhongyan:pyro"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.0000196,
+					"dmg": 1498540.5,
+					"enemyAtk": [
+						685300
+					],
+					"enemyDef": [
+						[
+							16930,
+							16930
+						]
+					],
+					"enemyHp": 1976000.0,
+					"lost": false,
+					"members": [
+						1,
+						19,
+						3,
+						49
+					],
+					"party": [
+						1,
+						19,
+						3,
+						49
+					],
+					"partyAtk": [
+						[
+							9808,
+							7133
+						],
+						[
+							4176,
+							14468
+						],
+						[
+							8459,
+							11076
+						],
+						[
+							8353,
+							4119
+						]
+					],
+					"partyHp": [
+						387409,
+						380552,
+						359004,
+						262552
+					],
+					"rng": 200032,
+					"swap": {},
+					"team": "随机3",
+					"turns": 2,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"929:zhongyan:fervor"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.0000196,
+					"dmg": 1482180.5,
+					"enemyAtk": [
+						685300
+					],
+					"enemyDef": [
+						[
+							16930,
+							16930
+						]
+					],
+					"enemyHp": 1976000.0,
+					"lost": false,
+					"members": [
+						1,
+						19,
+						3,
+						49
+					],
+					"party": [
+						1,
+						19,
+						3,
+						49
+					],
+					"partyAtk": [
+						[
+							9808,
+							7133
+						],
+						[
+							4176,
+							14468
+						],
+						[
+							8459,
+							11076
+						],
+						[
+							8353,
+							4119
+						]
+					],
+					"partyHp": [
+						387409,
+						380552,
+						359004,
+						262552
+					],
+					"rng": 300032,
+					"swap": {},
+					"team": "随机3",
+					"turns": 4,
+					"won": true
+				}
+			],
+			"teams": 12,
+			"troop": 468,
+			"turns": 10.0,
+			"won": 6
+		},
+		{
+			"atkScale": 0.00001,
+			"dmg": 208660.458333333,
+			"enemyHp": 920000.0,
+			"floor": 33,
+			"per": [
+				{
+					"aborted": false,
+					"alien": [
+						"537:zhongyan:fervor"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.00001,
+					"dmg": 253348.0,
+					"enemyAtk": [
+						2645300
+					],
+					"enemyDef": [
+						[
+							17970,
+							17970
+						]
+					],
+					"enemyHp": 920000.0,
+					"lost": false,
+					"members": [
+						3,
+						32,
+						115,
+						45
+					],
+					"party": [
+						3,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							2869,
+							2869
+						],
+						[
+							12493,
+							9695
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							6404,
+							14127
+						]
+					],
+					"partyHp": [
+						110979,
+						469361,
+						103455,
+						415162
+					],
+					"rng": 100033,
+					"swap": {},
+					"team": "原队",
+					"turns": 5,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"930:zhongyan:pyro"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.00001,
+					"dmg": 113916.666666667,
+					"enemyAtk": [
+						3597608
+					],
+					"enemyDef": [
+						[
+							9778,
+							21996
+						]
+					],
+					"enemyHp": 920000.0,
+					"lost": true,
+					"members": [
+						3,
+						32,
+						115,
+						45
+					],
+					"party": [
+						3,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							2869,
+							2869
+						],
+						[
+							12493,
+							9695
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							6404,
+							14127
+						]
+					],
+					"partyHp": [
+						110979,
+						469361,
+						103455,
+						415162
+					],
+					"rng": 200033,
+					"swap": {},
+					"team": "原队",
+					"turns": 15,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"930:zhongyan:fervor"
+					],
+					"alive": 2,
+					"allWeak": false,
+					"atkScale": 0.00001,
+					"dmg": 238864.0,
+					"enemyAtk": [
+						2645300
+					],
+					"enemyDef": [
+						[
+							17970,
+							17970
+						]
+					],
+					"enemyHp": 920000.0,
+					"lost": false,
+					"members": [
+						3,
+						32,
+						115,
+						45
+					],
+					"party": [
+						3,
+						32,
+						115,
+						45
+					],
+					"partyAtk": [
+						[
+							2869,
+							2869
+						],
+						[
+							12493,
+							9695
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							6404,
+							14127
+						]
+					],
+					"partyHp": [
+						110979,
+						469361,
+						103455,
+						415162
+					],
+					"rng": 300033,
+					"swap": {},
+					"team": "原队",
+					"turns": 8,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"930:zhongyan:fervor"
+					],
+					"alive": 2,
+					"allWeak": false,
+					"atkScale": 0.00001,
+					"dmg": 175966.466666667,
+					"enemyAtk": [
+						2645300
+					],
+					"enemyDef": [
+						[
+							17970,
+							17970
+						]
+					],
+					"enemyHp": 920000.0,
+					"lost": false,
+					"members": [
+						149,
+						53,
+						115,
+						32
+					],
+					"party": [
+						149,
+						53,
+						115,
+						32
+					],
+					"partyAtk": [
+						[
+							6007,
+							6718
+						],
+						[
+							1566,
+							1520
+						],
+						[
+							2697,
+							2618
+						],
+						[
+							12856,
+							9695
+						]
+					],
+					"partyHp": [
+						270881,
+						34200,
+						103455,
+						469361
+					],
+					"rng": 100033,
+					"swap": {},
+					"team": "随机1",
+					"turns": 15,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"537:zhongyan:pyro"
+					],
+					"alive": 2,
+					"allWeak": false,
+					"atkScale": 0.00001,
+					"dmg": 233327.428571429,
+					"enemyAtk": [
+						2645300
+					],
+					"enemyDef": [
+						[
+							17970,
+							17970
+						]
+					],
+					"enemyHp": 920000.0,
+					"lost": false,
+					"members": [
+						149,
+						53,
+						115,
+						32
+					],
+					"party": [
+						149,
+						53,
+						115,
+						32
+					],
+					"partyAtk": [
+						[
+							6007,
+							6718
+						],
+						[
+							1566,
+							1520
+						],
+						[
+							2697,
+							2618
+						],
+						[
+							12856,
+							9695
+						]
+					],
+					"partyHp": [
+						270881,
+						34200,
+						103455,
+						469361
+					],
+					"rng": 200033,
+					"swap": {},
+					"team": "随机1",
+					"turns": 7,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"537:zhongyan:fervor"
+					],
+					"alive": 2,
+					"allWeak": false,
+					"atkScale": 0.00001,
+					"dmg": 174692.13,
+					"enemyAtk": [
+						2645300
+					],
+					"enemyDef": [
+						[
+							17970,
+							17970
+						]
+					],
+					"enemyHp": 920000.0,
+					"lost": false,
+					"members": [
+						149,
+						53,
+						115,
+						32
+					],
+					"party": [
+						149,
+						53,
+						115,
+						32
+					],
+					"partyAtk": [
+						[
+							6007,
+							6718
+						],
+						[
+							1566,
+							1520
+						],
+						[
+							2697,
+							2618
+						],
+						[
+							12856,
+							9695
+						]
+					],
+					"partyHp": [
+						270881,
+						34200,
+						103455,
+						469361
+					],
+					"rng": 300033,
+					"swap": {},
+					"team": "随机1",
+					"turns": 10,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"537:zhongyan:fervor"
+					],
+					"alive": 3,
+					"allWeak": false,
+					"atkScale": 0.00001,
+					"dmg": 216585.166666667,
+					"enemyAtk": [
+						2645300
+					],
+					"enemyDef": [
+						[
+							17970,
+							17970
+						]
+					],
+					"enemyHp": 920000.0,
+					"lost": false,
+					"members": [
+						19,
+						32,
+						115,
+						53
+					],
+					"party": [
+						19,
+						32,
+						115,
+						53
+					],
+					"partyAtk": [
+						[
+							2394,
+							2394
+						],
+						[
+							12493,
+							9695
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							1520,
+							1520
+						]
+					],
+					"partyHp": [
+						98753,
+						469361,
+						103455,
+						34200
+					],
+					"rng": 100033,
+					"swap": {},
+					"team": "随机2",
+					"turns": 6,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"537:zhongyan:pyro"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.00001,
+					"dmg": 135135.428571429,
+					"enemyAtk": [
+						3280172
+					],
+					"enemyDef": [
+						[
+							22282,
+							22282
+						]
+					],
+					"enemyHp": 920000.0,
+					"lost": true,
+					"members": [
+						19,
+						32,
+						115,
+						53
+					],
+					"party": [
+						19,
+						32,
+						115,
+						53
+					],
+					"partyAtk": [
+						[
+							2394,
+							2394
+						],
+						[
+							12493,
+							9695
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							1520,
+							1520
+						]
+					],
+					"partyHp": [
+						98753,
+						469361,
+						103455,
+						34200
+					],
+					"rng": 200033,
+					"swap": {},
+					"team": "随机2",
+					"turns": 7,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"930:zhongyan:fervor"
+					],
+					"alive": 0,
+					"allWeak": false,
+					"atkScale": 0.00001,
+					"dmg": 161154.384615385,
+					"enemyAtk": [
+						3597608
+					],
+					"enemyDef": [
+						[
+							24440,
+							24440
+						]
+					],
+					"enemyHp": 920000.0,
+					"lost": true,
+					"members": [
+						19,
+						32,
+						115,
+						53
+					],
+					"party": [
+						19,
+						32,
+						115,
+						53
+					],
+					"partyAtk": [
+						[
+							2394,
+							2394
+						],
+						[
+							12493,
+							9695
+						],
+						[
+							2618,
+							2618
+						],
+						[
+							1520,
+							1520
+						]
+					],
+					"partyHp": [
+						98753,
+						469361,
+						103455,
+						34200
+					],
+					"rng": 300033,
+					"swap": {},
+					"team": "随机2",
+					"turns": 13,
+					"won": false
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"930:zhongyan:fervor"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.00001,
+					"dmg": 259535.714285714,
+					"enemyAtk": [
+						2645300
+					],
+					"enemyDef": [
+						[
+							17970,
+							17970
+						]
+					],
+					"enemyHp": 920000.0,
+					"lost": false,
+					"members": [
+						45,
+						32,
+						149,
+						81
+					],
+					"party": [
+						45,
+						32,
+						149,
+						81
+					],
+					"partyAtk": [
+						[
+							6587,
+							14127
+						],
+						[
+							12856,
+							9695
+						],
+						[
+							6007,
+							6718
+						],
+						[
+							6442,
+							9565
+						]
+					],
+					"partyHp": [
+						415162,
+						469361,
+						270881,
+						349088
+					],
+					"rng": 100033,
+					"swap": {},
+					"team": "随机3",
+					"turns": 7,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"930:zhongyan:pyro"
+					],
+					"alive": 4,
+					"allWeak": false,
+					"atkScale": 0.00001,
+					"dmg": 241114.769230769,
+					"enemyAtk": [
+						2645300
+					],
+					"enemyDef": [
+						[
+							17970,
+							17970
+						]
+					],
+					"enemyHp": 920000.0,
+					"lost": false,
+					"members": [
+						45,
+						32,
+						149,
+						81
+					],
+					"party": [
+						45,
+						32,
+						149,
+						81
+					],
+					"partyAtk": [
+						[
+							6587,
+							14127
+						],
+						[
+							12856,
+							9695
+						],
+						[
+							6007,
+							6718
+						],
+						[
+							6442,
+							9565
+						]
+					],
+					"partyHp": [
+						415162,
+						469361,
+						270881,
+						349088
+					],
+					"rng": 200033,
+					"swap": {},
+					"team": "随机3",
+					"turns": 13,
+					"won": true
+				},
+				{
+					"aborted": false,
+					"alien": [
+						"537:zhongyan:fervor"
+					],
+					"alive": 3,
+					"allWeak": false,
+					"atkScale": 0.00001,
+					"dmg": 200735.75,
+					"enemyAtk": [
+						2645300
+					],
+					"enemyDef": [
+						[
+							17970,
+							17970
+						]
+					],
+					"enemyHp": 920000.0,
+					"lost": false,
+					"members": [
+						45,
+						32,
+						149,
+						81
+					],
+					"party": [
+						45,
+						32,
+						149,
+						81
+					],
+					"partyAtk": [
+						[
+							6587,
+							14127
+						],
+						[
+							12856,
+							9695
+						],
+						[
+							6007,
+							6718
+						],
+						[
+							6442,
+							9565
+						]
+					],
+					"partyHp": [
+						415162,
+						469361,
+						270881,
+						349088
+					],
+					"rng": 300033,
+					"swap": {},
+					"team": "随机3",
+					"turns": 8,
+					"won": true
+				}
+			],
+			"teams": 12,
+			"troop": 469,
+			"turns": 8.0,
+			"won": 9
+		}
+	],
+	"turns": 40
+}

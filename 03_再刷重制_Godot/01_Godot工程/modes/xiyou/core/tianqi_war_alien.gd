@@ -10,7 +10,7 @@ extends RefCounted
 ##   层数照设计稿附录避开 4）、号令官（存活时同场所有怪属性 +10／20／30／50%、每回合再动 0／1／1／2 次；化形起被打倒时其他怪各立刻行动一次）、
 ##   烟火师（每次行动火花额外 +1；化形起火花满触发再动时自己多动一次；随机雷电段数没做）。
 ## - 终焉效果（cc/tianqi-alien-finale）：战狂免疫能力值减益（BattleLogic.sequence_buff）；号令官同场每多一只活着的怪自己多再动 1 次（上限 3）；
-##   烟火师火花满时额外对我方全体轰炸一次（攻击×系数×攻÷(攻＋防)，不吃护盾外的减伤）；战意满层那次再动伤害 ×2。
+##   烟火师火花满时额外对我方全体轰炸一次（攻击×系数×攻÷(攻＋防)×出伤倍率，不吃护盾外的减伤）；战意满层那次再动伤害 ×2。
 ##   战意化形起：满层再动时清掉自己一个减益（能力值减益或减益状态）。连击兵这个种类还没做。
 ## - 火花（本线核心计量）：异化怪每行动 +1，满 10（终焉在场时 6）全体异化怪立刻再动一次，火花归零。
 ## - 交锋（线规则）：场上有异化怪时，从第 3 回合起双方伤害每回合 +10%（上限 +100%）。
@@ -19,6 +19,11 @@ extends RefCounted
 ## 开关：XTianqiWarLine.ENABLED（战争线整条）；只认天启篇存档、发行构建里还要 XTianqi.RELEASE_OPEN。没 prepare 的战斗一概不动。
 
 const META := "xwar_alien"
+## O-待定（T394）：终焉烟火师轰炸乘攻击方出伤倍率（XEnemy.output_scale；守层者按层重算的那个，其余敌人是 1 不变），系数读表 finale_bomb。
+## 原来轰炸直接按攻击力算、漏乘倍率：31～33 层守层者攻击 264 万、倍率约 1e-5，普通招每下打我方约 500，轰炸一下每人约 390 万，第 1 回合团灭。
+## 回退：BOMB_SCALE = false（不乘倍率、系数回到原来的 BOMB_LEGACY_COEF）。
+static var BOMB_SCALE := true
+const BOMB_LEGACY_COEF := 1.5
 
 static var _pending := ""
 
@@ -262,13 +267,14 @@ static func after_action(logic, u) -> Array:
 	return take_logs(logic)
 
 
-## 烟火师终焉：对我方全体轰炸一次（同骑士 perform 的口径：攻击×系数×攻÷(攻＋防)，交锋照乘）
+## 烟火师终焉：对我方全体轰炸一次（同骑士 perform 的口径：攻击×系数×攻÷(攻＋防)，交锋照乘；T394 起再乘攻击方出伤倍率）
 static func _bomb(logic, f: Dictionary, e) -> void:
-	var coef := float(kind_info("pyro").get("finale_bomb", 1.5))
+	var coef := float(kind_info("pyro").get("finale_bomb", 16)) if BOMB_SCALE else BOMB_LEGACY_COEF
+	var scale := float(e.output_scale) if BOMB_SCALE and e is XEnemy else 1.0  # T394：同 XDamage.finish 乘守层者出伤倍率
 	var atk: float = maxf(1.0, float(e.atk))
 	var hit := 0
 	for a in logic.alive(logic.actors):
-		var v := floorf(atk * coef * atk / (atk + maxf(0.0, float(a.def))) * clash_mult(logic))
+		var v := floorf(atk * coef * atk / (atk + maxf(0.0, float(a.def))) * clash_mult(logic) * scale)
 		if v <= 0.0:
 			continue
 		var before: float = a.hp

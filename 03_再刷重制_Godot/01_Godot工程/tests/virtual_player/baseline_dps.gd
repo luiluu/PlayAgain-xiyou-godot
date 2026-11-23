@@ -118,6 +118,10 @@ func _ready() -> void:
 				XTianqiSegAlien.ENABLED = false
 			else:
 				XTianqiSegAlien.FORCE_KIND = v
+		elif a == "--bomb-scale=off":
+			XTianqiWarAlien.BOMB_SCALE = false   # T394：终焉烟火师轰炸回到修前（不乘出伤倍率、系数 1.5）
+		elif a.begins_with("--bomb-coef="):
+			XTianqiWarAlien.kind_info("pyro")["finale_bomb"] = float(a.substr(12))   # T394：轰炸系数换成这个数，只改内存里的表
 		elif a == "--add-healer":
 			add_healer = true
 		elif a == "--all-weak":
