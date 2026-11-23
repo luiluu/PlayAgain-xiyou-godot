@@ -304,5 +304,155 @@ class SaveKeyTests(unittest.TestCase):
         self.assertEqual((tool.check(d), d['current'], len(d['keys'])), ('', 2, 2))
 
 
+def _fake_pck_files(files: dict) -> bytes:
+    """构造最小 Godot v3 PCK（发行内容审计.read_files 可解析），只用于离线测试。"""
+    import struct
+    head = b'GDPC' + struct.pack('<IIIIIQ', 3, 4, 7, 2, 2, 0)
+    data, ofs, rows = b'', len(head) + 8 + 64, []
+    for path, blob in files.items():
+        rows.append((path, ofs + len(data), len(blob)))
+        data += blob
+    diroff = len(head) + 8 + 64 + len(data)
+    ent = b''
+    for path, o, n in rows:
+        x = path.encode('utf-8')
+        pad = (-len(x)) % 4
+        ent += struct.pack('<I', len(x) + pad) + x + b'\0' * pad + struct.pack('<QQ', o, n) + b'\0' * 16 + struct.pack('<I', 0)
+    return head + struct.pack('<Q', diroff) + b'\0' * 64 + data + struct.pack('<I', len(rows)) + ent
+
+
+class SaveSealPostCheckTests(unittest.TestCase):
+    """T423：出包后存档封存兜底断言与 --allow-unsealed 开关（不读外部密钥、不把密钥写进日志）。"""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+        self.saved = (M.NO_SAVE_KEY, M.ALLOW_UNSEALED)
+        M.NO_SAVE_KEY = False
+        M.ALLOW_UNSEALED = False
+
+    def tearDown(self):
+        M.NO_SAVE_KEY, M.ALLOW_UNSEALED = self.saved
+        self.tmp.cleanup()
+
+    def _make_artifacts(self, key_blob=None, transfer_blob=b'const FORMAT_SEALED := "kyo-remake-save-sealed-v2"\n') -> Path:
+        out = self.dir / 'out'
+        (out / M.WIN_DIR).mkdir(parents=True, exist_ok=True)
+        files = {}
+        if key_blob is not None:
+            files['res://' + M.SAVE_KEY_DEST] = key_blob
+        if transfer_blob is not None:
+            files['res://modes/xiyou/core/save_transfer.gd'] = transfer_blob
+        pck = _fake_pck_files(files)
+        with zipfile.ZipFile(out / M.MAC_ZIP, 'w') as z:
+            z.writestr('再刷.app/Contents/Resources/再刷.pck', pck)
+        (out / M.WIN_DIR / M.WIN_FILES[1]).write_bytes(pck)
+        with zipfile.ZipFile(out / M.APK, 'w') as z:
+            if key_blob is not None:
+                z.writestr('assets/' + M.SAVE_KEY_DEST, key_blob)
+            if transfer_blob is not None:
+                z.writestr('assets/modes/xiyou/core/save_transfer.gd', transfer_blob)
+        return out
+
+    def test_verify_save_seal_artifacts_passes_all_three(self):
+        key = json.dumps({'current': 1, 'keys': {'1': '11' * 32}}).encode('utf-8')
+        out = self._make_artifacts(key_blob=key)
+        self.assertEqual(M.verify_save_seal_artifacts(out), [])
+
+    def test_verify_save_seal_artifacts_blocks_missing_key_even_with_no_save_key(self):
+        M.NO_SAVE_KEY = True
+        M.ALLOW_UNSEALED = False
+        out = self._make_artifacts(key_blob=None)
+        probs = M.verify_save_seal_artifacts(out)
+        self.assertEqual(len(probs), 3, probs)
+        for msg in probs:
+            self.assertIn('--no-save-key', msg)
+            self.assertIn('--allow-unsealed', msg)
+            self.assertIn('kyo-remake-save-sealed-v2', msg)
+
+    def test_verify_save_seal_artifacts_blocks_bad_key_without_leaking_secret(self):
+        import contextlib
+        import io
+        sentinel = 'deadbeef' * 8
+        bad_key = json.dumps({'current': 999, 'keys': {'1': sentinel}}).encode('utf-8')
+        out = self._make_artifacts(key_blob=bad_key)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            probs = M.verify_save_seal_artifacts(out)
+        self.assertEqual(len(probs), 3, probs)
+        joined = '\n'.join(probs) + '\n' + buf.getvalue()
+        self.assertIn('格式不合格', joined)
+        self.assertNotIn(sentinel, joined)
+        self.assertNotIn(str(M.SAVE_KEY_SRC), joined)
+
+    def test_verify_save_seal_artifacts_blocks_missing_v2_or_disabled_source(self):
+        key = json.dumps({'current': 1, 'keys': {'1': '22' * 32}}).encode('utf-8')
+        out = self._make_artifacts(key_blob=key, transfer_blob=b'const FORMAT := "kyo-remake-save-json-v1"\n')
+        probs = M.verify_save_seal_artifacts(out)
+        self.assertEqual(len(probs), 3, probs)
+        self.assertTrue(all('kyo-remake-save-sealed-v2' in p for p in probs))
+
+        fake_proj = self.dir / 'proj'
+        (fake_proj / 'modes' / 'xiyou' / 'core').mkdir(parents=True)
+        (fake_proj / 'modes' / 'xiyou' / 'core' / 'save_seal.gd').write_text('static var ENABLED := false\n', encoding='utf-8')
+        (fake_proj / 'modes' / 'xiyou' / 'core' / 'save_transfer.gd').write_text('const FORMAT_SEALED := "kyo-remake-save-sealed-v2"\n', encoding='utf-8')
+        out_ok = self._make_artifacts(key_blob=key)
+        probs2 = M.verify_save_seal_artifacts(out_ok, project=fake_proj)
+        self.assertTrue(any('XSaveSeal.ENABLED' in p for p in probs2), probs2)
+
+    def test_allow_unsealed_warns_not_for_players(self):
+        import contextlib
+        import io
+        M.ALLOW_UNSEALED = True
+        out = self._make_artifacts(key_blob=None)
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            probs = M.verify_save_seal_artifacts(out)
+        self.assertEqual(probs, [])
+        self.assertIn('此包不能发给玩家', buf.getvalue())
+
+    def test_cli_no_save_key_requires_allow_unsealed(self):
+        blocked = subprocess.run([sys.executable, str(HERE / '发行出包.py'), '--no-save-key', '--dry-run', '--out', str(self.dir)],
+                                 capture_output=True, text=True)
+        self.assertEqual(blocked.returncode, 1, blocked.stdout + blocked.stderr)
+        self.assertIn('--allow-unsealed', blocked.stdout)
+        self.assertIn('kyo-remake-save-sealed-v2', blocked.stdout)
+
+        allowed = subprocess.run([sys.executable, str(HERE / '发行出包.py'), '--no-save-key', '--allow-unsealed', '--dry-run', '--out', str(self.dir)],
+                                 capture_output=True, text=True)
+        self.assertEqual(allowed.returncode, 0, allowed.stdout + allowed.stderr)
+        self.assertIn('此包不能发给玩家', allowed.stdout)
+
+    def test_smoke_all_forwards_allow_unsealed(self):
+        out = self.dir / 'out'
+        logs = self.dir / 'logs'
+        logs.mkdir(parents=True)
+        saved_run = M.run
+        seen = []
+
+        def fake_run(cmd, log, env=None, timeout=1800):
+            seen.append(cmd)
+            log.write_text('结论：通过（1/1）\n', encoding='utf-8')
+            return 0
+
+        M.run = fake_run
+        try:
+            M.ALLOW_UNSEALED = False
+            M.smoke_all(out, logs)
+            self.assertTrue(all('--allow-unsealed' not in c for c in seen), seen)
+            seen.clear()
+            M.ALLOW_UNSEALED = True
+            M.smoke_all(out, logs)
+            self.assertEqual(len(seen), len(M.SMOKES))
+            self.assertTrue(all('--allow-unsealed' in c for c in seen), seen)
+        finally:
+            M.run = saved_run
+
+    def test_allow_unsealed_keeps_old_releases(self):
+        src = (HERE / '发行出包.py').read_text(encoding='utf-8')
+        tail = src[src.index('ok = all(r[1] for r in rows)'):]
+        self.assertLess(tail.index('if ALLOW_UNSEALED'), tail.index('tidy_old(parent, dev)'))
+
+
 if __name__ == '__main__':
     unittest.main()
