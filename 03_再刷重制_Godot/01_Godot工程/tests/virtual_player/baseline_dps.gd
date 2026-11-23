@@ -138,6 +138,8 @@ func _ready() -> void:
 			XTianqiLedger.set_all_p2(false)   # 伤害加成总账期二归池清场全关（回到期一的单独相乘），开关对照用
 		elif a == "--guardian-heal=off":
 			XTianqiNoX6.GUARDIAN_HEAL = false   # 守层者回血只缩 1/6、不乘重算缩放比（O-469 关）
+		elif a == "--dot-pct=off":
+			XGuardianRework.DOT_PCT = false   # T402：守层者按层单列的持续伤害比例关（22 层毒回到 T080 换算），前后对照用
 		elif a == "--both":
 			both = true
 		elif a.begins_with("--resist="):
@@ -1105,10 +1107,10 @@ func _run_duel_snapshots() -> void:
 			str(per.map(func(r): return int(r.alive))), str(row.atkScale)])
 		if out_path != "":   # T244：每层写一次，长跑被中途停掉也留得下已量的层
 			var fp := FileAccess.open(out_path, FileAccess.WRITE)
-			fp.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "events": events, "turns": turns, "partial": true, "rows": rows}, "\t"))
+			fp.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "dotPct": XGuardianRework.DOT_PCT, "events": events, "turns": turns, "partial": true, "rows": rows}, "\t"))
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
-		fh.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "events": events, "turns": turns, "rows": rows}, "\t"))
+		fh.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "dotPct": XGuardianRework.DOT_PCT, "events": events, "turns": turns, "rows": rows}, "\t"))
 	print("BASELINE_DONE")
 	get_tree().quit(0)

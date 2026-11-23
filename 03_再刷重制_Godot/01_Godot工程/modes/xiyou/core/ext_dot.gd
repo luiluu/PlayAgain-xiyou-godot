@@ -102,6 +102,7 @@ static func _one(logic: XBattleLogic, rc: XResourceContext, b: XBattler, st: Dic
 			return
 		value = float(out.value)
 		value = XTianqiBase.dot_value(id, value, b, program)  # 天启篇期四（总开关关着原样）：常数持续伤害整条换成持有者生命上限的百分比（abs_rescale.json，T081）
+		value = XGuardianRework.dot_pct(id, value, a, b)  # T402（D257）：守层者本身挂的、表里单列的层（22 层三眼娃毒、出血）改按本层比例
 	value = XTianqiTrumpet.dot_value(a, value)  # 天启篇号卷三号：自己上的持续伤害、持续回复 +33%
 	var healing := bool(d.healing)
 	value = value if healing else -value
