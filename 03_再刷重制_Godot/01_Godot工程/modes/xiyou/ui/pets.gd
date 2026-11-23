@@ -63,9 +63,12 @@ var bottom_win: XMVWindow
 var team_win: XMVWindow
 var help_card: XHelpCard
 static var SKILL_CARD_NO_FRAME := true
+## T409：西游档先显示宠物资料，贴图读取和转色在后台完成。
+static var XIYOU_ASYNC_SPRITE := true
 var _status_ops: Array = []
 var _sprite_tex: Texture2D
 var _sprite_sv := false
+var _sprite_request := 0
 var _frame := 0
 var status_cover := -1.0      # 状态窗内容被挖掉的起点（画面 y）；没有窗口盖住时为 720
 
@@ -319,16 +322,46 @@ func _select_pet() -> void:
 	_status_ops = status_ops(XState.current, pet, syn_suffix(pet))
 	_sprite_tex = null
 	_sprite_sv = false
+	_sprite_request += 1
 	if not pet.is_empty():
 		var rec := XDB.rec("Enemies", int(pet.enemy))
 		var side := str(rec.get("meta", {}).get("Sideview Battler", "")).strip_edges()
-		if side != "":
+		if XIYOU_ASYNC_SPRITE and not XTianqi.active(XState.current):
+			var path := XDB.img_path("sv_actors", side) if side != "" else XDB.img_path("sv_enemies", str(rec.get("battlerName", "")))
+			if path != "":
+				_load_pet_sprite(get_tree(), weakref(self), _sprite_request, path, side != "", int(rec.get("battlerHue", 0)))
+		elif side != "":
 			var p := XDB.img_path("sv_actors", side)
 			_sprite_tex = load(p) if p != "" else null
 			_sprite_sv = _sprite_tex != null
 		else:
 			_sprite_tex = XMapTransfer.enemy_texture(rec)
 	_refresh()
+
+
+static func _load_pet_sprite(tree: SceneTree, owner: WeakRef, request: int, path: String, side: bool, hue: int) -> void:
+	if ResourceLoader.load_threaded_request(path, "Texture2D") != OK:
+		return
+	while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+		await tree.process_frame
+	var tex := ResourceLoader.load_threaded_get(path) as Texture2D
+	var page := owner.get_ref() as XPetScene
+	if tex == null or page == null or page._sprite_request != request:
+		return
+	if hue != 0 and not side:
+		var image := tex.get_image()
+		var result := []
+		var job := WorkerThreadPool.add_task(func(): result.append(XMapTransfer.rotate_hue(image, hue)))
+		while not WorkerThreadPool.is_task_completed(job):
+			await tree.process_frame
+		WorkerThreadPool.wait_for_task_completion(job)
+		page = owner.get_ref() as XPetScene
+		if page == null or page._sprite_request != request:
+			return
+		tex = ImageTexture.create_from_image(result[0])
+	page._sprite_tex = tex
+	page._sprite_sv = side
+	page.status_win.canvas.queue_redraw()
 
 
 func _refresh() -> void:

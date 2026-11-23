@@ -181,6 +181,43 @@ var _ghost_knob: Control
 var _ghost_alpha := {}
 ## 测试用：摇杆头画的行走图 [名字, 序号]；空＝取当前地图主角或队长
 static var knob_character_override: Array = []
+## T409：西游档从小窗/后台切回时重挂画布，并以显示状态判定命中。
+static var XIYOU_REATTACH_ON_RESUME := true
+var _reattach_pending := false
+
+
+func _xiyou_resync() -> bool:
+	return XIYOU_REATTACH_ON_RESUME and XState.current != null and not XTianqi.active(XState.current)
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_APPLICATION_RESUMED or what == NOTIFICATION_APPLICATION_FOCUS_IN:
+		_request_reattach()
+
+
+func _viewport_resized() -> void:
+	apply_layout()
+	_request_reattach()
+
+
+func _request_reattach() -> void:
+	if root != null and not _reattach_pending and _xiyou_resync():
+		_reattach_pending = true
+		_reattach_controls.call_deferred()
+
+
+func _reattach_controls() -> void:
+	_reattach_pending = false
+	if not is_inside_tree() or not _xiyou_resync():
+		return
+	release_all()
+	remove_child(root)
+	add_child(root)
+	show()
+	root.show()
+	apply_layout()
+	for control in root.get_children():
+		(control as CanvasItem).queue_redraw()
 
 
 func _ready() -> void:
@@ -232,7 +269,7 @@ func _ready() -> void:
 		platform.virtual_keys_release_requested.connect(release_all)
 	_load()
 	_build_layout_bar()
-	get_viewport().size_changed.connect(apply_layout)
+	get_viewport().size_changed.connect(_viewport_resized)
 	apply_layout()
 	_apply_hidden()
 
@@ -259,9 +296,11 @@ func _panel(rect: Rect2, radius: float, color: Color) -> Panel:
 
 ## 某点落在哪个按键上（"stick"、按键名或 ""）。隐藏时只剩「隐藏按键」能点（照原版 compact）。
 func hit(pos: Vector2) -> String:
+	if _xiyou_resync() and (not is_visible() or not root.is_visible_in_tree() or root.modulate.a <= 0.0 or _menu_hidden):
+		return ""
 	if (rects.hide as Rect2).has_point(pos):
 		return "hide"
-	if hidden:
+	if hidden and not (_xiyou_resync() and layout_editing):
 		return ""
 	if _uses_stick and pos.distance_to(stick_center) <= stick_radius * 1.2:
 		return "stick"

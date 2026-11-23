@@ -26,6 +26,8 @@ static var SKIN_PAGE_V2 := true
 ## T368 卡 G（T254 R9，O-632）回退开关：新皮肤下检索页改成「筛选小块」模板页（XSkinGearSearch：左筛选小块、中通用列表、右详情牌，搜词条点了才弹键盘）；
 ## false＝回到上面 T361 的版式（SKIN_PAGE_V2 照旧管它和网页换皮版）
 static var SKIN_PAGE_R9 := true
+## T409：西游触屏使用可拖动的指定词条列表。桌面沿用 OptionButton。
+static var XIYOU_DRAG_TERM_PICKER := true
 ## 新皮肤版式：筛选面板开着没有（重建页面时保留）
 static var filters_open := false
 
@@ -45,6 +47,19 @@ var _hints: XSkinKeyHints
 var _sort_note: Label
 ## R9 新页（XSkinGearSearch）
 var page: XSkinGearSearch
+
+
+class TermPickerList extends XSkinList:
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+			super._gui_input(event)
+		else:
+			_drag_input(event)
+
+	func _tap(p: Vector2) -> void:
+		var row := item_at(p)
+		if row >= 0:
+			activated.emit(row)
 
 
 static func reset_session() -> void:
@@ -312,7 +327,7 @@ func _render_gear() -> void:
 	items.append(_select("部位", type_options(source), str(filter.type), _on_field.bind("type")))
 	items.append(_select("品质", quality_options(), str(filter.quality), _on_field.bind("quality")))
 	items.append(_select("位置", XGearQuery.SCOPES, str(filter.scope), _on_field.bind("scope")))
-	items.append(_select("指定词条", term_options(source), str(filter.term), _on_term))
+	items.append(_select("指定词条", term_options(source), str(filter.term), _on_term, true))
 	var sort_field := _select("排序", sort_options(source, filter), str(filter.sort), _on_sort)
 	_sort_select = sort_field.get_child(1)
 	items.append(sort_field)
@@ -453,7 +468,7 @@ func _render_gear_skin() -> void:
 	fields.append(_select("部位", type_options(source), str(filter.type), _on_field.bind("type")))
 	fields.append(_select("品质", quality_options(), str(filter.quality), _on_field.bind("quality")))
 	fields.append(_select("位置", XGearQuery.SCOPES, str(filter.scope), _on_field.bind("scope")))
-	fields.append(_select("指定词条", term_options(source), str(filter.term), _on_term))
+	fields.append(_select("指定词条", term_options(source), str(filter.term), _on_term, true))
 	var sort_field := _select("排序", sort_options(source, filter), str(filter.sort), _on_sort)
 	_sort_select = sort_field.get_child(1)
 	fields.append(sort_field)
@@ -591,11 +606,12 @@ func _place_row(row: Array, y: float) -> float:
 
 
 ## label.cq-field：标签 13 号系统色、间距 5、下拉 36 高，宽按最长项（最多 260）
-func _select(label: String, values: Array, value: String, cb: Callable) -> Control:
+func _select(label: String, values: Array, value: String, cb: Callable, term_picker := false) -> Control:
 	var box := Control.new()
 	var l := _fixed(_label(label, 13, SYSTEM), 20.8)
 	box.add_child(l)
-	var s := OptionButton.new()
+	var use_drag := term_picker and XIYOU_DRAG_TERM_PICKER and XPlatform.is_touch() and not XTianqi.active(XState.current)
+	var s: Button = Button.new() if use_drag else OptionButton.new()
 	s.add_theme_font_override("font", _font())
 	s.add_theme_font_size_override("font_size", 17)
 	for k in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
@@ -608,23 +624,28 @@ func _select(label: String, values: Array, value: String, cb: Callable) -> Contr
 	focus.set_expand_margin_all(3)
 	s.add_theme_stylebox_override("focus", focus)
 	s.clip_text = true
-	s.fit_to_longest_item = false
 	var widest := 0.0
 	var font := _font()
+	var selected := -1
 	for i in range(values.size()):
 		var t := str(values[i][1])
-		s.add_item(t.replace("\n", " "), i)
-		s.set_item_metadata(i, str(values[i][0]))
 		widest = maxf(widest, font.get_string_size(t.get_slice("\n", 0), HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x)
 		if str(values[i][0]) == value:
-			s.select(i)
-	if not values.any(func(v): return str(v[0]) == value):
-		s.select(-1)
-	var popup := s.get_popup()
-	popup.add_theme_font_override("font", _font())
-	popup.add_theme_font_size_override("font_size", 17)
-	popup.add_theme_stylebox_override("panel", _box(Color("#1e1f2a"), BUTTON_EDGE, 4, 1, Vector2(4, 4)))
-	s.item_selected.connect(func(i): cb.call(str(s.get_item_metadata(i))))
+			selected = i
+	if use_drag:
+		_install_term_picker(s, values, selected, cb)
+	else:
+		var option := s as OptionButton
+		option.fit_to_longest_item = false
+		for i in values.size():
+			option.add_item(str(values[i][1]).replace("\n", " "), i)
+			option.set_item_metadata(i, str(values[i][0]))
+		option.select(selected)
+		var popup := option.get_popup()
+		popup.add_theme_font_override("font", _font())
+		popup.add_theme_font_size_override("font_size", 17)
+		popup.add_theme_stylebox_override("panel", _box(Color("#1e1f2a"), BUTTON_EDGE, 4, 1, Vector2(4, 4)))
+		option.item_selected.connect(func(i): cb.call(str(option.get_item_metadata(i))))
 	var lw := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
 	s.size = Vector2(minf(260.0, ceilf(widest) + 42.0), 36)
 	s.position = Vector2(ceilf(lw) + 5, 0)
@@ -632,6 +653,35 @@ func _select(label: String, values: Array, value: String, cb: Callable) -> Contr
 	box.add_child(s)
 	box.size = Vector2(s.position.x + s.size.x, 36)
 	return box
+
+
+func _install_term_picker(button: Button, values: Array, selected: int, cb: Callable) -> void:
+	var rows := values.map(func(v): return {"text": str(v[1]).replace("\n", " ")})
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.text = (rows[selected].text + " ▾") if selected >= 0 else "▾"
+	var popup := PopupPanel.new()
+	popup.add_theme_stylebox_override("panel", _box(Color("#1e1f2a"), BUTTON_EDGE, 4, 1, Vector2(4, 4)))
+	button.add_child(popup)
+	var list := TermPickerList.new()
+	popup.add_child(list)
+	list.set_items(rows)
+	popup.window_input.connect(func(event: InputEvent):
+		if (event is InputEventKey or event is InputEventAction or event is InputEventJoypadButton) and list.handle_input(event):
+			XKeyMap.handled(list))
+	list.cancelled.connect(popup.hide)
+	list.activated.connect(func(i: int):
+		popup.hide()
+		cb.call(str(values[i][0])))
+	button.pressed.connect(func():
+		var view := button.get_viewport().get_visible_rect().size
+		var target := button.get_global_rect()
+		var width := minf(maxf(320, target.size.x), view.x)
+		var height := mini(rows.size(), 9) * list.row_height + 8
+		var y := target.end.y if target.end.y + height <= view.y else maxf(0, target.position.y - height)
+		popup.popup(Rect2i(Rect2(Vector2(minf(target.position.x, view.x - width), y), Vector2(width, height))))
+		list.position = Vector2(4, 4)
+		list.size = Vector2(width - 8, height - 8)
+		list.select(maxi(selected, 0), false))
 
 
 func _on_field(v: String, key: String) -> void:

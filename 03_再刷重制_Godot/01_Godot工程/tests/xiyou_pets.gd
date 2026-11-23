@@ -114,6 +114,16 @@ func _setup(ref: Dictionary) -> XState:
 	return s
 
 
+func _check_async_sprite(page: XPetScene) -> void:
+	var started := Time.get_ticks_msec()
+	while page._sprite_tex == null and Time.get_ticks_msec() - started < 2000:
+		await get_tree().process_frame
+	var rec := XDB.rec("Enemies", int(page.current().enemy))
+	var side := str(rec.get("meta", {}).get("Sideview Battler", "")).strip_edges()
+	var expected := XDB.img_path("sv_actors", side) if side != "" else XDB.img_path("sv_enemies", str(rec.get("battlerName", "")))
+	check("async_pet_sprite_loaded", page._sprite_tex != null and page._sprite_tex.resource_path == expected and page._sprite_sv == (side != ""))
+
+
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if not check("fixture_loaded", ref is Dictionary and ref.pets.size() == 3):
@@ -124,6 +134,8 @@ func _run() -> void:
 	check("names", s.pets.list.map(func(p): return XPets.pet_name(s, p)) == ref.pets.map(func(p): return str(p.name)), s.pets.list.map(func(p): return XPets.pet_name(s, p)))
 	var page := XPetScene.new()
 	add_child(page)
+	check("async_pet_data_ready_on_open", not page._status_ops.is_empty())
+	await _check_async_sprite(page)
 	await frames()
 	var rect := func(w: Control) -> Array: return [w.position.x, w.position.y, w.size.x, w.size.y]
 	var geo: Dictionary = ref.geo

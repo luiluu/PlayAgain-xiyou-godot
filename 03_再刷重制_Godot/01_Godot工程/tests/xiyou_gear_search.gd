@@ -39,6 +39,55 @@ func names(rows: Array) -> Array:
 	return rows.map(func(r): return XGearSearch.star_name(r.item))
 
 
+func _touch_dropdown(panel: XGearSearch) -> void:
+	var original := panel.source
+	var sample: Dictionary = original[0].item.duplicate(true)
+	for element in ["物理", "魔法", "火系", "冰系", "雷系", "暗系", "光系"]:
+		for effect in ["伤害", "穿透", "暴击率", "抗性", "减伤"]:
+			sample.note += "\n<pos=APs text=%s%s +3%% size=20>" % [element, effect]
+	panel.source = original + [{"item": sample, "owner": "", "key": "touch-test"}]
+	var opts := XGearSearch.term_options(panel.source)
+	XPlatform.force_mobile = true
+	panel._render_gear()
+	await frames()
+	var popup := panel.find_children("*", "PopupPanel", true, false)[0] as PopupPanel
+	var button := popup.get_parent() as Button
+	var list := popup.get_child(0) as XSkinList
+	button.pressed.emit()
+	await frames()
+	check("term_picker_opens_scrollable", popup.visible and list.scrollable())
+	var start := Vector2(120, 220)
+	var end := Vector2(120, 50)
+	_popup_click(popup, start, true)
+	var drag := InputEventMouseMotion.new()
+	drag.device = InputEvent.DEVICE_ID_EMULATION
+	drag.button_mask = MOUSE_BUTTON_MASK_LEFT
+	drag.position = end
+	drag.relative = end - start
+	popup.push_input(drag, true)
+	_popup_click(popup, end, false)
+	check("term_picker_drag_scrolls_without_select", list.top_row > 0 and XGearSearch.filter.term == "" and popup.visible, list.top_row)
+	await frames()
+	await shot("gear_search_touch_terms")
+	var row := list.item_at(end - list.position)
+	_popup_click(popup, end, true)
+	_popup_click(popup, end, false)
+	check("term_picker_tap_selects_once", row >= 0 and XGearSearch.filter.term == str(opts[row][0]) and not popup.visible, XGearSearch.filter.term)
+	XPlatform.force_mobile = null
+	panel.source = original
+	panel._on_term("")
+	await frames()
+
+
+func _popup_click(popup: PopupPanel, pos: Vector2, pressed: bool) -> void:
+	var click := InputEventMouseButton.new()
+	click.device = InputEvent.DEVICE_ID_EMULATION
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.position = pos
+	click.pressed = pressed
+	popup.push_input(click, true)
+
+
 func _run() -> void:
 	# 拼音比较：Node Intl.Collator('zh-Hans') 的结果（标点 < 数字 < 汉字按拼音 < 拉丁）
 	var words := ["水果刀", "练习剑", "木棒", "Abc", "abc", "1刀", "*刀", "《字典》", "斩月"]
@@ -103,6 +152,7 @@ func _run() -> void:
 	f.term = "暴击率#%"
 	check("term_filter", names(XGearSearch.results(src, f)) == o.term, names(XGearSearch.results(src, f)))
 	check("term_sort_option", XGearSearch.sort_options(src, f).map(func(x): return x[0]) == o.sortOptions)
+	check("affix_count_sort_label", ["count", "词条多 → 少"] in XGearSearch.sort_options(src, f))
 	f.sort = "term"
 	f.sortTerm = "暴击率#%"
 	check("term_sorted", names(XGearSearch.results(src, f)) == o.termSorted, names(XGearSearch.results(src, f)))
@@ -148,6 +198,7 @@ func _run() -> void:
 		and panel._list_scroll.position.is_equal_approx(Vector2(46, 291.8)) and absf(panel._count.position.y - 259) < 0.5,
 		[panel._search.position, panel._search.size, panel._list_scroll.position, panel._count.position])
 	await shot("gear_search_panel")
+	await _touch_dropdown(panel)
 	panel._on_field("斩月", "query")
 	panel._on_sort("name")
 	panel.apply_filter()
