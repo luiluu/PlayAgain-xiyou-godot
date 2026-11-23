@@ -38,7 +38,7 @@
 
 - 依据：Kyo 11-23 事项 34→D262（「先做漩涡三阶段，再开放」）、事项 35（「看完二阶后下一次进大厅就播」「不再做甩出来，徐凤年从天而降」），以及 Kyo 11-23 回归设定（「隐世强者感受到了天地的变化，在追杀异化怪物的时候回归跟随玩家，可以留点关于四阶段的小彩蛋」）。
 - rift3 过场（`modes/xiyou/core/rift.gd`）：Map004 新增事件 EV205「时空漩涡_字幕3」、EV206「时空漩涡_徐凤年3」、EV207「时空漩涡_异化怪3」；触发条件 `RIFT3_CONDITION` 要求 `rift2` 看过、`rift3` 未看过、且非刚播完 `rift2` 的同一次进大厅（新虚拟键 `rift2@thisvisit`，不跟 `CHAIN_AFTER_RIFT1` 走）；先 `CodexWhisper.mark('rift3')` 再播，全存档只播一次。
-- 演出与台词（`XRift.RIFT3_LINES`，已过小A 文字审定稿）：变暗 → `??????` 低语 → 漩涡紫闪震屏 → 异化怪物（原版行走图 Monster 第 6 格，`XLobbyCorruption._update_tint` 按备注 `<codex_rift_alien_mob>` 染幽紫）自上方落至 (14,22) → 白光，徐凤年（`7mobu7` 第 2 格＝角色 152）追杀而下落至 (14,21) → 原版斩击动画 23＋重震＋白闪，怪物消散 → 徐凤年三句（隐世察觉天地气机变化追杀出山／点到四阶化形彩蛋不剧透／随玩家同行）→ 淡出往南 → 灰色小字。不新画美术；截图见 `../交付截图/luiluu_t412/rift3_fall.png`、`../交付截图/luiluu_t412/rift3_strike.png`。
+- 演出与台词（`XRift.RIFT3_LINES`，已过小A 文字审定稿）：变暗 → `??????` 低语 → 漩涡紫闪震屏 → 异化怪物（原版行走图 Monster 第 6 格，`XLobbyCorruption._update_tint` 按备注 `<codex_rift_alien_mob>` 染幽紫）自上方落至 (14,22) → 白光，徐凤年（`7mobu7` 第 2 格＝角色 152）追杀而下落至 (14,21) → 原版斩击动画 23＋重震＋白闪，怪物消散 → 徐凤年三句（隐世察觉天地气机变化追杀出山／点到四阶化形彩蛋不剧透／随玩家同行）→ 淡出往南 → 灰色小字。不新画美术；截图见 `00_项目管理/交付截图/luiluu_t412/rift3_fall.png`、`00_项目管理/交付截图/luiluu_t412/rift3_strike.png`。
 - `XRift.stage()==3` 与虚拟键：`rift3` 看过且 `STAGE2`、`STAGE3` 开着时 `XRift.stage()` 返回 3（供 T411 徐凤年招募／号角门槛读 `XConfig.whisper_seen("rift3")` 或 `XRift.stage() >= 3`）；`XConfig.whisper_seen` 改经 `XRift.is_visit_key` 判虚拟键，`XRift.on_mark` 改为键→进图次数字典。
 - 三阶怪物异化默认关（`modes/xiyou/core/rift_alien.gd`）：新增 `XRiftAlien.STAGE3_ALIEN := false`，`XRift.stage()` 返回 3 时怪物端按 2 算，西游档怪物行为与二阶逐值相同；`STAGE_OVERRIDE` 不受影响。
 - 回退开关：`XRift.STAGE3 = false` 后 `clear_cache()` 不加 EV205～207、`stage()` 不到 3（二阶不变）；`XRiftAlien.STAGE3_ALIEN` 默认 `false`（设为 `true` 才开三阶蚀骨异化）。两项回退支均已由 `xiyou_rift3_xufeng` 覆盖。
@@ -85,4 +85,5 @@
 - `d4f688be2` WIP: T412 漩涡三阶段 rift3：徐凤年追杀异化怪从天而降（Map004 EV205～207）、stage()==3、三阶怪物异化默认关；交付单写明接续（交小A）
 - `e6e7d4b38` T412 审改漩涡三阶段徐凤年过场台词 XRift.RIFT3_LINES
 - `1dedfb674` T412 修 xiyou_hall_intro._settle 等 EV205（rift3）放完再切场景，消除退出协程泄露
-- 本提交：补齐 T412 交付单（变更记录草稿、优化登记草稿、调用方逐处结论、云端选测 run `45148518536`、状态改可合并）
+- `39f29b452` T412 交付单收尾：变更记录草稿、优化登记草稿、调用方结论、云端选测通过 45148518536
+- 本提交：交付单变更记录草稿截图路径改为仓内相对路径（交付自检 0）
