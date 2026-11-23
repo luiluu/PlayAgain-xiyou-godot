@@ -55,13 +55,14 @@ const AWAKEN_TEXT := "苍龙独特技能伤害+125%（雷霆天罚*诛灭+250%�
 const _APS_TAIL := " size=18 color=rgba(255,255,255,1) line=false align=0"
 
 
-## 按原版比的参照测试（xiyou_rules、xiyou_help_card 等）用：漩涡二阶段、苍龙重做、解放三个开关全关并清缓存，数据回到原版
+## 按原版比的参照测试（xiyou_rules、xiyou_help_card 等）用：漩涡二阶段、苍龙重做、徐凤年重做、解放开关全关并清缓存，数据回到原版
 static func original_data() -> void:
 	XRift.STAGE2 = false
 	XRift.clear_cache()
 	REWORK = false
 	FIX_10091_DESC = false
 	clear_cache()
+	XXufeng.original_data()  # T440 西游档徐凤年重做同属「按原版比要关」
 	XImportedBalance.RELEASE_CANGLONG = false
 	XImportedBalance.RELEASE_XUFENG = false  # T411 解放徐凤年同属「按原版比要关」
 
