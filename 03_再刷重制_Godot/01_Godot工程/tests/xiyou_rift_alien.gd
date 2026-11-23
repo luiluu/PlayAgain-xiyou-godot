@@ -79,7 +79,9 @@ func _run() -> void:
 	XRiftAlien.reload_table()
 	# 默认开，测试与玩家同一条路（不按显示后端切）
 	_check("align_default_on", XRiftAlien.ALIGN_LOBBY and XRiftAlien.aligned() and XRiftAlien.first_alien_stage() == 2)
+	_check("stage3_alien_default_on", XRiftAlien.STAGE3_ALIEN)
 	_default_path()
+	_stage3_default()
 	XRiftAlien.ALIGN_LOBBY = false
 	_data()
 	_rules()
@@ -493,3 +495,89 @@ func _default_path() -> void:
 	_check("dp_turns_ran", turns > 0, turns)
 	lg2.end_battle(0)
 	_check("dp_end_clean", not XRiftAlien.active(lg2))
+
+
+## T413：STAGE3_ALIEN 默认开（O-641），不设 STAGE_OVERRIDE、读真 XRift.stage()：
+## rift3 看过前仍二阶；rift3 看过后三阶蚀骨规则生效（稀有、首领、守层者、深渊怪按阶段表）；
+## 天启篇存档零变化；关掉 STAGE3_ALIEN 回到二阶。
+func _stage3_default() -> void:
+	XRiftAlien.STAGE_OVERRIDE = 0
+	var s10 := _plain(10, true)
+	var s15 := _plain(15, true)
+	var s25 := _plain(25, true)
+	var boss_only := func() -> Array: return _enemies(37).slice(2, 3)
+	# 一、rift3 未看过：仍按二阶
+	_check("s3_before_stage2", not XConfig.whisper_seen("rift3") and XRift.stage() == 2 and XRiftAlien.stage() == 2, [XRift.stage(), XRiftAlien.stage()])
+	var g_pre := XRiftAlien.plan(s15, _enemies(69), _const(0.0))
+	_check("s3_before_guard_st2", g_pre.size() == 1 and g_pre[0].tier == "qinran" and XRiftAlien.plan(s15, _enemies(69), _const(0.33)).is_empty(), g_pre)
+	var b_pre := XRiftAlien.plan(s15, boss_only.call(), _const(0.15))
+	_check("s3_before_boss_st2", b_pre.size() == 1 and b_pre[0].tier == "qinran" and XRiftAlien.plan(s15, boss_only.call(), _const(0.22)).is_empty(), b_pre)
+	_check("s3_before_abyss_none", XRiftAlien.plan(s15, _enemies(145), _const(0.0)).is_empty())
+	# 二、rift3 看过后：三阶蚀骨规则生效（stages_aligned["3"]）
+	XConfig.whisper_mark("rift3")
+	_check("s3_after_stage3", XRift.stage() == 3 and XRiftAlien.stage() == 3, [XRift.stage(), XRiftAlien.stage()])
+	# 稀有：15% 侵染，10% 升蚀骨
+	var r_base := XRiftAlien.plan(s15, _enemies(15), _const(0.14))
+	var r_up := XRiftAlien.plan(s15, _enemies(15), _const(0.05))
+	_check("s3_after_rare", r_base.size() == 1 and r_base[0].tier == "qinran" and r_up.size() == 1 and r_up[0].tier == "shigu"
+		and XRiftAlien.plan(s15, _enemies(15), _const(0.15)).is_empty(), [r_base, r_up])
+	# 首领：33% 蚀骨
+	var b_hit := XRiftAlien.plan(s15, boss_only.call(), _const(0.32))
+	_check("s3_after_boss_shigu", b_hit.size() == 1 and b_hit[0].tier == "shigu" and XRiftAlien.plan(s15, boss_only.call(), _const(0.33)).is_empty(), b_hit)
+	# 守层者：100% 按层段（1-10 侵染、11-20 蚀骨、21-30 化形）
+	var g10 := XRiftAlien.plan(s10, _enemies(69), _const(0.99))
+	var g15 := XRiftAlien.plan(s15, _enemies(69), _const(0.99))
+	var g25 := XRiftAlien.plan(s25, _enemies(69), _const(0.99))
+	_check("s3_after_guard_bands", g10.size() == 1 and g10[0].tier == "qinran"
+		and g15.size() == 1 and g15[0].tier == "shigu"
+		and g25.size() == 1 and g25[0].tier == "huaxing", [g10, g15, g25])
+	# 深渊怪：50% 化形
+	var ab_hit := XRiftAlien.plan(s15, _enemies(145), _const(0.49))
+	_check("s3_after_abyss_huaxing", ab_hit.size() == 1 and ab_hit[0].tier == "huaxing" and XRiftAlien.plan(s15, _enemies(145), _const(0.5)).is_empty(), ab_hit)
+	# 真开战（不设 STAGE_OVERRIDE）：15 层守层者必出「蚀骨·」、规则随机流与关异化逐条相同、打几回合到结束不出错
+	XRiftAlien.ENABLED = false
+	var base_lg := XBattleLogic.new()
+	base_lg.setup(69, s15, XBattleRandom.create(SEED, 1))
+	var base_j: Array = base_lg.random.rule.journal.map(func(x): return [x.reason, x.event, x.value])
+	var plain_hp: float = base_lg.enemies[0].mhp
+	base_lg.end_battle(0)
+	XRiftAlien.ENABLED = true
+	var lg3 := XBattleLogic.new()
+	lg3.setup(69, s15, XBattleRandom.create(SEED, 1))
+	var e3: XEnemy = lg3.enemies[0]
+	var u3 := XRiftAlien.unit(lg3, e3)
+	_check("s3_battle_shigu", str(u3.get("tier", "")) == "shigu" and e3.display_name().begins_with("蚀骨·") and XRiftAlien.tint(e3, 0.0).a > 0.0, [u3, e3.display_name()])
+	var want3 := 1.5 * (float(XRiftAlien.kind_info("berserk").mult[1]) if str(u3.get("kind", "")) == "berserk" else 1.0)
+	_check("s3_battle_hp", absf(e3.mhp / plain_hp - want3) < 0.02 and is_equal_approx(e3.hp, e3.mhp), [e3.mhp / plain_hp, want3])
+	_check("s3_battle_rule_stream_same", lg3.random.rule.journal.map(func(x): return [x.reason, x.event, x.value]) == base_j)
+	var turns3 := 0
+	while not lg3.is_over() and turns3 < 8:
+		lg3.run_turn({})
+		turns3 += 1
+	_check("s3_battle_turns_ran", turns3 > 0, turns3)
+	lg3.end_battle(0)
+	_check("s3_battle_end_clean", not XRiftAlien.active(lg3) and not e3.has_meta("tianqi_prefix"))
+	# 三、天启篇存档零变化（rift3 已看过、STAGE3_ALIEN 开着）
+	var ts := _tianqi(15)
+	_check("s3_tianqi_off", not XRiftAlien.on(ts) and XRiftAlien.plan(ts, _enemies(69), _const(0.0)).is_empty() and XRiftAlien.plan(ts, _enemies(145), _const(0.0)).is_empty())
+	XRiftAlien.STAGE3_ALIEN = false
+	var lt_off := XBattleLogic.new()
+	lt_off.setup(69, ts, XBattleRandom.create(SEED, 1))
+	var sig_off := _sig(lt_off)
+	lt_off.end_battle(0)
+	XRiftAlien.STAGE3_ALIEN = true
+	var lt_on := XBattleLogic.new()
+	lt_on.setup(69, ts, XBattleRandom.create(SEED, 1))
+	_check("s3_tianqi_zero_diff", not XRiftAlien.active(lt_on) and not lt_on.enemies[0].has_meta(XRiftAlien.LOOK) and _sig(lt_on) == sig_off)
+	lt_on.end_battle(0)
+	# 四、关掉 STAGE3_ALIEN 回到二阶（rift3 仍在）
+	XRiftAlien.STAGE3_ALIEN = false
+	_check("s3_off_stage2", XRift.stage() == 3 and XRiftAlien.stage() == 2, [XRift.stage(), XRiftAlien.stage()])
+	_check("s3_off_abyss_none", XRiftAlien.plan(s15, _enemies(145), _const(0.0)).is_empty())
+	var g_off := XRiftAlien.plan(s15, _enemies(69), _const(0.0))
+	_check("s3_off_guard_st2", g_off.size() == 1 and g_off[0].tier == "qinran" and XRiftAlien.plan(s15, _enemies(69), _const(0.33)).is_empty(), g_off)
+	var b_off := XRiftAlien.plan(s15, boss_only.call(), _const(0.15))
+	_check("s3_off_boss_st2", b_off.size() == 1 and b_off[0].tier == "qinran" and XRiftAlien.plan(s15, boss_only.call(), _const(0.22)).is_empty(), b_off)
+	XRiftAlien.STAGE3_ALIEN = true
+	(XConfig._values.codexWhisperSeen as Array).erase("rift3")
+	_check("s3_cleanup_stage2", XRift.stage() == 2 and XRiftAlien.stage() == 2)
