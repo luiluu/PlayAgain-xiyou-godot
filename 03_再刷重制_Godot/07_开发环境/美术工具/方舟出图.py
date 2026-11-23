@@ -1,46 +1,51 @@
 #!/usr/bin/env python3
-"""火山方舟（Volcengine Ark）出图与出视频命令行工具。
+"""火山方舟 Agent Plan（Volcengine Ark）出图命令行工具。
 
-直接调用火山方舟 REST 接口（纯 Python 标准库，无第三方 MCP 依赖）：
-- 文生图（txt2img / t2i / 文生图）：POST /api/v3/images/generations（Seedream）
-- 图生图（img2img / i2i / 图生图）：POST /api/v3/images/generations（Seedream，--ref 支持多张本地图）
-- 图生视频（img2vid / i2v / 图生视频）：POST / GET /api/v3/contents/generations/tasks（Seedance，轮询并下载；--first-frame 与 --ref 互斥）
-- 视频续取（fetch / resume / 续取）：GET /api/v3/contents/generations/tasks/{task_id}（续轮询并下载，避免超时/断网重复扣费）
+直接调用火山方舟 Agent Plan REST 接口（纯 Python 标准库，无第三方 MCP 依赖，不装 ark-cli）：
+- 默认 Base URL：https://ark.cn-beijing.volces.com/api/plan/v3
+- 文生图（txt2img / t2i / 文生图）：POST /api/plan/v3/images/generations（Seedream）
+- 图生图（img2img / i2i / 图生图）：POST /api/plan/v3/images/generations（Seedream，--ref 支持多张本地图）
 - 抠绿（--green-key）：按需复用同目录 muse转精灵.py 的 key_mask + despill（此时需 Pillow＋numpy）
+- 图生视频（img2vid / i2v / 图生视频）与视频续取（fetch / resume / 续取）：
+  【默认禁用】订阅不含 Seedance，需另购，地址未知
 
-【安全与格式校验】
-- 钥匙只从 macOS 钥匙串读取，不读环境变量或 .env，不落盘，日志/报错/meta 自动打码。
-- --base-url 仅放行 https://ark.cn-beijing.volces.com 与本地单测地址（127.0.0.1 / localhost），其余一律拒绝。
+【重要：Agent Plan 专属地址与防额外扣费】
+- 必须使用 Agent Plan 前缀 https://ark.cn-beijing.volces.com/api/plan/v3（出图拼 /images/generations，即
+  https://ark.cn-beijing.volces.com/api/plan/v3/images/generations）。
+- 警告：请勿使用 https://ark.cn-beijing.volces.com/api/v3，接入会产生额外费用。
+- 本工具白名单仅放行 https://ark.cn-beijing.volces.com/api/plan/v3 前缀与本地单测地址（127.0.0.1 / localhost），
+  /api/v3 前缀及其他地址一律硬拒绝；不调用任何探测接口。
 - 鉴权请求拒绝自动跟随 30x 重定向且使用 unredirected Authorization 头，防止密钥随跳转外泄。
-- 不抠绿出图会按文件头魔数校验与 --out 扩展名是否一致（Seedream 5.x 自动请求对应 output_format）；不符时自动转格式（Pillow 或 macOS sips），无法转换则报错且不写入伪 PNG。
+- 出图默认 --response-format b64_json（随 API 响应直回字节，避免跨区直连对象存储超时）；选 url 模式下载遇临时故障时仅重试下载，绝不重发生成请求。
+- 不抠绿出图按文件头魔数校验与 --out 扩展名是否一致（Seedream 5.x 自动请求对应 output_format）；不符时自动转格式（Pillow 或 macOS sips），无法转换则报错且不写入伪 PNG。
 
-【开通火山方舟】
-1. 登录火山引擎控制台（https://console.volcengine.com/ark），开通「火山方舟」服务。
-2. 在「模型广场」或「开通管理」里开通所需模型：
-   - 出图：Seedream（如 doubao-seedream-5-5-261028 / doubao-seedream-5-0-pro-260628 / doubao-seedream-4-5-251128）
-   - 视频：Seedance（如 doubao-seedance-2-5-260628 / doubao-seedance-2-0-260128 / doubao-seedance-1-5-pro-251215）
-   （也可创建自定义推理接入点 ep-xxxx，通过 --model 传入。）
-3. 在「API Key 管理」创建 API Key，并在账户内充值按量计费额度。
+【开通与 Agent Plan 配置】
+1. 登录火山引擎控制台（https://console.volcengine.com/ark），开通「火山方舟 Agent Plan」订阅。
+2. 在 Agent Plan 控制台获取专属 API Key（存入 macOS 钥匙串 ark-api-key）。
+3. 控制台确认的视觉接口与模型 ID（原样，无日期后缀）：
+   - Base URL 前缀：https://ark.cn-beijing.volces.com/api/plan/v3
+   - 图片生成完整地址：https://ark.cn-beijing.volces.com/api/plan/v3/images/generations
+   - 视觉模型 ID：
+     * doubao-seedream-5.5（默认）
+     * doubao-seedream-5.0-pro
+     * doubao-seedream-5.0-flash
+   - 视频模型（Seedance）：订阅不含 Seedance，需另购，地址未知（对应子命令已默认禁用）。
 
 【存入 macOS 钥匙串】
-本工具只从 macOS 钥匙串读取钥匙（service 默认 ark-api-key），不读环境变量或 .env 文件，不写盘、不打印原文。
+本工具只从 macOS 钥匙串读取钥匙（service 默认 ark-api-key，请存 Agent Plan 专属 API Key），不读环境变量或 .env 文件，不写盘、不打印原文。
 存入或更新钥匙（终端会提示输入，不会留在命令历史里）：
   security add-generic-password -U -a "$USER" -s ark-api-key -w
 验证钥匙是否存在（不打印内容）：
   security find-generic-password -s ark-api-key >/dev/null && echo "已存入"
 
-【费用参考（人民币，具体以方舟控制台实时刊例为准）】
-- Seedream 文生图／图生图：约 0.22～0.40 元／张（如 5.0 Lite 约 0.22 元起、5.0 Pro 约 0.30 元起）。
-- Seedance 图生视频：按分辨率与时长计费（底层折算 Token），大致折合：
-  480p 约 0.46～0.70 元／秒（4 秒约 2～3 元）；
-  720p 约 0.99～1.50 元／秒（4 秒约 4～6 元）；
-  1080p 约 2.50～3.70 元／秒（4 秒约 10～15 元）。
+【费用说明】
+- Seedream 文生图／图生图：走 Agent Plan 专属地址 https://ark.cn-beijing.volces.com/api/plan/v3/images/generations，计入订阅套餐额度；严禁改走 /api/v3，否则会触发套餐外按量额外扣费（按量参考约 0.22～0.40 元／张）。
+- Seedance 视频：订阅不含 Seedance，需另购，地址与费用以另购控制台为准（本工具视频子命令已默认禁用）。
 
 【常用示例】
   python3 方舟出图.py txt2img --prompt "纯绿底像素风剑客立绘" --out out/role.png --green-key
+  python3 方舟出图.py txt2img --model doubao-seedream-5.0-pro --prompt "纯绿底像素风剑客立绘" --out out/role.png
   python3 方舟出图.py img2img --ref ref1.jpg --ref ref2.png --prompt "拔刀定妆" --out out/m5a.png
-  python3 方舟出图.py img2vid --first-frame out/m5a.png --prompt "拔刀挥砍" --duration 4 --out out/m5a.mp4
-  python3 方舟出图.py fetch --task-id cgt-xxxx --out out/m5a.mp4
 """
 import argparse
 import base64
@@ -58,12 +63,21 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-DEFAULT_BASE_URL = 'https://ark.cn-beijing.volces.com/api/v3'
-ALLOWED_PROD_HOSTS = {'ark.cn-beijing.volces.com'}
+DEFAULT_BASE_URL = 'https://ark.cn-beijing.volces.com/api/plan/v3'
+ALLOWED_PROD_HOST = 'ark.cn-beijing.volces.com'
+ALLOWED_PROD_PATH_PREFIX = '/api/plan/v3'
 ALLOWED_LOCAL_HOSTS = {'127.0.0.1', 'localhost'}
 KEYCHAIN_SERVICE = 'ark-api-key'
-DEFAULT_IMAGE_MODEL = 'doubao-seedream-5-5-261028'
-DEFAULT_VIDEO_MODEL = 'doubao-seedance-2-5-260628'
+DEFAULT_IMAGE_MODEL = 'doubao-seedream-5.5'
+AGENT_PLAN_IMAGE_MODELS = (
+    'doubao-seedream-5.5',
+    'doubao-seedream-5.0-pro',
+    'doubao-seedream-5.0-flash',
+)
+VIDEO_COMMANDS_ENABLED = False
+VIDEO_DISABLED_MESSAGE = '订阅不含 Seedance，需另购，地址未知'
+DEFAULT_DOWNLOAD_RETRIES = 2
+DEFAULT_DOWNLOAD_RETRY_DELAY = 1.5
 
 # 常用比例到 Seedream 2K 像素尺寸的映射（默认 1:1 = 2048x2048）
 SIZE_PRESETS = {
@@ -195,7 +209,7 @@ def detect_image_mime(data, path):
 
 
 def validate_base_url(base_url):
-    """校验 --base-url：仅放行 https://ark.cn-beijing.volces.com 与本地单测地址（127.0.0.1 / localhost）。"""
+    """校验 --base-url：仅放行 https://ark.cn-beijing.volces.com/api/plan/v3 前缀与本机单测地址；/api/v3 前缀一律拒绝。"""
     raw = (base_url or '').strip()
     if not raw:
         raise ArkToolError('--base-url 不能为空。', exit_code=2)
@@ -212,13 +226,30 @@ def validate_base_url(base_url):
     if parsed.query or parsed.fragment:
         raise ArkToolError('--base-url 不允许包含查询参数或锚点。', exit_code=2)
 
-    if host in ALLOWED_PROD_HOSTS:
+    norm_path = (parsed.path or '').rstrip('/')
+    if '..' in norm_path.split('/'):
+        raise ArkToolError(f'--base-url 不允许包含路径穿越片段：{raw}', exit_code=2)
+
+    if norm_path == '/api/v3' or norm_path.startswith('/api/v3/'):
+        raise ArkToolError(
+            f'已拒绝 --base-url {raw}：请勿使用 /api/v3（接入会产生额外费用）。'
+            f'Agent Plan 请使用 {DEFAULT_BASE_URL}。',
+            exit_code=2,
+        )
+
+    if host == ALLOWED_PROD_HOST:
         if scheme != 'https' or (port is not None and port != 443):
             raise ArkToolError(
                 f'--base-url 指向 {host} 时必须使用 https（默认 443 端口），已拒绝：{raw}',
                 exit_code=2,
             )
-        return raw.rstrip('/')
+        if not (norm_path == ALLOWED_PROD_PATH_PREFIX or norm_path.startswith(ALLOWED_PROD_PATH_PREFIX + '/')):
+            raise ArkToolError(
+                f'为防止 API Key 外泄或套餐外额外扣费，--base-url 指向 {ALLOWED_PROD_HOST} 时仅允许 '
+                f'{DEFAULT_BASE_URL} 前缀，已拒绝：{raw}',
+                exit_code=2,
+            )
+        return f'https://{ALLOWED_PROD_HOST}{norm_path}'
 
     if host in ALLOWED_LOCAL_HOSTS:
         if scheme not in ('http', 'https'):
@@ -226,10 +257,16 @@ def validate_base_url(base_url):
         return raw.rstrip('/')
 
     raise ArkToolError(
-        f'为防止 API Key 外泄，--base-url 仅允许 https://ark.cn-beijing.volces.com '
+        f'为防止 API Key 外泄或套餐外额外扣费，--base-url 仅允许 {DEFAULT_BASE_URL} 前缀'
         f'或本地单测地址（127.0.0.1 / localhost），已拒绝：{raw}',
         exit_code=2,
     )
+
+
+def ensure_video_enabled():
+    """视频子命令默认禁用（当前 Agent Plan 订阅不含 Seedance）。"""
+    if not VIDEO_COMMANDS_ENABLED:
+        raise ArkToolError(VIDEO_DISABLED_MESSAGE, exit_code=2)
 
 
 def validate_video_inputs(first_frame, last_frame, refs):
@@ -351,8 +388,16 @@ class ArkClient:
     def _safe(self, text):
         return redact_secret(text, self._api_key)
 
+    def _build_url(self, path):
+        rel = (path or '').lstrip('/')
+        if not rel:
+            return self.base_url
+        if self.base_url.endswith('/' + rel):
+            return self.base_url
+        return f'{self.base_url}/{rel}'
+
     def request_json(self, method, path, payload=None):
-        url = f'{self.base_url}/{path.lstrip("/")}'
+        url = self._build_url(path)
         body = None
         headers = {
             'Accept': 'application/json',
@@ -428,55 +473,90 @@ class ArkClient:
             pass
         return raw_body.strip()[:400]
 
-    def download_file(self, url, dest_path, timeout=None):
-        """下载结果图片／视频（不携带 Authorization 头，避免密钥外泄到对象存储）。"""
+    def download_file(
+        self,
+        url,
+        dest_path,
+        timeout=None,
+        retries=DEFAULT_DOWNLOAD_RETRIES,
+        retry_delay=DEFAULT_DOWNLOAD_RETRY_DELAY,
+        sleep_fn=None,
+    ):
+        """下载结果图片／视频（不携带 Authorization 头；遇临时网络/5xx/429 仅重试下载，不重发生成请求）。"""
+        if sleep_fn is None:
+            sleep_fn = time.sleep
         scheme = (urllib.parse.urlsplit(url).scheme or '').lower()
         if scheme not in ('http', 'https'):
             raise ArkToolError(f'拒绝下载非 http/https 链接（URL：{self._safe(url)}）。')
         dest = Path(dest_path)
         dest.parent.mkdir(parents=True, exist_ok=True)
         dl_timeout = self.http_timeout if timeout is None else float(timeout)
+        max_retries = max(0, int(retries))
         req = urllib.request.Request(url, headers={'User-Agent': 'ark-media-cli/1.0'}, method='GET')
-        tmp_path = None
-        try:
-            with urllib.request.urlopen(req, timeout=dl_timeout) as resp:
-                with tempfile.NamedTemporaryFile(dir=dest.parent, prefix='.ark_dl_', delete=False) as tf:
-                    tmp_path = Path(tf.name)
-                    while True:
-                        chunk = resp.read(65536)
-                        if not chunk:
-                            break
-                        tf.write(chunk)
-            if tmp_path.stat().st_size == 0:
-                raise ArkToolError(f'下载的文件为空（URL：{self._safe(url)}）。')
-            tmp_path.replace(dest)
+
+        for attempt in range(max_retries + 1):
             tmp_path = None
-            return dest
-        except urllib.error.HTTPError as exc:
-            err_body = ''
+            retry_reason = None
             try:
-                err_body = exc.read().decode('utf-8', errors='replace')
-            except Exception:
+                with urllib.request.urlopen(req, timeout=dl_timeout) as resp:
+                    with tempfile.NamedTemporaryFile(dir=dest.parent, prefix='.ark_dl_', delete=False) as tf:
+                        tmp_path = Path(tf.name)
+                        while True:
+                            chunk = resp.read(65536)
+                            if not chunk:
+                                break
+                            tf.write(chunk)
+                if tmp_path.stat().st_size == 0:
+                    raise ArkToolError(f'下载的文件为空（URL：{self._safe(url)}）。')
+                tmp_path.replace(dest)
+                tmp_path = None
+                return dest
+            except urllib.error.HTTPError as exc:
                 err_body = ''
-            lower_body = err_body.lower()
-            is_expired = exc.code in (403, 404, 410) or any(k in lower_body for k in EXPIRED_HINT_KEYWORDS)
-            safe_url = self._safe(url)
-            safe_detail = self._safe(err_body.strip()[:240])
-            if is_expired:
-                raise ArkToolError(
-                    f'下载结果失败（HTTP {exc.code}），下载链接可能已过期或失效（方舟临时链接通常 24 小时后过期）。'
-                    f'URL：{safe_url}' + (f'；详情：{safe_detail}' if safe_detail else '')
-                ) from exc
-            raise ArkToolError(
-                f'下载结果失败（HTTP {exc.code}），URL：{safe_url}' + (f'；详情：{safe_detail}' if safe_detail else '')
-            ) from exc
-        except urllib.error.URLError as exc:
-            raise ArkToolError(f'下载结果网络失败：{self._safe(exc.reason)}') from exc
-        except TimeoutError as exc:
-            raise ArkToolError(f'下载结果超时（{dl_timeout:g}s）。') from exc
-        finally:
-            if tmp_path is not None and tmp_path.exists():
-                tmp_path.unlink(missing_ok=True)
+                try:
+                    err_body = exc.read().decode('utf-8', errors='replace')
+                except Exception:
+                    err_body = ''
+                lower_body = err_body.lower()
+                is_expired = exc.code in (403, 404, 410) or any(k in lower_body for k in EXPIRED_HINT_KEYWORDS)
+                safe_url = self._safe(url)
+                safe_detail = self._safe(err_body.strip()[:240])
+                if is_expired:
+                    raise ArkToolError(
+                        f'下载结果失败（HTTP {exc.code}），下载链接可能已过期或失效（方舟临时链接通常 24 小时后过期）。'
+                        f'URL：{safe_url}' + (f'；详情：{safe_detail}' if safe_detail else '')
+                    ) from exc
+                if (exc.code == 429 or 500 <= exc.code < 600) and attempt < max_retries:
+                    retry_reason = f'HTTP {exc.code}'
+                else:
+                    raise ArkToolError(
+                        f'下载结果失败（HTTP {exc.code}），URL：{safe_url}' + (f'；详情：{safe_detail}' if safe_detail else '')
+                    ) from exc
+            except urllib.error.URLError as exc:
+                if attempt < max_retries:
+                    retry_reason = f'网络错误：{self._safe(exc.reason)}'
+                else:
+                    raise ArkToolError(f'下载结果网络失败：{self._safe(exc.reason)}') from exc
+            except TimeoutError as exc:
+                if attempt < max_retries:
+                    retry_reason = f'超时（{dl_timeout:g}s）'
+                else:
+                    raise ArkToolError(f'下载结果超时（{dl_timeout:g}s）。') from exc
+            except (http.client.HTTPException, OSError) as exc:
+                if attempt < max_retries:
+                    retry_reason = f'连接异常：{self._safe(exc)}'
+                else:
+                    raise ArkToolError(f'下载结果连接异常：{self._safe(exc)}') from exc
+            finally:
+                if tmp_path is not None and tmp_path.exists():
+                    tmp_path.unlink(missing_ok=True)
+
+            print(
+                f'  下载结果遇临时错误（{retry_reason}），第 {attempt + 1}/{max_retries} 次仅重试下载（不重发生成）…',
+                file=sys.stderr,
+            )
+            if retry_delay > 0:
+                sleep_fn(float(retry_delay))
 
 
 # ---------- 复用 muse转精灵.py 抠绿 ----------
@@ -584,7 +664,7 @@ def run_image_generation(
     watermark=False,
     refs=None,
     seed=None,
-    response_format='url',
+    response_format='b64_json',
     output_format='auto',
     out_path,
     green_key=False,
@@ -898,6 +978,9 @@ def run_video_generation(
     sleep_fn=time.sleep,
     clock_fn=time.monotonic,
 ):
+    ensure_video_enabled()
+    if not (model or '').strip():
+        raise ArkToolError('视频生成必须显式指定 --model（当前无默认视频模型）。', exit_code=2)
     validate_video_inputs(first_frame, last_frame, refs)
 
     content = []
@@ -980,6 +1063,7 @@ def run_video_fetch(
     sleep_fn=time.sleep,
     clock_fn=time.monotonic,
 ):
+    ensure_video_enabled()
     print(f'开始续取视频任务 {task_id}（间隔 {poll_interval:g}s，超时 {timeout:g}s）…', file=sys.stderr)
     return poll_and_download_video_task(
         client,
@@ -1009,7 +1093,7 @@ def _add_runtime_args(p):
     p.add_argument(
         '--base-url',
         default=DEFAULT_BASE_URL,
-        help=f'方舟接口地址（仅放行 https://ark.cn-beijing.volces.com 与 127.0.0.1/localhost；默认 {DEFAULT_BASE_URL}）',
+        help=f'方舟接口地址（仅放行 {DEFAULT_BASE_URL} 前缀与 127.0.0.1/localhost，/api/v3 一律拒绝；默认 {DEFAULT_BASE_URL}）',
     )
     p.add_argument('--keychain-service', default=KEYCHAIN_SERVICE, help=f'macOS 钥匙串服务名（默认 {KEYCHAIN_SERVICE}）')
     p.add_argument('--http-timeout', type=float, default=120.0, help='单次 HTTP 请求超时秒数（默认 120）')
@@ -1018,7 +1102,7 @@ def _add_runtime_args(p):
 def _add_common_args(p):
     p.add_argument('--prompt', default='', help='提示词文本')
     p.add_argument('--prompt-file', default='', help='从 UTF-8 文本文件读取提示词')
-    p.add_argument('--model', default='', help='模型 ID 或推理接入点 ID（不填用当前默认模型）')
+    p.add_argument('--model', default='', help=f'模型 ID（出图默认 {DEFAULT_IMAGE_MODEL}，可选 doubao-seedream-5.0-pro / doubao-seedream-5.0-flash）')
     p.add_argument('--watermark', action='store_true', help='开启平台水印（默认关闭）')
     p.add_argument('--seed', type=int, default=None, help='随机种子（可选）')
     p.add_argument('--no-keep-raw', action='store_true', help='开启 --green-key 时不保留原始绿底图（默认保留 *_raw）')
@@ -1027,7 +1111,7 @@ def _add_common_args(p):
 
 def build_parser():
     parser = argparse.ArgumentParser(
-        description='火山方舟（Seedream／Seedance）出图与出视频命令行工具。钥匙只从 macOS 钥匙串 ark-api-key 读取。',
+        description='火山方舟 Agent Plan（Seedream）出图命令行工具。钥匙只从 macOS 钥匙串 ark-api-key 读取。',
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     sub = parser.add_subparsers(dest='command', required=True)
@@ -1035,17 +1119,21 @@ def build_parser():
     p_t2i = sub.add_parser('txt2img', aliases=['t2i', '文生图'], help='文生图（Seedream）')
     _add_common_args(p_t2i)
     p_t2i.add_argument('--size', default='1:1', help='尺寸或比例，默认 1:1（映射 2048x2048），也支持 WxH / 2K / 4K')
-    p_t2i.add_argument('--response-format', choices=['url', 'b64_json'], default='url', help='返回格式（默认 url）')
+    p_t2i.add_argument('--response-format', choices=['b64_json', 'url'], default='b64_json', help='返回格式（默认 b64_json，直回字节免二次下载；可选 url，下载支持重试）')
     p_t2i.add_argument('--output-format', choices=['auto', 'png', 'jpeg'], default='auto', help='向支持该参数的 Seedream 5.x 模型请求的文件格式（默认 auto：按 --out 扩展名决定）')
 
     p_i2i = sub.add_parser('img2img', aliases=['i2i', '图生图'], help='图生图（Seedream，--ref 可多张）')
     _add_common_args(p_i2i)
     p_i2i.add_argument('--ref', action='append', required=True, help='本地参考图路径（或 URL），可重复传入多张')
     p_i2i.add_argument('--size', default='1:1', help='尺寸或比例，默认 1:1（映射 2048x2048），也支持 WxH / 2K / 4K')
-    p_i2i.add_argument('--response-format', choices=['url', 'b64_json'], default='url', help='返回格式（默认 url）')
+    p_i2i.add_argument('--response-format', choices=['b64_json', 'url'], default='b64_json', help='返回格式（默认 b64_json，直回字节免二次下载；可选 url，下载支持重试）')
     p_i2i.add_argument('--output-format', choices=['auto', 'png', 'jpeg'], default='auto', help='向支持该参数的 Seedream 5.x 模型请求的文件格式（默认 auto：按 --out 扩展名决定）')
 
-    p_i2v = sub.add_parser('img2vid', aliases=['i2v', '图生视频'], help='图生视频（Seedance，建任务后轮询并下载；--first-frame 与 --ref 互斥）')
+    p_i2v = sub.add_parser(
+        'img2vid',
+        aliases=['i2v', '图生视频'],
+        help=f'【默认禁用】图生视频（{VIDEO_DISABLED_MESSAGE}）',
+    )
     _add_common_args(p_i2v)
     p_i2v.add_argument('--first-frame', default='', help='首帧本地图片路径（或 URL）；与 --ref 互斥')
     p_i2v.add_argument('--last-frame', default='', help='可选：尾帧本地图片路径（或 URL），需配合 --first-frame 使用')
@@ -1060,7 +1148,11 @@ def build_parser():
     p_i2v.add_argument('--timeout', type=float, default=600.0, help='轮询总超时秒数（默认 600）')
     p_i2v.add_argument('--poll-retries', type=int, default=3, help='轮询遇 5xx／网络错误的连续重试次数（默认 3）')
 
-    p_fetch = sub.add_parser('fetch', aliases=['resume', '续取'], help='按 --task-id 续轮询并下载已有视频任务，避免重复扣费')
+    p_fetch = sub.add_parser(
+        'fetch',
+        aliases=['resume', '续取'],
+        help=f'【默认禁用】续取视频任务（{VIDEO_DISABLED_MESSAGE}）',
+    )
     p_fetch.add_argument('--task-id', required=True, help='已创建的视频任务 ID（如 cgt-xxxx）')
     p_fetch.add_argument('--poll-interval', type=float, default=5.0, help='轮询间隔秒数（默认 5）')
     p_fetch.add_argument('--timeout', type=float, default=600.0, help='轮询总超时秒数（默认 600）')
@@ -1076,10 +1168,15 @@ def main(argv=None):
     try:
         validated_base_url = validate_base_url(args.base_url)
         cmd = args.command
+        if cmd in ('img2vid', 'i2v', '图生视频', 'fetch', 'resume', '续取'):
+            ensure_video_enabled()
+
         prompt = None
         if cmd in ('txt2img', 't2i', '文生图', 'img2img', 'i2i', '图生图', 'img2vid', 'i2v', '图生视频'):
             prompt = resolve_prompt(args.prompt, args.prompt_file)
         if cmd in ('img2vid', 'i2v', '图生视频'):
+            if not (args.model or '').strip():
+                raise ArkToolError('视频生成必须显式指定 --model（当前无默认视频模型）。', exit_code=2)
             validate_video_inputs(args.first_frame, args.last_frame, args.ref)
         elif cmd in ('fetch', 'resume', '续取'):
             if not (args.task_id or '').strip():
@@ -1130,7 +1227,7 @@ def main(argv=None):
         elif cmd in ('img2vid', 'i2v', '图生视频'):
             res = run_video_generation(
                 client,
-                model=args.model or DEFAULT_VIDEO_MODEL,
+                model=args.model,
                 prompt=prompt,
                 first_frame=args.first_frame or None,
                 last_frame=args.last_frame or None,

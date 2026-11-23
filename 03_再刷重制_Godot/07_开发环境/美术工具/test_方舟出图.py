@@ -55,7 +55,9 @@ class FakeArkState:
         self.download_headers = []
         self.image_bytes = TINY_PNG
         self.video_bytes = FAKE_MP4
-        self.image_mode = 'url'          # url | b64 | expired_url | leak_error
+        self.image_mode = 'auto'         # auto | url | b64 | expired_url | leak_error
+        self.image_dl_plan = []          # 可选：模拟 /files/out.png 依次返回 503 / 'drop' / 200
+        self.image_dl_attempts = 0
         self.video_plan = ['queued', 'running', 'succeeded']
         self.video_dl_status = 200
         self.task_counter = 0
@@ -109,7 +111,7 @@ def start_fake_server(state):
                 return
 
             host = f'http://127.0.0.1:{self.server.server_address[1]}'
-            if self.path == '/api/v3/images/generations':
+            if self.path == '/api/plan/v3/images/generations':
                 if state.image_mode == 'leak_error':
                     self._send_json(401, {
                         'error': {
@@ -118,7 +120,10 @@ def start_fake_server(state):
                         }
                     })
                     return
-                if state.image_mode == 'b64':
+                use_b64 = state.image_mode == 'b64' or (
+                    state.image_mode == 'auto' and body.get('response_format') == 'b64_json'
+                )
+                if use_b64:
                     self._send_json(200, {
                         'model': body.get('model'),
                         'data': [{'b64_json': base64.b64encode(state.image_bytes).decode('ascii'), 'size': body.get('size')}],
@@ -133,7 +138,7 @@ def start_fake_server(state):
                 })
                 return
 
-            if self.path == '/api/v3/contents/generations/tasks':
+            if self.path == '/api/plan/v3/contents/generations/tasks':
                 state.task_counter += 1
                 tid = f'cgt-fake-{state.task_counter}'
                 state.task_polls[tid] = 0
@@ -150,6 +155,16 @@ def start_fake_server(state):
                     self._send_bytes(403, b'<Error><Code>AccessDenied</Code><Message>Request has expired</Message></Error>', 'application/xml')
                     return
                 if self.path.startswith('/files/out.png'):
+                    idx = state.image_dl_attempts
+                    state.image_dl_attempts += 1
+                    if state.image_dl_plan:
+                        step = state.image_dl_plan[min(idx, len(state.image_dl_plan) - 1)]
+                        if step == 'drop':
+                            self.connection.close()
+                            return
+                        if isinstance(step, int) and step != 200:
+                            self._send_bytes(step, b'transient download error', 'text/plain')
+                            return
                     self._send_bytes(200, state.image_bytes, 'image/png')
                     return
                 if self.path.startswith('/files/out.mp4'):
@@ -170,7 +185,7 @@ def start_fake_server(state):
             if self._maybe_redirect():
                 return
 
-            prefix = '/api/v3/contents/generations/tasks/'
+            prefix = '/api/plan/v3/contents/generations/tasks/'
             if self.path.startswith(prefix):
                 tid = self.path[len(prefix):]
                 idx = state.task_polls.get(tid, 0)
@@ -183,7 +198,7 @@ def start_fake_server(state):
                 if step == 'drop':
                     self.connection.close()
                     return
-                resp = {'id': tid, 'model': ark.DEFAULT_VIDEO_MODEL, 'status': step}
+                resp = {'id': tid, 'model': 'seedance-test', 'status': step}
                 if step == 'succeeded':
                     resp['content'] = {'video_url': f'{host}/files/out.mp4?X-Tos-Signature=vidsig'}
                     resp['usage'] = {'completion_tokens': 88000, 'total_tokens': 88000}
@@ -197,7 +212,7 @@ def start_fake_server(state):
     server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    base_url = f'http://127.0.0.1:{server.server_address[1]}/api/v3'
+    base_url = f'http://127.0.0.1:{server.server_address[1]}/api/plan/v3'
     return server, base_url
 
 
@@ -250,21 +265,59 @@ class ArkMediaCliTests(unittest.TestCase):
             capture_output=True, text=True, check=False,
         )
         req = self.state.requests[0]
-        self.assertEqual(req['path'], '/api/v3/images/generations')
+        self.assertEqual(req['path'], '/api/plan/v3/images/generations')
         self.assertEqual(req['auth'], f'Bearer {TEST_KEY}')
-        self.assertEqual(req['body']['model'], ark.DEFAULT_IMAGE_MODEL)
+        self.assertEqual(ark.DEFAULT_BASE_URL, 'https://ark.cn-beijing.volces.com/api/plan/v3')
+        self.assertEqual(ark.DEFAULT_IMAGE_MODEL, 'doubao-seedream-5.5')
+        self.assertEqual(req['body']['model'], 'doubao-seedream-5.5')
         self.assertEqual(req['body']['size'], '2048x2048')
+        self.assertEqual(req['body']['response_format'], 'b64_json')
         self.assertIs(req['body']['watermark'], False)
         self.assertNotIn('image', req['body'])
-        # 下载图片不能带 Authorization 头
-        self.assertEqual(len(self.state.download_headers), 1)
-        self.assertNotIn('Authorization', self.state.download_headers[0])
+        # 默认 b64_json 直接解码落盘，不触发二次下载
+        self.assertEqual(len(self.state.download_headers), 0)
         # stdout 与 meta 都不含密钥明文
         self.assertNotIn(TEST_KEY, stdout)
         self.assertNotIn(TEST_KEY, meta.read_text(encoding='utf-8'))
         parsed = json.loads(stdout)
         self.assertEqual(parsed['mode'], 'txt2img')
         self.assertEqual(parsed['usage']['generated_images'], 1)
+
+        # 显式 --response-format url 走二次下载且不带 Authorization 头
+        out_url = self.tmp / 't2i_url.png'
+        rc_u, _, err_u, _ = run_cli([
+            'txt2img',
+            '--prompt', 'URL下载验证',
+            '--response-format', 'url',
+            '--out', str(out_url),
+            '--base-url', self.base_url,
+        ])
+        self.assertEqual(rc_u, 0, err_u)
+        self.assertEqual(out_url.read_bytes(), TINY_PNG)
+        self.assertEqual(len(self.state.download_headers), 1)
+        self.assertNotIn('Authorization', self.state.download_headers[0])
+
+    def test_url_download_retries_without_regenerating(self):
+        """url 模式下载遇 503／断连时仅重试下载，绝不重发图片生成请求。"""
+        self.state.image_dl_plan = [503, 'drop', 200]
+        out = self.tmp / 'dl_retry.png'
+        with mock.patch.object(ark.time, 'sleep', return_value=None):
+            rc, _, stderr, _ = run_cli([
+                'txt2img',
+                '--prompt', '下载重试不重生成',
+                '--response-format', 'url',
+                '--out', str(out),
+                '--base-url', self.base_url,
+            ])
+        self.assertEqual(rc, 0, stderr)
+        self.assertEqual(out.read_bytes(), TINY_PNG)
+        post_reqs = [r for r in self.state.requests if r['method'] == 'POST']
+        self.assertEqual(len(post_reqs), 1, '下载重试不应重发 POST 生成请求')
+        self.assertEqual(self.state.image_dl_attempts, 3)
+        self.assertEqual(len(self.state.download_headers), 3)
+        for hdrs in self.state.download_headers:
+            self.assertNotIn('Authorization', hdrs)
+        self.assertIn('仅重试下载', stderr)
 
     def test_txt2img_b64_and_overrides(self):
         self.state.image_mode = 'b64'
@@ -321,27 +374,68 @@ class ArkMediaCliTests(unittest.TestCase):
         self.assertTrue(imgs[1].startswith('data:image/jpeg;base64,'))
         self.assertEqual(json.loads(stdout2)['refs_count'], 2)
 
+    def test_video_commands_disabled_by_default(self):
+        """Agent Plan 订阅不含 Seedance，img2vid 与 fetch（及所有别名）默认禁用且不读钥匙串、不发网络请求。"""
+        self.assertIs(ark.VIDEO_COMMANDS_ENABLED, False)
+        self.assertFalse(hasattr(ark, 'DEFAULT_VIDEO_MODEL'))
+        frame = self.tmp / 'first.png'
+        frame.write_bytes(TINY_PNG)
+        out = self.tmp / 'disabled.mp4'
+
+        for cmd in ('img2vid', 'i2v', '图生视频'):
+            with self.subTest(cmd=cmd):
+                rc, _, stderr, m_run = run_cli([
+                    cmd, '--first-frame', str(frame), '--prompt', '禁测',
+                    '--out', str(out), '--base-url', self.base_url,
+                ])
+                self.assertEqual(rc, 2)
+                self.assertIn('订阅不含 Seedance，需另购，地址未知', stderr)
+                m_run.assert_not_called()
+                self.assertEqual(self.state.requests, [])
+
+        for cmd in ('fetch', 'resume', '续取'):
+            with self.subTest(cmd=cmd):
+                rc, _, stderr, m_run = run_cli([
+                    cmd, '--task-id', 'cgt-disabled-1',
+                    '--out', str(out), '--base-url', self.base_url,
+                ])
+                self.assertEqual(rc, 2)
+                self.assertIn('订阅不含 Seedance，需另购，地址未知', stderr)
+                m_run.assert_not_called()
+                self.assertEqual(self.state.requests, [])
+
+        # 直接调用模块函数同样被默认禁用拦截
+        client = ark.ArkClient(TEST_KEY, base_url=self.base_url)
+        with self.assertRaises(ark.ArkToolError) as ctx1:
+            ark.run_video_generation(client, model='seedance-test', prompt='x', first_frame=str(frame), out_path=out)
+        self.assertIn('订阅不含 Seedance，需另购，地址未知', str(ctx1.exception))
+        with self.assertRaises(ark.ArkToolError) as ctx2:
+            ark.run_video_fetch(client, task_id='cgt-1', out_path=out)
+        self.assertIn('订阅不含 Seedance，需另购，地址未知', str(ctx2.exception))
+
     def test_img2vid_poll_and_download(self):
         frame = self.tmp / 'first.png'
         frame.write_bytes(TINY_PNG)
         out = self.tmp / 'clip.mp4'
-        rc, stdout, stderr, _ = run_cli([
-            'img2vid',
-            '--first-frame', str(frame),
-            '--prompt', '拔刀挥砍',
-            '--poll-interval', '0.01',
-            '--timeout', '5',
-            '--out', str(out),
-            '--base-url', self.base_url,
-        ])
+        with mock.patch.object(ark, 'VIDEO_COMMANDS_ENABLED', True):
+            rc, stdout, stderr, _ = run_cli([
+                'img2vid',
+                '--model', 'seedance-test',
+                '--first-frame', str(frame),
+                '--prompt', '拔刀挥砍',
+                '--poll-interval', '0.01',
+                '--timeout', '5',
+                '--out', str(out),
+                '--base-url', self.base_url,
+            ])
         self.assertEqual(rc, 0, stderr)
         self.assertEqual(out.read_bytes(), FAKE_MP4)
         # 校验 POST 建任务参数
         post_req = self.state.requests[0]
         self.assertEqual(post_req['method'], 'POST')
-        self.assertEqual(post_req['path'], '/api/v3/contents/generations/tasks')
+        self.assertEqual(post_req['path'], '/api/plan/v3/contents/generations/tasks')
         body = post_req['body']
-        self.assertEqual(body['model'], ark.DEFAULT_VIDEO_MODEL)
+        self.assertEqual(body['model'], 'seedance-test')
         self.assertEqual(body['ratio'], '1:1')
         self.assertEqual(body['duration'], 4)
         self.assertIs(body['watermark'], False)
@@ -363,11 +457,12 @@ class ArkMediaCliTests(unittest.TestCase):
         frame = self.tmp / 'first.png'
         frame.write_bytes(TINY_PNG)
         out = self.tmp / 'fail.mp4'
-        rc, _, stderr, _ = run_cli([
-            'img2vid', '--first-frame', str(frame), '--prompt', '失败路径',
-            '--poll-interval', '0.01', '--timeout', '5',
-            '--out', str(out), '--base-url', self.base_url,
-        ])
+        with mock.patch.object(ark, 'VIDEO_COMMANDS_ENABLED', True):
+            rc, _, stderr, _ = run_cli([
+                'img2vid', '--model', 'seedance-test', '--first-frame', str(frame), '--prompt', '失败路径',
+                '--poll-interval', '0.01', '--timeout', '5',
+                '--out', str(out), '--base-url', self.base_url,
+            ])
         self.assertNotEqual(rc, 0)
         self.assertIn('视频任务失败', stderr)
         self.assertIn('ModelError', stderr)
@@ -380,11 +475,12 @@ class ArkMediaCliTests(unittest.TestCase):
         frame = self.tmp / 'first.png'
         frame.write_bytes(TINY_PNG)
         out = self.tmp / 'timeout.mp4'
-        rc, _, stderr, _ = run_cli([
-            'img2vid', '--first-frame', str(frame), '--prompt', '超时路径',
-            '--poll-interval', '0.02', '--timeout', '0.07',
-            '--out', str(out), '--base-url', self.base_url,
-        ])
+        with mock.patch.object(ark, 'VIDEO_COMMANDS_ENABLED', True):
+            rc, _, stderr, _ = run_cli([
+                'img2vid', '--model', 'seedance-test', '--first-frame', str(frame), '--prompt', '超时路径',
+                '--poll-interval', '0.02', '--timeout', '0.07',
+                '--out', str(out), '--base-url', self.base_url,
+            ])
         self.assertNotEqual(rc, 0)
         self.assertIn('超时', stderr)
         self.assertIn('cgt-fake-1', stderr)
@@ -408,11 +504,12 @@ class ArkMediaCliTests(unittest.TestCase):
         frame = self.tmp / 'first.png'
         frame.write_bytes(TINY_PNG)
         vid_out = self.tmp / 'expired.mp4'
-        rc2, _, err2, _ = run_cli([
-            'img2vid', '--first-frame', str(frame), '--prompt', '过期视频',
-            '--poll-interval', '0.01', '--timeout', '5',
-            '--out', str(vid_out), '--base-url', self.base_url,
-        ])
+        with mock.patch.object(ark, 'VIDEO_COMMANDS_ENABLED', True):
+            rc2, _, err2, _ = run_cli([
+                'img2vid', '--model', 'seedance-test', '--first-frame', str(frame), '--prompt', '过期视频',
+                '--poll-interval', '0.01', '--timeout', '5',
+                '--out', str(vid_out), '--base-url', self.base_url,
+            ])
         self.assertNotEqual(rc2, 0)
         self.assertIn('过期', err2)
         self.assertNotIn('vidsig', err2)
@@ -570,9 +667,10 @@ class ArkMediaCliTests(unittest.TestCase):
             # 再测 307 跳转在 GET 轮询（fetch）上同样不跟随、不外泄
             self.state.redirect_status = 307
             out_vid = self.tmp / 'redirected.mp4'
-            rc2, _, stderr2, _ = run_cli([
-                'fetch', '--task-id', 'cgt-redirect-1', '--out', str(out_vid), '--base-url', self.base_url,
-            ])
+            with mock.patch.object(ark, 'VIDEO_COMMANDS_ENABLED', True):
+                rc2, _, stderr2, _ = run_cli([
+                    'fetch', '--task-id', 'cgt-redirect-1', '--out', str(out_vid), '--base-url', self.base_url,
+                ])
             self.assertNotEqual(rc2, 0)
             self.assertIn('307', stderr2)
             self.assertNotIn(TEST_KEY, stderr2)
@@ -581,19 +679,43 @@ class ArkMediaCliTests(unittest.TestCase):
             second_server.shutdown()
             second_server.server_close()
 
-    def test_p2_2_base_url_allowlist_rejects_untrusted_hosts_and_http(self):
-        """P2-2 复现与回归：--base-url 仅放行 https://ark.cn-beijing.volces.com 与 127.0.0.1/localhost，其余一律拒绝且不读钥匙串。"""
-        bad_urls = [
-            'https://evil.example.com/api/v3',
-            'http://evil.example.com/api/v3',
-            'http://ark.cn-beijing.volces.com/api/v3',
-            'https://ark.cn-beijing.volces.com:8443/api/v3',
-            'https://ark.cn-beijing.volces.com.evil.com/api/v3',
-            'https://ark.cn-beijing.volces.com@evil.com/api/v3',
-            'ftp://127.0.0.1:8080/api/v3',
-            'https://ark.cn-beijing.volces.com/api/v3?foo=bar',
+    def test_p2_2_base_url_allowlist_and_api_v3_rejected(self):
+        """P2-2 与 Agent Plan 防误扣费：仅放行 https://ark.cn-beijing.volces.com/api/plan/v3 前缀与本机单测，/api/v3 一律拒绝且提示额外费用。"""
+        port = self.server.server_address[1]
+        api_v3_urls = [
+            'https://ark.cn-beijing.volces.com/api/v3',
+            'https://ark.cn-beijing.volces.com/api/v3/',
+            'https://ark.cn-beijing.volces.com/api/v3/images/generations',
+            f'http://127.0.0.1:{port}/api/v3',
+            f'http://localhost:{port}/api/v3/images/generations',
         ]
         out = self.tmp / 'blocked.png'
+        for bad_v3 in api_v3_urls:
+            with self.subTest(api_v3=bad_v3):
+                rc, _, stderr, m_run = run_cli([
+                    'txt2img', '--prompt', '误走v3', '--out', str(out), '--base-url', bad_v3,
+                ])
+                self.assertEqual(rc, 2, f'预期拒绝 {bad_v3}，实际 rc={rc} stderr={stderr}')
+                self.assertIn('额外费用', stderr)
+                m_run.assert_not_called()
+                with self.assertRaises(ark.ArkToolError) as ctx:
+                    ark.ArkClient(TEST_KEY, base_url=bad_v3)
+                self.assertIn('额外费用', str(ctx.exception))
+
+        bad_urls = [
+            'https://evil.example.com/api/plan/v3',
+            'http://evil.example.com/api/plan/v3',
+            'http://ark.cn-beijing.volces.com/api/plan/v3',
+            'https://ark.cn-beijing.volces.com:8443/api/plan/v3',
+            'https://ark.cn-beijing.volces.com.evil.com/api/plan/v3',
+            'https://ark.cn-beijing.volces.com@evil.com/api/plan/v3',
+            'ftp://127.0.0.1:8080/api/plan/v3',
+            'https://ark.cn-beijing.volces.com/api/plan/v3?foo=bar',
+            'https://ark.cn-beijing.volces.com',
+            'https://ark.cn-beijing.volces.com/api/plan/v2',
+            'https://ark.cn-beijing.volces.com/api/plan/v30',
+            'https://ark.cn-beijing.volces.com/api/plan/v3/../../v3',
+        ]
         for bad in bad_urls:
             with self.subTest(base_url=bad):
                 rc, _, stderr, m_run = run_cli([
@@ -605,19 +727,29 @@ class ArkMediaCliTests(unittest.TestCase):
                 with self.assertRaises(ark.ArkToolError):
                     ark.ArkClient(TEST_KEY, base_url=bad)
 
-        # 合法生产地址通过校验
+        # 合法 Agent Plan 生产前缀通过校验且路径拼接不重复
         self.assertEqual(
-            ark.validate_base_url('https://ark.cn-beijing.volces.com/api/v3/'),
-            'https://ark.cn-beijing.volces.com/api/v3',
+            ark.validate_base_url('https://ark.cn-beijing.volces.com/api/plan/v3/'),
+            'https://ark.cn-beijing.volces.com/api/plan/v3',
+        )
+        self.assertEqual(
+            ark.ArkClient(TEST_KEY)._build_url('images/generations'),
+            'https://ark.cn-beijing.volces.com/api/plan/v3/images/generations',
+        )
+        self.assertEqual(
+            ark.ArkClient(
+                TEST_KEY,
+                base_url='https://ark.cn-beijing.volces.com/api/plan/v3/images/generations',
+            )._build_url('images/generations'),
+            'https://ark.cn-beijing.volces.com/api/plan/v3/images/generations',
         )
 
         # 合法 localhost 本地单测地址可正常走通
-        port = self.server.server_address[1]
         out_ok = self.tmp / 'localhost_ok.png'
         rc_ok, _, err_ok, _ = run_cli([
             'txt2img', '--prompt', 'localhost单测',
             '--out', str(out_ok),
-            '--base-url', f'http://localhost:{port}/api/v3',
+            '--base-url', f'http://localhost:{port}/api/plan/v3',
         ])
         self.assertEqual(rc_ok, 0, err_ok)
         self.assertEqual(out_ok.read_bytes(), TINY_PNG)
@@ -634,7 +766,7 @@ class ArkMediaCliTests(unittest.TestCase):
 
         out_4x = self.tmp / 'req4x.png'
         rc4, _, err4, _ = run_cli([
-            'txt2img', '--prompt', '4x格式测试', '--model', 'doubao-seedream-4-5-251128',
+            'txt2img', '--prompt', '4x格式测试', '--model', 'doubao-seedream-4.5',
             '--out', str(out_4x), '--base-url', self.base_url,
         ])
         self.assertEqual(rc4, 0, err4)
@@ -679,46 +811,47 @@ class ArkMediaCliTests(unittest.TestCase):
         frame = self.tmp / 'first.png'
         frame.write_bytes(TINY_PNG)
 
-        # 1) 轮询中出现 503、连接断开、502 后成功 -> 自动重试并下载完成
-        self.state.video_plan = [503, 'queued', 'drop', 502, 'succeeded']
-        out_ok = self.tmp / 'retry_ok.mp4'
-        rc_ok, stdout_ok, stderr_ok, _ = run_cli([
-            'img2vid', '--first-frame', str(frame), '--prompt', '重试恢复',
-            '--poll-interval', '0.01', '--timeout', '5', '--poll-retries', '3',
-            '--out', str(out_ok), '--base-url', self.base_url,
-        ])
-        self.assertEqual(rc_ok, 0, stderr_ok)
-        self.assertEqual(out_ok.read_bytes(), FAKE_MP4)
-        self.assertIn('临时错误', stderr_ok)
-        parsed_ok = json.loads(stdout_ok)
-        self.assertEqual(parsed_ok['poll_retries_used'], 3)
+        with mock.patch.object(ark, 'VIDEO_COMMANDS_ENABLED', True):
+            # 1) 轮询中出现 503、连接断开、502 后成功 -> 自动重试并下载完成
+            self.state.video_plan = [503, 'queued', 'drop', 502, 'succeeded']
+            out_ok = self.tmp / 'retry_ok.mp4'
+            rc_ok, stdout_ok, stderr_ok, _ = run_cli([
+                'img2vid', '--model', 'seedance-test', '--first-frame', str(frame), '--prompt', '重试恢复',
+                '--poll-interval', '0.01', '--timeout', '5', '--poll-retries', '3',
+                '--out', str(out_ok), '--base-url', self.base_url,
+            ])
+            self.assertEqual(rc_ok, 0, stderr_ok)
+            self.assertEqual(out_ok.read_bytes(), FAKE_MP4)
+            self.assertIn('临时错误', stderr_ok)
+            parsed_ok = json.loads(stdout_ok)
+            self.assertEqual(parsed_ok['poll_retries_used'], 3)
 
-        # 2) 连续 503 超过 --poll-retries -> 退出并给出 fetch --task-id 续取命令
-        self.state.video_plan = [503, 503, 'running', 'succeeded']
-        out_resume = self.tmp / 'resumed.mp4'
-        rc_fail, _, stderr_fail, _ = run_cli([
-            'img2vid', '--first-frame', str(frame), '--prompt', '重试耗尽后继续取',
-            '--poll-interval', '0.01', '--timeout', '5', '--poll-retries', '1',
-            '--out', str(out_resume), '--base-url', self.base_url,
-        ])
-        self.assertNotEqual(rc_fail, 0)
-        self.assertIn('fetch --task-id cgt-fake-2', stderr_fail)
-        self.assertFalse(out_resume.exists())
+            # 2) 连续 503 超过 --poll-retries -> 退出并给出 fetch --task-id 续取命令
+            self.state.video_plan = [503, 503, 'running', 'succeeded']
+            out_resume = self.tmp / 'resumed.mp4'
+            rc_fail, _, stderr_fail, _ = run_cli([
+                'img2vid', '--model', 'seedance-test', '--first-frame', str(frame), '--prompt', '重试耗尽后继续取',
+                '--poll-interval', '0.01', '--timeout', '5', '--poll-retries', '1',
+                '--out', str(out_resume), '--base-url', self.base_url,
+            ])
+            self.assertNotEqual(rc_fail, 0)
+            self.assertIn('fetch --task-id cgt-fake-2', stderr_fail)
+            self.assertFalse(out_resume.exists())
 
-        # 3) 用 fetch --task-id 续取同一任务：不再发 POST 建任务，直接 GET 轮询并下载
-        posts_before = len([r for r in self.state.requests if r['method'] == 'POST'])
-        rc_fetch, stdout_fetch, stderr_fetch, _ = run_cli([
-            'fetch', '--task-id', 'cgt-fake-2',
-            '--poll-interval', '0.01', '--timeout', '5',
-            '--out', str(out_resume), '--base-url', self.base_url,
-        ])
-        self.assertEqual(rc_fetch, 0, stderr_fetch)
-        self.assertEqual(out_resume.read_bytes(), FAKE_MP4)
-        posts_after = len([r for r in self.state.requests if r['method'] == 'POST'])
-        self.assertEqual(posts_after, posts_before, 'fetch 续取不应新建任务')
-        parsed_fetch = json.loads(stdout_fetch)
-        self.assertEqual(parsed_fetch['mode'], 'fetch')
-        self.assertEqual(parsed_fetch['task_id'], 'cgt-fake-2')
+            # 3) 用 fetch --task-id 续取同一任务：不再发 POST 建任务，直接 GET 轮询并下载
+            posts_before = len([r for r in self.state.requests if r['method'] == 'POST'])
+            rc_fetch, stdout_fetch, stderr_fetch, _ = run_cli([
+                'fetch', '--task-id', 'cgt-fake-2',
+                '--poll-interval', '0.01', '--timeout', '5',
+                '--out', str(out_resume), '--base-url', self.base_url,
+            ])
+            self.assertEqual(rc_fetch, 0, stderr_fetch)
+            self.assertEqual(out_resume.read_bytes(), FAKE_MP4)
+            posts_after = len([r for r in self.state.requests if r['method'] == 'POST'])
+            self.assertEqual(posts_after, posts_before, 'fetch 续取不应新建任务')
+            parsed_fetch = json.loads(stdout_fetch)
+            self.assertEqual(parsed_fetch['mode'], 'fetch')
+            self.assertEqual(parsed_fetch['task_id'], 'cgt-fake-2')
 
     def test_p3_2_img2vid_first_frame_and_ref_mutually_exclusive(self):
         """P3-2：img2vid 的 --first-frame 与 --ref 互斥，--last-frame 必须配合 --first-frame，单用 --ref 可走参考图生视频。"""
@@ -728,44 +861,45 @@ class ArkMediaCliTests(unittest.TestCase):
         img2.write_bytes(TINY_PNG)
         out = self.tmp / 'vid.mp4'
 
-        # 同时传 --first-frame 与 --ref -> 拒绝且不读钥匙串
-        rc1, _, err1, m1 = run_cli([
-            'img2vid', '--first-frame', str(img1), '--ref', str(img2),
-            '--prompt', '混用测试', '--out', str(out), '--base-url', self.base_url,
-        ])
-        self.assertEqual(rc1, 2)
-        self.assertIn('互斥', err1)
-        m1.assert_not_called()
+        with mock.patch.object(ark, 'VIDEO_COMMANDS_ENABLED', True):
+            # 同时传 --first-frame 与 --ref -> 拒绝且不读钥匙串
+            rc1, _, err1, m1 = run_cli([
+                'img2vid', '--model', 'seedance-test', '--first-frame', str(img1), '--ref', str(img2),
+                '--prompt', '混用测试', '--out', str(out), '--base-url', self.base_url,
+            ])
+            self.assertEqual(rc1, 2)
+            self.assertIn('互斥', err1)
+            m1.assert_not_called()
 
-        # 二者都不传 -> 拒绝
-        rc2, _, err2, m2 = run_cli([
-            'img2vid', '--prompt', '缺少图输入', '--out', str(out), '--base-url', self.base_url,
-        ])
-        self.assertEqual(rc2, 2)
-        self.assertIn('--first-frame', err2)
-        m2.assert_not_called()
+            # 二者都不传 -> 拒绝
+            rc2, _, err2, m2 = run_cli([
+                'img2vid', '--model', 'seedance-test', '--prompt', '缺少图输入', '--out', str(out), '--base-url', self.base_url,
+            ])
+            self.assertEqual(rc2, 2)
+            self.assertIn('--first-frame', err2)
+            m2.assert_not_called()
 
-        # --last-frame 与 --ref 混用 -> 拒绝
-        rc3, _, err3, m3 = run_cli([
-            'img2vid', '--ref', str(img1), '--last-frame', str(img2),
-            '--prompt', '尾帧混用', '--out', str(out), '--base-url', self.base_url,
-        ])
-        self.assertEqual(rc3, 2)
-        self.assertIn('--last-frame', err3)
-        m3.assert_not_called()
+            # --last-frame 与 --ref 混用 -> 拒绝
+            rc3, _, err3, m3 = run_cli([
+                'img2vid', '--model', 'seedance-test', '--ref', str(img1), '--last-frame', str(img2),
+                '--prompt', '尾帧混用', '--out', str(out), '--base-url', self.base_url,
+            ])
+            self.assertEqual(rc3, 2)
+            self.assertIn('--last-frame', err3)
+            m3.assert_not_called()
 
-        # 仅传 --ref（多张）-> 正常建任务并发送 reference_image 角色
-        self.state.video_plan = ['succeeded']
-        rc4, stdout4, err4, _ = run_cli([
-            'img2vid', '--ref', str(img1), '--ref', str(img2),
-            '--prompt', '参考图生视频', '--poll-interval', '0.01', '--timeout', '5',
-            '--out', str(out), '--base-url', self.base_url,
-        ])
-        self.assertEqual(rc4, 0, err4)
-        post_body = [r for r in self.state.requests if r['method'] == 'POST'][-1]['body']
-        roles = [c.get('role') for c in post_body['content'] if c.get('type') == 'image_url']
-        self.assertEqual(roles, ['reference_image', 'reference_image'])
-        self.assertEqual(json.loads(stdout4)['mode'], 'img2vid')
+            # 仅传 --ref（多张）-> 正常建任务并发送 reference_image 角色
+            self.state.video_plan = ['succeeded']
+            rc4, stdout4, err4, _ = run_cli([
+                'img2vid', '--model', 'seedance-test', '--ref', str(img1), '--ref', str(img2),
+                '--prompt', '参考图生视频', '--poll-interval', '0.01', '--timeout', '5',
+                '--out', str(out), '--base-url', self.base_url,
+            ])
+            self.assertEqual(rc4, 0, err4)
+            post_body = [r for r in self.state.requests if r['method'] == 'POST'][-1]['body']
+            roles = [c.get('role') for c in post_body['content'] if c.get('type') == 'image_url']
+            self.assertEqual(roles, ['reference_image', 'reference_image'])
+            self.assertEqual(json.loads(stdout4)['mode'], 'img2vid')
 
 
 if __name__ == '__main__':

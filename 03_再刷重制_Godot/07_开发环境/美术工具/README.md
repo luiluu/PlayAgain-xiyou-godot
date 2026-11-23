@@ -58,24 +58,27 @@ python3 muse转精灵.py --selftest        # 合成绿底视频自测 13 项，�
 - 精灵自检（`../精灵自检.py`）现按 64 格写死：待机条 192×64、行走 144×192、待机脚底 64，128 格图集第一项 `native_size` 就失败退出，后面的检查都不跑。要支持 128 需按格尺寸换算这几项（另开卡，不在 T352 改）。
 - 样片演示（swing，样片第 0 帧当临时定妆图）与取景不一致示例在私密设计仓 `协作交接/附图/T352/`。
 
-## 火山方舟出图出视频（T435）
+## 火山方舟 Agent Plan 出图（T435）
 
-`方舟出图.py`：直接调用火山方舟（Volcengine Ark）REST 接口的命令行工具，替代第三方 MCP。基础出图／出视频仅用 Python 标准库（零第三方依赖），开启 `--green-key` 时按需复用同目录 `muse转精灵.py` 的 `key_mask` 与 `despill`（此时需 Pillow＋numpy，可用 `uv run --with pillow --with numpy` 或 venv）。
+`方舟出图.py`：直接调用火山方舟 Agent Plan（Volcengine Ark）REST 接口的命令行工具，替代第三方 MCP。基础出图仅用 Python 标准库（零第三方依赖），开启 `--green-key` 时按需复用同目录 `muse转精灵.py` 的 `key_mask` 与 `despill`（此时需 Pillow＋numpy，可用 `uv run --with pillow --with numpy` 或 venv）。
+
+> **重要防误扣费说明**：Kyo 订阅的是火山方舟 **Agent Plan**，图片生成必须走专属前缀 `https://ark.cn-beijing.volces.com/api/plan/v3`（出图拼 `/images/generations`，即 `https://ark.cn-beijing.volces.com/api/plan/v3/images/generations`）。**请勿使用 `https://ark.cn-beijing.volces.com/api/v3`，接入会产生额外费用**；工具已硬拦截 `/api/v3` 前缀，且不调用任何探测接口。当前订阅不含 Seedance 视频生成，故 `img2vid`／`fetch` 子命令默认禁用并提示「订阅不含 Seedance，需另购，地址未知」。
 
 ### 怎么开通
 
-1. 登录火山引擎控制台（`https://console.volcengine.com/ark`），完成实名认证并开通「火山方舟」。
-2. 在「模型广场」／「开通管理」开通需要用到的模型（按量计费）：
-   - 出图（Seedream）：默认 `doubao-seedream-5-5-261028`（也可通过 `--model` 指定 `doubao-seedream-5-0-pro-260628`、`doubao-seedream-5-0-lite-260128`、`doubao-seedream-4-5-251128` 或自定义推理接入点 `ep-xxxx`）。
-   - 视频（Seedance）：默认 `doubao-seedance-2-5-260628`（也可通过 `--model` 指定 `doubao-seedance-2-0-260128`、`doubao-seedance-2-0-fast-260128`、`doubao-seedance-1-5-pro-251215` 或 `ep-xxxx`）。
-3. 在「API Key 管理」新建一把 API Key，并确保账户有可用按量计费余额。
+1. 登录火山引擎控制台（`https://console.volcengine.com/ark`），完成实名认证并开通「火山方舟 Agent Plan」订阅。
+2. 控制台确认的视觉接口与模型 ID（原样，无日期后缀）：
+   - 默认 Base URL 前缀：`https://ark.cn-beijing.volces.com/api/plan/v3`（完整图片生成地址 `https://ark.cn-beijing.volces.com/api/plan/v3/images/generations`）
+   - 视觉模型 ID：`doubao-seedream-5.5`（默认）、`doubao-seedream-5.0-pro`、`doubao-seedream-5.0-flash`（可通过 `--model` 切换）
+   - 视频模型（Seedance）：订阅不含 Seedance，需另购，地址未知（对应子命令已默认禁用）。
+3. 在 Agent Plan 控制台创建专属 API Key 并存入 macOS 钥匙串。
 
 ### 怎么存钥匙
 
-本工具**只从 macOS 钥匙串读取**（`security find-generic-password -s ark-api-key -w`），不读环境变量或 `.env` 文件，不落盘，日志、报错与 `--meta-out` 均自动打码；`--base-url` 仅放行 `https://ark.cn-beijing.volces.com` 与本地单测地址（`127.0.0.1`/`localhost`），鉴权请求拒绝自动跟随 30x 重定向（并把 `Authorization` 放进 unredirected 头），下载结果文件时不携带 `Authorization` 头。
+本工具**只从 macOS 钥匙串读取**（`security find-generic-password -s ark-api-key -w`，存 Agent Plan 专属钥匙），不读环境变量或 `.env` 文件，不落盘，日志、报错与 `--meta-out` 均自动打码；`--base-url` 仅放行 `https://ark.cn-beijing.volces.com/api/plan/v3` 前缀与本地单测地址（`127.0.0.1`/`localhost`），`/api/v3` 前缀一律拒绝并提示额外扣费；鉴权请求拒绝自动跟随 30x 重定向（并把 `Authorization` 放进 unredirected 头），下载结果文件时不携带 `Authorization` 头。
 
 ```sh
-# 存入或更新 API Key（回车后密文输入，不留命令历史）
+# 存入或更新 Agent Plan 专属 API Key（回车后密文输入，不留命令历史）
 security add-generic-password -U -a "$USER" -s ark-api-key -w
 
 # 只验证是否已存（不打印内容）
@@ -85,19 +88,16 @@ security find-generic-password -s ark-api-key >/dev/null && echo "已存入"
 security delete-generic-password -s ark-api-key
 ```
 
-### 每次大概花多少（人民币参考）
+### 每次大概花多少
 
-具体扣费随模型档位、分辨率与资源包浮动，以火山方舟控制台实时刊例为准：
+具体额度与刊例以火山方舟控制台实时页面为准：
 
-- **Seedream 文生图／图生图**：按张计费，大致 **0.22～0.40 元／张**（如 5.0 Lite 约 0.22 元起、5.0 Pro 约 0.30 元起）。
-- **Seedance 图生视频**：按分辨率与时长计费（底层折算 Token），大致折合：
-  - `480p`：约 **0.46～0.70 元／秒**（4 秒约 **2～3 元**）
-  - `720p`（默认）：约 **0.99～1.50 元／秒**（4 秒约 **4～6 元**）
-  - `1080p`：约 **2.50～3.70 元／秒**（4 秒约 **10～15 元**）
+- **Agent Plan 订阅内 Seedream 文生图／图生图**：走 `https://ark.cn-beijing.volces.com/api/plan/v3/images/generations` 计入 Agent Plan 套餐额度；切勿改用 `/api/v3`，否则会按量产生套餐外额外费用（标准按量参考约 **0.22～0.40 元／张**）。
+- **Seedance 视频生成**：订阅不含 Seedance，需另购，接口地址与费用以另购控制台为准（本工具 `img2vid`／`fetch` 子命令已默认禁用）。
 
 ### 常用命令与自测
 
-默认均为 **1:1 比例**、**关闭水印**（加 `--watermark` 才开启）。本地参考图自动转 Base64 Data URI，无需公网图床。出图不抠绿时按文件头魔数校验与 `--out` 扩展名是否一致（Seedream 5.x 自动请求对应 `output_format`），不符时自动转格式（Pillow 或 macOS `sips`），无法转换则报错且不写入伪 PNG。
+默认均为 **1:1 比例**、**关闭水印**（加 `--watermark` 才开启），默认模型 `doubao-seedream-5.5`，默认 `--response-format b64_json`（随 API 响应直回图片字节，避免跨区直连对象存储超时；显式传 `--response-format url` 时下载遇临时故障仅重试下载，绝不重发生成请求）。本地参考图自动转 Base64 Data URI，无需公网图床。出图不抠绿时按文件头魔数校验与 `--out` 扩展名是否一致（Seedream 5.x 自动请求对应 `output_format`），不符时自动转格式（Pillow 或 macOS `sips`），无法转换则报错且不写入伪 PNG。
 
 ```sh
 # 文生图（支持别名 t2i / 文生图），加 --green-key 抠绿并保留 *_raw 原绿底图
@@ -105,20 +105,16 @@ python3 方舟出图.py txt2img --prompt "纯绿底侧视像素剑客" --out /tm
 uv run --with pillow --with numpy python3 方舟出图.py txt2img \
   --prompt "纯绿底侧视像素剑客" --green-key --out /tmp/role.png
 
+# 切换 Agent Plan 其他视觉模型
+python3 方舟出图.py txt2img --model doubao-seedream-5.0-pro --prompt "纯绿底侧视像素剑客" --out /tmp/role.png
+
 # 图生图（支持别名 i2i / 图生图；--ref 可重复传多张本地图）
 python3 方舟出图.py img2img --ref ref1.jpg --ref ref2.png \
   --prompt "保持造型，拔刀定妆，纯绿底" --out /tmp/m5a.png
 
-# 图生视频（支持别名 i2v / 图生视频；--first-frame 与 --ref 互斥；轮询遇 5xx/断连默认连续重试 3 次）
-python3 方舟出图.py img2vid --first-frame /tmp/m5a.png \
-  --prompt "拔刀挥砍后收势" --duration 4 --ratio 1:1 --out /tmp/m5a.mp4
-
-# 续取已有视频任务（支持别名 resume / 续取；超时或断网后用 task_id 续轮询下载，避免重复扣费）
-python3 方舟出图.py fetch --task-id cgt-xxxx --out /tmp/m5a.mp4
-
-# 假服务器单测（16 项：三条路径、任务失败/超时/重试/续取、URL 过期、防跳转外泄、base-url 白名单、伪 PNG 校验转换、互斥校验、钥匙串安全与抠绿）
+# 假服务器单测（覆盖文生图、图生图、Agent Plan 前缀校验与 /api/v3 拒接、视频子命令默认禁用、底层视频轮询/失败/超时/重试/续取、URL 过期、防跳转外泄、伪 PNG 校验转换、钥匙串安全与抠绿）
 python3 -m unittest -v 03_再刷重制_Godot/07_开发环境/美术工具/test_方舟出图.py
 uv run --with pillow --with numpy python3 -m unittest -v 03_再刷重制_Godot/07_开发环境/美术工具/test_方舟出图.py
 ```
 
-图生视频输出的纯绿底 `.mp4` 可直接交给同目录 `muse转精灵.py` 转为 128 格战斗图集；如只想快速逐帧抠绿导出透明 PNG 序列，也可在 `img2vid` 或 `fetch` 加上 `--green-key`（输出到 `<视频名>_keyed/`）。
+说明：`img2vid`（`i2v`/`图生视频`）与 `fetch`（`resume`/`续取`）当前默认禁用，调用时会直接退出并提示「订阅不含 Seedance，需另购，地址未知」。
