@@ -8,6 +8,8 @@ extends RefCounted
 ## - 混合模式（spec.mode == "mixed"）的物理/魔法权重按公式对 atk/mat 的偏导数估算，与原版相同。
 
 const ACTIVE := [2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15]
+## T449 回退开关：false＝回到 O-433 起 DECK 下物理招读无属性 0 增伤（物理增伤白写）
+static var PHYS_AMP_ON_DECK := true
 static var _formulas := {}
 
 
@@ -116,6 +118,17 @@ static func original_elements(item: Dictionary, a: XBattler) -> Array:
 		if ((ei >= 1 and ei <= 15) or (keep_zero and ei == 0)) and not out.has(ei):
 			out.append(ei)
 	return out
+
+## T449（D280）：DECK 把物理 1 转成无属性 0 后，攻击方增伤（elementAmplify、passiveELUP01、固定附加、独立乘区）改读物理那份。
+## 只认映射前的原始属性里有 1 的招（原物理）；原本就是 0 的真无属性招不吃物理增伤。original=true 时照 original_elements 只看技能自身属性（不看被动属性覆盖）
+static func deck_physical(item: Dictionary, a: XBattler, original := false) -> bool:
+	if not PHYS_AMP_ON_DECK or not XTianqiElements.deck_on():
+		return false
+	var id := 0 if original else int(a.passive_cache().get("damageElement", 0))
+	if id == 0:
+		id = int(item.get("damage", {}).get("elementId", 0))
+	var es: Array = a.attack_elements() if id < 0 else [id]
+	return es.has(1) or item.get("yep", {}).get("multipleElements", []).has(1)
 
 ## 战斗者相关的全部对象：特性对象＋技能（角色已学、敌人行动表）
 static func objects(b: XBattler) -> Array:
@@ -353,9 +366,11 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var best := {}
 	var cands := []
 	var hp_type := int(item.get("damage", {}).get("type", 0)) in [1, 5]  # 去全队 ×6 只动 HP 伤害、HP 吸取（XTianqiNoX6）
+	var deck_phys: bool = not frame.noElement and explicit == null and deck_physical(item, a, not originals.is_empty())  # T449：DECK 下原物理招的无属性候选读物理增伤
 	for raw_e in es:
 		var e := XTianqiElements.map_element_id(int(raw_e))
-		for oe in (originals if not originals.is_empty() else [e]):
+		for oe0 in (originals if not originals.is_empty() else [e]):
+			var oe: int = 1 if deck_phys and int(oe0) == 0 else int(oe0)  # 攻击方侧（增伤、固定附加、独立乘区、明细）用的属性
 			var resistance := 1.0
 			var absorb := false
 			var tq_kind := ""
