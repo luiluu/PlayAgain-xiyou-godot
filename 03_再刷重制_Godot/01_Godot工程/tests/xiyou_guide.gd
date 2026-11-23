@@ -244,6 +244,7 @@ func _map_milestone() -> void:
 	XConfig.path_override = XSave.dir().path_join("options.json")
 	XConfig.whisper_mark("rift1")   # 新源大厅首次进入的漩涡过场（Map4 EV76）另测（xiyou_floor_reach004），这里当作播过，免得盖住里程碑提示
 	XConfig.whisper_mark("rift2")   # 漩涡二阶段过场（XRift，Map4 EV203：rift1 看过就播）同样占住大厅，一并记成看过
+	XConfig.whisper_mark("rift3")   # 漩涡三阶段过场（XRift，Map4 EV205：rift2 看过后下一次进大厅就播）同样占住大厅，一并记成看过
 	XMessageBox.auto = true
 	XMessageBox.transcript.clear()
 	_fresh()
@@ -275,6 +276,7 @@ func _tianqi_milestone() -> void:
 	var kit = Kit.new("xiyou_guide_tq")
 	XConfig.whisper_mark("rift1")
 	XConfig.whisper_mark("rift2")
+	XConfig.whisper_mark("rift3")   # 漩涡三阶段过场（XRift，Map4 EV205：rift2 看过后下一次进大厅就播）同样占住大厅，一并记成看过
 	var tq := Kit.new_game("jiusi")
 	var by := {}
 	for x in XGuide.atlas():

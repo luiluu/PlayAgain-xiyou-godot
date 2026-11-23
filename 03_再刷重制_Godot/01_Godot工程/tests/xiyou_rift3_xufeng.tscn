@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/xiyou_rift3_xufeng.gd" id="1"]
+
+[node name="Rift3Xufeng" type="Node"]
+script = ExtResource("1")

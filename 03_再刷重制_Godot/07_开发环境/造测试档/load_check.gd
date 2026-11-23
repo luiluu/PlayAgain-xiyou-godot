@@ -37,6 +37,7 @@ func _run() -> void:
 	XConfig._loaded_path = "<unloaded>"
 	XConfig.whisper_mark("rift1")
 	XConfig.whisper_mark("rift2")
+	XConfig.whisper_mark("rift3")   # 漩涡三阶段过场（XRift，Map4 EV205：rift2 看过后下一次进大厅就播）同样占住大厅，一并记成看过
 	out.exists = XSave.exists(slot)
 	out.summary = XSave.summary(slot)
 	out.loaded = XSave.load_slot(slot)

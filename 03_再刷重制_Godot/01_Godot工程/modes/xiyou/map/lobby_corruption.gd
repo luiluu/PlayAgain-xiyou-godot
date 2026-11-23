@@ -29,6 +29,8 @@ const RADIUS := 6.0
 const FLAG_KEY := "_remakeLobbyCorruption"
 ## 漩涡紫
 const PURPLE := Color(0.56, 0.36, 0.92)
+## 要整只染幽紫的过场事件备注（＝XRift.MOB_NOTE；按字面写，不依赖 XRift 先合）
+const MOB_TINT_NOTE := "<codex_rift_alien_mob>"
 const CRACK_DARK := Color(0.09, 0.02, 0.13)
 ## 正式美术（Codex 11-11 原创，content/lobby/）：有图用图，没图（或测试置空）照旧程序画
 static var CRACK_TEX := "res://content/lobby/crack_stage2.png"
@@ -504,6 +506,10 @@ func _on_shake() -> void:
 # ---- 人物染紫、气泡 ----
 
 func _update_tint() -> void:
+	# 漩涡三阶段过场（XRift EV207）的异化怪物：原版行走图整只染幽紫（T412，不新画）
+	for e in host.events:
+		if is_instance_valid(e) and str(e.data.get("note", "")) == MOB_TINT_NOTE and e.self_modulate != PURPLE:
+			e.self_modulate = PURPLE
 	var chars: Array = [host.player] + host.followers
 	for c in chars:
 		if not is_instance_valid(c):

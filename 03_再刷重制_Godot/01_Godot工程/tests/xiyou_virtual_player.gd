@@ -242,6 +242,7 @@ func _run() -> void:
 	XConfig._loaded_path = ""
 	XConfig.whisper_mark("rift1")
 	XConfig.whisper_mark("rift2")
+	XConfig.whisper_mark("rift3")   # 漩涡三阶段过场（XRift，Map4 EV205：rift2 看过后下一次进大厅就播）同样占住大厅，一并记成看过
 	XEnemy.force_roll = 100.0
 	_clock = [OS.low_processor_usage_mode_sleep_usec, Engine.physics_ticks_per_second, Engine.max_physics_steps_per_frame, Engine.time_scale]
 	if DisplayServer.get_name() == "headless":
