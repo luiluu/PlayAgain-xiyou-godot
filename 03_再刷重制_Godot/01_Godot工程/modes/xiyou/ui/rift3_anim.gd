@@ -1,21 +1,18 @@
 class_name XRift3Anim
 extends CanvasLayer
-## 【小A·未经审查】二阶到三阶徐凤年回归漫画动画播放器与实时视觉特效（T425 拆卡 2 ＋ T428 拆卡 3；分镜 v0.5 定稿）。
-## - 全片 26.0 秒、四段状态机：P1 实时入格（0.0–2.6s）→ P2～P9 离线 .ogv（2.6–15.0s）→
-##   P10 实时劈页（15.0–17.3s）→ P11 破框残格三连对白与碎页收尾（17.3–26.0s）。
-## - P1 实时入格：截取当前 Map004 视口经 comic_halftone.gdshader（兼容 gl_compatibility）转黑白半调网点
-##   并保留中心漩涡微紫点缀，0.0–0.30s 由全屏微弹收束入左格 (48,56,560×440)，随后 1.00×→1.04× 缓推。
-## - P10 实时劈页：两块 Polygon2D 沿右上→左下斜线切开 P9 尾帧画页，0.10s 反色冲击帧＋12px 震屏＋白光与朱红残影，
-##   随后两半滑开实时透出真实 Map004，CPUParticles2D（96 片，连同 P11d 20 片共 116 ≤ 120）碎纸飞溅＋M6 透明挥斩掠散紫烟。
-## - P11 破框残格与退场：左侧斜切破边漫画残格复用 M5a（1.00×→1.03× 缓推），右侧白底黑粗框尖尾气泡＋左上常驻朱红名签
-##   连播三句（P11b 21.2s 仅框边单拍 2px 紫闪，正文绝不变紫），24.7s 残格碎纸（20 片）飘散＋底部 #DCDCE0 旁白条收尾无残留。
-## - 资源守卫 available()、抗变速齿轮真实秒计时、0.8s 保护期跳过与 missed_lines 补播均保持 T425 口径不变。
+## 【小A·未经审查】二阶到三阶徐凤年回归漫画动画播放器与全套定稿素材合成舞台（T425＋T428＋T429；分镜 v0.6 定稿）。
+## - 全片 30.5 秒、7 幕画页、15 格四段状态机：P1 实时入格（0.0–2.6s）→ P2～P9b 动态漫画中段（2.6–19.5s，含 T437 新增
+##   P8a 落地对峙／P8b 怪扑侧闪／P9a 刀爪相撞／P9b 斩怪化雾与 M5b 30 帧拔刀寒光序列）→ P10 实时劈页（19.5–21.8s，
+##   以第 6 页 P9b 定格尾帧 rift3_mid_end.webp 为纹理源＋镜像 M6 右上→左下破框挥斩）→ P11 破框残格三连对白与碎页收尾（21.8–30.5s）。
+## - 5 句审定台词正文直读 XRift.RIFT3_LINES 一字不改，后 4 句时间轴整体顺延 +4.5s，跳过补播阈值同步对齐（1.0s/15.0s/27.5s）。
+## - 11 处实时叠字：原 8 处（T426 定稿）不变；新增 3 处（P8b 嗖！／P9a 铿！／P9b 嗤！，2026-11-23 小A·文字审定定稿）保留独立常量。
+## - 资源守卫 available()（解决 T430 核 P3-2 门槛：全套 19 项核心 WebP 入仓就绪即返回 true，缺任一项或关开关安全回退 false）。
 
 signal finished
 
-## 回退总开关：false 时 available() 恒为 false（兼容拆卡 5 在 XRift 增设 RIFT3_ANIM 开关）
+## 回退总开关：false 时 available() 恒为 false
 static var ENABLED := true
-## 跳过后待事件层补播的句键列表（按 LINE_ORDER 顺序）；每次开播前清空，自然播满 26.0s 为空
+## 跳过后待事件层补播的句键列表（按 LINE_ORDER 顺序）；每次开播前清空，自然播满 30.5s 为空
 static var missed_lines: Array[String] = []
 ## 专项测试专用：覆盖资源存在性判定（默认空 Callable，走 ResourceLoader.exists）
 static var _asset_exists_override: Callable = Callable()
@@ -24,14 +21,19 @@ const LAYER := 88                  # 盖过地图黑幕（80），位于 XMovieP
 const NODE_NAME := "XRift3Anim"
 const STAGE_SIZE := Vector2(1280, 720)
 
-const TOTAL_DURATION := 26.0
+const TOTAL_DURATION := 30.5
 const PHASE_P1_END := 2.6
-const PHASE_MID_END := 15.0
-const PHASE_P10_END := 17.3
-const PHASE_P11D_START := 24.7
+const PHASE_MID_END := 19.5        # v0.6：P2～P9b 共 16.9s（较 v0.5 净增 +4.5s）
+const PHASE_P10_END := 21.8        # v0.6：P10 实时劈页 2.3s（19.5–21.8s）
+const P11B_START := 24.3
+const P11B_PURPLE_FLASH := 25.7    # v0.6：P11b 残格破边单拍微紫闪中心时刻（原 21.2s +4.5s）
+const P11C_START := 27.0
+const PHASE_P11D_START := 29.2     # v0.6：P11d 碎纸收尾起始（原 24.7s +4.5s）
 const SKIP_GUARD_SEC := 0.8
 const SKIP_FADE_SEC := 0.25
 const END_FADE_SEC := 0.3
+const FIRST_FRAME_SPIKE_SEC := 0.105   # P3-2：开播首帧载图若引发 >105ms 卡顿尖峰，夹至 1/30s 防跳过 P1 开头
+const FIRST_FRAME_CLAMP_SEC := 1.0 / 30.0
 
 ## P1 / P10 / P11 视觉参数与粒子硬上限（P10 96 ＋ P11d 20 = 116 <= 120）
 const SHADER_HALFTONE := "res://modes/xiyou/ui/shaders/comic_halftone.gdshader"
@@ -43,30 +45,80 @@ const P10_SHARD_AMOUNT := 96
 const P11_SHARD_AMOUNT := 20
 const MAX_TOTAL_SHARDS := 120
 
-## 4 个必需资源（全齐 available() 才为真）＋ 1 个可选同步音轨
-const VIDEO_MID := "res://content/rift/rift3_comic_mid.ogv"
-const TEX_M6_SLASH := "res://content/rift/rift3_m6_slash.webp"
-const TEX_P9_END := "res://content/rift/rift3_p9_end.webp"
-const TEX_M5A_PORTRAIT := "res://content/rift/rift3_m5a_portrait.webp"
-const AUDIO_SFX := "res://content/rift/rift3_comic_sfx.ogg"
+## M5b 拔刀寒光抽帧图集规格（5 张 × 2×3 格 = 30 帧 @ 12fps，单帧 960×440）
+const M5B_FRAME_SIZE := Vector2(960.0, 440.0)
+const M5B_COLS := 2
+const M5B_FRAMES_PER_SHEET := 6
+const M5B_TOTAL_FRAMES := 30
+const P9_START := 14.6
+const P9_DURATION := 2.5
+
+## 全套定稿素材路径（落盘于 content/rift3/）
+const ASSET_DIR := "res://content/rift3/"
+const TEX_M1_1 := "res://content/rift3/rift3_m1_1.webp"
+const TEX_M1_2 := "res://content/rift3/rift3_m1_2.webp"
+const TEX_M1_3 := "res://content/rift3/rift3_m1_3.webp"
+const TEX_M1_4 := "res://content/rift3/rift3_m1_4.webp"
+const TEX_M2_MOB := "res://content/rift3/rift3_m2_mob.webp"
+const TEX_M3_SKY := "res://content/rift3/rift3_m3_sky.webp"
+const TEX_M4_DIVE := "res://content/rift3/rift3_m4_dive.webp"
+const TEX_M7_P8A := "res://content/rift3/rift3_m7_p8a.webp"
+const TEX_M8_P8B := "res://content/rift3/rift3_m8_p8b.webp"
+const TEX_M5B_SHEETS: Array[String] = [
+	"res://content/rift3/rift3_m5b_sheet_0.webp",
+	"res://content/rift3/rift3_m5b_sheet_1.webp",
+	"res://content/rift3/rift3_m5b_sheet_2.webp",
+	"res://content/rift3/rift3_m5b_sheet_3.webp",
+	"res://content/rift3/rift3_m5b_sheet_4.webp",
+]
+const TEX_M9_P9A := "res://content/rift3/rift3_m9_p9a.webp"
+const TEX_M10_P9B := "res://content/rift3/rift3_m10_p9b.webp"
+const TEX_MID_END := "res://content/rift3/rift3_mid_end.webp"
+const TEX_P9_END := TEX_MID_END   # 兼容旧引用别名（指向第 6 页 P9b 尾帧）
+const TEX_M6_SLASH := "res://content/rift3/rift3_m6_slash.webp"
+const TEX_M5A_PORTRAIT := "res://content/rift3/rift3_m5a_portrait.webp"
+const AUDIO_SFX := "res://content/rift3/rift3_comic_sfx.ogg"
+const VIDEO_MID := "res://content/rift3/rift3_comic_mid.ogv"  # 可选外部整段视频覆盖口（默认走实时 WebP 合成舞台）
+
+## 19 项核心视觉素材（全齐 available() 才为真；缺任一项返回 false 安全回退原像素过场）
 const REQUIRED_ASSETS: Array[String] = [
-	VIDEO_MID,
+	TEX_M1_1,
+	TEX_M1_2,
+	TEX_M1_3,
+	TEX_M1_4,
+	TEX_M2_MOB,
+	TEX_M3_SKY,
+	TEX_M4_DIVE,
+	TEX_M7_P8A,
+	TEX_M8_P8B,
+	"res://content/rift3/rift3_m5b_sheet_0.webp",
+	"res://content/rift3/rift3_m5b_sheet_1.webp",
+	"res://content/rift3/rift3_m5b_sheet_2.webp",
+	"res://content/rift3/rift3_m5b_sheet_3.webp",
+	"res://content/rift3/rift3_m5b_sheet_4.webp",
+	TEX_M9_P9A,
+	TEX_M10_P9B,
+	TEX_MID_END,
 	TEX_M6_SLASH,
-	TEX_P9_END,
 	TEX_M5A_PORTRAIT,
 ]
 
-## 三色配色规范（黑白线稿网点／幽紫／朱红）＋ v0.5 审定 after 浅银白字色
+## 三色配色规范（黑白线稿网点／幽紫／朱红）＋ v0.5/v0.6 审定 after 浅银白字色
 const COLOR_INK := Color("0b0b0e")
 const COLOR_PAPER := Color("f4f2ec")
 const COLOR_GRAY_DARK := Color("6e6e75")
 const COLOR_GRAY_LIGHT := Color("b8b8be")
-const COLOR_AFTER_TEXT := Color("dcdce0")       # v0.5 第 7.1 节审定：P11d after 浅银白字色
+const COLOR_AFTER_TEXT := Color("dcdce0")       # P11d after 浅银白字色
 const COLOR_PURPLE := Color(0.56, 0.36, 0.92)   # #8F5CEB，同 XLobbyCorruption.PURPLE
 const COLOR_PURPLE_DARK := Color("341956")
 const COLOR_PURPLE_BRIGHT := Color("c29bff")
 const COLOR_CRIMSON := Color("c8282e")
 const COLOR_CRIMSON_BRIGHT := Color("f04444")
+
+## v0.6 新增斩怪交互格 3 处拟声字（独立常量，2026-11-23 已由小A·文字审定定稿；P8a 留白无字）
+const SFX_P8B := "嗖！"
+const SFX_P9A := "铿！"
+const SFX_P9B := "嗤！"
 
 enum Phase {
 	P1 = 0,
@@ -82,38 +134,45 @@ const PHASE_NAMES := {
 	Phase.P11: "P11",
 }
 
-## 5 句定稿台词顺序与漫画内显示时段／已看全阈值（正文直读 XRift.RIFT3_LINES，零重复写死）
+## 5 句定稿台词顺序与漫画内显示时段／已看全阈值（正文直读 XRift.RIFT3_LINES，后 4 句顺延 +4.5s）
 const LINE_ORDER: Array[String] = ["whisper", "sense", "hint", "follow", "after"]
 const DIALOGUE_CUES: Array[Dictionary] = [
 	{"key": "whisper", "start": 0.4,  "end": 2.4,  "seen_at": 2.2,  "style": "narration_p1",  "show_speaker": false},
-	{"key": "sense",   "start": 17.4, "end": 19.7, "seen_at": 19.4, "style": "speech_bubble", "show_speaker": true},
-	{"key": "hint",    "start": 19.9, "end": 22.4, "seen_at": 22.1, "style": "speech_bubble", "show_speaker": true},
-	{"key": "follow",  "start": 22.6, "end": 24.6, "seen_at": 24.3, "style": "speech_bubble", "show_speaker": true},
-	{"key": "after",   "start": 24.7, "end": 25.9, "seen_at": 25.7, "style": "narration_end", "show_speaker": false},
+	{"key": "sense",   "start": 21.9, "end": 24.2, "seen_at": 23.9, "style": "speech_bubble", "show_speaker": true},
+	{"key": "hint",    "start": 24.4, "end": 26.9, "seen_at": 26.6, "style": "speech_bubble", "show_speaker": true},
+	{"key": "follow",  "start": 27.1, "end": 29.1, "seen_at": 28.8, "style": "speech_bubble", "show_speaker": true},
+	{"key": "after",   "start": 29.2, "end": 30.4, "seen_at": 30.2, "style": "narration_end", "show_speaker": false},
 ]
 
-## 8 处漫画实时叠字时间码（v0.5 第 7.2 节 T426 正式定稿：7 处拟声字＋1 处刀意字「斩」）
+## 11 处漫画实时叠字时间码（原 8 处 T426 定稿＋新格 3 处小A·文字审定定稿；10 拟声＋1 唯一刀意字「斩」）
 const SFX_CUES: Array[Dictionary] = [
-	{"id": "p2_hum",    "panel": "P2",  "kind": "sfx",   "text": "嗡——",   "start": 2.8,  "end": 4.3,   "pos": Vector2(920, 130), "size": 46, "color": COLOR_INK,   "outline": COLOR_PURPLE,      "rot_deg": -6.0},
-	{"id": "p3_crack",  "panel": "P3",  "kind": "sfx",   "text": "咔嚓！", "start": 4.5,  "end": 6.1,   "pos": Vector2(860, 520), "size": 54, "color": COLOR_PAPER, "outline": COLOR_PURPLE,      "rot_deg": 5.0},
-	{"id": "p4_rip",    "panel": "P4",  "kind": "sfx",   "text": "嘶啦！", "start": 6.3,  "end": 7.5,   "pos": Vector2(180, 170), "size": 52, "color": COLOR_PAPER, "outline": COLOR_PURPLE_DARK, "rot_deg": -10.0},
-	{"id": "p5_boom",   "panel": "P5",  "kind": "sfx",   "text": "轰——！", "start": 7.7,  "end": 9.5,   "pos": Vector2(840, 470), "size": 64, "color": COLOR_INK,   "outline": COLOR_PAPER,       "rot_deg": -8.0},
-	{"id": "p6_whoosh", "panel": "P6",  "kind": "sfx",   "text": "唰！",   "start": 9.65, "end": 10.45, "pos": Vector2(940, 100), "size": 50, "color": COLOR_PAPER, "outline": COLOR_CRIMSON,     "rot_deg": -14.0},
-	{"id": "p8_zheng",  "panel": "P8",  "kind": "sfx",   "text": "铮！",   "start": 11.4, "end": 12.45, "pos": Vector2(160, 440), "size": 56, "color": COLOR_PAPER, "outline": COLOR_INK,         "rot_deg": -12.0},
-	{"id": "p9_clang",  "panel": "P9",  "kind": "sfx",   "text": "锵——！", "start": 12.7, "end": 14.7,  "pos": Vector2(860, 130), "size": 62, "color": COLOR_PAPER, "outline": COLOR_INK,         "rot_deg": -6.0},
-	{"id": "p10_slash", "panel": "P10", "kind": "blade", "text": "斩",     "start": 15.0, "end": 15.45, "pos": Vector2(560, 240), "size": 88, "color": COLOR_PAPER, "outline": COLOR_INK,         "rot_deg": -18.0},
+	{"id": "p2_hum",     "panel": "P2",  "kind": "sfx",   "text": "嗡——",  "start": 2.8,   "end": 4.3,   "pos": Vector2(930, 118),  "size": 46, "color": COLOR_INK,   "outline": COLOR_PURPLE,      "rot_deg": -6.0},
+	{"id": "p3_crack",   "panel": "P3",  "kind": "sfx",   "text": "咔嚓！", "start": 4.5,   "end": 6.1,   "pos": Vector2(860, 520),  "size": 54, "color": COLOR_PAPER, "outline": COLOR_PURPLE,      "rot_deg": 5.0},
+	{"id": "p4_rip",     "panel": "P4",  "kind": "sfx",   "text": "嘶啦！", "start": 6.3,   "end": 7.5,   "pos": Vector2(180, 170),  "size": 52, "color": COLOR_PAPER, "outline": COLOR_PURPLE_DARK, "rot_deg": -10.0},
+	{"id": "p5_boom",    "panel": "P5",  "kind": "sfx",   "text": "轰——！", "start": 7.7,   "end": 9.5,   "pos": Vector2(830, 480),  "size": 64, "color": COLOR_INK,   "outline": COLOR_PAPER,       "rot_deg": -8.0},
+	{"id": "p6_whoosh",  "panel": "P6",  "kind": "sfx",   "text": "唰！",   "start": 9.65,  "end": 10.45, "pos": Vector2(950, 92),   "size": 50, "color": COLOR_PAPER, "outline": COLOR_CRIMSON,     "rot_deg": -14.0},
+	{"id": "p8_zheng",   "panel": "P8",  "kind": "sfx",   "text": "铮！",   "start": 11.4,  "end": 12.45, "pos": Vector2(160, 440),  "size": 56, "color": COLOR_PAPER, "outline": COLOR_INK,         "rot_deg": -12.0},
+	{"id": "p8b_dodge",  "panel": "P8b", "kind": "sfx",   "text": SFX_P8B,  "start": 13.7,  "end": 14.55, "pos": Vector2(468, 566),  "size": 54, "color": COLOR_PAPER, "outline": COLOR_CRIMSON,     "rot_deg": -14.0, "sharp": true},
+	{"id": "p9_clang",   "panel": "P9",  "kind": "sfx",   "text": "锵——！", "start": 14.8,  "end": 16.8,  "pos": Vector2(880, 126),  "size": 62, "color": COLOR_PAPER, "outline": COLOR_INK,         "rot_deg": -6.0},
+	{"id": "p9a_clash",  "panel": "P9a", "kind": "sfx",   "text": SFX_P9A,  "start": 17.15, "end": 18.15, "pos": Vector2(330, 290),  "size": 58, "color": COLOR_PAPER, "outline": COLOR_INK,         "rot_deg": -10.0, "crimson_shadow": true},
+	{"id": "p9b_cleave", "panel": "P9b", "kind": "sfx",   "text": SFX_P9B,  "start": 18.3,  "end": 19.45, "pos": Vector2(1030, 352), "size": 56, "color": COLOR_PAPER, "outline": COLOR_PURPLE,      "rot_deg": -8.0},
+	{"id": "p10_slash",  "panel": "P10", "kind": "blade", "text": "斩",     "start": 19.5,  "end": 19.95, "pos": Vector2(560, 240),  "size": 88, "color": COLOR_PAPER, "outline": COLOR_INK,         "rot_deg": -18.0},
 ]
 
-## P2～P9 中段分格时间窗（无 .ogv 时的程序占位可视化用）
+## P2～P9b 中段 12 格时间窗与主矩形（严格对齐分镜 v0.6 第 2.2/2.3 节）
 const MID_PANELS: Array[Dictionary] = [
-	{"panel": "P2", "start": 2.6,  "end": 4.4,  "rect": Rect2(632, 56, 600, 440),  "accent": COLOR_PURPLE},
-	{"panel": "P3", "start": 4.4,  "end": 6.2,  "rect": Rect2(48, 512, 1184, 168), "accent": COLOR_PURPLE_BRIGHT},
-	{"panel": "P4", "start": 6.2,  "end": 7.6,  "rect": Rect2(80, 90, 1120, 540),  "accent": COLOR_PURPLE_DARK},
-	{"panel": "P5", "start": 7.6,  "end": 9.6,  "rect": Rect2(260, 72, 760, 576),  "accent": COLOR_PURPLE},
-	{"panel": "P6", "start": 9.6,  "end": 10.5, "rect": Rect2(340, 36, 880, 220),  "accent": COLOR_CRIMSON},
-	{"panel": "P7", "start": 10.5, "end": 11.3, "rect": Rect2(370, 276, 540, 120), "accent": COLOR_PURPLE_BRIGHT},
-	{"panel": "P8", "start": 11.3, "end": 12.5, "rect": Rect2(120, 412, 820, 276), "accent": COLOR_CRIMSON},
-	{"panel": "P9", "start": 12.5, "end": 15.0, "rect": Rect2(60, 94, 1160, 532),  "accent": COLOR_CRIMSON_BRIGHT},
+	{"panel": "P2",  "start": 2.6,  "end": 4.4,  "rect": Rect2(632, 56, 600, 440),  "accent": COLOR_PURPLE},
+	{"panel": "P3",  "start": 4.4,  "end": 6.2,  "rect": Rect2(48, 512, 1184, 168), "accent": COLOR_PURPLE_BRIGHT},
+	{"panel": "P4",  "start": 6.2,  "end": 7.6,  "rect": Rect2(80, 90, 1120, 540),  "accent": COLOR_PURPLE_DARK},
+	{"panel": "P5",  "start": 7.6,  "end": 9.6,  "rect": Rect2(260, 72, 760, 576),  "accent": COLOR_PURPLE},
+	{"panel": "P6",  "start": 9.6,  "end": 10.5, "rect": Rect2(340, 36, 880, 220),  "accent": COLOR_CRIMSON},
+	{"panel": "P7",  "start": 10.5, "end": 11.3, "rect": Rect2(370, 276, 540, 120), "accent": COLOR_PURPLE_BRIGHT},
+	{"panel": "P8",  "start": 11.3, "end": 12.5, "rect": Rect2(120, 412, 820, 276), "accent": COLOR_CRIMSON},
+	{"panel": "P8a", "start": 12.5, "end": 13.6, "rect": Rect2(48, 44, 780, 340),   "accent": COLOR_CRIMSON},
+	{"panel": "P8b", "start": 13.6, "end": 14.6, "rect": Rect2(440, 344, 792, 340), "accent": COLOR_CRIMSON_BRIGHT},
+	{"panel": "P9",  "start": 14.6, "end": 17.1, "rect": Rect2(60, 94, 1160, 532),  "accent": COLOR_CRIMSON_BRIGHT},
+	{"panel": "P9a", "start": 17.1, "end": 18.2, "rect": Rect2(48, 40, 760, 348),   "accent": COLOR_CRIMSON_BRIGHT},
+	{"panel": "P9b", "start": 18.2, "end": 19.5, "rect": Rect2(340, 326, 892, 358), "accent": COLOR_PURPLE_BRIGHT},
 ]
 
 ## P11 左侧破边漫画残格内轮廓（相对 480×440 容器：上/左规整，右侧带斜切撕裂缺口）
@@ -149,6 +208,7 @@ static var _cached_m5a_fallback_tex: Texture2D = null
 
 var _viewport_tex: Texture2D = null
 var _placeholder_mode := false
+var _mid_assets_ready := false
 var _t := 0.0
 var _phase := Phase.P1
 var _skipping := false
@@ -157,6 +217,7 @@ var _skip_time := -1.0
 var _fade := 0.0
 var _done := false
 var _pressed := false
+var _first_frame := true
 var _mid_started := false
 var _active_dialogue_key := ""
 var _active_dialogue_text := ""
@@ -169,6 +230,20 @@ var _p10_split_gap := 0.0
 var _p10_shards_fired := false
 var _p11_shards_fired := false
 var _p11_last_bubble_key := ""
+var _m5b_last_frame := -1
+
+# 加载的定稿纹理缓存（实例级，退出自动释放，不常驻污染启动内存）
+var _tex_m1: Array[Texture2D] = []
+var _tex_m2: Texture2D = null
+var _tex_m3: Texture2D = null
+var _tex_m4: Texture2D = null
+var _tex_m7: Texture2D = null
+var _tex_m8: Texture2D = null
+var _tex_m5b_sheets: Array[Texture2D] = []
+var _tex_m9: Texture2D = null
+var _tex_m10: Texture2D = null
+var _m5b_atlas: AtlasTexture = null
+var _p7_eye_atlas: AtlasTexture = null
 
 var _root: Control
 var _stage_layer: Control
@@ -180,11 +255,69 @@ var _p1_frame: Panel
 var _p1_tex_rect: TextureRect
 var _p1_mat: ShaderMaterial
 
-# MID 离线中段层
+# MID 动态漫画中段层（6 页完整舞台 + 兼容 _video_player / _mid_placeholder_box）
 var _mid_layer: Control
 var _video_player: VideoStreamPlayer
 var _mid_placeholder_box: Panel
 var _mid_placeholder_label: Label
+var _mid_stage: Control
+# 第 1 页（P1 左格留驻 + P2 右上漩涡 + P3 下方通栏 + 幽紫蚀框裂脉）
+var _page1: Control
+var _pg1_left_frame: Panel
+var _pg1_left_tex: TextureRect
+var _pg1_p2_frame: Panel
+var _pg1_p2_img_a: TextureRect
+var _pg1_p2_img_b: TextureRect
+var _pg1_p3_frame: Panel
+var _pg1_p3_img_a: TextureRect
+var _pg1_p3_img_b: TextureRect
+var _pg1_cracks: Control
+var _pg1_crack_lines: Array[Line2D] = []
+# 第 2 页（P4 3 块撕裂残格 + P5 破框集中线 + M2 透明前景出格）
+var _page2: Control
+var _pg2_p4_root: Control
+var _pg2_p4_shards: Array[Node2D] = []
+var _pg2_p5_root: Control
+var _pg2_p5_frame: Panel
+var _pg2_p5_rays: Control
+var _pg2_p5_mob: TextureRect
+# 第 3 页（P6 高空掠影 + P7 眼部反打 + P8 俯冲追杀）
+var _page3: Control
+var _pg3_p6_frame: Panel
+var _pg3_p6_img: TextureRect
+var _pg3_p6_ribbon: Polygon2D
+var _pg3_p7_frame: Panel
+var _pg3_p7_img: TextureRect
+var _pg3_p7_mat: ShaderMaterial
+var _pg3_p8_frame: Panel
+var _pg3_p8_img: TextureRect
+var _pg3_p8_ribbon: Polygon2D
+# 第 4 页（新：P8a 落地对峙 + P8b 怪扑侧闪）
+var _page4: Control
+var _pg4_p8a_frame: Panel
+var _pg4_p8a_img: TextureRect
+var _pg4_p8b_gutter: ColorRect
+var _pg4_p8b_frame: Panel
+var _pg4_p8b_img: TextureRect
+var _pg4_p8b_speed: Control
+# 第 5 页（P9 拔刀特写大格：M5b 30 帧 12fps 图集序列＋尾段程序纯白刀锋寒光束与锐利十字星芒）
+var _page5: Control
+var _pg5_p9_frame: Panel
+var _pg5_p9_img: TextureRect
+var _pg5_glint_root: Control
+var _pg5_glint_beam: Polygon2D
+var _pg5_glint_glow: TextureRect
+var _pg5_glint_star: Polygon2D
+# 第 6 页（新：P9a 刀爪相撞 + P9b 斩怪化雾，末 0.15s 定格像素级对齐 rift3_mid_end.webp）
+var _page6: Control
+var _pg6_p9a_frame: Panel
+var _pg6_p9a_img: TextureRect
+var _pg6_p9a_mat: ShaderMaterial
+var _pg6_p9b_gutter: ColorRect
+var _pg6_p9b_frame: Panel
+var _pg6_p9b_img: TextureRect
+var _pg6_p9b_slash_white: Polygon2D
+var _pg6_p9b_slash_red: Polygon2D
 
 # P10 实时劈页碎格层
 var _p10_layer: Control
@@ -250,19 +383,16 @@ static func _asset_exists(path: String) -> bool:
 	return ResourceLoader.exists(path)
 
 
-## 兼容读取 XRift.RIFT3_ANIM（拆卡 5 加到 rift.gd 后自动生效；未定义时视为 true）
+## 开关守卫：XRift.STAGE3 与 XRift.RIFT3_ANIM 均开启才为真
 static func _rift_switch_on() -> bool:
 	if not XRift.STAGE3:
 		return false
-	var scr: Script = XRift
-	if scr != null:
-		var flag = scr.get("RIFT3_ANIM")
-		if flag != null and not bool(flag):
-			return false
+	if not XRift.RIFT3_ANIM:
+		return false
 	return true
 
 
-## 开关全开且 4 个必需资源全部就绪才返回 true；缺任一资源返回 false 不报错
+## 开关全开且全部 19 项核心定稿视觉资产就绪才返回 true；缺任一项返回 false 不报错（T430 核 P3-2）
 static func available() -> bool:
 	if not ENABLED or not _rift_switch_on():
 		return false
@@ -336,13 +466,14 @@ func _init() -> void:
 
 
 func _ready() -> void:
+	var p1_tex: Texture2D = _viewport_tex if _viewport_tex != null else _get_p1_fallback_tex()
 	if _p1_tex_rect != null:
-		if _viewport_tex != null:
-			_p1_tex_rect.texture = _viewport_tex
-		else:
-			_p1_tex_rect.texture = _get_p1_fallback_tex()
+		_p1_tex_rect.texture = p1_tex
+	if _pg1_left_tex != null:
+		_pg1_left_tex.texture = p1_tex
+	_bind_p4_shard_textures(p1_tex)
 	_speech_speaker_label.text = str(parse_rift_line("sense").speaker)
-	_load_optional_assets()
+	_load_assets()
 	_sync_p10_textures()
 	_sync_p11_portrait_texture(1.0)
 	_sync_visuals()
@@ -379,7 +510,12 @@ func _process(delta: float) -> void:
 	var scale := maxf(Engine.time_scale, 0.001)
 	if _video_player != null:
 		_video_player.speed_scale = 1.0 / scale
-	step(delta / scale, _pressed)
+	var real_dt := delta / scale
+	if _first_frame:
+		_first_frame = false
+		if real_dt > FIRST_FRAME_SPIKE_SEC:
+			real_dt = minf(real_dt, FIRST_FRAME_CLAMP_SEC)
+	step(real_dt, _pressed)
 	_pressed = false
 
 
@@ -464,6 +600,8 @@ func state() -> Dictionary:
 		"fade": _fade,
 		"done": _done,
 		"placeholder_mode": _placeholder_mode,
+		"mid_assets_ready": _mid_assets_ready,
+		"m5b_frame": _m5b_last_frame,
 		"missed_lines": missed_lines.duplicate(),
 		"p1_shader_ready": _p1_mat != null and _p1_mat.shader != null,
 		"p1_mix_amount": _p1_mix_amount,
@@ -480,26 +618,86 @@ func state() -> Dictionary:
 	}
 
 
-func _load_optional_assets() -> void:
-	if ResourceLoader.exists(VIDEO_MID):
+func _load_tex(path: String) -> Texture2D:
+	if not ResourceLoader.exists(path):
+		return null
+	var res = load(path)
+	return res as Texture2D if res is Texture2D else null
+
+
+func _load_assets() -> void:
+	# 1) 中段全部定稿 WebP 贴图（M1×4, M2, M3, M4, M7, M8, M5b×5, M9_v2, M10）
+	_tex_m1.clear()
+	for p in [TEX_M1_1, TEX_M1_2, TEX_M1_3, TEX_M1_4]:
+		var tm := _load_tex(p)
+		if tm != null:
+			_tex_m1.append(tm)
+	_tex_m2 = _load_tex(TEX_M2_MOB)
+	_tex_m3 = _load_tex(TEX_M3_SKY)
+	_tex_m4 = _load_tex(TEX_M4_DIVE)
+	_tex_m7 = _load_tex(TEX_M7_P8A)
+	_tex_m8 = _load_tex(TEX_M8_P8B)
+	_tex_m5b_sheets.clear()
+	for sp in TEX_M5B_SHEETS:
+		var ts := _load_tex(sp)
+		if ts != null:
+			_tex_m5b_sheets.append(ts)
+	_tex_m9 = _load_tex(TEX_M9_P9A)
+	_tex_m10 = _load_tex(TEX_M10_P9B)
+
+	_mid_assets_ready = (_tex_m1.size() == 4
+		and _tex_m2 != null and _tex_m3 != null and _tex_m4 != null
+		and _tex_m7 != null and _tex_m8 != null
+		and _tex_m5b_sheets.size() == TEX_M5B_SHEETS.size()
+		and _tex_m9 != null and _tex_m10 != null)
+
+	if _mid_assets_ready:
+		_pg1_p2_img_a.texture = _tex_m1[0]
+		_pg1_p2_img_b.texture = _tex_m1[1]
+		_pg1_p3_img_a.texture = _tex_m1[2]
+		_pg1_p3_img_b.texture = _tex_m1[3]
+		_pg2_p5_mob.texture = _tex_m2
+		_pg3_p6_img.texture = _tex_m3
+		# P7 裁切复用 M2 怪物亮紫双目横带（对齐 T427 实测 M2 眼部位置 y=20%~39%）
+		var m2_sz := _tex_m2.get_size()
+		_p7_eye_atlas = AtlasTexture.new()
+		_p7_eye_atlas.atlas = _tex_m2
+		_p7_eye_atlas.region = Rect2(m2_sz.x * 0.22, m2_sz.y * 0.19, m2_sz.x * 0.44, m2_sz.y * 0.19)
+		_pg3_p7_img.texture = _p7_eye_atlas
+		_pg3_p8_img.texture = _tex_m4
+		_pg4_p8a_img.texture = _tex_m7
+		_pg4_p8b_img.texture = _tex_m8
+		_m5b_atlas = AtlasTexture.new()
+		_m5b_atlas.atlas = _tex_m5b_sheets[0]
+		_m5b_atlas.region = Rect2(Vector2.ZERO, M5B_FRAME_SIZE)
+		_pg5_p9_img.texture = _m5b_atlas
+		_pg6_p9a_img.texture = _tex_m9
+		_pg6_p9b_img.texture = _tex_m10
+		if _mid_stage != null:
+			_mid_stage.visible = true
+		if _mid_placeholder_box != null:
+			_mid_placeholder_box.visible = false
+	elif ResourceLoader.exists(VIDEO_MID):
+		# 兼容可选整段 .ogv 覆盖口
 		var st = load(VIDEO_MID)
 		if st is VideoStream and _video_player != null:
 			_video_player.stream = st
 			_video_player.visible = true
 			if _mid_placeholder_box != null:
 				_mid_placeholder_box.visible = false
-	if ResourceLoader.exists(TEX_P9_END):
-		var t1 = load(TEX_P9_END)
-		if t1 is Texture2D and _p10_end_rect != null:
-			_p10_end_rect.texture = t1
-	if ResourceLoader.exists(TEX_M6_SLASH):
-		var t2 = load(TEX_M6_SLASH)
-		if t2 is Texture2D and _p10_slash_rect != null:
-			_p10_slash_rect.texture = t2
-	if ResourceLoader.exists(TEX_M5A_PORTRAIT):
-		var t3 = load(TEX_M5A_PORTRAIT)
-		if t3 is Texture2D and _p11_portrait_rect != null:
-			_p11_portrait_rect.texture = t3
+
+	# 2) P10 尾帧（第 6 页 P9b 斩怪定格）＋ M6 水平镜像透明挥斩 ＋ P11 M5a 立绘
+	var t_end := _load_tex(TEX_MID_END)
+	if t_end != null and _p10_end_rect != null:
+		_p10_end_rect.texture = t_end
+	var t_m6 := _load_tex(TEX_M6_SLASH)
+	if t_m6 != null and _p10_slash_rect != null:
+		_p10_slash_rect.texture = t_m6
+	var t_m5a := _load_tex(TEX_M5A_PORTRAIT)
+	if t_m5a != null and _p11_portrait_rect != null:
+		_p11_portrait_rect.texture = t_m5a
+
+	# 3) 可选同步音效轨（30.5s 混音）
 	if ResourceLoader.exists(AUDIO_SFX):
 		var au = load(AUDIO_SFX)
 		if au is AudioStream:
@@ -517,7 +715,7 @@ func _sync_visuals() -> void:
 	_p10_layer.visible = (_phase == Phase.P10)
 	_p11_layer.visible = (_phase == Phase.P11)
 
-	# 中段视频仅在进入 Phase.MID 时启动、离开时停止，避免 P1 阶段偷跑
+	# 若启用外部 .ogv 覆盖口，仅在进入 Phase.MID 时启动、离开时停止
 	if _phase == Phase.MID:
 		if _video_player != null and _video_player.stream != null and not _mid_started:
 			_mid_started = true
@@ -530,6 +728,7 @@ func _sync_visuals() -> void:
 
 	_sync_panel_placeholder()
 	_update_phase_p1()
+	_update_phase_mid()
 	_update_phase_p10()
 	_update_phase_p11()
 	_sync_sfx_cues()
@@ -564,14 +763,288 @@ func _update_phase_p1() -> void:
 		_p1_mat.set_shader_parameter("panel_size", _p1_tex_rect.size)
 
 
+## 中段动态漫画 6 页完整调度（2.6–19.5s，使用全部定稿 WebP＋M5b 30 帧拔刀图集）
+func _update_phase_mid() -> void:
+	if _phase != Phase.MID or not _mid_assets_ready or _mid_stage == null:
+		return
+	var show_p1 := _t < 6.2
+	var show_p2 := _t >= 6.2 and _t < 9.6
+	var show_p3 := _t >= 9.6 and _t < 12.5
+	var show_p4 := _t >= 12.5 and _t < 14.6
+	var show_p5 := _t >= 14.6 and _t < 17.1
+	var show_p6 := _t >= 17.1
+
+	_page1.visible = show_p1
+	_page2.visible = show_p2
+	_page3.visible = show_p3
+	_page4.visible = show_p4
+	_page5.visible = show_p5
+	_page6.visible = show_p6
+
+	if show_p1:
+		_update_mid_page1()
+	elif show_p2:
+		_update_mid_page2()
+	elif show_p3:
+		_update_mid_page3()
+	elif show_p4:
+		_update_mid_page4()
+	elif show_p5:
+		_update_mid_page5()
+	elif show_p6:
+		_update_mid_page6()
+
+
+func _update_mid_page1() -> void:
+	# 第 1 页：P2 (2.6–4.4s) 右上漩涡弹出 → P3 (4.4–6.2s) 下方通栏暴走＋整页白框遭幽紫侵蚀开裂、右格错位滑坠
+	var in_p3 := _t >= 4.4
+	var p2_u := clampf((_t - 2.6) / 1.8, 0.0, 1.0)
+	var slide_u := _ease_out_back_subtle(clampf((_t - 2.6) / 0.14, 0.0, 1.0))
+	var p2_base := Vector2(lerpf(760.0, 632.0, slide_u), 56.0)
+
+	# P2 内部 M1-1 → M1-2 图接图叠化＋加速微推
+	var blend_12 := clampf((_t - 3.35) / 0.45, 0.0, 1.0)
+	_pg1_p2_img_b.modulate.a = blend_12
+	var z2 := lerpf(1.0, 1.10, p2_u)
+	_set_zoom_rect(_pg1_p2_img_a, Vector2(590, 430), z2)
+	_set_zoom_rect(_pg1_p2_img_b, Vector2(590, 430), z2)
+
+	if not in_p3:
+		_page1.position = Vector2.ZERO
+		_pg1_p2_frame.position = p2_base
+		_pg1_p2_frame.rotation_degrees = 0.0
+		_pg1_p3_frame.visible = false
+		_pg1_cracks.visible = false
+		_set_frame_border_color(_pg1_left_frame, COLOR_PAPER)
+		_set_frame_border_color(_pg1_p2_frame, COLOR_PAPER)
+	else:
+		var p3_lt := _t - 4.4  # 0.0 .. 1.8s
+		var p3_u := clampf(p3_lt / 1.8, 0.0, 1.0)
+		var pop3 := _ease_out_back_subtle(clampf(p3_lt / 0.12, 0.0, 1.0))
+		_pg1_p3_frame.visible = true
+		_pg1_p3_frame.position = Vector2(48.0, lerpf(560.0, 512.0, pop3))
+		# M1-3 → M1-4 暴走裂开
+		_pg1_p3_img_b.modulate.a = clampf((p3_lt - 0.65) / 0.45, 0.0, 1.0)
+		var z3 := lerpf(1.0, 1.08, p3_u)
+		_set_zoom_rect(_pg1_p3_img_a, Vector2(1174, 158), z3)
+		_set_zoom_rect(_pg1_p3_img_b, Vector2(1174, 158), z3)
+
+		# 主题①起爆：4px 高频微震 + 幽紫蚀骨裂脉沿白框爬裂 + 右格错位滑坠 12px
+		var amp := lerpf(4.5, 2.2, p3_u)
+		_page1.position = Vector2(sin(p3_lt * 165.0) * amp, cos(p3_lt * 195.0) * amp * 0.75)
+		var slip := clampf((p3_lt - 0.25) / 0.55, 0.0, 1.0)
+		_pg1_p2_frame.position = Vector2(632.0 + slip * 4.0, 56.0 + slip * 12.0)
+		_pg1_p2_frame.rotation_degrees = slip * 1.6
+		var crack_col := COLOR_PAPER.lerp(COLOR_PURPLE_BRIGHT, clampf(p3_u * 1.1, 0.0, 0.85))
+		_set_frame_border_color(_pg1_left_frame, crack_col)
+		_set_frame_border_color(_pg1_p2_frame, crack_col)
+		_set_frame_border_color(_pg1_p3_frame, COLOR_PURPLE_BRIGHT)
+
+		_pg1_cracks.visible = true
+		for i in _pg1_crack_lines.size():
+			var ln: Line2D = _pg1_crack_lines[i]
+			var thresh := float(i) * 0.08
+			var a := clampf((p3_u - thresh) / 0.22, 0.0, 1.0)
+			ln.modulate.a = a
+
+
+func _update_mid_page2() -> void:
+	# 第 2 页：P4 (6.2–7.6s) 3 块斜切残格撕裂 → P5 (7.6–9.6s) 斜切格框＋集中线＋M2 透明怪破框出格急放
+	var in_p5 := _t >= 7.6
+	var p4_lt := clampf(_t - 6.2, 0.0, 1.4)
+	var p4_u := clampf(p4_lt / 1.4, 0.0, 1.0)
+	_pg2_p4_root.visible = true
+	var dirs := [Vector2(-46.0, -26.0), Vector2(36.0, -18.0), Vector2(-12.0, 42.0)]
+	var rots := [-4.2, 3.8, -2.5]
+	for i in _pg2_p4_shards.size():
+		var sh: Node2D = _pg2_p4_shards[i]
+		var jitter := Vector2(sin(p4_lt * 130.0 + i * 2.1), cos(p4_lt * 155.0 - i)) * (3.0 if not in_p5 else 0.0)
+		sh.position = dirs[i] * p4_u + jitter
+		sh.rotation_degrees = rots[i] * p4_u
+	_pg2_p4_root.modulate.a = 1.0 if not in_p5 else 0.45
+
+	_pg2_p5_root.visible = in_p5
+	if not in_p5:
+		_page2.position = Vector2.ZERO
+		return
+
+	var p5_lt := _t - 7.6  # 0.0 .. 2.0s
+	# 前 1.7s 急放 0.88x -> 1.16x，末 0.3s 顿压定格
+	var rush_u := clampf(p5_lt / 1.7, 0.0, 1.0)
+	var ease_rush := 1.0 - pow(1.0 - rush_u, 2.4)
+	var m2_scale := lerpf(0.88, 1.16, ease_rush)
+	var base_sz := Vector2(720.0, 560.0)
+	var cur_sz := base_sz * m2_scale
+	_pg2_p5_mob.size = cur_sz
+	_pg2_p5_mob.position = (STAGE_SIZE - cur_sz) * 0.5 + Vector2(0.0, lerpf(16.0, -12.0, ease_rush))
+
+	var shake_amp := 8.0 * pow(clampf(1.0 - p5_lt / 1.5, 0.0, 1.0), 1.4)
+	_page2.position = Vector2(sin(p5_lt * 185.0) * shake_amp, cos(p5_lt * 215.0) * shake_amp * 0.85)
+	_pg2_p5_rays.rotation_degrees = p5_lt * 8.0
+
+
+func _update_mid_page3() -> void:
+	# 第 3 页：P6 (9.6–10.5s) 高空掠影 → P7 (10.5–11.3s) 怪物眼部反打 → P8 (11.3–12.5s) 俯冲追杀
+	var in_p7 := _t >= 10.5
+	var in_p8 := _t >= 11.3
+
+	# P6 (9.6–10.5s)
+	var p6_lt := clampf(_t - 9.6, 0.0, 0.9)
+	var pop6 := _ease_out_back_subtle(clampf(p6_lt / 0.12, 0.0, 1.0))
+	_pg3_p6_frame.visible = true
+	_pg3_p6_frame.position = Vector2(lerpf(560.0, 340.0, pop6), 36.0)
+	_pg3_p6_ribbon.visible = true
+	_pg3_p6_ribbon.position = Vector2(lerpf(180.0, 0.0, pop6), 0.0)
+	_set_zoom_rect(_pg3_p6_img, Vector2(870, 210), lerpf(1.0, 1.07, p6_lt / 0.9), Vector2(lerpf(18.0, -18.0, p6_lt / 0.9), 0.0))
+
+	# P7 (10.5–11.3s)：眼部横条格＋首 2 帧反色闪
+	_pg3_p7_frame.visible = in_p7
+	if in_p7:
+		var p7_lt := clampf(_t - 10.5, 0.0, 0.8)
+		var pop7 := _ease_out_back_subtle(clampf(p7_lt / 0.10, 0.0, 1.0))
+		_pg3_p7_frame.position = Vector2(lerpf(180.0, 370.0, pop7), 276.0)
+		_set_zoom_rect(_pg3_p7_img, Vector2(530, 110), lerpf(1.0, 1.12, p7_lt / 0.8))
+		if _pg3_p7_mat != null:
+			_pg3_p7_mat.set_shader_parameter("invert_amount", 1.0 if p7_lt < 0.07 else 0.0)
+
+	# P8 (11.3–12.5s)：俯冲追杀大格＋急推 1.00×→1.12×
+	_pg3_p8_frame.visible = in_p8
+	_pg3_p8_ribbon.visible = in_p8
+	if in_p8:
+		var p8_lt := clampf(_t - 11.3, 0.0, 1.2)
+		var pop8 := _ease_out_back_subtle(clampf(p8_lt / 0.12, 0.0, 1.0))
+		var shake8 := 5.0 * clampf(1.0 - p8_lt / 0.35, 0.0, 1.0)
+		_pg3_p8_frame.position = Vector2(120.0 + sin(p8_lt * 190.0) * shake8, lerpf(510.0, 412.0, pop8) + cos(p8_lt * 210.0) * shake8 * 0.7)
+		_set_zoom_rect(_pg3_p8_img, Vector2(810, 266), lerpf(1.0, 1.12, p8_lt / 1.2))
+
+
+func _update_mid_page4() -> void:
+	# 第 4 页（新·近身周旋）：P8a (12.5–13.6s) 左上落地对峙 → P8b (13.6–14.6s) 右下怪扑侧闪压叠
+	var in_p8b := _t >= 13.6
+	var p8a_lt := clampf(_t - 12.5, 0.0, 1.1)
+	var pop8a := _ease_out_back_subtle(clampf(p8a_lt / 0.10, 0.0, 1.0))
+	_pg4_p8a_frame.position = Vector2(lerpf(12.0, 48.0, pop8a), 44.0)
+	_set_zoom_rect(_pg4_p8a_img, Vector2(770, 330), lerpf(1.0, 1.05, p8a_lt / 1.1))
+
+	_pg4_p8b_gutter.visible = in_p8b
+	_pg4_p8b_frame.visible = in_p8b
+	_pg4_p8b_speed.visible = in_p8b
+	if not in_p8b:
+		_page4.position = Vector2.ZERO
+		return
+
+	var p8b_lt := clampf(_t - 13.6, 0.0, 1.0)
+	var pop8b := _ease_out_back_subtle(clampf(p8b_lt / 0.11, 0.0, 1.0))
+	var slide_off := Vector2(lerpf(130.0, 0.0, pop8b), lerpf(42.0, 0.0, pop8b))
+	_pg4_p8b_gutter.position = Vector2(430.0, 334.0) + slide_off
+	_pg4_p8b_frame.position = Vector2(440.0, 344.0) + slide_off
+	_set_zoom_rect(_pg4_p8b_img, Vector2(782, 330), lerpf(1.0, 1.08, p8b_lt / 1.0))
+	var shake := 5.0 * clampf(1.0 - p8b_lt / 0.42, 0.0, 1.0)
+	_page4.position = Vector2(sin(p8b_lt * 175.0) * shake, cos(p8b_lt * 205.0) * shake * 0.8)
+
+
+func _update_mid_page5() -> void:
+	# 第 5 页（P9 拔刀特写大格，14.6–17.1s，2.5s）：M5b 0.00s～4.98s 物理连贯 30 帧 12fps 精准同步 _t，
+	# 尾段（lt 1.65~2.25s）叠加程序纯白刀锋掠光束＋纯白十字寒光星芒，末 0.25s 稳帧蓄力
+	var lt := clampf(_t - P9_START, 0.0, P9_DURATION)
+	var pop := _ease_out_back_subtle(clampf(lt / 0.10, 0.0, 1.0))
+	var shake := 6.0 * clampf(1.0 - lt / 0.28, 0.0, 1.0)
+	_pg5_p9_frame.position = Vector2(60.0 + sin(lt * 195.0) * shake, lerpf(132.0, 94.0, pop) + cos(lt * 210.0) * shake * 0.7)
+
+	# 0.0~2.25s 均匀推进 0..29 帧（严格 0.00s~4.98s 零穿帮段）；末 0.25s 稳住终帧蓄力
+	var anim_u := clampf(lt / 2.25, 0.0, 1.0)
+	var f_idx := clampi(int(floor(anim_u * float(M5B_TOTAL_FRAMES - 1) + 0.001)), 0, M5B_TOTAL_FRAMES - 1)
+	if f_idx != _m5b_last_frame and _m5b_atlas != null and not _tex_m5b_sheets.is_empty():
+		_m5b_last_frame = f_idx
+		var sheet_idx := clampi(f_idx / M5B_FRAMES_PER_SHEET, 0, _tex_m5b_sheets.size() - 1)
+		var local_idx := f_idx % M5B_FRAMES_PER_SHEET
+		var col := local_idx % M5B_COLS
+		var row := local_idx / M5B_COLS
+		_m5b_atlas.atlas = _tex_m5b_sheets[sheet_idx]
+		_m5b_atlas.region = Rect2(Vector2(col * M5B_FRAME_SIZE.x, row * M5B_FRAME_SIZE.y), M5B_FRAME_SIZE)
+	var zoom := lerpf(1.0, 1.035, clampf(lt / P9_DURATION, 0.0, 1.0))
+	_set_zoom_rect(_pg5_p9_img, Vector2(1150, 522), zoom)
+
+	# 尾段程序刀锋纯白寒光束＋锐利十字星芒（沿刀锋右段贴刃掠向刀锷，避开人物面部）
+	var glint_on := lt >= 1.62 and lt <= 2.28
+	_pg5_glint_root.visible = glint_on
+	if glint_on:
+		var gu := clampf((lt - 1.62) / 0.66, 0.0, 1.0)
+		var env := sin(gu * PI)
+		var blade_a := Vector2(470.0, 442.0)
+		var blade_b := Vector2(890.0, 222.0)
+		var dir := (blade_b - blade_a).normalized()
+		var nrm := Vector2(-dir.y, dir.x)
+		# 星芒沿刀刃右半段高速掠向刀锷（(640,352) -> (848,244)，全程离面部安全距离）
+		var sweep_pos := Vector2(640.0, 352.0).lerp(Vector2(848.0, 244.0), clampf(gu * 1.15, 0.0, 1.0))
+		var half_w := lerpf(2.0, 6.5, env)
+		_pg5_glint_beam.polygon = _tapered_slash_poly(blade_a, blade_b, nrm, half_w)
+		_pg5_glint_beam.color = Color(1.0, 1.0, 1.0, env * 0.78)
+		var glow_sz := Vector2.ONE * lerpf(80.0, 190.0, env)
+		_pg5_glint_glow.size = glow_sz
+		_pg5_glint_glow.position = sweep_pos - glow_sz * 0.5
+		_pg5_glint_glow.modulate = Color(1.0, 1.0, 1.0, env * 0.88)
+		_pg5_glint_star.position = sweep_pos
+		_pg5_glint_star.scale = Vector2.ONE * lerpf(0.40, 1.12, env)
+		_pg5_glint_star.rotation_degrees = -28.0 + gu * 12.0
+		_pg5_glint_star.color = Color(1.0, 1.0, 1.0, minf(env * 1.35, 1.0))
+
+
+func _update_mid_page6() -> void:
+	# 第 6 页（新·硬撼斩怪）：P9a (17.1–18.2s) 刀爪相撞 → P9b (18.2–19.5s) 斩怪化紫雾
+	# 末 0.15s (19.35–19.50s) 震屏归零、斜光收净，像素级 1:1 锁定对齐 rift3_mid_end.webp 无缝衔接 P10 劈页！
+	var in_p9b := _t >= 18.2
+	var p9a_lt := clampf(_t - 17.1, 0.0, 1.1)
+	# 首帧反色冲击闪 1 帧（0.05s）＋急速缩放回弹 1.06×→1.00×
+	if _pg6_p9a_mat != null:
+		_pg6_p9a_mat.set_shader_parameter("invert_amount", 1.0 if (not in_p9b and p9a_lt < 0.05) else 0.0)
+	var z9a := lerpf(1.06, 1.0, clampf(p9a_lt / 0.25, 0.0, 1.0)) if not in_p9b else 1.0
+	_pg6_p9a_frame.position = Vector2(48.0, 40.0)
+	_set_zoom_rect(_pg6_p9a_img, Vector2(750, 338), z9a)
+
+	_pg6_p9b_gutter.visible = in_p9b
+	_pg6_p9b_frame.visible = in_p9b
+	if not in_p9b:
+		var shake_a := 8.0 * pow(clampf(1.0 - p9a_lt / 0.45, 0.0, 1.0), 1.5)
+		_page6.position = Vector2(sin(p9a_lt * 210.0) * shake_a, cos(p9a_lt * 235.0) * shake_a * 0.85)
+		_pg6_p9b_slash_white.visible = false
+		_pg6_p9b_slash_red.visible = false
+		return
+
+	var p9b_lt := clampf(_t - 18.2, 0.0, 1.3)
+	var settle := p9b_lt >= 1.15  # 末 0.15s 定格对齐 rift3_mid_end.webp
+	var pop9b := 1.0 if settle else _ease_out_back_subtle(clampf(p9b_lt / 0.11, 0.0, 1.0))
+	var slide := Vector2(lerpf(80.0, 0.0, pop9b), lerpf(-32.0, 0.0, pop9b))
+	_pg6_p9b_gutter.position = Vector2(330.0, 316.0) + slide
+	_pg6_p9b_frame.position = Vector2(340.0, 326.0) + slide
+	var z9b := 1.0 if settle else lerpf(1.06, 1.0, clampf(p9b_lt / 0.40, 0.0, 1.0))
+	_set_zoom_rect(_pg6_p9b_img, Vector2(882, 348), z9b)
+
+	if settle:
+		_page6.position = Vector2.ZERO
+	else:
+		var shake_b := 9.0 * pow(clampf(1.0 - p9b_lt / 0.55, 0.0, 1.0), 1.5)
+		_page6.position = Vector2(sin(p9b_lt * 200.0) * shake_b, cos(p9b_lt * 240.0) * shake_b * 0.85)
+
+	# P9b 右上→左下纯白带朱红残影斜斩光掠过（0.0–0.42s），与 P10 斜斩刀势一脉相承
+	var slash_on := p9b_lt < 0.42
+	_pg6_p9b_slash_white.visible = slash_on
+	_pg6_p9b_slash_red.visible = slash_on
+	if slash_on:
+		var su := clampf(p9b_lt / 0.42, 0.0, 1.0)
+		var sa := 1.0 if su < 0.35 else clampf(1.0 - (su - 0.35) / 0.65, 0.0, 1.0)
+		_pg6_p9b_slash_white.color = Color(COLOR_PAPER.r, COLOR_PAPER.g, COLOR_PAPER.b, sa * 0.92)
+		_pg6_p9b_slash_red.color = Color(COLOR_CRIMSON.r, COLOR_CRIMSON.g, COLOR_CRIMSON.b, sa * 0.85)
+
+
 func _update_phase_p10() -> void:
 	if _phase != Phase.P10:
 		if _p10_shards != null and _p10_shards.emitting:
 			_p10_shards.emitting = false
 		return
 
-	var lt := _t - PHASE_MID_END  # 0.0 .. 2.3s
-	# 1) 15.00–15.10s：全屏反色冲击帧＋12px 重震屏（至 15.45s 平滑衰减）
+	var lt := _t - PHASE_MID_END  # 0.0 .. 2.3s（19.50–21.80s）
+	# 1) 19.50–19.60s：全屏反色冲击帧＋12px 重震屏（至 19.95s 平滑衰减）
 	var invert_amt := 1.0 if lt < 0.10 else clampf(1.0 - (lt - 0.10) / 0.06, 0.0, 1.0)
 	if _p10_half_mat != null:
 		_p10_half_mat.set_shader_parameter("invert_amount", invert_amt)
@@ -584,19 +1057,17 @@ func _update_phase_p10() -> void:
 		cos(lt * 235.0) * shake_amp * 0.85
 	)
 
-	# 2) 两半画页沿斜线法向裂开→滑出屏幕，实时露出底层 Map004
+	# 2) 两半第 6 页画页沿斜线法向裂开→滑出屏幕，实时露出底层 Map004
 	var cut_dir := Vector2(P10_CUT_BOT_X - P10_CUT_TOP_X, STAGE_SIZE.y).normalized()
-	var cut_normal := Vector2(-cut_dir.y, cut_dir.x)  # 指向左上方 (-0.6, -0.8)
+	var cut_normal := Vector2(-cut_dir.y, cut_dir.x)
 	var gap := 0.0
 	var half_rot := 0.0
 	var half_alpha := 1.0
 	if lt < 0.40:
-		# 15.00–15.40s：裂口初开 0 -> 28px，外透刺眼白光
 		var u := clampf(lt / 0.40, 0.0, 1.0)
 		gap = lerpf(4.0, 28.0, u * u)
 		half_rot = lerpf(0.0, 0.015, u)
 	elif lt < 1.35:
-		# 15.40–16.35s：两半加速滑开出屏，裂口完全洞开透出真实 Map004
 		var u := clampf((lt - 0.40) / 0.95, 0.0, 1.0)
 		var slide := u * u * (3.0 - 2.0 * u)
 		gap = lerpf(28.0, 920.0, slide)
@@ -619,11 +1090,10 @@ func _update_phase_p10() -> void:
 		_p10_half_br.position = -cut_normal * gap + Vector2(gap * 0.15, gap * 0.08)
 		_p10_half_br.rotation = half_rot
 		_p10_half_br.modulate = Color(1.0, 1.0, 1.0, half_alpha)
-		# 避免旋转偏心：确保绕画页中轴轻倾（Polygon2D 原点为 (0,0)，以少量位移补偿保持左右对称滑开）
 		_p10_half_tl.position += Vector2(pivot.y * sin(half_rot) * 0.12, 0.0)
 		_p10_half_br.position -= Vector2(pivot.y * sin(half_rot) * 0.12, 0.0)
 
-	# 3) 对角纯白刀光＋朱红残影（15.00–15.65s，中段宽锐、两端收尖的利刃刀芒）
+	# 3) 对角纯白刀光＋朱红残影（19.50–20.15s）
 	var slash_active := lt < 0.65
 	_p10_slash_bar.visible = lt < 0.55
 	_p10_slash_white_poly.visible = slash_active
@@ -640,13 +1110,13 @@ func _update_phase_p10() -> void:
 		_p10_slash_red_poly.color = Color(COLOR_CRIMSON.r, COLOR_CRIMSON.g, COLOR_CRIMSON.b, beam_a * 0.90)
 		_p10_slash_bar.color.a = 0.0
 
-	# 4) 碎格粒子 CPUParticles2D（amount = 96 <= 120）：15.32s 一次性爆发飞溅
+	# 4) 碎格粒子 CPUParticles2D（amount = 96 <= 120）：19.82s 一次性爆发飞溅
 	if not _p10_shards_fired and lt >= 0.32 and lt < 1.50:
 		_p10_shards_fired = true
 		_p10_shards.restart()
 		_p10_shards.emitting = true
 
-	# 5) 裂口下方残余紫烟（15.40–16.55s 被 M6 挥斩劈散）
+	# 5) 裂口下方残余紫烟（19.85–21.15s 被镜像 M6 挥斩劈散）
 	var smoke_on := lt >= 0.35 and lt < 1.65
 	_p10_purple_smoke.visible = smoke_on
 	if smoke_on:
@@ -659,7 +1129,7 @@ func _update_phase_p10() -> void:
 			wisp.scale = Vector2.ONE * (1.0 + cleave_u * 0.45)
 			wisp.modulate = Color(1.0, 1.0, 1.0, smoke_a * (0.58 if i % 2 == 0 else 0.42))
 
-	# 6) M6 透明挥斩前景冲破裂口（15.38–17.30s；0.82×→1.18× 冲近后收势消隐）
+	# 6) M6 镜像透明挥斩前景冲破裂口（19.88–21.75s；右上→左下挥斩冲近后收势消隐）
 	var m6_on := lt >= 0.38 and lt < 2.25
 	_p10_slash_rect.visible = m6_on
 	if m6_on:
@@ -717,18 +1187,20 @@ func _update_phase_p11() -> void:
 	# 左侧斜切破边漫画立绘残格
 	_p11_portrait_box.visible = not in_p11d
 	if not in_p11d:
-		# P11a 进场微弹（17.30–17.52s）＋ P11c 轻向右微推蓄势（22.5–24.7s）
+		# P11a 进场微弹（21.80–22.02s）＋ P11c 轻向右微推蓄势（27.0–29.2s）
 		var pop_u := clampf(p11_elapsed / 0.22, 0.0, 1.0)
 		var pop_ease := _ease_out_back_subtle(pop_u)
 		var base_pos := Vector2(20.0, 150.0).lerp(Vector2(44.0, 132.0), pop_ease)
-		if _t >= 22.5:
-			var push_right := clampf((_t - 22.5) / 2.2, 0.0, 1.0)
+		if _t >= P11C_START:
+			var push_right := clampf((_t - P11C_START) / (PHASE_P11D_START - P11C_START), 0.0, 1.0)
 			base_pos.x += lerpf(0.0, 8.0, push_right)
-		# P11b 21.2s 单拍 2px 幽紫框边微闪（严格限于框边与气泡外角，正文绝不变紫或抖动）
-		var purple_pulse := _t >= 21.12 and _t <= 21.38
+		# P11b 25.7s 单拍 2px 幽紫框边微闪（严格限于框边与气泡外角，正文绝不变紫或抖动）
+		var flash_start := P11B_PURPLE_FLASH - 0.08
+		var flash_end := P11B_PURPLE_FLASH + 0.18
+		var purple_pulse := _t >= flash_start and _t <= flash_end
 		var jitter := Vector2.ZERO
 		if purple_pulse:
-			var pt := _t - 21.12
+			var pt := _t - flash_start
 			jitter = Vector2(sin(pt * 210.0) * 2.0, cos(pt * 170.0) * 1.5)
 		_p11_portrait_box.position = base_pos + jitter
 		_p11_portrait_box.modulate.a = clampf(pop_u * 2.0, 0.0, 1.0)
@@ -740,23 +1212,23 @@ func _update_phase_p11() -> void:
 		_p11_purple_edge.visible = purple_pulse
 		_speech_purple_corner.visible = purple_pulse and _speech_bubble_box.visible
 		if purple_pulse:
-			var pulse_a := sin(clampf((_t - 21.12) / 0.26, 0.0, 1.0) * PI)
+			var pulse_a := sin(clampf((_t - flash_start) / (flash_end - flash_start), 0.0, 1.0) * PI)
 			_p11_purple_edge.default_color = Color(COLOR_PURPLE_BRIGHT.r, COLOR_PURPLE_BRIGHT.g, COLOR_PURPLE_BRIGHT.b, 0.92 * pulse_a)
 			_speech_purple_corner.default_color = Color(COLOR_PURPLE.r, COLOR_PURPLE.g, COLOR_PURPLE.b, 0.88 * pulse_a)
 
-		# P11c 红带微风飘尘线条（22.5–24.7s 轻盈掠过残格边沿）
-		var wind_on := _t >= 22.5
+		# P11c 红带微风飘尘线条（27.0–29.2s 轻盈掠过残格边沿）
+		var wind_on := _t >= P11C_START
 		for i in _p11_wind_lines.size():
 			var wl: Line2D = _p11_wind_lines[i]
 			wl.visible = wind_on
 			if wind_on:
-				var wt := fmod((_t - 22.5) * (0.9 + i * 0.25) + i * 0.33, 1.0)
+				var wt := fmod((_t - P11C_START) * (0.9 + i * 0.25) + i * 0.33, 1.0)
 				wl.position = Vector2(lerpf(-30.0, 110.0, wt), lerpf(18.0, -24.0, wt))
 				wl.default_color.a = sin(wt * PI) * 0.65
 	else:
 		_p11_purple_edge.visible = false
 		_speech_purple_corner.visible = false
-		# 24.7s：残格与气泡碎成最后 20 片黑白网点纸屑随风飘散
+		# 29.2s：残格与气泡碎成最后 20 片黑白网点纸屑随风飘散
 		if not _p11_shards_fired:
 			_p11_shards_fired = true
 			_p11_shards.restart()
@@ -771,16 +1243,16 @@ func _sync_panel_placeholder() -> void:
 		_active_panel = "P10"
 		return
 	if _phase == Phase.P11:
-		if _t < 19.8:
+		if _t < P11B_START:
 			_active_panel = "P11a"
-		elif _t < 22.5:
+		elif _t < P11C_START:
 			_active_panel = "P11b"
 		elif _t < PHASE_P11D_START:
 			_active_panel = "P11c"
 		else:
 			_active_panel = "P11d"
 		return
-	# Phase.MID：按时间码定位 P2～P9
+	# Phase.MID：按时间码定位 P2～P9b（12 格）
 	var matched: Dictionary = MID_PANELS[0]
 	for item in MID_PANELS:
 		if _t >= float(item.start) and _t < float(item.end):
@@ -825,6 +1297,12 @@ func _sync_sfx_cues() -> void:
 			lbl.position = base_pos + Vector2(sin(age * 68.0) * 2.0, cos(age * 54.0) * 1.5)
 			lbl.scale = Vector2.ONE
 			lbl.modulate.a = 1.0
+		elif cid == "p8b_dodge":
+			# P8b「嗖！」：小A·文字排版提示——硬朗瘦劲斜掠刀笔感，轻盈横掠淡稳
+			var pop := lerpf(1.18, 1.0, clampf(age / 0.07, 0.0, 1.0))
+			lbl.scale = Vector2(0.88 * pop, 1.08 * pop)
+			lbl.position = base_pos + Vector2(lerpf(18.0, 0.0, clampf(age / 0.12, 0.0, 1.0)), 0.0)
+			lbl.modulate.a = 1.0
 		else:
 			var pop := lerpf(1.16, 1.0, clampf(age / 0.08, 0.0, 1.0))
 			lbl.scale = Vector2.ONE * pop
@@ -841,7 +1319,7 @@ func _sync_dialogue_cues() -> void:
 	_active_dialogue_text = ""
 	_active_dialogue_speaker = ""
 
-	# v0.5 第 7.1 节：P11a～c（17.3–24.7s）期间名签「徐凤年」常驻不动、跨句间隙不闪烁
+	# P11a～c（21.8–29.2s）期间名签「徐凤年」常驻不动、跨句间隙不闪烁
 	var in_p11_talk := (_t >= PHASE_P10_END and _t < PHASE_P11D_START)
 	_speech_group.visible = in_p11_talk
 	_speech_nameplate.visible = in_p11_talk
@@ -859,13 +1337,11 @@ func _sync_dialogue_cues() -> void:
 			_active_dialogue_speaker = speaker
 			var style := str(cue.style)
 			if style == "narration_p1":
-				# v0.5：0.15s 整句淡入，单行居中，禁逐字打字机
 				_narration_p1_label.text = text
 				_narration_p1_label.visible_ratio = 1.0
 				_narration_p1_box.modulate.a = clampf((_t - c_start) / 0.15, 0.0, 1.0)
 				_narration_p1_box.visible = true
 			elif style == "speech_bubble":
-				# v0.5：名签常驻，正文整句即显（≤0.12s 轻弹入，禁逐字打字机；正文恒为深墨不变紫）
 				if speaker != "":
 					_speech_speaker_label.text = speaker
 				if _p11_last_bubble_key != key:
@@ -881,7 +1357,6 @@ func _sync_dialogue_cues() -> void:
 				_speech_bubble_wrap.visible = true
 				_speech_bubble_box.visible = true
 			elif style == "narration_end":
-				# v0.5：0.15s 快淡入 → 0.85s 稳停 → 0.20s 柔淡出
 				_narration_end_label.text = text
 				_narration_end_label.visible_ratio = 1.0
 				var fade_in := clampf((_t - c_start) / 0.15, 0.0, 1.0)
@@ -979,6 +1454,7 @@ func _build_phase_mid(font: Font) -> void:
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_mid_layer.add_child(bg)
 
+	# 兼容可选整段 .ogv 播放节点与旧测试 speed_scale 校验
 	_video_player = VideoStreamPlayer.new()
 	_video_player.name = "Video"
 	_video_player.expand = true
@@ -987,6 +1463,22 @@ func _build_phase_mid(font: Font) -> void:
 	_video_player.visible = false
 	_mid_layer.add_child(_video_player)
 
+	# 动态漫画 6 页主舞台（当全套定稿 WebP 就绪时启用）
+	_mid_stage = Control.new()
+	_mid_stage.name = "MidComicStage"
+	_mid_stage.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_mid_stage.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mid_stage.visible = false
+	_mid_layer.add_child(_mid_stage)
+
+	_build_mid_page1()
+	_build_mid_page2()
+	_build_mid_page3()
+	_build_mid_page4()
+	_build_mid_page5()
+	_build_mid_page6()
+
+	# 占位盒子（仅在 allow_placeholder 且缺定稿资产时可见）
 	_mid_placeholder_box = Panel.new()
 	_mid_placeholder_box.name = "MidPlaceholder"
 	_mid_placeholder_box.position = Vector2(632, 56)
@@ -1007,6 +1499,423 @@ func _build_phase_mid(font: Font) -> void:
 	_mid_placeholder_box.add_child(_mid_placeholder_label)
 
 
+func _make_comic_panel(parent: Node, tag: String, rect: Rect2, border_col := COLOR_PAPER) -> Dictionary:
+	var frame := Panel.new()
+	frame.name = tag
+	frame.position = rect.position
+	frame.size = rect.size
+	frame.clip_contents = true
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_theme_stylebox_override("panel", _panel_box(COLOR_INK, border_col, 5))
+	parent.add_child(frame)
+
+	var inner := Control.new()
+	inner.name = "InnerClip"
+	inner.position = Vector2(5, 5)
+	inner.size = Vector2(maxf(rect.size.x - 10.0, 1.0), maxf(rect.size.y - 10.0, 1.0))
+	inner.clip_contents = true
+	inner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.add_child(inner)
+
+	var tr := TextureRect.new()
+	tr.name = "Img"
+	tr.position = Vector2.ZERO
+	tr.size = inner.size
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	tr.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inner.add_child(tr)
+	return {"frame": frame, "inner": inner, "img": tr}
+
+
+func _build_mid_page1() -> void:
+	_page1 = Control.new()
+	_page1.name = "Page1_VortexCrack"
+	_page1.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_page1.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_mid_stage.add_child(_page1)
+
+	# 保留左侧实时 Map004 网点格（无缝承接 P1）
+	var p1_left := _make_comic_panel(_page1, "Pg1LeftLobby", P1_TARGET_RECT)
+	_pg1_left_frame = p1_left.frame
+	_pg1_left_tex = p1_left.img
+	if _p1_mat != null:
+		var mat_copy := _p1_mat.duplicate() as ShaderMaterial
+		mat_copy.set_shader_parameter("mix_amount", 1.0)
+		mat_copy.set_shader_parameter("zoom", 1.04)
+		mat_copy.set_shader_parameter("panel_size", Vector2(550.0, 430.0))
+		_pg1_left_tex.material = mat_copy
+
+	# 右上 P2 漩涡格（M1-1 → M1-2 图接图）
+	var p2 := _make_comic_panel(_page1, "Pg1P2Vortex", Rect2(632, 56, 600, 440))
+	_pg1_p2_frame = p2.frame
+	_pg1_p2_img_a = p2.img
+	_pg1_p2_img_b = TextureRect.new()
+	_pg1_p2_img_b.name = "ImgB"
+	_pg1_p2_img_b.size = (p2.inner as Control).size
+	_pg1_p2_img_b.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_pg1_p2_img_b.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_pg1_p2_img_b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pg1_p2_img_b.modulate.a = 0.0
+	(p2.inner as Control).add_child(_pg1_p2_img_b)
+
+	# 下方通栏 P3 暴走裂开格（M1-3 → M1-4 图接图）
+	var p3 := _make_comic_panel(_page1, "Pg1P3Burst", Rect2(48, 512, 1184, 168))
+	_pg1_p3_frame = p3.frame
+	_pg1_p3_img_a = p3.img
+	_pg1_p3_img_b = TextureRect.new()
+	_pg1_p3_img_b.name = "ImgB"
+	_pg1_p3_img_b.size = (p3.inner as Control).size
+	_pg1_p3_img_b.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_pg1_p3_img_b.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	_pg1_p3_img_b.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pg1_p3_img_b.modulate.a = 0.0
+	(p3.inner as Control).add_child(_pg1_p3_img_b)
+	_pg1_p3_frame.visible = false
+
+	# 主题①：幽紫锯齿蚀骨裂脉沿 P1～P3 纯白边框爬裂
+	_pg1_cracks = Control.new()
+	_pg1_cracks.name = "PurpleFrameCracks"
+	_pg1_cracks.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pg1_cracks.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pg1_cracks.visible = false
+	_page1.add_child(_pg1_cracks)
+	var crack_paths: Array = [
+		[Vector2(632, 512), Vector2(616, 468), Vector2(634, 412), Vector2(608, 355), Vector2(628, 290), Vector2(604, 210)],
+		[Vector2(640, 512), Vector2(720, 492), Vector2(812, 518), Vector2(932, 488), Vector2(1070, 512), Vector2(1232, 496)],
+		[Vector2(610, 512), Vector2(510, 494), Vector2(418, 516), Vector2(310, 492), Vector2(180, 514), Vector2(48, 494)],
+		[Vector2(1232, 340), Vector2(1188, 368), Vector2(1224, 424), Vector2(1196, 498)],
+		[Vector2(48, 280), Vector2(78, 312), Vector2(52, 368), Vector2(84, 430), Vector2(48, 496)],
+	]
+	for idx in crack_paths.size():
+		var pts := PackedVector2Array(crack_paths[idx])
+		var glow := Line2D.new()
+		glow.name = "CrackGlow_%d" % idx
+		glow.points = pts
+		glow.width = 7.0
+		glow.default_color = Color(COLOR_PURPLE.r, COLOR_PURPLE.g, COLOR_PURPLE.b, 0.78)
+		_pg1_cracks.add_child(glow)
+		var core := Line2D.new()
+		core.name = "CrackCore_%d" % idx
+		core.points = pts
+		core.width = 2.6
+		core.default_color = COLOR_PURPLE_BRIGHT
+		glow.add_child(core)
+		_pg1_crack_lines.append(glow)
+
+
+func _build_mid_page2() -> void:
+	_page2 = Control.new()
+	_page2.name = "Page2_RipAndMob"
+	_page2.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_page2.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_page2.visible = false
+	_mid_stage.add_child(_page2)
+
+	# P4：3 块斜切撕裂残格（底图复用实时 Map004 视口＋网点 shader，缝隙带亮紫边光）
+	_pg2_p4_root = Control.new()
+	_pg2_p4_root.name = "P4TornShards"
+	_pg2_p4_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pg2_p4_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_page2.add_child(_pg2_p4_root)
+	var shard_polys: Array = [
+		[Vector2(56, 54), Vector2(680, 42), Vector2(520, 380), Vector2(44, 420)],
+		[Vector2(704, 48), Vector2(1232, 64), Vector2(1218, 444), Vector2(548, 388)],
+		[Vector2(66, 444), Vector2(540, 404), Vector2(1208, 468), Vector2(1180, 672), Vector2(90, 666)],
+	]
+	for idx in shard_polys.size():
+		var holder := Node2D.new()
+		holder.name = "TornShard_%d" % idx
+		_pg2_p4_root.add_child(holder)
+		var pts := PackedVector2Array(shard_polys[idx])
+		var poly := Polygon2D.new()
+		poly.name = "ShardPoly"
+		poly.polygon = pts
+		if _p1_mat != null:
+			var m := _p1_mat.duplicate() as ShaderMaterial
+			m.set_shader_parameter("mix_amount", 1.0)
+			m.set_shader_parameter("zoom", 1.0)
+			m.set_shader_parameter("panel_size", STAGE_SIZE)
+			poly.material = m
+		holder.add_child(poly)
+		var closed := PackedVector2Array(pts)
+		closed.append(pts[0])
+		var edge_p := Line2D.new()
+		edge_p.name = "PurpleEdge"
+		edge_p.points = closed
+		edge_p.width = 7.0
+		edge_p.default_color = COLOR_PURPLE
+		holder.add_child(edge_p)
+		var edge_w := Line2D.new()
+		edge_w.name = "WhiteEdge"
+		edge_w.points = closed
+		edge_w.width = 3.0
+		edge_w.default_color = COLOR_PAPER
+		holder.add_child(edge_w)
+		_pg2_p4_shards.append(holder)
+
+	# P5：中央斜切格框＋黑白幽紫集中线＋M2 透明染紫怪破框出格层
+	_pg2_p5_root = Control.new()
+	_pg2_p5_root.name = "P5MobBreakout"
+	_pg2_p5_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pg2_p5_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pg2_p5_root.visible = false
+	_page2.add_child(_pg2_p5_root)
+
+	_pg2_p5_frame = Panel.new()
+	_pg2_p5_frame.name = "P5Frame"
+	_pg2_p5_frame.position = Vector2(260, 72)
+	_pg2_p5_frame.size = Vector2(760, 576)
+	_pg2_p5_frame.clip_contents = true
+	_pg2_p5_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pg2_p5_frame.add_theme_stylebox_override("panel", _panel_box(COLOR_INK, COLOR_PAPER, 6))
+	_pg2_p5_root.add_child(_pg2_p5_frame)
+
+	# 放射黑白＋幽紫集中线（置于格框内部）
+	_pg2_p5_rays = Control.new()
+	_pg2_p5_rays.name = "FocusLines"
+	_pg2_p5_rays.position = Vector2(380, 288)
+	_pg2_p5_rays.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pg2_p5_frame.add_child(_pg2_p5_rays)
+	for k in range(44):
+		var ang := float(k) * TAU / 44.0
+		var r0 := 110.0 + float(k % 4) * 24.0
+		var r1 := 520.0
+		var perp := Vector2(-sin(ang), cos(ang))
+		var half_w := 5.0 if k % 3 == 0 else 2.6
+		var ray := Polygon2D.new()
+		ray.polygon = PackedVector2Array([
+			Vector2(cos(ang), sin(ang)) * r0,
+			Vector2(cos(ang), sin(ang)) * r1 + perp * half_w,
+			Vector2(cos(ang), sin(ang)) * r1 - perp * half_w,
+		])
+		ray.color = COLOR_PURPLE if (k % 3 == 0) else (COLOR_PAPER if k % 2 == 0 else COLOR_GRAY_DARK)
+		_pg2_p5_rays.add_child(ray)
+
+	# M2 透明前景（放在 _pg2_p5_frame 之外的同级上层，真正冲破上下白边框「出格」）
+	_pg2_p5_mob = TextureRect.new()
+	_pg2_p5_mob.name = "M2OutOfFrame"
+	_pg2_p5_mob.position = Vector2(280, 80)
+	_pg2_p5_mob.size = Vector2(720, 560)
+	_pg2_p5_mob.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_pg2_p5_mob.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_pg2_p5_mob.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pg2_p5_root.add_child(_pg2_p5_mob)
+
+
+func _build_mid_page3() -> void:
+	_page3 = Control.new()
+	_page3.name = "Page3_RedRibbonChase"
+	_page3.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_page3.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_page3.visible = false
+	_mid_stage.add_child(_page3)
+
+	# P6：顶部右上窄格 (340, 36, 880×220) + 甩出格框右下角的朱红飘带
+	var p6 := _make_comic_panel(_page3, "Pg3P6Sky", Rect2(340, 36, 880, 220))
+	_pg3_p6_frame = p6.frame
+	_pg3_p6_img = p6.img
+	_pg3_p6_ribbon = Polygon2D.new()
+	_pg3_p6_ribbon.name = "P6CrimsonOutRibbon"
+	_pg3_p6_ribbon.polygon = PackedVector2Array([
+		Vector2(1020, 210), Vector2(1248, 256), Vector2(1264, 272), Vector2(1010, 232),
+	])
+	_pg3_p6_ribbon.color = COLOR_CRIMSON
+	_page3.add_child(_pg3_p6_ribbon)
+
+	# P7：中部收窄眼部横条格 (370, 276, 540×120) + 反色闪材质
+	var p7 := _make_comic_panel(_page3, "Pg3P7Eyes", Rect2(370, 276, 540, 120), COLOR_PURPLE_BRIGHT)
+	_pg3_p7_frame = p7.frame
+	_pg3_p7_img = p7.img
+	_pg3_p7_mat = ShaderMaterial.new()
+	_pg3_p7_mat.shader = _get_invert_shader()
+	_pg3_p7_mat.set_shader_parameter("invert_amount", 0.0)
+	_pg3_p7_img.material = _pg3_p7_mat
+	_pg3_p7_frame.visible = false
+
+	# P8：中下部大斜切俯冲追杀格 (120, 412, 820×276) + 越格朱红飘带
+	var p8 := _make_comic_panel(_page3, "Pg3P8Dive", Rect2(120, 412, 820, 276))
+	_pg3_p8_frame = p8.frame
+	_pg3_p8_img = p8.img
+	_pg3_p8_frame.visible = false
+	_pg3_p8_ribbon = Polygon2D.new()
+	_pg3_p8_ribbon.name = "P8CrimsonOutRibbon"
+	_pg3_p8_ribbon.polygon = PackedVector2Array([
+		Vector2(860, 492), Vector2(1140, 444), Vector2(1156, 464), Vector2(866, 514),
+	])
+	_pg3_p8_ribbon.color = COLOR_CRIMSON
+	_pg3_p8_ribbon.visible = false
+	_page3.add_child(_pg3_p8_ribbon)
+
+
+func _build_mid_page4() -> void:
+	_page4 = Control.new()
+	_page4.name = "Page4_StandoffAndDodge"
+	_page4.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_page4.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_page4.visible = false
+	_mid_stage.add_child(_page4)
+
+	# P8a (新)：左上落地对峙格 (48, 44, 780×340)
+	var p8a := _make_comic_panel(_page4, "Pg4P8aStandoff", Rect2(48, 44, 780, 340))
+	_pg4_p8a_frame = p8a.frame
+	_pg4_p8a_img = p8a.img
+
+	# P8b (新)：右下压盖黑槽 + 怪扑侧闪格 (440, 344, 792×340) + 斜向速度线
+	_pg4_p8b_gutter = ColorRect.new()
+	_pg4_p8b_gutter.name = "Pg4P8bGutter"
+	_pg4_p8b_gutter.position = Vector2(430, 334)
+	_pg4_p8b_gutter.size = Vector2(812, 360)
+	_pg4_p8b_gutter.color = COLOR_INK
+	_pg4_p8b_gutter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pg4_p8b_gutter.visible = false
+	_page4.add_child(_pg4_p8b_gutter)
+
+	var p8b := _make_comic_panel(_page4, "Pg4P8bDodge", Rect2(440, 344, 792, 340))
+	_pg4_p8b_frame = p8b.frame
+	_pg4_p8b_img = p8b.img
+	_pg4_p8b_frame.visible = false
+
+	_pg4_p8b_speed = Control.new()
+	_pg4_p8b_speed.name = "P8bSpeedLines"
+	_pg4_p8b_speed.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pg4_p8b_speed.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pg4_p8b_speed.visible = false
+	_pg4_p8b_frame.add_child(_pg4_p8b_speed)
+	for k in range(10):
+		var ln := Line2D.new()
+		var y0 := 28.0 + float(k) * 30.0
+		ln.points = PackedVector2Array([Vector2(790.0, y0 - 24.0), Vector2(540.0 + float(k % 3) * 45.0, y0 + 18.0)])
+		ln.width = 2.4 if k % 2 == 0 else 1.5
+		ln.default_color = Color(COLOR_PAPER.r, COLOR_PAPER.g, COLOR_PAPER.b, 0.42)
+		_pg4_p8b_speed.add_child(ln)
+
+
+func _build_mid_page5() -> void:
+	_page5 = Control.new()
+	_page5.name = "Page5_DrawBlade"
+	_page5.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_page5.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_page5.visible = false
+	_mid_stage.add_child(_page5)
+
+	# P9 拔刀特写大格 (60, 94, 1160×532)：承载 M5b 0.00s～4.98s 物理连贯 30 帧图集＋尾段程序纯白寒光束
+	var p9 := _make_comic_panel(_page5, "Pg5P9Draw", Rect2(60, 94, 1160, 532))
+	_pg5_p9_frame = p9.frame
+	_pg5_p9_img = p9.img
+
+	_pg5_glint_root = Control.new()
+	_pg5_glint_root.name = "P9BladeGlint"
+	_pg5_glint_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pg5_glint_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pg5_glint_root.visible = false
+	(p9.inner as Control).add_child(_pg5_glint_root)
+
+	_pg5_glint_beam = Polygon2D.new()
+	_pg5_glint_beam.name = "GlintBeam"
+	_pg5_glint_beam.color = Color(1.0, 1.0, 1.0, 0.0)
+	_pg5_glint_root.add_child(_pg5_glint_beam)
+
+	# 柔和径向纯白光晕贴图（替代生硬实心圆心，呈现自然刀锋辉光）
+	_pg5_glint_glow = TextureRect.new()
+	_pg5_glint_glow.name = "GlintGlow"
+	_pg5_glint_glow.texture = _get_glint_glow_tex()
+	_pg5_glint_glow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_pg5_glint_glow.stretch_mode = TextureRect.STRETCH_SCALE
+	_pg5_glint_glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pg5_glint_root.add_child(_pg5_glint_glow)
+
+	# 纤细锐利纯白四芒十字寒光针芒（细针感，不挡人物五官）
+	_pg5_glint_star = Polygon2D.new()
+	_pg5_glint_star.name = "GlintStar"
+	_pg5_glint_star.polygon = PackedVector2Array([
+		Vector2(0, -108), Vector2(4, -7),
+		Vector2(28, -26), Vector2(7, -4),
+		Vector2(158, 0),  Vector2(7, 4),
+		Vector2(28, 26),  Vector2(4, 7),
+		Vector2(0, 108),  Vector2(-4, 7),
+		Vector2(-28, 26), Vector2(-7, 4),
+		Vector2(-158, 0), Vector2(-7, -4),
+		Vector2(-28, -26), Vector2(-4, -7),
+	])
+	_pg5_glint_star.color = Color(1.0, 1.0, 1.0, 0.0)
+	_pg5_glint_root.add_child(_pg5_glint_star)
+
+
+func _build_mid_page6() -> void:
+	_page6 = Control.new()
+	_page6.name = "Page6_ClashAndCleave"
+	_page6.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_page6.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_page6.visible = false
+	_mid_stage.add_child(_page6)
+
+	# P9a (新)：左上刀爪相撞格 (48, 40, 760×348) —— 坐标像素级 1:1 对齐 rift3_mid_end.webp
+	var p9a := _make_comic_panel(_page6, "Pg6P9aClash", Rect2(48, 40, 760, 348))
+	_pg6_p9a_frame = p9a.frame
+	_pg6_p9a_img = p9a.img
+	_pg6_p9a_mat = ShaderMaterial.new()
+	_pg6_p9a_mat.shader = _get_invert_shader()
+	_pg6_p9a_mat.set_shader_parameter("invert_amount", 0.0)
+	_pg6_p9a_img.material = _pg6_p9a_mat
+
+	# P9b (新)：右下压盖黑槽 (330, 316, 912×378) + 斩怪化雾格 (340, 326, 892×358)
+	_pg6_p9b_gutter = ColorRect.new()
+	_pg6_p9b_gutter.name = "Pg6P9bGutter"
+	_pg6_p9b_gutter.position = Vector2(330, 316)
+	_pg6_p9b_gutter.size = Vector2(912, 378)
+	_pg6_p9b_gutter.color = COLOR_INK
+	_pg6_p9b_gutter.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pg6_p9b_gutter.visible = false
+	_page6.add_child(_pg6_p9b_gutter)
+
+	var p9b := _make_comic_panel(_page6, "Pg6P9bCleave", Rect2(340, 326, 892, 358))
+	_pg6_p9b_frame = p9b.frame
+	_pg6_p9b_img = p9b.img
+	_pg6_p9b_frame.visible = false
+
+	# P9b 右上→左下斜斩瞬闪刀光（末 0.15s 收净，无缝移交 P10）
+	var cut_dir := Vector2(P10_CUT_BOT_X - P10_CUT_TOP_X, STAGE_SIZE.y).normalized()
+	var cut_n := Vector2(-cut_dir.y, cut_dir.x)
+	_pg6_p9b_slash_red = Polygon2D.new()
+	_pg6_p9b_slash_red.name = "P9bSlashRed"
+	_pg6_p9b_slash_red.polygon = _tapered_slash_poly(Vector2(1180, 300) + cut_n * 10.0, Vector2(360, 690) + cut_n * 10.0, cut_n, 14.0)
+	_pg6_p9b_slash_red.color = COLOR_CRIMSON
+	_pg6_p9b_slash_red.visible = false
+	_page6.add_child(_pg6_p9b_slash_red)
+
+	_pg6_p9b_slash_white = Polygon2D.new()
+	_pg6_p9b_slash_white.name = "P9bSlashWhite"
+	_pg6_p9b_slash_white.polygon = _tapered_slash_poly(Vector2(1190, 294), Vector2(350, 696), cut_n, 18.0)
+	_pg6_p9b_slash_white.color = COLOR_PAPER
+	_pg6_p9b_slash_white.visible = false
+	_page6.add_child(_pg6_p9b_slash_white)
+
+
+func _bind_p4_shard_textures(tex: Texture2D) -> void:
+	if tex == null:
+		return
+	var ts := tex.get_size()
+	for holder in _pg2_p4_shards:
+		var poly := holder.get_node_or_null("ShardPoly") as Polygon2D
+		if poly != null:
+			poly.texture = tex
+			poly.uv = _covered_uvs(poly.polygon, STAGE_SIZE, ts, 1.0)
+
+
+func _set_zoom_rect(tr: TextureRect, base_size: Vector2, zoom: float, offset := Vector2.ZERO) -> void:
+	var z := maxf(zoom, 1.0)
+	var cur := base_size * z
+	tr.size = cur
+	tr.position = (base_size - cur) * 0.5 + offset
+
+
+func _set_frame_border_color(frame: Panel, col: Color) -> void:
+	var sb := frame.get_theme_stylebox("panel") as StyleBoxFlat
+	if sb != null:
+		sb.border_color = col
+
+
 func _build_phase_p10() -> void:
 	# 重要：PhaseP10 不放任何全屏不透明底板，确保两半画页滑开后裂口实时透出下方真实 Map004
 	_p10_layer = Control.new()
@@ -1016,7 +1925,7 @@ func _build_phase_p10() -> void:
 	_p10_layer.visible = false
 	_stage_layer.add_child(_p10_layer)
 
-	# 兼容 T425 纹理承载节点（隐藏，实际渲染走下方两块斜切 Polygon2D）
+	# 兼容纹理承载节点（隐藏，实际渲染走下方两块斜切 Polygon2D）
 	_p10_end_rect = TextureRect.new()
 	_p10_end_rect.name = "P9EndTex"
 	_p10_end_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1026,7 +1935,7 @@ func _build_phase_p10() -> void:
 	_p10_end_rect.visible = false
 	_p10_layer.add_child(_p10_end_rect)
 
-	# 裂口后残余紫烟（位处最底，M6 挥斩一刀劈散）
+	# 裂口后残余紫烟（位处最底，镜像 M6 挥斩一刀劈散）
 	_p10_purple_smoke = Control.new()
 	_p10_purple_smoke.name = "PurpleSmoke"
 	_p10_purple_smoke.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1048,7 +1957,7 @@ func _build_phase_p10() -> void:
 		_p10_purple_smoke.add_child(wisp)
 		_p10_smoke_wisps.append(wisp)
 
-	# 两半斜切 P9 画页（挂在可震屏容器下，带轻量反色冲击材质）
+	# 两半斜切第 6 页（P9b 斩怪定格）画页
 	_p10_halves_root = Control.new()
 	_p10_halves_root.name = "SplitHalvesRoot"
 	_p10_halves_root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -1142,7 +2051,7 @@ func _build_phase_p10() -> void:
 	_p10_shards.color_ramp = _shard_color_ramp()
 	_p10_layer.add_child(_p10_shards)
 
-	# M6 透明挥斩前景
+	# M6 透明挥斩前景（已水平镜像为右上→左下）
 	_p10_slash_rect = TextureRect.new()
 	_p10_slash_rect.name = "M6SlashTex"
 	_p10_slash_rect.position = Vector2(210, 20)
@@ -1169,7 +2078,7 @@ func _build_phase_p11(_font: Font) -> void:
 	_p11_dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_p11_layer.add_child(_p11_dim)
 
-	# 左侧斜切破边漫画立绘残格（外容器仍名 PortraitShard，透明底，内嵌破边多边形）
+	# 左侧斜切破边漫画立绘残格
 	_p11_portrait_box = Panel.new()
 	_p11_portrait_box.name = "PortraitShard"
 	_p11_portrait_box.position = Vector2(44, 132)
@@ -1204,14 +2113,12 @@ func _build_phase_p11(_font: Font) -> void:
 	_p11_portrait_poly.polygon = PackedVector2Array(P11_SHARD_INNER)
 	_p11_portrait_box.add_child(_p11_portrait_poly)
 
-	# 左内缘朱红竖条点缀（呼应三色体系）
 	var crimson_bar := Polygon2D.new()
 	crimson_bar.name = "CrimsonAccent"
 	crimson_bar.polygon = PackedVector2Array([Vector2(18, 18), Vector2(26, 18), Vector2(27, 418), Vector2(19, 418)])
 	crimson_bar.color = COLOR_CRIMSON
 	_p11_portrait_box.add_child(crimson_bar)
 
-	# 内描墨黑线（突出撕裂锯齿边与焦痕）
 	var closed_inner := PackedVector2Array(P11_SHARD_INNER)
 	closed_inner.append(P11_SHARD_INNER[0])
 	_p11_border_line = Line2D.new()
@@ -1221,7 +2128,7 @@ func _build_phase_p11(_font: Font) -> void:
 	_p11_border_line.default_color = COLOR_INK
 	_p11_portrait_box.add_child(_p11_border_line)
 
-	# P11b 21.2s 专用单拍幽紫电纹框边（仅沿右侧撕裂破边亮 0.26s，绝不入正文）
+	# P11b 25.7s 专用单拍幽紫电纹框边（仅沿右侧撕裂破边亮 0.26s，绝不入正文）
 	_p11_purple_edge = Line2D.new()
 	_p11_purple_edge.name = "ShardPurpleEdge"
 	_p11_purple_edge.points = PackedVector2Array([
@@ -1248,7 +2155,7 @@ func _build_phase_p11(_font: Font) -> void:
 		_p11_portrait_box.add_child(wl)
 		_p11_wind_lines.append(wl)
 
-	# 兼容 T425 纹理承载节点（隐藏，避免方形贴图盖住破边剪裁）
+	# 兼容纹理承载节点（隐藏，实际经破边 Polygon2D 裁切绘制）
 	_p11_portrait_rect = TextureRect.new()
 	_p11_portrait_rect.name = "M5aPortraitTex"
 	_p11_portrait_rect.position = Vector2(18, 14)
@@ -1291,6 +2198,15 @@ func _build_sfx_layer(font: Font) -> void:
 	_sfx_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_root.add_child(_sfx_layer)
 
+	# 为「嗖！」构造基于 XUI.font() 的硬朗瘦劲斜切刀笔 FontVariation（响应小A·文字排版建议）
+	var sharp_font: Font = font
+	if font != null:
+		var fv := FontVariation.new()
+		fv.base_font = font
+		fv.variation_transform = Transform2D(Vector2(0.90, 0.0), Vector2(-0.20, 1.05), Vector2.ZERO)
+		fv.spacing_glyph = 2
+		sharp_font = fv
+
 	for cue in SFX_CUES:
 		var lbl := Label.new()
 		lbl.name = "Sfx_" + str(cue.id)
@@ -1299,7 +2215,7 @@ func _build_sfx_layer(font: Font) -> void:
 		lbl.rotation_degrees = float(cue.rot_deg)
 		lbl.visible = false
 		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		lbl.add_theme_font_override("font", font)
+		lbl.add_theme_font_override("font", sharp_font if bool(cue.get("sharp", false)) else font)
 		lbl.add_theme_font_size_override("font_size", int(cue.size))
 		lbl.add_theme_color_override("font_color", cue.color)
 		lbl.add_theme_color_override("font_outline_color", cue.outline)
@@ -1309,6 +2225,14 @@ func _build_sfx_layer(font: Font) -> void:
 			lbl.add_theme_color_override("font_shadow_color", COLOR_CRIMSON)
 			lbl.add_theme_constant_override("shadow_offset_x", 6)
 			lbl.add_theme_constant_override("shadow_offset_y", 6)
+		elif bool(cue.get("crimson_shadow", false)):
+			lbl.add_theme_color_override("font_shadow_color", COLOR_CRIMSON)
+			lbl.add_theme_constant_override("shadow_offset_x", 4)
+			lbl.add_theme_constant_override("shadow_offset_y", 4)
+		elif bool(cue.get("sharp", false)):
+			lbl.add_theme_color_override("font_shadow_color", COLOR_INK)
+			lbl.add_theme_constant_override("shadow_offset_x", 4)
+			lbl.add_theme_constant_override("shadow_offset_y", 3)
 		_sfx_layer.add_child(lbl)
 		_sfx_labels[str(cue.id)] = lbl
 
@@ -1378,7 +2302,6 @@ func _build_dialogue_layer(font: Font) -> void:
 	_speech_bubble_box.add_theme_stylebox_override("panel", sb_bubble)
 	_speech_bubble_wrap.add_child(_speech_bubble_box)
 
-	# 指向左侧破边立绘残格的漫画气泡尖尾（白底盖缝＋5px 黑粗外描边）
 	_speech_tail_white = Polygon2D.new()
 	_speech_tail_white.name = "SpeechTailFill"
 	_speech_tail_white.polygon = PackedVector2Array([
@@ -1401,7 +2324,7 @@ func _build_dialogue_layer(font: Font) -> void:
 	_speech_tail_outline.default_color = COLOR_INK
 	_speech_bubble_wrap.add_child(_speech_tail_outline)
 
-	# P11b 21.2s 气泡外框右下角单拍幽紫细角（严格在框外，绝不染正文）
+	# P11b 25.7s 气泡外框右下角单拍幽紫细角（严格在框外，绝不染正文）
 	_speech_purple_corner = Line2D.new()
 	_speech_purple_corner.name = "BubblePurpleCorner"
 	_speech_purple_corner.points = PackedVector2Array([
@@ -1427,7 +2350,6 @@ func _build_dialogue_layer(font: Font) -> void:
 	_speech_text_label.add_theme_constant_override("line_spacing", 8)
 	_speech_bubble_box.add_child(_speech_text_label)
 
-	# 名签压贴气泡左上外缘，P11a～c 三句连播期间常驻不动
 	_speech_nameplate = PanelContainer.new()
 	_speech_nameplate.name = "SpeechNameplate"
 	_speech_nameplate.position = Vector2(38, 2)
@@ -1486,12 +2408,12 @@ func _build_dialogue_layer(font: Font) -> void:
 
 
 func _sync_p10_textures() -> void:
-	var p9_tex: Texture2D = _p10_end_rect.texture if (_p10_end_rect != null and _p10_end_rect.texture != null) else _get_p9_fallback_tex()
-	if _p10_half_tl != null and _p10_half_br != null and p9_tex != null:
-		var ts := p9_tex.get_size()
-		_p10_half_tl.texture = p9_tex
+	var end_tex: Texture2D = _p10_end_rect.texture if (_p10_end_rect != null and _p10_end_rect.texture != null) else _get_p9_fallback_tex()
+	if _p10_half_tl != null and _p10_half_br != null and end_tex != null:
+		var ts := end_tex.get_size()
+		_p10_half_tl.texture = end_tex
 		_p10_half_tl.uv = _covered_uvs(_p10_half_tl.polygon, STAGE_SIZE, ts, 1.0)
-		_p10_half_br.texture = p9_tex
+		_p10_half_br.texture = end_tex
 		_p10_half_br.uv = _covered_uvs(_p10_half_br.polygon, STAGE_SIZE, ts, 1.0)
 	if _p10_slash_rect != null and _p10_slash_rect.texture == null:
 		_p10_slash_rect.texture = _get_m6_fallback_tex()
@@ -1576,7 +2498,7 @@ static func _shard_color_ramp() -> Gradient:
 	return g
 
 
-## P10 0.10s 反色冲击帧轻量着色器（兼容 gl_compatibility，仅作用于两半 P9 多边形，不遮挡真实 Map004）
+## P10 / P7 / P9a 反色冲击帧轻量着色器（兼容 gl_compatibility）
 static func _get_invert_shader() -> Shader:
 	if _invert_shader == null:
 		_invert_shader = Shader.new()
@@ -1593,6 +2515,19 @@ void fragment() {
 }
 """
 	return _invert_shader
+
+
+## P9 刀锋寒光柔和径向纯白光晕贴图（64×64，中心高光、外缘二次衰减至 0，随实例自动释放）
+static func _get_glint_glow_tex() -> Texture2D:
+	var sz := 64
+	var img := Image.create(sz, sz, false, Image.FORMAT_RGBA8)
+	var half := float(sz) * 0.5
+	for y in range(sz):
+		for x in range(sz):
+			var d := Vector2(float(x) + 0.5 - half, float(y) + 0.5 - half).length() / half
+			var a := pow(clampf(1.0 - d, 0.0, 1.0), 2.8)
+			img.set_pixel(x, y, Color(1.0, 1.0, 1.0, a))
+	return ImageTexture.create_from_image(img)
 
 
 ## 黑白网点斜切碎纸片粒子纹理（28×22，供 P10 与 P11d 共享）
@@ -1618,7 +2553,7 @@ static func _get_shard_particle_tex() -> Texture2D:
 	return _cached_shard_tex
 
 
-## P1 无视口传入时的程序占位方桌大厅底图（含中心二阶幽紫漩涡，验证网点与中心微紫留色）
+## P1 无视口传入时的程序占位方桌大厅底图
 static func _get_p1_fallback_tex() -> Texture2D:
 	if _cached_p1_fallback_tex != null:
 		return _cached_p1_fallback_tex
@@ -1626,15 +2561,12 @@ static func _get_p1_fallback_tex() -> Texture2D:
 	var h := 180
 	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0.68, 0.66, 0.62, 1.0))
-	# 石砖网格
 	for x in range(0, w, 24):
 		img.fill_rect(Rect2i(x, 0, 2, h), Color(0.36, 0.35, 0.34, 1.0))
 	for y in range(0, h, 24):
 		img.fill_rect(Rect2i(0, y, w, 2), Color(0.36, 0.35, 0.34, 1.0))
-	# 方桌与围栏轮廓
 	img.fill_rect(Rect2i(110, 56, 100, 68), Color(0.42, 0.30, 0.20, 1.0))
 	img.fill_rect(Rect2i(116, 62, 88, 56), Color(0.76, 0.64, 0.48, 1.0))
-	# 中心二阶幽紫漩涡
 	var center := Vector2(160.0, 88.0)
 	for y in range(60, 116):
 		for x in range(132, 188):
@@ -1647,7 +2579,7 @@ static func _get_p1_fallback_tex() -> Texture2D:
 	return _cached_p1_fallback_tex
 
 
-## P9 尾帧缺图时的黑白漫画拔刀特写程序占位画页（320×180：墨黑页边＋粗白斜框＋放射集中线＋寒刃白锋＋朱红飘带）
+## P10 尾帧缺图时的程序占位画页
 static func _get_p9_fallback_tex() -> Texture2D:
 	if _cached_p9_fallback_tex != null:
 		return _cached_p9_fallback_tex
@@ -1656,34 +2588,26 @@ static func _get_p9_fallback_tex() -> Texture2D:
 	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
 	img.fill(COLOR_INK)
 	var clip := Rect2i(19, 28, 282, 124)
-	# 居中 P9 粗白大格 (15, 24, 290×132)
 	img.fill_rect(Rect2i(15, 24, 290, 132), COLOR_PAPER)
 	img.fill_rect(Rect2i(18, 27, 284, 126), Color(0.08, 0.08, 0.10, 1.0))
-	# 放射集中线（向出鞘刀锋中心汇聚）
 	var center := Vector2(188.0, 92.0)
 	for i in range(52):
 		var ang := float(i) * TAU / 52.0
 		var r0 := 30.0 + float(i % 5) * 8.0
 		var col := COLOR_PAPER if (i % 3 != 0) else COLOR_GRAY_DARK
 		_draw_img_line(img, center + Vector2(cos(ang), sin(ang)) * r0, center + Vector2(cos(ang), sin(ang)) * 195.0, col, clip)
-	# 左侧斜肩白衣剪影与飘扬墨发（流线轮廓，非方盒）
 	_fill_img_disc(img, Vector2(96, 148), 58.0, 44.0, COLOR_PAPER, clip)
 	_fill_img_disc(img, Vector2(104, 82), 26.0, 30.0, COLOR_PAPER, clip)
 	_fill_img_disc(img, Vector2(96, 68), 28.0, 22.0, COLOR_INK, clip)
 	_draw_img_ribbon(img, Vector2(114, 58), Vector2(36, 42), 5.0, COLOR_CRIMSON, clip)
-	_draw_img_ribbon(img, Vector2(114, 62), Vector2(24, 72), 3.5, COLOR_CRIMSON, clip)
-	# 凌厉斜出鞘寒刃＋刀锷＋红绳刀柄
 	for k in range(-3, 4):
 		var col := COLOR_PAPER if abs(k) <= 1 else COLOR_GRAY_LIGHT
 		_draw_img_line(img, Vector2(138, 126 + k), Vector2(294, 58 + k), col, clip)
-	_draw_img_line(img, Vector2(134, 114), Vector2(146, 138), COLOR_INK, clip)
-	_draw_img_line(img, Vector2(135, 114), Vector2(147, 138), COLOR_PAPER, clip)
-	_draw_img_ribbon(img, Vector2(84, 144), Vector2(138, 126), 4.0, COLOR_CRIMSON, clip)
 	_cached_p9_fallback_tex = ImageTexture.create_from_image(img)
 	return _cached_p9_fallback_tex
 
 
-## M6 透明挥斩缺图时的程序占位（256×200，纯透明底＋飞白大弧刀光＋炽烈朱红飘带残影）
+## M6 透明挥斩缺图时的程序占位（右上→左下）
 static func _get_m6_fallback_tex() -> Texture2D:
 	if _cached_m6_fallback_tex != null:
 		return _cached_m6_fallback_tex
@@ -1692,7 +2616,6 @@ static func _get_m6_fallback_tex() -> Texture2D:
 	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0, 0, 0, 0))
 	var bounds := Rect2i(0, 0, w, h)
-	# 凌厉飞白弯月大刀弧（右上→左下，首尾收尖）
 	for step_i in range(180):
 		var u := float(step_i) / 179.0
 		var bell := sin(u * PI)
@@ -1702,16 +2625,12 @@ static func _get_m6_fallback_tex() -> Texture2D:
 		var r_w := maxf(bell * 12.0, 1.2)
 		_fill_img_disc(img, q + Vector2(6.0, 8.0), r_w * 0.9, r_w * 0.55, COLOR_CRIMSON, bounds)
 		_fill_img_disc(img, q, r_w, r_w * 0.52, COLOR_PAPER, bounds)
-		if bell > 0.35:
-			_fill_img_disc(img, q - Vector2(3.0, 4.0), r_w * 0.32, r_w * 0.2, COLOR_INK, bounds)
-	# 一缕穿弧而过的朱红长飘带
 	_draw_img_ribbon(img, Vector2(216, 26), Vector2(72, 168), 3.6, COLOR_CRIMSON, bounds)
-	_draw_img_ribbon(img, Vector2(186, 48), Vector2(118, 128), 2.2, COLOR_INK, bounds)
 	_cached_m6_fallback_tex = ImageTexture.create_from_image(img)
 	return _cached_m6_fallback_tex
 
 
-## M5a 定妆图缺图时的程序占位（240×220，硬派黑白漫画侧影＋高束墨发＋朱红发带与斜掠红带＋寒刃高光）
+## M5a 定妆图缺图时的程序占位
 static func _get_m5a_fallback_tex() -> Texture2D:
 	if _cached_m5a_fallback_tex != null:
 		return _cached_m5a_fallback_tex
@@ -1720,34 +2639,9 @@ static func _get_m5a_fallback_tex() -> Texture2D:
 	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
 	img.fill(COLOR_INK)
 	var bounds := Rect2i(0, 0, w, h)
-	# 背景放射黑白集中线＋半调微点
-	var center := Vector2(118.0, 88.0)
-	for i in range(40):
-		var ang := float(i) * TAU / 40.0
-		var col := COLOR_GRAY_DARK if (i % 2 == 0) else COLOR_GRAY_LIGHT
-		_draw_img_line(img, center + Vector2(cos(ang), sin(ang)) * 38.0, center + Vector2(cos(ang), sin(ang)) * 175.0, col, bounds)
-	# 飘扬长发与高束发冠轮廓
-	_fill_img_disc(img, Vector2(96, 62), 34.0, 32.0, COLOR_INK, bounds)
-	_fill_img_disc(img, Vector2(72, 92), 28.0, 42.0, COLOR_INK, bounds)
-	_fill_img_disc(img, Vector2(102, 26), 14.0, 12.0, COLOR_INK, bounds)
-	# 素白宽肩侠袍（流线斜肩＋墨线衣褶）
 	_fill_img_disc(img, Vector2(112, 194), 76.0, 74.0, COLOR_PAPER, bounds)
-	_fill_img_disc(img, Vector2(112, 124), 46.0, 34.0, COLOR_PAPER, bounds)
-	# 俊朗侧颜剪影（白面＋锐利眉眼与高领阴影）
 	_fill_img_disc(img, Vector2(116, 68), 22.0, 26.0, COLOR_PAPER, bounds)
-	_fill_img_disc(img, Vector2(96, 56), 24.0, 18.0, COLOR_INK, bounds)
-	_draw_img_line(img, Vector2(118, 66), Vector2(133, 63), COLOR_INK, bounds)
-	_draw_img_line(img, Vector2(119, 67), Vector2(132, 65), COLOR_INK, bounds)
-	_draw_img_line(img, Vector2(104, 92), Vector2(128, 122), COLOR_INK, bounds)
-	_draw_img_line(img, Vector2(126, 94), Vector2(108, 124), COLOR_INK, bounds)
-	# 绯红领缘＋飞扬朱红发带＋前景斜掠长红带
-	_draw_img_ribbon(img, Vector2(96, 102), Vector2(134, 106), 3.6, COLOR_CRIMSON, bounds)
 	_draw_img_ribbon(img, Vector2(104, 34), Vector2(224, 18), 4.2, COLOR_CRIMSON, bounds)
-	_draw_img_ribbon(img, Vector2(102, 40), Vector2(204, 52), 2.8, COLOR_CRIMSON, bounds)
-	_draw_img_ribbon(img, Vector2(28, 188), Vector2(208, 122), 4.5, COLOR_CRIMSON, bounds)
-	# 佩刀出鞘雪白寒锋一闪
-	for k in range(-2, 3):
-		_draw_img_line(img, Vector2(112, 178 + k), Vector2(220, 140 + k), COLOR_PAPER if abs(k) <= 1 else COLOR_GRAY_LIGHT, bounds)
 	_cached_m5a_fallback_tex = ImageTexture.create_from_image(img)
 	return _cached_m5a_fallback_tex
 

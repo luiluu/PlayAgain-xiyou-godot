@@ -287,8 +287,8 @@ func _settle(frames := 1500) -> bool:
 			return false
 		if not m.busy and not m.scene_page_open() and not m.message.is_busy():
 			return true
-		if m.message.is_busy() and i % 6 == 0:
-			if i == 0:
+		if (m.message.is_busy() or m.get_node_or_null(XRift3Anim.NODE_NAME) != null) and i % 6 == 0:
+			if i == 0 and m.message.is_busy():
 				print("NOTE 大厅对话：", JSON.stringify(m.message._msg).left(200))
 			await _key(KEY_ENTER)
 			continue
