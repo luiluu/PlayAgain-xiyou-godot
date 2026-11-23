@@ -72,7 +72,7 @@ python3 muse转精灵.py --selftest        # 合成绿底视频自测 13 项，�
 
 ### 怎么存钥匙
 
-本工具**只从 macOS 钥匙串读取**（`security find-generic-password -s ark-api-key -w`），不读环境变量或 `.env` 文件，不落盘，日志、报错与 `--meta-out` 均自动打码；下载结果文件时也不携带 `Authorization` 头。
+本工具**只从 macOS 钥匙串读取**（`security find-generic-password -s ark-api-key -w`），不读环境变量或 `.env` 文件，不落盘，日志、报错与 `--meta-out` 均自动打码；`--base-url` 仅放行 `https://ark.cn-beijing.volces.com` 与本地单测地址（`127.0.0.1`/`localhost`），鉴权请求拒绝自动跟随 30x 重定向（并把 `Authorization` 放进 unredirected 头），下载结果文件时不携带 `Authorization` 头。
 
 ```sh
 # 存入或更新 API Key（回车后密文输入，不留命令历史）
@@ -97,7 +97,7 @@ security delete-generic-password -s ark-api-key
 
 ### 常用命令与自测
 
-默认均为 **1:1 比例**、**关闭水印**（加 `--watermark` 才开启）。本地参考图自动转 Base64 Data URI，无需公网图床。
+默认均为 **1:1 比例**、**关闭水印**（加 `--watermark` 才开启）。本地参考图自动转 Base64 Data URI，无需公网图床。出图不抠绿时按文件头魔数校验与 `--out` 扩展名是否一致（Seedream 5.x 自动请求对应 `output_format`），不符时自动转格式（Pillow 或 macOS `sips`），无法转换则报错且不写入伪 PNG。
 
 ```sh
 # 文生图（支持别名 t2i / 文生图），加 --green-key 抠绿并保留 *_raw 原绿底图
@@ -109,13 +109,16 @@ uv run --with pillow --with numpy python3 方舟出图.py txt2img \
 python3 方舟出图.py img2img --ref ref1.jpg --ref ref2.png \
   --prompt "保持造型，拔刀定妆，纯绿底" --out /tmp/m5a.png
 
-# 图生视频（支持别名 i2v / 图生视频；建任务后自动轮询并下载）
+# 图生视频（支持别名 i2v / 图生视频；--first-frame 与 --ref 互斥；轮询遇 5xx/断连默认连续重试 3 次）
 python3 方舟出图.py img2vid --first-frame /tmp/m5a.png \
   --prompt "拔刀挥砍后收势" --duration 4 --ratio 1:1 --out /tmp/m5a.mp4
 
-# 假服务器单测（11 项：三条路径、任务失败、超时、URL 过期、钥匙串缺失、脱敏与抠绿）
+# 续取已有视频任务（支持别名 resume / 续取；超时或断网后用 task_id 续轮询下载，避免重复扣费）
+python3 方舟出图.py fetch --task-id cgt-xxxx --out /tmp/m5a.mp4
+
+# 假服务器单测（16 项：三条路径、任务失败/超时/重试/续取、URL 过期、防跳转外泄、base-url 白名单、伪 PNG 校验转换、互斥校验、钥匙串安全与抠绿）
 python3 -m unittest -v 03_再刷重制_Godot/07_开发环境/美术工具/test_方舟出图.py
 uv run --with pillow --with numpy python3 -m unittest -v 03_再刷重制_Godot/07_开发环境/美术工具/test_方舟出图.py
 ```
 
-图生视频输出的纯绿底 `.mp4` 可直接交给同目录 `muse转精灵.py` 转为 128 格战斗图集；如只想快速逐帧抠绿导出透明 PNG 序列，也可在 `img2vid` 加上 `--green-key`（输出到 `<视频名>_keyed/`）。
+图生视频输出的纯绿底 `.mp4` 可直接交给同目录 `muse转精灵.py` 转为 128 格战斗图集；如只想快速逐帧抠绿导出透明 PNG 序列，也可在 `img2vid` 或 `fetch` 加上 `--green-key`（输出到 `<视频名>_keyed/`）。
