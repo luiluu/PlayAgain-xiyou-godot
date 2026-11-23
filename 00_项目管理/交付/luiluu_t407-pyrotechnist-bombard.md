@@ -81,7 +81,7 @@
 - 专项 `xiyou_tianqi_alien_finale.tscn` 35/35（新增 `pyro_bomb_pct_int`、`pyro_bomb_pct`、`pyro_bomb_pct_scale_off`、`pyro_bomb_pct_no_kill`；原 `pyro_bomb_scale_on/off` 改名 `pyro_bomb_scale_on`／`pyro_bomb_scale_off`，在 BOMB_PCT=false 下测）。
 - `语法检查.py` 0 个问题；`天启篇数据校验.py` 全部通过（另手测 5.5 会被拦）；`发行空壳.py check` 退出 0；`回退开关覆盖.py` 没有新缺口。
 - 量数日志无 `SCRIPT ERROR`（12 份 baseline_dps，exit 全 0）。
-- 云端选测：待写
+- 云端选测：整轮通过（提交 03597d3560，785 个场景、16 片；改了 baseline_dps.gd 选测判整轮；偶发 xiyou_tianqi_enemy_ai_scene.tscn 并行失败、单跑通过），运行 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45147160229 ，`gh run watch` 前台等完。
 
 ## 本分支提交
 
