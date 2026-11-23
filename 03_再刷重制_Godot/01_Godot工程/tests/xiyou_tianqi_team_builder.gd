@@ -1,5 +1,5 @@
 extends Node
-## 【cc·T162】配队器（tests/virtual_player/team_builder.gd）：四个模板的职责构成、档位规则（艰险上场最多 2 强、无超强者；九死起超强者 ≤ super_cap）、
+## 【cc·T162】配队器（tests/virtual_player/team_builder.gd）：四个模板的职责构成、档位规则（D265 取消弱者人数下限后，艰险无超强者且不再限制强者数；九死起超强者 ≤ super_cap）、
 ## 随机队合法且互不相同且种子定住、最强队合法、缺职责时报出来而不静默补。
 ## 【cc·T328】辅助位先保一名会复活的（最强队、随机队）；虚拟玩家出手层：有人倒下时会复活的人去复活，
 ## 还轮得到会复活的人时别人不拿道具，没人能救时才用复活道具；开关关掉回原自动战斗。
@@ -74,18 +74,19 @@ func _difficulty(diff: String) -> void:
 
 
 func _rules() -> void:
-	# 艰险：上场 4 人至少 2 弱者（强者 ≤ 2）、没有超强者
+	# D265：五档取消弱者人数下限（min_weak=0），艰险不再限制强者人数，只保留不出超强者
 	var ok := true
 	for tpl in TB.TEMPLATES:
 		for team in TB.random_teams(tpl, 12, 5, "jianxian"):
-			var strong := (team as Array).filter(func(x): return not XTianqiSkills.is_weak(int(x), true)).size()
-			ok = ok and strong <= 2 and team.all(func(x): return not XTianqiSkills.is_super(int(x), true))
-	_check("jianxian.at_most_2_strong_no_super", ok)
-	_check("jianxian.min_weak_field_2", TB.min_weak_field("jianxian") == 2)
-	# 非法队：重复、三强
+			ok = ok and team.all(func(x): return not XTianqiSkills.is_super(int(x), true))
+	_check("jianxian.no_super_d265", ok)
+	_check("jianxian.min_weak_field_0_d265", TB.min_weak_field("jianxian") == 0)
+	# D265：全强者（4 强）在艰险合法；超强者、重复、人数不对仍拒绝
 	var strong_ids: Array = XTianqi.pool("jianxian")[XTier.STRONG]
 	var weak_ids: Array = XTianqi.pool("jianxian")[XTier.WEAK]
-	_check("legal.rejects_3_strong", not TB.legal([strong_ids[0], strong_ids[1], strong_ids[2], weak_ids[0]], "jianxian"))
+	var super_ids: Array = XTianqi.pool("jiusi")[XTier.SUPER]
+	_check("legal.accepts_4_strong_d265", TB.legal([strong_ids[0], strong_ids[1], strong_ids[2], strong_ids[3]], "jianxian"))
+	_check("legal.rejects_super_in_jianxian", not TB.legal([super_ids[0], strong_ids[0], weak_ids[0], weak_ids[1]], "jianxian"))
 	_check("legal.rejects_duplicate", not TB.legal([weak_ids[0], weak_ids[0], weak_ids[1], weak_ids[2]], "jianxian"))
 	_check("legal.accepts_2_strong_2_weak", TB.legal([strong_ids[0], strong_ids[1], weak_ids[0], weak_ids[1]], "jianxian"))
 	_check("legal.rejects_wrong_size", not TB.legal([weak_ids[0], weak_ids[1], weak_ids[2]], "jianxian"))

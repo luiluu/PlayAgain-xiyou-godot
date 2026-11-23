@@ -121,4 +121,6 @@ func _difficulties() -> void:
 		_check("低难度候选池没有超强者：" + k, not d.get("pool", []).has(XTier.SUPER) and d.get("super_cap", -1) == 0, d)
 	for k in XTianqiBalance.difficulty_keys():
 		_check("助力位放超强者只有证道（D57）：" + k, XTianqiBalance.difficulty(k).get("helper_super") == (k == "zhengdao"), XTianqiBalance.difficulty(k))
+		# D265：五档随机阵容取消弱者人数下限，min_weak 均为 0
+		_check("五档 min_weak 为 0（D265）：" + k, XTianqiBalance.difficulty(k).get("min_weak", -1) == 0, XTianqiBalance.difficulty(k))
 
