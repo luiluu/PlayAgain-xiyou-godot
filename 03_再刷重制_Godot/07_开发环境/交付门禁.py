@@ -22,13 +22,15 @@ IMG_EXT = ('.png', '.jpg', '.jpeg', '.gif')
 LAUNCH_EXT = ('.sh', '.py', '.yml', '.yaml', '.command', '.bat', '.cmd')
 RUN_LINK = re.compile(r'github\.com/[^\s)）]+/actions/runs/\d+|actions/runs/\d+|\bgh run\b.{0,20}\d{8,}|(?:run|运行)\s*(?:id|号)?\s*[#：: ]?\s*\d{8,}', re.I)
 NO_CLOUD = re.compile(r'没跑云端|未跑云端|没有跑云端')
-IMG_REF = re.compile(r'[`(（\s"\']?([\w./\-一-龥()（）]+\.(?:png|jpe?g|gif))', re.I)
-TRUTHY = [(re.compile(r'\bor\s+true\b', re.I), 'or true'), (re.compile(r'\bassert\(\s*true\s*\)', re.I), 'assert(true)'),
+# 路径前必须是行首或分隔符（空白、反引号、引号、括号、冒号、逗号），路径里不含括号：「截图（a/b.png）」只取括号里的
+IMG_REF = re.compile(r'(?:^|(?<=[\s`\'"(（\[【:：,，、]))([\w./\-一-龥]+\.(?:png|jpe?g|gif))', re.I | re.M)
+SHOT_DIRS = ('00_项目管理/归档/交付截图/',)   # 同目录 MD5 只管交付截图目录；美术素材（01_Godot工程 下的精灵帧等）常有合法的同内容文件
+TRUTHY = [(re.compile(r'\bor\s+true\b', re.I), 'or true'), (re.compile(r'\bassert\(\s*true\s*[,)]', re.I), 'assert(true)'),
           (re.compile(r'\bassertTrue\(\s*True\s*\)'), 'assertTrue(True)')]
 RATIO_NAME = re.compile(r'(?<![\dx])(\d{1,2})[x×](\d{1,2})(?![\dx])', re.I)
 LAUNCH_HINT = re.compile(r'--headless|--path\b|--script\b|--quit\b|--import\b|\s-s\s|res://')
 CALLER_DIRS = ('/core/', '/battle/', '/skin/')
-CALLER_NOTE = re.compile(r'调用方[^\n]{0,30}处[^\n]{0,20}逐处')
+CALLER_NOTE = re.compile(r'调用方\s*\d+\s*处[^|\n]{0,16}逐处')   # 要真实数字：README 模板表头「调用方 N 处」不算
 SKIP_FUNCS = {'_init', '_ready', '_process', '_physics_process', '_draw', '_input', '_unhandled_input', '_enter_tree', '_exit_tree', '_notification'}
 FUNC_DEF = re.compile(r'^\s*(?:static\s+)?func\s+(\w+)\s*\(')
 
@@ -87,11 +89,31 @@ def sheet_checks(root, target, sheet_text, engine_gd, problems):
         if ref in seen or ref.startswith(('http', '/')):
             continue
         seen.add(ref)
-        cands = [ref, ref.lstrip('./'), '03_再刷重制_Godot/' + ref.lstrip('./')]
+        bare = ref.lstrip('./')
+        cands = [ref, bare, '03_再刷重制_Godot/' + bare, ENGINE + bare]
+        lead = re.sub(r'^[一-龥]+(?=[A-Za-z0-9_])', '', bare)      # 「如图00_项目管理/…」中文前缀直接连着路径
+        if lead != bare:
+            cands += [lead, '03_再刷重制_Godot/' + lead, ENGINE + lead]
         if not any(run(root, 'cat-file', '-e', '%s:%s' % (target, c))[0] == 0 for c in cands):
             # 只在交付单明显把它当仓内文件（带目录）时算数，纯文件名没法定位的不拦
             if '/' in ref:
                 problems.append('交付单列的截图 %s 不在分支提交里（没 git add，或路径写错）' % ref)
+
+
+def docstring_lines(lines):
+    """Python 文件里落在三引号字符串里的行号（1 起，含开合引号所在行）。"""
+    inside, out = None, set()
+    for i, ln in enumerate(lines, 1):
+        if inside:
+            out.add(i)
+        for m in re.finditer(r'"""|\'\'\'', ln):
+            if inside is None:
+                inside = m.group()
+                out.add(i)
+            elif m.group() == inside:
+                inside = None
+                out.add(i)
+    return out
 
 
 def launch_checks(root, fork, target, files, problems):
@@ -102,8 +124,12 @@ def launch_checks(root, fork, target, files, problems):
         if not new:
             continue
         lines = file_text(root, target, path).splitlines()
+        doc = docstring_lines(lines) if path.endswith('.py') else set()
         for no in sorted(new):
             ln = lines[no - 1] if no - 1 < len(lines) else ''
+            head = ln.lstrip()
+            if no in doc or head.startswith(('#', 'echo ', 'echo\t', 'print(', '//')):
+                continue                              # 注释、文档串、日志输出不是启动命令
             if EXEMPT in ln or not re.search(r'godot', ln, re.I) or not LAUNCH_HINT.search(ln):
                 continue
             window = '\n'.join(lines[max(0, no - 6):no + 5])
@@ -123,7 +149,7 @@ def test_checks(root, fork, target, files, problems):
         if not is_test(path):
             continue
         for no, ln in added_lines(root, fork, target, path):
-            if EXEMPT in ln:
+            if EXEMPT in ln or ln.lstrip().startswith('#'):
                 continue
             for rx, label in TRUTHY:
                 if rx.search(ln):
@@ -154,7 +180,8 @@ def image_size(data):
     return None
 
 
-def image_checks(root, fork, target, files, problems):
+def image_checks(root, fork, target, files, problems, sheet_text=''):
+    exempt_names = {n for ln in sheet_text.splitlines() if EXEMPT in ln for n in re.findall(r'[\w.\-一-龥]+\.(?:png|jpe?g|gif)', ln, re.I)}
     groups = {}
     for path in files:
         if not path.lower().endswith(IMG_EXT):
@@ -170,14 +197,15 @@ def image_checks(root, fork, target, files, problems):
                 if abs(got - want) / want > 0.03:
                     problems.append('截图 %s 名字写 %sx%s（%.2f），实际 %dx%d（%.2f）：宽高比对不上，重截或改名'
                                     % (path, m.group(1), m.group(2), want, size[0], size[1], got))
-        groups.setdefault(str(Path(path).parent), []).append((path, hashlib.md5(data).hexdigest()))
+        if path.startswith(SHOT_DIRS) and Path(path).name not in exempt_names:
+            groups.setdefault(str(Path(path).parent), []).append((path, hashlib.md5(data).hexdigest()))
     for folder, rows in groups.items():
         by = {}
         for path, md5 in rows:
             by.setdefault(md5, []).append(path)
         for md5, paths in by.items():
             if len(paths) > 1:
-                problems.append('同一目录新增的截图内容完全相同（MD5 %s…）：%s。多半是同一张图存了几次，没截到不同的画面' % (md5[:8], '、'.join(Path(p).name for p in paths)))
+                problems.append('交付截图目录里新增的截图内容完全相同（MD5 %s…）：%s。多半是同一张图存了几次，没截到不同的画面；确属例外在交付单写一行「门禁豁免：文件名＋理由」' % (md5[:8], '、'.join(Path(p).name for p in paths)))
 
 
 # ---------- ④ 调用方提醒 ----------
@@ -244,6 +272,6 @@ def gates(root, fork, target, sheet_text, wt=None):
     sheet_checks(root, target, sheet_text, engine_gd, problems)
     launch_checks(root, fork, target, files, problems)
     test_checks(root, fork, target, files, problems)
-    image_checks(root, fork, target, files, problems)
+    image_checks(root, fork, target, files, problems, sheet_text)
     hints += caller_notes(root, fork, target, files, sheet_text)
     return problems, hints

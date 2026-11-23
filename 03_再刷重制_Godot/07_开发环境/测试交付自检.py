@@ -423,12 +423,65 @@ class GateTests(Fixture):
         r = self.lane_images('cc/n', {'00_项目管理/交付/s/shot_20x9.png': self.png(1600, 900)})
         self.assertTrue(self.has(r, '宽高比'))
 
+    SHOTS = '00_项目管理/归档/交付截图/t/'
+
     def test_same_group_screenshots_must_differ(self):
         same = self.png(1600, 900)
-        r = self.lane_images('cc/o', {'00_项目管理/交付/s/a_16x9.png': same, '00_项目管理/交付/s/b_16x9.png': same})
+        r = self.lane_images('cc/o', {self.SHOTS + 'a_16x9.png': same, self.SHOTS + 'b_16x9.png': same})
         self.assertTrue(self.has(r, 'MD5'))
-        r = self.lane_images('cc/p', {'00_项目管理/交付/s/a_16x9.png': same, '00_项目管理/交付/s/b_16x9.png': same + b'x'})
+        r = self.lane_images('cc/p', {self.SHOTS + 'a_16x9.png': same, self.SHOTS + 'b_16x9.png': same + b'x'})
         self.assertFalse(self.has(r, 'MD5'))
+
+    def test_md5_only_for_delivery_shot_dir_and_exemptable(self):
+        same = self.png(64, 64)
+        art = self.ENG + 'content/mira/sv/'      # 美术素材：同目录同内容是合法的精灵帧
+        r = self.lane_images('cc/o2', {art + 'f0.png': same, art + 'f1.png': same})
+        self.assertFalse(self.has(r, 'MD5'))
+        wt = self.lane('cc/o3', files={'00_项目管理/x.md': 'x\n'}, extra='\n- 门禁豁免：a.png、b.png 是同一画面的两个版本\n')
+        for n in ('a.png', 'b.png'):
+            self.put_bytes(wt, self.SHOTS + n, same)
+        self.commit('imgs', cwd=wt)
+        self.assertFalse(self.has(pre.check(self.root, 'cc/o3'), 'MD5'))
+
+    def test_caller_header_template_does_not_swallow_reminder(self):
+        base = self.ENG + 'modes/xiyou/core/calc2.gd'
+        user = self.ENG + 'modes/xiyou/ui/user2.gd'
+        self.put(base, 'extends Node\n\nfunc calc2(a):\n\treturn a\n')
+        self.put(user, 'extends Node\n\nfunc go():\n\tcalc2(1)\n')
+        self.put(base + '.uid', 'u\n'), self.put(user + '.uid', 'u\n')
+        self.commit('callers base 2')
+        template = '\n- 没跑云端：测试\n\n| 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |\n| --- | --- | --- |\n| `XFoo.bar` | 12 处 | 调用方 N 处逐处结论（N 换成真实数字）：x |\n'
+        r = self.run_check('cc/t1', {base: 'extends Node\n\nfunc calc2(a):\n\treturn a + 1\n'}, extra=template)
+        self.assertTrue(any('calc2 1 处' in h for h in r['hints']), r['hints'])
+
+    def test_image_ref_with_cjk_brackets(self):
+        ref = '00_项目管理/交付/shots/a.png'
+        for text in ('截图（%s）', '参考图(%s)', '如图%s'):
+            r = self.run_check('cc/u%d' % len(text), {'00_项目管理/x.md': 'x\n', ref: 'png'}, extra='\n- ' + (text % ref) + '\n')
+            self.assertFalse(self.has(r, '不在分支提交里'), (text, r['problems']))
+        r = self.run_check('cc/u9', {'00_项目管理/x.md': 'x\n'}, extra='\n- 截图（%s）\n' % ref)
+        self.assertTrue(self.has(r, '不在分支提交里'))
+        # 工程相对路径写法
+        eng = 'modes/xiyou/ui/pic.png'
+        r = self.run_check('cc/u10', {self.ENG + eng: 'png'}, extra='\n- 图：`%s`\n' % eng)
+        self.assertFalse(self.has(r, '不在分支提交里'))
+
+    def test_launch_check_skips_comments_echo_docstrings(self):
+        body = ('#!/bin/sh\n# godot --headless --path proj 说明\necho "godot --headless --path proj"\n')
+        r = self.run_check('cc/v1', {'03_再刷重制_Godot/07_开发环境/n1.sh': body})
+        self.assertFalse(self.has(r, '--audio-driver'))
+        py = '"""\n说明：godot --headless --path x\n"""\nprint("godot --headless --path x")\n'
+        r = self.run_check('cc/v2', {'03_再刷重制_Godot/07_开发环境/n2.py': py})
+        self.assertFalse(self.has(r, '--audio-driver'))
+        r = self.run_check('cc/v3', {'03_再刷重制_Godot/07_开发环境/n3.sh': '#!/bin/sh\ngodot --headless --path proj\n'})
+        self.assertTrue(self.has(r, '--audio-driver'))
+
+    def test_truthy_skips_comments_and_catches_two_arg_assert(self):
+        path = self.ENG + 'tests/new_probe2.gd'
+        r = self.run_check('cc/w1', {path: 'extends Node\n# x ' + 'or true 的说明\nfunc t():\n\tpass\n', path + '.uid': 'u\n'})
+        self.assertFalse(self.has(r, '恒真断言'))
+        r = self.run_check('cc/w2', {path: 'extends Node\nfunc t():\n\tassert(' + 'true, "m")\n', path + '.uid': 'u\n'})
+        self.assertTrue(self.has(r, '恒真断言'))
 
     def test_caller_reminder_only_hint(self):
         base = self.ENG + 'modes/xiyou/core/calc.gd'
