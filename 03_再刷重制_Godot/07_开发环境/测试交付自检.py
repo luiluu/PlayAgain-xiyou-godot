@@ -391,7 +391,7 @@ class GateTests(Fixture):
 
     def test_truthy_assertions_in_new_tests(self):
         path = self.ENG + 'tests/new_probe.gd'
-        bad = 'extends Node\nfunc t():\n\tassert(' + 'true)\n\tvar ok = x ' + 'or true\n'
+        bad = 'extends Node\nfunc t():\n\tassert(' + 'true)\n\tvar ok = x ' + 'or true\n'  # 门禁豁免：夹具里故意写的恒真断言
         r = self.run_check('cc/j', {path: bad, path + '.uid': 'uid://y\n'})
         self.assertEqual(sum('恒真断言' in p for p in r['problems']), 2)
         r = self.run_check('cc/k', {path: 'extends Node\nfunc t():\n\tassert(1 == 1)\n', path + '.uid': 'uid://y\n'})
