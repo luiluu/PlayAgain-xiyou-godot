@@ -1283,8 +1283,9 @@ func _t120_sear() -> void:
 	e.horseman = {"rec": {}}
 	per.append(XTianqiBrand.sear_per_hit(lg, e))
 	e.horseman = {}
-	per.append(XTianqiBrand.sear_per_hit(lg, XEnemy.new().setup(_guardian_enemy(), 0, 100.0)) if _guardian_enemy() > 0 else 16)
-	_check("t120.per_hit", per == [3, 6, 9, 12, 16, 12, 16, 16, 16], per)
+	var fin := int(XTianqiBrand.data().sear.per_hit["终焉"])  # T390：终焉一下读表（标定数）
+	per.append(XTianqiBrand.sear_per_hit(lg, XEnemy.new().setup(_guardian_enemy(), 0, 100.0)) if _guardian_enemy() > 0 else fin)
+	_check("t120.per_hit", per == [3, 6, 9, 12, fin, 12, fin, fin, fin], per)
 	lg.end_battle()
 
 	# 3. 一次行动对同一个人最多一次；换一次行动再算；同一次行动里两只敌人各算一次；没掉血（没命中、护盾全挡）不涨；不在出战里的不涨

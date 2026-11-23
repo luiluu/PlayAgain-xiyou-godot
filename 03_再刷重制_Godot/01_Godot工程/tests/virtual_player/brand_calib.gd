@@ -9,6 +9,9 @@ extends "res://tests/virtual_player/baseline_dps.gd"
 ##     [--strip-guardian=1,3,4,7|none]（T348 起游戏默认就清守层者（含变身 538／929／930）这四项正值＝XGuardianRework.STRIP；
 ##      这里改 STRIP_XPARAM 拆开量，如 =3 只清暴闪、=7 只清回血；none＝关开关、照原数据。缺省照游戏默认）
 ##     [--pozhen-type]（T317：XTianqiElements.POZHEN_BY_TYPE 打开＝破阵认伤害类型）
+##     [--brand-set=sear.per_hit.终焉=12;sear.cap.base=70]（T390：进程内改 brand.json 的整数项量候选值，不写文件；键用点分路径、分号隔开）
+##     [--snapshots=<存档目录> --lineups=4 --rng-seeds=1,2]（T390：改用虚拟玩家每层存档链，同 T363 真打口径，不用配队器丙档队；
+##      上场 4 人按职责改写烙印，出手走虚拟玩家层 VPLogic。--carved-brand=line 取首通 1～f−1 层之和，node＝旧口径「≤f 最近节点」）
 ##
 ## 口径：
 ## - 输出职责（team_rank 的 role＝输出）：--carve=all 刻印、烙印 --carved-brand（line＝按层线 layer_line 取这一层的值，缺省 line）；
@@ -30,6 +33,7 @@ var gear_cache := ""
 var _knobs_printed := false
 var gear_floors: Array = [10, 20, 25, 30, 31, 32, 33]   # 装备按这一组层掷（缺省和第一轮 s45_raw 同一组，换层数不改装备）；--gear-floors= 换一组（要换缓存文件）
 var strip_ids := []
+var brand_set := {}   # T390 --brand-set：{"sear.per_hit.终焉": 12, ...}
 
 
 func _ready() -> void:
@@ -56,6 +60,9 @@ func _ready() -> void:
 			gear_floors = Array(a.substr(14).split(",")).map(func(x): return int(x))
 		elif a.begins_with("--gear-cache="):
 			gear_cache = a.substr(13)
+		elif a.begins_with("--brand-set="):
+			for kv in a.substr(12).split(";", false):
+				brand_set[kv.get_slice("=", 0)] = int(kv.get_slice("=", 1))
 		elif a == "--pozhen-type":
 			XTianqiElements.POZHEN_BY_TYPE = true
 	super._ready()
@@ -72,6 +79,15 @@ func _apply_knobs() -> void:
 		XGuardianRework.STRIP = strip_ids != [-1]  # T348：改游戏里的开关（数据层钩子，建档重载数据表也照认；含变身二阶段）
 		if XGuardianRework.STRIP:
 			XGuardianRework.STRIP_XPARAM = strip_ids.duplicate()
+	for path in brand_set:   # T390：每次都改（建档可能清缓存重读 brand.json）
+		var keys: PackedStringArray = str(path).split(".")
+		var node = XTianqiBrand.data()
+		for i in keys.size() - 1:
+			node = node.get(keys[i], {})
+		if node is Dictionary and node.has(keys[keys.size() - 1]):
+			node[keys[keys.size() - 1]] = brand_set[path]
+		else:
+			push_error("brand_calib --brand-set 找不到 " + str(path))
 	var seen := {}
 	for f in floors:
 		for m in XDB.rec("Troops", int(GUARDIAN[f])).get("members", []):
@@ -80,13 +96,33 @@ func _apply_knobs() -> void:
 				seen[id] = true
 	if not _knobs_printed:
 		_knobs_printed = true
-		print("BRAND_KNOBS xcap=%s strip=%s strip_on=%s enemies=%s pozhen_type=%s" % [str(xcap), str(XGuardianRework.STRIP_XPARAM), str(XGuardianRework.STRIP), str(seen.keys()), str(XTianqiElements.POZHEN_BY_TYPE)])
+		print("BRAND_KNOBS xcap=%s strip=%s strip_on=%s enemies=%s（变身二阶段 538／929／930 由 STRIP 一并清，不列） pozhen_type=%s brand_set=%s" % [str(xcap), str(XGuardianRework.STRIP_XPARAM), str(XGuardianRework.STRIP), str(seen.keys()), str(XTianqiElements.POZHEN_BY_TYPE), JSON.stringify(brand_set)])
 
 
+## T390（T121 核 P2-2）：职责口径同配队器（均衡按 BALANCED_AS_OUTPUT 并入输出），不再自己读 line_data
 static func role_of(id: int) -> String:
-	return str(XTianqiBase.line_data().get("actors", {}).get(str(id), {}).get("role", ""))
+	return CT.TB.role_of(id)
 
 
+## T390（T121 核 P2-4 截断偏差）：打第 f 层守层者之前的层线烙印＝首通 1～f−1 层每层给的数之和（first_clear.segments），
+## 不再取「≤f 的最近节点」（26～29 层原来都按 70 算、实际 73～82；30 层原来 85、打之前其实 82）。到节点就打心魔，所以不按节点截断
+static func line_before(f: int) -> float:
+	var fc: Dictionary = XTianqiBrand.data().get("gain", {}).get("first_clear", {})
+	var segs: Array = fc.get("segments", [])
+	var fls: Dictionary = fc.get("floors", {})   # T390 核 P3-1：35、36 层单列的数（同 s3_s10_formula.py 的 first_amount）
+	var t := 0.0
+	for k in range(1, f):
+		if fls.has(str(k)):
+			t += float(fls[str(k)])
+			continue
+		for sg in segs:
+			if k >= int(sg.get("from", 0)) and k <= int(sg.get("to", 0)):
+				t += float(sg.get("each", 0))
+				break
+	return t
+
+
+## 旧口径（--carved-brand=node）：≤f 的最近层线节点
 static func line_pct(f: int) -> float:
 	var ll: Dictionary = XTianqiBrand.data().get("gain", {}).get("layer_line", {})
 	var best := 0.0
@@ -120,7 +156,22 @@ func _calib_state(team: Array, f: int, rep: int) -> XState:
 	var s := _state(team, f)
 	s.flags["tianqi"]["difficulty"] = difficulty
 	s.random_master = XRandomStream.hex64(seed * 7919 + f * 131 + rep * 17 + int(team[0]))
-	var cb := line_pct(f) if carved_brand == "line" else float(carved_brand)
+	_brand_team(s, team, f)
+	XState.current = s
+	_apply_knobs()  # 建档（new_game）会重载数据表，改敌人记录／上限要在建档之后、每场再改一次
+	return s
+
+
+func carved_value(f: int) -> float:
+	if carved_brand == "line":
+		return line_before(f)
+	if carved_brand == "node":
+		return line_pct(f)
+	return float(carved_brand)
+
+
+func _brand_team(s: XState, team: Array, f: int) -> void:
+	var cb := carved_value(f)
 	for id in team:
 		var a := s.actor(int(id))
 		if role_of(int(id)) == "输出" and carve_mode == "all":
@@ -129,9 +180,22 @@ func _calib_state(team: Array, f: int, rep: int) -> XState:
 			_set_brand(a, other_brand, false)
 	if ripe_mode:
 		XTianqiBrand._firsts_rw(s)["guardian:%d" % f] = 1
-	XState.current = s
-	_apply_knobs()  # 建档（new_game）会重载数据表，改敌人记录／上限要在建档之后、每场再改一次
-	return s
+	else:
+		XTianqiBrand._firsts_rw(s).erase("guardian:%d" % f)
+
+
+## T390 --snapshots：虚拟玩家存档链（同 T363 真打：原队＋--lineups 随机阵容 × --rng-seeds），上场 4 人按职责改写烙印
+func _snap_calib_states(f: int) -> Array:
+	var out := []
+	for st in _snapshot_states(f):
+		XState._become_current(st)
+		var team: Array = st.battle_members().map(func(a): return int(a.actor_id))
+		st.flags["tianqi"]["difficulty"] = difficulty
+		_brand_team(st, team, f)
+		_apply_knobs()
+		st.set_meta("t390_team", team)
+		out.append(st)
+	return out
 
 
 func _alive_set(logic: XBattleLogic) -> Array:
@@ -147,7 +211,9 @@ func _downs(before: Array, after: Array) -> int:
 
 
 func _calib_fight(s: XState, troop: int) -> Dictionary:
-	var logic := XBattleLogic.new()
+	var logic: XBattleLogic = VPLogic.new() if (_use_vp() or snapshots != "") else XBattleLogic.new()   # T390：存档链同 T363 真打用虚拟玩家出手层
+	if s.has_meta("t239_rng"):
+		seed(int(s.get_meta("t239_rng")))
 	logic.setup(troop, s, XBattleRandom.create(str(s.random_master)))
 	logic.auto = true
 	_drain(logic, logic.troop_events())
@@ -155,6 +221,7 @@ func _calib_fight(s: XState, troop: int) -> Dictionary:
 	var done := 0
 	var dealt := 0.0   # 我方每次行动让敌方掉的血（不算敌人回血抵扣）
 	var foe_heal := 0.0   # 敌方生命在我方行动以外的时候涨了多少（回合首末的回血、敌人自己的回复招）
+	var dot := 0.0   # T390（T121 核 P3-1）：回合首末敌方掉的血（持续伤害等），计入 dealt_per_turn
 	var mhp0 := logic.enemies.map(func(e): return float(e.mhp))
 	for r in turns:
 		var al := _alive_set(logic)
@@ -162,6 +229,7 @@ func _calib_fight(s: XState, troop: int) -> Dictionary:
 		logic.start_turn()
 		logic.take_turn_start_logs()
 		foe_heal += maxf(0.0, _enemy_hp(logic) - eh)
+		dot += maxf(0.0, eh - _enemy_hp(logic))
 		downs += _downs(al, _alive_set(logic))
 		var count := 0
 		var turn_first := true
@@ -174,7 +242,7 @@ func _calib_fight(s: XState, troop: int) -> Dictionary:
 			if u == null:
 				break
 			count += 1
-			var cmd := logic.decide(u)
+			var cmd := [null, null] if logic.take_cleared(u) else logic.decide(u)   # T390：同 baseline_dps 真打（首位被强制行动清掉的那格放弃）
 			al = _alive_set(logic)
 			eh = _enemy_hp(logic)
 			logic.act(u, cmd[0], cmd[1])
@@ -182,6 +250,7 @@ func _calib_fight(s: XState, troop: int) -> Dictionary:
 				dealt += maxf(0.0, eh - _enemy_hp(logic))
 			else:
 				foe_heal += maxf(0.0, _enemy_hp(logic) - eh)
+				dealt += maxf(0.0, eh - _enemy_hp(logic))   # T390：敌人行动时掉的血（反伤、反击、敌方自伤）也算我方打的
 			downs += _downs(al, _alive_set(logic))
 			if logic.is_over():
 				break
@@ -189,7 +258,9 @@ func _calib_fight(s: XState, troop: int) -> Dictionary:
 			al = _alive_set(logic)
 			eh = _enemy_hp(logic)
 			logic.end_turn()
+			_drain(logic, logic.troop_events(null, true))   # T390：回合末敌群页（残血变身、阶段页），同 baseline_dps 真打；原来漏了
 			foe_heal += maxf(0.0, _enemy_hp(logic) - eh)
+			dot += maxf(0.0, eh - _enemy_hp(logic))
 			downs += _downs(al, _alive_set(logic))
 		done += 1
 		if logic.is_over():
@@ -214,7 +285,7 @@ func _calib_fight(s: XState, troop: int) -> Dictionary:
 	return {"turns": done, "won": logic.is_won(), "lost": logic.is_lost(), "downs": downs, "fits": fits, "kinds": kinds, "harm": harm,
 		"roles": roles, "ripe": bool(c.get("ripe", false)), "kind": str(c.get("kind", "")), "key": str(c.get("key", "")),
 		"fills": c.get("fills", {}).duplicate(),
-		"dealt_per_turn": dealt / maxf(1.0, done), "foe_heal_per_turn": foe_heal / maxf(1.0, done), "foe_mhp": mhp0,
+		"dealt_per_turn": (dealt + dot) / maxf(1.0, done), "dot_per_turn": dot / maxf(1.0, done), "capped": not logic.is_over(), "foe_heal_per_turn": foe_heal / maxf(1.0, done), "foe_mhp": mhp0,
 		"foe_hp_left": logic.enemies.map(func(e): return [int(e.enemy_id), float(e.hp) / maxf(1.0, float(e.mhp))]),
 		"foe_xparam": logic.enemies.map(func(e): return [int(e.enemy_id), snappedf(e.xparam(0), 0.001), snappedf(e.xparam(1), 0.001), snappedf(e.xparam(4), 0.001), snappedf(e.xparam(7), 0.001)]),
 		"party_mhp": logic.actors.map(func(a): return int(a.mhp)),
@@ -234,11 +305,20 @@ func _run() -> void:
 	XEnemy.force_roll = 100.0   # 守层者不按神话
 	XTianqiBrand.ENABLED = true
 	_apply_knobs()
-	var list := _teams()
-	_load_gears(list)
+	var list := [] if snapshots != "" else _teams()
+	if snapshots == "":
+		_load_gears(list)
 	var rows := []
 	for f in floors:
 		var per := []
+		if snapshots != "":
+			for st in _snap_calib_states(f):
+				XState._become_current(st)
+				var r := _calib_fight(st, _troop_for(st, f))
+				r["team"] = st.get_meta("t390_team")
+				r["label"] = str(st.get_meta("t239_team", ""))
+				r["rep"] = int(st.get_meta("t239_rng", 0))
+				per.append(r)
 		for team in list:
 			var gk := ",".join(team.map(func(x): return str(x)))
 			if not _gears.has(gk) or not _gears[gk].has(int(f)):
@@ -251,11 +331,14 @@ func _run() -> void:
 				r["rep"] = rep
 				per.append(r)
 		var n := per.size()
+		if n == 0:
+			print("BRAND_SKIP floor=%d（没有样本）" % f)
+			continue
 		var won := per.filter(func(r): return bool(r.won))
 		var row := {"floor": f, "troop": GUARDIAN[f], "n": n, "won": won.size(), "win_rate": float(won.size()) / maxf(1.0, n),
 			"turns_won_avg": _avg(won.map(func(r): return r.turns)), "turns_all_avg": _avg(per.map(func(r): return r.turns)),
 			"downs_avg": _avg(per.map(func(r): return r.downs)), "harm_fights": per.filter(func(r): return int(r.harm) > 0).size(),
-			"ripe_flag": per.all(func(r): return bool(r.ripe)), "boss_kind": per[0].kind if n else ""}
+			"ripe_flag": per.all(func(r): return bool(r.ripe)), "boss_kind": per[0].kind if n else "", "carved_value": carved_value(f)}
 		# 每人每场：按职责平均（每场这个职责的人数分摊）
 		for role in ["输出", "坦克", "辅助"]:
 			var self_pp := []
@@ -269,9 +352,35 @@ func _run() -> void:
 			row["self_" + role] = _avg(self_pp)
 			row["sear_" + role] = _avg(sear_pp)
 			row["n_" + role] = self_pp.size()
+			# T390（T121 核 P2-4）：折 8 回合按每场自己的回合数折（不再用「平均次数÷平均回合」），分母只算这一职责有人的场；
+			# 另给只算分出胜负（没打满封顶回合）的场，封顶僵局的场把发作次数撑大
+			var s8 := []
+			var r8 := []
+			var s8u := []
+			var r8u := []
+			for r in per:
+				var cnt := int(r.roles.get(role, 0))
+				if cnt <= 0:
+					continue
+				var k8 := 8.0 / maxf(1.0, float(r.turns)) / cnt
+				var a8 := float(r.fits.get(role, {}).get("self", 0)) * k8
+				var b8 := float(r.fits.get(role, {}).get("sear", 0)) * k8
+				s8.append(a8)
+				r8.append(b8)
+				if not bool(r.capped):
+					s8u.append(a8)
+					r8u.append(b8)
+			row["self8_" + role] = _avg(s8)
+			row["sear8_" + role] = _avg(r8)
+			row["self8u_" + role] = _avg(s8u)
+			row["sear8u_" + role] = _avg(r8u)
+			row["n8u_" + role] = s8u.size()
 		row["dealt_per_turn_avg"] = _avg(per.map(func(r): return r.dealt_per_turn))
+		row["dot_per_turn_avg"] = _avg(per.map(func(r): return r.dot_per_turn))
+		row["capped"] = per.filter(func(r): return bool(r.capped)).size()
 		row["foe_heal_per_turn_avg"] = _avg(per.map(func(r): return r.foe_heal_per_turn))
 		row["foe_mhp"] = per[0].foe_mhp if n else []
+		row["team_self8"] = _avg(per.map(func(r): return (int(r.fits.get("输出", {}).get("self", 0)) + int(r.fits.get("坦克", {}).get("self", 0)) + int(r.fits.get("辅助", {}).get("self", 0))) * 8.0 / maxf(1.0, float(r.turns))))
 		row["team_self_avg"] = _avg(per.map(func(r): return int(r.fits.get("输出", {}).get("self", 0)) + int(r.fits.get("坦克", {}).get("self", 0)) + int(r.fits.get("辅助", {}).get("self", 0))))
 		var kinds := {}
 		for r in per:
@@ -280,14 +389,17 @@ func _run() -> void:
 		row["kinds"] = kinds
 		row["fights"] = per
 		rows.append(row)
-		print("BRAND_ROW floor=%d diff=%s carve=%s ripe=%s n=%d won=%d turnsWon=%.2f turnsAll=%.2f downs=%.2f selfOut=%.3f searOut=%.3f selfTank=%.3f searTank=%.3f selfSup=%.3f searSup=%.3f teamSelf=%.3f harmFights=%d dealt/t=%.0f foeHeal/t=%.0f foeMhp=%s kind=%s ripeFlag=%s kinds=%s" % [
+		print("BRAND_ROW floor=%d diff=%s carve=%s ripe=%s n=%d won=%d turnsWon=%.2f turnsAll=%.2f downs=%.2f selfOut=%.3f searOut=%.3f selfTank=%.3f searTank=%.3f selfSup=%.3f searSup=%.3f teamSelf=%.3f harmFights=%d capped=%d s8Out=%.3f r8Out=%.3f r8Tank=%.3f s8uOut=%.3f r8uOut=%.3f r8uTank=%.3f n8u=%d teamSelf8=%.3f dealt/t=%.0f dot/t=%.0f foeHeal/t=%.0f foeMhp=%s kind=%s ripeFlag=%s kinds=%s" % [
 			f, difficulty, carve_mode, str(ripe_mode), n, won.size(), float(row.turns_won_avg), float(row.turns_all_avg), float(row.downs_avg),
 			float(row.get("self_输出", 0)), float(row.get("sear_输出", 0)), float(row.get("self_坦克", 0)), float(row.get("sear_坦克", 0)),
-			float(row.get("self_辅助", 0)), float(row.get("sear_辅助", 0)), float(row.team_self_avg), int(row.harm_fights), float(row.dealt_per_turn_avg), float(row.foe_heal_per_turn_avg), str(row.foe_mhp), str(row.boss_kind), str(row.ripe_flag), JSON.stringify(kinds)])
+			float(row.get("self_辅助", 0)), float(row.get("sear_辅助", 0)), float(row.team_self_avg), int(row.harm_fights), int(row.capped),
+			float(row.get("self8_输出", 0)), float(row.get("sear8_输出", 0)), float(row.get("sear8_坦克", 0)),
+			float(row.get("self8u_输出", 0)), float(row.get("sear8u_输出", 0)), float(row.get("sear8u_坦克", 0)), int(row.get("n8u_输出", 0)), float(row.team_self8),
+			float(row.dealt_per_turn_avg), float(row.dot_per_turn_avg), float(row.foe_heal_per_turn_avg), str(row.foe_mhp), str(row.boss_kind), str(row.ripe_flag), JSON.stringify(kinds)])
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
-		fh.store_string(JSON.stringify({"xcap": xcap, "strip": XGuardianRework.STRIP_XPARAM if XGuardianRework.STRIP else [], "pozhen_type": XTianqiElements.POZHEN_BY_TYPE, "difficulty": difficulty, "carve": carve_mode, "carved_brand": carved_brand, "other_brand": other_brand,
+		fh.store_string(JSON.stringify({"brand_set": brand_set, "snapshots": snapshots, "lineups": lineups, "rng_seeds": rng_seeds, "xcap": xcap, "strip": XGuardianRework.STRIP_XPARAM if XGuardianRework.STRIP else [], "pozhen_type": XTianqiElements.POZHEN_BY_TYPE, "difficulty": difficulty, "carve": carve_mode, "carved_brand": carved_brand, "other_brand": other_brand,
 			"ripe": ripe_mode, "reps": reps, "teams": list, "turns": turns, "seed": seed, "rows": rows}, "\t"))
 	print("BRAND_DONE")
 	get_tree().quit(0)
