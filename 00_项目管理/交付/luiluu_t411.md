@@ -12,7 +12,7 @@
   - 天启篇候选池开放「徐凤年」（超强者）：剑一～剑八保持被动、攻击命中时按原版 2%～30%（合计 95%）追加伤害；大帝转世提供物品掉落率 +10%；主动两招为「剑气滚龙壁·封印」（单体五段爆发）与「剑九」（单体八段终式，目标生命低于 30% 时伤害翻倍，放完 1 回合不能动，每场一次）；清除了原版遗留乘区、专属装备溢出属性、九阶基因锁 −100% 经验与角色本体旧特性。
 - 设计稿与口径：定稿 `03_再刷重制_Godot/00_设计/徐凤年天启篇技能卡草稿_v0.3.md`（回写 Kyo 11-23 事项 34 全部定案，修复 v0.1／v0.2 审稿全部 P1／P2／P3）。
 - 引擎与数据接线：
-  - `modes/xiyou/core/imported_balance.gd`：放出开关 `RELEASE_XUFENG`、号角 359 上架门槛 `XUFENG_HORN_GATE`（接 `rift3`）、改版向导文本清理、天启篇候选池开关 `XUFENG_TIANQI = true`（过线后打开）。
+  - `modes/xiyou/core/imported_balance.gd`：放出开关 `RELEASE_XUFENG`、号角 359 上架门槛 `XUFENG_HORN_GATE`（`xufeng_gate_met()` 认 `XRift.stage() >= 3`，三阶开关 `XRift.STAGE3` 关掉时同样不上架）、改版向导文本清理、天启篇候选池开关 `XUFENG_TIANQI = true`（过线后打开）。
   - `modes/xiyou/core/tianqi_skills.gd`、`modes/xiyou/core/state_effects.gd`：新增天启篇数据驱动状态命中追加伤害 `hit_extra_pct`（`rec_state` 合成 `establish` op，`run_one` 按主段实伤 `r.hp` 整数 % 扣血并写入 `r.extra` 弹字与 `r.hit_extra` 统计，回退开关 `HIT_EXTRA_ON`），修复原版 `States.json[2530..2537]` 闭合标签笔误导致 `effects: []` 零效果的问题。
   - `modes/xiyou/core/actor.gd`、`modes/xiyou/core/tianqi_skills.gd`：新增天启篇角色本体特性清理 `actors.<id>.traits_remove`（`actor_trait_obj(self, data())`，首句返回 `base` 合规发行空壳规则 2，回退开关 `ACTOR_TRAITS_STRIP`），清理 `Actors.json[152].traits` 再动 +100%、攻次 +2 与物理承伤 −20%；西游原版档零变化。
   - `modes/xiyou/tianqi_data/skill_rework.json`：补齐 152 段（`actors.152`、`skills` 9985～9998 共 14 条、`states` 2530～2537 与 `10833 剑竭`、`new_states.10833`、`gear` 4 件专属装备 `armor:143`／`weapon:76`／`armor:129`／`weapon:94`）。
@@ -22,8 +22,8 @@
 - 验证：
   - `03_转换工具/天启篇数据校验.py`：全部通过（退出码 0）。
   - `03_开发环境/发行空壳.py check`：81 个脚本 782 个函数全过（退出码 0）。
-  - 本机专项：`tests/xiyou_tianqi_xufeng.tscn` 33/33（含天启篇扣血、回退开关与西游档零变化证明）、`tests/xiyou_xufeng_release.tscn` 27/27、`tests/xiyou_tianqi_skills.tscn` 245/245、`tests/xiyou_tianqi_join_gifts.tscn` 208/208、`tests/xiyou_tianqi_hall.tscn` 74/74。
-  - 云端选测：Run `45152905079`（16 片 683 场景全绿），链接 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45152905079 。
+  - 本机专项：`tests/xiyou_tianqi_xufeng.tscn` 33/33（含天启篇扣血、回退开关与西游档零变化证明）、`tests/xiyou_xufeng_release.tscn` 28/28（含 `XRift.STAGE3 = false` 门槛断言）、`tests/xiyou_rift3_xufeng.tscn` 53/53、`tests/xiyou_tianqi_skills.tscn` 245/245、`tests/xiyou_tianqi_join_gifts.tscn` 208/208、`tests/xiyou_tianqi_hall.tscn` 74/74。
+  - 云端选测（已 rebase 至含 T412 的 `main a06fc6acc`）：Run `45175612221`（16 片 684 场景全绿），链接 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45175612221 。
 
 ## 交接板
 
@@ -92,15 +92,15 @@
 
 ## 云端选测与独占范围
 
-- 云端选测（提交 `e435cc3ba`，基准 `fd0a48deb`）：**通过**（16 片共 683 场景全绿），Run 链接：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45152905079
-  - （前一次 Run `45147546647` 在 683 场景中检出 `xiyou_tianqi_join_gifts.tscn` 硬编码超强者放行计数 `17` 失败，已同步更新为 `18` 后重跑全绿。）
+- 云端选测（提交 `58aed6bc7`，基准 `a06fc6acc` 含 T412）：**通过**（16 片共 684 场景全绿），Run 链接：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45175612221
+  - （此前 rebase 前 Run `45152905079` 683 场景全绿；更早 Run `45147546647` 检出 `xiyou_tianqi_join_gifts.tscn` 硬编码计数后已改为动态计算。）
 - 独占文件（含协调批准扩改项）：
   - `03_再刷重制_Godot/00_设计/徐凤年天启篇技能卡草稿_v0.3.md`
   - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/skill_rework.json`（152 段）
   - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_skills.gd`
   - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/state_effects.gd`
   - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor.gd`
-  - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/imported_balance.gd`（仅打开 `XUFENG_TIANQI`）
+  - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/imported_balance.gd`（打开 `XUFENG_TIANQI`、`xufeng_gate_met` 改认 `XRift.stage() >= 3`）
   - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_hall_text.gd`、`modes/xiyou/core/item_marks.gd`
   - `03_再刷重制_Godot/03_转换工具/天启篇数据校验.py`
   - `03_再刷重制_Godot/01_Godot工程/tests/virtual_player/k_calibrate.gd`
@@ -108,16 +108,19 @@
   - `03_再刷重制_Godot/01_Godot工程/tests/xiyou_xufeng_release.gd`、`tests/xiyou_tianqi_join_gifts.gd`、`tests/xiyou_tianqi_hall.gd`
   - `00_项目管理/交付/luiluu_t411.md`
 - 后续项：
-  - P2-1：`xufeng_gate_met` 改走 `XRift.stage() >= 3`，等 T412 合进 `main` 后 rebase 一起改；
   - `03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/six_dim.json` 的 152 行留后续统一重算，本单未改动；
   - P3-2 弹字合并：剑一～剑八当前每段由 8 个状态各自往 `r.extra` 弹 1 次，后续如实机观感偏密再合并为每段 1 个汇总弹字。
 
-## 本分支提交
+## 本分支提交（已 rebase 至 `a06fc6acc`）
 
-- `80a53a172` WIP: T411 放出徐凤年 152 开关（RELEASE_XUFENG、号角 359 上架门槛接口、天启篇候选池暂不放、改版向导删苍龙徐凤年）
-- `0c20e6afa` T411 号角 359 门槛接 T412 的 rift3；专项 xiyou_xufeng_release，隐藏角色与苍龙专项按原版比时一并关徐凤年解放
-- `34a24f4b3` T411 专项 uid
-- `83dcdc7c8` T411 徐凤年天启篇技能卡草稿 v0.1（只写文档、不接线，待小A 审）
-- `f6784b7d9` T411 徐凤年天启篇技能卡草稿 v0.2（Kyo 事项34：剑一～剑八保持被动按原版比例追加、大帝转世掉落率+10%）
-- `d1af1379a` T411 徐凤年天启篇技能卡 v0.3＋接线＋两轮 3 种子量数过线（1.21×狂刀）＋打开 XUFENG_TIANQI
-- `e435cc3ba` T411 同步 xiyou_tianqi_join_gifts 超强者放行计数（17→18，含 152 徐凤年）
+- `683a51ed3` WIP: T411 放出徐凤年 152 开关（RELEASE_XUFENG、号角 359 上架门槛接口、天启篇候选池暂不放、改版向导删苍龙徐凤年）
+- `cd05186d1` T411 号角 359 门槛接 T412 的 rift3；专项 xiyou_xufeng_release，隐藏角色与苍龙专项按原版比时一并关徐凤年解放
+- `8c4eedc98` T411 专项 uid
+- `df1d00625` T411 徐凤年天启篇技能卡草稿 v0.1（只写文档、不接线，待小A 审）
+- `a9e461174` T411 徐凤年天启篇技能卡草稿 v0.2（Kyo 事项34：剑一～剑八保持被动按原版比例追加、大帝转世掉落率+10%）
+- `8a967d2fc` T411 徐凤年天启篇技能卡 v0.3＋接线＋两轮 3 种子量数过线（1.21×狂刀）＋打开 XUFENG_TIANQI
+- `1de1066d5` T411 同步 xiyou_tianqi_join_gifts 超强者放行计数（17→18，含 152 徐凤年）
+- `7b4040802` T411 补交付单 luiluu_t411.md（含两轮 3 种子量数、调用方结论与云端选测全绿链接）
+- `721dd6603` T411 核后小修：P2-1 k_calibrate 压血限定 152/9995、P3-1 hit_extra_pct 伤害类型改 [1,5]、P3-4 join_gifts 动态计数、P3-2 弹字合并记后续项
+- `9d981afaf` T411 修 P1-1（天启篇 EV071 改版向导换稳定锚点「已停用，不能招募」＋双向实机文字断言）与 P3-1（item_marks 删过时注释）
+- `58aed6bc7` T411 修 P2-1（rebase 到 T412 main a06fc6acc 后，xufeng_gate_met 改认 XRift.stage() >= 3＋补 STAGE3=false 专项断言）
