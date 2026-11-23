@@ -248,6 +248,23 @@ func _title_pages() -> void:
 		await get_tree().process_frame
 		var old_lineup := _find(entry, "TianqiStartPage") == null and _find(entry, "TianqiReroll") != null
 		_check("setting_old_pages_old_frame", not XTianqiTitle.skin_on() and old_slots and old_diff and old_lineup, [old_slots, old_diff, old_lineup])
+		# T433：旧回退路径（entry.gd:_tq_lineup）五档标题——寻常／艰险写「无法获得超强者」（不含「0 名」），九死／炼狱／证道原句不变
+		var want_old_titles := {
+			"xunchang": "随机阵容 · 寻常（无法获得超强者）",
+			"jianxian": "随机阵容 · 艰险（无法获得超强者）",
+			"jiusi": "随机阵容 · 九死（同一场最多上阵 1 名超强者）",
+			"lianyu": "随机阵容 · 炼狱（同一场最多上阵 2 名超强者）",
+			"zhengdao": "随机阵容 · 证道（同一场最多上阵 2 名超强者" + ("，助力位可再放 1 名" if XTianqi.HELPER_RULES else "") + "）",
+		}
+		var old_title_bad := {}
+		for k in want_old_titles:
+			entry._tq_lineup(2, k, [])
+			await get_tree().process_frame
+			var title_node = entry.column.get_child(0) if entry.column != null and entry.column.get_child_count() > 0 else null
+			var title_txt: String = (title_node as Label).text if title_node is Label else ""
+			if title_txt != want_old_titles[k] or title_txt.contains("0 名"):
+				old_title_bad[k] = {"got": title_txt, "want": want_old_titles[k]}
+		_check("old_lineup_title_super_cap_text_t433", old_title_bad.is_empty(), old_title_bad)
 		XConfig._values["codexUiSkin"] = true
 
 
