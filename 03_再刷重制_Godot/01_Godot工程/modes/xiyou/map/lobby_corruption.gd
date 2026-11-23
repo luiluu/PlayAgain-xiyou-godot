@@ -14,7 +14,7 @@ extends Node2D
 
 ## O-311：大厅初步异化叠加层；false 回到阶段一的大厅。
 static var ENABLED := true
-## 大厅三阶「蚀骨」总开关（设计稿 重制设定/重制版_大厅三阶异化设计稿_v0.2.md；false 完整退回二阶）。
+## O-649：大厅三阶「蚀骨」总开关（设计稿 重制设定/重制版_大厅三阶异化设计稿_v0.2.md；false 完整退回二阶）。
 static var STAGE3_ENABLED := true
 ## 三阶子开关骨架（15 个，默认全 true；任一置 false 精确退回二阶对应表现）
 static var STAGE3_GROUND := true          # 3.1 褪色 10 格、裂纹成片、浮砖 5～7 块离地
