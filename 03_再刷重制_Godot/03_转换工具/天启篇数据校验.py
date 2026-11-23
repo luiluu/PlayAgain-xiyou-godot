@@ -10,7 +10,7 @@
 - horsemen.json（天启四骑士）：
   A 组：和 参数.json「骑士」一节逐项对照（生命、攻防、行动、系数、计量、终焉、骑士血量倍率）；不给 --params 时跳过。
   B 组：规则自检（五档骑士血量倍率齐全）。
-- war_line.json、famine_line.json、plague_line.json、death_line.json（各线关卡流程与异化，XTianqiLine）：只有 B 组，预设和台词齐全、开场步骤用到的台词／地图／坐标／预设都在表里。
+- war_line.json、famine_line.json、plague_line.json、death_line.json（各线关卡流程与异化，XTianqiLine）：只有 B 组，预设和台词齐全、开场步骤用到的台词／地图／坐标／预设都在表里；战争线 alien.kinds.pyro.finale_bomb_pct（T407）是 1～100 整数。
 - summit.json（31～36 层重做）：只有 B 组，34～36 层齐全、台词齐全。
 - seg_alien.json（按段异化，四线共用）：只有 B 组，1～36 层段表连续不重叠、级名和难度键齐全、几率在 0～100。
 - qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
@@ -415,6 +415,11 @@ def war_line_rules(table: dict) -> list:
     miss = [k for k in WAR_SCENES if not table.get('scenes', {}).get(k)]
     if miss:
         bad.append('缺台词：%s' % miss)
+    pyro = table.get('alien', {}).get('kinds', {}).get('pyro', {})
+    if 'finale_bomb_pct' in pyro:   # T407：终焉烟火师轰炸按生命上限百分比，1～100 整数（附则 E）
+        v = pyro['finale_bomb_pct']
+        if not (isinstance(v, int) and not isinstance(v, bool) and 1 <= v <= 100):
+            bad.append('alien.kinds.pyro.finale_bomb_pct＝%r：要 1～100 的整数（百分比）' % (v,))
     return bad
 
 
