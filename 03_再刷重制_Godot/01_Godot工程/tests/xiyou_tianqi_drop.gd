@@ -75,8 +75,16 @@ func _bonus() -> void:
 	_check("reworked_source_kept", _near(with_reworked - with_plain, 10.0 if seen == 10.0 else 5.0), [with_plain, with_reworked, seen])
 	a.learn_skill(5548)  # 普通难度被动：不算
 	_check("difficulty_passive_ignored", _near(XTianqiDrop.party_bonus(s, [a]), with_reworked), XTianqiDrop.party_bonus(s, [a]))
-	a.learn_skill(7198)  # 气运昌隆 5000% → 30
-	_check("huge_source_capped", _near(XTianqiDrop.party_bonus(s, [a]) - with_reworked, 30.0), XTianqiDrop.party_bonus(s, [a]))
+	# 通用书开时读重标定额；回退时仍覆盖旧来源的高值封顶。
+	var books_enabled := XTianqiGeneralBooks.ENABLED
+	XTianqiGeneralBooks.ENABLED = false
+	var legacy_before := XTianqiDrop.party_bonus(s, [a])
+	a.learn_skill(7198)
+	var legacy_after := XTianqiDrop.party_bonus(s, [a])
+	XTianqiGeneralBooks.ENABLED = books_enabled
+	_check("huge_source_capped", _near(legacy_after - legacy_before, 30.0), legacy_after)
+	var value := XTianqiDrop.rework_value(7198)
+	_check("general_book_source_kept", not is_nan(value) and _near(XTianqiDrop.party_bonus(s, [a]) - with_reworked, value))
 	_check("party_mult_below_three", XTianqiDrop.party_mult(s, [a]) < 3.0 and XTianqiDrop.party_mult(s, [a]) > 1.0, XTianqiDrop.party_mult(s, [a]))
 	var old := XState.new_game_blank()
 	XState.current = old
