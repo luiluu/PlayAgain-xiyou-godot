@@ -27,6 +27,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from 天启篇通用书生成 import GROUP as GENERAL_BOOKS_B2, plan as general_books_b2_plan
 
 HERE = Path(__file__).resolve().parent
 PROJECT = HERE.parent / '01_Godot工程'
@@ -3511,7 +3512,7 @@ def check_secret_books(_args) -> bool:
 
 
 def general_books_rules(t: dict, db_dir: Path = None) -> list:
-    """T444（T013-1d）通用书第一批重标表 general_books.json 校验。"""
+    """T444/T445 通用书重标表校验。"""
     bad = []
 
     def check(name, ok, detail=''):
@@ -3540,14 +3541,21 @@ def general_books_rules(t: dict, db_dir: Path = None) -> list:
 
     # groups 与 skills 一一对应
     g_ids = {}
-    for gname in ('sect_ding2', 'ev054_actives', 'lottery_passives'):
+    for gname in ('sect_ding2', 'ev054_actives', 'lottery_passives', GENERAL_BOOKS_B2):
         arr = groups.get(gname)
         check('groups.%s 非空列表' % gname, isinstance(arr, list) and bool(arr), gname)
         if isinstance(arr, list):
             for x in arr:
                 check('groups.%s 技能号正整数' % gname, isint(x) and x > 0, x)
+                check('groups 技能号唯一', str(x) not in g_ids, x)
                 g_ids[str(x)] = gname
     check('groups 覆盖全部 skills', set(g_ids) == set(skills), 'diff=%s' % sorted(set(g_ids) ^ set(skills))[:8])
+    exemptions = t.get('coverage_exemptions')
+    check('coverage_exemptions 非空对象', isinstance(exemptions, dict) and bool(exemptions))
+    if isinstance(exemptions, dict):
+        for k, reason in exemptions.items():
+            check('coverage_exemptions[%s] 有原因且未同时重标' % k,
+                  str(k).isdigit() and k not in skills and isinstance(reason, str) and bool(reason.strip()))
 
     # 教派包丁二＋EV054 4 主动必含技能
     must_ding2 = {6185, 6204, 2826, 2827, 2828, 2829, 2830, 6236, 6237, 6239} | set(range(6186, 6204)) | set(range(6206, 6212)) | set(range(6217, 6235))
@@ -3565,7 +3573,13 @@ def general_books_rules(t: dict, db_dir: Path = None) -> list:
         check('skills[%s].group 一致' % sid_s, sp.get('group') == g_ids.get(sid_s), (sp.get('group'), g_ids.get(sid_s)))
         d = sp.get('damage')
         if isinstance(d, dict):
-            coef = float(d.get('coef', 0))
+            if 'coef_pct' in d:
+                pct = d['coef_pct']
+                check('skills[%s].damage.coef_pct 正整数且不与 coef 共存' % sid_s,
+                      isint(pct) and 0 < pct < 100 and 'coef' not in d, pct)
+                coef = pct / 100 if isint(pct) else 0
+            else:
+                coef = float(d.get('coef', 0))
             check('skills[%s].damage.coef 整数或整数百分比' % sid_s, coef > 0 and _int_or_pct(coef), coef)
             for st_k, w in d.get('stats', {}).items():
                 wf = float(w)
@@ -3631,6 +3645,13 @@ def general_books_rules(t: dict, db_dir: Path = None) -> list:
         sk_db = json.loads(sk_path.read_text(encoding='utf-8'))
         it_db = json.loads(it_path.read_text(encoding='utf-8'))
         st_db = json.loads(st_path.read_text(encoding='utf-8'))
+        if (db / 'CommonEvents.json').exists():
+            expected, exempt, _ = general_books_b2_plan(t, db, DATA_DIR)
+            actual = {sid: row for sid, row in skills.items() if isinstance(row, dict)
+                      and row.get('group') == GENERAL_BOOKS_B2}
+            diff = sorted(sid for sid in expected.keys() | actual.keys()
+                          if expected.get(sid) != actual.get(sid))
+            check('code 43 和 code 44 教书重标或归属齐全', not diff and exempt == exemptions, diff[:12])
         taught5 = sorted({
             int(e['dataId'])
             for it in it_db if isinstance(it, dict)

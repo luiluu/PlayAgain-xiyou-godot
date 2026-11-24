@@ -247,6 +247,484 @@
    10434,
    10435,
    10436
+  ],
+  "remaining_books": [
+   115,
+   116,
+   117,
+   118,
+   119,
+   120,
+   121,
+   122,
+   123,
+   124,
+   125,
+   126,
+   148,
+   275,
+   282,
+   283,
+   284,
+   448,
+   449,
+   450,
+   451,
+   452,
+   453,
+   457,
+   458,
+   459,
+   460,
+   461,
+   462,
+   463,
+   488,
+   489,
+   490,
+   498,
+   553,
+   642,
+   783,
+   784,
+   785,
+   786,
+   787,
+   789,
+   790,
+   791,
+   792,
+   793,
+   794,
+   904,
+   939,
+   947,
+   948,
+   949,
+   950,
+   951,
+   952,
+   953,
+   954,
+   955,
+   956,
+   957,
+   1710,
+   1711,
+   1821,
+   1951,
+   1952,
+   1953,
+   1954,
+   1955,
+   1956,
+   1957,
+   1958,
+   1959,
+   1960,
+   2283,
+   2471,
+   2472,
+   2473,
+   2474,
+   2475,
+   2476,
+   2477,
+   2478,
+   2479,
+   2480,
+   2666,
+   2668,
+   2669,
+   2753,
+   2754,
+   2755,
+   2756,
+   2776,
+   2777,
+   2778,
+   2779,
+   2780,
+   2781,
+   2782,
+   2783,
+   2784,
+   2785,
+   2798,
+   2799,
+   2818,
+   2819,
+   2820,
+   2821,
+   2822,
+   2823,
+   2824,
+   2831,
+   2848,
+   2849,
+   2850,
+   2851,
+   2852,
+   2853,
+   2854,
+   2855,
+   2856,
+   2857,
+   2858,
+   2859,
+   2860,
+   2861,
+   2862,
+   2863,
+   3178,
+   3182,
+   3183,
+   3184,
+   3186,
+   3584,
+   3585,
+   3668,
+   3669,
+   3671,
+   3672,
+   3673,
+   3677,
+   3678,
+   3679,
+   3680,
+   3681,
+   3684,
+   3685,
+   3686,
+   3687,
+   3688,
+   3691,
+   3692,
+   3693,
+   3694,
+   3695,
+   3897,
+   3898,
+   3899,
+   3900,
+   3930,
+   3931,
+   3932,
+   3933,
+   3934,
+   3935,
+   4505,
+   4510,
+   4654,
+   4655,
+   4656,
+   4657,
+   4658,
+   4659,
+   4660,
+   4661,
+   4662,
+   4663,
+   4664,
+   4665,
+   4666,
+   4667,
+   4668,
+   4669,
+   4670,
+   4671,
+   4672,
+   4673,
+   4674,
+   4675,
+   4676,
+   4677,
+   4678,
+   4679,
+   4680,
+   4682,
+   4683,
+   4684,
+   4685,
+   4686,
+   4687,
+   4688,
+   4689,
+   4690,
+   4691,
+   4692,
+   4693,
+   4694,
+   4695,
+   4696,
+   4697,
+   4698,
+   4699,
+   4744,
+   4745,
+   4746,
+   4767,
+   4768,
+   4770,
+   4817,
+   5091,
+   5092,
+   5093,
+   5094,
+   5095,
+   5096,
+   5097,
+   5098,
+   5168,
+   5169,
+   5170,
+   5171,
+   5172,
+   5173,
+   5174,
+   5175,
+   5176,
+   5177,
+   5178,
+   5179,
+   5180,
+   5181,
+   5182,
+   5183,
+   5184,
+   5185,
+   5189,
+   5190,
+   5191,
+   5192,
+   5193,
+   5194,
+   5195,
+   5196,
+   5197,
+   5198,
+   5199,
+   5200,
+   5201,
+   5202,
+   5203,
+   5204,
+   5205,
+   5206,
+   5207,
+   5208,
+   5209,
+   5210,
+   5211,
+   5212,
+   5213,
+   5214,
+   5215,
+   5216,
+   5217,
+   5218,
+   5219,
+   5220,
+   5221,
+   5222,
+   5223,
+   5224,
+   5225,
+   5226,
+   5227,
+   5228,
+   5229,
+   5230,
+   5231,
+   5232,
+   5233,
+   5234,
+   5235,
+   5236,
+   5237,
+   5238,
+   5239,
+   5240,
+   5241,
+   5242,
+   5243,
+   5244,
+   5245,
+   5246,
+   5247,
+   5248,
+   5249,
+   5250,
+   5251,
+   5252,
+   5253,
+   5254,
+   5255,
+   5256,
+   5257,
+   5258,
+   5259,
+   5260,
+   5261,
+   5262,
+   5263,
+   5264,
+   5265,
+   5266,
+   5267,
+   5268,
+   5269,
+   5270,
+   5271,
+   5272,
+   5273,
+   5274,
+   5275,
+   5276,
+   5277,
+   5278,
+   5279,
+   5280,
+   5281,
+   5282,
+   5283,
+   5284,
+   5285,
+   5286,
+   5287,
+   5288,
+   5289,
+   5290,
+   5291,
+   5292,
+   5293,
+   5294,
+   5295,
+   5296,
+   5297,
+   5298,
+   5299,
+   5300,
+   5301,
+   5302,
+   5303,
+   5304,
+   5305,
+   5306,
+   5307,
+   5308,
+   5309,
+   5382,
+   5383,
+   5384,
+   5385,
+   5386,
+   5387,
+   5388,
+   5389,
+   5390,
+   5391,
+   5392,
+   5393,
+   5394,
+   5395,
+   5396,
+   5397,
+   5398,
+   5399,
+   5400,
+   5401,
+   5402,
+   5403,
+   5404,
+   5405,
+   5406,
+   5407,
+   5408,
+   5409,
+   5410,
+   5411,
+   5412,
+   5413,
+   5414,
+   5415,
+   5416,
+   5417,
+   5544,
+   5545,
+   5974,
+   5975,
+   5976,
+   5977,
+   6019,
+   6126,
+   6127,
+   6133,
+   6134,
+   6135,
+   6136,
+   6137,
+   6138,
+   6139,
+   6141,
+   6142,
+   6143,
+   6144,
+   6145,
+   6146,
+   6147,
+   6148,
+   6149,
+   6150,
+   6151,
+   6152,
+   6153,
+   6155,
+   6156,
+   6157,
+   6158,
+   6159,
+   6160,
+   6163,
+   6164,
+   6165,
+   6166,
+   6169,
+   6170,
+   6171,
+   6173,
+   6174,
+   6175,
+   6183,
+   6184,
+   6238,
+   6244,
+   6245,
+   6246,
+   6247,
+   6507,
+   6525,
+   6575,
+   6609,
+   6620,
+   6624,
+   7190,
+   7191,
+   7192,
+   7193,
+   7194,
+   7195,
+   7196,
+   7197,
+   7198,
+   7199,
+   7200,
+   8221,
+   8222,
+   8223,
+   8224,
+   8225,
+   8226
   ]
  },
  "skills": {
@@ -1404,7 +1882,7 @@
    "name": "秘境抽奖·减爆闪·Lv1",
    "group": "lottery_passives",
    "desc": [
-    "效果：开战使全体敌人的被暴击率在 2 回合内降低 3%"
+    "效果：开战使全体敌人的被暴击率在 2 回合内提高 3%"
    ],
    "_note": "秘境抽奖·减爆闪：原 -25/-35/-50/-80% 压至 -3/-5/-8/-12%"
   },
@@ -1412,7 +1890,7 @@
    "name": "秘境抽奖·减爆闪·Lv2",
    "group": "lottery_passives",
    "desc": [
-    "效果：开战使全体敌人的被暴击率在 2 回合内降低 5%"
+    "效果：开战使全体敌人的被暴击率在 2 回合内提高 5%"
    ],
    "_note": "秘境抽奖·减爆闪：原 -25/-35/-50/-80% 压至 -3/-5/-8/-12%"
   },
@@ -1420,7 +1898,7 @@
    "name": "秘境抽奖·减爆闪·Lv3",
    "group": "lottery_passives",
    "desc": [
-    "效果：开战使全体敌人的被暴击率在 2 回合内降低 8%"
+    "效果：开战使全体敌人的被暴击率在 2 回合内提高 8%"
    ],
    "_note": "秘境抽奖·减爆闪：原 -25/-35/-50/-80% 压至 -3/-5/-8/-12%"
   },
@@ -1428,7 +1906,7 @@
    "name": "秘境抽奖·减爆闪·LvMax",
    "group": "lottery_passives",
    "desc": [
-    "效果：开战使全体敌人的被暴击率在 2 回合内降低 12%"
+    "效果：开战使全体敌人的被暴击率在 2 回合内提高 12%"
    ],
    "_note": "秘境抽奖·减爆闪：原 -25/-35/-50/-80% 压至 -3/-5/-8/-12%"
   },
@@ -2226,7 +2704,7 @@
    "name": "蚀脑[抽奖版]",
    "group": "lottery_passives",
    "desc": [
-    "效果：造成伤害时为目标施加「衰弱」（持续 2 回合：攻防敏 −5%、命中被暴击率 −8%）"
+    "效果：造成伤害时为目标施加「衰弱」（持续 2 回合：攻防敏 −5%、命中率、暴击率与闪避率 −8%）"
    ],
    "_note": "状态 128 去固定全属性 -100"
   },
@@ -3446,6 +3924,9918 @@
    ],
    "note_add": "<CodexParamRate: 0:5,1:5,2:5,3:5,4:5,5:5,6:5,7:5>",
    "_note": "秘境抽奖·全属性：原 5/10/15/25% 压至 1/2/3/5%"
+  },
+  "115": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "瞄准射击",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "116": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "速射",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "117": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "钉刺射击",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "118": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "连续射击",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 1
+   },
+   "desc": [
+    "效果：每段物理攻击的 1 倍，随机攻击 2 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "119": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "跳斩",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "120": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "英勇打击",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "121": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "拔刀·疾斩",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "122": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "一闪",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     18
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "123": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "割裂",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "124": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "背刺",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3,
+    "conds": [
+     {
+      "if": "target_states",
+      "per": 0.2,
+      "cap": 0.2
+     }
+    ]
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害。目标带有减益时，伤害提高 20%"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "125": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "寒冰箭",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "126": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "愤怒",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "148": {
+   "group": "remaining_books",
+   "template": "B2",
+   "name": "暴风雪",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 8,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 1
+   },
+   "desc": [
+    "效果：造成魔法攻击的 1 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "275": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "炎柱术",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "282": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "奥术波动",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     74
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "283": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "陨星术",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "284": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "冰锥术",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "448": {
+   "group": "remaining_books",
+   "template": "A4",
+   "name": "影杀",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 39"
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Remove State 39"
+    }
+   ]
+  },
+  "449": {
+   "group": "remaining_books",
+   "template": "A4",
+   "name": "冲锋",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害，有 15% 概率使目标眩晕"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ],
+   "effects_add": [
+    {
+     "code": 21,
+     "dataId": 742,
+     "value1": 0.15,
+     "value2": 0
+    }
+   ]
+  },
+  "450": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "扫射",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "451": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "鬼斩",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "452": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "碎骨腿",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     73
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "453": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "后跳射击",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     72
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "457": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "弹幕射击",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "458": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "闪电杀",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "459": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "猛击",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     78
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "460": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "满弦射击",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "461": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "燕返",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "462": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "穿心枪术",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "463": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "升龙拳",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     75
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "488": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "体能强化",
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "\n<CodexParamRate:0:8>",
+   "desc": [
+    "效果：最大生命 +8%"
+   ]
+  },
+  "489": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "魔力强化",
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "\n<CodexParamRate:1:8>",
+   "desc": [
+    "效果：最大魔法 +8%"
+   ]
+  },
+  "490": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "能量强化",
+   "note_remove": [
+    "passiveEXTTP"
+   ],
+   "note_add": "\n<passiveEXTTP:20>",
+   "desc": [
+    "效果：TP 上限 +20"
+   ]
+  },
+  "498": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "套装:幸运女神赐福(2)",
+   "note_remove": [
+    "passiveIRUP"
+   ],
+   "note_add": "\n<passiveIRUP:8>",
+   "desc": [
+    "效果：物品获取 提高"
+   ]
+  },
+  "553": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "岩石球",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "642": {
+   "group": "remaining_books",
+   "template": "B4",
+   "name": "冰风暴",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 15,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "783": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "魔爆术",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "784": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "炽烈火柱",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "785": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "冻结术",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     107
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
+   ]
+  },
+  "786": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "土崩术",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "787": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "肆虐之风",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 85"
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Remove State 85"
+    }
+   ]
+  },
+  "789": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "精准射杀",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "790": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "袭杀",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 73"
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Remove State 73"
+    }
+   ]
+  },
+  "791": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "斩杀",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "792": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "百步穿杨",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "793": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "十字斩",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Tp +30"
+    }
+   ]
+  },
+  "794": {
+   "group": "remaining_books",
+   "template": "A4",
+   "name": "无畏冲锋",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "904": {
+   "group": "remaining_books",
+   "template": "B4",
+   "name": "亚特兰蒂斯巨浪",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 15,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "939": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "黑魔法:坍缩黑洞",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     116
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
+   ]
+  },
+  "947": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "奥术冲击",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     129
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "948": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "炎爆术",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     121
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
+   ]
+  },
+  "949": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "星辰碎冰",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     161
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
+   ]
+  },
+  "950": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "地震术",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     123
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
+   ]
+  },
+  "951": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "风魔炮",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     128
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "952": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "大号爆弹",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "953": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "剜心",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "954": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "断头台",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     130
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "955": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "骑射",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "956": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "汲血斩",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Hp +1500"
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Hp +500"
+    }
+   ]
+  },
+  "957": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "破军枪法",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "1710": {
+   "group": "remaining_books",
+   "template": "B2",
+   "name": "治疗祷告",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 8,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "heal": {
+    "mhp_pct": 0.08
+   },
+   "desc": [
+    "效果：恢复目标 8% 最大生命"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "1711": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "治疗之涌",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "heal": {
+    "mhp_pct": 0.12
+   },
+   "desc": [
+    "效果：恢复目标 12% 最大生命"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "1821": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "解毒术",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "desc": [
+    "效果：解除中毒"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "1951": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "紫罗兰大剑",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "1952": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "陨星碎",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
+   ]
+  },
+  "1953": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "极寒之触",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "1954": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "彻地钉",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
+   ]
+  },
+  "1955": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "巽风击",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "1956": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "死亡弹幕",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "1957": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "致死",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "1958": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "问天枪诀",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "1959": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "破灭矢",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 1
+   },
+   "desc": [
+    "效果：每段物理攻击的 1 倍，随机攻击 2 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "1960": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "翔天斩",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2283": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "星爆气流斩",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2471": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "巨龙法夫尼尔之力",
+   "note_remove": [
+    "passiveELUP01"
+   ],
+   "note_add": "\n<passiveELUP01:10%>",
+   "desc": [
+    "效果：物理伤害 +10%"
+   ]
+  },
+  "2472": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "炎龙费瑞拉格之力",
+   "note_remove": [
+    "passiveELUP02"
+   ],
+   "note_add": "\n<passiveELUP02:10%>",
+   "desc": [
+    "效果：火焰伤害 +10%"
+   ]
+  },
+  "2473": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "九头龙海德拉之力",
+   "note_remove": [
+    "passiveELUP03"
+   ],
+   "note_add": "\n<passiveELUP03:10%>",
+   "desc": [
+    "效果：寒冰伤害 +10%"
+   ]
+  },
+  "2474": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "恶龙之母提亚马特之力",
+   "note_remove": [
+    "passiveELUP04"
+   ],
+   "note_add": "\n<passiveELUP04:10%>",
+   "desc": [
+    "效果：大地伤害 +10%"
+   ]
+  },
+  "2475": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "雷龙普拉多之力",
+   "note_remove": [
+    "passiveELUP05"
+   ],
+   "note_add": "\n<passiveELUP05:10%>",
+   "desc": [
+    "效果：雷电伤害 +10%"
+   ]
+  },
+  "2476": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "风龙温蒂尼格之力",
+   "note_remove": [
+    "passiveELUP05"
+   ],
+   "note_add": "\n<passiveELUP05:10%>",
+   "desc": [
+    "效果：雷电伤害 +10%"
+   ]
+  },
+  "2477": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "魔龙拉尼斯之力",
+   "note_remove": [
+    "passiveELUP05"
+   ],
+   "note_add": "\n<passiveELUP05:10%>",
+   "desc": [
+    "效果：雷电伤害 +10%"
+   ]
+  },
+  "2478": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "神圣巨龙瑟古瑞德之力",
+   "note_remove": [
+    "passiveELUP08"
+   ],
+   "note_add": "\n<passiveELUP08:10%>",
+   "desc": [
+    "效果：神圣伤害 +10%"
+   ]
+  },
+  "2479": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "绝望黑龙尼德霍格之力",
+   "note_remove": [
+    "passiveELUP09"
+   ],
+   "note_add": "\n<passiveELUP09:10%>",
+   "desc": [
+    "效果：黑暗伤害 +10%"
+   ]
+  },
+  "2480": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "混沌巨龙凯奥斯之力",
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<passiveHarmRi:8>\n<passiveCrHarmRi:12>",
+   "desc": [
+    "效果：最终伤害 +8%，暴击伤害 +12%"
+   ]
+  },
+  "2666": {
+   "group": "remaining_books",
+   "template": "C4",
+   "name": "克苏鲁的恩赐",
+   "note_remove": [
+    "SkillTypesDvupA",
+    "SkillTypesDvupB",
+    "SkillTypesDvupC"
+   ],
+   "note_add": "\n<SkillTypesDvupA:10%>\n<SkillTypesDvupB:10%>\n<SkillTypesDvupC:10%>",
+   "desc": [
+    "效果：A 类技能伤害 +10%，B 类技能伤害 +10%，C 类技能伤害 +10%"
+   ]
+  },
+  "2668": {
+   "group": "remaining_books",
+   "template": "C4",
+   "name": "诺登的旧约",
+   "note_remove": [
+    "SkillTypesDvupA"
+   ],
+   "note_add": "\n<SkillTypesDvupA:12%>",
+   "desc": [
+    "效果：A 类技能伤害 +12%"
+   ]
+  },
+  "2669": {
+   "group": "remaining_books",
+   "template": "C4",
+   "name": "努茨的祝福",
+   "note_remove": [
+    "SkillTypesDvupB",
+    "SkillTypesDvupC"
+   ],
+   "note_add": "\n<SkillTypesDvupB:12%>\n<SkillTypesDvupC:12%>",
+   "desc": [
+    "效果：B 类技能伤害 +12%，C 类技能伤害 +12%"
+   ]
+  },
+  "2753": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "暴爽+",
+   "note_remove": [
+    "passiveGRUP",
+    "passiveIRUP",
+    "passiveSPBST9"
+   ],
+   "note_add": "\n<passiveGRUP:10>\n<passiveIRUP:10>\n<passiveSPBST9:10%>",
+   "desc": [
+    "效果：金钱获取 提高，物品获取 提高，资源获取 +10%"
+   ]
+  },
+  "2754": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "暴爽-",
+   "note_remove": [
+    "passiveGRUP",
+    "passiveIRUP"
+   ],
+   "note_add": "\n<passiveGRUP:10>\n<passiveIRUP:10>",
+   "desc": [
+    "效果：金钱获取 提高，物品获取 提高"
+   ]
+  },
+  "2755": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "云蒸大泽",
+   "note_remove": [
+    "PushState0005",
+    "PushState0006",
+    "PushState0007",
+    "PushState0008",
+    "PushState0009",
+    "PushState0010"
+   ],
+   "note_add": "\n<passiveHarmRi:5>",
+   "desc": [
+    "效果：最终伤害 +5%"
+   ]
+  },
+  "2756": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "苍天在上",
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passiveHarmRe01",
+    "passiveHarmRe02",
+    "passiveHarmRe03",
+    "passiveHarmRe04",
+    "passiveHarmRe05",
+    "passiveHarmRe06",
+    "passiveHarmRe07",
+    "passiveHarmRe08",
+    "passiveHarmRe09",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<passiveCrHarmRi:8>\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：暴击伤害 +8%，最终伤害 +8%"
+   ]
+  },
+  "2776": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "《焚天经·真》",
+   "note_remove": [
+    "PushState0021",
+    "passiveELUP02"
+   ],
+   "note_add": "\n<passiveELUP02:12%>",
+   "desc": [
+    "效果：火焰伤害 +12%"
+   ]
+  },
+  "2777": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "《冰心决·真》",
+   "note_remove": [
+    "PushState0026",
+    "passiveELUP03"
+   ],
+   "note_add": "\n<passiveELUP03:8%>",
+   "desc": [
+    "效果：寒冰伤害 +8%"
+   ]
+  },
+  "2778": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "《搬山决·真》",
+   "note_remove": [
+    "PushState0016",
+    "passiveELUP04"
+   ],
+   "note_add": "\n<passiveELUP04:12%>\n<passiveELUP01:8%>",
+   "desc": [
+    "效果：大地伤害 +12%，物理伤害 +8%"
+   ]
+  },
+  "2779": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "《五雷经·真》",
+   "note_remove": [
+    "passiveELUP05",
+    "passiveXPBST2"
+   ],
+   "note_add": "\n<passiveELUP05:12%>\n<passiveXPBST2:8%>",
+   "desc": [
+    "效果：雷电伤害 +12%，暴击率 +8%"
+   ]
+  },
+  "2780": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "《御风决·真》",
+   "note_remove": [
+    "passiveAPLUS",
+    "passiveELUP06"
+   ],
+   "note_add": "\n<passiveELUP06:12%>",
+   "desc": [
+    "效果：自然伤害 +12%"
+   ]
+  },
+  "2781": {
+   "group": "remaining_books",
+   "template": "C4",
+   "name": "《神光经·真》",
+   "note_remove": [
+    "SkillTypesDvupA",
+    "SkillTypesDvupB",
+    "SkillTypesDvupC",
+    "passiveELUP08"
+   ],
+   "note_add": "\n<passiveELUP08:12%>\n<SkillTypesDvupA:12%>\n<SkillTypesDvupB:12%>\n<SkillTypesDvupC:12%>",
+   "desc": [
+    "效果：神圣伤害 +12%，A 类技能伤害 +12%，B 类技能伤害 +12%，C 类技能伤害 +12%"
+   ]
+  },
+  "2782": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "《虚空经·真》",
+   "note_remove": [
+    "passiveASUP",
+    "passiveELUP07",
+    "passiveELUP09",
+    "passivePREE"
+   ],
+   "note_add": "\n<passiveELUP07:12%>\n<passiveELUP09:12%>\n<passivePREE:10>\n<passiveASUP:10>",
+   "desc": [
+    "效果：奥术伤害 +12%，黑暗伤害 +12%，先攻概率 +10%，防偷袭概率 +10%"
+   ]
+  },
+  "2783": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "《道经·真》",
+   "note_remove": [
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<passiveHarmRi:12>\n<passiveELUP01:12%>\n<passiveELUP02:12%>\n<passiveELUP03:12%>\n<passiveELUP04:12%>\n<passiveELUP05:12%>\n<passiveELUP06:12%>\n<passiveELUP07:12%>\n<passiveELUP08:12%>",
+   "desc": [
+    "效果：最终伤害 +12%，物理伤害 +12%，火焰伤害 +12%，寒冰伤害 +12%，大地伤害 +12%，雷电伤害 +12%，自然伤害 +12%，奥术伤害 +12%，神圣伤害 +12%"
+   ]
+  },
+  "2784": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "《无始经·真》",
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09"
+   ],
+   "note_add": "\n<passiveCrHarmRi:12>\n<passiveELUP01:12%>\n<passiveELUP02:12%>\n<passiveELUP03:12%>\n<passiveELUP04:12%>\n<passiveELUP05:12%>\n<passiveELUP06:12%>\n<passiveELUP07:12%>\n<passiveELUP08:12%>\n<passiveELUP09:12%>",
+   "desc": [
+    "效果：暴击伤害 +12%，物理伤害 +12%，火焰伤害 +12%，寒冰伤害 +12%，大地伤害 +12%，雷电伤害 +12%，自然伤害 +12%，奥术伤害 +12%，神圣伤害 +12%，黑暗伤害 +12%"
+   ]
+  },
+  "2785": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "《成功学·真》",
+   "note_remove": [
+    "passiveGRUP",
+    "passiveIRUP"
+   ],
+   "note_add": "\n<passiveGRUP:10>\n<passiveIRUP:10>",
+   "desc": [
+    "效果：金钱获取 提高，物品获取 提高"
+   ]
+  },
+  "2798": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "简单的拳架",
+   "note_remove": [
+    "SkillPass2799",
+    "SkillPass2800",
+    "SkillPass2801"
+   ],
+   "note_add": "\n<SkillPass2799:8%>\n<SkillPass2800:8%>\n<SkillPass2801:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "2799": {
+   "group": "remaining_books",
+   "template": "A4",
+   "name": "第一式:摧城",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2818": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "全能化"
+  },
+  "2819": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "武器精通"
+  },
+  "2820": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "护甲精通"
+  },
+  "2821": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "缩地成寸",
+   "note_remove": [
+    "StartPushState1037"
+   ],
+   "note_add": "\n<CodexParamRate:6:10>",
+   "desc": [
+    "效果：敏捷 +10%"
+   ]
+  },
+  "2822": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "红魔遗泽",
+   "desc": [
+    "效果：最终伤害 +15%。头盔、护甲、裤子及鞋子无法发挥效果"
+   ]
+  },
+  "2823": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "幸运星",
+   "note_remove": [
+    "passiveIRUP"
+   ],
+   "note_add": "\n<passiveIRUP:8>",
+   "desc": [
+    "效果：物品获取 提高"
+   ]
+  },
+  "2824": {
+   "group": "remaining_books",
+   "template": "B4",
+   "name": "光明护盾",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 15,
+   "cooldown": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "desc": [
+    "效果：为全队施加光明护盾"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2831": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "七煞功",
+   "note_remove": [
+    "AgainUseAll",
+    "passiveAPLUS"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "2848": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "星爆气流斩",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2849": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "封弊者",
+   "note_remove": [
+    "SkillPass2848",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6",
+    "passivePBST7"
+   ],
+   "note_add": "\n<SkillPass2848:10%>\n<CodexParamRate:2:8,3:8,4:8,5:8,6:8,7:8>",
+   "desc": [
+    "效果：对应技能伤害 +10%，物理攻击 +8%，物理防御 +8%，魔法攻击 +8%，魔法防御 +8%，敏捷 +8%，幸运 +8%"
+   ]
+  },
+  "2850": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "阐释者",
+   "note_remove": [
+    "SkETypeHarmRi11",
+    "SkETypeHarmRi2",
+    "SkillPass2848"
+   ],
+   "note_add": "\n<SkETypeHarmRi2:10%>\n<SkETypeHarmRi11:10%>\n<SkillPass2848:10%>",
+   "desc": [
+    "效果：对应武器的技能伤害 +10%，对应技能伤害 +10%"
+   ]
+  },
+  "2851": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "流光闪",
+   "note_remove": [
+    "SkETypeHarmRi11",
+    "SkETypeHarmRi2",
+    "SkillPass2848"
+   ],
+   "note_add": "\n<SkETypeHarmRi2:10%>\n<SkETypeHarmRi11:10%>\n<SkillPass2848:10%>",
+   "desc": [
+    "效果：对应武器的技能伤害 +10%，对应技能伤害 +10%"
+   ]
+  },
+  "2852": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "滑稽拳",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2853": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "超滑稽拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 1
+   },
+   "desc": [
+    "效果：每段物理攻击的 1 倍，随机攻击 2 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2854": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "超超滑稽拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 66
+   },
+   "desc": [
+    "效果：每段物理攻击的 66%，随机攻击 3 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2855": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "超超超滑稽拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2856": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "先天破体无形剑气",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2857": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "钻锋破芒",
+   "note_remove": [
+    "SkillPass2856",
+    "passiveXPBST2"
+   ],
+   "note_add": "\n<passiveXPBST2:8%>\n<SkillPass2856:10%>",
+   "desc": [
+    "效果：暴击率 +8%，对应技能伤害 +10%"
+   ]
+  },
+  "2858": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "十面锋流",
+   "note_remove": [
+    "SkillPass2856",
+    "passiveXPBST2"
+   ],
+   "note_add": "\n<passiveXPBST2:8%>\n<SkillPass2856:10%>",
+   "desc": [
+    "效果：暴击率 +8%，对应技能伤害 +10%"
+   ]
+  },
+  "2859": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "万剑归位",
+   "note_remove": [
+    "PushsubState1046",
+    "SkillPass2856",
+    "passiveXPBST2"
+   ],
+   "note_add": "\n<passiveXPBST2:8%>\n<SkillPass2856:10%>",
+   "desc": [
+    "效果：暴击率 +8%，对应技能伤害 +10%"
+   ]
+  },
+  "2860": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "巨型岩球",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2861": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "大地崩裂",
+   "note_remove": [
+    "SkillPass2860",
+    "passivePBST3",
+    "passivePBST5",
+    "passiveXPBST2"
+   ],
+   "note_add": "\n<SkillPass2860:10%>\n<passiveXPBST2:8%>\n<CodexParamRate:3:8,5:8>",
+   "desc": [
+    "效果：对应技能伤害 +10%，暴击率 +8%，物理防御 +8%，魔法防御 +8%"
+   ]
+  },
+  "2862": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "大地震撼",
+   "note_remove": [
+    "SkillPass2860",
+    "passiveXPBST2"
+   ],
+   "note_add": "\n<SkillPass2860:10%>\n<passiveXPBST2:8%>",
+   "desc": [
+    "效果：对应技能伤害 +10%，暴击率 +8%"
+   ]
+  },
+  "2863": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "大地之怒",
+   "note_remove": [
+    "SkillPass2860",
+    "passiveXPBST2"
+   ],
+   "note_add": "\n<SkillPass2860:10%>\n<passiveXPBST2:8%>",
+   "desc": [
+    "效果：对应技能伤害 +10%，暴击率 +8%"
+   ]
+  },
+  "3178": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "噬阳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 1
+   },
+   "desc": [
+    "效果：每段物理攻击的 1 倍，随机攻击 2 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3182": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "噬阳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 1
+   },
+   "desc": [
+    "效果：每段物理攻击的 1 倍，随机攻击 2 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3183": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "意难平",
+   "note_remove": [
+    "SkETypeHarmRi7"
+   ],
+   "note_add": "\n<SkETypeHarmRi7:12%>",
+   "desc": [
+    "效果：对应武器的技能伤害 +12%"
+   ]
+  },
+  "3184": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "莫等闲",
+   "note_remove": [
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<passiveHarmRi:12>",
+   "desc": [
+    "效果：最终伤害 +12%"
+   ]
+  },
+  "3186": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "穿星",
+   "note_remove": [
+    "SkillPass3178",
+    "SkillPass3182",
+    "SkillPass3187"
+   ],
+   "note_add": "\n<SkillPass3178:12%>\n<SkillPass3182:12%>\n<SkillPass3187:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "3584": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "速度强化",
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "\n<CodexParamRate:6:8>",
+   "desc": [
+    "效果：敏捷 +8%"
+   ]
+  },
+  "3585": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "防御强化",
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "\n<CodexParamRate:3:8,5:8>",
+   "desc": [
+    "效果：物理防御 +8%，魔法防御 +8%"
+   ]
+  },
+  "3668": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "滑稽秘闻",
+   "note_remove": [
+    "SkillPass3669",
+    "SkillPass3670",
+    "SkillPass3673",
+    "SkillPass3674",
+    "SkillPass3675",
+    "SkillPass4510",
+    "SkillPass4511",
+    "SkillPass4512"
+   ],
+   "note_add": "\n<SkillPass3669:12%>\n<SkillPass3670:12%>\n<SkillPass3673:12%>\n<SkillPass3674:12%>\n<SkillPass3675:12%>\n<SkillPass4510:12%>\n<SkillPass4511:12%>\n<SkillPass4512:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "3669": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "改良*滑稽弹",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     628
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3671": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "滑稽大法",
+   "note_add": "\n<SkillPass2848:8%>\n<SkillPass3669:8%>\n<SkillPass3673:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "3672": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "滑稽魂",
+   "note_remove": [
+    "passiveEXTTP"
+   ],
+   "note_add": "\n<passiveEXTTP:20>",
+   "desc": [
+    "效果：TP 上限 +20"
+   ]
+  },
+  "3673": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "改良*滑稽弹",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     629
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3677": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "暴行",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 548"
+    }
+   ]
+  },
+  "3678": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "打赌",
+   "note_remove": [
+    "CodexParamRate",
+    "SkillPass3677",
+    "SkillPass3681",
+    "SkillPass3682"
+   ],
+   "note_add": "\n<SkillPass3677:12%>\n<SkillPass3681:12%>\n<SkillPass3682:12%>\n<CodexParamRate:7:10>",
+   "desc": [
+    "效果：对应技能伤害 +12%，幸运 +10%"
+   ]
+  },
+  "3679": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "再赌",
+   "note_remove": [
+    "CodexParamRate",
+    "SkillPass3677",
+    "SkillPass3681",
+    "SkillPass3682"
+   ],
+   "note_add": "\n<SkillPass3677:12%>\n<SkillPass3681:12%>\n<SkillPass3682:12%>\n<CodexParamRate:7:10>",
+   "desc": [
+    "效果：对应技能伤害 +12%，幸运 +10%"
+   ]
+  },
+  "3680": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "谢幕",
+   "note_remove": [
+    "SkillPass3677",
+    "SkillPass3681",
+    "SkillPass3682"
+   ],
+   "note_add": "\n<SkillPass3677:12%>\n<SkillPass3681:12%>\n<SkillPass3682:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "3681": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "暴行",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 548"
+    }
+   ]
+  },
+  "3684": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "井中月",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3685": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "踏风",
+   "note_remove": [
+    "StartPushState0744",
+    "passiveAPLUS"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "3686": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "剑心",
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "\n<CodexParamRate:2:10,3:-10>",
+   "desc": [
+    "效果：物理攻击 +10%，物理防御 -10%"
+   ]
+  },
+  "3687": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "吾之剑道",
+   "note_remove": [
+    "Element\\ Amplify\\ 1",
+    "SkillPass3684",
+    "SkillPass3688",
+    "SkillPass3689",
+    "SkillPass3695",
+    "SkillPass3696",
+    "passivePBST2",
+    "passivePBST6"
+   ],
+   "note_add": "\n<Element Amplify 1:8%>\n<SkillPass3684:12%>\n<SkillPass3688:12%>\n<SkillPass3689:12%>\n<SkillPass3695:12%>\n<SkillPass3696:12%>\n<CodexParamRate:2:5,6:5>",
+   "desc": [
+    "效果：物理伤害 +8%，对应技能伤害 +12%，物理攻击 +5%，敏捷 +5%"
+   ]
+  },
+  "3688": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "井中月",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3691": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "王霸天魔斩",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3692": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "王霸厚土决",
+   "note_remove": [
+    "CodexParamRate",
+    "SkillPass3691"
+   ],
+   "note_add": "\n<SkillPass3691:12%>\n<CodexParamRate:0:10>",
+   "desc": [
+    "效果：对应技能伤害 +12%，最大生命 +10%"
+   ]
+  },
+  "3693": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "王霸修罗身",
+   "note_remove": [
+    "Element\\ Amplify\\ 4",
+    "StartPushState0731"
+   ],
+   "note_add": "\n<Element Amplify 4:12%>",
+   "desc": [
+    "效果：大地伤害 +12%"
+   ]
+  },
+  "3694": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "玄霸不死心",
+   "note_remove": [
+    "CodexParamRate",
+    "StartPushState0743"
+   ],
+   "note_add": "\n<CodexParamRate:0:10>",
+   "desc": [
+    "效果：最大生命 +10%"
+   ]
+  },
+  "3695": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "井中月",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3897": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "真*霸王连斩",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 66
+   },
+   "desc": [
+    "效果：每段物理攻击的 66%，随机攻击 3 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3898": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "真*红丸连斩",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 66
+   },
+   "desc": [
+    "效果：每段物理攻击的 66%，随机攻击 3 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3899": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "真*星爆气流斩",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3900": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "真*断头台",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3930": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "菊花枪",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 66
+   },
+   "desc": [
+    "效果：每段物理攻击的 66%，随机攻击 3 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 687"
+    }
+   ]
+  },
+  "3931": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "核桃镖",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3932": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "芒拳",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3933": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "漂亮一击",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     810
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3934": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "散弹葡萄",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3935": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "葵花点穴手",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     987
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 732"
+    }
+   ]
+  },
+  "4505": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "冰刺术",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     943
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "4510": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "改良*滑稽弹",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     976
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "4654": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:嘤元经",
+   "note_remove": [
+    "SkillPass4504",
+    "SkillPass4505",
+    "SkillPass4506",
+    "SkillPass4507",
+    "SkillPass4508",
+    "SkillPass4893"
+   ],
+   "note_add": "\n<SkillPass4504:12%>\n<SkillPass4505:12%>\n<SkillPass4506:12%>\n<SkillPass4507:12%>\n<SkillPass4508:12%>\n<SkillPass4893:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "4655": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:嘤元经",
+   "note_add": "\n<SkillTypesDvupB:8%>",
+   "desc": [
+    "效果：B 类技能伤害 +8%"
+   ]
+  },
+  "4656": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:嘤元经",
+   "note_remove": [
+    "StartPushState0733"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4657": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:哥林功",
+   "note_remove": [
+    "passiveAPLUS",
+    "passiveCrHarmRi"
+   ],
+   "note_add": "\n<passiveCrHarmRi:12>",
+   "desc": [
+    "效果：暴击伤害 +12%"
+   ]
+  },
+  "4658": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:哥林功",
+   "note_remove": [
+    "AgainUseAll",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<passiveHarmRi:12>",
+   "desc": [
+    "效果：最终伤害 +12%"
+   ]
+  },
+  "4659": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:哥林功",
+   "note_remove": [
+    "AgainUseAll",
+    "passiveAPLUS",
+    "passiveCrHarmRi",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<passiveCrHarmRi:-12>\n<passiveHarmRi:-8>",
+   "desc": [
+    "效果：暴击伤害 -12%，最终伤害 -8%"
+   ]
+  },
+  "4660": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:鱼我道",
+   "note_remove": [
+    "SkETypeHarmRi1",
+    "SkETypeHarmRi10",
+    "SkETypeHarmRi11",
+    "SkETypeHarmRi12",
+    "SkETypeHarmRi2",
+    "SkETypeHarmRi3",
+    "SkETypeHarmRi4",
+    "SkETypeHarmRi5",
+    "SkETypeHarmRi6",
+    "SkETypeHarmRi7",
+    "SkETypeHarmRi8",
+    "SkETypeHarmRi9"
+   ],
+   "note_add": "\n<SkETypeHarmRi1:12%>\n<SkETypeHarmRi2:12%>\n<SkETypeHarmRi3:12%>\n<SkETypeHarmRi4:12%>\n<SkETypeHarmRi5:12%>\n<SkETypeHarmRi6:12%>\n<SkETypeHarmRi7:12%>\n<SkETypeHarmRi8:12%>\n<SkETypeHarmRi9:12%>\n<SkETypeHarmRi10:12%>\n<SkETypeHarmRi11:12%>\n<SkETypeHarmRi12:12%>",
+   "desc": [
+    "效果：对应武器的技能伤害 +12%"
+   ]
+  },
+  "4661": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:鱼我道",
+   "note_remove": [
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09"
+   ],
+   "note_add": "\n<passiveELUP09:12%>\n<passiveELUP08:12%>\n<passiveELUP07:12%>\n<passiveELUP06:12%>\n<passiveELUP05:12%>\n<passiveELUP04:12%>\n<passiveELUP03:12%>\n<passiveELUP02:12%>\n<passiveELUP01:12%>",
+   "desc": [
+    "效果：黑暗伤害 +12%，神圣伤害 +12%，奥术伤害 +12%，自然伤害 +12%，雷电伤害 +12%，大地伤害 +12%，寒冰伤害 +12%，火焰伤害 +12%，物理伤害 +12%"
+   ]
+  },
+  "4662": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:鱼我道",
+   "note_remove": [
+    "SkETypeHarmRi1",
+    "SkETypeHarmRi10",
+    "SkETypeHarmRi11",
+    "SkETypeHarmRi12",
+    "SkETypeHarmRi2",
+    "SkETypeHarmRi3",
+    "SkETypeHarmRi4",
+    "SkETypeHarmRi5",
+    "SkETypeHarmRi6",
+    "SkETypeHarmRi7",
+    "SkETypeHarmRi8",
+    "SkETypeHarmRi9",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09"
+   ],
+   "note_add": "\n<passiveELUP09:12%>\n<passiveELUP08:12%>\n<passiveELUP07:12%>\n<passiveELUP06:12%>\n<passiveELUP05:12%>\n<passiveELUP04:12%>\n<passiveELUP03:12%>\n<passiveELUP02:12%>\n<passiveELUP01:12%>\n<SkETypeHarmRi1:12%>\n<SkETypeHarmRi2:12%>\n<SkETypeHarmRi3:12%>\n<SkETypeHarmRi4:12%>\n<SkETypeHarmRi5:12%>\n<SkETypeHarmRi6:12%>\n<SkETypeHarmRi7:12%>\n<SkETypeHarmRi8:12%>\n<SkETypeHarmRi9:12%>\n<SkETypeHarmRi10:12%>\n<SkETypeHarmRi11:12%>\n<SkETypeHarmRi12:12%>",
+   "desc": [
+    "效果：黑暗伤害 +12%，神圣伤害 +12%，奥术伤害 +12%，自然伤害 +12%，雷电伤害 +12%，大地伤害 +12%，寒冰伤害 +12%，火焰伤害 +12%，物理伤害 +12%，对应武器的技能伤害 +12%"
+   ]
+  },
+  "4663": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:啸天诀",
+   "note_remove": [
+    "passivePBST0"
+   ],
+   "note_add": "\n<CodexParamRate:0:10>",
+   "desc": [
+    "效果：最大生命 +10%"
+   ]
+  },
+  "4664": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:啸天诀",
+   "note_remove": [
+    "passivePBST1"
+   ],
+   "note_add": "\n<CodexParamRate:1:10>",
+   "desc": [
+    "效果：最大魔法 +10%"
+   ]
+  },
+  "4665": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:啸天诀",
+   "note_remove": [
+    "StartPushState0526",
+    "passivePBST0",
+    "passivePBST1"
+   ],
+   "note_add": "\n<CodexParamRate:0:-10,1:-10>",
+   "desc": [
+    "效果：最大生命 -10%，最大魔法 -10%"
+   ]
+  },
+  "4666": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:兽行谱",
+   "note_remove": [
+    "StartPushState0734"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4667": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:兽行谱",
+   "note_remove": [
+    "StartPushState0735"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4668": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:兽行谱",
+   "note_remove": [
+    "StartPushState0736",
+    "StartPushState0737",
+    "passivePRETP"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4669": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:天马典",
+   "note_remove": [
+    "StartPushState0738"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4670": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:天马典",
+   "note_remove": [
+    "StartPushState0739"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4671": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:天马典",
+   "note_remove": [
+    "StartPushState0740"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4672": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:绿渺录",
+   "note_remove": [
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5"
+   ],
+   "note_add": "\n<CodexParamRate:2:10,3:-10,4:10,5:-10>",
+   "desc": [
+    "效果：物理攻击 +10%，物理防御 -10%，魔法攻击 +10%，魔法防御 -10%"
+   ]
+  },
+  "4673": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:绿渺录",
+   "note_remove": [
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5"
+   ],
+   "note_add": "\n<CodexParamRate:2:-10,3:10,4:-10,5:10>",
+   "desc": [
+    "效果：物理攻击 -10%，物理防御 +10%，魔法攻击 -10%，魔法防御 +10%"
+   ]
+  },
+  "4674": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:绿渺录",
+   "note_remove": [
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6",
+    "passivePBST7"
+   ],
+   "note_add": "\n<CodexParamRate:2:10,3:10,4:10,5:10,6:-10,7:-10>",
+   "desc": [
+    "效果：物理攻击 +10%，物理防御 +10%，魔法攻击 +10%，魔法防御 +10%，敏捷 -10%，幸运 -10%"
+   ]
+  },
+  "4675": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:圣龙图",
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passiveXPBST2"
+   ],
+   "note_add": "\n<passiveCrHarmRi:12>\n<passiveXPBST2:-8%>",
+   "desc": [
+    "效果：暴击伤害 +12%，暴击率 -8%"
+   ]
+  },
+  "4676": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:圣龙图",
+   "note_remove": [
+    "passiveHarmRi",
+    "passiveXPBST2"
+   ],
+   "note_add": "\n<passiveHarmRi:12>\n<passiveXPBST2:-8%>",
+   "desc": [
+    "效果：最终伤害 +12%，暴击率 -8%"
+   ]
+  },
+  "4677": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:圣龙图",
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passiveHarmRi",
+    "passiveXPBST2"
+   ],
+   "note_add": "\n<passiveHarmRi:8>\n<passiveCrHarmRi:12>\n<passiveXPBST2:-8%>",
+   "desc": [
+    "效果：最终伤害 +8%，暴击伤害 +12%，暴击率 -8%"
+   ]
+  },
+  "4678": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:天魔法",
+   "note_remove": [
+    "PushState0741",
+    "PushState0742"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4679": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:天魔法",
+   "note_remove": [
+    "PushState0741",
+    "PushState0742"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4680": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:天魔法",
+   "note_remove": [
+    "PushState0741",
+    "PushsubState0742"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4682": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:啸穹苍灭",
+   "note_remove": [
+    "SkillPass2799",
+    "SkillPass2800",
+    "SkillPass2801"
+   ],
+   "note_add": "\n<SkillPass2799:12%>\n<SkillPass2800:12%>\n<SkillPass2801:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "4683": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:啸穹苍灭",
+   "note_remove": [
+    "SkillPass2799",
+    "SkillPass2800",
+    "SkillPass2801"
+   ],
+   "note_add": "\n<SkillPass2799:-12%>\n<SkillPass2800:-12%>\n<SkillPass2801:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "4684": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:啸穹苍灭",
+   "note_remove": [
+    "passiveHarmRe01",
+    "passiveHarmRe02",
+    "passiveHarmRe03",
+    "passiveHarmRe04",
+    "passiveHarmRe05",
+    "passiveHarmRe06",
+    "passiveHarmRe07",
+    "passiveHarmRe08",
+    "passiveHarmRe09"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4685": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:衍天云峟",
+   "note_remove": [
+    "SkETypeHarmRi7",
+    "SkillPass3178",
+    "SkillPass3182",
+    "SkillPass3187"
+   ],
+   "note_add": "\n<SkillPass3178:12%>\n<SkillPass3182:12%>\n<SkillPass3187:12%>\n<SkETypeHarmRi7:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%，对应武器的技能伤害 +12%"
+   ]
+  },
+  "4686": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:衍天云峟",
+   "note_remove": [
+    "SkETypeHarmRi7",
+    "SkillPass3178",
+    "SkillPass3182",
+    "SkillPass3187"
+   ],
+   "note_add": "\n<SkillPass3178:12%>\n<SkillPass3182:12%>\n<SkillPass3187:12%>\n<SkETypeHarmRi7:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%，对应武器的技能伤害 +12%"
+   ]
+  },
+  "4687": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:衍天云峟",
+   "note_remove": [
+    "SkillPass3178",
+    "SkillPass3182",
+    "SkillPass3187"
+   ],
+   "note_add": "\n<SkillPass3178:-12%>\n<SkillPass3182:-12%>\n<SkillPass3187:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "4688": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:逆转乾坤",
+   "note_remove": [
+    "passivePBST7"
+   ],
+   "note_add": "\n<CodexParamRate:7:10>",
+   "desc": [
+    "效果：幸运 +10%"
+   ]
+  },
+  "4689": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:逆转乾坤",
+   "note_add": "\n<SkillPass3677:12%>\n<SkillPass3681:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "4690": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:逆转乾坤",
+   "note_remove": [
+    "passivePBST7"
+   ],
+   "note_add": "\n<CodexParamRate:7:10>",
+   "desc": [
+    "效果：幸运 +10%"
+   ]
+  },
+  "4691": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:幻灭苍穹",
+   "note_remove": [
+    "SkETypeHarmRi4",
+    "SkETypeHarmRi9",
+    "passiveEXTTP"
+   ],
+   "note_add": "\n<passiveEXTTP:20>\n<SkETypeHarmRi4:12%>\n<SkETypeHarmRi9:-12%>",
+   "desc": [
+    "效果：TP 上限 +20，对应武器的技能伤害 -12%"
+   ]
+  },
+  "4692": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:幻灭苍穹",
+   "note_remove": [
+    "SkETypeHarmRi4",
+    "SkETypeHarmRi9"
+   ],
+   "note_add": "\n<SkETypeHarmRi4:-12%>\n<SkETypeHarmRi9:12%>",
+   "desc": [
+    "效果：对应武器的技能伤害 +12%"
+   ]
+  },
+  "4693": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:幻灭苍穹",
+   "note_remove": [
+    "StartPushState0747"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4694": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:寂灭长生",
+   "note_remove": [
+    "SkETypeHarmRi11",
+    "SkillPass3691"
+   ],
+   "note_add": "\n<SkETypeHarmRi11:12%>\n<SkillPass3691:12%>",
+   "desc": [
+    "效果：对应武器的技能伤害 +12%，对应技能伤害 +12%"
+   ]
+  },
+  "4695": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:寂灭长生",
+   "note_remove": [
+    "SkETypeHarmRi4",
+    "SkillPass3691"
+   ],
+   "note_add": "\n<SkETypeHarmRi4:12%>\n<SkillPass3691:12%>",
+   "desc": [
+    "效果：对应武器的技能伤害 +12%，对应技能伤害 +12%"
+   ]
+  },
+  "4696": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:寂灭长生",
+   "note_remove": [
+    "StartPushState0748"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4697": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:光阴寸断",
+   "note_remove": [
+    "PushsubState0751",
+    "StartPushState0749"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4698": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:光阴寸断",
+   "note_remove": [
+    "PushsubState0752",
+    "StartPushState0750"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4699": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "心法:光阴寸断",
+   "note_remove": [
+    "passiveHarmRe01",
+    "passiveHarmRe02",
+    "passiveHarmRe03",
+    "passiveHarmRe04",
+    "passiveHarmRe05",
+    "passiveHarmRe06",
+    "passiveHarmRe07",
+    "passiveHarmRe08",
+    "passiveHarmRe09"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4744": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "振奋",
+   "note_remove": [
+    "StartWTPushState1402"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4745": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "王霸之气",
+   "note_remove": [
+    "StartPushState1403",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "passiveEXTTP",
+    "passivePRETP",
+    "passiveXPBST2"
+   ],
+   "note_add": "\n<passiveXPBST2:8%>\n<passiveELUP01:10%>\n<passiveELUP02:10%>\n<passiveELUP03:10%>\n<passiveELUP04:10%>\n<passiveELUP05:10%>\n<passiveELUP06:10%>\n<passiveELUP07:10%>\n<passiveELUP08:10%>\n<passiveELUP09:10%>\n<passiveEXTTP:20>",
+   "desc": [
+    "效果：暴击率 +8%，物理伤害 +10%，火焰伤害 +10%，寒冰伤害 +10%，大地伤害 +10%，雷电伤害 +10%，自然伤害 +10%，奥术伤害 +10%，神圣伤害 +10%，黑暗伤害 +10%，TP 上限 +20"
+   ]
+  },
+  "4746": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "再来一次",
+   "note_remove": [
+    "passiveAPLUS"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "4767": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "大奉先[破限]"
+  },
+  "4768": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "大奉先"
+  },
+  "4770": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "大奉先"
+  },
+  "4817": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "套装:幸运女神赐福(2)",
+   "note_remove": [
+    "passiveIRUP"
+   ],
+   "note_add": "\n<passiveIRUP:10>",
+   "desc": [
+    "效果：物品获取 提高"
+   ]
+  },
+  "5091": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "弯道超车I",
+   "note_remove": [
+    "passiveHarmRi",
+    "passivePBST0",
+    "passivePBST1",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6"
+   ],
+   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "desc": [
+    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+   ]
+  },
+  "5092": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "弯道超车II",
+   "note_remove": [
+    "passiveHarmRi",
+    "passivePBST0",
+    "passivePBST1",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6"
+   ],
+   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "desc": [
+    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+   ]
+  },
+  "5093": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "弯道超车III",
+   "note_remove": [
+    "passiveHarmRi",
+    "passivePBST0",
+    "passivePBST1",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6"
+   ],
+   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "desc": [
+    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+   ]
+  },
+  "5094": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "弯道超车IV",
+   "note_remove": [
+    "passiveHarmRi",
+    "passivePBST0",
+    "passivePBST1",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6"
+   ],
+   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "desc": [
+    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+   ]
+  },
+  "5095": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "遥遥领先I",
+   "note_remove": [
+    "passiveHarmRi",
+    "passivePBST0",
+    "passivePBST1",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6"
+   ],
+   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "desc": [
+    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+   ]
+  },
+  "5096": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "遥遥领先II",
+   "note_remove": [
+    "passiveHarmRi",
+    "passivePBST0",
+    "passivePBST1",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6"
+   ],
+   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "desc": [
+    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+   ]
+  },
+  "5097": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "遥遥领先III",
+   "note_remove": [
+    "passiveHarmRi",
+    "passivePBST0",
+    "passivePBST1",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6"
+   ],
+   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "desc": [
+    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+   ]
+  },
+  "5098": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "遥遥领先IV",
+   "note_remove": [
+    "passiveHarmRi",
+    "passivePBST0",
+    "passivePBST1",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6"
+   ],
+   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "desc": [
+    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+   ]
+  },
+  "5168": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5169": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5170": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5171": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5172": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5173": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5174": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5175": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5176": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5177": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5178": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5179": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5180": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5181": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5182": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5183": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5184": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5185": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "鲲拳",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5189": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "弹幕射击精通★",
+   "note_remove": [
+    "SkillPass0457",
+    "SkillPass1003",
+    "SkillPass1689"
+   ],
+   "note_add": "\n<SkillPass0457:8%>\n<SkillPass1003:8%>\n<SkillPass1689:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5190": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "弹幕射击精通★★",
+   "note_remove": [
+    "SkillPass0457",
+    "SkillPass1003",
+    "SkillPass1689"
+   ],
+   "note_add": "\n<SkillPass0457:12%>\n<SkillPass1003:12%>\n<SkillPass1689:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5191": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "弹幕射击精通★★★",
+   "note_remove": [
+    "SkillPass0457",
+    "SkillPass1003",
+    "SkillPass1689"
+   ],
+   "note_add": "\n<SkillPass0457:15%>\n<SkillPass1003:15%>\n<SkillPass1689:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5192": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "弹幕射击精通★★★★",
+   "note_remove": [
+    "SkillPass0457",
+    "SkillPass1003",
+    "SkillPass1689"
+   ],
+   "note_add": "\n<SkillPass0457:15%>\n<SkillPass1003:15%>\n<SkillPass1689:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5193": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "弹幕射击精通★★★★★",
+   "note_remove": [
+    "SkillPass0457",
+    "SkillPass1003",
+    "SkillPass1689"
+   ],
+   "note_add": "\n<SkillPass0457:15%>\n<SkillPass1003:15%>\n<SkillPass1689:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5194": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "闪电杀精通★",
+   "note_remove": [
+    "SkillPass0458"
+   ],
+   "note_add": "\n<SkillPass0458:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5195": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "闪电杀精通★★",
+   "note_remove": [
+    "SkillPass0458"
+   ],
+   "note_add": "\n<SkillPass0458:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5196": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "闪电杀精通★★★",
+   "note_remove": [
+    "SkillPass0458"
+   ],
+   "note_add": "\n<SkillPass0458:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5197": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "闪电杀精通★★★★",
+   "note_remove": [
+    "SkillPass0458"
+   ],
+   "note_add": "\n<SkillPass0458:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5198": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "闪电杀精通★★★★★",
+   "note_remove": [
+    "SkillPass0458"
+   ],
+   "note_add": "\n<SkillPass0458:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5199": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "猛击精通★",
+   "note_remove": [
+    "SkillPass0459"
+   ],
+   "note_add": "\n<SkillPass0459:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5200": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "猛击精通★★",
+   "note_remove": [
+    "SkillPass0459"
+   ],
+   "note_add": "\n<SkillPass0459:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5201": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "猛击精通★★★",
+   "note_remove": [
+    "SkillPass0459"
+   ],
+   "note_add": "\n<SkillPass0459:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5202": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "猛击精通★★★★",
+   "note_remove": [
+    "SkillPass0459"
+   ],
+   "note_add": "\n<SkillPass0459:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5203": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "猛击精通★★★★★",
+   "note_remove": [
+    "SkillPass0459"
+   ],
+   "note_add": "\n<SkillPass0459:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5204": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "满弦射击精通★",
+   "note_remove": [
+    "SkillPass0460"
+   ],
+   "note_add": "\n<SkillPass0460:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5205": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "满弦射击精通★★",
+   "note_remove": [
+    "SkillPass0460"
+   ],
+   "note_add": "\n<SkillPass0460:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5206": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "满弦射击精通★★★",
+   "note_remove": [
+    "SkillPass0460"
+   ],
+   "note_add": "\n<SkillPass0460:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5207": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "满弦射击精通★★★★",
+   "note_remove": [
+    "SkillPass0460"
+   ],
+   "note_add": "\n<SkillPass0460:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5208": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "满弦射击精通★★★★★",
+   "note_remove": [
+    "SkillPass0460"
+   ],
+   "note_add": "\n<SkillPass0460:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5209": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "燕返精通★",
+   "note_remove": [
+    "SkillPass0461"
+   ],
+   "note_add": "\n<SkillPass0461:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5210": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "燕返精通★★",
+   "note_remove": [
+    "SkillPass0461"
+   ],
+   "note_add": "\n<SkillPass0461:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5211": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "燕返精通★★★",
+   "note_remove": [
+    "SkillPass0461"
+   ],
+   "note_add": "\n<SkillPass0461:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5212": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "燕返精通★★★★",
+   "note_remove": [
+    "SkillPass0461"
+   ],
+   "note_add": "\n<SkillPass0461:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5213": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "燕返精通★★★★★",
+   "note_remove": [
+    "SkillPass0461"
+   ],
+   "note_add": "\n<SkillPass0461:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5214": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "穿心枪术精通★",
+   "note_remove": [
+    "SkillPass0462"
+   ],
+   "note_add": "\n<SkillPass0462:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5215": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "穿心枪术精通★★",
+   "note_remove": [
+    "SkillPass0462"
+   ],
+   "note_add": "\n<SkillPass0462:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5216": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "穿心枪术精通★★★",
+   "note_remove": [
+    "SkillPass0462"
+   ],
+   "note_add": "\n<SkillPass0462:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5217": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "穿心枪术精通★★★★",
+   "note_remove": [
+    "SkillPass0462"
+   ],
+   "note_add": "\n<SkillPass0462:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5218": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "穿心枪术精通★★★★★",
+   "note_remove": [
+    "SkillPass0462"
+   ],
+   "note_add": "\n<SkillPass0462:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5219": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "升龙拳精通★",
+   "note_remove": [
+    "SkillPass0463",
+    "SkillPass0569"
+   ],
+   "note_add": "\n<SkillPass0463:8%>\n<SkillPass0569:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5220": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "升龙拳精通★★",
+   "note_remove": [
+    "SkillPass0463",
+    "SkillPass0569"
+   ],
+   "note_add": "\n<SkillPass0463:12%>\n<SkillPass0569:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5221": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "升龙拳精通★★★",
+   "note_remove": [
+    "SkillPass0463",
+    "SkillPass0569"
+   ],
+   "note_add": "\n<SkillPass0463:15%>\n<SkillPass0569:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5222": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "升龙拳精通★★★★",
+   "note_remove": [
+    "SkillPass0463",
+    "SkillPass0569"
+   ],
+   "note_add": "\n<SkillPass0463:15%>\n<SkillPass0569:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5223": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "升龙拳精通★★★★★",
+   "note_remove": [
+    "SkillPass0463",
+    "SkillPass0569"
+   ],
+   "note_add": "\n<SkillPass0463:15%>\n<SkillPass0569:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5224": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "精准射杀精通★",
+   "note_remove": [
+    "SkillPass0789",
+    "SkillPass1871"
+   ],
+   "note_add": "\n<SkillPass0789:8%>\n<SkillPass1871:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5225": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "精准射杀精通★★",
+   "note_remove": [
+    "SkillPass0789",
+    "SkillPass1871"
+   ],
+   "note_add": "\n<SkillPass0789:12%>\n<SkillPass1871:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5226": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "精准射杀精通★★★",
+   "note_remove": [
+    "SkillPass0789",
+    "SkillPass1871"
+   ],
+   "note_add": "\n<SkillPass0789:15%>\n<SkillPass1871:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5227": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "精准射杀精通★★★★",
+   "note_remove": [
+    "SkillPass0789",
+    "SkillPass1871"
+   ],
+   "note_add": "\n<SkillPass0789:15%>\n<SkillPass1871:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5228": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "精准射杀精通★★★★★",
+   "note_remove": [
+    "SkillPass0789",
+    "SkillPass1871"
+   ],
+   "note_add": "\n<SkillPass0789:15%>\n<SkillPass1871:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5229": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "袭杀精通★",
+   "note_remove": [
+    "SkillPass0790"
+   ],
+   "note_add": "\n<SkillPass0790:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5230": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "袭杀精通★★",
+   "note_remove": [
+    "SkillPass0790"
+   ],
+   "note_add": "\n<SkillPass0790:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5231": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "袭杀精通★★★",
+   "note_remove": [
+    "SkillPass0790"
+   ],
+   "note_add": "\n<SkillPass0790:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5232": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "袭杀精通★★★★",
+   "note_remove": [
+    "SkillPass0790"
+   ],
+   "note_add": "\n<SkillPass0790:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5233": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "袭杀精通★★★★★",
+   "note_remove": [
+    "SkillPass0790"
+   ],
+   "note_add": "\n<SkillPass0790:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5234": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "斩杀精通★",
+   "note_remove": [
+    "SkillPass0791"
+   ],
+   "note_add": "\n<SkillPass0791:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5235": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "斩杀精通★★",
+   "note_remove": [
+    "SkillPass0791"
+   ],
+   "note_add": "\n<SkillPass0791:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5236": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "斩杀精通★★★",
+   "note_remove": [
+    "SkillPass0791"
+   ],
+   "note_add": "\n<SkillPass0791:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5237": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "斩杀精通★★★★",
+   "note_remove": [
+    "SkillPass0791"
+   ],
+   "note_add": "\n<SkillPass0791:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5238": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "斩杀精通★★★★★",
+   "note_remove": [
+    "SkillPass0791"
+   ],
+   "note_add": "\n<SkillPass0791:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5239": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "百步穿杨精通★",
+   "note_remove": [
+    "SkillPass0792",
+    "SkillPass1007"
+   ],
+   "note_add": "\n<SkillPass0792:8%>\n<SkillPass1007:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5240": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "百步穿杨精通★★",
+   "note_remove": [
+    "SkillPass0792",
+    "SkillPass1007"
+   ],
+   "note_add": "\n<SkillPass0792:12%>\n<SkillPass1007:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5241": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "百步穿杨精通★★★",
+   "note_remove": [
+    "SkillPass0792",
+    "SkillPass1007"
+   ],
+   "note_add": "\n<SkillPass0792:15%>\n<SkillPass1007:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5242": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "百步穿杨精通★★★★",
+   "note_remove": [
+    "SkillPass0792",
+    "SkillPass1007"
+   ],
+   "note_add": "\n<SkillPass0792:15%>\n<SkillPass1007:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5243": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "百步穿杨精通★★★★★",
+   "note_remove": [
+    "SkillPass0792",
+    "SkillPass1007"
+   ],
+   "note_add": "\n<SkillPass0792:15%>\n<SkillPass1007:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5244": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "十字斩精通★",
+   "note_remove": [
+    "SkillPass0793"
+   ],
+   "note_add": "\n<SkillPass0793:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5245": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "十字斩精通★★",
+   "note_remove": [
+    "SkillPass0793"
+   ],
+   "note_add": "\n<SkillPass0793:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5246": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "十字斩精通★★★",
+   "note_remove": [
+    "SkillPass0793"
+   ],
+   "note_add": "\n<SkillPass0793:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5247": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "十字斩精通★★★★",
+   "note_remove": [
+    "SkillPass0793"
+   ],
+   "note_add": "\n<SkillPass0793:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5248": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "十字斩精通★★★★★",
+   "note_remove": [
+    "SkillPass0793"
+   ],
+   "note_add": "\n<SkillPass0793:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5249": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "无畏冲锋精通★",
+   "note_remove": [
+    "SkillPass0794"
+   ],
+   "note_add": "\n<SkillPass0794:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5250": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "无畏冲锋精通★★",
+   "note_remove": [
+    "SkillPass0794"
+   ],
+   "note_add": "\n<SkillPass0794:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5251": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "无畏冲锋精通★★★",
+   "note_remove": [
+    "SkillPass0794"
+   ],
+   "note_add": "\n<SkillPass0794:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5252": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "无畏冲锋精通★★★★",
+   "note_remove": [
+    "SkillPass0794"
+   ],
+   "note_add": "\n<SkillPass0794:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5253": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "无畏冲锋精通★★★★★",
+   "note_remove": [
+    "SkillPass0794"
+   ],
+   "note_add": "\n<SkillPass0794:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5254": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "奥术冲击精通★",
+   "note_remove": [
+    "SkillPass0947",
+    "SkillPass1046"
+   ],
+   "note_add": "\n<SkillPass0947:8%>\n<SkillPass1046:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5255": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "奥术冲击精通★★",
+   "note_remove": [
+    "SkillPass0947",
+    "SkillPass1046"
+   ],
+   "note_add": "\n<SkillPass0947:12%>\n<SkillPass1046:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5256": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "奥术冲击精通★★★",
+   "note_remove": [
+    "SkillPass0947",
+    "SkillPass1046"
+   ],
+   "note_add": "\n<SkillPass0947:15%>\n<SkillPass1046:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5257": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "奥术冲击精通★★★★",
+   "note_remove": [
+    "SkillPass0947",
+    "SkillPass1046"
+   ],
+   "note_add": "\n<SkillPass0947:15%>\n<SkillPass1046:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5258": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "奥术冲击精通★★★★★",
+   "note_remove": [
+    "SkillPass0947",
+    "SkillPass1046"
+   ],
+   "note_add": "\n<SkillPass0947:15%>\n<SkillPass1046:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5259": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "炎爆术精通★",
+   "note_remove": [
+    "SkillPass0948",
+    "SkillPass0987"
+   ],
+   "note_add": "\n<SkillPass0948:8%>\n<SkillPass0987:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5260": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "炎爆术精通★★",
+   "note_remove": [
+    "SkillPass0948",
+    "SkillPass0987"
+   ],
+   "note_add": "\n<SkillPass0948:12%>\n<SkillPass0987:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5261": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "炎爆术精通★★★",
+   "note_remove": [
+    "SkillPass0948",
+    "SkillPass0987"
+   ],
+   "note_add": "\n<SkillPass0948:15%>\n<SkillPass0987:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5262": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "炎爆术精通★★★★",
+   "note_remove": [
+    "SkillPass0948",
+    "SkillPass0987"
+   ],
+   "note_add": "\n<SkillPass0948:15%>\n<SkillPass0987:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5263": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "炎爆术精通★★★★★",
+   "note_remove": [
+    "SkillPass0948",
+    "SkillPass0987"
+   ],
+   "note_add": "\n<SkillPass0948:15%>\n<SkillPass0987:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5264": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "星辰碎冰精通★",
+   "note_remove": [
+    "SkillPass0949",
+    "SkillPass1271",
+    "SkillPass1272"
+   ],
+   "note_add": "\n<SkillPass0949:8%>\n<SkillPass1272:8%>\n<SkillPass1271:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5265": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "星辰碎冰精通★★",
+   "note_remove": [
+    "SkillPass0949",
+    "SkillPass1271",
+    "SkillPass1272"
+   ],
+   "note_add": "\n<SkillPass0949:12%>\n<SkillPass1272:12%>\n<SkillPass1271:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5266": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "星辰碎冰精通★★★",
+   "note_remove": [
+    "SkillPass0949",
+    "SkillPass1271",
+    "SkillPass1272"
+   ],
+   "note_add": "\n<SkillPass0949:15%>\n<SkillPass1272:15%>\n<SkillPass1271:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5267": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "星辰碎冰精通★★★★",
+   "note_remove": [
+    "SkillPass0949",
+    "SkillPass1271",
+    "SkillPass1272"
+   ],
+   "note_add": "\n<SkillPass0949:15%>\n<SkillPass1272:15%>\n<SkillPass1271:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5268": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "星辰碎冰精通★★★★★",
+   "note_remove": [
+    "SkillPass0949",
+    "SkillPass1271",
+    "SkillPass1272"
+   ],
+   "note_add": "\n<SkillPass0949:15%>\n<SkillPass1272:15%>\n<SkillPass1271:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5269": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "地震术精通★",
+   "note_remove": [
+    "SkillPass0950",
+    "SkillPass0994"
+   ],
+   "note_add": "\n<SkillPass0950:8%>\n<SkillPass0994:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5270": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "地震术精通★★",
+   "note_remove": [
+    "SkillPass0950",
+    "SkillPass0994"
+   ],
+   "note_add": "\n<SkillPass0950:12%>\n<SkillPass0994:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5271": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "地震术精通★★★",
+   "note_remove": [
+    "SkillPass0950",
+    "SkillPass0994"
+   ],
+   "note_add": "\n<SkillPass0950:15%>\n<SkillPass0994:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5272": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "地震术精通★★★★",
+   "note_remove": [
+    "SkillPass0950",
+    "SkillPass0994"
+   ],
+   "note_add": "\n<SkillPass0950:15%>\n<SkillPass0994:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5273": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "地震术精通★★★★★",
+   "note_remove": [
+    "SkillPass0950",
+    "SkillPass0994"
+   ],
+   "note_add": "\n<SkillPass0950:15%>\n<SkillPass0994:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5274": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "风魔炮精通★",
+   "note_remove": [
+    "SkillPass0951",
+    "SkillPass1043"
+   ],
+   "note_add": "\n<SkillPass0951:8%>\n<SkillPass1043:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5275": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "风魔炮精通★★",
+   "note_remove": [
+    "SkillPass0951",
+    "SkillPass1043"
+   ],
+   "note_add": "\n<SkillPass0951:12%>\n<SkillPass1043:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5276": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "风魔炮精通★★★",
+   "note_remove": [
+    "SkillPass0951",
+    "SkillPass1043"
+   ],
+   "note_add": "\n<SkillPass0951:15%>\n<SkillPass1043:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5277": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "风魔炮精通★★★★",
+   "note_remove": [
+    "SkillPass0951",
+    "SkillPass1043"
+   ],
+   "note_add": "\n<SkillPass0951:15%>\n<SkillPass1043:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5278": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "风魔炮精通★★★★★",
+   "note_remove": [
+    "SkillPass0951",
+    "SkillPass1043"
+   ],
+   "note_add": "\n<SkillPass0951:15%>\n<SkillPass1043:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5279": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "大号爆弹精通★",
+   "note_remove": [
+    "SkillPass0952"
+   ],
+   "note_add": "\n<SkillPass0952:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5280": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "大号爆弹精通★★",
+   "note_remove": [
+    "SkillPass0952"
+   ],
+   "note_add": "\n<SkillPass0952:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5281": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "大号爆弹精通★★★",
+   "note_remove": [
+    "SkillPass0952"
+   ],
+   "note_add": "\n<SkillPass0952:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5282": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "大号爆弹精通★★★★",
+   "note_remove": [
+    "SkillPass0952"
+   ],
+   "note_add": "\n<SkillPass0952:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5283": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "大号爆弹精通★★★★★",
+   "note_remove": [
+    "SkillPass0952"
+   ],
+   "note_add": "\n<SkillPass0952:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5284": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "剜心精通★",
+   "note_remove": [
+    "SkillPass0953"
+   ],
+   "note_add": "\n<SkillPass0953:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5285": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "剜心精通★★",
+   "note_remove": [
+    "SkillPass0953"
+   ],
+   "note_add": "\n<SkillPass0953:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5286": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "剜心精通★★★",
+   "note_remove": [
+    "SkillPass0953"
+   ],
+   "note_add": "\n<SkillPass0953:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5287": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "剜心精通★★★★",
+   "note_remove": [
+    "SkillPass0953"
+   ],
+   "note_add": "\n<SkillPass0953:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5288": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "剜心精通★★★★★",
+   "note_remove": [
+    "SkillPass0953"
+   ],
+   "note_add": "\n<SkillPass0953:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5289": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "断头台精通★",
+   "note_remove": [
+    "SkillPass0954",
+    "SkillPass1049"
+   ],
+   "note_add": "\n<SkillPass0954:8%>\n<SkillPass1049:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5290": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "断头台精通★★",
+   "note_remove": [
+    "SkillPass0954",
+    "SkillPass1049"
+   ],
+   "note_add": "\n<SkillPass0954:12%>\n<SkillPass1049:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5291": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "断头台精通★★★",
+   "note_remove": [
+    "SkillPass0954",
+    "SkillPass1049"
+   ],
+   "note_add": "\n<SkillPass0954:15%>\n<SkillPass1049:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5292": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "断头台精通★★★★",
+   "note_remove": [
+    "SkillPass0954",
+    "SkillPass1049"
+   ],
+   "note_add": "\n<SkillPass0954:15%>\n<SkillPass1049:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5293": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "断头台精通★★★★★",
+   "note_remove": [
+    "SkillPass0954",
+    "SkillPass1049"
+   ],
+   "note_add": "\n<SkillPass0954:15%>\n<SkillPass1049:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5294": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "骑射精通★",
+   "note_remove": [
+    "SkillPass0955",
+    "SkillPass0991"
+   ],
+   "note_add": "\n<SkillPass0955:8%>\n<SkillPass0991:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5295": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "骑射精通★★",
+   "note_remove": [
+    "SkillPass0955",
+    "SkillPass0991"
+   ],
+   "note_add": "\n<SkillPass0955:12%>\n<SkillPass0991:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5296": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "骑射精通★★★",
+   "note_remove": [
+    "SkillPass0955",
+    "SkillPass0991"
+   ],
+   "note_add": "\n<SkillPass0955:15%>\n<SkillPass0991:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5297": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "骑射精通★★★★",
+   "note_remove": [
+    "SkillPass0955",
+    "SkillPass0991"
+   ],
+   "note_add": "\n<SkillPass0955:15%>\n<SkillPass0991:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5298": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "骑射精通★★★★★",
+   "note_remove": [
+    "SkillPass0955",
+    "SkillPass0991"
+   ],
+   "note_add": "\n<SkillPass0955:15%>\n<SkillPass0991:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5299": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "汲血斩精通★",
+   "note_remove": [
+    "SkillPass0956",
+    "SkillPass0995"
+   ],
+   "note_add": "\n<SkillPass0956:8%>\n<SkillPass0995:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5300": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "汲血斩精通★★",
+   "note_remove": [
+    "SkillPass0956",
+    "SkillPass0995"
+   ],
+   "note_add": "\n<SkillPass0956:12%>\n<SkillPass0995:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5301": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "汲血斩精通★★★",
+   "note_remove": [
+    "SkillPass0956",
+    "SkillPass0995"
+   ],
+   "note_add": "\n<SkillPass0956:15%>\n<SkillPass0995:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5302": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "汲血斩精通★★★★★",
+   "note_remove": [
+    "SkillPass0956",
+    "SkillPass0995"
+   ],
+   "note_add": "\n<SkillPass0956:15%>\n<SkillPass0995:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5303": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "汲血斩精通★★★★★★",
+   "note_remove": [
+    "SkillPass0956",
+    "SkillPass0995"
+   ],
+   "note_add": "\n<SkillPass0956:15%>\n<SkillPass0995:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5304": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "破军枪法精通★",
+   "note_remove": [
+    "SkillPass0957"
+   ],
+   "note_add": "\n<SkillPass0957:8%>",
+   "desc": [
+    "效果：对应技能伤害 +8%"
+   ]
+  },
+  "5305": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "破军枪法精通★★",
+   "note_remove": [
+    "SkillPass0957"
+   ],
+   "note_add": "\n<SkillPass0957:12%>",
+   "desc": [
+    "效果：对应技能伤害 +12%"
+   ]
+  },
+  "5306": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "破军枪法精通★★★",
+   "note_remove": [
+    "SkillPass0957"
+   ],
+   "note_add": "\n<SkillPass0957:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5307": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "破军枪法精通★★★★",
+   "note_remove": [
+    "SkillPass0957"
+   ],
+   "note_add": "\n<SkillPass0957:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5308": {
+   "group": "remaining_books",
+   "template": "D1",
+   "name": "破军枪法精通★★★★★",
+   "note_remove": [
+    "SkillPass0957"
+   ],
+   "note_add": "\n<SkillPass0957:15%>",
+   "desc": [
+    "效果：对应技能伤害 +15%"
+   ]
+  },
+  "5309": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "幽光拔刀斩·备份",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     1186
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5382": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5383": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5384": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5385": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5386": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5387": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5388": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5389": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5390": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5391": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5392": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5393": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5394": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5395": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5396": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5397": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5398": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5399": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "马氏双节棍",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef_pct": 50
+   },
+   "desc": [
+    "效果：每段物理攻击的 50%，随机攻击 4 次"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5400": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5401": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5402": {
+   "group": "remaining_books",
+   "template": "B1",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成魔法攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5403": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5404": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5405": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5406": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5407": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5408": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5409": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5410": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5411": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5412": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5413": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5414": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5415": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5416": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5417": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "动感光线",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5544": {
+   "group": "remaining_books",
+   "template": "B4",
+   "name": "破盾法",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 15,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "desc": [
+    "效果：解除敌方护盾"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5545": {
+   "group": "remaining_books",
+   "template": "B4",
+   "name": "免疫转换",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 15,
+   "cooldown": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "desc": [
+    "效果：转换敌方免疫"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "5974": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "万灵增元丹",
+   "note_remove": [
+    "StartPushState1286"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "5975": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "焚天摧敌丹",
+   "note_remove": [
+    "StartPushState1287"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "5976": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "锁踪断闪丹",
+   "note_remove": [
+    "StartAEPushState1288"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "5977": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "轮回护元丹",
+   "note_remove": [
+    "StartPushState1289"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "6019": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "符文之王",
+   "note_remove": [
+    "SkillPass6015",
+    "SkillPass6016",
+    "SkillPass6017",
+    "SkillPass6018"
+   ],
+   "note_add": "\n<SkillPass6015:10%>\n<SkillPass6016:10%>\n<SkillPass6017:10%>\n<SkillPass6018:10%>",
+   "desc": [
+    "效果：对应技能伤害 +10%"
+   ]
+  },
+  "6126": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "圣灵剑法",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 522"
+    }
+   ]
+  },
+  "6127": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "六灭秘本"
+  },
+  "6133": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "永恒之火",
+   "note_remove": [
+    "PushState0017",
+    "PushState0018",
+    "PushState0019",
+    "PushState0020",
+    "PushState0021"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "6134": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "群仙俯首",
+   "note_remove": [
+    "passiveCrHarmRi"
+   ],
+   "note_add": "\n<passiveCrHarmRi:10>",
+   "desc": [
+    "效果：暴击伤害 +10%"
+   ]
+  },
+  "6135": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "纵意登仙步",
+   "note_remove": [
+    "AgainUseAll",
+    "passiveAPLUS",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<passiveHarmRi:10>",
+   "desc": [
+    "效果：最终伤害 +10%"
+   ]
+  },
+  "6136": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "左右互搏术",
+   "note_remove": [
+    "StartPushState0960"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "6137": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "磁场转动",
+   "note_remove": [
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<passiveHarmRi:10>",
+   "desc": [
+    "效果：最终伤害 +10%"
+   ]
+  },
+  "6138": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "天宫之寒",
+   "note_remove": [
+    "PushState0022",
+    "PushState0023",
+    "PushState0024",
+    "PushState0025",
+    "PushState0026",
+    "PushState0241",
+    "PushState0523"
+   ],
+   "note_add": "\n<passiveELUP03:8%>",
+   "desc": [
+    "效果：寒冰伤害 +8%"
+   ]
+  },
+  "6139": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "逆命伐天",
+   "desc": [
+    "效果：最终伤害 +10%"
+   ]
+  },
+  "6141": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "七无绝境",
+   "note_remove": [
+    "StartPushState0979",
+    "passiveCrHarmRi"
+   ],
+   "note_add": "\n<passiveCrHarmRi:10>\n<CodexParamRate:0:10>",
+   "desc": [
+    "效果：暴击伤害 +10%，最大生命 +10%"
+   ]
+  },
+  "6142": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "冰霜黑洞",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "6143": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "水果秘典·辣椒"
+  },
+  "6144": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "水果秘典·核桃"
+  },
+  "6145": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "水果秘典·芒果"
+  },
+  "6146": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "水果秘典·草莓"
+  },
+  "6147": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "水果秘典·葡萄"
+  },
+  "6148": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "水果秘典·仙人掌"
+  },
+  "6149": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "勇气赞歌",
+   "note_remove": [
+    "RecPushState0980",
+    "passiveELUP10"
+   ],
+   "note_add": "\n<passiveELUP10:10%>\n<passiveCrHarmRi:12>\n<passiveHarmRi:5>",
+   "desc": [
+    "效果：属性伤害 +10%，暴击伤害 +12%，最终伤害 +5%"
+   ]
+  },
+  "6150": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "霜惧",
+   "note_remove": [
+    "SkillPass6142",
+    "passiveELUP03",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<SkillPass6142:10%>\n<passiveELUP03:10%>\n<passiveHarmRi:10>",
+   "desc": [
+    "效果：对应技能伤害 +10%，寒冰伤害 +10%，最终伤害 +10%"
+   ]
+  },
+  "6151": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "霜魇",
+   "note_remove": [
+    "SkillPass6142",
+    "passiveELUP03",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<SkillPass6142:10%>\n<passiveELUP03:10%>\n<passiveHarmRi:10>",
+   "desc": [
+    "效果：对应技能伤害 +10%，寒冰伤害 +10%，最终伤害 +10%"
+   ]
+  },
+  "6152": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "霜渊",
+   "note_remove": [
+    "SkillPass6142",
+    "passiveELUP03",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<SkillPass6142:10%>\n<passiveELUP03:10%>\n<passiveHarmRi:10>",
+   "desc": [
+    "效果：对应技能伤害 +10%，寒冰伤害 +10%，最终伤害 +10%"
+   ]
+  },
+  "6153": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "霜灭",
+   "note_remove": [
+    "SkillPass6142",
+    "passiveELUP03",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<SkillPass6142:10%>\n<passiveELUP03:10%>\n<passiveHarmRi:10>",
+   "desc": [
+    "效果：对应技能伤害 +10%，寒冰伤害 +10%，最终伤害 +10%"
+   ]
+  },
+  "6155": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "鲲拳·奥义",
+   "note_remove": [
+    "SkillPass5168",
+    "SkillPass5169",
+    "SkillPass5170",
+    "SkillPass5171",
+    "SkillPass5172",
+    "SkillPass5173",
+    "SkillPass5174",
+    "SkillPass5175",
+    "SkillPass5176",
+    "SkillPass5177",
+    "SkillPass5178",
+    "SkillPass5179",
+    "SkillPass5180",
+    "SkillPass5181",
+    "SkillPass5182",
+    "SkillPass5183",
+    "SkillPass5184",
+    "SkillPass5185"
+   ],
+   "note_add": "\n<SkillPass5168:10%>\n<SkillPass5169:10%>\n<SkillPass5170:10%>\n<SkillPass5171:10%>\n<SkillPass5172:10%>\n<SkillPass5173:10%>\n<SkillPass5174:10%>\n<SkillPass5175:10%>\n<SkillPass5176:10%>\n<SkillPass5177:10%>\n<SkillPass5178:10%>\n<SkillPass5179:10%>\n<SkillPass5180:10%>\n<SkillPass5181:10%>\n<SkillPass5182:10%>\n<SkillPass5183:10%>\n<SkillPass5184:10%>\n<SkillPass5185:10%>",
+   "desc": [
+    "效果：对应技能伤害 +10%"
+   ]
+  },
+  "6156": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "动感光线·奥义",
+   "note_remove": [
+    "SkillPass5400",
+    "SkillPass5401",
+    "SkillPass5402",
+    "SkillPass5403",
+    "SkillPass5404",
+    "SkillPass5405",
+    "SkillPass5406",
+    "SkillPass5407",
+    "SkillPass5408",
+    "SkillPass5409",
+    "SkillPass5410",
+    "SkillPass5411",
+    "SkillPass5412",
+    "SkillPass5413",
+    "SkillPass5414",
+    "SkillPass5415",
+    "SkillPass5416",
+    "SkillPass5417"
+   ],
+   "note_add": "\n<SkillPass5400:10%>\n<SkillPass5401:10%>\n<SkillPass5402:10%>\n<SkillPass5403:10%>\n<SkillPass5404:10%>\n<SkillPass5405:10%>\n<SkillPass5406:10%>\n<SkillPass5407:10%>\n<SkillPass5408:10%>\n<SkillPass5409:10%>\n<SkillPass5410:10%>\n<SkillPass5411:10%>\n<SkillPass5412:10%>\n<SkillPass5413:10%>\n<SkillPass5414:10%>\n<SkillPass5415:10%>\n<SkillPass5416:10%>\n<SkillPass5417:10%>",
+   "desc": [
+    "效果：对应技能伤害 +10%"
+   ]
+  },
+  "6157": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "马氏双节棍·奥义",
+   "note_remove": [
+    "SkillPass5382",
+    "SkillPass5383",
+    "SkillPass5384",
+    "SkillPass5385",
+    "SkillPass5386",
+    "SkillPass5387",
+    "SkillPass5388",
+    "SkillPass5389",
+    "SkillPass5390",
+    "SkillPass5391",
+    "SkillPass5392",
+    "SkillPass5393",
+    "SkillPass5394",
+    "SkillPass5395",
+    "SkillPass5396",
+    "SkillPass5397",
+    "SkillPass5398",
+    "SkillPass5399"
+   ],
+   "note_add": "\n<SkillPass5382:10%>\n<SkillPass5383:10%>\n<SkillPass5384:10%>\n<SkillPass5385:10%>\n<SkillPass5386:10%>\n<SkillPass5387:10%>\n<SkillPass5388:10%>\n<SkillPass5389:10%>\n<SkillPass5390:10%>\n<SkillPass5391:10%>\n<SkillPass5392:10%>\n<SkillPass5393:10%>\n<SkillPass5394:10%>\n<SkillPass5395:10%>\n<SkillPass5396:10%>\n<SkillPass5397:10%>\n<SkillPass5398:10%>\n<SkillPass5399:10%>",
+   "desc": [
+    "效果：对应技能伤害 +10%"
+   ]
+  },
+  "6158": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "一堆没用的祝福和诅咒",
+   "note_remove": [
+    "StartAEPushState0986",
+    "StartAEPushState0987",
+    "StartAEPushState0988",
+    "StartAEPushState0989",
+    "StartAEPushState0990",
+    "StartWTPushState0981",
+    "StartWTPushState0982",
+    "StartWTPushState0983",
+    "StartWTPushState0984",
+    "StartWTPushState0985"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "6159": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "混元星宿劫",
+   "desc": [
+    "效果：最终伤害 +10%"
+   ]
+  },
+  "6160": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "向神挥拳",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 30,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ],
+   "effects": [
+    {
+     "code": 21,
+     "dataId": 992,
+     "value1": 0.25
+    }
+   ]
+  },
+  "6163": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "劫人运",
+   "note_remove": [
+    "SkillPass6161",
+    "passiveELUP01",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<SkillPass6161:10%>\n<passiveELUP01:10%>\n<passiveHarmRi:10>",
+   "desc": [
+    "效果：对应技能伤害 +10%，物理伤害 +10%，最终伤害 +10%"
+   ]
+  },
+  "6164": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "劫鬼运",
+   "note_remove": [
+    "SkillPass6161",
+    "passiveELUP01",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<SkillPass6161:10%>\n<passiveELUP01:10%>\n<passiveHarmRi:10>",
+   "desc": [
+    "效果：对应技能伤害 +10%，物理伤害 +10%，最终伤害 +10%"
+   ]
+  },
+  "6165": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "劫地运",
+   "note_remove": [
+    "SkillPass6161",
+    "passiveELUP01",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<SkillPass6161:10%>\n<passiveELUP01:10%>\n<passiveHarmRi:10>",
+   "desc": [
+    "效果：对应技能伤害 +10%，物理伤害 +10%，最终伤害 +10%"
+   ]
+  },
+  "6166": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "劫仙运",
+   "note_remove": [
+    "SkillPass6161",
+    "passiveELUP01",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<SkillPass6161:10%>\n<passiveELUP01:10%>\n<passiveHarmRi:10>",
+   "desc": [
+    "效果：对应技能伤害 +10%，物理伤害 +10%，最终伤害 +10%"
+   ]
+  },
+  "6169": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "斩意*十字斩",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Tp +100"
+    }
+   ]
+  },
+  "6170": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "初火*炽烈火柱",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "6171": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "零度*冻结术",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     1321
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "6173": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "十字灭绝",
+   "note_remove": [
+    "SkillPass6169",
+    "passiveELUP01"
+   ],
+   "note_add": "\n<SkillPass6169:10%>\n<passiveELUP01:10%>",
+   "desc": [
+    "效果：对应技能伤害 +10%，物理伤害 +10%"
+   ]
+  },
+  "6174": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "炽烈之魂",
+   "note_remove": [
+    "SkillPass6170",
+    "passiveELUP02"
+   ],
+   "note_add": "\n<SkillPass6170:10%>\n<passiveELUP02:10%>",
+   "desc": [
+    "效果：对应技能伤害 +10%，火焰伤害 +10%"
+   ]
+  },
+  "6175": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "极寒天地",
+   "note_remove": [
+    "SkillPass6171",
+    "SkillPass6172",
+    "passiveELUP03"
+   ],
+   "note_add": "\n<SkillPass6171:10%>\n<SkillPass6172:10%>\n<passiveELUP03:10%>",
+   "desc": [
+    "效果：对应技能伤害 +10%，寒冰伤害 +10%"
+   ]
+  },
+  "6183": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "不息神风",
+   "note_remove": [
+    "passiveELUP06"
+   ],
+   "note_add": "\n<passiveELUP06:10%>",
+   "desc": [
+    "效果：自然伤害 +10%"
+   ]
+  },
+  "6184": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "不灭神风",
+   "note_remove": [
+    "SkillPass6181",
+    "SkillPass6182",
+    "passiveELUP06"
+   ],
+   "note_add": "\n<SkillPass6181:10%>\n<SkillPass6182:10%>\n<passiveELUP06:10%>",
+   "desc": [
+    "效果：对应技能伤害 +10%，自然伤害 +10%"
+   ]
+  },
+  "6238": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "镇渊之岩",
+   "note_remove": [
+    "PushState0012",
+    "PushState0013",
+    "PushState0014",
+    "PushState0015",
+    "PushState0016",
+    "PushState0081",
+    "PushState0521"
+   ],
+   "note_add": "\n<passiveELUP01:8%>",
+   "desc": [
+    "效果：物理伤害 +8%"
+   ]
+  },
+  "6244": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "厄运*汲血斩",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Hp +1000"
+    }
+   ]
+  },
+  "6245": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "厄运降临",
+   "note_remove": [
+    "SkillPass6244"
+   ],
+   "note_add": "\n<SkillPass6244:10%>",
+   "desc": [
+    "效果：对应技能伤害 +10%"
+   ]
+  },
+  "6246": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "枪神一击",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "6247": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "无尽重装",
+   "note_remove": [
+    "SkillPass6246"
+   ],
+   "note_add": "\n<SkillPass6246:10%>",
+   "desc": [
+    "效果：对应技能伤害 +10%"
+   ]
+  },
+  "6507": {
+   "group": "remaining_books",
+   "template": "B4",
+   "name": "激励之歌[抽奖版]",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 15,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "desc": [
+    "效果：激励全队并恢复资源"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "6525": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "彻地钉刺[抽奖版]",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 10,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "6575": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "哼哈音波[抽奖版]",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "6609": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "雷火充能[抽奖版]",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 10,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "desc": [
+    "效果：为自身充能"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "6620": {
+   "group": "remaining_books",
+   "template": "B4",
+   "name": "PUA*终极大师版[抽奖版]",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 15,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "heal": {
+    "mhp_pct": 0.08
+   },
+   "desc": [
+    "效果：恢复目标 8% 最大生命"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "6624": {
+   "group": "remaining_books",
+   "template": "B4",
+   "name": "龙舞天下[抽奖版]",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "mp_pct": 15,
+   "cooldown": 5,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "heal": {
+    "mhp_pct": 0.08
+   },
+   "desc": [
+    "效果：恢复目标 8% 最大生命"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "7190": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "时之主宰",
+   "note_remove": [
+    "AgainUseAll",
+    "ConsumeReduceAll",
+    "StartPushState1250",
+    "passiveCrHarmRi",
+    "passiveEXTTP",
+    "passiveHarmRi",
+    "passivePBST6",
+    "passivePRETP"
+   ],
+   "note_add": "\n<ConsumeReduceAll:10%>\n<passiveHarmRi:8>\n<passiveCrHarmRi:12>\n<passiveEXTTP:20>\n<CodexParamRate:6:5>",
+   "desc": [
+    "效果：资源消耗 −10%，最终伤害 +8%，暴击伤害 +12%，TP 上限 +20，敏捷 +5%"
+   ]
+  },
+  "7191": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "无尽空间",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Hp -15%"
+    }
+   ]
+  },
+  "7192": {
+   "group": "remaining_books",
+   "template": "C4",
+   "name": "命运指引",
+   "note_remove": [
+    "SkillTypesDvupA",
+    "SkillTypesDvupB",
+    "SkillTypesDvupC",
+    "StartAEPushState1253",
+    "StartWTPushState1252"
+   ],
+   "note_add": "\n<SkillTypesDvupA:12%>\n<SkillTypesDvupB:12%>\n<SkillTypesDvupC:12%>",
+   "desc": [
+    "效果：A 类技能伤害 +12%，B 类技能伤害 +12%，C 类技能伤害 +12%"
+   ]
+  },
+  "7193": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "因果丝线",
+   "note_remove": [
+    "StartWTPushState1254"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "7194": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "生命之火",
+   "note_remove": [
+    "StartPushState1255",
+    "passiveELUP10",
+    "passivePBST0"
+   ],
+   "note_add": "\n<passiveELUP10:12%>\n<CodexParamRate:0:10>",
+   "desc": [
+    "效果：属性伤害 +12%，最大生命 +10%"
+   ]
+  },
+  "7195": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "死之掌握",
+   "note_remove": [
+    "StartPushState1256",
+    "StartPushState1257",
+    "StartPushState1262",
+    "passivePBST2",
+    "passivePBST4"
+   ],
+   "note_add": "\n<CodexParamRate:2:10,4:10>",
+   "desc": [
+    "效果：物理攻击 +10%，魔法攻击 +10%"
+   ]
+  },
+  "7196": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "轮回不止",
+   "note_remove": [
+    "StartWTPushState1258"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "7197": {
+   "group": "remaining_books",
+   "template": "C2",
+   "name": "阴阳合一·阴",
+   "note_remove": [
+    "StartPushState1260",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "passivePBST1",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST7"
+   ],
+   "note_add": "\n<passiveELUP01:12%>\n<passiveELUP02:12%>\n<passiveELUP03:12%>\n<passiveELUP04:12%>\n<passiveELUP05:12%>\n<passiveELUP06:12%>\n<passiveELUP07:12%>\n<passiveELUP08:12%>\n<passiveELUP09:12%>\n<CodexParamRate:1:10,4:10,5:10,7:10>",
+   "desc": [
+    "效果：物理伤害 +12%，火焰伤害 +12%，寒冰伤害 +12%，大地伤害 +12%，雷电伤害 +12%，自然伤害 +12%，奥术伤害 +12%，神圣伤害 +12%，黑暗伤害 +12%，最大魔法 +10%，魔法攻击 +10%，魔法防御 +10%，幸运 +10%"
+   ]
+  },
+  "7198": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "气运昌隆",
+   "note_remove": [
+    "passiveGRUP",
+    "passiveIRUP",
+    "passivePBST6",
+    "passivePBST7"
+   ],
+   "note_add": "\n<passiveGRUP:10>\n<passiveIRUP:10>\n<CodexParamRate:6:10,7:10>",
+   "desc": [
+    "效果：金钱获取 提高，物品获取 提高，敏捷 +10%，幸运 +10%"
+   ]
+  },
+  "7199": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "劲儿特大",
+   "note_remove": [
+    "DepassiveHarmRe01",
+    "DepassiveHarmRe02",
+    "DepassiveHarmRe03",
+    "DepassiveHarmRe04",
+    "DepassiveHarmRe05",
+    "DepassiveHarmRe06",
+    "DepassiveHarmRe07",
+    "DepassiveHarmRe08",
+    "DepassiveHarmRe09",
+    "DepassiveHarmRe11",
+    "DepassiveHarmRe12",
+    "DepassiveHarmRe13",
+    "DepassiveHarmRe14",
+    "DepassiveHarmRe15",
+    "StartPushState1261",
+    "passivePBST2",
+    "passivePBST4"
+   ],
+   "note_add": "\n<CodexParamRate:2:10,4:10>",
+   "desc": [
+    "效果：物理攻击 +10%，魔法攻击 +10%"
+   ]
+  },
+  "7200": {
+   "group": "remaining_books",
+   "template": "C3",
+   "name": "阴阳合一·阳",
+   "note_remove": [
+    "StartPushState1263",
+    "passiveCrHarmRi",
+    "passiveHarmRi",
+    "passivePBST0",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST6"
+   ],
+   "note_add": "\n<passiveCrHarmRi:12>\n<passiveHarmRi:8>\n<CodexParamRate:0:5,2:5,3:5,6:5>",
+   "desc": [
+    "效果：暴击伤害 +12%，最终伤害 +8%，最大生命 +5%，物理攻击 +5%，物理防御 +5%，敏捷 +5%"
+   ]
+  },
+  "8221": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "错误数据:速度",
+   "note_remove": [
+    "StartPushState1741"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "8222": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "错误数据:速度",
+   "note_remove": [
+    "StartPushState1742"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "8223": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "错误数据:速度",
+   "note_remove": [
+    "StartPushState1743"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "8224": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "错误数据:普攻",
+   "note_remove": [
+    "StartPushState1747"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "8225": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "错误数据:普攻",
+   "note_remove": [
+    "StartPushState1748"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
+  },
+  "8226": {
+   "group": "remaining_books",
+   "template": "C1",
+   "name": "数据错误:暴击",
+   "note_remove": [
+    "StartPushState1749"
+   ],
+   "note_add": "\n<passiveHarmRi:8>",
+   "desc": [
+    "效果：最终伤害 +8%"
+   ]
   }
  },
  "states": {
@@ -4011,7 +14401,7 @@
     }
    ],
    "turns": 2,
-   "state_note": "被暴击率 −3%"
+   "state_note": "被暴击率 +3%"
   },
   "1242": {
    "name": "抽奖·减爆闪2",
@@ -4023,7 +14413,7 @@
     }
    ],
    "turns": 2,
-   "state_note": "被暴击率 −5%"
+   "state_note": "被暴击率 +5%"
   },
   "1243": {
    "name": "抽奖·减爆闪3",
@@ -4035,7 +14425,7 @@
     }
    ],
    "turns": 2,
-   "state_note": "被暴击率 −8%"
+   "state_note": "被暴击率 +8%"
   },
   "1244": {
    "name": "抽奖·减爆闪4",
@@ -4047,7 +14437,7 @@
     }
    ],
    "turns": 2,
-   "state_note": "被暴击率 −12%"
+   "state_note": "被暴击率 +12%"
   },
   "1655": {
    "name": "《轮回转生决》",
@@ -4096,5 +14486,275 @@
    "turns": 2,
    "state_note": "全属性 +10%"
   }
+ },
+ "coverage_exemptions": {
+  "824": "角色技能重构表接管",
+  "2807": "角色技能重构表接管",
+  "2808": "角色技能重构表接管",
+  "2809": "角色技能重构表接管",
+  "2810": "角色技能重构表接管",
+  "2811": "角色技能重构表接管",
+  "2812": "角色技能重构表接管",
+  "2813": "角色技能重构表接管",
+  "3224": "角色技能重构表接管",
+  "3225": "角色技能重构表接管",
+  "3226": "角色技能重构表接管",
+  "3227": "角色技能重构表接管",
+  "3228": "角色技能重构表接管",
+  "3229": "角色技能重构表接管",
+  "3230": "角色技能重构表接管",
+  "3231": "角色技能重构表接管",
+  "3232": "角色技能重构表接管",
+  "3233": "角色技能重构表接管",
+  "3234": "角色技能重构表接管",
+  "3235": "角色技能重构表接管",
+  "3236": "角色技能重构表接管",
+  "3896": "角色技能重构表接管",
+  "4504": "角色技能重构表接管",
+  "4506": "角色技能重构表接管",
+  "4507": "角色技能重构表接管",
+  "4508": "角色技能重构表接管",
+  "4701": "角色技能重构表接管",
+  "4702": "角色技能重构表接管",
+  "4703": "角色技能重构表接管",
+  "4704": "角色技能重构表接管",
+  "4705": "角色技能重构表接管",
+  "4706": "角色技能重构表接管",
+  "4707": "角色技能重构表接管",
+  "4723": "角色技能重构表接管",
+  "4724": "角色技能重构表接管",
+  "4725": "角色技能重构表接管",
+  "4726": "角色技能重构表接管",
+  "4727": "角色技能重构表接管",
+  "4728": "角色技能重构表接管",
+  "4729": "角色技能重构表接管",
+  "4730": "角色技能重构表接管",
+  "4731": "角色技能重构表接管",
+  "4732": "角色技能重构表接管",
+  "4733": "角色技能重构表接管",
+  "4734": "角色技能重构表接管",
+  "4735": "角色技能重构表接管",
+  "4736": "角色技能重构表接管",
+  "4737": "角色技能重构表接管",
+  "4738": "角色技能重构表接管",
+  "4739": "角色技能重构表接管",
+  "4740": "角色技能重构表接管",
+  "4741": "角色技能重构表接管",
+  "4742": "角色技能重构表接管",
+  "4743": "角色技能重构表接管",
+  "4748": "角色技能重构表接管",
+  "4750": "角色技能重构表接管",
+  "4752": "角色技能重构表接管",
+  "4755": "角色技能重构表接管",
+  "4757": "角色技能重构表接管",
+  "4759": "角色技能重构表接管",
+  "4762": "角色技能重构表接管",
+  "4764": "角色技能重构表接管",
+  "4766": "角色技能重构表接管",
+  "4772": "角色技能重构表接管",
+  "4773": "角色技能重构表接管",
+  "4774": "角色技能重构表接管",
+  "4783": "角色技能重构表接管",
+  "4788": "角色技能重构表接管",
+  "4793": "角色技能重构表接管",
+  "4796": "角色技能重构表接管",
+  "4797": "角色技能重构表接管",
+  "4798": "角色技能重构表接管",
+  "4799": "角色技能重构表接管",
+  "4800": "角色技能重构表接管",
+  "4801": "角色技能重构表接管",
+  "4802": "角色技能重构表接管",
+  "4803": "角色技能重构表接管",
+  "4805": "角色技能重构表接管",
+  "4806": "角色技能重构表接管",
+  "4807": "角色技能重构表接管",
+  "4808": "角色技能重构表接管",
+  "4811": "角色技能重构表接管",
+  "4814": "角色技能重构表接管",
+  "4898": "角色技能重构表接管",
+  "4899": "角色技能重构表接管",
+  "4900": "角色技能重构表接管",
+  "4901": "角色技能重构表接管",
+  "4902": "角色技能重构表接管",
+  "4903": "角色技能重构表接管",
+  "4904": "角色技能重构表接管",
+  "4905": "角色技能重构表接管",
+  "4906": "角色技能重构表接管",
+  "4907": "角色技能重构表接管",
+  "4908": "角色技能重构表接管",
+  "4909": "角色技能重构表接管",
+  "4910": "角色技能重构表接管",
+  "4911": "角色技能重构表接管",
+  "4912": "角色技能重构表接管",
+  "4913": "角色技能重构表接管",
+  "4914": "角色技能重构表接管",
+  "4915": "角色技能重构表接管",
+  "4917": "角色技能重构表接管",
+  "4920": "角色技能重构表接管",
+  "4922": "角色技能重构表接管",
+  "4923": "角色技能重构表接管",
+  "4924": "角色技能重构表接管",
+  "4925": "角色技能重构表接管",
+  "4926": "角色技能重构表接管",
+  "4927": "角色技能重构表接管",
+  "5068": "元素转换规则接管，无附加伤害",
+  "5069": "元素转换规则接管，无附加伤害",
+  "5070": "元素转换规则接管，无附加伤害",
+  "5071": "元素转换规则接管，无附加伤害",
+  "5072": "元素转换规则接管，无附加伤害",
+  "5073": "元素转换规则接管，无附加伤害",
+  "5074": "元素转换规则接管，无附加伤害",
+  "5075": "元素转换规则接管，无附加伤害",
+  "5084": "角色技能重构表接管",
+  "5088": "角色技能重构表接管",
+  "5126": "角色技能重构表接管",
+  "6801": "独立时装系统，按秘籍格既有豁免",
+  "6802": "独立时装系统，按秘籍格既有豁免",
+  "6803": "独立时装系统，按秘籍格既有豁免",
+  "6804": "独立时装系统，按秘籍格既有豁免",
+  "6805": "独立时装系统，按秘籍格既有豁免",
+  "6807": "独立时装系统，按秘籍格既有豁免",
+  "6808": "独立时装系统，按秘籍格既有豁免",
+  "6809": "独立时装系统，按秘籍格既有豁免",
+  "6810": "独立时装系统，按秘籍格既有豁免",
+  "6811": "独立时装系统，按秘籍格既有豁免",
+  "6812": "独立时装系统，按秘籍格既有豁免",
+  "6813": "独立时装系统，按秘籍格既有豁免",
+  "6814": "独立时装系统，按秘籍格既有豁免",
+  "6815": "独立时装系统，按秘籍格既有豁免",
+  "6816": "独立时装系统，按秘籍格既有豁免",
+  "6817": "独立时装系统，按秘籍格既有豁免",
+  "6818": "独立时装系统，按秘籍格既有豁免",
+  "6819": "独立时装系统，按秘籍格既有豁免",
+  "6820": "独立时装系统，按秘籍格既有豁免",
+  "6821": "独立时装系统，按秘籍格既有豁免",
+  "6822": "独立时装系统，按秘籍格既有豁免",
+  "6823": "独立时装系统，按秘籍格既有豁免",
+  "6824": "独立时装系统，按秘籍格既有豁免",
+  "6825": "独立时装系统，按秘籍格既有豁免",
+  "6826": "独立时装系统，按秘籍格既有豁免",
+  "6827": "独立时装系统，按秘籍格既有豁免",
+  "6828": "独立时装系统，按秘籍格既有豁免",
+  "6829": "独立时装系统，按秘籍格既有豁免",
+  "6830": "独立时装系统，按秘籍格既有豁免",
+  "6831": "独立时装系统，按秘籍格既有豁免",
+  "6832": "独立时装系统，按秘籍格既有豁免",
+  "6833": "独立时装系统，按秘籍格既有豁免",
+  "6834": "独立时装系统，按秘籍格既有豁免",
+  "6835": "独立时装系统，按秘籍格既有豁免",
+  "6836": "独立时装系统，按秘籍格既有豁免",
+  "6837": "独立时装系统，按秘籍格既有豁免",
+  "6838": "独立时装系统，按秘籍格既有豁免",
+  "6839": "独立时装系统，按秘籍格既有豁免",
+  "6840": "独立时装系统，按秘籍格既有豁免",
+  "6841": "独立时装系统，按秘籍格既有豁免",
+  "6842": "独立时装系统，按秘籍格既有豁免",
+  "6843": "独立时装系统，按秘籍格既有豁免",
+  "6844": "独立时装系统，按秘籍格既有豁免",
+  "6845": "独立时装系统，按秘籍格既有豁免",
+  "6846": "独立时装系统，按秘籍格既有豁免",
+  "6847": "独立时装系统，按秘籍格既有豁免",
+  "6848": "独立时装系统，按秘籍格既有豁免",
+  "6849": "独立时装系统，按秘籍格既有豁免",
+  "6850": "独立时装系统，按秘籍格既有豁免",
+  "6851": "独立时装系统，按秘籍格既有豁免",
+  "6852": "独立时装系统，按秘籍格既有豁免",
+  "6853": "独立时装系统，按秘籍格既有豁免",
+  "6854": "独立时装系统，按秘籍格既有豁免",
+  "6855": "独立时装系统，按秘籍格既有豁免",
+  "6856": "独立时装系统，按秘籍格既有豁免",
+  "6857": "独立时装系统，按秘籍格既有豁免",
+  "6858": "独立时装系统，按秘籍格既有豁免",
+  "6901": "角色技能重构表接管",
+  "6902": "角色技能重构表接管",
+  "6903": "角色技能重构表接管",
+  "6904": "角色技能重构表接管",
+  "6905": "角色技能重构表接管",
+  "6906": "角色技能重构表接管",
+  "6907": "角色技能重构表接管",
+  "6908": "角色技能重构表接管",
+  "6909": "角色技能重构表接管",
+  "6910": "角色技能重构表接管",
+  "6911": "角色技能重构表接管",
+  "6912": "角色技能重构表接管",
+  "6913": "角色技能重构表接管",
+  "6914": "角色技能重构表接管",
+  "6915": "角色技能重构表接管",
+  "6916": "角色技能重构表接管",
+  "6918": "角色技能重构表接管",
+  "6919": "角色技能重构表接管",
+  "6920": "角色技能重构表接管",
+  "6921": "角色技能重构表接管",
+  "6922": "角色技能重构表接管",
+  "6925": "角色技能重构表接管",
+  "6926": "角色技能重构表接管",
+  "6927": "角色技能重构表接管",
+  "6928": "角色技能重构表接管",
+  "6929": "角色技能重构表接管",
+  "6930": "角色技能重构表接管",
+  "7135": "T443 功法表接管",
+  "7136": "T443 功法表接管",
+  "7137": "T443 功法表接管",
+  "7138": "T443 功法表接管",
+  "7139": "T443 功法表接管",
+  "7140": "T443 功法表接管",
+  "7141": "T443 功法表接管",
+  "7142": "T443 功法表接管",
+  "7143": "T443 功法表接管",
+  "7144": "T443 功法表接管",
+  "7145": "T443 功法表接管",
+  "7146": "T443 功法表接管",
+  "7147": "T443 功法表接管",
+  "7148": "T443 功法表接管",
+  "7149": "T443 功法表接管",
+  "7150": "T443 功法表接管",
+  "7151": "T443 功法表接管",
+  "7152": "T443 功法表接管",
+  "7153": "T443 功法表接管",
+  "7154": "T443 功法表接管",
+  "7155": "T443 功法表接管",
+  "7156": "T443 功法表接管",
+  "7157": "T443 功法表接管",
+  "7158": "T443 功法表接管",
+  "7159": "T443 功法表接管",
+  "7160": "T443 功法表接管",
+  "7161": "T443 功法表接管",
+  "7162": "T443 功法表接管",
+  "7166": "T443 功法表接管",
+  "7167": "T443 功法表接管",
+  "7168": "T443 功法表接管",
+  "7169": "T443 功法表接管",
+  "7170": "T443 功法表接管",
+  "7171": "T443 功法表接管",
+  "7172": "T443 功法表接管",
+  "7173": "T443 功法表接管",
+  "7174": "T443 功法表接管",
+  "7175": "T443 功法表接管",
+  "7176": "T443 功法表接管",
+  "7177": "T443 功法表接管",
+  "7178": "T443 功法表接管",
+  "7179": "T443 功法表接管",
+  "7180": "T443 功法表接管",
+  "7181": "T443 功法表接管",
+  "7182": "T443 功法表接管",
+  "7183": "T443 功法表接管",
+  "7184": "T443 功法表接管",
+  "7185": "T443 功法表接管",
+  "7186": "T443 功法表接管",
+  "7187": "T443 功法表接管",
+  "7238": "血脉、进阶或权能另表接管",
+  "7239": "血脉、进阶或权能另表接管",
+  "7240": "血脉、进阶或权能另表接管",
+  "7241": "血脉、进阶或权能另表接管",
+  "7242": "血脉、进阶或权能另表接管",
+  "7243": "血脉、进阶或权能另表接管",
+  "7244": "血脉、进阶或权能另表接管",
+  "7245": "血脉、进阶或权能另表接管",
+  "7246": "血脉、进阶或权能另表接管",
+  "7247": "血脉、进阶或权能另表接管",
+  "7515": "角色技能重构表接管",
+  "7516": "角色技能重构表接管",
+  "7517": "角色技能重构表接管",
+  "7518": "角色技能重构表接管"
  }
 }
