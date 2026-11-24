@@ -1,0 +1,15 @@
+SMOKE_KEY=wait:200 scene=res://modes/xiyou/entry.tscn
+ERROR: Condition "len == 0" is true. Returning: FAILED
+   at: update (core/crypto/hashing_context.cpp:54)
+SMOKE_KEY=accept scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=wait:60 scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=accept scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=wait:60 scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=accept scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=wait:60 scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=accept scene=res://modes/xiyou/map/map_scene.tscn
+SMOKE_KEY=wait:200 scene=res://modes/xiyou/map/map_scene.tscn
+SMOKE_DONE scene=res://modes/xiyou/map/map_scene.tscn
+Godot Engine v4.7.2.stable.kyo_aes.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org
+
+XSaveSeal: 旧存档已补上签名：{"dir":"user://modes/xiyou","failed":[],"sealed":["save_1.json"]}

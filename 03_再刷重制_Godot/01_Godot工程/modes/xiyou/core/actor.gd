@@ -582,6 +582,8 @@ func learn_skill(id: int) -> void:
 		return
 	if not XActorModules.can_learn(self, id) or (XPowerBooks.is_power(id) and not XPowerBooks.learn_reason(self, id).is_empty()):
 		return
+	if XTianqiSecrets.blocks_learn(self, id):
+		return
 	if not skill_ids.has(id) and not XDB.rec("Skills", id).is_empty():
 		skill_ids.append(id)
 		skill_ids.sort()
@@ -589,6 +591,7 @@ func learn_skill(id: int) -> void:
 	XTianqiGear.learned(self, id)  # 天启篇：茉蕾觉醒时学嘤雄
 	XLiuying.learned_skill(self, id)  # 流萤 learnSkill 包装：学 10628 连带学梦应
 	XTianqiElements.learned_skill(self, id)  # 天启篇元素重做：元素转换书技能互斥遗忘
+	XTianqiSecrets.learned_skill(self, id)  # 天启篇功法重标（T443）：同门后重顶替前重，只占 1 格
 
 func forget_skill(id: int) -> void:
 	read_touch()
@@ -654,6 +657,8 @@ func _skills_now() -> Array:
 func _skill_records(ids: Array[int]) -> Array:
 	var out := []
 	for id in ids:
+		if XTianqiSecrets.is_sealed(self, id):
+			continue
 		var s := XDB.rec("Skills", id)
 		if not s.is_empty():
 			out.append(XTianqiWeakAffix.skill_view(XTianqiGear.skill_view(XZhenqi.skill_view(s, self)), self))  # 道法按境界缩放（CodexZhenqi.skillView）；天启篇软绑定被动生效；弱者专属词条本人投影

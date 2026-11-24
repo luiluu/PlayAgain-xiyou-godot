@@ -32,7 +32,7 @@
 发行包排除了 tests/、不认 --verify-export，所以这里只看入口，不跑包内测试（那是 导出冒烟.py 对「macOS 验收」调试包做的）。
 按键冒烟（--keys）：发行模板的 GDScript 对 null 调方法不查空、直接 SIGSEGV（11-06 标题按空格/J 闪退），调试版只报错，
 所以只有发行包里真按键才看得到。游戏带 `-- --smoke-keys=<序列>` 时自己注入按键（core/key_smoke.gd，经 Input.parse_input_event），
-按完打印 SMOKE_DONE 并退出 0；这里查：退出码 0、有 SMOKE_DONE、新游戏那几组最后在地图场景、~/Library/Logs/DiagnosticReports 没多出本包的崩溃报告。
+按完打印 SMOKE_DONE 并退出 0；这里查：退出码 0、有 SMOKE_DONE、输出不含 SCRIPT ERROR／Failed to load script／Parse Error（T457）、新游戏那几组最后在地图场景、~/Library/Logs/DiagnosticReports 没多出本包的崩溃报告。
 发行构建直达西游标题、没有「返回版本选择」（BI），那一项只有调试构建有（tests/xiyou_input_handled 覆盖）。
 每次运行用新建的临时 HOME，跑完删掉；临时目录 xiyou_release_entry_* 通过就整个删、失败只留 .log、
 被 SIGTERM 结束也收尾，下次运行清掉上次被杀残留的（cc 平台 EC 2026-11-06，以前每次留 0.5～1 GB）；不碰真实玩家存档，不签名、不公证。退出码：通过 0，失败 1，导出或解包出错 2。
@@ -56,6 +56,7 @@ PRESET = 'macOS 发行'
 APP_NAME = '再刷一把：天启篇'
 TITLE = 'res://modes/xiyou/entry.tscn'
 MAP = 'res://modes/xiyou/map/map_scene.tscn'
+SCRIPT_ERROR_RE = re.compile(r'SCRIPT ERROR|Failed to load script|Parse Error')
 SEAL_EXPORT_FORMAT = 'kyo-remake-save-sealed-v2'
 UNSEALED_WARNING = (
     '============================================================\n'
@@ -77,6 +78,21 @@ KEY_RUNS = [
 ]
 
 
+def export_env():
+    """T454：独立自导出发行预设（macOS／Windows／安卓 发行都开了 encrypt_pck）要带资源加密密钥（环境变量或私密设计仓，资源加密.py）。
+    返回 (env, 错误)：没密钥不静默出明文包，返回错误说明由调用方失败退出。资源加密.ENCRYPT＝False（回退）时不注入。"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('资源加密', HERE / '资源加密.py')
+    enc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(enc)
+    if not enc.ENCRYPT:
+        return dict(os.environ), None
+    try:
+        return enc.export_env(), None
+    except RuntimeError as e:
+        return None, str(e)
+
+
 def windows(work: Path, check, keys=False, win_dir=None, require_seal=False, allow_unsealed=False) -> int:
     exe = work / 'win' / '再刷一把_天启篇.exe'
     exe.parent.mkdir()
@@ -89,8 +105,12 @@ def windows(work: Path, check, keys=False, win_dir=None, require_seal=False, all
                 return 2
             shutil.copy(src / f, exe.parent / f)
     else:
-        p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', 'Windows 发行', str(exe)],
-                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=900)
+        env, err = export_env()
+        if env is None:
+            print(err)
+            return 2
+        p = subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(PROJECT), '--export-release', 'Windows 发行', str(exe)],
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=900, env=env)
         (work / '导出.log').write_text(p.stdout, encoding='utf-8')
         if p.returncode != 0:
             print(p.stdout[-3000:])
@@ -126,9 +146,15 @@ def desktop_version(platform: str):
 
 
 def release_runner(work: Path, pck: Path):
-    """macOS 发行模板的可执行文件，改成和 pck 同名、放在它旁边（发行模板不认 --main-pack，只认同名 .pck）。"""
+    """macOS 发行模板的可执行文件，改成和 pck 同名、放在它旁边（发行模板不认 --main-pack，只认同名 .pck）。
+    T452：取「macOS 发行」预设自己的模板（加密模板，编进了资源加密密钥），不取第一个 macOS 模板（那是验收预设的官方模板，读不了加密包）。"""
     cfg = (PROJECT / 'export_presets.cfg').read_text(encoding='utf-8')
-    tpl = Path(re.search(r'custom_template/release="([^"]*macos[^"]*)"', cfg).group(1))
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('资源加密', HERE / '资源加密.py')
+    enc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(enc)
+    val = enc.preset_value(cfg, 'macOS 发行', 'custom_template/release', options=True)
+    tpl = Path(val.strip('"')) if val else Path(re.search(r'custom_template/release="([^"]*macos[^"]*)"', cfg).group(1))
     tdir = work / 'tpl'
     if subprocess.run(['ditto', '-x', '-k', str(tpl), str(tdir)]).returncode != 0:
         print('解不开 macOS 模板')
@@ -173,7 +199,10 @@ def android(work: Path, check, keys=False, apk=None, require_seal=False, allow_u
     if apk is None:
         apk = work / 'android' / '再刷一把_天启篇.apk'
         apk.parent.mkdir()
-        env = dict(os.environ)
+        env, err = export_env()
+        if env is None:
+            print(err)
+            return 2
         if not env.get('GODOT_ANDROID_KEYSTORE_RELEASE_PATH'):
             ks, pw = editor_debug_keystore()
             if ks is None:
@@ -182,7 +211,7 @@ def android(work: Path, check, keys=False, apk=None, require_seal=False, allow_u
             env.update(GODOT_ANDROID_KEYSTORE_RELEASE_PATH=ks, GODOT_ANDROID_KEYSTORE_RELEASE_USER='androiddebugkey',
                        GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=pw)
             print('发行 keystore 没配：用本机 Godot 调试 keystore 签名（只给冒烟和真机试装，不能上架）')
-        p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', ANDROID_PRESET, str(apk)],
+        p = subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(PROJECT), '--export-release', ANDROID_PRESET, str(apk)],
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=1800, env=env)
         (work / '导出.log').write_text(p.stdout, encoding='utf-8')
         if p.returncode != 0 or not apk.is_file():
@@ -206,12 +235,25 @@ def android(work: Path, check, keys=False, apk=None, require_seal=False, allow_u
     # 桌面替身：assets/ 打成 pck（打包pck.gd），放到 macOS 发行模板旁跑——查的是包里的数据能不能进标题、按键闪不闪退，不是安卓本身
     pck = work / 'run' / '再刷一把_天启篇.pck'
     pck.parent.mkdir()
-    empty = work / 'empty_project'
-    empty.mkdir()
-    (empty / 'project.godot').write_text('config_version=5\n', encoding='utf-8')
-    p = subprocess.run([str(GODOT), '--headless', '--path', str(empty), '--script', str(HERE / '打包pck.gd'), '--',
-                        str(work / 'apk' / 'assets'), str(pck)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                       text=True, errors='replace', timeout=900)
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('资源加密', HERE / '资源加密.py')
+    enc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(enc)
+    if enc.SPARSE in names:
+        # T452：Gradle 包的 assets/ 带 assets.sparsepck 目录（加密文件的标志在里面）：照目录原样拼成 pck，加密的保持加密，
+        # 替身模板（macOS 发行预设的加密模板）用自己编进去的密钥读——读得出来才说明安卓包里的密文和模板密钥对得上
+        try:
+            n = enc.apk_to_pck(apk, pck)
+            p = subprocess.CompletedProcess([], 0, f'PCK_FILES={n}（按 assets.sparsepck 原样拼）\n')
+        except (ValueError, KeyError, OSError) as e:
+            p = subprocess.CompletedProcess([], 1, f'按 assets.sparsepck 拼 pck 失败：{e}\n')
+    else:
+        empty = work / 'empty_project'
+        empty.mkdir()
+        (empty / 'project.godot').write_text('config_version=5\n', encoding='utf-8')
+        p = subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(empty), '--script', str(HERE / '打包pck.gd'), '--',
+                            str(work / 'apk' / 'assets'), str(pck)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                           text=True, errors='replace', timeout=900)
     (work / '打包pck.log').write_text(p.stdout, encoding='utf-8')
     shutil.rmtree(work / 'apk', ignore_errors=True)
     if p.returncode != 0 or not pck.is_file():
@@ -334,6 +376,11 @@ def check_save_seal_output(out: str, check, require_seal: bool, allow_unsealed: 
     check('release_save_export_format_v2', fmt_ok, fmt_note)
 
 
+def script_error_lines(out: str) -> list:
+    """T457：挑出输出里的脚本编译／加载／运行错误行（SCRIPT ERROR／Failed to load script／Parse Error）。"""
+    return [l.strip() for l in out.splitlines() if SCRIPT_ERROR_RE.search(l)]
+
+
 def run_entry(work: Path, exe: Path, check, platform='macos', require_seal=False, allow_unsealed=False) -> int:
     home = Path(tempfile.mkdtemp(prefix='xiyou_export_home_'))
     try:
@@ -343,8 +390,10 @@ def run_entry(work: Path, exe: Path, check, platform='macos', require_seal=False
         shutil.rmtree(home, ignore_errors=True)
     (work / '运行.log').write_text(out, encoding='utf-8')
     entries = [l.split('=', 1)[1].strip() for l in out.splitlines() if l.startswith('ENTRY_SCENE=')]
+    errs = script_error_lines(out)
     check('release_enters_title', entries == [TITLE], ','.join(entries) or '没有 ENTRY_SCENE')
     check('release_exit_clean', rc == 0, f'退出码 {rc}')
+    check('release_no_script_errors', not errs, f'脚本错误 {len(errs)} 条（首条：{errs[0][:120]}）' if errs else '0 条')
     check_save_seal_output(out, check, require_seal, allow_unsealed)
     key = baseline_key(platform)
     note = compare_baseline(key, secs, load_baseline())
@@ -380,7 +429,7 @@ def run_keys(work: Path, exe: Path, check, runs=KEY_RUNS) -> int:
     for name, seq, want in runs:
         home = Path(tempfile.mkdtemp(prefix='xiyou_keys_home_'))
         try:
-            p = subprocess.run([*RUN_PREFIX, str(exe), '--headless', '--quit-after', '6000', '--', f'--smoke-keys={seq}'],
+            p = subprocess.run([*RUN_PREFIX, str(exe), '--headless', '--audio-driver', 'Dummy', '--quit-after', '6000', '--', f'--smoke-keys={seq}'],
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace',
                                timeout=300, env=dict(os.environ, HOME=str(home)), cwd=str(home))
             out, rc = p.stdout, p.returncode
@@ -391,11 +440,14 @@ def run_keys(work: Path, exe: Path, check, runs=KEY_RUNS) -> int:
         (work / f'按键_{name}.log').write_text(out, encoding='utf-8')
         done = [l.split('scene=', 1)[1].strip() for l in out.splitlines() if l.startswith('SMOKE_DONE scene=')]
         steps = sum(1 for l in out.splitlines() if l.startswith('SMOKE_KEY='))
+        errs = script_error_lines(out)
         note = f'退出码 {rc}，按完 {steps}/{len(seq.split(","))} 步' + (f'，最后在 {done[0]}' if done else '，没有 SMOKE_DONE')
         if rc < 0 or rc > 128:
             crashed = True
             note += '（被信号结束，多半是闪退）'
-        ok = rc == 0 and bool(done) and (want is None or done[0] == want)
+        if errs:
+            note += f'，脚本错误 {len(errs)} 条（首条：{errs[0][:120]}）'
+        ok = rc == 0 and bool(done) and (want is None or done[0] == want) and not errs
         check('keys_' + name, ok, note)
     # 崩溃报告由系统 ReportCrash 事后写，闪退后要过几秒到十几秒才出现：有进程被信号结束时最多等 CRASH_WAIT 秒
     deadline = time.time() + (CRASH_WAIT if crashed else 3)
@@ -531,8 +583,12 @@ def main() -> int:
             pkg = Path(a.zip).resolve()
         else:
             pkg = work / 'release.zip'
-            p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', PRESET, str(pkg)],
-                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=900)
+            env, err = export_env()
+            if env is None:
+                print(err)
+                return 2
+            p = subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(PROJECT), '--export-release', PRESET, str(pkg)],
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=900, env=env)
             (work / '导出.log').write_text(p.stdout, encoding='utf-8')
             if p.returncode != 0 or not pkg.is_file():
                 print(p.stdout[-3000:])

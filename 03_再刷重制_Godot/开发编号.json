@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.883",
-  "sequence": 883,
-  "next": "dev.884",
-  "nextSequence": 884,
+  "current": "dev.893",
+  "sequence": 893,
+  "next": "dev.894",
+  "nextSequence": 894,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "xiyou-xufeng-rework-1",
+  "currentChange": "T444",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }

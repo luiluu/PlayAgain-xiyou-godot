@@ -66,11 +66,23 @@ class GuardianPhase4Rules(unittest.TestCase):
         self.assertTrue(chk.guardian_phase4_rules({'dot_pct': {'35': {'177': 15}}}))   # 层号越界
         self.assertTrue(chk.guardian_phase4_rules({'dot_pct': {'22': {'x': 15}}}))
         self.assertTrue(chk.guardian_phase4_rules({'dot_pct': {'22': {}}}))
+        self.assertTrue(chk.guardian_phase4_rules({'dot_pct': []}))   # T402 P2-1：非字典不崩（报错串 %% 转义）
+        self.assertTrue(chk.guardian_phase4_rules({'dot_pct': 'bad'}))
 
     def test_bad_tables(self):
         self.assertTrue(chk.guardian_phase4_rules({'hp_base': {'35': 1}}))
         self.assertTrue(chk.guardian_phase4_rules({'atk_scale': {'5': 0}}))
         self.assertTrue(chk.guardian_phase4_rules({'oops': {}}))
+
+    def test_boss_neg_hrg_cap_rules(self):
+        base = {'combat_rules': {'base_damage': 0.13, 'boss_hp_temp_unit': {'crit': 100, 'no_crit': 100}}}
+        self.assertEqual(chk.combat_rules_phase4_rules(base), [])
+        self.assertEqual(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], boss_neg_hrg_cap_pct=5)}), [])
+        for bad_v in (0, -5, 101, 5.5, True, '5', []):
+            self.assertTrue(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], boss_neg_hrg_cap_pct=bad_v)}), repr(bad_v))
+        self.assertEqual(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], boss_neg_hrg_cap_extdot_states=[243])}), [])
+        for bad_v in (243, [0], [-1], [True], ['243'], [2.5]):
+            self.assertTrue(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], boss_neg_hrg_cap_extdot_states=bad_v)}), repr(bad_v))
 
 
 class RealTables(unittest.TestCase):

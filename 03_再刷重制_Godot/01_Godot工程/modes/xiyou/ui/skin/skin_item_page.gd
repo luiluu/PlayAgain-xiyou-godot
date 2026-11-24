@@ -306,7 +306,9 @@ static func card_data(rec: Dictionary) -> Dictionary:
 		if int(ef.get("code", 0)) == 43:
 			var sk := XDB.rec("Skills", int(ef.get("dataId", 0)))
 			if not sk.is_empty():
-				d.sections.append({"title": "「%s」" % str(sk.get("name", "")), "rows": XSkinTemplatePage.help_rows(XHelpCard.content(sk, "skill", false, 300.0))})
+				var snm := str(sk.get("name", ""))
+				var title_s := snm if snm.begins_with("《") else ("「%s」" % snm)
+				d.sections.append({"title": title_s, "rows": XSkinTemplatePage.help_rows(XHelpCard.content(sk, "skill", false, 300.0))})
 	XTianqiSkinShow.dress_card(rec, d)   # 天启篇号卷（3A，#82）：效果、代价、获得、限制
 	return d
 
@@ -349,8 +351,9 @@ static func effect_lines(rec: Dictionary) -> Array:
 					out.append("解除「%s」" % st2.name)
 			43:
 				var sk := XDB.rec("Skills", int(e.get("dataId", 0)))
-				if str(sk.get("name", "")) != "":
-					out.append("学会技能「%s」" % sk.name)
+				var snm := str(sk.get("name", ""))
+				if snm != "":
+					out.append("学会技能%s" % (snm if snm.begins_with("《") else ("「%s」" % snm)))
 	return out
 
 

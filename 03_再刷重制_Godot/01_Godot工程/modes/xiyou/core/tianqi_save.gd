@@ -44,13 +44,14 @@ const SECTIONS := {
 	"fetters": {"v": 1, "owner": "XTianqiSect", "array": true},  # 教派包乙小小鱼破枷锁：发过的重数
 	"sect_xin": {"v": 1, "owner": "XTianqiSect"},  # 教派包辛：31～33 层首杀（kills）、19／25／27 层升华（sublimed），键是层号
 	"brand": {"v": 1, "owner": "XTianqiBrand"},  # 烙印首胜表 firsts（稿里叫 brand_firsts）：战斗键 → 打赢时的最高档位（T117）
+	"secrets": {"v": 1, "owner": "XTianqiSecrets"},  # 秘籍格已封列表与老存档免费自选（T446 / T013-1b，D274②）
 }
 ## 已接进门面（section／after_load 管迁移）的分区（no_diff_passive 是 vkey 标记，由 sync_difficulty_after_load 在能力刷新前跑）
 const WIRED := [
 	"war", "famine", "plague", "death",
 	"famine_prologue", "summit", "weak_clear", "rewards",
 	"qiyin", "drop", "elements", "money", "trumpet", "skill_grow",
-	"gojo", "sect_bing", "fetters", "sect_xin", "brand",
+	"gojo", "sect_bing", "fetters", "sect_xin", "brand", "secrets",
 ]
 ## 根上的散键（开局写一次或单值）：rules 规则版本、difficulty、lineup、line、draws／offer 抽角色、reincarnate、
 ## join_gifts 入队赠品已给过的角色号（XTianqi.on_join，T398；老档缺当空）
@@ -184,6 +185,7 @@ static func after_load(s: XState) -> void:
 	_migrate(s)
 	XTianqiRandom.after_load(s)
 	XTianqiGear.sync_element_fabaos(s)
+	XTianqiSecrets.migrate_after_load(s)
 	_raven_clamp(s)
 
 
@@ -224,6 +226,8 @@ static func _fill(s: XState, name: String, d, made: bool) -> void:
 			XTianqiElements.fill(s, d, made)
 		"trumpet":
 			XTianqiTrumpet.fill(d)
+		"secrets":
+			XTianqiSecrets.fill(d)
 
 
 ## 复制装备时去掉 copy＝false 的键（复制品另拿随机身份）

@@ -1,0 +1,4100 @@
+{
+ "version": 1,
+ "dev": "dev.893",
+ "_note": "天启篇通用书第一批重标表（T444 / T013-1d）：教派包丁二（54 技能：止戈/天怒、深渊六式 24 原技能并 18 口径、五条传承 21 技能、三本极尽升华被动）＋EV054 内 4 本主动书＋全量 147 本（含 6501 共 148 技能）抽奖与秘境被动＋26 个配套状态。遵循技能重构 v0.2（书上主动 ≤ 0.8 倍）、养成线 v0.3 §3.9、D274（秘籍格 +5%～+15%、抽奖被动上限不改压单本）与附则 E（整数/整数百分比、避 4）。独立于 skill_rework.json 与 T443 功法 50 本，零重叠。",
+ "rules": {
+  "module": "tianqi_general_book",
+  "active_cap_ratio": 0.8,
+  "secret_slot_pct_range": [
+   5,
+   15
+  ],
+  "lottery_caps": {
+   "harm_pct": 5,
+   "elem_pct": 6,
+   "crit_dmg_pct": 12,
+   "crit_rate_pct": 8,
+   "param_pct": 6,
+   "drop_pct": 10,
+   "gold_pct": 10,
+   "consume_reduce_pct": 15,
+   "ext_tp": 30,
+   "skill_pass_pct": 10
+  },
+  "forbidden_tags": [
+   "passiveAPLUS",
+   "AgainUseAll",
+   "AgainUseMf",
+   "AgainUseZj",
+   "DepassiveHarmRe",
+   "passiveHarmRe",
+   "passiveWPNM",
+   "passivePBSTEX",
+   "StartPushState1245",
+   "StartPushState1246",
+   "StartPushState1247",
+   "StartPushState1248",
+   "StartPushState1645"
+  ]
+ },
+ "groups": {
+  "sect_ding2": [
+   2826,
+   2827,
+   2828,
+   2829,
+   2830,
+   6185,
+   6186,
+   6187,
+   6188,
+   6189,
+   6190,
+   6191,
+   6192,
+   6193,
+   6194,
+   6195,
+   6196,
+   6197,
+   6198,
+   6199,
+   6200,
+   6201,
+   6202,
+   6203,
+   6204,
+   6206,
+   6207,
+   6208,
+   6209,
+   6210,
+   6211,
+   6217,
+   6218,
+   6219,
+   6220,
+   6221,
+   6222,
+   6223,
+   6224,
+   6225,
+   6226,
+   6227,
+   6228,
+   6229,
+   6230,
+   6231,
+   6232,
+   6233,
+   6234,
+   6236,
+   6237,
+   6239
+  ],
+  "ev054_actives": [
+   7163,
+   7164,
+   7165,
+   7188
+  ],
+  "lottery_passives": [
+   6301,
+   6302,
+   6303,
+   6304,
+   6305,
+   6306,
+   6307,
+   6308,
+   6309,
+   6310,
+   6311,
+   6312,
+   6313,
+   6314,
+   6315,
+   6316,
+   6317,
+   6318,
+   6319,
+   6320,
+   6321,
+   6322,
+   6323,
+   6324,
+   6325,
+   6326,
+   6327,
+   6328,
+   6329,
+   6330,
+   6331,
+   6332,
+   6333,
+   6334,
+   6335,
+   6336,
+   6501,
+   6502,
+   6503,
+   6504,
+   6505,
+   6506,
+   6508,
+   6509,
+   6510,
+   6511,
+   6512,
+   6513,
+   6514,
+   6515,
+   6516,
+   6517,
+   6518,
+   6519,
+   6520,
+   6521,
+   6522,
+   6523,
+   6524,
+   6526,
+   6527,
+   6528,
+   6529,
+   6530,
+   6551,
+   6552,
+   6553,
+   6554,
+   6555,
+   6556,
+   6557,
+   6558,
+   6559,
+   6560,
+   6561,
+   6562,
+   6563,
+   6564,
+   6565,
+   6566,
+   6567,
+   6568,
+   6569,
+   6570,
+   6571,
+   6572,
+   6573,
+   6574,
+   6577,
+   6601,
+   6602,
+   6603,
+   6604,
+   6605,
+   6606,
+   6607,
+   6608,
+   6610,
+   6611,
+   6612,
+   6613,
+   6614,
+   6615,
+   6616,
+   6617,
+   6618,
+   6619,
+   6621,
+   6622,
+   6623,
+   6625,
+   6651,
+   6652,
+   6653,
+   6654,
+   6655,
+   6656,
+   6657,
+   6658,
+   6659,
+   6660,
+   6661,
+   6662,
+   6663,
+   6664,
+   6665,
+   6666,
+   6667,
+   6668,
+   6669,
+   6670,
+   6671,
+   6672,
+   6673,
+   6674,
+   6675,
+   10425,
+   10426,
+   10427,
+   10428,
+   10429,
+   10430,
+   10431,
+   10432,
+   10433,
+   10434,
+   10435,
+   10436
+  ]
+ },
+ "skills": {
+  "2826": {
+   "name": "斩天拔剑术",
+   "group": "sect_ding2",
+   "tp": 50,
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 0.35
+   },
+   "element": 1,
+   "desc": [
+    "效果：六段物理单体伤害（限剑或太刀）；学会「天魔星」后追加一次「斩天拔剑术·再释放」",
+    "伤害：每段 物理攻击×35%"
+   ],
+   "_note": "五条传承·斩天拔剑术：6 段×35%=2.10（+2830 7 段=2.45；+2829 联放 2827 满配 4.55 ≤ 4.8）"
+  },
+  "2827": {
+   "name": "斩天拔剑术·再释放",
+   "group": "sect_ding2",
+   "tp": 0,
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 0.3
+   },
+   "element": 1,
+   "desc": [
+    "效果：六段物理单体伤害（由天魔星触发，限剑或太刀）",
+    "伤害：每段 物理攻击×30%"
+   ],
+   "_note": "五条传承·斩天拔剑术追加段：6 段×30%=1.80（+2830 7 段=2.10）"
+  },
+  "2828": {
+   "name": "剑魔",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：战技消耗 −10%"
+   ],
+   "note_remove": [
+    "ConsumeReduceZj"
+   ],
+   "note_add": "<ConsumeReduceZj: 10%>",
+   "_note": "五条传承·剑魔：原 -50% 压至 -10%，防与天魔星叠加零消耗"
+  },
+  "2829": {
+   "name": "天魔星",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：释放斩天拔剑术后追加一次「斩天拔剑术·再释放」",
+    "效果：战技消耗 −15%"
+   ],
+   "note_remove": [
+    "ConsumeReduceZj"
+   ],
+   "note_add": "<ConsumeReduceZj: 15%>",
+   "_note": "五条传承·天魔星：原 -50% 压至 -15%，与剑魔合计 -25%"
+  },
+  "2830": {
+   "name": "六道轮回术",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：斩天拔剑术额外增加一段群体伤害"
+   ],
+   "_note": "五条传承·六道轮回术"
+  },
+  "6185": {
+   "name": "止戈",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：造成伤害时为敌方施加「止戈」（持续 3 回合：双攻 −10%、暴击率 −15%）"
+   ],
+   "_note": "丁二：保留 PushState1004，状态 1004 双攻 −1000 固定值改 −10% 百分比、暴击率 −50% 压至 −15%"
+  },
+  "6186": {
+   "name": "最终盛宴",
+   "group": "sect_ding2",
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 0.5
+   },
+   "element": 1,
+   "seq": [
+    {
+     "op": "drop_if",
+     "match": "6193"
+    }
+   ],
+   "desc": [
+    "效果：六段物理单体伤害（吸取 10% 生命）；学会「冷血追命」后追加两段群体伤害",
+    "伤害：每段 物理攻击×50%"
+   ],
+   "_note": "丁二深渊六式主动：6 段×50%=3.0（带单号强化 8 段=4.0 ≤ 爆发 0.8 倍上限 4.8）；drop_if 删旧双号 6193 额外段",
+   "tp": 50
+  },
+  "6187": {
+   "name": "恶魔之眼",
+   "group": "sect_ding2",
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 0.5
+   },
+   "element": 9,
+   "seq": [
+    {
+     "op": "drop_if",
+     "match": "6195"
+    }
+   ],
+   "desc": [
+    "效果：六段黑暗单体伤害；学会「直死魔眼」后追加两段群体伤害",
+    "伤害：每段 魔法攻击×50%"
+   ],
+   "_note": "丁二深渊六式主动：6 段×50%=3.0（带单号强化 8 段=4.0 ≤ 爆发 0.8 倍上限 4.8）；drop_if 删旧双号 6195 额外段",
+   "mp_pct": 10,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   }
+  },
+  "6188": {
+   "name": "饕餮魔功",
+   "group": "sect_ding2",
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 0.5
+   },
+   "element": 9,
+   "seq": [
+    {
+     "op": "drop_if",
+     "match": "6197"
+    }
+   ],
+   "desc": [
+    "效果：六段黑暗单体伤害，施加「附骨之疽」（3 回合：每回合损失 5% 最大生命、暴击率 −10%）；学会「暴戾恣睢」后追加两段群体伤害",
+    "伤害：每段 魔法攻击×50%"
+   ],
+   "_note": "丁二深渊六式主动：6 段×50%=3.0（带单号强化 8 段=4.0 ≤ 爆发 0.8 倍上限 4.8）；drop_if 删旧双号 6197 额外段",
+   "mp_pct": 10,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   }
+  },
+  "6189": {
+   "name": "地爆天星",
+   "group": "sect_ding2",
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 0.5
+   },
+   "element": 4,
+   "seq": [
+    {
+     "op": "drop_if",
+     "match": "6199"
+    }
+   ],
+   "desc": [
+    "效果：四段大地单体加两段全体伤害；学会「死生轮转」后追加两段单体伤害",
+    "伤害：每段 魔法攻击×50%"
+   ],
+   "_note": "丁二深渊六式主动：6 段×50%=3.0（带单号强化 8 段=4.0 ≤ 爆发 0.8 倍上限 4.8）；drop_if 删旧双号 6199 额外段",
+   "mp_pct": 10,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   }
+  },
+  "6190": {
+   "name": "深渊崩裂",
+   "group": "sect_ding2",
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 0.5
+   },
+   "element": 1,
+   "seq": [
+    {
+     "op": "drop_if",
+     "match": "6201"
+    }
+   ],
+   "desc": [
+    "效果：六段物理单体伤害；学会「天极影杀」后追加两段单体伤害",
+    "伤害：每段 物理攻击×50%"
+   ],
+   "_note": "丁二深渊六式主动：6 段×50%=3.0（带单号强化 8 段=4.0 ≤ 爆发 0.8 倍上限 4.8）；drop_if 删旧双号 6201 额外段",
+   "tp": 50
+  },
+  "6191": {
+   "name": "毁灭水弹",
+   "group": "sect_ding2",
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 0.5
+   },
+   "element": 14,
+   "seq": [
+    {
+     "op": "drop_if",
+     "match": "6203"
+    }
+   ],
+   "desc": [
+    "效果：六段水系单体伤害；学会「涌泉之恨」后追加两段单体伤害",
+    "伤害：每段 魔法攻击×50%"
+   ],
+   "_note": "丁二深渊六式主动：6 段×50%=3.0（带单号强化 8 段=4.0 ≤ 爆发 0.8 倍上限 4.8）；drop_if 删旧双号 6203 额外段",
+   "mp_pct": 10,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   }
+  },
+  "6192": {
+   "name": "冷血追命",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：最终盛宴额外增加两段群体伤害，最终盛宴伤害 +15%",
+    "效果：物理伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveELUP01",
+    "SkillPass6186"
+   ],
+   "note_add": "<passiveELUP01:10%><SkillPass6186:15%>",
+   "_note": "丁二深渊六式强化载体（单号）：占 1 秘籍格，单本按 D274 5%～15% 口径重标"
+  },
+  "6193": {
+   "name": "吞食天地",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：最终盛宴伤害 +15%（已合并至对应主强化书）",
+    "效果：物理伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveELUP01",
+    "SkillPass6186"
+   ],
+   "note_add": "<passiveELUP01:10%><SkillPass6186:15%>",
+   "_note": "丁二深渊六式旧双号：已并入单号，重标防旧档或丁一合入前裸奔 +350%/+100%"
+  },
+  "6194": {
+   "name": "直死魔眼",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：恶魔之眼额外增加两段群体伤害，恶魔之眼伤害 +15%",
+    "效果：黑暗伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveELUP09",
+    "SkillPass6187"
+   ],
+   "note_add": "<passiveELUP09:10%><SkillPass6187:15%>",
+   "_note": "丁二深渊六式强化载体（单号）：占 1 秘籍格，单本按 D274 5%～15% 口径重标"
+  },
+  "6195": {
+   "name": "极恶凝视",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：恶魔之眼伤害 +15%（已合并至对应主强化书）",
+    "效果：黑暗伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveELUP09",
+    "SkillPass6187"
+   ],
+   "note_add": "<passiveELUP09:10%><SkillPass6187:15%>",
+   "_note": "丁二深渊六式旧双号：已并入单号，重标防旧档或丁一合入前裸奔 +350%/+100%"
+  },
+  "6196": {
+   "name": "暴戾恣睢",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：饕餮魔功额外增加两段群体伤害，饕餮魔功伤害 +15%",
+    "效果：黑暗伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveELUP09",
+    "SkillPass6188"
+   ],
+   "note_add": "<passiveELUP09:10%><SkillPass6188:15%>",
+   "_note": "丁二深渊六式强化载体（单号）：占 1 秘籍格，单本按 D274 5%～15% 口径重标"
+  },
+  "6197": {
+   "name": "邪咒魔冲",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：饕餮魔功伤害 +15%（已合并至对应主强化书）",
+    "效果：黑暗伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveELUP09",
+    "SkillPass6188"
+   ],
+   "note_add": "<passiveELUP09:10%><SkillPass6188:15%>",
+   "_note": "丁二深渊六式旧双号：已并入单号，重标防旧档或丁一合入前裸奔 +350%/+100%"
+  },
+  "6198": {
+   "name": "死生轮转",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：地爆天星额外增加两段单体伤害，地爆天星伤害 +15%",
+    "效果：大地伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveELUP04",
+    "SkillPass6189"
+   ],
+   "note_add": "<passiveELUP04:10%><SkillPass6189:15%>",
+   "_note": "丁二深渊六式强化载体（单号）：占 1 秘籍格，单本按 D274 5%～15% 口径重标"
+  },
+  "6199": {
+   "name": "六道合一",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：地爆天星伤害 +15%（已合并至对应主强化书）",
+    "效果：大地伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveELUP04",
+    "SkillPass6189"
+   ],
+   "note_add": "<passiveELUP04:10%><SkillPass6189:15%>",
+   "_note": "丁二深渊六式旧双号：已并入单号，重标防旧档或丁一合入前裸奔 +350%/+100%"
+  },
+  "6200": {
+   "name": "天极影杀",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：深渊崩裂额外增加两段单体伤害，深渊崩裂伤害 +15%",
+    "效果：物理伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveELUP01",
+    "SkillPass6190"
+   ],
+   "note_add": "<passiveELUP01:10%><SkillPass6190:15%>",
+   "_note": "丁二深渊六式强化载体（单号）：占 1 秘籍格，单本按 D274 5%～15% 口径重标"
+  },
+  "6201": {
+   "name": "弑魂夺魄",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：深渊崩裂伤害 +15%（已合并至对应主强化书）",
+    "效果：物理伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveELUP01",
+    "SkillPass6190"
+   ],
+   "note_add": "<passiveELUP01:10%><SkillPass6190:15%>",
+   "_note": "丁二深渊六式旧双号：已并入单号，重标防旧档或丁一合入前裸奔 +350%/+100%"
+  },
+  "6202": {
+   "name": "涌泉之恨",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：毁灭水弹额外增加两段单体伤害，毁灭水弹伤害 +15%",
+    "效果：水系伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveELUP03",
+    "SkillPass6191"
+   ],
+   "note_add": "<passiveELUP14:10%><SkillPass6191:15%>",
+   "_note": "丁二深渊六式强化载体（单号）：占 1 秘籍格，单本按 D274 5%～15% 口径重标"
+  },
+  "6203": {
+   "name": "怒涛终章",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：毁灭水弹伤害 +15%（已合并至对应主强化书）",
+    "效果：水系伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveELUP03",
+    "SkillPass6191"
+   ],
+   "note_add": "<passiveELUP14:10%><SkillPass6191:15%>",
+   "_note": "丁二深渊六式旧双号：已并入单号，重标防旧档或丁一合入前裸奔 +350%/+100%"
+  },
+  "6204": {
+   "name": "天怒",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：造成伤害时为自身施加「天怒」（持续 3 回合：双攻与双防 +8%）"
+   ],
+   "_note": "丁二：保留 PushsubState1007，状态 1007 双攻双防 ×115% 压至 +8%"
+  },
+  "6206": {
+   "name": "怨毒恶齿",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：最终盛宴为目标施加「怨毒恶齿」（持续 3 回合：双攻 −10%、暴击率 −15%、闪避率 −10%）"
+   ],
+   "_note": "丁二：去固定双攻 -750 与 -50% 暴击"
+  },
+  "6207": {
+   "name": "巡天之目",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：恶魔之眼为全体友方施加「巡天之目」（持续 3 回合：双攻与双防 +5%、敏捷 +8%）"
+   ],
+   "_note": "丁二：去固定敏捷 +500"
+  },
+  "6208": {
+   "name": "附骨之疽",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：饕餮魔功为目标施加「附骨之疽·极恶」（持续 3 回合：每回合损失 5% 最大生命、生命回复率 −20%）"
+   ],
+   "_note": "丁二：持续扣血由 8% 压至标准 5%"
+  },
+  "6209": {
+   "name": "重岩壁垒",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：地爆天星为全体友方施加「重岩壁垒」（持续 3 回合：承受物理与魔法伤害 −10%）"
+   ],
+   "_note": "丁二：重岩壁垒去固定减伤 8000，改百分比承伤 −10%"
+  },
+  "6210": {
+   "name": "黯灭幻影",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：深渊崩裂为全体友方施加「黯灭幻影」（持续 3 回合：暴击率 +10%、敏捷 +10%）"
+   ],
+   "note_remove": [
+    "AgainUseAll"
+   ],
+   "_note": "丁二：黯灭幻影彻底移除再动 +35%（状态 1013）与再释放 +35%（技能 6210）"
+  },
+  "6211": {
+   "name": "溺亡之水",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：毁灭水弹为目标施加「溺亡之水」（持续 3 回合：受到的水系伤害 +15%）"
+   ],
+   "_note": "丁二：对齐 6191 水系（元素 14），增幅由 20% 压至 15%"
+  },
+  "6217": {
+   "name": "无畏之愿",
+   "group": "sect_ding2",
+   "tp": 50,
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 0.35
+   },
+   "element": 1,
+   "desc": [
+    "效果：五段物理单体伤害（随强者之心 I／II／III 依次增至六／八／十一段）",
+    "伤害：每段 物理攻击×35%"
+   ],
+   "_note": "五条传承·无畏之愿：5→6→8→11 段 × 35% = 1.75→2.10→2.80→3.85（≤ 爆发 0.8 倍上限 4.8）"
+  },
+  "6218": {
+   "name": "强者之心I",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：无畏之愿额外增加一段伤害"
+   ],
+   "_note": "五条传承·强者之心 I"
+  },
+  "6219": {
+   "name": "强者之心II",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：无畏之愿额外增加两段伤害"
+   ],
+   "_note": "五条传承·强者之心 II"
+  },
+  "6220": {
+   "name": "强者之心III",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：无畏之愿额外增加三段伤害"
+   ],
+   "_note": "五条传承·强者之心 III"
+  },
+  "6221": {
+   "name": "瞬影一绝斩",
+   "group": "sect_ding2",
+   "tp": 20,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   },
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2,
+    "conds": [
+     {
+      "if": "self_tp",
+      "per": 0.002,
+      "cap": 0.2
+     }
+    ]
+   },
+   "element": 1,
+   "desc": [
+    "效果：一段物理单体伤害；每拥有 10 点 TP 伤害 +2%（最多 +20%）",
+    "伤害：物理攻击×2"
+   ],
+   "_note": "五条传承·瞬影斩：去 6*atk*tp 爆炸连乘，保留 TP 增幅与物防加成，四阶平滑 2.0→2.5→3.3→3.96（满 TP 4.75 ≤ 4.8）"
+  },
+  "6222": {
+   "name": "瞬影二绝斩",
+   "group": "sect_ding2",
+   "tp": 20,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   },
+   "damage": {
+    "stats": {
+     "atk": 1,
+     "def": 0.25
+    },
+    "coef": 1,
+    "conds": [
+     {
+      "if": "self_tp",
+      "per": 0.002,
+      "cap": 0.2
+     }
+    ]
+   },
+   "element": 1,
+   "desc": [
+    "效果：两段物理单体伤害；每拥有 10 点 TP 伤害 +2%（最多 +20%）",
+    "伤害：每段 物理攻击×1＋物理防御×25%"
+   ],
+   "_note": "五条传承·瞬影斩：去 6*atk*tp 爆炸连乘，保留 TP 增幅与物防加成，四阶平滑 2.0→2.5→3.3→3.96（满 TP 4.75 ≤ 4.8）"
+  },
+  "6223": {
+   "name": "瞬影三绝斩",
+   "group": "sect_ding2",
+   "tp": 20,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   },
+   "damage": {
+    "stats": {
+     "atk": 1,
+     "def": 0.1
+    },
+    "coef": 1,
+    "conds": [
+     {
+      "if": "self_tp",
+      "per": 0.002,
+      "cap": 0.2
+     }
+    ]
+   },
+   "element": 1,
+   "desc": [
+    "效果：三段物理单体伤害；每拥有 10 点 TP 伤害 +2%（最多 +20%）",
+    "伤害：每段 物理攻击×1＋物理防御×10%"
+   ],
+   "_note": "五条传承·瞬影斩：去 6*atk*tp 爆炸连乘，保留 TP 增幅与物防加成，四阶平滑 2.0→2.5→3.3→3.96（满 TP 4.75 ≤ 4.8）"
+  },
+  "6224": {
+   "name": "瞬影四绝斩",
+   "group": "sect_ding2",
+   "tp": 20,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   },
+   "damage": {
+    "stats": {
+     "atk": 1,
+     "def": 0.1
+    },
+    "coef": 0.9,
+    "conds": [
+     {
+      "if": "self_tp",
+      "per": 0.002,
+      "cap": 0.2
+     }
+    ]
+   },
+   "element": 1,
+   "desc": [
+    "效果：三段物理单体加一段全体伤害；每拥有 10 点 TP 伤害 +2%（最多 +20%）",
+    "伤害：每段 (物理攻击×1＋物理防御×10%)×90%"
+   ],
+   "_note": "五条传承·瞬影斩：去 6*atk*tp 爆炸连乘，保留 TP 增幅与物防加成，四阶平滑 2.0→2.5→3.3→3.96（满 TP 4.75 ≤ 4.8）"
+  },
+  "6225": {
+   "name": "神龙炎弹",
+   "group": "sect_ding2",
+   "mp_pct": 10,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   },
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 1
+   },
+   "element": 2,
+   "variance": 30,
+   "desc": [
+    "效果：一段火焰单体加一段全体伤害（波动幅度 ±30%）",
+    "伤害：每段 魔法攻击×1"
+   ],
+   "_note": "五条传承·神龙炎弹：去 5～250 倍随机乘法，四阶平滑 2.0→2.5→3.0→4.0（≤ 爆发 4.8）"
+  },
+  "6226": {
+   "name": "神龙炎弹",
+   "group": "sect_ding2",
+   "mp_pct": 10,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   },
+   "damage": {
+    "stats": {
+     "mat": 1,
+     "luk": 0.25
+    },
+    "coef": 1
+   },
+   "element": 2,
+   "variance": 30,
+   "desc": [
+    "效果：一段火焰单体加一段全体伤害（波动幅度 ±30%）",
+    "伤害：每段 魔法攻击×1＋幸运×25%"
+   ],
+   "_note": "五条传承·神龙炎弹：去 5～250 倍随机乘法，四阶平滑 2.0→2.5→3.0→4.0（≤ 爆发 4.8）"
+  },
+  "6227": {
+   "name": "神龙炎弹",
+   "group": "sect_ding2",
+   "mp_pct": 10,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   },
+   "damage": {
+    "stats": {
+     "mat": 1,
+     "luk": 0.5
+    },
+    "coef": 1
+   },
+   "element": 2,
+   "variance": 35,
+   "desc": [
+    "效果：一段火焰单体加一段全体伤害（波动幅度 ±35%）",
+    "伤害：每段 魔法攻击×1＋幸运×50%"
+   ],
+   "_note": "五条传承·神龙炎弹：去 5～250 倍随机乘法，四阶平滑 2.0→2.5→3.0→4.0（≤ 爆发 4.8）"
+  },
+  "6228": {
+   "name": "神龙炎弹",
+   "group": "sect_ding2",
+   "mp_pct": 10,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   },
+   "damage": {
+    "stats": {
+     "mat": 2
+    },
+    "coef": 1
+   },
+   "element": 2,
+   "variance": 35,
+   "desc": [
+    "效果：一段火焰单体加一段全体伤害（波动幅度 ±35%）",
+    "伤害：每段 魔法攻击×2"
+   ],
+   "_note": "五条传承·神龙炎弹：去 5～250 倍随机乘法，四阶平滑 2.0→2.5→3.0→4.0（≤ 爆发 4.8）"
+  },
+  "6229": {
+   "name": "冥花葬",
+   "group": "sect_ding2",
+   "tp": 50,
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 0.35
+   },
+   "element": 9,
+   "desc": [
+    "效果：六段黑暗单体伤害；学会「乱花冢／彼岸怨」后自动追加一次连锁斩击",
+    "伤害：每段 魔法攻击×35%"
+   ],
+   "_note": "五条传承·冥花葬：6 段×35%=2.10（+彼岸 1.80 = 3.90，配伤轮回 +15% = 4.485 ≤ 4.8）"
+  },
+  "6230": {
+   "name": "冥花葬*乱心",
+   "group": "sect_ding2",
+   "tp": 0,
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 0.25
+   },
+   "element": 9,
+   "desc": [
+    "效果：六段黑暗单体伤害（由乱花冢触发）",
+    "伤害：每段 魔法攻击×25%"
+   ],
+   "_note": "五条传承·冥花葬一阶追加：6 段×25%=1.50"
+  },
+  "6231": {
+   "name": "冥花葬*彼岸",
+   "group": "sect_ding2",
+   "tp": 0,
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 0.3
+   },
+   "element": 9,
+   "desc": [
+    "效果：六段黑暗单体伤害（由彼岸怨触发）",
+    "伤害：每段 魔法攻击×30%"
+   ],
+   "_note": "五条传承·冥花葬二阶追加：6 段×30%=1.80"
+  },
+  "6232": {
+   "name": "乱花冢",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：释放冥花葬后追加一次「冥花葬*乱心」"
+   ],
+   "_note": "五条传承·乱花冢"
+  },
+  "6233": {
+   "name": "彼岸怨",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：释放冥花葬后的追加技升级为「冥花葬*彼岸」"
+   ],
+   "_note": "五条传承·彼岸怨"
+  },
+  "6234": {
+   "name": "伤轮回",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：冥花葬及其追加技伤害 +15%"
+   ],
+   "note_remove": [
+    "SkillPass6229",
+    "SkillPass6230",
+    "SkillPass6231"
+   ],
+   "note_add": "<SkillPass6229: 15%><SkillPass6230: 15%><SkillPass6231: 15%>",
+   "_note": "五条传承·伤轮回：原 +50% 压至 +15%"
+  },
+  "6236": {
+   "name": "永恒之火·极尽升华",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：造成伤害时为敌方施加灼伤 I～VI",
+    "效果：暴击伤害 +15%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:15>",
+   "_note": "丁二极尽升华：保留灼伤 I~VI，爆伤 +30% 压至 +15%（符合 D274 5%～15%）"
+  },
+  "6237": {
+   "name": "天宫之寒·极尽升华",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：造成伤害时为敌方施加冰冷 I～VI、极度冰冷与冰封血脉 I～II",
+    "效果：暴击伤害 +15%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:15>",
+   "_note": "丁二极尽升华：保留冰冷异常，爆伤 +30% 压至 +15%"
+  },
+  "6239": {
+   "name": "镇渊之岩·极尽升华",
+   "group": "sect_ding2",
+   "desc": [
+    "效果：造成伤害时为敌方施加碎甲 I～VI、石化之土与大地崩坏",
+    "效果：暴击伤害 +15%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:15>",
+   "_note": "丁二极尽升华：保留碎甲/石化异常，爆伤 +30% 压至 +15%"
+  },
+  "6301": {
+   "name": "秘境抽奖·物品爆率·Lv1",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物品掉落率 +2%"
+   ],
+   "note_remove": [
+    "passiveIRUP"
+   ],
+   "note_add": "<passiveIRUP:2>",
+   "_note": "秘境抽奖·物品爆率：进掉落统一递减池，单件 ≤10%"
+  },
+  "6302": {
+   "name": "秘境抽奖·物品爆率·Lv2",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物品掉落率 +3%"
+   ],
+   "note_remove": [
+    "passiveIRUP"
+   ],
+   "note_add": "<passiveIRUP:3>",
+   "_note": "秘境抽奖·物品爆率：进掉落统一递减池，单件 ≤10%"
+  },
+  "6303": {
+   "name": "秘境抽奖·物品爆率·Lv3",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物品掉落率 +5%"
+   ],
+   "note_remove": [
+    "passiveIRUP"
+   ],
+   "note_add": "<passiveIRUP:5>",
+   "_note": "秘境抽奖·物品爆率：进掉落统一递减池，单件 ≤10%"
+  },
+  "6304": {
+   "name": "秘境抽奖·物品爆率·LvMax",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物品掉落率 +8%"
+   ],
+   "note_remove": [
+    "passiveIRUP"
+   ],
+   "note_add": "<passiveIRUP:8>",
+   "_note": "秘境抽奖·物品爆率：进掉落统一递减池，单件 ≤10%"
+  },
+  "6305": {
+   "name": "秘境抽奖·终伤·Lv1",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +1%"
+   ],
+   "note_remove": [
+    "passiveHarmRi"
+   ],
+   "note_add": "<passiveHarmRi:1>",
+   "_note": "秘境抽奖·终伤：四阶合计 +11%"
+  },
+  "6306": {
+   "name": "秘境抽奖·终伤·Lv2",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +2%"
+   ],
+   "note_remove": [
+    "passiveHarmRi"
+   ],
+   "note_add": "<passiveHarmRi:2>",
+   "_note": "秘境抽奖·终伤：四阶合计 +11%"
+  },
+  "6307": {
+   "name": "秘境抽奖·终伤·Lv3",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +3%"
+   ],
+   "note_remove": [
+    "passiveHarmRi"
+   ],
+   "note_add": "<passiveHarmRi:3>",
+   "_note": "秘境抽奖·终伤：四阶合计 +11%"
+  },
+  "6308": {
+   "name": "秘境抽奖·终伤·LvMax",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +5%"
+   ],
+   "note_remove": [
+    "passiveHarmRi"
+   ],
+   "note_add": "<passiveHarmRi:5>",
+   "_note": "秘境抽奖·终伤：四阶合计 +11%"
+  },
+  "6309": {
+   "name": "秘境抽奖·爆伤·Lv1",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +3%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:3>",
+   "_note": "秘境抽奖·爆伤：四阶合计 +28%"
+  },
+  "6310": {
+   "name": "秘境抽奖·爆伤·Lv2",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +5%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:5>",
+   "_note": "秘境抽奖·爆伤：四阶合计 +28%"
+  },
+  "6311": {
+   "name": "秘境抽奖·爆伤·Lv3",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +8%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:8>",
+   "_note": "秘境抽奖·爆伤：四阶合计 +28%"
+  },
+  "6312": {
+   "name": "秘境抽奖·爆伤·LvMax",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +12%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:12>",
+   "_note": "秘境抽奖·爆伤：四阶合计 +28%"
+  },
+  "6313": {
+   "name": "秘境抽奖·全伤·Lv1",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全系伤害 +1%"
+   ],
+   "note_remove": [
+    "passiveELUP00",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09"
+   ],
+   "note_add": "<passiveELUP01:1%><passiveELUP02:1%><passiveELUP03:1%><passiveELUP04:1%><passiveELUP05:1%><passiveELUP06:1%><passiveELUP07:1%><passiveELUP08:1%><passiveELUP09:1%><passiveELUP14:1%><passiveELUP15:1%>",
+   "_note": "秘境抽奖·全伤：四阶合计 +11%"
+  },
+  "6314": {
+   "name": "秘境抽奖·全伤·Lv2",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全系伤害 +2%"
+   ],
+   "note_remove": [
+    "passiveELUP00",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09"
+   ],
+   "note_add": "<passiveELUP01:2%><passiveELUP02:2%><passiveELUP03:2%><passiveELUP04:2%><passiveELUP05:2%><passiveELUP06:2%><passiveELUP07:2%><passiveELUP08:2%><passiveELUP09:2%><passiveELUP14:2%><passiveELUP15:2%>",
+   "_note": "秘境抽奖·全伤：四阶合计 +11%"
+  },
+  "6315": {
+   "name": "秘境抽奖·全伤·Lv3",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全系伤害 +3%"
+   ],
+   "note_remove": [
+    "passiveELUP00",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09"
+   ],
+   "note_add": "<passiveELUP01:3%><passiveELUP02:3%><passiveELUP03:3%><passiveELUP04:3%><passiveELUP05:3%><passiveELUP06:3%><passiveELUP07:3%><passiveELUP08:3%><passiveELUP09:3%><passiveELUP14:3%><passiveELUP15:3%>",
+   "_note": "秘境抽奖·全伤：四阶合计 +11%"
+  },
+  "6316": {
+   "name": "秘境抽奖·全伤·LvMax",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全系伤害 +5%"
+   ],
+   "note_remove": [
+    "passiveELUP00",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09"
+   ],
+   "note_add": "<passiveELUP01:5%><passiveELUP02:5%><passiveELUP03:5%><passiveELUP04:5%><passiveELUP05:5%><passiveELUP06:5%><passiveELUP07:5%><passiveELUP08:5%><passiveELUP09:5%><passiveELUP14:5%><passiveELUP15:5%>",
+   "_note": "秘境抽奖·全伤：四阶合计 +11%"
+  },
+  "6317": {
+   "name": "秘境抽奖·传承技能伤·Lv1",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：五条传承技能伤害 +2%"
+   ],
+   "note_remove": [
+    "SkillPass2826",
+    "SkillPass2827",
+    "SkillPass6229",
+    "SkillPass6230",
+    "SkillPass6231",
+    "SkillPass6217",
+    "SkillPass6221",
+    "SkillPass6222",
+    "SkillPass6223",
+    "SkillPass6224",
+    "SkillPass6225",
+    "SkillPass6226",
+    "SkillPass6227",
+    "SkillPass6228"
+   ],
+   "note_add": "<SkillPass2826:2%><SkillPass2827:2%><SkillPass6217:2%><SkillPass6221:2%><SkillPass6222:2%><SkillPass6223:2%><SkillPass6224:2%><SkillPass6225:2%><SkillPass6226:2%><SkillPass6227:2%><SkillPass6228:2%><SkillPass6229:2%><SkillPass6230:2%><SkillPass6231:2%>",
+   "_note": "秘境抽奖·传承技能伤：四阶合计 +18%"
+  },
+  "6318": {
+   "name": "秘境抽奖·传承技能伤·Lv2",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：五条传承技能伤害 +3%"
+   ],
+   "note_remove": [
+    "SkillPass2826",
+    "SkillPass2827",
+    "SkillPass6229",
+    "SkillPass6230",
+    "SkillPass6231",
+    "SkillPass6217",
+    "SkillPass6221",
+    "SkillPass6222",
+    "SkillPass6223",
+    "SkillPass6224",
+    "SkillPass6225",
+    "SkillPass6226",
+    "SkillPass6227",
+    "SkillPass6228"
+   ],
+   "note_add": "<SkillPass2826:3%><SkillPass2827:3%><SkillPass6217:3%><SkillPass6221:3%><SkillPass6222:3%><SkillPass6223:3%><SkillPass6224:3%><SkillPass6225:3%><SkillPass6226:3%><SkillPass6227:3%><SkillPass6228:3%><SkillPass6229:3%><SkillPass6230:3%><SkillPass6231:3%>",
+   "_note": "秘境抽奖·传承技能伤：四阶合计 +18%"
+  },
+  "6319": {
+   "name": "秘境抽奖·传承技能伤·Lv3",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：五条传承技能伤害 +5%"
+   ],
+   "note_remove": [
+    "SkillPass2826",
+    "SkillPass2827",
+    "SkillPass6229",
+    "SkillPass6230",
+    "SkillPass6231",
+    "SkillPass6217",
+    "SkillPass6221",
+    "SkillPass6222",
+    "SkillPass6223",
+    "SkillPass6224",
+    "SkillPass6225",
+    "SkillPass6226",
+    "SkillPass6227",
+    "SkillPass6228"
+   ],
+   "note_add": "<SkillPass2826:5%><SkillPass2827:5%><SkillPass6217:5%><SkillPass6221:5%><SkillPass6222:5%><SkillPass6223:5%><SkillPass6224:5%><SkillPass6225:5%><SkillPass6226:5%><SkillPass6227:5%><SkillPass6228:5%><SkillPass6229:5%><SkillPass6230:5%><SkillPass6231:5%>",
+   "_note": "秘境抽奖·传承技能伤：四阶合计 +18%"
+  },
+  "6320": {
+   "name": "秘境抽奖·传承技能伤·LvMax",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：五条传承技能伤害 +8%"
+   ],
+   "note_remove": [
+    "SkillPass2826",
+    "SkillPass2827",
+    "SkillPass6229",
+    "SkillPass6230",
+    "SkillPass6231",
+    "SkillPass6217",
+    "SkillPass6221",
+    "SkillPass6222",
+    "SkillPass6223",
+    "SkillPass6224",
+    "SkillPass6225",
+    "SkillPass6226",
+    "SkillPass6227",
+    "SkillPass6228"
+   ],
+   "note_add": "<SkillPass2826:8%><SkillPass2827:8%><SkillPass6217:8%><SkillPass6221:8%><SkillPass6222:8%><SkillPass6223:8%><SkillPass6224:8%><SkillPass6225:8%><SkillPass6226:8%><SkillPass6227:8%><SkillPass6228:8%><SkillPass6229:8%><SkillPass6230:8%><SkillPass6231:8%>",
+   "_note": "秘境抽奖·传承技能伤：四阶合计 +18%"
+  },
+  "6321": {
+   "name": "秘境抽奖·减爆闪·Lv1",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：开战为全体敌人施加 2 回合暴击闪避 −3%"
+   ],
+   "_note": "秘境抽奖·减爆闪：原 -25/-35/-50/-80% 压至 -3/-5/-8/-12%"
+  },
+  "6322": {
+   "name": "秘境抽奖·减爆闪·Lv2",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：开战为全体敌人施加 2 回合暴击闪避 −5%"
+   ],
+   "_note": "秘境抽奖·减爆闪：原 -25/-35/-50/-80% 压至 -3/-5/-8/-12%"
+  },
+  "6323": {
+   "name": "秘境抽奖·减爆闪·Lv3",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：开战为全体敌人施加 2 回合暴击闪避 −8%"
+   ],
+   "_note": "秘境抽奖·减爆闪：原 -25/-35/-50/-80% 压至 -3/-5/-8/-12%"
+  },
+  "6324": {
+   "name": "秘境抽奖·减爆闪·LvMax",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：开战为全体敌人施加 2 回合暴击闪避 −12%"
+   ],
+   "_note": "秘境抽奖·减爆闪：原 -25/-35/-50/-80% 压至 -3/-5/-8/-12%"
+  },
+  "6325": {
+   "name": "秘境抽奖·结算伤害·Lv1",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +1%"
+   ],
+   "note_remove": [
+    "StartPushState1245"
+   ],
+   "note_add": "<passiveHarmRi:1>",
+   "_note": "T446 P3-1 闭环：去除结算乘法状态 1245~1248，归入终伤池并压至 1/2/3/5%"
+  },
+  "6326": {
+   "name": "秘境抽奖·结算伤害·Lv2",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +2%"
+   ],
+   "note_remove": [
+    "StartPushState1246"
+   ],
+   "note_add": "<passiveHarmRi:2>",
+   "_note": "T446 P3-1 闭环：去除结算乘法状态 1245~1248，归入终伤池并压至 1/2/3/5%"
+  },
+  "6327": {
+   "name": "秘境抽奖·结算伤害·Lv3",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +3%"
+   ],
+   "note_remove": [
+    "StartPushState1247"
+   ],
+   "note_add": "<passiveHarmRi:3>",
+   "_note": "T446 P3-1 闭环：去除结算乘法状态 1245~1248，归入终伤池并压至 1/2/3/5%"
+  },
+  "6328": {
+   "name": "秘境抽奖·结算伤害·LvMax",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +5%"
+   ],
+   "note_remove": [
+    "StartPushState1248"
+   ],
+   "note_add": "<passiveHarmRi:5>",
+   "_note": "T446 P3-1 闭环：去除结算乘法状态 1245~1248，归入终伤池并压至 1/2/3/5%"
+  },
+  "6329": {
+   "name": "秘境抽奖·TP上限·Lv1",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：TP 上限 +5"
+   ],
+   "note_remove": [
+    "passiveEXTTP"
+   ],
+   "note_add": "<passiveEXTTP:5>",
+   "_note": "秘境抽奖·TP 上限：原 50/75/100/150 压至 5/10/15/25"
+  },
+  "6330": {
+   "name": "秘境抽奖·TP上限·Lv2",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：TP 上限 +10"
+   ],
+   "note_remove": [
+    "passiveEXTTP"
+   ],
+   "note_add": "<passiveEXTTP:10>",
+   "_note": "秘境抽奖·TP 上限：原 50/75/100/150 压至 5/10/15/25"
+  },
+  "6331": {
+   "name": "秘境抽奖·TP上限·Lv3",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：TP 上限 +15"
+   ],
+   "note_remove": [
+    "passiveEXTTP"
+   ],
+   "note_add": "<passiveEXTTP:15>",
+   "_note": "秘境抽奖·TP 上限：原 50/75/100/150 压至 5/10/15/25"
+  },
+  "6332": {
+   "name": "秘境抽奖·TP上限·LvMax",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：TP 上限 +25"
+   ],
+   "note_remove": [
+    "passiveEXTTP"
+   ],
+   "note_add": "<passiveEXTTP:25>",
+   "_note": "秘境抽奖·TP 上限：原 50/75/100/150 压至 5/10/15/25"
+  },
+  "6333": {
+   "name": "秘境抽奖·技能消耗降低·Lv1",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全技能消耗 −3%"
+   ],
+   "note_remove": [
+    "ConsumeReduceAll"
+   ],
+   "note_add": "<ConsumeReduceAll: 3%>",
+   "_note": "秘境抽奖·减耗：原 20/30/40/50% 压至 3/5/8/12%"
+  },
+  "6334": {
+   "name": "秘境抽奖·技能消耗降低·Lv2",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全技能消耗 −5%"
+   ],
+   "note_remove": [
+    "ConsumeReduceAll"
+   ],
+   "note_add": "<ConsumeReduceAll: 5%>",
+   "_note": "秘境抽奖·减耗：原 20/30/40/50% 压至 3/5/8/12%"
+  },
+  "6335": {
+   "name": "秘境抽奖·技能消耗降低·Lv3",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全技能消耗 −8%"
+   ],
+   "note_remove": [
+    "ConsumeReduceAll"
+   ],
+   "note_add": "<ConsumeReduceAll: 8%>",
+   "_note": "秘境抽奖·减耗：原 20/30/40/50% 压至 3/5/8/12%"
+  },
+  "6336": {
+   "name": "秘境抽奖·技能消耗降低·LvMax",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全技能消耗 −12%"
+   ],
+   "note_remove": [
+    "ConsumeReduceAll"
+   ],
+   "note_add": "<ConsumeReduceAll: 12%>",
+   "_note": "秘境抽奖·减耗：原 20/30/40/50% 压至 3/5/8/12%"
+  },
+  "6501": {
+   "name": "安慰奖I",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：攻防敏运 +1%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 2:1,3:1,4:1,5:1,6:1,7:1>",
+   "_note": "安慰奖 I～IV：原 5/8/10/13% 压至 1/2/3/5%"
+  },
+  "6502": {
+   "name": "白马过隙[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：敏捷 +5%，最终伤害 +2%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "passiveAPLUS",
+    "passiveHarmRi"
+   ],
+   "note_add": "<CodexParamRate: 6:5><passiveHarmRi:2>",
+   "_note": "去再动 10%"
+  },
+  "6503": {
+   "name": "龙血强身[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础最大生命与双防 +3%，最终伤害 +2%"
+   ],
+   "note_remove": [
+    "passivePBST0",
+    "passiveHarmRi",
+    "passiveHarmRe01",
+    "passiveHarmRe02",
+    "passiveHarmRe03",
+    "passiveHarmRe04",
+    "passiveHarmRe05",
+    "passiveHarmRe06",
+    "passiveHarmRe07",
+    "passiveHarmRe08",
+    "passiveHarmRe09"
+   ],
+   "note_add": "<passivePBST0:3%><passivePBST3:3%><passivePBST5:3%><passiveHarmRi:2>",
+   "_note": "去固定生命 1000 与固定减伤 500"
+  },
+  "6504": {
+   "name": "金身罗汉[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础最大生命与双防 +5%，最终伤害 +1%"
+   ],
+   "note_remove": [
+    "passivePBST0",
+    "passiveHarmRi",
+    "passiveHarmRe01",
+    "passiveHarmRe02",
+    "passiveHarmRe03",
+    "passiveHarmRe04",
+    "passiveHarmRe05",
+    "passiveHarmRe06",
+    "passiveHarmRe07",
+    "passiveHarmRe08",
+    "passiveHarmRe09"
+   ],
+   "note_add": "<passivePBST0:5%><passivePBST3:5%><passivePBST5:5%><passiveHarmRi:1>",
+   "_note": "去固定生命 3000 与固定减伤 1500"
+  },
+  "6505": {
+   "name": "吞云[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：TP 上限 +30"
+   ],
+   "note_remove": [
+    "passiveEXTTP"
+   ],
+   "note_add": "<passiveEXTTP:30>",
+   "_note": "原 TP+300 压至 +30"
+  },
+  "6506": {
+   "name": "超载[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +6%，最终伤害 +2%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passiveHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:6><passiveHarmRi:2>",
+   "_note": "原 30/15 压至 6/2"
+  },
+  "6508": {
+   "name": "袖中岁[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：开战 2 回合自动防御，最大生命 +5%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 0:5>",
+   "_note": "保留鸣贝 2 回合自动防御，生命 +18% 压至 +5%"
+  },
+  "6509": {
+   "name": "剑心[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物理攻击 +5%，物理防御 −5%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 2:5,3:-5>",
+   "_note": "原 ±15% 压至 ±5%"
+  },
+  "6510": {
+   "name": "蔷薇刺鞭[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：造成伤害时为目标施加「蔷薇刺鞭」（持续 3 回合：双防 −8%）"
+   ],
+   "_note": "状态 161 去固定双防 -300 改 -8%"
+  },
+  "6511": {
+   "name": "狂野疾奔[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：敏捷 +6%，暴击率 +3%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "passiveAPLUS"
+   ],
+   "note_add": "<CodexParamRate: 6:6><passiveXPBST2:3%>",
+   "_note": "去再动 10%"
+  },
+  "6512": {
+   "name": "翱翔[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：敏捷 +5%，物理与魔法闪避 +3%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "passiveAPLUS",
+    "passivePBST6"
+   ],
+   "note_add": "<CodexParamRate: 6:5><passiveXPBST1:3%><passiveXPBST4:3%>",
+   "_note": "去再动 8% 与固定敏捷 100"
+  },
+  "6513": {
+   "name": "英雄归来[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：攻防敏运 +2%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 2:2,3:2,4:2,5:2,6:2,7:2>",
+   "_note": "原 8% 压至 2%"
+  },
+  "6514": {
+   "name": "刻骨铭心[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击率 +3%，最终伤害 +3%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "passiveXPBST2",
+    "passiveAPLUS",
+    "passiveHarmRi"
+   ],
+   "note_add": "<passiveXPBST2:3%><passiveHarmRi:3>",
+   "_note": "去再动 9%"
+  },
+  "6515": {
+   "name": "锦囊妙计[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全系伤害 +3%，魔法消耗 −8%（原魔法再释放效果已移除）"
+   ],
+   "note_remove": [
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "AgainUseMf"
+   ],
+   "note_add": "<passiveELUP01:3%><passiveELUP02:3%><passiveELUP03:3%><passiveELUP04:3%><passiveELUP05:3%><passiveELUP06:3%><passiveELUP07:3%><passiveELUP08:3%><passiveELUP09:3%><passiveELUP14:3%><passiveELUP15:3%><ConsumeReduceMf: 8%>",
+   "_note": "去魔法再释放 20%"
+  },
+  "6516": {
+   "name": "暴力打击[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础物理攻击 +3%，暴击伤害 +5%"
+   ],
+   "note_remove": [
+    "passivePBST2",
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passivePBST2:3%><passiveCrHarmRi:5>",
+   "_note": "去固定物攻 60"
+  },
+  "6517": {
+   "name": "碧眼青睛[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +5%，火焰伤害 +3%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passiveELUP02"
+   ],
+   "note_add": "<passiveCrHarmRi:5><passiveELUP02:3%>",
+   "_note": "原 20/20 压至 5/3"
+  },
+  "6518": {
+   "name": "桃园三结义[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全系伤害 +2%，治疗效果 +5%"
+   ],
+   "note_remove": [
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "passiveELUP10"
+   ],
+   "note_add": "<passiveELUP01:2%><passiveELUP02:2%><passiveELUP03:2%><passiveELUP04:2%><passiveELUP05:2%><passiveELUP06:2%><passiveELUP07:2%><passiveELUP08:2%><passiveELUP09:2%><passiveELUP14:2%><passiveELUP15:2%><passiveELUP10:5%>",
+   "_note": "原全系与治疗 +20% 压至 +2%/+5%"
+  },
+  "6519": {
+   "name": "朔月依依[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础魔法攻击 +5%"
+   ],
+   "note_remove": [
+    "passivePBSTEX4"
+   ],
+   "note_add": "<passivePBST4:5%>",
+   "_note": "去固定条件魔攻 +300"
+  },
+  "6520": {
+   "name": "强袭之力[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：敏捷 +3%，最终伤害 +2%"
+   ],
+   "note_remove": [
+    "DepassiveHarmRe01",
+    "DepassiveHarmRe02",
+    "DepassiveHarmRe03",
+    "DepassiveHarmRe04",
+    "DepassiveHarmRe05",
+    "DepassiveHarmRe06",
+    "DepassiveHarmRe07",
+    "DepassiveHarmRe08",
+    "DepassiveHarmRe09",
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 6:3><passiveHarmRi:2>",
+   "_note": "去 DepassiveHarmRe 穿抗"
+  },
+  "6521": {
+   "name": "神风葬世[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：百八烦恼风与三千烦恼风伤害 +10%，自然伤害 +5%"
+   ],
+   "note_remove": [
+    "SkillPass6181",
+    "SkillPass6182",
+    "passiveELUP06"
+   ],
+   "note_add": "<SkillPass6181:10%><SkillPass6182:10%><passiveELUP06:5%>",
+   "_note": "原 150%/50% 压至 10%/5%"
+  },
+  "6522": {
+   "name": "透明化[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物理闪避与魔法闪避 +5%"
+   ],
+   "note_remove": [
+    "passiveXPBST1",
+    "passiveXPBST3",
+    "passiveXPBST4",
+    "passiveXPBST5",
+    "passiveXPBST6"
+   ],
+   "note_add": "<passiveXPBST1:5%><passiveXPBST4:5%>",
+   "_note": "原全闪避 +55% 压至物魔闪避 +5%"
+  },
+  "6523": {
+   "name": "嘤雄王中王[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础攻防敏运 +2%，全系伤害 +2%"
+   ],
+   "note_remove": [
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6",
+    "passivePBST7",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "passiveELUP11",
+    "passiveELUP12",
+    "passiveELUP13",
+    "passiveELUP14",
+    "passiveELUP15"
+   ],
+   "note_add": "<passivePBST2:2%><passivePBST3:2%><passivePBST4:2%><passivePBST5:2%><passivePBST6:2%><passivePBST7:2%><passiveELUP01:2%><passiveELUP02:2%><passiveELUP03:2%><passiveELUP04:2%><passiveELUP05:2%><passiveELUP06:2%><passiveELUP07:2%><passiveELUP08:2%><passiveELUP09:2%><passiveELUP14:2%><passiveELUP15:2%>",
+   "_note": "去固定全属性 +100"
+  },
+  "6524": {
+   "name": "土遁术[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：大地伤害 +5%，敏捷 +3%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "passiveELUP04",
+    "passiveAPLUS"
+   ],
+   "note_add": "<passiveELUP04:5%><CodexParamRate: 6:3>",
+   "_note": "去再动 10%"
+  },
+  "6526": {
+   "name": "地狱淬体I",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础攻防敏运 +1%，全系伤害 +1%",
+    "效果：最终伤害 +1%，暴击伤害 +2%，暴击率 +2%"
+   ],
+   "note_remove": [
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6",
+    "passivePBST7",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "passiveHarmRi",
+    "passiveCrHarmRi",
+    "passiveELUP11",
+    "passiveELUP12",
+    "passiveELUP13",
+    "passiveELUP14",
+    "passiveELUP15",
+    "passiveXPBST2"
+   ],
+   "note_add": "<passivePBST2:1%><passivePBST3:1%><passivePBST4:1%><passivePBST5:1%><passivePBST6:1%><passivePBST7:1%><passiveELUP01:1%><passiveELUP02:1%><passiveELUP03:1%><passiveELUP04:1%><passiveELUP05:1%><passiveELUP06:1%><passiveELUP07:1%><passiveELUP08:1%><passiveELUP09:1%><passiveELUP14:1%><passiveELUP15:1%><passiveHarmRi:1><passiveCrHarmRi:2><passiveXPBST2:2%>",
+   "_note": "地狱淬体 I～V：6530 移除 StartPushState1645（T446 P3-1 闭环），暴击 +600% 等全数压至稳健阶梯"
+  },
+  "6527": {
+   "name": "地狱淬体II",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础攻防敏运 +2%，全系伤害 +2%",
+    "效果：最终伤害 +2%，暴击伤害 +3%，暴击率 +3%"
+   ],
+   "note_remove": [
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6",
+    "passivePBST7",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "passiveHarmRi",
+    "passiveCrHarmRi",
+    "passiveELUP11",
+    "passiveELUP12",
+    "passiveELUP13",
+    "passiveELUP14",
+    "passiveELUP15",
+    "passiveXPBST2"
+   ],
+   "note_add": "<passivePBST2:2%><passivePBST3:2%><passivePBST4:2%><passivePBST5:2%><passivePBST6:2%><passivePBST7:2%><passiveELUP01:2%><passiveELUP02:2%><passiveELUP03:2%><passiveELUP04:2%><passiveELUP05:2%><passiveELUP06:2%><passiveELUP07:2%><passiveELUP08:2%><passiveELUP09:2%><passiveELUP14:2%><passiveELUP15:2%><passiveHarmRi:2><passiveCrHarmRi:3><passiveXPBST2:3%>",
+   "_note": "地狱淬体 I～V：6530 移除 StartPushState1645（T446 P3-1 闭环），暴击 +600% 等全数压至稳健阶梯"
+  },
+  "6528": {
+   "name": "地狱淬体III",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础攻防敏运 +2%，全系伤害 +2%",
+    "效果：最终伤害 +3%，暴击伤害 +5%，暴击率 +5%"
+   ],
+   "note_remove": [
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6",
+    "passivePBST7",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "passiveHarmRi",
+    "passiveCrHarmRi",
+    "passiveELUP11",
+    "passiveELUP12",
+    "passiveELUP13",
+    "passiveELUP14",
+    "passiveELUP15",
+    "passiveXPBST2"
+   ],
+   "note_add": "<passivePBST2:2%><passivePBST3:2%><passivePBST4:2%><passivePBST5:2%><passivePBST6:2%><passivePBST7:2%><passiveELUP01:2%><passiveELUP02:2%><passiveELUP03:2%><passiveELUP04:2%><passiveELUP05:2%><passiveELUP06:2%><passiveELUP07:2%><passiveELUP08:2%><passiveELUP09:2%><passiveELUP14:2%><passiveELUP15:2%><passiveHarmRi:3><passiveCrHarmRi:5><passiveXPBST2:5%>",
+   "_note": "地狱淬体 I～V：6530 移除 StartPushState1645（T446 P3-1 闭环），暴击 +600% 等全数压至稳健阶梯"
+  },
+  "6529": {
+   "name": "地狱淬体IV",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础攻防敏运 +3%，全系伤害 +3%",
+    "效果：最终伤害 +3%，暴击伤害 +6%，暴击率 +6%"
+   ],
+   "note_remove": [
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6",
+    "passivePBST7",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "passiveHarmRi",
+    "passiveCrHarmRi",
+    "passiveELUP11",
+    "passiveELUP12",
+    "passiveELUP13",
+    "passiveELUP14",
+    "passiveELUP15",
+    "passiveXPBST2"
+   ],
+   "note_add": "<passivePBST2:3%><passivePBST3:3%><passivePBST4:3%><passivePBST5:3%><passivePBST6:3%><passivePBST7:3%><passiveELUP01:3%><passiveELUP02:3%><passiveELUP03:3%><passiveELUP04:3%><passiveELUP05:3%><passiveELUP06:3%><passiveELUP07:3%><passiveELUP08:3%><passiveELUP09:3%><passiveELUP14:3%><passiveELUP15:3%><passiveHarmRi:3><passiveCrHarmRi:6><passiveXPBST2:6%>",
+   "_note": "地狱淬体 I～V：6530 移除 StartPushState1645（T446 P3-1 闭环），暴击 +600% 等全数压至稳健阶梯"
+  },
+  "6530": {
+   "name": "地狱淬体V",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础攻防敏运 +3%，全系伤害 +3%",
+    "效果：最终伤害 +5%，暴击伤害 +8%，暴击率 +8%"
+   ],
+   "note_remove": [
+    "StartPushState1645",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6",
+    "passivePBST7",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "passiveHarmRi",
+    "passiveCrHarmRi",
+    "passiveELUP11",
+    "passiveELUP12",
+    "passiveELUP13",
+    "passiveELUP14",
+    "passiveELUP15",
+    "passiveXPBST2"
+   ],
+   "note_add": "<passivePBST2:3%><passivePBST3:3%><passivePBST4:3%><passivePBST5:3%><passivePBST6:3%><passivePBST7:3%><passiveELUP01:3%><passiveELUP02:3%><passiveELUP03:3%><passiveELUP04:3%><passiveELUP05:3%><passiveELUP06:3%><passiveELUP07:3%><passiveELUP08:3%><passiveELUP09:3%><passiveELUP14:3%><passiveELUP15:3%><passiveHarmRi:5><passiveCrHarmRi:8><passiveXPBST2:8%>",
+   "_note": "地狱淬体 I～V：6530 移除 StartPushState1645（T446 P3-1 闭环），暴击 +600% 等全数压至稳健阶梯"
+  },
+  "6551": {
+   "name": "安慰奖II",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：攻防敏运 +2%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 2:2,3:2,4:2,5:2,6:2,7:2>",
+   "_note": "安慰奖 I～IV：原 5/8/10/13% 压至 1/2/3/5%"
+  },
+  "6552": {
+   "name": "妖兽化形[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：金钱获取 +5%，物品掉落率 +3%，全系伤害 +2%"
+   ],
+   "note_remove": [
+    "passiveGRUP",
+    "passiveIRUP",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09"
+   ],
+   "note_add": "<passiveGRUP:5><passiveIRUP:3><passiveELUP01:2%><passiveELUP02:2%><passiveELUP03:2%><passiveELUP04:2%><passiveELUP05:2%><passiveELUP06:2%><passiveELUP07:2%><passiveELUP08:2%><passiveELUP09:2%><passiveELUP14:2%><passiveELUP15:2%>",
+   "_note": "原 15/15/33% 压至 5/3/2%"
+  },
+  "6553": {
+   "name": "摸金始祖[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +2%，金钱获取 +8%，物品掉落率 +3%"
+   ],
+   "note_remove": [
+    "passiveHarmRi",
+    "passiveGRUP",
+    "passiveIRUP"
+   ],
+   "note_add": "<passiveHarmRi:2><passiveGRUP:8><passiveIRUP:3>",
+   "_note": "原 30/30/10 压至 2/8/3"
+  },
+  "6554": {
+   "name": "宝藏猎人[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物品掉落率 +5%"
+   ],
+   "note_remove": [
+    "passiveIRUP"
+   ],
+   "note_add": "<passiveIRUP:5>",
+   "_note": "原 10% 压至 5%"
+  },
+  "6555": {
+   "name": "疼爱[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础最大魔法与攻防敏运 +2%，暴击伤害 +6%"
+   ],
+   "note_remove": [
+    "passivePBST1",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6",
+    "passivePBST7",
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passivePBST1:2%><passivePBST2:2%><passivePBST3:2%><passivePBST4:2%><passivePBST5:2%><passivePBST6:2%><passivePBST7:2%><passiveCrHarmRi:6>",
+   "_note": "去固定属性 +100"
+  },
+  "6556": {
+   "name": "香火传承[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：攻防敏运 +2%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 2:2,3:2,4:2,5:2,6:2,7:2>",
+   "_note": "原 10% 压至 2%"
+  },
+  "6557": {
+   "name": "正义加身[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +3%，全系伤害 +2%"
+   ],
+   "note_remove": [
+    "passiveHarmRi",
+    "StartWTPushState0232"
+   ],
+   "note_add": "<passiveHarmRi:3><passiveELUP01:2%><passiveELUP02:2%><passiveELUP03:2%><passiveELUP04:2%><passiveELUP05:2%><passiveELUP06:2%><passiveELUP07:2%><passiveELUP08:2%><passiveELUP09:2%><passiveELUP14:2%><passiveELUP15:2%>",
+   "_note": "去开战全队挂 232，改为单人常驻 +3%终伤/+2%全伤"
+  },
+  "6558": {
+   "name": "老顽童[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +2%，暴击伤害 +6%，幸运 +3%（原再释放效果已移除）"
+   ],
+   "note_remove": [
+    "passiveHarmRi",
+    "passiveCrHarmRi",
+    "AgainUseAll"
+   ],
+   "note_add": "<passiveHarmRi:2><passiveCrHarmRi:6><CodexParamRate: 7:3>",
+   "_note": "去再释放 10%"
+  },
+  "6559": {
+   "name": "蚀脑[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：造成伤害时为目标施加「衰弱」（持续 2 回合：攻防敏 −5%、命中暴击闪避 −8%）"
+   ],
+   "_note": "状态 128 去固定全属性 -100"
+  },
+  "6560": {
+   "name": "九秘:阵字诀[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +3%"
+   ],
+   "note_remove": [
+    "passiveHarmRi"
+   ],
+   "note_add": "<passiveHarmRi:3>",
+   "_note": "原 20% 压至 3%"
+  },
+  "6561": {
+   "name": "武胆境[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础最大生命、物理攻击与物理防御 +3%"
+   ],
+   "note_remove": [
+    "passivePBST0",
+    "passivePBST2",
+    "passiveHarmRe01",
+    "passiveHarmRe02",
+    "passiveHarmRe03",
+    "passiveHarmRe04",
+    "passiveHarmRe05",
+    "passiveHarmRe06",
+    "passiveHarmRe07",
+    "passiveHarmRe08",
+    "passiveHarmRe09"
+   ],
+   "note_add": "<passivePBST0:3%><passivePBST2:3%><passivePBST3:3%>",
+   "_note": "去固定生命 1000/物攻 100/减伤 1000"
+  },
+  "6562": {
+   "name": "悟道心[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +2%，全系伤害 +2%"
+   ],
+   "note_remove": [
+    "passiveHarmRi",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09"
+   ],
+   "note_add": "<passiveHarmRi:2><passiveELUP01:2%><passiveELUP02:2%><passiveELUP03:2%><passiveELUP04:2%><passiveELUP05:2%><passiveELUP06:2%><passiveELUP07:2%><passiveELUP08:2%><passiveELUP09:2%><passiveELUP14:2%><passiveELUP15:2%>",
+   "_note": "原 10/30% 压至 2/2%"
+  },
+  "6563": {
+   "name": "兔然暴富[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：金钱获取 +10%，物品掉落率 +5%"
+   ],
+   "note_remove": [
+    "passiveGRUP",
+    "passiveIRUP"
+   ],
+   "note_add": "<passiveGRUP:10><passiveIRUP:5>",
+   "_note": "原 70/25% 压至 10/5%（单件 ≤10%）"
+  },
+  "6564": {
+   "name": "哥布林狂潮[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：攻防敏运 +2%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 2:2,3:2,4:2,5:2,6:2,7:2>",
+   "_note": "原 5% 压至 2%"
+  },
+  "6565": {
+   "name": "恶意滋生[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +8%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:8>",
+   "_note": "原 50% 压至 8%"
+  },
+  "6566": {
+   "name": "马神[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：战技消耗 −15%"
+   ],
+   "note_remove": [
+    "ConsumeReduceZj"
+   ],
+   "note_add": "<ConsumeReduceZj: 15%>",
+   "_note": "原 -75% 压至 -15%"
+  },
+  "6567": {
+   "name": "三昧真火[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +5%，火焰伤害 +5%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passiveELUP02"
+   ],
+   "note_add": "<passiveCrHarmRi:5><passiveELUP02:5%>",
+   "_note": "原 20/40% 压至 5/5%"
+  },
+  "6568": {
+   "name": "三昧神风[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +5%，自然与风系伤害 +5%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passiveELUP06"
+   ],
+   "note_add": "<passiveCrHarmRi:5><passiveELUP06:5%><passiveELUP15:5%>",
+   "_note": "原 20/40% 压至 5/5%（兼顾风系）"
+  },
+  "6569": {
+   "name": "鹰爪神功[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +2%，拳套伤害 +5%"
+   ],
+   "note_remove": [
+    "passiveHarmRi",
+    "SkETypeHarmRi5"
+   ],
+   "note_add": "<passiveHarmRi:2><SkETypeHarmRi5: 5%>",
+   "_note": "原 10/30% 压至 2/5%"
+  },
+  "6570": {
+   "name": "奇怪知识[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：魔法暴击率 +5%，元素伤害 +3%"
+   ],
+   "note_remove": [
+    "SkillCriPushMf",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "passiveELUP11",
+    "passiveELUP12",
+    "passiveELUP13",
+    "passiveELUP14",
+    "passiveELUP15"
+   ],
+   "note_add": "<SkillCriPushMf: 5%><passiveELUP02:3%><passiveELUP03:3%><passiveELUP04:3%><passiveELUP05:3%><passiveELUP06:3%><passiveELUP07:3%><passiveELUP08:3%><passiveELUP09:3%><passiveELUP14:3%><passiveELUP15:3%>",
+   "_note": "原 10/30% 压至 5/3%"
+  },
+  "6571": {
+   "name": "十字信仰[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：斩意*十字斩伤害 +10%，物理伤害 +5%"
+   ],
+   "note_remove": [
+    "SkillPass6169",
+    "passiveELUP01"
+   ],
+   "note_add": "<SkillPass6169:10%><passiveELUP01:5%>",
+   "_note": "原 150/50% 压至 10/5%"
+  },
+  "6572": {
+   "name": "起源之火[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：初火*炽烈火柱伤害 +10%，火焰伤害 +5%"
+   ],
+   "note_remove": [
+    "SkillPass6170",
+    "passiveELUP02"
+   ],
+   "note_add": "<SkillPass6170:10%><passiveELUP02:5%>",
+   "_note": "原 150/50% 压至 10/5%"
+  },
+  "6573": {
+   "name": "冰封万里[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：零度*冻结术伤害 +10%，寒冰伤害 +5%"
+   ],
+   "note_remove": [
+    "SkillPass6171",
+    "SkillPass6172",
+    "passiveELUP03"
+   ],
+   "note_add": "<SkillPass6171:10%><SkillPass6172:10%><passiveELUP03:5%>",
+   "_note": "原 150/50% 压至 10/5%"
+  },
+  "6574": {
+   "name": "天地荒芜[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：造成伤害时为目标施加「天地荒芜」（持续 3 回合：攻防敏运 −6%、暴击与闪避 −10%）"
+   ],
+   "_note": "状态 998 去固定全属性 -500"
+  },
+  "6577": {
+   "name": "变猪，变猪，变猪",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：造成伤害时为目标施加「变猪」（持续 3 回合：攻防敏运 −8%、暴击与闪避 −12%）"
+   ],
+   "_note": "状态 1227 去固定全属性 -800"
+  },
+  "6601": {
+   "name": "安慰奖III",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：攻防敏运 +3%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 2:3,3:3,4:3,5:3,6:3,7:3>",
+   "_note": "安慰奖 I～IV：原 5/8/10/13% 压至 1/2/3/5%"
+  },
+  "6602": {
+   "name": "掉落MOD[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物品掉落率 +6%"
+   ],
+   "note_remove": [
+    "passiveIRUP"
+   ],
+   "note_add": "<passiveIRUP:6>",
+   "_note": "原 15% 压至 6%"
+  },
+  "6603": {
+   "name": "冠刀[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：金钱获取 +10%，敏捷 +5%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "passiveGRUP",
+    "passiveAPLUS"
+   ],
+   "note_add": "<passiveGRUP:10><CodexParamRate: 6:5>",
+   "_note": "去再动 30%、金钱 100% 压至 10%"
+  },
+  "6604": {
+   "name": "武神之魂[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全武器技能伤害 +5%"
+   ],
+   "note_remove": [
+    "SkETypeHarmRi1",
+    "SkETypeHarmRi2",
+    "SkETypeHarmRi3",
+    "SkETypeHarmRi4",
+    "SkETypeHarmRi5",
+    "SkETypeHarmRi6",
+    "SkETypeHarmRi7",
+    "SkETypeHarmRi8",
+    "SkETypeHarmRi9",
+    "SkETypeHarmRi10",
+    "SkETypeHarmRi11",
+    "SkETypeHarmRi12"
+   ],
+   "note_add": "<SkETypeHarmRi1: 5%><SkETypeHarmRi2: 5%><SkETypeHarmRi3: 5%><SkETypeHarmRi4: 5%><SkETypeHarmRi5: 5%><SkETypeHarmRi6: 5%><SkETypeHarmRi7: 5%><SkETypeHarmRi8: 5%><SkETypeHarmRi9: 5%><SkETypeHarmRi10: 5%><SkETypeHarmRi11: 5%><SkETypeHarmRi12: 5%>",
+   "_note": "原 50% 压至 5%"
+  },
+  "6605": {
+   "name": "避苍[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础双防 +5%，物理与魔法闪避 +5%"
+   ],
+   "note_remove": [
+    "passivePBST3",
+    "passivePBST5",
+    "passiveXPBST1",
+    "passiveXPBST3",
+    "passiveXPBST4",
+    "passiveXPBST5",
+    "passiveXPBST6"
+   ],
+   "note_add": "<passivePBST3:5%><passivePBST5:5%><passiveXPBST1:5%><passiveXPBST4:5%>",
+   "_note": "去固定双防 500、闪避 30% 压至 5%"
+  },
+  "6606": {
+   "name": "先祖赐福[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物理攻击与魔法攻击 +3%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 2:3,4:3>",
+   "_note": "原 15% 压至 3%"
+  },
+  "6607": {
+   "name": "昂首[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +2%；受击时触发 3 回合「昂首」（终伤 +3%、爆伤 +6%）"
+   ],
+   "note_remove": [
+    "passiveHarmRi"
+   ],
+   "note_add": "<passiveHarmRi:2>",
+   "_note": "原终伤 30 + 状态 30/30 压至 2 + 状态 3/6"
+  },
+  "6608": {
+   "name": "妙趣横生[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +8%，暴击率 +5%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passiveXPBST2"
+   ],
+   "note_add": "<passiveCrHarmRi:8><passiveXPBST2:5%>",
+   "_note": "原 60/30% 压至 8/5%"
+  },
+  "6610": {
+   "name": "飞龙在天[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +10%，基础物理攻击 +3%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passivePBST2"
+   ],
+   "note_add": "<passiveCrHarmRi:10><passivePBST2:3%>",
+   "_note": "去固定物攻 500、爆伤 100 压至 10"
+  },
+  "6611": {
+   "name": "屌王[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +5%，暴击伤害 −15%，基础幸运 −5%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passiveHarmRi",
+    "passivePBST7"
+   ],
+   "note_add": "<passiveCrHarmRi:-15><passiveHarmRi:5><passivePBST7:-5%>",
+   "_note": "保留高风险换终伤特色，去固定幸运 -500 与 +75% 终伤"
+  },
+  "6612": {
+   "name": "牛比神功[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +6%，最终伤害 +3%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passiveHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:6><passiveHarmRi:3>",
+   "_note": "原 30/30 压至 6/3"
+  },
+  "6613": {
+   "name": "黄金甲[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础最大生命 +5%，基础双防 +6%"
+   ],
+   "note_remove": [
+    "passiveHarmRe01",
+    "passiveHarmRe02",
+    "passiveHarmRe03",
+    "passiveHarmRe04",
+    "passiveHarmRe05",
+    "passiveHarmRe06",
+    "passiveHarmRe07",
+    "passiveHarmRe08",
+    "passiveHarmRe09"
+   ],
+   "note_add": "<passivePBST0:5%><passivePBST3:6%><passivePBST5:6%>",
+   "_note": "去固定减伤 3000"
+  },
+  "6614": {
+   "name": "凝神诀[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物理与自然伤害 +3%，最终伤害 +2%"
+   ],
+   "note_remove": [
+    "passiveELUP06",
+    "passiveELUP01",
+    "passiveHarmRi"
+   ],
+   "note_add": "<passiveELUP01:3%><passiveELUP06:3%><passiveHarmRi:2>",
+   "_note": "原 50/50/30 压至 3/3/2"
+  },
+  "6615": {
+   "name": "血落凝魄[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础攻防敏运 +3%"
+   ],
+   "note_remove": [
+    "passivePBSTEX2",
+    "passivePBSTEX3",
+    "passivePBSTEX4",
+    "passivePBSTEX5",
+    "passivePBSTEX6",
+    "passivePBSTEX7"
+   ],
+   "note_add": "<passivePBST2:3%><passivePBST3:3%><passivePBST4:3%><passivePBST5:3%><passivePBST6:3%><passivePBST7:3%>",
+   "_note": "去固定条件全属性 +1000"
+  },
+  "6616": {
+   "name": "《黑皇经》[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：元素伤害 +3%，基础敏捷 +3%"
+   ],
+   "note_remove": [
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "passivePBST6"
+   ],
+   "note_add": "<passiveELUP02:3%><passiveELUP03:3%><passiveELUP04:3%><passiveELUP05:3%><passiveELUP06:3%><passiveELUP07:3%><passiveELUP08:3%><passiveELUP09:3%><passiveELUP14:3%><passiveELUP15:3%><passivePBST6:3%>",
+   "_note": "去固定敏捷 250、50% 压至 3%"
+  },
+  "6617": {
+   "name": "超越极限V[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +3%，基础生命、魔法与攻防敏 +2%"
+   ],
+   "note_remove": [
+    "passiveHarmRi",
+    "passivePBST0",
+    "passivePBST1",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6"
+   ],
+   "note_add": "<passiveHarmRi:3><passivePBST0:2%><passivePBST1:2%><passivePBST2:2%><passivePBST3:2%><passivePBST4:2%><passivePBST5:2%><passivePBST6:2%>",
+   "_note": "去固定 1500/150、终伤 50 压至 3"
+  },
+  "6618": {
+   "name": "晶石魔能[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物理攻击与魔法攻击 +3%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 2:3,4:3>",
+   "_note": "原 13% 压至 3%"
+  },
+  "6619": {
+   "name": "战场经验[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +2%，基础最大生命 +5%"
+   ],
+   "note_remove": [
+    "passiveHarmRi",
+    "passivePBST0"
+   ],
+   "note_add": "<passiveHarmRi:2><passivePBST0:5%>",
+   "_note": "去固定生命 5000、终伤 25 压至 2"
+  },
+  "6621": {
+   "name": "凶鲲吞天[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：鲲拳系列技能伤害 +10%"
+   ],
+   "note_remove": [
+    "SkillPass5168",
+    "SkillPass5169",
+    "SkillPass5170",
+    "SkillPass5171",
+    "SkillPass5172",
+    "SkillPass5173",
+    "SkillPass5174",
+    "SkillPass5175",
+    "SkillPass5176",
+    "SkillPass5177",
+    "SkillPass5178",
+    "SkillPass5179",
+    "SkillPass5180",
+    "SkillPass5181",
+    "SkillPass5182",
+    "SkillPass5183",
+    "SkillPass5184",
+    "SkillPass5185"
+   ],
+   "note_add": "<SkillPass5168:10%><SkillPass5169:10%><SkillPass5170:10%><SkillPass5171:10%><SkillPass5172:10%><SkillPass5173:10%><SkillPass5174:10%><SkillPass5175:10%><SkillPass5176:10%><SkillPass5177:10%><SkillPass5178:10%><SkillPass5179:10%><SkillPass5180:10%><SkillPass5181:10%><SkillPass5182:10%><SkillPass5183:10%><SkillPass5184:10%><SkillPass5185:10%>",
+   "_note": "原 150% 压至 10%"
+  },
+  "6622": {
+   "name": "动感地带[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：动感光线系列技能伤害 +10%"
+   ],
+   "note_remove": [
+    "SkillPass5400",
+    "SkillPass5401",
+    "SkillPass5402",
+    "SkillPass5403",
+    "SkillPass5404",
+    "SkillPass5405",
+    "SkillPass5406",
+    "SkillPass5407",
+    "SkillPass5408",
+    "SkillPass5409",
+    "SkillPass5410",
+    "SkillPass5411",
+    "SkillPass5412",
+    "SkillPass5413",
+    "SkillPass5414",
+    "SkillPass5415",
+    "SkillPass5416",
+    "SkillPass5417"
+   ],
+   "note_add": "<SkillPass5400:10%><SkillPass5401:10%><SkillPass5402:10%><SkillPass5403:10%><SkillPass5404:10%><SkillPass5405:10%><SkillPass5406:10%><SkillPass5407:10%><SkillPass5408:10%><SkillPass5409:10%><SkillPass5410:10%><SkillPass5411:10%><SkillPass5412:10%><SkillPass5413:10%><SkillPass5414:10%><SkillPass5415:10%><SkillPass5416:10%><SkillPass5417:10%>",
+   "_note": "原 150% 压至 10%"
+  },
+  "6623": {
+   "name": "马家绝学[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：马氏双节棍系列技能伤害 +10%"
+   ],
+   "note_remove": [
+    "SkillPass5382",
+    "SkillPass5383",
+    "SkillPass5384",
+    "SkillPass5385",
+    "SkillPass5386",
+    "SkillPass5387",
+    "SkillPass5388",
+    "SkillPass5389",
+    "SkillPass5390",
+    "SkillPass5391",
+    "SkillPass5392",
+    "SkillPass5393",
+    "SkillPass5394",
+    "SkillPass5395",
+    "SkillPass5396",
+    "SkillPass5397",
+    "SkillPass5398",
+    "SkillPass5399"
+   ],
+   "note_add": "<SkillPass5382:10%><SkillPass5383:10%><SkillPass5384:10%><SkillPass5385:10%><SkillPass5386:10%><SkillPass5387:10%><SkillPass5388:10%><SkillPass5389:10%><SkillPass5390:10%><SkillPass5391:10%><SkillPass5392:10%><SkillPass5393:10%><SkillPass5394:10%><SkillPass5395:10%><SkillPass5396:10%><SkillPass5397:10%><SkillPass5398:10%><SkillPass5399:10%>",
+   "_note": "原 150% 压至 10%"
+  },
+  "6625": {
+   "name": "神之盾[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：敏捷 +5%；受击时触发 3 回合「神之盾」（承受物理与魔法伤害 −8%）"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 6:5>",
+   "_note": "状态 1000 去固定减伤 10000 改承伤 -8%"
+  },
+  "6651": {
+   "name": "安慰奖IV",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：攻防敏运 +5%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 2:5,3:5,4:5,5:5,6:5,7:5>",
+   "_note": "安慰奖 I～IV：原 5/8/10/13% 压至 1/2/3/5%"
+  },
+  "6652": {
+   "name": "乱魔[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +5%"
+   ],
+   "note_remove": [
+    "passiveHarmRi"
+   ],
+   "note_add": "<passiveHarmRi:5>",
+   "_note": "原 80% 压至 5%"
+  },
+  "6653": {
+   "name": "万骨枯[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:10>",
+   "_note": "原 77% 压至 10%"
+  },
+  "6654": {
+   "name": "逆天难[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：火／冰／大地／雷电／自然伤害 +5%，魔法消耗 −10%（原再释放效果已移除）"
+   ],
+   "note_remove": [
+    "AgainUseAll",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06"
+   ],
+   "note_add": "<passiveELUP02:5%><passiveELUP03:5%><passiveELUP04:5%><passiveELUP05:5%><passiveELUP06:5%><ConsumeReduceMf: 10%>",
+   "_note": "去再释放 30%、五系 100% 压至 5%"
+  },
+  "6655": {
+   "name": "止境[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础最大生命 +6%，基础双防 +5%，基础物理攻击 +3%"
+   ],
+   "note_remove": [
+    "passivePBST0",
+    "passivePBST2",
+    "passiveHarmRe01",
+    "passiveHarmRe02",
+    "passiveHarmRe03",
+    "passiveHarmRe04",
+    "passiveHarmRe05",
+    "passiveHarmRe06",
+    "passiveHarmRe07",
+    "passiveHarmRe08",
+    "passiveHarmRe09"
+   ],
+   "note_add": "<passivePBST0:6%><passivePBST2:3%><passivePBST3:5%><passivePBST5:5%>",
+   "_note": "去固定生命 8000/物攻 800/减伤 8000"
+  },
+  "6656": {
+   "name": "海军王[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +3%，战技消耗 −10%，基础双防 +3%"
+   ],
+   "note_remove": [
+    "passiveHarmRi",
+    "ConsumeReduceZj",
+    "passiveHarmRe01",
+    "passiveHarmRe02",
+    "passiveHarmRe03",
+    "passiveHarmRe04",
+    "passiveHarmRe05",
+    "passiveHarmRe06",
+    "passiveHarmRe07",
+    "passiveHarmRe08",
+    "passiveHarmRe09"
+   ],
+   "note_add": "<passiveHarmRi:3><ConsumeReduceZj: 10%><passivePBST3:3%><passivePBST5:3%>",
+   "_note": "去固定减伤 1000、终伤 75 压至 3"
+  },
+  "6657": {
+   "name": "观星[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：魔法消耗 −12%，敏捷 +5%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "ConsumeReduceMf",
+    "passiveAPLUS"
+   ],
+   "note_add": "<ConsumeReduceMf: 12%><CodexParamRate: 6:5>",
+   "_note": "去再动 30%、魔耗 -30% 压至 -12%"
+  },
+  "6658": {
+   "name": "敌血映我影[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +8%；暴击时令目标敏捷 −10%（持续 3 回合）"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:8>",
+   "_note": "原爆伤 100 压至 8，状态 308 去固定敏捷 -300"
+  },
+  "6659": {
+   "name": "插科打诨[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：敏捷 +6%，幸运 +5%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "passiveAPLUS"
+   ],
+   "note_add": "<CodexParamRate: 6:6,7:5>",
+   "_note": "去再动 20%"
+  },
+  "6660": {
+   "name": "魔塔勇者[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：最终伤害 +3%，全系伤害 +3%"
+   ],
+   "note_remove": [
+    "passiveHarmRi",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09"
+   ],
+   "note_add": "<passiveHarmRi:3><passiveELUP01:3%><passiveELUP02:3%><passiveELUP03:3%><passiveELUP04:3%><passiveELUP05:3%><passiveELUP06:3%><passiveELUP07:3%><passiveELUP08:3%><passiveELUP09:3%><passiveELUP14:3%><passiveELUP15:3%>",
+   "_note": "原 30/50% 压至 3/3%"
+  },
+  "6661": {
+   "name": "黄昏的信徒[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础全属性 +2%，全系伤害 +2%，最终伤害 +2%，暴击伤害 +5%"
+   ],
+   "note_remove": [
+    "passivePBST0",
+    "passivePBST1",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6",
+    "passivePBST7",
+    "passiveELUP01",
+    "passiveELUP02",
+    "passiveELUP03",
+    "passiveELUP04",
+    "passiveELUP05",
+    "passiveELUP06",
+    "passiveELUP07",
+    "passiveELUP08",
+    "passiveELUP09",
+    "passiveHarmRi",
+    "passiveCrHarmRi",
+    "passiveELUP11",
+    "passiveELUP12",
+    "passiveELUP13",
+    "passiveELUP14",
+    "passiveELUP15"
+   ],
+   "note_add": "<passivePBST0:2%><passivePBST1:2%><passivePBST2:2%><passivePBST3:2%><passivePBST4:2%><passivePBST5:2%><passivePBST6:2%><passivePBST7:2%><passiveELUP01:2%><passiveELUP02:2%><passiveELUP03:2%><passiveELUP04:2%><passiveELUP05:2%><passiveELUP06:2%><passiveELUP07:2%><passiveELUP08:2%><passiveELUP09:2%><passiveELUP14:2%><passiveELUP15:2%><passiveHarmRi:2><passiveCrHarmRi:5>",
+   "_note": "去固定全属性 +150、30/50% 压至 2/2/5%"
+  },
+  "6662": {
+   "name": "器动四方[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +10%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveCrHarmRi:10>",
+   "_note": "原 80% 压至 10%"
+  },
+  "6663": {
+   "name": "最后的丸子[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：火焰伤害 +5%，最终伤害 +3%"
+   ],
+   "note_remove": [
+    "passiveELUP02",
+    "passiveHarmRi"
+   ],
+   "note_add": "<passiveELUP02:5%><passiveHarmRi:3>",
+   "_note": "原 150/50% 压至 5/3%"
+  },
+  "6664": {
+   "name": "神光聚合[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：战斗保留 TP，TP 上限 +20"
+   ],
+   "note_remove": [
+    "passiveEXTTP"
+   ],
+   "note_add": "<passiveEXTTP:20>",
+   "_note": "保留跨战存 TP 玩法，TP 上限 +100 压至 +20"
+  },
+  "6665": {
+   "name": "电瓶暴徒[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击率 +8%，暴击伤害 +8%"
+   ],
+   "note_remove": [
+    "passiveXPBST2",
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveXPBST2:8%><passiveCrHarmRi:8>",
+   "_note": "原 50/100% 压至 8/8%"
+  },
+  "6666": {
+   "name": "必杀信仰[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击率 +5%，暴击伤害 +8%，敏捷 +3%（原再动与再释放效果已移除）"
+   ],
+   "note_remove": [
+    "passiveWPNM01",
+    "AgainUseAll",
+    "passiveAPLUS"
+   ],
+   "note_add": "<passiveXPBST2:5%><passiveCrHarmRi:8><CodexParamRate: 6:3>",
+   "_note": "去匕首固定 +200、再动 20%、再释 10%"
+  },
+  "6667": {
+   "name": "随心铁杆兵[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：可用「矛」施展任意武器限制的技能"
+   ],
+   "_note": "纯武器泛用功能，原样保留"
+  },
+  "6668": {
+   "name": "阴阳之术[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：神圣与黑暗伤害 +5%"
+   ],
+   "note_remove": [
+    "passiveELUP08",
+    "passiveELUP09"
+   ],
+   "note_add": "<passiveELUP08:5%><passiveELUP09:5%>",
+   "_note": "原 133% 压至 5%"
+  },
+  "6669": {
+   "name": "大淼神水[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：寒冰与水系伤害 +6%"
+   ],
+   "note_remove": [
+    "passiveELUP03"
+   ],
+   "note_add": "<passiveELUP03:6%><passiveELUP14:6%>",
+   "_note": "原 150% 压至 6%（兼顾水系）"
+  },
+  "6670": {
+   "name": "鸿运[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：幸运 +6%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 7:6>",
+   "_note": "原 50% 压至 6%"
+  },
+  "6671": {
+   "name": "哥布林神威[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：基础物理与魔法攻击 +3%，暴击伤害 +8%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "passivePBST2",
+    "passivePBST4",
+    "passiveCrHarmRi",
+    "passiveAPLUS"
+   ],
+   "note_add": "<passivePBST2:3%><passivePBST4:3%><passiveCrHarmRi:8>",
+   "_note": "去固定双攻 250、爆伤 125、再动 25%"
+  },
+  "6672": {
+   "name": "豪战九天[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物理攻击与魔法攻击 +5%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 2:5,4:5>",
+   "_note": "原双攻 +50% 压至 +5%"
+  },
+  "6673": {
+   "name": "秋名山车神[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：暴击伤害 +8%，基础生命、魔法与攻防敏 +2%"
+   ],
+   "note_remove": [
+    "passiveCrHarmRi",
+    "passivePBST0",
+    "passivePBST1",
+    "passivePBST2",
+    "passivePBST3",
+    "passivePBST4",
+    "passivePBST5",
+    "passivePBST6"
+   ],
+   "note_add": "<passiveCrHarmRi:8><passivePBST0:2%><passivePBST1:2%><passivePBST2:2%><passivePBST3:2%><passivePBST4:2%><passivePBST5:2%><passivePBST6:2%>",
+   "_note": "去固定 2500/250、爆伤 100 压至 8"
+  },
+  "6674": {
+   "name": "春风不喜[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：自然与风系伤害 +6%"
+   ],
+   "note_remove": [
+    "passiveELUP06"
+   ],
+   "note_add": "<passiveELUP06:6%><passiveELUP15:6%>",
+   "_note": "原 200% 压至 6%（兼顾风系）"
+  },
+  "6675": {
+   "name": "奇门遁术·大全[抽奖版]",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：造成伤害时触发奇门五阵（各持续 3 回合）：敌方每回合损失 3% 最大生命、命中与暴击率 −10%、双防与敏捷 −8%、闪避率 −8%；自身闪避率 +10%"
+   ],
+   "_note": "奇门遁术·大全：五阵状态 1015~1019 全压至稳健小幅百分比、去固定 -500"
+  },
+  "7163": {
+   "name": "《百草回春经》上篇",
+   "group": "ev054_actives",
+   "mp_pct": 10,
+   "cooldown": 2,
+   "header": {
+    "冷却时间": "2回合"
+   },
+   "heal": {
+    "mhp_pct": 0.08
+   },
+   "effects_remove": [
+    [
+     11,
+     0
+    ]
+   ],
+   "effects": [
+    {
+     "code": 12,
+     "dataId": 0,
+     "value1": 0.05,
+     "value2": 0
+    },
+    {
+     "code": 13,
+     "dataId": 0,
+     "value1": 5,
+     "value2": 0
+    }
+   ],
+   "desc": [
+    "效果：全体友方回复 8% 最大生命、5% 最大魔法与 5 点 TP"
+   ],
+   "_note": "EV054 主动书 I2287：去固定治疗公式 1000+mat*10 与 50% 满回，按全体治疗 10%×0.8=8% 标定"
+  },
+  "7164": {
+   "name": "《百草回春经》下篇",
+   "group": "ev054_actives",
+   "mp_pct": 15,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   },
+   "heal": {
+    "mhp_pct": 0.12
+   },
+   "effects_remove": [
+    [
+     11,
+     0
+    ]
+   ],
+   "effects": [
+    {
+     "code": 12,
+     "dataId": 0,
+     "value1": 0.1,
+     "value2": 0
+    },
+    {
+     "code": 13,
+     "dataId": 0,
+     "value1": 10,
+     "value2": 0
+    }
+   ],
+   "desc": [
+    "效果：全体友方回复 12% 最大生命、10% 最大魔法与 10 点 TP"
+   ],
+   "_note": "EV054 主动书 I2288：去固定治疗 30000+mat*50 与 75% 满回/100TP 永动，按高阶全体治疗 12% 标定"
+  },
+  "7165": {
+   "name": "《轮回转生决》",
+   "group": "ev054_actives",
+   "mp_pct": 30,
+   "tp": 20,
+   "cooldown": 3,
+   "header": {
+    "冷却时间": "3回合"
+   },
+   "heal": {
+    "mhp_pct": 0.25
+   },
+   "effects_remove": [
+    [
+     11,
+     0
+    ],
+    [
+     12,
+     0
+    ],
+    [
+     13,
+     0
+    ]
+   ],
+   "desc": [
+    "效果：复活一名倒下友方并回复 25% 最大生命，附加 2 回合「轮回之力」（全属性 +10%）"
+   ],
+   "_note": "EV054 主动书 I2289：按复活标准 30%×0.8≈25%（避 4）标定，去 100% HP/MP/TP 满回，状态 1655 压至 +10%"
+  },
+  "7188": {
+   "name": "投石问路",
+   "group": "ev054_actives",
+   "desc": [
+    "效果：查看敌方一号位当前属性（无伤害）"
+   ],
+   "_note": "EV054 主动书 I2249：侦察功能技，保留 CE2486"
+  },
+  "10425": {
+   "name": "秘境抽奖·再动·Lv1",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：敏捷 +1%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "passiveAPLUS"
+   ],
+   "note_add": "<CodexParamRate: 6:1>",
+   "_note": "秘境抽奖·再动：彻底去 passiveAPLUS，换敏捷百分比"
+  },
+  "10426": {
+   "name": "秘境抽奖·再动·Lv2",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：敏捷 +2%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "passiveAPLUS"
+   ],
+   "note_add": "<CodexParamRate: 6:2>",
+   "_note": "秘境抽奖·再动：彻底去 passiveAPLUS，换敏捷百分比"
+  },
+  "10427": {
+   "name": "秘境抽奖·再动·Lv3",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：敏捷 +3%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "passiveAPLUS"
+   ],
+   "note_add": "<CodexParamRate: 6:3>",
+   "_note": "秘境抽奖·再动：彻底去 passiveAPLUS，换敏捷百分比"
+  },
+  "10428": {
+   "name": "秘境抽奖·再动·LvMax",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：敏捷 +6%（原再动效果已移除）"
+   ],
+   "note_remove": [
+    "passiveAPLUS"
+   ],
+   "note_add": "<CodexParamRate: 6:6>",
+   "_note": "秘境抽奖·再动：彻底去 passiveAPLUS，换敏捷百分比"
+  },
+  "10429": {
+   "name": "秘境抽奖·闪避·Lv1",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物理闪避与魔法闪避 +2%"
+   ],
+   "note_remove": [
+    "passiveXPBST1",
+    "passiveXPBST4"
+   ],
+   "note_add": "<passiveXPBST1:2%><passiveXPBST4:2%>",
+   "_note": "秘境抽奖·闪避：原 10/20/30/50% 压至 2/3/5/8%"
+  },
+  "10430": {
+   "name": "秘境抽奖·闪避·Lv2",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物理闪避与魔法闪避 +3%"
+   ],
+   "note_remove": [
+    "passiveXPBST1",
+    "passiveXPBST4"
+   ],
+   "note_add": "<passiveXPBST1:3%><passiveXPBST4:3%>",
+   "_note": "秘境抽奖·闪避：原 10/20/30/50% 压至 2/3/5/8%"
+  },
+  "10431": {
+   "name": "秘境抽奖·闪避·Lv3",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物理闪避与魔法闪避 +5%"
+   ],
+   "note_remove": [
+    "passiveXPBST1",
+    "passiveXPBST4"
+   ],
+   "note_add": "<passiveXPBST1:5%><passiveXPBST4:5%>",
+   "_note": "秘境抽奖·闪避：原 10/20/30/50% 压至 2/3/5/8%"
+  },
+  "10432": {
+   "name": "秘境抽奖·闪避·LvMax",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：物理闪避与魔法闪避 +8%"
+   ],
+   "note_remove": [
+    "passiveXPBST1",
+    "passiveXPBST4"
+   ],
+   "note_add": "<passiveXPBST1:8%><passiveXPBST4:8%>",
+   "_note": "秘境抽奖·闪避：原 10/20/30/50% 压至 2/3/5/8%"
+  },
+  "10433": {
+   "name": "秘境抽奖·全属性·Lv1",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全属性 +1%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 0:1,1:1,2:1,3:1,4:1,5:1,6:1,7:1>",
+   "_note": "秘境抽奖·全属性：原 5/10/15/25% 压至 1/2/3/5%"
+  },
+  "10434": {
+   "name": "秘境抽奖·全属性·Lv2",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全属性 +2%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 0:2,1:2,2:2,3:2,4:2,5:2,6:2,7:2>",
+   "_note": "秘境抽奖·全属性：原 5/10/15/25% 压至 1/2/3/5%"
+  },
+  "10435": {
+   "name": "秘境抽奖·全属性·Lv3",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全属性 +3%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 0:3,1:3,2:3,3:3,4:3,5:3,6:3,7:3>",
+   "_note": "秘境抽奖·全属性：原 5/10/15/25% 压至 1/2/3/5%"
+  },
+  "10436": {
+   "name": "秘境抽奖·全属性·LvMax",
+   "group": "lottery_passives",
+   "desc": [
+    "效果：全属性 +5%"
+   ],
+   "note_remove": [
+    "CodexParamRate"
+   ],
+   "note_add": "<CodexParamRate: 0:5,1:5,2:5,3:5,4:5,5:5,6:5,7:5>",
+   "_note": "秘境抽奖·全属性：原 5/10/15/25% 压至 1/2/3/5%"
+  }
+ },
+ "states": {
+  "128": {
+   "name": "衰弱",
+   "note_sub": [
+    [
+     "(?is)<G_ShuXing>.*?</G_shuxing>",
+     ""
+    ]
+   ],
+   "traits": [
+    {
+     "code": 21,
+     "dataId": 2,
+     "value": 0.95
+    },
+    {
+     "code": 21,
+     "dataId": 3,
+     "value": 0.95
+    },
+    {
+     "code": 21,
+     "dataId": 4,
+     "value": 0.95
+    },
+    {
+     "code": 21,
+     "dataId": 5,
+     "value": 0.95
+    },
+    {
+     "code": 21,
+     "dataId": 6,
+     "value": 0.95
+    },
+    {
+     "code": 22,
+     "dataId": 0,
+     "value": -0.08
+    },
+    {
+     "code": 22,
+     "dataId": 1,
+     "value": -0.08
+    },
+    {
+     "code": 22,
+     "dataId": 2,
+     "value": -0.08
+    }
+   ],
+   "turns": 2,
+   "state_note": "攻防敏 −5%，命中、暴击与闪避 −8%"
+  },
+  "161": {
+   "name": "蔷薇刺鞭",
+   "note_sub": [
+    [
+     "(?is)<G_ShuXing>.*?</G_shuxing>",
+     ""
+    ]
+   ],
+   "traits": [
+    {
+     "code": 21,
+     "dataId": 3,
+     "value": 0.92
+    },
+    {
+     "code": 21,
+     "dataId": 5,
+     "value": 0.92
+    }
+   ],
+   "turns": 3,
+   "state_note": "双防 −8%"
+  },
+  "308": {
+   "name": "畏手畏脚",
+   "note_sub": [
+    [
+     "(?is)<G_ShuXing>.*?</G_shuxing>",
+     ""
+    ]
+   ],
+   "traits": [
+    {
+     "code": 21,
+     "dataId": 6,
+     "value": 0.9
+    }
+   ],
+   "turns": 3,
+   "state_note": "敏捷 −10%"
+  },
+  "646": {
+   "name": "昂首",
+   "note_remove": [
+    "passiveHarmRi",
+    "passiveCrHarmRi"
+   ],
+   "note_add": "<passiveHarmRi:3><passiveCrHarmRi:6>",
+   "turns": 3,
+   "state_note": "最终伤害 +3%，暴击伤害 +6%"
+  },
+  "998": {
+   "name": "破阵——天地荒芜",
+   "note_sub": [
+    [
+     "(?is)<G_ShuXing>.*?</G_shuxing>",
+     ""
+    ]
+   ],
+   "traits": [
+    {
+     "code": 21,
+     "dataId": 2,
+     "value": 0.94
+    },
+    {
+     "code": 21,
+     "dataId": 3,
+     "value": 0.94
+    },
+    {
+     "code": 21,
+     "dataId": 4,
+     "value": 0.94
+    },
+    {
+     "code": 21,
+     "dataId": 5,
+     "value": 0.94
+    },
+    {
+     "code": 21,
+     "dataId": 6,
+     "value": 0.94
+    },
+    {
+     "code": 21,
+     "dataId": 7,
+     "value": 0.94
+    },
+    {
+     "code": 22,
+     "dataId": 1,
+     "value": -0.1
+    },
+    {
+     "code": 22,
+     "dataId": 2,
+     "value": -0.1
+    },
+    {
+     "code": 22,
+     "dataId": 4,
+     "value": -0.1
+    }
+   ],
+   "turns": 3,
+   "state_note": "攻防敏运 −6%，暴击与闪避 −10%"
+  },
+  "1000": {
+   "name": "破阵——神之盾",
+   "note_remove": [
+    "passiveHarmRe\\d+"
+   ],
+   "traits": [
+    {
+     "code": 23,
+     "dataId": 6,
+     "value": 0.92
+    },
+    {
+     "code": 23,
+     "dataId": 7,
+     "value": 0.92
+    }
+   ],
+   "turns": 3,
+   "state_note": "承受物理与魔法伤害 −8%"
+  },
+  "1004": {
+   "name": "破阵——止戈",
+   "note_sub": [
+    [
+     "(?is)<G_ShuXing>.*?</G_shuxing>",
+     ""
+    ]
+   ],
+   "traits": [
+    {
+     "code": 21,
+     "dataId": 2,
+     "value": 0.9
+    },
+    {
+     "code": 21,
+     "dataId": 4,
+     "value": 0.9
+    },
+    {
+     "code": 22,
+     "dataId": 2,
+     "value": -0.15
+    }
+   ],
+   "turns": 3,
+   "state_note": "双攻 −10%，暴击率 −15%"
+  },
+  "1006": {
+   "name": "破阵——附骨之疽",
+   "effects_remove": true,
+   "note_sub": [
+    [
+     "(?is)<Custom Regenerate Effect>.*?</Custom Regenerate Effect>",
+     ""
+    ]
+   ],
+   "traits": [
+    {
+     "code": 22,
+     "dataId": 7,
+     "value": -0.05
+    },
+    {
+     "code": 22,
+     "dataId": 2,
+     "value": -0.1
+    }
+   ],
+   "turns": 3,
+   "state_note": "每回合损失 5% 最大生命，暴击率 −10%"
+  },
+  "1007": {
+   "name": "破阵——天怒",
+   "traits": [
+    {
+     "code": 21,
+     "dataId": 2,
+     "value": 1.08
+    },
+    {
+     "code": 21,
+     "dataId": 3,
+     "value": 1.08
+    },
+    {
+     "code": 21,
+     "dataId": 4,
+     "value": 1.08
+    },
+    {
+     "code": 21,
+     "dataId": 5,
+     "value": 1.08
+    }
+   ],
+   "turns": 3,
+   "state_note": "双攻与双防 +8%"
+  },
+  "1009": {
+   "name": "破阵——怨毒恶齿",
+   "note_sub": [
+    [
+     "(?is)<G_ShuXing>.*?</G_shuxing>",
+     ""
+    ]
+   ],
+   "traits": [
+    {
+     "code": 21,
+     "dataId": 2,
+     "value": 0.9
+    },
+    {
+     "code": 21,
+     "dataId": 4,
+     "value": 0.9
+    },
+    {
+     "code": 22,
+     "dataId": 2,
+     "value": -0.15
+    },
+    {
+     "code": 22,
+     "dataId": 1,
+     "value": -0.1
+    },
+    {
+     "code": 22,
+     "dataId": 4,
+     "value": -0.1
+    }
+   ],
+   "turns": 3,
+   "state_note": "双攻 −10%，暴击率 −15%，闪避率 −10%"
+  },
+  "1010": {
+   "name": "破阵——巡天之目",
+   "note_sub": [
+    [
+     "(?is)<G_ShuXing>.*?</G_shuxing>",
+     ""
+    ]
+   ],
+   "traits": [
+    {
+     "code": 21,
+     "dataId": 2,
+     "value": 1.05
+    },
+    {
+     "code": 21,
+     "dataId": 3,
+     "value": 1.05
+    },
+    {
+     "code": 21,
+     "dataId": 4,
+     "value": 1.05
+    },
+    {
+     "code": 21,
+     "dataId": 5,
+     "value": 1.05
+    },
+    {
+     "code": 21,
+     "dataId": 6,
+     "value": 1.08
+    }
+   ],
+   "turns": 3,
+   "state_note": "双攻与双防 +5%，敏捷 +8%"
+  },
+  "1011": {
+   "name": "破阵——附骨之疽*极恶",
+   "traits": [
+    {
+     "code": 22,
+     "dataId": 7,
+     "value": -0.05
+    },
+    {
+     "code": 23,
+     "dataId": 2,
+     "value": 0.8
+    }
+   ],
+   "turns": 3,
+   "state_note": "每回合损失 5% 最大生命，生命回复率 −20%"
+  },
+  "1012": {
+   "name": "破阵——重岩壁垒",
+   "note_remove": [
+    "passiveHarmRe\\d+"
+   ],
+   "traits": [
+    {
+     "code": 23,
+     "dataId": 6,
+     "value": 0.9
+    },
+    {
+     "code": 23,
+     "dataId": 7,
+     "value": 0.9
+    }
+   ],
+   "turns": 3,
+   "state_note": "承受物理与魔法伤害 −10%"
+  },
+  "1013": {
+   "name": "破阵——黯灭幻影",
+   "traits": [
+    {
+     "code": 22,
+     "dataId": 2,
+     "value": 0.1
+    },
+    {
+     "code": 21,
+     "dataId": 6,
+     "value": 1.1
+    }
+   ],
+   "turns": 3,
+   "state_note": "暴击率 +10%，敏捷 +10%"
+  },
+  "1014": {
+   "name": "破阵——溺亡之水",
+   "traits": [
+    {
+     "code": 11,
+     "dataId": 14,
+     "value": 1.15
+    }
+   ],
+   "turns": 3,
+   "state_note": "受到的水系伤害 +15%"
+  },
+  "1015": {
+   "name": "破阵——离火阵*强化",
+   "traits": [
+    {
+     "code": 22,
+     "dataId": 7,
+     "value": -0.03
+    }
+   ],
+   "turns": 3,
+   "state_note": "每回合损失 3% 最大生命"
+  },
+  "1016": {
+   "name": "破阵——若水凝*强化",
+   "traits": [
+    {
+     "code": 22,
+     "dataId": 2,
+     "value": -0.1
+    },
+    {
+     "code": 22,
+     "dataId": 0,
+     "value": -0.1
+    }
+   ],
+   "turns": 3,
+   "state_note": "命中率与暴击率 −10%"
+  },
+  "1017": {
+   "name": "破阵——听风吟*强化",
+   "traits": [
+    {
+     "code": 22,
+     "dataId": 1,
+     "value": 0.1
+    },
+    {
+     "code": 22,
+     "dataId": 4,
+     "value": 0.1
+    }
+   ],
+   "turns": 3,
+   "state_note": "物理与魔法闪避 +10%"
+  },
+  "1018": {
+   "name": "破阵——土河车*强化",
+   "note_sub": [
+    [
+     "(?is)<G_ShuXing>.*?</G_shuxing>",
+     ""
+    ]
+   ],
+   "traits": [
+    {
+     "code": 21,
+     "dataId": 3,
+     "value": 0.92
+    },
+    {
+     "code": 21,
+     "dataId": 5,
+     "value": 0.92
+    },
+    {
+     "code": 21,
+     "dataId": 6,
+     "value": 0.92
+    }
+   ],
+   "turns": 3,
+   "state_note": "双防与敏捷 −8%"
+  },
+  "1019": {
+   "name": "破阵——困龙法*强化",
+   "traits": [
+    {
+     "code": 22,
+     "dataId": 1,
+     "value": -0.08
+    },
+    {
+     "code": 22,
+     "dataId": 4,
+     "value": -0.08
+    }
+   ],
+   "turns": 3,
+   "state_note": "物理与魔法闪避 −8%"
+  },
+  "1227": {
+   "name": "变猪",
+   "note_sub": [
+    [
+     "(?is)<G_ShuXing>.*?</G_shuxing>",
+     ""
+    ]
+   ],
+   "traits": [
+    {
+     "code": 21,
+     "dataId": 2,
+     "value": 0.92
+    },
+    {
+     "code": 21,
+     "dataId": 3,
+     "value": 0.92
+    },
+    {
+     "code": 21,
+     "dataId": 4,
+     "value": 0.92
+    },
+    {
+     "code": 21,
+     "dataId": 5,
+     "value": 0.92
+    },
+    {
+     "code": 21,
+     "dataId": 6,
+     "value": 0.92
+    },
+    {
+     "code": 21,
+     "dataId": 7,
+     "value": 0.92
+    },
+    {
+     "code": 22,
+     "dataId": 1,
+     "value": -0.12
+    },
+    {
+     "code": 22,
+     "dataId": 2,
+     "value": -0.12
+    },
+    {
+     "code": 22,
+     "dataId": 4,
+     "value": -0.12
+    }
+   ],
+   "turns": 3,
+   "state_note": "攻防敏运 −8%，暴击与闪避 −12%"
+  },
+  "1241": {
+   "name": "抽奖·减爆闪1",
+   "traits": [
+    {
+     "code": 22,
+     "dataId": 3,
+     "value": -0.03
+    }
+   ],
+   "turns": 2,
+   "state_note": "暴击闪避 −3%"
+  },
+  "1242": {
+   "name": "抽奖·减爆闪2",
+   "traits": [
+    {
+     "code": 22,
+     "dataId": 3,
+     "value": -0.05
+    }
+   ],
+   "turns": 2,
+   "state_note": "暴击闪避 −5%"
+  },
+  "1243": {
+   "name": "抽奖·减爆闪3",
+   "traits": [
+    {
+     "code": 22,
+     "dataId": 3,
+     "value": -0.08
+    }
+   ],
+   "turns": 2,
+   "state_note": "暴击闪避 −8%"
+  },
+  "1244": {
+   "name": "抽奖·减爆闪4",
+   "traits": [
+    {
+     "code": 22,
+     "dataId": 3,
+     "value": -0.12
+    }
+   ],
+   "turns": 2,
+   "state_note": "暴击闪避 −12%"
+  },
+  "1655": {
+   "name": "《轮回转生决》",
+   "traits": [
+    {
+     "code": 21,
+     "dataId": 0,
+     "value": 1.1
+    },
+    {
+     "code": 21,
+     "dataId": 1,
+     "value": 1.1
+    },
+    {
+     "code": 21,
+     "dataId": 2,
+     "value": 1.1
+    },
+    {
+     "code": 21,
+     "dataId": 3,
+     "value": 1.1
+    },
+    {
+     "code": 21,
+     "dataId": 4,
+     "value": 1.1
+    },
+    {
+     "code": 21,
+     "dataId": 5,
+     "value": 1.1
+    },
+    {
+     "code": 21,
+     "dataId": 6,
+     "value": 1.1
+    },
+    {
+     "code": 21,
+     "dataId": 7,
+     "value": 1.1
+    }
+   ],
+   "turns": 2,
+   "state_note": "全属性 +10%"
+  }
+ }
+}

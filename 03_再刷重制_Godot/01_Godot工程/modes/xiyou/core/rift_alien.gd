@@ -18,10 +18,13 @@ extends RefCounted
 ## - 异化图鉴：赢了倒下的异化怪按「借自的线:种类:级」点亮天启篇异化图鉴（XConfig.tianqi_alien_mark，跨存档，不给数值和物品）。
 ## 外观的纹路贴图、附加件、化形替换件和变形演出还没有美术，先用 tint() 给 XBattlerSprite 的幽紫偏色顶着。
 ##
-## 开关（O-356）：ENABLED＝false 时一概不建（画面、异化、掉落、图鉴都没有）；发行构建里另要 RELEASE_OPEN（默认关，不推给玩家）。
+## 开关（O-356）：ENABLED＝false 时一概不建（画面、异化、掉落、图鉴都没有）；发行构建里另要 RELEASE_OPEN（T455 起开，三阶段整包对玩家打开）。
+## 发行包里本脚本是真脚本（发行空壳.KEEP），调到的天启篇类（XTianqi、XTianqiAlienCodex）是空壳：只用 XTianqi.active／cleared_floors（空壳 false／0），图鉴键在本文件拼。
+## 掉落仍走 XAlienBattle.hidden()：发行构建里 RELEASE_HIDE 开着，所以整包里异化怪会出、图鉴会点亮，但不掉异化装备（T455 写进要 Kyo 定）。
 ## 阶段对齐大厅稿（O-468，Kyo 11-15 拍板 D8 选 A）：ALIGN_LOBBY（默认开）读 stages_aligned——二阶就出侵染、三阶蚀骨、四阶化形，
 ## 即旧表三～五阶整体前移一档；五阶怪物端没有终焉，先按「化形且几率最高」（设计稿 漩涡五阶段 v0.3 待补）。关掉回上面写的旧表（三阶起才异化）。
-## XRift.stage() 只要 STAGE2 开着就恒为 2（没按进度接线，旧问题），所以对齐后非发行构建里西游每场都可能出异化怪；
+## 三阶封顶蚀骨（T455，Kyo 11-24 事项49「按推荐」）：stages_aligned["3"].max_tier＝shigu，守层者 21～30 层、深渊怪由化形改蚀骨，几率不动；难度修正也不越过上限。
+## XRift.stage() 只要 STAGE2 开着就恒为 2（大厅补丁的开关，不是玩家进度）；本模块的 stage() 另按进度接：rift2 过场没看过（一阶玩家）就是 1，一概不建。
 ## 测试和玩家走同一条路，按原版对照的测试（xiyou_event_compare、xiyou_combat 等）自己显式关 ALIGN_LOBBY。
 
 const PATH := "res://modes/xiyou/rift_alien.json"
@@ -37,8 +40,8 @@ static var STAGE_OVERRIDE := 0
 static var STAGE3_ALIEN := true
 ## 阶段对齐大厅稿（O-468）：true＝读 stages_aligned（二阶起异化）；false＝旧表 stages（三阶起异化）
 static var ALIGN_LOBBY := true
-## 发行开关：false＝发行构建（ReleaseEntry.is_release）里一概不建（天启篇相关，Kyo 11-12 只进本地 main、不推给玩家）；以后对玩家开放改成 true
-static var RELEASE_OPEN := false
+## 发行开关：false＝发行构建（ReleaseEntry.is_release）里一概不建；T455（Kyo 11-24 事项49）改 true，这次三阶段整包对玩家打开
+static var RELEASE_OPEN := true
 ## 测试用：≥0 时掉落的「掷中没有」和「选哪件本体」都取它
 static var force_drop := -1.0
 
@@ -73,6 +76,8 @@ static func stage() -> int:
 	if STAGE_OVERRIDE > 0:
 		return clampi(STAGE_OVERRIDE, 1, 5)
 	var st := XRift.stage()
+	if st >= 2 and not XConfig.whisper_seen("rift2"):  # 一阶玩家（漩涡二阶过场没看过）：不出任何异化（T455）
+		return 1
 	return mini(st, 2) if not STAGE3_ALIEN else st
 
 
@@ -182,6 +187,16 @@ static func rule(cls: String, st: int, floor_no: int, difficulty: int) -> Dictio
 		var g := int(d.get("guardian_shift", 0))
 		if g != 0:
 			r.tier = _tier_at(order.find(str(r.tier)) + g)
+	var stage_cap := str(_stage_table().get(str(st), {}).get("max_tier", ""))  # 这一阶的级上限（T455：三阶封顶蚀骨）
+	if stage_cap != "":
+		var cap_i := order.find(stage_cap)
+		if order.find(str(r.tier)) > cap_i:
+			r.tier = stage_cap
+		if str(r.up) != "" and order.find(str(r.up)) > cap_i:
+			r.up = stage_cap
+		if str(r.up) == str(r.tier):
+			r.up = ""
+			r.up_rate = 0.0
 	return r
 
 
@@ -505,7 +520,7 @@ static func grant(logic) -> Array:
 		var u: Dictionary = f.units[e]
 		if not e.is_dead():
 			continue
-		XConfig.tianqi_alien_mark(XTianqiAlienCodex.key(str(kind_info(str(u.kind)).from), str(u.kind), str(u.tier)))
+		XConfig.tianqi_alien_mark("%s:%s:%s" % [str(kind_info(str(u.kind)).from), str(u.kind), str(u.tier)])  # 同 XTianqiAlienCodex.key；发行包里那个是空壳，这里自己拼
 		if XAlienBattle.hidden():
 			continue
 		var id: String = logic.stable_id(e)

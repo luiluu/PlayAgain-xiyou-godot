@@ -251,5 +251,86 @@ class SaveSealSmokeTests(unittest.TestCase):
         self.assertEqual(bad.returncode, 2)
 
 
+class ScriptErrorSmokeTests(unittest.TestCase):
+    """T457：发行入口冒烟 run_keys / run_entry 遇到 SCRIPT ERROR / Failed to load script / Parse Error 必判失败，杜绝假绿。"""
+
+    def _fake_exe(self, d: Path, lines: list) -> Path:
+        exe = d / 'fake_game'
+        body = ['#!/bin/sh']
+        for ln in lines:
+            safe = ln.replace("'", "'\"'\"'")
+            body.append(f"printf '%s\\n' '{safe}'")
+        exe.write_text('\n'.join(body) + '\n', encoding='utf-8')
+        exe.chmod(0o755)
+        return exe
+
+    def _run_one_key(self, lines: list) -> dict:
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d)
+            exe = self._fake_exe(p, lines)
+            got = {}
+            old_dir, old_sleep = M.CRASH_DIR, M.time.sleep
+            M.CRASH_DIR = p / 'empty_crash'
+            M.time.sleep = lambda _s: None
+            try:
+                M.run_keys(p, exe, lambda n, ok, note='': got.__setitem__(n, (ok, note)),
+                           runs=[('new_game', 'space', M.MAP)])
+            finally:
+                M.CRASH_DIR = old_dir
+                M.time.sleep = old_sleep
+            return got
+
+    def test_run_keys_passes_when_clean(self):
+        got = self._run_one_key([
+            'SMOKE_KEY=space scene=res://modes/xiyou/entry.tscn',
+            f'SMOKE_DONE scene={M.MAP}',
+        ])
+        self.assertTrue(got['keys_new_game'][0], got['keys_new_game'])
+        self.assertNotIn('脚本错误', got['keys_new_game'][1])
+
+    def test_run_keys_fails_on_script_error_even_if_rc0_and_done(self):
+        got = self._run_one_key([
+            'SCRIPT ERROR: Compile Error: Failed to compile depended scripts.',
+            '          at: GDScript::reload (res://modes/xiyou/map/map_scene.gd:0)',
+            'SMOKE_KEY=space scene=res://modes/xiyou/map/map_scene.tscn',
+            f'SMOKE_DONE scene={M.MAP}',
+        ])
+        self.assertFalse(got['keys_new_game'][0])
+        self.assertIn('脚本错误 1 条', got['keys_new_game'][1])
+        self.assertIn('SCRIPT ERROR', got['keys_new_game'][1])
+
+    def test_run_keys_fails_on_failed_to_load_script(self):
+        got = self._run_one_key([
+            'ERROR: Failed to load script "res://core/game_app.gd" with error "Compilation failed".',
+            'SMOKE_KEY=space scene=res://modes/xiyou/map/map_scene.tscn',
+            f'SMOKE_DONE scene={M.MAP}',
+        ])
+        self.assertFalse(got['keys_new_game'][0])
+        self.assertIn('Failed to load script', got['keys_new_game'][1])
+
+    def test_run_keys_fails_on_parse_error(self):
+        got = self._run_one_key([
+            'Parse Error: Identifier "XTianqiHallIntro" not declared in the current scope.',
+            'SMOKE_KEY=space scene=res://modes/xiyou/map/map_scene.tscn',
+            f'SMOKE_DONE scene={M.MAP}',
+        ])
+        self.assertFalse(got['keys_new_game'][0])
+        self.assertIn('Parse Error', got['keys_new_game'][1])
+
+    def test_run_entry_fails_on_script_error(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = Path(d)
+            exe = self._fake_exe(p, [
+                'SCRIPT ERROR: Parse Error: Identifier "XTianqiHallIntro" not declared in the current scope.',
+                'ERROR: Failed to load script "res://core/game_app.gd" with error "Compilation failed".',
+                'ENTRY_SCENE=res://modes/xiyou/entry.tscn',
+            ])
+            got = {}
+            M.run_entry(p, exe, lambda n, ok, note='': got.__setitem__(n, (ok, note)), 'macos', require_seal=False)
+            self.assertTrue(got['release_enters_title'][0])
+            self.assertFalse(got['release_no_script_errors'][0])
+            self.assertIn('脚本错误 2 条', got['release_no_script_errors'][1])
+
+
 if __name__ == '__main__':
     unittest.main()

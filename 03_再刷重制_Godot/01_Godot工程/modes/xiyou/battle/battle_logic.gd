@@ -51,6 +51,10 @@ var _damage_record := {}
 var _reflecting := false
 ## T225 逐段结算：战斗画面开的这次行动（XBattleStream，不开时为空）；根序列每条 ACTION EFFECT 前停下等画面
 var _stream = null
+## T456：VP 量数用回合末按来源拆账（默认 false，正常战斗与西游档零开销、零改动）
+var end_turn_audit := false
+var end_turn_sources := {}
+var end_turn_states := {}
 
 func _rule() -> XRandomStream:
 	if random == null and state != null and troop_id == 0:
@@ -182,6 +186,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XWeakChallenge.battle_setup(s, troop)  # 弱者挑战 BattleManager.setup 包装：同步 10357，记最终战判定
 	XImportedBalance.set_acting(null)
 	XTianqiBrand.sweep(s)  # T086-a：这份存档上还有上一场没还原的发作换人留底，先还原出战栏再开打
+	XTianqiSecrets.on_battle_start(s)  # T446 P2-1：进入下一场战斗时自动结束旧存档免费封印期
 	actors = s.battle_members()
 	XYomiJingliu.start_battle(self)  # 镜流 startBattle 包装：放血累计清零
 	XGuyu.after_load(s)  # 谷雨 startBattle 包装：syncAll（同读档）
@@ -1480,9 +1485,41 @@ func act(u: XBattler, skill, target) -> Array:
 	return logs
 
 
+## T456：回合末拆账辅助（仅 end_turn_audit=true 时调用）
+func _audit_enemy_hp() -> float:
+	var t := 0.0
+	for e in enemies:
+		t += maxf(0.0, float(e.hp)) if e.is_alive() else 0.0
+	return t
+
+
+func _audit_step(key: String, before: float) -> float:
+	var after := _audit_enemy_hp()
+	var d := before - after
+	if d != 0.0:
+		end_turn_sources[key] = float(end_turn_sources.get(key, 0.0)) + d
+	return after
+
+
+func _audit_log_states(prefix: String, logs: Array, from_idx: int) -> void:
+	for i in range(from_idx, logs.size()):
+		var l = logs[i]
+		if l is Dictionary and l.get("target") is XEnemy and l.has("state"):
+			var hp_d := float(l.get("hp", 0.0))
+			if hp_d != 0.0:
+				var sk := "%s:%d" % [prefix, int(l.state)]
+				end_turn_states[sk] = float(end_turn_states.get(sk, 0.0)) + hp_d
+
+
 ## 回合结束（MV onTurnEnd）：解除防御、再生、状态回合 -1；恢复行动的人只补进下个回合。
 func end_turn() -> Array:
 	var logs := []
+	var aud := end_turn_audit
+	var ahp := 0.0
+	if aud:
+		end_turn_sources.clear()
+		end_turn_states.clear()
+		ahp = _audit_enemy_hp()
 	for a in actors:
 		if a is XActor:
 			a.stale_state_ids.clear()  # 回合末 onTurnEnd 标 need_refresh，随后的 refresh 重建特性缓存
@@ -1493,22 +1530,40 @@ func end_turn() -> Array:
 	_acted.clear()
 	XAlienBattle.spread_pest(self)  # 异化疫囊 endTurn 包装（原 endTurn 之前）：传播异常与减益
 	XCat.end_turn(self)  # BattleManager.endTurn 的小猫剑圣包装：删过期的识破／剑痕
+	if aud:
+		ahp = _audit_step("pre_other", ahp)
 	logs.append_array(XSukuna.end_round(self))  # 宿傩 endTurn 包装（原 endTurn 之前，在米拉外层）：领域斩击、神灶：开、伤口到期
+	if aud:
+		ahp = _audit_step("pre_sukuna", ahp)
 	logs.append_array(XGojo.end_round(self))  # 天启篇五条悟：无量空处计时
 	XBlackFlash.end_round(self)  # 黑闪 endTurn 包装（宿傩之内、米拉之外）：觉醒到期
 	logs.append_array(XMira.end_turn(self))  # 米拉 endTurn 包装（原 endTurn 之前）：修雷德劫火追加
+	if aud:
+		ahp = _audit_step("pre_mira", ahp)
 	logs.append_array(XYomiJingliu.tq_end_turn(self))  # 天启篇镜流月魄剑匣：本回合扣的队友生命还回一半（原版档为空）
 	XRaven.end_turn(self)  # 渡鸦 endTurn 包装（原 endTurn 之前，在米拉之内、宠物捕捉插件之外）：残响、神话形态减一回合
 	logs.append_array(XPetCapture.end_turn(self))  # Star_PetSystem 的 endTurn 包装：第 5 回合可捕捉的敌人逃跑
+	if aud:
+		ahp = _audit_step("pre_other", ahp)
 	for b in actors + enemies:
 		turn_end_battler(b, logs)
+	if aud:
+		ahp = _audit_enemy_hp()
 	# BattleManager.refreshAllMembers
 	for b in actors + enemies:
 		b.param_refresh()
+	if aud:
+		ahp = _audit_step("refresh_all", ahp)
 	XHeartsteel.end_turn(self)  # 心钢 endTurn 包装（原 endTurn 之后，装得早在各包装里层）：每回合一次回复最大生命 3%／5%
 	XHubris.end_turn(self)  # 狂妄 endTurn 包装：结算倒下的敌人，扬名减 1 回合
+	if aud:
+		ahp = _audit_step("post_other", ahp)
 	logs.append_array(XAlienBattle.round_end(self))  # endTurn 的异化包装（在种族包装之内）：蚀能、腐蚀
+	if aud:
+		ahp = _audit_step("post_alien", ahp)
 	logs.append_array(XRaceBattle.round_end(self))  # endTurn 的种族包装：毒鸡汤结算、残响交接
+	if aud:
+		ahp = _audit_step("post_race", ahp)
 	XYunshang.end_turn(self)  # 云裳 endTurn 包装：六衡裁身回合末清除
 	XTusu.end_turn(self)  # 屠苏 endTurn 包装（原 endTurn 之后）：挫势到期
 	XShieldLedger.round_end()  # 护盾账本 endTurn 包装（原 endTurn 之后）：撤销到期来源、衰减
@@ -1516,34 +1571,64 @@ func end_turn() -> Array:
 	logs.append_array(XTusu.take_logs())  # 屠苏回合末释放支援的命中
 	logs.append_array(XXuanBattle.take_logs())
 	XGuyu.end_round()  # 谷雨 endTurn 包装（原 endTurn 之后）endRound：花期到期收束
+	if aud:
+		ahp = _audit_step("post_other", ahp)
 	logs.append_array(XTianqiQiyinEffects.end_turn(self))  # 天启篇七印装备：疫结算与传染、各计时
+	if aud:
+		ahp = _audit_step("post_qiyin", ahp)
 	XTianqiAffixBattle.end_turn(self)  # 天启篇词条：破绽、压制计时；新异化词条：临终必死、带毒续毒
 	XTianqiWeakAffix.turn_end(self)  # 天启篇弱者专属词条：每自然回合次数清零、受邀标签摘掉
 	XTianqiElements.end_turn(self)  # 天启篇元素重做：回合末清虚空吞没、弱点暴露
 	logs.append_array(XTianqiAlienAffix.take_logs(self))  # 天启篇新异化词条：临终
+	if aud:
+		ahp = _audit_step("post_alien_affix", ahp)
 	logs.append_array(XGuyu.take_visuals())  # 谷雨 queueVisual：回合末扣血引起的归根反馈（画面）
 	logs.append_array(XTianqiHorsemen.end_turn(self))  # 天启四骑士：死期带走、灼烧、疫病、不服、终末
+	if aud:
+		ahp = _audit_step("post_horsemen", ahp)
 	logs.append_array(XTianqiFamineAlien.end_turn(self))  # 天启篇饥荒线异化：化形熬夜者扣 TP
 	logs.append_array(XTianqiPlagueAlien.end_turn(self))  # 天启篇瘟疫线异化：中毒扣血、传染、减益回合
+	if aud:
+		ahp = _audit_step("post_plague", ahp)
 	logs.append_array(XTianqiDeathAlien.end_turn(self))  # 天启篇死亡线异化：死期带走、丧钟倒数
+	if aud:
+		ahp = _audit_step("post_death", ahp)
 	logs.append_array(XRiftAlien.end_turn(self))  # 漩涡阶段异化：毒腺中毒扣血、丧钟倒数
+	if aud:
+		ahp = _audit_step("post_rift", ahp)
 	logs.append_array(XTianqiXinmoTraits.end_turn(self))  # 天启篇心魔特点（T318）：骨裂倒计时、逆流冲刷
+	if aud:
+		ahp = _audit_step("post_xinmo", ahp)
 	_sync_orders(before, false)
 	resolve_collapses()
+	if aud:
+		_audit_step("post_other", ahp)
 	return logs
 
 
 ## 单个战斗者的 onTurnEnd。krz 前后各标一次 dirty，中间 regenerateAll 已 refresh（活着时）。
 func turn_end_battler(b: XBattler, logs: Array) -> void:
+	var aud := end_turn_audit and b is XEnemy
+	var ahp := _audit_enemy_hp() if aud else 0.0
 	b.runtime_result = XResourceContext.empty_result()  # Game_Battler.onTurnEnd 首句 clearResult（之前去掉的状态这时起可以再附加）
 	b.guarding = false
 	b.param_mark_dirty()
 	if b.is_alive():
 		b.param_refresh()
+		if aud:
+			ahp = _audit_step("battler_refresh", ahp)
+		var n0 := logs.size()
 		XExtDot.tick(self, b, logs)  # YEP_X_ExtDoT：regenerateAll 开头的持续伤害／再生（先于 HP 再生率）
+		if aud:
+			ahp = _audit_step("extdot", ahp)
+			_audit_log_states("extdot", logs, n0)
 		if b.is_alive():
 			_regenerate(b, logs)  # 原 regenerateAll 自带 isAlive：被 DoT 打倒就不再生了
+			if aud:
+				ahp = _audit_step("regen", ahp)
 		_tick_states(b, 2)
+		if aud:
+			ahp = _audit_step("tick_states", ahp)
 	# Custom Regenerate → Custom Turn End（regenerateAll 外层与 onTurnEnd 不看存活，倒下的也跑）
 	# 叠毒等 Regenerate 脚本的扣血按状态各弹一次字（regenerateStateEffects 每个状态 clearResult → eval → startDamagePopup）
 	# regenerateStateEffects：进去时活着、脚本后倒下就 performCollapse（叠毒脚本弹字后自己也调一次），紧跟这次弹字；同一次倒下只记一条
@@ -1556,13 +1641,23 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 		entry.views = views([entry.target])
 		logs.append(entry)
 		collapse.call()
+	var n1 := logs.size()
 	XStateEffects.run("regenerate", b, {"random": _rule(), "variables": vars(), "emit": emit})
 	collapse.call()
+	if aud:
+		ahp = _audit_step("state_regen", ahp)
+		_audit_log_states("state_regen", logs, n1)
+	var n2 := logs.size()
 	XStateEffects.run("turn_end", b, {"emit": emit})
+	if aud:
+		ahp = _audit_step("state_turn_end", ahp)
+		_audit_log_states("state_turn_end", logs, n2)
 	b.decay_shield()  # ShieldSystem 包在 regenerateAll 最外层，倒下的也衰减
 	b.param_mark_dirty()
 	XMira.turn_end(self, b, logs)  # 米拉 Game_Actor.onTurnEnd 包装（之后）：不灭龙血回 5%
 	XGarou.turn_end(b)  # 饿狼 Game_Actor.onTurnEnd 包装（之后）：清本回合受过伤、琦玉模式
+	if aud:
+		_audit_step("battler_other", ahp)
 
 
 ## 无界面测试用：跑完一整个回合。commands: actor -> [技能, 目标]（[null, null] 表示放弃）。
@@ -2037,6 +2132,7 @@ func _make_action_orders() -> void:
 	if not _orders_made:
 		# 原 makeActionOrders：偷袭不排我方、先制不排敌方（只首回合；「下个回合」仍是全员）
 		current_order = _sorted_by_speed((actors if not surprise else []) + (enemies if not preemptive else []))
+		XTianqiSecrets.apply_first_turn_advance(self, current_order)  # T443：九秘行字诀首回合行动提前（第 2 回合恢复）
 		_action_times_modification(current_order, true)
 	_clear_unable()
 	_action_times_modification(next_order)
@@ -3602,6 +3698,53 @@ func _tick_states(b: XBattler, timing: int) -> void:
 					b.buffs[i] = 0
 
 
+## 导入角色平衡：把导入状态里的负 HP 再生部分按 XImportedBalance.DOT_RATE 缩放。
+## T332＋T405＋T456：天启篇拆算去掉导入负再生时，逆祷来源的负再生已在 prayer_block 里扣过（记进 dot_prayer、不进 dot_neg），
+## 小怪／封顶关闭分支用 rr[0] − dot_neg 避免重复扣翻正；首领封顶开启分支重套 cap_neg_hrg（含本回合 XExtDot 已用预算）。
+static func _apply_imported_regen(b: XBattler, rr: Array, prayer_block: float, imported: Array, dh: float) -> float:
+	var b_rec := float(rr[1])
+	var tq_split := bool(rr[2])
+	# 原版把这些状态的负 hrg 特性换成 0，再按特性对象原顺序重新求和（不能用 hrg 减去它们：浮点会差，floor 后差 1）
+	var states := b.states()
+	var hrg := 0.0
+	var other_pos := 0.0
+	var other_neg := 0.0
+	var dot_neg := 0.0  # 导入状态里的非逆祷负再生（原值；逆祷部分已在 prayer_block 里，不能再扣一次，T456）
+	var dot_prayer := 0.0  # 其中来源是逆祷者的部分（已在 prayer_block 里，T405 核 P3-1／T456）
+	var altered := false
+	for o in b.trait_objects():
+		var dot_state: bool = imported.has(int(o.get("id", -1))) and states.any(func(x): return is_same(x, o))
+		for tr in o.get("traits", []):
+			if int(tr.code) != XBattler.TRAIT_XPARAM or int(tr.dataId) != 7:
+				continue
+			var tv := float(tr.value)
+			if dot_state and tv < 0.0:
+				altered = true
+				var osrc = XImportedBalance.origin(b, int(o.get("id", -1)))
+				if osrc != null and XAlienBattle.has(osrc, "prayer"):
+					dot_prayer += tv
+				else:
+					dot_neg += tv
+			else:
+				hrg += tv
+				if tv < 0.0:
+					other_neg += tv
+				else:
+					other_pos += tv
+	if not altered:
+		return dh
+	if tq_split and b is XEnemy:
+		var en := b as XEnemy
+		if XTianqiCombat.boss_neg_hrg_cap(en) < 0.0:  # 封顶开着：去掉后重套封顶，避免 rr[0] - dot_neg 翻正
+			var w := en.warehouse_rate()
+			var eff_other_neg := en.cap_neg_hrg(minf(0.0, other_neg - (prayer_block - dot_prayer)), b_rec) if other_neg < 0.0 else 0.0
+			hrg = other_pos * w * w + eff_other_neg
+		else:  # 封顶关着／小怪：逐值回到 T332 原式（dot_neg 已剔除逆祷部分，不重复扣、不翻正）
+			hrg = float(rr[0]) - dot_neg
+	var other := floorf(b.mhp * hrg * b_rec)
+	return other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
+
+
 func _regenerate(b: XBattler, logs: Array) -> void:
 	# krz regenerateHp：floor(mhp × hrg × rec)，含目标的恢复效果率（MP 再生不含）
 	# T332（D249 乙）：天启篇敌人负再生不乘仓库倍率、正再生照旧（XEnemy.regen_rates，开关 XTianqiCombat.DOT_NO_WAREHOUSE）
@@ -3609,7 +3752,6 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 	var prayer_block := XAlienBattle.prayer_regen_block(b)
 	var rr: Array = b.regen_rates(prayer_block) if b is XEnemy else [b.hrg - prayer_block if prayer_block != 0.0 else b.hrg, b.rec, false]
 	var b_rec: float = rr[1]
-	var tq_split: bool = rr[2]
 	var dh := floorf(b.mhp * float(rr[0]) * b_rec)
 	# 导入角色平衡：导入角色附加的状态里负的 HP 再生率（持续伤害）那部分 ×0.01（向下取整），其余照常；
 	# 两个值都按原顺序先乘 rec 再 floor，之后才拆出导入部分缩放（installImportedBalanceRuntime.js:496／506）
@@ -3619,26 +3761,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		if src != null and src != b and XImportedBalance.outgoing_rate(src) != 1.0:
 			imported.append(id)
 	if not imported.is_empty():
-		# 原版把这些状态的负 hrg 特性换成 0，再按特性对象原顺序重新求和（不能用 hrg 减去它们：浮点会差，floor 后差 1）
-		var states := b.states()
-		var hrg := 0.0
-		var dot_neg := 0.0  # 天启篇拆算时：导入状态里的负再生（原值）
-		var altered := false
-		for o in b.trait_objects():
-			var dot_state: bool = imported.has(int(o.get("id", -1))) and states.any(func(x): return is_same(x, o))
-			for tr in o.get("traits", []):
-				if int(tr.code) != XBattler.TRAIT_XPARAM or int(tr.dataId) != 7:
-					continue
-				if dot_state and float(tr.value) < 0.0:
-					altered = true
-					dot_neg += float(tr.value)
-				else:
-					hrg += float(tr.value)
-		if altered:
-			if tq_split:  # T332：天启篇拆算的 hrg 里去掉导入状态的负再生（它们本来就 ×1）
-				hrg = float(rr[0]) - dot_neg
-			var other := floorf(b.mhp * hrg * b_rec)
-			dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
+		dh = _apply_imported_regen(b, rr, prayer_block, imported, dh)
 	var dm := floorf(b.mmp * b.mrg)
 	var dt := 100.0 * b.trg
 	var famine := XTianqiFamineAlien.regen(self, b, dh, dm, dt)  # 天启篇饥荒线异化：荒年者降再生（化形起失效）、熬夜者降回 TP
@@ -3648,6 +3771,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 	var rift := XRiftAlien.regen(self, b, dh, dm)  # 漩涡阶段异化：荒年者降再生（化形我方再生失效）
 	dh = rift[0]
 	dm = rift[1]
+	dh = XTianqiCombat.cap_regen_after_dots(b, dh)  # T453（D273）：本回合火海类持续伤害已用的预算，从再生负值里扣
 	if XTianqiQiyinRule.no_regen(self, b):  # 七印祭坛限时：魔法、TP 不恢复
 		dm = 0.0
 		dt = 0.0
@@ -3850,7 +3974,8 @@ func drop_chances(e: XEnemy, all_rows := false) -> Array:
 				row.chance = minf(1.0, XTianqiDrop.signature_base(int(extra.kind), int(extra.id), float(extra.rate), e.enemy_id) * sig_mult)
 				row["sig"] = "%d:%d:%d" % [e.enemy_id, int(extra.kind), int(extra.id)]
 			out.append(row)
-	return XTianqiSect.drop_rows(state, e.enemy_id, out)  # 天启篇教派连带内容：研究日志去掉、夏娜心魔换碎片（XTianqiSect）
+	out = XTianqiSect.drop_rows(state, e.enemy_id, out)  # 天启篇教派连带内容：研究日志去掉、夏娜心魔换碎片（XTianqiSect）
+	return XTianqiSecrets.filter_drop_rows(state, out)  # T443：封禁功法书（炎黄后裔 2237／九阳淬体图 2240）天启篇不掉
 
 
 ## 把掉落放进背包（BattleManager.gainDropItems / SpriteEnemyTrP.gainDropItems）

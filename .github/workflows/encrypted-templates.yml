@@ -1,0 +1,215 @@
+# 加密导出模板（T452，cc 2026-11-24）：用仓库 Secret GODOT_SCRIPT_ENCRYPTION_KEY 编 Godot 发行导出模板
+# （macOS universal、Windows x86_64、安卓 arm64 ＋ android_source.zip／aar），另编一份「错密钥」macOS arm64 测试模板。
+# 密钥只在 Secret 里（GitHub 日志自动打码），不进仓库；产物先用同一把密钥 openssl 加密再作附件（仓库公开，附件谁都能下），留 3 天。
+# 触发：本机跑 07_开发环境/资源加密.py templates（推 ci-templates/<分支> 或手动 workflow_dispatch），它前台等完、下载、解密、装好模板。
+# 引擎版本照 07_开发环境/环境登记.json 的 version（4.7.2-stable，提交 ed1daf0bf）；编法尽量照 Godot 官方 CI（production=yes，带 ANGLE／AccessKit／D3D12／Vulkan）。
+name: 加密导出模板
+
+on:
+  push:
+    branches: ['ci-templates/**']
+  workflow_dispatch:
+    inputs:
+      godot_ref:
+        description: Godot 源码标签
+        type: string
+        default: 4.7.2-stable
+      platforms:
+        description: 编哪几个（逗号分隔：macos,windows,android,wrongkey）
+        type: string
+        default: macos,windows,android,wrongkey
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_REF: ${{ inputs.godot_ref || '4.7.2-stable' }}
+  PLATFORMS: ${{ inputs.platforms || 'macos,windows,android,wrongkey' }}
+  BUILD_NAME: kyo_aes
+  SCONS_VERSION: 4.10.1
+
+jobs:
+  macos:
+    if: contains(inputs.platforms || 'macos,windows,android,wrongkey', 'macos')
+    runs-on: macos-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: godotengine/godot
+          ref: ${{ env.GODOT_REF }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install scons==${{ env.SCONS_VERSION }}
+      - id: sdk
+        shell: bash
+        run: |
+          python ./misc/scripts/install_angle.py && echo "angle=yes" >> "$GITHUB_OUTPUT" || echo "angle=no" >> "$GITHUB_OUTPUT"
+          python3 ./misc/scripts/install_accesskit.py && echo "accesskit=yes" >> "$GITHUB_OUTPUT" || echo "accesskit=no" >> "$GITHUB_OUTPUT"
+          sh misc/scripts/install_vulkan_sdk_macos.sh && echo "vulkan=yes" >> "$GITHUB_OUTPUT" || echo "vulkan=no" >> "$GITHUB_OUTPUT"
+      - name: 编 x86_64 与 arm64
+        env:
+          SCRIPT_AES256_ENCRYPTION_KEY: ${{ secrets.GODOT_SCRIPT_ENCRYPTION_KEY }}
+        shell: bash
+        run: |
+          test ${#SCRIPT_AES256_ENCRYPTION_KEY} -eq 64 || { echo "::error::Secret GODOT_SCRIPT_ENCRYPTION_KEY 不是 64 位"; exit 1; }
+          rm -rf editor
+          F="platform=macos target=template_release production=yes lto=thin debug_symbols=no vulkan=${{ steps.sdk.outputs.vulkan }} angle=${{ steps.sdk.outputs.angle }} accesskit=${{ steps.sdk.outputs.accesskit }}"
+          scons $F arch=x86_64
+          scons $F arch=arm64
+      - name: 打 macos.zip
+        shell: bash
+        run: |
+          mkdir -p out && cp -R misc/dist/macos_template.app out/
+          mkdir -p out/macos_template.app/Contents/MacOS
+          lipo -create bin/godot.macos.template_release.x86_64 bin/godot.macos.template_release.arm64 -output out/macos_template.app/Contents/MacOS/godot_macos_release.universal
+          strip out/macos_template.app/Contents/MacOS/godot_macos_release.universal
+          chmod +x out/macos_template.app/Contents/MacOS/*
+          (cd out && zip -q -r -X macos.zip macos_template.app && rm -rf macos_template.app)
+          ls -l out
+      - name: 加密附件
+        env:
+          K: ${{ secrets.GODOT_SCRIPT_ENCRYPTION_KEY }}
+        shell: bash
+        run: |
+          tar -C out -cf tpl.tar . && openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:K -in tpl.tar -out tpl-macos.tar.enc
+          shasum -a 256 out/* tpl-macos.tar.enc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tpl-macos
+          path: tpl-macos.tar.enc
+          retention-days: 3
+
+  windows:
+    if: contains(inputs.platforms || 'macos,windows,android,wrongkey', 'windows')
+    runs-on: windows-latest
+    timeout-minutes: 330
+    env:
+      SCONS_CACHE_MSVC_CONFIG: true
+      PYTHONIOENCODING: utf8
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: godotengine/godot
+          ref: ${{ env.GODOT_REF }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install scons==${{ env.SCONS_VERSION }}
+      - id: sdk
+        shell: bash
+        run: |
+          python ./misc/scripts/install_d3d12_sdk_windows.py && echo "d3d12=yes" >> "$GITHUB_OUTPUT" || echo "d3d12=no" >> "$GITHUB_OUTPUT"
+          python ./misc/scripts/install_angle.py && echo "angle=yes" >> "$GITHUB_OUTPUT" || echo "angle=no" >> "$GITHUB_OUTPUT"
+          python ./misc/scripts/install_winrt.py || true
+          python ./misc/scripts/install_accesskit.py && echo "accesskit=yes" >> "$GITHUB_OUTPUT" || echo "accesskit=no" >> "$GITHUB_OUTPUT"
+      - name: 编 x86_64
+        env:
+          SCRIPT_AES256_ENCRYPTION_KEY: ${{ secrets.GODOT_SCRIPT_ENCRYPTION_KEY }}
+        shell: bash
+        run: |
+          test ${#SCRIPT_AES256_ENCRYPTION_KEY} -eq 64 || { echo "::error::Secret GODOT_SCRIPT_ENCRYPTION_KEY 不是 64 位"; exit 1; }
+          rm -rf editor
+          scons platform=windows target=template_release arch=x86_64 production=yes debug_symbols=no d3d12=${{ steps.sdk.outputs.d3d12 }} angle=${{ steps.sdk.outputs.angle }} accesskit=${{ steps.sdk.outputs.accesskit }}
+          ls -l bin
+      - name: 整理与加密附件
+        env:
+          K: ${{ secrets.GODOT_SCRIPT_ENCRYPTION_KEY }}
+        shell: bash
+        run: |
+          mkdir -p out
+          cp bin/godot.windows.template_release.x86_64.exe out/windows_release_x86_64.exe
+          cp bin/godot.windows.template_release.x86_64.console.exe out/windows_release_x86_64_console.exe
+          tar -C out -cf tpl.tar . && openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:K -in tpl.tar -out tpl-windows.tar.enc
+          sha256sum out/* tpl-windows.tar.enc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tpl-windows
+          path: tpl-windows.tar.enc
+          retention-days: 3
+
+  android:
+    if: contains(inputs.platforms || 'macos,windows,android,wrongkey', 'android')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: godotengine/godot
+          ref: ${{ env.GODOT_REF }}
+          fetch-depth: 1
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install scons==${{ env.SCONS_VERSION }}
+      - run: python ./misc/scripts/install_swappy_android.py
+      - name: 编 arm64
+        env:
+          SCRIPT_AES256_ENCRYPTION_KEY: ${{ secrets.GODOT_SCRIPT_ENCRYPTION_KEY }}
+        shell: bash
+        run: |
+          test ${#SCRIPT_AES256_ENCRYPTION_KEY} -eq 64 || { echo "::error::Secret GODOT_SCRIPT_ENCRYPTION_KEY 不是 64 位"; exit 1; }
+          rm -rf editor
+          scons platform=android target=template_release arch=arm64 production=yes lto=thin debug_symbols=no swappy=yes
+      - name: 生成 android_release.apk／android_source.zip／aar
+        shell: bash
+        run: |
+          cd platform/android/java && ./gradlew generateGodotTemplates && cd ../../..
+          ls -l bin
+      - name: 整理与加密附件
+        env:
+          K: ${{ secrets.GODOT_SCRIPT_ENCRYPTION_KEY }}
+        shell: bash
+        run: |
+          mkdir -p out
+          cp bin/android_release.apk bin/android_source.zip out/
+          cp bin/godot-lib.template_release.aar out/ || true
+          tar -C out -cf tpl.tar . && openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:K -in tpl.tar -out tpl-android.tar.enc
+          sha256sum out/* tpl-android.tar.enc
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tpl-android
+          path: tpl-android.tar.enc
+          retention-days: 3
+
+  wrongkey:
+    # 验收第 8 条：同版本、换一把随机密钥（只在这次运行里现生成，用完即弃）编的 macOS arm64 模板，用来证明错密钥读不出加密包
+    if: contains(inputs.platforms || 'macos,windows,android,wrongkey', 'wrongkey')
+    runs-on: macos-latest
+    timeout-minutes: 200
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          repository: godotengine/godot
+          ref: ${{ env.GODOT_REF }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install scons==${{ env.SCONS_VERSION }}
+      - name: 编（随机错密钥）
+        shell: bash
+        run: |
+          export SCRIPT_AES256_ENCRYPTION_KEY=$(openssl rand -hex 32)
+          rm -rf editor
+          scons platform=macos target=template_release arch=arm64 lto=none debug_symbols=no vulkan=no angle=no accesskit=no
+          mkdir -p out && cp -R misc/dist/macos_template.app out/ && mkdir -p out/macos_template.app/Contents/MacOS
+          cp bin/godot.macos.template_release.arm64 out/macos_template.app/Contents/MacOS/godot_macos_release.universal
+          chmod +x out/macos_template.app/Contents/MacOS/*
+          (cd out && zip -q -r -X macos_wrongkey.zip macos_template.app && rm -rf macos_template.app)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tpl-wrongkey
+          path: out/macos_wrongkey.zip
+          retention-days: 3

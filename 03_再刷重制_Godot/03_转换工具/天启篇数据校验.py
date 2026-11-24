@@ -208,7 +208,7 @@ def guardian_phase4_rules(g) -> list:
     if dp is not None:   # T402：{层号: {状态号: 正整数%}}，层号 1～34、状态号正整数、值 1～100 整数（附则 E）
         isint = lambda v: isinstance(v, int) and not isinstance(v, bool)
         if not isinstance(dp, dict):
-            bad.append('guardian_phase4.dot_pct＝%r：要 {层号: {状态号: 整数%}}' % (dp,))
+            bad.append('guardian_phase4.dot_pct＝%r：要 {层号: {状态号: 整数%%}}' % (dp,))
         else:
             for f, row in dp.items():
                 if str(f).startswith('_'):
@@ -2098,8 +2098,8 @@ def ledger_phase4_rules(table: dict, balance: dict = None) -> list:
         bad.append('phase4.derived_module 要正好是 derived 里的模块 7 行（同序）：%s' % mods)
     if p4.get('nine_crit_dmg_cap') != 0.3:
         bad.append('phase4.nine_crit_dmg_cap 要是 0.3（九线爆伤合计封顶 +30%）')
-    if p4.get('secret_slot') != 0.08:
-        bad.append('phase4.secret_slot 要是 0.08（秘籍每格 +8%，不改）')
+    if p4.get('secret_slot') != 0.15:
+        bad.append('phase4.secret_slot 要是 0.15（D274① 秘籍每格上限 +15%，原 D203 +8% 已改）')
     if p4.get('brand', {}).get('id') != 'brand':
         bad.append('phase4.brand 要登记烙印一行')
     return bad
@@ -2123,6 +2123,12 @@ def combat_rules_phase4_rules(table: dict) -> list:
             # T241（D222 丙）：U 改整数百分比，先填 100＝不打折，标定后约 20～30
             if not isinstance(v, int) or isinstance(v, bool) or not 10 <= v <= 100:
                 bad.append('combat_rules.boss_hp_temp_unit.%s 要是 10～100 的整数百分比（先填 100，标定后约 20～30）：%s' % (kk, v))
+    cap = cr.get('boss_neg_hrg_cap_pct')
+    if cap is not None and (not isinstance(cap, int) or isinstance(cap, bool) or not 1 <= cap <= 100):
+        bad.append('combat_rules.boss_neg_hrg_cap_pct 要是 1～100 的整数百分比：%r' % (cap,))
+    ex = cr.get('boss_neg_hrg_cap_extdot_states')
+    if ex is not None and (not isinstance(ex, list) or any(not isinstance(i, int) or isinstance(i, bool) or i <= 0 for i in ex)):
+        bad.append('combat_rules.boss_neg_hrg_cap_extdot_states 要是状态号（正整数）列表：%r' % (ex,))
     return bad
 
 
@@ -3278,6 +3284,393 @@ def check_weak_affix_table(_args) -> bool:
     return _run_table('weak_affix_table.json', lambda t: weak_affix_rules(t, _load_opt('six_dim.json')))
 
 
+def secret_books_rules(t: dict, db_dir: Path = None) -> list:
+    bad, check = _checker()
+    check('version', _is_int(t.get('version')) and t['version'] >= 1, '要是正整数')
+    rules = t.get('rules')
+    if not isinstance(rules, dict):
+        return bad + ['rules 要是对象']
+    check('rules.seal_field_units', _in(rules.get('seal_field_units'), 0, 100) and rules.get('seal_field_units') > 0,
+          '要是 (0, 100] 的场钱倍数：%r' % (rules.get('seal_field_units'),))
+    check('rules.seal_fallback_gold', _is_int(rules.get('seal_fallback_gold')) and rules['seal_fallback_gold'] > 0,
+          '要是正整数：%r' % (rules.get('seal_fallback_gold'),))
+    rng = rules.get('per_book_damage_pct_range')
+    check('rules.per_book_damage_pct_range',
+          isinstance(rng, list) and len(rng) == 2 and all(_is_int(x) and x > 0 for x in rng) and rng[0] <= rng[1],
+          '要是 [下限, 上限] 两个正整数（D274 5~15）：%r' % (rng,))
+    stypes = rules.get('slot_stypes')
+    check('rules.slot_stypes',
+          isinstance(stypes, list) and all(_is_int(x) and x > 0 for x in stypes) and 4 in stypes and 6 in stypes,
+          '要是含 4、6 的正整数数组：%r' % (stypes,))
+    check('rules.unseal_cost_units', _in(rules.get('unseal_cost_units', 0), 0, 100),
+          '要在 0～100：%r' % (rules.get('unseal_cost_units'),))
+
+    inc = t.get('include_skills')
+    inc_all = set()
+    if not isinstance(inc, dict):
+        bad.append('include_skills 要是对象')
+    else:
+        for k in ('abyss_six_passives', 'sect_passives', 'conversion_skills'):
+            arr = inc.get(k)
+            ok_arr = isinstance(arr, list) and len(arr) > 0 and all(_is_int(x) and x > 0 for x in arr) and len(arr) == len(set(arr))
+            check('include_skills.' + k, ok_arr, '要是非空去重正整数数组：%r' % (arr,))
+            if ok_arr:
+                inc_all.update(arr)
+        for req in (6185, 6204, 6192, 6203, 6206, 6211, 5068, 5075, 11201, 11205):
+            check('include_skills 含 %d' % req, req in inc_all, '缺少预留占格技能 %d' % req)
+
+    ex = t.get('seal_exempt')
+    ex_all = set()
+    if not isinstance(ex, dict):
+        bad.append('seal_exempt 要是对象')
+    else:
+        for k in ('bloodlines', 'not_book'):
+            arr = ex.get(k)
+            ok_arr = isinstance(arr, list) and len(arr) > 0 and all(_is_int(x) and x > 0 for x in arr) and len(arr) == len(set(arr))
+            check('seal_exempt.' + k, ok_arr, '要是非空去重正整数数组：%r' % (arr,))
+            if ok_arr:
+                ex_all.update(arr)
+        cr = ex.get('costume_range')
+        ok_cr = isinstance(cr, list) and len(cr) == 2 and all(_is_int(x) and x > 0 for x in cr) and cr[0] <= cr[1]
+        check('seal_exempt.costume_range', ok_cr, '要是 [起, 止] 两个正整数：%r' % (cr,))
+        if ok_cr:
+            ex_all.update(range(cr[0], cr[1] + 1))
+        check('seal_exempt 与 include_skills 无交集', not (inc_all & ex_all), '冲突技能：%r' % sorted(inc_all & ex_all))
+
+    ci = t.get('conversion_items')
+    if not isinstance(ci, dict) or not ci:
+        bad.append('conversion_items 要是非空对象')
+    else:
+        conv_skills = set(inc.get('conversion_skills', [])) if isinstance(inc, dict) else set()
+        for k, v in ci.items():
+            if str(k).startswith('_'):
+                continue
+            check('conversion_items.%s' % k, str(k).isdigit() and _is_int(v) and v in conv_skills,
+                  '键要为物品号、值要在 conversion_skills 中：%r -> %r' % (k, v))
+
+    ign = t.get('ignore_items', [])
+    check('ignore_items', isinstance(ign, list) and all(_is_int(x) and x > 0 for x in ign), '要是正整数数组：%r' % (ign,))
+
+    # ---- T013-1c：功法门表、重标表、状态 1656、EV054 货架 ----
+    schools = t.get('schools')
+    sk_tbl = t.get('skills')
+    check('schools', isinstance(schools, dict) and len(schools) >= 20, '功法门表 schools 要是非空对象')
+    check('skills', isinstance(sk_tbl, dict) and len(sk_tbl) >= 60, '功法重标表 skills 要是非空对象（50 原版＋新增）')
+    max_dmg = int(rng[1]) if isinstance(rng, list) and len(rng) == 2 and _is_int(rng[1]) else 15
+    seen_items = {}
+    school_skills = set()
+    if isinstance(schools, dict):
+        for sc_key, sc_val in schools.items():
+            tiers_map = sc_val.get('tiers') if isinstance(sc_val, dict) else None
+            check('schools.%s.tiers' % sc_key, isinstance(tiers_map, dict) and len(tiers_map) > 0, '要有非空 tiers 映射')
+            if isinstance(tiers_map, dict):
+                for tk, arr in tiers_map.items():
+                    check('schools.%s.tiers.%s' % (sc_key, tk),
+                          str(tk).isdigit() and int(tk) in (1, 2, 3) and isinstance(arr, list) and len(arr) > 0 and all(_is_int(x) and x > 0 for x in arr),
+                          'tier 要在 1..3 且技能号非空正整数：%r' % (arr,))
+                    if isinstance(arr, list):
+                        for sid in arr:
+                            check('schools 技能号不重复:%s' % sid, sid not in school_skills, '技能 %s 出现在多个门' % sid)
+                            school_skills.add(sid)
+        for req_sc in ('phys', 'fire', 'ice', 'earth', 'thunder', 'nature', 'arcane', 'holy', 'dark', 'water', 'wind',
+                       'liemo', 'jiuyang', 'jiuyin', 'yijin_miao', 'xuantian', 'yijin_xisui', 'xunbao', 'xingzi', 'shenzhao', 'gudu', 'zixia'):
+            check('schools 含 %s' % req_sc, req_sc in schools, '缺少功法门 %s' % req_sc)
+        for wf in ('water', 'wind'):
+            wt = schools.get(wf, {}).get('tiers', {}) if isinstance(schools.get(wf), dict) else {}
+            check('schools.%s 三重齐全' % wf, set(wt.keys()) == {'1', '2', '3'}, '水/风门要有 1/2/3 三重：%r' % (wt,))
+
+    forbidden_tag_re = re.compile(r'(?i)(DepassiveHarmRe|passiveAPLUS|AgainUse|passiveEXTTP|passivePRETP|passiveWPNM|StartPushState|RecPushState0980|ConsumeReduce\w*:\s*100)')
+    if isinstance(sk_tbl, dict):
+        for k, row in sk_tbl.items():
+            if not (str(k).isdigit() and isinstance(row, dict)):
+                bad.append('skills.%s 键要为数字、值要为对象' % k)
+                continue
+            sid = int(k)
+            iid = row.get('item')
+            check('skills.%d.id' % sid, int(row.get('skill', 0)) == sid and _is_int(iid) and iid > 0, 'skill/item 编号不合法')
+            check('skills.%d.item 唯一' % sid, iid not in seen_items, '物品 %s 被多个功法复用' % iid)
+            seen_items[iid] = sid
+            sc_key = row.get('school')
+            tier_v = row.get('tier')
+            check('skills.%d.school' % sid, isinstance(sc_key, str) and isinstance(schools, dict) and sc_key in schools and _is_int(tier_v) and tier_v in (1, 2, 3),
+                  '归属门/重不合法：%r/%r' % (sc_key, tier_v))
+            dmg_pct = row.get('damage_pct', 0)
+            check('skills.%d.damage_pct' % sid, _is_int(dmg_pct) and 0 <= dmg_pct <= max_dmg and (dmg_pct == 0 or (dmg_pct % 10 != 4)),
+                  '伤害百分比要是 0..%d 的整数且避 4：%r' % (max_dmg, dmg_pct))
+            bp = row.get('buy_price', 0)
+            check('skills.%d.buy_price' % sid, _is_int(bp) and bp >= 0 and (bp == 0 or (bp % 10 != 4)), '碎片价要是避 4 非负整数：%r' % (bp,))
+            tags = row.get('tags', [])
+            check('skills.%d.tags' % sid, isinstance(tags, list) and all(isinstance(x, str) for x in tags), 'tags 要是字符串数组')
+            if isinstance(tags, list):
+                for tg in tags:
+                    check('skills.%d.tag 禁项:%s' % (sid, tg), forbidden_tag_re.search(tg) is None, '含已禁用原版标签：%s' % tg)
+            if row.get('banned'):
+                check('skills.%d.banned 空效果' % sid, tags == [] and dmg_pct == 0, '停用功法 tags 必须为空且 damage_pct=0')
+                check('skills.%d.banned 无封字' % sid,
+                      '封' not in str(row.get('description', '')) and '封' not in str(row.get('effect_text', '')),
+                      '停用功法文案不能用「封」字以免与秘籍格封印冲突')
+            check('skills.%d.desc 无功法首行' % sid, not str(row.get('description', '')).startswith('功法\n'),
+                  'description 不应以「功法\\n」开头以免与右栏重复')
+            if 'legacy_only' in row:
+                check('skills.%d.legacy_only' % sid, isinstance(row['legacy_only'], bool), 'legacy_only 要是布尔')
+            if 'obtain_text' in row:
+                check('skills.%d.obtain_text' % sid, isinstance(row['obtain_text'], str) and row['obtain_text'].startswith('获得：'),
+                      'obtain_text 要是以「获得：」开头的非空字符串：%r' % (row['obtain_text'],))
+            if sc_key == 'xunbao':
+                dp = row.get('drop_pct', 0)
+                gp = row.get('gold_pct', 0)
+                check('skills.%d.xunbao' % sid, _is_int(dp) and _is_int(gp) and 1 <= dp <= 10 and 1 <= gp <= 10,
+                      '寻宝决掉率/金钱须在 1..10：%r/%r' % (dp, gp))
+            if sid >= 10000 or (isinstance(iid, int) and iid >= 3000):
+                check('skills.%d.template' % sid, _is_int(row.get('template_item')) and _is_int(row.get('template_skill')),
+                      '表外新功法必须提供 template_item 与 template_skill')
+        for bsid in (7135, 7144):
+            check('停用功法 %d' % bsid, bool(sk_tbl.get(str(bsid), {}).get('banned', False)), 'D274④ 炎黄后裔/九阳淬体图必须标记 banned=true')
+        for zsid in (7178, 7179):
+            check('紫霞专属 %d' % zsid, sk_tbl.get(str(zsid), {}).get('only_actor') == 70, 'D274④ 紫霞神功录必须限 only_actor=70')
+        check('行字诀 7140/7141 首回合提前',
+              sk_tbl.get('7140', {}).get('first_turn_mode') == 1 and sk_tbl.get('7141', {}).get('first_turn_mode') == 2,
+              '九秘行字诀须设 first_turn_mode 1/2')
+        check('玄天功 7139 标 legacy_only', bool(sk_tbl.get('7139', {}).get('legacy_only', False)), '7139 须标 legacy_only=true')
+        check('行字诀全篇与传承升华带出处',
+              '22 层' in str(sk_tbl.get('7141', {}).get('obtain_text', '')) and '28 层' in str(sk_tbl.get('7187', {}).get('obtain_text', '')),
+              '7141/7187 须带 obtain_text 出处')
+
+    st_tbl = t.get('states')
+    st1656 = st_tbl.get('1656') if isinstance(st_tbl, dict) else None
+    check('states.1656', isinstance(st1656, dict) and st1656.get('stat_rate_pct') == 5 and st1656.get('final_dmg_pct') == 8 and st1656.get('turns') == 2,
+          '状态 1656 神照经妙法重标须为全属性 +5%、终伤 +8%、2 回合')
+
+    ev54 = t.get('ev54_shop')
+    tabs = ev54.get('tabs') if isinstance(ev54, dict) else None
+    check('ev54_shop.tabs', isinstance(tabs, dict) and {'gongfa_t1', 'gongfa_t2', 'gongfa_t3', 'fabao', 'divine'}.issubset(set(tabs.keys())),
+          'ev54_shop.tabs 必须含 5 个页签')
+    if isinstance(tabs, dict):
+        all_ev54 = []
+        for tk, tv in tabs.items():
+            goods = tv.get('goods', []) if isinstance(tv, dict) else []
+            all_ev54.extend(goods)
+            for ex_blk in (tv.get('extra_by_floor', []) if isinstance(tv, dict) else []):
+                all_ev54.extend(ex_blk.get('goods', []))
+        pill_ids = set(range(1685, 1718))
+        legacy_items = {int(row['item']) for row in (sk_tbl.values() if isinstance(sk_tbl, dict) else []) if isinstance(row, dict) and row.get('legacy_only')}
+        bad_goods = {(2, 4553), (2, 4540), (0, 1981), (0, 2237), (0, 2240), (0, 2328), (0, 2329)}
+        for g in all_ev54:
+            pair = (int(g[0]), int(g[1]))
+            check('ev54 无禁售品 %r' % (pair,), pair not in bad_goods and not (pair[0] == 0 and (pair[1] in pill_ids or pair[1] in legacy_items)),
+                  'EV054 含丹药/洪荒三件/紫霞/停用书/老档专属：%r' % (pair,))
+        fabao_pairs = {(int(g[0]), int(g[1])) for g in tabs.get('fabao', {}).get('goods', [])}
+        for fid in list(range(4543, 4553)) + [8101, 8102]:
+            check('ev54.fabao 含 %d' % fid, (2, fid) in fabao_pairs, '缺少系别法宝 %d' % fid)
+        fabao_ex = {(int(g[0]), int(g[1])) for b in tabs.get('fabao', {}).get('extra_by_floor', []) for g in b.get('goods', [])}
+        for wid in (2019, 2020, 2021, 78, 92, 2022, 2023):
+            check('ev54.fabao 21层专武 %d' % wid, (1, wid) in fabao_ex, '缺少角色专武 %d' % wid)
+        div_pairs = [(int(g[0]), int(g[1])) for g in tabs.get('divine', {}).get('goods', [])]
+        check('ev54.divine 仙道模式去重', div_pairs == [(2, 5198)], '神武页只留 1 版仙道模式 5198：%r' % (div_pairs,))
+
+    # 若本地有转换后的数据库，抽查原版号段（<10000）技能与物品存在，且 50 本原版 stype=6 功法 100% 覆盖
+    db = db_dir or (PROJECT / 'modes' / 'xiyou' / 'generated' / 'db')
+    sk_path = db / 'Skills.json'
+    it_path = db / 'Items.json'
+    if sk_path.exists():
+        skills = json.loads(sk_path.read_text(encoding='utf-8'))
+        for sid in sorted(inc_all | ex_all):
+            if sid < 10000:
+                check('Skills[%d]' % sid, sid < len(skills) and isinstance(skills[sid], dict), '技能不存在')
+        if it_path.exists() and isinstance(sk_tbl, dict):
+            items = json.loads(it_path.read_text(encoding='utf-8'))
+            orig_gongfa = {}
+            for it in items:
+                if not isinstance(it, dict):
+                    continue
+                for ef in it.get('effects', []):
+                    if int(ef.get('code', 0)) == 43:
+                        sid = int(ef.get('dataId', 0))
+                        if sid < len(skills) and isinstance(skills[sid], dict) and int(skills[sid].get('stypeId', 0)) == 6:
+                            orig_gongfa[sid] = int(it['id'])
+            missing_gf = sorted(set(orig_gongfa.keys()) - {int(k) for k in sk_tbl if str(k).isdigit()})
+            check('50本原版功法全覆盖', len(orig_gongfa) == 50 and not missing_gf,
+                  '全库 stype=6 功法 %d 本，漏标：%r' % (len(orig_gongfa), missing_gf))
+            for sid, iid in orig_gongfa.items():
+                row = sk_tbl.get(str(sid), {})
+                check('原版功法 %d->%d 映射一致' % (iid, sid), int(row.get('item', 0)) == iid,
+                      '物品号不匹配：表 %r vs 库 %d' % (row.get('item'), iid))
+    if it_path.exists() and isinstance(ci, dict):
+        items = json.loads(it_path.read_text(encoding='utf-8'))
+        for k in ci:
+            if str(k).startswith('_') or not str(k).isdigit():
+                continue
+            iid = int(k)
+            if iid < 3000:
+                check('Items[%d]' % iid, iid < len(items) and isinstance(items[iid], dict), '物品不存在')
+    return bad
+
+
+def check_secret_books(_args) -> bool:
+    return _run_table('secret_books.json', secret_books_rules)
+
+
+def general_books_rules(t: dict, db_dir: Path = None) -> list:
+    """T444（T013-1d）通用书第一批重标表 general_books.json 校验。"""
+    bad = []
+
+    def check(name, ok, detail=''):
+        if not ok:
+            bad.append('%s：%s' % (name, detail))
+
+    isint = lambda v: isinstance(v, int) and not isinstance(v, bool)
+    check('version 正整数', isint(t.get('version')) and t['version'] >= 1, t.get('version'))
+    check('dev 非空', isinstance(t.get('dev'), str) and bool(t['dev'].strip()), t.get('dev'))
+    rules = t.get('rules')
+    check('rules 对象', isinstance(rules, dict), type(rules).__name__)
+    groups = t.get('groups')
+    check('groups 对象', isinstance(groups, dict), type(groups).__name__)
+    skills = t.get('skills')
+    check('skills 非空对象', isinstance(skills, dict) and bool(skills), type(skills).__name__)
+    states = t.get('states')
+    check('states 非空对象', isinstance(states, dict) and bool(states), type(states).__name__)
+    if bad:
+        return bad
+
+    check('rules.module', rules.get('module') == 'tianqi_general_book', rules.get('module'))
+    lcaps = rules.get('lottery_caps', {})
+    check('rules.lottery_caps 对象', isinstance(lcaps, dict) and bool(lcaps), lcaps)
+    for k, v in (lcaps.items() if isinstance(lcaps, dict) else []):
+        check('lottery_caps.%s 正整数' % k, isint(v) and v > 0, v)
+
+    # groups 与 skills 一一对应
+    g_ids = {}
+    for gname in ('sect_ding2', 'ev054_actives', 'lottery_passives'):
+        arr = groups.get(gname)
+        check('groups.%s 非空列表' % gname, isinstance(arr, list) and bool(arr), gname)
+        if isinstance(arr, list):
+            for x in arr:
+                check('groups.%s 技能号正整数' % gname, isint(x) and x > 0, x)
+                g_ids[str(x)] = gname
+    check('groups 覆盖全部 skills', set(g_ids) == set(skills), 'diff=%s' % sorted(set(g_ids) ^ set(skills))[:8])
+
+    # 教派包丁二＋EV054 4 主动必含技能
+    must_ding2 = {6185, 6204, 2826, 2827, 2828, 2829, 2830, 6236, 6237, 6239} | set(range(6186, 6204)) | set(range(6206, 6212)) | set(range(6217, 6235))
+    must_ev054 = {7163, 7164, 7165, 7188}
+    check('丁二必含技能齐', all(str(x) in skills for x in must_ding2), sorted(x for x in must_ding2 if str(x) not in skills))
+    check('EV054 4主动必含齐', all(str(x) in skills for x in must_ev054), sorted(x for x in must_ev054 if str(x) not in skills))
+
+    forbid_re = re.compile(r'<(passiveAPLUS|AgainUse\w+|DepassiveHarmRe\d+|passiveHarmRe\d+|passiveWPNM\d+|passivePBSTEX\d+|StartPushState(?:1245|1246|1247|1248|1645))\b', re.I)
+    flat_pbst_re = re.compile(r'<passivePBST\d:\s*[+-]?\d+(?:\.\d+)?\s*>')
+
+    for sid_s, sp in skills.items():
+        if not str(sid_s).isdigit() or not isinstance(sp, dict):
+            bad.append('skills[%s] 非法条目' % sid_s)
+            continue
+        check('skills[%s].group 一致' % sid_s, sp.get('group') == g_ids.get(sid_s), (sp.get('group'), g_ids.get(sid_s)))
+        d = sp.get('damage')
+        if isinstance(d, dict):
+            coef = float(d.get('coef', 0))
+            check('skills[%s].damage.coef 整数或整数百分比' % sid_s, coef > 0 and _int_or_pct(coef), coef)
+            for st_k, w in d.get('stats', {}).items():
+                wf = float(w)
+                check('skills[%s].damage.stats.%s 整数或整数百分比' % (sid_s, st_k), wf > 0 and _int_or_pct(wf), w)
+                check('skills[%s].damage.coef*%s 整数或整数百分比' % (sid_s, st_k), _int_or_pct(coef * wf), coef * wf)
+        h = sp.get('heal')
+        if isinstance(h, dict):
+            for hk in ('mhp_pct', 'mmp_pct'):
+                if hk in h:
+                    hv = float(h[hk])
+                    check('skills[%s].heal.%s 合法百分比' % (sid_s, hk), 0 < hv <= 1 and _int_or_pct(hv), hv)
+        na = str(sp.get('note_add', ''))
+        check('skills[%s].note_add 无违规标签' % sid_s, forbid_re.search(na) is None, na)
+        check('skills[%s].note_add 无固定 passivePBST' % sid_s, flat_pbst_re.search(na) is None, na)
+        if sp.get('group') == 'lottery_passives' and isinstance(lcaps, dict):
+            for m in re.finditer(r'<passiveHarmRi:\s*(-?\d+)>', na):
+                check('lottery[%s] 终伤不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('harm_pct', 5)), m.group(1))
+            for m in re.finditer(r'<passiveELUP\d+:\s*(-?\d+)%>', na):
+                check('lottery[%s] 元素伤不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('elem_pct', 6)), m.group(1))
+            for m in re.finditer(r'<passiveCrHarmRi:\s*(-?\d+)>', na):
+                check('lottery[%s] 爆伤不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('crit_dmg_pct', 12)), m.group(1))
+            for m in re.finditer(r'<passiveXPBST2:\s*(-?\d+)%>', na):
+                check('lottery[%s] 暴击率不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('crit_rate_pct', 8)), m.group(1))
+            for m in re.finditer(r'<passiveIRUP:\s*(-?\d+)>', na):
+                check('lottery[%s] 掉率不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('drop_pct', 10)), m.group(1))
+            for m in re.finditer(r'<passiveGRUP:\s*(-?\d+)>', na):
+                check('lottery[%s] 金钱不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('gold_pct', 10)), m.group(1))
+            for m in re.finditer(r'<ConsumeReduce\w+:\s*(\d+)%>', na):
+                check('lottery[%s] 减耗不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('consume_reduce_pct', 15)), m.group(1))
+            for m in re.finditer(r'<passiveEXTTP:\s*(\d+)>', na):
+                check('lottery[%s] TP上限不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('ext_tp', 30)), m.group(1))
+            for m in re.finditer(r'<SkillPass\d+:\s*(\d+)%>', na):
+                check('lottery[%s] 技能专伤不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('skill_pass_pct', 10)), m.group(1))
+            for m in re.finditer(r'<passivePBST\d:\s*(-?\d+)%>', na):
+                check('lottery[%s] 基础属性不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('param_pct', 6)), m.group(1))
+            for m in re.finditer(r'<CodexParamRate:\s*([^>]+)>', na):
+                for part in m.group(1).split(','):
+                    kv = part.split(':')
+                    if len(kv) == 2:
+                        check('lottery[%s] CodexParamRate不超限' % sid_s, int(kv[1].strip()) <= int(lcaps.get('param_pct', 6)), kv)
+
+    for stid_s, sp in states.items():
+        if not str(stid_s).isdigit() or not isinstance(sp, dict):
+            bad.append('states[%s] 非法条目' % stid_s)
+            continue
+        for tr in sp.get('traits', []):
+            check('states[%s] 无再动特性 61' % stid_s, isinstance(tr, dict) and int(tr.get('code', -1)) != 61, tr)
+        na = str(sp.get('note_add', ''))
+        check('states[%s] 无固定减伤/固定属性标签' % stid_s, 'passiveHarmRe' not in na and 'G_ShuXing' not in na, na)
+
+    # 与 skill_rework.json 零技能号重叠
+    sr_path = DATA_DIR / 'skill_rework.json'
+    if sr_path.exists():
+        sr = json.loads(sr_path.read_text(encoding='utf-8'))
+        sr_sk = {k for k in sr.get('skills', {}) if str(k).isdigit()}
+        ov = sorted(sr_sk & set(skills), key=int)
+        check('与 skill_rework.json 零重叠', not ov, ov[:8])
+
+    # 本地数据库在时做全量覆盖率＋改后零残留实查
+    db = db_dir or (PROJECT / 'modes' / 'xiyou' / 'generated' / 'db')
+    sk_path, it_path, st_path = db / 'Skills.json', db / 'Items.json', db / 'States.json'
+    if sk_path.exists() and it_path.exists() and st_path.exists():
+        sk_db = json.loads(sk_path.read_text(encoding='utf-8'))
+        it_db = json.loads(it_path.read_text(encoding='utf-8'))
+        st_db = json.loads(st_path.read_text(encoding='utf-8'))
+        taught5 = sorted({
+            int(e['dataId'])
+            for it in it_db if isinstance(it, dict)
+            for e in it.get('effects', [])
+            if int(e.get('code', 0)) == 43 and int(e.get('dataId', 0)) < len(sk_db) and isinstance(sk_db[int(e['dataId'])], dict) and int(sk_db[int(e['dataId'])].get('stypeId', 0)) == 5
+        })
+        miss5 = [sid for sid in taught5 if str(sid) not in skills]
+        check('147 抽奖被动书全覆盖', len(taught5) == 147 and not miss5, 'count=%d miss=%s' % (len(taught5), miss5[:8]))
+        gongfa_ov = [int(k) for k in skills if int(k) < len(sk_db) and isinstance(sk_db[int(k)], dict) and int(sk_db[int(k)].get('stypeId', 0)) == 6]
+        check('与 T443 stype=6 功法零重叠', not gongfa_ov, gongfa_ov)
+        for sid_s, sp in skills.items():
+            sid = int(sid_s)
+            if sid >= len(sk_db) or not isinstance(sk_db[sid], dict):
+                bad.append('Skills[%d] 不存在' % sid)
+                continue
+            note = str(sk_db[sid].get('note', '')).replace('\u200b', '')
+            for tag in sp.get('note_remove', []):
+                note = re.sub(r'<\s*(?:%s)\s*(?::[^>]*)?>' % str(tag), '', note)
+            note += str(sp.get('note_add', ''))
+            check('Skills[%d] 改后无违规标签' % sid, forbid_re.search(note) is None, sid)
+            check('Skills[%d] 改后无固定 passivePBST' % sid, flat_pbst_re.search(note) is None, sid)
+        for stid_s, sp in states.items():
+            stid = int(stid_s)
+            if stid >= len(st_db) or not isinstance(st_db[stid], dict):
+                bad.append('States[%d] 不存在' % stid)
+                continue
+            note = str(st_db[stid].get('note', ''))
+            for tag in sp.get('note_remove', []):
+                note = re.sub(r'<\s*(?:%s)\s*(?::[^>]*)?>' % str(tag), '', note)
+            for pair in sp.get('note_sub', []):
+                note = re.sub(str(pair[0]), str(pair[1]), note, flags=re.S)
+            note += str(sp.get('note_add', ''))
+            check('States[%d] 改后无 G_ShuXing/passiveHarmRe' % stid, 'G_ShuXing' not in note and 'G_shuxing' not in note and 'passiveHarmRe' not in note, stid)
+    return bad
+
+
+def check_general_books(_args) -> bool:
+    return _run_table('general_books.json', general_books_rules)
+
+
 def gear_elem_amp_rules(table: dict, rework: dict = None, gear_table: dict = None) -> list:
     """gear_elem_amp.json（T451，Kyo 11-24 事项 50）：通用武器（5～50%）与保留栏位普通防具（5～20%）元素/物理增幅分档表。"""
     bad = []
@@ -3379,6 +3772,8 @@ CHECKS = [
     ('ring_styles', check_ring_styles),
     ('trumpet', check_trumpet),
     ('weak_affix_table', check_weak_affix_table),
+    ('secret_books', check_secret_books),
+    ('general_books', check_general_books),
     ('gear_elem_amp', check_gear_elem_amp),
 ]
 

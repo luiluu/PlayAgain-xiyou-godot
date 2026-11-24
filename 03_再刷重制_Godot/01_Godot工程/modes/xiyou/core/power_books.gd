@@ -88,7 +88,8 @@ static func param_rate_bonus(a: XActor, param: int) -> float:
 	for id in a.skill_ids:
 		if XTianqiTrumpet.skips_rate(id):
 			continue  # 天启篇号卷：原洪荒权能的属性倍率不算
-		if not _rates.has(id):
+		var key := XTianqiGeneralBooks.rate_key(int(id))
+		if not _rates.has(key):
 			var values := {}
 			var hit := RegEx.create_from_string("(?i)<CodexParamRate:\\s*([^>]+)>").search(str(XDB.rec("Skills", id).get("note", "")))
 			if hit != null:
@@ -99,6 +100,6 @@ static func param_rate_bonus(a: XActor, param: int) -> float:
 					var index := int(float(pair[0]))
 					if index >= 0 and index < 8:
 						values[index] = float(values.get(index, 0.0)) + float(pair[1])
-			_rates[id] = values
-		sum += float(_rates[id].get(param, 0.0))
+			_rates[key] = values
+		sum += float(_rates[key].get(param, 0.0))
 	return sum

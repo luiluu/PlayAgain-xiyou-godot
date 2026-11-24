@@ -169,6 +169,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		return XXufeng.tianxia_state_rec(t)  # 西游档徐凤年 9997 专属神秘成圣副本（表外号段 19501，仅西游档可读，T440）
 	if id >= t.size() and XTianqiElements.has_new(name, id):
 		return XTianqiElements.new_rec(name, id, t)  # 天启篇元素重做：新转换书道具/技能/公共事件
+	if id >= t.size() and XTianqiSecrets.has_new(name, id):
+		return XTianqiSecrets.new_rec(name, id, t)  # 天启篇功法重标（T443）：表外水/风与大成篇道具/技能（3201～3219 / 11301～11319）
 	if id >= t.size() and (name == "Enemies" or name == "Troops" or name == "Skills") and XFestRoad.has(name, id):
 		return XFestRoad.rec(name, id, t)  # 冠军庆典·冠军之路：四支五人队、四个敌群、辅助的「应援」（表外号段 9300／19300）
 	if name == "Enemies" and XTianqiSect.has_enemy(XState.current, id):
@@ -205,14 +207,20 @@ static func rec(name: String, id: int) -> Dictionary:
 		out = XTianqiBase.realm_rec(id, out)  # 天启篇期四：原版通用境界被动数值全拦（REALM_OFF）
 	if name == "Skills" and XTianqiSkills.has(id):
 		out = XTianqiSkills.rec(id, out)  # 天启篇全角色技能重构：天启篇存档换成改写后的记录
+	if name == "Skills" and XTianqiGeneralBooks.has(id):
+		out = XTianqiGeneralBooks.rec(id, out)  # 天启篇通用书第一批（T444）：教派丁二、EV054 主动书、147 抽奖被动
 	if name == "Skills" and XGuardianRework.GROWTH_SKILLS.has(id):
 		out = XGuardianRework.growth_rec(id, out)  # 守层者成长招削弱＋改名（T302，天启篇存档）
 	if name == "States" and XTianqiSkills.has_state(id):
 		out = XTianqiSkills.rec_state(id, out)
+	if name == "States" and XTianqiGeneralBooks.has_state(id):
+		out = XTianqiGeneralBooks.rec_state(id, out)  # 天启篇通用书第一批配套状态（止戈、重岩壁垒、黯灭幻影、抽奖状态等）
 	if XXufeng.xiyou_save_on() and XXufeng.touches(name, id):
 		out = XXufeng.rec(name, id, out)  # 西游档徐凤年重做副本（仅西游档分派，不动共享原表、不串天启篇，T440）
 	if XTianqiElements.touches(name, id):
 		out = XTianqiElements.rec(name, id, out)  # 天启篇元素重做：技能转属、被动转属、自然书改名
+	if XTianqiSecrets.touches_rec(name, id):
+		out = XTianqiSecrets.rec_view(name, id, out)  # 天启篇功法重标（T443）：50 本原版功法物品/技能与状态 1656 重标视图
 	return out
 
 

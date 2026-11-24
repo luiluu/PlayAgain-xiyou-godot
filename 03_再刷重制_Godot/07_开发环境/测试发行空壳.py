@@ -193,8 +193,9 @@ class T(unittest.TestCase):
         self.assertIn('XGuardianRework', tg)
         self.assertNotIn('XTianqiTitle', tg)
         self.assertEqual(K.suspects(), [])
-        hand = (K.HAND / 'XRiftAlien.gd').read_text(encoding='utf-8')
-        self.assertIn(K.STUB_TAG_LINE, hand)
+        # T455：漩涡怪物异化对玩家打开，真脚本进包（KEEP），不再有手写空壳
+        self.assertNotIn('XRiftAlien', tg)
+        self.assertFalse((K.HAND / 'XRiftAlien.gd').exists())
 
     def test_map_element_id_stub_passes_element_through(self):
         # T310：真脚本首句 `if deck_on(s) and e == 1: return 0`，规则 2 照抄成恒 return 0，发行包招式属性号全被抹成 0。
@@ -307,7 +308,7 @@ class T(unittest.TestCase):
         'modes/xiyou/core/tianqi_growth.gd', 'modes/xiyou/core/tianqi_guardian_gift.gd', 'modes/xiyou/core/tianqi_hall.gd',
         'modes/xiyou/core/tianqi_hall_text.gd', 'modes/xiyou/core/tianqi_six_dim.gd', 'modes/xiyou/core/tianqi_weak_b2.gd',
         'modes/xiyou/core/xinmo_traits.gd',  # 文件名不带 tianqi，靠类名 XTianqiXinmoTraits 进名单
-        'modes/xiyou/ui/tianqi/tianqi_hall_intro.gd', 'modes/xiyou/ui/tianqi_start_page.gd',
+        'modes/xiyou/ui/tianqi_hall_intro.gd', 'modes/xiyou/ui/tianqi_start_page.gd',
     )
     K6_SHARED = (  # 西游档也走的真脚本：带进包
         'modes/xiyou/battle/battle_eval.gd',      # 我方 XSmartAI 估值内核（西游自动战斗）
@@ -583,6 +584,41 @@ class SmokeBattleTests(unittest.TestCase):
         self.assertIn('xiyou_battle.tscn', args)
         self.assertIn('xiyou_battle_ui.tscn', args)
         self.assertIn('--audio-driver Dummy', args)
+
+
+class ScrubRiftAlienTests(unittest.TestCase):
+    def test_scrub_rift_alien_strips_comment_keys_and_preserves_runtime_data(self):
+        raw = {
+            'source': '方案/重制版_漩涡五阶段怪物异化设计稿_v0.1.md',
+            '_note': '内部说明',
+            '_stages_aligned_note': 'O-468',
+            'difficulty': {'_note': '天启篇难度映射', '1': {'rare_mul': 0.5}},
+            'look': {'_note': '先用偏色顶着', 'tint': '#a87bff'},
+            'stages_aligned': {'3': {'max_tier': 'shigu', 'boss': [{'from': 11, 'to': 30, 'tier': 'shigu'}]}},
+        }
+        cleaned = K.scrub_rift_alien_data(raw)
+        self.assertNotIn('source', cleaned)
+        self.assertNotIn('_note', cleaned)
+        self.assertNotIn('_stages_aligned_note', cleaned)
+        self.assertNotIn('_note', cleaned['difficulty'])
+        self.assertNotIn('_note', cleaned['look'])
+        self.assertEqual(cleaned['difficulty']['1']['rare_mul'], 0.5)
+        self.assertEqual(cleaned['look']['tint'], '#a87bff')
+        self.assertEqual(cleaned['stages_aligned']['3']['max_tier'], 'shigu')
+        self.assertFalse(K._has_rift_alien_comments(cleaned))
+        self.assertTrue(K._has_rift_alien_comments(raw))
+
+    def test_scrub_rift_alien_file_and_is_stub_tree(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            f = root / K.RIFT_ALIEN_REL
+            f.parent.mkdir(parents=True)
+            f.write_text('{"source": "a", "_note": "b", "difficulty": {"_note": "c"}, "stages": {}}', encoding='utf-8')
+            self.assertTrue(any('rift_alien.json' in x for x in K.is_stub_tree(root)))
+            self.assertTrue(K.scrub_rift_alien(root))
+            self.assertEqual(K.is_stub_tree(root), [])
+            got = __import__('json').loads(f.read_text(encoding='utf-8'))
+            self.assertEqual(got, {'difficulty': {}, 'stages': {}})
 
 
 if __name__ == '__main__':

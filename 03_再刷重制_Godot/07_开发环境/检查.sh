@@ -252,6 +252,7 @@ want tools && { if python3 "$ENV_DIR/测试天启篇存档登记.py" >/dev/null 
 want tools && { if python3 "$ENV_DIR/测试随机守卫.py" >/dev/null 2>&1; then ok "随机守卫检查"; else bad "随机守卫检查回归失败，单跑 07_开发环境/测试随机守卫.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试状态js翻译.py" >/dev/null 2>&1; then ok "状态效果 js 再翻译整块边界"; else bad "状态 js 翻译边界失败，单跑 07_开发环境/测试状态js翻译.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试转换器写入.py"; then ok "转换器增量写入与中断恢复"; else bad "转换器写入回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试资源加密.py" >/dev/null 2>&1; then ok "资源加密工具与发行内容审计"; else bad "资源加密专项回归失败，单跑 07_开发环境/测试资源加密.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试云端准备.py" && python3 "$ENV_DIR/测试推送重试.py"; then ok "云端导入失败保护、推送重试"; else bad "云端导入保护回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发布补丁.py"; then ok "发布补丁工具（清单、签名、两次提交）"; else bad "发布补丁工具回归失败，单跑 07_开发环境/测试发布补丁.py 看详情"; fi; }
@@ -264,6 +265,7 @@ want tools && { if python3 "$ENV_DIR/测试导入超时.py" >/dev/null 2>&1; the
 want tools && { if python3 "$ROOT/03_再刷重制_Godot/03_转换工具/测试天启篇数据校验.py" >/dev/null 2>&1 && python3 "$ROOT/03_再刷重制_Godot/03_转换工具/天启篇数据校验.py" >/dev/null; then ok "天启篇数据表校验（规则自检与回归）"; else bad "天启篇数据表校验失败，单跑 03_转换工具/天启篇数据校验.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行入口冒烟.py" >/dev/null 2>&1; then ok "发行入口冒烟安卓分支"; else bad "发行入口冒烟工具回归失败，单跑 07_开发环境/测试发行入口冒烟.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行出包.py" >/dev/null 2>&1; then ok "发行出包（发行说明、旧目录、体积表）"; else bad "发行出包工具回归失败，单跑 07_开发环境/测试发行出包.py 看详情"; fi; }
+want tools && { if python3 "$ENV_DIR/测试发行预设排除检查.py" >/dev/null 2>&1; then ok "发行预设排除检查与出包实跑门禁"; else bad "发行预设排除检查回归失败，单跑 07_开发环境/测试发行预设排除检查.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试玩家资料包.py" >/dev/null 2>&1; then ok "玩家资料包工具"; else bad "玩家资料包工具回归失败，单跑 07_开发环境/测试玩家资料包.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发行空壳.py" >/dev/null 2>&1; then ok "发行空壳生成"; else bad "发行空壳工具回归失败，单跑 07_开发环境/测试发行空壳.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试Windows实机冒烟.py" >/dev/null 2>&1; then ok "Windows 实机冒烟（假 exe：入口、按键、存档目录）"; else bad "Windows 实机冒烟工具回归失败，单跑 07_开发环境/测试Windows实机冒烟.py 看详情"; fi; }

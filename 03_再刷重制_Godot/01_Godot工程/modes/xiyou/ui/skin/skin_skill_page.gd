@@ -13,6 +13,8 @@ var _list_key := []
 var _type_key := []
 var _sprite_layer: Control
 var _sprite_step := 0
+var confirm_dlg: XSkinConfirm
+var _card_actions: Array = []
 
 
 func _init(s: XSkillScene) -> void:
@@ -57,6 +59,7 @@ func _ready() -> void:
 	targets.activated.connect(func(_i):
 		if scene.mode == "actor":
 			scene.ok())
+	card_button.connect(_on_card_button)
 	gui_input.connect(func(event):
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 			scene.cancel()
@@ -80,7 +83,7 @@ func sync() -> void:
 		return
 	_syncing = true
 	var sc := scene
-	for w in [sc.type_win, sc.status_win, sc.list_win, sc.actor_win]:
+	for w in [sc.type_win, sc.status_win, sc.list_win, sc.actor_win, sc.secret_win]:
 		w.visible = false
 	sc.help_card.visible = false
 	for c in sc.help_card.extras:
@@ -98,21 +101,27 @@ func sync() -> void:
 	elif ring.index != sc.type_index and sc.type_index < ring.items.size():
 		ring.select(sc.type_index)
 	# 列表
+	var st: int = int(types[clampi(sc.type_index, 0, types.size() - 1)]) if not types.is_empty() else 0
 	var rows := []
 	for sk in sc.entries():
 		rows.append(_row(a, sk))
-	list_title = sc.type_name(types[clampi(sc.type_index, 0, types.size() - 1)]) if not types.is_empty() else ""
-	var key := [a.actor_id, sc.type_index, rows.map(func(r): return [r.text, r.get("right", ""), r.disabled, r.get("sub", ""), r.get("reason", "")])]
+	list_title = XTianqiSecrets.ui_list_title(sc.type_name(st), a, st) if not types.is_empty() else ""
+	if XSkinRingNav.INNER_V2:
+		currencies = XTianqiSecrets.ui_gold_currency(XState.current) if XTianqiSecrets.is_secret_stype(st) else []
+		if top_layer != null:
+			top_layer.queue_redraw()
+	var key := [a.actor_id, sc.type_index, list_title, rows.map(func(r): return [r.text, r.get("right", ""), r.disabled, r.get("sub", ""), r.get("reason", "")])]
 	if key != _list_key:
 		_list_key = key
 		set_items(rows, clampi(sc.index, 0, maxi(rows.size() - 1, 0)))
 	elif list.index != sc.index and sc.index < rows.size():
 		list.select(sc.index)
 	_sync_card(a)
+	_sync_secret_confirm()
 	match sc.mode:
 		"type":
 			set_focus("ring")
-		"list":
+		"list", "secret_confirm":
 			set_focus("list")
 		"actor":
 			set_focus("targets")
@@ -122,7 +131,8 @@ func sync() -> void:
 		"type":
 			set_hint_list([["确定", "选择"], ["取消", "返回"], ["Q / E", "换人"]])
 		"list":
-			set_hint_list([["确定", "选择"], ["取消", "回类型"], ["Q / E", "翻页"]])   # 列表里 Q/E 是翻页（同旧页）
+			var acc := XTianqiSecrets.ui_accept_hint(a, sc.current())
+			set_hint_list([["确定", acc if not acc.is_empty() else "选择"], ["取消", "回类型"], ["Q / E", "翻页"]])   # 列表里 Q/E 是翻页（同旧页）
 		_:
 			set_hint_list([["确定", "选择"], ["取消", "返回"]])   # 选人时 Q/E 不换人
 	_syncing = false
@@ -171,8 +181,10 @@ static func name_color(sk: Dictionary) -> Color:
 
 
 func _row(a: XActor, sk: Dictionary) -> Dictionary:
-	var r := {"text": str(sk.get("name", "")), "icon": int(sk.get("iconIndex", 0)), "color": name_color(sk), "disabled": not scene.usable(sk)}
-	if r.disabled and XSkinList.T366_V1:   # T366 R12：选中用不了的行，行尾写原因（只有选中那行才画，见 XSkinList）
+	var sm := XTianqiSecrets.ui_row_meta(a, sk)
+	var sealed := bool(sm.get("sealed", false))
+	var r := {"text": str(sk.get("name", "")), "icon": int(sk.get("iconIndex", 0)), "color": name_color(sk), "disabled": sealed or not scene.usable(sk)}
+	if r.disabled and XSkinList.T366_V1 and sm.is_empty():   # T366 R12：非秘籍用不了的行，行尾写原因；秘籍操作改放底栏提示，避免 16:9 挤坏技能名
 		r.reason = skill_reason(a, sk)
 	var costs := scene._costs(a, sk)
 	if not costs.is_empty():
@@ -180,6 +192,9 @@ func _row(a: XActor, sk: Dictionary) -> Dictionary:
 		var t := str(c.text)
 		r.right = t
 		r.right_color = XUiSkin.DOWN if t.ends_with("CD") or t.ends_with("WU") else (XUiSkin.TP if t.ends_with("TP") else (XUiSkin.MP if t.ends_with("MP") else (XUiSkin.HP if t.ends_with("HP") else XUiSkin.TEXT_2)))
+	elif sm.has("badge"):
+		r.right = str(sm.badge)
+		r.right_color = XUiSkin.DOWN if sealed else XUiSkin.GOLD
 	var lv := a.skillMasteryLevelOf(int(sk.get("id", 0))) if int(sk.get("id", 0)) > 0 else 0
 	if lv > 0:
 		r.sub = str(XDB.plugin("YEP_SkillMasteryLevels").get("Text Format", "LV.%1")).replace("%1", XSkillScene.mastery_level_text(lv))
@@ -202,11 +217,17 @@ func skill_reason(a: XActor, sk: Dictionary) -> String:
 
 func _sync_card(a: XActor) -> void:
 	var sc := scene
-	var sk := sc.current() if sc.mode in ["list", "actor"] else {}
+	var sk := sc.current() if sc.mode in ["list", "actor", "secret_confirm"] else {}
 	if sk.is_empty():
 		var types := sc.types()
 		var n := sc.entries().size()
-		set_card({"title": a.display_name(), "subtitle": (sc.type_name(types[clampi(sc.type_index, 0, types.size() - 1)]) + " · %d 个" % n) if not types.is_empty() else "",
+		_card_actions = []
+		var sub0 := (sc.type_name(types[clampi(sc.type_index, 0, types.size() - 1)]) + " · %d 个" % n) if not types.is_empty() else ""
+		var st0: int = int(types[clampi(sc.type_index, 0, types.size() - 1)]) if not types.is_empty() else 0
+		var slot0 := XTianqiSecrets.ui_slot_text(a) if XTianqiSecrets.is_secret_stype(st0) else ""
+		if not slot0.is_empty():
+			sub0 = "%s · %s" % [sub0, slot0] if not sub0.is_empty() else slot0
+		set_card({"title": a.display_name(), "subtitle": sub0,
 			"desc": "" if n > 0 else list.empty_text})
 		show_targets([])
 		return
@@ -215,6 +236,10 @@ func _sync_card(a: XActor) -> void:
 	var sub := [sc.type_name(int(sk.get("stypeId", 0)))]
 	for c in sc._costs(a, sk):
 		sub.append(str(c.text))
+	var sec_act := XTianqiSecrets.ui_card_actions(XState.current, a, sk)
+	_card_actions = sec_act.get("buttons", []) if not sec_act.is_empty() else []
+	if sec_act.has("tag") and str(sec_act.tag) != "":
+		sub.append(str(sec_act.tag))
 	var soul := XRaven.ledger_help(a, sk)
 	var help := XHelpCard.content(view, "skill", bool(view.get("skill_copy", false)), 300.0) if soul.is_empty() else []
 	var rows: Array = soul.map(func(t): return {"text": str(t), "color": XUiSkin.TEXT_2}) if not soul.is_empty() else XSkinTemplatePage.help_rows(help)
@@ -223,7 +248,8 @@ func _sync_card(a: XActor) -> void:
 	var sd := XHelpCard.skin_card_data(help, view) if split else {}
 	card.fold = split
 	set_card({"icon": XUiSkin.icon(int(sk.get("iconIndex", 0))), "title": str(sk.get("name", "")), "title_color": name_color(sk),
-		"subtitle": " · ".join(sub.filter(func(x): return str(x) != "")), "desc": sd.get("desc", ""), "sections": sd.sections if split else [{"title": "", "rows": rows}]})
+		"subtitle": " · ".join(sub.filter(func(x): return str(x) != "")), "desc": sd.get("desc", ""), "sections": sd.sections if split else [{"title": "", "rows": rows}],
+		"buttons": _card_actions})
 	var scope := int(sk.get("scope", 0))
 	if sc.mode == "actor":
 		var tr := []
@@ -314,8 +340,50 @@ func _draw_face() -> void:
 	ring.draw_circle(c, r + 1, Color(XUiSkin.GOLD, 0.6), false, 1.5, true)
 
 
-## 类型环上左右也能换类型（旧页只认上下）；其余按键交回旧代码
+func _on_card_button(i: int) -> void:
+	if i < 0 or i >= _card_actions.size():
+		return
+	var act := str(_card_actions[i].get("action", ""))
+	if act == "finish_free":
+		if XTianqiSecrets.ui_exec_action(XState.current, scene.actor(), "finish_free", 0):
+			scene._free_pick_touched.erase(scene.actor().actor_id)
+			scene._refresh()
+		return
+	if act in ["seal", "unseal"]:
+		scene.open_secret_confirm()
+
+
+func _sync_secret_confirm() -> void:
+	if scene.mode != "secret_confirm" or scene.secret_spec.is_empty():
+		if confirm_dlg != null:
+			confirm_dlg.close()
+			confirm_dlg = null
+		return
+	var d := {
+		"title": str(scene.secret_spec.get("title", "")),
+		"body": str(scene.secret_spec.get("body", "")),
+		"danger": bool(scene.secret_spec.get("danger", false)),
+		"buttons": scene.secret_spec.get("buttons", []),
+		"index": scene.secret_pick,
+	}
+	if confirm_dlg == null:
+		confirm_dlg = XSkinConfirm.open(self, d)
+		confirm_dlg.index_changed.connect(func(i):
+			scene.secret_pick = i
+			XSound.system(0))
+		confirm_dlg.chosen.connect(func(i):
+			scene.confirm_secret_choice(i))
+		confirm_dlg.cancelled.connect(func():
+			XSound.system(2)
+			scene.close_secret_confirm())
+	else:
+		confirm_dlg.setup(d)
+
+
+## 类型环上左右也能换类型（旧页只认上下）；确认弹窗开着时拦截全部按键；其余按键交回旧代码
 func input(event: InputEvent) -> bool:
+	if confirm_dlg != null:
+		return confirm_dlg.handle_input(event)
 	if scene.mode != "type":
 		return false
 	if event.is_action_pressed("ui_left", true) or event.is_action_pressed("ui_right", true):

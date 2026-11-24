@@ -39,7 +39,7 @@ EXTRA = {
     'XGojo',            # 五条悟 180（只在天启篇，modes/xiyou/core/gojo.gd）
     'XGuardianRework',  # 守层者按新成长重算（只管天启篇存档）
 }
-KEEP = {'XTianqiTitle'}  # 发行包要用的真脚本（标题画面）：不换
+KEEP = {'XTianqiTitle', 'XRiftAlien'}  # 发行包要用的真脚本：标题画面；漩涡怪物异化（T455，Kyo 11-24 事项49 三阶段整包对玩家打开）：不换
 SCAN_DIRS = ('modes', 'core', 'scenes', 'addons')
 MARK = '## 发行空壳'
 # 编进包里也认得出的空壳标记（注释导出时会去掉，字符串常量不会）：发行内容审计.py 解开包里的 .gdc 找它
@@ -71,7 +71,7 @@ MIXED_OK = {
 # 查不到的：没有固定玩法名的天启篇规则长文（如 guide.gd milestone_intro／advice 的天启篇分支），见 交付/luiluu_t385.md。
 TIANQI_WORDS = re.compile(r'号卷|封卷|七印|烙印|刻印|天启之路|天启篇词条|异化核|骑士遗物|毕业武器|炼狱、证道|证道难度|炼狱难度'
     r'|装备重铸|重铸第|重铸哪件|已重铸|不能重铸|不会重铸|重铸词条|洗其余'
-    r'|侵染、蚀骨|本线异化图鉴|确认取核|战商|装备环纹')  # T388：T385 核 P2-1 补；单独「取核」在 alien_workshop DANGER_RE 里，只收「确认取核」
+    r'|侵染、蚀骨|本线异化图鉴|确认取核|战商|装备环纹|秘籍格|启封秘籍')  # T388：T385 核 P2-1 补；单独「取核」在 alien_workshop DANGER_RE 里，只收「确认取核」；T446 补秘籍格守卫
 # 登记过的混合脚本：路径 →（命中的字面量条数, 为什么走不到）。make_tree 在发行克隆里把这些文件命中的字面量换成只剩格式符的占位
 # （"%s 的烙印加深至「%s」" → "%s%s"，% 运算照样不报错），游戏脚本本身一字不改；没登记的文件有命中、或条数变多，check 报错。
 MIXED_STR = {
@@ -591,6 +591,40 @@ def scrub_rules(root: Path) -> bool:
     return True
 
 
+RIFT_ALIEN_REL = Path('modes/xiyou/rift_alien.json')
+# T455 核 P2-1：rift_alien.json 进发行包前清掉 source 与所有 _ 开头注释键（含 _note、_stages_aligned_note、difficulty._note、look._note），不把内部路径与未发行术语带进玩家包。
+
+
+def _is_rift_alien_comment_key(key: str) -> bool:
+    return key == 'source' or key.startswith('_')
+
+
+def scrub_rift_alien_data(d):
+    """返回发行用 rift_alien.json 的内容（不改入参）：递归去掉 source 与 _ 开头注释键。"""
+    if isinstance(d, dict):
+        return {k: scrub_rift_alien_data(v) for k, v in d.items() if not _is_rift_alien_comment_key(k)}
+    if isinstance(d, list):
+        return [scrub_rift_alien_data(v) for v in d]
+    return d
+
+
+def _has_rift_alien_comments(d) -> bool:
+    if isinstance(d, dict):
+        return any(_is_rift_alien_comment_key(k) or _has_rift_alien_comments(v) for k, v in d.items())
+    if isinstance(d, list):
+        return any(_has_rift_alien_comments(v) for v in d)
+    return False
+
+
+def scrub_rift_alien(root: Path) -> bool:
+    f = Path(root) / RIFT_ALIEN_REL
+    if not f.is_file():
+        return False
+    d = json.loads(f.read_text(encoding='utf-8'))
+    f.write_text(json.dumps(scrub_rift_alien_data(d), ensure_ascii=False, indent=1), encoding='utf-8')
+    return True
+
+
 def make_tree(out: Path, src: Path = None) -> Path:
     """克隆工程到 out 并换上空壳。out 不能已存在。src：要克隆的工程目录（默认本仓工程 PROJECT）。"""
     if out.exists():
@@ -609,6 +643,7 @@ def make_tree(out: Path, src: Path = None) -> Path:
     for p, s in stubs.items():
         (out / p).write_text(s, encoding='utf-8')
     scrub_rules(out)
+    scrub_rift_alien(out)
     scrub_strings(out)
     return out
 
@@ -623,6 +658,9 @@ def is_stub_tree(root: Path) -> list:
     f = root / RULES_REL
     if f.is_file() and 'tianqi_dict' in json.loads(f.read_text(encoding='utf-8')):
         out.append(f'{RULES_REL}（还带 tianqi_dict）')
+    ra = root / RIFT_ALIEN_REL
+    if ra.is_file() and _has_rift_alien_comments(json.loads(ra.read_text(encoding='utf-8'))):
+        out.append(f'{RIFT_ALIEN_REL}（还带内部注释键）')
     for rel in tianqi_string_hits(root):  # T388：不止登记过的，任何不换空壳的脚本还有天启篇玩法名字符串都算（T385 核 P2-2）
         out.append(f'{rel}（还带天启篇玩法名字符串）')
     return out

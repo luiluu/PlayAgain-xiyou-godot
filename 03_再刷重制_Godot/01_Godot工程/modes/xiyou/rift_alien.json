@@ -41,7 +41,7 @@
       "abyss": {"rate": 100, "tier": "huaxing"}
     }
   },
-  "_stages_aligned_note": "O-468（Kyo 11-15 拍板 D8 选 A）：怪物异化的阶段对齐大厅稿——二阶侵染、三阶蚀骨、四阶化形、五阶对终焉。开关 XRiftAlien.ALIGN_LOBBY（默认开）读本表：旧表 stages 的三、四、五阶整体前移成二、三、四阶；怪物端没有终焉，五阶先按「化形且几率最高」（几率同旧五阶，各类一律化形、不再升级），终焉怪物端待补。关掉读旧表 stages（三阶起才异化）。",
+  "_stages_aligned_note": "O-468（Kyo 11-15 拍板 D8 选 A）：怪物异化的阶段对齐大厅稿——二阶侵染、三阶蚀骨、四阶化形、五阶对终焉。开关 XRiftAlien.ALIGN_LOBBY（默认开）读本表：旧表 stages 的三、四、五阶整体前移成二、三、四阶；怪物端没有终焉，五阶先按「化形且几率最高」（几率同旧五阶，各类一律化形、不再升级），终焉怪物端待补。关掉读旧表 stages（三阶起才异化）。T455（Kyo 11-24 事项49「按推荐」）：三阶封顶蚀骨——守层者 21～30 层、深渊怪由化形改蚀骨，几率不动；max_tier 是这一阶的级上限，难度修正（炼狱稀有升一级等）也不越过它。",
   "stages_aligned": {
     "2": {
       "rare": {"rate": 11, "tier": "qinran"},
@@ -49,10 +49,11 @@
       "guardian": {"rate": 33, "bands": [{"from": 1, "to": 20, "tier": "qinran"}, {"from": 21, "to": 30, "tier": "shigu"}]}
     },
     "3": {
+      "max_tier": "shigu",
       "rare": {"rate": 15, "tier": "qinran", "up": "shigu", "up_rate": 10},
       "very_rare": {"rate": 33, "tier": "shigu"},
-      "guardian": {"rate": 100, "bands": [{"from": 1, "to": 10, "tier": "qinran"}, {"from": 11, "to": 20, "tier": "shigu"}, {"from": 21, "to": 30, "tier": "huaxing"}]},
-      "abyss": {"rate": 50, "tier": "huaxing"}
+      "guardian": {"rate": 100, "bands": [{"from": 1, "to": 10, "tier": "qinran"}, {"from": 11, "to": 30, "tier": "shigu"}]},
+      "abyss": {"rate": 50, "tier": "shigu"}
     },
     "4": {
       "rare": {"rate": 20, "tier": "qinran", "up": "shigu", "up_rate": 10},

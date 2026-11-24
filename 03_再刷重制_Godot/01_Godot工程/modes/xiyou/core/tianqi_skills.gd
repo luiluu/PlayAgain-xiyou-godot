@@ -752,7 +752,7 @@ static func actor_trait_obj(a, base: Dictionary) -> Dictionary:
 
 ## 状态缓存的键：被改写的状态在天启篇存档里用负号，免得和原版档的缓存混用
 static func state_key(id: int) -> int:
-	return -id if has_state(id) and cards_on() else id
+	return -id if (has_state(id) and cards_on()) or (XTianqiGeneralBooks.has_state(id) and XTianqiGeneralBooks.on()) else id
 
 
 ## 说明行：desc 换掉全部「\c[1]」开头的效果行，header 改表头（冷却时间、对象…）的值；样式照原来第一行

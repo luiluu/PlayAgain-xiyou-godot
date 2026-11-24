@@ -183,6 +183,9 @@ func _suit_state_case(a: XActor, t0: float) -> Array:
 
 # ---- 二、passiveAPLUS；三、道法 ----
 func _aplus_daofa() -> void:
+	# T444（T013-1d）已将 10425（秘境抽奖·再动 Lv1）从根上移除 <passiveAPLUS>；本段单独隔离测 NINE_OFF 开关，暂关 XTianqiGeneralBooks 测完恢复
+	var gb_was := XTianqiGeneralBooks.ENABLED
+	XTianqiGeneralBooks.ENABLED = false
 	var s := _state()
 	var a := s.actor(int(s.battle_slots[1]))
 	var p0 := _plus(a).size()
@@ -204,7 +207,8 @@ func _aplus_daofa() -> void:
 	a.zhenqi = {"realm": 5, "daofa": {"lianji": 1, "fenshen": 1}}
 	_check("daofa_off", _times(a) == t0 and _plus(a).size() == n0 and _times(a, false) == t0_off + 1.0 and _plus(a, false).size() == n0_off + 1 and _plus(a, false).has(1.0), [t0, t0_off, _times(a), _times(a, false), _plus(a, false)])
 	a.zhenqi = keep
-	# 西游档：书的再动和道法照算
+	XTianqiGeneralBooks.ENABLED = gb_was
+	# 西游档：书的再动和道法照算（即使 XTianqiGeneralBooks 开着也照旧）
 	var x := _state(false)
 	var xa := x.actor(int(x.battle_slots[1]))
 	var xp0 := xa.action_plus_set().size()

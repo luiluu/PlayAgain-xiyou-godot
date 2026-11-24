@@ -73,6 +73,8 @@ var all_weak := false
 var troop_override := 0
 ## T244：--weak-assist=出伤%,承伤% 把 4 弱全队协力换成这两个整数百分比（4 人合计，如 33,-22＝九死档补偿），只改内存里的表、不写文件
 var weak_assist := ""
+## T456：--equip=armor:2617[,weapon:123] 给每支参战队伍额外穿上的装备（缺省前缀按 armor）；优先穿在第一位能穿的出战成员对应栏位
+var extra_equips: Array = []
 var shape := "4w"
 var templates: Array = ["A", "B", "C", "D"]   # --shape=tb 时的职责模板
 var sets := 20
@@ -160,6 +162,18 @@ func _ready() -> void:
 			XTianqiNoX6.GUARDIAN_HEAL = false   # 守层者回血只缩 1/6、不乘重算缩放比（O-469 关）
 		elif a == "--dot-pct=off":
 			XGuardianRework.DOT_PCT = false   # T402：守层者按层单列的持续伤害比例关（22 层毒回到 T080 换算），前后对照用
+		elif a == "--boss-neg-hrg-cap=off":
+			XTianqiCombat.BOSS_NEG_HRG_CAP = false   # T405（D273）：守层者／首领回合末负 HP 再生封顶关，前后对照用
+		elif a.begins_with("--equip="):
+			for tok in a.substr(8).split(","):   # T456：额外装备（如 --equip=2617 或 --equip=armor:2617,weapon:123）
+				var s_tok := tok.strip_edges()
+				if s_tok == "":
+					continue
+				if s_tok.contains(":"):
+					var kv := s_tok.split(":")
+					extra_equips.append({"kind": kv[0].strip_edges(), "id": int(kv[1])})
+				else:
+					extra_equips.append({"kind": "armor", "id": int(s_tok)})
 		elif a == "--both":
 			both = true
 		elif a.begins_with("--resist="):
@@ -354,10 +368,49 @@ func _use_vp() -> bool:
 	return revive_team or lineups > 1 or add_healer or not rng_seeds.is_empty()
 
 
+## T456：给当前状态出战成员穿上 --equip 指定的装备（使用 template 避免随机词缀波动）；返回穿戴记录
+func _apply_extra_equips(s: XState) -> Array:
+	if extra_equips.is_empty():
+		return []
+	var applied := []
+	var members: Array = s.battle_members()
+	for spec in extra_equips:
+		var kind := str(spec.kind)
+		var gid := int(spec.id)
+		var item := XGear.template(kind, gid)
+		if item.is_empty():
+			push_warning("--equip 未找到装备：%s:%d" % [kind, gid])
+			continue
+		var target_actor: XActor = null
+		var target_slot := -1
+		for a in members:
+			if a.can_equip(item):
+				var sl: int = a.equip_slots().find(int(item.etypeId))
+				if sl >= 0:
+					target_actor = a
+					target_slot = sl
+					break
+		if target_actor == null:
+			for a in members:
+				var sl: int = a.equip_slots().find(int(item.etypeId))
+				if sl >= 0:
+					target_actor = a
+					target_slot = sl
+					break
+		if target_actor != null and target_slot >= 0:
+			target_actor.equips[target_slot] = item
+			target_actor.refresh_passive()
+			target_actor.recover_all()
+			applied.append({"kind": kind, "id": gid, "name": str(item.get("name", "")), "actor": int(target_actor.actor_id), "slot": target_slot})
+	return applied
+
+
 func _fight(s: XState, troop: int) -> Dictionary:
 	XTianqiWarAlien.BOMB_STATS_ON = true   # T407：记每下轰炸占血比
 	XTianqiWarAlien.bomb_stats = []
+	var applied_equips := _apply_extra_equips(s)
 	var logic: XBattleLogic = VPLogic.new() if _use_vp() else XBattleLogic.new()
+	logic.end_turn_audit = true   # T456：回合末掉血按来源拆账
 	if s.has_meta("t239_rng"):
 		seed(int(s.get_meta("t239_rng")))   # T239 第 6 轮：全局随机（VPLogic 选招等）也按这支队的种子定住
 	var k_tab := float(atk_table.get(str(_cur_floor), atk_scale))   # T239 第 6 轮：--duel 也认 --atk-table（A 口径对照：只换出伤倍率、不设集火）
@@ -368,11 +421,17 @@ func _fight(s: XState, troop: int) -> Dictionary:
 	if events:
 		_drain(logic, logic.troop_events())
 	var total := 0.0
+	var end_total := 0.0
+	var end_by_src := {}
+	var end_by_state := {}
+	var mhp_peak := 0.0
+	var cap_pct_max := 0.0
 	var done := 0
 	var hp0 := 0.0
 	var trace := []   # --duel：每次行动 [回合, 行动者, 技能, 目标, 敌方各人血量, 我方各人血量]，开关对照找首个分歧点
 	for e in logic.enemies:
 		hp0 += float(e.mhp) if e.is_alive() else 0.0
+	mhp_peak = hp0
 	for r in turns:
 		# 每回合开始把敌人血量补满（不动状态），这一回合掉的血就是这一回合的伤害；血量用真值，按比例扣血的技能才不失真
 		for e in logic.enemies:
@@ -405,7 +464,21 @@ func _fight(s: XState, troop: int) -> Dictionary:
 				print("DBG t%d %s skill=%s enemyHp=%s logs=%s" % [r, logic.stable_id(u), str(int(cmd[0].id)) if cmd[0] != null else "-",
 					str(logic.enemies.map(func(e): return int(e.hp))), JSON.stringify(logs).left(300)])
 		if not logic.is_over():
+			var cur_mhp := 0.0
+			for e in logic.enemies:
+				if e.is_alive():
+					cur_mhp += float(e.mhp)
+			mhp_peak = maxf(mhp_peak, cur_mhp)
+			var hp_before_end := _enemy_hp(logic)
 			logic.end_turn()
+			end_total += maxf(0.0, hp_before_end - _enemy_hp(logic))
+			var cap_turn := maxf(0.0, float(logic.end_turn_sources.get("extdot", 0.0))) + maxf(0.0, float(logic.end_turn_sources.get("regen", 0.0)))
+			if cur_mhp > 0.0:
+				cap_pct_max = maxf(cap_pct_max, cap_turn / cur_mhp * 100.0)
+			for k in logic.end_turn_sources:
+				end_by_src[k] = float(end_by_src.get(k, 0.0)) + float(logic.end_turn_sources[k])
+			for k in logic.end_turn_states:
+				end_by_state[k] = float(end_by_state.get(k, 0.0)) + float(logic.end_turn_states[k])
 			if events:
 				_drain(logic, logic.troop_events(null, true))   # T239（T229 核 P3-1）：回合末的敌群事件页（残血变身、阶段页等），同战斗画面
 		total += turn_dmg
@@ -413,12 +486,23 @@ func _fight(s: XState, troop: int) -> Dictionary:
 		if logic.is_over():
 			break
 	var alive := logic.actors.filter(func(a): return a.hp > 0).size()
-	return {"trace": trace, "atkScale": _out_scale(logic), "alien": _alien_desc(logic), "dmg": total / maxf(1.0, float(done)), "turns": done, "alive": alive, "won": logic.is_won(), "lost": logic.is_lost(),
+	var d_n := maxf(1.0, float(done))
+	var end_src_avg := {}
+	for k in end_by_src:
+		end_src_avg[k] = float(end_by_src[k]) / d_n
+	var end_state_avg := {}
+	for k in end_by_state:
+		end_state_avg[k] = float(end_by_state[k]) / d_n
+	var out := {"trace": trace, "atkScale": _out_scale(logic), "alien": _alien_desc(logic), "dmg": total / d_n, "endTurnDmg": end_total / d_n,
+		"endTurnBySource": end_src_avg, "endTurnStates": end_state_avg, "enemyMhpPeak": mhp_peak, "endTurnCapPctMax": cap_pct_max, "turns": done, "alive": alive, "won": logic.is_won(), "lost": logic.is_lost(),
 		"aborted": logic.aborted, "enemyHp": hp0, "enemyAtk": logic.enemies.map(func(e): return int(e.param(2))), "enemyDef": logic.enemies.map(func(e): return [int(e.param(3)), int(e.param(5))]),
 		"partyAtk": logic.actors.map(func(a): return [int(a.param(2)), int(a.param(4))]),
 		"party": logic.actors.map(func(a): return int(a.actor_id)), "members": s.battle_members().map(func(a): return int(a.actor_id)),
 		"allWeak": s.battle_members().all(func(a): return XTianqiSkills.is_weak(int(a.actor_id), true)), "partyHp": logic.actors.map(func(a): return int(a.mhp)),
 		"bomb": XTianqiWarAlien.bomb_stats.duplicate()}   # T407：这场每下轰炸占血比（每人每下一笔）
+	if not applied_equips.is_empty():
+		out["extraEquips"] = applied_equips
+	return out
 
 
 ## 撑到第几回合团灭（没团灭记 turns＋1）
@@ -544,6 +628,7 @@ func _troop_for(s: XState, f: int) -> int:
 
 
 func _fight_both(s: XState, troop: int) -> Dictionary:
+	_apply_extra_equips(s)
 	var logic: XBattleLogic = VPLogic.new() if _use_vp() else XBattleLogic.new()
 	XState._become_current(s)
 	if troop <= 0:
@@ -1133,10 +1218,10 @@ func _run_duel_snapshots() -> void:
 			str(per.map(func(r): return int(r.alive))), str(row.atkScale)])
 		if out_path != "":   # T244：每层写一次，长跑被中途停掉也留得下已量的层
 			var fp := FileAccess.open(out_path, FileAccess.WRITE)
-			fp.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "dotPct": XGuardianRework.DOT_PCT, "events": events, "turns": turns, "partial": true, "rows": rows}, "\t"))
+			fp.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "dotPct": XGuardianRework.DOT_PCT, "bossNegHrgCap": XTianqiCombat.BOSS_NEG_HRG_CAP, "extraEquips": extra_equips, "events": events, "turns": turns, "partial": true, "rows": rows}, "\t"))
 	XEnemy.force_roll = -1.0
 	if out_path != "":
 		var fh := FileAccess.open(out_path, FileAccess.WRITE)
-		fh.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "dotPct": XGuardianRework.DOT_PCT, "events": events, "turns": turns, "rows": rows}, "\t"))
+		fh.store_string(JSON.stringify({"mode": "duel-snapshots", "forceDifficulty": force_difficulty, "dotPct": XGuardianRework.DOT_PCT, "bossNegHrgCap": XTianqiCombat.BOSS_NEG_HRG_CAP, "extraEquips": extra_equips, "events": events, "turns": turns, "rows": rows}, "\t"))
 	print("BASELINE_DONE")
 	get_tree().quit(0)

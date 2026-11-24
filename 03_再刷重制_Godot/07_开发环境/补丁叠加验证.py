@@ -51,8 +51,22 @@ PROBE_LINE = ('\tprint("PATCH_PROBE script=patched class=", XPatchProbe.version(
 EXPECT_PROBE = 'PATCH_PROBE script=patched class=new_class data=dev.9999 img=123456'
 
 
+def _env():
+    """T452：发行预设开了资源加密，导底包和补丁都要带密钥（资源加密.py 从私密设计仓取）；替身用「macOS 发行」的加密模板读。"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('资源加密', HERE / '资源加密.py')
+    enc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(enc)
+    # T454：看 export_presets.cfg 里发行预设实际的 encrypt_pck，不只看 ENCRYPT 开关；要加密就必须有密钥，没有直接抛错（不静默出明文包）
+    cfg = (PROJECT / 'export_presets.cfg').read_text(encoding='utf-8')
+    if 'encrypt_pck=true' not in cfg:
+        return None
+    return enc.export_env()  # 没密钥抛 RuntimeError（main 里先查一遍，给人话、不出堆栈）
+
+
 def godot(*args, timeout=3600):
-    p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), *args], capture_output=True, text=True, timeout=timeout)
+    p = subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(PROJECT), *args], capture_output=True, text=True, timeout=timeout,
+                       env=_env())
     return p.returncode, p.stdout + p.stderr
 
 
@@ -62,7 +76,7 @@ def png_set_pixel(path: Path):
     script.write_text('extends SceneTree\nfunc _init():\n\tvar i := Image.load_from_file("%s")\n\ti.convert(Image.FORMAT_RGBA8)\n'
                       '\ti.set_pixel(0, 0, Color("#123456"))\n\ti.save_png("%s")\n\tquit()\n' % (path, path), encoding='utf-8')
     try:
-        subprocess.run([str(GODOT), '--headless', '-s', str(script)], capture_output=True, text=True, timeout=120, cwd=str(path.parent))
+        subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '-s', str(script)], capture_output=True, text=True, timeout=120, cwd=str(path.parent))
     finally:
         script.unlink(missing_ok=True)
         Path(str(script) + '.uid').unlink(missing_ok=True)
@@ -128,7 +142,7 @@ def run_game(exe: Path, work: Path, tag: str, setup, after=None):
     upd = home / USER_DIR / 'updates'
     upd.mkdir(parents=True)
     setup(upd)
-    p = subprocess.run([str(exe), '--headless', '--quit-after', '600', '--', '--report-entry'], capture_output=True, text=True,
+    p = subprocess.run([str(exe), '--headless', '--audio-driver', 'Dummy', '--quit-after', '600', '--', '--report-entry'], capture_output=True, text=True,
                        timeout=600, env=dict(os.environ, HOME=str(home)), cwd=str(home))
     out = p.stdout + p.stderr
     (work / f'run_{tag}.log').write_text(out, encoding='utf-8')
@@ -147,6 +161,11 @@ def main() -> int:
     ap.add_argument('--base')
     ap.add_argument('--patch-out')
     a = ap.parse_args()
+    try:
+        _env()
+    except RuntimeError as e:
+        print(f'✗ {e}（发行预设开了 encrypt_pck，没有密钥不出补丁、不降级成明文；CI 请注入 GODOT_SCRIPT_ENCRYPTION_KEY）')
+        return 1
     if a.make_only:
         if not a.base or not a.patch_out:
             ap.error('--make-only 要同时给 --base 和 --patch-out')

@@ -177,7 +177,8 @@ static func formula_safe(formula: String) -> bool:
 ## 天启篇重构技（技能重构模块、五条悟茈）
 static func tq_module(rec: Dictionary) -> bool:
 	var program: Dictionary = rec.get("damage", {}).get("formulaProgram", {})
-	return str(program.get("status", "")) == "module" and str(program.get("module", "")) in [XTianqiSkills.MODULE, "gojo"]
+	var mod := str(program.get("module", ""))
+	return str(program.get("status", "")) == "module" and not mod.is_empty() and mod in [XTianqiSkills.MODULE, XTianqiGeneralBooks.MODULE, "gojo"]
 
 
 ## 公式只读求值：randf 固定 0.5（不抽实战随机数）；五条悟茈读当前对数（XGojo.ai_preview，只读）

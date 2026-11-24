@@ -18,6 +18,7 @@ static var test_hooks := {}
 
 
 static func tick(logic: XBattleLogic, b: XBattler, logs: Array) -> void:
+	XTianqiCombat.reset_dot_budget(b)  # T453：本回合持续伤害预算清账
 	if not b.is_alive():
 		return
 	var rows := []
@@ -113,6 +114,7 @@ static func _one(logic: XBattleLogic, rc: XResourceContext, b: XBattler, st: Dic
 	if element != 0:
 		value *= float(test_hooks.element_rate.call(b, element)) if test_hooks.has("element_rate") else b.element_rate(element)
 	value = floorf(value + 0.5)  # Math.round
+	value = XTianqiCombat.cap_extdot(b, id, value)  # T453（D273）：守层者／首领的火海类持续伤害并进每回合 5% 预算
 	if value == 0.0:
 		return
 	rc.seed_result(b, XResourceContext.empty_result())
