@@ -50,6 +50,18 @@ static func _evolved(e: Dictionary, spec: Dictionary) -> bool:
 	return bool(e.get("_codex60Evolved", false)) or (a != null and int(a.level) >= 60)
 
 
+## 只读查询三法宝当前原始每级成长（不改写原件，给说明卡与 XActor.magic_per_level 用；不归这里管返回空）
+static func growth_of(e: Dictionary) -> Array:
+	var spec := spec_of(e)
+	if spec.is_empty() or (e.has("kind") and str(e.get("kind", "")) != "armor"):
+		return []
+	var unit := 36 if _evolved(e, spec) else 18
+	var per := []
+	for i in 8:
+		per.append(unit * (2 if (spec.extra as Array).has(i) else 1))
+	return per
+
+
 ## R.syncItem：返回这件法宝现在的每级成长（不归这里管返回空）
 static func sync_item(e: Dictionary) -> Array:
 	var spec := spec_of(e)

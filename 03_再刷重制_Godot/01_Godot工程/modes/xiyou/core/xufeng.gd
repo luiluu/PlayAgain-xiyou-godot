@@ -61,7 +61,7 @@ const TIANXIA_APLUS := 1         # 再次行动几率 %（原 100）
 
 ## 9998 剑气滚龙壁·封印（每段公式，去 b.hp*0.000015）与 State 2539 真·剑九
 const GUNLONG_BASE := 666666     # 保留原版固定底数
-const GUNLONG_ATK_MUL := 209000  # 物攻整数系数（原 3000 + b.hp*0.000015）
+const GUNLONG_ATK_MUL := 130000  # 物攻整数系数（原 3000 + b.hp*0.000015；T468 按法宝 99→888 折算重标回 1.2× 狂刀）
 const ST2539_RATE := 2           # 真·剑九终伤加成整数倍（2 → +200%，原 5 → +500%）
 
 ## Armor 143 徐凤年·不朽法宝（保留全部 11 条 traits）
@@ -71,7 +71,7 @@ const FABAO_GROW_ALL := 12       # 每级全属性 +12（原 15）
 const FABAO_GROW_MMP_EXTRA := 18 # 魔法额外 +18，即每级 +30（原额外 +35，即 +50）
 
 ## Weapon 76 绣冬（75 级专属主手，方案 B：承接主要输出，保留 2301 紫炎与成长）
-const XIUDONG_ATK_PCT := 137     # 物攻能力值 *137%（原 300%）
+const XIUDONG_ATK_PCT := 176     # 物攻能力值 *176%（原 300%；T468 按法宝 99→888 折算重标回 75/80 全套 1.2× 狂刀）
 const XIUDONG_EL_AMP := 290      # 11 元素增幅 +290%（原 +600%）
 const XIUDONG_HARM := 120        # 终伤/爆伤 +120%（原 +450%）
 const XIUDONG_GROW := 4          # 绣冬 76 每级物攻/魔攻 +4（原 +10）

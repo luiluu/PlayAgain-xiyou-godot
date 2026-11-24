@@ -28,6 +28,7 @@ func _run() -> void:
 	var was_cl := XCanglong.REWORK
 	var was_xf := XXufeng.REWORK
 	var was_p4 := XTianqiBase.PHASE4
+	var was_scale := XMagicWeapon.SCALE_99_TO_888
 	XMessageBox.auto = true
 	XImportedBalance.RELEASE_CANGLONG = true
 	XImportedBalance.RELEASE_XUFENG = true
@@ -35,6 +36,7 @@ func _run() -> void:
 	XCanglong.clear_cache()
 	XXufeng.REWORK = true
 	XXufeng.clear_cache()
+	XMagicWeapon.SCALE_99_TO_888 = true
 
 	_check_rework_data_and_text()
 	_check_revert_and_original_data()
@@ -50,6 +52,7 @@ func _run() -> void:
 	XXufeng.REWORK = was_xf
 	XXufeng.clear_cache()
 	XTianqiBase.PHASE4 = was_p4
+	XMagicWeapon.SCALE_99_TO_888 = was_scale
 	XStateEffects.force_critical = false
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": total}))
 	get_tree().quit(0 if passed == total else 1)
@@ -231,6 +234,13 @@ func _check_rework_data_and_text() -> void:
 		and n143.contains("法宝每级增加%d全属性魔法额外+%d" % [XXufeng.FABAO_GROW_ALL, XXufeng.FABAO_GROW_MMP_EXTRA])
 		and n143.contains("暴击率+%d%% 再动+1" % XXufeng.FABAO_CRIT_PCT),
 		n143)
+	var a143_lv99: Dictionary = XGear.template("armor", 143)
+	a143_lv99["level"] = 99
+	var a143_card := "\n".join(PackedStringArray(XHelpCard.content(a143_lv99).map(func(r): return XHelpCard.plain(str(r[0])).replace("\\lock[1]", ""))))
+	check("armor143.help_card_scaled99",
+		a143_card.contains("魔法＋%d；其余全属性＋%d" % [888 * (XXufeng.FABAO_GROW_ALL + XXufeng.FABAO_GROW_MMP_EXTRA), 888 * XXufeng.FABAO_GROW_ALL])
+		and not a143_card.contains("法宝每级增加"),
+		a143_card)
 	var w76 := XDB.rec("Weapons", 76)
 	var n76 := str(w76.note)
 	check("weapon76.data_text",
@@ -293,17 +303,19 @@ func _check_revert_and_original_data() -> void:
 		and is_equal_approx(float(XDB.rec("Armors", 129).customParams.params[2].level), 30.0))
 	check("off.armor143_orig", str(XDB.rec("Armors", 143).note).contains("<atk Param +15 per Level>"))
 
-	# XCanglong.original_data() 一并关闭 XXufeng
+	# XCanglong.original_data() 一并关闭 XXufeng 与 T468 法宝折算
 	XXufeng.REWORK = true
 	XXufeng.clear_cache()
+	XMagicWeapon.SCALE_99_TO_888 = true
 	XCanglong.original_data()
-	check("canglong_original_data_turns_off_xufeng", not XXufeng.REWORK)
+	check("canglong_original_data_turns_off_xufeng", not XXufeng.REWORK and not XMagicWeapon.SCALE_99_TO_888)
 	XImportedBalance.RELEASE_CANGLONG = true
 	XImportedBalance.RELEASE_XUFENG = true
 	XCanglong.REWORK = true
 	XCanglong.clear_cache()
 	XXufeng.REWORK = true
 	XXufeng.clear_cache()
+	XMagicWeapon.SCALE_99_TO_888 = true
 
 
 ## P1-1 回归：先预热西游档全部缓存，再同进程直接切天启篇（不手动清缓存），验证天启篇属性／成长／记录与 REWORK=false 逐项相等，且再切回西游档仍生效
@@ -328,7 +340,7 @@ func _check_tianqi_untouched_and_switch() -> void:
 	check("p1_1.xy_warmed",
 		is_equal_approx(xy_cp76, 80.0 * float(XXufeng.XIUDONG_GROW))
 		and is_equal_approx(xy_cp129, 80.0 * float(XXufeng.CHUNLEI_ATK_GROW))
-		and is_equal_approx(xy_mg143, 99.0 * float(XXufeng.FABAO_GROW_ALL)),
+		and is_equal_approx(xy_mg143, 888.0 * float(XXufeng.FABAO_GROW_ALL)),
 		[xy_cp76, xy_cp129, xy_mg143])
 
 	# 同进程不手动清缓存，直接切到天启篇（REWORK = true）
