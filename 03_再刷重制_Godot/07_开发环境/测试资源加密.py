@@ -188,6 +188,17 @@ class Scan(unittest.TestCase):
         self.assertEqual(len(v), 1, v)
         self.assertIn('leak.json', v[0])
 
+    def test_zip_name_without_utf8_flag(self):
+        """Godot／Gradle 打的 apk 不带 UTF-8 标志：中文名按 UTF-8 重解，才对得上资源目录（T452 实测 movies/幻术世界.json）。"""
+        real = 'assets/modes/xiyou/generated/movies/幻术世界.json'
+        i = zipfile.ZipInfo(real.encode('utf-8').decode('cp437'))
+        i.flag_bits = 0
+        self.assertEqual(E.zip_name(i), real)
+        j = zipfile.ZipInfo(real)
+        j.flag_bits = 0x800
+        self.assertEqual(E.zip_name(j), real)
+        self.assertIn('kotlin-tooling-metadata.json', E.APK_BUILD_METADATA)
+
     def test_apk_to_pck_keeps_encryption(self):
         a = self.d / 'g.apk'
         make_apk(a, FILES)
