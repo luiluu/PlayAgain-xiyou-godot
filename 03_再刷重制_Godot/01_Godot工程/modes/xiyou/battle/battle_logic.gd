@@ -182,6 +182,7 @@ func setup(troop: int, s: XState, random_context: XBattleRandom = null) -> void:
 	XWeakChallenge.battle_setup(s, troop)  # 弱者挑战 BattleManager.setup 包装：同步 10357，记最终战判定
 	XImportedBalance.set_acting(null)
 	XTianqiBrand.sweep(s)  # T086-a：这份存档上还有上一场没还原的发作换人留底，先还原出战栏再开打
+	XTianqiSecrets.on_battle_start(s)  # T446 P2-1：进入下一场战斗时自动结束旧存档免费封印期
 	actors = s.battle_members()
 	XYomiJingliu.start_battle(self)  # 镜流 startBattle 包装：放血累计清零
 	XGuyu.after_load(s)  # 谷雨 startBattle 包装：syncAll（同读档）

@@ -9,6 +9,13 @@ extends Node
 
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
 
+class FakeMapHost extends Node:
+	var toasts: Array = []
+	func toast(text: String) -> void:
+		toasts.append(text)
+	func character(_ev: int, _id: int):
+		return null
+
 var results: Array = []
 var kit: Kit
 var out_dir := ""
@@ -307,6 +314,29 @@ func _test_save_and_migration() -> void:
 	var m2 := kit.reload()
 	var msup2 := m2.actor(lsup.actor_id)
 	_check("legacy_reload_idempotent", XTianqiSecrets.active_ids(msup2, m2) == XTianqiSecrets.active_ids(msup, migrated) and XTianqiSecrets.sealed_ids(msup2, m2) == XTianqiSecrets.sealed_ids(msup, migrated) and not XTianqiSecrets.has_free_pick(msup2, m2))
+	# P2-1：二次超格读档不再重复赠送 free_pick（migrated 只给一次）
+	XTianqiSecrets.ENABLED = false
+	var extra_book: Array = _pick_gongfa_items(6)[5]
+	msup2.learn_skill(int(extra_book[1]))
+	XTianqiSecrets.ENABLED = true
+	kit.save()
+	var m3 := kit.reload()
+	var msup3 := m3.actor(lsup.actor_id)
+	_check("p2_1_second_overflow_no_repeat_free_pick", XTianqiSecrets.used_slots(msup3, m3) == 3 and not XTianqiSecrets.has_free_pick(msup3, m3), [XTianqiSecrets.used_slots(msup3, m3), XTianqiSecrets.has_free_pick(msup3, m3)])
+	# P2-1：进入下一场战斗自动结束免费封印期
+	var bs := Kit.new_game()
+	var bsup := _find_actor_by_tier(bs, XTier.SUPER)
+	bs.party = [bsup.actor_id]
+	bs.battle_slots = [bsup.actor_id]
+	XTianqiSecrets.ENABLED = false
+	for i in range(5):
+		bsup.learn_skill(int(books[i][1]))
+	XTianqiSecrets.ENABLED = true
+	XTianqiSecrets.migrate_after_load(bs)
+	var before_battle_free := XTianqiSecrets.has_free_pick(bsup, bs)
+	var blogic := XBattleLogic.new()
+	blogic.setup(1, bs)
+	_check("p2_1_free_pick_auto_ends_on_battle_start", before_battle_free and not XTianqiSecrets.has_free_pick(bsup, bs) and XTianqiSecrets.seal_cost(bs, bsup) > 0)
 
 	# 4d) 西游档：零字段、零拦截、读写往返零变化
 	var xiyou := XState.new_game(1, 1, [])
@@ -390,19 +420,28 @@ func _test_ui_both_skins() -> void:
 	_check("new_skin_built", page1.skin != null)
 	_check("new_skin_gongfa_tab", _open_gongfa_tab(page1))
 	await _frames(3)
-	_check("new_skin_list_title_has_slots", page1.skin.list_title.contains("秘籍格 3 / 3") and page1.skin.list_title.contains("已封 2"), page1.skin.list_title)
+	_check("new_skin_list_title_has_slots", page1.skin.list_title.contains("秘籍格 3 / 3") and page1.skin.list_title.contains("已封 2") and page1.skin.list_title.contains("旧档补偿：免费封印中"), page1.skin.list_title)
 	_check("new_skin_entries_include_sealed", page1.entries().size() >= 5 and page1.entries().any(func(sk): return XTianqiSecrets.is_entry_sealed(sk)), page1.entries().size())
-	_check("new_skin_card_has_seal_btn", page1.skin._card_actions.size() >= 1 and str(page1.skin._card_actions[0].get("action", "")) == "seal", page1.skin._card_actions)
+	_check("new_skin_card_has_seal_btn", page1.skin._card_actions.size() >= 2 and str(page1.skin._card_actions[0].get("action", "")) == "seal" and str(page1.skin._card_actions[1].get("text", "")) == "结束免费期", page1.skin._card_actions)
+	# 文字审 P3：新皮肤列表行尾不塞长原因挤名字，改为底栏提示；徽标新旧统一「占格/已封」
+	var first_row: Dictionary = page1.skin.list.items[0] if not page1.skin.list.items.is_empty() else {}
+	var meta_act := XTianqiSecrets.ui_row_meta(a1, page1.entries()[0], d1.state)
+	_check("text_review_badge_and_no_row_squeeze", str(meta_act.get("badge", "")) == "占格" and str(meta_act.get("old_badge", "")) == "[占格]" and not first_row.has("reason") and XTianqiSecrets.ui_accept_hint(a1, page1.current(), d1.state) == "免费封印", [meta_act, first_row])
 	await _shots_pair("new_skin_secrets_list")
-	# 打开封印确认弹窗（免费自选）
+	# 打开封印确认弹窗（免费补偿）
 	page1.ok()
 	await _frames(3)
-	_check("new_skin_confirm_open", page1.mode == "secret_confirm" and page1.skin.confirm_dlg != null)
+	_check("new_skin_confirm_open", page1.mode == "secret_confirm" and page1.skin.confirm_dlg != null and str(page1.secret_spec.get("body", "")).contains("旧存档") and str(page1.secret_spec.get("body", "")).contains("结束免费期"))
 	await _shots_pair("new_skin_secrets_confirm")
 	# 确认免费封印
 	page1.confirm_secret_choice(0)
 	await _frames(2)
 	_check("new_skin_sealed_via_ui", XTianqiSecrets.used_slots(a1, d1.state) == 2 and page1.mode == "list")
+	# P2-1：改完离开技能页后自动结束免费封印期
+	page1.cancel()
+	page1.cancel()
+	await _frames(2)
+	_check("p2_1_free_pick_auto_ends_on_skill_page_close", not XTianqiSecrets.has_free_pick(a1, d1.state) and XTianqiSecrets.seal_cost(d1.state, a1) > 0)
 	page1.queue_free()
 	await _frames(3)
 	await _clear_toasts()
@@ -434,6 +473,133 @@ func _test_ui_both_skins() -> void:
 	XUiSkin.ENABLED = old_skin
 
 
+# ---- 7. P1-1 总账分桶与 secret_kept 协同（满格功法＋抽奖被动＋血脉，3 本功法全算伤害）----
+
+func _test_ledger_coexistence() -> void:
+	var s := Kit.new_game()
+	var sup := _find_actor_by_tier(s, XTier.SUPER)  # 3 格
+	var enemy := XEnemy.new().setup(1, 3, 100.0)
+	var gongfas := [7166, 7167, 7168]
+	var lotteries := [6305, 6306, 6307]
+	var bloodlines := [2807, 3236]
+	for sid in gongfas:
+		sup.learn_skill(sid)
+	for sid in lotteries:
+		sup.learn_skill(sid)
+	for sid in bloodlines:
+		sup.learn_skill(sid)
+	sup.refresh_passive()
+	# 占格功法进 secret，抽奖被动与血脉回 actor 桶，不再混进秘籍格
+	var bucket_ok := gongfas.all(func(id): return XTianqiLedger.bucket_of(XDB.rec("Skills", id), sup) == "secret") \
+		and lotteries.all(func(id): return XTianqiLedger.bucket_of(XDB.rec("Skills", id), sup) == "actor") \
+		and bloodlines.all(func(id): return XTianqiLedger.bucket_of(XDB.rec("Skills", id), sup) == "actor")
+	_check("p1_1_bucket_uses_occupies_slot", bucket_ok)
+	var by: Dictionary = sup.passive_cache().get("bySource", {})
+	var kept := XTianqiLedger.secret_kept(sup, by)
+	_check("p1_1_secret_kept_all_3_gongfas", kept == ["#7166", "#7167", "#7168"], kept)
+	var dmg_with := XDamage.calculate(XDB.rec("Skills", 1), sup, enemy, {"critical": false, "variance": false})
+	# 把 3 本功法都封印后，终伤池必须正好少掉 3 本功法各自封顶的 0.08 × 3 = 0.24
+	s.gold = 9999999
+	for sid in gongfas:
+		XTianqiSecrets.seal(s, sup, sid)
+	var dmg_sealed := XDamage.calculate(XDB.rec("Skills", 1), sup, enemy, {"critical": false, "variance": false})
+	var diff := float(dmg_with.breakdown.row.terminal) - float(dmg_sealed.breakdown.row.terminal)
+	var per := XTianqiBase.secret_slot(XTianqiLedger.nine_cap("secret_slot"))
+	_check("p1_1_all_3_gongfa_damage_counted", is_equal_approx(diff, per * 3.0) and float(dmg_with.value) > float(dmg_sealed.value), [diff, per * 3.0, dmg_with.value, dmg_sealed.value])
+
+
+# ---- 8. P2-2 单书多技能预检与固定角色 CE 预检 ----
+
+func _test_multi_slot_and_fixed_actor() -> void:
+	var s := Kit.new_game()
+	var a30 := s.actor(30)  # 西凉女帝（CE 1088 物品 77 固定教 30 号角色，正练同时学 4901 + 4920）
+	var other := _find_actor_by_tier(s, XTier.WEAK)
+	if other.actor_id == 30:
+		other = s.actor(1)
+	s.party = [other.actor_id, 30]
+	s.battle_slots = [other.actor_id, 30]
+	var cap30 := XTianqiSecrets.limit(a30)
+	var books := _pick_gongfa_items(cap30 + 2)
+	# 给 30 号角色填到只剩 1 格空位；other 保持 0 格已用
+	for i in range(cap30 - 1):
+		a30.learn_skill(int(books[i][1]))
+	_check("p2_2_setup_a30_one_left", XTianqiSecrets.used_slots(a30, s) == cap30 - 1 and XTianqiSecrets.used_slots(other, s) == 0)
+	var item77 := XDB.rec("Items", 77)
+	# 传 other 也会查对 30 号角色，且 1 格不够 2 格必须整本拒收
+	var reason77 := XTianqiSecrets.item_learn_reason(other, item77, s)
+	_check("p2_2_item77_checks_actor30_needs_2", not reason77.is_empty() and reason77.contains("需 2 格") and reason77.contains(a30.display_name()), reason77)
+	# 通过 XItemScene._use_direct() 实测：不吃书、不预约 CE、弹提示
+	s.gain_item(77, 1)
+	var old_skin := XUiSkin.ENABLED
+	XUiSkin.ENABLED = false
+	var isc := XItemScene.new()
+	add_child(isc)
+	await _frames(2)
+	isc._item = item77
+	XToast.shown.clear()
+	isc._use_direct()
+	_check("p2_2_item77_direct_no_consume", s.item_count(77) == 1 and s.peek_common_event() == 0 and not XToast.shown.is_empty(), [s.item_count(77), s.peek_common_event(), XToast.shown])
+	# 30 号角色再封 1 本（空出 2 格）后放行
+	s.gold = 9999999
+	XTianqiSecrets.seal(s, a30, int(books[0][1]))
+	_check("p2_2_item77_allowed_with_2_slots", XTianqiSecrets.item_learn_reason(other, item77, s).is_empty())
+	# 同测 code 43 单书双技能（物品 1998 幸运女神的眷顾：498 + 4817）
+	var sup := _find_actor_by_tier(s, XTier.SUPER)
+	s.party = [sup.actor_id]
+	sup.learn_skill(int(books[0][1]))
+	sup.learn_skill(int(books[1][1]))  # 2/3，只剩 1 格
+	var item1998 := XDB.rec("Items", 1998)
+	s.gain_item(1998, 1)
+	isc._item = item1998
+	isc._actor = 0
+	_check("p2_2_item1998_needs_2_blocks_1_left", XTianqiSecrets.item_effective(sup, item1998, s) == 0 and XTianqiSecrets.item_learn_reason(sup, item1998, s).contains("需 2 格"))
+	isc._use()
+	_check("p2_2_item1998_no_consume", s.item_count(1998) == 1 and not sup.skill_ids.has(498) and not sup.skill_ids.has(4817))
+	XTianqiSecrets.seal(s, sup, int(books[0][1]))  # 1/3，空出 2 格
+	_check("p2_2_item1998_allowed_with_2_slots", XTianqiSecrets.item_effective(sup, item1998, s) == 1)
+	isc.queue_free()
+	await _frames(2)
+	XUiSkin.ENABLED = old_skin
+
+
+# ---- 9. P3-2 非道具学技能被拦的提示与防伪成功 ----
+
+func _test_non_item_block_feedback() -> void:
+	var s := Kit.new_game()
+	var sup := _find_actor_by_tier(s, XTier.SUPER)
+	var books := _pick_gongfa_items(5)
+	for i in range(3):
+		sup.learn_skill(int(books[i][1]))
+	# 9a) forget_skill_scene.toggle：满格学占格秘籍时弹提示且不翻 r.kept
+	var row := {"id": int(books[3][1]), "kept": false}
+	XToast.shown.clear()
+	XForgetSkillScene.toggle(sup, row)
+	_check("p3_2_forget_toggle_no_flip", not bool(row.kept) and not sup.skill_ids.has(int(books[3][1])) and not XToast.shown.is_empty(), [row, XToast.shown])
+	# 9b) CE 1626（88 号角色学 7515 + 紧随其后的 $.toaster('融合成功...')）：满格时弹秘籍满格提示且不弹「融合成功」
+	var a88 := s.actor(88)
+	var cap88 := XTianqiSecrets.limit(a88)
+	var books88 := _pick_gongfa_items(cap88 + 1)
+	for i in range(cap88):
+		a88.learn_skill(int(books88[i][1]))
+	var ce1626: Dictionary = XDB.table("CommonEvents")[1626]
+	var sub_cmds := [ce1626.list[15], ce1626.list[16], {"code": 0, "indent": 3, "parameters": []}]
+	var host := FakeMapHost.new()
+	add_child(host)
+	var interp := MVInterpreter.new(host, 0, 0, sub_cmds)
+	XToast.shown.clear()
+	await interp.run()
+	_check("p3_2_ce1626_blocked_no_fake_success", not a88.skill_ids.has(7515) and not XToast.shown.is_empty() and not host.toasts.any(func(t): return str(t).contains("融合成功")), [a88.skill_ids.has(7515), XToast.shown, host.toasts])
+	host.queue_free()
+	await _frames(2)
+	# 文字审 P3 细节校验（已封重学提示 + 满格启封提示）
+	s.gold = 9999999
+	XTianqiSecrets.seal(s, sup, int(books[0][1]))
+	_check("text_review_p3_strings", XTianqiSecrets.learn_reason(sup, int(books[0][1]), s).contains("启封后生效") and XTianqiSecrets.learn_reason(sup, int(books[0][1]), s).contains("启封"))
+	sup.learn_skill(int(books[3][1]))
+	var up_full := XTianqiSecrets.unseal(s, sup, int(books[0][1]))
+	_check("text_review_p3_unseal_full", str(up_full.get("reason", "")).contains("生效中的") and str(up_full.get("reason", "")).contains("3 / 3"), up_full)
+
+
 func _run() -> void:
 	kit = Kit.new("xiyou_tianqi_secrets")
 	_test_classification()
@@ -441,6 +607,9 @@ func _run() -> void:
 	await _test_intercept_and_seal()
 	_test_save_and_migration()
 	_test_rollback()
+	_test_ledger_coexistence()
+	await _test_multi_slot_and_fixed_actor()
+	await _test_non_item_block_feedback()
 	await _test_ui_both_skins()
 	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()

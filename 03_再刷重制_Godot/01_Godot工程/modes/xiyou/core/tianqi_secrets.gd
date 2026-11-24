@@ -31,7 +31,7 @@ static var _conversion_items := {}
 static var _ignore_items := {}
 static var _slot_stypes := [4, 6]
 static var _book_skills := {}
-static var _ce_item_skills := {}  # item_id -> Array[int]（该 CE 物品会教的占格技能列表）
+static var _ce_item_info := {}  # item_id -> {skills: Array[int], fixed_actor: int, paths: Array}
 
 
 # ---- 数据加载与开关 ----
@@ -61,7 +61,7 @@ static func reload_table() -> void:
 	_ignore_items = {}
 	_slot_stypes = [4, 6]
 	_book_skills = {}
-	_ce_item_skills = {}
+	_ce_item_info = {}
 
 
 static func on(s = null) -> bool:
@@ -130,27 +130,41 @@ static func _scan_items() -> void:
 		if re_power.search(str(it.get("note", ""))) != null:
 			continue
 		var ce_sids := {}
+		var ce_paths: Array = []
+		var ce_fixed := {}
+		var ce_dynamic := false
 		for e in it.get("effects", []):
 			var code := int(e.get("code", 0))
 			var did := int(e.get("dataId", 0))
 			if code == 43 and did > 0:
 				_book_skills[did] = true
 			elif code == 44 and did > 0 and ces is Array and did < ces.size() and ces[did] is Dictionary:
-				for sid in _scan_ce(ces[did], re_learn, re_var):
-					_book_skills[sid] = true
-					ce_sids[sid] = true
+				var info := _scan_ce(ces[did], re_learn, re_var)
+				if info.is_empty():
+					continue
+				for sid in info.skills:
+					_book_skills[int(sid)] = true
+					ce_sids[int(sid)] = true
+				for pt in info.paths:
+					ce_paths.append(pt)
+				if int(info.fixed_actor) > 0:
+					ce_fixed[int(info.fixed_actor)] = true
+				else:
+					ce_dynamic = true
 		if not ce_sids.is_empty():
 			var arr: Array[int] = []
 			for sid in ce_sids:
 				arr.append(int(sid))
 			arr.sort()
-			_ce_item_skills[iid] = arr
+			var fixed_actor := int(ce_fixed.keys()[0]) if (not ce_dynamic and ce_fixed.size() == 1) else 0
+			_ce_item_info[iid] = {"skills": arr, "fixed_actor": fixed_actor, "paths": ce_paths}
 
 
-static func _scan_ce(ce: Dictionary, re_learn: RegEx, re_var: RegEx) -> Array[int]:
+static func _scan_ce(ce: Dictionary, re_learn: RegEx, re_var: RegEx) -> Dictionary:
+	var lst: Array = ce.get("list", [])
 	var recruits := {}
 	var has_learn := false
-	for c in ce.get("list", []):
+	for c in lst:
 		var code := int(c.get("code", 0))
 		var p: Array = c.get("parameters", [])
 		if code == 129 and p.size() > 1 and int(p[1]) == 0:
@@ -161,26 +175,122 @@ static func _scan_ce(ce: Dictionary, re_learn: RegEx, re_var: RegEx) -> Array[in
 			if str(p[0]).contains("learnSkill("):
 				has_learn = true
 	if not has_learn:
-		return []  # 只有 forgetSkill（如转换药剂）或纯辅助事件不收
-	var found := {}
-	for c in ce.get("list", []):
+		return {}  # 只有 forgetSkill（如转换药剂）或纯辅助事件不收
+	var acc := {"all": {}, "fixed": {}, "dynamic": false}
+	var parsed := _scan_ce_block(lst, 0, 0, recruits, re_learn, re_var, acc)
+	var raw_paths: Array = parsed[1]
+	var clean_paths: Array = []
+	for pt in raw_paths:
+		if not (pt is Dictionary) or pt.is_empty():
+			continue
+		var arr: Array[int] = []
+		for sid in pt:
+			arr.append(int(sid))
+		arr.sort()
+		if not clean_paths.has(arr):
+			clean_paths.append(arr)
+	var all_arr: Array[int] = []
+	for sid in acc.all:
+		all_arr.append(int(sid))
+	all_arr.sort()
+	var fixed_actor := int(acc.fixed.keys()[0]) if (not bool(acc.dynamic) and acc.fixed.size() == 1) else 0
+	return {"skills": all_arr, "fixed_actor": fixed_actor, "paths": clean_paths}
+
+
+static func _scan_ce_block(lst: Array, start: int, indent: int, recruits: Dictionary, re_learn: RegEx, re_var: RegEx, acc: Dictionary) -> Array:
+	var paths: Array = [{}]
+	var i := start
+	while i < lst.size():
+		var c: Dictionary = lst[i]
+		var ci := int(c.get("indent", 0))
 		var code := int(c.get("code", 0))
 		var p: Array = c.get("parameters", [])
-		if code == 318 and p.size() > 3 and int(p[2]) == 0:
-			if int(p[0]) == 0 and recruits.has(int(p[1])):
-				continue
-			found[int(p[3])] = true
+		if ci < indent:
+			break
+		if ci == indent and code in [402, 403, 404, 411, 412]:
+			break
+		if code == 102:
+			i += 1
+			var branch_paths: Array = []
+			while i < lst.size():
+				var cc: Dictionary = lst[i]
+				var cci := int(cc.get("indent", 0))
+				var ccode := int(cc.get("code", 0))
+				if cci == indent and ccode == 404:
+					i += 1
+					break
+				if cci == indent and ccode in [402, 403]:
+					var sub := _scan_ce_block(lst, i + 1, indent + 1, recruits, re_learn, re_var, acc)
+					i = int(sub[0])
+					branch_paths.append_array(sub[1])
+				else:
+					i += 1
+			if not branch_paths.is_empty():
+				paths = _merge_paths(paths, branch_paths)
+			continue
+		elif code == 111:
+			var sub_then := _scan_ce_block(lst, i + 1, indent + 1, recruits, re_learn, re_var, acc)
+			i = int(sub_then[0])
+			var else_paths: Array = [{}]
+			if i < lst.size() and int(lst[i].get("indent", 0)) == indent and int(lst[i].get("code", 0)) == 411:
+				var sub_else := _scan_ce_block(lst, i + 1, indent + 1, recruits, re_learn, re_var, acc)
+				i = int(sub_else[0])
+				else_paths = sub_else[1]
+			if i < lst.size() and int(lst[i].get("indent", 0)) == indent and int(lst[i].get("code", 0)) == 412:
+				i += 1
+			var combined: Array = []
+			combined.append_array(sub_then[1])
+			combined.append_array(else_paths)
+			paths = _merge_paths(paths, combined)
+			continue
+		elif code == 318 and p.size() > 3 and int(p[2]) == 0:
+			if not (int(p[0]) == 0 and recruits.has(int(p[1]))):
+				var sid := int(p[3])
+				acc.all[sid] = true
+				if int(p[0]) == 0 and int(p[1]) > 0:
+					acc.fixed[int(p[1])] = true
+				else:
+					acc.dynamic = true
+				for pt in paths:
+					pt[sid] = true
 		elif code in [355, 655] and not p.is_empty():
 			var line := str(p[0])
 			for m in re_learn.search_all(line):
-				found[int(m.get_string(1))] = true
+				var sid := int(m.get_string(1))
+				acc.all[sid] = true
+				acc.dynamic = true
+				for pt in paths:
+					pt[sid] = true
 			for m in re_var.search_all(line):
 				var sid := int(m.get_string(1))
 				if int(XDB.rec("Skills", sid).get("stypeId", 0)) == 4:
-					found[sid] = true
-	var out: Array[int] = []
-	for sid in found:
-		out.append(int(sid))
+					acc.all[sid] = true
+					acc.dynamic = true
+		i += 1
+	return [i, _dedup_path_dicts(paths)]
+
+
+static func _merge_paths(base: Array, branches: Array) -> Array:
+	var out: Array = []
+	for a in base:
+		for b in branches:
+			var m: Dictionary = (a as Dictionary).duplicate()
+			for k in b:
+				m[k] = true
+			out.append(m)
+	return _dedup_path_dicts(out)
+
+
+static func _dedup_path_dicts(paths: Array) -> Array:
+	var out: Array = []
+	var seen := {}
+	for pt in paths:
+		var ks := (pt as Dictionary).keys()
+		ks.sort()
+		var sig := ",".join(ks.map(func(x): return str(x)))
+		if not seen.has(sig):
+			seen[sig] = true
+			out.append(pt)
 	return out
 
 
@@ -240,7 +350,7 @@ static func fill(d: Dictionary) -> void:
 	for k in actors.keys():
 		var row = actors[k]
 		if not (row is Dictionary):
-			actors[k] = {"sealed": [], "free_pick": false}
+			actors[k] = {"sealed": [], "free_pick": false, "migrated": false}
 			continue
 		var raw = row.get("sealed", [])
 		var clean: Array[int] = []
@@ -252,6 +362,7 @@ static func fill(d: Dictionary) -> void:
 		clean.sort()
 		row["sealed"] = clean
 		row["free_pick"] = bool(row.get("free_pick", false))
+		row["migrated"] = bool(row.get("migrated", false))
 
 
 static func _peek_actor(s: XState, actor_id: int) -> Dictionary:
@@ -272,7 +383,7 @@ static func _write_actor(s: XState, actor_id: int) -> Dictionary:
 	var actors: Dictionary = sec["actors"]
 	var key := str(actor_id)
 	if not (actors.get(key) is Dictionary):
-		actors[key] = {"sealed": [], "free_pick": false}
+		actors[key] = {"sealed": [], "free_pick": false, "migrated": false}
 	return actors[key]
 
 
@@ -357,7 +468,7 @@ static func learn_reason(a, skill_id: int, s: XState = null) -> String:
 		s = XState.current
 	if a.skill_ids.has(skill_id):
 		if is_sealed(a, skill_id, s):
-			return "已学会此秘籍（已封印），请在技能页启封"
+			return "已学会此秘籍（已封印），请在技能页启封，启封后生效"
 		return "已经学会这本秘籍"
 	# 元素转换书：当前生效格已有另一门转换书 → 原地替换，不占新格
 	if is_conversion_skill(skill_id) and active_conversion_id(a, s) > 0:
@@ -365,7 +476,7 @@ static func learn_reason(a, skill_id: int, s: XState = null) -> String:
 	var cap := limit(a)
 	var used := used_slots(a, s)
 	if cap > 0 and used >= cap:
-		return "%s最多装备 %d 本秘籍（当前 %d/%d），请先在技能页封印已有秘籍" % [XTier.tier_of(a), cap, used, cap]
+		return "%s最多装备 %d 本秘籍（当前 %d / %d），请先在技能页封印已有秘籍" % [XTier.tier_of(a), cap, used, cap]
 	return ""
 
 
@@ -382,9 +493,9 @@ static func blocks_learn(a, skill_id: int, s: XState = null) -> bool:
 	return not learn_reason(a, skill_id, s).is_empty()
 
 
-## 使用物品前校验（覆盖 code 43、元素转换书、CE code 44 被动书）
+## 使用物品前校验（覆盖 code 43、元素转换书、CE code 44 被动书，含单书多技能与固定角色 CE；a 可为空用于无对象直用道具）
 static func item_learn_reason(a, item: Dictionary, s: XState = null) -> String:
-	if not on(s) or not (a is XActor) or item.is_empty():
+	if not on(s) or item.is_empty():
 		return ""
 	if s == null:
 		s = XState.current
@@ -392,42 +503,103 @@ static func item_learn_reason(a, item: Dictionary, s: XState = null) -> String:
 	var iid := int(item.get("id", 0))
 	if _ignore_items.has(iid) or XPowerBooks.book_skill(item) > 0:
 		return ""
+	var fixed_actor := 0
+	var target: XActor = null
+	if _ce_item_info.has(iid) and int(_ce_item_info[iid].get("fixed_actor", 0)) > 0:
+		fixed_actor = int(_ce_item_info[iid].fixed_actor)
+		if s != null and not XDB.rec("Actors", fixed_actor).is_empty():
+			target = s.actor(fixed_actor)
+	elif a is XActor:
+		target = a
+	if target == null:
+		return ""
 	# 1) 元素转换书物品（老版 1035~1042、新版 3101~3105）
 	if _conversion_items.has(iid):
-		return learn_reason(a, int(_conversion_items[iid]), s)
-	# 2) 直接学会技能（code 43）
+		return learn_reason(target, int(_conversion_items[iid]), s)
+	# 2) 直接学会技能（code 43，支持同一本书教多个占格技能如物品 1998）
+	var sids43: Array[int] = []
 	for e in item.get("effects", []):
 		if int(e.get("code", 0)) == 43:
 			var sid := int(e.get("dataId", 0))
-			if occupies_slot(sid):
-				return learn_reason(a, sid, s)
+			if occupies_slot(sid) and not sids43.has(sid):
+				sids43.append(sid)
+	if sids43.size() == 1:
+		return learn_reason(target, sids43[0], s)
+	if sids43.size() > 1:
+		var need43 := 0
+		var has_sealed43 := false
+		var conv_free := active_conversion_id(target, s) > 0
+		for sid in sids43:
+			if target.skill_ids.has(sid):
+				if is_sealed(target, sid, s):
+					has_sealed43 = true
+				continue
+			if is_conversion_skill(sid) and conv_free:
+				conv_free = false
+				continue
+			need43 += 1
+		if need43 == 0:
+			return "已学会此秘籍（已封印），请在技能页启封，启封后生效" if has_sealed43 else "已经学会这本秘籍"
+		var cap43 := limit(target)
+		var used43 := used_slots(target, s)
+		if cap43 > 0 and used43 + need43 > cap43:
+			return "%s最多装备 %d 本秘籍（当前 %d / %d，本书需 %d 格），请先在技能页封印已有秘籍" % [XTier.tier_of(target), cap43, used43, cap43, need43]
+		return ""
 	# 3) 公共事件教技能（code 44）
-	if _ce_item_skills.has(iid):
-		var raw: Array = _ce_item_skills[iid]
+	if _ce_item_info.has(iid):
+		var info: Dictionary = _ce_item_info[iid]
 		var slot_sids: Array[int] = []
-		for sid in raw:
+		for sid in info.get("skills", []):
 			if occupies_slot(int(sid)):
 				slot_sids.append(int(sid))
 		if slot_sids.is_empty():
 			return ""
+		var who := "%s（%s）" % [target.display_name(), XTier.tier_of(target)] if fixed_actor > 0 else XTier.tier_of(target)
 		if slot_sids.size() == 1:
-			return learn_reason(a, slot_sids[0], s)
-		# 多选一/升星类 CE（如心法正逆邪、精通 1~5★、小药丸）：
+			var r1 := learn_reason(target, slot_sids[0], s)
+			if fixed_actor > 0 and not r1.is_empty():
+				return "%s：%s" % [target.display_name(), r1]
+			return r1
+		# 按每条分支（心法正/逆/邪或条件分支）计算同分支同时新增的占格技能数，取最大值预留格位（T446 P2-2）
+		var paths: Array = info.get("paths", [])
+		var max_need := 0
+		if not paths.is_empty():
+			for pt in paths:
+				var pn := 0
+				for sid in pt:
+					var id := int(sid)
+					if occupies_slot(id) and not target.skill_ids.has(id):
+						pn += 1
+				if pn > max_need:
+					max_need = pn
+		else:
+			for sid in slot_sids:
+				if not target.skill_ids.has(sid):
+					max_need = 1
+					break
+		if max_need == 0:
+			var any_sealed := slot_sids.any(func(id): return is_sealed(target, id, s))
+			var msg0 := "已学会此秘籍（已封印），请在技能页启封，启封后生效" if any_sealed else "已经学会这本秘籍"
+			return ("%s：%s" % [target.display_name(), msg0]) if fixed_actor > 0 else msg0
+		# 非固定角色且每条分支只学 1 个技能的升星/多选一类 CE（精通 1~5★、小药丸、通用心法）：
 		# 若当前生效格已有同组中任意一本，则为原地替换/升星，净增 0 格，放行
-		var act := active_ids(a, s)
-		for sid in slot_sids:
-			if act.has(sid):
-				return ""
-		var cap := limit(a)
+		var act := active_ids(target, s)
+		if max_need == 1 and fixed_actor == 0:
+			for sid in slot_sids:
+				if act.has(sid):
+					return ""
+		var cap := limit(target)
 		var used := act.size()
-		if cap > 0 and used >= cap:
-			return "%s最多装备 %d 本秘籍（当前 %d/%d），请先在技能页封印已有秘籍" % [XTier.tier_of(a), cap, used, cap]
+		if cap > 0 and used + max_need > cap:
+			if max_need > 1:
+				return "%s最多装备 %d 本秘籍（当前 %d / %d，本书需 %d 格），请先在技能页封印已有秘籍" % [who, cap, used, cap, max_need]
+			return "%s最多装备 %d 本秘籍（当前 %d / %d），请先在技能页封印已有秘籍" % [who, cap, used, cap]
 	return ""
 
 
 ## 供 item_scene._effective 调用：-1 不归秘籍格管、1 有效、0 无效（满格或已学）
 static func item_effective(a, item: Dictionary, s: XState = null) -> int:
-	if not on(s) or not (a is XActor) or item.is_empty():
+	if not on(s) or item.is_empty():
 		return -1
 	_ensure_index()
 	var iid := int(item.get("id", 0))
@@ -439,8 +611,8 @@ static func item_effective(a, item: Dictionary, s: XState = null) -> int:
 			if int(e.get("code", 0)) == 43 and occupies_slot(int(e.get("dataId", 0))):
 				managed = true
 				break
-	if not managed and _ce_item_skills.has(iid):
-		for sid in _ce_item_skills[iid]:
+	if not managed and _ce_item_info.has(iid):
+		for sid in _ce_item_info[iid].get("skills", []):
 			if occupies_slot(int(sid)):
 				managed = true
 				break
@@ -502,7 +674,7 @@ static func unseal(s: XState, a: XActor, skill_id: int) -> Dictionary:
 		var cap := limit(a)
 		var used := used_slots(a, s)
 		if cap > 0 and used >= cap:
-			return {"ok": false, "reason": "秘籍格已满（%d/%d），请先封印一本秘籍" % [used, cap]}
+			return {"ok": false, "reason": "秘籍格已满（%d / %d），请先封印一本生效中的秘籍" % [used, cap]}
 	var row := _write_actor(s, a.actor_id)
 	var arr: Array = row["sealed"]
 	arr.erase(skill_id)
@@ -527,6 +699,22 @@ static func finish_free_pick(s: XState, a: XActor) -> void:
 	var row = actors.get(str(a.actor_id))
 	if row is Dictionary:
 		row["free_pick"] = false
+
+
+## 进入战斗时自动结束全员旧存档免费封印期（不能囤着跨场永久免单；T446 P2-1）
+static func on_battle_start(s: XState) -> void:
+	if not on(s) or s == null:
+		return
+	var sec = XTianqiSave.peek(s, SECTION)
+	if not (sec is Dictionary):
+		return
+	var actors = sec.get("actors")
+	if not (actors is Dictionary):
+		return
+	for k in actors.keys():
+		var row = actors[k]
+		if row is Dictionary and bool(row.get("free_pick", false)):
+			row["free_pick"] = false
 
 
 static func _refresh_actor(a: XActor) -> void:
@@ -576,7 +764,10 @@ static func migrate_after_load(s: XState) -> void:
 			if not sealed.has(sid):
 				sealed.append(sid)
 		sealed.sort()
-		row["free_pick"] = true
+		# 首次迁移才授予免费封印期，避免后续再次超格或反复读档重复赠送（T446 P2-1）
+		if not bool(row.get("migrated", false)):
+			row["migrated"] = true
+			row["free_pick"] = true
 		_refresh_actor(a)
 
 
@@ -618,7 +809,7 @@ static func is_entry_manageable(a: XActor, sk: Dictionary, s: XState = null) -> 
 	return sid > 0 and a.skill_ids.has(sid) and occupies_slot(sid)
 
 
-## 状态栏／列表顶标题用的秘籍格概要（如「秘籍格 3 / 6」或「秘籍格 4 / 4 · 已封 2 · 免费自选」）
+## 状态栏／列表顶标题用的秘籍格概要（如「秘籍格 3 / 6」或「秘籍格 3 / 3（已封 2） · 旧档补偿：免费封印中」）
 static func ui_slot_text(a: XActor, s: XState = null) -> String:
 	if not on(s) or a == null:
 		return ""
@@ -629,7 +820,7 @@ static func ui_slot_text(a: XActor, s: XState = null) -> String:
 	if sn > 0:
 		base += "（已封 %d）" % sn
 	if has_free_pick(a, s):
-		base += " · 免费自选"
+		base += " · 旧档补偿：免费封印中"
 	return base
 
 
@@ -639,27 +830,33 @@ static func ui_list_title(base_title: String, a: XActor, stype: int, s: XState =
 	return "%s · %s" % [base_title, ui_slot_text(a, s)]
 
 
-## 列表行右侧标签与选中原因提示（返回 {} 表示非秘籍）
+## 列表行右侧标签（新旧两套皮肤统一叫「占格 / 已封」；返回 {} 表示非秘籍）
 static func ui_row_meta(a: XActor, sk: Dictionary, s: XState = null) -> Dictionary:
 	if not on(s) or a == null or sk.is_empty():
 		return {}
-	var free := has_free_pick(a, s)
 	if is_entry_sealed(sk):
 		return {
 			"sealed": true,
 			"badge": "已封",
 			"old_badge": "[已封]",
-			"reason": "按确定免费启封" if free else "按确定启封",
 		}
 	var sid := int(sk.get("id", 0))
 	if sid > 0 and a.skill_ids.has(sid) and occupies_slot(sid):
 		return {
 			"sealed": false,
 			"badge": "占格",
-			"old_badge": "[秘籍]",
-			"reason": "按确定免费封印" if free else "按确定封印",
+			"old_badge": "[占格]",
 		}
 	return {}
+
+
+## 底部按键提示栏「确定」动作名（供新皮肤 skin_skill_page.gd 底栏使用，不在行尾挤技能名）
+static func ui_accept_hint(a: XActor, sk: Dictionary, s: XState = null) -> String:
+	if not on(s) or a == null or sk.is_empty() or not is_entry_manageable(a, sk, s):
+		return ""
+	if is_entry_sealed(sk):
+		return "启封"
+	return "免费封印" if has_free_pick(a, s) else "封印"
 
 
 ## 详情牌按钮与副标题补充（供新皮肤 skin_skill_page.gd 用）
@@ -678,13 +875,13 @@ static func ui_card_actions(s: XState, a: XActor, sk: Dictionary) -> Dictionary:
 		btns.append({"text": "启封秘籍", "action": "unseal", "disabled": not can_up})
 	else:
 		var cost := seal_cost(s, a)
-		tag = "占秘籍格（%d/%d）" % [used_slots(a, s), limit(a)]
+		tag = "占秘籍格（%d / %d）" % [used_slots(a, s), limit(a)]
 		if cost == 0:
 			btns.append({"text": "免费封印", "action": "seal", "disabled": false})
 		else:
 			btns.append({"text": "封印（%s 精魂）" % XMenu._group(cost), "action": "seal", "disabled": s.gold < cost})
 	if free:
-		btns.append({"text": "完成自选", "action": "finish_free", "disabled": false})
+		btns.append({"text": "结束免费期", "action": "finish_free", "disabled": false})
 	return {"tag": tag, "buttons": btns}
 
 
@@ -711,20 +908,20 @@ static func ui_confirm_spec(s: XState, a: XActor, sk: Dictionary) -> Dictionary:
 			body = "启封后将占用 1 个秘籍格（当前 %d / %d），被动立即生效。" % [used_slots(a, s), limit(a)]
 		var buttons: Array = [{"text": "确认启封", "disabled": not can_up, "action": "unseal"}]
 		if free:
-			buttons.append({"text": "完成自选", "disabled": false, "action": "finish_free"})
+			buttons.append({"text": "结束免费期", "disabled": false, "action": "finish_free"})
 		buttons.append({"text": "取消", "disabled": false, "action": "cancel"})
 		return {"title": "启封「%s」？" % nm, "body": body, "danger": false, "buttons": buttons, "skill_id": sid}
 	var cost := seal_cost(s, a)
 	var body2 := ""
 	var can_seal := true
 	if cost == 0:
-		body2 = "老存档免费自选期间本次封印不收费。封印后被动立即失效，腾出 1 个秘籍格（书本不退还，可在已封列表重新启封）。"
+		body2 = "旧存档超格补偿期间本次封印不收费。封印后被动立即失效，腾出 1 个秘籍格（书本不退还，可在已封列表重新启封）。点「结束免费期」、改完离开技能页或进入下一场战斗后免费期自动结束，之后封印要花精魂。"
 	else:
 		can_seal = s.gold >= cost
 		body2 = "封印后被动立即失效，腾出 1 个秘籍格，书本不退还。需花费 %s 精魂（当前 %s）。" % [XMenu._group(cost), XMenu._group(s.gold)]
 	var buttons2: Array = [{"text": "确认封印", "disabled": not can_seal, "action": "seal"}]
 	if free:
-		buttons2.append({"text": "完成自选", "disabled": false, "action": "finish_free"})
+		buttons2.append({"text": "结束免费期", "disabled": false, "action": "finish_free"})
 	buttons2.append({"text": "取消", "disabled": false, "action": "cancel"})
 	return {"title": "封印「%s」？" % nm, "body": body2, "danger": true, "buttons": buttons2, "skill_id": sid}
 
@@ -750,7 +947,7 @@ static func ui_action_toast(action: String, sk_name: String, res: Dictionary) ->
 		"unseal":
 			return "已启封「%s」，被动已生效" % sk_name
 		"finish_free":
-			return "已完成老存档免费自选，后续封印将收取精魂"
+			return "已结束旧存档免费封印期，后续封印将收取精魂"
 	return ""
 
 

@@ -45,6 +45,7 @@ var actor_win: XMVWindow
 var secret_win: XMVWindow
 var secret_spec: Dictionary = {}
 var secret_pick := 0
+var _free_pick_touched: Dictionary = {}
 var help_card: XHelpCard
 var logic: XBattleLogic
 ## 新界面（天启篇，XUiSkin.on() 时）：同一套状态换成模板页布局画（XSkinSkillPage）；关着时为 null，旧页一行不变
@@ -422,13 +423,36 @@ func confirm_secret_choice(choice: int) -> void:
 		close_secret_confirm()
 		return
 	var a := actor()
+	var had_free := action in ["seal", "unseal"] and XTianqiSecrets.has_free_pick(a, XState.current)
 	var sid := int(secret_spec.get("skill_id", 0))
 	if not XTianqiSecrets.ui_exec_action(XState.current, a, action, sid):
 		return
+	if had_free:
+		_free_pick_touched[a.actor_id] = true
+	elif action == "finish_free":
+		_free_pick_touched.erase(a.actor_id)
 	secret_spec = {}
 	mode = "list"
 	index = clampi(index, 0, maxi(0, entries().size() - 1))
 	_refresh()
+
+
+func _finish_touched_free_picks(only_actor_id := 0) -> void:
+	var s := XState.current
+	if s == null or _free_pick_touched.is_empty():
+		return
+	if only_actor_id > 0:
+		if _free_pick_touched.has(only_actor_id):
+			_free_pick_touched.erase(only_actor_id)
+			var a := s.actor(only_actor_id)
+			if a != null:
+				XTianqiSecrets.finish_free_pick(s, a)
+		return
+	for aid in _free_pick_touched.keys():
+		var a := s.actor(int(aid))
+		if a != null:
+			XTianqiSecrets.finish_free_pick(s, a)
+	_free_pick_touched.clear()
 
 
 # ---- 操作 ----
@@ -468,6 +492,7 @@ func cancel() -> void:
 	XSound.system(2)
 	match mode:
 		"type":
+			_finish_touched_free_picks()
 			help_card.show_for({})
 			closed.emit()
 			return
@@ -510,6 +535,7 @@ func use_skill() -> void:
 		if int(e.code) == 44:
 			XState.current.reserve_common_event(int(e.dataId))
 	if XState.current.peek_common_event() > 0:
+		_finish_touched_free_picks()
 		to_map = true
 		closed.emit()
 
@@ -541,6 +567,7 @@ static func _for_friend(s: Dictionary) -> bool:
 func change_actor(d: int) -> void:
 	if mode in ["actor", "secret_confirm"]:
 		return
+	_finish_touched_free_picks(actor().actor_id)
 	var n := XState.current.party.size()
 	actor_index = (actor_index + d + n) % n
 	XSound.system(0)

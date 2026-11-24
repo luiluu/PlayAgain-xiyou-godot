@@ -968,6 +968,11 @@ func _use_direct() -> void:
 	if s.item_count(int(_item.get("id", 0))) <= 0:
 		XSound.system(3)
 		return
+	var sec_reason := XTianqiSecrets.item_learn_reason(null, _item, s)
+	if not sec_reason.is_empty():
+		XSound.system(3)
+		XToast.show_text(sec_reason, true)
+		return
 	if int(_item.get("id",0)) == XPowerBooks.FORGET_ITEM:
 		_open_power_forget()
 		return

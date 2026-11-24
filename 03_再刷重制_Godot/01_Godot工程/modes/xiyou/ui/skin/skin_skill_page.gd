@@ -131,7 +131,8 @@ func sync() -> void:
 		"type":
 			set_hint_list([["确定", "选择"], ["取消", "返回"], ["Q / E", "换人"]])
 		"list":
-			set_hint_list([["确定", "选择"], ["取消", "回类型"], ["Q / E", "翻页"]])   # 列表里 Q/E 是翻页（同旧页）
+			var acc := XTianqiSecrets.ui_accept_hint(a, sc.current())
+			set_hint_list([["确定", acc if not acc.is_empty() else "选择"], ["取消", "回类型"], ["Q / E", "翻页"]])   # 列表里 Q/E 是翻页（同旧页）
 		_:
 			set_hint_list([["确定", "选择"], ["取消", "返回"]])   # 选人时 Q/E 不换人
 	_syncing = false
@@ -183,8 +184,8 @@ func _row(a: XActor, sk: Dictionary) -> Dictionary:
 	var sm := XTianqiSecrets.ui_row_meta(a, sk)
 	var sealed := bool(sm.get("sealed", false))
 	var r := {"text": str(sk.get("name", "")), "icon": int(sk.get("iconIndex", 0)), "color": name_color(sk), "disabled": sealed or not scene.usable(sk)}
-	if r.disabled and XSkinList.T366_V1:   # T366 R12：选中用不了的行，行尾写原因（只有选中那行才画，见 XSkinList）
-		r.reason = str(sm.reason) if sm.has("reason") else skill_reason(a, sk)
+	if r.disabled and XSkinList.T366_V1 and sm.is_empty():   # T366 R12：非秘籍用不了的行，行尾写原因；秘籍操作改放底栏提示，避免 16:9 挤坏技能名
+		r.reason = skill_reason(a, sk)
 	var costs := scene._costs(a, sk)
 	if not costs.is_empty():
 		var c: Dictionary = costs[costs.size() - 1] if costs.size() > 1 else costs[0]
@@ -345,6 +346,7 @@ func _on_card_button(i: int) -> void:
 	var act := str(_card_actions[i].get("action", ""))
 	if act == "finish_free":
 		if XTianqiSecrets.ui_exec_action(XState.current, scene.actor(), "finish_free", 0):
+			scene._free_pick_touched.erase(scene.actor().actor_id)
 			scene._refresh()
 		return
 	if act in ["seal", "unseal"]:

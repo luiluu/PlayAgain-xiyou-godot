@@ -97,6 +97,8 @@ var casino_root := false
 var lottery_id := 0
 ## T055：本游标（存档公共事件 1 的子游标）里的存档要按这些变量的偏移写 {变量: 加多少}，见 XDungeon.save_bias；平时为空
 var save_bias := {}
+## T446 P3-2：刚被秘籍格拦下的 318 指令位置，用于抑制紧随其后的伪成功 $.toaster（如 CE 1626「融合成功」）
+var _secret_blocked_index := -10
 
 
 func state() -> XState:
@@ -451,6 +453,12 @@ func _execute(c: Dictionary):
 			var targets: Array = _party_members() if aid == 0 else ([state().actor(aid)] if not XDB.rec("Actors", aid).is_empty() else [])
 			for a in targets:
 				if int(p[2]) == 0:
+					var sec_reason := XTianqiSecrets.learn_reason(a, int(p[3]), state())
+					if not sec_reason.is_empty():
+						_secret_blocked_index = index
+						XSound.system(3)
+						XToast.show_text(sec_reason, true)
+						continue
 					a.learn_skill(int(p[3]))
 				else:
 					a.forget_skill(int(p[3]))

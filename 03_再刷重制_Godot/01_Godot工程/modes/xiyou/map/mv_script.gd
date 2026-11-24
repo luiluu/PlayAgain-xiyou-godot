@@ -233,17 +233,25 @@ static func run(code: String, interp) -> Array:
 		var aid := int(s.variable(int(one.variable)))
 		if not XDB.rec("Actors", aid).is_empty():
 			var who := s.actor(aid)
+			var sec_blocked := false
 			for call in one.calls:
 				if call[0] == "forgetSkill":
 					who.forget_skill(int(call[1]))
 				elif call[0] == "removeState":  # 心法 CE1003～1018：学新心法时解除另两种心法状态
 					who.remove_state(int(call[1]))
 				elif call[0] == "toast":
-					var text := _toaster_text(call[1])
-					if text != "":
-						interp.host.toast(text)
+					if not sec_blocked:
+						var text := _toaster_text(call[1])
+						if text != "":
+							interp.host.toast(text)
 				else:
-					who.learn_skill(int(call[1]))
+					var sec_reason := XTianqiSecrets.learn_reason(who, int(call[1]), s)
+					if not sec_reason.is_empty():
+						sec_blocked = true
+						XSound.system(3)
+						XToast.show_text(sec_reason, true)
+					else:
+						who.learn_skill(int(call[1]))
 			who.refresh_passive()
 		return []
 	# 大厅老妪／抽奖机头顶倒计时（Map004 EV005／006、CE817；Star_LotteryAnimation 的 setInterval 往事件名字条上画剩余时间）：
@@ -1160,7 +1168,12 @@ static func _target_block(js: String, env: Dictionary, interp, run: bool) -> Var
 			if m.get_string(2) == "forgetSkill":
 				env.actor.forget_skill(sid)
 			else:
-				env.actor.learn_skill(sid)
+				var sec_reason := XTianqiSecrets.learn_reason(env.actor, sid, s)
+				if not sec_reason.is_empty():
+					XSound.system(3)
+					XToast.show_text(sec_reason, true)
+				else:
+					env.actor.learn_skill(sid)
 			continue
 		m = _re("^\\$gameParty\\.gainItem\\(\\$dataItems\\[(\\d+)\\]\\s*,\\s*(\\d+)(?:\\s*,\\s*(?:true|false))?\\)$").search(st)
 		if m:
