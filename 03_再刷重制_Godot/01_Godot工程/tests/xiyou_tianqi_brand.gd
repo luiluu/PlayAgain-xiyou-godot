@@ -963,9 +963,10 @@ func _t119_fits() -> void:
 	_fs(lg).mods["brand_fit_target"] = lg.alive(lg.enemies).size() - 1
 	fa = lg.brand_forced(a)
 	var tgt = fa[1]
+	var last_alive = lg.alive(lg.enemies).back()  # T449：DECK 下普攻吃物理增伤后可能把目标打死，出手前先记
 	logs = lg.act(a, fa[0], fa[1])
 	var acted := logs.filter(func(l): return str(l.get("type", "")) == "action")
-	_check("t119.misfire", tgt is XEnemy and tgt == lg.alive(lg.enemies).back() and not acted.is_empty() and int(acted[0].skill.id) == a.attack_skill_id()
+	_check("t119.misfire", tgt is XEnemy and tgt == last_alive and not acted.is_empty() and int(acted[0].skill.id) == a.attack_skill_id()
 		and int(XTianqiBrand.fight(lg).hits.get(a, -1)) == int(lg.turn), [tgt, _types(logs)])
 	_check("t119.misfire_burns", logs.any(func(l): return str(l.get("type", "")) == "regen" and l.get("target") == a))
 	lg.end_battle()
