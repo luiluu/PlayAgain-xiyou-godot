@@ -1,6 +1,6 @@
 # 交付：luiluu/t451
 
-- 车道／工作者：T451 DECK 物理增幅恢复后逐把重调武器与普通防具全系增幅／小A（Gemini 4 Neon＋high，职级 P8；`ctx_efce68dead0f` 实现＋`ctx_792d62d29fde` 原地合 main 收口）
+- 车道／工作者：T451 DECK 物理增幅恢复后逐把重调武器与普通防具全系增幅／小A（Gemini 4 Neon＋high，职级 P8；`ctx_efce68dead0f` 实现＋`ctx_792d62d29fde` 原地合 main 收口＋`ctx_ba758a603a9d` 原地返修 R1）
 - 状态：可合并
 
 ## 变更记录草稿
@@ -10,11 +10,11 @@
 - 依据：Kyo 2026-11-24 事项 48／50（D280 补）与 T449 换家核查（P2-1、P3-1 及 60 件专武／防具残留 `elementAmplify` 线索）。
 - 清理专武／状态残留原版增幅回设计稿（`03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_skills.gd`、`03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/skill_rework.json`）：
   - 新增 `XTianqiSkills.parse_yep`／`_merge_yep` 与回退开关 `XTianqiSkills.YEP_RECOMPUTE := true`（西游档不生效），`gear_view` 与同源 `rec_state` 在改写 `note` 后重算 `yep` 并通过差值合并完整保留宝珠／强化等实例增量；清除了 60 件已写 `note_remove: Element Amplify` 专武／防具（含五河琴里 `weapon:87` +1200%、贝吉特 `weapon:91` +300%、桐人／亚斯娜／诛仙等天外天系列）与 36 个改写状态（如 `state:2719` +500%、`state:2768` +200%→+10%、`state:710` +100%→+10%）的原版残留增幅。
-  - 在 `skill_rework.json` 补齐 3 件漏写 `note_remove: ["Element Amplify \\d+"]` 的装备（`armor:4519 戒指朱`、`armor:4520/4521 命运骰子`），并补录启用角色 `85 爱莉` 的专武 `weapon:2222 真我之钥·无暇回归`（去原版全 15 系 +1000%）。
+  - 在 `skill_rework.json` 补齐 5 件漏写 `note_remove: ["Element Amplify \\d+"]` 的装备（`armor:4518 赤染樱`、`armor:4519 戒指朱`、`armor:4520/4521 命运骰子`、`armor:4579 月魄剑匣`），并补录启用角色 `85 爱莉` 的专武 `weapon:2222 真我之钥·无暇回归`（去原版全 15 系 +1000%）。
 - 通用武器与保留栏位普通防具全系增幅按等级分档重调（`03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/gear_elem_amp.json`、`03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_gear.gd`、`03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/help_card.gd`）：
   - 新增 `gear_elem_amp.json` 与视图 `XTianqiGear.elem_amp_view`（回退开关 `XTianqiGear.GEAR_ELEM_RESCALE := true`，西游档恒不生效），在 `stat_list` 与说明卡 `XHelpCard._content`／`detail_rows` 接入；重算 `yep.elementAmplify` 时按相对原表差值保留宝珠／强化增量，并同步重写备注 `<Element Amplify>` 与 `<pos=APs>` 卡面文案。
   - 范围全覆盖（不含双引号附魔模板与无名模板，非改写实体装备 0 遗漏）：326 把通用武器（含 179 把物理武器及非物理武器，五档上限 10／15／25／35／50%，取值 5%～50% 整数避 4）与 540 件保留栏位普通防具（含 205 件物理防具及非物理防具，五档上限 7／10／13／18／20%，常规 5%～20% 整数避 4，仅原版即 3% 的 `armor:327` 与原版 4% 避 4 降为 3% 的 `armor:501` 为 3%）。
-  - `03_再刷重制_Godot/03_转换工具/天启篇数据校验.py` 新增 `gear_elem_amp` 规则校验（校验版本、档位上限、全避 4 正整数、`subs` 格式及与 `skill_rework.gear`／`gear_table.element_fabaos` 零重叠）。
+  - `03_再刷重制_Godot/03_转换工具/天启篇数据校验.py` 新增并收紧 `gear_elem_amp` 规则校验（校验版本、武器／防具全局下限 5% 且仅白名单放行 `armor:327/501`、档位上限、全避 4 整数、`subs` 格式及与 `skill_rework.gear`／`gear_table.element_fabaos` 零重叠；本地数据库存在时进一步校验 `tier` 与 `req_level` 对齐、修后不高于原值、不低于有效档位下限及 `subs` 旧串 100% 命中原版 `note`）。
 - 修通 `passiveELUP` 扩展读取（`03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/actor.gd`、`03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_skills.gd`、`03_再刷重制_Godot/01_Godot工程/modes/xiyou/core/tianqi_ledger.gd`）：
   - 新增回退开关 `XTianqiSkills.PASSIVE_ELUP_EXT := true`，建立白名单 `passive_elup_sources()`，仅读取 `skill_rework.json` 中 `note_add` 显式写入 `passiveELUP` 的 6 件装备（`armor:4995/4519`、`weapon:2023/1698～1700`）与 2 个状态（`state:173/2733`），接入 `XActor._carry_fp`、`_passive_values_now` 与 `XTianqiLedger.passive_buckets`（装备入 `tianqi` 桶、状态入 `state` 桶），不激活原版未改写装备／状态（如 `armor:124`、`state:1149`）的废标签。
 - 验证与归档：扩展 `03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_deck_phys_amp.gd` 至 25 项（覆盖 T449 核 P3-1 两条路径、残留 yep 清理、6 装备＋2 状态 `passiveELUP`、分档重调与卡面同步、宝珠增量保留、三开关回退与西游档不变）；阶段一全清单归档于 [T451_武器物理增幅全清单.md](../归档/交付截图/luiluu_t451/T451_武器物理增幅全清单.md)，单人木桩复测归档于 [T451_修后单人木桩复测.json](../归档/交付截图/luiluu_t451/T451_修后单人木桩复测.json)。五档标尺复测经协调批复移交 T450 合后重跑。
@@ -24,7 +24,7 @@
 
 | 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| O-待定·T451专武状态yep重算 | `modes/xiyou/core/tianqi_skills.gd` `XTianqiSkills.YEP_RECOMPUTE`（`parse_yep`、`_merge_yep`、`gear_view`、`rec_state`）＋`tianqi_data/skill_rework.json`（`armor:4519/4520/4521`、`weapon:2222`） | `gear_view` 与 `rec_state` 只改写 `note`/`meta`/`traits` 不重算 `yep`，60 件已删 `Element Amplify` 的专武／防具与 36 个改写状态残留原版 +30%～+1200% 增幅 | 天启篇改写视图按改写后 `note` 重算 `yep`，通过相对原表差值保留宝珠／强化增量，并补齐 3 件漏删与 `weapon:2222` 录入；西游档不变 | Kyo 11-24 事项 50① 与 T449 核查线索：残留原版增幅清掉回设计稿 | `XTianqiSkills.YEP_RECOMPUTE = false`＋`XTianqiSkills.reload_table()` | 小A（T451） | 保留 |
+| O-待定·T451专武状态yep重算 | `modes/xiyou/core/tianqi_skills.gd` `XTianqiSkills.YEP_RECOMPUTE`（`parse_yep`、`_merge_yep`、`gear_view`、`rec_state`）＋`tianqi_data/skill_rework.json`（`armor:4518/4519/4520/4521/4579`、`weapon:2222`） | `gear_view` 与 `rec_state` 只改写 `note`/`meta`/`traits` 不重算 `yep`，60 件已删 `Element Amplify` 的专武／防具与 36 个改写状态残留原版 +30%～+1200% 增幅 | 天启篇改写视图按改写后 `note` 重算 `yep`，通过相对原表差值保留宝珠／强化增量，并补齐 5 件漏删与 `weapon:2222` 录入；西游档不变 | Kyo 11-24 事项 50① 与 T449 核查线索：残留原版增幅清掉回设计稿 | `XTianqiSkills.YEP_RECOMPUTE = false`＋`XTianqiSkills.reload_table()` | 小A（T451） | 保留 |
 | O-待定·T451装备passiveELUP扩展 | `modes/xiyou/core/tianqi_skills.gd` `XTianqiSkills.PASSIVE_ELUP_EXT`（`passive_elup_sources`、`is_passive_elup_state`、`is_passive_elup_obj`、`passive_elup_extra`）＋`core/actor.gd`＋`core/tianqi_ledger.gd` | `XActor._passive_values_now` 只扫 `skills()`，导致 `skill_rework.json` 中 6 装备＋2 状态的 `note_add passiveELUP` 不生效 | 天启篇白名单读取上述 6 装备＋2 状态的 `passiveELUP` 并接入缓存指纹与账本分桶（装备入 `tianqi` 桶、状态入 `state` 桶），不激活原版废标签；西游档不变 | T449 换家核查 P2-1 | `XTianqiSkills.PASSIVE_ELUP_EXT = false` | 小A（T451） | 保留 |
 | O-待定·T451通用装备全系增幅重调 | `modes/xiyou/core/tianqi_gear.gd` `XTianqiGear.GEAR_ELEM_RESCALE`（`elem_amp_view`、`stat_list`）＋`tianqi_data/gear_elem_amp.json`＋`ui/help_card.gd` | 天启篇掉落掷词条后整件装备进 `tianqi` 桶绕过九线封顶，通用武器物理／元素增幅高达 +100%～+1300%、普通防具高达 +100%～+1000% | 天启篇将 326 把通用武器按五档压至 5%～50%、540 件保留栏位普通防具按档压至 3%～20%（常规 5%～20%），物理与非物理元素一并重调、全整数避 4，保留宝珠增量并同步说明卡显示；西游档不变 | Kyo 11-24 事项 50②③④（D280 补） | `XTianqiGear.GEAR_ELEM_RESCALE = false`＋`XTianqiGear.clear_effective_cache()` | 小A（T451） | 保留 |
 
@@ -44,10 +44,10 @@
 | --- | --- | --- | --- |
 | 1 | 先出清单：每把武器修前修后木桩倍数、所属角色，按涨幅排序 | ✓ | 提交 `35bd002af` 入仓 `00_项目管理/归档/交付截图/luiluu_t451/T451_武器物理增幅全清单.md`（226 把物理武器按天启掉落态降序＋60 件残留专武／防具＋12 名专武角色实测＋6 装备 2 状态清单） |
 | 2 | 定重调口径并给协调／Kyo 过 | ✓ | 阶段一清单呈报后，Kyo 2026-11-24 事项 50 拍板四条口径 |
-| 3 | 按口径逐把改，系数整数避 4，卡面说明同步 | ✓ | `modes/xiyou/tianqi_data/gear_elem_amp.json`（326 把通用武器 5～50%＋540 件保留栏位防具 3～20%，全整数避 4，实体装备 0 遗漏，823 条 `subs` 100% 命中且无残留旧 `%`）、`tianqi_gear.gd`、`help_card.gd`、`天启篇数据校验.py` 通过，专项 `t451_gear_elem_rescale_values`／`t451_help_card_text_synced` 通过 |
+| 3 | 按口径逐把改，系数整数避 4，卡面说明同步 | ✓ | `modes/xiyou/tianqi_data/gear_elem_amp.json`（326 把通用武器 5～50%＋540 件保留栏位防具 3～20%，全整数避 4，实体装备 0 遗漏，829 条 `subs` 100% 命中且 R1 返修清零漏换与误改）、`tianqi_gear.gd`、`help_card.gd`、`天启篇数据校验.py` 通过，专项 `t451_gear_elem_rescale_values`／`t451_help_card_text_synced` 通过 |
 | 4 | 五档标尺复测 | － | 经协调 2026-11-24 批复选项 A：单进程跑 A/B/C/D×3 种子约 30～40 分钟超出附则 A 限制，本单按已有单人木桩复测＋云端选测收口，五档标尺复测移交 T450 合后重跑 |
 | 5 | T449 核 P2-1：6 装备＋2 状态 `passiveELUP` 修通读取 | ✓ | `actor.gd`（`_carry_fp`＋`_passive_values_now`）、`tianqi_skills.gd`（`PASSIVE_ELUP_EXT` 白名单）、`tianqi_ledger.gd`（分桶），专项 `t451_p2_1_passive_elup_ext` 与木桩 5 项复测全过，且未激活原版废标签 |
-| 6 | T449 核线索：`gear_view` 重算 `yep` 清 60 件残留 | ✓ | `tianqi_skills.gd`（`YEP_RECOMPUTE`、`parse_yep`、`_merge_yep`，同步修复同源 `rec_state` 36 状态）＋`skill_rework.json`（补 `armor:4519/4520/4521`、`weapon:2222`），专项 4 条（残留清零、宝珠增量保留、`rec_state` 重算、回退开关）全过 |
+| 6 | T449 核线索：`gear_view` 重算 `yep` 清 60 件残留 | ✓ | `tianqi_skills.gd`（`YEP_RECOMPUTE`、`parse_yep`、`_merge_yep`，同步修复同源 `rec_state` 36 状态）＋`skill_rework.json`（补 `armor:4518/4519/4520/4521/4579`、`weapon:2222`），专项 4 条（残留清零含 4518/4579、宝珠增量保留、`rec_state` 重算、回退开关）全过 |
 | 7 | T449 核 P3-1：补专项「属性转换＋原物理招」「目标挂物理抗/免」 | ✓ | `tests/xiyou_tianqi_deck_phys_amp.gd` 新增 `p3_conv_plus_orig_phys` 与 `p3_target_phys_immune_ignored_on_deck`，全场景 25/25 通过 |
 | 8 | Kyo 11-24 事项 50（①清残留 ②194 武器分档 5～50% ③234 防具压至 5～20% ④非物理元素一起压） | ✓ | ①见验收 6；②326 把通用武器全覆盖（含全部 179 把非附魔模板物理武器＋非物理武器，分五档 5～50%）；③540 件保留栏位普通防具全覆盖（含全部 205 件非附魔模板物理防具＋非物理防具，分五档 ≤20%）；④火／冰／雷／圣／暗／治疗等全系元素增幅同套分档一并压低 |
 
@@ -106,33 +106,54 @@
 | `state:173` 法天象地 | 物理 | 7661 → 7661 → **8427** | ×1.10（`<passiveELUP01:10%>` 生效） |
 | `state:2733` 三教极元（人） | 火焰 | 7661 → 7661 → **8427** | ×1.10（`<passiveELUP02:10%>` 生效） |
 
-## 玩家可见文字改动清单（待 cc Sonnet 审，D276）
+## R1 合并核查报告逐条回应（提交 `d9f628b50`）
+
+| 核查编号 | 处理状态 | 修改与验证落点 |
+| --- | --- | --- |
+| Opus P2-1（必改） | 已修 | `03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/skill_rework.json` 为 `armor:4518`（赤染樱）与 `armor:4579`（月魄剑匣）补齐 `"note_remove": ["Element Amplify \\d+"]`（全量复扫 `skill_rework.gear` 确认 0 遗漏）；并在 `03_再刷重制_Godot/01_Godot工程/tests/xiyou_tianqi_deck_phys_amp.gd` 的 `t451_gear_view_clears_residual_yep` 加入这两件断言（通过）。 |
+| Opus P3-1（顺手修） | 已修 | `03_再刷重制_Godot/03_转换工具/天启篇数据校验.py` `gear_elem_amp_rules` 收紧校验：武器／防具全局下限 5%（仅白名单放行原值 <5% 的 `armor:327`/`armor:501`）；本地库在时追加校验 `tier` 与 `req_level` 对齐、修后不高于原值、不低于有效档位下限 `no4_floor(min(tier_lo, orig_pct))` 及每条 `subs` 旧串命中原版 `note`（退出码 0）。 |
+| Opus P3-2（知会） | 已确认 | `armor:327`（原 3%）、`armor:501`（原 4% 避 4 降 3%）保持 3% 不私涨原值，纳入校验白名单。 |
+| 文字 P1-1（`weapon:1099`） | 已修 | `gear_elem_amp.json` 补 `subs`：`妖精神器(所有伤害提高55%)` → `妖精神器(所有伤害提高13%)`，并加进 `t451_help_card_text_synced` 断言。 |
+| 文字 P1-2（`weapon:1130`） | 已修 | `gear_elem_amp.json` 补 `subs`：`巨神之力(所有伤害提高100%)` → `巨神之力(所有伤害提高18%)`。 |
+| 文字 P1-3（`weapon:1355`） | 已修 | `gear_elem_amp.json` 补 `subs`：`物理及自然伤害+75%` → `物理及自然伤害+16%`。 |
+| 文字 P1-4（`weapon:1356`） | 已修 | `gear_elem_amp.json` 补 `subs`：`物理及自然伤害+40%` → `物理及自然伤害+15%`。 |
+| 文字 P1-5（`weapon:1674`） | 已修 | 核实原版治疗增幅为 `+30%`（≥ 4 档下限 20%），将 `amp["10"]` 由 `19` 修正为 `20`（全表唯一低于有效档位下限项），`subs` 修正为 `自然伤+20%，治疗效果+20%，爆伤+50%`，并加进 `t451_help_card_text_synced` 断言。 |
+| 文字 P2-1（`weapon:1748`） | 已修 | `gear_elem_amp.json` 补 `subs`：`治疗效果增加15%，治疗值+350` → `治疗效果增加10%，治疗值+350`，并加进 `t451_help_card_text_synced` 断言。 |
+| 文字 P2-2（`armor:4107`） | 已修 | 核实原版即为 `<Element Amplify 9: +25%>`（9=黑暗，原版错位），不私改原版属性归属；按实际生效 `amp={"9": 15}` 补 `subs` 将卡面统一为 `黑暗伤害+15%，魔法消耗-10%`，并加进 `t451_help_card_text_synced` 断言。 |
+| 文字 P3-1（`weapon:1433`） | 已修 | 卡面改为 `所有伤害+15%～18%`（对应 1～3 系 18%、4～7 系 17%、8～9 系 15%）。 |
+| 文字 P3-2（`weapon:1666/1667`、`armor:2610`） | 已修 | `weapon:1666/1667` 改为 `全元素伤+25%(黑暗+15%)`；`armor:2610` 改为 `黑耀魔能(所有伤害+11%，火焰+10%)`。 |
+| 文字 P3-3（6 件武器括号） | 已修 | `weapon:1408/1427/1432/1562/1908/1909` 的 `（物理+22%）`／`（物理+25%）` 统一改为半角 `(物理+22%)`／`(物理+25%)`。 |
+| 自查加清（13 件同类项） | 已修 | 全表逐件复查额外清理：①补 6 件漏进 `subs`（`weapon:1117/1128` 拆分物理伤害与暴击伤害、`armor:1841` 火焰及寒冰+10%、`armor:3954` 奥数伤+15%、`armor:4014` 全伤+15%、`armor:4105` 冰伤+16%）；②还原 7 件误改触发状态／光环／专属技能伤行的 `subs`（`weapon:1673` 改替自身常驻电伤+150%→+25% 并还原闪电护盾电伤+30%，加进 `t451_help_card_text_synced`；`weapon:1111/1677/1680` 与 `armor:3774/4288/4330` 删掉误改触发状态／光环／技能伤的第 2 条 sub）。 |
+
+## 玩家可见文字改动清单（待 cc Sonnet 复审，D276）
 
 1. `03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/gear_elem_amp.json`（`subs` 字段，经 `XTianqiGear.elem_amp_view`＋`XHelpCard` 展示）：
-   - 仅对装备原版 `<pos=APs>` 特效说明行做**百分比数字替换**，不改写剧情／叙事措辞；共覆盖 **316 把通用武器（322 条替换）**＋**496 件保留栏位普通防具（501 条替换）**，合计 **812 件装备、823 处数值文案**（其余 10 把武器／44 件防具原版 `<pos=APs>` 本身不含增幅百分比，只由说明卡头部的元素增伤汇总行自动按新 `yep` 显示）。
+   - 对装备原版 `<pos=APs>` 自身常驻元素特效说明行做百分比替换与精确标注（R1 返修后不误改触发状态／光环／技能专属增伤行）；共覆盖 **323 把通用武器（326 条替换）**＋**501 件保留栏位普通防具（503 条替换）**，合计 **824 件装备、829 处数值文案**（其余 3 把武器／39 件防具原版 `<pos=APs>` 本身不含增幅百分比，只由说明卡头部的元素增伤汇总行自动按新 `yep` 显示）。
    - 代表性前后对照：
      - `weapon:1826 大鹏风起`：`特效:物伤+300%` → `特效:物伤+30%`
      - `armor:4535 苍琉幻生灭`：`特效:所有伤害+250%，…` → `特效:所有伤害+20%，…`
      - `weapon:88 天外天·护摩之杖`：`特效:血梅香(物理伤害+1000%,火焰伤害+1500%)` → `特效:血梅香(物理伤害+7%,火焰伤害+10%)`
-     - `weapon:397 元素法杖`：`特效:元素祝福(所有元素伤害+10%)` → `特效:元素祝福(所有元素伤害+5%)`
+     - `weapon:1674 巫蛊木棒`：`特效:自然伤100%，治疗效果+30%，爆伤+50%` → `特效:自然伤+20%，治疗效果+20%，爆伤+50%`
+     - `armor:4107 神圣箴言护腿`：`特效:治疗效果+25%，魔法消耗-10%` → `特效:黑暗伤害+15%，魔法消耗-10%`（按原版实际 `<Element Amplify 9>` 统一）
      - `armor:501 主教之冠`：`特效:愈合祝福(治疗效果+4%)` → `特效:愈合祝福(治疗效果+3%)`；`特效:神光祝福(神圣伤害+12%)` → `特效:神光祝福(神圣伤害+6%)`
 2. `03_再刷重制_Godot/01_Godot工程/modes/xiyou/tianqi_data/skill_rework.json`：
-   - 新增 `weapon:2222 真我之钥·无暇回归`（`"desc": []`，隐藏原版超高元素特效行）；`armor:4519/4520/4521` 仅补 `note_remove: ["Element Amplify \\d+"]`，原有 `desc` 文字未变。
+   - 新增 `weapon:2222 真我之钥·无暇回归`（`"desc": []`，隐藏原版超高元素特效行）；`armor:4518/4519/4520/4521/4579` 仅补 `note_remove: ["Element Amplify \\d+"]`，原有 `desc` 文字未变。
 3. `03_再刷重制_Godot/01_Godot工程/modes/xiyou/ui/help_card.gd`：
    - 不新增文案，仅在 `_content` 与 `detail_rows` 接入 `XTianqiGear.elem_amp_view(obj)`。
 
 ## 验证与云端选测
 
-- 本地专项：`xiyou_tianqi_deck_phys_amp.tscn`（`--headless --audio-driver Dummy`）→ `TEST_RESULT={"passed":25,"total":25}`
-- 本地校验与回归：
-  - `python3 03_再刷重制_Godot/03_转换工具/天启篇数据校验.py` → 退出码 0（含 `secret_books`、`general_books`、`gear_elem_amp` 全部通过）
+- 本地专项（R1 返修后）：`xiyou_tianqi_deck_phys_amp.tscn`（`--headless --audio-driver Dummy`）→ `TEST_RESULT={"passed":25,"total":25}`（新增覆盖 `armor:4518/4579` 与 R1 返修代表件卡面）
+- 本地校验与回归（R1 返修后）：
+  - `python3 03_再刷重制_Godot/03_转换工具/天启篇数据校验.py` → 退出码 0（含收紧后的 `gear_elem_amp` 全库校验全部通过）
   - `python3 03_再刷重制_Godot/07_开发环境/发行空壳.py check` → 退出码 0（82 个脚本，812 个函数都有）
-  - `python3 03_再刷重制_Godot/07_开发环境/语法检查.py` → 退出码 0（1200 个 `.gd`，0 个问题）
+  - `python3 03_再刷重制_Godot/07_开发环境/语法检查.py` → 退出码 0（1208 个 `.gd`，0 个问题）
   - `python3 03_再刷重制_Godot/07_开发环境/工具回归.py` → 退出码 0（24/24 项全部通过）
   - `python3 03_再刷重制_Godot/07_开发环境/交付自检.py` → 退出码 0
 - 云端选测：
   - 合并前（提交 `50c7376ea`）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45356836130 （16 片全部通过）
-  - 合并 `github/main`（`1667d3cda`）并解冲突后（提交 `0ae336e07`）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45456941904 （492 个场景、16 片全部通过，`gh run watch` 前台等完）
+  - 合并 `github/main`（`1667d3cda`）后（提交 `0ae336e07`）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45456941904 （492 个场景、16 片全部通过）
+  - R1 返修后（提交 `d9f628b50`）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45471130947 （plan＋prepare＋16 test 分片＋report 全绿，`gh run watch 45471130947 --exit-status` 前台等完）
 
 ## 可优化（流程／工具／效率）
 
@@ -161,4 +182,6 @@
 - `35bd002af` WIP: T451 阶段一实测清单入仓（226 把物理武器、60 件残留专武/防具、6 装备 2 状态 passiveELUP），等 Kyo 拍板口径
 - `50c7376ea` T451 按 Kyo 事项 50 重调通用武器与普通防具全系增幅、修通 gear_view/rec_state 重算 yep 与 passiveELUP 扩展读取＋补专项
 - `0ae336e07` T451 合并 github/main（1667d3cda）并解决 天启篇数据校验.py CHECKS 冲突
-- 本提交：补齐标准交付单 `00_项目管理/交付/luiluu_t451.md`
+- `3213f26e8` T451 补齐标准交付单 luiluu_t451.md（含云端选测 45456941904 全绿、单人木桩复测摘要与优化登记草稿）
+- `d9f628b50` T451 R1 返修：补 armor:4518/4579 清残留、修通 23 件卡面文案与 weapon:1674 治疗 20%、收紧数据校验并补专项断言（云端选测 45471130947 全绿）
+- 本提交：更新标准交付单 `00_项目管理/交付/luiluu_t451.md`（逐条回应 R1 核查编号并记录云端选测 45471130947 全绿）
