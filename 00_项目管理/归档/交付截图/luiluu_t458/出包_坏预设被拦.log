@@ -1,0 +1,12 @@
+本次 0.887 → <scratch>/e2e/dev887_三平台发行；上一个发行目录：无
+== 发行空壳：天启篇脚本已换成空壳（.空壳工程_dev887_三平台发行）
+== 资源加密：密钥指纹 84a84bf37d3bcf9d，模板 <工具>/导出模板/4.7.2.stable_aes
+== 安卓 Gradle 构建模板：4.7.2.stable_aes/android_source.zip → android/build
+== 存档密钥：已注入（号 1，不进仓库）
+== 空壳树开战冒烟（xiyou_battle＋xiyou_battle_ui）
+  40 秒，通过
+== 发行预设排除检查：486 个要进包的脚本／场景，3 处被排除
+  modes/xiyou/ui/tianqi/tianqi_hall_intro.gd｜macOS 发行｜命中 modes/xiyou/ui/tianqi/*｜空壳 XTianqiHallIntro
+  modes/xiyou/ui/tianqi/tianqi_hall_intro.gd｜Windows 发行｜命中 modes/xiyou/ui/tianqi/*｜空壳 XTianqiHallIntro
+  modes/xiyou/ui/tianqi/tianqi_hall_intro.gd｜安卓 发行｜命中 modes/xiyou/ui/tianqi/*｜空壳 XTianqiHallIntro
+✗ 发行预设 exclude_filter 踢掉了要进包的脚本（modes/xiyou/ui/tianqi/tianqi_hall_intro.gd｜macOS 发行｜命中 modes/xiyou/ui/tianqi/*｜空壳 XTianqiHallIntro；modes/xiyou/ui/tianqi/tianqi_hall_intro.gd｜Windows 发行｜命中 modes/xiyou/ui/tianqi/*｜空壳 XTianqiHallIntro；modes/xiyou/ui/tianqi/tianqi_hall_intro.gd｜安卓 发行｜命中 modes/xiyou/ui/tianqi/*｜空壳 XTianqiHallIntro）：改 export_presets.cfg 或挪脚本，单跑 python3 07_开发环境/发行预设排除检查.py
