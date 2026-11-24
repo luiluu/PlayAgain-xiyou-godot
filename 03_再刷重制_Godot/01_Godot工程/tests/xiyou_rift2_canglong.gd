@@ -166,6 +166,7 @@ func _source(t: String):
 				XGrowthHelp.describe(raw[id])
 		XGojo.patch_armors(raw)  # 天启篇五条悟专属法宝「眼罩」
 		XFestRing.patch_armors(raw)  # 冠军庆典三枚冠军戒指 8010～8012（常驻，XDB.table 同样打上）
+		XElementalKing.patch_armors(raw)  # 西游档「元素之王的赐福」8013（常驻，XDB.table 同样打上）
 	return raw
 
 
