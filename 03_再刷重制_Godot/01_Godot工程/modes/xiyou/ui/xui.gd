@@ -268,6 +268,8 @@ static func icon_texture(index: int) -> AtlasTexture:
 		return XGojo.icon_texture(index)
 	if index == XDemonCrown.ICON:  # 魔冠自带的大图（CodexQualityIcons demonCrownArt）
 		return XDemonCrown.icon_texture()
+	if XElementalKing.is_icon(index):  # 西游档阿夜专属装备「元素之王的赐福」图标（content/xiyou/icons）
+		return XElementalKing.icon_texture()
 	var sheet := floori(index / 1600.0)
 	var p := XDB.img_path("system", "IconSet_%d" % (sheet + 1))
 	if p == "":

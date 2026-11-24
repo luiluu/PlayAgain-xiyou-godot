@@ -86,8 +86,15 @@ static func action_elements(item: Dictionary, a: XBattler) -> Array:
 	es = es.duplicate()
 	var multi: Array = item.get("yep", {}).get("multipleElements", [])
 	es.append_array(multi)
+	var king_e := XElementalKing.extra_element(item, a)
+	var king_zero := false
+	if king_e > 0:
+		if es.is_empty():
+			es.append(0)
+			king_zero = true
+		es.append(king_e)
 	var out := []
-	var keep_zero := XTianqiElements.deck_on() and multi.has(0)
+	var keep_zero := (XTianqiElements.deck_on() and multi.has(0)) or king_zero
 	for e in es:
 		var ei := XTianqiElements.map_element_id(int(e))
 		if ((ei >= 1 and ei <= 15) or (keep_zero and ei == 0)) and not out.has(ei):
@@ -111,8 +118,15 @@ static func original_elements(item: Dictionary, a: XBattler) -> Array:
 	es = es.duplicate()
 	var multi: Array = item.get("yep", {}).get("multipleElements", [])
 	es.append_array(multi)
+	var king_e := XElementalKing.extra_element(item, a)
+	var king_zero := false
+	if king_e > 0:
+		if es.is_empty():
+			es.append(0)
+			king_zero = true
+		es.append(king_e)
 	var out := []
-	var keep_zero := XTianqiElements.deck_on() and multi.has(0)
+	var keep_zero := (XTianqiElements.deck_on() and multi.has(0)) or king_zero
 	for e in es:
 		var ei := XTianqiElements.map_element_id(int(e))
 		if ((ei >= 1 and ei <= 15) or (keep_zero and ei == 0)) and not out.has(ei):
