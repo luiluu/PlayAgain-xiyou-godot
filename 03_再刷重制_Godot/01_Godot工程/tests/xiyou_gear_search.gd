@@ -10,6 +10,7 @@ var out_dir := ""
 func _ready() -> void:
 	# 参照是原版文字：原版文字错的加载时修正（XTextFix，cc/text-fix-b）比对时整组关掉；修正本身由 tests/xiyou_text_fix 核
 	XTextFix.set_all(false)
+	XXufeng.original_data()  # 参照快照含原版绣冬 76，比对时关西游档徐凤年重做（T440）
 	XPower.SHOW_POWER_UI = true  # 战力先藏（默认关）：本专项测战力显示，开着才与藏之前逐字一致
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):

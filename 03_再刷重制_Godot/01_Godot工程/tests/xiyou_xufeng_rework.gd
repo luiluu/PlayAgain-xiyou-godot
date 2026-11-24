@@ -264,6 +264,15 @@ func _check_rework_data_and_text() -> void:
 		and n129.contains("混沌伤+%d%%" % XXufeng.CHUNLEI_EL_AMP)
 		and n129.contains("攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [XXufeng.CHUNLEI_ATK_PCT, XXufeng.CHUNLEI_HARM, XXufeng.CHUNLEI_HARM]),
 		n129)
+	# 装备检索面板（XGearQuery）：重做生效时绣冬/春雷基础特性均判定为「固定」，不会误判成「随机 / 附加」
+	var q_w76: Dictionary = XGearQuery.record(XGear.template("weapon", 76))
+	var q_a129: Dictionary = XGearQuery.record(XGear.template("armor", 129))
+	check("gear_query.base_lines_fixed",
+		not (q_w76.rows as Array).is_empty()
+		and (q_w76.rows as Array).all(func(r): return str(r.source) == "固定")
+		and not (q_a129.rows as Array).is_empty()
+		and (q_a129.rows as Array).all(func(r): return str(r.source) == "固定"),
+		[q_w76.rows, q_a129.rows])
 
 
 func _check_revert_and_original_data() -> void:
