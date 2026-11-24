@@ -206,12 +206,25 @@ def android(work: Path, check, keys=False, apk=None, require_seal=False, allow_u
     # 桌面替身：assets/ 打成 pck（打包pck.gd），放到 macOS 发行模板旁跑——查的是包里的数据能不能进标题、按键闪不闪退，不是安卓本身
     pck = work / 'run' / '再刷一把_天启篇.pck'
     pck.parent.mkdir()
-    empty = work / 'empty_project'
-    empty.mkdir()
-    (empty / 'project.godot').write_text('config_version=5\n', encoding='utf-8')
-    p = subprocess.run([str(GODOT), '--headless', '--path', str(empty), '--script', str(HERE / '打包pck.gd'), '--',
-                        str(work / 'apk' / 'assets'), str(pck)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                       text=True, errors='replace', timeout=900)
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('资源加密', HERE / '资源加密.py')
+    enc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(enc)
+    if enc.SPARSE in names:
+        # T452：Gradle 包的 assets/ 带 assets.sparsepck 目录（加密文件的标志在里面）：照目录原样拼成 pck，加密的保持加密，
+        # 替身模板（macOS 发行预设的加密模板）用自己编进去的密钥读——读得出来才说明安卓包里的密文和模板密钥对得上
+        try:
+            n = enc.apk_to_pck(apk, pck)
+            p = subprocess.CompletedProcess([], 0, f'PCK_FILES={n}（按 assets.sparsepck 原样拼）\n')
+        except (ValueError, KeyError, OSError) as e:
+            p = subprocess.CompletedProcess([], 1, f'按 assets.sparsepck 拼 pck 失败：{e}\n')
+    else:
+        empty = work / 'empty_project'
+        empty.mkdir()
+        (empty / 'project.godot').write_text('config_version=5\n', encoding='utf-8')
+        p = subprocess.run([str(GODOT), '--headless', '--path', str(empty), '--script', str(HERE / '打包pck.gd'), '--',
+                            str(work / 'apk' / 'assets'), str(pck)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                           text=True, errors='replace', timeout=900)
     (work / '打包pck.log').write_text(p.stdout, encoding='utf-8')
     shutil.rmtree(work / 'apk', ignore_errors=True)
     if p.returncode != 0 or not pck.is_file():

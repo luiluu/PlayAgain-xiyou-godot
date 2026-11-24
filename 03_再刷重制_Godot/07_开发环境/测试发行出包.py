@@ -238,14 +238,15 @@ class SaveKeyTests(unittest.TestCase):
         self._key({'current': 256, 'keys': {'256': 'x'}})
         proj = self.dir / 'proj'
         (proj / 'content').mkdir(parents=True)
-        saved = (M.stub_tree, M._export_all)
+        saved = (M.stub_tree, M._export_all, M.prepare_encryption)
         called = []
         M.stub_tree = lambda out: proj
         M._export_all = lambda *a: called.append(1) or []
+        M.prepare_encryption = lambda src: ({}, '')  # T452：加密准备另有专项（下面 EncryptionTests）
         try:
             problems = M.export_all(self.dir / 'out', self.dir)
         finally:
-            M.stub_tree, M._export_all = saved
+            M.stub_tree, M._export_all, M.prepare_encryption = saved
         self.assertEqual(len(problems), 1)
         self.assertIn('格式不对', problems[0])
         self.assertEqual(called, [])
@@ -255,17 +256,60 @@ class SaveKeyTests(unittest.TestCase):
         self._key({'current': 1, 'keys': {'1': 'ab' * 32}})
         proj = self.dir / 'proj'
         (proj / 'content').mkdir(parents=True)
-        saved = (M.stub_tree, M._export_all, M.stub_smoke)
+        saved = (M.stub_tree, M._export_all, M.stub_smoke, M.prepare_encryption)
         called = []
         M.stub_tree = lambda out: proj
         M._export_all = lambda *a: called.append(1) or []
         M.stub_smoke = lambda tree, logs: ['空壳树开战冒烟 xiyou_battle：脚本错误（开战崩了）']
+        M.prepare_encryption = lambda src: ({}, '')
         try:
             problems = M.export_all(self.dir / 'out', self.dir)
         finally:
-            M.stub_tree, M._export_all, M.stub_smoke = saved
+            M.stub_tree, M._export_all, M.stub_smoke, M.prepare_encryption = saved
         self.assertIn('开战冒烟', problems[0])
         self.assertEqual(called, [])
+
+    def test_encryption_problem_blocks_export(self):
+        """T452：没有资源加密密钥或模板不对时不导出（不许静默出明文包）。"""
+        self._key({'current': 1, 'keys': {'1': 'ab' * 32}})
+        proj = self.dir / 'proj'
+        (proj / 'content').mkdir(parents=True)
+        saved = (M.stub_tree, M._export_all, M.prepare_encryption)
+        called = []
+        M.stub_tree = lambda out: proj
+        M._export_all = lambda *a: called.append(1) or []
+        M.prepare_encryption = lambda src: (None, '资源加密：加密导出模板没装')
+        try:
+            problems = M.export_all(self.dir / 'out', self.dir)
+        finally:
+            M.stub_tree, M._export_all, M.prepare_encryption = saved
+        self.assertEqual(problems, ['资源加密：加密导出模板没装'])
+        self.assertEqual(called, [])
+
+    def test_export_env_passed_to_all_exports(self):
+        """T452：三个平台的导出都带上加密环境（密钥在环境变量里，不写进预设）。"""
+        out = self.dir / 'o'
+        (out / M.WIN_DIR).mkdir(parents=True)
+        envs = []
+        saved = (M.run, M.android_env, M.win_zip)
+        def fake_run(cmd, log, env=None, timeout=1800):
+            envs.append(env)
+            dst = Path(cmd[-1])
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            dst.write_bytes(b'x')
+            if dst.suffix == '.exe':
+                dst.with_suffix('.pck').write_bytes(b'x')
+            return 0
+        M.run = fake_run
+        M.android_env = lambda base=None: (dict(base or {}, A='1'), '测试')
+        M.win_zip = lambda o: None
+        try:
+            probs = M._export_all(out, self.dir, self.dir, [], {'GODOT_SCRIPT_ENCRYPTION_KEY': 'k'})
+        finally:
+            M.run, M.android_env, M.win_zip = saved
+        self.assertEqual(probs, [])
+        self.assertEqual(len(envs), 3)
+        self.assertTrue(all(e and e.get('GODOT_SCRIPT_ENCRYPTION_KEY') == 'k' for e in envs))
 
     def test_stub_smoke_skipped_for_real_scripts_and_flag(self):
         self.assertEqual(M.stub_smoke(M.PROJECT, self.dir), [])
