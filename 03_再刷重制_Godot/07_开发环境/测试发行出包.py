@@ -269,6 +269,26 @@ class SaveKeyTests(unittest.TestCase):
         self.assertIn('开战冒烟', problems[0])
         self.assertEqual(called, [])
 
+    def test_android_build_installed_after_smoke(self):
+        """T452：安卓构建模板在空壳树开战冒烟之后才装（先装会让 xiyou_battle_ui 少过一条）。"""
+        self._key({'current': 1, 'keys': {'1': 'ab' * 32}})
+        proj = self.dir / 'proj'
+        (proj / 'content').mkdir(parents=True)
+        saved = (M.stub_tree, M._export_all, M.stub_smoke, M.prepare_encryption, M.install_android_build, M.verify_save_key, M.verify_encryption)
+        order = []
+        M.stub_tree = lambda out: proj
+        M.prepare_encryption = lambda src: (order.append('enc') or {}, '')
+        M.stub_smoke = lambda tree, logs: order.append('smoke') or []
+        M.install_android_build = lambda src: order.append('build')
+        M._export_all = lambda *a: order.append('export') or []
+        M.verify_save_key = lambda out: []
+        M.verify_encryption = lambda out: []
+        try:
+            self.assertEqual(M.export_all(self.dir / 'out', self.dir), [])
+        finally:
+            M.stub_tree, M._export_all, M.stub_smoke, M.prepare_encryption, M.install_android_build, M.verify_save_key, M.verify_encryption = saved
+        self.assertEqual(order, ['enc', 'smoke', 'build', 'export'])
+
     def test_encryption_problem_blocks_export(self):
         """T452：没有资源加密密钥或模板不对时不导出（不许静默出明文包）。"""
         self._key({'current': 1, 'keys': {'1': 'ab' * 32}})

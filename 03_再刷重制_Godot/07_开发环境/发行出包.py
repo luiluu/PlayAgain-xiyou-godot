@@ -344,7 +344,7 @@ def _enc_mod():
 
 
 def prepare_encryption(src: Path) -> tuple:
-    """T452：返回 (导出环境, 问题)。开加密时查密钥和模板（缺一样不出包），装安卓 Gradle 构建模板（加密模板的 android_source.zip）；
+    """T452：返回 (导出环境, 问题)。开加密时查密钥和模板（缺一样不出包；安卓构建模板冒烟后由 install_android_build 装）；
     回退（资源加密.ENCRYPT＝False）时只在导出用的工程副本里关掉加密。"""
     enc = _enc_mod()
     if not enc.ENCRYPT:
@@ -359,6 +359,13 @@ def prepare_encryption(src: Path) -> tuple:
             return None, '资源加密：' + '；'.join(bad)
         env = enc.export_env()
         print(f'== 资源加密：密钥指纹 {enc.fingerprint(enc.load_key())}，模板 {enc.template_dir()}')
+    return env, ''
+
+
+def install_android_build(src: Path) -> None:
+    """装安卓 Gradle 构建模板（加密模板的 android_source.zip）进导出用的工程副本。要在空壳树开战冒烟之后装：
+    android/build 先装进树里会让冒烟 xiyou_battle_ui 少过一条（action_log_shown，T452 实测）。"""
+    enc = _enc_mod()
     src_zip = enc.template_dir() / enc.ANDROID_SOURCE
     if not src_zip.is_file():  # 回退时模板目录可能没有；退回官方模板的 android_source.zip
         src_zip = HERE / '导出模板' / enc.TEMPLATE_VERSION / enc.ANDROID_SOURCE
@@ -368,7 +375,6 @@ def prepare_encryption(src: Path) -> tuple:
     reg = json.loads((HERE / '环境登记.json').read_text(encoding='utf-8'))
     build = ce.install_build_template(src_zip, src, reg['templateVersion'])
     print(f'== 安卓 Gradle 构建模板：{src_zip.parent.name}/{src_zip.name} → {build.relative_to(src)}')
-    return env, ''
 
 
 def export_all(out: Path, logs: Path) -> list:
@@ -384,6 +390,7 @@ def export_all(out: Path, logs: Path) -> list:
         bad = stub_smoke(src, logs)
         if bad:
             return bad
+        install_android_build(src)
         problems = _export_all(out, logs, src, problems, env)
         return problems or verify_save_key(out) or verify_encryption(out)
     finally:
