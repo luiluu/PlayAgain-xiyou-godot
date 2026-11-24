@@ -150,6 +150,7 @@ func _recruit(c: Dictionary) -> void:
 
 
 func _run() -> void:
+	XMagicWeapon.SCALE_99_TO_888 = false  # 原版对照：西游档法宝 99→888 折算（T468）由 xiyou_fabao_99_scale 核
 	var ref = XDB.load_json(ORACLE)
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
 		return finish()

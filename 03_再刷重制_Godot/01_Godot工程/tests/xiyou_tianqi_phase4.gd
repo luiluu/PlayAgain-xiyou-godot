@@ -275,7 +275,12 @@ func _fabao() -> void:
 	_check("fabao.phase4_off", [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)] == raw)
 	XTianqiBase.PHASE4 = true
 	_state(false)
-	_check("fabao.xiyou", [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)] == raw)
+	var was_scale := XMagicWeapon.SCALE_99_TO_888
+	var xy_on := [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)]
+	XMagicWeapon.SCALE_99_TO_888 = false
+	var xy_off := [XActor.magic_param(e, 0), XActor.magic_param(e, 2), XActor.magic_param(e, 4)]
+	XMagicWeapon.SCALE_99_TO_888 = was_scale
+	_check("fabao.xiyou", not XTianqiGear.fabao_applies(e) and xy_off == raw and xy_on[1] > raw[1], [xy_on, xy_off, raw])
 	XTianqiBase.PHASE4 = false
 	XState.current = s
 

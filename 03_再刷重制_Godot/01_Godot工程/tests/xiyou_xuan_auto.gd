@@ -277,6 +277,7 @@ func _check_actor_hp_ledger(ref: Dictionary) -> void:
 
 
 func _ready() -> void:
+	XMagicWeapon.SCALE_99_TO_888 = false  # 原版对照：西游档法宝 99→888 折算（T468）由 xiyou_fabao_99_scale 核
 	XXuanBattle.YUHUI_SHIELD = false  # 参照比原版：余辉不给护盾（fix1 默认修好，修正支在 xiyou_xuan_battle）
 	XResourceContext.o_actor_hp_wrappers = false  # 参照比原版：新源角色 gainHp／setHp 绕过账本（O-282；修正支见 _check_actor_hp_ledger）
 	_go.call_deferred()

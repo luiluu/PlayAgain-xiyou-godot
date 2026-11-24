@@ -281,6 +281,7 @@ func _ready() -> void:
 
 
 func _go() -> void:
+	XMagicWeapon.SCALE_99_TO_888 = false  # 原版对照：西游档法宝 99→888 折算（T468）由 xiyou_fabao_99_scale 核
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	check("oracle", ref.cases.size() == 13 and ref.cases.all(func(c): return (c.errors as Array).is_empty()))
 	for c in ref.cases:

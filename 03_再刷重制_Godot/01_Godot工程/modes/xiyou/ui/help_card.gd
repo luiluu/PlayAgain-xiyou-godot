@@ -257,6 +257,8 @@ static func desc_params(obj: Dictionary, type: int) -> Array:
 			_extra_row(rows, pos, line, normal)
 	if type == 2 and XYunshang.relic_item(obj):
 		_relic_rows(obj, rows, pos)
+	if (type == 1 or type == 2) and XMagicWeapon.scale_active(obj):
+		_apply_fabao_scale_rows(obj, rows)
 	# ItemQuality：<pos=AD text=品质：名称 size=18 color=normalcolor line=false align=0>
 	_extra_row(rows, pos, "<pos=AD text=品质：%s size=18 color=normalcolor line=false align=0>" % XQuality.grade_name(obj), normal)
 	# 西游 v0.15 Q.labelRows：所有「品质：」行换成七档名称，装备带标签（品质：不朽（传家宝））
@@ -656,9 +658,151 @@ static func _relic_rows(obj: Dictionary, rows: Array, pos: Array) -> void:
 	var xp := int(XMagicWeapon.exp_of(obj))
 	var at := rows.find_custom(func(r): return str(r[0]) == "等级需求：1")
 	at = at + 1 if at >= 0 else int(pos[3])
-	var lines := ["当前等级：%d / %d" % [lv, top], "法宝经验：%d" % xp + ("（已满级）" if lv >= top else " / %d" % int(XMagicWeapon.next_level_exp(obj)))]
+	var old_tag := "（旧档超上限）" if XMagicWeapon.scale_active(obj) and lv > int(XMagicWeapon.top_level(obj)) else ""
+	var lines := ["当前等级：%d / %d%s" % [lv, top, old_tag], "法宝经验：%d" % xp + ("（已满级）" if lv >= top else " / %d" % int(XMagicWeapon.next_level_exp(obj)))]
 	for i in lines.size():
 		rows.insert(at + i, [lines[i], OTHER_SIZE, "rgba(255,255,255,1)", false, 0])
+
+
+const FABAO_STAT_NAMES := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "敏捷", "幸运"]
+static var _fabao_stale_re: RegEx
+static var _fabao_kirin_re: RegEx
+
+
+static func _fabao_signed(v: int) -> String:
+	return "+%d" % v if v >= 0 else "-%d" % absi(v)
+
+
+static func _fabao_format_stats(vals: Array) -> String:
+	var ints := []
+	for i in range(8):
+		ints.append(int(roundf(float(vals[i]))))
+	var groups := {}
+	var order := []
+	var nonzero := 0
+	for i in range(8):
+		var v: int = ints[i]
+		if v == 0:
+			continue
+		nonzero += 1
+		if not groups.has(v):
+			groups[v] = []
+			order.append(v)
+		groups[v].append(i)
+	if nonzero == 0:
+		return ""
+	if nonzero == 8 and order.size() == 1:
+		return "全属性" + _fabao_signed(int(order[0]))
+	if nonzero == 8:
+		var common_v := 0
+		var common_n := 0
+		for v in order:
+			if (groups[v] as Array).size() > common_n:
+				common_n = (groups[v] as Array).size()
+				common_v = int(v)
+		if common_n >= 5:
+			var parts := []
+			for v in order:
+				if int(v) == common_v:
+					continue
+				var names := (groups[v] as Array).map(func(idx): return FABAO_STAT_NAMES[int(idx)])
+				parts.append("/".join(PackedStringArray(names)) + _fabao_signed(int(v)))
+			parts.append("其余全属性" + _fabao_signed(common_v))
+			return "；".join(PackedStringArray(parts))
+	var parts := []
+	for v in order:
+		var names := (groups[v] as Array).map(func(idx): return FABAO_STAT_NAMES[int(idx)])
+		parts.append("/".join(PackedStringArray(names)) + _fabao_signed(int(v)))
+	return "；".join(PackedStringArray(parts))
+
+
+## 西游档法宝 99→888 折算（T468，仅显示层、不改写装备实例备注）：
+## 隐藏备注／模块中未折算的静态每级成长误导行，按 XActor.magic_param 实算插入「当前法宝加成」与「满级（99级）总加成」。
+static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
+	var per := XActor.magic_per_level(obj)
+	var has_growth := false
+	for v in per:
+		if float(v) != 0.0:
+			has_growth = true
+			break
+	if not has_growth:
+		return
+	if _fabao_stale_re == null:
+		_fabao_stale_re = RegEx.create_from_string("^(?:(?:特效|效果)[：:]\\s*法宝每(?:级|升一级)|法宝每级(?:提上|[：:])|每级(?:成长|全属性)?[：:＋+]|进化后每级全属性)")
+		_fabao_kirin_re = RegEx.create_from_string("^麒麟\\(可如法宝一样升级，每级.*\\)$")
+	var lv := int(XMagicWeapon.level_of(obj))
+	var cap_lv := int(XMagicWeapon.max_level(obj))
+	var top_lv := int(XMagicWeapon.top_level(obj))
+	var orig_max := XMagicWeapon.raw_max_level(obj)
+	var insert_at := -1
+	var kept := []
+	for idx in rows.size():
+		var r: Array = rows[idx]
+		if idx < 2:
+			kept.append(r)
+			continue
+		var p := plain(str(r[0])).strip_edges()
+		if p.contains("法宝形态：") and p.contains("等级上限：888"):
+			var nr := r.duplicate()
+			nr[0] = str(r[0]).replace("等级上限：888", "等级上限：%d" % top_lv)
+			kept.append(nr)
+			continue
+		if p.begins_with("当前等级：") and p.contains(" / 888；经验："):
+			var nr := r.duplicate()
+			var old_tag := "（旧档超上限）" if lv > top_lv else ""
+			nr[0] = str(r[0]).replace(" / 888；经验：", " / %d%s；经验：" % [cap_lv, old_tag])
+			kept.append(nr)
+			continue
+		if _fabao_kirin_re.search(p) != null:
+			var nr := r.duplicate()
+			nr[0] = "\\c[1]麒麟（可如法宝一样升级）"
+			kept.append(nr)
+			if insert_at < 0:
+				insert_at = kept.size()
+			continue
+		if _fabao_stale_re.search(p) != null:
+			if insert_at < 0:
+				insert_at = kept.size()
+			continue
+		kept.append(r)
+	if insert_at < 0:
+		insert_at = kept.size()
+		for idx in range(2, kept.size()):
+			var p := plain(str(kept[idx][0])).strip_edges()
+			if p.begins_with("购买价格：") or p.begins_with("出售价格：") or p.begins_with("无法出售"):
+				insert_at = idx
+				break
+	var cur_vals := []
+	var full_vals := []
+	for i in range(8):
+		cur_vals.append(XActor.magic_param(obj, i))
+		full_vals.append(XMagicWeapon.scaled_growth(obj, float(per[i]), float(top_lv)))
+	var cur_text := _fabao_format_stats(cur_vals)
+	var full_text := _fabao_format_stats(full_vals)
+	var is_three := not XThreeGrowth.spec_of(obj).is_empty() and (not obj.has("kind") or str(obj.get("kind", "")) == "armor")
+	var evo_hint := "（60级进化后加成翻倍）" if is_three and not XThreeGrowth.is_evolved(obj) else ""
+	var add := []
+	if lv < top_lv:
+		var lv_txt := ""
+		if cap_lv > 0 and cap_lv < top_lv:
+			lv_txt = "Lv.%d/本层上限%d" % [lv, cap_lv] if lv <= cap_lv else "Lv.%d/%d，本层上限%d" % [lv, top_lv, cap_lv]
+		else:
+			lv_txt = "Lv.%d/%d" % [lv, top_lv]
+		if cur_text != "":
+			add.append("\\c[3]加成：法宝当前（%s）累计 %s" % [lv_txt, cur_text])
+		if full_text != "":
+			add.append("\\c[3]满级（%d级）累计 %s%s" % [top_lv, full_text, evo_hint])
+	elif lv == top_lv:
+		if cur_text != "":
+			add.append("\\c[3]加成：法宝满级（Lv.%d/%d）累计 %s%s" % [lv, top_lv, cur_text, evo_hint])
+	else:
+		var note_cap := "超出现行上限，按%d级满级加成计" % top_lv if float(lv) <= orig_max else "高于满级，按原等级加成计"
+		if cur_text != "":
+			add.append("\\c[3]加成：法宝当前（旧档Lv.%d，%s）累计 %s%s" % [lv, note_cap, cur_text, evo_hint])
+	for k in add.size():
+		kept.insert(insert_at + k, [add[k], 18, "rgba(255,255,255,1)", false, 0])
+	rows.clear()
+	rows.append_array(kept)
 
 
 static func _prices(obj: Dictionary, rows: Array) -> void:

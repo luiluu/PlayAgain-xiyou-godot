@@ -431,8 +431,9 @@ static func equipment(item: Dictionary) -> Dictionary:
 		return _finish(_empty())
 	# 缓存键含全部输入：正式版按物品对象缓存，Godot 用一张表，故另加种类与武器／防具类型（_is_weapon、武器类型乘区要用）
 	var eff = XTianqiGear.effective_params(item) if XTianqiGear.applies(item) else null  # 期四装备八项（T104）：关着为 null，签名、八项同原来
+	var scaled := XMagicWeapon.scale_active(item)
 	var sig := JSON.stringify([item.get("kind"), item.get("wtypeId"), item.get("atypeId"), item.get("params") if eff == null else eff, item.get("traits"),
-		item.get("note"), item.get("level"), item.get(XHeartsteel.STACKS), item.get(XHubris.FAME), item.get("base")])
+		item.get("note"), item.get("level"), item.get(XHeartsteel.STACKS), item.get(XHubris.FAME), item.get("base"), scaled])
 	if _gear_cache.has(sig):
 		return _gear_cache[sig]
 	var s := _empty()
@@ -444,7 +445,8 @@ static func equipment(item: Dictionary) -> Dictionary:
 	if magic:
 		var plus := magic_growth(item)
 		for i in range(8):
-			_attribute(s, i, plus[i] * level, "法宝成长 · " + NAMES[i])
+			var bonus := XMagicWeapon.scaled_growth(item, float(plus[i]), float(level)) if scaled else float(plus[i]) * float(level)
+			_attribute(s, i, bonus, "法宝成长 · " + NAMES[i])
 	_traits(s, item, false)
 	_notes(s, item)
 	_exclusive_gear(s, item)
@@ -838,7 +840,7 @@ static func evaluate(actor: XActor, naked: bool) -> Dictionary:
 
 static func _signature(a: XActor) -> String:
 	return JSON.stringify([a.actor_id, a.class_id, a.level, a.skill_ids, a.state_ids, a.equips, XState.current.variable(8) if XState.current else 0,
-		int(a.zhenqi.get("realm", 0)), XRaceBattle.data_of(a)])   # 突破改道法缩放而技能表可能不变；种族（含血契开关）
+		int(a.zhenqi.get("realm", 0)), XRaceBattle.data_of(a), XMagicWeapon.scale_active()])   # 突破改道法缩放而技能表可能不变；种族（含血契开关）；法宝 99→888 折算开关
 
 
 ## 角色战力 {total, self, gear, gearScore, parts, selfParts, gearParts, equipment[{item, slot, score}], rows, evaluation, ownEvaluation}；关掉时全 0

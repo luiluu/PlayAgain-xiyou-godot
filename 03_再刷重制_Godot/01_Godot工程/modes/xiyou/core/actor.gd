@@ -1280,25 +1280,40 @@ func custom_param(e: Dictionary, i: int) -> float:
 		v += float(t.vars[vid]) * (XState.current.variable(int(vid)) if XState.current else 0.0)
 	return v
 
-## CP_MagicWeapon paramPlus：法宝加 等级 × 每级成长；成长在载入时从数据库原件备注解析一次（实例复制原件的 paramPlusPerLevel），
-## 不受 passiveWPNM／ARMM 放大。等级取 XEquipmentView.level（实例 level，缺省 <Init Level>）。
+## CP_MagicWeapon paramPlus：法宝加 等级 × 每级成长（西游档启用 XMagicWeapon.SCALE_99_TO_888 时按 99→888 线性折算，老存档 >99 级防爆封顶）；
+## 成长在载入时从数据库原件备注解析一次（实例复制原件的 paramPlusPerLevel），不受 passiveWPNM／ARMM 放大。等级取 XEquipmentView.level（实例 level，缺省 <Init Level>）。
 static var _magic_growth_cache := {}
+
+
+## 只读查询法宝 8 项原始每级成长（未折算；三法宝按当前进化状态取，普通法宝按数据库原件备注缓存；不改写原件）
+static func magic_per_level(e: Dictionary) -> Array:
+	if not XMagicWeapon.is_magic(e):
+		return [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+	var grown := XThreeGrowth.growth_of(e)
+	if not grown.is_empty():
+		return grown
+	var kind := str(e.get("kind", ""))
+	if kind == "":
+		kind = "weapon" if e.has("wtypeId") else "armor"
+	var base := int(e.get("base", e.get("id", 0)))
+	var key := ("%s:%d:xy" if XXufeng.xiyou_save_on() else "%s:%d") % [kind, base]
+	if not _magic_growth_cache.has(key):
+		var rec := XDB.rec("Weapons" if kind == "weapon" else "Armors", base)
+		_magic_growth_cache[key] = XPower.magic_growth(rec if not rec.is_empty() else e)
+	return _magic_growth_cache[key]
+
+
 static func magic_param(e: Dictionary, i: int) -> float:
 	var lv = XEquipmentView.level(e)
 	if float(lv) < 0.0:
 		return 0.0
 	if XTianqiGear.fabao_applies(e):  # T163：天启篇期四法宝读表（半件同级装备），关着照原版每级成长
 		return XTianqiGear.fabao_param(e, i)
-	var grown := XThreeGrowth.sync_item(e)  # 三法宝成长 magicWeaponCustomParam 包装：所属人物 60 级进化，每级成长翻倍
+	var grown := XThreeGrowth.sync_item(e) if e.has("kind") else XThreeGrowth.growth_of(e)  # 三法宝成长 magicWeaponCustomParam 包装：所属人物 60 级进化，每级成长翻倍
 	if not grown.is_empty():
-		return float(lv) * float(grown[i])
-	var kind := str(e.get("kind", ""))
-	var base := int(e.get("base", e.get("id", 0)))
-	var key := ("%s:%d:xy" if XXufeng.xiyou_save_on() else "%s:%d") % [kind, base]
-	if not _magic_growth_cache.has(key):
-		var rec := XDB.rec("Weapons" if kind == "weapon" else "Armors", base)
-		_magic_growth_cache[key] = XPower.magic_growth(rec if not rec.is_empty() else e)
-	return float(lv) * float(_magic_growth_cache[key][i])
+		return XMagicWeapon.scaled_growth(e, float(grown[i]), float(lv))
+	var per := magic_per_level(e)
+	return XMagicWeapon.scaled_growth(e, float(per[i]), float(lv))
 
 ## YEP_CoreEngine 角色上限：Actor MaxHP／MaxMP／Parameter 都是 99999999，由 G_StateParam 的 param 在这一层夹住（外层包装另算）；
 ## 饿狼 173 的 paramMax 包装（installNativeGarouRuntime）放到 999999999999。参照 battle_gaps_probe（cap.*）
