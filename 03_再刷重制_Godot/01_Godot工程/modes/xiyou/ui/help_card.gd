@@ -119,6 +119,7 @@ static func content(obj: Dictionary, kind := "", skill_copy := false, width := -
 ## 详情不经 Sprite_ItemHelp.setItem，所以没有那一层加的行：「装备战力：」（installCombatPowerRuntime）、攻击属性／元素增伤
 ## （installDamageElementRuntime 包的也是 setItem；云端专项 rows_* 对原版读数核过）。特效排序、◆唯一 包在 getDescParams 上，照样有。
 static func detail_rows(obj: Dictionary, width: float) -> Array:
+	obj = XTianqiGear.element_fabao_view(obj)  # 天启篇系别法宝（T442）：老档实例名字与说明按新视图显示
 	var rows := _content(obj, "", false, false, false)
 	if rows.is_empty():
 		return rows
@@ -135,6 +136,7 @@ static func _content(obj: Dictionary, kind := "", skill_copy := false, power := 
 	if obj.is_empty():
 		return []
 	obj = XTianqiSkills.gear_view(obj)  # 天启篇技能重构：专属法宝、武器的说明按改写后的备注
+	obj = XTianqiGear.element_fabao_view(obj)  # 天启篇系别法宝（T442）：老档实例说明卡按改写视图显示
 	obj = XThreeGrowth.view(obj)  # 三法宝成长 R.syncItem：法宝说明条目（relicLines）、名字、说明
 	obj = XLiuyingHelp.view(obj)  # 流萤 Sprite_ItemHelp.setItem 包装：10622／10623 说明按流萤当前进阶重写（L.refreshText）
 	if kind == "":
