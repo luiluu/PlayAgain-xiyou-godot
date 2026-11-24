@@ -184,8 +184,8 @@ static func boss_neg_hrg_cap(e) -> float:
 	return -float(pct) / 100.0 if pct > 0 else 0.0
 
 
-## T453（D273，Kyo 11-24 事项 45）：守层者／首领身上的 XExtDot 持续伤害也算进同一个每回合封顶预算。
-## 只认 balance_table.combat_rules.boss_neg_hrg_cap_extdot_states 列的状态（现为 243 火海＝传承 2617 火海披风开战挂，按血量 100%）；
+## T453（D273，Kyo 11-24 事项 45）＋T456：守层者／首领身上的 XExtDot 持续伤害也算进同一个每回合封顶预算。
+## 只认 balance_table.combat_rules.boss_neg_hrg_cap_extdot_states 列的状态（243 火海＝传承 2617 火海披风开战挂，261 怨毒＝法术反射回首领同为 100% 血）；
 ## 其余 XExtDot 状态（守层者自带的 T402 毒／出血等）不动。开关就是 BOSS_NEG_HRG_CAP（不依赖 T332 的 DOT_NO_WAREHOUSE）。
 static func extdot_capped_states() -> Array:
 	var cr = XTianqiBalance.data().get("combat_rules", {})
@@ -204,6 +204,13 @@ static func boss_dot_budget(e) -> float:
 const META_DOT_USED := "t453_dot_used"
 
 
+## 本回合 XExtDot 已花掉的持续伤害预算（正数，HP 值）；未记账或非敌人返回 0.0（供 XEnemy.cap_neg_hrg 前置扣减，T456）。
+static func dot_budget_used(e) -> float:
+	if not (e is XEnemy) or not e.has_meta(META_DOT_USED):
+		return 0.0
+	return float(e.get_meta(META_DOT_USED, 0.0))
+
+
 ## XExtDot 一条状态的负值（扣血为负）过预算：返回夹后的值（≤0）并记账；不在列表、不是封顶对象原样返回。
 static func cap_extdot(e, state_id: int, value: float) -> float:
 	if value >= 0.0 or not (e is XEnemy) or not extdot_capped_states().any(func(x): return int(x) == state_id):
@@ -218,12 +225,16 @@ static func cap_extdot(e, state_id: int, value: float) -> float:
 	return -take
 
 
-## 回合末 HP 再生算出 dh 后调：这回合 XExtDot 已经花掉的预算从再生的负值里扣；并清账（每回合只用一次）。
+## 回合末 HP 再生算出 dh 后调：清掉本回合 XExtDot 已用预算账（每回合只用一次）。
+## T456：主体预算扣减已前置到 XEnemy.cap_neg_hrg（避免负再生吃掉正再生）；此处仅在 T332 拆算开启（regen_unscaled）且 dh 为负时兜底，
+## 关 T332（DOT_NO_WAREHOUSE=false）时按注释只清账、不夹再生。
 static func cap_regen_after_dots(e, dh: float) -> float:
 	if not (e is XEnemy) or not e.has_meta(META_DOT_USED):
 		return dh
 	var used := float(e.get_meta(META_DOT_USED, 0.0))
 	e.remove_meta(META_DOT_USED)
+	if not regen_unscaled():
+		return dh
 	var budget := boss_dot_budget(e)
 	if dh >= 0.0 or budget < 0.0:
 		return dh
