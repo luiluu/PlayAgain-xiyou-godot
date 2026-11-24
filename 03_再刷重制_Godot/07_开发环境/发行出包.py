@@ -408,11 +408,11 @@ def verify_encryption(out: Path) -> list:
 
 def _export_all(out: Path, logs: Path, src: Path, problems: list, env: dict = None) -> list:
     print('== 导出 macOS 发行')
-    if run([str(GODOT), '--headless', '--path', str(src), '--export-release', 'macOS 发行', str(out / MAC_ZIP)], logs / '导出_mac.log', env=env) or not (out / MAC_ZIP).is_file():
+    if run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(src), '--export-release', 'macOS 发行', str(out / MAC_ZIP)], logs / '导出_mac.log', env=env) or not (out / MAC_ZIP).is_file():
         problems.append('macOS 导出失败')
     print('== 导出 Windows 发行')
     (out / WIN_DIR).mkdir(exist_ok=True)
-    if run([str(GODOT), '--headless', '--path', str(src), '--export-release', 'Windows 发行', str(out / WIN_DIR / WIN_FILES[0])], logs / '导出_windows.log', env=env) \
+    if run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(src), '--export-release', 'Windows 发行', str(out / WIN_DIR / WIN_FILES[0])], logs / '导出_windows.log', env=env) \
             or not all((out / WIN_DIR / f).is_file() for f in WIN_FILES):
         problems.append('Windows 导出失败')
     else:
@@ -423,7 +423,7 @@ def _export_all(out: Path, logs: Path, src: Path, problems: list, env: dict = No
         problems.append('安卓：没配发行 keystore，本机也找不到 Godot 调试 keystore')
     else:
         print(f'  签名：{how}')
-        if run([str(GODOT), '--headless', '--path', str(src), '--export-release', '安卓 发行', str(out / APK)], logs / '导出_安卓.log', env=env) \
+        if run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(src), '--export-release', '安卓 发行', str(out / APK)], logs / '导出_安卓.log', env=env) \
                 or not (out / APK).is_file():
             problems.append('安卓导出失败')
         idsig = out / (APK + '.idsig')

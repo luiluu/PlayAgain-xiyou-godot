@@ -104,7 +104,7 @@ class Crypto(unittest.TestCase):
         self.assertEqual(len(enc_blob(b'x' * 17, KEY)), E.stored_size(17, 1))
 
     def test_must_encrypt(self):
-        for n in ('modes/a.gd', 'modes/a.gdc', 'res://a/b.json', '.godot/exported/1/x.scn', 'a.gd.remap', '.godot/global_script_class_cache.cfg'):
+        for n in ('modes/a.gd', 'modes/a.gdc', 'res://a/b.json', '.godot/exported/1/x.scn', 'a.gd.remap', '.godot/global_script_class_cache.cfg'):  # 门禁豁免：只是 .godot 路径字符串，不起 Godot
             self.assertTrue(E.must_encrypt(n), n)
         for n in ('content/a.png', '.godot/imported/a.ctex', 'fonts/a.ttf', 'project.binary'):
             self.assertFalse(E.must_encrypt(n), n)

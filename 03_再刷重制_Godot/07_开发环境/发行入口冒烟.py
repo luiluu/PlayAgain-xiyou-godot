@@ -228,7 +228,7 @@ def android(work: Path, check, keys=False, apk=None, require_seal=False, allow_u
         empty = work / 'empty_project'
         empty.mkdir()
         (empty / 'project.godot').write_text('config_version=5\n', encoding='utf-8')
-        p = subprocess.run([str(GODOT), '--headless', '--path', str(empty), '--script', str(HERE / '打包pck.gd'), '--',
+        p = subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(empty), '--script', str(HERE / '打包pck.gd'), '--',
                             str(work / 'apk' / 'assets'), str(pck)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                            text=True, errors='replace', timeout=900)
     (work / '打包pck.log').write_text(p.stdout, encoding='utf-8')

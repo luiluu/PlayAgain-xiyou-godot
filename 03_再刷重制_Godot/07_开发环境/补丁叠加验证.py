@@ -61,7 +61,7 @@ def _env():
 
 
 def godot(*args, timeout=3600):
-    p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), *args], capture_output=True, text=True, timeout=timeout,
+    p = subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(PROJECT), *args], capture_output=True, text=True, timeout=timeout,
                        env=_env())
     return p.returncode, p.stdout + p.stderr
 
