@@ -586,5 +586,40 @@ class SmokeBattleTests(unittest.TestCase):
         self.assertIn('--audio-driver Dummy', args)
 
 
+class ScrubRiftAlienTests(unittest.TestCase):
+    def test_scrub_rift_alien_strips_comment_keys_and_preserves_runtime_data(self):
+        raw = {
+            'source': '方案/重制版_漩涡五阶段怪物异化设计稿_v0.1.md',
+            '_note': '内部说明',
+            '_stages_aligned_note': 'O-468',
+            'difficulty': {'_note': '天启篇难度映射', '1': {'rare_mul': 0.5}},
+            'look': {'_note': '先用偏色顶着', 'tint': '#a87bff'},
+            'stages_aligned': {'3': {'max_tier': 'shigu', 'boss': [{'from': 11, 'to': 30, 'tier': 'shigu'}]}},
+        }
+        cleaned = K.scrub_rift_alien_data(raw)
+        self.assertNotIn('source', cleaned)
+        self.assertNotIn('_note', cleaned)
+        self.assertNotIn('_stages_aligned_note', cleaned)
+        self.assertNotIn('_note', cleaned['difficulty'])
+        self.assertNotIn('_note', cleaned['look'])
+        self.assertEqual(cleaned['difficulty']['1']['rare_mul'], 0.5)
+        self.assertEqual(cleaned['look']['tint'], '#a87bff')
+        self.assertEqual(cleaned['stages_aligned']['3']['max_tier'], 'shigu')
+        self.assertFalse(K._has_rift_alien_comments(cleaned))
+        self.assertTrue(K._has_rift_alien_comments(raw))
+
+    def test_scrub_rift_alien_file_and_is_stub_tree(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            f = root / K.RIFT_ALIEN_REL
+            f.parent.mkdir(parents=True)
+            f.write_text('{"source": "a", "_note": "b", "difficulty": {"_note": "c"}, "stages": {}}', encoding='utf-8')
+            self.assertTrue(any('rift_alien.json' in x for x in K.is_stub_tree(root)))
+            self.assertTrue(K.scrub_rift_alien(root))
+            self.assertEqual(K.is_stub_tree(root), [])
+            got = __import__('json').loads(f.read_text(encoding='utf-8'))
+            self.assertEqual(got, {'difficulty': {}, 'stages': {}})
+
+
 if __name__ == '__main__':
     unittest.main()

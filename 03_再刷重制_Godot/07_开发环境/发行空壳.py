@@ -591,6 +591,40 @@ def scrub_rules(root: Path) -> bool:
     return True
 
 
+RIFT_ALIEN_REL = Path('modes/xiyou/rift_alien.json')
+# T455 核 P2-1：rift_alien.json 进发行包前清掉 source 与所有 _ 开头注释键（含 _note、_stages_aligned_note、difficulty._note、look._note），不把内部路径与未发行术语带进玩家包。
+
+
+def _is_rift_alien_comment_key(key: str) -> bool:
+    return key == 'source' or key.startswith('_')
+
+
+def scrub_rift_alien_data(d):
+    """返回发行用 rift_alien.json 的内容（不改入参）：递归去掉 source 与 _ 开头注释键。"""
+    if isinstance(d, dict):
+        return {k: scrub_rift_alien_data(v) for k, v in d.items() if not _is_rift_alien_comment_key(k)}
+    if isinstance(d, list):
+        return [scrub_rift_alien_data(v) for v in d]
+    return d
+
+
+def _has_rift_alien_comments(d) -> bool:
+    if isinstance(d, dict):
+        return any(_is_rift_alien_comment_key(k) or _has_rift_alien_comments(v) for k, v in d.items())
+    if isinstance(d, list):
+        return any(_has_rift_alien_comments(v) for v in d)
+    return False
+
+
+def scrub_rift_alien(root: Path) -> bool:
+    f = Path(root) / RIFT_ALIEN_REL
+    if not f.is_file():
+        return False
+    d = json.loads(f.read_text(encoding='utf-8'))
+    f.write_text(json.dumps(scrub_rift_alien_data(d), ensure_ascii=False, indent=1), encoding='utf-8')
+    return True
+
+
 def make_tree(out: Path, src: Path = None) -> Path:
     """克隆工程到 out 并换上空壳。out 不能已存在。src：要克隆的工程目录（默认本仓工程 PROJECT）。"""
     if out.exists():
@@ -609,6 +643,7 @@ def make_tree(out: Path, src: Path = None) -> Path:
     for p, s in stubs.items():
         (out / p).write_text(s, encoding='utf-8')
     scrub_rules(out)
+    scrub_rift_alien(out)
     scrub_strings(out)
     return out
 
@@ -623,6 +658,9 @@ def is_stub_tree(root: Path) -> list:
     f = root / RULES_REL
     if f.is_file() and 'tianqi_dict' in json.loads(f.read_text(encoding='utf-8')):
         out.append(f'{RULES_REL}（还带 tianqi_dict）')
+    ra = root / RIFT_ALIEN_REL
+    if ra.is_file() and _has_rift_alien_comments(json.loads(ra.read_text(encoding='utf-8'))):
+        out.append(f'{RIFT_ALIEN_REL}（还带内部注释键）')
     for rel in tianqi_string_hits(root):  # T388：不止登记过的，任何不换空壳的脚本还有天启篇玩法名字符串都算（T385 核 P2-2）
         out.append(f'{rel}（还带天启篇玩法名字符串）')
     return out
