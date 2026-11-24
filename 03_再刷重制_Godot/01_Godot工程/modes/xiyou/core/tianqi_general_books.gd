@@ -98,7 +98,7 @@ static func rec(id: int, base: Dictionary) -> Dictionary:
 
 ## XPowerBooks.param_rate_bonus 缓存键：天启篇通用书改写过的技能用负号隔离，避免跨存档或切开关串缓存
 static func rate_key(id: int) -> int:
-	if not on() or not has(id):
+	if not has(id) or not on():
 		return id
 	return -id
 
