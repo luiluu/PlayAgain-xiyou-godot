@@ -24,6 +24,24 @@ const ROUTES := [
 	{"key": "calamity", "name": "天灾", "coef": 5}, {"key": "doom", "name": "灭世", "coef": 8}, {"key": "primordial", "name": "洪荒", "coef": 13}]
 const GUARDIANS := {4: 1, 5: 2, 8: 3, 22: 4, 28: 5, 245: 5, 39: 6, 52: 7, 53: 8, 67: 9, 69: 10, 109: 11, 110: 12, 111: 13, 118: 14, 138: 15, 172: 16,
 	173: 17, 174: 18, 333: 19, 456: 20, 457: 21, 458: 22, 459: 23, 460: 24, 461: 25, 462: 26, 463: 27, 464: 28, 465: 29, 466: 30, 467: 31, 468: 32, 469: 33}
+## 替身守层者（O-待定·替身守层者首通，T466）：13～30 层守层者事件按开局教派换敌群——天道使者雕像（开关 2302）、攻击引路人（2303）
+## 打【求道者】748～765，轮回归来（2307）打【我们联合】798～814（26 层仍是 761）。原版 GUARDIANS 不认它们，非求道者雕像的玩家
+## 13～30 层不记首通、只给 Boss 奖励（T464 查清）。这里另起一张表，只在 battle_setup 给真气认层（battle.standInFloor），
+## 不并进 GUARDIANS（天启篇掉落 tianqi_drop、心魔／神兵试炼取守层者、星爆书礼都读它或 guardianFloor，口径不变）。
+const STAND_IN_GUARDIANS := {748: 13, 749: 14, 750: 15, 751: 16, 752: 17, 753: 18, 754: 19, 755: 20, 756: 21, 757: 22, 758: 23, 759: 24,
+	760: 25, 761: 26, 762: 27, 763: 28, 764: 29, 765: 30, 798: 13, 799: 14, 800: 15, 801: 16, 802: 17, 803: 18, 804: 19, 805: 20,
+	806: 21, 807: 22, 808: 23, 809: 24, 810: 25, 811: 27, 812: 28, 813: 29, 814: 30}
+## 替身守层者的教派开关（任一开着＝这局 13～30 层打替身）
+const STAND_IN_SECT_SWITCHES := [2302, 2303, 2307]
+## 回退：STAND_IN_FIRSTS = false 回到原版（替身只给 Boss 奖励、不记首通，读档也不补发）
+static var STAND_IN_FIRSTS := true
+## 读档补发只跑一次的标记（flags 键；本局打过一场替身守层者时也记上，表示首通已在实时记，不再补）
+const STAND_IN_MARK := "zqStandInFirsts"
+const STAND_IN_FLOORS := [13, 30]
+## 读档补发攒下的提示（进地图时放，map_start）
+static var _pending_notice: Array = []
+## 测试看：最近一次读档补发的明细 {actor_id: 补的点数}
+static var last_backfill := {}
 const REALMS := [
 	{"name": "炼气", "need": 0, "world": "人界"},
 	{"name": "筑基", "need": 600, "world": "人界", "trial": "心魔", "scale": 1, "choice": {"split": 30}},
@@ -295,10 +313,61 @@ static func battle_setup(s: XState, troop_id: int) -> void:
 		f = progress_floor(s)
 	if not scaled.is_empty():
 		f = int(scaled.ref.floor)
-	battle = {"troopId": troop_id, "trial": trial, "scaled": scaled, "route": r, "guardianFloor": 0 if not trial.is_empty() else gf, "floor": f, "comp": comp_for(r.key, f), "ovf": {}}
+	var sf := 0
+	if STAND_IN_FIRSTS and gf == 0 and trial.is_empty() and scaled.is_empty() and not XTianqi.active(s):  # 天启篇不认（真气由烙印取代）
+		sf = int(STAND_IN_GUARDIANS.get(troop_id, 0))
+		if sf > 0:
+			f = sf
+			s.flags[STAND_IN_MARK] = 1  # 首通从此实时记：以后读这份档不再补发
+	battle = {"troopId": troop_id, "trial": trial, "scaled": scaled, "route": r, "guardianFloor": 0 if not trial.is_empty() else gf, "standInFloor": sf, "floor": f, "comp": comp_for(r.key, f), "ovf": {}}
 	for a in s.members():
 		data(a)
 		a.zq_guard = false  # 元婴护体每场一次
+
+
+## 读档补发（XSave._load_data）：本局 13～30 层打的是替身守层者（教派开关 2302／2303／2307 任一开着）、还没补过的西游档，
+## 按修行进度已通关的层（13～min(30, 进度层)），给当前队伍全员（出战＋后备，party）补当前路线缺的首通真气（10×层×路线系数，
+## 只补首通、不补每胜），已有「路线:层」的跳过；补完打标记只补一次。口径 Kyo 11-24 定（事项53）。天启篇档不碰。
+static func backfill_stand_in(s: XState) -> Dictionary:
+	last_backfill = {}
+	if s == null or not STAND_IN_FIRSTS or XTianqi.active(s) or s.flags.get(STAND_IN_MARK):
+		return {}
+	if not STAND_IN_SECT_SWITCHES.any(func(id): return s.switch(int(id))):
+		return {}
+	var top := mini(int(STAND_IN_FLOORS[1]), progress_floor(s))
+	if top < int(STAND_IN_FLOORS[0]):
+		return {}  # 还没过 13 层：不用补，也不打标记（之后打替身时 battle_setup 记上）
+	s.flags[STAND_IN_MARK] = 1
+	var r := route(s)
+	var c := int(r.coef)
+	var out := {}
+	for a in s.members():
+		if a == null:
+			continue
+		var d := data(a)
+		var g := 0
+		for fl in range(int(STAND_IN_FLOORS[0]), top + 1):
+			var key := "%s:%d" % [r.key, fl]
+			if not d.firsts.has(key):
+				d.firsts[key] = 1
+				g += COEF.first * fl * c
+		if g > 0:
+			d.qi = int(d.qi) + g  # 同原版 migrate 补发楼层：直接加，不逐人弹境界提示
+			out[a.actor_id] = g
+	last_backfill = out
+	if not out.is_empty():
+		var total := 0
+		for v in out.values():
+			total += int(v)
+		_pending_notice.append("补发%s第%d～%d层守层者首通真气：%d 名队员共 +%d" % [r.name, int(STAND_IN_FLOORS[0]), top, out.size(), total])
+	return out
+
+
+## 地图场景建好（map_scene）：放出读档补发攒下的提示
+static func map_start() -> void:
+	for m in _pending_notice:
+		_toast(str(m))
+	_pending_notice.clear()
 
 
 ## otbActionTimesModification（只在首回合的当前顺序）：追加次数 extra 超过 4 的部分记为溢出
@@ -326,9 +395,11 @@ static func on_victory(s: XState, actors: Array, enemies: Array) -> Array:
 	unlock_specs(s, enemies, b)
 	if XTianqiBrand.on(s):
 		return []  # 天启篇烙印开着：真气不再涨，打赢后的烙印由 XTianqiBrand.settle 结算（BattleLogic.grant）
-	var boss := int(b.guardianFloor) == 0 and enemies.any(func(e): return is_boss_enemy(e))
+	# 替身守层者（STAND_IN_FIRSTS）与正牌同口径：首通＋每胜，不再算 Boss 奖励
+	var gfl := int(b.guardianFloor) if int(b.guardianFloor) else int(b.get("standInFloor", 0))
+	var boss := gfl == 0 and enemies.any(func(e): return is_boss_enemy(e))
 	var c := int(b.route.coef)
-	var f := int(b.guardianFloor) if int(b.guardianFloor) else int(b.floor)
+	var f := gfl if gfl else int(b.floor)
 	var lines := []
 	var out := []
 	for a in actors:
@@ -337,7 +408,7 @@ static func on_victory(s: XState, actors: Array, enemies: Array) -> Array:
 		var d := data(a)
 		var g := mini(OVERFLOW_CAP, int(b.ovf.get(a.actor_id, 0)))
 		var first := false
-		if int(b.guardianFloor):
+		if gfl:
 			var key := "%s:%d" % [b.route.key, f]
 			if not d.firsts.has(key):
 				d.firsts[key] = 1
