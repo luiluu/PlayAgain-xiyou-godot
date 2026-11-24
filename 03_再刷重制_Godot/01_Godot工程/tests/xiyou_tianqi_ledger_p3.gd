@@ -61,6 +61,7 @@ func _run() -> void:
 	_budget()
 	_derived_table()
 	_notes()
+	_t473_fixes()
 	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
@@ -162,7 +163,7 @@ func _nine_cap() -> void:
 	_check("bucket_secret_ce_books", ce_miss.is_empty(), ce_miss)
 	_check("bucket_secret_by_book", wrong.is_empty() and int(sk_of.call(7144).stypeId) == 6 and int(sk_of.call(2776).stypeId) == 4 and int(sk_of.call(1077).stypeId) == 5, wrong)
 	var slots := XTianqiLedger.secret_slots(a)
-	_check("secret_slots_by_tier", slots == XTianqiBalance.secret_cap(XTier.tier_of(a)) and slots > 0, slots)
+	_check("secret_slots_by_tier", slots == XTianqiBalance.secret_cap(XTianqiSkills.tier_of(a)) and slots > 0, slots)
 	# 正式秘籍格与重标数据由 B2 专项覆盖。这里恢复两个旧视图，实际造出超格、超单本上限的回退档。
 	var books_enabled := XTianqiGeneralBooks.ENABLED
 	var secrets_enabled := XTianqiSecrets.ENABLED
@@ -431,3 +432,116 @@ func _notes() -> void:
 	_check("note2_qiyin_derived_allowed", XTianqiLedger.row("qiyin_derived").get("status") == "allowed" and XTianqiLedger.row("qiyin_derived").has("phase3"))
 	_check("note3_qiyin_dot_allowed", XTianqiLedger.row("qiyin_dot").get("status") == "allowed")
 	_check("ledger_phase3", XTianqiLedger.phase() >= 3 and not XTianqiLedger.data().get("nine_caps", {}).is_empty())
+
+
+# ---- 五、T473 漏口：原版装 tianqi_affixes／alien.tq 不逃逸九线封顶＋secret_slots 按天启档位 ----
+func _t473_fixes() -> void:
+	var s := _state()
+	var a := s.actor(int(s.battle_slots[0]))
+	var e := XEnemy.new().setup(1, 3, 100.0)
+	var sample_affix := [{"key": "final_damage", "tier": 4, "grade": "perfect", "extra": {}}]
+	# 1) 分桶：原版装（4535 苍琉幻生灭、4285 双鱼念气瓶、4075 三环剑、4115 苍苍白骨）贴 tianqi_affixes 或天启异化后仍归 equip；
+	#    符文之语／成长装贴 tianqi_affixes 仍归 runeword／hubris；纯天启装（qiyin／tq_reward）仍归 tianqi
+	var eq4535 := XActor.make_equip("armor", 4535)
+	var eq4285 := XActor.make_equip("armor", 4285)
+	var eq4075 := XActor.make_equip("armor", 4075)
+	var eq4115 := XActor.make_equip("armor", 4115)
+	for eq in [eq4535, eq4285, eq4075, eq4115]:
+		XTianqiAffixRoll.set_affixes(eq, sample_affix.duplicate(true))
+	var eq4535_alien := XActor.make_equip("armor", 4535)
+	eq4535_alien["alien"] = {"uid": "t473-alien", "affix": "dying", "tq": {"line": "death", "level": "huaxing"}}
+	var rw_affix := {"kind": "armor", "runewords": [1], "tianqi_affixes": sample_affix.duplicate(true)}
+	var hub_affix := XActor.make_equip("armor", XHubris.ARMOR)
+	XTianqiAffixRoll.set_affixes(hub_affix, sample_affix.duplicate(true))
+	var bucket_ok := XTianqiLedger.bucket_of(eq4535, a) == "equip" \
+		and XTianqiLedger.bucket_of(eq4285, a) == "equip" \
+		and XTianqiLedger.bucket_of(eq4075, a) == "equip" \
+		and XTianqiLedger.bucket_of(eq4115, a) == "equip" \
+		and XTianqiLedger.bucket_of(eq4535_alien, a) == "equip" \
+		and XTianqiLedger.bucket_of(rw_affix, a) == "runeword" \
+		and XTianqiLedger.bucket_of(hub_affix, a) == "hubris" \
+		and XTianqiLedger.bucket_of({"kind": "weapon", "qiyin": {"kind": "weapon"}}, a) == "tianqi" \
+		and XTianqiLedger.bucket_of({"kind": "armor", "tq_reward": {"kind": "seal"}}, a) == "tianqi"
+	_check("t473_bucket_original_gear_with_tq_affix", bucket_ok, [
+		XTianqiLedger.bucket_of(eq4535, a), XTianqiLedger.bucket_of(eq4285, a),
+		XTianqiLedger.bucket_of(eq4075, a), XTianqiLedger.bucket_of(eq4115, a),
+		XTianqiLedger.bucket_of(eq4535_alien, a), XTianqiLedger.bucket_of(rw_affix, a),
+		XTianqiLedger.bucket_of(hub_affix, a)
+	])
+	# 2) 4535 苍琉幻生灭＋4285 双鱼念气瓶贴 tianqi_affixes 上身实测：原版被动全部落 equip 桶被九线封顶，tianqi 桶为 0；天启词条自身增量仍生效
+	a.change_level(81)
+	var eslots := a.equip_slots()
+	var neck_idx := eslots.find(9)
+	var off_idx := eslots.find(2)
+	var old_neck = a.equips[neck_idx] if neck_idx >= 0 else null
+	var old_off = a.equips[off_idx] if off_idx >= 0 else null
+	var eq4535_plain := XActor.make_equip("armor", 4535)
+	var eq4285_plain := XActor.make_equip("armor", 4285)
+	if neck_idx >= 0:
+		a.equips[neck_idx] = eq4535_plain
+	if off_idx >= 0:
+		a.equips[off_idx] = eq4285_plain
+	a.read_touch()
+	a.refresh_passive()
+	# 启动一场短战斗使 XTianqiAffixBattle 激活，验证词条增量正常叠加、原版被动被九线封顶
+	var bl := XBattleLogic.new()
+	bl.setup(2, s)
+	var probe_skill := XDB.rec("Skills", 1).duplicate(true)
+	probe_skill["meta"] = probe_skill.get("meta", {}).duplicate(true)
+	probe_skill["meta"]["SkillTypes"] = "[\"A\"]"
+	probe_skill["damage"] = probe_skill.get("damage", {}).duplicate(true)
+	probe_skill["damage"]["elementId"] = 7
+	var res_plain := XDamage.calculate(probe_skill, a, e, {"critical": true, "variance": false})
+	# 换成贴了 tianqi_affixes（仅 4535 挂一条 final_damage 四阶极品）的 4535＋带词条 4285（4285 换一条非伤害词条避免叠 final_damage）
+	var eq4285_def := XActor.make_equip("armor", 4285)
+	XTianqiAffixRoll.set_affixes(eq4285_def, [{"key": "def", "tier": 4, "grade": "normal", "extra": {}}])
+	if neck_idx >= 0:
+		a.equips[neck_idx] = eq4535
+	if off_idx >= 0:
+		a.equips[off_idx] = eq4285_def
+	a.read_touch()
+	a.refresh_passive()
+	var by4535: Dictionary = a.passive_cache().get("bySource", {})
+	var res_affix := XDamage.calculate(probe_skill, a, e, {"critical": true, "variance": false})
+	XTianqiAffixBattle.finish(bl)
+	XAlienBattle.finish(bl, [])
+	var cut4535: Dictionary = res_affix.breakdown.row.get("nineCap", {})
+	var affix_fd := float(XTianqiAffixTable.value("final_damage", 4, "perfect")) / 100.0
+	var elem7_eq := float(by4535.get("elementAmplify", {}).get(7, {}).get("equip", 0.0))
+	var pools_ok := float(by4535.get("globalHarmRi", {}).get("tianqi", 0.0)) == 0.0 \
+		and float(by4535.get("critHarmRi", {}).get("tianqi", 0.0)) == 0.0 \
+		and float(by4535.get("elementAmplify", {}).get(7, {}).get("tianqi", 0.0)) == 0.0 \
+		and float(by4535.get("globalHarmRi", {}).get("equip", 0.0)) >= 1.75 - 1e-4 \
+		and float(by4535.get("critHarmRi", {}).get("equip", 0.0)) >= 3.00 - 1e-4 \
+		and float(by4535.get("skillTypeDvup", {}).get("A", {}).get("equip", 0.0)) >= 2.15 - 1e-4 \
+		and elem7_eq > 0.30 + 1e-4 \
+		and float(cut4535.get("bonus", 0.0)) >= 1.40 - 1e-4 \
+		and float(cut4535.get("crit", 0.0)) >= 2.70 - 1e-4 \
+		and float(cut4535.get("skill", 0.0)) >= 2.00 - 1e-4 \
+		and is_equal_approx(float(cut4535.get("element", {}).get(7, 0.0)), elem7_eq - 0.30) \
+		and is_equal_approx(float(res_affix.breakdown.row.terminal) - float(res_plain.breakdown.row.terminal), affix_fd) \
+		and is_equal_approx(float(res_affix.breakdown.row.critical), float(res_plain.breakdown.row.critical))
+	_check("t473_4535_affix_capped_all_pools", pools_ok, {
+		"by_fin": by4535.get("globalHarmRi", {}),
+		"by_crit": by4535.get("critHarmRi", {}),
+		"by_elem7": by4535.get("elementAmplify", {}).get(7, {}),
+		"cut": cut4535,
+		"term_diff": float(res_affix.breakdown.row.terminal) - float(res_plain.breakdown.row.terminal),
+		"affix_fd": affix_fd,
+	})
+	if neck_idx >= 0:
+		a.equips[neck_idx] = old_neck
+	if off_idx >= 0:
+		a.equips[off_idx] = old_off
+	a.read_touch()
+	a.refresh_passive()
+	# 3) NINE_OFF：原版装带特性 34／61 贴 tianqi_affixes 或 alien.tq 后仍受 NINE_OFF 停用，不逃逸
+	var extra_eq := {"kind": "weapon", "traits": [{"code": 34, "dataId": 0, "value": 1.0}, {"code": 61, "dataId": 0, "value": 1.0}], "tianqi_affixes": sample_affix.duplicate(true)}
+	_check("t473_nine_off_not_escaped_by_affix", XTianqiLedger.nine_off_source(a, extra_eq) and XTianqiLedger.nine_off_source(a, eq4535_alien))
+	# 4) secret_slots：天启篇按天启档位（三笠 95→3、绿司机 2→4、维利 22→4、艾坤 3→6），西游档照 XTier 零改动（4/6/6/6）
+	var tq_slots := [XTianqiLedger.secret_slots(s.actor(95), s), XTianqiLedger.secret_slots(s.actor(2), s),
+		XTianqiLedger.secret_slots(s.actor(22), s), XTianqiLedger.secret_slots(s.actor(3), s)]
+	var xs := _state(false)
+	var xy_slots := [XTianqiLedger.secret_slots(xs.actor(95), xs), XTianqiLedger.secret_slots(xs.actor(2), xs),
+		XTianqiLedger.secret_slots(xs.actor(22), xs), XTianqiLedger.secret_slots(xs.actor(3), xs)]
+	_check("t473_ledger_secret_slots_tq_tier", tq_slots == [3, 4, 4, 6] and xy_slots == [4, 6, 6, 6], {"tq": tq_slots, "xy": xy_slots})

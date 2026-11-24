@@ -32,9 +32,9 @@ func _near(a: float, b: float, eps := 1e-4) -> bool:
 
 
 func _find_actor_by_tier(s: XState, tier: String) -> XActor:
-	for aid in XTier.ids(tier):
+	for aid in XTianqiSkills.ids(tier):
 		var a: XActor = s.actor(int(aid))
-		if a != null and XTier.tier_of(a) == tier and not XImportedBalance.is_disabled_actor(int(aid)) and int(aid) != 70:
+		if a != null and XTianqiSkills.tier_of(a) == tier and not XImportedBalance.is_disabled_actor(int(aid)) and int(aid) != 70:
 			return a
 	return null
 
@@ -144,18 +144,19 @@ func _test_gongfa_views_and_stats() -> void:
 	c.refresh_passive()
 
 	# 易筋经妙法：最大生命 +10% / +15% / +20%（去 TP+150、去 RecPushState0980、去治疗+500%）
-	var base_mhp := float(c.mhp)
+	var base_mhp_direct := c.param_base_direct(0)
+	var base_mhp_base := c.param_base(0)
 	var base_tp := float(c.max_tp())
 	var yjm_ok := true
 	var yjm_detail := []
-	for pair in [[7171, 1.10], [7172, 1.15], [7173, 1.20]]:
+	for pair in [[7171, 0.10], [7172, 0.15], [7173, 0.20]]:
 		c.learn_skill(int(pair[0]))
 		c.param_mark_dirty()
 		c.refresh_passive()
-		var ratio := float(c.mhp) / base_mhp
-		if absf(ratio - float(pair[1])) > 0.02 or not _near(float(c.max_tp()), base_tp):
+		var delta := (c.param_base(0) - base_mhp_base) / maxf(1.0, base_mhp_direct)
+		if absf(delta - float(pair[1])) > 0.005 or not _near(float(c.max_tp()), base_tp):
 			yjm_ok = false
-			yjm_detail.append([pair[0], ratio, pair[1], c.max_tp(), base_tp])
+			yjm_detail.append([pair[0], delta, pair[1], c.max_tp(), base_tp])
 	_check("yijin_miaofa_mhp_10_15_20_no_tp", yjm_ok, yjm_detail)
 	c.skill_ids.erase(7173)
 	c.param_mark_dirty()
@@ -167,8 +168,9 @@ func _test_gongfa_views_and_stats() -> void:
 	c.learn_skill(11316)  # 九阳大成
 	c.param_mark_dirty()
 	c.refresh_passive()
-	_check("jiuyang_t3_elem8_hp10_no_atk", _near(XDamage.own_bonus(c, 2) - base_own2, 0.08) and absf(float(c.mhp) / base_mhp - 1.10) < 0.02 and _near(float(c.atk), base_atk),
-		[XDamage.own_bonus(c, 2) - base_own2, float(c.mhp) / base_mhp, c.atk, base_atk])
+	var jy_hp_delta := (c.param_base(0) - base_mhp_base) / maxf(1.0, base_mhp_direct)
+	_check("jiuyang_t3_elem8_hp10_no_atk", _near(XDamage.own_bonus(c, 2) - base_own2, 0.08) and absf(jy_hp_delta - 0.10) < 0.005 and _near(float(c.atk), base_atk),
+		[XDamage.own_bonus(c, 2) - base_own2, jy_hp_delta, c.atk, base_atk])
 	c.skill_ids.erase(11316)
 	c.param_mark_dirty()
 	c.refresh_passive()
