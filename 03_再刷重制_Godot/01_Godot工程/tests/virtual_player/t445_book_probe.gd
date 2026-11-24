@@ -104,7 +104,7 @@ func _lianyu_state(id: int) -> XState:
 	rng.seed = battle_seed + 31337
 	var qstream := XRandomStream.create(XRandomStream.hex64(battle_seed + 99991), "rule")
 	var preset := D271.new()
-	var gear := preset._equip_actor(s, a, "C", LIANYU, DAMAGE_ROLE, LIANYU_FLOOR, level, rng, qstream)
+	var gear := preset._equip_actor(s, a, "C", LIANYU, DAMAGE_ROLE, LIANYU_FLOOR, level, rng, qstream, true)
 	preset._equip_fabao_mount_artifact(s, a, "C", DAMAGE_ROLE, 0, false, rng)
 	_secrets(a)
 	preset._apply_growth(s, a, "C", DAMAGE_ROLE, false)
@@ -112,6 +112,11 @@ func _lianyu_state(id: int) -> XState:
 	if gear.is_empty() or not gear.all(func(it): return it.req_level >= 70 and it.req_level <= level and it.grade >= 5):
 		invalid = true
 		push_error("炼狱档常规装备不符合毕业要求：%d %s" % [id, gear])
+	for eq in a.equip_list():
+		var mark := XTianqiQiyinEffects.mark_of(eq)
+		if mark.get("kind") == "weapon" and XTianqiQiyinGear.weapon(str(mark.get("key", ""))).is_empty():
+			invalid = true
+			push_error("炼狱档七印武器未挂合法词条：%d %s" % [id, eq.get("name", "")])
 	a.set_meta("lianyu_gear", gear)
 	a.param_mark_dirty()
 	a.refresh_passive()
@@ -146,10 +151,12 @@ func _measure(id: int, tier: String) -> Dictionary:
 			push_error("炼狱档实战秘籍和已学秘籍不一致：%d %s / %s" % [id, active, learned])
 		row["build"] = _build_desc(actor)
 		var sid := int(row.skill)
+		row["skill_name"] = str(XDB.rec("Skills", sid).get("name", ""))
 		var mastery := XSkillMastery.level(actor, sid)
 		mastery_seen = maxi(mastery_seen, mastery)
 		row["lianyu"] = {"gear": actor.get_meta("lianyu_gear"), "race_rank": int(XRace.data(s, actor).rank),
-			"mastery": mastery, "mastery_cap": XSkillMastery.max_level(sid), "secret_limit": XTianqiSecrets.limit(actor)}
+			"mastery": mastery, "mastery_cap": XSkillMastery.max_level(sid), "skill_learned": actor.skill_ids.has(sid),
+			"secret_limit": XTianqiSecrets.limit(actor)}
 	row["lottery_count"] = lottery.size()
 	row["ledger_violations"] = XTianqiLedger.violations.size()
 	return row
