@@ -152,8 +152,8 @@ def active_row(sk, states):
     if effects:
         row['effects'] = effects
     if sid == 449:
-        row['effects_add'] = [{'code': 21, 'dataId': 742, 'value1': 0.15, 'value2': 0}]
-        row['desc'][0] += '，有 15% 概率使目标眩晕'
+        row['effects_add'] = [{'code': 21, 'dataId': 29, 'value1': 0.15, 'value2': 0}]
+        row['desc'][0] += '，有 15% 概率使目标眩晕 1 回合'
     return row
 
 

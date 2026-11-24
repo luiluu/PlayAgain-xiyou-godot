@@ -30,7 +30,8 @@ func _run() -> void:
 	var backstab := XTianqiGeneralBooks.spec(124)
 	_check("A3_single_burst", int(backstab.damage.coef) == 3 and int(backstab.cooldown) == 3)
 	var charge := XDB.rec("Skills", 449)
-	_check("A4_control", int(charge.tpCost) == 10 and charge.effects.any(func(e): return int(e.code) == 21 and int(e.dataId) != 0))
+	_check("A4_control", int(charge.tpCost) == 10 and charge.effects.any(func(e):
+		return int(e.code) == 21 and int(XDB.rec("States", int(e.dataId)).get("maxTurns", 0)) == 1))
 	for case in [[125, "B1", 2, 5], [148, "B2", 1, 8], [282, "B3", 3, 10], [642, "B4", 2, 15]]:
 		var sp := XTianqiGeneralBooks.spec(case[0])
 		var sk := XDB.rec("Skills", case[0])
