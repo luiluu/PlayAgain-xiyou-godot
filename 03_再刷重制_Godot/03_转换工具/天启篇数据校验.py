@@ -3510,6 +3510,167 @@ def check_secret_books(_args) -> bool:
     return _run_table('secret_books.json', secret_books_rules)
 
 
+def general_books_rules(t: dict, db_dir: Path = None) -> list:
+    """T444（T013-1d）通用书第一批重标表 general_books.json 校验。"""
+    bad = []
+
+    def check(name, ok, detail=''):
+        if not ok:
+            bad.append('%s：%s' % (name, detail))
+
+    isint = lambda v: isinstance(v, int) and not isinstance(v, bool)
+    check('version 正整数', isint(t.get('version')) and t['version'] >= 1, t.get('version'))
+    check('dev 非空', isinstance(t.get('dev'), str) and bool(t['dev'].strip()), t.get('dev'))
+    rules = t.get('rules')
+    check('rules 对象', isinstance(rules, dict), type(rules).__name__)
+    groups = t.get('groups')
+    check('groups 对象', isinstance(groups, dict), type(groups).__name__)
+    skills = t.get('skills')
+    check('skills 非空对象', isinstance(skills, dict) and bool(skills), type(skills).__name__)
+    states = t.get('states')
+    check('states 非空对象', isinstance(states, dict) and bool(states), type(states).__name__)
+    if bad:
+        return bad
+
+    check('rules.module', rules.get('module') == 'tianqi_general_book', rules.get('module'))
+    lcaps = rules.get('lottery_caps', {})
+    check('rules.lottery_caps 对象', isinstance(lcaps, dict) and bool(lcaps), lcaps)
+    for k, v in (lcaps.items() if isinstance(lcaps, dict) else []):
+        check('lottery_caps.%s 正整数' % k, isint(v) and v > 0, v)
+
+    # groups 与 skills 一一对应
+    g_ids = {}
+    for gname in ('sect_ding2', 'ev054_actives', 'lottery_passives'):
+        arr = groups.get(gname)
+        check('groups.%s 非空列表' % gname, isinstance(arr, list) and bool(arr), gname)
+        if isinstance(arr, list):
+            for x in arr:
+                check('groups.%s 技能号正整数' % gname, isint(x) and x > 0, x)
+                g_ids[str(x)] = gname
+    check('groups 覆盖全部 skills', set(g_ids) == set(skills), 'diff=%s' % sorted(set(g_ids) ^ set(skills))[:8])
+
+    # 教派包丁二＋EV054 4 主动必含技能
+    must_ding2 = {6185, 6204, 2826, 2827, 2828, 2829, 2830, 6236, 6237, 6239} | set(range(6186, 6204)) | set(range(6206, 6212)) | set(range(6217, 6235))
+    must_ev054 = {7163, 7164, 7165, 7188}
+    check('丁二必含技能齐', all(str(x) in skills for x in must_ding2), sorted(x for x in must_ding2 if str(x) not in skills))
+    check('EV054 4主动必含齐', all(str(x) in skills for x in must_ev054), sorted(x for x in must_ev054 if str(x) not in skills))
+
+    forbid_re = re.compile(r'<(passiveAPLUS|AgainUse\w+|DepassiveHarmRe\d+|passiveHarmRe\d+|passiveWPNM\d+|passivePBSTEX\d+|StartPushState(?:1245|1246|1247|1248|1645))\b', re.I)
+    flat_pbst_re = re.compile(r'<passivePBST\d:\s*[+-]?\d+(?:\.\d+)?\s*>')
+
+    for sid_s, sp in skills.items():
+        if not str(sid_s).isdigit() or not isinstance(sp, dict):
+            bad.append('skills[%s] 非法条目' % sid_s)
+            continue
+        check('skills[%s].group 一致' % sid_s, sp.get('group') == g_ids.get(sid_s), (sp.get('group'), g_ids.get(sid_s)))
+        d = sp.get('damage')
+        if isinstance(d, dict):
+            coef = float(d.get('coef', 0))
+            check('skills[%s].damage.coef 整数或整数百分比' % sid_s, coef > 0 and _int_or_pct(coef), coef)
+            for st_k, w in d.get('stats', {}).items():
+                wf = float(w)
+                check('skills[%s].damage.stats.%s 整数或整数百分比' % (sid_s, st_k), wf > 0 and _int_or_pct(wf), w)
+                check('skills[%s].damage.coef*%s 整数或整数百分比' % (sid_s, st_k), _int_or_pct(coef * wf), coef * wf)
+        h = sp.get('heal')
+        if isinstance(h, dict):
+            for hk in ('mhp_pct', 'mmp_pct'):
+                if hk in h:
+                    hv = float(h[hk])
+                    check('skills[%s].heal.%s 合法百分比' % (sid_s, hk), 0 < hv <= 1 and _int_or_pct(hv), hv)
+        na = str(sp.get('note_add', ''))
+        check('skills[%s].note_add 无违规标签' % sid_s, forbid_re.search(na) is None, na)
+        check('skills[%s].note_add 无固定 passivePBST' % sid_s, flat_pbst_re.search(na) is None, na)
+        if sp.get('group') == 'lottery_passives' and isinstance(lcaps, dict):
+            for m in re.finditer(r'<passiveHarmRi:\s*(-?\d+)>', na):
+                check('lottery[%s] 终伤不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('harm_pct', 5)), m.group(1))
+            for m in re.finditer(r'<passiveELUP\d+:\s*(-?\d+)%>', na):
+                check('lottery[%s] 元素伤不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('elem_pct', 6)), m.group(1))
+            for m in re.finditer(r'<passiveCrHarmRi:\s*(-?\d+)>', na):
+                check('lottery[%s] 爆伤不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('crit_dmg_pct', 12)), m.group(1))
+            for m in re.finditer(r'<passiveXPBST2:\s*(-?\d+)%>', na):
+                check('lottery[%s] 暴击率不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('crit_rate_pct', 8)), m.group(1))
+            for m in re.finditer(r'<passiveIRUP:\s*(-?\d+)>', na):
+                check('lottery[%s] 掉率不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('drop_pct', 10)), m.group(1))
+            for m in re.finditer(r'<passiveGRUP:\s*(-?\d+)>', na):
+                check('lottery[%s] 金钱不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('gold_pct', 10)), m.group(1))
+            for m in re.finditer(r'<ConsumeReduce\w+:\s*(\d+)%>', na):
+                check('lottery[%s] 减耗不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('consume_reduce_pct', 15)), m.group(1))
+            for m in re.finditer(r'<passiveEXTTP:\s*(\d+)>', na):
+                check('lottery[%s] TP上限不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('ext_tp', 30)), m.group(1))
+            for m in re.finditer(r'<SkillPass\d+:\s*(\d+)%>', na):
+                check('lottery[%s] 技能专伤不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('skill_pass_pct', 10)), m.group(1))
+            for m in re.finditer(r'<passivePBST\d:\s*(-?\d+)%>', na):
+                check('lottery[%s] 基础属性不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('param_pct', 6)), m.group(1))
+            for m in re.finditer(r'<CodexParamRate:\s*([^>]+)>', na):
+                for part in m.group(1).split(','):
+                    kv = part.split(':')
+                    if len(kv) == 2:
+                        check('lottery[%s] CodexParamRate不超限' % sid_s, int(kv[1].strip()) <= int(lcaps.get('param_pct', 6)), kv)
+
+    for stid_s, sp in states.items():
+        if not str(stid_s).isdigit() or not isinstance(sp, dict):
+            bad.append('states[%s] 非法条目' % stid_s)
+            continue
+        for tr in sp.get('traits', []):
+            check('states[%s] 无再动特性 61' % stid_s, isinstance(tr, dict) and int(tr.get('code', -1)) != 61, tr)
+        na = str(sp.get('note_add', ''))
+        check('states[%s] 无固定减伤/固定属性标签' % stid_s, 'passiveHarmRe' not in na and 'G_ShuXing' not in na, na)
+
+    # 与 skill_rework.json 零技能号重叠
+    sr_path = DATA_DIR / 'skill_rework.json'
+    if sr_path.exists():
+        sr = json.loads(sr_path.read_text(encoding='utf-8'))
+        sr_sk = {k for k in sr.get('skills', {}) if str(k).isdigit()}
+        ov = sorted(sr_sk & set(skills), key=int)
+        check('与 skill_rework.json 零重叠', not ov, ov[:8])
+
+    # 本地数据库在时做全量覆盖率＋改后零残留实查
+    db = db_dir or (PROJECT / 'modes' / 'xiyou' / 'generated' / 'db')
+    sk_path, it_path, st_path = db / 'Skills.json', db / 'Items.json', db / 'States.json'
+    if sk_path.exists() and it_path.exists() and st_path.exists():
+        sk_db = json.loads(sk_path.read_text(encoding='utf-8'))
+        it_db = json.loads(it_path.read_text(encoding='utf-8'))
+        st_db = json.loads(st_path.read_text(encoding='utf-8'))
+        taught5 = sorted({
+            int(e['dataId'])
+            for it in it_db if isinstance(it, dict)
+            for e in it.get('effects', [])
+            if int(e.get('code', 0)) == 43 and int(e.get('dataId', 0)) < len(sk_db) and isinstance(sk_db[int(e['dataId'])], dict) and int(sk_db[int(e['dataId'])].get('stypeId', 0)) == 5
+        })
+        miss5 = [sid for sid in taught5 if str(sid) not in skills]
+        check('147 抽奖被动书全覆盖', len(taught5) == 147 and not miss5, 'count=%d miss=%s' % (len(taught5), miss5[:8]))
+        gongfa_ov = [int(k) for k in skills if int(k) < len(sk_db) and isinstance(sk_db[int(k)], dict) and int(sk_db[int(k)].get('stypeId', 0)) == 6]
+        check('与 T443 stype=6 功法零重叠', not gongfa_ov, gongfa_ov)
+        for sid_s, sp in skills.items():
+            sid = int(sid_s)
+            if sid >= len(sk_db) or not isinstance(sk_db[sid], dict):
+                bad.append('Skills[%d] 不存在' % sid)
+                continue
+            note = str(sk_db[sid].get('note', '')).replace('\u200b', '')
+            for tag in sp.get('note_remove', []):
+                note = re.sub(r'<\s*(?:%s)\s*(?::[^>]*)?>' % str(tag), '', note)
+            note += str(sp.get('note_add', ''))
+            check('Skills[%d] 改后无违规标签' % sid, forbid_re.search(note) is None, sid)
+            check('Skills[%d] 改后无固定 passivePBST' % sid, flat_pbst_re.search(note) is None, sid)
+        for stid_s, sp in states.items():
+            stid = int(stid_s)
+            if stid >= len(st_db) or not isinstance(st_db[stid], dict):
+                bad.append('States[%d] 不存在' % stid)
+                continue
+            note = str(st_db[stid].get('note', ''))
+            for tag in sp.get('note_remove', []):
+                note = re.sub(r'<\s*(?:%s)\s*(?::[^>]*)?>' % str(tag), '', note)
+            for pair in sp.get('note_sub', []):
+                note = re.sub(str(pair[0]), str(pair[1]), note, flags=re.S)
+            note += str(sp.get('note_add', ''))
+            check('States[%d] 改后无 G_ShuXing/passiveHarmRe' % stid, 'G_ShuXing' not in note and 'G_shuxing' not in note and 'passiveHarmRe' not in note, stid)
+    return bad
+
+
+def check_general_books(_args) -> bool:
+    return _run_table('general_books.json', general_books_rules)
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -3555,6 +3716,7 @@ CHECKS = [
     ('trumpet', check_trumpet),
     ('weak_affix_table', check_weak_affix_table),
     ('secret_books', check_secret_books),
+    ('general_books', check_general_books),
 ]
 
 

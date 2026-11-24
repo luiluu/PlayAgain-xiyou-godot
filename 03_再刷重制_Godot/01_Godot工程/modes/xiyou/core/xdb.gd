@@ -207,10 +207,14 @@ static func rec(name: String, id: int) -> Dictionary:
 		out = XTianqiBase.realm_rec(id, out)  # 天启篇期四：原版通用境界被动数值全拦（REALM_OFF）
 	if name == "Skills" and XTianqiSkills.has(id):
 		out = XTianqiSkills.rec(id, out)  # 天启篇全角色技能重构：天启篇存档换成改写后的记录
+	if name == "Skills" and XTianqiGeneralBooks.has(id):
+		out = XTianqiGeneralBooks.rec(id, out)  # 天启篇通用书第一批（T444）：教派丁二、EV054 主动书、147 抽奖被动
 	if name == "Skills" and XGuardianRework.GROWTH_SKILLS.has(id):
 		out = XGuardianRework.growth_rec(id, out)  # 守层者成长招削弱＋改名（T302，天启篇存档）
 	if name == "States" and XTianqiSkills.has_state(id):
 		out = XTianqiSkills.rec_state(id, out)
+	if name == "States" and XTianqiGeneralBooks.has_state(id):
+		out = XTianqiGeneralBooks.rec_state(id, out)  # 天启篇通用书第一批配套状态（止戈、重岩壁垒、黯灭幻影、抽奖状态等）
 	if XXufeng.xiyou_save_on() and XXufeng.touches(name, id):
 		out = XXufeng.rec(name, id, out)  # 西游档徐凤年重做副本（仅西游档分派，不动共享原表、不串天启篇，T440）
 	if XTianqiElements.touches(name, id):

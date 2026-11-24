@@ -45,6 +45,8 @@ static func _run_item(item: Dictionary, a: XBattler, b: XBattler, variables, swi
 		if execute:
 			XTianqiSkills.after_formula(a, b, item)  # 护盾（shield）只在正式结算时加，预估、AI 估值不加
 		return {"available": true, "value": tq, "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
+	if status == "module" and not XTianqiGeneralBooks.MODULE.is_empty() and program.get("module") == XTianqiGeneralBooks.MODULE:  # 天启篇通用书第一批（XTianqiGeneralBooks.formula）
+		return {"available": true, "value": XTianqiGeneralBooks.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "gojo":  # 天启篇五条悟虚式「茈」（XGojo.formula，按对数取系数）
 		return {"available": true, "value": XGojo.formula(a, b, item), "diagnostic": "", "effectJournal": [], "results": {}, "executed": execute}
 	if status == "module" and program.get("module") == "cat":  # 整条公式是 CodexCat.formula(user,item,b)（转换器 MODULE_FORMULAS）

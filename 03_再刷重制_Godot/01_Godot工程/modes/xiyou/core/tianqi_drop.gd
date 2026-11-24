@@ -124,7 +124,9 @@ static func rework_value(skill_id: int) -> float:
 	if not is_nan(gf):
 		return gf
 	var e = XTianqiSkills.data().get("skills", {}).get(str(skill_id))
-	if not e is Dictionary:
+	if not e is Dictionary and XTianqiGeneralBooks.on():
+		e = XTianqiGeneralBooks.spec(skill_id)
+	if not e is Dictionary or (e as Dictionary).is_empty():
 		return NAN
 	var m := RegEx.create_from_string("passiveIRUP:\\s*(-?[\\d.]+)").search(str(e.get("note_add", "")))
 	return float(m.get_string(1)) if m else NAN
