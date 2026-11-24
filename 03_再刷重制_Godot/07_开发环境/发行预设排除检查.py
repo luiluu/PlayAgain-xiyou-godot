@@ -12,6 +12,7 @@
   - 空壳：发行空壳.py targets() 要换成空壳的脚本（换了壳照样要进包，西游代码按类名调它们）
   - KEEP：发行空壳.KEEP 里带真脚本进包的类
   - class_name：其余所有带 class_name 的 .gd（全局类表里有它，包里缺了就 Failed to load script）
+  - 脚本：其余所有 .gd（跟 T457 测试导出过滤.py 的「非测试脚本不许踢」同一口径；场景 .tscn 只认被引用的）
   - 被引用：project.godot 的主场景与自动加载，以及进包的 .gd／.tscn 里写死的 res://….gd／.tscn／.scn（preload、load、ext_resource）
 只认脚本和场景；png、json 之类资源被排除不报（天启篇美术、数据本来就该排除）。
 匹配照 Godot 导出（EditorExportPlatform::_edit_files_with_filter）：规则按逗号分开、去空白，跟 `res://<路径>` 或 `<路径>` 比，
@@ -109,16 +110,17 @@ def must_ship(root: Path, stub=None) -> dict:
         if p.suffix != '.gd':
             continue
         m = CLASS_RE.search(p.read_text(encoding='utf-8', errors='replace'))
-        if m and rel not in need:
-            need[rel] = (f'KEEP {m.group(1)}' if m.group(1) in stub.KEEP else f'class_name {m.group(1)}')
+        if rel not in need:
+            need[rel] = (f'KEEP {m.group(1)}' if m and m.group(1) in stub.KEEP else f'class_name {m.group(1)}' if m else '脚本')
     pg = root / 'project.godot'
     if pg.is_file():
         for ref in REF_RE.findall(pg.read_text(encoding='utf-8', errors='replace')):
-            need.setdefault(ref, 'project.godot（主场景／自动加载）')
+            if need.get(ref, '脚本') == '脚本':
+                need[ref] = 'project.godot（主场景／自动加载）'
     for rel, p in shipped_src:
         for ref in REF_RE.findall(p.read_text(encoding='utf-8', errors='replace')):
-            if not _skipped(ref) and (root / ref).is_file():
-                need.setdefault(ref, f'被引用：{rel}')
+            if not _skipped(ref) and (root / ref).is_file() and need.get(ref, '脚本') == '脚本':
+                need[ref] = f'被引用：{rel}'
     return need
 
 

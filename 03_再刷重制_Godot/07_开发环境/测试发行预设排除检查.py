@@ -46,7 +46,8 @@ class Tree:
         self.put('modes/xiyou/ui/tianqi/01_badge.png', 'png')
         self.put('modes/xiyou/ui/tianqi_title.gd', 'class_name XTianqiTitle\nextends Control\n')
         self.put('modes/xiyou/core/plain.gd', 'class_name XPlain\nextends RefCounted\n')
-        self.put('modes/xiyou/core/loose.gd', 'extends RefCounted\n')  # 没 class_name、没人引用：不要求进包
+        self.put('modes/xiyou/core/loose.gd', 'extends RefCounted\n')  # 没 class_name、没人引用：照样要进包（T457 同口径）
+        self.put('content/tianqi/fx.tscn', '[gd_scene format=3]\n')     # 没人引用的场景：不要求进包
         self.put('tests/xiyou_foo.gd', 'class_name XFooTest\nextends Node\nconst T := preload("res://modes/xiyou/core/loose.gd")\n')
         self.stub = FakeStub({'XTianqiHallIntro': 'modes/xiyou/ui/tianqi/tianqi_hall_intro.gd'})
 
@@ -109,12 +110,17 @@ class CheckTests(unittest.TestCase):
         self.assertEqual(probs, [])
         self.assertGreaterEqual(n, 6)
 
-    def test_png_and_loose_and_tests_not_reported(self):
-        probs, _ = self.t.check('*.png, modes/xiyou/core/loose.gd')
-        self.assertEqual(probs, [])  # 徽章 png 被排除是对的；loose.gd 只被 tests/ 引用
+    def test_png_and_unreferenced_scene_and_tests_not_reported(self):
+        probs, _ = self.t.check('*.png, content/tianqi/*, tests/*')
+        self.assertEqual(probs, [])  # 徽章 png、没人引用的天启篇场景被排除是对的；tests/ 本来就不进包
         need = M.must_ship(self.t.root, self.t.stub)
         self.assertNotIn('tests/xiyou_foo.gd', need)
         self.assertNotIn('modes/xiyou/ui/tianqi/01_badge.png', need)
+        self.assertEqual(need['modes/xiyou/core/loose.gd'], '脚本')
+
+    def test_plain_script_hit(self):
+        probs, _ = self.t.check('modes/xiyou/core/loose.gd')
+        self.assertEqual(sorted({p.split('｜')[0] for p in probs}), ['modes/xiyou/core/loose.gd'])
 
     def test_missing_release_preset(self):
         with self.assertRaises(ValueError):
@@ -148,6 +154,88 @@ class RealProjectTests(unittest.TestCase):
                     M._stub_mod = orig
             finally:
                 t.tmp.cleanup()
+
+
+_spec2 = importlib.util.spec_from_file_location('发行出包', HERE / '发行出包.py')
+P = importlib.util.module_from_spec(_spec2)
+_spec2.loader.exec_module(P)
+MAP = P.RUN_MAP
+TITLE = 'res://modes/xiyou/entry.tscn'
+
+
+def run_out(scenes, done=MAP, extra=''):
+    return extra + ''.join(f'SMOKE_KEY=accept scene={x}\n' for x in scenes) + (f'SMOKE_DONE scene={done}\n' if done else '')
+
+
+class ReleaseGateTests(unittest.TestCase):
+    """发行出包.py 的 T458 门禁：实跑判定、--skip-run 要理由、排除检查拦在导出前。"""
+
+    def test_judge_ok(self):
+        ok, note = P.judge_run('新开局', 0, run_out([MAP, MAP]))
+        self.assertTrue(ok, note)
+
+    def test_judge_script_error_fails_even_with_rc0_and_map(self):
+        for line in ('SCRIPT ERROR: Parse Error: Identifier "XTianqiHallIntro" not declared\n',
+                     'ERROR: Failed to load script "res://a.gd" with error "File not found".\n',
+                     'Parse Error: x\n'):
+            ok, note = P.judge_run('新开局', 0, run_out([MAP], extra=line))
+            self.assertFalse(ok, line)
+            self.assertIn('脚本错误', note)
+
+    def test_judge_not_map_or_no_done_or_rc(self):
+        self.assertFalse(P.judge_run('x', 0, run_out([TITLE], done=TITLE))[0])
+        self.assertFalse(P.judge_run('x', 0, run_out([TITLE], done=None))[0])
+        self.assertFalse(P.judge_run('x', 139, run_out([MAP]))[0])
+
+    def test_judge_load_must_not_start_new_game(self):
+        ok, note = P.judge_run('读旧档', 0, run_out([MAP, MAP]), first_not_map=True)
+        self.assertFalse(ok)
+        self.assertIn('没读档', note)
+        self.assertTrue(P.judge_run('读旧档', 0, run_out([TITLE, TITLE, MAP]), first_not_map=True)[0])
+
+    def test_release_user_dir_from_project(self):
+        self.assertEqual(P.release_user_dir(), 'KYO/再刷重制')
+
+    def test_skip_run_needs_reason(self):
+        self.assertEqual(P.main(['--skip-run', '  ']), 1)
+
+    def test_old_save_script_writes_plain_json(self):
+        self.assertIn('XSaveSeal.ENABLED = false', P.OLD_SAVE_GD)
+        self.assertIn('XSave.save(1)', P.OLD_SAVE_GD)
+
+    def test_preset_problem_blocks_export(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            t = Tree()
+            try:
+                (t.root / 'export_presets.cfg').write_text(presets('modes/xiyou/ui/tianqi/*'), encoding='utf-8')
+                (t.root / 'modes/xiyou/ui/tianqi/tianqi_hall_intro.gd').write_text('class_name XHall\nextends Node\n', encoding='utf-8')
+                saved = (P.stub_tree, P._export_all, P.prepare_encryption, P.inject_save_key, P.stub_smoke)
+                called = []
+                P.stub_tree = lambda out: t.root
+                P._export_all = lambda *a: called.append(1) or []
+                P.prepare_encryption = lambda src: ({}, '')
+                P.inject_save_key = lambda src: ''
+                P.stub_smoke = lambda tree, logs: []
+                try:
+                    probs = P.export_all(Path(tmp) / 'out', Path(tmp))
+                finally:
+                    P.stub_tree, P._export_all, P.prepare_encryption, P.inject_save_key, P.stub_smoke = saved
+                self.assertEqual(called, [])
+                self.assertEqual(len(probs), 1)
+                self.assertIn('tianqi_hall_intro.gd', probs[0])
+            finally:
+                t.tmp.cleanup()
+
+    def test_real_run_not_mac(self):
+        orig = P.sys.platform
+        P.sys.platform = 'linux'
+        try:
+            rows = P.real_run(Path('/nonexistent'), Path('/nonexistent'))
+        finally:
+            P.sys.platform = orig
+        self.assertEqual(len(rows), 1)
+        self.assertFalse(rows[0][1])
+        self.assertIn('--skip-run', rows[0][2])
 
 
 if __name__ == '__main__':
