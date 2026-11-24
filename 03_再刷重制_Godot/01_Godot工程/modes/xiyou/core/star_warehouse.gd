@@ -130,9 +130,14 @@ static func deposit_gear(s: XState, rec: Dictionary) -> String:
 	var token := str(rec.get("whToken", ""))
 	var undo := _take_pending(token)   # 取出还没存档又存回来：取消那笔取出
 	rec.erase("whToken")
+	var pre_sync = rec.duplicate(true) if XXufeng.is_tracked_gear(rec) else null
+	XXufeng.sync_gear_for_state(s, rec)  # 西游档徐凤年重做（T440）：存入星级仓库前按当前开关与存档模式同步 76/129/143
 	_gear.append(rec)
 	if not _changed():
 		_gear.pop_back()
+		if pre_sync != null:
+			rec.clear()
+			rec.merge(pre_sync, true)
 		_restore_pending(undo, rec, token)
 		if config != null:
 			XAlienation.mark(rec).config = config
@@ -161,6 +166,7 @@ static func withdraw_gear(s: XState, rec: Dictionary) -> bool:
 	s.register_gear(rec)
 	if XAlienHide.active():
 		XAlienHide.restore(rec)  # 异化隐藏生效：取出的异化装备还原成普通装备（同读档迁移）
+	XXufeng.sync_gear_for_state(s, rec)  # 西游档徐凤年重做（T440）：从星级仓库取出时按本档模式与 REWORK 开关同步 76/129/143，取出即穿正确数值
 	if o_alien_reset and not XAlienation.mark(rec).is_empty():
 		var led := XAlienation.ledger(s)
 		led.sequence = int(led.sequence) + 1

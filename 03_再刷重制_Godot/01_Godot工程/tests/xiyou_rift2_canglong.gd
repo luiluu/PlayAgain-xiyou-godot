@@ -140,11 +140,13 @@ func _canglong_data() -> void:
 	XCanglong.FIX_10091_DESC = false
 	XCanglong.clear_cache()
 	XVegetaTune.original_data()  # 参照是原版：贝吉特优化调整也改 Skills，一并关掉，新行为由 xiyou_vegeta_tune 核
+	XXufeng.original_data()  # 参照是原版：西游档徐凤年重做也改 Skills／Armors（T440），一并关掉，新行为由 xiyou_xufeng_rework 核
 	for t in ["Skills", "Classes", "Armors"]:
 		check("off.%s" % t, JSON.stringify(XDB.table(t)) == JSON.stringify(_source(t)))
 	check("off.awaken_text", not str(XDB.rec("Skills", 10091).note).contains("雷霆天罚*诛灭+250%"))
 	XVegetaTune.ENABLED = true
-	XDB._tables.erase("Skills")
+	XXufeng.REWORK = true
+	XXufeng.clear_cache()
 	XCanglong.REWORK = true
 	XCanglong.FIX_10091_DESC = true
 	XCanglong.clear_cache()

@@ -248,23 +248,36 @@ static func _revert_one(item: Dictionary) -> int:
 	var b := template("weapon", int(item.get("base", 0)))
 	if b.is_empty() or exclusive_affix(b):
 		return 0
-	var t := affix_template(item, b)
+	var b_plain := b
+	var t := affix_template(item, b_plain)
 	if t.is_empty() or _req_actors_re.search(str(t.note)) == null:
 		return 0
 	var kept_affixes: Array = []
 	if REVERT_KEEP_OTHER_AFFIXES:
 		kept_affixes = (item.get("affixIds", []) as Array).filter(func(x): return not exclusive_affix(XDB.rec(str(x.get("table", "Weapons")), int(x.get("id", 0)))))
 		if not kept_affixes.is_empty():
-			b = affix_template({"kind": "weapon", "base": item.get("base", 0), "affixIds": kept_affixes}, b)
+			b = affix_template({"kind": "weapon", "base": item.get("base", 0), "affixIds": kept_affixes}, b_plain)
 			if b.is_empty():
 				return 0
 	var own_note := str(item.get("note", ""))
 	var own_desc := str(item.get("description", ""))
 	var own_traits: Array = item.get("traits", [])
 	var t_traits: Array = t.traits
-	if not own_note.begins_with(str(t.note)) or not own_desc.begins_with(str(t.description)) or own_traits.size() < t_traits.size() \
-			or range(t_traits.size()).any(func(k): return JSON.stringify(own_traits[k]) != JSON.stringify(t_traits[k])):
-		return -1
+	var _matches := func(cand: Dictionary) -> bool:
+		if cand.is_empty():
+			return false
+		var ct: Array = cand.traits
+		return own_note.begins_with(str(cand.note)) and own_desc.begins_with(str(cand.description)) \
+			and own_traits.size() >= ct.size() \
+			and not range(ct.size()).any(func(k): return JSON.stringify(own_traits[k]) != JSON.stringify(ct[k]))
+	if not _matches.call(t):
+		# 历史旧档（v0.37 前）的专武词缀按原版共享表拼出；若当前档对专武启用了 XDB.rec 副本（如 T440 绣冬），回退用原表重拼以照常迁移
+		var t_raw := _affix_template_raw(item, b_plain)
+		if _matches.call(t_raw) and _req_actors_re.search(str(t_raw.note)) != null:
+			t = t_raw
+			t_traits = t.traits
+		else:
+			return -1
 	var backup := {}
 	for k in AFFIX_REVERT_FIELDS:
 		if item.has(k):
@@ -343,6 +356,25 @@ static func affix_template(item: Dictionary, b := {}) -> Dictionary:
 		if rec.is_empty():
 			return {}
 		combine(t, rec, str(affix.get("kind", "prefix")))
+	_apply_note_params(t)
+	return t
+
+
+## 同 affix_template，但词缀直接取共享原表（XDB.table）原件，供历史旧档专武词缀还原（_revert_one）匹配原版词缀文本与特性
+static func _affix_template_raw(item: Dictionary, b: Dictionary) -> Dictionary:
+	if b.is_empty():
+		return {}
+	var affixes: Array = item.get("affixIds", [])
+	if affixes.is_empty():
+		return b
+	var t := b.duplicate(true)
+	for affix in affixes:
+		var tbl := str(affix.get("table", "Weapons"))
+		var aid := int(affix.get("id", 0))
+		var arr = XDB.table(tbl)
+		if not (arr is Array) or aid <= 0 or aid >= arr.size() or not (arr[aid] is Dictionary):
+			return {}
+		combine(t, arr[aid], str(affix.get("kind", "prefix")))
 	_apply_note_params(t)
 	return t
 

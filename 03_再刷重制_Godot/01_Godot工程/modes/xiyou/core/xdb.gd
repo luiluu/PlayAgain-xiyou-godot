@@ -165,6 +165,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		return XTianqiSkills.new_rec(id, t)  # 天启篇技能重构补的招（表外号段，按底号复制）
 	if name == "States" and id >= t.size() and XTianqiSkills.has_new_state(id):
 		return XTianqiSkills.new_state_rec(id, t)  # 天启篇技能重构新加的状态（表外号段 10801 起）
+	if name == "States" and id == XXufeng.ST_TIANXIA and XXufeng.xiyou_save_on():
+		return XXufeng.tianxia_state_rec(t)  # 西游档徐凤年 9997 专属神秘成圣副本（表外号段 19501，仅西游档可读，T440）
 	if id >= t.size() and XTianqiElements.has_new(name, id):
 		return XTianqiElements.new_rec(name, id, t)  # 天启篇元素重做：新转换书道具/技能/公共事件
 	if id >= t.size() and (name == "Enemies" or name == "Troops" or name == "Skills") and XFestRoad.has(name, id):
@@ -207,6 +209,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		out = XGuardianRework.growth_rec(id, out)  # 守层者成长招削弱＋改名（T302，天启篇存档）
 	if name == "States" and XTianqiSkills.has_state(id):
 		out = XTianqiSkills.rec_state(id, out)
+	if XXufeng.xiyou_save_on() and XXufeng.touches(name, id):
+		out = XXufeng.rec(name, id, out)  # 西游档徐凤年重做副本（仅西游档分派，不动共享原表、不串天启篇，T440）
 	if XTianqiElements.touches(name, id):
 		out = XTianqiElements.rec(name, id, out)  # 天启篇元素重做：技能转属、被动转属、自然书改名
 	return out
