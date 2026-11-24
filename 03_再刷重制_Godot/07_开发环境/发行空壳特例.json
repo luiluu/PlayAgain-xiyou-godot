@@ -16,7 +16,7 @@
     "XTianqiGrowth.floor_ok": "T257：raven.gd／nanoha.gd／liuying.gd 只在 XTianqiGrowth.on() 为真时调；空壳 on() 恒 false（发行里天启篇关着），走不到",
     "XTianqiQiyinEffects.skill_usable": "T360：XSkinBattle.qiyin_reason 只在技能已判不能用、要写原因时调；空壳 true＝不是万籁俱寂挡的，往下判，西游档本来就没有七印"
   },
-  "XRiftAlien.gear_energy": "-1",
+  "XTianqi.cleared_floors": "maxi(0, int(s.variable(20)) - 1)",
   "XTianqi.fighter_slots": "XState.MAX_BATTLE_MEMBERS",
   "XTianqi.super_cap": "-1",
   "XTianqi.helper_super_ok": "true",

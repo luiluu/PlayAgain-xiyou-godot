@@ -193,8 +193,9 @@ class T(unittest.TestCase):
         self.assertIn('XGuardianRework', tg)
         self.assertNotIn('XTianqiTitle', tg)
         self.assertEqual(K.suspects(), [])
-        hand = (K.HAND / 'XRiftAlien.gd').read_text(encoding='utf-8')
-        self.assertIn(K.STUB_TAG_LINE, hand)
+        # T455：漩涡怪物异化对玩家打开，真脚本进包（KEEP），不再有手写空壳
+        self.assertNotIn('XRiftAlien', tg)
+        self.assertFalse((K.HAND / 'XRiftAlien.gd').exists())
 
     def test_map_element_id_stub_passes_element_through(self):
         # T310：真脚本首句 `if deck_on(s) and e == 1: return 0`，规则 2 照抄成恒 return 0，发行包招式属性号全被抹成 0。

@@ -38,7 +38,7 @@ for sec in [s for s in cfg.sections() if s.startswith('preset.') and s.count('.'
         problems.append(f'{name}: 导出验收场景 tests/xiyou_mac_export.tscn 被排除')
 # 名单自己也测一下：天启篇数据要拦、西游游戏数据不能误拦
 problems += [f'发行内容审计：{p} 没被 DENY 拦下' for p in UNRELEASED if not 审计.denied(p)]
-problems += [f'发行内容审计：游戏文件 {p} 被 DENY 误拦' for p in GAME + ['modes/xiyou/alienation.json', 'modes/xiyou/core/rift_alien.gdc', 'content/intro/tianqi_intro_v8.ogv'] if 审计.denied(p)]
+problems += [f'发行内容审计：游戏文件 {p} 被 DENY 误拦' for p in GAME + ['modes/xiyou/alienation.json', 'modes/xiyou/rift_alien.json', 'modes/xiyou/core/rift_alien.gdc', 'content/intro/tianqi_intro_v8.ogv'] if 审计.denied(p)]
 # 读包名单：造一个最小的 pck（格式 3，目录在尾部）和一个内嵌在 exe 末尾的同一份，审计要能读出并拦下
 import struct, tempfile
 def _fake_pck(paths):
@@ -48,12 +48,12 @@ def _fake_pck(paths):
     diroff = len(head) + 8 + 64
     return head + struct.pack('<Q', diroff) + b'\0' * 64 + struct.pack('<I', len(paths)) + entries
 with tempfile.TemporaryDirectory() as td:
-    raw = _fake_pck(['res://modes/xiyou/rift_alien.json', 'res://content/modes.json'])
+    raw = _fake_pck(['res://modes/xiyou/tianqi_data/skill_rework.json', 'res://content/modes.json'])
     (Path(td) / 'a.pck').write_bytes(raw)
     (Path(td) / 'a.exe').write_bytes(b'MZ' + b'\0' * 30 + raw + struct.pack('<Q', len(raw)) + b'GDPC')
     for f in ('a.pck', 'a.exe'):
         got = 审计.audit(Path(td) / f)
-        if got != ['modes/xiyou/rift_alien.json']:
+        if got != ['modes/xiyou/tianqi_data/skill_rework.json']:
             problems.append(f'发行内容审计读 {f} 不对：{got}')
 # 天启篇脚本在包里必须是空壳（11-14 release-stub-gojo，XGojo 曾漏）：造带内容的 pck，真脚本要报、带标记的空壳（压缩／不压缩／文本）放过
 def _fake_pck_files(files):
