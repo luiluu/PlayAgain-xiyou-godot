@@ -314,6 +314,8 @@ def make_old_save(dest: Path, logs: Path) -> str:
     import tempfile
     dest.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='xiyou_old_save_') as tmp:
+        home = Path(tmp) / 'home'  # 临时 HOME（T458 核 P3-2）：自动加载读写的 user:// 不落到真实开发数据目录
+        home.mkdir()
         gd = Path(tmp) / 'old_save.gd'
         gd.write_text(OLD_SAVE_GD, encoding='utf-8')
         scene = Path(tmp) / 'run.tscn'
@@ -321,7 +323,7 @@ def make_old_save(dest: Path, logs: Path) -> str:
                          f'[ext_resource type="Script" path="{gd}" id="1"]\n\n'
                          '[node name="Run" type="Node"]\nscript = ExtResource("1")\n', encoding='utf-8')
         rc = run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(PROJECT), '-s', 'res://tests/test_main_loop.gd',
-                  str(scene), '--', f'--dir={dest}'], logs / '实跑_造旧档.log', timeout=300)
+                  str(scene), '--', f'--dir={dest}'], logs / '实跑_造旧档.log', env=dict(os.environ, HOME=str(home)), timeout=300)
     if rc or not (dest / 'save_1.json').is_file():
         return f'造旧档失败（退出码 {rc}，看 日志/实跑_造旧档.log）'
     return ''
@@ -344,6 +346,8 @@ def judge_run(name: str, rc: int, out: str, first_not_map: bool = False) -> tupl
     """一次实跑的结论：(通过, 说明)。first_not_map：第一下确认后还不能在地图（读档那次）。"""
     fatal = [l.strip() for l in out.splitlines() if RUN_FATAL.search(l)]
     steps = [l.split('scene=', 1)[1].strip() for l in out.splitlines() if l.startswith('SMOKE_KEY=')]
+    # 真按键那几步（XKeySmoke 对 wait:N 也打 SMOKE_KEY=wait:N，不算；T458 核 P1-1：读档序列开头 wait:200 曾让下面的防线恒不触发）
+    keys = [l.split('scene=', 1)[1].strip() for l in out.splitlines() if l.startswith('SMOKE_KEY=') and not l.startswith('SMOKE_KEY=wait:')]
     done = [l.split('scene=', 1)[1].strip() for l in out.splitlines() if l.startswith('SMOKE_DONE scene=')]
     why = []
     if fatal:
@@ -354,7 +358,9 @@ def judge_run(name: str, rc: int, out: str, first_not_map: bool = False) -> tupl
         why.append(f'没有 SMOKE_DONE（按完 {len(steps)} 步）')
     elif done[-1] != RUN_MAP:
         why.append(f'最后在 {done[-1]}，没进地图')
-    if first_not_map and steps and steps[0] == RUN_MAP:
+    if first_not_map and not keys:
+        why.append('一下键都没按到，判不了读档')
+    elif first_not_map and keys[0] == RUN_MAP:
         why.append('第一下确认就进了地图：开的是新局，没读档')
     return (not why), ('；'.join(why) if why else f'进地图，按完 {len(steps)} 步，没有脚本错误')
 

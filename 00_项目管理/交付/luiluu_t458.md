@@ -30,9 +30,18 @@
 5. ✓ 工具回归登记新增「发行预设排除检查」；`python3 工具回归.py` 全部通过（135 秒），`测试工具回归.py` 6/6；交付自检见下。
 6. ✓（协调追加，T457 核 P3-1）实跑报错判定加 Failed loading resource、Cannot open file；好包两次实跑日志里这两类 0 行，没误报。
 
+## 返修（小A Neon 核查退回，报告在私密仓 协作交接/核查报告/luiluu_t458.md）
+
+- P1-1 ✓ `03_再刷重制_Godot/07_开发环境/发行出包.py` judge_run：「读档变新开局」防线只看真按键步，跳过 `SMOKE_KEY=wait:` 行（XKeySmoke 对 wait 也打 SMOKE_KEY，读档序列开头 wait:200 让 steps[0] 恒是标题，防线永不触发＝假绿）；一下真键都没按到也判红。单测按 RUN_LOAD_KEYS 的真实输出造样例：开头 `SMOKE_KEY=wait:200 scene=…entry.tscn`、第一下确认就进地图 → 判红；第一下停在读档页 → 判过；只有 wait 行 → 判红。在内存里用修前的 judge_run 跑同一条坏样例得 `(True, …)`，确认旧代码是假绿。用仓里两份真实实跑日志复判：封存包读旧档、新开局仍判过，dev.887 坏包仍判红。
+- P2-1 ✓ `03_再刷重制_Godot/07_开发环境/发行预设排除检查.py` extract_rev 的 `git ls-tree` 加 `-c core.quotepath=false`。修前在 `core.quotepath=true` 环境下 `--rev ad238e50e` 报「里没有 export_presets.cfg」，修后照常报出 tianqi_hall_intro.gd；单测 dev.887 那条改在 quotepath=true 环境里跑。
+- P3-1 ✓ must_ship 的引用只从已确定要进包的文件（空壳、KEEP、全部非 tests 脚本、project.godot 引用）往外扩（队列），被排除目录里没人用的场景互相引用不再误报；被进包脚本引用到的场景及其下游照报。补单测。本工作树结果不变（481 个，0 命中）。
+- P3-2 ① ✓ make_old_save 起 Godot 时用临时 HOME，自动加载的 user:// 不落到真实开发数据目录；实测照样 7 秒造出 save_1.json、0 行脚本错误。
+- P3-2 ② 没改（排除检查挪到空壳树开战冒烟之前）：`测试发行出包.py` 里三个现有用例（开战冒烟失败拦导出、加密问题拦导出、密钥格式不对）的假工程没有 export_presets.cfg，挪到前面它们会先撞排除检查而变红；那个测试文件不在本单名单。现在排在开战冒烟后、真导出前，仍是导出前拦，只是晚 40 秒。要挪的话连那三个用例的假工程一起补预设，可另派。
+- 核查意见「检查.sh 那一行放行」照办；「挪过 class_name 文件后类缓存过期」改按核查建议记进可优化：只在检出缓存过期时对克隆空壳树 `--import`，不在出包开头无条件对工程 `--import`（本单没做）。
+
 ## 测试
 
-- `测试发行预设排除检查.py` 20/20；`测试发行出包.py` 33/33（没改它，确认没被我改坏）；`测试工具回归.py` 6/6；`工具回归.py` 全过。
+- `测试发行预设排除检查.py` 22/22（返修后）；`测试发行出包.py` 33/33（没改它，确认没被我改坏）；`测试工具回归.py` 6/6；`工具回归.py` 全过。
 - 云端选测：选测 0 个 Godot 场景（只改了 07_开发环境 工具），照样跑了：rebase 前 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45423716739 ；rebase 后（47e416bf8，基准 3e86b53df）https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45426076942 ，都用 `gh run watch` 前台等完，success。
 - 没起 Godot 截图（实跑全是无头），没有截图；实跑日志已提交在 `../归档/交付截图/luiluu_t458/`。
 
@@ -56,7 +65,7 @@
 ## 可优化（流程／工具／效率）
 
 - 建议：T457 在 测试导出过滤.py 里加的「发行预设不许踢空壳／KEEP／非测试脚本」护栏和本工具同口径（本工具是超集：另含被引用的场景、Godot 匹配法）。两边都合后，由小A 或总装把那段改成调 `发行预设排除检查.check()`，只留一套规则（预计省一处维护；归小A 车道，几分钟）。
-- 建议：发行出包.py 起头先 `godot --headless --import` 刷一次 `.godot` 全局类缓存（挪过 class_name 文件后缓存是旧的，空壳树冒烟会误报），约 1～2 分钟；本单没做，归下一单出包工具。
+- 建议（按 T458 核查意见改）：发行出包.py 克隆空壳树后，用 Python 比一下 `.godot/global_script_class_cache.cfg` 和工程里 `.gd` 的 class_name 路径（不到 0.1 秒），只在过期时对克隆的空壳树跑 `godot --headless --import`；不对工程本身 `--import`（会改写工作区的 .uid／.import）。本单没做，归下一单出包工具。
 - 建议：实跑现在只跑 Mac 原生架构；Windows／安卓仍靠 发行入口冒烟.py 的替身。要更严可以给 x86_64 切片也跑一次（多约 30 秒）。
 
 ## 动了的共用函数和开关
@@ -70,3 +79,4 @@
 - （见 git log）T458：出包实跑判定加 Failed loading resource／Cannot open file（T457 核 P3-1）
 - （见 git log）T458 交付单与实跑日志
 - （见 git log）单测门禁豁免、rebase 到 main、补完整出包结果
+- （见 git log）T458 返修：读档判定跳过 wait 步、ls-tree 不转义中文、引用只从要进包的文件扩、造旧档用临时 HOME

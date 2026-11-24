@@ -99,27 +99,31 @@ def must_ship(root: Path, stub=None) -> dict:
     need = {}
     for cls, p in stub.targets(root).items():
         need[str(p).replace('\\', '/')] = f'空壳 {cls}'
-    shipped_src = []
-    for p in sorted(root.rglob('*')):
-        if not p.is_file() or p.suffix not in SCRIPT_EXT:
-            continue
+    for p in sorted(root.rglob('*.gd')):
         rel = p.relative_to(root).as_posix()
-        if _skipped(rel):
-            continue
-        shipped_src.append((rel, p))
-        if p.suffix != '.gd':
+        if not p.is_file() or _skipped(rel) or rel in need:
             continue
         m = CLASS_RE.search(p.read_text(encoding='utf-8', errors='replace'))
-        if rel not in need:
-            need[rel] = (f'KEEP {m.group(1)}' if m and m.group(1) in stub.KEEP else f'class_name {m.group(1)}' if m else '脚本')
+        need[rel] = (f'KEEP {m.group(1)}' if m and m.group(1) in stub.KEEP else f'class_name {m.group(1)}' if m else '脚本')
     pg = root / 'project.godot'
     if pg.is_file():
         for ref in REF_RE.findall(pg.read_text(encoding='utf-8', errors='replace')):
             if need.get(ref, '脚本') == '脚本':
                 need[ref] = 'project.godot（主场景／自动加载）'
-    for rel, p in shipped_src:
-        for ref in REF_RE.findall(p.read_text(encoding='utf-8', errors='replace')):
-            if not _skipped(ref) and (root / ref).is_file() and need.get(ref, '脚本') == '脚本':
+    # 引用只从已确定要进包的文件往外扩（T458 核 P3-1）：被排除目录里没人用的场景互相引用，不算要进包
+    queue, seen = list(need), set()
+    while queue:
+        rel = queue.pop()
+        if rel in seen or not (root / rel).is_file():
+            continue
+        seen.add(rel)
+        for ref in REF_RE.findall((root / rel).read_text(encoding='utf-8', errors='replace')):
+            if _skipped(ref) or not (root / ref).is_file():
+                continue
+            if ref not in need:
+                need[ref] = f'被引用：{rel}'
+                queue.append(ref)
+            elif need[ref] == '脚本':
                 need[ref] = f'被引用：{rel}'
     return need
 
@@ -144,7 +148,8 @@ def extract_rev(rev: str, dest: Path) -> Path:
     """把提交 rev 的工程里的脚本、场景、project.godot、export_presets.cfg 解到 dest，返回工程目录。"""
     top = subprocess.run(['git', 'rev-parse', '--show-toplevel'], cwd=HERE, capture_output=True, text=True).stdout.strip() or str(HERE)
     proj = PRESETS_REL.rsplit('/', 1)[0]
-    ls = subprocess.run(['git', 'ls-tree', '-r', '--name-only', rev, '--', proj], cwd=top, capture_output=True, text=True)
+    # core.quotepath=false：git 默认把中文路径转义成八进制，会找不到 export_presets.cfg（T458 核 P2-1）
+    ls = subprocess.run(['git', '-c', 'core.quotepath=false', 'ls-tree', '-r', '--name-only', rev, '--', proj], cwd=top, capture_output=True, text=True)
     if ls.returncode:
         raise ValueError(f'git ls-tree {rev} 失败：{ls.stderr.strip()}')
     want = [f for f in ls.stdout.splitlines() if f.endswith(SCRIPT_EXT) or f in (f'{proj}/project.godot', PRESETS_REL)]

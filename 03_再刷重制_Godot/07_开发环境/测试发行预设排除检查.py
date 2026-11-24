@@ -2,6 +2,7 @@
 """发行预设排除检查.py（T458）：通配命中、目录命中、不命中、资源（png）命中不报；空壳／KEEP／class_name／被引用都算要进包；
 dev.887 的坏预设报出 tianqi_hall_intro.gd。不跑 Godot，几秒。"""
 import importlib.util
+import os
 import tempfile
 import types
 import unittest
@@ -118,6 +119,15 @@ class CheckTests(unittest.TestCase):
         self.assertNotIn('modes/xiyou/ui/tianqi/01_badge.png', need)
         self.assertEqual(need['modes/xiyou/core/loose.gd'], '脚本')
 
+    def test_unreferenced_scenes_referencing_each_other_not_reported(self):
+        """T458 核 P3-1：被排除目录里两个没人用的场景互相引用，不算要进包；被要进包的脚本引用到才算。"""
+        self.t.put('content/tianqi/a.tscn', '[ext_resource type="PackedScene" path="res://content/tianqi/b.tscn" id="1"]\n')
+        self.t.put('content/tianqi/b.tscn', '[gd_scene format=3]\n')
+        self.assertEqual(self.t.check('content/tianqi/*')[0], [])
+        self.t.put('core/game_app.gd', 'extends Node\nconst S := preload("res://content/tianqi/a.tscn")\n')
+        probs, _ = self.t.check('content/tianqi/*')
+        self.assertEqual(sorted({p.split('｜')[0] for p in probs}), ['content/tianqi/a.tscn', 'content/tianqi/b.tscn'])
+
     def test_plain_script_hit(self):
         probs, _ = self.t.check('modes/xiyou/core/loose.gd')
         self.assertEqual(sorted({p.split('｜')[0] for p in probs}), ['modes/xiyou/core/loose.gd'])
@@ -134,7 +144,15 @@ class RealProjectTests(unittest.TestCase):
         if subprocess.run(['git', 'cat-file', '-e', 'ad238e50e^{commit}'], cwd=HERE, capture_output=True).returncode:
             self.skipTest('本地没有 ad238e50e')
         with tempfile.TemporaryDirectory() as tmp:
-            root = M.extract_rev('ad238e50e', Path(tmp))
+            # T458 核 P2-1：git 默认 core.quotepath=true 时中文路径会被转义，extract_rev 要照样找得到预设
+            env = {'GIT_CONFIG_COUNT': '1', 'GIT_CONFIG_KEY_0': 'core.quotepath', 'GIT_CONFIG_VALUE_0': 'true'}
+            old = {k: os.environ.get(k) for k in env}
+            os.environ.update(env)
+            try:
+                root = M.extract_rev('ad238e50e', Path(tmp))
+            finally:
+                for k, v in old.items():
+                    os.environ.pop(k) if v is None else os.environ.__setitem__(k, v)
             probs, _ = M.check((root / 'export_presets.cfg').read_text(encoding='utf-8'), root)
         self.assertEqual(sorted({p.split('｜')[0] for p in probs}), ['modes/xiyou/ui/tianqi/tianqi_hall_intro.gd'])
 
@@ -194,6 +212,32 @@ class ReleaseGateTests(unittest.TestCase):
         self.assertFalse(ok)
         self.assertIn('没读档', note)
         self.assertTrue(P.judge_run('读旧档', 0, run_out([TITLE, TITLE, MAP]), first_not_map=True)[0])
+
+    def test_judge_load_real_sequence_with_leading_wait(self):
+        """T458 核 P1-1：照 RUN_LOAD_KEYS 的真实输出（XKeySmoke 对 wait 也打 SMOKE_KEY），旧档没认出、第一下确认开了新局要判红。"""
+        seq = P.RUN_LOAD_KEYS.split(',')
+        self.assertTrue(seq[0].startswith('wait:'))
+
+        def real(first_key_scene):
+            lines, pressed = [], 0
+            for step in seq:
+                if step.startswith('wait:'):
+                    sc = TITLE if pressed == 0 else (first_key_scene if pressed == 1 else MAP)
+                else:
+                    pressed += 1
+                    sc = first_key_scene if pressed == 1 else MAP
+                lines.append(f'SMOKE_KEY={step} scene={sc}\n')
+            return ''.join(lines) + f'SMOKE_DONE scene={MAP}\n'
+
+        bad = real(MAP)            # 读档页没出来：第一下确认直接开新局进地图
+        self.assertTrue(bad.startswith(f'SMOKE_KEY=wait:200 scene={TITLE}'))
+        ok, note = P.judge_run('读旧档', 0, bad, first_not_map=True)
+        self.assertFalse(ok)
+        self.assertIn('没读档', note)
+        ok, note = P.judge_run('读旧档', 0, real(TITLE), first_not_map=True)   # 正常读档：第一下停在读档页
+        self.assertTrue(ok, note)
+        only_wait = f'SMOKE_KEY=wait:200 scene={TITLE}\nSMOKE_DONE scene={MAP}\n'
+        self.assertFalse(P.judge_run('读旧档', 0, only_wait, first_not_map=True)[0])
 
     def test_release_user_dir_from_project(self):
         self.assertEqual(P.release_user_dir(), 'KYO/再刷重制')
