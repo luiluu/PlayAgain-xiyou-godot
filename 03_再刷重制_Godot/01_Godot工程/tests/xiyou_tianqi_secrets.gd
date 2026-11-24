@@ -104,6 +104,7 @@ func _find_actor_by_tier(s: XState, tier: String) -> XActor:
 
 func _pick_gongfa_items(n: int) -> Array:
 	var out := []
+	var seen_sc := {}
 	for it in XDB.table("Items"):
 		if not (it is Dictionary):
 			continue
@@ -111,8 +112,21 @@ func _pick_gongfa_items(n: int) -> Array:
 			if int(e.get("code", 0)) == 43:
 				var sid := int(e.get("dataId", 0))
 				var sk := XDB.rec("Skills", sid)
-				if int(sk.get("stypeId", 0)) == 6 and XTianqiSecrets.occupies_slot(sid) and not out.any(func(x): return x[1] == sid):
+				if int(sk.get("stypeId", 0)) != 6 or not XTianqiSecrets.occupies_slot(sid):
+					continue
+				if XTianqiSecrets.is_banned_skill(sid):
+					continue
+				# 跳过专属限制书（如紫霞神功录）并保证不同门不互顶
+				var sp: Dictionary = XTianqiSecrets.data().get("skills", {}).get(str(sid), {})
+				if int(sp.get("only_actor", 0)) > 0:
+					continue
+				var sc := XTianqiSecrets.school_of(sid)
+				if sc != "" and seen_sc.has(sc):
+					continue
+				if not out.any(func(x): return x[1] == sid):
 					out.append([int(it.id), sid])
+					if sc != "":
+						seen_sc[sc] = true
 					if out.size() >= n:
 						return out
 	return out
@@ -188,9 +202,9 @@ func _test_intercept_and_seal() -> void:
 	var sup := _find_actor_by_tier(s, XTier.SUPER)  # 3 格
 	s.party = [sup.actor_id]
 	s.battle_slots = [sup.actor_id]
-	# 选 4 本带终伤的功法（7166/7167/7168/7179 等）
+	# 选 4 本不同门功法（首本 7168 裂魔大成带终伤，其余 3 本不同门不互顶）
 	var books := []
-	for sid in [7166, 7167, 7168, 7179]:
+	for sid in [7168, 7145, 7147, 7149]:
 		for it in XDB.table("Items"):
 			if it is Dictionary:
 				for e in it.get("effects", []):
@@ -479,7 +493,24 @@ func _test_ledger_coexistence() -> void:
 	var s := Kit.new_game()
 	var sup := _find_actor_by_tier(s, XTier.SUPER)  # 3 格
 	var enemy := XEnemy.new().setup(1, 3, 100.0)
-	var gongfas := [7166, 7167, 7168]
+	# 挑 3 本不同门且带 passiveHarmRi 的占格秘籍（含 7168 裂魔大成＋2 本通用被动书）
+	var gongfas: Array[int] = [7168]
+	var re_harm := RegEx.create_from_string("<passiveHarmRi\\s*:\\s*(\\d+)")
+	for sk0 in XDB.table("Skills"):
+		if not (sk0 is Dictionary):
+			continue
+		var sid := int(sk0.get("id", 0))
+		if sid <= 0 or gongfas.has(sid) or not XTianqiSecrets.occupies_slot(sid) or XTianqiSecrets.is_banned_skill(sid):
+			continue
+		var sk := XDB.rec("Skills", sid)
+		if int(sk.get("stypeId", 0)) != 4:
+			continue
+		var m := re_harm.search(str(sk.get("note", "")))
+		if m != null and float(m.get_string(1)) > 0.0:
+			gongfas.append(sid)
+			if gongfas.size() >= 3:
+				break
+	gongfas.sort()
 	var lotteries := [6305, 6306, 6307]
 	var bloodlines := [2807, 3236]
 	for sid in gongfas:
@@ -489,23 +520,27 @@ func _test_ledger_coexistence() -> void:
 	for sid in bloodlines:
 		sup.learn_skill(sid)
 	sup.refresh_passive()
-	# 占格功法进 secret，抽奖被动与血脉回 actor 桶，不再混进秘籍格
+	# 占格秘籍进 secret，抽奖被动与血脉回 actor 桶，不再混进秘籍格
 	var bucket_ok := gongfas.all(func(id): return XTianqiLedger.bucket_of(XDB.rec("Skills", id), sup) == "secret") \
 		and lotteries.all(func(id): return XTianqiLedger.bucket_of(XDB.rec("Skills", id), sup) == "actor") \
 		and bloodlines.all(func(id): return XTianqiLedger.bucket_of(XDB.rec("Skills", id), sup) == "actor")
 	_check("p1_1_bucket_uses_occupies_slot", bucket_ok)
 	var by: Dictionary = sup.passive_cache().get("bySource", {})
 	var kept := XTianqiLedger.secret_kept(sup, by)
-	_check("p1_1_secret_kept_all_3_gongfas", kept == ["#7166", "#7167", "#7168"], kept)
+	var expect_kept := gongfas.map(func(id): return "#%d" % id)
+	_check("p1_1_secret_kept_all_3_gongfas", kept == expect_kept, [kept, expect_kept])
 	var dmg_with := XDamage.calculate(XDB.rec("Skills", 1), sup, enemy, {"critical": false, "variance": false})
-	# 把 3 本功法都封印后，终伤池必须正好少掉 3 本功法各自封顶的 0.08 × 3 = 0.24
+	var per := XTianqiBase.secret_slot(XTianqiLedger.nine_cap("secret_slot"))
+	var expect_diff := 0.0
+	for id in gongfas:
+		expect_diff += minf(float(by.get("books", {}).get("globalHarmRi", {}).get("#%d" % id, 0.0)), per)
+	# 把 3 本秘籍都封印后，终伤池必须正好少掉 3 本各自封顶到 per 后的合计值
 	s.gold = 9999999
 	for sid in gongfas:
 		XTianqiSecrets.seal(s, sup, sid)
 	var dmg_sealed := XDamage.calculate(XDB.rec("Skills", 1), sup, enemy, {"critical": false, "variance": false})
 	var diff := float(dmg_with.breakdown.row.terminal) - float(dmg_sealed.breakdown.row.terminal)
-	var per := XTianqiBase.secret_slot(XTianqiLedger.nine_cap("secret_slot"))
-	_check("p1_1_all_3_gongfa_damage_counted", is_equal_approx(diff, per * 3.0) and float(dmg_with.value) > float(dmg_sealed.value), [diff, per * 3.0, dmg_with.value, dmg_sealed.value])
+	_check("p1_1_all_3_gongfa_damage_counted", is_equal_approx(diff, expect_diff) and float(dmg_with.value) > float(dmg_sealed.value), [diff, expect_diff, dmg_with.value, dmg_sealed.value])
 
 
 # ---- 8. P2-2 单书多技能预检与固定角色 CE 预检 ----

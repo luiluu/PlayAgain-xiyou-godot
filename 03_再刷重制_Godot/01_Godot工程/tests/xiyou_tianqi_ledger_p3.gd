@@ -110,12 +110,31 @@ func _pills() -> void:
 # ---- 二、九线封顶 ----
 func _secret_books(n: int) -> Array:
 	var out := []
-	# 核查 P1：先取真功法（类型 6）、再取通用被动书（类型 4），都要由书教、判进秘籍桶（原来只抽类型 5，掩盖了 6／4 漏判）
+	var seen_sc := {}
+	var per_pct := XTianqiBase.secret_slot(XTianqiLedger.nine_cap("secret_slot")) * 100.0
+	var re_harm := RegEx.create_from_string("<passiveHarmRi\\s*:\\s*(\\d+)")
+	# 核查 P1：先取真功法（类型 6）、再取通用被动书（类型 4），都要由书教、判进秘籍桶；
+	# T443 功法重标后同门互顶且单本 ≤15%，故只取不同门且当前视图 passiveHarmRi > per_pct 的书验证单本封顶
 	for want in [6, 4]:
-		for sk in XDB.table("Skills"):
-			if sk is Dictionary and int(sk.get("stypeId", 0)) == want and XTianqiLedger.is_secret_skill(int(sk.id), want) \
-					and RegEx.create_from_string("<passiveHarmRi\\s*:\\s*(\\d+)").search(str(sk.get("note", ""))) != null and not out.has(int(sk.id)):
-				out.append(int(sk.id))
+		for sk0 in XDB.table("Skills"):
+			if not (sk0 is Dictionary):
+				continue
+			var sid := int(sk0.get("id", 0))
+			if sid <= 0 or out.has(sid):
+				continue
+			var sk := XDB.rec("Skills", sid)
+			if int(sk.get("stypeId", 0)) != want or not XTianqiLedger.is_secret_skill(sid, want):
+				continue
+			if XTianqiSecrets.is_banned_skill(sid):
+				continue
+			var sc := XTianqiSecrets.school_of(sid)
+			if sc != "" and seen_sc.has(sc):
+				continue
+			var m := re_harm.search(str(sk.get("note", "")))
+			if m != null and float(m.get_string(1)) > per_pct:
+				out.append(sid)
+				if sc != "":
+					seen_sc[sc] = true
 				if out.size() >= n:
 					return out
 	return out
@@ -155,9 +174,10 @@ func _nine_cap() -> void:
 	XTianqiLedger.CAP_NINE = false
 	var one_off := _calc(a, e)
 	XTianqiLedger.CAP_NINE = true
-	var cut1 := maxf(0.0, raw1 - 0.08)
+	var per := XTianqiBase.secret_slot(XTianqiLedger.nine_cap("secret_slot"))
+	var cut1 := maxf(0.0, raw1 - per)
 	_check("cap_one_book", is_equal_approx(float(one.breakdown.row.terminal), float(one_off.breakdown.row.terminal) - cut1), [raw1, one.breakdown.row.terminal, one_off.breakdown.row.terminal])
-	# 学满格数＋3：只算前 slots 本，每本 ≤8%
+	# 学满格数＋3：只算前 slots 本，每本 ≤per（D274 为 15%）
 	for id in books.slice(1):
 		a.learn_skill(int(id))
 	a.refresh_passive()
@@ -170,7 +190,7 @@ func _nine_cap() -> void:
 	XTianqiLedger.CAP_NINE = true
 	var raw := float(by.globalHarmRi.get("secret", 0.0))
 	var terminal_drop := float(res_off.breakdown.row.terminal) - float(res.breakdown.row.terminal)
-	_check("cap_secret_slots", terminal_drop > 0.0 and is_equal_approx(terminal_drop, raw - 0.08 * slots) and res.breakdown.row.has("nineCap"), [raw, slots, terminal_drop, res.breakdown.row.get("nineCap")])
+	_check("cap_secret_slots", terminal_drop > 0.0 and is_equal_approx(terminal_drop, raw - per * slots) and res.breakdown.row.has("nineCap"), [raw, slots, per, terminal_drop, res.breakdown.row.get("nineCap")])
 	_check("cap_value_lower", float(res.value) < float(res_off.value), [res.value, res_off.value])
 	# 其余九线：③ 合计 ＋35%（套装确认阶段 ＋1 → 封到 0.35）
 	var b := s.actor(int(s.battle_slots[1]))

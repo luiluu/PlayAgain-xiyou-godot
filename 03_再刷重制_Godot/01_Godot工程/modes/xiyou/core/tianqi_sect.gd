@@ -532,6 +532,8 @@ static func shop_goods(s, map_id: int, event_id: int, goods: Array) -> Array:
 	# ---- 槽位：丙 ----
 
 	# ---- 槽位：丁一 ----
+	# K8 丁一（深渊六式被动上架 EV054）可通过下方 ev54_extra_goods 按楼层与页签直接追加，
+	# 也可在本处对 map_id == 4 and event_id == 54 的 goods 做后置改写。
 
 	# ---- 槽位：己 ----
 
@@ -541,6 +543,22 @@ static func shop_goods(s, map_id: int, event_id: int, goods: Array) -> Array:
 
 	# ---- 槽位：壬 ----
 	return out
+
+
+## 槽位：丁一（T441 第四节与 K8 丁一避撞契约）
+## 人族首领 EV054 货架扩展插槽：默认返回空数组；K8 丁一开启后按 top_floor >= 10/15/20/22/25/27
+## 返回深渊六式被动列表 [[0, item_id, 0, 0], ...]，不依赖原版商品号猜页。
+## tab: "gongfa_t1" / "gongfa_t2" / "gongfa_t3" / "fabao" / "divine" / "abyss"
+static var _ev54_extra_test_hook: Callable = Callable()
+
+
+static func ev54_extra_goods(s, tab: String, top_floor: int) -> Array:
+	if not on(s):
+		return []
+	if _ev54_extra_test_hook.is_valid():
+		var r = _ev54_extra_test_hook.call(s, tab, top_floor)
+		return r if r is Array else []
+	return []
 
 
 # ---- 掉落改写 ----

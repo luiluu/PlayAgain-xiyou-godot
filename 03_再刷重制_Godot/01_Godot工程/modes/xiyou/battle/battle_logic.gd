@@ -2132,6 +2132,7 @@ func _make_action_orders() -> void:
 	if not _orders_made:
 		# 原 makeActionOrders：偷袭不排我方、先制不排敌方（只首回合；「下个回合」仍是全员）
 		current_order = _sorted_by_speed((actors if not surprise else []) + (enemies if not preemptive else []))
+		XTianqiSecrets.apply_first_turn_advance(self, current_order)  # T443：九秘行字诀首回合行动提前（第 2 回合恢复）
 		_action_times_modification(current_order, true)
 	_clear_unable()
 	_action_times_modification(next_order)
@@ -3973,7 +3974,8 @@ func drop_chances(e: XEnemy, all_rows := false) -> Array:
 				row.chance = minf(1.0, XTianqiDrop.signature_base(int(extra.kind), int(extra.id), float(extra.rate), e.enemy_id) * sig_mult)
 				row["sig"] = "%d:%d:%d" % [e.enemy_id, int(extra.kind), int(extra.id)]
 			out.append(row)
-	return XTianqiSect.drop_rows(state, e.enemy_id, out)  # 天启篇教派连带内容：研究日志去掉、夏娜心魔换碎片（XTianqiSect）
+	out = XTianqiSect.drop_rows(state, e.enemy_id, out)  # 天启篇教派连带内容：研究日志去掉、夏娜心魔换碎片（XTianqiSect）
+	return XTianqiSecrets.filter_drop_rows(state, out)  # T443：封禁功法书（炎黄后裔 2237／九阳淬体图 2240）天启篇不掉
 
 
 ## 把掉落放进背包（BattleManager.gainDropItems / SpriteEnemyTrP.gainDropItems）

@@ -120,6 +120,9 @@ static func tier(v: float) -> float:
 
 ## 技能重构给这个技能定的掉率（没定过返回 NAN）。重构只对指定角色生效，所以还要和实际读到的值对上才算
 static func rework_value(skill_id: int) -> float:
+	var gf := XTianqiSecrets.gongfa_drop_value(skill_id)
+	if not is_nan(gf):
+		return gf
 	var e = XTianqiSkills.data().get("skills", {}).get(str(skill_id))
 	if not e is Dictionary:
 		return NAN
