@@ -1,0 +1,29 @@
+{
+ "sha": "d68ee066edd17e5c0d6e6c1be24c76d1b12b3b53",
+ "branch": "luiluu/t471",
+ "mode": "scenes",
+ "base": "",
+ "passed": true,
+ "scenes": 8,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 1,
+ "longestShardSeconds": 120.7,
+ "testSeconds": 213,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "7f7cc73cc504821d93480d517c372a4708690bec",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45483124538",
+ "sceneNames": [
+  "xiyou_determinism.tscn",
+  "xiyou_tianqi_affix_roll.tscn",
+  "xiyou_tianqi_balance.tscn",
+  "xiyou_tianqi_general_books_b2.tscn",
+  "xiyou_tianqi_phase4.tscn",
+  "xiyou_tianqi_qiyin_endgame.tscn",
+  "xiyou_tianqi_qiyin_equip.tscn",
+  "xiyou_tianqi_secrets.tscn"
+ ],
+ "time": "2026-11-24T20:46:57+00:00"
+}
