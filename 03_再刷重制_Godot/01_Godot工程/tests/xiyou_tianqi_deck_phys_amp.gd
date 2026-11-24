@@ -251,31 +251,37 @@ func _run() -> void:
 		float(r_imm[3][0]) > 100.0 and float(r_imm[3][1]) > float(r_imm[3][0]) * 1.4 and absf(float(r_imm[0]) - 1.6 / 1.1) < 0.02,
 		r_imm)
 
-	# 五、T451 验收 6：gear_view 60 件专武/防具＋weapon:2222＋armor:4519/4520/4521＋rec_state 36 状态重算 yep（含宝珠增量保留与回退开关）
+	# 五、T451 验收 6：gear_view 60 件专武/防具＋weapon:2222＋armor:4518/4519/4520/4521/4579＋rec_state 36 状态重算 yep（含宝珠增量保留与回退开关）
 	var w87 := XGear.template("weapon", 87)  # 琴里 物/火 +1200%
 	var w91 := XGear.template("weapon", 91)  # 贝吉特 物 +300%
 	var w85 := XGear.template("weapon", 85)  # 病娇 无属性 +300%
 	var w2222 := XGear.template("weapon", 2222)  # 爱莉 全15系 +1000%
+	var a4518 := XGear.template("armor", 4518)  # 赤染樱 原 火/冰/雷 +150%（R1 Opus P2-1）
 	var a4519 := XGear.template("armor", 4519)  # 戒指朱 原 4系 +50%
 	var a4521 := XGear.template("armor", 4521)  # 命运骰子 原 7系 +100%
+	var a4579 := XGear.template("armor", 4579)  # 月魄剑匣 原 冰 +30%（R1 Opus P2-1）
 	var w1698 := XGear.template("weapon", 1698)  # 心澜 原 治疗+20%/+450、自然+40%
 	var v87: Dictionary = XTianqiSkills.gear_view(w87)
 	var v91: Dictionary = XTianqiSkills.gear_view(w91)
 	var v85: Dictionary = XTianqiSkills.gear_view(w85)
 	var v2222: Dictionary = XTianqiSkills.gear_view(w2222)
+	var v4518: Dictionary = XTianqiSkills.gear_view(a4518)
 	var v4519: Dictionary = XTianqiSkills.gear_view(a4519)
 	var v4521: Dictionary = XTianqiSkills.gear_view(a4521)
+	var v4579: Dictionary = XTianqiSkills.gear_view(a4579)
 	var v1698: Dictionary = XTianqiSkills.gear_view(w1698)
 	_check("t451_gear_view_clears_residual_yep",
 		v87.get("yep", {}).get("elementAmplify", {}).is_empty()
 		and v91.get("yep", {}).get("elementAmplify", {}).is_empty()
 		and v85.get("yep", {}).get("elementAmplify", {}).is_empty()
 		and v2222.get("yep", {}).get("elementAmplify", {}).is_empty()
+		and v4518.get("yep", {}).get("elementAmplify", {}).is_empty()
 		and v4519.get("yep", {}).get("elementAmplify", {}).is_empty()
 		and v4521.get("yep", {}).get("elementAmplify", {}).is_empty()
+		and v4579.get("yep", {}).get("elementAmplify", {}).is_empty()
 		and v1698.get("yep", {}).get("elementAmplify", {}).is_empty()
 		and v1698.get("yep", {}).get("elementAmplifyN", {}).is_empty(),
-		[v87.get("yep"), v91.get("yep"), v85.get("yep"), v2222.get("yep"), v4519.get("yep"), v1698.get("yep")])
+		[v87.get("yep"), v91.get("yep"), v85.get("yep"), v2222.get("yep"), v4518.get("yep"), v4519.get("yep"), v4579.get("yep"), v1698.get("yep")])
 
 	# 宝珠增量保留（gear_view 不误删镶嵌宝珠加的 elementAmplify）
 	var w87_orb := w87.duplicate(true)
@@ -392,13 +398,23 @@ func _run() -> void:
 		and absf(float(va4541.yep.elementAmplify["1"]) - 0.20) < 1e-6,
 		[vw2011.yep.elementAmplify["1"], vw1826.yep.elementAmplify["1"], vw1408.yep.elementAmplify, va4535.yep.elementAmplify["1"]])
 
-	# 卡面说明同步（XHelpCard 不留旧 +300% / +250% / +1300% 元素增伤，显示新整数）
+	# 卡面说明同步（XHelpCard 不留旧 +300% / +250% / +1300% 元素增伤，显示新整数；含 R1 返修代表件）
 	var card_w1826 := "\n".join(XHelpCard._content(w1826).map(func(r): return str(r[0])))
 	var card_a4535 := "\n".join(XHelpCard._content(a4535).map(func(r): return str(r[0])))
+	var card_w1099 := "\n".join(XHelpCard._content(XGear.template("weapon", 1099)).map(func(r): return str(r[0])))
+	var card_w1673 := "\n".join(XHelpCard._content(XGear.template("weapon", 1673)).map(func(r): return str(r[0])))
+	var card_w1674 := "\n".join(XHelpCard._content(XGear.template("weapon", 1674)).map(func(r): return str(r[0])))
+	var card_w1748 := "\n".join(XHelpCard._content(XGear.template("weapon", 1748)).map(func(r): return str(r[0])))
+	var card_a4107 := "\n".join(XHelpCard._content(XGear.template("armor", 4107)).map(func(r): return str(r[0])))
 	_check("t451_help_card_text_synced",
 		card_w1826.contains("物伤+30%") and not card_w1826.contains("物伤+300%")
-		and card_a4535.contains("所有伤害+20%") and not card_a4535.contains("所有伤害+250%"),
-		[card_w1826, card_a4535])
+		and card_a4535.contains("所有伤害+20%") and not card_a4535.contains("所有伤害+250%")
+		and card_w1099.contains("所有伤害提高13%") and not card_w1099.contains("55%")
+		and card_w1673.contains("电伤+25%") and card_w1673.contains("电伤+30%") and not card_w1673.contains("150%")
+		and card_w1674.contains("自然伤+20%") and card_w1674.contains("治疗效果+20%") and not card_w1674.contains("100%")
+		and card_w1748.contains("治疗效果增加10%") and not card_w1748.contains("15%")
+		and card_a4107.contains("黑暗伤害+15%") and not card_a4107.contains("治疗效果+25%"),
+		[card_w1826, card_a4535, card_w1099, card_w1673, card_w1674, card_w1748, card_a4107])
 
 	# 宝珠增量保留＋幂等＋回退开关
 	var w1826_orb := w1826.duplicate(true)
