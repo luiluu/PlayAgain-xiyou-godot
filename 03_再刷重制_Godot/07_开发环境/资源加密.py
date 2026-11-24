@@ -294,12 +294,13 @@ def preset_sections(text: str) -> dict:
     return out
 
 
-def preset_value(text: str, preset: str, key: str):
+def preset_value(text: str, preset: str, key: str, options: bool = False):
+    """预设 [preset.N] 段（options＝True 时 [preset.N.options] 段，模板路径、包名等在那里）里 key 的原样值；没有返回 None。"""
     import re
     sec = preset_sections(text).get(preset)
     if sec is None:
         return None
-    m = re.search(r'^\[preset\.' + sec + r'\]\n(.*?)(?=^\[)', text + '\n[', re.M | re.S)
+    m = re.search(r'^\[preset\.' + sec + (r'\.options' if options else '') + r'\]\n(.*?)(?=^\[)', text + '\n[', re.M | re.S)
     body = m.group(1) if m else ''
     m = re.search(r'^' + re.escape(key) + r'=(.*)$', body, re.M)
     return m.group(1) if m else None
@@ -372,12 +373,34 @@ def pck_raw_entries(f, base: int = 0) -> list:
     return out
 
 
+def zip_name(info: zipfile.ZipInfo) -> str:
+    """zip 条目的真名。Godot／Gradle 打的 apk 不设 UTF-8 标志，Python 按 cp437 解中文名会成乱码、对不上资源目录（T452 实测
+    movies/幻术世界.json）：没标志时按 UTF-8 重解，解不了才用原样。"""
+    n = info.filename
+    if info.flag_bits & 0x800:
+        return n
+    try:
+        return n.encode('cp437').decode('utf-8')
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return n
+
+
+def zip_index(z: zipfile.ZipFile) -> dict:
+    """真名 → ZipInfo。"""
+    return {zip_name(i): i for i in z.infolist()}
+
+
+# apk 根目录里 Gradle／Kotlin 构建工具自己写的元数据（不是游戏数据），不算包外明文
+APK_BUILD_METADATA = {'kotlin-tooling-metadata.json'}
+
+
 def apk_to_pck(apk: Path, out: Path, ver=(4, 7, 2)) -> int:
     """安卓包 assets/ 按 assets.sparsepck 的目录原样拼成桌面 pck（加密文件保持加密、标志照抄），给 macOS 发行模板当替身跑。
     返回文件数。旧的明文安卓包（没有 sparsepck）不走这里。"""
     import io
     with zipfile.ZipFile(apk) as z:
         ents = pck_raw_entries(io.BytesIO(z.read(SPARSE)))
+        idx = zip_index(z)
         with open(out, 'wb') as f:
             hdr = b'GDPC' + struct.pack('<IIIII', 3, *ver, 2)  # 版本 3，PACK_REL_FILEBASE
             f.write(hdr + b'\0' * 16 + b'\0' * 32)
@@ -386,7 +409,7 @@ def apk_to_pck(apk: Path, out: Path, ver=(4, 7, 2)) -> int:
             for name, _o, size, md5, fl in ents:
                 if fl & 2:
                     continue
-                data = z.read('assets/' + name)
+                data = z.read(idx['assets/' + name])
                 rows.append((name, f.tell() - fbase, size, md5, fl))
                 f.write(data)
                 f.write(b'\0' * ((-f.tell()) % 32))
@@ -450,7 +473,7 @@ def scan(path: Path, key: bytes = None, sample: int = 20) -> list:
             if not flags:
                 probs.append(f'{path.name}：没有 assets.sparsepck（不是 Godot 4.7 安卓包，或没导出数据）')
             for info in z.infolist():
-                n = info.filename
+                n = zip_name(info)
                 if n.startswith('assets/'):
                     rel = n[len('assets/'):]
                     if n == SPARSE:
@@ -460,8 +483,8 @@ def scan(path: Path, key: bytes = None, sample: int = 20) -> list:
                     elif must_encrypt(rel) and not flags.get(rel, 0) & 1:
                         probs.append(f'{path.name}：{n} 没加密')
                     elif flags.get(rel, 0) & 1:
-                        enc_seen.append((path.name, rel, None, n, info.file_size))
-                elif n.lower().endswith(('.gd', '.gdc', '.json', '.tscn', '.tres')):
+                        enc_seen.append((path.name, rel, None, info, info.file_size))
+                elif n.lower().endswith(('.gd', '.gdc', '.json', '.tscn', '.tres')) and n not in APK_BUILD_METADATA:
                     probs.append(f'{path.name}：{n} 是 assets/ 外的脚本／数据明文')
             for i, (label, rel, _fp, n, _size) in enumerate(enc_seen[:sample]):
                 _try(probs, label, rel, z.read(n), key)
@@ -470,7 +493,7 @@ def scan(path: Path, key: bytes = None, sample: int = 20) -> list:
         with zipfile.ZipFile(path) as z, tempfile.TemporaryDirectory() as td:
             pcks = 0
             for info in z.infolist():
-                n = info.filename
+                n = zip_name(info)
                 if n.lower().endswith('.pck') and '__MACOSX' not in n:
                     pcks += 1
                     check_pck(Path(z.extract(info, td)), f'{path.name}:{Path(n).name}')

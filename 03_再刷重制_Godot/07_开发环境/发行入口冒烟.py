@@ -126,9 +126,15 @@ def desktop_version(platform: str):
 
 
 def release_runner(work: Path, pck: Path):
-    """macOS 发行模板的可执行文件，改成和 pck 同名、放在它旁边（发行模板不认 --main-pack，只认同名 .pck）。"""
+    """macOS 发行模板的可执行文件，改成和 pck 同名、放在它旁边（发行模板不认 --main-pack，只认同名 .pck）。
+    T452：取「macOS 发行」预设自己的模板（加密模板，编进了资源加密密钥），不取第一个 macOS 模板（那是验收预设的官方模板，读不了加密包）。"""
     cfg = (PROJECT / 'export_presets.cfg').read_text(encoding='utf-8')
-    tpl = Path(re.search(r'custom_template/release="([^"]*macos[^"]*)"', cfg).group(1))
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('资源加密', HERE / '资源加密.py')
+    enc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(enc)
+    val = enc.preset_value(cfg, 'macOS 发行', 'custom_template/release', options=True)
+    tpl = Path(val.strip('"')) if val else Path(re.search(r'custom_template/release="([^"]*macos[^"]*)"', cfg).group(1))
     tdir = work / 'tpl'
     if subprocess.run(['ditto', '-x', '-k', str(tpl), str(tdir)]).returncode != 0:
         print('解不开 macOS 模板')

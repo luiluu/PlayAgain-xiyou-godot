@@ -115,8 +115,9 @@ def read_files(path: Path, want) -> dict:
         enc = _enc()
         with zipfile.ZipFile(path) as z:
             flags = enc.apk_flags(z)
-            return {n[len('assets/'):]: _plain(enc, n, z.read(n), bool(flags.get(n[len('assets/'):], 0) & 1))
-                    for n in z.namelist() if n.startswith('assets/') and want(n[len('assets/'):])}
+            idx = enc.zip_index(z)  # 中文名按 UTF-8 重解（apk 条目不带 UTF-8 标志）
+            return {n[len('assets/'):]: _plain(enc, n, z.read(i), bool(flags.get(n[len('assets/'):], 0) & 1))
+                    for n, i in idx.items() if n.startswith('assets/') and want(n[len('assets/'):])}
     if suf == '.zip':
         out = {}
         with zipfile.ZipFile(path) as z, tempfile.TemporaryDirectory() as td:
@@ -132,7 +133,7 @@ def names(path: Path) -> list:
     path = Path(path)
     if path.suffix.lower() == '.apk':
         with zipfile.ZipFile(path) as z:
-            return [n[len('assets/'):] for n in z.namelist() if n.startswith('assets/')]
+            return [n[len('assets/'):] for n in _enc().zip_index(z) if n.startswith('assets/')]
     if path.suffix.lower() == '.zip':
         out = []
         with zipfile.ZipFile(path) as z:
