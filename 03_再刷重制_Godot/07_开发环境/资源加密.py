@@ -19,7 +19,7 @@
 丢了密钥会怎样：已装的游戏照常玩，存档不受影响（存档封存是另一把密钥）；但新补丁没法再给旧整包用（补丁要用同一把密钥加密），
 只能换新密钥、重编模板、出新整包让玩家重下。所以私密仓那份就是备份，别删；换密钥（--rotate 式）也只在出新整包时做。
 防误提交：密钥只在仓库外的文件和环境变量里；export_presets.cfg 不写 script_encryption_key（Godot 会把它放进 .godot/export_credentials.cfg，
-已 .gitignore）；测试导出过滤.py 查预设里没有 64 位十六进制串，测试资源加密.py 查公开仓文件里没有密钥指纹以外的东西。
+已 .gitignore）；测试资源加密.py 查预设、本工具、工作流里没有 64 位十六进制串，本机有密钥时再 git grep 整个公开仓不含它。
 """
 import argparse
 import fnmatch
@@ -188,6 +188,8 @@ def cmd_templates(a) -> int:
         return 1
     repo = ROOT
     run_id = a.run
+    if a.from_dir:
+        return install(run_id or 'local', key, repo, Path(a.from_dir))
     if not run_id:
         branch = subprocess.run(['git', '-C', str(repo), 'rev-parse', '--abbrev-ref', 'HEAD'], capture_output=True, text=True).stdout.strip()
         head = subprocess.run(['git', '-C', str(repo), 'rev-parse', 'HEAD'], capture_output=True, text=True).stdout.strip()
@@ -215,23 +217,26 @@ def cmd_templates(a) -> int:
     return install(run_id, key, repo)
 
 
-def install(run_id: str, key: bytes, repo: Path) -> int:
+def install(run_id: str, key: bytes, repo: Path, from_dir: Path = None) -> int:
     dest = template_dir()
     with tempfile.TemporaryDirectory(prefix='aes_tpl_') as td:
         td = Path(td)
-        if _run(['gh', 'run', 'download', run_id, '--dir', str(td)], cwd=repo).returncode:
+        got = td / 'dl'
+        if from_dir:
+            got = Path(from_dir)
+        elif _run(['gh', 'run', 'download', run_id, '--dir', str(got)], cwd=repo).returncode:
             return 1
         stage = td / 'stage'
         stage.mkdir()
         env = dict(os.environ, K=key.hex())
-        for enc in sorted(td.rglob('tpl-*.tar.enc')):
-            tar = enc.with_suffix('')
+        for enc in sorted(got.rglob('tpl-*.tar.enc')):
+            tar = td / enc.with_suffix('').name
             if subprocess.run(['openssl', 'enc', '-d', '-aes-256-cbc', '-pbkdf2', '-iter', '200000', '-pass', 'env:K',
                                '-in', str(enc), '-out', str(tar)], env=env).returncode:
                 print(f'✗ 解不开 {enc.name}（附件不是这把密钥加密的）')
                 return 1
             subprocess.run(['tar', '-xf', str(tar), '-C', str(stage)], check=True)
-        for wk in td.rglob('macos_wrongkey.zip'):
+        for wk in list(got.rglob('macos_wrongkey.zip')):
             shutil.copyfile(wk, stage / wk.name)
         (stage / FINGERPRINT_FILE).write_text(fingerprint(key) + '\n', encoding='utf-8')
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -530,6 +535,7 @@ def main(argv=None) -> int:
     p = sub.add_parser('templates')
     p.add_argument('--run', help='不触发新运行，直接装这个运行号的产物')
     p.add_argument('--remote', default='github')
+    p.add_argument('--from-dir', help='已用 gh run download 下好的附件目录（不再下载，配 --run 记运行号）')
     p.set_defaults(fn=cmd_templates)
     p = sub.add_parser('scan')
     p.add_argument('pkgs', nargs='+')

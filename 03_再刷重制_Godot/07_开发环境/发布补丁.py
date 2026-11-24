@@ -222,8 +222,19 @@ def _export_env(src: Path):
         raise Fail(str(e)) from e
 
 
+def base_encrypted(base: Path) -> bool:
+    """底包里有没有加密文件（T452 之后的整包都有；之前的旧整包一个也没有）。"""
+    enc = _enc_mod()
+    with open(base, 'rb') as f:
+        return any(fl & 1 for _o, _s, fl in enc.pck_entries(f, enc.pck_base(f, base)).values())
+
+
 def _export_presets(base: Path, tmp: Path, dry: bool, shas: dict, src: Path) -> None:
     env = None if dry else _export_env(src)
+    if env is not None and not base_encrypted(base):
+        # 旧整包的程序里没有密钥，读不了加密补丁（装上就进不了游戏）：旧整包的玩家只能换新整包，不给它出加密补丁
+        raise Fail(f'底包 {base.name} 是加密前的旧整包，读不了加密补丁：不给旧整包出补丁（玩家看到「要换新的安装包」）；'
+                   '要给旧整包玩家补东西只能出新整包。确认要出明文补丁就把 资源加密.ENCRYPT 改 False')
     for preset in PRESETS:
         dst = tmp / (preset.split(' ')[0] + '.pck')
         if dry:

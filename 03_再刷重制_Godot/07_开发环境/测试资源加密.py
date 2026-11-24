@@ -204,6 +204,26 @@ class Scan(unittest.TestCase):
             self.assertEqual((f.read(size), fl), (FILES['.godot/imported/a.ctex'], 0))
 
 
+class PatchBase(unittest.TestCase):
+    def test_old_unencrypted_base_refused(self):
+        """发布补丁.py：加密前的旧整包当底包时不出加密补丁（旧程序没密钥，装上就进不了游戏）。"""
+        P = load('发布补丁')
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            make_pck(d / 'old.pck', FILES, encrypt=lambda n: False)
+            make_pck(d / 'new.pck', FILES)
+            self.assertFalse(P.base_encrypted(d / 'old.pck'))
+            self.assertTrue(P.base_encrypted(d / 'new.pck'))
+            saved = P._export_env
+            P._export_env = lambda src: {'GODOT_SCRIPT_ENCRYPTION_KEY': KEY.hex()}
+            try:
+                with self.assertRaises(P.Fail) as cm:
+                    P._export_presets(d / 'old.pck', d, False, {}, d)
+            finally:
+                P._export_env = saved
+            self.assertIn('加密前的旧整包', str(cm.exception))
+
+
 class Templates(unittest.TestCase):
     def test_template_has_key(self):
         with tempfile.TemporaryDirectory() as td:
