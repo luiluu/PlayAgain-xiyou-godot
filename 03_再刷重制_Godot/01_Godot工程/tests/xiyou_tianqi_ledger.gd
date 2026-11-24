@@ -729,6 +729,8 @@ func _p2_items() -> void:
 	_check("p2_suit_confirm", has713 and is_equal_approx(XTianqiLedger.suit_confirm_add(b, e, 1), 1.0) and is_equal_approx(float(res.breakdown.row.terminal), float(res_off.breakdown.row.terminal) + 1.0) \
 		and fin_off > float(res_off.value) * 1.9 and absf(fin_on - float(res.value)) <= 1.0 and heal <= -200.0 and self_hit >= 200.0, [has713, res.breakdown.row.terminal, res_off.breakdown.row.terminal, res.value, fin_on, res_off.value, fin_off, heal, self_hit])
 	# 7. 万灵增元丹类被动（5974～5977）：天启篇不挂开战状态；西游档照挂
+	_check("p2_pill_passives_keep_ledger_owner", XTianqiLedger.PILL_PASSIVES.all(
+		func(id): return XTianqiGeneralBooks.spec(int(id)).is_empty()))
 	var p := s.actor(int(s.battle_slots[2]))
 	p.learn_skill(5975)
 	var tags_on := p.battle_start_state_tags().filter(func(t): return int(t[1]) == 1287)

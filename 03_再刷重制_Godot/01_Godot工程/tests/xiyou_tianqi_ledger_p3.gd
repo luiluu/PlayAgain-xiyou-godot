@@ -163,6 +163,11 @@ func _nine_cap() -> void:
 	_check("bucket_secret_by_book", wrong.is_empty() and int(sk_of.call(7144).stypeId) == 6 and int(sk_of.call(2776).stypeId) == 4 and int(sk_of.call(1077).stypeId) == 5, wrong)
 	var slots := XTianqiLedger.secret_slots(a)
 	_check("secret_slots_by_tier", slots == XTianqiBalance.secret_cap(XTier.tier_of(a)) and slots > 0, slots)
+	# 正式秘籍格与重标数据由 B2 专项覆盖。这里恢复两个旧视图，实际造出超格、超单本上限的回退档。
+	var books_enabled := XTianqiGeneralBooks.ENABLED
+	var secrets_enabled := XTianqiSecrets.ENABLED
+	XTianqiGeneralBooks.ENABLED = false
+	XTianqiSecrets.ENABLED = false
 	var books := _secret_books(slots + 3)
 	_check("secret_books_found", books.size() == slots + 3, books)
 	# 一本书：没超（≤8% 的不变；超了也只封到 8%）
@@ -192,6 +197,8 @@ func _nine_cap() -> void:
 	var terminal_drop := float(res_off.breakdown.row.terminal) - float(res.breakdown.row.terminal)
 	_check("cap_secret_slots", terminal_drop > 0.0 and is_equal_approx(terminal_drop, raw - per * slots) and res.breakdown.row.has("nineCap"), [raw, slots, per, terminal_drop, res.breakdown.row.get("nineCap")])
 	_check("cap_value_lower", float(res.value) < float(res_off.value), [res.value, res_off.value])
+	XTianqiSecrets.ENABLED = secrets_enabled
+	XTianqiGeneralBooks.ENABLED = books_enabled
 	# 其余九线：③ 合计 ＋35%（套装确认阶段 ＋1 → 封到 0.35）
 	var b := s.actor(int(s.battle_slots[1]))
 	b.change_level(40)

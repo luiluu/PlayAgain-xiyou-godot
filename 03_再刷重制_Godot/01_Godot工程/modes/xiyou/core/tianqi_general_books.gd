@@ -1,9 +1,9 @@
 class_name XTianqiGeneralBooks
 extends RefCounted
-## 【小A·天启篇·未经审查】天启篇通用书第一批重标模块（T444 / T013-1d）。
+## 天启篇通用书重标模块（T013-1d / 1e）。
 ## 范围：教派包丁二（止戈/天怒、深渊六式 24 原技能并 18 口径、五条传承 21 技能、三本极尽升华被动）、
 ##       EV054 内 4 本主动书（投石问路、百草回春经上下、轮回转生决）、
-##       全量 147 本（含 6501 共 148 技能）抽奖与秘境被动，以及配套 26 个状态。
+##       抽奖与秘境被动、其余通用主动／被动／CE 精通书及配套状态。
 ## 数据：modes/xiyou/tianqi_data/general_books.json（独立于 skill_rework.json，与 T443 功法 50 本零重叠）。
 ## 规则：
 ## - 仅在天启篇存档（XTianqi.active）且 ENABLED := true 时生效；西游档零变化。
@@ -98,7 +98,7 @@ static func rec(id: int, base: Dictionary) -> Dictionary:
 
 ## XPowerBooks.param_rate_bonus 缓存键：天启篇通用书改写过的技能用负号隔离，避免跨存档或切开关串缓存
 static func rate_key(id: int) -> int:
-	if not on() or not has(id):
+	if not has(id) or not on():
 		return id
 	return -id
 
@@ -150,6 +150,8 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 				r.yepSeq[ph] = XTianqiSkills._seq_edit(r.yepSeq[ph], sp.seq)
 		if r.has("yepEffects"):
 			r.yepEffects = maxi(1, int(r.yepEffects) + XTianqiSkills._seq_effect_count(r.yepSeq) - before)
+	if sp.has("setup_seq") and r.get("yepSeq") is Dictionary and r.yepSeq.get("setup") is Array:
+		r.yepSeq.setup = XTianqiSkills._seq_edit(r.yepSeq.setup, sp.setup_seq)
 	if sp.has("repeats"):
 		r.repeats = int(sp.repeats)
 	if sp.has("scope"):
@@ -233,9 +235,10 @@ static func formula(a, b, item: Dictionary) -> float:
 		var idx := STATS.find(str(k))
 		if idx >= 0:
 			base += float(stats[k]) * float(a.param(idx))
-	var v := base * float(d.get("coef", 0.0)) * XTianqiSkills.level_scale(a)
+	var coefficient := float(d.coef_pct) / 100.0 if d.has("coef_pct") else float(d.get("coef", 0.0))
+	var v := base * coefficient * XTianqiSkills.level_scale(a)
 	var hit_cap := XTianqiBase.single_hit_cap(a)
-	var eff := float(d.get("coef", 0.0)) * (XTianqiSkills.hit_weight(d) if hit_cap > 0.0 else 1.0)
+	var eff := coefficient * (XTianqiSkills.hit_weight(d) if hit_cap > 0.0 else 1.0)
 	var prev := XTianqiSkills._cur_skill
 	XTianqiSkills._cur_skill = int(item.get("id", 0))
 	for c in d.get("conds", []):

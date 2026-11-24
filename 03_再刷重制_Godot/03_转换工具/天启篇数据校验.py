@@ -27,6 +27,10 @@ import json
 import re
 import sys
 from pathlib import Path
+from 天启篇通用书生成 import (
+    GROUP as GENERAL_BOOKS_B2, MASTERY, RANKED_SERIES, START_STATE, TAG,
+    passive_damage_factor, plan as general_books_b2_plan,
+)
 
 HERE = Path(__file__).resolve().parent
 PROJECT = HERE.parent / '01_Godot工程'
@@ -3511,7 +3515,7 @@ def check_secret_books(_args) -> bool:
 
 
 def general_books_rules(t: dict, db_dir: Path = None) -> list:
-    """T444（T013-1d）通用书第一批重标表 general_books.json 校验。"""
+    """T444/T445 通用书重标表校验。"""
     bad = []
 
     def check(name, ok, detail=''):
@@ -3540,14 +3544,21 @@ def general_books_rules(t: dict, db_dir: Path = None) -> list:
 
     # groups 与 skills 一一对应
     g_ids = {}
-    for gname in ('sect_ding2', 'ev054_actives', 'lottery_passives'):
+    for gname in ('sect_ding2', 'ev054_actives', 'lottery_passives', GENERAL_BOOKS_B2):
         arr = groups.get(gname)
         check('groups.%s 非空列表' % gname, isinstance(arr, list) and bool(arr), gname)
         if isinstance(arr, list):
             for x in arr:
                 check('groups.%s 技能号正整数' % gname, isint(x) and x > 0, x)
+                check('groups 技能号唯一', str(x) not in g_ids, x)
                 g_ids[str(x)] = gname
     check('groups 覆盖全部 skills', set(g_ids) == set(skills), 'diff=%s' % sorted(set(g_ids) ^ set(skills))[:8])
+    exemptions = t.get('coverage_exemptions')
+    check('coverage_exemptions 非空对象', isinstance(exemptions, dict) and bool(exemptions))
+    if isinstance(exemptions, dict):
+        for k, reason in exemptions.items():
+            check('coverage_exemptions[%s] 有原因且未同时重标' % k,
+                  str(k).isdigit() and k not in skills and isinstance(reason, str) and bool(reason.strip()))
 
     # 教派包丁二＋EV054 4 主动必含技能
     must_ding2 = {6185, 6204, 2826, 2827, 2828, 2829, 2830, 6236, 6237, 6239} | set(range(6186, 6204)) | set(range(6206, 6212)) | set(range(6217, 6235))
@@ -3556,7 +3567,12 @@ def general_books_rules(t: dict, db_dir: Path = None) -> list:
     check('EV054 4主动必含齐', all(str(x) in skills for x in must_ev054), sorted(x for x in must_ev054 if str(x) not in skills))
 
     forbid_re = re.compile(r'<(passiveAPLUS|AgainUse\w+|DepassiveHarmRe\d+|passiveHarmRe\d+|passiveWPNM\d+|passivePBSTEX\d+|StartPushState(?:1245|1246|1247|1248|1645))\b', re.I)
+    active_forbid_re = re.compile(rf'<\s*(?:{START_STATE}|RecPushState\d+|{MASTERY})\s*:', re.I)
     flat_pbst_re = re.compile(r'<passivePBST\d:\s*[+-]?\d+(?:\.\d+)?\s*>')
+    setup_state_re = re.compile(r'(?:add|remove) state\b', re.I)
+    damage_factors = {}
+    for sid in (6181, 6128, 6129, 6130, 6131):
+        check('派生技能 %d 已重标' % sid, str(sid) in skills)
 
     for sid_s, sp in skills.items():
         if not str(sid_s).isdigit() or not isinstance(sp, dict):
@@ -3565,7 +3581,13 @@ def general_books_rules(t: dict, db_dir: Path = None) -> list:
         check('skills[%s].group 一致' % sid_s, sp.get('group') == g_ids.get(sid_s), (sp.get('group'), g_ids.get(sid_s)))
         d = sp.get('damage')
         if isinstance(d, dict):
-            coef = float(d.get('coef', 0))
+            if 'coef_pct' in d:
+                pct = d['coef_pct']
+                check('skills[%s].damage.coef_pct 正整数且不与 coef 共存' % sid_s,
+                      isint(pct) and 0 < pct < 100 and 'coef' not in d, pct)
+                coef = pct / 100 if isint(pct) else 0
+            else:
+                coef = float(d.get('coef', 0))
             check('skills[%s].damage.coef 整数或整数百分比' % sid_s, coef > 0 and _int_or_pct(coef), coef)
             for st_k, w in d.get('stats', {}).items():
                 wf = float(w)
@@ -3580,6 +3602,26 @@ def general_books_rules(t: dict, db_dir: Path = None) -> list:
         na = str(sp.get('note_add', ''))
         check('skills[%s].note_add 无违规标签' % sid_s, forbid_re.search(na) is None, na)
         check('skills[%s].note_add 无固定 passivePBST' % sid_s, flat_pbst_re.search(na) is None, na)
+        if sp.get('group') == GENERAL_BOOKS_B2:
+            is_active = str(sp.get('template', '')).startswith(('A', 'B'))
+            if is_active:
+                check('skills[%s] 主动书无开战状态或额外熟练度公式' % sid_s,
+                      active_forbid_re.search(na) is None)
+            else:
+                try:
+                    tags = dict(TAG.findall(na))
+                    stats = dict(tuple(map(int, x.split(':'))) for x in tags.pop('CodexParamRate', '').split(',') if x)
+                    factor = passive_damage_factor(tags, stats)
+                    damage_factors[int(sid_s)] = factor
+                    check('skills[%s] 单本跨池伤害倍率上限 115%%' % sid_s, factor <= 115 * 100**4, factor)
+                except ValueError as exc:
+                    bad.append('skills[%s] 跨池预算要求整数值：%s' % (sid_s, exc))
+            if 'setup_seq' in sp:
+                setup = sp['setup_seq']
+                check('skills[%s].setup_seq 仅删除旧状态命令' % sid_s,
+                      is_active and isinstance(setup, list) and bool(setup)
+                      and all(isinstance(op, dict) and op.get('op') == 'drop_cmd'
+                              and setup_state_re.match(str(op.get('match', ''))) for op in setup))
         if sp.get('group') == 'lottery_passives' and isinstance(lcaps, dict):
             for m in re.finditer(r'<passiveHarmRi:\s*(-?\d+)>', na):
                 check('lottery[%s] 终伤不超限' % sid_s, int(m.group(1)) <= int(lcaps.get('harm_pct', 5)), m.group(1))
@@ -3607,6 +3649,12 @@ def general_books_rules(t: dict, db_dir: Path = None) -> list:
                     if len(kv) == 2:
                         check('lottery[%s] CodexParamRate不超限' % sid_s, int(kv[1].strip()) <= int(lcaps.get('param_pct', 6)), kv)
 
+    for first in RANKED_SERIES:
+        factors = [damage_factors.get(sid, 0) for sid in range(first, first + 4)]
+        check('skills[%d] 四档伤害逐级提高并落在 5%%～15%%' % first,
+              factors == sorted(set(factors)) and factors[0] >= 105 * 100**4
+              and factors[-1] <= 115 * 100**4, factors)
+
     for stid_s, sp in states.items():
         if not str(stid_s).isdigit() or not isinstance(sp, dict):
             bad.append('states[%s] 非法条目' % stid_s)
@@ -3631,6 +3679,13 @@ def general_books_rules(t: dict, db_dir: Path = None) -> list:
         sk_db = json.loads(sk_path.read_text(encoding='utf-8'))
         it_db = json.loads(it_path.read_text(encoding='utf-8'))
         st_db = json.loads(st_path.read_text(encoding='utf-8'))
+        if all((db / f'{name}.json').exists() for name in ('CommonEvents', 'System')):
+            expected, exempt, _ = general_books_b2_plan(t, db, DATA_DIR)
+            actual = {sid: row for sid, row in skills.items() if isinstance(row, dict)
+                      and row.get('group') == GENERAL_BOOKS_B2}
+            diff = sorted(sid for sid in expected.keys() | actual.keys()
+                          if expected.get(sid) != actual.get(sid))
+            check('直接教书、公共事件和派生技能重标或归属齐全', not diff and exempt == exemptions, diff[:12])
         taught5 = sorted({
             int(e['dataId'])
             for it in it_db if isinstance(it, dict)
@@ -3652,6 +3707,13 @@ def general_books_rules(t: dict, db_dir: Path = None) -> list:
             note += str(sp.get('note_add', ''))
             check('Skills[%d] 改后无违规标签' % sid, forbid_re.search(note) is None, sid)
             check('Skills[%d] 改后无固定 passivePBST' % sid, flat_pbst_re.search(note) is None, sid)
+            if (sp.get('group') == GENERAL_BOOKS_B2 and str(sp.get('template', '')).startswith(('A', 'B'))):
+                check('Skills[%d] 改后无开战状态或额外熟练度公式' % sid,
+                      active_forbid_re.search(note) is None, sid)
+                dropped = {op.get('match') for op in sp.get('setup_seq', []) if isinstance(op, dict)}
+                legacy = {cmd[0] for cmd in sk_db[sid].get('yepSeq', {}).get('setup', [])
+                          if setup_state_re.match(cmd[0])}
+                check('Skills[%d] 施放前无旧状态命令' % sid, legacy <= dropped, sorted(legacy - dropped))
         for stid_s, sp in states.items():
             stid = int(stid_s)
             if stid >= len(st_db) or not isinstance(st_db[stid], dict):
