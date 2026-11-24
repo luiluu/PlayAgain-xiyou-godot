@@ -658,7 +658,8 @@ static func _relic_rows(obj: Dictionary, rows: Array, pos: Array) -> void:
 	var xp := int(XMagicWeapon.exp_of(obj))
 	var at := rows.find_custom(func(r): return str(r[0]) == "等级需求：1")
 	at = at + 1 if at >= 0 else int(pos[3])
-	var lines := ["当前等级：%d / %d" % [lv, top], "法宝经验：%d" % xp + ("（已满级）" if lv >= top else " / %d" % int(XMagicWeapon.next_level_exp(obj)))]
+	var old_tag := "（旧档超上限）" if XMagicWeapon.scale_active(obj) and lv > int(XMagicWeapon.top_level(obj)) else ""
+	var lines := ["当前等级：%d / %d%s" % [lv, top, old_tag], "法宝经验：%d" % xp + ("（已满级）" if lv >= top else " / %d" % int(XMagicWeapon.next_level_exp(obj)))]
 	for i in lines.size():
 		rows.insert(at + i, [lines[i], OTHER_SIZE, "rgba(255,255,255,1)", false, 0])
 
@@ -669,7 +670,7 @@ static var _fabao_kirin_re: RegEx
 
 
 static func _fabao_signed(v: int) -> String:
-	return "＋%d" % v if v >= 0 else "－%d" % absi(v)
+	return "+%d" % v if v >= 0 else "-%d" % absi(v)
 
 
 static func _fabao_format_stats(vals: Array) -> String:
@@ -748,7 +749,8 @@ static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
 			continue
 		if p.begins_with("当前等级：") and p.contains(" / 888；经验："):
 			var nr := r.duplicate()
-			nr[0] = str(r[0]).replace(" / 888；经验：", " / %d；经验：" % cap_lv)
+			var old_tag := "（旧档超上限）" if lv > top_lv else ""
+			nr[0] = str(r[0]).replace(" / 888；经验：", " / %d%s；经验：" % [cap_lv, old_tag])
 			kept.append(nr)
 			continue
 		if _fabao_kirin_re.search(p) != null:
@@ -777,20 +779,26 @@ static func _apply_fabao_scale_rows(obj: Dictionary, rows: Array) -> void:
 		full_vals.append(XMagicWeapon.scaled_growth(obj, float(per[i]), float(top_lv)))
 	var cur_text := _fabao_format_stats(cur_vals)
 	var full_text := _fabao_format_stats(full_vals)
+	var is_three := not XThreeGrowth.spec_of(obj).is_empty() and (not obj.has("kind") or str(obj.get("kind", "")) == "armor")
+	var evo_hint := "（60级进化后加成翻倍）" if is_three and not XThreeGrowth.is_evolved(obj) else ""
 	var add := []
 	if lv < top_lv:
-		var cap_txt := "本层上限%d" % cap_lv if cap_lv > 0 and cap_lv < top_lv else str(top_lv)
+		var lv_txt := ""
+		if cap_lv > 0 and cap_lv < top_lv:
+			lv_txt = "Lv.%d/本层上限%d" % [lv, cap_lv] if lv <= cap_lv else "Lv.%d/%d，本层上限%d" % [lv, top_lv, cap_lv]
+		else:
+			lv_txt = "Lv.%d/%d" % [lv, top_lv]
 		if cur_text != "":
-			add.append("\\c[3]成长：法宝当前（Lv.%d／%s）%s" % [lv, cap_txt, cur_text])
+			add.append("\\c[3]加成：法宝当前（%s）累计 %s" % [lv_txt, cur_text])
 		if full_text != "":
-			add.append("\\c[3]成长：法宝满级（%d级）%s" % [top_lv, full_text])
+			add.append("\\c[3]满级（%d级）累计 %s%s" % [top_lv, full_text, evo_hint])
 	elif lv == top_lv:
 		if cur_text != "":
-			add.append("\\c[3]成长：法宝满级（Lv.%d／%d）%s" % [lv, top_lv, cur_text])
+			add.append("\\c[3]加成：法宝满级（Lv.%d/%d）累计 %s%s" % [lv, top_lv, cur_text, evo_hint])
 	else:
-		var note_cap := "已按满级封顶" if float(lv) <= orig_max else "保留原等级加成"
+		var note_cap := "超出现行上限，按%d级满级加成计" % top_lv if float(lv) <= orig_max else "高于满级，按原等级加成计"
 		if cur_text != "":
-			add.append("\\c[3]成长：法宝当前（旧档Lv.%d，%s）%s" % [lv, note_cap, cur_text])
+			add.append("\\c[3]加成：法宝当前（旧档Lv.%d，%s）累计 %s%s" % [lv, note_cap, cur_text, evo_hint])
 	for k in add.size():
 		kept.insert(insert_at + k, [add[k], 18, "rgba(255,255,255,1)", false, 0])
 	rows.clear()

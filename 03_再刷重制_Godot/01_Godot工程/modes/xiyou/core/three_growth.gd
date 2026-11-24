@@ -50,6 +50,14 @@ static func _evolved(e: Dictionary, spec: Dictionary) -> bool:
 	return bool(e.get("_codex60Evolved", false)) or (a != null and int(a.level) >= 60)
 
 
+## 只读查询三法宝是否已 60 级进化（非三法宝返回 false）
+static func is_evolved(e: Dictionary) -> bool:
+	var spec := spec_of(e)
+	if spec.is_empty() or (e.has("kind") and str(e.get("kind", "")) != "armor"):
+		return false
+	return _evolved(e, spec)
+
+
 ## 只读查询三法宝当前原始每级成长（不改写原件，给说明卡与 XActor.magic_per_level 用；不归这里管返回空）
 static func growth_of(e: Dictionary) -> Array:
 	var spec := spec_of(e)

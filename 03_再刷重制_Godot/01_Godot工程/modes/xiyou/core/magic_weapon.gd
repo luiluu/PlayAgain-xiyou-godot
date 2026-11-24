@@ -104,25 +104,10 @@ static func scale_active(item = null, state: XState = null) -> bool:
 	return true
 
 
-## 折算后的有效法宝等级（用于计算法宝每级成长总属性）：
-## - 关折算／天启档／原上限 ≤ 99：原样返回 lv；
-## - 1..99 级：lv * orig_max / 99.0（lv == 99 时精确取 orig_max，避免浮点误差）；
-## - 老存档 lv > 99：平滑封顶到 maxf(lv, orig_max)（如 331／888 级均按 888 算，不爆表不降级；>888 保原等级）。
-static func effective_level(item: Dictionary, lv: float, state: XState = null) -> float:
-	if lv <= 0.0:
-		return lv
-	if not scale_active(item, state):
-		return lv
-	var orig_max := raw_max_level(item)
-	var top := float(CAP_TOP)
-	if lv >= top:
-		return maxf(lv, orig_max)
-	return lv * orig_max / top
-
-
 ## 给定原始每级成长 per 与法宝等级 lv，计算本项实际总成长属性：
-## - 关折算时与原版一致（lv * per）；
-## - 开折算时 1..98 级取 roundf(lv * orig_max / 99.0 * per)，99 级精确等于 orig_max * per（888 * per），支持负成长（如紫电）。
+## - 关折算／天启档／原上限 ≤ 99：与原版一致（lv * per）；
+## - 开折算时 1..98 级取 roundf(lv * orig_max / 99.0 * per)，99 级精确等于 orig_max * per（888 * per），支持负成长（如紫电）；
+## - 老存档 lv > 99：平滑封顶到 maxf(lv, orig_max) * per（如 331／888 级均按 888 算，不爆表不降级；极端 >888 保原等级）。
 static func scaled_growth(item: Dictionary, per: float, lv: float, state: XState = null) -> float:
 	if lv <= 0.0 or per == 0.0:
 		return 0.0

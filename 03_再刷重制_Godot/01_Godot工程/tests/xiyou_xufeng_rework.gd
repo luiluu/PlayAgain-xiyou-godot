@@ -196,12 +196,12 @@ func _check_rework_data_and_text() -> void:
 	var sk9998 := XDB.rec("Skills", 9998)
 	var n9998 := str(sk9998.note)
 	check("9998.formula_text",
-		str(sk9998.damage.formula) == "(%d+a.atk*%d)*(1+user.skillMasteryLevel(item.id))" % [XXufeng.GUNLONG_BASE, XXufeng.GUNLONG_ATK_MUL]
+		str(sk9998.damage.formula) == "(%d+a.atk*%d)*(1+user.skillMasteryLevel(item.id))" % [XXufeng.GUNLONG_BASE, XXufeng.gunlong_atk_mul()]
 		and not str(sk9998.damage.formula).contains("b.hp")
 		and XSmartAI.formula_safe(str(sk9998.damage.formula))
 		and sk9998.meta.has("StartPushState2539")
 		and int(sk9998.yepEffects) == 5
-		and n9998.contains("[%d+己·攻击力*%d]*[1+技能等级]" % [XXufeng.GUNLONG_BASE, XXufeng.GUNLONG_ATK_MUL])
+		and n9998.contains("[%d+己·攻击力*%d]*[1+技能等级]" % [XXufeng.GUNLONG_BASE, XXufeng.gunlong_atk_mul()])
 		and n9998.contains("消耗10tp"),
 		[sk9998.damage.formula, n9998])
 	var st2539_xy := XDB.rec("States", 2539)
@@ -238,7 +238,7 @@ func _check_rework_data_and_text() -> void:
 	a143_lv99["level"] = 99
 	var a143_card := "\n".join(PackedStringArray(XHelpCard.content(a143_lv99).map(func(r): return XHelpCard.plain(str(r[0])).replace("\\lock[1]", ""))))
 	check("armor143.help_card_scaled99",
-		a143_card.contains("魔法＋%d；其余全属性＋%d" % [888 * (XXufeng.FABAO_GROW_ALL + XXufeng.FABAO_GROW_MMP_EXTRA), 888 * XXufeng.FABAO_GROW_ALL])
+		a143_card.contains("魔法+%d；其余全属性+%d" % [888 * (XXufeng.FABAO_GROW_ALL + XXufeng.FABAO_GROW_MMP_EXTRA), 888 * XXufeng.FABAO_GROW_ALL])
 		and not a143_card.contains("法宝每级增加"),
 		a143_card)
 	var w76 := XDB.rec("Weapons", 76)
@@ -252,7 +252,7 @@ func _check_rework_data_and_text() -> void:
 		and is_equal_approx(float(w76.customParams.params[2].level), float(XXufeng.XIUDONG_GROW))
 		and n76.contains("造成所有伤害结果*249%")
 		and n76.contains("混沌伤+%d%%" % XXufeng.XIUDONG_EL_AMP)
-		and n76.contains("攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [XXufeng.XIUDONG_ATK_PCT, XXufeng.XIUDONG_HARM, XXufeng.XIUDONG_HARM])
+		and n76.contains("攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [XXufeng.xiudong_atk_pct(), XXufeng.XIUDONG_HARM, XXufeng.XIUDONG_HARM])
 		and n76.contains("每级+%d)" % XXufeng.XIUDONG_GROW),
 		n76)
 	var a129 := XDB.rec("Armors", 129)
@@ -657,7 +657,7 @@ func _check_r2_migrations() -> void:
 	var w_on: Dictionary = s_r0_on.actor(152).equips[0]
 	var c_on: Dictionary = s_r0_on.actor(152).equips[1]
 	check("r2.r0_to_r1",
-		is_equal_approx(float(w_on.traits[3].value), float(XXufeng.XIUDONG_ATK_PCT) / 100.0)
+		is_equal_approx(float(w_on.traits[3].value), float(XXufeng.xiudong_atk_pct()) / 100.0)
 		and is_equal_approx(float(w_on.yep.elementAmplify["1"]), float(XXufeng.XIUDONG_EL_AMP) / 100.0)
 		and str(w_on.meta.get("passiveHarmRi", "")) == str(XXufeng.XIUDONG_HARM)
 		and str(w_on.note).contains("造成所有伤害结果*249%")
@@ -740,7 +740,7 @@ func _check_r2_migrations() -> void:
 	var dmg_ref_rw := _single_hit_9998(s_wh_ref_rw)
 	check("r2.star_wh.orig_to_rw_equip_now",
 		dep1 == "" and wd1
-		and is_equal_approx(float(got_rw.traits[3].value), float(XXufeng.XIUDONG_ATK_PCT) / 100.0)
+		and is_equal_approx(float(got_rw.traits[3].value), float(XXufeng.xiudong_atk_pct()) / 100.0)
 		and is_equal_approx(float(got_rw.yep.elementAmplify["1"]), float(XXufeng.XIUDONG_EL_AMP) / 100.0)
 		and str(got_rw.meta.get("passiveHarmRi", "")) == str(XXufeng.XIUDONG_HARM)
 		and is_equal_approx(float(got_rw.params[2]), 155.0)
@@ -794,7 +794,7 @@ func _check_r2_migrations() -> void:
 	var stored_after_dep: Dictionary = XStarWarehouse.gear()[0]
 	check("r2.star_wh.deposit_syncs",
 		dep3 == ""
-		and is_equal_approx(float(stored_after_dep.traits[3].value), float(XXufeng.XIUDONG_ATK_PCT) / 100.0)
+		and is_equal_approx(float(stored_after_dep.traits[3].value), float(XXufeng.xiudong_atk_pct()) / 100.0)
 		and is_equal_approx(float(stored_after_dep.yep.elementAmplify["1"]), float(XXufeng.XIUDONG_EL_AMP) / 100.0)
 		and str(stored_after_dep.meta.get("passiveHarmRi", "")) == str(XXufeng.XIUDONG_HARM),
 		[dep3, stored_after_dep.traits[3].value, stored_after_dep.meta.get("passiveHarmRi")])
@@ -933,6 +933,40 @@ func _check_dummy_tiers() -> void:
 		elif tag.ends_with("_single"):
 			check("dummy.%s.option_b_range" % tag, ratio >= 0.70 and ratio <= 0.85,
 				{"kd_T": snappedf(kd_m, 0.01), "xf_T": snappedf(xf_m, 0.01), "ratio": snappedf(ratio, 0.0001)})
+
+	# T468 P2-1：关闭 SCALE_99_TO_888（不手清缓存）联动回退 209000／137%，且木桩各主档仍落 D272（1.15～1.25× 狂刀）
+	XMagicWeapon.SCALE_99_TO_888 = false
+	var s_off := _make_xiyou_state(80)
+	XState.current = s_off
+	var sk9998_off := XDB.rec("Skills", 9998)
+	var w76_off := XDB.rec("Weapons", 76)
+	check("scale_off.xufeng_联动_209000_137",
+		XXufeng.gunlong_atk_mul() == 209000
+		and XXufeng.xiudong_atk_pct() == 137
+		and str(sk9998_off.damage.formula).contains("a.atk*209000")
+		and str(sk9998_off.note).contains("己·攻击力*209000")
+		and is_equal_approx(float(w76_off.traits[3].value), 1.37)
+		and str(w76_off.note).contains("攻击力能力值*137%"),
+		[sk9998_off.damage.formula, w76_off.traits[3].value])
+	for row in [
+		["scale_off_lv50", 50, 99, 0, 0, 0],
+		["scale_off_lv70", 70, 99, 0, 0, 0],
+		["scale_off_lv75_fullset", 75, 99, 2019, 76, 129],
+		["scale_off_lv80_fullset", 80, 99, 2019, 76, 129],
+	]:
+		var tag: String = row[0]
+		var kd_list := _bench_seeds(122, 4575, int(row[3]), 0, int(row[1]), int(row[2]), 32, seeds)
+		var xf_list := _bench_seeds(152, 143, int(row[4]), int(row[5]), int(row[1]), int(row[2]), 32, seeds)
+		var kd_m := _mean(kd_list)
+		var xf_m := _mean(xf_list)
+		var ratio := xf_m / maxf(1e-9, kd_m)
+		print("BENCH ", tag, " ", JSON.stringify({
+			"kd_T": snappedf(kd_m, 0.01), "xf_T": snappedf(xf_m, 0.01),
+			"ratio": snappedf(ratio, 0.0001),
+		}))
+		check("dummy.%s.ratio" % tag, ratio >= 1.15 and ratio <= 1.25,
+			{"kd_T": snappedf(kd_m, 0.01), "xf_T": snappedf(xf_m, 0.01), "ratio": snappedf(ratio, 0.0001)})
+	XMagicWeapon.SCALE_99_TO_888 = true
 	XStateEffects.force_critical = false
 
 

@@ -291,31 +291,52 @@ func _test_help_cards() -> void:
 	var zx_join := "\n".join(PackedStringArray(zx_rows))
 	var expect_lv1 := int(XActor.magic_param(zx, 0))
 	check("card.zhuxian_lv1_match",
-		zx_join.contains("法宝当前（Lv.1／本层上限12）全属性＋%d" % expect_lv1)
-		and zx_join.contains("法宝满级（99级）全属性＋15984")
+		zx_join.contains("加成：法宝当前（Lv.1/本层上限12）累计 全属性+%d" % expect_lv1)
+		and zx_join.contains("满级（99级）累计 全属性+15984")
+		and not zx_join.contains("加成：法宝满级")
 		and not zx_join.contains("法宝每级增加18全属性"),
 		zx_rows)
 	check("card.zhuxian_note_untouched", str(zx.note) == orig_note)
+
+	# a2) 旧档等级高于本层上限但未满 99（如 1 层 Lv.50）
+	zx["level"] = 50
+	var zx50_f1 := "\n".join(PackedStringArray(_plain_rows(XHelpCard.content(zx))))
+	check("card.zhuxian_lv50_over_floor_cap",
+		zx50_f1.contains("加成：法宝当前（Lv.50/99，本层上限12）累计 全属性+%d" % int(XActor.magic_param(zx, 0))),
+		zx50_f1)
 
 	# b) 诛仙剑 Lv.99（30 层上限 99）
 	s.set_variable(20, 30)
 	zx["level"] = 99
 	var zx99_join := "\n".join(PackedStringArray(_plain_rows(XHelpCard.content(zx))))
 	check("card.zhuxian_lv99_match",
-		zx99_join.contains("法宝满级（Lv.99／99）全属性＋15984")
+		zx99_join.contains("加成：法宝满级（Lv.99/99）累计 全属性+15984")
 		and not zx99_join.contains("法宝当前"),
 		zx99_join)
 	# detail_rows 也一致
 	var zx99_detail := "\n".join(PackedStringArray(_plain_rows(XHelpCard.detail_rows(zx, 380.0))))
-	check("card.detail_rows_match", zx99_detail.contains("法宝满级（Lv.99／99）全属性＋15984"), zx99_detail)
+	check("card.detail_rows_match", zx99_detail.contains("加成：法宝满级（Lv.99/99）累计 全属性+15984"), zx99_detail)
 
 	# c) 老存档 331 级与 1000 级
 	zx["level"] = 331
 	var zx331_join := "\n".join(PackedStringArray(_plain_rows(XHelpCard.content(zx))))
-	check("card.old331_note", zx331_join.contains("旧档Lv.331，已按满级封顶") and zx331_join.contains("全属性＋15984"), zx331_join)
+	check("card.old331_note",
+		zx331_join.contains("加成：法宝当前（旧档Lv.331，超出现行上限，按99级满级加成计）累计 全属性+15984"),
+		zx331_join)
 	zx["level"] = 1000
 	var zx1000_join := "\n".join(PackedStringArray(_plain_rows(XHelpCard.content(zx))))
-	check("card.old1000_note", zx1000_join.contains("旧档Lv.1000，保留原等级加成") and zx1000_join.contains("全属性＋18000"), zx1000_join)
+	check("card.old1000_note",
+		zx1000_join.contains("加成：法宝当前（旧档Lv.1000，高于满级，按原等级加成计）累计 全属性+18000"),
+		zx1000_join)
+
+	# c2) 4563 雷符（张楚岚专属）：原备注「最大生命+500」对应 <mhp Param +500 per Level>，实算行准确体现 888×500=444000
+	var leifu := XGear.template("armor", 4563)
+	leifu["level"] = 99
+	var lf_join := "\n".join(PackedStringArray(_plain_rows(XHelpCard.content(leifu))))
+	check("card.leifu4563_scaled_mhp",
+		lf_join.contains("加成：法宝满级（Lv.99/99）累计 生命+444000；其余全属性+17760")
+		and not lf_join.contains("法宝每级增加20全属性"),
+		lf_join)
 
 	# d) 武器法宝 73 麒麟对剑：保留人物等级成长行，替换旧法宝每级行
 	var kr := XGear.template("weapon", 73)
@@ -324,42 +345,63 @@ func _test_help_cards() -> void:
 	check("card.kirin_keeps_actor_growth",
 		kr_join.contains("麒麟（可如法宝一样升级）")
 		and kr_join.contains("随人物等级提升")
-		and kr_join.contains("生命/魔法＋88800；魔攻＋44400")
+		and kr_join.contains("生命/魔法+88800；魔攻+44400")
 		and not kr_join.contains("每级+50魔攻"),
 		kr_join)
 
-	# e) 三法宝百谷生 7912（进化后 Lv.99），数据库原件不动
+	# e) 三法宝百谷生 7912：未进化带「60级进化后加成翻倍」，进化后按翻倍总值显示且不重复提示，数据库原件不动
 	s.actor_max_level = 99
-	s.actor(175).change_level_mv(60)
+	s.actor(175).change_level_mv(50)
 	var bgs_db := XDB.rec("Armors", 7912)
+	var bgs_pre := "\n".join(PackedStringArray(_plain_rows(XHelpCard.content(bgs_db))))
+	check("card.three_growth_pre60_evo_hint",
+		bgs_pre.contains("满级（99级）累计")
+		and bgs_pre.contains("31968")
+		and bgs_pre.contains("15984")
+		and bgs_pre.contains("（60级进化后加成翻倍）")
+		and not bgs_pre.contains("法宝每级："),
+		bgs_pre)
+	s.actor(175).change_level_mv(60)
 	var bgs_join := "\n".join(PackedStringArray(_plain_rows(XHelpCard.content(bgs_db))))
 	check("card.three_growth_evolved",
-		bgs_join.contains("法宝满级（99级）")
+		bgs_join.contains("满级（99级）累计")
 		and bgs_join.contains("63936")
 		and bgs_join.contains("31968")
+		and not bgs_join.contains("60级进化后加成翻倍")
 		and not bgs_join.contains("法宝每级："),
 		bgs_join)
 	check("card.three_growth_db_untouched", str(bgs_db.name) == "百谷生")
 
-	# f) 织神天梭 7935：顶部八项与实算一致，旧每级成长行已替换
+	# f) 织神天梭 7935：顶部八项与实算一致，旧每级成长行已替换；旧档 331 级带超上限提示
 	var ys := XGear.template("armor", XYunshang.RELIC)
 	ys["level"] = 99
 	var ys_join := "\n".join(PackedStringArray(_plain_rows(XHelpCard.content(ys))))
 	check("card.yunshang_match",
-		ys_join.contains("魔攻/敏捷＋45288；其余全属性＋15984")
+		ys_join.contains("魔攻/敏捷+45288；其余全属性+15984")
 		and not ys_join.contains("每级成长："),
 		ys_join)
+	ys["level"] = 331
+	var ys331_join := "\n".join(PackedStringArray(_plain_rows(XHelpCard.content(ys))))
+	check("card.yunshang_old331_hint",
+		ys331_join.contains("当前等级：331 / 99（旧档超上限）")
+		and ys331_join.contains("旧档Lv.331，超出现行上限，按99级满级加成计"),
+		ys331_join)
 
-	# g) 饿狼破限之心 7904：等级上限 99，旧每级成长行已替换
+	# g) 饿狼破限之心 7904：等级上限 99，旧每级成长行已替换；旧档 331 级带超上限提示
 	var gr := XGear.template("armor", 7904)
 	gr["level"] = 50
 	var gr_join := "\n".join(PackedStringArray(_plain_rows(XHelpCard.content(gr))))
 	check("card.garou_match",
 		gr_join.contains("等级上限：99")
 		and gr_join.contains("当前等级：50 / 99；经验：")
-		and gr_join.contains("法宝满级（99级）")
+		and gr_join.contains("满级（99级）累计")
 		and not gr_join.contains("每级成长："),
 		gr_join)
+	gr["level"] = 331
+	var gr331_join := "\n".join(PackedStringArray(_plain_rows(XHelpCard.content(gr))))
+	check("card.garou_old331_hint",
+		gr331_join.contains("当前等级：331 / 99（旧档超上限）；经验："),
+		gr331_join)
 
 
 ## 7) 开关回退与天启档隔离
