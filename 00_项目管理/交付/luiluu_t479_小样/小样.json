@@ -1,0 +1,547 @@
+{
+ "version": 0,
+ "_doc": "小样，格式见 小样差异表.md「字段约定」；enemies 键＝敌人号字符串",
+ "enemies": {
+  "79": {
+   "natures": [
+    4,
+    6
+   ],
+   "src": "keyword",
+   "hit": "石、林",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "66": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "12": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    14
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "354": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "水",
+   "xiyou_affinity": [
+    3,
+    4
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "678": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": [
+    4
+   ],
+   "verdict": ""
+  },
+  "47": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "124": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "189": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    9,
+    15
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "82": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "141": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    14,
+    3
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "647": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    9,
+    15
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "649": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": [
+    4
+   ],
+   "verdict": ""
+  },
+  "15": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    3,
+    14
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "536": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": [
+    4
+   ],
+   "verdict": ""
+  },
+  "49": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    2,
+    4
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "675": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    1
+   ],
+   "verdict": ""
+  },
+  "461": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "血",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    1
+   ],
+   "verdict": ""
+  },
+  "592": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    7
+   ],
+   "absorb": [
+    1
+   ],
+   "verdict": ""
+  },
+  "595": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [],
+   "absorb": [
+    1
+   ],
+   "verdict": ""
+  },
+  "652": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    6,
+    9
+   ],
+   "absorb": [
+    1
+   ],
+   "verdict": ""
+  },
+  "971": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "影",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    1,
+    9
+   ],
+   "verdict": ""
+  },
+  "979": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "影",
+   "xiyou_affinity": [
+    2,
+    3
+   ],
+   "absorb": [
+    1,
+    2,
+    3
+   ],
+   "verdict": ""
+  },
+  "655": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    7,
+    2
+   ],
+   "absorb": [
+    1
+   ],
+   "verdict": ""
+  },
+  "657": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    7,
+    2
+   ],
+   "absorb": [
+    1
+   ],
+   "verdict": ""
+  },
+  "980": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "影",
+   "xiyou_affinity": [
+    3,
+    4
+   ],
+   "absorb": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    9
+   ],
+   "verdict": ""
+  },
+  "981": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "影",
+   "xiyou_affinity": [
+    2,
+    8
+   ],
+   "absorb": [
+    1,
+    2,
+    8
+   ],
+   "verdict": ""
+  },
+  "973": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "影",
+   "xiyou_affinity": [
+    9
+   ],
+   "absorb": [
+    1,
+    9
+   ],
+   "verdict": ""
+  },
+  "976": {
+   "natures": [
+    9
+   ],
+   "src": "keyword",
+   "hit": "影",
+   "xiyou_affinity": [
+    2,
+    3
+   ],
+   "absorb": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    9
+   ],
+   "verdict": ""
+  },
+  "22": {
+   "natures": [
+    6
+   ],
+   "src": "keyword",
+   "hit": "林",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "verdict": ""
+  },
+  "23": {
+   "natures": [
+    6
+   ],
+   "src": "keyword",
+   "hit": "林",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "verdict": ""
+  },
+  "13": {
+   "natures": [
+    14
+   ],
+   "src": "keyword",
+   "hit": "鱼",
+   "xiyou_affinity": [
+    14
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "303": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "verdict": ""
+  },
+  "867": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    4
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "309": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "verdict": ""
+  },
+  "1": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "verdict": ""
+  },
+  "56": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "558": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "verdict": ""
+  },
+  "573": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ],
+   "verdict": ""
+  },
+  "578": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    2
+   ],
+   "absorb": [
+    2
+   ],
+   "verdict": ""
+  },
+  "563": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "verdict": ""
+  },
+  "2": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "verdict": ""
+  },
+  "115": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "552": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [
+    6
+   ],
+   "absorb": [],
+   "verdict": ""
+  },
+  "57": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "verdict": ""
+  },
+  "305": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "verdict": ""
+  },
+  "542": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "verdict": ""
+  },
+  "41": {
+   "natures": [],
+   "src": "none",
+   "hit": "",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "verdict": ""
+  }
+ }
+}
