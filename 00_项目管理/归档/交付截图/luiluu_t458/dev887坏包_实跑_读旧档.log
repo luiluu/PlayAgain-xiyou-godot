@@ -1,0 +1,107 @@
+SCRIPT ERROR: Parse Error: Identifier "XTianqiHallIntro" not declared in the current scope.
+          at: GDScript::reload (res://modes/xiyou/map/map_scene.gd:170)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "intro" variable because the value doesn't have a set type.
+          at: GDScript::reload (res://modes/xiyou/map/map_scene.gd:170)
+SCRIPT ERROR: Parse Error: Identifier "XTianqiHallIntro" not declared in the current scope.
+          at: GDScript::reload (res://modes/xiyou/map/map_scene.gd:172)
+SCRIPT ERROR: Parse Error: Identifier "XTianqiHallIntro" not declared in the current scope.
+          at: GDScript::reload (res://modes/xiyou/map/map_scene.gd:177)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/map/mv_interpreter.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/treasure_map.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/treasure_batch.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/gear.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/tianqi_random.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/heartsteel.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/growth_forge.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/crafting.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/mv_event_core.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/battle/battle_event_runner.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/battle/battle_logic.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/hang_up_auto.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/hang_up.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/dungeon.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/rift_alien.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/alienation.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/alien_battle.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/ui/menu.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/ui/skin/skin_main_menu.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/ui/skin/skin_party_strip.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/ui/skin/skin_target_list.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/ui/skin/skin_template_page.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/ui/skin/skin_notice_lane.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/ui/toast.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/zhenqi.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/xdb.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/demon_crown.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/xsave.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/xconfig.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/ui/font_scale.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/ui/skin/ui_skin.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/ui/xwindow_style.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/ui/xui.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/enemy.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/boss_output_context.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/resource_context.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/battler.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/actor.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://modes/xiyou/core/xstate.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://core/touch_controls.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://core/key_repeat.gd:0)
+SCRIPT ERROR: Compile Error: Failed to compile depended scripts.
+          at: GDScript::reload (res://core/game_app.gd:0)
+ERROR: Failed to load script "res://core/game_app.gd" with error "Compilation failed".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+SMOKE_KEY=wait:200 scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=accept scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=wait:60 scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=accept scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=wait:60 scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=accept scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=wait:60 scene=res://modes/xiyou/entry.tscn
+SMOKE_KEY=accept scene=res://modes/xiyou/map/map_scene.tscn
+SMOKE_KEY=wait:200 scene=res://modes/xiyou/map/map_scene.tscn
+SMOKE_DONE scene=res://modes/xiyou/map/map_scene.tscn
+Godot Engine v4.7.2.stable.kyo_aes.ed1daf0bf (2026-08-17 01:18:38 UTC) - https://godotengine.org
+
+XSaveSeal: 旧存档已补上签名：{"dir":"user://modes/xiyou","failed":[],"sealed":["save_1.json"]}

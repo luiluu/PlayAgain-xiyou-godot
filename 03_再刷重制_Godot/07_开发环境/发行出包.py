@@ -11,6 +11,13 @@
   python3 发行出包.py --keep-old       出完不删旧发行目录
   python3 发行出包.py --since <号>     发行说明从这个开发编号之后算（默认上一个发行目录的号）
   python3 发行出包.py --no-save-key --allow-unsealed  仅限本地测试用明文包（单传 --no-save-key 默认拦下；此包不能发给玩家）
+  python3 发行出包.py --skip-run "<理由>"  不实跑 mac 包进地图（理由必填，写进 冒烟.md；旧发行目录不删）
+
+出包硬门禁（T458，T424 dev.887 坏包后加）：
+  - 导出前：发行预设排除检查.py 对要导出的空壳树查三个发行预设的 exclude_filter，踢掉空壳／KEEP／class_name／被引用的脚本就不导
+  - 导出后：解开 mac 包实跑两次（新 HOME、无头、静音）——新开局进地图；用工程造一份明文旧档放进存档目录，从标题「旧的回忆」读进地图。
+    输出里有 SCRIPT ERROR／Parse Error／Failed to load script／Failed loading resource／Cannot open file、没到地图、读档那次第一下就进了地图（没读档、是新开局）都判出包失败。
+    --no-smoke 不跳过这两项；要跳过只能 --skip-run "<理由>"
 
 产物：<上一级>/dev<号>_三平台发行/
   再刷一把_天启篇_mac.zip              macOS 发行（universal）
@@ -245,6 +252,158 @@ def stub_smoke(tree: Path, logs: Path) -> list:
     return probs
 
 
+def preset_exclude_problems(tree: Path) -> list:
+    """T458：导出前查发行预设 exclude_filter 没踢掉要进包的脚本／场景（发行预设排除检查.py），有就不导。"""
+    spec = importlib.util.spec_from_file_location('发行预设排除检查', HERE / '发行预设排除检查.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    try:
+        probs, n = m.check((tree / 'export_presets.cfg').read_text(encoding='utf-8'), tree)
+    except (OSError, ValueError) as e:
+        return [f'发行预设排除检查读不了：{e}']
+    print(f'== 发行预设排除检查：{n} 个要进包的脚本／场景，' + ('通过' if not probs else f'{len(probs)} 处被排除'))
+    for x in probs[:20]:
+        print('  ' + x)
+    return [f'发行预设 exclude_filter 踢掉了要进包的脚本（{"；".join(probs[:3])}）：改 export_presets.cfg 或挪脚本，'
+            '单跑 python3 07_开发环境/发行预设排除检查.py'] if probs else []
+
+
+# ---- 出包后实跑（T458）：mac 包新开局进地图＋读明文旧档进地图 ----
+# 后两条（T457 核 P3-1）：运行时拼路径 load 被排除的资源
+RUN_FATAL = re.compile(r'SCRIPT ERROR|Parse Error|Failed to load script|Failed loading resource|Cannot open file')
+RUN_MAP = 'res://modes/xiyou/map/map_scene.tscn'
+# 没存档时第一下确认就开新局（发行包天启篇关着，直接进西游开局地图）；后面几下是在地图上按，按完多等 120 帧让地图事件跑起来
+RUN_NEW_GAME_KEYS = 'accept,accept,accept,down,accept,wait:120'
+# 有存档时标题光标默认在「旧的回忆」：确认 → 读档页 → 选格 → 进地图（第一下后必须还在标题，否则是开了新局、没读档）
+RUN_LOAD_KEYS = 'wait:200,accept,wait:60,accept,wait:60,accept,wait:60,accept,wait:200'
+RUN_TIMEOUT = 600
+SKIP_RUN = ''  # --skip-run 的理由；非空＝不实跑
+# 造旧档：照 MV setupNewGame 建新局、带 1 号角色，关掉封存写明文 save_1.json（玩家封存以前的旧档就是明文），存到 --dir
+OLD_SAVE_GD = '''extends Node
+## 发行出包.py 实跑用（T458，临时生成，不进工程）：明文旧档 save_1.json 写到 --dir。
+
+func _ready() -> void:
+	_run.call_deferred()
+
+
+func _run() -> void:
+	var dir := ""
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--dir="):
+			dir = a.substr(6)
+	XMessageBox.auto = true
+	XSaveSeal.ENABLED = false
+	XSave.dir_override = dir
+	var s := XState.new_game_blank()
+	s.add_actor(1)
+	var ok := XSave.save(1)
+	print("RELEASE_OLD_SAVE=", "ok" if ok else "fail")
+	XSave.dir_override = ""
+	get_tree().quit(0 if ok else 1)
+'''
+
+
+def release_user_dir(project: Path = PROJECT) -> str:
+    """发行构建的存档根（相对 ~/Library/Application Support）：project.godot 的 custom_user_dir_name.release。"""
+    m = re.search(r'^config/custom_user_dir_name\.release="([^"]+)"', (project / 'project.godot').read_text(encoding='utf-8'), re.M)
+    return m.group(1) if m else 'KYO/再刷重制'
+
+
+def make_old_save(dest: Path, logs: Path) -> str:
+    """用工程（调试版）造明文旧档 dest/save_1.json；返回问题（空＝成功）。"""
+    import tempfile
+    dest.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='xiyou_old_save_') as tmp:
+        home = Path(tmp) / 'home'  # 临时 HOME（T458 核 P3-2）：自动加载读写的 user:// 不落到真实开发数据目录
+        home.mkdir()
+        gd = Path(tmp) / 'old_save.gd'
+        gd.write_text(OLD_SAVE_GD, encoding='utf-8')
+        scene = Path(tmp) / 'run.tscn'
+        scene.write_text('[gd_scene load_steps=2 format=3]\n\n'
+                         f'[ext_resource type="Script" path="{gd}" id="1"]\n\n'
+                         '[node name="Run" type="Node"]\nscript = ExtResource("1")\n', encoding='utf-8')
+        rc = run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(PROJECT), '-s', 'res://tests/test_main_loop.gd',
+                  str(scene), '--', f'--dir={dest}'], logs / '实跑_造旧档.log', env=dict(os.environ, HOME=str(home)), timeout=300)
+    if rc or not (dest / 'save_1.json').is_file():
+        return f'造旧档失败（退出码 {rc}，看 日志/实跑_造旧档.log）'
+    return ''
+
+
+def _run_app(exe: Path, home: Path, keys: str, log: Path) -> tuple:
+    """无头静音跑一次按键序列；返回 (退出码, 输出)。"""
+    try:
+        p = subprocess.run([str(exe), '--headless', '--audio-driver', 'Dummy', '--quit-after', '20000', '--', f'--smoke-keys={keys}'],
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace',
+                           timeout=RUN_TIMEOUT, env=dict(os.environ, HOME=str(home)), cwd=str(home))
+        rc, out = p.returncode, p.stdout
+    except subprocess.TimeoutExpired as e:
+        rc, out = 124, (e.stdout.decode('utf-8', 'replace') if isinstance(e.stdout, bytes) else (e.stdout or ''))
+    log.write_text(out, encoding='utf-8')
+    return rc, out
+
+
+def judge_run(name: str, rc: int, out: str, first_not_map: bool = False) -> tuple:
+    """一次实跑的结论：(通过, 说明)。first_not_map：第一下确认后还不能在地图（读档那次）。"""
+    fatal = [l.strip() for l in out.splitlines() if RUN_FATAL.search(l)]
+    steps = [l.split('scene=', 1)[1].strip() for l in out.splitlines() if l.startswith('SMOKE_KEY=')]
+    # 真按键那几步（XKeySmoke 对 wait:N 也打 SMOKE_KEY=wait:N，不算；T458 核 P1-1：读档序列开头 wait:200 曾让下面的防线恒不触发）
+    keys = [l.split('scene=', 1)[1].strip() for l in out.splitlines() if l.startswith('SMOKE_KEY=') and not l.startswith('SMOKE_KEY=wait:')]
+    done = [l.split('scene=', 1)[1].strip() for l in out.splitlines() if l.startswith('SMOKE_DONE scene=')]
+    why = []
+    if fatal:
+        why.append(f'{len(fatal)} 行脚本错误，第一行：{fatal[0][:160]}')
+    if rc != 0:
+        why.append(f'退出码 {rc}')
+    if not done:
+        why.append(f'没有 SMOKE_DONE（按完 {len(steps)} 步）')
+    elif done[-1] != RUN_MAP:
+        why.append(f'最后在 {done[-1]}，没进地图')
+    if first_not_map and not keys:
+        why.append('一下键都没按到，判不了读档')
+    elif first_not_map and keys[0] == RUN_MAP:
+        why.append('第一下确认就进了地图：开的是新局，没读档')
+    return (not why), ('；'.join(why) if why else f'进地图，按完 {len(steps)} 步，没有脚本错误')
+
+
+def real_run(out: Path, logs: Path) -> list:
+    """T458：解开 mac 包实跑两次（新开局进地图、读明文旧档进地图）；返回 [(名字, 通过, 说明)]。"""
+    import tempfile
+    rows = []
+    if sys.platform != 'darwin':
+        return [('实跑', False, '本机不是 Mac，跑不了 mac 包；确实没法跑就用 --skip-run "<理由>"')]
+    work = Path(tempfile.mkdtemp(prefix='xiyou_release_run_'))
+    try:
+        if subprocess.run(['ditto', '-x', '-k', str(out / MAC_ZIP), str(work / 'app')]).returncode:
+            return [('实跑', False, f'解不开 {MAC_ZIP}')]
+        exes = [p for p in sorted((work / 'app').glob('*.app/Contents/MacOS/*')) if p.is_file() and os.access(p, os.X_OK)]
+        if not exes:
+            return [('实跑', False, f'{MAC_ZIP} 里没有可执行文件')]
+        print('== 实跑 mac 包：新开局进地图')
+        home = work / 'home_new'
+        home.mkdir()
+        rc, text = _run_app(exes[0], home, RUN_NEW_GAME_KEYS, logs / '实跑_新开局.log')
+        rows.append(('实跑 新开局进地图', *judge_run('新开局', rc, text)))
+        print('== 实跑 mac 包：读旧档进地图')
+        home = work / 'home_load'
+        save_dir = home / 'Library' / 'Application Support' / release_user_dir() / 'modes' / 'xiyou'
+        bad = make_old_save(work / 'old_save', logs)
+        if bad:
+            rows.append(('实跑 读旧档进地图', False, bad))
+        else:
+            save_dir.mkdir(parents=True)
+            shutil.copy2(work / 'old_save' / 'save_1.json', save_dir / 'save_1.json')
+            rc, text = _run_app(exes[0], home, RUN_LOAD_KEYS, logs / '实跑_读旧档.log')
+            ok, note = judge_run('读旧档', rc, text, first_not_map=True)
+            if ok:
+                note += '；旧档已封存成 .ksv' if (save_dir / 'save_1.ksv').is_file() else '；旧档没封存成 .ksv（包没开封存）'
+            rows.append(('实跑 读旧档进地图', ok, note))
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    for n, ok, v in rows:
+        print(('  ✓ ' if ok else '  ✗ ') + f'{n}：{v}')
+    return rows
+
+
 REAL_SCRIPTS = False  # 回退开关：True＝发行包照旧带天启篇真脚本（--real-scripts）
 NO_STUB_SMOKE = False  # 回退开关：True＝导出前不跑空壳树开战冒烟（--no-stub-smoke）
 
@@ -382,6 +541,9 @@ def export_all(out: Path, logs: Path) -> list:
         if bad:
             return [bad]
         bad = stub_smoke(src, logs)
+        if bad:
+            return bad
+        bad = preset_exclude_problems(src)  # T458：导出前查发行预设没踢掉要进包的脚本
         if bad:
             return bad
         problems = _export_all(out, logs, src, problems, env)
@@ -543,6 +705,10 @@ def smoke_all(out: Path, logs: Path) -> list:
     return rows
 
 
+def run_table(rows: list) -> str:
+    return '\n'.join(['| 项 | 结果 | 说明 |', '| --- | --- | --- |'] + [f'| {n} | {"通过" if ok else "失败"} | {v} |' for n, ok, v in rows]) + '\n'
+
+
 def win_zip(out: Path) -> Path:
     """把 windows/ 里的 exe、pck 打成 再刷一把_天启篇_windows.zip（只放这两个文件、不带目录；文件名标 UTF-8）。"""
     z = out / WIN_ZIP
@@ -630,9 +796,14 @@ def main(argv=None) -> int:
     ap.add_argument('--notes-audit', action='store_true', help='列出会进说明但没写「- 玩家可见：」行的条目')
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--keep-old', action='store_true', help='出完不删旧发行目录')
+    ap.add_argument('--skip-run', metavar='理由', help='不实跑 mac 包进地图（T458 门禁；理由必填，写进 冒烟.md，旧发行目录不删）')
     ap.add_argument('--since', type=int, help='发行说明从哪个开发编号之后算起（默认上一个发行目录的号）')
     a = ap.parse_args(argv)
-    global REAL_SCRIPTS, NO_SAVE_KEY, NO_STUB_SMOKE, ALLOW_UNSEALED
+    global REAL_SCRIPTS, NO_SAVE_KEY, NO_STUB_SMOKE, ALLOW_UNSEALED, SKIP_RUN
+    if a.skip_run is not None and not a.skip_run.strip():
+        print('✗ --skip-run 要写理由（如 --skip-run "本机没有 Mac 运行环境"），理由会写进 冒烟.md')
+        return 1
+    SKIP_RUN = SKIP_RUN or (a.skip_run or '').strip()
     NO_STUB_SMOKE = NO_STUB_SMOKE or a.no_stub_smoke
     REAL_SCRIPTS = REAL_SCRIPTS or a.real_scripts
     NO_SAVE_KEY = NO_SAVE_KEY or a.no_save_key
@@ -651,6 +822,7 @@ def main(argv=None) -> int:
     print(f'本次 0.{dev} → {out}；上一个发行目录：{prev_dir or "无"}')
     if a.dry_run:
         print(f'会导出：macOS 发行、Windows 发行（另打 {WIN_ZIP}）、安卓 发行；' + ('不跑冒烟' if a.no_smoke else '冒烟：' + '、'.join(n for n, _ in SMOKES)))
+        print('导出前：发行预设排除检查；导出后：' + (f'不实跑（--skip-run：{SKIP_RUN}）' if SKIP_RUN else '实跑 mac 包新开局进地图、读旧档进地图'))
         for t in ([] if a.keep_old else tidy_old(parent, dev, dry=True)):
             print(f'冒烟全过后会删旧发行：{t.name}')
         return 0
@@ -688,8 +860,14 @@ def main(argv=None) -> int:
         problems = audit_unreleased(out)
     if not problems:
         problems = verify_save_seal_artifacts(out)
+    run_rows = []
+    if not problems and not SKIP_RUN:
+        run_rows = real_run(out, logs)
+        problems = [f'{n}：{v}' for n, ok, v in run_rows if not ok]
     if problems:
         print('✗ ' + '；'.join(problems))
+        if run_rows:
+            (out / '冒烟.md').write_text('# 冒烟\n\n出包失败（实跑没过）\n\n' + run_table(run_rows), encoding='utf-8')
         return 1
     rows = [] if a.no_smoke else smoke_all(out, logs)
     files = package_files(out)
@@ -700,6 +878,7 @@ def main(argv=None) -> int:
     smoke_body = smoke_md if rows else ['# 冒烟', '', '没跑（--no-smoke）']
     if ALLOW_UNSEALED:
         smoke_body = ['# 冒烟', '', '> ⚠️ 警告：本次启用了 `--allow-unsealed`（未要求存档封存生效）——**此包不能发给玩家！**', ''] + smoke_body[2:]
+    smoke_body += ['', '## 实跑（T458）', ''] + (run_table(run_rows).splitlines() if run_rows else [f'> ⚠️ 没实跑（--skip-run）：{SKIP_RUN}'])
     (out / '冒烟.md').write_text('\n'.join(smoke_body) + '\n', encoding='utf-8')
     (out / '发行说明.txt').write_text(notes, encoding='utf-8')
     print((out / '体积.md').read_text(encoding='utf-8'))
@@ -710,6 +889,8 @@ def main(argv=None) -> int:
         print('已启用 --allow-unsealed（此包不能发给玩家）：旧发行目录留着没删')
     elif a.keep_old:
         print('--keep-old：旧发行目录没删')
+    elif SKIP_RUN:
+        print(f'没实跑（--skip-run：{SKIP_RUN}）：旧发行目录没删')
     elif not rows:
         print('没跑冒烟（--no-smoke）：旧发行目录没删')
     elif not ok:
