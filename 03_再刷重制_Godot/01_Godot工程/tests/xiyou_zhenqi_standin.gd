@@ -1,5 +1,5 @@
 extends Node
-## T466 替身守层者首通（XZhenqi.STAND_IN_GUARDIANS／STAND_IN_FIRSTS，O-待定·替身守层者首通）：
+## T466 替身守层者首通（XZhenqi.STAND_IN_GUARDIANS／STAND_IN_FIRSTS，O-657）：
 ## 表与 13～30 层地图守层者事件教派页（2302／2303／2307）的敌群一致、不并进 GUARDIANS；替身打赢记首通＋每胜、与正牌同口径；
 ## 回退开关关掉回到只给 Boss 奖励；读档补发（backfill_stand_in）按进度层补 party 全员当前路线首通、只一次；天启篇不认、不补。
 
