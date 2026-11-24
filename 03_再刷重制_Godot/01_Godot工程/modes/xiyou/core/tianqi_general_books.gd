@@ -150,6 +150,8 @@ static func build(id: int, base: Dictionary) -> Dictionary:
 				r.yepSeq[ph] = XTianqiSkills._seq_edit(r.yepSeq[ph], sp.seq)
 		if r.has("yepEffects"):
 			r.yepEffects = maxi(1, int(r.yepEffects) + XTianqiSkills._seq_effect_count(r.yepSeq) - before)
+	if sp.has("setup_seq") and r.get("yepSeq") is Dictionary and r.yepSeq.get("setup") is Array:
+		r.yepSeq.setup = XTianqiSkills._seq_edit(r.yepSeq.setup, sp.setup_seq)
 	if sp.has("repeats"):
 		r.repeats = int(sp.repeats)
 	if sp.has("scope"):

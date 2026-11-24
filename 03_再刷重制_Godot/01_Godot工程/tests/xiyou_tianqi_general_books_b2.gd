@@ -44,12 +44,33 @@ func _run() -> void:
 	_check("B3_old_cast_removed", XDB.rec("Skills", 282).effects.is_empty())
 	_check("active_tooltip_matches_cast", str(XDB.rec("Skills", 282).note).contains("冷却时间:3 回合")
 		and not str(XDB.rec("Skills", 450).note).contains("效果:五段攻击"))
+	var space := XDB.rec("Skills", 7191)
+	_check("endless_space_no_battle_start_or_extra_mastery", not space.meta.has("StartPushState1251")
+		and not space.meta.has("StartWTPushState1262")
+		and not space.meta.has("Custom Damage Mastery Formula") and not space.meta.has("Custom EXP Mastery Formula"))
+	var wind := XDB.rec("Skills", 6181)
+	_check("replace_attack_uses_reworked_damage_with_no_cost", int(str(XDB.rec("Skills", 6183).meta["Replace Attack"])) == 6181
+		and wind.damage.formulaProgram.module == XTianqiGeneralBooks.MODULE and int(wind.yepEffects) == 1
+		and int(wind.tpCost) == 0 and not wind.meta.has("MP Cost") and wind.effects.is_empty())
+	var depth := XDB.rec("Skills", 6127)
+	_check("sword_book_keeps_advancement_event", depth.effects.any(func(e): return int(e.code) == 44 and int(e.dataId) == 1313))
+	for sid in range(6128, 6132):
+		_check("sword_book_rank_" + str(sid), XTianqiGeneralBooks.spec(sid).get("template") == "D2"
+			and int(str(XDB.rec("Skills", sid).meta.passiveHarmRi)) == sid - 6126)
+	_check("legacy_setup_state_is_removed", XDB.rec("Skills", 275).yepSeq.setup.all(func(cmd):
+		return not str(cmd[0]).to_lower().begins_with("add state")))
+	_check("area_and_legacy_tooltip", str(XDB.rec("Skills", 148).note).contains("对象:全体敌人")
+		and not str(XDB.rec("Skills", 2799).note).contains("TP恢复+20")
+		and not str(XDB.rec("Skills", 4666).note).contains("初次学完")
+		and not str(XDB.rec("Skills", 4767).note).contains("死循环"))
 
 	for case in [[488, "CodexParamRate", "0:8"], [2471, "passiveELUP01", "10%"],
-			[2472, "passiveELUP02", "10%"], [2480, "passiveHarmRi", "8"], [2480, "passiveCrHarmRi", "12"],
+			[2472, "passiveELUP02", "10%"], [2480, "passiveHarmRi", "5"], [2480, "passiveCrHarmRi", "8"],
 			[2666, "SkillTypesDvupA", "10%"], [5189, "SkillPass0457", "8%"],
 			[5190, "SkillPass0457", "12%"], [5191, "SkillPass0457", "15%"], [5193, "SkillPass0457", "15%"],
-			[3687, "SkillPass3688", "12%"]]:
+			[3687, "SkillPass3688", "7%"], [2755, "PushState0005", "1%"],
+			[4678, "PushState0742", "1%"], [4680, "PushsubState0742", "1%"],
+			[6133, "PushState0017", "2%"], [2776, "PushState0021", "10%"]]:
 		var meta: Dictionary = XDB.rec("Skills", case[0]).meta
 		_check(str(case[0]) + "_" + case[1], str(meta.get(case[1], "")).strip_edges() == case[2])
 	_check("D2_no_flat_stat", not XDB.rec("Skills", 3687).meta.has("passivePBST2"))

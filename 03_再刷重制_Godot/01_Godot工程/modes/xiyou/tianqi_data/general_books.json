@@ -352,6 +352,8 @@
    2785,
    2798,
    2799,
+   2800,
+   2801,
    2818,
    2819,
    2820,
@@ -381,6 +383,7 @@
    3183,
    3184,
    3186,
+   3187,
    3584,
    3585,
    3668,
@@ -393,16 +396,19 @@
    3679,
    3680,
    3681,
+   3682,
    3684,
    3685,
    3686,
    3687,
    3688,
+   3689,
    3691,
    3692,
    3693,
    3694,
    3695,
+   3696,
    3897,
    3898,
    3899,
@@ -655,6 +661,10 @@
    6019,
    6126,
    6127,
+   6128,
+   6129,
+   6130,
+   6131,
    6133,
    6134,
    6135,
@@ -691,6 +701,7 @@
    6173,
    6174,
    6175,
+   6181,
    6183,
    6184,
    6238,
@@ -3929,7 +3940,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -3961,7 +3972,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -3993,7 +4004,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4025,7 +4036,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4034,7 +4045,7 @@
     "coef": 1
    },
    "desc": [
-    "效果：每段物理攻击的 1 倍，随机攻击 2 次"
+    "效果：随机攻击 2 次，每段造成物理攻击的 1 倍伤害"
    ],
    "seq": [
     {
@@ -4057,7 +4068,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4089,7 +4100,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4121,7 +4132,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4153,7 +4164,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4191,7 +4202,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4224,7 +4235,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4267,7 +4278,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4303,7 +4314,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4336,10 +4347,11 @@
    "repeats": 1,
    "mp_pct": 8,
    "header": {
-    "冷却时间": "无"
+    "冷却时间": "无",
+    "对象": "全体敌人"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4348,7 +4360,7 @@
     "coef": 1
    },
    "desc": [
-    "效果：造成魔法攻击的 1 倍伤害"
+    "效果：对全体敌人造成魔法攻击的 1 倍伤害"
    ],
    "seq": [
     {
@@ -4375,7 +4387,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4397,6 +4409,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 122"
+    }
    ]
   },
   "282": {
@@ -4412,7 +4430,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4451,7 +4469,7 @@
    "repeats": 1,
    "mp_pct": 5,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4473,6 +4491,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 122"
+    }
    ]
   },
   "284": {
@@ -4484,7 +4508,7 @@
    "repeats": 1,
    "mp_pct": 5,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4519,7 +4543,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4559,7 +4583,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4600,12 +4624,12 @@
    "repeats": 1,
    "note_sub": [
     [
-     "<pos=APs text=效果:[^>]*>",
+     "<pos=APs text=(?:TP恢复\\+\\d+|\\\\c\\[10\\]注意:初次学完此技能)[^>]*>|<pos=APs text=效果:[^>]*>",
      ""
     ]
    ],
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4637,7 +4661,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4672,7 +4696,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4713,7 +4737,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4741,6 +4765,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
    ]
   },
   "457": {
@@ -4751,7 +4781,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4783,7 +4813,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4805,6 +4835,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
    ]
   },
   "459": {
@@ -4815,7 +4851,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4843,6 +4879,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
    ]
   },
   "460": {
@@ -4856,7 +4898,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4888,7 +4930,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4920,7 +4962,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4955,7 +4997,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -4982,6 +5024,12 @@
     {
      "op": "keep_effects",
      "n": 1
+    }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
     }
    ]
   },
@@ -5030,7 +5078,7 @@
    ],
    "note_add": "\n<passiveIRUP:8>",
    "desc": [
-    "效果：物品获取 提高"
+    "效果：物品掉率提高"
    ]
   },
   "553": {
@@ -5043,7 +5091,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5077,10 +5125,11 @@
    "mp_pct": 15,
    "cooldown": 3,
    "header": {
-    "冷却时间": "3 回合"
+    "冷却时间": "3 回合",
+    "对象": "全体敌人"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5089,7 +5138,7 @@
     "coef": 2
    },
    "desc": [
-    "效果：造成魔法攻击的 2 倍伤害"
+    "效果：对全体敌人造成魔法攻击的 2 倍伤害"
    ],
    "seq": [
     {
@@ -5116,7 +5165,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5149,7 +5198,7 @@
    "repeats": 1,
    "mp_pct": 5,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5171,6 +5220,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 122"
+    }
    ]
   },
   "785": {
@@ -5182,7 +5237,7 @@
    "repeats": 1,
    "mp_pct": 5,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5225,7 +5280,7 @@
    "repeats": 1,
    "mp_pct": 5,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5258,7 +5313,7 @@
    "repeats": 1,
    "mp_pct": 5,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5288,6 +5343,12 @@
      "op": "drop_cmd",
      "match": "Remove State 85"
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 76"
+    }
    ]
   },
   "789": {
@@ -5298,7 +5359,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5330,7 +5391,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5370,7 +5431,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5405,7 +5466,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5437,7 +5498,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5473,7 +5534,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5507,10 +5568,11 @@
    "mp_pct": 15,
    "cooldown": 3,
    "header": {
-    "冷却时间": "3 回合"
+    "冷却时间": "3 回合",
+    "对象": "全体敌人"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5519,7 +5581,7 @@
     "coef": 2
    },
    "desc": [
-    "效果：造成魔法攻击的 2 倍伤害"
+    "效果：对全体敌人造成魔法攻击的 2 倍伤害"
    ],
    "seq": [
     {
@@ -5545,12 +5607,12 @@
    "cooldown": 3,
    "note_sub": [
     [
-     "<pos=APs text=效果:[^>]*>",
+     "<pos=APs text=(?:TP恢复\\+\\d+|\\\\c\\[10\\]注意:初次学完此技能)[^>]*>|<pos=APs text=效果:[^>]*>",
      ""
     ]
    ],
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5597,7 +5659,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5625,6 +5687,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
    ]
   },
   "948": {
@@ -5637,7 +5705,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5669,6 +5737,12 @@
      "op": "drop_cmd",
      "match": "Add State 345"
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 122"
+    }
    ]
   },
   "949": {
@@ -5681,7 +5755,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5725,7 +5799,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5769,7 +5843,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5797,6 +5871,16 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 76"
+    }
    ]
   },
   "952": {
@@ -5808,7 +5892,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5841,7 +5925,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5877,7 +5961,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5905,6 +5989,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 16"
+    }
    ]
   },
   "955": {
@@ -5919,7 +6009,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5952,7 +6042,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -5996,7 +6086,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6032,7 +6122,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "heal": {
     "mhp_pct": 0.08
@@ -6065,7 +6155,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "heal": {
     "mhp_pct": 0.12
@@ -6098,7 +6188,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "desc": [
     "效果：解除中毒"
@@ -6129,7 +6219,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6151,6 +6241,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
    ]
   },
   "1952": {
@@ -6163,7 +6259,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6189,6 +6285,12 @@
      "op": "drop_cmd",
      "match": "Add State 345"
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 122"
+    }
    ]
   },
   "1953": {
@@ -6201,7 +6303,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6235,7 +6337,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6273,7 +6375,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6295,6 +6397,20 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 118"
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 76"
+    }
    ]
   },
   "1956": {
@@ -6306,7 +6422,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6339,7 +6455,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6376,7 +6492,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6411,7 +6527,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6420,7 +6536,7 @@
     "coef": 1
    },
    "desc": [
-    "效果：每段物理攻击的 1 倍，随机攻击 2 次"
+    "效果：随机攻击 2 次，每段造成物理攻击的 1 倍伤害"
    ],
    "seq": [
     {
@@ -6433,6 +6549,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
    ]
   },
   "1960": {
@@ -6444,7 +6566,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6481,7 +6603,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6621,9 +6743,9 @@
     "passiveCrHarmRi",
     "passiveHarmRi"
    ],
-   "note_add": "\n<passiveHarmRi:8>\n<passiveCrHarmRi:12>",
+   "note_add": "\n<passiveHarmRi:5>\n<passiveCrHarmRi:8>",
    "desc": [
-    "效果：最终伤害 +8%，暴击伤害 +12%"
+    "效果：最终伤害 +5%，暴击伤害 +8%"
    ]
   },
   "2666": {
@@ -6637,7 +6759,7 @@
    ],
    "note_add": "\n<SkillTypesDvupA:10%>\n<SkillTypesDvupB:10%>\n<SkillTypesDvupC:10%>",
    "desc": [
-    "效果：A 类技能伤害 +10%，B 类技能伤害 +10%，C 类技能伤害 +10%"
+    "效果：1～45 级及三阶技能伤害 +10%"
    ]
   },
   "2668": {
@@ -6649,7 +6771,7 @@
    ],
    "note_add": "\n<SkillTypesDvupA:12%>",
    "desc": [
-    "效果：A 类技能伤害 +12%"
+    "效果：1～30 级技能伤害 +12%"
    ]
   },
   "2669": {
@@ -6662,7 +6784,7 @@
    ],
    "note_add": "\n<SkillTypesDvupB:12%>\n<SkillTypesDvupC:12%>",
    "desc": [
-    "效果：B 类技能伤害 +12%，C 类技能伤害 +12%"
+    "效果：40～45 级及三阶技能伤害 +12%"
    ]
   },
   "2753": {
@@ -6676,7 +6798,7 @@
    ],
    "note_add": "\n<passiveGRUP:10>\n<passiveIRUP:10>\n<passiveSPBST9:10%>",
    "desc": [
-    "效果：金钱获取 提高，物品获取 提高，资源获取 +10%"
+    "效果：金钱获取提高，物品掉率提高，资源获取 +10%"
    ]
   },
   "2754": {
@@ -6689,7 +6811,7 @@
    ],
    "note_add": "\n<passiveGRUP:10>\n<passiveIRUP:10>",
    "desc": [
-    "效果：金钱获取 提高，物品获取 提高"
+    "效果：金钱获取提高，物品掉率提高"
    ]
   },
   "2755": {
@@ -6704,9 +6826,9 @@
     "PushState0009",
     "PushState0010"
    ],
-   "note_add": "\n<passiveHarmRi:5>",
+   "note_add": "\n<PushState0005:1%>\n<PushState0006:1%>\n<PushState0007:1%>\n<PushState0008:1%>\n<PushState0009:1%>\n<PushState0010:1%>",
    "desc": [
-    "效果：最终伤害 +5%"
+    "效果：造成伤害时各有 1% 概率使目标附加黑暗、沉默、愤怒、混乱、魅惑、睡眠"
    ]
   },
   "2756": {
@@ -6726,9 +6848,9 @@
     "passiveHarmRe09",
     "passiveHarmRi"
    ],
-   "note_add": "\n<passiveCrHarmRi:8>\n<passiveHarmRi:8>",
+   "note_add": "\n<passiveCrHarmRi:7>\n<passiveHarmRi:7>",
    "desc": [
-    "效果：暴击伤害 +8%，最终伤害 +8%"
+    "效果：暴击伤害 +7%，最终伤害 +7%"
    ]
   },
   "2776": {
@@ -6739,9 +6861,9 @@
     "PushState0021",
     "passiveELUP02"
    ],
-   "note_add": "\n<passiveELUP02:12%>",
+   "note_add": "\n<passiveELUP02:12%>\n<PushState0021:10%>",
    "desc": [
-    "效果：火焰伤害 +12%"
+    "效果：火焰伤害 +12%，造成伤害时有 10% 概率使目标附加灼伤V"
    ]
   },
   "2777": {
@@ -6780,7 +6902,7 @@
    ],
    "note_add": "\n<passiveELUP05:12%>\n<passiveXPBST2:8%>",
    "desc": [
-    "效果：雷电伤害 +12%，暴击率 +8%"
+    "效果：暴击率 +8%，雷电伤害 +12%"
    ]
   },
   "2780": {
@@ -6806,9 +6928,9 @@
     "SkillTypesDvupC",
     "passiveELUP08"
    ],
-   "note_add": "\n<passiveELUP08:12%>\n<SkillTypesDvupA:12%>\n<SkillTypesDvupB:12%>\n<SkillTypesDvupC:12%>",
+   "note_add": "\n<passiveELUP08:7%>\n<SkillTypesDvupA:7%>\n<SkillTypesDvupB:7%>\n<SkillTypesDvupC:7%>",
    "desc": [
-    "效果：神圣伤害 +12%，A 类技能伤害 +12%，B 类技能伤害 +12%，C 类技能伤害 +12%"
+    "效果：神圣伤害 +7%，1～45 级及三阶技能伤害 +7%"
    ]
   },
   "2782": {
@@ -6823,7 +6945,7 @@
    ],
    "note_add": "\n<passiveELUP07:12%>\n<passiveELUP09:12%>\n<passivePREE:10>\n<passiveASUP:10>",
    "desc": [
-    "效果：奥术伤害 +12%，黑暗伤害 +12%，先攻概率 +10%，防偷袭概率 +10%"
+    "效果：先攻概率 +10%，防偷袭概率 +10%，奥术、黑暗伤害 +12%"
    ]
   },
   "2783": {
@@ -6841,9 +6963,9 @@
     "passiveELUP08",
     "passiveHarmRi"
    ],
-   "note_add": "\n<passiveHarmRi:12>\n<passiveELUP01:12%>\n<passiveELUP02:12%>\n<passiveELUP03:12%>\n<passiveELUP04:12%>\n<passiveELUP05:12%>\n<passiveELUP06:12%>\n<passiveELUP07:12%>\n<passiveELUP08:12%>",
+   "note_add": "\n<passiveHarmRi:7>\n<passiveELUP01:7%>\n<passiveELUP02:7%>\n<passiveELUP03:7%>\n<passiveELUP04:7%>\n<passiveELUP05:7%>\n<passiveELUP06:7%>\n<passiveELUP07:7%>\n<passiveELUP08:7%>",
    "desc": [
-    "效果：最终伤害 +12%，物理伤害 +12%，火焰伤害 +12%，寒冰伤害 +12%，大地伤害 +12%，雷电伤害 +12%，自然伤害 +12%，奥术伤害 +12%，神圣伤害 +12%"
+    "效果：最终伤害 +7%，物理、火焰、寒冰、大地、雷电、自然、奥术、神圣伤害 +7%"
    ]
   },
   "2784": {
@@ -6862,9 +6984,9 @@
     "passiveELUP08",
     "passiveELUP09"
    ],
-   "note_add": "\n<passiveCrHarmRi:12>\n<passiveELUP01:12%>\n<passiveELUP02:12%>\n<passiveELUP03:12%>\n<passiveELUP04:12%>\n<passiveELUP05:12%>\n<passiveELUP06:12%>\n<passiveELUP07:12%>\n<passiveELUP08:12%>\n<passiveELUP09:12%>",
+   "note_add": "\n<passiveCrHarmRi:7>\n<passiveELUP01:7%>\n<passiveELUP02:7%>\n<passiveELUP03:7%>\n<passiveELUP04:7%>\n<passiveELUP05:7%>\n<passiveELUP06:7%>\n<passiveELUP07:7%>\n<passiveELUP08:7%>\n<passiveELUP09:7%>",
    "desc": [
-    "效果：暴击伤害 +12%，物理伤害 +12%，火焰伤害 +12%，寒冰伤害 +12%，大地伤害 +12%，雷电伤害 +12%，自然伤害 +12%，奥术伤害 +12%，神圣伤害 +12%，黑暗伤害 +12%"
+    "效果：暴击伤害 +7%，全系伤害 +7%"
    ]
   },
   "2785": {
@@ -6877,7 +6999,7 @@
    ],
    "note_add": "\n<passiveGRUP:10>\n<passiveIRUP:10>",
    "desc": [
-    "效果：金钱获取 提高，物品获取 提高"
+    "效果：金钱获取提高，物品掉率提高"
    ]
   },
   "2798": {
@@ -6891,7 +7013,7 @@
    ],
    "note_add": "\n<SkillPass2799:8%>\n<SkillPass2800:8%>\n<SkillPass2801:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「第一式:摧城」、「第二式:擂鼓」、「第三式:诛神」伤害 +8%"
    ]
   },
   "2799": {
@@ -6901,8 +7023,86 @@
    "tp": 10,
    "mp": 0,
    "repeats": 1,
+   "note_sub": [
+    [
+     "<pos=APs text=(?:TP恢复\\+\\d+|\\\\c\\[10\\]注意:初次学完此技能)[^>]*>|<pos=APs text=效果:[^>]*>",
+     ""
+    ]
+   ],
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2800": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "第二式:擂鼓",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "header": {
+    "冷却时间": "无",
+    "TP消耗": "10"
+   },
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 2
+   },
+   "desc": [
+    "效果：造成物理攻击的 2 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "2801": {
+   "group": "remaining_books",
+   "template": "A1",
+   "name": "第三式:诛神",
+   "tp": 10,
+   "mp": 0,
+   "repeats": 1,
+   "header": {
+    "冷却时间": "无",
+    "TP消耗": "10"
+   },
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -6970,7 +7170,7 @@
    ],
    "note_add": "\n<passiveIRUP:8>",
    "desc": [
-    "效果：物品获取 提高"
+    "效果：物品掉率提高"
    ]
   },
   "2824": {
@@ -6986,7 +7186,7 @@
     "冷却时间": "5 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "desc": [
     "效果：为全队施加光明护盾"
@@ -7026,7 +7226,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7063,9 +7263,9 @@
     "passivePBST6",
     "passivePBST7"
    ],
-   "note_add": "\n<SkillPass2848:10%>\n<CodexParamRate:2:8,3:8,4:8,5:8,6:8,7:8>",
+   "note_add": "\n<SkillPass2848:8%>\n<CodexParamRate:2:6,3:8,4:6,5:8,6:6,7:6>",
    "desc": [
-    "效果：对应技能伤害 +10%，物理攻击 +8%，物理防御 +8%，魔法攻击 +8%，魔法防御 +8%，敏捷 +8%，幸运 +8%"
+    "效果：「星爆气流斩」伤害 +8%，物理攻击 +6%，物理防御 +8%，魔法攻击 +6%，魔法防御 +8%，敏捷 +6%，幸运 +6%"
    ]
   },
   "2850": {
@@ -7077,9 +7277,9 @@
     "SkETypeHarmRi2",
     "SkillPass2848"
    ],
-   "note_add": "\n<SkETypeHarmRi2:10%>\n<SkETypeHarmRi11:10%>\n<SkillPass2848:10%>",
+   "note_add": "\n<SkETypeHarmRi2:5%>\n<SkETypeHarmRi11:5%>\n<SkillPass2848:5%>",
    "desc": [
-    "效果：对应武器的技能伤害 +10%，对应技能伤害 +10%"
+    "效果：「星爆气流斩」伤害 +5%，装备剑、太刀时的技能伤害 +5%"
    ]
   },
   "2851": {
@@ -7091,9 +7291,9 @@
     "SkETypeHarmRi2",
     "SkillPass2848"
    ],
-   "note_add": "\n<SkETypeHarmRi2:10%>\n<SkETypeHarmRi11:10%>\n<SkillPass2848:10%>",
+   "note_add": "\n<SkETypeHarmRi2:5%>\n<SkETypeHarmRi11:5%>\n<SkillPass2848:5%>",
    "desc": [
-    "效果：对应武器的技能伤害 +10%，对应技能伤害 +10%"
+    "效果：「星爆气流斩」伤害 +5%，装备剑、太刀时的技能伤害 +5%"
    ]
   },
   "2852": {
@@ -7105,7 +7305,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7137,7 +7337,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7146,7 +7346,7 @@
     "coef": 1
    },
    "desc": [
-    "效果：每段物理攻击的 1 倍，随机攻击 2 次"
+    "效果：随机攻击 2 次，每段造成物理攻击的 1 倍伤害"
    ],
    "seq": [
     {
@@ -7169,7 +7369,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7178,7 +7378,7 @@
     "coef_pct": 66
    },
    "desc": [
-    "效果：每段物理攻击的 66%，随机攻击 3 次"
+    "效果：随机攻击 3 次，每段造成物理攻击的 66% 伤害"
    ],
    "seq": [
     {
@@ -7201,7 +7401,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7210,7 +7410,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -7233,7 +7433,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7242,7 +7442,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -7267,7 +7467,7 @@
    ],
    "note_add": "\n<passiveXPBST2:8%>\n<SkillPass2856:10%>",
    "desc": [
-    "效果：暴击率 +8%，对应技能伤害 +10%"
+    "效果：暴击率 +8%，「先天破体无形剑气」伤害 +10%"
    ]
   },
   "2858": {
@@ -7280,7 +7480,7 @@
    ],
    "note_add": "\n<passiveXPBST2:8%>\n<SkillPass2856:10%>",
    "desc": [
-    "效果：暴击率 +8%，对应技能伤害 +10%"
+    "效果：暴击率 +8%，「先天破体无形剑气」伤害 +10%"
    ]
   },
   "2859": {
@@ -7294,7 +7494,7 @@
    ],
    "note_add": "\n<passiveXPBST2:8%>\n<SkillPass2856:10%>",
    "desc": [
-    "效果：暴击率 +8%，对应技能伤害 +10%"
+    "效果：暴击率 +8%，「先天破体无形剑气」伤害 +10%"
    ]
   },
   "2860": {
@@ -7307,7 +7507,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7343,7 +7543,7 @@
    ],
    "note_add": "\n<SkillPass2860:10%>\n<passiveXPBST2:8%>\n<CodexParamRate:3:8,5:8>",
    "desc": [
-    "效果：对应技能伤害 +10%，暴击率 +8%，物理防御 +8%，魔法防御 +8%"
+    "效果：暴击率 +8%，「巨型岩球」伤害 +10%，物理防御 +8%，魔法防御 +8%"
    ]
   },
   "2862": {
@@ -7356,7 +7556,7 @@
    ],
    "note_add": "\n<SkillPass2860:10%>\n<passiveXPBST2:8%>",
    "desc": [
-    "效果：对应技能伤害 +10%，暴击率 +8%"
+    "效果：暴击率 +8%，「巨型岩球」伤害 +10%"
    ]
   },
   "2863": {
@@ -7369,7 +7569,7 @@
    ],
    "note_add": "\n<SkillPass2860:10%>\n<passiveXPBST2:8%>",
    "desc": [
-    "效果：对应技能伤害 +10%，暴击率 +8%"
+    "效果：暴击率 +8%，「巨型岩球」伤害 +10%"
    ]
   },
   "3178": {
@@ -7380,7 +7580,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7389,7 +7589,7 @@
     "coef": 1
    },
    "desc": [
-    "效果：每段物理攻击的 1 倍，随机攻击 2 次"
+    "效果：随机攻击 2 次，每段造成物理攻击的 1 倍伤害"
    ],
    "seq": [
     {
@@ -7412,7 +7612,7 @@
    "mp": 0,
    "repeats": 1,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7421,7 +7621,7 @@
     "coef": 1
    },
    "desc": [
-    "效果：每段物理攻击的 1 倍，随机攻击 2 次"
+    "效果：随机攻击 2 次，每段造成物理攻击的 1 倍伤害"
    ],
    "seq": [
     {
@@ -7445,7 +7645,7 @@
    ],
    "note_add": "\n<SkETypeHarmRi7:12%>",
    "desc": [
-    "效果：对应武器的技能伤害 +12%"
+    "效果：装备弓弩时的技能伤害 +12%"
    ]
   },
   "3184": {
@@ -7471,7 +7671,39 @@
    ],
    "note_add": "\n<SkillPass3178:12%>\n<SkillPass3182:12%>\n<SkillPass3187:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「噬阳」、「噬阳*极」伤害 +12%"
+   ]
+  },
+  "3187": {
+   "group": "remaining_books",
+   "template": "A2",
+   "name": "噬阳*极",
+   "tp": 15,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 1
+   },
+   "desc": [
+    "效果：随机攻击 2 次，每段造成物理攻击的 1 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
    ]
   },
   "3584": {
@@ -7514,7 +7746,7 @@
    ],
    "note_add": "\n<SkillPass3669:12%>\n<SkillPass3670:12%>\n<SkillPass3673:12%>\n<SkillPass3674:12%>\n<SkillPass3675:12%>\n<SkillPass4510:12%>\n<SkillPass4511:12%>\n<SkillPass4512:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「改良*滑稽弹」、「超级*滑稽弹」、「究极*滑稽弹」伤害 +12%"
    ]
   },
   "3669": {
@@ -7529,7 +7761,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7557,6 +7789,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
    ]
   },
   "3671": {
@@ -7565,7 +7803,7 @@
    "name": "滑稽大法",
    "note_add": "\n<SkillPass2848:8%>\n<SkillPass3669:8%>\n<SkillPass3673:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「星爆气流斩」、「改良*滑稽弹」伤害 +8%"
    ]
   },
   "3672": {
@@ -7592,7 +7830,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7620,6 +7858,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
    ]
   },
   "3677": {
@@ -7631,7 +7875,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7669,9 +7913,9 @@
     "SkillPass3681",
     "SkillPass3682"
    ],
-   "note_add": "\n<SkillPass3677:12%>\n<SkillPass3681:12%>\n<SkillPass3682:12%>\n<CodexParamRate:7:10>",
+   "note_add": "\n<SkillPass3677:8%>\n<SkillPass3681:8%>\n<SkillPass3682:8%>\n<CodexParamRate:7:6>",
    "desc": [
-    "效果：对应技能伤害 +12%，幸运 +10%"
+    "效果：「暴行」、「命运扭转」伤害 +8%，幸运 +6%"
    ]
   },
   "3679": {
@@ -7684,9 +7928,9 @@
     "SkillPass3681",
     "SkillPass3682"
    ],
-   "note_add": "\n<SkillPass3677:12%>\n<SkillPass3681:12%>\n<SkillPass3682:12%>\n<CodexParamRate:7:10>",
+   "note_add": "\n<SkillPass3677:8%>\n<SkillPass3681:8%>\n<SkillPass3682:8%>\n<CodexParamRate:7:6>",
    "desc": [
-    "效果：对应技能伤害 +12%，幸运 +10%"
+    "效果：「暴行」、「命运扭转」伤害 +8%，幸运 +6%"
    ]
   },
   "3680": {
@@ -7700,7 +7944,7 @@
    ],
    "note_add": "\n<SkillPass3677:12%>\n<SkillPass3681:12%>\n<SkillPass3682:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「暴行」、「命运扭转」伤害 +12%"
    ]
   },
   "3681": {
@@ -7712,7 +7956,44 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    },
+    {
+     "op": "drop_cmd",
+     "match": "Add State 548"
+    }
+   ]
+  },
+  "3682": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "命运扭转",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7749,7 +8030,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7795,7 +8076,7 @@
    ],
    "note_add": "\n<CodexParamRate:2:10,3:-10>",
    "desc": [
-    "效果：物理攻击 +10%，物理防御 -10%"
+    "效果：物理攻击 +10%，物理防御 −10%"
    ]
   },
   "3687": {
@@ -7812,9 +8093,9 @@
     "passivePBST2",
     "passivePBST6"
    ],
-   "note_add": "\n<Element Amplify 1:8%>\n<SkillPass3684:12%>\n<SkillPass3688:12%>\n<SkillPass3689:12%>\n<SkillPass3695:12%>\n<SkillPass3696:12%>\n<CodexParamRate:2:5,6:5>",
+   "note_add": "\n<Element Amplify 1:4%>\n<SkillPass3684:7%>\n<SkillPass3688:7%>\n<SkillPass3689:7%>\n<SkillPass3695:7%>\n<SkillPass3696:7%>\n<CodexParamRate:2:3,6:3>",
    "desc": [
-    "效果：物理伤害 +8%，对应技能伤害 +12%，物理攻击 +5%，敏捷 +5%"
+    "效果：物理伤害 +4%，「井中月」、「雾中花」、「血中寒」伤害 +7%，物理攻击 +3%，敏捷 +3%"
    ]
   },
   "3688": {
@@ -7826,7 +8107,40 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3689": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "雾中花",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7859,7 +8173,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7893,7 +8207,7 @@
    ],
    "note_add": "\n<SkillPass3691:12%>\n<CodexParamRate:0:10>",
    "desc": [
-    "效果：对应技能伤害 +12%，最大生命 +10%"
+    "效果：「王霸天魔斩」伤害 +12%，最大生命 +10%"
    ]
   },
   "3693": {
@@ -7931,7 +8245,40 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
+   ],
+   "damage": {
+    "stats": {
+     "atk": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成物理攻击的 3 倍伤害"
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
+   ]
+  },
+  "3696": {
+   "group": "remaining_books",
+   "template": "A3",
+   "name": "血中寒",
+   "tp": 35,
+   "mp": 0,
+   "repeats": 1,
+   "cooldown": 3,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7967,7 +8314,7 @@
     "TP消耗": "15"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -7976,7 +8323,7 @@
     "coef_pct": 66
    },
    "desc": [
-    "效果：每段物理攻击的 66%，随机攻击 3 次"
+    "效果：随机攻击 3 次，每段造成物理攻击的 66% 伤害"
    ],
    "seq": [
     {
@@ -8003,7 +8350,7 @@
     "TP消耗": "15"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -8012,7 +8359,7 @@
     "coef_pct": 66
    },
    "desc": [
-    "效果：每段物理攻击的 66%，随机攻击 3 次"
+    "效果：随机攻击 3 次，每段造成物理攻击的 66% 伤害"
    ],
    "seq": [
     {
@@ -8040,7 +8387,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -8077,7 +8424,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -8105,14 +8452,14 @@
    "group": "remaining_books",
    "template": "A2",
    "name": "菊花枪",
-   "tp": 15,
+   "tp": 0,
    "mp": 0,
    "repeats": 1,
    "header": {
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -8121,7 +8468,7 @@
     "coef_pct": 66
    },
    "desc": [
-    "效果：每段物理攻击的 66%，随机攻击 3 次"
+    "效果：随机攻击 3 次，每段造成物理攻击的 66% 伤害"
    ],
    "seq": [
     {
@@ -8144,15 +8491,14 @@
    "group": "remaining_books",
    "template": "A3",
    "name": "核桃镖",
-   "tp": 35,
+   "tp": 0,
    "mp": 0,
    "repeats": 1,
-   "cooldown": 3,
    "header": {
-    "冷却时间": "3 回合"
+    "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -8188,7 +8534,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -8222,7 +8568,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -8261,7 +8607,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -8295,7 +8641,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -8341,7 +8687,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -8383,7 +8729,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -8411,6 +8757,12 @@
      "op": "keep_effects",
      "n": 1
     }
+   ],
+   "setup_seq": [
+    {
+     "op": "drop_cmd",
+     "match": "Add State 345"
+    }
    ]
   },
   "4654": {
@@ -8427,7 +8779,7 @@
    ],
    "note_add": "\n<SkillPass4504:12%>\n<SkillPass4505:12%>\n<SkillPass4506:12%>\n<SkillPass4507:12%>\n<SkillPass4508:12%>\n<SkillPass4893:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「火球术」、「冰刺术」、「土锥术」等技能伤害 +12%"
    ]
   },
   "4655": {
@@ -8436,7 +8788,7 @@
    "name": "心法:嘤元经",
    "note_add": "\n<SkillTypesDvupB:8%>",
    "desc": [
-    "效果：B 类技能伤害 +8%"
+    "效果：40～45 级技能伤害 +8%"
    ]
   },
   "4656": {
@@ -8489,7 +8841,7 @@
    ],
    "note_add": "\n<passiveCrHarmRi:-12>\n<passiveHarmRi:-8>",
    "desc": [
-    "效果：暴击伤害 -12%，最终伤害 -8%"
+    "效果：暴击伤害 −12%，最终伤害 −8%"
    ]
   },
   "4660": {
@@ -8510,9 +8862,9 @@
     "SkETypeHarmRi8",
     "SkETypeHarmRi9"
    ],
-   "note_add": "\n<SkETypeHarmRi1:12%>\n<SkETypeHarmRi2:12%>\n<SkETypeHarmRi3:12%>\n<SkETypeHarmRi4:12%>\n<SkETypeHarmRi5:12%>\n<SkETypeHarmRi6:12%>\n<SkETypeHarmRi7:12%>\n<SkETypeHarmRi8:12%>\n<SkETypeHarmRi9:12%>\n<SkETypeHarmRi10:12%>\n<SkETypeHarmRi11:12%>\n<SkETypeHarmRi12:12%>",
+   "note_add": "\n<SkETypeHarmRi1:7%>\n<SkETypeHarmRi2:7%>\n<SkETypeHarmRi3:7%>\n<SkETypeHarmRi4:7%>\n<SkETypeHarmRi5:7%>\n<SkETypeHarmRi6:7%>\n<SkETypeHarmRi7:7%>\n<SkETypeHarmRi8:7%>\n<SkETypeHarmRi9:7%>\n<SkETypeHarmRi10:7%>\n<SkETypeHarmRi11:7%>\n<SkETypeHarmRi12:7%>",
    "desc": [
-    "效果：对应武器的技能伤害 +12%"
+    "效果：装备任一武器类型时的技能伤害 +7%"
    ]
   },
   "4661": {
@@ -8532,7 +8884,7 @@
    ],
    "note_add": "\n<passiveELUP09:12%>\n<passiveELUP08:12%>\n<passiveELUP07:12%>\n<passiveELUP06:12%>\n<passiveELUP05:12%>\n<passiveELUP04:12%>\n<passiveELUP03:12%>\n<passiveELUP02:12%>\n<passiveELUP01:12%>",
    "desc": [
-    "效果：黑暗伤害 +12%，神圣伤害 +12%，奥术伤害 +12%，自然伤害 +12%，雷电伤害 +12%，大地伤害 +12%，寒冰伤害 +12%，火焰伤害 +12%，物理伤害 +12%"
+    "效果：全系伤害 +12%"
    ]
   },
   "4662": {
@@ -8562,9 +8914,9 @@
     "passiveELUP08",
     "passiveELUP09"
    ],
-   "note_add": "\n<passiveELUP09:12%>\n<passiveELUP08:12%>\n<passiveELUP07:12%>\n<passiveELUP06:12%>\n<passiveELUP05:12%>\n<passiveELUP04:12%>\n<passiveELUP03:12%>\n<passiveELUP02:12%>\n<passiveELUP01:12%>\n<SkETypeHarmRi1:12%>\n<SkETypeHarmRi2:12%>\n<SkETypeHarmRi3:12%>\n<SkETypeHarmRi4:12%>\n<SkETypeHarmRi5:12%>\n<SkETypeHarmRi6:12%>\n<SkETypeHarmRi7:12%>\n<SkETypeHarmRi8:12%>\n<SkETypeHarmRi9:12%>\n<SkETypeHarmRi10:12%>\n<SkETypeHarmRi11:12%>\n<SkETypeHarmRi12:12%>",
+   "note_add": "\n<passiveELUP09:4%>\n<passiveELUP08:4%>\n<passiveELUP07:4%>\n<passiveELUP06:4%>\n<passiveELUP05:4%>\n<passiveELUP04:4%>\n<passiveELUP03:4%>\n<passiveELUP02:4%>\n<passiveELUP01:4%>\n<SkETypeHarmRi1:4%>\n<SkETypeHarmRi2:4%>\n<SkETypeHarmRi3:4%>\n<SkETypeHarmRi4:4%>\n<SkETypeHarmRi5:4%>\n<SkETypeHarmRi6:4%>\n<SkETypeHarmRi7:4%>\n<SkETypeHarmRi8:4%>\n<SkETypeHarmRi9:4%>\n<SkETypeHarmRi10:4%>\n<SkETypeHarmRi11:4%>\n<SkETypeHarmRi12:4%>",
    "desc": [
-    "效果：黑暗伤害 +12%，神圣伤害 +12%，奥术伤害 +12%，自然伤害 +12%，雷电伤害 +12%，大地伤害 +12%，寒冰伤害 +12%，火焰伤害 +12%，物理伤害 +12%，对应武器的技能伤害 +12%"
+    "效果：全系伤害 +4%，装备任一武器类型时的技能伤害 +4%"
    ]
   },
   "4663": {
@@ -8602,7 +8954,7 @@
    ],
    "note_add": "\n<CodexParamRate:0:-10,1:-10>",
    "desc": [
-    "效果：最大生命 -10%，最大魔法 -10%"
+    "效果：最大生命 −10%，最大魔法 −10%"
    ]
   },
   "4666": {
@@ -8611,6 +8963,12 @@
    "name": "心法:兽行谱",
    "note_remove": [
     "StartPushState0734"
+   ],
+   "note_sub": [
+    [
+     "<pos=APs text=(?:TP恢复\\+\\d+|\\\\c\\[10\\]注意:初次学完此技能)[^>]*>",
+     ""
+    ]
    ],
    "note_add": "\n<passiveHarmRi:8>",
    "desc": [
@@ -8623,6 +8981,12 @@
    "name": "心法:兽行谱",
    "note_remove": [
     "StartPushState0735"
+   ],
+   "note_sub": [
+    [
+     "<pos=APs text=(?:TP恢复\\+\\d+|\\\\c\\[10\\]注意:初次学完此技能)[^>]*>",
+     ""
+    ]
    ],
    "note_add": "\n<passiveHarmRi:8>",
    "desc": [
@@ -8691,7 +9055,7 @@
    ],
    "note_add": "\n<CodexParamRate:2:10,3:-10,4:10,5:-10>",
    "desc": [
-    "效果：物理攻击 +10%，物理防御 -10%，魔法攻击 +10%，魔法防御 -10%"
+    "效果：物理攻击 +10%，物理防御 −10%，魔法攻击 +10%，魔法防御 −10%"
    ]
   },
   "4673": {
@@ -8706,7 +9070,7 @@
    ],
    "note_add": "\n<CodexParamRate:2:-10,3:10,4:-10,5:10>",
    "desc": [
-    "效果：物理攻击 -10%，物理防御 +10%，魔法攻击 -10%，魔法防御 +10%"
+    "效果：物理攻击 −10%，物理防御 +10%，魔法攻击 −10%，魔法防御 +10%"
    ]
   },
   "4674": {
@@ -8723,7 +9087,7 @@
    ],
    "note_add": "\n<CodexParamRate:2:10,3:10,4:10,5:10,6:-10,7:-10>",
    "desc": [
-    "效果：物理攻击 +10%，物理防御 +10%，魔法攻击 +10%，魔法防御 +10%，敏捷 -10%，幸运 -10%"
+    "效果：物理攻击 +10%，物理防御 +10%，魔法攻击 +10%，魔法防御 +10%，敏捷 −10%，幸运 −10%"
    ]
   },
   "4675": {
@@ -8736,7 +9100,7 @@
    ],
    "note_add": "\n<passiveCrHarmRi:12>\n<passiveXPBST2:-8%>",
    "desc": [
-    "效果：暴击伤害 +12%，暴击率 -8%"
+    "效果：暴击伤害 +12%，暴击率 −8%"
    ]
   },
   "4676": {
@@ -8749,7 +9113,7 @@
    ],
    "note_add": "\n<passiveHarmRi:12>\n<passiveXPBST2:-8%>",
    "desc": [
-    "效果：最终伤害 +12%，暴击率 -8%"
+    "效果：最终伤害 +12%，暴击率 −8%"
    ]
   },
   "4677": {
@@ -8761,9 +9125,9 @@
     "passiveHarmRi",
     "passiveXPBST2"
    ],
-   "note_add": "\n<passiveHarmRi:8>\n<passiveCrHarmRi:12>\n<passiveXPBST2:-8%>",
+   "note_add": "\n<passiveHarmRi:5>\n<passiveCrHarmRi:8>\n<passiveXPBST2:-8%>",
    "desc": [
-    "效果：最终伤害 +8%，暴击伤害 +12%，暴击率 -8%"
+    "效果：最终伤害 +5%，暴击伤害 +8%，暴击率 −8%"
    ]
   },
   "4678": {
@@ -8774,9 +9138,9 @@
     "PushState0741",
     "PushState0742"
    ],
-   "note_add": "\n<passiveHarmRi:8>",
+   "note_add": "\n<PushState0741:1%>\n<PushState0742:1%>",
    "desc": [
-    "效果：最终伤害 +8%"
+    "效果：造成伤害时各有 1% 概率使目标附加封技、眩晕"
    ]
   },
   "4679": {
@@ -8787,9 +9151,9 @@
     "PushState0741",
     "PushState0742"
    ],
-   "note_add": "\n<passiveHarmRi:8>",
+   "note_add": "\n<PushState0741:1%>\n<PushState0742:1%>",
    "desc": [
-    "效果：最终伤害 +8%"
+    "效果：造成伤害时各有 1% 概率使目标附加封技、眩晕"
    ]
   },
   "4680": {
@@ -8800,9 +9164,9 @@
     "PushState0741",
     "PushsubState0742"
    ],
-   "note_add": "\n<passiveHarmRi:8>",
+   "note_add": "\n<PushState0741:1%>\n<PushsubState0742:1%>",
    "desc": [
-    "效果：最终伤害 +8%"
+    "效果：造成伤害时有 1% 概率使目标附加封技，造成伤害时有 1% 概率使自身附加眩晕"
    ]
   },
   "4682": {
@@ -8816,7 +9180,7 @@
    ],
    "note_add": "\n<SkillPass2799:12%>\n<SkillPass2800:12%>\n<SkillPass2801:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「第一式:摧城」、「第二式:擂鼓」、「第三式:诛神」伤害 +12%"
    ]
   },
   "4683": {
@@ -8830,7 +9194,7 @@
    ],
    "note_add": "\n<SkillPass2799:-12%>\n<SkillPass2800:-12%>\n<SkillPass2801:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「第一式:摧城」、「第二式:擂鼓」伤害 −12%，「第三式:诛神」伤害 +12%"
    ]
   },
   "4684": {
@@ -8863,9 +9227,9 @@
     "SkillPass3182",
     "SkillPass3187"
    ],
-   "note_add": "\n<SkillPass3178:12%>\n<SkillPass3182:12%>\n<SkillPass3187:12%>\n<SkETypeHarmRi7:12%>",
+   "note_add": "\n<SkillPass3178:7%>\n<SkillPass3182:7%>\n<SkillPass3187:7%>\n<SkETypeHarmRi7:7%>",
    "desc": [
-    "效果：对应技能伤害 +12%，对应武器的技能伤害 +12%"
+    "效果：「噬阳」、「噬阳*极」伤害 +7%，装备弓弩时的技能伤害 +7%"
    ]
   },
   "4686": {
@@ -8878,9 +9242,9 @@
     "SkillPass3182",
     "SkillPass3187"
    ],
-   "note_add": "\n<SkillPass3178:12%>\n<SkillPass3182:12%>\n<SkillPass3187:12%>\n<SkETypeHarmRi7:12%>",
+   "note_add": "\n<SkillPass3178:7%>\n<SkillPass3182:7%>\n<SkillPass3187:7%>\n<SkETypeHarmRi7:7%>",
    "desc": [
-    "效果：对应技能伤害 +12%，对应武器的技能伤害 +12%"
+    "效果：「噬阳」、「噬阳*极」伤害 +7%，装备弓弩时的技能伤害 +7%"
    ]
   },
   "4687": {
@@ -8894,7 +9258,7 @@
    ],
    "note_add": "\n<SkillPass3178:-12%>\n<SkillPass3182:-12%>\n<SkillPass3187:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「噬阳」伤害 −12%，「噬阳*极」伤害 +12%"
    ]
   },
   "4688": {
@@ -8915,7 +9279,7 @@
    "name": "心法:逆转乾坤",
    "note_add": "\n<SkillPass3677:12%>\n<SkillPass3681:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「暴行」伤害 +12%"
    ]
   },
   "4690": {
@@ -8941,7 +9305,7 @@
    ],
    "note_add": "\n<passiveEXTTP:20>\n<SkETypeHarmRi4:12%>\n<SkETypeHarmRi9:-12%>",
    "desc": [
-    "效果：TP 上限 +20，对应武器的技能伤害 -12%"
+    "效果：TP 上限 +20，装备斧时的技能伤害 +12%，装备矛时的技能伤害 −12%"
    ]
   },
   "4692": {
@@ -8954,7 +9318,7 @@
    ],
    "note_add": "\n<SkETypeHarmRi4:-12%>\n<SkETypeHarmRi9:12%>",
    "desc": [
-    "效果：对应武器的技能伤害 +12%"
+    "效果：装备斧时的技能伤害 −12%，装备矛时的技能伤害 +12%"
    ]
   },
   "4693": {
@@ -8977,9 +9341,9 @@
     "SkETypeHarmRi11",
     "SkillPass3691"
    ],
-   "note_add": "\n<SkETypeHarmRi11:12%>\n<SkillPass3691:12%>",
+   "note_add": "\n<SkETypeHarmRi11:7%>\n<SkillPass3691:7%>",
    "desc": [
-    "效果：对应武器的技能伤害 +12%，对应技能伤害 +12%"
+    "效果：「王霸天魔斩」伤害 +7%，装备太刀时的技能伤害 +7%"
    ]
   },
   "4695": {
@@ -8990,9 +9354,9 @@
     "SkETypeHarmRi4",
     "SkillPass3691"
    ],
-   "note_add": "\n<SkETypeHarmRi4:12%>\n<SkillPass3691:12%>",
+   "note_add": "\n<SkETypeHarmRi4:7%>\n<SkillPass3691:7%>",
    "desc": [
-    "效果：对应武器的技能伤害 +12%，对应技能伤害 +12%"
+    "效果：「王霸天魔斩」伤害 +7%，装备斧时的技能伤害 +7%"
    ]
   },
   "4696": {
@@ -9086,7 +9450,7 @@
    ],
    "note_add": "\n<passiveXPBST2:8%>\n<passiveELUP01:10%>\n<passiveELUP02:10%>\n<passiveELUP03:10%>\n<passiveELUP04:10%>\n<passiveELUP05:10%>\n<passiveELUP06:10%>\n<passiveELUP07:10%>\n<passiveELUP08:10%>\n<passiveELUP09:10%>\n<passiveEXTTP:20>",
    "desc": [
-    "效果：暴击率 +8%，物理伤害 +10%，火焰伤害 +10%，寒冰伤害 +10%，大地伤害 +10%，雷电伤害 +10%，自然伤害 +10%，奥术伤害 +10%，神圣伤害 +10%，黑暗伤害 +10%，TP 上限 +20"
+    "效果：暴击率 +8%，TP 上限 +20，全系伤害 +10%"
    ]
   },
   "4746": {
@@ -9104,17 +9468,26 @@
   "4767": {
    "group": "remaining_books",
    "template": "D2",
-   "name": "大奉先[破限]"
+   "name": "大奉先[破限]",
+   "desc": [
+    "效果：所有攻击必定命中，普通攻击替换为「神话*堕天一击[破限]」"
+   ]
   },
   "4768": {
    "group": "remaining_books",
    "template": "D2",
-   "name": "大奉先"
+   "name": "大奉先",
+   "desc": [
+    "效果：所有攻击必定命中，普通攻击替换为「魔化*堕天一击」"
+   ]
   },
   "4770": {
    "group": "remaining_books",
    "template": "D2",
-   "name": "大奉先"
+   "name": "大奉先",
+   "desc": [
+    "效果：所有攻击必定命中，普通攻击替换为「神话*堕天一击」"
+   ]
   },
   "4817": {
    "group": "remaining_books",
@@ -9125,7 +9498,7 @@
    ],
    "note_add": "\n<passiveIRUP:10>",
    "desc": [
-    "效果：物品获取 提高"
+    "效果：物品掉率提高"
    ]
   },
   "5091": {
@@ -9142,9 +9515,9 @@
     "passivePBST5",
     "passivePBST6"
    ],
-   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "note_add": "\n<passiveHarmRi:4>\n<CodexParamRate:0:2,1:2,2:2,3:2,4:2,5:2,6:2>",
    "desc": [
-    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+    "效果：最终伤害 +4%，最大生命 +2%，最大魔法 +2%，物理攻击 +2%，物理防御 +2%，魔法攻击 +2%，魔法防御 +2%，敏捷 +2%"
    ]
   },
   "5092": {
@@ -9161,9 +9534,9 @@
     "passivePBST5",
     "passivePBST6"
    ],
-   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "note_add": "\n<passiveHarmRi:6>\n<CodexParamRate:0:3,1:3,2:3,3:3,4:3,5:3,6:3>",
    "desc": [
-    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+    "效果：最终伤害 +6%，最大生命 +3%，最大魔法 +3%，物理攻击 +3%，物理防御 +3%，魔法攻击 +3%，魔法防御 +3%，敏捷 +3%"
    ]
   },
   "5093": {
@@ -9180,9 +9553,9 @@
     "passivePBST5",
     "passivePBST6"
    ],
-   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "note_add": "\n<passiveHarmRi:8>\n<CodexParamRate:0:4,1:4,2:4,3:4,4:4,5:4,6:4>",
    "desc": [
-    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+    "效果：最终伤害 +8%，最大生命 +4%，最大魔法 +4%，物理攻击 +4%，物理防御 +4%，魔法攻击 +4%，魔法防御 +4%，敏捷 +4%"
    ]
   },
   "5094": {
@@ -9199,9 +9572,9 @@
     "passivePBST5",
     "passivePBST6"
    ],
-   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "note_add": "\n<passiveHarmRi:9>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
    "desc": [
-    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+    "效果：最终伤害 +9%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
    ]
   },
   "5095": {
@@ -9218,9 +9591,9 @@
     "passivePBST5",
     "passivePBST6"
    ],
-   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "note_add": "\n<passiveHarmRi:4>\n<CodexParamRate:0:2,1:2,2:2,3:2,4:2,5:2,6:2>",
    "desc": [
-    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+    "效果：最终伤害 +4%，最大生命 +2%，最大魔法 +2%，物理攻击 +2%，物理防御 +2%，魔法攻击 +2%，魔法防御 +2%，敏捷 +2%"
    ]
   },
   "5096": {
@@ -9237,9 +9610,9 @@
     "passivePBST5",
     "passivePBST6"
    ],
-   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "note_add": "\n<passiveHarmRi:6>\n<CodexParamRate:0:3,1:3,2:3,3:3,4:3,5:3,6:3>",
    "desc": [
-    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+    "效果：最终伤害 +6%，最大生命 +3%，最大魔法 +3%，物理攻击 +3%，物理防御 +3%，魔法攻击 +3%，魔法防御 +3%，敏捷 +3%"
    ]
   },
   "5097": {
@@ -9256,9 +9629,9 @@
     "passivePBST5",
     "passivePBST6"
    ],
-   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "note_add": "\n<passiveHarmRi:8>\n<CodexParamRate:0:4,1:4,2:4,3:4,4:4,5:4,6:4>",
    "desc": [
-    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+    "效果：最终伤害 +8%，最大生命 +4%，最大魔法 +4%，物理攻击 +4%，物理防御 +4%，魔法攻击 +4%，魔法防御 +4%，敏捷 +4%"
    ]
   },
   "5098": {
@@ -9275,9 +9648,9 @@
     "passivePBST5",
     "passivePBST6"
    ],
-   "note_add": "\n<passiveHarmRi:12>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
+   "note_add": "\n<passiveHarmRi:9>\n<CodexParamRate:0:5,1:5,2:5,3:5,4:5,5:5,6:5>",
    "desc": [
-    "效果：最终伤害 +12%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
+    "效果：最终伤害 +9%，最大生命 +5%，最大魔法 +5%，物理攻击 +5%，物理防御 +5%，魔法攻击 +5%，魔法防御 +5%，敏捷 +5%"
    ]
   },
   "5168": {
@@ -9291,7 +9664,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9300,7 +9673,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9326,7 +9699,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9335,7 +9708,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9361,7 +9734,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9370,7 +9743,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9396,7 +9769,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9405,7 +9778,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9431,7 +9804,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9440,7 +9813,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9466,7 +9839,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9475,7 +9848,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9501,7 +9874,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9510,7 +9883,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9536,7 +9909,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9545,7 +9918,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9571,7 +9944,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9580,7 +9953,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9606,7 +9979,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9615,7 +9988,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9641,7 +10014,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9650,7 +10023,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9676,7 +10049,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9685,7 +10058,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9711,7 +10084,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9720,7 +10093,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9746,7 +10119,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9755,7 +10128,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9781,7 +10154,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9790,7 +10163,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9816,7 +10189,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9825,7 +10198,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9851,7 +10224,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9860,7 +10233,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9886,7 +10259,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -9895,7 +10268,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -9921,7 +10294,7 @@
    ],
    "note_add": "\n<SkillPass0457:8%>\n<SkillPass1003:8%>\n<SkillPass1689:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「弹幕射击」伤害 +8%"
    ]
   },
   "5190": {
@@ -9935,7 +10308,7 @@
    ],
    "note_add": "\n<SkillPass0457:12%>\n<SkillPass1003:12%>\n<SkillPass1689:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「弹幕射击」伤害 +12%"
    ]
   },
   "5191": {
@@ -9949,7 +10322,7 @@
    ],
    "note_add": "\n<SkillPass0457:15%>\n<SkillPass1003:15%>\n<SkillPass1689:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「弹幕射击」伤害 +15%"
    ]
   },
   "5192": {
@@ -9963,7 +10336,7 @@
    ],
    "note_add": "\n<SkillPass0457:15%>\n<SkillPass1003:15%>\n<SkillPass1689:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「弹幕射击」伤害 +15%"
    ]
   },
   "5193": {
@@ -9977,7 +10350,7 @@
    ],
    "note_add": "\n<SkillPass0457:15%>\n<SkillPass1003:15%>\n<SkillPass1689:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「弹幕射击」伤害 +15%"
    ]
   },
   "5194": {
@@ -9989,7 +10362,7 @@
    ],
    "note_add": "\n<SkillPass0458:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「闪电杀」伤害 +8%"
    ]
   },
   "5195": {
@@ -10001,7 +10374,7 @@
    ],
    "note_add": "\n<SkillPass0458:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「闪电杀」伤害 +12%"
    ]
   },
   "5196": {
@@ -10013,7 +10386,7 @@
    ],
    "note_add": "\n<SkillPass0458:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「闪电杀」伤害 +15%"
    ]
   },
   "5197": {
@@ -10025,7 +10398,7 @@
    ],
    "note_add": "\n<SkillPass0458:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「闪电杀」伤害 +15%"
    ]
   },
   "5198": {
@@ -10037,7 +10410,7 @@
    ],
    "note_add": "\n<SkillPass0458:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「闪电杀」伤害 +15%"
    ]
   },
   "5199": {
@@ -10049,7 +10422,7 @@
    ],
    "note_add": "\n<SkillPass0459:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「猛击」伤害 +8%"
    ]
   },
   "5200": {
@@ -10061,7 +10434,7 @@
    ],
    "note_add": "\n<SkillPass0459:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「猛击」伤害 +12%"
    ]
   },
   "5201": {
@@ -10073,7 +10446,7 @@
    ],
    "note_add": "\n<SkillPass0459:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「猛击」伤害 +15%"
    ]
   },
   "5202": {
@@ -10085,7 +10458,7 @@
    ],
    "note_add": "\n<SkillPass0459:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「猛击」伤害 +15%"
    ]
   },
   "5203": {
@@ -10097,7 +10470,7 @@
    ],
    "note_add": "\n<SkillPass0459:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「猛击」伤害 +15%"
    ]
   },
   "5204": {
@@ -10109,7 +10482,7 @@
    ],
    "note_add": "\n<SkillPass0460:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「满弦射击」伤害 +8%"
    ]
   },
   "5205": {
@@ -10121,7 +10494,7 @@
    ],
    "note_add": "\n<SkillPass0460:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「满弦射击」伤害 +12%"
    ]
   },
   "5206": {
@@ -10133,7 +10506,7 @@
    ],
    "note_add": "\n<SkillPass0460:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「满弦射击」伤害 +15%"
    ]
   },
   "5207": {
@@ -10145,7 +10518,7 @@
    ],
    "note_add": "\n<SkillPass0460:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「满弦射击」伤害 +15%"
    ]
   },
   "5208": {
@@ -10157,7 +10530,7 @@
    ],
    "note_add": "\n<SkillPass0460:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「满弦射击」伤害 +15%"
    ]
   },
   "5209": {
@@ -10169,7 +10542,7 @@
    ],
    "note_add": "\n<SkillPass0461:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「燕返」伤害 +8%"
    ]
   },
   "5210": {
@@ -10181,7 +10554,7 @@
    ],
    "note_add": "\n<SkillPass0461:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「燕返」伤害 +12%"
    ]
   },
   "5211": {
@@ -10193,7 +10566,7 @@
    ],
    "note_add": "\n<SkillPass0461:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「燕返」伤害 +15%"
    ]
   },
   "5212": {
@@ -10205,7 +10578,7 @@
    ],
    "note_add": "\n<SkillPass0461:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「燕返」伤害 +15%"
    ]
   },
   "5213": {
@@ -10217,7 +10590,7 @@
    ],
    "note_add": "\n<SkillPass0461:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「燕返」伤害 +15%"
    ]
   },
   "5214": {
@@ -10229,7 +10602,7 @@
    ],
    "note_add": "\n<SkillPass0462:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「穿心枪术」伤害 +8%"
    ]
   },
   "5215": {
@@ -10241,7 +10614,7 @@
    ],
    "note_add": "\n<SkillPass0462:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「穿心枪术」伤害 +12%"
    ]
   },
   "5216": {
@@ -10253,7 +10626,7 @@
    ],
    "note_add": "\n<SkillPass0462:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「穿心枪术」伤害 +15%"
    ]
   },
   "5217": {
@@ -10265,7 +10638,7 @@
    ],
    "note_add": "\n<SkillPass0462:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「穿心枪术」伤害 +15%"
    ]
   },
   "5218": {
@@ -10277,7 +10650,7 @@
    ],
    "note_add": "\n<SkillPass0462:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「穿心枪术」伤害 +15%"
    ]
   },
   "5219": {
@@ -10290,7 +10663,7 @@
    ],
    "note_add": "\n<SkillPass0463:8%>\n<SkillPass0569:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「升龙拳」伤害 +8%"
    ]
   },
   "5220": {
@@ -10303,7 +10676,7 @@
    ],
    "note_add": "\n<SkillPass0463:12%>\n<SkillPass0569:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「升龙拳」伤害 +12%"
    ]
   },
   "5221": {
@@ -10316,7 +10689,7 @@
    ],
    "note_add": "\n<SkillPass0463:15%>\n<SkillPass0569:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「升龙拳」伤害 +15%"
    ]
   },
   "5222": {
@@ -10329,7 +10702,7 @@
    ],
    "note_add": "\n<SkillPass0463:15%>\n<SkillPass0569:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「升龙拳」伤害 +15%"
    ]
   },
   "5223": {
@@ -10342,7 +10715,7 @@
    ],
    "note_add": "\n<SkillPass0463:15%>\n<SkillPass0569:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「升龙拳」伤害 +15%"
    ]
   },
   "5224": {
@@ -10355,7 +10728,7 @@
    ],
    "note_add": "\n<SkillPass0789:8%>\n<SkillPass1871:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「精准射杀」伤害 +8%"
    ]
   },
   "5225": {
@@ -10368,7 +10741,7 @@
    ],
    "note_add": "\n<SkillPass0789:12%>\n<SkillPass1871:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「精准射杀」伤害 +12%"
    ]
   },
   "5226": {
@@ -10381,7 +10754,7 @@
    ],
    "note_add": "\n<SkillPass0789:15%>\n<SkillPass1871:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「精准射杀」伤害 +15%"
    ]
   },
   "5227": {
@@ -10394,7 +10767,7 @@
    ],
    "note_add": "\n<SkillPass0789:15%>\n<SkillPass1871:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「精准射杀」伤害 +15%"
    ]
   },
   "5228": {
@@ -10407,7 +10780,7 @@
    ],
    "note_add": "\n<SkillPass0789:15%>\n<SkillPass1871:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「精准射杀」伤害 +15%"
    ]
   },
   "5229": {
@@ -10419,7 +10792,7 @@
    ],
    "note_add": "\n<SkillPass0790:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「袭杀」伤害 +8%"
    ]
   },
   "5230": {
@@ -10431,7 +10804,7 @@
    ],
    "note_add": "\n<SkillPass0790:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「袭杀」伤害 +12%"
    ]
   },
   "5231": {
@@ -10443,7 +10816,7 @@
    ],
    "note_add": "\n<SkillPass0790:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「袭杀」伤害 +15%"
    ]
   },
   "5232": {
@@ -10455,7 +10828,7 @@
    ],
    "note_add": "\n<SkillPass0790:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「袭杀」伤害 +15%"
    ]
   },
   "5233": {
@@ -10467,7 +10840,7 @@
    ],
    "note_add": "\n<SkillPass0790:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「袭杀」伤害 +15%"
    ]
   },
   "5234": {
@@ -10479,7 +10852,7 @@
    ],
    "note_add": "\n<SkillPass0791:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「斩杀」伤害 +8%"
    ]
   },
   "5235": {
@@ -10491,7 +10864,7 @@
    ],
    "note_add": "\n<SkillPass0791:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「斩杀」伤害 +12%"
    ]
   },
   "5236": {
@@ -10503,7 +10876,7 @@
    ],
    "note_add": "\n<SkillPass0791:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「斩杀」伤害 +15%"
    ]
   },
   "5237": {
@@ -10515,7 +10888,7 @@
    ],
    "note_add": "\n<SkillPass0791:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「斩杀」伤害 +15%"
    ]
   },
   "5238": {
@@ -10527,7 +10900,7 @@
    ],
    "note_add": "\n<SkillPass0791:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「斩杀」伤害 +15%"
    ]
   },
   "5239": {
@@ -10540,7 +10913,7 @@
    ],
    "note_add": "\n<SkillPass0792:8%>\n<SkillPass1007:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「百步穿杨」伤害 +8%"
    ]
   },
   "5240": {
@@ -10553,7 +10926,7 @@
    ],
    "note_add": "\n<SkillPass0792:12%>\n<SkillPass1007:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「百步穿杨」伤害 +12%"
    ]
   },
   "5241": {
@@ -10566,7 +10939,7 @@
    ],
    "note_add": "\n<SkillPass0792:15%>\n<SkillPass1007:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「百步穿杨」伤害 +15%"
    ]
   },
   "5242": {
@@ -10579,7 +10952,7 @@
    ],
    "note_add": "\n<SkillPass0792:15%>\n<SkillPass1007:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「百步穿杨」伤害 +15%"
    ]
   },
   "5243": {
@@ -10592,7 +10965,7 @@
    ],
    "note_add": "\n<SkillPass0792:15%>\n<SkillPass1007:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「百步穿杨」伤害 +15%"
    ]
   },
   "5244": {
@@ -10604,7 +10977,7 @@
    ],
    "note_add": "\n<SkillPass0793:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「十字斩」伤害 +8%"
    ]
   },
   "5245": {
@@ -10616,7 +10989,7 @@
    ],
    "note_add": "\n<SkillPass0793:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「十字斩」伤害 +12%"
    ]
   },
   "5246": {
@@ -10628,7 +11001,7 @@
    ],
    "note_add": "\n<SkillPass0793:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「十字斩」伤害 +15%"
    ]
   },
   "5247": {
@@ -10640,7 +11013,7 @@
    ],
    "note_add": "\n<SkillPass0793:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「十字斩」伤害 +15%"
    ]
   },
   "5248": {
@@ -10652,7 +11025,7 @@
    ],
    "note_add": "\n<SkillPass0793:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「十字斩」伤害 +15%"
    ]
   },
   "5249": {
@@ -10664,7 +11037,7 @@
    ],
    "note_add": "\n<SkillPass0794:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「无畏冲锋」伤害 +8%"
    ]
   },
   "5250": {
@@ -10676,7 +11049,7 @@
    ],
    "note_add": "\n<SkillPass0794:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「无畏冲锋」伤害 +12%"
    ]
   },
   "5251": {
@@ -10688,7 +11061,7 @@
    ],
    "note_add": "\n<SkillPass0794:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「无畏冲锋」伤害 +15%"
    ]
   },
   "5252": {
@@ -10700,7 +11073,7 @@
    ],
    "note_add": "\n<SkillPass0794:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「无畏冲锋」伤害 +15%"
    ]
   },
   "5253": {
@@ -10712,7 +11085,7 @@
    ],
    "note_add": "\n<SkillPass0794:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「无畏冲锋」伤害 +15%"
    ]
   },
   "5254": {
@@ -10725,7 +11098,7 @@
    ],
    "note_add": "\n<SkillPass0947:8%>\n<SkillPass1046:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「奥术冲击」伤害 +8%"
    ]
   },
   "5255": {
@@ -10738,7 +11111,7 @@
    ],
    "note_add": "\n<SkillPass0947:12%>\n<SkillPass1046:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「奥术冲击」伤害 +12%"
    ]
   },
   "5256": {
@@ -10751,7 +11124,7 @@
    ],
    "note_add": "\n<SkillPass0947:15%>\n<SkillPass1046:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「奥术冲击」伤害 +15%"
    ]
   },
   "5257": {
@@ -10764,7 +11137,7 @@
    ],
    "note_add": "\n<SkillPass0947:15%>\n<SkillPass1046:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「奥术冲击」伤害 +15%"
    ]
   },
   "5258": {
@@ -10777,7 +11150,7 @@
    ],
    "note_add": "\n<SkillPass0947:15%>\n<SkillPass1046:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「奥术冲击」伤害 +15%"
    ]
   },
   "5259": {
@@ -10790,7 +11163,7 @@
    ],
    "note_add": "\n<SkillPass0948:8%>\n<SkillPass0987:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「炎爆术」伤害 +8%"
    ]
   },
   "5260": {
@@ -10803,7 +11176,7 @@
    ],
    "note_add": "\n<SkillPass0948:12%>\n<SkillPass0987:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「炎爆术」伤害 +12%"
    ]
   },
   "5261": {
@@ -10816,7 +11189,7 @@
    ],
    "note_add": "\n<SkillPass0948:15%>\n<SkillPass0987:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「炎爆术」伤害 +15%"
    ]
   },
   "5262": {
@@ -10829,7 +11202,7 @@
    ],
    "note_add": "\n<SkillPass0948:15%>\n<SkillPass0987:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「炎爆术」伤害 +15%"
    ]
   },
   "5263": {
@@ -10842,7 +11215,7 @@
    ],
    "note_add": "\n<SkillPass0948:15%>\n<SkillPass0987:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「炎爆术」伤害 +15%"
    ]
   },
   "5264": {
@@ -10856,7 +11229,7 @@
    ],
    "note_add": "\n<SkillPass0949:8%>\n<SkillPass1272:8%>\n<SkillPass1271:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「星辰碎冰」伤害 +8%"
    ]
   },
   "5265": {
@@ -10870,7 +11243,7 @@
    ],
    "note_add": "\n<SkillPass0949:12%>\n<SkillPass1272:12%>\n<SkillPass1271:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「星辰碎冰」伤害 +12%"
    ]
   },
   "5266": {
@@ -10884,7 +11257,7 @@
    ],
    "note_add": "\n<SkillPass0949:15%>\n<SkillPass1272:15%>\n<SkillPass1271:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「星辰碎冰」伤害 +15%"
    ]
   },
   "5267": {
@@ -10898,7 +11271,7 @@
    ],
    "note_add": "\n<SkillPass0949:15%>\n<SkillPass1272:15%>\n<SkillPass1271:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「星辰碎冰」伤害 +15%"
    ]
   },
   "5268": {
@@ -10912,7 +11285,7 @@
    ],
    "note_add": "\n<SkillPass0949:15%>\n<SkillPass1272:15%>\n<SkillPass1271:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「星辰碎冰」伤害 +15%"
    ]
   },
   "5269": {
@@ -10925,7 +11298,7 @@
    ],
    "note_add": "\n<SkillPass0950:8%>\n<SkillPass0994:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「地震术」伤害 +8%"
    ]
   },
   "5270": {
@@ -10938,7 +11311,7 @@
    ],
    "note_add": "\n<SkillPass0950:12%>\n<SkillPass0994:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「地震术」伤害 +12%"
    ]
   },
   "5271": {
@@ -10951,7 +11324,7 @@
    ],
    "note_add": "\n<SkillPass0950:15%>\n<SkillPass0994:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「地震术」伤害 +15%"
    ]
   },
   "5272": {
@@ -10964,7 +11337,7 @@
    ],
    "note_add": "\n<SkillPass0950:15%>\n<SkillPass0994:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「地震术」伤害 +15%"
    ]
   },
   "5273": {
@@ -10977,7 +11350,7 @@
    ],
    "note_add": "\n<SkillPass0950:15%>\n<SkillPass0994:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「地震术」伤害 +15%"
    ]
   },
   "5274": {
@@ -10990,7 +11363,7 @@
    ],
    "note_add": "\n<SkillPass0951:8%>\n<SkillPass1043:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「风魔炮」伤害 +8%"
    ]
   },
   "5275": {
@@ -11003,7 +11376,7 @@
    ],
    "note_add": "\n<SkillPass0951:12%>\n<SkillPass1043:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「风魔炮」伤害 +12%"
    ]
   },
   "5276": {
@@ -11016,7 +11389,7 @@
    ],
    "note_add": "\n<SkillPass0951:15%>\n<SkillPass1043:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「风魔炮」伤害 +15%"
    ]
   },
   "5277": {
@@ -11029,7 +11402,7 @@
    ],
    "note_add": "\n<SkillPass0951:15%>\n<SkillPass1043:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「风魔炮」伤害 +15%"
    ]
   },
   "5278": {
@@ -11042,7 +11415,7 @@
    ],
    "note_add": "\n<SkillPass0951:15%>\n<SkillPass1043:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「风魔炮」伤害 +15%"
    ]
   },
   "5279": {
@@ -11054,7 +11427,7 @@
    ],
    "note_add": "\n<SkillPass0952:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「大号爆弹」伤害 +8%"
    ]
   },
   "5280": {
@@ -11066,7 +11439,7 @@
    ],
    "note_add": "\n<SkillPass0952:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「大号爆弹」伤害 +12%"
    ]
   },
   "5281": {
@@ -11078,7 +11451,7 @@
    ],
    "note_add": "\n<SkillPass0952:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「大号爆弹」伤害 +15%"
    ]
   },
   "5282": {
@@ -11090,7 +11463,7 @@
    ],
    "note_add": "\n<SkillPass0952:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「大号爆弹」伤害 +15%"
    ]
   },
   "5283": {
@@ -11102,7 +11475,7 @@
    ],
    "note_add": "\n<SkillPass0952:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「大号爆弹」伤害 +15%"
    ]
   },
   "5284": {
@@ -11114,7 +11487,7 @@
    ],
    "note_add": "\n<SkillPass0953:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「剜心」伤害 +8%"
    ]
   },
   "5285": {
@@ -11126,7 +11499,7 @@
    ],
    "note_add": "\n<SkillPass0953:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「剜心」伤害 +12%"
    ]
   },
   "5286": {
@@ -11138,7 +11511,7 @@
    ],
    "note_add": "\n<SkillPass0953:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「剜心」伤害 +15%"
    ]
   },
   "5287": {
@@ -11150,7 +11523,7 @@
    ],
    "note_add": "\n<SkillPass0953:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「剜心」伤害 +15%"
    ]
   },
   "5288": {
@@ -11162,7 +11535,7 @@
    ],
    "note_add": "\n<SkillPass0953:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「剜心」伤害 +15%"
    ]
   },
   "5289": {
@@ -11175,7 +11548,7 @@
    ],
    "note_add": "\n<SkillPass0954:8%>\n<SkillPass1049:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「断头台」伤害 +8%"
    ]
   },
   "5290": {
@@ -11188,7 +11561,7 @@
    ],
    "note_add": "\n<SkillPass0954:12%>\n<SkillPass1049:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「断头台」伤害 +12%"
    ]
   },
   "5291": {
@@ -11201,7 +11574,7 @@
    ],
    "note_add": "\n<SkillPass0954:15%>\n<SkillPass1049:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「断头台」伤害 +15%"
    ]
   },
   "5292": {
@@ -11214,7 +11587,7 @@
    ],
    "note_add": "\n<SkillPass0954:15%>\n<SkillPass1049:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「断头台」伤害 +15%"
    ]
   },
   "5293": {
@@ -11227,7 +11600,7 @@
    ],
    "note_add": "\n<SkillPass0954:15%>\n<SkillPass1049:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「断头台」伤害 +15%"
    ]
   },
   "5294": {
@@ -11240,7 +11613,7 @@
    ],
    "note_add": "\n<SkillPass0955:8%>\n<SkillPass0991:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「骑射」伤害 +8%"
    ]
   },
   "5295": {
@@ -11253,7 +11626,7 @@
    ],
    "note_add": "\n<SkillPass0955:12%>\n<SkillPass0991:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「骑射」伤害 +12%"
    ]
   },
   "5296": {
@@ -11266,7 +11639,7 @@
    ],
    "note_add": "\n<SkillPass0955:15%>\n<SkillPass0991:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「骑射」伤害 +15%"
    ]
   },
   "5297": {
@@ -11279,7 +11652,7 @@
    ],
    "note_add": "\n<SkillPass0955:15%>\n<SkillPass0991:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「骑射」伤害 +15%"
    ]
   },
   "5298": {
@@ -11292,7 +11665,7 @@
    ],
    "note_add": "\n<SkillPass0955:15%>\n<SkillPass0991:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「骑射」伤害 +15%"
    ]
   },
   "5299": {
@@ -11305,7 +11678,7 @@
    ],
    "note_add": "\n<SkillPass0956:8%>\n<SkillPass0995:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「汲血斩」伤害 +8%"
    ]
   },
   "5300": {
@@ -11318,7 +11691,7 @@
    ],
    "note_add": "\n<SkillPass0956:12%>\n<SkillPass0995:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「汲血斩」伤害 +12%"
    ]
   },
   "5301": {
@@ -11331,7 +11704,7 @@
    ],
    "note_add": "\n<SkillPass0956:15%>\n<SkillPass0995:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「汲血斩」伤害 +15%"
    ]
   },
   "5302": {
@@ -11344,7 +11717,7 @@
    ],
    "note_add": "\n<SkillPass0956:15%>\n<SkillPass0995:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「汲血斩」伤害 +15%"
    ]
   },
   "5303": {
@@ -11357,7 +11730,7 @@
    ],
    "note_add": "\n<SkillPass0956:15%>\n<SkillPass0995:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「汲血斩」伤害 +15%"
    ]
   },
   "5304": {
@@ -11369,7 +11742,7 @@
    ],
    "note_add": "\n<SkillPass0957:8%>",
    "desc": [
-    "效果：对应技能伤害 +8%"
+    "效果：「破军枪法」伤害 +8%"
    ]
   },
   "5305": {
@@ -11381,7 +11754,7 @@
    ],
    "note_add": "\n<SkillPass0957:12%>",
    "desc": [
-    "效果：对应技能伤害 +12%"
+    "效果：「破军枪法」伤害 +12%"
    ]
   },
   "5306": {
@@ -11393,7 +11766,7 @@
    ],
    "note_add": "\n<SkillPass0957:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「破军枪法」伤害 +15%"
    ]
   },
   "5307": {
@@ -11405,7 +11778,7 @@
    ],
    "note_add": "\n<SkillPass0957:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「破军枪法」伤害 +15%"
    ]
   },
   "5308": {
@@ -11417,7 +11790,7 @@
    ],
    "note_add": "\n<SkillPass0957:15%>",
    "desc": [
-    "效果：对应技能伤害 +15%"
+    "效果：「破军枪法」伤害 +15%"
    ]
   },
   "5309": {
@@ -11432,7 +11805,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11473,7 +11846,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11482,7 +11855,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11508,7 +11881,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11517,7 +11890,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11543,7 +11916,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11552,7 +11925,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11578,7 +11951,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11587,7 +11960,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11613,7 +11986,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11622,7 +11995,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11648,7 +12021,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11657,7 +12030,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11683,7 +12056,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11692,7 +12065,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11718,7 +12091,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11727,7 +12100,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11753,7 +12126,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11762,7 +12135,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11788,7 +12161,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11797,7 +12170,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11823,7 +12196,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11832,7 +12205,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11858,7 +12231,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11867,7 +12240,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11893,7 +12266,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11902,7 +12275,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11928,7 +12301,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11937,7 +12310,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11963,7 +12336,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -11972,7 +12345,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -11998,7 +12371,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12007,7 +12380,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -12033,7 +12406,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12042,7 +12415,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -12068,7 +12441,7 @@
     "冷却时间": "无"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12077,7 +12450,7 @@
     "coef_pct": 50
    },
    "desc": [
-    "效果：每段物理攻击的 50%，随机攻击 4 次"
+    "效果：随机攻击 4 次，每段造成物理攻击的 50% 伤害"
    ],
    "seq": [
     {
@@ -12101,7 +12474,7 @@
    "repeats": 1,
    "mp_pct": 5,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12134,7 +12507,7 @@
    "repeats": 1,
    "mp_pct": 5,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12167,7 +12540,7 @@
    "repeats": 1,
    "mp_pct": 5,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12201,7 +12574,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12235,7 +12608,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12269,7 +12642,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12303,7 +12676,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12337,7 +12710,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12371,7 +12744,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12405,7 +12778,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12439,7 +12812,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12473,7 +12846,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12507,7 +12880,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12541,7 +12914,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12575,7 +12948,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12609,7 +12982,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12643,7 +13016,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12677,7 +13050,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12710,8 +13083,11 @@
    "repeats": 1,
    "mp_pct": 15,
    "cooldown": 3,
+   "header": {
+    "对象": "全体敌人"
+   },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "desc": [
     "效果：解除敌方护盾"
@@ -12739,10 +13115,11 @@
    "mp_pct": 15,
    "cooldown": 5,
    "header": {
-    "冷却时间": "5 回合"
+    "冷却时间": "5 回合",
+    "对象": "全体敌人"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "desc": [
     "效果：转换敌方免疫"
@@ -12772,7 +13149,7 @@
    ],
    "note_add": "\n<SkillPass6015:10%>\n<SkillPass6016:10%>\n<SkillPass6017:10%>\n<SkillPass6018:10%>",
    "desc": [
-    "效果：对应技能伤害 +10%"
+    "效果：「疾风连斩*蚀骨」、「奥秘之刃*洪流」、「破灭箭矢*坠神」等技能伤害 +10%"
    ]
   },
   "6126": {
@@ -12784,7 +13161,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12815,7 +13192,70 @@
   "6127": {
    "group": "remaining_books",
    "template": "C1",
-   "name": "六灭秘本"
+   "name": "六灭秘本",
+   "desc": [
+    "效果：可提升六灭秘本境界并领悟剑法"
+   ]
+  },
+  "6128": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "剑廿二",
+   "note_remove": [
+    "SkillPass6126",
+    "SkillPass6140",
+    "passiveELUP01",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<SkillPass6126:2%>\n<SkillPass6140:2%>\n<passiveELUP01:2%>\n<passiveHarmRi:2>",
+   "desc": [
+    "效果：最终伤害 +2%，物理伤害 +2%，「圣灵剑法」伤害 +2%"
+   ]
+  },
+  "6129": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "灭天绝地剑廿三",
+   "note_remove": [
+    "SkillPass6126",
+    "SkillPass6140",
+    "passiveELUP01",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<SkillPass6126:3%>\n<SkillPass6140:3%>\n<passiveELUP01:3%>\n<passiveHarmRi:3>",
+   "desc": [
+    "效果：最终伤害 +3%，物理伤害 +3%，「圣灵剑法」伤害 +3%"
+   ]
+  },
+  "6130": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "有情天地剑廿三",
+   "note_remove": [
+    "SkillPass6126",
+    "SkillPass6140",
+    "passiveELUP01",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<SkillPass6126:4%>\n<SkillPass6140:4%>\n<passiveELUP01:4%>\n<passiveHarmRi:4>",
+   "desc": [
+    "效果：最终伤害 +4%，物理伤害 +4%，「圣灵剑法」伤害 +4%"
+   ]
+  },
+  "6131": {
+   "group": "remaining_books",
+   "template": "D2",
+   "name": "六灭剑廿三",
+   "note_remove": [
+    "SkillPass6126",
+    "SkillPass6140",
+    "passiveELUP01",
+    "passiveHarmRi"
+   ],
+   "note_add": "\n<SkillPass6126:5%>\n<SkillPass6140:5%>\n<passiveELUP01:4%>\n<passiveHarmRi:5>",
+   "desc": [
+    "效果：最终伤害 +5%，物理伤害 +4%，「圣灵剑法」伤害 +5%"
+   ]
   },
   "6133": {
    "group": "remaining_books",
@@ -12828,9 +13268,9 @@
     "PushState0020",
     "PushState0021"
    ],
-   "note_add": "\n<passiveHarmRi:8>",
+   "note_add": "\n<PushState0017:2%>\n<PushState0018:2%>\n<PushState0019:2%>\n<PushState0020:2%>\n<PushState0021:2%>",
    "desc": [
-    "效果：最终伤害 +8%"
+    "效果：造成伤害时各有 2% 概率使目标附加灼伤 I～V"
    ]
   },
   "6134": {
@@ -12933,12 +13373,12 @@
    "cooldown": 3,
    "note_sub": [
     [
-     "<pos=APs text=效果:[^>]*>",
+     "<pos=APs text=(?:TP恢复\\+\\d+|\\\\c\\[10\\]注意:初次学完此技能)[^>]*>|<pos=APs text=效果:[^>]*>",
      ""
     ]
    ],
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -12965,12 +13405,18 @@
   "6143": {
    "group": "remaining_books",
    "template": "C1",
-   "name": "水果秘典·辣椒"
+   "name": "水果秘典·辣椒",
+   "desc": [
+    "效果：普通攻击替换为「菊花枪」"
+   ]
   },
   "6144": {
    "group": "remaining_books",
    "template": "C1",
-   "name": "水果秘典·核桃"
+   "name": "水果秘典·核桃",
+   "desc": [
+    "效果：普通攻击替换为「核桃镖」"
+   ]
   },
   "6145": {
    "group": "remaining_books",
@@ -13000,9 +13446,9 @@
     "RecPushState0980",
     "passiveELUP10"
    ],
-   "note_add": "\n<passiveELUP10:10%>\n<passiveCrHarmRi:12>\n<passiveHarmRi:5>",
+   "note_add": "\n<passiveELUP10:10%>\n<passiveCrHarmRi:10>\n<passiveHarmRi:4>",
    "desc": [
-    "效果：属性伤害 +10%，暴击伤害 +12%，最终伤害 +5%"
+    "效果：暴击伤害 +10%，最终伤害 +4%，治疗效果 +10%"
    ]
   },
   "6150": {
@@ -13014,9 +13460,9 @@
     "passiveELUP03",
     "passiveHarmRi"
    ],
-   "note_add": "\n<SkillPass6142:10%>\n<passiveELUP03:10%>\n<passiveHarmRi:10>",
+   "note_add": "\n<SkillPass6142:2%>\n<passiveELUP03:2%>\n<passiveHarmRi:2>",
    "desc": [
-    "效果：对应技能伤害 +10%，寒冰伤害 +10%，最终伤害 +10%"
+    "效果：最终伤害 +2%，寒冰伤害 +2%，「冰霜黑洞」伤害 +2%"
    ]
   },
   "6151": {
@@ -13028,9 +13474,9 @@
     "passiveELUP03",
     "passiveHarmRi"
    ],
-   "note_add": "\n<SkillPass6142:10%>\n<passiveELUP03:10%>\n<passiveHarmRi:10>",
+   "note_add": "\n<SkillPass6142:3%>\n<passiveELUP03:3%>\n<passiveHarmRi:3>",
    "desc": [
-    "效果：对应技能伤害 +10%，寒冰伤害 +10%，最终伤害 +10%"
+    "效果：最终伤害 +3%，寒冰伤害 +3%，「冰霜黑洞」伤害 +3%"
    ]
   },
   "6152": {
@@ -13042,9 +13488,9 @@
     "passiveELUP03",
     "passiveHarmRi"
    ],
-   "note_add": "\n<SkillPass6142:10%>\n<passiveELUP03:10%>\n<passiveHarmRi:10>",
+   "note_add": "\n<SkillPass6142:4%>\n<passiveELUP03:4%>\n<passiveHarmRi:4>",
    "desc": [
-    "效果：对应技能伤害 +10%，寒冰伤害 +10%，最终伤害 +10%"
+    "效果：最终伤害 +4%，寒冰伤害 +4%，「冰霜黑洞」伤害 +4%"
    ]
   },
   "6153": {
@@ -13056,9 +13502,9 @@
     "passiveELUP03",
     "passiveHarmRi"
    ],
-   "note_add": "\n<SkillPass6142:10%>\n<passiveELUP03:10%>\n<passiveHarmRi:10>",
+   "note_add": "\n<SkillPass6142:5%>\n<passiveELUP03:4%>\n<passiveHarmRi:5>",
    "desc": [
-    "效果：对应技能伤害 +10%，寒冰伤害 +10%，最终伤害 +10%"
+    "效果：最终伤害 +5%，寒冰伤害 +4%，「冰霜黑洞」伤害 +5%"
    ]
   },
   "6155": {
@@ -13087,7 +13533,7 @@
    ],
    "note_add": "\n<SkillPass5168:10%>\n<SkillPass5169:10%>\n<SkillPass5170:10%>\n<SkillPass5171:10%>\n<SkillPass5172:10%>\n<SkillPass5173:10%>\n<SkillPass5174:10%>\n<SkillPass5175:10%>\n<SkillPass5176:10%>\n<SkillPass5177:10%>\n<SkillPass5178:10%>\n<SkillPass5179:10%>\n<SkillPass5180:10%>\n<SkillPass5181:10%>\n<SkillPass5182:10%>\n<SkillPass5183:10%>\n<SkillPass5184:10%>\n<SkillPass5185:10%>",
    "desc": [
-    "效果：对应技能伤害 +10%"
+    "效果：「鲲拳」伤害 +10%"
    ]
   },
   "6156": {
@@ -13116,7 +13562,7 @@
    ],
    "note_add": "\n<SkillPass5400:10%>\n<SkillPass5401:10%>\n<SkillPass5402:10%>\n<SkillPass5403:10%>\n<SkillPass5404:10%>\n<SkillPass5405:10%>\n<SkillPass5406:10%>\n<SkillPass5407:10%>\n<SkillPass5408:10%>\n<SkillPass5409:10%>\n<SkillPass5410:10%>\n<SkillPass5411:10%>\n<SkillPass5412:10%>\n<SkillPass5413:10%>\n<SkillPass5414:10%>\n<SkillPass5415:10%>\n<SkillPass5416:10%>\n<SkillPass5417:10%>",
    "desc": [
-    "效果：对应技能伤害 +10%"
+    "效果：「动感光线」伤害 +10%"
    ]
   },
   "6157": {
@@ -13145,7 +13591,7 @@
    ],
    "note_add": "\n<SkillPass5382:10%>\n<SkillPass5383:10%>\n<SkillPass5384:10%>\n<SkillPass5385:10%>\n<SkillPass5386:10%>\n<SkillPass5387:10%>\n<SkillPass5388:10%>\n<SkillPass5389:10%>\n<SkillPass5390:10%>\n<SkillPass5391:10%>\n<SkillPass5392:10%>\n<SkillPass5393:10%>\n<SkillPass5394:10%>\n<SkillPass5395:10%>\n<SkillPass5396:10%>\n<SkillPass5397:10%>\n<SkillPass5398:10%>\n<SkillPass5399:10%>",
    "desc": [
-    "效果：对应技能伤害 +10%"
+    "效果：「马氏双节棍」伤害 +10%"
    ]
   },
   "6158": {
@@ -13189,7 +13635,7 @@
     "冷却时间": "30 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -13229,9 +13675,9 @@
     "passiveELUP01",
     "passiveHarmRi"
    ],
-   "note_add": "\n<SkillPass6161:10%>\n<passiveELUP01:10%>\n<passiveHarmRi:10>",
+   "note_add": "\n<SkillPass6161:2%>\n<passiveELUP01:2%>\n<passiveHarmRi:2>",
    "desc": [
-    "效果：对应技能伤害 +10%，物理伤害 +10%，最终伤害 +10%"
+    "效果：最终伤害 +2%，物理伤害 +2%，「劫运神镖」伤害 +2%"
    ]
   },
   "6164": {
@@ -13243,9 +13689,9 @@
     "passiveELUP01",
     "passiveHarmRi"
    ],
-   "note_add": "\n<SkillPass6161:10%>\n<passiveELUP01:10%>\n<passiveHarmRi:10>",
+   "note_add": "\n<SkillPass6161:3%>\n<passiveELUP01:3%>\n<passiveHarmRi:3>",
    "desc": [
-    "效果：对应技能伤害 +10%，物理伤害 +10%，最终伤害 +10%"
+    "效果：最终伤害 +3%，物理伤害 +3%，「劫运神镖」伤害 +3%"
    ]
   },
   "6165": {
@@ -13257,9 +13703,9 @@
     "passiveELUP01",
     "passiveHarmRi"
    ],
-   "note_add": "\n<SkillPass6161:10%>\n<passiveELUP01:10%>\n<passiveHarmRi:10>",
+   "note_add": "\n<SkillPass6161:4%>\n<passiveELUP01:4%>\n<passiveHarmRi:4>",
    "desc": [
-    "效果：对应技能伤害 +10%，物理伤害 +10%，最终伤害 +10%"
+    "效果：最终伤害 +4%，物理伤害 +4%，「劫运神镖」伤害 +4%"
    ]
   },
   "6166": {
@@ -13271,9 +13717,9 @@
     "passiveELUP01",
     "passiveHarmRi"
    ],
-   "note_add": "\n<SkillPass6161:10%>\n<passiveELUP01:10%>\n<passiveHarmRi:10>",
+   "note_add": "\n<SkillPass6161:5%>\n<passiveELUP01:4%>\n<passiveHarmRi:5>",
    "desc": [
-    "效果：对应技能伤害 +10%，物理伤害 +10%，最终伤害 +10%"
+    "效果：最终伤害 +5%，物理伤害 +4%，「劫运神镖」伤害 +5%"
    ]
   },
   "6169": {
@@ -13285,7 +13731,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -13323,7 +13769,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -13357,7 +13803,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -13395,9 +13841,9 @@
     "SkillPass6169",
     "passiveELUP01"
    ],
-   "note_add": "\n<SkillPass6169:10%>\n<passiveELUP01:10%>",
+   "note_add": "\n<SkillPass6169:7%>\n<passiveELUP01:7%>",
    "desc": [
-    "效果：对应技能伤害 +10%，物理伤害 +10%"
+    "效果：物理伤害 +7%，「斩意*十字斩」伤害 +7%"
    ]
   },
   "6174": {
@@ -13408,9 +13854,9 @@
     "SkillPass6170",
     "passiveELUP02"
    ],
-   "note_add": "\n<SkillPass6170:10%>\n<passiveELUP02:10%>",
+   "note_add": "\n<SkillPass6170:7%>\n<passiveELUP02:7%>",
    "desc": [
-    "效果：对应技能伤害 +10%，火焰伤害 +10%"
+    "效果：火焰伤害 +7%，「初火*炽烈火柱」伤害 +7%，普通攻击替换为「初火*炽烈火柱」"
    ]
   },
   "6175": {
@@ -13422,9 +13868,47 @@
     "SkillPass6172",
     "passiveELUP03"
    ],
-   "note_add": "\n<SkillPass6171:10%>\n<SkillPass6172:10%>\n<passiveELUP03:10%>",
+   "note_add": "\n<SkillPass6171:7%>\n<SkillPass6172:7%>\n<passiveELUP03:7%>",
    "desc": [
-    "效果：对应技能伤害 +10%，寒冰伤害 +10%"
+    "效果：寒冰伤害 +7%，「零度*冻结术」、「零度*冻结术·再释放」伤害 +7%"
+   ]
+  },
+  "6181": {
+   "group": "remaining_books",
+   "template": "B3",
+   "name": "百八烦恼风",
+   "tp": 0,
+   "mp": 0,
+   "repeats": 1,
+   "note_remove": [
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
+   ],
+   "damage": {
+    "stats": {
+     "mat": 1
+    },
+    "coef": 3
+   },
+   "desc": [
+    "效果：造成魔法攻击的 3 倍伤害"
+   ],
+   "effects_remove": [
+    [
+     44,
+     1327
+    ]
+   ],
+   "seq": [
+    {
+     "op": "drop_if"
+    },
+    {
+     "op": "clear_effect_args"
+    },
+    {
+     "op": "keep_effects",
+     "n": 1
+    }
    ]
   },
   "6183": {
@@ -13436,7 +13920,7 @@
    ],
    "note_add": "\n<passiveELUP06:10%>",
    "desc": [
-    "效果：自然伤害 +10%"
+    "效果：自然伤害 +10%，普通攻击替换为「百八烦恼风」"
    ]
   },
   "6184": {
@@ -13448,9 +13932,9 @@
     "SkillPass6182",
     "passiveELUP06"
    ],
-   "note_add": "\n<SkillPass6181:10%>\n<SkillPass6182:10%>\n<passiveELUP06:10%>",
+   "note_add": "\n<SkillPass6181:7%>\n<SkillPass6182:7%>\n<passiveELUP06:7%>",
    "desc": [
-    "效果：对应技能伤害 +10%，自然伤害 +10%"
+    "效果：自然伤害 +7%，「百八烦恼风」、「三千烦恼风」伤害 +7%"
    ]
   },
   "6238": {
@@ -13480,7 +13964,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -13517,7 +14001,7 @@
    ],
    "note_add": "\n<SkillPass6244:10%>",
    "desc": [
-    "效果：对应技能伤害 +10%"
+    "效果：「厄运*汲血斩」伤害 +10%"
    ]
   },
   "6246": {
@@ -13529,7 +14013,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -13562,7 +14046,7 @@
    ],
    "note_add": "\n<SkillPass6246:10%>",
    "desc": [
-    "效果：对应技能伤害 +10%"
+    "效果：「枪神一击」伤害 +10%"
    ]
   },
   "6507": {
@@ -13578,7 +14062,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "desc": [
     "效果：激励全队并恢复资源"
@@ -13606,7 +14090,7 @@
    "mp_pct": 10,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -13639,10 +14123,11 @@
    "repeats": 1,
    "cooldown": 3,
    "header": {
-    "冷却时间": "3 回合"
+    "冷却时间": "3 回合",
+    "对象": "全体敌人"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -13651,7 +14136,7 @@
     "coef": 2
    },
    "desc": [
-    "效果：造成物理攻击的 2 倍伤害"
+    "效果：对全体敌人造成物理攻击的 2 倍伤害"
    ],
    "seq": [
     {
@@ -13678,7 +14163,7 @@
     "冷却时间": "10 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "desc": [
     "效果：为自身充能"
@@ -13709,7 +14194,7 @@
     "冷却时间": "3 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "heal": {
     "mhp_pct": 0.08
@@ -13743,7 +14228,7 @@
     "冷却时间": "5 回合"
    },
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "heal": {
     "mhp_pct": 0.08
@@ -13778,9 +14263,9 @@
     "passivePBST6",
     "passivePRETP"
    ],
-   "note_add": "\n<ConsumeReduceAll:10%>\n<passiveHarmRi:8>\n<passiveCrHarmRi:12>\n<passiveEXTTP:20>\n<CodexParamRate:6:5>",
+   "note_add": "\n<ConsumeReduceAll:10%>\n<passiveHarmRi:4>\n<passiveCrHarmRi:7>\n<passiveEXTTP:20>\n<CodexParamRate:6:3>",
    "desc": [
-    "效果：资源消耗 −10%，最终伤害 +8%，暴击伤害 +12%，TP 上限 +20，敏捷 +5%"
+    "效果：资源消耗 −10%，最终伤害 +4%，暴击伤害 +7%，TP 上限 +20，敏捷 +3%"
    ]
   },
   "7191": {
@@ -13792,7 +14277,7 @@
    "repeats": 1,
    "cooldown": 3,
    "note_remove": [
-    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+)"
+    "(?i:TP COST|passiveAPLUS|AgainUse\\w+|SkillPass\\d+|Start(?:AE|WT|Rom(?:Act|Eme)?)?PushState\\d+|RecPushState\\d+|Custom (?:Damage|EXP) Mastery Formula|Mastery Effect)"
    ],
    "damage": {
     "stats": {
@@ -13801,7 +14286,7 @@
     "coef": 2
    },
    "desc": [
-    "效果：造成物理攻击的 2 倍伤害"
+    "效果：对全体敌人造成物理攻击的 2 倍伤害"
    ],
    "seq": [
     {
@@ -13833,7 +14318,7 @@
    ],
    "note_add": "\n<SkillTypesDvupA:12%>\n<SkillTypesDvupB:12%>\n<SkillTypesDvupC:12%>",
    "desc": [
-    "效果：A 类技能伤害 +12%，B 类技能伤害 +12%，C 类技能伤害 +12%"
+    "效果：1～45 级及三阶技能伤害 +12%"
    ]
   },
   "7193": {
@@ -13859,7 +14344,7 @@
    ],
    "note_add": "\n<passiveELUP10:12%>\n<CodexParamRate:0:10>",
    "desc": [
-    "效果：属性伤害 +12%，最大生命 +10%"
+    "效果：治疗效果 +12%，最大生命 +10%"
    ]
   },
   "7195": {
@@ -13910,9 +14395,9 @@
     "passivePBST5",
     "passivePBST7"
    ],
-   "note_add": "\n<passiveELUP01:12%>\n<passiveELUP02:12%>\n<passiveELUP03:12%>\n<passiveELUP04:12%>\n<passiveELUP05:12%>\n<passiveELUP06:12%>\n<passiveELUP07:12%>\n<passiveELUP08:12%>\n<passiveELUP09:12%>\n<CodexParamRate:1:10,4:10,5:10,7:10>",
+   "note_add": "\n<passiveELUP01:8%>\n<passiveELUP02:8%>\n<passiveELUP03:8%>\n<passiveELUP04:8%>\n<passiveELUP05:8%>\n<passiveELUP06:8%>\n<passiveELUP07:8%>\n<passiveELUP08:8%>\n<passiveELUP09:8%>\n<CodexParamRate:1:10,4:6,5:10,7:6>",
    "desc": [
-    "效果：物理伤害 +12%，火焰伤害 +12%，寒冰伤害 +12%，大地伤害 +12%，雷电伤害 +12%，自然伤害 +12%，奥术伤害 +12%，神圣伤害 +12%，黑暗伤害 +12%，最大魔法 +10%，魔法攻击 +10%，魔法防御 +10%，幸运 +10%"
+    "效果：全系伤害 +8%，最大魔法 +10%，魔法攻击 +6%，魔法防御 +10%，幸运 +6%"
    ]
   },
   "7198": {
@@ -13927,7 +14412,7 @@
    ],
    "note_add": "\n<passiveGRUP:10>\n<passiveIRUP:10>\n<CodexParamRate:6:10,7:10>",
    "desc": [
-    "效果：金钱获取 提高，物品获取 提高，敏捷 +10%，幸运 +10%"
+    "效果：金钱获取提高，物品掉率提高，敏捷 +10%，幸运 +10%"
    ]
   },
   "7199": {
@@ -13971,9 +14456,9 @@
     "passivePBST3",
     "passivePBST6"
    ],
-   "note_add": "\n<passiveCrHarmRi:12>\n<passiveHarmRi:8>\n<CodexParamRate:0:5,2:5,3:5,6:5>",
+   "note_add": "\n<passiveCrHarmRi:7>\n<passiveHarmRi:4>\n<CodexParamRate:0:5,2:3,3:5,6:3>",
    "desc": [
-    "效果：暴击伤害 +12%，最终伤害 +8%，最大生命 +5%，物理攻击 +5%，物理防御 +5%，敏捷 +5%"
+    "效果：暴击伤害 +7%，最终伤害 +4%，最大生命 +5%，物理攻击 +3%，物理防御 +5%，敏捷 +3%"
    ]
   },
   "8221": {
@@ -14762,9 +15247,12 @@
   "4762": "角色技能重构表接管",
   "4764": "角色技能重构表接管",
   "4766": "角色技能重构表接管",
+  "4769": "角色技能重构表接管",
+  "4771": "角色技能重构表接管",
   "4772": "角色技能重构表接管",
   "4773": "角色技能重构表接管",
   "4774": "角色技能重构表接管",
+  "4782": "角色技能重构表接管",
   "4783": "角色技能重构表接管",
   "4788": "角色技能重构表接管",
   "4793": "角色技能重构表接管",
