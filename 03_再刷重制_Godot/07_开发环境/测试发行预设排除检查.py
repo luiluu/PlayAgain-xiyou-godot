@@ -37,7 +37,7 @@ class Tree:
     def __init__(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.put('project.godot', 'run/main_scene="res://scenes/entry.tscn"\n[autoload]\nGameApp="*res://core/game_app.gd"\n')
+        self.put('project.godot', 'run/main_scene="res://scenes/entry.tscn"\n[autoload]\nGameApp="*res://core/game_app.gd"\n')  # 门禁豁免：只写假 project.godot 文本，不起 Godot
         self.put('scenes/entry.tscn', '[ext_resource type="Script" path="res://scenes/entry.gd" id="1"]\n')
         self.put('scenes/entry.gd', 'extends Node\nconst P := preload("res://modes/xiyou/ui/helper.gd")\n')
         self.put('core/game_app.gd', 'extends Node\n')
