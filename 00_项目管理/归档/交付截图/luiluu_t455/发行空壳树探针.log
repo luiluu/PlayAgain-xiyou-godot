@@ -1,0 +1,5 @@
+T455P stub=false open=true
+T455P stage1 1 [[], ["【守层者】嫦娥"], 2, []]
+T455P stage2 2 [["shigu"], ["蚀骨·【守层者】嫦娥"], 2, []]
+T455P stage3 3 [["shigu"], ["蚀骨·【守层者】嫦娥"], 2, []]
+T455P codex ["war:berserk:shigu"]
