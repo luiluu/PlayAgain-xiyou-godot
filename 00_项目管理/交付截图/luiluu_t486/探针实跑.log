@@ -1,0 +1,6 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+T486 A_fx_off_v003player={"anim":true,"available":true,"fx_on":false,"load_ok":true,"seen":["rift1","rift2","rift3"],"stage":3}
+T486 B_fx_on_v003player={"anim":true,"available":true,"fx_on":true,"load_ok":true,"seen":["rift1","rift2","rift3"],"stage":3}
+T486 C_after_seen_reenter={"anim":false,"available":true,"fx_on":true,"load_ok":true,"seen":["rift1","rift2","rift3"],"stage":3}
+T486 D1_fresh_config_first={"anim":false,"available":true,"fx_on":true,"load_ok":true,"seen":["rift1","rift2"],"stage":2}
+T486 D2_fresh_config_second={"anim":true,"available":true,"fx_on":true,"load_ok":true,"seen":["rift1","rift2","rift3"],"stage":3}

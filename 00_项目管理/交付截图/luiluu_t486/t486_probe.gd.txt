@@ -1,0 +1,59 @@
+extends Node
+## T486 临时探针（不入仓）：旧存档进大厅，三阶漫画过场播不播
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
+func frames(n): 
+	for i in n: await get_tree().process_frame
+func _ready(): _run.call_deferred()
+func _seen() -> Array:
+	XConfig.ensure_loaded(); return (XConfig._values.codexWhisperSeen as Array).duplicate()
+
+## 打开读档后的大厅，最多等 n 帧，返回 {anim, rift3_marked, seen}
+func _enter(n := 900) -> Dictionary:
+	XRift.clear_cache()
+	var ok := XSave.load_slot(1)
+	var map := XMapScene.new()
+	add_child(map)
+	var anim_seen := false
+	for i in n:
+		await frames(1)
+		if map.get_node_or_null(XRift3Anim.NODE_NAME) != null or get_tree().root.find_child(XRift3Anim.NODE_NAME, true, false) != null:
+			anim_seen = true
+			break
+	var r := {"load_ok": ok, "anim": anim_seen, "seen": _seen(), "stage": XRift.stage(), "available": XRift3Anim.available(), "fx_on": XGraphics.fx_on()}
+	map.queue_free()
+	await frames(3)
+	for c in get_tree().root.get_children():
+		if c.name == XRift3Anim.NODE_NAME: c.queue_free()
+	await frames(2)
+	return r
+
+func _make_old_save():
+	var s := XState.new_game(3, 1, [8, 9, 10])
+	s.map_id = 4; s.x = 14; s.y = 26
+	XSave.save(1)
+
+func _run():
+	XMessageBox.auto = true
+	# 1) v0.03 玩家：配置里 rift1、rift2 看过；旧档在大厅；画面特效关
+	TestEnv.isolate("t486_a", false)
+	XConfig.whisper_mark("rift1"); XConfig.whisper_mark("rift2")
+	XConfig.set_flag("codexScreenFx", false)
+	XRift.on_map_setup(132)
+	_make_old_save()
+	print("T486 A_fx_off_v003player=", JSON.stringify(await _enter()))
+	# 2) 同上但画面特效开
+	TestEnv.isolate("t486_b", false)
+	XConfig.whisper_mark("rift1"); XConfig.whisper_mark("rift2")
+	XConfig.set_flag("codexScreenFx", true)
+	XRift.on_map_setup(132)
+	_make_old_save()
+	print("T486 B_fx_on_v003player=", JSON.stringify(await _enter()))
+	# 3) 配置已记 rift3（在别的档/新档看过一次）→ 旧档再进
+	print("T486 C_after_seen_reenter=", JSON.stringify(await _enter(300)))
+	# 4) 配置是空的（换装、配置丢了）：第一次进大厅 rift1→rift2，rift3 不播；第二次进才播
+	TestEnv.isolate("t486_d", false)
+	_make_old_save()
+	print("T486 D1_fresh_config_first=", JSON.stringify(await _enter(1500)))
+	XRift.on_map_setup(132)
+	print("T486 D2_fresh_config_second=", JSON.stringify(await _enter()))
+	get_tree().quit(0)
