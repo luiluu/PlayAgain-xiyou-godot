@@ -33,7 +33,7 @@
 | --- | --- | --- |
 | `XTianqiGeneralBooks.rate_key` | 1 处 `git grep -n 'XTianqiGeneralBooks.rate_key(' -- '*.gd'` | `power_books.gd` 在已登记且天启篇开启时使用独立缓存键；其余仍用原键。 |
 | `XTianqiGeneralBooks.formula` | 1 个运行时分派 `git grep -n 'XTianqiGeneralBooks.formula(' -- '*.gd'` | `formula_execution.gd` 读取模块公式。旧批次继续读 `coef`，拆段书把整数 `coef_pct` 除以 100 后进入同一计算；B1、B2 各测原路径。 |
-| `XTianqiGeneralBooks.build` | `rec` 在读取天启篇技能时调用 | 第二批主动表可用 `setup_seq` 定点去除施放前的旧状态指令；其他演出和第一批记录仍走原分支。 |
+| `XTianqiGeneralBooks.build` | 1 处，`tianqi_general_books.gd` 的 `rec` 在 `XDB.rec` 读取天启篇技能且缓存未命中时调用 | 第二批主动表通过 `setup_seq` 去除施放前的旧状态指令，保留其余演出。第一批记录继续走原分支。 |
 
 ## 验收对照
 
@@ -142,7 +142,7 @@ R1 在同一仓内探针重跑确定值，仍为 613,960 对 923,208（1.504 倍
 - R1 本机专项 `xiyou_tianqi_general_books_b1.tscn` 20/20、`xiyou_tianqi_general_books_b2.tscn` 46/46、`xiyou_tianqi_ledger.tscn` 83/83、`xiyou_tianqi_ledger_p3.tscn` 40/40、`xiyou_tianqi_drop.tscn` 102/102、`xiyou_tianqi_secrets.tscn` 86/86、`xiyou_tianqi_nine_off.tscn` 19/19、`xiyou_determinism.tscn` 372/372。
 - R1 GDScript 解析检查 1,211 个脚本零问题，本机 Godot 使用 `--audio-driver Dummy`。工具快速回归 24/24。确定性生成检查、`天启篇数据校验.py`、`发行空壳.py check` 退出码均为 0。内存中撤销 7191 清理、再人为叠两项 12%，确认两条守卫都能报错。
 - 云端选测 初轮整轮 801/803，发现丹药回退与掉落旧值两个用例。修订后按差异选测 5/5 全绿，包含两项失败场景。已用 `gh run watch --exit-status` 等到退出码 0。其余场景沿用首轮过数。[初轮](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45460748080)、[最终选测](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45465756844)。
-- R1 云端选测按规则扩为 804 个场景，正在前台等待代码提交 `8cf491130` 的结果。[R1 选测](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45470564968)
+- R1 云端选测扩为整轮，代码提交 `8cf491130` 在 `ci/luiluu/t445` 跑完 16 片，804/804 通过，失败与缺片均为 0。`xiyou_tianqi_followup_kill.tscn` 并行时偶发失败，单跑重试通过。`gh run watch --exit-status` 前台等到退出码 0。[R1 云端结果](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45470564968)
 - `交付自检.py` 退出码 0，快车道。
 
 ## 待交叉核查
