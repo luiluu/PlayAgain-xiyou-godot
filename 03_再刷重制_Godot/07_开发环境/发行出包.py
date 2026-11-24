@@ -16,7 +16,7 @@
 出包硬门禁（T458，T424 dev.887 坏包后加）：
   - 导出前：发行预设排除检查.py 对要导出的空壳树查三个发行预设的 exclude_filter，踢掉空壳／KEEP／class_name／被引用的脚本就不导
   - 导出后：解开 mac 包实跑两次（新 HOME、无头、静音）——新开局进地图；用工程造一份明文旧档放进存档目录，从标题「旧的回忆」读进地图。
-    输出里有 SCRIPT ERROR／Parse Error／Failed to load script、没到地图、读档那次第一下就进了地图（没读档、是新开局）都判出包失败。
+    输出里有 SCRIPT ERROR／Parse Error／Failed to load script／Failed loading resource／Cannot open file、没到地图、读档那次第一下就进了地图（没读档、是新开局）都判出包失败。
     --no-smoke 不跳过这两项；要跳过只能 --skip-run "<理由>"
 
 产物：<上一级>/dev<号>_三平台发行/
@@ -269,7 +269,8 @@ def preset_exclude_problems(tree: Path) -> list:
 
 
 # ---- 出包后实跑（T458）：mac 包新开局进地图＋读明文旧档进地图 ----
-RUN_FATAL = re.compile(r'SCRIPT ERROR|Parse Error|Failed to load script')
+# 后两条（T457 核 P3-1）：运行时拼路径 load 被排除的资源
+RUN_FATAL = re.compile(r'SCRIPT ERROR|Parse Error|Failed to load script|Failed loading resource|Cannot open file')
 RUN_MAP = 'res://modes/xiyou/map/map_scene.tscn'
 # 没存档时第一下确认就开新局（发行包天启篇关着，直接进西游开局地图）；后面几下是在地图上按，按完多等 120 帧让地图事件跑起来
 RUN_NEW_GAME_KEYS = 'accept,accept,accept,down,accept,wait:120'

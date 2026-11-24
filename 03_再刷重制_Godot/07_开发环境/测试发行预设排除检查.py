@@ -177,7 +177,9 @@ class ReleaseGateTests(unittest.TestCase):
     def test_judge_script_error_fails_even_with_rc0_and_map(self):
         for line in ('SCRIPT ERROR: Parse Error: Identifier "XTianqiHallIntro" not declared\n',
                      'ERROR: Failed to load script "res://a.gd" with error "File not found".\n',
-                     'Parse Error: x\n'):
+                     'Parse Error: x\n',
+                     'ERROR: Failed loading resource: res://content/tianqi/a.png.\n',   # T457 核 P3-1：拼路径 load 被排除的资源
+                     'ERROR: Cannot open file \'res://content/tianqi/b.json\'.\n'):
             ok, note = P.judge_run('新开局', 0, run_out([MAP], extra=line))
             self.assertFalse(ok, line)
             self.assertIn('脚本错误', note)
