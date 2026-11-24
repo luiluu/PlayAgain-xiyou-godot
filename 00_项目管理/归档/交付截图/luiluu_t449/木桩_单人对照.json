@@ -1,0 +1,1933 @@
+{
+  "enemy": 113,
+  "rows": [
+    {
+      "actor": 0,
+      "skip": "no actor"
+    },
+    {
+      "actor": 1,
+      "after": [
+        5127.0,
+        3798.0,
+        5127.0
+      ],
+      "attack_change_pct": 34.9921011058452,
+      "before": [
+        3798.0,
+        3798.0,
+        3798.0
+      ],
+      "name": "狗逍遥",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "妖兽化形",
+          "pct": 10.0,
+          "skill": 2746
+        },
+        {
+          "name": "天遁仙法",
+          "pct": 10.0,
+          "skill": 41
+        },
+        {
+          "name": "觉醒:狗逍遥",
+          "pct": 10.0,
+          "skill": 1746
+        },
+        {
+          "name": "天罡剑阵",
+          "pct": 5.0,
+          "skill": 717
+        }
+      ],
+      "phys_change_pct": 34.9921011058452,
+      "read_elup01": [
+        "10%",
+        "5%",
+        "10%",
+        "10%"
+      ],
+      "table_sum_pct": 35.0
+    },
+    {
+      "actor": 6,
+      "after": [
+        2986.0,
+        2488.0,
+        2986.0
+      ],
+      "attack_change_pct": 20.016077170418,
+      "before": [
+        2488.0,
+        2488.0,
+        2488.0
+      ],
+      "name": "吕布",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "射戟术",
+          "pct": 10.0,
+          "skill": 45
+        },
+        {
+          "name": "觉醒:吕布",
+          "pct": 10.0,
+          "skill": 1751
+        }
+      ],
+      "phys_change_pct": 20.016077170418,
+      "read_elup01": [
+        "10%",
+        "10%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 7,
+      "after": [
+        2027.0,
+        1501.0,
+        2027.0
+      ],
+      "attack_change_pct": 35.0433044636909,
+      "before": [
+        1501.0,
+        1501.0,
+        1501.0
+      ],
+      "name": "茉蕾",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "未知之力",
+          "pct": 10.0,
+          "skill": 28
+        },
+        {
+          "name": "宇宙能量",
+          "pct": 10.0,
+          "skill": 46
+        },
+        {
+          "name": "能量觉醒",
+          "pct": 10.0,
+          "skill": 517
+        },
+        {
+          "name": "能量磁场",
+          "pct": 5.0,
+          "skill": 715
+        }
+      ],
+      "phys_change_pct": 35.0433044636909,
+      "read_elup01": [
+        "10%",
+        "10%",
+        "10%",
+        "5%"
+      ],
+      "table_sum_pct": 35.0
+    },
+    {
+      "actor": 8,
+      "after": [
+        1698.0,
+        1544.0,
+        1698.0
+      ],
+      "attack_change_pct": 9.9740932642487,
+      "before": [
+        1544.0,
+        1544.0,
+        1544.0
+      ],
+      "name": "修",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "觉醒:修",
+          "pct": 10.0,
+          "skill": 1753
+        }
+      ],
+      "phys_change_pct": 9.9740932642487,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 9,
+      "after": [
+        3042.0,
+        2765.0,
+        3042.0
+      ],
+      "attack_change_pct": 10.0180831826401,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "罗琳",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "觉醒:罗琳",
+          "pct": 10.0,
+          "skill": 1754
+        }
+      ],
+      "phys_change_pct": 10.0180831826401,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 10,
+      "after": [
+        1605.0,
+        1459.0,
+        1605.0
+      ],
+      "attack_change_pct": 10.0068540095956,
+      "before": [
+        1459.0,
+        1459.0,
+        1459.0
+      ],
+      "name": "美娜",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "觉醒:美娜",
+          "pct": 10.0,
+          "skill": 1755
+        }
+      ],
+      "phys_change_pct": 10.0068540095956,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 11,
+      "after": [
+        3100.0,
+        2818.0,
+        3100.0
+      ],
+      "attack_change_pct": 10.0070972320795,
+      "before": [
+        2818.0,
+        2818.0,
+        2818.0
+      ],
+      "name": "里德",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "觉醒:里德",
+          "pct": 10.0,
+          "skill": 1756
+        }
+      ],
+      "phys_change_pct": 10.0070972320795,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 13,
+      "after": [
+        4650.0,
+        4228.0,
+        4650.0
+      ],
+      "attack_change_pct": 9.98107852412489,
+      "before": [
+        4228.0,
+        4228.0,
+        4228.0
+      ],
+      "name": "刘备",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "隐忍",
+          "pct": 10.0,
+          "skill": 69
+        }
+      ],
+      "phys_change_pct": 9.98107852412489,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 14,
+      "after": [
+        3042.0,
+        2765.0,
+        3042.0
+      ],
+      "attack_change_pct": 10.0180831826401,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "关羽",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "武圣",
+          "pct": 10.0,
+          "skill": 82
+        }
+      ],
+      "phys_change_pct": 10.0180831826401,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 15,
+      "after": [
+        3318.0,
+        2765.0,
+        3318.0
+      ],
+      "attack_change_pct": 20.0,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "张飞",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "燕人血统",
+          "pct": 10.0,
+          "skill": 77
+        },
+        {
+          "name": "觉醒:张飞",
+          "pct": 10.0,
+          "skill": 1760
+        }
+      ],
+      "phys_change_pct": 20.0,
+      "read_elup01": [
+        "10%",
+        "10%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 19,
+      "after": [
+        1702.0,
+        1621.0,
+        1702.0
+      ],
+      "attack_change_pct": 4.99691548426897,
+      "before": [
+        1621.0,
+        1621.0,
+        1621.0
+      ],
+      "name": "安东尼",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "元素法阵",
+          "pct": 5.0,
+          "skill": 723
+        }
+      ],
+      "phys_change_pct": 4.99691548426897,
+      "read_elup01": [
+        "5%"
+      ],
+      "table_sum_pct": 5.0
+    },
+    {
+      "actor": 20,
+      "after": [
+        3180.0,
+        2765.0,
+        3180.0
+      ],
+      "attack_change_pct": 15.0090415913201,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "伯伦希尔",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "武神血脉",
+          "pct": 15.0,
+          "skill": 529
+        }
+      ],
+      "phys_change_pct": 15.0090415913201,
+      "read_elup01": [
+        "15%"
+      ],
+      "table_sum_pct": 15.0
+    },
+    {
+      "actor": 22,
+      "after": [
+        5019.0,
+        4562.0,
+        5019.0
+      ],
+      "attack_change_pct": 10.0175361683472,
+      "before": [
+        4562.0,
+        4562.0,
+        4562.0
+      ],
+      "name": "维利",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "觉醒:维利",
+          "pct": 10.0,
+          "skill": 1767
+        }
+      ],
+      "phys_change_pct": 10.0175361683472,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 24,
+      "after": [
+        3100.0,
+        2818.0,
+        3100.0
+      ],
+      "attack_change_pct": 10.0070972320795,
+      "before": [
+        2818.0,
+        2818.0,
+        2818.0
+      ],
+      "name": "克比",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "觉醒:克比",
+          "pct": 10.0,
+          "skill": 1769
+        }
+      ],
+      "phys_change_pct": 10.0070972320795,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 26,
+      "after": [
+        1750.0,
+        1459.0,
+        1750.0
+      ],
+      "attack_change_pct": 19.9451679232351,
+      "before": [
+        1459.0,
+        1459.0,
+        1459.0
+      ],
+      "name": "曼德斯",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "圣火令",
+          "pct": 10.0,
+          "skill": 818
+        },
+        {
+          "name": "觉醒:曼德斯",
+          "pct": 10.0,
+          "skill": 1771
+        }
+      ],
+      "phys_change_pct": 19.9451679232351,
+      "read_elup01": [
+        "10%",
+        "10%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 27,
+      "after": [
+        3302.0,
+        3002.0,
+        3302.0
+      ],
+      "attack_change_pct": 9.99333777481679,
+      "before": [
+        3002.0,
+        3002.0,
+        3002.0
+      ],
+      "name": "齐格鲁德",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "屠龙秘法",
+          "pct": 10.0,
+          "skill": 382
+        }
+      ],
+      "phys_change_pct": 9.99333777481679,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 29,
+      "after": [
+        1945.0,
+        1621.0,
+        1945.0
+      ],
+      "attack_change_pct": 19.9876619370759,
+      "before": [
+        1621.0,
+        1621.0,
+        1621.0
+      ],
+      "name": "金蝉子",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "佛法无边",
+          "pct": 10.0,
+          "skill": 564
+        },
+        {
+          "name": "金蝉转世",
+          "pct": 10.0,
+          "skill": 555
+        }
+      ],
+      "phys_change_pct": 19.9876619370759,
+      "read_elup01": [
+        "10%",
+        "10%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 30,
+      "after": [
+        3752.0,
+        3002.0,
+        3752.0
+      ],
+      "attack_change_pct": 24.983344437042,
+      "before": [
+        3002.0,
+        3002.0,
+        3002.0
+      ],
+      "name": "西凉女帝",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "霸气武装",
+          "pct": 10.0,
+          "skill": 1263
+        },
+        {
+          "name": "霸气武装·光环",
+          "pct": 5.0,
+          "skill": 1262
+        },
+        {
+          "name": "巾帼不让须眉",
+          "pct": 10.0,
+          "skill": 592
+        }
+      ],
+      "phys_change_pct": 24.983344437042,
+      "read_elup01": [
+        "10%",
+        "5%",
+        "10%"
+      ],
+      "table_sum_pct": 25.0
+    },
+    {
+      "actor": 32,
+      "after": [
+        3318.0,
+        2765.0,
+        3318.0
+      ],
+      "attack_change_pct": 20.0,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "涅斐莉",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "战斗大师",
+          "pct": 20.0,
+          "skill": 1694
+        }
+      ],
+      "phys_change_pct": 20.0,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 38,
+      "after": [
+        4355.0,
+        4148.0,
+        4355.0
+      ],
+      "attack_change_pct": 4.9903567984571,
+      "before": [
+        4148.0,
+        4148.0,
+        4148.0
+      ],
+      "name": "曹操",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "霸气缠绕",
+          "pct": 5.0,
+          "skill": 1079
+        }
+      ],
+      "phys_change_pct": 4.9903567984571,
+      "read_elup01": [
+        "5%"
+      ],
+      "table_sum_pct": 5.0
+    },
+    {
+      "actor": 41,
+      "after": [
+        3664.0,
+        2818.0,
+        3664.0
+      ],
+      "attack_change_pct": 30.0212916962385,
+      "before": [
+        2818.0,
+        2818.0,
+        2818.0
+      ],
+      "name": "波加尼",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "勇者",
+          "pct": 30.0,
+          "skill": 1157
+        }
+      ],
+      "phys_change_pct": 30.0212916962385,
+      "read_elup01": [
+        "30%"
+      ],
+      "table_sum_pct": 30.0
+    },
+    {
+      "actor": 43,
+      "after": [
+        3318.0,
+        2765.0,
+        3318.0
+      ],
+      "attack_change_pct": 20.0,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "露丝",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "紫罗兰盛开",
+          "pct": 20.0,
+          "skill": 1183
+        }
+      ],
+      "phys_change_pct": 20.0,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 45,
+      "after": [
+        5019.0,
+        4562.0,
+        5019.0
+      ],
+      "attack_change_pct": 10.0175361683472,
+      "before": [
+        4562.0,
+        4562.0,
+        4562.0
+      ],
+      "name": "东方教主",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "青尾藏锋",
+          "pct": 10.0,
+          "skill": 5106
+        }
+      ],
+      "phys_change_pct": 10.0175361683472,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 47,
+      "after": [
+        4562.0,
+        4148.0,
+        4562.0
+      ],
+      "attack_change_pct": 9.98071359691417,
+      "before": [
+        4148.0,
+        4148.0,
+        4148.0
+      ],
+      "name": "酒剑仙",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "剑道成仙",
+          "pct": 10.0,
+          "skill": 1198
+        }
+      ],
+      "phys_change_pct": 9.98071359691417,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 49,
+      "after": [
+        3318.0,
+        2765.0,
+        3318.0
+      ],
+      "attack_change_pct": 20.0,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "疾风丸",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "狼人倭刀术",
+          "pct": 10.0,
+          "skill": 1224
+        },
+        {
+          "name": "野性激发",
+          "pct": 10.0,
+          "skill": 1227
+        }
+      ],
+      "phys_change_pct": 20.0,
+      "read_elup01": [
+        "10%",
+        "10%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 52,
+      "after": [
+        3595.0,
+        2765.0,
+        3595.0
+      ],
+      "attack_change_pct": 30.0180831826401,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "孙悟空",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "超级赛亚人I",
+          "pct": 5.0,
+          "skill": 6000
+        },
+        {
+          "name": "超级赛亚人II",
+          "pct": 5.0,
+          "skill": 6001
+        },
+        {
+          "name": "超级赛亚人III",
+          "pct": 5.0,
+          "skill": 6002
+        },
+        {
+          "name": "超级赛亚人·蓝",
+          "pct": 5.0,
+          "skill": 6003
+        },
+        {
+          "name": "界王拳",
+          "pct": 10.0,
+          "skill": 6008
+        }
+      ],
+      "phys_change_pct": 30.0180831826401,
+      "read_elup01": [
+        "5%",
+        "5%",
+        "5%",
+        "5%",
+        "10%"
+      ],
+      "table_sum_pct": 30.0
+    },
+    {
+      "actor": 54,
+      "after": [
+        3456.0,
+        2765.0,
+        3456.0
+      ],
+      "attack_change_pct": 24.9909584086799,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "迪昂",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "上古之人",
+          "pct": 10.0,
+          "skill": 2062
+        },
+        {
+          "name": "上古攻伐术",
+          "pct": 10.0,
+          "skill": 2068
+        },
+        {
+          "name": "擐甲持戈",
+          "pct": 5.0,
+          "skill": 2367
+        }
+      ],
+      "phys_change_pct": 24.9909584086799,
+      "read_elup01": [
+        "10%",
+        "10%",
+        "5%"
+      ],
+      "table_sum_pct": 25.0
+    },
+    {
+      "actor": 55,
+      "after": [
+        3318.0,
+        2765.0,
+        3318.0
+      ],
+      "attack_change_pct": 20.0,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "橙",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "破坏装置",
+          "pct": 10.0,
+          "skill": 2080
+        },
+        {
+          "name": "毁灭装置",
+          "pct": 10.0,
+          "skill": 2081
+        }
+      ],
+      "phys_change_pct": 20.0,
+      "read_elup01": [
+        "10%",
+        "10%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 57,
+      "after": [
+        3318.0,
+        2765.0,
+        3318.0
+      ],
+      "attack_change_pct": 20.0,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "龙马",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "斩龙倭刀术",
+          "pct": 10.0,
+          "skill": 2119
+        },
+        {
+          "name": "斩龙倭刀诀",
+          "pct": 10.0,
+          "skill": 2123
+        }
+      ],
+      "phys_change_pct": 20.0,
+      "read_elup01": [
+        "10%",
+        "10%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 58,
+      "after": [
+        3042.0,
+        2765.0,
+        3042.0
+      ],
+      "attack_change_pct": 10.0180831826401,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "小青",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "剑神传人",
+          "pct": 10.0,
+          "skill": 2107
+        }
+      ],
+      "phys_change_pct": 10.0180831826401,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 59,
+      "after": [
+        5475.0,
+        4562.0,
+        5475.0
+      ],
+      "attack_change_pct": 20.0131521262604,
+      "before": [
+        4562.0,
+        4562.0,
+        4562.0
+      ],
+      "name": "大羿",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "神弓术",
+          "pct": 20.0,
+          "skill": 2190
+        }
+      ],
+      "phys_change_pct": 20.0131521262604,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 60,
+      "after": [
+        3484.0,
+        2903.0,
+        3484.0
+      ],
+      "attack_change_pct": 20.0137788494661,
+      "before": [
+        2903.0,
+        2903.0,
+        2903.0
+      ],
+      "name": "马宝国",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "四两拨千斤",
+          "pct": 10.0,
+          "skill": 2222
+        },
+        {
+          "name": "雷电真气",
+          "pct": 10.0,
+          "skill": 2228
+        }
+      ],
+      "phys_change_pct": 20.0137788494661,
+      "read_elup01": [
+        "10%",
+        "10%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 61,
+      "after": [
+        3318.0,
+        2765.0,
+        3318.0
+      ],
+      "attack_change_pct": 20.0,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "町甄",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "早岁艰难",
+          "pct": 20.0,
+          "skill": 5515
+        }
+      ],
+      "phys_change_pct": 20.0,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 64,
+      "after": [
+        3595.0,
+        2765.0,
+        3595.0
+      ],
+      "attack_change_pct": 30.0180831826401,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "杰诺",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "无人能敌",
+          "pct": 30.0,
+          "skill": 2355
+        }
+      ],
+      "phys_change_pct": 30.0180831826401,
+      "read_elup01": [
+        "30%"
+      ],
+      "table_sum_pct": 30.0
+    },
+    {
+      "actor": 65,
+      "after": [
+        3954.0,
+        3042.0,
+        3954.0
+      ],
+      "attack_change_pct": 29.9802761341223,
+      "before": [
+        3042.0,
+        3042.0,
+        3042.0
+      ],
+      "name": "孙权",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "雄踞",
+          "pct": 10.0,
+          "skill": 2588
+        },
+        {
+          "name": "称帝",
+          "pct": 10.0,
+          "skill": 2592
+        },
+        {
+          "name": "紫髯碧眼",
+          "pct": 10.0,
+          "skill": 2577
+        }
+      ],
+      "phys_change_pct": 29.9802761341223,
+      "read_elup01": [
+        "10%",
+        "10%",
+        "10%"
+      ],
+      "table_sum_pct": 30.0
+    },
+    {
+      "actor": 67,
+      "after": [
+        3484.0,
+        2903.0,
+        3484.0
+      ],
+      "attack_change_pct": 20.0137788494661,
+      "before": [
+        2903.0,
+        2903.0,
+        2903.0
+      ],
+      "name": "科妮莉亚",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "劲气",
+          "pct": 20.0,
+          "skill": 2373
+        }
+      ],
+      "phys_change_pct": 20.0137788494661,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 68,
+      "after": [
+        3318.0,
+        2765.0,
+        3318.0
+      ],
+      "attack_change_pct": 20.0,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "尤妮娅",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "豹群狩猎术",
+          "pct": 20.0,
+          "skill": 2337
+        }
+      ],
+      "phys_change_pct": 20.0,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 69,
+      "after": [
+        3318.0,
+        2765.0,
+        3318.0
+      ],
+      "attack_change_pct": 20.0,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "花木兰",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "巾帼英雄",
+          "pct": 20.0,
+          "skill": 2412
+        }
+      ],
+      "phys_change_pct": 20.0,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 74,
+      "after": [
+        1750.0,
+        1459.0,
+        1750.0
+      ],
+      "attack_change_pct": 19.9451679232351,
+      "before": [
+        1459.0,
+        1459.0,
+        1459.0
+      ],
+      "name": "陈",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "悟道心",
+          "pct": 20.0,
+          "skill": 2608
+        }
+      ],
+      "phys_change_pct": 19.9451679232351,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 75,
+      "after": [
+        3595.0,
+        2765.0,
+        3595.0
+      ],
+      "attack_change_pct": 30.0180831826401,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "智甚",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "武道修行",
+          "pct": 30.0,
+          "skill": 2679
+        }
+      ],
+      "phys_change_pct": 30.0180831826401,
+      "read_elup01": [
+        "30%"
+      ],
+      "table_sum_pct": 30.0
+    },
+    {
+      "actor": 79,
+      "after": [
+        1750.0,
+        1459.0,
+        1750.0
+      ],
+      "attack_change_pct": 19.9451679232351,
+      "before": [
+        1459.0,
+        1459.0,
+        1459.0
+      ],
+      "name": "裴钱",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "同风起",
+          "pct": 20.0,
+          "skill": 4392
+        }
+      ],
+      "phys_change_pct": 19.9451679232351,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 83,
+      "after": [
+        3318.0,
+        2765.0,
+        3318.0
+      ],
+      "attack_change_pct": 20.0,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "荒天弟",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "天生宝骨",
+          "pct": 10.0,
+          "skill": 5990
+        },
+        {
+          "name": "雷道四绝天",
+          "pct": 10.0,
+          "skill": 5986
+        }
+      ],
+      "phys_change_pct": 20.0,
+      "read_elup01": [
+        "10%",
+        "10%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 86,
+      "after": [
+        3318.0,
+        2765.0,
+        3318.0
+      ],
+      "attack_change_pct": 20.0,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "张三丰",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "少林绝技",
+          "pct": 20.0,
+          "skill": 5864
+        }
+      ],
+      "phys_change_pct": 20.0,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 87,
+      "after": [
+        3318.0,
+        2765.0,
+        3318.0
+      ],
+      "attack_change_pct": 20.0,
+      "before": [
+        2765.0,
+        2765.0,
+        2765.0
+      ],
+      "name": "张无忌",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "九阳神功",
+          "pct": 20.0,
+          "skill": 5855
+        }
+      ],
+      "phys_change_pct": 20.0,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 93,
+      "after": [
+        4977.0,
+        4148.0,
+        4977.0
+      ],
+      "attack_change_pct": 19.9855351976856,
+      "before": [
+        4148.0,
+        4148.0,
+        4148.0
+      ],
+      "name": "炭治郎",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "圣母",
+          "pct": 20.0,
+          "skill": 7094
+        }
+      ],
+      "phys_change_pct": 19.9855351976856,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 95,
+      "after": [
+        1750.0,
+        1459.0,
+        1750.0
+      ],
+      "attack_change_pct": 19.9451679232351,
+      "before": [
+        1459.0,
+        1459.0,
+        1459.0
+      ],
+      "name": "三笠",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "艾尔迪亚人种",
+          "pct": 20.0,
+          "skill": 8118
+        }
+      ],
+      "phys_change_pct": 19.9451679232351,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 97,
+      "after": [
+        1750.0,
+        1459.0,
+        1750.0
+      ],
+      "attack_change_pct": 19.9451679232351,
+      "before": [
+        1459.0,
+        1459.0,
+        1459.0
+      ],
+      "name": "赤狐",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "好色",
+          "pct": 20.0,
+          "skill": 7053
+        }
+      ],
+      "phys_change_pct": 19.9451679232351,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 103,
+      "after": [
+        1750.0,
+        1459.0,
+        1750.0
+      ],
+      "attack_change_pct": 19.9451679232351,
+      "before": [
+        1459.0,
+        1459.0,
+        1459.0
+      ],
+      "name": "波风水门",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "不差",
+          "pct": 20.0,
+          "skill": 7085
+        }
+      ],
+      "phys_change_pct": 19.9451679232351,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 104,
+      "after": [
+        5989.0,
+        4991.0,
+        5989.0
+      ],
+      "attack_change_pct": 19.9959927870166,
+      "before": [
+        4991.0,
+        4991.0,
+        4991.0
+      ],
+      "name": "天虎令",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "四象齐汇:朱雀",
+          "pct": 20.0,
+          "skill": 7497
+        }
+      ],
+      "phys_change_pct": 19.9959927870166,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 105,
+      "after": [
+        1750.0,
+        1459.0,
+        1750.0
+      ],
+      "attack_change_pct": 19.9451679232351,
+      "before": [
+        1459.0,
+        1459.0,
+        1459.0
+      ],
+      "name": "唐三",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "魂士",
+          "pct": 2.0,
+          "skill": 7033
+        },
+        {
+          "name": "魂师",
+          "pct": 2.0,
+          "skill": 7034
+        },
+        {
+          "name": "大魂师",
+          "pct": 2.0,
+          "skill": 7035
+        },
+        {
+          "name": "魂尊",
+          "pct": 2.0,
+          "skill": 7036
+        },
+        {
+          "name": "魂宗",
+          "pct": 2.0,
+          "skill": 7037
+        },
+        {
+          "name": "魂王",
+          "pct": 2.0,
+          "skill": 7038
+        },
+        {
+          "name": "魂帝",
+          "pct": 2.0,
+          "skill": 7039
+        },
+        {
+          "name": "魂圣",
+          "pct": 2.0,
+          "skill": 7040
+        },
+        {
+          "name": "魂斗罗",
+          "pct": 2.0,
+          "skill": 7041
+        },
+        {
+          "name": "封号:千手斗罗",
+          "pct": 2.0,
+          "skill": 7042
+        }
+      ],
+      "phys_change_pct": 19.9451679232351,
+      "read_elup01": [
+        "2%",
+        "2%",
+        "2%",
+        "2%",
+        "2%",
+        "2%",
+        "2%",
+        "2%",
+        "2%",
+        "2%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 106,
+      "after": [
+        2626.0,
+        2188.0,
+        2626.0
+      ],
+      "attack_change_pct": 20.018281535649,
+      "before": [
+        2188.0,
+        2188.0,
+        2188.0
+      ],
+      "name": "甘雨",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "唯此一心",
+          "pct": 20.0,
+          "skill": 7227
+        }
+      ],
+      "phys_change_pct": 20.018281535649,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 115,
+      "after": [
+        2626.0,
+        2188.0,
+        2626.0
+      ],
+      "attack_change_pct": 20.018281535649,
+      "before": [
+        2188.0,
+        2188.0,
+        2188.0
+      ],
+      "name": "蕾姆",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "渺小的勇气",
+          "pct": 20.0,
+          "skill": 5753
+        }
+      ],
+      "phys_change_pct": 20.018281535649,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 124,
+      "after": [
+        2626.0,
+        2188.0,
+        2626.0
+      ],
+      "attack_change_pct": 20.018281535649,
+      "before": [
+        2188.0,
+        2188.0,
+        2188.0
+      ],
+      "name": "伊莉雅",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "精灵之力",
+          "pct": 20.0,
+          "skill": 6262
+        }
+      ],
+      "phys_change_pct": 20.018281535649,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 129,
+      "after": [
+        2407.0,
+        2188.0,
+        2407.0
+      ],
+      "attack_change_pct": 10.0091407678245,
+      "before": [
+        2188.0,
+        2188.0,
+        2188.0
+      ],
+      "name": "要乐奈",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "天才手感",
+          "pct": 10.0,
+          "skill": 5638
+        }
+      ],
+      "phys_change_pct": 10.0091407678245,
+      "read_elup01": [
+        "10%"
+      ],
+      "table_sum_pct": 10.0
+    },
+    {
+      "actor": 131,
+      "after": [
+        2626.0,
+        2188.0,
+        2626.0
+      ],
+      "attack_change_pct": 20.018281535649,
+      "before": [
+        2188.0,
+        2188.0,
+        2188.0
+      ],
+      "name": "椎名立希",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "稳定节拍",
+          "pct": 20.0,
+          "skill": 5652
+        }
+      ],
+      "phys_change_pct": 20.018281535649,
+      "read_elup01": [
+        "20%"
+      ],
+      "table_sum_pct": 20.0
+    },
+    {
+      "actor": 142,
+      "after": [
+        8676.0,
+        6674.0,
+        6674.0
+      ],
+      "attack_change_pct": 0.0,
+      "before": [
+        6674.0,
+        6674.0,
+        6674.0
+      ],
+      "name": "天海麒麟星",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "麒麟战神",
+          "pct": 15.0,
+          "skill": 10115
+        },
+        {
+          "name": "天地纳气*百川汇宗",
+          "pct": 15.0,
+          "skill": 10106
+        }
+      ],
+      "phys_change_pct": 29.997003296374,
+      "read_elup01": [
+        "15%",
+        "15%"
+      ],
+      "table_sum_pct": 30.0
+    },
+    {
+      "actor": 153,
+      "after": [
+        14316.0,
+        11012.0,
+        124441.0
+      ],
+      "attack_change_pct": 0.0,
+      "before": [
+        11012.0,
+        11012.0,
+        124441.0
+      ],
+      "name": "惠惠",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "贫穷",
+          "pct": 15.0,
+          "skill": 9999
+        },
+        {
+          "name": "红魔一族",
+          "pct": 15.0,
+          "skill": 10003
+        }
+      ],
+      "phys_change_pct": 30.0036324010171,
+      "read_elup01": [
+        "15%",
+        "15%"
+      ],
+      "table_sum_pct": 30.0
+    },
+    {
+      "actor": 155,
+      "after": [
+        14217.0,
+        43746.0,
+        43746.0
+      ],
+      "attack_change_pct": 0.0,
+      "before": [
+        43746.0,
+        43746.0,
+        43746.0
+      ],
+      "name": "病娇",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "致命惩处",
+          "pct": 30.0,
+          "skill": 10027
+        }
+      ],
+      "phys_change_pct": -67.501028665478,
+      "read_elup01": [
+        "30%"
+      ],
+      "table_sum_pct": 30.0
+    },
+    {
+      "actor": 156,
+      "after": [
+        9478.0,
+        7291.0,
+        123581.0
+      ],
+      "attack_change_pct": 0.0,
+      "before": [
+        7291.0,
+        7291.0,
+        123581.0
+      ],
+      "name": "嫦娥",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "轮回执念",
+          "pct": 30.0,
+          "skill": 10030
+        }
+      ],
+      "phys_change_pct": 29.9958853380881,
+      "read_elup01": [
+        "30%"
+      ],
+      "table_sum_pct": 30.0
+    },
+    {
+      "actor": 159,
+      "after": [
+        187286.0,
+        14082.0,
+        14082.0
+      ],
+      "attack_change_pct": 0.0,
+      "before": [
+        14082.0,
+        14082.0,
+        14082.0
+      ],
+      "name": "五河琴里",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "觉醒:五河琴里",
+          "pct": 30.0,
+          "skill": 10059
+        }
+      ],
+      "phys_change_pct": 1229.96733418549,
+      "read_elup01": [
+        "30%"
+      ],
+      "table_sum_pct": 30.0
+    },
+    {
+      "actor": 164,
+      "after": [
+        47354.0,
+        11012.0,
+        47354.0
+      ],
+      "attack_change_pct": 330.021794406102,
+      "before": [
+        11012.0,
+        11012.0,
+        11012.0
+      ],
+      "name": "贝吉特",
+      "none_change_pct": 0.0,
+      "passives": [
+        {
+          "name": "合体赛亚人",
+          "pct": 30.0,
+          "skill": 9940
+        }
+      ],
+      "phys_change_pct": 330.021794406102,
+      "read_elup01": [
+        "30%"
+      ],
+      "table_sum_pct": 30.0
+    }
+  ]
+}
