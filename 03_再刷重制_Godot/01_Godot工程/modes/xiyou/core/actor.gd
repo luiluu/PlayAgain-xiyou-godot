@@ -1311,16 +1311,16 @@ static func magic_per_level(e: Dictionary) -> Array:
 
 
 static func magic_param(e: Dictionary, i: int) -> float:
-	var lv = XEquipmentView.level(e)
-	if float(lv) < 0.0:
+	var lv := XMagicWeapon.effective_level(e)
+	if lv < 0.0:
 		return 0.0
 	if XTianqiGear.fabao_applies(e):  # T163：天启篇期四法宝读表（半件同级装备），关着照原版每级成长
 		return XTianqiGear.fabao_param(e, i)
 	var grown := XThreeGrowth.sync_item(e) if e.has("kind") else XThreeGrowth.growth_of(e)  # 三法宝成长 magicWeaponCustomParam 包装：所属人物 60 级进化，每级成长翻倍
 	if not grown.is_empty():
-		return XMagicWeapon.scaled_growth(e, float(grown[i]), float(lv))
+		return XMagicWeapon.scaled_growth(e, float(grown[i]), lv)
 	var per := magic_per_level(e)
-	return XMagicWeapon.scaled_growth(e, float(per[i]), float(lv))
+	return XMagicWeapon.scaled_growth(e, float(per[i]), lv)
 
 ## YEP_CoreEngine 角色上限：Actor MaxHP／MaxMP／Parameter 都是 99999999，由 G_StateParam 的 param 在这一层夹住（外层包装另算）；
 ## 饿狼 173 的 paramMax 包装（installNativeGarouRuntime）放到 999999999999。参照 battle_gaps_probe（cap.*）
