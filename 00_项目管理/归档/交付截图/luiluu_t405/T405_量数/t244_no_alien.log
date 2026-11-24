@@ -1,0 +1,9 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+DUEL floor=24 won=9/12 turns=9.5 dmg=321005 enemyHp=3664000 alive=[4, 4, 4, 2, 2, 0, 1, 0, 0, 3, 4, 3] atk=0.169
+DUEL floor=29 won=9/12 turns=13.0 dmg=1141035 enemyHp=25680000 alive=[4, 4, 4, 0, 0, 0, 2, 3, 3, 3, 3, 3] atk=0.0331
+DUEL floor=31 won=6/12 turns=28.0 dmg=1413809 enemyHp=12960000 alive=[4, 4, 4, 3, 3, 3, 4, 4, 4, 3, 3, 3] atk=0.000247
+DUEL floor=32 won=12/12 turns=5.5 dmg=885445 enemyHp=1976000 alive=[4, 4, 4, 4, 4, 4, 3, 4, 4, 4, 4, 4] atk=0.0000196
+DUEL floor=33 won=6/12 turns=22.0 dmg=202228 enemyHp=644000 alive=[4, 4, 4, 1, 1, 1, 1, 1, 1, 4, 4, 4] atk=0.00001
+DUEL floor=34 won=1/12 turns=40.0 dmg=2573305 enemyHp=60000000 alive=[2, 1, 3, 2, 2, 4, 1, 2, 1, 2, 3, 1] atk=0.0000109
+BASELINE_DONE

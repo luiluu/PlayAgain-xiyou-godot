@@ -1,0 +1,18 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+WEAK_ASSIST 4 弱合计 出伤 +33% 承伤 -22%
+DUEL floor=7 won=11/12 turns=3.0 dmg=17467 enemyHp=52400 alive=[4, 3, 3, 0, 3, 3, 3, 3, 4, 4, 3, 4] atk=3.95
+DUEL floor=16 won=10/12 turns=7.0 dmg=64265 enemyHp=414400 alive=[4, 3, 4, 2, 0, 1, 3, 4, 0, 4, 4, 4] atk=1.07
+DUEL floor=19 won=12/12 turns=1.0 dmg=944000 enemyHp=944000 alive=[4, 4, 4, 4, 4, 4, 3, 2, 4, 4, 4, 4] atk=0.626
+DUEL floor=22 won=12/12 turns=4.0 dmg=2361621 enemyHp=11120000 alive=[4, 4, 4, 3, 3, 3, 1, 1, 2, 4, 4, 4] atk=0.402
+DUEL floor=23 won=11/12 turns=3.0 dmg=1881860 enemyHp=5192000 alive=[4, 4, 4, 4, 4, 2, 0, 2, 2, 4, 4, 4] atk=0.094
+DUEL floor=24 won=6/12 turns=8.0 dmg=233098 enemyHp=3664000 alive=[2, 4, 4, 0, 1, 2, 0, 0, 0, 0, 0, 4] atk=0.169
+DUEL floor=27 won=12/12 turns=1.0 dmg=3760000 enemyHp=3760000 alive=[4, 4, 4, 3, 4, 4, 4, 4, 4, 3, 4, 4] atk=0.0524
+DUEL floor=28 won=9/12 turns=3.0 dmg=4519168 enemyHp=12240000 alive=[3, 4, 4, 0, 0, 0, 3, 4, 4, 4, 4, 4] atk=0.0156
+DUEL floor=29 won=4/12 turns=10.0 dmg=894665 enemyHp=25680000 alive=[0, 4, 4, 0, 0, 0, 0, 0, 0, 0, 2, 2] atk=0.0331
+DUEL floor=30 won=7/12 turns=2.0 dmg=741000 enemyHp=1560000 alive=[4, 4, 4, 0, 0, 0, 4, 2, 0, 4, 4, 0] atk=0.0133
+DUEL floor=31 won=5/12 turns=26.0 dmg=1088719 enemyHp=12960000 alive=[4, 4, 4, 2, 0, 4, 4, 2, 4, 3, 0, 3] atk=0.000247
+DUEL floor=32 won=12/12 turns=2.0 dmg=1780968 enemyHp=1976000 alive=[4, 4, 4, 4, 4, 4, 4, 3, 4, 4, 4, 4] atk=0.0000196
+DUEL floor=33 won=6/12 turns=4.0 dmg=341238 enemyHp=644000 alive=[4, 4, 4, 0, 0, 0, 0, 0, 0, 4, 4, 4] atk=0.00001
+DUEL floor=34 won=0/12 turns=19.0 dmg=3470322 enemyHp=60000000 alive=[1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0] atk=0.0000109
+BASELINE_DONE

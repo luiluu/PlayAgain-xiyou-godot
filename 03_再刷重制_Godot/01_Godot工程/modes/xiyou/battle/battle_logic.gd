@@ -3622,21 +3622,29 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		# 原版把这些状态的负 hrg 特性换成 0，再按特性对象原顺序重新求和（不能用 hrg 减去它们：浮点会差，floor 后差 1）
 		var states := b.states()
 		var hrg := 0.0
-		var dot_neg := 0.0  # 天启篇拆算时：导入状态里的负再生（原值）
+		var other_pos := 0.0
+		var other_neg := 0.0
 		var altered := false
 		for o in b.trait_objects():
 			var dot_state: bool = imported.has(int(o.get("id", -1))) and states.any(func(x): return is_same(x, o))
 			for tr in o.get("traits", []):
 				if int(tr.code) != XBattler.TRAIT_XPARAM or int(tr.dataId) != 7:
 					continue
-				if dot_state and float(tr.value) < 0.0:
+				var tv := float(tr.value)
+				if dot_state and tv < 0.0:
 					altered = true
-					dot_neg += float(tr.value)
 				else:
-					hrg += float(tr.value)
+					hrg += tv
+					if tv < 0.0:
+						other_neg += tv
+					else:
+						other_pos += tv
 		if altered:
-			if tq_split:  # T332：天启篇拆算的 hrg 里去掉导入状态的负再生（它们本来就 ×1）
-				hrg = float(rr[0]) - dot_neg
+			if tq_split and b is XEnemy:  # T332＋T405：天启篇拆算去掉导入负再生后重套封顶，避免 rr[0] - dot_neg 翻正
+				var en := b as XEnemy
+				var w := en.warehouse_rate()
+				var eff_other_neg := en.cap_neg_hrg(minf(0.0, other_neg - prayer_block), b_rec) if other_neg < 0.0 else 0.0
+				hrg = other_pos * w * w + eff_other_neg
 			var other := floorf(b.mhp * hrg * b_rec)
 			dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
 	var dm := floorf(b.mmp * b.mrg)

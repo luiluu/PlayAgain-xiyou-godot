@@ -317,10 +317,11 @@ func cev_for_toji(pct: int) -> float:
 func sparam(i: int) -> float:
 	return super.sparam(i) * warehouse_rate()
 
-## T332（D249 乙，r1 返修）：回合末 HP 再生用的 [hrg, rec, 天启篇拆算]。drop＝不算的负再生（异化逆祷挡掉的那部分，原值 ≤0）。
+## T332（D249 乙，r1 返修）＋T405（D273）：回合末 HP 再生用的 [hrg, rec, 天启篇拆算]。drop＝不算的负再生（异化逆祷挡掉的那部分，原值 ≤0）。
 ## 天启篇（XTianqiCombat.regen_unscaled）且再生特性里有负值时：照 T285 xparam_parts 把特性 22-7 拆成正值 pos 与负值 neg，
-## 正再生照原版吃两次仓库倍率（pos × w × w，原版 hrg、rec 各 ×w），负再生不吃（neg − drop，×1），rec 取不乘倍率的原值：
-## floor(mhp × (pos×w² ＋ neg − drop) × rec原值)。别的情况（西游档、开关关、没有负再生）逐字照原版 [hrg − drop, rec]。
+## 正再生照原版吃两次仓库倍率（pos × w × w，原版 hrg、rec 各 ×w），负再生不吃（eff_neg = neg − drop，×1），rec 取不乘倍率的原值；
+## T405（D273）：守层者与首领的负再生部分再按 balance_table.combat_rules.boss_neg_hrg_cap_pct 封顶（每回合最多扣 5% 最大生命，普通小怪不封）：
+## floor(mhp × (pos×w² ＋ eff_neg) × rec原值)。别的情况（西游档、开关关、没有负再生）逐字照原版 [hrg − drop, rec]。
 func regen_rates(drop := 0.0) -> Array:
 	if XTianqiCombat.regen_unscaled():
 		var pos := 0.0
@@ -332,9 +333,23 @@ func regen_rates(drop := 0.0) -> Array:
 			else:
 				pos += v
 		if neg < 0.0:
+			var b_rec := super.sparam(2)
+			var eff_neg := cap_neg_hrg(neg - drop, b_rec)
 			var w := warehouse_rate()
-			return [pos * w * w + (neg - drop), super.sparam(2), true]
+			return [pos * w * w + eff_neg, b_rec, true]
 	return [self.hrg - drop if drop != 0.0 else self.hrg, self.rec, false]
+
+
+## T405（D273）：按守层者／首领负再生上限夹住负再生率，确保 eff_neg × b_rec ≥ cap（最多扣 cap% 最大生命）。
+func cap_neg_hrg(eff_neg: float, b_rec: float) -> float:
+	var cap := XTianqiCombat.boss_neg_hrg_cap(self)
+	if cap >= 0.0:
+		return eff_neg
+	if is_equal_approx(b_rec, 1.0):
+		return maxf(eff_neg, cap)
+	if b_rec > 0.0 and eff_neg * b_rec < cap:
+		return cap / b_rec
+	return eff_neg
 
 func param_now(i: int) -> float:
 	var v := param_base_unscaled(i) + param_plus(i)

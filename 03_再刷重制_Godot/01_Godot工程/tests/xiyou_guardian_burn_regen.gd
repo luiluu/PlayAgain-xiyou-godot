@@ -29,6 +29,8 @@ func _run() -> void:
 	seed(20261121)
 	var was_strip := XGuardianRework.STRIP
 	XGuardianRework.STRIP = false  # T348 起天启篇守层者默认清掉正值双闪暴闪回血；本专项量的是机制本身，借守层者原数据的正值（别的敌人照吃这套）
+	var was_cap := XTianqiCombat.BOSS_NEG_HRG_CAP
+	XTianqiCombat.BOSS_NEG_HRG_CAP = false  # T405（D273）起天启篇守层者负再生封顶 5%；本专项量 T332 不吃仓库倍率本身，封顶由 xiyou_tianqi_boss_neg_hrg_cap 专测
 	_case("tq", true)
 	XTianqiCombat.DOT_NO_WAREHOUSE = false  # 回退支：天启篇也照原版 ×4
 	_case("tq_off", true)
@@ -45,6 +47,7 @@ func _run() -> void:
 			print("FAIL ", r.name, " ", r.detail)
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	XGuardianRework.STRIP = was_strip
+	XTianqiCombat.BOSS_NEG_HRG_CAP = was_cap
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)
 
 
