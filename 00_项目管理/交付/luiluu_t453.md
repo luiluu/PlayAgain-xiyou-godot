@@ -2,7 +2,7 @@
 
 - 车道／工作者：cc（Claude Sonnet 5.5＋medium，P6），T453 火海披风纳入首领持续伤害 5% 上限
 - 状态：可合并
-- 云端选测：run 45378841735（`https://github.com/<本库>/actions/runs/45378841735`），结果见文末「云端选测」一节
+- 云端选测：run 45378841735（https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45378841735），通过，结果见文末「云端选测」一节
 
 ## 变更记录草稿
 
@@ -79,4 +79,5 @@
 
 ## 云端选测
 
-（待跑完补）
+- 提交 10b78deaf3，选测基准 ef0ab8730d，359 个场景、16 片，`gh run watch` 前台等完＋`云端选测.py wait`：✓ 通过，最长一片 14.8 分钟。
+- 运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45378841735
