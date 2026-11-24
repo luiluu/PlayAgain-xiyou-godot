@@ -33,7 +33,7 @@
 ## 测试
 
 - `测试发行预设排除检查.py` 20/20；`测试发行出包.py` 33/33（没改它，确认没被我改坏）；`测试工具回归.py` 6/6；`工具回归.py` 全过。
-- 云端选测：选测 0 个 Godot 场景（只改了 07_开发环境 工具），照样跑了一轮：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45423716739 ，`gh run watch` 前台等完，success。
+- 云端选测：选测 0 个 Godot 场景（只改了 07_开发环境 工具），照样跑了：rebase 前 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45423716739 ；rebase 后（47e416bf8，基准 3e86b53df）https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45426076942 ，都用 `gh run watch` 前台等完，success。
 - 没起 Godot 截图（实跑全是无头），没有截图；实跑日志已提交在 `../归档/交付截图/luiluu_t458/`。
 
 ## 没做／偏离
