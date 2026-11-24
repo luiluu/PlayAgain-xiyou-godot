@@ -3278,6 +3278,63 @@ def check_weak_affix_table(_args) -> bool:
     return _run_table('weak_affix_table.json', lambda t: weak_affix_rules(t, _load_opt('six_dim.json')))
 
 
+def gear_elem_amp_rules(table: dict, rework: dict = None, gear_table: dict = None) -> list:
+    """gear_elem_amp.json（T451，Kyo 11-24 事项 50）：通用武器（5～50%）与保留栏位普通防具（5～20%）元素/物理增幅分档表。"""
+    bad = []
+
+    def check(name, ok, detail=''):
+        if not ok:
+            bad.append('%s：%s' % (name, detail))
+
+    check('表头 version', _is_int(table.get('version')) and table['version'] >= 1, table.get('version'))
+    check('表头 source', _text(table.get('source')), table.get('source'))
+    w_caps = {1: 10, 2: 15, 3: 25, 4: 35, 5: 50}
+    a_caps = {1: 7, 2: 10, 3: 13, 4: 18, 5: 20}
+    rw_gear = set((rework or {}).get('gear', {}).keys())
+    efabao = {int(r['id']) for r in (gear_table or {}).get('element_fabaos', {}).get('items', []) if isinstance(r, dict) and 'id' in r}
+
+    for sec, kind, caps in (('weapons', 'weapon', w_caps), ('armors', 'armor', a_caps)):
+        rows = table.get(sec)
+        check(sec, isinstance(rows, dict) and len(rows) > 0, '要非空字典')
+        if not isinstance(rows, dict):
+            continue
+        for k, v in rows.items():
+            if not (str(k).isdigit() and int(k) > 0):
+                bad.append('%s[%s]：键要是正整数 ID' % (sec, k))
+                continue
+            if not isinstance(v, dict):
+                bad.append('%s[%s]：值要是对象' % (sec, k))
+                continue
+            t = v.get('tier')
+            if not (_is_int(t) and t in caps):
+                bad.append('%s[%s].tier＝%r：要在 1～5' % (sec, k, t))
+                continue
+            amp = v.get('amp')
+            if not isinstance(amp, dict) or not amp:
+                bad.append('%s[%s].amp：要非空字典' % (sec, k))
+                continue
+            cap = caps[t]
+            for ek, val in amp.items():
+                if not (str(ek).isdigit() and int(ek) >= 0):
+                    bad.append('%s[%s].amp[%s]：元素键要是非负整数' % (sec, k, ek))
+                elif not (_is_int(val) and 1 <= val <= cap and '4' not in str(val)):
+                    bad.append('%s[%s].amp[%s]＝%r：要是 1～%d 的避 4 正整数' % (sec, k, ek, val, cap))
+            if 'subs' in v:
+                subs = v['subs']
+                if not isinstance(subs, list) or not all(isinstance(p, list) and len(p) == 2 and all(isinstance(s, str) for s in p) for p in subs):
+                    bad.append('%s[%s].subs：要是 [旧, 新] 字符串对列表' % (sec, k))
+            gkey = '%s:%s' % (kind, k)
+            if gkey in rw_gear:
+                bad.append('%s 与 skill_rework.gear 重叠' % gkey)
+            if kind == 'armor' and int(k) in efabao:
+                bad.append('%s 与 gear_table.element_fabaos 重叠' % gkey)
+    return bad
+
+
+def check_gear_elem_amp(_args) -> bool:
+    return _run_table('gear_elem_amp.json', lambda t: gear_elem_amp_rules(t, _load_opt('skill_rework.json'), _load_opt('gear_table.json')))
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -3322,6 +3379,7 @@ CHECKS = [
     ('ring_styles', check_ring_styles),
     ('trumpet', check_trumpet),
     ('weak_affix_table', check_weak_affix_table),
+    ('gear_elem_amp', check_gear_elem_amp),
 ]
 
 

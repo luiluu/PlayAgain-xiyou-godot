@@ -196,6 +196,8 @@ static func reload_table() -> void:
 	_efabao_recs = {}
 	_efabao_views = {}
 	_efabao_strip_re = null
+	_elem_amp_table = {}
+	_elem_amp_views = {}
 
 
 # ---- A. 删除栏位的物品不上架、不掉落 ----
@@ -323,6 +325,8 @@ static func stat_list(list: Array) -> Array:
 		list = list.map(func(e): return XTianqiSkills.gear_view(e))  # 天启篇技能重构：专属法宝、武器换改写视图
 	if element_fabaos_on():
 		list = list.map(func(e): return element_fabao_view(e))  # 天启篇系别法宝（T442）：老档已有实例去原版特性/标签，只留本系或治疗 +10%
+	if elem_amp_on():
+		list = list.map(func(e): return elem_amp_view(e))  # T451：通用武器（5～50%）与保留栏位普通防具（5～20%）元素/物理增幅按档重调
 	if not mount_on():
 		return list
 	return list.filter(func(e): return not plain_mount(e))
@@ -445,6 +449,8 @@ static func clear_effective_cache() -> void:
 	_efabao_recs = {}
 	_efabao_views = {}
 	_efabao_strip_re = null
+	_elem_amp_table = {}
+	_elem_amp_views = {}
 
 
 ## 这件装备在当前状态下读不读新底子（总开关开着、天启篇存档；武器／防具；部位 1～10 且不在例外里；有等级需求和品质标记；不是天启篇奖励装备）
@@ -1116,3 +1122,104 @@ static func sync_element_fabaos(s: XState) -> void:
 		for a in s.actors.values():
 			a.refresh_passive()
 			a.param_mark_dirty()
+
+
+# ==== F. 通用武器与保留栏位普通防具元素/物理增幅分档重调（T451，Kyo 2026-11-24 事项 50）====
+## 开关（T451）：true＝天启篇存档里 326 把通用武器按五档重调至 5%～50%（整数避 4）、540 件保留栏位普通防具按档重调至 5%～20%（整数避 4），
+## 物理与火/冰/雷等其它元素增幅一并压低，并同步卡面 <pos=APs> 说明行与 <Element Amplify> 备注标签；宝珠／强化增量完整保留。
+## false＝回退到原版增幅。西游档恒不生效。
+static var GEAR_ELEM_RESCALE := true
+const ELEM_AMP_PATH := "res://modes/xiyou/tianqi_data/gear_elem_amp.json"
+static var _elem_amp_table: Dictionary = {}
+static var _elem_amp_views: Dictionary = {}
+static var _elem_amp_tag_re := RegEx.create_from_string("(?i)<ELEMENT AMPLIFY [^:>]+: [+-]\\d+(?:\\.\\d+)?[%％]>\\r?\\n?")
+
+
+static func elem_amp_on(s: XState = null) -> bool:
+	return GEAR_ELEM_RESCALE and on(s)
+
+
+static func elem_amp_table() -> Dictionary:
+	if _elem_amp_table.is_empty():
+		if XDataFile.missing(ELEM_AMP_PATH):  # 发行包里没有（没发行的内容，见 发行内容审计.py）
+			return {}
+		var f := FileAccess.open(ELEM_AMP_PATH, FileAccess.READ)
+		if f == null:
+			push_error("XTianqiGear: 读不到 " + ELEM_AMP_PATH)
+			return {}
+		var parsed = JSON.parse_string(f.get_as_text())
+		if parsed is Dictionary:
+			_elem_amp_table = parsed
+		else:
+			push_error("XTianqiGear: JSON 解析失败 " + ELEM_AMP_PATH)
+	return _elem_amp_table
+
+
+static func _rewrite_elem_amp_note(src_note: String, sp: Dictionary) -> String:
+	var note := src_note
+	for pair in sp.get("subs", []):
+		if pair is Array and pair.size() >= 2:
+			note = note.replace(str(pair[0]), str(pair[1]))
+	note = _elem_amp_tag_re.sub(note, "", true).strip_edges()
+	var add_lines: PackedStringArray = []
+	var amp: Dictionary = sp.get("amp", {})
+	var keys := amp.keys()
+	keys.sort_custom(func(a, b): return int(a) < int(b))
+	for ek in keys:
+		add_lines.append("<Element Amplify %s: +%d%%>" % [str(ek), int(amp[ek])])
+	if add_lines.is_empty():
+		return note
+	return (note + "\n" if note != "" else "") + "\n".join(add_lines)
+
+
+static func _rescaled_elem_amp_yep(item: Dictionary, kind: String, base_id: int, amp: Dictionary) -> Dictionary:
+	var yep: Dictionary = (item.get("yep", {}) as Dictionary).duplicate(true)
+	var cur: Dictionary = yep.get("elementAmplify", {}) if yep.get("elementAmplify") is Dictionary else {}
+	var raw_rec := XDB.rec("Weapons" if kind == "weapon" else "Armors", base_id)
+	var raw_ea: Dictionary = raw_rec.get("yep", {}).get("elementAmplify", {}) if not raw_rec.is_empty() else {}
+	var out_ea := {}
+	for ek in cur:
+		var ks := str(ek)
+		if amp.has(ks):
+			var extra := float(cur[ek]) - float(raw_ea.get(ks, 0.0))
+			var val := float(amp[ks]) / 100.0 + extra
+			if absf(val) >= 1e-9:
+				out_ea[ks] = val
+		else:
+			out_ea[ks] = float(cur[ek])
+	for ek in amp:
+		var ks := str(ek)
+		if not out_ea.has(ks) and not cur.has(ks):
+			out_ea[ks] = float(amp[ks]) / 100.0
+	if out_ea.is_empty():
+		yep.erase("elementAmplify")
+	else:
+		yep["elementAmplify"] = out_ea
+	return yep
+
+
+## 战斗／说明卡视图（XTianqiGear.stat_list、XHelpCard 调）：按 gear_elem_amp.json 替换元素／物理增幅与卡面文字，保留宝珠／强化增量
+static func elem_amp_view(item):
+	if not elem_amp_on() or not (item is Dictionary) or item.is_empty() or bool(item.get("_tq_ea_view", false)):
+		return item
+	var kind := _kind(item)
+	if kind != "weapon" and kind != "armor":
+		return item
+	var base_id := int(item.get("base", item.get("id", 0)))
+	var sec := "weapons" if kind == "weapon" else "armors"
+	var sp = elem_amp_table().get(sec, {}).get(str(base_id))
+	if not (sp is Dictionary) or sp.is_empty():
+		return item
+	var src_note := str(item.get("note", ""))
+	var ckey := "%s:%d" % [kind, base_id]
+	var c = _elem_amp_views.get(ckey)
+	if not (c is Array and c[0] == src_note):
+		var note := _rewrite_elem_amp_note(src_note, sp)
+		c = [src_note, note, XTianqiSkills.parse_meta(note)]
+		_elem_amp_views[ckey] = c
+	var v: Dictionary = item.duplicate(false)
+	v["note"] = c[1]
+	v["meta"] = c[2]
+	v["yep"] = _rescaled_elem_amp_yep(item, kind, base_id, sp.get("amp", {}))
+	v["_tq_ea_view"] = true
+	return v
