@@ -460,10 +460,106 @@ func _test_ev54_shop_and_dingyi_slot() -> void:
 		[x_sr.get("buy_items", {}), x_new.is_empty()])
 
 
+func _frames(n := 4) -> void:
+	for _i in range(n):
+		await get_tree().process_frame
+
+
+func _run_yield_probe() -> void:
+	var presets := {
+		"超强者_95": {"aid": 95, "skill": 10731, "t1": [7145, 7166, 7174], "t2": [7146, 7167, 7175], "t3": [11301, 7168, 11316]},
+		"强者_1":   {"aid": 1,  "skill": 4749,  "t1": [7145, 7166, 7174, 7136], "t2": [7146, 7167, 7175, 7137], "t3": [11301, 7168, 11316, 7138]},
+		"弱者_12":  {"aid": 12, "skill": 318,   "t1": [7145, 7166, 7174, 7136, 7171, 7181], "t2": [7146, 7167, 7175, 7137, 7172, 7181], "t3": [11301, 7168, 11316, 7138, 7173, 7181]},
+	}
+	for sd in [101, 202, 303]:
+		seed(sd)
+		var s := _fresh_tianqi(28)
+		for aid in [95, 1, 12]:
+			if s.actors.get(aid) == null:
+				XTianqi._joining = true
+				s.add_actor(aid)
+				XTianqi._joining = false
+		var e := XEnemy.new().setup(4, 3, 100.0)
+		for label in presets:
+			var cfg: Dictionary = presets[label]
+			var a: XActor = s.actor(int(cfg.aid))
+			a.change_level(81)
+			var sk := XDB.rec("Skills", int(cfg.skill))
+			var base_skills := a.skill_ids.duplicate()
+			var res := {}
+			for stage in ["base", "t1", "t2", "t3"]:
+				a.skill_ids = base_skills.duplicate()
+				if stage != "base":
+					for sid in cfg[stage]:
+						a.learn_skill(int(sid))
+				a.param_mark_dirty()
+				a.refresh_passive()
+				seed(sd * 100 + int(cfg.aid))
+				var sum_v := 0.0
+				var max_v := 0.0
+				for _h in range(5):
+					var r := XDamage.calculate(sk, a, e, {"critical": true, "variance": true})
+					var v := float(r.value)
+					sum_v += v
+					max_v = maxf(max_v, v)
+				res[stage] = {"max": roundi(max_v), "avg": roundi(sum_v / 5.0), "used": XTianqiSecrets.used_slots(a, s), "mhp": roundi(a.mhp), "cri_pct": roundi(a.cri * 100.0)}
+			var bmax := maxf(1.0, float(res.base.max))
+			print("YIELD_ROW ", JSON.stringify({
+				"seed": sd, "role": label, "cap": XTianqiSecrets.limit(a),
+				"base": res.base.max,
+				"t1": res.t1.max, "t1_pct": snappedf((float(res.t1.max) / bmax - 1.0) * 100.0, 0.1),
+				"t2": res.t2.max, "t2_pct": snappedf((float(res.t2.max) / bmax - 1.0) * 100.0, 0.1),
+				"t3": res.t3.max, "t3_pct": snappedf((float(res.t3.max) / bmax - 1.0) * 100.0, 0.1),
+				"t3_used": res.t3.used, "t3_mhp_pct": snappedf((float(res.t3.mhp) / maxf(1.0, float(res.base.mhp)) - 1.0) * 100.0, 0.1),
+				"t3_cri_diff": int(res.t3.cri_pct) - int(res.base.cri_pct),
+			}))
+
+
+func _take_shots(out_dir: String) -> void:
+	if DisplayServer.get_name() == "headless":
+		return
+	DirAccess.make_dir_recursive_absolute(out_dir)
+	get_viewport().size = Vector2i(1280, 720)
+	var s := _fresh_tianqi(28)
+	s.gain_item(2530, 999)
+	s.gold = 999999
+	var old_skin := XUiSkin.ENABLED
+	XUiSkin.ENABLED = true
+	for pair in [["gongfa_t3", "luiluu_t443_ev54_gongfa_t3.png", 9], ["fabao", "luiluu_t443_ev54_fabao.png", 10]]:
+		var tab := str(pair[0])
+		var fn := str(pair[1])
+		var sel := int(pair[2])
+		var goods := XTianqiSecrets.ev54_tab_goods(s, tab)
+		XShopStock.set_context(4, 54)
+		var shop := XShop.new()
+		shop.setup(goods, true, "")
+		add_child(shop)
+		await _frames(6)
+		if "_buy_idx" in shop:
+			shop._buy_idx = mini(sel, maxi(0, goods.size() - 1))
+			if shop.has_method("_refresh"):
+				shop._refresh()
+		await _frames(6)
+		var img := get_viewport().get_texture().get_image()
+		if img != null:
+			var err := img.save_png(out_dir.path_join(fn))
+			print("SHOT ", fn, " err=", err, " size=", img.get_size())
+		shop.queue_free()
+		XShopStock.shop_context = {}
+		await _frames(3)
+	XUiSkin.ENABLED = old_skin
+
+
 func _run() -> void:
 	kit = Kit.new("xiyou_tianqi_gongfa_shop")
 	seed(20261124)
 	XTianqiSecrets.reload_table()
+	var args := OS.get_cmdline_user_args()
+	if args.has("--yield-probe"):
+		_run_yield_probe()
+	for a in args:
+		if a.begins_with("--shots="):
+			await _take_shots(a.substr(8))
 	_test_gongfa_views_and_stats()
 	_test_same_school_override()
 	_test_xingzi_first_turn()
