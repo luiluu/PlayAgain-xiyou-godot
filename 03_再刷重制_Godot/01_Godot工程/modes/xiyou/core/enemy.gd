@@ -340,11 +340,17 @@ func regen_rates(drop := 0.0) -> Array:
 	return [self.hrg - drop if drop != 0.0 else self.hrg, self.rec, false]
 
 
-## T405（D273）：按守层者／首领负再生上限夹住负再生率，确保 eff_neg × b_rec ≥ cap（最多扣 cap% 最大生命）。
+## T405（D273）＋T456：按守层者／首领负再生上限夹住负再生率，先扣掉本回合 XExtDot 已用预算，确保 eff_neg × b_rec ≥ 剩余上限（合计最多扣 cap% 最大生命，不吃正再生）。
 func cap_neg_hrg(eff_neg: float, b_rec: float) -> float:
 	var cap := XTianqiCombat.boss_neg_hrg_cap(self)
 	if cap >= 0.0:
 		return eff_neg
+	var used := XTianqiCombat.dot_budget_used(self)
+	if used > 0.0:
+		var left := maxf(0.0, floorf(float(mhp) * -cap) - used)
+		if left <= 0.0:
+			return maxf(eff_neg, 0.0)
+		cap = -left / maxf(1.0, float(mhp))
 	if is_equal_approx(b_rec, 1.0):
 		return maxf(eff_neg, cap)
 	if b_rec > 0.0 and eff_neg * b_rec < cap:
