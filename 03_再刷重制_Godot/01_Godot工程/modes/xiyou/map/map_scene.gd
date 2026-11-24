@@ -995,6 +995,13 @@ func run_event(e: MVEvent) -> void:
 		_set_busy(false)
 		refresh_events()
 		return
+	# 天启篇人族首领 EV054 货架重整（XTianqiSecrets，T443）：无丹药空店、按三重分级上架、含 K8 丁一插槽
+	if XTianqiSecrets.ev54_intercepts(XState.current, map_id, e.event_id):
+		_set_busy(true)
+		await XTianqiSecrets.run_ev54(self, XState.current)
+		_set_busy(false)
+		refresh_events()
+		return
 	# 天启篇大厅 NPC 清理（XTianqiHall，T079）：并进来的 NPC 在宿主开口时多一层选单
 	if XTianqiHall.intercepts(self, XState.current, map_id, e.event_id):
 		_set_busy(true)

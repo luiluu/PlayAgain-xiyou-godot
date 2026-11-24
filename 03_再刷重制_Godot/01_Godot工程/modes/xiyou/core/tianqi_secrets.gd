@@ -17,9 +17,14 @@ extends RefCounted
 ## 发行空壳替换本脚本后西游发行包零外泄。
 
 static var ENABLED := true
+static var GONGFA_REWORK := true
+static var EV54_SHOP := true
 
 const PATH := "res://modes/xiyou/tianqi_data/secret_books.json"
 const SECTION := "secrets"
+const EV54_MAP := 4
+const EV54_EVENT := 54
+const EV54_HIDE_SWITCH := 681
 
 static var _data: Dictionary = {}
 static var _load_failed := false
@@ -32,6 +37,12 @@ static var _ignore_items := {}
 static var _slot_stypes := [4, 6]
 static var _book_skills := {}
 static var _ce_item_info := {}  # item_id -> {skills: Array[int], fixed_actor: int, paths: Array}
+static var _gongfa_by_skill := {}  # skill_id -> spec
+static var _gongfa_by_item := {}   # item_id -> spec
+static var _school_skills := {}    # school_key -> Array[int]
+static var _state_specs := {}      # state_id -> spec
+static var _banned_items := {}     # item_id -> true
+static var _view_cache := {}       # "Table:id" -> Dictionary
 
 
 # ---- 数据加载与开关 ----
@@ -62,6 +73,12 @@ static func reload_table() -> void:
 	_slot_stypes = [4, 6]
 	_book_skills = {}
 	_ce_item_info = {}
+	_gongfa_by_skill = {}
+	_gongfa_by_item = {}
+	_school_skills = {}
+	_state_specs = {}
+	_banned_items = {}
+	_view_cache = {}
 
 
 static func on(s = null) -> bool:
@@ -70,6 +87,14 @@ static func on(s = null) -> bool:
 	if s == null:
 		s = XState.current
 	return XTianqi.active(s) and (XTianqi.RELEASE_OPEN or not ReleaseEntry.is_release()) and not data().is_empty()
+
+
+static func gongfa_on(s = null) -> bool:
+	return GONGFA_REWORK and on(s)
+
+
+static func ev54_on(s = null) -> bool:
+	return EV54_SHOP and on(s)
 
 
 static func _ensure_index() -> void:
@@ -112,6 +137,41 @@ static func _ensure_index() -> void:
 			_conversion_items[int(k)] = int(ci[k])
 	for iid in d.get("ignore_items", []):
 		_ignore_items[int(iid)] = true
+	# T013-1c：功法重标表、门表、状态表
+	var sk_tbl: Dictionary = d.get("skills", {})
+	for k in sk_tbl:
+		if not str(k).is_valid_int() or not (sk_tbl[k] is Dictionary):
+			continue
+		var sp: Dictionary = sk_tbl[k]
+		var sid := int(k)
+		var iid := int(sp.get("item", 0))
+		_gongfa_by_skill[sid] = sp
+		if iid > 0:
+			_gongfa_by_item[iid] = sp
+			if bool(sp.get("banned", false)):
+				_banned_items[iid] = true
+		_book_skills[sid] = true
+		_include_set[sid] = true
+	var sc_tbl: Dictionary = d.get("schools", {})
+	for sc_key in sc_tbl:
+		var sc_val = sc_tbl[sc_key]
+		if not (sc_val is Dictionary):
+			continue
+		var tiers_map = sc_val.get("tiers", {})
+		var all_sids: Array[int] = []
+		if tiers_map is Dictionary:
+			for tk in tiers_map:
+				var arr = tiers_map[tk]
+				if arr is Array:
+					for sid in arr:
+						if not all_sids.has(int(sid)):
+							all_sids.append(int(sid))
+		all_sids.sort()
+		_school_skills[str(sc_key)] = all_sids
+	var st_tbl: Dictionary = d.get("states", {})
+	for k in st_tbl:
+		if str(k).is_valid_int() and st_tbl[k] is Dictionary:
+			_state_specs[int(k)] = st_tbl[k]
 	# 扫描物品表（code 43 ＋ CE code 44）建立书教技能索引
 	_scan_items()
 
@@ -466,10 +526,29 @@ static func learn_reason(a, skill_id: int, s: XState = null) -> String:
 		return ""
 	if s == null:
 		s = XState.current
+	# T013-1c：封禁功法、专属角色限制、同门后重顶前重
+	if gongfa_on(s):
+		_ensure_index()
+		if _gongfa_by_skill.has(skill_id):
+			var sp: Dictionary = _gongfa_by_skill[skill_id]
+			if bool(sp.get("banned", false)):
+				return "天启篇已封禁此功法，无法修习"
+			var only_aid := int(sp.get("only_actor", 0))
+			if only_aid > 0 and a.actor_id != only_aid:
+				var who_nm := str(XDB.rec("Actors", only_aid).get("name", "指定角色"))
+				return "此功法仅%s可修习" % who_nm
 	if a.skill_ids.has(skill_id):
 		if is_sealed(a, skill_id, s):
 			return "已学会此秘籍（已封印），请在技能页启封，启封后生效"
 		return "已经学会这本秘籍"
+	if gongfa_on(s) and _gongfa_by_skill.has(skill_id):
+		var higher := _owned_school_higher_or_same(a, skill_id)
+		if higher > 0:
+			var hnm := str(XDB.rec("Skills", higher).get("name", ""))
+			return "已修习更高或同重功法「%s」，无需重复修习" % hnm
+		# 当前生效格里已有同门更低重 → 原地升级替换，净增 0 格，放行
+		if _active_school_lower_id(a, skill_id, s) > 0:
+			return ""
 	# 元素转换书：当前生效格已有另一门转换书 → 原地替换，不占新格
 	if is_conversion_skill(skill_id) and active_conversion_id(a, s) > 0:
 		return ""
@@ -667,10 +746,22 @@ static func unseal(s: XState, a: XActor, skill_id: int) -> Dictionary:
 		s = XState.current
 	if a == null or not is_sealed(a, skill_id, s):
 		return {"ok": false, "reason": "该秘籍未处于封印状态"}
+	if gongfa_on(s):
+		_ensure_index()
+		var sp: Dictionary = _gongfa_by_skill.get(skill_id, {})
+		if bool(sp.get("banned", false)):
+			return {"ok": false, "reason": "天启篇已封禁此功法，无法启封"}
+		var higher := _owned_school_higher_or_same(a, skill_id)
+		if higher > 0:
+			var hnm := str(XDB.rec("Skills", higher).get("name", ""))
+			return {"ok": false, "reason": "已修习更高或同重功法「%s」，无法启封低重" % hnm}
 	var replaced := 0
+	var replaced_lower := 0
 	if is_conversion_skill(skill_id):
 		replaced = active_conversion_id(a, s)
-	if replaced == 0:
+	elif gongfa_on(s) and _gongfa_by_skill.has(skill_id):
+		replaced_lower = _active_school_lower_id(a, skill_id, s)
+	if replaced == 0 and replaced_lower == 0:
 		var cap := limit(a)
 		var used := used_slots(a, s)
 		if cap > 0 and used >= cap:
@@ -680,9 +771,12 @@ static func unseal(s: XState, a: XActor, skill_id: int) -> Dictionary:
 	arr.erase(skill_id)
 	if replaced > 0 and not arr.has(replaced):
 		arr.append(replaced)
+	if replaced_lower > 0:
+		a.skill_ids.erase(replaced_lower)
+		arr.erase(replaced_lower)
 	arr.sort()
 	_refresh_actor(a)
-	return {"ok": true, "replaced": replaced}
+	return {"ok": true, "replaced": replaced if replaced > 0 else replaced_lower}
 
 
 static func finish_free_pick(s: XState, a: XActor) -> void:
@@ -747,6 +841,11 @@ static func migrate_after_load(s: XState) -> void:
 					kept.append(id)
 			kept.sort()
 			row["sealed"] = kept
+	# 1.5) T013-1c：同门功法合并去重（老存档同时有上/下篇时，只保留最高重、遗忘同门低重）
+	if gongfa_on(s):
+		for a in s.actors.values():
+			if a is XActor:
+				_dedup_actor_schools(a, s)
 	# 2) 检查每名角色是否超格（老存档不没收，超出部分自动移入已封并授予一次免费自选）
 	for a in s.actors.values():
 		if not (a is XActor):
@@ -971,3 +1070,512 @@ static func ui_exec_action(s: XState, a: XActor, action: String, skill_id: int) 
 	XSound.system(1)
 	XToast.show_text(ui_action_toast(action, sk_name, res), true)
 	return true
+
+
+# ==============================================================================
+# T013-1c：功法 50 本重标分门三重（补水风、同门互顶）、行字诀首回合提前、
+#          状态 1656 重标、封禁禁掉与人族首领 EV054 货架重整（含 K8 丁一插槽）
+# ==============================================================================
+
+# ---- 同门查询与互顶 ----
+
+static func school_of(skill_id: int) -> String:
+	if skill_id <= 0:
+		return ""
+	_ensure_index()
+	var sp: Dictionary = _gongfa_by_skill.get(skill_id, {})
+	return str(sp.get("school", ""))
+
+
+static func school_tier(skill_id: int) -> int:
+	if skill_id <= 0:
+		return 0
+	_ensure_index()
+	var sp: Dictionary = _gongfa_by_skill.get(skill_id, {})
+	return int(sp.get("tier", 0))
+
+
+static func is_banned_skill(skill_id: int, s: XState = null) -> bool:
+	if not gongfa_on(s) or skill_id <= 0:
+		return false
+	_ensure_index()
+	return bool(_gongfa_by_skill.get(skill_id, {}).get("banned", false))
+
+
+static func is_banned_item(item_id: int, s: XState = null) -> bool:
+	if not gongfa_on(s) or item_id <= 0:
+		return false
+	_ensure_index()
+	return _banned_items.has(item_id)
+
+
+static func _owned_school_higher_or_same(a: XActor, skill_id: int) -> int:
+	var sc := school_of(skill_id)
+	if sc == "":
+		return 0
+	var cur_t := school_tier(skill_id)
+	for sid in _school_skills.get(sc, []):
+		var id := int(sid)
+		if id != skill_id and a.skill_ids.has(id) and school_tier(id) >= cur_t:
+			return id
+	return 0
+
+
+static func _active_school_lower_id(a: XActor, skill_id: int, s: XState) -> int:
+	var sc := school_of(skill_id)
+	if sc == "":
+		return 0
+	var cur_t := school_tier(skill_id)
+	for sid in active_ids(a, s):
+		if sid != skill_id and school_of(sid) == sc and school_tier(sid) < cur_t:
+			return sid
+	return 0
+
+
+## XActor.learn_skill 末尾调用：学到同门更高重时，遗忘并清理同门更低重（只占 1 格）
+static func learned_skill(a, skill_id: int, s: XState = null) -> void:
+	if not gongfa_on(s) or not (a is XActor):
+		return
+	if s == null:
+		s = XState.current
+	_ensure_index()
+	if not _gongfa_by_skill.has(skill_id):
+		return
+	var sc := school_of(skill_id)
+	var cur_t := school_tier(skill_id)
+	if sc == "":
+		return
+	var removed := false
+	for sid in _school_skills.get(sc, []):
+		var id := int(sid)
+		if id == skill_id or not a.skill_ids.has(id):
+			continue
+		if school_tier(id) <= cur_t:
+			a.skill_ids.erase(id)
+			var row := _peek_actor(s, a.actor_id)
+			if not row.is_empty():
+				var sealed: Array = row.get("sealed", [])
+				if sealed.has(id):
+					sealed.erase(id)
+			removed = true
+	if removed:
+		_refresh_actor(a)
+
+
+## 老存档同门去重合并：同一门同时有多本时只保留最高重（优先保留生效态的最高重），清理低重
+static func _dedup_actor_schools(a: XActor, s: XState) -> void:
+	_ensure_index()
+	var by_sc := {}
+	for sid in a.skill_ids:
+		var id := int(sid)
+		var sc := school_of(id)
+		if sc == "":
+			continue
+		if not by_sc.has(sc):
+			by_sc[sc] = []
+		by_sc[sc].append(id)
+	var changed := false
+	for sc in by_sc:
+		var list: Array = by_sc[sc]
+		if list.size() <= 1:
+			continue
+		var best_id := int(list[0])
+		var best_t := school_tier(best_id)
+		var best_act := not is_sealed(a, best_id, s)
+		for i in range(1, list.size()):
+			var cid := int(list[i])
+			var ct := school_tier(cid)
+			var cact := not is_sealed(a, cid, s)
+			if ct > best_t or (ct == best_t and ((cact and not best_act) or (cact == best_act and cid > best_id))):
+				best_id = cid
+				best_t = ct
+				best_act = cact
+		var any_active := list.any(func(x): return not is_sealed(a, int(x), s))
+		var row := _peek_actor(s, a.actor_id)
+		var sealed: Array = row.get("sealed", []) if not row.is_empty() else []
+		for cid in list:
+			var id := int(cid)
+			if id == best_id:
+				continue
+			a.skill_ids.erase(id)
+			if sealed.has(id):
+				sealed.erase(id)
+			changed = true
+		if any_active and sealed.has(best_id):
+			sealed.erase(best_id)
+			changed = true
+	if changed:
+		_refresh_actor(a)
+
+
+# ---- 表外新功法与运行期视图改写（XDB.rec 挂点）----
+
+static func has_new(table: String, id: int) -> bool:
+	if not gongfa_on():
+		return false
+	_ensure_index()
+	if table == "Items":
+		return _gongfa_by_item.has(id) and int(_gongfa_by_item[id].get("template_item", 0)) > 0
+	if table == "Skills":
+		return _gongfa_by_skill.has(id) and int(_gongfa_by_skill[id].get("template_skill", 0)) > 0
+	return false
+
+
+static func new_rec(table: String, id: int, base_table: Array) -> Dictionary:
+	if not gongfa_on():
+		return {}
+	_ensure_index()
+	var ckey := "new:%s:%d" % [table, id]
+	if _view_cache.has(ckey):
+		return _view_cache[ckey]
+	if table == "Items" and _gongfa_by_item.has(id):
+		var sp: Dictionary = _gongfa_by_item[id]
+		var tpl_id := int(sp.get("template_item", 0))
+		if tpl_id <= 0 or tpl_id >= base_table.size() or not (base_table[tpl_id] is Dictionary):
+			return {}
+		var out := _build_item_view(base_table[tpl_id], sp)
+		_view_cache[ckey] = out
+		return out
+	if table == "Skills" and _gongfa_by_skill.has(id):
+		var sp2: Dictionary = _gongfa_by_skill[id]
+		var tpl_sid := int(sp2.get("template_skill", 0))
+		if tpl_sid <= 0 or tpl_sid >= base_table.size() or not (base_table[tpl_sid] is Dictionary):
+			return {}
+		var out2 := _build_skill_view(base_table[tpl_sid], sp2)
+		_view_cache[ckey] = out2
+		return out2
+	return {}
+
+
+static func touches_rec(table: String, id: int) -> bool:
+	if not gongfa_on():
+		return false
+	_ensure_index()
+	match table:
+		"Items":
+			return _gongfa_by_item.has(id)
+		"Skills":
+			return _gongfa_by_skill.has(id)
+		"States":
+			return _state_specs.has(id)
+	return false
+
+
+static func rec_view(table: String, id: int, base: Dictionary) -> Dictionary:
+	if not gongfa_on() or base.is_empty():
+		return base
+	_ensure_index()
+	var ckey := "view:%s:%d" % [table, id]
+	if _view_cache.has(ckey):
+		return _view_cache[ckey]
+	var out: Dictionary = base
+	match table:
+		"Items":
+			if _gongfa_by_item.has(id):
+				out = _build_item_view(base, _gongfa_by_item[id])
+		"Skills":
+			if _gongfa_by_skill.has(id):
+				out = _build_skill_view(base, _gongfa_by_skill[id])
+		"States":
+			if _state_specs.has(id):
+				out = _build_state_view(base, _state_specs[id])
+	_view_cache[ckey] = out
+	return out
+
+
+static func _tier_quality(sp: Dictionary) -> int:
+	if bool(sp.get("banned", false)):
+		return 1
+	match int(sp.get("tier", 1)):
+		1:
+			return 5
+		2:
+			return 7
+		_:
+			return 9
+
+
+static func _build_skill_view(base: Dictionary, sp: Dictionary) -> Dictionary:
+	var out: Dictionary = base.duplicate(true)
+	var sid := int(sp.get("skill", base.get("id", 0)))
+	var q := _tier_quality(sp)
+	out["id"] = sid
+	out["stypeId"] = 6
+	out["name"] = str(sp.get("name", base.get("name", "")))
+	out["description"] = str(sp.get("description", base.get("description", "")))
+	out["traits"] = []
+	var lines: Array[String] = ["<Hide in Battle>", "<quality:%d>" % q, "<ici:%d>" % q]
+	for tg in sp.get("tags", []):
+		lines.append("<%s>" % str(tg))
+	var eff := str(sp.get("effect_text", ""))
+	if eff != "":
+		lines.append("<pos=APs text=\\c[1]效果:%s size=18 color=rgba(255,255,255,1) line=false align=0>" % eff)
+	var note := "\n".join(lines)
+	out["note"] = note
+	out["meta"] = XTianqiSkills.parse_meta(note)
+	return out
+
+
+static func _build_item_view(base: Dictionary, sp: Dictionary) -> Dictionary:
+	var out: Dictionary = base.duplicate(true)
+	var iid := int(sp.get("item", base.get("id", 0)))
+	var sid := int(sp.get("skill", 0))
+	var q := _tier_quality(sp)
+	var nm := str(sp.get("item_name", sp.get("name", base.get("name", ""))))
+	var sk_nm := str(sp.get("name", nm))
+	out["id"] = iid
+	out["name"] = nm
+	out["description"] = str(sp.get("description", base.get("description", "")))
+	out["price"] = 0
+	out["effects"] = [{"code": 43, "dataId": sid, "value1": 1.0, "value2": 0.0}]
+	var lines: Array[String] = ["<quality:%d>" % q, "<ici:%d>" % q]
+	var bp := int(sp.get("buy_price", 0))
+	if bp > 0:
+		lines.append("<item 2530 Buy Price: %d>" % bp)
+	var eff := str(sp.get("effect_text", ""))
+	if bool(sp.get("banned", false)):
+		lines.append("<pos=APs text=\\c[2]%s size=18 color=rgba(255,255,255,1) line=false align=0>" % eff)
+	else:
+		lines.append("<pos=APs text=\\c[1]效果:使用后学会功法「%s」 size=18 color=rgba(255,255,255,1) line=false align=0>" % sk_nm)
+		if eff != "":
+			lines.append("<pos=APs text=\\c[1]功法效果:%s size=18 color=rgba(255,255,255,1) line=false align=0>" % eff)
+	var note := "\n".join(lines)
+	out["note"] = note
+	out["meta"] = XTianqiSkills.parse_meta(note)
+	out["_tq_price_ver"] = "gf1"
+	return out
+
+
+static func _build_state_view(base: Dictionary, sp: Dictionary) -> Dictionary:
+	var out: Dictionary = base.duplicate(true)
+	out["name"] = str(sp.get("name", base.get("name", "")))
+	var turns := int(sp.get("turns", 2))
+	out["minTurns"] = turns
+	out["maxTurns"] = turns
+	var rate := 1.0 + float(sp.get("stat_rate_pct", 5)) / 100.0
+	var traits := []
+	for i in range(8):
+		traits.append({"code": 21, "dataId": i, "value": rate})
+	out["traits"] = traits
+	var fd := int(sp.get("final_dmg_pct", 8))
+	var sn := str(sp.get("state_note", "全属性+%d%%，最终伤害+%d%%" % [int(sp.get("stat_rate_pct", 5)), fd]))
+	var note := "<BuffType:祝福>\n<StateNote>\n%s\n</StateNote>\n<passiveHarmRi:%d>" % [sn, fd]
+	out["note"] = note
+	out["meta"] = XTianqiSkills.parse_meta(note)
+	return out
+
+
+# ---- 寻宝决掉率直通（供 XTianqiDrop.rework_value 调用，不被 tier() 拍平）----
+
+static func gongfa_drop_value(skill_id: int) -> float:
+	if not gongfa_on() or skill_id <= 0:
+		return NAN
+	_ensure_index()
+	var sp: Dictionary = _gongfa_by_skill.get(skill_id, {})
+	if sp.has("drop_pct"):
+		return float(sp.drop_pct)
+	return NAN
+
+
+# ---- 封禁书掉落过滤（battle_logic.drop_chances 末尾调用）----
+
+static func filter_drop_rows(s, rows: Array) -> Array:
+	if not gongfa_on(s) or rows.is_empty():
+		return rows
+	_ensure_index()
+	if _banned_items.is_empty():
+		return rows
+	return rows.filter(func(r): return not (int(r.get("kind", 0)) == 1 and _banned_items.has(int(r.get("id", 0)))))
+
+
+# ---- 九秘:行字诀首回合行动提前（battle_logic._make_action_orders 首回合调用）----
+
+## 0=无；1=简篇（首回合速度 +50% 且至少提前 2 位）；2=全篇（首回合最先行动）
+static func first_turn_mode(a, s: XState = null) -> int:
+	if not gongfa_on(s) or not (a is XActor):
+		return 0
+	_ensure_index()
+	var best := 0
+	for sid in active_ids(a, s):
+		var m := int(_gongfa_by_skill.get(sid, {}).get("first_turn_mode", 0))
+		if m > best:
+			best = m
+	return best
+
+
+## 首回合对 current_order 就地重排（偷袭时不生效；第 2 回合不调用自动恢复）
+static func apply_first_turn_advance(logic, order: Array) -> void:
+	if logic == null or order.size() <= 1:
+		return
+	var s: XState = logic.state if "state" in logic else XState.current
+	if not gongfa_on(s) or bool(logic.surprise):
+		return
+	var top_list := []
+	var boost_list := []  # [[orig_idx, battler]]
+	for i in range(order.size()):
+		var b = order[i]
+		if b is XActor and logic.can_move(b):
+			var m := first_turn_mode(b, s)
+			if m >= 2:
+				top_list.append(b)
+			elif m == 1:
+				boost_list.append([i, b])
+	if top_list.is_empty() and boost_list.is_empty():
+		return
+	# 1) 全篇（mode 2）：抽出按原相对顺序置顶
+	for b in top_list:
+		order.erase(b)
+	for i in range(top_list.size() - 1, -1, -1):
+		order.insert(0, top_list[i])
+	var floor_idx := top_list.size()
+	# 2) 简篇（mode 1）：等效速度 +50%，并保证至少比原顺位提前 2 位（不越过全篇持有者）
+	for entry in boost_list:
+		var orig_idx := int(entry[0])
+		var b = entry[1]
+		var cur_idx := order.find(b)
+		if cur_idx < 0:
+			continue
+		var sp := float(logic._speed.get(b, float(b.agi))) * 1.5
+		logic._speed[b] = sp
+		var target_idx := cur_idx
+		while target_idx > floor_idx:
+			var prev = order[target_idx - 1]
+			var prev_sp := float(logic._speed.get(prev, float(prev.agi)))
+			if sp > prev_sp:
+				target_idx -= 1
+			else:
+				break
+		var min_target := maxi(floor_idx, mini(orig_idx, cur_idx) - 2)
+		if target_idx > min_target:
+			target_idx = min_target
+		if target_idx < cur_idx:
+			order.remove_at(cur_idx)
+			order.insert(target_idx, b)
+
+
+# ---- 人族首领 EV054 货架重整＋K8 丁一插槽契约（T441 第四节）----
+
+static func ev54_intercepts(s, map_id: int, event_id: int) -> bool:
+	return map_id == EV54_MAP and event_id == EV54_EVENT and ev54_on(s) and s != null and not s.switch(EV54_HIDE_SWITCH)
+
+
+static func ev54_top_floor(s: XState) -> int:
+	return maxi(1, int(s.variable(20))) if s != null else 1
+
+
+## 拼装并过滤 EV054 指定页签货单（必经 XTianqiSect.ev54_extra_goods 与完整商店滤链，供运行与专项共用）
+static func ev54_tab_goods(s: XState, tab: String) -> Array:
+	if not ev54_on(s) or s == null:
+		return []
+	var cfg: Dictionary = data().get("ev54_shop", {})
+	var tabs: Dictionary = cfg.get("tabs", {})
+	var top_floor := ev54_top_floor(s)
+	var goods: Array = []
+	if tabs.has(tab):
+		var tinfo: Dictionary = tabs[tab]
+		var mf := int(tinfo.get("min_floor", 1))
+		if top_floor < mf:
+			return []
+		for g in tinfo.get("goods", []):
+			goods.append((g as Array).duplicate())
+		for blk in tinfo.get("extra_by_floor", []):
+			if blk is Dictionary and top_floor >= int(blk.get("min_floor", 1)):
+				for g in blk.get("goods", []):
+					goods.append((g as Array).duplicate())
+	# K8 丁一显式插槽（按楼层与页签追加货品，不依赖原版商品号猜页）
+	var extra := XTianqiSect.ev54_extra_goods(s, tab, top_floor)
+	for g in extra:
+		if g is Array and g.size() >= 2:
+			var dup := goods.any(func(x): return int(x[0]) == int(g[0]) and int(x[1]) == int(g[1]))
+			if not dup:
+				var row: Array = (g as Array).duplicate()
+				while row.size() < 4:
+					row.append(0)
+				goods.append(row)
+	# 必经完整商店滤链（含 XTianqiSect.shop_goods(s, 4, 54, goods)）
+	goods = XTianqiTrim.shop_goods(s, EV54_MAP, EV54_EVENT, goods)
+	goods = XTianqiSect.shop_goods(s, EV54_MAP, EV54_EVENT, goods)
+	goods = XTianqiTrumpet.shop_goods(s, goods)
+	goods = XTianqiElements.shop_goods(s, EV54_MAP, goods)
+	return goods
+
+
+## 人族首领主菜单：[[显示文字, 动作]]（无「购买丹药」空选项；若 K8 丁一在 "abyss" 页返回货品则自动露出「深渊秘传」）
+static func ev54_menu(s: XState) -> Array:
+	if not ev54_on(s) or s == null:
+		return []
+	var top_floor := ev54_top_floor(s)
+	var out := [
+		["修习功法", ["gongfa"]],
+		["法宝与专武" if top_floor >= 13 else "法宝与专武（13层解锁）", ["tab", "fabao"]],
+		["神武装备" if top_floor >= 21 else "神武装备（21层解锁）", ["tab", "divine"]],
+	]
+	if not ev54_tab_goods(s, "abyss").is_empty():
+		out.append(["深渊秘传", ["tab", "abyss"]])
+	out.append(["离开", []])
+	return out
+
+
+static func ev54_gongfa_menu(s: XState) -> Array:
+	if not ev54_on(s) or s == null:
+		return []
+	var top_floor := ev54_top_floor(s)
+	var out := [
+		["入门功法（1层）", ["tab", "gongfa_t1"]],
+		["小成功法（13层）" if top_floor >= 13 else "小成功法（13层解锁）", ["tab", "gongfa_t2"]],
+		["大成功法（21层）" if top_floor >= 21 else "大成功法（21层解锁）", ["tab", "gongfa_t3"]],
+	]
+	if not ev54_tab_goods(s, "abyss").is_empty():
+		out.append(["深渊秘传", ["tab", "abyss"]])
+	out.append(["返回", []])
+	return out
+
+
+static func run_ev54(host, s: XState) -> void:
+	if not ev54_on(s) or host == null or s == null:
+		return
+	var cfg: Dictionary = data().get("ev54_shop", {})
+	var face_arr: Array = cfg.get("face", ["Package2", 4])
+	var face := str(face_arr[0]) if face_arr.size() >= 1 else "Package2"
+	var face_idx := int(face_arr[1]) if face_arr.size() >= 2 else 4
+	var speaker := str(cfg.get("speaker", "人族首领"))
+	var greeting := str(cfg.get("greeting", "以人道意志碎片换取传承功法与法宝吧。"))
+	var tabs: Dictionary = cfg.get("tabs", {})
+	while true:
+		var opts := ev54_menu(s)
+		var labels := opts.map(func(o): return str(o[0]))
+		var pick: int = await host.show_text_with_choices(face, face_idx, ["\\n<%s>%s" % [speaker, greeting]], labels, labels.size() - 1)
+		if pick < 0 or pick >= opts.size():
+			return
+		var act: Array = opts[pick][1]
+		if act.is_empty():
+			return
+		if str(act[0]) == "gongfa":
+			await _run_ev54_gongfa(host, s, face, face_idx, speaker, tabs)
+		elif str(act[0]) == "tab":
+			await _open_ev54_tab(host, s, str(act[1]), face, face_idx, speaker, tabs)
+
+
+static func _run_ev54_gongfa(host, s: XState, face: String, face_idx: int, speaker: String, tabs: Dictionary) -> void:
+	while true:
+		var opts := ev54_gongfa_menu(s)
+		var labels := opts.map(func(o): return str(o[0]))
+		var pick: int = await host.show_text_with_choices(face, face_idx, ["\\n<%s>功法分入门、小成、大成三重，同门后重顶替前重、只占一格秘籍格。" % speaker], labels, labels.size() - 1)
+		if pick < 0 or pick >= opts.size():
+			return
+		var act: Array = opts[pick][1]
+		if act.is_empty():
+			return
+		if str(act[0]) == "tab":
+			await _open_ev54_tab(host, s, str(act[1]), face, face_idx, speaker, tabs)
+
+
+static func _open_ev54_tab(host, s: XState, tab: String, face: String, face_idx: int, speaker: String, tabs: Dictionary) -> void:
+	var goods := ev54_tab_goods(s, tab)
+	if goods.is_empty():
+		var lock_msg := str(tabs.get(tab, {}).get("lock_text", "继续探索神魔之塔，即可解锁此货架。"))
+		await host.show_text(face, face_idx, ["\\n<%s>%s" % [speaker, lock_msg]])
+		return
+	XShopStock.set_context(EV54_MAP, EV54_EVENT)
+	await host.open_shop(goods, false)
+	XShopStock.shop_context = {}

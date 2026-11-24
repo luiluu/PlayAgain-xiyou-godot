@@ -187,7 +187,7 @@ func _on() -> void:
 		bal4["guardian_phase4"] = phase4
 	_check("on.heal_x5_off", XTianqiBase.heal_skip_types() == [3, 4])
 	_check("on.nine_crit", is_equal_approx(XTianqiBase.nine_crit_cap(), 0.3))
-	_check("on.secret", is_equal_approx(XTianqiBase.secret_slot(0.123), 0.08))
+	_check("on.secret", is_equal_approx(XTianqiBase.secret_slot(0.123), 0.15))
 	var heal := XTianqiBase.abs_value("item_fixed_heal", 1, 500.0, a, "mhp")
 	_check("on.abs_item", heal == floorf(float(a.mhp) * 7.0 / 100.0), [heal, a.mhp])
 	_check("on.abs_dot_sign", XTianqiBase.abs_value("state_dot", 33, -300.0, a) == -floorf(float(a.mhp) * 4.0 / 100.0))

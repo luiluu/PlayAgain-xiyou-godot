@@ -1129,8 +1129,8 @@
   ],
   "nine_crit_dmg_cap": 0.3,
   "nine_crit_dmg_cap_note": "九线爆伤合计封顶 +30%（T041 暂定的数，和元素池的九线封顶同数）；九线三期逐条重做时各自带上限，这个封顶到时拿掉。nine_caps 里没有爆伤这一项，T081 在 apply_nine_cap 加了读它的地方（关着不封）",
-  "secret_slot": 0.08,
-  "secret_slot_note": "秘籍每格 +8%，不改（测算标骑士一直用的数）",
+  "secret_slot": 0.15,
+  "secret_slot_note": "秘籍每格上限 +15%（D274① 改 D203：Kyo 11-23 定单本 +5%～+15% 拉开档差，第一期合入后重校 K）",
   "brand": {
    "id": "brand",
    "name": "烙印（原真气）：配满 +50%（D147），单独相乘，每人各自",

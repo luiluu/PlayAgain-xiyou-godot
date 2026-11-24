@@ -133,7 +133,8 @@ static func sell_rewards(rec: Dictionary) -> Dictionary:
 
 static func sell_rewards_raw(rec: Dictionary) -> Dictionary:
 	var base := _base_rec(rec)
-	var key := "%s:%d" % [str(base.get("_table", _table_of(rec))), int(base.get("id", 0))]
+	var pver := str(base.get("_tq_price_ver", ""))
+	var key := "%s:%d%s" % [str(base.get("_table", _table_of(rec))), int(base.get("id", 0)), ("@" + pver) if pver != "" else ""]
 	if _rewards.has(key):
 		return _rewards[key]
 	if _mc_res.is_empty():

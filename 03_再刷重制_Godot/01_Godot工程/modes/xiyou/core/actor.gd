@@ -591,6 +591,7 @@ func learn_skill(id: int) -> void:
 	XTianqiGear.learned(self, id)  # 天启篇：茉蕾觉醒时学嘤雄
 	XLiuying.learned_skill(self, id)  # 流萤 learnSkill 包装：学 10628 连带学梦应
 	XTianqiElements.learned_skill(self, id)  # 天启篇元素重做：元素转换书技能互斥遗忘
+	XTianqiSecrets.learned_skill(self, id)  # 天启篇功法重标（T443）：同门后重顶替前重，只占 1 格
 
 func forget_skill(id: int) -> void:
 	read_touch()
