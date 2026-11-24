@@ -2,6 +2,7 @@ extends Node
 ## T445 通用书第二批专项。运行时检查主动、被动、CE 精通、秘籍总账及西游档隔离。
 
 const Kit := preload("res://tests/lib/tq_save_kit.gd")
+const BookProbe := preload("res://tests/virtual_player/t445_book_probe.tscn")
 var passed := 0
 var total := 0
 
@@ -19,6 +20,9 @@ func _check(label: String, ok: bool, detail = null) -> void:
 
 
 func _run() -> void:
+	var probe := BookProbe.instantiate()
+	_check("book_probe_scene_loads", probe.has_method("_measure"))
+	probe.free()
 	var kit := Kit.new("xiyou_tianqi_general_books_b2")
 	var s := Kit.new_game("zhengdao")
 	var actor := s.actor(s.party[0])
@@ -38,6 +42,8 @@ func _run() -> void:
 		_check(case[1], sp.template == case[1] and int(sp.damage.coef) == case[2]
 			and int(str(sk.meta["MP Cost"]).strip_edges().trim_suffix("%")) == case[3] and int(sk.yepEffects) == 1)
 	_check("B3_old_cast_removed", XDB.rec("Skills", 282).effects.is_empty())
+	_check("active_tooltip_matches_cast", str(XDB.rec("Skills", 282).note).contains("冷却时间:3 回合")
+		and not str(XDB.rec("Skills", 450).note).contains("效果:五段攻击"))
 
 	for case in [[488, "CodexParamRate", "0:8"], [2471, "passiveELUP01", "10%"],
 			[2472, "passiveELUP02", "10%"], [2480, "passiveHarmRi", "8"], [2480, "passiveCrHarmRi", "12"],

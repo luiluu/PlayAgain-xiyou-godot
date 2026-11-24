@@ -110,6 +110,16 @@ def active_row(sk, states):
         row['cooldown'] = max(3, old_cd)
     elif old_cd:
         row['cooldown'] = old_cd
+    # 旧书的顶栏有独立的消耗／冷却文案，须和运行时数值一起刷新。
+    header = {}
+    if '<pos=APs text=冷却时间:' in sk['note']:
+        header['冷却时间'] = f'{row["cooldown"]} 回合' if row.get('cooldown') else '无'
+    if '<pos=APs text=TP消耗:' in sk['note']:
+        header['TP消耗'] = str(row['tp'])
+    if header:
+        row['header'] = header
+    if '<pos=APs text=效果:' in sk['note']:
+        row['note_sub'] = [['<pos=APs text=效果:[^>]*>', '']]
     row['note_remove'] = [r'(?i:TP COST|passiveAPLUS|AgainUse\w+|SkillPass\d+)']
     if kind in (1, 2, 5, 6):
         stat = 'atk' if physical else 'mat'
