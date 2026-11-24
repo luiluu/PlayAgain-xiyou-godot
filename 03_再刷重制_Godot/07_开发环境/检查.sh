@@ -252,6 +252,7 @@ want tools && { if python3 "$ENV_DIR/测试天启篇存档登记.py" >/dev/null 
 want tools && { if python3 "$ENV_DIR/测试随机守卫.py" >/dev/null 2>&1; then ok "随机守卫检查"; else bad "随机守卫检查回归失败，单跑 07_开发环境/测试随机守卫.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试状态js翻译.py" >/dev/null 2>&1; then ok "状态效果 js 再翻译整块边界"; else bad "状态 js 翻译边界失败，单跑 07_开发环境/测试状态js翻译.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试转换器写入.py"; then ok "转换器增量写入与中断恢复"; else bad "转换器写入回归失败"; fi; }
+want tools && { if python3 "$ENV_DIR/测试资源加密.py" >/dev/null 2>&1; then ok "资源加密工具与发行内容审计"; else bad "资源加密专项回归失败，单跑 07_开发环境/测试资源加密.py 看详情"; fi; }
 want tools && { if python3 "$ENV_DIR/测试记录工具.py" >/dev/null 2>&1; then ok "变更记录分卷与待核查清单工具"; else bad "记录工具回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试云端准备.py" && python3 "$ENV_DIR/测试推送重试.py"; then ok "云端导入失败保护、推送重试"; else bad "云端导入保护回归失败"; fi; }
 want tools && { if python3 "$ENV_DIR/测试发布补丁.py"; then ok "发布补丁工具（清单、签名、两次提交）"; else bad "发布补丁工具回归失败，单跑 07_开发环境/测试发布补丁.py 看详情"; fi; }

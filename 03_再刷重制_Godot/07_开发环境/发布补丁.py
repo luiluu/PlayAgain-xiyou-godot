@@ -240,7 +240,7 @@ def _export_presets(base: Path, tmp: Path, dry: bool, shas: dict, src: Path) -> 
         if dry:
             print(f'  [dry-run] godot --export-patch "{preset}" {dst} --patches {base}')
             continue
-        p = subprocess.run([str(GODOT), '--headless', '--path', str(src), '--export-patch', preset, str(dst), '--patches', str(base)],
+        p = subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(src), '--export-patch', preset, str(dst), '--patches', str(base)],
                            capture_output=True, text=True, env=env)
         if '没有要导出的文件或更改' in p.stdout + p.stderr or 'No files or changes to export' in p.stdout + p.stderr:
             raise Fail('当前工程相对这个底包没有任何改动，没有补丁可发')
