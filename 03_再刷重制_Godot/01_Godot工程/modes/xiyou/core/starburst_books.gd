@@ -16,7 +16,7 @@ const IMMORTAL_BOOK := 1141
 const BASE_RATE := 1.0 / 66.0
 const MAX_RATE := 1.0 / 33.0
 const FLAG := "kyoStarburstBooks"
-## O-待定·替身守层者星爆书礼：关闭后，胜利结算恢复到只认正牌守层者。
+## O-658：关闭后，胜利结算恢复到只认正牌守层者。
 static var STAND_IN_GIFTS := true
 ## 只给测试用：-1 照常问云裳 immortal_clear；0／1 当作不是／是不朽存在（参照探针把 Y.isImmortalClear 换成恒真）
 static var IMMORTAL_CLEAR_TEST := -1
