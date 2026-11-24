@@ -139,6 +139,11 @@ static func toggle(a: XActor, r: Dictionary) -> void:
 	if r.kept:
 		a.forget_skill(int(r.id))
 	else:
+		var reason := XTianqiSecrets.learn_reason(a, int(r.id))
+		if not reason.is_empty():
+			XSound.system(3)
+			XToast.show_text(reason, true)
+			return
 		a.learn_skill(int(r.id))
 	a.refresh_passive()
 	r.kept = not r.kept

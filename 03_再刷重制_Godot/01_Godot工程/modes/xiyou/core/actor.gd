@@ -582,6 +582,8 @@ func learn_skill(id: int) -> void:
 		return
 	if not XActorModules.can_learn(self, id) or (XPowerBooks.is_power(id) and not XPowerBooks.learn_reason(self, id).is_empty()):
 		return
+	if XTianqiSecrets.blocks_learn(self, id):
+		return
 	if not skill_ids.has(id) and not XDB.rec("Skills", id).is_empty():
 		skill_ids.append(id)
 		skill_ids.sort()
@@ -654,6 +656,8 @@ func _skills_now() -> Array:
 func _skill_records(ids: Array[int]) -> Array:
 	var out := []
 	for id in ids:
+		if XTianqiSecrets.is_sealed(self, id):
+			continue
 		var s := XDB.rec("Skills", id)
 		if not s.is_empty():
 			out.append(XTianqiWeakAffix.skill_view(XTianqiGear.skill_view(XZhenqi.skill_view(s, self)), self))  # 道法按境界缩放（CodexZhenqi.skillView）；天启篇软绑定被动生效；弱者专属词条本人投影

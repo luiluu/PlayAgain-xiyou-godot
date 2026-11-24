@@ -418,12 +418,16 @@ func _host_command(c: Dictionary):
 			host.return_to_title()
 			return false
 		355:
+			var start_idx := index
 			var code := str(p[0])
 			if MVEvent.MERCHANT29_FIX and list[index].has("mvStringParameters"):
 				code = str(list[index].mvStringParameters)  # O-286：字符串参数按整段执行（v0.62.13 修法）
 			while index + 1 < list.size() and int(list[index + 1].code) == 655:
 				index += 1
 				code += "\n" + str(list[index].parameters[0])
+			if start_idx == _secret_blocked_index + 1 and code.strip_edges().begins_with("$.toaster("):
+				_secret_blocked_index = -10
+				return true
 			for st in await MVScript.run(code, self):
 				skipped.append({"code": 355, "text": str(st).left(80)})
 			var leave := int(removed_gate_fix.get("%d:%d" % [map_id, event_id], -1))
