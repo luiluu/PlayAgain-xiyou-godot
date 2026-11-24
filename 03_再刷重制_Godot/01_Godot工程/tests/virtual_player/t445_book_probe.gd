@@ -8,10 +8,10 @@ extends "res://tests/virtual_player/k_calibrate.gd"
 const EXTREME := [6308, 6328, 6530, 6652, 6307, 6327, 6529, 6660, 6316, 6315, 6528, 6616, 6661,
 	6312, 6653, 6662, 6610, 6311, 6658, 6672, 10436, 6651, 6606, 6618, 6509]
 const BALANCED_UTILITY := [6504, 6613, 6625, 10432, 6508, 6304, 6563, 6336, 6332, 6664]
-# 按实战主系固定，填满 3/4/6 秘籍格。混搭攻、防、资源和总账状态，所有种子用同一套。
+# 按实战主系固定，填满运行时 XTier 的 3/4/6 格。K 报表另按天启篇技能卡档位分组。
 const NORMAL_SECRETS := {
-	95: [2471, 2480, 488], 122: [2472, 2480, 489], 163: [2471, 2480, 488], 167: [2478, 2480, 489],
-	1: [2471, 2480, 6159, 488], 2: [2471, 2480, 489, 6159], 22: [2471, 2480, 488, 6139],
+	95: [2471, 2480, 488, 6159], 122: [2472, 2480, 489], 163: [2471, 2480, 488], 167: [2478, 2480, 489],
+	1: [2471, 2480, 6159, 488], 2: [2471, 2480, 489, 6159, 488, 6139], 22: [2471, 2480, 488, 6139, 489, 6159],
 	3: [2471, 2480, 488, 489, 6139, 6159],
 	12: [2472, 2480, 488, 489, 6139, 6159],
 	18: [2472, 2480, 488, 489, 6139, 6159],
@@ -56,9 +56,10 @@ func _secrets(a: XActor) -> void:
 	for sid in loadout:
 		a.learn_skill(int(sid))
 	var slots := XTianqiSecrets.active_ids(a)
-	if slots.size() != XTianqiSecrets.limit(a) or not loadout.all(func(sid): return slots.has(sid)):
+	var limit := XTianqiSecrets.limit(a)
+	if slots.size() != limit or not loadout.all(func(sid): return slots.has(sid)):
 		invalid = true
-		push_error("实战配置未正确装满秘籍格：%d %s / %s" % [a.actor_id, slots, loadout])
+		push_error("实战配置未正确装满秘籍格：%d %s / %s，上限 %d" % [a.actor_id, slots, loadout, limit])
 	a.set_meta("k_secrets", slots)
 
 
