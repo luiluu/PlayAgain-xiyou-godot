@@ -62,6 +62,7 @@ func _make_xiyou_state(lv: int) -> XState:
 	var s := XState.new_game_blank()
 	s.random_master = XRandomStream.hex64(20261123)
 	s.set_switch(2494, true)
+	s.set_variable(20, 30)  # 80 级西游测试档对应 30 层（法宝上限 99 级，T476 生效等级受楼层上限限制）
 	XState.current = s
 	s.add_actor(152)
 	for i in 5:
@@ -983,6 +984,7 @@ func _bench_seeds(aid: int, art_id: int, wpn_id: int, off_id: int, lv: int, art_
 		var s := XState.new_game_blank()
 		s.random_master = XRandomStream.hex64(1000003 + aid * 7919 + int(sd))
 		s.set_switch(2494, true)
+		s.set_variable(20, 30)  # 满级法宝木桩测试对应 30 层上限（T476）
 		XState.current = s
 		s.add_actor(aid)
 		for i in 5:
