@@ -1,16 +1,17 @@
 # 交付：luiluu/xiyou-xufeng-rework-1
 
-- 车道／工作者：T440 西游档徐凤年重做＋R1 返修（小A）
+- 车道／工作者：T440 西游档徐凤年重做＋R1／R2 返修（小A）
 - 状态：可合并
 
 ## 变更记录草稿
 
-## 2026-11-24 【小A·未经审查】西游档徐凤年（152）数值重做与 R1 返修：保留全机制均匀调至 1.2× 狂刀（dev.待定）
+## 2026-11-24 【小A·未经审查】西游档徐凤年（152）数值重做与 R1／R2 返修：保留全机制均匀调至 1.2× 狂刀（dev.待定）
 
-- 依据 D272、Kyo 11-23 拍板（去掉 9998 公式中随目标血量无限膨胀的 `b.hp*0.000015`，以现行西游满级法宝 99 级为主口径，50/70/75/80 全档锚定 1.15～1.25× 狂刀，系数全整数，其余原版机制全保留）与 R1 返修口径（小o 核查 P1×2/P2×1、cc Sonnet 文字审 P2×1/P3，协调拍板 75/80 级按合法全套绣冬＋春雷验收并采用方案 B）。
-- 新建 `modes/xiyou/core/xufeng.gd`（`XXufeng`，回退开关 `REWORK := true`，接入 `XCanglong.original_data()`、`XDB.rec`、`XState.from_dict` 与 `XActor.custom_param`/`magic_param` 缓存键隔离）：
+- 依据 D272、Kyo 11-23 拍板（去掉 9998 公式中随目标血量无限膨胀的 `b.hp*0.000015`，以现行西游满级法宝 99 级为主口径，50/70/75/80 全档锚定 1.15～1.25× 狂刀，系数全整数，其余原版机制全保留）与 R1／R2 返修口径（小o 核查 P1/P2/P3、cc Sonnet 文字审 P2/P3，协调拍板 75/80 级按合法全套绣冬＋春雷验收并采用方案 B）。
+- 新建 `modes/xiyou/core/xufeng.gd`（`XXufeng`，回退开关 `REWORK := true`，接入 `XCanglong.original_data()`、`XDB.rec`、`XState.from_dict`、`XStarWarehouse.deposit_gear`/`withdraw_gear` 与 `XActor.custom_param`/`magic_param` 缓存键隔离）：
   - **零共享表污染（P1-1）**：不动 `XDB.table` 共享原表，全部 152 重做技能／状态／装备及表外状态 `19501` 均仅在 `XXufeng.xiyou_save_on()`（已载入非天启篇存档且 `REWORK = true`）时经 `XDB.rec` 分派副本；`XActor._custom_param_cache` 与 `_magic_growth_cache` 按西游档区分缓存键，同进程西游↔天启切换零串味，天启篇徐凤年（T411）属性／成长／记录与 `REWORK = false` 逐项相等且 `19501` 不可读。
-  - **既有装备实例双向读档同步（P1-2）**：`XState.from_dict` 末尾调用 `XXufeng.after_load(s)`，按当前 `REWORK` 开关与存档模式双向同步角色穿戴、背包及仓库中的 `Weapon 76`／`Armor 129`／`Armor 143` 既有实例，保留随机浮动 `params`、强化、法宝等级经验与词缀，并差值同步 `yep.elementAmplify` 保留词缀／强化／宝珠叠加，同时清理旧档 152 身上常驻的 `State 2525`／`19501` 残留防双叠。
+  - **既有装备实例全路径双向同步（P1-2＋R2 补全）**：`XState.from_dict` 末尾调用 `XXufeng.after_load(s)` 同步穿戴、背包、档内仓库，`XStarWarehouse.deposit_gear`（带写盘失败原子回滚）与 `withdraw_gear` 同步跨存档星级仓库（取出即穿正确数值）；`sync_gear_item` 按结构化 `traits`/`note` 前缀覆盖原版、R0（`9da929fa4`）及当前 R1 任意历史实例，按「目标模板＋词缀＋符文之语＋强化＋宝珠（直调西游核心 `XOrbs` 保发行空壳零缺口）」重算 `yep.elementAmplify`，按 `XRunewords.check` 语义重放 `item.runewords` 数值叠加保留符文之语合并元数据（P3-1：500→170→500），并保留随机浮动 `params`、强化、法宝等级经验与词缀，同时清理旧档 152 身上常驻的 `State 2525`／`19501` 残留防双叠。
+  - **历史旧通用武器专武词缀迁移兼容（R2 P2-2）**：`XGear._revert_one` 在 `affix_template` 匹配失败时回退按共享原表 `_affix_template_raw` 重拼历史专武词缀，开启重做时狂刀旧武器上的原版绣冬前缀仍照常清除。
 - 保留全部原版技能与状态机制（大黄庭、大帝转世、剑一～剑八、剑九、九阶基因锁、天下第一、剑气滚龙壁·封印、真·剑九、绣冬、春雷、不朽法宝），均匀调整各乘区倍率与属性并同步更新全部改数卡面说明文字：
   - `9985 大黄庭`：物攻 `+150% → +100%`；
   - `9987～9994 剑一～剑八`：物理/寒冰伤合计 `+170% → +100%`（6/8/10/12/14/16/16/18%），无视抗性合计 `+54% → +30%`（2/2/3/4/4/5/5/5%），固定伤害 `500万～1万亿 → 50万～200亿`；
@@ -21,7 +22,7 @@
   - `Armor 129 春雷`（方案 B 保留再动+1 与完整生存成长 `mhp*200/mmp*150/agi*25`＋轻输出）：西游档 `XDB.rec` 副本物攻 `×300% → ×105%`、再动 `+2 → +1`、11 元素（含 `yep.elementAmplify`）`+600% → +45%`、终伤/爆伤 `+450% → +5%`、每级物/魔攻成长 `+30 → +1`，说明等级需求修正为 75、紫炎 `*249%`，措辞统一为「爆伤+5%，伤害+5%」。
 - 协调员放行在三处正式版原版参照测试各补一行 `XXufeng.original_data()`：`tests/xiyou_rift2_canglong.gd`、`tests/xiyou_state_effects.gd`、`tests/xiyou_gear_search.gd`（只此三处）。
 - 玩家可见：西游档徐凤年的技能、不朽法宝及专属武器绣冬／副手春雷数值已重新平衡至实战全套约 1.2 倍狂刀，并保留大黄庭、大帝转世、剑一～剑九、九阶基因锁、天下第一与剑气滚龙壁全套机制，旧存档已有专属装备读档自动同步，卡面说明已与实效一致。
-- 验证：新专项 `xiyou_xufeng_rework` 58/58（含 P1-1 同进程西游↔天启切换、P1-2 `XSaveSlim` 双向读档实打、P2-1 全套与单穿四档 5 种子、`XGearQuery` 固定词条）；`xiyou_xufeng_release` 28/28、`xiyou_tianqi_xufeng` 33/33、`xiyou_rift2_canglong` 85/85、`xiyou_tianqi_live_sample` 32/32、`xiyou_state_effects` 32816/32816、`xiyou_power` 139/139、`xiyou_tianqi_pool_text` 28/28、`xiyou_save_slim` 126/126、`xiyou_tianqi_save` 82/82、`xiyou_gear_search` 68/68；`语法检查.py` 1194 个 .gd 0 问题；`发行空壳.py check` 退出码 0；`随机守卫.py`、`天启篇存档登记.py` 通过；云端选测 762/762 通过（run 45295478601，16 片全绿，含 `xiyou_rules` 与 `xiyou_gear_search`）。
+- 验证：新专项 `xiyou_xufeng_rework` 65/65（含 P1-1 同进程西游↔天启切换、P1-2 `XSaveSlim` 双向读档实打、R2 的 R0 双向／星级仓库真存读盘存取与取出即穿实打／P2-2 旧通用武器绣冬词缀迁移／P3-1 符文之语 500→170→500、P2-1 全套与单穿四档 5 种子、`XGearQuery` 固定词条）；`xiyou_xufeng_release` 28/28、`xiyou_tianqi_xufeng` 33/33、`xiyou_rift2_canglong` 85/85、`xiyou_tianqi_live_sample` 32/32、`xiyou_state_effects` 32816/32816、`xiyou_power` 139/139、`xiyou_tianqi_pool_text` 28/28、`xiyou_save_slim` 126/126、`xiyou_tianqi_save` 82/82、`xiyou_gear_search` 68/68、`xiyou_star_warehouse` 99/99、`xiyou_equipment` 1254/1254、`xiyou_runewords` 23/23；`语法检查.py` 1194 个 .gd 0 问题；`发行空壳.py check` 退出码 0；`随机守卫.py`、`天启篇存档登记.py` 通过；云端选测 R1 run 45295478601（762/762）与 R2 run 45302702919（179/179）全部通过。
 
 ## 优化登记草稿
 
@@ -39,6 +40,11 @@
    - **`yep.elementAmplify` 补丁与差值同步**：原版 DB JSON 已把 `<Element Amplify N: +600%>` 预解析到 `yep.elementAmplify`，战斗层 `XDamage.own_bonus` 实际读取该字段。首轮仅改了 `note`/`meta` 未改 `yep.elementAmplify`，导致 76/129 实战仍带原版 +600%。R1 已在 `_patch_xiudong_76`/`_patch_chunlei_129` 同步修改 `yep.elementAmplify` 并在 `sync_gear_item` 以差值方式同步（保留词缀／强化／宝珠叠加）。**影响范围**：仅限西游档 `Weapon 76 绣冬` 与 `Armor 129 春雷` 两件徐凤年专属装备副本，对西游档其他角色与天启篇零影响。
    - **旧档 `State 2525` 常驻残留清理**：原版 `States[2525]`（神秘成圣）`removeAtBattleEnd = false`，旧档 80 级徐凤年打过一次战斗后 `2525` 会永久留在 `actor(152).state_ids` 中；开重做读旧档时会同时挂原版 `2525`（×2.89）与新 `19501`（×1.02）造成双叠，关重做读重做档则残留 `19501`。R1 在 `XXufeng.after_load` 中仅针对 `s.actors.get(152)` 处理：开重做且 152 未学 `9984`/`10512` 时清掉残留 `2525`，关重做时清掉残留 `19501`。**影响范围**：仅限角色 152 徐凤年自身，不改 `States[2525]` 原件，对持有 `9984`/`10512` 的西游档其他角色零影响。
 6. **装备检索界面（`XGearQuery`）固定／随机词条判定确认**：`XGearQuery.record` 通过 `XGear.affix_template(item)` → `XGear.template` → `XDB.rec` 比对底材。重做生效时，新掉落与读档同步后的绣冬 76／春雷 129 实例备注与 `XDB.rec` 一致，所有基础特性均正确判定为「固定」，不会误判为「随机 / 附加」（已由 `xiyou_xufeng_rework` 的 `gear_query.base_lines_fixed` 实测证明）。`tests/xiyou_gear_search.gd` 失败仅因该原版参照测试在加载时手写覆盖了 v0.62.12 原版备注快照而未关闭 `XXufeng`，经协调员放行补一行 `XXufeng.original_data()` 后本地 68/68 与云端全过。
+7. **R2 返修三项落点（小o R1 复核退回 P1×1、P2×1、P3×1）**：
+   - **P1-2① 星级仓库存取双向同步**：在 `modes/xiyou/core/star_warehouse.gd` 的 `deposit_gear`（写盘前调用、写盘失败自动回滚）与 `withdraw_gear`（`XAlienHide.restore` 后、进 `s.gear` 前）接入 `XXufeng.sync_gear_for_state(s, rec)`。原版存星级仓库→开重做取出即穿直接生效 R1 数值，R1 存星级仓库→关重做取出即穿直接还原原版数值，存入方向落盘前同步完成。
+   - **P1-2② R0（`9da929fa4`）等任意历史重做实例双向迁移**：`XXufeng.sync_gear_item` 改为按结构化 `traits` 签名（76 四条、143 十一条、129 按物攻 3.0 区分原版三条与重做两条）及 `note` 边界标签匹配基础前缀，并由 `_expected_element_amplify` 按「目标模板＋`affixIds`＋`runewords`＋`upgrades`＋`XOrbs` 宝珠（直调西游核心不依赖天启篇脚本）」重算 11 元素 `yep.elementAmplify`，使 R0 样本（150% 物攻、600% 元素增幅、125 终爆伤）双向读档无任何混合残留。
+   - **P2-2 历史旧通用武器专武词缀还原**：`modes/xiyou/core/gear.gd` 新增 `_affix_template_raw` 读取共享原表 `XDB.table` 词缀；`_revert_one` 若与当前 `affix_template` 不匹配则回退按 `_affix_template_raw` 校验并迁移，开重做且有西游档上下文时狂刀身上带原版绣冬前缀的练习剑照常去除前缀与 600% 元素增幅。
+   - **P3-1 符文之语合并元数据保留**：`XXufeng.sync_gear_item` 在同步 `meta` 差异键时按 `XRunewords.check` 同款正则与数值相加规则重放 `item.runewords`，带「致密」符文之语（+50 `passiveCrHarmRi`）的原版绣冬双向切换严格保持 `500 → 170 → 500`。
 
 ## 调前／调后逐项数值对照表
 
@@ -77,7 +83,7 @@
 
 ## 交接板
 
-- 下一步：R1 返修四项问题全部关闭且云端选测 762/762 全绿，可供小o 复核与合并。
+- 下一步：R1 与 R2 返修全部问题关闭且云端选测全绿，可供小o 复核与合并。
 - 用户试玩说明：西游档徐凤年已按实战全套（绣冬+春雷+天下第一）约 1.2 倍狂刀重新平衡，保留全套原版机制；旧档已有绣冬／春雷／不朽法宝读档自动同步且保留随机属性、强化与词缀；卡面说明已与实效同步。
 - 需要用户决定：无（方案 B 与最后一刀 `XIUDONG_ATK_PCT 140→137` 均由协调按 D272 定案，早报 Kyo）。
 
@@ -98,6 +104,9 @@
 | `XActor.custom_param` | 11 处（`git grep -nE 'custom_param[[:space:]]*\(' -- '*.gd'`） | 调用方 11 处逐处结论：仅把 `_custom_param_cache` 键在 `XXufeng.xiyou_save_on()` 时加 `:xy` 后缀区分西游档与天启篇／原版，避免同进程切档串用 76/129 等级成长缓存；其他装备与所有计算语义完全不变。 |
 | `XActor.magic_param` | 17 处（`git grep -nE 'magic_param[[:space:]]*\(' -- '*.gd'`） | 调用方 17 处逐处结论：仅把 `_magic_growth_cache` 键在 `XXufeng.xiyou_save_on()` 时加 `:xy` 后缀区分西游档与天启篇／原版，避免同进程切档串用 143 法宝成长缓存；其余法宝与天启篇分支完全不变。 |
 | `XState.from_dict` | 188 处（`git grep -nE 'from_dict[[:space:]]*\(' -- '*.gd'`） | 调用方 188 处逐处结论：在读档末尾（`_become_current(s)`、`XTianqiSave.after_load(s)` 之后、全队 `param_mark_dirty/param_refresh` 之前）新增 `XXufeng.after_load(s)`，仅同步 `weapon:76`/`armor:129`/`armor:143` 模板差分字段与 152 残留 2525/19501，已匹配存档零写入、不改变其他角色与存档字节。 |
+| `XStarWarehouse.deposit_gear` | 19 处（`git grep -nE 'deposit_gear[[:space:]]*\(' -- '*.gd'`） | 调用方 19 处逐处结论：存入前仅对 `XXufeng.is_tracked_gear(rec)`（76/129/143）按当前存档 `s` 模式同步并带写盘失败原子回滚，其他装备零改动，确保跨档仓库落盘即对齐。 |
+| `XStarWarehouse.withdraw_gear` | 10 处（`git grep -nE 'withdraw_gear[[:space:]]*\(' -- '*.gd'`） | 调用方 10 处逐处结论：取出进 `s.gear` 前仅对 76/129/143 按本档 `s` 模式与 `REWORK` 开关同步，取出即穿正确数值且保留随机属性／强化／词缀／符文之语，其他装备零改动。 |
+| `XGear.revert_exclusive_affixes` | 2 处（`git grep -nE 'revert_exclusive_affixes[[:space:]]*\(' -- '*.gd'`） | 调用方 2 处逐处结论：内部 `_revert_one` 仅在常规 `affix_template` 不匹配时回退用共享原表 `_affix_template_raw` 重拼历史专武词缀，确保开重做时旧通用武器带原版绣冬前缀仍照常迁移，非历史专武词缀装备零变化。 |
 
 ## 数值报告：单件／全套对照与逐种子分布
 
@@ -169,9 +178,10 @@
 
 ## 云端选测与本地检查
 
-- 本地专项：`xiyou_xufeng_rework` 58/58、`xiyou_xufeng_release` 28/28、`xiyou_tianqi_xufeng` 33/33、`xiyou_rift2_canglong` 85/85、`xiyou_tianqi_live_sample` 32/32、`xiyou_state_effects` 32816/32816、`xiyou_power` 139/139、`xiyou_tianqi_pool_text` 28/28、`xiyou_save_slim` 126/126、`xiyou_tianqi_save` 82/82、`xiyou_gear_search` 68/68
+- 本地专项：`xiyou_xufeng_rework` 65/65、`xiyou_xufeng_release` 28/28、`xiyou_tianqi_xufeng` 33/33、`xiyou_rift2_canglong` 85/85、`xiyou_tianqi_live_sample` 32/32、`xiyou_state_effects` 32816/32816、`xiyou_power` 139/139、`xiyou_tianqi_pool_text` 28/28、`xiyou_save_slim` 126/126、`xiyou_tianqi_save` 82/82、`xiyou_gear_search` 68/68、`xiyou_star_warehouse` 99/99、`xiyou_equipment` 1254/1254、`xiyou_runewords` 23/23
 - 静态与门禁：`语法检查.py` 1194 个 `.gd` 0 问题；`发行空壳.py check` 退出码 0（81 个脚本 782 个函数都有）；`随机守卫.py`、`天启篇存档登记.py` 通过
-- 云端选测（R1 终轮，提交 `d272eda457`，基准 `9da929fa47`，762 个场景分 16 片，含 `xiyou_rules` 与 `xiyou_gear_search`，全部通过）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45295478601
+- 云端选测（R1 终轮，提交 `d272eda457`，762/762 通过）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45295478601
+- 云端选测（R2 终轮，提交 `9202f23b9e`，基准 `3c2c0e4c54`，179 个场景分 6 片，全部通过）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45302702919
 
 ## 本分支提交
 
@@ -180,4 +190,6 @@
 - 9da929fa4 T440 交付单：西游档徐凤年重做（调前调后对照、三轮五档逐种子实测、云端选测 625/625 通过）
 - e24c2c0eb T440 R1 返修：全量改走 XDB.rec 西游副本（零串天启篇）、读档双向同步装备实例、方案 B 全套标定 1.2× 与卡面文字修正
 - d272eda45 T440 R1 补原版参照测试 xiyou_gear_search 关闭重做及 XGearQuery 固定词条断言
-- （本交付单提交）T440 R1 交付单更新（含四项返修落点、单件／全套逐种子对照与云端选测 run 45295478601 762/762 通过结论）
+- 3c2c0e4c5 T440 R1 交付单更新：四项返修落点、单件／全套逐种子对照与云端选测 762/762 通过
+- 9202f23b9 T440 R2 返修：星级仓库存取双向同步、R0 历史实例迁移、旧通用武器专武词缀还原与符文之语元数据保留
+- （本交付单提交）T440 R2 交付单更新（含三项返修落点、新增共用函数调用方表与云端选测 run 45302702919 179/179 通过结论）
