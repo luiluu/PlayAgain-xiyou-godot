@@ -652,10 +652,6 @@
    5417,
    5544,
    5545,
-   5974,
-   5975,
-   5976,
-   5977,
    6019,
    6126,
    6127,
@@ -12764,54 +12760,6 @@
     }
    ]
   },
-  "5974": {
-   "group": "remaining_books",
-   "template": "C1",
-   "name": "万灵增元丹",
-   "note_remove": [
-    "StartPushState1286"
-   ],
-   "note_add": "\n<passiveHarmRi:8>",
-   "desc": [
-    "效果：最终伤害 +8%"
-   ]
-  },
-  "5975": {
-   "group": "remaining_books",
-   "template": "C1",
-   "name": "焚天摧敌丹",
-   "note_remove": [
-    "StartPushState1287"
-   ],
-   "note_add": "\n<passiveHarmRi:8>",
-   "desc": [
-    "效果：最终伤害 +8%"
-   ]
-  },
-  "5976": {
-   "group": "remaining_books",
-   "template": "C1",
-   "name": "锁踪断闪丹",
-   "note_remove": [
-    "StartAEPushState1288"
-   ],
-   "note_add": "\n<passiveHarmRi:8>",
-   "desc": [
-    "效果：最终伤害 +8%"
-   ]
-  },
-  "5977": {
-   "group": "remaining_books",
-   "template": "C1",
-   "name": "轮回护元丹",
-   "note_remove": [
-    "StartPushState1289"
-   ],
-   "note_add": "\n<passiveHarmRi:8>",
-   "desc": [
-    "效果：最终伤害 +8%"
-   ]
-  },
   "6019": {
    "group": "remaining_books",
    "template": "C1",
@@ -14871,6 +14819,10 @@
   "5084": "角色技能重构表接管",
   "5088": "角色技能重构表接管",
   "5126": "角色技能重构表接管",
+  "5974": "万灵增元丹被动由总账开关接管",
+  "5975": "万灵增元丹被动由总账开关接管",
+  "5976": "万灵增元丹被动由总账开关接管",
+  "5977": "万灵增元丹被动由总账开关接管",
   "6801": "独立时装系统，按秘籍格既有豁免",
   "6802": "独立时装系统，按秘籍格既有豁免",
   "6803": "独立时装系统，按秘籍格既有豁免",

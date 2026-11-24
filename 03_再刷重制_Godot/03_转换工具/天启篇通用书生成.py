@@ -36,6 +36,8 @@ REPLACEMENTS = {
 }
 # 原账本的稳定状态入池案例，保留合法装配限制和演出；进③仍由总账逐本截断。
 STATE_ONLY = {1038, 978, 991}
+# 由 XTianqiLedger.NO_PILL_PASSIVES 管理，旧视图必须保留原来的开战状态。
+PILL_PASSIVES = {5974, 5975, 5976, 5977}
 SPECIAL_ACTIVE = {124, 282, 642}
 UTILITY = {1821: '解除中毒', 2824: '为全队施加光明护盾', 5544: '解除敌方护盾',
            5545: '转换敌方免疫', 6507: '激励全队并恢复资源', 6609: '为自身充能'}
@@ -320,6 +322,8 @@ def plan(table, db_dir=DB, data_dir=DATA):
             exemptions[key] = '元素转换规则接管，无附加伤害'
         elif sid in costume:
             exemptions[key] = '独立时装系统，按秘籍格既有豁免'
+        elif sid in PILL_PASSIVES:
+            exemptions[key] = '万灵增元丹被动由总账开关接管'
         elif sid in split['bloodlines'] or sid in split['not_book'] or 'CodexPower' in sk['meta']:
             exemptions[key] = '血脉、进阶或权能另表接管'
         elif stype in (1, 2):
