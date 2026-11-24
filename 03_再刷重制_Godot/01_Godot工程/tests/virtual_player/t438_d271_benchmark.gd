@@ -983,7 +983,7 @@ func _equip_fabao_mount_artifact(s: XState, a: XActor, tpl: String, role: String
 	return ""
 
 
-func _apply_growth(s: XState, a: XActor, tpl: String, role: String) -> void:
+func _apply_growth(s: XState, a: XActor, tpl: String, role: String, fill_secrets := true) -> void:
 	var mastery_ratio := 0.0
 	match tpl:
 		"A": mastery_ratio = 0.0
@@ -1018,7 +1018,7 @@ func _apply_growth(s: XState, a: XActor, tpl: String, role: String) -> void:
 		"B": secret_ratio = 0.5
 		"C": secret_ratio = 0.8
 		"D": secret_ratio = 1.0
-	if secret_ratio > 0.0:
+	if fill_secrets and secret_ratio > 0.0:
 		_learn_secrets_cached(a, secret_ratio)
 
 	var brand_pct := 0.0
