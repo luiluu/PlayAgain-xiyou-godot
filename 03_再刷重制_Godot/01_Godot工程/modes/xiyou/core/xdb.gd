@@ -217,6 +217,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		out = XTianqiGeneralBooks.rec_state(id, out)  # 天启篇通用书第一批配套状态（止戈、重岩壁垒、黯灭幻影、抽奖状态等）
 	if XXufeng.xiyou_save_on() and XXufeng.touches(name, id):
 		out = XXufeng.rec(name, id, out)  # 西游档徐凤年重做副本（仅西游档分派，不动共享原表、不串天启篇，T440）
+	if XXiyouNerf.xiyou_save_on() and XXiyouNerf.touches(name, id):
+		out = XXiyouNerf.rec(name, id, out)  # 西游档离群削弱副本：琴里／非天（仅西游档分派，天启篇零改动，T465）
 	if XTianqiElements.touches(name, id):
 		out = XTianqiElements.rec(name, id, out)  # 天启篇元素重做：技能转属、被动转属、自然书改名
 	if XTianqiSecrets.touches_rec(name, id):

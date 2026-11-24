@@ -193,10 +193,11 @@ func _run() -> void:
 	_check("west_unchanged", JSON.stringify(r_w) == JSON.stringify(r_w_old) and absf(float(r_w[1]) - 1.0) < 1e-6, [r_w, r_w_old])
 	# 西游档下 T451 全部新视图与扩展 passiveELUP 恒不生效
 	var w87_west := XGear.template("weapon", 87)
+	var w87_want := float(XXiyouNerf.KOTORI_WPN_EL_AMP) / 100.0 if XXiyouNerf.ENABLED else 12.0  # T465：西游档琴里专武 87 已下调至 +200%
 	var w1826_west := XGear.template("weapon", 1826)
 	var a4535_west := XGear.template("armor", 4535)
 	_check("west_t451_views_noop",
-		is_equal_approx(float(XTianqiSkills.gear_view(w87_west).get("yep", {}).get("elementAmplify", {}).get("1", 0.0)), 12.0)
+		is_equal_approx(float(XTianqiSkills.gear_view(w87_west).get("yep", {}).get("elementAmplify", {}).get("1", 0.0)), w87_want)
 		and is_equal_approx(float(XTianqiGear.elem_amp_view(w1826_west).get("yep", {}).get("elementAmplify", {}).get("1", 0.0)), 3.0)
 		and is_equal_approx(float(XTianqiGear.elem_amp_view(a4535_west).get("yep", {}).get("elementAmplify", {}).get("1", 0.0)), 2.5)
 		and is_equal_approx(float(XDB.rec("States", 2719).get("yep", {}).get("elementAmplify", {}).get("1", 0.0)), 5.0))

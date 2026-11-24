@@ -63,6 +63,8 @@ static func original_data() -> void:
 	FIX_10091_DESC = false
 	clear_cache()
 	XXufeng.original_data()  # T440 西游档徐凤年重做同属「按原版比要关」
+	XXiyouNerf.original_data()  # T465 西游档琴里／非天削弱同属「按原版比要关」
+	XZhenqi.APPLY_TO_DAMAGE = false  # T463 西游档真气×天道 1/100 伤害与修行页显示同属「按原版比要关」
 	XMagicWeapon.SCALE_99_TO_888 = false  # T468 西游档法宝 99→888 折算同属「按原版比要关」
 	XImportedBalance.RELEASE_CANGLONG = false
 	XImportedBalance.RELEASE_XUFENG = false  # T411 解放徐凤年同属「按原版比要关」

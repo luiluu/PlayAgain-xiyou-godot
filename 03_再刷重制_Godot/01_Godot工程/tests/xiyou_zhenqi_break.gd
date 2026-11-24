@@ -303,6 +303,8 @@ func _params_actor(a: XActor) -> Array:
 
 
 func _run() -> void:
+	var was_apply := XZhenqi.APPLY_TO_DAMAGE
+	XZhenqi.APPLY_TO_DAMAGE = false  # T463：原版冻结参照比对原版闭关显示；新行为由 xiyou_t463_t465 专项验证
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
 	var n := 0
 	if check("zhenqi_oracle_loaded", data is Dictionary, ORACLE):
@@ -319,6 +321,7 @@ func _run() -> void:
 	check("second_batch_cases", n >= 60, n)
 	_extra()
 	await _flow()
+	XZhenqi.APPLY_TO_DAMAGE = was_apply
 	var failed := results.filter(func(r): return not r.passed)
 	_cmp.free()   # 借用第一批测试的比较函数（Node 实例，退出前释放）
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_zhenqi_break", "passed": results.size() - failed.size(), "total": results.size(), "failed": failed.map(func(r): return r.name)}))
