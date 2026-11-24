@@ -5,8 +5,14 @@ extends Node
 ## - victory.*：真气本场守层者 8／13／18（试炼、缩放、同层两场、没有真气战斗）与 152 号地图不朽存在（随机数 0.5／0.01／0.02／0.04）：
 ##   三本书数量、送过的层、提示文字（XToast.shown）；重制直接调 grant 里的挂点 on_victory（参照走真实 endBattle(0)）；
 ## - mapstart.*：变量 20 为 1／9／19、旧档已送过 8 层时的补发。
+## - T469：18 层替身守层者胜利、独立回退、旧档补发、试炼／缩放与天启篇隔离。
 const FIXTURE := "res://tests/fixtures/starburst_books_oracle.json"
 const BOOKS := [1121, 1141, 1161]
+const GUARDIAN_18 := 174
+const STAND_IN_17 := 752
+const STAND_IN_18 := 753
+const UNITED_STAND_IN_18 := 803
+const GIFT_18 := 1161
 var results := []
 
 
@@ -38,14 +44,14 @@ func _fresh(switches: Array) -> XState:
 	return s
 
 
-func _logic(s: XState, random: float) -> XBattleLogic:
+func _logic(s: XState, random: float, troop: int = 3) -> XBattleLogic:
 	var rand := XBattleRandom.create("0000000000001121")
 	var stream := FixedStream.new()
 	stream.value = random
 	rand.rule = stream
 	rand.rule.domain = "rule"
 	var logic := XBattleLogic.new()
-	logic.setup(3, s, rand)
+	logic.setup(troop, s, rand)
 	return logic
 
 
@@ -100,6 +106,85 @@ func _mapstart(c: Dictionary) -> void:
 	_compare(c.id, _view(s), _want(c.observed))
 
 
+func _stand_in_victory() -> void:
+	var genuine := _fresh([])
+	XStarburstBooks.on_victory(_logic(genuine, 0.5, GUARDIAN_18))
+	check("stand_in.genuine_18", genuine.item_count(GIFT_18) == 1)
+
+	for sect in XZhenqi.STAND_IN_SECT_SWITCHES:
+		var troop := UNITED_STAND_IN_18 if sect == 2307 else STAND_IN_18
+		var s := _fresh([sect])
+		XStarburstBooks.on_victory(_logic(s, 0.5, troop))
+		check("stand_in.victory.%d" % sect, XZhenqi.battle.guardianFloor == 0 and XZhenqi.battle.standInFloor == 18 \
+				and s.item_count(GIFT_18) == 1 and s.flags.get(XStarburstBooks.FLAG) == {"18": 1})
+		XStarburstBooks.on_victory(_logic(s, 0.5, troop))
+		XStarburstBooks.on_victory(_logic(s, 0.5, GUARDIAN_18))
+		check("stand_in.once.%d" % sect, s.item_count(GIFT_18) == 1 and XToast.shown.size() == 1)
+
+	var other_floor := _fresh([2302])
+	XStarburstBooks.on_victory(_logic(other_floor, 0.5, STAND_IN_17))
+	check("stand_in.other_floor", not other_floor.flags.has(XStarburstBooks.FLAG))
+
+
+func _stand_in_backfill() -> void:
+	var old := _fresh([2307])
+	old.flags[XStarburstBooks.FLAG] = {"8": 1}
+	old.set_variable(20, 18)
+	XStarburstBooks.map_start(old)
+	check("stand_in.backfill_below_18", old.item_count(GIFT_18) == 0)
+	old.set_variable(20, 19)
+	var loaded := XState.from_dict(JSON.parse_string(JSON.stringify(old.to_dict())))
+	XState.current = loaded
+	check("stand_in.old_save_without_firsts", XZhenqi.data(loaded.actor(8)).firsts.is_empty())
+	XStarburstBooks.map_start(loaded)
+	check("stand_in.backfill_18", loaded.item_count(GIFT_18) == 1 and _view(loaded).given == {"8": 1, "18": 1})
+	var reloaded := XState.from_dict(JSON.parse_string(JSON.stringify(loaded.to_dict())))
+	XState.current = reloaded
+	XStarburstBooks.map_start(reloaded)
+	XStarburstBooks.on_victory(_logic(reloaded, 0.5, UNITED_STAND_IN_18))
+	check("stand_in.backfill_once_after_reload", reloaded.item_count(GIFT_18) == 1 and XToast.shown.size() == 1)
+
+
+func _stand_in_rollback() -> void:
+	XStarburstBooks.STAND_IN_GIFTS = false
+	var s := _fresh([2302])
+	XStarburstBooks.on_victory(_logic(s, 0.5, STAND_IN_18))
+	check("stand_in.gifts_off", XZhenqi.battle.standInFloor == 18 and s.item_count(GIFT_18) == 0 and not s.flags.has(XStarburstBooks.FLAG))
+	XStarburstBooks.on_victory(_logic(s, 0.5, GUARDIAN_18))
+	check("stand_in.gifts_off_genuine", s.item_count(GIFT_18) == 1)
+	var old := _fresh([2302])
+	old.set_variable(20, 19)
+	XStarburstBooks.map_start(old)
+	check("stand_in.gifts_off_original_backfill", old.item_count(GIFT_18) == 1)
+	XStarburstBooks.STAND_IN_GIFTS = true
+
+	var firsts := XZhenqi.STAND_IN_FIRSTS
+	XZhenqi.STAND_IN_FIRSTS = false
+	s = _fresh([2302])
+	XStarburstBooks.on_victory(_logic(s, 0.5, STAND_IN_18))
+	check("stand_in.firsts_off_gifts_on", XZhenqi.battle.standInFloor == 0 and s.item_count(GIFT_18) == 1)
+	XZhenqi.STAND_IN_FIRSTS = firsts
+
+
+func _stand_in_exclusions() -> void:
+	for kind in ["trial", "scaled"]:
+		var s := _fresh([2302])
+		var logic := _logic(s, 0.5, STAND_IN_18)
+		XZhenqi.battle[kind] = {"ref": {"floor": 18}}
+		XStarburstBooks.on_victory(logic)
+		check("stand_in.excludes_" + kind, not s.flags.has(XStarburstBooks.FLAG))
+
+	var tianqi := _fresh([2307])
+	tianqi.flags["tianqi"] = {"rules": 1}
+	var fight := _logic(tianqi, 0.5, UNITED_STAND_IN_18)
+	XStarburstBooks.on_victory(fight)
+	check("stand_in.tianqi_victory", XZhenqi.battle.standInFloor == 0 and not tianqi.flags.has(XStarburstBooks.FLAG))
+	tianqi.set_variable(20, 19)
+	XStarburstBooks.map_start(tianqi)
+	check("stand_in.tianqi_original_backfill", tianqi.item_count(GIFT_18) == 1)
+	XZhenqi.battle = {}
+
+
 func _run() -> void:
 	var ref = JSON.parse_string(FileAccess.get_file_as_string(FIXTURE))
 	if not check("oracle_present", ref is Dictionary and ref.has("cases")):
@@ -127,6 +212,10 @@ func _run() -> void:
 			"mapstart":
 				_mapstart(c)
 	check("covers_all", seen.keys().size() == 4, seen.keys())
+	_stand_in_victory()
+	_stand_in_backfill()
+	_stand_in_rollback()
+	_stand_in_exclusions()
 	finish()
 
 
