@@ -1,0 +1,48 @@
+extends Node
+## T455 临时探针（只在发行空壳树里跑）：发行模式下西游档 25 层守层者 rift3 前后各打一场到底，赢了走 grant（图鉴、掉落门）
+func _ready() -> void:
+	_run.call_deferred()
+
+func _fight(s: XState, sd: String) -> Array:
+	var lg := XBattleLogic.new()
+	lg.setup(461, s, XBattleRandom.create(sd, 1))
+	var tiers := []
+	for e in XRiftAlien.fight(lg).get("units", {}):
+		tiers.append(str(XRiftAlien.fight(lg).units[e].tier))
+	var names: Array = lg.enemies.map(func(e): return e.display_name())
+	var t := 0
+	while not lg.is_over() and t < 6:
+		lg.run_turn({})
+		t += 1
+	for e in lg.enemies:
+		e.hp = 0.0
+		e.add_new_state(1)
+	var got := XRiftAlien.grant(lg)
+	lg.end_battle(0)
+	return [tiers, names, t, got]
+
+func _run() -> void:
+	get_tree().create_timer(240).timeout.connect(func(): print("T455P timeout"); get_tree().quit(3))
+	XMessageBox.auto = true
+	ReleaseEntry.simulate_release = true
+	XConfig.path_override = "user://t455_stub_probe/options.json"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("user://t455_stub_probe"))
+	if FileAccess.file_exists(XConfig.path_override):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(XConfig.path_override))
+	var mk := func() -> XState:
+		var s := XState.new()
+		for id in [22, 34, 10]:
+			s.add_actor(id)
+		s.map_id = 0
+		s.set_variable(20, 26)
+		XState.current = s
+		return s
+	print("T455P stub=", (load("res://modes/xiyou/core/rift_alien.gd") as GDScript).source_code.contains("xiyou-release-stub"), " open=", XRiftAlien.RELEASE_OPEN)
+	print("T455P stage1 ", XRiftAlien.stage(), " ", _fight(mk.call(), "5a17c0de00000001"))
+	XConfig.whisper_mark("rift1")
+	XConfig.whisper_mark("rift2")
+	print("T455P stage2 ", XRiftAlien.stage(), " ", _fight(mk.call(), "5a17c0de00000001"))
+	XConfig.whisper_mark("rift3")
+	print("T455P stage3 ", XRiftAlien.stage(), " ", _fight(mk.call(), "5a17c0de00000001"))
+	print("T455P codex ", XConfig._values.codexTianqiAliens)
+	get_tree().quit(0)

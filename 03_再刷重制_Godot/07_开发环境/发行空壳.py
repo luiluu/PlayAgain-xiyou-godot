@@ -39,7 +39,7 @@ EXTRA = {
     'XGojo',            # 五条悟 180（只在天启篇，modes/xiyou/core/gojo.gd）
     'XGuardianRework',  # 守层者按新成长重算（只管天启篇存档）
 }
-KEEP = {'XTianqiTitle'}  # 发行包要用的真脚本（标题画面）：不换
+KEEP = {'XTianqiTitle', 'XRiftAlien'}  # 发行包要用的真脚本：标题画面；漩涡怪物异化（T455，Kyo 11-24 事项49 三阶段整包对玩家打开）：不换
 SCAN_DIRS = ('modes', 'core', 'scenes', 'addons')
 MARK = '## 发行空壳'
 # 编进包里也认得出的空壳标记（注释导出时会去掉，字符串常量不会）：发行内容审计.py 解开包里的 .gdc 找它

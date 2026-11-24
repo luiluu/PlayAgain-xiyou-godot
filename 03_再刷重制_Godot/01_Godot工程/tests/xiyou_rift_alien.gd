@@ -80,6 +80,10 @@ func _run() -> void:
 	# 默认开，测试与玩家同一条路（不按显示后端切）
 	_check("align_default_on", XRiftAlien.ALIGN_LOBBY and XRiftAlien.aligned() and XRiftAlien.first_alien_stage() == 2)
 	_check("stage3_alien_default_on", XRiftAlien.STAGE3_ALIEN)
+	_check("release_open_default_on", XRiftAlien.RELEASE_OPEN)
+	_stage1_player()
+	XConfig.whisper_mark("rift1")
+	XConfig.whisper_mark("rift2")
 	_default_path()
 	_stage3_default()
 	XRiftAlien.ALIGN_LOBBY = false
@@ -92,6 +96,9 @@ func _run() -> void:
 	_drops()
 	XRiftAlien.ALIGN_LOBBY = true
 	_aligned()
+	XRiftAlien.STAGE_OVERRIDE = 0
+	_stage3_cap()
+	_release_path()
 	XRiftAlien.STAGE_OVERRIDE = 0
 	XRiftAlien.force_drop = -1.0
 	XConfig.path_override = ""
@@ -171,12 +178,12 @@ func _plan() -> void:
 	XRiftAlien.ENABLED = false
 	_check("switch_off_none", XRiftAlien.plan(_plain(10), _enemies(69), _const(0.0)).is_empty())
 	XRiftAlien.ENABLED = true
-	# 发行构建：RELEASE_OPEN 关着不建
+	# 发行构建：RELEASE_OPEN 关着不建（回退路）；开着（T455 默认）照建
 	ReleaseEntry.simulate_release = true
+	XRiftAlien.RELEASE_OPEN = false
 	_check("release_none", XRiftAlien.plan(_plain(10), _enemies(69), _const(0.0)).is_empty() and not XRiftAlien.on(_plain(10)))
 	XRiftAlien.RELEASE_OPEN = true
 	_check("release_open", XRiftAlien.plan(_plain(10), _enemies(69), _const(0.0)).size() == 1)
-	XRiftAlien.RELEASE_OPEN = false
 	ReleaseEntry.simulate_release = false
 	_check("floor_fallback", XRiftAlien.floor_of(_plain(10)) == 10)
 
@@ -387,6 +394,15 @@ func _aligned() -> void:
 					var now := _r(cls, st, f, d)
 					XRiftAlien.ALIGN_LOBBY = false
 					var old := _r(cls, st + 1, f, d)
+					if st == 3 and cls == "guardian" and XRiftAlien.diff_key(d) == "low":
+						continue  # 宝宝、简单守层者低一级：封顶后 21～30 层由蚀骨降成侵染，下面 t455_st3_low_guard 单核
+					if st == 3 and not old.is_empty():  # T455：三阶封顶蚀骨，旧表四阶的化形压成蚀骨，几率不动
+						for k in [1, 2]:
+							if old[k] == "huaxing":
+								old[k] = "shigu"
+						if old[2] == old[1]:
+							old[2] = ""
+							old[3] = 0.0
 					if now != old:
 						diffs.append([st, cls, f, d, now, old])
 	XRiftAlien.ALIGN_LOBBY = true
@@ -394,6 +410,7 @@ func _aligned() -> void:
 	_check("al_st1_none", _r("rare", 1, 10).is_empty() and _r("guardian", 1, 30).is_empty())
 	_check("al_st2_rare", _r("rare", 2, 10) == [11.0, "qinran", "", 0.0], _r("rare", 2, 10))
 	_check("al_st3_shigu", _r("very_rare", 3, 10) == [33.0, "shigu", "", 0.0], _r("very_rare", 3, 10))
+	_check("al_st3_cap_shigu", _r("guardian", 3, 30)[1] == "shigu" and _r("abyss", 3, 10) == [50.0, "shigu", "", 0.0], [_r("guardian", 3, 30), _r("abyss", 3, 10)])
 	_check("al_st4_huaxing", _r("guardian", 4, 30)[1] == "huaxing" and _r("abyss", 4, 10) == [100.0, "huaxing", "", 0.0])
 	# 五阶：怪物端没有终焉，先按「化形且几率最高」（几率同旧五阶，一律化形、不升级）
 	var st5 := []
@@ -524,16 +541,16 @@ func _stage3_default() -> void:
 	# 首领：33% 蚀骨
 	var b_hit := XRiftAlien.plan(s15, boss_only.call(), _const(0.32))
 	_check("s3_after_boss_shigu", b_hit.size() == 1 and b_hit[0].tier == "shigu" and XRiftAlien.plan(s15, boss_only.call(), _const(0.33)).is_empty(), b_hit)
-	# 守层者：100% 按层段（1-10 侵染、11-20 蚀骨、21-30 化形）
+	# 守层者：100% 按层段（1-10 侵染、11-30 蚀骨；T455 三阶封顶蚀骨，21-30 不再化形）
 	var g10 := XRiftAlien.plan(s10, _enemies(69), _const(0.99))
 	var g15 := XRiftAlien.plan(s15, _enemies(69), _const(0.99))
 	var g25 := XRiftAlien.plan(s25, _enemies(69), _const(0.99))
 	_check("s3_after_guard_bands", g10.size() == 1 and g10[0].tier == "qinran"
 		and g15.size() == 1 and g15[0].tier == "shigu"
-		and g25.size() == 1 and g25[0].tier == "huaxing", [g10, g15, g25])
-	# 深渊怪：50% 化形
+		and g25.size() == 1 and g25[0].tier == "shigu", [g10, g15, g25])
+	# 深渊怪：50% 蚀骨（T455 由化形改）
 	var ab_hit := XRiftAlien.plan(s15, _enemies(145), _const(0.49))
-	_check("s3_after_abyss_huaxing", ab_hit.size() == 1 and ab_hit[0].tier == "huaxing" and XRiftAlien.plan(s15, _enemies(145), _const(0.5)).is_empty(), ab_hit)
+	_check("s3_after_abyss_shigu", ab_hit.size() == 1 and ab_hit[0].tier == "shigu" and XRiftAlien.plan(s15, _enemies(145), _const(0.5)).is_empty(), ab_hit)
 	# 真开战（不设 STAGE_OVERRIDE）：15 层守层者必出「蚀骨·」、规则随机流与关异化逐条相同、打几回合到结束不出错
 	XRiftAlien.ENABLED = false
 	var base_lg := XBattleLogic.new()
@@ -581,3 +598,101 @@ func _stage3_default() -> void:
 	XRiftAlien.STAGE3_ALIEN = true
 	(XConfig._values.codexWhisperSeen as Array).erase("rift3")
 	_check("s3_cleanup_stage2", XRift.stage() == 2 and XRiftAlien.stage() == 2)
+
+
+## T455：一阶玩家（漩涡二阶过场 rift2 没看过）：XRift.stage() 恒为 2 也不出任何异化、不挂画面标记（开发、发行都一样）
+func _stage1_player() -> void:
+	XRiftAlien.STAGE_OVERRIDE = 0
+	var bad := []
+	for rel in [false, true]:
+		ReleaseEntry.simulate_release = rel
+		var s := _plain(25, true)
+		if XConfig.whisper_seen("rift2") or XRiftAlien.stage() != 1 or XRiftAlien.on(s):
+			bad.append([rel, XRift.stage(), XRiftAlien.stage()])
+		for troop in [69, 145, 37]:
+			var lg := XBattleLogic.new()
+			lg.setup(troop, s, XBattleRandom.create(SEED, 1))
+			if XRiftAlien.active(lg) or lg.enemies.any(func(e): return e.has_meta(XRiftAlien.LOOK)):
+				bad.append([rel, troop])
+			lg.end_battle(0)
+	ReleaseEntry.simulate_release = false
+	_check("t455_stage1_player_none", bad.is_empty(), bad)
+
+
+## T455：三阶封顶蚀骨（stages_aligned["3"].max_tier）：各类、各层、九档难度都不出化形；几率与旧四阶（对齐前的同一行）相同
+func _stage3_cap() -> void:
+	XRiftAlien.ALIGN_LOBBY = true
+	var over := []
+	var rate_diff := []
+	for cls in ["rare", "very_rare", "guardian", "abyss"]:
+		for f in [1, 10, 11, 20, 21, 25, 30]:
+			for d in range(1, 10):
+				var r := _r(cls, 3, f, d)
+				if r.is_empty():
+					continue
+				if r[1] == "huaxing" or r[2] == "huaxing":
+					over.append([cls, f, d, r])
+				XRiftAlien.ALIGN_LOBBY = false
+				var old := _r(cls, 4, f, d)
+				XRiftAlien.ALIGN_LOBBY = true
+				if old.is_empty() or old[0] != r[0]:
+					rate_diff.append([cls, f, d, r, old])
+	_check("t455_st3_no_huaxing", over.is_empty(), over.slice(0, 5))
+	_check("t455_st3_rates_same", rate_diff.is_empty(), rate_diff.slice(0, 5))
+	_check("t455_st3_low_guard", _r("guardian", 3, 25, 1)[1] == "qinran" and _r("guardian", 3, 25, 9)[1] == "shigu", [_r("guardian", 3, 25, 1), _r("guardian", 3, 25, 9)])
+	_check("t455_st4_still_huaxing", _r("guardian", 4, 25)[1] == "huaxing" and _r("abyss", 4, 10)[1] == "huaxing")
+
+
+## T455：发行模式（simulate_release）走玩家路径：rift3 前二阶（守层者 25 层出侵染～蚀骨按二阶表），rift3 后守层者 25 层出蚀骨不出化形；
+## 整场打到底不出错；赢了图鉴点亮、不掉异化装备（XAlienBattle 发行隐藏）
+func _release_path() -> void:
+	XRiftAlien.STAGE_OVERRIDE = 0
+	XRiftAlien.ALIGN_LOBBY = true
+	ReleaseEntry.simulate_release = true
+	(XConfig._values.codexWhisperSeen as Array).erase("rift3")
+	var s := _plain(25, true)
+	_check("rel_on_stage2", XRiftAlien.on(s) and XRiftAlien.stage() == 2, XRiftAlien.stage())
+	var pre := XRiftAlien.plan(s, _enemies(69), _const(0.0))
+	_check("rel_pre_rift3_guard_st2", pre.size() == 1 and pre[0].tier == "shigu" and XRiftAlien.plan(s, _enemies(69), _const(0.33)).is_empty(), pre)
+	var lg_pre := XBattleLogic.new()
+	lg_pre.setup(69, s, XBattleRandom.create(SEED, 1))
+	var turns := 0
+	while not lg_pre.is_over() and turns < 8:
+		lg_pre.run_turn({})
+		turns += 1
+	_check("rel_pre_rift3_battle_ran", turns > 0 and XRiftAlien.active(lg_pre), turns)
+	lg_pre.end_battle(0)
+	XConfig.whisper_mark("rift3")
+	_check("rel_after_stage3", XRiftAlien.stage() == 3)
+	var tiers := {}
+	for i in 12:
+		var lg := XBattleLogic.new()
+		lg.setup(69, s, XBattleRandom.create("%016x" % (0x5a17c0de00000100 + i), 1))
+		for e in XRiftAlien.fight(lg).get("units", {}):
+			tiers[str(XRiftAlien.fight(lg).units[e].tier)] = true
+		lg.end_battle(0)
+	_check("rel_after_guard25_shigu", tiers.keys() == ["shigu"], tiers.keys())
+	s = _plain(25, true)  # 上一场打过的队伍血量留在档里，换一份新档
+	var lg3 := XBattleLogic.new()
+	lg3.setup(69, s, XBattleRandom.create(SEED, 1))
+	var e3: XEnemy = lg3.enemies[0]
+	_check("rel_after_named_shigu", e3.display_name().begins_with("蚀骨·"), e3.display_name())
+	var t3 := 0
+	while not lg3.is_over() and t3 < 8:
+		lg3.run_turn({})
+		t3 += 1
+	_check("rel_after_battle_ran", t3 > 0, t3)
+	# 赢了：图鉴点亮（键在 XRiftAlien 里拼，不靠 XTianqiAlienCodex）、发行隐藏下不掉装备
+	e3.hp = 0.0
+	e3.add_new_state(1)
+	var gear_before := s.gear.size()
+	XRiftAlien.force_drop = 0.0
+	var got := XRiftAlien.grant(lg3)
+	XRiftAlien.force_drop = -1.0
+	var u3: Dictionary = XRiftAlien.unit(lg3, e3)
+	var key := "%s:%s:%s" % [str(XRiftAlien.kind_info(str(u3.kind)).from), str(u3.kind), str(u3.tier)]
+	_check("rel_codex_lit", (XConfig._values.codexTianqiAliens as Array).has(key), key)
+	_check("rel_no_drop_hidden", XAlienBattle.hidden() and got.is_empty() and s.gear.size() == gear_before, got)
+	lg3.end_battle(0)
+	ReleaseEntry.simulate_release = false
+	(XConfig._values.codexWhisperSeen as Array).erase("rift3")

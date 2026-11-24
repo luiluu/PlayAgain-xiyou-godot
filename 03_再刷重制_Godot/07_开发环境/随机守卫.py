@@ -32,6 +32,7 @@ PROJECT = HERE.parent / '01_Godot工程'
 EXTRA_FILES = (
     'modes/xiyou/core/fabao_feed.gd',
     'modes/xiyou/core/lottery_rework.gd',
+    'modes/xiyou/core/rift_alien.gd',  # T455 起发行包带真脚本（发行空壳.KEEP），不在 targets 里，照旧守
 )
 ALLOW = re.compile(r'#\s*(表现|随机守卫[:：])')
 GLOBAL_CALL = re.compile(r'(?<![\w.])(randf|randi|randf_range|randi_range|randfn|randomize|seed)\s*\(')

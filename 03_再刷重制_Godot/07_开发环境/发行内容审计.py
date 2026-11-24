@@ -29,12 +29,11 @@ import zipfile
 
 HERE = Path(__file__).resolve().parent
 
-# 还没发行的内容（Kyo 11-12：天启篇只在本地；漩涡三阶起的异化没开放）
+# 还没发行的内容（Kyo 11-12：天启篇只在本地）。rift_alien.json 已于 T455 移出（Kyo 11-24 事项49：漩涡怪物异化随三阶段整包对玩家打开）
 DENY = [
     'modes/xiyou/tianqi_data/*',      # 天启篇全部数值表、词条、四线、七印、技能重构
     'content/tianqi/*',               # 天启篇美术（骑士、七印）
     'content/gojo/*',                 # 五条悟（只进天启篇）
-    'modes/xiyou/rift_alien.json',    # 漩涡五阶段怪物异化设计数值
     'modes/xiyou/ui/tianqi/*',        # 天启篇五档难度徽章
     'content/ui_skin/*',              # 天启篇新界面的字体与通用法阵（ui-skin-p0；新皮肤只在天启篇开）
 ]
