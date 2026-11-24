@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/xiyou_tianqi_deck_phys_amp.gd" id="1"]
+
+[node name="XiyouTianqiDeckPhysAmp" type="Node"]
+script = ExtResource("1")

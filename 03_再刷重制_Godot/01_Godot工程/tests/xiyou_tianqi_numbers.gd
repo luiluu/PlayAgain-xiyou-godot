@@ -175,7 +175,7 @@ func _damage_end_to_end() -> void:
 	var off := float(XDamage.calculate(item, a, enemy, opts).value)
 	XTianqiCombat.ENABLED = true
 	var mult := XTianqiCombat.damage_mult(a, enemy)
-	_check("calc_dealt_ratio", off > 0.0 and absf(on - off * mult) <= 1.0 + 1e-6 * on, [on, off, mult])
+	_check("calc_dealt_ratio", off > 0.0 and absf(on - off * mult) <= 0.5 + 0.5 * mult + 1e-6 * on, [on, off, mult])  # T449：两边各自四舍五入，off 的 ±0.5 乘倍率后放大
 	var back := float(XDamage.calculate(item, enemy, a, opts).value)
 	XTianqiCombat.ENABLED = false
 	var back_off := float(XDamage.calculate(item, enemy, a, opts).value)
