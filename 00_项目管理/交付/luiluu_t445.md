@@ -1,7 +1,7 @@
 # 交付：luiluu/t445
 
 - 车道／工作者：小o（co）·T013 第一期数值
-- 状态：进行中
+- 状态：可合并
 - 公共规矩 v1.8
 
 ## 变更记录草稿
@@ -127,8 +127,8 @@
 
 - `xiyou_tianqi_general_books_b1.tscn` 20/20、`xiyou_tianqi_general_books_b2.tscn` 32/32、`xiyou_tianqi_ledger.tscn` 83/83、`xiyou_tianqi_ledger_p3.tscn` 40/40、`xiyou_tianqi_drop.tscn` 102/102、`xiyou_tianqi_secrets.tscn` 86/86、`xiyou_tianqi_nine_off.tscn` 19/19。
 - GDScript 解析检查 1,210 个脚本零问题，本机 Godot 使用 `--audio-driver Dummy`。工具快速回归 24/24。确定性生成检查、`天启篇数据校验.py`、`发行空壳.py check` 退出码均为 0。
-- 云端选测 初轮整轮 801/803，发现丹药回退与掉落旧值两个用例。修订后本机对应专项 83/83、102/102。最终代码 `ec5590e99` 的五场景选测已开始。[初轮](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45460748080)、[修复复跑](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45465756844)。
-- `交付自检.py` 将在交付单提交后运行。
+- 云端选测 初轮整轮 801/803，发现丹药回退与掉落旧值两个用例。修订后按差异选测 5/5 全绿，包含两项失败场景。已用 `gh run watch --exit-status` 等到退出码 0。其余场景沿用首轮过数。[初轮](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45460748080)、[最终选测](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45465756844)。
+- `交付自检.py` 退出码 0，快车道。
 
 ## 待交叉核查
 
