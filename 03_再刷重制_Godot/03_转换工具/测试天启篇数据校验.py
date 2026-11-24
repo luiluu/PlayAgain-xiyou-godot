@@ -80,6 +80,9 @@ class GuardianPhase4Rules(unittest.TestCase):
         self.assertEqual(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], boss_neg_hrg_cap_pct=5)}), [])
         for bad_v in (0, -5, 101, 5.5, True, '5', []):
             self.assertTrue(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], boss_neg_hrg_cap_pct=bad_v)}), repr(bad_v))
+        self.assertEqual(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], boss_neg_hrg_cap_extdot_states=[243])}), [])
+        for bad_v in (243, [0], [-1], [True], ['243'], [2.5]):
+            self.assertTrue(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], boss_neg_hrg_cap_extdot_states=bad_v)}), repr(bad_v))
 
 
 class RealTables(unittest.TestCase):

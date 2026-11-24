@@ -3624,6 +3624,8 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 		var hrg := 0.0
 		var other_pos := 0.0
 		var other_neg := 0.0
+		var dot_neg := 0.0  # 导入状态里的负再生（原值）
+		var dot_prayer := 0.0  # 其中来源是逆祷者的部分（已在 prayer_block 里，不能再扣一次，T405 核 P3-1）
 		var altered := false
 		for o in b.trait_objects():
 			var dot_state: bool = imported.has(int(o.get("id", -1))) and states.any(func(x): return is_same(x, o))
@@ -3633,6 +3635,10 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 				var tv := float(tr.value)
 				if dot_state and tv < 0.0:
 					altered = true
+					dot_neg += tv
+					var osrc = XImportedBalance.origin(b, int(o.get("id", -1)))
+					if osrc != null and XAlienBattle.has(osrc, "prayer"):
+						dot_prayer += tv
 				else:
 					hrg += tv
 					if tv < 0.0:
@@ -3640,11 +3646,14 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 					else:
 						other_pos += tv
 		if altered:
-			if tq_split and b is XEnemy:  # T332＋T405：天启篇拆算去掉导入负再生后重套封顶，避免 rr[0] - dot_neg 翻正
+			if tq_split and b is XEnemy:  # T332＋T405：天启篇拆算去掉导入负再生
 				var en := b as XEnemy
-				var w := en.warehouse_rate()
-				var eff_other_neg := en.cap_neg_hrg(minf(0.0, other_neg - prayer_block), b_rec) if other_neg < 0.0 else 0.0
-				hrg = other_pos * w * w + eff_other_neg
+				if XTianqiCombat.boss_neg_hrg_cap(en) < 0.0:  # 封顶开着：去掉后重套封顶，避免 rr[0] - dot_neg 翻正
+					var w := en.warehouse_rate()
+					var eff_other_neg := en.cap_neg_hrg(minf(0.0, other_neg - (prayer_block - dot_prayer)), b_rec) if other_neg < 0.0 else 0.0
+					hrg = other_pos * w * w + eff_other_neg
+				else:  # 封顶关着／小怪：逐值回到 T332 原式
+					hrg = float(rr[0]) - dot_neg
 			var other := floorf(b.mhp * hrg * b_rec)
 			dh = other - floorf(maxf(0.0, other - dh) * XImportedBalance.DOT_RATE)
 	var dm := floorf(b.mmp * b.mrg)
@@ -3656,6 +3665,7 @@ func _regenerate(b: XBattler, logs: Array) -> void:
 	var rift := XRiftAlien.regen(self, b, dh, dm)  # 漩涡阶段异化：荒年者降再生（化形我方再生失效）
 	dh = rift[0]
 	dm = rift[1]
+	dh = XTianqiCombat.cap_regen_after_dots(b, dh)  # T453（D273）：本回合火海类持续伤害已用的预算，从再生负值里扣
 	if XTianqiQiyinRule.no_regen(self, b):  # 七印祭坛限时：魔法、TP 不恢复
 		dm = 0.0
 		dt = 0.0

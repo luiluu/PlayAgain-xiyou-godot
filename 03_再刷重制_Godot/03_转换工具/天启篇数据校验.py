@@ -2126,6 +2126,9 @@ def combat_rules_phase4_rules(table: dict) -> list:
     cap = cr.get('boss_neg_hrg_cap_pct')
     if cap is not None and (not isinstance(cap, int) or isinstance(cap, bool) or not 1 <= cap <= 100):
         bad.append('combat_rules.boss_neg_hrg_cap_pct 要是 1～100 的整数百分比：%r' % (cap,))
+    ex = cr.get('boss_neg_hrg_cap_extdot_states')
+    if ex is not None and (not isinstance(ex, list) or any(not isinstance(i, int) or isinstance(i, bool) or i <= 0 for i in ex)):
+        bad.append('combat_rules.boss_neg_hrg_cap_extdot_states 要是状态号（正整数）列表：%r' % (ex,))
     return bad
 
 
