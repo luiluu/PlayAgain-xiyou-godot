@@ -30,7 +30,7 @@
 3. ✓ 发行里阶段跟进度：rift2 前 1 阶（零异化）、rift2 后 rift3 前二阶（照 D8 出侵染怪，协调确认）、rift3 后三阶。「STAGE2 开着恒为 2」确实会让一阶玩家出异化，已修（`stage()` 看 rift2）。
 4. ✓ `发行空壳.py check` 0；`发行内容审计.py --tree` 0；空壳树里发行模式实跑 25 层守层者三场，零脚本错，图鉴键 `war:berserk:shigu` 写进 codexTianqiAliens（日志 `../归档/交付截图/luiluu_t455/发行空壳树探针.log`）。
 5. － 文字：本单没新写文字；前缀「侵染·／蚀骨·」和「漩涡的颜色渗进了…」「丧钟开始倒数…」等战斗提示以前就有，这次第一次进玩家手里，待小A 文字审。
-6. ✓ 专项见上；explore 16/16（卡死 0、违规 0、脚本错 0）；短帧 climb（`--vp-mode=climb --vp-seed=1 --vp-ff --vp-frames=120000`）7/8：爬到 17 层，卡死 0、违规 0、脚本错 0，没过的一项是 `climb_not_blocked`（17 层守层者输 5 次，数值卡关，不是脚本问题，同 T298／T405 那种判红）。云端选测见下。
+6. ✓ 专项见上；云端整轮 798 通过（run 45382369716）；explore 16/16（卡死 0、违规 0、脚本错 0）；短帧 climb（`--vp-mode=climb --vp-seed=1 --vp-ff --vp-frames=120000`）7/8：爬到 17 层，卡死 0、违规 0、脚本错 0，没过的一项是 `climb_not_blocked`（17 层守层者输 5 次，数值卡关，不是脚本问题，同 T298／T405 那种判红）。云端选测见下。
 
 ## 数值报告：逐种子分布
 
@@ -80,10 +80,12 @@
 
 ## 云端选测
 
-- 待填
+- 第 1 次 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45377927050 （aefdd78bb，整轮 798）：失败 1 个 xiyou_rift3_xufeng（2 项：隔离环境没记 rift2，被新的一阶判定当成 1 阶），补测试口径后本机 53/53。
+- 第 2 次 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45382369716 （8b5579993，整轮 798 个场景、16 片）：`gh run watch` 前台等完，通过；偶发 2 个（并行失败、单跑通过）：xiyou_tianqi_enemy_ai_scene、xiyou_tianqi_ring_style。
 
 ## 本分支提交
 
 - 798494ba9 WIP: T455 三阶封顶蚀骨、一阶玩家不出异化、XRiftAlien 真脚本进发行包
 - 8a5ef2714 WIP: T455 量数探针
 - aefdd78bb T455 三个发行预设去掉 rift_alien.json；量数与发行空壳树探针归档
+- 8b5579993 T455 xiyou_rift3_xufeng 补记 rift2；交付单
