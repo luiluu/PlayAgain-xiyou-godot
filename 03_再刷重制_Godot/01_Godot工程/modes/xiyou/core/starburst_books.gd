@@ -16,6 +16,8 @@ const IMMORTAL_BOOK := 1141
 const BASE_RATE := 1.0 / 66.0
 const MAX_RATE := 1.0 / 33.0
 const FLAG := "kyoStarburstBooks"
+## O-658：关闭后，胜利结算恢复到只认正牌守层者。
+static var STAND_IN_GIFTS := true
 ## 只给测试用：-1 照常问云裳 immortal_clear；0／1 当作不是／是不朽存在（参照探针把 Y.isImmortalClear 换成恒真）
 static var IMMORTAL_CLEAR_TEST := -1
 
@@ -60,9 +62,15 @@ static func on_victory(logic) -> void:
 		return
 	var b: Dictionary = XZhenqi.battle
 	# 真气 battle 里 trial、scaled 没有时是空字典（原版 null）
-	if not b.is_empty() and (b.get("trial", {}) as Dictionary).is_empty() and (b.get("scaled", {}) as Dictionary).is_empty() and GIFTS.has(int(b.get("guardianFloor", 0))):
-		var f := int(b.guardianFloor)
-		_gift(s, f, "第%d层守层者" % f)
+	if not b.is_empty() and (b.get("trial", {}) as Dictionary).is_empty() and (b.get("scaled", {}) as Dictionary).is_empty():
+		var f := int(b.get("guardianFloor", 0))
+		if f == 0 and STAND_IN_GIFTS and not XTianqi.active(s):
+			f = int(b.get("standInFloor", 0))
+			if f == 0:
+				# 真气回退时不填替身层，星爆书仍按同一张表独立判定。
+				f = int(XZhenqi.STAND_IN_GUARDIANS.get(int(b.get("troopId", 0)), 0))
+		if GIFTS.has(f):
+			_gift(s, f, "第%d层守层者" % f)
 	var immortal: bool = XYunshangOrders.immortal_clear(s, int(logic.troop_id)) if IMMORTAL_CLEAR_TEST < 0 else IMMORTAL_CLEAR_TEST == 1
 	if s.map_id == IMMORTAL_MAP and immortal \
 			and logic._rule().next_float("starburst.immortal") < immortal_rate(s):
@@ -70,6 +78,7 @@ static func on_victory(logic) -> void:
 
 
 ## Scene_Map.start 包装：老存档补发（当前路线已通过的层数够了就送，每个存档一次）
+## 原版已按通关进度补发，正牌和替身共用，不依赖真气首通记录或胜利结算开关。
 static func map_start(s: XState) -> void:
 	if s == null:
 		return
