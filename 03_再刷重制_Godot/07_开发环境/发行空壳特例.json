@@ -62,6 +62,8 @@
   "XTianqiEnemyAI.enemy_action": "logic.enemy_action(e)",
   "XTianqiCombat.crit_after_cev": "maxf(rate, 0.0) * (1.0 - dt.cev * XToji.cev_rate(u, skill))",
   "XTianqiCombat.xparam_cap_pct": "-1",
+  "XTianqiCombat.cap_extdot": "value",
+  "XTianqiCombat.cap_regen_after_dots": "dh",
   "XTianqiCombat.enemy_xparam": "e.xparam(i)",
   "XTianqiSkills.mastery_damage": "initial",
   "XTianqiSummit.map_name": "original",
