@@ -1109,10 +1109,10 @@ static func secret_kept(a, by: Dictionary) -> Array:
 				ids[sub] = true
 	if XTianqiSecrets.on():
 		# 新秘籍格开着时，格数与已封状态已由 XTianqiSecrets 管住，不再用旧期三桶做截断（T446 P1-1）
-		var active := XTianqiSecrets.active_ids(a)
 		var out := []
 		for b in ids:
-			if active.has(int(str(b).substr(1))):
+			var bid := int(str(b).substr(1))
+			if XTianqiSecrets.occupies_slot(bid) and not XTianqiSecrets.is_sealed(a, bid):
 				out.append(b)
 		out.sort_custom(func(x, y): return int(str(x).substr(1)) < int(str(y).substr(1)))
 		return out
