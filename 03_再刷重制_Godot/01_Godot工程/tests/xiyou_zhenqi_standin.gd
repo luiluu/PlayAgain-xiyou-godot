@@ -136,7 +136,7 @@ func _backfill() -> void:
 	check("backfill_qi_added", int(s.actor(1).zhenqi.qi) == before[1] + per and int(s.actor(8).zhenqi.qi) == 100 + per - 1690)
 	check("backfill_firsts", s.actor(9).zhenqi.firsts.has("primordial:20") and not s.actor(9).zhenqi.firsts.has("primordial:21") and not s.actor(9).zhenqi.firsts.has("primordial:12"))
 	check("backfill_mark", bool(s.flags.get(XZhenqi.STAND_IN_MARK, false)))
-	check("backfill_notice", XZhenqi._pending_notice.size() == 1 and str(XZhenqi._pending_notice[0]).contains("第13～20层"), XZhenqi._pending_notice)
+	check("backfill_notice", XZhenqi._pending_notice.size() == 1 and str(XZhenqi._pending_notice[0]) == "已补发洪荒路线第13～20层守层者首通真气：4 名队员共 +%d" % (per * 4 - 1690), XZhenqi._pending_notice)
 	check("backfill_once", XZhenqi.backfill_stand_in(s).is_empty() and int(s.actor(1).zhenqi.qi) == before[1] + per)
 	# 存读档后不再补
 	var s2 := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
@@ -158,6 +158,8 @@ func _backfill() -> void:
 	s6.set_switch(2303, true)
 	s6.set_variable(20, 14)
 	check("backfill_normal_route", int(XZhenqi.backfill_stand_in(s6).get(1, 0)) == 130 and s6.actor(1).zhenqi.firsts.has("normal:13"))
+	# 只过了 13 层：提示写单层「第13层」，不写「第13～13层」
+	check("backfill_single_floor_notice", XZhenqi._pending_notice.size() == 1 and str(XZhenqi._pending_notice[0]) == "已补发普通路线第13层守层者首通真气：4 名队员共 +520", XZhenqi._pending_notice)
 
 
 func _tianqi() -> void:

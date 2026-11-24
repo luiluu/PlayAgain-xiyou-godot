@@ -330,6 +330,7 @@ static func battle_setup(s: XState, troop_id: int) -> void:
 ## 只补首通、不补每胜），已有「路线:层」的跳过；补完打标记只补一次。口径 Kyo 11-24 定（事项53）。天启篇档不碰。
 static func backfill_stand_in(s: XState) -> Dictionary:
 	last_backfill = {}
+	_pending_notice.clear()  # 只留这一次读档的提示（上一档没进地图就又读档时不叠）
 	if s == null or not STAND_IN_FIRSTS or XTianqi.active(s) or s.flags.get(STAND_IN_MARK):
 		return {}
 	if not STAND_IN_SECT_SWITCHES.any(func(id): return s.switch(int(id))):
@@ -359,7 +360,8 @@ static func backfill_stand_in(s: XState) -> Dictionary:
 		var total := 0
 		for v in out.values():
 			total += int(v)
-		_pending_notice.append("补发%s第%d～%d层守层者首通真气：%d 名队员共 +%d" % [r.name, int(STAND_IN_FLOORS[0]), top, out.size(), total])
+		var span := "第%d层" % top if top == int(STAND_IN_FLOORS[0]) else "第%d～%d层" % [int(STAND_IN_FLOORS[0]), top]
+		_pending_notice.append("已补发%s路线%s守层者首通真气：%d 名队员共 +%d" % [r.name, span, out.size(), total])
 	return out
 
 
