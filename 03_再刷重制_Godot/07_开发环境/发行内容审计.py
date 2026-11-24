@@ -56,26 +56,25 @@ def _pck_names(f, base: int) -> list:
 
 def _pck_entries(f, base: int) -> dict:
     """pck 目录：文件名 → (绝对偏移, 长度)。"""
-    f.seek(base)
-    if f.read(4) != b'GDPC':
-        raise ValueError('不是 Godot pck')
-    ver, _maj, _min, _pat, flags, fbase = struct.unpack('<IIIIIQ', f.read(28))
-    if flags & 1:
-        raise ValueError('pck 目录加密了，读不了名单（加密包要换法子审）')
-    if ver >= 3:
-        diroff, = struct.unpack('<Q', f.read(8))
-        f.seek(base + diroff)
-    else:
-        f.read(64)
-    n, = struct.unpack('<I', f.read(4))
-    out = {}
-    for _ in range(n):
-        ln, = struct.unpack('<I', f.read(4))
-        name = f.read(ln).rstrip(b'\0').decode('utf-8', 'replace')
-        ofs, size = struct.unpack('<QQ', f.read(16))
-        f.read(16 + (4 if ver >= 2 else 0))
-        out[name.removeprefix('res://')] = (base + fbase + ofs if ver >= 2 else ofs, size)
-    return out
+    return {n: (o, s) for n, (o, s, _fl) in _enc().pck_entries(f, base).items()}
+
+
+def _enc():
+    """资源加密.py（T452）：pck 目录解析与解密。"""
+    sp = importlib.util.spec_from_file_location('资源加密', HERE / '资源加密.py')
+    m = importlib.util.module_from_spec(sp)
+    sp.loader.exec_module(m)
+    return m
+
+
+def _plain(enc, name: str, data: bytes, encrypted: bool) -> bytes:
+    """加密的文件（T452 发行包）用密钥解开再给审计看；没密钥或解不开就抛错（审计把它当问题，不当干净）。"""
+    if not encrypted:
+        return data
+    key = enc.load_key()
+    if not key:
+        raise ValueError(f'{name} 加密了，没有资源加密密钥解不开（私密设计仓的 pck_encryption_key.json）')
+    return enc.decrypt(data, key)
 
 
 def _pck_base(f, path: Path) -> int:
@@ -96,23 +95,28 @@ def pck_names(path: Path) -> list:
 
 
 def _pck_read(path: Path, want) -> dict:
+    enc = _enc()
     with open(path, 'rb') as f:
-        ents = _pck_entries(f, _pck_base(f, path))
+        ents = enc.pck_entries(f, _pck_base(f, path))
         out = {}
-        for n, (ofs, size) in ents.items():
-            if want(n):
+        for n, (ofs, size, fl) in ents.items():
+            if want(n) and not fl & 2:
                 f.seek(ofs)
-                out[n] = f.read(size)
+                out[n] = _plain(enc, n, f.read(size), bool(fl & 1))
         return out
 
 
 def read_files(path: Path, want) -> dict:
-    """包里名字满足 want(源路径写法) 的文件内容：名字 → bytes。"""
+    """包里名字满足 want(源路径写法) 的文件内容：名字 → bytes（加密的已解开）。"""
     path = Path(path)
     suf = path.suffix.lower()
     if suf == '.apk':
+        enc = _enc()
         with zipfile.ZipFile(path) as z:
-            return {n[len('assets/'):]: z.read(n) for n in z.namelist() if n.startswith('assets/') and want(n[len('assets/'):])}
+            flags = enc.apk_flags(z)
+            idx = enc.zip_index(z)  # 中文名按 UTF-8 重解（apk 条目不带 UTF-8 标志）
+            return {n[len('assets/'):]: _plain(enc, n, z.read(i), bool(flags.get(n[len('assets/'):], 0) & 1))
+                    for n, i in idx.items() if n.startswith('assets/') and want(n[len('assets/'):])}
     if suf == '.zip':
         out = {}
         with zipfile.ZipFile(path) as z, tempfile.TemporaryDirectory() as td:
@@ -128,7 +132,7 @@ def names(path: Path) -> list:
     path = Path(path)
     if path.suffix.lower() == '.apk':
         with zipfile.ZipFile(path) as z:
-            return [n[len('assets/'):] for n in z.namelist() if n.startswith('assets/')]
+            return [n[len('assets/'):] for n in _enc().zip_index(z) if n.startswith('assets/')]
     if path.suffix.lower() == '.zip':
         out = []
         with zipfile.ZipFile(path) as z:

@@ -119,8 +119,11 @@ def cmd_presets(a) -> int:
     cfg = PROJECT / 'export_presets.cfg'
     before = cfg.read_text(encoding='utf-8')
     after = rewrite_presets(before, Path(a.templates), cloud_export()['presets'])
+    # T452：发行预设开了资源加密，要带密钥的模板；CI 用官方模板、不拿密钥，导出冒烟在检出副本里关掉加密（查的是包能不能跑，不是加密）
+    if not os.environ.get('GODOT_SCRIPT_ENCRYPTION_KEY'):
+        after = re.sub(r'^encrypt_pck=true$', 'encrypt_pck=false', after, flags=re.M)
     cfg.write_text(after, encoding='utf-8')
-    cloud.log('export_presets.cfg：%d 处模板路径改到 %s（只改 CI 检出副本）' % (
+    cloud.log('export_presets.cfg：%d 处模板路径改到 %s（只改 CI 检出副本；发行预设的资源加密在 CI 里关掉）' % (
         sum(1 for x, y in zip(before.splitlines(), after.splitlines()) if x != y), a.templates))
     return 0
 

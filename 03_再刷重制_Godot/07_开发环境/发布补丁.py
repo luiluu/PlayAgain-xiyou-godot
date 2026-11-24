@@ -27,6 +27,9 @@
 清单格式见 core/update_check.gd 头注释（schema 1）。做的检查：
   - 私钥对应的公钥等于游戏里内嵌的公钥（XUpdateCheck.PUBLIC_KEY），签完用公钥再验一次；
   - 「Windows 发行」「安卓 发行」「macOS 发行」三个预设各导一次补丁，三份逐字节相同才发（一个补丁三端通用）；
+  - 资源加密（T452）：导出时带私密设计仓的资源加密密钥（资源加密.py），补丁和整包同一把密钥、同样只加密文件；
+    预设里的 seed 让加密 IV 由内容算出，三端仍逐字节相同；导完 资源加密.py scan 查该加密的都加密了、抽查解得开；
+    底包是加密包时编辑器也要这把密钥才读得了底包（没有密钥直接停，不出明文补丁）。回退：资源加密.ENCRYPT＝False（导出副本里关加密）；
   - 补丁超过 30 MB 报错（Gitee 放不下大文件，该发新底包了；--allow-big 放行）；
   - 清单的最新编号不能比原来的小；同一底包的补丁编号不能比原来的小。
 --stage 之后要做的（工具只打印、不执行）：Kyo 回「推」后，两个仓库各 `git push`，等一两分钟，再跑
@@ -198,14 +201,47 @@ REAL_SCRIPTS = False  # 回退开关：True＝补丁照旧带天启篇真脚本
 NO_STUB_SMOKE = False  # 回退开关：True＝导出前不跑空壳树开战冒烟（--no-stub-smoke）
 
 
+def _enc_mod():
+    spec = importlib.util.spec_from_file_location('资源加密', HERE / '资源加密.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def _export_env(src: Path):
+    """T452：导补丁的环境（带资源加密密钥）。回退（ENCRYPT＝False）时在导出副本里关加密；没密钥抛 Fail。"""
+    enc = _enc_mod()
+    if not enc.ENCRYPT:
+        if src == PROJECT:
+            raise Fail('资源加密回退（ENCRYPT＝False）不能配真脚本回退（会改工作区的 export_presets.cfg）')
+        enc.strip_encryption(src / 'export_presets.cfg')
+        return None
+    try:
+        return enc.export_env()
+    except RuntimeError as e:
+        raise Fail(str(e)) from e
+
+
+def base_encrypted(base: Path) -> bool:
+    """底包里有没有加密文件（T452 之后的整包都有；之前的旧整包一个也没有）。"""
+    enc = _enc_mod()
+    with open(base, 'rb') as f:
+        return any(fl & 1 for _o, _s, fl in enc.pck_entries(f, enc.pck_base(f, base)).values())
+
+
 def _export_presets(base: Path, tmp: Path, dry: bool, shas: dict, src: Path) -> None:
+    env = None if dry else _export_env(src)
+    if env is not None and not base_encrypted(base):
+        # 旧整包的程序里没有密钥，读不了加密补丁（装上就进不了游戏）：旧整包的玩家只能换新整包，不给它出加密补丁
+        raise Fail(f'底包 {base.name} 是加密前的旧整包，读不了加密补丁：不给旧整包出补丁（玩家看到「要换新的安装包」）；'
+                   '要给旧整包玩家补东西只能出新整包。确认要出明文补丁就把 资源加密.ENCRYPT 改 False')
     for preset in PRESETS:
         dst = tmp / (preset.split(' ')[0] + '.pck')
         if dry:
             print(f'  [dry-run] godot --export-patch "{preset}" {dst} --patches {base}')
             continue
         p = subprocess.run([str(GODOT), '--headless', '--path', str(src), '--export-patch', preset, str(dst), '--patches', str(base)],
-                           capture_output=True, text=True)
+                           capture_output=True, text=True, env=env)
         if '没有要导出的文件或更改' in p.stdout + p.stderr or 'No files or changes to export' in p.stdout + p.stderr:
             raise Fail('当前工程相对这个底包没有任何改动，没有补丁可发')
         if p.returncode != 0 or not dst.exists():
@@ -223,6 +259,9 @@ def _check_patch(tmp: Path, dry: bool, shas: dict) -> Path:
     m = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(m)
     bad = m.audit(tmp / 'Windows.pck', [] if REAL_SCRIPTS else None)  # 回退带真脚本时只查没发行的文件（11-14）
+    enc = _enc_mod()
+    if enc.ENCRYPT:
+        bad += enc.scan(tmp / 'Windows.pck')  # T452：补丁里该加密的都加密了
     if bad:
         raise Fail(f'补丁有 {len(bad)} 个问题，不能发：' + '、'.join(bad[:10]) + '（没发行的文件看 export_presets.cfg 发行预设的 exclude_filter，天启篇真脚本看 发行空壳.py 的 EXTRA）')
     return tmp / 'Windows.pck'

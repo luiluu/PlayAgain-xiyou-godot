@@ -51,8 +51,18 @@ PROBE_LINE = ('\tprint("PATCH_PROBE script=patched class=", XPatchProbe.version(
 EXPECT_PROBE = 'PATCH_PROBE script=patched class=new_class data=dev.9999 img=123456'
 
 
+def _env():
+    """T452：发行预设开了资源加密，导底包和补丁都要带密钥（资源加密.py 从私密设计仓取）；替身用「macOS 发行」的加密模板读。"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('资源加密', HERE / '资源加密.py')
+    enc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(enc)
+    return enc.export_env() if enc.ENCRYPT else None
+
+
 def godot(*args, timeout=3600):
-    p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), *args], capture_output=True, text=True, timeout=timeout)
+    p = subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(PROJECT), *args], capture_output=True, text=True, timeout=timeout,
+                       env=_env())
     return p.returncode, p.stdout + p.stderr
 
 
