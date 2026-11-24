@@ -618,7 +618,7 @@ static func _role_gear_score(p: Array, role: String, w: Dictionary, et: int) -> 
 	return K._wscore(p, w) + float(p[0]) * 0.05 + (float(p[3]) + float(p[5])) * 0.2
 
 
-static func _make_legal_qiyin_weapon(a: XActor, seal_prefer: String, lv: int, true_seal: bool, grades: Array, diff: String, qstream: XRandomStream, inst_id: String) -> Dictionary:
+static func _make_legal_qiyin_weapon(a: XActor, seal_prefer: String, lv: int, true_seal: bool, grades: Array, diff: String, qstream: XRandomStream, inst_id: String, canonical_weapon := false) -> Dictionary:
 	var wtypes := a.traits_set(51)
 	var chosen_name := ""
 	var chosen_seal := seal_prefer
@@ -638,10 +638,17 @@ static func _make_legal_qiyin_weapon(a: XActor, seal_prefer: String, lv: int, tr
 				break
 	if chosen_name == "":
 		return {}
-	for wrec in XTianqiQiyinGear.data().get("weapons", []):
-		if str(wrec.get("type", "")) == chosen_name:
-			chosen_seal = str(wrec.get("seal", seal_prefer))
-			break
+	if canonical_weapon:
+		var weapon := XTianqiQiyinGear.weapon_of_type(chosen_name)
+		if weapon.is_empty():
+			return {}
+		chosen_seal = str(weapon.seal)
+	else:
+		# 保留 T438 历史模板取件，便于按原口径复跑旧报告。
+		for wrec in XTianqiQiyinGear.data().get("weapons", []):
+			if str(wrec.get("type", "")) == chosen_name:
+				chosen_seal = str(wrec.get("seal", seal_prefer))
+				break
 	var item := XTianqiQiyinEquip.make({
 		"kind": "weapon", "seal": chosen_seal, "wtype": chosen_name,
 		"true_seal": true_seal, "level": lv, "grades": grades,
@@ -671,7 +678,7 @@ static func _qiyin_part_of(et: int) -> String:
 	return ""
 
 
-func _equip_actor(s: XState, a: XActor, tpl: String, diff: String, role: String, f: int, lv: int, rng: RandomNumberGenerator, qstream: XRandomStream) -> Array:
+func _equip_actor(s: XState, a: XActor, tpl: String, diff: String, role: String, f: int, lv: int, rng: RandomNumberGenerator, qstream: XRandomStream, canonical_weapon := false) -> Array:
 	var slots := a.equip_slots()
 	var w := K.main_weights(a)
 	var aid := int(a.actor_id)
@@ -748,7 +755,7 @@ func _equip_actor(s: XState, a: XActor, tpl: String, diff: String, role: String,
 					item["instanceId"] = inst
 			elif et == 1:
 				var is_true_w := f >= 36
-				item = _make_legal_qiyin_weapon(a, seal, q_lv, is_true_w, fine_grades, diff, qstream, inst)
+				item = _make_legal_qiyin_weapon(a, seal, q_lv, is_true_w, fine_grades, diff, qstream, inst, canonical_weapon)
 			elif et == 9 and f >= 34:
 				item = _pick_db_item(a, 9, role, w, 80, 80, 6, 6, inst)
 			if item.is_empty():
