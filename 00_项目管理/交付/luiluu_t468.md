@@ -9,23 +9,23 @@
 
 - **起因**：Kyo 11-24 定案「西游档 99 级法宝总数值和 888 级旧版数值一样，等级上限（99＋楼层上限）与吃装备／禁经验丹成长方式不变」；随后 Kyo 11-24 19:10 拍板「徐凤年要调整，跟法宝到一个热补丁里」（因法宝放大 ~9 倍后，T440 原按 99 级法宝标定的西游档徐凤年 70 级木桩比值从 1.20× 飙升至 1.92× 狂刀，需同步按 888 口径重标回 D272 的 1.15～1.25× 狂刀）。
 - **改动**：
-  - `modes/xiyou/core/magic_weapon.gd`：新增独立回退开关 `XMagicWeapon.SCALE_99_TO_888 := true`（O-待定·法宝99折算888），新增 `raw_max_level`、`scale_active`、`effective_level`、`scaled_growth`。仅在已载入西游档（`XState.current != null` 且 `not XTianqi.active(s)`）且 `LEVEL_99` 开启、法宝原上限 > 99 时启用；天启篇零改动、无存档上下文不启用。1～98 级按 `roundf(lv * orig_max / 99.0 * per)` 线性折算，99 级精确等于 `orig_max * per`（全库 222 件法宝原上限均为 888，精确对齐原版 888 级总值，支持紫电等负成长）；老存档 >99 级（如 331／888 级）平滑封顶在 `maxf(lv, orig_max) * per`（不爆表不降级；极端 >888 级旧档保留原等级成长）。`LEVEL_99`、`FLOOR_CAP`、`XFabaoFeed` 保持不变。
-  - `modes/xiyou/core/actor.gd`、`modes/xiyou/core/three_growth.gd`：`XThreeGrowth` 新增只读 `growth_of`（不改写实例 `paramPlusPerLevel`／`note`，零存档污染、无重复放大）；`XActor` 新增只读 `magic_per_level`（修补武器法宝数据库模板按 `wtypeId` 查 `Weapons`），`magic_param` 统一经 `XMagicWeapon.scaled_growth` 折算，覆盖普通法宝、武器法宝（麒麟对剑 73～75）、三法宝 60 级进化翻倍（谷雨 7912／屠苏 4047／璇 4048）与云裳织神天梭（`XYunshang.relic_params` 经 `XActor.magic_param` 自动一致）。
+  - `modes/xiyou/core/magic_weapon.gd`：新增独立回退开关 `XMagicWeapon.SCALE_99_TO_888 := true`（O-待定·法宝99折算888），新增 `raw_max_level`、`scale_active`、`scaled_growth`（R1 返修删除未调用死代码 `effective_level`）。仅在已载入西游档（`XState.current != null` 且 `not XTianqi.active(s)`）且 `LEVEL_99` 开启、法宝原上限 > 99 时启用；天启篇零改动、无存档上下文不启用。1～98 级按 `roundf(lv * orig_max / 99.0 * per)` 线性折算，99 级精确等于 `orig_max * per`（全库 222 件法宝原上限均为 888，精确对齐原版 888 级总值，支持紫电等负成长）；老存档 >99 级（如 331／888 级）平滑封顶在 `maxf(lv, orig_max) * per`（不爆表不降级；极端 >888 级旧档保留原等级成长）。`LEVEL_99`、`FLOOR_CAP`、`XFabaoFeed` 保持不变。
+  - `modes/xiyou/core/actor.gd`、`modes/xiyou/core/three_growth.gd`：`XThreeGrowth` 新增只读 `growth_of` 与 `is_evolved`（不改写实例 `paramPlusPerLevel`／`note`，零存档污染、无重复放大）；`XActor` 新增只读 `magic_per_level`（修补武器法宝数据库模板按 `wtypeId` 查 `Weapons`），`magic_param` 统一经 `XMagicWeapon.scaled_growth` 折算，覆盖普通法宝、武器法宝（麒麟对剑 73～75）、三法宝 60 级进化翻倍（谷雨 7912／屠苏 4047／璇 4048）与云裳织神天梭（`XYunshang.relic_params` 经 `XActor.magic_param` 自动一致）。
   - `modes/xiyou/core/power.gd`：`XPower.equipment` 同步按 `XMagicWeapon.scaled_growth` 计法宝成长，装备缓存键与 `_signature` 纳入 `scale_active`，切换开关或切档不串缓存。
-  - `modes/xiyou/ui/help_card.gd`：仅在西游档且 `scale_active(obj)` 开启的显示层（不改写装备备注与数据库原件）隐藏旧静态「法宝每级／每级成长」误导行（保留麒麟对剑「随人物等级提升」人物成长行，同步饿狼破限之心上限显示 99），改按 `XActor.magic_param` 实算插入 `成长：法宝当前（Lv.X／…）` 与 `成长：法宝满级（99级）`（含老档 >99 级封顶提示），覆盖 `content()` 与 `detail_rows()`。
-  - `modes/xiyou/core/xufeng.gd`：保持西游档徐凤年（152）全部技能与状态机制不变，按法宝 99→888 新口径重标两项整数系数（附则 E）：`GUNLONG_ATK_MUL` 由 `209000` 调为 `130000`、`XIUDONG_ATK_PCT` 由 `137` 调为 `176`（卡面与公式同步）。50/70/75(全套)/80(全套) 级五回合木桩（5 种子）重回 1.168～1.226× 狂刀（70 级 1.1934×，单穿绣冬 0.768～0.796×）。
-  - `modes/xiyou/core/canglong.gd` 与原版参照测试：`XCanglong.original_data()` 同步关闭 `XMagicWeapon.SCALE_99_TO_888`；24 个 MV 原版参照测试补关 `XMagicWeapon.SCALE_99_TO_888 = false`，`tests/xiyou_tianqi_phase4.gd` 的 `fabao.xiyou` 更新为核验开/关双支且不走天启表；`tests/xiyou_xufeng_rework.gd` 改为开启 `SCALE_99_TO_888 = true` 的真回归断言并补 143 说明卡检验；新增专项 `tests/xiyou_fabao_99_scale.gd`（`.tscn`＋`.gd.uid`，64/64 通过）。
-- **玩家可见**：西游档法宝维持 99 级与楼层上限、吃装备升级不变，但 1～99 级成长属性按线性放大，99 级满级总数值与原版 888 级完全一致；老存档超过 99 级的法宝自动按满级封顶，不爆表不降级；法宝说明卡改为直接显示当前等级实加属性与 99 级满级总加成；西游档徐凤年同步按新法宝数值重调「剑气滚龙壁·封印」与「绣冬」倍率，保持约 1.2× 狂刀定位。（新增说明卡文案待文字审）
+  - `modes/xiyou/ui/help_card.gd`：仅在西游档且 `scale_active(obj)` 开启的显示层（不改写装备备注与数据库原件）隐藏旧静态「法宝每级／每级成长」误导行（保留麒麟对剑「随人物等级提升」人物成长行，同步饿狼破限之心上限显示 99），改按 `XActor.magic_param` 实算插入累计加成行，覆盖 `content()` 与 `detail_rows()`。R1 返修按文字审与主核意见统一改为半角 `+`/`-`/`/`、「加成：……累计」前缀、未满级第二行去重复前缀、老存档 >99 级文案重写并在 `当前等级：X / Y` 补 `（旧档超上限）`、未进化三法宝补 `（60级进化后加成翻倍）`、旧档超本层上限未满 99 显示 `Lv.X/99，本层上限Y`。注：核证主核 P3-2 提及的 4563 雷符「最大生命+500」，其数据库原件 `params` 全 0、`traits` 仅全属性×110%、成长标签为 `<mhp Param +500 per Level>`，原句即每级成长而非固定加成，新实算行已准确显示 `生命+444000；其余全属性+17760`，未凭空补回假固定加成。
+  - `modes/xiyou/core/xufeng.gd`：保持西游档徐凤年（152）全部技能与状态机制不变，按法宝 99→888 新口径重标两项整数系数（附则 E）并在 R1 返修改为静态函数联动 `XMagicWeapon.SCALE_99_TO_888`（缓存键纳入开关状态，无需手清缓存）：`gunlong_atk_mul()` 开 `130000`／关 `209000`、`xiudong_atk_pct()` 开 `176`／关 `137`（公式与卡面同步）。开开关 50/70/75(全套)/80(全套) 级五回合木桩（5 种子）落 1.168～1.226× 狂刀（单穿绣冬 0.768～0.796×）；关开关四档落 1.163～1.246× 狂刀，单开关回退完整不失衡。
+  - `modes/xiyou/core/canglong.gd` 与原版参照测试：`XCanglong.original_data()` 同步关闭 `XMagicWeapon.SCALE_99_TO_888`；24 个 MV 原版参照测试补关 `XMagicWeapon.SCALE_99_TO_888 = false`，`tests/xiyou_tianqi_phase4.gd` 的 `fabao.xiyou` 更新为核验开/关双支且不走天启表；`tests/xiyou_xufeng_rework.gd` 覆盖开/关 `SCALE_99_TO_888` 双口径回归与木桩（71/71）；新增专项 `tests/xiyou_fabao_99_scale.gd`（`.tscn`＋`.gd.uid`，69/69 通过）。
+- **玩家可见**：西游档法宝维持 99 级与楼层上限、吃装备升级不变，但 1～99 级成长属性按线性放大，99 级满级总数值与原版 888 级完全一致；老存档超过 99 级的法宝自动按满级封顶，不爆表不降级；法宝说明卡改为直接显示当前累计加成与 99 级满级累计加成（三法宝未进化附 60 级进化翻倍提示、旧档超上限明确标注）；西游档徐凤年同步按新法宝数值重调「剑气滚龙壁·封印」与「绣冬」倍率，保持约 1.2× 狂刀定位。（R1 返修后说明卡文案待 cc Sonnet 复核）
 
 ## 优化登记草稿
 
 | 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| O-待定·法宝99折算888 | `modes/xiyou/core/magic_weapon.gd` `XMagicWeapon.SCALE_99_TO_888`（`raw_max_level`、`scale_active`、`effective_level`、`scaled_growth`）；`core/actor.gd` `magic_param`/`magic_per_level`；`core/three_growth.gd` `growth_of`；`core/power.gd` `equipment`/`_signature`；`ui/help_card.gd` `_apply_fabao_scale_rows`；`tests/xiyou_fabao_99_scale.gd` | O-388 将法宝等级封到 99 级后，西游档 99 级法宝仅提供原版 99 级成长，远低于原版 888 级满级数值 | 仅在西游档（非天启篇且 `LEVEL_99` 开启）下对 1～99 级法宝做线性折算，使 99 级总成长属性精确对齐原版 888 级总值（等级上限、楼层上限与吃装备方式不变）；老存档 >99 级平滑封顶不爆表不降级；说明卡显示层实时对齐实算、不改写装备备注；天启篇零改动 | Kyo 11-24 定案「西游档 99 级法宝总数值和 888 级旧版数值一样，等级和成长方式不变」；同步重标西游档徐凤年（O-656）保持 D272 1.2× 狂刀 | `XMagicWeapon.SCALE_99_TO_888 = false` | 小A（T468） | 保留 |
+| O-待定·法宝99折算888 | `modes/xiyou/core/magic_weapon.gd` `XMagicWeapon.SCALE_99_TO_888`（`raw_max_level`、`scale_active`、`scaled_growth`）；`core/actor.gd` `magic_param`/`magic_per_level`；`core/three_growth.gd` `growth_of`/`is_evolved`；`core/power.gd` `equipment`/`_signature`；`core/xufeng.gd` `gunlong_atk_mul`/`xiudong_atk_pct`；`ui/help_card.gd` `_apply_fabao_scale_rows`/`_relic_rows`；`tests/xiyou_fabao_99_scale.gd` | O-388 将法宝等级封到 99 级后，西游档 99 级法宝仅提供原版 99 级成长，远低于原版 888 级满级数值 | 仅在西游档（非天启篇且 `LEVEL_99` 开启）下对 1～99 级法宝做线性折算，使 99 级总成长属性精确对齐原版 888 级总值（等级上限、楼层上限与吃装备方式不变）；老存档 >99 级平滑封顶不爆表不降级；说明卡显示层实时对齐实算、不改写装备备注；徐凤年两项系数联动此开关；天启篇零改动 | Kyo 11-24 定案「西游档 99 级法宝总数值和 888 级旧版数值一样，等级和成长方式不变」；同步重标西游档徐凤年（O-656）保持 D272 1.2× 狂刀 | `XMagicWeapon.SCALE_99_TO_888 = false`（自动同步回退法宝折算与徐凤年 209000／137% 系数） | 小A（T468） | 保留 |
 
 ## 交接板
 
-- 下一步：请 cc Sonnet 文字审新增法宝说明卡文案（见下文「新增／改动玩家可见文字」）；合并时按「优化登记草稿」发号并登记（代码注释占位 `O-待定·法宝99折算888`）。
+- 下一步：R1 返修已完成（含主核 P2-1/P3-1/P3-3、文字审 P2-1/P2-2/P3-1/P3-2/P3-3；主核 P3-2 4563 雷符经查数据库原件实为每级成长 `<mhp Param +500 per Level>` 而非固定加成，已于测试与下文说明）；请复核返修改动与说明卡新文案，合并时按「优化登记草稿」发号并登记（代码注释占位 `O-待定·法宝99折算888`）。
 - 用户试玩说明：西游档法宝 99 级总属性现与原版 888 级完全一致（吃装备升级与楼层上限不变），打开法宝说明卡可直接看到当前实加与 99 级满级总加成；老存档 331/888 级法宝保持原等级不降级且不爆表；西游档徐凤年已按新法宝口径重标回约 1.2× 狂刀；天启篇零变化。
 - 需要用户决定：无（两项口径均已由 Kyo 11-24 拍板）。
 
@@ -41,7 +41,7 @@
 
 | 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |
 | --- | --- | --- |
-| `XMagicWeapon.SCALE_99_TO_888`（新开关） | `magic_weapon.gd`、`canglong.gd` 与 26 个测试文件（`git grep -n 'SCALE_99_TO_888' -- '*.gd'`） | 调用方 28 处逐处结论：仅西游档且 `LEVEL_99` 开时生效；关开关后 `magic_param`、`XPower.equipment`、`XHelpCard` 全线回退原 99 级口径，已在 `xiyou_fabao_99_scale` 测回退支 |
+| `XMagicWeapon.SCALE_99_TO_888`（新开关） | `magic_weapon.gd`、`canglong.gd`、`xufeng.gd`、`actor.gd`（注释）与 27 个测试文件，共 31 文件（`git grep -n 'SCALE_99_TO_888' -- '*.gd'`） | 调用方逐处结论：仅西游档且 `LEVEL_99` 开时生效；关开关后 `magic_param`、`XPower.equipment`、`XHelpCard`、`XXufeng.gunlong_atk_mul/xiudong_atk_pct` 全线回退原 99 级口径，已在 `xiyou_fabao_99_scale` 与 `xiyou_xufeng_rework` 双专项测回退支 |
 | `XMagicWeapon.max_level` / `top_level` | `max_level` 100 处、`top_level` 6 处（`git grep -nE '[^[:alnum:]_](max_level\|top_level)[[:space:]]*\(' -- '*.gd'`） | 调用方 106 处逐处结论：内部抽取公共 `raw_max_level`，返回值与签名同改前逐值一致，零行为变化 |
 | `XActor.magic_param` | 50 处（`git grep -nE '[^[:alnum:]_]magic_param[[:space:]]*\(' -- '*.gd'`） | 调用方 50 处逐处结论：游戏内 `actor.gd` `_param_plus` 与 `yunshang.gd` `relic_params` 均需同步吃 99→888 折算；天启篇 `XTianqiGear.fabao_applies` 支路在前零改动；MV 原版参照测试均已显式关开关并过全量云端选测 |
 | `XThreeGrowth.sync_item` | 7 处（`git grep -nE '[^[:alnum:]_]sync_item[[:space:]]*\(' -- '*.gd'`） | 调用方 7 处逐处结论：`sync_item` 本身未改写折算倍率，新增只读 `growth_of` 供模板查询，实例 `paramPlusPerLevel`／`note` 与原来完全一致，无重复放大 |
@@ -78,43 +78,54 @@
 
 样本数：每档 5 种子（`[1, 2, 3, 4, 5]`），全部计入、零剔除。
 
-## 新增／改动玩家可见文字（待 cc Sonnet 文字审）
+### R1 返修联动回退核验（关 `SCALE_99_TO_888 = false`，不手清缓存，自动切回 `209000`／`137%`）
 
-1. `modes/xiyou/ui/help_card.gd`（西游档 `SCALE_99_TO_888` 开启时的法宝说明卡成长行，由小A 执笔，待 cc Sonnet 审）：
-   - 未满级当前加成：`成长：法宝当前（Lv.<lv>／本层上限<cap>）<属性汇总>` 或 `成长：法宝当前（Lv.<lv>／99）<属性汇总>`
-   - 未满级满级预览：`成长：法宝满级（99级）<属性汇总>`
-   - 已满级：`成长：法宝满级（Lv.99／99）<属性汇总>`
-   - 老存档 >99 级且 ≤888 级：`成长：法宝当前（旧档Lv.<lv>，已按满级封顶）<属性汇总>`
-   - 老存档 >888 级：`成长：法宝当前（旧档Lv.<lv>，保留原等级加成）<属性汇总>`
+- `scale_off_lv50`：狂刀均值 `41.29T`、徐凤年均值 `49.33T`，比值 **1.1948×**（过线）
+- `scale_off_lv70`：狂刀均值 `242.94T`、徐凤年均值 `292.60T`，比值 **1.2044×**（过线）
+- `scale_off_lv75_fullset`：狂刀均值 `12810.06T`、徐凤年均值 `14894.05T`，比值 **1.1627×**（过线）
+- `scale_off_lv80_fullset`：狂刀均值 `12876.03T`、徐凤年均值 `16048.54T`，比值 **1.2464×**（过线）
+
+## 新增／改动玩家可见文字（R1 返修后，待 cc Sonnet 复核）
+
+1. `modes/xiyou/ui/help_card.gd`（西游档 `SCALE_99_TO_888` 开启时的法宝说明卡累计加成行，半角 `+`/`-`/`/` 统一，由小A 执笔）：
+   - 未满级当前累计：`加成：法宝当前（Lv.<lv>/本层上限<cap>）累计 <属性汇总>`、`加成：法宝当前（Lv.<lv>/99，本层上限<cap>）累计 <属性汇总>`（旧档超本层上限但未满 99）、或 `加成：法宝当前（Lv.<lv>/99）累计 <属性汇总>`
+   - 未满级满级预览（去重复前缀）：`满级（99级）累计 <属性汇总>`（未进化三法宝末尾附 `（60级进化后加成翻倍）`）
+   - 已满级：`加成：法宝满级（Lv.99/99）累计 <属性汇总>`（未进化三法宝末尾附 `（60级进化后加成翻倍）`）
+   - 老存档 >99 级且 ≤888 级：`加成：法宝当前（旧档Lv.<lv>，超出现行上限，按99级满级加成计）累计 <属性汇总>`；且 `当前等级：<lv> / <cap>` 补 `（旧档超上限）`
+   - 老存档 >888 级：`加成：法宝当前（旧档Lv.<lv>，高于满级，按原等级加成计）累计 <属性汇总>`
    - 麒麟对剑（73～75）替换旧法宝每级字样：`麒麟（可如法宝一样升级）`
-   - 属性汇总格式：`全属性＋N`、`魔法＋A；其余全属性＋B`、`生命/物防/魔防/敏捷＋A；魔法/物攻/魔攻/幸运＋B`
-2. `modes/xiyou/core/xufeng.gd`（数字同步，句式不变）：
-   - 9998 剑气滚龙壁·封印：`[666666+己·攻击力*130000]*[1+技能等级]`（原 `*209000`）
-   - 76 绣冬：`攻击力能力值*176%，爆伤+120%，伤害+120%`（原 `*137%`）
+   - 属性汇总格式：`全属性+N`、`魔法+A；其余全属性+B`、`生命/魔法+A；魔攻+B`
+   - 说明（关于主核 P3-2 4563 雷符「最大生命+500」）：核查 `modes/xiyou/generated/db/Armors.json` 第 4563 号记录，`params` 为 `[0,0,0,0,0,0,0,0]`、`traits` 仅 8 条全属性×110%，实际效果是 `<mhp Param +500 per Level>`（其余 7 项 `+20 per Level`），并非固定加成；新实算加成行已准确显示 `生命+444000；其余全属性+17760`，未凭空补假固定加成。
+2. `modes/xiyou/core/xufeng.gd`（数字与 `SCALE_99_TO_888` 联动，句式不变）：
+   - 9998 剑气滚龙壁·封印：`[666666+己·攻击力*130000]*[1+技能等级]`（关开关回退 `*209000`）
+   - 76 绣冬：`攻击力能力值*176%，爆伤+120%，伤害+120%`（关开关回退 `*137%`）
 
 ## 验收逐条核对
 
-1. **仅西游档生效＋独立开关＋等级上限与吃装备不变**：通过（`XMagicWeapon.SCALE_99_TO_888`，天启篇开/关表与无存档零改动，99 级＋楼层上限＋吃装备／禁经验丹全保，`xiyou_fabao_99_scale` 与 `xiyou_fabao_rework` 全过）。
+1. **仅西游档生效＋独立开关＋等级上限与吃装备不变**：通过（`XMagicWeapon.SCALE_99_TO_888`，天启篇开/关表与无存档零改动，99 级＋楼层上限＋吃装备／禁经验丹全保；R1 返修补齐徐凤年 `gunlong_atk_mul`/`xiudong_atk_pct` 联动回退）。
 2. **99 级总成长精确对齐原版 888 级总值**：通过（全库 222 件法宝全遍历断言 99 级＝`888 × per`，含三法宝 60 级进化、织神天梭、负成长紫电、武器法宝麒麟对剑、`XPower` 与 `XActor.param_plus`）。
 3. **老存档 >99 级防爆封顶且不降级**：通过（331／888 级封顶在 888 级总值，1000 级保原等级不乘 9，存档往返保持原等级 331）。
-4. **说明卡与实算一致、待文字审**：通过（`content()` 与 `detail_rows()` 全对齐，不改写实例备注与数据库原件；新增文案已列上表待 cc Sonnet 审）。
-5. **复跑徐凤年 vs 狂刀木桩并按批复选项 B 重标回 D272**：通过（2 轮整数重标后 50/70/75(全套)/80(全套) 级分别落 1.2264× / 1.1934× / 1.1682× / 1.2229×，`xiyou_xufeng_rework.tscn` 66/66 全绿）。
-6. **新增专项＋云端选测全绿**：通过（`xiyou_fabao_99_scale` 64/64、云端选测 491/491 全绿）。
+4. **说明卡与实算一致、过文字审**：通过（`content()` 与 `detail_rows()` 全对齐，不改写实例备注与数据库原件；R1 返修已落实文字审 P2-1/P2-2/P3-1/P3-2/P3-3，待复核）。
+5. **复跑徐凤年 vs 狂刀木桩**：通过（已列调前与调后逐种子数据，以及 R1 关开关回退四档木桩）。
+6. **新增专项＋云端选测全绿**：通过（`xiyou_fabao_99_scale` 69/69、`xiyou_xufeng_rework` 71/71、两轮云端选测 `45468112026` 491/491 ＋ `45476410934` 77/77 全绿）。
+7. **同补丁重调西游档徐凤年（1.15～1.25× 狂刀，系数整数，保留全部机制）**：通过（开开关 50/70/75全套/80全套 1.2264×/1.1934×/1.1682×/1.2229×，关开关 1.1948×/1.2044×/1.1627×/1.2464×，`xiyou_xufeng_rework.tscn` 71/71 全绿）。
 
 ## 测试
 
-- 新增专项（本机，`--audio-driver Dummy`）：`xiyou_fabao_99_scale.tscn` 64/64 通过。
-- 徐凤年专项（本机，`--audio-driver Dummy`）：`xiyou_xufeng_rework.tscn` 66/66 通过（含 99→888 新口径五档木桩＋143 说明卡校验）。
-- 关联专项（本机）：`xiyou_fabao_rework.tscn` 86/86、`xiyou_character_gear_help.tscn` 89/89、`xiyou_yunshang_shop.tscn` 436/436、`xiyou_tianqi_phase4.tscn` 176/176 等均通过。
-- 语法检查：`python3 03_再刷重制_Godot/07_开发环境/语法检查.py` 通过（1208 个 `.gd`，0 问题）。
+- 新增专项（本机，`--audio-driver Dummy`）：`xiyou_fabao_99_scale.tscn` 69/69 通过（含 R1 新增三法宝未进化翻倍提示、4563 雷符实算、旧档超层上限与超 99 级提示）。
+- 徐凤年专项（本机，`--audio-driver Dummy`）：`xiyou_xufeng_rework.tscn` 71/71 通过（含开 `SCALE_99_TO_888` 五档木桩＋关开关 209000/137% 联动与四档木桩回归）。
+- 语法检查：`python3 03_再刷重制_Godot/07_开发环境/语法检查.py` 通过（1210 个 `.gd`，0 问题）。
 - 发行空壳：`python3 03_再刷重制_Godot/07_开发环境/发行空壳.py check` 退出 0（82 个脚本，809 个函数都有）。
 - 工具回归：`python3 03_再刷重制_Godot/07_开发环境/工具回归.py` 24/24 全部通过。
-- 云端选测：通过。提交 `f2e42e6df1`（`ci/luiluu/t468`），基准 `6f8fe44161026da323e31cc8e3caae06fddd4f3d`，491 个场景、16 片，最长一片 15.0 分钟，`gh run watch 45468112026 --exit-status` 等完结论 `success`。运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45468112026
-- 截图：本单未生成截图（纯数值折算＋说明卡动态行，无新页面排版；文案待 cc Sonnet 审）。
+- 云端选测（R1 返修后）：通过。提交 `f72a56d695`（`ci/luiluu/t468`），基准 `1806c5181656605a006fc076dc30471922123cde`，77 个场景、2 片，最长一片 10.1 分钟，`gh run watch 45476410934 --exit-status` 等完结论 `success`。运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45476410934
+- 云端选测（R0 全量关联）：通过。提交 `f2e42e6df1`（`ci/luiluu/t468`），基准 `6f8fe44161026da323e31cc8e3caae06fddd4f3d`，491 个场景、16 片，最长一片 15.0 分钟，`gh run watch 45468112026 --exit-status` 等完结论 `success`。运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45468112026
+- 截图：本单未生成截图（纯数值折算＋说明卡动态行，无新页面排版）。
 
 ## 本分支提交
 
 - `0c5275057` T468：西游档法宝 99 级总数值对齐原版 888 级（SCALE_99_TO_888）＋老存档防爆＋说明卡同步＋徐凤年按新口径重标回 1.2× 狂刀
 - `cfc6f5f60` T468：合并最新 main（dev.894）
 - `f2e42e6df` T468：补齐 6 个原版参照测试关 SCALE_99_TO_888 与 xiyou_tianqi_phase4 fabao.xiyou 双支断言
-- 本交付单
+- `1806c5181` T468：补充交付单 luiluu_t468.md
+- `f72a56d69` T468 R1返修：徐凤年系数联动SCALE_99_TO_888、说明卡文案与半角统一、补三法宝进化提示与删死代码
+- 本交付单更新
