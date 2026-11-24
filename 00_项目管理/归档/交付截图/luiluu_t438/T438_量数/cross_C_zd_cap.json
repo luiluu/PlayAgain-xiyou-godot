@@ -1,0 +1,853 @@
+{
+  "artifact_cap_table": {
+    "crown_bonus_pct": 300.0,
+    "heartsteel_stage": 10.0,
+    "hubris_stage": 10.0
+  },
+  "artifact_mode": "cap",
+  "base_seed": 20261123,
+  "basis": "D271",
+  "floors": [
+    35,
+    36
+  ],
+  "force_diff": "zhengdao",
+  "lines": [
+    "war",
+    "famine",
+    "death",
+    "plague"
+  ],
+  "max_turns": 25,
+  "seconds": 72.036,
+  "seeds": [
+    1
+  ],
+  "task": "T438",
+  "teams_per_template": 2,
+  "templates": {
+    "C": {
+      "artifact_mode": "cap",
+      "difficulty": "zhengdao",
+      "floors": {
+        "35": {
+          "by_line": {
+            "death": {
+              "cases": [
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 4676000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 59,
+                  "instant_loss": false,
+                  "line": "death",
+                  "lost": false,
+                  "party_hp0": 4178230,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    108,
+                    131,
+                    127
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 2,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 4676000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 1,
+                  "helper": 151,
+                  "instant_loss": false,
+                  "line": "death",
+                  "lost": false,
+                  "party_hp0": 4404794,
+                  "revive_casts": 1,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    163,
+                    117,
+                    130
+                  ],
+                  "team_idx": 1,
+                  "timeout": false,
+                  "turns": 3,
+                  "won": true
+                }
+              ],
+              "summary": {
+                "deaths_mean": 0.0,
+                "falls_mean": 0.5,
+                "instant_losses": 0,
+                "loss_enemy_hp_left_pct": 0.0,
+                "n": 2,
+                "timeouts": 0,
+                "turns_mean": 2.5,
+                "turns_won_mean": 2.5,
+                "win_rate": 1.0,
+                "wins": 2
+              }
+            },
+            "famine": {
+              "cases": [
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 4676000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 59,
+                  "instant_loss": false,
+                  "line": "famine",
+                  "lost": false,
+                  "party_hp0": 4214960,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    108,
+                    131,
+                    127
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 1,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 4676000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 151,
+                  "instant_loss": false,
+                  "line": "famine",
+                  "lost": false,
+                  "party_hp0": 4104651,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    163,
+                    117,
+                    130
+                  ],
+                  "team_idx": 1,
+                  "timeout": false,
+                  "turns": 1,
+                  "won": true
+                }
+              ],
+              "summary": {
+                "deaths_mean": 0.0,
+                "falls_mean": 0.0,
+                "instant_losses": 0,
+                "loss_enemy_hp_left_pct": 0.0,
+                "n": 2,
+                "timeouts": 0,
+                "turns_mean": 1.0,
+                "turns_won_mean": 1.0,
+                "win_rate": 1.0,
+                "wins": 2
+              }
+            },
+            "plague": {
+              "cases": [
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 4676000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 59,
+                  "instant_loss": false,
+                  "line": "plague",
+                  "lost": false,
+                  "party_hp0": 3786352,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    108,
+                    131,
+                    127
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 3,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 4676000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 151,
+                  "instant_loss": false,
+                  "line": "plague",
+                  "lost": false,
+                  "party_hp0": 3298332,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    163,
+                    117,
+                    130
+                  ],
+                  "team_idx": 1,
+                  "timeout": false,
+                  "turns": 3,
+                  "won": true
+                }
+              ],
+              "summary": {
+                "deaths_mean": 0.0,
+                "falls_mean": 0.0,
+                "instant_losses": 0,
+                "loss_enemy_hp_left_pct": 0.0,
+                "n": 2,
+                "timeouts": 0,
+                "turns_mean": 3.0,
+                "turns_won_mean": 3.0,
+                "win_rate": 1.0,
+                "wins": 2
+              }
+            },
+            "war": {
+              "cases": [
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 5306000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 59,
+                  "instant_loss": false,
+                  "line": "war",
+                  "lost": false,
+                  "party_hp0": 4660867,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    108,
+                    131,
+                    127
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 1,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 5306000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 151,
+                  "instant_loss": false,
+                  "line": "war",
+                  "lost": false,
+                  "party_hp0": 4031531,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    163,
+                    117,
+                    130
+                  ],
+                  "team_idx": 1,
+                  "timeout": false,
+                  "turns": 2,
+                  "won": true
+                }
+              ],
+              "summary": {
+                "deaths_mean": 0.0,
+                "falls_mean": 0.0,
+                "instant_losses": 0,
+                "loss_enemy_hp_left_pct": 0.0,
+                "n": 2,
+                "timeouts": 0,
+                "turns_mean": 1.5,
+                "turns_won_mean": 1.5,
+                "win_rate": 1.0,
+                "wins": 2
+              }
+            }
+          },
+          "gear": {
+            "bands": {
+              "60-69": 0,
+              "70-75": 14,
+              "80-81": 66,
+              "<60": 0
+            },
+            "grades": {
+              "不朽": 14,
+              "传说": 0,
+              "史诗及以下": 0,
+              "神话": 66
+            },
+            "myth_ratio": 0.825,
+            "qiyin": 58,
+            "req_max": 80,
+            "req_mean": 78.5,
+            "req_median": 80.0,
+            "req_min": 70,
+            "teams": 2,
+            "total_items": 80,
+            "true_seal": 24
+          },
+          "level": 80,
+          "summary": {
+            "deaths_mean": 0.0,
+            "falls_mean": 0.13,
+            "instant_losses": 0,
+            "loss_enemy_hp_left_pct": 0.0,
+            "n": 8,
+            "timeouts": 0,
+            "turns_mean": 2.0,
+            "turns_won_mean": 2.0,
+            "win_rate": 1.0,
+            "wins": 8
+          }
+        },
+        "36": {
+          "by_line": {
+            "death": {
+              "cases": [
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 11100000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 59,
+                  "instant_loss": false,
+                  "line": "death",
+                  "lost": false,
+                  "party_hp0": 4691955,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    108,
+                    131,
+                    127
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 4,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 11100000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 1,
+                  "helper": 151,
+                  "instant_loss": false,
+                  "line": "death",
+                  "lost": false,
+                  "party_hp0": 4036830,
+                  "revive_casts": 1,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    163,
+                    117,
+                    130
+                  ],
+                  "team_idx": 1,
+                  "timeout": false,
+                  "turns": 8,
+                  "won": true
+                }
+              ],
+              "summary": {
+                "deaths_mean": 0.0,
+                "falls_mean": 0.5,
+                "instant_losses": 0,
+                "loss_enemy_hp_left_pct": 0.0,
+                "n": 2,
+                "timeouts": 0,
+                "turns_mean": 6.0,
+                "turns_won_mean": 6.0,
+                "win_rate": 1.0,
+                "wins": 2
+              }
+            },
+            "famine": {
+              "cases": [
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 9480000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 59,
+                  "instant_loss": false,
+                  "line": "famine",
+                  "lost": false,
+                  "party_hp0": 4253607,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    108,
+                    131,
+                    127
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 1,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 9480000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 151,
+                  "instant_loss": false,
+                  "line": "famine",
+                  "lost": false,
+                  "party_hp0": 3978450,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    163,
+                    117,
+                    130
+                  ],
+                  "team_idx": 1,
+                  "timeout": false,
+                  "turns": 2,
+                  "won": true
+                }
+              ],
+              "summary": {
+                "deaths_mean": 0.0,
+                "falls_mean": 0.0,
+                "instant_losses": 0,
+                "loss_enemy_hp_left_pct": 0.0,
+                "n": 2,
+                "timeouts": 0,
+                "turns_mean": 1.5,
+                "turns_won_mean": 1.5,
+                "win_rate": 1.0,
+                "wins": 2
+              }
+            },
+            "plague": {
+              "cases": [
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 2880000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 59,
+                  "instant_loss": false,
+                  "line": "plague",
+                  "lost": false,
+                  "party_hp0": 3535523,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    108,
+                    131,
+                    127
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 1,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 2880000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 151,
+                  "instant_loss": false,
+                  "line": "plague",
+                  "lost": false,
+                  "party_hp0": 3441851,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    163,
+                    117,
+                    130
+                  ],
+                  "team_idx": 1,
+                  "timeout": false,
+                  "turns": 2,
+                  "won": true
+                }
+              ],
+              "summary": {
+                "deaths_mean": 0.0,
+                "falls_mean": 0.0,
+                "instant_losses": 0,
+                "loss_enemy_hp_left_pct": 0.0,
+                "n": 2,
+                "timeouts": 0,
+                "turns_mean": 1.5,
+                "turns_won_mean": 1.5,
+                "win_rate": 1.0,
+                "wins": 2
+              }
+            },
+            "war": {
+              "cases": [
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 10630000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 59,
+                  "instant_loss": false,
+                  "line": "war",
+                  "lost": false,
+                  "party_hp0": 4245415,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    108,
+                    131,
+                    127
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 2,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [
+                    "无我10阶",
+                    "头顶+300%",
+                    "利维坦10阶",
+                    "利维坦10阶"
+                  ],
+                  "deaths": 0,
+                  "enemy_hp0": 10630000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 151,
+                  "instant_loss": false,
+                  "line": "war",
+                  "lost": false,
+                  "party_hp0": 4068382,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    95,
+                    163,
+                    117,
+                    130
+                  ],
+                  "team_idx": 1,
+                  "timeout": false,
+                  "turns": 2,
+                  "won": true
+                }
+              ],
+              "summary": {
+                "deaths_mean": 0.0,
+                "falls_mean": 0.0,
+                "instant_losses": 0,
+                "loss_enemy_hp_left_pct": 0.0,
+                "n": 2,
+                "timeouts": 0,
+                "turns_mean": 2.0,
+                "turns_won_mean": 2.0,
+                "win_rate": 1.0,
+                "wins": 2
+              }
+            }
+          },
+          "gear": {
+            "bands": {
+              "60-69": 0,
+              "70-75": 14,
+              "80-81": 66,
+              "<60": 0
+            },
+            "grades": {
+              "不朽": 14,
+              "传说": 0,
+              "史诗及以下": 0,
+              "神话": 66
+            },
+            "myth_ratio": 0.825,
+            "qiyin": 58,
+            "req_max": 80,
+            "req_mean": 78.5,
+            "req_median": 80.0,
+            "req_min": 70,
+            "teams": 2,
+            "total_items": 80,
+            "true_seal": 34
+          },
+          "level": 81,
+          "summary": {
+            "deaths_mean": 0.0,
+            "falls_mean": 0.13,
+            "instant_losses": 0,
+            "loss_enemy_hp_left_pct": 0.0,
+            "n": 8,
+            "timeouts": 0,
+            "turns_mean": 2.8,
+            "turns_won_mean": 2.8,
+            "win_rate": 1.0,
+            "wins": 8
+          }
+        }
+      },
+      "gear_summary": {
+        "35": {
+          "bands": {
+            "60-69": 0,
+            "70-75": 14,
+            "80-81": 66,
+            "<60": 0
+          },
+          "grades": {
+            "不朽": 14,
+            "传说": 0,
+            "史诗及以下": 0,
+            "神话": 66
+          },
+          "myth_ratio": 0.825,
+          "qiyin": 58,
+          "req_max": 80,
+          "req_mean": 78.5,
+          "req_median": 80.0,
+          "req_min": 70,
+          "teams": 2,
+          "total_items": 80,
+          "true_seal": 24
+        },
+        "36": {
+          "bands": {
+            "60-69": 0,
+            "70-75": 14,
+            "80-81": 66,
+            "<60": 0
+          },
+          "grades": {
+            "不朽": 14,
+            "传说": 0,
+            "史诗及以下": 0,
+            "神话": 66
+          },
+          "myth_ratio": 0.825,
+          "qiyin": 58,
+          "req_max": 80,
+          "req_mean": 78.5,
+          "req_median": 80.0,
+          "req_min": 70,
+          "teams": 2,
+          "total_items": 80,
+          "true_seal": 34
+        }
+      },
+      "label": "C_炼狱2超2强同级毕业(养成80%)",
+      "teams": [
+        {
+          "field": [
+            95,
+            108,
+            131,
+            127
+          ],
+          "helper": 59,
+          "helper_name": "大羿",
+          "helper_tier": "强者",
+          "names": [
+            "三笠",
+            "奈叶",
+            "椎名立希",
+            "小铃兰"
+          ],
+          "roles": [
+            "输出",
+            "输出",
+            "坦克",
+            "辅助"
+          ],
+          "shape": "A",
+          "tiers": [
+            "超强者",
+            "超强者",
+            "强者",
+            "强者"
+          ]
+        },
+        {
+          "field": [
+            95,
+            163,
+            117,
+            130
+          ],
+          "helper": 151,
+          "helper_name": "亚斯娜",
+          "helper_tier": "强者",
+          "names": [
+            "三笠",
+            "拳一",
+            "绯红蔷薇",
+            "长崎爽世"
+          ],
+          "roles": [
+            "输出",
+            "输出",
+            "辅助",
+            "辅助"
+          ],
+          "shape": "D",
+          "tiers": [
+            "超强者",
+            "超强者",
+            "强者",
+            "强者"
+          ]
+        }
+      ],
+      "template": "C"
+    }
+  },
+  "version": 2
+}
