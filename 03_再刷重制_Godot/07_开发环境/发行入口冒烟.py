@@ -77,6 +77,21 @@ KEY_RUNS = [
 ]
 
 
+def export_env():
+    """T454：独立自导出发行预设（macOS／Windows／安卓 发行都开了 encrypt_pck）要带资源加密密钥（环境变量或私密设计仓，资源加密.py）。
+    返回 (env, 错误)：没密钥不静默出明文包，返回错误说明由调用方失败退出。资源加密.ENCRYPT＝False（回退）时不注入。"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('资源加密', HERE / '资源加密.py')
+    enc = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(enc)
+    if not enc.ENCRYPT:
+        return dict(os.environ), None
+    try:
+        return enc.export_env(), None
+    except RuntimeError as e:
+        return None, str(e)
+
+
 def windows(work: Path, check, keys=False, win_dir=None, require_seal=False, allow_unsealed=False) -> int:
     exe = work / 'win' / '再刷一把_天启篇.exe'
     exe.parent.mkdir()
@@ -89,8 +104,12 @@ def windows(work: Path, check, keys=False, win_dir=None, require_seal=False, all
                 return 2
             shutil.copy(src / f, exe.parent / f)
     else:
-        p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', 'Windows 发行', str(exe)],
-                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=900)
+        env, err = export_env()
+        if env is None:
+            print(err)
+            return 2
+        p = subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(PROJECT), '--export-release', 'Windows 发行', str(exe)],
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=900, env=env)
         (work / '导出.log').write_text(p.stdout, encoding='utf-8')
         if p.returncode != 0:
             print(p.stdout[-3000:])
@@ -179,7 +198,10 @@ def android(work: Path, check, keys=False, apk=None, require_seal=False, allow_u
     if apk is None:
         apk = work / 'android' / '再刷一把_天启篇.apk'
         apk.parent.mkdir()
-        env = dict(os.environ)
+        env, err = export_env()
+        if env is None:
+            print(err)
+            return 2
         if not env.get('GODOT_ANDROID_KEYSTORE_RELEASE_PATH'):
             ks, pw = editor_debug_keystore()
             if ks is None:
@@ -188,7 +210,7 @@ def android(work: Path, check, keys=False, apk=None, require_seal=False, allow_u
             env.update(GODOT_ANDROID_KEYSTORE_RELEASE_PATH=ks, GODOT_ANDROID_KEYSTORE_RELEASE_USER='androiddebugkey',
                        GODOT_ANDROID_KEYSTORE_RELEASE_PASSWORD=pw)
             print('发行 keystore 没配：用本机 Godot 调试 keystore 签名（只给冒烟和真机试装，不能上架）')
-        p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', ANDROID_PRESET, str(apk)],
+        p = subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(PROJECT), '--export-release', ANDROID_PRESET, str(apk)],
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=1800, env=env)
         (work / '导出.log').write_text(p.stdout, encoding='utf-8')
         if p.returncode != 0 or not apk.is_file():
@@ -399,7 +421,7 @@ def run_keys(work: Path, exe: Path, check, runs=KEY_RUNS) -> int:
     for name, seq, want in runs:
         home = Path(tempfile.mkdtemp(prefix='xiyou_keys_home_'))
         try:
-            p = subprocess.run([*RUN_PREFIX, str(exe), '--headless', '--quit-after', '6000', '--', f'--smoke-keys={seq}'],
+            p = subprocess.run([*RUN_PREFIX, str(exe), '--headless', '--audio-driver', 'Dummy', '--quit-after', '6000', '--', f'--smoke-keys={seq}'],
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace',
                                timeout=300, env=dict(os.environ, HOME=str(home)), cwd=str(home))
             out, rc = p.stdout, p.returncode
@@ -550,8 +572,12 @@ def main() -> int:
             pkg = Path(a.zip).resolve()
         else:
             pkg = work / 'release.zip'
-            p = subprocess.run([str(GODOT), '--headless', '--path', str(PROJECT), '--export-release', PRESET, str(pkg)],
-                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=900)
+            env, err = export_env()
+            if env is None:
+                print(err)
+                return 2
+            p = subprocess.run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(PROJECT), '--export-release', PRESET, str(pkg)],
+                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors='replace', timeout=900, env=env)
             (work / '导出.log').write_text(p.stdout, encoding='utf-8')
             if p.returncode != 0 or not pkg.is_file():
                 print(p.stdout[-3000:])

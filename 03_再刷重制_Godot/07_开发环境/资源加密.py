@@ -484,9 +484,11 @@ def scan(path: Path, key: bytes = None, sample: int = 20) -> list:
                         probs.append(f'{path.name}：{n} 没加密')
                     elif flags.get(rel, 0) & 1:
                         enc_seen.append((path.name, rel, None, info, info.file_size))
-                elif n.lower().endswith(('.gd', '.gdc', '.json', '.tscn', '.tres')) and n not in APK_BUILD_METADATA:
+                elif n.lower().endswith(('.gd', '.gdc', '.json', '.tscn', '.tres', '.scn', '.res', '.cfg', '.remap')) and n not in APK_BUILD_METADATA:
                     probs.append(f'{path.name}：{n} 是 assets/ 外的脚本／数据明文')
-            for i, (label, rel, _fp, n, _size) in enumerate(enc_seen[:sample]):
+            n_seen = len(enc_seen)
+            picks = enc_seen if n_seen <= sample else [enc_seen[i * n_seen // sample] for i in range(sample)]
+            for label, rel, _fp, n, _size in picks:
                 _try(probs, label, rel, z.read(n), key)
         return probs
     if suf == '.zip':
@@ -509,8 +511,9 @@ def scan(path: Path, key: bytes = None, sample: int = 20) -> list:
 
 
 def _sample(probs, enc_seen, key, sample):
-    step = max(1, len(enc_seen) // sample) if enc_seen else 1
-    for label, n, fp, ofs, size in enc_seen[::step][:sample]:
+    n_seen = len(enc_seen)
+    picks = enc_seen if n_seen <= sample else [enc_seen[i * n_seen // sample] for i in range(sample)]  # 均匀步长，首尾都覆盖到
+    for label, n, fp, ofs, size in picks:
         with open(fp, 'rb') as f:
             f.seek(ofs)
             _try(probs, label, n, f.read(size), key)
