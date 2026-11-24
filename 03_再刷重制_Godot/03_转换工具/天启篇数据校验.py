@@ -3399,7 +3399,17 @@ def secret_books_rules(t: dict, db_dir: Path = None) -> list:
                 for tg in tags:
                     check('skills.%d.tag 禁项:%s' % (sid, tg), forbidden_tag_re.search(tg) is None, '含已禁用原版标签：%s' % tg)
             if row.get('banned'):
-                check('skills.%d.banned 空效果' % sid, tags == [] and dmg_pct == 0, '封禁功法 tags 必须为空且 damage_pct=0')
+                check('skills.%d.banned 空效果' % sid, tags == [] and dmg_pct == 0, '停用功法 tags 必须为空且 damage_pct=0')
+                check('skills.%d.banned 无封字' % sid,
+                      '封' not in str(row.get('description', '')) and '封' not in str(row.get('effect_text', '')),
+                      '停用功法文案不能用「封」字以免与秘籍格封印冲突')
+            check('skills.%d.desc 无功法首行' % sid, not str(row.get('description', '')).startswith('功法\n'),
+                  'description 不应以「功法\\n」开头以免与右栏重复')
+            if 'legacy_only' in row:
+                check('skills.%d.legacy_only' % sid, isinstance(row['legacy_only'], bool), 'legacy_only 要是布尔')
+            if 'obtain_text' in row:
+                check('skills.%d.obtain_text' % sid, isinstance(row['obtain_text'], str) and row['obtain_text'].startswith('获得：'),
+                      'obtain_text 要是以「获得：」开头的非空字符串：%r' % (row['obtain_text'],))
             if sc_key == 'xunbao':
                 dp = row.get('drop_pct', 0)
                 gp = row.get('gold_pct', 0)
@@ -3409,12 +3419,16 @@ def secret_books_rules(t: dict, db_dir: Path = None) -> list:
                 check('skills.%d.template' % sid, _is_int(row.get('template_item')) and _is_int(row.get('template_skill')),
                       '表外新功法必须提供 template_item 与 template_skill')
         for bsid in (7135, 7144):
-            check('封禁功法 %d' % bsid, bool(sk_tbl.get(str(bsid), {}).get('banned', False)), 'D274④ 炎黄后裔/九阳淬体图必须标记 banned=true')
+            check('停用功法 %d' % bsid, bool(sk_tbl.get(str(bsid), {}).get('banned', False)), 'D274④ 炎黄后裔/九阳淬体图必须标记 banned=true')
         for zsid in (7178, 7179):
             check('紫霞专属 %d' % zsid, sk_tbl.get(str(zsid), {}).get('only_actor') == 70, 'D274④ 紫霞神功录必须限 only_actor=70')
         check('行字诀 7140/7141 首回合提前',
               sk_tbl.get('7140', {}).get('first_turn_mode') == 1 and sk_tbl.get('7141', {}).get('first_turn_mode') == 2,
               '九秘行字诀须设 first_turn_mode 1/2')
+        check('玄天功 7139 标 legacy_only', bool(sk_tbl.get('7139', {}).get('legacy_only', False)), '7139 须标 legacy_only=true')
+        check('行字诀全篇与传承升华带出处',
+              '22 层' in str(sk_tbl.get('7141', {}).get('obtain_text', '')) and '28 层' in str(sk_tbl.get('7187', {}).get('obtain_text', '')),
+              '7141/7187 须带 obtain_text 出处')
 
     st_tbl = t.get('states')
     st1656 = st_tbl.get('1656') if isinstance(st_tbl, dict) else None
@@ -3433,11 +3447,12 @@ def secret_books_rules(t: dict, db_dir: Path = None) -> list:
             for ex_blk in (tv.get('extra_by_floor', []) if isinstance(tv, dict) else []):
                 all_ev54.extend(ex_blk.get('goods', []))
         pill_ids = set(range(1685, 1718))
+        legacy_items = {int(row['item']) for row in (sk_tbl.values() if isinstance(sk_tbl, dict) else []) if isinstance(row, dict) and row.get('legacy_only')}
         bad_goods = {(2, 4553), (2, 4540), (0, 1981), (0, 2237), (0, 2240), (0, 2328), (0, 2329)}
         for g in all_ev54:
             pair = (int(g[0]), int(g[1]))
-            check('ev54 无禁售品 %r' % (pair,), pair not in bad_goods and not (pair[0] == 0 and pair[1] in pill_ids),
-                  'EV054 含丹药/洪荒三件/紫霞/封禁书：%r' % (pair,))
+            check('ev54 无禁售品 %r' % (pair,), pair not in bad_goods and not (pair[0] == 0 and (pair[1] in pill_ids or pair[1] in legacy_items)),
+                  'EV054 含丹药/洪荒三件/紫霞/停用书/老档专属：%r' % (pair,))
         fabao_pairs = {(int(g[0]), int(g[1])) for g in tabs.get('fabao', {}).get('goods', [])}
         for fid in list(range(4543, 4553)) + [8101, 8102]:
             check('ev54.fabao 含 %d' % fid, (2, fid) in fabao_pairs, '缺少系别法宝 %d' % fid)

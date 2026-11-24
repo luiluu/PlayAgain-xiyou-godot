@@ -344,11 +344,13 @@ func _test_special_ten_books() -> void:
 		other.refresh_passive()
 	_check("five_breakthroughs_and_ascend_clean", inh_ok, inh_detail)
 
-	# 炎黄后裔（2237/7135）与九阳淬体图（2240/7144）：禁学、禁掉、老档清零
+	# 炎黄后裔（2237/7135）与九阳淬体图（2240/7144）：停用禁学、禁掉、老档清零，文案不含「封」字
+	var r2237 := XTianqiSecrets.item_learn_reason(other, XDB.rec("Items", 2237), s)
+	var r2240 := XTianqiSecrets.item_learn_reason(other, XDB.rec("Items", 2240), s)
 	_check("banned_7135_7144_blocked",
 		XTianqiSecrets.blocks_learn(other, 7135, s) and XTianqiSecrets.blocks_learn(other, 7144, s)
-		and XTianqiSecrets.item_learn_reason(other, XDB.rec("Items", 2237), s).contains("封禁")
-		and XTianqiSecrets.item_learn_reason(other, XDB.rec("Items", 2240), s).contains("封禁"))
+		and r2237.contains("已停用") and not r2237.contains("封")
+		and r2240.contains("已停用") and not r2240.contains("封"), [r2237, r2240])
 	var fake_drops := [{"kind": 1, "id": 2237, "chance": 1.0}, {"kind": 1, "id": 2240, "chance": 1.0}, {"kind": 1, "id": 2530, "chance": 1.0}]
 	var filtered := XTianqiSecrets.filter_drop_rows(s, fake_drops)
 	_check("banned_drops_filtered", filtered.size() == 1 and int(filtered[0].id) == 2530, filtered)
@@ -460,6 +462,105 @@ func _test_ev54_shop_and_dingyi_slot() -> void:
 		[x_sr.get("buy_items", {}), x_new.is_empty()])
 
 
+class _FakeShopHost extends RefCounted:
+	var last_group := ""
+	var last_managed := false
+	var last_rem := -1
+	var buy_count := 0
+	var buy_kind := 2
+	var buy_id := 5198
+	var s: XState
+
+	func open_shop(goods: Array, _purchase_only: bool) -> void:
+		goods = XShopStock.prepare_policy(goods)
+		last_group = XShopStock.open(s)
+		last_managed = XShopStock.shop_managed(buy_kind, buy_id)
+		last_rem = XShopStock.remaining(s, last_group, buy_kind, buy_id)
+		if buy_count > 0:
+			XShopStock.record_purchase(s, last_group, buy_kind, buy_id, buy_count)
+		XShopStock.close_policy()
+
+	func show_text(_f: String, _fi: int, _lines: Array) -> void:
+		pass
+
+
+func _test_ev54_stock_and_r1_fixes() -> void:
+	# 1) EV054 神武页仙道模式 5198 限购 5 且与大厅另两家人道碎片店共用库存（T443 R1 代码 P2-1）
+	var s := _fresh_tianqi(28)
+	var tabs: Dictionary = XTianqiSecrets.data().get("ev54_shop", {}).get("tabs", {})
+	var host := _FakeShopHost.new()
+	host.s = s
+	host.buy_count = 2
+	await XTianqiSecrets._open_ev54_tab(host, s, "divine", "Package2", 4, "人族首领", tabs)
+	var g1 := host.last_group
+	var m1 := host.last_managed
+	var r1 := host.last_rem
+	# 模拟大厅另两家人道碎片店（如 Map004 EV065）同样应用库存组
+	XShopStock.set_context(4, 65)
+	XShopStock.apply_group(s, "人道碎片相关物品购买")
+	var g_other := XShopStock.open(s)
+	XShopStock.prepare_policy([[2, 5198, 0, 0]])
+	var r_other_before := XShopStock.remaining(s, g_other, 2, 5198)
+	XShopStock.record_purchase(s, g_other, 2, 5198, 3)
+	var r_other_after := XShopStock.remaining(s, g_other, 2, 5198)
+	XShopStock.close_policy()
+	XShopStock.shop_context = {}
+	# 回到 EV054 神武页：应当同步售完（剩余 0、不可购买）
+	host.buy_count = 0
+	await XTianqiSecrets._open_ev54_tab(host, s, "divine", "Package2", 4, "人族首领", tabs)
+	var r_ev54_after := host.last_rem
+	# EV054 功法页含被动书：按原版 v0.41 chief_passive 不限购
+	host.buy_kind = 0
+	host.buy_id = 3201
+	await XTianqiSecrets._open_ev54_tab(host, s, "gongfa_t3", "Package2", 4, "人族首领", tabs)
+	_check("ev54_divine_5198_stock5_shared",
+		g1 == "人道碎片相关物品购买" and m1 and r1 == 5
+		and r_other_before == 3 and r_other_after == 0 and r_ev54_after == 0
+		and not host.last_managed and s.shop_pending == "" and XShopStock.shop_context.is_empty(),
+		[g1, m1, r1, r_other_before, r_other_after, r_ev54_after, host.last_managed, s.shop_pending])
+
+	# 2) 玄天功 7139 标 legacy_only、不上架 EV054、与 7138 同阶互拦（代码 P3-1 / 文字 P2-3）
+	var sp7139: Dictionary = XTianqiSecrets.data().get("skills", {}).get("7139", {})
+	var all_ev54 := XTianqiSecrets.ev54_tab_goods(s, "gongfa_t1") + XTianqiSecrets.ev54_tab_goods(s, "gongfa_t2") + XTianqiSecrets.ev54_tab_goods(s, "gongfa_t3")
+	var a := _find_actor_by_tier(s, XTier.WEAK)
+	a.skill_ids.append(7139)
+	var r7138 := XTianqiSecrets.learn_reason(a, 7138, s)
+	_check("xuantian_7139_legacy_only_and_block",
+		bool(sp7139.get("legacy_only", false))
+		and not all_ev54.any(func(g): return int(g[0]) == 0 and int(g[1]) == 2234)
+		and r7138.contains("同系更高阶或同阶秘籍《玄天功》大成") and not r7138.contains("「《"),
+		[sp7139.get("legacy_only"), r7138])
+
+	# 3) 行字诀全篇/传承升华出处行、命名与新皮肤右栏无重复说明/无套引号（文字 P2-3 / P3）
+	var sk7141 := XDB.rec("Skills", 7141)
+	var it2236 := XDB.rec("Items", 2236)
+	var it2337 := XDB.rec("Items", 2337)
+	var it3201 := XDB.rec("Items", 3201)
+	var card := XSkinItemPage.card_data(it3201)
+	var sec_titles: Array = card.get("sections", []).map(func(sec): return str(sec.get("title", "")))
+	var sec_texts := JSON.stringify(card.get("sections", []))
+	_check("r1_text_obtain_and_card_clean",
+		str(sk7141.get("name", "")) == "《九秘·行字诀》全篇"
+		and str(it2236.get("note", "")).contains("获得：击败第 22 层")
+		and str(it2337.get("name", "")) == "《传承升华》"
+		and str(it2337.get("note", "")).contains("获得：击败第 28 层")
+		and str(card.get("desc", "")) == ""
+		and sec_titles.has("《碎空霸体诀》大成")
+		and sec_texts.contains("学会技能《碎空霸体诀》大成")
+		and not sec_texts.contains("「《")
+		and str(it3201.get("note", "")).contains("用法:使用后学会秘籍《碎空霸体诀》大成"),
+		[sk7141.get("name"), it2337.get("name"), card.get("desc"), sec_titles])
+
+	# 4) EV054 菜单「第 X 层」写法
+	s.set_variable(20, 1)
+	var m_main := XTianqiSecrets.ev54_menu(s).map(func(x): return str(x[0]))
+	var m_gf := XTianqiSecrets.ev54_gongfa_menu(s).map(func(x): return str(x[0]))
+	_check("ev54_menu_floor_format",
+		m_main.has("法宝与专武（第 13 层解锁）") and m_main.has("神武装备（第 21 层解锁）")
+		and m_gf.has("入门功法（第 1 层）") and m_gf.has("小成功法（第 13 层解锁）") and m_gf.has("大成功法（第 21 层解锁）"),
+		[m_main, m_gf])
+
+
 func _frames(n := 4) -> void:
 	for _i in range(n):
 		await get_tree().process_frame
@@ -566,6 +667,7 @@ func _run() -> void:
 	_test_xunbao_drop_and_money()
 	_test_special_ten_books()
 	_test_ev54_shop_and_dingyi_slot()
+	await _test_ev54_stock_and_r1_fixes()
 	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:

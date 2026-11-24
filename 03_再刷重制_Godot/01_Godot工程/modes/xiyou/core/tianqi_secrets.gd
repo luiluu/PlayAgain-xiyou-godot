@@ -25,6 +25,7 @@ const SECTION := "secrets"
 const EV54_MAP := 4
 const EV54_EVENT := 54
 const EV54_HIDE_SWITCH := 681
+const EV54_STOCK_GROUP := "人道碎片相关物品购买"
 
 static var _data: Dictionary = {}
 static var _load_failed := false
@@ -526,17 +527,17 @@ static func learn_reason(a, skill_id: int, s: XState = null) -> String:
 		return ""
 	if s == null:
 		s = XState.current
-	# T013-1c：封禁功法、专属角色限制、同门后重顶前重
+	# T013-1c：停用功法、专属角色限制、同系高阶替换低阶
 	if gongfa_on(s):
 		_ensure_index()
 		if _gongfa_by_skill.has(skill_id):
 			var sp: Dictionary = _gongfa_by_skill[skill_id]
 			if bool(sp.get("banned", false)):
-				return "天启篇已封禁此功法，无法修习"
+				return "此秘籍在天启篇已停用，不可修习、不生效"
 			var only_aid := int(sp.get("only_actor", 0))
 			if only_aid > 0 and a.actor_id != only_aid:
 				var who_nm := str(XDB.rec("Actors", only_aid).get("name", "指定角色"))
-				return "此功法仅%s可修习" % who_nm
+				return "此秘籍仅%s可修习" % who_nm
 	if a.skill_ids.has(skill_id):
 		if is_sealed(a, skill_id, s):
 			return "已学会此秘籍（已封印），请在技能页启封，启封后生效"
@@ -545,8 +546,8 @@ static func learn_reason(a, skill_id: int, s: XState = null) -> String:
 		var higher := _owned_school_higher_or_same(a, skill_id)
 		if higher > 0:
 			var hnm := str(XDB.rec("Skills", higher).get("name", ""))
-			return "已修习更高或同重功法「%s」，无需重复修习" % hnm
-		# 当前生效格里已有同门更低重 → 原地升级替换，净增 0 格，放行
+			return "已修习同系更高阶或同阶秘籍%s，无需重复修习" % _quote_name(hnm)
+		# 当前生效格里已有同系更低阶 → 原地升级替换，净增 0 格，放行
 		if _active_school_lower_id(a, skill_id, s) > 0:
 			return ""
 	# 元素转换书：当前生效格已有另一门转换书 → 原地替换，不占新格
@@ -750,11 +751,11 @@ static func unseal(s: XState, a: XActor, skill_id: int) -> Dictionary:
 		_ensure_index()
 		var sp: Dictionary = _gongfa_by_skill.get(skill_id, {})
 		if bool(sp.get("banned", false)):
-			return {"ok": false, "reason": "天启篇已封禁此功法，无法启封"}
+			return {"ok": false, "reason": "此秘籍在天启篇已停用，不可启用、不生效"}
 		var higher := _owned_school_higher_or_same(a, skill_id)
 		if higher > 0:
 			var hnm := str(XDB.rec("Skills", higher).get("name", ""))
-			return {"ok": false, "reason": "已修习更高或同重功法「%s」，无法启封低重" % hnm}
+			return {"ok": false, "reason": "已修习同系更高阶或同阶秘籍%s，无法启封低阶" % _quote_name(hnm)}
 	var replaced := 0
 	var replaced_lower := 0
 	if is_conversion_skill(skill_id):
@@ -984,6 +985,10 @@ static func ui_card_actions(s: XState, a: XActor, sk: Dictionary) -> Dictionary:
 	return {"tag": tag, "buttons": btns}
 
 
+static func _quote_name(nm: String) -> String:
+	return nm if nm.begins_with("《") else ("「%s」" % nm)
+
+
 ## 封印／启封确认弹窗文案（新旧两套皮肤共用）
 static func ui_confirm_spec(s: XState, a: XActor, sk: Dictionary) -> Dictionary:
 	if not on(s) or a == null or sk.is_empty() or not is_entry_manageable(a, sk, s):
@@ -991,6 +996,7 @@ static func ui_confirm_spec(s: XState, a: XActor, sk: Dictionary) -> Dictionary:
 	if s == null:
 		s = XState.current
 	var nm := str(sk.get("name", ""))
+	var qnm := _quote_name(nm)
 	var sid := int(sk.get("id", 0))
 	var free := has_free_pick(a, s)
 	if is_entry_sealed(sk):
@@ -999,7 +1005,7 @@ static func ui_confirm_spec(s: XState, a: XActor, sk: Dictionary) -> Dictionary:
 		var can_up := true
 		if old_conv > 0:
 			var old_nm := str(XDB.rec("Skills", old_conv).get("name", ""))
-			body = "启封后将与当前生效的「%s」互换（不额外占格），被动立即生效。" % old_nm
+			body = "启封后将与当前生效的%s互换（不额外占格），被动立即生效。" % _quote_name(old_nm)
 		elif used_slots(a, s) >= limit(a):
 			can_up = false
 			body = "当前秘籍格已满（%d / %d），请先封印一本生效中的秘籍。" % [used_slots(a, s), limit(a)]
@@ -1009,7 +1015,7 @@ static func ui_confirm_spec(s: XState, a: XActor, sk: Dictionary) -> Dictionary:
 		if free:
 			buttons.append({"text": "结束免费期", "disabled": false, "action": "finish_free"})
 		buttons.append({"text": "取消", "disabled": false, "action": "cancel"})
-		return {"title": "启封「%s」？" % nm, "body": body, "danger": false, "buttons": buttons, "skill_id": sid}
+		return {"title": "启封%s？" % qnm, "body": body, "danger": false, "buttons": buttons, "skill_id": sid}
 	var cost := seal_cost(s, a)
 	var body2 := ""
 	var can_seal := true
@@ -1022,7 +1028,7 @@ static func ui_confirm_spec(s: XState, a: XActor, sk: Dictionary) -> Dictionary:
 	if free:
 		buttons2.append({"text": "结束免费期", "disabled": false, "action": "finish_free"})
 	buttons2.append({"text": "取消", "disabled": false, "action": "cancel"})
-	return {"title": "封印「%s」？" % nm, "body": body2, "danger": true, "buttons": buttons2, "skill_id": sid}
+	return {"title": "封印%s？" % qnm, "body": body2, "danger": true, "buttons": buttons2, "skill_id": sid}
 
 
 static func ui_gold_currency(s: XState = null) -> Array:
@@ -1038,13 +1044,14 @@ static func ui_action_toast(action: String, sk_name: String, res: Dictionary) ->
 		return ""
 	if not bool(res.get("ok", false)):
 		return str(res.get("reason", "操作失败"))
+	var qnm := _quote_name(sk_name)
 	match action:
 		"seal":
 			if bool(res.get("free", false)):
-				return "已免费封印「%s」，腾出 1 个秘籍格" % sk_name
-			return "已封印「%s」（消耗 %s 精魂），腾出 1 个秘籍格" % [sk_name, XMenu._group(int(res.get("cost", 0)))]
+				return "已免费封印%s，腾出 1 个秘籍格" % qnm
+			return "已封印%s（消耗 %s 精魂），腾出 1 个秘籍格" % [qnm, XMenu._group(int(res.get("cost", 0)))]
 		"unseal":
-			return "已启封「%s」，被动已生效" % sk_name
+			return "已启封%s，被动已生效" % qnm
 		"finish_free":
 			return "已结束旧存档免费封印期，后续封印将收取精魂"
 	return ""
@@ -1310,6 +1317,9 @@ static func _build_skill_view(base: Dictionary, sp: Dictionary) -> Dictionary:
 	var eff := str(sp.get("effect_text", ""))
 	if eff != "":
 		lines.append("<pos=APs text=\\c[1]效果:%s size=18 color=rgba(255,255,255,1) line=false align=0>" % eff)
+	var obtain := str(sp.get("obtain_text", ""))
+	if obtain != "":
+		lines.append("<pos=APs text=\\c[1]%s size=18 color=rgba(255,255,255,1) line=false align=0>" % obtain)
 	var note := "\n".join(lines)
 	out["note"] = note
 	out["meta"] = XTianqiSkills.parse_meta(note)
@@ -1323,9 +1333,10 @@ static func _build_item_view(base: Dictionary, sp: Dictionary) -> Dictionary:
 	var q := _tier_quality(sp)
 	var nm := str(sp.get("item_name", sp.get("name", base.get("name", ""))))
 	var sk_nm := str(sp.get("name", nm))
+	var is_banned := bool(sp.get("banned", false))
 	out["id"] = iid
 	out["name"] = nm
-	out["description"] = str(sp.get("description", base.get("description", "")))
+	out["description"] = str(sp.get("description", "")) if is_banned else ""
 	out["price"] = 0
 	out["effects"] = [{"code": 43, "dataId": sid, "value1": 1.0, "value2": 0.0}]
 	var lines: Array[String] = ["<quality:%d>" % q, "<ici:%d>" % q]
@@ -1333,12 +1344,15 @@ static func _build_item_view(base: Dictionary, sp: Dictionary) -> Dictionary:
 	if bp > 0:
 		lines.append("<item 2530 Buy Price: %d>" % bp)
 	var eff := str(sp.get("effect_text", ""))
-	if bool(sp.get("banned", false)):
+	if is_banned:
 		lines.append("<pos=APs text=\\c[2]%s size=18 color=rgba(255,255,255,1) line=false align=0>" % eff)
 	else:
-		lines.append("<pos=APs text=\\c[1]效果:使用后学会功法「%s」 size=18 color=rgba(255,255,255,1) line=false align=0>" % sk_nm)
+		lines.append("<pos=APs text=\\c[1]用法:使用后学会秘籍%s size=18 color=rgba(255,255,255,1) line=false align=0>" % _quote_name(sk_nm))
 		if eff != "":
-			lines.append("<pos=APs text=\\c[1]功法效果:%s size=18 color=rgba(255,255,255,1) line=false align=0>" % eff)
+			lines.append("<pos=APs text=\\c[1]效果:%s size=18 color=rgba(255,255,255,1) line=false align=0>" % eff)
+		var obtain := str(sp.get("obtain_text", ""))
+		if obtain != "":
+			lines.append("<pos=APs text=\\c[1]%s size=18 color=rgba(255,255,255,1) line=false align=0>" % obtain)
 	var note := "\n".join(lines)
 	out["note"] = note
 	out["meta"] = XTianqiSkills.parse_meta(note)
@@ -1507,8 +1521,8 @@ static func ev54_menu(s: XState) -> Array:
 	var top_floor := ev54_top_floor(s)
 	var out := [
 		["修习功法", ["gongfa"]],
-		["法宝与专武" if top_floor >= 13 else "法宝与专武（13层解锁）", ["tab", "fabao"]],
-		["神武装备" if top_floor >= 21 else "神武装备（21层解锁）", ["tab", "divine"]],
+		["法宝与专武" if top_floor >= 13 else "法宝与专武（第 13 层解锁）", ["tab", "fabao"]],
+		["神武装备" if top_floor >= 21 else "神武装备（第 21 层解锁）", ["tab", "divine"]],
 	]
 	if not ev54_tab_goods(s, "abyss").is_empty():
 		out.append(["深渊秘传", ["tab", "abyss"]])
@@ -1521,9 +1535,9 @@ static func ev54_gongfa_menu(s: XState) -> Array:
 		return []
 	var top_floor := ev54_top_floor(s)
 	var out := [
-		["入门功法（1层）", ["tab", "gongfa_t1"]],
-		["小成功法（13层）" if top_floor >= 13 else "小成功法（13层解锁）", ["tab", "gongfa_t2"]],
-		["大成功法（21层）" if top_floor >= 21 else "大成功法（21层解锁）", ["tab", "gongfa_t3"]],
+		["入门功法（第 1 层）", ["tab", "gongfa_t1"]],
+		["小成功法（第 13 层）" if top_floor >= 13 else "小成功法（第 13 层解锁）", ["tab", "gongfa_t2"]],
+		["大成功法（第 21 层）" if top_floor >= 21 else "大成功法（第 21 层解锁）", ["tab", "gongfa_t3"]],
 	]
 	if not ev54_tab_goods(s, "abyss").is_empty():
 		out.append(["深渊秘传", ["tab", "abyss"]])
@@ -1560,7 +1574,7 @@ static func _run_ev54_gongfa(host, s: XState, face: String, face_idx: int, speak
 	while true:
 		var opts := ev54_gongfa_menu(s)
 		var labels := opts.map(func(o): return str(o[0]))
-		var pick: int = await host.show_text_with_choices(face, face_idx, ["\\n<%s>功法分入门、小成、大成三重，同门后重顶替前重、只占一格秘籍格。" % speaker], labels, labels.size() - 1)
+		var pick: int = await host.show_text_with_choices(face, face_idx, ["\\n<%s>功法分入门、小成、大成三重，同系高阶替换低阶，只占 1 个秘籍格。" % speaker], labels, labels.size() - 1)
 		if pick < 0 or pick >= opts.size():
 			return
 		var act: Array = opts[pick][1]
@@ -1577,5 +1591,7 @@ static func _open_ev54_tab(host, s: XState, tab: String, face: String, face_idx:
 		await host.show_text(face, face_idx, ["\\n<%s>%s" % [speaker, lock_msg]])
 		return
 	XShopStock.set_context(EV54_MAP, EV54_EVENT)
+	XShopStock.apply_group(s, EV54_STOCK_GROUP)
 	await host.open_shop(goods, false)
+	s.shop_pending = ""
 	XShopStock.shop_context = {}
