@@ -238,6 +238,19 @@ func _test_levels_and_old_save() -> void:
 	check("repeat_load.marker_prevents_second_pass",
 		int(XMagicWeapon.level_of(reload3.gear[2])) == 200,
 		XMagicWeapon.level_of(reload3.gear[2]))
+	# 仅含 ≤99 级法宝的干净西游档读档不改写任何字段、不写入迁移标记（与 save_roundtrip 逐字节一致）
+	var clean_s := _make_xiyou(10)
+	var clean_fb := XGear.template("armor", 123)
+	clean_fb["level"] = 37.0
+	clean_s.register_gear(clean_fb)
+	clean_s.gear.append(clean_fb)
+	var clean_before := JSON.stringify(clean_s.to_dict())
+	var clean_after := XState.from_dict(JSON.parse_string(clean_before))
+	check("clean_save.no_flag_and_exact_roundtrip",
+		not clean_after.flags.has(XMagicWeapon.OLD_LEVEL_MIGRATE_MARK)
+		and JSON.parse_string(clean_before) == JSON.parse_string(JSON.stringify(clean_after.to_dict())),
+		clean_after.flags)
+	XState.current = reload3
 
 	# 升层自动恢复（不丢等级）：5 层上限 24 → 10 层上限 39（37 恢复）→ 20 层上限 69（50 恢复）→ 30 层上限 99（99 恢复）
 	var r3_331: Dictionary = reload3.actor(1).equips[slot1]

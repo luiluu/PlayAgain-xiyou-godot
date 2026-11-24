@@ -719,8 +719,10 @@ func set_variable(id: int, value: float) -> void:
 	variables[id] = floorf(value)  # Game_Variables.setValue：数值一律 Math.floor。
 	XGlobalVars.on_variable(id, value)  # 跨存档变量存取整前的原值（同 Drill_VariablesAcrossArchive）
 	if id == 20 and XMagicWeapon.scale_active(null, self):
+		XActor.read_touch()
 		for a in actors.values():
-			a.param_mark_dirty()
+			if a.param_cache_on:
+				a.param_dirty = true
 
 ## 公式用的变量表 v[...]：未定义的按 0。
 func variable_array(size := 5000) -> Array:
