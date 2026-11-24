@@ -123,4 +123,25 @@ func _difficulties() -> void:
 		_check("助力位放超强者只有证道（D57）：" + k, XTianqiBalance.difficulty(k).get("helper_super") == (k == "zhengdao"), XTianqiBalance.difficulty(k))
 		# D265：五档随机阵容取消弱者人数下限，min_weak 均为 0
 		_check("五档 min_weak 为 0（D265）：" + k, XTianqiBalance.difficulty(k).get("min_weak", -1) == 0, XTianqiBalance.difficulty(k))
+	# D282：秘籍格随难度增加（寻常/艰险 +0、九死 +1、炼狱 +2、证道 +3，三档同加）
+	var want_bonus := {"xunchang": 0, "jianxian": 0, "jiusi": 1, "lianyu": 2, "zhengdao": 3}
+	var want_matrix := {
+		"xunchang": [6, 4, 3],
+		"jianxian": [6, 4, 3],
+		"jiusi": [7, 5, 4],
+		"lianyu": [8, 6, 5],
+		"zhengdao": [9, 7, 6],
+	}
+	for k in want_bonus:
+		var b := XTianqiBalance.secret_cap_bonus(k)
+		var caps := [
+			XTianqiBalance.secret_cap(XTier.WEAK, k),
+			XTianqiBalance.secret_cap(XTier.STRONG, k),
+			XTianqiBalance.secret_cap(XTier.SUPER, k),
+		]
+		_check("D282 难度秘籍格加成与三档上限：" + k,
+			b == int(want_bonus[k]) and caps == want_matrix[k] and int(XTianqi.difficulty(k).get("secret_cap_bonus", -1)) == b,
+			{"bonus": b, "caps": caps, "want": want_matrix[k]})
+	_check("D282 未知档位与未知难度安全返回 0",
+		XTianqiBalance.secret_cap("nope", "zhengdao") == 0 and XTianqiBalance.secret_cap_bonus("nope") == 0)
 

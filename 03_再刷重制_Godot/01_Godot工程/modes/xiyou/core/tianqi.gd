@@ -149,6 +149,7 @@ static func difficulty(key: String) -> Dictionary:
 			out["super_cap"] = int(row.get("super_cap", 0))
 			out["min_weak"] = int(row.get("min_weak", 0))
 			out["helper_super"] = bool(row.get("helper_super", false))
+			out["secret_cap_bonus"] = int(row.get("secret_cap_bonus", 0))
 			out["pool"] = row.get("pool", [])
 			return out
 	return {}

@@ -56,8 +56,19 @@ static func tier_taken_mult(name: String) -> float:
 	return 1.0 + float(tier(name).get("damage_taken", 0.0))
 
 
-static func secret_cap(name: String) -> int:
-	return int(tier(name).get("secret_cap", 0))
+## 档位秘籍格上限：只传档位名返回基数（弱 6 / 强 4 / 超 3）；传入难度键时加上该难度的 secret_cap_bonus（D282）
+static func secret_cap(name: String, diff_key := "") -> int:
+	var base := int(tier(name).get("secret_cap", 0))
+	if base <= 0:
+		return 0
+	return base + secret_cap_bonus(diff_key)
+
+
+## 某难度的秘籍格加成（D282：寻常/艰险 0、九死 +1、炼狱 +2、证道 +3；未知或空难度返回 0）
+static func secret_cap_bonus(diff_key: String) -> int:
+	if diff_key == "":
+		return 0
+	return int(difficulty(diff_key).get("secret_cap_bonus", 0))
 
 
 # ---- 弱者协力与助力位 ----
@@ -113,11 +124,11 @@ static func difficulty_keys() -> Array:
 	return data().get("difficulties", []).map(func(d): return str(d.get("key", "")))
 
 
-## 难度一行，拍平成：key、name、enemy_hp、enemy_atk、party_damage、quality_offset（占位）、pool（档位名）、super_cap、min_weak、helper_super。没有为空。
+## 难度一行，拍平成：key、name、secret_cap_bonus、enemy_hp、enemy_atk、party_damage、quality_offset（占位）、pool（档位名）、super_cap、min_weak、helper_super。没有为空。
 static func difficulty(key: String) -> Dictionary:
 	for d in data().get("difficulties", []):
 		if str(d.get("key", "")) == key:
-			var out := {"key": key, "name": str(d.get("name", ""))}
+			var out := {"key": key, "name": str(d.get("name", "")), "secret_cap_bonus": int(d.get("secret_cap_bonus", 0))}
 			var sc: Dictionary = d.get("scaling", {})
 			for k in ["enemy_hp", "enemy_atk", "party_damage", "quality_offset"]:
 				out[k] = float(sc.get(k, 0.0))
