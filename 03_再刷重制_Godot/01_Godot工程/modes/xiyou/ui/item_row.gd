@@ -38,8 +38,8 @@ static func paint(c: XMVCanvas, rec: Dictionary, y: float, right_text: String, a
 ## 物品列表一系（物品页、出售、装备候选、战斗物品）有自己的 drawItemName 链，不画（magic_level_oracle.json classes）。
 ## 画了返回 true：原版画完把不透明度改回不透明，同一行后面画的（如商店价格）不再半透明。
 static func paint_magic_level(c: XMVCanvas, rec: Dictionary, x: float, y: float) -> bool:
-	var lv = XEquipmentView.level(rec)
-	if not (lv is float and lv >= 0.0):
+	var lv := XMagicWeapon.effective_level(rec)
+	if lv < 0.0:
 		return false
 	var p := XDB.plugin("CP_MagicWeapon")
 	var size := int(str(p.get("Level Font Size", "16")))

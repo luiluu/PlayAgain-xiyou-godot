@@ -14,5 +14,5 @@ static func level(item: Dictionary):
 static func first_armor_level(rows: Array, base_id: int):
 	for item in rows:
 		if item is Dictionary and item.get("kind") == "armor" and int(item.get("baseItemId", item.get("base", item.get("id", 0)))) == base_id:
-			return item.get("instanceLevel", level(item))
+			return item.get("instanceLevel", XMagicWeapon.effective_level(item))
 	return 0.0
