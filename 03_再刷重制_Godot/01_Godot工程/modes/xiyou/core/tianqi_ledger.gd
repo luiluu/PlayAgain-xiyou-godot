@@ -356,9 +356,12 @@ static func live_confirm_add(a, b, dmg_type := 1, item := {}, critical := false,
 		var e: Dictionary = trip[2]
 		if str(row.get("action", "")) != "pool" or not _live_hp_ok(e, dmg_type):
 			continue
+		var cap_kind := str(row.get("cap", ""))
+		if cap_kind == "secret" and XTianqiSecrets.is_sealed(a, int(row.get("book", trip[0]))):
+			continue
 		var x := maxf(0.0, _probe_k(a, b, int(trip[0]), e, item, critical, vars) - 1.0) if bool(row.get("probe", false)) else float(int(row.get("add", 0))) / 100.0
 		out.crit += float(int(row.get("crit", 0))) / 100.0  # T205（协调定 B）：暴击专属段进④（frame.criticalAdd，只在暴击时生效）
-		match str(row.get("cap", "")):
+		match cap_kind:
 			"secret":
 				var key := "#%d" % int(row.get("book", trip[0]))
 				raw_books[key] = float(raw_books.get(key, 0.0)) + x
@@ -734,6 +737,8 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 	# 期三九线封顶：秘籍格按本数封，所以秘籍桶再并排按本记一份（同样的形状，桶名 "#技能号"）
 	var books := {"globalHarmRi": {}, "critHarmRi": {}, "skillTypeDvup": {}, "SkETypeHarmRi": {}, "skillPass": {}, "passiveELUP": {}, "elementAmplify": {}}
 	for o in objs:
+		if o.has("stypeId") and XTianqiSecrets.is_sealed(a, int(o.get("id", 0))):
+			continue
 		var bucket := bucket_of(o, a)
 		var book := "#%d" % int(o.get("id", 0)) if bucket == "secret" else ""
 		var sc := XActor._note_scans(str(o.get("note", "")))
@@ -1099,10 +1104,13 @@ static func secret_kept(a, by: Dictionary) -> Array:
 	var per := XTianqiBase.secret_slot(nine_cap("secret_slot"))  # 期四开着读 phase4.secret_slot
 	var scored := []
 	for b in ids:
+		var bid := int(str(b).substr(1))
+		if XTianqiSecrets.is_sealed(a, bid):
+			continue
 		var score := minf(_max_of(books.globalHarmRi, b), per) + minf(_max_of(books.critHarmRi, b), per)
 		score += minf(maxf(maxf(_max_nested(books.skillTypeDvup, b), _max_nested(books.SkETypeHarmRi, b)), _max_nested(books.skillPass, b)), per)
 		score += minf(maxf(_max_nested(books.elementAmplify, b), _max_nested(books.passiveELUP, b)), per)
-		scored.append([score, int(str(b).substr(1)), b])
+		scored.append([score, bid, b])
 	scored.sort_custom(func(x, y): return x[0] > y[0] or (x[0] == y[0] and x[1] < y[1]))
 	return scored.slice(0, secret_slots(a)).map(func(x): return x[2])
 

@@ -3278,6 +3278,97 @@ def check_weak_affix_table(_args) -> bool:
     return _run_table('weak_affix_table.json', lambda t: weak_affix_rules(t, _load_opt('six_dim.json')))
 
 
+def secret_books_rules(t: dict, db_dir: Path = None) -> list:
+    bad, check = _checker()
+    check('version', _is_int(t.get('version')) and t['version'] >= 1, '要是正整数')
+    rules = t.get('rules')
+    if not isinstance(rules, dict):
+        return bad + ['rules 要是对象']
+    check('rules.seal_field_units', _in(rules.get('seal_field_units'), 0, 100) and rules.get('seal_field_units') > 0,
+          '要是 (0, 100] 的场钱倍数：%r' % (rules.get('seal_field_units'),))
+    check('rules.seal_fallback_gold', _is_int(rules.get('seal_fallback_gold')) and rules['seal_fallback_gold'] > 0,
+          '要是正整数：%r' % (rules.get('seal_fallback_gold'),))
+    rng = rules.get('per_book_damage_pct_range')
+    check('rules.per_book_damage_pct_range',
+          isinstance(rng, list) and len(rng) == 2 and all(_is_int(x) and x > 0 for x in rng) and rng[0] <= rng[1],
+          '要是 [下限, 上限] 两个正整数（D274 5~15）：%r' % (rng,))
+    stypes = rules.get('slot_stypes')
+    check('rules.slot_stypes',
+          isinstance(stypes, list) and all(_is_int(x) and x > 0 for x in stypes) and 4 in stypes and 6 in stypes,
+          '要是含 4、6 的正整数数组：%r' % (stypes,))
+    check('rules.unseal_cost_units', _in(rules.get('unseal_cost_units', 0), 0, 100),
+          '要在 0～100：%r' % (rules.get('unseal_cost_units'),))
+
+    inc = t.get('include_skills')
+    inc_all = set()
+    if not isinstance(inc, dict):
+        bad.append('include_skills 要是对象')
+    else:
+        for k in ('abyss_six_passives', 'sect_passives', 'conversion_skills'):
+            arr = inc.get(k)
+            ok_arr = isinstance(arr, list) and len(arr) > 0 and all(_is_int(x) and x > 0 for x in arr) and len(arr) == len(set(arr))
+            check('include_skills.' + k, ok_arr, '要是非空去重正整数数组：%r' % (arr,))
+            if ok_arr:
+                inc_all.update(arr)
+        for req in (6185, 6204, 6192, 6203, 6206, 6211, 5068, 5075, 11201, 11205):
+            check('include_skills 含 %d' % req, req in inc_all, '缺少预留占格技能 %d' % req)
+
+    ex = t.get('seal_exempt')
+    ex_all = set()
+    if not isinstance(ex, dict):
+        bad.append('seal_exempt 要是对象')
+    else:
+        for k in ('bloodlines', 'not_book'):
+            arr = ex.get(k)
+            ok_arr = isinstance(arr, list) and len(arr) > 0 and all(_is_int(x) and x > 0 for x in arr) and len(arr) == len(set(arr))
+            check('seal_exempt.' + k, ok_arr, '要是非空去重正整数数组：%r' % (arr,))
+            if ok_arr:
+                ex_all.update(arr)
+        cr = ex.get('costume_range')
+        ok_cr = isinstance(cr, list) and len(cr) == 2 and all(_is_int(x) and x > 0 for x in cr) and cr[0] <= cr[1]
+        check('seal_exempt.costume_range', ok_cr, '要是 [起, 止] 两个正整数：%r' % (cr,))
+        if ok_cr:
+            ex_all.update(range(cr[0], cr[1] + 1))
+        check('seal_exempt 与 include_skills 无交集', not (inc_all & ex_all), '冲突技能：%r' % sorted(inc_all & ex_all))
+
+    ci = t.get('conversion_items')
+    if not isinstance(ci, dict) or not ci:
+        bad.append('conversion_items 要是非空对象')
+    else:
+        conv_skills = set(inc.get('conversion_skills', [])) if isinstance(inc, dict) else set()
+        for k, v in ci.items():
+            if str(k).startswith('_'):
+                continue
+            check('conversion_items.%s' % k, str(k).isdigit() and _is_int(v) and v in conv_skills,
+                  '键要为物品号、值要在 conversion_skills 中：%r -> %r' % (k, v))
+
+    ign = t.get('ignore_items', [])
+    check('ignore_items', isinstance(ign, list) and all(_is_int(x) and x > 0 for x in ign), '要是正整数数组：%r' % (ign,))
+
+    # 若本地有转换后的数据库，抽查原版号段（<10000）技能与物品存在
+    db = db_dir or (PROJECT / 'modes' / 'xiyou' / 'generated' / 'db')
+    sk_path = db / 'Skills.json'
+    if sk_path.exists():
+        skills = json.loads(sk_path.read_text(encoding='utf-8'))
+        for sid in sorted(inc_all | ex_all):
+            if sid < 10000:
+                check('Skills[%d]' % sid, sid < len(skills) and isinstance(skills[sid], dict), '技能不存在')
+    it_path = db / 'Items.json'
+    if it_path.exists() and isinstance(ci, dict):
+        items = json.loads(it_path.read_text(encoding='utf-8'))
+        for k in ci:
+            if str(k).startswith('_') or not str(k).isdigit():
+                continue
+            iid = int(k)
+            if iid < 3000:
+                check('Items[%d]' % iid, iid < len(items) and isinstance(items[iid], dict), '物品不存在')
+    return bad
+
+
+def check_secret_books(_args) -> bool:
+    return _run_table('secret_books.json', secret_books_rules)
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -3322,6 +3413,7 @@ CHECKS = [
     ('ring_styles', check_ring_styles),
     ('trumpet', check_trumpet),
     ('weak_affix_table', check_weak_affix_table),
+    ('secret_books', check_secret_books),
 ]
 
 

@@ -880,6 +880,9 @@ func _effective(t: XActor) -> bool:
 	var pill := XPercentPills.valid(_item, t)  # 淬元丹（Codex_PercentPills 的 hasItemAnyValidEffects 包装）：没满 20 颗才有效
 	if pill >= 0:
 		return pill == 1
+	var sec := XTianqiSecrets.item_effective(t, _item)  # 天启篇秘籍格：满格或已学不可用
+	if sec >= 0:
+		return sec == 1
 	for e in _item.get("effects", []):
 		match int(e.code):
 			11:
@@ -920,6 +923,12 @@ func _use() -> void:
 		if not reason.is_empty():
 			XSound.system(3)
 			XToast.show_text(reason,true)
+			return
+	if targets.size() == 1:
+		var sec_reason := XTianqiSecrets.item_learn_reason(targets[0], _item)
+		if not sec_reason.is_empty():
+			XSound.system(3)
+			XToast.show_text(sec_reason, true)
 			return
 	if s.item_count(int(_item.get("id", 0))) <= 0 or not targets.any(func(t): return _effective(t)):
 		XSound.system(3)

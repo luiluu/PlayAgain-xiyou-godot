@@ -16,6 +16,7 @@ const TYPE_RECT := Rect2(0, 0, 240, 172)
 const STATUS_RECT := Rect2(240, 0, 1040, 172)
 const LIST_RECT := Rect2(0, 172, 1280, 548)
 const ACTOR_RECT := Rect2(0, 0, 1280, 720)
+const SECRET_RECT := Rect2(260, 200, 760, 310)
 const LH := 36.0
 const COL_W := 602.0
 const SPACING := 48.0
@@ -41,6 +42,9 @@ var type_win: XMVWindow
 var status_win: XMVWindow
 var list_win: XMVWindow
 var actor_win: XMVWindow
+var secret_win: XMVWindow
+var secret_spec: Dictionary = {}
+var secret_pick := 0
 var help_card: XHelpCard
 var logic: XBattleLogic
 ## 新界面（天启篇，XUiSkin.on() 时）：同一套状态换成模板页布局画（XSkinSkillPage）；关着时为 null，旧页一行不变
@@ -58,10 +62,13 @@ func _ready() -> void:
 	status_win = XMVWindow.make(self, STATUS_RECT, XUI.MENU_WINDOW_OPACITY, _paint_status)
 	list_win = XMVWindow.make(self, LIST_RECT, XUI.MENU_WINDOW_OPACITY, _paint_list)
 	actor_win = XMVWindow.make(self, ACTOR_RECT, XUI.MENU_WINDOW_OPACITY, _paint_actors)
-	for w in [type_win, list_win, actor_win]:
+	secret_win = XMVWindow.make(self, SECRET_RECT, 235, _paint_secret_confirm)
+	secret_win.visible = false
+	for w in [type_win, list_win, actor_win, secret_win]:
 		w.canvas.blink = true
 	help_card = XHelpCard.new()
 	add_child(help_card)
+	move_child(secret_win, get_child_count() - 1)
 	if XUiSkin.on():
 		skin = XSkinSkillPage.new(self)
 		add_child(skin)
@@ -98,7 +105,10 @@ func entries() -> Array:
 	if list.is_empty():
 		return []
 	var st: int = list[clampi(type_index, 0, list.size() - 1)]
-	return actor().skills().filter(func(s): return int(s.get("stypeId", 0)) == st and not XTianqiSkills.is_shell(int(s.get("id", 0))))
+	var out: Array = actor().skills().filter(func(s): return int(s.get("stypeId", 0)) == st and not XTianqiSkills.is_shell(int(s.get("id", 0))))
+	if XTianqiSecrets.is_secret_stype(st):
+		out.append_array(XTianqiSecrets.sealed_entries_for_stype(actor(), st))
+	return out
 
 
 func current() -> Dictionary:
@@ -137,7 +147,8 @@ func _refresh() -> void:
 	actor_win.visible = actor_mode
 	actor_win.up_arrow = actor_top > 0
 	actor_win.down_arrow = actor_top + ACTOR_ROWS < XState.current.members().size()
-	for w in [type_win, status_win, list_win, actor_win]:
+	secret_win.visible = mode == "secret_confirm" and skin == null
+	for w in [type_win, status_win, list_win, actor_win, secret_win]:
 		w.refresh()
 	_update_help()
 	if skin != null:
@@ -189,6 +200,9 @@ func _paint_status(c: XMVCanvas) -> void:
 	var a := actor()
 	c.face(str(a.data().get("faceName", "")), int(a.data().get("faceIndex", 0)), 0, 0, 144, c.size.y)
 	XMenu.paint_actor_status(c, a, 158, 0, c.size.x - 158 - 6, LH, XPower.status_text(a))
+	var slot_txt := XTianqiSecrets.ui_slot_text(a)
+	if not slot_txt.is_empty():
+		c.text(slot_txt, 314, 0, c.size.x - 320, "right", XUI.text_color(17), 22, LH)
 
 
 func _paint_list(c: XMVCanvas) -> void:
@@ -200,7 +214,9 @@ func _paint_list(c: XMVCanvas) -> void:
 		if mode == "list" and i == index:
 			c.cursor(Rect2(x, y, COL_W, LH))
 		var s: Dictionary = list[i]
-		var alpha := 1.0 if usable(s) else XUI.DIM.a
+		var sm := XTianqiSecrets.ui_row_meta(a, s)
+		var sealed := bool(sm.get("sealed", false))
+		var alpha := XUI.DIM.a if sealed else (1.0 if usable(s) else XUI.DIM.a)
 		var w := COL_W - 6.0
 		var name_w := w - c.text_width("000")
 		_paint_mastery_gauge(c, a, s, x, y, name_w, alpha)
@@ -209,7 +225,11 @@ func _paint_list(c: XMVCanvas) -> void:
 		c.text(str(s.name), x + 36, y, name_w - 36, "left", XQuality.list_color(s), XUI.FONT_SIZE, LH, alpha)
 		_paint_mastery_level(c, a, s, x, y, alpha)
 		var dw := w
-		for cost in _costs(a, s):
+		var costs := _costs(a, s)
+		if costs.is_empty() and sm.has("old_badge"):
+			var bc := XUI.text_color(18) if sealed else XUI.text_color(17)
+			c.text(str(sm.old_badge), x, y, dw, "right", bc, COST_SIZE, LH, 1.0 if sealed else 0.9)
+		for cost in costs:
 			if int(cost.get("icon", 0)) > 0:
 				c.icon(int(cost.icon), x + dw - 32, y + 2, alpha)
 				dw -= 34
@@ -339,6 +359,78 @@ func _paint_actors(c: XMVCanvas) -> void:
 		XItemScene._current_max(c, "MP", m.mp, m.mmp, gx, y + LH * 2, gw, "mp")
 
 
+func _paint_secret_confirm(c: XMVCanvas) -> void:
+	if secret_spec.is_empty():
+		return
+	var w := c.size.x - 16.0
+	c.text(str(secret_spec.get("title", "")), 8, 4, w, "left", XUI.text_color(17), 26, LH)
+	var body := str(secret_spec.get("body", ""))
+	var y := LH + 12.0
+	var line := ""
+	for ch in body:
+		if c.text_width(line + ch, 21) > w and not line.is_empty():
+			c.text(line, 8, y, w, "left", XUI.TEXT, 21, 30.0)
+			y += 30.0
+			line = ch
+		else:
+			line += ch
+	if not line.is_empty():
+		c.text(line, 8, y, w, "left", XUI.TEXT, 21, 30.0)
+	var btns: Array = secret_spec.get("buttons", [])
+	var by := c.size.y - LH - 8.0
+	var n := maxi(btns.size(), 1)
+	var bw := (c.size.x - 16.0 - (n - 1) * 12.0) / float(n)
+	for i in btns.size():
+		var bx := 8.0 + i * (bw + 12.0)
+		var b: Dictionary = btns[i]
+		if i == secret_pick:
+			c.cursor(Rect2(bx, by, bw, LH))
+		var alpha := XUI.DIM.a if bool(b.get("disabled", false)) else 1.0
+		c.text(str(b.get("text", "")), bx, by, bw, "center", XUI.TEXT, 22, LH, alpha)
+
+
+func open_secret_confirm() -> bool:
+	var sk := current()
+	var spec := XTianqiSecrets.ui_confirm_spec(XState.current, actor(), sk)
+	if spec.is_empty():
+		return false
+	secret_spec = spec
+	var btns: Array = spec.get("buttons", [])
+	secret_pick = maxi(btns.size() - 1, 0) if bool(spec.get("danger", false)) else 0
+	mode = "secret_confirm"
+	help_card.show_for({})
+	XSound.system(1)
+	_refresh()
+	return true
+
+
+func close_secret_confirm() -> void:
+	secret_spec = {}
+	mode = "list"
+	_refresh()
+
+
+func confirm_secret_choice(choice: int) -> void:
+	var btns: Array = secret_spec.get("buttons", [])
+	if choice < 0 or choice >= btns.size():
+		close_secret_confirm()
+		return
+	var btn: Dictionary = btns[choice]
+	var action := str(btn.get("action", "cancel"))
+	if action == "cancel":
+		XSound.system(2)
+		close_secret_confirm()
+		return
+	var a := actor()
+	var sid := int(secret_spec.get("skill_id", 0))
+	if not XTianqiSecrets.ui_exec_action(XState.current, a, action, sid):
+		return
+	secret_spec = {}
+	mode = "list"
+	index = clampi(index, 0, maxi(0, entries().size() - 1))
+	_refresh()
+
+
 # ---- 操作 ----
 func ok() -> void:
 	match mode:
@@ -351,6 +443,9 @@ func ok() -> void:
 			index = clampi(index, 0, maxi(0, entries().size() - 1))
 		"list":
 			if not usable(current()):
+				if XTianqiSecrets.is_entry_manageable(actor(), current()):
+					open_secret_confirm()
+					return
 				XSound.system(3)
 				return
 			XSound.system(1)
@@ -363,6 +458,9 @@ func ok() -> void:
 			actor_top = 0
 		"actor":
 			use_skill()
+		"secret_confirm":
+			confirm_secret_choice(secret_pick)
+			return
 	_refresh()
 
 
@@ -376,6 +474,9 @@ func cancel() -> void:
 		"list":
 			mode = "type"
 		"actor":
+			mode = "list"
+		"secret_confirm":
+			secret_spec = {}
 			mode = "list"
 	_refresh()
 
@@ -438,7 +539,7 @@ static func _for_friend(s: Dictionary) -> bool:
 
 ## Scene_MenuBase.nextActor/previousActor：换角色后回到类型窗
 func change_actor(d: int) -> void:
-	if mode == "actor":
+	if mode in ["actor", "secret_confirm"]:
 		return
 	var n := XState.current.party.size()
 	actor_index = (actor_index + d + n) % n
@@ -452,7 +553,7 @@ func change_actor(d: int) -> void:
 
 
 func _move(d: int, horizontal: bool, wrap: bool) -> void:
-	var before := [type_index, index, actor_pick]
+	var before := [type_index, index, actor_pick, secret_pick]
 	match mode:
 		"type":
 			if horizontal:
@@ -487,7 +588,11 @@ func _move(d: int, horizontal: bool, wrap: bool) -> void:
 				return
 			actor_pick = XMenu._move(actor_pick, d, XState.current.members().size(), wrap)
 			actor_top = XMenu._scroll_to(actor_pick, actor_top, ACTOR_ROWS)
-	if before != [type_index, index, actor_pick]:
+		"secret_confirm":
+			var bn: int = (secret_spec.get("buttons", []) as Array).size()
+			if bn > 0:
+				secret_pick = XMenu._move(secret_pick, d, bn, wrap)
+	if before != [type_index, index, actor_pick, secret_pick]:
 		XSound.system(0)
 	_refresh()
 
@@ -603,3 +708,23 @@ func _gui_input(event: InputEvent) -> void:
 					actor_pick = i
 					XSound.system(0)
 					_refresh()
+		"secret_confirm":
+			if not SECRET_RECT.grow(-XMVWindow.PADDING).has_point(p):
+				return
+			var q: Vector2 = p - SECRET_RECT.position - pad
+			var btns: Array = secret_spec.get("buttons", [])
+			var inner_w := SECRET_RECT.size.x - XMVWindow.PADDING * 2.0
+			var inner_h := SECRET_RECT.size.y - XMVWindow.PADDING * 2.0
+			var by := inner_h - LH - 8.0
+			if q.y >= by and q.y <= by + LH and not btns.is_empty():
+				var bw := (inner_w - 16.0 - (btns.size() - 1) * 12.0) / float(btns.size())
+				for bi in btns.size():
+					var bx := 8.0 + bi * (bw + 12.0)
+					if q.x >= bx and q.x <= bx + bw:
+						if bi == secret_pick:
+							confirm_secret_choice(bi)
+						else:
+							secret_pick = bi
+							XSound.system(0)
+							_refresh()
+						break
