@@ -308,7 +308,7 @@ class T(unittest.TestCase):
         'modes/xiyou/core/tianqi_growth.gd', 'modes/xiyou/core/tianqi_guardian_gift.gd', 'modes/xiyou/core/tianqi_hall.gd',
         'modes/xiyou/core/tianqi_hall_text.gd', 'modes/xiyou/core/tianqi_six_dim.gd', 'modes/xiyou/core/tianqi_weak_b2.gd',
         'modes/xiyou/core/xinmo_traits.gd',  # 文件名不带 tianqi，靠类名 XTianqiXinmoTraits 进名单
-        'modes/xiyou/ui/tianqi/tianqi_hall_intro.gd', 'modes/xiyou/ui/tianqi_start_page.gd',
+        'modes/xiyou/ui/tianqi_hall_intro.gd', 'modes/xiyou/ui/tianqi_start_page.gd',
     )
     K6_SHARED = (  # 西游档也走的真脚本：带进包
         'modes/xiyou/battle/battle_eval.gd',      # 我方 XSmartAI 估值内核（西游自动战斗）
