@@ -1,0 +1,29 @@
+{
+ "sha": "9d60901dbb4e9f0a2f56d78215f086d92b568cd1",
+ "branch": "ci/luiluu/t469",
+ "mode": "affected",
+ "base": "origin/main",
+ "passed": true,
+ "scenes": 8,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 2,
+ "longestShardSeconds": 291.1,
+ "testSeconds": 900,
+ "generatedRef": "refs/ci/generated/main",
+ "generatedCommit": "7f7cc73cc504821d93480d517c372a4708690bec",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45461274132",
+ "sceneNames": [
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_lobby_stage3_adjacent.tscn",
+  "xiyou_starburst_books.tscn",
+  "xiyou_tianqi_battle_seed.tscn",
+  "xiyou_tianqi_trim.tscn"
+ ],
+ "time": "2026-11-24T18:54:53+00:00"
+}
