@@ -7,9 +7,8 @@ extends RefCounted
 ##   溢出再动——OTB 首回合排序时追加次数超过 4 的部分每次 1 点（note_overflow），每场每人最多 10；
 ##   守层者（GUARDIANS 敌群→楼层）——每条路线每层首通 10×层×路线系数，每次胜利再 3×层×系数；
 ##   非守层者敌群里有 Boss——bossReward(层, 系数)，层取守层者层、本图楼层或修行进度层。只有活着的出战成员得。
-## - 加成 rate = √(1＋真气÷10)，境界 9（真仙）起每级再 ×1.1。原版把 rate×天道补偿乘进对敌伤害（growthMultiplier）；
-##   加成只显示、按数值平衡不移植（用户 2026-10-12 已定：成长修正不移植），伤害 growth 仍为 1，这里只算出来供界面显示（APPLY_TO_DAMAGE）；
-##   统一调整时再定（数值平衡.md「统一调整时要看的已知问题」）。
+## - 加成 rate = √(1＋真气÷10)，境界 9（真仙）起每级再 ×1.1。西游档把真气与天道合算加成的 1/100
+##   计入我方对敌伤害（growthMultiplier），修行页与闭关页同步显示。APPLY_TO_DAMAGE 关闭时对敌伤害倍率恢复为 1。
 ## - 第二批（文件后半）：闭关菜单节点、瓶颈之战、突破、突破奖励与道法、灵根降服、奖励技能数值（参照 zhenqi_probe「break.*」，tests/xiyou_zhenqi_break）。
 ## - 第三批：道法的运行时钩子（连击、分神、金身、护法减伤与掩护、灵台保留 TP、破甲 2705、元婴护体，接在 XBattler／XActor／BattleLogic）、
 ##   神兵试炼（weapon 页、_pendingScale）、降服时含没出场的隐藏成员（troop_members）。参照 zhenqi_probe「daofa.*」「weapon.*」「hidden.*」
@@ -1042,7 +1041,7 @@ static func _actor_page(s: XState, a: XActor) -> Dictionary:
 		var r := route(s)
 		var fl := clampi(int(s.variable(20)) if int(s.variable(20)) else 1, 1, 33)
 		if comp_for(r.key, fl) > 1.0001:
-			rate_line = "真气 %d　基础 ×%.1f　本层合算 ×%.1f" % [st.qi, shown, combined_mult(a, r.key, fl, s)]
+			rate_line = "真气 %d　加成 ×%.1f（本层连同天道 ×%.1f）" % [st.qi, shown, combined_mult(a, r.key, fl, s)]
 	var lines := ["\\C[6]%s\\C[0]：%s %s" % [a.display_name(), st.world, st.name], rate_line]
 	if st.next == null:
 		lines.append("已至最高境界")

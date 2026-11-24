@@ -319,7 +319,7 @@ static func panel_rows(s: XState, a: XActor) -> Array:
 		if ctx.comp > 1.0001:
 			if XZhenqi.APPLY_TO_DAMAGE:
 				var eff := XZhenqi.combined_mult(a, ctx.route.key, ctx.floor, s)
-				rows.append(_line("天道加持：本层合算伤害 \\C[3]%s\\C[0]（含真气，自动生效）" % dmg_pct(eff)))
+				rows.append(_line("天道加持：连同真气，本层伤害 \\C[3]%s\\C[0]（自动生效）" % dmg_pct(eff)))
 			else:
 				rows.append(_line("天道加持：伤害 %s（本层自动获得）" % dmg_pct(ctx.comp)))
 	else:
@@ -357,7 +357,7 @@ static func detail_rows(s: XState, a: XActor) -> Array:
 		var zq_line := "真气：伤害 " + dmg_pct(XZhenqi.display_rate(s, a))
 		if XZhenqi.APPLY_TO_DAMAGE and ctx_z.comp > 1.0001:
 			var eff := XZhenqi.combined_mult(a, ctx_z.route.key, ctx_z.floor, s)
-			zq_line = "真气×天道（%s·第%d层）：伤害 %s（实际生效）" % [ctx_z.route.name, ctx_z.floor, dmg_pct(eff)]
+			zq_line = "真气与天道（%s·第%d层）：伤害 %s" % [ctx_z.route.name, ctx_z.floor, dmg_pct(eff)]
 		rows = [_head("真气"), _line("境界：%s　真气：%s点" % [st.name, big_panel(st.qi)]), _line(zq_line)]
 		var df := XZhenqi.DAOFA.filter(func(k): return d.daofa.get(k, 0)).map(func(k): return XZhenqi.DAOFA_NAME[k])
 		rows.append(_line("道法：" + ("、".join(df) if not df.is_empty() else "未领悟")))

@@ -64,6 +64,7 @@ func _run() -> void:
 	_check_t463_tianqi_untouched()
 	_check_t465_table_pure_and_kotori()
 	_check_t465_wpn87_save_sync()
+	_check_t465_wpn87_runeword_save_sync()
 	_check_t465_feitian_and_cri_cap()
 	_check_t465_st2739_and_rollback()
 	_check_t465_tianqi_untouched()
@@ -187,10 +188,10 @@ func _check_t463_guide_and_retreat_sync() -> void:
 	var act_pg := "\n".join(XZhenqi.menu(s, {"page": "actor", "id": 1}).get("lines", []))
 	check("t463.guide_with_comp_consistent",
 		p33.contains("真气：伤害 \\C[3]%s\\C[0]" % XGuide.dmg_pct(single33))
-		and p33.contains("天道加持：本层合算伤害 \\C[3]%s\\C[0]" % XGuide.dmg_pct(eff33))
-		and d33.contains("真气×天道（洪荒·第33层）：伤害 %s（实际生效）" % XGuide.dmg_pct(eff33))
+		and p33.contains("天道加持：连同真气，本层伤害 \\C[3]%s\\C[0]（自动生效）" % XGuide.dmg_pct(eff33))
+		and d33.contains("真气与天道（洪荒·第33层）：伤害 %s" % XGuide.dmg_pct(eff33))
 		and st33.contains(XZhenqi.mult(eff33))
-		and act_pg.contains("本层合算 ×%.1f" % eff33),
+		and act_pg.contains("真气 500000　加成 ×%.1f（本层连同天道 ×%.1f）" % [single33, eff33]),
 		[single33, eff33, p33, d33, st33, act_pg])
 
 
@@ -309,6 +310,41 @@ func _check_t465_wpn87_save_sync() -> void:
 		and (str(w_nerf.note).contains("神兵(伤害+150%)") or str(w_nerf.note).contains("神兵(最终伤害+150%)"))
 		and (str(w_back.note).contains("神兵(伤害+600%)") or str(w_back.note).contains("神兵(最终伤害+600%)")),
 		[orb_delta, e1_nerf, e1_back])
+
+
+func _check_t465_wpn87_runeword_save_sync() -> void:
+	XXiyouNerf.original_data()
+	var s := _make_xiyou()
+	s.add_actor(159)
+	var w := XGear.template("weapon", 87)
+	var recipe: Dictionary = XDB.table("Runewords").filter(func(r): return r is Dictionary and r.get("name") == "诛魔")[0]
+	w.upgradeSlots = 0
+	w.upgrades = recipe.materials.map(func(id): return {"item": int(id), "name": "", "cost": 1})
+	XRunewords.check(w)
+	w.meta["t465_instance_only"] = {"sentinel": true}
+	s.actor(159).equips[0] = w
+	var old_meta: Dictionary = w.meta.duplicate(true)
+	var old_note := str(w.note)
+
+	XXiyouNerf.ENABLED = true
+	var s_nerf := XState.from_dict(JSON.parse_string(JSON.stringify(s.to_dict())))
+	var w_nerf: Dictionary = s_nerf.actor(159).equips[0]
+	var expected := old_meta.duplicate(true)
+	expected["passiveHarmRi"] = " " + str(230.0)
+	for id in XXiyouNerf.KOTORI_SKILLS:
+		expected["SkillPass%d" % id] = " 200%"
+	check("t465.wpn87_runeword_preserves_meta",
+		w.runewords == [int(recipe.id)] and float(old_meta.get("passiveHarmRi", 0)) == 680.0
+		and w_nerf.meta == expected and is_equal_approx(float(w_nerf.yep.elementAmplify["1"]), 2.5)
+		and not XXiyouNerf.sync_gear_item(w_nerf, true),
+		[w.runewords, old_meta, w_nerf.meta, expected])
+
+	XXiyouNerf.original_data()
+	var s_back := XState.from_dict(JSON.parse_string(JSON.stringify(s_nerf.to_dict())))
+	var w_back: Dictionary = s_back.actor(159).equips[0]
+	check("t465.wpn87_runeword_restores_save",
+		w_back.meta == old_meta and w_back.note == old_note, [w_back.meta, old_meta])
+	XXiyouNerf.ENABLED = true
 
 
 func _check_t465_feitian_and_cri_cap() -> void:

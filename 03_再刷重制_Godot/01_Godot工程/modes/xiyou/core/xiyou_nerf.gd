@@ -269,28 +269,62 @@ static func sync_gear_item(item: Dictionary, want_nerf: bool) -> bool:
 	var to_sp := KOTORI_WPN_SKILL_PASS if want_nerf else 1500
 	var from_hm := 600 if want_nerf else KOTORI_WPN_HARM
 	var to_hm := KOTORI_WPN_HARM if want_nerf else 600
-	var new_note := own_note
+	# 武器原备注以自定义参数段结束，后面是实例追加的词缀、符文之语、宝珠。
+	var end_tag := "</Custom Parameters>"
+	var end_pos := own_note.find(end_tag)
+	var base_end := end_pos + end_tag.length() if end_pos >= 0 else own_note.length()
+	var old_base := own_note.left(base_end)
+	var extra_note := own_note.substr(base_end)
+	var new_base := old_base
 	for el in [1, 2]:
-		new_note = new_note.replace("<Element Amplify %d: +%d%%>" % [el, from_el], "<Element Amplify %d: +%d%%>" % [el, to_el])
-	new_note = new_note.replace("<passiveHarmRi:%d>" % from_hm, "<passiveHarmRi:%d>" % to_hm)
+		new_base = new_base.replace("<Element Amplify %d: +%d%%>" % [el, from_el], "<Element Amplify %d: +%d%%>" % [el, to_el])
+	new_base = new_base.replace("<passiveHarmRi:%d>" % from_hm, "<passiveHarmRi:%d>" % to_hm)
 	for sid in KOTORI_SKILLS:
-		new_note = new_note.replace("<SkillPass%d: %d%%>" % [sid, from_sp], "<SkillPass%d: %d%%>" % [sid, to_sp])
-	new_note = new_note.replace("神兵(最终伤害+%d%%)" % from_hm, "神兵(最终伤害+%d%%)" % to_hm)
-	new_note = new_note.replace("神兵(伤害+%d%%)" % from_hm, "神兵(伤害+%d%%)" % to_hm)
-	new_note = new_note.replace("火焰/物理伤害+%d%%" % from_el, "火焰/物理伤害+%d%%" % to_el)
-	new_note = new_note.replace("专属技能伤害+%d%%" % from_sp, "专属技能伤害+%d%%" % to_sp)
-	if new_note == own_note:
+		new_base = new_base.replace("<SkillPass%d: %d%%>" % [sid, from_sp], "<SkillPass%d: %d%%>" % [sid, to_sp])
+	new_base = new_base.replace("神兵(最终伤害+%d%%)" % from_hm, "神兵(最终伤害+%d%%)" % to_hm)
+	new_base = new_base.replace("神兵(伤害+%d%%)" % from_hm, "神兵(伤害+%d%%)" % to_hm)
+	new_base = new_base.replace("火焰/物理伤害+%d%%" % from_el, "火焰/物理伤害+%d%%" % to_el)
+	new_base = new_base.replace("专属技能伤害+%d%%" % from_sp, "专属技能伤害+%d%%" % to_sp)
+	if new_base == old_base:
 		return false
-	item.note = new_note
-	item.meta = XZhenqi.extract_meta(new_note)
+	item.note = new_base + extra_note
+	var old_meta := XZhenqi.extract_meta(old_base)
+	var new_meta := XZhenqi.extract_meta(new_base)
+	if item.get("meta") is Dictionary:
+		_sync_wpn87_meta(item.meta, old_meta, new_meta, XZhenqi.extract_meta(extra_note))
 	# yep.elementAmplify 按基值差值同步（保留宝珠／词缀／强化／符文之语叠加）
 	if item.get("yep") is Dictionary and item.yep.get("elementAmplify") is Dictionary:
 		var ea: Dictionary = item.yep.elementAmplify
 		var delta := float(to_el - from_el) / 100.0
 		for ek in ["1", "2"]:
-			if ea.has(ek):
+			var tag := "Element Amplify %s" % ek
+			if ea.has(ek) and old_meta.get(tag) != new_meta.get(tag):
 				ea[ek] = snappedf(float(ea[ek]) + delta, 0.0001)
 	return true
+
+
+static func _sync_wpn87_meta(meta: Dictionary, before: Dictionary, after: Dictionary, extra: Dictionary) -> void:
+	var numeric := RegEx.create_from_string("^\\s*(-?\\d+(?:\\.\\d+)?)\\s*(%?)\\s*$")
+	for key in before:
+		if not after.has(key) or before[key] == after[key] or not meta.has(key):
+			continue
+		var own = meta[key]
+		# 追加备注覆盖该键时保留覆盖值。例：诛魔的「+50%」按 XRunewords.check 语义是覆盖。
+		if extra.get(key) == own:
+			continue
+		if own == before[key]:
+			meta[key] = after[key]
+			continue
+		var old_num := numeric.search(str(before[key]))
+		var new_num := numeric.search(str(after[key]))
+		var add_num := numeric.search(str(extra.get(key, "")))
+		if old_num == null or new_num == null or add_num == null:
+			continue
+		# 验证实例值确实来自原基值与追加值相加，再迁移这部分基值。
+		var add := float(add_num.get_string(1))
+		var suffix := old_num.get_string(2) if old_num.get_string(2) != "" else add_num.get_string(2)
+		if own == " " + str(float(old_num.get_string(1)) + add) + suffix:
+			meta[key] = " " + str(float(new_num.get_string(1)) + add) + suffix
 
 
 # ---- 通用替换工具 ----
