@@ -114,10 +114,15 @@ func _stage() -> void:
 	check("stage.before", XRift.stage() == 2)
 	_seen().append("rift3")
 	check("stage.after_rift3", XRift.stage() == 3)
+	var had_rift2 := _seen().has("rift2")
+	if not had_rift2:
+		_seen().append("rift2")  # T455：XRiftAlien.stage() 要 rift2 看过才算二阶起（一阶玩家不出异化），这里核的是看过 rift2 的玩家
 	check("alien.default_off", XRiftAlien.stage() == 2, XRiftAlien.stage())
 	XRiftAlien.STAGE3_ALIEN = true
 	check("alien.on", XRiftAlien.stage() == 3)
 	XRiftAlien.STAGE3_ALIEN = false
+	if not had_rift2:
+		_seen().erase("rift2")
 	XRift.STAGE3 = false
 	check("stage.off", XRift.stage() == 2)
 	XRift.STAGE3 = true
