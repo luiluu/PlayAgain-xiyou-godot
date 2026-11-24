@@ -90,14 +90,9 @@ func _shots_pair(tag: String) -> void:
 
 
 func _find_actor_by_tier(s: XState, tier: String) -> XActor:
-	for rec in XDB.table("Actors"):
-		if not (rec is Dictionary):
-			continue
-		var aid := int(rec.get("id", 0))
-		if aid <= 0 or str(rec.get("name", "")) == "":
-			continue
-		var a := s.actor(aid)
-		if a != null and XTier.tier_of(a) == tier:
+	for aid in XTianqiSkills.ids(tier):
+		var a := s.actor(int(aid))
+		if a != null and XTianqiSkills.tier_of(a) == tier:
 			return a
 	return null
 
@@ -635,6 +630,283 @@ func _test_non_item_block_feedback() -> void:
 	_check("text_review_p3_unseal_full", str(up_full.get("reason", "")).contains("生效中的") and str(up_full.get("reason", "")).contains("3 / 3"), up_full)
 
 
+# ---- 10. T473：天启篇运行时档位（95/2/22 → 3/4/4）＋老存档超量封印不丢书＋西游档零改动 ----
+
+func _test_t473_runtime_tier_and_migration() -> void:
+	var s := Kit.new_game()
+	var a95 := s.actor(95)   # 三笠：天启超强者（原版 XTier 为强者）→ 应 3 格
+	var a2 := s.actor(2)     # 绿司机：天启强者（原版 XTier 为弱者）→ 应 4 格
+	var a22 := s.actor(22)   # 维利：天启强者（原版 XTier 为弱者）→ 应 4 格
+	var a3 := s.actor(3)     # 艾坤：天启弱者 → 应 6 格
+	# 三笠尚未锻炼/进阶时，秘籍格仍按天启名单档位（超强者 3 格），不随 battle_tier 浮动
+	var caps := [XTianqiSecrets.limit(a95, s), XTianqiSecrets.limit(a2, s), XTianqiSecrets.limit(a22, s), XTianqiSecrets.limit(a3, s)]
+	var tiers := [XTianqiSecrets.tier_of(a95, s), XTianqiSecrets.tier_of(a2, s), XTianqiSecrets.tier_of(a22, s), XTianqiSecrets.tier_of(a3, s)]
+	var books := _pick_gongfa_items(8)
+	for i in range(3):
+		a95.learn_skill(int(books[i][1]))
+	var r95 := XTianqiSecrets.learn_reason(a95, int(books[3][1]), s)
+	_check("t473_secrets_limit_mikasa_green_willy",
+		caps == [3, 4, 4, 6]
+		and tiers == [XTier.SUPER, XTier.STRONG, XTier.STRONG, XTier.WEAK]
+		and r95.contains("超强者最多装备 3 本秘籍"),
+		{"caps": caps, "tiers": tiers, "r95": r95})
+	# 老存档超量封印：模拟 T446 旧档下 95/2/22 已装 4/6/6 本书，读档时 XState.current 置 null（模拟标题页读档）走 XTianqiSave.after_load
+	var legacy := Kit.new_game()
+	XTianqiSecrets.ENABLED = false
+	var l95 := legacy.actor(95)
+	var l2 := legacy.actor(2)
+	var l22 := legacy.actor(22)
+	var b95: Array[int] = []
+	var b2: Array[int] = []
+	var b22: Array[int] = []
+	for i in range(4):
+		var sid := int(books[i][1])
+		l95.learn_skill(sid)
+		b95.append(sid)
+	for i in range(6):
+		var sid := int(books[i][1])
+		l2.learn_skill(sid)
+		l22.learn_skill(sid)
+		b2.append(sid)
+		b22.append(sid)
+	var raw_save := legacy.to_dict()
+	XTianqiSecrets.ENABLED = true
+	XState.current = null  # 模拟标题页／非天启上下文读档，验证 migrate_after_load 传 s 不误退回 XTier
+	var loaded := XState.from_dict(raw_save)
+	XState.current = loaded
+	var r_l95 := loaded.actor(95)
+	var r_l2 := loaded.actor(2)
+	var r_l22 := loaded.actor(22)
+	var all_kept := b95.all(func(id): return r_l95.skill_ids.has(id)) \
+		and b2.all(func(id): return r_l2.skill_ids.has(id)) \
+		and b22.all(func(id): return r_l22.skill_ids.has(id))
+	var slots_clamped := XTianqiSecrets.active_ids(r_l95, loaded).size() == 3 \
+		and XTianqiSecrets.sealed_ids(r_l95, loaded).size() == 1 \
+		and XTianqiSecrets.active_ids(r_l2, loaded).size() == 4 \
+		and XTianqiSecrets.sealed_ids(r_l2, loaded).size() == 2 \
+		and XTianqiSecrets.active_ids(r_l22, loaded).size() == 4 \
+		and XTianqiSecrets.sealed_ids(r_l22, loaded).size() == 2 \
+		and XTianqiSecrets.has_free_pick(r_l95, loaded) \
+		and XTianqiSecrets.has_free_pick(r_l2, loaded) \
+		and XTianqiSecrets.has_free_pick(r_l22, loaded)
+	# 结束免费期后二次读档幂等：不丢书、不重复赠免费期
+	XTianqiSecrets.finish_free_pick(loaded, r_l95)
+	var loaded2 := XState.from_dict(loaded.to_dict())
+	XState.current = loaded2
+	var idempotent := XTianqiSecrets.active_ids(loaded2.actor(95), loaded2).size() == 3 \
+		and XTianqiSecrets.sealed_ids(loaded2.actor(95), loaded2).size() == 1 \
+		and not XTianqiSecrets.has_free_pick(loaded2.actor(95), loaded2)
+	_check("t473_legacy_overflow_95_2_22_no_loss", all_kept and slots_clamped and idempotent, {
+		"all_kept": all_kept, "slots_clamped": slots_clamped, "idempotent": idempotent,
+		"act95": XTianqiSecrets.active_ids(r_l95, loaded).size(),
+		"seal95": XTianqiSecrets.sealed_ids(r_l95, loaded).size(),
+		"act2": XTianqiSecrets.active_ids(r_l2, loaded).size(),
+		"seal2": XTianqiSecrets.sealed_ids(r_l2, loaded).size(),
+		"act22": XTianqiSecrets.active_ids(r_l22, loaded).size(),
+		"seal22": XTianqiSecrets.sealed_ids(r_l22, loaded).size(),
+	})
+	# 西游档零改动：XTianqi.active == false 时 limit 照 XTier（4/6/6），不拦学书，读档不建 flags.tianqi
+	var xs := XState.new()
+	XState.current = xs
+	var x95 := xs.actor(95)
+	var x2 := xs.actor(2)
+	var x22 := xs.actor(22)
+	var xy_caps := [XTianqiSecrets.limit(x95, xs), XTianqiSecrets.limit(x2, xs), XTianqiSecrets.limit(x22, xs)]
+	for i in range(4):
+		x95.learn_skill(int(books[i][1]))
+	for i in range(6):
+		x2.learn_skill(int(books[i][1]))
+		x22.learn_skill(int(books[i][1]))
+	var xs_reloaded := XState.from_dict(xs.to_dict())
+	var xy_ok := not XTianqiSecrets.on(xs) \
+		and xy_caps == [4, 6, 6] \
+		and b95.all(func(id): return xs_reloaded.actor(95).skill_ids.has(id)) \
+		and b2.all(func(id): return xs_reloaded.actor(2).skill_ids.has(id)) \
+		and b22.all(func(id): return xs_reloaded.actor(22).skill_ids.has(id)) \
+		and not xs_reloaded.flags.has("tianqi")
+	_check("t473_xiyou_save_untouched", xy_ok, {"xy_caps": xy_caps, "has_tianqi": xs_reloaded.flags.has("tianqi")})
+
+
+# ---- 11. T475 / D282：秘籍格随难度增加（五档×三档、降难度超量封印读档迁移、UI 与满格文案、西游档零改动）----
+
+func _test_t475_difficulty_secret_cap() -> void:
+	# 11a) 五档难度 × 三档角色精确断言（弱6/强4/超3 + 寻常/艰险 0、九死 +1、炼狱 +2、证道 +3）
+	var matrix := {
+		"xunchang": [0, 6, 4, 3],
+		"jianxian": [0, 6, 4, 3],
+		"jiusi": [1, 7, 5, 4],
+		"lianyu": [2, 8, 6, 5],
+		"zhengdao": [3, 9, 7, 6],
+	}
+	for diff_key in ["xunchang", "jianxian", "jiusi", "lianyu", "zhengdao"]:
+		var s := Kit.new_game(diff_key)
+		var w := _find_actor_by_tier(s, XTier.WEAK)
+		var st := _find_actor_by_tier(s, XTier.STRONG)
+		var su := _find_actor_by_tier(s, XTier.SUPER)
+		var exp: Array = matrix[diff_key]
+		var got_limit := [XTianqiSecrets.limit(w, s), XTianqiSecrets.limit(st, s), XTianqiSecrets.limit(su, s)]
+		var got_ledger := [XTianqiLedger.secret_slots(w, s), XTianqiLedger.secret_slots(st, s), XTianqiLedger.secret_slots(su, s)]
+		var bonus := XTianqiSecrets.difficulty_bonus(s)
+		_check("t475_matrix_" + diff_key,
+			bonus == int(exp[0]) and got_limit == exp.slice(1) and got_ledger == exp.slice(1),
+			{"diff": diff_key, "bonus": bonus, "limit": got_limit, "ledger": got_ledger, "want": exp})
+	# 回退开关 DIFFICULTY_BONUS = false → 证道回到 6/4/3
+	var s_zd := Kit.new_game("zhengdao")
+	var wz := _find_actor_by_tier(s_zd, XTier.WEAK)
+	var stz := _find_actor_by_tier(s_zd, XTier.STRONG)
+	var suz := _find_actor_by_tier(s_zd, XTier.SUPER)
+	XTianqiSecrets.DIFFICULTY_BONUS = false
+	var rb_caps := [XTianqiSecrets.limit(wz, s_zd), XTianqiSecrets.limit(stz, s_zd), XTianqiSecrets.limit(suz, s_zd)]
+	var rb_ledger := [XTianqiLedger.secret_slots(wz, s_zd), XTianqiLedger.secret_slots(stz, s_zd), XTianqiLedger.secret_slots(suz, s_zd)]
+	XTianqiSecrets.DIFFICULTY_BONUS = true
+	_check("t475_difficulty_bonus_rollback", rb_caps == [6, 4, 3] and rb_ledger == [6, 4, 3], {"caps": rb_caps, "ledger": rb_ledger})
+
+	# 11b) 换到低难度时多出的书走 T446 超量封印，书不丢，读档迁移断言（证道 9/7/6 → 寻常 6/4/3）
+	var books := _pick_gongfa_items(10)
+	_check("t475_ten_books_found", books.size() >= 10, books.size())
+	var high_s := Kit.new_game("zhengdao")
+	var hw := _find_actor_by_tier(high_s, XTier.WEAK)
+	var hst := _find_actor_by_tier(high_s, XTier.STRONG)
+	var hsu := _find_actor_by_tier(high_s, XTier.SUPER)
+	var bw: Array[int] = []
+	var bst: Array[int] = []
+	var bsu: Array[int] = []
+	for i in range(9):
+		var sid := int(books[i][1])
+		hw.learn_skill(sid)
+		bw.append(sid)
+	for i in range(7):
+		var sid := int(books[i][1])
+		hst.learn_skill(sid)
+		bst.append(sid)
+	for i in range(6):
+		var sid := int(books[i][1])
+		hsu.learn_skill(sid)
+		bsu.append(sid)
+	_check("t475_zhengdao_full_9_7_6",
+		XTianqiSecrets.used_slots(hw, high_s) == 9
+		and XTianqiSecrets.used_slots(hst, high_s) == 7
+		and XTianqiSecrets.used_slots(hsu, high_s) == 6,
+		[XTianqiSecrets.used_slots(hw, high_s), XTianqiSecrets.used_slots(hst, high_s), XTianqiSecrets.used_slots(hsu, high_s)])
+	# 写盘后将难度降为寻常（+0），XState.current = null 模拟标题页真读档（经 XSave.load_slot → XTianqiSave.after_load）
+	kit.save()
+	kit.edit_raw(func(d: Dictionary): d["flags"]["tianqi"]["difficulty"] = "xunchang")
+	XState.current = null
+	var low_s := kit.reload()
+	var lw := low_s.actor(hw.actor_id)
+	var lst := low_s.actor(hst.actor_id)
+	var lsu := low_s.actor(hsu.actor_id)
+	var no_loss := bw.all(func(id): return lw.skill_ids.has(id)) \
+		and bst.all(func(id): return lst.skill_ids.has(id)) \
+		and bsu.all(func(id): return lsu.skill_ids.has(id))
+	var clamped_643 := XTianqiSecrets.active_ids(lw, low_s).size() == 6 and XTianqiSecrets.sealed_ids(lw, low_s).size() == 3 \
+		and XTianqiSecrets.active_ids(lst, low_s).size() == 4 and XTianqiSecrets.sealed_ids(lst, low_s).size() == 3 \
+		and XTianqiSecrets.active_ids(lsu, low_s).size() == 3 and XTianqiSecrets.sealed_ids(lsu, low_s).size() == 3
+	var sealed_inactive := XTianqiSecrets.sealed_ids(lsu, low_s).all(func(sid):
+		return not lsu.skills().any(func(sk): return int(sk.get("id", 0)) == sid))
+	var free_granted := XTianqiSecrets.has_free_pick(lw, low_s) and XTianqiSecrets.has_free_pick(lst, low_s) and XTianqiSecrets.has_free_pick(lsu, low_s)
+	# 结束免费期再存读档幂等；若再切回炼狱（超强 5 格），已封的书仍在且可免费启封至 5 格
+	XTianqiSecrets.finish_free_pick(low_s, lsu)
+	var low_rt := kit.roundtrip()
+	var lsu_rt := low_rt.actor(hsu.actor_id)
+	var rt_idempotent := XTianqiSecrets.active_ids(lsu_rt, low_rt).size() == 3 \
+		and XTianqiSecrets.sealed_ids(lsu_rt, low_rt).size() == 3 \
+		and not XTianqiSecrets.has_free_pick(lsu_rt, low_rt)
+	low_rt.flags.tianqi["difficulty"] = "lianyu"
+	var unseal_sids := XTianqiSecrets.sealed_ids(lsu_rt, low_rt)
+	var u1 := XTianqiSecrets.unseal(low_rt, lsu_rt, unseal_sids[0])
+	var u2 := XTianqiSecrets.unseal(low_rt, lsu_rt, unseal_sids[1])
+	var u3 := XTianqiSecrets.unseal(low_rt, lsu_rt, unseal_sids[2])  # 第 6 本超炼狱 5 格应被拦
+	var back_high_ok := bool(u1.get("ok", false)) and bool(u2.get("ok", false)) and not bool(u3.get("ok", false)) \
+		and XTianqiSecrets.used_slots(lsu_rt, low_rt) == 5 and str(u3.get("reason", "")).contains("5 / 5")
+	# 再从炼狱运行期换回九死（超强 4 格）调 enforce_caps → 自动多封 1 本，不丢书
+	low_rt.flags.tianqi["difficulty"] = "jiusi"
+	XTianqiSecrets.enforce_caps(low_rt)
+	var runtime_clamp_ok := XTianqiSecrets.used_slots(lsu_rt, low_rt) == 4 \
+		and XTianqiSecrets.sealed_ids(lsu_rt, low_rt).size() == 2 \
+		and bsu.all(func(id): return lsu_rt.skill_ids.has(id))
+	_check("t475_downgrade_overflow_seal_and_migration",
+		no_loss and clamped_643 and sealed_inactive and free_granted and rt_idempotent and back_high_ok and runtime_clamp_ok,
+		{"no_loss": no_loss, "clamped": clamped_643, "sealed_inactive": sealed_inactive, "free": free_granted,
+		 "rt_idem": rt_idempotent, "back_high": back_high_ok, "rt_clamp": runtime_clamp_ok})
+
+	# 11c) 功法页 UI 显示当前难度格数，满格提示文案随之对（炼狱超强 5 格 + 证道弱者 9 格）
+	var ui_s := Kit.new_game("lianyu")
+	ui_s.set_variable(20, 12)
+	ui_s.gold = 500000
+	var ui_sup := _find_actor_by_tier(ui_s, XTier.SUPER)  # 炼狱超强 5 格
+	ui_s.party = [ui_sup.actor_id]
+	ui_s.battle_slots = [ui_sup.actor_id]
+	for i in range(5):
+		ui_sup.learn_skill(int(books[i][1]))
+	# 满格提示文案（单技能 + code 43 多技能 + unseal + confirm）
+	var r_single := XTianqiSecrets.learn_reason(ui_sup, int(books[5][1]), ui_s)
+	var r_multi := XTianqiSecrets.item_learn_reason(ui_sup, XDB.rec("Items", 1998), ui_s)
+	var lianyu_msg_ok := r_single.contains("炼狱难度下超强者最多装备 5 本秘籍（当前 5 / 5）") \
+		and r_multi.contains("炼狱难度下超强者最多装备 5 本秘籍（当前 5 / 5，本书需 2 格）")
+	# 证道弱者 9 格满格文案
+	var zd_w_s := Kit.new_game("zhengdao")
+	var zd_w := _find_actor_by_tier(zd_w_s, XTier.WEAK)
+	for i in range(9):
+		zd_w.learn_skill(int(books[i][1]))
+	var r_zd_w := XTianqiSecrets.learn_reason(zd_w, int(books[9][1]), zd_w_s)
+	_check("t475_full_slot_wording_by_difficulty",
+		lianyu_msg_ok and r_zd_w.contains("证道难度下弱者最多装备 9 本秘籍（当前 9 / 9）"),
+		{"r_single": r_single, "r_multi": r_multi, "r_zd_w": r_zd_w})
+
+	# 切回炼狱档验证新旧两套皮肤功法页 UI 显示「秘籍格 5 / 5（炼狱 +2）」与详情牌副标题
+	XState.current = ui_s
+	await _clear_toasts()
+	var old_skin := XUiSkin.ENABLED
+	XUiSkin.ENABLED = true
+	var p_new := XSkillScene.new()
+	add_child(p_new)
+	await _frames(3)
+	_open_gongfa_tab(p_new)
+	await _frames(3)
+	var card_act := XTianqiSecrets.ui_card_actions(ui_s, ui_sup, p_new.current())
+	_check("t475_ui_new_skin_lianyu_5_of_5",
+		p_new.skin != null
+		and p_new.skin.list_title.contains("秘籍格 5 / 5（炼狱 +2）")
+		and str(card_act.get("tag", "")) == "占秘籍格（5 / 5，炼狱 +2）",
+		{"list_title": p_new.skin.list_title if p_new.skin != null else "", "card_tag": card_act.get("tag", "")})
+	await _shots_pair("t475_new_skin_lianyu_5of5")
+	p_new.queue_free()
+	await _frames(3)
+
+	XUiSkin.ENABLED = false
+	var p_old := XSkillScene.new()
+	add_child(p_old)
+	await _frames(3)
+	_open_gongfa_tab(p_old)
+	await _frames(3)
+	var old_slot_txt := XTianqiSecrets.ui_slot_text(ui_sup, ui_s)
+	_check("t475_ui_old_skin_lianyu_5_of_5",
+		p_old.skin == null and old_slot_txt == "秘籍格 5 / 5（炼狱 +2）",
+		old_slot_txt)
+	await _shots_pair("t475_old_skin_lianyu_5of5")
+	p_old.queue_free()
+	await _frames(3)
+	XUiSkin.ENABLED = old_skin
+
+	# 11d) 西游档零改动（XTianqi.active 守卫）
+	var xs := XState.new()
+	xs.difficulty = 6  # 西游原版高难度（天灾）绝不能触发天启篇难度秘籍加成
+	XState.current = xs
+	var xw := xs.actor(3)
+	var xst := xs.actor(95)
+	var x_ok := XTianqiSecrets.difficulty_key(xs) == "" \
+		and XTianqiSecrets.difficulty_bonus(xs) == 0 \
+		and XTianqiSecrets.limit(xw, xs) == XTianqiBalance.secret_cap(XTier.tier_of(xw)) \
+		and XTianqiSecrets.limit(xst, xs) == XTianqiBalance.secret_cap(XTier.tier_of(xst)) \
+		and XTianqiLedger.secret_slots(xw, xs) == XTianqiBalance.secret_cap(XTier.tier_of(xw)) \
+		and not XTianqiSecrets.on(xs)
+	_check("t475_xiyou_save_zero_change", x_ok, {
+		"key": XTianqiSecrets.difficulty_key(xs), "bonus": XTianqiSecrets.difficulty_bonus(xs),
+		"lim_w": XTianqiSecrets.limit(xw, xs), "lim_st": XTianqiSecrets.limit(xst, xs),
+	})
+
+
 func _run() -> void:
 	kit = Kit.new("xiyou_tianqi_secrets")
 	_test_classification()
@@ -646,6 +918,8 @@ func _run() -> void:
 	await _test_multi_slot_and_fixed_actor()
 	await _test_non_item_block_feedback()
 	await _test_ui_both_skins()
+	_test_t473_runtime_tier_and_migration()
+	await _test_t475_difficulty_secret_cap()
 	kit.teardown()
 	var passed := results.filter(func(r): return r.passed).size()
 	print("TEST_RESULT=", JSON.stringify({"passed": passed, "total": results.size()}))

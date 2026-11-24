@@ -3,20 +3,22 @@ extends RefCounted
 ## 【小A·天启篇·未经审查】秘籍格核心系统（T446 / T013-1b；设计依据：天启篇_原版养成线重做方案_v0.3 第三节第 8 条、D274）。
 ##
 ## 规则：
-## - 格数上限读 balance_table.json tiers.<档位>.secret_cap（弱者 6、强者 4、超强者 3）。
+## - 格数上限＝角色档位基数（balance_table.json tiers.<档位>.secret_cap：弱 6、强 4、超强 3）
+##   ＋天启篇当前难度加成（D282，balance_table.json difficulties[].secret_cap_bonus：寻常/艰险 0、九死 +1、炼狱 +2、证道 +3，三档同加）。
 ## - 占格：功法（stype=6）、通用被动书（code 43 ＋ CE code 44，stype=4）、元素转换书（老 5068~5075 ＋ 新 11201~11205）、
 ##   深渊六式被动（6192~6203 / 6206~6211）与止戈/天怒（6185 / 6204）。
 ## - 不占格：号卷（XTianqiTrumpet / <CodexPower>）、抽奖被动（stype=5）、主动书（stype 1/2/3 等）、
 ##   角色自带/职业/进阶被动、27 本 Boss 血脉（D274④）、58 张外观变身卡（6801~6858）、种族技能、万灵增元丹被动。
 ## - 元素转换书：首次学占 1 格；当前生效格里已有另一门转换书时原地替换，不要求先空出新格。
 ## - 花场钱封印：腾出 1 格、不退书、被动立即失效（_skill_records 滤掉已封，不删 skill_ids）；封印记录在 flags.tianqi.secrets。
-## - 老存档迁移：读档后若某角色生效占格秘籍超出上限，不没收，超出部分自动移入已封并授予该角色一次免费自选生效格（free_pick）。
-## - 回退开关：ENABLED = false 完整回退到旧临时截断；西游档（XTianqi.active == false）零变化、零存档字段。
+## - 老存档迁移／换低难度超量封印：读档后（或调 enforce_caps）若某角色生效占格秘籍超出当前难度上限，不没收，超出部分自动移入已封并授予该角色首次免费自选生效格（free_pick）。
+## - 回退开关：ENABLED = false 完整回退到旧临时截断；DIFFICULTY_BONUS = false 回退到固定 6/4/3；西游档（XTianqi.active == false）零变化、零存档字段。
 ##
 ## 玩家可见文字（待小A/cc Sonnet 审）全部集中在本模块 ui_* / learn_reason / seal / unseal 中，
 ## 发行空壳替换本脚本后西游发行包零外泄。
 
 static var ENABLED := true
+static var DIFFICULTY_BONUS := true
 static var GONGFA_REWORK := true
 static var EV54_SHOP := true
 
@@ -395,11 +397,62 @@ static func occupies_slot(id: int) -> bool:
 	return _book_skills.has(id)
 
 
-## 角色秘籍格上限（读 balance_table.json：弱 6 / 强 4 / 超 3）
-static func limit(a) -> int:
+## 角色秘籍格档位：天启篇档按天启篇运行时名单档位（XTianqiSkills.tier_of），西游档零改动按 XTier
+static func tier_of(a, s: XState = null) -> String:
+	if not (a is XActor):
+		return ""
+	if s == null:
+		s = XState.current
+	if XTianqi.active(s) and XTianqiSkills.tiers_on(s):
+		var t := XTianqiSkills.tier_of(a, true)
+		if t != "":
+			return t
+	return XTier.tier_of(a)
+
+
+## 当前存档的天启篇难度键（西游档恒返回 ""，守卫 XTianqi.active）
+static func difficulty_key(s: XState = null) -> String:
+	if s == null:
+		s = XState.current
+	if not XTianqi.active(s):
+		return ""
+	return str(s.flags.tianqi.get("difficulty", ""))
+
+
+## 当前存档的天启篇难度显示名（如「寻常」「炼狱」「证道」；西游档恒返回 ""）
+static func difficulty_name(s: XState = null) -> String:
+	var key := difficulty_key(s)
+	if key == "":
+		return ""
+	return str(XTianqiBalance.difficulty(key).get("name", ""))
+
+
+## 当前存档的难度秘籍格加成（D282：寻常/艰险 0、九死 +1、炼狱 +2、证道 +3；西游档或关 DIFFICULTY_BONUS 恒 0）
+static func difficulty_bonus(s: XState = null) -> int:
+	if not DIFFICULTY_BONUS:
+		return 0
+	var key := difficulty_key(s)
+	if key == "":
+		return 0
+	return XTianqiBalance.secret_cap_bonus(key)
+
+
+static func _cap_prefix(s: XState) -> String:
+	var dname := difficulty_name(s)
+	return "%s难度下" % dname if dname != "" else ""
+
+
+## 角色秘籍格上限：档位基数（弱 6 / 强 4 / 超 3）＋天启篇当前难度加成（D282：寻常/艰险 +0、九死 +1、炼狱 +2、证道 +3）
+## 西游档（XTianqi.active == false）零改动，只按 XTier 返回基数（difficulty_bonus 恒 0）
+static func limit(a, s: XState = null) -> int:
 	if not (a is XActor):
 		return 0
-	return XTianqiBalance.secret_cap(XTier.tier_of(a))
+	if s == null:
+		s = XState.current
+	var base := XTianqiBalance.secret_cap(tier_of(a, s))
+	if base <= 0:
+		return 0
+	return base + difficulty_bonus(s)
 
 
 # ---- 存档分区（flags.tianqi.secrets）----
@@ -553,10 +606,10 @@ static func learn_reason(a, skill_id: int, s: XState = null) -> String:
 	# 元素转换书：当前生效格已有另一门转换书 → 原地替换，不占新格
 	if is_conversion_skill(skill_id) and active_conversion_id(a, s) > 0:
 		return ""
-	var cap := limit(a)
+	var cap := limit(a, s)
 	var used := used_slots(a, s)
 	if cap > 0 and used >= cap:
-		return "%s最多装备 %d 本秘籍（当前 %d / %d），请先在技能页封印已有秘籍" % [XTier.tier_of(a), cap, used, cap]
+		return "%s%s最多装备 %d 本秘籍（当前 %d / %d），请先在技能页封印已有秘籍" % [_cap_prefix(s), tier_of(a, s), cap, used, cap]
 	return ""
 
 
@@ -620,10 +673,10 @@ static func item_learn_reason(a, item: Dictionary, s: XState = null) -> String:
 			need43 += 1
 		if need43 == 0:
 			return "已学会此秘籍（已封印），请在技能页启封，启封后生效" if has_sealed43 else "已经学会这本秘籍"
-		var cap43 := limit(target)
+		var cap43 := limit(target, s)
 		var used43 := used_slots(target, s)
 		if cap43 > 0 and used43 + need43 > cap43:
-			return "%s最多装备 %d 本秘籍（当前 %d / %d，本书需 %d 格），请先在技能页封印已有秘籍" % [XTier.tier_of(target), cap43, used43, cap43, need43]
+			return "%s%s最多装备 %d 本秘籍（当前 %d / %d，本书需 %d 格），请先在技能页封印已有秘籍" % [_cap_prefix(s), tier_of(target, s), cap43, used43, cap43, need43]
 		return ""
 	# 3) 公共事件教技能（code 44）
 	if _ce_item_info.has(iid):
@@ -634,7 +687,7 @@ static func item_learn_reason(a, item: Dictionary, s: XState = null) -> String:
 				slot_sids.append(int(sid))
 		if slot_sids.is_empty():
 			return ""
-		var who := "%s（%s）" % [target.display_name(), XTier.tier_of(target)] if fixed_actor > 0 else XTier.tier_of(target)
+		var who := "%s（%s）" % [target.display_name(), tier_of(target, s)] if fixed_actor > 0 else tier_of(target, s)
 		if slot_sids.size() == 1:
 			var r1 := learn_reason(target, slot_sids[0], s)
 			if fixed_actor > 0 and not r1.is_empty():
@@ -668,12 +721,12 @@ static func item_learn_reason(a, item: Dictionary, s: XState = null) -> String:
 			for sid in slot_sids:
 				if act.has(sid):
 					return ""
-		var cap := limit(target)
+		var cap := limit(target, s)
 		var used := act.size()
 		if cap > 0 and used + max_need > cap:
 			if max_need > 1:
-				return "%s最多装备 %d 本秘籍（当前 %d / %d，本书需 %d 格），请先在技能页封印已有秘籍" % [who, cap, used, cap, max_need]
-			return "%s最多装备 %d 本秘籍（当前 %d / %d），请先在技能页封印已有秘籍" % [who, cap, used, cap]
+				return "%s%s最多装备 %d 本秘籍（当前 %d / %d，本书需 %d 格），请先在技能页封印已有秘籍" % [_cap_prefix(s), who, cap, used, cap, max_need]
+			return "%s%s最多装备 %d 本秘籍（当前 %d / %d），请先在技能页封印已有秘籍" % [_cap_prefix(s), who, cap, used, cap]
 	return ""
 
 
@@ -763,7 +816,7 @@ static func unseal(s: XState, a: XActor, skill_id: int) -> Dictionary:
 	elif gongfa_on(s) and _gongfa_by_skill.has(skill_id):
 		replaced_lower = _active_school_lower_id(a, skill_id, s)
 	if replaced == 0 and replaced_lower == 0:
-		var cap := limit(a)
+		var cap := limit(a, s)
 		var used := used_slots(a, s)
 		if cap > 0 and used >= cap:
 			return {"ok": false, "reason": "秘籍格已满（%d / %d），请先封印一本生效中的秘籍" % [used, cap]}
@@ -819,7 +872,34 @@ static func _refresh_actor(a: XActor) -> void:
 	a.refresh_resources()
 
 
-# ---- 老存档迁移（XTianqiSave.after_load 调用，幂等）----
+## 按当前存档格数上限收敛全员超格秘籍（老存档迁移与换到低难度共用：不没收、多出的自动进已封，首次迁移授予免费封印期）
+static func enforce_caps(s: XState) -> void:
+	if not on(s) or s == null:
+		return
+	for a in s.actors.values():
+		if not (a is XActor):
+			continue
+		var cap := limit(a, s)
+		if cap <= 0:
+			continue
+		var act := active_ids(a, s)
+		if act.size() <= cap:
+			continue
+		var row := _write_actor(s, a.actor_id)
+		var sealed: Array = row["sealed"]
+		var overflow := act.slice(cap)
+		for sid in overflow:
+			if not sealed.has(sid):
+				sealed.append(sid)
+		sealed.sort()
+		# 首次迁移才授予免费封印期，避免后续再次超格或反复读档重复赠送（T446 P2-1）
+		if not bool(row.get("migrated", false)):
+			row["migrated"] = true
+			row["free_pick"] = true
+		_refresh_actor(a)
+
+
+# ---- 老存档迁移／降难度收敛（XTianqiSave.after_load 调用，幂等）----
 
 static func migrate_after_load(s: XState) -> void:
 	if not on(s) or not XTianqiSave.ENABLED or s == null:
@@ -847,28 +927,8 @@ static func migrate_after_load(s: XState) -> void:
 		for a in s.actors.values():
 			if a is XActor:
 				_dedup_actor_schools(a, s)
-	# 2) 检查每名角色是否超格（老存档不没收，超出部分自动移入已封并授予一次免费自选）
-	for a in s.actors.values():
-		if not (a is XActor):
-			continue
-		var cap := limit(a)
-		if cap <= 0:
-			continue
-		var act := active_ids(a, s)
-		if act.size() <= cap:
-			continue
-		var row := _write_actor(s, a.actor_id)
-		var sealed: Array = row["sealed"]
-		var overflow := act.slice(cap)
-		for sid in overflow:
-			if not sealed.has(sid):
-				sealed.append(sid)
-		sealed.sort()
-		# 首次迁移才授予免费封印期，避免后续再次超格或反复读档重复赠送（T446 P2-1）
-		if not bool(row.get("migrated", false)):
-			row["migrated"] = true
-			row["free_pick"] = true
-		_refresh_actor(a)
+	# 2) 检查每名角色是否超格（老存档迁移或换低难度均走同一套超量封印，不丢书）
+	enforce_caps(s)
 
 
 # ---- UI 辅助（供 skill_scene.gd / skin_skill_page.gd 调用，发行空壳零外泄）----
@@ -909,17 +969,27 @@ static func is_entry_manageable(a: XActor, sk: Dictionary, s: XState = null) -> 
 	return sid > 0 and a.skill_ids.has(sid) and occupies_slot(sid)
 
 
-## 状态栏／列表顶标题用的秘籍格概要（如「秘籍格 3 / 6」或「秘籍格 3 / 3（已封 2） · 旧档补偿：免费封印中」）
+## 状态栏／列表顶标题用的秘籍格概要（如「秘籍格 3 / 6」「秘籍格 5 / 5（炼狱 +2，已封 1）」或「秘籍格 3 / 3（已封 2） · 旧档补偿：免费封印中」）
 static func ui_slot_text(a: XActor, s: XState = null) -> String:
 	if not on(s) or a == null:
 		return ""
+	if s == null:
+		s = XState.current
 	var used := used_slots(a, s)
-	var cap := limit(a)
+	var cap := limit(a, s)
 	var sn := sealed_ids(a, s).size()
+	var free := has_free_pick(a, s)
+	var bonus := difficulty_bonus(s)
+	var dname := difficulty_name(s) if (bonus > 0 and not free) else ""
 	var base := "秘籍格 %d / %d" % [used, cap]
+	var notes: Array[String] = []
+	if bonus > 0 and dname != "":
+		notes.append("%s +%d" % [dname, bonus])
 	if sn > 0:
-		base += "（已封 %d）" % sn
-	if has_free_pick(a, s):
+		notes.append("已封 %d" % sn)
+	if not notes.is_empty():
+		base += "（%s）" % "，".join(notes)
+	if free:
 		base += " · 旧档补偿：免费封印中"
 	return base
 
@@ -970,12 +1040,17 @@ static func ui_card_actions(s: XState, a: XActor, sk: Dictionary) -> Dictionary:
 	var tag := ""
 	if is_entry_sealed(sk):
 		var sid := int(sk.get("id", 0))
-		var can_up := (is_conversion_skill(sid) and active_conversion_id(a, s) > 0) or used_slots(a, s) < limit(a)
+		var can_up := (is_conversion_skill(sid) and active_conversion_id(a, s) > 0) or used_slots(a, s) < limit(a, s)
 		tag = "已封印 · 不生效"
 		btns.append({"text": "启封秘籍", "action": "unseal", "disabled": not can_up})
 	else:
 		var cost := seal_cost(s, a)
-		tag = "占秘籍格（%d / %d）" % [used_slots(a, s), limit(a)]
+		var bonus := difficulty_bonus(s)
+		var dname := difficulty_name(s) if bonus > 0 else ""
+		if bonus > 0 and dname != "":
+			tag = "占秘籍格（%d / %d，%s +%d）" % [used_slots(a, s), limit(a, s), dname, bonus]
+		else:
+			tag = "占秘籍格（%d / %d）" % [used_slots(a, s), limit(a, s)]
 		if cost == 0:
 			btns.append({"text": "免费封印", "action": "seal", "disabled": false})
 		else:
@@ -1006,11 +1081,11 @@ static func ui_confirm_spec(s: XState, a: XActor, sk: Dictionary) -> Dictionary:
 		if old_conv > 0:
 			var old_nm := str(XDB.rec("Skills", old_conv).get("name", ""))
 			body = "启封后将与当前生效的%s互换（不额外占格），被动立即生效。" % _quote_name(old_nm)
-		elif used_slots(a, s) >= limit(a):
+		elif used_slots(a, s) >= limit(a, s):
 			can_up = false
-			body = "当前秘籍格已满（%d / %d），请先封印一本生效中的秘籍。" % [used_slots(a, s), limit(a)]
+			body = "当前秘籍格已满（%d / %d），请先封印一本生效中的秘籍。" % [used_slots(a, s), limit(a, s)]
 		else:
-			body = "启封后将占用 1 个秘籍格（当前 %d / %d），被动立即生效。" % [used_slots(a, s), limit(a)]
+			body = "启封后将占用 1 个秘籍格（当前 %d / %d），被动立即生效。" % [used_slots(a, s), limit(a, s)]
 		var buttons: Array = [{"text": "确认启封", "disabled": not can_up, "action": "unseal"}]
 		if free:
 			buttons.append({"text": "结束免费期", "disabled": false, "action": "finish_free"})

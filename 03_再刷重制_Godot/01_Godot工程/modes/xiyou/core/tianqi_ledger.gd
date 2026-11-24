@@ -644,7 +644,11 @@ const BUCKET_NAMES := {"secret": "秘籍格（功法、通用被动书）", "run
 ## 一个特性对象（装备实例、技能、状态）归哪个桶
 static func bucket_of(o: Dictionary, a = null) -> String:
 	if o.has("kind") and str(o.kind) in ["weapon", "armor"]:
-		if o.has("qiyin") or o.has("tianqi_affixes") or o.has("tq_reward") or XTianqiAlienGear.is_tq(o):
+		# T473：原版装备／符文之语／成长装只是挂了天启词条（tianqi_affixes）或天启异化（alien.tq）时，
+		# 词条本身走 XTianqiAffixBattle／XAlienBattle／XTianqiAlienAffix 独立通道，
+		# 装备自带的原版 note／yep／traits 必须仍按本体归进 equip／runeword／hubris 受九线封顶与停用管束，
+		# 只有纯天启篇底子装备（七印 qiyin、净印／遗物 tq_reward）才归 tianqi 桶。
+		if o.has("qiyin") or o.has("tq_reward"):
 			return "tianqi"
 		if XHubris.is_gear(o):
 			return "hubris"
@@ -1069,8 +1073,18 @@ static func nine_cap(key: String) -> float:
 	return float(data().get("nine_caps", {}).get(key, NINE_DEFAULTS[key]))
 
 
-static func secret_slots(a) -> int:
-	return XTianqiBalance.secret_cap(XTier.tier_of(a)) if a is XActor else 0
+static func secret_slots(a, s: XState = null) -> int:
+	if not (a is XActor):
+		return 0
+	if s == null:
+		s = XState.current
+	var tier := XTianqiSkills.tier_of(a, true) if (XTianqi.active(s) and XTianqiSkills.tiers_on(s)) else ""
+	if tier == "":
+		tier = XTier.tier_of(a)
+	var base := XTianqiBalance.secret_cap(tier)
+	if base <= 0:
+		return 0
+	return base + XTianqiSecrets.difficulty_bonus(s)
 
 
 ## 某一桶（或某一本书 "#id"）在这一下各池的量：skill（①，按这一招的技能类型、装备的武器类型、技能专属被动）、bonus（③）、crit（④）、element {e: ②}

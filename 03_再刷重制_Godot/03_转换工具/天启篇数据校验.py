@@ -158,11 +158,22 @@ def balance_rules(table: dict, tianqi: list) -> list:
             check('协力：%d弱 出伤低于 %d弱（换%s）' % (weak, weak - 1, other), dm < dl - EPS, '%.4f ≥ %.4f' % (dm, dl))
             tm, tl = team(table, more, 'taken'), team(table, less, 'taken')
             check('协力：%d弱 承伤高于 %d弱（换%s）' % (weak, weak - 1, other), tm > tl + EPS, '%.4f ≤ %.4f' % (tm, tl))
-    # 5. 难度单调、低难度没有超强者
+    # 5. 难度单调、低难度没有超强者、D282 秘籍格随难度加成（五档非负整数且单调不降）
+    want_bonus = {'xunchang': 0, 'jianxian': 0, 'jiusi': 1, 'lianyu': 2, 'zhengdao': 3}
+    for d in diffs:
+        dk = d.get('key')
+        bv = d.get('secret_cap_bonus')
+        is_ok = isinstance(bv, int) and not isinstance(bv, bool) and bv >= 0
+        check('难度 secret_cap_bonus 非负整数：' + str(dk), is_ok, bv)
+        if is_ok and dk in want_bonus:
+            check('难度 secret_cap_bonus 符 D282：' + str(dk), bv == want_bonus[dk], '表 %s，应为 %s' % (bv, want_bonus[dk]))
     for a, b in zip(diffs, diffs[1:]):
         for k in ('enemy_hp', 'enemy_atk'):
             va, vb = a['scaling'][k], b['scaling'][k]
             check('%s 不降：%s→%s' % (k, a['key'], b['key']), vb >= va, '%s → %s' % (va, vb))
+        ba, bb = a.get('secret_cap_bonus'), b.get('secret_cap_bonus')
+        if isinstance(ba, int) and not isinstance(ba, bool) and isinstance(bb, int) and not isinstance(bb, bool):
+            check('secret_cap_bonus 不降：%s→%s' % (a['key'], b['key']), bb >= ba, '%s → %s' % (ba, bb))
     for k in ('xunchang', 'jianxian'):
         r = by_key.get(k, {}).get('roster', {})
         check('低难度候选池没有超强者：' + k, SUPER not in r.get('pool', []) and r.get('super_cap') == 0, r)
