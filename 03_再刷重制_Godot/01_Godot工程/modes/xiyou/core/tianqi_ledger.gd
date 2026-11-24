@@ -771,6 +771,9 @@ static func passive_buckets(a, objs: Array) -> Dictionary:
 				put.call("skillPass", int(tag.substr(9)), XActor._num(meta[k]) / 100.0)
 			elif tag.begins_with("passiveELUP") and o.has("stypeId"):
 				put.call("passiveELUP", int(tag.substr(11)), XActor._num(meta[k]) / 100.0)
+			elif tag.begins_with("passiveELUP") and XTianqiSkills.is_passive_elup_obj(o):
+				var eb := "state" if bucket == "state" else "tianqi"  # T451：skill_rework 改写装备的 passiveELUP 属天启篇改写数，不计进九线 equip 桶
+				_add(out.passiveELUP, int(tag.substr(11)), eb, XActor._num(meta[k]) / 100.0)
 	out["books"] = books
 	# 元素增幅（damage.own_bonus 的 elementAmplify 来源：状态＋装备＋角色＋职业）；宝珠镶进装备的那份单列
 	var amp_objs: Array = a.states() + (a.stat_equips() if a.has_method("stat_equips") else []) + ([a.data(), a.class_data()] if a is XActor else [])

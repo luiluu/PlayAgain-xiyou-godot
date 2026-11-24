@@ -45,7 +45,13 @@ static var _actor_trait_cache: Dictionary = {}  # int 角色号 → [原 data �
 ## T411：天启篇状态命中追加伤害（hit_extra_pct，徐凤年剑一～剑八）与角色本体 traits_remove 开关；false＝回退
 static var HIT_EXTRA_ON := true
 static var ACTOR_TRAITS_STRIP := true
+## T451：gear_view 与 rec_state 按改写后 note 重算 yep（清 60 件专武/防具＋36 个状态残留原版 elementAmplify）；false＝回退
+static var YEP_RECOMPUTE := true
+## T451（T449 核 P2-1）：修通 skill_rework.json 6 装备（armor:4995/4519、weapon:2023/1698~1700）＋2 状态（state:173/2733）的 note_add passiveELUP 读取；false＝回退
+static var PASSIVE_ELUP_EXT := true
 static var _again: Dictionary = {}  # again_sources：读再释放的改写技能号（int）／装备键 → true（空表＝还没建）
+static var _passive_elup: Dictionary = {}  # passive_elup_sources：note_add 写了 passiveELUP 的装备键／"state:号" → true
+static var _elem_name_ids: Dictionary = {}  # 元素名（大写）→ 元素号（parse_yep 用）
 static var _counter_ids: Array = []  # 技能行带 counter／counter_next／guard 的技能号（data() 读表时列出）
 static var _counter_next_ids: Array = []
 static var _guard_ids: Array = []  # 同上键 → [原备注, 原特性数组, 新备注, 新 meta, 新特性]
@@ -136,6 +142,7 @@ static func reload_table() -> void:
 	_gear_cache = {}
 	_actor_trait_cache = {}
 	_again = {}
+	_passive_elup = {}
 	_new_recs = {}
 	_new_state_recs = {}
 	_counter_ids = []
@@ -511,6 +518,60 @@ static func again_sources() -> Dictionary:
 	return _again
 
 
+## T451（T449 核 P2-1）：skill_rework.json 里 note_add 写了 passiveELUP 的装备键（"armor:底号"／"weapon:底号"）与状态键（"state:号"）→ true。
+## 只读名单内的装备与状态，不激活原版未改写装备／状态上的遗留 passiveELUP 废标签（如 armor:124/125、state:1149 等）。
+static func passive_elup_sources() -> Dictionary:
+	if _passive_elup.is_empty():
+		data()
+		var out := {}
+		for key in _gear:
+			if _gear[key] is Dictionary and str(_gear[key].get("note_add", "")).contains("passiveELUP"):
+				out[str(key)] = true
+		for sid in _states:
+			if _states[sid] is Dictionary and str(_states[sid].get("note_add", "")).contains("passiveELUP"):
+				out["state:%d" % int(sid)] = true
+		_passive_elup = out
+	return _passive_elup
+
+
+static func is_passive_elup_state(id: int) -> bool:
+	if not PASSIVE_ELUP_EXT or not cards_flag() or not cards_on():
+		return false
+	return passive_elup_sources().has("state:%d" % id)
+
+
+static func is_passive_elup_obj(o: Dictionary) -> bool:
+	if not PASSIVE_ELUP_EXT or not cards_flag() or not cards_on() or o.is_empty():
+		return false
+	var tab := passive_elup_sources()
+	if o.has("kind") and str(o.kind) in ["weapon", "armor"]:
+		return tab.has(gear_key(o))
+	if not o.has("stypeId") and o.has("id") and o.has("autoRemovalTiming"):
+		return tab.has("state:%d" % int(o.get("id", 0)))
+	return false
+
+
+static func passive_elup_extra(a, tag: String) -> Array:
+	if not PASSIVE_ELUP_EXT or not cards_flag() or not cards_on() or not (a is XActor) or not tag.begins_with("passiveELUP"):
+		return []
+	var tab := passive_elup_sources()
+	if tab.is_empty():
+		return []
+	var out := []
+	for e in a.stat_equips():
+		var key := gear_key(e)
+		if key != "" and tab.has(key):
+			var m: Dictionary = e.get("meta", {})
+			if m.has(tag):
+				out.append(m[tag])
+	for st in a.states():
+		if st is Dictionary and tab.has("state:%d" % int(st.get("id", 0))):
+			var m: Dictionary = st.get("meta", {})
+			if m.has(tag):
+				out.append(m[tag])
+	return out
+
+
 # ---- 专属装备（法宝、武器）：按底号换成改写视图（第二期之二）----
 ## 表 gear 的键是「armor:底号」或「weapon:底号」，规格：note_remove／note_sub／note_add 改备注（独有技能增伤、承伤、开战状态等标签），
 ## traits_remove [[code, dataId]…]、traits_set [{code, dataId, value}…]（有就改值、没有就加）改特性，desc 换「\\c[1]」效果行。
@@ -557,12 +618,14 @@ static func gear_view(item):
 					hit = true
 			if not hit:
 				traits.append({"code": int(e.code), "dataId": int(e.dataId), "value": float(e.value)})
-		c = [src_note, src_traits, note, parse_meta(note), traits]
+		c = [src_note, src_traits, note, parse_meta(note), traits, parse_yep(src_note), parse_yep(note)]
 		_gear_cache[key] = c
 	var v: Dictionary = item.duplicate(false)
 	v.note = c[2]
 	v.meta = c[3]
 	v.traits = c[4]
+	if YEP_RECOMPUTE:
+		v.yep = _merge_yep(item.get("yep", {}), c[5], c[6])
 	return v
 
 
@@ -600,8 +663,8 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 	if base.is_empty() or not has_state(id) or not cards_on():
 		return base
 	var hit = _state_recs.get(id)
-	if hit is Array and is_same(hit[0], base):
-		return hit[1]
+	if hit is Array and is_same(hit[0], base) and bool(hit[1]) == YEP_RECOMPUTE:
+		return hit[2]
 	var sp: Dictionary = _states[id]
 	var r: Dictionary = base.duplicate(true)
 	var note := _note_edit(str(r.get("note", "")), sp)
@@ -610,6 +673,12 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 		note = RegEx.create_from_string("(?s)<StateNote>.*?</StateNote>").sub(note, "<StateNote>\n%s\n</StateNote>" % str(sp.state_note))
 	r.note = note
 	r.meta = parse_meta(note)
+	if YEP_RECOMPUTE:
+		var ny := parse_yep(note)
+		if ny.is_empty():
+			r.erase("yep")
+		else:
+			r.yep = ny
 	if sp.has("traits"):
 		r.traits = (sp.traits as Array).duplicate(true)
 	for t in sp.get("traits_add", []):
@@ -657,7 +726,7 @@ static func rec_state(id: int, base: Dictionary) -> Dictionary:
 		var effs: Array = (r.get("effects", []) as Array).duplicate(true) if r.get("effects") is Array else []
 		effs.append({"phase": "establish", "op": "hit_extra_pct", "pct": int(sp.hit_extra_pct)})
 		r.effects = effs
-	_state_recs[id] = [base, r]
+	_state_recs[id] = [base, YEP_RECOMPUTE, r]
 	return r
 
 
@@ -706,6 +775,143 @@ static func parse_meta(note: String) -> Dictionary:
 	var out := {}
 	for m in RegEx.create_from_string("<([^<>:]+)(:?)([^>]*)>").search_all(note):
 		out[m.get_string(1)] = m.get_string(3) if m.get_string(2) == ":" else true
+	return out
+
+
+static var _yep_c1 := RegEx.create_from_string("(?i)<ELEMENT AMPLIFY (\\d+): ([+\\-]\\d+(?:\\.\\d+)?)[%％]>")
+static var _yep_c2 := RegEx.create_from_string("(?i)<ELEMENT AMPLIFY ([^:>]+): ([+\\-]\\d+(?:\\.\\d+)?)[%％]>")
+static var _yep_cn1 := RegEx.create_from_string("(?i)<ELEMENT AMPLIFY (\\d+): ([+\\-]\\d+(?:\\.\\d+)?)>")
+static var _yep_cn2 := RegEx.create_from_string("(?i)<ELEMENT AMPLIFY ([^:>]+): ([+\\-]\\d+(?:\\.\\d+)?)>")
+static var _yep_c3 := RegEx.create_from_string("(?i)<ELEMENT MAGNIFY (\\d+): ([+\\-]\\d+(?:\\.\\d+)?)[%％]>")
+static var _yep_c4 := RegEx.create_from_string("(?i)<ELEMENT MAGNIFY ([^:>]+): ([+\\-]\\d+(?:\\.\\d+)?)[%％]>")
+static var _yep_rf1 := RegEx.create_from_string("(?i)<ELEMENT REFLECT (\\d+): ([+\\-]\\d+(?:\\.\\d+)?)[%％]>")
+static var _yep_rf2 := RegEx.create_from_string("(?i)<ELEMENT REFLECT ([^:>]+): ([+\\-]\\d+(?:\\.\\d+)?)[%％]>")
+static var _yep_crit := RegEx.create_from_string("(?i)<CRITICAL MULTIPLIER: ([+\\-]\\d+)[%％]>")
+static var _yep_m1 := RegEx.create_from_string("(?i)<MULTIPLE ELEMENTS:[ ]*(\\d+(?:\\s*,\\s*\\d+)*)>")
+static var _yep_m2 := RegEx.create_from_string("(?i)<MULTIPLE ELEMENTS: (\\d+) (?:THROUGH|to) (\\d+)>")
+static var _yep_digits := RegEx.create_from_string("\\d+")
+
+
+static func _elem_id_of(name: String) -> int:
+	if _elem_name_ids.is_empty():
+		var els = XDB.system().get("elements", [])
+		if els is Array:
+			for i in range(1, els.size()):
+				var s := str(els[i]).to_upper().strip_edges()
+				if s != "":
+					_elem_name_ids[s] = i
+	return int(_elem_name_ids.get(name.to_upper().strip_edges(), 0))
+
+
+## T451：按行解析 YEP_ElementCore / YEP_X_CriticalControl 备注标签（与 xiyou_export.py parse_yep 100% 同口径）
+static func parse_yep(note: String) -> Dictionary:
+	var amp := {}
+	var ampn := {}
+	var mag := {}
+	var reflect := {}
+	var crit := 0.0
+	var multi := []
+	for raw_line in note.split("\n"):
+		var line := raw_line.strip_edges(false, true)
+		var m := _yep_c1.search(line)
+		if m != null:
+			var k := m.get_string(1)
+			amp[k] = float(amp.get(k, 0.0)) + float(m.get_string(2)) * 0.01
+		else:
+			m = _yep_c2.search(line)
+			if m != null:
+				var eid := _elem_id_of(m.get_string(1))
+				if eid > 0:
+					var k := str(eid)
+					amp[k] = float(amp.get(k, 0.0)) + float(m.get_string(2)) * 0.01
+			else:
+				m = _yep_cn1.search(line)
+				if m != null:
+					var k := m.get_string(1)
+					ampn[k] = float(ampn.get(k, 0.0)) + float(m.get_string(2))
+				else:
+					m = _yep_cn2.search(line)
+					if m != null:
+						var eid := _elem_id_of(m.get_string(1))
+						if eid > 0:
+							var k := str(eid)
+							ampn[k] = float(ampn.get(k, 0.0)) + float(m.get_string(2))
+					else:
+						m = _yep_c3.search(line)
+						if m != null:
+							mag[m.get_string(1)] = float(m.get_string(2)) * 0.01
+						else:
+							m = _yep_c4.search(line)
+							if m != null:
+								var eid := _elem_id_of(m.get_string(1))
+								if eid > 0:
+									mag[str(eid)] = float(m.get_string(2)) * 0.01
+		m = _yep_rf1.search(line)
+		if m != null:
+			reflect[m.get_string(1)] = float(m.get_string(2)) * 0.01
+		else:
+			m = _yep_rf2.search(line)
+			if m != null:
+				var eid := _elem_id_of(m.get_string(1))
+				if eid > 0:
+					reflect[str(eid)] = float(m.get_string(2)) * 0.01
+		m = _yep_crit.search(line)
+		if m != null:
+			crit = float(m.get_string(1)) * 0.01
+		m = _yep_m2.search(line)
+		if m != null:
+			for x in range(int(m.get_string(1)), int(m.get_string(2)) + 1):
+				multi.append(x)
+		else:
+			m = _yep_m1.search(line)
+			if m != null:
+				for dm in _yep_digits.search_all(m.get_string(1)):
+					multi.append(int(dm.get_string(0)))
+	var out := {}
+	if not amp.is_empty():
+		out["elementAmplify"] = amp
+	if not ampn.is_empty():
+		out["elementAmplifyN"] = ampn
+	if not mag.is_empty():
+		out["elementMagnify"] = mag
+	if not reflect.is_empty():
+		out["elementReflect"] = reflect
+	if crit != 0.0:
+		out["critMultBonus"] = crit
+	if not multi.is_empty():
+		out["multipleElements"] = multi
+	return out
+
+
+## gear_view 合并 yep：只把装备自身 note 变更导致的差值套到 item.yep 上，完整保留宝珠／强化等实例增量
+static func _merge_yep(src_yep, raw_yep: Dictionary, new_yep: Dictionary) -> Dictionary:
+	var out: Dictionary = (src_yep as Dictionary).duplicate(true) if src_yep is Dictionary else {}
+	for field in ["elementAmplify", "elementAmplifyN"]:
+		var cur: Dictionary = out.get(field, {}) if out.get(field) is Dictionary else {}
+		var raw_m: Dictionary = raw_yep.get(field, {}) if raw_yep.get(field) is Dictionary else {}
+		var new_m: Dictionary = new_yep.get(field, {}) if new_yep.get(field) is Dictionary else {}
+		if cur.is_empty() and raw_m.is_empty() and new_m.is_empty():
+			continue
+		var keys := {}
+		for k in cur: keys[str(k)] = true
+		for k in raw_m: keys[str(k)] = true
+		for k in new_m: keys[str(k)] = true
+		var merged := {}
+		for k in keys:
+			var extra := float(cur.get(k, 0.0)) - float(raw_m.get(k, 0.0))
+			var val := float(new_m.get(k, 0.0)) + extra
+			if absf(val) >= 1e-9:
+				merged[k] = val
+		if merged.is_empty():
+			out.erase(field)
+		else:
+			out[field] = merged
+	for field in ["elementMagnify", "elementReflect", "critMultBonus", "multipleElements"]:
+		if raw_yep.get(field) != new_yep.get(field):
+			if new_yep.has(field):
+				out[field] = new_yep[field].duplicate(true) if (new_yep[field] is Dictionary or new_yep[field] is Array) else new_yep[field]
+			else:
+				out.erase(field)
 	return out
 
 

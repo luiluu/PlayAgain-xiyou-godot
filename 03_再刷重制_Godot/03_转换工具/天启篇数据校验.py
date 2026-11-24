@@ -3733,6 +3733,122 @@ def check_general_books(_args) -> bool:
     return _run_table('general_books.json', general_books_rules)
 
 
+def gear_elem_amp_rules(table: dict, rework: dict = None, gear_table: dict = None, db_dir: Path = None) -> list:
+    """gear_elem_amp.json（T451，Kyo 11-24 事项 50）：通用武器（5～50%）与保留栏位普通防具（5～20%）元素/物理增幅分档表。"""
+    bad = []
+
+    def check(name, ok, detail=''):
+        if not ok:
+            bad.append('%s：%s' % (name, detail))
+
+    def no4_floor(x: int) -> int:
+        while x > 1 and '4' in str(x):
+            x -= 1
+        return x
+
+    check('表头 version', _is_int(table.get('version')) and table['version'] >= 1, table.get('version'))
+    check('表头 source', _text(table.get('source')), table.get('source'))
+    w_caps = {1: 10, 2: 15, 3: 25, 4: 35, 5: 50}
+    a_caps = {1: 7, 2: 10, 3: 13, 4: 18, 5: 20}
+    w_floors = {1: 5, 2: 10, 3: 15, 4: 20, 5: 35}
+    a_floors = {1: 5, 2: 8, 3: 10, 4: 15, 5: 18}
+    w_lv = {1: (1, 29), 2: (30, 49), 3: (50, 69), 4: (70, 80), 5: (81, 999)}
+    a_lv = {1: (1, 29), 2: (30, 49), 3: (50, 69), 4: (70, 79), 5: (80, 999)}
+    # 原版元素增幅低于 5% 的两件防具白名单（不私涨原值：armor:327 原 3%，armor:501 原 4% 避 4 降 3%）
+    low_orig_whitelist = {('armor', '327'), ('armor', '501')}
+    rw_gear = set((rework or {}).get('gear', {}).keys())
+    efabao = {int(r['id']) for r in (gear_table or {}).get('element_fabaos', {}).get('items', []) if isinstance(r, dict) and 'id' in r}
+
+    # 本地数据库存在时补查：档位与 req_level 对齐、修后不高于原值、不低于 min(档位下限, 原值) 避 4、subs 命中原版 note
+    db = db_dir or DB_DIR
+    raw_dbs = {}
+    for sec, fname in (('weapons', 'Weapons.json'), ('armors', 'Armors.json')):
+        p = db / fname
+        if p.is_file():
+            raw_dbs[sec] = json.loads(p.read_text(encoding='utf-8'))
+    req_lv_re = re.compile(r'等级需求[：:]\s*(\d+)')
+
+    for sec, kind, caps, floors, lv_rng in (
+        ('weapons', 'weapon', w_caps, w_floors, w_lv),
+        ('armors', 'armor', a_caps, a_floors, a_lv),
+    ):
+        rows = table.get(sec)
+        check(sec, isinstance(rows, dict) and len(rows) > 0, '要非空字典')
+        if not isinstance(rows, dict):
+            continue
+        raw_db = raw_dbs.get(sec)
+        for k, v in rows.items():
+            if not (str(k).isdigit() and int(k) > 0):
+                bad.append('%s[%s]：键要是正整数 ID' % (sec, k))
+                continue
+            if not isinstance(v, dict):
+                bad.append('%s[%s]：值要是对象' % (sec, k))
+                continue
+            t = v.get('tier')
+            if not (_is_int(t) and t in caps):
+                bad.append('%s[%s].tier＝%r：要在 1～5' % (sec, k, t))
+                continue
+            amp = v.get('amp')
+            if not isinstance(amp, dict) or not amp:
+                bad.append('%s[%s].amp：要非空字典' % (sec, k))
+                continue
+            cap = caps[t]
+            min_v = 1 if (kind, str(k)) in low_orig_whitelist else 5
+            for ek, val in amp.items():
+                if not (str(ek).isdigit() and int(ek) >= 0):
+                    bad.append('%s[%s].amp[%s]：元素键要是非负整数' % (sec, k, ek))
+                elif not (_is_int(val) and min_v <= val <= cap and '4' not in str(val)):
+                    bad.append('%s[%s].amp[%s]＝%r：要是 %d～%d 的避 4 整数' % (sec, k, ek, val, min_v, cap))
+            if 'subs' in v:
+                subs = v['subs']
+                if not isinstance(subs, list) or not all(isinstance(p, list) and len(p) == 2 and all(isinstance(s, str) for s in p) for p in subs):
+                    bad.append('%s[%s].subs：要是 [旧, 新] 字符串对列表' % (sec, k))
+            gkey = '%s:%s' % (kind, k)
+            if gkey in rw_gear:
+                bad.append('%s 与 skill_rework.gear 重叠' % gkey)
+            if kind == 'armor' and int(k) in efabao:
+                bad.append('%s 与 gear_table.element_fabaos 重叠' % gkey)
+            if raw_db is not None:
+                gid = int(k)
+                if gid >= len(raw_db) or not isinstance(raw_db[gid], dict):
+                    bad.append('%s 不存在于原版库' % gkey)
+                    continue
+                rec = raw_db[gid]
+                note = str(rec.get('note', ''))
+                rl_str = str((rec.get('meta') or {}).get('req_level', '')).strip()
+                lv = int(rl_str) if rl_str.isdigit() else None
+                if lv is None:
+                    m = req_lv_re.search(note)
+                    if m:
+                        lv = int(m.group(1))
+                if lv is not None and lv > 0:
+                    lo_lv, hi_lv = lv_rng[t]
+                    if not (lo_lv <= lv <= hi_lv):
+                        bad.append('%s tier＝%d 与 req_level＝%d 不对齐（应在 %d～%d）' % (gkey, t, lv, lo_lv, hi_lv))
+                orig_ea = (rec.get('yep') or {}).get('elementAmplify') or {}
+                for ek, val in amp.items():
+                    if not (_is_int(val) and str(ek).isdigit()):
+                        continue
+                    if str(ek) not in orig_ea:
+                        bad.append('%s.amp[%s] 原版无此元素增幅' % (gkey, ek))
+                        continue
+                    orig_pct = round(float(orig_ea[str(ek)]) * 100)
+                    if val > orig_pct:
+                        bad.append('%s.amp[%s]＝%d 高于原值 %d%%（禁止私涨原值）' % (gkey, ek, val, orig_pct))
+                    eff_lo = no4_floor(min(floors[t], orig_pct))
+                    if val < eff_lo:
+                        bad.append('%s.amp[%s]＝%d 低于有效下限 %d%%（档位下限 %d%%、原值 %d%%）' % (gkey, ek, val, eff_lo, floors[t], orig_pct))
+                if isinstance(v.get('subs'), list):
+                    for pair in v['subs']:
+                        if isinstance(pair, list) and len(pair) == 2 and isinstance(pair[0], str) and pair[0] not in note:
+                            bad.append('%s.subs 旧串未命中原版 note：%r' % (gkey, pair[0]))
+    return bad
+
+
+def check_gear_elem_amp(_args) -> bool:
+    return _run_table('gear_elem_amp.json', lambda t: gear_elem_amp_rules(t, _load_opt('skill_rework.json'), _load_opt('gear_table.json')))
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -3779,6 +3895,7 @@ CHECKS = [
     ('weak_affix_table', check_weak_affix_table),
     ('secret_books', check_secret_books),
     ('general_books', check_general_books),
+    ('gear_elem_amp', check_gear_elem_amp),
 ]
 
 

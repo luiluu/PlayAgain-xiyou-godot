@@ -836,7 +836,7 @@ func _carry_fp() -> Array:
 	var traited: Array[int] = []
 	for id in state_ids:
 		var cls := XBattler.state_class(id)
-		if cls == XBattler.STATE_HARD:
+		if cls == XBattler.STATE_HARD or XTianqiSkills.is_passive_elup_state(id):
 			hard.append(id)
 		elif cls == XBattler.STATE_TRAITS:
 			traited.append(id)
@@ -1062,6 +1062,8 @@ func _passive_values_now(tag: String) -> Array:
 		var m: Dictionary = s.get("meta", {})
 		if m.has(tag):
 			out.append(m[tag])
+	if tag.begins_with("passiveELUP"):  # T451（T449 核 P2-1）：天启篇 skill_rework 改写装备／状态的 note_add passiveELUP
+		out.append_array(XTianqiSkills.passive_elup_extra(self, tag))
 	return out
 
 ## Game_Actor.replaceAttackSkillId：状态 → 装备（按槽序）→ 技能 → 职业 → 角色
