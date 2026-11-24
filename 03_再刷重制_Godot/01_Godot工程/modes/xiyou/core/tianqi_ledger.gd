@@ -1081,7 +1081,10 @@ static func secret_slots(a, s: XState = null) -> int:
 	var tier := XTianqiSkills.tier_of(a, true) if (XTianqi.active(s) and XTianqiSkills.tiers_on(s)) else ""
 	if tier == "":
 		tier = XTier.tier_of(a)
-	return XTianqiBalance.secret_cap(tier)
+	var base := XTianqiBalance.secret_cap(tier)
+	if base <= 0:
+		return 0
+	return base + XTianqiSecrets.difficulty_bonus(s)
 
 
 ## 某一桶（或某一本书 "#id"）在这一下各池的量：skill（①，按这一招的技能类型、装备的武器类型、技能专属被动）、bonus（③）、crit（④）、element {e: ②}
