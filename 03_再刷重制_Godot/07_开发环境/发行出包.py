@@ -18,6 +18,10 @@
   windows/再刷一把_天启篇.exe、.pck     zip 的原料，冒烟用（--win-dir）
   再刷一把_天启篇_安卓.apk              安卓发行；发行 keystore 没配时用本机 Godot 调试 keystore 签（只能试装，不能上架）
   SHA256SUMS.txt、体积.md、冒烟.md、发行说明.txt
+资源加密（T452，Kyo 11-24「只做2」）：三个发行预设开 AES-256 资源包加密（脚本、json 等，只加密文件不加密目录），
+导出前查密钥（私密设计仓 发行密钥/pck_encryption_key.json）和用同一把密钥编的模板（资源加密.py status），缺一样不出包；
+安卓 Gradle 构建模板从加密模板目录的 android_source.zip 装进导出用的工程副本；导完 资源加密.py scan 逐个查该加密的都加密了、包外没有明文。
+回退：资源加密.ENCRYPT＝False（导出用的副本里关掉加密，模板照样能跑明文包）。
 三个包都在这台 Mac 上导（Godot 在 Mac 上能直接导 Windows 和安卓，不用虚拟机）。不走云端：云端导入为了不超时去掉了 WebP 最高档，
 包会大约 150 MB；下载包要把完整游戏包作公开附件；云端每次现生成的调试 keystore 跟本机签名不同，手机上不能覆盖安装。
 冒烟：Mac `--keys` 和 `--arch x86_64 --keys`；Windows `--win-dir --keys`（macOS 发行模板当替身）；安卓 `--apk --keys`（静态检查＋替身）。
@@ -191,8 +195,8 @@ def run(cmd, log: Path, env=None, timeout=1800) -> int:
     return p.returncode
 
 
-def android_env():
-    env = dict(os.environ)
+def android_env(base: dict = None):
+    env = dict(os.environ if base is None else base)
     if env.get('GODOT_ANDROID_KEYSTORE_RELEASE_PATH'):
         return env, '发行 keystore（环境变量）'
     sys.path.insert(0, str(HERE))
@@ -294,8 +298,14 @@ def inject_save_key(src: Path) -> str:
 
 
 def artifact_has_key(path: Path, key: bytes) -> bool:
-    """导出的包里读得到注入的密钥文件吗：zip（mac 包、apk）逐项看，名字是 save_seal_key.json 的比内容，.pck 在里面找这段字节；
-    单独的 .pck（Windows）直接找。Godot 打包 .json 不改内容，所以找原字节。"""
+    """导出的包里读得到注入的密钥文件吗：先按包内目录读 content/save_seal_key.json（加密包用资源加密密钥解开，T452）比内容；
+    读不了目录的旧格式再退回：zip（mac 包、apk）逐项看，.pck 在里面找这段字节；单独的 .pck（Windows）直接找。"""
+    try:
+        got = _audit_mod().read_files(path, lambda n: n == SAVE_KEY_DEST)
+        if SAVE_KEY_DEST in got:
+            return got[SAVE_KEY_DEST] == key
+    except Exception:  # noqa: BLE001
+        pass
     import mmap
     def in_blob(data) -> bool:
         return data.find(key) >= 0
@@ -326,18 +336,56 @@ def verify_save_key(out: Path) -> list:
     return problems
 
 
+def _enc_mod():
+    spec = importlib.util.spec_from_file_location('资源加密', HERE / '资源加密.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def prepare_encryption(src: Path) -> tuple:
+    """T452：返回 (导出环境, 问题)。开加密时查密钥和模板（缺一样不出包），装安卓 Gradle 构建模板（加密模板的 android_source.zip）；
+    回退（资源加密.ENCRYPT＝False）时只在导出用的工程副本里关掉加密。"""
+    enc = _enc_mod()
+    if not enc.ENCRYPT:
+        if src == PROJECT:
+            return None, '资源加密回退（ENCRYPT＝False）不能配 --real-scripts（会改工作区的 export_presets.cfg）'
+        enc.strip_encryption(src / 'export_presets.cfg')
+        print('== 资源加密：回退开关关着，本次出明文包')
+        env = dict(os.environ)
+    else:
+        bad = enc.template_problems()
+        if bad:
+            return None, '资源加密：' + '；'.join(bad)
+        env = enc.export_env()
+        print(f'== 资源加密：密钥指纹 {enc.fingerprint(enc.load_key())}，模板 {enc.template_dir()}')
+    src_zip = enc.template_dir() / enc.ANDROID_SOURCE
+    if not src_zip.is_file():  # 回退时模板目录可能没有；退回官方模板的 android_source.zip
+        src_zip = HERE / '导出模板' / enc.TEMPLATE_VERSION / enc.ANDROID_SOURCE
+    spec = importlib.util.spec_from_file_location('云端导出', HERE / '云端导出.py')
+    ce = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(ce)
+    reg = json.loads((HERE / '环境登记.json').read_text(encoding='utf-8'))
+    build = ce.install_build_template(src_zip, src, reg['templateVersion'])
+    print(f'== 安卓 Gradle 构建模板：{src_zip.parent.name}/{src_zip.name} → {build.relative_to(src)}')
+    return env, ''
+
+
 def export_all(out: Path, logs: Path) -> list:
     problems = []
     src = stub_tree(out)
     try:
+        env, bad = prepare_encryption(src)
+        if bad:
+            return [bad]
         bad = inject_save_key(src)
         if bad:
             return [bad]
         bad = stub_smoke(src, logs)
         if bad:
             return bad
-        problems = _export_all(out, logs, src, problems)
-        return problems or verify_save_key(out)
+        problems = _export_all(out, logs, src, problems, env)
+        return problems or verify_save_key(out) or verify_encryption(out)
     finally:
         if src != PROJECT:
             shutil.rmtree(src, ignore_errors=True)
@@ -345,24 +393,37 @@ def export_all(out: Path, logs: Path) -> list:
             (PROJECT / SAVE_KEY_DEST).unlink(missing_ok=True)  # --real-scripts 直接用工程导：导完删掉，不留在工作区
 
 
-def _export_all(out: Path, logs: Path, src: Path, problems: list) -> list:
+def verify_encryption(out: Path) -> list:
+    """T452：逐个查发给玩家的产物（mac zip、Windows zip 与 pck、apk）：该加密的都加密了、包外没有明文副本、抽查用密钥解得开。"""
+    enc = _enc_mod()
+    if not enc.ENCRYPT:
+        return []
+    problems = []
+    for p in (out / MAC_ZIP, out / WIN_ZIP, out / WIN_DIR / WIN_FILES[1], out / APK):
+        if p.is_file():
+            problems += enc.scan(p)
+    print('== 资源加密检查：' + ('有问题' if problems else '通过'))
+    return problems[:20]
+
+
+def _export_all(out: Path, logs: Path, src: Path, problems: list, env: dict = None) -> list:
     print('== 导出 macOS 发行')
-    if run([str(GODOT), '--headless', '--path', str(src), '--export-release', 'macOS 发行', str(out / MAC_ZIP)], logs / '导出_mac.log') or not (out / MAC_ZIP).is_file():
+    if run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(src), '--export-release', 'macOS 发行', str(out / MAC_ZIP)], logs / '导出_mac.log', env=env) or not (out / MAC_ZIP).is_file():
         problems.append('macOS 导出失败')
     print('== 导出 Windows 发行')
     (out / WIN_DIR).mkdir(exist_ok=True)
-    if run([str(GODOT), '--headless', '--path', str(src), '--export-release', 'Windows 发行', str(out / WIN_DIR / WIN_FILES[0])], logs / '导出_windows.log') \
+    if run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(src), '--export-release', 'Windows 发行', str(out / WIN_DIR / WIN_FILES[0])], logs / '导出_windows.log', env=env) \
             or not all((out / WIN_DIR / f).is_file() for f in WIN_FILES):
         problems.append('Windows 导出失败')
     else:
         win_zip(out)
     print('== 导出 安卓 发行')
-    env, how = android_env()
+    env, how = android_env(env)
     if env is None:
         problems.append('安卓：没配发行 keystore，本机也找不到 Godot 调试 keystore')
     else:
         print(f'  签名：{how}')
-        if run([str(GODOT), '--headless', '--path', str(src), '--export-release', '安卓 发行', str(out / APK)], logs / '导出_安卓.log', env=env) \
+        if run([str(GODOT), '--headless', '--audio-driver', 'Dummy', '--path', str(src), '--export-release', '安卓 发行', str(out / APK)], logs / '导出_安卓.log', env=env) \
                 or not (out / APK).is_file():
             problems.append('安卓导出失败')
         idsig = out / (APK + '.idsig')
