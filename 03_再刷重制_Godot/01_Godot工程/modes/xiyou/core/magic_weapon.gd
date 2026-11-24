@@ -168,8 +168,8 @@ static func after_load(s: XState) -> int:
 		seen.append(item)
 		if migrate_item(item, s):
 			changed += 1
-	s.flags[OLD_LEVEL_MIGRATE_MARK] = true
 	if changed > 0:
+		s.flags[OLD_LEVEL_MIGRATE_MARK] = true
 		for a in s.actors.values():
 			a.refresh_passive()
 	return changed
