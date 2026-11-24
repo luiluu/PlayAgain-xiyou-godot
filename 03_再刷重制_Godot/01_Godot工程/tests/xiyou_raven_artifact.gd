@@ -57,6 +57,7 @@ func _read(a: XActor) -> Dictionary:
 
 
 func _run() -> void:
+	XMagicWeapon.SCALE_99_TO_888 = false  # 原版对照：西游档法宝 99→888 折算（T468）由 xiyou_fabao_99_scale 核
 	var d = JSON.parse_string(FileAccess.get_file_as_string(XDB.BASE + ORACLE))
 	if not check("oracle", d is Dictionary and d.cases.size() >= 9 and d.cases.all(func(c): return c.errors.is_empty()), ORACLE):
 		finish()

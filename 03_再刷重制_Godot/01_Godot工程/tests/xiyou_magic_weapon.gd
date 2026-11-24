@@ -30,6 +30,7 @@ static func _floats(list: Array) -> Array:
 
 
 func _run() -> void:
+	XMagicWeapon.SCALE_99_TO_888 = false  # 原版对照：西游档法宝 99→888 折算（T468）由 xiyou_fabao_99_scale 核
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
 	if not check("magic_oracle_loaded", data is Dictionary and data.get("cases", []).size() >= 5, ORACLE):
 		_finish()

@@ -60,9 +60,10 @@ const TIANXIA_CRIT_HIT := 50     # 暴击/命中 +%（原 500）
 const TIANXIA_APLUS := 1         # 再次行动几率 %（原 100）
 
 ## 9998 剑气滚龙壁·封印（每段公式，去 b.hp*0.000015）与 State 2539 真·剑九
-const GUNLONG_BASE := 666666     # 保留原版固定底数
-const GUNLONG_ATK_MUL := 209000  # 物攻整数系数（原 3000 + b.hp*0.000015）
-const ST2539_RATE := 2           # 真·剑九终伤加成整数倍（2 → +200%，原 5 → +500%）
+const GUNLONG_BASE := 666666         # 保留原版固定底数
+const GUNLONG_ATK_MUL_888 := 130000  # 物攻整数系数（原 3000 + b.hp*0.000015；T468 法宝 99→888 折算开启口径）
+const GUNLONG_ATK_MUL_99 := 209000   # 物攻整数系数（T440 原 99 级法宝口径，SCALE_99_TO_888 关闭时联动回退）
+const ST2539_RATE := 2               # 真·剑九终伤加成整数倍（2 → +200%，原 5 → +500%）
 
 ## Armor 143 徐凤年·不朽法宝（保留全部 11 条 traits）
 const FABAO_MMP_PCT := 200       # 魔法 *200%（原 300%）
@@ -71,7 +72,8 @@ const FABAO_GROW_ALL := 12       # 每级全属性 +12（原 15）
 const FABAO_GROW_MMP_EXTRA := 18 # 魔法额外 +18，即每级 +30（原额外 +35，即 +50）
 
 ## Weapon 76 绣冬（75 级专属主手，方案 B：承接主要输出，保留 2301 紫炎与成长）
-const XIUDONG_ATK_PCT := 137     # 物攻能力值 *137%（原 300%）
+const XIUDONG_ATK_PCT_888 := 176     # 物攻能力值 *176%（原 300%；T468 法宝 99→888 折算开启口径）
+const XIUDONG_ATK_PCT_99 := 137      # 物攻能力值 *137%（T440 原 99 级法宝口径，SCALE_99_TO_888 关闭时联动回退）
 const XIUDONG_EL_AMP := 290      # 11 元素增幅 +290%（原 +600%）
 const XIUDONG_HARM := 120        # 终伤/爆伤 +120%（原 +450%）
 const XIUDONG_GROW := 4          # 绣冬 76 每级物攻/魔攻 +4（原 +10）
@@ -89,6 +91,16 @@ static var _gear_tpl_cache := {}          # "kind:id" -> [orig_ref, rework_copy]
 
 static func on() -> bool:
 	return REWORK
+
+
+## 9998 剑气滚龙壁·封印物攻倍率：联动 XMagicWeapon.SCALE_99_TO_888（开 130000，关回退 209000）
+static func gunlong_atk_mul() -> int:
+	return GUNLONG_ATK_MUL_888 if XMagicWeapon.SCALE_99_TO_888 else GUNLONG_ATK_MUL_99
+
+
+## 76 绣冬物攻能力值百分比：联动 XMagicWeapon.SCALE_99_TO_888（开 176，关回退 137）
+static func xiudong_atk_pct() -> int:
+	return XIUDONG_ATK_PCT_888 if XMagicWeapon.SCALE_99_TO_888 else XIUDONG_ATK_PCT_99
 
 
 ## 仅在已载入西游档（非天启篇、非无存档静态表校验）时生效的记录分派
@@ -128,11 +140,12 @@ static func touches(table_name: String, id: int) -> bool:
 	return false
 
 
-## 西游档经 XDB.rec 取副本（缓存按原件引用校验，不改共享原表）
+## 西游档经 XDB.rec 取副本（缓存按原件引用与 SCALE_99_TO_888 状态校验，不改共享原表）
 static func rec(table_name: String, id: int, base: Dictionary) -> Dictionary:
 	if not REWORK or base.is_empty():
 		return base
-	var key := "%s:%d" % [table_name, id]
+	var scale_tag := ":s1" if XMagicWeapon.SCALE_99_TO_888 else ":s0"
+	var key := "%s:%d%s" % [table_name, id, scale_tag]
 	var cached = _rec_cache.get(key)
 	if cached is Array and cached.size() == 2 and is_same(cached[0], base):
 		return cached[1]
@@ -246,7 +259,8 @@ static func _gear_pair(kind: String, base_id: int) -> Array:
 	if not (arr is Array) or base_id <= 0 or base_id >= arr.size() or not (arr[base_id] is Dictionary):
 		return []
 	var orig: Dictionary = arr[base_id]
-	var key := "%s:%d" % [kind, base_id]
+	var scale_tag := ":s1" if XMagicWeapon.SCALE_99_TO_888 else ":s0"
+	var key := "%s:%d%s" % [kind, base_id, scale_tag]
 	var cached = _gear_tpl_cache.get(key)
 	if cached is Array and cached.size() == 2 and is_same(cached[0], orig):
 		return cached
@@ -632,8 +646,9 @@ static func _patch_9997(s) -> void:
 static func _patch_9998(s) -> void:
 	if not (s is Dictionary):
 		return
-	var f_js := "(%d+a.atk*%d)*(1+user.skillMasteryLevel(item.id))" % [GUNLONG_BASE, GUNLONG_ATK_MUL]
-	var f_gd := "(%d+a.atk*%d)*(1+a.skillMasteryLevel(%d))" % [GUNLONG_BASE, GUNLONG_ATK_MUL, SK_GUNLONG]
+	var atk_mul := gunlong_atk_mul()
+	var f_js := "(%d+a.atk*%d)*(1+user.skillMasteryLevel(item.id))" % [GUNLONG_BASE, atk_mul]
+	var f_gd := "(%d+a.atk*%d)*(1+a.skillMasteryLevel(%d))" % [GUNLONG_BASE, atk_mul, SK_GUNLONG]
 	s.damage.formula = f_js
 	s.damage.formulaGd = f_gd
 	var old_src: Dictionary = s.damage.get("formulaProgram", {}).get("source", {"table": "Skills", "id": SK_GUNLONG, "custom": false})
@@ -660,7 +675,7 @@ static func _patch_9998(s) -> void:
 						"pos": 8,
 						"operator": "*",
 						"left": {"op": "property", "pos": 8, "receiver": "a", "name": "atk"},
-						"right": {"op": "literal", "pos": 14, "value": float(GUNLONG_ATK_MUL)},
+						"right": {"op": "literal", "pos": 14, "value": float(atk_mul)},
 					},
 				},
 				"right": {
@@ -682,7 +697,7 @@ static func _patch_9998(s) -> void:
 	}
 	_replace_note_meta(s,
 		"[666666+己·攻击力*3000+敌·生命值*0.00001]*[1+技能等级]",
-		"[%d+己·攻击力*%d]*[1+技能等级]" % [GUNLONG_BASE, GUNLONG_ATK_MUL])
+		"[%d+己·攻击力*%d]*[1+技能等级]" % [GUNLONG_BASE, atk_mul])
 	_replace_note_meta(s, "老剑神李淳罡的绝学,消耗15tp", "老剑神李淳罡的绝学,消耗10tp")
 
 
@@ -712,9 +727,10 @@ static func _patch_fabao_143(a: Dictionary) -> void:
 
 
 static func _patch_xiudong_76(w: Dictionary) -> void:
+	var atk_pct := xiudong_atk_pct()
 	for tr in w.get("traits", []):
 		if int(tr.get("code", 0)) == 21 and int(tr.get("dataId", 0)) == 2:
-			tr.value = float(XIUDONG_ATK_PCT) / 100.0
+			tr.value = float(atk_pct) / 100.0
 	for el in [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12]:
 		_replace_tag(w, "Element Amplify %d" % el, " +%d%%" % XIUDONG_EL_AMP)
 	if w.get("yep") is Dictionary and w.yep.get("elementAmplify") is Dictionary:
@@ -733,7 +749,7 @@ static func _patch_xiudong_76(w: Dictionary) -> void:
 	_replace_note_meta(w, "atk += user.level * 10; mat += user.level * 10;", "atk += user.level * %d; mat += user.level * %d;" % [XIUDONG_GROW, XIUDONG_GROW])
 	_replace_note_meta(w, "造成所有伤害结果*350%", "造成所有伤害结果*249%")
 	_replace_note_meta(w, "物理 、雷电 阴阳 混沌伤+600%", "物理 、雷电 阴阳 混沌伤+%d%%" % XIUDONG_EL_AMP)
-	_replace_note_meta(w, "攻击力能力值*300%", "攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [XIUDONG_ATK_PCT, XIUDONG_HARM, XIUDONG_HARM])
+	_replace_note_meta(w, "攻击力能力值*300%", "攻击力能力值*%d%%，爆伤+%d%%，伤害+%d%%" % [atk_pct, XIUDONG_HARM, XIUDONG_HARM])
 	_replace_note_meta(w, "每级+10)", "每级+%d)" % XIUDONG_GROW)
 
 

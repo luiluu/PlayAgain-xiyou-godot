@@ -57,9 +57,9 @@ static func level_of(item) -> float:
 
 
 static func max_level(item: Dictionary) -> float:
-	if not is_magic(item):
+	var own := raw_max_level(item)
+	if own < 0.0:
 		return -1.0
-	var own := _round_or(item.meta.get("Max Level", null), _param("Max Level", 15))
 	var cap := level_cap(XState.current)
 	return minf(own, float(cap)) if cap > 0 else own
 
@@ -77,12 +77,54 @@ static var FLOOR_CAP := true
 static var TIANQI_TOO := true
 const CAP_TOP := 99
 
+## O-待定·法宝99折算888（T468，Kyo 11-24「99级法宝总数值和888级旧版数值一样」）：西游档（非天启篇）法宝在 99 级封顶下，
+## 1～99 级按线性折算使 99 级总成长属性精确等于原版 888 级总值（原上限 ÷ 99）；等级上限、楼层上限与吃装备升级方式不变。
+## 老存档已超 99 级的法宝（如 331／888 级）平滑封顶在原版上限（888）总值，极端 >888 级旧档保留原等级不降级，绝不乘 9 爆表。
+## 天启篇存档零改动；无存档上下文不启用。回退：`XMagicWeapon.SCALE_99_TO_888 = false`。
+static var SCALE_99_TO_888 := true
+
+
+## 数据原版满级（不受 LEVEL_99／FLOOR_CAP 影响）；不是法宝返回 -1
+static func raw_max_level(item: Dictionary) -> float:
+	if not is_magic(item):
+		return -1.0
+	return _round_or(item.meta.get("Max Level", null), _param("Max Level", 15))
+
+
+## 本次是否启用「西游档 99→原版上限（888）折算」：
+## 须同时满足 SCALE_99_TO_888 与 LEVEL_99 均开启、已载入西游档（非天启篇）、法宝原上限 > CAP_TOP（99）。
+static func scale_active(item = null, state: XState = null) -> bool:
+	if not SCALE_99_TO_888 or not LEVEL_99:
+		return false
+	var s := state if state != null else XState.current
+	if s == null or XTianqi.active(s):
+		return false
+	if item is Dictionary:
+		return raw_max_level(item) > float(CAP_TOP)
+	return true
+
+
+## 给定原始每级成长 per 与法宝等级 lv，计算本项实际总成长属性：
+## - 关折算／天启档／原上限 ≤ 99：与原版一致（lv * per）；
+## - 开折算时 1..98 级取 roundf(lv * orig_max / 99.0 * per)，99 级精确等于 orig_max * per（888 * per），支持负成长（如紫电）；
+## - 老存档 lv > 99：平滑封顶到 maxf(lv, orig_max) * per（如 331／888 级均按 888 算，不爆表不降级；极端 >888 保原等级）。
+static func scaled_growth(item: Dictionary, per: float, lv: float, state: XState = null) -> float:
+	if lv <= 0.0 or per == 0.0:
+		return 0.0
+	if not scale_active(item, state):
+		return lv * per
+	var orig_max := raw_max_level(item)
+	var top := float(CAP_TOP)
+	if lv >= top:
+		return maxf(lv, orig_max) * per
+	return roundf(lv * orig_max / top * per)
+
 
 ## 不跟楼层的满级（数据上限，LEVEL_99 时封到 99）
 static func top_level(item: Dictionary) -> float:
-	if not is_magic(item):
+	var own := raw_max_level(item)
+	if own < 0.0:
 		return -1.0
-	var own := _round_or(item.meta.get("Max Level", null), _param("Max Level", 15))
 	return minf(own, float(CAP_TOP)) if LEVEL_99 else own
 
 
