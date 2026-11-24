@@ -183,6 +183,7 @@ static func versions(s: XState) -> Dictionary:
 static func after_load(s: XState) -> void:
 	_migrate(s)
 	XTianqiRandom.after_load(s)
+	XTianqiGear.sync_element_fabaos(s)
 	_raven_clamp(s)
 
 

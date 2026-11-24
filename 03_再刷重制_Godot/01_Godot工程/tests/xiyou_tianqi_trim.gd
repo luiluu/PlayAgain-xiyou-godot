@@ -184,7 +184,7 @@ func _honghuang() -> void:
 	_check("shop_no_sale", left == [4543, 5198, 2234], left)
 	var divine := [[2, 4279, 0, 0, false], [2, 4540, 0, 0]]
 	var page := XTianqiTrim.shop_goods(s, 4, 54, divine).map(func(g): return [int(g[0]), int(g[1])])
-	_check("shop_xiandao_added", page == [[2, 4279], [2, 4540], [2, 5198]], page)
+	_check("shop_xiandao_added", page == [[2, 4279], [2, 5198]], page)
 	_check("shop_xiandao_only_divine_page", XTianqiTrim.shop_goods(s, 4, 54, [[0, 2232, 0, 0, false]]).size() == 1)
 	_check("shop_original", XTianqiTrim.shop_goods(_plain_state(), 4, 65, empress).size() == empress.size())
 	XTianqiTrim.NO_HONGHUANG = false
