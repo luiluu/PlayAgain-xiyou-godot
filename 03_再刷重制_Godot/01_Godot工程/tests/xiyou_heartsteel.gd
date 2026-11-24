@@ -603,6 +603,7 @@ func _set_wait(w: int) -> void:
 
 func _ready() -> void:
 	await get_tree().process_frame  # 得到装备会弹提示（XToast 挂在根节点上），_ready 里根节点还在忙
+	XMagicWeapon.SCALE_99_TO_888 = false  # 原版对照：西游档法宝 99→888 折算（T468）由 xiyou_fabao_99_scale 核
 	XHeartsteel.TURN_CD_V035 = true
 	var heart_inst := _run_fixture(FIXTURE, false)
 	_case_save(heart_inst)
