@@ -40,6 +40,7 @@ func _run() -> void:
 	_check_revert_and_original_data()
 	_check_tianqi_untouched_and_switch()
 	_check_save_reload_gear_sync()
+	_check_r2_migrations()
 	_check_dummy_tiers()
 
 	XImportedBalance.RELEASE_CANGLONG = was_rel_cl
@@ -552,6 +553,307 @@ func _check_save_reload_gear_sync() -> void:
 		[bk_a129.meta.get("passiveHarmRi"), bk_129_aplus, bk_bag_w76.meta.get("passiveHarmRi"), bk_wh_a129.meta.get("passiveHarmRi")])
 	var dmg_back := _single_hit_9998(s_back)
 	check("p1_2.rw_to_old.combat_dmg", dmg_back > 0.0 and is_equal_approx(dmg_back, dmg_old), [dmg_old, dmg_back])
+
+	XXufeng.REWORK = true
+	XXufeng.clear_cache()
+
+
+## 构造与 R0（9da929fa4）完全一致的历史重做实例（150% 物攻、600% yep、125 终爆伤、195% 元素说明）
+func _make_r0_weapon76() -> Dictionary:
+	var raw: Dictionary = XDB.table("Weapons")[76].duplicate(true)
+	raw.kind = "weapon"
+	raw.base = 76.0
+	raw["affixIds"] = []
+	raw["upgradeSlots"] = 6
+	raw["originalUpgradeSlots"] = 6
+	raw["boostCount"] = 0
+	raw["upgrades"] = []
+	raw["baseName"] = str(raw.name)
+	for tr in raw.traits:
+		if int(tr.code) == 21 and int(tr.dataId) == 2:
+			tr.value = 1.5
+	for el in [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12]:
+		XXufeng._replace_tag(raw, "Element Amplify %d" % el, " +195%")
+	XXufeng._replace_tag(raw, "passiveHarmRi", "125")
+	XXufeng._replace_tag(raw, "passiveCrHarmRi", "125")
+	raw.customParams.params[2].level = 6.0
+	raw.customParams.params[4].level = 6.0
+	XXufeng._replace_note_meta(raw, "atk += user.level * 10; mat += user.level * 10;", "atk += user.level * 6; mat += user.level * 6;")
+	XXufeng._replace_note_meta(raw, "物理 、雷电 阴阳 混沌伤+600%", "物理 、雷电 阴阳 混沌伤+195%")
+	XXufeng._replace_note_meta(raw, "攻击力能力值*300%", "攻击力能力值*150%，爆伤与伤害+125%")
+	XXufeng._replace_note_meta(raw, "每级+10)", "每级+6)")
+	# R0 未改 yep.elementAmplify，仍为 6.0
+	raw["instanceId"] = "xg:9101"
+	return raw
+
+
+func _make_r0_armor129() -> Dictionary:
+	var raw: Dictionary = XDB.table("Armors")[129].duplicate(true)
+	raw.kind = "armor"
+	raw.base = 129.0
+	raw["affixIds"] = []
+	raw["upgradeSlots"] = 6
+	raw["originalUpgradeSlots"] = 6
+	raw["boostCount"] = 0
+	raw["upgrades"] = []
+	raw["baseName"] = str(raw.name)
+	var aplus := 0
+	var nt := []
+	for tr in raw.traits:
+		if int(tr.code) == 21 and int(tr.dataId) == 2:
+			tr.value = 1.5
+			nt.append(tr)
+		elif int(tr.code) == 61 and int(tr.dataId) == 0:
+			aplus += 1
+			if aplus == 1:
+				nt.append(tr)
+		else:
+			nt.append(tr)
+	raw.traits = nt
+	for el in [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12]:
+		XXufeng._replace_tag(raw, "Element Amplify %d" % el, " +195%")
+	XXufeng._replace_tag(raw, "passiveHarmRi", "125")
+	XXufeng._replace_tag(raw, "passiveCrHarmRi", "125")
+	XXufeng._replace_note_meta(raw, "等级需求:1 ", "等级需求:75 ")
+	XXufeng._replace_note_meta(raw, "造成所有伤害结果*350%", "造成所有伤害结果*249%")
+	XXufeng._replace_note_meta(raw, "物理 、雷电 阴阳 混沌伤+600%", "物理 、雷电 阴阳 混沌伤+195%")
+	XXufeng._replace_note_meta(raw, "再动+2 ", "再动+1 ")
+	XXufeng._replace_note_meta(raw, "攻击力能力值*300%", "攻击力能力值*150%，爆伤与伤害+125%")
+	raw["instanceId"] = "xg:9102"
+	return raw
+
+
+## R2 专项回归：R0 双向迁移、星级仓库存取双向＋取出即穿、旧通用武器绣冬词缀迁移（P2-2）、符文之语合并元数据（P3-1）
+func _check_r2_migrations() -> void:
+	# 1) R0（9da929fa4）实例双向读档迁移（R0→R1 与 R0→原版）
+	XXufeng.REWORK = true
+	XXufeng.clear_cache()
+	var s_r0 := _make_xiyou_state(80)
+	var a_r0: XActor = s_r0.actor(152)
+	var r0_w76 := _make_r0_weapon76()
+	r0_w76.params[2] = 199.0
+	var r0_a129 := _make_r0_armor129()
+	r0_a129.params[2] = 88.0
+	_equip_in_slot(a_r0, r0_w76)
+	_equip_in_slot(a_r0, r0_a129)
+	var raw_r0: Dictionary = JSON.parse_string(JSON.stringify(XSaveSlim.as_reloaded(s_r0.to_dict())))
+
+	# R0 → R1（REWORK=true）
+	XXufeng.REWORK = true
+	XXufeng.clear_cache()
+	var s_r0_on := XState.from_dict(raw_r0.duplicate(true))
+	var w_on: Dictionary = s_r0_on.actor(152).equips[0]
+	var c_on: Dictionary = s_r0_on.actor(152).equips[1]
+	check("r2.r0_to_r1",
+		is_equal_approx(float(w_on.traits[3].value), float(XXufeng.XIUDONG_ATK_PCT) / 100.0)
+		and is_equal_approx(float(w_on.yep.elementAmplify["1"]), float(XXufeng.XIUDONG_EL_AMP) / 100.0)
+		and str(w_on.meta.get("passiveHarmRi", "")) == str(XXufeng.XIUDONG_HARM)
+		and str(w_on.note).contains("造成所有伤害结果*249%")
+		and is_equal_approx(float(w_on.customParams.params[2].level), float(XXufeng.XIUDONG_GROW))
+		and is_equal_approx(float(w_on.params[2]), 199.0)
+		and is_equal_approx(float(c_on.traits[0].value), float(XXufeng.CHUNLEI_ATK_PCT) / 100.0)
+		and (c_on.traits as Array).filter(func(tr): return int(tr.code) == 61).size() == 1
+		and is_equal_approx(float(c_on.yep.elementAmplify["1"]), float(XXufeng.CHUNLEI_EL_AMP) / 100.0)
+		and str(c_on.meta.get("passiveHarmRi", "")) == str(XXufeng.CHUNLEI_HARM)
+		and is_equal_approx(float(c_on.customParams.params[2].level), float(XXufeng.CHUNLEI_ATK_GROW))
+		and is_equal_approx(float(c_on.params[2]), 88.0),
+		[w_on.traits[3].value, w_on.yep.elementAmplify["1"], c_on.traits[0].value, c_on.yep.elementAmplify["1"]])
+
+	# R0 → 原版（REWORK=false）
+	XXufeng.REWORK = false
+	XXufeng.clear_cache()
+	var s_r0_off := XState.from_dict(raw_r0.duplicate(true))
+	var w_off: Dictionary = s_r0_off.actor(152).equips[0]
+	var c_off: Dictionary = s_r0_off.actor(152).equips[1]
+	check("r2.r0_to_orig",
+		is_equal_approx(float(w_off.traits[3].value), 3.0)
+		and is_equal_approx(float(w_off.yep.elementAmplify["1"]), 6.0)
+		and str(w_off.meta.get("passiveHarmRi", "")) == "450"
+		and str(w_off.note).contains("造成所有伤害结果*350%")
+		and is_equal_approx(float(w_off.customParams.params[2].level), 10.0)
+		and is_equal_approx(float(w_off.params[2]), 199.0)
+		and is_equal_approx(float(c_off.traits[0].value), 3.0)
+		and (c_off.traits as Array).filter(func(tr): return int(tr.code) == 61).size() == 2
+		and is_equal_approx(float(c_off.yep.elementAmplify["1"]), 6.0)
+		and str(c_off.meta.get("passiveHarmRi", "")) == "450"
+		and is_equal_approx(float(c_off.customParams.params[2].level), 30.0)
+		and is_equal_approx(float(c_off.params[2]), 88.0),
+		[w_off.traits[3].value, w_off.yep.elementAmplify["1"], c_off.traits[0].value, c_off.traits.size()])
+
+	# 2) 星级仓库（XStarWarehouse）真存读盘＋双向存取＋取出即穿实打回归
+	var wh_path := ProjectSettings.globalize_path("user://test_xufeng_r2_star_wh.json")
+	var old_wh_override := XStarWarehouse.path_override
+	var old_wh_txn := XStarWarehouse.o_withdraw_txn
+	for p_rm in [wh_path, wh_path + ".before_slim.bak"]:
+		if FileAccess.file_exists(p_rm):
+			DirAccess.remove_absolute(p_rm)
+	XStarWarehouse.path_override = wh_path
+	XStarWarehouse.o_withdraw_txn = false
+	XStarWarehouse._loaded_path = "<unloaded>"
+
+	# 2a) 原版存进星级仓库 → 真读盘 → 开 REWORK 取出即穿（不重读档）
+	XXufeng.REWORK = false
+	XXufeng.clear_cache()
+	var s_wh_orig := _make_xiyou_state(80)
+	var wh_w_orig: Dictionary = XGear.template("weapon", 76)
+	wh_w_orig.params[2] = 155.0
+	s_wh_orig.register_gear(wh_w_orig)
+	s_wh_orig.gear.append(wh_w_orig)
+	var dep1 := XStarWarehouse.deposit_gear(s_wh_orig, wh_w_orig)
+	# 强制从磁盘重新加载星级仓库
+	XStarWarehouse._loaded_path = "<unloaded>"
+	XXufeng.REWORK = true
+	XXufeng.clear_cache()
+	var s_wh_rw := _make_xiyou_state(80)
+	var wd1 := XStarWarehouse.withdraw_gear(s_wh_rw, XStarWarehouse.gear()[0])
+	var got_rw: Dictionary = s_wh_rw.gear[0]
+	var a_wh_rw: XActor = s_wh_rw.actor(152)
+	_equip_in_slot(a_wh_rw, got_rw)
+	a_wh_rw.param_mark_dirty()
+	a_wh_rw.refresh_passive()
+	for sid in a_wh_rw.skill_ids:
+		a_wh_rw.mastery_levels[sid] = 32
+	a_wh_rw.recover_all()
+	var dmg_wh_rw := _single_hit_9998(s_wh_rw)
+	# 同条件新建 R1 绣冬对照
+	var s_wh_ref_rw := _make_xiyou_state(80)
+	var ref_w_rw: Dictionary = XGear.template("weapon", 76)
+	ref_w_rw.params[2] = 155.0
+	_equip_in_slot(s_wh_ref_rw.actor(152), ref_w_rw)
+	s_wh_ref_rw.actor(152).param_mark_dirty()
+	s_wh_ref_rw.actor(152).refresh_passive()
+	for sid in s_wh_ref_rw.actor(152).skill_ids:
+		s_wh_ref_rw.actor(152).mastery_levels[sid] = 32
+	s_wh_ref_rw.actor(152).recover_all()
+	var dmg_ref_rw := _single_hit_9998(s_wh_ref_rw)
+	check("r2.star_wh.orig_to_rw_equip_now",
+		dep1 == "" and wd1
+		and is_equal_approx(float(got_rw.traits[3].value), float(XXufeng.XIUDONG_ATK_PCT) / 100.0)
+		and is_equal_approx(float(got_rw.yep.elementAmplify["1"]), float(XXufeng.XIUDONG_EL_AMP) / 100.0)
+		and str(got_rw.meta.get("passiveHarmRi", "")) == str(XXufeng.XIUDONG_HARM)
+		and is_equal_approx(float(got_rw.params[2]), 155.0)
+		and dmg_wh_rw > 0.0 and is_equal_approx(dmg_wh_rw, dmg_ref_rw),
+		[dep1, wd1, got_rw.traits[3].value, got_rw.yep.elementAmplify["1"], dmg_wh_rw, dmg_ref_rw])
+
+	# 2b) R1 存进星级仓库 → 真读盘 → 关 REWORK 取出即穿（不重读档）
+	s_wh_rw.gear.clear()
+	s_wh_rw.gear.append(got_rw)
+	var dep2 := XStarWarehouse.deposit_gear(s_wh_rw, got_rw)
+	XStarWarehouse._loaded_path = "<unloaded>"
+	XXufeng.REWORK = false
+	XXufeng.clear_cache()
+	var s_wh_back := _make_xiyou_state(80)
+	var wd2 := XStarWarehouse.withdraw_gear(s_wh_back, XStarWarehouse.gear()[0])
+	var got_orig: Dictionary = s_wh_back.gear[0]
+	var a_wh_back: XActor = s_wh_back.actor(152)
+	_equip_in_slot(a_wh_back, got_orig)
+	a_wh_back.param_mark_dirty()
+	a_wh_back.refresh_passive()
+	for sid in a_wh_back.skill_ids:
+		a_wh_back.mastery_levels[sid] = 32
+	a_wh_back.recover_all()
+	var dmg_wh_orig := _single_hit_9998(s_wh_back)
+	var s_wh_ref_orig := _make_xiyou_state(80)
+	var ref_w_orig: Dictionary = XGear.template("weapon", 76)
+	ref_w_orig.params[2] = 155.0
+	_equip_in_slot(s_wh_ref_orig.actor(152), ref_w_orig)
+	s_wh_ref_orig.actor(152).param_mark_dirty()
+	s_wh_ref_orig.actor(152).refresh_passive()
+	for sid in s_wh_ref_orig.actor(152).skill_ids:
+		s_wh_ref_orig.actor(152).mastery_levels[sid] = 32
+	s_wh_ref_orig.actor(152).recover_all()
+	var dmg_ref_orig := _single_hit_9998(s_wh_ref_orig)
+	check("r2.star_wh.rw_to_orig_equip_now",
+		dep2 == "" and wd2
+		and is_equal_approx(float(got_orig.traits[3].value), 3.0)
+		and is_equal_approx(float(got_orig.yep.elementAmplify["1"]), 6.0)
+		and str(got_orig.meta.get("passiveHarmRi", "")) == "450"
+		and is_equal_approx(float(got_orig.params[2]), 155.0)
+		and dmg_wh_orig > 0.0 and is_equal_approx(dmg_wh_orig, dmg_ref_orig),
+		[dep2, wd2, got_orig.traits[3].value, got_orig.yep.elementAmplify["1"], dmg_wh_orig, dmg_ref_orig])
+
+	# 2c) 存入方向：开 REWORK 存入一件旧原版绣冬，落盘前即已同步为 R1
+	XXufeng.REWORK = true
+	XXufeng.clear_cache()
+	var s_dep := _make_xiyou_state(80)
+	s_dep.gear.append(got_orig)  # got_orig 目前是原版 300%/600%/450
+	var dep3 := XStarWarehouse.deposit_gear(s_dep, got_orig)
+	XStarWarehouse._loaded_path = "<unloaded>"
+	var stored_after_dep: Dictionary = XStarWarehouse.gear()[0]
+	check("r2.star_wh.deposit_syncs",
+		dep3 == ""
+		and is_equal_approx(float(stored_after_dep.traits[3].value), float(XXufeng.XIUDONG_ATK_PCT) / 100.0)
+		and is_equal_approx(float(stored_after_dep.yep.elementAmplify["1"]), float(XXufeng.XIUDONG_EL_AMP) / 100.0)
+		and str(stored_after_dep.meta.get("passiveHarmRi", "")) == str(XXufeng.XIUDONG_HARM),
+		[dep3, stored_after_dep.traits[3].value, stored_after_dep.meta.get("passiveHarmRi")])
+
+	XStarWarehouse.path_override = old_wh_override
+	XStarWarehouse.o_withdraw_txn = old_wh_txn
+	XStarWarehouse._loaded_path = "<unloaded>"
+	for p_rm in [wh_path, wh_path + ".before_slim.bak"]:
+		if FileAccess.file_exists(p_rm):
+			DirAccess.remove_absolute(p_rm)
+
+	# 3) P2-2：历史旧通用武器带原版绣冬 76 词缀，开 REWORK 且在西游档上下文读档时仍照常迁移清除
+	XXufeng.REWORK = false
+	XXufeng.clear_cache()
+	var s_kd := XState.new_game_blank()
+	s_kd.random_master = XRandomStream.hex64(20261124)
+	s_kd.set_switch(2494, true)
+	XState.current = s_kd
+	s_kd.add_actor(122)
+	var kd_w: Dictionary = XGear.template("weapon", 1)
+	XGear.combine(kd_w, XDB.rec("Weapons", 76), "prefix")
+	kd_w.affixIds.append({"table": "Weapons", "id": 76, "kind": "prefix"})
+	XGear._apply_note_params(kd_w)
+	kd_w["instanceId"] = "xg:9201"
+	s_kd.actor(122).equips[0] = kd_w
+	var raw_kd: Dictionary = JSON.parse_string(JSON.stringify(XSaveSlim.as_reloaded(s_kd.to_dict())))
+	# 在已打开西游档且 REWORK=true 的上下文里读档
+	XXufeng.REWORK = true
+	XXufeng.clear_cache()
+	XState.current = _make_xiyou_state(80)
+	var s_kd_loaded := XState.from_dict(raw_kd)
+	var kd_w_after: Dictionary = s_kd_loaded.actor(122).equips[0]
+	check("r2.p2_2.exclusive_affix_reverted",
+		(XGear.last_affix_revert.get("skipped", []) as Array).is_empty()
+		and kd_w_after.has("_affixRevert")
+		and (kd_w_after.get("affixIds", []) as Array).is_empty()
+		and not str(kd_w_after.name).begins_with("绣冬")
+		and (kd_w_after.get("yep", {}).get("elementAmplify", {}) as Dictionary).is_empty()
+		and not (kd_w_after.get("meta", {}) as Dictionary).has("passiveHarmRi"),
+		[XGear.last_affix_revert, kd_w_after.name, kd_w_after.get("yep"), kd_w_after.get("affixIds")])
+
+	# 4) P3-1：原版绣冬经真实强化形成符文之语（RW 3「致密」+50 passiveCrHarmRi → 500），双向读档保留增量（500 → 170 → 500）
+	XXufeng.REWORK = false
+	XXufeng.clear_cache()
+	var s_rw_orig := _make_xiyou_state(80)
+	var w_runeword: Dictionary = XGear.template("weapon", 76)
+	s_rw_orig.register_gear(w_runeword)
+	s_rw_orig.gear.append(w_runeword)
+	for mid in [282, 280, 283]:
+		s_rw_orig.gain_item(mid, 1)
+		XGearUpgrade.apply(s_rw_orig, w_runeword, mid)
+	var cr_orig_val := float(str(w_runeword.meta.get("passiveCrHarmRi", "0")).strip_edges())
+	var raw_rw_orig: Dictionary = JSON.parse_string(JSON.stringify(XSaveSlim.as_reloaded(s_rw_orig.to_dict())))
+	XXufeng.REWORK = true
+	XXufeng.clear_cache()
+	var s_rw_reloaded := XState.from_dict(raw_rw_orig)
+	var w_rw_after: Dictionary = s_rw_reloaded.gear[0]
+	var cr_rw_val := float(str(w_rw_after.meta.get("passiveCrHarmRi", "0")).strip_edges())
+	var raw_rw_back: Dictionary = JSON.parse_string(JSON.stringify(XSaveSlim.as_reloaded(s_rw_reloaded.to_dict())))
+	XXufeng.REWORK = false
+	XXufeng.clear_cache()
+	var s_rw_back := XState.from_dict(raw_rw_back)
+	var w_rw_back: Dictionary = s_rw_back.gear[0]
+	var cr_back_val := float(str(w_rw_back.meta.get("passiveCrHarmRi", "0")).strip_edges())
+	check("r2.p3_1.runeword_meta_preserved",
+		w_runeword.get("runewords", []) == [3]
+		and is_equal_approx(cr_orig_val, 500.0)
+		and is_equal_approx(cr_rw_val, float(XXufeng.XIUDONG_HARM) + 50.0)
+		and str(w_rw_after.meta.get("passiveHarmRi", "")) == str(XXufeng.XIUDONG_HARM)
+		and is_equal_approx(cr_back_val, 500.0),
+		[w_runeword.get("runewords"), cr_orig_val, cr_rw_val, cr_back_val, w_rw_after.meta.get("passiveCrHarmRi")])
 
 	XXufeng.REWORK = true
 	XXufeng.clear_cache()

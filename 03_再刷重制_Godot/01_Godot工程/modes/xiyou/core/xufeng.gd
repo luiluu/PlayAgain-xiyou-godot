@@ -228,6 +228,18 @@ static func _is_xufeng_gear(kind: String, base_id: int) -> bool:
 	return (kind == "weapon" and base_id == WPN_XIUDONG) or (kind == "armor" and (base_id == ARM_CHUNLEI or base_id == ARM_FABAO))
 
 
+## 是否为本模块跟踪同步的三件徐凤年专属装备（76 绣冬 / 129 春雷 / 143 不朽法宝）
+static func is_tracked_gear(item: Dictionary) -> bool:
+	return _is_xufeng_gear(str(item.get("kind", "")), int(item.get("base", item.get("id", 0))))
+
+
+## 按给定存档模式（仅西游档且 REWORK=true 启用重做，天启篇与 REWORK=false 均还原原版）同步单件装备实例；
+## 供跨存档星级仓库（XStarWarehouse.deposit_gear / withdraw_gear）在存取瞬间调用，取出即可直接穿戴正确数值。
+static func sync_gear_for_state(s: XState, item: Dictionary) -> bool:
+	var want_rework := REWORK and s != null and not XTianqi.active(s)
+	return sync_gear_item(item, want_rework)
+
+
 static func _gear_pair(kind: String, base_id: int) -> Array:
 	var tbl := "Weapons" if kind == "weapon" else "Armors"
 	var arr = XDB.table(tbl)
@@ -259,7 +271,147 @@ static func _traits_prefix_eq(own: Array, prefix: Array) -> bool:
 	return true
 
 
-## 双向同步单件专属装备实例（orig ↔ rework）；已匹配时不写任何字段，返回是否改动。
+static func _traits_codes_match(own: Array, ref: Array) -> bool:
+	if own.size() < ref.size():
+		return false
+	for i in range(ref.size()):
+		if not (own[i] is Dictionary):
+			return false
+		if int(own[i].get("code", -1)) != int(ref[i].get("code", -2)) or int(own[i].get("dataId", -1)) != int(ref[i].get("dataId", -2)):
+			return false
+	return true
+
+
+## 识别原版、当前 R1 或历史重做版本（如 R0 9da929fa4）的基础 traits 前缀长度，保留后面词缀／强化／符文之语追加的 traits
+static func _base_trait_prefix_len(kind: String, base_id: int, own_traits: Array, orig_traits: Array, rw_traits: Array) -> int:
+	if _traits_prefix_eq(own_traits, orig_traits):
+		return orig_traits.size()
+	if _traits_prefix_eq(own_traits, rw_traits):
+		return rw_traits.size()
+	if kind == "weapon" and base_id == WPN_XIUDONG:
+		return orig_traits.size() if _traits_codes_match(own_traits, orig_traits) else -1
+	if kind == "armor" and base_id == ARM_FABAO:
+		return orig_traits.size() if _traits_codes_match(own_traits, orig_traits) else -1
+	if kind == "armor" and base_id == ARM_CHUNLEI:
+		if _traits_codes_match(own_traits, orig_traits) and is_equal_approx(float(own_traits[0].get("value", 0.0)), 3.0):
+			return orig_traits.size()
+		if _traits_codes_match(own_traits, rw_traits):
+			return rw_traits.size()
+	return -1
+
+
+## 识别原版、当前 R1 或历史重做版本（如 R0 9da929fa4）的基础备注前缀长度，保留后面词缀／符文之语／自定义备注后缀
+static func _base_note_prefix_len(kind: String, base_id: int, own_note: String, orig_note: String, rw_note: String) -> int:
+	if own_note.begins_with(orig_note):
+		return orig_note.length()
+	if own_note.begins_with(rw_note):
+		return rw_note.length()
+	if kind == "weapon" and base_id == WPN_XIUDONG and own_note.begins_with("<req_level:75>"):
+		var end_tag := "</Custom Parameters>"
+		var pos := own_note.find(end_tag)
+		return pos + end_tag.length() if pos >= 0 else -1
+	if kind == "armor" and base_id == ARM_CHUNLEI and own_note.begins_with("<Custom Parameters>"):
+		var end_tag := "<StartPushState2301: 100%>"
+		var pos := own_note.find(end_tag)
+		return pos + end_tag.length() if pos >= 0 else -1
+	if kind == "armor" and base_id == ARM_FABAO and own_note.begins_with("<req_level:1>"):
+		var m := RegEx.create_from_string("<luk Param \\+\\d+ per Level>").search(own_note)
+		return m.get_end() if m != null else -1
+	return -1
+
+
+## 查找装备已形成的符文之语模板列表（按 item.runewords 顺序）
+static func _runeword_templates(item: Dictionary, kind: String) -> Array:
+	var out := []
+	var rw_ids: Array = item.get("runewords", [])
+	if rw_ids.is_empty():
+		return out
+	var table = XDB.table("Runewords")
+	if not (table is Array):
+		return out
+	var tbl_name := "Weapons" if kind == "weapon" else "Armors"
+	for raw_id in rw_ids:
+		var rid := int(raw_id)
+		for recipe in table:
+			if recipe is Dictionary and int(recipe.get("id", -1)) == rid:
+				var tid := XRunewords.template_id(recipe, item)
+				if tid > 0:
+					var tpl := XDB.rec(tbl_name, tid)
+					if not tpl.is_empty():
+						out.append(tpl)
+				break
+	return out
+
+
+## 按目标模板＋词缀＋符文之语＋强化元素＋镶嵌宝珠重算基础元素增幅（覆盖原版／R0／R1 任意历史实例，同时保留所有合法叠加）
+static func _expected_element_amplify(item: Dictionary, kind: String, target: Dictionary, rw_tpls: Array) -> Dictionary:
+	var base_ea: Dictionary = target.get("yep", {}).get("elementAmplify", {})
+	var out := {}
+	for ek in base_ea:
+		out[str(ek)] = float(base_ea[ek])
+	var default_tbl := "Weapons" if kind == "weapon" else "Armors"
+	for affix in item.get("affixIds", []):
+		if not (affix is Dictionary):
+			continue
+		var af_rec := XDB.rec(str(affix.get("table", default_tbl)), int(affix.get("id", 0)))
+		var af_ea: Dictionary = af_rec.get("yep", {}).get("elementAmplify", {})
+		for ek in out:
+			if af_ea.has(ek):
+				out[ek] = float(out[ek]) + float(af_ea[ek])
+	for tpl in rw_tpls:
+		var tpl_ea: Dictionary = tpl.get("yep", {}).get("elementAmplify", {})
+		for ek in out:
+			if tpl_ea.has(ek):
+				out[ek] = float(out[ek]) + float(tpl_ea[ek])
+	for upg in item.get("upgrades", []):
+		if not (upg is Dictionary) or not upg.has("item"):
+			continue
+		var u_item := XDB.rec("Items", int(upg.item))
+		var u_rule := XGearUpgrade.rule(u_item)
+		for eff in u_rule.get(kind, []):
+			if eff is Dictionary and str(eff.get("op", "")) == "element":
+				var ek := str(int(eff.get("element", 0)))
+				if out.has(ek):
+					out[ek] = float(out[ek]) + float(eff.get("value", 0.0))
+	var orb_ea: Dictionary = _orb_element_amplify(item)
+	for ek in out:
+		if orb_ea.has(ek):
+			out[ek] = float(out[ek]) + float(orb_ea[ek])
+	return out
+
+
+## 读取装备孔里宝珠加的元素增幅（直接调西游核心 XOrbs，不依赖天启篇脚本 XTianqiLedger，保证发行空壳零缺口）
+static func _orb_element_amplify(eq: Dictionary) -> Dictionary:
+	var out := {}
+	var held: Array = eq.get("augmentSlotItems", [])
+	if held.is_empty():
+		return out
+	var sock := XOrbs.socket_type(eq).to_upper()
+	var num_re := RegEx.create_from_string("(?i)ELEMENT AMPLIFY[ ](\\d+):[ ]([\\+\\-]\\d+)[%％]")
+	var name_re := RegEx.create_from_string("(?i)ELEMENT AMPLIFY[ ](.*):[ ]([\\+\\-]\\d+)[%％]")
+	var els: Array = XDB.system().get("elements", []).map(func(n): return str(n).to_upper())
+	for i in held.size():
+		var gem := XOrbs.gem_in_slot(eq, i)
+		if gem.is_empty():
+			continue
+		var lines: Array = XOrbs.parse(gem).attach.get(sock, [])
+		for line in lines:
+			var s := str(line)
+			var m := num_re.search(s)
+			if m:
+				var ek := m.get_string(1)
+				out[ek] = float(out.get(ek, 0.0)) + float(m.get_string(2)) / 100.0
+			else:
+				m = name_re.search(s)
+				if m:
+					var id: int = els.find(m.get_string(1).to_upper().strip_edges())
+					if id > 0:
+						var ek := str(id)
+						out[ek] = float(out.get(ek, 0.0)) + float(m.get_string(2)) / 100.0
+	return out
+
+
+## 双向同步单件专属装备实例（原版／R0／R1 ↔ 目标状态）；已匹配时不写任何字段，返回是否改动。
 static func sync_gear_item(item: Dictionary, want_rework: bool) -> bool:
 	var kind := str(item.get("kind", ""))
 	var base_id := int(item.get("base", item.get("id", 0)))
@@ -271,29 +423,33 @@ static func sync_gear_item(item: Dictionary, want_rework: bool) -> bool:
 	var orig: Dictionary = pair[0]
 	var rw: Dictionary = pair[1]
 	var target: Dictionary = rw if want_rework else orig
-	var other: Dictionary = orig if want_rework else rw
 	var changed := false
-	var switched_from_other := false
 
-	# 1) traits：仅替换原件/重做模板前缀，保留词缀与强化追加的 traits
+	# 1) traits：替换原版／R0／R1 基础前缀，保留词缀／强化／符文之语追加的 traits
 	var own_traits: Array = item.get("traits", [])
+	var orig_traits: Array = orig.get("traits", [])
+	var rw_traits: Array = rw.get("traits", [])
 	var tgt_traits: Array = target.get("traits", [])
-	var oth_traits: Array = other.get("traits", [])
-	if not _traits_prefix_eq(own_traits, tgt_traits) and _traits_prefix_eq(own_traits, oth_traits):
-		item.traits = tgt_traits.duplicate(true) + own_traits.slice(oth_traits.size()).duplicate(true)
-		changed = true
-		switched_from_other = true
+	if not _traits_prefix_eq(own_traits, tgt_traits):
+		var plen := _base_trait_prefix_len(kind, base_id, own_traits, orig_traits, rw_traits)
+		if plen > 0:
+			item.traits = tgt_traits.duplicate(true) + own_traits.slice(plen).duplicate(true)
+			changed = true
 
-	# 2) note：仅替换原件/重做模板前缀，保留词缀等追加备注
+	# 2) note：替换原版／R0／R1 基础备注前缀，保留词缀／符文之语等追加备注
 	var own_note := str(item.get("note", ""))
+	var orig_note := str(orig.get("note", ""))
+	var rw_note := str(rw.get("note", ""))
 	var tgt_note := str(target.get("note", ""))
-	var oth_note := str(other.get("note", ""))
-	if not own_note.begins_with(tgt_note) and own_note.begins_with(oth_note):
-		item.note = tgt_note + own_note.substr(oth_note.length())
-		changed = true
-		switched_from_other = true
+	var replaced_old_note := ""
+	if not own_note.begins_with(tgt_note):
+		var nlen := _base_note_prefix_len(kind, base_id, own_note, orig_note, rw_note)
+		if nlen > 0:
+			replaced_old_note = own_note.left(nlen)
+			item.note = tgt_note + own_note.substr(nlen)
+			changed = true
 
-	# 3) meta：仅同步 orig 与 rework 之间存在差异的键；若实例词缀覆盖了同名键，按 affixIds 还原词缀覆盖
+	# 3) meta：按目标模板→词缀覆盖→符文之语同名数值合并（XRunewords.check 语义）同步差异键，并清理旧版备注遗留的陈旧键
 	var orig_meta: Dictionary = orig.get("meta", {})
 	var rw_meta: Dictionary = rw.get("meta", {})
 	var tgt_meta: Dictionary = target.get("meta", {})
@@ -304,30 +460,48 @@ static func sync_gear_item(item: Dictionary, want_rework: bool) -> bool:
 	for k in rw_meta:
 		if not orig_meta.has(k) or orig_meta[k] != rw_meta[k]:
 			diff_keys[k] = true
-	var affix_overrides := {}
+	if replaced_old_note != "":
+		for m in RegEx.create_from_string("<([^<>:]+)(?::[^>]*)?>").search_all(replaced_old_note):
+			var mk := m.get_string(1)
+			if not tgt_meta.has(mk):
+				diff_keys[mk] = true
+	var desired_meta := {}
+	for k in diff_keys:
+		if tgt_meta.has(k):
+			desired_meta[k] = tgt_meta[k]
 	var default_tbl := "Weapons" if kind == "weapon" else "Armors"
 	for affix in item.get("affixIds", []):
 		if not (affix is Dictionary):
 			continue
-		var af_tbl := str(affix.get("table", default_tbl))
-		var af_id := int(affix.get("id", 0))
-		var af_rec := XDB.rec(af_tbl, af_id)
+		var af_rec := XDB.rec(str(affix.get("table", default_tbl)), int(affix.get("id", 0)))
 		var af_meta: Dictionary = af_rec.get("meta", {})
 		for k in af_meta:
 			if diff_keys.has(k):
-				affix_overrides[k] = af_meta[k]
+				desired_meta[k] = af_meta[k]
+	var rw_tpls := _runeword_templates(item, kind)
+	if not rw_tpls.is_empty():
+		var numeric := RegEx.create_from_string("^\\s*(-?\\d+(?:\\.\\d+)?)\\s*(%?)\\s*$")
+		var tag_re := RegEx.create_from_string("<([^<>:]+)(:?)([^>]*)>")
+		for tpl in rw_tpls:
+			for m in tag_re.search_all(str(tpl.get("note", ""))):
+				var rk := m.get_string(1)
+				if not diff_keys.has(rk):
+					continue
+				if m.get_string(2) != ":":
+					desired_meta[rk] = true
+					continue
+				var old_m := numeric.search(str(desired_meta.get(rk, "")))
+				var extra_m := numeric.search(m.get_string(3))
+				desired_meta[rk] = " " + str(float(old_m.get_string(1)) + float(extra_m.get_string(1))) \
+					+ (old_m.get_string(2) if old_m.get_string(2) != "" else extra_m.get_string(2)) if (old_m and extra_m) else m.get_string(3)
 	var own_meta: Dictionary = item.get("meta", {})
 	if not (own_meta is Dictionary):
 		own_meta = {}
 		item["meta"] = own_meta
 	for k in diff_keys:
-		if affix_overrides.has(k):
-			if not own_meta.has(k) or own_meta[k] != affix_overrides[k]:
-				own_meta[k] = affix_overrides[k]
-				changed = true
-		elif tgt_meta.has(k):
-			if not own_meta.has(k) or own_meta[k] != tgt_meta[k]:
-				own_meta[k] = tgt_meta[k]
+		if desired_meta.has(k):
+			if not own_meta.has(k) or own_meta[k] != desired_meta[k]:
+				own_meta[k] = desired_meta[k]
 				changed = true
 		elif own_meta.has(k):
 			own_meta.erase(k)
@@ -339,19 +513,21 @@ static func sync_gear_item(item: Dictionary, want_rework: bool) -> bool:
 			item["customParams"] = target.customParams.duplicate(true)
 			changed = true
 
-	# 5) yep.elementAmplify（76 绣冬 / 129 春雷元素增幅；用差值同步，保留词缀／强化／宝珠叠加）
-	if switched_from_other and target.get("yep") is Dictionary and target.yep.get("elementAmplify") is Dictionary \
-			and other.get("yep") is Dictionary and other.yep.get("elementAmplify") is Dictionary:
-		var tgt_ea: Dictionary = target.yep.elementAmplify
-		var oth_ea: Dictionary = other.yep.elementAmplify
+	# 5) yep.elementAmplify（76 绣冬 / 129 春雷元素增幅；按目标模板＋词缀＋符文之语＋强化＋宝珠精确重算，覆盖 R0 600% 残留）
+	if target.get("yep") is Dictionary and target.yep.get("elementAmplify") is Dictionary:
+		var want_ea := _expected_element_amplify(item, kind, target, rw_tpls)
 		var own_yep: Dictionary = item.get("yep", {}) if item.get("yep") is Dictionary else {}
 		var own_ea: Dictionary = (own_yep.get("elementAmplify", {}) as Dictionary).duplicate() if own_yep.get("elementAmplify") is Dictionary else {}
-		for ek in tgt_ea:
-			if oth_ea.has(ek):
-				own_ea[ek] = snappedf(float(own_ea.get(ek, float(oth_ea[ek]))) + float(tgt_ea[ek]) - float(oth_ea[ek]), 0.0001)
-		own_yep["elementAmplify"] = own_ea
-		item["yep"] = own_yep
-		changed = true
+		var ea_changed := false
+		for ek in want_ea:
+			var want_v := snappedf(float(want_ea[ek]), 0.0001)
+			if not own_ea.has(ek) or not is_equal_approx(float(own_ea[ek]), want_v):
+				own_ea[ek] = want_v
+				ea_changed = true
+		if ea_changed:
+			own_yep["elementAmplify"] = own_ea
+			item["yep"] = own_yep
+			changed = true
 
 	return changed
 
