@@ -11,9 +11,9 @@
       --min-playable <号>｜latest｜0   强制更新（Kyo 11-14）：运行的开发编号低于它的客户端进标题前被拦住、必须更新
                                （latest＝本次发布的编号，所有旧版都强制；0＝取消强制）。不给就沿用清单原值（默认不改）。
                                不能比本次发布的编号大。只有装了强制更新逻辑的客户端认它，更老的客户端照旧只看红点。
-      --download-url <https 地址>｜none   强制更新框「手动下载」打开的页面（不给就沿用原值；none＝去掉，客户端改指 QQ 群）
-                               设了 min_playable 时必须有：参数没给、清单里也没有就默认填 Gitee 发行版页面
-                               （DEFAULT_DOWNLOAD_URL，Kyo 11-14）；同时给 none 拒绝发布
+      --download-url <https 地址>｜none   强制更新框「手动下载」打开的页面（不给就沿用原值；none 或空串＝去掉，客户端改指 QQ 群）
+                               新设 min_playable 且没给本参数、清单里也没有时默认填 Gitee 发行版页面（DEFAULT_DOWNLOAD_URL，Kyo 11-14）；
+                               显式传 --download-url none（或空串）允许搭配 --min-playable 留空指 QQ 群（Kyo 11-24，T457）
       --out <目录>             输出目录（默认 05_发布/补丁/dev<号>/，不入 Git）
       --stage                  把补丁和清单提交到两个发版仓库的本机副本（先提交包、再提交清单，清单里的包地址固定到包提交）
       --old-tree <目录>        底包对应的工程目录：顺带调 生成更新清单.py 比对它和当前工程，写签名的补丁文件清单
@@ -315,19 +315,22 @@ def build_manifest(old: dict, code: int, date: str, notes: list, base_code, patc
             m['min_playable'] = mp
         else:
             m.pop('min_playable', None)
+    had_min_playable = bool(old and old.get('min_playable'))
+    clear_download_url = a.download_url is not None and a.download_url.strip() in ('', 'none')
     if a.download_url is not None:
-        if a.download_url == 'none':
+        if clear_download_url:
             m.pop('download_url', None)
         elif not a.download_url.startswith('https://'):
             raise Fail('--download-url 要 https:// 开头（客户端不认别的）')
         else:
             m['download_url'] = a.download_url
     if m.get('min_playable') and not str(m.get('download_url', '')).startswith('https://'):
-        if a.download_url == 'none':
-            raise Fail('设了 min_playable（强制更新）就必须有手动下载页，不能同时 --download-url none：'
-                       '底包太旧的玩家只能靠它换整包，没有就卡在更新框里')
-        m['download_url'] = DEFAULT_DOWNLOAD_URL  # Kyo 11-14：没给就用 Gitee 发行版页面
-        print(f'· 强制更新没给下载页，默认用 {DEFAULT_DOWNLOAD_URL}')
+        if clear_download_url or had_min_playable:
+            m.pop('download_url', None)
+            print('· 强制更新不设手动下载页（download_url 留空，客户端改指 QQ 群）')
+        else:
+            m['download_url'] = DEFAULT_DOWNLOAD_URL  # Kyo 11-14：新设强制更新且没给下载页时默认填 Gitee 发行版页面
+            print(f'· 强制更新没给下载页，默认用 {DEFAULT_DOWNLOAD_URL}')
     for r in a.revoke or []:
         if r not in m['revoked']:
             m['revoked'].append(r)

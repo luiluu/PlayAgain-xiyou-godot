@@ -19,10 +19,24 @@ GAME = ['modes/xiyou/generated/db/System.json', 'modes/xiyou/generated/maps/Map0
 _spec = importlib.util.spec_from_file_location('发行内容审计', Path(__file__).resolve().parent / '发行内容审计.py')
 审计 = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(审计)
+_stub_spec = importlib.util.spec_from_file_location('发行空壳', Path(__file__).resolve().parent / '发行空壳.py')
+_K = importlib.util.module_from_spec(_stub_spec)
+_stub_spec.loader.exec_module(_K)
 # 没发行的内容（发行内容审计.DENY）：发行预设必须排除，验收预设不管（调试包只给自己试）
 UNRELEASED = [d.replace('*', 'x.json') for d in 审计.DENY] + ['content/tianqi/knight_war.png', 'modes/xiyou/tianqi_data/skill_rework.json']
 TESTS = [p.relative_to(PROJECT).as_posix() for p in (PROJECT / 'tests').rglob('*') if p.is_file()]
 PRESETS = {'macOS 验收': [], 'macOS 发行': TESTS + UNRELEASED, 'Windows 验收': [], 'Windows 发行': TESTS + UNRELEASED, '安卓 验收': [], '安卓 发行': TESTS + UNRELEASED}  # 预设名 → 另外必须排除的文件
+# T457：发行预设 exclude_filter 不能把空壳脚本、KEEP 脚本或其它非 tests/ 工程脚本踢出 PCK（防再出现 XTianqiHallIntro 被踢出导致编译失败）
+RELEASE_STUBS = sorted(p.as_posix() for p in _K.targets(PROJECT).values())
+RELEASE_NON_TEST_GDS = sorted(
+    p.relative_to(PROJECT).as_posix()
+    for p in PROJECT.rglob('*.gd')
+    if not p.relative_to(PROJECT).as_posix().startswith(('.godot/', 'tests/', 'builds/'))
+)
+RELEASE_KEEPS = sorted(
+    rel for rel in RELEASE_NON_TEST_GDS
+    if (m := _K.CLASS_RE.search((PROJECT / rel).read_text(encoding='utf-8', errors='replace'))) and m.group(1) in _K.KEEP
+)
 
 cfg = configparser.ConfigParser(interpolation=None)
 cfg.read(PROJECT / 'export_presets.cfg', encoding='utf-8')
@@ -34,6 +48,10 @@ for sec in [s for s in cfg.sections() if s.startswith('preset.') and s.count('.'
     hit = lambda path: any(fnmatch.fnmatchcase(path.lower(), p.lower()) for p in pats)
     problems += [f'{name}: {p} 没被排除' for p in NOT_GAME + PRESETS.get(name, []) if not hit(p)]
     problems += [f'{name}: 游戏文件 {p} 被排除' for p in GAME if hit(p)]
+    if name in 审计.RELEASE_PRESETS:
+        problems += [f'{name}: 发行空壳脚本 {p} 被 exclude_filter 踢出包' for p in RELEASE_STUBS if hit(p)]
+        problems += [f'{name}: KEEP 脚本 {p} 被 exclude_filter 踢出包' for p in RELEASE_KEEPS if hit(p)]
+        problems += [f'{name}: 非测试脚本 {p} 被 exclude_filter 踢出包' for p in RELEASE_NON_TEST_GDS if hit(p)]
     if name in ('macOS 验收', 'Windows 验收', '安卓 验收') and hit('tests/xiyou_mac_export.tscn'):
         problems.append(f'{name}: 导出验收场景 tests/xiyou_mac_export.tscn 被排除')
 # 名单自己也测一下：天启篇数据要拦、西游游戏数据不能误拦
@@ -100,9 +118,6 @@ with tempfile.TemporaryDirectory() as td:
             problems.append(f'发行内容审计查空壳 {f} 不对：{got}')
 # T109：发行克隆的 rules.json 剔掉 tianqi_dict 与注释字段，西游档 dict／trad／namebox_skip 原样
 import json as _json
-_spec = importlib.util.spec_from_file_location('发行空壳', Path(__file__).resolve().parent / '发行空壳.py')
-_K = importlib.util.module_from_spec(_spec)
-_spec.loader.exec_module(_K)
 _real = _json.loads((_K.PROJECT / _K.RULES_REL).read_text(encoding='utf-8'))
 _clean = _K.scrub_rules_data(_real)
 if 'tianqi_dict' in _clean or not _real.get('tianqi_dict'):

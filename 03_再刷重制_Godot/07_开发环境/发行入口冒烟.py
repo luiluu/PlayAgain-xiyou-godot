@@ -32,7 +32,7 @@
 发行包排除了 tests/、不认 --verify-export，所以这里只看入口，不跑包内测试（那是 导出冒烟.py 对「macOS 验收」调试包做的）。
 按键冒烟（--keys）：发行模板的 GDScript 对 null 调方法不查空、直接 SIGSEGV（11-06 标题按空格/J 闪退），调试版只报错，
 所以只有发行包里真按键才看得到。游戏带 `-- --smoke-keys=<序列>` 时自己注入按键（core/key_smoke.gd，经 Input.parse_input_event），
-按完打印 SMOKE_DONE 并退出 0；这里查：退出码 0、有 SMOKE_DONE、新游戏那几组最后在地图场景、~/Library/Logs/DiagnosticReports 没多出本包的崩溃报告。
+按完打印 SMOKE_DONE 并退出 0；这里查：退出码 0、有 SMOKE_DONE、输出不含 SCRIPT ERROR／Failed to load script／Parse Error（T457）、新游戏那几组最后在地图场景、~/Library/Logs/DiagnosticReports 没多出本包的崩溃报告。
 发行构建直达西游标题、没有「返回版本选择」（BI），那一项只有调试构建有（tests/xiyou_input_handled 覆盖）。
 每次运行用新建的临时 HOME，跑完删掉；临时目录 xiyou_release_entry_* 通过就整个删、失败只留 .log、
 被 SIGTERM 结束也收尾，下次运行清掉上次被杀残留的（cc 平台 EC 2026-11-06，以前每次留 0.5～1 GB）；不碰真实玩家存档，不签名、不公证。退出码：通过 0，失败 1，导出或解包出错 2。
@@ -56,6 +56,7 @@ PRESET = 'macOS 发行'
 APP_NAME = '再刷一把：天启篇'
 TITLE = 'res://modes/xiyou/entry.tscn'
 MAP = 'res://modes/xiyou/map/map_scene.tscn'
+SCRIPT_ERROR_RE = re.compile(r'SCRIPT ERROR|Failed to load script|Parse Error')
 SEAL_EXPORT_FORMAT = 'kyo-remake-save-sealed-v2'
 UNSEALED_WARNING = (
     '============================================================\n'
@@ -375,6 +376,11 @@ def check_save_seal_output(out: str, check, require_seal: bool, allow_unsealed: 
     check('release_save_export_format_v2', fmt_ok, fmt_note)
 
 
+def script_error_lines(out: str) -> list:
+    """T457：挑出输出里的脚本编译／加载／运行错误行（SCRIPT ERROR／Failed to load script／Parse Error）。"""
+    return [l.strip() for l in out.splitlines() if SCRIPT_ERROR_RE.search(l)]
+
+
 def run_entry(work: Path, exe: Path, check, platform='macos', require_seal=False, allow_unsealed=False) -> int:
     home = Path(tempfile.mkdtemp(prefix='xiyou_export_home_'))
     try:
@@ -384,8 +390,10 @@ def run_entry(work: Path, exe: Path, check, platform='macos', require_seal=False
         shutil.rmtree(home, ignore_errors=True)
     (work / '运行.log').write_text(out, encoding='utf-8')
     entries = [l.split('=', 1)[1].strip() for l in out.splitlines() if l.startswith('ENTRY_SCENE=')]
+    errs = script_error_lines(out)
     check('release_enters_title', entries == [TITLE], ','.join(entries) or '没有 ENTRY_SCENE')
     check('release_exit_clean', rc == 0, f'退出码 {rc}')
+    check('release_no_script_errors', not errs, f'脚本错误 {len(errs)} 条（首条：{errs[0][:120]}）' if errs else '0 条')
     check_save_seal_output(out, check, require_seal, allow_unsealed)
     key = baseline_key(platform)
     note = compare_baseline(key, secs, load_baseline())
@@ -432,11 +440,14 @@ def run_keys(work: Path, exe: Path, check, runs=KEY_RUNS) -> int:
         (work / f'按键_{name}.log').write_text(out, encoding='utf-8')
         done = [l.split('scene=', 1)[1].strip() for l in out.splitlines() if l.startswith('SMOKE_DONE scene=')]
         steps = sum(1 for l in out.splitlines() if l.startswith('SMOKE_KEY='))
+        errs = script_error_lines(out)
         note = f'退出码 {rc}，按完 {steps}/{len(seq.split(","))} 步' + (f'，最后在 {done[0]}' if done else '，没有 SMOKE_DONE')
         if rc < 0 or rc > 128:
             crashed = True
             note += '（被信号结束，多半是闪退）'
-        ok = rc == 0 and bool(done) and (want is None or done[0] == want)
+        if errs:
+            note += f'，脚本错误 {len(errs)} 条（首条：{errs[0][:120]}）'
+        ok = rc == 0 and bool(done) and (want is None or done[0] == want) and not errs
         check('keys_' + name, ok, note)
     # 崩溃报告由系统 ReportCrash 事后写，闪退后要过几秒到十几秒才出现：有进程被信号结束时最多等 CRASH_WAIT 秒
     deadline = time.time() + (CRASH_WAIT if crashed else 3)
