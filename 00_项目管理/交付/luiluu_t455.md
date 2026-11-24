@@ -73,8 +73,9 @@
 
 | 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |
 | --- | --- | --- |
-| `XRiftAlien.stage()` | 游戏代码外部 0 处（`git grep -nE 'XRiftAlien\.stage\(' -- '*.gd'`，tests 外）；本文件内 `on()`、`plan()` 两处 | 两处都只多了「rift2 没看过＝1 阶」这一条，玩家看过 rift2 的档行为不变；测试用 TestEnv 默认把 rift2 记成看过 |
-| `XRiftAlien.rule()` | 游戏代码外部 0 处；本文件 `plan()` 1 处 | 只有表里写了 `max_tier` 的阶段（现在只有对齐表三阶）会封顶，别的阶段逐值不变（`al_shift_one_stage` 核二、四阶） |
+| `XRiftAlien.stage()` | 游戏代码外部 0 处（自检按名粗数 153 处是 XRift.stage 等同名函数）（`git grep -nE 'XRiftAlien\.stage\(' -- '*.gd'`，tests 外）；本文件内 `on()`、`plan()` 两处 | 两处都只多了「rift2 没看过＝1 阶」这一条，玩家看过 rift2 的档行为不变；测试用 TestEnv 默认把 rift2 记成看过 |
+| `XRiftAlien.rule()` | 游戏代码外部 0 处（自检粗数 17 处是别的类同名 rule）；本文件 `plan()` 1 处 | 只有表里写了 `max_tier` 的阶段（现在只有对齐表三阶）会封顶，别的阶段逐值不变（`al_shift_one_stage` 核二、四阶） |
+| `XRiftAlien.grant()` | 游戏代码 1 处（`modes/xiyou/battle/battle_logic.gd:3928`；自检按名粗数 80 处是别的类同名 grant） | 只把图鉴键改成本文件拼，格式同 `XTianqiAlienCodex.key`，开发版写进的键逐字相同；掉落门没动 |
 | `XRiftAlien.RELEASE_OPEN` | 本文件 `on()` 1 处 | 只影响发行构建 |
 | `发行空壳.KEEP` | targets() 1 处 | XRiftAlien 不再换空壳；随机守卫、玩家资料包的类名词表跟着 targets 走，随机守卫已补 EXTRA_FILES |
 
