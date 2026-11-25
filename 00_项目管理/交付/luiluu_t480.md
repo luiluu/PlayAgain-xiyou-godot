@@ -77,16 +77,19 @@
 
 - 新专项 `xiyou_tianqi_element_effects`：41/41（§3.1 两条＋护盾全吸不掷＋散段补掷＋跳伤不再触发；§3.4 四例＋旧麻痹归并；§3.6 三条＋共用冷却 5 次；冰冻、水体质、浸湿、体质免疫；§4.3 首领九系版本与最终回合、首领冷却 2 回合、首领谓词；§3.3 高等不掷十系且吞没／空蚀／弱点暴露照旧、敌人高等打我方按受击者原倍率；圣护单体、群体人人、对敌给施放者、挡对方减益、不挡无出手者、持盾人冷却；子流不动主流（开关关 vs 开且几率 0 主流快照逐字相同）、开关关不建记账、西游档零改动）。
 - 本机：xiyou_tianqi_elements、xiyou_tianqi_element_effects、xiyou_combat、xiyou_otb、xiyou_determinism、xiyou_tianqi_xinmo_traits、xiyou_tianqi_balance、xiyou_attack_element、xiyou_multi_element 9 个全过；语法检查 0 问题；`天启篇数据校验.py` 全部通过、`测试天启篇数据校验.py` 148 例 OK（新增 `ElementEffectsRules` 3 例）；工具快速回归全部通过；`发行空壳.py check` 退出 0（新两个类的空壳：out_mult 1.0、crit_mult 原值、has_state false、钩子空）。
-- 云端选测：待回填
+- 云端选测：第一轮 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45524650316 挂 1 个（xiyou_tianqi_swap_view `p3_2_hold_released`：效果模块用静态强引用记当前战斗，替战斗对象续命，T181 的 swap_hold 放不开；改弱引用，本机该场景＋两个元素专项复跑全过）；第二轮 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45527927217 685 个场景 16 片全过（提交 34be0bd73，选测基准 1ad6347c6），`gh run watch` 前台等完。
 
 ## 验收
 
 1. 3.1 事件契约、十个效果、归并、首领链、3.6 行动位规则、停手共用冷却：✓
 2. 圣护：己方目标给目标、对敌给施放者、群体己方每个目标都给：✓
 3. 回退开关（`XTianqiElements.EFFECTS`）；西游档零改动：✓（测试 `switch_off_no_meta`、`substream_leaves_main_stream_identical`、`west_save_untouched`）
-4. 固定断言全过（3.1 两条＋3.4 四例＋3.6 三条＋4.3 首领表＋3.3 高等回归两条）：✓ 本机
+4. 固定断言全过（3.1 两条＋3.4 四例＋3.6 三条＋4.3 首领表＋3.3 高等回归两条）：✓ 本机＋云端
 
 ## 本分支提交
 
 - 1b58feb5d 效果接线与固定断言（WIP）
-- （后续）数据校验字段、回退支字面量、西游档清钩子指针、交付单
+- fac491426 等：数据校验字段、回退支字面量、西游档清钩子指针
+- 9ed2cf39b 交付单
+- 34be0bd73 战斗指针改弱引用（修 swap_view p3_2）
+- 交付单回填云端结果（本提交）
