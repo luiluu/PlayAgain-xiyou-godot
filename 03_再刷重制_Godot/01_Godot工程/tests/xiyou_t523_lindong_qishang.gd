@@ -122,6 +122,7 @@ func _test_tianqi_lindong_169() -> void:
 	var has_add_23 := effs.any(func(e): return int(e.get("code", -1)) == 21 and int(e.get("dataId", -1)) == 23 and is_equal_approx(float(e.get("value1", 0.0)), 1.0))
 	var has_rem_23 := effs.any(func(e): return int(e.get("code", -1)) == 22 and int(e.get("dataId", -1)) == 23)
 	check("tq.s169.effects_add_23_no_remove", has_add_23 and not has_rem_23, effs)
+	check("tq.s169.tags_debuff", XTianqiSkills.spec(169).get("tags", []) == ["减益"], XTianqiSkills.spec(169).get("tags"))
 	check("tq.s169.card_text_intact", str(sk169.get("note", "")).contains("效果：随机两个敌人；冰冷（敏捷 −10%）"), str(sk169.get("note", "")))
 
 	XTianqiBase.TUNE_D200 = false
@@ -140,7 +141,7 @@ func _test_tianqi_lindong_169() -> void:
 	# 2) 天启篇实战：场景 A（敌无 23 → 放 169 命中后挂上 23 冰冷II、敏捷下降）
 	var lg := XBattleLogic.new()
 	lg.elite_roll = 100.0
-	lg.setup(2, s)
+	lg.setup(2, s, XBattleRandom.create("0000000000000523"))
 	for e in lg.enemies:
 		e.add_param(0, 1e9)
 		e.param_refresh()
@@ -240,7 +241,7 @@ func _test_tianqi_qishang_1341() -> void:
 	XStateEffects.clear_diagnostics()
 	var lg := XBattleLogic.new()
 	lg.elite_roll = 100.0
-	lg.setup(2, s)
+	lg.setup(2, s, XBattleRandom.create("0000000000000523"))
 	var foe: XEnemy = lg.enemies[0]
 	for e in lg.enemies:
 		e.add_param(0, 1e9)
@@ -309,10 +310,10 @@ func _test_xiyou_regression() -> void:
 		effs_x)
 
 	var thx: XActor = sx.actor(104)
-	thx.change_level(60)
+	thx.change_level(15)
 	for sid in [7485, 7492, 7494]:
 		thx.learn_skill(sid)
-	thx.mastery_levels[7485] = 5
+	thx.mastery_levels[7485] = 2
 	_equip_weapon(thx, 1925)
 	var fengwu_x := _equip_armor(thx, 3550, 40)
 	thx.refresh_passive()
@@ -332,11 +333,12 @@ func _test_xiyou_regression() -> void:
 	XStateEffects.clear_diagnostics()
 	var lgx := XBattleLogic.new()
 	lgx.elite_roll = 100.0
-	lgx.setup(2, sx)
+	lgx.setup(2, sx, XBattleRandom.create("0000000000000524"))
 	var foex: XEnemy = lgx.enemies[0]
-	foex.add_param(0, 1e12)
+	foex.add_param(0, 1e11)
 	foex.param_refresh()
 	foex.hp = foex.mhp
+	foex.shield = 0.0
 	lgx.start_turn()
 	check("xy.battle_start_has_1340", thx.is_state_affected(1340), thx.state_ids)
 
@@ -347,17 +349,27 @@ func _test_xiyou_regression() -> void:
 		{"states": foex.state_ids, "counter": foex.state_data.get("_stateCounter", {})})
 
 	thx.tp = 100.0
+	foex.hp = foex.mhp
+	foex.shield = 0.0
+	var dmm := maxf(0.0, thx.atk * 2.0 + thx.mhp)
+	var ddd0 := float(ceil(foex.element_rate(1) * thx.mdr * dmm * 1.25 / 2.0))
+	var lv_combat := XMagicWeapon.combat_level(fengwu_x)
+	var want_qishang := ddd0 + float(ceil(ddd0 * (float(thx.mastery_levels[7485]) + lv_combat)))
 	var hp_before := foex.hp
 	var logs_x2 := lgx.act(thx, sk7485_x, foex)
+	var hit_cnt_x2 := 0
 	var hit_sum_x2 := 0.0
-	var has_qishang_popup := false
+	var qishang_pop_sum := 0.0
 	for r in logs_x2:
 		if r is Dictionary and r.get("type") == "hit" and r.get("target") == foex:
+			hit_cnt_x2 += 1
 			hit_sum_x2 += float(r.get("hp", 0.0))
 			for p in r.get("started_popups", []):
 				if p is Dictionary and bool(p.get("hpAffected", false)) and float(p.get("hpDamage", 0.0)) > 0.0:
-					has_qishang_popup = true
+					qishang_pop_sum += float(p.get("hpDamage", 0.0))
 	var actual_loss_x2 := hp_before - foex.hp
 	var diag_x := XStateEffects.diagnostics.filter(func(d): return int(d.get("state", 0)) == 1341)
-	check("xy.cast2_1341_react_deals_extra_damage", actual_loss_x2 > hit_sum_x2 and has_qishang_popup and diag_x.is_empty(),
-		{"actual_loss": actual_loss_x2, "hit_sum": hit_sum_x2, "popup": has_qishang_popup, "diag": diag_x})
+	check("xy.cast2_1341_react_deals_extra_damage",
+		foex.is_alive() and hit_cnt_x2 >= 1 and is_equal_approx(qishang_pop_sum, float(hit_cnt_x2) * want_qishang)
+		and actual_loss_x2 >= qishang_pop_sum and diag_x.is_empty(),
+		{"alive": foex.is_alive(), "hits": hit_cnt_x2, "actual_loss": actual_loss_x2, "hit_sum": hit_sum_x2, "qishang_pop": qishang_pop_sum, "want": float(hit_cnt_x2) * want_qishang, "diag": diag_x})
