@@ -556,6 +556,9 @@ func _xinsu_mechanics() -> void:
 	var lg := _battle(s, 2)
 	var e: XEnemy = lg.enemies[0]
 	var f := XTianqiGojoTrial.fight(lg)
+	# T501 R2 小A 核 P1-1：影子生命＝unit×hp_units（unit 已含 K），敌人生命统一折算不能再缩一次
+	var want_hp := roundf(float(f.unit) * float(XTianqiGojoTrial.trial(2).hp_units))
+	_check("x_shadow_hp_once", XTianqiBase.enemy_hp_pct() == 40 and absf(float(e.mhp) - want_hp) <= 2.0, [e.mhp, want_hp, XTianqiBase.enemy_hp_pct()])
 	_check("x_shadow", e.display_name() == "两面宿傩的影子" and lg.make_action_times(e) == 1 and e.mdf > 0.0)
 	lg.turn = 1
 	_check("x_r1", int(lg.decide(e)[0].id) == XTianqiGojoTrial.DISMANTLE)

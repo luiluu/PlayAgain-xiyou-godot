@@ -224,11 +224,40 @@ static func k_for(a, s = null) -> float:
 	return k_base(s) * k_actor_mult(a, s)
 
 
-## 面板一行：[名字, 「伤害 ×K」]；关着为空。只显示表里的 K 本身（不含烙印口子）
+## 面板一行：[名字, 「伤害压制 N%」（K＜1，T501 R2 Kyo「注视必须是压制」）或「伤害 ×K」]；关着为空。只显示表里的 K 本身（不含烙印口子）
 static func gaze_row(s = null) -> Array:
 	if not on(s):
 		return []
-	return [GAZE_NAME, "伤害 ×" + _k_text(k_base(s))]
+	var k := k_base(s)
+	if k < 1.0:
+		return [GAZE_NAME, "伤害压制 %d%%" % int(roundf((1.0 - k) * 100.0))]
+	return [GAZE_NAME, "伤害 ×" + _k_text(k)]
+
+
+# ---- 敌人生命统一折算（T501 R2，Kyo 11-25「K 0.5，敌人血量统一 ×0.4」）----
+
+## 开关：true＝天启篇全部敌人（守层者、骑士、首领、召唤物、楼层敌群）最大生命 ×enemy_hp_pct%；false＝不折（K 0.5 时敌人会硬 2.5 倍）
+static var ENEMY_HP_SCALE := true
+
+
+## 表里的整数百分比（combat_rules.enemy_hp_pct，附则 E）；总开关或本开关关着 100
+static func enemy_hp_pct(s = null) -> int:
+	if not ENEMY_HP_SCALE or not on(s):
+		return 100
+	return int(XTianqiBalance.data().get("combat_rules", {}).get("enemy_hp_pct", 100))
+
+
+## 小数形式（XTianqiNoX6 的等价换算用）
+static func enemy_hp_mult(s = null) -> float:
+	return float(enemy_hp_pct(s)) / 100.0
+
+
+## XEnemy.param(0) 最外层调：最大生命按整数百分比折，向下取整、至少 1；100 原样返回（西游档逐字节不变）
+static func scale_enemy_mhp(v: float) -> float:
+	var pct := enemy_hp_pct()
+	if pct == 100:
+		return v
+	return maxf(1.0, floorf(v * float(pct) / 100.0))
 
 
 static func _k_text(k: float) -> String:

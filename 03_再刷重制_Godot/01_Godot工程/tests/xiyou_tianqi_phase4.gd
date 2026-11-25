@@ -16,8 +16,9 @@ var results: Array = []
 
 
 ## T082 实机标定的 K（balance_table combat_rules.base_damage）；改标定只改这两行
-const K_TABLE := 0.13
-const K_TEXT := "0.13"
+const K_TABLE := 0.5
+## T501 R2：K＜1 时面板写「伤害压制 N%」
+const K_TEXT := "伤害压制 50%"
 ## 首领生命临时折算 U（整数百分比，先填 100＝不打折，D222 丙）（balance_table combat_rules.boss_hp_temp_unit）；重量只改这两行
 const U_CRIT := 100
 const U_NO_CRIT := 100
@@ -172,9 +173,9 @@ func _on() -> void:
 	var off_parts := XTianqiCombat.dealt_parts(a, s)
 	XTianqiBase.PHASE4 = true
 	_check("on.k_dealt", is_equal_approx(float(on_parts.mult), float(off_parts.mult) * K_TABLE) and is_equal_approx(float(on_parts.k), K_TABLE), [on_parts, off_parts])
-	_check("on.gaze_row", XTianqiBase.gaze_row() == ["天启注视", "伤害 ×" + K_TEXT], XTianqiBase.gaze_row())
+	_check("on.gaze_row", XTianqiBase.gaze_row() == ["天启注视", K_TEXT], XTianqiBase.gaze_row())
 	var rows := XStatusPage.global_bonuses(a)
-	_check("on.gaze_panel", not rows.is_empty() and rows[0] == ["天启注视", "伤害 ×" + K_TEXT], rows.slice(0, 2))
+	_check("on.gaze_panel", not rows.is_empty() and rows[0] == ["天启注视", K_TEXT], rows.slice(0, 2))
 	# U、守层者、治疗、九线、秘籍、绝对值、单段上限
 	_check("on.u", XTianqiBase.boss_hp_unit(false) == U_CRIT and XTianqiBase.boss_hp_unit(true) == U_NO_CRIT)  # T162 丙档实机量（表里的数）
 	var old := {1: 2.0}
@@ -775,8 +776,21 @@ func _e2e(on: bool) -> void:
 	var en: XBattler = lg.enemies[0]
 	var base6 := maxf(1.0, floorf(600.0 * XTianqiNoX6.hp_unit())) if XTianqiNoX6.on() else 600.0
 	var want_k := maxf(1.0, floorf(base6 * K_TABLE)) if on else base6
-	_check(tag + "scale_direct_k", XTianqiNoX6.scale_direct(a, en, 600.0) == want_k and XTianqiNoX6.scale_direct(a, en, 600.0, false) == base6 \
-		and XTianqiNoX6.scale_direct(en, a, 600.0) == 600.0, [XTianqiNoX6.scale_direct(a, en, 600.0), want_k, base6])
+	# T501 R2：敌人最大生命统一 ×enemy_hp_pct%（开着 40，关着／西游档 100 原样）；开关 ENEMY_HP_SCALE 关掉回原值
+	var raw0: float = (en as XEnemy)._param_raw(0)
+	var want_mhp := maxf(1.0, floorf(raw0 * 40.0 / 100.0)) if on else raw0
+	var mhp_on := float(en.mhp)
+	XTianqiBase.ENEMY_HP_SCALE = false
+	en.param_mark_dirty()
+	var mhp_off := float(en.mhp)
+	XTianqiBase.ENEMY_HP_SCALE = true
+	en.param_mark_dirty()
+	_check(tag + "enemy_hp_pct", XTianqiBase.enemy_hp_pct() == (40 if on else 100) and mhp_on == want_mhp and mhp_off == raw0, [raw0, mhp_on, want_mhp, mhp_off])
+	# T501 R2：反弹（不乘 K）跟敌人生命同缩 enemy_unit（1/6 × 敌人生命折算 40%）；乘 K 的那路只缩 1/6
+	var eu := XTianqiNoX6.enemy_unit()
+	var want_ref := maxf(1.0, floorf(600.0 * eu)) if eu != 1.0 else 600.0
+	_check(tag + "scale_direct_k", XTianqiNoX6.scale_direct(a, en, 600.0) == want_k and XTianqiNoX6.scale_direct(a, en, 600.0, false) == want_ref \
+		and XTianqiNoX6.scale_direct(en, a, 600.0) == 600.0, [XTianqiNoX6.scale_direct(a, en, 600.0), want_k, XTianqiNoX6.scale_direct(a, en, 600.0, false), want_ref])
 	# （7）表外角色：开着也回落职业曲线
 	var out_id := 0
 	for id in range(1, 400):
