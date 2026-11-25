@@ -57,10 +57,14 @@ static func level_of(item) -> float:
 
 
 static func max_level(item: Dictionary) -> float:
+	return max_level_in(item, XState.current)
+
+
+static func max_level_in(item: Dictionary, state: XState) -> float:
 	var own := raw_max_level(item)
 	if own < 0.0:
 		return -1.0
-	var cap := level_cap(XState.current)
+	var cap := level_cap(state)
 	return minf(own, float(cap)) if cap > 0 else own
 
 
@@ -69,7 +73,7 @@ static func max_level(item: Dictionary) -> float:
 ## - LEVEL_99：上限封到 99；回退 `XMagicWeapon.LEVEL_99 = false`（照原版 888）。
 ## - FLOOR_CAP：再跟楼层走，上限 ＝ min(99, 9 ＋ 3 × 最高到达层)，最高到达层＝变量 20（至少 1）：1 层 12、10 层 39、30 层 99；
 ##   回退 `XMagicWeapon.FLOOR_CAP = false`（只封 99）。
-## 超过上限的经验作废（照原版满级不得经验）；已经超过上限的法宝等级不降。
+## 超过上限的经验作废（照原版满级不得经验）；已经超过楼层上限的法宝存档保留原/折算等级，生效与显示按本层上限，升层后自动恢复。
 ## - TIANQI_TOO：天启篇存档（现在的新开局入口）也照这个上限；`XMagicWeapon.TIANQI_TOO = false` 时天启篇照数据。
 ## 天启篇法宝的阶（XTianqiAffixRoll.artifact_tier_of）按 top_level（封 99、不跟楼层）算，楼层上限不让阶提前满。
 static var LEVEL_99 := true
@@ -77,11 +81,13 @@ static var FLOOR_CAP := true
 static var TIANQI_TOO := true
 const CAP_TOP := 99
 
-## O-662（T468，Kyo 11-24「99级法宝总数值和888级旧版数值一样」）：西游档（非天启篇）法宝在 99 级封顶下，
-## 1～99 级按线性折算使 99 级总成长属性精确等于原版 888 级总值（原上限 ÷ 99）；等级上限、楼层上限与吃装备升级方式不变。
-## 老存档已超 99 级的法宝（如 331／888 级）平滑封顶在原版上限（888）总值，极端 >888 级旧档保留原等级不降级，绝不乘 9 爆表。
-## 天启篇存档零改动；无存档上下文不启用。回退：`XMagicWeapon.SCALE_99_TO_888 = false`。
+## O-662（T468＋T476，Kyo 11-24「99级法宝总数值和888级旧版数值一样」「超过99级的法宝等比例折算等级并且仍然受到层数上限限制」）：
+## - 西游档（非天启篇）法宝在 99 级封顶下，1～99 级按线性折算使 99 级总成长属性精确等于原版 888 级总值（原上限 ÷ 99）；
+## - 读档时老存档 >99 级法宝按 round(旧等级 × 99 / 888) 折算写回存档（封顶 99），加迁移标记只折一次；≤99 级不动；
+## - 折算后再受当前楼层上限限制：存档保留折算值，生效与显示按本层上限，层数上限提高后自动恢复，不丢等级；
+## - 天启篇存档零改动；无存档上下文不启用。回退：`XMagicWeapon.SCALE_99_TO_888 = false`。
 static var SCALE_99_TO_888 := true
+const OLD_LEVEL_MIGRATE_MARK := "fabao_old_lv_scaled_v1"
 
 
 ## 数据原版满级（不受 LEVEL_99／FLOOR_CAP 影响）；不是法宝返回 -1
@@ -104,10 +110,74 @@ static func scale_active(item = null, state: XState = null) -> bool:
 	return true
 
 
-## 给定原始每级成长 per 与法宝等级 lv，计算本项实际总成长属性：
+## 老存档 >99 级法宝的 888→99 等比例折算公式：新等级 = clamp(round(旧等级 × 99 / 原上限), 1, 99)（888→99、331→37、1000→99）。
+static func convert_old_level(old_lv: float, orig_max: float = 888.0) -> int:
+	var denom := orig_max if orig_max > float(CAP_TOP) else 888.0
+	return clampi(int(XPower.js_round(old_lv * float(CAP_TOP) / denom)), 1, CAP_TOP)
+
+
+## 法宝当前生效等级：
+## - 存档保留原值／折算后的等级（由 level_of 读取），绝不因楼层上限低而砍掉存档等级；
+## - 西游档启用 99→888 折算（scale_active）时，超过当前楼层上限（max_level_in）的按上限生效，层数提高后自动恢复；
+## - 天启篇、无存档上下文或回退关折算时照原等级返回，天启篇零改动。
+static func effective_level(item, state: XState = null) -> float:
+	var lv := level_of(item)
+	if lv < 0.0:
+		return -1.0
+	var s := state if state != null else XState.current
+	if not scale_active(item, s):
+		return lv
+	var cap := max_level_in(item, s)
+	return minf(lv, cap) if cap > 0.0 else lv
+
+
+## 迁移单件老存档 >99 级法宝：写回 888→99 折算等级（≤99 级、非西游档或关折算不动）；返回是否改写。
+static func migrate_item(item: Dictionary, state: XState = null) -> bool:
+	if not scale_active(item, state):
+		return false
+	var old_lv := level_of(item)
+	if old_lv <= float(CAP_TOP):
+		return false
+	var new_lv := convert_old_level(old_lv, raw_max_level(item))
+	item["level"] = float(new_lv)
+	if item.has("exp") and (new_lv >= CAP_TOP or float(item["exp"]) >= next_level_exp(item)):
+		item["exp"] = 0.0
+	return true
+
+
+## 读档迁移（XState.from_dict 末尾调用，T476）：西游档老存档 >99 级法宝按 888→99 等比例折算并写回存档，
+## 覆盖背包、全员装备栏及 PH 仓库；在 s.flags 写入 OLD_LEVEL_MIGRATE_MARK，重复读档不再折。天启篇与关折算零改动。
+static func after_load(s: XState) -> int:
+	if s == null or not scale_active(null, s) or bool(s.flags.get(OLD_LEVEL_MIGRATE_MARK, false)):
+		return 0
+	var all := s.gear.duplicate()
+	for a in s.actors.values():
+		for e in a.equips:
+			if e is Dictionary:
+				all.append(e)
+	for w in s.warehouses.values():
+		for list in w.get("items", {}).values():
+			for v in list:
+				if v is Dictionary:
+					all.append(v)
+	var seen := []
+	var changed := 0
+	for item in all:
+		if not (item is Dictionary) or seen.any(func(x): return is_same(x, item)):
+			continue
+		seen.append(item)
+		if migrate_item(item, s):
+			changed += 1
+	if changed > 0:
+		s.flags[OLD_LEVEL_MIGRATE_MARK] = true
+		for a in s.actors.values():
+			a.refresh_passive()
+	return changed
+
+
+## 给定原始每级成长 per 与法宝生效等级 lv，计算本项实际总成长属性：
 ## - 关折算／天启档／原上限 ≤ 99：与原版一致（lv * per）；
-## - 开折算时 1..98 级取 roundf(lv * orig_max / 99.0 * per)，99 级精确等于 orig_max * per（888 * per），支持负成长（如紫电）；
-## - 老存档 lv > 99：平滑封顶到 maxf(lv, orig_max) * per（如 331／888 级均按 888 算，不爆表不降级；极端 >888 保原等级）。
+## - 开折算时 1..98 级取 roundf(lv * orig_max / 99.0 * per)，99 级精确等于 orig_max * per（888 * per），支持负成长（如紫电）。
 static func scaled_growth(item: Dictionary, per: float, lv: float, state: XState = null) -> float:
 	if lv <= 0.0 or per == 0.0:
 		return 0.0
@@ -116,7 +186,7 @@ static func scaled_growth(item: Dictionary, per: float, lv: float, state: XState
 	var orig_max := raw_max_level(item)
 	var top := float(CAP_TOP)
 	if lv >= top:
-		return maxf(lv, orig_max) * per
+		return orig_max * per
 	return roundf(lv * orig_max / top * per)
 
 
@@ -296,7 +366,7 @@ static func level_up_trait_object(item: Dictionary) -> Dictionary:
 	return _trait_cache[key]
 
 
-## Game_Actor.traitObjects 追加：每件法宝的升级特性对象按等级重复
+## Game_Actor.traitObjects 追加：每件法宝的升级特性对象按生效等级重复
 static func trait_objects(equips: Array) -> Array:
 	var out := []
 	for item in equips:
@@ -305,7 +375,7 @@ static func trait_objects(equips: Array) -> Array:
 		var o := level_up_trait_object(item)
 		if o.is_empty():
 			continue
-		for i in range(int(level_of(item))):
+		for i in range(int(effective_level(item))):
 			out.append(o)
 	return out
 
@@ -340,11 +410,11 @@ static func _num_or_zero(s: String) -> float:
 	return n if not is_nan(n) else 0.0
 
 
-## Game_Item.magicWeaponSkills：这件法宝当前等级给的技能编号
+## Game_Item.magicWeaponSkills：这件法宝当前生效等级给的技能编号
 static func item_skills(item) -> Array:
 	if not is_magic(item):
 		return []
-	var lv := level_of(item)
+	var lv := effective_level(item)
 	var out := []
 	for d in learn_data(item):
 		if d.all or (lv >= d.min and lv <= d.max):

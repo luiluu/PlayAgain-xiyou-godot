@@ -718,6 +718,11 @@ func variable(id: int) -> float:
 func set_variable(id: int, value: float) -> void:
 	variables[id] = floorf(value)  # Game_Variables.setValue：数值一律 Math.floor。
 	XGlobalVars.on_variable(id, value)  # 跨存档变量存取整前的原值（同 Drill_VariablesAcrossArchive）
+	if id == 20 and XMagicWeapon.scale_active(null, self):
+		XActor.read_touch()
+		for a in actors.values():
+			if a.param_cache_on:
+				a.param_dirty = true
 
 ## 公式用的变量表 v[...]：未定义的按 0。
 func variable_array(size := 5000) -> Array:
@@ -1111,6 +1116,7 @@ static func from_dict(d: Dictionary) -> XState:
 	XTianqiSave.after_load(s)  # 天启篇存档门面：唯一的读档后入口（分区迁移、五条悟进阶表版本、装备随机身份补号），幂等
 	XXufeng.after_load(s)  # 西游档徐凤年重做（T440）：按当前开关双向同步既有 76/129/143 装备实例，保留随机属性、强化与词缀
 	XXiyouNerf.after_load(s)  # 西游档离群削弱（T465）：按当前开关双向同步既有 Weapon 87 实例，保留宝珠、强化与词缀
+	XMagicWeapon.after_load(s)  # T476：西游档老存档 >99 级法宝按 888→99 等比例折算写回（加迁移标记只折一次）
 	XWeakChallenge.after_load(s)  # 弱者挑战 extractSaveContents 包装：按本局标记学／忘 10357（不回满）
 	# setup时曾缓存空状态；恢复完当前存档后重建效果快照，不额外夹HP／MP。
 	for a in s.actors.values():
