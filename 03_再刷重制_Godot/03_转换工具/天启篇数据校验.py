@@ -1482,6 +1482,152 @@ def check_elements_table(_args) -> bool:
     return _report('elements_table.json', '规则自检', bad)
 
 
+def enemy_nature_rules(table: dict, elements: dict, enemy_ids=None) -> list:
+    """enemy_nature.json（T479，天启篇敌人自然体质）：号、元素号、来源、守层者／鸿钧／骑士对 elements_table。"""
+    bad = []
+    base = set(elements.get('base_elements', []))
+    srcs = {'guardian', 'hongjun', 'keyword', 'race', 'manual', 'none', 'keyword+race'}
+    take = table.get('guardian_take')
+    if take not in (1, 2):
+        bad.append('guardian_take 应为 1 或 2：%r' % (take,))
+    cons = elements.get('guardian_constitutions', {})
+    for k, e in (table.get('enemies') or {}).items():
+        if not str(k).isdigit():
+            bad.append('敌人号不是整数：%r' % (k,))
+            continue
+        if enemy_ids is not None and int(k) not in enemy_ids:
+            bad.append('%s 号不在 Enemies.json' % k)
+        nat = e.get('natures')
+        if not isinstance(nat, list) or not 1 <= len(nat) <= 2 or len(set(nat)) != len(nat):
+            bad.append('%s 号 natures 应为 1～2 个不重复元素号（没体质的不写条目）：%r' % (k, nat))
+            continue
+        if any(n not in base for n in nat):
+            bad.append('%s 号 natures 含基础十系以外的元素号：%r' % (k, nat))
+        if e.get('src') not in srcs:
+            bad.append('%s 号 src 不认识：%r' % (k, e.get('src')))
+        if e.get('src') == 'manual' and not e.get('verdict'):
+            bad.append('%s 号 src=manual 要有 verdict' % k)
+        if e.get('src') == 'guardian':
+            f = e.get('floor')
+            if not isinstance(f, int) or not 1 <= f <= 33:
+                bad.append('%s 号守层者 floor 应为 1～33：%r' % (k, f))
+            elif nat != [x for x in cons.get(str(f), [])[:take or 2] if x in base]:
+                bad.append('%s 号守层者体质 %r 与 guardian_constitutions 第 %d 层前 %s 个 %r 不一致' % (k, nat, f, take, cons.get(str(f))))
+    sp = table.get('special') or {}
+    if (sp.get('hongjun') or {}).get('natures') != elements.get('fixed_entries', {}).get('hongjun', {}).get('constitutions'):
+        bad.append('special.hongjun 与 elements_table.fixed_entries.hongjun.constitutions 不一致')
+    if (sp.get('knight') or {}).get('natures') != []:
+        bad.append('special.knight 应硬留空（4.3）')
+    return bad
+
+
+def check_enemy_nature(_args) -> bool:
+    path = DATA_DIR / 'enemy_nature.json'
+    if not path.is_file():
+        print('跳过：没有 enemy_nature.json')
+        return True
+    try:
+        elements = json.loads((DATA_DIR / 'elements_table.json').read_text(encoding='utf-8'))
+        ids = None
+        db = PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'Enemies.json'
+        if db.is_file():  # 云端没有转换产物时跳过号核对
+            ids = {x['id'] for x in json.loads(db.read_text(encoding='utf-8')) if x}
+        bad = enemy_nature_rules(json.loads(path.read_text(encoding='utf-8')), elements, ids)
+    except Exception as e:
+        bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
+    return _report('enemy_nature.json', '规则自检', bad)
+
+
+ACTOR_NATURE_NOT_USED = {172, 180}  # 宿傩、五条悟：Kyo 11-22 暂不用，不进我方体质表（T484 返修 R2）
+
+
+def actor_nature_rules(table: dict, elements: dict, usable_ids=None) -> list:
+    """actor_nature.json（T484，天启篇我方自然体质，设计稿 4.4）：每个可用角色一行，natures 空或 1 个基础十系，且与得票规则对得上。"""
+    bad = []
+    base = set(elements.get('base_elements', []))
+    higher = set(elements.get('higher_elements', []))
+    srcs = {'majority', 'tie_first', 'neutral', 'higher', 'no_attack', 'manual'}
+    rows = table.get('actors') or {}
+    for i in sorted(ACTOR_NATURE_NOT_USED):
+        if str(i) in rows:
+            bad.append('%d 号按 Kyo 11-22 不用，不该有体质行' % i)
+    if usable_ids is not None:
+        usable_ids = set(usable_ids) - ACTOR_NATURE_NOT_USED
+        miss = sorted(i for i in usable_ids if str(i) not in rows)
+        extra = sorted(int(k) for k in rows if str(k).isdigit() and int(k) not in usable_ids)
+        if miss:
+            bad.append('可用角色缺行：%s' % miss)
+        if extra:
+            bad.append('表里有不可用角色的行：%s' % extra)
+    for k, e in rows.items():
+        if not str(k).isdigit():
+            bad.append('角色号不是整数：%r' % (k,))
+            continue
+        nat = e.get('natures')
+        if not isinstance(nat, list) or len(nat) > 1 or len(set(nat)) != len(nat):
+            bad.append('%s 号 natures 应为空或 1 个元素号：%r' % (k, nat))
+            continue
+        if any(n not in base for n in nat):
+            bad.append('%s 号 natures 含基础十系以外的元素号：%r' % (k, nat))
+        src = e.get('src')
+        if src not in srcs:
+            bad.append('%s 号 src 不认识：%r' % (k, src))
+            continue
+        if src == 'manual':
+            if not e.get('verdict'):
+                bad.append('%s 号 src=manual 要有 verdict' % k)
+            continue
+        if e.get('basis') not in ('card', 'original'):
+            bad.append('%s 号 basis 应为 card 或 original：%r' % (k, e.get('basis')))
+        votes = {int(a): b for a, b in (e.get('votes') or {}).items()}
+        if not votes:
+            if src != 'no_attack' or nat:
+                bad.append('%s 号没有得票却不是 no_attack 空体质' % k)
+            continue
+        # 口径（设计稿字面）：只在基础十系元素招里数多数，无属性、高等三系只作证据不参与比票
+        bv = {a: b for a, b in votes.items() if a in base}
+        if not bv:
+            want_src = 'higher' if any(a in higher for a in votes) else 'neutral'
+            if nat or src != want_src:
+                bad.append('%s 号没有基础十系招，应无体质且 src=%s：%r／%r' % (k, want_src, nat, src))
+            continue
+        top = max(bv.values())
+        tied = sorted(a for a in bv if bv[a] == top)
+        if sorted(e.get('tie') or []) != (tied if len(tied) > 1 else []):
+            bad.append('%s 号 tie %r 与基础十系得票并列项 %r 不一致' % (k, e.get('tie'), tied))
+        if len(tied) == 1:
+            if nat != tied or src != 'majority':
+                bad.append('%s 号基础十系得票唯一最高 %d，体质应为 %r、src=majority：表里是 %r／%r' % (k, tied[0], tied, nat, src))
+        else:
+            # 并列时赢家取决于技能号，表里不存技能号，只要求结果在并列项里
+            if src != 'tie_first' or len(nat) != 1 or nat[0] not in tied:
+                bad.append('%s 号基础十系并列最高 %r，应 src=tie_first 且体质在并列项里：%r／%r' % (k, tied, nat, src))
+    return bad
+
+
+def check_actor_nature(_args) -> bool:
+    path = DATA_DIR / 'actor_nature.json'
+    if not path.is_file():
+        print('跳过：没有 actor_nature.json')
+        return True
+    try:
+        elements = json.loads((DATA_DIR / 'elements_table.json').read_text(encoding='utf-8'))
+        rework = json.loads((DATA_DIR / 'skill_rework.json').read_text(encoding='utf-8'))
+        usable = None
+        db = PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'Actors.json'
+        gd = PROJECT / 'modes' / 'xiyou' / 'core' / 'imported_balance.gd'
+        if db.is_file() and gd.is_file():  # 云端没有转换产物时跳过「每个可用角色都有一行」
+            gt = gd.read_text(encoding='utf-8')
+            dis = set(json.loads(re.search(r'^const DISABLED_ACTORS\s*:?=\s*(\[[^\]]*\])', gt, re.M).group(1)))
+            dis -= {int(x) for x in re.findall(r'^const (?:CANGLONG|XUFENG)\s*:?=\s*(\d+)', gt, re.M)}
+            closed = set(rework['tiers'].get('不开放', []))
+            usable = {x['id'] for x in json.loads(db.read_text(encoding='utf-8')) if x and str(x.get('name', '')).strip() and x['id'] not in closed and x['id'] not in dis}
+        bad = actor_nature_rules(json.loads(path.read_text(encoding='utf-8')), elements, usable)
+    except Exception as e:
+        bad = ['能读表并跑完全部检查：%s: %s' % (type(e).__name__, e)]
+    return _report('actor_nature.json', '规则自检', bad)
+
+
 # ---- 第三批：reforge／alien_gear／abyss_shelves／qiyin_equip／qiyin_show／qiyin_dragon_run（cc/pro-tianqi-datacheck3）----
 # 只查代码真读的字段（读表的模块写在各函数说明里）；字段缺了不查，不认识的键不报错。
 # 跨表引用的那张表不在就跳过那一项（例如没有 qiyin_gear.json 就不查部位、武器类型对不对得上）。
@@ -3880,6 +4026,8 @@ CHECKS = [
     ('qiyin_refs', check_qiyin_refs),
     ('skill_rework', check_skill_rework),
     ('elements_table', check_elements_table),
+    ('enemy_nature', check_enemy_nature),
+    ('actor_nature', check_actor_nature),
     ('reforge', check_reforge),
     ('alien_gear', check_alien_gear),
     ('abyss_shelves', check_abyss_shelves),
