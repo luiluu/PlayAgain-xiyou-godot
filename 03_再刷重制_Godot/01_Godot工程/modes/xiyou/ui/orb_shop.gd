@@ -123,7 +123,7 @@ func desc(id: int) -> Array:
 		var f: Dictionary = cfg().families[int(sp.family)]
 		var sets: Array = f.sets.map(func(i): return str(cfg().sets[int(i)].name))
 		var out := ["定位：" + str(f.role) + "（镶" + str(f.get("slot", "武器宝珠")) + "孔）"]
-		out.append_array(XDB.table("CodexOrbs").items[str(id)].effects)
+		out.append_array(cfg().items[str(id)].effects)  # 天启篇读新表（T518）
 		if not sets.is_empty():
 			out.append("套装组件：" + "、".join(sets))
 		out.append("同一件装备同类新宝珠最多1颗")

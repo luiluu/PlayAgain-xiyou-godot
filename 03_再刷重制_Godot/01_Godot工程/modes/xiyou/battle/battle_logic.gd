@@ -4008,6 +4008,7 @@ func drop_chances(e: XEnemy, all_rows := false) -> Array:
 				row["sig"] = "%d:%d:%d" % [e.enemy_id, int(extra.kind), int(extra.id)]
 			out.append(row)
 	out = XTianqiSect.drop_rows(state, e.enemy_id, out)  # 天启篇教派连带内容：研究日志去掉、夏娜心魔换碎片（XTianqiSect）
+	out = XTianqiOrbs.drop_rows(state, out)  # 天启篇原作旧宝珠不再掉（T518）
 	return XTianqiSecrets.filter_drop_rows(state, out)  # T443：封禁功法书（炎黄后裔 2237／九阳淬体图 2240）天启篇不掉
 
 

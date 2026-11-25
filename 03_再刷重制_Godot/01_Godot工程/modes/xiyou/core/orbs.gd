@@ -32,7 +32,9 @@ static var _parsed := {}
 
 static func config() -> Dictionary:
 	var c = XDB.table("CodexOrbs")
-	return c if c is Dictionary else {}
+	if not c is Dictionary:
+		return {}
+	return XTianqiOrbs.config(c) if XTianqiOrbs.on() else c  # 天启篇宝珠新表（T518）：补水风两族、效果换新表、鉴定不出旧宝珠
 
 
 # ---- 32 位整数运算（JS Math.imul、>>>、|0 逐位照搬）----

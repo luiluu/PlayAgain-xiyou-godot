@@ -327,6 +327,7 @@ static func stat_list(list: Array) -> Array:
 		list = list.map(func(e): return element_fabao_view(e))  # 天启篇系别法宝（T442）：老档已有实例去原版特性/标签，只留本系或治疗 +10%
 	if elem_amp_on():
 		list = list.map(func(e): return elem_amp_view(e))  # T451：通用武器（5～50%）与保留栏位普通防具（5～20%）元素/物理增幅按档重调
+	list = XTianqiOrbs.views(list)  # T518：宝珠新表读时换表（带新宝珠的装备换视图，存档不改写）
 	if not mount_on():
 		return list
 	return list.filter(func(e): return not plain_mount(e))
