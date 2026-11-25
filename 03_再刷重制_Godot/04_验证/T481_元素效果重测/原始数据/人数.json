@@ -1,0 +1,1399 @@
+{
+	"attackers": 146,
+	"detail": {
+		"1": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "狗逍遥"
+		},
+		"10": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "美娜"
+		},
+		"100": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "云霄"
+		},
+		"101": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "琼霄"
+		},
+		"102": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1
+			},
+			"has_attack_skill": true,
+			"name": "碧霄"
+		},
+		"103": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"name": "波风水门"
+		},
+		"104": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "天虎令"
+		},
+		"105": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 1,
+				"6": 2,
+				"8": 1,
+				"9": 1,
+				"14": 1
+			},
+			"has_attack_skill": true,
+			"name": "唐三"
+		},
+		"106": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 4
+			},
+			"has_attack_skill": true,
+			"name": "甘雨"
+		},
+		"107": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "钟离"
+		},
+		"108": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 2
+			},
+			"has_attack_skill": true,
+			"name": "奈叶"
+		},
+		"109": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "牢大"
+		},
+		"11": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "里德"
+		},
+		"110": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "黄猫猫"
+		},
+		"111": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "紫猫猫"
+		},
+		"112": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "粉猫猫"
+		},
+		"113": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "黑猫猫"
+		},
+		"114": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "红猫猫"
+		},
+		"115": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 1,
+				"14": 1
+			},
+			"has_attack_skill": true,
+			"name": "蕾姆"
+		},
+		"117": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "绯红蔷薇"
+		},
+		"118": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 4
+			},
+			"has_attack_skill": true,
+			"name": "高松灯"
+		},
+		"119": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 1
+			},
+			"has_attack_skill": true,
+			"name": "千早爱音"
+		},
+		"12": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1
+			},
+			"has_attack_skill": true,
+			"name": "斯盖"
+		},
+		"120": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 1,
+				"14": 3
+			},
+			"has_attack_skill": true,
+			"name": "希格雯"
+		},
+		"121": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "可莉"
+		},
+		"122": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "南宫恨·狂刀"
+		},
+		"123": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "南宫恨·武道"
+		},
+		"124": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"3": 1,
+				"4": 1,
+				"5": 1,
+				"6": 1,
+				"7": 1,
+				"9": 1
+			},
+			"has_attack_skill": true,
+			"name": "伊莉雅"
+		},
+		"127": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"name": "小铃兰"
+		},
+		"128": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 3
+			},
+			"has_attack_skill": true,
+			"name": "张楚岚"
+		},
+		"129": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"15": 2
+			},
+			"has_attack_skill": true,
+			"name": "要乐奈"
+		},
+		"13": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "刘备"
+		},
+		"130": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 2
+			},
+			"has_attack_skill": true,
+			"name": "长崎爽世"
+		},
+		"131": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "椎名立希"
+		},
+		"14": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"14": 2
+			},
+			"has_attack_skill": true,
+			"name": "关羽"
+		},
+		"142": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"3": 1,
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"name": "天海麒麟星"
+		},
+		"146": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 1
+			},
+			"has_attack_skill": true,
+			"name": "苍龙破晓"
+		},
+		"147": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "天剑 非天"
+		},
+		"148": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "黑崎一护"
+		},
+		"149": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 4,
+				"3": 3,
+				"5": 3,
+				"15": 2
+			},
+			"has_attack_skill": true,
+			"name": "祈求者"
+		},
+		"15": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "张飞"
+		},
+		"150": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "桐人"
+		},
+		"151": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "亚斯娜"
+		},
+		"152": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "徐凤年"
+		},
+		"153": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 3,
+				"3": 2,
+				"4": 2,
+				"5": 2,
+				"6": 2,
+				"7": 2,
+				"8": 2,
+				"9": 2
+			},
+			"has_attack_skill": true,
+			"name": "惠惠"
+		},
+		"154": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 2
+			},
+			"has_attack_skill": true,
+			"name": "夏娜"
+		},
+		"155": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "病娇"
+		},
+		"156": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"name": "嫦娥"
+		},
+		"158": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 2
+			},
+			"has_attack_skill": true,
+			"name": "炮姐"
+		},
+		"159": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "五河琴里"
+		},
+		"16": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "克莱德"
+		},
+		"162": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "诛仙"
+		},
+		"163": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "拳一"
+		},
+		"164": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "贝吉特"
+		},
+		"165": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "李逍遥"
+		},
+		"167": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 1
+			},
+			"has_attack_skill": true,
+			"name": "渡鸦"
+		},
+		"168": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 4
+			},
+			"has_attack_skill": true,
+			"name": "米拉"
+		},
+		"169": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 2
+			},
+			"has_attack_skill": true,
+			"name": "黄泉"
+		},
+		"17": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 3
+			},
+			"has_attack_skill": true,
+			"name": "克洛什"
+		},
+		"170": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 7
+			},
+			"has_attack_skill": true,
+			"name": "镜流"
+		},
+		"171": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "伏黑甚尔"
+		},
+		"172": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 2
+			},
+			"has_attack_skill": true,
+			"name": "宿傩"
+		},
+		"173": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "饿狼"
+		},
+		"174": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 2
+			},
+			"has_attack_skill": true,
+			"name": "云裳"
+		},
+		"175": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 1
+			},
+			"has_attack_skill": true,
+			"name": "谷雨"
+		},
+		"176": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "屠苏"
+		},
+		"177": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "璇"
+		},
+		"178": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"name": "哈基米"
+		},
+		"179": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1
+			},
+			"has_attack_skill": true,
+			"name": "流萤"
+		},
+		"18": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 5
+			},
+			"has_attack_skill": true,
+			"name": "雪清寒"
+		},
+		"19": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 3
+			},
+			"has_attack_skill": true,
+			"name": "安东尼"
+		},
+		"2": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 3
+			},
+			"has_attack_skill": true,
+			"name": "绿司机"
+		},
+		"20": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "伯伦希尔"
+		},
+		"21": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"name": "玛莎"
+		},
+		"22": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "维利"
+		},
+		"23": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 1,
+				"9": 2
+			},
+			"has_attack_skill": true,
+			"name": "魔雷老人"
+		},
+		"24": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"name": "克比"
+		},
+		"25": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"4": 1,
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"name": "雷加尔"
+		},
+		"26": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "曼德斯"
+		},
+		"27": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "齐格鲁德"
+		},
+		"28": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "桑克莱"
+		},
+		"29": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 3
+			},
+			"has_attack_skill": true,
+			"name": "金蝉子"
+		},
+		"3": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"4": 4
+			},
+			"has_attack_skill": true,
+			"name": "艾坤"
+		},
+		"30": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "西凉女帝"
+		},
+		"31": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"name": "露茜"
+		},
+		"32": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "涅斐莉"
+		},
+		"33": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"8": 2
+			},
+			"has_attack_skill": true,
+			"name": "晴明"
+		},
+		"34": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 1
+			},
+			"has_attack_skill": true,
+			"name": "签弟"
+		},
+		"35": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 3
+			},
+			"has_attack_skill": true,
+			"name": "摇光"
+		},
+		"36": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 2
+			},
+			"has_attack_skill": true,
+			"name": "至尊宝"
+		},
+		"37": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 3
+			},
+			"has_attack_skill": true,
+			"name": "天蓬元帅"
+		},
+		"38": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 3
+			},
+			"has_attack_skill": true,
+			"name": "曹操"
+		},
+		"39": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"4": 3
+			},
+			"has_attack_skill": true,
+			"name": "沙和尚"
+		},
+		"4": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"name": "窃格瓦拉·周"
+		},
+		"40": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"14": 1
+			},
+			"has_attack_skill": true,
+			"name": "小白龙"
+		},
+		"41": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "波加尼"
+		},
+		"42": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "布兰德瓦登"
+		},
+		"43": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 3
+			},
+			"has_attack_skill": true,
+			"name": "露丝"
+		},
+		"44": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 1
+			},
+			"has_attack_skill": true,
+			"name": "碧池"
+		},
+		"45": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "东方教主"
+		},
+		"46": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 3
+			},
+			"has_attack_skill": true,
+			"name": "克莉丝汀"
+		},
+		"47": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "酒剑仙"
+		},
+		"48": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 4
+			},
+			"has_attack_skill": true,
+			"name": "莉娜"
+		},
+		"49": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"15": 2
+			},
+			"has_attack_skill": true,
+			"name": "疾风丸"
+		},
+		"5": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 3,
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"name": "小痔"
+		},
+		"50": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "劲夫"
+		},
+		"51": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 2
+			},
+			"has_attack_skill": true,
+			"name": "法海"
+		},
+		"52": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "孙悟空"
+		},
+		"53": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 4
+			},
+			"has_attack_skill": true,
+			"name": "艾瑞塔"
+		},
+		"54": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "迪昂"
+		},
+		"55": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "橙"
+		},
+		"56": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "瑞普"
+		},
+		"57": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "龙马"
+		},
+		"58": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "小青"
+		},
+		"59": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1
+			},
+			"has_attack_skill": true,
+			"name": "大羿"
+		},
+		"6": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "吕布"
+		},
+		"60": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 3
+			},
+			"has_attack_skill": true,
+			"name": "马宝国"
+		},
+		"61": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "町甄"
+		},
+		"62": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"4": 1
+			},
+			"has_attack_skill": true,
+			"name": "布兰博"
+		},
+		"63": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 3
+			},
+			"has_attack_skill": true,
+			"name": "拉尔"
+		},
+		"64": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "杰诺"
+		},
+		"65": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"15": 2
+			},
+			"has_attack_skill": true,
+			"name": "孙权"
+		},
+		"66": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 1
+			},
+			"has_attack_skill": true,
+			"name": "娜莎"
+		},
+		"67": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 3
+			},
+			"has_attack_skill": true,
+			"name": "科妮莉亚"
+		},
+		"68": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "尤妮娅"
+		},
+		"69": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "花木兰"
+		},
+		"7": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"6": 4
+			},
+			"has_attack_skill": true,
+			"name": "茉蕾"
+		},
+		"70": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"7": 3
+			},
+			"has_attack_skill": true,
+			"name": "紫霞仙子"
+		},
+		"71": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "诸葛孔明"
+		},
+		"72": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 1,
+				"9": 1
+			},
+			"has_attack_skill": true,
+			"name": "阿语"
+		},
+		"73": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 4,
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"name": "塞西莉"
+		},
+		"74": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"6": 1
+			},
+			"has_attack_skill": true,
+			"name": "陈"
+		},
+		"75": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "智甚"
+		},
+		"76": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 2
+			},
+			"has_attack_skill": true,
+			"name": "白晶晶"
+		},
+		"77": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 2
+			},
+			"has_attack_skill": true,
+			"name": "玉兔精"
+		},
+		"78": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 2
+			},
+			"has_attack_skill": true,
+			"name": "十三娘"
+		},
+		"79": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "裴钱"
+		},
+		"8": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "修"
+		},
+		"80": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 3
+			},
+			"has_attack_skill": true,
+			"name": "白起"
+		},
+		"81": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "申公豹"
+		},
+		"82": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 1
+			},
+			"has_attack_skill": true,
+			"name": "玉面狐狸"
+		},
+		"83": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "荒天弟"
+		},
+		"84": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "小毒"
+		},
+		"85": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 2
+			},
+			"has_attack_skill": true,
+			"name": "爱莉"
+		},
+		"86": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "张三丰"
+		},
+		"87": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "张无忌"
+		},
+		"88": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 1
+			},
+			"has_attack_skill": true,
+			"name": "西西卡"
+		},
+		"89": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 2
+			},
+			"has_attack_skill": true,
+			"name": "虎姐"
+		},
+		"9": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 1
+			},
+			"has_attack_skill": true,
+			"name": "罗琳"
+		},
+		"90": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "艾琳"
+		},
+		"91": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 3,
+				"14": 1
+			},
+			"has_attack_skill": true,
+			"name": "宇智波·鼬"
+		},
+		"92": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 2,
+				"3": 2,
+				"5": 2
+			},
+			"has_attack_skill": true,
+			"name": "八重樱"
+		},
+		"93": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "炭治郎"
+		},
+		"94": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"3": 1,
+				"4": 1,
+				"5": 1,
+				"7": 1,
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"name": "命运编织者"
+		},
+		"95": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": true,
+			"name": "三笠"
+		},
+		"96": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 2,
+				"14": 1
+			},
+			"has_attack_skill": true,
+			"name": "朵莉亚"
+		},
+		"97": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 1,
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"name": "赤狐"
+		},
+		"98": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1
+			},
+			"has_attack_skill": true,
+			"name": "金狐"
+		},
+		"99": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"has_attack_skill": false,
+			"name": "小明"
+		}
+	},
+	"native": {
+		"14": {
+			"chance": 0.22,
+			"n": 7,
+			"table_tier": "few",
+			"tier": "few"
+		},
+		"15": {
+			"chance": 0.22,
+			"n": 11,
+			"table_tier": "few",
+			"tier": "few"
+		},
+		"2": {
+			"chance": 0.11,
+			"n": 23,
+			"table_tier": "many",
+			"tier": "many"
+		},
+		"3": {
+			"chance": 0.15,
+			"n": 17,
+			"table_tier": "many",
+			"tier": "mid"
+		},
+		"4": {
+			"chance": 0.22,
+			"n": 7,
+			"table_tier": "few",
+			"tier": "few"
+		},
+		"5": {
+			"chance": 0.15,
+			"n": 14,
+			"table_tier": "mid",
+			"tier": "mid"
+		},
+		"6": {
+			"chance": 0.15,
+			"n": 12,
+			"table_tier": "mid",
+			"tier": "mid"
+		},
+		"7": {
+			"chance": 0.15,
+			"n": 12,
+			"table_tier": "mid",
+			"tier": "mid"
+		},
+		"8": {
+			"chance": 0.15,
+			"n": 14,
+			"table_tier": "many",
+			"tier": "mid"
+		},
+		"9": {
+			"chance": 0.15,
+			"n": 14,
+			"table_tier": "mid",
+			"tier": "mid"
+		}
+	},
+	"usable": 159
+}

@@ -1,0 +1,4814 @@
+{
+	"attackers": 146,
+	"detail": {
+		"1": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "狗逍遥",
+			"natures": [],
+			"tier": "强者"
+		},
+		"10": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "美娜",
+			"natures": [],
+			"tier": "强者"
+		},
+		"100": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": true,
+			"name": "云霄",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"101": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "琼霄",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"102": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1
+			},
+			"elements_with_basic": {
+				"2": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "碧霄",
+			"natures": [
+				2
+			],
+			"tier": "超强者"
+		},
+		"103": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"15": 1
+			},
+			"elements_with_basic": {
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "波风水门",
+			"natures": [
+				15
+			],
+			"tier": "弱者"
+		},
+		"104": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "天虎令",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"105": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 1,
+				"6": 2,
+				"8": 1,
+				"9": 1,
+				"14": 1
+			},
+			"elements_with_basic": {
+				"3": 1,
+				"6": 2,
+				"8": 1,
+				"9": 1,
+				"14": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "唐三",
+			"natures": [
+				6
+			],
+			"tier": "弱者"
+		},
+		"106": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 4
+			},
+			"elements_with_basic": {
+				"3": 4
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "甘雨",
+			"natures": [
+				3
+			],
+			"tier": "超强者"
+		},
+		"107": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "钟离",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"108": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 2
+			},
+			"elements_with_basic": {
+				"7": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "奈叶",
+			"natures": [
+				7
+			],
+			"tier": "超强者"
+		},
+		"109": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "牢大",
+			"natures": [],
+			"tier": "强者"
+		},
+		"11": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "里德",
+			"natures": [],
+			"tier": "强者"
+		},
+		"110": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": false,
+			"name": "黄猫猫",
+			"natures": [],
+			"tier": "强者"
+		},
+		"111": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": false,
+			"name": "紫猫猫",
+			"natures": [],
+			"tier": "强者"
+		},
+		"112": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": false,
+			"name": "粉猫猫",
+			"natures": [],
+			"tier": "强者"
+		},
+		"113": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": false,
+			"name": "黑猫猫",
+			"natures": [],
+			"tier": "强者"
+		},
+		"114": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": false,
+			"name": "红猫猫",
+			"natures": [],
+			"tier": "强者"
+		},
+		"115": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 1,
+				"14": 1
+			},
+			"elements_with_basic": {
+				"3": 1,
+				"14": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "蕾姆",
+			"natures": [
+				3
+			],
+			"tier": "强者"
+		},
+		"117": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": true,
+			"name": "绯红蔷薇",
+			"natures": [],
+			"tier": "强者"
+		},
+		"118": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 4
+			},
+			"elements_with_basic": {
+				"7": 4
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "高松灯",
+			"natures": [
+				7
+			],
+			"tier": "强者"
+		},
+		"119": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 1
+			},
+			"elements_with_basic": {
+				"7": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "千早爱音",
+			"natures": [
+				7
+			],
+			"tier": "强者"
+		},
+		"12": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1
+			},
+			"elements_with_basic": {
+				"2": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "斯盖",
+			"natures": [
+				2
+			],
+			"tier": "弱者"
+		},
+		"120": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 1,
+				"14": 3
+			},
+			"elements_with_basic": {
+				"3": 1,
+				"14": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "希格雯",
+			"natures": [
+				14
+			],
+			"tier": "超强者"
+		},
+		"121": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": false,
+			"name": "可莉",
+			"natures": [],
+			"tier": "强者"
+		},
+		"122": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "南宫恨·狂刀",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"123": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "南宫恨·武道",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"124": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"3": 1,
+				"4": 1,
+				"5": 1,
+				"6": 1,
+				"7": 1,
+				"9": 1
+			},
+			"elements_with_basic": {
+				"2": 1,
+				"3": 1,
+				"4": 1,
+				"5": 1,
+				"6": 1,
+				"7": 1,
+				"9": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": true,
+			"name": "伊莉雅",
+			"natures": [
+				9
+			],
+			"tier": "超强者"
+		},
+		"127": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"8": 1
+			},
+			"elements_with_basic": {
+				"2": 1,
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "小铃兰",
+			"natures": [
+				2
+			],
+			"tier": "超强者"
+		},
+		"128": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 3
+			},
+			"elements_with_basic": {
+				"5": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "张楚岚",
+			"natures": [
+				5
+			],
+			"tier": "强者"
+		},
+		"129": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"15": 2
+			},
+			"elements_with_basic": {
+				"15": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "要乐奈",
+			"natures": [
+				15
+			],
+			"tier": "强者"
+		},
+		"13": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "刘备",
+			"natures": [],
+			"tier": "强者"
+		},
+		"130": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 2
+			},
+			"elements_with_basic": {
+				"7": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "长崎爽世",
+			"natures": [
+				7
+			],
+			"tier": "强者"
+		},
+		"131": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "椎名立希",
+			"natures": [],
+			"tier": "强者"
+		},
+		"14": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"14": 2
+			},
+			"elements_with_basic": {
+				"14": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "关羽",
+			"natures": [
+				14
+			],
+			"tier": "弱者"
+		},
+		"142": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"3": 1,
+				"8": 1
+			},
+			"elements_with_basic": {
+				"2": 1,
+				"3": 1,
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "天海麒麟星",
+			"natures": [
+				3
+			],
+			"tier": "超强者"
+		},
+		"146": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 1
+			},
+			"elements_with_basic": {
+				"5": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "苍龙破晓",
+			"natures": [
+				5
+			],
+			"tier": "超强者"
+		},
+		"147": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "天剑 非天",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"148": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "黑崎一护",
+			"natures": [
+				9
+			],
+			"tier": "超强者"
+		},
+		"149": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 4,
+				"3": 3,
+				"5": 3,
+				"15": 2
+			},
+			"elements_with_basic": {
+				"2": 4,
+				"3": 3,
+				"5": 3,
+				"15": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "祈求者",
+			"natures": [
+				2
+			],
+			"tier": "超强者"
+		},
+		"15": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "张飞",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"150": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "桐人",
+			"natures": [],
+			"tier": "强者"
+		},
+		"151": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "亚斯娜",
+			"natures": [],
+			"tier": "强者"
+		},
+		"152": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "徐凤年",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"153": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 3,
+				"3": 2,
+				"4": 2,
+				"5": 2,
+				"6": 2,
+				"7": 2,
+				"8": 2,
+				"9": 2
+			},
+			"elements_with_basic": {
+				"2": 3,
+				"3": 2,
+				"4": 2,
+				"5": 2,
+				"6": 2,
+				"7": 2,
+				"8": 2,
+				"9": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "惠惠",
+			"natures": [
+				2
+			],
+			"tier": "强者"
+		},
+		"154": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 2
+			},
+			"elements_with_basic": {
+				"2": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "夏娜",
+			"natures": [
+				2
+			],
+			"tier": "强者"
+		},
+		"155": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "病娇",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"156": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 2
+			},
+			"elements_with_basic": {
+				"8": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": true,
+			"name": "嫦娥",
+			"natures": [
+				8
+			],
+			"tier": "超强者"
+		},
+		"158": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 3
+			},
+			"elements_with_basic": {
+				"5": 4
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "炮姐",
+			"natures": [
+				5
+			],
+			"tier": "强者"
+		},
+		"159": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": false,
+			"name": "五河琴里",
+			"natures": [
+				2
+			],
+			"tier": "超强者"
+		},
+		"16": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": false,
+			"name": "克莱德",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"162": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "诛仙",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"163": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "拳一",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"164": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "贝吉特",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"165": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "李逍遥",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"167": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 1
+			},
+			"elements_with_basic": {
+				"9": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "渡鸦",
+			"natures": [
+				9
+			],
+			"tier": "超强者"
+		},
+		"168": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 4
+			},
+			"elements_with_basic": {
+				"2": 4
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "米拉",
+			"natures": [
+				2
+			],
+			"tier": "超强者"
+		},
+		"169": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 2
+			},
+			"elements_with_basic": {
+				"5": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "黄泉",
+			"natures": [
+				5
+			],
+			"tier": "超强者"
+		},
+		"17": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 3
+			},
+			"elements_with_basic": {
+				"6": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "克洛什",
+			"natures": [
+				6
+			],
+			"tier": "强者"
+		},
+		"170": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 7
+			},
+			"elements_with_basic": {
+				"3": 7
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "镜流",
+			"natures": [
+				3
+			],
+			"tier": "强者"
+		},
+		"171": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "伏黑甚尔",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"172": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 2
+			},
+			"elements_with_basic": {
+				"2": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "宿傩",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"173": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "饿狼",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"174": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 2
+			},
+			"elements_with_basic": {
+				"7": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "云裳",
+			"natures": [
+				7
+			],
+			"tier": "超强者"
+		},
+		"175": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 1
+			},
+			"elements_with_basic": {
+				"6": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "谷雨",
+			"natures": [
+				6
+			],
+			"tier": "超强者"
+		},
+		"176": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "屠苏",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"177": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "璇",
+			"natures": [],
+			"tier": "超强者"
+		},
+		"178": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 1
+			},
+			"elements_with_basic": {
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "哈基米",
+			"natures": [
+				8
+			],
+			"tier": "强者"
+		},
+		"179": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1
+			},
+			"elements_with_basic": {
+				"2": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "流萤",
+			"natures": [
+				2
+			],
+			"tier": "超强者"
+		},
+		"18": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 5
+			},
+			"elements_with_basic": {
+				"3": 5
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "雪清寒",
+			"natures": [
+				3
+			],
+			"tier": "弱者"
+		},
+		"19": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 3
+			},
+			"elements_with_basic": {
+				"2": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "安东尼",
+			"natures": [
+				2
+			],
+			"tier": "弱者"
+		},
+		"2": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 3
+			},
+			"elements_with_basic": {
+				"6": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "绿司机",
+			"natures": [
+				6
+			],
+			"tier": "弱者"
+		},
+		"20": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "伯伦希尔",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"21": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"15": 2
+			},
+			"elements_with_basic": {
+				"15": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "玛莎",
+			"natures": [
+				15
+			],
+			"tier": "弱者"
+		},
+		"22": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "维利",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"23": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 1,
+				"9": 2
+			},
+			"elements_with_basic": {
+				"5": 1,
+				"9": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "魔雷老人",
+			"natures": [
+				9
+			],
+			"tier": "弱者"
+		},
+		"24": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"15": 1
+			},
+			"elements_with_basic": {
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "克比",
+			"natures": [
+				15
+			],
+			"tier": "弱者"
+		},
+		"25": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"4": 1,
+				"15": 1
+			},
+			"elements_with_basic": {
+				"4": 1,
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "雷加尔",
+			"natures": [
+				6
+			],
+			"tier": "弱者"
+		},
+		"26": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "曼德斯",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"27": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "齐格鲁德",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"28": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "桑克莱",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"29": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 3
+			},
+			"elements_with_basic": {
+				"9": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "金蝉子",
+			"natures": [
+				9
+			],
+			"tier": "弱者"
+		},
+		"3": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"4": 4
+			},
+			"elements_with_basic": {
+				"4": 4
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "艾坤",
+			"natures": [
+				4
+			],
+			"tier": "弱者"
+		},
+		"30": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "西凉女帝",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"31": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 1
+			},
+			"elements_with_basic": {
+				"6": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "露茜",
+			"natures": [
+				6
+			],
+			"tier": "弱者"
+		},
+		"32": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "涅斐莉",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"33": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"8": 2
+			},
+			"elements_with_basic": {
+				"2": 1,
+				"8": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": true,
+			"name": "晴明",
+			"natures": [
+				8
+			],
+			"tier": "弱者"
+		},
+		"34": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 1
+			},
+			"elements_with_basic": {
+				"5": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "签弟",
+			"natures": [
+				5
+			],
+			"tier": "弱者"
+		},
+		"35": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 3
+			},
+			"elements_with_basic": {
+				"8": 4
+			},
+			"has_attack_skill": true,
+			"holy_ally": true,
+			"name": "摇光",
+			"natures": [
+				8
+			],
+			"tier": "弱者"
+		},
+		"36": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 2
+			},
+			"elements_with_basic": {
+				"2": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "至尊宝",
+			"natures": [
+				2
+			],
+			"tier": "弱者"
+		},
+		"37": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 3
+			},
+			"elements_with_basic": {
+				"3": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "天蓬元帅",
+			"natures": [
+				3
+			],
+			"tier": "弱者"
+		},
+		"38": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 3
+			},
+			"elements_with_basic": {
+				"9": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "曹操",
+			"natures": [
+				9
+			],
+			"tier": "强者"
+		},
+		"39": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"4": 3
+			},
+			"elements_with_basic": {
+				"4": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "沙和尚",
+			"natures": [
+				4
+			],
+			"tier": "弱者"
+		},
+		"4": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 1
+			},
+			"elements_with_basic": {
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": true,
+			"name": "窃格瓦拉·周",
+			"natures": [
+				8
+			],
+			"tier": "弱者"
+		},
+		"40": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"14": 1
+			},
+			"elements_with_basic": {
+				"14": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "小白龙",
+			"natures": [
+				4
+			],
+			"tier": "弱者"
+		},
+		"41": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "波加尼",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"42": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "布兰德瓦登",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"43": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 3
+			},
+			"elements_with_basic": {
+				"7": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "露丝",
+			"natures": [
+				7
+			],
+			"tier": "弱者"
+		},
+		"44": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 1
+			},
+			"elements_with_basic": {
+				"6": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "碧池",
+			"natures": [
+				6
+			],
+			"tier": "弱者"
+		},
+		"45": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "东方教主",
+			"natures": [],
+			"tier": "强者"
+		},
+		"46": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 3
+			},
+			"elements_with_basic": {
+				"9": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "克莉丝汀",
+			"natures": [
+				9
+			],
+			"tier": "弱者"
+		},
+		"47": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "酒剑仙",
+			"natures": [],
+			"tier": "强者"
+		},
+		"48": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 4
+			},
+			"elements_with_basic": {
+				"2": 4
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "莉娜",
+			"natures": [
+				2
+			],
+			"tier": "弱者"
+		},
+		"49": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"15": 2
+			},
+			"elements_with_basic": {
+				"15": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "疾风丸",
+			"natures": [
+				15
+			],
+			"tier": "弱者"
+		},
+		"5": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 3,
+				"8": 1
+			},
+			"elements_with_basic": {
+				"3": 3,
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "小痔",
+			"natures": [
+				3
+			],
+			"tier": "弱者"
+		},
+		"50": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "劲夫",
+			"natures": [],
+			"tier": "强者"
+		},
+		"51": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 2
+			},
+			"elements_with_basic": {
+				"8": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": true,
+			"name": "法海",
+			"natures": [
+				8
+			],
+			"tier": "弱者"
+		},
+		"52": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "孙悟空",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"53": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 4
+			},
+			"elements_with_basic": {
+				"9": 4
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "艾瑞塔",
+			"natures": [
+				9
+			],
+			"tier": "弱者"
+		},
+		"54": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "迪昂",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"55": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "橙",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"56": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": true,
+			"name": "瑞普",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"57": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "龙马",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"58": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "小青",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"59": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1
+			},
+			"elements_with_basic": {
+				"2": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "大羿",
+			"natures": [
+				2
+			],
+			"tier": "强者"
+		},
+		"6": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "吕布",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"60": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 3
+			},
+			"elements_with_basic": {
+				"5": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "马宝国",
+			"natures": [
+				5
+			],
+			"tier": "弱者"
+		},
+		"61": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "町甄",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"62": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"4": 3
+			},
+			"elements_with_basic": {
+				"4": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "布兰博",
+			"natures": [
+				4
+			],
+			"tier": "弱者"
+		},
+		"63": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 3
+			},
+			"elements_with_basic": {
+				"8": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": true,
+			"name": "拉尔",
+			"natures": [
+				8
+			],
+			"tier": "弱者"
+		},
+		"64": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "杰诺",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"65": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"15": 2
+			},
+			"elements_with_basic": {
+				"15": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "孙权",
+			"natures": [
+				15
+			],
+			"tier": "弱者"
+		},
+		"66": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 3
+			},
+			"elements_with_basic": {
+				"5": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "娜莎",
+			"natures": [
+				5
+			],
+			"tier": "弱者"
+		},
+		"67": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 3
+			},
+			"elements_with_basic": {
+				"6": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "科妮莉亚",
+			"natures": [
+				6
+			],
+			"tier": "弱者"
+		},
+		"68": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "尤妮娅",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"69": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "花木兰",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"7": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"6": 4
+			},
+			"elements_with_basic": {
+				"2": 1,
+				"6": 4
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "茉蕾",
+			"natures": [
+				6
+			],
+			"tier": "弱者"
+		},
+		"70": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 3,
+				"7": 1
+			},
+			"elements_with_basic": {
+				"2": 3,
+				"7": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "紫霞仙子",
+			"natures": [
+				2
+			],
+			"tier": "强者"
+		},
+		"71": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": false,
+			"name": "诸葛孔明",
+			"natures": [
+				2
+			],
+			"tier": "强者"
+		},
+		"72": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 1,
+				"9": 1
+			},
+			"elements_with_basic": {
+				"8": 1,
+				"9": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": true,
+			"name": "阿语",
+			"natures": [
+				8
+			],
+			"tier": "弱者"
+		},
+		"73": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 4,
+				"15": 1
+			},
+			"elements_with_basic": {
+				"3": 4,
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "塞西莉",
+			"natures": [
+				3
+			],
+			"tier": "弱者"
+		},
+		"74": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"6": 1
+			},
+			"elements_with_basic": {
+				"2": 1,
+				"6": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "陈",
+			"natures": [
+				2
+			],
+			"tier": "弱者"
+		},
+		"75": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "智甚",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"76": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 2
+			},
+			"elements_with_basic": {
+				"6": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "白晶晶",
+			"natures": [
+				6
+			],
+			"tier": "弱者"
+		},
+		"77": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 2
+			},
+			"elements_with_basic": {
+				"7": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "玉兔精",
+			"natures": [
+				7
+			],
+			"tier": "弱者"
+		},
+		"78": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 3
+			},
+			"elements_with_basic": {
+				"9": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "十三娘",
+			"natures": [
+				9
+			],
+			"tier": "弱者"
+		},
+		"79": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "裴钱",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"8": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "修",
+			"natures": [],
+			"tier": "强者"
+		},
+		"80": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 3
+			},
+			"elements_with_basic": {
+				"9": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "白起",
+			"natures": [
+				9
+			],
+			"tier": "弱者"
+		},
+		"81": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": false,
+			"name": "申公豹",
+			"natures": [
+				3
+			],
+			"tier": "弱者"
+		},
+		"82": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"6": 1
+			},
+			"elements_with_basic": {
+				"6": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "玉面狐狸",
+			"natures": [
+				6
+			],
+			"tier": "强者"
+		},
+		"83": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "荒天弟",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"84": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "小毒",
+			"natures": [],
+			"tier": "强者"
+		},
+		"85": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 3
+			},
+			"elements_with_basic": {
+				"3": 3
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "爱莉",
+			"natures": [
+				3
+			],
+			"tier": "强者"
+		},
+		"86": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "张三丰",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"87": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "张无忌",
+			"natures": [],
+			"tier": "弱者"
+		},
+		"88": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"5": 1
+			},
+			"elements_with_basic": {
+				"5": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "西西卡",
+			"natures": [
+				5
+			],
+			"tier": "弱者"
+		},
+		"89": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"7": 2
+			},
+			"elements_with_basic": {
+				"7": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "虎姐",
+			"natures": [
+				7
+			],
+			"tier": "弱者"
+		},
+		"9": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 2
+			},
+			"elements_with_basic": {
+				"9": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "罗琳",
+			"natures": [
+				9
+			],
+			"tier": "强者"
+		},
+		"90": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"8": 1
+			},
+			"elements_with_basic": {
+				"8": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": true,
+			"name": "艾琳",
+			"natures": [
+				8
+			],
+			"tier": "弱者"
+		},
+		"91": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 3,
+				"14": 1
+			},
+			"elements_with_basic": {
+				"2": 3,
+				"14": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "宇智波·鼬",
+			"natures": [
+				2
+			],
+			"tier": "弱者"
+		},
+		"92": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 2,
+				"3": 2,
+				"5": 2
+			},
+			"elements_with_basic": {
+				"2": 2,
+				"3": 2,
+				"5": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "八重樱",
+			"natures": [
+				2
+			],
+			"tier": "强者"
+		},
+		"93": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": false,
+			"name": "炭治郎",
+			"natures": [],
+			"tier": "强者"
+		},
+		"94": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 1,
+				"3": 1,
+				"4": 1,
+				"5": 1,
+				"7": 1,
+				"15": 1
+			},
+			"elements_with_basic": {
+				"2": 1,
+				"3": 1,
+				"4": 1,
+				"5": 1,
+				"7": 1,
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "命运编织者",
+			"natures": [
+				2
+			],
+			"tier": "弱者"
+		},
+		"95": {
+			"attack": true,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "三笠",
+			"natures": [],
+			"tier": "强者"
+		},
+		"96": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"3": 2,
+				"14": 1
+			},
+			"elements_with_basic": {
+				"3": 2,
+				"14": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "朵莉亚",
+			"natures": [
+				3
+			],
+			"tier": "超强者"
+		},
+		"97": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"9": 1,
+				"15": 1
+			},
+			"elements_with_basic": {
+				"9": 1,
+				"15": 1
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "赤狐",
+			"natures": [
+				15
+			],
+			"tier": "弱者"
+		},
+		"98": {
+			"attack": true,
+			"deployable": true,
+			"elements": {
+				"2": 2
+			},
+			"elements_with_basic": {
+				"2": 2
+			},
+			"has_attack_skill": true,
+			"holy_ally": false,
+			"name": "金狐",
+			"natures": [
+				2
+			],
+			"tier": "弱者"
+		},
+		"99": {
+			"attack": false,
+			"deployable": true,
+			"elements": {},
+			"elements_with_basic": {},
+			"has_attack_skill": false,
+			"holy_ally": false,
+			"name": "小明",
+			"natures": [
+				7
+			],
+			"tier": "强者"
+		}
+	},
+	"holy_ally_ids": [
+		4,
+		33,
+		35,
+		51,
+		56,
+		63,
+		72,
+		90,
+		100,
+		117,
+		124,
+		156
+	],
+	"legal": {
+		"attackers": 146,
+		"fails": {
+			"35:11:lianyu:use": "",
+			"35:11:zhengdao:use": "",
+			"35:12:lianyu:use": "",
+			"35:12:zhengdao:use": "",
+			"35:13:lianyu:use": "",
+			"35:13:zhengdao:use": "",
+			"35:14:lianyu:use": "",
+			"35:14:xunchang:use": "",
+			"35:14:zhengdao:use": "",
+			"35:15:lianyu:use": "",
+			"35:15:xunchang:use": "",
+			"35:15:zhengdao:use": "",
+			"35:2:lianyu:use": "",
+			"35:2:xunchang:use": "",
+			"35:2:zhengdao:use": "",
+			"35:3:lianyu:use": "",
+			"35:3:xunchang:use": "",
+			"35:3:zhengdao:use": "",
+			"35:4:lianyu:use": "",
+			"35:4:xunchang:use": "",
+			"35:4:zhengdao:use": "",
+			"35:5:lianyu:use": "",
+			"35:5:xunchang:use": "",
+			"35:5:zhengdao:use": "",
+			"35:6:lianyu:use": "",
+			"35:6:xunchang:use": "",
+			"35:6:zhengdao:use": "",
+			"35:7:lianyu:use": "",
+			"35:7:xunchang:use": "",
+			"35:7:zhengdao:use": "",
+			"35:9:lianyu:use": "",
+			"35:9:xunchang:use": "",
+			"35:9:zhengdao:use": ""
+		},
+		"pawnshop_check": {
+			"xunchang_has_water_3101": true,
+			"xunchang_has_wind_3102": true
+		},
+		"per_elem": {
+			"11": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 145,
+				"n_by_diff": {
+					"lianyu": 145,
+					"xunchang": 0,
+					"zhengdao": 145
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 145,
+					"xunchang": 0,
+					"zhengdao": 145
+				},
+				"table_tier": "",
+				"tier": "many"
+			},
+			"12": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 145,
+				"n_by_diff": {
+					"lianyu": 145,
+					"xunchang": 0,
+					"zhengdao": 145
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 145,
+					"xunchang": 0,
+					"zhengdao": 145
+				},
+				"table_tier": "",
+				"tier": "many"
+			},
+			"13": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 145,
+				"n_by_diff": {
+					"lianyu": 145,
+					"xunchang": 0,
+					"zhengdao": 145
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 145,
+					"xunchang": 0,
+					"zhengdao": 145
+				},
+				"table_tier": "",
+				"tier": "many"
+			},
+			"14": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 145,
+				"n_by_diff": {
+					"lianyu": 145,
+					"xunchang": 145,
+					"zhengdao": 145
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 145,
+					"xunchang": 109,
+					"zhengdao": 145
+				},
+				"table_tier": "few",
+				"tier": "many"
+			},
+			"15": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 145,
+				"n_by_diff": {
+					"lianyu": 145,
+					"xunchang": 145,
+					"zhengdao": 145
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 145,
+					"xunchang": 109,
+					"zhengdao": 145
+				},
+				"table_tier": "few",
+				"tier": "many"
+			},
+			"2": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 145,
+				"n_by_diff": {
+					"lianyu": 145,
+					"xunchang": 145,
+					"zhengdao": 145
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 145,
+					"xunchang": 109,
+					"zhengdao": 145
+				},
+				"table_tier": "many",
+				"tier": "many"
+			},
+			"3": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 145,
+				"n_by_diff": {
+					"lianyu": 145,
+					"xunchang": 145,
+					"zhengdao": 145
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 145,
+					"xunchang": 109,
+					"zhengdao": 145
+				},
+				"table_tier": "mid",
+				"tier": "many"
+			},
+			"4": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 145,
+				"n_by_diff": {
+					"lianyu": 145,
+					"xunchang": 145,
+					"zhengdao": 145
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 145,
+					"xunchang": 109,
+					"zhengdao": 145
+				},
+				"table_tier": "few",
+				"tier": "many"
+			},
+			"5": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 145,
+				"n_by_diff": {
+					"lianyu": 145,
+					"xunchang": 145,
+					"zhengdao": 145
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 145,
+					"xunchang": 109,
+					"zhengdao": 145
+				},
+				"table_tier": "mid",
+				"tier": "many"
+			},
+			"6": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 145,
+				"n_by_diff": {
+					"lianyu": 145,
+					"xunchang": 145,
+					"zhengdao": 145
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 145,
+					"xunchang": 109,
+					"zhengdao": 145
+				},
+				"table_tier": "mid",
+				"tier": "many"
+			},
+			"7": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 145,
+				"n_by_diff": {
+					"lianyu": 145,
+					"xunchang": 145,
+					"zhengdao": 145
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 145,
+					"xunchang": 109,
+					"zhengdao": 145
+				},
+				"table_tier": "mid",
+				"tier": "many"
+			},
+			"8": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					35,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 146,
+				"n_by_diff": {
+					"lianyu": 146,
+					"xunchang": 146,
+					"zhengdao": 146
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 146,
+					"xunchang": 110,
+					"zhengdao": 146
+				},
+				"table_tier": "many",
+				"tier": "many"
+			},
+			"9": {
+				"chance": 0.11,
+				"ids": [
+					1,
+					2,
+					3,
+					4,
+					5,
+					6,
+					7,
+					8,
+					9,
+					10,
+					11,
+					12,
+					13,
+					14,
+					15,
+					17,
+					18,
+					19,
+					20,
+					21,
+					22,
+					23,
+					24,
+					25,
+					26,
+					27,
+					28,
+					29,
+					30,
+					31,
+					32,
+					33,
+					34,
+					36,
+					37,
+					38,
+					39,
+					40,
+					41,
+					42,
+					43,
+					44,
+					45,
+					46,
+					47,
+					48,
+					49,
+					50,
+					51,
+					52,
+					53,
+					54,
+					55,
+					56,
+					57,
+					58,
+					59,
+					60,
+					61,
+					62,
+					63,
+					64,
+					65,
+					66,
+					67,
+					68,
+					69,
+					70,
+					72,
+					73,
+					74,
+					75,
+					76,
+					77,
+					78,
+					79,
+					80,
+					82,
+					83,
+					84,
+					85,
+					86,
+					87,
+					88,
+					89,
+					90,
+					91,
+					92,
+					94,
+					95,
+					96,
+					97,
+					98,
+					100,
+					101,
+					102,
+					103,
+					104,
+					105,
+					106,
+					107,
+					108,
+					109,
+					115,
+					118,
+					119,
+					120,
+					122,
+					123,
+					124,
+					127,
+					128,
+					129,
+					130,
+					131,
+					142,
+					146,
+					147,
+					148,
+					149,
+					150,
+					151,
+					152,
+					153,
+					154,
+					155,
+					156,
+					158,
+					162,
+					163,
+					164,
+					165,
+					167,
+					168,
+					169,
+					170,
+					171,
+					172,
+					173,
+					174,
+					175,
+					176,
+					177,
+					178,
+					179
+				],
+				"n": 145,
+				"n_by_diff": {
+					"lianyu": 145,
+					"xunchang": 145,
+					"zhengdao": 145
+				},
+				"n_deployable_by_diff": {
+					"lianyu": 145,
+					"xunchang": 109,
+					"zhengdao": 145
+				},
+				"table_tier": "mid",
+				"tier": "many"
+			}
+		}
+	},
+	"native": {
+		"14": {
+			"chance": 0.22,
+			"ids": [
+				14,
+				40,
+				91,
+				96,
+				105,
+				115,
+				120
+			],
+			"n": 7,
+			"table_tier": "few",
+			"tier": "few"
+		},
+		"15": {
+			"chance": 0.22,
+			"ids": [
+				21,
+				24,
+				25,
+				49,
+				65,
+				73,
+				94,
+				97,
+				103,
+				129,
+				149
+			],
+			"n": 11,
+			"table_tier": "few",
+			"tier": "few"
+		},
+		"2": {
+			"chance": 0.11,
+			"ids": [
+				7,
+				12,
+				19,
+				33,
+				36,
+				48,
+				59,
+				70,
+				74,
+				91,
+				92,
+				94,
+				98,
+				102,
+				124,
+				127,
+				142,
+				149,
+				153,
+				154,
+				168,
+				172,
+				179
+			],
+			"n": 23,
+			"table_tier": "many",
+			"tier": "many"
+		},
+		"3": {
+			"chance": 0.15,
+			"ids": [
+				5,
+				18,
+				37,
+				73,
+				85,
+				92,
+				94,
+				96,
+				105,
+				106,
+				115,
+				120,
+				124,
+				142,
+				149,
+				153,
+				170
+			],
+			"n": 17,
+			"table_tier": "mid",
+			"tier": "mid"
+		},
+		"4": {
+			"chance": 0.22,
+			"ids": [
+				3,
+				25,
+				39,
+				62,
+				94,
+				124,
+				153
+			],
+			"n": 7,
+			"table_tier": "few",
+			"tier": "few"
+		},
+		"5": {
+			"chance": 0.15,
+			"ids": [
+				23,
+				34,
+				60,
+				66,
+				88,
+				92,
+				94,
+				124,
+				128,
+				146,
+				149,
+				153,
+				158,
+				169
+			],
+			"n": 14,
+			"table_tier": "mid",
+			"tier": "mid"
+		},
+		"6": {
+			"chance": 0.15,
+			"ids": [
+				2,
+				7,
+				17,
+				31,
+				44,
+				67,
+				74,
+				76,
+				82,
+				105,
+				124,
+				153,
+				175
+			],
+			"n": 13,
+			"table_tier": "mid",
+			"tier": "mid"
+		},
+		"7": {
+			"chance": 0.15,
+			"ids": [
+				43,
+				70,
+				77,
+				89,
+				94,
+				108,
+				118,
+				119,
+				124,
+				130,
+				153,
+				174
+			],
+			"n": 12,
+			"table_tier": "mid",
+			"tier": "mid"
+		},
+		"8": {
+			"chance": 0.15,
+			"ids": [
+				4,
+				5,
+				33,
+				35,
+				51,
+				63,
+				72,
+				90,
+				105,
+				127,
+				142,
+				153,
+				156,
+				178
+			],
+			"n": 14,
+			"table_tier": "many",
+			"tier": "mid"
+		},
+		"9": {
+			"chance": 0.15,
+			"ids": [
+				9,
+				23,
+				29,
+				38,
+				46,
+				53,
+				72,
+				78,
+				80,
+				97,
+				105,
+				124,
+				153,
+				167
+			],
+			"n": 14,
+			"table_tier": "mid",
+			"tier": "mid"
+		}
+	},
+	"native_with_basic": {
+		"14": {
+			"diff": 0,
+			"n": 7
+		},
+		"15": {
+			"diff": 0,
+			"n": 11
+		},
+		"2": {
+			"diff": 0,
+			"n": 23
+		},
+		"3": {
+			"diff": 0,
+			"n": 17
+		},
+		"4": {
+			"diff": 0,
+			"n": 7
+		},
+		"5": {
+			"diff": 0,
+			"n": 14
+		},
+		"6": {
+			"diff": 0,
+			"n": 13
+		},
+		"7": {
+			"diff": 0,
+			"n": 12
+		},
+		"8": {
+			"diff": 0,
+			"n": 14
+		},
+		"9": {
+			"diff": 0,
+			"n": 14
+		}
+	},
+	"phase4": true,
+	"usable": 159
+}

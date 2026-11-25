@@ -165,8 +165,8 @@ func _test_states_and_data() -> void:
 	_check("states_out_of_table_restriction0_no_clash", ok, size)
 	var boss_tags := [XTianqiElementEffects.ST_SHOCK, XTianqiElementEffects.ST_SLOW, XTianqiElementEffects.ST_BURN, XTianqiElementEffects.ST_VEIL]
 	_check("boss_versions_no_control_tag", not boss_tags.any(func(id): return XEnemy.boss_control_state(id)))
-	_check("tier_chances_trial", is_equal_approx(XTianqiElementEffects.tier_chance(2), 0.11) and is_equal_approx(XTianqiElementEffects.tier_chance(5), 0.15)
-		and is_equal_approx(XTianqiElementEffects.tier_chance(14), 0.22) and is_equal_approx(XTianqiElementEffects.tier_chance(8), 0.11))
+	_check("tier_chances_trial", is_equal_approx(XTianqiElementEffects.tier_chance(2), 0.11) and is_equal_approx(XTianqiElementEffects.tier_chance(3), 0.15)
+		and is_equal_approx(XTianqiElementEffects.tier_chance(5), 0.15) and is_equal_approx(XTianqiElementEffects.tier_chance(14), 0.22) and is_equal_approx(XTianqiElementEffects.tier_chance(8), 0.11))
 	var s := _tq_state()
 	var lg := _normal_logic(s)
 	var a: XActor = s.battle_members()[0]
