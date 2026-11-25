@@ -418,9 +418,16 @@ static func _num_or_zero(s: String) -> float:
 	return n if not is_nan(n) else 0.0
 
 
+## T523：天启篇停用法宝按等级领悟技能（全库仅 3550 烽舞的 7510～7513 天熄乱舞，在 skill_rework.json 已标暂未实装），
+## 避免天启篇露出未改写的旧版技能卡并开战挂 1337～1340；仅天启篇存档生效，西游档路径零改动；false＝回退。
+static var TIANQI_SKIP_LEARN_SKILL := true
+
+
 ## Game_Item.magicWeaponSkills：这件法宝当前生效等级给的技能编号
 static func item_skills(item) -> Array:
 	if not is_magic(item):
+		return []
+	if TIANQI_SKIP_LEARN_SKILL and XTianqi.active(XState.current):
 		return []
 	var lv := effective_level(item)
 	var out := []
