@@ -1381,6 +1381,9 @@ class ElementEffectsRules(unittest.TestCase):
             (lambda t: t['effect_immunity']['2']['constitution'].append(11), 'constitution'),
             (lambda t: t['effect_immunity'].__setitem__('8', {}), '神圣以外'),
             (lambda t: t['effect_merge'].__setitem__('2', ''), 'effect_merge'),
+            (lambda t: t['holy_ally'].__setitem__('by_nature', 1), 'by_nature'),
+            (lambda t: t['holy_ally']['skills'].append('5571'), 'holy_ally.skills'),
+            (lambda t: t['holy_ally']['exclude'].append(5571), '重叠'),
         ]
         for mut, word in cases:
             t = copy.deepcopy(self.t)

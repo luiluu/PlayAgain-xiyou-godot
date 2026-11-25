@@ -1532,6 +1532,21 @@ def element_effects_rules(table: dict) -> list:
     for k, v in table.get('effect_merge', {}).items():
         if int(k) not in base or not isinstance(v, list) or not all(isinstance(x, str) and x for x in v):
             bad.append('effect_merge[%s] 应为基础十系 → BuffType 名列表' % k)
+    ha = table.get('holy_ally')  # T480 R2：哪些己方技算神圣（by_nature＋skills 白名单＋exclude 排除）
+    if ha is not None:
+        if not isinstance(ha, dict):
+            bad.append('holy_ally 应为对象')
+        else:
+            if not isinstance(ha.get('by_nature', True), bool):
+                bad.append('holy_ally.by_nature 应为布尔')
+            for key in ('skills', 'exclude'):
+                ids = ha.get(key, [])
+                if not isinstance(ids, list) or not all(isinstance(x, int) and not isinstance(x, bool) and x > 0 for x in ids):
+                    bad.append('holy_ally.%s 应为正整数技能号列表：%r' % (key, ids))
+            if isinstance(ha.get('skills'), list) and isinstance(ha.get('exclude'), list):
+                both = set(ha['skills']) & set(ha['exclude'])
+                if both:
+                    bad.append('holy_ally 的 skills 与 exclude 重叠：%r' % sorted(both))
     return bad
 
 
