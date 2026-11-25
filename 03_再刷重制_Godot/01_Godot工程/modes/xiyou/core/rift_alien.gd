@@ -42,6 +42,9 @@ static var STAGE3_ALIEN := true
 static var ALIGN_LOBBY := true
 ## 发行开关：false＝发行构建（ReleaseEntry.is_release）里一概不建；T455（Kyo 11-24 事项49）改 true，这次三阶段整包对玩家打开
 static var RELEASE_OPEN := true
+## T498 替身守层者异化开关（O-待定）：true＝13～30 层教派替身守层战（XZhenqi.STAND_IN_GUARDIANS）中的【求道者】按守层者类异化；
+## false＝回退到只认 rift_alien.json classes（【求道者】不异化）。仅西游档生效（on(s) 已含 not XTianqi.active(s)）。
+static var STAND_IN_GUARDIAN := true
 ## 测试用：≥0 时掉落的「掷中没有」和「选哪件本体」都取它
 static var force_drop := -1.0
 
@@ -100,12 +103,16 @@ static func kinds() -> Array:
 	return data().get("kinds", {}).keys()
 
 
-static func class_of(e) -> String:
+static func class_of(e, troop_id := 0) -> String:
 	var name := str(e.data().get("name", "")) if e is XEnemy else str(e)
 	var m := _tag.search(name)
 	if m == null:
 		return ""
-	return str(data().get("classes", {}).get(m.get_string(1), ""))
+	var tag := m.get_string(1)
+	var cls := str(data().get("classes", {}).get(tag, ""))
+	if cls == "" and STAND_IN_GUARDIAN and tag == "求道者" and troop_id > 0 and XZhenqi.STAND_IN_GUARDIANS.has(troop_id):
+		return "guardian"
+	return cls
 
 
 static func floor_of(s: XState) -> int:
@@ -201,7 +208,7 @@ static func rule(cls: String, st: int, floor_no: int, difficulty: int) -> Dictio
 
 
 ## 给一场敌群定异化：[{enemy, tier, kind, class}]。roll(理由, 键) 返回 [0,1)（战斗里是本模块自己的随机流，测试可换）
-static func plan(s: XState, enemies: Array, roll: Callable) -> Array:
+static func plan(s: XState, enemies: Array, roll: Callable, troop_id := 0) -> Array:
 	var st := stage()
 	if not on(s) or st < first_alien_stage():
 		return []
@@ -212,7 +219,7 @@ static func plan(s: XState, enemies: Array, roll: Callable) -> Array:
 		var e = enemies[i]
 		if e.hidden:
 			continue
-		var cls := class_of(e)
+		var cls := class_of(e, troop_id)
 		if cls != "":
 			cands.append([order.find(cls), i, e, cls])
 	cands.sort_custom(func(a, b): return a[0] < b[0] or (a[0] == b[0] and a[1] < b[1]))
@@ -288,16 +295,17 @@ static func setup(logic, s: XState) -> void:
 	logic.set_meta(META, f)
 	_logic_ref = weakref(logic)
 	_mark_looks(logic, rng)
-	var list := plan(s, logic.enemies, func(reason: String, key: String) -> float: return rng.next_float(reason, key))
+	var list := plan(s, logic.enemies, func(reason: String, key: String) -> float: return rng.next_float(reason, key), int(logic.troop_id))
 	apply(logic, list)
 
 
 ## 二阶画面：守层者常驻一明一暗，稀有以上 11% 进场闪一下
 static func _mark_looks(logic, rng: XRandomStream) -> void:
 	var lk: Dictionary = data().get("look", {})
+	var tid := int(logic.troop_id)
 	for i in logic.enemies.size():
 		var e = logic.enemies[i]
-		var cls := class_of(e)
+		var cls := class_of(e, tid)
 		if cls == "":
 			continue
 		var look := {"pulse": cls == "guardian", "flash": false, "tier": ""}

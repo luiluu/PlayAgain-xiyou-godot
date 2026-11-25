@@ -99,6 +99,7 @@ func _run() -> void:
 	XRiftAlien.STAGE_OVERRIDE = 0
 	_stage3_cap()
 	_release_path()
+	_stand_in_guardians()
 	XRiftAlien.STAGE_OVERRIDE = 0
 	XRiftAlien.force_drop = -1.0
 	XConfig.path_override = ""
@@ -695,4 +696,117 @@ func _release_path() -> void:
 	_check("rel_no_drop_hidden", XAlienBattle.hidden() and got.is_empty() and s.gear.size() == gear_before, got)
 	lg3.end_battle(0)
 	ReleaseEntry.simulate_release = false
+	(XConfig._values.codexWhisperSeen as Array).erase("rift3")
+
+
+## T498：13～30 层求道者／教派替身守层战按守层者类异化（三阶 100%、二阶 33%，层段同常规守层者）；
+## 只认守层战里的替身（XZhenqi.STAND_IN_GUARDIANS），不误伤其他带【求道者】标签的敌人；带回退开关 STAND_IN_GUARDIAN；天启篇零改动。
+func _stand_in_guardians() -> void:
+	XRiftAlien.STAGE_OVERRIDE = 0
+	XRiftAlien.ALIGN_LOBBY = true
+	_check("t498_default_on", XRiftAlien.STAND_IN_GUARDIAN)
+	# 1. 分类上下文：仅替身守层战里的【求道者】算 guardian；无敌群号或非替身敌群 787／766 不误伤
+	_check("t498_class_context", XRiftAlien.class_of("【求道者】关羽") == ""
+		and XRiftAlien.class_of("【求道者】关羽", 756) == "guardian"
+		and XRiftAlien.class_of("【求道者】狗逍遥", 748) == "guardian"
+		and XRiftAlien.class_of("【求道者】智甚", 765) == "guardian"
+		and XRiftAlien.class_of("【求道者】斯盖", 787) == ""
+		and XRiftAlien.class_of("【求道者】齐格鲁德", 787) == ""
+		and XRiftAlien.class_of("求道者", 766) == "")
+	# 35 场替身守层战（13～30 层天道／引路人 748～765、轮回归来 798～814）每场都至少认出 1 只守层者
+	var miss_troops := []
+	for tid in XZhenqi.STAND_IN_GUARDIANS:
+		var es := _enemies(int(tid))
+		if not es.any(func(e): return XRiftAlien.class_of(e, int(tid)) == "guardian"):
+			miss_troops.append(int(tid))
+	_check("t498_all_stand_in_classified", miss_troops.is_empty(), miss_troops)
+	# 2. 同层对照（二阶 33%、三阶 100%，层段同常规守层者）：13 层（Map 64：常规 111 vs 替身 748）与 21 层（Map 117：常规 457 vs 替身 756）
+	(XConfig._values.codexWhisperSeen as Array).erase("rift3")
+	var s13 := _plain(13, true)
+	s13.map_id = 64
+	s13.set_switch(2302, true)
+	var s21 := _plain(21, true)
+	s21.map_id = 117
+	s21.set_switch(2302, true)
+	var r13_st2 := XRiftAlien.plan(s13, _enemies(111), _const(0.32), 111)
+	var si13_st2 := XRiftAlien.plan(s13, _enemies(748), _const(0.32), 748)
+	_check("t498_st2_f13_same", r13_st2.size() == 1 and si13_st2.size() == 1
+		and r13_st2[0].tier == "qinran" and si13_st2[0].tier == "qinran" and si13_st2[0]["class"] == "guardian"
+		and XRiftAlien.plan(s13, _enemies(748), _const(0.33), 748).is_empty(), [r13_st2, si13_st2])
+	var r21_st2 := XRiftAlien.plan(s21, _enemies(457), _const(0.32), 457)
+	var si21_st2 := XRiftAlien.plan(s21, _enemies(756), _const(0.32), 756)
+	_check("t498_st2_f21_same", r21_st2.size() == 1 and si21_st2.size() == 1
+		and r21_st2[0].tier == "shigu" and si21_st2[0].tier == "shigu" and si21_st2[0]["class"] == "guardian"
+		and XRiftAlien.plan(s21, _enemies(756), _const(0.33), 756).is_empty(), [r21_st2, si21_st2])
+	# 三阶（rift3 看过）：13 层与 21 层常规／替身都 100% 蚀骨；26 层双替身 761 与轮回归来 806 均 100% 且最多异化 1 只
+	XConfig.whisper_mark("rift3")
+	var r13_st3 := XRiftAlien.plan(s13, _enemies(111), _const(0.99), 111)
+	var si13_st3 := XRiftAlien.plan(s13, _enemies(748), _const(0.99), 748)
+	var r21_st3 := XRiftAlien.plan(s21, _enemies(457), _const(0.99), 457)
+	var si21_st3 := XRiftAlien.plan(s21, _enemies(756), _const(0.99), 756)
+	var si26_st3 := XRiftAlien.plan(_plain(26, true), _enemies(761), _const(0.99), 761)
+	var lh21_st3 := XRiftAlien.plan(s21, _enemies(806), _const(0.99), 806)
+	_check("t498_st3_100pct_same_band", r13_st3.size() == 1 and si13_st3.size() == 1 and r13_st3[0].tier == "shigu" and si13_st3[0].tier == "shigu"
+		and r21_st3.size() == 1 and si21_st3.size() == 1 and r21_st3[0].tier == "shigu" and si21_st3[0].tier == "shigu"
+		and si26_st3.size() == 1 and si26_st3[0].tier == "shigu"
+		and lh21_st3.size() == 1 and lh21_st3[0].tier == "shigu", [r13_st3, si13_st3, r21_st3, si21_st3, si26_st3, lh21_st3])
+	# 3. 真实开战：21 层常规守层（457）与替身守层（756 【求道者】关羽）都异化为蚀骨、挂幽紫偏色、规则随机流不受影响
+	XRiftAlien.ENABLED = false
+	var base_si := XBattleLogic.new()
+	base_si.setup(756, s21, XBattleRandom.create(SEED, 1))
+	var base_si_j: Array = base_si.random.rule.journal.map(func(x): return [x.reason, x.event, x.value])
+	var base_si_hp: float = base_si.enemies[0].mhp
+	base_si.end_battle(0)
+	XRiftAlien.ENABLED = true
+	var lg_reg := XBattleLogic.new()
+	lg_reg.setup(457, s21, XBattleRandom.create(SEED, 1))
+	var e_reg: XEnemy = lg_reg.enemies[0]
+	var lg_si := XBattleLogic.new()
+	lg_si.setup(756, s21, XBattleRandom.create(SEED, 1))
+	var e_si: XEnemy = lg_si.enemies[0]
+	var u_si := XRiftAlien.unit(lg_si, e_si)
+	var look_si: Dictionary = e_si.get_meta(XRiftAlien.LOOK, {})
+	_check("t498_battle_both_alien", e_reg.display_name().begins_with("蚀骨·") and e_si.display_name().begins_with("蚀骨·【求道者】关羽")
+		and str(u_si.get("tier", "")) == "shigu" and str(u_si.get("class", "")) == "guardian"
+		and bool(look_si.get("pulse", false)) and XRiftAlien.tint(e_si, 0.0).a > 0.0
+		and e_si.mhp > base_si_hp * 1.4
+		and lg_si.turn_start_logs.any(func(x): return str(x.get("text", "")).contains("漩涡的颜色渗进了【求道者】关羽：蚀骨·")),
+		[e_reg.display_name(), e_si.display_name(), u_si, look_si])
+	_check("t498_battle_rule_stream_same", lg_si.random.rule.journal.map(func(x): return [x.reason, x.event, x.value]) == base_si_j)
+	lg_reg.end_battle(0)
+	lg_si.end_battle(0)
+	# 轮回归来 806：两只都挂守层脉动、最多异化 1 只
+	var lg_lh := XBattleLogic.new()
+	lg_lh.setup(806, s21, XBattleRandom.create(SEED, 1))
+	_check("t498_lunhui_pulse_and_one_unit", XRiftAlien.fight(lg_lh).units.size() == 1
+		and lg_lh.enemies.all(func(e): return bool(e.get_meta(XRiftAlien.LOOK, {}).get("pulse", false))))
+	lg_lh.end_battle(0)
+	# 4. 非守层战带【求道者】标签的敌人（敌群 787：斯盖＋齐格鲁德）不误伤
+	var lg_other := XBattleLogic.new()
+	lg_other.setup(787, s21, XBattleRandom.create(SEED, 1))
+	_check("t498_non_stand_in_untouched", XRiftAlien.fight(lg_other).units.is_empty()
+		and lg_other.enemies.all(func(e): return not e.has_meta("tianqi_prefix") and not e.has_meta(XRiftAlien.LOOK)))
+	lg_other.end_battle(0)
+	# 5. 回退开关 STAND_IN_GUARDIAN = false：替身 756 恢复不异化，常规 457 不受影响
+	XRiftAlien.STAND_IN_GUARDIAN = false
+	_check("t498_rollback_class_empty", XRiftAlien.class_of("【求道者】关羽", 756) == ""
+		and XRiftAlien.plan(s21, _enemies(756), _const(0.0), 756).is_empty())
+	var lg_off := XBattleLogic.new()
+	lg_off.setup(756, s21, XBattleRandom.create(SEED, 1))
+	var lg_reg_off := XBattleLogic.new()
+	lg_reg_off.setup(457, s21, XBattleRandom.create(SEED, 1))
+	_check("t498_rollback_battle", XRiftAlien.fight(lg_off).units.is_empty()
+		and not lg_off.enemies[0].has_meta("tianqi_prefix") and not lg_off.enemies[0].has_meta(XRiftAlien.LOOK)
+		and lg_reg_off.enemies[0].display_name().begins_with("蚀骨·"))
+	lg_off.end_battle(0)
+	lg_reg_off.end_battle(0)
+	XRiftAlien.STAND_IN_GUARDIAN = true
+	# 6. 天启篇存档零改动（756 不激活、不挂标记）
+	var ts := _tianqi(21)
+	ts.map_id = 117
+	var lg_tq := XBattleLogic.new()
+	lg_tq.setup(756, ts, XBattleRandom.create(SEED, 1))
+	_check("t498_tianqi_zero_diff", not XRiftAlien.on(ts) and not XRiftAlien.active(lg_tq)
+		and not lg_tq.enemies[0].has_meta(XRiftAlien.LOOK) and not lg_tq.enemies[0].has_meta("tianqi_prefix"))
+	lg_tq.end_battle(0)
 	(XConfig._values.codexWhisperSeen as Array).erase("rift3")
