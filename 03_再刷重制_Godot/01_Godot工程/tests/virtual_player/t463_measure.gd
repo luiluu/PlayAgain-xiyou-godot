@@ -1,7 +1,7 @@
 extends Node
 ## T463 + T465 西游档量数工具（非顶层专项）：
 ## --mode=dummy [--lv=35|55|80]
-## --mode=tower [--team=strong|super|feitian|kotori] [--route=normal|doom|primordial|all] [--floors=13,21,33] [--gmode=off|split|combined] [--turns=15] [--seeds=3]
+## --mode=tower [--team=strong|super|super_feitian|feitian|kotori] [--route=normal|doom|primordial|all] [--floors=13,21,33] [--gmode=off|combined] [--nerf=off] [--turns=15] [--seeds=3]
 
 const GUARDIANS := {13: 111, 21: 457, 33: 469}
 const LV_BY_F := {13: 35, 21: 55, 33: 80}
@@ -413,9 +413,11 @@ func _run_tower() -> void:
 			[159, 120, 87, 0, [10055, 10560]],
 		],
 	}
+	# 保留常规超强队作对照，只在占比组把第 4 位流萤换成非天。
+	teams["super_feitian"] = teams.super.slice(0, 3) + teams.feitian
 	var spec: Array = teams[team_arg]
 	var routes := ["normal", "doom", "primordial"] if route_arg == "all" else [route_arg]
-	print("=== TOWER team=%s gmode=%s ===" % [team_arg, gmode])
+	print("=== TOWER team=%s gmode=%s nerf=%s ===" % [team_arg, gmode, str(nerf_on)])
 	for rk in routes:
 		for fl in floors_arg:
 			var wins := 0
@@ -464,6 +466,9 @@ func _run_tower() -> void:
 					hp0 += float(e.mhp)
 				last_hp0 = hp0
 				var dealt := 0.0
+				var by_actor := {}
+				for m in s.battle_members():
+					by_actor[m.actor_id] = 0.0
 				var turns := 0
 				while turns < max_turns and not logic.is_over():
 					turns += 1
@@ -496,16 +501,24 @@ func _run_tower() -> void:
 						for e in logic.enemies:
 							if e.is_alive(): a_hp += float(e.hp)
 						if u is XActor:
-							dealt += maxf(0.0, b_hp - a_hp)
+							var damage := maxf(0.0, b_hp - a_hp)
+							dealt += damage
+							by_actor[u.actor_id] = float(by_actor[u.actor_id]) + damage
 						if logic.is_over():
 							break
 					if not logic.is_over():
 						logic.end_turn()
-				if logic.is_won():
+				var won := logic.is_won()
+				if won:
 					wins += 1
 				sum_turns += float(turns)
-				sum_dpt += dealt / maxf(1.0, float(turns))
-				logic.end_battle(0 if logic.is_won() else 2)
+				var dpt := dealt / maxf(1.0, float(turns))
+				sum_dpt += dpt
+				print("TOWER_SEED=" + JSON.stringify({
+					"route": rk, "floor": fl, "seed": sd, "win": won, "turns": turns, "dpt": dpt,
+					"by_actor": by_actor,
+				}))
+				logic.end_battle(0 if won else 2)
 			var avg_dpt := sum_dpt / float(seed_count)
 			print("  %-10s F%2d | g=%6.2fx | cri=%5.1f | HP=%9s | dpt=%9s | win=%d/%d | avgT=%4.1f | ttk=%8.1f" % [
 				rk, fl, last_g, last_cri, _fmt(last_hp0), _fmt(avg_dpt), wins, seed_count, sum_turns / float(seed_count), last_hp0 / maxf(1.0, avg_dpt)
