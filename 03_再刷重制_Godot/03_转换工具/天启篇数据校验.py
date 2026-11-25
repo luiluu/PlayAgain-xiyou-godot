@@ -1500,6 +1500,12 @@ def element_effects_rules(table: dict) -> list:
         boss = v.get('boss', {})
         if 'turns' in boss and not (isinstance(boss['turns'], int) and 1 <= boss['turns'] <= 5):
             bad.append('element_effects[%s].boss.turns 应为 1～5 的整数' % k)
+        if 'chance' in boss:  # T516：首领档单列几率，直接替代「档几率 × boss_chance_rate」
+            c = boss['chance']
+            if not (isinstance(c, (int, float)) and not isinstance(c, bool) and 0 <= c <= 1 and abs(c * 100 - round(c * 100)) < 1e-9):
+                bad.append('element_effects[%s].boss.chance 应为 [0, 1] 内的整数百分比：%r' % (k, c))
+            if not (isinstance(boss.get('chance_source'), str) and boss['chance_source']):
+                bad.append('element_effects[%s].boss.chance 要带 chance_source 写来源' % k)
     if len(keys) != len(eff):
         bad.append('element_effects 的 key 有重复')
     tiers = table.get('effect_tiers', {})
