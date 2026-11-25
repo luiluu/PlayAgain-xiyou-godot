@@ -842,7 +842,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 		# D195：「一直生效」的减成条件（如 3922 三连击时每段 ×1/3、4848 每段 ×0.6）是拿段数换的，按总伤算时要算进去，
 		# 不然「峰值单段（不含减成）× 段数」会多算 3 倍（T175 v12：9、10、19）。--single 照旧口径不算
 		var full_raw := (float((sp.gojo_pairs as Array).max()) if gojo_pairs else eff_full(id, int(sid)) * (1.0 if single else _always_reduce(a, e, d, id, int(sid))))
-		var full := minf(full_raw, cap * XTianqiSkills.cap_hits(d)) if cap > 0.0 else full_raw  # T192：cap_hits 按每段封
+		var full := minf(full_raw, cap * XTianqiSkills.cap_hits(d, sk)) if cap > 0.0 else full_raw  # T192：cap_hits 按每段封；T502 R2：传 sk 按实际段数封
 		var w := XTianqiSkills.hit_weight(d)
 		var sk_best := {}
 		for n in hits:
@@ -879,7 +879,7 @@ func _scan(a, e, logic, sids: Array, cap: float) -> Dictionary:
 			if term != 1.0 and cap > 0.0:
 				# 终式倍数乘在单段上限后面：按「条件全中×终式」再封一次上限折回（报告 term、term_capped 两个数都留）
 				var ef := eff_full(id, int(sid))
-				dealt *= minf(ef * term, cap * XTianqiSkills.cap_hits(d)) / (minf(ef, cap * XTianqiSkills.cap_hits(d)) * term)
+				dealt *= minf(ef * term, cap * XTianqiSkills.cap_hits(d, sk)) / (minf(ef, cap * XTianqiSkills.cap_hits(d, sk)) * term)
 			if v0 <= 0.0 or dealt <= 0.0:
 				if per_skill and n == 0:
 					print("K_SKILL %d %d skip=zero v0=%s dealt=%s" % [id, int(sid), v0, dealt])
@@ -1037,8 +1037,9 @@ func _coef_now(a, e, d: Dictionary, sid: int) -> float:
 		m *= XTianqiSkills._cond(c, a, e)
 	var cap := XTianqiBase.single_hit_cap(a)
 	var w := XTianqiSkills.hit_weight(d)
-	if cap > 0.0 and m * w > cap * XTianqiSkills.cap_hits(d):  # T192：cap_hits 按每段封（同 XTianqiSkills.formula）
-		m = cap * XTianqiSkills.cap_hits(d) / w
+	var sk_rec := XDB.rec("Skills", sid)
+	if cap > 0.0 and m * w > cap * XTianqiSkills.cap_hits(d, sk_rec):  # T192：cap_hits 按每段封（同 XTianqiSkills.formula）；T502 R2：传技能记录按实际段数封
+		m = cap * XTianqiSkills.cap_hits(d, sk_rec) / w
 	return m
 
 
