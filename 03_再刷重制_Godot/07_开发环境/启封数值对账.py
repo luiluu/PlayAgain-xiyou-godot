@@ -430,6 +430,7 @@ def map_floor_direct(name):
     return CN.index(s) + 1
 
 
+HONGJUN_SCALE = 0.0000109  # 同 core/guardian_rework.gd HONGJUN_SCALE
 GUARD_TROOPS = {1: 4, 2: 5, 3: 8, 4: 22, 5: 28, 6: 39, 7: 52, 8: 53, 9: 67, 10: 69, 11: 109, 12: 110, 13: 111, 14: 118, 15: 138,
                 16: 172, 17: 173, 18: 174, 19: 333, 20: 456, 21: 457, 22: 458, 23: 459, 24: 460, 25: 461, 26: 462, 27: 463, 28: 464, 29: 465,
                 30: 466, 31: 467, 32: 468, 33: 469}  # 同 core/guardian_rework.gd TROOPS
@@ -489,11 +490,60 @@ def sec_enemy(D, diff):
         if fl:
             curve.append({'层': f, '只数': len(fl), **{k2: med([x[k2] for x in fl]) for k2 in ['生命', '出伤指数', '物防', '魔防', '敏捷']},
                           'hp_base': hb, 'atk_scale': atk_s})
+    # 34 层鸿钧：借鸿蒙老祖（summit.json hongjun.enemy）× rate；血量＝hp_base[34]×目标回合；出伤 HONGJUN_SCALE；双防 guardian_params floors.34
+    hj = load(TQ / 'summit.json').get('hongjun', {})
+    if hj:
+        p = [a * b for a, b in zip(D.E[hj['enemy']]['params'], hj['rate'])]
+        hb = float(g4['hp_base'].get('34', 0))
+        ov = D.gp['floors'].get('34', {})
+        r = {'层': 34, '号': hj['enemy'], '名': hj['name'], '来源': '鸿钧（合成）', '生命': hb * turns * hp_pct_all / 100,
+             '出伤指数': max(p[2], p[4]) * HONGJUN_SCALE * dif['enemy_atk'], '物攻': p[2], '魔攻': p[4],
+             '物防': ref[3] * ov.get('def', 100) / 100 if 'def' in ov else p[3], '魔防': ref[5] * ov.get('mdf', 100) / 100 if 'mdf' in ov else p[5], '敏捷': p[6]}
+        rows[34].append(r)
+        curve.append({'层': 34, '只数': 1, **{k2: r[k2] for k2 in ['生命', '出伤指数', '物防', '魔防', '敏捷']}, 'hp_base': hb, 'atk_scale': HONGJUN_SCALE})
     knights = []
     for key, kn in D.hm['knights'].items():
         knights.append({'名': kn['name'], '生命': kn.get('hp'), '攻击': kn.get('atk'), '魔攻': kn.get('mat'), '防御': kn.get('def')})
     sh = D.hm.get('shadow', {})
     return rows, curve, knights, sh, maps_used, turns
+
+
+# ---------------- 角色白板属性 ----------------
+LEVELS = [1, 30, 60, 99]
+
+
+def actor_mult(D, aid, stat):
+    """同 XTianqiBase.actor_mult：职责×速度档×个人微调（TUNE_D189 开）"""
+    row = D.bl['actors'].get(str(aid), {})
+    if not row:
+        return 1.0
+    role = D.bl['roles'].get(row.get('role', '均衡'), {})
+    m = 1.0
+    if stat == 'mhp':
+        m = role.get('hp', 1.0)
+    elif stat in ('def', 'mdf'):
+        m = role.get('def', 1.0)
+    elif stat == 'agi':
+        m = D.bl['speed'].get(row.get('speed', '中'), 1.0)
+    tw = row.get('tweak', {}).get(stat, 1.0)
+    tw = D.bl.get('tune', {}).get('D189', {}).get('actors', {}).get(str(aid), {}).get('tweak', {}).get(stat, tw)
+    return m * tw
+
+
+def sec_white(D):
+    """每人 8 项在 1/30/60/99 级的本体（XTianqiBase.param_base＝floor(标准线(等级)×actor_mult)）；按档位分组比 99 级"""
+    tier_of = actor_tiers(D)
+    rows, groups = [], defaultdict(list)
+    for aid, t in tier_of.items():
+        if str(aid) not in D.bl['actors']:
+            continue
+        row = D.bl['actors'][str(aid)]
+        r = {'号': aid, '名': row.get('name', aid), '档位': t, '职责': row.get('role'), '速度': row.get('speed')}
+        for st in STATS:
+            r[st] = {lv: int(D.line(lv, st) * actor_mult(D, aid, st)) for lv in LEVELS}
+            groups[f'{t}·{SN[st]}'].append((f"{r['名']}（{aid}·{r['职责']}/{r['速度']}）", float(r[st][99]), ''))
+        rows.append(r)
+    return rows, groups
 
 
 # ---------------- 逐招技能系数 ----------------
@@ -545,6 +595,12 @@ def cond_max(dmg):
     return m
 
 
+def stat_weight(dmg):
+    """卡上属性权重折成「攻击当量」：生命、魔法按标准线 ×25（同 skill_rework.rules.single_hit_cap_note 口径），其余 ×1"""
+    w = sum(float(v) * (25 if k in ('mhp', 'mmp') else 1) for k, v in (dmg.get('stats') or {}).items())
+    return w if w > 0 else 1.0
+
+
 def sec_skillcoef(D):
     """逐招：系数×段数÷每几回合一次（冷却＋1，没冷却按 1）＝每回合期望倍率（单目标口径）"""
     tier_of = actor_tiers(D)
@@ -557,7 +613,7 @@ def sec_skillcoef(D):
         t = tier_of.get(aid)
         if not t:
             continue
-        coef = float(dmg['coef'])
+        coef = float(dmg['coef']) * stat_weight(dmg)
         if coef <= 0:
             continue
         n, how = segs_of(D, sid, c)
@@ -574,7 +630,7 @@ def sec_skillcoef(D):
         dmg = c.get('damage')
         if not isinstance(dmg, dict) or 'coef' not in dmg:
             continue
-        coef = float(dmg['coef'])
+        coef = float(dmg['coef']) * stat_weight(dmg)
         n = int(c.get('repeats', 0) or 0) or segs_of(D, sid, c)[0]
         cd = int(c.get('cooldown', 0) or 0)
         rows.append({'招': f"{c.get('name', sid)}（{sid}）", '角色': '通用书', '档位': '通用书', '类别': '书·主动', '目标': '—', '系数': coef,
@@ -582,7 +638,7 @@ def sec_skillcoef(D):
                      '条件最高': cond_max(dmg), '每回合期望': coef * n / (cd + 1 if cd > 0 else 1)})
     groups = defaultdict(list)
     for r in rows:
-        groups[f"{r['档位']}·{r['类别']}"].append((f"{r['招']}·{r['角色']}", r['每回合期望'], f"系数{r['系数']:g}×{r['段数']}段（{r['段数来源']}）÷{r['冷却'] + 1 if r['冷却'] else 1}回合；{r['属性']}"))
+        groups[f"{r['档位']}·{r['类别']}"].append((f"{r['招']}·{r['角色']}", r['每回合期望'], f"折算系数{r['系数']:.3g}×{r['段数']}段（{r['段数来源']}）÷{r['冷却'] + 1 if r['冷却'] else 1}回合；{r['属性']}"))
     return rows, groups
 
 
@@ -883,7 +939,7 @@ def cross_judge(src, nine):
     """每个属性：各来源上限、份额；压过装备＝单来源上限 > 其余来源上限合计，或 > 装备整身（九线封顶后）"""
     attrs = sorted({a for s in src.values() for a in s}, key=lambda a: list(ATTR).index(a) if a in ATTR else 99)
     table, flags = {}, []
-    gear_srcs = ('装备本体（整身：各栏单件最高相加）', '随机词条（整身：同条每件一条×10 件）', '套装模板（5 件档·四阶）', '宝珠（同类 3 颗）')
+    gear_srcs = ('装备底子（整身，75 级）', '装备本体（整身：各栏单件最高相加）', '随机词条（整身：同条每件一条×10 件）', '套装模板（5 件档·四阶）', '宝珠（同类 3 颗）')
     skip_sum = ('装备本体（单件最高）', '随机词条（单条，四阶·极）', '宝珠（单颗归真）')
     for a in attrs:
         rows = [(n, s[a]) for n, s in src.items() if a in s]
@@ -908,7 +964,72 @@ def cross_judge(src, nine):
     return table, flags
 
 
+# ---------------- 大类（第一层总表的行组；T521 外部来源也归进这些类） ----------------
+# Kyo 11-25「先分类再细看」：来源大类固定这一串，T521 往 src 里加来源时名字写成「大类｜细项」即可归类；认不出的进「新发现」
+CATS = ['角色白板', '被动心法', '技能', '装备底子', '固定词条', '随机词条', '套装', '宝石宝珠', '符石', '技能书秘籍', '法宝', '真气',
+        '称号传承光耀', '临时增益光环', '元素', '天启篇规则（档位／烙印／境／种族／常驻）', '新发现']
+CAT_PREFIX = [('角色白板', '角色白板'), ('角色技能', '被动心法'), ('装备底子', '装备底子'), ('装备本体', '固定词条'), ('随机词条', '随机词条'),
+              ('套装', '套装'), ('宝珠', '宝石宝珠'), ('宝石', '宝石宝珠'), ('符石', '符石'), ('符文', '符石'), ('秘籍', '技能书秘籍'), ('通用书', '技能书秘籍'),
+              ('法宝', '法宝'), ('真气', '真气'), ('种族', '天启篇规则（档位／烙印／境／种族／常驻）'), ('档位', '天启篇规则（档位／烙印／境／种族／常驻）'),
+              ('烙印', '天启篇规则（档位／烙印／境／种族／常驻）'), ('境', '天启篇规则（档位／烙印／境／种族／常驻）'), ('天启篇常驻', '天启篇规则（档位／烙印／境／种族／常驻）')]
+EXPAND_RATE = 0.10
+DIFF_CN = dict(xunchang='寻常', jianxian='艰险', jiusi='九死', lianyu='炼狱', zhengdao='证道')
+
+
+def cat_of(name):
+    if '｜' in name:
+        c = name.split('｜', 1)[0]
+        return c if c in CATS else '新发现'
+    for pre, c in CAT_PREFIX:
+        if name.startswith(pre):
+            return c
+    return '新发现'
+
+
+SINGLE_ROWS = ('（单件', '（单条', '（单颗')
+
+
+def cat_table(ctab):
+    """属性 → [「大类：上限／常见值（份额）标记」…]；同一大类多行取上限最大的那行（单件／单条／单颗只作参照，不进）"""
+    out = {}
+    for attr, (rows_, gear, gear_raw) in ctab.items():
+        best = {}
+        for nm, v, share, mark in rows_:
+            if any(x in nm for x in SINGLE_ROWS):
+                continue
+            c = cat_of(nm)
+            if c not in best or abs(v[0]) > abs(best[c][0][0]):
+                best[c] = (v, mark)
+        tot = sum(abs(v[0]) for v, _ in best.values())
+        cells = []
+        for c, (v, mark) in sorted(best.items(), key=lambda kv: -abs(kv[1][0][0])):
+            others = [abs(x[0][0]) for k, x in best.items() if k != c]
+            tag = '⬆' if mark else ('⬇' if others and abs(v[0]) < 0.5 * med(others) else '')
+            cells.append(f"{c}：{fmt(v[0])}／{fmt(v[1])}（{abs(v[0]) / tot * 100:.0f}%）{tag}" if tot else f'{c}：{fmt(v[0])}')
+        out[attr] = cells
+    return out
+
+
 def sec_cross_extra(D, src, nine):
+    """并入固定值两项（75 级）：角色白板 vs 装备底子整身 vs 法宝底子，再判"""
+    lv = max(x[1] for x in D.dt['generic']['level_by_floor'])
+    conv = 1 + lv * 98 / 90
+    grades = D.gb['grades']
+    top_g = QKEYS[D.dt['generic']['top_grade']]
+    tier_of = actor_tiers(D)
+    for attr, st, col in (('攻击(固定值·75级)', 'atk', 'atk'), ('生命(固定值·75级)', 'mhp', 'hp')):
+        vals = [(int(D.line(lv, st) * actor_mult(D, aid, st)), aid) for aid in tier_of if str(aid) in D.bl['actors']]
+        top = max(vals)
+        src.setdefault('角色白板（75 级本体）', {})[attr] = (top[0], med([v for v, _ in vals]), f"{D.bl['actors'][str(top[1])]['name']}（{top[1]}）", 'base_line 标准线×职责×速度×微调')
+        ksum = sum(sl.get(col, 0) for et, sl in D.slots.items())
+        src.setdefault('装备底子（整身，75 级）', {})[attr] = (D.line(conv, st) * ksum * grades[top_g], D.line(conv, st) * ksum * grades['jingliang'],
+                                                       f'部位系数和 {ksum:g}×{GN[D.dt["generic"]["top_grade"]]} {grades[top_g]}', '常见值按精良 1.0')
+        fb = D.gb['fabao']
+        eq = min(99, 99) * fb['equip_level_at_full'] / fb['full_level']
+        fconv = 1 + eq * 98 / 90
+        share = fb['share'].get('hp' if st == 'mhp' else 'atk', 0)
+        src.setdefault('法宝底子（满级）', {})[attr] = (D.line(fconv, st) * share * grades[top_g], D.line(fconv, st) * share * grades['jingliang'],
+                                                 f'share {share}×品质', 'gear_base.fabao：满级＝半件 80 级装备')
     return cross_judge(src, nine)
 
 
@@ -958,208 +1079,171 @@ def build(D, diff):
     ranked = sorted([o for o in allouts if o['倍数'] is not None], key=sev, reverse=True)
     zero_med = [o for o in allouts if o['倍数'] is None]
 
+    # ---- 白板 ----
+    wrows, wg = sec_white(D)
+    wm, wo, ws = outliers(wg, '角色白板')
+
+    # ---- 类内一行汇总：每个大类的条数、离群数、离群率、跨来源标记 → 决定第二层展开谁 ----
+    cross_by_cat = defaultdict(list)
+    for f in cflags:
+        cross_by_cat[cat_of(f['来源'])].append(f)
+    so = [o for _, o, _ in skill_res.values() for o in o]
+    eo = sorted([o for _, o, _ in eres.values() for o in o], key=sev, reverse=True)
+    inner = [  # (大类, 比的单位, 条数, 离群列表, 额外问题数, 额外说明)
+        ('角色白板', '档位·属性（99 级）', sum(v[0] for v in wm.values()), wo, 0, '本体＝标准线×职责×速度×微调，档位不影响白板'),
+        ('被动心法', '跨来源（角色桶）', len(per_actor), [], 0, '见跨来源总表'),
+        ('技能（六维强度）', '档位', sum(v[0] for m_, _, _ in skill_res.values() for v in m_.values()), so, 0, '六维实测口径'),
+        ('技能系数（逐招伤害）', '档位·招式类别', len(kr), ko, 0, '每回合期望倍率'),
+        ('技能全系数', '字段路径', n_fields, co, 0, '卡里全部数值字段'),
+        ('装备底子', '等级段·品质·部位', sum(v[0] for v in bm.values()), bo, len(noformula), f'{len(noformula)} 件不读新表照原版'),
+        ('固定词条', '等级段·品质', len(pool), ao, 0, f'原版必出行 {sum(v[1] for v in aff_count.values())} 件'),
+        ('随机词条', '层·单位·阶·成色', sum(v[0] for v in rm.values()), ro, len(steps), f'阶间跳幅超 ×{HI:g} {len(steps)} 条'),
+        ('怪物', '层', sum(c['只数'] for c in curve), eo, len(jumps), f'相邻层跳幅 {len(jumps)} 处'),
+    ]
+    expand = {}
+    for cat, unit, n, outs, extra, note in inner:
+        rate = len(outs) / n if n else 0
+        flag = []
+        if rate >= EXPAND_RATE:
+            flag.append(f'离群率 {rate * 100:.0f}%')
+        if extra:
+            flag.append(note)
+        if cross_by_cat.get(cat):
+            flag.append('跨来源偏高')
+        expand[cat] = (unit, n, outs, rate, flag, note)
+    for cat in cross_by_cat:
+        if cat not in expand:
+            expand[cat] = ('跨来源', None, [], 0, ['跨来源偏高'], '见跨来源总表')
+
     L.append('# 启封数值总对账报告（T520）')
     L.append('')
-    L.append(f'由 `03_再刷重制_Godot/07_开发环境/启封数值对账.py --write` 生成，只读游戏数据。离群＝同档内 >中位数×{HI:g} 或 <中位数×{LO:g}；档内不足 3 条不判。怪物生命按「{dict(xunchang="寻常", jianxian="艰险", jiusi="九死", lianyu="炼狱", zhengdao="证道")[diff]}」目标回合 {turns} 算。本报告只摆数和倍数，不判断是不是有意为之。')
+    L.append(f'由 `03_再刷重制_Godot/07_开发环境/启封数值对账.py --write` 生成，只读游戏数据；全量明细 `--json <文件>`。离群＝同档内 >中位数×{HI:g} 或 <中位数×{LO:g}（档内不足 3 条不判）。怪物生命按「{DIFF_CN[diff]}」目标回合 {turns} 算。只摆数和倍数，不判断是不是有意为之。')
     L.append('')
-    L.append('## 一、结论')
+    L.append('两层：第一层先按来源大类看整体（总表＋类内汇总），标出偏高偏低的大类；第二层只展开被标出的大类。没标出的大类只有一行汇总，明细在 --json。')
     L.append('')
-    L.append('### 跨来源同属性：单一来源压过装备／超过其余来源合计（放最前）')
+    L.append('## 第一层·结论')
     L.append('')
-    L.append('「装备整身」＝装备本体整身＋随机词条整身＋套装模板＋宝珠 3 颗的上限相加，再按九线封顶（damage_ledger nine_caps：①15%、②每系30%、③35%、属性30%）夹；「其余合计」＝同属性其它来源上限相加（单件／单条那几行不算进合计）。只同一属性内比，属性之间不比；乘区见第二节表 0。')
+    L.append('### 1. 跨来源总表（大类 × 属性，启封满级档）')
     L.append('')
-    L.append('| 属性（乘区） | 来源 | 上限 | 谁 | 装备整身（封顶后／未封） | 其余合计 | 标记 |')
+    L.append('每格＝这一大类在这项属性上的上限／常见值，份额＝上限占同属性各大类上限合计。「固定词条」＝装备自带的备注标签和特性（原版必出词缀行在启封里基本为空），装备类（固定词条、随机词条、套装、宝珠）合计还要过九线封顶（①15%、②每系30%、③35%、属性30%），表里是封顶前的数。百分数都是「＋N%」加进所在乘区，只同一属性内比。⬆＝单一大类上限压过装备整身（九线封顶后）或超过其余大类合计；⬇＝上限不到同属性其余大类中位数的一半。固定值两行按 75 级（启封通用掉落最高等级）算。')
+    L.append('')
+    L.append('| 属性（乘区；叠法） | ' + ' | '.join(['大类：上限／常见值（份额）标记']) + ' |')
+    L.append('|---|---|')
+    for attr, cells in cat_table(ctab).items():
+        pz = ATTR.get(attr, (attr, '单独'))
+        L.append(f'| {attr}（{pz[0]}；{pz[1]}） | ' + '；'.join(cells) + ' |')
+    L.append('')
+    L.append('### 2. 偏高明细（单一来源压过装备／超过其余合计）')
+    L.append('')
+    L.append('| 属性 | 大类·来源 | 上限 | 谁 | 装备整身（封顶后／未封） | 其余合计 | 标记 |')
     L.append('|---|---|---|---|---|---|---|')
     for f in sorted(cflags, key=lambda f: -abs(f['上限']) / max(1e-9, f['装备整身'] or 1)):
-        L.append(f"| {f['属性']}（{ATTR.get(f['属性'], ('',))[0]}） | {f['来源']} | {fmt(f['上限'])} | {f['谁']} | {fmt(f['装备整身'])}／{fmt(f['装备整身未封'])} | {fmt(f['其余合计'])} | {f['标记']} |")
+        L.append(f"| {f['属性']} | {f['来源']} | {fmt(f['上限'])} | {f['谁']} | {fmt(f['装备整身'])}／{fmt(f['装备整身未封'])} | {fmt(f['其余合计'])} | {f['标记']} |")
     L.append('')
-    L.append(f'- 离群条目合计 {len(allouts)} 条（装备底子 {len(bo)}、固定词条 {len(ao)}、随机词条 {len(ro)}、技能 {sum(len(v[1]) for v in skill_res.values())}、怪物 {sum(len(v[1]) for v in eres.values())}）；其中「档中位为 0、本条不为 0」{len(zero_med)} 条单列在第三节。')
-    L.append(f'- 装备底子：读新表的装备按公式生成，同档同部位内份数一致（{len(bo)} 条离群）；不读表、照原版八项的 {len(noformula)} 件单列（第三节）。')
-    L.append(f'- 固定词条：通用池 {len(pool)} 件里有原版必出词缀行的 {sum(v[1] for v in aff_count.values())} 件；它们按换算比放大后不受品质档约束，离群 {len(ao)} 条。')
-    L.append(f'- 随机词条：{len(D.at["affixes"])} 条词条；同层同单位同阶同成色内离群 {len(ro)} 条；阶与阶之间普通成色跳幅超 ×{HI:g} 的 {len(steps)} 条。')
-    L.append(f'- 怪物：1～33 层中位数相邻层跳幅超 ×{HI:g} 或低于 ×{LO:g} 的 {len(jumps)} 处；层内离群 {sum(len(v[1]) for v in eres.values())} 条。')
-    L.append(f'- 装备等级：通用池里等级需求 > {lv_cap}（启封 1～30 层通用掉落挑装备的最高等级）或品质 > {GN[D.dt["generic"]["top_grade"]]} 的 {len(unreach)} 件在 1～30 层通用掉落里掉不出。')
+    L.append('### 3. 类内一行汇总（决定第二层展开谁）')
     L.append('')
-    L.append('### 离群前 20（按偏离倍数，跨类）')
+    L.append(f'展开条件：离群率 ≥{EXPAND_RATE * 100:.0f}%、有跳幅／不读表这类结构问题、或跨来源偏高。')
     L.append('')
-    L.append('| # | 类 | 名 | 档 | 值 | 档中位数 | 倍数 |')
+    L.append('| 大类 | 比的单位 | 条数 | 离群 | 离群率 | 标记 | 第二层 |')
     L.append('|---|---|---|---|---|---|---|')
-    for n, o in enumerate(ranked[:20], 1):
-        L.append(f"| {n} | {o['类']} | {o['名']} | {o['档']} | {fmt(o['值'])} | {fmt(o['中位数'])} | ×{fmt(o['倍数'])} |")
+    for cat, (unit, n, outs, rate, flag, note) in expand.items():
+        L.append(f"| {cat} | {unit} | {'—' if n is None else n} | {len(outs)} | {rate * 100:.0f}% | {'、'.join(flag) or '—'} | {'展开' if flag else '不展开'} |")
     L.append('')
-    L.append('### 不平滑处（曲线跳幅）')
+    L.append('### 4. 技能系数离群前 20（逐招每回合期望倍率）')
     L.append('')
-    if jumps:
-        L.append('| 层→层 | 项 | 前层中位 | 后层中位 | 倍数 |')
-        L.append('|---|---|---|---|---|')
-        for a, b, k, x, y, q in jumps:
-            L.append(f'| {a}→{b} | {k} | {fmt(x)} | {fmt(y)} | ×{fmt(q)} |')
-    else:
-        L.append('（怪物各项中位数相邻层没有超出 ×0.5～×2 的跳幅）')
-    if steps:
-        L.append('')
-        L.append('随机词条阶间跳幅（普通成色，一阶→四阶）：' + '；'.join(f'{n}〔{"/".join(fmt(float(x)) for x in s)}〕' for n, _, _, s in steps[:12]) + ('…' if len(steps) > 12 else ''))
-    L.append('')
-
-    # 二、分表
-    L.append('## 二、分表')
-    L.append('')
-    L.append('### 0. 跨来源同属性总表（每来源上限／常见值／份额）')
-    L.append('')
-    L.append('份额＝本来源上限 ÷ 同属性各来源上限合计（「单件／单条／单颗」行只作参照，不进合计、不算份额）。百分数一律是「＋N%」加进所在乘区；⑤档位、烙印各自单独一池／单独相乘，不和③比大小。')
-    L.append('')
-    L.append('| 属性 | 乘区／叠法 | 来源 | 上限 | 常见值 | 谁 | 份额 | 说明 |')
-    L.append('|---|---|---|---|---|---|---|---|')
-    for a, (rows_, gear, gear_raw) in ctab.items():
-        pz = ATTR.get(a, (a, '单独'))
-        for n, v, share, mark in sorted(rows_, key=lambda x: -abs(x[1][0])):
-            L.append(f"| {a} | {pz[0]}；{pz[1]} | {n} | {fmt(v[0])} | {fmt(v[1])} | {v[2]} | {'—' if share is None else f'{share * 100:.0f}%'} | {v[3]}{('；' + '、'.join(mark)) if mark else ''} |")
-    L.append('')
-    L.append('### 0b. 逐招伤害系数（每回合期望倍率＝系数×段数÷每几回合一次；单目标口径）')
-    L.append('')
-    L.append('| 档位·类别 | 招数 | 中位 | 最小 | 最大 |')
-    L.append('|---|---|---|---|---|')
-    for g in sorted(km):
-        n, m, lo, hi = km[g]
-        if n >= 3:
-            L.append(f'| {g} | {n} | {fmt(m)} | {fmt(lo)} | {fmt(hi)} |')
-    L.append('')
-    L.append('逐招离群（前 30，按倍数）：')
+    L.append('每回合期望＝系数×属性权重（生命魔法折 ×25）×段数÷每几回合一次（冷却＋1），单目标口径；段数先读卡上说明「N段／随机N个」，再读拆段、原版 repeats×随机目标数。')
     L.append('')
     L.append('| 招·角色 | 档位·类别 | 每回合期望 | 组中位 | 倍数 | 算法 |')
     L.append('|---|---|---|---|---|---|')
-    for o in sorted(ko, key=sev, reverse=True)[:30]:
-        L.append(f"| {o['名']} | {o['档']} | {fmt(o['值'])} | {fmt(o['中位数'])} | ×{fmt(o['倍数'])} | {o['备注']} |")
-    L.append(f'\n（逐招共 {len(kr)} 条、离群 {len(ko)} 条；全表 --json。）')
+    for o in sorted(ko, key=sev, reverse=True)[:20]:
+        L.append(f"| {o['名']} | {o['档']} | {fmt(o['值'])} | {fmt(o['中位数'])} | ×{fmt(o['倍数'])} | {o['备注'][:50]} |")
     L.append('')
-    L.append(f'### 0c. 技能全系数（卡里全部数值字段 {n_fields} 个，按字段路径分 {len(cm)} 组；离群 {len(co)} 条）')
+    L.append('### 5. 怪物跳层前 20（相邻层中位数，1～34 层）')
     L.append('')
-    L.append('字段路径照 skill_rework.json：heal.mhp_pct 治疗、shield.pct 护盾、cooldown 冷却、mp_pct／tp 消耗、seq.n 拆段、follow.rate 追加几率、damage.conds.* 条件（cap 封顶、per 每层、mult 倍率）、状态.turns 持续回合、状态.traits.* 状态特性值。同组内比，不分档位；备注列是档位。')
-    L.append('')
-    L.append('| 字段 | 条数 | 中位 | 最小 | 最大 |')
+    L.append('| 层→层 | 项 | 前层中位 | 后层中位 | 倍数 |')
     L.append('|---|---|---|---|---|')
-    for g in sorted(cm, key=lambda g: -cm[g][0])[:25]:
-        n, m, lo, hi = cm[g]
-        L.append(f'| {g} | {n} | {fmt(m)} | {fmt(lo)} | {fmt(hi)} |')
+    for a_, b_, k, x, y, q in sorted(jumps, key=lambda j: -max(j[5], 1 / j[5]))[:20]:
+        L.append(f'| {a_}→{b_} | {k} | {fmt(x)} | {fmt(y)} | ×{fmt(q)} |')
     L.append('')
-    L.append('| 招／状态 | 字段 | 值 | 组中位 | 倍数 | 档位 |')
-    L.append('|---|---|---|---|---|---|')
-    for o in sorted(co, key=sev, reverse=True)[:30]:
-        L.append(f"| {o['名']} | {o['档']} | {fmt(o['值'])} | {fmt(o['中位数'])} | ×{fmt(o['倍数'])} | {o['备注']} |")
+
+    # ---- 第二层 ----
+    L.append('## 第二层·被标出大类的明细')
     L.append('')
-    L.append('### 1. 装备对应等级分布（通用池件数，等级段 × 品质）')
+    sec_no = 0
+    for cat, (unit, n, outs, rate, flag, note) in expand.items():
+        if not flag:
+            continue
+        sec_no += 1
+        L.append(f'### {sec_no}. {cat}（{"、".join(flag)}）')
+        L.append('')
+        if cat == '怪物':
+            L.append(f'各层中位数（生命已乘全局 {D.bt["combat_rules"]["enemy_hp_pct"]}%；34 层鸿钧＝鸿蒙老祖×summit.json rate，出伤倍率 HONGJUN_SCALE）：')
+            L.append('')
+            L.append('| 层 | 只数 | 生命 | 出伤指数 | 物防 | 魔防 | 敏捷 | hp_base | atk_scale |')
+            L.append('|---|---|---|---|---|---|---|---|---|')
+            for c in curve:
+                L.append(f"| {c['层']} | {c['只数']} | {fmt(c['生命'])} | {fmt(c['出伤指数'])} | {fmt(c['物防'])} | {fmt(c['魔防'])} | {fmt(c['敏捷'])} | {fmt(c['hp_base'])} | {fmt(c['atk_scale'], 4)} |")
+            L.append('')
+            L.append('35／36 层（horsemen.json，艰险基准）：' + '；'.join(f"{k['名']} 生命 {fmt(k['生命'])}、攻击 {fmt(k['攻击'])}、防御 {fmt(k['防御'])}" for k in knights) + f"；35 层影子生命 {fmt(shadow.get('hp'))}。")
+            L.append('')
+        if cat == '装备底子' and noformula:
+            L.append(f'不读新表、照原版八项的通用池装备（{len(noformula)} 件）：' + '；'.join(f'{nm}〔{k}，份数 {fmt(v)}〕' for nm, k, v, _ in noformula))
+            L.append('')
+        if cat == '随机词条' and steps:
+            L.append('阶间跳幅（普通成色，一阶→四阶）：' + '；'.join(f'{nm}〔{"/".join(fmt(float(x)) for x in sq)}〕' for nm, _, _, sq in steps))
+            L.append('')
+        if cross_by_cat.get(cat):
+            L.append('跨来源偏高：' + '；'.join(f"{f['属性']} {f['来源']} {fmt(f['上限'])}（{f['谁']}，{f['标记']}）" for f in cross_by_cat[cat]))
+            L.append('')
+        if outs:
+            L.append(f'类内离群前 20（共 {len(outs)} 条）：')
+            L.append('')
+            L.append('| 名 | 档 | 值 | 档中位 | 倍数 | 备注 |')
+            L.append('|---|---|---|---|---|---|')
+            for o in sorted(outs, key=sev, reverse=True)[:20]:
+                L.append(f"| {o['名']} | {o['档']} | {fmt(o['值'])} | {fmt(o['中位数'])} | {'—' if o['倍数'] is None else '×' + fmt(o['倍数'])} | {str(o['备注'])[:60]} |")
+            L.append('')
+    if not sec_no:
+        L.append('（没有被标出的大类）')
+        L.append('')
+
+    # ---- 附录 ----
+    L.append('## 附录')
     L.append('')
-    bands = sorted({b for b, _ in dist})
+    L.append('### A. 跨来源逐来源表（第一层总表的来源拆细）')
+    L.append('')
+    L.append('| 属性 | 大类 | 来源 | 上限 | 常见值 | 谁 | 份额 | 说明 |')
+    L.append('|---|---|---|---|---|---|---|---|')
+    for attr, (rows_, gear, gear_raw) in ctab.items():
+        for nm, v, share, mark in sorted(rows_, key=lambda x: -abs(x[1][0])):
+            L.append(f"| {attr} | {cat_of(nm)} | {nm} | {fmt(v[0])} | {fmt(v[1])} | {v[2]} | {'—' if share is None else f'{share * 100:.0f}%'} | {v[3]}{('；' + '、'.join(mark)) if mark else ''} |")
+    L.append('')
+    L.append('### B. 角色白板（每档位中位，1／30／60／99 级）')
+    L.append('')
+    L.append('| 档位 | 人数 | ' + ' | '.join(SN[st] for st in STATS) + ' |')
+    L.append('|---|---|' + '---|' * len(STATS))
+    for t in ['弱者', '强者', '超强者']:
+        tr = [r for r in wrows if r['档位'] == t]
+        for lv in LEVELS:
+            L.append(f'| {t}·{lv}级 | {len(tr)} | ' + ' | '.join(fmt(med([r[st][lv] for r in tr])) for st in STATS) + ' |')
+    L.append('')
+    L.append('### C. 装备对应等级分布（通用池件数，等级段 × 品质）')
+    L.append('')
+    bands = sorted({bb for bb, _ in dist})
     L.append('| 等级段 | ' + ' | '.join(GN) + ' | 合计 |')
     L.append('|---' * (len(GN) + 2) + '|')
-    for b in bands:
-        row = [dist.get((b, g), 0) for g in range(7)]
-        L.append(f'| {band_name(b)} | ' + ' | '.join(str(x) if x else '·' for x in row) + f' | {sum(row)} |')
+    for bb in bands:
+        row = [dist.get((bb, g), 0) for g in range(7)]
+        L.append(f'| {band_name(bb)} | ' + ' | '.join(str(x) if x else '·' for x in row) + f' | {sum(row)} |')
     L.append('')
     lbf = D.dt['generic']['level_by_floor']
-    L.append('通用掉落按层挑装备的等级上限（drop_table.generic.level_by_floor，层间线性插值）：' + '、'.join(f'{f} 层 {lv}' for f, lv in lbf) + f'；窗口向下 {D.dt["generic"]["level_window"]} 级。')
-    L.append('不进通用池的：' + '；'.join(f'{k} {v} 件' for k, v in skipped.items()) + '。')
+    L.append('通用掉落按层挑装备的等级上限：' + '、'.join(f'{f} 层 {lv}' for f, lv in lbf) + f'；窗口向下 {D.dt["generic"]["level_window"]} 级。不进通用池：' + '；'.join(f'{k} {v} 件' for k, v in skipped.items()) + f'。掉不出（等级 >{lv_cap}、无等级或品质超上限）{len(unreach)} 件。')
     L.append('')
-
-    L.append('### 2. 装备基础属性（读新表的，按等级段·品质·部位的「标准线份数」中位）')
+    smalls = bs + as_ + rs + ws + ks + cs + [x for _, _, s_ in skill_res.values() for x in s_] + [x for _, _, s_ in eres.values() for x in s_]
+    L.append(f'档内不足 3 条、没判离群的档 {len(smalls)} 个；「档中位为 0、本条不为 0」{len(zero_med)} 条（都在 --json）。')
     L.append('')
-    L.append('份数＝八项各除以本件等级的标准线后相加（同部位同品质理论上为常数：部位系数和×品质系数＋副属性）。只列有离群或件数 ≥5 的档。')
-    L.append('')
-    L.append('| 档 | 件数 | 中位 | 最小 | 最大 |')
-    L.append('|---|---|---|---|---|')
-    shown = 0
-    for g in sorted(bm, key=lambda x: (x.split('·')[0], x)):
-        n, m, lo, hi = bm[g]
-        if n >= 5 and shown < 25:
-            L.append(f'| {g} | {n} | {fmt(m)} | {fmt(lo)} | {fmt(hi)} |')
-            shown += 1
-    L.append(f'\n（共 {len(bm)} 档，表里只放前 {shown} 个件数 ≥5 的档；全表用 --json 导出。）')
-    L.append('')
-
-    L.append('### 3. 固定词条（原版必出词缀行，换算后的标准线份数，按等级段·品质）')
-    L.append('')
-    L.append('| 档 | 件数 | 带必出行的件数 | 中位 | 最大 |')
-    L.append('|---|---|---|---|---|')
-    for g in sorted(am, key=lambda x: x):
-        n, m, lo, hi = am[g]
-        L.append(f'| {g} | {n} | {aff_count[g][1]} | {fmt(m)} | {fmt(hi)} |')
-    L.append('')
-
-    L.append('### 4. 随机词条取值（affix_table，层·单位·阶·成色内）')
-    L.append('')
-    L.append('| 档 | 条数 | 中位 | 最小 | 最大 | 离群 |')
-    L.append('|---|---|---|---|---|---|')
-    ro_by = defaultdict(list)
-    for o in ro:
-        ro_by[o['档']].append(o)
-    for g in sorted(rm):
-        n, m, lo, hi = rm[g]
-        if g.endswith('普通') or ro_by.get(g):
-            L.append(f"| {g} | {n} | {fmt(m)} | {fmt(lo)} | {fmt(hi)} | {'、'.join(o['名'].split('（')[0] + '×' + fmt(o['倍数']) for o in ro_by.get(g, [])[:6])} |")
-    L.append('\n（只列普通成色和有离群的档；上品、极与普通同一排数后移一格。）')
-    L.append('')
-
-    L.append('### 5. 角色技能强度（六维打分口径，按档位）')
-    L.append('')
-    L.append('| 项 | 档位 | 人数 | 中位 | 最小 | 最大 |')
-    L.append('|---|---|---|---|---|---|')
-    for k, (m_, o_, s_) in skill_res.items():
-        for t in ['弱者', '强者', '超强者']:
-            if t in m_:
-                n, m, lo, hi = m_[t]
-                L.append(f'| {k} | {t} | {n} | {fmt(m)} | {fmt(lo)} | {fmt(hi)} |')
-    L.append('')
-    so = [o for _, o, _ in skill_res.values() for o in o]
-    if so:
-        L.append('技能离群明细：')
-        L.append('')
-        L.append('| 项 | 名 | 档位 | 值 | 中位 | 倍数 |')
-        L.append('|---|---|---|---|---|---|')
-        for o in sorted(so, key=sev, reverse=True)[:30]:
-            L.append(f"| {o['类'][3:]} | {o['名']} | {o['档']} | {fmt(o['值'])} | {fmt(o['中位数'])} | ×{fmt(o['倍数'])} |")
-        L.append('')
-
-    L.append(f'### 6. 怪物各层属性（中位数；生命按{turns}回合口径、已乘全局 {D.bt["combat_rules"]["enemy_hp_pct"]}%）')
-    L.append('')
-    L.append('| 层 | 只数 | 生命 | 出伤指数 | 物防 | 魔防 | 敏捷 | hp_base | atk_scale |')
-    L.append('|---|---|---|---|---|---|---|---|---|')
-    for c in curve:
-        L.append(f"| {c['层']} | {c['只数']} | {fmt(c['生命'])} | {fmt(c['出伤指数'])} | {fmt(c['物防'])} | {fmt(c['魔防'])} | {fmt(c['敏捷'])} | {fmt(c['hp_base'])} | {fmt(c['atk_scale'], 4)} |")
-    L.append('')
-    L.append('35／36 层（horsemen.json，艰险基准）：' + '；'.join(f"{k['名']} 生命 {fmt(k['生命'])}、攻击 {fmt(k['攻击'])}、防御 {fmt(k['防御'])}" for k in knights) + f"；35 层影子生命 {fmt(shadow.get('hp'))}。34 层鸿钧借鸿蒙老祖合成记录，本脚本没算。")
-    L.append('')
-    eo = sorted([o for _, o, _ in eres.values() for o in o], key=sev, reverse=True)
-    if eo:
-        L.append('怪物层内离群明细（前 30）：')
-        L.append('')
-        L.append('| 项 | 名 | 层 | 值 | 层中位 | 倍数 |')
-        L.append('|---|---|---|---|---|---|')
-        for o in eo[:30]:
-            L.append(f"| {o['类'][3:]} | {o['名']} | {o['档']} | {fmt(o['值'])} | {fmt(o['中位数'])} | ×{fmt(o['倍数'])} |")
-        L.append(f'\n（共 {len(eo)} 条，全量用 --json。）')
-    L.append('')
-
-    # 三、单列
-    L.append('## 三、单列（不进倍数排行的）')
-    L.append('')
-    L.append(f'**不读新表、照原版八项的通用池装备（{len(noformula)} 件）**：' + '；'.join(f'{n}〔{k}，份数 {fmt(v)}〕' for n, k, v, _ in noformula[:20]) + ('…' if len(noformula) > 20 else ''))
-    L.append('')
-    zm = defaultdict(list)
-    for o in zero_med:
-        zm[o['类']].append(o)
-    for k, v in zm.items():
-        v = sorted(v, key=lambda o: -abs(o['值']))
-        L.append(f'**{k}：档中位为 0、本条不为 0（{len(v)} 条，按值大到小前 12）**：' + '；'.join(f"{o['名']}〔{o['档']}，{fmt(o['值'])}；{o['备注'][6:40]}〕" for o in v[:12]))
-        L.append('')
-    if unreach:
-        L.append(f'**1～30 层通用掉落掉不出的通用池装备（{len(unreach)} 件，等级 > {lv_cap}、无等级或品质超上限）**：' + '、'.join(unreach[:25]) + ('…' if len(unreach) > 25 else ''))
-        L.append('')
-    smalls = bs + as_ + rs + [s for _, _, s_ in skill_res.values() for s in s_] + [s for _, _, s_ in eres.values() for s in s_]
-    L.append(f'档内不足 3 条、没判离群的档 {len(smalls)} 个（--json 里有明细）。')
-    L.append('')
-
     # 四、口径与拿不准
-    L.append('## 四、口径与拿不准')
+    L.append('### D. 口径与拿不准')
     L.append('')
     L.append('口径（照游戏代码复算，不跑 Godot）：')
     L.append('- 装备池＝`modes/xiyou/core/tianqi_gear.gd` drop_pool＋_reroll_ok，`core/tianqi_drop.gd` pool 去低档稀有；底子＝`tianqi_gear.gd` new_base；换算比 ratio 夹到 80 级（CAP_80）。')
@@ -1174,14 +1258,19 @@ def build(D, diff):
     L.append('- 固定词条只换算了八项，百分比特性、技能触发类效果没折成数，「中位为 0」的档里只要有必出行就会单列。')
     L.append('- 怪物「出伤指数」＝max(物攻,魔攻)×atk_scale×难度攻击，只是相对量，不含技能系数、集火招（focus）、伤害抵抗；守层者以外的敌人生命按本层守层者同比缩（_world），所以遇敌小怪和守层者同口径。')
     L.append('- 怪物楼层只认名字直接带「N层」的地图（' + '、'.join(f'{f}:{"/".join(n[:8] for n in v)}' for f, v in sorted(maps_used.items()) if len(v) > 1) + ' 等多图层都算进去了）；伐木场、黑金村、深渊、肝帝之地、天外天等挂在某层下面的子地图没算。科维努斯镇（7 层）按名字算进去了，它在启封里开不开没核。')
-    L.append('- 28～33 层没有随机遇敌，只有守层者那场；七印里副本、七首之龙、心魔、鸿钧不在本表。')
+    L.append('- 28～33 层没有随机遇敌，只有守层者那场；34 层鸿钧照 summit.json（借鸿蒙老祖 537×rate）、血量 hp_base[34]×目标回合、出伤 HONGJUN_SCALE、双防 guardian_params floors.34 复算，没核首领霸体等其它乘区；七印里副本、七首之龙、心魔不在本表。')
+    L.append('- 角色白板＝XTianqiBase.param_base（标准线(等级)×职责×速度档×微调，D189 微调开），不含职业倍率（CLASS_RATE_OFF 去掉）、不含被动、装备；暴击等 x 参数没进白板表。档位不影响白板（同一条标准线）。')
     L.append('- 通用池按全部敌人掉落表算（同游戏），不是只看启封里出现的敌人。')
     L.append('- 跨来源表的「法宝」行扫的是全部带 Magic Weapon 的法宝栏物件（去掉被当词缀引用的），启封里哪些拿得到没核；法宝备注标签是否归九线封顶没核（ledger 只写「人族首领法宝」归 equip 桶）。')
     L.append('- 跨来源表的装备本体只算启封 1～30 层通用掉落掉得出的（等级 ≤75、品质 ≤不朽）；招牌掉落、商店、事件给的装备没单算。')
-    L.append('- 跨来源表来源是按已知名单扫的（角色卡、装备、随机词条、套装模板、宝珠、种族、秘籍、通用书、法宝、档位、烙印、境、常驻规则），还没从结算函数倒查（见回执「没做」）。')
+    L.append('- 本脚本的跨来源来源是按名单扫的（角色卡、装备、随机词条、套装模板、宝珠、种族、秘籍、通用书、法宝、档位、烙印、境、常驻规则）；从结算函数倒查外部来源归 T521（启封数值对账_来源.py），归进同一套大类。')
+    L.append('- 怪物生命：守层者以外的敌人照 _world 按「本层守层者新总血÷原总血」同比缩，原版小怪和守层者原血差几个数量级的层（如 27 层原守层者 24 万亿），小怪复算出来只有几十点；这是照代码复算的数，没进游戏实测核对，可能有别的乘区（等级、难度、异化）没算进来。')
+    L.append('- 逐招系数：卡上 coef 按属性权重折攻击当量（生命魔法 ×25）；段数从说明文字解析，解析错会放大成离群（如 24 段），明细的「段数来源」在 --json。')
     L.append('- 技能全系数：damage.stats 权重、条件里的变量号／技能号（of、var、ids）也是数字字段，照样分组，看时跳过即可。')
     L.append('')
-    detail = {'装备底子': {'档': bm, '离群': bo}, '固定词条': {'档': am, '离群': ao}, '随机词条': {'档': rm, '离群': ro, '阶间跳幅': steps},
+    detail = {'角色白板': {'档': wm, '离群': wo, '明细': wrows}, '逐招系数': {'档': km, '离群': ko, '明细': kr}, '技能全系数': {'档': cm, '离群': co},
+              '跨来源': {'来源': src, '标记': cflags}, '大类汇总': {k: {'条数': v[1], '离群数': len(v[2]), '标记': v[4]} for k, v in expand.items()},
+              '装备底子': {'档': bm, '离群': bo}, '固定词条': {'档': am, '离群': ao}, '随机词条': {'档': rm, '离群': ro, '阶间跳幅': steps},
               '技能': {k: {'档': v[0], '离群': v[1]} for k, v in skill_res.items()}, '怪物': {'曲线': curve, '离群': {k: v[1] for k, v in eres.items()}, '跳幅': jumps, '明细': erows},
               '不读表装备': noformula, '掉不出': unreach, '等级分布': {f'{band_name(b)}·{GN[g]}': n for (b, g), n in dist.items()}}
     return '\n'.join(L) + '\n', detail, allouts
@@ -1203,7 +1292,7 @@ def main():
     if a.json:
         Path(a.json).write_text(json.dumps(detail, ensure_ascii=False, indent=1, default=str), encoding='utf-8')
         print('写了', a.json)
-    print(md.split('### 离群前 20')[0])
+    print(md.split('## 第二层')[0])
     print('报告行数', md.count('\n'))
 
 
