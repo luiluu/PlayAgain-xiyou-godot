@@ -1,7 +1,7 @@
 # 交付：luiluu/t460
 
 - 车道／工作者：小A（Neon＋high，P8；同分支另含小o T487 洪荒碑正式美术贴图）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -96,7 +96,7 @@
 
 - 云端选测：
   - 首轮（提交 `e0ba654762`，run `45515244017`）：697 个场景中 693 通过，4 项失败（`xiyou_ui_skin` 裸 `draw_string`、`xiyou_event_compare`／`xiyou_floor_reach004`／`xiyou_rift2_canglong` 原版 Map004 对照未关 `XHonghuangMonument`），均已在 `264b936f2` 修复。运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45515244017
-  - 复跑（提交 `264b936f2c`，`ci/luiluu/t460`，基准 `fb0c7d2042`，777 场景、16 片）：运行中（`gh run watch 45520376743` 前台等待中，完成后回填结论）。运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45520376743
+  - 复跑（提交 `264b936f2c`，`ci/luiluu/t460`，基准 `fb0c7d2042`，777 场景、16 片）：**全部通过**（最长一片 18.0 分钟；偶发并行失败、单跑通过算通过：`xiyou_tianqi_brand.tscn`、`xiyou_tianqi_deck_phys_amp.tscn`）。后续 `366f38759` 仅改 `honghuang_first_clear.json` 与 `tests/xiyou_honghuang_monument.gd`（「阿夜」→「大手子」），不涉其他 `.gd`，本机专项 67/67 复验通过。运行页：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45520376743
 - 本机专项与静态检查（前台单跑，`--audio-driver Dummy`）：
   - `python3 03_再刷重制_Godot/07_开发环境/发行空壳.py check`：82 个脚本，812 个函数全部通过（退出码 0）
   - `xiyou_honghuang_monument.tscn`：67/67 通过（含「大手子」改名后复验）
@@ -118,6 +118,8 @@
 - `e189fca05` Merge branch 'main' into luiluu/t460
 - `264b936f2` T460：修复云端选测 4 项（XUiSkin.ds 替代裸 draw_string；原版对照夹具关闭 XHonghuangMonument）
 - `366f38759` T460：配置首位洪荒证道者改名为「大手子」并更新测试断言与碑文／播报截图
+- `b7df9f47a` T460：提交初版交付单 luiluu_t460.md
+- `ec9302145` T487：向交付单追加正式美术段与复验记录（小o）
 
 ## T487 正式美术
 
