@@ -88,8 +88,14 @@ func _run() -> void:
 	_check("整包显示 0.01", C.version_of(470) == "0.01")
 	_check("补丁显示 0.01.<多几号>", C.version_of(475) == "0.01.05")
 	_check("比整包旧的号照旧 0.<号>", C.version_of(462) == "0.462")
-	var rv := C.evaluate(_manifest(475, 470), 470, 470)
-	_check("0.01 整包遇到 475：有新版、显示 0.01.05", rv["state"] == C.FULL and rv["version"] == "0.01.05" and rv["current"] == "0.01")
+	var rv := C.evaluate(_manifest(475, 470, 475), 470, 470)
+	_check("0.01 整包遇到同底包 475 补丁：有新版、显示 0.01.05", rv["state"] == C.PATCH and rv["version"] == "0.01.05" and rv["current"] == "0.01")
+	var m_full := _manifest(892, 889, 892, {"min_base": 889})
+	m_full["latest"]["version"] = "0.04.03"
+	C.release_base = 477
+	rv = C.evaluate(m_full, 477, 477)
+	_check("T500 换整包（FULL）直接读清单 latest.version，不按旧底包算成 0.01.415", rv["state"] == C.FULL and rv["version"] == "0.04.03" and rv["current"] == "0.01")
+	C.release_base = 470
 	rv = C.evaluate(_manifest(470, 470), 470, 470)
 	_check("同号是最新", rv["state"] == C.LATEST)
 	rv = C.evaluate(_manifest(462, 462), 470, 470)

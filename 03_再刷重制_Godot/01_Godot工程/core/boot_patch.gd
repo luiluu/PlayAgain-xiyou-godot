@@ -54,6 +54,9 @@ static func prepare(state_path: String) -> void:
 	var st = _json(state_path)
 	if typeof(st) != TYPE_DICTIONARY or st.get("confirmed", true) == true:
 		return
+	var cur_base := base_code()
+	if cur_base > 0 and int(st.get("base", -1)) != cur_base:
+		return  # T500：旧底包残留由 apply() 静默清理，不当成本底包启动失败写退回提示
 	var boots := int(st.get("boots", 0))
 	if boots < MAX_BOOTS:
 		st["boots"] = boots + 1
@@ -101,6 +104,18 @@ static func _json(path: String) -> Variant:
 	return j.data if j.parse(FileAccess.get_file_as_string(path)) == OK else null
 
 
+## 清理不属于当前底包的过期 active.json 及旧底包补丁文件（只删 patch_<非本底包>_*.pck/.part/.chunk，不碰存档与 save_backup）。
+static func _cleanup_stale_base(state_path: String, cur_base: int) -> void:
+	DirAccess.remove_absolute(state_path)
+	var da := DirAccess.open(state_path.get_base_dir())
+	if da == null:
+		return
+	var keep_prefix := "patch_%d_" % cur_base
+	for f in da.get_files():
+		if f.begins_with("patch_") and not f.begins_with(keep_prefix) and (f.ends_with(".pck") or f.ends_with(".part") or f.ends_with(".chunk")):
+			da.remove(f)
+
+
 ## 读登记、校验、载入。state_path 可换，给测试用。
 static func apply(state_path: String) -> Dictionary:
 	var out := {"loaded": false, "reason": "", "code": 0, "base": base_code()}
@@ -120,6 +135,8 @@ static func apply(state_path: String) -> Dictionary:
 		return out
 	out["code"] = int(st.get("code", 0))
 	if int(st.get("base", -1)) != out["base"]:
+		if out["base"] > 0:
+			_cleanup_stale_base(state_path, out["base"])
 		out["reason"] = "底包不符"
 		return out
 	var path := state_path.get_base_dir().path_join(file)

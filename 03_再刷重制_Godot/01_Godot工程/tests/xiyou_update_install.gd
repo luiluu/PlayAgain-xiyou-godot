@@ -109,8 +109,8 @@ func _run() -> void:
 	for i in range(data.size()):
 		data[i] = (i * 31 + 7) % 251
 	_files = {"/a.pck": data, "/b.pck": data, "/c.pck": data}
-	var base := 453
-	var final := XUpdateInstall.dir.path_join("patch_453_9470.pck")
+	var base := XUpdateClient.base_code()
+	var final := XUpdateInstall.dir.path_join(XUpdateInstall.file_name(base, 9470))
 	var seen := []
 	inst.progress.connect(func(d, t): seen.append([d, t]))
 
@@ -272,7 +272,9 @@ func _run() -> void:
 	var p9470 := _patch(["https://x.invalid/p"], data, 9470)
 	_check("登记成功", XUpdateInstall.register(p9470, base))
 	var st = _state()
-	_check("登记内容：未确认、计数 0、没有上一份", st["file"] == "patch_453_9470.pck" and st["confirmed"] == false and st["boots"] == 0 and st["prev"] == null and int(st["code"]) == 9470 and int(st["base"]) == 453)
+	var fname_9470 := XUpdateInstall.file_name(base, 9470)
+	var fname_9475 := XUpdateInstall.file_name(base, 9475)
+	_check("登记内容：未确认、计数 0、没有上一份", st["file"] == fname_9470 and st["confirmed"] == false and st["boots"] == 0 and st["prev"] == null and int(st["code"]) == 9470 and int(st["base"]) == base)
 	_check("待生效的是 9470", XUpdateInstall.pending_code() == 9470)
 	var p_bad := p9470.duplicate()
 	p_bad["sha256"] = "0".repeat(64)
@@ -299,7 +301,7 @@ func _run() -> void:
 	BootPatchScript.prepare(sp)
 	_check("确认过的补丁再启动多少次都不退回", int(_state()["code"]) == 9470)
 	var data2 := data.slice(0, 5000)
-	var f2 := FileAccess.open(XUpdateInstall.dir.path_join("patch_453_9475.pck"), FileAccess.WRITE)
+	var f2 := FileAccess.open(XUpdateInstall.dir.path_join(fname_9475), FileAccess.WRITE)
 	f2.store_buffer(data2)
 	f2.close()
 	var p9475 := _patch(["https://x.invalid/p"], data2, 9475)
@@ -310,9 +312,8 @@ func _run() -> void:
 	BootPatchScript.prepare(sp)
 	BootPatchScript.prepare(sp)
 	st = _state()
-	_check("9475 两次没起来：自动退回 9470（已确认）", int(st["code"]) == 9470 and st["confirmed"] == true and st["file"] == "patch_453_9470.pck")
-	var r: Dictionary = BootPatchScript.apply(sp)
-	_check("退回后的 9470 能过载入器的校验（底包号不符在测试里是预期）", not ["登记坏了", "文件不在", "字节数不符", "校验不符"].has(r["reason"]))
+	_check("9475 两次没起来：自动退回 9470（已确认）", int(st["code"]) == 9470 and st["confirmed"] == true and st["file"] == fname_9470)
+	_check("退回后的 9470 登记与本地文件字节、SHA、底包全部对得上", int(st["base"]) == base and FileAccess.file_exists(final) and XUpdateInstall._file_size(final) == int(st["size"]) and FileAccess.get_sha256(final) == str(st["sha256"]))
 	XUpdateInstall.take_rollback_notice()
 
 	# 手动退回
@@ -323,8 +324,6 @@ func _run() -> void:
 	_check("没有登记时退回不出错", XUpdateInstall.rollback(true) == 0)
 
 	# 静默检查见到「现在运行的版本被撤回」：登记着的就是正在跑的才退；已登记新补丁只差重启时不退（审查 78 P3-4）
-	XUpdateInstall.register(p9470, base)
-	BootPatchScript.confirm(sp)
 	var client := XUpdateClient.instance(get_tree())
 	var keep := {"urls": XUpdateClient.channel_urls, "key": XUpdateClient.public_key, "stamp": XUpdateClient.stamp_path, "result": BootPatchScript.result.duplicate()}
 	var key := Crypto.new().generate_rsa(2048)
@@ -332,21 +331,27 @@ func _run() -> void:
 	XUpdateClient.channel_urls = PackedStringArray(["https://a.invalid/godot/channel.json"])
 	XUpdateClient.stamp_path = DIR.path_join("check2.json")
 	var cur_code := XUpdateClient.current_code()
+	var rb_base := cur_code - 1
+	var f_rb := FileAccess.open(XUpdateInstall.dir.path_join(XUpdateInstall.file_name(rb_base, 9470)), FileAccess.WRITE)
+	f_rb.store_buffer(data)
+	f_rb.close()
+	XUpdateInstall.register(p9470, rb_base)
+	BootPatchScript.confirm(sp)
 	var man := JSON.stringify({"schema": 1, "latest": {"version": "0.%d" % (cur_code + 9), "code": cur_code + 9}, "bases": {}, "min_base": 0, "revoked": [cur_code]}).to_utf8_buffer()
 	var hc := HashingContext.new()
 	hc.start(HashingContext.HASH_SHA256)
 	hc.update(man)
 	var sig := Crypto.new().sign(HashingContext.HASH_SHA256, hc.finish(), key)
 	client.fetcher = func(url: String) -> PackedByteArray: return sig if url.ends_with(".sig") else man
-	# 假装正在跑的是一个补丁（号＝当前号，底包更旧），登记里却已经是更新的 470
-	BootPatchScript.result = {"loaded": true, "reason": "已载入", "code": cur_code, "base": cur_code - 1, "confirmed": true}
+	# 假装正在跑的是一个补丁（号＝当前号，底包＝rb_base），登记里却已经是更新的 9470
+	BootPatchScript.result = {"loaded": true, "reason": "已载入", "code": cur_code, "base": rb_base, "confirmed": true}
 	await get_tree().process_frame  # 让前面关掉的检查更新页真正离开场景树（页面开着时由页面处理撤回）
 	await get_tree().process_frame
 	var rr: Dictionary = await client.check()
 	_check("撤回名单里有现在运行的版本", rr["revoked"] == true)
 	_check("已登记新补丁只差重启：静默检查不退回", int(_state()["code"]) == 9470 and XUpdateInstall.take_rollback_notice().is_empty())
 	# 登记着的就是正在跑的：退
-	BootPatchScript.result = {"loaded": true, "reason": "已载入", "code": 9470, "base": cur_code - 1, "confirmed": true}
+	BootPatchScript.result = {"loaded": true, "reason": "已载入", "code": 9470, "base": rb_base, "confirmed": true}
 	_check("这时没有待生效的", XUpdateInstall.pending_code() == 0)
 	man = JSON.stringify({"schema": 1, "latest": {"version": "0.%d" % (cur_code + 9), "code": cur_code + 9}, "bases": {}, "min_base": 0, "revoked": [cur_code]}).to_utf8_buffer()
 	rr = await client.check()
@@ -362,19 +367,108 @@ func _run() -> void:
 	f.close()
 
 	# 旧文件清理：登记 9475 后只留 9475 和上一份
-	var f3 := FileAccess.open(XUpdateInstall.dir.path_join("patch_453_460.pck"), FileAccess.WRITE)
+	var old_same_base := XUpdateInstall.dir.path_join(XUpdateInstall.file_name(base, 460))
+	var f3 := FileAccess.open(old_same_base, FileAccess.WRITE)
 	f3.store_string("旧的")
 	f3.close()
 	XUpdateInstall.register(p9470, base)
 	BootPatchScript.confirm(sp)
-	f2 = FileAccess.open(XUpdateInstall.dir.path_join("patch_453_9475.pck"), FileAccess.WRITE)  # 上面登记 9470 时已把它当旧文件清掉
+	f2 = FileAccess.open(XUpdateInstall.dir.path_join(fname_9475), FileAccess.WRITE)  # 上面登记 9470 时已把它当旧文件清掉
 	f2.store_buffer(data2)
 	f2.close()
-	f3 = FileAccess.open(XUpdateInstall.dir.path_join("patch_453_460.pck"), FileAccess.WRITE)
+	f3 = FileAccess.open(old_same_base, FileAccess.WRITE)
 	f3.store_string("旧的")
 	f3.close()
 	XUpdateInstall.register(p9475, base)
-	_check("登记时清掉用不到的旧补丁，留现在和上一份", not FileAccess.file_exists(XUpdateInstall.dir.path_join("patch_453_460.pck")) and FileAccess.file_exists(final) and FileAccess.file_exists(XUpdateInstall.dir.path_join("patch_453_9475.pck")))
+	_check("登记时清掉用不到的旧补丁，留现在和上一份", not FileAccess.file_exists(old_same_base) and FileAccess.file_exists(final) and FileAccess.file_exists(XUpdateInstall.dir.path_join(fname_9475)))
+
+	# 11 T500 跨底包残留根治：477/485、其他旧 base（470/475、482/485）、register(prev)/rollback 不串底包、正常新补丁流不受影响
+	XUpdateInstall.rollback(true)
+	XUpdateInstall.take_rollback_notice()
+	var old_477_pck := XUpdateInstall.dir.path_join("patch_477_485.pck")
+	var old_477_part := old_477_pck + ".part"
+	_write(old_477_pck, "old477")
+	_write(old_477_part, "old477part")
+	_write(sp, JSON.stringify({"file": "patch_477_485.pck", "sha256": "ca".repeat(32), "size": 6, "base": 477, "code": 485, "confirmed": true, "boots": 0, "prev": null}))
+	_check("T500 477/485 残留：registered_code/pending_code 为 0 且自动清理",
+		XUpdateInstall.registered_code() == 0 and XUpdateInstall.pending_code() == 0
+		and not FileAccess.file_exists(sp) and not FileAccess.file_exists(old_477_pck) and not FileAccess.file_exists(old_477_part))
+	# 其他旧底包（v0.01 初包 470、v0.03 底包 482）同样归 0 并清理
+	for pair in [[470, 475], [482, 485]]:
+		var ob: int = pair[0]
+		var oc: int = pair[1]
+		var opck := XUpdateInstall.dir.path_join(XUpdateInstall.file_name(ob, oc))
+		_write(opck, "oldbase")
+		_write(sp, JSON.stringify({"file": XUpdateInstall.file_name(ob, oc), "sha256": "ab".repeat(32), "size": 7, "base": ob, "code": oc, "confirmed": true, "boots": 0, "prev": null}))
+		_check("T500 旧底包 %d/%d 残留：pending_code 为 0 且清理" % [ob, oc],
+			XUpdateInstall.pending_code() == 0 and not FileAccess.file_exists(sp) and not FileAccess.file_exists(opck))
+	# 更新页遇到 477/485 残留时不短路显示 0.485，而是正常联网拉取当前底包新补丁
+	_write(old_477_pck, "old477")
+	_write(sp, JSON.stringify({"file": "patch_477_485.pck", "sha256": "ca".repeat(32), "size": 6, "base": 477, "code": 485, "confirmed": true, "boots": 0, "prev": null}))
+	var t500_key := Crypto.new().generate_rsa(2048)
+	var t500_man := JSON.stringify({"schema": 1, "latest": {"version": "0.04.02", "code": cur_code + 2, "date": "2026-11-25", "notes": ["T500 测试"]},
+		"bases": {str(base): {"patch": {"code": cur_code + 2, "size": data.size(), "sha256": p9470["sha256"], "urls": ["https://example.invalid/p.pck"]}}}, "min_base": base, "revoked": [cur_code + 1]}).to_utf8_buffer()
+	var t500_hc := HashingContext.new()
+	t500_hc.start(HashingContext.HASH_SHA256)
+	t500_hc.update(t500_man)
+	var t500_sig := Crypto.new().sign(HashingContext.HASH_SHA256, t500_hc.finish(), t500_key)
+	var t500_asked := [0]
+	var t500_keep := {"urls": XUpdateClient.channel_urls, "key": XUpdateClient.public_key, "stamp": XUpdateClient.stamp_path, "result": BootPatchScript.result.duplicate()}
+	XUpdateClient.channel_urls = PackedStringArray(["https://a.invalid/godot/channel.json"])
+	XUpdateClient.public_key = t500_key.save_to_string(true)
+	XUpdateClient.stamp_path = DIR.path_join("check_t500.json")
+	client.last = {}
+	client.fetcher = func(url: String) -> PackedByteArray:
+		t500_asked[0] += 1
+		return t500_sig if url.ends_with(".sig") else t500_man
+	var t500_host := Control.new()
+	get_tree().root.add_child(t500_host)
+	var t500_page := XUpdatePage.open(t500_host, true)
+	for i in range(12):
+		await get_tree().process_frame
+	_check("T500 更新页不卡 0.485 而是正常联网识别当前底包新补丁",
+		t500_asked[0] >= 2 and t500_page.state == XUpdateCheck.PATCH and not (t500_page.find_child("Body", true, false) as Label).text.contains("0.485"))
+	t500_page.close_page()
+	t500_host.queue_free()
+	await get_tree().process_frame
+	client.fetcher = Callable()
+	client.last = {}
+	XUpdateClient.channel_urls = t500_keep["urls"]
+	XUpdateClient.public_key = t500_keep["key"]
+	XUpdateClient.stamp_path = t500_keep["stamp"]
+	# register() 遇到残留 477/485 时绝不把旧底包塞进 prev；rollback() 遇到被污染的旧底包 prev 也不恢复旧底包
+	_write(old_477_pck, "old477")
+	_write(sp, JSON.stringify({"file": "patch_477_485.pck", "sha256": "ca".repeat(32), "size": 6, "base": 477, "code": 485, "confirmed": true, "boots": 0, "prev": null}))
+	f = FileAccess.open(XUpdateInstall.dir.path_join(XUpdateInstall.file_name(base, base + 2)), FileAccess.WRITE)
+	f.store_buffer(data)
+	f.close()
+	var p_next1 := _patch(["https://example.invalid/p1.pck"], data, base + 2)
+	_check("T500 register 在 477/485 残留上登记新补丁时 prev 为 null 且清旧包",
+		XUpdateInstall.register(p_next1, base) and _state()["prev"] == null and not FileAccess.file_exists(old_477_pck))
+	# 模拟当前底包正常连续更新（889→891→892 逻辑）：待重启识别、确认后清待重启、再升下一版保留同底包 prev、退回正常
+	_check("T500 正常新补丁登记后 pending_code 等于新号", XUpdateInstall.pending_code() == base + 2)
+	BootPatchScript.confirm(sp)
+	BootPatchScript.result = {"loaded": true, "reason": "已载入", "code": base + 2, "base": base, "confirmed": true}
+	_check("T500 正常新补丁载入后 pending_code 归 0", XUpdateInstall.pending_code() == 0)
+	f2 = FileAccess.open(XUpdateInstall.dir.path_join(XUpdateInstall.file_name(base, base + 3)), FileAccess.WRITE)
+	f2.store_buffer(data2)
+	f2.close()
+	var p_next2 := _patch(["https://example.invalid/p2.pck"], data2, base + 3)
+	_check("T500 同底包再升一版：pending 正确且 prev 保留上一版",
+		XUpdateInstall.register(p_next2, base) and XUpdateInstall.pending_code() == base + 3 and int(_state()["prev"]["code"]) == base + 2)
+	_check("T500 同底包退回上一版正常", XUpdateInstall.rollback(false) == base + 2 and int(_state()["code"]) == base + 2)
+	# 模拟被旧版客户端污染了 prev（base=477）：rollback(false) 拒绝退回旧底包、直接退回底包自带内容
+	var polluted: Dictionary = _state()
+	polluted["prev"] = {"file": "patch_477_485.pck", "sha256": "ca".repeat(32), "size": 6, "base": 477, "code": 485}
+	_write(sp, JSON.stringify(polluted))
+	_check("T500 rollback 拒绝把被污染的 477 prev 写回 active.json",
+		XUpdateInstall.rollback(false, "已撤回") == 0 and not FileAccess.file_exists(sp))
+	# 同底包已确认但本次启动未能载入（例如补丁文件被误删）：pending_code 不卡死且自动清理
+	BootPatchScript.result = {"loaded": false, "reason": "文件不在", "code": base + 2, "base": base}
+	_write(sp, JSON.stringify({"file": XUpdateInstall.file_name(base, base + 2), "sha256": p_next1["sha256"], "size": data.size(), "base": base, "code": base + 2, "confirmed": true, "boots": 0, "prev": null}))
+	_check("T500 同底包已确认但未载入时不卡死重启页", XUpdateInstall.pending_code() == 0 and not FileAccess.file_exists(sp))
+	BootPatchScript.result = t500_keep["result"]
+	XUpdateInstall.take_rollback_notice()
 
 	# 页面文字
 	_check("下载中", XUpdatePage.texts({"state": "downloading", "done": 1048576, "total": 2097152}, true)["body"].begins_with("1.0 MB / 2.0 MB") and XUpdatePage.texts({"state": "downloading"}, true)["primary"] == "取消下载")
