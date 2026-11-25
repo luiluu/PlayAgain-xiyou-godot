@@ -137,7 +137,8 @@ static func evaluate(manifest: Dictionary, base_code: int, current_code: int) ->
 	out["download_url"] = du if du is String and du.begins_with("https://") else ""
 	var latest: Dictionary = manifest["latest"]
 	out["code"] = int(latest["code"])
-	out["version"] = version_of(out["code"]) if release_name != "" else str(latest["version"])
+	var manifest_ver := str(latest["version"]).strip_edges()
+	out["version"] = version_of(out["code"]) if release_name != "" else manifest_ver
 	out["date"] = str(latest.get("date", ""))
 	var notes := PackedStringArray()
 	if typeof(latest.get("notes")) == TYPE_ARRAY:
@@ -153,6 +154,8 @@ static func evaluate(manifest: Dictionary, base_code: int, current_code: int) ->
 		out["state"] = LATEST
 		return out
 	out["state"] = FULL
+	if manifest_ver != "":
+		out["version"] = manifest_ver  # T500：要换整包时直接用清单 latest.version，不按旧底包 release_base 算成 0.01.415
 	out["forced"] = out["min_playable"] > current_code  # 走到这里已确定有更新的版本；清单最新号比 min_playable 还小时照样拦，只能手动下载
 	if base_code < int(manifest.get("min_base", 0)):
 		return out
@@ -165,6 +168,7 @@ static func evaluate(manifest: Dictionary, base_code: int, current_code: int) ->
 	if out["forced"] and int(p["code"]) < out["min_playable"]:
 		return out  # 强制时补丁不够新（装完重启还是被拦）：当整包，只给手动下载（gpt 核查 P2-1）
 	out["state"] = PATCH
+	out["version"] = version_of(out["code"]) if release_name != "" else manifest_ver
 	out["patch"] = {"code": int(p["code"]), "size": int(p["size"]), "sha256": str(p["sha256"]).to_lower(), "urls": order_urls(p["urls"])}
 	return out
 
