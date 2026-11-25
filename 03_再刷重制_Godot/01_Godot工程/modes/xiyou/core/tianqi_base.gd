@@ -236,7 +236,7 @@ static func gaze_row(s = null) -> Array:
 
 # ---- 敌人生命统一折算（T501 R2，Kyo 11-25「K 0.5，敌人血量统一 ×0.4」）----
 
-## 开关：true＝天启篇全部敌人（守层者、骑士、首领、召唤物、楼层敌群）最大生命 ×enemy_hp_pct%；false＝不折（K 0.5 时敌人会硬 2.5 倍）
+## O-670 开关：true＝天启篇全部敌人（守层者、骑士、首领、召唤物、楼层敌群）最大生命 ×enemy_hp_pct%；false＝不折（K 0.5 时敌人会硬 2.5 倍）
 static var ENEMY_HP_SCALE := true
 
 
