@@ -52,14 +52,13 @@ const VARIANT_DIAGNOSTICS := {1: [4749], 2: [4759, 4760], 22: [3776]}
 # T488 方案 A（维持 Kyo 原定档位倍率 1.0/1.5/2.5，收拢三档主招总系数范围与同档离群；全整数系数）。
 # 仅在显式传入 --t488-proposal 时于内存覆写，不写入正式表，待 Kyo 拍板后再另开实现卡。
 const T488_PROPOSAL_SKILLS := {
-	# 超强者（总系数收拢至 10～12，保留 D209 排名 拳一 > 渡鸦 > 三笠 > 狂刀）
+	# 超强者（等效总系数收拢至 8～11，含血量折算与常态余响；D209 次序：渡鸦第 1 > 拳一第 3 > 三笠第 11 > 狂刀第 15）
 	9938: {"damage": {"stats": {"atk": 2, "mhp": 0.01}, "coef": 1}},
 	9939: {"seq": [{"op": "keep_effects", "n": 4}]},
-	10731: {"damage": {"stats": {"atk": 2, "mat": 0, "mhp": 0.01}, "coef": 1}},
+	10731: {"damage": {"stats": {"atk": 2, "mat": 1, "mhp": 0.01}, "coef": 1}},
 	10729: {"damage": {"stats": {"atk": 1}, "coef": 2}},
 	6026: {"damage": {"stats": {"atk": 4, "mhp": 0}, "coef": 1}},
 	6027: {"damage": {"stats": {"atk": 1}, "coef": 5}},
-	6040: {"note_remove": ["passiveELUP\\d+", "passiveHarmRi", "passiveCrHarmRi", "StartPushState1834"]},
 	10125: {"damage": {"stats": {"mat": 1, "mhp": 0.01}, "coef": 1}, "seq": [{"op": "split_effects", "n": 4}]},
 	# 强者（输出 9～12、辅助 8～9；维利九段拆每段 1，绿司机升档去小数 0.63，狗逍遥破魂对齐 12）
 	4749: {"damage": {"stats": {"atk": 1}, "coef": 6}},
@@ -77,7 +76,7 @@ const T488_PROPOSAL_SKILLS := {
 	4755: {"damage": {"stats": {"mat": 1}, "coef": 9}},
 	4757: {"damage": {"stats": {"mat": 1}, "coef": 9}},
 	4759: {"damage": {"stats": {"mat": 1}, "coef": 9}},
-	4756: {"damage": {"stats": {"mat": 1}, "coef": 1}},
+	4756: {"damage": {"stats": {"mat": 1, "mmp": 0}, "coef": 1}},
 	4758: {"damage": {"stats": {"mat": 1}, "coef": 1}},
 	4760: {"damage": {"stats": {"mat": 1}, "coef": 1}},
 	# 弱者（8～10：艾坤大灌篮 3×2=6 → 3×3=9 拉齐同档）
@@ -177,13 +176,6 @@ func _secrets(a: XActor) -> void:
 	a.set_meta("k_secrets", slots)
 
 
-func _state(id: int) -> XState:
-	var s := super._state(id)
-	if t488_proposal and id == 95:
-		s.set_variable(1490, 10)  # 三笠满 10 次锻炼（配 4 阶进阶 → 真实超强者档位）
-	return s
-
-
 func _lianyu_state(id: int) -> XState:
 	var diff := ZHENGDAO if book_build == ZHENGDAO else LIANYU
 	var tpl := "D" if book_build == ZHENGDAO else "C"
@@ -193,8 +185,10 @@ func _lianyu_state(id: int) -> XState:
 	s.random_master = XRandomStream.hex64(battle_seed)
 	seed(battle_seed)
 	s.set_variable(20, LIANYU_FLOOR)
-	if t488_proposal and id == 95:
-		s.set_variable(1490, 10)  # 三笠满 10 次锻炼（配 4 阶进阶 → 真实超强者档位）
+	# T488 R2（修 P2-4）：按 skill_rework.json tiers.growth["95"]（锻炼 var 1490=10 且 4 阶进阶完成 → 超强者），
+	# 炼狱 80% / 证道满配统一按已完成自身超强者成长态测算（与 --t488-proposal 无关，基线与改后同口径）。
+	if id == 95:
+		s.set_variable(1490, 10)
 	s.actor_max_level = level
 	XState._become_current(s)
 	XTianqiSkills.MASTERY = true
@@ -248,13 +242,18 @@ func _lianyu_battle(s: XState, a: XActor, sample_seed: int) -> XBattleLogic:
 	e.add_param(0, 1.0e9)
 	e.param_mark_dirty()
 	_pin_def(e)
-	# T488（修 T471 R2 P2-5）：对称屏蔽单次木桩里不对称放大的武器流派效果——
-	# 红印整套连段重放（extra_hits）、黑印单动增伤（single_action_dmg_pct）与真印无视防御（ignore_def_pct）；
-	# 不预置黑印层数或上一回合防御。
+	# T488 R2（修 P2-2）：对称屏蔽全部武器流派效果（mark:/true:/unique:，涵盖红印连击递增与追段、
+	# 黑印单动+50%与无视防御、震印落星/陨月、灰印斩杀等），只保留武器白字面板与词条，确保四类武器单次木桩同起跑线。
 	var qfx := XTianqiQiyinEffects.effects(logic, a)
-	qfx.erase("extra_hits")
-	qfx.erase("single_action_dmg_pct")
-	qfx.erase("ignore_def_pct")
+	for k in qfx.keys():
+		var fx = qfx[k]
+		var src := str(fx.get("src", "")) if fx is Dictionary else ""
+		if src.begins_with("mark:") or src.begins_with("true:") or src.begins_with("unique:"):
+			qfx.erase(k)
+	# T488 R2（修 P2-5）：单人木桩无队友导致 122 狂刀 6040 孤世独行（开战状态 1834）必然触发，
+	# 而 4 人实战基本不触发；改在探针里移除状态 1834（基线与方案 A 同口径），不动正式表被动。
+	if a.state_ids.has(1834):
+		a.remove_state(1834)
 	a.hp = a.mhp
 	a.mp = a.mmp
 	a.tp = a.max_tp()
