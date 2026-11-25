@@ -133,6 +133,8 @@ func _run() -> void:
 	_test_b2_higher_no_expand_and_guard()
 	_test_stream_and_switch()
 	_test_t482_ui()
+	_test_t482_immune_same_roll()
+	_test_t482_old_skin_rows()
 	XTianqiElements.EFFECTS = true
 	XTianqiElements.reload_table()
 	XTianqiNature.reload_table()
@@ -1254,3 +1256,78 @@ func _test_t482_ui() -> void:
 	_check("t482_nature_line_west_empty", XTianqiNature.line_of(a) == "" and XTianqiNature.line_of_actor_id(a.actor_id) == "", [XTianqiNature.line_of(a)])
 	XState.current = s
 	_check("t482_floor_help_in_tooltip", XTianqiElements.profile_tooltip({"weak": [2], "resist": [], "immune": [4]}).ends_with(XTianqiNature.FLOOR_HELP))
+
+
+
+## T482 返修 R2（小o P1-1）：免疫跳字跟实际效果判定同一次结果——固定骰：几率 0.5，效果骰 0.25（会挂）／0.75（掷空）。
+## 有火体质（免疫）的一侧：0.25 弹「免疫灼烧」、0.75 不弹；对照无体质一侧：0.25 真挂上灼烧、0.75 没挂；弹＝对照侧真挂上；
+## 免疫侧不消费效果子流（draws 不变）。我方状态有效度 0 时挡住，不弹
+func _roll_case(s: XState, a: XActor, nat: Array, v: float, rate0_id := -1) -> Dictionary:
+	_actor_natures({a.actor_id: nat} if not nat.is_empty() else {})
+	var lg := _normal_logic(s)
+	var en: XEnemy = lg.enemies[0]
+	a.recover_all()
+	if rate0_id >= 0:
+		a.add_state(rate0_id)
+	var fx: Dictionary = XTianqiElementEffects._fx(lg)
+	fx.stream = XRandomStream.scripted([{"kind": "float", "value": v}, {"kind": "float", "value": v}])
+	XTianqiElementEffects.frame_begin(lg, en)
+	lg.apply(en, _stub(98710, 2, "200"), a)
+	var logs := XTianqiElementEffects.frame_end(lg, en)
+	var out := {"pops": _pops(logs), "burn": a.state_ids.has(XTianqiElementEffects.ST_BURN), "draws": int(fx.stream.draws)}
+	if rate0_id >= 0:
+		a.remove_state(rate0_id)
+	a.remove_state(XTianqiElementEffects.ST_BURN)
+	return out
+
+
+func _test_t482_immune_same_roll() -> void:
+	_reset()
+	_force(0.5)
+	var s := _tq_state()
+	var a: XActor = s.battle_members()[0]
+	_natures({})
+	for v in [0.25, 0.75]:
+		var imm := _roll_case(s, a, [2], v)
+		var ctl := _roll_case(s, a, [], v)
+		var hit: bool = ctl.burn
+		_check("t482_immune_pop_matches_effect_roll_%s" % str(v), hit == (v < 0.5) and (imm.pops == ["免疫灼烧"]) == hit and not imm.burn and imm.draws == 0 and ctl.pops == (["灼烧"] if hit else []), [v, imm, ctl])
+	# 状态有效度 0：对照侧也挂不上，免疫侧不弹
+	var st: Array = XDB.table("States")
+	var rid := st.size()
+	st.append({"id": rid, "name": "T482有效度0", "traits": [{"code": XBattler.TRAIT_STATE_RATE, "dataId": XTianqiElementEffects.ST_BURN, "value": 0.0}],
+		"note": "", "meta": {}, "iconIndex": 0, "restriction": 0, "autoRemovalTiming": 0, "removeAtBattleEnd": true})
+	var imm0 := _roll_case(s, a, [2], 0.25, rid)
+	var ctl0 := _roll_case(s, a, [], 0.25, rid)
+	st.pop_back()
+	_check("t482_immune_pop_silent_when_state_rate0", imm0.pops.is_empty() and not ctl0.burn, [imm0, ctl0])
+	_force()
+	_actor_natures({})
+
+
+## T482 返修 R2（小o P1-3）：原版界面（旧窗口）也有「角色属性」一行；西游档没有、不占位
+func _op_texts(ops: Array) -> Array:
+	var out := []
+	for o in ops:
+		if o is Array and o.size() > 1 and (str(o[0]) == "t" or str(o[0]) == "text"):
+			out.append(str(o[1]))
+	return out
+
+
+func _test_t482_old_skin_rows() -> void:
+	_reset()
+	var s := _tq_state()
+	var a: XActor = s.battle_members()[0]
+	XState.current = s
+	_actor_natures({a.actor_id: [2]})
+	var sh := _op_texts(XStatusPage.header_ops(a))
+	var ab := _op_texts(XActorBook.status_ops(a.actor_id, func(t, sz): return float(str(t).length()) * float(sz)))
+	_check("t482_old_status_nature_row", sh.has("角色属性") and sh.has("火焰"), sh)
+	_check("t482_old_actor_book_nature_row", ab.has("角色属性") and ab.has("火焰"), ab.slice(0, 12))
+	var west := XState.new()
+	XState.current = west
+	var wh := _op_texts(XStatusPage.header_ops(a))
+	var wb := _op_texts(XActorBook.status_ops(a.actor_id, func(t, sz): return float(str(t).length()) * float(sz)))
+	_check("t482_old_rows_west_no_nature", not wh.has("角色属性") and not wb.has("角色属性"), [wh, wb.slice(0, 6)])
+	XState.current = s
+	_actor_natures({})

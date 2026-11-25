@@ -73,8 +73,8 @@ static func of(b) -> Array:
 
 ## ---- 界面文字（T482，Kyo 11-25 事项 59 ④）：图鉴、角色页那一行「角色属性：火焰」，双属性顿号隔开、无则「无」 ----
 const LABEL := "角色属性"
-const HELP := "角色属性只决定免疫或易受哪些元素效果，不影响元素伤害倍率。"
-const FLOOR_HELP := "角色属性只影响元素效果，不免疫元素伤害。"
+const HELP := "角色属性决定免疫或易受哪些元素效果，不影响元素伤害倍率。"
+const FLOOR_HELP := "注：角色属性只影响元素效果，不免疫元素伤害。"
 
 
 static func ui_on() -> bool:
@@ -85,6 +85,12 @@ static func ui_on() -> bool:
 static func format_line(natures: Array) -> String:
 	var names := natures.map(func(e): return XTianqiElements.element_name(int(e)))
 	return "%s：%s" % [LABEL, "、".join(names) if not names.is_empty() else "无"]
+
+
+## 把「角色属性：火焰」拆成 [标签, 值]，界面好分开着色（标签灰字、值白字）；没有「：」时标签为空
+static func split_line(line: String) -> Array:
+	var i := line.find("：")
+	return [line.substr(0, i), line.substr(i + 1)] if i >= 0 else ["", line]
 
 
 ## 战斗单位的那一行；西游档（或元素效果开关关着）返回 ""，界面不画

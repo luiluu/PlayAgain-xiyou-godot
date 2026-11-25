@@ -290,6 +290,12 @@ static func status_ops(e: XEnemy, all := true) -> Array:
 		ops.append(_t(str(sm.resist_line), 214.0, 212.0, 190.0, XUI.SYSTEM, "left", 18))
 	# 左栏：属性、技能
 	y = LH * 7 + 6.0
+	var nat := XTianqiNature.line_of(e)   # T482 返修 R2（小o P1-3）：原版界面也补「角色属性」一行（西游档为空，不占位）；未登记照旧遮蔽
+	if nat != "":
+		var np := XTianqiNature.split_line(nat)
+		ops.append(_t(str(np[0]), 0, y, 130.0, XUI.SYSTEM))
+		ops.append(_t(UNKNOWN_DATA if hide else str(np[1]), 130.0, y, COLW - 130.0))
+		y += LH
 	_element_row(ops, e, y, true, hide)
 	y += LH * 2 + 6.0
 	_element_row(ops, e, y, false, hide)

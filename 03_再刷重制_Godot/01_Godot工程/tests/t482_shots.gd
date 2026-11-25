@@ -5,12 +5,15 @@ const TestEnv = preload("res://tests/xiyou_test_env.gd")
 
 var out_dir := ""
 var only: PackedStringArray = []
+var suffix := ""   # 原版界面截图加后缀：加启动参数 --ui-skin=old 且 --suffix=_old
 
 
 func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="):
 			out_dir = arg.substr(6)
+		elif arg.begins_with("--suffix="):
+			suffix = arg.substr(9)
 		elif arg.begins_with("--only="):
 			only = arg.substr(7).split(",")
 	_run.call_deferred()
@@ -42,7 +45,7 @@ func _run() -> void:
 		return
 	TestEnv.isolate("t482_shots")
 	XSplashScreen.shown = true
-	XUiSkin.FORCE = true
+	XUiSkin.FORCE = XUiSkin.cli_mode() != 0
 	var s := XTianqi.start_new_game(3, "jianxian", [9])
 	XTianqi.take_pending()
 	XState.current = s
@@ -69,6 +72,12 @@ func _run() -> void:
 			await _frames(5)
 			await _shot(p[3])
 			await _frames(70)
+		# 敌我同场一起弹（返修 R2：头顶、不盖名牌；我方同一人两条提示往上叠）
+		for p in [[e, "灼烧", 2], [a, "免疫灼烧", 2], [a, "圣佑抵挡", 1], [sc.logic.actors[1], "迟缓", 2]]:
+			sc._play([{"type": "battle_text", "text": "x", "pop": {"target": p[0], "text": p[1], "format": p[2]}}])
+		await _frames(5)
+		await _shot("popup_both_sides")
+		await _frames(70)
 		sc.queue_free()
 		await _frames(5)
 	if _want("icons"):
@@ -109,20 +118,22 @@ func _run() -> void:
 		await _frames(3)
 		b.select(1)
 		await _frames(8)
-		await _shot("book_enemy_nature")
+		await _shot("book_enemy_nature" + suffix)
 		b.queue_free()
 		await _frames(3)
 		var ab := XActorBook.new()
 		add_child(ab)
 		await _frames(5)
-		await _shot("book_actor_nature")
+		ab.select(9)   # 罗琳（0 号槽是空的「？？？」，旧页停在它上面右边一片空）
+		await _frames(8)
+		await _shot("book_actor_nature" + suffix)
 		ab.queue_free()
 		await _frames(3)
 	if _want("status"):
 		var st := XStatusPage.new()
 		add_child(st)
 		await _frames(8)
-		await _shot("status_nature")
+		await _shot("status_nature" + suffix)
 		st.queue_free()
 		await _frames(3)
 	get_tree().quit.call_deferred(0)

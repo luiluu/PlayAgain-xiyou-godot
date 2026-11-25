@@ -358,6 +358,11 @@ static func status_ops(id: int, measure: Callable) -> Array:
 	y += LH
 	ops.append(_t("最大进阶次数 ", c2 / 3.0, y, cw, XUI.SYSTEM))
 	ops.append(_t(advance_max(id), c2 / 3.0 + tw.call("最大进阶次数:"), y, cw, XUI.TEXT))
+	var nat := XTianqiNature.line_of_actor_id(id)   # T482 返修 R2（小o P1-3）：原版界面也补「角色属性」，与「最大进阶次数」同一行靠右（西游档为空，不占位）
+	if nat != "":
+		var np := XTianqiNature.split_line(nat)
+		ops.append(_t(str(np[0]), cols[0] + sp7, y, cw, XUI.SYSTEM))
+		ops.append(_t(str(np[1]), cols[0] + tw.call(str(np[0]) + "        "), y, cw, XUI.TEXT))
 	y += LH
 	var raven := id == 167 or id == 173
 	var skill_lh := 32.0 if raven else LH

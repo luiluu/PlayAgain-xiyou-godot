@@ -1193,10 +1193,11 @@ func _draw_actor(a: Rect2) -> void:
 	spans.append(["、".join(info.weapons) if not (info.weapons as Array).is_empty() else "—", XUiSkin.TEXT])
 	spans.append(["    " + T_ARMOR + "  ", XUiSkin.TEXT_2])
 	spans.append(["、".join(info.armors) if not (info.armors as Array).is_empty() else "—", XUiSkin.TEXT])
-	if str(info.get("nature", "")) != "":   # T482：天启篇「角色属性：火焰」，放不下自动折行
-		spans.append(["    " + str(info.nature), XUiSkin.TEXT])
 	# 牌头高按内容算：掌握多（渡鸦）或 130% 字号折成三四行时往下推，不裁字
 	var span_end := draw_spans(ci, spans, tx, ny, tw, XUiSkin.FS_AUX, XUiSkin.FS_AUX * 1.55)
+	if str(info.get("nature", "")) != "":   # T482 返修 R2（小A P2-1）：「角色属性」单独一行，灰字标签＋白字值，不拼在防具列表后
+		var np := XTianqiNature.split_line(str(info.nature))
+		span_end = draw_spans(ci, [[str(np[0]) + "  ", XUiSkin.TEXT_2], [str(np[1]), XUiSkin.TEXT]], tx, span_end, tw, XUiSkin.FS_AUX, XUiSkin.FS_AUX * 1.55)
 	y = maxf(y + HEAD_H, span_end + 8.0)
 	mastery_end = span_end
 	head_bottom = y
@@ -1301,7 +1302,10 @@ func _draw_enemy(a: Rect2) -> void:
 	var fa := XUiSkin.FS_AUX
 	y = draw_spans(ci, [[" · ".join(sub), XUiSkin.TEXT_2]], x, y, lw, fa, fa * 1.5, y + fa * 1.5 * 3)
 	if str(info.get("nature", "")) != "":   # T482：天启篇「角色属性：火焰」一行
-		XUiSkin.ds(ci, body, Vector2(x, y + fa * 0.9), str(info.nature), HORIZONTAL_ALIGNMENT_LEFT, lw, fa, XUiSkin.TEXT)
+		var np := XTianqiNature.split_line(str(info.nature))   # 灰字标签＋白字值，跟上一行「种族」灰字一个层级（小A P3）
+		var lab := str(np[0]) + "  "
+		XUiSkin.ds(ci, body, Vector2(x, y + fa * 0.9), lab, HORIZONTAL_ALIGNMENT_LEFT, lw, fa, XUiSkin.TEXT_2)
+		XUiSkin.ds(ci, body, Vector2(x + body.get_string_size(lab, HORIZONTAL_ALIGNMENT_LEFT, -1, fa).x, y + fa * 0.9), str(np[1]), HORIZONTAL_ALIGNMENT_LEFT, lw, fa, XUiSkin.TEXT)
 		y += fa * 1.6
 	var six: Dictionary = info.get("six", {})
 	# 图的高按下面弱／抗要占的高让出来（出没地图多、弱抗图标多行、130% 字号时图变矮，最矮 80），不画出面板
