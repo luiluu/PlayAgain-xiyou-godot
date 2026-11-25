@@ -10,7 +10,7 @@ extends RefCounted
 ## - WEAK_EXPOSURE（O-434）：弱点暴露 +11%（同破绽取 max，不叠加）
 ## - HIGHER_EFFECTS（O-435）：高阶属性（11 虚空吞没 / 12 混沌随机 / 13 空间空蚀 15% 真伤）
 ## - SKILL_SHIFTS（O-436）：技能/被动转属（水/风/虚空/混沌）、转换书（1039 改名、3101~3105、互斥与仅炼狱/证道掉落）
-## - EFFECTS（O-待定，T480）：元素独特效果（XTianqiElementEffects，设计稿《天启篇_元素独特效果_v0.3》）：十系效果、圣护、行动位停手；false＝回到改前（不记账、不取子流、不挂效果状态）
+## - EFFECTS（O-664，T480）：元素独特效果（XTianqiElementEffects，设计稿《天启篇_元素独特效果_v0.3》）：十系效果、圣护、行动位停手；false＝回到改前（不记账、不取子流、不挂效果状态）
 ## - PHYSICAL_DUAL_KEEP_NEUTRAL：待确认项 B（true＝8 个自然物攻保留 [0, 水/风] 双属性；false＝默认单水/单风）
 
 static var ENABLED := true
