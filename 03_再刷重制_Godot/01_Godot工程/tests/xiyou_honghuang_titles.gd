@@ -276,6 +276,12 @@ func _run() -> void:
 	_put_local(good_bytes)
 	XHonghuangTitles.reload_local()
 	check("device.back_home", XDesignation.unlocked(52) and XDesignation.unlocked(53))
+	# 热修 P1-1：已有缓存时标识变空（不手动 reload）→ 立刻不认，正确码提示重试；恢复后（不手动 reload）原解锁照认
+	XHonghuangTitles.machine_id_missing = true
+	check("noid.cache_dropped_on_empty", not XDesignation.unlocked(52) and not XDesignation.unlocked(53) and not XHonghuangTitles.worn_ok(sn)
+		and XHonghuangTitles.redeem(sn, TEST_CODE).text == XHonghuangTitles.MSG_RETRY and FileAccess.get_file_as_bytes(lp) == good_bytes)
+	XHonghuangTitles.machine_id_missing = false
+	check("noid.cache_restored", XDesignation.unlocked(52) and XDesignation.unlocked(53) and XHonghuangTitles.worn_ok(sn))
 	# 返修 P1-1：设备 ID 取不到 → 已有文件不认；兑换提示稍后重试，什么都不写、不记存档
 	XHonghuangTitles.machine_id_missing = true
 	XHonghuangTitles.reload_local()

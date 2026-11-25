@@ -135,8 +135,26 @@ static func local_path() -> String:
 
 
 ## 本机标记；设备 ID 取不到时返回 ""（调用方一律不认、不写）
+## 系统设备 ID 最多每 ID_RECHECK_MS 重查一次（名牌每帧要问，不每帧查系统）；变了下面的本机缓存跟着失效
+const ID_RECHECK_MS := 2000
+static var _id_cache := ""
+static var _id_at := -1
+
+
+static func _raw_id() -> String:
+	if machine_id_missing:
+		return ""
+	if machine_id_override != "":
+		return machine_id_override
+	var now := Time.get_ticks_msec()
+	if _id_at < 0 or now - _id_at >= ID_RECHECK_MS:
+		_id_cache = OS.get_unique_id()
+		_id_at = now
+	return _id_cache
+
+
 static func machine_tag() -> String:
-	var id := "" if machine_id_missing else (machine_id_override if machine_id_override != "" else OS.get_unique_id())
+	var id := _raw_id()
 	if id.strip_edges() == "":
 		return ""
 	return ("%s|%s" % [MACHINE_SALT, id]).sha256_text()
@@ -148,13 +166,15 @@ static func _can_seal() -> bool:
 
 
 ## 读本机解锁（签名不对、不是本机的、没有文件，都当空的；文件不动）
+## 缓存按「路径｜本机标记」记：先查设备标识，标识为空一律当空的；标识变了（变空、恢复、换了）缓存自动失效（热修 P1-1）
 static func local_state() -> Dictionary:
 	var p := local_path()
-	if p == _local_path:
-		return _local
-	_local_path = p
-	_local = {"titles": {}, "used": []}
 	var tag := machine_tag()
+	var key := "%s|%s" % [p, tag]
+	if key == _local_path:
+		return _local
+	_local_path = key
+	_local = {"titles": {}, "used": []}
 	if tag == "" or not FileAccess.file_exists(p):
 		return _local
 	var r := XSaveSeal.read(p)  # 有大小上限；不在封存管的文件名里，不触发目录迁移
@@ -340,6 +360,8 @@ static func redeem(s, code: String) -> Dictionary:
 			want.append(tid)
 	if not _can_seal():
 		return _redeem_to_save(s, h, want)
+	if machine_tag() == "":
+		return {"ok": false, "text": MSG_RETRY, "titles": []}  # 设备标识取不到：先于「已拥有」判断，不认缓存（热修 P1-1）
 	# 本机还没有的就写本机解锁文件（T493 只兑在某份存档里的，也补成本机拥有）
 	var got := want.filter(func(tid): return not local_has(tid))
 	if got.is_empty():

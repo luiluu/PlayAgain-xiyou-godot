@@ -20,6 +20,7 @@ import hashlib
 import json
 import os
 import secrets
+import stat
 import sys
 from pathlib import Path
 
@@ -74,7 +75,16 @@ def main() -> int:
     if a.note:
         entry["note"] = a.note
     # 先写码文件（写不了就停，配置里不会留下没人知道原文的 hash）
-    fd = os.open(a.out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    # 不跟符号链接、不截断地打开，再按文件描述符确认是普通文件（终端、管道、设备一律拒绝），然后才截断写入；不是就报错，配置不动
+    try:
+        fd = os.open(a.out, os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW | os.O_NONBLOCK, 0o600)
+    except OSError as e:
+        sys.exit("--out 打不开（%s）：必须是普通文件；配置没改" % e.strerror)
+    if not stat.S_ISREG(os.fstat(fd).st_mode):
+        os.close(fd)
+        sys.exit("--out 必须是普通文件（不能是终端、管道、设备、符号链接）；配置没改")
+    os.set_blocking(fd, True)
+    os.ftruncate(fd, 0)
     os.fchmod(fd, 0o600)  # 覆写已有文件时 O_CREAT 的权限位不生效，这里再收紧一次
     with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(code + "\n")
