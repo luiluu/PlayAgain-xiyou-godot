@@ -47,6 +47,8 @@ func _state() -> XState:
 	for a in s.members():
 		a.change_level(99)
 		a.refresh_passive()
+		a.add_param(0, 99999999.0)  # 截图要停在我方指令，别被首领先手打光
+		a.add_param(3, 999999.0)
 		a.param_mark_dirty()
 		a.recover_all()
 	s.random_master = XRandomStream.hex64(20261125)
@@ -82,6 +84,11 @@ func _battle(troop: int, tiers: Dictionary) -> XBattleScene:
 	XRiftAlien.apply(b.logic, rows)
 	add_child(b)
 	await _frames(30 if _windowed() else 6)
+	if _windowed():  # 截图等到我方指令（敌人先手的行动演出里身体会被藏）
+		for k in range(900):
+			if b.cmd_win != null and b.cmd_win.active:
+				break
+			await get_tree().process_frame
 	return b
 
 
@@ -113,6 +120,7 @@ func _run() -> void:
 	await _glow_and_switch()
 	await _tianqi()
 	await _exit()
+	await _transform()
 	if _windowed():
 		await _shots()
 	XRiftAlien.STAGE_OVERRIDE = 0
@@ -175,6 +183,8 @@ func _reference(troop: int, prof: String, name: String) -> void:
 		if sp2 == null or sp2.scale != Vector2.ONE or not sp2.position.is_equal_approx(tl + Vector2(off[0], off[1])):
 			bad.append([part_name, sp2.position if sp2 else null, tl + Vector2(off[0], off[1])])
 	_check("ref_positions_" + prof, bad.is_empty() and sprites.size() == 5, bad)
+	# 返修 P2-1：样本怪不挖避让区（模板美术已绕开），前件不带挖空材质，挂件像素与定稿件原样一致
+	_check("ref_no_avoid_mask_" + prof, n.front.get_children().all(func(c): return c.material == null))
 	await _close(b)
 
 
@@ -260,6 +270,28 @@ func _exit() -> void:
 	_check("free_clears_back", not is_instance_valid(n))
 
 
+## 返修 P1-1：漩涡三阶玉皇大帝（敌群 466）蚀骨，事件 336 入魔（534→538）换图；新旧精灵同时在场时旧件退场不清新件的标记
+func _transform() -> void:
+	XRiftAlien.STAGE_OVERRIDE = 3
+	var b := await _battle(466, {0: "shigu"})
+	var e: XEnemy = b.logic.enemies[0]
+	var old_sp: XBattlerSprite = b.sprites[e]
+	var old_parts := _parts(b, 0)
+	_check("jade_before", old_parts != null and is_equal_approx(XRiftAlien.tint(e, 0.0).a, 0.06), XRiftAlien.tint(e, 0.0))
+	for l in b.logic.enemy_transform(0, 538):
+		b._apply_enemy_change(l)
+	var new_sp: XBattlerSprite = b.sprites[e]
+	await _frames(1)
+	var same_frame := new_sp != old_sp and _parts(b, 0) != null
+	await _frames(35)
+	var np := _parts(b, 0)
+	_check("jade_new_parts", same_frame and np != null and np.tier == "shigu" and np.host == new_sp, [same_frame, np])
+	_check("jade_old_freed", not is_instance_valid(old_sp) and not is_instance_valid(old_parts))
+	_check("jade_mark_owner", np != null and int(e.get_meta(XRiftAlien.PARTS, 0)) == np.get_instance_id(), e.get_meta(XRiftAlien.PARTS, null))
+	_check("jade_glow_after", is_equal_approx(XRiftAlien.tint(e, 0.0).a, 0.06), XRiftAlien.tint(e, 0.0))
+	await _close(b)
+
+
 func _shots() -> void:
 	# 实战一场最多一只异化（max_units 1）：异化怪站在普通邻怪中间
 	var b := await _battle(20, {0: "huaxing"})
@@ -296,3 +328,10 @@ func _shots() -> void:
 		await _frames(30)
 		await _shot("07_首领黝石巨人_" + t)
 		await _close(b)
+	# 返修 P2-2：癫舞狂信者（敌群 115 首位）、撼地神牛之影（敌群 146）用单独锚点
+	for pair in [[115, "08_癫舞狂信者_"], [146, "09_撼地神牛之影_"]]:
+		for t in ["shigu", "huaxing"]:
+			b = await _battle(int(pair[0]), {0: t})
+			await _frames(30)
+			await _shot(str(pair[1]) + t)
+			await _close(b)

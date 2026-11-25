@@ -31,7 +31,7 @@ extends RefCounted
 const PATH := "res://modes/xiyou/rift_alien.json"
 const META := "xrift_alien"
 const LOOK := "xrift_look"
-## T505：这只异化怪身上挂着附加件（XRiftAlienParts 挂上时设、拆下时清）；有它时整体偏色改用 look.parts_tier_glow
+## T505：这只异化怪身上挂着附加件（XRiftAlienParts 挂上时设、拆下时清；值是挂件实例 ID，返修 P1-1 换图时旧件只清自己的）；有它时整体偏色改用 look.parts_tier_glow
 const PARTS := "xrift_parts"
 
 ## 开关：false＝漩涡阶段不影响怪物
