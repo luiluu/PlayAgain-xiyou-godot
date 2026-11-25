@@ -29,7 +29,7 @@ static func _active_now(a: XActor) -> Array:
 	var pieces := XTianqiSuits.filter_suits(a, counts(a))  # 天启篇一人最多两套（T513，西游档原样）
 	for id in pieces:
 		if id <= 0 or id >= defs.size() or defs[id] == null:continue
-		for b in defs[id].bonuses:
+		for b in XTianqiSuits.bonuses_of(a, id, int(pieces[id]), defs[id].bonuses):  # 天启篇原版套装模板（T515，西游档原样）
 			if int(pieces[id]) >= int(b.requirePieces):out.append(b)
 	return out
 

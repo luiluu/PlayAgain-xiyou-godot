@@ -148,6 +148,7 @@ func _traits() -> void:
 
 ## 原版套装 9「勇士」2 件给状态 41（攻击次数 +1）：两件身上的装备挂上套装号 9
 func _suit_state_case(a: XActor, t0: float) -> Array:
+	XTianqiSuits.TEMPLATE = false  # 9 号勇士套是原版套装模板样板（T515）；这里量的是原效果（状态 41）被九线停用，模板关掉看原效果
 	var keep := a.equips.duplicate()
 	var off0 := _times(a, false)
 	var pieces := []
@@ -178,6 +179,7 @@ func _suit_state_case(a: XActor, t0: float) -> Array:
 	var off := _times(a, false)
 	a.equips = keep
 	a.read_touch()
+	XTianqiSuits.TEMPLATE = true
 	return [pieces.size() == 2 and has and on == base_on and off == base_off + 1.0, [pieces.size(), has, t0, off0, base_on, base_off, on, off]]
 
 

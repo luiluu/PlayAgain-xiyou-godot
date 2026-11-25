@@ -1405,5 +1405,41 @@ class ElementEffectsRules(unittest.TestCase):
             self.assertTrue(any(word in b for b in bad), (word, bad))
 
 
+class SuitTemplateT515(unittest.TestCase):
+    """原版套装模板表（2B）：现表通过；改坏几处要报。"""
+    def setUp(self):
+        self.t = json.loads((chk.DATA_DIR / 'suit_template.json').read_text(encoding='utf-8'))
+        self.affix = json.loads((chk.DATA_DIR / 'affix_table.json').read_text(encoding='utf-8'))
+        self.db = json.loads(chk.EQUIP_SUITS_DB.read_text(encoding='utf-8')) if chk.EQUIP_SUITS_DB.is_file() else None
+
+    def test_current_passes(self):
+        self.assertEqual(chk.suit_template_rules(self.t, self.affix, self.db), [])
+
+    def test_broken(self):
+        cases = [
+            (lambda t: t['values']['3'].__setitem__(3, 14), '不出 4'),
+            (lambda t: t['values'].__setitem__('5', [8, 10, 12, 12]), '往前每阶挪一格'),
+            (lambda t: t['values'].__setitem__('3', [1, 2, 2, 3]), '不小于上一档'),
+            (lambda t: t['kinds']['drop'].__setitem__('cap', 15), '掉率单件封顶'),
+            (lambda t: t['kinds']['atk_final'].__setitem__('affix', 'no_such'), 'affix 在 affix_table'),
+            (lambda t: t['suits']['14'].pop('element'), '带元素'),
+            (lambda t: t['suits'].__setitem__('9', {'kind': 'nope'}), 'kind 认识'),
+            (lambda t: t.__setitem__('steps', [1, 3]), 'steps'),
+        ]
+        for mut, word in cases:
+            t = copy.deepcopy(self.t)
+            mut(t)
+            bad = chk.suit_template_rules(t, self.affix, self.db)
+            self.assertTrue(any(word in b for b in bad), (word, bad))
+
+    def test_single_piece_suit_rejected(self):
+        if self.db is None:
+            self.skipTest('没有转换产物 EquipSuits.json')
+        single = next(i for i, r in enumerate(self.db) if r and r.get('bonuses') and all(b['requirePieces'] <= 1 for b in r['bonuses']))
+        t = copy.deepcopy(self.t)
+        t['suits'][str(single)] = {'kind': 'atk_final'}
+        self.assertTrue(any('多件档' in b for b in chk.suit_template_rules(t, self.affix, self.db)))
+
+
 if __name__ == '__main__':
     unittest.main()
