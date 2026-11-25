@@ -49,8 +49,12 @@ const SPECS := {
 }
 
 static var _recs: Dictionary = {}
-## 当前战斗（add_state 钩子没有 logic 参数时用）；start 设、finish 清
-static var _logic = null
+## 当前战斗（add_state 钩子没有 logic 参数时用）；start 设、finish 清。只存弱引用：不能替战斗对象续命（T181 swap_hold 靠战斗对象释放来放开）
+static var _logic_ref: WeakRef = null
+
+
+static func _cur():
+	return _logic_ref.get_ref() if _logic_ref != null else null
 
 
 # ---- 状态记录（XDB.rec 表外号段） ----
@@ -116,7 +120,7 @@ static func start(logic) -> void:
 	if logic.has_meta(META):
 		logic.remove_meta(META)
 	if not on(logic):
-		_logic = null  # 西游档／开关关：add_state 钩子不再指向上一场天启篇战斗
+		_logic_ref = null  # 西游档／开关关：add_state 钩子不再指向上一场天启篇战斗
 		return
 	logic._rule()  # 只确保本场随机对象建好（不取数）
 	var rnd = logic.random
@@ -128,14 +132,14 @@ static func start(logic) -> void:
 	var seed_hex := XRandomStream.derive(base_seed, "elem_effects")
 	logic.set_meta(META, {"seed": seed_hex, "stream": XRandomStream.create(seed_hex, "elem_effects"),
 		"frames": [], "loose": [], "units": {}, "logs": [], "stats": {}, "holy_boss": 0})
-	_logic = logic
+	_logic_ref = weakref(logic)
 
 
 static func finish(logic) -> void:
 	if logic != null and logic.has_meta(META):
 		logic.remove_meta(META)
-	if is_same(_logic, logic):
-		_logic = null
+	if is_same(_cur(), logic):
+		_logic_ref = null
 
 
 ## 回合末（XTianqiElements.end_turn，状态已按回合递减）：把到期的效果记进冷却
@@ -559,14 +563,17 @@ static func _dispel_one(logic, src, b) -> void:
 
 ## XBattler.add_state 入口（_add_state 之前）：持圣护盾的单位挡下一次对方施加的可解除减益，盾碎
 static func shield_blocks(b, id: int) -> bool:
-	if _logic == null or not b.state_ids.has(ST_HOLY) or b.state_ids.has(id):
+	if _logic_ref == null or not b.state_ids.has(ST_HOLY) or b.state_ids.has(id):
+		return false
+	var lg = _cur()
+	if lg == null:
 		return false
 	if not removable_debuff(id) or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
 		return false
 	var src = XImportedBalance.acting_battler()
 	if src == null or _same_side(src, b):
 		return false  # 没有出手者（脚本、阶段状态、剧情锁）或自己人上的：不挡
-	var fx := _fx(_logic)
+	var fx := _fx(lg)
 	if fx.is_empty():
 		return false
 	b.remove_state(ST_HOLY)
@@ -576,9 +583,9 @@ static func shield_blocks(b, id: int) -> bool:
 
 ## XBattler.add_state 之后：旧停手挂上 → 停手计数至少 1、元素停手标记移除（不算吃位）；旧灼伤／旧麻痹挂上 → 顶掉新效果（§3.4、3.6）
 static func after_add_state(b, id: int) -> void:
-	if _logic == null or STATE_IDS.has(id) or not b.state_ids.has(id):
+	if _logic_ref == null or STATE_IDS.has(id) or not b.state_ids.has(id):
 		return
-	var fx := _fx(_logic)
+	var fx := _fx(_cur())
 	if fx.is_empty():
 		return
 	var rec := XDB.rec("States", id)
