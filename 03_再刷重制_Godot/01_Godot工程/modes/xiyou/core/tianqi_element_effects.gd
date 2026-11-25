@@ -1,12 +1,14 @@
 class_name XTianqiElementEffects
 extends RefCounted
-## 【cc·天启篇·未经审查】天启篇元素独特效果（设计稿《天启篇_元素独特效果_v0.3》§3.1～3.6、4.2～4.3、5.1、5.5；T480＝B 卡「我方打敌」）。
+## 【cc／小A·天启篇·未经审查】天启篇元素独特效果（设计稿《天启篇_元素独特效果_v0.3》§3.1～3.6、4.2～4.4、5.1、5.3、5.5；T480 B 卡我方打敌 ＋ T485 B2 卡敌打我方）。
 ## 只对天启篇存档生效（XTianqiElements.on：XTianqi.active＋发行守卫），开关 XTianqiElements.EFFECTS；西游档、开关关着时每个入口都直接返回、不取随机数。
 ##
 ## 事件契约（§3.1）：BattleLogic.apply 每段结算后 note_hit 只记账不掷；一次行动（execute 一次、反击一次各开一帧）收尾时
 ## 对每个（实际扣血对象, 胜出元素）只掷一次，基数＝该行动对该目标该系合格段 hp_loss 合计。没有帧的零散段（直接调 apply）在 act 收尾按出手者各掷。
-## 合格段：胜出元素是基础十系、hp_loss > 0、未闪避未落空、出手方是我方、实际挨打的是敌人（B 卡）；持续伤害跳数、空蚀不经 apply 记账，天然不算。
-## B2（敌打我方）共用同一套帧、段记录与 _try_apply，只需放宽 _side_ok 并接 4.4 判定，本卡不开。
+## 合格段：胜出元素是基础十系、hp_loss > 0、未闪避未落空、跨边（我方打敌或敌打我方，不认自伤／友伤）；持续伤害跳数、空蚀不经 apply 记账，天然不算。
+## 敌打我方（§4.4、§5.3）共用同一套帧、段记录、状态与 _try_apply：我方受者走「硬免疫 → 体质免疫 → 状态有效度 → 停手类六维韧性（只乘一次）」；
+## 敌方统一用 enemy_effect_rules.base_chance（11%，首领不加成）并受施效预算（普通一次最多 1 停手、精英／化形另每场对同角最多 2 停手、首领每行动最多 1 效果／麻痹换感电／不冻我方／首领一侧圣护每场 3 次）。
+## 高等三系本轮不扩到敌打我方（D285③）：敌人高等三系打我方只走受击者原属性倍率，不触发吞没／无序／空蚀、不掷十系效果。
 ##
 ## 停手（§3.6）：麻痹、冰冻是 restriction 0 的标记状态，只跳过下一个本可执行的行动位（act 里 take_skip），一次只吃一位；
 ## 吃位后目标要自己完成 5 次行动才可再被元素停手（stop_need）；旧控（restriction ≥ 4）挂上时 stop_need 至少 1、待生效标记直接移除。
@@ -120,6 +122,10 @@ static func _rules() -> Dictionary:
 	return data().get("effect_rules", {})
 
 
+static func _enemy_rules() -> Dictionary:
+	return data().get("enemy_effect_rules", {})
+
+
 static func _spec(elem: int) -> Dictionary:
 	return data().get("element_effects", {}).get(str(elem), {})
 
@@ -193,7 +199,7 @@ static func _stat(fx: Dictionary, elem: int, what: String) -> void:
 
 static func _unit(fx: Dictionary, b) -> Dictionary:
 	if not fx.units.has(b):
-		fx.units[b] = {"active": {}, "until": {}, "stop_need": 0, "slow_n": 0, "frozen": 0, "dot": {}, "skips": 0, "done": 0}
+		fx.units[b] = {"active": {}, "until": {}, "stop_need": 0, "slow_n": 0, "frozen": 0, "dot": {}, "skips": 0, "done": 0, "stops_on": {}}
 	return fx.units[b]
 
 
@@ -221,24 +227,38 @@ static func _ready_for(logic, b, key: String) -> bool:
 
 # ---- 身份 ----
 
-## §4.3 统一首领谓词：is_boss_enemy ∪ 终焉级异化；化形按精英（不算首领）
+## §4.3 统一首领谓词：is_boss_enemy ∪ 终焉级异化；非首领的化形不算首领，按精英处理
 static func effect_boss(logic, t) -> bool:
 	if not (t is XEnemy):
 		return false
+	if XTianqiElements.is_boss_enemy(t):
+		return true
 	if logic != null:
 		for row in XTianqiAlienGear.alien_units(logic):
-			if is_same(row.get("enemy"), t):
-				var lv := str(row.get("level", ""))
-				if lv == "zhongyan":
-					return true
-				if lv == "huaxing":
-					return false
-	return XTianqiElements.is_boss_enemy(t)
+			if is_same(row.get("enemy"), t) and str(row.get("level", "")) == "zhongyan":
+				return true
+	return false
 
 
-## B 卡只开我方打敌人；B2 在这里放宽并接 4.4 我方判定
+## §5.3 精英／化形谓词（非首领）：神话／精英标记、化形级异化、敌人名含【精英】、六维表 class == "elite"
+static func effect_elite(logic, t) -> bool:
+	if not (t is XEnemy) or effect_boss(logic, t):
+		return false
+	var e := t as XEnemy
+	if e.elite:
+		return true
+	if logic != null:
+		for row in XTianqiAlienGear.alien_units(logic):
+			if is_same(row.get("enemy"), e) and str(row.get("level", "")) == "huaxing":
+				return true
+	if str(e.data().get("name", "")).contains("【精英】"):
+		return true
+	return str(XTianqiSixDim.data().get("enemies", {}).get(str(e.enemy_id), {}).get("class", "")) == "elite"
+
+
+## 双向（T480 我方打敌 ＋ T485 B2 敌打我方）：只认敌我跨边，不认自伤／友伤
 static func _side_ok(src, t) -> bool:
-	return src is XActor and t is XEnemy
+	return (src is XActor and t is XEnemy) or (src is XEnemy and t is XActor)
 
 
 static func _same_side(a, b) -> bool:
@@ -259,8 +279,10 @@ static func frame_end(logic, src) -> Array:
 	var fx := _fx(logic)
 	if fx.is_empty() or fx.frames.is_empty():
 		return []
-	var f: Dictionary = fx.frames.pop_back()
+	# T480 复核 P3-4：先结算再弹栈，免得敌人反击结算给持盾我方挂元素减益时 shield_blocks 误读外层我方帧主漏挡
+	var f: Dictionary = fx.frames.back()
 	var logs := _settle(logic, f)
+	fx.frames.pop_back()
 	logs.append_array(_take_logs(fx))
 	return logs
 
@@ -295,20 +317,20 @@ static func note_hit(logic, u, skill: Dictionary, t, r: Dictionary) -> void:
 		_frame_for(fx, u).segs.append({"hit_target": hit_t, "settled_element": e, "element_kind": str(row.get("tianqiKind", "")),
 			"hp_loss": hp_loss, "origin": "skill"})
 		return
-	# 神圣对己方用（§3.5 己方目标入口）：非伤害技能（不是道具）算神圣己方技、目标是自己人、结算了（活着）
+	# 神圣对己方用（§3.5 己方目标入口，敌我镜像）：非伤害技能（不是道具）算神圣己方技、目标是自己人、结算了（活着）
 	if dtype in [1, 5]:
 		return  # 伤害技打到自己人（混乱、反射已在上面拦）不走己方入口
-	if u is XActor and _same_side(u, t) and not XBattleLogic.is_item(skill) and t.is_alive() and holy_ally_skill(skill):
+	if (u is XActor or u is XEnemy) and _same_side(u, t) and not XBattleLogic.is_item(skill) and t.is_alive() and holy_ally_skill(skill, u):
 		var f := _frame_for(fx, u)
 		if not (f.holy_allies as Array).has(t):
 			f.holy_allies.append(t)
 
 
-## 哪些己方技算神圣（R2 P1-1，协调定丙案）：真实库里己方目标技没有一个带神圣元素（全是治疗 10／无属性 0），所以不看技能元素——
+## 哪些己方技算神圣（R2 P1-1 丙案 ＋ T485 B2 敌方镜像）：真实库里己方目标技没有一个带神圣元素（全是治疗 10／无属性 0），所以不看技能元素——
 ## 转换书、转属只管攻击，碰不到这里。口径＝elements_table.holy_ally：
-##   skills 白名单（非神圣体质角色的圣光类技能）→ 算；exclude 排除名单 → 不算（先于其它两条）；
-##   否则技能卡（skill_rework.skills）归属角色的自然体质（actor_nature.json，T484 R2 表）含神圣 → 算。
-static func holy_ally_skill(skill: Dictionary) -> bool:
+##   exclude 排除名单 → 不算（先于其它两条）；skills 白名单（非神圣体质角色／敌人的圣光类技能）→ 算；
+##   by_nature 为真时：敌方施放者看自身自然体质（enemy_nature.json）含神圣；我方看技能卡归属角色自然体质（actor_nature.json）含神圣。
+static func holy_ally_skill(skill: Dictionary, u = null) -> bool:
 	var id := int(skill.get("id", 0))
 	var cfg: Dictionary = data().get("holy_ally", {})
 	if _int_list(cfg.get("exclude", [])).has(id):
@@ -317,6 +339,8 @@ static func holy_ally_skill(skill: Dictionary) -> bool:
 		return true
 	if not bool(cfg.get("by_nature", true)):
 		return false
+	if u is XEnemy:
+		return XTianqiNature.of(u).has(8)
 	var card: Dictionary = XTianqiSkills.data().get("skills", {}).get(str(id), {})
 	if not card.has("actor"):
 		return false
@@ -388,13 +412,14 @@ static func _settle(logic, f: Dictionary) -> Array:
 			order.append(key)
 			found = order.size() - 1
 		base[found] = float(base.get(found, 0.0)) + float(s.hp_loss)
+	var budget := {"applied": 0, "stops": 0}
 	for i in order.size():
 		var t = order[i][0]
 		if is_instance_valid(t) and t.is_alive():
-			_try_apply(logic, src, t, int(order[i][1]), float(base.get(i, 0.0)))
+			_try_apply(logic, src, t, int(order[i][1]), float(base.get(i, 0.0)), budget)
 	var allies: Array = f.holy_allies
 	if (holy_hit or not allies.is_empty()) and is_instance_valid(src) and src.is_alive():
-		_try_holy(logic, src, allies, holy_hit)
+		_try_holy(logic, src, allies, holy_hit, budget)
 	return _take_logs(fx)
 
 
@@ -423,16 +448,41 @@ static func _boost(t, elem: int) -> float:
 	return out
 
 
-## 硬免疫／状态有效度 0：查新状态，也查借图标的原版同类状态（敌人身上对原版灼伤、麻痹的抗性照样算）
-static func _hard_blocked(logic, t, sid: int, borrow: int) -> bool:
+## 硬免疫（装备、被动 TRAIT_STATE_RESIST）：查新状态与借图标的原版同类状态
+static func _hard_resist_only(t, sid: int, borrow: int) -> bool:
 	for id in [sid, borrow]:
-		if id <= 0:
-			continue
-		if t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
-			return true
-		if id == borrow and logic.state_rate(t, id) <= 0.0:
+		if id > 0 and t.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
 			return true
 	return false
+
+
+## 敌人受者用：硬免疫／借用状态有效度 0（敌人身上对原版灼伤、麻痹的抗性照样算）
+static func _hard_blocked(logic, t, sid: int, borrow: int) -> bool:
+	if _hard_resist_only(t, sid, borrow):
+		return true
+	return borrow > 0 and logic.state_rate(t, borrow) <= 0.0
+
+
+## §4.4 我方受者状态有效度：装备／被动 TRAIT_STATE_RATE × 天启篇异常抵抗词条（不含六维韧性，停手类在后面单独乘一次）
+static func _actor_state_rate(t, sid: int, borrow: int) -> float:
+	var rate: float = float(t.traits_pi(XBattler.TRAIT_STATE_RATE, sid))
+	if borrow > 0:
+		rate *= float(t.traits_pi(XBattler.TRAIT_STATE_RATE, borrow))
+	var ar := XTianqiAffixBattle.state_rate(t, sid)
+	if borrow > 0 and is_equal_approx(ar, 1.0):
+		ar = XTianqiAffixBattle.state_rate(t, borrow)
+	return rate * ar
+
+
+## §5.3 敌方停手预算：普通怪／精英／化形每次行动最多给 1 个目标挂停手；精英／化形另每场对同一角色最多 2 次停手
+static func _enemy_stop_ok(fx: Dictionary, src, src_elite: bool, t, budget: Dictionary) -> bool:
+	if int(budget.get("stops", 0)) >= 1:
+		return false
+	if src_elite:
+		var cap := int(_enemy_rules().get("elite_stun_per_battle", 2))
+		if int(_unit(fx, src).stops_on.get(t, 0)) >= cap:
+			return false
+	return true
 
 
 static func _old_stopped(t) -> bool:
@@ -462,62 +512,101 @@ static func _stop_ok(logic, t) -> bool:
 	return int(_unit(_fx(logic), t).stop_need) <= 0
 
 
-static func _try_apply(logic, src, t, elem: int, base_hp: float) -> void:
+static func _try_apply(logic, src, t, elem: int, base_hp: float, budget := {}) -> void:
 	var fx := _fx(logic)
 	var spec := _spec(elem)
 	if spec.is_empty() or elem == 8:
 		return
-	var boss := effect_boss(logic, t)
+	var enemy_src := src is XEnemy
+	var actor_t := t is XActor
+	var target_boss := effect_boss(logic, t)
+	var src_boss := enemy_src and effect_boss(logic, src)
+	var src_elite := enemy_src and effect_elite(logic, src)
+	var boss_cap := int(_enemy_rules().get("boss_per_action_cap", 1))
+	if src_boss and int(budget.get("applied", 0)) >= boss_cap:
+		return  # §5.3 首领每个自己的行动最多挂 1 个新效果（全目标合计）
 	var key := str(spec.get("key", ""))
 	var sid := int(KEY_STATE.get(key, 0))
 	var turns := int(spec.get("turns", 1))
 	var value := float(spec.get("value", 0.0))
-	if boss and spec.has("boss"):
+	if target_boss and spec.has("boss"):
 		var bs: Dictionary = spec.boss
 		if bs.has("key"):
 			key = str(bs.key)
 			sid = int(KEY_STATE.get(key, 0))
 		turns = int(bs.get("turns", turns))
 		value = float(bs.get("value", value))
+	elif src_boss and actor_t and elem == 5 and bool(_enemy_rules().get("stun_soft_replace", true)) and spec.has("boss"):
+		# §5.3 首领打我方：麻痹一律换软版「感电」（我方受伤 +11%，1 回合）
+		var bs2: Dictionary = spec.boss
+		if bs2.has("key"):
+			key = str(bs2.key)
+			sid = int(KEY_STATE.get(key, 0))
+		turns = int(bs2.get("turns", turns))
+		value = float(bs2.get("value", value))
 	_stat(fx, elem, "eligible")
 	if not _ready_for(logic, t, key):
 		return
-	if _immune(t, elem):
-		_stat(fx, elem, "immune")
-		return
-	# 冰：本场第 2 次迟缓（或浸湿中、水体质第一次）改冰冻；首领只迟缓
+	# 冰：本场第 2 次迟缓（或浸湿中、水体质第一次）改冰冻；首领作受者只迟缓，首领打我方也不冻我方（§4.3、§5.3）
 	var un := _unit(fx, t)
 	var freeze := false
-	if key == "slow" and not boss:
+	if key == "slow" and not target_boss and not src_boss:
 		var need := int(_rules().get("freeze_on_slow_count", 2))
 		var soaked: bool = t.state_ids.has(ST_SOAK)
 		freeze = int(un.frozen) < int(_rules().get("freeze_per_battle", 1)) and (int(un.slow_n) + 1 >= need or soaked or XTianqiNature.of(t).has(14))
 		if freeze and (not _ready_for(logic, t, "freeze") or not _stop_ok(logic, t)):
+			freeze = false
+		if freeze and enemy_src and not _enemy_stop_ok(fx, src, src_elite, t, budget):
 			freeze = false
 		if freeze:
 			key = "freeze"
 			sid = ST_FREEZE
 	var stop := key in ["paralyze", "freeze"]
 	var borrow := 0 if key == "shock" else (int(spec.get("freeze", {}).get("borrow", 0)) if key == "freeze" else int(spec.get("borrow", 0)))  # 感电不借麻痹（不是控制）
-	if _hard_blocked(logic, t, sid, borrow):
-		_stat(fx, elem, "blocked")
-		return
-	# §3.4 白名单归并：旧灼伤、旧麻痹挂着时新效果落空（不耗冷却）
-	for bt in data().get("effect_merge", {}).get(str(elem), []):
-		if _has_buff_type(t, str(bt)):
+	var eff_rate := 1.0
+	if actor_t:
+		# §4.4 我方判定顺序：硬免疫 → 体质免疫（4.2，不读种族）→ 状态有效度 → 停手类再乘一次六维韧性（×0.90～×1.10）
+		if _hard_resist_only(t, sid, borrow):
 			_stat(fx, elem, "blocked")
 			return
+		if _immune(t, elem):
+			_stat(fx, elem, "immune")
+			return
+		eff_rate = _actor_state_rate(t, sid, borrow)
+		if eff_rate <= 0.0:
+			_stat(fx, elem, "blocked")
+			return
+	else:
+		if _immune(t, elem):
+			_stat(fx, elem, "immune")
+			return
+		if _hard_blocked(logic, t, sid, borrow):
+			_stat(fx, elem, "blocked")
+			return
+	# §3.4 白名单归并：旧灼伤、旧麻痹挂着时新效果落空（不耗冷却；感电不是麻痹，不归并）
+	if key != "shock":
+		for bt in data().get("effect_merge", {}).get(str(elem), []):
+			if _has_buff_type(t, str(bt)):
+				_stat(fx, elem, "blocked")
+				return
 	if stop and not _stop_ok(logic, t):
 		_stat(fx, elem, "blocked")
 		return
-	var chance := tier_chance(elem)
-	if boss:
+	if stop and enemy_src and not _enemy_stop_ok(fx, src, src_elite, t, budget):
+		_stat(fx, elem, "blocked")
+		return
+	var chance := float(_enemy_rules().get("base_chance", 0.11)) if enemy_src else tier_chance(elem)
+	if not enemy_src and target_boss:
 		chance *= float(_rules().get("boss_chance_rate", 0.5))
 	if elem == 5:
 		var rate := _boost(t, elem)
-		if not boss and t.state_ids.has(ST_SOAK):
+		if not target_boss and t.state_ids.has(ST_SOAK):
 			rate = maxf(rate, 1.5)  # 水体质或浸湿：×1.5，两者都有也只 ×1.5
 		chance *= rate
+	if actor_t:
+		chance *= eff_rate
+		if stop:
+			chance *= XTianqiSixDim.control_state_rate(t, sid, logic)  # §4.4 停手类再乘一次六维韧性（只乘一次）
 	_stat(fx, elem, "rolled")
 	if fx.stream.next_float("tianqi_elem_effect", "%d" % elem) >= chance:
 		return
@@ -526,6 +615,13 @@ static func _try_apply(logic, src, t, elem: int, base_hp: float) -> void:
 		return
 	_stat(fx, elem, "applied")
 	un.active[key] = sid
+	if enemy_src:
+		budget["applied"] = int(budget.get("applied", 0)) + 1
+		if stop:
+			budget["stops"] = int(budget.get("stops", 0)) + 1
+			if src_elite:
+				var su := _unit(fx, src)
+				su.stops_on[t] = int(su.stops_on.get(t, 0)) + 1
 	if key == "slow":
 		un.slow_n = int(un.slow_n) + 1
 	if key == "freeze":
@@ -545,9 +641,15 @@ static func _add(logic, src, t, sid: int, turns: int) -> bool:
 	var fx := _fx(logic)
 	var res = logic._operation_resources(t)
 	var prev = XImportedBalance.acting_battler()
+	var prev_add = fx.get("_add_src", null)
 	XImportedBalance.set_acting(src)
+	fx["_add_src"] = src
 	res.add_state(t, sid, {"random": fx.stream})
 	logic._finish_lifecycle_operation(res, t)
+	if prev_add == null:
+		fx.erase("_add_src")
+	else:
+		fx["_add_src"] = prev_add
 	XImportedBalance.set_acting(prev)
 	if not t.state_ids.has(sid):
 		return false
@@ -555,11 +657,20 @@ static func _add(logic, src, t, sid: int, turns: int) -> bool:
 	return true
 
 
-# ---- 神圣·圣护（§3.5，D285②＋补） ----
+# ---- 神圣·圣护（§3.5，D285②＋补；敌我镜像，首领一侧每场最多 3 次） ----
 
-## 对己方用：给每个目标（D285 补：群体人人都给）；对敌人用：给施放者自己。一次行动最多掷一次
-static func _try_holy(logic, src, allies: Array, holy_hit: bool) -> void:
+## 对己方用：给每个目标（D285 补：群体人人都给）；对敌方用：给施放者自己。一次行动最多掷一次
+static func _try_holy(logic, src, allies: Array, holy_hit: bool, budget := {}) -> void:
 	var fx := _fx(logic)
+	var enemy_src := src is XEnemy
+	var src_boss := enemy_src and effect_boss(logic, src)
+	var boss_side := enemy_src and (src_boss or (logic.enemies as Array).any(func(e): return effect_boss(logic, e)))
+	var boss_cap := int(_enemy_rules().get("boss_per_action_cap", 1))
+	var holy_cap := int(_rules().get("holy_boss_per_battle", 3))
+	if src_boss and int(budget.get("applied", 0)) >= boss_cap:
+		return
+	if boss_side and int(fx.holy_boss) >= holy_cap:
+		return
 	var recips := []
 	for a in allies:
 		if is_instance_valid(a) and a.is_alive() and not recips.has(a):
@@ -571,19 +682,30 @@ static func _try_holy(logic, src, allies: Array, holy_hit: bool) -> void:
 	if ready.is_empty():
 		return
 	_stat(fx, 8, "rolled")
-	if fx.stream.next_float("tianqi_elem_effect", "8") >= tier_chance(8):
+	var chance := float(_enemy_rules().get("base_chance", 0.11)) if enemy_src else tier_chance(8)
+	if fx.stream.next_float("tianqi_elem_effect", "8") >= chance:
 		return
 	var turns := int(_spec(8).get("turns", 2))
 	for b in ready:
+		if boss_side and int(fx.holy_boss) >= holy_cap:
+			break
+		if src_boss and int(budget.get("applied", 0)) >= boss_cap:
+			break
 		var gone := _dispel_one(logic, src, b)
 		if _add(logic, src, b, ST_HOLY, turns):
 			_unit(fx, b).active["holy"] = ST_HOLY
 			_stat(fx, 8, "applied")
+			if boss_side:
+				fx.holy_boss = int(fx.holy_boss) + 1
+			if enemy_src:
+				budget["applied"] = int(budget.get("applied", 0)) + 1
 			if gone != "":
 				_say(fx, "%s 净化了%s并获得了%s！" % [b.display_name(), gone, str(SPECS[ST_HOLY][0])])
 			else:
 				_say(fx, "%s 获得了%s！" % [b.display_name(), str(SPECS[ST_HOLY][0])])
 		elif gone != "":
+			if boss_side:
+				fx.holy_boss = int(fx.holy_boss) + 1
 			_say(fx, "%s 净化了%s！" % [b.display_name(), gone])
 
 
@@ -627,12 +749,14 @@ static func shield_blocks(b, id: int) -> bool:
 	var fx := _fx(lg)
 	if fx.is_empty():
 		return false
-	# 出手者：先看元素效果最里层的行动帧（反击单独开帧，帧主是反击者，R2 P2-2），没有帧才看 acting_battler；
+	# 出手者：先看 _add 显式传入的 src，再看最里层行动帧（反击单独开帧，帧主是反击者，R2 P2-2／P3-4），最后才看 acting_battler；
 	# 不在反击里切 acting_battler，免得连带改反击挂上状态的来源（持续伤害归属）
-	var src = fx.frames.back().src if not (fx.frames as Array).is_empty() else XImportedBalance.acting_battler()
+	var add_src = fx.get("_add_src", null)
+	var src = add_src if add_src != null else (fx.frames.back().src if not (fx.frames as Array).is_empty() else XImportedBalance.acting_battler())
 	if src == null or _same_side(src, b):
 		return false  # 没有出手者（脚本、阶段状态、剧情锁）或自己人上的：不挡
 	b.remove_state(ST_HOLY)
+	_sync_unit(lg, b)  # 盾碎当回合立刻起算圣护冷却（不依赖回合末才同步）
 	_say(fx, "%s 的%s抵挡了%s！" % [b.display_name(), str(SPECS[ST_HOLY][0]), str(XDB.rec("States", id).get("name", ""))])
 	return true
 

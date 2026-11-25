@@ -44,12 +44,13 @@ func _stub(id: int, elem: int, formula := "5", dtype := 1, scope := 1, multi := 
 	return sk
 
 
-## 几率拨满（首领 ×1）：只改缓存里的表，收尾 reload
+## 几率拨满（首领 ×1、敌方同拨；拨满时敌方给 2.0 盖过角色 SSS 韧性 ×0.90，免随机抖动）：只改缓存里的表，收尾 reload
 func _force(chance := 1.0, boss_rate := 1.0) -> void:
 	var d := XTianqiElements.data()
 	for k in d.effect_tiers:
 		d.effect_tiers[k].chance = chance
 	d.effect_rules.boss_chance_rate = boss_rate
+	d.enemy_effect_rules.base_chance = 2.0 if chance >= 1.0 else chance
 
 
 func _natures(map: Dictionary) -> void:
@@ -58,6 +59,14 @@ func _natures(map: Dictionary) -> void:
 		en[str(k)] = {"natures": map[k]}
 	XTianqiNature._enemy = {"special": {"hongjun": {"natures": []}, "knight": {"natures": []}}, "enemies": en}
 	XTianqiNature._enemy_failed = false
+
+
+func _actor_natures(map: Dictionary) -> void:
+	var ac := {}
+	for k in map:
+		ac[str(k)] = {"natures": map[k]}
+	XTianqiNature._actor = {"actors": ac}
+	XTianqiNature._actor_failed = false
 
 
 var _plain_troop := -1
@@ -118,6 +127,10 @@ func _run() -> void:
 	_test_holy()
 	_test_holy_real_db()
 	_test_r2_table_and_shield()
+	_test_b2_enemy_to_actor_and_nature()
+	_test_b2_actor_judgment_and_slots()
+	_test_b2_enemy_budgets_and_holy()
+	_test_b2_higher_no_expand_and_guard()
 	_test_stream_and_switch()
 	XTianqiElements.EFFECTS = true
 	XTianqiElements.reload_table()
@@ -573,8 +586,8 @@ func _test_holy_real_db() -> void:
 	var a: XActor = mem[0]
 	var H := XTianqiElementEffects.ST_HOLY
 	_natures({})
-	var yes := [2317, 2318, 2320, 5511, 5571, 5779, 6274]  # 拉尔／阿语按体质；云霄、绯红蔷薇、伊莉雅按白名单
-	var no := [749, 357, 73, 306, 1]  # 窃格瓦拉冷血（排除）、治疗波、PUA、痛饮、普攻
+	var yes := [2317, 2318, 2320, 5511, 5571, 5779, 6274, 680, 3968]  # 拉尔／阿语按体质；云霄、绯红蔷薇、伊莉雅、敌方圣光术按白名单
+	var no := [749, 5513, 357, 73, 306, 1]  # 窃格瓦拉冷血、阿语仪式:转化（T480 遗留①排除）、治疗波、PUA、痛饮、普攻
 	var bad := []
 	for id in yes:
 		if not XTianqiElementEffects.holy_ally_skill(XDB.rec("Skills", id)):
@@ -610,23 +623,43 @@ func _test_holy_real_db() -> void:
 	_hit(lc, a, XDB.rec("Skills", 357), c)
 	a.passive_cache()["damageElement"] = old_conv
 	_check("holy_convert_book_no_ally_shield", conv_on and not c.state_ids.has(H) and _st(lc, 8, "eligible") == 0, [conv_on, XTianqiElementEffects.stats(lc)])
-	# 反射反例（全路径 _invoke）：神圣魔法伤害被敌人魔法反射打回自己，不挂圣护、不记合格段
+	# 反射反例（T480 P3-3）：用真实神圣伤害技 2704（阿语「仪式:神光」，holy_ally_skill 为真）经属性反射打回自己，不挂圣护、不记合格段；末尾 pop_back 还原全局 States 表
 	var lr := _normal_logic(s)
 	var foe: XEnemy = lr.enemies[0]
+	var sk2704 := XDB.rec("Skills", 2704)
+	var pre_2704 := XTianqiElementEffects.holy_ally_skill(sk2704)
 	var st: Array = XDB.table("States")
 	var mrf_id := st.size()
-	st.append({"id": mrf_id, "name": "T480反射", "traits": [{"code": 22, "dataId": 5, "value": 1.0}], "note": "", "meta": {},
+	st.append({"id": mrf_id, "name": "T485反射", "traits": [{"code": 22, "dataId": 5, "value": 1.0}],
+		"yep": {"elementReflect": {"8": 1.0}}, "note": "", "meta": {},
 		"iconIndex": 0, "restriction": 0, "autoRemovalTiming": 0, "removeAtBattleEnd": true})
 	foe.add_state(mrf_id)
 	a.remove_state(H)
 	a.hp = a.mhp
 	XTianqiElementEffects.frame_begin(lr, a)
-	var rs := lr._invoke(a, _stub(98590, 8, "50", 1, 1), foe)
+	var rs := lr._invoke(a, sk2704, foe)
 	XTianqiElementEffects.frame_end(lr, a)
 	XTianqiElementEffects.flush(lr)
+	foe.remove_state(mrf_id)
+	st.pop_back()
 	var reflected := rs.any(func(x): return str(x.get("type", "")) == "reflect")
-	_check("holy_reflected_no_shield_no_segment", reflected and not a.state_ids.has(H) and not foe.state_ids.has(H) and _st(lr, 8, "eligible") == 0,
-		[reflected, XTianqiElementEffects.stats(lr)])
+	_check("holy_reflected_no_shield_no_segment", pre_2704 and reflected and not a.state_ids.has(H) and not foe.state_ids.has(H) and _st(lr, 8, "eligible") == 0,
+		[pre_2704, reflected, XTianqiElementEffects.stats(lr)])
+	# T480 P3-3 补：直接测 note_hit 在 r.reflected 或 logic._reflecting 为真时，跨边合格伤害段也不记账
+	var ld := _normal_logic(s)
+	var fe: XEnemy = ld.enemies[0]
+	var fire_sk := _stub(98591, 2, "50", 1, 1)
+	XTianqiElementEffects.frame_begin(ld, fe)
+	XTianqiElementEffects.note_hit(ld, fe, fire_sk, a, {"hp_loss": 50.0, "best_row": {"element": 2, "tianqiKind": ""}, "reflected": true})
+	var segs_flag: int = (ld.get_meta(XTianqiElementEffects.META).frames.back().segs as Array).size()
+	ld._reflecting = true
+	XTianqiElementEffects.note_hit(ld, fe, fire_sk, a, {"hp_loss": 50.0, "best_row": {"element": 2, "tianqiKind": ""}})
+	ld._reflecting = false
+	var segs_state: int = (ld.get_meta(XTianqiElementEffects.META).frames.back().segs as Array).size()
+	XTianqiElementEffects.note_hit(ld, fe, fire_sk, a, {"hp_loss": 50.0, "best_row": {"element": 2, "tianqiKind": ""}})
+	var segs_ctrl: int = (ld.get_meta(XTianqiElementEffects.META).frames.back().segs as Array).size()
+	XTianqiElementEffects.frame_end(ld, fe)
+	_check("reflected_segment_not_recorded", segs_flag == 0 and segs_state == 0 and segs_ctrl == 1, [segs_flag, segs_state, segs_ctrl])
 
 
 ## R2 P2-1（数值读表）、P2-2（反击帧的出手者）、P2-3（续回合也挡、受限时 removeByRestriction 不耗盾）、P2-4（迟缓不借 61）
@@ -672,4 +705,441 @@ func _test_r2_table_and_shield() -> void:
 	# 盾碎日志带持盾者名字
 	var logs := XTianqiElementEffects.flush(lg)
 	_check("shield_log_names_holder", logs.any(func(l): return str(l.get("text", "")).begins_with(b.display_name() + " 的")), logs)
+	# T480 复核 P3-4：外层我方 execute 帧仍在栈上时，敌人反击在 frame_end→_settle→_add 挂元素减益，我方圣护盾必须挡住（不能误读外层帧主漏挡）
+	_reset()
+	_force()
+	_actor_natures({})
+	var lcp := _normal_logic(s)
+	var ec: XEnemy = lcp.enemies[0]
+	var ac: XActor = mem[0]
+	ac.recover_all()
+	lcp._state_add(ac, H)
+	XTianqiElementEffects.frame_begin(lcp, ac)
+	XTianqiElementEffects.frame_begin(lcp, ec)
+	lcp.apply(ec, _stub(98600, 2, "500"), ac)
+	var counter_logs := XTianqiElementEffects.frame_end(lcp, ec)
+	var outer_ok := not (lcp.get_meta(XTianqiElementEffects.META).frames as Array).is_empty() and is_same(lcp.get_meta(XTianqiElementEffects.META).frames.back().src, ac)
+	XTianqiElementEffects.frame_end(lcp, ac)
+	_check("p3_4_enemy_counter_element_debuff_blocked_by_actor_shield", not ac.state_ids.has(XTianqiElementEffects.ST_BURN) and not ac.state_ids.has(H)
+		and outer_ok and counter_logs.any(func(l): return str(l.get("text", "")).contains("抵挡了")), [ac.state_ids, outer_ok, counter_logs])
+
+
+## B2（T485）：敌打我方记账入口、共用事件契约与状态接口、我方体质（§4.4，读 actor_nature.json、不读种族、转换书不改体质）
+func _test_b2_enemy_to_actor_and_nature() -> void:
+	_reset()
+	_force()
+	var s := _tq_state()
+	var mem: Array = s.battle_members()
+	var a: XActor = mem[0]
+	var b: XActor = mem[1]
+	_natures({})
+	_actor_natures({})
+	# ① 敌打我方基础十系状态（灼烧＋5% 生命上限封顶、寄生回合末回血给敌方血量比例最低者、浸湿、遮蔽锋芒、碎甲、乱流、魔蚀）
+	var lg := _normal_logic(s)
+	var e: XEnemy = lg.enemies[0]
+	a.recover_all()
+	var r_cap := _hit(lg, e, _stub(98610, 2, "750"), a)  # 过防后扣血 ~290：活着且 11% > 5% mhp 封顶
+	var burn_un: Dictionary = lg.get_meta(XTianqiElementEffects.META).units.get(a, {})
+	var burn_tick := float(burn_un.get("dot", {}).get("burn", {}).get("tick", -1.0))
+	var burn_cap := floorf(a.mhp * 0.05)
+	_check("b2_enemy_burn_and_5pct_cap", a.is_alive() and float(r_cap.hp_loss) * 0.11 > burn_cap
+		and a.state_ids.has(XTianqiElementEffects.ST_BURN)
+		and int(a.state_turns.get(XTianqiElementEffects.ST_BURN, 0)) == 3 and is_equal_approx(burn_tick, burn_cap),
+		[a.hp, r_cap.hp_loss, burn_tick, burn_cap])
+	# 寄生：回合末扣我方血，并给敌方血量比例最低者回等量血
+	a.recover_all()
+	var lpar := _normal_logic(s)
+	var ep: XEnemy = lpar.enemies[0]
+	ep.hp = floorf(ep.mhp * 0.5)
+	var ep_hp0 := ep.hp
+	_hit(lpar, ep, _stub(98611, 6, "500"), a)
+	var a_hp0 := a.hp
+	var par_logs := []
+	XTianqiElementEffects.tick_dot(lpar, a, par_logs)
+	var par_lost := a_hp0 - a.hp
+	_check("b2_enemy_parasite_heals_lowest_enemy", a.state_ids.has(XTianqiElementEffects.ST_PARASITE) and par_lost > 0.0
+		and is_equal_approx(ep.hp - ep_hp0, minf(par_lost, ep.mhp - ep_hp0)), [par_lost, ep.hp - ep_hp0])
+	# 其余减益共用接口：浸湿 out_mult、遮蔽锋芒 crit_mult、碎甲、乱流、魔蚀
+	var lrest := _normal_logic(s)
+	var er: XEnemy = lrest.enemies[0]
+	a.recover_all()
+	for el in [4, 7, 9, 14, 15]:
+		_hit(lrest, er, _stub(98612 + el, el, "200"), a)
+	_check("b2_enemy_debuffs_shared_interface", a.state_ids.has(XTianqiElementEffects.ST_SHATTER)
+		and a.state_ids.has(XTianqiElementEffects.ST_ARCANE) and a.state_ids.has(XTianqiElementEffects.ST_VEIL)
+		and a.state_ids.has(XTianqiElementEffects.ST_SOAK) and a.state_ids.has(XTianqiElementEffects.ST_GUST)
+		and is_equal_approx(XTianqiElementEffects.out_mult(a), 0.89)
+		and is_equal_approx(XTianqiElementEffects.crit_mult(a, 2.0), 1.67))
+	# 共用事件契约（敌打我方多段＋护盾全吸不计基数）
+	var lcon := _normal_logic(s)
+	var econ: XEnemy = lcon.enemies[0]
+	b.recover_all()
+	XTianqiElementEffects.frame_begin(lcon, econ)
+	var d1 := lcon.apply(econ, _stub(98630, 2, "100"), b)
+	b.shield = 99999999.0
+	var d2 := lcon.apply(econ, _stub(98631, 2, "500"), b)
+	b.shield = 0.0
+	var d3 := lcon.apply(econ, _stub(98632, 4, "100"), b)
+	XTianqiElementEffects.frame_end(lcon, econ)
+	var b_tick := float(lcon.get_meta(XTianqiElementEffects.META).units.get(b, {}).get("dot", {}).get("burn", {}).get("tick", -1.0))
+	var b_want := minf(floorf(float(d1.hp_loss) * 0.11), floorf(b.mhp * 0.05))
+	_check("b2_enemy_contract_multi_segment_and_shield", float(d2.hp_loss) == 0.0 and _st(lcon, 2, "eligible") == 1
+		and _st(lcon, 4, "eligible") == 1 and b.state_ids.has(XTianqiElementEffects.ST_BURN)
+		and b.state_ids.has(XTianqiElementEffects.ST_SHATTER) and is_equal_approx(b_tick, b_want), [d1.hp_loss, d2.hp_loss, b_tick, b_want])
+	# ② 我方体质免疫与增幅（§4.4）：火/地/水免灼烧、自然受灼烧 ×1.5（仍封顶）、地/雷免麻痹和感电、水首次迟缓即冻（每场仅 1 次）、圣/暗免遮蔽锋芒、不读种族
+	var lnat := _normal_logic(s)
+	var enat: XEnemy = lnat.enemies[0]
+	a.recover_all()
+	_actor_natures({a.actor_id: [2]})
+	_hit(lnat, enat, _stub(98635, 2, "200"), a)
+	_hit(lnat, enat, _stub(98636, 3, "200"), a)
+	var fire_imm := not a.state_ids.has(XTianqiElementEffects.ST_BURN) and not a.state_ids.has(XTianqiElementEffects.ST_SLOW) and _st(lnat, 2, "immune") == 1 and _st(lnat, 3, "immune") == 1
+	_actor_natures({a.actor_id: [6]})
+	var r_nat := _hit(lnat, enat, _stub(98637, 2, "80"), a)
+	var nat_tick := float(lnat.get_meta(XTianqiElementEffects.META).units.get(a, {}).get("dot", {}).get("burn", {}).get("tick", 0.0))
+	a.recover_all()
+	var lnat2 := _normal_logic(s)
+	_actor_natures({a.actor_id: []})
+	var r_plain := _hit(lnat2, lnat2.enemies[0], _stub(98638, 2, "80"), a)
+	var plain_tick := float(lnat2.get_meta(XTianqiElementEffects.META).units.get(a, {}).get("dot", {}).get("burn", {}).get("tick", 0.0))
+	var nat_boost_ok := nat_tick > plain_tick and is_equal_approx(nat_tick, minf(floorf(floorf(float(r_nat.hp_loss) * 0.11) * 1.5), floorf(a.mhp * 0.05)))
+	# 地体质：免麻痹也免首领感电；圣体质：免遮蔽锋芒；不读种族
+	var lboss := _boss_logic(s)
+	a.recover_all()
+	_actor_natures({a.actor_id: [4]})
+	_hit(lnat2, lnat2.enemies[0], _stub(98639, 5, "200"), a)
+	_hit(lboss, lboss.enemies[0], _stub(98640, 5, "200"), a)
+	var earth_imm_shock := not a.state_ids.has(XTianqiElementEffects.ST_PARALYZE) and not a.state_ids.has(XTianqiElementEffects.ST_SHOCK)
+	_actor_natures({a.actor_id: [8]})
+	_hit(lnat2, lnat2.enemies[0], _stub(98641, 9, "200"), a)
+	var holy_imm_veil := not a.state_ids.has(XTianqiElementEffects.ST_VEIL)
+	# 水体质我方：普通怪首次迟缓即冰冻，且每场最多冻 1 次（第 2 次退回迟缓）
+	var lw := _normal_logic(s)
+	var ew: XEnemy = lw.enemies[0]
+	b.recover_all()
+	_actor_natures({b.actor_id: [14]})
+	_hit(lw, ew, _stub(98642, 3, "200"), b)
+	var w_froze1 := b.state_ids.has(XTianqiElementEffects.ST_FREEZE)
+	lw.act(b, b.attack_skill(), ew)
+	for i in 5:
+		lw.act(b, b.attack_skill(), ew)
+	lw.turn += 3
+	_hit(lw, ew, _stub(98643, 3, "200"), b)
+	var w_slow2 := not b.state_ids.has(XTianqiElementEffects.ST_FREEZE) and b.state_ids.has(XTianqiElementEffects.ST_SLOW)
+	# 转换书不改我方体质（§4.4）：无体质角色装火转换书，照样吃灼烧
+	var lcv := _normal_logic(s)
+	a.recover_all()
+	_actor_natures({a.actor_id: []})
+	var pc: Dictionary = a.passive_cache()
+	var old_conv := int(pc.get("damageElement", 0))
+	pc["damageElement"] = 2
+	_hit(lcv, lcv.enemies[0], _stub(98644, 2, "200"), a)
+	a.passive_cache()["damageElement"] = old_conv
+	var conv_no_imm := a.state_ids.has(XTianqiElementEffects.ST_BURN) and XTianqiNature.races(a).is_empty()
+	_check("b2_actor_nature_immunity_boost_and_no_conv", fire_imm and nat_boost_ok and earth_imm_shock and holy_imm_veil
+		and w_froze1 and w_slow2 and conv_no_imm, [fire_imm, nat_boost_ok, earth_imm_shock, holy_imm_veil, w_froze1, w_slow2, conv_no_imm])
+
+
+## B2（T485）：§4.4 我方判定顺序（硬免疫 → 体质 → 状态有效度 → 停手类六维韧性只乘一次）、必中不绕过、§3.6 我方行动位跳过与冷却
+func _test_b2_actor_judgment_and_slots() -> void:
+	_reset()
+	_force()
+	var s := _tq_state()
+	var mem: Array = s.battle_members()
+	var a: XActor = mem[0]
+	var b: XActor = mem[1]
+	_natures({})
+	_actor_natures({})
+	var st: Array = XDB.table("States")
+	# ① 硬免疫（装备／被动 TRAIT_STATE_RESIST）＋必中（hitType == 0）不绕过；且硬免疫先于体质免疫（记 blocked 不记 immune）
+	var lg := _normal_logic(s)
+	var e: XEnemy = lg.enemies[0]
+	var res_id := st.size()
+	st.append({"id": res_id, "name": "T485硬免灼伤", "traits": [{"code": XBattler.TRAIT_STATE_RESIST, "dataId": 17, "value": 1.0}],
+		"note": "", "meta": {}, "iconIndex": 0, "restriction": 0, "autoRemovalTiming": 0, "removeAtBattleEnd": true})
+	a.recover_all()
+	a.add_state(res_id)
+	_actor_natures({a.actor_id: [2]})  # 同时有火体质，验硬免疫在体质之前
+	var sure_fire := _stub(98650, 2, "200")
+	sure_fire.hitType = 0  # 必中
+	_hit(lg, e, sure_fire, a)
+	var hard_first := not a.state_ids.has(XTianqiElementEffects.ST_BURN) and _st(lg, 2, "blocked") == 1 and _st(lg, 2, "immune") == 0
+	a.remove_state(res_id)
+	st.pop_back()
+	# ② 状态有效度 0% 挡住、不耗冷却
+	var rate0_id := st.size()
+	st.append({"id": rate0_id, "name": "T485有效度0", "traits": [{"code": XBattler.TRAIT_STATE_RATE, "dataId": 100, "value": 0.0}],
+		"note": "", "meta": {}, "iconIndex": 0, "restriction": 0, "autoRemovalTiming": 0, "removeAtBattleEnd": true})
+	_actor_natures({})
+	var lg2 := _normal_logic(s)
+	var e2: XEnemy = lg2.enemies[0]
+	a.recover_all()
+	a.add_state(rate0_id)
+	var sure_par := _stub(98651, 5, "200")
+	sure_par.hitType = 0
+	_hit(lg2, e2, sure_par, a)
+	var rate0_blocked := not a.state_ids.has(XTianqiElementEffects.ST_PARALYZE) and _st(lg2, 5, "blocked") == 1 and _st(lg2, 5, "rolled") == 0
+	a.remove_state(rate0_id)
+	st.pop_back()
+	# 撤掉 0% 有效度后同回合可挂（证明上次没耗冷却）
+	_hit(lg2, e2, sure_par, a)
+	var no_cd_after_rate0 := a.state_ids.has(XTianqiElementEffects.ST_PARALYZE)
+	_check("b2_actor_hard_immune_order_sure_hit_and_state_rate0", hard_first and rate0_blocked and no_cd_after_rate0,
+		[hard_first, rate0_blocked, no_cd_after_rate0])
+	# ③ 六维韧性只乘一次且仅管停手类（E＝×1.10，SSS＝×0.90）：用确定性子流首值检验边界
+	_reset()
+	_actor_natures({})
+	var old_sd := XTianqiSixDim._data.duplicate(true)
+	var sd := XTianqiSixDim.data().duplicate(true)
+	if not sd.has("actors"):
+		sd["actors"] = {}
+	sd.actors[str(a.actor_id)] = {"output": "C", "survive": "C", "speed": "C", "wit": "C", "resolve": "E", "support": "C"}
+	sd.actors[str(b.actor_id)] = {"output": "C", "survive": "C", "speed": "C", "wit": "C", "resolve": "SSS", "support": "C"}
+	XTianqiSixDim._data = sd
+	var r_e := XTianqiSixDim.control_state_rate(a, XTianqiElementEffects.ST_PARALYZE, lg2)
+	var r_sss := XTianqiSixDim.control_state_rate(b, XTianqiElementEffects.ST_PARALYZE, lg2)
+	# 选固定种子使 u0 落在 (0.2, 0.85)，四场共用同一个 seed_i
+	var seed_i := 48500
+	var lres_e := XBattleLogic.new()
+	lres_e.setup(_plain_troop, s, XBattleRandom.create(XRandomStream.hex64(seed_i)))
+	var u0: float = XRandomStream.create(XTianqiElementEffects.seed_of(lres_e), "elem_effects").next_float("tianqi_elem_effect", "5")
+	while u0 < 0.2 or u0 > 0.85:
+		seed_i += 1
+		lres_e = XBattleLogic.new()
+		lres_e.setup(_plain_troop, s, XBattleRandom.create(XRandomStream.hex64(seed_i)))
+		u0 = XRandomStream.create(XTianqiElementEffects.seed_of(lres_e), "elem_effects").next_float("tianqi_elem_effect", "5")
+	var lres_sss := XBattleLogic.new()
+	lres_sss.setup(_plain_troop, s, XBattleRandom.create(XRandomStream.hex64(seed_i)))
+	var lres_once := XBattleLogic.new()
+	lres_once.setup(_plain_troop, s, XBattleRandom.create(XRandomStream.hex64(seed_i)))
+	var lres_shat := XBattleLogic.new()
+	lres_shat.setup(_plain_troop, s, XBattleRandom.create(XRandomStream.hex64(seed_i)))
+	# case A: base = u0 / 0.95 → E: u0*1.10/0.95 > u0 (必中); SSS: u0*0.90/0.95 < u0 (必不中)
+	XTianqiElements.data().enemy_effect_rules.base_chance = u0 / 0.95
+	a.recover_all()
+	b.recover_all()
+	_hit(lres_e, lres_e.enemies[0], _stub(98652, 5, "200"), a)
+	_hit(lres_sss, lres_sss.enemies[0], _stub(98653, 5, "200"), b)
+	var e_hit_sss_miss := a.state_ids.has(XTianqiElementEffects.ST_PARALYZE) and not b.state_ids.has(XTianqiElementEffects.ST_PARALYZE)
+	# case B（验只乘一次不乘两次）: base = u0 / 0.85 → SSS 乘一次＝0.90/0.85*u0 > u0 (必中)；若误乘两次＝0.81/0.85*u0 < u0 (会不中)
+	XTianqiElements.data().enemy_effect_rules.base_chance = u0 / 0.85
+	b.recover_all()
+	_hit(lres_once, lres_once.enemies[0], _stub(98654, 5, "200"), b)
+	var sss_mult_once := b.state_ids.has(XTianqiElementEffects.ST_PARALYZE)
+	# case C（非停手类碎甲不吃六维韧性）: 取 elem 4 的 u4，设 base = u4 / 0.95 → SSS 若误吃 0.90 会落空，不吃则 1/0.95*u4 > u4 必中
+	var u4: float = XRandomStream.create(XTianqiElementEffects.seed_of(lres_shat), "elem_effects").next_float("tianqi_elem_effect", "4")
+	var base4 := (u4 / 0.95) if u4 > 0.05 else 0.5
+	XTianqiElements.data().enemy_effect_rules.base_chance = minf(1.0, base4)
+	b.recover_all()
+	_hit(lres_shat, lres_shat.enemies[0], _stub(98655, 4, "200"), b)
+	var shatter_no_resolve := b.state_ids.has(XTianqiElementEffects.ST_SHATTER)
+	XTianqiSixDim._data = old_sd
+	_check("b2_actor_six_dim_resolve_once_stop_only", is_equal_approx(r_e, 1.1) and is_equal_approx(r_sss, 0.9)
+		and e_hit_sss_miss and sss_mult_once and shatter_no_resolve, [r_e, r_sss, e_hit_sss_miss, sss_mult_once, shatter_no_resolve])
+	# ④ §3.6 我方行动位跳过（只跳一位、同回合第二位照常、pending_skip 同步、5 次共用冷却）
+	_reset()
+	_force()
+	_actor_natures({})
+	var lsl := _normal_logic(s)
+	var esl: XEnemy = lsl.enemies[0]
+	a.recover_all()
+	_hit(lsl, esl, _stub(98656, 5, "200"), a)
+	var pend_before := XTianqiElementEffects.pending_skip(lsl, a)
+	var la1 := lsl.act(a, a.attack_skill(), esl)
+	var pend_after := XTianqiElementEffects.pending_skip(lsl, a)
+	var la2 := lsl.act(a, a.attack_skill(), esl)
+	_check("b2_actor_stop_slot_only_one_lost", pend_before and not pend_after and _skip_logs(la1) and not _skip_logs(la2)
+		and XTianqiElementEffects.skip_count(lsl, a) == 1)
+
+
+## B2（T485）：§5.3 敌方几率与施效预算（普通一次最多 1 停手、精英／化形每场同角最多 2 停手、首领每行动最多 1 效果／麻痹换感电＋实伤 +11%／不冻我方／首领一侧圣护每场 3 次）
+func _test_b2_enemy_budgets_and_holy() -> void:
+	_reset()
+	var s := _tq_state()
+	var mem: Array = s.battle_members()
+	var a: XActor = mem[0]
+	var b: XActor = mem[1]
+	var c: XActor = mem[2]
+	_natures({})
+	_actor_natures({})
+	# ① 敌方默认基准几率 11%（不套我方 22% 档）
+	_check("b2_enemy_default_chance_11pct", is_equal_approx(float(XTianqiElements.data().enemy_effect_rules.base_chance), 0.11))
+	_force()
+	# ② 普通怪：群体雷打 3 人最多 1 人被麻痹；群体冰打 2 个浸湿目标最多 1 人冰冻、第 2 人退回迟缓
+	var ln := _normal_logic(s)
+	var en: XEnemy = ln.enemies[0]
+	en.elite = false
+	for m in [a, b, c]:
+		m.recover_all()
+	XTianqiElementEffects.frame_begin(ln, en)
+	for m in [a, b, c]:
+		ln.apply(en, _stub(98660, 5, "200", 1, 2), m)
+	XTianqiElementEffects.frame_end(ln, en)
+	var par_cnt := [a, b, c].filter(func(m): return m.state_ids.has(XTianqiElementEffects.ST_PARALYZE)).size()
+	_check("b2_normal_enemy_max_1_stop_per_action", par_cnt == 1, par_cnt)
+	var ln2 := _normal_logic(s)
+	var en2: XEnemy = ln2.enemies[0]
+	en2.elite = false
+	for m in [a, b]:
+		m.recover_all()
+		ln2._state_add(m, XTianqiElementEffects.ST_SOAK)
+	XTianqiElementEffects.frame_begin(ln2, en2)
+	ln2.apply(en2, _stub(98661, 3, "200", 1, 2), a)
+	ln2.apply(en2, _stub(98661, 3, "200", 1, 2), b)
+	XTianqiElementEffects.frame_end(ln2, en2)
+	_check("b2_normal_enemy_aoe_ice_1_freeze_1_slow", a.state_ids.has(XTianqiElementEffects.ST_FREEZE)
+		and not b.state_ids.has(XTianqiElementEffects.ST_FREEZE) and b.state_ids.has(XTianqiElementEffects.ST_SLOW))
+	# ③ 精英／化形：每场对同一角色最多 2 次停手（第 3 次落空；另一角色仍可被停手）
+	var le := _normal_logic(s)
+	var ee: XEnemy = le.enemies[0]
+	ee.elite = true
+	var elite_pred := XTianqiElementEffects.effect_elite(le, ee)
+	a.recover_all()
+	b.recover_all()
+	var got_stops := []
+	for round_i in 3:
+		_hit(le, ee, _stub(98662 + round_i, 5, "200"), a)
+		got_stops.append(a.state_ids.has(XTianqiElementEffects.ST_PARALYZE))
+		if a.state_ids.has(XTianqiElementEffects.ST_PARALYZE):
+			le.act(a, a.attack_skill(), ee)  # 吃位
+			for k in 5:
+				le.act(a, a.attack_skill(), ee)  # 走完 5 次共用冷却
+		le.turn += 3
+	_hit(le, ee, _stub(98666, 5, "200"), b)
+	_check("b2_elite_max_2_stops_per_actor", elite_pred and got_stops == [true, true, false]
+		and b.state_ids.has(XTianqiElementEffects.ST_PARALYZE), [elite_pred, got_stops, b.state_ids])
+	# ④ 首领（含终焉）：每次行动最多 1 个新效果；被体质免疫的目标不占预算，下一人照挂
+	var lb := _boss_logic(s)
+	var boss: XEnemy = lb.enemies[0]
+	for m in [a, b, c]:
+		m.recover_all()
+	_actor_natures({a.actor_id: [2], b.actor_id: [], c.actor_id: []})
+	XTianqiElementEffects.frame_begin(lb, boss)
+	for m in [a, b, c]:
+		lb.apply(boss, _stub(98670, 2, "300", 1, 2), m)
+	XTianqiElementEffects.frame_end(lb, boss)
+	_check("b2_boss_per_action_cap_1_immune_free", not a.state_ids.has(XTianqiElementEffects.ST_BURN)
+		and b.state_ids.has(XTianqiElementEffects.ST_BURN) and not c.state_ids.has(XTianqiElementEffects.ST_BURN),
+		[a.state_ids.has(XTianqiElementEffects.ST_BURN), b.state_ids.has(XTianqiElementEffects.ST_BURN), c.state_ids.has(XTianqiElementEffects.ST_BURN)])
+	# 首领雷打我方：一律换软版「感电」（1 回合，且实伤真 +11%），不挂麻痹
+	_actor_natures({})
+	var lb2 := _boss_logic(s)
+	var boss2: XEnemy = lb2.enemies[0]
+	a.recover_all()
+	var dmg_sk := _stub(98671, 0, "1000")
+	var d_before := float(XDamage.calculate(dmg_sk, boss2, a, {"variance": false, "tianqi_logic": lb2}).value)
+	_hit(lb2, boss2, _stub(98672, 5, "300"), a)
+	var d_after := float(XDamage.calculate(dmg_sk, boss2, a, {"variance": false, "tianqi_logic": lb2}).value)
+	_check("b2_boss_thunder_gives_shock_plus_11pct", a.state_ids.has(XTianqiElementEffects.ST_SHOCK)
+		and not a.state_ids.has(XTianqiElementEffects.ST_PARALYZE)
+		and int(a.state_turns.get(XTianqiElementEffects.ST_SHOCK, 0)) == 1
+		and is_equal_approx(d_after, roundf(d_before * 1.11)), [d_before, d_after, a.state_turns.get(XTianqiElementEffects.ST_SHOCK)])
+	# 首领冰打我方：水体质＋浸湿也不冻，只挂迟缓（2 回合）
+	var lb3 := _boss_logic(s)
+	var boss3: XEnemy = lb3.enemies[0]
+	b.recover_all()
+	_actor_natures({b.actor_id: [14]})
+	lb3._state_add(b, XTianqiElementEffects.ST_SOAK)
+	_hit(lb3, boss3, _stub(98673, 3, "300"), b)
+	_check("b2_boss_ice_never_freezes_actor", not b.state_ids.has(XTianqiElementEffects.ST_FREEZE)
+		and b.state_ids.has(XTianqiElementEffects.ST_SLOW)
+		and int(b.state_turns.get(XTianqiElementEffects.ST_SLOW, 0)) == 2)
+	# ⑤ 敌方圣护镜像（§3.5）：对敌打我方给施放敌人自己、对己方用 680 圣光术给目标敌人、盾挡我方减益、首领一侧每场最多 3 次
+	_actor_natures({})
+	var H := XTianqiElementEffects.ST_HOLY
+	var lh := _boss_logic(s)
+	var hb: XEnemy = lh.enemies[0]
+	a.recover_all()
+	lh._state_add(hb, 12)
+	_hit(lh, hb, _stub(98674, 8, "300"), a)
+	var got1 := hb.state_ids.has(H) and not hb.state_ids.has(12) and not a.state_ids.has(H)
+	# 敌方圣护盾挡我方施加的减益
+	XImportedBalance.set_acting(a)
+	hb.add_state(12)
+	XImportedBalance.set_acting(null)
+	var enemy_shield_blocked := not hb.state_ids.has(12) and not hb.state_ids.has(H)
+	# 敌方对己方用 680 圣光术给目标圣护，并且首领一侧每场最多 3 次（前面已 1 次，再中 2 次到顶，第 4 次落空）
+	var sk680 := XDB.rec("Skills", 680)
+	var holy_seq := [got1]
+	for k in 3:
+		hb.remove_state(H)
+		XTianqiElementEffects.end_turn(lh)
+		lh.turn += 3
+		_hit(lh, hb, sk680, hb)
+		holy_seq.append(hb.state_ids.has(H))
+	_check("b2_enemy_holy_mirror_and_boss_cap_3", enemy_shield_blocked and holy_seq == [true, true, true, false],
+		[enemy_shield_blocked, holy_seq, lh.get_meta(XTianqiElementEffects.META).get("holy_boss")])
+	# 敌方圣体质按 by_nature 放非白名单治疗技（906 治愈之歌）也触发圣护；普通怪没有首领 3 次上限
+	var ln_h := _normal_logic(s)
+	var eh: XEnemy = ln_h.enemies[0]
+	_natures({eh.enemy_id: [8]})
+	var sk906 := XDB.rec("Skills", 906)
+	var nat_holy_ok := XTianqiElementEffects.holy_ally_skill(sk906, eh)
+	eh.remove_state(H)
+	_hit(ln_h, eh, sk906, eh)
+	var got_by_nat := eh.state_ids.has(H)
+	_natures({eh.enemy_id: []})
+	var no_nat_holy := not XTianqiElementEffects.holy_ally_skill(sk906, eh)
+	_check("b2_enemy_holy_by_nature_ally_skill", nat_holy_ok and got_by_nat and no_nat_holy, [nat_holy_ok, got_by_nat, no_nat_holy])
+
+
+## B2（T485）：D285③ 高等三系不扩到敌打我方；开关关与西游档敌打我方零改动
+func _test_b2_higher_no_expand_and_guard() -> void:
+	_reset()
+	_force()
+	var s := _tq_state()
+	var a: XActor = s.battle_members()[0]
+	_natures({})
+	_actor_natures({})
+	var lg := _normal_logic(s)
+	var e: XEnemy = lg.enemies[0]
+	var bad := []
+	for h in [11, 12, 13]:
+		a.recover_all()
+		var r := _hit(lg, e, _stub(98680 + h, h, "300"), a)
+		if bool(r.get("void_engulfed", false)) or float(r.get("space_erosion", 0.0)) > 0.0:
+			bad.append(["higher_proc", h])
+		var row: Dictionary = r.get("best_row", {})
+		if not is_equal_approx(float(row.get("resistance", -1.0)), a.element_rate(h)):
+			bad.append(["rate", h, row.get("resistance"), a.element_rate(h)])
+	var any_st := XTianqiElementEffects.STATE_IDS.any(func(id): return a.state_ids.has(id))
+	_check("b2_higher_not_expanded_enemy_to_actor", bad.is_empty() and not any_st and XTianqiElementEffects.stats(lg).is_empty(),
+		[bad, XTianqiElementEffects.stats(lg)])
+	# 回退开关（EFFECTS = false）与子流隔离：敌打我方时开关关不建 meta、主流一致
+	var snaps := []
+	for mode in ["off", "on0"]:
+		_reset()
+		if mode == "off":
+			XTianqiElements.EFFECTS = false
+		_force(0.0, 0.0)
+		a.recover_all()
+		var lsw := XBattleLogic.new()
+		lsw.setup(_plain_troop, s, XBattleRandom.create(XRandomStream.hex64(4851234)))
+		var esw: XEnemy = lsw.enemies[0]
+		esw.recover_all()
+		lsw.execute(esw, _stub(98690, 5, "200"), a)
+		lsw.execute(esw, _stub(98691, 2, "200"), a)
+		snaps.append([JSON.stringify(lsw.random.rule.snapshot()), a.hp, lsw.has_meta(XTianqiElementEffects.META)])
+	_check("b2_switch_off_enemy_to_actor_identical", snaps[0][0] == snaps[1][0] and is_equal_approx(float(snaps[0][1]), float(snaps[1][1]))
+		and not snaps[0][2] and snaps[1][2], [snaps[0][1], snaps[1][1], snaps[0][2], snaps[1][2]])
+	# 西游档敌打我方零改动
+	_reset()
+	_force()
+	var w := XState.new_game_blank()
+	w.difficulty = 3
+	w.add_actor(1)
+	w.map_id = 4
+	XState.current = w
+	var wa: XActor = w.battle_members()[0]
+	wa.recover_all()
+	var lw := XBattleLogic.new()
+	lw.setup(_plain_troop, w)
+	var we: XEnemy = lw.enemies[0]
+	we.recover_all()
+	lw.execute(we, _stub(98692, 5, "50"), wa)
+	lw.execute(we, _stub(98693, 2, "50"), wa)
+	lw.execute(we, _stub(98694, 8, "50"), wa)
+	_check("b2_west_save_enemy_to_actor_untouched", not lw.has_meta(XTianqiElementEffects.META)
+		and not XTianqiElementEffects.STATE_IDS.any(func(id): return wa.state_ids.has(id) or we.state_ids.has(id)))
+
 

@@ -1547,6 +1547,19 @@ def element_effects_rules(table: dict) -> list:
                 both = set(ha['skills']) & set(ha['exclude'])
                 if both:
                     bad.append('holy_ally 的 skills 与 exclude 重叠：%r' % sorted(both))
+    er = table.get('enemy_effect_rules')  # T485 B2：敌方施效预算与软替换
+    if not isinstance(er, dict):
+        bad.append('enemy_effect_rules 应为对象')
+    else:
+        bc = er.get('base_chance')
+        if isinstance(bc, bool) or not isinstance(bc, (int, float)) or not (0 <= bc <= 1):
+            bad.append('enemy_effect_rules.base_chance 应在 [0, 1]')
+        for name in ('boss_per_action_cap', 'elite_stun_per_battle'):
+            v = er.get(name)
+            if isinstance(v, bool) or not isinstance(v, int) or v < 1:
+                bad.append('enemy_effect_rules.%s 应为正整数' % name)
+        if not isinstance(er.get('stun_soft_replace'), bool):
+            bad.append('enemy_effect_rules.stun_soft_replace 应为布尔')
     return bad
 
 
