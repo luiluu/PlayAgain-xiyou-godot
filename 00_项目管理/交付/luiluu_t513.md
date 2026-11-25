@@ -54,11 +54,15 @@
 - 专项：`xiyou_tianqi_suit_cap` 41/41（本机，返修后）；关联本机选测 7 个全过：xiyou_ui_skin_1c、xiyou_tianqi_ring_style、xiyou_gear_detail、xiyou_tianqi_qiyin_effects、xiyou_equipment、xiyou_gear_ui、xiyou_tianqi_qiyin_equip。
 - 语法检查 0 问题；`发行空壳.py check` 退出 0；`天启篇数据校验.py` 全部通过（本卡没改数据表）。
 - 云端选测：整轮 815 个场景 16 片全部通过（提交 3831d4ec4，基准 547e9b7a1；之后只加了交付单），运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45662370851 。
-- 云端选测（返修，提交 98378e611）：待填。
+- 云端选测（返修，提交 98378e611，基准 91b267df7）：15 个场景 1 片全部通过，运行页 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45670733993 （之后只改交付单、加截图）。
 - 截图（返修，真实装备页、新皮肤 1280×720）：`00_项目管理/交付截图/luiluu_t513/t513_equip_orig.png`（冰冷 3＋黑印 3＋云压 2，选云压戒指）、`t513_equip_seal.png`（白印 3＋统帅 3＋黑印 2，选黑印件；夹具把黑印 2 件放在项链、戒指格）。
 
 ## 本分支提交
 
 - 3831d4ec4 WIP: T513 2A 套装同台上限（一人两套含七印）＋专项
 - c7ce38ecf T513 交付单（云端选测待填）
-- 本提交：交付单填云端结果、标可合并
+- 91b267df7 交付单填云端结果、标可合并
+- 886e292b6 补两个 .gd.uid
+- 98378e611 返修：提示接真实装备页（原版＋七印）、同件数新套优先、混合套与溢出件数、环纹小点认生效套
+- e37c2373c 返修交付单更正＋截图入仓
+- 本提交：填返修云端结果
