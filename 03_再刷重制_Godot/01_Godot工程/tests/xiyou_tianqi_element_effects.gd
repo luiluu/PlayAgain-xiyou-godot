@@ -135,6 +135,7 @@ func _run() -> void:
 	_test_t482_ui()
 	_test_t482_immune_same_roll()
 	_test_t482_old_skin_rows()
+	_test_t482_popup_slots()
 	XTianqiElements.EFFECTS = true
 	XTianqiElements.reload_table()
 	XTianqiNature.reload_table()
@@ -1262,19 +1263,22 @@ func _test_t482_ui() -> void:
 ## T482 返修 R2（小o P1-1）：免疫跳字跟实际效果判定同一次结果——固定骰：几率 0.5，效果骰 0.25（会挂）／0.75（掷空）。
 ## 有火体质（免疫）的一侧：0.25 弹「免疫灼烧」、0.75 不弹；对照无体质一侧：0.25 真挂上灼烧、0.75 没挂；弹＝对照侧真挂上；
 ## 免疫侧不消费效果子流（draws 不变）。我方状态有效度 0 时挡住，不弹
-func _roll_case(s: XState, a: XActor, nat: Array, v: float, rate0_id := -1) -> Dictionary:
+func _roll_case(s: XState, a: XActor, nat: Array, v: float, rate0_id := -1, holy := false) -> Dictionary:
 	_actor_natures({a.actor_id: nat} if not nat.is_empty() else {})
 	var lg := _normal_logic(s)
 	var en: XEnemy = lg.enemies[0]
 	a.recover_all()
 	if rate0_id >= 0:
 		a.add_state(rate0_id)
+	if holy:
+		a.add_state(XTianqiElementEffects.ST_HOLY)
 	var fx: Dictionary = XTianqiElementEffects._fx(lg)
 	fx.stream = XRandomStream.scripted([{"kind": "float", "value": v}, {"kind": "float", "value": v}])
 	XTianqiElementEffects.frame_begin(lg, en)
 	lg.apply(en, _stub(98710, 2, "200"), a)
 	var logs := XTianqiElementEffects.frame_end(lg, en)
-	var out := {"pops": _pops(logs), "burn": a.state_ids.has(XTianqiElementEffects.ST_BURN), "draws": int(fx.stream.draws)}
+	var out := {"pops": _pops(logs), "burn": a.state_ids.has(XTianqiElementEffects.ST_BURN), "draws": int(fx.stream.draws), "holy": a.state_ids.has(XTianqiElementEffects.ST_HOLY)}
+	a.remove_state(XTianqiElementEffects.ST_HOLY)
 	if rate0_id >= 0:
 		a.remove_state(rate0_id)
 	a.remove_state(XTianqiElementEffects.ST_BURN)
@@ -1292,6 +1296,12 @@ func _test_t482_immune_same_roll() -> void:
 		var ctl := _roll_case(s, a, [], v)
 		var hit: bool = ctl.burn
 		_check("t482_immune_pop_matches_effect_roll_%s" % str(v), hit == (v < 0.5) and (imm.pops == ["免疫灼烧"]) == hit and not imm.burn and imm.draws == 0 and ctl.pops == (["灼烧"] if hit else []), [v, imm, ctl])
+	# 圣佑同在（R2 热修 P1-1）：实际结算先过圣佑，去掉体质后同一骰是「圣佑抵挡」；免疫侧同骰也弹圣佑抵挡、不弹免疫，都未上灼烧
+	for v in [0.25, 0.75]:
+		var ih := _roll_case(s, a, [2], v, -1, true)
+		var ch := _roll_case(s, a, [], v, -1, true)
+		var hit2: bool = v < 0.5
+		_check("t482_immune_pop_holy_same_roll_%s" % str(v), (ih.pops == ["圣佑抵挡"]) == hit2 and (ch.pops == ["圣佑抵挡"]) == hit2 and not ih.pops.has("免疫灼烧") and not ih.burn and not ch.burn, [v, ih, ch])
 	# 状态有效度 0：对照侧也挂不上，免疫侧不弹
 	var st: Array = XDB.table("States")
 	var rid := st.size()
@@ -1303,6 +1313,26 @@ func _test_t482_immune_same_roll() -> void:
 	_check("t482_immune_pop_silent_when_state_rate0", imm0.pops.is_empty() and not ctl0.burn, [imm0, ctl0])
 	_force()
 	_actor_natures({})
+
+
+## T482 返修 R2 热修（小o P2-3）：同一目标的头顶提示按占用位叠放——第一条先消失后，补进来的第三条占第一格，不压第二条
+func _test_t482_popup_slots() -> void:
+	_reset()
+	var sc := XBattleScene.new()
+	sc.setup(2, true, false, XDB.map(5))
+	add_child(sc)
+	var a: XBattler = sc.logic.actors[0]
+	sc._custom_popup(a, "一", 2, true)
+	sc._custom_popup(a, "二", 2, true)
+	var pops: Array = sc._custom_pops[a]
+	var y0: float = pops[0].position.y
+	var y1: float = pops[1].position.y
+	_check("t482_popup_slots_stack", y1 < y0, [y0, y1])
+	pops[0].free()  # 第一条先到期消失
+	sc._custom_popup(a, "三", 2, true)
+	var p3: XDamagePopup = sc._custom_pops[a][-1]
+	_check("t482_popup_slots_reuse_first_slot", is_equal_approx(p3.position.y, y0) and not is_equal_approx(p3.position.y, y1), [p3.position.y, y0, y1])
+	sc.queue_free()
 
 
 ## T482 返修 R2（小o P1-3）：原版界面（旧窗口）也有「角色属性」一行；西游档没有、不占位

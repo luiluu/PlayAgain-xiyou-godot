@@ -3190,7 +3190,15 @@ func _custom_popup(b: XBattler, text: String, format: int, at_head := false) -> 
 		# T482 返修 R2（小o P1-2、P2-3）：元素提示停在受影响单位头顶（精灵脚底原点上移一个身高），不压我方脚边、不盖敌方名牌；
 		# 同一目标上还没消失的提示往上叠一格，多元素同帧结算时不重叠。旧自定义跳字（黑闪等）不传 at_head，原坐标不动
 		var live_c: Array = _custom_pops.get(b, []).filter(func(x): return is_instance_valid(x))
-		var top := s.position + Vector2(0, -s.height() - 14.0 - 26.0 * live_c.size())
+		# 按占用位分配：取最小的没被还活着的提示占用的一格（先消失的是第一条时，第三条补进第一格，不压第二条）
+		var used := {}
+		for x in live_c:
+			used[int(x.get_meta("pop_slot", 0))] = true
+		var slot := 0
+		while used.has(slot):
+			slot += 1
+		p.set_meta("pop_slot", slot)
+		var top := s.position + Vector2(0, -s.height() - 14.0 - 26.0 * slot)
 		p.position = Vector2(top.x, maxf(top.y, 20.0))
 		live_c.append(p)
 		_custom_pops[b] = live_c

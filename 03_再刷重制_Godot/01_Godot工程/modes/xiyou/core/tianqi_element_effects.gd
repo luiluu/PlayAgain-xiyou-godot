@@ -629,7 +629,12 @@ static func _try_apply(logic, src, t, elem: int, base_hp: float, budget := {}) -
 	if imm:
 		var peek := XRandomStream.restore(fx.stream.snapshot())  # 复制一份流再取一次：等于「下一次效果骰」，正式流不动
 		if peek != null and peek.next_float("tianqi_elem_effect", "%d" % elem) < chance:
-			_immune_pop(fx, t, sid)  # 只读预览同一次效果骰：没有免疫它真会挂上才弹
+			# 只读预览同一次效果骰：没有免疫它真会挂上才弹；实际结算里圣佑在 add_state 入口先于挂上，
+			# 持圣佑且这个减益会被它挡时，去掉体质后同一骰是「圣佑抵挡」，所以弹圣佑抵挡、不弹免疫（只提示，不耗盾）
+			if _holy_would_block(t, sid, src):
+				_say(fx, "%s 的%s抵挡了%s！" % [t.display_name(), str(SPECS[ST_HOLY][0]), str(XDB.rec("States", sid).get("name", ""))], t, str(SPECS[ST_HOLY][0]) + "抵挡", 1)
+			else:
+				_immune_pop(fx, t, sid)
 		return
 	_stat(fx, elem, "rolled")
 	if fx.stream.next_float("tianqi_elem_effect", "%d" % elem) >= chance:
@@ -758,6 +763,22 @@ static func _dispel_one(logic, src, b) -> String:
 	return ""
 
 
+## 圣佑能不能挡这个状态（只看目标与状态，不看出手者）
+static func _holy_state_ok(b, id: int) -> bool:
+	if not removable_debuff(id) or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
+		return false
+	if bool(XDB.rec("States", id).get("removeByRestriction", false)) and b.is_restricted():
+		return false
+	return true
+
+
+## 免疫跳字用的只读判断：持圣佑、状态可挡、出手者在对方阵营（同 shield_blocks，不耗盾不写日志）
+static func _holy_would_block(b, id: int, src) -> bool:
+	if not b.state_ids.has(ST_HOLY) or src == null or _same_side(src, b):
+		return false
+	return _holy_state_ok(b, id)
+
+
 ## XBattler.add_state 入口（_add_state 之前）：持圣佑（原圣护盾）的单位挡下一次对方施加的可解除减益，盾碎
 ## 目标身上已有这个减益时，对方重施（续回合）照样挡（R2 P2-3①）；带 removeByRestriction 的减益在目标受限时本来就加不上，不耗盾（P2-3③）
 static func shield_blocks(b, id: int) -> bool:
@@ -766,9 +787,7 @@ static func shield_blocks(b, id: int) -> bool:
 	var lg = _cur()
 	if lg == null:
 		return false
-	if not removable_debuff(id) or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
-		return false
-	if bool(XDB.rec("States", id).get("removeByRestriction", false)) and b.is_restricted():
+	if not _holy_state_ok(b, id):
 		return false
 	var fx := _fx(lg)
 	if fx.is_empty():
