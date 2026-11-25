@@ -42,7 +42,7 @@ const SPECS := {
 	ST_FREEZE: ["冰冻", 1168, "冰冻", [], "跳过下一次行动", 0, "", false],
 	ST_SHATTER: ["碎甲", 706, "破甲", [{"code": 21, "dataId": 3, "mode": "rate"}], "物理防御 −{v}%", 2, "4", false],
 	ST_PARALYZE: ["麻痹", 1029, "麻痹", [], "跳过下一次行动", 0, "", false],
-	ST_PARASITE: ["寄生", 1072, "减益", [], "回合结束受自然伤害，为施加方血量最低者回等量血", 2, "", false],
+	ST_PARASITE: ["寄生", 916, "减益", [], "回合结束受自然伤害，为施加方血量最低者回等量血", 2, "", false],
 	ST_SOAK: ["浸湿", 955, "减益", [], "造成伤害 −{v}%", 2, "14", false],
 	ST_GUST: ["乱流", 921, "减益", [{"code": 22, "dataId": 0, "mode": "minus"}, {"code": 22, "dataId": 1, "mode": "minus"}], "命中 −{v}%，闪避 −{v}%", 2, "15", false],
 	ST_ARCANE: ["魔蚀", 706, "破甲", [{"code": 21, "dataId": 5, "mode": "rate"}], "魔法防御 −{v}%", 2, "7", false],
