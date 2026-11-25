@@ -291,4 +291,5 @@ done
 - `语法检查.py`：1224 个 .gd，0 问题；`发行空壳.py check`：84 个脚本、825 个函数都有。
 - 本机：`xiyou_tianqi_skills` 246/246、`xiyou_gojo` 97/97、`xiyou_tianqi_phase4` 176/176、`xiyou_tianqi_balance` 99/99、`xiyou_tianqi_general_books_b2` 46/46（都加 `--audio-driver Dummy`、临时 HOME）。
 - 探针：改前 3×24 行（含 11 里德那行秘籍格报错，之后排除）；第 1 轮、第 2 轮、复核各 3×23 行，违规 0、invalid=false。
-- 云端选测：见下（跑完补）。
+- 云端选测：提交 `4d8775668`（`ci/luiluu/t496`），整轮 810 个场景、16 片，`gh run watch 45593814781 --exit-status` 前台等到跑完，**全部通过**。[云端选测 45593814781](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45593814781)
+- `tianqi_skills.gd:data` 调用方（交付自检粗数 1203 处，同名函数也算进去了）逐处结论：函数签名和返回结构都没变，只在 tune 叠层循环里多叠一层 D287；所有调用方读到的是叠完 D287 的表，这正是本单要改的数，没有别的行为变化。`TUNE_D287=false`＋`reload_table()` 照原样回 D209，测试 `p7_d287_table` 两边都查过。
