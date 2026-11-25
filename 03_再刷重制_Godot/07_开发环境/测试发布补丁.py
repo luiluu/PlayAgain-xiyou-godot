@@ -371,6 +371,59 @@ class T489Tests(Base):
         self.assertEqual(self.gate_calls, [])
         self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--skip-save-gate', '  '), 1)
 
+    def test_sign_guard_blocks_dangerous_targets_and_positional_args(self):
+        data = self.t / 'channel.json'
+        data.write_text('{"schema": 1}\n', encoding='utf-8')
+        key_bytes = self.key.read_bytes()
+
+        # 1. 强制关键字参数：禁止位置参数（防传反顺序）
+        with self.assertRaises(TypeError):
+            M.sign(self.key, data, self.t / 'pos.sig')
+
+        # 2. 禁止 -out 指向 .pem / .key 等敏感后缀，且不截断原私钥
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=data, sig=self.key)
+        self.assertEqual(self.key.read_bytes(), key_bytes)
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=data, sig=self.t / 'other.PEM')
+
+        # 3. 禁止 -out 落入「发版密钥」目录
+        fake_key_dir = self.t / '发版密钥'
+        fake_key_dir.mkdir()
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=data, sig=fake_key_dir / 'channel.sig')
+        self.assertFalse((fake_key_dir / 'channel.sig').exists())
+
+        # 4. 无 .pem 后缀但与 key 或 data 同路径也必须拦截且不改原文件
+        plain_key = self.t / 'priv_raw'
+        plain_key.write_bytes(key_bytes)
+        with self.assertRaises(M.Fail):
+            M.sign(key=plain_key, data=data, sig=plain_key)
+        self.assertEqual(plain_key.read_bytes(), key_bytes)
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=data, sig=data)
+        self.assertEqual(data.read_text(encoding='utf-8'), '{"schema": 1}\n')
+
+        # 5. 非私钥文件 / 损坏私钥 / data 是私钥均拦截，且不破坏已有 sig（原子替换）
+        existing_sig = self.t / 'existing.sig'
+        existing_sig.write_bytes(b'KEEP_ME')
+        with self.assertRaises(M.Fail):
+            M.sign(key=data, data=data, sig=existing_sig)
+        self.assertEqual(existing_sig.read_bytes(), b'KEEP_ME')
+        bad_key = self.t / 'broken.pem'
+        bad_key.write_text('-----BEGIN PRIVATE KEY-----\nBROKEN\n-----END PRIVATE KEY-----\n', encoding='utf-8')
+        with self.assertRaises(M.Fail):
+            M.sign(key=bad_key, data=data, sig=existing_sig)
+        self.assertEqual(existing_sig.read_bytes(), b'KEEP_ME')
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=self.key, sig=existing_sig)
+        self.assertEqual(existing_sig.read_bytes(), b'KEEP_ME')
+
+        # 6. 正常按名传参签出有效签名并验签通过
+        ok_sig = self.t / 'ok.sig'
+        M.sign(key=self.key, data=data, sig=ok_sig)
+        self.assertTrue(M.verify(self.pub, data, ok_sig))
+
 
 if __name__ == '__main__':
     unittest.main(argv=[sys.argv[0], *sys.argv[1:]])
