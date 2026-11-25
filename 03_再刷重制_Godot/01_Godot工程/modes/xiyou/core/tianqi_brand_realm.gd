@@ -17,7 +17,7 @@ extends RefCounted
 ## | big_hit(角色, 伤害) | 迎劫：一下超过最大生命一半的部分少受三成 | BattleLogic.execute_hp_damage（各保命之前） |
 ## | note_hit／after_hit | 逆命：每场一次，挨打真掉了血、掉到三成以下还活着，这一击结算完后独立回复最大生命 20% | execute_hp_damage 记；apply、horseman_strike 末尾结算 |
 
-## false＝回退：境底、境支一律不算，闭关菜单不出「分支」
+## O-671（T514）：false＝回退：境底、境支一律不算，闭关菜单不出「分支」
 static var ENABLED := true
 
 const PARAM := {"mhp": 0, "mmp": 1, "atk": 2, "def": 3, "mat": 4, "mdf": 5, "agi": 6, "luk": 7}
