@@ -80,6 +80,12 @@ static var SAFE_AIRSHIP_MENU := true  # O-117；测试要切回原版，用 stat
 ## 要站上去再按确定，只有鼠标点那格走过去才自动进（Game_Player.triggerTouchActionD1）；安卓摇杆走上去不进，玩家反馈 v0.01。
 ## 开着时这类门踩上就进（挂机走动不进）；false 回到原版。判定见 MVEvent.is_plain_door。
 static var STEP_ON_DOORS := true
+## T507（玩家反馈 v0.04「站在传送门／NPC 前按 1 快捷回程，先弹面前的对话，后传送；连点就进了深渊、回程没了」）：
+## 快捷键（YEP_ButtonCommonEvents）在物理帧里只「预约」公共事件，要到这一帧的 _process 才开跑；同一物理帧里玩家的确认键／点到了目的地／
+## 撞上、踩上的事件只看 busy，就先把面前的事件跑起来，预约的回城排到它后面。原版 Game_Map.update 先 setupStartingEvent
+## （预约的公共事件优先），解释器一跑玩家这一帧就动不了。开着时：有预约的公共事件就先跑它，这一下确认／点按／接触不调查地图事件。
+## false 回到旧行为。
+static var RESERVED_FIRST := true
 ## Game_Vehicle.maxAltitude：飞艇升到 48 才能飞（canMove 要 isHighest），降到 0 才算下完
 const AIRSHIP_MAX_ALTITUDE := 48
 ## 飞艇影子（Spriteset_Map.createShadow：system/Shadow1，锚点底边中点，z 6 在飞艇 z 5 之上）；挂在飞艇精灵下跟着它的格子位置，
@@ -795,6 +801,8 @@ func _on_player_step() -> void:
 	if not in_vehicle():
 		XState.current.steps += 1
 	on_player_walk(XState.current)
+	if _reserved_first():
+		return
 	# 玩家接触：踩上「角色下方/上方」事件，或撞上同层事件时在 _on_bump 处理；乘飞艇时不触发（canStartLocalEvents）
 	for e in events:
 		if can_start_local_events() and e.grid == player.grid and [1, 2].has(e.trigger()) and not e.is_normal_priority():
@@ -812,8 +820,16 @@ func _on_player_step() -> void:
 			await _encounter()
 
 
+## RESERVED_FIRST：有预约的公共事件（快捷键、枫叶、物品）还没开跑时，地图事件让它先跑；返回 true 表示这一下让掉了
+func _reserved_first() -> bool:
+	if not RESERVED_FIRST or busy or _menu_open or XState.current == null or XState.current.peek_common_event() <= 0:
+		return false
+	run_reserved_common_event(XState.current)
+	return true
+
+
 func _on_action() -> void:
-	if busy:
+	if busy or _reserved_first():
 		return
 	# Game_Player.triggerButtonAction：先上下载具；乘飞艇时不触发确认键事件（canStartLocalEvents）
 	if get_on_off_vehicle() or not can_start_local_events():
@@ -839,7 +855,7 @@ func _on_action() -> void:
 ## Game_Player.triggerTouchActionD1：点了某格走到那里停下（wasMoving 且目的地＝脚下）时，脚下「确定键、角色下方」的事件启动；
 ## 乘飞艇时那格是升降（get_on_off_vehicle 里处理脚下飞艇），不查事件
 func _on_touch_arrived() -> void:
-	if busy or not can_start_local_events() or in_vehicle():
+	if busy or _reserved_first() or not can_start_local_events() or in_vehicle():
 		return
 	for e in events:
 		if e.grid == player.grid and e.trigger() == 0 and not e.is_normal_priority():
@@ -893,7 +909,8 @@ func _physics_process(_delta: float) -> void:
 	var front := player.front_cell(d)
 	for e in events:
 		if e.grid == front and [1, 2].has(e.trigger()) and e.is_normal_priority():
-			run_event(e)
+			if not _reserved_first():
+				run_event(e)
 			return
 
 
