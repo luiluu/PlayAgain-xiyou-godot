@@ -12,14 +12,17 @@ extends RefCounted
 ##   1434 一阶段与二阶段附加 −300～330 → −315～315：＋17 → 0；
 ##   1433 二阶段格子 −350～380／−350～500 → −365～365／−425～425、附加 −50～60 → −55～55：＋11 → 0。
 ##   对话框里写的范围同步改。只换下表列出的（下限, 上限）组合，别的随机（选格子、星神瞥视）不动。
+## T494（TIANQI_ONLY，Kyo 11-25 拍板）：西游档恢复原版 v0.62.12 正期望范围与文字（防 SL 的 SAVED_STREAM 保留），
+##   EV_NOT_POSITIVE 按 XTianqi.active 分流，仅对天启篇存档生效；天启篇行为零改动。
 ## O-451（SEED_FROM_ORB）：存档里还没有抽奖流（从没抽过的档）时，种子由存档种子 orb_seed 派生（orb_seed 随存档；更老的档
 ##   由存档内容算出，XState.from_dict），不再首次使用时 fresh_seed——否则「从没抽过就存档→抽→读档再抽」首抽每次不同。
 ##   存档里已有种子的照旧用存档里的；有种子没进度（建了流还没抽就存了）从种子开头接着。随机算法不变，分布与原版一样，只是种子来源固定了。
-## 回退：`XLotteryRework.SAVED_STREAM = false`（回世界随机流）；`XLotteryRework.EV_NOT_POSITIVE = false`（原版范围与文字）；
-##   `XLotteryRework.SEED_FROM_ORB = false`（没有流时现开 fresh_seed）。
+## 回退：`XLotteryRework.SAVED_STREAM = false`（回世界随机流）；`XLotteryRework.EV_NOT_POSITIVE = false`（全部存档回原版范围与文字）；
+##   `XLotteryRework.TIANQI_ONLY = false`（西游档也走非正期望）；`XLotteryRework.SEED_FROM_ORB = false`（没有流时现开 fresh_seed）。
 
 static var SAVED_STREAM := true
 static var EV_NOT_POSITIVE := true
+static var TIANQI_ONLY := true
 static var SEED_FROM_ORB := true
 
 const EVENTS := [1431, 1432, 1433, 1434]
@@ -43,16 +46,26 @@ static func is_lottery(ce_id: int) -> bool:
 	return EVENTS.has(ce_id)
 
 
-## 换范围：返回 [lo, hi]
-static func remap(ce_id: int, lo: int, hi: int) -> Array:
+## 本存档是否启用期望不为正改写：TIANQI_ONLY 开着时仅对天启篇存档（XTianqi.active）生效，西游档回原版范围与文字
+static func ev_active(s: XState = null) -> bool:
 	if not EV_NOT_POSITIVE:
+		return false
+	if not TIANQI_ONLY:
+		return true
+	var cur := s if s != null else XState.current
+	return XTianqi.active(cur)
+
+
+## 换范围：返回 [lo, hi]
+static func remap(ce_id: int, lo: int, hi: int, s: XState = null) -> Array:
+	if not ev_active(s):
 		return [lo, hi]
 	var r = RANGES.get(ce_id, {}).get("%d,%d" % [lo, hi])
 	return [int(r[0]), int(r[1])] if r != null else [lo, hi]
 
 
-static func text(ce_id: int, line: String) -> String:
-	if not EV_NOT_POSITIVE:
+static func text(ce_id: int, line: String, s: XState = null) -> String:
+	if not ev_active(s):
 		return line
 	for k in TEXTS.get(ce_id, {}):
 		if line.contains(k):

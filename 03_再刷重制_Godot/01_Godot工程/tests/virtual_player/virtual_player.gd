@@ -126,7 +126,7 @@ var _greet_sig := {}               # 层 → 上次试着交时手里的 [不朽
 var _greet_asked := -1             # 刚在这一层点了「给」，等着看交成没有
 var greet_paid: Array = []         # 交过见面礼的层
 var greet_failed: Array = []       # 想交没交成的层（东西不够）
-var lottery_keep := 2000           # 抽奖期望调成零以下后长期抽一定亏：肝帝积分低于这个数不抽，抽的次数也按每抽最多亏 500 留够这个数（--vp-lottery-keep=N，0＝有券就全抽）
+var lottery_keep := 2000           # 天启篇抽奖期望调成零以下后长期抽一定亏（西游档 T494 已恢复原版正期望，此处留底仅作保守保护）：肝帝积分低于这个数不抽，抽的次数也按每抽最多亏 500 留够这个数（--vp-lottery-keep=N，0＝有券就全抽）
 var formations := 0                # 整队改了几次
 var fragment_buys := 0             # 换了几次碎片
 var _frag_stamp := -1              # 上次去找绪绪时的积分（没变就不再去）
