@@ -1,21 +1,33 @@
 class_name XHonghuangTitles
 extends RefCounted
-## 【cc·T493·未经审查】洪荒首通奖励②：三款称号＋一次性绑存档兑换码（Kyo 11-24／11-25 拍板，派单 T493）。只在西游档生效。
+## 【cc·T493·未经审查】洪荒首通奖励②：三款称号＋兑换码（Kyo 11-24／11-25 拍板，派单 T493；T508 改成不绑存档）。只在西游档生效。
 ##
 ## 三款称号（接在 XDesignation 表里原版 1～30、kyo 专属 31、庆典 41～47 之后）：
 ## - 51 洪荒证道（紫）：西游档通关洪荒难度（打赢第 33 层最终守层者，层数变量 20 到 34，且洪荒开关 2483／2463 开着）就自动解锁；
 ##   跟别的称号一样记全局配置（所有存档共用）。已经通关的老存档读进来，地图空闲时同样补发（判定只看存档现状，不看是哪一版打的）。
 ## - 52 洪荒首证（曙光流光）：只能用兑换码解锁，没解锁的照别的称号显示 ???。
-## - 53 洪荒·阿夜（极夜流光）：所有人都能在列表里看到（标「阿夜专属，不可获得」），只有兑换码绑定的那份存档能获得、佩戴。
-## 52、53 记在存档里（s.flags[FLAG_KEY].titles，每份存档各算各的），不记全局配置：换档就没有。
+## - 53 洪荒·阿夜（极夜流光）：所有人都能在列表里看到（标「阿夜专属，不可获得」），只有兑过码的那台设备能获得、佩戴。
+## T508 起 52、53 记在本机解锁文件里（见下），本机所有存档（含之后新开档）都有；不记 options.json（明文，能伪造）。
+## T493 时兑在存档里的记号（s.flags[FLAG_KEY].titles）照旧认。
 ##
-## 兑换码（一次性、绑指定存档）：
-## - 存档身份用 orb_seed（新游戏随机、随存档保存，导出导入、换存档位都不变；没有这个字段的旧档由存档内容算出，同一档每次一样）。
-##   存档本身封存签名（XSaveSeal，D28），玩家改不了这个数，也改不了「已兑换」记号。
-## - 仓库里只放 sha256(盐|兑换码|存档身份) 的十六进制（modes/xiyou/honghuang_redeem.json），兑换码原文不进仓库、日志、交付单；
-##   码由 07_开发环境/洪荒兑换码.py 在本机生成（读玩家存档取身份、写哈希进配置、把码打到终端）。
-## - 兑换：输入的码规范化（大写、去掉空格和横线）后连当前存档身份算哈希，配置里有这条才算对 → 解锁这条给的称号、记已兑换。
-##   换一份存档（身份不同）哈希就对不上；同一份存档第二次输入提示已经兑换过、什么都不发。
+## 兑换码（T508：本机兑一次、本机永久拥有；Kyo 11-25「他对换了以后，他本机的游戏就永久拥有这个称号，他能复用」）：
+## - 码不绑存档、不绑设备：仓库里只放 sha256(盐 v2|兑换码) 的十六进制（modes/xiyou/honghuang_redeem.json），
+##   兑换码原文不进仓库、日志、交付单；码由 07_开发环境/洪荒兑换码.py 在本机生成（写哈希进配置、码原文写本机私密文件）。
+##   代价：码外流，别的设备也能兑（称号纯外观，Kyo 知情）。
+## - 兑换：输入的码规范化（大写、去掉空格和横线）后算哈希，配置里有这条才算对 → 写本机解锁文件 → 本机所有存档都有这条给的称号。
+##   本机已经有了再输入，提示已经拥有、什么都不改。
+## - 本机解锁文件 <存档目录>/honghuang_titles.ksv：用存档封存同一套 AES＋HMAC（XSaveSeal.seal／unseal，发行包用注入的密钥）封起来，
+##   内容 {titles: {"52": true…}, used: [码哈希], machine: 本机 ID 哈希}。machine＝sha256(盐|OS.get_unique_id())，
+##   拷到别的设备上对不上就不认；改过（签名不对）也不认。不认时只是没有称号，文件原样不动、不碰存档和设置；删掉同样只是丢称号。
+##   安卓的 get_unique_id 是 ANDROID_ID（8.0 起按应用签名＋用户＋设备，卸载重装不变、恢复出厂才变）；
+##   但卸载会连存档目录一起删，解锁文件也没了，要再输一次码（码不绑设备，照样能兑）。
+## - 设备 ID 取不到（OS.get_unique_id() 返回空，系统查询失败时可能这样）：不认、不写本机解锁（返修 P1-1：空 ID 的哈希所有这类设备都一样，
+##   拷文件就能通用），兑换提示暂时无法保存、可以稍后重试，什么都不改。
+## - 有封存密钥但文件写失败：同上，兑换没完成、什么都不改，提示稍后重试（返修 P2-1）。
+## - 没有封存密钥（发行包没注入密钥的旧底包）才退回 T493 的做法：记在当前存档里（s.flags[FLAG_KEY]，这份存档一次），提示只在当前存档、记得存档。
+## - 读本机文件走 XSaveSeal.read（有大小上限，只认 sealed）（返修 P2-2）；运行中外部改了文件，重启后才生效（P3-1 没做）。
+## - 存档里的记号（T493 兑过的、上面退回时记的）照旧认；明文导入、补签旧明文档照旧清掉（strip_unsealed），展示侧照旧再校验（worn_ok）。
+## - T493 的 v1 码（sha256(盐 v1|码|orb_seed)，绑存档）作废：配置里删掉那条，旧码输入提示码不对；已用旧码兑过的存档照旧有。
 ## - 入口：大厅洪荒碑调查后多一个「输入兑换码」选项（XHonghuangMonument.inspect）。
 ##
 ## 流光：称号颜色是基色（列表外、侧栏等静态地方用），头顶名牌按 flow_style(名字) 逐字渐变并随时间流动（XDesignationPlate）；
@@ -52,21 +64,38 @@ const CLEAR_FLOOR := 34
 
 const FLAG_KEY := "honghuang_titles"
 const CODES_PATH := "res://modes/xiyou/honghuang_redeem.json"
-const SALT := "honghuang-redeem-v1"
+const SALT := "honghuang-redeem-v2"
 
 ## 玩家可见文字（待小A 文字审）
 const REDEEM_OPTION := "输入兑换码"
 const LEAVE_OPTION := "离开"
 const REDEEM_PROMPT := "请输入兑换码："
-const MSG_OK := "兑换成功！获得称号：%s。\n在大厅找奥尔夫尼选「更换称号」即可佩戴。"
-const MSG_USED := "这个兑换码在这份存档已经用过了。"
-const MSG_INVALID := "兑换码不对，或者不是给这份存档的。"
+const MSG_OK := "兑换成功！获得称号：%s。\n本机的西游存档都可佩戴。到大厅找奥尔夫尼，选择「更换称号」。"
+const MSG_USED := "本机已解锁这些称号。"
+const MSG_INVALID := "兑换码不正确，请核对后重试。"
+## 没有封存密钥的兼容路径（只记当前存档）
+const MSG_OK_SAVE := "兑换成功！获得称号：%s。\n称号仅在当前存档可用，请记得存档。"
+const MSG_USED_SAVE := "这份存档已解锁这些称号。"
+## 有密钥但写不了本机解锁（设备 ID 取不到、写文件失败）：兑换没完成
+const MSG_RETRY := "称号解锁暂时无法保存，请稍后重试。"
 const MSG_UNAVAILABLE := "现在无法兑换。"
 const TOAST_ZHENGDAO := "通关洪荒难度！获得称号：洪荒证道"
 
 ## 测试用：非 null 时代替配置文件里的兑换表（[{hash, titles}]）
 static var codes_override = null
 static var _codes = null
+## 本机解锁文件名（在 XSave.dir() 下）
+const LOCAL_FILE := "honghuang_titles.ksv"
+const MACHINE_SALT := "honghuang-machine-v1"
+## 测试用：非空时代替 OS.get_unique_id()（模拟换一台设备）
+static var machine_id_override := ""
+## 测试用：true 时当作设备 ID 取不到（OS.get_unique_id() 返回空）
+static var machine_id_missing := false
+## 测试用：true 时写本机解锁文件当作失败（模拟磁盘写不进）
+static var write_fail_for_test := false
+## 本机解锁缓存：读过的文件路径 → {titles: {}, used: []}（名牌每帧要查，不每次读盘）
+static var _local_path := ""
+static var _local := {}
 
 
 static func on(s = null) -> bool:
@@ -92,11 +121,96 @@ static func is_save_title(id: int) -> bool:
 	return SAVE_TITLES.has(id)
 
 
-## 52、53 有没有（当前存档）
+## 52、53 有没有：本机解锁文件里有，或当前存档里有兑换记号（T493 兑的、封存写不了时退回记的）
 static func save_has(s, id: int) -> bool:
 	if not on(s):
 		return false
-	return _flag_has(s.flags, id)
+	return local_has(id) or _flag_has(s.flags, id)
+
+
+# ---- 本机解锁文件（见文件头）----
+
+static func local_path() -> String:
+	return XSave.dir().path_join(LOCAL_FILE)
+
+
+## 本机标记；设备 ID 取不到时返回 ""（调用方一律不认、不写）
+## 系统设备 ID 最多每 ID_RECHECK_MS 重查一次（名牌每帧要问，不每帧查系统）；变了下面的本机缓存跟着失效
+const ID_RECHECK_MS := 2000
+static var _id_cache := ""
+static var _id_at := -1
+
+
+static func _raw_id() -> String:
+	if machine_id_missing:
+		return ""
+	if machine_id_override != "":
+		return machine_id_override
+	var now := Time.get_ticks_msec()
+	if _id_at < 0 or now - _id_at >= ID_RECHECK_MS:
+		_id_cache = OS.get_unique_id()
+		_id_at = now
+	return _id_cache
+
+
+static func machine_tag() -> String:
+	var id := _raw_id()
+	if id.strip_edges() == "":
+		return ""
+	return ("%s|%s" % [MACHINE_SALT, id]).sha256_text()
+
+
+## 有没有封存密钥（能不能写本机解锁文件）
+static func _can_seal() -> bool:
+	return not XSaveSeal.seal("{}").is_empty()
+
+
+## 读本机解锁（签名不对、不是本机的、没有文件，都当空的；文件不动）
+## 缓存按「路径｜本机标记」记：先查设备标识，标识为空一律当空的；标识变了（变空、恢复、换了）缓存自动失效（热修 P1-1）
+static func local_state() -> Dictionary:
+	var p := local_path()
+	var tag := machine_tag()
+	var key := "%s|%s" % [p, tag]
+	if key == _local_path:
+		return _local
+	_local_path = key
+	_local = {"titles": {}, "used": []}
+	if tag == "" or not FileAccess.file_exists(p):
+		return _local
+	var r := XSaveSeal.read(p)  # 有大小上限；不在封存管的文件名里，不触发目录迁移
+	if str(r.get("status", "")) != "sealed":
+		return _local
+	var d = JSON.parse_string(str(r.text))
+	if not d is Dictionary or str(d.get("machine", "")) != tag:
+		return _local
+	if d.get("titles") is Dictionary:
+		for k in d.titles:
+			if d.titles[k] == true and is_save_title(int(str(k))):
+				_local.titles[str(int(str(k)))] = true
+	if d.get("used") is Array:
+		_local.used = (d.used as Array).filter(func(h): return h is String)
+	return _local
+
+
+static func local_has(id: int) -> bool:
+	return local_state().titles.get(str(id)) == true
+
+
+## 换了存档目录、设备 ID、密钥后重读（测试用）
+static func reload_local() -> void:
+	_local_path = ""
+	_local = {}
+
+
+## 写本机解锁（封存）；写不了返回 false
+static func _write_local(titles: Dictionary, used: Array) -> bool:
+	var tag := machine_tag()
+	if tag == "" or write_fail_for_test:
+		return false
+	var text := JSON.stringify({"titles": titles, "used": used, "machine": tag})
+	var ok := XSaveSeal.write_file(local_path(), text)
+	reload_local()
+	return ok
 
 
 ## 称号选择里没拿到的那一项怎么显示：所有人可见的照名字列＋说明，其余 ""（调用方显示 ???）
@@ -121,12 +235,12 @@ static func _flag_has(flags, id: int) -> bool:
 	return rec is Dictionary and rec.get("titles") is Dictionary and rec.titles.get(str(id)) == true
 
 
-## 当前佩戴的称号能不能显示（返修 P1-1 展示侧双保险）：戴着 52／53 却没有兑换记号的（改明文存档硬塞的）不显示
+## 当前佩戴的称号能不能显示（返修 P1-1 展示侧双保险）：戴着 52／53，本机和存档里都没有兑换记号的（改明文存档硬塞的）不显示
 static func worn_ok(s) -> bool:
 	if s == null or not s.designation is Dictionary:
 		return true
 	var tid := save_title_by_name(str(s.designation.get("name", "")))
-	return tid == 0 or _flag_has(s.flags, tid)
+	return tid == 0 or _flag_has(s.flags, tid) or (on(s) and local_has(tid))
 
 
 ## 没签名的明文存档数据（封存开着时的明文导入、XSaveSeal 补签旧明文档）去掉 52／53：兑换记号整条删、佩戴着的清空。
@@ -207,13 +321,9 @@ static func normalize(code: String) -> String:
 	return out
 
 
-## 存档身份（orb_seed，见文件头）
-static func save_identity(s) -> String:
-	return str(int(s.orb_seed))
-
-
-static func code_hash(code: String, identity: String) -> String:
-	return ("%s|%s|%s" % [SALT, normalize(code), identity]).sha256_text()
+## 码哈希（不带存档身份，见文件头；和 07_开发环境/洪荒兑换码.py 同一算法）
+static func code_hash(code: String) -> String:
+	return ("%s|%s" % [SALT, normalize(code)]).sha256_text()
 
 
 static func codes() -> Array:
@@ -235,7 +345,7 @@ static func redeem(s, code: String) -> Dictionary:
 	var n := normalize(code)
 	if n == "":
 		return {"ok": false, "text": MSG_INVALID, "titles": []}
-	var h := code_hash(n, save_identity(s))
+	var h := code_hash(n)
 	var entry := {}
 	for e in codes():
 		if str(e.hash) == h:
@@ -243,6 +353,38 @@ static func redeem(s, code: String) -> Dictionary:
 			break
 	if entry.is_empty():
 		return {"ok": false, "text": MSG_INVALID, "titles": []}
+	var want := []
+	for id in entry.titles:
+		var tid := int(id)
+		if is_save_title(tid) and not want.has(tid):
+			want.append(tid)
+	if not _can_seal():
+		return _redeem_to_save(s, h, want)
+	if machine_tag() == "":
+		return {"ok": false, "text": MSG_RETRY, "titles": []}  # 设备标识取不到：先于「已拥有」判断，不认缓存（热修 P1-1）
+	# 本机还没有的就写本机解锁文件（T493 只兑在某份存档里的，也补成本机拥有）
+	var got := want.filter(func(tid): return not local_has(tid))
+	if got.is_empty():
+		return {"ok": false, "text": MSG_USED, "titles": []}
+	var loc := local_state()
+	var titles: Dictionary = (loc.titles as Dictionary).duplicate()
+	var used: Array = (loc.used as Array).duplicate()
+	for tid in want:
+		titles[str(tid)] = true
+	if not used.has(h):
+		used.append(h)
+	if not _write_local(titles, used):
+		# 设备 ID 取不到、写文件失败：兑换没完成，什么都不改，可以重试（返修 P1-1／P2-1）
+		return {"ok": false, "text": MSG_RETRY, "titles": []}
+	var names := "、".join(got.map(func(id): return str(title(id).get("name", ""))))
+	return {"ok": true, "text": MSG_OK % names, "titles": got}
+
+
+## 没有封存密钥：退回 T493 做法，记在当前存档里（这份存档一次）
+static func _redeem_to_save(s, h: String, want: Array) -> Dictionary:
+	var got := want.filter(func(tid): return not _flag_has(s.flags, tid))
+	if got.is_empty():
+		return {"ok": false, "text": MSG_USED_SAVE, "titles": []}
 	if not s.flags.get(FLAG_KEY) is Dictionary:
 		s.flags[FLAG_KEY] = {}
 	var rec: Dictionary = s.flags[FLAG_KEY]
@@ -250,17 +392,12 @@ static func redeem(s, code: String) -> Dictionary:
 		rec["used"] = []
 	if not rec.get("titles") is Dictionary:
 		rec["titles"] = {}
-	if (rec.used as Array).has(h):
-		return {"ok": false, "text": MSG_USED, "titles": []}
-	(rec.used as Array).append(h)
-	var got := []
-	for id in entry.titles:
-		var tid := int(id)
-		if is_save_title(tid) and rec.titles.get(str(tid)) != true:
-			rec.titles[str(tid)] = true
-			got.append(tid)
+	if not (rec.used as Array).has(h):
+		(rec.used as Array).append(h)
+	for tid in got:
+		rec.titles[str(tid)] = true
 	var names := "、".join(got.map(func(id): return str(title(id).get("name", ""))))
-	return {"ok": not got.is_empty(), "text": MSG_OK % names if names != "" else MSG_USED, "titles": got}
+	return {"ok": true, "text": MSG_OK_SAVE % names, "titles": got}
 
 
 ## 洪荒碑调查后的兑换流程（interp：当前事件解释器）
