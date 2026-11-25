@@ -49,7 +49,7 @@
 
 - `天启篇数据校验.py` 新增 `actor_nature_rules`／`check_actor_nature`（每个可用角色都有一行、natures 空或 1 个基础十系、与得票对账、manual 要 verdict），退出码 0；测试 `测试天启篇数据校验.py` 加 `ActorNature` 8 例，全文件 145 例 OK。
 - 选测名单（`选测.py main --list`）：xiyou_json_cache、xiyou_text_batch23、xiyou_tianqi_affix_text、xiyou_tianqi_balance、xiyou_tianqi_skills；工具回归。
-- 结果：（待填）
+- 结果：工具快速回归全部通过（141 秒）；云端选测通过（提交 aab7ec5595，5 场景 1 片，运行 45520497790，选测基准 c0007a9206）；本机没跑 Godot。
 
 ## 验收
 
@@ -60,4 +60,6 @@
 ## 本分支提交
 
 - 0c95f24c0 铺我方体质表、生成器、数据校验与测试、交付单
-- 交付单补云端选测结果（本提交）
+- c0007a920 交付单补云端选测结果
+- aab7ec559 口径改为只数基础十系元素招
+- 交付单补口径改后云端结果（本提交）
