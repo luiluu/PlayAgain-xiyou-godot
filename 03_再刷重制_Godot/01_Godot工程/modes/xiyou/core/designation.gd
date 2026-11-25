@@ -5,6 +5,7 @@ class_name XDesignation
 ## - 解锁：ConfigManager.DesignationN（全局配置，所有存档共用，XConfig.designations）；事件脚本「ConfigManager.DesignationN[N] = true;」。
 ## - 当前称号：$gamePlayer.DesignationName／DesignationIcon／DesignationColor（进存档，XState.designation）。
 ## - 选择：Star.Designation.ChooseTitle 预约的公共事件——选项是全部称号（没解锁的显示 \I[0]???），取消清空，选到 ??? 不变。
+## - T493：洪荒证道 51（全局）、洪荒首证 52／洪荒·阿夜 53（只记在兑换码绑定的存档里）接在最后，见 XHonghuangTitles。
 ## 参照 mv_oracle/designation_probe.cjs（tests/fixtures/designation_oracle.json）。头顶名牌的画面是第二期。
 
 const KYO_ID := 31
@@ -33,11 +34,16 @@ static func table() -> Array:
 		for t in XFest.TITLES:
 			if not out.any(func(d): return int(d.id) == int(t.id)) and (during or unlocked(int(t.id))):
 				out.append((t as Dictionary).duplicate())
+	for t in XHonghuangTitles.table_rows():  # T493 洪荒三款称号（西游档、开关开着才列；见 XHonghuangTitles）
+		if not out.any(func(d): return int(d.id) == int(t.id)):
+			out.append(t)
 	return out
 
 static func unlocked(id: int) -> bool:
 	if id == KYO_ID:
 		return XAchievement.global_has(KYO_ACHIEVEMENT)  # syncDesignation：DesignationN[31] = K.owned()
+	if XHonghuangTitles.is_save_title(id):
+		return XHonghuangTitles.save_has(XState.current, id)  # T493：洪荒首证、洪荒·阿夜只记在兑换的那份存档里
 	return XConfig.designations().get(str(id)) == true
 
 ## 事件脚本 ConfigManager.DesignationN[N] = true
@@ -49,7 +55,13 @@ static func unlock(id: int) -> void:
 
 ## 选择称号公共事件的选项文字（\I[图标]名字；没解锁的 \I[0]???）
 static func choices() -> Array:
-	return table().map(func(d): return "\\I[%d]%s" % [int(d.icon), d.name] if unlocked(int(d.id)) else "\\I[0]???")
+	return table().map(func(d): return "\\I[%d]%s" % [int(d.icon), d.name] if unlocked(int(d.id)) else _locked_choice(int(d.id)))
+
+
+## 没解锁的选项：一般是 \I[0]???；T493 洪荒·阿夜所有人可见（标专属、不可获得）
+static func _locked_choice(id: int) -> String:
+	var shown := XHonghuangTitles.locked_choice(id)
+	return shown if shown != "" else "\\I[0]???"
 
 ## 选中后（branch：选项下标；取消为负）：取消清空成 {name "", icon 0, color #ffffff}；选到 ??? 不变
 static func apply_choice(s: XState, branch: int) -> void:

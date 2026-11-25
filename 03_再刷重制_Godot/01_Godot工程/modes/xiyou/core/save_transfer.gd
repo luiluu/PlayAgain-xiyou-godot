@@ -135,6 +135,8 @@ static func parse_import(text: String) -> Dictionary:
 		return {"error": "这是旧版本导出的存档（没有签名），不能导入；请用当前版本重新导出"}
 	if not XSave.valid_data(data):
 		return {"error": "JSON 缺少完整的游戏存档数据，或是更新版本的存档"}
+	if XSaveSeal.active_now():
+		XHonghuangTitles.strip_unsealed(data)  # T493 返修 P1-1：没签名的明文导入不带洪荒首证／洪荒·阿夜（只能兑换码给）
 	return {"data": data}
 
 

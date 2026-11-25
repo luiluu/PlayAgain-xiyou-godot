@@ -166,8 +166,8 @@ static var SHOW_TITLE := true
 ## 这个角色该显示的称号（只有队长、已选称号时有；否则空串）
 func title_text() -> String:
 	var st := XState.current
-	if not SHOW_TITLE or st == null or actor == null or st.leader() != actor:
-		return ""
+	if not SHOW_TITLE or st == null or actor == null or st.leader() != actor or not XHonghuangTitles.worn_ok(st):
+		return ""  # T493 返修 P1-1：没兑换记号的洪荒首证／洪荒·阿夜不显示
 	return str(st.designation.get("name", ""))
 
 

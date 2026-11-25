@@ -440,6 +440,8 @@ static func _migrate_dir(dir: String) -> bool:
 		var json := JSON.new()
 		if json.parse(text) != OK:
 			continue  # 写了一半的坏明文：不封，原样留着
+		if name.begins_with("save_") and XHonghuangTitles.strip_unsealed(json.data):
+			text = JSON.stringify(json.data)  # T493 返修 P1-1：补签的明文存档不带洪荒首证／洪荒·阿夜（只能兑换码给）
 		# 要替换的 .ksv 是好的（删了记号人工找回、开关来回切）：先原样留一份 <名>.ksv.replaced_<时间>[_n]，核对过才替换（复核 P2）
 		if quarantine_if_failed(k) and archive_before_replace(k) and write_file(k, text) and FileAccess.file_exists(k):
 			last_migration.sealed.append(name)

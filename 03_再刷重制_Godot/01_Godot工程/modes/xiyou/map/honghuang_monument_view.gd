@@ -3,12 +3,11 @@ extends Node2D
 ## 【小A·未经审查】T460：西游大厅洪荒碑的地图视觉绘制层（只在 Map004 且西游档＋开关开启时由 XMapScene 创建）。
 ## 节点本身挂在 XMapScene 下，实际绘制子节点挂入 host.chars 并以碑脚底 y 坐标参与 y_sort，
 ## 玩家走到碑后时被碑身自然遮挡，走到碑前时位于底座之前。
-## 按 Kyo 11-25 要求（绝不做小块圆顶灰碑，要高大、庄严有威压感的丰碑／镇界石）：
-## 现有素材中无合适的镇界丰碑图（!$fsm_Statue03 偏圆顶灰碑已排除），当前以程序绘制三层坛座＋飞檐护翼＋方尖赤金冠顶的
-## 高大玄金暗赤镇界丰碑（约 72×138px）占位，并预留 TEX_PATH 供后续小o 美术卡替换。
+## 碑面用 T487 定稿贴图（Kyo 11-25 选 C 朱漆镇碑，TEX_PATH＝content/lobby/honghuang_monument.png，脚底居中锚点，1:1 不缩放）；
+## 贴图是静态的，只在贴图缺失时才走程序兜底（三层坛座＋飞檐护翼＋方尖赤金冠顶的镇界丰碑，开画面特效时带呼吸光、每帧重画）。
 
 const TS := 48
-## 预留正式美术贴图路径（脚底居中锚点）；存在时优先使用，不存在时走程序绘制
+## 正式美术贴图路径（脚底居中锚点）；存在时用贴图，不存在时走程序兜底
 static var TEX_PATH := "res://content/lobby/honghuang_monument.png"
 
 ## 三阶整图底图（hall_stage3_backdrop[_fest].png）中 (18, 8..9) 原画入了花盆／烛台；
@@ -58,7 +57,7 @@ func _process(delta: float) -> void:
 			_stage3_cover.queue_redraw()
 	if not is_instance_valid(_stele_node):
 		return
-	if XGraphics.fx_on():
+	if _tex == null and XGraphics.fx_on():  # 贴图是静态的，只有程序兜底的呼吸光要每帧重画（T493 顺手清 T460 合核 P2）
 		_t += delta
 		_stele_node.queue_redraw()
 
