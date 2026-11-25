@@ -286,6 +286,9 @@ python3 00_项目管理/归档/交付截图/luiluu_t501/T501_量数/胜率汇总
 | P3-4 面板宽度与注释 | `status_page.gd` 只「天启注视」那一行放不下时以原中线往两边溢出（T095 写法），其余行照原版 80；`status_page.gd`、`damage_ledger.json` 注释改「伤害压制 N%」 | `xiyou_status_page` 过（原版对照不变） |
 | P3-5／P3-6 | 既有注释瑕疵／可选自检，未改 | — |
 
+- 核后验证：本机 `xiyou_gojo_trials`、`xiyou_tianqi_guardian_lifesteal`、`xiyou_fabao_rework`、`xiyou_tianqi_qiyin_dragon_run`、`xiyou_tianqi_xinmo_align`、`xiyou_tianqi_phase4*`、`xiyou_tianqi_no_x6`、`xiyou_status_page` 全过（`--audio-driver Dummy`）；语法检查、发行空壳 check、交付自检 0。`XTianqiGojoTrial.setup` 签名不变，调用方只有 `battle_logic` 开战一处，只改建血那一行。
+- 核后云端选测（提交 `b87f10c01`，基准 `e139bb38a`）：70 个场景、2 片，`云端选测.py wait` 前台等完，**全部通过**。[云端选测 45682858750](https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45682858750)
+
 ## R2 验收（返修 5 条）
 
 | # | 结果 | 说明 |
