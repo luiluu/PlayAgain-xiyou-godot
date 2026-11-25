@@ -34,6 +34,7 @@ var results: Array = []
 
 
 func _ready() -> void:
+	XTianqiBalance.data()["combat_rules"]["enemy_hp_pct"] = 100  # T501 R2：本测试按表断言敌人血量（或按血量缩的估伤），测公式本身；天启篇敌人生命统一 ×40% 在 xiyou_tianqi_phase4 测
 	_run.call_deferred()
 
 
@@ -193,6 +194,11 @@ func _fight() -> void:
 	_check("fight_active", XTianqiQiyinDragonRun.active(lg) and XTianqiQiyinRule.active(lg) and e != null and XTianqiQiyinDragonRun.pending().is_empty())
 	_check("fight_name", e.display_name().contains("七首之龙"), e.display_name())
 	_check("fight_max_hp", absf(e.mhp - float(fd.max_hp)) <= 2.0 and is_equal_approx(e.hp, e.mhp), [e.mhp, fd.max_hp])
+	# T501 R2（小A 核 P2-2）：enemy_hp_pct=40 时按表 max_hp 重标读折算前生命（mhp_raw），实际生命正好是表值的 40%（读 mhp 会约掉）
+	XTianqiBalance.data().combat_rules["enemy_hp_pct"] = 40
+	var e40 := XTianqiQiyinDragonRun.dragon(_dragon_fight(_state()))
+	_check("fight_max_hp_pct40", e40 != null and absf(e40.mhp - floorf(float(fd.max_hp) * 0.4)) <= 2.0, [e40.mhp if e40 else -1, fd.max_hp])
+	XTianqiBalance.data().combat_rules["enemy_hp_pct"] = 100
 	_check("fight_three_actions", e.action_plus_set().filter(func(v): return v >= 1.0).size() >= 2, e.action_plus_set())
 	_check("fight_no_drop", e.data().dropItems.is_empty() and int(e.data().exp) == 0)
 	_check("fight_no_borrowed_tags", not str(e.data().note).contains("<hp") and not str(e.data().note).contains("Capture") and e.data().meta.is_empty())

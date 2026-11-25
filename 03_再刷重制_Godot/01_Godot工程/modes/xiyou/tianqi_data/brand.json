@@ -126,5 +126,48 @@
   ],
   "per_pick_range": [0.02, 0.04],
   "note": "换伤支：伤害和承伤各 +3%，两半相等；伤害那一半并进 K 那一项，承伤那一半进承伤池"
+ },
+ "realm": {
+  "_note": "T514（T013 3A）：境底＋境支（养成线 v0.3 第三节第 5 条；烙印 v0.6 第四节第 5 条改过的口径：D129 迎劫境底物攻魔攻 +5% 换成生命 +5%，D145 九条带攻境支去攻、其中锋骨／化刃／劫火／开印改换伤支）。数一律是整数百分数（5 ＝ +5%，-5 ＝ 承伤 −5%）。境底按立到的境（brand_realm）累加，之前各境的都在；境支每境（不染～逆命）选一条，没选过的按第一条算、第一次选免费（老档口径）。属性键：mhp 生命 mmp 魔法 atk 物攻 def 物防 mat 魔攻 mdf 魔防 agi 敏捷 luk 幸运。换伤支（trade）的伤害、承伤照上面 trade.branches 同名那一行。联动（link）只写给人看，3B 才接；道法（3C）不在本表。",
+  "source": "养成线 v0.3 第三节第 5 条、第五节第 1～3 条甲；烙印 v0.6 第四节第 5 条；D129、D130、D145",
+  "base": [
+   {"realm": "守一", "params": {"mhp": 5}},
+   {"realm": "不染", "params": {"mhp": 3, "mdf": 5}, "debuff_resist": 10},
+   {"realm": "铸骨", "params": {"mhp": 3, "def": 5}, "taken": -5},
+   {"realm": "砥柱", "params": {"mhp": 3, "mmp": 5}, "low_heal": {"below": 50, "up": 15}},
+   {"realm": "真形", "params": {"mhp": 3, "agi": 5}, "taken": -5},
+   {"realm": "迎劫", "params": {"mhp": 8}, "big_hit": {"over": 50, "cut": 30}, "src": "D129：原物攻、魔攻 +5% 换成生命 +5%，加上每境生命 +3%"},
+   {"realm": "逆命", "params": {"mhp": 3, "luk": 5}, "rally": {"below": 30, "heal": 20}}
+  ],
+  "branch_pct": 3,
+  "branches": [
+   {"realm": "不染", "list": [
+    {"key": "dichen", "name": "涤尘", "params": ["mdf", "mhp"], "link": "回合结束时 15% 几率自己去掉一个减益"},
+    {"key": "qingxin", "name": "清心", "params": ["mmp", "mdf"], "link": "悟道法时候选从 3 个变成 5 个", "src": "D129 去攻：魔攻换魔防"},
+    {"key": "yingyuan", "name": "映元", "params": ["agi", "luk"], "link": "打中本层弱点系时回复自己最大魔法的 3%", "src": "D129 去攻：物攻魔攻换敏捷幸运"}]},
+   {"realm": "铸骨", "list": [
+    {"key": "jingu", "name": "金骨", "params": ["def", "mhp"], "link": "原版模板套装的件数按多 1 件算"},
+    {"key": "fenggu", "name": "锋骨", "params": [], "trade": true, "link": "道法「本命兵」的加成 ×1.5", "src": "D145 换伤支"},
+    {"key": "suihuo", "name": "髓火", "params": ["mmp", "mdf"], "link": "种族祝福按高一阶算", "src": "D129 去攻：魔攻换魔防"}]},
+   {"realm": "砥柱", "list": [
+    {"key": "buyi", "name": "不移", "params": ["def", "mdf"], "link": "掩护、嘲讽期间承伤 −8%"},
+    {"key": "huilan", "name": "回澜", "params": ["mdf", "mhp"], "link": "自己给出的治疗、护盾 +6%", "src": "D129 去攻：魔攻换生命"},
+    {"key": "jisha", "name": "积沙", "params": ["agi", "mmp"], "link": "技能消耗 −6%"}]},
+   {"realm": "真形", "list": [
+    {"key": "dingxing", "name": "定形", "params": ["mhp", "mdf"], "link": "被化形级以上的异化怪打时承伤 −6%"},
+    {"key": "zhaoxing", "name": "照形", "params": ["agi", "luk"], "link": "自己身上异化词条的效果 +20%"},
+    {"key": "huaren", "name": "化刃", "params": [], "trade": true, "link": "镶的宝珠按高一阶算", "src": "D145 换伤支"}]},
+   {"realm": "迎劫", "list": [
+    {"key": "yingfeng", "name": "迎锋", "params": ["def", "mhp"], "link": "对首领、使徒、骑士承伤 −6%"},
+    {"key": "jiehuo", "name": "劫火", "params": [], "trade": true, "link": "生命低于 30% 时伤害 +10%", "src": "D145 换伤支"},
+    {"key": "jieyin", "name": "劫印", "params": ["agi", "luk"], "link": "自己生效的符文之语「数」那一段 ×1.5"}]},
+   {"realm": "逆命", "list": [
+    {"key": "nilin", "name": "逆鳞", "params": ["mhp", "def"], "link": "骑士遗物的代价减三成"},
+    {"key": "kaiyin", "name": "开印", "params": [], "trade": true, "link": "七印套装 2 件档的效果 ×1.5", "src": "D145 换伤支"},
+    {"key": "wentian", "name": "问天", "params": ["agi", "mmp"], "link": "三个道法的效果 +30%", "src": "D129 去攻：魔攻换最大魔法"},
+    {"key": "benxian", "name": "本线支", "params": [], "line_only": true, "hidden": true, "link": "瘟疫蜕疫／战争临阵／饥荒辟谷／死亡向死（3B 接）", "src": "稿写「看线」，属性未定，3B 前不摆出来"}]}
+  ],
+  "swap_price_units": 10,
+  "swap_price_note": "换支价 ＝ swap_price_units 场钱 × 难度价格倍数（XTianqiMoney.price，场钱按最高到达层，所以跟层走）；稿写「具体价交金钱线」，10 是占位，待金钱线定"
  }
 }

@@ -405,7 +405,9 @@ static func _resist_ops(a: XActor) -> Array:
 	var qy := LH * (HEADER_LINES + 1)
 	for row in global_bonuses(a):
 		ops.append(_t(row[0], col7, qy, 100, "center", XUI.SYSTEM))
-		ops.append(_t(row[1], col8, qy, 80, "center", _element_color(_element_index(row[1]))))
+		# T501 R2 小A 核 P3-4：「伤害压制 50%」比数字长，按 T095 写法放不下时以原中线往两边溢出，不压窄字
+		var vw := maxf(80.0, _tw(str(row[1])) + PAD) if str(row[0]) == XTianqiBase.GAZE_NAME else 80.0  # 只动这一行，其余（含西游档）照原版宽度
+		ops.append(_t(row[1], col8 + 40.0 - vw / 2.0, qy, vw, "center", _element_color(_element_index(row[1]))))
 		qy += LH
 	return ops
 
@@ -451,7 +453,7 @@ static func global_bonuses(a: XActor) -> Array:
 			element = int(de.get_string(1))
 	var dvup: Dictionary = cache.get("skillTypeDvup", {})
 	var pct := func(v: float) -> String: return "%d%%" % int(XPower.js_round(v * 100))
-	var gaze := XTianqiBase.gaze_row()  # 天启篇期四「天启注视」：伤害 ×K（总开关关着没有这一行）
+	var gaze := XTianqiBase.gaze_row()  # 天启篇期四「天启注视」：K＜1 写「伤害压制 N%」、否则「伤害 ×K」（T501 R2；总开关关着没有这一行）
 	return ([gaze] if not gaze.is_empty() else []) + [["爆伤加成", pct.call(float(cache.get("critHarmRi", 0.0)))],
 		["伤害加成", pct.call(float(cache.get("globalHarmRi", 0.0)))],
 		["全队掉率", drop_rate_text()],

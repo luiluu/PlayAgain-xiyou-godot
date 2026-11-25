@@ -556,6 +556,9 @@ func _xinsu_mechanics() -> void:
 	var lg := _battle(s, 2)
 	var e: XEnemy = lg.enemies[0]
 	var f := XTianqiGojoTrial.fight(lg)
+	# T501 R2 小A 核 P1-1：影子生命＝unit×hp_units（unit 已含 K），敌人生命统一折算不能再缩一次
+	var want_hp := roundf(float(f.unit) * float(XTianqiGojoTrial.trial(2).hp_units))
+	_check("x_shadow_hp_once", XTianqiBase.enemy_hp_pct() == 40 and absf(float(e.mhp) - want_hp) <= 2.0, [e.mhp, want_hp, XTianqiBase.enemy_hp_pct()])
 	_check("x_shadow", e.display_name() == "两面宿傩的影子" and lg.make_action_times(e) == 1 and e.mdf > 0.0)
 	lg.turn = 1
 	_check("x_r1", int(lg.decide(e)[0].id) == XTianqiGojoTrial.DISMANTLE)
@@ -690,6 +693,10 @@ func _xinsu_ready(s: XState) -> void:
 
 
 func _scripted() -> void:
+	# T514：脚本打法「生命低于一半才放反转术式」是按没有境底时的生命调的；守一境底生命 +5% 让第 8 回合正好停在一半线上、
+	# 不放反转，接着被连招打倒（影子出招按本体基础生命算，不跟境底变）。这是脚本阈值，不是变难了：本段按没有境底跑，末尾还原
+	var realm_was := XTianqiBrandRealm.ENABLED
+	XTianqiBrandRealm.ENABLED = false
 	var stats := {"huaiyu_smart": [], "huaiyu_no_purple": [], "xinsu_smart": [], "xinsu_no_domain": []}
 	var awakened := 0
 	for k in range(SEEDS):
@@ -716,6 +723,7 @@ func _scripted() -> void:
 	for key in stats:
 		print("%s rounds=%s won=%s shadow_left=%s" % [key, str(stats[key].map(func(r): return r.rounds)), str(stats[key].map(func(r): return r.won)),
 			str(stats[key].map(func(r): return snappedf(float(r.shadow_hp) / maxf(1.0, float(r.shadow_mhp)), 0.01)))])
+	XTianqiBrandRealm.ENABLED = realm_was
 
 
 ## 假地图：start_battle 照真的建战斗（换不换影子看 XTianqiGojoTrial.setup），按 result 收场

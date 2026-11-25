@@ -128,6 +128,9 @@ func _f10() -> void:
 	_check("f10.rec", XGuardianRework.xinmo_floor(e) == 10 and str(e.data().get("name", "")) == "心魔" and int(e.data().get("_xinmo_guardian", 0)) == 72, [XGuardianRework.xinmo_floor(e), e.data().get("name"), e.data().get("_xinmo_guardian")])
 	_check("f10.hp_eq_guardian", g != null and is_equal_approx(float(e.mhp), float(g.mhp)), [e.mhp, g.mhp if g else -1])
 	_check("f10.hp_not_huge", float(e.mhp) < 1.0e8, e.mhp)
+	# T501 R2（小A 核 P2-2）：心魔按 xinmo_hp 重标读折算前生命（mhp_raw），实际生命＝目标×enemy_hp_pct（40%）；读 mhp 会约掉成 100%
+	var xt := XGuardianRework.xinmo_hp(10, 72, XState.current)
+	_check("f10.hp_pct40", XTianqiBase.enemy_hp_pct() == 40 and absf(float(e.mhp) - floorf(xt * 0.4)) <= 2.0, [e.mhp, xt])
 	_check("f10.def_eq", g != null and int(e.param(3)) == int(g.param(3)) and int(e.param(5)) == int(g.param(5)), [e.param(3), e.param(5), g.param(3) if g else -1])
 	_check("f10.atk_eq", g != null and int(e.param(2)) == int(g.param(2)) and int(e.param(4)) == int(g.param(4)), [e.param(2), g.param(2) if g else -1])
 	_check("f10.output_eq", g != null and is_equal_approx(e.output_scale, g.output_scale) and is_equal_approx(e.output_scale, float(XTianqiBase.guardian_table("atk_scale", XGuardianRework.ATK_SCALE).get(10, XGuardianRework.ATK_SCALE[10]))), [e.output_scale, g.output_scale if g else -1])

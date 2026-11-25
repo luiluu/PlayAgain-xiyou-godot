@@ -16,7 +16,7 @@
 - qiyin_gear.json、qiyin_drop.json、qiyin_dragon.json、qiyin_altar.json（七印祭坛）：只有 B 组，印键只有七个、部位键只有六个、几率在 0～1、权重非负且不全为 0；qiyin_gear 另查类型号在 core/tianqi_gear.gd 的 ORDER 里、七套各 6 件、毕业武器 13 把、神器 5 件；跨表查另三张引用的套装、武器、神器、印、部位都在 qiyin_gear 里。只查表里现有的字段，不认识的键不报错。
 - skill_rework.json（全角色技能重构）：forced_copy_pending（T255 登记：技能号→原因）、forced_copy_unreachable（T261：副本分支天启篇走不到，技能号→原因）；卡里技能的效果 44 调公共事件强制放副本、副本没进卡的，要 effects_remove 或副本进卡或登记；只有 B 组，超强者 17（含五条悟）／强者 54 不重叠、技能行系数大于 0、覆盖层全开后系数和属性权重不得有小数（整数或整数百分比，T191）、治疗比例与追加几率在 0～1；技能行 tags（T519）只能填持续伤害／减益、不重复、被动心法不打；状态行 battle_end 是布尔（T263）；技能行 self_states_on_hit 只能是 true 且要带 self_states（T264）；技能行 cast_pick、seg_elements_of、伤害条件 stat_floor 的格式（T268）。
 - reforge.json、alien_gear.json、abyss_shelves.json、qiyin_equip.json、qiyin_show.json、qiyin_dragon_run.json（重铸、异化装备、深渊商人货架、七印装备底子、七印演出、七首之龙流程）：只有 B 组，只查代码读的字段，类型和范围（几率 0～1、百分比 0～100、花费非负、随阶／随级不降、颜色 #RRGGBB、能力值 8 项）；跨表查货架的层和阶在 affix_table、品质在 tianqi_affix_roll.gd 的 QUALITY_KEYS、异化词条在 rewards.json 的 finale.lines、七印装备的部位和武器类型与 qiyin_gear 对得上、演出的印齐七个；参照表不在就跳过那一项。
-- brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。
+- brand.json（烙印，T073-a）：只有 B 组，节点递增且末项 100、配满加成不超过 0.5、不刻印封顶是节点之一且正好是 uncarved_max_realm 那境、换伤支四条且伤害＝承伤、常驻六条发作六种齐且 over 照节点、熟的花样名单是六种的子集且不含抽自己／六亲不认／换人、灼痕各级递增、首通加起来不超过 100 且每 5 层末等于节点、折法＝满了才算、带 _range 的数落在范围里。稿定的数带 4。realm 段（T514 境底＋境支）：七行境底、19 支、换伤支对 trade、别的支两项属性不带攻。
 - balance_table.json 的 guardian_phase4（守层者三表，T239）：hp_base／atk_scale／resist 层号 1～34、值为正；focus 层号 5～33、{skill: 正整数, scale: 正数[, single: 1]}（T363）。lifesteal_cap {skills: 正整数列表, pct: {五档难度键齐全: 正整数}}（T392）。dot_pct {层号 1～34: {状态号: 1～100 整数}}（T402）。hp_pct {层号 1～34: 1～100 整数}（T406）。
 - guardian_params.json（守层者能力值重锚，T237／T245）：只有 B 组，ref_enemy 是正整数、stats 八项对 0～7、floors 只有 31～34 层、qiyin 行（可没有）和每层只写 stats 里的项（下划线开头的注释键除外）、取值是正整数百分比（附则 E）。
 - growth.json（渡鸦、奈叶、流萤无限成长，T256）：只有 B 组，全表整数（附则 E）、层价分段从 1 层起连续且份数不降、翻倍倍数 ≥2、拐点在分段里、Q6 判定四项范围、三人行齐全且角色号对、一份是正整数、平加只认能力编号 0～7 且渡鸦只加魔攻、奈叶只加生命魔法、流萤不走平加。
@@ -2376,8 +2376,13 @@ def combat_rules_phase4_rules(table: dict) -> list:
     bad = []
     cr = table.get('combat_rules', {})
     k = cr.get('base_damage')
-    if not isinstance(k, (int, float)) or not 0.05 <= float(k) <= 1.0:
-        bad.append('combat_rules.base_damage（K）要在 0.05～1（暗装期先填 1，标定后 0.07～0.17）：%s' % k)
+    # T501 R2（Kyo 11-25「注视必须是压制，K 要小于 1」）：K 在 0.05～1（不含 1）；附则 E 按整数百分比写（D200 先例，0.5＝50%）
+    if (not isinstance(k, (int, float)) or isinstance(k, bool) or not 0.05 <= float(k) < 1.0
+            or abs(float(k) * 100 - round(float(k) * 100)) > 1e-9):
+        bad.append('combat_rules.base_damage（K）要在 0.05～1（不含 1，注视是压制）、写整数百分比（如 0.5＝50%%）：%s' % k)
+    hp = cr.get('enemy_hp_pct', 100)
+    if not isinstance(hp, int) or isinstance(hp, bool) or not 10 <= hp <= 100:
+        bad.append('combat_rules.enemy_hp_pct（天启篇敌人生命统一折算）要是 10～100 的整数百分比（T501 R2 定 40）：%s' % hp)
     u = cr.get('boss_hp_temp_unit')
     if not isinstance(u, dict) or set(u) != {'crit', 'no_crit'}:
         bad.append('combat_rules.boss_hp_temp_unit 要是 {crit, no_crit} 两个数')
@@ -2695,6 +2700,61 @@ def brand_rules(table: dict, balance: dict = None) -> list:
     if not (num(aggro.get('outsider_base')) and num(aggro.get('bird_mult')) and aggro['bird_mult'] >= 1):
         bad.append('aggro 外人项、出头鸟项要是数且出头鸟 ≥ 1')
     _brand_ranges(table, '', bad)
+    bad += _brand_realm_rules(table.get('realm'), realms, br)
+    return bad
+
+
+BRAND_PARAMS = ('mhp', 'mmp', 'atk', 'def', 'mat', 'mdf', 'agi', 'luk')
+BRAND_REALM_EFFECTS = {'low_heal': ('below', 'up'), 'big_hit': ('over', 'cut'), 'rally': ('below', 'heal')}
+
+
+def _brand_realm_rules(rm, realms: list, trade: list) -> list:
+    """brand.json realm（T514，境底＋境支）：七行境底照七境顺序、数是整数；不染～逆命各有支（3/3/3/3/3/4 共 19），
+    key 不重；带 trade 的支名要在 trade.branches 里、境对得上，且没有属性；别的支正好两项属性、不含物攻魔攻（D129）。没有这一段不报（回退前的表）"""
+    if rm is None:
+        return []
+    bad = []
+    base = rm.get('base', [])
+    if [b.get('realm') for b in base] != realms:
+        bad.append('realm.base 要按七境顺序七行：%s' % [b.get('realm') for b in base])
+    for b in base:
+        for k, v in (b.get('params') or {}).items():
+            if k not in BRAND_PARAMS or not _is_int(v):
+                bad.append('realm.base/%s 属性键或数不对（要整数百分）：%s=%s' % (b.get('realm'), k, v))
+        for k in ('taken', 'debuff_resist'):
+            if k in b and not _is_int(b[k]):
+                bad.append('realm.base/%s.%s 要整数百分：%s' % (b.get('realm'), k, b[k]))
+        for k, subs in BRAND_REALM_EFFECTS.items():  # T514 核 P2-2：三组生存对象的子字段也要整数百分、不为负
+            if k not in b:
+                continue
+            o = b[k]
+            if not isinstance(o, dict) or set(o) != set(subs) or not all(_is_int(o[x]) and o[x] >= 0 for x in subs):
+                bad.append('realm.base/%s.%s 要正好有 %s、都是非负整数百分：%s' % (b.get('realm'), k, '、'.join(subs), o))
+    if not _is_int(rm.get('branch_pct')):
+        bad.append('realm.branch_pct 要整数：%s' % rm.get('branch_pct'))
+    groups = rm.get('branches', [])
+    if [g.get('realm') for g in groups] != realms[1:]:
+        bad.append('realm.branches 要是不染到逆命六组：%s' % [g.get('realm') for g in groups])
+    sizes = [len(g.get('list', [])) for g in groups]
+    if sizes != [3, 3, 3, 3, 3, 4]:
+        bad.append('realm.branches 每境 3 支、逆命 4 支（共 19）：%s' % sizes)
+    tmap = {t.get('key'): t.get('realm') for t in trade}
+    keys = []
+    for g in groups:
+        for b in g.get('list', []):
+            keys.append(b.get('key'))
+            ps = b.get('params', [])
+            if b.get('trade'):
+                if tmap.get(b.get('name')) != g.get('realm') or ps:
+                    bad.append('realm 换伤支 %s 要在 trade.branches 里、境对得上、不带属性' % b.get('name'))
+            elif b.get('hidden'):
+                pass
+            elif len(ps) != 2 or any(p not in BRAND_PARAMS for p in ps) or {'atk', 'mat'} & set(ps):
+                bad.append('realm 支 %s 要两项属性、不带物攻魔攻（D129）：%s' % (b.get('name'), ps))
+    if len(keys) != len(set(keys)):
+        bad.append('realm.branches 的 key 有重复')
+    if not _is_int(rm.get('swap_price_units')) or rm['swap_price_units'] < 0:
+        bad.append('realm.swap_price_units 要是非负整数（附则 E）：%s' % rm.get('swap_price_units'))
     return bad
 
 

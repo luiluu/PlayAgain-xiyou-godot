@@ -1,0 +1,449 @@
+{
+  "artifact_cap_table": {
+    "crown_bonus_pct": 300.0,
+    "heartsteel_stage": 10.0,
+    "hubris_stage": 10.0
+  },
+  "artifact_mode": "none",
+  "base_seed": 20261123,
+  "basis": "D271",
+  "floors": [
+    32
+  ],
+  "force_diff": "",
+  "lines": [
+    "war",
+    "famine",
+    "death",
+    "plague"
+  ],
+  "max_turns": 25,
+  "seconds": 468.66,
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "task": "T438",
+  "teams_per_template": 3,
+  "templates": {
+    "C": {
+      "artifact_mode": "none",
+      "difficulty": "lianyu",
+      "floors": {
+        "32": {
+          "cases": [
+            {
+              "alien": [
+                "536:zhongyan:pyro"
+              ],
+              "artifacts": [],
+              "deaths": 4,
+              "enemy_hp0": 2964000,
+              "enemy_hp_left_pct": 0.714,
+              "falls_total": 6,
+              "helper": 59,
+              "instant_loss": false,
+              "line": "war",
+              "lost": true,
+              "party_hp0": 906532,
+              "revive_casts": 1,
+              "revive_items": 2,
+              "seed": 1,
+              "team": [
+                95,
+                108,
+                131,
+                127
+              ],
+              "team_idx": 0,
+              "timeout": false,
+              "turns": 11,
+              "won": false
+            },
+            {
+              "alien": [
+                "536:zhongyan:exhaust"
+              ],
+              "artifacts": [],
+              "deaths": 0,
+              "enemy_hp0": 2964000,
+              "enemy_hp_left_pct": 0.0,
+              "falls_total": 0,
+              "helper": 59,
+              "instant_loss": false,
+              "line": "famine",
+              "lost": false,
+              "party_hp0": 940558,
+              "revive_casts": 0,
+              "revive_items": 0,
+              "seed": 2,
+              "team": [
+                95,
+                108,
+                131,
+                127
+              ],
+              "team_idx": 0,
+              "timeout": false,
+              "turns": 7,
+              "won": true
+            },
+            {
+              "alien": [
+                "929:zhongyan:knell"
+              ],
+              "artifacts": [],
+              "deaths": 0,
+              "enemy_hp0": 2964000,
+              "enemy_hp_left_pct": 0.0,
+              "falls_total": 3,
+              "helper": 59,
+              "instant_loss": false,
+              "line": "death",
+              "lost": false,
+              "party_hp0": 906281,
+              "revive_casts": 1,
+              "revive_items": 2,
+              "seed": 3,
+              "team": [
+                95,
+                108,
+                131,
+                127
+              ],
+              "team_idx": 0,
+              "timeout": false,
+              "turns": 7,
+              "won": true
+            },
+            {
+              "alien": [
+                "536:zhongyan:chaos"
+              ],
+              "artifacts": [],
+              "deaths": 4,
+              "enemy_hp0": 2964000,
+              "enemy_hp_left_pct": 1.12,
+              "falls_total": 2,
+              "helper": 151,
+              "instant_loss": false,
+              "line": "plague",
+              "lost": true,
+              "party_hp0": 873177,
+              "revive_casts": 0,
+              "revive_items": 0,
+              "seed": 1,
+              "team": [
+                95,
+                163,
+                117,
+                130
+              ],
+              "team_idx": 1,
+              "timeout": false,
+              "turns": 4,
+              "won": false
+            },
+            {
+              "alien": [
+                "536:zhongyan:berserk"
+              ],
+              "artifacts": [],
+              "deaths": 2,
+              "enemy_hp0": 2964000,
+              "enemy_hp_left_pct": 0.147,
+              "falls_total": 5,
+              "helper": 151,
+              "instant_loss": false,
+              "line": "war",
+              "lost": false,
+              "party_hp0": 870774,
+              "revive_casts": 0,
+              "revive_items": 3,
+              "seed": 2,
+              "team": [
+                95,
+                163,
+                117,
+                130
+              ],
+              "team_idx": 1,
+              "timeout": true,
+              "turns": 25,
+              "won": false
+            },
+            {
+              "alien": [
+                "929:zhongyan:overdraw"
+              ],
+              "artifacts": [],
+              "deaths": 0,
+              "enemy_hp0": 2964000,
+              "enemy_hp_left_pct": 0.0,
+              "falls_total": 0,
+              "helper": 151,
+              "instant_loss": false,
+              "line": "famine",
+              "lost": false,
+              "party_hp0": 870879,
+              "revive_casts": 0,
+              "revive_items": 0,
+              "seed": 3,
+              "team": [
+                95,
+                163,
+                117,
+                130
+              ],
+              "team_idx": 1,
+              "timeout": false,
+              "turns": 19,
+              "won": true
+            },
+            {
+              "alien": [
+                "536:zhongyan:reaper"
+              ],
+              "artifacts": [],
+              "deaths": 0,
+              "enemy_hp0": 2964000,
+              "enemy_hp_left_pct": 0.0,
+              "falls_total": 0,
+              "helper": 106,
+              "instant_loss": false,
+              "line": "death",
+              "lost": false,
+              "party_hp0": 905432,
+              "revive_casts": 0,
+              "revive_items": 0,
+              "seed": 1,
+              "team": [
+                163,
+                122,
+                131,
+                100
+              ],
+              "team_idx": 2,
+              "timeout": false,
+              "turns": 3,
+              "won": true
+            },
+            {
+              "alien": [
+                "929:zhongyan:taunt"
+              ],
+              "artifacts": [],
+              "deaths": 0,
+              "enemy_hp0": 2964000,
+              "enemy_hp_left_pct": 0.0,
+              "falls_total": 0,
+              "helper": 106,
+              "instant_loss": false,
+              "line": "plague",
+              "lost": false,
+              "party_hp0": 926838,
+              "revive_casts": 0,
+              "revive_items": 0,
+              "seed": 2,
+              "team": [
+                163,
+                122,
+                131,
+                100
+              ],
+              "team_idx": 2,
+              "timeout": false,
+              "turns": 22,
+              "won": true
+            },
+            {
+              "alien": [
+                "929:zhongyan:berserk"
+              ],
+              "artifacts": [],
+              "deaths": 2,
+              "enemy_hp0": 2964000,
+              "enemy_hp_left_pct": 2.179,
+              "falls_total": 6,
+              "helper": 106,
+              "instant_loss": false,
+              "line": "war",
+              "lost": false,
+              "party_hp0": 939650,
+              "revive_casts": 1,
+              "revive_items": 3,
+              "seed": 3,
+              "team": [
+                163,
+                122,
+                131,
+                100
+              ],
+              "team_idx": 2,
+              "timeout": true,
+              "turns": 25,
+              "won": false
+            }
+          ],
+          "gear": {
+            "bands": {
+              "60-69": 0,
+              "70-75": 120,
+              "80-81": 0,
+              "<60": 0
+            },
+            "grades": {
+              "不朽": 34,
+              "传说": 0,
+              "史诗及以下": 0,
+              "神话": 86
+            },
+            "myth_ratio": 0.717,
+            "qiyin": 86,
+            "req_max": 75,
+            "req_mean": 74.2,
+            "req_median": 75.0,
+            "req_min": 70,
+            "teams": 3,
+            "total_items": 120,
+            "true_seal": 0
+          },
+          "level": 75,
+          "summary": {
+            "deaths_mean": 1.33,
+            "falls_mean": 2.44,
+            "instant_losses": 0,
+            "loss_enemy_hp_left_pct": 1.04,
+            "n": 9,
+            "timeouts": 2,
+            "turns_mean": 13.7,
+            "turns_won_mean": 11.6,
+            "win_rate": 0.556,
+            "wins": 5
+          }
+        }
+      },
+      "gear_summary": {
+        "32": {
+          "bands": {
+            "60-69": 0,
+            "70-75": 120,
+            "80-81": 0,
+            "<60": 0
+          },
+          "grades": {
+            "不朽": 34,
+            "传说": 0,
+            "史诗及以下": 0,
+            "神话": 86
+          },
+          "myth_ratio": 0.717,
+          "qiyin": 86,
+          "req_max": 75,
+          "req_mean": 74.2,
+          "req_median": 75.0,
+          "req_min": 70,
+          "teams": 3,
+          "total_items": 120,
+          "true_seal": 0
+        }
+      },
+      "label": "C_炼狱2超2强同级毕业(养成80%)",
+      "teams": [
+        {
+          "field": [
+            95,
+            108,
+            131,
+            127
+          ],
+          "helper": 59,
+          "helper_name": "大羿",
+          "helper_tier": "强者",
+          "names": [
+            "三笠",
+            "奈叶",
+            "椎名立希",
+            "小铃兰"
+          ],
+          "roles": [
+            "输出",
+            "输出",
+            "坦克",
+            "辅助"
+          ],
+          "shape": "A",
+          "tiers": [
+            "超强者",
+            "超强者",
+            "强者",
+            "强者"
+          ]
+        },
+        {
+          "field": [
+            95,
+            163,
+            117,
+            130
+          ],
+          "helper": 151,
+          "helper_name": "亚斯娜",
+          "helper_tier": "强者",
+          "names": [
+            "三笠",
+            "拳一",
+            "绯红蔷薇",
+            "长崎爽世"
+          ],
+          "roles": [
+            "输出",
+            "输出",
+            "辅助",
+            "辅助"
+          ],
+          "shape": "D",
+          "tiers": [
+            "超强者",
+            "超强者",
+            "强者",
+            "强者"
+          ]
+        },
+        {
+          "field": [
+            163,
+            122,
+            131,
+            100
+          ],
+          "helper": 106,
+          "helper_name": "甘雨",
+          "helper_tier": "强者",
+          "names": [
+            "拳一",
+            "南宫恨·狂刀",
+            "椎名立希",
+            "云霄"
+          ],
+          "roles": [
+            "输出",
+            "输出",
+            "坦克",
+            "辅助"
+          ],
+          "shape": "A",
+          "tiers": [
+            "超强者",
+            "超强者",
+            "强者",
+            "强者"
+          ]
+        }
+      ],
+      "template": "C"
+    }
+  },
+  "version": 2
+}

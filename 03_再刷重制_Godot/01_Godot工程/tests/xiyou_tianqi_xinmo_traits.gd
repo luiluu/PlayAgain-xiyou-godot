@@ -270,7 +270,8 @@ func _niliu() -> void:
 	_setb(a, 4001, 3)
 	_check("nl.weak_heal_has_cost", XTianqiBrand.has_cost(a, "weak_heal"))
 	_check("nl.weak_heal_no_double", healed.call(0.6, 100.0) == 50.0, healed.call(0.6, 100.0))  # 虚不受补已减半，不再成 25
-	_check("nl.weak_heal_low_115", healed.call(0.4, 100.0) == 115.0, healed.call(0.4, 100.0))
+	# T514：立到砥柱的人半血以下另有境底受疗 +15%（先算，100→115），逆流低血再 ×1.15 → 132；心魔特点稿 v0.2 第二节砥柱注：默认允许叠乘
+	_check("nl.weak_heal_low_115", healed.call(0.4, 100.0) == (132.0 if XTianqiBrandRealm.ENABLED else 115.0), healed.call(0.4, 100.0))
 	_check("nl.damage_untouched", XTianqiXinmoTraits.heal(a, -100.0) == -100.0)
 	_setb(a, 0, 0)
 	_check("nl.surge0", XTianqiXinmoTraits.hp_damage(lg, e, a, 1000.0, sk) == 1000.0)
@@ -437,7 +438,8 @@ func _t318_fixes() -> void:
 	b.hp = floorf(b.mhp * 0.47)
 	var h0 := b.hp
 	lg3.gain_hp(b, 100.0)
-	_check("p3.split45_weak_heal_between", b.hp - h0 == 50.0, b.hp - h0)
+	# T514：47% 在 50% 以下，砥柱境底受疗 +15%（100→115），逆流高血侧再减半 → 57
+	_check("p3.split45_weak_heal_between", b.hp - h0 == (57.0 if XTianqiBrandRealm.ENABLED else 50.0), b.hp - h0)
 	b.hp = floorf(b.mhp * 0.6)
 	h0 = b.hp
 	lg3.gain_hp(b, 100.0)

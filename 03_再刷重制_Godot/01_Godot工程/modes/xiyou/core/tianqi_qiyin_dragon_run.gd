@@ -420,8 +420,8 @@ static func setup(logic, s: XState) -> void:
 	e.refresh_passive()
 	e.recover_all()
 	# 借来的普拉顿身上还有能力值比率等特性：按量出来的最大生命再校一次，最后正好是本档的 max_hp
-	if e.mhp > 0.0 and absf(e.mhp - float(fd.max_hp)) > 1.0:
-		params[0] = roundf(float(params[0]) * float(fd.max_hp) / e.mhp)
+	if e.mhp_raw() > 0.0 and absf(e.mhp_raw() - float(fd.max_hp)) > 1.0:
+		params[0] = roundf(float(params[0]) * float(fd.max_hp) / e.mhp_raw())  # T501 R2：读折算前的生命，表里的 max_hp 再统一 ×40%
 		rec.params = params
 		e.param_mark_dirty()
 		e.refresh_passive()

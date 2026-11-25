@@ -316,6 +316,7 @@ func _legacy_instance_view() -> void:
 	a.param_mark_dirty()
 	var bare_cri := a.cri
 	var bare_hit := a.hit
+	var bare_r0 := a.param_rate(0)  # T514：天启篇守一境底生命 +5%，裸身也不是 1
 	var bare_er10 := a.element_rate(10)
 	var bare_own1 := XDamage.own_bonus(a, 1)
 	var bare_own10 := XDamage.own_bonus(a, 10)
@@ -325,9 +326,9 @@ func _legacy_instance_view() -> void:
 		and _near(XDamage.own_bonus(a, 1) - bare_own1, 0.10)
 	_check("old_save_4543_cleaned", ok4543, [a.param_rate(2), a.cri, a.hit, a.passive_cache().get("globalHarmRi"), XDamage.own_bonus(a, 1) - bare_own1])
 	_equip_fabao(a, old_4552)
-	var ok4552 := _near(a.param_rate(0), 1.0) and _near(a.element_rate(10), bare_er10) \
+	var ok4552 := _near(a.param_rate(0), bare_r0) and _near(a.element_rate(10), bare_er10) \
 		and _near(XDamage.own_bonus(a, 10) - bare_own10, 0.10)
-	_check("old_save_4552_cleaned", ok4552, [a.param_rate(0), a.element_rate(10), XDamage.own_bonus(a, 10) - bare_own10])
+	_check("old_save_4552_cleaned", ok4552, [a.param_rate(0), bare_r0, a.element_rate(10), XDamage.own_bonus(a, 10) - bare_own10])
 	_unequip_fabao(a)
 
 

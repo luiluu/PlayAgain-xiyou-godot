@@ -406,7 +406,9 @@ static func setup(logic, s: XState) -> void:
 	var unit := float(base.mat) * XTianqiSkills.level_scale(a) * float(dealt.get("tier", 1.0)) * float(dealt.get("party", 1.0)) * float(dealt.get("k", 1.0)) * settle()
 	var rec: Dictionary = XDB.rec("Enemies", int(data().get("shell_enemy", 71))).duplicate(true)
 	rec.name = str(t.foe)
-	rec.params = [roundf(unit * float(t.hp_units)), 1000.0, roundf(float(base.def) * float(t.atk_def)), 0.0,
+	# T501 R2 小A 核 P1-1：unit 里已乘 K（K 0.5 时自带 ×0.4），XEnemy.param(0) 还会统一 ×enemy_hp_pct，这里先除回去，只缩一次
+	var hp_div := maxf(0.01, XTianqiBase.enemy_hp_mult(s))
+	rec.params = [roundf(unit * float(t.hp_units) / hp_div), 1000.0, roundf(float(base.def) * float(t.atk_def)), 0.0,
 		roundf(float(base.mdf) * float(t.atk_def)), roundf(float(base.mat) * float(t.mdf_mat)), roundf(float(a.agi) * float(t.agi_rate)), 100.0]
 	rec.actions = []
 	rec.note = "NoElite\n<Sideview Battler: %s>\n<Sideview Show Shadow>" % str(t.sv)
