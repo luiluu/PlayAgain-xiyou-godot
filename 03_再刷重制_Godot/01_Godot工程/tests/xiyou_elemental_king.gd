@@ -104,7 +104,7 @@ func _test_definition_and_icon() -> void:
 	var rec := XDB.rec("Armors", XElementalKing.ARMOR)
 	check("def_exists", not rec.is_empty(), rec.size())
 	check("def_name", str(rec.get("name", "")) == "元素之王的赐福", rec.get("name"))
-	check("def_desc_exact", str(rec.get("description", "")) == "形态\n群友大手子亲自为大家找元素之王要的福利", rec.get("description"))
+	check("def_desc_exact", str(rec.get("description", "")) == "形态\n纪念群友大手子首通洪荒的特殊装备。\n他亲自替大家向元素之王讨来的福利。", rec.get("description"))
 	check("def_etype_form", int(rec.get("etypeId", 0)) == 19, rec.get("etypeId"))
 	check("def_atype_universal", int(rec.get("atypeId", 0)) == 5, rec.get("atypeId"))
 	check("def_req_level_60", int(rec.get("meta", {}).get("req_level", 0)) == 60, rec.get("meta", {}).get("req_level"))
