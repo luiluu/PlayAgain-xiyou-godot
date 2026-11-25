@@ -16,8 +16,8 @@ var results: Array = []
 
 
 ## T082 实机标定的 K（balance_table combat_rules.base_damage）；改标定只改这两行
-const K_TABLE := 0.13
-const K_TEXT := "0.13"
+const K_TABLE := 1.25
+const K_TEXT := "1.25"
 ## 首领生命临时折算 U（整数百分比，先填 100＝不打折，D222 丙）（balance_table combat_rules.boss_hp_temp_unit）；重量只改这两行
 const U_CRIT := 100
 const U_NO_CRIT := 100

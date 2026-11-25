@@ -39,9 +39,9 @@
   "_note": "天启篇常驻战斗规则（伤害加成总账 v0.4 第四节第 2 条第 4 款、第五节第 1 条，期二挪进来，数不变；XTianqiCombat.combat_rule，开关 XTianqiLedger.COMBAT_RULES）：crit_add＝暴击率 +50 个百分点（原天道诅咒 passiveXPBST2，算④暴击池的基础暴击率，测算 10%→60%）；agi_rate＝战斗中敏捷能力倍率加算 −0.2（原状态 995 特性 21 ×0.8）。legacy_passive 里同名两项只留给回退开关。",
   "crit_add": 0.5,
   "agi_rate": -0.2,
-  "base_damage": 0.13,
+  "base_damage": 1.25,
   "boss_hp_temp_unit": {"crit": 100, "no_crit": 100},
-  "phase4_note": "T080 暗装填表、T081 接线（基础数值重构 v0.4 第三节、第七节）：base_damage＝基准系数 K「天启注视」，起点 0.088（D141 丙：九线不让，多出来的全由 K 收；T012-c 实机标定再改；T082 0.2、T163 0.27；T175 按 D195 一次施放总伤害重量，超强者最大 169 黄泉归葬 6 段顶回锚 200 万→0.13）；boss_hp_temp_unit＝首领生命临时折算 U，整数百分比（血量×U÷100 向零取整，100＝不打折；crit 能暴击的、no_crit 免暴击的），先填 100，M5 实机标定骑士血量后删（D222 丙）。只在总开关 XTianqiBase.PHASE4 开着时读（XTianqiBase.k_base、boss_hp_unit），关着 K 按 1、U 按 100。guardian_phase4（守层者三张新表 atk_scale／hp_base／resist）由 T012-c 实机量出来补，没有时开着也退回代码里的旧表。",
+  "phase4_note": "T080 暗装填表、T081 接线（基础数值重构 v0.4 第三节、第七节）：base_damage＝基准系数 K「天启注视」，起点 0.088（D141 丙：九线不让，多出来的全由 K 收；T012-c 实机标定再改；T082 0.2、T163 0.27；T175 按 D195 一次施放总伤害重量，超强者最大 169 黄泉归葬 6 段顶回锚 200 万→0.13；T501 按 D281 改绑炼狱 80%（t445_book_probe --book-build=lianyu 三种子，D287 表）量 D148 三档共同 K 交集 [1.124, 1.407]，取整数百分比 125%→1.25）；boss_hp_temp_unit＝首领生命临时折算 U，整数百分比（血量×U÷100 向零取整，100＝不打折；crit 能暴击的、no_crit 免暴击的），先填 100，M5 实机标定骑士血量后删（D222 丙）。只在总开关 XTianqiBase.PHASE4 开着时读（XTianqiBase.k_base、boss_hp_unit），关着 K 按 1、U 按 100。guardian_phase4（守层者三张新表 atk_scale／hp_base／resist）由 T012-c 实机量出来补，没有时开着也退回代码里的旧表。",
   "enemy_xparam_cap": {
    "_note": "T285（D237 丙，首领暴击闪避评估 v0.2 第二节丙、第五节；Kyo 11-20「237 减暴闪要根据难度来升高」）：天启篇敌人闪避 eva、暴击 cri、暴击闪避（cev_tiers）、魔法闪避 mev 的底子上限，整数百分比，-1＝不封顶。eva／cri／mev（T397，D242：Kyo 11-22「按难度来调整」、11-23 再确认）按五档难度键各一个整数：寻常＝评估稿 30／50／30，每升一档 +5（同 cev_tiers 的难度步长），证道 50／70／50；写回 -1（或 brand_calib --xcap=-1,-1,-1）就退回不封顶、照原路 ×2。底子本身为负的闪避（1～9 层小怪等）不抬成 0，只去 ×2。底子＝敌人数据特性＋自身正值状态（照旧乘仓库倍率）夹到上限；我方减益（负值状态）不再 ×2，加在夹完的底子上，再扣词条压制，最后不低于 0。cev_tiers：所在层 ≤ max_floor 的第一行，cap 按难度键取（寻常一行＝评估稿 20／30／40，高难度每升一档先按 +5 填推荐值，待 Kyo 定）；层数 0（骑士、七印里副本、七首之龙）按第一行，超过最后一行按最后一行。toji_cev_pct：甚尔五感读到的底子乘这个整数百分比（50＝减半）再扣队友的降暴击闪避。开关 XTianqiCombat.ENEMY_XPARAM_CAP、SUBTRACTIVE_CEV，XTianqiAffixBattle.SUPPRESS_CEV，XToji.TIANQI_CEV_HALF。",
    "eva": {"xunchang": 30, "jianxian": 35, "jiusi": 40, "lianyu": 45, "zhengdao": 50},

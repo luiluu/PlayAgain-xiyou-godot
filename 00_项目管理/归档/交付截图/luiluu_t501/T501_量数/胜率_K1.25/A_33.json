@@ -1,0 +1,221 @@
+{
+  "artifact_cap_table": {
+    "crown_bonus_pct": 300.0,
+    "heartsteel_stage": 10.0,
+    "hubris_stage": 10.0
+  },
+  "artifact_mode": "none",
+  "base_seed": 20261123,
+  "basis": "D271",
+  "floors": [
+    33
+  ],
+  "force_diff": "",
+  "lines": [
+    "war",
+    "famine",
+    "death",
+    "plague"
+  ],
+  "max_turns": 35,
+  "seconds": 108.483,
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "task": "T438",
+  "teams_per_template": 1,
+  "templates": {
+    "A": {
+      "artifact_mode": "none",
+      "difficulty": "jianxian",
+      "floors": {
+        "33": {
+          "cases": [
+            {
+              "alien": [
+                "930:zhongyan:pyro"
+              ],
+              "artifacts": [],
+              "deaths": 4,
+              "enemy_hp0": 644000,
+              "enemy_hp_left_pct": 1.133,
+              "falls_total": 3,
+              "helper": 10,
+              "instant_loss": false,
+              "line": "war",
+              "lost": true,
+              "party_hp0": 1275523,
+              "revive_casts": 1,
+              "revive_items": 2,
+              "seed": 1,
+              "team": [
+                93,
+                20,
+                39,
+                117
+              ],
+              "team_idx": 0,
+              "timeout": false,
+              "turns": 9,
+              "won": false
+            },
+            {
+              "alien": [
+                "930:zhongyan:overdraw"
+              ],
+              "artifacts": [],
+              "deaths": 0,
+              "enemy_hp0": 644000,
+              "enemy_hp_left_pct": 0.0,
+              "falls_total": 1,
+              "helper": 10,
+              "instant_loss": false,
+              "line": "famine",
+              "lost": false,
+              "party_hp0": 1347793,
+              "revive_casts": 1,
+              "revive_items": 0,
+              "seed": 2,
+              "team": [
+                93,
+                20,
+                39,
+                117
+              ],
+              "team_idx": 0,
+              "timeout": false,
+              "turns": 8,
+              "won": true
+            },
+            {
+              "alien": [
+                "930:zhongyan:knell"
+              ],
+              "artifacts": [],
+              "deaths": 0,
+              "enemy_hp0": 644000,
+              "enemy_hp_left_pct": 0.0,
+              "falls_total": 4,
+              "helper": 10,
+              "instant_loss": false,
+              "line": "death",
+              "lost": false,
+              "party_hp0": 1292580,
+              "revive_casts": 1,
+              "revive_items": 2,
+              "seed": 3,
+              "team": [
+                93,
+                20,
+                39,
+                117
+              ],
+              "team_idx": 0,
+              "timeout": false,
+              "turns": 7,
+              "won": true
+            }
+          ],
+          "gear": {
+            "bands": {
+              "60-69": 12,
+              "70-75": 12,
+              "80-81": 0,
+              "<60": 14
+            },
+            "grades": {
+              "不朽": 24,
+              "传说": 12,
+              "史诗及以下": 2,
+              "神话": 0
+            },
+            "myth_ratio": 0.0,
+            "qiyin": 0,
+            "req_max": 75,
+            "req_mean": 63.1,
+            "req_median": 60.0,
+            "req_min": 45,
+            "teams": 1,
+            "total_items": 38,
+            "true_seal": 0
+          },
+          "level": 75,
+          "summary": {
+            "deaths_mean": 1.33,
+            "falls_mean": 2.67,
+            "instant_losses": 0,
+            "loss_enemy_hp_left_pct": 1.133,
+            "n": 3,
+            "timeouts": 0,
+            "turns_mean": 8.0,
+            "turns_won_mean": 7.5,
+            "win_rate": 0.667,
+            "wins": 2
+          }
+        }
+      },
+      "gear_summary": {
+        "33": {
+          "bands": {
+            "60-69": 12,
+            "70-75": 12,
+            "80-81": 0,
+            "<60": 14
+          },
+          "grades": {
+            "不朽": 24,
+            "传说": 12,
+            "史诗及以下": 2,
+            "神话": 0
+          },
+          "myth_ratio": 0.0,
+          "qiyin": 0,
+          "req_max": 75,
+          "req_mean": 63.1,
+          "req_median": 60.0,
+          "req_min": 45,
+          "teams": 1,
+          "total_items": 38,
+          "true_seal": 0
+        }
+      },
+      "label": "A_艰险顺推混搭对照(均req≈58)",
+      "teams": [
+        {
+          "field": [
+            93,
+            20,
+            39,
+            117
+          ],
+          "helper": 10,
+          "helper_name": "美娜",
+          "helper_tier": "弱者",
+          "names": [
+            "炭治郎",
+            "伯伦希尔",
+            "沙和尚",
+            "绯红蔷薇"
+          ],
+          "roles": [
+            "输出",
+            "输出",
+            "坦克",
+            "辅助"
+          ],
+          "shape": "A",
+          "tiers": [
+            "强者",
+            "弱者",
+            "弱者",
+            "强者"
+          ]
+        }
+      ],
+      "template": "A"
+    }
+  },
+  "version": 2
+}

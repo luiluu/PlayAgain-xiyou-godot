@@ -1,0 +1,513 @@
+{
+  "artifact_cap_table": {
+    "crown_bonus_pct": 300.0,
+    "heartsteel_stage": 10.0,
+    "hubris_stage": 10.0
+  },
+  "artifact_mode": "none",
+  "base_seed": 20261123,
+  "basis": "D271",
+  "floors": [
+    36
+  ],
+  "force_diff": "",
+  "lines": [
+    "war",
+    "famine",
+    "death",
+    "plague"
+  ],
+  "max_turns": 25,
+  "seconds": 173.5,
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "task": "T438",
+  "teams_per_template": 1,
+  "templates": {
+    "D": {
+      "artifact_mode": "none",
+      "difficulty": "zhengdao",
+      "floors": {
+        "36": {
+          "by_line": {
+            "death": {
+              "cases": [
+                {
+                  "alien": [],
+                  "artifacts": [],
+                  "deaths": 4,
+                  "enemy_hp0": 11100000,
+                  "enemy_hp_left_pct": 1.121,
+                  "falls_total": 7,
+                  "helper": 107,
+                  "instant_loss": false,
+                  "line": "death",
+                  "lost": true,
+                  "party_hp0": 1329474,
+                  "revive_casts": 0,
+                  "revive_items": 5,
+                  "seed": 1,
+                  "team": [
+                    122,
+                    108,
+                    119,
+                    2
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 15,
+                  "won": false
+                },
+                {
+                  "alien": [],
+                  "artifacts": [],
+                  "deaths": 4,
+                  "enemy_hp0": 11100000,
+                  "enemy_hp_left_pct": 1.233,
+                  "falls_total": 4,
+                  "helper": 107,
+                  "instant_loss": false,
+                  "line": "death",
+                  "lost": true,
+                  "party_hp0": 1329474,
+                  "revive_casts": 0,
+                  "revive_items": 5,
+                  "seed": 2,
+                  "team": [
+                    122,
+                    108,
+                    119,
+                    2
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 15,
+                  "won": false
+                },
+                {
+                  "alien": [],
+                  "artifacts": [],
+                  "deaths": 4,
+                  "enemy_hp0": 11100000,
+                  "enemy_hp_left_pct": 1.153,
+                  "falls_total": 5,
+                  "helper": 107,
+                  "instant_loss": false,
+                  "line": "death",
+                  "lost": true,
+                  "party_hp0": 1329474,
+                  "revive_casts": 2,
+                  "revive_items": 5,
+                  "seed": 3,
+                  "team": [
+                    122,
+                    108,
+                    119,
+                    2
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 15,
+                  "won": false
+                }
+              ],
+              "summary": {
+                "deaths_mean": 4.0,
+                "falls_mean": 5.33,
+                "instant_losses": 0,
+                "loss_enemy_hp_left_pct": 1.169,
+                "n": 3,
+                "timeouts": 0,
+                "turns_mean": 15.0,
+                "turns_won_mean": -1.0,
+                "win_rate": 0.0,
+                "wins": 0
+              }
+            },
+            "famine": {
+              "cases": [
+                {
+                  "alien": [],
+                  "artifacts": [],
+                  "deaths": 0,
+                  "enemy_hp0": 9480000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 107,
+                  "instant_loss": false,
+                  "line": "famine",
+                  "lost": false,
+                  "party_hp0": 1329474,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    122,
+                    108,
+                    119,
+                    2
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 7,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [],
+                  "deaths": 0,
+                  "enemy_hp0": 9480000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 107,
+                  "instant_loss": false,
+                  "line": "famine",
+                  "lost": false,
+                  "party_hp0": 1329474,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 2,
+                  "team": [
+                    122,
+                    108,
+                    119,
+                    2
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 9,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [],
+                  "deaths": 0,
+                  "enemy_hp0": 9480000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 1,
+                  "helper": 107,
+                  "instant_loss": false,
+                  "line": "famine",
+                  "lost": false,
+                  "party_hp0": 1329474,
+                  "revive_casts": 0,
+                  "revive_items": 1,
+                  "seed": 3,
+                  "team": [
+                    122,
+                    108,
+                    119,
+                    2
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 9,
+                  "won": true
+                }
+              ],
+              "summary": {
+                "deaths_mean": 0.0,
+                "falls_mean": 0.33,
+                "instant_losses": 0,
+                "loss_enemy_hp_left_pct": 0.0,
+                "n": 3,
+                "timeouts": 0,
+                "turns_mean": 8.3,
+                "turns_won_mean": 8.3,
+                "win_rate": 1.0,
+                "wins": 3
+              }
+            },
+            "plague": {
+              "cases": [
+                {
+                  "alien": [],
+                  "artifacts": [],
+                  "deaths": 1,
+                  "enemy_hp0": 2880000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 1,
+                  "helper": 107,
+                  "instant_loss": false,
+                  "line": "plague",
+                  "lost": false,
+                  "party_hp0": 1124736,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 1,
+                  "team": [
+                    122,
+                    108,
+                    119,
+                    2
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 3,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [],
+                  "deaths": 0,
+                  "enemy_hp0": 2880000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 107,
+                  "instant_loss": false,
+                  "line": "plague",
+                  "lost": false,
+                  "party_hp0": 1124736,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 2,
+                  "team": [
+                    122,
+                    108,
+                    119,
+                    2
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 3,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [],
+                  "deaths": 0,
+                  "enemy_hp0": 2880000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 0,
+                  "helper": 107,
+                  "instant_loss": false,
+                  "line": "plague",
+                  "lost": false,
+                  "party_hp0": 1124736,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 3,
+                  "team": [
+                    122,
+                    108,
+                    119,
+                    2
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 3,
+                  "won": true
+                }
+              ],
+              "summary": {
+                "deaths_mean": 0.33,
+                "falls_mean": 0.33,
+                "instant_losses": 0,
+                "loss_enemy_hp_left_pct": 0.0,
+                "n": 3,
+                "timeouts": 0,
+                "turns_mean": 3.0,
+                "turns_won_mean": 3.0,
+                "win_rate": 1.0,
+                "wins": 3
+              }
+            },
+            "war": {
+              "cases": [
+                {
+                  "alien": [],
+                  "artifacts": [],
+                  "deaths": 4,
+                  "enemy_hp0": 10630000,
+                  "enemy_hp_left_pct": 0.063,
+                  "falls_total": 7,
+                  "helper": 107,
+                  "instant_loss": false,
+                  "line": "war",
+                  "lost": true,
+                  "party_hp0": 1329474,
+                  "revive_casts": 1,
+                  "revive_items": 5,
+                  "seed": 1,
+                  "team": [
+                    122,
+                    108,
+                    119,
+                    2
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 10,
+                  "won": false
+                },
+                {
+                  "alien": [],
+                  "artifacts": [],
+                  "deaths": 1,
+                  "enemy_hp0": 10630000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 1,
+                  "helper": 107,
+                  "instant_loss": false,
+                  "line": "war",
+                  "lost": false,
+                  "party_hp0": 1329474,
+                  "revive_casts": 0,
+                  "revive_items": 0,
+                  "seed": 2,
+                  "team": [
+                    122,
+                    108,
+                    119,
+                    2
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 4,
+                  "won": true
+                },
+                {
+                  "alien": [],
+                  "artifacts": [],
+                  "deaths": 0,
+                  "enemy_hp0": 10630000,
+                  "enemy_hp_left_pct": 0.0,
+                  "falls_total": 2,
+                  "helper": 107,
+                  "instant_loss": false,
+                  "line": "war",
+                  "lost": false,
+                  "party_hp0": 1329474,
+                  "revive_casts": 0,
+                  "revive_items": 2,
+                  "seed": 3,
+                  "team": [
+                    122,
+                    108,
+                    119,
+                    2
+                  ],
+                  "team_idx": 0,
+                  "timeout": false,
+                  "turns": 6,
+                  "won": true
+                }
+              ],
+              "summary": {
+                "deaths_mean": 1.67,
+                "falls_mean": 3.33,
+                "instant_losses": 0,
+                "loss_enemy_hp_left_pct": 0.063,
+                "n": 3,
+                "timeouts": 0,
+                "turns_mean": 6.7,
+                "turns_won_mean": 5.0,
+                "win_rate": 0.667,
+                "wins": 2
+              }
+            }
+          },
+          "gear": {
+            "bands": {
+              "60-69": 0,
+              "70-75": 8,
+              "80-81": 32,
+              "<60": 0
+            },
+            "grades": {
+              "不朽": 8,
+              "传说": 0,
+              "史诗及以下": 0,
+              "神话": 32
+            },
+            "myth_ratio": 0.8,
+            "qiyin": 28,
+            "req_max": 80,
+            "req_mean": 78.4,
+            "req_median": 80.0,
+            "req_min": 70,
+            "teams": 1,
+            "total_items": 40,
+            "true_seal": 28
+          },
+          "level": 81,
+          "summary": {
+            "deaths_mean": 1.5,
+            "falls_mean": 2.33,
+            "instant_losses": 0,
+            "loss_enemy_hp_left_pct": 0.892,
+            "n": 12,
+            "timeouts": 0,
+            "turns_mean": 8.3,
+            "turns_won_mean": 5.5,
+            "win_rate": 0.667,
+            "wins": 8
+          }
+        }
+      },
+      "gear_summary": {
+        "36": {
+          "bands": {
+            "60-69": 0,
+            "70-75": 8,
+            "80-81": 32,
+            "<60": 0
+          },
+          "grades": {
+            "不朽": 8,
+            "传说": 0,
+            "史诗及以下": 0,
+            "神话": 32
+          },
+          "myth_ratio": 0.8,
+          "qiyin": 28,
+          "req_max": 80,
+          "req_mean": 78.4,
+          "req_median": 80.0,
+          "req_min": 70,
+          "teams": 1,
+          "total_items": 40,
+          "true_seal": 28
+        }
+      },
+      "label": "D_证道2超2强+助力超强拉满(95%+)",
+      "teams": [
+        {
+          "field": [
+            122,
+            108,
+            119,
+            2
+          ],
+          "helper": 107,
+          "helper_name": "钟离",
+          "helper_tier": "超强者",
+          "names": [
+            "南宫恨·狂刀",
+            "奈叶",
+            "千早爱音",
+            "绿司机"
+          ],
+          "roles": [
+            "输出",
+            "输出",
+            "坦克",
+            "辅助"
+          ],
+          "shape": "A",
+          "tiers": [
+            "超强者",
+            "超强者",
+            "强者",
+            "强者"
+          ]
+        }
+      ],
+      "template": "D"
+    }
+  },
+  "version": 2
+}

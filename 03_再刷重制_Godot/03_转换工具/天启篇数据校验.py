@@ -2367,8 +2367,10 @@ def combat_rules_phase4_rules(table: dict) -> list:
     bad = []
     cr = table.get('combat_rules', {})
     k = cr.get('base_damage')
-    if not isinstance(k, (int, float)) or not 0.05 <= float(k) <= 1.0:
-        bad.append('combat_rules.base_damage（K）要在 0.05～1（暗装期先填 1，标定后 0.07～0.17）：%s' % k)
+    # T501（D281 绑炼狱 80%）：K 标定到 1.25，上限放到 2；附则 E 按整数百分比写（D200 先例，1.25＝125%）
+    if (not isinstance(k, (int, float)) or isinstance(k, bool) or not 0.05 <= float(k) <= 2.0
+            or abs(float(k) * 100 - round(float(k) * 100)) > 1e-9):
+        bad.append('combat_rules.base_damage（K）要在 0.05～2、写整数百分比（如 1.25＝125%%；T501 标定 1.25）：%s' % k)
     u = cr.get('boss_hp_temp_unit')
     if not isinstance(u, dict) or set(u) != {'crit', 'no_crit'}:
         bad.append('combat_rules.boss_hp_temp_unit 要是 {crit, no_crit} 两个数')

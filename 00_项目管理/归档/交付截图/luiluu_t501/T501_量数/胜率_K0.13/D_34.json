@@ -1,0 +1,221 @@
+{
+  "artifact_cap_table": {
+    "crown_bonus_pct": 300.0,
+    "heartsteel_stage": 10.0,
+    "hubris_stage": 10.0
+  },
+  "artifact_mode": "none",
+  "base_seed": 20261123,
+  "basis": "D271",
+  "floors": [
+    34
+  ],
+  "force_diff": "",
+  "lines": [
+    "war",
+    "famine",
+    "death",
+    "plague"
+  ],
+  "max_turns": 25,
+  "seconds": 250.812,
+  "seeds": [
+    1,
+    2,
+    3
+  ],
+  "task": "T438",
+  "teams_per_template": 1,
+  "templates": {
+    "D": {
+      "artifact_mode": "none",
+      "difficulty": "zhengdao",
+      "floors": {
+        "34": {
+          "cases": [
+            {
+              "alien": [
+                "537:zhongyan:pyro"
+              ],
+              "artifacts": [],
+              "deaths": 4,
+              "enemy_hp0": 112500000,
+              "enemy_hp_left_pct": 1.219,
+              "falls_total": 0,
+              "helper": 107,
+              "instant_loss": false,
+              "line": "war",
+              "lost": true,
+              "party_hp0": 1326108,
+              "revive_casts": 0,
+              "revive_items": 0,
+              "seed": 1,
+              "team": [
+                122,
+                108,
+                119,
+                2
+              ],
+              "team_idx": 0,
+              "timeout": false,
+              "turns": 5,
+              "won": false
+            },
+            {
+              "alien": [
+                "537:zhongyan:lean"
+              ],
+              "artifacts": [],
+              "deaths": 0,
+              "enemy_hp0": 112500000,
+              "enemy_hp_left_pct": 1.332,
+              "falls_total": 3,
+              "helper": 107,
+              "instant_loss": false,
+              "line": "famine",
+              "lost": false,
+              "party_hp0": 1326108,
+              "revive_casts": 0,
+              "revive_items": 3,
+              "seed": 2,
+              "team": [
+                122,
+                108,
+                119,
+                2
+              ],
+              "team_idx": 0,
+              "timeout": true,
+              "turns": 25,
+              "won": false
+            },
+            {
+              "alien": [
+                "537:zhongyan:captain"
+              ],
+              "artifacts": [],
+              "deaths": 0,
+              "enemy_hp0": 112500000,
+              "enemy_hp_left_pct": 1.344,
+              "falls_total": 0,
+              "helper": 107,
+              "instant_loss": false,
+              "line": "death",
+              "lost": false,
+              "party_hp0": 1326108,
+              "revive_casts": 0,
+              "revive_items": 0,
+              "seed": 3,
+              "team": [
+                122,
+                108,
+                119,
+                2
+              ],
+              "team_idx": 0,
+              "timeout": true,
+              "turns": 25,
+              "won": false
+            }
+          ],
+          "gear": {
+            "bands": {
+              "60-69": 0,
+              "70-75": 8,
+              "80-81": 32,
+              "<60": 0
+            },
+            "grades": {
+              "不朽": 8,
+              "传说": 0,
+              "史诗及以下": 0,
+              "神话": 32
+            },
+            "myth_ratio": 0.8,
+            "qiyin": 28,
+            "req_max": 80,
+            "req_mean": 78.4,
+            "req_median": 80.0,
+            "req_min": 70,
+            "teams": 1,
+            "total_items": 40,
+            "true_seal": 28
+          },
+          "level": 80,
+          "summary": {
+            "deaths_mean": 1.33,
+            "falls_mean": 1.0,
+            "instant_losses": 0,
+            "loss_enemy_hp_left_pct": 1.298,
+            "n": 3,
+            "timeouts": 2,
+            "turns_mean": 18.3,
+            "turns_won_mean": -1.0,
+            "win_rate": 0.0,
+            "wins": 0
+          }
+        }
+      },
+      "gear_summary": {
+        "34": {
+          "bands": {
+            "60-69": 0,
+            "70-75": 8,
+            "80-81": 32,
+            "<60": 0
+          },
+          "grades": {
+            "不朽": 8,
+            "传说": 0,
+            "史诗及以下": 0,
+            "神话": 32
+          },
+          "myth_ratio": 0.8,
+          "qiyin": 28,
+          "req_max": 80,
+          "req_mean": 78.4,
+          "req_median": 80.0,
+          "req_min": 70,
+          "teams": 1,
+          "total_items": 40,
+          "true_seal": 28
+        }
+      },
+      "label": "D_证道2超2强+助力超强拉满(95%+)",
+      "teams": [
+        {
+          "field": [
+            122,
+            108,
+            119,
+            2
+          ],
+          "helper": 107,
+          "helper_name": "钟离",
+          "helper_tier": "超强者",
+          "names": [
+            "南宫恨·狂刀",
+            "奈叶",
+            "千早爱音",
+            "绿司机"
+          ],
+          "roles": [
+            "输出",
+            "输出",
+            "坦克",
+            "辅助"
+          ],
+          "shape": "A",
+          "tiers": [
+            "超强者",
+            "超强者",
+            "强者",
+            "强者"
+          ]
+        }
+      ],
+      "template": "D"
+    }
+  },
+  "version": 2
+}
