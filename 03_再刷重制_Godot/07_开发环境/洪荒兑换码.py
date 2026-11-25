@@ -93,6 +93,7 @@ def main() -> int:
         print("没带 --write：配置没改；hash＝%s" % entry["hash"])
     if a.out:
         fd = os.open(a.out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        os.fchmod(fd, 0o600)  # 覆写已有文件时 O_CREAT 的权限位不生效，这里再收紧一次
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             f.write(code + "\n")
         print("码已写入 %s（权限 600）；别贴进仓库、日志、交付单" % a.out)

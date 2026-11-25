@@ -58,8 +58,8 @@ const SALT := "honghuang-redeem-v1"
 const REDEEM_OPTION := "输入兑换码"
 const LEAVE_OPTION := "离开"
 const REDEEM_PROMPT := "请输入兑换码："
-const MSG_OK := "兑换成功！获得称号：%s。\n可以到方桌大厅「更换称号」佩戴。"
-const MSG_USED := "这个兑换码已经在这份存档兑换过了。"
+const MSG_OK := "兑换成功！获得称号：%s。\n在大厅找奥尔夫尼选「更换称号」即可佩戴。"
+const MSG_USED := "这个兑换码在这份存档已经用过了。"
 const MSG_INVALID := "兑换码不对，或者不是给这份存档的。"
 const MSG_UNAVAILABLE := "现在无法兑换。"
 const TOAST_ZHENGDAO := "通关洪荒难度！获得称号：洪荒证道"
@@ -96,8 +96,7 @@ static func is_save_title(id: int) -> bool:
 static func save_has(s, id: int) -> bool:
 	if not on(s):
 		return false
-	var rec = s.flags.get(FLAG_KEY)
-	return rec is Dictionary and rec.get("titles") is Dictionary and rec.titles.get(str(id)) == true
+	return _flag_has(s.flags, id)
 
 
 ## 称号选择里没拿到的那一项怎么显示：所有人可见的照名字列＋说明，其余 ""（调用方显示 ???）
@@ -106,6 +105,44 @@ static func locked_choice(id: int) -> String:
 		return ""
 	var t := title(id)
 	return "\\I[%d]%s%s" % [int(t.icon), t.name, VISIBLE_LOCKED[id]]
+
+
+## 称号名是不是 52／53（存档里称号只存名字），是就返回号，否则 0
+static func save_title_by_name(d_name: String) -> int:
+	for t in TITLES:
+		if t.name == d_name and is_save_title(int(t.id)):
+			return int(t.id)
+	return 0
+
+
+## 存档 flags 里有没有这条称号的兑换记号（不看开关：回退时只用来判断，不删不改）
+static func _flag_has(flags, id: int) -> bool:
+	var rec = flags.get(FLAG_KEY) if flags is Dictionary else null
+	return rec is Dictionary and rec.get("titles") is Dictionary and rec.titles.get(str(id)) == true
+
+
+## 当前佩戴的称号能不能显示（返修 P1-1 展示侧双保险）：戴着 52／53 却没有兑换记号的（改明文存档硬塞的）不显示
+static func worn_ok(s) -> bool:
+	if s == null or not s.designation is Dictionary:
+		return true
+	var tid := save_title_by_name(str(s.designation.get("name", "")))
+	return tid == 0 or _flag_has(s.flags, tid)
+
+
+## 没签名的明文存档数据（封存开着时的明文导入、XSaveSeal 补签旧明文档）去掉 52／53：兑换记号整条删、佩戴着的清空。
+## T493 晚于 D28 封存，合法兑换过的存档只会是封存格式，明文里出现 52／53 只能是手改的（返修 P1-1）。返回改没改。
+static func strip_unsealed(data) -> bool:
+	if not data is Dictionary:
+		return false
+	var changed := false
+	if data.get("flags") is Dictionary and (data.flags as Dictionary).has(FLAG_KEY):
+		(data.flags as Dictionary).erase(FLAG_KEY)
+		changed = true
+	var dg = data.get("designation")
+	if dg is Dictionary and save_title_by_name(str(dg.get("name", ""))) != 0:
+		data["designation"] = {"name": "", "icon": 0, "color": "#ffffff"}
+		changed = true
+	return changed
 
 
 ## 名牌流光样式：按称号名找（存档里称号只存名字、图标、颜色，不改存档结构）
@@ -223,7 +260,7 @@ static func redeem(s, code: String) -> Dictionary:
 			rec.titles[str(tid)] = true
 			got.append(tid)
 	var names := "、".join(got.map(func(id): return str(title(id).get("name", ""))))
-	return {"ok": true, "text": MSG_OK % names if names != "" else MSG_USED, "titles": got}
+	return {"ok": not got.is_empty(), "text": MSG_OK % names if names != "" else MSG_USED, "titles": got}
 
 
 ## 洪荒碑调查后的兑换流程（interp：当前事件解释器）

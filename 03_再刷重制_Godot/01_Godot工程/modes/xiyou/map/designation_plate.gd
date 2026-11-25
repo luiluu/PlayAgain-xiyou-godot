@@ -44,7 +44,8 @@ func place(shift: float) -> void:
 
 func refresh(s: XState) -> void:
 	var d := s.designation if s != null else {}
-	var sig := "%s|%s|%s|%s|%s" % [XUiSkin.on(), s.actor_name if s != null else "", d.get("name", ""), d.get("icon", 0), d.get("color", "")]
+	var sig := "%s|%s|%s|%s|%s|%s|%s|%s" % [XUiSkin.on(), s.actor_name if s != null else "", d.get("name", ""), d.get("icon", 0), d.get("color", ""),
+		XHonghuangTitles.ENABLED, XGraphics.fx_on(), XHonghuangTitles.worn_ok(s)]
 	if sig != _sig:
 		_sig = sig
 		queue_redraw()
@@ -61,7 +62,7 @@ func _paint(c: XMVCanvas) -> void:
 	var s := XState.current
 	if s == null:
 		return
-	var d := s.designation
+	var d := s.designation if XHonghuangTitles.worn_ok(s) else {}  # T493 返修 P1-1：没兑换记号的 52／53 不显示
 	var col := Color.from_string(str(d.get("color", "#ffffff")), Color.WHITE)
 	var d_name := str(d.get("name", ""))
 	var flow := XHonghuangTitles.flow_style(d_name)

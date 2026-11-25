@@ -60,6 +60,7 @@ var _bgm_name := ""
 var _menu_open := false
 var _hotkeys := XMapHotkeys.new()
 var _milestone_tick := 0
+var _honghuang_clear_tick := 0
 var _backup_until := 0
 ## Scene_Map.create / update：变量 21（副本）为 0 时建出地图传送按钮，建出后到下次换场景前一直在
 var _transfer_shown := false
@@ -702,8 +703,10 @@ func _process(delta: float) -> void:
 				open_menu(back)
 		if not busy and transfer_page == null:
 			_check_honghuang_broadcast()
-		if not busy and transfer_page == null and Engine.get_physics_frames() % 30 == 0:
-			_check_honghuang_clear()
+		if not busy and transfer_page == null:
+			_honghuang_clear_tick += 1  # T493 返修 P2-1：独立计数器节流（同 _check_milestone），不靠物理帧号取模
+			if _honghuang_clear_tick % 30 == 0:
+				_check_honghuang_clear()
 		if not busy and transfer_page == null:
 			_check_milestone()
 	if not busy and (Input.is_action_just_pressed("ui_cancel") or Input.is_action_just_pressed("mv_menu")) and not XMessageBox.consumed_input_this_frame() and not XKeyMap.menu_call_blocked(_menu_closed_frame, Engine.get_process_frames()):

@@ -231,6 +231,7 @@ func _run() -> void:
 	XState.current = back
 	check("save.roundtrip", int(back.orb_seed) == 12345 and XDesignation.unlocked(52) and XDesignation.unlocked(53) and back.designation.name == "洪荒·阿夜", [back.orb_seed, back.designation])
 	check("save.roundtrip_still_once", XHonghuangTitles.redeem(back, TEST_CODE).text == XHonghuangTitles.MSG_USED)
+	_unsealed_vs_sealed(back)
 
 	# ==== 4. 碑前兑换（真地图）====
 	var sm := _make_save()
@@ -279,6 +280,84 @@ func _run() -> void:
 # ---- 截图（交付单用）----
 
 ## 玩家头顶名牌那一块（180×110，按名牌画布在屏幕上的位置裁）放大 3 倍
+## 返修 P1-1：封存开着时，封存格式导出再导入完整保留 52／53；没签名的明文导入、补签旧明文档都去掉 52／53 记号和佩戴；
+## 展示侧戴着 52／53 却没记号的不显示。back：已兑换 52／53、戴着洪荒·阿夜的存档。
+func _unsealed_vs_sealed(back: XState) -> void:
+	var old_seal := XSaveSeal.ENABLED
+	var old_dir := XSave.dir_override
+	var dir := OS.get_user_data_dir().path_join("test_honghuang_seal_%d" % OS.get_process_id())
+	for sub in ["", "mig"]:
+		var dd := dir.path_join(sub)
+		if DirAccess.dir_exists_absolute(dd):
+			for f in DirAccess.get_files_at(dd):
+				DirAccess.remove_absolute(dd.path_join(f))
+	DirAccess.make_dir_recursive_absolute(dir.path_join("mig"))
+	XSave.dir_override = dir
+	XSaveSeal.ENABLED = true
+	XSaveSeal.key_file_override = ""
+	XSaveSeal.reload_keys()
+	XSaveSeal.forget_dirs()
+	check("seal.active", XSaveSeal.active_now())
+	# 封存档：存进第 7 格、导出（封存格式）、再导入 → 52／53 与佩戴都在
+	XState.current = back
+	XSave.save(7)
+	var ex := XSaveTransfer.export_text(7)
+	check("seal.export_sealed", str(ex.get("text", "")).contains(XSaveTransfer.FORMAT_SEALED), ex.keys())
+	var imp_sealed := XSaveTransfer.parse_import(str(ex.get("text", "")))
+	var ds = imp_sealed.get("data", {})
+	check("seal.sealed_import_keeps", ds is Dictionary and XHonghuangTitles._flag_has(ds.get("flags"), 52) and XHonghuangTitles._flag_has(ds.get("flags"), 53)
+		and str(ds.get("designation", {}).get("name", "")) == "洪荒·阿夜", imp_sealed.get("error", ""))
+	# 明文导入（旧 v1 明文导出格式、直接一份明文存档）：同样内容 → 记号删掉、佩戴清空
+	var forged: Dictionary = JSON.parse_string(JSON.stringify(back.to_dict()))  # 深拷贝：to_dict 的 flags 是同一个字典
+	for text in [JSON.stringify({"format": XSaveTransfer.FORMAT, "game": XSaveTransfer.GAME, "slot": 1, "data": forged}), JSON.stringify(forged)]:
+		var r := XSaveTransfer.parse_import(text)
+		var d = r.get("data", {})
+		check("seal.plain_import_stripped", d is Dictionary and not (d.get("flags", {}) as Dictionary).has(XHonghuangTitles.FLAG_KEY)
+			and str(d.get("designation", {}).get("name", "")) == "", [r.get("error", ""), d.get("designation") if d is Dictionary else null])
+	# 只改佩戴（不带记号）也清
+	var only_wear: Dictionary = JSON.parse_string(JSON.stringify(back.to_dict()))  # 深拷贝：to_dict 的 flags 是同一个字典
+	(only_wear.flags as Dictionary).erase(XHonghuangTitles.FLAG_KEY)
+	var rw := XSaveTransfer.parse_import(JSON.stringify(only_wear))
+	check("seal.plain_wear_only_stripped", str(rw.get("data", {}).get("designation", {}).get("name", "")) == "", rw.get("error", ""))
+	# 别的称号不动
+	var other: Dictionary = JSON.parse_string(JSON.stringify(back.to_dict()))  # 深拷贝：to_dict 的 flags 是同一个字典
+	(other.flags as Dictionary).erase(XHonghuangTitles.FLAG_KEY)
+	other["designation"] = {"name": "洪荒证道", "icon": 6426, "color": "#b44dff"}
+	var ro := XSaveTransfer.parse_import(JSON.stringify(other))
+	check("seal.plain_other_title_kept", str(ro.get("data", {}).get("designation", {}).get("name", "")) == "洪荒证道", ro.get("error", ""))
+	# 补签：目录里留一份明文 save_3.json（带伪造记号），迁移后 .ksv 里没有
+	var mig := dir.path_join("mig")
+	var f := FileAccess.open(mig.path_join("save_3.json"), FileAccess.WRITE)
+	f.store_string(JSON.stringify(forged))
+	f.close()
+	check("seal.migrate_done", XSaveSeal.ensure_dir(mig), XSaveSeal.last_migration)
+	var ur := XSaveSeal.unseal(FileAccess.get_file_as_bytes(mig.path_join("save_3" + XSaveSeal.EXT)))
+	var md = JSON.parse_string(str(ur.get("text", ""))) if ur.ok else null
+	check("seal.migrate_stripped", md is Dictionary and not (md.get("flags", {}) as Dictionary).has(XHonghuangTitles.FLAG_KEY)
+		and str(md.get("designation", {}).get("name", "")) == "", ur.ok)
+	# 封存关着（开发版、回退）：明文导入原样（明文本来就能改，不清）
+	XSaveSeal.ENABLED = false
+	var rp := XSaveTransfer.parse_import(JSON.stringify(forged))
+	check("seal.off_plain_untouched", XHonghuangTitles._flag_has(rp.get("data", {}).get("flags"), 53))
+	XSaveSeal.ENABLED = old_seal
+	XSaveSeal.reload_keys()
+	XSaveSeal.forget_dirs()
+	XSave.dir_override = old_dir
+	for sub in ["mig", ""]:
+		var dd := dir.path_join(sub)
+		for fn in DirAccess.get_files_at(dd):
+			DirAccess.remove_absolute(dd.path_join(fn))
+		DirAccess.remove_absolute(dd)
+	# 展示侧：戴着洪荒·阿夜却没记号 → 不算数（名牌、侧栏不显示）；有记号、别的称号照常
+	var sf := XState.from_dict(JSON.parse_string(JSON.stringify(back.to_dict())))
+	check("worn.legit_ok", XHonghuangTitles.worn_ok(sf))
+	sf.flags.erase(XHonghuangTitles.FLAG_KEY)
+	check("worn.forged_hidden", not XHonghuangTitles.worn_ok(sf))
+	sf.designation = {"name": "洪荒证道", "icon": 6426, "color": "#b44dff"}
+	check("worn.other_ok", XHonghuangTitles.worn_ok(sf))
+	XState.current = back
+
+
 func _plate_crop(map: XMapScene) -> Image:
 	RenderingServer.force_draw()
 	var img := get_viewport().get_texture().get_image()
