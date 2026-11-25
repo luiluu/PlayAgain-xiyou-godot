@@ -77,6 +77,9 @@ func _build() -> void:
 		0:
 			if not item.is_empty():
 				_rows = XSkinTemplatePage.help_rows(XHelpCard.detail_rows(absorb_view(item), 300.0))
+				var crowd := "" if compare else XTianqiSuits.note(actor, item)  # 天启篇一人最多两套（T513）
+				if crowd != "":
+					_rows.push_front({"text": crowd, "color": XUiSkin.GOLD})
 		1:
 			var names: Array = XDB.system().get("terms", {}).get("params", [])
 			if actor != null:

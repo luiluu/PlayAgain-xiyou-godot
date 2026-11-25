@@ -642,6 +642,9 @@ func _sync_card(a: XActor) -> void:
 			"subtitle": "" if item_mode else "空", "desc": "", "sections": []}
 	else:
 		d = XSkinItemPage.card_data(XSkinGearDetail.absorb_view(rec))
+		var crowd := "" if item_mode else XTianqiSuits.note(a, rec)  # 天启篇一人最多两套：身上这件所属套装被挤掉时提示（T513）
+		if crowd != "":
+			d.sections = [{"title": "", "rows": [{"text": crowd, "color": XUiSkin.GOLD}]}] + d.get("sections", [])
 	if item_mode:
 		var temp := preview_actor(a)
 		_cache_compare(a, temp)
