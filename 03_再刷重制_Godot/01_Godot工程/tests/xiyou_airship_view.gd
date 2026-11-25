@@ -261,6 +261,8 @@ func _run() -> void:
 	map.player.touch_target = Vector2i(65, 56)
 	await _until(func(): return map.player.grid == Vector2i(65, 56) and not map.player.is_moving())
 	map.player.click_cell(map.player.grid)
+	await get_tree().physics_frame   # T507：点按当确认留到玩家物理帧再发（MVPlayer.DEFER_CLICK_ACTION）
+	await get_tree().physics_frame
 	_check("click_self_lands", map._vehicle_getting_off)
 	var seen := await _sample("land", -1, func(): return s.vehicle_type == "walk", 24, "land_24")
 	_check("land_to_0", seen.front() >= 47 and seen.back() == 0 and seen.size() == seen.front() + 1, seen)
@@ -282,6 +284,17 @@ func _run() -> void:
 	await _view("rising_loaded")
 	var seen3 := await _sample("rising_rest", 1, func(): return map.vehicle_can_move())
 	_check("rising_to_48", seen3.back() == 48 and map.vehicle_can_move(), seen3)
+	# T507 R2（小o P1-2）：滑行中点可降落的脚下格，这一下留到停稳再发，不用再点就降落（MVPlayer.DEFER_CLICK_ACTION）
+	map.player.touch_target = Vector2i(65, 55)
+	await _until(func(): return map.player.grid == Vector2i(65, 55) and not map.player.is_moving())
+	map.player.touch_target = Vector2i(65, 56)
+	var sliding := await _until(func(): return map.player.grid == Vector2i(65, 56) and map.player.is_moving())
+	_check("slide_into_landable_cell", sliding, [map.player.grid, map.player.is_moving()])
+	map.player.click_cell(map.player.grid)
+	var slide_lands := await _until(func(): return map._vehicle_getting_off)
+	_check("slide_click_lands_without_reclick", slide_lands and not map.player._tap_self_moving and map.player._touch_queued == 0, [map._vehicle_getting_off, _airship()])
+	_check("slide_land_to_walk", await _until(func(): return s.vehicle_type == "walk"), _airship())
+	await _get_on("third")
 	# 物件图（! 开头，不上移 6）：萌物
 	await MVInterpreter.new(map, 69, 0, [{"code": 323, "indent": 0, "parameters": [2, "!$occ01jp_mv03_georgette_tv", 0]}, {"code": 0, "indent": 0, "parameters": []}]).run()
 	await get_tree().physics_frame
