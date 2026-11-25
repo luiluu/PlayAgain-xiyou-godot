@@ -169,7 +169,9 @@ func _purple() -> void:
 	XGojo.begin(lg, a, p_out)
 	var v := XGojo.formula(a, b, p_out)
 	# T191（D200）gojo_pairs 10.8 取整成 11；T209（D209）3 对合计 18（原 17，协调 11-18 改）、分 4 段（gojo_hits 4），每段公式值＝18÷4；TUNE_D209 关掉回 11 一段
-	var purple_each := 18.0 / 4.0 if XTianqiBase.TUNE_D209 else 11.0
+	# T496（D287）：3 对合计 18 → 9（D287 叠在 D209 后，关 D209 时 D287 照样写 9、一段）
+	var purple_total := 9.0 if XTianqiBase.TUNE_D287 else (18.0 if XTianqiBase.TUNE_D209 else 11.0)
+	var purple_each := purple_total / 4.0 if XTianqiBase.TUNE_D209 else purple_total
 	_check("purple_out_3", is_equal_approx(v, a.mat * purple_each), [v, a.mat])
 	var via: Dictionary = XFormulaExecution.run_item(p_out, a, b, {})
 	_check("purple_pipeline", via.available and is_equal_approx(float(via.value), a.mat * purple_each), via)
@@ -313,7 +315,7 @@ func _purple_segments() -> void:
 		var hits := logs.filter(func(l): return l is Dictionary and str(l.get("type", "")) == "hit" and l.get("target") == e \
 			and l.get("skill") is Dictionary and int(l.skill.get("id", 0)) == XGojo.PURPLE_OUT)
 		_check("purple_act_4_hits_p4_%s" % p4, pairs == 3 and hits.size() == 4, [pairs, hits.size()])
-		_check("purple_total_18_p4_%s" % p4, is_equal_approx(each * hits.size(), a.mat * 18.0), [each, hits.size(), a.mat])
+		_check("purple_total_18_p4_%s" % p4, is_equal_approx(each * hits.size(), a.mat * (9.0 if XTianqiBase.TUNE_D287 else 18.0)), [each, hits.size(), a.mat])  # T496 D287：18 → 9
 		# 双 build 时被动「最强」的 note_add <passiveHarmRi:10> 也叠了两遍（damage.gd 逐个扫，伤害 +20%）；单入口后只一个
 		var harm := RegEx.create_from_string("(?i)<passiveHarmRi:").search_all(str(XDB.rec("Skills", XGojo.STRONGEST).get("note", ""))).size()
 		_check("strongest_harm_once_p4_%s" % p4, harm == 1, harm)
@@ -323,13 +325,16 @@ func _purple_segments() -> void:
 	XTianqiNoDiffPassive.ENABLED = true
 	# 回退：TUNE_D209 关掉＋reload_table → 1 段、3 对 ×11；再开回 4 段
 	var d209 := XTianqiBase.TUNE_D209
+	var d287 := XTianqiBase.TUNE_D287
 	XTianqiBase.TUNE_D209 = false
+	XTianqiBase.TUNE_D287 = false  # T496：D287 叠在 D209 后，回退要一起关
 	XTianqiSkills.reload_table()
 	var off := XDB.rec("Skills", XGojo.PURPLE_OUT)
 	var sp_off := XTianqiSkills.spec(XGojo.PURPLE_OUT)
 	_check("purple_d209_off_one_seg", fx.call(off) == 1 and int(off.get("yepEffects", 0)) == 1 and int(sp_off.get("gojo_hits", 1)) == 1 and is_equal_approx(float((sp_off.get("gojo_pairs", []) as Array)[2]), 11.0),
 		[fx.call(off), off.get("yepEffects"), sp_off.get("gojo_hits"), sp_off.get("gojo_pairs")])
 	XTianqiBase.TUNE_D209 = d209
+	XTianqiBase.TUNE_D287 = d287
 	XTianqiSkills.reload_table()
 	var back := XDB.rec("Skills", XGojo.PURPLE_OUT)
 	_check("purple_d209_back_seg4", fx.call(back) == (4 if d209 else 1), fx.call(back))

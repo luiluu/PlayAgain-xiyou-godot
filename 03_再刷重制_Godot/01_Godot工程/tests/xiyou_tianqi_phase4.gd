@@ -320,6 +320,8 @@ func _tune_d189() -> void:
 	_check("tune_d200.switch", d200_on.slice(0, 3) == [4.0, 0.45, 0] and str(d200_on[3]).contains("物理攻击×4") and d200_off.slice(0, 3) == [3.6, 0.5, 1] and str(d200_off[3]).contains("×3.6") and d200_off_10727 == 5.0, [d200_on, d200_off, d200_off_10727])
 	# 第二批（偏弱超强者调高）：176 贯日 6.0→10、177 棱光 2.5→6（T175 取整；T163 的本体成长 ×1.2 撤掉，开着也是 1）；关掉照原卡
 	var d209_was := XTianqiBase.TUNE_D209
+	var d287_was := XTianqiBase.TUNE_D287
+	XTianqiBase.TUNE_D287 = false  # T496：D287（三档收拢）又调了 9938 等超强者主招（10315／10337 没动），同 D209 一起关，D287 层由 xiyou_tianqi_skills p7_d287_table 管
 	XTianqiBase.TUNE_D209 = false  # T209 R1：D209（超强者按名次重排）又调了 10337／5706 等，D189、D198 两段只看各自的层，D209 层由 xiyou_tianqi_skills p7_d209_table 管
 	XTianqiBase.TUNE_D198 = false  # T192：D198 又调了 177 棱光，这段只看 D189 层
 	XTianqiSkills.reload_table()
@@ -364,6 +366,7 @@ func _tune_d189() -> void:
 	# cap_hits：卡上 12（九段合计）×流萤角色条件，按每段封不压；没写 cap_hits 的照整招封
 	_check("tune_d198.cap_hits", XTianqiSkills.cap_hits({"coef": 12, "cap_hits": 9}) == 9.0 and XTianqiSkills.cap_hits({"coef": 12}) == 1.0)
 	XTianqiBase.TUNE_D209 = d209_was
+	XTianqiBase.TUNE_D287 = d287_was
 	XTianqiSkills.reload_table()
 
 ## 开着但是西游档：全走关着

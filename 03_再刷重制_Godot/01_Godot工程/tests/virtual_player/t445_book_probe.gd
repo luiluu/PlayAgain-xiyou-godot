@@ -36,6 +36,15 @@ const LIANYU_SECRETS := {
 	163: [2471, 2480, 6139, 6159, 488], 167: [2479, 2480, 6139, 6159, 489],
 	1: [2471, 2480, 6139, 6159, 488, 489], 2: [2780, 2480, 6139, 6159, 488, 489],
 	22: [2471, 2480, 6139, 6159, 488, 489],
+	# T496：其余 14 名超强者按自然体质（actor_nature.json）配主系书，无属性者走 2471 物理（与 95/163 同口径）；
+	# 奥术 2477 原表误标雷电，奈叶改用 2782 《虚空经·真》（与绿司机 2780 同类）。
+	168: [2472, 2480, 6139, 6159, 488], 173: [2471, 2480, 6139, 6159, 488],
+	172: [2471, 2480, 6139, 6159, 488], 11: [2471, 2480, 6139, 6159, 488],
+	180: [2471, 2480, 6139, 6159, 489], 152: [2471, 2480, 6139, 6159, 488],
+	175: [2780, 2480, 6139, 6159, 489], 108: [2782, 2480, 6139, 6159, 489],
+	171: [2471, 2480, 6139, 6159, 488], 176: [2471, 2480, 6139, 6159, 488],
+	177: [2471, 2480, 6139, 6159, 489], 169: [2475, 2480, 6139, 6159, 488],
+	107: [2471, 2480, 6139, 6159, 488], 179: [2472, 2480, 6139, 6159, 488],
 	3: [2474, 2480, 6139, 6159, 488, 489, 490, 2471],
 	12: [2471, 2480, 6139, 6159, 488, 489, 490, 2472],
 	18: [2473, 2480, 6139, 6159, 488, 489, 490, 2471],
@@ -46,6 +55,9 @@ const ZHENGDAO_EXTRA_SECRET := 2756
 const LIANYU_WEAPONS := {
 	95: "katana", 122: "katana", 163: "fist", 167: "staff",
 	1: "sword", 2: "staff", 22: "fist", 3: "staff", 12: "sword", 18: "sword",
+	# T496：其余超强者；里德招式限斧/矛、黄泉限太刀、流萤限剑，其余按主属性（魔攻走法杖）。
+	168: "sword", 173: "fist", 172: "katana", 11: "axe", 180: "staff", 152: "sword", 175: "sword",
+	108: "staff", 171: "sword", 176: "sword", 177: "staff", 169: "katana", 107: "spear", 179: "sword",
 }
 # 同一木桩下强制量这些核查点，只用于定位；正常样本通过出招菜单触发变招。
 const VARIANT_DIAGNOSTICS := {1: [4749], 2: [4759, 4760], 22: [3776]}
@@ -88,6 +100,8 @@ var historical := false
 var t488_proposal := false
 var _t488_applied := false
 var invalid := false
+var _prime_forced := false
+var k_scan := false  # T496：--k-scan 炼狱/证道配装不变，改用 K 探针 _measure_in（D209 量法：公式条件全中＋整次施放段数比）对照
 
 
 func _is_d271_build() -> bool:
@@ -102,6 +116,11 @@ func _ready() -> void:
 			historical = true
 		elif arg == "--t488-proposal":
 			t488_proposal = true
+		elif arg == "--k-scan":
+			k_scan = true
+		elif arg == "--no-d287":  # T496：关掉 D287 收拢覆盖层（改前对照）；k_calibrate 也会读到同一开关
+			XTianqiBase.TUNE_D287 = false
+			XTianqiSkills.reload_table()
 	if book_build not in ["normal", "empty", "balanced", "extreme", LIANYU, ZHENGDAO]:
 		push_error("未知量数配法：" + book_build)
 		get_tree().quit(2)
@@ -205,7 +224,7 @@ func _lianyu_state(id: int) -> XState:
 	rng.seed = battle_seed + 31337
 	var qstream := XRandomStream.create(XRandomStream.hex64(battle_seed + 99991), "rule")
 	var preset := D271.new()
-	var weapon_type := str(LIANYU_WEAPONS.get(id, ""))
+	var weapon_type := _weapon_for(a)
 	var gear := preset._equip_actor(s, a, tpl, diff, DAMAGE_ROLE, LIANYU_FLOOR, level, rng, qstream, weapon_type)
 	preset._equip_fabao_mount_artifact(s, a, tpl, DAMAGE_ROLE, 0, false, rng)
 	_secrets(a)
@@ -231,6 +250,23 @@ func _lianyu_state(id: int) -> XState:
 	a.refresh_passive()
 	a.recover_all()
 	return s
+
+
+## T496：首选 LIANYU_WEAPONS；角色装不了这类（职业 51 号特性）时，按主属性取第一种能装的（魔攻高走法杖／书）。
+func _weapon_for(a: XActor) -> String:
+	var want := str(LIANYU_WEAPONS.get(int(a.actor_id), ""))
+	var wtypes := a.traits_set(51)
+	var keys := []
+	for t in XTianqiQiyinGear.weapon_types():
+		if wtypes.has(int(t.get("wtype_id", -1))):
+			keys.append(str(t.get("key", "")))
+	if want == "" or keys.has(want) or keys.is_empty():
+		return want
+	var magic := a.param(4) > a.param(2)
+	for k in keys:
+		if magic == (k in ["staff", "book"]):
+			return k
+	return str(keys[0])
 
 
 func _lianyu_battle(s: XState, a: XActor, sample_seed: int) -> XBattleLogic:
@@ -270,10 +306,18 @@ func _sample_lianyu(snapshot: Dictionary, id: int, sk: Dictionary, sample_seed: 
 	var row := {}
 	if forced or logic.can_use(a, sk):
 		e.hp = e.mhp * _target_hp_rate(a, sk)
+		if forced and _prime_forced:
+			# T496：超强者改写招强制量＝条件全中（五条悟苍赫印满 3 对；宿傩看破三层转终式），与 K 探针 _prime 同口径
+			_prime(logic, a, e, sk)
+			if XMira.own(a) and int(sk.get("id", 0)) >= 10148 and int(sk.get("id", 0)) <= 10152 and not a.state_ids.has(2592):
+				a.add_state(2592)  # 米拉黑龙技要黑龙形态（XMira：重制以状态 2592 代替）
+			if XSukuna.own(a) and XSukuna.PRIMARY.has(int(sk.get("id", 0))):
+				XSukuna._layers(logic, e, 3)
 		var stats := {"atk": a.atk, "mat": a.mat, "mhp": a.mhp}
 		XStateEffects.force_critical = true
 		var logs := logic.execute(a, sk, e, true)
 		XStateEffects.force_critical = false
+		XSukuna.cast = {}
 		var segs := []
 		_collect_hits(logs, e, segs)
 		if not segs.is_empty():
@@ -296,6 +340,7 @@ func _sample_lianyu(snapshot: Dictionary, id: int, sk: Dictionary, sample_seed: 
 
 func _lianyu_cast_peaks(snapshot: Dictionary, id: int, sk: Dictionary, battle_seed: int, forced: bool) -> Dictionary:
 	var peaks := {}
+	var base := {}  # T496：每个落地招「段数最少的那几次」里的最大值＝不含随机再放（如流萤天火 10% 再放）的一次施放（T488 预算口径不含随机再放）
 	for n in hits:
 		var row := _sample_lianyu(snapshot, id, sk, battle_seed + n, forced)
 		if row.is_empty():
@@ -303,6 +348,12 @@ func _lianyu_cast_peaks(snapshot: Dictionary, id: int, sk: Dictionary, battle_se
 		var landing: int = row.skill
 		if not peaks.has(landing) or row.peak > peaks[landing].peak:
 			peaks[landing] = row
+		var nseg: int = (row.segments as Array).size()
+		if not base.has(landing) or nseg < int(base[landing].n) or (nseg == int(base[landing].n) and int(row.peak) > int(base[landing].peak)):
+			base[landing] = {"n": nseg, "peak": int(row.peak)}
+	for landing in peaks:
+		peaks[landing]["peak_base"] = int(base[landing].peak)
+		peaks[landing]["segs_base"] = int(base[landing].n)
 	return peaks
 
 
@@ -331,6 +382,52 @@ func _measure_lianyu(s: XState, a: XActor, tier: String) -> Dictionary:
 			actual_peaks.append(row)
 			if best.is_empty() or int(row.peak) > int(best.peak):
 				best = row
+	# T496：超强者另把本角色全部改写伤害招（含屠苏武器招、五条悟茈）强制各量一遍（条件全中），量「主招」在炼狱 80% 的峰值，
+	# 补上单人木桩开场放不出来的形态／资源招；记 forced_main，与自然出招的 best 取大作为该角色峰值。谷雨走储备终结（K 探针同口径）。
+	var forced_main := []
+	if tier == XTier.SUPER:
+		if XGuyu.own(a):
+			var gs := XState.from_dict(snapshot.duplicate(true))
+			XState._become_current(gs)
+			var ga := gs.actor(id)
+			var glogic := _lianyu_battle(gs, ga, battle_seed)
+			var g := _measure_guyu(gs, ga, glogic, glogic.enemies[0])
+			glogic.end_battle()
+			if not g.is_empty():
+				var grow := {"actor": id, "input_skill": int(g.skill), "input_name": "储备终结", "skill": int(g.skill),
+					"skill_name": "储备终结", "segments": [g.peak], "peak": int(g.peak), "peak_single": int(g.peak), "variance": 0,
+					"atk": ga.atk, "mat": ga.mat, "mhp": ga.mhp, "forced": true}
+				forced_main.append(grow)
+		var natural := actual_peaks.map(func(x): return int(x.input_skill))  # 自然出招量到了的才跳过（放不出来的照样强制量）
+		var ids := []
+		for k in XTianqiSkills.data().get("skills", {}):
+			var rec = XTianqiSkills.data().skills[k]
+			if rec is Dictionary and int(rec.get("actor", -1)) == id and (rec.has("damage") or rec.has("gojo_pairs")) and not rec.has("heal"):
+				ids.append(int(k))
+		if XTusu.is_tusu(a):
+			for w in XTusu.ARM_OF:
+				for k in XTusu.ARM_OF[w]:
+					var tsid := XTusu.skill_id(str(k))
+					if tsid > 0 and not ids.has(tsid):
+						ids.append(tsid)
+		_prime_forced = true
+		for sid in ids:
+			if natural.has(sid) and not (XSukuna.own(a) and XSukuna.PRIMARY.has(sid)):  # 宿傩主招另挂看破三层再量一遍（终式）
+				continue
+			var rec := XDB.rec("Skills", sid)
+			if rec.is_empty() or not XSmartAI.for_opponent(rec):
+				print("T496_FORCED_SKIP %d %d empty=%s" % [id, sid, rec.is_empty()])
+				continue
+			var fpeaks := _lianyu_cast_peaks(snapshot, id, rec, battle_seed, true)
+			if fpeaks.is_empty():
+				print("T496_FORCED_NOHIT %d %d" % [id, sid])
+			for prow in fpeaks.values():
+				prow["forced"] = true
+				forced_main.append(prow)
+		_prime_forced = false
+		for prow in forced_main:
+			if best.is_empty() or int(prow.peak) > int(best.peak):
+				best = prow
 	if best.is_empty():
 		return best
 	var diagnostic := []
@@ -346,7 +443,7 @@ func _measure_lianyu(s: XState, a: XActor, tier: String) -> Dictionary:
 	row["lianyu"] = {"gear": a.get_meta("lianyu_gear"), "race_rank": int(XRace.data(s, a).rank),
 		"mastery": mastery, "mastery_cap": XSkillMastery.max_level(int(row.input_skill)),
 		"skill_learned": a.skill_ids.has(int(row.input_skill)), "secret_limit": limit,
-		"cast_peaks": actual_peaks, "forced_diagnostics": diagnostic}
+		"cast_peaks": actual_peaks, "forced_diagnostics": diagnostic, "forced_main": forced_main}
 	return row
 
 
@@ -367,7 +464,15 @@ func _measure(id: int, tier: String) -> Dictionary:
 		push_error("抽奖被动未全部学会：%d" % id)
 	actor.param_mark_dirty()
 	actor.refresh_passive()
-	var row := _measure_lianyu(s, actor, tier) if d271 else _measure_in(s, actor, tier, true)
+	var row := {}
+	if d271 and k_scan:
+		var ka := s.actor(int(actor.actor_id))
+		ka.hp = ka.mhp
+		row = _measure_in(s, ka, tier, false)
+		if not row.is_empty():
+			row["k_scan"] = true
+	else:
+		row = _measure_lianyu(s, actor, tier) if d271 else _measure_in(s, actor, tier, true)
 	if row.is_empty():
 		return row
 	row["lottery_count"] = lottery.size()

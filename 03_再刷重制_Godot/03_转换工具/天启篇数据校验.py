@@ -1275,7 +1275,7 @@ def skill_rework_rules(table: dict) -> list:
     return bad
 
 
-TUNE_KEYS = ('D189', 'D200', 'D198', 'D208', 'D209')  # 同 XTianqiSkills.data()：按这个顺序叠（T192 加 D198；T204 加 D208、D209）
+TUNE_KEYS = ('D189', 'D200', 'D198', 'D208', 'D209', 'D287')  # 同 XTianqiSkills.data()：按这个顺序叠（T192 加 D198；T204 加 D208、D209；T496 加 D287）
 
 
 def tune_merge(base: dict, patch: dict) -> dict:
