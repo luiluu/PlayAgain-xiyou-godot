@@ -261,6 +261,8 @@ func _run() -> void:
 	map.player.touch_target = Vector2i(65, 56)
 	await _until(func(): return map.player.grid == Vector2i(65, 56) and not map.player.is_moving())
 	map.player.click_cell(map.player.grid)
+	await get_tree().physics_frame   # T507：点按当确认留到玩家物理帧再发（MVPlayer.DEFER_CLICK_ACTION）
+	await get_tree().physics_frame
 	_check("click_self_lands", map._vehicle_getting_off)
 	var seen := await _sample("land", -1, func(): return s.vehicle_type == "walk", 24, "land_24")
 	_check("land_to_0", seen.front() >= 47 and seen.back() == 0 and seen.size() == seen.front() + 1, seen)

@@ -33,9 +33,12 @@ func _ready() -> void:
 	_run.call_deferred()
 
 
+var mute := false   # 验旧行为时预期的失败不打印（运行器见 FAIL 行即判失败）
+
+
 func check(name: String, ok: bool, detail = null) -> void:
 	results.append({"name": name, "passed": ok})
-	if not ok:
+	if not ok and not mute:
 		print("FAIL ", name, " ", JSON.stringify(detail))
 
 
@@ -308,6 +311,51 @@ func _flow_hotkey(map: XMapScene, where: String, tag: String, keys: Array, pre_r
 	await _clear(map)
 
 
+## 小o 核 P1-1：快捷键 1 和点按面前一格同一批到达（中间不跨物理帧）。地图点按（触屏仿出的左键）落在漩涡上＝D2 调查。
+## order："key_first" 先送 1 再点；"tap_first" 先点再送 1；"tap_only" 只点（对照：照常调查）
+func _cell_screen(map: XMapScene, c: Vector2i) -> Vector2:
+	var ts := float(MVPlayer.TS)
+	var world := Vector2(c) * ts + Vector2(ts, ts) / 2
+	return get_viewport().get_screen_transform() * (map.player.get_canvas_transform() * world)
+
+
+func _flow_tap_hotkey(map: XMapScene, where: String, order: String) -> void:
+	var name := "%s_tap_hotkey_%s" % [where, order]
+	await _stand(map, SPOTS[where])
+	actions = 0
+	shop_opens = 0
+	ev_runs = 0
+	var front := map.player.front_cell(8)
+	var touch := InputEventScreenTouch.new()
+	touch.index = 0
+	touch.position = _cell_screen(map, front)
+	touch.pressed = true
+	var key := InputEventKey.new()
+	key.physical_keycode = KEY_1
+	key.keycode = KEY_1
+	key.pressed = true
+	var batch: Array = [touch] if order == "tap_only" else ([key, touch] if order == "key_first" else [touch, key])
+	for e in batch:
+		Input.parse_input_event(e)
+		Input.flush_buffered_events()
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var up := touch.duplicate()
+	up.pressed = false
+	_send(up)
+	if order != "tap_only":
+		_key(KEY_1, false)
+	if order == "tap_only":
+		await frames(20)
+		check("%s_investigates" % name, ev_runs == 1, _st(map))
+	else:
+		var arrived := await until(func(): return map.map_id == LOBBY and map.player.grid == Vector2i(14, 21) and not map.busy, 900)
+		check("%s_returned" % name, arrived, _st(map))
+		check("%s_no_investigate" % name, ev_runs == 0 and shop_opens == 0, _st(map))
+	await frames(10)
+	await _clear(map)
+
+
 func _run() -> void:
 	TestEnv.isolate("xiyou_item_transfer_no_talk")
 	XMessageBox.auto = false
@@ -342,6 +390,10 @@ func _run() -> void:
 		await _flow_hotkey(map, where, "hotkey1", [KEY_1])
 		await _flow_hotkey(map, where, "hotkey1_with_ok", [KEY_1, KEY_ENTER])
 		await _flow_hotkey(map, where, "reserved_then_ok", [KEY_ENTER], true)
+	for where in SPOTS:
+		await _flow_tap_hotkey(map, where, "tap_only")
+		await _flow_tap_hotkey(map, where, "key_first")
+		await _flow_tap_hotkey(map, where, "tap_first")
 	# 新界面物品页（天启线开了、界面风格选「新」的西游档也会用到）：点牌上「使用」
 	XUiSkin.FORCE = true
 	for where in SPOTS:
@@ -370,6 +422,16 @@ func _run() -> void:
 	check("switch_off_old_behavior_investigates_first", ev_runs == 1 and map.map_id == LOBBY and map.player.grid == SPOTS["npc"], _st(map))
 	XMapScene.RESERVED_FIRST = true
 	await _clear(map)
+	# 回退开关 MVPlayer.DEFER_CLICK_ACTION = false：旧行为——先点漩涡再按 1（同一批），点按当场调查漩涡，回城被吞
+	MVPlayer.DEFER_CLICK_ACTION = false
+	var n0 := results.size()
+	mute = true
+	await _flow_tap_hotkey(map, "rift", "tap_first")
+	mute = false
+	var old_ok: bool = results.size() == n0 + 2 and not results[n0].passed and not results[n0 + 1].passed
+	results.resize(n0)
+	check("switch_off_click_old_behavior_swallows_return", old_ok)
+	MVPlayer.DEFER_CLICK_ACTION = true
 	var passed := results.filter(func(x): return x.passed).size()
 	print("TEST_RESULT=" + JSON.stringify({"passed": passed, "total": results.size()}))
 	get_tree().quit.call_deferred(0 if passed == results.size() else 1)

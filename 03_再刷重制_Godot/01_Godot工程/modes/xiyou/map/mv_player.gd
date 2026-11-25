@@ -36,6 +36,12 @@ var vehicle_speed := 0
 ## 紧接着的物理帧又看到「刚按下」，再调查一次 NPC（又开对话、又开店）；高刷新率显示器上处理帧多于物理帧，更容易撞上。
 ## 原版 popScene 回地图要隔帧，Input.isTriggered 早已过去。这里在 _unhandled_input 记下这一下，下一次物理帧用掉。
 var _accept_queued := false
+## T507 返修（小o 核 P1-1）：点自己脚下／前方一格当确认（D1／D2）原来在输入回调里当场发 action_pressed，比地图物理帧采样快捷键 1
+## 还早：1 和点按同一批到达时，先开了面前的漩涡／NPC，busy 之后热键不再预约，回城请求被吞。开着时这一下也像确认键一样先记下，
+## 到玩家自己的物理帧（排在地图物理帧采样、预约快捷键之后）再发，预约的回城就会先跑（XMapScene.RESERVED_FIRST）。
+## 回退开关 DEFER_CLICK_ACTION = false：回到当场发。
+static var DEFER_CLICK_ACTION := true
+var _click_queued := false
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -60,9 +66,15 @@ func _unhandled_input(event: InputEvent) -> void:
 ## 当作确认；乘飞艇时 D2 只查事件（canStartLocalEvents 为假，什么都不做），前方一格照常当目的地飞过去
 func click_cell(c: Vector2i) -> void:
 	touch_target = c
+	# DEFER_CLICK_ACTION：走动中点按只当目的地（原版 triggerTouchAction 在 updateNonmoving 里），走到停下（D1）或走不过去（D2）时再按确认
+	if DEFER_CLICK_ACTION and is_moving():
+		return
 	if touch_target == grid or (touch_target == front_cell(direction) and vehicle_speed <= 0):
 		touch_target = Vector2i(-1, -1)
-		action_pressed.emit()
+		if DEFER_CLICK_ACTION:
+			_click_queued = true
+		else:
+			action_pressed.emit()
 
 
 ## Game_Player 的跑步姿势保持帧数（跟随用 isDashingPoseFollower 读它）
@@ -102,6 +114,9 @@ func update_character() -> void:
 	# 这一下确认键只给紧接着的这一个物理帧（同原版 isTriggered 只在按下那帧为真；走动中、不收输入时按的作废）
 	var accept := _accept_queued
 	_accept_queued = false
+	# 点按当确认（DEFER_CLICK_ACTION）：同确认键，只给紧接着的这一个物理帧
+	var click := _click_queued
+	_click_queued = false
 	if not is_moving() and auto_step.is_valid():
 		for d in auto_step.call():
 			if move_straight(d):
@@ -109,6 +124,9 @@ func update_character() -> void:
 				break
 		return
 	if is_moving() or not input_enabled:
+		return
+	if click:
+		action_pressed.emit()
 		return
 	var d := _input_dir()
 	if d == 0 and touch_target.x >= 0:
