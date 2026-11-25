@@ -43,7 +43,7 @@ const PARAM_VARIANCE := 500
 const GROWTH_PER_LEVEL := [100.0, 50.0, 25.0, 25.0, 25.0, 25.0, 25.0, 25.0]
 
 const NAME := "元素之王的赐福"
-const DESCRIPTION := "形态\n纪念群友大手子首通洪荒的特殊装备。\n他亲自替大家向元素之王讨来的福利。"
+const DESCRIPTION := "形态\n纪念群友大手子首通洪荒的特殊装备。\n他亲自为大家向元素之王争取来的福利。"
 const ELEM_PLACEHOLDER := "赐福元素：获得时从十三种元素中随机定下一种（攻击时额外附带该属性）"
 
 static var _icon_cache: AtlasTexture = null
