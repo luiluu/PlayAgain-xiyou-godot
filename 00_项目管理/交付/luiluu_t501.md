@@ -49,6 +49,8 @@
 | --- | --- | --- |
 | `XEnemy.param(i)`（i＝0 时外包 `scale_enemy_mhp`，原体挪到 `_param_raw`） | `mhp` 取值处全工程（`git grep -n "\.mhp" -- '*.gd'` 上千处） | 只改 i＝0；天启篇开着时所有读敌人生命上限的地方都看到 ×40% 后的值，这正是本单要的（显示、阈值、按比例回血／扣血都跟着按比例走）；按绝对目标重标血量的 3 处（守层者层总血、心魔、七印龙）改读 `mhp_raw()`；西游档 `enemy_hp_pct` 恒 100，`scale_enemy_mhp` 原样返回，逐字节不变 |
 | `XTianqiNoX6.flat_unit／steal_mult／heal_scale／dealt_scale／program_hp／scale_direct` | `damage.gd:411、415、484、520`，`battle_logic.gd:3383、3414`，`smart_ai.gd:440`，`state_effects.gd:169、460、864`，`tianqi_affix_battle.gd:501`，`tianqi_qiyin_effects.gd:348、515、546、568`，`tianqi_skills.gd:1446` | 换算因子从 1/6 改成 `enemy_unit`（1/6×0.4）；闸门从 `on()` 改成 `scaled()`（去 ×6 或折算任一开着）；`scale_direct` 乘 K 的那路仍只缩 1/6（K 已带 ×0.4），反弹那路缩 `enemy_unit`；骑士一系 `heal_scale` 从 1 改成 0.4（血量也缩了）。去 ×6 的 `skip_types` 仍只认 `on()` |
+| `XGuardianRework.setup`（1236 处是 `setup` 同名粗数）、`xinmo_setup`（1 处）、`XTianqiQiyinDragonRun.setup` | 真正的调用方：`battle_logic` 开战末尾各 1 处 | 签名、返回都没变；函数体里只把「按绝对目标重标血量」的分母／比较从 `e.mhp` 换成 `e.mhp_raw()`，结果＝目标血量×40%（关开关时两者相等，和原来逐字节同）；其余调用方不受影响 |
+| `XTianqiBase.k_for`（8 处） | `dealt_parts`、`scale_direct` 等 | 函数没改，只是表值 K 变 0.5 |
 | `XTianqiBase.gaze_row` | `tianqi_base.gd` 面板、`xiyou_tianqi_phase4` | K＜1 写「伤害压制 N%」，K≥1 照旧 |
 | 表值 `combat_rules.base_damage`、新键 `enemy_hp_pct` | `k_base`、`enemy_hp_pct` | 见上 |
 
