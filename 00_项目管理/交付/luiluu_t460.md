@@ -118,3 +118,17 @@
 - `e189fca05` Merge branch 'main' into luiluu/t460
 - `264b936f2` T460：修复云端选测 4 项（XUiSkin.ds 替代裸 draw_string；原版对照夹具关闭 XHonghuangMonument）
 - `366f38759` T460：配置首位洪荒证道者改名为「大手子」并更新测试断言与碑文／播报截图
+
+## T487 正式美术
+
+- Kyo 11-25 选定 C「朱漆镇碑」。正式贴图为 96×155 透明 PNG，含 Godot 导入描述。在西游大厅沿用脚底居中锚点。
+- 静音实机复验三个阶段的平时和庆典。共 42/42 项核对通过，覆盖正式贴图加载、楼梯右侧落点、原摆件移除、三阶遮罩和完整取景。六张截图均为 1280×720 原尺寸。
+
+| 大厅 | 平时 | 庆典 |
+| --- | --- | --- |
+| 一阶 | `00_项目管理/归档/交付截图/luiluu_t487/t487_stage1_regular.png` | `00_项目管理/归档/交付截图/luiluu_t487/t487_stage1_fest.png` |
+| 二阶 | `00_项目管理/归档/交付截图/luiluu_t487/t487_stage2_regular.png` | `00_项目管理/归档/交付截图/luiluu_t487/t487_stage2_fest.png` |
+| 三阶 | `00_项目管理/归档/交付截图/luiluu_t487/t487_stage3_regular.png` | `00_项目管理/归档/交付截图/luiluu_t487/t487_stage3_fest.png` |
+
+- 本地静音专项复验：`xiyou_honghuang_monument.tscn` 67/67，`xiyou_lobby_corruption.tscn` 205/205，`xiyou_fest_lobby.tscn` 155/155。工具回归 24/24，发行空壳检查退出码 0。
+- T460 修正原版对照夹具后，本地复跑 `xiyou_event_compare.tscn` 14/14、`xiyou_floor_reach004.tscn` 207/207、`xiyou_rift2_canglong.tscn` 85/85、`xiyou_ui_skin.tscn` 111/111。
