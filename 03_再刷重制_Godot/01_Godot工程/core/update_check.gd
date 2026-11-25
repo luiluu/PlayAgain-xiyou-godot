@@ -20,18 +20,18 @@ const SCHEMA := 1
 ## 第三方 GitHub 加速代理（T153，Kyo 11-17）：在 GitHub 地址前加这个前缀。只当镜像（验签、SHA-256 照旧）。
 const GH_PROXY := "https://gh-proxy.com/"
 const PUBLIC_KEY := """-----BEGIN PUBLIC KEY-----
-MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAv9EIRElfaFHqp5aAlHyI
-wzU/7YoiD0E7ftj4WVS5nufJkJFOKhnzT2596xhUaNW2m2j2gA7RJP6FFQtVzr3F
-5O730zdYwwtbeAh/EXRhz8sMg5pKQtUH186a5aWU90J9ANwjGNQIZAx/zLy+n5uD
-3qNE3/xFbfC5Pu+D8uQcu0KhhjiDCwUSEZRUye7tlaT5xXlwN56qxempPhf6ipaV
-XMaVjULjb9I7QcjkMeWS19tCu2o4/hWCVpWLQvKGkmAGCLBE0PLaw/BGXoGChEDT
-4BofCQK9nCwOsMn2DuEOpK5Lj3IIN6nFVCuDPmJfJ6VV98IciitSbKQ6jOuxD018
-uBaARf5SYTDP8m5YIhKqvyKvp17ode6nCjHv0aRCEPqh1Ph+wJ4PNcj1B6bAT1CW
-+3wHqLqM8xB09+OroPm0KYF9JGV8MroyHVbTwE0umpJqRMOvsQqo4myypRUT7Zf+
-RePBWuuZ54b+TvKNe9C2K1zyWPBIEc6QP27ZOcxD2cU6YytCvW6/F7ojVuWjsFWS
-+lZi2hCzErPTBX+idAyKqQ7SOlN7KAe3VT8p7o8i8vv+dh7NXjXtySc8+IuG21PU
-d0HpaovaEJPUEhw+9hP6sGyxTfOlAu1n89UmcLYVLrMl8Z2YHwAjmdX7paA84GZG
-akk2RNB99i+gyZxyxyvEbwsCAwEAAQ==
+MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsvQZJi1MkQm/BZ3a7cue
+qbB1VbDR2kB1ZvCSa6Pi9isv5gaUXwBuFRHsZ5FEKDJXrwZr58x8WD1ATYux9oCi
+vxNPmviSGFEZ2TiPzeMkGs+W1BwgeHaHsbka/X8z9DeIpHwOIvIC9naKap5Hv8AX
+0iSixvWBbHByf+vpB0sro8u/vG2yvmF2Y4X0/YvN4xI2M/4mQDe4cfxdVog+Xu5W
+eYtmhG0fBeId7GU1gY5fWitfMGuXCybhYcBk2P8TqVaklNSJcSzzW4aCdtHlM6Mu
+jjN/RM7XHANp1fHYbADeWp42yMmGPiXfxbpDGtcHvyrE2RbjELuCyLu5E3zMysrm
+HbZ87I5+owiMpoxkknR7YzXqKOGvq49So0a+/O209rZHWVM+cbmb6egXqI1IUTpo
+cy0w09kpS2tUIerjE2qL3vMzPhhY2gFEKJifxE4Hfxj1GXhoEZQ38PvgdnDm1rxJ
+GixXzeaoOjHWPelIB/womnkyM8C2qNb0RfbtNbCIMn5KPeDUwVSRVbpUHF2ZSsay
+9osg1wJSa8Ddr51gMCUNJAzEdFE8Ui29f4xordSoeOBfm0Zt68g+n6KHnJWUjffC
+PZ5KB20VqEFCSTJg8FbY8pSojOEj8qW/gsFk3fJaRgGr4iUD8nB1g/iCOLgllVrK
+Qu2RfrhhfnTbuCrv8BC97l8CAwEAAQ==
 -----END PUBLIC KEY-----
 """
 
@@ -61,12 +61,20 @@ static var release_name := ""
 static var release_base := 0
 
 
-## 开发编号 → 玩家看到的版本号。有发行版本名时：整包本身是「0.01」，之后的补丁是「0.01.<比整包多几号，两位>」；
+## 开发编号 → 玩家看到的版本号。有发行版本名时：
+## - 两段名（如 0.01、0.04）：整包是「0.04」，之后补丁是「0.04.<多几号，两位>」（0.04.01）；
+## - 三段名（如 0.04.05，T517 方案 A）：整包是「0.04.05」，之后补丁末段直接累加两位补零（0.04.06、0.04.07…）；
 ## 没有时是 0.<号>（导出给系统看的 Mac／Windows 版本号、安卓 versionCode 不走这里，照旧按编号）。
 ## 新旧一律比开发编号（evaluate、has_update），版本号只给人看。
 static func version_of(code: int) -> String:
 	if release_name != "" and release_base > 0 and code >= release_base:
-		return release_name if code == release_base else "%s.%02d" % [release_name, code - release_base]  # 两位：0.01.01（Kyo 11-12：修 bug 改末两位）
+		if code == release_base:
+			return release_name
+		var delta := code - release_base
+		var segs := release_name.split(".")
+		if segs.size() == 3 and segs[2].is_valid_int():
+			return "%s.%s.%02d" % [segs[0], segs[1], segs[2].to_int() + delta]
+		return "%s.%02d" % [release_name, delta]  # 两位：0.01.01（Kyo 11-12：修 bug 改末两位）
 	return "0.%d" % code
 
 
