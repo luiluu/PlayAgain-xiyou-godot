@@ -526,7 +526,8 @@ func _test_stream_and_switch() -> void:
 	var snaps := []
 	for mode in ["off", "on0"]:
 		_reset()
-		XTianqiElements.EFFECTS = mode != "off"
+		if mode == "off":
+			XTianqiElements.EFFECTS = false  # 回退支（O-待定）：关着时不记账、不取子流
 		_force(0.0, 0.0)
 		var lg := XBattleLogic.new()
 		lg.setup(_plain_troop if _plain_troop > 0 else 1, s, XBattleRandom.create(XRandomStream.hex64(4801234)))
