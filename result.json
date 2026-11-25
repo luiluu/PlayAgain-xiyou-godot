@@ -1,0 +1,32 @@
+{
+ "sha": "7a5901b8120f0d31e23254f28a5f562fe2b4ab1e",
+ "branch": "luiluu/t463",
+ "mode": "scenes",
+ "base": "",
+ "passed": true,
+ "scenes": 11,
+ "failed": [],
+ "flaky": [],
+ "lostShards": [],
+ "jobStatus": "success",
+ "shards": 2,
+ "longestShardSeconds": 302.5,
+ "testSeconds": 894,
+ "generatedRef": "refs/ci/generated/luiluu/t463",
+ "generatedCommit": "946d2fa68708eca5036f3ffe0a239188e2a5d25e",
+ "runUrl": "https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45517996212",
+ "sceneNames": [
+  "xiyou_determinism.tscn",
+  "xiyou_event_compare.tscn",
+  "xiyou_event_compare_b.tscn",
+  "xiyou_event_compare_c.tscn",
+  "xiyou_event_compare_d.tscn",
+  "xiyou_fabao_99_scale.tscn",
+  "xiyou_star_warehouse.tscn",
+  "xiyou_t463_t465.tscn",
+  "xiyou_tianqi_deck_phys_amp.tscn",
+  "xiyou_zhenqi.tscn",
+  "xiyou_zhenqi_break.tscn"
+ ],
+ "time": "2026-11-25T00:43:33+00:00"
+}
