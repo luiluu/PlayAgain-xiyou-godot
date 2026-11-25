@@ -139,7 +139,7 @@ func _run() -> void:
 	var labels := XDesignation.choices()
 	var idx53 := ids.find(53)
 	check("choice.aye_visible_locked", labels[idx53] == "\\I[6428]洪荒·阿夜（阿夜专属，不可获得）", labels[idx53])
-	check("choice.shouzheng_visible_locked", labels[ids.find(52)] == "\\I[6427]洪荒首证：首位证道洪荒者的荣誉。首证人：大手子。（不可获得）", labels[ids.find(52)])
+	check("choice.shouzheng_visible_locked", labels[ids.find(52)] == "\\I[6427]洪荒首证（首位证道洪荒者的荣誉，首证人：大手子，不可获得）", labels[ids.find(52)])
 	check("choice.zhengdao_hidden", labels[ids.find(51)] == "\\I[0]???", labels[ids.find(51)])
 	sx.designation = {"name": "", "icon": 0, "color": "#ffffff"}
 	XDesignation.apply_choice(sx, idx53)
