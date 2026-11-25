@@ -1355,5 +1355,42 @@ class K5SixTables(unittest.TestCase):
             self.assertFalse(ok)
 
 
+
+class ElementEffectsRules(unittest.TestCase):
+    """T480 元素独特效果字段（element_effects 等）。"""
+    def setUp(self):
+        self.t = json.loads((REAL_DIR / 'elements_table.json').read_text(encoding='utf-8'))
+
+    def test_real_passes(self):
+        self.assertEqual(chk.element_effects_rules(self.t), [])
+
+    def test_absent_skips(self):
+        t = copy.deepcopy(self.t)
+        t.pop('element_effects')
+        self.assertEqual(chk.element_effects_rules(t), [])
+
+    def test_bad_values(self):
+        cases = [
+            (lambda t: t['element_effects'].pop('15'), '覆盖基础十系'),
+            (lambda t: t['element_effects']['2'].__setitem__('key', 'fire'), 'key 不认识'),
+            (lambda t: t['element_effects']['4'].__setitem__('turns', 0), 'turns'),
+            (lambda t: t['element_effects']['4'].__setitem__('value', 1.5), 'value'),
+            (lambda t: t['effect_tiers']['many'].__setitem__('chance', 2), 'chance'),
+            (lambda t: t['effect_tier_of'].__setitem__('5', 'huge'), 'effect_tier_of'),
+            (lambda t: t['effect_rules'].__setitem__('stun_shared_cooldown', -1), 'stun_shared_cooldown'),
+            (lambda t: t['effect_immunity']['2']['constitution'].append(11), 'constitution'),
+            (lambda t: t['effect_immunity'].__setitem__('8', {}), '神圣以外'),
+            (lambda t: t['effect_merge'].__setitem__('2', ''), 'effect_merge'),
+            (lambda t: t['holy_ally'].__setitem__('by_nature', 1), 'by_nature'),
+            (lambda t: t['holy_ally']['skills'].append('5571'), 'holy_ally.skills'),
+            (lambda t: t['holy_ally']['exclude'].append(5571), '重叠'),
+        ]
+        for mut, word in cases:
+            t = copy.deepcopy(self.t)
+            mut(t)
+            bad = chk.element_effects_rules(t)
+            self.assertTrue(any(word in b for b in bad), (word, bad))
+
+
 if __name__ == '__main__':
     unittest.main()

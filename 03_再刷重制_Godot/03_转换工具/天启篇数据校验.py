@@ -1467,6 +1467,86 @@ def elements_table_rules(table: dict) -> list:
         bad.append('抗性总量与双单层分布不匹配')
     if int(rules.get('immune_min_floor', 0)) != 6:
         bad.append('immune_min_floor 应为 6（1~5 层无免疫）')
+    bad.extend(element_effects_rules(table))
+    return bad
+
+
+EFFECT_KEYS = {'burn', 'slow', 'shatter', 'paralyze', 'parasite', 'arcane', 'holy', 'veil', 'soak', 'gust'}
+EFFECT_CATEGORIES = {'dot', 'debuff', 'stop', 'buff'}
+
+
+def element_effects_rules(table: dict) -> list:
+    """T480 元素独特效果（设计稿 元素独特效果 v0.3 第 6 节）：element_effects／effect_tiers／effect_tier_of／effect_rules／effect_immunity／effect_merge。
+    表里没有 element_effects 时整段不查（旧表）。"""
+    bad = []
+    eff = table.get('element_effects')
+    if eff is None:
+        return bad
+    base = sorted(int(x) for x in table.get('base_elements', []))
+    if not isinstance(eff, dict) or sorted(int(k) for k in eff) != base:
+        return ['element_effects 应恰好覆盖基础十系：%r' % (sorted(eff) if isinstance(eff, dict) else eff,)]
+    keys = set()
+    for k, v in eff.items():
+        key = v.get('key')
+        keys.add(key)
+        if key not in EFFECT_KEYS:
+            bad.append('element_effects[%s].key 不认识：%r' % (k, key))
+        if v.get('category') not in EFFECT_CATEGORIES:
+            bad.append('element_effects[%s].category 应为 %s 之一' % (k, sorted(EFFECT_CATEGORIES)))
+        if v.get('category') != 'stop' and not (isinstance(v.get('turns'), int) and 1 <= v['turns'] <= 5):
+            bad.append('element_effects[%s].turns 应为 1～5 的整数' % k)
+        if 'value' in v and not (isinstance(v['value'], (int, float)) and 0 < v['value'] < 1):
+            bad.append('element_effects[%s].value 应在 (0, 1)' % k)
+        boss = v.get('boss', {})
+        if 'turns' in boss and not (isinstance(boss['turns'], int) and 1 <= boss['turns'] <= 5):
+            bad.append('element_effects[%s].boss.turns 应为 1～5 的整数' % k)
+    if len(keys) != len(eff):
+        bad.append('element_effects 的 key 有重复')
+    tiers = table.get('effect_tiers', {})
+    for name, t in tiers.items():
+        c = t.get('chance')
+        if not (isinstance(c, (int, float)) and 0 <= c <= 1):
+            bad.append('effect_tiers[%s].chance 应在 [0, 1]' % name)
+    tier_of = table.get('effect_tier_of', {})
+    if sorted(int(k) for k in tier_of) != base or any(v not in tiers for v in tier_of.values()):
+        bad.append('effect_tier_of 应给基础十系每系一个 effect_tiers 里有的档')
+    rules = table.get('effect_rules', {})
+    for name in ('cooldown', 'boss_cooldown', 'stun_shared_cooldown', 'freeze_per_battle', 'freeze_on_slow_count', 'holy_boss_per_battle'):
+        if not (isinstance(rules.get(name), int) and rules[name] >= 0):
+            bad.append('effect_rules.%s 应为非负整数' % name)
+    for name in ('boss_chance_rate', 'dot_tick_cap'):
+        if not (isinstance(rules.get(name), (int, float)) and 0 <= rules[name] <= 1):
+            bad.append('effect_rules.%s 应在 [0, 1]' % name)
+    for k, v in table.get('effect_immunity', {}).items():
+        if int(k) not in base or int(k) == 8:
+            bad.append('effect_immunity 键应为神圣以外的基础十系：%s' % k)
+        for c in v.get('constitution', []):
+            if c not in base:
+                bad.append('effect_immunity[%s].constitution 含基础十系以外的元素号：%r' % (k, c))
+        for c in v.get('boost', {}):
+            if int(c) not in base:
+                bad.append('effect_immunity[%s].boost 含基础十系以外的元素号：%r' % (k, c))
+        for r in v.get('race', []):
+            if not (isinstance(r, int) and 1 <= r <= 15):
+                bad.append('effect_immunity[%s].race 种族号应为 1～15：%r' % (k, r))
+    for k, v in table.get('effect_merge', {}).items():
+        if int(k) not in base or not isinstance(v, list) or not all(isinstance(x, str) and x for x in v):
+            bad.append('effect_merge[%s] 应为基础十系 → BuffType 名列表' % k)
+    ha = table.get('holy_ally')  # T480 R2：哪些己方技算神圣（by_nature＋skills 白名单＋exclude 排除）
+    if ha is not None:
+        if not isinstance(ha, dict):
+            bad.append('holy_ally 应为对象')
+        else:
+            if not isinstance(ha.get('by_nature', True), bool):
+                bad.append('holy_ally.by_nature 应为布尔')
+            for key in ('skills', 'exclude'):
+                ids = ha.get(key, [])
+                if not isinstance(ids, list) or not all(isinstance(x, int) and not isinstance(x, bool) and x > 0 for x in ids):
+                    bad.append('holy_ally.%s 应为正整数技能号列表：%r' % (key, ids))
+            if isinstance(ha.get('skills'), list) and isinstance(ha.get('exclude'), list):
+                both = set(ha['skills']) & set(ha['exclude'])
+                if both:
+                    bad.append('holy_ally 的 skills 与 exclude 重叠：%r' % sorted(both))
     return bad
 
 

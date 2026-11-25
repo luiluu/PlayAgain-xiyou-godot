@@ -1375,6 +1375,10 @@ func act(u: XBattler, skill, target) -> Array:
 	if overloaded:
 		skipped = true
 		logs.append(XGojo.overload_text(u))
+	var elem_skip := "" if (skipped and can_move(u)) else XTianqiElementEffects.take_skip(self, u, skipped)  # 天启篇元素停手（T480，§3.6）：只跳这一个行动位；被旧控跳过的记停手计数
+	if elem_skip != "":
+		skipped = true
+		logs.append({"type": "battle_text", "text": elem_skip})
 	if not skipped:
 		XTianqiXinmoTraits.mirror_note(self, u, skill)  # 天启篇心魔特点【影劫】（T323）：判完能不能行动再记挑战者的招，被控跳过的不记
 	if skipped:
@@ -1478,6 +1482,7 @@ func act(u: XBattler, skill, target) -> Array:
 	logs.append_array(XTianqiWeakAffix.root_end(self, u))  # 天启篇弱者专属词条：这一根全部结算完，各条专属出派生（反击、追击），收根
 	logs.append_array(XTianqiBrand.take_logs(self))  # 天启篇烙印灼痕：满了的那一行、当场开始的发作
 	logs.append_array(XTianqiXinmoTraits.take_logs(self))  # 天启篇心魔特点（T318）：骨裂叠层／震散；排在烙印之后，「印纹发亮」先于「借势同堕」（T323）
+	logs.append_array(XTianqiElementEffects.act_end(self, u, not skipped))  # 天启篇元素效果（T480）：零散段补掷、记完成的行动
 	_sync_orders(before, true)
 	resolve_collapses()
 	logs.append_array(XTianqiBrand.after_act(self, u))  # T086-a 发作真换人／自动换回：行动收尾全部跑完、人还活着才和助力位对调
@@ -1619,6 +1624,7 @@ func turn_end_battler(b: XBattler, logs: Array) -> void:
 			ahp = _audit_step("battler_refresh", ahp)
 		var n0 := logs.size()
 		XExtDot.tick(self, b, logs)  # YEP_X_ExtDoT：regenerateAll 开头的持续伤害／再生（先于 HP 再生率）
+		XTianqiElementEffects.tick_dot(self, b, logs)  # 天启篇元素效果（T480）：灼烧、寄生跳伤（状态递减之前；西游档没有记账）
 		if aud:
 			ahp = _audit_step("extdot", ahp)
 			_audit_log_states("extdot", logs, n0)
@@ -2430,7 +2436,16 @@ func _lotus_all(skill: Dictionary) -> bool:
 ## 天启篇烙印烧命：act 的主行动交给 execute 前记下行动者，execute 确实出手时扣一次（T118 小A P3②）
 var _burn_armed: XBattler = null
 
+## 天启篇元素效果（T480，§3.1）：一次 execute 是一次行动，开一帧，收尾时统一掷元素效果（西游档、开关关着不开帧）
 func execute(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false, stream_root := false) -> Array:
+	var framed := XTianqiElementEffects.frame_begin(self, u)
+	var logs := _execute_body(u, skill, chosen, forcing, stream_root)
+	if framed:
+		logs.append_array(XTianqiElementEffects.frame_end(self, u))
+	return logs
+
+
+func _execute_body(u: XBattler, skill: Dictionary, chosen: XBattler, forcing := false, stream_root := false) -> Array:
 	var logs := []
 	if stream_root:
 		_stream.parts.append(logs)  # T225：主行动这一层的记录也登记进前缀
@@ -2809,14 +2824,16 @@ func _counter_attack(u: XBattler, t: XBattler, cast := {}, scale := 1.0) -> Arra
 	XTianqiSkills.follow_scale = scale
 	XTianqiSkills.counter_depth += 1  # 反击里的命中：XTianqiSkills.after_apply 认得出（护短不把敌人反击打中队友记成「被打」）
 	XTianqiWeakAffix.push_kind(self, XTianqiWeakAffix.COUNTER)  # 天启篇弱者专属词条：原生反击（含技能重构的反击招）
+	var framed := XTianqiElementEffects.frame_begin(self, t)  # 天启篇元素效果（T480）：反击是独立行动，单独掷
 	var r := apply(t, XAlienBattle.project(t, t.attack_skill() if cast.is_empty() else cast), u)  # invokeCounterAttack：反击者 setAttack（异化逆祷：反击也读投影）
+	var fx_logs := XTianqiElementEffects.frame_end(self, t) if framed else []
 	XTianqiWeakAffix.pop_kind(self)
 	XTianqiSkills.follow_scale = prev_scale
 	XTianqiSkills.counter_depth -= 1
 	XBlackFlash.nested -= 1
 	XRaceBattle.derived_end(self, race_prev)
 	r.counter = true
-	return [{"type": "counter", "user": t, "target": u}, r]
+	return [{"type": "counter", "user": t, "target": u}, r] + fx_logs
 
 
 ## invokeNormalAction：掩护后正常生效；_last_receiver 记实际挨打的（v0.35 敌人反击判 receiver === target）
@@ -3072,6 +3089,7 @@ func apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	XTianqiQiyinEffects.after_apply(self, u, skill, t, r)  # 天启篇七印装备：疫、判决、落星、处决、击倒记录
 	XTianqiAffixBattle.after_apply(self, u, skill, t, r)  # 天启篇词条：吸血、斩获、破绽、压制、回春
 	XTianqiElements.after_apply(self, u, skill, t, r, r.get("best_row", {}))  # 天启篇元素重做：免疫弹字、虚空吞没、弱点暴露
+	XTianqiElementEffects.note_hit(self, u, skill, t, r)  # 天启篇元素效果（T480）：段记录，只记账不掷
 	XTianqiSkills.after_apply(self, u, skill, t, r)  # 天启篇技能重构：追加释放的目标、反弹（reflect）
 	XTianqiWeakAffix.note_hit(self, u, skill, t, r)  # 天启篇弱者专属词条：主动根的直接有效命中
 	return r
@@ -3216,6 +3234,9 @@ func _apply(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 				if not flash.is_empty():
 					r.custom_popups = flash
 				XRaceBattle.after_hp(self, u, skill, dt, race_mark)
+				r.hp_loss = maxf(0.0, hp_pre_elem - dt.hp)  # 天启篇元素效果（T480）段记录：这一段实际扣掉的生命（过护盾后、空蚀前）
+				if dt != t:
+					r.hit_target = dt  # 实际扣血对象（嫁祸转给保护者）
 				XTianqiElements.apply_space_erosion(self, u, skill, dt, maxf(0.0, hp_pre_elem - dt.hp), r.get("best_row", {}), r)
 				if dt != t:
 					XAlienBattle.sync_relations(self)

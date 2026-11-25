@@ -502,12 +502,15 @@ func add_state(id: int, random: XRandomStream = null) -> void:
 		return  # 流萤 addState 包装：负面免疫
 	if XZhenhuo.blocks_state(self, id):
 		return  # 至尊宝真火印记 addState 包装：角色不挂旧追击状态 109
+	if XTianqiElementEffects.shield_blocks(self, id):
+		return  # 天启篇元素效果（T480）圣护盾：挡下一次对方施加的可解除减益（西游档没有记账，恒假）
 	var alien_rev := XAlienBattle.revision(self, id)
 	_adding_state = true
 	_add_state(id, random)
 	_adding_state = false
 	XAlienBattle.after_add_state(self, id, alien_rev)  # 异化囚厄：其他角色得到的 jailStates 转给囚厄者
 	XGuyu.after_add_state(self, id)  # 谷雨 addState 包装（原 addState 之后）：谷雨自己倒下就归根
+	XTianqiElementEffects.after_add_state(self, id)  # 天启篇元素效果（T480）：旧停手、旧灼伤／麻痹挂上时顶掉元素标记
 
 ## Game_BattlerBase.addNewState（不查抵抗）：死亡先 die，再进状态表、排序；魔冠的 addNewState 包装在这里。
 ## 谷雨强制归根被死亡抵抗挡下时也走这里（审查 31 P3-1）
