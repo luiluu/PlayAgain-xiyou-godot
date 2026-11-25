@@ -977,8 +977,9 @@ static func _formula(a, b, item: Dictionary) -> float:
 			var m2 := _cond(c, a, b)
 			v *= m2
 			eff *= m2
-	if hit_cap > 0.0 and eff > hit_cap * cap_hits(d):  # T192：卡上写合计、模块再按段分的（cap_hits），按每段封
-		v *= hit_cap * cap_hits(d) / eff  # 卡面系数×条件全中后超过上限：压回上限（数据校验已按上限拆段，这里只兜底）
+	var hits_cap := cap_hits(d, item)
+	if hit_cap > 0.0 and eff > hit_cap * hits_cap:  # T192：卡上写合计、模块再按段分的（cap_hits），按每段封；T502 R2：屠苏分段技按实际段数封
+		v *= hit_cap * hits_cap / eff  # 卡面系数×条件全中后超过上限：压回上限（数据校验已按上限拆段，这里只兜底）
 	var wpct := XTianqiWeakAffix.dmg_pct(a, _cur_skill)  # 天启篇弱者专属词条批 2：波风水门第一次飞雷神这一根 −30%（整数百分比）
 	if wpct != 100:
 		v *= wpct / 100.0
@@ -986,10 +987,17 @@ static func _formula(a, b, item: Dictionary) -> float:
 	return -v if kind in [3, 4] else v
 
 
-## T192（D198 A，协调 11-18）：卡上系数是「N 段合计」、由模块代码按段分的技能（流萤天火 5、完全燃烧 9），damage.cap_hits 写段数，
-## 单段上限按「合计÷段数」封（formula、K 探针共用这一个；天启篇数据校验.py cap_hits 同口径）。没写的为 1，照旧
-static func cap_hits(d: Dictionary) -> float:
-	return maxf(1.0, float(d.get("cap_hits", 1)))
+## T192（D198 A，协调 11-18）：卡上系数是「N 段合计」、由模块代码按段分的技能（流萤天火 5、完全燃烧 9、屠苏贯日 3），damage.cap_hits 写段数，
+## 单段上限按「合计÷实际段数」封（formula、K 探针共用这一个；天启篇数据校验.py cap_hits 同口径）。
+## T502 R2（修小o 核 P1-1）：屠苏分段武装技仅 60 级起且装备止戈环才拆段，传入技能记录 item 时按 XTusu.segments(item) 实际段数封顶，
+## 未满 60 级或未装备止戈环时按 1 段封顶（不放宽到三段额度）。没写的为 1，照旧。
+static func cap_hits(d: Dictionary, item: Dictionary = {}) -> float:
+	var n := maxf(1.0, float(d.get("cap_hits", 1)))
+	if n > 1.0 and not item.is_empty():
+		var tkey := XTusu.key_of(item)
+		if XTusu.SEGMENTS.has(tkey):
+			n = minf(n, float(maxi(1, XTusu.segments(item))))
+	return n
 
 
 ## 单段有效系数里的属性权重合计（同 天启篇数据校验.py skill_weight）：生命、魔法上限按标准线折成攻击的 hp_mult／mp_mult 倍；max_of 再加 1

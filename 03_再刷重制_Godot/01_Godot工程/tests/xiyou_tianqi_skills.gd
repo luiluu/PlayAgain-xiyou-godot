@@ -1210,16 +1210,98 @@ func _p7() -> void:
 			ok = ok and (is_equal_approx(v, roundf(v)) or (v < 1.0 and is_equal_approx(v * 100.0, roundf(v * 100.0))))
 		return ok)
 	var on287 := [XTianqiSkills.spec(9938).damage.stats.get("atk"), XSukuna.tq_terminal_hits(10235), XTianqiSkills.spec(10641).get("gojo_pairs"), XGuyu.tq_pct("finish_pct", 100.0),
-		float(XTianqiSkills.spec(3776).damage.coef), str(XDB.rec("Skills", 10292).get("note", "")).contains("×9%")]
+		float(XTianqiSkills.spec(3776).damage.coef), str(XDB.rec("Skills", 10292).get("note", "")).contains("×9%"),
+		int(XTianqiSkills.spec(10315).damage.stats.get("atk", 0)), int(XTianqiSkills.spec(10315).damage.get("cap_hits", 1)),
+		int(XTianqiSkills.spec(10337).damage.stats.get("mat", 0)), float(XTianqiSkills.spec(10337).damage.stats.get("mhp", 0.0)),
+		str(XDB.rec("Skills", 10315).get("note", "")).contains("物理攻击×23"),
+		str(XDB.rec("Skills", 10337).get("note", "")).contains("魔法攻击×6＋生命上限×1%")]
 	XTianqiBase.TUNE_D287 = false
 	XTianqiSkills.reload_table()
 	var off287 := [XTianqiSkills.spec(9938).damage.stats.get("atk"), XSukuna.tq_terminal_hits(10235), XTianqiSkills.spec(10641).get("gojo_pairs"), XGuyu.tq_pct("finish_pct", 100.0),
-		float(XTianqiSkills.spec(3776).damage.coef)]
+		float(XTianqiSkills.spec(3776).damage.coef),
+		int(XTianqiSkills.spec(10315).damage.stats.get("atk", 0)), int(XTianqiSkills.spec(10315).damage.get("cap_hits", 1)),
+		float(XTianqiSkills.spec(10337).damage.get("coef", 0.0))]
 	XTianqiBase.TUNE_D287 = d287_on
 	XTianqiSkills.reload_table()
 	_check("p7_d287_table", not XTianqiBase.TUNE_D287 or (d287_int and int(on287[0]) == 3 and on287[1] == [1.0, 2.0, 3.0] and (on287[2] as Array).map(func(x): return int(x)) == [2, 4, 9]
 		and is_equal_approx(on287[3], 0.09) and is_equal_approx(on287[4], 1.0) and on287[5]
-		and int(off287[0]) == 5 and off287[1] == [6.0, 7.0, 8.0] and is_equal_approx(off287[3], 0.93) and is_equal_approx(off287[4], 6.0)), [d287_int, on287, off287])
+		and int(on287[6]) == 23 and int(on287[7]) == 3 and int(on287[8]) == 6 and is_equal_approx(float(on287[9]), 0.01) and on287[10] and on287[11]
+		and int(off287[0]) == 5 and off287[1] == [6.0, 7.0, 8.0] and is_equal_approx(off287[3], 0.93) and is_equal_approx(off287[4], 6.0)
+		and int(off287[5]) == 10 and int(off287[6]) == 1 and is_equal_approx(float(off287[7]), 10.0)), [d287_int, on287, off287])
+	# 【小A·T502 R2】修小o 核 P1-1（贯日按实际段数封顶）＋P2-1/P2-2（贯日／棱光卡面 XHelpCard.content 实测）
+	var p4_was := XTianqiBase.PHASE4
+	XTianqiBase.PHASE4 = true
+	XTianqiSkills.reload_table()
+	var ts := _state()
+	ts.actor_max_level = 99
+	XTianqi._joining = true
+	ts.add_actor(176)
+	XTianqi._joining = false
+	ts.set_battle_slot(0, 176)
+	ts.set_battle_slot(1, XIAOYAO)
+	var tusu: XActor = ts.actor(176)
+	var host: XActor = ts.actor(XIAOYAO)
+	tusu.change_level_mv(81)
+	host.change_level_mv(81)
+	var relic := XGear.template("armor", XTusu.RELIC)
+	var rslot := tusu.equip_slots().find(int(relic.etypeId))
+	var tlg := XBattleLogic.new()
+	tlg.setup(2, ts)
+	var te := _enemy(tlg)
+	te.add_param(0, 1.0e8)
+	te.recover_all()
+	XTusu._d = XTusu._fresh()
+	XTusu._d.pending = "bow"
+	XBinding.bind(tusu, host, "huawu")
+	var sk_gr := XDB.rec("Skills", 10315)
+	var sp_gr := XTianqiSkills.spec(10315)
+	# 1) 81 级戴止戈环：3 段，cap_hits=3，公式按 atk×23 结算
+	tusu.equips[rslot] = relic
+	tusu.param_mark_dirty()
+	tusu.recover_all()
+	host.recover_all()
+	var cap_with := XTianqiSkills.cap_hits(sp_gr.damage, sk_gr)
+	var f_with := XTianqiSkills.formula(tusu, te, sk_gr)
+	var exp_with := tusu.atk * 23.0 * XTianqiSkills.level_scale(tusu)
+	var hits_with := tlg.execute(host, sk_gr, te, true).filter(func(x): return x is Dictionary and str(x.get("type", "")) == "hit" and is_same(x.get("target"), te)).size()
+	# 2) 81 级卸下止戈环：1 段，cap_hits=1，公式压回单段上限 atk×11
+	tusu.equips[rslot] = null
+	tusu.param_mark_dirty()
+	tusu.recover_all()
+	host.recover_all()
+	te.recover_all()
+	var cap_no := XTianqiSkills.cap_hits(sp_gr.damage, sk_gr)
+	var f_no := XTianqiSkills.formula(tusu, te, sk_gr)
+	var exp_no := tusu.atk * 11.0 * XTianqiSkills.level_scale(tusu)
+	var hits_no := tlg.execute(host, sk_gr, te, true).filter(func(x): return x is Dictionary and str(x.get("type", "")) == "hit" and is_same(x.get("target"), te)).size()
+	# 3) 50 级戴止戈环（未满 60 级）：1 段，cap_hits=1，公式压回单段上限 atk×11
+	tusu.equips[rslot] = relic
+	tusu.change_level_mv(50)
+	tusu.param_mark_dirty()
+	tusu.recover_all()
+	host.recover_all()
+	te.recover_all()
+	var cap_lv50 := XTianqiSkills.cap_hits(sp_gr.damage, sk_gr)
+	var f_lv50 := XTianqiSkills.formula(tusu, te, sk_gr)
+	var exp_lv50 := tusu.atk * 11.0 * XTianqiSkills.level_scale(tusu)
+	var hits_lv50 := tlg.execute(host, sk_gr, te, true).filter(func(x): return x is Dictionary and str(x.get("type", "")) == "hit" and is_same(x.get("target"), te)).size()
+	tlg.end_battle(0)
+	_check("p7_d287_tusu_cap_hits",
+		is_equal_approx(cap_with, 3.0) and is_equal_approx(f_with, exp_with) and hits_with == 3
+		and is_equal_approx(cap_no, 1.0) and is_equal_approx(f_no, exp_no) and hits_no == 1
+		and is_equal_approx(cap_lv50, 1.0) and is_equal_approx(f_lv50, exp_lv50) and hits_lv50 == 1,
+		[[cap_with, f_with, exp_with, hits_with], [cap_no, f_no, exp_no, hits_no], [cap_lv50, f_lv50, exp_lv50, hits_lv50]])
+	var gr_text := "\n".join(XHelpCard.content(XDB.rec("Skills", 10315), "skill").map(func(r): return str(r[0])))
+	var lg_text := "\n".join(XHelpCard.content(XDB.rec("Skills", 10337), "skill").map(func(r): return str(r[0])))
+	_check("p7_d287_tusu_xuan_cards",
+		not gr_text.contains("合计120%") and not gr_text.contains("锁定倍率") and not gr_text.contains("段数：1") and not gr_text.contains("攻击次数")
+		and gr_text.contains("60级起装备止戈环时分三段") and gr_text.contains("物理攻击×23") and gr_text.contains("物理攻击×11") and gr_text.contains("对锁定目标伤害提高10%")
+		and not lg_text.contains("多命中一次") and not lg_text.contains("命中后降低目标物防、魔防")
+		and lg_text.contains("主动施放打两段") and lg_text.contains("魔法攻击×6＋生命上限×1%") and lg_text.contains("每个星影再打两段") and lg_text.contains("提高20%") and lg_text.contains("最多提高60%") and lg_text.contains("每次命中降低目标物防和魔防，持续2回合"),
+		{"guanri": gr_text, "lengguang": lg_text})
+	XTianqiBase.PHASE4 = p4_was
+	XTianqiSkills.reload_table()
+	XState._become_current(s)
 	# 模块法宝：百分比属性去掉
 	var view: Dictionary = XTianqiSkills.gear_view(XDB.rec("Armors", 4577).merged({"kind": "armor", "base": 4577}, true))
 	_check("p7_gear", (view.get("traits", []) as Array).filter(func(t): return int(t.code) == 21).is_empty(), view.get("traits"))
