@@ -1,7 +1,7 @@
 # 交付：luiluu/t519
 
 - 车道／工作者：天启篇养成线 T013 2J 招式类别补标／cc（Sonnet＋medium，T519）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -217,8 +217,12 @@
 - `天启篇数据校验.py`：退出码 0；另用 6 个临时反例（填掩护、空数组、重复、不是数组、打在被动上、正例）喂 `skill_rework_rules`，前五个报错、正例不报（脚本没入仓）。
 - `测试天启篇数据校验.py`：152 条过。
 - 写入方式自检：脚本插入后逐字段比对，去掉 `tags` 后和原文件解析结果完全相同；`git diff --numstat` 数据文件 157 增 157 删（每招一行）。西游档不读这张表。
-- 工具回归、发行空壳、云端选测：待填
+- 以上在挪到 `github/main`（10de8afd2）之后复跑过；`工具回归.py` 全部通过（退出码 0）；`发行空壳.py check` 退出码 0。
+- 云端选测通过：9 个场景、1 片（`xiyou_json_cache`、`xiyou_text_batch23`、`xiyou_tianqi_affix_text`、`xiyou_tianqi_balance`、`xiyou_tianqi_ledger`、`xiyou_tianqi_phase4`、`xiyou_tianqi_phase4_modules`、`xiyou_tianqi_qishi_states`、`xiyou_tianqi_skills`，同 `选测.py --list`），提交 8df76dfc08，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45709868448 。本机没起 Godot。本单没改 `.gd`。
+- 云端用的转换产物快照是总装合并 t514 期间补齐的，推送时提示参照没刷新；本单不碰转换器和切片。
+- 基底说明：本工作树原先切在本机 main（含还没推送的 t501、t514 合并），已把本单这一个提交挪到 `github/main` 上；挪之前误触发的一轮云端（45709656412，算出 609 个场景）已取消。t501、t514 没动 `skill_rework.json`，但动过 `天启篇数据校验.py`，合并时留意。
 
 ## 本分支提交
 
-- 待填
+- 8df76dfc0 T519 T013 2J：天启篇招式补标持续伤害／减益（数据＋校验＋交付单）
+- 其后一条只补本交付单的验证结果
