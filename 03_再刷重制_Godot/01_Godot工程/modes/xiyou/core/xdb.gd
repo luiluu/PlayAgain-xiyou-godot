@@ -165,6 +165,8 @@ static func rec(name: String, id: int) -> Dictionary:
 		return XTianqiSkills.new_rec(id, t)  # 天启篇技能重构补的招（表外号段，按底号复制）
 	if name == "States" and id >= t.size() and XTianqiSkills.has_new_state(id):
 		return XTianqiSkills.new_state_rec(id, t)  # 天启篇技能重构新加的状态（表外号段 10801 起）
+	if name == "States" and id >= t.size() and XTianqiElementEffects.has_state(id):
+		return XTianqiElementEffects.state_rec(id)  # 天启篇元素独特效果（T480）的新状态（表外号段 10940～10951）
 	if name == "States" and id == XXufeng.ST_TIANXIA and XXufeng.xiyou_save_on():
 		return XXufeng.tianxia_state_rec(t)  # 西游档徐凤年 9997 专属神秘成圣副本（表外号段 19501，仅西游档可读，T440）
 	if id >= t.size() and XTianqiElements.has_new(name, id):

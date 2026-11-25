@@ -332,6 +332,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var critical: bool = options.get("critical", false)
 	var critical_base := 1.5 + critical_multiplier_bonus(a)
 	var critical_mult := maxf(1.0, critical_base + float(frame.criticalAdd)) if critical else 1.0
+	critical_mult = XTianqiElementEffects.crit_mult(a, critical_mult)  # 天启篇元素效果（T480）遮蔽锋芒：暴击多出的部分 −33%（没挂恒原值）
 	var final_mult := maxf(0.0, 1.0 + float(frame.finalAdd)) * maxf(0.0, float(frame.finalMultiplier))
 	var normal_mult := maxf(0.0, 1.0 + float(frame.normalAdd))
 	var explicit = options.get("elements", frame.elements)
@@ -358,6 +359,7 @@ static func _calculate(item: Dictionary, a: XBattler, b: XBattler, options := {}
 	var growth := maxf(0.0, frame.growthMultiplier)
 	var tianqi := XTianqiCombat.damage_mult(a, b)  # 天启篇档位出伤／承伤、弱者协力、助力位光环（独立乘区，只乘一次；原版档恒 1）
 	if dmg_type in [1, 5]:
+		tianqi *= XTianqiElementEffects.out_mult(a)  # 天启篇元素效果（T480）浸湿：造成的伤害 −11%（没挂恒 1）
 		tianqi *= XTianqiBrand.taken_mult(b)  # 天启篇烙印发作「破防」：这一回合和下一回合受到的生命伤害 ×1.3（只生命伤害、吸取；开关关着恒 1）
 	var tq_elem := XTianqiElements.deck_on() and b is XEnemy
 	var conv_e := 0 if (explicit != null or frame.noElement) else conversion_id(item, a)

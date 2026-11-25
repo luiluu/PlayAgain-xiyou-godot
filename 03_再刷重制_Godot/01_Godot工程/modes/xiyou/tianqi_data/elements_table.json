@@ -131,5 +131,38 @@
       {"item": 3105, "skill": 11205, "ce": 9105, "element": 13, "name": "元素转换：空间", "icon": 768, "price": 100}
     ],
     "higher_drop_difficulties": ["lianyu", "zhengdao"]
-  }
+  },
+  "_effects_doc": "T480 元素独特效果（设计稿 天启篇_元素独特效果_v0.3 第 3～6 节，B 卡：我方打敌＋神圣对己方）。数字全是试测参数，C 卡校准；effect_tier_of 是 v0.7 估算的人数档（C 卡按当前数据重数后改），神圣按 D285 补「群体己方人人都给」降一档到 many。enemy_effect_rules 给 B2 卡留口，本卡不读。名字是草稿，待小A 审。",
+  "element_effects": {
+    "2": {"key": "burn", "name": "灼烧", "category": "dot", "turns": 3, "value": 0.11, "borrow": 17, "boss": {"turns": 2}},
+    "3": {"key": "slow", "name": "迟缓", "category": "debuff", "turns": 2, "value": 0.22, "borrow": 61, "freeze": {"key": "freeze", "name": "冰冻", "category": "stop", "borrow": 1082}, "boss": {"turns": 1, "no_freeze": true}},
+    "4": {"key": "shatter", "name": "碎甲", "category": "debuff", "turns": 2, "value": 0.15, "borrow": 12, "boss": {"turns": 1}},
+    "5": {"key": "paralyze", "name": "麻痹", "category": "stop", "borrow": 100, "boss": {"key": "shock", "name": "感电", "turns": 1, "value": 0.11}},
+    "6": {"key": "parasite", "name": "寄生", "category": "dot", "turns": 3, "value": 0.08, "boss": {"turns": 2}},
+    "7": {"key": "arcane", "name": "魔蚀", "category": "debuff", "turns": 2, "value": 0.15, "boss": {"turns": 1}},
+    "8": {"key": "holy", "name": "圣护", "category": "buff", "turns": 2},
+    "9": {"key": "veil", "name": "遮蔽锋芒", "category": "debuff", "turns": 2, "value": 0.33, "boss": {"turns": 1}},
+    "14": {"key": "soak", "name": "浸湿", "category": "debuff", "turns": 2, "value": 0.11, "boss": {"turns": 1}},
+    "15": {"key": "gust", "name": "乱流", "category": "debuff", "turns": 2, "value": 0.15, "borrow": 37, "boss": {"turns": 1}}
+  },
+  "effect_tiers": {
+    "many": {"min": 20, "chance": 0.11},
+    "mid": {"min": 12, "chance": 0.15},
+    "few": {"min": 0, "chance": 0.22}
+  },
+  "effect_tier_of": {"2": "many", "3": "many", "4": "few", "5": "mid", "6": "mid", "7": "mid", "8": "many", "9": "mid", "14": "few", "15": "few"},
+  "effect_rules": {"cooldown": 1, "boss_cooldown": 2, "stun_shared_cooldown": 5, "boss_chance_rate": 0.5, "dot_tick_cap": 0.05, "freeze_per_battle": 1, "freeze_on_slow_count": 2, "holy_boss_per_battle": 3},
+  "effect_immunity": {
+    "2": {"constitution": [2, 4, 14], "race": [], "boost": {"6": 1.5}},
+    "3": {"constitution": [2, 3], "race": [], "boost": {"14": 1}},
+    "4": {"constitution": [4], "race": [], "boost": {}},
+    "5": {"constitution": [4, 5], "race": [], "boost": {"14": 1.5}},
+    "6": {"constitution": [6], "race": [2, 11], "boost": {}},
+    "7": {"constitution": [7], "race": [], "boost": {}},
+    "9": {"constitution": [8, 9], "race": [], "boost": {}},
+    "14": {"constitution": [14], "race": [], "boost": {}},
+    "15": {"constitution": [15], "race": [7], "boost": {}}
+  },
+  "effect_merge": {"2": ["灼伤"], "5": ["麻痹"]},
+  "enemy_effect_rules": {"base_chance": 0.11, "boss_per_action_cap": 1, "stun_soft_replace": true, "elite_stun_per_battle": 2}
 }
