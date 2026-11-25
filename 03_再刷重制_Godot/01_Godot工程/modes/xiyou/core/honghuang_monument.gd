@@ -260,3 +260,4 @@ static func inspect(interp) -> void:
 		"face": "", "index": 0, "background": 0, "position": 2,
 		"lines": monument_lines(),
 	})
+	await XHonghuangTitles.redeem_flow(interp)  # T493：碑前输入兑换码（西游档、开关开着才有这个选项）

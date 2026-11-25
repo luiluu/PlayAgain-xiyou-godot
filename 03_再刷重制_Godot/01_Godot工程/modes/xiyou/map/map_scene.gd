@@ -702,6 +702,8 @@ func _process(delta: float) -> void:
 				open_menu(back)
 		if not busy and transfer_page == null:
 			_check_honghuang_broadcast()
+		if not busy and transfer_page == null and Engine.get_physics_frames() % 30 == 0:
+			_check_honghuang_clear()
 		if not busy and transfer_page == null:
 			_check_milestone()
 	if not busy and (Input.is_action_just_pressed("ui_cancel") or Input.is_action_just_pressed("mv_menu")) and not XMessageBox.consumed_input_this_frame() and not XKeyMap.menu_call_blocked(_menu_closed_frame, Engine.get_process_frames()):
@@ -901,8 +903,6 @@ func _tile_events_at(x: int, y: int) -> Array:
 	return out
 
 
-## 修行指引区段里程碑（installNativeGuidanceRuntime 的 Scene_Map.update）：没有事件在跑时每 30 帧查一次，
-## 修行进度层所在区段没看过就记看过、显示本段说明（每段一次）
 ## T460 洪荒首通一次性播报：标题／读档进西游档且地图空闲时弹一次，每档只弹一次（天启档不弹）
 func _check_honghuang_broadcast() -> void:
 	if not XHonghuangMonument.is_entry_armed():
@@ -922,6 +922,14 @@ func _run_honghuang_broadcast(lines: Array[String]) -> void:
 	refresh_events()
 
 
+## T493：西游档通关洪荒（打赢 33 层，含已通关的老存档）自动解锁称号洪荒证道，地图空闲时每 30 帧查一次，新解锁弹提示
+func _check_honghuang_clear() -> void:
+	if XHonghuangTitles.check_clear(XState.current):
+		toast(XHonghuangTitles.TOAST_ZHENGDAO)
+
+
+## 修行指引区段里程碑（installNativeGuidanceRuntime 的 Scene_Map.update）：没有事件在跑时每 30 帧查一次，
+## 修行进度层所在区段没看过就记看过、显示本段说明（每段一次）
 func _check_milestone() -> void:
 	_milestone_tick += 1
 	if _milestone_tick % 30:

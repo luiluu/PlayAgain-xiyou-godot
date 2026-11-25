@@ -6,6 +6,7 @@ extends RefCounted
 ## - 130225、130250～130269 带 <CodexQualityIcon:n> 的技能：从 IconSet 第 n 格取亮白的笔画（不透明度 >100，三通道最小 >150，和 >550），按技能品质色铺在透明底上，
 ##   只看第 3～28 行列；5789 不取图，画两个同心圆加八个点（伏魔御厨子同款）。
 ## - 6420～6425：冠军庆典称号／成就图标（T072，content/fest/Fest_Icon_*.png，128 RGBA 原色，32 显示最近邻）：6420 Road、6421 OneFour_Gold、6422 OneFour_Orange、6423 OneFour_Red、6424 Watch、6425 Attend。
+## - 6426～6428：T493 洪荒称号图标（content/honghuang/Honghuang_Title_*.png，同上）：6426 洪荒证道、6427 洪荒首证、6428 洪荒·阿夜。
 ## - 6410 宿傩法宝（Codex_Sukuna_Artifact）、6411～6417 破限之心（Garou_Relics 4 列）：按品质色调色（shade＋高光留白）。
 ## 云裳、屠苏璇、小猫、魔冠各有自己的图集，在 XUI.icon_texture 前面分流。参照 mv_oracle/quality_icons_probe.cjs，专项 tests/xiyou_quality_icons。
 
@@ -13,6 +14,8 @@ const CUSTOM := {6400: "Codex_Yomi_Seal", 6401: "Codex_Jingliu_Seal", 6402: "Cod
 	6404: "Codex_Toji_Artifact", 6405: "Codex_Heartsteel", 6406: "Codex_Leviathan", 6407: "Codex_Ornn_Masterwork_Upgrade", 6408: "Codex_Hubris", 6409: "Codex_Ataraxia"}
 const FEST := {6420: "Fest_Icon_Road", 6421: "Fest_Icon_OneFour_Gold", 6422: "Fest_Icon_OneFour_Orange", 6423: "Fest_Icon_OneFour_Red",
 	6424: "Fest_Icon_Watch", 6425: "Fest_Icon_Attend"}
+## T493 洪荒三款称号图标（T492 小o 定稿 A 版，content/honghuang/，128 RGBA 原色，32 显示最近邻，同庆典）
+const HONGHUANG := {6426: "Honghuang_Title_Zhengdao", 6427: "Honghuang_Title_Shouzheng", 6428: "Honghuang_Title_Aye"}
 const GUYU_ATLAS := 220000
 const GUYU_COUNT := 16
 const SKILL_BASE := 120000
@@ -29,6 +32,8 @@ static func info(index: int) -> Dictionary:
 		return {"image": CUSTOM[index], "native": true}
 	if FEST.has(index):
 		return {"image": FEST[index], "res": "res://content/fest/%s.png" % FEST[index], "native": true}
+	if HONGHUANG.has(index):
+		return {"image": HONGHUANG[index], "res": "res://content/honghuang/%s.png" % HONGHUANG[index], "native": true}
 	if index == 9001:
 		return {"image": "Raven_Artifact_Icon", "picture": true, "native": true}
 	if index >= GUYU_ATLAS and index < GUYU_ATLAS + GUYU_COUNT:
