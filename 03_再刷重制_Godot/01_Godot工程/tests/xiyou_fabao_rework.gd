@@ -2,7 +2,8 @@ extends Node
 ## 法宝与积分重构 v0.2 一期（O-388 法宝上限、O-389 抽奖，Kyo 11-13 通过）：
 ## - 法宝上限：XMagicWeapon.LEVEL_99／FLOOR_CAP（min(99, 9＋3×最高到达层)），超上限经验作废，天启篇存档也照上限（TIANQI_TOO），三档回退。
 ## - 抽奖：XLotteryRework.SAVED_STREAM（抽奖随机流进存档：读档后同一抽结果相同，世界随机不影响它）、
-##   EV_NOT_POSITIVE（范围与对话框文字换掉；批量模式真跑 1432／1431 各几千抽，平均积分变化不为正），两档回退。
+##   EV_NOT_POSITIVE＋TIANQI_ONLY（T494：西游档回原版正期望与原版文字，天启篇档照旧非正期望与改写文字；
+##   批量模式真跑西游／天启篇 1432／1431 各几千抽），各开关回退。
 var checks := 0
 var failures: Array = []
 
@@ -90,10 +91,60 @@ func fabao_cap() -> void:
 	check("cap.no_state", XMagicWeapon.max_level(plain) == 888.0)
 
 
+func _first_message_text(ce: int, tianqi: bool) -> String:
+	var s := _blank()
+	if tianqi:
+		s.flags["tianqi"] = {"rules": 1}
+	s.set_switch(XCasinoBatch.SWITCH_OPEN, true)
+	if ce == 1434:
+		s.set_switch(2291, true)
+		s.set_variable(1185, 300)
+	s.set_variable(206, 100000)
+	var core := MVEventCore.new()
+	core.list = XDB.rec("CommonEvents", ce).list
+	core.lottery_id = ce
+	for i in 200:
+		var r := core.advance()
+		if r.kind == "message":
+			return "\n".join(r.msg.lines)
+		if r.kind == "done":
+			break
+		if r.kind != "child":
+			core.resume(null)
+	return ""
+
+
 func lottery_ranges() -> void:
+	# 无存档对象：不套用天启篇非正期望，回原版范围与文字
+	XState.current = null
+	check("range.no_state", XLotteryRework.remap(1432, -400, 600) == [-400, 600] and XLotteryRework.text(1432, "-400~+600") == "-400~+600")
+	# 西游档（T494）：CE 1431/1432/1433/1434 全部随机范围与文字回到原版 v0.62.12
+	var xy := _blank()
+	for ce in XLotteryRework.RANGES:
+		for k in XLotteryRework.RANGES[ce]:
+			var parts := str(k).split(",")
+			var lo := int(parts[0])
+			var hi := int(parts[1])
+			check("range.xiyou_%d_%s" % [ce, k], XLotteryRework.remap(ce, lo, hi, xy) == [lo, hi], XLotteryRework.remap(ce, lo, hi, xy))
+		for k in XLotteryRework.TEXTS.get(ce, {}):
+			check("text.xiyou_%d_%s" % [ce, k], XLotteryRework.text(ce, k, xy) == k, XLotteryRework.text(ce, k, xy))
+	# 真事件解释器首句对话：西游档回原版范围文字
+	check("msg.xiyou_1432", _first_message_text(1432, false).contains("-400~+600"))
+	check("msg.xiyou_1431", _first_message_text(1431, false).contains("-8000~+12500"))
+	check("msg.xiyou_1434", _first_message_text(1434, false).contains("-300~+330"))
+	# TIANQI_ONLY 回退支：关掉后西游档也走非正期望
+	XLotteryRework.TIANQI_ONLY = false
+	check("range.tq_only_off", XLotteryRework.remap(1432, -400, 600, xy) == [-500, 500] and XLotteryRework.text(1432, "-400~+600", xy) == "-500~+500")
+	XLotteryRework.TIANQI_ONLY = true
+	# 天启篇档：CE 1431/1432/1433/1434 照旧走 O-389 期望不为正
+	var tq := _blank()
+	tq.flags["tianqi"] = {"rules": 1}
 	check("range.1432", XLotteryRework.remap(1432, -400, 600) == [-500, 500] and XLotteryRework.remap(1432, -300, 850) == [-650, 500])
 	check("range.other", XLotteryRework.remap(1432, 1, 5) == [1, 5] and XLotteryRework.remap(1200, -400, 600) == [-400, 600])
 	check("text.1432", XLotteryRework.text(1432, "(随机获得-400~+600肝帝积分)[二阶段基础门槛400，可减免]") == "(随机获得-500~+500肝帝积分)[二阶段基础门槛400，可减免]")
+	check("msg.tianqi_1432", _first_message_text(1432, true).contains("-500~+500"))
+	check("msg.tianqi_1431", _first_message_text(1431, true).contains("-10250~+10250"))
+	check("msg.tianqi_1434", _first_message_text(1434, true).contains("-315~+315"))
 	# 数据里的每个被换范围、被换文字都真的存在（数据变了这里先报）
 	for ce in XLotteryRework.RANGES:
 		var have := {}
@@ -107,6 +158,8 @@ func lottery_ranges() -> void:
 			check("range.data_%d_%s" % [ce, k], have.has(k), have.keys())
 		for k in XLotteryRework.TEXTS.get(ce, {}):
 			check("text.data_%d_%s" % [ce, k], texts.any(func(t): return t.contains(k)), texts)
+	# EV_NOT_POSITIVE 回退支：天启篇档也回原版
+	XState._become_current(tq)
 	XLotteryRework.EV_NOT_POSITIVE = false
 	check("range.o-off", XLotteryRework.remap(1432, -400, 600) == [-400, 600] and XLotteryRework.text(1432, "-400~+600") == "-400~+600")
 	XLotteryRework.EV_NOT_POSITIVE = true
@@ -161,9 +214,14 @@ func lottery_stream() -> void:
 
 
 ## 批量模式（文字跳过、选项选第 0 项「赢下所有」）真跑整条事件 n 次，返回平均积分变化
-func _mean(ce: int, n: int) -> float:
+func _mean(ce: int, n: int, tianqi := false) -> float:
 	var s := _blank()
+	if tianqi:
+		s.flags["tianqi"] = {"rules": 1}
 	s.set_switch(XCasinoBatch.SWITCH_OPEN, true)
+	if ce == 1434:
+		s.set_switch(2291, true)
+		s.set_variable(1185, 300)
 	var total := 0.0
 	for i in n:
 		s.set_variable(206, 100000)
@@ -185,15 +243,26 @@ func _mean(ce: int, n: int) -> float:
 
 
 func lottery_ev() -> void:
-	var m1432 := _mean(1432, 4000)
-	var m1431 := _mean(1431, 6000)
-	print("ev 1432 %.1f  1431 %.1f" % [m1432, m1431])
+	# 西游档（T494）：四个抽奖公共事件全部回到原版 v0.62.12 正期望量级
+	var xy1432 := _mean(1432, 4000, false)
+	var xy1431 := _mean(1431, 6000, false)
+	var xy1434 := _mean(1434, 4000, false)
+	var xy1433 := _mean(1433, 4000, false)
+	print("ev xiyou 1432 %.1f  1431 %.1f  1434 %.1f  1433 %.1f" % [xy1432, xy1431, xy1434, xy1433])
+	check("ev.xiyou_1432_orig", xy1432 > 100.0 and xy1432 < 230.0, xy1432)
+	check("ev.xiyou_1431_orig", xy1431 > 2000.0 and xy1431 < 3600.0, xy1431)
+	check("ev.xiyou_1434_orig", xy1434 > 5.0, xy1434)
+	check("ev.xiyou_1433_orig", xy1433 > 2.0, xy1433)
+	# 天启篇档：保持 O-389 期望不为正，不受影响
+	var tq1432 := _mean(1432, 4000, true)
+	var tq1431 := _mean(1431, 6000, true)
+	print("ev tianqi 1432 %.1f  1431 %.1f" % [tq1432, tq1431])
 	# 一抽标准差约 300（1432）／约 6000（1431），留 3 个标准误的余量
-	check("ev.1432", m1432 < 3.0 * 330.0 / sqrt(4000.0), m1432)
-	check("ev.1431", m1431 < 3.0 * 6500.0 / sqrt(6000.0), m1431)
+	check("ev.1432", tq1432 < 3.0 * 330.0 / sqrt(4000.0), tq1432)
+	check("ev.1431", tq1431 < 3.0 * 6500.0 / sqrt(6000.0), tq1431)
 	XLotteryRework.EV_NOT_POSITIVE = false
-	var old := _mean(1432, 4000)
-	print("ev 1432 原版 %.1f" % old)
+	var old := _mean(1432, 4000, true)
+	print("ev tianqi 1432 o-off %.1f" % old)
 	check("ev.1432_o-off_positive", old > 100.0, old)
 	XLotteryRework.EV_NOT_POSITIVE = true
 

@@ -55,8 +55,10 @@ func _run() -> void:
 			var fixed: Dictionary = c.observed.duplicate(true)
 			fixed.messages = ["自定义单抽未开始：肝帝积分低于原单抽门槛\n积分 -30001；剩余券 5"]
 			await run_case(c, fixed, ".o-unstarted")
-	XLotteryRework.EV_NOT_POSITIVE = true  # 不固定随机的抽法用重构后的范围与存档随机流跑
+	XLotteryRework.EV_NOT_POSITIVE = true  # T494：西游档不套用非正期望（回原版范围），但保留存档随机流
 	await random_draws()
+	await custom_draw_parity("single", 25)
+	await custom_draw_parity("twenty", 15)
 	abyss_stage2()
 	XCasinoBatch.notify_unstarted = true
 	XCasinoBatch.frame_budget_ms = 8
@@ -268,6 +270,97 @@ func random_draws() -> void:
 	check("random.skipped", parent.skipped.is_empty(), parent.skipped)
 	print("random draws: used %d, second %d, proof %d, %s" % [int(r.used), int(r.second), int(r.proof), str(r.reason)])
 	await close_map()
+
+
+## T494：真地图 Map004 EV60 数量框自定义抽（single／twenty）核对：
+## ① 西游档下 ev_active=false（走原版期望范围）；
+## ② 与手动逐抽（原生 CE 1432／1431，选「赢下所有」）逐抽积分、二阶段次数、lotteryRandom 进度完全一致；
+## ③ 读档重抽（同一起点存档）通过数量框再跑一次结果逐项相同（保留防 SL）。
+func custom_draw_parity(mode: String, count: int) -> void:
+	MVEventCore.fixed_random = -1.0
+	var tag := "custom_" + mode
+	var ce_id := 1431 if mode == "twenty" else 1432
+	var cost := 20 if mode == "twenty" else 1
+	var base := new_state({})
+	base.set_switch(XCasinoBatch.SWITCH_OPEN, true)
+	base.set_variable(XCasinoBatch.VAR_POINTS, 500000)
+	base.gain_item(XCasinoBatch.TICKET, count * cost)
+	XLotteryRework.stream(base)
+	var snap: Dictionary = JSON.parse_string(JSON.stringify(base.to_dict()))
+	check(tag + ".ev_orig", not XLotteryRework.ev_active(base))
+
+	# 1. 真 XMapScene + Map004 EV60 + XCasinoDialog 数量框跑自定义抽
+	var run_dialog := func() -> Dictionary:
+		var s := XState.from_dict(snap)
+		XState._become_current(s)
+		var ok := await open_map()
+		check(tag + ".map", ok)
+		XCasinoBatch.last_result = {}
+		XMessageBox.transcript.clear()
+		var parent := MVInterpreter.new(map, 4, 60, [{"code": 355, "indent": 0, "parameters": [scripts.get(2 if mode == "twenty" else 0, "")]}, {"code": 0, "indent": 0, "parameters": []}])
+		var done := [false]
+		parent.finished.connect(func(): done[0] = true)
+		parent.run()
+		await frames(2)
+		var dialog: XCasinoDialog = map.ui.get_children().filter(func(n): return n is XCasinoDialog)[0]
+		dialog.input.text = str(count)
+		dialog.input.text_changed.emit(dialog.input.text)
+		dialog.ok_button.pressed.emit()
+		for i in 600:
+			if done[0]:
+				break
+			await frames(1)
+		var out := {
+			"done": done[0],
+			"result": XCasinoBatch.last_result.duplicate(true),
+			"points": int(s.variable(XCasinoBatch.VAR_POINTS)),
+			"tickets": s.item_count(XCasinoBatch.TICKET),
+			"lottery": s.lottery_random.duplicate(true),
+			"skipped": parent.skipped.duplicate(),
+		}
+		await close_map()
+		return out
+
+	var r1: Dictionary = await run_dialog.call()
+	# 2. 读回同一起点存档，再通过数量框跑一次（防 SL 必须逐项相同）
+	var r2: Dictionary = await run_dialog.call()
+	check(tag + ".done", r1.done and int(r1.result.get("used", 0)) == count and r1.skipped.is_empty(), r1)
+	check(tag + ".reload_same", r1.points == r2.points and r1.lottery == r2.lottery and norm(r1.result) == norm(r2.result), [r1.result, r2.result])
+
+	# 3. 同一起点走原生手动逐抽（CE 1432／1431，不用 casino_draw 批量捷径，遇到 102 选第 0 项「赢下所有」）
+	var sm := XState.from_dict(snap)
+	XState._become_current(sm)
+	var manual_samples := []
+	var manual_second := 0
+	for k in count:
+		sm.gain_item(XCasinoBatch.TICKET, -cost)
+		var core := MVEventCore.new()
+		core.list = XCasinoBatch.native_list(ce_id)
+		core.lottery_id = ce_id
+		var sec := false
+		var steps := 0
+		while steps < 5000:
+			steps += 1
+			var r := core.advance()
+			if r.kind == "done":
+				break
+			if r.kind == "message" and r.msg.has("choices"):
+				if int(core._wait_arg) == 5:
+					sec = true
+				core.resume(0)
+			elif r.kind != "child":
+				core.resume(null)
+		if sec:
+			manual_second += 1
+		if manual_samples.size() < 20:
+			manual_samples.append({"draw": k + 1, "second": sec, "points": int(sm.variable(XCasinoBatch.VAR_POINTS))})
+	var batch_samples: Array = (r1.result.get("samples", []) as Array).map(func(x): return {"draw": int(x.draw), "second": bool(x.second), "points": int(x.points)})
+	check(tag + ".matches_manual", int(sm.variable(XCasinoBatch.VAR_POINTS)) == r1.points
+		and sm.item_count(XCasinoBatch.TICKET) == r1.tickets
+		and manual_second == int(r1.result.second)
+		and sm.lottery_random == r1.lottery
+		and batch_samples == manual_samples,
+		[int(sm.variable(XCasinoBatch.VAR_POINTS)), r1.points, manual_second, r1.result.second, sm.lottery_random, r1.lottery])
 
 
 ## O-285（新源 v0.62.10 fixAbyssStage2）：读入后 1434 的五对「读 v1191～1195、抽那一格」换成先抽再读；
