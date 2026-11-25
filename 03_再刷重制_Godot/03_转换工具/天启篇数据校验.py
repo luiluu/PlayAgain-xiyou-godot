@@ -2691,6 +2691,7 @@ def brand_rules(table: dict, balance: dict = None) -> list:
 
 
 BRAND_PARAMS = ('mhp', 'mmp', 'atk', 'def', 'mat', 'mdf', 'agi', 'luk')
+BRAND_REALM_EFFECTS = {'low_heal': ('below', 'up'), 'big_hit': ('over', 'cut'), 'rally': ('below', 'heal')}
 
 
 def _brand_realm_rules(rm, realms: list, trade: list) -> list:
@@ -2709,6 +2710,12 @@ def _brand_realm_rules(rm, realms: list, trade: list) -> list:
         for k in ('taken', 'debuff_resist'):
             if k in b and not _is_int(b[k]):
                 bad.append('realm.base/%s.%s 要整数百分：%s' % (b.get('realm'), k, b[k]))
+        for k, subs in BRAND_REALM_EFFECTS.items():  # T514 核 P2-2：三组生存对象的子字段也要整数百分、不为负
+            if k not in b:
+                continue
+            o = b[k]
+            if not isinstance(o, dict) or set(o) != set(subs) or not all(_is_int(o[x]) and o[x] >= 0 for x in subs):
+                bad.append('realm.base/%s.%s 要正好有 %s、都是非负整数百分：%s' % (b.get('realm'), k, '、'.join(subs), o))
     if not _is_int(rm.get('branch_pct')):
         bad.append('realm.branch_pct 要整数：%s' % rm.get('branch_pct'))
     groups = rm.get('branches', [])
@@ -2732,8 +2739,8 @@ def _brand_realm_rules(rm, realms: list, trade: list) -> list:
                 bad.append('realm 支 %s 要两项属性、不带物攻魔攻（D129）：%s' % (b.get('name'), ps))
     if len(keys) != len(set(keys)):
         bad.append('realm.branches 的 key 有重复')
-    if not isinstance(rm.get('swap_price_units'), (int, float)) or rm['swap_price_units'] < 0:
-        bad.append('realm.swap_price_units 要是非负数：%s' % rm.get('swap_price_units'))
+    if not _is_int(rm.get('swap_price_units')) or rm['swap_price_units'] < 0:
+        bad.append('realm.swap_price_units 要是非负整数（附则 E）：%s' % rm.get('swap_price_units'))
     return bad
 
 

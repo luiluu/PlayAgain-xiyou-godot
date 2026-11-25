@@ -214,16 +214,99 @@ func _survive() -> void:
 	lg.execute_hp_damage(lg.enemies[0], a, floorf(a.mhp * 0.8), false)
 	var lost := before - a.hp
 	_check("yingjie.real", lost < floorf(a.mhp * 0.8) and lost > floorf(a.mhp * 0.5), [lost, a.mhp])
-	# 逆命：掉到三成以下回 20%，每场一次
+	# 逆命（核 P1-1 返修）：execute_hp_damage 只记「真掉了血」，这一击结算完 after_hit 才独立回复；
+	# 立到逆命的人也立过砥柱，三成以下受疗 +15%：回复量 ＝ floor(floor(mhp×20%)×1.15)
 	_setr(a, 6)
-	a.hp = a.mhp
-	lg.execute_hp_damage(lg.enemies[0], a, floorf(a.mhp * 0.9), false)
-	var after1 := a.hp
 	var mhp := a.mhp
-	_check("niming.rally", after1 > mhp * 0.15 and after1 >= floorf(mhp * 0.2), [after1, mhp])
+	var heal_amt := floorf(floorf(mhp * 0.2) * 1.15)
+	a.hp = mhp
+	lg.execute_hp_damage(lg.enemies[0], a, floorf(mhp * 0.9), false)
+	var hit_hp := a.hp
+	_check("niming.deferred", hit_hp < mhp * 0.3, [hit_hp, mhp])  # 伤害里头不回
+	XTianqiBrandRealm.after_hit(lg)
+	_check("niming.rally", a.hp == hit_hp + heal_amt, [a.hp, hit_hp, heal_amt])
 	a.hp = floorf(mhp * 0.5)
 	lg.execute_hp_damage(lg.enemies[0], a, floorf(mhp * 0.4), false)
+	XTianqiBrandRealm.after_hit(lg)
 	_check("niming.once", a.hp < mhp * 0.3, [a.hp, mhp])
+	lg.end_battle()
+	# 真走 apply：受击结果、弹字还是这一击的正伤害，扣血统计不被回复吃掉，回复另算
+	lg = _fight(s)
+	a = lg.actors[0]
+	_setr(a, 6)
+	mhp = a.mhp
+	var e: XEnemy = lg.enemies[0]
+	var sk: Dictionary = XDB.rec("Skills", 1)
+	# 普攻：卡在三成线上 1 点，打中就掉到线下；没打中（闪避、未命中）换一场再来，最多 8 场
+	var got := 0.0
+	var shown := 0.0
+	var hp0 := 0.0
+	var r := {}
+	for i in 8:
+		a.hp = floorf(mhp * 0.3) + 1.0
+		hp0 = a.hp
+		r = lg.apply(e, sk, a)
+		got = float(r.get("hp", 0.0))
+		shown = float(r.get("shown", {}).get("hp", 0.0))
+		if got > 0.0:
+			break
+		lg.end_battle()
+		lg = _fight(s)
+		a = lg.actors[0]
+		_setr(a, 6)
+		e = lg.enemies[0]
+	_check("niming.apply_result_positive", got > 0.0 and shown == got and a.hp == hp0 - got + heal_amt, [got, shown, hp0, a.hp, heal_amt, r.get("missed"), r.get("evaded")])
+	lg.end_battle()
+	# 四骑士出伤（horseman_strike）同一套：record_hp 是这一下的伤害
+	lg = _fight(s)
+	a = lg.actors[0]
+	_setr(a, 6)
+	a.hp = floorf(mhp * 0.6)
+	hp0 = a.hp
+	var hs := lg.horseman_strike(lg.enemies[0], a, sk, floorf(mhp * 0.5), false)
+	_check("niming.horseman", float(hs.record_hp) > 0.0 and float(hs.hp) > 0.0 and a.hp == hp0 - float(hs.hp) + heal_amt, [hs.record_hp, hs.hp, hp0, a.hp])
+	lg.end_battle()
+	# 残血挨治疗、护盾全挡：不误耗这一次
+	lg = _fight(s)
+	lg._action_resources = lg._new_lifecycle_resources()
+	a = lg.actors[0]
+	_setr(a, 6)
+	a.hp = floorf(mhp * 0.1)
+	lg.execute_hp_damage(lg.actors[1], a, -100.0, false)
+	XTianqiBrandRealm.after_hit(lg)
+	var after_heal := a.hp
+	a.shield = mhp
+	lg.execute_hp_damage(e if e != null else lg.enemies[0], a, 100.0, false)
+	a.shield = 0.0
+	XTianqiBrandRealm.after_hit(lg)
+	var after_shield := a.hp
+	_check("niming.no_heal_shield_trigger", after_heal < mhp * 0.3 and after_shield == after_heal and not XTianqiBrand.fight(lg).get(XTianqiBrandRealm.RALLY, {}).has(a), [after_heal, after_shield, mhp])
+	# 这一次还在：真挨打照常回
+	var hp_b := a.hp
+	lg.execute_hp_damage(lg.enemies[0], a, 10.0, false)
+	XTianqiBrandRealm.after_hit(lg)
+	_check("niming.still_available", a.hp > hp_b, [hp_b, a.hp])
+	# 不染（核 P2-1）：元素独特效果的灼烧、冰冻在我方受者有效度里也吃 10%；圣佑（增益）不吃
+	_setr(a, 0)
+	var b0 := XTianqiElementEffects._actor_state_rate(a, XTianqiElementEffects.ST_BURN, 0)
+	var f0 := XTianqiElementEffects._actor_state_rate(a, XTianqiElementEffects.ST_FREEZE, 0)
+	_setr(a, 1)
+	_check("buran.elem_burn_freeze", absf(XTianqiElementEffects._actor_state_rate(a, XTianqiElementEffects.ST_BURN, 0) - b0 * 0.9) < 1e-6
+		and absf(XTianqiElementEffects._actor_state_rate(a, XTianqiElementEffects.ST_FREEZE, 0) - f0 * 0.9) < 1e-6
+		and absf(XTianqiElementEffects._actor_state_rate(a, XTianqiElementEffects.ST_HOLY, 0) - XTianqiElementEffects._actor_state_rate(a, XTianqiElementEffects.ST_HOLY, 0)) < 1e-6
+		and XTianqiBrandRealm.debuff_rate(a) == 0.9, [b0, f0])
+	# 抽自己、六亲不认那一下（_plain_hit）换伤支不乘（核 P3-1）
+	_setr(a, 6)
+	_pick_all(a, {2: "fenggu"})
+	XTianqiBrand._plain_hit = a
+	var plain := XTianqiBrandRealm.dealt_mult(a, s)
+	XTianqiBrand._plain_hit = null
+	_check("trade.plain_hit_one", plain == 1.0 and XTianqiBrandRealm.dealt_mult(a, s) > 1.0, plain)
+	# 立境当场生效（核 P3-2）
+	_setr(a, 1)
+	var p0 := a.param(0)
+	XTianqiBrand.stand(a)
+	_check("stand.param_refresh", XTianqiBrand.realm(a) == 2 and a.param(0) > p0, [p0, a.param(0)])
 	lg.end_battle()
 
 
@@ -250,7 +333,7 @@ func _swap() -> void:
 	var lst := XZhenqi.menu(s, {"page": "branch", "id": a.actor_id})
 	_check("menu.list", lst.options.size() == 7, lst.options.size())
 	var pk := XZhenqi.menu(s, {"page": "branch_pick", "id": a.actor_id, "r": 1})
-	_check("menu.pick", pk.options.size() == 4 and str(pk.lines[1]).contains("免费"), pk)
+	_check("menu.pick", pk.options.size() == 4 and str(pk.lines[1]) == XTianqiBrandRealm.TEXT_COST_FREE, pk)
 	var st := XZhenqi.menu(s, {"page": "branch_set", "id": a.actor_id, "r": 1, "k": "qingxin"})
 	_check("menu.set", XTianqiBrandRealm.branch_of(a, 1).key == "qingxin" and st.next.page == "branch", st)
 	# 打赢心魔：立入下一段后当场到选分支
@@ -258,6 +341,25 @@ func _swap() -> void:
 	XZhenqi.trial_done = {"actorId": a.actor_id, "target": 2, "won": true, "brand": true}
 	var te := XZhenqi.menu(s, {"page": "trial_end"})
 	_check("menu.after_stand", XTianqiBrand.realm(a) == 2 and te.get("next", {}).get("page") == "branch_pick" and int(te.next.r) == 2, te)
+	# 核 P1-2：只在方桌大厅换支；不在大厅（塔层、副本）选过的段不让改、不扣钱，没选过的段（破境当场选）照放
+	_setr(a, 3)
+	_pick_all(a, {1: "dichen"})
+	s.gold = 99999999
+	var g0 := int(s.gold)
+	s.map_id = 30
+	var away := XTianqiBrandRealm.choose(s, a, 1, "qingxin")
+	var away_pk := XTianqiBrandRealm.pick_page(s, a, 1)
+	_check("hall.block_change", away == XTianqiBrandRealm.TEXT_HALL_ONLY and XTianqiBrandRealm.branch_of(a, 1).key == "dichen" and int(s.gold) == g0
+		and str(away_pk.lines[1]) == XTianqiBrandRealm.TEXT_HALL_ONLY and away_pk.options.all(func(o): return str(o.next.page) != "branch_set"), [away, away_pk])
+	_check("hall.first_pick_ok", XTianqiBrandRealm.choose(s, a, 2, "suihuo") == "" and XTianqiBrandRealm.branch_of(a, 2).key == "suihuo")
+	s.map_id = XTianqi.HALL_MAP
+	s.set_variable(XDungeon.VAR_INSIDE, 1)
+	_check("hall.block_dungeon", XTianqiBrandRealm.choose(s, a, 1, "qingxin") == XTianqiBrandRealm.TEXT_HALL_ONLY and not XTianqiBrandRealm.can_change(s))
+	s.set_variable(XDungeon.VAR_INSIDE, 0)
+	_check("hall.ok", XTianqiBrandRealm.can_change(s) and XTianqiBrandRealm.choose(s, a, 1, "qingxin") == "" and int(s.gold) < g0)
+	# 定稿文字
+	_check("text.final", XTianqiBrandRealm.TEXT_MENU == "加深分支（已选 %d/%d）" and XTianqiBrandRealm.describe(XTianqiBrandRealm.branches(1)[0]) == "魔防 +3%、生命 +3%"
+		and XTianqiBrandRealm.describe(XTianqiBrandRealm.branches(2)[1]) == "伤害 +3%、承伤 +3%")
 	# 不染这一段不显示的西游档
 	var ox := _state(false)
 	var b: XActor = ox.battle_members()[0]

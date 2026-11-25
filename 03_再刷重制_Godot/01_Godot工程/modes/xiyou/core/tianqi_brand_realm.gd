@@ -4,7 +4,7 @@ extends RefCounted
 ## 《天启篇_烙印 v0.6》第四节第 5 条：D129 迎劫境底攻换生命、九条带攻境支去攻、D145 四条换伤支）。数在 brand.json 的 realm 段。
 ## 只在天启篇、烙印开着（XTianqiBrand.on）时算；西游档、开关关着每个入口都是「没有」（倍率 1、加 0）。
 ## 境按立到的境（XTianqiBrand.realm，打赢心魔才升）算，不按烙印值；境支每境（不染～逆命）一条，存在 zhenqi.brand_branch {"境号": 支 key}。
-## 没选过的境按第一条算（老档口径：默认第一支），第一次选免费；之后换支花钱、一次换一境（闭关菜单，大厅里才有）。
+## 没选过的境按第一条算（老档口径：默认第一支），第一次选免费；之后换支花钱、一次换一境，只在方桌大厅（不在副本、里副本里；can_change）。
 ## 道法（3C）和境支联动（3B）不在本卡：联动只在表里写给人看。
 ##
 ## | 入口 | 干什么 | 谁调 |
@@ -15,7 +15,7 @@ extends RefCounted
 ## | state_rate(角色, 状态)／debuff_rate(角色) | 不染：被上有害状态、能力减益 10% 不中（和异常抵抗相乘） | BattleLogic.state_rate／add_debuff_effect、XTianqiElementEffects |
 ## | heal(角色, 量) | 砥柱：战斗里生命低于一半时受到的回复 +15%（各线削减之后） | XTianqiBrand.heal |
 ## | big_hit(角色, 伤害) | 迎劫：一下超过最大生命一半的部分少受三成 | BattleLogic.execute_hp_damage（各保命之前） |
-## | rally(logic, 角色) | 逆命：每场一次，生命第一次掉到三成以下、人还活着时回复最大生命 20% | BattleLogic.execute_hp_damage 末尾 |
+## | note_hit／after_hit | 逆命：每场一次，挨打真掉了血、掉到三成以下还活着，这一击结算完后独立回复最大生命 20% | execute_hp_damage 记；apply、horseman_strike 末尾结算 |
 
 ## false＝回退：境底、境支一律不算，闭关菜单不出「分支」
 static var ENABLED := true
@@ -24,15 +24,19 @@ const PARAM := {"mhp": 0, "mmp": 1, "atk": 2, "def": 3, "mat": 4, "mdf": 5, "agi
 const PARAM_CN := ["生命", "魔法", "物攻", "物防", "魔攻", "魔防", "敏捷", "幸运"]
 const KEY := "brand_branch"
 const RALLY := "realm_rally"
-## 玩家可见文字（交付单单列，待小A 文字审）。D174：不用「境」作总称，说七段原名＋「分支」
-const TEXT_MENU := "加深分支（%d/%d 已选）"
-const TEXT_HEAD := ["\\C[6]%s\\C[0] 的加深分支", "每段选一条分支，属性当场生效。第一次选免费，之后改选要花%s。"]
+const RALLY_HIT := "realm_rally_hit"
+## 玩家可见文字（已过小A 文字审，T514 核报告第四节定稿）。D174：不用「境」作总称，说七段原名＋「分支」
+const TEXT_MENU := "加深分支（已选 %d/%d）"
+const TEXT_HEAD := ["\\C[6]%s\\C[0] 的加深分支", "每段可选一条分支，属性即刻生效；首次免费，改选消耗%s。"]
 const TEXT_PICK_HEAD := "\\C[6]%s\\C[0]「%s」分支：现为「%s」%s"
-const TEXT_UNPICKED := "（未选，按第一条算）"
-const TEXT_FREE := "免费"
-const TEXT_DONE := "%s 的「%s」分支改为「%s」。"
+const TEXT_UNPICKED := "（未选，默认首项）"
+const TEXT_COST_FREE := "本次选择免费。"
+const TEXT_COST_PAID := "改选需消耗 %d %s。"
+const TEXT_DONE := "%s 的「%s」分支已定为「%s」。"
 const TEXT_POOR := "%s不足（需要 %d）。"
-const TEXT_TRADE := "伤害+%d%%、承伤+%d%%"
+const TEXT_TRADE := "伤害 +%d%%、承伤 +%d%%"
+const TEXT_PARAM := "%s +%d%%"
+const TEXT_HALL_ONLY := "仅限在大厅闭关处更换分支。"
 
 
 static func on(s = null) -> bool:
@@ -140,7 +144,7 @@ static func trades(a) -> Array:
 
 ## 伤害那一半：1 ＋ Σ damage（并进 K 那一项）
 static func dealt_mult(a, s = null) -> float:
-	if not a is XActor or not on(s):
+	if not a is XActor or not on(s) or is_same(a, XTianqiBrand._plain_hit):  # 抽自己、六亲不认那一下：同烙印加成按 1（T514 核 P3-1）
 		return 1.0
 	var m := 1.0
 	for t in trades(a):
@@ -209,20 +213,38 @@ static func big_hit(logic, t, value: float) -> float:
 	return value - floorf((value - line) * float(e.value.get("cut", 30)) / 100.0)
 
 
-## 逆命：每场一次，挨打后生命第一次掉到 below% 以下、人还活着，回复最大生命 heal%（走资源回复，照吃各线削减；不留那 1 点血）
-static func rally(logic, t) -> void:
+## 逆命（T514 核 P1-1 返修）：分两步。execute_hp_damage 里只记「这一下真的掉了血」（note_hit：伤害为正、生命确实减少）；
+## 这一击结算完、弹字和扣血统计都定了之后（apply 末尾、horseman_strike 末尾），after_hit 再判：每场一次，
+## 人还活着、生命在三成以下，就用独立的回复（logic.gain_hp，走资源回复、照吃各线削减和砥柱）回最大生命 heal%。
+## 治疗、护盾全挡、没掉血的一下不记，不会误耗掉这一次；不留那 1 点血。
+static func note_hit(logic, t, value: float, hp_before: float) -> void:
+	if value <= 0.0 or not t is XActor or float(t.hp) >= hp_before:
+		return
 	var c := XTianqiBrand.fight(logic)
-	if c.is_empty() or not t is XActor or not logic.actors.has(t) or not t.is_alive() or t.hp <= 0.0:
+	if c.is_empty() or _effect(t, "rally").is_empty():
 		return
-	var e := _effect(t, "rally")
-	if e.is_empty():
+	if not c.has(RALLY_HIT):
+		c[RALLY_HIT] = []
+	if not c[RALLY_HIT].has(t):
+		c[RALLY_HIT].append(t)
+
+
+static func after_hit(logic) -> void:
+	var c := XTianqiBrand.fight(logic)
+	if c.is_empty() or c.get(RALLY_HIT, []).is_empty():
 		return
+	var hit: Array = c[RALLY_HIT]
+	c[RALLY_HIT] = []
 	if not c.has(RALLY):
 		c[RALLY] = {}
-	if c[RALLY].has(t) or t.hp * 100.0 >= t.mhp * float(e.value.get("below", 30)):
-		return
-	c[RALLY][t] = true
-	logic._action_resources.gain(t, "hp", floorf(t.mhp * float(e.value.get("heal", 20)) / 100.0))
+	for t in hit:
+		var e := _effect(t, "rally")
+		if e.is_empty() or c[RALLY].has(t) or not logic.actors.has(t) or not t.is_alive() or t.hp <= 0.0:
+			continue
+		if t.hp * 100.0 >= t.mhp * float(e.value.get("below", 30)):
+			continue
+		c[RALLY][t] = true
+		logic.gain_hp(t, floorf(t.mhp * float(e.value.get("heal", 20)) / 100.0))
 
 
 # ---- 换支（闭关菜单）----
@@ -234,10 +256,24 @@ static func price(s: XState, a, r: int) -> int:
 	return XTianqiMoney.price(s, float(data().get("swap_price_units", 10)))
 
 
+## 能不能在这里改分支：稿「在大厅闭关处花钱换……战斗里、里副本里不能换」（养成线 v0.3 第三节第 5 条）。
+## 主菜单「真气」在塔层、副本、里副本也能打开，所以按地点拦：只在方桌大厅、不在副本里（T514 核 P1-2）。
+## 只拦「换」：这一段还没选过的第一次选是「破境时当场选」（稿同条），心魔可能在别处打，照放
+static func may_choose(s: XState, a, r: int) -> bool:
+	return not picked(a, r) or can_change(s)
+
+
+
+static func can_change(s: XState) -> bool:
+	return s != null and int(s.map_id) == XTianqi.HALL_MAP and not XDungeon.inside(s)
+
+
 ## 选／换：成功返回 ""，否则返回提示
 static func choose(s: XState, a, r: int, key: String) -> String:
 	if not on(s) or not a is XActor or r < 1 or r > XTianqiBrand.realm(a):
 		return "—"
+	if not may_choose(s, a, r):
+		return TEXT_HALL_ONLY
 	var b := _find(r, key)
 	if b.is_empty() or bool(b.get("hidden", false)):
 		return "—"
@@ -252,6 +288,7 @@ static func choose(s: XState, a, r: int, key: String) -> String:
 	if not d.get(KEY) is Dictionary:
 		d[KEY] = {}
 	d[KEY][str(r)] = key
+	a.param_mark_dirty()
 	XZhenqi.refresh_rewards(a)
 	return ""
 
@@ -266,7 +303,7 @@ static func describe(b: Dictionary) -> String:
 		var t := _trade_row(str(b.get("name", "")))
 		return TEXT_TRADE % [roundi(float(t.get("damage", 0)) * 100), roundi(float(t.get("taken", 0)) * 100)]
 	var each := int(data().get("branch_pct", 3))
-	return "、".join(Array(b.get("params", [])).map(func(k): return "%s+%d%%" % [PARAM_CN[int(PARAM.get(str(k), 0))], each]))
+	return "、".join(Array(b.get("params", [])).map(func(k): return TEXT_PARAM % [PARAM_CN[int(PARAM.get(str(k), 0))], each]))
 
 
 static func picked_count(a) -> int:
@@ -295,12 +332,14 @@ static func pick_page(s: XState, a, r: int) -> Dictionary:
 	var cur := branch_of(a, r)
 	var cost := price(s, a, r)
 	var opts := []
+	var ok := may_choose(s, a, r)
 	for b in branches(r):
 		var mine := str(b.get("key", "")) == str(cur.get("key", "")) and picked(a, r)
-		opts.append({"label": "%s：%s%s" % [str(b.get("name", "")), describe(b), "（当前）" if mine else ""],
-			"next": {"page": "branch_set", "id": a.actor_id, "r": r, "k": str(b.get("key", ""))}})
+		# 不在大厅：照样列出几支看属性，点了回到本页（不落到 branch_set）
+		var nxt := {"page": "branch_set", "id": a.actor_id, "r": r, "k": str(b.get("key", ""))} if ok else {"page": "branch_pick", "id": a.actor_id, "r": r}
+		opts.append({"label": "%s：%s%s" % [str(b.get("name", "")), describe(b), "（当前）" if mine else ""], "next": nxt})
 	opts.append({"label": "返回", "next": {"page": "branch", "id": a.actor_id}})
-	var tail := "（改选 %d%s）" % [cost, _unit()] if cost > 0 else "（%s）" % TEXT_FREE
+	var tail := TEXT_HALL_ONLY if not ok else (TEXT_COST_PAID % [cost, _unit()] if cost > 0 else TEXT_COST_FREE)
 	return {"lines": [TEXT_PICK_HEAD % [a.display_name(), XTianqiBrand.stage_name(r), str(cur.get("name", "")), "" if picked(a, r) else TEXT_UNPICKED], tail], "options": opts}
 
 

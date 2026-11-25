@@ -104,6 +104,7 @@ func _run() -> void:
 	_t118_off()
 	_t119_off()
 	_t120_off()
+	XTianqiBrandRealm.ENABLED = true  # 开头为量代价关掉的境底开关还原（T514 核 P3-2）
 	var passed := results.filter(func(r): return r.passed).size()
 	for r in results:
 		if not r.passed:

@@ -2593,6 +2593,7 @@ func horseman_strike(u: XBattler, t: XBattler, skill: Dictionary, value: float, 
 		r.died = true
 	r.views = views([t, u])
 	XTianqiWeakAffix.note_hit(self, u, skill, t, r)  # 天启篇弱者专属词条：四骑士主动技的直接命中也发同一个通知（v0.3.1 第二节第 2 条）
+	XTianqiBrandRealm.after_hit(self)  # 天启篇逆命境底（T514 核 P1-1）
 	return r
 
 
@@ -3180,6 +3181,7 @@ func _apply_core(u: XBattler, skill: Dictionary, t: XBattler) -> Dictionary:
 	XMira.after_apply(u, skill, t, r)  # 米拉 Game_Action.apply 包装：记劫火累计
 	XGojo.after_apply(self, u, skill, t, r)  # 天启篇五条悟进阶一：茈·收减速
 	XGojo.after_hit(self, t)  # 天启篇五条悟进阶三：自动反转
+	XTianqiBrandRealm.after_hit(self)  # 天启篇逆命境底（T514 核 P1-1）：独立回复，不改写这一击的伤害结果和弹字
 	XBlackFlash.apply_end(black_flash)
 	return r
 
@@ -3336,7 +3338,7 @@ func execute_hp_damage(u: XBattler, t: XBattler, value: float, drain: bool, item
 	XXuanBattle.hp_after(u, t, value, item)  # 璇 60 级列星：归宿、星幕的消费
 	XTianqiBrand.sear_hit(self, u, t, hubris_before)  # 天启篇烙印灼痕：敌人打中我方、生命确实掉了才涨（开关关着不取数）
 	XTianqiXinmoTraits.after_hp(self, u, t, value, hubris_before, item)  # 天启篇心魔特点（T318）：沾尘挂弱化、透骨叠／消骨裂
-	XTianqiBrandRealm.rally(self, t)  # 天启篇逆命境底（T514）：每场一次掉到三成以下回 20%
+	XTianqiBrandRealm.note_hit(self, t, value, hubris_before)  # 天启篇逆命境底（T514）：只记「真掉了血」，回复等这一击结算完（apply／horseman_strike 末尾）
 	return out
 
 

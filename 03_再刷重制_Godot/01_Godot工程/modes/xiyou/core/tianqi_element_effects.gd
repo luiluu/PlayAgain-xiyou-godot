@@ -483,7 +483,9 @@ static func _actor_state_rate(t, sid: int, borrow: int) -> float:
 	var ar := XTianqiAffixBattle.state_rate(t, sid)
 	if borrow > 0 and is_equal_approx(ar, 1.0):
 		ar = XTianqiAffixBattle.state_rate(t, borrow)
-	return rate * ar * XTianqiBrandRealm.state_rate(t, sid)  # 天启篇不染境底（T514）：和异常抵抗相乘
+	# 天启篇不染境底（T514；核 P2-1）：和异常抵抗相乘。这十二种里除了圣佑（增益）都是负面；灼烧、冰冻名字不进 harmful_state 的正则，不能靠它认
+	var br := XTianqiBrandRealm.debuff_rate(t) if sid != ST_HOLY else 1.0
+	return rate * ar * br
 
 
 ## §5.3 敌方停手预算：普通怪／精英／化形每次行动最多给 1 个目标挂停手；精英／化形另每场对同一角色最多 2 次停手

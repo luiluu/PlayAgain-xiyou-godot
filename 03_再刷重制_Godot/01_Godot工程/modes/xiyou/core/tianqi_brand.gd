@@ -244,6 +244,7 @@ static func stand(a) -> bool:
 		return false
 	_ensure_keys(a)
 	a.zhenqi["brand_realm"] = realm(a) + 1
+	a.param_mark_dirty()  # 境底、境支跟着立到的段走（T514 核 P3-2）
 	return true
 
 
