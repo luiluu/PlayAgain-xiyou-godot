@@ -30,6 +30,10 @@
   - 资源加密（T452）：导出时带私密设计仓的资源加密密钥（资源加密.py），补丁和整包同一把密钥、同样只加密文件；
     预设里的 seed 让加密 IV 由内容算出，三端仍逐字节相同；导完 资源加密.py scan 查该加密的都加密了、抽查解得开；
     底包是加密包时编辑器也要这把密钥才读得了底包（没有密钥直接停，不出明文补丁）。回退：资源加密.ENCRYPT＝False（导出副本里关加密）；
+  - 存档密钥（T489）：底包带发行存档密钥时，导出用的工程里注入同一把（发行出包.inject_save_key）；补丁目录里不许有删除条目
+    （Godot 把「底包有、工程里没有」的文件记成删除，0.04.01 因此删了密钥、玩家存档全部看不见），确要删加 --allow-removal <路径>；
+  - 存档门禁（T489）：导完用底包目录里的真 mac 包＋这份补丁，读发行密钥封存的 .ksv 档必须进得了地图（save_gate，约 1～2 分钟）；
+    --base 给的不是 devNNN_三平台发行 目录、或本机不是 Mac 时跑不了，要 --skip-save-gate "<理由>"；
   - 补丁超过 30 MB 报错（Gitee 放不下大文件，该发新底包了；--allow-big 放行）；
   - 清单的最新编号不能比原来的小；同一底包的补丁编号不能比原来的小。
 --stage 之后要做的（工具只打印、不执行）：Kyo 回「推」后，两个仓库各 `git push`，等一两分钟，再跑
@@ -189,12 +193,124 @@ def export_patch(base: Path, out: Path, dry: bool) -> Path:
             if probs:
                 shutil.rmtree(src, ignore_errors=True)
                 raise Fail('；'.join(probs) + f'（日志在 {out / "日志"}；明知故发加 --no-stub-smoke）')
+    injected = None
     try:
+        if not dry:
+            injected = inject_save_key(src, base)  # T489：底包带存档密钥就同样注入，不然 --export-patch 把它记成删除
         _export_presets(base, tmp, dry, shas, src)
     finally:
+        if injected is not None and src == PROJECT:
+            injected.unlink(missing_ok=True)  # 真脚本回退直接用工程导：导完删掉，不留在工作区（.gitignore 了）
         if src != PROJECT:
             shutil.rmtree(src, ignore_errors=True)
     return _check_patch(tmp, dry, shas)
+
+
+# T489（v0.04.01 存档「不见」事故，cc 11-25）：发行存档密钥只在出整包时注入（发行出包.py inject_save_key、不进仓库）。
+# 补丁导出用 --patches 底包做差异，Godot 4.4 起把「底包有、这次工程里没有」的文件记成删除（PACK_FILE_REMOVAL）——
+# 0.04.01 就这样把 content/save_seal_key.json 删了：发行版没了密钥就不封存，玩家的 .ksv 存档在读档页全变空。
+# 现在：底包里有密钥就在导出用的工程里注入同一把（与整包同一个来源、同样先查格式），导完补丁里不能有任何删除条目。
+INJECT_SAVE_KEY = True  # 回退开关：False＝补丁流程不注入密钥（底包带密钥时删除门禁会拦下，不会再悄悄删）
+ALLOWED_REMOVALS = set()  # 确实要在补丁里删掉的底包文件（res:// 之后的路径）；单次放行用 --allow-removal <路径>
+PCK_FILE_REMOVAL = 2
+
+
+def _rel_mod():
+    spec = importlib.util.spec_from_file_location('发行出包', HERE / '发行出包.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
+def pck_dir(path: Path) -> dict:
+    """补丁或底包 pck 的目录：名字 → (偏移, 字节数, 标志)。"""
+    enc = _enc_mod()
+    with open(path, 'rb') as f:
+        return enc.pck_entries(f, enc.pck_base(f, path))
+
+
+def base_has_save_key(base: Path) -> bool:
+    if not Path(base).is_file():
+        return False  # 测试夹具的假底包路径；真出包时 resolve_base 已确认底包存在
+    return _rel_mod().SAVE_KEY_DEST in pck_dir(base)
+
+
+def inject_save_key(src: Path, base: Path):
+    """底包带存档密钥时往 src 工程注入同一把（复用 发行出包.inject_save_key 的格式检查和读回比对）；返回写进去的文件，没注入返回 None。"""
+    if not INJECT_SAVE_KEY or not base_has_save_key(base):
+        return None
+    rel = _rel_mod()
+    bad = rel.inject_save_key(src)
+    if bad:
+        raise Fail('补丁要带的存档密钥：' + bad)
+    return src / rel.SAVE_KEY_DEST
+
+
+def removal_problems(patch: Path, allowed=None) -> list:
+    """补丁里的删除条目（白名单以外的）。底包里的任何文件被删都可能让玩家的东西「消失」，默认一律不发。"""
+    ok = ALLOWED_REMOVALS | set(allowed or ())
+    return [f'补丁会删掉底包里的 {n}（不是有意删就是导出工程缺了它；确要删加 --allow-removal {n}）'
+            for n, (_o, _s, fl) in sorted(pck_dir(patch).items()) if fl & PCK_FILE_REMOVAL and n not in ok]
+
+
+ALLOW_REMOVAL = []
+SKIP_SAVE_GATE = ''  # --skip-save-gate "<理由>"：确实跑不了存档门禁（不是 Mac、底包目录里没有 mac 包）时写明理由跳过
+
+
+def save_gate(base_dir: Path, patch: Path, base_code: int, logs: Path) -> list:
+    """T489 出包门禁：用真底包的 mac 包＋这份补丁，读发行密钥封存的 .ksv 档要能进地图。返回问题（空＝通过）。
+    做法（临时 HOME，全程无头静音）：工程造明文旧档 → 底包自己读一次（封存成 .ksv，就是 v0.04 玩家手里的样子）→ 删掉明文 →
+    补丁登记进 updates/（已确认）→ 再读档：要 BOOT_PATCH loaded=true、第一下确认后不是新开局、最后进地图、封存记号 .sealed_v1 还在。"""
+    import tempfile
+    if sys.platform != 'darwin':
+        return ['本机不是 Mac，跑不了补丁存档门禁（确实跑不了加 --skip-save-gate "<理由>"）']
+    rel = _rel_mod()
+    zipf = base_dir / rel.MAC_ZIP
+    if not zipf.is_file():
+        return [f'底包目录 {base_dir} 里没有 {rel.MAC_ZIP}，跑不了补丁存档门禁（--base 给 devNNN_三平台发行 目录；确实没有加 --skip-save-gate "<理由>"）']
+    logs.mkdir(parents=True, exist_ok=True)
+    work = Path(tempfile.mkdtemp(prefix='xiyou_patch_save_gate_'))
+    try:
+        if subprocess.run(['ditto', '-x', '-k', str(zipf), str(work / 'app')]).returncode:
+            return [f'解不开 {zipf.name}']
+        exes = [x for x in sorted((work / 'app').glob('*.app/Contents/MacOS/*')) if x.is_file() and os.access(x, os.X_OK)]
+        if not exes:
+            return [f'{zipf.name} 里没有可执行文件']
+        home = work / 'home'
+        root = home / 'Library' / 'Application Support' / rel.release_user_dir()
+        save_dir = root / 'modes' / 'xiyou'
+        bad = rel.make_old_save(work / 'old_save', logs)
+        if bad:
+            return ['存档门禁：' + bad]
+        save_dir.mkdir(parents=True)
+        shutil.copy2(work / 'old_save' / 'save_1.json', save_dir / 'save_1.json')
+        print('· 存档门禁：底包读一次旧档，封存成发行密钥的 .ksv')
+        rc, text = rel._run_app(exes[0], home, rel.RUN_LOAD_KEYS, logs / '存档门禁_底包封存.log')
+        ok, note = rel.judge_run('底包封存', rc, text, first_not_map=True)
+        if not ok or not (save_dir / 'save_1.ksv').is_file() or not (save_dir / '.sealed_v1').is_file():
+            return [f'存档门禁：底包没把旧档封存成 .ksv（{note}；日志 {logs / "存档门禁_底包封存.log"}）——底包本身不封存就测不了']
+        (save_dir / 'save_1.json').unlink()
+        upd = root / 'updates'
+        upd.mkdir(parents=True)
+        shutil.copy2(patch, upd / patch.name)
+        (upd / 'active.json').write_text(json.dumps({'file': patch.name, 'sha256': sha256(patch), 'size': patch.stat().st_size, 'base': base_code,
+                                                     'code': current_code(), 'confirmed': True, 'boots': 0, 'prev': None}), encoding='utf-8')
+        print('· 存档门禁：装上补丁再读这份 .ksv')
+        rc, text = rel._run_app(exes[0], home, rel.RUN_LOAD_KEYS, logs / '存档门禁_补丁读档.log')
+        ok, note = rel.judge_run('补丁读档', rc, text, first_not_map=True)
+        probs = []
+        if 'BOOT_PATCH loaded=true' not in text:
+            line = next((l for l in text.splitlines() if 'BOOT_PATCH' in l), '没有 BOOT_PATCH 行')
+            probs.append(f'存档门禁：补丁没载入（{line.strip()[:120]}）')
+        if not ok:
+            probs.append(f'存档门禁：装补丁后读不到发行密钥封存的存档（{note}）——玩家会看到存档「不见了」')
+        if not (save_dir / '.sealed_v1').is_file():
+            probs.append('存档门禁：装补丁后封存记号 .sealed_v1 被删（游戏没了存档密钥、退回明文模式，.ksv 全看不见）')
+        if probs:
+            probs[-1] += f'（日志 {logs / "存档门禁_补丁读档.log"}）'
+        return probs
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
 
 
 REAL_SCRIPTS = False  # 回退开关：True＝补丁照旧带天启篇真脚本
@@ -254,6 +370,9 @@ def _check_patch(tmp: Path, dry: bool, shas: dict) -> Path:
         return tmp / 'Windows.pck'
     if len(set(shas.values())) != 1:
         raise Fail('三个预设导出的补丁不一样，不能当通用补丁发：' + json.dumps(shas, ensure_ascii=False))
+    gone = removal_problems(tmp / 'Windows.pck', ALLOW_REMOVAL)  # T489：先查删除条目（存档密钥被删就是这里该拦）
+    if gone:
+        raise Fail(f'补丁有 {len(gone)} 个删除条目，不能发：' + '；'.join(gone[:10]))
     # 发行内容审计（11-13 漩涡异化设计稿随 0.475 补丁外泄后加）：补丁里不许有没发行的内容
     spec = importlib.util.spec_from_file_location('发行内容审计', HERE / '发行内容审计.py')
     m = importlib.util.module_from_spec(spec)
@@ -459,9 +578,14 @@ def main(argv=None) -> int:
     ap.add_argument('--no-files-manifest', action='store_true')
     ap.add_argument('--no-stub-smoke', action='store_true', help='导出前不跑空壳树开战冒烟（默认跑，约 40 秒）')
     ap.add_argument('--no-player-pack', action='store_true')
+    ap.add_argument('--allow-removal', action='append', help='放行补丁里删掉底包的这个文件（res:// 之后的路径，可多次；T489）')
+    ap.add_argument('--skip-save-gate', help='不跑补丁存档门禁，写明理由（T489；默认在 Mac 上用真底包 mac 包跑）')
     a = ap.parse_args(argv)
     global NO_STUB_SMOKE
     NO_STUB_SMOKE = NO_STUB_SMOKE or a.no_stub_smoke
+    ALLOW_REMOVAL[:] = a.allow_removal or []
+    global SKIP_SAVE_GATE
+    SKIP_SAVE_GATE = (a.skip_save_gate or '').strip()
     try:
         repos = [Path(p).expanduser() for p in a.repos] if a.repos else DEFAULT_REPOS
         embedded = embedded_public_key()
@@ -507,6 +631,13 @@ def main(argv=None) -> int:
                 if size > MAX_PATCH and not a.allow_big:
                     raise Fail(f'补丁 {size / 1e6:.1f} MB 超过 30 MB：该发新底包了（硬要发加 --allow-big）')
                 entry = {'code': code, 'size': size, 'sha256': sha256(patch_file), 'urls': []}
+                if SKIP_SAVE_GATE:
+                    print(f'⚠ 跳过补丁存档门禁：{SKIP_SAVE_GATE}')
+                else:
+                    gate = save_gate(base.parent.parent if base.parent.name == 'windows' else base.parent, patch_file, base_code, out / '日志')
+                    if gate:
+                        raise Fail('；'.join(gate))
+                    print('· 存档门禁通过：真底包＋本补丁读得到发行密钥封存的存档、进了地图')
 
         files_pair = None
         if patch_file is not None and a.old_tree and not a.no_files_manifest:

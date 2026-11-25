@@ -26,7 +26,10 @@ class Base(unittest.TestCase):
         self.key = self.t / 'k.pem'
         sh('openssl', 'genpkey', '-algorithm', 'RSA', '-pkeyopt', 'rsa_keygen_bits:2048', '-out', str(self.key))
         self.pub = M.public_of(self.key)
-        self._saved = (M.embedded_public_key, M.export_patch, M.current_code, M.NEW_TREE)
+        self._saved = (M.embedded_public_key, M.export_patch, M.current_code, M.NEW_TREE, M.save_gate)
+        self.gate_calls = []
+        self.gate_result = []
+        M.save_gate = lambda *a: (self.gate_calls.append(a), list(self.gate_result))[1]  # 存档门禁要跑真 mac 包：离线测试打桩
         M.embedded_public_key = lambda: self.pub
         M.current_code = lambda: 470
         self.patch_bytes = b'PATCH' * 1000
@@ -71,7 +74,9 @@ class Base(unittest.TestCase):
         return self._tree(self.t / f'tree_{code}', code)
 
     def tearDown(self):
-        M.embedded_public_key, M.export_patch, M.current_code, M.NEW_TREE = self._saved
+        M.embedded_public_key, M.export_patch, M.current_code, M.NEW_TREE, M.save_gate = self._saved
+        M.ALLOW_REMOVAL[:] = []
+        M.SKIP_SAVE_GATE = ''
         self.td.cleanup()
 
     def run_tool(self, *args):
@@ -296,6 +301,75 @@ class RuleTests(Base):
 
     def test_embedded_key_is_read_from_game_code(self):
         self.assertIn('BEGIN PUBLIC KEY', self._saved[0]())
+
+
+def fake_pck(path: Path, entries) -> Path:
+    """造一个只有目录的 Godot pck（格式 3）：entries＝[(名字, 标志)]。"""
+    import struct
+    d = bytearray(struct.pack('<I', len(entries)))
+    for name, fl in entries:
+        n = ('res://' + name).encode()
+        n += b'\0' * ((4 - len(n) % 4) % 4)
+        d += struct.pack('<I', len(n)) + n + struct.pack('<QQ', 0, 0 if fl & 2 else 10) + b'\0' * 16 + struct.pack('<I', fl)
+    head = b'GDPC' + struct.pack('<IIIIIQQ', 3, 4, 7, 2, 2, 0, 104) + b'\0' * 64
+    path.write_bytes(head + bytes(d))
+    return path
+
+
+class T489Tests(Base):
+    """v0.04.01 事故：补丁把底包里的存档密钥记成删除，玩家 .ksv 存档全看不见。"""
+    def test_removal_entry_refused_unless_allowed(self):
+        pck = fake_pck(self.t / 'p.pck', [('content/build_info.json', 1), ('content/save_seal_key.json', 2)])
+        probs = M.removal_problems(pck)
+        self.assertEqual(len(probs), 1)
+        self.assertIn('content/save_seal_key.json', probs[0])
+        self.assertEqual(M.removal_problems(pck, ['content/save_seal_key.json']), [])
+        self.assertEqual(M.removal_problems(fake_pck(self.t / 'q.pck', [('a.gd', 1), ('b.json', 0)])), [])
+
+    def test_check_patch_refuses_removal(self):
+        d = self.t / 'exp'
+        d.mkdir()
+        fake_pck(d / 'Windows.pck', [('content/save_seal_key.json', 2)])
+        with self.assertRaises(M.Fail) as cm:
+            M._check_patch(d, False, {'a': 'x', 'b': 'x'})
+        self.assertIn('删除条目', str(cm.exception))
+
+    def test_base_key_detected_and_injected(self):
+        import os
+        key = self.t / 'save_seal_key.json'
+        key.write_text(json.dumps({'current': 1, 'keys': {'1': 'ab' * 32}}))
+        old = os.environ.get('XIYOU_SAVE_KEY')
+        os.environ['XIYOU_SAVE_KEY'] = str(key)
+        try:
+            src = self.t / 'src'
+            (src / 'content').mkdir(parents=True)
+            no_key = fake_pck(self.t / 'b0.pck', [('content/build_info.json', 1)])
+            with_key = fake_pck(self.t / 'b1.pck', [('content/build_info.json', 1), ('content/save_seal_key.json', 1)])
+            self.assertFalse(M.base_has_save_key(no_key))
+            self.assertIsNone(M.inject_save_key(src, no_key))  # 底包没密钥（加密前的旧整包）：不往补丁里加
+            self.assertTrue(M.base_has_save_key(with_key))
+            got = M.inject_save_key(src, with_key)
+            self.assertEqual(got.read_bytes(), key.read_bytes())
+            key.write_text('{"current": 1}')  # 格式不对：不出包
+            with self.assertRaises(M.Fail):
+                M.inject_save_key(src, with_key)
+        finally:
+            if old is None:
+                os.environ.pop('XIYOU_SAVE_KEY', None)
+            else:
+                os.environ['XIYOU_SAVE_KEY'] = old
+
+    def test_save_gate_runs_and_blocks(self):
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453'), 0)
+        self.assertEqual(len(self.gate_calls), 1)
+        self.gate_result = ['存档门禁：装补丁后读不到发行密钥封存的存档']
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453'), 1)
+
+    def test_skip_save_gate_needs_reason(self):
+        self.gate_result = ['不该跑到']
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--skip-save-gate', '本机不是 Mac'), 0)
+        self.assertEqual(self.gate_calls, [])
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--skip-save-gate', '  '), 1)
 
 
 if __name__ == '__main__':
