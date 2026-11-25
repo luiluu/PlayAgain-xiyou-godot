@@ -18,6 +18,12 @@
 - `tests/xiyou_tianqi_nine_off` 的「套装状态 41 被九线停用」那一段借的是 9 号勇士套的原效果，9 号进了模板样板后那一段临时关 `TEMPLATE` 量原效果（其余不变）。
 - 玩家可见：天启篇存档里这 5 套原版套装的效果变了（如高阶火焰 3 件从「火焰伤害 +45%」变成四阶「火焰伤害 +10%」）；装备说明卡上的套装效果文字还是原版的（见「没做」）。
 
+## 优化登记草稿
+
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | `modes/xiyou/core/tianqi_suits.gd` `XTianqiSuits.TEMPLATE` | （天启篇新增）原版套装照原效果（被动技能、状态、固定值，最高到「所有伤害结果乘 2」） | 归了类的原版套装多件档按模板表 `tianqi_data/suit_template.json` 取（类型×件数档×阶，件数档不累加、阶取最低），1 件档和没归类的套装照旧；西游档零改动 | 养成线重做方案 v0.3 第三节第 3 条「模板套」（Kyo 11-14）；口径协调 11-25 回 T515 | `XTianqiSuits.TEMPLATE = false` | cc（T515） | 保留 |
+
 ## 交接板
 
 - 下一步：2C（约 130 套归类填表，先 15 套样板给 Kyo）可接；2E 单件 49 套另开。装备说明卡（`ui/gear_info.gd` 套装段、新皮肤说明牌）对归了类的套装还显示原效果文字，建议开一张界面小单按模板显示（玩家可见文字过小A）。
@@ -40,7 +46,7 @@
 | `XTianqiAffixBattle.fold` | 2 处（`git grep -nE '[^._a-z]fold\(' -- 'modes/xiyou/core/tianqi_affix_battle.gd'`） | 调用方 2 处逐处结论：personal、auras_of；只多认「条目带 value 就用 value」，装备词条条目（{key, tier, grade, extra}，见 tianqi_affix_roll.gd:292、tianqi_qiyin_equip.gd:163）都不带 value，结果不变 |
 | `XTianqiAffixBattle.personal` | 3 处（`git grep -nE '[^._a-z]personal\(' -- '*.gd' ':!*/tests/*'`） | 调用方 3 处逐处结论：party_sum、view（战斗中、战斗外）；多并入 `XTianqiSuits.affix_entries`，不在天启篇或开关关时是空数组，结果不变 |
 | `XTianqiDrop.sources_of` | 1 处（`git grep -nE 'sources_of\(' -- '*.gd' ':!*/tests/*'`） | 调用方 1 处逐处结论：party_bonus；只有带 tqTemplate 标记的模板档换成按表值，原版套装档照旧落档 |
-| 新开关 `XTianqiSuits.TEMPLATE`（O-待定） | 新增 | 默认 true；登记优化登记：`modes/xiyou/core/tianqi_suits.gd` `XTianqiSuits.TEMPLATE`｜（天启篇新增）原版套装照原效果｜归了类的原版套装多件档按模板表取（类型×件数档×阶）｜养成线重做方案 v0.3 第三节第 3 条；协调 11-25｜`XTianqiSuits.TEMPLATE = false`｜cc（T515）｜保留 |
+| 新开关 `XTianqiSuits.TEMPLATE`（O-待定） | 新增 | 默认 true；登记见上「优化登记草稿」 |
 
 ## 验证
 
