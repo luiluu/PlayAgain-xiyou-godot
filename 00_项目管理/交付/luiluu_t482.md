@@ -60,13 +60,14 @@
 
 - 本机前台（`--audio-driver Dummy`，隔离 HOME）：`xiyou_tianqi_element_effects.tscn` 88/88（含新增 T482 九条、T485 P2-1 两条）
 - `发行空壳.py check`：0
-- 云端选测：见下
+- 云端选测：整轮 811 个场景、16 片全绿，偶发 3 个（并行失败、单跑通过：`xiyou_floor_reach080`、`xiyou_tianqi_skill_debt`、`xiyou_ui_detail_d3`，与本单无关）
 
 ## 云端选测
 
-（待写）
+- 提交 567f877feb（`ci/luiluu/t482`，整轮，选测基准 3370833830）：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45585130718 ，`gh run watch` 前台等到跑完，结论 success（19 个 job 全 ✓）。
 
 ## 本分支提交
 
 - 55b4ac98a WIP：元素效果 D 卡主体（图标、跳字、角色属性、圣佑改名、T485 核 P2-1 测试）
 - 960e13a8f 截图工具、寄生换图标、截图入仓
+- 交付单草稿与云端结果补写（本提交）
