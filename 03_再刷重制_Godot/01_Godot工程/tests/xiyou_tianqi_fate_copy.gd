@@ -18,6 +18,7 @@ const NAMES := {6862: "火", 6863: "风", 6864: "地", 6865: "雷", 6866: "冰",
 
 
 func _ready() -> void:
+	XTianqiBalance.data()["combat_rules"]["base_damage"] = 0.13  # T501：本测试测机制不测 K，木桩血量按 K=0.13 写的；K 改 1.25 后会被一击打死，这里钉回 0.13
 	_run.call_deferred()
 
 
