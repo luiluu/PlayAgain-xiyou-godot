@@ -1113,6 +1113,10 @@ func _p7() -> void:
 	# 【cc·T204】D208：终式按段打（10245 terminal_hits 空间斩 4、5，次元斩 5、6，合计同原 9／11；整数、×诅咒之王 1.3 后每段 ≤ 单段上限 11、最后一段最大）；
 	# D209（T204＋T209）再改成空间斩 5、6、7，次元斩 6、7、8（每段×1.3 最大 10.4）；
 	# 二十指宿傩打看破三层的目标：解转次元斩、三段跳数，每段 finalMultiplier＝段倍率÷解卡上 4；TUNE_D209 关掉照 D208 两段，再关 TUNE_D208 照一段 9／11
+	# T496：下面这段查 D208／D209 两层自己的数，先关 D287（三段收拢覆盖层），查完再开、另查 p7_d287_table
+	var d287_on := XTianqiBase.TUNE_D287
+	XTianqiBase.TUNE_D287 = false
+	XTianqiSkills.reload_table()
 	var h34 := XSukuna.tq_terminal_hits(10234)
 	var h35 := XSukuna.tq_terminal_hits(10235)
 	var cap11 := float(XTianqiSkills.data().get("rules", {}).get("single_hit_cap", {}).get("超强者", 0.0))
@@ -1194,6 +1198,28 @@ func _p7() -> void:
 		and is_equal_approx(gy_pct_off[0], 0.1) and is_equal_approx(gy_pct_off[1], 1.0) and gy_pct_off[2].contains("100%提到120%")
 		and is_equal_approx(nano_off[0], 12.0) and int(nano_off[1][0].n) == 2, [d9.size(), d9_int, nano, gy_on, gy_off, nano_off, gy_pct_on, gy_pct_off])
 	_check("p7_d209_guyu_cards", gy_card_on and gy_card_off, [gy_card_on, gy_card_off, gy_note.call(10288)])
+	# 【cc·T496】D287 路线一（Kyo 11-25 事项 55 选 A）：超强者主招按炼狱 80% 实测收拢、五人离群修；系数整数或整数百分比；关掉 TUNE_D287 回 D209
+	XTianqiBase.TUNE_D287 = d287_on
+	XTianqiSkills.reload_table()
+	var d287 := XTianqiSkills.data().get("tune", {}).get("D287", {}).get("skills", {}) as Dictionary
+	var d287_int := d287.keys().all(func(k):
+		var dm: Dictionary = d287[k].get("damage", {})
+		var ok := not dm.has("coef") or float(dm.coef) == roundf(float(dm.coef)) or (float(dm.coef) < 1.0 and is_equal_approx(float(dm.coef) * 100.0, roundf(float(dm.coef) * 100.0)))
+		for st in dm.get("stats", {}):
+			var v := float(dm.stats[st]) * float(dm.get("coef", 1.0))
+			ok = ok and (is_equal_approx(v, roundf(v)) or (v < 1.0 and is_equal_approx(v * 100.0, roundf(v * 100.0))))
+		return ok)
+	var on287 := [XTianqiSkills.spec(9938).damage.stats.get("atk"), XSukuna.tq_terminal_hits(10235), XTianqiSkills.spec(10641).get("gojo_pairs"), XGuyu.tq_pct("finish_pct", 100.0),
+		float(XTianqiSkills.spec(3776).damage.coef), str(XDB.rec("Skills", 10292).get("note", "")).contains("×9%")]
+	XTianqiBase.TUNE_D287 = false
+	XTianqiSkills.reload_table()
+	var off287 := [XTianqiSkills.spec(9938).damage.stats.get("atk"), XSukuna.tq_terminal_hits(10235), XTianqiSkills.spec(10641).get("gojo_pairs"), XGuyu.tq_pct("finish_pct", 100.0),
+		float(XTianqiSkills.spec(3776).damage.coef)]
+	XTianqiBase.TUNE_D287 = d287_on
+	XTianqiSkills.reload_table()
+	_check("p7_d287_table", not XTianqiBase.TUNE_D287 or (d287_int and int(on287[0]) == 3 and on287[1] == [3.0, 4.0, 5.0] and on287[2] == [2, 4, 9]
+		and is_equal_approx(on287[3], 0.09) and is_equal_approx(on287[4], 1.0) and on287[5]
+		and int(off287[0]) == 5 and off287[1] == [6.0, 7.0, 8.0] and is_equal_approx(off287[3], 0.93) and is_equal_approx(off287[4], 6.0)), [d287_int, on287, off287])
 	# 模块法宝：百分比属性去掉
 	var view: Dictionary = XTianqiSkills.gear_view(XDB.rec("Armors", 4577).merged({"kind": "armor", "base": 4577}, true))
 	_check("p7_gear", (view.get("traits", []) as Array).filter(func(t): return int(t.code) == 21).is_empty(), view.get("traits"))

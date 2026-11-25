@@ -50,6 +50,8 @@ static var TUNE_D198 := true
 static var TUNE_D208 := true
 ## T204＋T209（D209 ABA，Kyo 11-18）：超强者按 Kyo 名次重排的覆盖层（skill_rework.json 的 tune.D209，叠在 D208 之后；可往下调）；false＋XTianqiSkills.reload_table() 照 D208
 static var TUNE_D209 := true
+## T496（D287 路线一，Kyo 11-25 事项 55）：档位倍率 1.0/1.5/2.5 不动，把超强者主招等效总系数收拢进 8～11、五人离群一起修的覆盖层（skill_rework.json 的 tune.D287，叠在 D209 之后）；false＋XTianqiSkills.reload_table() 照 D209
+static var TUNE_D287 := true
 ## T228（协调 11-19 定 A）：状态备注 <G_ShuXing> 写死的八项加减换成「持有者自身该项的整数百分比」（abs_rescale.json 的 state_shuxing 行）。
 ## 只在总开关开着时生效；false＝照原数加减（回退）。原版量级的 ±500～±30000 在期四本体（81 级攻击约 3766，原量级主攻中位 1854）上的分量对不上
 static var ABS_SHUXING := true

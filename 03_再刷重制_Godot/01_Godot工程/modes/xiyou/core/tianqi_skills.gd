@@ -77,8 +77,8 @@ static func data() -> Dictionary:
 			push_error("XTianqiSkills: JSON 解析失败 " + PATH)
 			return {}
 		_data = parsed
-		for key in ["D189", "D200", "D198", "D208", "D209"]:  # T191：D200（小数系数全表取整）叠在 D189 之后；T192：D198（偏弱超强者调高）再叠在后面；T204：D208（宿傩终式按段）、D209（超强者按名次重排）最后，各自开关
-			if not {"D189": XTianqiBase.TUNE_D189, "D200": XTianqiBase.TUNE_D200, "D198": XTianqiBase.TUNE_D198, "D208": XTianqiBase.TUNE_D208, "D209": XTianqiBase.TUNE_D209}[key]:
+		for key in ["D189", "D200", "D198", "D208", "D209", "D287"]:  # T191：D200（小数系数全表取整）叠在 D189 之后；T192：D198（偏弱超强者调高）再叠在后面；T204：D208（宿傩终式按段）、D209（超强者按名次重排）；T496：D287（三档收拢）最后，各自开关
+			if not {"D189": XTianqiBase.TUNE_D189, "D200": XTianqiBase.TUNE_D200, "D198": XTianqiBase.TUNE_D198, "D208": XTianqiBase.TUNE_D208, "D209": XTianqiBase.TUNE_D209, "D287": XTianqiBase.TUNE_D287}[key]:
 				continue
 			var tune: Dictionary = _data.get("tune", {}).get(key, {})
 			for sec in ["skills", "actors", "gear"]:  # gear：T209＋D213 改百谷生卡面
