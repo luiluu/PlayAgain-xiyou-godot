@@ -161,6 +161,7 @@ static func roll_item(item: Dictionary, owner: XState = null, replacement_rows :
 	item.upgradeSlots = slots
 	item.originalUpgradeSlots = slots
 	item.baseName = str(item.name)
+	XElementalKing.on_roll(item, owner)  # 西游档「元素之王的赐福」：爆出时随机定下 13 种活跃元素之一并写入实例
 	XTianqiAffixRoll.apply(item, owner if owner != null else XState.current)  # 天启篇：掷天启篇词条
 	return item
 

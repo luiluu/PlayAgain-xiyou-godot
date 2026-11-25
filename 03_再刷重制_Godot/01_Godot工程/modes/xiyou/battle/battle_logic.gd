@@ -3737,6 +3737,13 @@ func _liuying_core() -> Array:
 	return get_meta("liuying_core")
 
 
+## 元素之王的赐福只掷一次（西游档二层深渊【未知存在】固定 1/888，不吃掉率加成）
+func _elemental_king_drops() -> Array:
+	if not has_meta("elemental_king_drops"):
+		set_meta("elemental_king_drops", XElementalKing.battle_drops(self))
+	return get_meta("elemental_king_drops")
+
+
 func rewards() -> Dictionary:
 	tianqi_restore()  # T086-a：胜利结算前还原出战栏＋在场名单（读 actors 的套装金钱率等按发作前的位置）
 	if XTianqiGojoTrial.no_rewards(self):
@@ -3764,6 +3771,7 @@ func rewards() -> Dictionary:
 		drops.append_array(rolled)
 	drops.append_array(XMira.abyss_bonus(self))  # 米拉 makeRewards 包装：深渊地图 1/30 黑龙进阶石
 	drops.append_array(_liuying_core())  # 流萤 makeRewards 包装（第 34 个，奖励最后）：萨姆残核
+	drops.append_array(_elemental_king_drops())  # 西游档：二层深渊【未知存在】固定 1/888 掉落「元素之王的赐福」（不吃掉率、不被屏蔽）
 	drops.append_array(_tag_src(XTianqiDrop.battle_drops(self), "generic"))  # 天启篇通用掉落：每场掷一次（带 generic 标记，倒下即发的锁不拦它，见 grant）
 	var gold_total := floorf(gold * (2.0 if state.party_ability(4) else 1.0))
 	var out := {"exp": int(XEquipSuits.reward(reward_members, exp, 0)) * 8 * XTestMode.exp_rate(), "gold": int(XEquipSuits.reward(reward_members, gold_total, 1)) * 5, "drops": drops}
@@ -3933,7 +3941,7 @@ func grant(r: Dictionary) -> Array:
 	if not drop_lock:
 		gain_drops(r.drops)
 	else:
-		gain_drops((r.drops as Array).filter(func(d): return d.get("generic", false)))  # 天启篇通用掉落不是哪只怪倒下时发的，锁着也要发
+		gain_drops((r.drops as Array).filter(func(d): return d.get("generic", false) or d.get("elem_king", false)))  # 天启篇通用掉落与西游档元素之王的赐福不是哪只怪倒下时发的，锁着也要发
 	XAlienBattle.grant(self)  # 异化 gainDropItems 包装：异化敌人倒下就发奖励装备
 	XRiftAlien.grant(self)  # 漩涡阶段异化：倒下的异化怪点亮图鉴、按级掷一件原版异化装备（自己的随机流）
 	XTianqiAlienGear.grant(self)  # 天启篇异化装备：本线异化怪倒下按级掷（侵染 3%…终焉必掉），本体从它的掉落表里挑
