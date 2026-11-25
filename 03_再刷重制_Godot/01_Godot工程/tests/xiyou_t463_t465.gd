@@ -361,7 +361,7 @@ func _check_t465_feitian_and_cri_cap() -> void:
 	var e := XEnemy.new()
 	e.setup(1, 3)
 
-	# D286：10072（6000）、10485（2500）、10486（3000）及暴击率 500% 封顶。
+	# D286：10072（6000）、10485（1200）、10486（3000）及暴击率 500% 封顶。
 	var sk72 := XDB.rec("Skills", 10072)
 	var sk85 := XDB.rec("Skills", 10485)
 	var sk86 := XDB.rec("Skills", 10486)
@@ -398,7 +398,7 @@ func _check_t465_feitian_and_cri_cap() -> void:
 	var v85_45 := XDamage.eval_formula(sk85, f, e, vars)
 	var v86_45 := XDamage.eval_formula(sk86, f, e, vars)
 
-	var want85_cap := (float(f.atk) * 55.0 + float(f.mat) * 55.0 * (1.0 + 0.0 + 5.0 * 3.0)) * 2500.0
+	var want85_cap := (float(f.atk) * 55.0 + float(f.mat) * 55.0 * (1.0 + 0.0 + 5.0 * 3.0)) * 1200.0
 	var want72_cap := (float(f.atk) * 15.0 + float(f.mat) * 15.0 * (1.0 + 0.0 + 5.0)) * 6000.0
 	check("t465.feitian_coef_and_cri_cap_500pct",
 		cri_low < 5.0 and cri_15 > 5.0 and cri_45 > 40.0
