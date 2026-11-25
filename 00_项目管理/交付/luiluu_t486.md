@@ -209,3 +209,8 @@
 ## 动了的共用函数和开关（R3）
 
 - `XRift.backfill_from_save`（新）、`XRift.BACKFILL_FROM_SAVE`（新开关）；`XMapScene.load_map` 多调一行。没改 `XConfig.whisper_mark`／`whisper_seen` 签名。
+
+## 云端选测（R3）
+
+- 通过：提交 85239c4549，基准 fb0c7d204，195 个场景、8 片全绿（GitHub Actions run 45517409798，`gh run watch` 前台等完）。
+- 发行空壳.py check 退出 0；回退开关覆盖没有报 O-663 缺口（专项里把 `BACKFILL_FROM_SAVE` 设成 false）。
