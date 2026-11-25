@@ -37,7 +37,10 @@ def gain(runs, key=lambda r: r["out"] + r["dot"]):
 
 
 def solo(paths):
-    rows = load(paths)
+    uniq = {}
+    for r in load(paths):
+        uniq[(r["id"], r["build"])] = r   # 补量的文件放后面，同一角色同一构筑以后者为准
+    rows = list(uniq.values())
     out = ["## 场景 1：单人（逐角色）", ""]
     by_el = {}
     big = []
@@ -76,8 +79,8 @@ def solo(paths):
     out.append(f"- 单人出伤增益（出伤＋回合末持续伤害，5 种子合计）：中位 {st.median(allg)*100:.2f}%，均值 {st.mean(allg)*100:.2f}%，最大 {max(allg)*100:.2f}%")
     out.append(f"- 超 6%：{len(big)} 条；超 8%：{len([r for r in rows if r['_g'] > 0.08])} 条")
     out.append("")
-    out.append("| 系 | 构筑数 | 平均增益 | 中位 | 最大 | 最小 | 有资格 | 被免疫 | 掷点 | 挂上 | 实挂/掷 |")
-    out.append("|---|---|---|---|---|---|---|---|---|---|---|")
+    out.append("| 系 | 构筑数 | 平均增益 | 中位 | 最大 | 最小 | 有资格 | 被免疫 | 掷点 | 挂上 | 实挂/掷 | 敌人被停手位/敌出手 | 我方承伤 开/关−1 |")
+    out.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
     means = {}
     for el in sorted(by_el):
         L = by_el[el]
@@ -89,8 +92,14 @@ def solo(paths):
                     for kk, vv in v.items():
                         tot[kk] = tot.get(kk, 0) + vv
         means[el] = st.mean(gs)
+        ons = [x for r in L for x in r["runs"] if x["on"]]
+        offs = [x for r in L for x in r["runs"] if not x["on"]]
+        sk = sum(x["eskip"] for x in ons)
+        ea = sum(x["eact"] for x in ons)
+        io, iff = sum(x["inc"] for x in ons), sum(x["inc"] for x in offs)
+        extra = f" {sk}/{ea} | {((io/iff-1)*100 if iff>0 else 0):+.2f}% |"
         out.append(f"| {NAME.get(el, el)} | {len(L)} | {st.mean(gs)*100:.2f}% | {st.median(gs)*100:.2f}% | {max(gs)*100:.2f}% | {min(gs)*100:.2f}% | "
-                   f"{tot.get('eligible',0)} | {tot.get('immune',0)} | {tot.get('rolled',0)} | {tot.get('applied',0)} | {tot.get('applied',0)/max(1,tot.get('rolled',0))*100:.1f}% |")
+                   f"{tot.get('eligible',0)} | {tot.get('immune',0)} | {tot.get('rolled',0)} | {tot.get('applied',0)} | {tot.get('applied',0)/max(1,tot.get('rolled',0))*100:.1f}% |" + extra)
     if means:
         hi, lo = max(means.values()), min(means.values())
         out.append("")
@@ -290,7 +299,10 @@ def dark2(paths):
 
 def csv_solo(paths):
     out = ["id,name,build,elem,natures,seed,on,out,dot,inc,eskip,eact,rev_e,rev_a,turns,stats"]
+    uniq = {}
     for r in load(paths):
+        uniq[(r["id"], r["build"])] = r
+    for r in uniq.values():
         for x in r["runs"]:
             stats = ";".join(f"{k}:{v.get('eligible',0)}/{v.get('immune',0)}/{v.get('blocked',0)}/{v.get('rolled',0)}/{v.get('applied',0)}" for k, v in sorted(x["stats"].items()))
             out.append(f"{r['id']},{r['name']},{r['build']},{r['elem']},{'|'.join(str(int(n)) for n in r['natures'])},{x['seed']},{int(x['on'])},{x['out']:.0f},{x['dot']:.0f},{x['inc']:.0f},{x['eskip']},{x['eact']},{x.get('rev_e',0)},{x.get('rev_a',0)},{x['turns']},{stats}")

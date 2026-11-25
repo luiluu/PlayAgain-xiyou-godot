@@ -43,6 +43,9 @@ func _run() -> void:
 				var r := fight(dress_state(int(arg("id", "2")), 60), int(arg("fix", "21")), false, 0, {"turns": 3, "enemy_mhp": hp, "atk_mult": float(arg("atk", "1"))})
 				r.erase("stats")
 				print("ONE ", hp, " ", JSON.stringify(r))
+				var st := dress_state(int(arg("id", "2")), 60)
+				var a0 := st.actor(int(arg("id", "2")))
+				print("ONEINFO members=", st.battle_members().map(func(x): return x.actor_id), " hp=", a0.hp, "/", a0.mhp, " dead=", a0.is_dead(), " lv=", a0.level)
 		"team":
 			res = _team()
 		"floor":
@@ -83,6 +86,16 @@ const BASE := [2, 3, 4, 5, 6, 7, 8, 9, 14, 15]
 static func dress_state(id: int, lv := 81) -> XState:
 	var s := XState.new_game(XTianqi.legacy_of("lianyu"), id, [])
 	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": "lianyu", "lineup": [id]}
+	if not s.battle_members().any(func(x): return int(x.actor_id) == id):
+		# 新局以他为首位进不了出战栏（强者／超强者等）：用天启篇的入队路径（_joining）加进来再放到第 1 格
+		s = XState.new_game(XTianqi.legacy_of("lianyu"), 2, [])
+		s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": "lianyu", "lineup": [2]}
+		XTianqi._joining = true
+		s.add_actor(id)
+		XTianqi._joining = false
+		s.set_battle_slot(0, id)
+		for i in range(1, s.battle_slots.size()):
+			s.set_battle_slot(i, 0)
 	s.actor_max_level = lv
 	var a := s.actor(id)
 	a.change_level_mv(lv)
@@ -100,6 +113,7 @@ func _count() -> Dictionary:
 	for id in ids:
 		var s := dress_state(int(id))
 		var a := s.actor(int(id))
+		var deployable := s.battle_members().any(func(x): return int(x.actor_id) == int(id))   # 新局以他为首位建队，他能进出战栏（同 baseline_dps 的筛法）
 		var els := {}
 		var has_attack := false
 		for sk in a.skills():
@@ -109,11 +123,13 @@ func _count() -> Dictionary:
 			for e in XDamage.action_elements(sk, a):
 				if int(e) in BASE:
 					els[int(e)] = int(els.get(int(e), 0)) + 1
-		if has_attack:
+		if has_attack and deployable:
 			attackers.append(int(id))
 		var nm := str(XDB.rec("Actors", int(id)).get("name", ""))
-		detail[str(id)] = {"name": nm, "elements": els, "attack": has_attack}
+		detail[str(id)] = {"name": nm, "elements": els, "attack": has_attack and deployable, "deployable": deployable, "has_attack_skill": has_attack}
 		for e in els:
+			if not deployable:
+				break
 			if not native.has(e):
 				native[e] = []
 			native[e].append(int(id))
@@ -321,8 +337,15 @@ func calib(mk: Callable, troop: int, _mult := 10.0, _want := 0.0) -> Dictionary:
 
 
 func neutral_state_for(ids: Array, lv: int) -> XState:
-	var s := XState.new_game(XTianqi.legacy_of("lianyu"), int(ids[0]), ids.slice(1))
+	var s := XState.new_game(XTianqi.legacy_of("lianyu"), 2, [])
 	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": "lianyu", "lineup": ids.duplicate()}
+	for id in ids:
+		if int(id) != 2:
+			XTianqi._joining = true
+			s.add_actor(int(id))
+			XTianqi._joining = false
+	for i in s.battle_slots.size():
+		s.set_battle_slot(i, int(ids[i]) if i < ids.size() else 0)
 	s.actor_max_level = lv
 	for id in ids:
 		var a := s.actor(int(id))
