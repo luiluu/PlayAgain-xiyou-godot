@@ -1577,26 +1577,24 @@ def actor_nature_rules(table: dict, elements: dict, usable_ids=None) -> list:
             if src != 'no_attack' or nat:
                 bad.append('%s 号没有得票却不是 no_attack 空体质' % k)
             continue
-        top = max(votes.values())
-        tied = sorted(a for a in votes if votes[a] == top)
+        # 口径（设计稿字面）：只在基础十系元素招里数多数，无属性、高等三系只作证据不参与比票
+        bv = {a: b for a, b in votes.items() if a in base}
+        if not bv:
+            want_src = 'higher' if any(a in higher for a in votes) else 'neutral'
+            if nat or src != want_src:
+                bad.append('%s 号没有基础十系招，应无体质且 src=%s：%r／%r' % (k, want_src, nat, src))
+            continue
+        top = max(bv.values())
+        tied = sorted(a for a in bv if bv[a] == top)
         if sorted(e.get('tie') or []) != (tied if len(tied) > 1 else []):
-            bad.append('%s 号 tie %r 与得票并列项 %r 不一致' % (k, e.get('tie'), tied))
+            bad.append('%s 号 tie %r 与基础十系得票并列项 %r 不一致' % (k, e.get('tie'), tied))
         if len(tied) == 1:
-            win = tied[0]
+            if nat != tied or src != 'majority':
+                bad.append('%s 号基础十系得票唯一最高 %d，体质应为 %r、src=majority：表里是 %r／%r' % (k, tied[0], tied, nat, src))
         else:
-            win = None
-        # 并列时赢家取决于技能号，表里不存技能号，只要求结果在并列项里（或空）
-        if len(tied) == 1:
-            want = [win] if win in base else []
-            if nat != want:
-                bad.append('%s 号得票唯一最高 %d，体质应为 %r，表里是 %r' % (k, win, want, nat))
-            if src != ('majority' if want else ('higher' if win in higher else 'neutral')):
-                bad.append('%s 号 src %r 与得票不符' % (k, src))
-        else:
-            if src not in ('tie_first', 'neutral', 'higher'):
-                bad.append('%s 号并列最高 src 应为 tie_first／neutral／higher：%r' % (k, src))
-            if nat and nat[0] not in tied:
-                bad.append('%s 号体质 %r 不在并列项 %r 里' % (k, nat, tied))
+            # 并列时赢家取决于技能号，表里不存技能号，只要求结果在并列项里
+            if src != 'tie_first' or len(nat) != 1 or nat[0] not in tied:
+                bad.append('%s 号基础十系并列最高 %r，应 src=tie_first 且体质在并列项里：%r／%r' % (k, tied, nat, src))
     return bad
 
 

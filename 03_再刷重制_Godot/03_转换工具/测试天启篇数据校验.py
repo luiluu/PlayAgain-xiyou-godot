@@ -797,6 +797,13 @@ class ActorNature(unittest.TestCase):
         self.t['actors'][self._one('neutral')]['natures'] = [2]
         self.assertTrue(chk.actor_nature_rules(self.t, self.el))
 
+    def test_neutral_majority_does_not_block_element(self):
+        # 无属性票最多但有元素招：按设计稿字面只数基础十系，应有体质（4 号：无属性 4、圣 1）
+        e = self.t['actors']['4']
+        self.assertEqual((e['natures'], e['src']), ([8], 'majority'))
+        e['natures'], e['src'] = [], 'neutral'
+        self.assertTrue(any('体质应为' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
     def test_missing_usable_row_fails(self):
         self.assertTrue(any('缺行' in b for b in chk.actor_nature_rules(self.t, self.el, {99999})))
 

@@ -9,8 +9,8 @@
 - 原生元素：该角色在天启篇技能卡（skill_rework.skills 里 actor＝角色号）的**自带攻击招**（有效伤害类型是 HP 伤害／吸血，不含被动、心法、治疗、功能），
   每招的元素集按天启篇运行时口径（XTianqiElements._patch_skill）：基础记录 elementId＋Multiple Elements，再套技能卡 element 覆盖、
   skill_shifts（改水／风）、physical_shifts（物理改成 无属性＋水／风），物理（1）按无属性（0）。
-  每招给它的每个元素各记一票（多元素招每系一票，无属性算一类）；得票最多的类就是原生；并列时取并列类里「技能号最小的攻击招」所带的那一类（并列取第一个主攻招）。
-- 原生是无属性或高等三系（虚空／混沌／空间）→ 没有体质；没有任何攻击招 → 没有体质。转换书、转属、装备附伤不改体质（转换技能不属于任何角色，本来就不进票）。
+  每招给它的每个元素各记一票（多元素招每系一票；无属性、高等三系也记票，只作证据，不参与比票）；基础十系里得票最多的就是原生；并列时取并列类里「技能号最小的攻击招」所带的那一类（并列取第一个主攻招）。
+- 口径（设计稿字面，Kyo 11-25）：只在**基础十系**元素招里数多数，无属性不算一类、不参与比票；完全没有基础十系招：只有高等三系 → higher、全无属性 → neutral，都没有体质；没有任何攻击招 → 没有体质。转换书、转属、装备附伤不改体质（转换技能不属于任何角色，本来就不进票）。
 - 手工覆盖写在 MANUAL（暂空，人核差异报告里列出要人看的）；改规则直接改本文件。
 """
 import argparse
@@ -130,18 +130,23 @@ def build():
                 votes[e] += 1
                 first_of.setdefault(e, sid)
         row = dict(id=i, name=actors[i]['name'], basis='card' if any(str(s) in sk for s, _, _ in owned.get(i, [])) else 'original', votes=dict(votes), n_attack=len(used), used=used)
+        # 口径（Kyo 11-25 按设计稿字面）：只在基础十系元素招里数多数，无属性不算一类、不参与比票；old_winner 是旧口径（无属性也算一类）的赢家，只给差异报告对比
+        bv = {e: n for e, n in votes.items() if e in NAMES}
+        row['old_nature'] = None
+        if votes:
+            top0 = max(votes.values())
+            t0 = [e for e in votes if votes[e] == top0]
+            w0 = min(t0, key=lambda e: first_of[e]) if len(t0) > 1 else t0[0]
+            row['old_nature'] = w0 if w0 in NAMES else None
         if not used:
             row.update(natures=[], src='no_attack', tie=[], winner=None)
-        else:
-            top = max(votes.values())
-            tied = [e for e in votes if votes[e] == top]
+        elif bv:
+            top = max(bv.values())
+            tied = [e for e in bv if bv[e] == top]
             winner = min(tied, key=lambda e: first_of[e]) if len(tied) > 1 else tied[0]
-            src = 'tie_first' if len(tied) > 1 else 'majority'
-            if winner in NAMES:
-                row.update(natures=[winner], src=src)
-            else:
-                row.update(natures=[], src='higher' if winner in HIGHER else 'neutral')
-            row.update(tie=tied if len(tied) > 1 else [], winner=winner)
+            row.update(natures=[winner], src='tie_first' if len(tied) > 1 else 'majority', tie=tied if len(tied) > 1 else [], winner=winner)
+        else:
+            row.update(natures=[], src='higher' if any(e in HIGHER for e in votes) else 'neutral', tie=[], winner=None)
         if i in MANUAL:
             e, why = MANUAL[i]
             row.update(natures=[e] if e else [], src='manual', verdict=why)
@@ -173,14 +178,14 @@ def report(outdir, actors, rows, disabled, released, rework, missing):
         for r in sel:
             out.append('| %d | %s | %d | %s | %s | %s%s |' % (r['id'], r['name'], r['n_attack'], fvotes(r['votes']) or '—', fnat(r['natures']), r['src'], ('（并列：' + fnat(r['tie']) + '）') if r['tie'] else ''))
         return out + ['']
-    md += sect('一、多元素并列', lambda r: bool(r['tie']), '得票并列最高，取并列类里技能号最小的攻击招所带的那一类。人核看这个顺序是不是合理。')
-    md += sect('二、原生是高等三系（无体质）', lambda r: r['src'] == 'higher', '虚空／混沌／空间得票最多，按 4.4 没有体质。')
-    md += sect('三、原生无属性（无体质）', lambda r: r['src'] == 'neutral', '无属性（含原物理）得票最多。其中同时带基础十系招的列在得票里，人核看要不要给体质。')
+    md += sect('一、多元素并列', lambda r: bool(r['tie']), '基础十系得票并列最高，取并列元素里技能号最小的攻击招所带的那一类。人核看这个顺序是不是合理。')
+    md += sect('二、原生只有高等三系招、没有基础十系招（无体质）', lambda r: r['src'] == 'higher', '没有基础十系招、只有虚空／混沌／空间，按 4.4 没有体质。')
+    md += sect('三、原生全无属性（无体质）', lambda r: r['src'] == 'neutral', '没有任何基础十系元素招，全是无属性（含原物理）。')
     md += sect('三之二、技能卡还没做、退回原版自带技能的角色', lambda r: r['basis'] == 'original', '这些角色没有天启篇技能卡，按原版角色特性／职业技能表里的攻击招算；技能卡做出来后重跑本脚本。')
     md += sect('四、没有攻击招（无体质）', lambda r: r['src'] == 'no_attack', '技能卡里没有自带攻击招（纯辅助）。')
-    mix = [r for r in rows.values() if r['src'] == 'neutral' and any(e in NAMES for e in r['votes'])]
-    md += ['## 五、无属性压过元素招的角色（%d 名，三之子集）' % len(mix), '', '| 号 | 名 | 得票 |', '|---|---|---|']
-    md += ['| %d | %s | %s |' % (r['id'], r['name'], fvotes(r['votes'])) for r in mix] + ['']
+    mix = [r for r in rows.values() if r['natures'] and r['old_nature'] is None]
+    md += ['## 五、口径改后新得体质（%d 名）' % len(mix), '', '旧口径（无属性也算一类，得票最多者胜）下无属性压过元素招而无体质，现按设计稿字面只在基础十系元素招里数多数。', '', '| 号 | 名 | 得票 | 新体质 | 来源 |', '|---|---|---|---|---|']
+    md += ['| %d | %s | %s | %s | %s |' % (r['id'], r['name'], fvotes(r['votes']), fnat(r['natures']), r['src']) for r in mix] + ['']
     md += ['## 六、全部可用角色', '', '| 号 | 名 | 体质 | 来源 | 得票 |', '|---|---|---|---|---|']
     md += ['| %d | %s | %s | %s | %s |' % (r['id'], r['name'], fnat(r['natures']), r['src'], fvotes(r['votes']) or '—') for r in rows.values()]
     outdir.mkdir(parents=True, exist_ok=True)
@@ -190,8 +195,8 @@ def report(outdir, actors, rows, disabled, released, rework, missing):
 def table_json(rows):
     out = {'version': 1,
            '_doc': '天启篇我方角色自然体质（T484，设计稿 元素独特效果 v0.3 4.4，D285④）。actors 键＝角色号，每个可用角色都有一行；natures 0 或 1 个、基础十系元素号。'
-                   'basis：card＝按天启篇技能卡、original＝技能卡还没做的角色退回原版自带技能。src：majority 单类得票最多、tie_first 并列取技能号最小的攻击招、neutral 原生无属性、higher 原生高等三系、no_attack 没有攻击招、manual 人核（要有 verdict）。'
-                   'votes 是各元素得票（0＝无属性），tie 是并列最高的元素；只看原生，转换书／转属／装备不改。改规则后重跑 03_转换工具/天启篇我方体质表生成.py。',
+                   'basis：card＝按天启篇技能卡、original＝技能卡还没做的角色退回原版自带技能。src：majority 基础十系里单个得票最多、tie_first 并列取技能号最小的攻击招、neutral 没有基础十系招（全无属性）、higher 没有基础十系招（只有高等三系）、no_attack 没有攻击招、manual 人核（要有 verdict）。'
+                   'votes 是各元素得票（0＝无属性，只作证据），tie 是基础十系里并列最高的元素；只看原生，转换书／转属／装备不改。改规则后重跑 03_转换工具/天启篇我方体质表生成.py。',
            'actors': {}}
     for r in sorted(rows.values(), key=lambda r: r['id']):
         e = {'name': r['name'], 'natures': r['natures'], 'src': r['src'], 'n_attack': r['n_attack'], 'basis': r['basis'],

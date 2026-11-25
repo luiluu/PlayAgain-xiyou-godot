@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_doc": "天启篇我方角色自然体质（T484，设计稿 元素独特效果 v0.3 4.4，D285④）。actors 键＝角色号，每个可用角色都有一行；natures 0 或 1 个、基础十系元素号。basis：card＝按天启篇技能卡、original＝技能卡还没做的角色退回原版自带技能。src：majority 单类得票最多、tie_first 并列取技能号最小的攻击招、neutral 原生无属性、higher 原生高等三系、no_attack 没有攻击招、manual 人核（要有 verdict）。votes 是各元素得票（0＝无属性），tie 是并列最高的元素；只看原生，转换书／转属／装备不改。改规则后重跑 03_转换工具/天启篇我方体质表生成.py。",
+ "_doc": "天启篇我方角色自然体质（T484，设计稿 元素独特效果 v0.3 4.4，D285④）。actors 键＝角色号，每个可用角色都有一行；natures 0 或 1 个、基础十系元素号。basis：card＝按天启篇技能卡、original＝技能卡还没做的角色退回原版自带技能。src：majority 基础十系里单个得票最多、tie_first 并列取技能号最小的攻击招、neutral 没有基础十系招（全无属性）、higher 没有基础十系招（只有高等三系）、no_attack 没有攻击招、manual 人核（要有 verdict）。votes 是各元素得票（0＝无属性，只作证据），tie 是基础十系里并列最高的元素；只看原生，转换书／转属／装备不改。改规则后重跑 03_转换工具/天启篇我方体质表生成.py。",
  "actors": {
   "1": {
    "name": "狗逍遥",
@@ -41,8 +41,10 @@
   },
   "4": {
    "name": "窃格瓦拉·周",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    8
+   ],
+   "src": "majority",
    "n_attack": 5,
    "basis": "card",
    "votes": {
@@ -92,8 +94,10 @@
   },
   "8": {
    "name": "修",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    8
+   ],
+   "src": "tie_first",
    "n_attack": 19,
    "basis": "card",
    "votes": {
@@ -102,7 +106,10 @@
     "8": 5,
     "9": 5
    },
-   "tie": []
+   "tie": [
+    8,
+    9
+   ]
   },
   "9": {
    "name": "罗琳",
@@ -141,8 +148,10 @@
   },
   "12": {
    "name": "斯盖",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    2
+   ],
+   "src": "majority",
    "n_attack": 3,
    "basis": "card",
    "votes": {
@@ -164,8 +173,10 @@
   },
   "14": {
    "name": "关羽",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    14
+   ],
+   "src": "majority",
    "n_attack": 8,
    "basis": "card",
    "votes": {
@@ -288,8 +299,10 @@
   },
   "24": {
    "name": "克比",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    15
+   ],
+   "src": "majority",
    "n_attack": 9,
    "basis": "card",
    "votes": {
@@ -397,8 +410,10 @@
   },
   "33": {
    "name": "晴明",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    8
+   ],
+   "src": "majority",
    "n_attack": 9,
    "basis": "card",
    "votes": {
@@ -439,17 +454,14 @@
    "natures": [
     2
    ],
-   "src": "tie_first",
+   "src": "majority",
    "n_attack": 4,
    "basis": "card",
    "votes": {
     "0": 2,
     "2": 2
    },
-   "tie": [
-    2,
-    0
-   ]
+   "tie": []
   },
   "37": {
    "name": "天蓬元帅",
@@ -604,8 +616,10 @@
   },
   "49": {
    "name": "疾风丸",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    15
+   ],
+   "src": "majority",
    "n_attack": 4,
    "basis": "card",
    "votes": {
@@ -719,8 +733,10 @@
   },
   "59": {
    "name": "大羿",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    2
+   ],
+   "src": "majority",
    "n_attack": 6,
    "basis": "card",
    "votes": {
@@ -906,8 +922,7 @@
    },
    "tie": [
     8,
-    9,
-    0
+    9
    ]
   },
   "73": {
@@ -926,8 +941,10 @@
   },
   "74": {
    "name": "陈",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    2
+   ],
+   "src": "tie_first",
    "n_attack": 5,
    "basis": "card",
    "votes": {
@@ -935,7 +952,10 @@
     "2": 1,
     "6": 1
    },
-   "tie": []
+   "tie": [
+    2,
+    6
+   ]
   },
   "75": {
    "name": "智甚",
@@ -1106,8 +1126,10 @@
   },
   "88": {
    "name": "西西卡",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    5
+   ],
+   "src": "tie_first",
    "n_attack": 17,
    "basis": "card",
    "votes": {
@@ -1120,7 +1142,11 @@
     "8": 2,
     "9": 2
    },
-   "tie": []
+   "tie": [
+    5,
+    9,
+    8
+   ]
   },
   "89": {
    "name": "虎姐",
@@ -1137,8 +1163,10 @@
   },
   "90": {
    "name": "艾琳",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    8
+   ],
+   "src": "majority",
    "n_attack": 3,
    "basis": "card",
    "votes": {
@@ -1213,8 +1241,7 @@
     4,
     5,
     3,
-    7,
-    0
+    7
    ]
   },
   "95": {
@@ -1257,7 +1284,6 @@
    },
    "tie": [
     15,
-    0,
     9
    ]
   },
@@ -1311,8 +1337,10 @@
   },
   "102": {
    "name": "碧霄",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    2
+   ],
+   "src": "majority",
    "n_attack": 3,
    "basis": "card",
    "votes": {
@@ -1323,8 +1351,10 @@
   },
   "103": {
    "name": "波风水门",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    15
+   ],
+   "src": "majority",
    "n_attack": 3,
    "basis": "card",
    "votes": {
@@ -1413,8 +1443,10 @@
   },
   "115": {
    "name": "蕾姆",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    3
+   ],
+   "src": "tie_first",
    "n_attack": 4,
    "basis": "card",
    "votes": {
@@ -1422,7 +1454,10 @@
     "3": 1,
     "14": 1
    },
-   "tie": []
+   "tie": [
+    3,
+    14
+   ]
   },
   "117": {
    "name": "绯红蔷薇",
@@ -1448,8 +1483,10 @@
   },
   "119": {
    "name": "千早爱音",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    7
+   ],
+   "src": "majority",
    "n_attack": 3,
    "basis": "card",
    "votes": {
@@ -1497,8 +1534,10 @@
   },
   "124": {
    "name": "伊莉雅",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    9
+   ],
+   "src": "tie_first",
    "n_attack": 8,
    "basis": "card",
    "votes": {
@@ -1512,7 +1551,6 @@
     "9": 1
    },
    "tie": [
-    0,
     9,
     6,
     5,
@@ -1537,7 +1575,6 @@
    },
    "tie": [
     2,
-    0,
     8
    ]
   },
@@ -1556,8 +1593,10 @@
   },
   "129": {
    "name": "要乐奈",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    15
+   ],
+   "src": "majority",
    "n_attack": 4,
    "basis": "card",
    "votes": {
@@ -1635,8 +1674,10 @@
   },
   "148": {
    "name": "黑崎一护",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    9
+   ],
+   "src": "majority",
    "n_attack": 6,
    "basis": "card",
    "votes": {
@@ -1647,8 +1688,10 @@
   },
   "149": {
    "name": "祈求者",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    2
+   ],
+   "src": "majority",
    "n_attack": 12,
    "basis": "card",
    "votes": {
@@ -1770,17 +1813,14 @@
    "natures": [
     2
    ],
-   "src": "tie_first",
+   "src": "majority",
    "n_attack": 4,
    "basis": "card",
    "votes": {
     "0": 2,
     "2": 2
    },
-   "tie": [
-    2,
-    0
-   ]
+   "tie": []
   },
   "162": {
    "name": "诛仙",
@@ -1891,8 +1931,10 @@
   },
   "172": {
    "name": "宿傩",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    2
+   ],
+   "src": "majority",
    "n_attack": 8,
    "basis": "card",
    "votes": {
@@ -1962,8 +2004,10 @@
   },
   "178": {
    "name": "哈基米",
-   "natures": [],
-   "src": "neutral",
+   "natures": [
+    8
+   ],
+   "src": "majority",
    "n_attack": 5,
    "basis": "card",
    "votes": {
@@ -1977,17 +2021,14 @@
    "natures": [
     2
    ],
-   "src": "tie_first",
+   "src": "majority",
    "n_attack": 2,
    "basis": "card",
    "votes": {
     "0": 2,
     "2": 2
    },
-   "tie": [
-    2,
-    0
-   ]
+   "tie": []
   }
  }
 }
