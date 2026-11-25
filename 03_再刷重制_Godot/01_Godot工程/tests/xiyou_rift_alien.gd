@@ -713,14 +713,25 @@ func _stand_in_guardians() -> void:
 		and XRiftAlien.class_of("【求道者】斯盖", 787) == ""
 		and XRiftAlien.class_of("【求道者】齐格鲁德", 787) == ""
 		and XRiftAlien.class_of("求道者", 766) == "")
-	# 35 场替身守层战（13～30 层天道／引路人 748～765、轮回归来 798～814）每场都至少认出 1 只守层者
-	var miss_troops := []
-	for tid in XZhenqi.STAND_IN_GUARDIANS:
-		var es := _enemies(int(tid))
-		if not es.any(func(e): return XRiftAlien.class_of(e, int(tid)) == "guardian"):
-			miss_troops.append(int(tid))
-	_check("t498_all_stand_in_classified", miss_troops.is_empty(), miss_troops)
-	# 2. 同层对照（二阶 33%、三阶 100%，层段同常规守层者）：13 层（Map 64：常规 111 vs 替身 748）与 21 层（Map 117：常规 457 vs 替身 756）
+	# 35 场替身守层战（13～30 层纯替身 748～765、联合战 798～814）逐场核对：
+	# 纯替身无原生守层者 -> 三阶异化【求道者】；联合战已有原生【守层者】 -> 不提升【求道者】，固定异化真【守层者】
+	XConfig.whisper_mark("rift3")
+	var pure_bad := []
+	var joint_bad := []
+	for tid_v in XZhenqi.STAND_IN_GUARDIANS:
+		var tid := int(tid_v)
+		var fl := int(XZhenqi.STAND_IN_GUARDIANS[tid])
+		var es := _enemies(tid)
+		var has_native := es.any(func(e): return XRiftAlien.class_of(e) == "guardian")
+		var got := XRiftAlien.plan(_plain(fl, true), es, _const(0.99), tid)
+		if has_native:
+			if got.size() != 1 or not str(got[0].enemy.original_name()).begins_with("【守层者】"):
+				joint_bad.append([tid, got])
+		else:
+			if got.size() != 1 or not str(got[0].enemy.original_name()).begins_with("【求道者】"):
+				pure_bad.append([tid, got])
+	_check("t498_all_stand_in_classified", pure_bad.is_empty() and joint_bad.is_empty(), [pure_bad, joint_bad])
+	# 2. 同层对照（二阶 33%、三阶 100%，层段同常规守层者）：13 层（Map 64：常规 111 vs 替身 748）与 21 层（Map 117：常规 457 vs 替身 756 vs 联合战 806）
 	(XConfig._values.codexWhisperSeen as Array).erase("rift3")
 	var s13 := _plain(13, true)
 	s13.map_id = 64
@@ -738,7 +749,26 @@ func _stand_in_guardians() -> void:
 	_check("t498_st2_f21_same", r21_st2.size() == 1 and si21_st2.size() == 1
 		and r21_st2[0].tier == "shigu" and si21_st2[0].tier == "shigu" and si21_st2[0]["class"] == "guardian"
 		and XRiftAlien.plan(s21, _enemies(756), _const(0.33), 756).is_empty(), [r21_st2, si21_st2])
-	# 三阶（rift3 看过）：13 层与 21 层常规／替身都 100% 蚀骨；26 层双替身 761 与轮回归来 806 均 100% 且最多异化 1 只
+	# 联合战 806（【求道者】关羽＋【守层者】六道魔君）二阶用顺序掷点验证：首掷 0.5 没中后不会去掷【求道者】，整场不出异化（几率仍 33% 非 55.6%）；首掷 0.32 中时异化真守层者
+	var miss_rates := [0]
+	var miss_roll := func(reason: String, _key: String) -> float:
+		if reason == "rift_alien.rate":
+			miss_rates[0] += 1
+			return 0.5 if miss_rates[0] == 1 else 0.0
+		return 0.0
+	var lh21_st2_miss := XRiftAlien.plan(s21, _enemies(806), miss_roll, 806)
+	var hit_rates := [0]
+	var hit_roll := func(reason: String, _key: String) -> float:
+		if reason == "rift_alien.rate":
+			hit_rates[0] += 1
+			return 0.32 if hit_rates[0] == 1 else 0.99
+		return 0.0
+	var lh21_st2_hit := XRiftAlien.plan(s21, _enemies(806), hit_roll, 806)
+	_check("t498_st2_joint_806_rate_33pct", lh21_st2_miss.is_empty() and miss_rates[0] == 1
+		and lh21_st2_hit.size() == 1 and hit_rates[0] == 1
+		and lh21_st2_hit[0].tier == "shigu" and lh21_st2_hit[0].enemy.original_name() == "【守层者】六道魔君",
+		[lh21_st2_miss, miss_rates, lh21_st2_hit, hit_rates])
+	# 三阶（rift3 看过）：13 层与 21 层常规／替身都 100% 蚀骨；26 层双替身 761 最多异化 1 只；联合战 806 固定异化真守层者【守层者】六道魔君
 	XConfig.whisper_mark("rift3")
 	var r13_st3 := XRiftAlien.plan(s13, _enemies(111), _const(0.99), 111)
 	var si13_st3 := XRiftAlien.plan(s13, _enemies(748), _const(0.99), 748)
@@ -749,7 +779,8 @@ func _stand_in_guardians() -> void:
 	_check("t498_st3_100pct_same_band", r13_st3.size() == 1 and si13_st3.size() == 1 and r13_st3[0].tier == "shigu" and si13_st3[0].tier == "shigu"
 		and r21_st3.size() == 1 and si21_st3.size() == 1 and r21_st3[0].tier == "shigu" and si21_st3[0].tier == "shigu"
 		and si26_st3.size() == 1 and si26_st3[0].tier == "shigu"
-		and lh21_st3.size() == 1 and lh21_st3[0].tier == "shigu", [r13_st3, si13_st3, r21_st3, si21_st3, si26_st3, lh21_st3])
+		and lh21_st3.size() == 1 and lh21_st3[0].tier == "shigu" and lh21_st3[0].enemy.original_name() == "【守层者】六道魔君",
+		[r13_st3, si13_st3, r21_st3, si21_st3, si26_st3, lh21_st3])
 	# 3. 真实开战：21 层常规守层（457）与替身守层（756 【求道者】关羽）都异化为蚀骨、挂幽紫偏色、规则随机流不受影响
 	XRiftAlien.ENABLED = false
 	var base_si := XBattleLogic.new()
@@ -775,11 +806,18 @@ func _stand_in_guardians() -> void:
 	_check("t498_battle_rule_stream_same", lg_si.random.rule.journal.map(func(x): return [x.reason, x.event, x.value]) == base_si_j)
 	lg_reg.end_battle(0)
 	lg_si.end_battle(0)
-	# 轮回归来 806：两只都挂守层脉动、最多异化 1 只
+	# 轮回归来联合战 806（【求道者】关羽＋【守层者】六道魔君）：真守层者异化并挂脉动，【求道者】按原分类不异化、不挂脉动
 	var lg_lh := XBattleLogic.new()
 	lg_lh.setup(806, s21, XBattleRandom.create(SEED, 1))
-	_check("t498_lunhui_pulse_and_one_unit", XRiftAlien.fight(lg_lh).units.size() == 1
-		and lg_lh.enemies.all(func(e): return bool(e.get_meta(XRiftAlien.LOOK, {}).get("pulse", false))))
+	var e_lh_qdz: XEnemy = lg_lh.enemies[0]
+	var e_lh_gd: XEnemy = lg_lh.enemies[1]
+	_check("t498_lunhui_806_real_guardian_only", XRiftAlien.fight(lg_lh).units.size() == 1
+		and e_lh_qdz.original_name() == "【求道者】关羽"
+		and not XRiftAlien.is_alien(lg_lh, e_lh_qdz) and not e_lh_qdz.has_meta("tianqi_prefix") and not e_lh_qdz.has_meta(XRiftAlien.LOOK)
+		and e_lh_gd.original_name() == "【守层者】六道魔君"
+		and XRiftAlien.is_alien(lg_lh, e_lh_gd) and e_lh_gd.display_name().begins_with("蚀骨·【守层者】六道魔君")
+		and bool(e_lh_gd.get_meta(XRiftAlien.LOOK, {}).get("pulse", false)),
+		[e_lh_qdz.display_name(), e_lh_qdz.get_meta(XRiftAlien.LOOK, {}), e_lh_gd.display_name(), e_lh_gd.get_meta(XRiftAlien.LOOK, {})])
 	lg_lh.end_battle(0)
 	# 4. 非守层战带【求道者】标签的敌人（敌群 787：斯盖＋齐格鲁德）不误伤
 	var lg_other := XBattleLogic.new()
