@@ -6,8 +6,9 @@ ROOT="$(cd "$(dirname "$0")/../../../../.." && pwd)"
 OUT="$(cd "$(dirname "$0")" && pwd)/$TAG"
 mkdir -p $OUT
 jobs=()
-for f in 31 32 33 34 35 36; do jobs+=("C 3 $f"); done
-for t in A B D; do for f in 31 32 33 34 35 36; do jobs+=("$t 1 $f"); done; done
+FLOORS=(${=FLOORS:-31 32 33 34 35 36})  # 只重跑几层时 FLOORS="31 32 33 34" run.sh <目录名>
+for f in $FLOORS; do jobs+=("C 3 $f"); done
+for t in A B D; do for f in $FLOORS; do jobs+=("$t 1 $f"); done; done
 printf '%s\n' "${jobs[@]}" | xargs -P 3 -L 1 zsh -c '
 t=$0; n=$1; f=$2; mt=25; [ "$t" = A ] && mt=35
 H=$(mktemp -d)

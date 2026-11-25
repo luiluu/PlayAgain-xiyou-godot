@@ -272,6 +272,11 @@ func param(i: int) -> float:
 	return _param_raw(i)
 
 
+## T501 R2：敌人生命统一折算之前的最大生命。按绝对目标值重标血量（目标÷当前 mhp）的地方读它，免得把 40% 又约回去
+func mhp_raw() -> float:
+	return _param_raw(0)
+
+
 func _param_raw(i: int) -> float:
 	var dragon := XCat.dragon_param(self, i)  # 小猫试炼巨龙 param 最外层包装：数据库原值
 	if not is_nan(dragon):
