@@ -16,6 +16,7 @@ func check(tag: String, ok: bool, detail = null) -> void:
 
 
 func _ready() -> void:
+	XTianqiBalance.data()["combat_rules"]["enemy_hp_pct"] = 100  # T501 R2：本测试按表断言敌人血量（或按血量缩的估伤），测公式本身；天启篇敌人生命统一 ×40% 在 xiyou_tianqi_phase4 测
 	_run.call_deferred()
 
 
