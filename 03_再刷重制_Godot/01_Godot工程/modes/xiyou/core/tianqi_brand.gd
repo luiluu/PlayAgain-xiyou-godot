@@ -455,12 +455,13 @@ static func def_rate(a, i: int) -> float:
 
 ## 虚不受补：战斗中生命高于一半时受到的生命回复 ×heal_mult（各线的回复削减先算；禁疗照禁，0 还是 0）
 static func heal(b, amount: float) -> float:
-	if amount <= 0.0 or not has_cost(b, "weak_heal") or _fighting(b) == null:
+	if amount <= 0.0 or _fighting(b) == null:
 		return amount
-	var r := cost_row("weak_heal")
-	if b.hp > b.mhp * float(r.get("hp_above", 0.5)):
-		return floorf(amount * float(r.get("heal_mult", 0.5)))
-	return amount
+	if has_cost(b, "weak_heal"):
+		var r := cost_row("weak_heal")
+		if b.hp > b.mhp * float(r.get("hp_above", 0.5)):
+			return floorf(amount * float(r.get("heal_mult", 0.5)))
+	return XTianqiBrandRealm.heal(b, amount)  # 砥柱境底：低于一半受疗 +15%（T514；和虚不受补分在血线两边）
 
 
 ## 不合群：我方别人放的全体友方（scope 8）技能、物品落不到过 55% 的人身上；自己放的照吃，点名给他的（scope 7）照吃。
@@ -777,14 +778,16 @@ static func strike(logic, u, t) -> Dictionary:
 
 
 ## 破防：这一回合和下一回合受到的生命伤害 ×(1 ＋ taken_up)（XDamage 的天启篇乘区、四骑士的出伤处乘；不碰瘟疫病灶、灼痕）
+## T514：境底承伤（铸骨、真形各 −5%）、换伤支承伤（每条 +3%）和破防同在承伤池里相加（稿第四节第 7 条）
 static func taken_mult(b) -> float:
 	var logic = _fighting(b)
 	if logic == null:
 		return 1.0
+	var add := XTianqiBrandRealm.taken_add(b)
 	var until = fight(logic).get("guard_break", {}).get(b)
-	if until == null or int(logic.turn) > int(until):
-		return 1.0
-	return 1.0 + float(fit_row("break_guard").get("taken_up", 0.3))
+	if until != null and int(logic.turn) <= int(until):
+		add += float(fit_row("break_guard").get("taken_up", 0.3))
+	return maxf(0.0, 1.0 + add)
 
 
 ## 断片的人：这两回合队友点名给他的（scope 7）治疗、增益落不到他身上

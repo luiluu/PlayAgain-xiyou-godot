@@ -214,7 +214,7 @@ static func k_base(s = null) -> float:
 
 ## 按角色取的乘数口子（D139：和烙印联动）：烙印的伤害乘数 XTianqiBrand.mult（T073-b；烙印开关关着、西游档恒 1）
 static func k_actor_mult(a, s = null) -> float:
-	return XTianqiBrand.mult(a, s)
+	return XTianqiBrand.mult(a, s) * XTianqiBrandRealm.dealt_mult(a, s)  # 换伤支伤害那一半并在同一项（T514，烙印稿第三节第 3 条）
 
 
 ## 这个角色打出伤害要乘的 K × 烙印（dealt_parts、scale_direct 用）。总开关关着 K 按 1，烙印开关各管各的；两个都关着恒 1

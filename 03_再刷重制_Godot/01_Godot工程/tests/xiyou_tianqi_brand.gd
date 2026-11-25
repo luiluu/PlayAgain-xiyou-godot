@@ -73,6 +73,8 @@ func _run() -> void:
 	XTianqiBase.clear_cache()
 	_off()
 	XTianqiBrand.ENABLED = true
+	# T514：本专项量的是烙印本体和代价（皮薄、虚不受补、破防的单独倍率），境底＋境支关着量；它们在 xiyou_tianqi_brand_realm 专项
+	XTianqiBrandRealm.ENABLED = false
 	_power()
 	_save_on()
 	_t1_node_stall()

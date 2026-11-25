@@ -483,7 +483,7 @@ static func _actor_state_rate(t, sid: int, borrow: int) -> float:
 	var ar := XTianqiAffixBattle.state_rate(t, sid)
 	if borrow > 0 and is_equal_approx(ar, 1.0):
 		ar = XTianqiAffixBattle.state_rate(t, borrow)
-	return rate * ar
+	return rate * ar * XTianqiBrandRealm.state_rate(t, sid)  # 天启篇不染境底（T514）：和异常抵抗相乘
 
 
 ## §5.3 敌方停手预算：普通怪／精英／化形每次行动最多给 1 个目标挂停手；精英／化形另每场对同一角色最多 2 次停手
