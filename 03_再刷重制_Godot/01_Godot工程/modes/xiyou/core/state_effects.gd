@@ -88,6 +88,15 @@ static var FIX_CRIT_1749 := true
 ## target 是被打的人，持有者身上的删不掉，整回合每击都另扣一次（＝×2）；修成从持有者自删（只吃一下）。false＝原版
 static var FIX_HALFSTEP_1666 := true
 const HALFSTEP_STATE := 1666
+## T491：西游档逐行移植曹操霸道真气（State 106）Regenerate 与天虎令气伤（State 1341）Apply／React（原版 v0.62.12，
+## 法宝等级走 T490 共用读口 XEquipmentView.first_armor_level -> XMagicWeapon.combat_level，99 级等价 888）。
+## 仅西游档（XState.current != null 且 not XTianqi.active(XState.current)）生效，天启篇零改动；false＝回退到未移植现状。
+static var PORT_CAOCAO_TIANHU := true
+const CAOCAO_STATE := 106
+const CAOCAO_ARMOR := 3640
+const TIANHU_STATE := 1341
+const TIANHU_ARMOR := 3550
+const TIANHU_SKILL := 7485
 
 
 ## Private value-only adapter: current signed phase input, without the damage
@@ -334,7 +343,7 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 	# Game_Battler.customEffectEval always shadows the enclosing action domain,
 	# including non-Boss/missing origins. Only native react1341/2550 override Action.
 	var resources: XResourceContext = c.get("resources")
-	var owns_resources := execute and resources == null and effects.any(func(e): return e.get("op") in ["poison_tick", "gain_steps", "add_state", "effect_program"] or e.has("addState"))
+	var owns_resources := execute and resources == null and effects.any(func(e): return e.get("op") in ["poison_tick", "gain_steps", "add_state", "effect_program"] or e.has("addState") or (_handles_caocao_tianhu(phase, int(st.id), str(e.get("op", ""))) and phase != "apply"))
 	if owns_resources:
 		resources = XResourceContext.new()
 		resources.random = c.get("random")
@@ -463,6 +472,14 @@ static func run_one(phase: String, holder: XBattler, st: Dictionary, ctx := {}) 
 					r2.extra = r2.get("extra", []) + [amount2]
 					r2.hit_extra = float(r2.get("hit_extra", 0.0)) + amount2
 					r2.record_hp = float(r2.get("record_hp", 0.0)) + floorf(amount2)
+		elif _handles_caocao_tianhu(phase, int(st.id), op):
+			if execute:
+				if int(st.id) == CAOCAO_STATE:
+					_caocao_regenerate_106(holder, c)
+				elif phase == "apply":
+					_tianhu_apply_1341(holder)
+				else:
+					_tianhu_react_1341(c)
 		elif not SUPPORTED_OPS.has(op):
 			if ctx.has("untranslated"):
 				ctx.untranslated.append({"state": int(st.id), "phase": phase})
@@ -850,6 +867,93 @@ static func _poison_tick(e: Dictionary, holder: XBattler, c: Dictionary, ctx: Di
 		ctx.emit.call({"type": "regen", "target": holder, "hp": r.hpDamage, "animation": int(e.animation), "state": int(c.state_id)})
 	# The translated original460-style block calls clearResult after its popup.
 	rc.seed_result(holder, XResourceContext.empty_result())
+
+
+## T491 西游档守卫：仅开关开启且已载入西游档（非天启篇）时生效，天启篇与无存档静态参照零改动。
+static func _caocao_tianhu_active() -> bool:
+	return PORT_CAOCAO_TIANHU and XState.current != null and not XTianqi.active(XState.current)
+
+
+static func _handles_caocao_tianhu(phase: String, state_id: int, op: String) -> bool:
+	if op != "js" or not _caocao_tianhu_active():
+		return false
+	return (state_id == CAOCAO_STATE and phase == "regenerate") \
+		or (state_id == TIANHU_STATE and (phase == "apply" or phase == "react"))
+
+
+## T491：曹操霸道真气（State 106）Regenerate（原版 v0.62.12 逐行移植）。
+## origin 非角色时原版 origin.equips() 抛 TypeError 整块中止（不写 _stackingPoison、不扣血、不播动画）。
+## 法宝「暗涌」（基础防具 3640）等级走 T490 共用读口 XEquipmentView.first_armor_level（99 级等价 888，受楼层上限压制）。
+static func _caocao_regenerate_106(holder: XBattler, c: Dictionary) -> void:
+	var origin: XBattler = c.origin
+	if not (origin is XActor):
+		return
+	var level: float = float(XEquipmentView.first_armor_level((origin as XActor).equip_list(), CAOCAO_ARMOR))
+	var stacks := _truthy_number(holder.state_data.get("_stackingPoison"))
+	if stacks == 0.0:
+		stacks = 1.0
+	holder.state_data["_stackingPoison"] = stacks
+	var damage1: float = float(origin.atk)
+	var damage2: float = float(origin.mat)
+	var damage3: float = float(origin.level)
+	var damage: float = stacks * (damage1 + damage2) * damage3 * (1.0 + level)
+	var rc: XResourceContext = c.resources
+	rc.seed_result(holder, XResourceContext.empty_result())
+	rc.gain(holder, "hp", -damage)
+	var r := rc.result(holder)
+	rc.start_damage_popup(holder)
+	if c.get("emit") is Callable and c.emit.is_valid():
+		c.emit.call({"type": "regen", "target": holder, "hp": r.hpDamage if r.hpAffected else 0.0, "animation": 130, "state": CAOCAO_STATE})
+	rc.seed_result(holder, XResourceContext.empty_result())
+
+
+## T491：天虎令气伤（State 1341）Apply（原版 v0.62.12 逐行移植）：
+## target.addStateCounter(1341, 1); target.clampStateCounter(1341, 0, 10000);
+static func _tianhu_apply_1341(holder: XBattler) -> void:
+	var counters: Dictionary = holder.state_data.get("_stateCounter", {})
+	var cur := _truthy_number(counters.get(str(TIANHU_STATE)))
+	counters[str(TIANHU_STATE)] = clampf(cur + 1.0, 0.0, 10000.0)
+	holder.state_data["_stateCounter"] = counters
+
+
+## T491：天虎令气伤（State 1341）React（原版 v0.62.12 逐行移植）。
+## 不修改主伤害 value；先按原版顺序抽一次 RNG（Math.random(1) < origin.cri）；
+## 当 value > 0 且当前行动为技能（item.has("stypeId")）时，追加气伤扣血并弹字；
+## 熟练度 7485 >= 1 时法宝「烽舞」（基础防具 3550）等级走 T490 共用读口 XEquipmentView.first_armor_level（99 级等价 888）。
+static func _tianhu_react_1341(c: Dictionary) -> void:
+	var target: XBattler = c.target
+	var origin: XBattler = c.origin
+	if target == null or origin == null:
+		return
+	var counters: Dictionary = target.state_data.get("_stateCounter", {})
+	var d := _truthy_number(counters.get(str(TIANHU_STATE)))
+	var b: float = float(origin.cri)
+	var random: XRandomStream = c.get("random")
+	var roll: float = random.next_float("state_effect", "react:1341") if random != null else 0.5
+	# 原版：if (Math.random(1) < b) { c = origin.criticalMultiplierBonus() + 2; } else { c = 1; }
+	# 及 var e = origin.elementAmplifyRate(1) + 1;（原版后续未引用 c 与 e，仅消耗一次 RNG，保留对拍顺序）
+	var _unused_c: float = (XDamage.critical_multiplier_bonus(origin) + 2.0) if roll < b else 1.0
+	var era: float = target.element_rate(1)
+	var item = c.get("item")
+	var is_skill: bool = item is Dictionary and item.has("stypeId")
+	if float(c.value) > 0.0 and is_skill:
+		var dmm: float = float(origin.atk) * 2.0 + float(origin.mhp)
+		if dmm < 0.0:
+			dmm = 0.0
+		var origin_mdr: float = float(origin.mdr)
+		var ddd: float = float(ceil(era * origin_mdr * dmm * (1.0 + d * 0.25) / 2.0)) if d != 0.0 else float(ceil(era * origin_mdr * dmm / 2.0))
+		var mastery: int = origin.skillMasteryLevel(TIANHU_SKILL)
+		if mastery >= 1:
+			if not (origin is XActor):
+				return  # 原版 origin.equips() 抛 TypeError 整块中止，不执行后续 gainHp
+			var level: float = float(XEquipmentView.first_armor_level((origin as XActor).equip_list(), TIANHU_ARMOR))
+			var ddw: float = float(mastery) * 1.0
+			var ddmg: float = float(ceil(ddd * (ddw + level)))
+			ddd += ddmg
+		var rc: XResourceContext = c.resources
+		rc.gain(target, "hp", -ddd)
+		rc.start_damage_popup(target)
+		_emit_result(target, rc, c)
 
 
 ## Game_Battler.addState：isStateAddable（活着、未抵抗、本结果槽没刚去掉它）才加；已有的只续回合，都记入 addedStates
