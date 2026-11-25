@@ -116,6 +116,7 @@ static func start(logic) -> void:
 	if logic.has_meta(META):
 		logic.remove_meta(META)
 	if not on(logic):
+		_logic = null  # 西游档／开关关：add_state 钩子不再指向上一场天启篇战斗
 		return
 	logic._rule()  # 只确保本场随机对象建好（不取数）
 	var rnd = logic.random
