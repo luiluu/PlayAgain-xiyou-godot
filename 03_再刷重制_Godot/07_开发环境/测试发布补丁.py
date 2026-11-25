@@ -94,27 +94,27 @@ class StageTests(Base):
             log = sh('git', 'log', '--format=%s', cwd=r).splitlines()
             self.assertEqual(log[:2], ['重制版清单指向 0.470', '重制版 0.470 补丁（底包 0.453）'])
             self.assertEqual(sh('git', 'status', '--porcelain', cwd=r), '')
-            self.assertEqual((r / 'godot/patch_453_470.pck').read_bytes(), self.patch_bytes)
-        m = json.loads((self.repos[0] / 'godot/channel.json').read_text(encoding='utf-8'))
+            self.assertEqual((r / 'godot2/patch_453_470.pck').read_bytes(), self.patch_bytes)
+        m = json.loads((self.repos[0] / 'godot2/channel.json').read_text(encoding='utf-8'))
         self.assertEqual(m['latest'], {'version': '0.470', 'code': 470, 'date': '2026-11-20', 'notes': ['修了一处']})
         p = m['bases']['453']['patch']
-        self.assertEqual((p['code'], p['size'], p['sha256']), (470, len(self.patch_bytes), M.sha256(self.repos[0] / 'godot/patch_453_470.pck')))
+        self.assertEqual((p['code'], p['size'], p['sha256']), (470, len(self.patch_bytes), M.sha256(self.repos[0] / 'godot2/patch_453_470.pck')))
         gitee_pkg = sh('git', 'rev-parse', 'HEAD~1', cwd=self.repos[0])
         github_pkg = sh('git', 'rev-parse', 'HEAD~1', cwd=self.repos[1])
-        self.assertEqual(p['urls'][0], f'https://gitee.com/someone/some-repo/raw/{gitee_pkg}/godot/patch_453_470.pck')
-        self.assertIn(f'https://cdn.jsdelivr.net/gh/someone/updates@{github_pkg}/godot/patch_453_470.pck', p['urls'])
+        self.assertEqual(p['urls'][0], f'https://gitee.com/someone/some-repo/raw/{gitee_pkg}/godot2/patch_453_470.pck')
+        self.assertIn(f'https://cdn.jsdelivr.net/gh/someone/updates@{github_pkg}/godot2/patch_453_470.pck', p['urls'])
         # T153：gh-proxy（GitHub raw 加前缀）排第二，在 jsDelivr 前；置空 GH_PROXY 就不写
-        self.assertEqual(p['urls'][1], f'https://gh-proxy.com/https://raw.githubusercontent.com/someone/updates/{github_pkg}/godot/patch_453_470.pck')
+        self.assertEqual(p['urls'][1], f'https://gh-proxy.com/https://raw.githubusercontent.com/someone/updates/{github_pkg}/godot2/patch_453_470.pck')
         self.assertTrue(p['urls'][2].startswith('https://cdn.jsdelivr.net/'))
-        self.assertIn(f'https://raw.githubusercontent.com/someone/updates/{github_pkg}/godot/patch_453_470.pck', p['urls'])
+        self.assertIn(f'https://raw.githubusercontent.com/someone/updates/{github_pkg}/godot2/patch_453_470.pck', p['urls'])
         self.assertTrue(all(u.startswith('https://') and '/main/' not in u and '@main' not in u for u in p['urls']))
         # 两个仓库里的清单逐字节相同，签名用公钥验得过
-        self.assertEqual((self.repos[0] / 'godot/channel.json').read_bytes(), (self.repos[1] / 'godot/channel.json').read_bytes())
-        self.assertTrue(M.verify(self.pub, self.repos[1] / 'godot/channel.json', self.repos[1] / 'godot/channel.sig'))
+        self.assertEqual((self.repos[0] / 'godot2/channel.json').read_bytes(), (self.repos[1] / 'godot2/channel.json').read_bytes())
+        self.assertTrue(M.verify(self.pub, self.repos[1] / 'godot2/channel.json', self.repos[1] / 'godot2/channel.sig'))
         # 清单改一个字节就验不过
         bad = self.t / 'bad.json'
-        bad.write_bytes((self.repos[0] / 'godot/channel.json').read_bytes().replace(b'470', b'471', 1))
-        self.assertFalse(M.verify(self.pub, bad, self.repos[0] / 'godot/channel.sig'))
+        bad.write_bytes((self.repos[0] / 'godot2/channel.json').read_bytes().replace(b'470', b'471', 1))
+        self.assertFalse(M.verify(self.pub, bad, self.repos[0] / 'godot2/channel.sig'))
 
     def test_next_patch_replaces_old_file_and_keeps_other_bases(self):
         self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage'), 0)
@@ -123,10 +123,10 @@ class StageTests(Base):
         self.patch_bytes = b'NEWER' * 500
         self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage', '--revoke', '470'), 0)
         r = self.repos[0]
-        self.assertFalse((r / 'godot/patch_453_470.pck').exists())
-        self.assertTrue((r / 'godot/patch_453_475.pck').exists())
-        self.assertTrue((r / 'godot/patch_460_470.pck').exists())
-        m = json.loads((r / 'godot/channel.json').read_text(encoding='utf-8'))
+        self.assertFalse((r / 'godot2/patch_453_470.pck').exists())
+        self.assertTrue((r / 'godot2/patch_453_475.pck').exists())
+        self.assertTrue((r / 'godot2/patch_460_470.pck').exists())
+        m = json.loads((r / 'godot2/channel.json').read_text(encoding='utf-8'))
         self.assertEqual(sorted(m['bases']), ['453', '460'])
         self.assertEqual(m['bases']['453']['patch']['code'], 475)
         self.assertEqual(m['latest']['code'], 475)
@@ -146,7 +146,7 @@ class StageTests(Base):
         self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage'), 0)
         M.current_code = lambda: 480
         self.assertEqual(self.run_tool('--full-only', '--min-base', '480', '--drop-base', '453', '--stage'), 0)
-        m = json.loads((self.repos[0] / 'godot/channel.json').read_text(encoding='utf-8'))
+        m = json.loads((self.repos[0] / 'godot2/channel.json').read_text(encoding='utf-8'))
         self.assertEqual((m['latest']['code'], m['bases'], m['min_base']), (480, {}, 480))
 
 
@@ -156,21 +156,21 @@ class FilesManifestTests(Base):
         self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage'), 0)
         for r in self.repos:
             pkg_commit_files = sh('git', 'show', '--name-only', '--format=', 'HEAD~1', cwd=r).splitlines()
-            self.assertEqual(sorted(pkg_commit_files), ['godot/patch_453_470.files.json', 'godot/patch_453_470.files.sig', 'godot/patch_453_470.pck'])
+            self.assertEqual(sorted(pkg_commit_files), ['godot2/patch_453_470.files.json', 'godot2/patch_453_470.files.sig', 'godot2/patch_453_470.pck'])
         r = self.repos[0]
-        fm = json.loads((r / 'godot/patch_453_470.files.json').read_text(encoding='utf-8'))
+        fm = json.loads((r / 'godot2/patch_453_470.files.json').read_text(encoding='utf-8'))
         self.assertEqual((fm['kind'], fm['code'], fm['base_code'], fm['min_base']), ('xiyou-patch-files', 470, 453, 453))
         paths = [f['path'] for f in fm['files']]
         self.assertIn('core/changed.gd', paths)
         self.assertNotIn('tests/only_in_tests.gd', paths, '发行预设排除的 tests/ 不该进补丁文件清单')
-        self.assertTrue(M.verify(self.pub, r / 'godot/patch_453_470.files.json', r / 'godot/patch_453_470.files.sig'))
+        self.assertTrue(M.verify(self.pub, r / 'godot2/patch_453_470.files.json', r / 'godot2/patch_453_470.files.sig'))
 
     def test_next_patch_replaces_old_files_manifest(self):
         self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage'), 0)
         M.current_code = lambda: 475
         self.patch_bytes = b'NEWER' * 500
         self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--stage'), 0)
-        names = sorted(x.name for x in (self.repos[0] / 'godot').iterdir())
+        names = sorted(x.name for x in (self.repos[0] / 'godot2').iterdir())
         self.assertEqual(names, ['channel.json', 'channel.sig', 'patch_453_475.files.json', 'patch_453_475.files.sig', 'patch_453_475.pck'])
 
     def test_stage_without_old_tree_refused(self):
@@ -238,7 +238,7 @@ class RuleTests(Base):
         self.assertEqual((p.name, code), ('再刷一把_天启篇.pck', 453))
 
     def _channel(self):
-        return json.loads((self.repos[0] / 'godot/channel.json').read_text(encoding='utf-8'))
+        return json.loads((self.repos[0] / 'godot2/channel.json').read_text(encoding='utf-8'))
 
     def test_min_playable_default_unchanged(self):
         # 强制更新（Kyo 11-14）：不给参数就不写、也不改原值
@@ -370,6 +370,66 @@ class T489Tests(Base):
         self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--skip-save-gate', '本机不是 Mac'), 0)
         self.assertEqual(self.gate_calls, [])
         self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--skip-save-gate', '  '), 1)
+
+    def test_sign_guard_blocks_dangerous_targets_and_positional_args(self):
+        data = self.t / 'channel.json'
+        data.write_text('{"schema": 1}\n', encoding='utf-8')
+        key_bytes = self.key.read_bytes()
+
+        # 1. 强制关键字参数：禁止位置参数（防传反顺序）
+        with self.assertRaises(TypeError):
+            M.sign(self.key, data, self.t / 'pos.sig')
+
+        # 2. 禁止 -out 指向 .pem / .key 等敏感后缀，且不截断原私钥
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=data, sig=self.key)
+        self.assertEqual(self.key.read_bytes(), key_bytes)
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=data, sig=self.t / 'other.PEM')
+
+        # 3. 禁止 -out 落入「发版密钥」目录
+        fake_key_dir = self.t / '发版密钥'
+        fake_key_dir.mkdir()
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=data, sig=fake_key_dir / 'channel.sig')
+        self.assertFalse((fake_key_dir / 'channel.sig').exists())
+
+        # 4. 无 .pem 后缀但与 key 或 data 同路径也必须拦截且不改原文件
+        plain_key = self.t / 'priv_raw'
+        plain_key.write_bytes(key_bytes)
+        with self.assertRaises(M.Fail):
+            M.sign(key=plain_key, data=data, sig=plain_key)
+        self.assertEqual(plain_key.read_bytes(), key_bytes)
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=data, sig=data)
+        self.assertEqual(data.read_text(encoding='utf-8'), '{"schema": 1}\n')
+
+        # 5. 非私钥文件 / 损坏私钥 / data 是私钥均拦截，且不破坏已有 sig（原子替换）
+        existing_sig = self.t / 'existing.sig'
+        existing_sig.write_bytes(b'KEEP_ME')
+        with self.assertRaises(M.Fail):
+            M.sign(key=data, data=data, sig=existing_sig)
+        self.assertEqual(existing_sig.read_bytes(), b'KEEP_ME')
+        bad_key = self.t / 'broken.pem'
+        bad_key.write_text('-----BEGIN PRIVATE KEY-----\nBROKEN\n-----END PRIVATE KEY-----\n', encoding='utf-8')
+        with self.assertRaises(M.Fail):
+            M.sign(key=bad_key, data=data, sig=existing_sig)
+        self.assertEqual(existing_sig.read_bytes(), b'KEEP_ME')
+        self.assertEqual(list(self.t.glob('.sig_*.tmp')), [])
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=self.key, sig=existing_sig)
+        self.assertEqual(existing_sig.read_bytes(), b'KEEP_ME')
+
+        # 6. 正常按名传参签出有效签名并验签通过
+        ok_sig = self.t / 'ok.sig'
+        M.sign(key=self.key, data=data, sig=ok_sig)
+        self.assertTrue(M.verify(self.pub, data, ok_sig))
+        self.assertEqual(list(self.t.glob('.sig_*.tmp')), [])
+
+    def test_explicit_version_flag(self):
+        self.assertEqual(self.run_tool('--base', str(self.base), '--base-code', '453', '--version', 'v0.04.05'), 0)
+        m = json.loads((self.t / 'out/channel.json').read_text(encoding='utf-8'))
+        self.assertEqual(m['latest']['version'], '0.04.05')
 
 
 if __name__ == '__main__':

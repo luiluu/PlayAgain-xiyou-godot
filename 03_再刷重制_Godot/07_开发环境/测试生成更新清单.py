@@ -213,6 +213,48 @@ class T(unittest.TestCase):
         self.assertEqual(rc, 1)
         self.assertIn('gitignore', buf.getvalue())
 
+    def test_sign_guard_blocks_dangerous_targets_and_positional_args(self):
+        t = Path(self.d.name)
+        data = t / 'manifest.json'
+        data.write_text('{"schema": 1}\n', encoding='utf-8')
+        key_bytes = self.key.read_bytes()
+
+        with self.assertRaises(TypeError):
+            M.sign(self.key, data, t / 'pos.sig')
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=data, sig=self.key)
+        self.assertEqual(self.key.read_bytes(), key_bytes)
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=data, sig=t / 'bad.pem')
+        fake_key_dir = t / '发版密钥'
+        fake_key_dir.mkdir()
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=data, sig=fake_key_dir / 'manifest.sig')
+        self.assertFalse((fake_key_dir / 'manifest.sig').exists())
+        plain_key = t / 'raw_key'
+        plain_key.write_bytes(key_bytes)
+        with self.assertRaises(M.Fail):
+            M.sign(key=plain_key, data=data, sig=plain_key)
+        self.assertEqual(plain_key.read_bytes(), key_bytes)
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=data, sig=data)
+        existing = t / 'keep.sig'
+        existing.write_bytes(b'KEEP_ME')
+        bad_key = t / 'bad_key.pem'
+        bad_key.write_text('-----BEGIN PRIVATE KEY-----\nBAD\n-----END PRIVATE KEY-----\n', encoding='utf-8')
+        with self.assertRaises(M.Fail):
+            M.sign(key=bad_key, data=data, sig=existing)
+        self.assertEqual(existing.read_bytes(), b'KEEP_ME')
+        self.assertEqual(list(t.glob('.sig_*.tmp')), [])
+        with self.assertRaises(M.Fail):
+            M.sign(key=self.key, data=self.key, sig=existing)
+        self.assertEqual(existing.read_bytes(), b'KEEP_ME')
+
+        ok_sig = t / 'ok.sig'
+        M.sign(key=self.key, data=data, sig=ok_sig)
+        self.assertTrue(M.verify_sig(self.pub.read_text(encoding='utf-8'), data, ok_sig))
+        self.assertEqual(list(t.glob('.sig_*.tmp')), [])
+
 
 if __name__ == '__main__':
     unittest.main(verbosity=1)
