@@ -321,7 +321,7 @@ func _tune_d189() -> void:
 	# 第二批（偏弱超强者调高）：176 贯日 6.0→10、177 棱光 2.5→6（T175 取整；T163 的本体成长 ×1.2 撤掉，开着也是 1）；关掉照原卡
 	var d209_was := XTianqiBase.TUNE_D209
 	var d287_was := XTianqiBase.TUNE_D287
-	XTianqiBase.TUNE_D287 = false  # T496：D287（三档收拢）又调了 10315／10337／9938 等，同 D209 一起关，D287 层由 xiyou_tianqi_skills p7_d287_table 管
+	XTianqiBase.TUNE_D287 = false  # T496：D287（三档收拢）又调了 9938 等超强者主招（10315／10337 没动），同 D209 一起关，D287 层由 xiyou_tianqi_skills p7_d287_table 管
 	XTianqiBase.TUNE_D209 = false  # T209 R1：D209（超强者按名次重排）又调了 10337／5706 等，D189、D198 两段只看各自的层，D209 层由 xiyou_tianqi_skills p7_d209_table 管
 	XTianqiBase.TUNE_D198 = false  # T192：D198 又调了 177 棱光，这段只看 D189 层
 	XTianqiSkills.reload_table()
