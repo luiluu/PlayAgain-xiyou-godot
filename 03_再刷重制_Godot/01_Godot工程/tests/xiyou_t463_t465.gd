@@ -361,7 +361,7 @@ func _check_t465_feitian_and_cri_cap() -> void:
 	var e := XEnemy.new()
 	e.setup(1, 3)
 
-	# 1. 验证 10072 (12000)、10485 (5500)、10486 (6000) 公式系数＋暴击率 1000% 封顶
+	# D286：10072（6000）、10485（2500）、10486（3000）及暴击率 500% 封顶。
 	var sk72 := XDB.rec("Skills", 10072)
 	var sk85 := XDB.rec("Skills", 10485)
 	var sk86 := XDB.rec("Skills", 10486)
@@ -370,15 +370,15 @@ func _check_t465_feitian_and_cri_cap() -> void:
 	vars.fill(0)
 	for vid in range(1580, 1590):
 		vars[vid] = 1
-	# 通过武器 traits 设暴击率：先 500% (<1000%)，再 1500% (>1000%)，再 4500% (>>1000%)
-	var w_cri5 := {"kind": "weapon", "id": 99981, "base": 99981, "etypeId": 1, "wtypeId": 2, "params": [0,0,0,0,0,0,0,0],
-		"traits": [{"code": 22, "dataId": 2, "value": 2.5}], "note": "", "meta": {}, "yep": {}}
-	var w_cri15 := w_cri5.duplicate(true)
+	# 通过武器 traits 设三档暴击率，第一档在上限以下，其余两档均超过上限。
+	var w_cri_low := {"kind": "weapon", "id": 99981, "base": 99981, "etypeId": 1, "wtypeId": 2, "params": [0,0,0,0,0,0,0,0],
+		"traits": [{"code": 22, "dataId": 2, "value": 0.0}], "note": "", "meta": {}, "yep": {}}
+	var w_cri15 := w_cri_low.duplicate(true)
 	w_cri15.traits[0].value = 12.5
-	var w_cri45 := w_cri5.duplicate(true)
+	var w_cri45 := w_cri_low.duplicate(true)
 	w_cri45.traits[0].value = 42.5
 
-	f.equips[0] = w_cri5
+	f.equips[0] = w_cri_low
 	f.refresh_passive()
 	var cri_low := f.cri
 	var v85_low := XDamage.eval_formula(sk85, f, e, vars)
@@ -398,18 +398,19 @@ func _check_t465_feitian_and_cri_cap() -> void:
 	var v85_45 := XDamage.eval_formula(sk85, f, e, vars)
 	var v86_45 := XDamage.eval_formula(sk86, f, e, vars)
 
-	var want85_cap := (float(f.atk) * 55.0 + float(f.mat) * 55.0 * (1.0 + 0.0 + 10.0 * 3.0)) * 5500.0
-	var want72_cap := (float(f.atk) * 15.0 + float(f.mat) * 15.0 * (1.0 + 0.0 + 10.0)) * 12000.0
-	check("t465.feitian_coef_and_cri_cap_1000pct",
-		cri_low < 10.0 and cri_15 > 10.0 and cri_45 > 40.0
+	var want85_cap := (float(f.atk) * 55.0 + float(f.mat) * 55.0 * (1.0 + 0.0 + 5.0 * 3.0)) * 2500.0
+	var want72_cap := (float(f.atk) * 15.0 + float(f.mat) * 15.0 * (1.0 + 0.0 + 5.0)) * 6000.0
+	check("t465.feitian_coef_and_cri_cap_500pct",
+		cri_low < 5.0 and cri_15 > 5.0 and cri_45 > 40.0
 		and v85_low < v85_15 and v86_low < v86_15
 		and is_equal_approx(v72_15, v72_45)
 		and is_equal_approx(v85_15, v85_45)
 		and is_equal_approx(v86_15, v86_45)
 		and absf(v85_45 - want85_cap) < 10.0
 		and absf(v72_45 - want72_cap) < 10.0
-		and str(sk85.note).contains("暴击率(上限1000%)")
-		and str(sk86.note).contains("暴击(上限1000%)*2"),
+		and str(sk86.damage.formula).contains("* 3000 *")
+		and str(sk85.note).contains("暴击率(上限500%)")
+		and str(sk86.note).contains("暴击(上限500%)*2"),
 		[cri_low, cri_15, cri_45, v85_low, v85_15, v85_45, want85_cap])
 
 
