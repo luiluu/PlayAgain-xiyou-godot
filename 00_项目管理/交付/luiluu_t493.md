@@ -1,7 +1,7 @@
 # 交付：luiluu/t493
 
 - 车道／工作者：T493 洪荒首通奖励②（cc，Opus＋medium，P8）
-- 状态：进行中
+- 状态：可合并
 
 ## 变更记录草稿
 
@@ -42,7 +42,7 @@
 - 新专项 `xiyou_honghuang_titles` 50/50（称号表与选项、天启篇与开关、自动解锁含老存档真地图补发、兑换码一次性／换档无效／错码／天启篇／开关关、存档往返、与 Python 工具同一算法的固定向量、仓库配置只有哈希、真地图碑前兑换两次、图标三张 32 互不相同、流光样式与特效关停帧）。
 - 相关专项本机全过：xiyou_designation 24/24（加了一行关 T493 开关，只比原版表）、xiyou_designation_plate 2/2、xiyou_fest_road 66/66、xiyou_fest_lobby 155/155、xiyou_fest_reward 56/56、xiyou_honghuang_monument 67/67、xiyou_quality_icons 7/7、xiyou_ui_skin_4b 123/123、xiyou_airship_view 63/63、xiyou_script_gaps 73/73、xiyou_floor_odds 173/173。
 - 语法检查 0 问题；发行空壳 check 0；回退开关覆盖无新报错。
-- 云端选测：待写
+- 云端选测：整轮 811 场景 16 片全过，https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45593319682 （提交 8ab3c3b7f）。第一轮 https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45585275897 挂了 3 个场景，全是本单引起的：xiyou_event_compare／_d 比原版称号选项（Map4 EV1）时多出洪荒三款 → 测试里关 T493 开关；xiyou_ui_skin 不许裸 draw_string → 流光逐字改走 XUiSkin.ds。修完本机这 5 个场景全过，第二轮云端全绿。
 
 ## 兑换码（不在这里写码）
 
@@ -78,8 +78,11 @@
 | `XDesignation.unlocked` | 调用方 36 处，游戏代码 6 处、其余 tests（`git grep -n 'XDesignation.unlocked(' -- '*.gd'`） | 只对 52、53 改走存档记号，其余 id 原样；52、53 以前不存在 |
 | `XDesignation.choices` | 调用方 6 处，全在 tests；游戏内经 choose 用 | 没解锁时只有 53 改显示名字＋说明，其余仍 ??? |
 | `XDesignationPlate._paint／refresh` | 地图名牌 2 处（玩家、飞艇） | 只有称号名是首证／阿夜时走流光，其余画法一行不变；xiyou_designation_plate、xiyou_airship_view 过 |
+| `XQualityIcons.info` | 调用方游戏内 2 处（xui.gd、item_status_painter.gd） | 只多认 6426～6428 三个号，原有号段不变；xiyou_quality_icons 过 |
 | `XHonghuangMonument.inspect` | 洪荒碑 1 处 | 碑文后接兑换选项；xiyou_honghuang_monument 67/67 |
 
 ## 本分支提交
 
 - 9288caf1e T493：三款称号＋兑换码＋T460 P2
+- f2ae47f2c 交付单
+- 8ab3c3b7f 修云端三项、截图改仓内路径
