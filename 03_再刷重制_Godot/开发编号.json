@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.910",
-  "sequence": 910,
-  "next": "dev.911",
-  "nextSequence": 911,
+  "current": "dev.911",
+  "sequence": 911,
+  "next": "dev.912",
+  "nextSequence": 912,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "t491-caocao-tianhu-port",
+  "currentChange": "t494",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
