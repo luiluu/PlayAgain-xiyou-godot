@@ -586,6 +586,59 @@ def sec_skillcoef(D):
     return rows, groups
 
 
+
+# ---------------- 技能全系数（招里所有数值，按同类字段分组） ----------------
+SKIP_KEYS = {'actor', 'dataId', 'code', 'state', 'states', 'skills', 'need_skill', 'from', 'element', 'elements', 'self_states', 'kill_grow',
+             'header', 'desc', 'name', 'kind', 'note_remove', 'note_add', 'note_sub', 'effects_remove', 'variants', 'id', 'skill', 'n_id', 'icon'}
+EFF_NAME = {11: '回复生命', 12: '回复魔法', 13: '回复TP', 21: '加状态几率', 22: '解状态', 31: '加强化', 32: '加弱化', 44: '公共事件'}
+
+
+def leaves(x, path=''):
+    if isinstance(x, dict):
+        code = x.get('code')
+        for k, v in x.items():
+            if k in SKIP_KEYS or k.startswith('_'):
+                continue
+            seg = k
+            if code is not None and k.startswith('value'):
+                seg = f"{EFF_NAME.get(code, '效果%s' % code)}.{k}"
+            elif k == 'if' or k == 'op':
+                continue
+            yield from leaves(v, f'{path}.{seg}' if path else seg)
+        if 'if' in x and isinstance(x.get('if'), str):
+            for k, v in x.items():
+                if isinstance(v, (int, float)) and not isinstance(v, bool) and k not in ('mult',):
+                    yield (f"{path}.条件[{x['if']}].{k}", float(v))
+    elif isinstance(x, list):
+        for v in x:
+            yield from leaves(v, path)
+    elif isinstance(x, (int, float)) and not isinstance(x, bool):
+        yield (path, float(x))
+
+
+def sec_allcoef(D):
+    tier_of = actor_tiers(D)
+    groups = defaultdict(list)
+    n_fields = 0
+    for sid, c in D.cards.items():
+        aid = str(c.get('actor', ''))
+        if aid not in tier_of:
+            continue
+        nm = f"{c.get('name', sid)}（{sid}）·{D.sd['actors'][aid].get('name', aid)}"
+        for path, v in leaves({k: v for k, v in c.items() if k not in ('damage',)} | ({'damage': {k: v for k, v in c['damage'].items() if k != 'coef'}} if isinstance(c.get('damage'), dict) else {})):
+            if v == 0 or '.条件[' in path and path.endswith('.mult'):
+                continue
+            groups[path].append((nm, v, tier_of[aid]))
+            n_fields += 1
+    for sid, st in D.rw.get('states', {}).items():
+        for path, v in leaves({k: v for k, v in st.items() if k in ('turns', 'traits', 'hit_extra_pct', 'reflect', 'revive', 'dot_remove')}):
+            if v == 0:
+                continue
+            groups['状态.' + path].append((f"{st.get('name', sid)}（状态{sid}）", v, '状态'))
+            n_fields += 1
+    return groups, n_fields
+
+
 # ---------------- 跨来源同属性 ----------------
 # 属性键 → (乘区, 叠法)；口径照 core/power.gd _notes 与 damage_ledger.json pools／nine_caps
 ATTR = {
@@ -884,6 +937,9 @@ def build(D, diff):
     src, nine, body, per_actor = sec_cross(D, pool, actor_tiers(D))
     ctab, cflags = sec_cross_extra(D, src, nine)
     allouts += ko
+    cg, n_fields = sec_allcoef(D)
+    cgg = {k: [(n, v, t) for n, v, t in rows_] for k, rows_ in cg.items()}
+    cm, co, cs = outliers(cgg, '技能全系数')
     for o in bo + ao + ro:
         allouts.append(o)
     for k, (_, o, _) in skill_res.items():
@@ -975,6 +1031,21 @@ def build(D, diff):
     for o in sorted(ko, key=sev, reverse=True)[:30]:
         L.append(f"| {o['名']} | {o['档']} | {fmt(o['值'])} | {fmt(o['中位数'])} | ×{fmt(o['倍数'])} | {o['备注']} |")
     L.append(f'\n（逐招共 {len(kr)} 条、离群 {len(ko)} 条；全表 --json。）')
+    L.append('')
+    L.append(f'### 0c. 技能全系数（卡里全部数值字段 {n_fields} 个，按字段路径分 {len(cm)} 组；离群 {len(co)} 条）')
+    L.append('')
+    L.append('字段路径照 skill_rework.json：heal.mhp_pct 治疗、shield.pct 护盾、cooldown 冷却、mp_pct／tp 消耗、seq.n 拆段、follow.rate 追加几率、damage.conds.* 条件（cap 封顶、per 每层、mult 倍率）、状态.turns 持续回合、状态.traits.* 状态特性值。同组内比，不分档位；备注列是档位。')
+    L.append('')
+    L.append('| 字段 | 条数 | 中位 | 最小 | 最大 |')
+    L.append('|---|---|---|---|---|')
+    for g in sorted(cm, key=lambda g: -cm[g][0])[:25]:
+        n, m, lo, hi = cm[g]
+        L.append(f'| {g} | {n} | {fmt(m)} | {fmt(lo)} | {fmt(hi)} |')
+    L.append('')
+    L.append('| 招／状态 | 字段 | 值 | 组中位 | 倍数 | 档位 |')
+    L.append('|---|---|---|---|---|---|')
+    for o in sorted(co, key=sev, reverse=True)[:30]:
+        L.append(f"| {o['名']} | {o['档']} | {fmt(o['值'])} | {fmt(o['中位数'])} | ×{fmt(o['倍数'])} | {o['备注']} |")
     L.append('')
     L.append('### 1. 装备对应等级分布（通用池件数，等级段 × 品质）')
     L.append('')
@@ -1105,6 +1176,10 @@ def build(D, diff):
     L.append('- 怪物楼层只认名字直接带「N层」的地图（' + '、'.join(f'{f}:{"/".join(n[:8] for n in v)}' for f, v in sorted(maps_used.items()) if len(v) > 1) + ' 等多图层都算进去了）；伐木场、黑金村、深渊、肝帝之地、天外天等挂在某层下面的子地图没算。科维努斯镇（7 层）按名字算进去了，它在启封里开不开没核。')
     L.append('- 28～33 层没有随机遇敌，只有守层者那场；七印里副本、七首之龙、心魔、鸿钧不在本表。')
     L.append('- 通用池按全部敌人掉落表算（同游戏），不是只看启封里出现的敌人。')
+    L.append('- 跨来源表的「法宝」行扫的是全部带 Magic Weapon 的法宝栏物件（去掉被当词缀引用的），启封里哪些拿得到没核；法宝备注标签是否归九线封顶没核（ledger 只写「人族首领法宝」归 equip 桶）。')
+    L.append('- 跨来源表的装备本体只算启封 1～30 层通用掉落掉得出的（等级 ≤75、品质 ≤不朽）；招牌掉落、商店、事件给的装备没单算。')
+    L.append('- 跨来源表来源是按已知名单扫的（角色卡、装备、随机词条、套装模板、宝珠、种族、秘籍、通用书、法宝、档位、烙印、境、常驻规则），还没从结算函数倒查（见回执「没做」）。')
+    L.append('- 技能全系数：damage.stats 权重、条件里的变量号／技能号（of、var、ids）也是数字字段，照样分组，看时跳过即可。')
     L.append('')
     detail = {'装备底子': {'档': bm, '离群': bo}, '固定词条': {'档': am, '离群': ao}, '随机词条': {'档': rm, '离群': ro, '阶间跳幅': steps},
               '技能': {k: {'档': v[0], '离群': v[1]} for k, v in skill_res.items()}, '怪物': {'曲线': curve, '离群': {k: v[1] for k, v in eres.items()}, '跳幅': jumps, '明细': erows},
