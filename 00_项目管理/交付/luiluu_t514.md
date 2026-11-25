@@ -61,7 +61,8 @@
 
 - 本机：`xiyou_tianqi_brand_realm` 46/46，返修后 `xiyou_gojo_trials`、`xiyou_tianqi_element_fabaos`、`xiyou_tianqi_xinmo_traits`、`xiyou_ui_skin_card_o`、`xiyou_star_warehouse` 一起跑全过，`xiyou_tianqi_brand` 248/248（改前加了境底那一版 241/248，失败都是代价单独倍率被境底叠上，已在专项里关掉境底跑），`xiyou_zhenqi` 过。
 - `语法检查.py`：1234 个 .gd，0 个问题。`天启篇数据校验.py` 全部通过（另手工喂一张清心带魔攻的表，报错）。`发行空壳.py check` 退出码 0（`debuff_rate`、`picked_count` 写进特例，四个菜单函数登记空值安全）。
-- 云端选测：通过。整轮 818 个场景、16 片，提交 c8c2c7d2a：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45677952828 （`gh run watch` 前台等完 rc=0）。首轮 4215a2912（https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45670109619）4 个失败，见上；偶发 `xiyou_star_warehouse`（单跑通过）。
+- 返修云端选测：通过。选测 367 个场景、16 片，提交 679c7e31c：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45684703274 （`gh run watch` 前台等完 rc=0）。返修本机：`xiyou_tianqi_brand_realm` 59/59、`xiyou_tianqi_brand` 248/248、`xiyou_tianqi_xinmo_traits` 212/212、`xiyou_gojo_trials` 162/162、`xiyou_tianqi_element_effects` 98/98、`xiyou_tianqi_elements` 57/57、`xiyou_tianqi_element_fabaos` 32/32、`xiyou_zhenqi` 201/201；语法检查 1235 个 0 问题；数据校验全过；发行空壳 check 0。
+- 首轮云端选测：通过。整轮 818 个场景、16 片，提交 c8c2c7d2a：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45677952828 （`gh run watch` 前台等完 rc=0）。首轮 4215a2912（https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45670109619）4 个失败，见上；偶发 `xiyou_star_warehouse`（单跑通过）。
 - 截图：无（闭关菜单是文字页，专项断言了标签和翻页）
 
 ## 没做／偏离
