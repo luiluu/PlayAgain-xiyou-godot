@@ -35,6 +35,10 @@ static var STAGE3 := true
 ## T430（O-651）：三阶过场整段替换为 26 秒漫画动画（XRift3Anim，分镜 v0.5）。
 ## true＝资源就绪走漫画替换支，缺资源自动走 411 Else 支回退原像素过场；false＝回退 T412 原像素过场（clear_cache() 生效）
 static var RIFT3_ANIM := true
+## T486（O-663，Kyo 11-25 事项60「悄悄补记，直接进三阶看徐凤年」）：存档里 EV76／EV203 自开关 A 开着（这个档真看过流萤／苍龙），
+## 配置 codexWhisperSeen 却缺 rift1／rift2（重装／换机导回存档、配置坏了）时，进大厅先补记这两项、不播过场，
+## 同一次进大厅就按原逻辑播 rift3、进三阶。只管西游档（天启篇不动）；不改存档。false 回到不补记（旧档永久卡二阶）。
+static var BACKFILL_FROM_SAVE := true
 
 const MAP := 4
 const VORTEX := 75
@@ -91,6 +95,24 @@ static func clear_cache() -> void:
 
 static func on_map_setup(_map_id: int) -> void:
 	_visit += 1
+
+
+## T486：进大厅时按存档自开关补记 rift1／rift2（只记配置、不播过场、不算「这一次进大厅才记的」）。
+## 在 map_scene 建本图事件之前调；返回补记了哪些键（测试用）。
+static func backfill_from_save(s: XState, map_id: int) -> Array:
+	var added := []
+	if not BACKFILL_FROM_SAVE or not STAGE2 or map_id != MAP or s == null or XTianqi.active(s):
+		return added
+	var r1_done := s.self_switch(MAP, RIFT1, "A")
+	var r2_done := s.self_switch(MAP, RIFT2, "A")
+	if (r1_done or r2_done) and not XConfig.whisper_seen("rift1"):
+		added.append("rift1")
+	if r2_done and not XConfig.whisper_seen("rift2"):
+		added.append("rift2")
+	for key in added:
+		XConfig.whisper_mark(key)
+		_mark_visit.erase(key)  # 补记不是这一次进大厅播的：rift3 同一次就能播
+	return added
 
 
 ## XConfig.whisper_mark 记键时通知

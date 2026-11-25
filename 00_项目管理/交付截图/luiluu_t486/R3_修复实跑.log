@@ -1,0 +1,12 @@
+# 本分支（main dev.900 之上＋T486 修复）带窗口实跑；存档＝玩家旧档（11-23 v0.03 导出，洪荒 difficulty 8，存在大厅），只读、拷副本用
+T486R3 import=
+T486R3 F1_cfg_empty_fix_on_enter1={"XRift.stage":3,"canglong_shown":false,"difficulty":8,"ev203A":true,"ev205A":null,"ev76A":true,"load_ok":true,"lobby_s3":true,"rift3_anim":true,"seen_after":["rift1","rift2","rift3"],"seen_before":[]}
+T486R3 F1_cfg_empty_fix_on_enter2={"XRift.stage":3,"canglong_shown":false,"difficulty":8,"ev203A":true,"ev205A":true,"ev76A":true,"load_ok":true,"lobby_s3":true,"rift3_anim":false,"seen_after":["rift1","rift2","rift3"],"seen_before":["rift1","rift2","rift3"]}
+T486R3 import=
+T486R3 F2_cfg_rift1_fix_on_enter1={"XRift.stage":3,"canglong_shown":false,"difficulty":8,"ev203A":true,"ev205A":null,"ev76A":true,"load_ok":true,"lobby_s3":true,"rift3_anim":true,"seen_after":["rift1","rift2","rift3"],"seen_before":["rift1"]}
+T486R3 import=
+T486R3 F3_cfg_rift123_fix_on_enter1={"XRift.stage":3,"canglong_shown":false,"difficulty":8,"ev203A":true,"ev205A":true,"ev76A":true,"load_ok":true,"lobby_s3":true,"rift3_anim":false,"seen_after":["rift1","rift2","rift3"],"seen_before":["rift1","rift2","rift3"]}
+T486R3 import=
+T486R3 F4_cfg_empty_fix_off_enter1={"XRift.stage":2,"canglong_shown":false,"difficulty":8,"ev203A":true,"ev205A":null,"ev76A":true,"load_ok":true,"lobby_s3":false,"rift3_anim":false,"seen_after":[],"seen_before":[]}
+T486R3 F4_cfg_empty_fix_off_enter2={"XRift.stage":2,"canglong_shown":false,"difficulty":8,"ev203A":true,"ev205A":null,"ev76A":true,"load_ok":true,"lobby_s3":false,"rift3_anim":false,"seen_after":[],"seen_before":[]}
+ERROR: 2 resources still in use at exit (run with --verbose for details).

@@ -473,6 +473,7 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	XYunshangOrders.on_map_setup(s, s.map_id, id)  # 云裳 Game_Map.setup 包装：未知战斗记来源地图（不朽天丝用）
 	XAbyssMerchant.on_map_setup(s, s.map_id, id)  # 深渊商人 Game_Map.setup 包装：商人路线地图开新一轮
 	XRift.on_map_setup(id)  # 时空漩涡二阶段：记进图次数（rift2 不在刚播完 rift1 的同一次进大厅播）
+	XRift.backfill_from_save(s, id)  # T486：旧档自开关 A 开着、配置缺 rift1／rift2 时补记（重装导回存档卡二阶）
 	s.map_id = id
 	XTianqiMoney.scale_sync(s)  # 天启篇天平：进了别的层就清掉（只管买时那一层）
 	XEnemyBook.on_map_setup(s, map_data)  # AB_EnemyBook Game_Map.setup：记遇敌表敌人的出没地图

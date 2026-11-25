@@ -1,0 +1,81 @@
+extends Node
+## T486 R3 临时探针（不入仓）：玩家旧档（洪荒、v0.03 导出）配置丢 rift1/rift2 时，补记后同一次进大厅播徐凤年、进三阶
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
+var OUT := ""
+func frames(n):
+	for i in n: await get_tree().process_frame
+func _ready(): _run.call_deferred()
+func _seen() -> Array:
+	XConfig.ensure_loaded(); return (XConfig._values.codexWhisperSeen as Array).duplicate()
+func _import(file: String) -> String:
+	var r := XSaveTransfer.parse_import(FileAccess.get_file_as_string(file))
+	if r.has("error"): return str(r.error)
+	return XSaveTransfer.import_to(1, r.data)
+func _snap(name: String) -> void:
+	if OUT == "" or DisplayServer.get_name() == "headless": return
+	RenderingServer.force_draw()
+	get_viewport().get_texture().get_image().save_png(OUT.path_join(name))
+
+func _enter(tag: String, n := 900, shot_anim := "", shot_after := "") -> Dictionary:
+	XRift.clear_cache()
+	XRift.on_map_setup(132)
+	var seen_before := _seen()
+	var ok := XSave.load_slot(1)
+	var st := XState.current
+	var map := XMapScene.new()
+	add_child(map)
+	var anim_seen := false
+	var canglong := false
+	for i in n:
+		await frames(1)
+		for e in map.events:
+			if e.event_id == XRift.CANGLONG_EV and e.character_name != "": canglong = true
+		var a = get_tree().root.find_child(XRift3Anim.NODE_NAME, true, false)
+		if a != null and not anim_seen:
+			anim_seen = true
+			if shot_anim != "":
+				await frames(420); _snap(shot_anim)
+		if anim_seen and a == null and not map.busy:
+			break
+	await frames(90)
+	if shot_after != "": _snap(shot_after)
+	var ss: Dictionary = st.self_switches
+	var r := {"load_ok": ok, "seen_before": seen_before, "rift3_anim": anim_seen, "canglong_shown": canglong, "seen_after": _seen(),
+		"XRift.stage": XRift.stage(), "lobby_s3": XLobbyCorruption.stage3_active(st), "difficulty": st.difficulty,
+		"ev76A": ss.get("4,76,A", null), "ev203A": ss.get("4,203,A", null), "ev205A": ss.get("4,205,A", null)}
+	print("T486R3 ", tag, "=", JSON.stringify(r))
+	map.queue_free()
+	await frames(3)
+	for c in get_tree().root.get_children():
+		if c.name == XRift3Anim.NODE_NAME: c.queue_free()
+	await frames(2)
+	return r
+
+func _run():
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--o="): OUT = a.substr(4)
+	XMessageBox.auto = true
+	var save := OUT.path_join("../saves/old_save.json")
+	# F1：配置丢了（重装导回存档），开着补记
+	TestEnv.isolate("t486r3_1", false)
+	print("T486R3 import=", _import(save))
+	await _enter("F1_cfg_empty_fix_on_enter1", 3000, "F1_补记后播徐凤年.png")
+	await _enter("F1_cfg_empty_fix_on_enter2", 300, "", "F1_三阶大厅.png")
+	# F2：配置只有 rift1
+	TestEnv.isolate("t486r3_2", false)
+	XConfig.whisper_mark("rift1")
+	print("T486R3 import=", _import(save))
+	await _enter("F2_cfg_rift1_fix_on_enter1", 3000)
+	# F3：已经正常进过三阶的配置：不动、不重播
+	TestEnv.isolate("t486r3_3", false)
+	XConfig.whisper_mark("rift1"); XConfig.whisper_mark("rift2"); XConfig.whisper_mark("rift3")
+	print("T486R3 import=", _import(save))
+	await _enter("F3_cfg_rift123_fix_on_enter1", 300)
+	# F4：关掉开关＝现状，卡二阶
+	XRift.BACKFILL_FROM_SAVE = false
+	TestEnv.isolate("t486r3_4", false)
+	print("T486R3 import=", _import(save))
+	await _enter("F4_cfg_empty_fix_off_enter1", 900)
+	await _enter("F4_cfg_empty_fix_off_enter2", 300, "", "F4_开关关_卡二阶.png")
+	XRift.BACKFILL_FROM_SAVE = true
+	get_tree().quit(0)
