@@ -4,6 +4,8 @@
   python3 补丁叠加验证.py               导出底包 → 临时改四处 → 导出补丁 → 还原改动 → 用 macOS 发行模板当替身跑六次
   python3 补丁叠加验证.py --preset "安卓 发行"   换一个导出预设做底包和补丁（默认「Windows 发行」）
   python3 补丁叠加验证.py --make-only --base <底包.pck> --patch-out <目录>   只做探针补丁（给云端 windows-run／android-run 在真系统上跑）
+  python3 补丁叠加验证.py --real-base <devNNN_三平台发行>   用真发行底包（T489）：补丁相对它的 windows/*.pck 导出（底包带存档密钥就照
+                         发布补丁.py 注入），六次运行换成目录里的真 mac 包，最后加 g：读发行密钥封存的 .ksv 档进地图（同 发布补丁.py 存档门禁）
   python3 补丁叠加验证.py --keep        留下工作目录（底包、补丁、日志）
   python3 补丁叠加验证.py --out <目录>   工作目录（默认系统临时目录下新建）
 
@@ -23,7 +25,8 @@
        e 新装的补丁（未确认）  → 载入、进标题，跑起来后登记变成已确认
        f 已连续两次没起来      → 启动前自动退回、不载入，留下退回提示
 它量的是引擎读包与载入顺序；Windows／安卓真系统上 user:// 的位置和文件读写不在这里（走云端 export-smoke 或实机）。
-退出码 0＝六次都符合预期。
+自己导的底包里没有发行存档密钥，测不出「补丁删了密钥、存档全看不见」（v0.04.01 事故，T489）；那条要 --real-base。
+退出码 0＝六次（--real-base 七次）都符合预期。
 """
 import argparse
 import hashlib
@@ -90,14 +93,25 @@ def sha(p: Path) -> str:
     return h.hexdigest()
 
 
+def _release_patch():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location('发布补丁', HERE / '发布补丁.py')
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+
 def make_patch(base: Path, patch: Path, preset: str):
-    """临时改四处 → 相对 base 导出补丁到 patch → 按原字节还原。返回 (成功, 引擎输出, 底包开发编号)。"""
+    """临时改四处 → 相对 base 导出补丁到 patch → 按原字节还原。返回 (成功, 引擎输出, 底包开发编号)。
+    底包带发行存档密钥（真底包）时照 发布补丁.py 往工程里注入同一把、导完删（T489），不然补丁会把它记成删除。"""
     ga, bi, icon = PROJECT / 'core/game_app.gd', PROJECT / 'content/build_info.json', PROJECT / 'modes/xiyou/ui/game_over_null.png'
     probe = PROJECT / 'core/_patch_probe.gd'
     backup = {p: p.read_bytes() for p in (ga, bi, icon)}
     base_code = int(str(json.loads(backup[bi].decode('utf-8'))['developmentVersion']).replace('dev.', ''))
     rc, out = 1, ''
+    injected = None
     try:
+        injected = _release_patch().inject_save_key(PROJECT, base)
         src = ga.read_text(encoding='utf-8')
         anchor = 'func _ready() -> void:\n'
         assert src.count(anchor) == 1, 'game_app.gd 里 _ready 定位不到'
@@ -110,6 +124,8 @@ def make_patch(base: Path, patch: Path, preset: str):
         godot('--import')
         rc, out = godot('--export-patch', preset, str(patch), '--patches', str(base))
     finally:
+        if injected is not None:
+            injected.unlink(missing_ok=True)  # 工作区不留密钥（.gitignore 了）
         for p, b in backup.items():
             p.write_bytes(b)
         for p in (probe, Path(str(probe) + '.uid')):
@@ -137,6 +153,19 @@ def make_only(base: Path, out: Path, preset: str) -> int:
     return 0
 
 
+def real_app(real_dir: Path, work: Path):
+    """解开真底包目录里的 mac 包，返回可执行文件（T489）。"""
+    zipf = real_dir / _release_patch()._rel_mod().MAC_ZIP
+    if not zipf.is_file() or subprocess.run(['ditto', '-x', '-k', str(zipf), str(work / 'app')]).returncode:
+        print(f'✗ 解不开 {zipf}')
+        return None
+    exes = [x for x in sorted((work / 'app').glob('*.app/Contents/MacOS/*')) if x.is_file() and os.access(x, os.X_OK)]
+    if not exes:
+        print(f'✗ {zipf.name} 里没有可执行文件')
+        return None
+    return exes[0]
+
+
 def run_game(exe: Path, work: Path, tag: str, setup, after=None):
     home = work / f'home_{tag}'
     upd = home / USER_DIR / 'updates'
@@ -160,6 +189,7 @@ def main() -> int:
     ap.add_argument('--make-only', action='store_true')
     ap.add_argument('--base')
     ap.add_argument('--patch-out')
+    ap.add_argument('--real-base', help='真发行底包目录 devNNN_三平台发行（T489）')
     a = ap.parse_args()
     try:
         _env()
@@ -176,23 +206,46 @@ def main() -> int:
     problems = []
 
     print(f'· 工作目录 {work}')
-    rc, out = godot('--export-pack', a.preset, str(base))
-    if rc != 0 or not base.exists():
-        print(out[-2000:])
-        print('✗ 底包导出失败')
-        return 1
-    print(f'· 底包 {base.stat().st_size / 1e6:.1f} MB（预设「{a.preset}」）')
+    real_dir, real_code = None, None
+    if a.real_base:
+        rp = _release_patch()
+        try:
+            base, real_code = rp.resolve_base(a.real_base, None)
+        except rp.Fail as e:
+            print(f'✗ {e}')
+            return 1
+        real_dir = base.parent.parent
+        if not real_code:
+            print('✗ --real-base 要给 devNNN_三平台发行 目录（编号取目录名）')
+            return 1
+        print(f'· 真底包 {base}（dev.{real_code}，存档密钥：{"有" if rp.base_has_save_key(base) else "没有"}）')
+    else:
+        rc, out = godot('--export-pack', a.preset, str(base))
+        if rc != 0 or not base.exists():
+            print(out[-2000:])
+            print('✗ 底包导出失败')
+            return 1
+        print(f'· 底包 {base.stat().st_size / 1e6:.1f} MB（预设「{a.preset}」）')
 
     ok, out, base_code = make_patch(base, patch, a.preset)
     if not ok:
         print(out[-2000:])
         print('✗ 补丁导出失败')
         return 1
+    if real_code:
+        base_code = real_code  # 登记里的底包号要等于真底包的号（BootPatch 比的是底包自己的 build_info）
+        gone = _release_patch().removal_problems(patch)
+        if gone:
+            print('✗ ' + '；'.join(gone))
+            return 1
     print(f'· 补丁 {patch.stat().st_size / 1e3:.1f} KB（改了 1 个脚本、加 1 个脚本、1 个 JSON、1 张图）')
 
     sys.path.insert(0, str(HERE))
-    import 发行入口冒烟 as entry_smoke
-    exe = entry_smoke.release_runner(work, base)  # macOS 发行模板改成和底包同名、放在旁边
+    if real_dir is not None:
+        exe = real_app(real_dir, work)  # 目录里的真 mac 包
+    else:
+        import 发行入口冒烟 as entry_smoke
+        exe = entry_smoke.release_runner(work, base)  # macOS 发行模板改成和底包同名、放在旁边
     if exe is None:
         return 1
 
@@ -240,10 +293,17 @@ def main() -> int:
     check('f 两次没起来', '自动退回：不载入补丁、照常进标题', 'PATCH_PROBE' not in o and 'BOOT_PATCH loaded=true' not in o and ENTRY in o)
     check('f 两次没起来', '登记删掉、留下退回提示', st is None and noted)
 
+    if real_dir is not None:
+        # g 真底包＋补丁读发行密钥封存的 .ksv 档（T489：0.04.01 补丁删了密钥，这一步会看到存档「不见了」）
+        gate = _release_patch().save_gate(real_dir, patch, base_code, work / '日志')
+        for g in gate:
+            print('    ' + g)
+        check('g 封存存档', '装补丁后读得到发行密钥封存的 .ksv、进地图', not gate)
+
     if problems:
         print(f'✗ {len(problems)} 项不符，日志留在 {work}')
         return 1
-    print('✓ 补丁叠加载入：六次运行都符合预期')
+    print('✓ 补丁叠加载入：%s次运行都符合预期' % ('七' if real_dir is not None else '六'))
     if not a.keep and not a.out:
         shutil.rmtree(work, ignore_errors=True)
     return 0
