@@ -52,6 +52,7 @@
 | 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |
 | --- | --- | --- |
 | `XTianqiElementEffects._try_apply`（只换几率取值那一行）、新增 `actor_chance` | `git grep -nE 'actor_chance\(|_try_apply\(' -- '*.gd'` | `_try_apply` 签名没变，调用方不受影响；`actor_chance` 只有 `_try_apply` 和专项在用 |
+| `XTianqiElementEffects.tier_chance`（函数本身没改，自检因新函数紧挨着它而列出） | 调用方 6 处（`git grep -nE '[^[:alnum:]_]tier_chance[[:space:]]*\(' -- '*.gd'`，不算定义行：模块里 2 行、专项里 4 行） | 调用方 6 处逐处结论：签名和返回值都没变；模块里一处是新增的 `actor_chance`，一处是圣护的 `tier_chance(8)`（没动）；专项 4 行是断言 |
 
 ## 本分支提交
 
