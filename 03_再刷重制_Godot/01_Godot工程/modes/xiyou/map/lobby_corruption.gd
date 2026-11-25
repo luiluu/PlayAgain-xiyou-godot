@@ -198,7 +198,7 @@ const STAGE3_DECAY_FURNITURE := [
 	{"id": "wardrobe", "cell": Vector2i(8, 26), "size": Vector2i(1, 2), "fest_hide": false, "avoid_mirror": false},
 	{"id": "vanity", "cell": Vector2i(9, 26), "size": Vector2i(1, 2), "fest_hide": false, "avoid_mirror": true},
 	{"id": "north_table_w", "cell": Vector2i(10, 9), "size": Vector2i(1, 1), "fest_hide": false, "avoid_mirror": false},
-	{"id": "north_table_e", "cell": Vector2i(18, 9), "size": Vector2i(1, 1), "fest_hide": false, "avoid_mirror": false},
+	{"id": "north_table_e", "cell": Vector2i(18, 9), "size": Vector2i(1, 1), "fest_hide": false, "monument_hide": true, "avoid_mirror": false},
 	{"id": "south_rail_e", "cell": Vector2i(18, 26), "size": Vector2i(3, 1), "fest_hide": false, "avoid_mirror": false},
 	{"id": "north_rail_w", "cell": Vector2i(6, 7), "size": Vector2i(5, 1), "fest_hide": false, "avoid_mirror": false},
 	{"id": "north_rail_e", "cell": Vector2i(18, 7), "size": Vector2i(5, 1), "fest_hide": false, "avoid_mirror": false},
@@ -222,7 +222,7 @@ const STAGE3_DECAY_LAMPS := [
 	{"id": "table_candle_w", "cell": Vector2i(13, 11), "fest_hide": true},
 	{"id": "table_candle_e", "cell": Vector2i(15, 11), "fest_hide": true},
 	{"id": "north_candle_w", "cell": Vector2i(10, 8), "fest_hide": false},
-	{"id": "north_candle_e", "cell": Vector2i(18, 8), "fest_hide": false},
+	{"id": "north_candle_e", "cell": Vector2i(18, 8), "fest_hide": false, "monument_hide": true},
 	{"id": "floor_lamp_se", "cell": Vector2i(17, 26), "fest_hide": false},
 ]
 
@@ -1077,9 +1077,10 @@ func _build_decay_props() -> void:
 			var geom := _gen_furniture_decay(0x5F21 + i * 53, sz, bool(cfg.avoid_mirror))
 			n.draw.connect(_draw_furniture_decay.bind(n, geom))
 		var fh := bool(cfg.fest_hide)
-		n.visible = not (fh and fest)
+		var mh := bool(cfg.get("monument_hide", false))
+		n.visible = not (fh and fest) and not (mh and XHonghuangMonument.monument_active(XState.current))
 		_decay_furniture_node.add_child(n)
-		_decay_furniture_items.append({"node": n, "fest_hide": fh})
+		_decay_furniture_items.append({"node": n, "fest_hide": fh, "monument_hide": mh})
 
 	# 2) 盆栽／植物枯死（墙脚与栏柱脚装饰位，均无事件、不改通行；z=-8）
 	_decay_plants_node = Node2D.new()
@@ -1129,9 +1130,10 @@ func _build_decay_props() -> void:
 		sp.position = cell_px(cfg.cell)
 		sp.modulate.a = 0.62
 		var fh := bool(cfg.fest_hide)
-		sp.visible = not (fh and fest)
+		var mh := bool(cfg.get("monument_hide", false))
+		sp.visible = not (fh and fest) and not (mh and XHonghuangMonument.monument_active(XState.current))
 		_decay_light_node.add_child(sp)
-		_decay_lamp_items.append({"node": sp, "fest_hide": fh, "phase": i * 1.37})
+		_decay_lamp_items.append({"node": sp, "fest_hide": fh, "monument_hide": mh, "phase": i * 1.37})
 
 
 func _gen_furniture_decay(seed_val: int, sz: Vector2, avoid_mirror: bool) -> Dictionary:
@@ -1263,16 +1265,18 @@ func _update_decay(dt: float, fest: bool) -> void:
 		_decay_dim_alpha = 0.0
 		return
 	var fest_i := 1 if fest else 0
-	if fest_i != _decay_last_fest:
-		_decay_last_fest = fest_i
+	var mon_on := XHonghuangMonument.monument_active(XState.current)
+	var state_i := fest_i + (2 if mon_on else 0)
+	if state_i != _decay_last_fest:
+		_decay_last_fest = state_i
 		for row in _decay_furniture_items:
 			var n: Node2D = row.node
 			if is_instance_valid(n):
-				n.visible = not (bool(row.fest_hide) and fest)
+				n.visible = not (bool(row.fest_hide) and fest) and not (bool(row.get("monument_hide", false)) and mon_on)
 		for row in _decay_lamp_items:
 			var sp: Node2D = row.node
 			if is_instance_valid(sp):
-				sp.visible = not (bool(row.fest_hide) and fest)
+				sp.visible = not (bool(row.fest_hide) and fest) and not (bool(row.get("monument_hide", false)) and mon_on)
 	# 偶发灯光闪烁（关「画面特效」时仅保持静态压暗，不闪烁）
 	var fx := fx_on()
 	var flicker_add := 0.0

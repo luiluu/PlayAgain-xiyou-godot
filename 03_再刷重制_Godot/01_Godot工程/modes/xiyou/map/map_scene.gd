@@ -480,18 +480,19 @@ func load_map(id: int, x: int, y: int, d: int) -> void:
 	XEnemyBook.on_map_setup(s, map_data)  # AB_EnemyBook Game_Map.setup：记遇敌表敌人的出没地图
 	XMapTransfer.on_arrive(s, id)
 	_reset_transfer_button()
+	var tile_data := XHonghuangMonument.tile_map_data(id, map_data, s)
 	lower = MVTilemap.new()
 	lower.z_index = -10
 	add_child(lower)
-	lower.setup(map_data, false)
-	lower.open_cells = MVTilemap.opened_cells(id, map_data)
+	lower.setup(tile_data, false)
+	lower.open_cells = MVTilemap.opened_cells(id, tile_data)
 	chars = Node2D.new()
 	chars.y_sort_enabled = true
 	add_child(chars)
 	upper = MVTilemap.new()
 	upper.z_index = 10
 	add_child(upper)
-	upper.setup(map_data, true)
+	upper.setup(tile_data, true)
 	XLobbyDebugNpc.sync(s)  # installTestGateRuntime：进地图先对齐开关 2501（测试模式 99 级 NPC）
 	var keep_cfg = slice().get("keepEvents", {}).get(str(id), [])
 	var keep: Array = keep_cfg.map(func(v): return int(v)) if keep_cfg is Array else []

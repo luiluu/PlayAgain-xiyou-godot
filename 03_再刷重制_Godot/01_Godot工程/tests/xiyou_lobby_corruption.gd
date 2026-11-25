@@ -556,9 +556,11 @@ func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -
 	check("stage3.wall_veins_7", fx3.wall_vein_count() == 7 and fx3.gate_vein_visible(), [fx3.wall_vein_count(), fx3.gate_vein_visible()])
 	check("stage3.wall_alpha", fx3._wall_veins_node.modulate.a <= XLobbyCorruption.STAGE3_WALL_ALPHA_MAX + 0.001, fx3._wall_veins_node.modulate.a)
 
-	# 3.8 大厅腐烂破败层（Kyo 11-23：9 家具朽坏、6 枯死盆栽、16 墙角地缝霉斑、5 真实灯具变暗＋偶发闪烁）
-	check("stage3.decay_counts", fx3.decay_furniture_count() == 9 and fx3.decay_plant_count() == 6 \
-		and fx3.decay_mold_count() == 16 and fx3.decay_lamp_count() == 5 \
+	# 3.8 大厅腐烂破败层（Kyo 11-23；T460 洪荒碑启用时隐藏楼梯东侧 north_table_e 与 north_candle_e → 8 家具、4 灯）
+	var exp_f := 8 if XHonghuangMonument.ENABLED else 9
+	var exp_l := 4 if XHonghuangMonument.ENABLED else 5
+	check("stage3.decay_counts", fx3.decay_furniture_count() == exp_f and fx3.decay_plant_count() == 6 \
+		and fx3.decay_mold_count() == 16 and fx3.decay_lamp_count() == exp_l \
 		and fx3.decay_dim_alpha() >= XLobbyCorruption.STAGE3_DECAY_DIM_BASE - 0.005,
 		[fx3.decay_furniture_count(), fx3.decay_plant_count(), fx3.decay_mold_count(), fx3.decay_lamp_count(), fx3.decay_dim_alpha()])
 	fx3.trigger_decay_flicker()
@@ -643,7 +645,7 @@ func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -
 	var m_fest := await open_lobby(3, 14, 7)
 	var fx_fest := m_fest.lobby_fx
 	check("stage3.fest_gate_hidden", XFestLobby.decor() and fx_fest != null and not fx_fest.gate_vein_visible() and fx_fest.wall_vein_count() == 6 \
-		and fx_fest.decay_furniture_count() == 7 and fx_fest.decay_lamp_count() == 3,
+		and fx_fest.decay_furniture_count() == exp_f - 2 and fx_fest.decay_lamp_count() == exp_l - 2,
 		[XFestLobby.decor(), fx_fest.gate_vein_visible() if fx_fest else null, fx_fest.wall_vein_count() if fx_fest else -1, fx_fest.decay_furniture_count() if fx_fest else -1, fx_fest.decay_lamp_count() if fx_fest else -1])
 	check("stage3.fest_floats_avoid", fx_fest != null and fx_fest.floats.all(func(f): return _float_s3_clear(m_fest, fx_fest, f)), fx_fest.floats if fx_fest else [])
 	var olf := fx_fest._event_by_id(1)
@@ -658,7 +660,7 @@ func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -
 	await frames(2)
 	check("stage3.final_regular_backdrop", fest_backdrop != null and fest_backdrop.texture.resource_path.ends_with("_backdrop.png"))
 	check("stage3.fest_gate_restored", not XFestLobby.decor() and fx_fest.gate_vein_visible() and fx_fest.wall_vein_count() == 7 \
-		and fx_fest.decay_furniture_count() == 9 and fx_fest.decay_lamp_count() == 5,
+		and fx_fest.decay_furniture_count() == exp_f and fx_fest.decay_lamp_count() == exp_l,
 		[XFestLobby.decor(), fx_fest.gate_vein_visible(), fx_fest.wall_vein_count(), fx_fest.decay_furniture_count(), fx_fest.decay_lamp_count()])
 	await close(m_fest)
 	XFestLobby.reload_map()
@@ -685,7 +687,7 @@ func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -
 	await frames(10)
 	check("stage3.off_ground", fx_ng != null and absf(fx_ng.desat_radius_cells() - 6.0) < 0.01 and not fx_ng.has_stage3_cracks() \
 		and fx_ng.floats.has(XLobbyCorruption.FIXED_FLOAT) and fx_ng.floats.size() >= 2 and fx_ng.floats.size() <= 3 \
-		and fx_ng.corner_count() == 4 and fx_ng.wall_vein_count() == 7 and fx_ng.decay_furniture_count() == 9,
+		and fx_ng.corner_count() == 4 and fx_ng.wall_vein_count() == 7 and fx_ng.decay_furniture_count() == exp_f,
 		[fx_ng.desat_radius_cells(), fx_ng.has_stage3_cracks(), fx_ng.floats, fx_ng.corner_count(), fx_ng.wall_vein_count(), fx_ng.decay_furniture_count()])
 	await close(m_ng)
 	XLobbyCorruption.STAGE3_GROUND = true
@@ -695,7 +697,7 @@ func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -
 	var fx_nc := m_nc.lobby_fx
 	await frames(15)
 	check("stage3.off_four_colors", fx_nc != null and fx_nc.corner_count() == 0 and fx_nc.mote_count() <= 30 and fx_nc.corner_mote_count() == 0 \
-		and absf(fx_nc.desat_radius_cells() - 10.0) < 0.01 and fx_nc.has_stage3_cracks() and fx_nc.wall_vein_count() == 7 and fx_nc.decay_furniture_count() == 9,
+		and absf(fx_nc.desat_radius_cells() - 10.0) < 0.01 and fx_nc.has_stage3_cracks() and fx_nc.wall_vein_count() == 7 and fx_nc.decay_furniture_count() == exp_f,
 		[fx_nc.corner_count(), fx_nc.mote_count(), fx_nc.corner_mote_count(), fx_nc.desat_radius_cells(), fx_nc.wall_vein_count(), fx_nc.decay_furniture_count()])
 	await close(m_nc)
 	XLobbyCorruption.STAGE3_FOUR_COLORS = true
@@ -705,7 +707,7 @@ func _test_stage3(pass1: Array, ev1: String, data_before: String, per2: float) -
 	var fx_nw := m_nw.lobby_fx
 	await frames(10)
 	check("stage3.off_wall_veins", fx_nw != null and fx_nw.wall_vein_count() == 0 and not fx_nw.gate_vein_visible() \
-		and absf(fx_nw.desat_radius_cells() - 10.0) < 0.01 and fx_nw.has_stage3_cracks() and fx_nw.corner_count() == 4 and fx_nw.decay_furniture_count() == 9,
+		and absf(fx_nw.desat_radius_cells() - 10.0) < 0.01 and fx_nw.has_stage3_cracks() and fx_nw.corner_count() == 4 and fx_nw.decay_furniture_count() == exp_f,
 		[fx_nw.wall_vein_count(), fx_nw.gate_vein_visible(), fx_nw.desat_radius_cells(), fx_nw.corner_count(), fx_nw.decay_furniture_count()])
 	await close(m_nw)
 	XLobbyCorruption.STAGE3_WALL_VEINS = true

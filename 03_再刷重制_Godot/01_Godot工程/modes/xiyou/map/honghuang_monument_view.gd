@@ -11,8 +11,16 @@ const TS := 48
 ## 预留正式美术贴图路径（脚底居中锚点）；存在时优先使用，不存在时走程序绘制
 static var TEX_PATH := "res://content/lobby/honghuang_monument.png"
 
+## 三阶整图底图（hall_stage3_backdrop[_fest].png）中 (18, 8..9) 原画入了花盆／烛台；
+## 运行时用同张底图上紧邻的干净北隔墙 (21, 8) 与干净灰绿地砖 (18, 10) 在 z=-8（底图 -9 之上、角色与碑 0 之下）无缝覆盖，
+## 平时与庆典三阶自动同步，且回退开关关闭时原图完好无损。
+const STAGE3_WALL_SRC := Vector2i(21, 8)
+const STAGE3_FLOOR_SRC := Vector2i(18, 10)
+
 var host: XMapScene
 var _stele_node: Node2D
+var _stage3_cover: Node2D
+var _stage3_last_tex: Texture2D
 var _tex: Texture2D
 var _t := 0.0
 
@@ -21,6 +29,12 @@ func setup(map: XMapScene) -> void:
 	host = map
 	name = "HonghuangMonumentView"
 	_tex = load(TEX_PATH) if TEX_PATH != "" and ResourceLoader.exists(TEX_PATH) else null
+	_stage3_cover = Node2D.new()
+	_stage3_cover.name = "HonghuangStage3PotCover"
+	_stage3_cover.z_as_relative = false
+	_stage3_cover.z_index = -8
+	_stage3_cover.draw.connect(_draw_stage3_cover)
+	add_child(_stage3_cover)
 	var foot_y := (XHonghuangMonument.CELL.y + 1) * TS
 	_stele_node = Node2D.new()
 	_stele_node.name = "HonghuangMonumentStele"
@@ -32,14 +46,53 @@ func setup(map: XMapScene) -> void:
 func _exit_tree() -> void:
 	if is_instance_valid(_stele_node):
 		_stele_node.queue_free()
+	if is_instance_valid(_stage3_cover):
+		_stage3_cover.queue_free()
 
 
 func _process(delta: float) -> void:
+	if is_instance_valid(_stage3_cover):
+		var tex := _stage3_backdrop_tex()
+		if tex != _stage3_last_tex:
+			_stage3_last_tex = tex
+			_stage3_cover.queue_redraw()
 	if not is_instance_valid(_stele_node):
 		return
 	if XGraphics.fx_on():
 		_t += delta
 		_stele_node.queue_redraw()
+
+
+func _stage3_backdrop_tex() -> Texture2D:
+	if host == null or not is_instance_valid(host.lobby_fx):
+		return null
+	var fx: XLobbyCorruption = host.lobby_fx
+	if not fx.stage3_on() or fx._art_backdrop == null or not is_instance_valid(fx._art_backdrop) or not fx._art_backdrop.visible:
+		return null
+	return fx._art_backdrop.texture
+
+
+func stage3_pot_covered() -> bool:
+	return _stage3_backdrop_tex() != null
+
+
+func _draw_stage3_cover() -> void:
+	var tex := _stage3_backdrop_tex()
+	_stage3_last_tex = tex
+	if tex == null:
+		return
+	var top := XHonghuangMonument.POT_TOP_CELL
+	var bot := XHonghuangMonument.CELL
+	_stage3_cover.draw_texture_rect_region(
+		tex,
+		Rect2(float(top.x * TS), float(top.y * TS), float(TS), float(TS)),
+		Rect2(float(STAGE3_WALL_SRC.x * TS), float(STAGE3_WALL_SRC.y * TS), float(TS), float(TS))
+	)
+	_stage3_cover.draw_texture_rect_region(
+		tex,
+		Rect2(float(bot.x * TS), float(bot.y * TS), float(TS), float(TS)),
+		Rect2(float(STAGE3_FLOOR_SRC.x * TS), float(STAGE3_FLOOR_SRC.y * TS), float(TS), float(TS))
+	)
 
 
 func _draw_stele() -> void:

@@ -3,18 +3,22 @@ extends RefCounted
 ## 【小A·未经审查】T460：西游大厅洪荒碑＋进西游档一次性首通播报（Kyo 11-24 / 11-25 拍板）。
 ##
 ## 两部分（均只在西游档生效，天启篇存档完全不受影响；回退开关 ENABLED 置 false 即整套无痕关闭）：
-## 1. 大厅洪荒碑：方桌大厅 Map004 东侧红毯外空处 (18, 14)，新增事件 EV82（避开原版 1～77、庆典 78～81、漩涡 201～207），
+## 1. 大厅洪荒碑：方桌大厅 Map004 上方红毯楼梯右侧原花盆／烛台位 (18, 9)（Kyo 11-25 拍板），新增事件 EV82（避开原版 1～77、庆典 78～81、漩涡 201～207），
+##    同步去除原位置 (18, 8..9) 的花盆／烛台图块与地垫（不改生成文件，回退开关关闭或天启档自动恢复）；
 ##    视觉绘制由 XHonghuangMonumentView 挂入角色层按 y 排序；可调查，名字从 honghuang_first_clear.json 读取，留空时不显示名字。
 ## 2. 进西游档一次性播报：标题进入西游档（读档／自动继续／西游新开局）或游戏内读档后，在正式游戏地图空闲时弹出一次消息框，
 ##    宣告首位洪荒证道者；每个存档只弹一次（已弹标记记在 s.flags[FLAG_KEY]["broadcast_seen"]，老存档读入也只弹一次；
 ##    配置留空或回退开关关闭时不弹、不写已弹标记）。
 
-## T460 回退开关：false＝关闭大厅洪荒碑与进游一次性播报，恢复改动前原样
+## T460 回退开关：false＝关闭大厅洪荒碑与进游一次性播报，恢复改动前原样（含原花盆／烛台）
 static var ENABLED := true
 
 const MAP_ID := 4
 const EVENT_ID := 82
-const CELL := Vector2i(18, 14)
+const CELL := Vector2i(18, 9)
+## 原花盆／烛台上半截位于北隔墙 (18, 8)，下半截与蓝地垫位于 (18, 9)；西游档开碑时一并清除，地砖换白大理石 1542
+const POT_TOP_CELL := Vector2i(18, 8)
+const FLOOR_TILE_ID := 1542
 const CONFIG_PATH := "res://modes/xiyou/honghuang_first_clear.json"
 const FLAG_KEY := "honghuang_first_clear"
 ## 西游新开局三连过场图（Map001 选档选难度 → Map002 开局剧情 → Map221 教派选择）：不打断开局过场，进大厅后再弹播报
@@ -90,7 +94,7 @@ static func broadcast_lines() -> Array[String]:
 	return [
 		"【洪荒首通播报】",
 		"恭喜「%s」成为首位通关洪荒难度的玩家！" % who,
-		"他的名字已经刻在大厅的洪荒碑上，有空可以去看看。",
+		"这个名字已经刻在大厅的洪荒碑上，有空可以去看看。",
 	]
 
 
@@ -157,7 +161,7 @@ static func reload_map() -> void:
 	XDB._tables.erase("map:%d" % MAP_ID)
 
 
-## Map004 缓存失效检测：回退开关切换时作废重读
+## Map004 缓存失效检测：回退开关切换时作废重读（天启档由 hides() 隐藏事件、tile_map_data() 保留原图块，切档不抖动缓存）
 static func cache_stale() -> bool:
 	var stamp := str(ENABLED)
 	if stamp == _cache_stamp:
@@ -197,7 +201,7 @@ static func _make_event() -> Dictionary:
 	return {"id": EVENT_ID, "name": "洪荒碑", "note": "<CodexHonghuang>", "pages": [page], "x": CELL.x, "y": CELL.y}
 
 
-## XDB.map 读 Map004 时追加 EV82；开关关闭或编号被占时不改原数据
+## XDB.map 读 Map004 时追加 EV82；开关关闭或编号被占时不改原数据（天启档由 hides() 隐藏）
 static func patch_map(map_id: int, data) -> void:
 	if map_id != MAP_ID or not ENABLED or not (data is Dictionary):
 		return
@@ -207,6 +211,26 @@ static func patch_map(map_id: int, data) -> void:
 	while events.size() <= EVENT_ID:
 		events.append(null)
 	events[EVENT_ID] = _make_event()
+
+
+## 供 XMapScene.load_map 传给 MVTilemap（lower/upper）的图块视图：
+## 西游档且开碑时返回浅拷贝，清除 (18, 8..9) 原花盆／烛台图块（z=3）并把 (18, 9) 蓝地垫换为白大理石 1542；
+## 天启档或回退开关关闭时原样返回 data，不动 XDB.map(4) 缓存。
+static func tile_map_data(map_id: int, data: Dictionary, s = null) -> Dictionary:
+	if map_id != MAP_ID or not monument_active(s):
+		return data
+	var w := int(data.get("width", 0))
+	var h := int(data.get("height", 0))
+	var raw = data.get("data", [])
+	if not (raw is Array) or w <= CELL.x or h <= CELL.y or raw.size() < w * h * 4:
+		return data
+	var tiles: Array = raw.duplicate()
+	tiles[(3 * h + POT_TOP_CELL.y) * w + POT_TOP_CELL.x] = 0
+	tiles[(3 * h + CELL.y) * w + CELL.x] = 0
+	tiles[(0 * h + CELL.y) * w + CELL.x] = FLOOR_TILE_ID
+	var out := data.duplicate(false)
+	out["data"] = tiles
+	return out
 
 
 ## 切片 keepEvents 放行 EV82（由 MVEvent._is_hidden_event 按当前存档再裁天启档与回退开关）
