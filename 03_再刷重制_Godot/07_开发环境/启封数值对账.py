@@ -1197,6 +1197,7 @@ def main():
         sys.exit('没有 generated/db，先 新建工作树.sh --补齐')
     D = Data()
     md, detail, allouts = build(D, a.diff)
+    md += __import__('启封数值对账_来源').section(D, sys.modules[__name__])  # T521 外部来源倒查（独立模块，见 启封数值对账_来源.py）
     if a.write:
         REPORT.write_text(md, encoding='utf-8')
         print('写了', REPORT.relative_to(GODOT.parent))
