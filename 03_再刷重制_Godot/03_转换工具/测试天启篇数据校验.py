@@ -767,6 +767,24 @@ class EnemyNature(unittest.TestCase):
         self.assertTrue(any('verdict' in b for b in chk.enemy_nature_rules(self.t, self.el)))
 
 
+class EnemyNatureGuardianFloor5(unittest.TestCase):
+    """T479 返修 R2 P1-3：五层第二个守层者敌群（245，敌人 263 驯龙猎手）也有守层者体质。"""
+
+    def test_second_floor5_guardian_has_nature(self):
+        t = json.loads((chk.DATA_DIR / 'enemy_nature.json').read_text(encoding='utf-8'))
+        el = json.loads((chk.DATA_DIR / 'elements_table.json').read_text(encoding='utf-8'))
+        e = t['enemies'].get('263')
+        self.assertIsNotNone(e)
+        self.assertEqual((e['src'], e['floor']), ('guardian', 5))
+        self.assertEqual(e['natures'], [x for x in el['guardian_constitutions']['5'] if x in el['base_elements']][:t['guardian_take']])
+
+    def test_name_clash_enemies_have_no_keyword_nature(self):
+        # 音译人名／人名撞字：普雷西 98、格雷果 100、葛雷果 331、范海辛 54、巴风特 430／434、关羽 880、海拉 924／幻影 174
+        t = json.loads((chk.DATA_DIR / 'enemy_nature.json').read_text(encoding='utf-8'))
+        for i in (98, 100, 331, 54, 430, 434, 880, 924, 174):
+            self.assertNotIn(str(i), t['enemies'])
+
+
 class ActorNature(unittest.TestCase):
     """actor_nature.json（T484）：我方体质表的格式与得票规则对账。"""
 
@@ -803,6 +821,18 @@ class ActorNature(unittest.TestCase):
         self.assertEqual((e['natures'], e['src']), ([8], 'majority'))
         e['natures'], e['src'] = [], 'neutral'
         self.assertTrue(any('体质应为' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
+    def test_not_used_actors_have_no_row(self):
+        # 五条悟 180、宿傩 172 按 Kyo 11-22 不进表；修 8 的转属链不算原生，应无体质
+        self.assertNotIn('180', self.t['actors'])
+        self.assertNotIn('172', self.t['actors'])
+        self.assertEqual((self.t['actors']['8']['natures'], self.t['actors']['8']['src']), ([], 'neutral'))
+        self.t['actors']['180'] = dict(self.t['actors']['8'])
+        self.assertTrue(any('不用' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
+    def test_canglong_counts_runtime_class_skills(self):
+        e = self.t['actors']['146']
+        self.assertEqual((e['n_attack'], e['votes']), (5, {'0': 4, '5': 1}))
 
     def test_missing_usable_row_fails(self):
         self.assertTrue(any('缺行' in b for b in chk.actor_nature_rules(self.t, self.el, {99999})))

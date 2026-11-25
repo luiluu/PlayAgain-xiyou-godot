@@ -6,10 +6,10 @@
    "name": "狗逍遥",
    "natures": [],
    "src": "neutral",
-   "n_attack": 15,
+   "n_attack": 8,
    "basis": "card",
    "votes": {
-    "0": 15
+    "0": 8
    },
    "tie": []
   },
@@ -19,10 +19,10 @@
     6
    ],
    "src": "majority",
-   "n_attack": 9,
+   "n_attack": 3,
    "basis": "card",
    "votes": {
-    "6": 9
+    "6": 3
    },
    "tie": []
   },
@@ -59,11 +59,11 @@
     3
    ],
    "src": "majority",
-   "n_attack": 9,
+   "n_attack": 7,
    "basis": "card",
    "votes": {
     "3": 6,
-    "8": 3
+    "8": 1
    },
    "tie": []
   },
@@ -84,32 +84,24 @@
     6
    ],
    "src": "majority",
-   "n_attack": 7,
+   "n_attack": 6,
    "basis": "card",
    "votes": {
     "2": 1,
-    "6": 6
+    "6": 5
    },
    "tie": []
   },
   "8": {
    "name": "修",
-   "natures": [
-    8
-   ],
-   "src": "tie_first",
-   "n_attack": 19,
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 6,
    "basis": "card",
    "votes": {
-    "0": 6,
-    "7": 3,
-    "8": 5,
-    "9": 5
+    "0": 6
    },
-   "tie": [
-    8,
-    9
-   ]
+   "tie": []
   },
   "9": {
    "name": "罗琳",
@@ -117,10 +109,10 @@
     9
    ],
    "src": "majority",
-   "n_attack": 7,
+   "n_attack": 6,
    "basis": "card",
    "votes": {
-    "9": 7
+    "9": 6
    },
    "tie": []
   },
@@ -128,10 +120,10 @@
    "name": "美娜",
    "natures": [],
    "src": "neutral",
-   "n_attack": 7,
+   "n_attack": 6,
    "basis": "card",
    "votes": {
-    "0": 7
+    "0": 6
    },
    "tie": []
   },
@@ -139,10 +131,10 @@
    "name": "里德",
    "natures": [],
    "src": "neutral",
-   "n_attack": 7,
+   "n_attack": 6,
    "basis": "card",
    "votes": {
-    "0": 7
+    "0": 6
    },
    "tie": []
   },
@@ -239,10 +231,10 @@
     2
    ],
    "src": "majority",
-   "n_attack": 7,
+   "n_attack": 4,
    "basis": "card",
    "votes": {
-    "2": 5,
+    "2": 2,
     "3": 1,
     "5": 1
    },
@@ -303,10 +295,10 @@
     15
    ],
    "src": "majority",
-   "n_attack": 9,
+   "n_attack": 7,
    "basis": "card",
    "votes": {
-    "0": 9,
+    "0": 7,
     "15": 1
    },
    "tie": []
@@ -366,10 +358,10 @@
     9
    ],
    "src": "majority",
-   "n_attack": 6,
+   "n_attack": 3,
    "basis": "card",
    "votes": {
-    "9": 6
+    "9": 3
    },
    "tie": []
   },
@@ -377,10 +369,10 @@
    "name": "西凉女帝",
    "natures": [],
    "src": "neutral",
-   "n_attack": 6,
+   "n_attack": 4,
    "basis": "card",
    "votes": {
-    "0": 6
+    "0": 4
    },
    "tie": []
   },
@@ -401,10 +393,10 @@
    "name": "涅斐莉",
    "natures": [],
    "src": "neutral",
-   "n_attack": 11,
+   "n_attack": 10,
    "basis": "card",
    "votes": {
-    "0": 11
+    "0": 10
    },
    "tie": []
   },
@@ -414,10 +406,10 @@
     8
    ],
    "src": "majority",
-   "n_attack": 9,
+   "n_attack": 7,
    "basis": "card",
    "votes": {
-    "0": 5,
+    "0": 3,
     "2": 1,
     "8": 3
    },
@@ -737,11 +729,11 @@
     2
    ],
    "src": "majority",
-   "n_attack": 6,
+   "n_attack": 4,
    "basis": "card",
    "votes": {
-    "0": 4,
-    "2": 2
+    "0": 3,
+    "2": 1
    },
    "tie": []
   },
@@ -961,10 +953,10 @@
    "name": "智甚",
    "natures": [],
    "src": "neutral",
-   "n_attack": 9,
+   "n_attack": 7,
    "basis": "card",
    "votes": {
-    "0": 9
+    "0": 7
    },
    "tie": []
   },
@@ -1654,9 +1646,10 @@
     5
    ],
    "src": "majority",
-   "n_attack": 1,
+   "n_attack": 5,
    "basis": "original",
    "votes": {
+    "0": 4,
     "5": 1
    },
    "tie": []
@@ -1926,20 +1919,6 @@
    "basis": "card",
    "votes": {
     "0": 8
-   },
-   "tie": []
-  },
-  "172": {
-   "name": "宿傩",
-   "natures": [
-    2
-   ],
-   "src": "majority",
-   "n_attack": 8,
-   "basis": "card",
-   "votes": {
-    "0": 6,
-    "2": 2
    },
    "tie": []
   },

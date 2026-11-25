@@ -69,17 +69,25 @@ def parse_const(path: Path, name: str):
 
 
 def guardian_floors(enemies, troops):
-    """守层者敌人号→本层：同 XGuardianRework.floor_of（TROOPS 里名字含「守层者」的成员）。并校验 TROOPS 与 zhenqi.GUARDIANS 一致。"""
+    """守层者敌人号→本层。先按 XGuardianRework.TROOPS（每层一场）取，再把 zhenqi.GUARDIANS 里别的敌群（如 5 层第二场 245、地图 062 EV004）也遍历，
+    双向核对：TROOPS 的每一场都在 GUARDIANS 里且层号一致；GUARDIANS 里多出的敌群记在 extra_troops 报告（guardian_rework.floor_of 只认 TROOPS，漏认这几场，不改游戏代码，见交付单）。"""
     tr = parse_const(XY / 'core' / 'guardian_rework.gd', 'TROOPS')
     gd = parse_const(XY / 'core' / 'zhenqi.gd', 'GUARDIANS')
-    assert {v: k for k, v in tr.items()}.keys() <= set(gd), 'TROOPS 与 GUARDIANS 敌群号对不上'
-    out = {}
     for f, tid in tr.items():
+        assert gd.get(tid) == f, 'TROOPS 的 %s 层敌群 %s 与 GUARDIANS 层号对不上' % (f, tid)
+    extra = {tid: f for tid, f in gd.items() if tid not in set(tr.values())}
+    out = {}
+    for tid, f in sorted(gd.items(), key=lambda kv: (kv[1], kv[0] not in set(tr.values()), kv[0])):  # 同层先 TROOPS 的那场
         for m in troops[tid]['members']:
             e = enemies.get(m['enemyId'])
             if e and '守层者' in e['name'] and m['enemyId'] not in out:
                 out[m['enemyId']] = int(f)
+    global EXTRA_TROOPS
+    EXTRA_TROOPS = extra
     return out, tr
+
+
+EXTRA_TROOPS = {}
 
 
 def encounter_weights(troops):
@@ -180,7 +188,12 @@ RACE_BLOCK = {'自然·寄生': {2, 11}, '风·乱流': {7}}
 _NO = {276: '陆龟意象', 277: '陆龟意象', 282: '陆龟意象', 318: '「巨龟」绰号无法判是水龟', 363: '旋龟种类不明',
        381: '「黄金鹰」是人名绰号', 442: '「盗火者」是神话称号不是火身', 492: '云锦是人名', 561: '夜云是人名',
        549: '龟儿种类不明', 550: '龟父种类不明'}
-MANUAL = {i: ([], '不采纳：' + why) for i, why in _NO.items()}
+# 引号外的音译人名／真人名撞字（T479 返修 R2 P2-1）：名字里的「雷／海／风／羽」不是元素意象，逐条手工覆盖为空
+_NAME_CLASH = {98: '普雷西是音译人名，「雷」不是雷', 100: '格雷果是音译人名，「雷」不是雷', 331: '葛雷果是音译人名，「雷」不是雷',
+               54: '范海辛是人名（吸血鬼猎人），「海」不是水', 430: '巴风特是音译名，「风」不是风', 434: '巴风特是音译名，「风」不是风',
+               880: '关羽是人名，「羽」不是风', 924: '海拉是北欧死亡女神的音译，「海」不是水，没有独立的水意象',
+               174: '海拉的幻影随海拉，「海」不是水', 175: '海拉的幻影随海拉，「海」不是水'}
+MANUAL = {i: ([], '不采纳：' + why) for i, why in {**_NO, **_NAME_CLASH}.items()}
 # 人核清单里没覆盖的就是采纳（名字有元素意象）：烈焰、冰霜、人鱼公主、魔晶龟、火皮、死亡之风、邪鳄、刃羽鹰、熔岩巨龟、龟丞相
 REVIEW_OK = {34, 35, 141, 280, 321, 342, 357, 378, 379, 438, 439, 604}
 
@@ -237,6 +250,8 @@ def report(outdir: Path, enemies, rows, n_maps, ev_en, gfloor, tr, table):
         b = n_b / (len(per_floor) + 1)
         md.append('| %s | %.1f%% | %.1f%% | %s | %s |' % (eff, a * 100, b * 100, '✓' if a <= .2 else '✗', '✓' if b <= .2 else '✗（守层者体质决定，不调关键字；交数值线）'))
     md += ['', '首领线每层 1 份，守层者共 %d 层有记录，鸿钧体质 %s。' % (len(per_floor), fnat(hong)), '']
+    md += ['`zhenqi.GUARDIANS` 里不在 `guardian_rework.TROOPS` 的守层者敌群（生成器已遍历，`guardian_rework.floor_of` 漏认，B 接线须对齐）：%s。' % (
+        '、'.join('敌群 %d＝%d 层' % kv for kv in sorted(EXTRA_TROOPS.items())) or '无'), '']
     # 旧体质归类
     cls = collections.Counter()
     for r in enc:

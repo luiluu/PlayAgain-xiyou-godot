@@ -5,12 +5,15 @@
 
 - 只读 generated/db（Actors／Skills）、core/imported_balance.gd（DISABLED_ACTORS 与解放名单）、tianqi_data/skill_rework.json、elements_table.json；
   西游档数据零改动。`--write-table` 才写 tianqi_data/actor_nature.json。
-- 可用角色＝有名字、不在 skill_rework.tiers「不开放」、不是停用角色（imported_balance 的 DISABLED_ACTORS，苍龙破晓 146、徐凤年 152 已解放算可用；五条悟 180 算可用，解锁前不进候选池但有体质）。
+- 可用角色＝有名字、不在 skill_rework.tiers「不开放」、不是停用角色（imported_balance 的 DISABLED_ACTORS，苍龙破晓 146、徐凤年 152 已解放算可用），且不在 NOT_USED：
+  五条悟 180、宿傩 172 按 Kyo 11-22「同 142 的五条悟不用，宿傩也暂时先不用」不进表（五条悟经 xdb.gd:111→gojo.gd:126 运行时注入，现在仍进可用池，只报事实，不改）。
 - 原生元素：该角色在天启篇技能卡（skill_rework.skills 里 actor＝角色号）的**自带攻击招**（有效伤害类型是 HP 伤害／吸血，不含被动、心法、治疗、功能），
   每招的元素集按天启篇运行时口径（XTianqiElements._patch_skill）：基础记录 elementId＋Multiple Elements，再套技能卡 element 覆盖、
   skill_shifts（改水／风）、physical_shifts（物理改成 无属性＋水／风），物理（1）按无属性（0）。
   每招给它的每个元素各记一票（多元素招每系一票；无属性、高等三系也记票，只作证据，不参与比票）；基础十系里得票最多的就是原生；并列时取并列类里「技能号最小的攻击招」所带的那一类（并列取第一个主攻招）。
 - 口径（设计稿字面，Kyo 11-25）：只在**基础十系**元素招里数多数，无属性不算一类、不参与比票；完全没有基础十系招：只有高等三系 → higher、全无属性 → neutral，都没有体质；没有任何攻击招 → 没有体质。转换书、转属、装备附伤不改体质（转换技能不属于任何角色，本来就不进票）。
+- 转属链不算原生票（R2 P1-2）：心法物品（Items 的 44 效果→公共事件）里「忘掉原招、学会派生招」的那批派生招（如怪奇真解 1078：忘 3635、学 4783～4798）是互斥的转属，
+  玩家只会走其中一条，且天启篇卡片里这些号带 actor 但不是原生招，不进票；原招本身（3635 家族）照常计票。同一公共事件学了又忘的（屌魂圣逆 1060）不排除。
 - 手工覆盖写在 MANUAL（暂空，人核差异报告里列出要人看的）；改规则直接改本文件。
 """
 import argparse
@@ -30,7 +33,7 @@ _en = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_en)
 NAMES, ALLN = _en.NAMES, _en.ALLN
 HIGHER = {11, 12, 13}
-GOJO = 180
+NOT_USED = {172: '宿傩，Kyo 11-22 暂时先不用', 180: '五条悟，Kyo 11-22 同 142 不用'}
 NEUTRAL = 0  # 无属性（含原物理 1，天启篇物理按无属性）
 ATTACK_TYPES = {1, 5}  # RMMV damage.type：1 HP 伤害、5 HP 吸收
 NOT_ATTACK_KINDS = {'被动', '心法', '功能', '领袖', '领袖说明', '光环', '进阶', '复活', '复活全体', '全体治疗', '治疗', '单体治疗', '护盾', '全体增益'}
@@ -58,7 +61,43 @@ def load():
 
 def usable_ids(actors, rework, disabled):
     closed = set(rework['tiers'].get('不开放', []))
-    return sorted(i for i, a in actors.items() if str(a.get('name', '')).strip() and i not in closed and i not in disabled)
+    return sorted(i for i, a in actors.items() if str(a.get('name', '')).strip() and i not in closed and i not in disabled and i not in NOT_USED)
+
+
+def canglong_skills():
+    """苍龙破晓 146 运行时的职业技能表（core/canglong.gd 的 LEARNINGS 替换职业 144 的整张表，XDB.table 加载时打补丁）。"""
+    t = (XY / 'core' / 'canglong.gd').read_text(encoding='utf-8')
+    m = re.search(r'^const LEARNINGS\s*:?=\s*(\[.*\])\s*$', t, re.M)
+    consts = {k: int(v) for k, v in re.findall(r'^const ([A-Z_0-9]+)\s*:?=\s*(\d+)\s*$', t, re.M)}
+    body = m.group(1)
+    for k in sorted(consts, key=len, reverse=True):
+        body = re.sub(r'\b%s\b' % k, str(consts[k]), body)
+    return [l[1] for l in json.loads(body)]
+
+
+def converted_chain(skills=None):
+    """心法物品（效果 44 调公共事件）里「忘掉原招、学会派生招」的派生招 → {技能号: (心法物品名, 公共事件号)}；同一事件学了又忘的不算。"""
+    items = json.load(open(DB / 'Items.json'))
+    ce = json.load(open(DB / 'CommonEvents.json'))
+    out = {}
+    for it in items:
+        if not it:
+            continue
+        for ef in it.get('effects', []):
+            if ef['code'] != 44 or not (0 < ef['dataId'] < len(ce)) or not ce[ef['dataId']]:
+                continue
+            lst = ce[ef['dataId']]['list']
+            learn = {c['parameters'][3] for c in lst if c['code'] == 318 and c['parameters'][2] == 0}
+            forget = {c['parameters'][3] for c in lst if c['code'] == 318 and c['parameters'][2] == 1}
+            if learn and forget:
+                for sid in learn - forget:
+                    out.setdefault(sid, (it['name'], ef['dataId']))
+                    nm = (skills or {}).get(sid, {}).get('name', '')
+                    nxt = sid + 1  # 派生招（善恶有报*善 等）紧跟在学会的主招后面，同名加「*」
+                    while nm and nxt in (skills or {}) and skills[nxt]['name'].startswith(nm + '*') and nxt not in learn:
+                        out.setdefault(nxt, (it['name'], ef['dataId']))
+                        nxt += 1
+    return out
 
 
 def multi_elements(note):
@@ -98,13 +137,14 @@ def build():
     new_from = {int(k): int(v['from']) for k, v in rework.get('new_skills', {}).items()}
     owned = {}
     missing = []
+    chain = converted_chain(skills)
     for k, sp in sk.items():
         if 'actor' not in sp:
             continue
         sid = int(k)
+        if sid in chain or int(sp['actor']) in NOT_USED:  # 转属链派生招不算原生；不用的角色（五条悟、宿傩）的卡不看
+            continue
         base = skills.get(sid) or skills.get(new_from.get(sid, -1))
-        if not base and int(sp['actor']) == GOJO:  # 五条悟的技能由 core/gojo.gd 运行时造：elementId 0，攻击招伤害类型 1
-            base = {'damage': {'elementId': 0, 'type': 1}, 'note': '', 'name': sp.get('name', '')}
         if not base:
             missing.append(sid)
             continue
@@ -114,6 +154,8 @@ def build():
         if not owned.get(i):
             a = actors[i]
             sids = [t['dataId'] for t in a['traits'] if t['code'] == 43] + [l['skillId'] for l in classes[a['classId']]['learnings']]
+            if i == 146:  # 苍龙破晓：运行时职业补丁换了整张学习表，不能用裸职业表
+                sids = [t['dataId'] for t in a['traits'] if t['code'] == 43] + canglong_skills()
             for sid in dict.fromkeys(sids):
                 if sid in skills:
                     owned.setdefault(i, []).append((sid, {}, skills[sid]))
@@ -151,6 +193,7 @@ def build():
             e, why = MANUAL[i]
             row.update(natures=[e] if e else [], src='manual', verdict=why)
         rows[i] = row
+    build.chain = chain
     return actors, rows, disabled, released, rework, missing
 
 
@@ -166,7 +209,7 @@ def report(outdir, actors, rows, disabled, released, rework, missing):
     cnt = Counter(r['src'] for r in rows.values())
     by = Counter(r['natures'][0] for r in rows.values() if r['natures'])
     md = ['# T484 A2 卡：天启篇我方体质表差异报告', '',
-          '可用角色 %d 名（有名字、不在不开放名单、不是停用角色；解放的 %s 算可用，五条悟 180 算可用）；有体质 %d 名。' % (
+          '可用角色 %d 名（有名字、不在不开放名单、不是停用角色；解放的 %s 算可用；五条悟 180、宿傩 172 按 Kyo 11-22 不用，不进表）；有体质 %d 名。' % (
               len(rows), '、'.join(map(str, sorted(released))), sum(1 for r in rows.values() if r['natures'])), '',
           '来源统计：' + '，'.join('%s %d' % (k, v) for k, v in sorted(cnt.items())), '',
           '体质分布：' + '，'.join('%s %d' % (NAMES[e], by[e]) for e in sorted(by)), '']

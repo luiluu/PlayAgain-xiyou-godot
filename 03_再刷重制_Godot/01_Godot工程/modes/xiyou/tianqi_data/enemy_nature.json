@@ -164,16 +164,6 @@
    "absorb": [],
    "floor": 6
   },
-  "54": {
-   "natures": [
-    14
-   ],
-   "src": "keyword",
-   "hit": "海",
-   "xiyou_affinity": [],
-   "absorb": [],
-   "floor": 7
-  },
   "55": {
    "natures": [
     7
@@ -226,28 +216,6 @@
    ],
    "src": "keyword",
    "hit": "石",
-   "xiyou_affinity": [
-    4
-   ],
-   "absorb": []
-  },
-  "98": {
-   "natures": [
-    5
-   ],
-   "src": "keyword",
-   "hit": "雷",
-   "xiyou_affinity": [
-    8
-   ],
-   "absorb": []
-  },
-  "100": {
-   "natures": [
-    5
-   ],
-   "src": "keyword",
-   "hit": "雷",
    "xiyou_affinity": [
     4
    ],
@@ -549,18 +517,6 @@
    ],
    "absorb": []
   },
-  "174": {
-   "natures": [
-    14
-   ],
-   "src": "keyword",
-   "hit": "海",
-   "xiyou_affinity": [
-    2,
-    3
-   ],
-   "absorb": []
-  },
   "179": {
    "natures": [
     2
@@ -746,6 +702,17 @@
     6
    ]
   },
+  "263": {
+   "natures": [
+    6,
+    15
+   ],
+   "src": "guardian",
+   "hit": "",
+   "xiyou_affinity": [],
+   "absorb": [],
+   "floor": 5
+  },
   "270": {
    "natures": [
     3
@@ -805,15 +772,6 @@
    "absorb": [
     2
    ]
-  },
-  "331": {
-   "natures": [
-    5
-   ],
-   "src": "keyword",
-   "hit": "雷",
-   "xiyou_affinity": [],
-   "absorb": []
   },
   "338": {
    "natures": [
@@ -949,32 +907,6 @@
    "absorb": [
     2,
     6
-   ]
-  },
-  "430": {
-   "natures": [
-    15
-   ],
-   "src": "keyword",
-   "hit": "风",
-   "xiyou_affinity": [
-    9
-   ],
-   "absorb": [
-    9
-   ]
-  },
-  "434": {
-   "natures": [
-    15
-   ],
-   "src": "keyword",
-   "hit": "风",
-   "xiyou_affinity": [
-    9
-   ],
-   "absorb": [
-    9
    ]
   },
   "438": {
@@ -1658,17 +1590,6 @@
    ],
    "absorb": []
   },
-  "880": {
-   "natures": [
-    15
-   ],
-   "src": "keyword",
-   "hit": "羽",
-   "xiyou_affinity": [
-    14
-   ],
-   "absorb": []
-  },
   "898": {
    "natures": [
     2
@@ -1707,18 +1628,6 @@
    "absorb": [
     2
    ]
-  },
-  "924": {
-   "natures": [
-    14
-   ],
-   "src": "keyword",
-   "hit": "海",
-   "xiyou_affinity": [
-    8,
-    14
-   ],
-   "absorb": []
   },
   "931": {
    "natures": [

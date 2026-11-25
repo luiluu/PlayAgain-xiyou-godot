@@ -1603,6 +1603,9 @@ def check_enemy_nature(_args) -> bool:
     return _report('enemy_nature.json', '规则自检', bad)
 
 
+ACTOR_NATURE_NOT_USED = {172, 180}  # 宿傩、五条悟：Kyo 11-22 暂不用，不进我方体质表（T484 返修 R2）
+
+
 def actor_nature_rules(table: dict, elements: dict, usable_ids=None) -> list:
     """actor_nature.json（T484，天启篇我方自然体质，设计稿 4.4）：每个可用角色一行，natures 空或 1 个基础十系，且与得票规则对得上。"""
     bad = []
@@ -1610,7 +1613,11 @@ def actor_nature_rules(table: dict, elements: dict, usable_ids=None) -> list:
     higher = set(elements.get('higher_elements', []))
     srcs = {'majority', 'tie_first', 'neutral', 'higher', 'no_attack', 'manual'}
     rows = table.get('actors') or {}
+    for i in sorted(ACTOR_NATURE_NOT_USED):
+        if str(i) in rows:
+            bad.append('%d 号按 Kyo 11-22 不用，不该有体质行' % i)
     if usable_ids is not None:
+        usable_ids = set(usable_ids) - ACTOR_NATURE_NOT_USED
         miss = sorted(i for i in usable_ids if str(i) not in rows)
         extra = sorted(int(k) for k in rows if str(k).isdigit() and int(k) not in usable_ids)
         if miss:
