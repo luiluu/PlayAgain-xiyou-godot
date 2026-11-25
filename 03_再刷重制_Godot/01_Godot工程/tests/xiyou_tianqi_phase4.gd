@@ -776,6 +776,16 @@ func _e2e(on: bool) -> void:
 	var en: XBattler = lg.enemies[0]
 	var base6 := maxf(1.0, floorf(600.0 * XTianqiNoX6.hp_unit())) if XTianqiNoX6.on() else 600.0
 	var want_k := maxf(1.0, floorf(base6 * K_TABLE)) if on else base6
+	# T501 R2：敌人最大生命统一 ×enemy_hp_pct%（开着 40，关着／西游档 100 原样）；开关 ENEMY_HP_SCALE 关掉回原值
+	var raw0: float = (en as XEnemy)._param_raw(0)
+	var want_mhp := maxf(1.0, floorf(raw0 * 40.0 / 100.0)) if on else raw0
+	var mhp_on := float(en.mhp)
+	XTianqiBase.ENEMY_HP_SCALE = false
+	en.param_mark_dirty()
+	var mhp_off := float(en.mhp)
+	XTianqiBase.ENEMY_HP_SCALE = true
+	en.param_mark_dirty()
+	_check(tag + "enemy_hp_pct", XTianqiBase.enemy_hp_pct() == (40 if on else 100) and mhp_on == want_mhp and mhp_off == raw0, [raw0, mhp_on, want_mhp, mhp_off])
 	# T501 R2：反弹（不乘 K）跟敌人生命同缩 enemy_unit（1/6 × 敌人生命折算 40%）；乘 K 的那路只缩 1/6
 	var eu := XTianqiNoX6.enemy_unit()
 	var want_ref := maxf(1.0, floorf(600.0 * eu)) if eu != 1.0 else 600.0
