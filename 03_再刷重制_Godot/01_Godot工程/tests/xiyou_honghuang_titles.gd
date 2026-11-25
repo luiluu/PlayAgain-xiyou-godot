@@ -7,6 +7,7 @@ extends Node
 ## 3. 兑换码（T508 不绑存档）：码规范化（小写、空格、横线）后对；同一存档第二次提示已兑换、不再发；
 ##    本机兑一次后本机所有存档（别的档、新开档、导入档）都有、再输提示已拥有；本机解锁文件封存、不进存档、不进 options.json；
 ##    拷到别的设备（设备 ID 不同）、改一个字节、换成明文都不认（文件原样）；别的设备输码照样能兑；没有封存密钥时退回记在存档里；
+##    设备 ID 取不到、有密钥但写文件失败：不认、不写、提示重试（返修 P1-1／P2-1）；天启档戴着阿夜不显示（P2-3）；
 ##    T493 只记在存档里的照旧有、再输码补成本机；T493 v1 绑存档哈希作废；错码无效；
 ##    天启篇、开关关着都不能兑换；兑换后存档往返仍在；和 07_开发环境/洪荒兑换码.py 同一算法（固定测试向量）；
 ##    仓库配置能读出（只有哈希，不含码原文）；
@@ -246,6 +247,9 @@ func _run() -> void:
 	var stq3 := _make_save(true)
 	XState.current = stq3
 	check("local.tianqi_none", not XHonghuangTitles.save_has(stq3, 52) and not _ids().has(52))
+	# 返修 P2-3：天启档带着阿夜佩戴记录，本机解锁也不让它显示
+	stq3.designation = {"name": "洪荒·阿夜", "icon": 6428, "color": "#a9c8ff"}
+	check("local.tianqi_worn_hidden", XHonghuangTitles.local_has(53) and not XHonghuangTitles.worn_ok(stq3))
 	XState.current = sn
 	XHonghuangTitles.ENABLED = false
 	check("local.off_none", not XHonghuangTitles.save_has(sn, 52) and not XHonghuangTitles.worn_ok(sn) and FileAccess.file_exists(lp))
@@ -272,6 +276,30 @@ func _run() -> void:
 	_put_local(good_bytes)
 	XHonghuangTitles.reload_local()
 	check("device.back_home", XDesignation.unlocked(52) and XDesignation.unlocked(53))
+	# 返修 P1-1：设备 ID 取不到 → 已有文件不认；兑换提示稍后重试，什么都不写、不记存档
+	XHonghuangTitles.machine_id_missing = true
+	XHonghuangTitles.reload_local()
+	check("noid.file_ignored", XHonghuangTitles.machine_tag() == "" and not XDesignation.unlocked(52) and not XDesignation.unlocked(53))
+	var snid := _make_save()
+	XState.current = snid
+	var rnid := XHonghuangTitles.redeem(snid, TEST_CODE)
+	check("noid.retry", not rnid.ok and rnid.text == XHonghuangTitles.MSG_RETRY and not snid.flags.has(XHonghuangTitles.FLAG_KEY)
+		and FileAccess.get_file_as_bytes(lp) == good_bytes and not XDesignation.unlocked(52), rnid)
+	XHonghuangTitles.machine_id_missing = false
+	XHonghuangTitles.reload_local()
+	XState.current = sn
+	# 返修 P2-1：有密钥但写文件失败 → 兑换没完成、什么都不改、提示重试；恢复后重试能成
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(lp))
+	XHonghuangTitles.reload_local()
+	XHonghuangTitles.write_fail_for_test = true
+	var rwf := XHonghuangTitles.redeem(sn, TEST_CODE)
+	check("writefail.retry", not rwf.ok and rwf.text == XHonghuangTitles.MSG_RETRY and not sn.flags.has(XHonghuangTitles.FLAG_KEY)
+		and not FileAccess.file_exists(lp) and not XDesignation.unlocked(52), rwf)
+	XHonghuangTitles.write_fail_for_test = false
+	var rwf2 := XHonghuangTitles.redeem(sn, TEST_CODE)
+	check("writefail.retry_ok", rwf2.ok and XHonghuangTitles.local_has(52) and XHonghuangTitles.local_has(53), rwf2)
+	good_bytes = FileAccess.get_file_as_bytes(lp)
+	XState.current = sn
 	# 篡改：改一个字节（签名不对）、换成明文 → 不认，文件原样，存档照常
 	var bad := good_bytes.duplicate()
 	bad[bad.size() / 2] = (int(bad[bad.size() / 2]) + 1) % 256
@@ -281,6 +309,13 @@ func _run() -> void:
 	_put_local(JSON.stringify({"titles": {"52": true, "53": true}, "used": [], "machine": XHonghuangTitles.machine_tag()}).to_utf8_buffer())
 	XHonghuangTitles.reload_local()
 	check("tamper.plain_ignored", not XDesignation.unlocked(52) and not XDesignation.unlocked(53))
+	# 空设备标记的合法封存文件（别的取不到 ID 的设备写的）：本机取不到 ID 时也不认
+	_put_local(XSaveSeal.seal(JSON.stringify({"titles": {"52": true, "53": true}, "used": [], "machine": ""})))
+	XHonghuangTitles.machine_id_missing = true
+	XHonghuangTitles.reload_local()
+	check("noid.empty_tag_file_ignored", not XDesignation.unlocked(52) and not XDesignation.unlocked(53))
+	XHonghuangTitles.machine_id_missing = false
+	XHonghuangTitles.reload_local()
 	check("tamper.save_fine", XHonghuangTitles.worn_ok(XState.from_dict(JSON.parse_string(JSON.stringify(sa.to_dict())))))
 	# 没有封存密钥（发行构建没注入密钥）：本机文件写不了 → 退回记在当前存档里（这份存档一次）
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(lp))
@@ -290,8 +325,8 @@ func _run() -> void:
 	var snk := _make_save()
 	XState.current = snk
 	var rk := XHonghuangTitles.redeem(snk, TEST_CODE)
-	check("nokey.fallback_save", rk.ok and XHonghuangTitles._flag_has(snk.flags, 52) and XHonghuangTitles._flag_has(snk.flags, 53) and not FileAccess.file_exists(lp), rk)
-	check("nokey.second_use", XHonghuangTitles.redeem(snk, TEST_CODE).text == XHonghuangTitles.MSG_USED)
+	check("nokey.fallback_save", rk.ok and rk.text == XHonghuangTitles.MSG_OK_SAVE % "洪荒首证、洪荒·阿夜" and XHonghuangTitles._flag_has(snk.flags, 52) and XHonghuangTitles._flag_has(snk.flags, 53) and not FileAccess.file_exists(lp), rk)
+	check("nokey.second_use", XHonghuangTitles.redeem(snk, TEST_CODE).text == XHonghuangTitles.MSG_USED_SAVE)
 	XSaveSeal.simulate_template = false
 	XSaveSeal.reload_keys()
 	# T493 只兑在存档里的老存档：照旧有；再输新码补成本机拥有
