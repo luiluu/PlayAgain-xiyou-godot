@@ -28,7 +28,7 @@ extends RefCounted
 static var ENABLED := true
 ## 回退开关（O-669，同号）：false＝同件数时原版套装号小的优先（T513 首版口径）
 static var NEWER_FIRST := true
-## 回退开关（O-待定）：false＝原版套装照原效果（回到 T515 之前），模板表不读
+## 回退开关（O-672）：false＝原版套装照原效果（回到 T515 之前），模板表不读
 static var TEMPLATE := true
 ## 一人最多生效几套（养成线 v0.3 第三节第 3 条：一人最多两套）
 const CAP := 2
