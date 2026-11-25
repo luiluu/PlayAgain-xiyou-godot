@@ -75,13 +75,17 @@ class GuardianPhase4Rules(unittest.TestCase):
         self.assertTrue(chk.guardian_phase4_rules({'oops': {}}))
 
     def test_boss_neg_hrg_cap_rules(self):
-        base = {'combat_rules': {'base_damage': 1.25, 'boss_hp_temp_unit': {'crit': 100, 'no_crit': 100}}}
+        base = {'combat_rules': {'base_damage': 0.5, 'enemy_hp_pct': 40, 'boss_hp_temp_unit': {'crit': 100, 'no_crit': 100}}}
         self.assertEqual(chk.combat_rules_phase4_rules(base), [])
-        # T501：K 写整数百分比、0.05～2
-        for ok_k in (0.13, 1, 1.25, 2):
+        # T501 R2：K 写整数百分比、0.05～1（不含 1）；enemy_hp_pct 10～100 整数
+        for ok_k in (0.13, 0.5, 0.99):
             self.assertEqual(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], base_damage=ok_k)}), [], repr(ok_k))
-        for bad_k in (1.255, 0.04, 2.01, True, '1.25', None):
+        for bad_k in (0.555, 0.04, 1, 1.25, True, '0.5', None):
             self.assertTrue(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], base_damage=bad_k)}), repr(bad_k))
+        for ok_h in (10, 40, 100):
+            self.assertEqual(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], enemy_hp_pct=ok_h)}), [], repr(ok_h))
+        for bad_h in (0, 9, 101, 40.0, True, '40'):
+            self.assertTrue(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], enemy_hp_pct=bad_h)}), repr(bad_h))
         self.assertEqual(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], boss_neg_hrg_cap_pct=5)}), [])
         for bad_v in (0, -5, 101, 5.5, True, '5', []):
             self.assertTrue(chk.combat_rules_phase4_rules({'combat_rules': dict(base['combat_rules'], boss_neg_hrg_cap_pct=bad_v)}), repr(bad_v))

@@ -2367,10 +2367,13 @@ def combat_rules_phase4_rules(table: dict) -> list:
     bad = []
     cr = table.get('combat_rules', {})
     k = cr.get('base_damage')
-    # T501（D281 绑炼狱 80%）：K 标定到 1.25，上限放到 2；附则 E 按整数百分比写（D200 先例，1.25＝125%）
-    if (not isinstance(k, (int, float)) or isinstance(k, bool) or not 0.05 <= float(k) <= 2.0
+    # T501 R2（Kyo 11-25「注视必须是压制，K 要小于 1」）：K 在 0.05～1（不含 1）；附则 E 按整数百分比写（D200 先例，0.5＝50%）
+    if (not isinstance(k, (int, float)) or isinstance(k, bool) or not 0.05 <= float(k) < 1.0
             or abs(float(k) * 100 - round(float(k) * 100)) > 1e-9):
-        bad.append('combat_rules.base_damage（K）要在 0.05～2、写整数百分比（如 1.25＝125%%；T501 标定 1.25）：%s' % k)
+        bad.append('combat_rules.base_damage（K）要在 0.05～1（不含 1，注视是压制）、写整数百分比（如 0.5＝50%%）：%s' % k)
+    hp = cr.get('enemy_hp_pct', 100)
+    if not isinstance(hp, int) or isinstance(hp, bool) or not 10 <= hp <= 100:
+        bad.append('combat_rules.enemy_hp_pct（天启篇敌人生命统一折算）要是 10～100 的整数百分比（T501 R2 定 40）：%s' % hp)
     u = cr.get('boss_hp_temp_unit')
     if not isinstance(u, dict) or set(u) != {'crit', 'no_crit'}:
         bad.append('combat_rules.boss_hp_temp_unit 要是 {crit, no_crit} 两个数')

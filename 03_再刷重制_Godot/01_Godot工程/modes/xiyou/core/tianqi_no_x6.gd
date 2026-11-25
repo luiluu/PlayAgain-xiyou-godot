@@ -51,6 +51,18 @@ static func hp_unit(s = null) -> float:
 	return 1.0 / p if p > 0.0 else 1.0
 
 
+## T501 R2：敌人生命相对原口径（带 ×6、原血量）的总缩放＝hp_unit（去 ×6 的 1/6）× 敌人生命统一折算 g（XTianqiBase.enemy_hp_mult，0.4）。
+## g 由 XEnemy.param(0) 最外层乘，这里只给「跟血量同缩才等价」的那些换算用（固定减伤、敌人绝对值回血、吸取、反弹、状态脚本、AI 估伤）。
+## K 从 1.25 改 0.5 时我方经确认阶段的伤害也正好 ×0.4，所以这些换算按 enemy_unit 走就和 K=1.25、原血量逐项等价。
+static func enemy_unit(s = null) -> float:
+	return hp_unit(s) * XTianqiBase.enemy_hp_mult(s)
+
+
+## 去 ×6 或敌人生命折算有一个开着（换算函数的总闸；skip_types 仍只认去 ×6 本身）
+static func scaled(s = null) -> bool:
+	return on(s) or XTianqiBase.enemy_hp_pct(s) != 100
+
+
 ## 天启篇我方角色（持有过三个难度被动的一方）
 static func party_actor(x) -> bool:
 	return x != null and x is XActor and XState.current != null and XState.current.party.has(int((x as XActor).actor_id))
@@ -63,26 +75,27 @@ static func skip_types() -> Array:
 
 ## 天启篇角色打敌人（HP 伤害、吸取）时固定减伤的缩放；打自己人照旧 ×6，不缩
 static func flat_unit(a, b = null) -> float:
-	return hp_unit() if party_actor(a) and b is XEnemy else 1.0
+	return enemy_unit() if party_actor(a) and b is XEnemy else 1.0  # T501 R2：K 在固定减伤之前乘，K×0.4 时固定减伤也 ×0.4 才等价
 
 
 ## 我方吸取、吸血按 ×6 前的伤害算
 static func steal_mult(u) -> float:
-	if not party_actor(u) or not on():
+	if not party_actor(u) or not scaled():
 		return 1.0
-	return settle_product()
+	var eu := enemy_unit()
+	return 1.0 / eu if eu > 0.0 else 1.0  # 去 ×6：×6；T501 R2：再 ÷0.4（K 1.25→0.5 打出的伤害少了，吸血按原来的算）
 
 
 ## 敌人回血的缩放（甲）：本功能开着 ×1/6。with_k（只给按敌人自己能力值算的技能回复用）且 GUARDIAN_HEAL 开着时，
 ## 再乘守层者重算记下的血量缩放比 k——那类公式是原版敌人数值的口径，血量缩了 k 倍它没缩。
 ## 元素吸收、吸取、吸血的回血量来自伤害（我方伤害、按层重算过的守层者出伤），已经是新口径，只乘 1/6。
 static func heal_scale(e, with_k := false) -> float:
-	if not e is XEnemy or not on():
+	if not e is XEnemy or not scaled():
 		return 1.0
 	var en := e as XEnemy
 	if not en.horseman.is_empty() and not en.horseman.get("rec", {}).has("_ref"):
-		return 1.0   # 骑士、援军、影子、七首之龙、五条悟影子：天启篇自己的数值，不缩
-	var k := hp_unit()
+		return XTianqiBase.enemy_hp_mult()   # 骑士、援军、影子、七首之龙、五条悟影子：天启篇自己的数值，不跟 1/6；T501 R2 血量统一 ×0.4，绝对值回血跟着 ×0.4
+	var k := enemy_unit()
 	if with_k and GUARDIAN_HEAL:
 		k *= float(en.get_meta(META_HP_K, 1.0))
 	return k
@@ -100,10 +113,10 @@ static func enemy_heal(item: Dictionary, a, b) -> float:
 ## u 打 t 的 HP 伤害比原来缩了多少：我方打敌人 1/6（确认阶段不再 ×6；打自己人照旧 ×6，为 1）；
 ## 敌人打敌人（混乱、反射）按目标血量缩（XDamage.finish 乘 heal_scale(t)）；敌人打我方 1
 static func dealt_scale(u, t) -> float:
-	if not on():
+	if not scaled():
 		return 1.0
 	if party_actor(u):
-		return hp_unit() if t is XEnemy else 1.0
+		return enemy_unit() if t is XEnemy else 1.0
 	if u is XEnemy and t is XEnemy:
 		return heal_scale(t)
 	return 1.0
@@ -132,12 +145,12 @@ const PROGRAM_ABS := [50, 97, 102, 224, 260, 381, 566, 577, 732, 908, 1006, 1061
 ## 扣血：本状态是我方一侧的（来源或行动者是天启篇角色）×1/6，否则按敌人血量缩（heal_scale）；回血：×heal_scale(敌人, 带 k)。
 ## 写到我方身上的不动（我方血量没变）。西游档、不在名单里的状态原样返回。
 static func program_hp(ctx: Dictionary, b, amount: float) -> float:
-	if amount == 0.0 or not b is XEnemy or not PROGRAM_ABS.has(int(ctx.get("state_id", 0))) or not on():
+	if amount == 0.0 or not b is XEnemy or not PROGRAM_ABS.has(int(ctx.get("state_id", 0))) or not scaled():
 		return amount
 	if amount > 0.0:
 		return floorf(amount * heal_scale(b, true))
 	var party_side := party_actor(ctx.get("origin")) or party_actor(ctx.get("user"))
-	var f := hp_unit() if party_side else heal_scale(b)
+	var f := enemy_unit() if party_side else heal_scale(b)  # T501 R2：状态脚本绝对值扣血不经 K，跟血量同缩
 	return -maxf(1.0, floorf(-amount * f)) if f != 1.0 else amount
 
 
@@ -148,8 +161,10 @@ static func scale_direct(u, t, value: float, gaze := true) -> float:
 	if value <= 0.0 or not t is XEnemy or not party_actor(u):
 		return value
 	var v := value
-	if on():
-		v = maxf(1.0, floorf(v * hp_unit()))
+	# 乘 K 的（gaze）只缩 1/6：K 1.25→0.5 已经带了 ×0.4；不乘 K 的（反弹敌人的攻击）跟敌人血量同缩 enemy_unit（T501 R2）
+	var unit := hp_unit() if gaze else enemy_unit()
+	if unit != 1.0:
+		v = maxf(1.0, floorf(v * unit))
 	var k := XTianqiBase.k_for(u) if gaze else 1.0
 	if k != 1.0:
 		v = maxf(1.0, floorf(v * k))

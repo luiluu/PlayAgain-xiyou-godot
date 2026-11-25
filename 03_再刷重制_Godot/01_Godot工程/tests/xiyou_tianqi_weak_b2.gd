@@ -10,7 +10,8 @@ const AIKUN := 3
 
 
 func _ready() -> void:
-	XTianqiBalance.data()["combat_rules"]["base_damage"] = 0.13  # T501：本测试测机制不测 K，木桩血量按 K=0.13 写的；K 改 1.25 后会被一击打死，这里钉回 0.13
+	XTianqiBalance.data()["combat_rules"]["base_damage"] = 0.13  # T501：本测试测机制不测 K，木桩血量按 K=0.13、敌人生命不折算写的；
+	XTianqiBalance.data()["combat_rules"]["enemy_hp_pct"] = 100  # K 0.5＋敌人生命 ×40% 等于有效伤害 ×9.6，木桩会被一击打死，这里两项一起钉回旧口径
 	_run.call_deferred()
 
 

@@ -267,6 +267,12 @@ func param_base(i: int) -> float:
 ## 乘法次序照 JS，倍率不预乘进基础值：预乘时 10250×1.4 得 14349.999999999998，再×1.25＋1500 为 19437.499999999996，
 ## 四舍五入少 1（二十七层多宝 463 攻击 19438，敌群事件参照）。战斗中经 krz 能力值缓存（见 XBattler.param_cells）。
 func param(i: int) -> float:
+	if i == 0:
+		return XTianqiBase.scale_enemy_mhp(_param_raw(i))  # T501 R2：天启篇敌人最大生命统一 ×enemy_hp_pct%（西游档 100 原样）
+	return _param_raw(i)
+
+
+func _param_raw(i: int) -> float:
 	var dragon := XCat.dragon_param(self, i)  # 小猫试炼巨龙 param 最外层包装：数据库原值
 	if not is_nan(dragon):
 		return XHubris.formula_param(self, i, dragon)
