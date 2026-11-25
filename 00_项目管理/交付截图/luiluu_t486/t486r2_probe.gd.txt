@@ -1,0 +1,67 @@
+extends Node
+## T486 R2 临时探针（不入仓）：真玩家旧档（洪荒、v0.03 导出）读进补丁线，大厅推不推进到三阶
+const TestEnv = preload("res://tests/xiyou_test_env.gd")
+var OUT := ""
+func frames(n):
+	for i in n: await get_tree().process_frame
+func _ready(): _run.call_deferred()
+func _seen() -> Array:
+	XConfig.ensure_loaded(); return (XConfig._values.codexWhisperSeen as Array).duplicate()
+
+func _import(file: String) -> String:
+	var r := XSaveTransfer.parse_import(FileAccess.get_file_as_string(file))
+	if r.has("error"): return str(r.error)
+	return XSaveTransfer.import_to(1, r.data)
+
+func _enter(tag: String, n := 900, shot := "") -> Dictionary:
+	XRift.clear_cache()
+	XRift.on_map_setup(132)  # 模拟「从别的图进来」：每次读档进大厅算新的一次进图
+	var ok := XSave.load_slot(1)
+	var st := XState.current
+	var map := XMapScene.new()
+	add_child(map)
+	var anim_seen := false
+	for i in n:
+		await frames(1)
+		if get_tree().root.find_child(XRift3Anim.NODE_NAME, true, false) != null:
+			anim_seen = true
+			break
+	if shot != "" and not anim_seen:
+		await frames(60)
+		get_viewport().get_texture().get_image().save_png(OUT.path_join(shot))
+	var ss: Dictionary = st.self_switches if "self_switches" in st else {}
+	var r := {"load_ok": ok, "rift3_anim": anim_seen, "seen": _seen(), "XRift.stage": XRift.stage(),
+		"lobby_s3": XLobbyCorruption.stage3_active(st), "difficulty": st.difficulty if "difficulty" in st else -1,
+		"ev76A": ss.get("4,76,A", null), "ev203A": ss.get("4,203,A", null), "ev205A": ss.get("4,205,A", null)}
+	print("T486R2 ", tag, "=", JSON.stringify(r))
+	map.queue_free()
+	await frames(3)
+	for c in get_tree().root.get_children():
+		if c.name == XRift3Anim.NODE_NAME: c.queue_free()
+	await frames(2)
+	return r
+
+func _run():
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--o="): OUT = a.substr(4)
+	XMessageBox.auto = true
+	var old_save := OUT.path_join("../saves/old_save.json")
+	# R1：同一台机器从 v0.03 升上来（配置里 rift1、rift2 都在）
+	TestEnv.isolate("t486r2_1", false)
+	XConfig.whisper_mark("rift1"); XConfig.whisper_mark("rift2")
+	print("T486R2 import=", _import(old_save))
+	await _enter("R1_cfg_rift12_enter1")
+	await _enter("R1_cfg_rift12_enter2", 300, "R1_三阶大厅.png")
+	# R2：配置里没有 rift1（重装／换机／清数据后导回存档）
+	TestEnv.isolate("t486r2_2", false)
+	print("T486R2 import=", _import(old_save))
+	await _enter("R2_cfg_empty_enter1", 1500)
+	await _enter("R2_cfg_empty_enter2", 900)
+	await _enter("R2_cfg_empty_enter3", 900, "R2_卡二阶大厅.png")
+	# R3：配置只有 rift1（v0.01 前就装、没看到苍龙的极少数）
+	TestEnv.isolate("t486r2_3", false)
+	XConfig.whisper_mark("rift1")
+	print("T486R2 import=", _import(old_save))
+	await _enter("R3_cfg_rift1_enter1", 1500)
+	await _enter("R3_cfg_rift1_enter2", 900)
+	get_tree().quit(0)
