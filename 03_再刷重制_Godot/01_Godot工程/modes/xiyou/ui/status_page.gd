@@ -240,6 +240,12 @@ static func header_ops(a: XActor) -> Array:
 		if int(st.get("iconIndex", 0)) > 0 and n < 4:
 			ops.append(["icon", int(st.iconIndex), x + n * 32, LH * 2 + 2])
 			n += 1
+	var nat := XTianqiNature.line_of(a)   # T482 返修 R2（小o P1-3）：原版界面状态页补「角色属性」，放在状态图标与等级之间的空行；西游档为空
+	if nat != "":
+		var np := XTianqiNature.split_line(nat)
+		var lbw := _tw(str(np[0]) + "  ")
+		ops.append(_t(str(np[0]), x, LH * 3, lbw, "left", XUI.SYSTEM))
+		ops.append(_t(str(np[1]), x + lbw, LH * 3, 400.0))
 	var lv := _term(1)
 	var lw := _tw(lv)
 	ops.append(_t(lv, x, LH * 4, lw, "left", XUI.SYSTEM))

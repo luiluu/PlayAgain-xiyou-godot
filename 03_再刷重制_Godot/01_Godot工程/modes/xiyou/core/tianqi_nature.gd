@@ -71,6 +71,40 @@ static func of(b) -> Array:
 	return []
 
 
+## ---- 界面文字（T482，Kyo 11-25 事项 59 ④）：图鉴、角色页那一行「角色属性：火焰」，双属性顿号隔开、无则「无」 ----
+const LABEL := "角色属性"
+const HELP := "角色属性决定免疫或易受哪些元素效果，不影响元素伤害倍率。"
+const FLOOR_HELP := "注：角色属性只影响元素效果，不免疫元素伤害。"
+
+
+static func ui_on() -> bool:
+	return XTianqiElements.on(XState.current)
+
+
+## 按元素号数组拼一行（不看是否天启篇，测试和界面共用）
+static func format_line(natures: Array) -> String:
+	var names := natures.map(func(e): return XTianqiElements.element_name(int(e)))
+	return "%s：%s" % [LABEL, "、".join(names) if not names.is_empty() else "无"]
+
+
+## 把「角色属性：火焰」拆成 [标签, 值]，界面好分开着色（标签灰字、值白字）；没有「：」时标签为空
+static func split_line(line: String) -> Array:
+	var i := line.find("：")
+	return [line.substr(0, i), line.substr(i + 1)] if i >= 0 else ["", line]
+
+
+## 战斗单位的那一行；西游档（或元素效果开关关着）返回 ""，界面不画
+static func line_of(b) -> String:
+	return format_line(of(b)) if ui_on() else ""
+
+
+## 图鉴里按角色号取（没有战斗单位）
+static func line_of_actor_id(id: int) -> String:
+	if not ui_on():
+		return ""
+	return format_line(_ints(actor_table().get("actors", {}).get(str(id), {}).get("natures", [])))
+
+
 ## 种族号：敌人读 <EnemyRace>，我方不读种族（4.4）
 static func races(b) -> Array:
 	if b is XEnemy:

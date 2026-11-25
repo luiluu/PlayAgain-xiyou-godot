@@ -2686,6 +2686,8 @@ func _play(logs: Array) -> void:
 					await movie.finished
 			"battle_text":
 				_log_add(str(l.text))  # BattleManager._logWindow.push('addText')（宿傩「发动了神灶：开！」等）
+				if l.has("pop") and sprites.has(l.pop.target):
+					_custom_popup(l.pop.target, str(l.pop.text), int(l.pop.format), true)  # 天启篇元素效果（T482）：效果名、免疫＋效果名、圣佑抵挡、麻痹／冰冻跳字
 				if l.has("sukuna_fx"):
 					await _sukuna_fx(str(l.sukuna_fx))
 				if l.has("tianqi_fit"):
@@ -3081,6 +3083,7 @@ func _attack_animation(u: XBattler) -> int:
 ## 角色 = 脚底；同一目标仍存活的回复弹数决定纵向锚点（XDamagePopup.anchor_y）。text: "miss" 显示 Miss。
 const POPUP_Z := 7
 var _popups := {}          # XBattler -> Array[XDamagePopup]
+var _custom_pops := {}      # XBattler -> Array[XDamagePopup]，天启篇元素提示（头顶叠放用）
 
 
 ## 原版 Sprite_Battler.setupDamagePopup 每帧每个战斗者只取一个弹数（LGP popupQueue），同一次结算的几个弹数隔帧出、
@@ -3178,12 +3181,29 @@ func _spawn_popup(b: XBattler, args: Array) -> void:
 
 
 ## LGP customPopup(文字, 格式)：格式 2 伤害色、1 回复色，原地不动，最后 10 次淡出（设置「战斗伤害显示」关掉时不弹）
-func _custom_popup(b: XBattler, text: String, format: int) -> void:
+func _custom_popup(b: XBattler, text: String, format: int, at_head := false) -> void:
 	if not XConfig.flag("CombatDamageShow"):
 		return
 	var s: XBattlerSprite = sprites[b]
 	var p := XDamagePopup.new()
-	p.position = s.position + (Vector2.ZERO if b is XActor else Vector2(0, -s.height() / s.body_scale / 2.0 + 16))
+	if at_head:
+		# T482 返修 R2（小o P1-2、P2-3）：元素提示停在受影响单位头顶（精灵脚底原点上移一个身高），不压我方脚边、不盖敌方名牌；
+		# 同一目标上还没消失的提示往上叠一格，多元素同帧结算时不重叠。旧自定义跳字（黑闪等）不传 at_head，原坐标不动
+		var live_c: Array = _custom_pops.get(b, []).filter(func(x): return is_instance_valid(x))
+		# 按占用位分配：取最小的没被还活着的提示占用的一格（先消失的是第一条时，第三条补进第一格，不压第二条）
+		var used := {}
+		for x in live_c:
+			used[int(x.get_meta("pop_slot", 0))] = true
+		var slot := 0
+		while used.has(slot):
+			slot += 1
+		p.set_meta("pop_slot", slot)
+		var top := s.position + Vector2(0, -s.height() - 14.0 - 26.0 * slot)
+		p.position = Vector2(top.x, maxf(top.y, 20.0))
+		live_c.append(p)
+		_custom_pops[b] = live_c
+	else:
+		p.position = s.position + (Vector2.ZERO if b is XActor else Vector2(0, -s.height() / s.body_scale / 2.0 + 16))
 	p.z_index = POPUP_Z
 	p.setup_custom(text, format)
 	p.on_removed = _popup_removed

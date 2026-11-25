@@ -155,6 +155,11 @@ func _draw_actor() -> void:
 	var iw := body.get_string_size(info, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX).x
 	XUiSkin.ds(actor_panel, body, Vector2((sz.x - iw) / 2.0, y + 18), info, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX_MAX, XUiSkin.TEXT_2)
 	y += 30
+	var nat := XTianqiNature.line_of(a)   # T482：天启篇「角色属性：火焰」，西游档为空不画
+	if nat != "":
+		var nw2 := body.get_string_size(nat, HORIZONTAL_ALIGNMENT_LEFT, -1, XUiSkin.FS_AUX).x
+		XUiSkin.ds(actor_panel, body, Vector2((sz.x - nw2) / 2.0, y + 14), nat, HORIZONTAL_ALIGNMENT_LEFT, w, XUiSkin.FS_AUX, XUiSkin.TEXT)
+		y += 24
 	# 状态图标（最多 6 个，居中）
 	var icons := []
 	for st in a.states():

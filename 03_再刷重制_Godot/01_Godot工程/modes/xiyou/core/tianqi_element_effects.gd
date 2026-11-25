@@ -34,21 +34,21 @@ const STOP_STATES := [ST_PARALYZE, ST_FREEZE]
 const KEY_STATE := {"burn": ST_BURN, "slow": ST_SLOW, "freeze": ST_FREEZE, "shatter": ST_SHATTER, "paralyze": ST_PARALYZE, "parasite": ST_PARASITE,
 	"soak": ST_SOAK, "gust": ST_GUST, "arcane": ST_ARCANE, "holy": ST_HOLY, "veil": ST_VEIL, "shock": ST_SHOCK}
 
-## 状态记录规格：[名字, 图标, BuffType, 特性模板, 说明草稿（待小A 审；{v} 换成表里的百分数）, 自动解除时机, 数值读 element_effects 哪一系（"" 不读）, 读 boss 段]
+## 状态记录规格：[名字, 图标, BuffType, 特性模板, 说明（小A 文字审已过；{v} 换成表里的百分数）, 自动解除时机, 数值读 element_effects 哪一系（"" 不读）, 读 boss 段]
 ## 特性模板里的 value 是占位：state_rec 按 elements_table.json 的 element_effects.<系>.value 生成（R2 P2-1：C 卡改表即生效）
 const SPECS := {
 	ST_BURN: ["灼烧", 1072, "灼伤", [], "回合结束受到火焰持续伤害", 2, "", false],
 	ST_SLOW: ["迟缓", 420, "减益", [{"code": 21, "dataId": 6, "mode": "rate"}], "敏捷 −{v}%", 2, "3", false],
-	ST_FREEZE: ["冰冻", 0, "冰冻", [], "跳过下一次行动", 0, "", false],
+	ST_FREEZE: ["冰冻", 1168, "冰冻", [], "跳过下一次行动", 0, "", false],
 	ST_SHATTER: ["碎甲", 706, "破甲", [{"code": 21, "dataId": 3, "mode": "rate"}], "物理防御 −{v}%", 2, "4", false],
 	ST_PARALYZE: ["麻痹", 1029, "麻痹", [], "跳过下一次行动", 0, "", false],
-	ST_PARASITE: ["寄生", 1072, "减益", [], "回合结束受自然伤害，为施加方血量最低者回等量血", 2, "", false],
-	ST_SOAK: ["浸湿", 0, "减益", [], "造成伤害 −{v}%", 2, "14", false],
+	ST_PARASITE: ["寄生", 1214, "减益", [], "回合结束受自然伤害，为施加方血量最低者回等量血", 2, "", false],
+	ST_SOAK: ["浸湿", 955, "减益", [], "造成伤害 −{v}%", 2, "14", false],
 	ST_GUST: ["乱流", 921, "减益", [{"code": 22, "dataId": 0, "mode": "minus"}, {"code": 22, "dataId": 1, "mode": "minus"}], "命中 −{v}%，闪避 −{v}%", 2, "15", false],
 	ST_ARCANE: ["魔蚀", 706, "破甲", [{"code": 21, "dataId": 5, "mode": "rate"}], "魔法防御 −{v}%", 2, "7", false],
-	ST_HOLY: ["圣护", 0, "增益", [], "抵挡下一次可净化的负面状态，不挡伤害（1次）", 2, "", false],
-	ST_VEIL: ["遮蔽锋芒", 921, "减益", [], "暴击多出的伤害 −{v}%", 2, "9", false],
-	ST_SHOCK: ["感电", 1029, "减益", [], "受到的伤害 +{v}%（与弱点暴露、破绽取高）", 2, "5", true],
+	ST_HOLY: ["圣佑", 1184, "增益", [], "抵挡下一次可净化的负面状态，不挡伤害（1次）", 2, "", false],
+	ST_VEIL: ["遮蔽锋芒", 920, "减益", [], "暴击多出的伤害 −{v}%", 2, "9", false],
+	ST_SHOCK: ["感电", 945, "减益", [], "受到的伤害 +{v}%（与弱点暴露、破绽取高）", 2, "5", true],
 }
 
 static var _recs: Dictionary = {}
@@ -383,8 +383,20 @@ static func _take_logs(fx: Dictionary) -> Array:
 	return out
 
 
-static func _say(fx: Dictionary, text: String) -> void:
-	fx.logs.append({"type": "battle_text", "text": text})
+## pop（T482）：战斗画面在这条日志旁在 pop_target 头顶弹 pop_text（战斗画面 _play 认 l.pop；无画面的调用方照旧只读 text）。fmt 2＝伤害色、1＝回复色
+static func _say(fx: Dictionary, text: String, pop_target = null, pop_text := "", fmt := 2) -> void:
+	var l := {"type": "battle_text", "text": text}
+	if pop_target != null and pop_text != "":
+		l["pop"] = {"target": pop_target, "text": pop_text, "format": fmt}
+	fx.logs.append(l)
+
+
+## 体质免疫跳字（T482 返修 R2，Kyo 11-25）：只在「免疫的话本会挂上」时弹「免疫＋效果名」，不弹「免疫」「无效」二字（无效是元素伤害免疫的跳字）。
+## 跟实际效果判定走同一次结果：免疫候选走完同样的资格与几率门槛，对效果子流的下一次骰只读预览（复制流取一次，不消费），小于几率才弹；
+## 所以弹出＝没有这层免疫就真会挂上，正式流的消费位置与原先一致
+static func _immune_pop(fx: Dictionary, t, sid: int) -> void:
+	var nm := str(SPECS[sid][0])
+	_say(fx, "%s 免疫了%s！" % [t.display_name(), nm], t, "免疫" + nm)
 
 
 ## 一帧收尾：按（实际扣血对象, 胜出元素）首次出现的顺序各掷一次；神圣整帧最多一次
@@ -502,9 +514,10 @@ static func _has_buff_type(t, type: String) -> bool:
 
 
 ## 停手资格（§3.6）：没有旧停手、没有待生效标记、共用冷却走完
-static func _stop_ok(logic, t) -> bool:
+static func _stop_ok(logic, t, touch := true) -> bool:
 	if _old_stopped(t):
-		_unit(_fx(logic), t).stop_need = maxi(int(_unit(_fx(logic), t).stop_need), 1)
+		if touch:
+			_unit(_fx(logic), t).stop_need = maxi(int(_unit(_fx(logic), t).stop_need), 1)
 		return false
 	for sid in STOP_STATES:
 		if t.state_ids.has(sid):
@@ -564,36 +577,42 @@ static func _try_apply(logic, src, t, elem: int, base_hp: float, budget := {}) -
 	var stop := key in ["paralyze", "freeze"]
 	var borrow := 0 if key == "shock" else (int(spec.get("freeze", {}).get("borrow", 0)) if key == "freeze" else int(spec.get("borrow", 0)))  # 感电不借麻痹（不是控制）
 	var eff_rate := 1.0
+	var imm := false
 	if actor_t:
 		# §4.4 我方判定顺序：硬免疫 → 体质免疫（4.2，不读种族）→ 状态有效度 → 停手类再乘一次六维韧性（×0.90～×1.10）
 		if _hard_resist_only(t, sid, borrow):
 			_stat(fx, elem, "blocked")
 			return
-		if _immune(t, elem):
-			_stat(fx, elem, "immune")
-			return
+		imm = _immune(t, elem)
+		if imm:
+			_stat(fx, elem, "immune")  # 免疫候选继续往下走同样的门槛，只为判「没有免疫会不会挂上」，下面一律不动状态、冷却、预算
 		eff_rate = _actor_state_rate(t, sid, borrow)
 		if eff_rate <= 0.0:
-			_stat(fx, elem, "blocked")
+			if not imm:
+				_stat(fx, elem, "blocked")
 			return
 	else:
-		if _immune(t, elem):
+		imm = _immune(t, elem)
+		if imm:
 			_stat(fx, elem, "immune")
-			return
 		if _hard_blocked(logic, t, sid, borrow):
-			_stat(fx, elem, "blocked")
+			if not imm:
+				_stat(fx, elem, "blocked")
 			return
 	# §3.4 白名单归并：旧灼伤、旧麻痹挂着时新效果落空（不耗冷却；感电不是麻痹，不归并）
 	if key != "shock":
 		for bt in data().get("effect_merge", {}).get(str(elem), []):
 			if _has_buff_type(t, str(bt)):
-				_stat(fx, elem, "blocked")
+				if not imm:
+					_stat(fx, elem, "blocked")
 				return
-	if stop and not _stop_ok(logic, t):
-		_stat(fx, elem, "blocked")
+	if stop and not _stop_ok(logic, t, not imm):
+		if not imm:
+			_stat(fx, elem, "blocked")
 		return
 	if stop and enemy_src and not _enemy_stop_ok(fx, src, src_elite, t, budget):
-		_stat(fx, elem, "blocked")
+		if not imm:
+			_stat(fx, elem, "blocked")
 		return
 	var chance := float(_enemy_rules().get("base_chance", 0.11)) if enemy_src else tier_chance(elem)
 	if not enemy_src and target_boss:
@@ -607,6 +626,16 @@ static func _try_apply(logic, src, t, elem: int, base_hp: float, budget := {}) -
 		chance *= eff_rate
 		if stop:
 			chance *= XTianqiSixDim.control_state_rate(t, sid, logic)  # §4.4 停手类再乘一次六维韧性（只乘一次）
+	if imm:
+		var peek := XRandomStream.restore(fx.stream.snapshot())  # 复制一份流再取一次：等于「下一次效果骰」，正式流不动
+		if peek != null and peek.next_float("tianqi_elem_effect", "%d" % elem) < chance:
+			# 只读预览同一次效果骰：没有免疫它真会挂上才弹；实际结算里圣佑在 add_state 入口先于挂上，
+			# 持圣佑且这个减益会被它挡时，去掉体质后同一骰是「圣佑抵挡」，所以弹圣佑抵挡、不弹免疫（只提示，不耗盾）
+			if _holy_would_block(t, sid, src):
+				_say(fx, "%s 的%s抵挡了%s！" % [t.display_name(), str(SPECS[ST_HOLY][0]), str(XDB.rec("States", sid).get("name", ""))], t, str(SPECS[ST_HOLY][0]) + "抵挡", 1)
+			else:
+				_immune_pop(fx, t, sid)
+		return
 	_stat(fx, elem, "rolled")
 	if fx.stream.next_float("tianqi_elem_effect", "%d" % elem) >= chance:
 		return
@@ -633,7 +662,7 @@ static func _try_apply(logic, src, t, elem: int, base_hp: float, budget := {}) -
 		if key == "burn":
 			tick = floorf(tick * _boost(t, elem))  # 自然体质受灼烧 ×1.5，仍受每跳上限
 		un.dot[key] = {"tick": minf(tick, floorf(cap)), "src": src, "elem": elem}
-	_say(fx, "%s 陷入了%s！" % [t.display_name(), str(SPECS[sid][0])])
+	_say(fx, "%s 陷入了%s！" % [t.display_name(), str(SPECS[sid][0])], t, str(SPECS[sid][0]))
 
 
 ## 用效果子流挂状态（持续回合不吃战斗主流），挂上后把回合数写成最终值（首领版不再减半，§4.3）
@@ -700,9 +729,9 @@ static func _try_holy(logic, src, allies: Array, holy_hit: bool, budget := {}) -
 			if enemy_src:
 				budget["applied"] = int(budget.get("applied", 0)) + 1
 			if gone != "":
-				_say(fx, "%s 净化了%s并获得了%s！" % [b.display_name(), gone, str(SPECS[ST_HOLY][0])])
+				_say(fx, "%s 净化了%s并获得了%s！" % [b.display_name(), gone, str(SPECS[ST_HOLY][0])], b, str(_spec(8).get("name", "圣护")), 1)
 			else:
-				_say(fx, "%s 获得了%s！" % [b.display_name(), str(SPECS[ST_HOLY][0])])
+				_say(fx, "%s 获得了%s！" % [b.display_name(), str(SPECS[ST_HOLY][0])], b, str(_spec(8).get("name", "圣护")), 1)
 		elif gone != "":
 			if boss_side:
 				fx.holy_boss = int(fx.holy_boss) + 1
@@ -734,7 +763,23 @@ static func _dispel_one(logic, src, b) -> String:
 	return ""
 
 
-## XBattler.add_state 入口（_add_state 之前）：持圣护盾的单位挡下一次对方施加的可解除减益，盾碎
+## 圣佑能不能挡这个状态（只看目标与状态，不看出手者）
+static func _holy_state_ok(b, id: int) -> bool:
+	if not removable_debuff(id) or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
+		return false
+	if bool(XDB.rec("States", id).get("removeByRestriction", false)) and b.is_restricted():
+		return false
+	return true
+
+
+## 免疫跳字用的只读判断：持圣佑、状态可挡、出手者在对方阵营（同 shield_blocks，不耗盾不写日志）
+static func _holy_would_block(b, id: int, src) -> bool:
+	if not b.state_ids.has(ST_HOLY) or src == null or _same_side(src, b):
+		return false
+	return _holy_state_ok(b, id)
+
+
+## XBattler.add_state 入口（_add_state 之前）：持圣佑（原圣护盾）的单位挡下一次对方施加的可解除减益，盾碎
 ## 目标身上已有这个减益时，对方重施（续回合）照样挡（R2 P2-3①）；带 removeByRestriction 的减益在目标受限时本来就加不上，不耗盾（P2-3③）
 static func shield_blocks(b, id: int) -> bool:
 	if _logic_ref == null or not b.state_ids.has(ST_HOLY):
@@ -742,9 +787,7 @@ static func shield_blocks(b, id: int) -> bool:
 	var lg = _cur()
 	if lg == null:
 		return false
-	if not removable_debuff(id) or b.traits_set(XBattler.TRAIT_STATE_RESIST).has(id):
-		return false
-	if bool(XDB.rec("States", id).get("removeByRestriction", false)) and b.is_restricted():
+	if not _holy_state_ok(b, id):
 		return false
 	var fx := _fx(lg)
 	if fx.is_empty():
@@ -757,7 +800,7 @@ static func shield_blocks(b, id: int) -> bool:
 		return false  # 没有出手者（脚本、阶段状态、剧情锁）或自己人上的：不挡
 	b.remove_state(ST_HOLY)
 	_sync_unit(lg, b)  # 盾碎当回合立刻起算圣护冷却（不依赖回合末才同步）
-	_say(fx, "%s 的%s抵挡了%s！" % [b.display_name(), str(SPECS[ST_HOLY][0]), str(XDB.rec("States", id).get("name", ""))])
+	_say(fx, "%s 的%s抵挡了%s！" % [b.display_name(), str(SPECS[ST_HOLY][0]), str(XDB.rec("States", id).get("name", ""))], b, str(SPECS[ST_HOLY][0]) + "抵挡", 1)
 	return true
 
 
@@ -811,8 +854,19 @@ static func take_skip(logic, u, restricted: bool) -> String:
 			un.stop_need = int(_rules().get("stun_shared_cooldown", 5))
 			un.skips = int(un.skips) + 1
 			_sync_unit(logic, u)
+			fx["skip_name"] = str(SPECS[sid][0])
 			return "%s 因%s跳过了本次行动！" % [u.display_name(), str(SPECS[sid][0])]
 	return ""
+
+
+## take_skip 返回非空后，战斗逻辑用它拼那一条日志：带上头顶跳字（麻痹／冰冻），战斗画面 _play 认 pop
+static func skip_log(logic, u, text: String) -> Dictionary:
+	var l := {"type": "battle_text", "text": text}
+	var fx := _fx(logic)
+	if not fx.is_empty() and str(fx.get("skip_name", "")) != "":
+		l["pop"] = {"target": u, "text": str(fx.skip_name), "format": 2}
+		fx.erase("skip_name")
+	return l
 
 
 ## 失去的行动位与完成的行动（C 卡量 17% 判线用）
