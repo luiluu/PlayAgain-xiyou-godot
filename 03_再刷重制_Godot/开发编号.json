@@ -1,13 +1,13 @@
 {
   "projectId": "kyo.godot_remake",
   "scope": "独立 Godot 工程开发修订；不替代现有西游 MOD 更新编号",
-  "current": "dev.920",
-  "sequence": 920,
-  "next": "dev.921",
-  "nextSequence": 921,
+  "current": "dev.921",
+  "sequence": 921,
+  "next": "dev.922",
+  "nextSequence": 922,
   "releaseVersion": null,
   "publicReleaseCreated": false,
-  "currentChange": "t506-yunxiao-heal",
+  "currentChange": "t502",
   "runtimeVersionFile": "01_Godot工程/content/build_info.json",
   "legacyModVersionUnchanged": "v0.04"
 }
