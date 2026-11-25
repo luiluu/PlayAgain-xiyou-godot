@@ -896,7 +896,7 @@ static func _caocao_regenerate_106(holder: XBattler, c: Dictionary) -> void:
 	var damage1: float = float(origin.atk)
 	var damage2: float = float(origin.mat)
 	var damage3: float = float(origin.level)
-	var damage: float = stacks * (damage1 + damage2) * damage3 * (1.0 + level)
+	var damage: float = floorf(stacks * (damage1 + damage2) * damage3 * (1.0 + level))
 	var rc: XResourceContext = c.resources
 	rc.seed_result(holder, XResourceContext.empty_result())
 	rc.gain(holder, "hp", -damage)

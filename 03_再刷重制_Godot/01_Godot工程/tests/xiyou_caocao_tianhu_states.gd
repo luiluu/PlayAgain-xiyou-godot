@@ -184,7 +184,7 @@ func _test_caocao_106_oracle() -> void:
 	check("s106.oracle_s0_defaults_to_1", is_equal_approx(1e12 - e.hp, 42672000.0)
 		and float(e.state_data.get("_stackingPoison", 0.0)) == 1.0, [1e12 - e.hp, e.state_data])
 
-	# 样本 1c：带护盾 1,000,000 吸收击穿减半 -> (42,672,000 - 1,000,000) / 2 = 20,836,000（原版实测数）
+	# 样本 1c：带护盾 1,000,000 吸收击穿减半 -> (42,672,000 - 1,000,000) / 2 = 20,836,000（按原版 v0.62.12 公式复算）
 	e.state_data["_stackingPoison"] = 1.0
 	e.hp = 1e12
 	e.shield = 1000000.0
@@ -192,14 +192,16 @@ func _test_caocao_106_oracle() -> void:
 	XStateEffects.run_one("regenerate", e, st, ctx)
 	check("s106.oracle_shield_absorb", is_equal_approx(1e12 - e.hp, 20836000.0) and e.shield == 0.0, [1e12 - e.hp, e.shield])
 
-	# 样本 1d：1 层楼层上限压实际等级为 12 再折算（12 * 888 / 99），升 30 层自动恢复 888
+	# 样本 1d：1 层楼层上限压实际等级为 12 再折算（12 * 888 / 99），经 floorf 取整恒为整数，升 30 层自动恢复 888
 	s.set_variable(20, 1)
 	e.state_data["_stackingPoison"] = 1.0
 	e.hp = 1e12
 	XStateEffects.run_one("regenerate", e, st, ctx)
-	var want_f1 := 1.0 * (500.0 + 300.0) * 60.0 * (1.0 + 12.0 * 888.0 / 99.0)
+	var want_f1 := floorf(1.0 * (500.0 + 300.0) * 60.0 * (1.0 + 12.0 * 888.0 / 99.0))
+	var dmg_f1 := 1e12 - e.hp
 	var dark_list := caocao.equip_list().filter(func(eq): return int(eq.get("base", eq.get("id", 0))) == 3640)
-	check("s106.floor_cap_1", is_equal_approx(1e12 - e.hp, want_f1) and dark_list.size() == 1 and float(dark_list[0].level) == 99.0, [1e12 - e.hp, want_f1])
+	check("s106.floor_cap_1", dmg_f1 == want_f1 and dark_list.size() == 1 and float(dark_list[0].level) == 99.0, [dmg_f1, want_f1])
+	check("s106.floor_cap_1_is_integer", dmg_f1 == floorf(dmg_f1) and dmg_f1 == 5214545.0, [dmg_f1, floorf(dmg_f1)])
 	s.set_variable(20, 30)
 
 	# 样本 1e：关 T490 折算开关回到 99 级原读口 -> 1 * 800 * 60 * (1 + 99) = 4,800,000
@@ -209,7 +211,7 @@ func _test_caocao_106_oracle() -> void:
 	check("s106.t490_scale_off_99", is_equal_approx(1e12 - e.hp, 4800000.0), 1e12 - e.hp)
 	XMagicWeapon.SCALE_99_TO_888 = true
 
-	# 样本 1f：未装备暗涌（level = 0），stacks = 2 -> 2 * 800 * 60 * 1 = 96,000（原版实测数）
+	# 样本 1f：未装备暗涌（level = 0），stacks = 2 -> 2 * 800 * 60 * 1 = 96,000（按原版 v0.62.12 公式复算）
 	var bare := _make_caocao(0)
 	var e_bare := _make_enemy(1e12, 1.0)
 	XImportedBalance.set_acting(bare)
@@ -267,7 +269,7 @@ func _test_caocao_106_battle_turn_end() -> void:
 	foe.add_state(106)
 	XImportedBalance.set_acting(null)
 	foe.param_refresh()
-	var want_dmg := 1.0 * (caocao.atk + caocao.mat) * float(caocao.level) * (1.0 + 888.0)
+	var want_dmg := floorf(1.0 * (caocao.atk + caocao.mat) * float(caocao.level) * (1.0 + 888.0))
 	logic.start_turn()
 	var logs := logic.end_turn()
 	var regen_rows := logs.filter(func(l): return l.get("type") == "regen" and l.get("target") == foe and int(l.get("state", 0)) == 106)
@@ -299,7 +301,7 @@ func _test_tianhu_1341_apply_and_react_oracle() -> void:
 	#   dmm = 400*2 + 20000 = 20800
 	#   ddd0 = ceil(1.33 * 0.77 * 20800 * (1 + 1*0.25) / 2) = ceil(13313.768) = 13314
 	#   ddmg = ceil(13314 * (5 + 888)) = 11,889,402
-	#   ddd = 13314 + 11,889,402 = 11,902,716（原版实测数）
+	#   ddd = 13314 + 11,889,402 = 11,902,716（按原版 v0.62.12 公式复算）
 	e.hp = 1e12
 	var rc := XResourceContext.new()
 	var rng := XRandomStream.create(XRandomStream.hex64(491), "battle")
@@ -315,7 +317,7 @@ func _test_tianhu_1341_apply_and_react_oracle() -> void:
 
 	# 样本 2b：d=3，mastery=5，烽舞 99->888，护盾 500,000
 	# ddd0 = ceil(1.33 * 0.77 * 20800 * 1.75 / 2) = ceil(18638.62) = 18639
-	# ddd = 18639 + 18639 * 893 = 16,663,266；护盾吸收后 (16,663,266 - 500,000) / 2 = 8,081,633（原版实测数）
+	# ddd = 18639 + 18639 * 893 = 16,663,266；护盾吸收后 (16,663,266 - 500,000) / 2 = 8,081,633（按原版 v0.62.12 公式复算）
 	e.state_data["_stateCounter"]["1341"] = 3.0
 	e.hp = 1e12
 	e.shield = 500000.0
@@ -328,7 +330,7 @@ func _test_tianhu_1341_apply_and_react_oracle() -> void:
 	check("s1341.oracle_shield_m5_d3", ret2 == 1000.0 and is_equal_approx(1e12 - e.hp, 8081633.0) and e.shield == 0.0 and rng2.draws == 1,
 		[ret2, 1e12 - e.hp, e.shield, rng2.draws])
 
-	# 样本 2c：mastery=0, d=3 -> 不进法宝/熟练度倍增，ddd = 18,639（原版实测数）
+	# 样本 2c：mastery=0, d=3 -> 不进法宝/熟练度倍增，ddd = 18,639（按原版 v0.62.12 公式复算）
 	tianhu.mastery_levels[7485] = 0
 	e.hp = 1e12
 	var rc3 := XResourceContext.new()
@@ -339,7 +341,7 @@ func _test_tianhu_1341_apply_and_react_oracle() -> void:
 	})
 	check("s1341.oracle_m0_d3", is_equal_approx(1e12 - e.hp, 18639.0) and rng3.draws == 1, [1e12 - e.hp, rng3.draws])
 
-	# 样本 2d：d=0, mastery=2, 无烽舞（level=0）, era=1.25, mdr=0.8 -> ddd0=10400, ddmg=20800, ddd=31,200（原版实测数）
+	# 样本 2d：d=0, mastery=2, 无烽舞（level=0）, era=1.25, mdr=0.8 -> ddd0=10400, ddmg=20800, ddd=31,200（按原版 v0.62.12 公式复算）
 	var bare := _make_tianhu(0, 2, 0.8, 0.5)
 	var e2 := _make_enemy(1e12, 1.25)
 	XImportedBalance.set_acting(bare)
