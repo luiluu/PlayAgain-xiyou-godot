@@ -13,7 +13,7 @@ extends Node2D
 ## 挂上时给敌人设 XRiftAlien.PARTS，整体偏色改用 look.parts_tier_glow（0.04／0.06／0.08）；没挂上照旧 tier_glow。
 ## 不挂（回到原偏色）：开关关、素材或锚点不齐、场景外观（骨骼动画等）、清单里查不到模板。
 ##
-## 开关（O-待定，T505）：ENABLED＝false 回到 T504 前（只有偏色，不挂件）。
+## 开关（O-668，T505）：ENABLED＝false 回到 T504 前（只有偏色，不挂件）。
 
 const DIR := "res://content/monsters/rift/"
 const ANCHORS := DIR + "anchors.json"
