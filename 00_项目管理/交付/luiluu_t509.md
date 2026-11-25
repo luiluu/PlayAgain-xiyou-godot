@@ -26,7 +26,7 @@
 ## 测试
 
 - 本机：语法检查 0 问题；本机直接跑 Godot 专项因工作树未补齐转换产物编译失败，没测。
-- 专项 `xiyou_honghuang_titles` 改断言（52 显示名字＋说明；选 52 未获得不变），云端选测结果见下。
+- 专项 `xiyou_honghuang_titles` 改断言（52 显示名字＋说明；选 52 未获得不变），云端选测 6 个场景（xiyou_designation、xiyou_event_compare 四片、xiyou_honghuang_titles）2 片全过：https://github.com/luiluu/PlayAgain-xiyou-godot/actions/runs/45644265094 （提交 b5b31326c，等到跑完）。
 
 ## 动了的共用函数和开关
 
