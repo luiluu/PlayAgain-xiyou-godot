@@ -203,7 +203,7 @@ def export_patch(base: Path, out: Path, dry: bool) -> Path:
             injected.unlink(missing_ok=True)  # 真脚本回退直接用工程导：导完删掉，不留在工作区（.gitignore 了）
         if src != PROJECT:
             shutil.rmtree(src, ignore_errors=True)
-    return _check_patch(tmp, dry, shas, base)
+    return _check_patch(tmp, dry, shas)
 
 
 # T489（v0.04.01 存档「不见」事故，cc 11-25）：发行存档密钥只在出整包时注入（发行出包.py inject_save_key、不进仓库）。
@@ -230,6 +230,8 @@ def pck_dir(path: Path) -> dict:
 
 
 def base_has_save_key(base: Path) -> bool:
+    if not Path(base).is_file():
+        return False  # 测试夹具的假底包路径；真出包时 resolve_base 已确认底包存在
     return _rel_mod().SAVE_KEY_DEST in pck_dir(base)
 
 
@@ -363,7 +365,7 @@ def _export_presets(base: Path, tmp: Path, dry: bool, shas: dict, src: Path) -> 
         shas[preset] = sha256(dst)
 
 
-def _check_patch(tmp: Path, dry: bool, shas: dict, base: Path = None) -> Path:
+def _check_patch(tmp: Path, dry: bool, shas: dict) -> Path:
     if dry:
         return tmp / 'Windows.pck'
     if len(set(shas.values())) != 1:
