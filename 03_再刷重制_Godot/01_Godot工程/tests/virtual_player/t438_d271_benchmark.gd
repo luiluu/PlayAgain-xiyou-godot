@@ -791,17 +791,19 @@ func _equip_actor(s: XState, a: XActor, tpl: String, diff: String, role: String,
 				if not item.is_empty():
 					item["instanceId"] = inst
 			elif et == 1:
-				item = _make_legal_qiyin_weapon(a, seal, q_lv, true, perf_grades, diff, qstream, inst)
+				var is_true_w := not neutral_dummy or primary_weapon
+				item = _make_legal_qiyin_weapon(a, seal, q_lv, is_true_w, perf_grades, diff, qstream, inst, preferred_weapon)
+				primary_weapon = false
 				if item.is_empty() and f >= 36:
-					item = _pick_db_item(a, 1, role, w, 80, 81, 6, 6, inst)
-			elif et == 9 and f >= 34:
+					item = _pick_db_item(a, 1, role, w, 80, 81, 6, 6, inst, neutral_dummy)
+			elif et == 9 and f >= 34 and not neutral_dummy:
 				item = _pick_db_item(a, 9, role, w, 80, 80, 6, 6, inst)
 			if item.is_empty():
-				item = _pick_db_item(a, et, role, w, 70, mini(lv, 81), 5, 6, inst)
+				item = _pick_db_item(a, et, role, w, 70, mini(lv, 81), 5, 6, inst, neutral_dummy)
 				if item.is_empty():
-					item = _pick_db_item(a, et, role, w, 65, mini(lv, 81), 5, 6, inst)
+					item = _pick_db_item(a, et, role, w, 65, mini(lv, 81), 5, 6, inst, neutral_dummy)
 			if not item.is_empty():
-				_apply_curated_affixes(item, a, role, "D", diff, rng)
+				_apply_curated_affixes(item, a, role, "D", diff, rng, w if neutral_dummy else {})
 
 		if not item.is_empty():
 			a.equips[i] = item
