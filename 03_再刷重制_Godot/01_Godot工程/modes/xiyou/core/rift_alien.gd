@@ -16,7 +16,8 @@ extends RefCounted
 ## - 掉落：赢了且异化怪倒下，按级掷（3／8／20%）一件西游原版异化装备（22 件本体等权，XAlienation.create；首领以上来源算 boss），
 ##   名字「级·词条·原名」，分解按级给能量 1／2／3。原版异化整套隐藏时（XAlienBattle.hidden，含发行隐藏）不掉。原版 1% 异化遭遇照旧各算各的。
 ## - 异化图鉴：赢了倒下的异化怪按「借自的线:种类:级」点亮天启篇异化图鉴（XConfig.tianqi_alien_mark，跨存档，不给数值和物品）。
-## 外观的纹路贴图、附加件、化形替换件和变形演出还没有美术，先用 tint() 给 XBattlerSprite 的幽紫偏色顶着。
+## 外观：T505 起异化怪按模板挂附加件（XRiftAlienParts，素材 content/monsters/rift/，T504），挂上时整体偏色降到 look.parts_tier_glow；
+## 没挂上（开关关、素材不齐、场景外观）时照旧只用 tint() 给 XBattlerSprite 的幽紫偏色（look.tier_glow）。
 ##
 ## 开关（O-356）：ENABLED＝false 时一概不建（画面、异化、掉落、图鉴都没有）；发行构建里另要 RELEASE_OPEN（T455 起开，三阶段整包对玩家打开）。
 ## 发行包里本脚本是真脚本（发行空壳.KEEP），调到的天启篇类（XTianqi、XTianqiAlienCodex）是空壳：只用 XTianqi.active／cleared_floors（空壳 false／0），图鉴键在本文件拼。
@@ -30,6 +31,8 @@ extends RefCounted
 const PATH := "res://modes/xiyou/rift_alien.json"
 const META := "xrift_alien"
 const LOOK := "xrift_look"
+## T505：这只异化怪身上挂着附加件（XRiftAlienParts 挂上时设、拆下时清；值是挂件实例 ID，返修 P1-1 换图时旧件只清自己的）；有它时整体偏色改用 look.parts_tier_glow
+const PARTS := "xrift_parts"
 
 ## 开关：false＝漩涡阶段不影响怪物
 static var ENABLED := true
@@ -599,7 +602,8 @@ static func tint(e, t: float) -> Color:
 	var a := 0.0
 	var tier := str(look.get("tier", ""))
 	if tier != "":
-		a = float(lk.get("tier_glow", {}).get(tier, 0.0))
+		var glow: Dictionary = lk.get("parts_tier_glow", {}) if e.has_meta(PARTS) and lk.has("parts_tier_glow") else lk.get("tier_glow", {})
+		a = float(glow.get(tier, 0.0))
 	var fx := XGraphics.fx_on()  # 二阶的预兆跟大厅「画面特效」设置一起，可关；异化怪的常亮不关
 	if fx and bool(look.get("pulse", false)):
 		a = maxf(a, float(lk.get("guardian_pulse", 0.0)) * (0.5 - 0.5 * cos(TAU * t / maxf(float(lk.get("period", 6)), 0.01))))
@@ -622,4 +626,6 @@ static func end(logic) -> void:
 	for e in logic.enemies:
 		if e is XEnemy and e.has_meta(LOOK):
 			e.remove_meta(LOOK)
+		if e is XEnemy and e.has_meta(PARTS):
+			e.remove_meta(PARTS)
 	_logic_ref = null

@@ -91,6 +91,8 @@
     "flash_rate": 11,
     "flash": 0.5,
     "fade": 1,
-    "tier_glow": {"qinran": 0.15, "shigu": 0.3, "huaxing": 0.5}
+    "tier_glow": {"qinran": 0.15, "shigu": 0.3, "huaxing": 0.5},
+    "_parts_note": "T505：异化怪挂上附加件（XRiftAlienParts）时整体偏色改用 parts_tier_glow（Kyo 11-25 事项 67 首轮）；没挂上（开关关、素材不齐）时照旧 tier_glow",
+    "parts_tier_glow": {"qinran": 0.04, "shigu": 0.06, "huaxing": 0.08}
   }
 }

@@ -410,6 +410,7 @@ func motion_tick() -> void:
 
 func _process(delta: float) -> void:
 	if battler is XEnemy:
+		XRiftAlienParts.sync(self)  # T505 异化三级附加件（先挂件，偏色才知道用 parts_tier_glow）
 		_rift_tint(delta)
 		XTianqiQiyinArt.update_sprite(self)  # 七印祭坛首领新画：七首之龙断首藏头、守默者香炉两态
 	if battler is XActor:
@@ -718,6 +719,8 @@ static func body_shader() -> Shader:
 
 ## 漩涡阶段异化（XRiftAlien.tint）：幽紫偏色，二阶守层者一明一暗、稀有以上进场一闪、异化怪按级常亮；没有时不建材质
 var _rift_t := 0.0
+## T505：挂着的异化附加件（XRiftAlienParts.sync 建、拆）
+var rift_parts: XRiftAlienParts = null
 func _rift_tint(delta: float) -> void:
 	_rift_t += delta
 	var c := XRiftAlien.tint(battler, _rift_t)
