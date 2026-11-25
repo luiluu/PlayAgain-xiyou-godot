@@ -66,9 +66,6 @@ func _unhandled_input(event: InputEvent) -> void:
 ## 当作确认；乘飞艇时 D2 只查事件（canStartLocalEvents 为假，什么都不做），前方一格照常当目的地飞过去
 func click_cell(c: Vector2i) -> void:
 	touch_target = c
-	# DEFER_CLICK_ACTION：走动中点按只当目的地（原版 triggerTouchAction 在 updateNonmoving 里），走到停下（D1）或走不过去（D2）时再按确认
-	if DEFER_CLICK_ACTION and is_moving():
-		return
 	if touch_target == grid or (touch_target == front_cell(direction) and vehicle_speed <= 0):
 		touch_target = Vector2i(-1, -1)
 		if DEFER_CLICK_ACTION:
@@ -114,9 +111,12 @@ func update_character() -> void:
 	# 这一下确认键只给紧接着的这一个物理帧（同原版 isTriggered 只在按下那帧为真；走动中、不收输入时按的作废）
 	var accept := _accept_queued
 	_accept_queued = false
-	# 点按当确认（DEFER_CLICK_ACTION）：同确认键，只给紧接着的这一个物理帧
+	# 点按当确认（DEFER_CLICK_ACTION）：记下的这一下不因走动／滑行丢掉，留到停稳那一帧再发（飞艇滑进可降落格时点脚下＝降落，
+	# 小o R2 P1-2）；只有不收输入（事件、菜单、挂机、升降）时作废，同旧版此时根本收不到点按
 	var click := _click_queued
-	_click_queued = false
+	if not input_enabled:
+		_click_queued = false
+		click = false
 	if not is_moving() and auto_step.is_valid():
 		for d in auto_step.call():
 			if move_straight(d):
@@ -126,6 +126,7 @@ func update_character() -> void:
 	if is_moving() or not input_enabled:
 		return
 	if click:
+		_click_queued = false
 		action_pressed.emit()
 		return
 	var d := _input_dir()
