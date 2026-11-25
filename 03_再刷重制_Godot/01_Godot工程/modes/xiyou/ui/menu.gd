@@ -584,6 +584,7 @@ func _show_save() -> void:
 
 
 func _reload_after_load() -> void:
+	XHonghuangMonument.arm_entry()
 	get_tree().change_scene_to_file.call_deferred(MAP_SCENE)
 
 
