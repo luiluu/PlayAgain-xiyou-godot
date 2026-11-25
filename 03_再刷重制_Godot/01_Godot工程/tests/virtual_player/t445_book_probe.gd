@@ -13,6 +13,12 @@ const LIANYU := "lianyu"
 const ZHENGDAO := "zhengdao"
 const LIANYU_FLOOR := 36
 const DAMAGE_ROLE := "输出"
+# T502：绑定型超强者（176 屠苏、177 璇）编组探针：
+# - 176 屠苏：2 人编组（屠苏＋标准强者 1 狗逍遥，化武绑定＋开刃＋锁定／和鸣，持武者放武装技）
+# - 177 璇：天启篇标准 4 人场（璇＋主宿主 1 狗逍遥＋2 星影 22 维利／2 绿司机，手动列星 2 星影棱光）；
+#   另监控 2 人编组（璇＋1 狗逍遥）星契自律＋同调的峰值确认不越 3.5×。
+const BIND_HOST_ID := 1
+const XUAN_SHADOW_IDS := [22, 2]
 
 const EXTREME := [6308, 6328, 6530, 6652, 6307, 6327, 6529, 6660, 6316, 6315, 6528, 6616, 6661,
 	6312, 6653, 6662, 6610, 6311, 6658, 6672, 10436, 6651, 6606, 6618, 6509]
@@ -102,6 +108,7 @@ var _t488_applied := false
 var invalid := false
 var _prime_forced := false
 var k_scan := false  # T496：--k-scan 炼狱/证道配装不变，改用 K 探针 _measure_in（D209 量法：公式条件全中＋整次施放段数比）对照
+var bind_probe := true  # T502：炼狱/证道下对 176 屠苏（2 人化武）、177 璇（4 人列星＋2 人自律同调监控）启用编组探针；--no-bind-probe 回退单人对照
 
 
 func _is_d271_build() -> bool:
@@ -118,6 +125,8 @@ func _ready() -> void:
 			t488_proposal = true
 		elif arg == "--k-scan":
 			k_scan = true
+		elif arg == "--no-bind-probe":
+			bind_probe = false
 		elif arg == "--no-d287":  # T496：关掉 D287 收拢覆盖层（改前对照）；k_calibrate 也会读到同一开关
 			XTianqiBase.TUNE_D287 = false
 			XTianqiSkills.reload_table()
@@ -450,6 +459,12 @@ func _measure_lianyu(s: XState, a: XActor, tier: String) -> Dictionary:
 func _measure(id: int, tier: String) -> Dictionary:
 	_ensure_t488_proposal()
 	var d271 := _is_d271_build()
+	if d271 and not k_scan and bind_probe and id in [XTusu.ACTOR, XXuanBattle.XUAN]:
+		var brow := _measure_lianyu_tusu(tier) if id == XTusu.ACTOR else _measure_lianyu_xuan(tier)
+		if not brow.is_empty():
+			brow["lottery_count"] = 0
+			brow["ledger_violations"] = XTianqiLedger.violations.size()
+		return brow
 	var s := _lianyu_state(id) if d271 else _state(id)
 	var actor := s.actor(id)
 	var lottery: Array = []
@@ -477,4 +492,413 @@ func _measure(id: int, tier: String) -> Dictionary:
 		return row
 	row["lottery_count"] = lottery.size()
 	row["ledger_violations"] = XTianqiLedger.violations.size()
+	return row
+
+
+# ---- T502：绑定型超强者（176 屠苏、177 璇）编组探针 ----
+
+func _lianyu_state_group(ids: Array) -> XState:
+	var diff := ZHENGDAO if book_build == ZHENGDAO else LIANYU
+	var tpl := "D" if book_build == ZHENGDAO else "C"
+	var lead := int(ids[0])
+	var s := XState.new_game(XTianqi.legacy_of(diff), lead, [])
+	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": diff, "lineup": ids.duplicate()}
+	var lead_seed := 20261117 + lead + seed_off
+	s.random_master = XRandomStream.hex64(lead_seed)
+	s.set_variable(20, LIANYU_FLOOR)
+	s.actor_max_level = level
+	XState._become_current(s)
+	XTianqiSkills.MASTERY = true
+	for aid_v in ids:
+		var aid := int(aid_v)
+		if not s.party.has(aid):
+			XTianqi._joining = true
+			s.add_actor(aid)
+			XTianqi._joining = false
+	for i in 5:
+		s.set_battle_slot(i, int(ids[i]) if i < ids.size() else 0)
+	var preset := D271.new()
+	for idx in ids.size():
+		var aid := int(ids[idx])
+		var a := s.actor(aid)
+		var aseed := 20261117 + aid + seed_off
+		seed(aseed)
+		a.change_level_mv(level)
+		D271._apply_advance(s, a, tpl)
+		if idx == 0:
+			# 主测角色（176 屠苏／177 璇）按完整炼狱／证道 C/D 模板配置，与单人木桩逐位一致。
+			var rng := RandomNumberGenerator.new()
+			rng.seed = aseed + 31337
+			var qstream := XRandomStream.create(XRandomStream.hex64(aseed + 99991), "rule")
+			var weapon_type := _weapon_for(a)
+			var gear := preset._equip_actor(s, a, tpl, diff, DAMAGE_ROLE, LIANYU_FLOOR, level, rng, qstream, weapon_type)
+			preset._equip_fabao_mount_artifact(s, a, tpl, DAMAGE_ROLE, 0, false, rng)
+			_secrets(a)
+			preset._apply_growth(s, a, tpl, DAMAGE_ROLE, false)
+			if gear.is_empty() or not gear.all(func(it): return it.req_level >= 70 and it.req_level <= level and it.grade >= 5):
+				invalid = true
+				push_error("炼狱/证道编组常规装备不符合毕业要求：%d %s" % [aid, gear])
+			var weapon := XTianqiQiyinGear.weapon_of_type(weapon_type)
+			var true_weapons := 0
+			for eq in a.equip_list():
+				var mark := XTianqiQiyinEffects.mark_of(eq)
+				if mark.get("kind") == "weapon" and bool(mark.get("true_seal", false)):
+					true_weapons += 1
+				if D271._changes_dummy_defense(eq) or (mark.get("kind") == "weapon" and mark.get("key") != weapon.get("key")):
+					invalid = true
+					push_error("炼狱/证道编组装备不符合木桩配置：%d %s" % [aid, eq.get("name", "")])
+			if weapon.is_empty() or true_weapons != 1:
+				invalid = true
+				push_error("炼狱/证道编组应恰有一件合法的真印武器：%d %s" % [aid, weapon_type])
+			a.set_meta("lianyu_gear", gear)
+		# 绑定队友（标准强者宿主／星影载体）不穿带全队光环／开局随机队友状态的不朽装（如双鱼念气瓶、破阵装），
+		# 避免外部光环污染主测角色面板与乘区，保持与 T496 其余 15 名超强者同一把尺。
+		a.param_mark_dirty()
+		a.refresh_passive()
+		a.recover_all()
+	preset.free()
+	return s
+
+
+func _lianyu_battle_group(s: XState, sample_seed: int) -> XBattleLogic:
+	seed(sample_seed)
+	var logic := XBattleLogic.new()
+	logic.setup(_troop(s), s, XBattleRandom.create(XRandomStream.hex64(sample_seed)))
+	var e = logic.alive(logic.enemies)[0]
+	logic.enemies = [e]
+	e.add_param(0, 1.0e9)
+	e.param_mark_dirty()
+	_pin_def(e)
+	for m in logic.actors:
+		if not m is XActor:
+			continue
+		var qfx := XTianqiQiyinEffects.effects(logic, m)
+		for k in qfx.keys():
+			var fx = qfx[k]
+			var src := str(fx.get("src", "")) if fx is Dictionary else ""
+			if src.begins_with("mark:") or src.begins_with("true:") or src.begins_with("unique:"):
+				qfx.erase(k)
+		if m.state_ids.has(1834):
+			m.remove_state(1834)
+		m.hp = m.mhp
+		m.mp = m.mmp
+		m.tp = m.max_tp()
+	return logic
+
+
+func _check_d282_slots(s: XState, a: XActor, tier: String) -> int:
+	var active := XTianqiSecrets.active_ids(a, s)
+	var limit := XTianqiSecrets.limit(a, s)
+	var learned := a.skill_ids.filter(func(sid): return XTianqiSecrets.occupies_slot(int(sid)))
+	var expected_slots: Dictionary = ZHENGDAO_SLOTS if book_build == ZHENGDAO else LIANYU_SLOTS
+	if limit != expected_slots[tier] or active.size() != limit or active.size() != learned.size():
+		invalid = true
+		push_error("D282 %s 秘籍格不符：%d %s，生效 %d，已学 %d，上限 %d" % [book_build, int(a.actor_id), tier, active.size(), learned.size(), limit])
+	return limit
+
+
+func _tusu_arm_weapon(sid: int) -> String:
+	for w in XTusu.ARM_OF:
+		for k in XTusu.ARM_OF[w]:
+			if XTusu.skill_id(str(k)) == sid:
+				return str(w)
+	return ""
+
+
+func _sample_tusu_duo(snapshot: Dictionary, sk: Dictionary, sample_seed: int, mode: String, w: String) -> Dictionary:
+	var s := XState.from_dict(snapshot.duplicate(true))
+	XState._become_current(s)
+	if w != "":
+		s.gain_item(XTusu.REFORGE_ITEM, 30)
+		var k := XTusu.kairen(s)
+		if not k.has(w):
+			XTusu.set_kairen(s, 0, w)
+	var logic := _lianyu_battle_group(s, sample_seed)
+	var tusu: XActor = s.actor(XTusu.ACTOR)
+	var host: XActor = s.actor(BIND_HOST_ID)
+	var e = logic.enemies[0]
+	var caster: XActor = tusu
+	if mode == "arm" or mode == "support":
+		XTusu._d = XTusu._fresh()
+		XTusu._d.pending = w
+		if not XBinding.bind(tusu, host, "huawu") or XTusu.weapon(tusu) != w or not is_same(XTusu.holder(tusu), host):
+			invalid = true
+			push_error("T502 屠苏化武绑定失败：w=%s" % w)
+			logic.end_battle()
+			return {}
+		if not XTusu.has_kairen(w):
+			invalid = true
+			push_error("T502 屠苏开刃未生效：w=%s" % w)
+			logic.end_battle()
+			return {}
+		if mode == "arm":
+			caster = host
+			if not logic.can_use(host, sk):
+				invalid = true
+				push_error("T502 持武者无法施放武装技：%d w=%s" % [int(sk.id), w])
+				logic.end_battle()
+				return {}
+			var kname := XTusu.key_of(sk)
+			if kname == "arm.guanri":
+				XTusu._locks[host] = e
+				logic._state_add(host, XTusu.state_id("lock"))
+			elif kname == "arm.chiling":
+				logic._state_add(host, XTusu.state_id("heming"))
+	e.hp = e.mhp * _target_hp_rate(tusu, sk)
+	_prime(logic, tusu, e, sk)
+	if caster != tusu:
+		_prime(logic, caster, e, sk)
+	var stats := {"atk": tusu.atk, "mat": tusu.mat, "mhp": tusu.mhp}
+	XStateEffects.force_critical = true
+	var logs := logic.execute(caster, sk, e, true)
+	XStateEffects.force_critical = false
+	var segs := []
+	_collect_hits(logs, e, segs)
+	var row := {}
+	if not segs.is_empty():
+		var total := 0.0
+		for damage in segs:
+			total += float(damage)
+		row = {"actor": XTusu.ACTOR, "input_skill": int(sk.id), "input_name": str(sk.name),
+			"skill": int(sk.id), "skill_name": str(sk.name),
+			"segments": segs, "peak": roundi(total), "peak_single": roundi(float(segs.max())),
+			"variance": int(sk.get("damage", {}).get("variance", 0)),
+			"atk": stats.atk, "mat": stats.mat, "mhp": stats.mhp, "forced": true,
+			"bind_mode": mode, "weapon_phase": w}
+	logic.end_battle()
+	return row
+
+
+func _tusu_duo_peaks(snapshot: Dictionary, sk: Dictionary, battle_seed: int, mode: String, w: String) -> Dictionary:
+	var best := {}
+	var base := {}
+	for n in hits:
+		var row := _sample_tusu_duo(snapshot, sk, battle_seed + n, mode, w)
+		if row.is_empty():
+			continue
+		if best.is_empty() or int(row.peak) > int(best.peak):
+			best = row
+		var nseg: int = (row.segments as Array).size()
+		if base.is_empty() or nseg < int(base.n) or (nseg == int(base.n) and int(row.peak) > int(base.peak)):
+			base = {"n": nseg, "peak": int(row.peak)}
+	if not best.is_empty():
+		best["peak_base"] = int(base.peak)
+		best["segs_base"] = int(base.n)
+	return best
+
+
+func _measure_lianyu_tusu(tier: String) -> Dictionary:
+	var party := [XTusu.ACTOR, BIND_HOST_ID]
+	var s := _lianyu_state_group(party)
+	var tusu := s.actor(XTusu.ACTOR)
+	var limit := _check_d282_slots(s, tusu, tier)
+	var snapshot := s.to_dict().duplicate(true)
+	var battle_seed := 20261117 + XTusu.ACTOR + seed_off
+	var cases := []
+	# 武装技能（持武者施放，开刃＋锁定／和鸣）
+	for w in ["bow", "sword", "book", "hammer"]:
+		for k in XTusu.ARM_OF.get(w, []):
+			var sid := XTusu.skill_id(str(k))
+			if sid > 0:
+				cases.append({"sid": sid, "mode": "arm", "w": w})
+	# 武具支援（剑气纵横／镇魂重击）与人形本体技
+	cases.append({"sid": XTusu.skill_id("support.jianqi"), "mode": "support", "w": "sword"})
+	cases.append({"sid": XTusu.skill_id("support.zhenhun"), "mode": "support", "w": "hammer"})
+	cases.append({"sid": XTusu.skill_id("body.phys"), "mode": "body", "w": ""})
+	cases.append({"sid": XTusu.skill_id("body.mag"), "mode": "body", "w": ""})
+	var best := {}
+	var all_rows := []
+	for c in cases:
+		var sid := int(c.sid)
+		if sid <= 0:
+			continue
+		var sk := XDB.rec("Skills", sid)
+		if sk.is_empty() or not XSmartAI.for_opponent(sk):
+			continue
+		var r := _tusu_duo_peaks(snapshot, sk, battle_seed, str(c.mode), str(c.w))
+		if r.is_empty():
+			continue
+		all_rows.append(r)
+		if best.is_empty() or int(r.peak) > int(best.peak):
+			best = r
+	if best.is_empty():
+		return {}
+	XState._become_current(s)
+	var row := best.duplicate()
+	row["build"] = _build_desc(tusu)
+	row["brand_mult"] = XTianqiBrand.mult(tusu, s)
+	row["battle_tier"] = XTianqiSkills.battle_tier(tusu, s)
+	var mastery := XSkillMastery.level(tusu, int(row.input_skill))
+	mastery_seen = maxi(mastery_seen, mastery)
+	row["bind_probe"] = {"mode": "tusu_duo", "party": party, "host": BIND_HOST_ID,
+		"kairen": true, "lock_or_heming": true}
+	row["lianyu"] = {"gear": tusu.get_meta("lianyu_gear"), "race_rank": int(XRace.data(s, tusu).rank),
+		"mastery": mastery, "mastery_cap": XSkillMastery.max_level(int(row.input_skill)),
+		"skill_learned": tusu.skill_ids.has(int(row.input_skill)), "secret_limit": limit,
+		"cast_peaks": [], "forced_diagnostics": [], "forced_main": all_rows}
+	return row
+
+
+func _sample_xuan_liexing(snapshot: Dictionary, sk: Dictionary, sample_seed: int) -> Dictionary:
+	var s := XState.from_dict(snapshot.duplicate(true))
+	XState._become_current(s)
+	var logic := _lianyu_battle_group(s, sample_seed)
+	var xuan: XActor = s.actor(XXuanBattle.XUAN)
+	var host: XActor = s.actor(BIND_HOST_ID)
+	var e = logic.enemies[0]
+	if XXuanBattle.auto_enabled():
+		invalid = true
+		push_error("T502 璇手动列星探针不应处于星契自律模式")
+		logic.end_battle()
+		return {}
+	if not XBinding.bind(xuan, host, "jixing"):
+		invalid = true
+		push_error("T502 璇寄星绑定失败")
+		logic.end_battle()
+		return {}
+	# 与 T496 米拉黑龙／宿傩看破／五条悟苍赫印同口径：直接置列星态，避免先执行一次技能触发装备行动后状态
+	XXuanBattle._liexing(logic, xuan)
+	var cover: Array = XXuanBattle.beneficiaries(xuan).list
+	var shadow_n: int = cover.filter(func(t): return t != host).size()
+	if shadow_n != XUAN_SHADOW_IDS.size():
+		invalid = true
+		push_error("T502 璇列星星影数不符：实得 %d，期望 %d" % [shadow_n, XUAN_SHADOW_IDS.size()])
+		logic.end_battle()
+		return {}
+	_pin_def(e)
+	e.hp = e.mhp * _target_hp_rate(xuan, sk)
+	xuan.hp = xuan.mhp
+	xuan.mp = xuan.mmp
+	xuan.tp = xuan.max_tp()
+	_prime(logic, xuan, e, sk)
+	var stats := {"atk": xuan.atk, "mat": xuan.mat, "mhp": xuan.mhp}
+	XStateEffects.force_critical = true
+	var logs := logic.execute(xuan, sk, e, true)
+	XStateEffects.force_critical = false
+	var segs := []
+	_collect_hits(logs, e, segs)
+	var row := {}
+	if not segs.is_empty():
+		var total := 0.0
+		for damage in segs:
+			total += float(damage)
+		row = {"actor": XXuanBattle.XUAN, "input_skill": int(sk.id), "input_name": str(sk.name),
+			"skill": int(sk.id), "skill_name": str(sk.name),
+			"segments": segs, "peak": roundi(total), "peak_single": roundi(float(segs.max())),
+			"variance": int(sk.get("damage", {}).get("variance", 0)),
+			"atk": stats.atk, "mat": stats.mat, "mhp": stats.mhp, "forced": true,
+			"shadows": shadow_n}
+	logic.end_battle()
+	return row
+
+
+func _sample_xuan_auto_tongdiao(snapshot: Dictionary, sample_seed: int, elem_id: int) -> Dictionary:
+	var s := XState.from_dict(snapshot.duplicate(true))
+	XState._become_current(s)
+	var xuan_pre: XActor = s.actor(XXuanBattle.XUAN)
+	var c := XXuanChart.chart(s)
+	c.sand = 200
+	if elem_id > 0:
+		# 同调 1 级＋星谱指定元素（验证元素增伤池上限）
+		XXuanChart.equip(s, xuan_pre, "tongdiao")
+		XXuanChart.set_element(s, elem_id)
+	else:
+		# 同调 2 级＋跟随宿主攻击元素（1 狗逍遥 3632 万剑归一，物理 elementId=1）
+		XXuanChart.learn(s, xuan_pre, "tongdiao")
+		XXuanChart.equip(s, xuan_pre, "tongdiao")
+	if not XXuanChart.set_control(s, xuan_pre, "auto"):
+		invalid = true
+		push_error("T502 璇星契自律开启失败")
+		return {}
+	var logic := _lianyu_battle_group(s, sample_seed)
+	var xuan: XActor = s.actor(XXuanBattle.XUAN)
+	var host: XActor = s.actor(BIND_HOST_ID)
+	var e = logic.enemies[0]
+	if not XXuanBattle.auto_enabled() or not XBinding.bind(xuan, host, "jixing"):
+		invalid = true
+		push_error("T502 璇自律寄星失败")
+		logic.end_battle()
+		return {}
+	XBinding.gain(xuan, 2)
+	var sk_lg := XDB.rec("Skills", XTusuXuan.skill_id(XXuanBattle.XUAN, "lengguang"))
+	var sk_host := XDB.rec("Skills", 3632) if elem_id == 0 else {"id": 999999, "scope": 1, "damage": {"type": 1, "elementId": 0}}
+	_pin_def(e)
+	e.hp = e.mhp * _target_hp_rate(xuan, sk_lg)
+	_prime(logic, xuan, e, sk_lg)
+	XXuanBattle.note_target(e)
+	XStateEffects.force_critical = true
+	var logs := XXuanBattle.end_action(logic, host, sk_host)
+	XStateEffects.force_critical = false
+	var segs := []
+	_collect_hits(logs, e, segs)
+	logic.end_battle()
+	var total := 0.0
+	for damage in segs:
+		total += float(damage)
+	return {"peak": roundi(total), "segments": segs}
+
+
+func _measure_lianyu_xuan(tier: String) -> Dictionary:
+	var party := [XXuanBattle.XUAN, BIND_HOST_ID] + XUAN_SHADOW_IDS
+	var s := _lianyu_state_group(party)
+	var xuan := s.actor(XXuanBattle.XUAN)
+	var limit := _check_d282_slots(s, xuan, tier)
+	var snapshot := s.to_dict().duplicate(true)
+	var battle_seed := 20261117 + XXuanBattle.XUAN + seed_off
+	var sk_lg := XDB.rec("Skills", XTusuXuan.skill_id(XXuanBattle.XUAN, "lengguang"))
+	var best := {}
+	var base := {}
+	for n in hits:
+		var r := _sample_xuan_liexing(snapshot, sk_lg, battle_seed + n)
+		if r.is_empty():
+			continue
+		if best.is_empty() or int(r.peak) > int(best.peak):
+			best = r
+		var nseg: int = (r.segments as Array).size()
+		if base.is_empty() or nseg < int(base.n) or (nseg == int(base.n) and int(r.peak) > int(base.peak)):
+			base = {"n": nseg, "peak": int(r.peak)}
+	if best.is_empty():
+		return {}
+	best["peak_base"] = int(base.peak)
+	best["segs_base"] = int(base.n)
+	# 附带监控：2 人编组（璇＋1 狗逍遥）星契自律＋同调（验证不越 3.5×）
+	var duo_s := _lianyu_state_group([XXuanBattle.XUAN, BIND_HOST_ID])
+	var duo_snap := duo_s.to_dict().duplicate(true)
+	var auto_host_peak := 0
+	var auto_host_segs := []
+	var auto_elem_peak := 0
+	var auto_elem_segs := []
+	for n in hits:
+		var ah := _sample_xuan_auto_tongdiao(duo_snap, battle_seed + n, 0)
+		if int(ah.peak) > auto_host_peak:
+			auto_host_peak = int(ah.peak)
+			auto_host_segs = ah.segments
+		var ae := _sample_xuan_auto_tongdiao(duo_snap, battle_seed + n, 2)
+		if int(ae.peak) > auto_elem_peak:
+			auto_elem_peak = int(ae.peak)
+			auto_elem_segs = ae.segments
+	XState._become_current(s)
+	var row := best.duplicate()
+	row["build"] = _build_desc(xuan)
+	row["brand_mult"] = XTianqiBrand.mult(xuan, s)
+	row["battle_tier"] = XTianqiSkills.battle_tier(xuan, s)
+	var mastery := XSkillMastery.level(xuan, int(row.input_skill))
+	mastery_seen = maxi(mastery_seen, mastery)
+	row["bind_probe"] = {
+		"mode": "xuan_liexing_4p",
+		"party": party,
+		"host": BIND_HOST_ID,
+		"shadows": XUAN_SHADOW_IDS,
+		"auto_tongdiao_duo": {
+			"party": [XXuanBattle.XUAN, BIND_HOST_ID],
+			"host_phys_peak": auto_host_peak,
+			"host_phys_segs": auto_host_segs,
+			"elem_fire_peak": auto_elem_peak,
+			"elem_fire_segs": auto_elem_segs,
+		},
+	}
+	row["lianyu"] = {"gear": xuan.get_meta("lianyu_gear"), "race_rank": int(XRace.data(s, xuan).rank),
+		"mastery": mastery, "mastery_cap": XSkillMastery.max_level(int(row.input_skill)),
+		"skill_learned": xuan.skill_ids.has(int(row.input_skill)), "secret_limit": limit,
+		"cast_peaks": [], "forced_diagnostics": [], "forced_main": [best]}
 	return row
