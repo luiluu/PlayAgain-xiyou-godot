@@ -20,6 +20,7 @@
 - balance_table.json 的 guardian_phase4（守层者三表，T239）：hp_base／atk_scale／resist 层号 1～34、值为正；focus 层号 5～33、{skill: 正整数, scale: 正数[, single: 1]}（T363）。lifesteal_cap {skills: 正整数列表, pct: {五档难度键齐全: 正整数}}（T392）。dot_pct {层号 1～34: {状态号: 1～100 整数}}（T402）。hp_pct {层号 1～34: 1～100 整数}（T406）。
 - guardian_params.json（守层者能力值重锚，T237／T245）：只有 B 组，ref_enemy 是正整数、stats 八项对 0～7、floors 只有 31～34 层、qiyin 行（可没有）和每层只写 stats 里的项（下划线开头的注释键除外）、取值是正整数百分比（附则 E）。
 - growth.json（渡鸦、奈叶、流萤无限成长，T256）：只有 B 组，全表整数（附则 E）、层价分段从 1 层起连续且份数不降、翻倍倍数 ≥2、拐点在分段里、Q6 判定四项范围、三人行齐全且角色号对、一份是正整数、平加只认能力编号 0～7 且渡鸦只加魔攻、奈叶只加生命魔法、流萤不走平加。
+- suit_template.json（原版套装模板，T515）：只有 B 组，件数档、一排数（不出 4）、各档四阶取数是一排往前挪、类型与词条键、掉率单件封顶 ≤10、样板套装号在 EquipSuits 且有多件档（转换产物不在就跳过这一项）。
 - six_dim.json（天启篇六维，T275）：只有 B 组，八档刻度、全整数（附则 E）、韧性抗控表 −10～+10 随档不降、R1～R3（SSS 唯一极化、SS 其余五维至少 2 项 ≤C、S 稀有度）逐份过，R4 分档总分只报告不拦（T280）、普通怪模板 8～10 个、样板角色号在 base_line.json、骑士键同 horsemen.json。\n有不一致就逐条打印「项、游戏数据、参数.json」，退出码 1；全过退出码 0。
 """
 import argparse
@@ -4159,6 +4160,79 @@ def check_gear_elem_amp(_args) -> bool:
     return _run_table('gear_elem_amp.json', lambda t: gear_elem_amp_rules(t, _load_opt('skill_rework.json'), _load_opt('gear_table.json')))
 
 
+# ---- 原版套装模板 suit_template.json（养成线二期 2B，T515；XTianqiSuits 读）----
+EQUIP_SUITS_DB = PROJECT / 'modes' / 'xiyou' / 'generated' / 'db' / 'EquipSuits.json'
+SUIT_TEMPLATE_TYPES = ('atk', 'def', 'func', 'drop')
+SUIT_DROP_CAP = 10  # 九线共规第 4 条：掉率、金钱加成单件不超过 +10%
+
+
+def suit_template_rules(t: dict, affix: dict = None, suits_db: list = None) -> list:
+    """steps 正整数升序且 ≥2；values 每档 4 个（一～四阶）正整数、随阶不降、随档不降、不出 4、都在 row 里且四阶取数是 row 往前挪一格；
+    kinds 类型四种、affix 在 affix_table（给了才查）、掉率类 cap ≤10；suits 的 kind 认识、要元素的带元素（在 affix_table elements 里）、
+    套装号在 EquipSuits（给了才查）且有多件档、不是 12 套招牌之外的单件套。"""
+    bad, check = _checker()
+    for h in ('version', 'source'):
+        check('表头 ' + h, str(t.get(h, '')) != '')
+    steps = t.get('steps', [])
+    check('steps 正整数、升序、≥2', isinstance(steps, list) and steps and all(_is_int(x) and x >= 2 for x in steps)
+          and steps == sorted(set(steps)), steps)
+    row = t.get('row', [])
+    check('row 正整数升序、不出 4', isinstance(row, list) and row and all(_is_int(x) and x > 0 and '4' not in str(x) for x in row)
+          and row == sorted(set(row)), row)
+    vals = t.get('values', {})
+    check('values 每个件数档都有', isinstance(vals, dict) and sorted(vals) == sorted(str(x) for x in steps), sorted(vals) if isinstance(vals, dict) else vals)
+    prev = None
+    for st in steps if isinstance(steps, list) else []:
+        v = vals.get(str(st)) if isinstance(vals, dict) else None
+        ok = isinstance(v, list) and len(v) == 4 and all(_is_int(x) and x > 0 and '4' not in str(x) for x in v) and v == sorted(v)
+        check('values[%s] 四阶正整数、随阶不降、不出 4' % st, ok, v)
+        if ok and isinstance(row, list) and v[-1] in row:
+            i = row.index(v[-1])
+            check('values[%s] 是 row 从四阶往前每阶挪一格' % st, i >= 3 and row[i - 3:i + 1] == v, (v, row))
+        elif ok:
+            check('values[%s] 四阶的数在 row 里' % st, False, v)
+        if ok and prev is not None:
+            check('values[%s] 每阶不小于上一档' % st, all(a >= b for a, b in zip(v, prev)), (v, prev))
+        prev = v if ok else prev
+    kinds = t.get('kinds', {})
+    akeys = {a.get('key') for a in (affix or {}).get('affixes', [])}
+    elems = {e.get('key') for e in (affix or {}).get('elements', [])}
+    check('kinds 非空', isinstance(kinds, dict) and kinds)
+    for k, d in (kinds.items() if isinstance(kinds, dict) else []):
+        check('kinds.%s 类型' % k, d.get('type') in SUIT_TEMPLATE_TYPES, d.get('type'))
+        check('kinds.%s 名字' % k, str(d.get('name', '')) != '')
+        drop = d.get('drop') is True
+        check('kinds.%s affix 和 drop 二选一' % k, drop != bool(d.get('affix')), d)
+        if d.get('affix') and affix is not None:
+            check('kinds.%s affix 在 affix_table' % k, d['affix'] in akeys, d['affix'])
+        if 'cap' in d:
+            check('kinds.%s cap 正整数' % k, _is_int(d['cap']) and d['cap'] > 0, d['cap'])
+        if drop:
+            check('kinds.%s 掉率单件封顶 ≤%d' % (k, SUIT_DROP_CAP), _is_int(d.get('cap')) and d['cap'] <= SUIT_DROP_CAP, d.get('cap'))
+        check('kinds.%s 类型 drop 才是掉率' % k, drop == (d.get('type') == 'drop'), d)
+    suits = t.get('suits', {})
+    check('suits 是字典', isinstance(suits, dict), type(suits).__name__)
+    for sid, e in (suits.items() if isinstance(suits, dict) else []):
+        check('suits.%s 号是正整数' % sid, str(sid).isdigit() and int(sid) > 0, sid)
+        kd = kinds.get(e.get('kind'), None) if isinstance(kinds, dict) else None
+        check('suits.%s kind 认识' % sid, kd is not None, e.get('kind'))
+        if kd and kd.get('needs_element'):
+            check('suits.%s 带元素' % sid, str(e.get('element', '')) != '' and (affix is None or e.get('element') in elems), e.get('element'))
+        if suits_db is not None and str(sid).isdigit():
+            i = int(sid)
+            rec = suits_db[i] if 0 < i < len(suits_db) else None
+            check('suits.%s 在 EquipSuits' % sid, isinstance(rec, dict), sid)
+            if isinstance(rec, dict):
+                tiers = [b.get('requirePieces', 0) for b in rec.get('bonuses', [])]
+                check('suits.%s 有多件档（单件套归 2E，不进模板）' % sid, any(x >= 2 for x in tiers), tiers)
+    return bad
+
+
+def check_suit_template(_args) -> bool:
+    suits_db = json.loads(EQUIP_SUITS_DB.read_text(encoding='utf-8')) if EQUIP_SUITS_DB.is_file() else None
+    return _run_table('suit_template.json', lambda t: suit_template_rules(t, _load_opt('affix_table.json'), suits_db))
+
+
 # 每张表一个检查函数：(名字, 函数(args) -> 是否通过)。词条表那张单加 affix_table 时往这里登记。
 CHECKS = [
     ('balance_table', lambda args: check_balance_table(args.params)),
@@ -4208,6 +4282,7 @@ CHECKS = [
     ('secret_books', check_secret_books),
     ('general_books', check_general_books),
     ('gear_elem_amp', check_gear_elem_amp),
+    ('suit_template', check_suit_template),
 ]
 
 
