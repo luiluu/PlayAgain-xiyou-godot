@@ -433,7 +433,7 @@ func _xinfa() -> void:
 	var b := _enemy(lg)
 	a.change_level(99)
 	var base := XTianqiSkills.formula(a, b, XDB.rec("Skills", 4748))
-	_check("xinfa_pohun", is_equal_approx(XTianqiSkills.formula(a, b, XDB.rec("Skills", 4749)) * 2.0, base * 3.0 * 16.0 / 12.0), [base])  # T081：破魂 2 段 ×8.1、万剑归一 3 段 ×3.6，合计 1.5 倍；T191（D200）取整成 ×8、×4，合计 16 比 12
+	_check("xinfa_pohun", is_equal_approx(XTianqiSkills.formula(a, b, XDB.rec("Skills", 4749)) * 2.0, base * 3.0 * (12.0 if XTianqiBase.TUNE_D287 else 16.0) / 12.0), [base])  # T496（D287）：破魂 2 段 ×8 → ×6，合计 12 比 12  # T081：破魂 2 段 ×8.1、万剑归一 3 段 ×3.6，合计 1.5 倍；T191（D200）取整成 ×8、×4，合计 16 比 12
 	var ops := XTianqiSkills.damage_ops(XDB.rec("Skills", 4751), a, b)
 	_check("xinfa_pierce", ops.size() == 2 and is_equal_approx(float(ops[0].value), 0.7), ops)
 	_check("xinfa_pierce_none", XTianqiSkills.damage_ops(XDB.rec("Skills", 4748), a, b).is_empty())
@@ -516,7 +516,7 @@ func _p3() -> void:
 	var up := func(id, ph): return ((XDB.rec("Skills", id).yepSeq.get(ph, []) as Array).filter(func(c): return str(c[0]).to_lower() == "action effect")).size()
 	_check("split_plain", up.call(3632, "target") == 3 and up.call(3631, "target") == 3 and up.call(4749, "target") == 2 and up.call(10731, "target") == 4, [up.call(3632, "target"), up.call(3631, "target"), up.call(4749, "target"), up.call(10731, "target")])
 	_check("split_in_if", up.call(3645, "target") == 6 and up.call(1060, "target") == 12 and up.call(2058, "target") == 2, [up.call(3645, "target"), up.call(1060, "target"), up.call(2058, "target")])
-	_check("split_upper", up.call(6036, "whole") == 3 and up.call(10615, "whole") == 3 and up.call(10752, "target") == 3 and up.call(10125, "target") == 5, [up.call(6036, "whole"), up.call(10615, "whole"), up.call(10752, "target"), up.call(10125, "target")])
+	_check("split_upper", up.call(6036, "whole") == 3 and up.call(10615, "whole") == 3 and up.call(10752, "target") == 3 and up.call(10125, "target") == (4 if XTianqiBase.TUNE_D287 else 5), [up.call(6036, "whole"), up.call(10615, "whole"), up.call(10752, "target"), up.call(10125, "target")])
 	_check("split_yep_effects", int(XDB.rec("Skills", 6036).get("yepEffects", 0)) == int(XDB.table("Skills")[6036].get("yepEffects", 0)) * 3)
 	_check("seq_yep_effects_recount", int(XDB.rec("Skills", 2058).get("yepEffects", 0)) == 2 and int(XDB.table("Skills")[2058].get("yepEffects", 0)) == 22, XDB.rec("Skills", 2058).get("yepEffects"))  # 核查 R2 P3：drop_if 删条件块后 yepEffects 按差值重算（原来 22×2＝44）
 	_check("split_tp_gain", int(XDB.rec("Skills", 1060).tpGain) == 10 and int(XDB.table("Skills")[1060].tpGain) == 30)
@@ -1101,13 +1101,13 @@ func _p7() -> void:
 	var rates := []
 	XLiuying.action_plus_set(ly, rates)
 	_check("p7_liuying", rates == [0.1] and XLiuying.repeats(ly, XDB.rec("Skills", 10622), 1) == 5, rates)
-	# 【cc·T192】天火五段合计读卡（D200 取整 4、D198 调到 6，原代码写死 3.6）；宿傩终式倍率读 10245 卡上的 terminal（9／11，原代码 9.0／10.8）
+	# 【cc·T192】天火五段合计读卡（D200 取整 4、D198 调到 6、T496 D287 收到 5，原代码写死 3.6）；宿傩终式倍率读 10245 卡上的 terminal（9／11，原代码 9.0／10.8）
 	var tq_per := float(XTianqiSkills.spec(10622).damage.coef)
 	var tq_m := 0.0
 	for op in XLiuying.tq_ops(XDB.rec("Skills", 10622), ly, _enemy(lg)):
 		if str(op.field) == "finalMultiplier":
 			tq_m = float(op.value)
-	_check("p7_liuying_total_card", is_equal_approx(tq_per, 6.0) and is_equal_approx(tq_m * tq_per * 5.0, tq_per), [tq_per, tq_m])
+	_check("p7_liuying_total_card", is_equal_approx(tq_per, 5.0 if XTianqiBase.TUNE_D287 else 6.0) and is_equal_approx(tq_m * tq_per * 5.0, tq_per), [tq_per, tq_m])
 	_check("p7_sukuna_terminal_card", is_equal_approx(XSukuna.tq_terminal_coef(10234), 9.0) and is_equal_approx(XSukuna.tq_terminal_coef(10235), 11.0)
 		and str(XTianqiSkills.spec(10245).get("desc", [""])[0]).contains("10.8") == false, [XSukuna.tq_terminal_coef(10234), XSukuna.tq_terminal_coef(10235), XTianqiSkills.spec(10245).get("desc")])
 	# 【cc·T204】D208：终式按段打（10245 terminal_hits 空间斩 4、5，次元斩 5、6，合计同原 9／11；整数、×诅咒之王 1.3 后每段 ≤ 单段上限 11、最后一段最大）；
@@ -1217,7 +1217,7 @@ func _p7() -> void:
 		float(XTianqiSkills.spec(3776).damage.coef)]
 	XTianqiBase.TUNE_D287 = d287_on
 	XTianqiSkills.reload_table()
-	_check("p7_d287_table", not XTianqiBase.TUNE_D287 or (d287_int and int(on287[0]) == 3 and on287[1] == [3.0, 4.0, 5.0] and on287[2] == [2, 4, 9]
+	_check("p7_d287_table", not XTianqiBase.TUNE_D287 or (d287_int and int(on287[0]) == 3 and on287[1] == [1.0, 2.0, 3.0] and (on287[2] as Array).map(func(x): return int(x)) == [2, 4, 9]
 		and is_equal_approx(on287[3], 0.09) and is_equal_approx(on287[4], 1.0) and on287[5]
 		and int(off287[0]) == 5 and off287[1] == [6.0, 7.0, 8.0] and is_equal_approx(off287[3], 0.93) and is_equal_approx(off287[4], 6.0)), [d287_int, on287, off287])
 	# 模块法宝：百分比属性去掉
