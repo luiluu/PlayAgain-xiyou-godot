@@ -20,7 +20,7 @@
                                （patch_<底>_<新>.files.json／.files.sig），--stage 时和补丁同一提交进发版仓库。
                                --stage 出补丁时必须给；确实没有底包目录时加 --no-files-manifest 跳过
       --repos <gitee副本> <github副本>   发版仓库副本的位置（默认 ~/Documents/DSH/小小鱼/发版/zaishuayiba-updates-{gitee,github}）
-      --key <私钥.pem>         签名私钥（默认 ~/Library/Application Support/KYO/发版密钥/godot_update_private.pem；也认环境变量 XIYOU_UPDATE_KEY）
+      --key <私钥.pem>         签名私钥（默认 ~/Library/Application Support/KYO/发版密钥/godot_update_private_20261125.pem；也认环境变量 XIYOU_UPDATE_KEY）
       --dry-run                只打印会做什么
       --no-player-pack         --verify-online 通过后不出小小鱼的玩家资料包（默认出，见 PLAYER_PACK_AFTER_VERIFY）
 
@@ -652,7 +652,8 @@ def main(argv=None) -> int:
         notes = read_notes(a)
         out = Path(a.out).expanduser() if a.out else REMAKE / '05_发布' / '补丁' / f'dev{code}'
         out.mkdir(parents=True, exist_ok=True)
-        print(f'· 当前开发编号 {code}（玩家看到 0.{code}），输出 {out}')
+        ver_label = (getattr(a, 'version', None) or '').strip().lstrip('vV') or f'0.{code}'
+        print(f'· 当前开发编号 {code}（玩家看到 {ver_label}），输出 {out}')
 
         base_code, patch_file, entry = None, None, None
         if not a.full_only:
@@ -724,7 +725,7 @@ def main(argv=None) -> int:
 
         manifest = build_manifest(old, code, date, notes, base_code, entry, a)
         write_channel(out, manifest, key, pub)
-        print(f'· 清单 channel.json、channel.sig 已写并验签：最新 0.{code}，有补丁的底包 {sorted(manifest["bases"])}，'
+        print(f'· 清单 channel.json、channel.sig 已写并验签：最新 {manifest["latest"]["version"]}，有补丁的底包 {sorted(manifest["bases"])}，'
               f'min_base {manifest["min_base"]}，撤回 {manifest["revoked"]}，'
               + (f'强制更新：开发编号低于 {manifest["min_playable"]} 的进不了游戏' if manifest.get('min_playable') else '不强制更新'))
         if a.stage:
