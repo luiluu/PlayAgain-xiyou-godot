@@ -2,12 +2,15 @@ extends "res://tests/virtual_player/k_calibrate.gd"
 ## T445：沿用 K 探针的养成与木桩，显式装书；--t444 重跑第二批之前的狗逍遥核算。
 ## godot --headless --audio-driver Dummy --path <工程> res://tests/virtual_player/t445_book_probe.tscn --
 ##   --tier=all --actors=95,122,163,167,1,2,22,3,12,18 --book-build=normal --noisy --seed=1
-## --book-build=normal|empty|balanced|extreme|lianyu；T444 单段重量用 --t444 --single --actors=1。
-## lianyu：D281，T438 炼狱 C 模板的单人输出配法，只装有效秘籍格内的书。
+## --book-build=normal|empty|balanced|extreme|lianyu|zhengdao；T444 单段重量用 --t444 --single --actors=1。
+## lianyu：D281，T438 炼狱 C 模板的单人输出配法，只装有效秘籍格内的书（D282 8/6/5）。
+## zhengdao：T488，T438 证道 D 模板满配（Lv81、100% 熟练度/烙印、3 槽极品词条、D282 9/7/6 秘籍格、0 抽奖书），与 lianyu 同口径。
+## --t488-proposal：T488 开关式试改（默认关闭，仅内存覆写，不改正式数据表；供 Kyo 拍板前量数验证）。
 ## --noisy --seed=101/202/303 为随机样本；不带 --noisy 跑确定值。JSON 输出可加 --out=<路径>。
 
 const D271 := preload("res://tests/virtual_player/t438_d271_benchmark.gd")
 const LIANYU := "lianyu"
+const ZHENGDAO := "zhengdao"
 const LIANYU_FLOOR := 36
 const DAMAGE_ROLE := "输出"
 
@@ -23,16 +26,22 @@ const NORMAL_SECRETS := {
 	18: [2472, 2480, 488, 489, 6139, 6159],
 }
 const LIANYU_SLOTS := {XTier.SUPER: 5, XTier.STRONG: 6, XTier.WEAK: 8}
+const ZHENGDAO_SLOTS := {XTier.SUPER: 6, XTier.STRONG: 7, XTier.WEAK: 9}
 # D282：先装本角色主系、通用增伤，再以体能和资源类补足。每本都经运行时占格校验。
+# T488（修 T471 R2 P2-4）：对齐 5 名角色主系元素秘籍（122 巨龙物理、167 黑龙黑暗、
+# 2 绿司机因 2476 风龙原表误写 passiveELUP05 雷电，改用自然秘籍 2780 《御风决·真》、
+# 3 艾坤恶龙大地、18 雪清寒九头龙寒冰；12 斯盖主系物理前置）。
 const LIANYU_SECRETS := {
-	95: [2471, 2480, 6139, 6159, 488], 122: [2472, 2480, 6139, 6159, 489],
-	163: [2471, 2480, 6139, 6159, 488], 167: [2478, 2480, 6139, 6159, 489],
-	1: [2471, 2480, 6139, 6159, 488, 489], 2: [2471, 2480, 6139, 6159, 488, 489],
+	95: [2471, 2480, 6139, 6159, 488], 122: [2471, 2480, 6139, 6159, 489],
+	163: [2471, 2480, 6139, 6159, 488], 167: [2479, 2480, 6139, 6159, 489],
+	1: [2471, 2480, 6139, 6159, 488, 489], 2: [2780, 2480, 6139, 6159, 488, 489],
 	22: [2471, 2480, 6139, 6159, 488, 489],
-	3: [2471, 2480, 6139, 6159, 488, 489, 490, 2472],
-	12: [2472, 2480, 6139, 6159, 488, 489, 490, 2471],
-	18: [2472, 2480, 6139, 6159, 488, 489, 490, 2471],
+	3: [2474, 2480, 6139, 6159, 488, 489, 490, 2471],
+	12: [2471, 2480, 6139, 6159, 488, 489, 490, 2472],
+	18: [2473, 2480, 6139, 6159, 488, 489, 490, 2471],
 }
+# D282 证道比炼狱三档各多 1 格（6/7/9），追加通用增伤秘籍 2756 苍天在上（爆伤+7%、终伤+7%）。
+const ZHENGDAO_EXTRA_SECRET := 2756
 # 依角色主招要求或招牌武器选类。无武器要求的纯法系走法杖。
 const LIANYU_WEAPONS := {
 	95: "katana", 122: "katana", 163: "fist", 167: "staff",
@@ -40,10 +49,49 @@ const LIANYU_WEAPONS := {
 }
 # 同一木桩下强制量这些核查点，只用于定位；正常样本通过出招菜单触发变招。
 const VARIANT_DIAGNOSTICS := {1: [4749], 2: [4759, 4760], 22: [3776]}
+# T488 方案 A（维持 Kyo 原定档位倍率 1.0/1.5/2.5，收拢三档主招总系数范围与同档离群；全整数系数）。
+# 仅在显式传入 --t488-proposal 时于内存覆写，不写入正式表，待 Kyo 拍板后再另开实现卡。
+const T488_PROPOSAL_SKILLS := {
+	# 超强者（等效总系数收拢至 8～11，含血量折算与常态余响；D209 次序：渡鸦第 1 > 拳一第 3 > 三笠第 11 > 狂刀第 15）
+	9938: {"damage": {"stats": {"atk": 2, "mhp": 0.01}, "coef": 1}},
+	9939: {"seq": [{"op": "keep_effects", "n": 4}]},
+	10731: {"damage": {"stats": {"atk": 2, "mat": 1, "mhp": 0.01}, "coef": 1}},
+	10729: {"damage": {"stats": {"atk": 1}, "coef": 2}},
+	6026: {"damage": {"stats": {"atk": 4, "mhp": 0}, "coef": 1}},
+	6027: {"damage": {"stats": {"atk": 1}, "coef": 5}},
+	10125: {"damage": {"stats": {"mat": 1, "mhp": 0.01}, "coef": 1}, "seq": [{"op": "split_effects", "n": 4}]},
+	# 强者（输出 9～12、辅助 8～9；维利九段拆每段 1，绿司机升档去小数 0.63，狗逍遥破魂对齐 12）
+	4749: {"damage": {"stats": {"atk": 1}, "coef": 6}},
+	3768: {"damage": {"stats": {"atk": 1}, "coef": 10}},
+	3769: {"damage": {"stats": {"atk": 1}, "coef": 5}},
+	3770: {"damage": {"stats": {"atk": 1}, "coef": 3}},
+	3771: {"damage": {"stats": {"atk": 1}, "coef": 2}},
+	3772: {"damage": {"stats": {"atk": 1}, "coef": 2}},
+	3773: {"damage": {"stats": {"atk": 1}, "coef": 2}},
+	3774: {"damage": {"stats": {"atk": 1}, "coef": 1}},
+	3775: {"damage": {"stats": {"atk": 1}, "coef": 1}},
+	3776: {"damage": {"stats": {"atk": 1}, "coef": 1}},
+	3777: {"damage": {"stats": {"atk": 1}, "coef": 1}},
+	504: {"damage": {"stats": {"mat": 1}, "coef": 9}},
+	4755: {"damage": {"stats": {"mat": 1}, "coef": 9}},
+	4757: {"damage": {"stats": {"mat": 1}, "coef": 9}},
+	4759: {"damage": {"stats": {"mat": 1}, "coef": 9}},
+	4756: {"damage": {"stats": {"mat": 1, "mmp": 0}, "coef": 1}},
+	4758: {"damage": {"stats": {"mat": 1}, "coef": 1}},
+	4760: {"damage": {"stats": {"mat": 1}, "coef": 1}},
+	# 弱者（8～10：艾坤大灌篮 3×2=6 → 3×3=9 拉齐同档）
+	506: {"damage": {"stats": {"mat": 1}, "coef": 3}},
+}
 
 var book_build := "normal"
 var historical := false
+var t488_proposal := false
+var _t488_applied := false
 var invalid := false
+
+
+func _is_d271_build() -> bool:
+	return book_build in [LIANYU, ZHENGDAO]
 
 
 func _ready() -> void:
@@ -52,24 +100,42 @@ func _ready() -> void:
 			book_build = arg.trim_prefix("--book-build=")
 		elif arg == "--t444":
 			historical = true
-	if book_build not in ["normal", "empty", "balanced", "extreme", LIANYU]:
+		elif arg == "--t488-proposal":
+			t488_proposal = true
+	if book_build not in ["normal", "empty", "balanced", "extreme", LIANYU, ZHENGDAO]:
 		push_error("未知量数配法：" + book_build)
 		get_tree().quit(2)
 		return
-	if book_build == LIANYU and (historical or not OS.get_cmdline_user_args().has("--noisy") or OS.get_cmdline_user_args().has("--single")):
-		push_error("炼狱档使用 --noisy 实测整次施放")
+	if _is_d271_build() and (historical or not OS.get_cmdline_user_args().has("--noisy") or OS.get_cmdline_user_args().has("--single")):
+		push_error("炼狱/证道实战档使用 --noisy 实测整次施放")
 		get_tree().quit(2)
 		return
 	super._ready()
 
 
+func _ensure_t488_proposal() -> void:
+	if not t488_proposal or _t488_applied:
+		return
+	var data := XTianqiSkills.data()
+	var skills_map: Dictionary = data.get("skills", {})
+	for sid in T488_PROPOSAL_SKILLS:
+		var k := str(sid)
+		var cur = XTianqiSkills._skills.get(int(sid), {})
+		var merged := XTianqiSkills.tune_merge(cur if cur is Dictionary else {}, T488_PROPOSAL_SKILLS[sid])
+		XTianqiSkills._skills[int(sid)] = merged
+		skills_map[k] = merged
+	XTianqiSkills._recs.clear()
+	_t488_applied = true
+
+
 func _run() -> void:
 	XTianqiLedger.violations.clear()
-	if book_build == LIANYU:
+	_t488_applied = false
+	if _is_d271_build():
 		level = D271.floor_level_cap(LIANYU_FLOOR)
 		gear_level = level - 1
 		fabao_level = FABAO
-		brand_pct = 75.0
+		brand_pct = 100.0 if book_build == ZHENGDAO else 75.0
 		if only.is_empty():
 			only = NORMAL_SECRETS.keys()
 			tier_arg = "all"
@@ -78,17 +144,28 @@ func _run() -> void:
 		for sid in XTianqiGeneralBooks.data().get("groups", {}).get("remaining_books", []):
 			XTianqiGeneralBooks._skills.erase(int(sid))
 	super._run()
-	print("BOOK_PROBE " + JSON.stringify({"build": book_build, "historical": historical,
+	report["t488_proposal"] = t488_proposal
+	print("BOOK_PROBE " + JSON.stringify({"build": book_build, "historical": historical, "t488_proposal": t488_proposal,
 		"violations": XTianqiLedger.violations.size(), "invalid": invalid, "rows": report.rows.size()}))
 	if invalid or not XTianqiLedger.violations.is_empty() or (not only.is_empty() and report.rows.size() != only.size()):
 		get_tree().quit.call_deferred(1)
+
+
+func _secret_loadout(actor_id: int) -> Array:
+	if book_build == LIANYU:
+		return LIANYU_SECRETS.get(actor_id, []).duplicate()
+	if book_build == ZHENGDAO:
+		var list: Array = LIANYU_SECRETS.get(actor_id, []).duplicate()
+		list.append(ZHENGDAO_EXTRA_SECRET)
+		return list
+	return NORMAL_SECRETS.get(actor_id, []).duplicate()
 
 
 func _secrets(a: XActor) -> void:
 	if historical:
 		super._secrets(a)
 		return
-	var loadout: Array = (LIANYU_SECRETS if book_build == LIANYU else NORMAL_SECRETS).get(a.actor_id, [])
+	var loadout := _secret_loadout(a.actor_id)
 	for sid in loadout:
 		a.learn_skill(int(sid))
 	var slots := XTianqiSecrets.active_ids(a)
@@ -100,12 +177,18 @@ func _secrets(a: XActor) -> void:
 
 
 func _lianyu_state(id: int) -> XState:
-	var s := XState.new_game(XTianqi.legacy_of(LIANYU), id, [])
-	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": LIANYU, "lineup": [id]}
+	var diff := ZHENGDAO if book_build == ZHENGDAO else LIANYU
+	var tpl := "D" if book_build == ZHENGDAO else "C"
+	var s := XState.new_game(XTianqi.legacy_of(diff), id, [])
+	s.flags["tianqi"] = {"rules": XTianqi.RULES_VERSION, "difficulty": diff, "lineup": [id]}
 	var battle_seed := 20261117 + id + seed_off
 	s.random_master = XRandomStream.hex64(battle_seed)
 	seed(battle_seed)
 	s.set_variable(20, LIANYU_FLOOR)
+	# T488 R2（修 P2-4）：按 skill_rework.json tiers.growth["95"]（锻炼 var 1490=10 且 4 阶进阶完成 → 超强者），
+	# 炼狱 80% / 证道满配统一按已完成自身超强者成长态测算（与 --t488-proposal 无关，基线与改后同口径）。
+	if id == 95:
+		s.set_variable(1490, 10)
 	s.actor_max_level = level
 	XState._become_current(s)
 	XTianqiSkills.MASTERY = true
@@ -117,20 +200,20 @@ func _lianyu_state(id: int) -> XState:
 		s.set_battle_slot(i, id if i == 0 else 0)
 	var a := s.actor(id)
 	a.change_level_mv(level)
-	D271._apply_advance(s, a, "C")
+	D271._apply_advance(s, a, tpl)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = battle_seed + 31337
 	var qstream := XRandomStream.create(XRandomStream.hex64(battle_seed + 99991), "rule")
 	var preset := D271.new()
 	var weapon_type := str(LIANYU_WEAPONS.get(id, ""))
-	var gear := preset._equip_actor(s, a, "C", LIANYU, DAMAGE_ROLE, LIANYU_FLOOR, level, rng, qstream, weapon_type)
-	preset._equip_fabao_mount_artifact(s, a, "C", DAMAGE_ROLE, 0, false, rng)
+	var gear := preset._equip_actor(s, a, tpl, diff, DAMAGE_ROLE, LIANYU_FLOOR, level, rng, qstream, weapon_type)
+	preset._equip_fabao_mount_artifact(s, a, tpl, DAMAGE_ROLE, 0, false, rng)
 	_secrets(a)
-	preset._apply_growth(s, a, "C", DAMAGE_ROLE, false)
+	preset._apply_growth(s, a, tpl, DAMAGE_ROLE, false)
 	preset.free()
 	if gear.is_empty() or not gear.all(func(it): return it.req_level >= 70 and it.req_level <= level and it.grade >= 5):
 		invalid = true
-		push_error("炼狱档常规装备不符合毕业要求：%d %s" % [id, gear])
+		push_error("炼狱/证道档常规装备不符合毕业要求：%d %s" % [id, gear])
 	var weapon := XTianqiQiyinGear.weapon_of_type(weapon_type)
 	var true_weapons := 0
 	for eq in a.equip_list():
@@ -139,10 +222,10 @@ func _lianyu_state(id: int) -> XState:
 			true_weapons += 1
 		if D271._changes_dummy_defense(eq) or (mark.get("kind") == "weapon" and mark.get("key") != weapon.get("key")):
 			invalid = true
-			push_error("炼狱档装备不符合木桩配置：%d %s" % [id, eq.get("name", "")])
+			push_error("炼狱/证道档装备不符合木桩配置：%d %s" % [id, eq.get("name", "")])
 	if weapon.is_empty() or true_weapons != 1:
 		invalid = true
-		push_error("炼狱档应恰有一件合法的真印武器：%d %s" % [id, weapon_type])
+		push_error("炼狱/证道档应恰有一件合法的真印武器：%d %s" % [id, weapon_type])
 	a.set_meta("lianyu_gear", gear)
 	a.param_mark_dirty()
 	a.refresh_passive()
@@ -159,8 +242,18 @@ func _lianyu_battle(s: XState, a: XActor, sample_seed: int) -> XBattleLogic:
 	e.add_param(0, 1.0e9)
 	e.param_mark_dirty()
 	_pin_def(e)
-	# 只屏蔽会重复整套连段的红印效果；不预置黑印层数或上一回合防御。
-	XTianqiQiyinEffects.effects(logic, a).erase("extra_hits")
+	# T488 R2（修 P2-2）：对称屏蔽全部武器流派效果（mark:/true:/unique:，涵盖红印连击递增与追段、
+	# 黑印单动+50%与无视防御、震印落星/陨月、灰印斩杀等），只保留武器白字面板与词条，确保四类武器单次木桩同起跑线。
+	var qfx := XTianqiQiyinEffects.effects(logic, a)
+	for k in qfx.keys():
+		var fx = qfx[k]
+		var src := str(fx.get("src", "")) if fx is Dictionary else ""
+		if src.begins_with("mark:") or src.begins_with("true:") or src.begins_with("unique:"):
+			qfx.erase(k)
+	# T488 R2（修 P2-5）：单人木桩无队友导致 122 狂刀 6040 孤世独行（开战状态 1834）必然触发，
+	# 而 4 人实战基本不触发；改在探针里移除状态 1834（基线与方案 A 同口径），不动正式表被动。
+	if a.state_ids.has(1834):
+		a.remove_state(1834)
 	a.hp = a.mhp
 	a.mp = a.mmp
 	a.tp = a.max_tp()
@@ -218,9 +311,10 @@ func _measure_lianyu(s: XState, a: XActor, tier: String) -> Dictionary:
 	var active := XTianqiSecrets.active_ids(a, s)
 	var limit := XTianqiSecrets.limit(a, s)
 	var learned := a.skill_ids.filter(func(sid): return XTianqiSecrets.occupies_slot(int(sid)))
-	if limit != LIANYU_SLOTS[tier] or active.size() != limit or active.size() != learned.size():
+	var expected_slots: Dictionary = ZHENGDAO_SLOTS if book_build == ZHENGDAO else LIANYU_SLOTS
+	if limit != expected_slots[tier] or active.size() != limit or active.size() != learned.size():
 		invalid = true
-		push_error("D282 炼狱秘籍格不符：%d %s，生效 %d，已学 %d，上限 %d" % [id, tier, active.size(), learned.size(), limit])
+		push_error("D282 %s 秘籍格不符：%d %s，生效 %d，已学 %d，上限 %d" % [book_build, id, tier, active.size(), learned.size(), limit])
 	var snapshot := s.to_dict().duplicate(true)
 	var battle_seed := 20261117 + id + seed_off
 	var logic := _lianyu_battle(s, a, battle_seed)
@@ -246,6 +340,7 @@ func _measure_lianyu(s: XState, a: XActor, tier: String) -> Dictionary:
 	var row := best.duplicate()
 	row["build"] = _build_desc(a)
 	row["brand_mult"] = XTianqiBrand.mult(a, s)
+	row["battle_tier"] = XTianqiSkills.battle_tier(a, s)
 	var mastery := XSkillMastery.level(a, int(row.input_skill))
 	mastery_seen = maxi(mastery_seen, mastery)
 	row["lianyu"] = {"gear": a.get_meta("lianyu_gear"), "race_rank": int(XRace.data(s, a).rank),
@@ -256,8 +351,9 @@ func _measure_lianyu(s: XState, a: XActor, tier: String) -> Dictionary:
 
 
 func _measure(id: int, tier: String) -> Dictionary:
-	var lianyu := book_build == LIANYU
-	var s := _lianyu_state(id) if lianyu else _state(id)
+	_ensure_t488_proposal()
+	var d271 := _is_d271_build()
+	var s := _lianyu_state(id) if d271 else _state(id)
 	var actor := s.actor(id)
 	var lottery: Array = []
 	if book_build in ["normal", "balanced"]:
@@ -271,7 +367,7 @@ func _measure(id: int, tier: String) -> Dictionary:
 		push_error("抽奖被动未全部学会：%d" % id)
 	actor.param_mark_dirty()
 	actor.refresh_passive()
-	var row := _measure_lianyu(s, actor, tier) if lianyu else _measure_in(s, actor, tier, true)
+	var row := _measure_lianyu(s, actor, tier) if d271 else _measure_in(s, actor, tier, true)
 	if row.is_empty():
 		return row
 	row["lottery_count"] = lottery.size()
