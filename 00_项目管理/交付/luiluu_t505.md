@@ -36,13 +36,15 @@
 | 函数／开关 | 调用方 N 处（附 grep 命令） | 逐处结论 |
 | --- | --- | --- |
 | `XBattlerSprite._process`（敌人分支加一行 `XRiftAlienParts.sync(self)`） | 引擎每帧调，无显式调用方 | 只在 `battler is XEnemy` 分支；没异化级时 `want_tier` 返回空、直接 return，不建节点、不改身体 |
-| `XRiftAlien.tint` | 非测试 1 处（`git grep -n 'XRiftAlien.tint' -- '*.gd'`：battler_sprite.gd:726；其余为测试） | 只在敌人有 `XRiftAlien.PARTS` 标记（挂上件）且表里有 `parts_tier_glow` 时换用新值；没挂件逐值同原来（专项 off_glow_original 核 0.5） |
-| `XRiftAlien.end` | 1 处（`battle_logic.gd:4129`） | 多清一个 `xrift_parts` 标记，其余不变 |
+| `XRiftAlien.tint` | 非测试 1 处（`git grep -n 'XRiftAlien.tint' -- '*.gd'`：battler_sprite.gd:726；自检粗数 12 处其余是测试与同名函数） | 只在敌人有 `XRiftAlien.PARTS` 标记（挂上件）且表里有 `parts_tier_glow` 时换用新值；没挂件逐值同原来（专项 off_glow_original 核 0.5） |
+| `XRiftAlien.end` | 非测试 1 处（`git grep -n 'XRiftAlien.end(' -- '*.gd'`：battle_logic.gd:4129；自检粗数 18 处是同名 end 函数和测试） | 多清一个 `xrift_parts` 标记，其余不变 |
 | 新开关 `XRiftAlienParts.ENABLED`（O-待定，默认 true） | 专项设 false 核回退 | false＝不挂件、回原偏色 |
 
 ## 优化登记草稿
 
-- O-待定　西游档异化附加件（T505）　异化怪按模板挂三级附加件、偏色降到 0.04／0.06／0.08　恢复方法：`XRiftAlienParts.ENABLED = false`　状态：保留
+| 编号 | 位置 | 原版行为 | 优化 | 理由 | 恢复方法 | 执行者 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| O-待定 | `XRiftAlienParts`（T505） | 异化怪只有整体幽紫偏色（0.15／0.3／0.5） | 按模板挂侵染／蚀骨／化形附加件，偏色降到 0.04／0.06／0.08 | Kyo 11-25 事项 67 定稿接入 | `XRiftAlienParts.ENABLED = false` | cc | 保留 |
 
 ## 待单独锚点（清单「需」404 条）
 
@@ -52,12 +54,12 @@
 
 完整 13 张在私密设计仓 `协作交接/审样/T505/`，入仓 8 张：
 
-- [首领捕猎者化形，两侧普通精英邻位](../交付截图/luiluu_t505/01_邻位_首领捕猎者化形.png)
-- [精英鱼人化形受击闪白](../交付截图/luiluu_t505/03_受击_精英鱼人化形.png)
-- [敌方整体镜像翻面](../交付截图/luiluu_t505/04_翻面_精英鱼人化形.png)
-- [精英鱼人邻位·侵染](../交付截图/luiluu_t505/05_精英鱼人邻位_qinran.png)、[蚀骨](../交付截图/luiluu_t505/05_精英鱼人邻位_shigu.png)、[化形](../交付截图/luiluu_t505/05_精英鱼人邻位_huaxing.png)
-- [守层者瑟伦化形（守层者面板）](../交付截图/luiluu_t505/06_守层者瑟伦_huaxing.png)
-- [首领黝石巨人化形（首领面板）](../交付截图/luiluu_t505/07_首领黝石巨人_huaxing.png)
+- 首领捕猎者化形，两侧普通精英邻位 `00_项目管理/交付截图/luiluu_t505/01_邻位_首领捕猎者化形.png`
+- 精英鱼人化形受击闪白 `00_项目管理/交付截图/luiluu_t505/03_受击_精英鱼人化形.png`
+- 敌方整体镜像翻面 `00_项目管理/交付截图/luiluu_t505/04_翻面_精英鱼人化形.png`
+- 精英鱼人邻位·侵染 `00_项目管理/交付截图/luiluu_t505/05_精英鱼人邻位_qinran.png`、蚀骨 `00_项目管理/交付截图/luiluu_t505/05_精英鱼人邻位_shigu.png`、化形 `00_项目管理/交付截图/luiluu_t505/05_精英鱼人邻位_huaxing.png`
+- 守层者瑟伦化形（守层者面板） `00_项目管理/交付截图/luiluu_t505/06_守层者瑟伦_huaxing.png`
+- 首领黝石巨人化形（首领面板） `00_项目管理/交付截图/luiluu_t505/07_首领黝石巨人_huaxing.png`
 
 截图由专项带窗口跑出：`godot --audio-driver Dummy --path 01_Godot工程 res://tests/xiyou_rift_alien_parts.tscn -- --out=<目录>`。异化级走 `XRiftAlien.apply`（同实战），一场一只。
 
