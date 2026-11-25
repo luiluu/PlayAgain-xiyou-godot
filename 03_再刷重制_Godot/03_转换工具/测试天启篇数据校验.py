@@ -767,6 +767,44 @@ class EnemyNature(unittest.TestCase):
         self.assertTrue(any('verdict' in b for b in chk.enemy_nature_rules(self.t, self.el)))
 
 
+class ActorNature(unittest.TestCase):
+    """actor_nature.json（T484）：我方体质表的格式与得票规则对账。"""
+
+    def setUp(self):
+        self.t = json.loads((chk.DATA_DIR / 'actor_nature.json').read_text(encoding='utf-8'))
+        self.el = json.loads((chk.DATA_DIR / 'elements_table.json').read_text(encoding='utf-8'))
+
+    def _one(self, src):
+        return next(k for k, e in self.t['actors'].items() if e['src'] == src)
+
+    def test_real_passes(self):
+        self.assertEqual(chk.actor_nature_rules(self.t, self.el), [])
+
+    def test_two_natures_fails(self):
+        self.t['actors'][self._one('majority')]['natures'] = [2, 3]
+        self.assertTrue(any('空或 1 个' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
+    def test_higher_element_fails(self):
+        self.t['actors'][self._one('majority')]['natures'] = [11]
+        self.assertTrue(any('基础十系以外' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
+    def test_nature_vs_votes_fails(self):
+        e = self.t['actors'][self._one('majority')]
+        e['natures'] = [next(n for n in (2, 3, 4) if [n] != e['natures'])]
+        self.assertTrue(any('体质应为' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
+    def test_neutral_with_nature_fails(self):
+        self.t['actors'][self._one('neutral')]['natures'] = [2]
+        self.assertTrue(chk.actor_nature_rules(self.t, self.el))
+
+    def test_missing_usable_row_fails(self):
+        self.assertTrue(any('缺行' in b for b in chk.actor_nature_rules(self.t, self.el, {99999})))
+
+    def test_manual_needs_verdict(self):
+        self.t['actors'][self._one('majority')]['src'] = 'manual'
+        self.assertTrue(any('verdict' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
+
 class GuardianParams(unittest.TestCase):
     """guardian_params.json（T237／T245）：只认 31～34 层和 qiyin 行，取值是正整数百分比。"""
 

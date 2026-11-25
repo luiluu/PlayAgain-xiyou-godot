@@ -1,0 +1,1993 @@
+{
+ "version": 1,
+ "_doc": "天启篇我方角色自然体质（T484，设计稿 元素独特效果 v0.3 4.4，D285④）。actors 键＝角色号，每个可用角色都有一行；natures 0 或 1 个、基础十系元素号。basis：card＝按天启篇技能卡、original＝技能卡还没做的角色退回原版自带技能。src：majority 单类得票最多、tie_first 并列取技能号最小的攻击招、neutral 原生无属性、higher 原生高等三系、no_attack 没有攻击招、manual 人核（要有 verdict）。votes 是各元素得票（0＝无属性），tie 是并列最高的元素；只看原生，转换书／转属／装备不改。改规则后重跑 03_转换工具/天启篇我方体质表生成.py。",
+ "actors": {
+  "1": {
+   "name": "狗逍遥",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 15,
+   "basis": "card",
+   "votes": {
+    "0": 15
+   },
+   "tie": []
+  },
+  "2": {
+   "name": "绿司机",
+   "natures": [
+    6
+   ],
+   "src": "majority",
+   "n_attack": 9,
+   "basis": "card",
+   "votes": {
+    "6": 9
+   },
+   "tie": []
+  },
+  "3": {
+   "name": "艾坤",
+   "natures": [
+    4
+   ],
+   "src": "majority",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "4": 5
+   },
+   "tie": []
+  },
+  "4": {
+   "name": "窃格瓦拉·周",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 4,
+    "8": 1
+   },
+   "tie": []
+  },
+  "5": {
+   "name": "小痔",
+   "natures": [
+    3
+   ],
+   "src": "majority",
+   "n_attack": 9,
+   "basis": "card",
+   "votes": {
+    "3": 6,
+    "8": 3
+   },
+   "tie": []
+  },
+  "6": {
+   "name": "吕布",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 7,
+   "basis": "card",
+   "votes": {
+    "0": 7
+   },
+   "tie": []
+  },
+  "7": {
+   "name": "茉蕾",
+   "natures": [
+    6
+   ],
+   "src": "majority",
+   "n_attack": 7,
+   "basis": "card",
+   "votes": {
+    "2": 1,
+    "6": 6
+   },
+   "tie": []
+  },
+  "8": {
+   "name": "修",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 19,
+   "basis": "card",
+   "votes": {
+    "0": 6,
+    "7": 3,
+    "8": 5,
+    "9": 5
+   },
+   "tie": []
+  },
+  "9": {
+   "name": "罗琳",
+   "natures": [
+    9
+   ],
+   "src": "majority",
+   "n_attack": 7,
+   "basis": "card",
+   "votes": {
+    "9": 7
+   },
+   "tie": []
+  },
+  "10": {
+   "name": "美娜",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 7,
+   "basis": "card",
+   "votes": {
+    "0": 7
+   },
+   "tie": []
+  },
+  "11": {
+   "name": "里德",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 7,
+   "basis": "card",
+   "votes": {
+    "0": 7
+   },
+   "tie": []
+  },
+  "12": {
+   "name": "斯盖",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 2,
+    "2": 1
+   },
+   "tie": []
+  },
+  "13": {
+   "name": "刘备",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "14": {
+   "name": "关羽",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 8,
+   "basis": "card",
+   "votes": {
+    "0": 7,
+    "14": 2
+   },
+   "tie": []
+  },
+  "15": {
+   "name": "张飞",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 5
+   },
+   "tie": []
+  },
+  "16": {
+   "name": "克莱德",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 1,
+   "basis": "card",
+   "votes": {
+    "0": 1
+   },
+   "tie": []
+  },
+  "17": {
+   "name": "克洛什",
+   "natures": [
+    6
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "6": 3
+   },
+   "tie": []
+  },
+  "18": {
+   "name": "雪清寒",
+   "natures": [
+    3
+   ],
+   "src": "majority",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "3": 5
+   },
+   "tie": []
+  },
+  "19": {
+   "name": "安东尼",
+   "natures": [
+    2
+   ],
+   "src": "majority",
+   "n_attack": 7,
+   "basis": "card",
+   "votes": {
+    "2": 5,
+    "3": 1,
+    "5": 1
+   },
+   "tie": []
+  },
+  "20": {
+   "name": "伯伦希尔",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "21": {
+   "name": "玛莎",
+   "natures": [
+    15
+   ],
+   "src": "majority",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "15": 2
+   },
+   "tie": []
+  },
+  "22": {
+   "name": "维利",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 12,
+   "basis": "card",
+   "votes": {
+    "0": 12
+   },
+   "tie": []
+  },
+  "23": {
+   "name": "魔雷老人",
+   "natures": [
+    9
+   ],
+   "src": "majority",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "5": 1,
+    "9": 4
+   },
+   "tie": []
+  },
+  "24": {
+   "name": "克比",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 9,
+   "basis": "card",
+   "votes": {
+    "0": 9,
+    "15": 1
+   },
+   "tie": []
+  },
+  "25": {
+   "name": "雷加尔",
+   "natures": [
+    6
+   ],
+   "src": "majority",
+   "n_attack": 7,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "4": 1,
+    "6": 5,
+    "15": 1
+   },
+   "tie": []
+  },
+  "26": {
+   "name": "曼德斯",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 10,
+   "basis": "card",
+   "votes": {
+    "0": 10
+   },
+   "tie": []
+  },
+  "27": {
+   "name": "齐格鲁德",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 3
+   },
+   "tie": []
+  },
+  "28": {
+   "name": "桑克莱",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 6,
+   "basis": "card",
+   "votes": {
+    "0": 6
+   },
+   "tie": []
+  },
+  "29": {
+   "name": "金蝉子",
+   "natures": [
+    9
+   ],
+   "src": "majority",
+   "n_attack": 6,
+   "basis": "card",
+   "votes": {
+    "9": 6
+   },
+   "tie": []
+  },
+  "30": {
+   "name": "西凉女帝",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 6,
+   "basis": "card",
+   "votes": {
+    "0": 6
+   },
+   "tie": []
+  },
+  "31": {
+   "name": "露茜",
+   "natures": [
+    6
+   ],
+   "src": "majority",
+   "n_attack": 1,
+   "basis": "card",
+   "votes": {
+    "6": 1
+   },
+   "tie": []
+  },
+  "32": {
+   "name": "涅斐莉",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 11,
+   "basis": "card",
+   "votes": {
+    "0": 11
+   },
+   "tie": []
+  },
+  "33": {
+   "name": "晴明",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 9,
+   "basis": "card",
+   "votes": {
+    "0": 5,
+    "2": 1,
+    "8": 3
+   },
+   "tie": []
+  },
+  "34": {
+   "name": "签弟",
+   "natures": [
+    5
+   ],
+   "src": "majority",
+   "n_attack": 1,
+   "basis": "card",
+   "votes": {
+    "5": 1
+   },
+   "tie": []
+  },
+  "35": {
+   "name": "摇光",
+   "natures": [
+    8
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "8": 3
+   },
+   "tie": []
+  },
+  "36": {
+   "name": "至尊宝",
+   "natures": [
+    2
+   ],
+   "src": "tie_first",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 2,
+    "2": 2
+   },
+   "tie": [
+    2,
+    0
+   ]
+  },
+  "37": {
+   "name": "天蓬元帅",
+   "natures": [
+    3
+   ],
+   "src": "majority",
+   "n_attack": 6,
+   "basis": "card",
+   "votes": {
+    "3": 6
+   },
+   "tie": []
+  },
+  "38": {
+   "name": "曹操",
+   "natures": [
+    9
+   ],
+   "src": "majority",
+   "n_attack": 6,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "9": 5
+   },
+   "tie": []
+  },
+  "39": {
+   "name": "沙和尚",
+   "natures": [
+    4
+   ],
+   "src": "majority",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "4": 4
+   },
+   "tie": []
+  },
+  "40": {
+   "name": "小白龙",
+   "natures": [
+    4
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "4": 2,
+    "14": 1
+   },
+   "tie": []
+  },
+  "41": {
+   "name": "波加尼",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "42": {
+   "name": "布兰德瓦登",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "0": 2
+   },
+   "tie": []
+  },
+  "43": {
+   "name": "露丝",
+   "natures": [
+    7
+   ],
+   "src": "majority",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "7": 3
+   },
+   "tie": []
+  },
+  "44": {
+   "name": "碧池",
+   "natures": [
+    6
+   ],
+   "src": "majority",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "6": 2
+   },
+   "tie": []
+  },
+  "45": {
+   "name": "东方教主",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 5
+   },
+   "tie": []
+  },
+  "46": {
+   "name": "克莉丝汀",
+   "natures": [
+    9
+   ],
+   "src": "majority",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "9": 4
+   },
+   "tie": []
+  },
+  "47": {
+   "name": "酒剑仙",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "48": {
+   "name": "莉娜",
+   "natures": [
+    2
+   ],
+   "src": "majority",
+   "n_attack": 8,
+   "basis": "card",
+   "votes": {
+    "2": 8
+   },
+   "tie": []
+  },
+  "49": {
+   "name": "疾风丸",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4,
+    "15": 2
+   },
+   "tie": []
+  },
+  "50": {
+   "name": "劲夫",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "51": {
+   "name": "法海",
+   "natures": [
+    8
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "8": 3
+   },
+   "tie": []
+  },
+  "52": {
+   "name": "孙悟空",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "53": {
+   "name": "艾瑞塔",
+   "natures": [
+    9
+   ],
+   "src": "majority",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "9": 4
+   },
+   "tie": []
+  },
+  "54": {
+   "name": "迪昂",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "55": {
+   "name": "橙",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 5
+   },
+   "tie": []
+  },
+  "56": {
+   "name": "瑞普",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "0": 2
+   },
+   "tie": []
+  },
+  "57": {
+   "name": "龙马",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 6,
+   "basis": "card",
+   "votes": {
+    "0": 6
+   },
+   "tie": []
+  },
+  "58": {
+   "name": "小青",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 3
+   },
+   "tie": []
+  },
+  "59": {
+   "name": "大羿",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 6,
+   "basis": "card",
+   "votes": {
+    "0": 4,
+    "2": 2
+   },
+   "tie": []
+  },
+  "60": {
+   "name": "马宝国",
+   "natures": [
+    5
+   ],
+   "src": "majority",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 2,
+    "5": 3
+   },
+   "tie": []
+  },
+  "61": {
+   "name": "町甄",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 1,
+   "basis": "card",
+   "votes": {
+    "0": 1
+   },
+   "tie": []
+  },
+  "62": {
+   "name": "布兰博",
+   "natures": [
+    4
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "4": 3
+   },
+   "tie": []
+  },
+  "63": {
+   "name": "拉尔",
+   "natures": [
+    8
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "8": 3
+   },
+   "tie": []
+  },
+  "64": {
+   "name": "杰诺",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "0": 2
+   },
+   "tie": []
+  },
+  "65": {
+   "name": "孙权",
+   "natures": [
+    15
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "15": 2
+   },
+   "tie": []
+  },
+  "66": {
+   "name": "娜莎",
+   "natures": [
+    5
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "5": 3
+   },
+   "tie": []
+  },
+  "67": {
+   "name": "科妮莉亚",
+   "natures": [
+    6
+   ],
+   "src": "majority",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "6": 3
+   },
+   "tie": []
+  },
+  "68": {
+   "name": "尤妮娅",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 5
+   },
+   "tie": []
+  },
+  "69": {
+   "name": "花木兰",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "70": {
+   "name": "紫霞仙子",
+   "natures": [
+    2
+   ],
+   "src": "majority",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "2": 3,
+    "7": 2
+   },
+   "tie": []
+  },
+  "71": {
+   "name": "诸葛孔明",
+   "natures": [
+    2
+   ],
+   "src": "tie_first",
+   "n_attack": 20,
+   "basis": "card",
+   "votes": {
+    "2": 4,
+    "4": 4,
+    "5": 4,
+    "6": 1,
+    "14": 4,
+    "15": 3
+   },
+   "tie": [
+    2,
+    14,
+    4,
+    5
+   ]
+  },
+  "72": {
+   "name": "阿语",
+   "natures": [
+    8
+   ],
+   "src": "tie_first",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "8": 1,
+    "9": 1
+   },
+   "tie": [
+    8,
+    9,
+    0
+   ]
+  },
+  "73": {
+   "name": "塞西莉",
+   "natures": [
+    3
+   ],
+   "src": "majority",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "3": 5,
+    "15": 1
+   },
+   "tie": []
+  },
+  "74": {
+   "name": "陈",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 3,
+    "2": 1,
+    "6": 1
+   },
+   "tie": []
+  },
+  "75": {
+   "name": "智甚",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 9,
+   "basis": "card",
+   "votes": {
+    "0": 9
+   },
+   "tie": []
+  },
+  "76": {
+   "name": "白晶晶",
+   "natures": [
+    6
+   ],
+   "src": "majority",
+   "n_attack": 7,
+   "basis": "card",
+   "votes": {
+    "6": 7
+   },
+   "tie": []
+  },
+  "77": {
+   "name": "玉兔精",
+   "natures": [
+    7
+   ],
+   "src": "majority",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "7": 4
+   },
+   "tie": []
+  },
+  "78": {
+   "name": "十三娘",
+   "natures": [
+    9
+   ],
+   "src": "majority",
+   "n_attack": 19,
+   "basis": "card",
+   "votes": {
+    "9": 19
+   },
+   "tie": []
+  },
+  "79": {
+   "name": "裴钱",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 9,
+   "basis": "card",
+   "votes": {
+    "0": 9
+   },
+   "tie": []
+  },
+  "80": {
+   "name": "白起",
+   "natures": [
+    9
+   ],
+   "src": "majority",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "9": 4
+   },
+   "tie": []
+  },
+  "81": {
+   "name": "申公豹",
+   "natures": [
+    3
+   ],
+   "src": "majority",
+   "n_attack": 1,
+   "basis": "card",
+   "votes": {
+    "3": 1
+   },
+   "tie": []
+  },
+  "82": {
+   "name": "玉面狐狸",
+   "natures": [
+    6
+   ],
+   "src": "tie_first",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "2": 1,
+    "3": 1,
+    "4": 1,
+    "6": 1
+   },
+   "tie": [
+    6,
+    2,
+    4,
+    3
+   ]
+  },
+  "83": {
+   "name": "荒天弟",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 3
+   },
+   "tie": []
+  },
+  "84": {
+   "name": "小毒",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 1,
+   "basis": "card",
+   "votes": {
+    "0": 1
+   },
+   "tie": []
+  },
+  "85": {
+   "name": "爱莉",
+   "natures": [
+    3
+   ],
+   "src": "majority",
+   "n_attack": 6,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "3": 4,
+    "12": 1
+   },
+   "tie": []
+  },
+  "86": {
+   "name": "张三丰",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "87": {
+   "name": "张无忌",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 5
+   },
+   "tie": []
+  },
+  "88": {
+   "name": "西西卡",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 17,
+   "basis": "card",
+   "votes": {
+    "0": 7,
+    "2": 1,
+    "3": 1,
+    "4": 1,
+    "5": 2,
+    "6": 1,
+    "8": 2,
+    "9": 2
+   },
+   "tie": []
+  },
+  "89": {
+   "name": "虎姐",
+   "natures": [
+    7
+   ],
+   "src": "majority",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "7": 2
+   },
+   "tie": []
+  },
+  "90": {
+   "name": "艾琳",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 2,
+    "8": 1
+   },
+   "tie": []
+  },
+  "91": {
+   "name": "宇智波·鼬",
+   "natures": [
+    2
+   ],
+   "src": "majority",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "2": 3,
+    "14": 1
+   },
+   "tie": []
+  },
+  "92": {
+   "name": "八重樱",
+   "natures": [
+    2
+   ],
+   "src": "tie_first",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "2": 2,
+    "3": 2,
+    "5": 2
+   },
+   "tie": [
+    2,
+    3,
+    5
+   ]
+  },
+  "93": {
+   "name": "炭治郎",
+   "natures": [],
+   "src": "no_attack",
+   "n_attack": 0,
+   "basis": "card",
+   "votes": {},
+   "tie": []
+  },
+  "94": {
+   "name": "命运编织者",
+   "natures": [
+    2
+   ],
+   "src": "tie_first",
+   "n_attack": 7,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "2": 1,
+    "3": 1,
+    "4": 1,
+    "5": 1,
+    "7": 1,
+    "15": 1
+   },
+   "tie": [
+    2,
+    15,
+    4,
+    5,
+    3,
+    7,
+    0
+   ]
+  },
+  "95": {
+   "name": "三笠",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "96": {
+   "name": "朵莉亚",
+   "natures": [
+    3
+   ],
+   "src": "majority",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "3": 2,
+    "14": 1
+   },
+   "tie": []
+  },
+  "97": {
+   "name": "赤狐",
+   "natures": [
+    15
+   ],
+   "src": "tie_first",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "9": 1,
+    "15": 1
+   },
+   "tie": [
+    15,
+    0,
+    9
+   ]
+  },
+  "98": {
+   "name": "金狐",
+   "natures": [
+    2
+   ],
+   "src": "majority",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "2": 2
+   },
+   "tie": []
+  },
+  "99": {
+   "name": "小明",
+   "natures": [
+    7
+   ],
+   "src": "majority",
+   "n_attack": 1,
+   "basis": "card",
+   "votes": {
+    "7": 1
+   },
+   "tie": []
+  },
+  "100": {
+   "name": "云霄",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 1,
+   "basis": "card",
+   "votes": {
+    "0": 1
+   },
+   "tie": []
+  },
+  "101": {
+   "name": "琼霄",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 3
+   },
+   "tie": []
+  },
+  "102": {
+   "name": "碧霄",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 2,
+    "2": 1
+   },
+   "tie": []
+  },
+  "103": {
+   "name": "波风水门",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 2,
+    "15": 1
+   },
+   "tie": []
+  },
+  "104": {
+   "name": "天虎令",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "105": {
+   "name": "唐三",
+   "natures": [
+    6
+   ],
+   "src": "majority",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "3": 1,
+    "6": 2,
+    "8": 1,
+    "9": 1,
+    "14": 1
+   },
+   "tie": []
+  },
+  "106": {
+   "name": "甘雨",
+   "natures": [
+    3
+   ],
+   "src": "majority",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "3": 4
+   },
+   "tie": []
+  },
+  "107": {
+   "name": "钟离",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "108": {
+   "name": "奈叶",
+   "natures": [
+    7
+   ],
+   "src": "majority",
+   "n_attack": 8,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "7": 7
+   },
+   "tie": []
+  },
+  "109": {
+   "name": "牢大",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "115": {
+   "name": "蕾姆",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 3,
+    "3": 1,
+    "14": 1
+   },
+   "tie": []
+  },
+  "117": {
+   "name": "绯红蔷薇",
+   "natures": [],
+   "src": "no_attack",
+   "n_attack": 0,
+   "basis": "card",
+   "votes": {},
+   "tie": []
+  },
+  "118": {
+   "name": "高松灯",
+   "natures": [
+    7
+   ],
+   "src": "majority",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "7": 4
+   },
+   "tie": []
+  },
+  "119": {
+   "name": "千早爱音",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 2,
+    "7": 1
+   },
+   "tie": []
+  },
+  "120": {
+   "name": "希格雯",
+   "natures": [
+    14
+   ],
+   "src": "majority",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "3": 1,
+    "14": 3
+   },
+   "tie": []
+  },
+  "122": {
+   "name": "南宫恨·狂刀",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 9,
+   "basis": "card",
+   "votes": {
+    "0": 9
+   },
+   "tie": []
+  },
+  "123": {
+   "name": "南宫恨·武道",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 5
+   },
+   "tie": []
+  },
+  "124": {
+   "name": "伊莉雅",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 8,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "2": 1,
+    "3": 1,
+    "4": 1,
+    "5": 1,
+    "6": 1,
+    "7": 1,
+    "9": 1
+   },
+   "tie": [
+    0,
+    9,
+    6,
+    5,
+    2,
+    4,
+    3,
+    7
+   ]
+  },
+  "127": {
+   "name": "小铃兰",
+   "natures": [
+    2
+   ],
+   "src": "tie_first",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 1,
+    "2": 1,
+    "8": 1
+   },
+   "tie": [
+    2,
+    0,
+    8
+   ]
+  },
+  "128": {
+   "name": "张楚岚",
+   "natures": [
+    5
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "5": 3
+   },
+   "tie": []
+  },
+  "129": {
+   "name": "要乐奈",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4,
+    "15": 2
+   },
+   "tie": []
+  },
+  "130": {
+   "name": "长崎爽世",
+   "natures": [
+    7
+   ],
+   "src": "majority",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "7": 2
+   },
+   "tie": []
+  },
+  "131": {
+   "name": "椎名立希",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "142": {
+   "name": "天海麒麟星",
+   "natures": [
+    3
+   ],
+   "src": "tie_first",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "2": 1,
+    "3": 1,
+    "8": 1
+   },
+   "tie": [
+    3,
+    2,
+    8
+   ]
+  },
+  "146": {
+   "name": "苍龙破晓",
+   "natures": [
+    5
+   ],
+   "src": "majority",
+   "n_attack": 1,
+   "basis": "original",
+   "votes": {
+    "5": 1
+   },
+   "tie": []
+  },
+  "147": {
+   "name": "天剑 非天",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "0": 2
+   },
+   "tie": []
+  },
+  "148": {
+   "name": "黑崎一护",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 6,
+   "basis": "card",
+   "votes": {
+    "0": 4,
+    "9": 2
+   },
+   "tie": []
+  },
+  "149": {
+   "name": "祈求者",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 12,
+   "basis": "card",
+   "votes": {
+    "0": 6,
+    "2": 4,
+    "3": 3,
+    "5": 3,
+    "15": 2
+   },
+   "tie": []
+  },
+  "150": {
+   "name": "桐人",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "151": {
+   "name": "亚斯娜",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 1,
+   "basis": "card",
+   "votes": {
+    "0": 1
+   },
+   "tie": []
+  },
+  "152": {
+   "name": "徐凤年",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "0": 2
+   },
+   "tie": []
+  },
+  "153": {
+   "name": "惠惠",
+   "natures": [
+    2
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "2": 3,
+    "3": 2,
+    "4": 2,
+    "5": 2,
+    "6": 2,
+    "7": 2,
+    "8": 2,
+    "9": 2,
+    "11": 1,
+    "12": 1
+   },
+   "tie": []
+  },
+  "154": {
+   "name": "夏娜",
+   "natures": [
+    2
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "2": 3
+   },
+   "tie": []
+  },
+  "155": {
+   "name": "病娇",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "0": 3
+   },
+   "tie": []
+  },
+  "156": {
+   "name": "嫦娥",
+   "natures": [
+    8
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "8": 3
+   },
+   "tie": []
+  },
+  "158": {
+   "name": "炮姐",
+   "natures": [
+    5
+   ],
+   "src": "majority",
+   "n_attack": 3,
+   "basis": "card",
+   "votes": {
+    "5": 3
+   },
+   "tie": []
+  },
+  "159": {
+   "name": "五河琴里",
+   "natures": [
+    2
+   ],
+   "src": "tie_first",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 2,
+    "2": 2
+   },
+   "tie": [
+    2,
+    0
+   ]
+  },
+  "162": {
+   "name": "诛仙",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 5
+   },
+   "tie": []
+  },
+  "163": {
+   "name": "拳一",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "164": {
+   "name": "贝吉特",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "165": {
+   "name": "李逍遥",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "0": 4
+   },
+   "tie": []
+  },
+  "167": {
+   "name": "渡鸦",
+   "natures": [
+    9
+   ],
+   "src": "majority",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "9": 5
+   },
+   "tie": []
+  },
+  "168": {
+   "name": "米拉",
+   "natures": [
+    2
+   ],
+   "src": "majority",
+   "n_attack": 9,
+   "basis": "card",
+   "votes": {
+    "2": 9
+   },
+   "tie": []
+  },
+  "169": {
+   "name": "黄泉",
+   "natures": [
+    5
+   ],
+   "src": "majority",
+   "n_attack": 4,
+   "basis": "card",
+   "votes": {
+    "5": 4
+   },
+   "tie": []
+  },
+  "170": {
+   "name": "镜流",
+   "natures": [
+    3
+   ],
+   "src": "majority",
+   "n_attack": 7,
+   "basis": "card",
+   "votes": {
+    "3": 7
+   },
+   "tie": []
+  },
+  "171": {
+   "name": "伏黑甚尔",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 8,
+   "basis": "card",
+   "votes": {
+    "0": 8
+   },
+   "tie": []
+  },
+  "172": {
+   "name": "宿傩",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 8,
+   "basis": "card",
+   "votes": {
+    "0": 6,
+    "2": 2
+   },
+   "tie": []
+  },
+  "173": {
+   "name": "饿狼",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 13,
+   "basis": "card",
+   "votes": {
+    "0": 13
+   },
+   "tie": []
+  },
+  "174": {
+   "name": "云裳",
+   "natures": [
+    7
+   ],
+   "src": "majority",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "7": 5
+   },
+   "tie": []
+  },
+  "175": {
+   "name": "谷雨",
+   "natures": [
+    6
+   ],
+   "src": "majority",
+   "n_attack": 1,
+   "basis": "original",
+   "votes": {
+    "6": 1
+   },
+   "tie": []
+  },
+  "176": {
+   "name": "屠苏",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 10,
+   "basis": "card",
+   "votes": {
+    "0": 10
+   },
+   "tie": []
+  },
+  "177": {
+   "name": "璇",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 1,
+   "basis": "card",
+   "votes": {
+    "0": 1
+   },
+   "tie": []
+  },
+  "178": {
+   "name": "哈基米",
+   "natures": [],
+   "src": "neutral",
+   "n_attack": 5,
+   "basis": "card",
+   "votes": {
+    "0": 3,
+    "8": 2
+   },
+   "tie": []
+  },
+  "179": {
+   "name": "流萤",
+   "natures": [
+    2
+   ],
+   "src": "tie_first",
+   "n_attack": 2,
+   "basis": "card",
+   "votes": {
+    "0": 2,
+    "2": 2
+   },
+   "tie": [
+    2,
+    0
+   ]
+  }
+ }
+}
