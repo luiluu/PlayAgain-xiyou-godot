@@ -110,7 +110,7 @@ func rule_random() -> XRandomStream:
 
 func _variable_random(lo: int, hi: int) -> int:
 	if lottery_id != 0:
-		var r := XLotteryRework.remap(lottery_id, lo, hi)
+		var r := XLotteryRework.remap(lottery_id, lo, hi, state())
 		lo = r[0]
 		hi = r[1]
 		if XLotteryRework.SAVED_STREAM and fixed_random < 0.0 and random_sequence.is_empty() and state() != null:
@@ -269,7 +269,7 @@ func _execute(c: Dictionary):
 				"position": int(p[3]) if p.size() > 3 else 2, "lines": []}
 			while index + 1 < list.size() and int(list[index + 1].code) == 401:
 				index += 1
-				msg.lines.append(message_text(XLotteryRework.text(lottery_id, str(list[index].parameters[0])) if lottery_id != 0 else str(list[index].parameters[0])))
+				msg.lines.append(message_text(XLotteryRework.text(lottery_id, str(list[index].parameters[0]), state()) if lottery_id != 0 else str(list[index].parameters[0])))
 			msg = XTianqiSect.rewrite_message(state(), _map_id(), _event_id(), msg)
 			msg = XTianqiHallText.rewrite_message(state(), _map_id(), _event_id(), msg)
 			if index + 1 < list.size() and int(list[index + 1].code) == 102:
