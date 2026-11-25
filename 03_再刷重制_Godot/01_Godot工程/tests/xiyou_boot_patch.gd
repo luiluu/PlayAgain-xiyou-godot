@@ -79,6 +79,26 @@ func _run() -> void:
 	d2["base"] = base - 1
 	r = BootPatchScript.apply(_state(d2))
 	_check("底包不符", not r["loaded"] and r["reason"] == "底包不符")
+	_check("底包不符时清掉过期 active.json", not FileAccess.file_exists(DIR.path_join("active.json")))
+	# T500：旧底包（477/485、470/475 等）残留：prepare 不误写退回提示，apply 清掉 active.json 与旧底包 pck/part，保留本底包 pck
+	_write(DIR.path_join("patch_477_485.pck"), "old477")
+	_write(DIR.path_join("patch_477_485.pck.part"), "old477part")
+	_write(DIR.path_join("patch_470_475.pck"), "old470")
+	var keep_cur_pck := DIR.path_join("patch_%d_%d.pck" % [base, base + 2])
+	_write(keep_cur_pck, "keepcur")
+	var stale_unconfirmed := {"file": "patch_477_485.pck", "sha256": sha, "size": size, "base": 477, "code": 485, "confirmed": false, "boots": 2, "prev": null}
+	BootPatchScript.prepare(_state(stale_unconfirmed))
+	_check("T500 旧底包残留 prepare 不误写 rolled_back.json", not FileAccess.file_exists(DIR.path_join(BootPatchScript.ROLLED_BACK_NAME)))
+	var stale_477 := {"file": "patch_477_485.pck", "sha256": sha, "size": size, "base": 477, "code": 485, "confirmed": true, "boots": 0, "prev": null}
+	r = BootPatchScript.apply(_state(stale_477))
+	_check("T500 477/485 残留 apply 拒载并清掉 active.json 与旧底包补丁、保留本底包补丁",
+		not r["loaded"] and r["reason"] == "底包不符"
+		and not FileAccess.file_exists(DIR.path_join("active.json"))
+		and not FileAccess.file_exists(DIR.path_join("patch_477_485.pck"))
+		and not FileAccess.file_exists(DIR.path_join("patch_477_485.pck.part"))
+		and not FileAccess.file_exists(DIR.path_join("patch_470_475.pck"))
+		and FileAccess.file_exists(keep_cur_pck))
+	DirAccess.remove_absolute(keep_cur_pck)
 	d2 = good.duplicate()
 	d2["file"] = "q.pck"
 	r = BootPatchScript.apply(_state(d2))

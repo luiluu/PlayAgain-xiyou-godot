@@ -297,10 +297,11 @@ static func register(patch: Dictionary, base: int) -> bool:
 		return false
 	var cur = _read_json(state_path())
 	var prev = null
-	if typeof(cur) == TYPE_DICTIONARY and cur.get("file") is String and cur.get("confirmed", true) == true and cur["file"] != name:
-		prev = {"file": cur["file"], "sha256": cur.get("sha256", ""), "size": cur.get("size", 0), "base": cur.get("base", 0), "code": cur.get("code", 0)}
-	elif typeof(cur) == TYPE_DICTIONARY and typeof(cur.get("prev")) == TYPE_DICTIONARY:
-		prev = cur["prev"]  # 现在这份还没确认过：上一份仍是它的上一份
+	if typeof(cur) == TYPE_DICTIONARY and int(cur.get("base", -1)) == base:
+		if cur.get("file") is String and cur.get("confirmed", true) == true and cur["file"] != name:
+			prev = {"file": cur["file"], "sha256": cur.get("sha256", ""), "size": cur.get("size", 0), "base": cur.get("base", 0), "code": cur.get("code", 0)}
+		elif typeof(cur.get("prev")) == TYPE_DICTIONARY and int(cur["prev"].get("base", -1)) == base:
+			prev = cur["prev"]  # 现在这份还没确认过：上一份仍是它的上一份（仅限同底包，T500 防旧底包污染 prev）
 	var st := {"file": name, "sha256": str(patch["sha256"]).to_lower(), "size": int(patch["size"]), "base": base,
 		"code": int(patch["code"]), "confirmed": false, "boots": 0, "prev": prev}
 	var f := FileAccess.open(state_path(), FileAccess.WRITE)
@@ -323,20 +324,48 @@ static func _prune(keep: Array) -> void:
 			da.remove(f)
 
 
-## 现在登记着的补丁编号（没有为 0）。
-static func registered_code() -> int:
+## 清理不属于当前底包的过期 active.json 及旧底包补丁文件（T500；不碰存档和 save_backup）。
+static func _cleanup_stale_base(cur_base: int) -> void:
+	DirAccess.remove_absolute(state_path())
+	var da := DirAccess.open(dir)
+	if da == null:
+		return
+	var keep_prefix := "patch_%d_" % cur_base
+	for f in da.get_files():
+		if f.begins_with("patch_") and not f.begins_with(keep_prefix) and (f.ends_with(".pck") or f.ends_with(".part") or f.ends_with(".chunk")):
+			da.remove(f)
+
+
+## 现在登记着的当前底包补丁编号（没有或底包不符为 0；底包不符时自动清理过期登记与旧底包补丁）。
+static func registered_code(expected_base := -1) -> int:
 	var cur = _read_json(state_path())
-	return int(cur.get("code", 0)) if typeof(cur) == TYPE_DICTIONARY else 0
+	if typeof(cur) != TYPE_DICTIONARY:
+		return 0
+	var want := expected_base if expected_base > 0 else XUpdateClient.base_code()
+	if want > 0 and int(cur.get("base", -1)) != want:
+		_cleanup_stale_base(want)
+		return 0
+	return int(cur.get("code", 0))
 
 
-## 已登记、还没重启生效的补丁编号（没有为 0）。
-static func pending_code() -> int:
-	var c := registered_code()
+## 已登记、还没重启生效的当前底包补丁编号（没有或底包不符为 0）。
+static func pending_code(expected_base := -1) -> int:
+	var want := expected_base if expected_base > 0 else XUpdateClient.base_code()
+	var c := registered_code(want)
+	if c <= 0:
+		return 0
 	var running := int(BootPatchScript.result.get("code", 0)) if BootPatchScript.result.get("loaded", false) else 0
-	return c if c != running else 0
+	if c == running:
+		return 0
+	# T500：若登记已 confirmed=true 却在本次启动未能载入（例如补丁文件缺失/损坏），绝非待重启新补丁，清掉防死循环
+	var cur = _read_json(state_path())
+	if typeof(cur) == TYPE_DICTIONARY and cur.get("confirmed", false) == true and not BootPatchScript.result.get("loaded", false):
+		DirAccess.remove_absolute(state_path())
+		return 0
+	return c
 
 
-## 退回：to_base＝true 直接回安装包自带内容；否则回上一份（没有上一份也回自带内容）。下次启动生效。
+## 退回：to_base＝true 直接回安装包自带内容；否则回上一份（没有上一份或上一份不属于当前底包也回自带内容）。下次启动生效。
 ## 返回退回后登记的编号（0＝安装包自带）。
 static func rollback(to_base := false, reason := "手动退回") -> int:
 	var cur = _read_json(state_path())
@@ -347,7 +376,8 @@ static func rollback(to_base := false, reason := "手动退回") -> int:
 	if note:
 		note.store_string(JSON.stringify({"code": int(cur.get("code", 0)), "reason": reason}))
 		note.close()
-	if not to_base and typeof(prev) == TYPE_DICTIONARY and prev.get("file") is String:
+	var cur_base := XUpdateClient.base_code()
+	if not to_base and typeof(prev) == TYPE_DICTIONARY and prev.get("file") is String and (cur_base <= 0 or int(prev.get("base", -1)) == cur_base):
 		prev["confirmed"] = true
 		prev["prev"] = null
 		var f := FileAccess.open(state_path(), FileAccess.WRITE)

@@ -371,11 +371,11 @@ func _ready() -> void:
 	if not rb.is_empty():
 		_notice = "上次的更新 %s 没能用上（%s），已退回。\n" % [XUpdateCheck.version_of(int(rb.get("code", 0))), rb.get("reason", "")]
 	client = XUpdateClient.instance(get_tree())
-	var pending := XUpdateInstall.pending_code()
+	var pending := XUpdateInstall.pending_code(XUpdateClient.base_code())
 	if forced:
 		show_forced(_forced_result)
 		return
-	if pending > 0:  # 已经下好登记了，只差重启
+	if pending > 0:  # 已经下好登记了（仅限当前底包，T500），只差重启
 		show_result({"state": READY, "version": XUpdateCheck.version_of(pending)})
 		return
 	show_result({"state": "checking"})
@@ -402,7 +402,7 @@ func _check() -> void:
 ## 已经下好、只差重启的补丁够新时直接显示「已准备好」。
 func show_forced(result: Dictionary) -> void:
 	_forced_result = result
-	var pending := XUpdateInstall.pending_code()
+	var pending := XUpdateInstall.pending_code(XUpdateClient.base_code())
 	if pending > 0 and pending >= int(result.get("min_playable", 0)) and str(result.get("state", "")) != "checking":
 		show_result({"state": READY, "version": XUpdateCheck.version_of(pending), "download_url": download_link(result)})
 		return
