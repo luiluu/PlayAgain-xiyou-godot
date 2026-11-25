@@ -397,6 +397,9 @@ static func _damage_ops(item: Dictionary, a, b) -> Array:
 					ops.append({"op": "add", "field": "elementAdd", "element": eid, "value": float(p[k]) / 100.0})
 	if b is XActor:
 		var m := _taken_mult(logic, item, a, b)
+		var actor_expose := XTianqiElements.combined_exposure_pct(logic, b, 0.0)  # T485 B2：首领雷电打我方挂感电（受伤 +11%），同易伤格
+		if actor_expose > 0.0:
+			m *= 1.0 + actor_expose / 100.0
 		if m != 1.0:
 			ops.append({"op": "mul", "field": "incomingMultiplier", "value": m})
 	else:

@@ -1384,6 +1384,10 @@ class ElementEffectsRules(unittest.TestCase):
             (lambda t: t['holy_ally'].__setitem__('by_nature', 1), 'by_nature'),
             (lambda t: t['holy_ally']['skills'].append('5571'), 'holy_ally.skills'),
             (lambda t: t['holy_ally']['exclude'].append(5571), '重叠'),
+            (lambda t: t['enemy_effect_rules'].__setitem__('base_chance', 1.5), 'base_chance'),
+            (lambda t: t['enemy_effect_rules'].__setitem__('boss_per_action_cap', 0), 'boss_per_action_cap'),
+            (lambda t: t['enemy_effect_rules'].__setitem__('stun_soft_replace', 1), 'stun_soft_replace'),
+            (lambda t: t['enemy_effect_rules'].__setitem__('elite_stun_per_battle', 0), 'elite_stun_per_battle'),
         ]
         for mut, word in cases:
             t = copy.deepcopy(self.t)
