@@ -231,6 +231,8 @@ static func map(map_id: int) -> Dictionary:
 	var key := "map:%d" % map_id
 	if map_id == XFestLobby.MAP_ID and XFestLobby.cache_stale():
 		_tables.erase(key)  # 冠军庆典：活动状态变了（跨日期、开关）大厅补丁要重做
+	if map_id == XHonghuangMonument.MAP_ID and XHonghuangMonument.cache_stale():
+		_tables.erase(key)  # 洪荒碑：回退开关切换时大厅补丁要重做
 	if not _tables.has(key):
 		_tables[key] = load_json("maps/Map%03d.json" % map_id)
 		XTextFix.patch_map(map_id, _tables[key])  # 原版文字错（名字框、挑战符文等；开关见 XTextFix）
@@ -239,6 +241,7 @@ static func map(map_id: int) -> Dictionary:
 		XImportedBalance.patch_map(map_id, _tables[key])  # 改版向导停用名单删掉已解放的苍龙、徐凤年（T411）
 		XLobbyDebugNpc.patch_map(map_id, _tables[key])  # 大厅全图鉴 NPC 只留怪物图鉴（Kyo 11-12）
 		XFestLobby.patch_map(map_id, _tables[key])  # 冠军庆典：大厅使者、报名处、奖杯、BGM（只在活动期间，O-466）
+		XHonghuangMonument.patch_map(map_id, _tables[key])  # T460：西游大厅洪荒碑（EV82，开关 XHonghuangMonument.ENABLED）
 		XTianqiGuardianGift.patch_map(map_id, _tables[key])  # 天启篇守层者去见面礼、首胜必给宝珠必开压箱底店（T236）
 	return _tables[key] if _tables[key] != null else {}
 

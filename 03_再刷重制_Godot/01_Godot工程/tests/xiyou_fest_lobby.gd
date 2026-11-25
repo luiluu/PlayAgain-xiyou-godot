@@ -188,7 +188,8 @@ func _run() -> void:
 	await frames(20)
 	await shot("fest_lobby_north_before.png")
 	check("before.no_layer", m0.fest_fx == null and m0.get_children().all(func(n): return not n is XFestLobby))
-	check("before.no_events", ids(m0).all(func(i): return i < XFestLobby.FIRST_EV), ids(m0))
+	var fest_evs: Array = [XFestLobby.ENVOY_EV, XFestLobby.ENROLL_EV] + XFestLobby.TROPHY_EVS
+	check("before.no_events", fest_evs.all(func(i): return not ids(m0).has(i)), ids(m0))
 	var base_tiles: Array = m0.map_data.data.duplicate()
 	var base_pass := passability(m0)
 	var base_ids := ids(m0)

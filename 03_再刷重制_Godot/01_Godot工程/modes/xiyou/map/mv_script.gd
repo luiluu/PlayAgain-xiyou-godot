@@ -140,6 +140,10 @@ static func run(code: String, interp) -> Array:
 	if js.begins_with("CodexFest."):
 		await XFestLobby.run_script(js, interp)
 		return []
+	# T460：西游大厅洪荒碑调查（事件里一行「CodexHonghuang.inspect();」）
+	if js.begins_with("CodexHonghuang."):
+		await XHonghuangMonument.run_script(js, interp)
+		return []
 	# 三阶漫画动画（T430，分镜 v0.5）：播放 26 秒漫画过场；中途跳过后按 missed_lines 原参数补播未看全的句
 	if _re("^CodexRift3\\.play\\(\\);?$").search(js) != null:
 		if interp != null and interp.host != null and is_instance_valid(interp.host) and interp.host.has_method("play_rift3_anim"):
