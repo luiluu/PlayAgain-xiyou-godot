@@ -26,7 +26,7 @@ static func active(a: XActor) -> Array:
 static func _active_now(a: XActor) -> Array:
 	var out := []
 	var defs: Array = XDB.table("EquipSuits")
-	var pieces := counts(a)
+	var pieces := XTianqiSuits.filter_suits(a, counts(a))  # 天启篇一人最多两套（T513，西游档原样）
 	for id in pieces:
 		if id <= 0 or id >= defs.size() or defs[id] == null:continue
 		for b in defs[id].bonuses:

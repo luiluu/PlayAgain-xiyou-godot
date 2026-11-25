@@ -31,9 +31,10 @@ static func details(parent: Control, item: Dictionary, a: XActor = null) -> void
 		var suit := XDB.rec("EquipSuits",int(suit_id))
 		if suit.is_empty():continue
 		var count := int(XEquipSuits.counts(a).get(int(suit_id),0)) if a!=null else 0
-		text(parent,"%s（已装备 %d 件）"%[suit.name,count] if a!=null else str(suit.name),XUI.SYSTEM)
+		var crowded := a!=null and XTianqiSuits.crowded_out(a,int(suit_id))  # 天启篇超过两套被挤掉（T513）
+		text(parent,("%s（已装备 %d 件）"%[suit.name,count] if a!=null else str(suit.name))+(XTianqiSuits.TEXT_CROWDED if crowded else ""),XUI.SYSTEM)
 		for bonus in suit.bonuses:
-			text(parent,"%d 件：%s"%[int(bonus.requirePieces),bonus_text(bonus)],XUI.POWER_UP if count>=int(bonus.requirePieces) else XUI.DIM,20)
+			text(parent,"%d 件：%s"%[int(bonus.requirePieces),bonus_text(bonus)],XUI.POWER_UP if count>=int(bonus.requirePieces) and not crowded else XUI.DIM,20)
 	if not item.get("upgrades",[]).is_empty():
 		text(parent,"已镶嵌："+"、".join(item.upgrades.map(func(u):return str(u.name))),XUI.DIM,20)
 static func bonus_text(b: Dictionary) -> String:

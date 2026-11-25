@@ -149,10 +149,15 @@ static func set_counts(a) -> Dictionary:
 	return out
 
 
+## 生效的套装件数：天启篇一人最多两套（原版套装与七印合算，件数多的优先，T513 XTianqiSuits）；被挤掉的印不在里面
+static func live_set_counts(a) -> Dictionary:
+	return XTianqiSuits.filter_seals(a, set_counts(a))
+
+
 ## 一人身上的七印效果（不含神器；神器看全队，见 effects）：[{code, …参数, src}]，按套装（2→3→5）、武器（印记、真印追加、独有）、刻印的顺序
 static func gear_effects(a) -> Array:
 	var out := []
-	var counts := set_counts(a)
+	var counts := live_set_counts(a)
 	for seal in XTianqiQiyinGear.seal_keys():
 		var n := int(counts.get(seal, 0))
 		for c in [2, 3, 5]:
@@ -1096,7 +1101,7 @@ static func blocks_revive(b) -> bool:
 static func param_rate(a, i: int) -> float:
 	if i != 0 or not ENABLED or not (a is XActor):
 		return 1.0
-	var counts := set_counts(a)
+	var counts := live_set_counts(a)
 	if counts.is_empty() or not on():
 		return 1.0
 	for seal in counts:
