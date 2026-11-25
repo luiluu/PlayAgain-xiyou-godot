@@ -728,7 +728,7 @@ func _training() -> void:
 	var pv2 := XTrainingScene.preview(s2, a2, XTraining.listed()[0])
 	var e0: Dictionary = XTraining.listed()[0]
 	s2.training[str(a2.actor_id)] = {str(int(e0.id)): 1}   # 西游表首项一级 5 亿，钱给不起：直接写等级核预览
-	check("tr_classic_preview", pv2.size() == 2 and int(a2.param(int(e0.param))) == int(pv2[1]) and int(pv2[1]) - int(pv2[0]) == int(e0.value), [pv2, a2.param(int(e0.param))])
+	check("tr_classic_preview", pv2.size() == 2 and int(a2.param(int(e0.param))) == int(pv2[1]) and absf(float(int(pv2[1]) - int(pv2[0])) - float(e0.value) * a2.param_rate(int(e0.param))) <= 1.0, [pv2, a2.param(int(e0.param)), a2.param_rate(int(e0.param))])  # T514：天启篇守一境底生命 +5%，预览差＝修炼值×属性倍率
 	s2.training.erase(str(a2.actor_id))
 	XTianqiMoney.TRAINING = old_on
 	p2.queue_free()

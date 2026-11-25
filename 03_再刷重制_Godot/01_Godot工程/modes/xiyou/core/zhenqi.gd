@@ -121,6 +121,12 @@ static func from_save(d) -> Dictionary:
 		for k in BRAND_KEYS:
 			if d.has(k) and (d[k] is int or d[k] is float):  # 坏档塞了别的类型：不认（原样丢弃，不报错）
 				out[k] = int(d[k])
+		# 天启篇境支（XTianqiBrandRealm，T514）：同上只在本来就有时留；键、值一律转字符串
+		if d.get(XTianqiBrandRealm.KEY) is Dictionary:
+			var bb := {}
+			for k in d[XTianqiBrandRealm.KEY]:
+				bb[str(k)] = str(d[XTianqiBrandRealm.KEY][k])
+			out[XTianqiBrandRealm.KEY] = bb
 	return out
 
 
@@ -972,6 +978,9 @@ static func menu(s: XState, node: Dictionary) -> Dictionary:
 		"trial": return _start_trial(s, s.actors[int(node.id)])
 		"trial_end": return _trial_end(s)
 		"carve": return _brand_carve(s, s.actors[int(node.id)], bool(node.get("ok", false)))
+		"branch": return XTianqiBrandRealm.page(s, s.actors[int(node.id)])  # 天启篇境支（T514）
+		"branch_pick": return XTianqiBrandRealm.pick_page(s, s.actors[int(node.id)], int(node.get("r", 1)))
+		"branch_set": return XTianqiBrandRealm.set_page(s, s.actors[int(node.id)], int(node.get("r", 1)), str(node.get("k", "")))
 		"pick": return _pick_flow(s, s.actors[int(node.id)])
 		"attr":
 			var a: XActor = s.actors[int(node.id)]
@@ -1091,7 +1100,8 @@ static func _trial_end(s: XState) -> Dictionary:
 	if bool(t.get("brand", false)):
 		var name := XTianqiBrand.stage_name(int(t.target))
 		if bool(t.get("won", false)) and XTianqiBrand.stand(a):
-			return _tell(["\\C[6]%s 的烙印加深至「%s」！\\C[0]" % [a.display_name(), name]], {"page": "actor", "id": a.actor_id})
+			var nxt := {"page": "branch_pick", "id": a.actor_id, "r": XTianqiBrand.realm(a)} if XTianqiBrandRealm.on(s) and not XTianqiBrandRealm.branches(XTianqiBrand.realm(a)).is_empty() else {"page": "actor", "id": a.actor_id}  # 立境当场选境支（T514）
+			return _tell(["\\C[6]%s 的烙印加深至「%s」！\\C[0]" % [a.display_name(), name]], nxt)
 		return _tell(["%s 的烙印未能加深至「%s」。" % [a.display_name(), name], "（打心魔的角色需活到战斗结束）"], {"page": "actor", "id": a.actor_id})
 	if bool(t.get("won", false)) and breakthrough(s, a):
 		return _tell(["\\C[6]%s 突破至%s！\\C[0]" % [a.display_name(), REALMS[int(t.target)].name]], {"page": "pick", "id": a.actor_id})
@@ -1115,6 +1125,8 @@ static func _brand_page(s: XState, a: XActor) -> Dictionary:
 		opts.append({"label": "进行刻印", "next": {"page": "carve", "id": a.actor_id}})
 	if bool(bp.plus):
 		opts.append({"label": "挑战心魔", "next": {"page": "trial", "id": a.actor_id}})
+	if XTianqiBrandRealm.on(s) and r >= 1:
+		opts.append({"label": XTianqiBrandRealm.TEXT_MENU % [XTianqiBrandRealm.picked_count(a), r], "next": {"page": "branch", "id": a.actor_id}})  # 天启篇境支（T514）
 	opts.append({"label": "返回", "next": {"page": "retreat"}})
 	opts.append({"label": "离开", "next": null})
 	return _ask(lines, opts)
