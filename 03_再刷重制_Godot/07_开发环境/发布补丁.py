@@ -60,9 +60,9 @@ REMAKE = HERE.parent
 PROJECT = REMAKE / '01_Godot工程'
 GODOT = Path(os.environ.get('XIYOU_GODOT') or HERE / 'godot')
 PRESETS = ('Windows 发行', '安卓 发行', 'macOS 发行')
-DEFAULT_KEY = Path.home() / 'Library/Application Support/KYO/发版密钥/godot_update_private.pem'
+DEFAULT_KEY = Path.home() / 'Library/Application Support/KYO/发版密钥/godot_update_private_20261125.pem'
 DEFAULT_REPOS = [Path.home() / 'Documents/DSH/小小鱼/发版' / n for n in ('zaishuayiba-updates-gitee', 'zaishuayiba-updates-github')]
-SUBDIR = 'godot'
+SUBDIR = 'godot2'
 # 强制更新的手动下载页默认值（Kyo 11-14 定：Gitee 更新仓的发行版页面）。只写进清单，客户端不写死
 # 第三方 GitHub 加速代理（T153，Kyo 11-17 提）：只当镜像，补丁照旧比 SHA-256；哪天挂了把它置空，就不再写进补丁地址、也不再在线核它。
 GH_PROXY = 'https://gh-proxy.com/'
@@ -142,10 +142,52 @@ def public_of(key: Path) -> str:
     return p.stdout.strip()
 
 
-def sign(key: Path, data: Path, sig: Path) -> None:
-    p = subprocess.run(['openssl', 'dgst', '-sha256', '-sign', str(key), '-out', str(sig), str(data)], capture_output=True, text=True)
-    if p.returncode != 0:
-        raise Fail(f'签名失败：{p.stderr.strip()[:200]}')
+KEY_DIR_NAME = '发版密钥'
+FORBIDDEN_SIG_SUFFIXES = frozenset({'.pem', '.key', '.keystore', '.p12', '.pfx', '.jks'})
+
+
+def sign(*, key: Path, data: Path, sig: Path) -> None:
+    """对 data 做 SHA-256 RSA 签名写到 sig（强制关键字参数＋路径守卫＋原子替换，防止误覆写私钥）。"""
+    key = Path(key).expanduser()
+    data = Path(data).expanduser()
+    sig = Path(sig).expanduser()
+    k_res = key.resolve(strict=False)
+    d_res = data.resolve(strict=False)
+    s_res = sig.resolve(strict=False)
+    if s_res.suffix.lower() in FORBIDDEN_SIG_SUFFIXES or sig.suffix.lower() in FORBIDDEN_SIG_SUFFIXES:
+        raise Fail(f'拒绝把签名输出到密钥后缀文件：{sig}')
+    if any(part == KEY_DIR_NAME for part in (*sig.parts, *s_res.parts)):
+        raise Fail(f'拒绝把签名输出到发版密钥目录：{sig}')
+    try:
+        s_res.relative_to(DEFAULT_KEY.parent.resolve(strict=False))
+        raise Fail(f'拒绝把签名输出到发版密钥目录：{sig}')
+    except ValueError:
+        pass
+    if s_res == k_res or s_res == d_res:
+        raise Fail(f'拒绝签名输出覆盖私钥或待签文件：{sig}')
+    if not key.is_file() or key.stat().st_size <= 0:
+        raise Fail(f'私钥文件不存在或为空：{key}')
+    head = key.read_bytes()[:64]
+    if b'-----BEGIN' not in head or b'PRIVATE KEY-----' not in head:
+        raise Fail(f'私钥文件格式不对（不是 PEM 私钥）：{key}')
+    if not data.is_file() or data.stat().st_size <= 0:
+        raise Fail(f'待签名文件不存在或为空：{data}')
+    if b'PRIVATE KEY-----' in data.read_bytes()[:64]:
+        raise Fail(f'待签名文件疑似私钥，拒绝签名：{data}')
+    sig.parent.mkdir(parents=True, exist_ok=True)
+    fd, tmp_name = tempfile.mkstemp(prefix='.sig_', suffix='.tmp', dir=str(sig.parent))
+    os.close(fd)
+    tmp = Path(tmp_name)
+    try:
+        p = subprocess.run(['openssl', 'dgst', '-sha256', '-sign', str(key), '-out', str(tmp), str(data)],
+                           capture_output=True, text=True)
+        if p.returncode != 0 or tmp.stat().st_size <= 0:
+            raise Fail(f'签名失败：{p.stderr.strip()[:200]}')
+        os.chmod(tmp, 0o644)
+        os.replace(tmp, sig)
+    except BaseException:
+        tmp.unlink(missing_ok=True)
+        raise
 
 
 def verify(pub_pem: str, data: Path, sig: Path) -> bool:
@@ -410,7 +452,8 @@ def build_manifest(old: dict, code: int, date: str, notes: list, base_code, patc
         old_code = int((old.get('latest') or {}).get('code', 0))
         if code < old_code:
             raise Fail(f'清单里的最新编号是 {old_code}，不能发更小的 {code}')
-    m['latest'] = {'version': f'0.{code}', 'code': code, 'date': date, 'notes': notes}
+    ver_str = (getattr(a, 'version', None) or '').strip().lstrip('vV') or f'0.{code}'
+    m['latest'] = {'version': ver_str, 'code': code, 'date': date, 'notes': notes}
     if patch_entry is not None:
         prev = ((m['bases'].get(str(base_code)) or {}).get('patch') or {})
         if int(prev.get('code', 0)) > patch_entry['code']:
@@ -460,7 +503,7 @@ def build_manifest(old: dict, code: int, date: str, notes: list, base_code, patc
 def write_channel(out: Path, manifest: dict, key: Path, pub: str) -> None:
     cj, cs = out / 'channel.json', out / 'channel.sig'
     cj.write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + '\n', encoding='utf-8')
-    sign(key, cj, cs)
+    sign(key=key, data=cj, sig=cs)
     if not verify(pub, cj, cs):
         raise Fail('签完用公钥验不过')
 
@@ -570,6 +613,7 @@ def main(argv=None) -> int:
     ap.add_argument('--stage', action='store_true')
     ap.add_argument('--repos', nargs=2)
     ap.add_argument('--key')
+    ap.add_argument('--version', help='显式指定清单 latest.version（如 0.04.05；默认 0.<code>）')
     ap.add_argument('--date')
     ap.add_argument('--allow-big', action='store_true')
     ap.add_argument('--verify-online', action='store_true')
