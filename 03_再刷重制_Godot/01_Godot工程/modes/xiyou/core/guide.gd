@@ -126,8 +126,9 @@ static func _cols(cells: Array, system := false, warn := false) -> Dictionary:
 static func zhenqi_rows(s: XState, a: XActor) -> Array:
 	var st := XZhenqi.state_of(s, a)
 	var d := XZhenqi.data(a)
+	var shown := XZhenqi.display_rate(s, a)
 	var rows := [_head("真气"),
-		_line("境界：\\C[6]%s·%s\\C[0]　真气 %s　加成 \\C[3]%s\\C[0]" % [st.world, st.name, XZhenqi.group(st.qi), XZhenqi.mult(st.rate)])]
+		_line("境界：\\C[6]%s·%s\\C[0]　真气 %s　加成 \\C[3]%s\\C[0]" % [st.world, st.name, XZhenqi.group(st.qi), XZhenqi.mult(shown)])]
 	var nxt := ""
 	if st.next == null:
 		nxt = "已至道祖，之后每 10 万真气一重。"
@@ -162,7 +163,11 @@ static func page_rows_v028(s: XState, a: XActor) -> Array:
 	var ctx := context(s)
 	if not tq:
 		rows.append({"type": "blank"})
-		rows.append(_head("难度对照　%s·第 %d 层　天道补偿 %s" % [ctx.route.name, ctx.floor, XZhenqi.mult(ctx.comp)]))
+		if XZhenqi.APPLY_TO_DAMAGE:
+			var eff := XZhenqi.combined_mult(a, ctx.route.key, ctx.floor, s)
+			rows.append(_head("难度对照　%s·第 %d 层　真气×天道 %s" % [ctx.route.name, ctx.floor, XZhenqi.mult(eff)]))
+		else:
+			rows.append(_head("难度对照　%s·第 %d 层　天道补偿 %s" % [ctx.route.name, ctx.floor, XZhenqi.mult(ctx.comp)]))
 	else:
 		rows.append(_head("难度对照　%s·第 %d 层" % [ctx.route.name, ctx.floor]))
 	rows.append(_cols(["项目", "难度（含补强）", "自身", "当前"], true))
@@ -299,7 +304,8 @@ static func panel_rows(s: XState, a: XActor) -> Array:
 	var rows := [_head("%s·第%d层" % [ctx.route.name, ctx.floor]), _line("挑战评估：" + challenge(c))]
 	if not _tianqi_status_on(s):
 		var st := XZhenqi.state_of(s, a)
-		rows.append(_line("境界：\\C[6]%s\\C[0]　真气：伤害 \\C[3]%s\\C[0]" % [st.name, dmg_pct(st.rate)]))
+		var shown_rate := XZhenqi.display_rate(s, a)
+		rows.append(_line("境界：\\C[6]%s\\C[0]　真气：伤害 \\C[3]%s\\C[0]" % [st.name, dmg_pct(shown_rate)]))
 		if st.next == null:
 			rows.append(_line("境界：已至道祖"))
 		elif st.capped and st.canBreak:
@@ -311,7 +317,11 @@ static func panel_rows(s: XState, a: XActor) -> Array:
 		if st.pending:
 			rows.append(_line("\\C[17]待选突破奖励：%d项（菜单「真气」）\\C[0]" % int(st.pending)))
 		if ctx.comp > 1.0001:
-			rows.append(_line("天道加持：伤害 %s（本层自动获得）" % dmg_pct(ctx.comp)))
+			if XZhenqi.APPLY_TO_DAMAGE:
+				var eff := XZhenqi.combined_mult(a, ctx.route.key, ctx.floor, s)
+				rows.append(_line("天道加持：连同真气，本层伤害 \\C[3]%s\\C[0]（自动生效）" % dmg_pct(eff)))
+			else:
+				rows.append(_line("天道加持：伤害 %s（本层自动获得）" % dmg_pct(ctx.comp)))
 	else:
 		for t in XTianqiBrand.status_rows(s, a):  # 天启篇烙印行（T121；T145 已藏真气行；烙印关着为空）
 			rows.append(_line(t))
@@ -343,7 +353,12 @@ static func detail_rows(s: XState, a: XActor) -> Array:
 	if not _tianqi_status_on(s):
 		var st := XZhenqi.state_of(s, a)
 		var d := XZhenqi.data(a)
-		rows = [_head("真气"), _line("境界：%s　真气：%s点" % [st.name, big_panel(st.qi)]), _line("真气：伤害 " + dmg_pct(st.rate))]
+		var ctx_z := context(s)
+		var zq_line := "真气：伤害 " + dmg_pct(XZhenqi.display_rate(s, a))
+		if XZhenqi.APPLY_TO_DAMAGE and ctx_z.comp > 1.0001:
+			var eff := XZhenqi.combined_mult(a, ctx_z.route.key, ctx_z.floor, s)
+			zq_line = "真气与天道（%s·第%d层）：伤害 %s" % [ctx_z.route.name, ctx_z.floor, dmg_pct(eff)]
+		rows = [_head("真气"), _line("境界：%s　真气：%s点" % [st.name, big_panel(st.qi)]), _line(zq_line)]
 		var df := XZhenqi.DAOFA.filter(func(k): return d.daofa.get(k, 0)).map(func(k): return XZhenqi.DAOFA_NAME[k])
 		rows.append(_line("道法：" + ("、".join(df) if not df.is_empty() else "未领悟")))
 		rows.append(_line("来源：守层者（每层一次）、副本首领、神兵试炼、溢出再动（每场最多10次）"))
@@ -383,7 +398,11 @@ static func strip_text(s: XState, a: XActor) -> Array:
 	if _tianqi_status_on(s):
 		return ["", false]
 	var st := XZhenqi.state_of(s, a)
-	return ["真气·" + st.name + " " + XZhenqi.mult(st.rate) + ("（待选）" if st.pending else ("（瓶颈）" if st.capped else "")), st.capped or st.pending > 0]
+	var mult_val: float = st.rate
+	if XZhenqi.APPLY_TO_DAMAGE:
+		var ctx := context(s)
+		mult_val = XZhenqi.combined_mult(a, ctx.route.key, ctx.floor, s)
+	return ["真气·" + st.name + " " + XZhenqi.mult(mult_val) + ("（待选）" if st.pending else ("（瓶颈）" if st.capped else "")), st.capped or st.pending > 0]
 
 
 # ---- 第二阶段：区段里程碑与「下一步建议」 ----

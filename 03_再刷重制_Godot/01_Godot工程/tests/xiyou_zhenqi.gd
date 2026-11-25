@@ -250,6 +250,8 @@ func _strip_zones(rows: Array) -> Array:
 
 
 func _run() -> void:
+	var was_apply := XZhenqi.APPLY_TO_DAMAGE
+	XZhenqi.APPLY_TO_DAMAGE = false  # T463：原版冻结参照比对原版 rate／修行页；新行为由 xiyou_t463_t465 专项验证
 	var data = JSON.parse_string(FileAccess.get_file_as_string(ORACLE)) if FileAccess.file_exists(ORACLE) else null
 	if check("zhenqi_oracle_loaded", data is Dictionary and data.get("cases", []).size() >= 150, ORACLE):
 		for c in data.cases:
@@ -309,6 +311,7 @@ func _run() -> void:
 	_old_save()
 	_page_ui()
 	_panel_rollback()
+	XZhenqi.APPLY_TO_DAMAGE = was_apply
 	var failed := results.filter(func(r): return not r.passed)
 	print("TEST_RESULT=" + JSON.stringify({"name": "xiyou_zhenqi", "passed": results.size() - failed.size(), "total": results.size(), "failed": failed.map(func(r): return r.name)}))
 	get_tree().quit(0 if failed.is_empty() else 1)

@@ -7,9 +7,8 @@ extends RefCounted
 ##   溢出再动——OTB 首回合排序时追加次数超过 4 的部分每次 1 点（note_overflow），每场每人最多 10；
 ##   守层者（GUARDIANS 敌群→楼层）——每条路线每层首通 10×层×路线系数，每次胜利再 3×层×系数；
 ##   非守层者敌群里有 Boss——bossReward(层, 系数)，层取守层者层、本图楼层或修行进度层。只有活着的出战成员得。
-## - 加成 rate = √(1＋真气÷10)，境界 9（真仙）起每级再 ×1.1。原版把 rate×天道补偿乘进对敌伤害（growthMultiplier）；
-##   加成只显示、按数值平衡不移植（用户 2026-10-12 已定：成长修正不移植），伤害 growth 仍为 1，这里只算出来供界面显示（APPLY_TO_DAMAGE）；
-##   统一调整时再定（数值平衡.md「统一调整时要看的已知问题」）。
+## - 加成 rate = √(1＋真气÷10)，境界 9（真仙）起每级再 ×1.1。西游档把真气与天道合算加成的 1/100
+##   计入我方对敌伤害（growthMultiplier），修行页与闭关页同步显示。APPLY_TO_DAMAGE 关闭时对敌伤害倍率恢复为 1。
 ## - 第二批（文件后半）：闭关菜单节点、瓶颈之战、突破、突破奖励与道法、灵根降服、奖励技能数值（参照 zhenqi_probe「break.*」，tests/xiyou_zhenqi_break）。
 ## - 第三批：道法的运行时钩子（连击、分神、金身、护法减伤与掩护、灵台保留 TP、破甲 2705、元婴护体，接在 XBattler／XActor／BattleLogic）、
 ##   神兵试炼（weapon 页、_pendingScale）、降服时含没出场的隐藏成员（troop_members）。参照 zhenqi_probe「daofa.*」「weapon.*」「hidden.*」
@@ -65,8 +64,10 @@ const DAOFA_NAME := {"lianji": "连击", "fenshen": "分神", "lingtai": "灵台
 const COMP_ANCHORS := [[12, 1.0], [21, 15.0], [33, 111.0]]
 const SUB3 := ["初期", "中期", "后期"]
 const CN := "零一二三四五六七八九十"
-## 原版 rate×天道补偿 乘进对敌伤害；按用户 2026-10-12 数值平衡决定不乘（见文件头）
-const APPLY_TO_DAMAGE := false
+## 西游档真气×天道加成接回伤害链（T463，Kyo 11-24 D283：合算 1 + (rate × comp - 1) / 100）。
+## 仅西游档（not XTianqi.active(s)）生效，天启篇零改动；false＝回退为不乘进伤害、修行页与闭关页照原版显示。
+static var APPLY_TO_DAMAGE := true
+const DAMAGE_SCALE := 0.01
 ## 神兵试炼：没有 <CodexZhenqi: weapon N> 标签时按敌人编号认的神兵 Boss（Z.WEAPON_BOSS）；对手强度＝修行进度层守层者 ×2
 const WEAPON_BOSS := {20: 11, 40: 2, 51: 5, 52: 2, 419: 2, 420: 2, 421: 2, 655: 4, 664: 9, 667: 4}
 const WEAPON_TRIAL_SCALE := 2
@@ -245,7 +246,8 @@ static func state_of(s: XState, a: XActor) -> Dictionary:
 
 static func describe(s: XState, a: XActor) -> String:
 	var st := state_of(s, a)
-	return "%s %s ×%.1f" % [st.world, st.name, st.rate]
+	var shown := display_rate(s, a)
+	return "%s %s ×%.1f" % [st.world, st.name, shown]
 
 
 # ---- 天道补偿与 Boss 奖励 ----
@@ -264,6 +266,57 @@ static func comp_for(route_key: String, floor: int) -> float:
 			var t := float(floor - a[0]) / float(b[0] - a[0])
 			return exp(log(a[1]) + (log(b[1]) - log(a[1])) * t)
 	return pts[pts.size() - 1][1]
+
+
+## 加成部分取原版 1/100：1 + (原倍率 - 1) / 100（原倍率 ≤ 1 时保持不变；Kyo 11-24 D283）
+static func scale_bonus(orig: float) -> float:
+	if orig <= 1.0:
+		return orig
+	return 1.0 + (orig - 1.0) * DAMAGE_SCALE
+
+
+## 真气×天道在指定路线与楼层的合算实际倍率（T463，Kyo 11-24 D283）：
+## 仅西游档（not XTianqi.active(s)）且 APPLY_TO_DAMAGE 开启时生效，天启篇与关开关恒返回 1.0。
+static func combined_mult(a: XActor, route_key: String, floor_n: int, s: XState = null) -> float:
+	var st := s if s != null else XState.current
+	if not APPLY_TO_DAMAGE or st == null or XTianqi.active(st):
+		return 1.0
+	var prod := rate(a) * comp_for(route_key, floor_n)
+	return scale_bonus(prod) if prod > 0.0 else 1.0
+
+
+## 无天道补偿（comp=1）时的实际生效真气倍率；关开关或天启篇返回 1.0。
+static func effective_rate(a: XActor, s: XState = null) -> float:
+	var st := s if s != null else XState.current
+	if not APPLY_TO_DAMAGE or st == null or XTianqi.active(st):
+		return 1.0
+	return scale_bonus(rate(a))
+
+
+## 界面显示用单真气倍率：APPLY_TO_DAMAGE 开启（西游档）显示实际生效 1+(rate-1)/100；关闭时照原版 rate（兼容参照测试）。
+static func display_rate(s: XState, a: XActor) -> float:
+	if APPLY_TO_DAMAGE and s != null and not XTianqi.active(s):
+		return scale_bonus(rate(a))
+	return rate(a)
+
+
+## 本场战斗的原版天道补偿（battle_setup 已算入 battle.comp；非战斗态为 1.0）
+static func battle_comp() -> float:
+	return float(battle.get("comp", 1.0)) if not battle.is_empty() else 1.0
+
+
+## 接入伤害链（XDamage._calculate 的 growthMultiplier，Kyo 11-24 D283 合算）：
+## 仅西游档（XState.current != null 且非天启篇）、我方打敌人、非参考预览时生效。
+static func damage_mult(a: XBattler, b: XBattler, options := {}) -> float:
+	if not APPLY_TO_DAMAGE or bool(options.get("reference", false)):
+		return 1.0
+	if not (a is XActor) or not (b is XEnemy):
+		return 1.0
+	var s := XState.current
+	if s == null or XTianqi.active(s):
+		return 1.0
+	var prod := rate(a as XActor) * battle_comp()
+	return scale_bonus(prod) if prod > 0.0 else 1.0
 
 
 ## Z.bossReward：1～15 层保留 1/3，16～25 层 1/2，26 层起 2/3；JS Math.round
@@ -966,7 +1019,7 @@ static func _retreat(s: XState, page: int) -> Dictionary:
 			continue
 		var st := state_of(s, a)
 		var tag := "［待选奖励］" if st.pending else ("［可突破］" if st.canBreak else ("［通关%d层后突破］" % int(st.gate.required) if st.capped else ""))
-		opts.append({"label": "%s %s ×%.1f%s" % [a.display_name(), st.name, st.rate, tag], "next": {"page": "actor", "id": a.actor_id}})
+		opts.append({"label": "%s %s ×%.1f%s" % [a.display_name(), st.name, display_rate(s, a), tag], "next": {"page": "actor", "id": a.actor_id}})
 	if page > 0:
 		opts.append({"label": "上一页（%d/%d）" % [page, pages], "next": {"page": "retreat", "p": page - 1}})
 	if page + 1 < pages:
@@ -982,7 +1035,14 @@ static func _actor_page(s: XState, a: XActor) -> Dictionary:
 	if XTianqiBrand.on(s):
 		return _brand_page(s, a)
 	var st := state_of(s, a)
-	var lines := ["\\C[6]%s\\C[0]：%s %s" % [a.display_name(), st.world, st.name], "真气 %d　加成 ×%.1f" % [st.qi, st.rate]]
+	var shown := display_rate(s, a)
+	var rate_line := "真气 %d　加成 ×%.1f" % [st.qi, shown]
+	if APPLY_TO_DAMAGE and not XTianqi.active(s):
+		var r := route(s)
+		var fl := clampi(int(s.variable(20)) if int(s.variable(20)) else 1, 1, 33)
+		if comp_for(r.key, fl) > 1.0001:
+			rate_line = "真气 %d　加成 ×%.1f（本层连同天道 ×%.1f）" % [st.qi, shown, combined_mult(a, r.key, fl, s)]
+	var lines := ["\\C[6]%s\\C[0]：%s %s" % [a.display_name(), st.world, st.name], rate_line]
 	if st.next == null:
 		lines.append("已至最高境界")
 	elif not st.capped:
