@@ -88,7 +88,7 @@ func _run() -> void:
 	var bad := []
 	for table in ["Weapons", "Armors"]:
 		for rec in XDB.table(table):
-			if rec is Dictionary and rec.has("customParams") and not bool(rec.get("_fest", false)):  # 冠军戒指·欢庆是重制运行时追加的（XFestRing），不是转换器解析的
+			if rec is Dictionary and rec.has("customParams") and not bool(rec.get("_fest", false)) and not bool(rec.get("_elem_king", false)):  # 冠军戒指·欢庆（XFestRing）与元素之王的赐福（XElementalKing）是重制运行时追加的，不是转换器解析的
 				if rec.customParams.has("params"):
 					parsed += 1
 				else:
