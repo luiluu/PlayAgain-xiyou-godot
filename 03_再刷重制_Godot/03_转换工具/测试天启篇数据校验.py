@@ -732,6 +732,116 @@ class CoefInteger(unittest.TestCase):
 
 
 
+class EnemyNature(unittest.TestCase):
+    """enemy_nature.json（T479）：敌人体质表的格式与跟 elements_table 的对账。"""
+
+    def setUp(self):
+        self.t = json.loads((chk.DATA_DIR / 'enemy_nature.json').read_text(encoding='utf-8'))
+        self.el = json.loads((chk.DATA_DIR / 'elements_table.json').read_text(encoding='utf-8'))
+
+    def test_real_passes(self):
+        self.assertEqual(chk.enemy_nature_rules(self.t, self.el), [])
+
+    def test_three_natures_fails(self):
+        k = next(iter(self.t['enemies']))
+        self.t['enemies'][k]['natures'] = [2, 3, 4]
+        self.assertTrue(any('1～2 个' in b for b in chk.enemy_nature_rules(self.t, self.el)))
+
+    def test_higher_element_fails(self):
+        k = next(iter(self.t['enemies']))
+        self.t['enemies'][k]['natures'] = [11]
+        self.assertTrue(any('基础十系以外' in b for b in chk.enemy_nature_rules(self.t, self.el)))
+
+    def test_guardian_mismatch_fails(self):
+        k = next(k for k, e in self.t['enemies'].items() if e['src'] == 'guardian')
+        self.t['enemies'][k]['natures'] = [2]
+        self.assertTrue(any('guardian_constitutions' in b for b in chk.enemy_nature_rules(self.t, self.el)))
+
+    def test_knight_must_be_empty(self):
+        self.t['special']['knight']['natures'] = [2]
+        self.assertTrue(any('knight' in b for b in chk.enemy_nature_rules(self.t, self.el)))
+
+    def test_manual_needs_verdict(self):
+        k = next(iter(self.t['enemies']))
+        self.t['enemies'][k]['src'] = 'manual'
+        self.assertTrue(any('verdict' in b for b in chk.enemy_nature_rules(self.t, self.el)))
+
+
+class EnemyNatureGuardianFloor5(unittest.TestCase):
+    """T479 返修 R2 P1-3：五层第二个守层者敌群（245，敌人 263 驯龙猎手）也有守层者体质。"""
+
+    def test_second_floor5_guardian_has_nature(self):
+        t = json.loads((chk.DATA_DIR / 'enemy_nature.json').read_text(encoding='utf-8'))
+        el = json.loads((chk.DATA_DIR / 'elements_table.json').read_text(encoding='utf-8'))
+        e = t['enemies'].get('263')
+        self.assertIsNotNone(e)
+        self.assertEqual((e['src'], e['floor']), ('guardian', 5))
+        self.assertEqual(e['natures'], [x for x in el['guardian_constitutions']['5'] if x in el['base_elements']][:t['guardian_take']])
+
+    def test_name_clash_enemies_have_no_keyword_nature(self):
+        # 音译人名／人名撞字：普雷西 98、格雷果 100、葛雷果 331、范海辛 54、巴风特 430／434、关羽 880、海拉 924／幻影 174
+        t = json.loads((chk.DATA_DIR / 'enemy_nature.json').read_text(encoding='utf-8'))
+        for i in (98, 100, 331, 54, 430, 434, 880, 924, 174):
+            self.assertNotIn(str(i), t['enemies'])
+
+
+class ActorNature(unittest.TestCase):
+    """actor_nature.json（T484）：我方体质表的格式与得票规则对账。"""
+
+    def setUp(self):
+        self.t = json.loads((chk.DATA_DIR / 'actor_nature.json').read_text(encoding='utf-8'))
+        self.el = json.loads((chk.DATA_DIR / 'elements_table.json').read_text(encoding='utf-8'))
+
+    def _one(self, src):
+        return next(k for k, e in self.t['actors'].items() if e['src'] == src)
+
+    def test_real_passes(self):
+        self.assertEqual(chk.actor_nature_rules(self.t, self.el), [])
+
+    def test_two_natures_fails(self):
+        self.t['actors'][self._one('majority')]['natures'] = [2, 3]
+        self.assertTrue(any('空或 1 个' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
+    def test_higher_element_fails(self):
+        self.t['actors'][self._one('majority')]['natures'] = [11]
+        self.assertTrue(any('基础十系以外' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
+    def test_nature_vs_votes_fails(self):
+        e = self.t['actors'][self._one('majority')]
+        e['natures'] = [next(n for n in (2, 3, 4) if [n] != e['natures'])]
+        self.assertTrue(any('体质应为' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
+    def test_neutral_with_nature_fails(self):
+        self.t['actors'][self._one('neutral')]['natures'] = [2]
+        self.assertTrue(chk.actor_nature_rules(self.t, self.el))
+
+    def test_neutral_majority_does_not_block_element(self):
+        # 无属性票最多但有元素招：按设计稿字面只数基础十系，应有体质（4 号：无属性 4、圣 1）
+        e = self.t['actors']['4']
+        self.assertEqual((e['natures'], e['src']), ([8], 'majority'))
+        e['natures'], e['src'] = [], 'neutral'
+        self.assertTrue(any('体质应为' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
+    def test_not_used_actors_have_no_row(self):
+        # 五条悟 180、宿傩 172 按 Kyo 11-22 不进表；修 8 的转属链不算原生，应无体质
+        self.assertNotIn('180', self.t['actors'])
+        self.assertNotIn('172', self.t['actors'])
+        self.assertEqual((self.t['actors']['8']['natures'], self.t['actors']['8']['src']), ([], 'neutral'))
+        self.t['actors']['180'] = dict(self.t['actors']['8'])
+        self.assertTrue(any('不用' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
+    def test_canglong_counts_runtime_class_skills(self):
+        e = self.t['actors']['146']
+        self.assertEqual((e['n_attack'], e['votes']), (5, {'0': 4, '5': 1}))
+
+    def test_missing_usable_row_fails(self):
+        self.assertTrue(any('缺行' in b for b in chk.actor_nature_rules(self.t, self.el, {99999})))
+
+    def test_manual_needs_verdict(self):
+        self.t['actors'][self._one('majority')]['src'] = 'manual'
+        self.assertTrue(any('verdict' in b for b in chk.actor_nature_rules(self.t, self.el)))
+
+
 class GuardianParams(unittest.TestCase):
     """guardian_params.json（T237／T245）：只认 31～34 层和 qiyin 行，取值是正整数百分比。"""
 
@@ -1243,6 +1353,47 @@ class K5SixTables(unittest.TestCase):
             finally:
                 chk.DATA_DIR = old
             self.assertFalse(ok)
+
+
+
+class ElementEffectsRules(unittest.TestCase):
+    """T480 元素独特效果字段（element_effects 等）。"""
+    def setUp(self):
+        self.t = json.loads((REAL_DIR / 'elements_table.json').read_text(encoding='utf-8'))
+
+    def test_real_passes(self):
+        self.assertEqual(chk.element_effects_rules(self.t), [])
+
+    def test_absent_skips(self):
+        t = copy.deepcopy(self.t)
+        t.pop('element_effects')
+        self.assertEqual(chk.element_effects_rules(t), [])
+
+    def test_bad_values(self):
+        cases = [
+            (lambda t: t['element_effects'].pop('15'), '覆盖基础十系'),
+            (lambda t: t['element_effects']['2'].__setitem__('key', 'fire'), 'key 不认识'),
+            (lambda t: t['element_effects']['4'].__setitem__('turns', 0), 'turns'),
+            (lambda t: t['element_effects']['4'].__setitem__('value', 1.5), 'value'),
+            (lambda t: t['effect_tiers']['many'].__setitem__('chance', 2), 'chance'),
+            (lambda t: t['effect_tier_of'].__setitem__('5', 'huge'), 'effect_tier_of'),
+            (lambda t: t['effect_rules'].__setitem__('stun_shared_cooldown', -1), 'stun_shared_cooldown'),
+            (lambda t: t['effect_immunity']['2']['constitution'].append(11), 'constitution'),
+            (lambda t: t['effect_immunity'].__setitem__('8', {}), '神圣以外'),
+            (lambda t: t['effect_merge'].__setitem__('2', ''), 'effect_merge'),
+            (lambda t: t['holy_ally'].__setitem__('by_nature', 1), 'by_nature'),
+            (lambda t: t['holy_ally']['skills'].append('5571'), 'holy_ally.skills'),
+            (lambda t: t['holy_ally']['exclude'].append(5571), '重叠'),
+            (lambda t: t['enemy_effect_rules'].__setitem__('base_chance', 1.5), 'base_chance'),
+            (lambda t: t['enemy_effect_rules'].__setitem__('boss_per_action_cap', 0), 'boss_per_action_cap'),
+            (lambda t: t['enemy_effect_rules'].__setitem__('stun_soft_replace', 1), 'stun_soft_replace'),
+            (lambda t: t['enemy_effect_rules'].__setitem__('elite_stun_per_battle', 0), 'elite_stun_per_battle'),
+        ]
+        for mut, word in cases:
+            t = copy.deepcopy(self.t)
+            mut(t)
+            bad = chk.element_effects_rules(t)
+            self.assertTrue(any(word in b for b in bad), (word, bad))
 
 
 if __name__ == '__main__':

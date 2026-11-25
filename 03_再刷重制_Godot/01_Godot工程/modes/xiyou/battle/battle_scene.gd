@@ -1292,6 +1292,8 @@ func _command(u: XBattler):
 	var fit := logic.brand_forced(u)
 	if not fit.is_empty():
 		return fit
+	if u is XActor and XTianqiElementEffects.pending_skip(logic, u):
+		return logic.decide(u)  # 天启篇元素停手（T480）：这一位会被跳过，不开指令窗
 	# 挂机中队员按自动战斗行动（Game_BattlerBase.isAutoBattle）
 	if u is XActor and logic.can_move(u) and XHangUp.is_active(XState.current):
 		# 技能顺序表／智能战斗AI（XBattleLogic.auto_battle_action）

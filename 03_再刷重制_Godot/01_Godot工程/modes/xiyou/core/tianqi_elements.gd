@@ -10,6 +10,7 @@ extends RefCounted
 ## - WEAK_EXPOSURE（O-434）：弱点暴露 +11%（同破绽取 max，不叠加）
 ## - HIGHER_EFFECTS（O-435）：高阶属性（11 虚空吞没 / 12 混沌随机 / 13 空间空蚀 15% 真伤）
 ## - SKILL_SHIFTS（O-436）：技能/被动转属（水/风/虚空/混沌）、转换书（1039 改名、3101~3105、互斥与仅炼狱/证道掉落）
+## - EFFECTS（O-664，T480）：元素独特效果（XTianqiElementEffects，设计稿《天启篇_元素独特效果_v0.3》）：十系效果、圣护、行动位停手；false＝回到改前（不记账、不取子流、不挂效果状态）
 ## - PHYSICAL_DUAL_KEEP_NEUTRAL：待确认项 B（true＝8 个自然物攻保留 [0, 水/风] 双属性；false＝默认单水/单风）
 
 static var ENABLED := true
@@ -17,6 +18,7 @@ static var DECK := true
 static var WEAK_EXPOSURE := true
 static var HIGHER_EFFECTS := true
 static var SKILL_SHIFTS := true
+static var EFFECTS := true
 static var PHYSICAL_DUAL_KEEP_NEUTRAL := false
 ## T317：破阵 1047「物理免疫」／1048「元素免疫」原版查「行动元素里有没有物理（元素 1）」；DECK 把物理转成无属性后再没有招带元素 1，
 ## 1048 挡掉一切、1047 什么都不挡（31～34 层守层者过 30% 血后全免疫）。只在 DECK 生效时改（DECK 关着元素 1 还在，照原版查元素）；西游档不变。
@@ -68,6 +70,7 @@ static func reload_table() -> void:
 	_data = {}
 	_load_failed = false
 	_recs = {}
+	XTianqiElementEffects.clear_cache()  # T480 R2 P2-1：元素效果状态的数值读表，改表后重建
 	_synthetic = {}
 	_knight_clamp_warned = false
 	_last_knight_clamp_error = ""
@@ -703,6 +706,7 @@ static func _battle(logic) -> Dictionary:
 
 
 static func start(logic) -> void:
+	XTianqiElementEffects.start(logic)  # T480 元素独特效果：本场子流与记账（开关关、西游档时清掉旧记账直接返回）
 	if logic == null or not deck_on(logic.state):
 		return
 	ensure_deck(logic.state)
@@ -712,11 +716,13 @@ static func start(logic) -> void:
 
 
 static func finish(logic) -> void:
+	XTianqiElementEffects.finish(logic)
 	if logic != null and logic.has_meta(META_BATTLE):
 		logic.remove_meta(META_BATTLE)
 
 
 static func end_turn(logic) -> void:
+	XTianqiElementEffects.end_turn(logic)  # T480：到期的元素效果起算冷却
 	if logic == null or not logic.has_meta(META_BATTLE):
 		return
 	var st := _battle(logic)
@@ -740,9 +746,12 @@ static func has_weak_exposure(logic, target) -> bool:
 
 ## 返回与词条「破绽」取 max 后的有效增伤百分数（如 11.0 或 affix_pct）
 static func combined_exposure_pct(logic, target, affix_pct: float) -> float:
+	var out := affix_pct
 	if has_weak_exposure(logic, target):
-		return maxf(affix_pct, float(data().get("rates", {}).get("weak_exposure", 0.11)) * 100.0)
-	return affix_pct
+		out = maxf(out, float(data().get("rates", {}).get("weak_exposure", 0.11)) * 100.0)
+	if logic != null and XTianqiElementEffects.has_shock(target):  # T480 感电（首领版麻痹）走同一格，取高不叠；数值读 element_effects.5.boss.value（R2 P2-1）
+		out = maxf(out, XTianqiElementEffects.spec_value(XTianqiElementEffects.ST_SHOCK) * 100.0)
+	return out
 
 
 static func has_void_engulfed(logic, target) -> bool:
