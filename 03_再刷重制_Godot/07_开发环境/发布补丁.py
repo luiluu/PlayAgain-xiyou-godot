@@ -60,9 +60,9 @@ REMAKE = HERE.parent
 PROJECT = REMAKE / '01_Godot工程'
 GODOT = Path(os.environ.get('XIYOU_GODOT') or HERE / 'godot')
 PRESETS = ('Windows 发行', '安卓 发行', 'macOS 发行')
-DEFAULT_KEY = Path.home() / 'Library/Application Support/KYO/发版密钥/godot_update_private.pem'
+DEFAULT_KEY = Path.home() / 'Library/Application Support/KYO/发版密钥/godot_update_private_20261125.pem'
 DEFAULT_REPOS = [Path.home() / 'Documents/DSH/小小鱼/发版' / n for n in ('zaishuayiba-updates-gitee', 'zaishuayiba-updates-github')]
-SUBDIR = 'godot'
+SUBDIR = 'godot2'
 # 强制更新的手动下载页默认值（Kyo 11-14 定：Gitee 更新仓的发行版页面）。只写进清单，客户端不写死
 # 第三方 GitHub 加速代理（T153，Kyo 11-17 提）：只当镜像，补丁照旧比 SHA-256；哪天挂了把它置空，就不再写进补丁地址、也不再在线核它。
 GH_PROXY = 'https://gh-proxy.com/'
@@ -183,6 +183,7 @@ def sign(*, key: Path, data: Path, sig: Path) -> None:
                            capture_output=True, text=True)
         if p.returncode != 0 or tmp.stat().st_size <= 0:
             raise Fail(f'签名失败：{p.stderr.strip()[:200]}')
+        os.chmod(tmp, 0o644)
         os.replace(tmp, sig)
     except BaseException:
         tmp.unlink(missing_ok=True)
@@ -451,7 +452,8 @@ def build_manifest(old: dict, code: int, date: str, notes: list, base_code, patc
         old_code = int((old.get('latest') or {}).get('code', 0))
         if code < old_code:
             raise Fail(f'清单里的最新编号是 {old_code}，不能发更小的 {code}')
-    m['latest'] = {'version': f'0.{code}', 'code': code, 'date': date, 'notes': notes}
+    ver_str = (getattr(a, 'version', None) or '').strip().lstrip('vV') or f'0.{code}'
+    m['latest'] = {'version': ver_str, 'code': code, 'date': date, 'notes': notes}
     if patch_entry is not None:
         prev = ((m['bases'].get(str(base_code)) or {}).get('patch') or {})
         if int(prev.get('code', 0)) > patch_entry['code']:
@@ -611,6 +613,7 @@ def main(argv=None) -> int:
     ap.add_argument('--stage', action='store_true')
     ap.add_argument('--repos', nargs=2)
     ap.add_argument('--key')
+    ap.add_argument('--version', help='显式指定清单 latest.version（如 0.04.05；默认 0.<code>）')
     ap.add_argument('--date')
     ap.add_argument('--allow-big', action='store_true')
     ap.add_argument('--verify-online', action='store_true')

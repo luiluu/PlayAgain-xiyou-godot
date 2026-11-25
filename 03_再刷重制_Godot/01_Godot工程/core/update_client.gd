@@ -25,10 +25,10 @@ static var AUTO := true
 ## 清单源，按顺序读，第一份验签通过的就用（T153）。Gitee 为主，GitHub 更新仓库经代理／CDN 当镜像，Gitee 不通才用。
 ## 镜像只管传字节，验签照旧：被篡改的清单验不过，换下一个。
 static var channel_urls: PackedStringArray = [
-	"https://gitee.com/kyoluu/play-again_-xiyou_-kyo/raw/main/godot/channel.json",
-	XUpdateCheck.GH_PROXY + "https://raw.githubusercontent.com/luiluu/zaishuayiba-updates/main/godot/channel.json",  # 第三方代理，挂了删这一行即可
-	"https://cdn.jsdelivr.net/gh/luiluu/zaishuayiba-updates@main/godot/channel.json",
-	"https://raw.githubusercontent.com/luiluu/zaishuayiba-updates/main/godot/channel.json",
+	"https://gitee.com/kyoluu/play-again_-xiyou_-kyo/raw/main/godot2/channel.json",
+	XUpdateCheck.GH_PROXY + "https://raw.githubusercontent.com/luiluu/zaishuayiba-updates/main/godot2/channel.json",  # 第三方代理，挂了删这一行即可
+	"https://cdn.jsdelivr.net/gh/luiluu/zaishuayiba-updates@main/godot2/channel.json",
+	"https://raw.githubusercontent.com/luiluu/zaishuayiba-updates/main/godot2/channel.json",
 ]
 static var public_key := XUpdateCheck.PUBLIC_KEY
 static var stamp_path := STAMP_FILE

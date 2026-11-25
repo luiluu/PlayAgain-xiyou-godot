@@ -908,8 +908,8 @@ def run(a) -> int:
         published = channel['latest'].get('date', '')
         try:
             repo = Path(ch.get('repo') or '')
-            if repo.is_dir() and hashlib.sha256((repo / 'godot/channel.json').read_bytes()).hexdigest() == ch.get('sha256'):
-                published = git('log', '-1', '--format=%cd', '--date=format:%Y-%m-%d %H:%M', '--', 'godot/channel.json', cwd=repo).strip() or published
+            if repo.is_dir() and hashlib.sha256((repo / 'godot2/channel.json').read_bytes()).hexdigest() == ch.get('sha256'):
+                published = git('log', '-1', '--format=%cd', '--date=format:%Y-%m-%d %H:%M', '--', 'godot2/channel.json', cwd=repo).strip() or published
         except Exception:  # noqa: BLE001
             pass
         if len(published) == 10:

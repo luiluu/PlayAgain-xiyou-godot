@@ -191,6 +191,7 @@ def sign(*, key: Path, data: Path, sig: Path) -> None:
         p = openssl('dgst', '-sha256', '-sign', str(key), '-out', str(tmp), str(data))
         if p.returncode != 0 or tmp.stat().st_size <= 0:
             raise Fail(f'签名失败：{p.stderr.strip()[:200]}')
+        os.chmod(tmp, 0o644)
         os.replace(tmp, sig)
     except BaseException:
         tmp.unlink(missing_ok=True)

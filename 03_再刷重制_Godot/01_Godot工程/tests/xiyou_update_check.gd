@@ -100,6 +100,12 @@ func _run() -> void:
 	_check("同号是最新", rv["state"] == C.LATEST)
 	rv = C.evaluate(_manifest(462, 462), 470, 470)
 	_check("清单号更小不提示（不按 0.462 > 0.01 判反）", rv["state"] == C.LATEST)
+	C.release_name = "0.04.05"
+	C.release_base = 894
+	_check("T517 方案 A：三段发行名整包显示 0.04.05", C.version_of(894) == "0.04.05")
+	_check("T517 方案 A：三段发行名后续补丁末段累加 0.04.06/0.04.07", C.version_of(895) == "0.04.06" and C.version_of(896) == "0.04.07")
+	rv = C.evaluate(_manifest(895, 894, 895), 894, 894)
+	_check("T517 方案 A：0.04.05 整包遇到 895 补丁显示 0.04.06", rv["state"] == C.PATCH and rv["version"] == "0.04.06" and rv["current"] == "0.04.05")
 	C.release_name = rn
 	C.release_base = rb
 
@@ -219,7 +225,7 @@ func _run() -> void:
 	_check("补丁地址 Gitee、gh-proxy、jsDelivr、GitHub raw、其它的顺序", pu["state"] == C.PATCH and pu["patch"]["urls"] == ["https://gitee.com/k/raw/c/x.pck", gp, "https://cdn.jsdelivr.net/x.pck", "https://fastly.jsdelivr.net/x.pck", "https://raw.githubusercontent.com/x.pck", "https://other.example/x.pck"])
 	_check("清单本身的地址顺序不被改动", mixed["bases"][str(base)]["patch"]["urls"][0] == "https://other.example/x.pck")
 	_check("Gitee 子域名、主机名大小写都认", C.url_rank("https://Gitee.com/2") == 0 and C.url_rank("https://x.gitee.com/3") == 0 and C.url_rank("https://gitee.com.evil.io/4") == 4)
-	_check("正式清单源顺序：Gitee、gh-proxy、jsDelivr、GitHub raw", saved["urls"].size() == 4 and C.url_rank(saved["urls"][0]) == 0 and saved["urls"][1] == C.GH_PROXY + "https://raw.githubusercontent.com/luiluu/zaishuayiba-updates/main/godot/channel.json" and C.url_rank(saved["urls"][2]) == 2 and C.url_rank(saved["urls"][3]) == 3)
+	_check("正式清单源顺序：Gitee、gh-proxy、jsDelivr、GitHub raw", saved["urls"].size() == 4 and C.url_rank(saved["urls"][0]) == 0 and saved["urls"][1] == C.GH_PROXY + "https://raw.githubusercontent.com/luiluu/zaishuayiba-updates/main/godot2/channel.json" and C.url_rank(saved["urls"][2]) == 2 and C.url_rank(saved["urls"][3]) == 3)
 	_check("查到新版后有红点", client.has_update())
 	_check("查到结果就记时间", FileAccess.file_exists(XUpdateClient.stamp_path))
 	_check("一天内不到期、满一天到期、时钟回拨算到期", not XUpdateClient.due(1000, 1000 + 86399) and XUpdateClient.due(1000, 1000 + 86400) and XUpdateClient.due(1000, 500) and XUpdateClient.due(0, 1000))

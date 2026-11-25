@@ -245,6 +245,7 @@ class T(unittest.TestCase):
         with self.assertRaises(M.Fail):
             M.sign(key=bad_key, data=data, sig=existing)
         self.assertEqual(existing.read_bytes(), b'KEEP_ME')
+        self.assertEqual(list(t.glob('.sig_*.tmp')), [])
         with self.assertRaises(M.Fail):
             M.sign(key=self.key, data=self.key, sig=existing)
         self.assertEqual(existing.read_bytes(), b'KEEP_ME')
@@ -252,6 +253,7 @@ class T(unittest.TestCase):
         ok_sig = t / 'ok.sig'
         M.sign(key=self.key, data=data, sig=ok_sig)
         self.assertTrue(M.verify_sig(self.pub.read_text(encoding='utf-8'), data, ok_sig))
+        self.assertEqual(list(t.glob('.sig_*.tmp')), [])
 
 
 if __name__ == '__main__':
